@@ -32,11 +32,26 @@ HRESULT OpenFileFolderPlugin(const UString &path,
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
 
+  CSysString pathSys = GetSystemString(path);
   CSysString extension;
   CSysString name, pureName, dot;
-  if(!NFile::NDirectory::GetOnlyName(GetSystemString(path), name))
+
+  if(!NFile::NDirectory::GetOnlyName(pathSys, name))
     return E_FAIL;
   NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
+
+
+  int slashPos = pathSys.ReverseFind('\\');
+  CSysString dirPrefix;
+  CSysString fileName;
+  if (slashPos >= 0)
+  {
+    dirPrefix = pathSys.Left(slashPos + 1);
+    fileName = pathSys.Mid(slashPos + 1);
+  }
+  else
+    fileName = pathSys;
+
   if (!extension.IsEmpty())
   {
     CExtInfo extInfo;
@@ -69,6 +84,7 @@ HRESULT OpenFileFolderPlugin(const UString &path,
     CComPtr<IProgress> openCallback = openCallbackSpec;
     openCallbackSpec->_passwordIsDefined = false;
     openCallbackSpec->_parentWindow = parentWindow;
+    openCallbackSpec->LoadFileInfo(dirPrefix, fileName);
 
     result = folderManager->OpenFolderFile(path, &folder, openCallback);
     if (result == S_OK)

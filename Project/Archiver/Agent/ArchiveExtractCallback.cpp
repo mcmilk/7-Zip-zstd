@@ -41,9 +41,9 @@ void CArchiveExtractCallback::Init(
     UINT codePage, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
-    UINT32 attributesDefault
+    UINT32 attributesDefault)
     // bool passwordIsDefined, const UString &password
-    )
+    // CSysString srcDirectoryPrefix)
 {
   _extractCallback2 = extractCallback2;
   // m_PasswordIsDefined = passwordIsDefined;
@@ -63,6 +63,8 @@ void CArchiveExtractCallback::Init(
   _archiveHandler = archiveHandler;
   _directoryPath = directoryPath;
   NFile::NName::NormalizeDirPathPrefix(_directoryPath);
+
+  // _srcDirectoryPrefix = srcDirectoryPrefix;
 }
 
 STDMETHODIMP CArchiveExtractCallback::SetTotal(UINT64 size)
@@ -334,6 +336,19 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(INT32 operationResult)
   RINOK(_extractCallback2->SetOperationResult(operationResult));
   return S_OK;
 }
+
+/*
+STDMETHODIMP CArchiveExtractCallback::GetInStream(
+    const wchar_t *name, ISequentialInStream **inStream)
+{
+  CComObjectNoLock<CInFileStream> *inFile = new CComObjectNoLock<CInFileStream>;
+  CComPtr<ISequentialInStream> inStreamTemp = inFile;
+  if (!inFile->Open(_srcDirectoryPrefix + name))
+    return ::GetLastError();
+  *inStream = inStreamTemp.Detach();
+  return S_OK;
+}
+*/
 
 STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
 {

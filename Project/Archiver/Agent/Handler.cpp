@@ -302,7 +302,9 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *anIndexes,
       codePage, 
       _proxyHandler->ItemDefaultName,
       _proxyHandler->DefaultTime, 
-      _proxyHandler->DefaultAttributes);
+      _proxyHandler->DefaultAttributes
+      // ,_agentSpec->_srcDirectoryPrefix
+      );
   CUIntVector realIndices;
   _proxyHandler->GetRealIndices(*_proxyFolderItem, anIndexes, numItems, realIndices);
   return _proxyHandler->Archive->Extract(&realIndices.Front(), 
@@ -431,7 +433,9 @@ STDMETHODIMP CAgent::Extract(
       codePage, 
       _defaultName,
       _defaultTime, 
-      _defaultAttributes);
+      _defaultAttributes
+      // ,_srcDirectoryPrefix
+      );
   return _archive->ExtractAllItems(testMode, extractCallback);
 }
 

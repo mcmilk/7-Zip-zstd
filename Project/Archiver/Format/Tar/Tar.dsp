@@ -210,15 +210,7 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\OutEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\PropID.h
+SOURCE=..\Common\ArchiveInterface.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -250,6 +242,30 @@ SOURCE=..\..\..\..\SDK\Windows\Time.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IProgress.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
 # End Source File
 # Begin Source File
@@ -263,6 +279,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -280,14 +300,6 @@ SOURCE=..\..\..\..\SDK\Compression\CopyCoder.h
 # Begin Group "Format Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Common\DummyOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DummyOutStream.h
-# End Source File
 # End Group
 # Begin Source File
 

@@ -15,12 +15,14 @@
 
 class CArchiveExtractCallback: 
   public IArchiveExtractCallback,
+  // public IArchiveVolumeExtractCallback,
   public ICryptoGetTextPassword,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CArchiveExtractCallback)
   COM_INTERFACE_ENTRY(IArchiveExtractCallback)
+  // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
 
@@ -37,6 +39,9 @@ DECLARE_NO_REGISTRY()
       INT32 askExtractMode);
   STDMETHOD(PrepareOperation)(INT32 askExtractMode);
   STDMETHOD(SetOperationResult)(INT32 resultEOperationResult);
+
+  // IArchiveVolumeExtractCallback
+  // STDMETHOD(GetInStream)(const wchar_t *name, ISequentialInStream **inStream);
 
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
@@ -77,6 +82,8 @@ private:
   // bool m_PasswordIsDefined;
   // UString m_Password;
 
+  
+  // CSysString _srcDirectoryPrefix;
 
   void CreateComplexDirectory(const UStringVector &dirPathParts);
   /*
@@ -97,8 +104,10 @@ public:
       const UStringVector &removePathParts,
       UINT codePage, 
       const UString &itemDefaultName,
-      const FILETIME &utcLastWriteTimeDefault, UINT32 anAttributesDefault
+      const FILETIME &utcLastWriteTimeDefault, 
+      UINT32 anAttributesDefault
       // bool aPasswordIsDefined, const UString &aPassword
+      // CSysString srcDirectoryPrefix
       );
 
   UINT64 _numErrors;

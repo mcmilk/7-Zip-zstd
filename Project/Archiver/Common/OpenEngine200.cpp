@@ -133,7 +133,7 @@ HRESULT OpenArchive(const CSysString &fileName,
 
     #ifdef FORMAT_TAR
     if (archiverInfo.Name.CompareNoCase(TEXT("Tar")) == 0)
-      archive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
+      archive = new CComObjectNoLock<NArchive::NTar::CHandler>;
     #endif
 
     #ifdef FORMAT_ZIP

@@ -88,7 +88,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       if (!filled)
         break;
       m_Items.Add(itemInfo);
-      archive.SkeepDataRecords(itemInfo.Size);
+      archive.SkeepDataRecords(itemInfo.Size, itemInfo.OldHeader);
       if (openArchiveCallback != NULL)
       {
         UINT64 numFiles = m_Items.Size();

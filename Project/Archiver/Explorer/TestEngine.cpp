@@ -72,6 +72,14 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   openCallbackSpec->_passwordIsDefined = false;
   openCallbackSpec->_parentWindow = parentWindow;
 
+  CSysString fullName;
+  int fileNamePartStartIndex;
+  NFile::NDirectory::MyGetFullPathName(fileName, fullName, fileNamePartStartIndex);
+
+  openCallbackSpec->LoadFileInfo(
+      fullName.Left(fileNamePartStartIndex), 
+      fullName.Mid(fileNamePartStartIndex));
+
   RETURN_IF_NOT_S_OK(OpenArchive(fileName, &tester.ArchiveHandler, 
       archiverInfoResult, openCallback));
 

@@ -5,8 +5,6 @@
 #ifndef __ARCHIVE_TAR_ITEMINFOEX_H
 #define __ARCHIVE_TAR_ITEMINFOEX_H
 
-#include "Common/Vector.h"
-
 #include "Archive/Tar/ItemInfo.h"
 #include "Archive/Tar/Header.h"
 
@@ -21,8 +19,6 @@ public:
   UINT64 GetDataPosition() const { return HeaderPosition + LongLinkSize + NFileHeader::kRecordSize; };
   UINT64 GetFullSize() const { return LongLinkSize + NFileHeader::kRecordSize + Size; };
 };
-
-typedef CObjectVector<CItemInfoEx> CItemInfoExVector;
 
 }}
 

@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 27        2003-01-24
+  --------------------------------------
+      Project/Archiver/Format/Common/ArchiveInterface.h:
+        new IArchiveOpenVolumeCallback interface.
+
+
   Version 2.30 Beta 26        2003-01-12
   --------------------------------------
       SDK/Interface/PropID.h:

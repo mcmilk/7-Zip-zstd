@@ -848,6 +848,26 @@ SOURCE=..\Agent\Handler.h
 SOURCE=..\Agent\OutHandler.cpp
 # End Source File
 # End Group
+# Begin Group "Archive Interfaces"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Format\Common\ArchiveInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Interface\CompressInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\CryptoInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FolderArchiveInterface.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\GUI.cpp

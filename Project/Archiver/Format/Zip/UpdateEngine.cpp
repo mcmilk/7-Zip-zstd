@@ -94,6 +94,7 @@ static HRESULT UpdateOneFile(IInStream *inStream,
 
   bool isDirectory;
   UINT32 fileSize = updateItem.Size;
+  fileHeader.UnPackSize = fileSize;
 
   if (updateItem.NewProperties)
   {
@@ -152,9 +153,9 @@ static HRESULT UpdateOneFile(IInStream *inStream,
       fileHeader.CompressionMethod = compressingResult.Method;
       fileHeader.ExtractVersion.Version = compressingResult.ExtractVersion;
       fileHeader.FileCRC = inStreamSpec->GetCRC();
+      fileHeader.UnPackSize = inStreamSpec->GetSize();
     }
   }
-  fileHeader.UnPackSize = fileSize;
   fileHeader.SetEncrypted(options.PasswordIsDefined);
   fileHeader.CommentSize = (updateItem.Commented) ? 
       WORD(updateItem.CommentRange.Size) : 0;

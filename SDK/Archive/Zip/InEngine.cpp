@@ -297,7 +297,7 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     if (anItemInfo.ExtractVersion != aCentalHeaderExtractVersion ||
         anItemInfo.Flags != aHeader.Flags ||
         anItemInfo.CompressionMethod != aHeader.CompressionMethod ||
-        anItemInfo.Time != aHeader.Time ||
+        // anItemInfo.Time != aHeader.Time ||
         anItemInfo.FileCRC != aHeader.FileCRC ||
         anItemInfo.PackSize != aHeader.PackSize ||
         anItemInfo.UnPackSize != aHeader.UnPackSize)

@@ -76,7 +76,8 @@ HRESULT UpdateArchive(IInStream *inStream,
 
   RINOK(compressor.Compress(crcStream, outStream, compressProgress));
 
-  RINOK(outArchive.WritePostInfo(inStreamSpec->GetCRC(), itemInfo.UnPackSize32));
+  RINOK(outArchive.WritePostInfo(inStreamSpec->GetCRC(), 
+      (UINT32)inStreamSpec->GetSize()));
   return updateCallback->SetOperationResult(
       NArchive::NUpdate::NOperationResult::kOK);
 }

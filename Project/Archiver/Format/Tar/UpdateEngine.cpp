@@ -22,16 +22,20 @@ namespace NArchive {
 namespace NTar {
 
 static HRESULT CopyBlock(ISequentialInStream *inStream, 
-    ISequentialOutStream *outStream, ICompressProgressInfo *progress)
+    ISequentialOutStream *outStream, ICompressProgressInfo *progress,
+    UINT64 *totalSize = NULL)
 {
   CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
   CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
-  return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+  HRESULT result = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+  if (totalSize != NULL)
+    *totalSize = copyCoderSpec->TotalSize;
+  return result;
 }
 
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
-    const NArchive::NTar::CItemInfoExVector &inputItems,
+    const CObjectVector<NArchive::NTar::CItemInfoEx> &inputItems,
     const CObjectVector<CUpdateItemInfo> &updateItems,
     IArchiveUpdateCallback *updateCallback)
 {
@@ -119,7 +123,10 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       RINOK(updateCallback->GetStream(updateItem.IndexInClient, &fileInStream));
       if (!updateItem.IsDirectory)
       {
-        RINOK(CopyBlock(fileInStream, outStream, compressProgress));
+        UINT64 totalSize;
+        RINOK(CopyBlock(fileInStream, outStream, compressProgress, &totalSize));
+        if (totalSize != itemInfo.Size)
+          return E_FAIL;
         RINOK(outArchive.FillDataResidual(itemInfo.Size));
       }
       complexity += updateItem.Size;

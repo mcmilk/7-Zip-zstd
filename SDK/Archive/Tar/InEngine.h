@@ -14,16 +14,15 @@ namespace NTar {
 class CInArchive
 {
   CComPtr<IInStream> m_Stream;
-  
   UINT64 m_Position;
   
-  HRESULT ReadBytes(void *aData, UINT32 aSize, UINT32 &aProcessedSize);
+  HRESULT ReadBytes(void *data, UINT32 size, UINT32 &processedSize);
 public:
-  HRESULT Open(IInStream *aStream);
-  HRESULT GetNextItemReal(bool &aFilled, CItemInfoEx &anItemInfo);
-  HRESULT GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo);
-  HRESULT Skeep(UINT64 aNumBytes);
-  HRESULT SkeepDataRecords(UINT64 aDataSize);
+  HRESULT Open(IInStream *inStream);
+  HRESULT GetNextItemReal(bool &filled, CItemInfoEx &itemInfo);
+  HRESULT GetNextItem(bool &filled, CItemInfoEx &itemInfo);
+  HRESULT Skeep(UINT64 numBytes);
+  HRESULT SkeepDataRecords(UINT64 dataSize);
 };
   
 }}

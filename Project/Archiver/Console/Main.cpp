@@ -49,7 +49,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 26  Copyright (c) 1999-2003 Igor Pavlov  2003-01-12\n";
+" 2.30 Beta 27  Copyright (c) 1999-2003 Igor Pavlov  2003-01-24\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -785,6 +785,14 @@ static void MyOpenArhive(const CSysString &archiveName,
     openCallbackSpec->PasswordIsDefined = passwordEnabled;
     openCallbackSpec->Password = password;
   }
+
+  CSysString fullName;
+  int fileNamePartStartIndex;
+  NFile::NDirectory::MyGetFullPathName(archiveName, fullName, fileNamePartStartIndex);
+  openCallbackSpec->LoadFileInfo(
+      fullName.Left(fileNamePartStartIndex), 
+      fullName.Mid(fileNamePartStartIndex));
+
   NZipRootRegistry::CArchiverInfo archiverInfo;
   HRESULT result = OpenArchive(archiveName, archiveHandler, archiverInfo, 
       openCallback);
@@ -993,10 +1001,6 @@ int Main2(int numArguments, const char *arguments[])
     CComPtr<IInArchive> archiveHandler;
     NZipRootRegistry::CArchiverInfo archiverInfo;
 
-    CComObjectNoLock<COpenCallbackImp> *openCallbackSpec = 
-        new CComObjectNoLock<COpenCallbackImp>;
-    CComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
-
     MyOpenArhive(archiveName, archiveFileInfo, &archiveHandler, 
         defaultItemName, passwordEnabled, password);
 
@@ -1095,8 +1099,6 @@ int Main2(int numArguments, const char *arguments[])
     {
       if (archiveFileInfo.IsDirectory())
         throw "there is no such archive";
-      CComObjectNoLock<COpenCallbackImp> *openCallbackSpec = 
-        new CComObjectNoLock<COpenCallbackImp>;
       MyOpenArhive(archiveName, archiveFileInfo, &archive, 
           defaultItemName, passwordEnabled, password);
     }

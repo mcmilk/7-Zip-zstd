@@ -80,6 +80,30 @@ public:
   STDMETHOD(SetOperationResult)(INT32 resultEOperationResult) PURE;
 };
 
+
+// {23170F69-40C1-278A-0000-0001000D0000}
+DEFINE_GUID(IID_IArchiveOpenVolumeCallback, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0D, 0x00, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000D0000")
+IArchiveOpenVolumeCallback: public IUnknown
+{
+public:
+  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream) PURE;
+};
+
+/*
+// {23170F69-40C1-278A-0000-0001000E0000}
+DEFINE_GUID(IID_IArchiveVolumeExtractCallback, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0E, 0x00, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000E0000")
+IArchiveVolumeExtractCallback: public IUnknown
+{
+public:
+  STDMETHOD(GetInStream)(const wchar_t *name, IInStream **inStream) PURE;
+};
+*/
+
 /*
 // {23170F69-40C1-278A-0000-0001000C0000}
 DEFINE_GUID(IID_IArchivePropertiesInfo, 

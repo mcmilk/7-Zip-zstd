@@ -157,16 +157,6 @@ void CInArchive::SkipArchiveComment()
   m_SeekOnArchiveComment = false;
 }
 
-bool CInArchiveInfo::IsSolid() const
-{
-  return (Flags & NHeader::NArchive::kSolid) != 0;
-}
-
-bool CInArchiveInfo::IsCommented() const
-{
-  return (Flags & NHeader::NArchive::kComment) != 0;
-}
-
 void CInArchive::GetArchiveInfo(CInArchiveInfo &anArchiveInfo) const
 {
   anArchiveInfo.StartPosition = m_ArchiveStartPosition;

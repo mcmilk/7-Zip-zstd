@@ -5,42 +5,41 @@
 #include "InEngine.h"
 
 #include "Archive/Tar/Header.h"
+#include "Windows/Defs.h"
 
 namespace NArchive {
 namespace NTar {
  
-#define RETURN_IF_NOT_S_OK(x) { HRESULT aResult = (x); if(aResult != S_OK) return aResult; }
-
-HRESULT CInArchive::ReadBytes(void *aData, UINT32 aSize, UINT32 &aProcessedSize)
+HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 &processedSize)
 {
-  RETURN_IF_NOT_S_OK(m_Stream->Read(aData, aSize, &aProcessedSize));
-  m_Position += aProcessedSize;
+  RINOK(m_Stream->Read(data, size, &processedSize));
+  m_Position += processedSize;
   return S_OK;
 }
 
-HRESULT CInArchive::Open(IInStream *aStream)
+HRESULT CInArchive::Open(IInStream *inStream)
 {
-  RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
-  m_Stream = aStream;
+  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
+  m_Stream = inStream;
   return S_OK;
 }
 
-static UINT32 OctalToNumber(const char *aString)
+static UINT32 OctalToNumber(const char *srcString)
 {
-  char *anEndPtr;
-  return(strtoul(aString, &anEndPtr, 8));
+  char *endPtr;
+  return(strtoul(srcString, &endPtr, 8));
 }
 
-bool CheckOctalString(const char *aString, int aNumChars)
+static bool CheckOctalString(const char *srcString, int numChars)
 {
-  for(int i = 0; i < aNumChars; i++)
+  for(int i = 0; i < numChars; i++)
   {
-    char aChar = aString[i];
-    if (aChar == 0)
+    char c = srcString[i];
+    if (c == 0)
       return true;
-    if (aChar >= '0' && aChar <= '7')
+    if (c >= '0' && c <= '7')
       continue;
-    if (aChar != ' ')
+    if (c != ' ')
       return false;
   }
   return true;
@@ -48,137 +47,133 @@ bool CheckOctalString(const char *aString, int aNumChars)
 
 #define ReturnIfBadOctal(x, y) { if (!CheckOctalString((x), (y))) return S_FALSE; }
 
-static bool IsRecordLast(const NFileHeader::CRecord &aRecord)
+static bool IsRecordLast(const NFileHeader::CRecord &record)
 {
-  for (int i = 0; i < sizeof(aRecord); i++)
-    if (aRecord.Padding[i] != 0)
+  for (int i = 0; i < sizeof(record); i++)
+    if (record.Padding[i] != 0)
       return false;
   return true;
 }
 
-HRESULT CInArchive::GetNextItemReal(bool &aFilled, CItemInfoEx &anItemInfo)
+HRESULT CInArchive::GetNextItemReal(bool &filled, CItemInfoEx &itemInfo)
 {
-  anItemInfo.LongLinkSize = 0;
-  NFileHeader::CRecord aRecord;
-  aFilled = false;
+  itemInfo.LongLinkSize = 0;
+  NFileHeader::CRecord record;
+  filled = false;
 
-  UINT32 aProcessedSize;
-  anItemInfo.HeaderPosition = m_Position;
-  RETURN_IF_NOT_S_OK(ReadBytes(&aRecord, sizeof(aRecord), aProcessedSize));
-  if (aProcessedSize == 0 || 
-      (aProcessedSize == sizeof(aRecord) && IsRecordLast(aRecord)))
+  UINT32 processedSize;
+  itemInfo.HeaderPosition = m_Position;
+  RINOK(ReadBytes(&record, sizeof(record), processedSize));
+  if (processedSize == 0 || 
+      (processedSize == sizeof(record) && IsRecordLast(record)))
     return S_OK;
-  if (aProcessedSize < sizeof(aRecord))
+  if (processedSize < sizeof(record))
     return S_FALSE;
   
-  NFileHeader::CHeader &aHeader = aRecord.Header;
+  NFileHeader::CHeader &header = record.Header;
   
-  char aTempString[NFileHeader::kNameSize + 1];
-  strncpy(aTempString, aHeader.Name, NFileHeader::kNameSize);
-  aTempString[NFileHeader::kNameSize] = '\0';
-  anItemInfo.Name = aTempString;
+  char tempString[NFileHeader::kNameSize + 1];
+  strncpy(tempString, header.Name, NFileHeader::kNameSize);
+  tempString[NFileHeader::kNameSize] = '\0';
+  itemInfo.Name = tempString;
 
-  for (int i = 0; i < anItemInfo.Name.Length(); i++)
-    if (((BYTE)anItemInfo.Name[i]) < 0x20)
+  for (int i = 0; i < itemInfo.Name.Length(); i++)
+    if (((BYTE)itemInfo.Name[i]) < 0x20)
       return S_FALSE;
-  anItemInfo.LinkFlag = aHeader.LinkFlag;
+  itemInfo.LinkFlag = header.LinkFlag;
 
-  BYTE aLinkFlag = anItemInfo.LinkFlag;
+  BYTE linkFlag = itemInfo.LinkFlag;
 
-  ReturnIfBadOctal(aHeader.Mode, 8);
-  ReturnIfBadOctal(aHeader.UID, 8);
-  ReturnIfBadOctal(aHeader.GID, 8);
-  ReturnIfBadOctal(aHeader.Size, 12);
-  ReturnIfBadOctal(aHeader.ModificationTime, 12);
-  ReturnIfBadOctal(aHeader.CheckSum, 8);
-  ReturnIfBadOctal(aHeader.DeviceMajor, 8);
-  ReturnIfBadOctal(aHeader.DeviceMinor, 8);
+  ReturnIfBadOctal(header.Mode, 8);
+  ReturnIfBadOctal(header.UID, 8);
+  ReturnIfBadOctal(header.GID, 8);
+  ReturnIfBadOctal(header.Size, 12);
+  ReturnIfBadOctal(header.ModificationTime, 12);
+  ReturnIfBadOctal(header.CheckSum, 8);
+  ReturnIfBadOctal(header.DeviceMajor, 8);
+  ReturnIfBadOctal(header.DeviceMinor, 8);
 
-  anItemInfo.Mode = OctalToNumber(aHeader.Mode);
-  anItemInfo.UID = OctalToNumber(aHeader.UID);
-  anItemInfo.GID = OctalToNumber(aHeader.GID);
-  anItemInfo.Size = OctalToNumber(aHeader.Size);
-  anItemInfo.ModificationTime = OctalToNumber(aHeader.ModificationTime);
+  itemInfo.Mode = OctalToNumber(header.Mode);
+  itemInfo.UID = OctalToNumber(header.UID);
+  itemInfo.GID = OctalToNumber(header.GID);
+  itemInfo.Size = OctalToNumber(header.Size);
+  itemInfo.ModificationTime = OctalToNumber(header.ModificationTime);
   
 
-  anItemInfo.LinkName = aHeader.LinkName;
-  memmove(anItemInfo.Magic, aHeader.Magic, 8);
+  itemInfo.LinkName = header.LinkName;
+  memmove(itemInfo.Magic, header.Magic, 8);
 
-  anItemInfo.UserName = aHeader.UserName;
-  anItemInfo.GroupName = aHeader.GroupName;
+  itemInfo.UserName = header.UserName;
+  itemInfo.GroupName = header.GroupName;
 
 
-  anItemInfo.DeviceMajorDefined = strlen(aHeader.DeviceMajor) > 0;
-  if (anItemInfo.DeviceMajorDefined)
-    anItemInfo.DeviceMajor = OctalToNumber(aHeader.DeviceMajor);
+  itemInfo.DeviceMajorDefined = strlen(header.DeviceMajor) > 0;
+  if (itemInfo.DeviceMajorDefined)
+    itemInfo.DeviceMajor = OctalToNumber(header.DeviceMajor);
   
-  anItemInfo.DeviceMinorDefined = strlen(aHeader.DeviceMinor) > 0;
-  if (anItemInfo.DeviceMinorDefined)
-  anItemInfo.DeviceMinor = OctalToNumber(aHeader.DeviceMinor);
+  itemInfo.DeviceMinorDefined = strlen(header.DeviceMinor) > 0;
+  if (itemInfo.DeviceMinorDefined)
+  itemInfo.DeviceMinor = OctalToNumber(header.DeviceMinor);
   
-  UINT32 aCheckSum = OctalToNumber(aHeader.CheckSum);
+  UINT32 checkSum = OctalToNumber(header.CheckSum);
 
-  memmove(aHeader.CheckSum, NFileHeader::kCheckSumBlanks, 8);
+  memmove(header.CheckSum, NFileHeader::kCheckSumBlanks, 8);
 
-  UINT32 aCheckSumReal = 0;
+  UINT32 checkSumReal = 0;
   for(i = 0; i < NFileHeader::kRecordSize; i++)
-    aCheckSumReal += BYTE(aRecord.Padding[i]);
+    checkSumReal += BYTE(record.Padding[i]);
   
-  if (aCheckSumReal != aCheckSum)
+  if (checkSumReal != checkSum)
     return S_FALSE;
 
-
-  aFilled = true;
+  filled = true;
   return S_OK;
 }
 
-HRESULT CInArchive::GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo)
+HRESULT CInArchive::GetNextItem(bool &filled, CItemInfoEx &itemInfo)
 {
-  RETURN_IF_NOT_S_OK(GetNextItemReal(aFilled, anItemInfo));
-  if (!aFilled)
+  RINOK(GetNextItemReal(filled, itemInfo));
+  if (!filled)
     return S_OK;
   // GNUtar extension
-  if (anItemInfo.LinkFlag == 'L')
+  if (itemInfo.LinkFlag == 'L')
   {
-    if (anItemInfo.Name.Compare(NFileHeader::kLongLink) != 0)
+    if (itemInfo.Name.Compare(NFileHeader::kLongLink) != 0)
       return S_FALSE;
-    UINT64 aHeaderPosition = anItemInfo.HeaderPosition;
+    UINT64 headerPosition = itemInfo.HeaderPosition;
 
-    UINT32 aProcessedSize;
-    AString aFullName;
-    char *aString = aFullName.GetBuffer(anItemInfo.Size + 1);
-    RETURN_IF_NOT_S_OK(ReadBytes(aString, anItemInfo.Size, aProcessedSize));
-    aString[anItemInfo.Size] = '\0';
-    aFullName.ReleaseBuffer();
-    if (aProcessedSize != anItemInfo.Size)
+    UINT32 processedSize;
+    AString fullName;
+    char *buffer = fullName.GetBuffer(itemInfo.Size + 1);
+    RINOK(ReadBytes(buffer, itemInfo.Size, processedSize));
+    buffer[itemInfo.Size] = '\0';
+    fullName.ReleaseBuffer();
+    if (processedSize != itemInfo.Size)
       return S_FALSE;
-    RETURN_IF_NOT_S_OK(Skeep((0 - anItemInfo.Size) & 0x1FF));
-    RETURN_IF_NOT_S_OK(GetNextItemReal(aFilled, anItemInfo));
-    anItemInfo.Name = aFullName;
-    anItemInfo.LongLinkSize = anItemInfo.HeaderPosition - aHeaderPosition;
-    anItemInfo.HeaderPosition = aHeaderPosition;
+    RINOK(Skeep((0 - itemInfo.Size) & 0x1FF));
+    RINOK(GetNextItemReal(filled, itemInfo));
+    itemInfo.Name = fullName;
+    itemInfo.LongLinkSize = itemInfo.HeaderPosition - headerPosition;
+    itemInfo.HeaderPosition = headerPosition;
   }
-  else if (anItemInfo.LinkFlag > '7' || (anItemInfo.LinkFlag < '0' && anItemInfo.LinkFlag != 0))
+  else if (itemInfo.LinkFlag > '7' || (itemInfo.LinkFlag < '0' && itemInfo.LinkFlag != 0))
     return S_FALSE;
   return S_OK;
 }
 
-
-
-
-HRESULT CInArchive::Skeep(UINT64 aNumBytes)
+HRESULT CInArchive::Skeep(UINT64 numBytes)
 {
-  UINT64 aNewPostion;
-  RETURN_IF_NOT_S_OK(m_Stream->Seek(aNumBytes, STREAM_SEEK_CUR, &aNewPostion));
-  m_Position += aNumBytes;
-  if (m_Position != aNewPostion)
+  UINT64 newPostion;
+  RINOK(m_Stream->Seek(numBytes, STREAM_SEEK_CUR, &newPostion));
+  m_Position += numBytes;
+  if (m_Position != newPostion)
     return E_FAIL;
   return S_OK;
 }
 
-HRESULT CInArchive::SkeepDataRecords(UINT64 aDataSize)
+HRESULT CInArchive::SkeepDataRecords(UINT64 dataSize)
 {
-  return Skeep((aDataSize + 511) & 0xFFFFFFFFFFFFFE00);
+  return Skeep((dataSize + 511) & 0xFFFFFFFFFFFFFE00);
 }
 
 }}

@@ -551,7 +551,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
         RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
         if (propVariant.vt != VT_UI8)
           return E_INVALIDARG;
-        updateItemInfo.Size = *(const  *)(&propVariant.uhVal);
+        updateItemInfo.Size = *(const UINT64 *)(&propVariant.uhVal);
       }
     }
     else

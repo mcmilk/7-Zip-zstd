@@ -20,6 +20,7 @@ class CCopyCoder :
 {
   BYTE *_buffer;
 public:
+  UINT64 TotalSize;
   CCopyCoder();
   ~CCopyCoder();
 

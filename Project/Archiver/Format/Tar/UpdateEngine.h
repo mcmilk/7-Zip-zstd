@@ -29,7 +29,7 @@ struct CUpdateItemInfo
 };
 
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
-    const NArchive::NTar::CItemInfoExVector &inputItems,
+    const CObjectVector<NArchive::NTar::CItemInfoEx> &inputItems,
     const CObjectVector<CUpdateItemInfo> &updateItems,
     IArchiveUpdateCallback *updateCallback);
 

@@ -268,6 +268,8 @@ public:
 
   CObjectVector<CComBSTR> m_PropNames;
   std::vector<NWindows::NCOM::CPropVariant> m_PropValues;
+
+  // CSysString _srcDirectoryPrefix;
 };
 
 #endif

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "Common/StringConvert.h"
+
 #include "Interface/StreamObjects.h"
 #include "Interface/EnumStatProp.h"
 #include "Interface/ProgressUtils.h"
@@ -17,19 +19,15 @@
 
 #include "../Common/OutStreamWithCRC.h"
 #include "../Common/CoderMixer.h"
-// #include "../Common/CoderMixer2.h"
 
 #include "../../../Compress/Interface/CompressInterface.h"
 #include "../../../Crypto/Cipher/Common/CipherInterface.h"
 
-
-#include "Common/StringConvert.h"
-
 using namespace NWindows;
 using namespace NTime;
 
-using namespace NArchive;
-using namespace NRar;
+namespace NArchive {
+namespace NRar {
 
 const wchar_t *kHostOS[] =
 {
@@ -72,7 +70,16 @@ STATPROPSTG kProperties[] =
   { L"UnPack Version", kpidUnPackVersion, VT_UI1}
 };
 
-STDMETHODIMP CRarHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
+UINT64 CHandler::GetPackSize(int refIndex) const
+{
+  const CRefItem &refItem = _refItems[refIndex];
+  UINT64 totalPackSize = 0;
+  for (int i = 0; i < refItem.NumItems; i++)
+    totalPackSize += _items[refItem.ItemIndex + i].PackSize;
+  return totalPackSize;
+}
+
+STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
   return CStatPropEnumerator::CreateEnumerator(kProperties, 
@@ -80,17 +87,18 @@ STDMETHODIMP CRarHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
   COM_TRY_END
 }
 
-STDMETHODIMP CRarHandler::GetNumberOfItems(UINT32 *numItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
-  *numItems = _items.Size();
+  *numItems = _refItems.Size();
   return S_OK;
 }
 
-STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
-  const NArchive::NRar::CItemInfoEx &item = _items[index];
+  const CRefItem &refItem = _refItems[index];
+  const CItemInfoEx &item = _items[refItem.ItemIndex];
   switch(propID)
   {
     case kpidPath:
@@ -106,8 +114,10 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
       propVariant = item.UnPackSize;
       break;
     case kpidPackedSize:
-      propVariant = item.PackSize;
+    {
+      propVariant = GetPackSize(index);
       break;
+    }
     case kpidLastWriteTime:
     {
       FILETIME localFileTime, utcFileTime;
@@ -137,7 +147,7 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
       propVariant = item.IsSplitBefore();
       break;
     case kpidSplitAfter:
-      propVariant = item.IsSplitAfter();
+      propVariant = _items[refItem.ItemIndex + refItem.NumItems - 1].IsSplitAfter();
       break;
     /*
     case kpidDictionarySize:
@@ -146,8 +156,15 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
       break;
     */
     case kpidCRC:
-      propVariant = item.FileCRC;
+    {
+      const CItemInfoEx &lastItem = 
+          _items[refItem.ItemIndex + refItem.NumItems - 1];
+      if (lastItem.IsSplitAfter())
+        propVariant = item.FileCRC;
+      else
+        propVariant = lastItem.FileCRC;
       break;
+    }
     case kpidUnPackVersion:
       propVariant = item.UnPackVersion;
       break;
@@ -174,8 +191,6 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
         method += temp;
       }
       propVariant = method;
-
-      // propVariant = item.Method;
       break;
     }
     case kpidHostOS:
@@ -188,34 +203,190 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
   COM_TRY_END
 }
 
-STDMETHODIMP CRarHandler::Open(IInStream *stream, 
+class CVolumeName
+{
+  bool _first;
+  bool _newStyle;
+  UString _unchangedPart;
+  UString _changedPart;    
+  UString _afterPart;    
+public:
+  CVolumeName(): _newStyle(true) {};
+
+  bool InitName(const UString &name, bool newStyle)
+  {
+    _first = true;
+    _newStyle = newStyle;
+    int dotPos = name.ReverseFind('.');
+    UString basePart = name;
+    if (dotPos >= 0)
+    {
+      UString ext = name.Mid(dotPos + 1);
+      if (ext.CompareNoCase(L"RAR")==0 || 
+        ext.CompareNoCase(L"EXE") == 0)
+      {
+        _afterPart = L".rar";
+        basePart = name.Left(dotPos);
+      }
+    }
+
+    if (!_newStyle)
+    {
+      _afterPart.Empty();
+      _unchangedPart = basePart + UString(L".");
+      _changedPart = L"r00";
+      return true;;
+    }
+
+    int numLetters = 1;
+    bool splitStyle = false;
+    if (basePart.Right(numLetters) == L"1")
+    {
+      while (numLetters < basePart.Length())
+      {
+        if (basePart[basePart.Length() - numLetters - 1] != '0')
+          break;
+        numLetters++;
+      }
+    }
+    else 
+      return false;
+    _unchangedPart = basePart.Left(basePart.Length() - numLetters);
+    _changedPart = basePart.Right(numLetters);
+    return true;
+  }
+
+  UString GetNextName()
+  {
+    UString newName; 
+    if (_newStyle || !_first)
+    {
+      int i;
+      int numLetters = _changedPart.Length();
+      for (i = numLetters - 1; i >= 0; i--)
+      {
+        wchar_t c = _changedPart[i];
+        if (c == L'9')
+        {
+          c = L'0';
+          newName = c + newName;
+          if (i == 0)
+            newName = UString(L'1') + newName;
+          continue;
+        }
+        c++;
+        newName = UString(c) + newName;
+        i--;
+        for (; i >= 0; i--)
+          newName = _changedPart[i] + newName;
+        break;
+      }
+      _changedPart = newName;
+    }
+    _first = false;
+    return _unchangedPart + _changedPart + _afterPart;
+  }
+};
+
+STDMETHODIMP CHandler::Open(IInStream *stream, 
     const UINT64 *maxCheckStartPosition,
     IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
+  Close();
   try
   {
-    if(!_archive.Open(stream, maxCheckStartPosition))
-      return S_FALSE;
-    _items.Clear();
+    CComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
+    CComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = openArchiveCallback;
+    openArchiveCallbackWrap.QueryInterface(&openVolumeCallback);
     
-    NRar::CItemInfoEx itemInfo;
+    CVolumeName seqName;
+
     if (openArchiveCallback != NULL)
     {
       RINOK(openArchiveCallback->SetTotal(NULL, NULL));
       UINT64 numFiles = _items.Size();
       RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
     }
-    while(_archive.GetNextItem(itemInfo))
+
+    CInArchiveInfo archiveInfo;
+    while(true)
     {
-      if (itemInfo.IgnoreItem())
-        continue;
-      _items.Add(itemInfo);
-      if (openArchiveCallback != NULL)
+      CComPtr<IInStream> inStream;
+      if (!_archives.IsEmpty())
       {
-        UINT64 numFiles = _items.Size();
-        RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
+        if (!openVolumeCallback)
+          break;
+        
+        if(_archives.Size() == 1)
+        {
+          if (!archiveInfo.IsVolume())
+            break;
+          UString baseName;
+          {
+            NCOM::CPropVariant propVariant;
+            RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
+            if (propVariant.vt != VT_BSTR)
+              break;
+            baseName = propVariant.bstrVal;
+          }
+          seqName.InitName(baseName, archiveInfo.HaveNewVolumeName());
+        }
+
+        UString fullName = seqName.GetNextName();
+        HRESULT result = openVolumeCallback->GetStream(fullName, &inStream);
+        if (result == S_FALSE)
+          break;
+        if (result != S_OK)
+          return result;
+        if (!stream)
+          break;
       }
+      else
+        inStream = stream;
+      
+      NArchive::NRar::CInArchive archive;
+      if(!archive.Open(inStream, maxCheckStartPosition))
+        return S_FALSE;
+
+      if (_archives.IsEmpty())
+      {
+        archive.GetArchiveInfo(archiveInfo);
+      }
+
+      
+      CItemInfoEx itemInfo;
+      while(archive.GetNextItem(itemInfo))
+      {
+        if (itemInfo.IgnoreItem())
+          continue;
+
+        bool needAdd = true;
+        if (itemInfo.IsSplitBefore())
+        {
+          if (!_refItems.IsEmpty())
+          {
+            CRefItem &refItem = _refItems.Back();
+            refItem.NumItems++;
+            needAdd = false;
+          }
+        }
+        if (needAdd)
+        {
+          CRefItem refItem;
+          refItem.ItemIndex = _items.Size();
+          refItem.NumItems = 1;
+          refItem.VolumeIndex = _archives.Size();
+          _refItems.Add(refItem);
+        }
+        _items.Add(itemInfo);
+        if (openArchiveCallback != NULL)
+        {
+          UINT64 numFiles = _items.Size();
+          RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
+        }
+      }
+      _archives.Add(archive);
     }
   }
   catch(...)
@@ -226,24 +397,28 @@ STDMETHODIMP CRarHandler::Open(IInStream *stream,
   COM_TRY_END
 }
 
-STDMETHODIMP CRarHandler::Close()
+STDMETHODIMP CHandler::Close()
 {
   COM_TRY_BEGIN
-  _archive.Close();
+  _refItems.Clear();
+  _items.Clear();
+  _archives.Clear();
   return S_OK;
   COM_TRY_END
 }
 
 
-STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
+STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
   CComPtr<ICryptoGetTextPassword> getTextPassword;
   bool testMode = (_aTestMode != 0);
   CComPtr<IArchiveExtractCallback> extractCallback = _anExtractCallback;
-  UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0,
-        importantTotalUnPacked = 0, importantTotalPacked = 0;
+  UINT64 censoredTotalUnPacked = 0, 
+        // censoredTotalPacked = 0,
+        importantTotalUnPacked = 0; 
+        // importantTotalPacked = 0;
   if(numItems == 0)
     return S_OK;
   int lastIndex = 0;
@@ -253,17 +428,22 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
   for(UINT32 t = 0; t < numItems; t++)
   {
     int index = indices[t];
-    const CItemInfoEx &itemInfo = _items[index];
+    const CRefItem &refItem = _refItems[index];
+    const CItemInfoEx &itemInfo = _items[refItem.ItemIndex];
     censoredTotalUnPacked += itemInfo.UnPackSize;
-    censoredTotalPacked += itemInfo.PackSize;
+    // censoredTotalPacked += itemInfo.PackSize;
     for(int j = lastIndex; j <= index; j++)
-      if(!_items[j].IsSolid())
+      if(!_items[_refItems[j].ItemIndex].IsSolid())
         lastIndex = j;
     for(j = lastIndex; j <= index; j++)
     {
-      const CItemInfoEx &itemInfo = _items[j];
+      const CRefItem &refItem = _refItems[j];
+      const CItemInfoEx &itemInfo = _items[refItem.ItemIndex];
+
+      // const CItemInfoEx &itemInfo = _items[j];
+
       importantTotalUnPacked += itemInfo.UnPackSize;
-      importantTotalPacked += itemInfo.PackSize;
+      // importantTotalPacked += itemInfo.PackSize;
       importantIndexes.Add(j);
       extractStatuses.Add(j == index);
     }
@@ -295,6 +475,9 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
   CComPtr<ICompressCoder> rar20CryptoDecoder;
   CComPtr<ICompressCoder> rar29CryptoDecoder;
 
+  CComObjectNoLock<CFolderInStream> *folderInStreamSpec = NULL;
+  CComPtr<ISequentialInStream> folderInStream;
+
   for(int i = 0; i < importantIndexes.Size(); i++, 
       currentImportantTotalUnPacked += currentUnPackSize,
       currentImportantTotalPacked += currentPackSize)
@@ -311,10 +494,13 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
       askMode = NArchive::NExtract::NAskMode::kSkip;
 
     UINT32 index = importantIndexes[i];
-    const CItemInfoEx &itemInfo = _items[index];
+
+    const CRefItem &refItem = _refItems[index];
+    const CItemInfoEx &itemInfo = _items[refItem.ItemIndex];
 
     currentUnPackSize = itemInfo.UnPackSize;
-    currentPackSize = itemInfo.PackSize;
+
+    currentPackSize = GetPackSize(index);
 
     if(itemInfo.IgnoreItem())
       continue;
@@ -331,7 +517,8 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
     bool mustBeProcessedAnywhere = false;
     if(i < importantIndexes.Size() - 1)
     {
-      const CItemInfoEx &nextItemInfo = _items[importantIndexes[i + 1]];
+      const CRefItem &nextRefItem = _refItems[importantIndexes[i + 1]];
+      const CItemInfoEx &nextItemInfo = _items[nextRefItem.ItemIndex];
       mustBeProcessedAnywhere = nextItemInfo.IsSolid();
     }
     
@@ -349,22 +536,46 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
     outStreamSpec->Init(realOutStream);
     realOutStream.Release();
     
+    UINT64 packedPos = currentImportantTotalPacked;
+    UINT64 unpackedPos = currentImportantTotalUnPacked;
+
+    /*
+    for (int partIndex = 0; partIndex < 1; partIndex++)
+    {
     CComPtr<ISequentialInStream> inStream;
-    inStream.Attach(_archive.CreateLimitedStream(itemInfo.GetDataPosition(),
+
+    // itemInfo redefinition
+    const CItemInfoEx &itemInfo = _items[refItem.ItemIndex + partIndex];
+
+    NArchive::NRar::CInArchive &archive = _archives[refItem.VolumeIndex + partIndex];
+
+    inStream.Attach(archive.CreateLimitedStream(itemInfo.GetDataPosition(),
       itemInfo.PackSize));
-    
+    */
+    if (!folderInStream)
+    {
+      folderInStreamSpec = new CComObjectNoLock<CFolderInStream>;
+      folderInStream = folderInStreamSpec;
+    }
+
+    folderInStreamSpec->Init(&_archives, &_items, refItem);
+
     
     CComObjectNoLock<CLocalProgress> *localProgressSpec = new  CComObjectNoLock<CLocalProgress>;
     CComPtr<ICompressProgressInfo> progress = localProgressSpec;
     localProgressSpec->Init(extractCallback, false);
     
-    
     CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
     CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
     localCompressProgressSpec->Init(progress, 
-      &currentImportantTotalPacked,
-      &currentImportantTotalUnPacked);
+      &packedPos,
+      &unpackedPos);
+
+    UINT64 packSize = currentPackSize;
+
+    // packedPos += itemInfo.PackSize;
+    // unpackedPos += 0;
     
     if (itemInfo.IsEncrypted())
     {
@@ -453,17 +664,17 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
               mixerCryptoVersion = itemInfo.UnPackVersion;
             }
             mixerCoderSpec->ReInit();
-            mixerCoderSpec->SetCoderInfo(0, &itemInfo.PackSize, &itemInfo.UnPackSize);
+            mixerCoderSpec->SetCoderInfo(0, &packSize, &itemInfo.UnPackSize);
             mixerCoderSpec->SetCoderInfo(1, &itemInfo.UnPackSize, &itemInfo.UnPackSize);
             mixerCoderSpec->SetProgressCoderIndex(1);
             
-            RINOK(mixerCoder->Code(inStream, outStream,
+            RINOK(mixerCoder->Code(folderInStream, outStream,
               NULL, NULL, compressProgress));
           }
         }
         else
         {
-          RINOK(copyCoder->Code(inStream, outStream,
+          RINOK(copyCoder->Code(folderInStream, outStream,
               NULL, NULL, compressProgress));
         }
         break;
@@ -511,7 +722,9 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
         CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
         RINOK(decoder.QueryInterface(&compressSetDecoderProperties));
         
-        BYTE isSolid = itemInfo.IsSolid() ? 1: 0;
+        BYTE isSolid = (itemInfo.IsSolid() || itemInfo.IsSplitBefore())
+            ? 1: 0;
+
         CComObjectNoLock<CSequentialInStreamImp> *inStreamSpec = new 
           CComObjectNoLock<CSequentialInStreamImp>;
         CComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
@@ -535,16 +748,16 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
             mixerCoderStoreMethod = false;
           }
           mixerCoderSpec->ReInit();
-          mixerCoderSpec->SetCoderInfo(1, &itemInfo.PackSize, 
+          mixerCoderSpec->SetCoderInfo(1, &packSize, 
               &itemInfo.UnPackSize);
           mixerCoderSpec->SetProgressCoderIndex(1);
-          result = mixerCoder->Code(inStream, outStream, 
+          result = mixerCoder->Code(folderInStream, outStream, 
               NULL, NULL, compressProgress);
         }
         else
         {
-          result = decoder->Code(inStream, outStream,
-              &itemInfo.PackSize, &itemInfo.UnPackSize, compressProgress);
+          result = decoder->Code(folderInStream, outStream,
+              &packSize, &itemInfo.UnPackSize, compressProgress);
         }
         if (result == S_FALSE)
         {
@@ -561,26 +774,50 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
         RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
         continue;
     }
-    bool crcOK = outStreamSpec->GetCRC() == itemInfo.FileCRC;
-    outStream.Release();
-    if(crcOK)
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK))
+
+    /*
+    if (refItem.NumItems == 1 && 
+        !itemInfo.IsSplitBefore() && !itemInfo.IsSplitAfter())
+    */
+    {
+      const CItemInfoEx &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
+      bool crcOK = outStreamSpec->GetCRC() == lastItem.FileCRC;
+      outStream.Release();
+      RINOK(extractCallback->SetOperationResult(crcOK ? NArchive::NExtract::NOperationResult::kOK:
+          NArchive::NExtract::NOperationResult::kCRCError));
+    }
+    /*
     else
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError))
+    {
+      bool crcOK = true;
+      for (int partIndex = 0; partIndex < refItem.NumItems; partIndex++)
+      {
+        const CItemInfoEx &itemInfo = _items[refItem.ItemIndex + partIndex];
+        if (itemInfo.FileCRC != folderInStreamSpec->CRCs[partIndex])
+        {
+          crcOK = false;
+          break;
+        }
+      }
+      RINOK(extractCallback->SetOperationResult(crcOK ? NArchive::NExtract::NOperationResult::kOK:
+          NArchive::NExtract::NOperationResult::kCRCError));
+    }
+    */
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CRarHandler::ExtractAllItems(INT32 testMode,
+STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode,
       IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   CRecordVector<UINT32> indices;
-  indices.Reserve(_items.Size());
-  for(int i = 0; i < _items.Size(); i++)
+  indices.Reserve(_refItems.Size());
+  for(int i = 0; i < _refItems.Size(); i++)
     indices.Add(i);
-  return Extract(&indices.Front(), _items.Size(), testMode, extractCallback);
+  return Extract(&indices.Front(), _refItems.Size(), testMode, extractCallback);
   COM_TRY_END
 }
 
+}}

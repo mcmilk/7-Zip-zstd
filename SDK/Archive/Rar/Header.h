@@ -42,7 +42,11 @@ namespace NArchive
   const UINT16 kComment = 2;
   const UINT16 kLock    = 4;
   const UINT16 kSolid   = 8;
-  const UINT16 kAuthenticity  = 32;
+  const UINT16 kNewVolName = 0x10; // ('volname.partN.rar')
+  const UINT16 kAuthenticity  = 0x20;
+  const UINT16 kRecovery = 0x40;
+  const UINT16 kBlockEncryption  = 0x80;
+  const UINT16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
   
   struct CBlock
   {

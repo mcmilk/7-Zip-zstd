@@ -35,8 +35,10 @@ public:
   WORD Flags;
   UINT64 CommentPosition;
   WORD CommentSize;
-  bool IsSolid() const;
-  bool IsCommented() const;
+  bool IsSolid() const { return (Flags & NHeader::NArchive::kSolid) != 0; }
+  bool IsCommented() const {  return (Flags & NHeader::NArchive::kComment) != 0; }
+  bool IsVolume() const {  return (Flags & NHeader::NArchive::kVolume) != 0; }
+  bool HaveNewVolumeName() const {  return (Flags & NHeader::NArchive::kNewVolName) != 0; }
 };
 
 class CInArchive

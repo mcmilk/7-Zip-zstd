@@ -10,7 +10,6 @@
 
 #include "Interface/ProgressUtils.h"
 #include "Interface/LimitedStreams.h"
-#include "Interface/StreamObjects.h"
 #include "Interface/EnumStatProp.h"
 
 #include "Windows/Time.h"
@@ -21,8 +20,6 @@
 
 #include "Archive/Common/ItemNameUtils.h"
 #include "Archive/Tar/InEngine.h"
-
-#include "../Common/DummyOutStream.h"
 
 using namespace NWindows;
 using namespace NTime;
@@ -41,7 +38,7 @@ STATPROPSTG kProperties[] =
   { L"Group", kpidGroup, VT_BSTR},
 };
 
-STDMETHODIMP CTarHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
+STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
   return CStatPropEnumerator::CreateEnumerator(kProperties, 
@@ -49,7 +46,7 @@ STDMETHODIMP CTarHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
   COM_TRY_END
 }
 
-STDMETHODIMP CTarHandler::Open(IInStream *stream, 
+STDMETHODIMP CHandler::Open(IInStream *stream, 
     const UINT64 *maxCheckStartPosition,
     IArchiveOpenCallback *openArchiveCallback)
 {
@@ -105,19 +102,19 @@ STDMETHODIMP CTarHandler::Open(IInStream *stream,
   COM_TRY_END
 }
 
-STDMETHODIMP CTarHandler::Close()
+STDMETHODIMP CHandler::Close()
 {
   _inStream.Release();
   return S_OK;
 }
 
-STDMETHODIMP CTarHandler::GetNumberOfItems(UINT32 *numItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CTarHandler::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
@@ -164,9 +161,9 @@ STDMETHODIMP CTarHandler::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *
 }
 
 //////////////////////////////////////
-// CTarHandler::DecompressItems
+// CHandler::DecompressItems
 
-STDMETHODIMP CTarHandler::Extract(const UINT32* indices, UINT32 numItems,
+STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
@@ -259,7 +256,7 @@ STDMETHODIMP CTarHandler::Extract(const UINT32* indices, UINT32 numItems,
   COM_TRY_END
 }
 
-STDMETHODIMP CTarHandler::ExtractAllItems(INT32 testMode,
+STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode,
       IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN

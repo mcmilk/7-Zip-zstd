@@ -16,21 +16,21 @@ DEFINE_GUID(CLSID_CFormatTar,
 namespace NArchive {
 namespace NTar {
 
-class CTarHandler: 
+class CHandler: 
   public IInArchive,
   public IOutArchive,
   public CComObjectRoot,
-  public CComCoClass<CTarHandler, &CLSID_CFormatTar>
+  public CComCoClass<CHandler, &CLSID_CFormatTar>
 {
 public:
-BEGIN_COM_MAP(CTarHandler)
+BEGIN_COM_MAP(CHandler)
   COM_INTERFACE_ENTRY(IInArchive)
   COM_INTERFACE_ENTRY(IOutArchive)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CTarHandler)
+DECLARE_NOT_AGGREGATABLE(CHandler)
 
-DECLARE_REGISTRY(CTarHandler, 
+DECLARE_REGISTRY(CHandler, 
     // TEXT("SevenZip.FormatTar.1"), TEXT("SevenZip.FormatTar"), 
     TEXT("SevenZip.1"), TEXT("SevenZip"), 
     UINT(0), THREADFLAGS_APARTMENT)
@@ -53,7 +53,7 @@ DECLARE_REGISTRY(CTarHandler,
   STDMETHOD(GetFileTimeType)(UINT32 *type);  
 
 private:
-  NArchive::NTar::CItemInfoExVector _items;
+  CObjectVector<NArchive::NTar::CItemInfoEx> _items;
   CComPtr<IInStream> _inStream;
 };
 

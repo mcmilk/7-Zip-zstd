@@ -7,6 +7,7 @@
 
 #include "../Common/ArchiveInterface.h"
 #include "Archive/Rar/InEngine.h"
+#include "RarVolumeInStream.h"
 
 // {23170F69-40C1-278B-0403-010000000000}
 DEFINE_GUID(CLSID_CCompressRar15Decoder, 
@@ -28,23 +29,35 @@ DEFINE_GUID(CLSID_CCryptoRar20Decoder,
 DEFINE_GUID(CLSID_CCryptoRar29Decoder, 
 0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00);
 
-
 // {23170F69-40C1-278A-1000-000110020000}
 DEFINE_GUID(CLSID_CRarHandler, 
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x02, 0x00, 0x00);
-class CRarHandler: 
-  public IInArchive,
-  public CComObjectRoot,
-  public CComCoClass<CRarHandler,&CLSID_CRarHandler>
+
+namespace NArchive {
+namespace NRar {
+
+
+/*
+class CRarItemInfo: public NArchive::NRar::CItemInfoEx
 {
 public:
-BEGIN_COM_MAP(CRarHandler)
+  // int VolumeIndex;
+};
+*/
+
+class CHandler: 
+  public IInArchive,
+  public CComObjectRoot,
+  public CComCoClass<CHandler,&CLSID_CRarHandler>
+{
+public:
+BEGIN_COM_MAP(CHandler)
   COM_INTERFACE_ENTRY(IInArchive)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CRarHandler)
+DECLARE_NOT_AGGREGATABLE(CHandler)
 
-DECLARE_REGISTRY(CRarHandler, 
+DECLARE_REGISTRY(CHandler, 
     // "SevenZip.FormatRar.1", "SevenZip.FormatRar", 
     "SevenZip.1", "SevenZip", 
     UINT(0), THREADFLAGS_APARTMENT)
@@ -62,8 +75,14 @@ DECLARE_REGISTRY(CRarHandler,
       IArchiveExtractCallback *extractCallback);
 
 private:
+  CRecordVector<CRefItem> _refItems;
   CObjectVector<NArchive::NRar::CItemInfoEx> _items;
-  NArchive::NRar::CInArchive _archive;
+  CObjectVector<NArchive::NRar::CInArchive> _archives;
+
+  UINT64 GetPackSize(int refIndex) const;
+  // NArchive::NRar::CInArchive _archive;
 };
+
+}}
 
 #endif

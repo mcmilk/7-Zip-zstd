@@ -15,7 +15,7 @@ using namespace NWindows;
 
 // void CAppTitle::LoadTittle()
 
-CAppTitle::CAppTitle()
+CAppTitle::CAppTitle(): Window(0) 
 {
   _range = 0;
   _prevPercent = _UI64_MAX;

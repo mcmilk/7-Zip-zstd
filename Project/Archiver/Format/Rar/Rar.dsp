@@ -126,11 +126,19 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\Buffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\CRC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
@@ -200,6 +208,10 @@ SOURCE=..\..\..\..\SDK\Archive\Rar\ItemInfoEx.h
 # Begin Group "Interface"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\ArchiveInterface.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\Common\CipherInterface.h
@@ -352,6 +364,14 @@ SOURCE=.\Handler.cpp
 # Begin Source File
 
 SOURCE=.\Handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\RarVolumeInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\RarVolumeInStream.h
 # End Source File
 # End Target
 # End Project

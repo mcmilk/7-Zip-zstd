@@ -11,7 +11,8 @@ namespace NCompression {
 
 static const UINT32 kBufferSize = 1 << 17;
 
-CCopyCoder::CCopyCoder()
+CCopyCoder::CCopyCoder(): 
+  TotalSize(0) 
 {
   _buffer = new BYTE[kBufferSize];
 }
@@ -26,7 +27,7 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     const UINT64 *inSize, const UINT64 *outSize,
     ICompressProgressInfo *progress)
 {
-  UINT64 totalSize = 0;
+  TotalSize = 0;
   while(true)
   {
     UINT32 realProcessedSize;
@@ -34,10 +35,10 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     if(realProcessedSize == 0)
       break;
     RETURN_IF_NOT_S_OK(outStream->Write(_buffer, realProcessedSize, NULL));
-    totalSize += realProcessedSize;
+    TotalSize += realProcessedSize;
     if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&totalSize, &totalSize));
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&TotalSize, &TotalSize));
     }
   }
   return S_OK;

@@ -15,7 +15,7 @@ CNewHandlerSetter g_NewHandlerSetter;
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-	OBJECT_ENTRY(CLSID_CRarHandler, CRarHandler)
+  OBJECT_ENTRY(CLSID_CRarHandler, NArchive::NRar::CHandler)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

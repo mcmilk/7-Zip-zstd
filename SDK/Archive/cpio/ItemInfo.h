@@ -34,6 +34,8 @@ struct CItemInfo
   UINT32 RDevMinor;
   UINT32 ChkSum;
 
+  bool OldHeader;
+
   bool IsDirectory() const 
     { return (Mode & _S_IFMT) == _S_IFDIR; }
 };

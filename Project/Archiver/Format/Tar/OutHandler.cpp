@@ -21,13 +21,13 @@ using namespace NWindows;
 using namespace NCOM;
 using namespace NTime;
 
-STDMETHODIMP CTarHandler::GetFileTimeType(UINT32 *type)
+STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
 {
   *type = NFileTimeType::kUnix;
   return S_OK;
 }
 
-STDMETHODIMP CTarHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN

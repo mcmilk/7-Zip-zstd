@@ -57,7 +57,9 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       codePage, 
       _proxyHandler->ItemDefaultName,
       _proxyHandler->DefaultTime, 
-      _proxyHandler->DefaultAttributes);
+      _proxyHandler->DefaultAttributes
+      // ,_agentSpec->_srcDirectoryPrefix
+      );
   CUIntVector realIndices;
   _proxyHandler->GetRealIndices(*_proxyFolderItem, indices, numItems, realIndices);
   return _proxyHandler->Archive->Extract(&realIndices.Front(), 

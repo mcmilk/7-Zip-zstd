@@ -22,7 +22,7 @@ public:
   HRESULT Open(IInStream *aStream);
   HRESULT GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo);
   HRESULT Skeep(UINT64 aNumBytes);
-  HRESULT SkeepDataRecords(UINT64 aDataSize);
+  HRESULT SkeepDataRecords(UINT64 aDataSize, bool OldHeader);
 };
   
 }}

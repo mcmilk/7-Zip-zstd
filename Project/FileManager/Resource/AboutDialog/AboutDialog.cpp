@@ -42,11 +42,13 @@ bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       break;
     case IDC_ABOUT_BUTTON_REGISTER:
     {
+      LPCTSTR registerURL = kRegisterRegNowURL;
+      /*
       LCID aLCID = ::GetUserDefaultLCID();
-      LPCTSTR aRegisterURL = kRegisterRegNowURL;
       if (aLCID == 0x0419 || aLCID == 0x422 || aLCID == 0x0423)
-        aRegisterURL = TEXT("http://www.7-zip.org/ru/donate.html");
-      ::ShellExecute(NULL, NULL, aRegisterURL, NULL, NULL, SW_SHOWNORMAL);
+        registerURL = TEXT("http://www.7-zip.org/ru/donate.html");
+      */
+      ::ShellExecute(NULL, NULL, registerURL, NULL, NULL, SW_SHOWNORMAL);
       break;
     }
     case IDC_ABOUT_BUTTON_EMAIL:

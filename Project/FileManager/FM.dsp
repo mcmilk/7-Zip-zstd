@@ -173,11 +173,7 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Archiver\Format\Common\IArchiveHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Archiver\Common\IArchiveHandler2.h
+SOURCE=..\Archiver\Format\Common\ArchiveInterface.h
 # End Source File
 # End Group
 # Begin Group "Folders"

@@ -388,6 +388,11 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       new CComObjectNoLock<CExtractCallbackImp>;
   extracter.ExtractCallback = extracter.ExtractCallbackSpec;
   extracter.ExtractCallbackSpec->_parentWindow = GetParent();
+  
+  // extracter.ExtractCallbackSpec->_appTitle.Window = extracter.ExtractCallbackSpec->_parentWindow;
+  // extracter.ExtractCallbackSpec->_appTitle.Title = progressWindowTitle;
+  // extracter.ExtractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+
   extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kWithoutPrompt, false, L"");
   extracter.Indices.Add(index);
   extracter.DestPath = GetUnicodeString(tempDir + NFile::NName::kDirDelimiter);

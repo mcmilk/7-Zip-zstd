@@ -20,7 +20,24 @@ namespace NFileHeader
     extern const char *kMagic1;
     extern const char *kMagic2;
     extern const char *kEndName;
+    extern unsigned short kMagicForRecord2;
+    extern unsigned short kMagicForRecord2BE;
   }
+
+  struct CRecord2
+  {
+    unsigned short c_magic;
+    short c_dev;
+    unsigned short c_ino;
+    unsigned short c_mode;
+    unsigned short c_uid;
+    unsigned short c_gid;
+    unsigned short c_nlink;
+    short c_rdev;
+    unsigned short c_mtimes[2];
+    unsigned short c_namesize;
+    unsigned short c_filesizes[2];
+  };
 
   struct CRecord
   {
@@ -38,7 +55,7 @@ namespace NFileHeader
     char RDevMinor[8];  /*only valid for chr and blk special files*/
     char NameSize[8]; /*count includes terminating NUL in pathname*/
     char ChkSum[8];  /* 0 for "new" portable format; for CRC format the sum of all the bytes in the file  */
-    int CheckMagic()
+    bool CheckMagic()
     { return memcmp(Magic, NMagic::kMagic1, 6) == 0 || 
              memcmp(Magic, NMagic::kMagic2, 6) == 0;  };
   };

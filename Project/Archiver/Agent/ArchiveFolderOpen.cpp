@@ -55,7 +55,24 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
   UINT codePage = GetCurrentFileCodePage();
   CSysString filePath2 = GetSystemString(filePath, codePage);
   _archiveFilePath = filePath2;
+
+  /*
+  int slashPos = _archiveFilePath.ReverseFind('\\');
+  if (slashPos >= 0)
+  {
+    _srcDirectoryPrefix = _archiveFilePath.Left(slashPos + 1);
+    _fileName = _archiveFilePath.Mid(slashPos + 1);
+  }
+  else
+  {
+    _srcDirectoryPrefix.Empty();
+    fileName = _archiveFilePath;
+  }
+  */
+
   
+  
+
   CSysString extension;
   {
     CSysString name, pureName, dot;

@@ -22,6 +22,7 @@
 
 #include "Messages.h"
 
+#include "Interface/FileStreams.h"
 
 #include "../Common/DefaultName.h"
 #include "../Common/OpenEngine2.h"
@@ -97,6 +98,7 @@ void WINAPI SetStartupInfo(struct PluginStartupInfo *info)
 
 class COpenArchiveCallback: 
   public IArchiveOpenCallback,
+  public IArchiveOpenVolumeCallback,
   public IProgress,
   public ICryptoGetTextPassword,
   public CComObjectRoot
@@ -112,13 +114,17 @@ class COpenArchiveCallback:
   bool m_NumBytesDefined;
   UINT32 m_PrevTickCount;
 
+  NWindows::NFile::NFind::CFileInfo _fileInfo;
 public:
   bool PasswordIsDefined;
   UString Password;
 
+  CSysString _folderPrefix;
+
 public:
 BEGIN_COM_MAP(COpenArchiveCallback)
   COM_INTERFACE_ENTRY(IArchiveOpenCallback)
+  COM_INTERFACE_ENTRY(IArchiveOpenVolumeCallback)
   COM_INTERFACE_ENTRY(IProgress)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
@@ -135,6 +141,10 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(SetTotal)(const UINT64 *numFiles, const UINT64 *numBytes);
   STDMETHOD(SetCompleted)(const UINT64 *numFiles, const UINT64 *numBytes);
 
+  // IArchiveOpenVolumeCallback
+  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value);
+  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream);
+
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
@@ -148,6 +158,14 @@ DECLARE_NO_REGISTRY()
     m_MessageBox = messageBox;
   }
   void ShowMessage(const UINT64 *completed);
+
+  void LoadFileInfo(const CSysString &folderPrefix,  
+      const CSysString &fileName)
+  {
+    _folderPrefix = folderPrefix;
+    if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
+      throw 1;
+  }
 };
 
 void COpenArchiveCallback::ShowMessage(const UINT64 *completed)
@@ -232,6 +250,55 @@ STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *completed)
   return S_OK;
 }
 
+STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, 
+    IInStream **inStream)
+{
+  *inStream = NULL;
+  CSysString fullPath = _folderPrefix + GetSystemString(name, CP_OEMCP);
+  if (!NWindows::NFile::NFind::FindFile(fullPath, _fileInfo))
+    return S_FALSE;
+  if (_fileInfo.IsDirectory())
+    return S_FALSE;
+  CComObjectNoLock<CInFileStream> *inFile = new CComObjectNoLock<CInFileStream>;
+  CComPtr<IInStream> inStreamTemp = inFile;
+  if (!inFile->Open(fullPath))
+    return ::GetLastError();
+  *inStream = inStreamTemp.Detach();
+  return S_OK;
+}
+
+
+STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value)
+{
+  NWindows::NCOM::CPropVariant propVariant;
+  switch(propID)
+  {
+  case kpidName:
+    propVariant = GetUnicodeString(_fileInfo.Name, CP_OEMCP);
+    break;
+  case kpidIsFolder:
+    propVariant = _fileInfo.IsDirectory();
+    break;
+  case kpidSize:
+    propVariant = _fileInfo.Size;
+    break;
+  case kpidAttributes:
+    propVariant = (UINT32)_fileInfo.Attributes;
+    break;
+  case kpidLastAccessTime:
+    propVariant = _fileInfo.LastAccessTime;
+    break;
+  case kpidCreationTime:
+    propVariant = _fileInfo.CreationTime;
+    break;
+  case kpidLastWriteTime:
+    propVariant = _fileInfo.LastWriteTime;
+    break;
+  }
+  propVariant.Detach(value);
+  return S_OK;
+}
+
 HRESULT GetPassword(UString &password)
 {
   password.Empty();
@@ -272,12 +339,14 @@ static HANDLE MyOpenFilePlugin(const char *name)
   CSysString aNormalizedName = name;
   aNormalizedName.Trim();
   CSysString fullName;
-  NFile::NDirectory::MyGetFullPathName(aNormalizedName, fullName);
+  int fileNamePartStartIndex;
+  NFile::NDirectory::MyGetFullPathName(aNormalizedName, fullName, fileNamePartStartIndex);
   NFile::NFind::CFileInfo aFileInfo;
   if (!NFile::NFind::FindFile(fullName, aFileInfo))
     return INVALID_HANDLE_VALUE;
   if (aFileInfo.IsDirectory())
      return INVALID_HANDLE_VALUE;
+
 
   CComPtr<IInFolderArchive> archiveHandler;
 
@@ -294,13 +363,16 @@ static HANDLE MyOpenFilePlugin(const char *name)
   CMessageBox m_MessageBox;
   {
     screenRestorer.Save();
-    openArchiveCallbackSpec->Init(&m_MessageBox);
   }
+  openArchiveCallbackSpec->Init(&m_MessageBox);
+  openArchiveCallbackSpec->LoadFileInfo(
+      fullName.Left(fileNamePartStartIndex), 
+      fullName.Mid(fileNamePartStartIndex));
   
   // ::OutputDebugString("before OpenArchive\n");
   
   UString defaultName;
-  HRESULT result = OpenArchive(fullName, &archiveHandler, 
+  HRESULT result = ::OpenArchive(fullName, &archiveHandler, 
       archiverInfoResult, defaultName, openArchiveCallback);
   if (result != S_OK)
      return INVALID_HANDLE_VALUE;

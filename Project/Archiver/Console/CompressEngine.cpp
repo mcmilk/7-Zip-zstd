@@ -125,7 +125,7 @@ HRESULT Compress(
 
     #ifdef FORMAT_TAR
     if (compressionMethod.Name.CompareNoCase(TEXT("Tar")) == 0)
-      outArchive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
+      outArchive = new CComObjectNoLock<NArchive::NTar::CHandler>;
     #endif
     
     #ifdef FORMAT_ZIP

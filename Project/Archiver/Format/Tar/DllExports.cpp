@@ -13,7 +13,7 @@ CNewHandlerSetter g_NewHandlerSetter;
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CFormatTar, NArchive::NTar::CTarHandler)
+  OBJECT_ENTRY(CLSID_CFormatTar, NArchive::NTar::CHandler)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

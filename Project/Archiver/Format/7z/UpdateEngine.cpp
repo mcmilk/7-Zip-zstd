@@ -129,6 +129,7 @@ HRESULT UpdateOneFile(IInStream *inStream,
 
   UINT64 size;
   UINT64 *sizePointer = NULL;
+  UINT64 fileSize = updateItem.Size;
   if (fileInStream != NULL)
   {
     CComPtr<IInStream> fullInStream;
@@ -137,11 +138,11 @@ HRESULT UpdateOneFile(IInStream *inStream,
       RINOK(fullInStream->Seek(0, STREAM_SEEK_END, &size));
       RINOK(fullInStream->Seek(0, STREAM_SEEK_SET, NULL));
       sizePointer = &size;
+      fileSize = size;
     }
   }
+  fileHeaderInfo.UnPackSize = fileSize;
 
-  UINT64 fileSize = updateItem.Size;
-  
   if(updateItem.IsAnti || updateItem.IsDirectory || fileSize == 0)
     folderItemIsDefined = false;
   else
@@ -167,9 +168,8 @@ HRESULT UpdateOneFile(IInStream *inStream,
 
     fileHeaderInfo.FileCRC = inStreamSpec->GetCRC();
     fileHeaderInfo.FileCRCIsDefined = true;
-
+    fileHeaderInfo.UnPackSize = inStreamSpec->GetSize();
   }
-  fileHeaderInfo.UnPackSize = fileSize;
   // folderItem.NumFiles = 1;
   
   currentComplexity += fileSize;
