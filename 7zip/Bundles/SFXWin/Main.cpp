@@ -65,7 +65,7 @@ int APIENTRY WinMain(
   CExtractOptions eo;
   eo.OutputDir = outputFolderDefined ? outputFolder : 
       fullPath.Left(fileNamePartStartIndex);
-  eo.YesToAll = true;
+  eo.YesToAll = assumeYes;
   eo.OverwriteMode = assumeYes ? 
       NExtract::NOverwriteMode::kWithoutPrompt : 
       NExtract::NOverwriteMode::kAskBefore;
@@ -79,7 +79,7 @@ int APIENTRY WinMain(
   wildcardCensor.AddItem(L"*", true, true, true, true);
 
   HRESULT result = ExtractGUI(v1, v2,
-      wildcardCensor, eo, false, &openCallback, ecs);
+    wildcardCensor, eo, (assumeYes ? false: true), &openCallback, ecs);
 
   /*
   HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, 

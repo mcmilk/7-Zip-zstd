@@ -35,7 +35,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.07 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-03\n";
+"\n7-Zip SFX 4.09 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-05\n";
 
 static const int kNumSwitches = 6;
 
@@ -413,7 +413,7 @@ int Main2()
       CExtractOptions eo;
       eo.StdOutMode = false;
       eo.PathMode = NExtract::NPathMode::kFullPathnames;
-      eo.TestMode = command.CommandType == NCommandType::kList;
+      eo.TestMode = command.CommandType == NCommandType::kTest;
       eo.OverwriteMode = yesToAll ? 
           NExtract::NOverwriteMode::kWithoutPrompt : 
           NExtract::NOverwriteMode::kAskBefore;

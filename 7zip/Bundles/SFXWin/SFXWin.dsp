@@ -298,28 +298,12 @@ SOURCE=..\..\Crypto\AES\aescpp.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\AES\aescrypt.c
-
-!IF  "$(CFG)" == "SFXWin - Win32 Release"
-
 # SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Crypto\AES\aeskey.c
-
-!IF  "$(CFG)" == "SFXWin - Win32 Release"
-
 # SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -328,15 +312,7 @@ SOURCE=..\..\Crypto\AES\aesopt.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\AES\aestab.c
-
-!IF  "$(CFG)" == "SFXWin - Win32 Release"
-
 # SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

@@ -97,12 +97,13 @@ BEGIN
                     IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING,"Button",
                     BS_AUTORADIOBUTTON,154,113,130,10
     GROUPBOX        "Files",IDC_EXTRACT_FILES,7,140,127,48,NOT WS_VISIBLE | 
-                    WS_GROUP
+                    WS_DISABLED | WS_GROUP
     CONTROL         "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES,
-                    "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_GROUP,
-                    13,153,114,10
+                    "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE | 
+                    WS_DISABLED | WS_GROUP,13,153,114,10
     CONTROL         "&All files",IDC_EXTRACT_RADIO_ALL_FILES,"Button",
-                    BS_AUTORADIOBUTTON | NOT WS_VISIBLE,13,166,114,10
+                    BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_DISABLED,13,166,
+                    114,10
     GROUPBOX        "Password",IDC_EXTRACT_PASSWORD,148,142,144,46
     EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,154,153,130,14,ES_PASSWORD | 
                     ES_AUTOHSCROLL

@@ -31,7 +31,13 @@ public:
 
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 
-  CExtractOptions(): StdOutMode(false) {}
+  CExtractOptions(): 
+      StdOutMode(false), 
+      YesToAll(false), 
+      TestMode(false),
+      PathMode(NExtract::NPathMode::kFullPathnames),
+      OverwriteMode(NExtract::NOverwriteMode::kAskBefore)
+      {}
 
   /*
     bool FullPathMode() const { return (ExtractMode == NExtractMode::kTest) || 

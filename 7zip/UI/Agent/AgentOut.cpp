@@ -358,6 +358,7 @@ STDMETHODIMP CAgent::DeleteItems(
     updatePairs.Add(updatePair);
   }
   updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallbackSpec->Archive = GetArchive();
   updateCallbackSpec->Callback = &updateCallbackAgent;
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
@@ -416,6 +417,7 @@ HRESULT CAgent::CreateFolder(
   updateCallbackSpec->Callback = &updateCallbackAgent;
   updateCallbackSpec->DirItems = &dirItems;
   updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallbackSpec->Archive = GetArchive();
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
 
@@ -484,6 +486,7 @@ HRESULT CAgent::RenameItem(
   }
   updateCallbackSpec->Callback = &updateCallbackAgent;
   updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallbackSpec->Archive = GetArchive();
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
 

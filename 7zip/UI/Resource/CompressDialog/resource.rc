@@ -103,10 +103,10 @@ BEGIN
     CONTROL         "Multi-threading",IDC_COMPRESS_MULTI_THREAD,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,195,157,10
     LTEXT           "Split to &volumes, bytes:",IDC_STATIC_COMPRESS_VOLUME,
-                    186,183,120,8,NOT WS_VISIBLE
+                    186,183,120,8,NOT WS_VISIBLE | WS_DISABLED
     COMBOBOX        IDC_COMPRESS_COMBO_VOLUME,186,196,120,73,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | NOT WS_VISIBLE | WS_VSCROLL | 
-                    WS_TABSTOP
+                    CBS_AUTOHSCROLL | NOT WS_VISIBLE | WS_DISABLED | 
+                    WS_VSCROLL | WS_TABSTOP
     LTEXT           "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS,7,214,157,
                     8
     EDITTEXT        IDC_COMPRESS_EDIT_PARAMETERS,7,225,283,14,ES_AUTOHSCROLL
