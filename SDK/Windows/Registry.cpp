@@ -230,8 +230,7 @@ LONG CKey::QueryValue(LPCTSTR aValueName, void *aValue, UINT32 &aCount)
 }
 
 
-LONG CKey::QueryValue(LPCTSTR aValueName, CByteDynamicBuffer &aValue, 
-    UINT32 &aDataSize)
+LONG CKey::QueryValue(LPCTSTR aValueName, CByteBuffer &aValue, UINT32 &aDataSize)
 {
   DWORD aType = NULL;
   aDataSize = 0;
@@ -239,7 +238,7 @@ LONG CKey::QueryValue(LPCTSTR aValueName, CByteDynamicBuffer &aValue,
       NULL, (DWORD *)&aDataSize);
   if (aRes != ERROR_SUCCESS && aRes != ERROR_MORE_DATA)
     return aRes;
-  aValue.EnsureCapacity(aDataSize);
+  aValue.SetCapacity(aDataSize);
   return QueryValue(aValueName, (BYTE *)aValue, aDataSize);
 }
 

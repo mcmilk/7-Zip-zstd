@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 16 Sources
+7-Zip 2.30 Beta 17 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -95,6 +95,7 @@ Project
       RPM            
       Tar
       Zip
+      arj
     Config          7-Zip Configuration program
 
   Compress
@@ -113,6 +114,7 @@ Project
     LZ              Lempel - Ziv
       Deflate       
       Implode
+      arj
       LZMA
       MatchFinder   Match Finder for LZ modules
         BinTree     Match Finder based on Binary Tree

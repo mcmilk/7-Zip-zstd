@@ -5,7 +5,7 @@
 #ifndef __WINDOWS_REGISTRY_H
 #define __WINDOWS_REGISTRY_H
 
-#include "Common/DynamicBuffer.h"
+#include "Common/Buffer.h"
 #include "Common/String.h"
 
 namespace NWindows {
@@ -55,8 +55,7 @@ public:
   LONG QueryValue(LPCTSTR aValueName, CSysString &aValue);
 
   LONG QueryValue(LPCTSTR aValueName, void *aValue, UINT32 &aDataSize);
-  LONG QueryValue(LPCTSTR aValueName, CByteDynamicBuffer &aValue,  
-      UINT32 &aDataSize);
+  LONG QueryValue(LPCTSTR aValueName, CByteBuffer &aValue, UINT32 &aDataSize);
 
   LONG EnumKeys(CSysStringVector &aKeyNames);
 };

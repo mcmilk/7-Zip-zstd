@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 16)
+Compression method IDs (2.30 Beta 17)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -45,6 +45,10 @@ List of defined IDs
       02 BZip2
    03 - Rar
       02 Rar20
+   04 - ARJ
+      01 Arj (1,2,3)
+      02 Arj 4
+
 
 05 - ECC (will be)
   

@@ -19,7 +19,7 @@ static CIDLangPair kIDLangPairs[] =
 static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
 static LPCTSTR kRegisterRegNowURL = TEXT("https://www.regnow.com/softsell/nph-softsell.cgi?item=2521-1&vreferrer=program");
 
-static LPCTSTR kRegisterTopic = _T("gui/7-zipCfg/register.htm");
+static LPCTSTR kRegisterTopic = _T("gui/7-zipCfg/info.htm");
 
 bool CInfoPage::OnInit() 
 {
@@ -44,7 +44,7 @@ bool CInfoPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
       LCID aLCID = ::GetUserDefaultLCID();
       LPCTSTR aRegisterURL = kRegisterRegNowURL;
       if (aLCID == 0x0419 || aLCID == 0x422 || aLCID == 0x0423)
-        aRegisterURL = TEXT("http://www.7-zip.org/ru/register.html");
+        aRegisterURL = TEXT("http://www.7-zip.org/ru/donate.html");
       ::ShellExecute(NULL, NULL, aRegisterURL, NULL, NULL, SW_SHOWNORMAL);
       break;
     }

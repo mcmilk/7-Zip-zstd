@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 17        2002-03-03
+  --------------------------------------
+    - ARJ suppport.
+
+
   Version 2.30 Beta 16        2002-02-24
   --------------------------------------
     - Project/Compress/LZ/LZMA/Decoder.cpp:

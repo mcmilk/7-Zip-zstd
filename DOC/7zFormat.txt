@@ -1,4 +1,4 @@
-7z Format description (2.30 Beta 16)
+7z Format description (2.30 Beta 17)
 -----------------------------------
 
 This file contain descrition of 7z archive format. 
@@ -38,7 +38,7 @@ UINT64 means real UINT64 encoded with the following scheme:
 
 StartHeader
 ~~~~~~~~~~~
-  BYTE kSignature[6] = {'7', 'Z', 0xBC, 0xAF, 0x27, 0x1C};
+  BYTE kSignature[6] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
   ArchiveVersion
   {

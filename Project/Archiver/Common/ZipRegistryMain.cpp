@@ -95,15 +95,24 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &anInfoList)
   #endif
 
   #ifdef FORMAT_CPIO
+  anItemInfo.UpdateEnabled = false;
   anItemInfo.Name = TEXT("cpio");
   anItemInfo.Extension = TEXT("cpio");
   anInfoList.Add(anItemInfo);
   #endif
 
   #ifdef FORMAT_RPM
+  anItemInfo.UpdateEnabled = false;
   anItemInfo.Name = TEXT("RPM");
   anItemInfo.Extension = TEXT("rpm");
   anItemInfo.AddExtension = TEXT(".cpio.gz");
+  anInfoList.Add(anItemInfo);
+  #endif
+
+  #ifdef FORMAT_ARJ
+  anItemInfo.UpdateEnabled = false;
+  anItemInfo.Name = TEXT("arj");
+  anItemInfo.Extension = TEXT("arj");
   anInfoList.Add(anItemInfo);
   #endif
   

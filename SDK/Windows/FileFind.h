@@ -104,6 +104,17 @@ public:
 bool MyGetLogicalDriveStrings(CSysStringVector &aDriveStrings);
 #endif
 
+inline bool GetCompressedFileSize(LPCTSTR aFileName, UINT64 &aSize)
+{
+  DWORD aHighPart;
+  DWORD aLowPart = ::GetCompressedFileSize(aFileName, &aHighPart);
+  if (aLowPart == INVALID_FILE_SIZE)
+    if (::GetLastError() != NO_ERROR)
+      return false;
+  aSize = (UINT64(aHighPart) << 32) | aLowPart;
+  return true;
+}
+
 }}}
 
 #endif

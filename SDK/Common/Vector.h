@@ -5,6 +5,8 @@
 #ifndef __COMMON_VECTOR_H
 #define __COMMON_VECTOR_H
 
+#include "Defs.h"
+
 ///////////////////////////
 // class CBaseRecordVector
 

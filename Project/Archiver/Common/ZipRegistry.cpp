@@ -92,9 +92,9 @@ static const UINT32 kColumnInfoVersion = 0;
 void CZipRegistryManager::SaveListViewInfo(const CLSID &aClassID, const CListViewInfo &aViewInfo)
 {
   const CColumnInfoVector &aColumnInfoList = aViewInfo.ColumnInfoVector;
-  CByteDynamicBuffer aBuffer;
+  CByteBuffer aBuffer;
   UINT32 aDataSize = sizeof(CColumnHeader) + sizeof(CColumnInfoSpec) * aColumnInfoList.size();
-  aBuffer.EnsureCapacity(aDataSize);
+  aBuffer.SetCapacity(aDataSize);
 
   BYTE *aDataPointer = (BYTE *)aBuffer;
 
@@ -126,7 +126,7 @@ void CZipRegistryManager::ReadListViewInfo(const CLSID &aClassID, CListViewInfo 
   aViewInfo.SortIndex = -1;
   aViewInfo.Ascending = true;
   aColumnInfoList.clear();
-  CByteDynamicBuffer aBuffer;
+  CByteBuffer aBuffer;
   UINT32 aSize;
   {
     NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
