@@ -27,6 +27,7 @@ struct CMethodInfo
   CLSID EncoderProperties;
   CLSID DecoderProperties;
   CSysString Description;
+  // bool Crypto;
 };
 
 struct CMethodInfo2: public CMethodInfo

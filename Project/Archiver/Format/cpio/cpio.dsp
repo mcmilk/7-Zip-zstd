@@ -126,6 +126,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -210,11 +218,19 @@ SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Handler\IArchiveHandler.h
+SOURCE=..\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\IArchiveHandler2.h
+SOURCE=..\..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IProgress.h
 # End Source File
 # Begin Source File
 

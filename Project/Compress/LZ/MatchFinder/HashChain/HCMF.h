@@ -47,9 +47,9 @@ namespace HC_NAMESPACE {
   #define kIDUse3BytesString TEXT("")
 #endif
 
-#undef kIDStringFull
+// #undef kIDStringFull
 
-#define kIDStringFull TEXT("Compress.MatchFinderHC") kIDString kIDUse3BytesString
+// #define kIDStringFull TEXT("Compress.MatchFinderHC") kIDString kIDUse3BytesString
 
 // {23170F69-40C1-278C-03XX-0000000000}
 DEFINE_GUID(HC_CLSID, 
@@ -81,8 +81,10 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CMatchFinderHC)
 
-DECLARE_REGISTRY(CMatchFinderHC, kIDStringFull TEXT(".1"), kIDStringFull, 
-	UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CMatchFinderHC, 
+    // kIDStringFull TEXT(".1"), kIDStringFull, 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+	  UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

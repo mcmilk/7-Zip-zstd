@@ -14,52 +14,50 @@ namespace NZip {
 
 HRESULT UpdateMain(    
     const NArchive::NZip::CItemInfoExVector &anInputItems,
-    const CRecordVector<bool> &aCompressStatuses,
     const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
     IOutStream *anOutStream,
     NArchive::NZip::CInArchive *anInArchive,
     CCompressionMethodMode *aCompressionMethodMode,
-    IUpdateCallBack *anUpdateCallBack)
+    IArchiveUpdateCallback *updateCallback)
 {
-  DWORD aStartBlockSize;
-  bool aCommentRangeAssigned;
-  CUpdateRange aCommentRange;
+  DWORD startBlockSize;
+  bool commentRangeAssigned;
+  CUpdateRange commentRange;
   if(anInArchive != 0)
   {
-    CInArchiveInfo anArchiveInfo;
-    anInArchive->GetArchiveInfo(anArchiveInfo);
-    aStartBlockSize = anArchiveInfo.StartPosition;
-    aCommentRangeAssigned = anArchiveInfo.IsCommented();
-    if (aCommentRangeAssigned)
+    CInArchiveInfo archiveInfo;
+    anInArchive->GetArchiveInfo(archiveInfo);
+    startBlockSize = archiveInfo.StartPosition;
+    commentRangeAssigned = archiveInfo.IsCommented();
+    if (commentRangeAssigned)
     {
-      aCommentRange.Position = anArchiveInfo.CommentPosition;
-      aCommentRange.Size = anArchiveInfo.CommentSize;
+      commentRange.Position = archiveInfo.CommentPosition;
+      commentRange.Size = archiveInfo.CommentSize;
     }
   }
   else
   {
-    aStartBlockSize = 0;
-    aCommentRangeAssigned = false;
+    startBlockSize = 0;
+    commentRangeAssigned = false;
   }
   
   COutArchive anOutArchive;
   anOutArchive.Create(anOutStream);
-  if (aStartBlockSize > 0)
+  if (startBlockSize > 0)
   {
     CComPtr<ISequentialInStream> anInStream;
-    anInStream.Attach(anInArchive->CreateLimitedStream(0, aStartBlockSize));
+    anInStream.Attach(anInArchive->CreateLimitedStream(0, startBlockSize));
     RETURN_IF_NOT_S_OK(CopyBlockToArchive(anInStream, anOutArchive, NULL));
-    anOutArchive.MoveBasePosition(aStartBlockSize);
+    anOutArchive.MoveBasePosition(startBlockSize);
   }
   CComPtr<IInStream> anInStream;
   if(anInArchive != 0)
     anInStream.Attach(anInArchive->CreateStream());
 
   return UpdateArchiveStd(anOutArchive, anInStream, 
-      anInputItems, aCompressStatuses, anUpdateItems, aCopyIndexes,
+      anInputItems, anUpdateItems, 
       aCompressionMethodMode, 
-      aCommentRangeAssigned, aCommentRange, anUpdateCallBack);
+      commentRangeAssigned, commentRange, updateCallback);
 }
 
 }}

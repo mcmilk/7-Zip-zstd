@@ -24,7 +24,7 @@ CExtractCallbackImp::~CExtractCallbackImp()
   _progressDialog.Destroy();
 }
 
-void CExtractCallbackImp::Init(IArchiveHandler200 *archiveHandler,
+void CExtractCallbackImp::Init(IInArchive *archiveHandler,
     const CSysString &directoryPath,   
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
@@ -76,7 +76,7 @@ void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathPar
   }
 }
 
-STDMETHODIMP CExtractCallbackImp::Extract(UINT32 index,
+STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     ISequentialOutStream **outStream, INT32 askExtractMode)
 {
   // ProcessMessages(_progressDialog);
@@ -98,7 +98,7 @@ STDMETHODIMP CExtractCallbackImp::Extract(UINT32 index,
 
   // m_CurrentFilePath = GetSystemString(fullPath, _codePage);
   
-  if(askExtractMode == NArchiveHandler::NExtract::NAskMode::kExtract)
+  if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
     NCOM::CPropVariant propVariant;
     RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(index, kpidAttributes, &propVariant));
@@ -119,7 +119,7 @@ STDMETHODIMP CExtractCallbackImp::Extract(UINT32 index,
       NCOM::CPropVariant propVariantTemp;
       RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(index, kpidIsAnti, 
           &propVariantTemp));
-      if (propVariantTemp.vt != VT_EMPTY)
+      if (propVariantTemp.vt == VT_BOOL)
         isAnti = VARIANT_BOOLToBool(propVariantTemp.boolVal);
     }
 
@@ -202,18 +202,18 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(INT32 askExtractMode)
   _extractMode = false;
   switch (askExtractMode)
   {
-    case NArchiveHandler::NExtract::NAskMode::kExtract:
+    case NArchive::NExtract::NAskMode::kExtract:
       _extractMode = true;
       break;
   };
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::OperationResult(INT32 resultEOperationResult)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResult)
 {
   switch(resultEOperationResult)
   {
-    case NArchiveHandler::NExtract::NOperationResult::kOK:
+    case NArchive::NExtract::NOperationResult::kOK:
     {
       break;
     }
@@ -222,15 +222,15 @@ STDMETHODIMP CExtractCallbackImp::OperationResult(INT32 resultEOperationResult)
       _numErrors++;
       switch(resultEOperationResult)
       {
-        case NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod:
+        case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
           MessageBox(0, "Unsupported Method", "7-Zip", 0);
           return E_FAIL;
           // break;
-        case NArchiveHandler::NExtract::NOperationResult::kCRCError:
+        case NArchive::NExtract::NOperationResult::kCRCError:
           MessageBox(0, "CRC Failed", "7-Zip", 0);
           return E_FAIL;
           // break;
-        case NArchiveHandler::NExtract::NOperationResult::kDataError:
+        case NArchive::NExtract::NOperationResult::kDataError:
           MessageBox(0, "Data Error", "7-Zip", 0);
           return E_FAIL;
           // break;

@@ -10,7 +10,7 @@
 #include "Common/String.h"
 #include "Windows/ResourceString.h"
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../../Format/Common/ArchiveInterface.h"
 
 #include "Interface/FileStreams.h"
 #include "../../Common/ZipSettings.h"
@@ -19,12 +19,12 @@
 #include "../../Explorer/MyMessages.h"
 
 class CExtractCallbackImp: 
-  public IExtractCallback200,
+  public IArchiveExtractCallback,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CExtractCallbackImp)
-  COM_INTERFACE_ENTRY(IExtractCallback200)
+  COM_INTERFACE_ENTRY(IArchiveExtractCallback)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CExtractCallbackImp)
@@ -35,14 +35,14 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(SetTotal)(UINT64 size);
   STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
-  // IExtractCallback200
-  STDMETHOD(Extract)(UINT32 index, ISequentialOutStream **outStream, 
+  // IExtractCallback
+  STDMETHOD(GetStream)(UINT32 index, ISequentialOutStream **outStream, 
       INT32 askExtractMode);
   STDMETHOD(PrepareOperation)(INT32 askExtractMode);
-  STDMETHOD(OperationResult)(INT32 resultEOperationResult);
+  STDMETHOD(SetOperationResult)(INT32 resultEOperationResult);
 
 private:
-  CComPtr<IArchiveHandler200> _archiveHandler;
+  CComPtr<IInArchive> _archiveHandler;
   CSysString _directoryPath;
 
   CSysString _filePath;
@@ -70,7 +70,7 @@ public:
   // DWORD _threadID;
   CProgressDialog _progressDialog;
 
-  void Init(IArchiveHandler200 *archiveHandler,     
+  void Init(IInArchive *archiveHandler,     
     const CSysString &directoryPath, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,

@@ -35,8 +35,10 @@ public:
 
   // DECLARE_NO_REGISTRY()
 
-  DECLARE_REGISTRY(CEncoder, TEXT("Compress.BZip2Decoder.1"), 
-  TEXT("Compress.BZip2Decoder"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CEncoder, 
+    // TEXT("Compress.BZip2Decoder.1"), TEXT("Compress.BZip2Decoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   HRESULT Flush();
   // void (ReleaseStreams)();

@@ -22,7 +22,7 @@ bool CPasswordDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _passwordControl.Init(*this, IDC_EDIT_PASSWORD);
-  _passwordControl.SetText(_T(""));
+  _passwordControl.SetText(_password);
   return CModalDialog::OnInit();
 }
 

@@ -42,6 +42,7 @@ public:
 
   void CreateStreamForCompressing(IOutStream **anOutStream);
   void CreateStreamForCopying(ISequentialOutStream **anOutStream);
+  void SeekToPackedDataPosition();
 };
 
 }}

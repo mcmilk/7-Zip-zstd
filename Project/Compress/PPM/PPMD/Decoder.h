@@ -28,15 +28,14 @@ class CDecoder :
   public CComObjectRoot,
   public CComCoClass<CDecoder, &CLSID_CompressPPMDDecoder>
 {
-  CMyRangeDecoder m_RangeDecoder;
+  CMyRangeDecoder _rangeDecoder;
 
-  // NCompression::NArithmetic::CDirectBitsDecoder m_DirectBitsDecoder;
-  NStream::COutByte m_OutStream;
+  NStream::COutByte _outStream;
 
-  CDecodeInfo m_Info;
+  CDecodeInfo _info;
 
-  BYTE m_Order;
-  UINT32 m_UsedMemorySize;
+  BYTE _order;
+  UINT32 _usedMemorySize;
 
 public:
 
@@ -48,31 +47,34 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CDecoder, TEXT("Compress.PPMDDecoder.1"), 
-                 TEXT("Compress.PPMDDecoder"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CDecoder, 
+    // TEXT("Compress.PPMDDecoder.1"), TEXT("Compress.PPMDDecoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   void ReleaseStreams()
   {
-    m_RangeDecoder.ReleaseStream();
-    m_OutStream.ReleaseStream();
+    _rangeDecoder.ReleaseStream();
+    _outStream.ReleaseStream();
   }
 
   // STDMETHOD(Code)(UINT32 aNumBytes, UINT32 &aProcessedBytes);
   HRESULT Flush()
-    { return m_OutStream.Flush(); }
+    { return _outStream.Flush(); }
 
 
-  STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
 
   // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *anInStream);
+  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
 
 };
 

@@ -218,6 +218,7 @@ int WINAPI WinMain(	HINSTANCE hInstance,
 					int       nCmdShow)
 {
   InitCommonControls();
+  NCOM::CComInitializer comInitializer;
 
   UString programString, commandsString;
   // MessageBoxW(0, GetCommandLineW(), L"", 0);

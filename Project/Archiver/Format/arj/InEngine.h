@@ -1,17 +1,18 @@
-// Archive/arj/InEngine.h
+// Archive/Arj/InEngine.h
 
 #pragma once
 
-#ifndef __ARJ_INENGINE_H
-#define __ARJ_INENGINE_H
+#ifndef __ARCHIVE_ARJ_INENGINE_H
+#define __ARCHIVE_ARJ_INENGINE_H
 
-#include "Header.h"
-#include "ItemInfoEx.h"
 #include "Common/Exception.h"
 #include "Interface/IInOutStreams.h"
 
+#include "Header.h"
+#include "ItemInfoEx.h"
+
 namespace NArchive {
-namespace Narj {
+namespace NArj {
   
 class CInArchiveException: public CCException
 {
@@ -25,62 +26,42 @@ public:
     kSeekStreamError
   } 
   Cause;
-  CInArchiveException(CCauseType aCause);
-};
-
-class CInArchiveInfo
-{
-public:
-  UINT64 StartPosition;
-  UINT64 CommentPosition;
-  UINT16 CommentSize;
-  bool IsCommented() const { return (CommentSize != 0); };
+  CInArchiveException(CCauseType cause);
 };
 
 class CProgressVirt
 {
 public:
-  STDMETHOD(SetCompleted)(const UINT64 *aNumFiles) PURE;
+  STDMETHOD(SetCompleted)(const UINT64 *numFiles) PURE;
 };
 
 class CInArchive
 {
-  CComPtr<IInStream> m_Stream;
-  UINT64 m_StreamStartPosition;
-  UINT64 m_Position;
-
-  // UINT16 m_HeaderSize;
-
-  UINT16 m_BlockSize;
-  BYTE m_Block[kMaxBlockSize];
+  CComPtr<IInStream> _stream;
+  UINT64 _streamStartPosition;
+  UINT64 _position;
+  UINT16 _blockSize;
+  BYTE _block[kMaxBlockSize];
   
-  bool FindAndReadMarker(const UINT64 *aSearchHeaderSizeLimit);
+  bool FindAndReadMarker(const UINT64 *searchHeaderSizeLimit);
   
   bool ReadBlock();
   bool ReadBlock2();
 
-  HRESULT ReadBytes(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  bool ReadBytesAndTestSize(void *aData, UINT32 aSize);
-  void SafeReadBytes(void *aData, UINT32 aSize);
+  HRESULT ReadBytes(void *data, UINT32 size, UINT32 *processedSize);
+  bool ReadBytesAndTestSize(void *data, UINT32 size);
+  void SafeReadBytes(void *data, UINT32 size);
   
-  void IncreasePositionValue(UINT64 anAddValue);
+  void IncreasePositionValue(UINT64 addValue);
   void ThrowIncorrectArchiveException();
  
 public:
-  HRESULT GetNextItem(bool &aFilled, CItemInfoEx &anItem);
+  HRESULT GetNextItem(bool &filled, CItemInfoEx &item);
 
-  bool Open(IInStream *aStreamm, const UINT64 *aSearchHeaderSizeLimit);
+  bool Open(IInStream *inStream, const UINT64 *searchHeaderSizeLimit);
   void Close();
 
-  void IncreaseRealPosition(UINT64 anAddValue);
-
-  /*
-  void GetArchiveInfo(CInArchiveInfo &anArchiveInfo) const;
-  void DirectGetBytes(void *aData, UINT32 aNum);
-  bool SeekInArchive(UINT64 aPosition);
-  ISequentialInStream *CreateLimitedStream(UINT64 aPosition, UINT64 aSize);
-  IInStream* CreateStream();
-  */
+  void IncreaseRealPosition(UINT64 addValue);
 };
   
 }}

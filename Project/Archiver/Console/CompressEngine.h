@@ -9,12 +9,12 @@
 #include "../Common/CompressEngineCommon.h"
 
 #include "CompressionMethodUtils.h"
-#include "../Common/IArchiveHandler2.h"
+#include "../Format/Common/ArchiveInterface.h"
 
 
 HRESULT Compress(
     const NUpdateArchive::CActionSet &actionSet, 
-    IArchiveHandler200 *archive,
+    IInArchive *archive,
     const CCompressionMethodMode &compressionMethod,
     const CSysString &archiveName,     
     const CArchiveItemInfoVector &archiveItems,

@@ -147,19 +147,19 @@ SOURCE=..\Common\CipherInterface.h
 # End Group
 # Begin Source File
 
-SOURCE=.\Coder.cpp
+SOURCE=.\ZipCipher.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Coder.h
+SOURCE=.\ZipCipher.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Crypto.cpp
+SOURCE=.\ZipCrypto.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Crypto.h
+SOURCE=.\ZipCrypto.h
 # End Source File
 # End Target
 # End Project

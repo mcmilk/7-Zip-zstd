@@ -179,11 +179,11 @@ STDMETHODIMP CExtractCallbackImp::ShowMessage(const wchar_t *message)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::OperationResult(INT32 operationResult)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 operationResult)
 {
   switch(operationResult)
   {
-    case NArchiveHandler::NExtract::NOperationResult::kOK:
+    case NArchive::NExtract::NOperationResult::kOK:
       break;
     default:
     {
@@ -191,15 +191,15 @@ STDMETHODIMP CExtractCallbackImp::OperationResult(INT32 operationResult)
       UINT32 langID;
       switch(operationResult)
       {
-        case NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod:
+        case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
           messageID = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD;
           langID = 0x02000A91;
           break;
-        case NArchiveHandler::NExtract::NOperationResult::kDataError:
+        case NArchive::NExtract::NOperationResult::kDataError:
           messageID = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR;
           langID = 0x02000A92;
           break;
-        case NArchiveHandler::NExtract::NOperationResult::kCRCError:
+        case NArchive::NExtract::NOperationResult::kCRCError:
           messageID = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
           langID = 0x02000A93;
           break;
@@ -252,11 +252,11 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   }
   */
   *destPathResult = 0;
-  *writeAnswer = BoolToMyBool(false);
+  *writeAnswer = BoolToInt(false);
 
   UString destPathSpec = destPath;
   CSysString destPathSys = GetSystemString(destPathSpec, _fileCodePage);
-  bool srcIsFolderSpec = MyBoolToBool(srcIsFolder);
+  bool srcIsFolderSpec = IntToBool(srcIsFolder);
   CFileInfo aDestFileInfo;
   if (FindFile(destPathSys, aDestFileInfo))
   {
@@ -270,7 +270,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
         RETURN_IF_NOT_S_OK(MessageError(message));
         return E_ABORT;
       }
-      *writeAnswer = BoolToMyBool(false);
+      *writeAnswer = BoolToInt(false);
       return S_OK;
     }
     if (aDestFileInfo.IsDirectory())
@@ -348,7 +348,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   }
   CComBSTR destPathResultBSTR = destPathResultTemp;
   *destPathResult = destPathResultBSTR.Detach();
-  *writeAnswer = BoolToMyBool(true);
+  *writeAnswer = BoolToInt(true);
   return S_OK;
 }
 

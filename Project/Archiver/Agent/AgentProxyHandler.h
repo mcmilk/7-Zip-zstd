@@ -10,32 +10,52 @@
 #include "Windows/COM.h"
 #include "Windows/FileFind.h"
 
-#include "../Common/IArchiveHandler2.h"
+#include "../Common/FolderArchiveInterface.h"
 
 class CFileItem
 {
 public:
-  UINT32 m_Index;
-  UString m_Name;
+  UINT32 Index;
+  UString Name;
 };
 
 class CFolderItem: public CFileItem
 {
 public:
-  CFolderItem *m_Parent;
-  CObjectVector<CFolderItem> m_FolderSubItems;
-  CObjectVector<CFileItem> m_FileSubItems;
-  UINT32 m_Index;
-  UString m_Name;
-  bool m_IsLeaf;
+  CFolderItem *Parent;
+  CObjectVector<CFolderItem> FolderSubItems;
+  CObjectVector<CFileItem> FileSubItems;
+  UINT32 Index;
+  UString Name;
+  bool IsLeaf;
 
-  CFolderItem(): m_Parent(NULL) {};
-  int FindDirSubItemIndex(const UString &aName, int &anInsertPos) const;
-  int FindDirSubItemIndex(const UString &aName) const;
-  CFolderItem* AddDirSubItem(UINT32 anIndex, 
-      bool anLeaf, const UString &aName);
-  void AddFileSubItem(UINT32 anIndex, const UString &aName);
+  CFolderItem(): Parent(NULL) {};
+  int FindDirSubItemIndex(const UString &name, int &insertPos) const;
+  int FindDirSubItemIndex(const UString &name) const;
+  CFolderItem* AddDirSubItem(UINT32 index, 
+      bool leaf, const UString &name);
+  void AddFileSubItem(UINT32 index, const UString &name);
   void Clear();
+
+  UString GetFullPathPrefix() const 
+  {
+    UString result;
+    const CFolderItem *current = this;
+    while (current->Parent != NULL)
+    {
+      result = current->Name + UString(L'\\') + result;
+      current = current->Parent;
+    }
+    return result;
+  }
+
+  UString GetItemName(UINT32 index) const 
+  {
+    if (index < FolderSubItems.Size())
+      return FolderSubItems[index].Name;
+    return FileSubItems[index - FolderSubItems.Size()].Name;
+  }
+
 };
 
 ////////////////////////////////////////////////
@@ -44,35 +64,32 @@ class CAgentProxyHandler
 {
   void ClearState();
   // HRESULT ReadProperties(IArchiveHandler200 *aHandler);
-  HRESULT ReadObjects(IArchiveHandler200 *aHandler, IProgress *aProgress);
+  HRESULT ReadObjects(IInArchive *aHandler, IProgress *progress);
 public:
-  CComPtr<IArchiveHandler200> _archiveHandler;
-  UString _itemDefaultName;
-  FILETIME _defaultTime;
-  UINT32 _defaultAttributes;
+  CComPtr<IInArchive> Archive;
+  UString ItemDefaultName;
+  FILETIME DefaultTime;
+  UINT32 DefaultAttributes;
 
   // NWindows::NFile::NFind::CFileInfo m_ArchiveFileInfo;
 
-  CFolderItem _folderItemHead;
+  CFolderItem FolderItemHead;
 
   // CArchiveItemPropertyVector m_HandlerProperties;
   // CArchiveItemPropertyVector m_InternalProperties;
 
-  HRESULT ReInit(IProgress *aProgress);
-  HRESULT Init(IArchiveHandler200 *anArchiveHandler, 
+  HRESULT ReInit(IProgress *progress);
+  HRESULT Init(IInArchive *archive, 
       // const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-      const UString &anItemDefaultName,
-      const FILETIME &aDefaultTime,
-      UINT32 aDefaultAttributes,
-      IProgress *aProgress);
+      const UString &itemDefaultName,
+      const FILETIME &defaultTime,
+      UINT32 defaultAttributes,
+      IProgress *progress);
 
 
-  void AddRealIndexes(const CFolderItem &anItem, 
-      std::vector<UINT32> &aRealIndexes);
-  void GetRealIndexes(const CFolderItem &anItem, 
-      const UINT32 *anIndexes, 
-      UINT32 aNumItems, 
-      std::vector<UINT32> &aRealIndexes);
+  void AddRealIndices(const CFolderItem &item, CUIntVector &realIndices);
+  void GetRealIndices(const CFolderItem &item, const UINT32 *indices, 
+      UINT32 numItems, CUIntVector &realIndices);
 
 };
 

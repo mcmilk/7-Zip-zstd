@@ -1,17 +1,14 @@
-// Archive/arj/Header.h
+// Archive/Arj/Header.h
 
 #pragma once
 
-#ifndef __ARCHIVE_arj_HEADER_H
-#define __ARCHIVE_arj_HEADER_H
+#ifndef __ARCHIVE_ARJ_HEADER_H
+#define __ARCHIVE_ARJ_HEADER_H
 
 #include "Common/Types.h"
 
 namespace NArchive {
-namespace Narj {
-
-#pragma pack( push, Pragma_arj_Headers)
-#pragma pack( push, 1)
+namespace NArj {
 
 const kMaxBlockSize = 2600;
 
@@ -20,6 +17,9 @@ namespace NSignature
   const BYTE kSig0 = 0x60;
   const BYTE kSig1 = 0xEA;
 }
+
+#pragma pack( push, Pragma_Arj_Headers)
+#pragma pack( push, 1)
 
 struct CArchiveHeader
 {
@@ -96,78 +96,6 @@ namespace NFileHeader
     BYTE FirstChapter;
     BYTE LastChapter;
   };
-  /*
-  struct CLocalBlock
-  {
-    CVersion ExtractVersion;
-    
-    UINT16 Flags;
-    UINT16 CompressionMethod;
-    UINT32 Time;
-    UINT32 FileCRC;
-    UINT32 PackSize;
-    UINT32 UnPackSize;
-    UINT16 NameSize;
-    UINT16 ExtraSize;
-  };
-
-  struct CDataDescriptor
-  {
-    UINT32 Signature;
-    UINT32 FileCRC;
-    UINT32 PackSize;
-    UINT32 UnPackSize;
-  };
-
-  struct CLocalBlockFull
-  {
-    UINT32 Signature;
-    CLocalBlock Header;
-  };
-  
-  struct CBlock
-  {
-    CVersion MadeByVersion;
-    CVersion ExtractVersion;
-    UINT16 Flags;
-    UINT16 CompressionMethod;
-    UINT32 Time;
-    UINT32 FileCRC;
-    UINT32 PackSize;
-    UINT32 UnPackSize;
-    UINT16 NameSize;
-    UINT16 ExtraSize;
-    UINT16 CommentSize;
-    UINT16 DiskNumberStart;
-    UINT16 InternalAttributes;
-    UINT32 ExternalAttributes;
-    UINT32 LocalHeaderOffset;
-  };
-  
-  struct CBlockFull
-  {
-    UINT32 Signature;
-    CBlock Header;
-  };
-  
-  namespace NFlags 
-  {
-    const kNumUsedBits = 4;
-    const kUsedBitsMask = (1 << kNumUsedBits) - 1;
-    
-    const kEncryptedMask   = 1 << 0;
-    const kDescriptorUsedMask   = 1 << 3;
-    
-    const kImplodeDictionarySizeMask = 1 << 1;
-    const kImplodeLiteralsOnMask     = 1 << 2;
-    
-    const kDeflateTypeBitStart = 1;
-    const kNumDeflateTypeBits = 2;
-    const kNumDeflateTypes = (1 << kNumDeflateTypeBits);
-    const kDeflateTypeMask = (1 << kNumDeflateTypeBits) - 1;
-  }
-  
-  */
   namespace NHostOS
   {
     enum EEnum
@@ -185,12 +113,11 @@ namespace NFileHeader
         kVAX_VMS  = 9,
         kWIN95   = 10
     };
-    // const kNumHostSystems = 19;
   }
 }
 
 #pragma pack(pop)
-#pragma pack(pop, Pragma_arj_Headers)
+#pragma pack(pop, Pragma_Arj_Headers)
 
 }}
 

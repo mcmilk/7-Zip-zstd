@@ -7,10 +7,10 @@
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
 #include "Windows/FileDir.h"
+#include "Interface/PropID.h"
 
 #include "Common/StringConvert.h"
 
-#include "../Archiver/Format/Common/IArchiveHandler.h"
 #include "RootFolder.h"
 
 #include "FSFolder.h"

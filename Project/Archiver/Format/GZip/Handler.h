@@ -5,7 +5,7 @@
 #ifndef __GZIP_HANDLER_H
 #define __GZIP_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 
 #include "Archive/GZip/InEngine.h"
 
@@ -19,54 +19,49 @@ namespace NArchive {
 namespace NGZip {
 
 class CGZipHandler: 
-  public IArchiveHandler200,
-  public IOutArchiveHandler200,
+  public IInArchive,
+  public IOutArchive,
   public ISetProperties,
   public CComObjectRoot,
   public CComCoClass<CGZipHandler,&CLSID_CGZipHandler>
 {
 public:
 BEGIN_COM_MAP(CGZipHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
-  COM_INTERFACE_ENTRY(IOutArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
+  COM_INTERFACE_ENTRY(IOutArchive)
   COM_INTERFACE_ENTRY(ISetProperties)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CGZipHandler)
 
-DECLARE_REGISTRY(CGZipHandler, TEXT("SevenZip.FormatGZip.1"), 
-    TEXT("SevenZip.FormatGZip"), UINT(0), THREADFLAGS_APARTMENT)
-// DECLARE_REGISTRY(CGZipHandler, "", "", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CGZipHandler, 
+    // TEXT("SevenZip.FormatGZip.1"), TEXT("SevenZip.FormatGZip"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"), 
+    UINT(0), THREADFLAGS_APARTMENT)
 
-
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+  STDMETHOD(Open)(IInStream *inStream, 
+      const UINT64 *maxCheckStartPosition,
+      IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
   
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(
-      UINT32 anIndex, 
-      PROPID aPropID,  
-      PROPVARIANT *aValue);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID,  PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, 
+      IArchiveExtractCallback *extractCallback);
 
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);
 
-  // IOutArchiveHandler
+  // IOutArchive
 
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, 
-      const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack);
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, UINT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack);
+  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+      IArchiveUpdateCallback *updateCallback);
 
-  STDMETHOD(GetFileTimeType)(UINT32 *aType);  
+  STDMETHOD(GetFileTimeType)(UINT32 *timeType);  
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties);
+  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
 
 public:
   CGZipHandler()

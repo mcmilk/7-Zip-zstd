@@ -85,8 +85,10 @@ public:
 
   // DECLARE_NO_REGISTRY()
 
-  DECLARE_REGISTRY(CEncoder, TEXT("Compress.DeflateDecoder.1"), 
-  TEXT("Compress.DeflateDecoder"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CEncoder, 
+    // TEXT("Compress.DeflateDecoder.1"), TEXT("Compress.DeflateDecoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,

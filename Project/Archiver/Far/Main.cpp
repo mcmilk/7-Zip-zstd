@@ -9,6 +9,8 @@
 
 #include "Common/WildCard.h"
 #include "Common/DynamicBuffer.h"
+#include "Common/StringConvert.h"
+#include "Common/Defs.h"
 
 #include "Windows/FileFind.h"
 #include "Windows/FileIO.h"
@@ -20,11 +22,11 @@
 
 #include "Messages.h"
 
-#include "Common/Defs.h"
 
 #include "../Common/DefaultName.h"
 #include "../Common/OpenEngine2.h"
 #include "../../Compress/Interface/CompressInterface.h"
+#include "Interface/CryptoInterface.h"
 
 
 using namespace NWindows;
@@ -43,26 +45,26 @@ static const char *kHelpTopicConfig =  "Config";
 
 extern "C"
 {
-  void WINAPI SetStartupInfo(struct PluginStartupInfo *anInfo);
-  HANDLE WINAPI OpenFilePlugin(char *Name, const unsigned char *Data, 
+  void WINAPI SetStartupInfo(struct PluginStartupInfo *info);
+  HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char *Data, 
       unsigned int DataSize);
-  HANDLE WINAPI OpenPlugin(int anOpenFrom, int anItem);
-  void WINAPI ClosePlugin(HANDLE aPlugin);
-  int WINAPI GetFindData(HANDLE aPlugin, struct PluginPanelItem **aPanelItems, 
-      int *anItemsNumber, int OpMode);
-  void WINAPI FreeFindData(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-    int anItemsNumber);
-  int WINAPI GetFiles(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-    int anItemsNumber, int aMove, char *aDestPath, int anOpMode);
-  int WINAPI SetDirectory(HANDLE aPlugin, char *aDir, int anOpMode);
-  void WINAPI GetPluginInfo(struct PluginInfo *anInfo);
-  int WINAPI Configure(int anItemNumber);
-  void WINAPI GetOpenPluginInfo(HANDLE aPlugin, struct OpenPluginInfo *anInfo);
-  int WINAPI PutFiles(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-      int anItemsNumber, int aMove, int anOpMode);
-  int WINAPI DeleteFiles(HANDLE aPlugin, PluginPanelItem *aPanelItems,
-      int anItemsNumber, int anOpMode);
-  int WINAPI ProcessKey(HANDLE aPlugin, int aKey, unsigned int aControlState);
+  HANDLE WINAPI OpenPlugin(int openFrom, int anItem);
+  void WINAPI ClosePlugin(HANDLE plugin);
+  int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems, 
+      int *itemsNumber, int OpMode);
+  void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems,
+    int itemsNumber);
+  int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
+    int itemsNumber, int move, char *destPath, int opMode);
+  int WINAPI SetDirectory(HANDLE plugin, char *dir, int opMode);
+  void WINAPI GetPluginInfo(struct PluginInfo *info);
+  int WINAPI Configure(int itemNumber);
+  void WINAPI GetOpenPluginInfo(HANDLE plugin, struct OpenPluginInfo *info);
+  int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
+      int itemsNumber, int move, int opMode);
+  int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems,
+      int itemsNumber, int opMode);
+  int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState);
 };
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
@@ -83,19 +85,20 @@ static const char *kPliginNameForRegestry = "7-ZIP";
 
 #define  MY_TRY_BEGIN_COM_INIT  MY_TRY_BEGIN NCOM::CComInitializer aComInitializer;
 
-void WINAPI SetStartupInfo(struct PluginStartupInfo *anInfo)
+void WINAPI SetStartupInfo(struct PluginStartupInfo *info)
 {
   MY_TRY_BEGIN_COM_INIT;
-  g_StartupInfo.Init(*anInfo, kPliginNameForRegestry);
+  g_StartupInfo.Init(*info, kPliginNameForRegestry);
   g_Options.Enabled = g_StartupInfo.QueryRegKeyValue(
       HKEY_CURRENT_USER, kRegisrtryMainKeyName, 
       kRegisrtryValueNameEnabled, kPluginEnabledDefault);
   MY_TRY_END1("SetStartupInfo");
 }
 
-class COpenArchive2CallBack: 
-  public IOpenArchive2CallBack,
+class COpenArchiveCallback: 
+  public IArchiveOpenCallback,
   public IProgress,
+  public ICryptoGetTextPassword,
   public CComObjectRoot
 {
   DWORD m_StartTickValue;
@@ -108,40 +111,51 @@ class COpenArchive2CallBack:
   UINT64 m_NumBytes;
   bool m_NumBytesDefined;
   UINT32 m_PrevTickCount;
+
 public:
-BEGIN_COM_MAP(COpenArchive2CallBack)
-  COM_INTERFACE_ENTRY(IOpenArchive2CallBack)
+  bool PasswordIsDefined;
+  UString Password;
+
+public:
+BEGIN_COM_MAP(COpenArchiveCallback)
+  COM_INTERFACE_ENTRY(IArchiveOpenCallback)
   COM_INTERFACE_ENTRY(IProgress)
+  COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(COpenArchive2CallBack)
+DECLARE_NOT_AGGREGATABLE(COpenArchiveCallback)
 
 DECLARE_NO_REGISTRY()
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 aTotal);
+  STDMETHOD(SetTotal)(UINT64 total);
   STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
 
-  // IOpenArchive2CallBack
-  STDMETHOD(SetTotal)(const UINT64 *aFiles, const UINT64 *aBytes);
-  STDMETHOD(SetCompleted)(const UINT64 *aFiles, const UINT64 *aBytes);
+  // IArchiveOpenCallback
+  STDMETHOD(SetTotal)(const UINT64 *numFiles, const UINT64 *numBytes);
+  STDMETHOD(SetCompleted)(const UINT64 *numFiles, const UINT64 *numBytes);
 
-  void Init(CMessageBox *aMessageBox)
+  // ICryptoGetTextPassword
+  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
+
+  void Init(CMessageBox *messageBox)
   {
+    PasswordIsDefined = false;
+
     m_NumFilesMax = 0;
     m_MessageBoxIsShown = false;
     m_PrevTickCount = GetTickCount();
-    m_MessageBox = aMessageBox;
+    m_MessageBox = messageBox;
   }
-  void ShowMessage(const UINT64 *aCompleted);
+  void ShowMessage(const UINT64 *completed);
 };
 
-void COpenArchive2CallBack::ShowMessage(const UINT64 *aCompleted)
+void COpenArchiveCallback::ShowMessage(const UINT64 *completed)
 {
-  UINT32 aCurrentTime = GetTickCount();
+  UINT32 currentTime = GetTickCount();
   if (!m_MessageBoxIsShown)
   {
-    if (aCurrentTime - m_PrevTickCount < 400)
+    if (currentTime - m_PrevTickCount < 400)
       return;
     m_MessageBox->Init(g_StartupInfo.GetMsgString(NMessageID::kWaitTitle), 
       g_StartupInfo.GetMsgString(NMessageID::kReading), 2, 30);
@@ -149,111 +163,146 @@ void COpenArchive2CallBack::ShowMessage(const UINT64 *aCompleted)
   }
   else
   {
-    if (aCurrentTime - m_PrevTickCount < 200)
+    if (currentTime - m_PrevTickCount < 200)
       return;
   }
-  m_PrevTickCount = aCurrentTime;
+  m_PrevTickCount = currentTime;
   char aMessage[256];
   sprintf(aMessage, "%5I64u", m_NumFilesMax);
   char aMessage2[256];
   aMessage2[0] = '\0';
-  if (aCompleted != NULL)
-    sprintf(aMessage2, "%5I64u", *aCompleted);
+  if (completed != NULL)
+    sprintf(aMessage2, "%5I64u", *completed);
   const char *aMessages[2] = 
      {aMessage, aMessage2 };
   m_MessageBox->ShowProcessMessages(aMessages);
 }
 
-STDMETHODIMP COpenArchive2CallBack::SetTotal(const UINT64 *aFiles, const UINT64 *aBytes)
+STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 *numFiles, const UINT64 *numBytes)
 {
   if (WasEscPressed())
     return E_ABORT;
-  m_NumFilesDefined = (aFiles != NULL);
+  m_NumFilesDefined = (numFiles != NULL);
   if (m_NumFilesDefined)
-    m_NumFiles = *aFiles;
-  m_NumBytesDefined = (aBytes != NULL);
+    m_NumFiles = *numFiles;
+  m_NumBytesDefined = (numBytes != NULL);
   if (m_NumBytesDefined)
-    m_NumBytes = *aBytes;
+    m_NumBytes = *numBytes;
   return S_OK;
 }
 
-STDMETHODIMP COpenArchive2CallBack::SetCompleted(const UINT64 *aFiles, const UINT64 *aBytes)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *numFiles, const UINT64 *numBytes)
 {
   if (WasEscPressed())
     return E_ABORT;
-  if (aFiles == NULL)
+  if (numFiles == NULL)
     return S_OK;
-  m_NumFilesMax = *aFiles;
-  // if (*aFiles % 100 != 0)
+  m_NumFilesMax = *numFiles;
+  // if (*numFiles % 100 != 0)
   //   return S_OK;
   ShowMessage(NULL);
   return S_OK;
 }
 
 
-STDMETHODIMP COpenArchive2CallBack::SetTotal(const UINT64 aTotal)
+STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 total)
 {
   if (WasEscPressed())
     return E_ABORT;
   /*
-  aNumFilesDefined = (aFiles != NULL);
+  aNumFilesDefined = (numFiles != NULL);
   if (aNumFilesDefined)
-    aNumFiles = *aFiles;
-  aNumBytesDefined = (aBytes != NULL);
+    aNumFiles = *numFiles;
+  aNumBytesDefined = (numBytes != NULL);
   if (aNumBytesDefined)
-    aNumBytes = *aBytes;
+    aNumBytes = *numBytes;
   */
   return S_OK;
 }
 
-STDMETHODIMP COpenArchive2CallBack::SetCompleted(const UINT64 *aCompleted)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *completed)
 {
   if (WasEscPressed())
     return E_ABORT;
-  if (aCompleted == NULL)
+  if (completed == NULL)
     return S_OK;
-  // if (*aCompleted % 100 != 0)
+  // if (*completed % 100 != 0)
   //   return S_OK;
-  ShowMessage(aCompleted);
+  ShowMessage(completed);
   return S_OK;
 }
 
-static HANDLE MyOpenFilePlugin(const char *aName)
+HRESULT GetPassword(UString &password)
 {
-  CSysString aNormalizedName = aName;
+  password.Empty();
+  CInitDialogItem anInitItems[]=
+  {
+    { DI_DOUBLEBOX, 3, 1, 72, 4, false, false, 0, false,  NMessageID::kGetPasswordTitle, NULL, NULL }, 
+    { DI_TEXT, 5, 2, 0, 0, false, false, DIF_SHOWAMPERSAND, false, NMessageID::kEnterPasswordForFile, NULL, NULL },
+    { DI_PSWEDIT, 5, 3, 70, 3, true, false, 0, true, -1, "", NULL }
+  };
+  
+  const kNumItems = sizeof(anInitItems)/sizeof(anInitItems[0]);
+  FarDialogItem aDialogItems[kNumItems];
+  g_StartupInfo.InitDialogItems(anInitItems, aDialogItems, kNumItems);
+  
+  // sprintf(DialogItems[1].Data,GetMsg(MGetPasswordForFile),FileName);
+  if (g_StartupInfo.ShowDialog(76, 6, NULL, aDialogItems, kNumItems) < 0)
+    return (E_ABORT);
+
+  AString oemPassword = aDialogItems[2].Data;
+  password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+  return S_OK;
+}
+
+STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
+{
+  if (!PasswordIsDefined)
+  {
+    RETURN_IF_NOT_S_OK(GetPassword(Password));
+    PasswordIsDefined = true;
+  }
+  CComBSTR temp = Password;
+  *password = temp.Detach();
+  return S_OK;
+}
+
+static HANDLE MyOpenFilePlugin(const char *name)
+{
+  CSysString aNormalizedName = name;
   aNormalizedName.Trim();
-  CSysString aFullName;
-  NFile::NDirectory::MyGetFullPathName(aNormalizedName, aFullName);
+  CSysString fullName;
+  NFile::NDirectory::MyGetFullPathName(aNormalizedName, fullName);
   NFile::NFind::CFileInfo aFileInfo;
-  if (!NFile::NFind::FindFile(aFullName, aFileInfo))
+  if (!NFile::NFind::FindFile(fullName, aFileInfo))
     return INVALID_HANDLE_VALUE;
   if (aFileInfo.IsDirectory())
      return INVALID_HANDLE_VALUE;
 
-  CComPtr<IArchiveHandler100> anArchiveHandler;
+  CComPtr<IInFolderArchive> archiveHandler;
 
-  NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
+  NZipRootRegistry::CArchiverInfo archiverInfoResult;
   // ::OutputDebugString("before OpenArchive\n");
   
-  CComObjectNoLock<COpenArchive2CallBack> *anOpenArchive2CallBackSpec =
-    new CComObjectNoLock<COpenArchive2CallBack>;
+  CComObjectNoLock<COpenArchiveCallback> *openArchiveCallbackSpec =
+    new CComObjectNoLock<COpenArchiveCallback>;
   
-  CComPtr<IOpenArchive2CallBack> anOpenArchive2CallBack = anOpenArchive2CallBackSpec;
+  CComPtr<IArchiveOpenCallback> openArchiveCallback = openArchiveCallbackSpec;
 
-  // if ((anOpMode & OPM_SILENT) == 0 && (anOpMode & OPM_FIND ) == 0)
-  CScreenRestorer aScreenRestorer;
+  // if ((opMode & OPM_SILENT) == 0 && (opMode & OPM_FIND ) == 0)
+  CScreenRestorer screenRestorer;
   CMessageBox m_MessageBox;
   {
-    aScreenRestorer.Save();
-    anOpenArchive2CallBackSpec->Init(&m_MessageBox);
+    screenRestorer.Save();
+    openArchiveCallbackSpec->Init(&m_MessageBox);
   }
   
   // ::OutputDebugString("before OpenArchive\n");
   
-  UString aDefaultName;
-  HRESULT aResult = OpenArchive(aFullName, &anArchiveHandler, 
-      anArchiverInfoResult, aDefaultName, anOpenArchive2CallBack);
-  if (aResult != S_OK)
+  UString defaultName;
+  HRESULT result = OpenArchive(fullName, &archiveHandler, 
+      archiverInfoResult, defaultName, openArchiveCallback);
+  if (result != S_OK)
      return INVALID_HANDLE_VALUE;
 
   // ::OutputDebugString("after OpenArchive\n");
@@ -261,39 +310,42 @@ static HANDLE MyOpenFilePlugin(const char *aName)
   /*
   std::auto_ptr<CProxyHandler> aProxyHandler(new CProxyHandler());
 
-  if(aProxyHandler->Init(anArchiveHandler, 
+  if(aProxyHandler->Init(archiveHandler, 
       aFileInfo,
-      GetDefaultName(aFullName, anArchiverInfoResult.Extension), 
-      anOpenArchive2CallBackSpec) != S_OK)
+      GetDefaultName(fullName, archiverInfoResult.Extension), 
+      openArchiveCallbackSpec) != S_OK)
     return INVALID_HANDLE_VALUE;
 
   // ::OutputDebugString("after Init\n");
   */
 
-  CPlugin *aPlugin = new CPlugin(aFullName, aDefaultName, 
-      anArchiveHandler, anArchiverInfoResult);
-  if (aPlugin == NULL)
+  CPlugin *plugin = new CPlugin(fullName, defaultName, 
+      archiveHandler, archiverInfoResult);
+  if (plugin == NULL)
     return(INVALID_HANDLE_VALUE);
-  return (HANDLE)(aPlugin);
+  plugin->PasswordIsDefined = openArchiveCallbackSpec->PasswordIsDefined;
+  plugin->Password = openArchiveCallbackSpec->Password;
+
+  return (HANDLE)(plugin);
 }
 
-HANDLE WINAPI OpenFilePlugin(char *aName, 
-    const unsigned char *aData, unsigned int aDataSize)
+HANDLE WINAPI OpenFilePlugin(char *name, 
+    const unsigned char *data, unsigned int dataSize)
 {
   MY_TRY_BEGIN_COM_INIT;
-  if (aName == NULL || (!g_Options.Enabled))
+  if (name == NULL || (!g_Options.Enabled))
   {
     // if (!Opt.ProcessShiftF1)
       return(INVALID_HANDLE_VALUE);
   }
-  return MyOpenFilePlugin(aName);
+  return MyOpenFilePlugin(name);
   MY_TRY_END2("OpenFilePlugin", INVALID_HANDLE_VALUE);
 }
 
-HANDLE WINAPI OpenPlugin(int anOpenFrom, int anItem)
+HANDLE WINAPI OpenPlugin(int openFrom, int anItem)
 {
   MY_TRY_BEGIN_COM_INIT;
-  if(anOpenFrom == OPEN_COMMANDLINE)
+  if(openFrom == OPEN_COMMANDLINE)
   {
     CSysString aFileName = (const char *)anItem;
     if(aFileName.IsEmpty())
@@ -304,7 +356,7 @@ HANDLE WINAPI OpenPlugin(int anOpenFrom, int anItem)
 
     return MyOpenFilePlugin(aFileName);
   }
-  if(anOpenFrom == OPEN_PLUGINSMENU)
+  if(openFrom == OPEN_PLUGINSMENU)
   {
     switch(anItem)
     {
@@ -338,67 +390,67 @@ HANDLE WINAPI OpenPlugin(int anOpenFrom, int anItem)
   MY_TRY_END2("OpenPlugin", INVALID_HANDLE_VALUE);
 }
 
-void WINAPI ClosePlugin(HANDLE aPlugin)
+void WINAPI ClosePlugin(HANDLE plugin)
 {
   MY_TRY_BEGIN_COM_INIT;
-  delete (CPlugin *)aPlugin;
+  delete (CPlugin *)plugin;
   MY_TRY_END1("ClosePlugin");
 }
 
-int WINAPI GetFindData(HANDLE aPlugin, struct PluginPanelItem **aPanelItems,
-    int *anItemsNumber,int anOpMode)
+int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems,
+    int *itemsNumber,int opMode)
 {
   MY_TRY_BEGIN_COM_INIT;
-  return(((CPlugin *)aPlugin)->GetFindData(aPanelItems, anItemsNumber, anOpMode));
+  return(((CPlugin *)plugin)->GetFindData(panelItems, itemsNumber, opMode));
   MY_TRY_END2("GetFindData", FALSE);
 }
 
-void WINAPI FreeFindData(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-    int anItemsNumber)
+void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems,
+    int itemsNumber)
 {
   MY_TRY_BEGIN_COM_INIT;
-  ((CPlugin *)aPlugin)->FreeFindData(aPanelItems, anItemsNumber);
+  ((CPlugin *)plugin)->FreeFindData(panelItems, itemsNumber);
   MY_TRY_END1("FreeFindData");      
 }
 
-int WINAPI GetFiles(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-    int anItemsNumber, int aMove, char *aDestPath, int anOpMode)
+int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
+    int itemsNumber, int move, char *destPath, int opMode)
 {
   MY_TRY_BEGIN_COM_INIT;  
-  return(((CPlugin *)aPlugin)->GetFiles(aPanelItems, anItemsNumber, aMove, aDestPath, anOpMode));
+  return(((CPlugin *)plugin)->GetFiles(panelItems, itemsNumber, move, destPath, opMode));
   MY_TRY_END2("GetFiles", NFileOperationReturnCode::kError);
 }
 
-int WINAPI SetDirectory(HANDLE aPlugin, char *aDir, int anOpMode)
+int WINAPI SetDirectory(HANDLE plugin, char *dir, int opMode)
 {
   MY_TRY_BEGIN_COM_INIT;
-  return(((CPlugin *)aPlugin)->SetDirectory(aDir, anOpMode));
+  return(((CPlugin *)plugin)->SetDirectory(dir, opMode));
   MY_TRY_END2("SetDirectory", FALSE);
 }
 
-void WINAPI GetPluginInfo(struct PluginInfo *anInfo)
+void WINAPI GetPluginInfo(struct PluginInfo *info)
 {
   MY_TRY_BEGIN_COM_INIT;
 
-  anInfo->StructSize = sizeof(*anInfo);
-  anInfo->Flags = 0;
-  anInfo->DiskMenuStrings = NULL;
-  anInfo->DiskMenuNumbers = NULL;
-  anInfo->DiskMenuStringsNumber = 0;
+  info->StructSize = sizeof(*info);
+  info->Flags = 0;
+  info->DiskMenuStrings = NULL;
+  info->DiskMenuNumbers = NULL;
+  info->DiskMenuStringsNumber = 0;
   static const char *aPluginMenuStrings[2];
   aPluginMenuStrings[0] = g_StartupInfo.GetMsgString(NMessageID::kOpenArchiveMenuString);
   aPluginMenuStrings[1] = g_StartupInfo.GetMsgString(NMessageID::kCreateArchiveMenuString);
-  anInfo->PluginMenuStrings = (char **)aPluginMenuStrings;
-  anInfo->PluginMenuStringsNumber = 2;
+  info->PluginMenuStrings = (char **)aPluginMenuStrings;
+  info->PluginMenuStringsNumber = 2;
   static const char *PluginCfgStrings[1];
   PluginCfgStrings[0] = g_StartupInfo.GetMsgString(NMessageID::kOpenArchiveMenuString);
-  anInfo->PluginConfigStrings = (char **)PluginCfgStrings;
-  anInfo->PluginConfigStringsNumber = sizeof(PluginCfgStrings) / sizeof(PluginCfgStrings[0]);
-  anInfo->CommandPrefix = (char *)kCommandPrefix;
+  info->PluginConfigStrings = (char **)PluginCfgStrings;
+  info->PluginConfigStringsNumber = sizeof(PluginCfgStrings) / sizeof(PluginCfgStrings[0]);
+  info->CommandPrefix = (char *)kCommandPrefix;
   MY_TRY_END1("GetPluginInfo");      
 }
 
-int WINAPI Configure(int anItemNumber)
+int WINAPI Configure(int itemNumber)
 {
   MY_TRY_BEGIN_COM_INIT;
 
@@ -435,32 +487,32 @@ int WINAPI Configure(int anItemNumber)
   MY_TRY_END2("Configure", FALSE);
 }
 
-void WINAPI GetOpenPluginInfo(HANDLE aPlugin,struct OpenPluginInfo *anInfo)
+void WINAPI GetOpenPluginInfo(HANDLE plugin,struct OpenPluginInfo *info)
 {
   MY_TRY_BEGIN_COM_INIT;
-  ((CPlugin *)aPlugin)->GetOpenPluginInfo(anInfo);
+  ((CPlugin *)plugin)->GetOpenPluginInfo(info);
   MY_TRY_END1("GetOpenPluginInfo");      
 }
 
-int WINAPI PutFiles(HANDLE aPlugin, struct PluginPanelItem *aPanelItems,
-                   int anItemsNumber, int aMove, int anOpMode)
+int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
+                   int itemsNumber, int move, int opMode)
 {
   MY_TRY_BEGIN_COM_INIT;
-  return(((CPlugin *)aPlugin)->PutFiles(aPanelItems, anItemsNumber, aMove, anOpMode));
+  return(((CPlugin *)plugin)->PutFiles(panelItems, itemsNumber, move, opMode));
   MY_TRY_END2("PutFiles", NFileOperationReturnCode::kError);
 }
 
-int WINAPI DeleteFiles(HANDLE aPlugin, PluginPanelItem *aPanelItems,
-    int anItemsNumber, int anOpMode)
+int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems,
+    int itemsNumber, int opMode)
 {
   MY_TRY_BEGIN_COM_INIT;
-  return(((CPlugin *)aPlugin)->DeleteFiles(aPanelItems, anItemsNumber, anOpMode));
+  return(((CPlugin *)plugin)->DeleteFiles(panelItems, itemsNumber, opMode));
   MY_TRY_END2("DeleteFiles", FALSE);      
 }
 
-int WINAPI ProcessKey(HANDLE aPlugin, int aKey, unsigned int aControlState)
+int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState)
 {
   MY_TRY_BEGIN_COM_INIT;
-  return (((CPlugin *)aPlugin)->ProcessKey(aKey, aControlState));
+  return (((CPlugin *)plugin)->ProcessKey(key, controlState));
   MY_TRY_END2("ProcessKey", FALSE);
 }

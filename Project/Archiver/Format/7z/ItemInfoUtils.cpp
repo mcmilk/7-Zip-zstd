@@ -88,6 +88,17 @@ static void RemoveOneItem(CRecordVector<UINT32> &src, UINT32 item)
     }
 }
 
+static void InsertToHead(CRecordVector<UINT32> &dest, UINT32 item)
+{
+  for (int i = 0; i < dest.Size(); i++)
+    if (dest[i] == item)
+    {
+      dest.Delete(i);
+      break;
+    }
+  dest.Insert(0, item);
+}
+
 void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &fileInfoPopIDsSpec)
 { 
   CRecordVector<UINT32> fileInfoPopIDs = fileInfoPopIDsSpec;
@@ -117,6 +128,13 @@ void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &fileInfoPopIDsS
   _fileInfoPopIDs.Add(102);
   _fileInfoPopIDs.Add(103);
   _fileInfoPopIDs.Add(104);
+  #endif
+
+  #ifndef _SFX
+  InsertToHead(_fileInfoPopIDs, NID::kLastWriteTime);
+  InsertToHead(_fileInfoPopIDs, NID::kPackInfo);
+  InsertToHead(_fileInfoPopIDs, NID::kSize);
+  InsertToHead(_fileInfoPopIDs, NID::kName);
   #endif
 }
 

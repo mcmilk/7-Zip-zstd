@@ -5,20 +5,20 @@
 
 #include "Common/String.h"
 
-#include "IArchiveHandler2.h"
+#include "FolderArchiveInterface.h"
 #include "ZipRegistryMain.h"
 
-HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler200 **anArchiveHandler, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult);
+HRESULT OpenArchive(const CSysString &fileName, 
+    IInArchive **archive, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult);
 
-HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler200 **anArchiveHandler, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult,
-    IOpenArchive2CallBack *anOpenArchive2CallBack);
+HRESULT OpenArchive(const CSysString &fileName, 
+    IInArchive **archive, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult,
+    IArchiveOpenCallback *openArchiveCallback);
 
-HRESULT ReOpenArchive(IArchiveHandler200 *anArchiveHandler, 
-    const CSysString &aFileName);
+HRESULT ReOpenArchive(IInArchive *archive, 
+    const CSysString &fileName);
 
 
 #endif

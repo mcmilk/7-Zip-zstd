@@ -126,16 +126,40 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Windows\COMTry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\NewHandler.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Vector.h
+# End Source File
 # End Group
 # Begin Group "Windows"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileName.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
@@ -158,11 +182,19 @@ SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Handler\IArchiveHandler.h
+SOURCE=..\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\IArchiveHandler2.h
+SOURCE=..\..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IProgress.h
 # End Source File
 # Begin Source File
 
@@ -171,6 +203,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # End Group
 # Begin Group "Compression"

@@ -78,7 +78,7 @@ static HRESULT CopyBlock(ISequentialInStream *inStream, ISequentialOutStream *ou
 
 HRESULT Compress(
     const CActionSet &actionSet, 
-    IArchiveHandler200 *archive,
+    IInArchive *archive,
     const CCompressionMethodMode &compressionMethod,
     const CSysString &archiveName, 
     const CArchiveItemInfoVector &archiveItems,
@@ -87,10 +87,10 @@ HRESULT Compress(
     bool sfxMode,
     const CSysString &sfxModule)
 {
-  CComPtr<IOutArchiveHandler200> outArchive;
+  CComPtr<IOutArchive> outArchive;
   if(archive != NULL)
   {
-    CComPtr<IArchiveHandler200> archive2 = archive;
+    CComPtr<IInArchive> archive2 = archive;
     HRESULT result = archive2.QueryInterface(&outArchive);
     if(result != S_OK)
     {
@@ -163,11 +163,11 @@ HRESULT Compress(
   UpdateProduce(dirItems, archiveItems, updatePairs, actionSet,
       operationChain);
   
-  CComObjectNoLock<CUpdateCallBackImp> *updateCallBackSpec =
-    new CComObjectNoLock<CUpdateCallBackImp>;
-  CComPtr<IUpdateCallBack> updateCallback(updateCallBackSpec );
+  CComObjectNoLock<CUpdateCallbackImp> *updateCallbackSpec =
+    new CComObjectNoLock<CUpdateCallbackImp>;
+  CComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
-  updateCallBackSpec->Init(&dirItems, &archiveItems, &operationChain, enablePercents,
+  updateCallbackSpec->Init(&dirItems, &archiveItems, &operationChain, enablePercents,
       compressionMethod.PasswordIsDefined, compressionMethod.Password, 
       compressionMethod.AskPassword);
   
@@ -219,7 +219,6 @@ HRESULT Compress(
     RETURN_IF_NOT_S_OK(setProperties->SetProperties(&names.front(), 
        &values.front(), names.size()));
   }
-
 
   if (sfxMode)
   {

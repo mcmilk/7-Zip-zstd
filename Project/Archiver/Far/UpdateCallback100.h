@@ -5,19 +5,19 @@
 #ifndef __UPDATECALLBACK100_H
 #define __UPDATECALLBACK100_H
 
-#include "../Common/IArchiveHandler2.h"
+#include "../Common/FolderArchiveInterface.h"
 
 #include "Far/ProgressBox.h"
 
 #include "Common/String.h"
 
 class CUpdateCallBack100Imp: 
-  public IUpdateCallback100,
+  public IFolderArchiveUpdateCallback,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CUpdateCallBack100Imp)
-  COM_INTERFACE_ENTRY(IUpdateCallback100)
+  COM_INTERFACE_ENTRY(IFolderArchiveUpdateCallback)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CUpdateCallBack100Imp)
@@ -35,10 +35,10 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(OperationResult)(INT32 aOperationResult);
 
 private:
-  CComPtr<IArchiveHandler100> m_ArchiveHandler;
+  CComPtr<IInFolderArchive> m_ArchiveHandler;
   CProgressBox *m_ProgressBox;
 public:
-  void Init(IArchiveHandler100 *anArchiveHandler,
+  void Init(IInFolderArchive *anArchiveHandler,
       CProgressBox *aProgressBox)
   {
     m_ArchiveHandler = anArchiveHandler;

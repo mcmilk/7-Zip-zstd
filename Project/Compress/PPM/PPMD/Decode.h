@@ -15,11 +15,11 @@ namespace NPPMD {
 struct CDecodeInfo: public CInfo
 {
 
-  void DecodeBinSymbol(CMyRangeDecoder *aRangeDecoder)
+  void DecodeBinSymbol(CMyRangeDecoder *rangeDecoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
     WORD& bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
-    if (aRangeDecoder->DecodeBit(bs, TOT_BITS) == 0) 
+    if (rangeDecoder->DecodeBit(bs, TOT_BITS) == 0) 
     {
       FoundState = &rs;
       rs.Freq += (rs.Freq < 128);
@@ -38,86 +38,86 @@ struct CDecodeInfo: public CInfo
     }
   }
 
-  void DecodeSymbol1(CMyRangeDecoder *aRangeDecoder)
+  void DecodeSymbol1(CMyRangeDecoder *rangeDecoder)
   {
     PPM_CONTEXT::STATE* p = MinContext->Stats;
-    int i, count, HiCnt;
-    if ((count = aRangeDecoder->GetThreshold(MinContext->SummFreq)) < (HiCnt = p->Freq)) 
+    int i, count, hiCnt;
+    if ((count = rangeDecoder->GetThreshold(MinContext->SummFreq)) < (hiCnt = p->Freq)) 
     {
-      PrevSuccess = (2 * HiCnt > MinContext->SummFreq);
+      PrevSuccess = (2 * hiCnt > MinContext->SummFreq);
       RunLength += PrevSuccess;
-      aRangeDecoder->Decode(0, MinContext->Stats->Freq, MinContext->SummFreq);
-      (FoundState = p)->Freq=(HiCnt += 4);  
+      rangeDecoder->Decode(0, MinContext->Stats->Freq, MinContext->SummFreq);
+      (FoundState = p)->Freq=(hiCnt += 4);  
       MinContext->SummFreq += 4;
-      if (HiCnt > MAX_FREQ)
+      if (hiCnt > MAX_FREQ)
         rescale();
       return;
     }
     PrevSuccess = 0;
     i = MinContext->NumStats - 1;
-    while ((HiCnt += (++p)->Freq) <= count)
+    while ((hiCnt += (++p)->Freq) <= count)
       if (--i == 0) 
       {
         HiBitsFlag = HB2Flag[FoundState->Symbol];
-        aRangeDecoder->Decode(HiCnt, MinContext->SummFreq - HiCnt, MinContext->SummFreq);
+        rangeDecoder->Decode(hiCnt, MinContext->SummFreq - hiCnt, MinContext->SummFreq);
         CharMask[p->Symbol] = EscCount;
         i = (NumMasked = MinContext->NumStats)-1;       
         FoundState = NULL;
         do { CharMask[(--p)->Symbol] = EscCount; } while ( --i );
         return;
       }
-    aRangeDecoder->Decode(HiCnt - p->Freq, p->Freq, MinContext->SummFreq);
+    rangeDecoder->Decode(hiCnt - p->Freq, p->Freq, MinContext->SummFreq);
     update1(p);
   }
 
 
-  void DecodeSymbol2(CMyRangeDecoder *aRangeDecoder)
+  void DecodeSymbol2(CMyRangeDecoder *rangeDecoder)
   {
-    int count, HiCnt, i = MinContext->NumStats - NumMasked;
-    UINT32 aFreqSum;
-    SEE2_CONTEXT* psee2c = makeEscFreq2(i, aFreqSum);
+    int count, hiCnt, i = MinContext->NumStats - NumMasked;
+    UINT32 freqSum;
+    SEE2_CONTEXT* psee2c = makeEscFreq2(i, freqSum);
     PPM_CONTEXT::STATE* ps[256], ** pps = ps, * p = MinContext->Stats-1;
-    HiCnt = 0;
+    hiCnt = 0;
     do 
     {
       do { p++; } while (CharMask[p->Symbol] == EscCount);
-      HiCnt += p->Freq;                   
+      hiCnt += p->Freq;                   
       *pps++ = p;
     } 
     while ( --i );
     
-    aFreqSum += HiCnt;
-    count = aRangeDecoder->GetThreshold(aFreqSum);
+    freqSum += hiCnt;
+    count = rangeDecoder->GetThreshold(freqSum);
     
     p = *(pps = ps);
-    if (count < HiCnt) 
+    if (count < hiCnt) 
     {
-      HiCnt = 0;
-      while ((HiCnt += p->Freq) <= count) 
+      hiCnt = 0;
+      while ((hiCnt += p->Freq) <= count) 
         p=*++pps;
-      aRangeDecoder->Decode(HiCnt - p->Freq, p->Freq, aFreqSum);
+      rangeDecoder->Decode(hiCnt - p->Freq, p->Freq, freqSum);
       
       psee2c->update();                   
       update2(p);
     } 
     else 
     {
-      aRangeDecoder->Decode(HiCnt, aFreqSum - HiCnt, aFreqSum);
+      rangeDecoder->Decode(hiCnt, freqSum - hiCnt, freqSum);
       
       i = MinContext->NumStats - NumMasked;               
       pps--;
       do { CharMask[(*++pps)->Symbol] = EscCount; } while ( --i );
-      psee2c->Summ += aFreqSum;     
+      psee2c->Summ += freqSum;     
       NumMasked = MinContext->NumStats;
     }
   }
 
-  int DecodeSymbol(CMyRangeDecoder *aRangeDecoder)
+  int DecodeSymbol(CMyRangeDecoder *rangeDecoder)
   {
     if (MinContext->NumStats != 1)                        
-      DecodeSymbol1(aRangeDecoder);
+      DecodeSymbol1(rangeDecoder);
     else                                
-      DecodeBinSymbol(aRangeDecoder);
+      DecodeBinSymbol(rangeDecoder);
     while ( !FoundState ) 
     {
       do 
@@ -128,11 +128,11 @@ struct CDecodeInfo: public CInfo
           return -1;
       } 
       while (MinContext->NumStats == NumMasked);
-      DecodeSymbol2(aRangeDecoder);    
+      DecodeSymbol2(rangeDecoder);    
     }
-    BYTE aSymbol = FoundState->Symbol;
+    BYTE symbol = FoundState->Symbol;
     NextContext();
-    return aSymbol;
+    return symbol;
   }
 };
 

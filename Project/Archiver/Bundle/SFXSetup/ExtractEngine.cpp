@@ -21,9 +21,9 @@ using namespace NWindows;
 
 struct CThreadExtracting
 {
-  CComPtr<IArchiveHandler200> ArchiveHandler;
+  CComPtr<IInArchive> ArchiveHandler;
   CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
-  CComPtr<IExtractCallback200> ExtractCallback;
+  CComPtr<IArchiveExtractCallback> ExtractCallback;
 
   HRESULT Result;
   

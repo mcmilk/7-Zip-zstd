@@ -5,7 +5,7 @@
 #ifndef __RPM_HANDLER_H
 #define __RPM_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 
 // {23170F69-40C1-278A-1000-000110090000}
 DEFINE_GUID(CLSID_CFormatRPM, 
@@ -15,34 +15,33 @@ namespace NArchive {
 namespace NRPM {
 
 class CHandler: 
-  public IArchiveHandler200,
+  public IInArchive,
   public CComObjectRoot,
   public CComCoClass<CHandler, &CLSID_CFormatRPM>
 {
 public:
 BEGIN_COM_MAP(CHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CHandler)
 
-DECLARE_REGISTRY(CHandler, TEXT("SevenZip.FormatRPM.1"), 
-    TEXT("SevenZip.FormatRPM"), 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CHandler, 
+    // TEXT("SevenZip.FormatRPM.1"), TEXT("SevenZip.FormatRPM"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"), 
+    UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+  STDMETHOD(Open)(IInStream *inStream, 
+      const UINT64 *maxCheckStartPosition,
+      IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(
-      UINT32 anIndex, 
-      PROPID aPropID,  
-      PROPVARIANT *aValue);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, 
+      IArchiveExtractCallback *extractCallback);
 
 
 private:

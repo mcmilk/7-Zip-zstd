@@ -16,8 +16,6 @@
 #include "Windows/Error.h"
 #include "Windows/COM.h"
 
-#include "../Archiver/Common/IArchiveHandler2.h" 
-
 #include "ExtractCallback.h"
 #include "FolderInterface.h"
 #include "FileFolderPluginOpen.h"
@@ -72,7 +70,12 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name,
   folderLink.FolderPath = folderPath;
 
   CComPtr<IFolderFolder> newFolder;
-  RETURN_IF_NOT_S_OK(OpenFileFolderPlugin(GetUnicodeString(filePath), &newFolder));
+
+  // _passwordIsDefined = false;
+  // _password.Empty();
+
+  RETURN_IF_NOT_S_OK(OpenFileFolderPlugin(GetUnicodeString(filePath), 
+      &newFolder, GetParent()));
  
   folderLink.ParentFolder = _folder;
   folderLink.ItemName = name;
@@ -240,6 +243,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
         return;
   if (tryExternal)
   {
+    ::SetCurrentDirectory(GetSystemString(_currentFolderPrefix));
     HANDLE hProcess = StartApplication(fullPath, (HWND)*this);
     if (hProcess != 0)
       ::CloseHandle(hProcess);

@@ -6,8 +6,10 @@
 #define __7Z_DECODE_H
 
 #include "Interface/IInOutStreams.h"
+#include "Interface/CryptoInterface.h"
 
 #include "../Common/CoderMixer2.h"
+
 #include "RegistryInfo.h"
 #include "ItemInfo.h"
 
@@ -37,7 +39,8 @@ public:
       const UINT64 *packSizes,
       const CFolderItemInfo &folderInfo, 
       ISequentialOutStream *outStream,
-      ICompressProgressInfo *compressProgress);
+      ICompressProgressInfo *compressProgress,
+      ICryptoGetTextPassword *getTextPasswordSpec);
 };
 
 }}

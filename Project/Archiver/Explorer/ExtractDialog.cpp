@@ -138,7 +138,7 @@ bool CExtractDialog::OnInit()
   #endif
   #ifndef _SFX
   _passwordControl.Init(*this, IDC_EXTRACT_EDIT_PASSWORD);
-  _passwordControl.SetText(_T(""));
+  _passwordControl.SetText(_password);
   #endif
 
   NExtraction::CInfo extractionInfo;

@@ -23,20 +23,20 @@ using namespace NWindows;
 
 static const UINT64 kMaxCheckStartPosition = 1 << 20;
 
-HRESULT ReOpenArchive(IArchiveHandler100 *anArchiveHandler,
-    const UString &aDefaultName,
-    const CSysString &aFileName)
+HRESULT ReOpenArchive(IInFolderArchive *archiveHandler,
+    const UString &defaultName,
+    const CSysString &fileName)
 {
-  NFile::NFind::CFileInfo aFileInfo;
-  if (!NFile::NFind::FindFile(aFileName, aFileInfo))
+  NFile::NFind::CFileInfo fileInfo;
+  if (!NFile::NFind::FindFile(fileName, fileInfo))
     return E_FAIL;
-  NCOM::CComInitializer aComInitializer; // test it
-  CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
+  NCOM::CComInitializer comInitializer; // test it
+  CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
-  CComPtr<IInStream> anInStream(anInStreamSpec);
-  anInStreamSpec->Open(aFileName);
-  return anArchiveHandler->ReOpen(anInStream, aDefaultName, 
-      &aFileInfo.LastWriteTime, aFileInfo.Attributes, 
+  CComPtr<IInStream> inStream(inStreamSpec);
+  inStreamSpec->Open(fileName);
+  return archiveHandler->ReOpen(inStream, defaultName, 
+      &fileInfo.LastWriteTime, fileInfo.Attributes, 
       &kMaxCheckStartPosition, NULL);
 }
 
@@ -46,84 +46,84 @@ DEFINE_GUID(CLSID_CAgentArchiveHandler,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
 */
 
-HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler100 **anArchiveHandlerResult, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult,
-    UString &aDefaultName,
-    IOpenArchive2CallBack *anOpenArchive2CallBack)
+HRESULT OpenArchive(const CSysString &fileName, 
+    IInFolderArchive **archiveHandlerResult, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult,
+    UString &defaultName,
+    IArchiveOpenCallback *openArchiveCallback)
 {
-  *anArchiveHandlerResult = NULL;
-  CObjectVector<NZipRootRegistry::CArchiverInfo> anArchiverInfoList;
-  NZipRootRegistry::ReadArchiverInfoList(anArchiverInfoList);
-  CSysString anExtension;
+  *archiveHandlerResult = NULL;
+  CObjectVector<NZipRootRegistry::CArchiverInfo> archiverInfoList;
+  NZipRootRegistry::ReadArchiverInfoList(archiverInfoList);
+  CSysString extension;
   {
-    CSysString aName, aPureName, aDot;
-    if(!NFile::NDirectory::GetOnlyName(aFileName, aName))
+    CSysString name, pureName, dot;
+    if(!NFile::NDirectory::GetOnlyName(fileName, name))
       return E_FAIL;
-    NFile::NName::SplitNameToPureNameAndExtension(aName, aPureName, aDot, anExtension);
+    NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
   }
-  std::vector<int> anOrderIndexes;
-  for(int anFirstArchiverIndex = 0; 
-      anFirstArchiverIndex < anArchiverInfoList.Size(); anFirstArchiverIndex++)
-    if(anExtension.CollateNoCase(anArchiverInfoList[anFirstArchiverIndex].Extension) == 0)
+  CIntVector orderIndices;
+  for(int firstArchiverIndex = 0; 
+      firstArchiverIndex < archiverInfoList.Size(); firstArchiverIndex++)
+    if(extension.CollateNoCase(archiverInfoList[firstArchiverIndex].Extension) == 0)
       break;
-  if(anFirstArchiverIndex < anArchiverInfoList.Size())
-    anOrderIndexes.push_back(anFirstArchiverIndex);
-  for(int j = 0; j < anArchiverInfoList.Size(); j++)
-    if(j != anFirstArchiverIndex)
-      anOrderIndexes.push_back(j);
+  if(firstArchiverIndex < archiverInfoList.Size())
+    orderIndices.Add(firstArchiverIndex);
+  for(int j = 0; j < archiverInfoList.Size(); j++)
+    if(j != firstArchiverIndex)
+      orderIndices.Add(j);
   
-  NCOM::CComInitializer aComInitializer;
-  CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
+  NCOM::CComInitializer comInitializer;
+  CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
 
-  NFile::NFind::CFileInfo aFileInfo;
-  if (!NFile::NFind::FindFile(aFileName, aFileInfo))
+  NFile::NFind::CFileInfo fileInfo;
+  if (!NFile::NFind::FindFile(fileName, fileInfo))
     return E_FAIL;
-  CComPtr<IInStream> anInStream(anInStreamSpec);
-  if (!anInStreamSpec->Open(aFileName))
+  CComPtr<IInStream> inStream(inStreamSpec);
+  if (!inStreamSpec->Open(fileName))
     return E_FAIL;
 
 
-  CComPtr<IArchiveHandler100> anArchiveHandler;
+  CComPtr<IInFolderArchive> archiveHandler;
 
-  CComObjectNoLock<CAgent> *anAgentSpec = new CComObjectNoLock<CAgent>;
-  anArchiveHandler = anAgentSpec;
+  CComObjectNoLock<CAgent> *agentSpec = new CComObjectNoLock<CAgent>;
+  archiveHandler = agentSpec;
   
   /*
-  HRESULT result = anArchiveHandler.CoCreateInstance(CLSID_CAgentArchiveHandler);
+  HRESULT result = archiveHandler.CoCreateInstance(CLSID_CAgentArchiveHandler);
   if (result != S_OK)
     return result;
   */
 
   HRESULT badResult = S_OK;
-  for(int i = 0; i < anOrderIndexes.size(); i++)
+  for(int i = 0; i < orderIndices.Size(); i++)
   {
-    anInStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
-    const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
-        anArchiverInfoList[anOrderIndexes[i]];
+    inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
+    const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+        archiverInfoList[orderIndices[i]];
     
     /*
     */
-    aDefaultName = GetDefaultName(aFileName, anArchiverInfo.Extension, 
-        GetUnicodeString(anArchiverInfo.AddExtension));
+    defaultName = GetDefaultName(fileName, archiverInfo.Extension, 
+        GetUnicodeString(archiverInfo.AddExtension));
 
     #ifdef EXCLUDE_COM
-    CLSID aClassID;
-    aClassID.Data4[5] = 5;
+    CLSID classID;
+    classID.Data4[5] = 5;
     #endif
-    HRESULT result = anAgentSpec->Open(
-        anInStream, aDefaultName, 
-        &aFileInfo.LastWriteTime, aFileInfo.Attributes, 
+    HRESULT result = agentSpec->Open(
+        inStream, defaultName, 
+        &fileInfo.LastWriteTime, fileInfo.Attributes, 
         &kMaxCheckStartPosition, 
 
         #ifdef EXCLUDE_COM
-        &aClassID,
+        &classID,
         #else
-        &anArchiverInfo.ClassID, 
+        &archiverInfo.ClassID, 
         #endif
 
-        anOpenArchive2CallBack);
+        openArchiveCallback);
 
     if(result == S_FALSE)
       continue;
@@ -133,8 +133,8 @@ HRESULT OpenArchive(const CSysString &aFileName,
       continue;
       // return result;
     }
-    *anArchiveHandlerResult = anArchiveHandler.Detach();
-    anArchiverInfoResult = anArchiverInfo;
+    *archiveHandlerResult = archiveHandler.Detach();
+    archiverInfoResult = archiverInfo;
     return S_OK;
   }
   if (badResult != S_OK)
@@ -144,10 +144,10 @@ HRESULT OpenArchive(const CSysString &aFileName,
 }
 
 /*
-  HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler100 **anArchiveHandlerResult, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult)
+  HRESULT OpenArchive(const CSysString &fileName, 
+    IInFolderArchive **archiveHandlerResult, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult)
 {
-  return OpenArchive(aFileName, anArchiveHandlerResult, anArchiverInfoResult, NULL);
+  return OpenArchive(fileName, archiveHandlerResult, archiverInfoResult, NULL);
 }
 */

@@ -148,31 +148,31 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
 
 class CPropgressImp: public CProgressVirt
 {
-  CComPtr<IOpenArchive2CallBack> m_OpenArchiveCallBack;
+  CComPtr<IArchiveOpenCallback> m_OpenArchiveCallback;
 public:
   STDMETHOD(SetTotal)(const UINT64 *aNumFiles);
   STDMETHOD(SetCompleted)(const UINT64 *aNumFiles);
-  void Init(IOpenArchive2CallBack *anOpenArchiveCallBack)
-    { m_OpenArchiveCallBack = anOpenArchiveCallBack; }
+  void Init(IArchiveOpenCallback *openArchiveCallback)
+    { m_OpenArchiveCallback = openArchiveCallback; }
 };
 
 STDMETHODIMP CPropgressImp::SetTotal(const UINT64 *aNumFiles)
 {
-  if (m_OpenArchiveCallBack)
-    return m_OpenArchiveCallBack->SetCompleted(aNumFiles, NULL);
+  if (m_OpenArchiveCallback)
+    return m_OpenArchiveCallback->SetCompleted(aNumFiles, NULL);
   return S_OK;
 }
 
 STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *aNumFiles)
 {
-  if (m_OpenArchiveCallBack)
-    return m_OpenArchiveCallBack->SetCompleted(aNumFiles, NULL);
+  if (m_OpenArchiveCallback)
+    return m_OpenArchiveCallback->SetCompleted(aNumFiles, NULL);
   return S_OK;
 }
 
 STDMETHODIMP CCabHandler::Open(IInStream *aStream, 
     const UINT64 *aMaxCheckStartPosition,
-    IOpenArchive2CallBack *anOpenArchiveCallBack)
+    IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   m_Stream.Release();
@@ -181,8 +181,8 @@ STDMETHODIMP CCabHandler::Open(IInStream *aStream,
     CInArchive anArchive;
     m_Files.Clear();
     CPropgressImp aPropgressImp;
-    aPropgressImp.Init(anOpenArchiveCallBack);
-    RETURN_IF_NOT_S_OK(anArchive.Open(aStream, aMaxCheckStartPosition, 
+    aPropgressImp.Init(openArchiveCallback);
+    RINOK(anArchive.Open(aStream, aMaxCheckStartPosition, 
         m_ArchiveInfo, m_Folders, m_Files, &aPropgressImp));
     m_Stream = aStream;
   }
@@ -228,7 +228,7 @@ private:
   int m_CurrentIndex;
   int m_NumFiles;
   UINT64 m_CurrentDataPos;
-  CComPtr<IExtractCallback200> m_ExtractCallBack;
+  CComPtr<IArchiveExtractCallback> m_ExtractCallback;
   bool m_TestMode;
 
   bool m_FileIsOpen;
@@ -246,7 +246,7 @@ public:
       const CRecordVector<bool> *anExtractStatuses, 
       int aStartIndex, 
       int aNumFiles, 
-      IExtractCallback200 *anExtractCallBack,
+      IArchiveExtractCallback *anExtractCallback,
       UINT64 aStartImportantTotalUnPacked,
       bool aTestMode);
   STDMETHOD(FlushCorrupted)();
@@ -259,7 +259,7 @@ void CCabFolderOutStream::Init(
     const CRecordVector<bool> *anExtractStatuses, 
     int aStartIndex, 
     int aNumFiles,
-    IExtractCallback200 *anExtractCallBack,
+    IArchiveExtractCallback *anExtractCallback,
     UINT64 aStartImportantTotalUnPacked,
     bool aTestMode)
 {
@@ -269,7 +269,7 @@ void CCabFolderOutStream::Init(
   m_ExtractStatuses = anExtractStatuses;
   m_StartIndex = aStartIndex;
   m_NumFiles = aNumFiles;
-  m_ExtractCallBack = anExtractCallBack;
+  m_ExtractCallback = anExtractCallback;
   m_StartImportantTotalUnPacked = aStartImportantTotalUnPacked;
   m_TestMode = aTestMode;
 
@@ -279,24 +279,24 @@ void CCabFolderOutStream::Init(
 
 HRESULT CCabFolderOutStream::OpenFile(int anIndexIndex, ISequentialOutStream **aRealOutStream)
 {
-  // RETURN_IF_NOT_S_OK(m_ExtractCallBack->SetCompleted(&m_StartImportantTotalUnPacked));
+  // RINOK(m_ExtractCallback->SetCompleted(&m_StartImportantTotalUnPacked));
   
   int aFullIndex = m_StartIndex + anIndexIndex;
 
   INT32 anAskMode;
   if((*m_ExtractStatuses)[aFullIndex])
     anAskMode = m_TestMode ? 
-        NArchiveHandler::NExtract::NAskMode::kTest :
-        NArchiveHandler::NExtract::NAskMode::kExtract;
+        NArchive::NExtract::NAskMode::kTest :
+        NArchive::NExtract::NAskMode::kExtract;
   else
-    anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+    anAskMode = NArchive::NExtract::NAskMode::kSkip;
   
   int anIndex = (*m_FileIndexes)[aFullIndex];
   const CFileInfo &fileInfo = (*m_Files)[anIndex];
   UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
       m_Folders->Size(), fileInfo.FolderIndex);
 
-  RETURN_IF_NOT_S_OK(m_ExtractCallBack->Extract(anIndex, aRealOutStream, anAskMode));
+  RINOK(m_ExtractCallback->GetStream(anIndex, aRealOutStream, anAskMode));
   
   UINT64 aCurrentUnPackSize = fileInfo.UnPackSize;
   
@@ -305,8 +305,8 @@ HRESULT CCabFolderOutStream::OpenFile(int anIndexIndex, ISequentialOutStream **a
   if (aRealOutStream || aMustBeProcessedAnywhere)
   {
     if (!aRealOutStream && !m_TestMode)
-      anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
-    RETURN_IF_NOT_S_OK(m_ExtractCallBack->PrepareOperation(anAskMode));
+      anAskMode = NArchive::NExtract::NAskMode::kSkip;
+    RINOK(m_ExtractCallback->PrepareOperation(anAskMode));
     return S_OK;
   }
   else
@@ -330,7 +330,7 @@ HRESULT CCabFolderOutStream::WriteEmptyFiles()
     }
     else if (aResult == S_OK)
     {
-      RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+      RINOK(m_ExtractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
     }
     else
       return aResult;
@@ -360,20 +360,20 @@ STDMETHODIMP CCabFolderOutStream::Write(const void *aData,
       }
       else
       {
-        RETURN_IF_NOT_S_OK(aRealOutStream->Write((const BYTE *)aData + aProcessedSizeReal, aNumBytesToWrite, &aProcessedSizeLocal));
+        RINOK(aRealOutStream->Write((const BYTE *)aData + aProcessedSizeReal, aNumBytesToWrite, &aProcessedSizeLocal));
       }
       m_FilePos += aProcessedSizeLocal;
       aProcessedSizeReal += aProcessedSizeLocal;
       if (m_FilePos == fileInfo.UnPackSize)
       {
         aRealOutStream.Release();
-        RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+        RINOK(m_ExtractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
         m_FileIsOpen = false;
         m_CurrentIndex++;
       }
       if (aProcessedSizeReal == aSize)
       {
-        RETURN_IF_NOT_S_OK(WriteEmptyFiles());
+        RINOK(WriteEmptyFiles());
         if (aProcessedSize != NULL)
           *aProcessedSize = aProcessedSizeReal;
         return S_OK;
@@ -405,7 +405,7 @@ STDMETHODIMP CCabFolderOutStream::FlushCorrupted()
       UINT64 aFileSize = fileInfo.UnPackSize;
       
       aRealOutStream.Release();
-      RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kCRCError));
+      RINOK(m_ExtractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError));
       m_FileIsOpen = false;
       m_CurrentIndex++;
     }
@@ -428,11 +428,11 @@ STDMETHODIMP CCabFolderOutStream::WritePart(const void *aData,
 
 
 STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
-    INT32 _aTestMode, IExtractCallback200 *_anExtractCallBack)
+    INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
   bool aTestMode = (_aTestMode != 0);
-  CComPtr<IExtractCallback200> anExtractCallBack = _anExtractCallBack;
+  CComPtr<IArchiveExtractCallback> anExtractCallback = _anExtractCallback;
   UINT64 aCensoredTotalUnPacked = 0, anImportantTotalUnPacked = 0;
   if(aNumItems == 0)
     return S_OK;
@@ -469,7 +469,7 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     aLastIndex = anIndex + 1;
   }
 
-  anExtractCallBack->SetTotal(anImportantTotalUnPacked);
+  anExtractCallback->SetTotal(anImportantTotalUnPacked);
   UINT64 aCurrentImportantTotalUnPacked = 0;
   UINT64 aCurrentImportantTotalPacked = 0;
 
@@ -491,7 +491,7 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
         m_Folders.Size(), aFolderIndex);
 
-    RETURN_IF_NOT_S_OK(anExtractCallBack->SetCompleted(&aCurrentImportantTotalUnPacked));
+    RINOK(anExtractCallback->SetCompleted(&aCurrentImportantTotalUnPacked));
     aTotalFolderUnPacked = 0;
     for (int j = aCurImportantIndexIndex; j < anImportantIndexes.Size(); j++)
     {
@@ -507,17 +507,17 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
 
     aCabFolderOutStream->Init(&m_Folders, &m_Files, &anImportantIndexes, 
         &anExtractStatuses, aCurImportantIndexIndex, j - aCurImportantIndexIndex, 
-        anExtractCallBack, aCurrentImportantTotalUnPacked, aTestMode);
+        anExtractCallback, aCurrentImportantTotalUnPacked, aTestMode);
 
     aCurImportantIndexIndex = j;
   
     const NHeader::CFolder &aFolder = m_Folders[aRealFolderIndex];
     UINT64 aPos = aFolder.DataStart; // test it (+ archiveStart)
-    RETURN_IF_NOT_S_OK(m_Stream->Seek(aPos, STREAM_SEEK_SET, NULL));
+    RINOK(m_Stream->Seek(aPos, STREAM_SEEK_SET, NULL));
 
     CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
     CComPtr<ICompressProgressInfo> aProgress = aLocalProgressSpec;
-    aLocalProgressSpec->Init(anExtractCallBack, false);
+    aLocalProgressSpec->Init(anExtractCallback, false);
    
     CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
@@ -541,12 +541,12 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         try
         {
           aStoreDecoderSpec->SetParams(aReservedSize, aFolder.NumDataBlocks);
-          RETURN_IF_NOT_S_OK(aStoreDecoder->Code(m_Stream, anOutStream,
+          RINOK(aStoreDecoder->Code(m_Stream, anOutStream,
               NULL, &aTotalFolderUnPacked, aCompressProgress));
         }
         catch(...)
         {
-          RETURN_IF_NOT_S_OK(aCabFolderOutStream->FlushCorrupted());
+          RINOK(aCabFolderOutStream->FlushCorrupted());
           continue;
         }
         break;
@@ -561,12 +561,12 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         try
         {
           aMSZipDecoderSpec->SetParams(aReservedSize, aFolder.NumDataBlocks);
-          RETURN_IF_NOT_S_OK(aMSZipDecoder->Code(m_Stream, anOutStream,
+          RINOK(aMSZipDecoder->Code(m_Stream, anOutStream,
             NULL, &aTotalFolderUnPacked, aCompressProgress));
         }
         catch(...)
         {
-          RETURN_IF_NOT_S_OK(aCabFolderOutStream->FlushCorrupted());
+          RINOK(aCabFolderOutStream->FlushCorrupted());
           continue;
         }
         break;
@@ -582,12 +582,12 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         {
           aLZXDecoderSpec->SetParams(aReservedSize, aFolder.NumDataBlocks, 
               aFolder.CompressionTypeMinor);
-          RETURN_IF_NOT_S_OK(aLZXDecoder->Code(m_Stream, anOutStream,
+          RINOK(aLZXDecoder->Code(m_Stream, anOutStream,
             NULL, &aTotalFolderUnPacked, aCompressProgress));
         }
         catch(...)
         {
-          RETURN_IF_NOT_S_OK(aCabFolderOutStream->FlushCorrupted());
+          RINOK(aCabFolderOutStream->FlushCorrupted());
           continue;
         }
         break;
@@ -609,13 +609,13 @@ STDMETHODIMP CCabHandler::GetNumberOfItems(UINT32 *aNumItems)
 }
 
 STDMETHODIMP CCabHandler::ExtractAllItems(INT32 aTestMode,
-      IExtractCallback200 *anExtractCallBack)
+      IArchiveExtractCallback *anExtractCallback)
 {
   COM_TRY_BEGIN
   CRecordVector<UINT32> anIndexes;
   anIndexes.Reserve(m_Files.Size());
   for(int i = 0; i < m_Files.Size(); i++)
     anIndexes.Add(i);
-  return Extract(&anIndexes.Front(), m_Files.Size(), aTestMode, anExtractCallBack);
+  return Extract(&anIndexes.Front(), m_Files.Size(), aTestMode, anExtractCallback);
   COM_TRY_END
 }

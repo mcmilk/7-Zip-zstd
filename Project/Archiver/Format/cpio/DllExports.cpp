@@ -13,7 +13,7 @@ CNewHandlerSetter g_NewHandlerSetter;
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CFormatcpio, NArchive::Ncpio::CHandler)
+  OBJECT_ENTRY(CLSID_CArchiveCpio, NArchive::Ncpio::CHandler)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

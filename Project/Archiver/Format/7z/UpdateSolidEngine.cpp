@@ -83,21 +83,22 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive,
     IInStream *inStream,
     const CCompressionMethodMode *method, 
     const CCompressionMethodMode *headerMethod, 
+    bool useAdditionalHeaderStreams, 
+    bool compressMainHeader,
     const NArchive::N7z::CArchiveDatabaseEx &database,
-    const CRecordVector<bool> &compressStatuses,
     const CObjectVector<CUpdateItemInfo> &updateItems,
-    const CRecordVector<UINT32> &copyIndices,
-    IUpdateCallBack *updateCallback)
+    IArchiveUpdateCallback *updateCallback)
 {
+  /*
   if (copyIndices.Size() != 0)
-    return E_FAIL;
+    return E_NOTIMPL;
+  */
 
   /*
   if (inStream != NULL)
     return E_FAIL;
   */
 
-  RETURN_IF_NOT_S_OK(archive.SkeepPrefixArchiveHeader());
 
   UINT64 complexity = 0;
   UINT32 compressIndex = 0, copyIndexIndex = 0;
@@ -106,11 +107,11 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive,
 
   bool thereIsPackStream = false;
   int i;
-  for(i = 0; i < compressStatuses.Size(); i++)
+  for(i = 0; i < updateItems.Size(); i++)
   {
-    if (compressStatuses[i])
+    const CUpdateItemInfo &updateItem = updateItems[compressIndex++];
+    if (updateItem.NewData)
     {
-      const CUpdateItemInfo &updateItem = updateItems[compressIndex++];
       complexity += updateItem.Size;
       if (updateItem.Commented)
         complexity += updateItem.CommentRange.Size;
@@ -121,9 +122,10 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive,
     }
   }
 
-  RETURN_IF_NOT_S_OK(updateCallback->SetTotal(complexity));
+  RINOK(archive.SkeepPrefixArchiveHeader());
+  RINOK(updateCallback->SetTotal(complexity));
   UINT64 currentComplexity = 0;
-  RETURN_IF_NOT_S_OK(updateCallback->SetCompleted(&currentComplexity));
+  RINOK(updateCallback->SetCompleted(&currentComplexity));
 
 
   int numFiles = updateItems.Size();
@@ -202,10 +204,10 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive,
     CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
     localCompressProgressSpec->Init(localProgress, &currentComplexity, NULL);
 
-    RETURN_IF_NOT_S_OK(encoder.Encode(solidInStream, 
+    RINOK(encoder.Encode(solidInStream, 
         NULL,
         folderItem, 
-        archive.m_Stream, newDatabase.PackSizes, compressProgress));
+        archive.Stream, newDatabase.PackSizes, compressProgress));
 
     // folderItem.NumFiles = numFiles;
     newDatabase.Folders.Add(folderItem);
@@ -225,7 +227,8 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive,
     newDatabase.NumUnPackStreamsVector.Add(numUnPackStreams);
   }
 
-  return archive.WriteDatabase(newDatabase, headerMethod);
+  return archive.WriteDatabase(newDatabase, headerMethod, 
+      useAdditionalHeaderStreams, compressMainHeader);
 }
 
 }}

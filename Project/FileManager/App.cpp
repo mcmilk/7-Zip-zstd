@@ -146,7 +146,7 @@ struct CThreadUpdate
   UString SrcFolderPrefix;
   UStringVector FileNames;
   CRecordVector<const wchar_t *> FileNamePointers;
-  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComPtr<IFolderArchiveUpdateCallback> UpdateCallback;
   CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
   HRESULT Result;
   

@@ -21,12 +21,13 @@
 
 #include "Archive/Common/ItemNameUtils.h"
 
+#include "Interface/CryptoInterface.h"
+
 #include "../Common/OutStreamWithCRC.h"
 #include "../Common/CoderMixer.h"
 
 #include "../../../Compress/Interface/CompressInterface.h"
 #include "../../../Crypto/Cipher/Common/CipherInterface.h"
-#include "../Common/FormatCryptoInterface.h"
 
 #ifdef COMPRESS_DEFLATE
 #include "../../../Compress/LZ/Deflate/Decoder.h"
@@ -45,11 +46,11 @@ DEFINE_GUID(CLSID_CCompressImplodeDecoder,
 #endif
 
 #ifdef CRYPTO_ZIP
-#include "../../../Crypto/Cipher/Zip/Coder.h"
+#include "../../../Crypto/Cipher/Zip/ZipCipher.h"
 #else
-// {23170F69-40C1-278A-1000-000250030000}
+// {23170F69-40C1-278B-06F1-0101000000000}
 DEFINE_GUID(CLSID_CCryptoZipDecoder, 
-0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x50, 0x03, 0x00, 0x00);
+0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00);
 #endif
 
 using namespace std;
@@ -152,17 +153,17 @@ STDMETHODIMP CZipHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
   COM_TRY_END
 }
 
-STDMETHODIMP CZipHandler::GetNumberOfItems(UINT32 *aNumItems)
+STDMETHODIMP CZipHandler::GetNumberOfItems(UINT32 *numItems)
 {
-  *aNumItems = m_Items.Size();
+  *numItems = m_Items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
+STDMETHODIMP CZipHandler::GetProperty(UINT32 index, PROPID aPropID,  PROPVARIANT *aValue)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
-  const NArchive::NZip::CItemInfoEx &item = m_Items[anIndex];
+  const NArchive::NZip::CItemInfoEx &item = m_Items[index];
   switch(aPropID)
   {
     case kpidPath:
@@ -226,37 +227,37 @@ STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
 
 class CPropgressImp: public CProgressVirt
 {
-  CComPtr<IOpenArchive2CallBack> m_OpenArchiveCallBack;
+  CComPtr<IArchiveOpenCallback> m_OpenArchiveCallback;
 public:
-  STDMETHOD(SetCompleted)(const UINT64 *aNumFiles);
-  void Init(IOpenArchive2CallBack *anOpenArchiveCallBack)
-    { m_OpenArchiveCallBack = anOpenArchiveCallBack; }
+  STDMETHOD(SetCompleted)(const UINT64 *numFiles);
+  void Init(IArchiveOpenCallback *openArchiveCallback)
+    { m_OpenArchiveCallback = openArchiveCallback; }
 };
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *aNumFiles)
+STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *numFiles)
 {
-  if (m_OpenArchiveCallBack)
-    return m_OpenArchiveCallBack->SetCompleted(aNumFiles, NULL);
+  if (m_OpenArchiveCallback)
+    return m_OpenArchiveCallback->SetCompleted(numFiles, NULL);
   return S_OK;
 }
 
-STDMETHODIMP CZipHandler::Open(IInStream *aStream, 
-    const UINT64 *aMaxCheckStartPosition, IOpenArchive2CallBack *anOpenArchiveCallBack)
+STDMETHODIMP CZipHandler::Open(IInStream *inStream, 
+    const UINT64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   // try
   {
-    if(!m_Archive.Open(aStream, aMaxCheckStartPosition))
+    if(!m_Archive.Open(inStream, maxCheckStartPosition))
       return S_FALSE;
     m_ArchiveIsOpen = true;
     m_Items.Clear();
-    if (anOpenArchiveCallBack != NULL)
+    if (openArchiveCallback != NULL)
     {
-      RETURN_IF_NOT_S_OK(anOpenArchiveCallBack->SetTotal(NULL, NULL));
+      RINOK(openArchiveCallback->SetTotal(NULL, NULL));
     }
-    CPropgressImp aPropgressImp;
-    aPropgressImp.Init(anOpenArchiveCallBack);
-    RETURN_IF_NOT_S_OK(m_Archive.ReadHeaders(m_Items, &aPropgressImp));
+    CPropgressImp propgressImp;
+    propgressImp.Init(openArchiveCallback);
+    RINOK(m_Archive.ReadHeaders(m_Items, &propgressImp));
   }
   /*
   catch(...)
@@ -280,309 +281,307 @@ STDMETHODIMP CZipHandler::Close()
 //////////////////////////////////////
 // CZipHandler::DecompressItems
 
-STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
-    INT32 _aTestMode, IExtractCallback200 *_anExtractCallBack)
+STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
+    INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
   CComPtr<ICryptoGetTextPassword> getTextPassword;
-  bool aTestMode = (_aTestMode != 0);
-  CComPtr<IExtractCallback200> anExtractCallBack = _anExtractCallBack;
+  bool testMode = (_aTestMode != 0);
+  CComPtr<IArchiveExtractCallback> extractCallback = _anExtractCallback;
   UINT64 aTotalUnPacked = 0, aTotalPacked = 0;
-  if(aNumItems == 0)
+  if(numItems == 0)
     return S_OK;
   int i;
-  for(i = 0; i < aNumItems; i++)
+  for(i = 0; i < numItems; i++)
   {
-    const CItemInfoEx &anItemInfo = m_Items[anIndexes[i]];
-    aTotalUnPacked += anItemInfo.UnPackSize;
-    aTotalPacked += anItemInfo.PackSize;
+    const CItemInfoEx &itemInfo = m_Items[indices[i]];
+    aTotalUnPacked += itemInfo.UnPackSize;
+    aTotalPacked += itemInfo.PackSize;
   }
-  anExtractCallBack->SetTotal(aTotalUnPacked);
+  extractCallback->SetTotal(aTotalUnPacked);
 
-  UINT64 aCurrentTotalUnPacked = 0, aCurrentTotalPacked = 0;
-  UINT64 aCurrentItemUnPacked, aCurrentItemPacked;
+  UINT64 currentTotalUnPacked = 0, currentTotalPacked = 0;
+  UINT64 currentItemUnPacked, currentItemPacked;
   
   CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = NULL;
-  CComPtr<ICompressCoder> aDeflateDecoder;
-  CComPtr<ICompressCoder> anImplodeDecoder;
-  CComPtr<ICompressCoder> aCopyCoder;
+  CComPtr<ICompressCoder> deflateDecoder;
+  CComPtr<ICompressCoder> implodeDecoder;
+  CComPtr<ICompressCoder> copyCoder;
   CComPtr<ICompressCoder> cryptoDecoder;
   CComObjectNoLock<CCoderMixer> *mixerCoderSpec;
   CComPtr<ICompressCoder> mixerCoder;
 
   UINT16 mixerCoderMethod;
 
-  for(i = 0; i < aNumItems; i++, aCurrentTotalUnPacked += aCurrentItemUnPacked,
-      aCurrentTotalPacked += aCurrentItemPacked)
+  for(i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
+      currentTotalPacked += currentItemPacked)
   {
-    aCurrentItemUnPacked = 0;
-    aCurrentItemPacked = 0;
+    currentItemUnPacked = 0;
+    currentItemPacked = 0;
 
-    RETURN_IF_NOT_S_OK(anExtractCallBack->SetCompleted(&aCurrentTotalUnPacked));
-    CComPtr<ISequentialOutStream> aRealOutStream;
-    INT32 anAskMode;
-    anAskMode = aTestMode ? NArchiveHandler::NExtract::NAskMode::kTest :
-        NArchiveHandler::NExtract::NAskMode::kExtract;
-    INT32 anIndex = anIndexes[i];
-    const CItemInfoEx &anItemInfo = m_Items[anIndex];
-    RETURN_IF_NOT_S_OK(anExtractCallBack->Extract(anIndex, &aRealOutStream, anAskMode));
+    RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
+    CComPtr<ISequentialOutStream> realOutStream;
+    INT32 askMode;
+    askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+        NArchive::NExtract::NAskMode::kExtract;
+    INT32 index = indices[i];
+    const CItemInfoEx &itemInfo = m_Items[index];
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-    if(anItemInfo.IsDirectory() || anItemInfo.IgnoreItem())
+    if(itemInfo.IsDirectory() || itemInfo.IgnoreItem())
     {
-      // if (!aTestMode)
+      // if (!testMode)
       {
-        RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
-        RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->PrepareOperation(askMode));
+        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
       }
       continue;
     }
 
-    if (!aTestMode && (!aRealOutStream)) 
+    if (!testMode && (!realOutStream)) 
       continue;
 
-    RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
-    aCurrentItemUnPacked = anItemInfo.UnPackSize;
-    aCurrentItemPacked = anItemInfo.PackSize;
+    RINOK(extractCallback->PrepareOperation(askMode));
+    currentItemUnPacked = itemInfo.UnPackSize;
+    currentItemPacked = itemInfo.PackSize;
 
     {
-      CComObjectNoLock<COutStreamWithCRC> *anOutStreamSpec = 
+      CComObjectNoLock<COutStreamWithCRC> *outStreamSpec = 
         new CComObjectNoLock<COutStreamWithCRC>;
-      CComPtr<ISequentialOutStream> anOutStream(anOutStreamSpec);
-      anOutStreamSpec->Init(aRealOutStream);
-      aRealOutStream.Release();
+      CComPtr<ISequentialOutStream> outStream(outStreamSpec);
+      outStreamSpec->Init(realOutStream);
+      realOutStream.Release();
       
       CComPtr<ISequentialInStream> anInStream;
-      anInStream.Attach(m_Archive.CreateLimitedStream(anItemInfo.GetDataPosition(),
-          anItemInfo.PackSize));
+      anInStream.Attach(m_Archive.CreateLimitedStream(itemInfo.GetDataPosition(),
+          itemInfo.PackSize));
 
       CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
       CComPtr<ICompressProgressInfo> aProgress = aLocalProgressSpec;
-      aLocalProgressSpec->Init(anExtractCallBack, false);
+      aLocalProgressSpec->Init(extractCallback, false);
 
 
       CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
           new  CComObjectNoLock<CLocalCompressProgressInfo>;
-      CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
+      CComPtr<ICompressProgressInfo> compressProgress = aLocalCompressProgressSpec;
       aLocalCompressProgressSpec->Init(aProgress, 
-          &aCurrentTotalPacked,
-          &aCurrentTotalUnPacked);
+          &currentTotalPacked,
+          &currentTotalUnPacked);
 
-      if (anItemInfo.IsEncrypted())
+      if (itemInfo.IsEncrypted())
       {
         if (!cryptoDecoder)
         {
           #ifdef CRYPTO_ZIP
           cryptoDecoder = new CComObjectNoLock<NCrypto::NZip::CDecoder>;
           #else
-          RETURN_IF_NOT_S_OK(cryptoDecoder.CoCreateInstance(CLSID_CCryptoZipDecoder));
+          RINOK(cryptoDecoder.CoCreateInstance(CLSID_CCryptoZipDecoder));
           #endif
         }
         CComPtr<ICryptoSetPassword> cryptoSetPassword;
-        RETURN_IF_NOT_S_OK(cryptoDecoder.QueryInterface(&cryptoSetPassword));
+        RINOK(cryptoDecoder.QueryInterface(&cryptoSetPassword));
 
         if (!getTextPassword)
-          anExtractCallBack.QueryInterface(&getTextPassword);
+          extractCallback.QueryInterface(&getTextPassword);
 
         if (getTextPassword)
         {
           CComBSTR password;
-          RETURN_IF_NOT_S_OK(getTextPassword->CryptoGetTextPassword(&password));
+          RINOK(getTextPassword->CryptoGetTextPassword(&password));
           AString anOemPassword = UnicodeStringToMultiByte(
               (const wchar_t *)password, CP_OEMCP);
-          RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(
+          RINOK(cryptoSetPassword->CryptoSetPassword(
               (const BYTE *)(const char *)anOemPassword, anOemPassword.Length()));
         }
         else
         {
-          RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(0, 0));
+          RINOK(cryptoSetPassword->CryptoSetPassword(0, 0));
         }
       }
 
-      switch(anItemInfo.CompressionMethod)
+      switch(itemInfo.CompressionMethod)
       {
         case NFileHeader::NCompressionMethod::kStored:
           {
             if(aCopyCoderSpec == NULL)
             {
               aCopyCoderSpec = new CComObjectNoLock<NCompression::CCopyCoder>;
-              aCopyCoder = aCopyCoderSpec;
+              copyCoder = aCopyCoderSpec;
             }
             try
             {
-              if (anItemInfo.IsEncrypted())
+              if (itemInfo.IsEncrypted())
               {
-                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != itemInfo.CompressionMethod)
                 {
                   mixerCoder.Release();
                   mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
                   mixerCoder = mixerCoderSpec;
                   mixerCoderSpec->AddCoder(cryptoDecoder);
-                  mixerCoderSpec->AddCoder(aCopyCoder);
+                  mixerCoderSpec->AddCoder(copyCoder);
                   mixerCoderSpec->FinishAddingCoders();
-                  mixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoderMethod = itemInfo.CompressionMethod;
                 }
                 mixerCoderSpec->ReInit();
-                mixerCoderSpec->SetCoderInfo(0, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetCoderInfo(0, NULL, &currentItemUnPacked);
                 mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
                 mixerCoderSpec->SetProgressCoderIndex(1);
-                RETURN_IF_NOT_S_OK(mixerCoder->Code(anInStream, anOutStream,
-                  NULL, NULL, aCompressProgress));
+                RINOK(mixerCoder->Code(anInStream, outStream,
+                  NULL, NULL, compressProgress));
               }
               else
               {
-                RETURN_IF_NOT_S_OK(aCopyCoder->Code(anInStream, anOutStream,
-                    NULL, NULL, aCompressProgress));
+                RINOK(copyCoder->Code(anInStream, outStream,
+                    NULL, NULL, compressProgress));
               }
             }
             catch(...)
             {
-              anOutStream.Release();
-              RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-                  NArchiveHandler::NExtract::NOperationResult::kDataError));
+              outStream.Release();
+              RINOK(extractCallback->SetOperationResult(
+                  NArchive::NExtract::NOperationResult::kDataError));
               continue;
             }
             break;
           }
         case NFileHeader::NCompressionMethod::kImploded:
           {
-            if(!anImplodeDecoder)
+            if(!implodeDecoder)
             {
               #ifdef COMPRESS_IMPLODE
-              anImplodeDecoder = new CComObjectNoLock<NImplode::NDecoder::CCoder>;
+              implodeDecoder = new CComObjectNoLock<NImplode::NDecoder::CCoder>;
               #else
-              RETURN_IF_NOT_S_OK(anImplodeDecoder.CoCreateInstance(CLSID_CCompressImplodeDecoder));
+              RINOK(implodeDecoder.CoCreateInstance(CLSID_CCompressImplodeDecoder));
               #endif
             }
             try
             {
               CComPtr<ICompressSetDecoderProperties> aCompressSetDecoderProperties;
-              RETURN_IF_NOT_S_OK(anImplodeDecoder->QueryInterface(&aCompressSetDecoderProperties));
+              RINOK(implodeDecoder->QueryInterface(&aCompressSetDecoderProperties));
 
               BYTE aProperties[2] = 
               {
-                anItemInfo.IsImplodeBigDictionary() ? 1: 0,
-                anItemInfo.IsImplodeLiteralsOn() ? 1: 0
+                itemInfo.IsImplodeBigDictionary() ? 1: 0,
+                itemInfo.IsImplodeLiteralsOn() ? 1: 0
               };
 
               CComObjectNoLock<CSequentialInStreamImp> *anInStreamSpec = new 
                  CComObjectNoLock<CSequentialInStreamImp>;
               CComPtr<ISequentialInStream> anInStreamProperties(anInStreamSpec);
               anInStreamSpec->Init((const BYTE *)aProperties, 2);
-              RETURN_IF_NOT_S_OK(aCompressSetDecoderProperties->SetDecoderProperties(anInStreamProperties));
+              RINOK(aCompressSetDecoderProperties->SetDecoderProperties(anInStreamProperties));
 
-              HRESULT aResult;
-              if (anItemInfo.IsEncrypted())
+              HRESULT result;
+              if (itemInfo.IsEncrypted())
               {
-                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != itemInfo.CompressionMethod)
                 {
                   mixerCoder.Release();
                   mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
                   mixerCoder = mixerCoderSpec;
                   mixerCoderSpec->AddCoder(cryptoDecoder);
-                  mixerCoderSpec->AddCoder(anImplodeDecoder);
+                  mixerCoderSpec->AddCoder(implodeDecoder);
                   mixerCoderSpec->FinishAddingCoders();
-                  mixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoderMethod = itemInfo.CompressionMethod;
                 }
                 mixerCoderSpec->ReInit();
-                mixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetCoderInfo(1, NULL, &currentItemUnPacked);
                 mixerCoderSpec->SetProgressCoderIndex(1);
-                aResult = mixerCoder->Code(anInStream, anOutStream, 
-                    NULL, NULL, aCompressProgress);
+                result = mixerCoder->Code(anInStream, outStream, 
+                    NULL, NULL, compressProgress);
               }   
               else
               {
-                aResult = anImplodeDecoder->Code(anInStream, anOutStream,
-                    NULL, &aCurrentItemUnPacked, aCompressProgress);
+                result = implodeDecoder->Code(anInStream, outStream,
+                    NULL, &currentItemUnPacked, compressProgress);
               }
-              if (aResult == S_FALSE)
+              if (result == S_FALSE)
                 throw "data error";
-              if (aResult != S_OK)
-                return aResult;
+              if (result != S_OK)
+                return result;
             }
             catch(...)
             {
-              anOutStream.Release();
-              RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-                  NArchiveHandler::NExtract::NOperationResult::kDataError));
+              outStream.Release();
+              RINOK(extractCallback->SetOperationResult(
+                  NArchive::NExtract::NOperationResult::kDataError));
               continue;
             }
             break;
           }
         case NFileHeader::NCompressionMethod::kDeflated:
           {
-            if(!aDeflateDecoder)
+            if(!deflateDecoder)
             {
               #ifdef COMPRESS_DEFLATE
-              aDeflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
+              deflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
               #else
-              RETURN_IF_NOT_S_OK(aDeflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
+              RINOK(deflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
               #endif
             }
             try
             {
-              HRESULT aResult;
-              if (anItemInfo.IsEncrypted())
+              HRESULT result;
+              if (itemInfo.IsEncrypted())
               {
-                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != itemInfo.CompressionMethod)
                 {
                   mixerCoder.Release();
                   mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
                   mixerCoder = mixerCoderSpec;
                   mixerCoderSpec->AddCoder(cryptoDecoder);
-                  mixerCoderSpec->AddCoder(aDeflateDecoder);
+                  mixerCoderSpec->AddCoder(deflateDecoder);
                   mixerCoderSpec->FinishAddingCoders();
-                  mixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoderMethod = itemInfo.CompressionMethod;
                 }
                 mixerCoderSpec->ReInit();
-                mixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetCoderInfo(1, NULL, &currentItemUnPacked);
                 mixerCoderSpec->SetProgressCoderIndex(1);
-                aResult = mixerCoder->Code(anInStream, anOutStream, 
-                    NULL, NULL, aCompressProgress);
+                result = mixerCoder->Code(anInStream, outStream, 
+                    NULL, NULL, compressProgress);
               }   
               else
               {
-                aResult = aDeflateDecoder->Code(anInStream, anOutStream,
-                    NULL, &aCurrentItemUnPacked, aCompressProgress);
+                result = deflateDecoder->Code(anInStream, outStream,
+                    NULL, &currentItemUnPacked, compressProgress);
               }
-              if (aResult == S_FALSE)
+              if (result == S_FALSE)
                 throw "data error";
-              if (aResult != S_OK)
-                return aResult;
+              if (result != S_OK)
+                return result;
             }
             catch(...)
             {
-              anOutStream.Release();
-              RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-                  NArchiveHandler::NExtract::NOperationResult::kDataError));
+              outStream.Release();
+              RINOK(extractCallback->SetOperationResult(
+                  NArchive::NExtract::NOperationResult::kDataError));
               continue;
             }
             break;
           }
         default:
-            RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-                NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod));
+            RINOK(extractCallback->SetOperationResult(
+                NArchive::NExtract::NOperationResult::kUnSupportedMethod));
             continue;
       }
-      bool aCRC_Ok = anOutStreamSpec->GetCRC() == anItemInfo.FileCRC;
-      anOutStream.Release();
-      if(aCRC_Ok)
-        RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK))
-      else
-        RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kCRCError))
+      bool crcOK = outStreamSpec->GetCRC() == itemInfo.FileCRC;
+      outStream.Release();
+      RINOK(extractCallback->SetOperationResult(crcOK ? NArchive::NExtract::NOperationResult::kOK :
+          NArchive::NExtract::NOperationResult::kCRCError))
     }
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CZipHandler::ExtractAllItems(INT32 aTestMode,
-      IExtractCallback200 *anExtractCallBack)
+STDMETHODIMP CZipHandler::ExtractAllItems(INT32 testMode,
+      IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  CRecordVector<UINT32> anIndexes;
+  CRecordVector<UINT32> indices;
   for(int i = 0; i < m_Items.Size(); i++)
-    anIndexes.Add(i);
-  return Extract(&anIndexes.Front(), m_Items.Size(), aTestMode, anExtractCallBack);
+    indices.Add(i);
+  return Extract(&indices.Front(), m_Items.Size(), testMode, extractCallback);
   COM_TRY_END
 }
 

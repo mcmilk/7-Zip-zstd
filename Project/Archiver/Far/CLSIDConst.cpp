@@ -5,4 +5,4 @@
 #include <initguid.h>
 
 #include "../Agent/Handler.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"

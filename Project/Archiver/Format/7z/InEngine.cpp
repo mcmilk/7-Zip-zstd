@@ -19,10 +19,10 @@ class CStreamSwitch
 {
   CInArchive *_archive;
   bool _needRemove;
-  void Remove();
 public:
   CStreamSwitch(): _needRemove(false) {}
   ~CStreamSwitch() { Remove(); }
+  void Remove();
   void Set(CInArchive *archive, const BYTE *data, UINT32 size);
   void Set(CInArchive *archive, const CByteBuffer &byteBuffer);
   HRESULT Set(CInArchive *archive, const CObjectVector<CByteBuffer> *dataVector);
@@ -201,12 +201,12 @@ HRESULT CInArchive::SkeepData()
   return SkeepData(size);
 }
 
-HRESULT CInArchive::ReadArhiveProperties(CInArchiveInfo &archiveInfo)
+HRESULT CInArchive::ReadArchiveProperties(CInArchiveInfo &archiveInfo)
 {
   while(true)
   {
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == NID::kEnd)
       break;
     SkeepData();
@@ -228,32 +228,41 @@ HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
     itemInfo.CodersInfo.Add(CCoderInfo());
     CCoderInfo &coderInfo = itemInfo.CodersInfo.Back();
 
-    BYTE mainByte;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(mainByte));
-    coderInfo.DecompressionMethod.IDSize = mainByte & 0xF;
-    bool isComplex = (mainByte & 0x10) != 0;
-    bool tereAreProperties = (mainByte & 0x20) != 0;
-    RETURN_IF_NOT_S_OK(SafeReadBytes2(&coderInfo.DecompressionMethod.ID[0], 
-        coderInfo.DecompressionMethod.IDSize));
-    if (isComplex)
+    while (true)
     {
-      RETURN_IF_NOT_S_OK(ReadNumber(coderInfo.NumInStreams));
-      RETURN_IF_NOT_S_OK(ReadNumber(coderInfo.NumOutStreams));
-    }
-    else
-    {
-      coderInfo.NumInStreams = 1;
-      coderInfo.NumOutStreams = 1;
+      coderInfo.AltCoders.Add(CAltCoderInfo());
+      CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Back();
+      BYTE mainByte;
+      RETURN_IF_NOT_S_OK(SafeReadByte2(mainByte));
+      altCoderInfo.DecompressionMethod.IDSize = mainByte & 0xF;
+      bool isComplex = (mainByte & 0x10) != 0;
+      bool tereAreProperties = (mainByte & 0x20) != 0;
+      RETURN_IF_NOT_S_OK(SafeReadBytes2(&altCoderInfo.DecompressionMethod.ID[0], 
+        altCoderInfo.DecompressionMethod.IDSize));
+      if (isComplex)
+      {
+        RETURN_IF_NOT_S_OK(ReadNumber(coderInfo.NumInStreams));
+        RETURN_IF_NOT_S_OK(ReadNumber(coderInfo.NumOutStreams));
+      }
+      else
+      {
+        coderInfo.NumInStreams = 1;
+        coderInfo.NumOutStreams = 1;
+      }
+      UINT64 propertiesSize = 0;
+      if (tereAreProperties)
+      {
+        RETURN_IF_NOT_S_OK(ReadNumber(propertiesSize));
+      }
+      altCoderInfo.Properties.SetCapacity(propertiesSize);
+      RETURN_IF_NOT_S_OK(SafeReadBytes2((BYTE *)altCoderInfo.Properties, propertiesSize));
+
+      // coderInfo.AltCoders.Add(coderInfo.AltCoders.Back());
+      if ((mainByte & 0x80) == 0)
+        break;
     }
     numInStreams += coderInfo.NumInStreams;
     numOutStreams += coderInfo.NumOutStreams;
-    UINT64 propertiesSize = 0;
-    if (tereAreProperties)
-    {
-      RETURN_IF_NOT_S_OK(ReadNumber(propertiesSize));
-    }
-    coderInfo.Properties.SetCapacity(propertiesSize);
-    RETURN_IF_NOT_S_OK(SafeReadBytes2((BYTE *)coderInfo.Properties, propertiesSize));
   }
 
   UINT64 numBindPairs;
@@ -293,12 +302,12 @@ HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
   return S_OK;
 }
 
-HRESULT CInArchive::WaitAttribute(BYTE attribute)
+HRESULT CInArchive::WaitAttribute(UINT64 attribute)
 {
   while(true)
   {
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == attribute)
       return S_OK;
     if (type == NID::kEnd)
@@ -344,10 +353,10 @@ HRESULT CInArchive::ReadPackInfo(
     packSizes.Add(size);
   }
 
-  BYTE type;
+  UINT64 type;
   while(true)
   {
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == NID::kEnd)
       break;
     if (type == NID::kCRC)
@@ -410,8 +419,8 @@ HRESULT CInArchive::ReadUnPackInfo(
 
   while(true)
   {
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == NID::kEnd)
       return S_OK;
     if (type == NID::kCRC)
@@ -440,10 +449,10 @@ HRESULT CInArchive::ReadSubStreamsInfo(
 {
   numUnPackStreamsInFolders.Clear();
   numUnPackStreamsInFolders.Reserve(folders.Size());
-  BYTE type;
+  UINT64 type;
   while(true)
   {
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == NID::kNumUnPackStream)
     {
       for(int i = 0; i < folders.Size(); i++)
@@ -482,7 +491,7 @@ HRESULT CInArchive::ReadSubStreamsInfo(
   }
   if (type == NID::kSize)
   {
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadID(type));
   }
 
   int numDigests = 0;
@@ -538,7 +547,7 @@ HRESULT CInArchive::ReadSubStreamsInfo(
     {
       RETURN_IF_NOT_S_OK(SkeepData());
     }
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadID(type));
   }
 }
 
@@ -557,8 +566,8 @@ HRESULT CInArchive::ReadStreamsInfo(
 {
   while(true)
   {
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
     switch(type)
     {
       case NID::kEnd:
@@ -687,23 +696,80 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
   return S_OK;
 }
 
-HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
+HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset, 
+    UINT64 &dataOffset, CObjectVector<CByteBuffer> &dataVector,
+    ICryptoGetTextPassword *getTextPassword)
 {
-  database.Clear();
+  CRecordVector<UINT64> packSizes;
+  CRecordVector<bool> packCRCsDefined;
+  CRecordVector<UINT32> packCRCs;
+  CObjectVector<CFolderItemInfo> folders;
+  
+  CRecordVector<UINT64> numUnPackStreamsInFolders;
+  CRecordVector<UINT64> unPackSizes;
+  CRecordVector<bool> digestsDefined;
+  CRecordVector<UINT32> digests;
+  
+  RETURN_IF_NOT_S_OK(ReadStreamsInfo(NULL, 
+    dataOffset,
+    packSizes, 
+    packCRCsDefined, 
+    packCRCs, 
+    folders,
+    numUnPackStreamsInFolders,
+    unPackSizes,
+    digestsDefined, 
+    digests));
+  
+  // database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
+  
+  UINT32 packIndex = 0;
+  CDecoder decoder;
+  UINT64 dataStartPos = baseOffset + dataOffset;
+  for(int i = 0; i < folders.Size(); i++)
+  {
+    const CFolderItemInfo &folder = folders[i];
+    dataVector.Add(CByteBuffer());
+    CByteBuffer &data = dataVector.Back();
+    UINT64 unPackSize = folder.GetUnPackSize();
+    data.SetCapacity(unPackSize);
+    
+    CComObjectNoLock<CSequentialOutStreamImp2> *outStreamSpec = 
+      new  CComObjectNoLock<CSequentialOutStreamImp2>;
+    CComPtr<ISequentialOutStream> outStream = outStreamSpec;
+    outStreamSpec->Init(data, unPackSize);
+    
+    RETURN_IF_NOT_S_OK(decoder.Decode(_stream, dataStartPos, 
+      &packSizes[packIndex], folder, outStream, NULL, getTextPassword));
+    
+    if (folder.UnPackCRCDefined)
+      if (!CCRC::VerifyDigest(folder.UnPackCRC, data, unPackSize))
+        throw CInArchiveException(CInArchiveException::kIncorrectHeader);
+      for (int j = 0; j < folder.PackStreams.Size(); j++)
+        dataStartPos += packSizes[packIndex++];
+  }
+  return S_OK;
+}
 
-  BYTE type;
-  RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database, 
+    ICryptoGetTextPassword *getTextPassword)
+{
+  // database.Clear();
+
+  UINT64 type;
+  RETURN_IF_NOT_S_OK(ReadID(type));
 
   if (type == NID::kArchiveProperties)
   {
-    RETURN_IF_NOT_S_OK(ReadArhiveProperties(database.ArchiveInfo));
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadArchiveProperties(database.ArchiveInfo));
+    RETURN_IF_NOT_S_OK(ReadID(type));
   }
  
   CObjectVector<CByteBuffer> dataVector;
   
   if (type == NID::kAdditionalStreamsInfo)
   {
+    /*
     CRecordVector<UINT64> packSizes;
     CRecordVector<bool> packCRCsDefined;
     CRecordVector<UINT32> packCRCs;
@@ -744,7 +810,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
       outStreamSpec->Init(data, unPackSize);
       
       RETURN_IF_NOT_S_OK(decoder.Decode(_stream, dataStartPos, 
-          &packSizes[packIndex], folder, outStream, NULL));
+          &packSizes[packIndex], folder, outStream, NULL, getTextPassword));
       
       if (folder.UnPackCRCDefined)
         if (!CCRC::VerifyDigest(folder.UnPackCRC, data, unPackSize))
@@ -752,7 +818,14 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
       for (int j = 0; j < folder.PackStreams.Size(); j++)
         dataStartPos += packSizes[packIndex++];
     }
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    */
+    RETURN_IF_NOT_S_OK(ReadAndDecodePackedStreams(
+        database.ArchiveInfo.StartPositionAfterHeader, 
+        database.ArchiveInfo.DataStartPosition2,
+        dataVector,
+        getTextPassword));
+    database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
+    RETURN_IF_NOT_S_OK(ReadID(type));
   }
 
   CRecordVector<UINT64> unPackSizes;
@@ -772,7 +845,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
         digestsDefined,
         digests));
     database.ArchiveInfo.DataStartPosition += database.ArchiveInfo.StartPositionAfterHeader;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    RETURN_IF_NOT_S_OK(ReadID(type));
   }
   else
   {
@@ -830,8 +903,8 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
       if (sizePrev != _inByteBack->GetProcessedSize() - posPrev)
         throw 2;
     */
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
     if (type == NID::kEnd)
       break;
     UINT64 size;
@@ -896,7 +969,6 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database)
       case NID::kLastWriteTime:
       case NID::kLastAccessTime:
       {
-        CBoolVector boolVector;
         RETURN_IF_NOT_S_OK(ReadTime(dataVector, database.Files, type))
         break;
       }
@@ -995,8 +1067,10 @@ void CArchiveDatabaseEx::FillFolderStartFileIndex()
   }
 }
 
-HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database)
+HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database, 
+    ICryptoGetTextPassword *getTextPassword)
 {
+  database.Clear();
   database.ArchiveInfo.StartPosition = _arhiveBeginStreamPosition;
   RETURN_IF_NOT_S_OK(SafeReadBytes(&database.ArchiveInfo.Version, 
       sizeof(database.ArchiveInfo.Version)));
@@ -1012,6 +1086,9 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database)
 
   database.ArchiveInfo.StartPositionAfterHeader = _position;
 
+  if (startHeader.NextHeaderSize == 0)
+    return S_OK;
+
   RETURN_IF_NOT_S_OK(_stream->Seek(startHeader.NextHeaderOffset, STREAM_SEEK_CUR, &_position));
 
   CByteBuffer buffer2;
@@ -1020,19 +1097,32 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database)
   if (!CCRC::VerifyDigest(startHeader.NextHeaderCRC, buffer2, startHeader.NextHeaderSize))
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
   
+  CStreamSwitch streamSwitch;
+  streamSwitch.Set(this, buffer2);
+  
+  CObjectVector<CByteBuffer> dataVector;
+  
+  while (true)
   {
-    CStreamSwitch streamSwitch;
-    streamSwitch.Set(this, buffer2, startHeader.NextHeaderSize);
-
-    BYTE type;
-    RETURN_IF_NOT_S_OK(SafeReadByte2(type));
-
-    if (type != NID::kHeader)
+    UINT64 type;
+    RETURN_IF_NOT_S_OK(ReadID(type));
+    if (type == NID::kHeader)
+      break;
+    if (type != NID::kEncodedHeader)
       throw CInArchiveException(CInArchiveException::kIncorrectHeader);
-
-    RETURN_IF_NOT_S_OK(ReadHeader(database));
+    RETURN_IF_NOT_S_OK(ReadAndDecodePackedStreams(
+      database.ArchiveInfo.StartPositionAfterHeader, 
+      database.ArchiveInfo.DataStartPosition2,
+      dataVector, getTextPassword));
+    if (dataVector.Size() == 0)
+      return S_OK;
+    if (dataVector.Size() > 1)
+      throw CInArchiveException(CInArchiveException::kIncorrectHeader);
+    streamSwitch.Remove();
+    streamSwitch.Set(this, dataVector.Front());
   }
-  return S_OK;
+
+  return ReadHeader(database, getTextPassword);
 }
 
 }}

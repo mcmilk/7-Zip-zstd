@@ -12,6 +12,8 @@
 #include "Common/WildCard.h"
 #include "Common/StringConvert.h"
 
+#include "Windows/Defs.h"
+
 using namespace NWindows;
 using namespace NFar;
 
@@ -114,24 +116,24 @@ STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *aMessage)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::OperationResult(INT32 anOperationResult)
+STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 anOperationResult)
 {
   switch(anOperationResult)
   {
-    case NArchiveHandler::NExtract::NOperationResult::kOK:
+    case NArchive::NExtract::NOperationResult::kOK:
       break;
     default:
     {
       UINT anIDMessage;
       switch(anOperationResult)
       {
-        case NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod:
+        case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
           anIDMessage = NMessageID::kExtractUnsupportedMethod;
           break;
-        case NArchiveHandler::NExtract::NOperationResult::kCRCError:
+        case NArchive::NExtract::NOperationResult::kCRCError:
           anIDMessage = NMessageID::kExtractCRCFailed;
           break;
-        case NArchiveHandler::NExtract::NOperationResult::kDataError:
+        case NArchive::NExtract::NOperationResult::kDataError:
           anIDMessage = NMessageID::kExtractDataError;
           break;
         default:
@@ -147,27 +149,13 @@ STDMETHODIMP CExtractCallBackImp::OperationResult(INT32 anOperationResult)
   return S_OK;
 }
 
+extern HRESULT GetPassword(UString &password);
+
 STDMETHODIMP CExtractCallBackImp::CryptoGetTextPassword(BSTR *aPassword)
 {
   if (!m_PasswordIsDefined)
   {
-    CInitDialogItem anInitItems[]=
-    {
-      { DI_DOUBLEBOX, 3, 1, 72, 4, false, false, 0, false,  NMessageID::kGetPasswordTitle, NULL, NULL }, 
-      { DI_TEXT, 5, 2, 0, 0, false, false, DIF_SHOWAMPERSAND, false, NMessageID::kEnterPasswordForFile, NULL, NULL },
-      { DI_PSWEDIT, 5, 3, 70, 3, true, false, 0, true, -1, "", NULL }
-    };
-    
-    const kNumItems = sizeof(anInitItems)/sizeof(anInitItems[0]);
-    FarDialogItem aDialogItems[kNumItems];
-    g_StartupInfo.InitDialogItems(anInitItems, aDialogItems, kNumItems);
-    
-    // sprintf(DialogItems[1].Data,GetMsg(MGetPasswordForFile),FileName);
-    if (g_StartupInfo.ShowDialog(76, 6, NULL, aDialogItems, kNumItems) < 0)
-      return (E_ABORT);
-    
-    AString anOemPassword = aDialogItems[2].Data;
-    m_Password = MultiByteToUnicodeString(anOemPassword, CP_OEMCP); 
+    RETURN_IF_NOT_S_OK(GetPassword(m_Password));
     m_PasswordIsDefined = true;
   }
   CComBSTR aTempName = m_Password;

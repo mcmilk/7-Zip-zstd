@@ -206,7 +206,7 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\OutEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Common\IArchiveHandler.h
+SOURCE=..\Common\ArchiveInterface.h
 # End Source File
 # Begin Source File
 
@@ -235,10 +235,6 @@ SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 

@@ -5,7 +5,7 @@
 #ifndef __RAR_HANDLER_H
 #define __RAR_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 #include "Archive/Rar/InEngine.h"
 
 // {23170F69-40C1-278B-0403-020000000000}
@@ -16,42 +16,50 @@ DEFINE_GUID(CLSID_CCompressRar20Decoder,
 DEFINE_GUID(CLSID_CCompressRar29Decoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00);
 
-// {23170F69-40C1-278A-1000-000250010000}
+// {23170F69-40C1-278B-06F1-0302000000000}
 DEFINE_GUID(CLSID_CCryptoRar20Decoder, 
-0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x50, 0x01, 0x00, 0x00);
+0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x03, 0x02, 0x00, 0x00, 0x00, 0x00);
+
+// {23170F69-40C1-278B-06F1-0303000000000}
+DEFINE_GUID(CLSID_CCryptoRar29Decoder, 
+0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00);
+
 
 // {23170F69-40C1-278A-1000-000110020000}
 DEFINE_GUID(CLSID_CRarHandler, 
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x02, 0x00, 0x00);
 class CRarHandler: 
-  public IArchiveHandler200,
+  public IInArchive,
   public CComObjectRoot,
   public CComCoClass<CRarHandler,&CLSID_CRarHandler>
 {
 public:
 BEGIN_COM_MAP(CRarHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CRarHandler)
 
-DECLARE_REGISTRY(CRarHandler, "SevenZip.FormatRar.1", "SevenZip.FormatRar", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CRarHandler, 
+    // "SevenZip.FormatRar.1", "SevenZip.FormatRar", 
+    "SevenZip.1", "SevenZip", 
+    UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);	
+  STDMETHOD(Open)(IInStream *stream, 
+      const UINT64 *maxCheckStartPosition,
+      IArchiveOpenCallback *openArchiveCallback);	
   STDMETHOD(Close)();	
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);	
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);	
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID,  PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, 
+      IArchiveExtractCallback *extractCallback);
 
 private:
-  CObjectVector<NArchive::NRar::CItemInfoEx> m_Items;
-  NArchive::NRar::CInArchive m_Archive;
+  CObjectVector<NArchive::NRar::CItemInfoEx> _items;
+  NArchive::NRar::CInArchive _archive;
 };
 
 #endif

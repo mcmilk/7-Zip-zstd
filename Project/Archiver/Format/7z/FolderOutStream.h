@@ -9,7 +9,6 @@
 #include "Header.h"
 
 #include "Interface/IInOutStreams.h"
-#include "../../Common/IArchiveHandler2.h"
 #include "ItemInfoUtils.h"
 #include "../Common/OutStreamWithCRC.h"
 
@@ -39,7 +38,7 @@ private:
   UINT32 _startIndex;
   int _currentIndex;
   // UINT64 _currentDataPos;
-  CComPtr<IExtractCallback200> _extractCallback;
+  CComPtr<IArchiveExtractCallback> _extractCallback;
   bool _testMode;
 
   bool _fileIsOpen;
@@ -52,9 +51,9 @@ public:
       NArchive::N7z::CArchiveDatabaseEx *archiveDatabase,
       UINT32 startIndex,
       const CBoolVector *extractStatuses, 
-      IExtractCallback200 *extractCallback,
+      IArchiveExtractCallback *extractCallback,
       bool testMode);
-  HRESULT FlushCorrupted();
+  HRESULT FlushCorrupted(INT32 resultEOperationResult);
   HRESULT WasWritingFinished();
 };
 

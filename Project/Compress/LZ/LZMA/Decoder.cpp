@@ -73,9 +73,6 @@ namespace NLZMA {
 
 HRESULT CDecoder::SetDictionarySize(UINT32 dictionarySize)
 {
-  if (dictionarySize > (1 << kDicLogSizeMax))
-    return E_INVALIDARG;
-  
   if (_dictionarySize != dictionarySize)
   {
     _dictionarySize = dictionarySize;
@@ -178,8 +175,10 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
     const UINT64 *inSize, const UINT64 *outSize,
     ICompressProgressInfo *progress)
 {
+  /*
   if (outSize == NULL)
     return E_INVALIDARG;
+  */
 
   Init(inStream, outStream);
   CDecoderFlusher flusher(this);
@@ -193,7 +192,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
     repDistances[i] = 0;
 
   UINT64 nowPos64 = 0;
-  UINT64 size = *outSize;
+  UINT64 size = (outSize == NULL) ? (UINT64)(INT64)(-1) : *outSize;
   while(nowPos64 < size)
   {
     UINT64 nextPos = MyMin(nowPos64 + (1 << 18), size);
@@ -290,7 +289,14 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
           // UpdateStat(len, posSlot);
         }
         if (distance >= nowPos64 || distance >= _dictionarySizeCheck)
+        {
+          if (distance == (UINT32)(-1) && size == (UINT64)(INT64)(-1))
+          {
+            flusher.NeedFlush = false;
+            return Flush();
+          }
           throw "data error";
+        }
         _outWindowStream.CopyBackBlock(distance, len);
         nowPos64 += len;
         previousByte = _outWindowStream.GetOneByte(0 - 1);
@@ -302,7 +308,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
       RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
   }
-  flusher.m_NeedFlush = false;
+  flusher.NeedFlush = false;
   return Flush();
 }
 

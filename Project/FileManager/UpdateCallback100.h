@@ -5,9 +5,10 @@
 #ifndef __UPDATECALLBACK100_H
 #define __UPDATECALLBACK100_H
 
-#include "../Archiver/Common/IArchiveHandler2.h"
+#include "Interface/CryptoInterface.h"
+
+#include "../Archiver/Common/FolderArchiveInterface.h"
 #include "Resource/ProgressDialog/ProgressDialog.h"
-#include "../Archiver/Format/Common/FormatCryptoInterface.h"
 // #include "resource.h"
 
 #include "Common/String.h"
@@ -19,13 +20,13 @@
 #include "AppTitle.h"
 
 class CUpdateCallback100Imp: 
-  public IUpdateCallback100,
+  public IFolderArchiveUpdateCallback,
   public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CUpdateCallback100Imp)
-  COM_INTERFACE_ENTRY(IUpdateCallback100)
+  COM_INTERFACE_ENTRY(IFolderArchiveUpdateCallback)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 

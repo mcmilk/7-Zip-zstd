@@ -338,15 +338,15 @@ SOURCE=..\..\..\..\SDK\Windows\Thread.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Crypto\Cipher\Common\CipherInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Hash\Common\CryptoHashInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 
@@ -534,6 +534,10 @@ SOURCE=.\UpdateSolidEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Common\ArchiveInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\CoderMixer2.cpp
 # End Source File
 # Begin Source File
@@ -547,10 +551,6 @@ SOURCE=..\Common\CrossThreadProgress.cpp
 # Begin Source File
 
 SOURCE=..\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
@@ -572,6 +572,10 @@ SOURCE=..\Common\OutStreamWithCRC.h
 # Begin Source File
 
 SOURCE=".\7-7z.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=.\CompressionMethod.cpp
 # End Source File
 # Begin Source File
 

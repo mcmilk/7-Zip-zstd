@@ -14,13 +14,20 @@ class CListViewDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CListView _listView;
   virtual void OnOK();
   virtual bool OnInit();
+  virtual bool OnNotify(UINT controlID, LPNMHDR header);
+
 public:
   CSysString Title;
+  bool DeleteIsAllowed;
   CSysStringVector Strings;
-  int ItemIndex;
+  bool StringsWereChanged;
+  int FocusedItemIndex;
 
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_LISTVIEW), aWndParent); }
+
+  CListViewDialog(): DeleteIsAllowed(false) {}
+
 };
 
 #endif

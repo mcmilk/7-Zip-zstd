@@ -48,34 +48,34 @@ CCounter g_Counter;
 // ISetRangeEncoder
 STDMETHODIMP CEncoder::SetRangeEncoder(CRangeEncoder *aRangeEncoder)
 {
-  m_RangeEncoder = aRangeEncoder;
-  RETURN_IF_NOT_S_OK(m_RangeEncoder.QueryInterface(&m_InitOutCoder));
+  _rangeEncoder = aRangeEncoder;
+  RETURN_IF_NOT_S_OK(_rangeEncoder.QueryInterface(&m_InitOutCoder));
 
   return S_OK;
 }
 */
 
-STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *aPropIDs, 
-    const PROPVARIANT *aProperties, UINT32 aNumProperties)
+STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *propIDs, 
+    const PROPVARIANT *properties, UINT32 numProperties)
 {
-  for (UINT32 i = 0; i < aNumProperties; i++)
+  for (UINT32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &aProperty = aProperties[i];
-    switch(aPropIDs[i])
+    const PROPVARIANT &aProperty = properties[i];
+    switch(propIDs[i])
     {
       case NEncodedStreamProperies::kUsedMemorySize:
         if (aProperty.vt != VT_UI4)
           return E_INVALIDARG;
         if (aProperty.ulVal < kMinMemSize)
           return E_INVALIDARG;
-        m_UsedMemorySize = aProperty.ulVal;
+        _usedMemorySize = aProperty.ulVal;
         break;
       case NEncodedStreamProperies::kOrder:
         if (aProperty.vt != VT_UI4)
           return E_INVALIDARG;
         if (aProperty.ulVal < kMinOrder || aProperty.ulVal > kMaxOrderCompress)
           return E_INVALIDARG;
-        m_Order = BYTE(aProperty.ulVal);
+        _order = BYTE(aProperty.ulVal);
         break;
       default:
         return E_INVALIDARG;
@@ -84,59 +84,59 @@ STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *aPropIDs,
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *anOutStreams)
+STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
-  RETURN_IF_NOT_S_OK(anOutStreams->Write(&m_Order, sizeof(m_Order), NULL));
-  return anOutStreams->Write(&m_UsedMemorySize, sizeof(m_UsedMemorySize), NULL);
+  RETURN_IF_NOT_S_OK(outStream->Write(&_order, sizeof(_order), NULL));
+  return outStream->Write(&_usedMemorySize, sizeof(_usedMemorySize), NULL);
 }
 
 const kUsedMemorySizeDefault = (1 << 24);
 const kOrderDefault = 6;
 
 CEncoder::CEncoder():
-  m_UsedMemorySize(kUsedMemorySizeDefault),
-  m_Order(kOrderDefault)
+  _usedMemorySize(kUsedMemorySizeDefault),
+  _order(kOrderDefault)
 {
-  // m_SubAllocator.StartSubAllocator(kSubAllocator);
+  // SubAllocator.StartSubAllocator(kSubAllocator);
 }
 
 
 HRESULT CEncoder::Flush()
 {
-  m_RangeEncoder.FlushData();
-  return m_RangeEncoder.FlushStream();
+  _rangeEncoder.FlushData();
+  return _rangeEncoder.FlushStream();
 }
 
 class CEncoderFlusher
 {
-  CEncoder *m_Encoder;
+  CEncoder *_encoder;
 public:
-  CEncoderFlusher(CEncoder *anEncoder): m_Encoder(anEncoder) {}
+  CEncoderFlusher(CEncoder *encoder): _encoder(encoder) {}
   ~CEncoderFlusher()
   {
-    m_Encoder->Flush();
-    m_Encoder->ReleaseStreams();
+    _encoder->Flush();
+    _encoder->ReleaseStreams();
   }
 };
 
 
 
-HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, 
-      const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress)
+HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
 {
-  m_InStream.Init(anInStream);
-  m_RangeEncoder.Init(anOutStream);
+  _inStream.Init(inStream);
+  _rangeEncoder.Init(outStream);
 
   CEncoderFlusher aFlusher(this);
 
-  UINT64 aPos = 0;
-  UINT64 aProgressPosValuePrev = 0;
+  UINT64 pos = 0;
+  UINT64 prevProgressPos = 0;
 
   try
   {
-    if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
+    if ( !_info.SubAllocator.StartSubAllocator(_usedMemorySize) ) 
       return E_OUTOFMEMORY;
   }
   catch(...)
@@ -145,33 +145,39 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
   }
 
 
-  m_Info.MaxOrder = 0;
-  m_Info.StartModelRare(m_Order);
+  _info.MaxOrder = 0;
+  _info.StartModelRare(_order);
 
 
   while (true)
   {
-    BYTE aByte;
-    if (!m_InStream.ReadByte(aByte))
-      return S_OK;
-    m_Info.EncodeSymbol(aByte, &m_RangeEncoder);   
-    aPos++;
-    if (aPos - aProgressPosValuePrev >= (1 << 18) && aProgress != NULL)
+    BYTE symbol;
+    if (!_inStream.ReadByte(symbol))
     {
-      UINT64 anOutSize = m_RangeEncoder.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&aPos, &anOutSize));
-      aProgressPosValuePrev = aPos;
+      // here we can write End Mark for stream version. 
+      // In current version this feature is not used.
+      // _info.EncodeSymbol(-1, &_rangeEncoder);   
+
+      return S_OK;
+    }
+    _info.EncodeSymbol(symbol, &_rangeEncoder);   
+    pos++;
+    if (pos - prevProgressPos >= (1 << 18) && progress != NULL)
+    {
+      UINT64 outSize = _rangeEncoder.GetProcessedSize();
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&pos, &outSize));
+      prevProgressPos = pos;
     }
   }
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
+    return CodeReal(inStream, outStream, inSize, outSize, progress);
   }
   catch(const NStream::CInByteReadException &exception)
   {

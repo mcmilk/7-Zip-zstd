@@ -5,21 +5,21 @@
 #ifndef __EXTRACTENGINE_H
 #define __EXTRACTENGINE_H
 
-#include "../Common/IArchiveHandler2.h"
+#include "../Common/FolderArchiveInterface.h"
 #include "Common/String.h"
 
 #include "Far/ProgressBox.h"
 
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"
 
 class CExtractCallBackImp: 
-  public IExtractCallback2,
+  public IFolderArchiveExtractCallback,
   public ICryptoGetTextPassword,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CExtractCallBackImp)
-  COM_INTERFACE_ENTRY(IExtractCallback2)
+  COM_INTERFACE_ENTRY(IFolderArchiveExtractCallback)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
 
@@ -39,7 +39,7 @@ DECLARE_NO_REGISTRY()
   STDMETHOD (PrepareOperation)(const wchar_t *aName, INT32 anAskExtractMode);
 
   STDMETHOD(MessageError)(const wchar_t *aMessage);
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult);
+  STDMETHOD(SetOperationResult)(INT32 aResultEOperationResult);
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
 

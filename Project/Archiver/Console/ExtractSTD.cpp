@@ -20,78 +20,79 @@ using namespace NWindows;
 static const char *kEverythingIsOk = "Everything is Ok";
 
 HRESULT DeCompressArchiveSTD(
-    IArchiveHandler200 *anArchive,
-    const NWildcard::CCensor &aWildcardCensor,
-    const CExtractOptions &anOptions)
+    IInArchive *archive,
+    const NWildcard::CCensor &wildcardCensor,
+    const CExtractOptions &options)
 {
-  CRecordVector<UINT32> aRealIndexes;
-  UINT32 aNumItems;
-  RETURN_IF_NOT_S_OK(anArchive->GetNumberOfItems(&aNumItems));
+  CRecordVector<UINT32> realIndices;
+  UINT32 numItems;
+  RETURN_IF_NOT_S_OK(archive->GetNumberOfItems(&numItems));
 
-  for(UINT32 i = 0; i < aNumItems; i++)
+  for(UINT32 i = 0; i < numItems; i++)
   {
-    NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariant));
-    UString aFilePath;
-    if(aPropVariant.vt == VT_EMPTY)
-      aFilePath = anOptions.DefaultItemName;
+    NCOM::CPropVariant propVariant;
+    RETURN_IF_NOT_S_OK(archive->GetProperty(i, kpidPath, &propVariant));
+    UString filePath;
+    if(propVariant.vt == VT_EMPTY)
+      filePath = options.DefaultItemName;
     else
     {
-      if(aPropVariant.vt != VT_BSTR)
+      if(propVariant.vt != VT_BSTR)
         return E_FAIL;
-      aFilePath = aPropVariant.bstrVal;
+      filePath = propVariant.bstrVal;
     }
-    if (!aWildcardCensor.CheckName(aFilePath))
+    if (!wildcardCensor.CheckName(filePath))
       continue;
-    aRealIndexes.Add(i);
+    realIndices.Add(i);
   }
-  if (aRealIndexes.Size() == 0)
+  if (realIndices.Size() == 0)
+  {
+    g_StdOut << endl << "No files to process" << endl;
     return S_OK;
+  }
 
-  CComObjectNoLock<CExtractCallBackImp> *anExtractCallBackSpec =
-    new CComObjectNoLock<CExtractCallBackImp>;
-  CComPtr<IExtractCallback200> anExtractCallBack(anExtractCallBackSpec);
+  CComObjectNoLock<CExtractCallbackImp> *extractCallbackSpec =
+    new CComObjectNoLock<CExtractCallbackImp>;
+  CComPtr<IArchiveExtractCallback> extractCallback(extractCallbackSpec);
   
-  
-  UStringVector aRemovePathParts;
+  UStringVector removePathParts;
 
-  NZipSettings::NExtraction::CInfo anExtractionInfo;
-  anExtractionInfo.PathMode = anOptions.FullPathMode() ? NExtraction::NPathMode::kFullPathnames:
+  NZipSettings::NExtraction::CInfo extractionInfo;
+  extractionInfo.PathMode = options.FullPathMode() ? NExtraction::NPathMode::kFullPathnames:
       NExtraction::NPathMode::kNoPathnames;
 
-  if (anOptions.YesToAll)
-    anExtractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
+  if (options.YesToAll)
+    extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
   else
   {
-    anExtractionInfo.OverwriteMode = anOptions.OverwriteMode;
-
+    extractionInfo.OverwriteMode = options.OverwriteMode;
   }
 
-  if(!anOptions.OutputBaseDir.IsEmpty())
-    if(!NFile::NDirectory::CreateComplexDirectory(anOptions.OutputBaseDir))
+  if(!options.OutputBaseDir.IsEmpty())
+    if(!NFile::NDirectory::CreateComplexDirectory(options.OutputBaseDir))
     {
       throw "Can not create output directory";
     }
 
-  anExtractCallBackSpec->Init(anArchive, 
-      anOptions.OutputBaseDir, anExtractionInfo, aRemovePathParts, CP_OEMCP,
-      anOptions.DefaultItemName, 
-      anOptions.ArchiveFileInfo.LastWriteTime,
-      anOptions.ArchiveFileInfo.Attributes,
-      anOptions.PasswordEnabled, 
-      anOptions.Password);
+  extractCallbackSpec->Init(archive, 
+      options.OutputBaseDir, extractionInfo, removePathParts, CP_OEMCP,
+      options.DefaultItemName, 
+      options.ArchiveFileInfo.LastWriteTime,
+      options.ArchiveFileInfo.Attributes,
+      options.PasswordEnabled, 
+      options.Password);
 
-  HRESULT aResult = anArchive->Extract(&aRealIndexes.Front(), 
-      aRealIndexes.Size(), anOptions.ExtractMode == NExtractMode::kTest, 
-      anExtractCallBack);
+  HRESULT result = archive->Extract(&realIndices.Front(), 
+      realIndices.Size(), options.ExtractMode == NExtractMode::kTest, 
+      extractCallback);
 
-  if (anExtractCallBackSpec->m_NumErrors != 0)
-    throw NExitCode::CMultipleErrors(anExtractCallBackSpec->m_NumErrors);
+  if (extractCallbackSpec->m_NumErrors != 0)
+    throw NExitCode::CMultipleErrors(extractCallbackSpec->m_NumErrors);
+
+  if (result != S_OK)
+    throw NExitCode::CSystemError(result);
 
   g_StdOut << endl << kEverythingIsOk << endl;
 
-  if (aResult != S_OK)
-    throw NExitCode::CSystemError(aResult);
-
-  return aResult;
+  return S_OK;
 }

@@ -6,8 +6,8 @@
 
 #include "Windows/FileFind.h"
 
-#include "../Format/Common/IArchiveHandler.h"
 #include "Windows/PropVariantConversions.h"
+#include "Interface/PropID.h"
 
 using namespace NWindows;
 

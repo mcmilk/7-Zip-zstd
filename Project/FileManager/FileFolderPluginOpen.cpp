@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
-
 #include "Windows/Defs.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
@@ -11,6 +10,8 @@
 #include "FolderInterface.h"
 #include "RegistryAssociations.h"
 #include "RegistryPlugins.h"
+
+#include "OpenCallback.h"
 
 using namespace NWindows;
 using namespace NRegistryAssociations;
@@ -25,7 +26,8 @@ static int FindPlugin(const CObjectVector<CPluginInfo> &plugins,
 }
 
 
-HRESULT OpenFileFolderPlugin(const UString &path, IFolderFolder **resultFolder)
+HRESULT OpenFileFolderPlugin(const UString &path, 
+    IFolderFolder **resultFolder, HWND parentWindow)
 {
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
@@ -61,7 +63,14 @@ HRESULT OpenFileFolderPlugin(const UString &path, IFolderFolder **resultFolder)
     HRESULT result = folderManager.CoCreateInstance(plugin.ClassID);
     if (result != S_OK)
       continue;
-    result = folderManager->OpenFolderFile(path, &folder, NULL);
+
+    CComObjectNoLock<COpenArchiveCallback> *openCallbackSpec = 
+      new CComObjectNoLock<COpenArchiveCallback>;
+    CComPtr<IProgress> openCallback = openCallbackSpec;
+    openCallbackSpec->_passwordIsDefined = false;
+    openCallbackSpec->_parentWindow = parentWindow;
+
+    result = folderManager->OpenFolderFile(path, &folder, openCallback);
     if (result == S_OK)
     {
       *resultFolder = folder.Detach();

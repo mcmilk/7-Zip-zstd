@@ -1,4 +1,4 @@
-// arj/Decoder1.h
+// Arj/Decoder1.h
 
 #pragma once
 
@@ -6,7 +6,6 @@
 #define __COMPRESS_ARJ_DECODER1_H
 
 #include "Interface/ICoder.h"
-#include "../../Interface/CompressInterface.h"
 
 #include "Stream/WindowOut.h"
 #include "Stream/MSBFDecoder.h"
@@ -17,7 +16,7 @@ DEFINE_GUID(CLSID_CCompressArjDecoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 namespace NCompress {
-namespace Narj {
+namespace NArj {
 namespace NDecoder1 {
 
 typedef NStream::NMSBF::CDecoder<NStream::CInByte> CInBit;

@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 25        2003-01-02
+  --------------------------------------
+      Main archive interfaces were changed.
+
+
   Version 2.30 Beta 24        2002-11-01
   --------------------------------------
       SDK/Windows/Synchronization.h 

@@ -20,97 +20,134 @@ namespace N7z {
 
 class CWriteBufferLoc
 {
-  BYTE *m_Data;
-  UINT32 m_Size;
-  UINT32 m_Pos;
+  BYTE *_data;
+  UINT32 _size;
+  UINT32 _pos;
 public:
-  CWriteBufferLoc(): m_Size(0), m_Pos(0) {}
-  void Init(BYTE *aData, UINT32 aSize)  
+  CWriteBufferLoc(): _size(0), _pos(0) {}
+  void Init(BYTE *data, UINT32 size)  
   { 
-    m_Pos = 0;
-    m_Data = aData;
-    m_Size = aSize; 
+    _pos = 0;
+    _data = data;
+    _size = size; 
   }
-  HRESULT Write(const void *aData, UINT32 aSize)
+  HRESULT Write(const void *data, UINT32 size)
   {
-    if (m_Pos + aSize > m_Size)
+    if (_pos + size > _size)
       return E_FAIL;
-    memmove(m_Data + m_Pos, aData, aSize);
-    m_Pos += aSize;
+    memmove(_data + _pos, data, size);
+    _pos += size;
     return S_OK; 
   }
+};
+
+class CWriteDynamicBuffer
+{
+  CByteDynamicBuffer _buffer;
+  UINT32 _pos;
+public:
+  CWriteDynamicBuffer(): _pos(0) {}
+  void Init()  
+  { 
+    _pos = 0;
+  }
+  void Write(const void *data, UINT32 size)
+  {
+    if (_pos + size > _buffer.GetCapacity())
+      _buffer.EnsureCapacity(_pos + size);
+    memmove(((BYTE *)_buffer) +_pos, data, size);
+    _pos += size;
+  }
+  operator BYTE *() { return (BYTE *)_buffer; };
+  operator const BYTE *() const { return (const BYTE *)_buffer; };
+  UINT32 GetSize() const { return _pos; }
 };
 
 
 class COutArchive
 {
-  UINT64 m_PrefixHeaderPos;
+  UINT64 _prefixHeaderPos;
 
-  HRESULT WriteBytes(const void *aData, UINT32 aSize);
-  HRESULT WriteBytes2(const void *aData, UINT32 aSize);
-  HRESULT WriteBytes2(const CByteBuffer &aData);
-  HRESULT WriteByte2(BYTE aByte);
-  HRESULT WriteNumber(UINT64 aValue);
-  HRESULT WriteFolderHeader(const CFolderItemInfo &anItemInfo);
-  HRESULT WriteFileHeader(const CFileItemInfo &anItemInfo);
-  HRESULT WriteBoolVector(const CBoolVector &aVector);
+  HRESULT WriteBytes(const void *data, UINT32 size);
+  HRESULT WriteBytes2(const void *data, UINT32 size);
+  HRESULT WriteBytes2(const CByteBuffer &data);
+  HRESULT WriteByte2(BYTE b);
+  HRESULT WriteNumber(UINT64 value);
+  HRESULT WriteID(UINT64 value)
+  {
+    return WriteNumber(value);
+  }
+
+  HRESULT WriteFolderHeader(const CFolderItemInfo &itemInfo);
+  HRESULT WriteFileHeader(const CFileItemInfo &itemInfo);
+  HRESULT WriteBoolVector(const CBoolVector &boolVector);
   HRESULT WriteHashDigests(
-      const CRecordVector<bool> &aDigestsDefined,
-      const CRecordVector<UINT32> &aHashDigests);
+      const CRecordVector<bool> &digestsDefined,
+      const CRecordVector<UINT32> &hashDigests);
 
   HRESULT WritePackInfo(
-      UINT64 aDataOffset,
-      const CRecordVector<UINT64> &aPackSizes,
-      const CRecordVector<bool> &aPackCRCsDefined,
-      const CRecordVector<UINT32> &aPackCRCs);
+      UINT64 dataOffset,
+      const CRecordVector<UINT64> &packSizes,
+      const CRecordVector<bool> &packCRCsDefined,
+      const CRecordVector<UINT32> &packCRCs);
 
   HRESULT WriteUnPackInfo(
-      bool anExternalFolders,
-      UINT64 anExternalFoldersStreamIndex,
-      const CObjectVector<CFolderItemInfo> &aFolders);
+      bool externalFolders,
+      UINT64 externalFoldersStreamIndex,
+      const CObjectVector<CFolderItemInfo> &folders);
 
   HRESULT WriteSubStreamsInfo(
-      const CObjectVector<CFolderItemInfo> &aFolders,
-      const CRecordVector<UINT64> &aNumUnPackStreamsInFolders,
-      const CRecordVector<UINT64> &anUnPackSizes,
-      const CRecordVector<bool> &aDigestsDefined,
-      const CRecordVector<UINT32> &aHashDigests);
+      const CObjectVector<CFolderItemInfo> &folders,
+      const CRecordVector<UINT64> &numUnPackStreamsInFolders,
+      const CRecordVector<UINT64> &unPackSizes,
+      const CRecordVector<bool> &digestsDefined,
+      const CRecordVector<UINT32> &hashDigests);
 
   HRESULT WriteStreamsInfo(
-      UINT64 aDataOffset,
-      const CRecordVector<UINT64> &aPackSizes,
-      const CRecordVector<bool> &aPackCRCsDefined,
-      const CRecordVector<UINT32> &aPackCRCs,
-      bool anExternalFolders,
-      UINT64 anExternalFoldersStreamIndex,
-      const CObjectVector<CFolderItemInfo> &aFolders,
-      const CRecordVector<UINT64> &aNumUnPackStreamsInFolders,
-      const CRecordVector<UINT64> &anUnPackSizes,
-      const CRecordVector<bool> &aDigestsDefined,
-      const CRecordVector<UINT32> &aHashDigests);
+      UINT64 dataOffset,
+      const CRecordVector<UINT64> &packSizes,
+      const CRecordVector<bool> &packCRCsDefined,
+      const CRecordVector<UINT32> &packCRCs,
+      bool externalFolders,
+      UINT64 externalFoldersStreamIndex,
+      const CObjectVector<CFolderItemInfo> &folders,
+      const CRecordVector<UINT64> &numUnPackStreamsInFolders,
+      const CRecordVector<UINT64> &unPackSizes,
+      const CRecordVector<bool> &digestsDefined,
+      const CRecordVector<UINT32> &hashDigests);
 
 
-  HRESULT WriteTime(const CObjectVector<CFileItemInfo> &aFiles, BYTE aType,
-      bool anIsExternal, int anExternalDataIndex);
+  HRESULT WriteTime(const CObjectVector<CFileItemInfo> &files, BYTE type,
+      bool isExternal, int externalDataIndex);
 
-  HRESULT EncodeStream(CEncoder &anEncoder, const CByteBuffer &aData, 
-      CRecordVector<UINT64> &aPackSizes, CObjectVector<CFolderItemInfo> &aFolders);
-  HRESULT WriteHeader(const CArchiveDatabase &aDatabase,
-      const CCompressionMethodMode *anOptions, UINT64 &aHeaderOffset);
+  HRESULT EncodeStream(CEncoder &encoder, const BYTE *data, UINT32 dataSize,
+      CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders);
+  HRESULT EncodeStream(CEncoder &encoder, const CByteBuffer &data, 
+      CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders);
+  HRESULT WriteHeader(const CArchiveDatabase &database,
+      const CCompressionMethodMode *options, 
+      UINT64 &headerOffset);
+  
+  bool _mainMode;
+
+  bool _dynamicMode;
+
+  bool _countMode;
+  UINT32 _countSize;
+  NStream::COutByte _outByte;
+  CWriteBufferLoc _outByte2;
+  CWriteDynamicBuffer _dynamicBuffer;
+  CCRC _crc;
+
 public:
-  CComPtr<IOutStream> m_Stream;
-  bool m_MainMode;
-  bool m_CountMode;
-  UINT32 m_CountSize;
-  NStream::COutByte m_OutByte;
-  CWriteBufferLoc m_OutByte2;
-  CCRC m_CRC;
-
-  HRESULT Create(IOutStream *aStream);
+  CComPtr<IOutStream> Stream;
+  HRESULT Create(IOutStream *stream);
   void Close();
   HRESULT SkeepPrefixArchiveHeader();
-  HRESULT WriteDatabase(const CArchiveDatabase &aDatabase,
-      const CCompressionMethodMode *anOptions);
+  HRESULT WriteDatabase(const CArchiveDatabase &database,
+      const CCompressionMethodMode *options, 
+      bool useAdditionalHeaderStreams, 
+      bool compressMainHeader);
 };
 
 }}

@@ -130,7 +130,7 @@ static void EnumerateItems(const NWildcard::CCensorNode &curNode,
   }
 }
 
-HRESULT GetFileTime(IArchiveHandler200 *archive, UINT32 index, 
+HRESULT GetFileTime(IInArchive *archive, UINT32 index, 
     FILETIME &fileTime, const FILETIME &defaultFileTime)
 {
   CPropVariant property;
@@ -145,7 +145,7 @@ HRESULT GetFileTime(IArchiveHandler200 *archive, UINT32 index,
 }
 
 HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
-    IArchiveHandler200 *archive,
+    IInArchive *archive,
     const UString &defaultItemName,
     const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
     CArchiveItemInfoVector &archiveItems)
@@ -191,7 +191,7 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
 }
 
 static HRESULT UpdateWithItemLists(const CUpdateArchiveOptions &options,
-    IArchiveHandler200 *archive, 
+    IInArchive *archive, 
     const CArchiveItemInfoVector &archiveItems,
     const CArchiveStyleDirItemInfoVector &dirItems,
     bool enablePercents)
@@ -225,7 +225,7 @@ static HRESULT UpdateWithItemLists(const CUpdateArchiveOptions &options,
 
 HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &censor, 
     CUpdateArchiveOptions  &options, const CSysString &workingDir, 
-    IArchiveHandler200 *archive,
+    IInArchive *archive,
     const UString *defaultItemName,
     const NWindows::NFile::NFind::CFileInfo *archiveFileInfo,
     bool enablePercents)

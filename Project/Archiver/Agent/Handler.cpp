@@ -7,7 +7,7 @@
 #include "Windows/PropVariant.h"
 #include "Windows/COM.h"
 
-#include "ExtractCallback200.h"
+#include "ArchiveExtractCallback.h"
 #include "Common/StringConvert.h"
 
 #ifdef FORMAT_7Z
@@ -30,17 +30,17 @@ STDMETHODIMP CAgentFolder::LoadItems()
   return S_OK;
 }
 
-STDMETHODIMP CAgentFolder::GetNumberOfItems(UINT32 *aNumItems)
+STDMETHODIMP CAgentFolder::GetNumberOfItems(UINT32 *numItems)
 {
-  *aNumItems = _proxyFolderItem->m_FolderSubItems.Size() +
-      _proxyFolderItem->m_FileSubItems.Size();
+  *numItems = _proxyFolderItem->FolderSubItems.Size() +
+      _proxyFolderItem->FileSubItems.Size();
   return S_OK;
 }
 
 /*
 STDMETHODIMP CAgentFolder::GetNumberOfSubFolders(UINT32 *aNumSubFolders)
 {
-  *aNumSubFolders = _proxyFolderItem->m_FolderSubItems.Size();
+  *aNumSubFolders = _proxyFolderItem->FolderSubItems.Size();
   return S_OK;
 }
 */
@@ -48,37 +48,37 @@ STDMETHODIMP CAgentFolder::GetNumberOfSubFolders(UINT32 *aNumSubFolders)
 STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant propVariant;
-  if (itemIndex < _proxyFolderItem->m_FolderSubItems.Size())
+  if (itemIndex < _proxyFolderItem->FolderSubItems.Size())
   {
-    const CFolderItem &item = _proxyFolderItem->m_FolderSubItems[itemIndex];
+    const CFolderItem &item = _proxyFolderItem->FolderSubItems[itemIndex];
     switch(propID)
     {
       case kpidIsFolder:
         propVariant = true;
         break;
       case kpidName:
-        propVariant = item.m_Name;
+        propVariant = item.Name;
         break;
       default:
-        if (item.m_IsLeaf)
-          return _proxyHandler->_archiveHandler->GetProperty(item.m_Index,
+        if (item.IsLeaf)
+          return _proxyHandler->Archive->GetProperty(item.Index,
               propID, value);
     }
   }
   else
   {
-    itemIndex -= _proxyFolderItem->m_FolderSubItems.Size();
-    const CFileItem &item = _proxyFolderItem->m_FileSubItems[itemIndex];
+    itemIndex -= _proxyFolderItem->FolderSubItems.Size();
+    const CFileItem &item = _proxyFolderItem->FileSubItems[itemIndex];
     switch(propID)
     {
       case kpidIsFolder:
         propVariant = false;
         break;
       case kpidName:
-        propVariant = item.m_Name;
+        propVariant = item.Name;
         break;
       default:
-        return _proxyHandler->_archiveHandler->GetProperty(item.m_Index,
+        return _proxyHandler->Archive->GetProperty(item.Index,
           propID, value);
     }
   }
@@ -88,11 +88,11 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
 
 STDMETHODIMP CAgentFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 {
-  if (index >= _proxyFolderItem->m_FolderSubItems.Size())
+  if (index >= _proxyFolderItem->FolderSubItems.Size())
     return E_INVALIDARG;
   CComObjectNoLock<CAgentFolder> *folderSpec = new CComObjectNoLock<CAgentFolder>;
   CComPtr<IFolderFolder> agentFolder = folderSpec;
-  folderSpec->Init(_proxyHandler, &_proxyFolderItem->m_FolderSubItems[index], 
+  folderSpec->Init(_proxyHandler, &_proxyFolderItem->FolderSubItems[index], 
       this, _agentSpec);
   *resultFolder = agentFolder.Detach();
   return S_OK;
@@ -115,7 +115,7 @@ STDMETHODIMP CAgentFolder::BindToParentFolder(IFolderFolder **resultFolder)
 
 STDMETHODIMP CAgentFolder::GetName(BSTR *name)
 {
-  CComBSTR temp = _proxyFolderItem->m_Name;
+  CComBSTR temp = _proxyFolderItem->Name;
   *name = temp.Detach();
   return S_OK;
 }
@@ -136,7 +136,7 @@ class CEnumFolderItemProperty:
   public CComObjectRoot
 {
 public:
-  int m_Index;
+  int Index;
   CObjectVector<CArchiveItemPropertyTemp> m_Properties;
 
   BEGIN_COM_MAP(CEnumFolderItemProperty)
@@ -147,36 +147,36 @@ public:
     
   DECLARE_NO_REGISTRY()
 public:
-  CEnumFolderItemProperty(): m_Index(0) {};
+  CEnumFolderItemProperty(): Index(0) {};
 
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
+  STDMETHOD(Next) (ULONG numItems, STATPROPSTG *items, ULONG *numFetched);
+  STDMETHOD(Skip)  (ULONG numItems);
   STDMETHOD(Reset) ();
   STDMETHOD(Clone) (IEnumSTATPROPSTG **tempEnumerator);
 };
 
 STDMETHODIMP CEnumFolderItemProperty::Reset()
 {
-  m_Index = 0;
+  Index = 0;
   return S_OK;
 }
 
-STDMETHODIMP CEnumFolderItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
+STDMETHODIMP CEnumFolderItemProperty::Next(ULONG numItems, 
+    STATPROPSTG *items, ULONG *numFetched)
 {
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
+  HRESULT result = S_OK;
+  if(numItems > 1 && !numFetched)
     return E_INVALIDARG;
 
-  for(DWORD index = 0; index < aNumItems; index++, m_Index++)
+  for(DWORD index = 0; index < numItems; index++, Index++)
   {
-    if(m_Index >= m_Properties.Size())
+    if(Index >= m_Properties.Size())
     {
-      aResult =  S_FALSE;
+      result =  S_FALSE;
       break;
     }
-    const CArchiveItemPropertyTemp &aSrcItem = m_Properties[m_Index];
-    STATPROPSTG &aDestItem = anItems[index];
+    const CArchiveItemPropertyTemp &aSrcItem = m_Properties[Index];
+    STATPROPSTG &aDestItem = items[index];
     aDestItem.propid = aSrcItem.ID;
     aDestItem.vt = aSrcItem.Type;
     if(!aSrcItem.Name.IsEmpty())
@@ -187,9 +187,9 @@ STDMETHODIMP CEnumFolderItemProperty::Next(ULONG aNumItems,
     else
       aDestItem.lpwstrName = 0; // aSrcItem.lpwstrName;
   }
-  if (aNumFetched)
-    *aNumFetched = index;
-  return aResult;
+  if (numFetched)
+    *numFetched = index;
+  return result;
 }
 
 STDMETHODIMP CEnumFolderItemProperty::Skip(ULONG aNumSkip)
@@ -202,7 +202,7 @@ STDMETHODIMP CEnumFolderItemProperty::Clone(IEnumSTATPROPSTG **tempEnumerator)
 STDMETHODIMP CAgentFolder::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   CComPtr<IEnumSTATPROPSTG> anEnumPropertyArchive;
-  RETURN_IF_NOT_S_OK(_proxyHandler->_archiveHandler->EnumProperties(
+  RINOK(_proxyHandler->Archive->EnumProperties(
       &anEnumPropertyArchive));
   
   CComObjectNoLock<CEnumFolderItemProperty> *enumeratorSpec = 
@@ -275,38 +275,38 @@ STDMETHODIMP CAgentFolder::GetPath(BSTR *path)
 
 
 STDMETHODIMP CAgentFolder::Extract(const UINT32 *anIndexes, 
-    UINT32 aNumItems, 
-    NExtractionMode::NPath::EEnum aPathMode, 
-    NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
-    const wchar_t *aPath,
-    INT32 aTestMode,
-    IExtractCallback2 *anExtractCallBack2)
+    UINT32 numItems, 
+    NExtractionMode::NPath::EEnum pathMode, 
+    NExtractionMode::NOverwrite::EEnum overwriteMode, 
+    const wchar_t *path,
+    INT32 testMode,
+    IFolderArchiveExtractCallback *extractCallback2)
 {
-  UINT aCodePage = GetCurrentFileCodePage();
-  CComObjectNoLock<CExtractCallBack200Imp> *anExtractCallBackSpec = new 
-      CComObjectNoLock<CExtractCallBack200Imp>;
-  CComPtr<IExtractCallback200> anExtractCallBack = anExtractCallBackSpec;
+  UINT codePage = GetCurrentFileCodePage();
+  CComObjectNoLock<CArchiveExtractCallback> *extractCallbackSpec = new 
+      CComObjectNoLock<CArchiveExtractCallback>;
+  CComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UStringVector pathParts;
-  CFolderItem *aCurrentProxyFolder = _proxyFolderItem;
-  while (aCurrentProxyFolder->m_Parent)
+  CFolderItem *currentProxyFolder = _proxyFolderItem;
+  while (currentProxyFolder->Parent)
   {
-    pathParts.Insert(0, aCurrentProxyFolder->m_Name);
-    aCurrentProxyFolder = aCurrentProxyFolder->m_Parent;
+    pathParts.Insert(0, currentProxyFolder->Name);
+    currentProxyFolder = currentProxyFolder->Parent;
   }
-  anExtractCallBackSpec->Init(_proxyHandler->_archiveHandler, 
-      anExtractCallBack2, 
-      GetSystemString(aPath, aCodePage),
-      aPathMode, 
-      anOverwriteMode, 
+  extractCallbackSpec->Init(_proxyHandler->Archive, 
+      extractCallback2, 
+      GetSystemString(path, codePage),
+      pathMode, 
+      overwriteMode, 
       pathParts, 
-      aCodePage, 
-      _proxyHandler->_itemDefaultName,
-      _proxyHandler->_defaultTime, 
-      _proxyHandler->_defaultAttributes);
-  std::vector<UINT32> aRealIndexes;
-  _proxyHandler->GetRealIndexes(*_proxyFolderItem, anIndexes, aNumItems, aRealIndexes);
-  return _proxyHandler->_archiveHandler->Extract(&aRealIndexes.front(), 
-      aRealIndexes.size(), aTestMode, anExtractCallBack);
+      codePage, 
+      _proxyHandler->ItemDefaultName,
+      _proxyHandler->DefaultTime, 
+      _proxyHandler->DefaultAttributes);
+  CUIntVector realIndices;
+  _proxyHandler->GetRealIndices(*_proxyFolderItem, anIndexes, numItems, realIndices);
+  return _proxyHandler->Archive->Extract(&realIndices.Front(), 
+      realIndices.Size(), testMode, extractCallback);
 }
 
 
@@ -330,7 +330,7 @@ STDMETHODIMP CAgent::Open(IInStream *stream,
     UINT32 defaultAttributes,
     const UINT64 *maxCheckStartPosition,
     const CLSID *aCLSID, 
-    IOpenArchive2CallBack *openArchiveCallback)
+    IArchiveOpenCallback *openArchiveCallback)
 {
   _defaultName = defaultName;
   _defaultTime = *defaultTime;
@@ -357,10 +357,10 @@ STDMETHODIMP CAgent::Open(IInStream *stream,
   
   #endif
 
-  HRESULT aResult = _archive->Open(stream, maxCheckStartPosition, openArchiveCallback);
-  if (aResult != S_OK)
+  HRESULT result = _archive->Open(stream, maxCheckStartPosition, openArchiveCallback);
+  if (result != S_OK)
     _archive.Release();
-  return aResult;
+  return result;
 }
 
 STDMETHODIMP CAgent::ReOpen(IInStream *stream, 
@@ -368,7 +368,7 @@ STDMETHODIMP CAgent::ReOpen(IInStream *stream,
       const FILETIME *defaultTime,
       UINT32 defaultAttributes,
       const UINT64 *maxCheckStartPosition,
-      IOpenArchive2CallBack *openArchiveCallback)
+      IArchiveOpenCallback *openArchiveCallback)
 {
   _defaultName = defaultName;
   _defaultTime = *defaultTime;
@@ -376,10 +376,10 @@ STDMETHODIMP CAgent::ReOpen(IInStream *stream,
 
   delete _proxyHandler;
   _proxyHandler = 0;
-  HRESULT aResult = _archive->Open(stream, maxCheckStartPosition, openArchiveCallback);
-  if (aResult != S_OK)
+  HRESULT result = _archive->Open(stream, maxCheckStartPosition, openArchiveCallback);
+  if (result != S_OK)
     _archive.Release();
-  return aResult;
+  return result;
 }
 
 STDMETHODIMP CAgent::Close()
@@ -397,43 +397,42 @@ HRESULT CAgent::ReadItems()
   if (_proxyHandler != NULL)
     return S_OK;
   _proxyHandler = new CAgentProxyHandler();
-  RETURN_IF_NOT_S_OK(_proxyHandler->Init(_archive, _defaultName, 
-    _defaultTime, _defaultAttributes, NULL));
-  return S_OK;
+  return _proxyHandler->Init(_archive, _defaultName, 
+      _defaultTime, _defaultAttributes, NULL);
 }
 
 STDMETHODIMP CAgent::BindToRootFolder(IFolderFolder **resultFolder)
 {
-  RETURN_IF_NOT_S_OK(ReadItems());
+  RINOK(ReadItems());
   CComObjectNoLock<CAgentFolder> *folderSpec = new CComObjectNoLock<CAgentFolder>;
   CComPtr<IFolderFolder> rootFolder = folderSpec;
-  folderSpec->Init(_proxyHandler, &_proxyHandler->_folderItemHead, NULL, this);
+  folderSpec->Init(_proxyHandler, &_proxyHandler->FolderItemHead, NULL, this);
   *resultFolder = rootFolder.Detach();
   return S_OK;
 }
 
 STDMETHODIMP CAgent::Extract(
-    NExtractionMode::NPath::EEnum aPathMode, 
-    NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
-    const wchar_t *aPath,
-    INT32 aTestMode,
-    IExtractCallback2 *anExtractCallBack2)
+    NExtractionMode::NPath::EEnum pathMode, 
+    NExtractionMode::NOverwrite::EEnum overwriteMode, 
+    const wchar_t *path,
+    INT32 testMode,
+    IFolderArchiveExtractCallback *extractCallback2)
 {
-  UINT aCodePage = GetCurrentFileCodePage();
-  CComObjectNoLock<CExtractCallBack200Imp> *anExtractCallBackSpec = new 
-      CComObjectNoLock<CExtractCallBack200Imp>;
-  CComPtr<IExtractCallback200> anExtractCallBack = anExtractCallBackSpec;
-  anExtractCallBackSpec->Init(_archive, 
-      anExtractCallBack2, 
-      GetSystemString(aPath, aCodePage),
-      aPathMode, 
-      anOverwriteMode, 
+  UINT codePage = GetCurrentFileCodePage();
+  CComObjectNoLock<CArchiveExtractCallback> *extractCallbackSpec = new 
+      CComObjectNoLock<CArchiveExtractCallback>;
+  CComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
+  extractCallbackSpec->Init(_archive, 
+      extractCallback2, 
+      GetSystemString(path, codePage),
+      pathMode, 
+      overwriteMode, 
       UStringVector(), 
-      aCodePage, 
+      codePage, 
       _defaultName,
       _defaultTime, 
       _defaultAttributes);
-  return _archive->ExtractAllItems(aTestMode, anExtractCallBack);
+  return _archive->ExtractAllItems(testMode, extractCallback);
 }
 
 

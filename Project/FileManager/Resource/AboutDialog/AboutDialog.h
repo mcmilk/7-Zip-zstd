@@ -12,7 +12,7 @@ class CAboutDialog: public NWindows::NControl::CModalDialog
 {
 public:
   virtual bool OnInit();
-  // virtual void OnNotifyHelp();
+  virtual void OnHelp();
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_ABOUT), aWndParent); }

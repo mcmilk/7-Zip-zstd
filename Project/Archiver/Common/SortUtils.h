@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-void SortStringsToIndexes(UStringVector &aStrings, std::vector<int> &anIndexes);
+void SortStringsToIndexes(UStringVector &strings, CIntVector &indices);
 
 #endif

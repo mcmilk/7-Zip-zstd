@@ -30,8 +30,10 @@ public:
   DECLARE_NOT_AGGREGATABLE(CCopyCoder)
 
   // DECLARE_NO_REGISTRY()
-  DECLARE_REGISTRY(CCopyCoder, TEXT("Compress.CopyCoder.1"), 
-    TEXT("Compress.CopyCoder"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CCopyCoder, 
+    // TEXT("Compress.CopyCoder.1"), TEXT("Compress.CopyCoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 

@@ -5,7 +5,7 @@
 #ifndef __TAR_HANDLER_H
 #define __TAR_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 
 #include "Archive/Tar/ItemInfoEx.h"
 
@@ -17,49 +17,44 @@ namespace NArchive {
 namespace NTar {
 
 class CTarHandler: 
-  public IArchiveHandler200,
-  public IOutArchiveHandler200,
+  public IInArchive,
+  public IOutArchive,
   public CComObjectRoot,
   public CComCoClass<CTarHandler, &CLSID_CFormatTar>
 {
 public:
 BEGIN_COM_MAP(CTarHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
-  COM_INTERFACE_ENTRY(IOutArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
+  COM_INTERFACE_ENTRY(IOutArchive)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CTarHandler)
 
-DECLARE_REGISTRY(CTarHandler, TEXT("SevenZip.FormatTar.1"), 
-    TEXT("SevenZip.FormatTar"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CTarHandler, 
+    // TEXT("SevenZip.FormatTar.1"), TEXT("SevenZip.FormatTar"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"), 
+    UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *stream, 
       const UINT64 *maxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+      IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(
-      UINT32 anIndex, 
-      PROPID aPropID,  
-      PROPVARIANT *aValue);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, 
+      IArchiveExtractCallback *extractCallback);
 
-
-  // IOutArchiveHandler
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, 
-      const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack);
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, UINT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack);
-
-  STDMETHOD(GetFileTimeType)(UINT32 *aType);  
+  // IOutArchive
+  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+      IArchiveUpdateCallback *updateCallback);
+  STDMETHOD(GetFileTimeType)(UINT32 *type);  
 
 private:
-  NArchive::NTar::CItemInfoExVector m_Items;
-  CComPtr<IInStream> m_InStream;
+  NArchive::NTar::CItemInfoExVector _items;
+  CComPtr<IInStream> _inStream;
 };
 
 }}

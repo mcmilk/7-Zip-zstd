@@ -10,69 +10,69 @@
 using namespace std;
 using namespace NWindows;
 
-int CFolderItem::FindDirSubItemIndex(const UString &aName, int &anInsertPos) const
+int CFolderItem::FindDirSubItemIndex(const UString &name, int &insertPos) const
 {
-  int aLeft = 0, aRight = m_FolderSubItems.Size();
+  int left = 0, right = FolderSubItems.Size();
   while(true)
   {
-    if (aLeft == aRight)
+    if (left == right)
     {
-      anInsertPos = aLeft;
+      insertPos = left;
       return -1;
     }
-    int aMid = (aLeft + aRight) / 2;
-    int aCompare = aName.CollateNoCase(m_FolderSubItems[aMid].m_Name);
-    if (aCompare == 0)
-      return aMid;
-    if (aCompare < 0)
-      aRight = aMid;
+    int mid = (left + right) / 2;
+    int compare = name.CollateNoCase(FolderSubItems[mid].Name);
+    if (compare == 0)
+      return mid;
+    if (compare < 0)
+      right = mid;
     else
-      aLeft = aMid + 1;
+      left = mid + 1;
   }
 }
 
-int CFolderItem::FindDirSubItemIndex(const UString &aName) const
+int CFolderItem::FindDirSubItemIndex(const UString &name) const
 {
-  int anInsertPos;
-  return FindDirSubItemIndex(aName, anInsertPos);
+  int insertPos;
+  return FindDirSubItemIndex(name, insertPos);
 }
 
-void CFolderItem::AddFileSubItem(UINT32 anIndex, const UString &aName)
+void CFolderItem::AddFileSubItem(UINT32 index, const UString &name)
 {
   CFileItem aFolderFileItem;
-  m_FileSubItems.Add(aFolderFileItem);
-  m_FileSubItems.Back().m_Name = aName;
-  m_FileSubItems.Back().m_Index = anIndex;
+  FileSubItems.Add(aFolderFileItem);
+  FileSubItems.Back().Name = name;
+  FileSubItems.Back().Index = index;
 }
 
-CFolderItem* CFolderItem::AddDirSubItem(UINT32 anIndex, bool anLeaf, 
-    const UString &aName)
+CFolderItem* CFolderItem::AddDirSubItem(UINT32 index, bool leaf, 
+    const UString &name)
 {
-  int anInsertPos;
-  int aFolderIndex = FindDirSubItemIndex(aName, anInsertPos);
-  if (aFolderIndex >= 0)
+  int insertPos;
+  int folderIndex = FindDirSubItemIndex(name, insertPos);
+  if (folderIndex >= 0)
   {
-    CFolderItem *anItem = &m_FolderSubItems[aFolderIndex];
-    if(anLeaf)
+    CFolderItem *item = &FolderSubItems[folderIndex];
+    if(leaf)
     {
-      anItem->m_Index = anIndex;
-      anItem->m_IsLeaf = true;
+      item->Index = index;
+      item->IsLeaf = true;
     }
-    return anItem;
+    return item;
   }
-  m_FolderSubItems.Insert(anInsertPos, CFolderItem());
-  CFolderItem *anItem = &m_FolderSubItems[anInsertPos];
-  anItem->m_Name = aName;
-  anItem->m_Index = anIndex;
-  anItem->m_Parent = this;
-  anItem->m_IsLeaf = anLeaf;
-  return anItem;
+  FolderSubItems.Insert(insertPos, CFolderItem());
+  CFolderItem *item = &FolderSubItems[insertPos];
+  item->Name = name;
+  item->Index = index;
+  item->Parent = this;
+  item->IsLeaf = leaf;
+  return item;
 }
 
 void CFolderItem::Clear()
 {
-  m_FolderSubItems.Clear();
-  m_FileSubItems.Clear();
+  FolderSubItems.Clear();
+  FileSubItems.Clear();
 }
 
 ///////////////////////////////////////////////
@@ -82,42 +82,40 @@ void CAgentProxyHandler::ClearState()
 {
   // m_HandlerProperties.Clear();
   // m_InternalProperties.Clear();
-  _folderItemHead.Clear();
+  FolderItemHead.Clear();
 }
 
-HRESULT CAgentProxyHandler::ReInit(IProgress *aProgress)
+HRESULT CAgentProxyHandler::ReInit(IProgress *progress)
 {
   ClearState();
   // RETURN_IF_NOT_S_OK(ReadProperties(_archiveHandler));
 
   // OutputDebugString("before ReadObjects\n");
-  // return ReadObjects(_archiveHandler, aProgress);
-  HRESULT aResult = ReadObjects(_archiveHandler, aProgress);
+  // return ReadObjects(_archiveHandler, progress);
+  return ReadObjects(Archive, progress);
   // OutputDebugString("after ReadObjects\n");
-  return aResult;
 }
 
 
-HRESULT CAgentProxyHandler::Init(IArchiveHandler200 *anArchiveHandler, 
-    const UString &anItemDefaultName, 
-    const FILETIME &aDefaultTime,
-    UINT32 aDefaultAttributes,
-    IProgress *aProgress)
+HRESULT CAgentProxyHandler::Init(IInArchive *archiveHandler, 
+    const UString &itemDefaultName, 
+    const FILETIME &defaultTime,
+    UINT32 defaultAttributes,
+    IProgress *progress)
 {
-  // m_ArchiveFileInfo = anArchiveFileInfo;
-  _itemDefaultName = anItemDefaultName;
-  _defaultTime = aDefaultTime;
-  _defaultAttributes = aDefaultAttributes;
+  ItemDefaultName = itemDefaultName;
+  DefaultTime = defaultTime;
+  DefaultAttributes = defaultAttributes;
 
-  _archiveHandler = anArchiveHandler;
-  return ReInit(aProgress);
+  Archive = archiveHandler;
+  return ReInit(progress);
 }
 
 /*
-HRESULT CAgentProxyHandler::ReadProperties(IArchiveHandler200 *anArchiveHandler)
+HRESULT CAgentProxyHandler::ReadProperties(IArchiveHandler200 *archiveHandler)
 {
   CComPtr<IEnumSTATPROPSTG> anEnumProperty;
-  RETURN_IF_NOT_S_OK(anArchiveHandler->EnumProperties(&anEnumProperty));
+  RETURN_IF_NOT_S_OK(archiveHandler->EnumProperties(&anEnumProperty));
 
   STATPROPSTG aSrcProperty;
 
@@ -139,101 +137,100 @@ HRESULT CAgentProxyHandler::ReadProperties(IArchiveHandler200 *anArchiveHandler)
   }
   for(int i = 0; i < m_HandlerProperties.Size(); i++)
   {
-    const CArchiveItemProperty &aHandlerProperty = m_HandlerProperties[i];
-    CArchiveItemProperty anInternalProperty = aHandlerProperty;
+    const CArchiveItemProperty &handlerProperty = m_HandlerProperties[i];
+    CArchiveItemProperty internalProperty = handlerProperty;
 
-    if (aHandlerProperty.ID == kpidPath)
-      anInternalProperty.ID = kpidName;
-    m_InternalProperties.Add(anInternalProperty);
+    if (handlerProperty.ID == kpidPath)
+      internalProperty.ID = kpidName;
+    m_InternalProperties.Add(internalProperty);
   }
-  CArchiveItemProperty anInternalProperty;
-  anInternalProperty.ID = kpidHandlerItemIndex;
-  // anInternalProperty.Name not defined;
+  CArchiveItemProperty internalProperty;
+  internalProperty.ID = kpidHandlerItemIndex;
+  // internalProperty.Name not defined;
   
-  anInternalProperty.Type = VT_I4;
-  m_InternalProperties.Add(anInternalProperty);
+  internalProperty.Type = VT_I4;
+  m_InternalProperties.Add(internalProperty);
   
   return S_OK;
 }
 */
 
-HRESULT CAgentProxyHandler::ReadObjects(IArchiveHandler200 *anArchiveHandler, IProgress *aProgress)
+HRESULT CAgentProxyHandler::ReadObjects(IInArchive *archiveHandler, IProgress *progress)
 {
-  UINT32 aNumItems;
-  RETURN_IF_NOT_S_OK(anArchiveHandler->GetNumberOfItems(&aNumItems));
-  for(UINT32 anItemIndex = 0; anItemIndex < aNumItems; anItemIndex++)
+  UINT32 numItems;
+  RETURN_IF_NOT_S_OK(archiveHandler->GetNumberOfItems(&numItems));
+  for(UINT32 itemIndex = 0; itemIndex < numItems; itemIndex++)
   {
-    if (aProgress != NULL)
+    if (progress != NULL)
     {
-      UINT64 aCurrentItemIndex = anItemIndex; 
-      RETURN_IF_NOT_S_OK(aProgress->SetCompleted(&aCurrentItemIndex));
+      UINT64 currentItemIndex = itemIndex; 
+      RETURN_IF_NOT_S_OK(progress->SetCompleted(&currentItemIndex));
     }
-    NCOM::CPropVariant aPropVariantPath;
-    RETURN_IF_NOT_S_OK(anArchiveHandler->GetProperty(anItemIndex, kpidPath, &aPropVariantPath));
-    CFolderItem *aCurrentItem = &_folderItemHead;
-    UString aFileName;
-    if(aPropVariantPath.vt == VT_EMPTY)
-      aFileName = _itemDefaultName;
+    NCOM::CPropVariant propVariantPath;
+    RETURN_IF_NOT_S_OK(archiveHandler->GetProperty(itemIndex, kpidPath, &propVariantPath));
+    CFolderItem *currentItem = &FolderItemHead;
+    UString fileName;
+    if(propVariantPath.vt == VT_EMPTY)
+      fileName = ItemDefaultName;
     else
     {
-      if(aPropVariantPath.vt != VT_BSTR)
+      if(propVariantPath.vt != VT_BSTR)
         return E_FAIL;
-      UString aFilePath = aPropVariantPath.bstrVal;
+      UString filePath = propVariantPath.bstrVal;
 
-      int aLen = aFilePath.Length();
-      for (int i = 0; i < aLen; i++)
+      int len = filePath.Length();
+      for (int i = 0; i < len; i++)
       {
-        wchar_t c = aFilePath[i];
+        wchar_t c = filePath[i];
         if (c == '\\' || c == '/')
         {
-          aCurrentItem = aCurrentItem->AddDirSubItem(-1, false, aFileName);
-          aFileName.Empty();
+          currentItem = currentItem->AddDirSubItem(-1, false, fileName);
+          fileName.Empty();
         }
         else
-          aFileName += c;
+          fileName += c;
       }
     }
 
-    NCOM::CPropVariant aPropVariantIsFolder;
-    RETURN_IF_NOT_S_OK(anArchiveHandler->GetProperty(anItemIndex, 
-        kpidIsFolder, &aPropVariantIsFolder));
-    if(aPropVariantIsFolder.vt != VT_BOOL)
+    NCOM::CPropVariant propVariantIsFolder;
+    RETURN_IF_NOT_S_OK(archiveHandler->GetProperty(itemIndex, 
+        kpidIsFolder, &propVariantIsFolder));
+    if(propVariantIsFolder.vt != VT_BOOL)
       return E_FAIL;
-    if(VARIANT_BOOLToBool(aPropVariantIsFolder.boolVal))
-      aCurrentItem->AddDirSubItem(anItemIndex, true, aFileName);
+    if(VARIANT_BOOLToBool(propVariantIsFolder.boolVal))
+      currentItem->AddDirSubItem(itemIndex, true, fileName);
     else
-      aCurrentItem->AddFileSubItem(anItemIndex, aFileName);
+      currentItem->AddFileSubItem(itemIndex, fileName);
   }
   return S_OK;
 }
 
-void CAgentProxyHandler::AddRealIndexes(const CFolderItem &anItem, 
-    vector<UINT32> &aRealIndexes)
+void CAgentProxyHandler::AddRealIndices(const CFolderItem &item, 
+    CUIntVector &realIndices)
 {
-  if (anItem.m_IsLeaf)
-    aRealIndexes.push_back(anItem.m_Index);
-  for(int i = 0; i < anItem.m_FolderSubItems.Size(); i++)
-    AddRealIndexes(anItem.m_FolderSubItems[i], aRealIndexes);
-  for(i = 0; i < anItem.m_FileSubItems.Size(); i++)
-    aRealIndexes.push_back(anItem.m_FileSubItems[i].m_Index);
+  if (item.IsLeaf)
+    realIndices.Add(item.Index);
+  for(int i = 0; i < item.FolderSubItems.Size(); i++)
+    AddRealIndices(item.FolderSubItems[i], realIndices);
+  for(i = 0; i < item.FileSubItems.Size(); i++)
+    realIndices.Add(item.FileSubItems[i].Index);
 }
 
 
-void CAgentProxyHandler::GetRealIndexes(const CFolderItem &anItem, 
-    const UINT32 *anIndexes, 
-    UINT32 aNumItems, 
-    vector<UINT32> &aRealIndexes)
+void CAgentProxyHandler::GetRealIndices(const CFolderItem &item, 
+    const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices)
 {
-  aRealIndexes.clear();
-  for(int i = 0; i < aNumItems; i++)
+  realIndices.Clear();
+  for(int i = 0; i < numItems; i++)
   {
-    int anIndex = anIndexes[i];
-    int aNumDirItems = anItem.m_FolderSubItems.Size();
-    if (anIndex < aNumDirItems)
-      AddRealIndexes(anItem.m_FolderSubItems[anIndex], aRealIndexes);
+    int index = indices[i];
+    int numDirItems = item.FolderSubItems.Size();
+    if (index < numDirItems)
+      AddRealIndices(item.FolderSubItems[index], realIndices);
     else
-      aRealIndexes.push_back(anItem.m_FileSubItems[anIndex - aNumDirItems].m_Index);
+      realIndices.Add(item.FileSubItems[index - numDirItems].Index);
   }
-  std::sort(aRealIndexes.begin(), aRealIndexes.end());
+  realIndices.Sort();
+  // std::sort(realIndices.begin(), realIndices.end());
 }
 

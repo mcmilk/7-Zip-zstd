@@ -38,9 +38,12 @@ void CAgentFolder::GetPathParts(UStringVector &pathParts)
 
 HRESULT CAgentFolder::CommonUpdateOperation(
     bool deleteOperation,
+    bool createFolderOperation,
+    bool renameOperation,
+    const wchar_t *newItemName, 
     const NUpdateArchive::CActionSet *actionSet,
     const UINT32 *indices, UINT32 numItems,
-    IUpdateCallback100 *updateCallback100)
+    IFolderArchiveUpdateCallback *updateCallback100)
 {
   UINT codePage = GetCurrentFileCodePage();
   // CZipRegistryManager aZipRegistryManager;
@@ -56,9 +59,6 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     return E_FAIL;
 
 
-  BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
-  for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-    actionSetByte[i] = actionSet->StateActions[i];
 
   /*
   if (SetOutProperties(anOutArchive, aCompressionInfo.Method) != S_OK)
@@ -75,9 +75,27 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   if (deleteOperation)
     result = _agentSpec->DeleteItems(GetUnicodeString(tempFileName, codePage),
         indices, numItems, updateCallback100);
+  else if (createFolderOperation)
+  {
+    result = _agentSpec->CreateFolder(GetUnicodeString(tempFileName, codePage),
+        newItemName, updateCallback100);
+  }
+  else if (renameOperation)
+  {
+    result = _agentSpec->RenameItem(
+        GetUnicodeString(tempFileName, codePage),
+        indices, numItems, 
+        newItemName, 
+        updateCallback100);
+  }
   else
+  {
+    BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
+    for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
+      actionSetByte[i] = actionSet->StateActions[i];
     result = _agentSpec->DoOperation(NULL,GetUnicodeString(tempFileName, codePage),
         actionSetByte, NULL, updateCallback100);
+  }
   
   if (result != S_OK)
     return result;
@@ -93,15 +111,15 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   if (!MoveFile(tempFileName, archiveFilePath ))
     return GetLastError();
   
-  RETURN_IF_NOT_S_OK(_agentSpec->FolderReOpen(NULL));
+  RINOK(_agentSpec->FolderReOpen(NULL));
 
  
   ////////////////////////////
   // Restore FolderItem;
 
   CComPtr<IFolderFolder> archiveFolder;
-  RETURN_IF_NOT_S_OK(_agentSpec->BindToRootFolder(&archiveFolder));
-  for (i = 0; i < pathParts.Size(); i++)
+  RINOK(_agentSpec->BindToRootFolder(&archiveFolder));
+  for (int i = 0; i < pathParts.Size(); i++)
   {
     CComPtr<IFolderFolder> newFolder;
     archiveFolder->BindToFolder(pathParts[i], &newFolder);
@@ -111,9 +129,9 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   }
 
   CComPtr<IArchiveFolderInternal> archiveFolderInternal;
-  RETURN_IF_NOT_S_OK(archiveFolder.QueryInterface(&archiveFolderInternal));
+  RINOK(archiveFolder.QueryInterface(&archiveFolderInternal));
   CAgentFolder *agentFolder;
-  RETURN_IF_NOT_S_OK(archiveFolderInternal->GetAgentFolder(&agentFolder));
+  RINOK(archiveFolderInternal->GetAgentFolder(&agentFolder));
   _proxyFolderItem = agentFolder->_proxyFolderItem;
   _proxyHandler = agentFolder->_proxyHandler;
   _parentFolder = agentFolder->_parentFolder;
@@ -127,27 +145,64 @@ STDMETHODIMP CAgentFolder::CopyFrom(
     UINT32 numItems,
     IProgress *progress)
 {
-  RETURN_IF_NOT_S_OK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
-  RETURN_IF_NOT_S_OK(_agentSpec->SetFolder(this));
-  CComPtr<IUpdateCallback100> updateCallback100;
+  RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
+  RINOK(_agentSpec->SetFolder(this));
+  CComPtr<IFolderArchiveUpdateCallback> updateCallback100;
   if (progress != 0)
   {
     CComPtr<IProgress> progressWrapper = progress;
-    RETURN_IF_NOT_S_OK(progressWrapper.QueryInterface(&updateCallback100));
+    RINOK(progressWrapper.QueryInterface(&updateCallback100));
   }
-  return CommonUpdateOperation(false, &kAddActionSet, 0, 0, 
+  return CommonUpdateOperation(false, false, false, NULL, &kAddActionSet, 0, 0, 
       updateCallback100);
 }
 
 STDMETHODIMP CAgentFolder::Delete(const UINT32 *indices, UINT32 numItems, IProgress *progress)
 {
-  RETURN_IF_NOT_S_OK(_agentSpec->SetFolder(this));
-  CComPtr<IUpdateCallback100> updateCallback100;
+  RINOK(_agentSpec->SetFolder(this));
+  CComPtr<IFolderArchiveUpdateCallback> updateCallback100;
   if (progress != 0)
   {
     CComPtr<IProgress> progressWrapper = progress;
-    RETURN_IF_NOT_S_OK(progressWrapper.QueryInterface(&updateCallback100));
+    RINOK(progressWrapper.QueryInterface(&updateCallback100));
   }
-  return CommonUpdateOperation(true, &kDeleteActionSet, indices, 
-      numItems, updateCallback100);
+  return CommonUpdateOperation(true, false, false, NULL, &kDeleteActionSet, 
+      indices, numItems, updateCallback100);
+}
+
+STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress)
+{
+  if (_proxyFolderItem->FindDirSubItemIndex(name) >= 0)
+    return ERROR_ALREADY_EXISTS;
+  RINOK(_agentSpec->SetFolder(this));
+  CComPtr<IFolderArchiveUpdateCallback> updateCallback100;
+  if (progress != 0)
+  {
+    CComPtr<IProgress> progressWrapper = progress;
+    RINOK(progressWrapper.QueryInterface(&updateCallback100));
+  }
+  return CommonUpdateOperation(false, true, false, name, NULL, NULL, 
+      0, updateCallback100);
+}
+
+STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgress *progress)
+{
+  CUIntVector realIndices;
+  CUIntVector indices;
+  indices.Add(index);
+  RINOK(_agentSpec->SetFolder(this));
+  CComPtr<IFolderArchiveUpdateCallback> updateCallback100;
+  if (progress != 0)
+  {
+    CComPtr<IProgress> progressWrapper = progress;
+    RINOK(progressWrapper.QueryInterface(&updateCallback100));
+  }
+  return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(), 
+      indices.Size(), updateCallback100);
+  return E_NOTIMPL;
+}
+
+STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *name, IProgress *progress)
+{
+  return E_NOTIMPL;
 }

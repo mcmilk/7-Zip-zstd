@@ -52,7 +52,7 @@ void COutArchive::WriteLocalHeader(const CItemInfo &anItemInfo)
   aHeader.UnPackSize = anItemInfo.UnPackSize;
 
   aHeader.NameSize = anItemInfo.Name.Length();
-  aHeader.ExtraSize = 0; // test it;
+  aHeader.ExtraSize = anItemInfo.LocalExtraSize; // test it;
 
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
   WriteBytes(&aFileHeader, sizeof(aFileHeader));
@@ -120,6 +120,12 @@ void COutArchive::CreateStreamForCompressing(IOutStream **anOutStream)
   aStreamSpec->Init(m_Stream, m_BasePosition + m_LocalFileHeaderSize);
   *anOutStream = aStream.Detach();
 }
+
+void COutArchive::SeekToPackedDataPosition()
+{
+  m_Stream->Seek(m_BasePosition + m_LocalFileHeaderSize, STREAM_SEEK_SET, NULL);
+}
+
 
 void COutArchive::CreateStreamForCopying(ISequentialOutStream **anOutStream)
 {

@@ -39,11 +39,11 @@ struct CExtractFolderInfo
 };
 
 STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
-    INT32 testModeSpec, IExtractCallback200 *extractCallBackSpec)
+    INT32 testModeSpec, IArchiveExtractCallback *extractCallbackSpec)
 {
   COM_TRY_BEGIN
   bool testMode = (testModeSpec != 0);
-  CComPtr<IExtractCallback200> extractCallback = extractCallBackSpec;
+  CComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UINT64 importantTotalUnPacked = 0, importantTotalPacked = 0;
   UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
   if(numItems == 0)
@@ -89,7 +89,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector[i];
     totalFolderUnPacked = extractFolderInfo.UnPackSize;
 
-    RETURN_IF_NOT_S_OK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
+    RINOK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
 
     CComObjectNoLock<CFolderOutStream> *aFolderOutStream = 
       new CComObjectNoLock<CFolderOutStream>;
@@ -102,7 +102,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       startIndex = _database.FolderStartFileIndex[extractFolderInfo.FolderIndex];
 
 
-    RETURN_IF_NOT_S_OK(aFolderOutStream->Init(&_database, startIndex, 
+    RINOK(aFolderOutStream->Init(&_database, startIndex, 
         &extractFolderInfo.ExtractStatuses, extractCallback, testMode));
 
     if (extractFolderInfo.FileIndex >= 0)
@@ -148,6 +148,10 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     UINT32 packStreamIndex = _database.FolderStartPackStreamIndex[folderIndex];
     UINT64 folderStartPackPos = _database.GetFolderStreamPos(folderIndex, 0);
 
+    CComPtr<ICryptoGetTextPassword> getTextPassword;
+    if (extractCallback)
+      extractCallback.QueryInterface(&getTextPassword);
+
     try
     {
       HRESULT result = decoder.Decode(_inStream,
@@ -155,17 +159,26 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
           &_database.PackSizes[packStreamIndex],
           folderInfo,
           outStream,
-          compressProgress);
+          compressProgress, 
+          getTextPassword);
 
       if (result == S_FALSE)
-        throw "data error";
+      {
+        RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+        continue;
+      }
+      if (result == E_NOTIMPL)
+      {
+        RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        continue;
+      }
       if (result != S_OK)
         return result;
-      RETURN_IF_NOT_S_OK(aFolderOutStream->WasWritingFinished());
+      RINOK(aFolderOutStream->WasWritingFinished());
     }
     catch(...)
     {
-      RETURN_IF_NOT_S_OK(aFolderOutStream->FlushCorrupted());
+      RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
       continue;
     }
   }
@@ -174,7 +187,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 }
 
 STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode,
-      IExtractCallback200 *extractCallback)
+      IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   CRecordVector<UINT32> indices;

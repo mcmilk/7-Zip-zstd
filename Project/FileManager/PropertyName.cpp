@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
+#include "Interface/PropID.h"
 #include "Windows/ResourceString.h"
 #include "resource.h"
 #include "PropertyName.h"
-#include "../Archiver/Format/Common/IArchiveHandler.h"
 #include "Resource/PropertyName/resource.h"
 #include "LangUtils.h"
 

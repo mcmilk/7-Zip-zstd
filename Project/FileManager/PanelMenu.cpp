@@ -82,7 +82,7 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
     for(i = 0; i < operatedIndices.Size(); i++)
       namePointers.Add(names[i]);
     
-    SetCurrentDirectory(GetSystemString(_currentFolderPrefix));
+    ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
     if (initContextMenu->InitContextMenu(folder, &namePointers.Front(),
         operatedIndices.Size()) == S_OK)
     {

@@ -19,8 +19,8 @@ extern CComModule _Module;
 #include <regstr.h>
 #include <stdio.h>
 
-#include <vector>
 #include <memory>
-#include <algorithm>
+#include <vector>
+// #include <algorithm>
 
 #endif 

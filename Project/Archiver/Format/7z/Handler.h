@@ -5,7 +5,7 @@
 #ifndef __7Z_HANDLER_H
 #define __7Z_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 #include "../../../Compress/Interface/CompressInterface.h"
 #include "InEngine.h"
 #include "ItemInfoUtils.h"
@@ -37,9 +37,9 @@ struct COneMethodInfo
 DEFINE_GUID(CLSID_CFormat7z, 
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x05, 0x00, 0x00);
 class CHandler: 
-  public IArchiveHandler200,
+  public IInArchive,
   #ifndef EXTRACT_ONLY
-  public IOutArchiveHandler200,
+  public IOutArchive,
   public ISetProperties,
   #endif
   public CComObjectRoot,
@@ -47,35 +47,35 @@ class CHandler:
 {
 public:
 BEGIN_COM_MAP(CHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
   #ifndef EXTRACT_ONLY
-  COM_INTERFACE_ENTRY(IOutArchiveHandler200)
+  COM_INTERFACE_ENTRY(IOutArchive)
   COM_INTERFACE_ENTRY(ISetProperties)
   #endif
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CHandler)
 
-DECLARE_REGISTRY(CHandler, TEXT("SevenZip.Format7z.1"), 
-                 TEXT("SevenZip.Format7z"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CHandler, 
+    // TEXT("SevenZip.Format7z.1"), TEXT("SevenZip.Format7z"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"), 
+    UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *stream, 
       const UINT64 *maxCheckStartPosition,
-      IOpenArchive2CallBack *openArchiveCallback);  
+      IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
   STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
   STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
   STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
-      INT32 testMode, IExtractCallback200 *extractCallback);
-  STDMETHOD(ExtractAllItems)(INT32 testMode, IExtractCallback200 *extractCallback);
+      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, IArchiveExtractCallback *extractCallback);
 
   #ifndef EXTRACT_ONLY
   // IOutArchiveHandler
-  STDMETHOD(DeleteItems)(IOutStream *outStream, 
-      const UINT32* indices, UINT32 numItems, IUpdateCallBack *updateCallback);
   STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
-      IUpdateCallBack *updateCallback);
+      IArchiveUpdateCallback *updateCallback);
 
   STDMETHOD(GetFileTimeType)(UINT32 *type);  
 
@@ -93,8 +93,12 @@ private:
   #ifndef EXTRACT_ONLY
   CObjectVector<COneMethodInfo> _methods;
   CRecordVector<CBind> _binds;
+  bool _removeSfxBlock;
+  bool _solidIsSpecified;
   bool _solid;
   bool _compressHeaders;
+  bool _compressHeadersFull;
+  bool _encryptHeaders;
   UINT32 _defaultDicSize;
   UINT32 _defaultAlgorithm;
   UINT32 _defaultFastBytes;
@@ -105,8 +109,15 @@ private:
   HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
 
+  HRESULT SetPassword(CCompressionMethodMode &methodMode,
+      IArchiveUpdateCallback *updateCallback);
+
+  HRESULT SetCompressionMethod(CCompressionMethodMode &method,
+      CObjectVector<COneMethodInfo> &methodsInfo);
+
   HRESULT SetCompressionMethod(CCompressionMethodMode &method,
       CCompressionMethodMode &headerMethod);
+
   #endif
   
   #ifndef _SFX
@@ -119,8 +130,12 @@ private:
   void Init()
   {
     #ifndef EXTRACT_ONLY
+    _removeSfxBlock = false;
     _solid = true;
+    _solidIsSpecified = false;
     _compressHeaders = true;
+    _compressHeadersFull = false;
+    _encryptHeaders = false;
     _multiThread = false;
     _defaultDicSize = (1 << 20);
     _defaultAlgorithm = 1;

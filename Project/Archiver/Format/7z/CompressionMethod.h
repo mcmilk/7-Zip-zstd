@@ -57,6 +57,13 @@ struct CCompressionMethodMode
   CRecordVector<CBind> Binds;
   bool MultiThread;
   UINT32 MultiThreadMult;
+  
+  bool PasswordIsDefined;
+  UString Password;
+
+  bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
+
+  CCompressionMethodMode(): PasswordIsDefined(false), MultiThread(false) {}
 };
 
 }}

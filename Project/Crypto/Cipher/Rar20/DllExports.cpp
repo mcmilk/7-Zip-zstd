@@ -5,7 +5,7 @@
 #include <initguid.h>
 
 #include "Interface/ICoder.h"
-#include "Coder.h"
+#include "Rar20Cipher.h"
 
 CComModule _Module;
 

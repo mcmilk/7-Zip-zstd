@@ -68,6 +68,8 @@ namespace NID
     kLastWriteTime,
     kWinAttributes,
     kComment,
+
+    kEncodedHeader,
   };
 }
 

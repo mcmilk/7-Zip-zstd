@@ -71,7 +71,7 @@ const WORD InitBinEsc[] =
 
 struct CInfo
 {
-  CSubAllocator m_SubAllocator;
+  CSubAllocator SubAllocator;
   SEE2_CONTEXT _PACK_ATTR SEE2Cont[25][16], DummySEE2Cont;
   PPM_CONTEXT _PACK_ATTR * MinContext, * MaxContext;
 
@@ -94,13 +94,13 @@ struct CInfo
   {
     int i, k, m;
     memset(CharMask,0,sizeof(CharMask));
-    m_SubAllocator.InitSubAllocator();                     
+    SubAllocator.InitSubAllocator();                     
     InitRL = -((MaxOrder < 12) ? MaxOrder : 12) - 1;
-    MinContext = MaxContext = (PPM_CONTEXT*) m_SubAllocator.AllocContext();
+    MinContext = MaxContext = (PPM_CONTEXT*) SubAllocator.AllocContext();
     MinContext->Suffix = NULL;                
     OrderFall = MaxOrder;
     MinContext->SummFreq = (MinContext->NumStats = 256) + 1;
-    FoundState = MinContext->Stats = (PPM_CONTEXT::STATE*) m_SubAllocator.AllocUnits(256 / 2);
+    FoundState = MinContext->Stats = (PPM_CONTEXT::STATE*) SubAllocator.AllocUnits(256 / 2);
     for (RunLength = InitRL, PrevSuccess = i = 0; i < 256; i++) 
     {
         MinContext->Stats[i].Symbol = i;      
@@ -215,7 +215,7 @@ NO_LOOP:
       UpState.Freq = pc->oneState().Freq;
     do 
     {
-        pc = pc->createChild(m_SubAllocator, *--pps, UpState);
+        pc = pc->createChild(SubAllocator, *--pps, UpState);
         if ( !pc )                          
           return NULL;
     } 
@@ -260,19 +260,19 @@ NO_LOOP:
           goto RESTART_MODEL;
         return;
     }
-    *m_SubAllocator.pText++ = fs.Symbol;                   
-    Successor = (PPM_CONTEXT*) m_SubAllocator.pText;
-    if (m_SubAllocator.pText >= m_SubAllocator.UnitsStart)                
+    *SubAllocator.pText++ = fs.Symbol;                   
+    Successor = (PPM_CONTEXT*) SubAllocator.pText;
+    if (SubAllocator.pText >= SubAllocator.UnitsStart)                
       goto RESTART_MODEL;
     if ( fs.Successor ) 
     {
-        if ((BYTE*) fs.Successor <= m_SubAllocator.pText &&
+        if ((BYTE*) fs.Successor <= SubAllocator.pText &&
                 (fs.Successor=CreateSuccessors(FALSE,p)) == NULL)
                         goto RESTART_MODEL;
         if ( !--OrderFall ) 
         {
             Successor = fs.Successor;         
-            m_SubAllocator.pText -= (MaxContext != MinContext);
+            SubAllocator.pText -= (MaxContext != MinContext);
         }
     } 
     else 
@@ -287,7 +287,7 @@ NO_LOOP:
         {
             if ((ns1 & 1) == 0) 
             {
-                pc->Stats = (PPM_CONTEXT::STATE*) m_SubAllocator.ExpandUnits(pc->Stats, ns1 >> 1);
+                pc->Stats = (PPM_CONTEXT::STATE*) SubAllocator.ExpandUnits(pc->Stats, ns1 >> 1);
                 if ( !pc->Stats )           
                   goto RESTART_MODEL;
             }
@@ -296,7 +296,7 @@ NO_LOOP:
         } 
         else 
         {
-            p = (PPM_CONTEXT::STATE*) m_SubAllocator.AllocUnits(1);
+            p = (PPM_CONTEXT::STATE*) SubAllocator.AllocUnits(1);
             if ( !p )                       
               goto RESTART_MODEL;
             *p = pc->oneState();              
@@ -415,7 +415,7 @@ RESTART_MODEL:
         {
             PPM_CONTEXT::STATE tmp = *MinContext->Stats;
             do { tmp.Freq -= (tmp.Freq >> 1); EscFreq >>= 1; } while (EscFreq > 1);
-            m_SubAllocator.FreeUnits(MinContext->Stats, (OldNS+1) >> 1);
+            SubAllocator.FreeUnits(MinContext->Stats, (OldNS+1) >> 1);
             *(FoundState = &MinContext->oneState()) = tmp;  return;
         }
     }
@@ -423,13 +423,13 @@ RESTART_MODEL:
     int n0 = (OldNS+1) >> 1, n1 = (MinContext->NumStats + 1) >> 1;
     if (n0 != n1)
       MinContext->Stats = 
-          (PPM_CONTEXT::STATE*) m_SubAllocator.ShrinkUnits(MinContext->Stats, n0, n1);
+          (PPM_CONTEXT::STATE*) SubAllocator.ShrinkUnits(MinContext->Stats, n0, n1);
     FoundState = MinContext->Stats;
   }
 
   void NextContext()
   {
-    if (!OrderFall && (BYTE*) FoundState->Successor > m_SubAllocator.pText)
+    if (!OrderFall && (BYTE*) FoundState->Successor > SubAllocator.pText)
       MinContext = MaxContext = FoundState->Successor;
     else 
     {

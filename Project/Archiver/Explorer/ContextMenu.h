@@ -47,7 +47,10 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CZipContextMenu)
 
-DECLARE_REGISTRY(CZipContextMenu, _T("SevenZip.ContextMenu.1"), _T("SevenZip.ContextMenu"), 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CZipContextMenu, 
+    // _T("SevenZip.ContextMenu.1"), _T("SevenZip.ContextMenu"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   ///////////////////////////////
   // IShellExtInit

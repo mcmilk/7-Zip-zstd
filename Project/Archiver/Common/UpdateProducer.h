@@ -9,12 +9,20 @@
 
 struct CUpdatePairInfo2
 {
-  bool OperationIsCompress;
+  // bool OperationIsCompress;
+  bool NewData;
+  bool NewProperties;
+
   bool ExistInArchive;
   bool ExistOnDisk;
   bool IsAnti;
   int ArchiveItemIndex;
   int DirItemIndex;
+
+  bool NewNameIsDefined;
+  UString NewName;
+
+  CUpdatePairInfo2(): NewNameIsDefined(false) {}
 };
 
 typedef CObjectVector<CUpdatePairInfo2> CUpdatePairInfo2Vector;

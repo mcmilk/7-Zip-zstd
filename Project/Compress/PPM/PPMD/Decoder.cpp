@@ -14,58 +14,60 @@ namespace NCompress {
 namespace NPPMD {
 
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *anInStream)
+STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
-  UINT32 aProcessedSize;
-  RETURN_IF_NOT_S_OK(anInStream->Read(&m_Order, 
-      sizeof(m_Order), &aProcessedSize));
-  if (aProcessedSize != sizeof(m_Order))
+  UINT32 processedSize;
+  RETURN_IF_NOT_S_OK(inStream->Read(&_order, 
+      sizeof(_order), &processedSize));
+  if (processedSize != sizeof(_order))
     return E_FAIL;
-  RETURN_IF_NOT_S_OK(anInStream->Read(&m_UsedMemorySize, 
-      sizeof(m_UsedMemorySize), &aProcessedSize));
-  if (aProcessedSize != sizeof(m_UsedMemorySize))
+  RETURN_IF_NOT_S_OK(inStream->Read(&_usedMemorySize, 
+      sizeof(_usedMemorySize), &processedSize));
+  if (processedSize != sizeof(_usedMemorySize))
     return E_FAIL;
   return S_OK;
 }
 
 class CDecoderFlusher
 {
-  CDecoder *m_Coder;
+  CDecoder *_coder;
 public:
-  CDecoderFlusher(CDecoder *aCoder): m_Coder(aCoder) {}
+  CDecoderFlusher(CDecoder *coder): _coder(coder) {}
   ~CDecoderFlusher()
   {
-    m_Coder->Flush();
-    m_Coder->ReleaseStreams();
+    _coder->Flush();
+    _coder->ReleaseStreams();
   }
 };
 
-UINT32 GetMatchLen(const BYTE *aPointer1, const BYTE *aPointer2, 
-    UINT32 aLimit)
+UINT32 GetMatchLen(const BYTE *pointer1, const BYTE *pointer2, 
+    UINT32 limit)
 {  
   UINT32 i;
-  for(i = 0; i < aLimit && *aPointer1 == *aPointer2; 
-      aPointer1++, aPointer2++, i++);
+  for(i = 0; i < limit && *pointer1 == *pointer2; 
+      pointer1++, pointer2++, i++);
   return i;
 }
 
-STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
 {
-  m_RangeDecoder.Init(anInStream);
-  m_OutStream.Init(anOutStream);
+  _rangeDecoder.Init(inStream);
+  _outStream.Init(outStream);
 
-  CDecoderFlusher aFlusher(this);
+  CDecoderFlusher flusher(this);
 
-  if (anOutSize == NULL)
+  /*
+  if (outSize == NULL)
     return E_INVALIDARG;
+  */
 
-  UINT64 aProgressPosValuePrev = 0, aPos = 0;
+  UINT64 progressPosValuePrev = 0, pos = 0;
 
   try
   {
-    if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
+    if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
       return E_OUTOFMEMORY;
   }
   catch(...)
@@ -73,32 +75,37 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
     return E_OUTOFMEMORY;
   }
 
-  // m_Info.Init();
-  // m_Info.MaxOrder = m_Order; 
-  m_Info.MaxOrder = 0;
-  m_Info.StartModelRare(m_Order);
-  
-  while(aPos < *anOutSize)
+  // _info.Init();
+  // _info.MaxOrder = _order; 
+  _info.MaxOrder = 0;
+  _info.StartModelRare(_order);
+
+  UINT64 size = (outSize == NULL) ? (UINT64)(INT64)(-1) : *outSize;
+
+  while(pos < size)
   {
-    aPos++;
-    m_OutStream.WriteByte(m_Info.DecodeSymbol(&m_RangeDecoder));
-    if (aPos - aProgressPosValuePrev >= (1 << 18) && aProgress != NULL)
+    pos++;
+    int symbol = _info.DecodeSymbol(&_rangeDecoder);
+    if (symbol < 0)
+      return S_OK;
+    _outStream.WriteByte(symbol);
+    if (pos - progressPosValuePrev >= (1 << 18) && progress != NULL)
     {
-      UINT64 anInSize = m_RangeDecoder.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&anInSize, &aPos));
-      aProgressPosValuePrev = aPos;
+      UINT64 inSize = _rangeDecoder.GetProcessedSize();
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&inSize, &pos));
+      progressPosValuePrev = pos;
     }
   }
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
+    return CodeReal(inStream, outStream, inSize, outSize, progress);
   }
   catch(const NStream::COutByteWriteException &exception)
   {

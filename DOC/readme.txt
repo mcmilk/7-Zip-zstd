@@ -1,9 +1,9 @@
-7-Zip 2.30 Beta 24 Sources
+7-Zip 2.30 Beta 25 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
 
-7-Zip Copyright (C) 1999-2002 Igor Pavlov.
+7-Zip Copyright (C) 1999-2003 Igor Pavlov.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,20 @@ For compiling some files you also need
 new Platform SDK from Microsoft' Site.
 
 
+Notes:
+------
+7-Zip consists of COM modules (DLL files).
+But if you don't like COM you can call DLL without using COM 
+(and without using registry). Look 
+Project\Archiver\Test\Client7z folder for example of using
+DLL without COM. But some DLL files can use other DLL files via COM.
+If you don't like it, you must use standalone version of DLL.
+To compile standalone version of DLL you must include all used parts
+to project and define some defs. 
+For example, Project\Archiver\Bundle\Format7z  is a standalone version 
+of 7z.dll that works with 7z format.
+So you can use such DLL in your project without additional DLL files and 
+without installing registry items.
 
 
 WWW:
@@ -86,6 +100,7 @@ Project
       SFXCon        7zCon.sfx: Console 7z SFX module
       SFXWin        7z.sfx: Windows 7z SFX module
       SFXSetup      7zS.sfx: Windows 7z SFX module for Installers
+      Format7z      7za.dll: Standalone version of 7z.dll
     Common          Common modules
     Console         7z.exe Console version
     Explorer        Explorer plugin
@@ -103,6 +118,8 @@ Project
       Tar
       Zip
       arj
+    Test
+      Client7z      Test application for 7za.dll 
 
   Compress
   --------
@@ -133,8 +150,13 @@ Project
   ------
     Cipher          Cipher
       Common        Interfaces
-      Rar20         Cipher for Rar
+      7zAES         Cipher for 7z
+      AES           AES Cipher
+      Rar20         Cipher for Rar 2.0
+      RarAES        Cipher for Rar 3.0
       Zip           Cipher for Zip
+    Hash            
+      SHA256        SHA-256
 
   FileManager       File Manager
   ------

@@ -23,6 +23,10 @@ struct CUpdateRange
 
 struct CUpdateItemInfo
 {
+  bool NewData;
+  bool NewProperties;
+  bool IsDirectory;
+  int IndexInArchive;
   int IndexInClient;
   UINT32 Attributes;
   UINT32 Time;
@@ -31,8 +35,10 @@ struct CUpdateItemInfo
   // bool ExistInArchive;
   bool Commented;
   CUpdateRange CommentRange;
+  /*
   bool IsDirectory() const 
     { return ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
+  */
 };
 
 }}

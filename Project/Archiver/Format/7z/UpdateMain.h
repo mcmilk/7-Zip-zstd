@@ -15,16 +15,17 @@ namespace NArchive {
 namespace N7z {
 
 HRESULT UpdateMain(const NArchive::N7z::CArchiveDatabaseEx &database,
-    const CRecordVector<bool> &compressStatuses,
-    const CObjectVector<CUpdateItemInfo> &updateItems,
-    const CRecordVector<UINT32> &copyIndices,
+    CObjectVector<CUpdateItemInfo> &updateItems,
     IOutStream *outStream,
     IInStream *inStream,
     NArchive::N7z::CInArchiveInfo *inArchiveInfo,
     CCompressionMethodMode *method,
     CCompressionMethodMode *headerMethod,
-    IUpdateCallBack *anUpdateCallback,
-    bool solid);
+    bool useAdditionalHeaderStreams, 
+    bool compressMainHeader,
+    IArchiveUpdateCallback *anUpdateCallback,
+    bool solid,
+    bool removeSfxBlock);
 
 }}
 

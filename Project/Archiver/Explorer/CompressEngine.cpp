@@ -16,7 +16,7 @@
 
 #include "../Common/CompressEngineCommon.h"
 #include "../Common/UpdateUtils.h"
-#include "../Common/IArchiveHandler2.h"
+#include "../Common/FolderArchiveInterface.h"
 
 #include "../Common/OpenEngine2.h"
 #include "../../FileManager/ProgramLocation.h"
@@ -102,8 +102,9 @@ static void SetOptions(const CSysString &options,
   }
 }
 
-static HRESULT SetOutProperties(IOutArchiveHandler100 * outArchive, 
+static HRESULT SetOutProperties(IOutFolderArchive * outArchive, 
     UINT32 method, bool solidModeIsAllowed, bool solidMode, 
+    bool sfxMode,
     const CSysString &options)
 {
   CComPtr<ISetProperties> setProperties;
@@ -128,7 +129,13 @@ static HRESULT SetOutProperties(IOutArchiveHandler100 * outArchive,
     std::vector<NCOM::CPropVariant> values;
     realNames.Add(comBSTR);
     values.push_back(NCOM::CPropVariant());
-    
+
+    if (sfxMode)
+    {
+      realNames.Add(L"rsfx");
+      values.push_back(NCOM::CPropVariant(L"on"));
+    }
+   
     // Solid
     if (solidModeIsAllowed)
     {
@@ -150,7 +157,7 @@ static HRESULT SetOutProperties(IOutArchiveHandler100 * outArchive,
 
 struct CThreadUpdateCompress
 {
-  CComPtr<IOutArchiveHandler100> OutArchive;
+  CComPtr<IOutFolderArchive> OutArchive;
   CLSID ClassID;
   UString OutArchivePath;
   BYTE ActionSetByte[NUpdateArchive::NPairState::kNumValues];
@@ -160,7 +167,7 @@ struct CThreadUpdateCompress
 
   UStringVector FileNames;
   CRecordVector<const wchar_t *> FileNamePointers;
-  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComPtr<IFolderArchiveUpdateCallback> UpdateCallback;
   CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
   HRESULT Result;
   
@@ -299,9 +306,9 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
   
   NFind::CFileInfo fileInfo;
 
-  CComPtr<IOutArchiveHandler100> outArchive;
+  CComPtr<IOutFolderArchive> outArchive;
 
-  CComPtr<IArchiveHandler100> archiveHandler;
+  CComPtr<IInFolderArchive> archiveHandler;
   if(NFind::FindFile(arcPath, fileInfo))
   {
     if (fileInfo.IsDirectory())
@@ -390,6 +397,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
 
   RETURN_IF_NOT_S_OK(SetOutProperties(outArchive, dialog.m_Info.Method, 
       dialog.m_Info.SolidModeIsAllowed, dialog.m_Info.SolidMode, 
+      dialog.m_Info.SFXMode,
       dialog.m_Info.Options));
 
   UString sfxModule;

@@ -12,9 +12,10 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
 
+#include "Interface/CryptoInterface.h"
+
 #include "../../../Compress/Interface/CompressInterface.h"
-#include "../../Format/Common/FormatCryptoInterface.h"
-#include "../../Common/IArchiveHandler2.h"
+#include "../../Format/Common/ArchiveInterface.h"
 #include "ExtractEngine.h"
 #include "../../Explorer/MyMessages.h"
 #include "Common/TextConfig.h"

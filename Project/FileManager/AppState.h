@@ -54,11 +54,13 @@ class CFolderHistrory
   NWindows::NSynchronization::CCriticalSection _criticalSection;
   UStringVector Strings;
 public:
+  
   void GetList(UStringVector &foldersHistory)
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
     foldersHistory = Strings;
   }
+  
   void Normalize()
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
@@ -66,17 +68,26 @@ public:
     if (Strings.Size() > kMaxSize)
       Strings.Delete(kMaxSize, Strings.Size() - kMaxSize + 1);
   }
+  
   void AddString(const UString &string)
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
     AddUniqueStringToHead(Strings, string);
     Normalize();
   }
+  
+  void RemoveAll()
+  {
+    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    Strings.Clear();
+  }
+  
   void Save()
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
     SaveFolderHistory(Strings);
   }
+  
   void Read()
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);

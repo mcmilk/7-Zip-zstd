@@ -150,8 +150,10 @@ public:
   DECLARE_NOT_AGGREGATABLE(CCoder)
 
   // DECLARE_NO_REGISTRY()
-  DECLARE_REGISTRY(CEncoder, TEXT("Compress.DeflateEncoder.1"), 
-  TEXT("Compress.DeflateEncoder"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CEncoder, 
+    // TEXT("Compress.DeflateEncoder.1"), TEXT("Compress.DeflateEncoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   HRESULT CodeReal(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,

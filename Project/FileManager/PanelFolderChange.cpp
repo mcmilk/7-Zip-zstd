@@ -177,16 +177,24 @@ bool CPanel::OnNotifyComboBox(LPNMHDR header, LRESULT &result)
 void CPanel::FoldersHistory()
 {
   CListViewDialog listViewDialog;
+  listViewDialog.DeleteIsAllowed = true;
   // listViewDialog.m_Value = TEXT("*");
   listViewDialog.Title = LangLoadString(IDS_FOLDERS_HISTORY, 0x03020260);
   UStringVector strings;
   _appState->FolderHistrory.GetList(strings);
-  for(int i = 0; i < strings.Size(); i++)
+  int i;
+  for(i = 0; i < strings.Size(); i++)
     listViewDialog.Strings.Add(GetSystemString(strings[i]));
   if (listViewDialog.Create(GetParent()) == IDCANCEL)
     return;
-  if (listViewDialog.ItemIndex >= 0)
-    BindToFolder(strings[listViewDialog.ItemIndex]);
+  if (listViewDialog.StringsWereChanged)
+  {
+    _appState->FolderHistrory.RemoveAll();
+    for (i = listViewDialog.Strings.Size() - 1; i >= 0; i--)
+      _appState->FolderHistrory.AddString(GetUnicodeString(listViewDialog.Strings[i]));
+  }
+  if (listViewDialog.FocusedItemIndex >= 0)
+    BindToFolder(strings[listViewDialog.FocusedItemIndex]);
 }
  
 void CPanel::OpenParentFolder()
@@ -236,6 +244,7 @@ void CPanel::OpenParentFolder()
   */
   RefreshListCtrl(focucedName, -1, selectedItems);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
+  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
 }
 
 void CPanel::CloseOpenFolders()
@@ -253,6 +262,7 @@ void CPanel::OpenRootFolder()
   _parentFolders.Clear();
   SetToRootFolder();
   RefreshListCtrl(UString(), 0, UStringVector());
+  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
   /*
   BeforeChangeFolder();
   _currentFolderPrefix.Empty();
@@ -283,4 +293,5 @@ void CPanel::OpenFolder(int index)
   UINT state = LVIS_SELECTED;
   _listView.SetItemState(_listView.GetFocusedItem(), state, state);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
+  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
 }

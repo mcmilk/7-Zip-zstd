@@ -20,11 +20,11 @@ DEFINE_GUID(CLSID_CCompressDeflateEncoder,
 #endif
 
 #ifdef CRYPTO_ZIP
-#include "../../../Crypto/Cipher/Zip/Coder.h"
+#include "../../../Crypto/Cipher/Zip/ZipCipher.h"
 #else
-// {23170F69-40C1-278A-1000-000250030100}
+// {23170F69-40C1-278B-06F1-0101000000100}
 DEFINE_GUID(CLSID_CCryptoZipEncoder, 
-0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x50, 0x03, 0x01, 0x00);
+0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00);
 #endif
 
 

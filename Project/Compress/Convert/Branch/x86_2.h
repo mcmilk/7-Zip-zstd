@@ -64,9 +64,12 @@ public:
 BEGIN_COM_MAP(CBCJ2_x86_Encoder)
   COM_INTERFACE_ENTRY(ICompressCoder2)
 END_COM_MAP()
+
 DECLARE_NOT_AGGREGATABLE(CBCJ2_x86_Encoder)
-  DECLARE_REGISTRY(CBCJ2_x86_Encoder, TEXT("Compress.ConvertBranch.1"), 
-  TEXT("Compress.ConvertBranch"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CBCJ2_x86_Encoder, 
+    // TEXT("Compress.ConvertBranch.1"), TEXT("Compress.ConvertBranch"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
   HRESULT CodeReal(ISequentialInStream **inStreams,
       const UINT64 **inSizes,
       UINT32 numInStreams,
@@ -126,8 +129,10 @@ BEGIN_COM_MAP(CBCJ2_x86_Decoder)
   COM_INTERFACE_ENTRY(ICompressCoder2)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CBCJ2_x86_Decoder)
-  DECLARE_REGISTRY(CBCJ2_x86_Decoder, TEXT("Compress.ConvertBranch.1"), 
-  TEXT("Compress.ConvertBranch"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CBCJ2_x86_Decoder, 
+  // TEXT("Compress.ConvertBranch.1"), TEXT("Compress.ConvertBranch"), 
+  TEXT("SevenZip.1"), TEXT("SevenZip"),
+  UINT(0), THREADFLAGS_APARTMENT)
   HRESULT CodeReal(ISequentialInStream **inStreams,
       const UINT64 **inSizes,
       UINT32 numInStreams,

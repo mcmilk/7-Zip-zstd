@@ -14,13 +14,11 @@ namespace NZip {
 
 HRESULT UpdateMain(
     const NArchive::NZip::CItemInfoExVector &anInputItems,
-    const CRecordVector<bool> &aCompressStatuses,
     const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
     IOutStream *anOutStream,
     NArchive::NZip::CInArchive *anInArchive,
     CCompressionMethodMode *aCompressionMethodMode,
-    IUpdateCallBack *anUpdateCallBack);
+    IArchiveUpdateCallback *anUpdateCallback);
 
 }}
 

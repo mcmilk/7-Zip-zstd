@@ -48,10 +48,12 @@ class CInArchive
   UINT64 m_ArchiveStartPosition;
   
   NHeader::NArchive::CBlock m_ArchiveHeader;
-  AString m_NameBuffer;
+  CDynamicBuffer<char> m_NameBuffer;
+  CDynamicBuffer<wchar_t> _unicodeNameBuffer;
   bool m_SeekOnArchiveComment;
   UINT64 m_ArchiveCommentPosition;
   
+  void CInArchive::ReadName(CItemInfoEx &anItemInfo);
   void ReadHeader32Real(CItemInfoEx &anItemInfo);
   void ReadHeader64Real(CItemInfoEx &anItemInfo);
   

@@ -23,9 +23,11 @@
 #include "../../FileManager/ExtractCallback.h"
 #include "../../FileManager/LangUtils.h"
 
-#include "../Agent/ExtractCallback200.h"
+#include "../Agent/ArchiveExtractCallback.h"
 
 #include "resource.h"
+
+#include "../../FileManager/OpenCallback.h"
 
 using namespace NWindows;
 
@@ -34,10 +36,10 @@ static inline UINT GetCurrentFileCodePage()
 
 struct CThreadTesting
 {
-  CComPtr<IArchiveHandler200> ArchiveHandler;
+  CComPtr<IInArchive> ArchiveHandler;
   CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
-  CComPtr<IExtractCallback2> ExtractCallback;
-  CComPtr<IExtractCallback200> ExtractCallback200;
+  CComPtr<IFolderArchiveExtractCallback> ExtractCallback2;
+  CComPtr<IArchiveExtractCallback> ExtractCallback;
 
   HRESULT Result;
   
@@ -48,7 +50,7 @@ struct CThreadTesting
     ExtractCallbackSpec->_appTitle.Window = 
         (HWND)ExtractCallbackSpec->_progressDialog;
     Result = ArchiveHandler->ExtractAllItems(BoolToInt(true), 
-        ExtractCallback200);
+        ExtractCallback);
     ExtractCallbackSpec->_progressDialog.MyClose();
     return 0;
   }
@@ -64,11 +66,17 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
 
   NZipRootRegistry::CArchiverInfo archiverInfoResult;
 
+  CComObjectNoLock<COpenArchiveCallback> *openCallbackSpec = 
+      new CComObjectNoLock<COpenArchiveCallback>;
+  CComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
+  openCallbackSpec->_passwordIsDefined = false;
+  openCallbackSpec->_parentWindow = parentWindow;
+
   RETURN_IF_NOT_S_OK(OpenArchive(fileName, &tester.ArchiveHandler, 
-      archiverInfoResult, NULL));
+      archiverInfoResult, openCallback));
 
   tester.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
-  tester.ExtractCallback = tester.ExtractCallbackSpec;
+  tester.ExtractCallback2 = tester.ExtractCallbackSpec;
   
   tester.ExtractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
@@ -82,16 +90,15 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   
   tester.ExtractCallbackSpec->_appTitle.Title = title;
 
-  UString password;
   tester.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
-      !password.IsEmpty(), password);
+      openCallbackSpec->_passwordIsDefined, openCallbackSpec->_password);
 
-  CComObjectNoLock<CExtractCallBack200Imp> *extractCallback200Spec = new 
-      CComObjectNoLock<CExtractCallBack200Imp>;
-  tester.ExtractCallback200 = extractCallback200Spec;
+  CComObjectNoLock<CArchiveExtractCallback> *extractCallback200Spec = new 
+      CComObjectNoLock<CArchiveExtractCallback>;
+  tester.ExtractCallback = extractCallback200Spec;
 
   FILETIME fileTomeDefault;
-  extractCallback200Spec->Init(tester.ArchiveHandler, tester.ExtractCallback, 
+  extractCallback200Spec->Init(tester.ArchiveHandler, tester.ExtractCallback2, 
       TEXT(""), NExtractionMode::NPath::kFullPathnames, 
       NExtractionMode::NOverwrite::kWithoutPrompt, UStringVector(),
       GetCurrentFileCodePage(), L"", 

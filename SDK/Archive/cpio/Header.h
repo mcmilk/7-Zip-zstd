@@ -2,8 +2,8 @@
 
 #pragma once
 
-#ifndef __ARCHIVE_TAR_HEADER_H
-#define __ARCHIVE_TAR_HEADER_H
+#ifndef __ARCHIVE_CPIO_HEADER_H
+#define __ARCHIVE_CPIO_HEADER_H
 
 #include "Common/Types.h"
 

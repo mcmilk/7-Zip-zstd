@@ -117,15 +117,16 @@ STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *propIDs,
     {
       case NEncodedStreamProperies::kDictionarySize:
       {
+        const kDicLogSizeMaxCompress = 28;
         if (property.vt != VT_UI4)
           return E_INVALIDARG;
         UINT32 dictionarySize = property.ulVal;
         if (dictionarySize < UINT32(1 << kDicLogSizeMin) ||
-            dictionarySize > UINT32(1 << kDicLogSizeMax))
+            dictionarySize > UINT32(1 << kDicLogSizeMaxCompress))
           return E_INVALIDARG;
         _dictionarySize = dictionarySize;
         UINT32 dicLogSize;
-        for(dicLogSize = 0; dicLogSize < kDicLogSizeMax; dicLogSize++)
+        for(dicLogSize = 0; dicLogSize < kDicLogSizeMaxCompress; dicLogSize++)
           if (dictionarySize <= (UINT32(1) << dicLogSize))
             break;
         _distTableSize = dicLogSize * 2;
@@ -829,6 +830,27 @@ HRESULT CEncoder::Flush()
   return _rangeEncoder.FlushStream();
 }
 
+void CEncoder::WriteEndMarker(UINT32 posState)
+{
+  // This function for writing End Mark for stream version of LZMA. 
+  // In current version this feature is not used.
+
+  return;
+
+  _mainChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, kMainChoiceMatchIndex);
+  _matchChoiceEncoders[_state.Index].Encode(&_rangeEncoder, kMatchChoiceDistanceIndex);
+  _state.UpdateMatch();
+  UINT32 len = kMatchMinLen; // kMatchMaxLen;
+  _lenEncoder.Encode(&_rangeEncoder, len - kMatchMinLen, posState);
+  UINT32 posSlot = (1 << kNumPosSlotBits)  - 1;
+  UINT32 lenToPosState = GetLenToPosState(len);
+  _posSlotEncoder[lenToPosState].Encode(&_rangeEncoder, posSlot);
+  UINT32 footerBits = 30;
+  UINT32 posReduced = (UINT32(1) << footerBits) - 1;
+  _rangeEncoder.EncodeDirectBits(posReduced >> kNumAlignBits, footerBits - kNumAlignBits);
+  _posAlignEncoder.Encode(&_rangeEncoder, posReduced & kAlignMask);
+}
+
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
       const UINT64 *inSize, const UINT64 *outSize,
@@ -868,7 +890,10 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   _additionalOffset--;
   nowPos64++;
   if (_matchFinder->GetNumAvailableBytes() == 0)
+  {
+    WriteEndMarker(UINT32(nowPos64) & _posStateMask);
     return Flush();
+  }
   while(true)
   {
     UINT32 pos;
@@ -984,7 +1009,10 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       progressPosValuePrev = nowPos64;
     }
     if (_additionalOffset == 0 && _matchFinder->GetNumAvailableBytes() == 0)
+    {
+      WriteEndMarker(UINT32(nowPos64) & _posStateMask);
       return Flush();
+    }
   }
 }
 

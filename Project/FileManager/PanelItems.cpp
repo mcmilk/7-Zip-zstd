@@ -283,7 +283,8 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     SetToRootFolder();
   
 
-  _folder->LoadItems();
+  if (_folder->LoadItems() != S_OK)
+    return;
 
   SetCurrentPathText();
 

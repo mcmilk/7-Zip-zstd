@@ -2,8 +2,8 @@
 
 #pragma once
 
-#ifndef __ARCHIVE_cpio_ITEMINFOEX_H
-#define __ARCHIVE_cpio_ITEMINFOEX_H
+#ifndef __ARCHIVE_CPIO_ITEMINFOEX_H
+#define __ARCHIVE_CPIO_ITEMINFOEX_H
 
 #include "Common/Vector.h"
 

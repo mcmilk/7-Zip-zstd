@@ -21,117 +21,136 @@ static const kOneItemComplexity = 30;
 namespace NArchive {
 namespace NTar {
 
-HRESULT CopyBlock(ISequentialInStream *anInStream, 
-    ISequentialOutStream *anOutStream, ICompressProgressInfo *aProgress)
+static HRESULT CopyBlock(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 
+  CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
-  CComPtr<ICompressCoder> aCopyCoder = aCopyCoderSpec;
-
-  return aCopyCoder->Code(anInStream, anOutStream, NULL, NULL, aProgress);
+  CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+  return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
 }
 
-HRESULT UpdateArchive(IInStream *anInStream, ISequentialOutStream *anOutStream,
-    const NArchive::NTar::CItemInfoExVector &anInputItems,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
-    IUpdateCallBack *anUpdateCallBack)
+HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
+    const NArchive::NTar::CItemInfoExVector &inputItems,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    IArchiveUpdateCallback *updateCallback)
 {
-  COutArchive anOutArchive;
+  COutArchive outArchive;
+  outArchive.Create(outStream);
 
-  anOutArchive.Create(anOutStream);
-
-  UINT64 aComplexity = 0;
-  UINT32 aCompressIndex = 0, aCopyIndexIndex = 0;
+  UINT64 complexity = 0;
 
   int i;
-  for(i = 0; i < aCompressStatuses.Size(); i++)
+  for(i = 0; i < updateItems.Size(); i++)
   {
-    if (aCompressStatuses[i])
-      aComplexity += anUpdateItems[aCompressIndex++].Size;
+    const CUpdateItemInfo &updateItem = updateItems[i];
+    if (updateItem.NewData)
+      complexity += updateItem.Size;
     else
-      aComplexity += anInputItems[aCopyIndexes[aCopyIndexIndex++]].GetFullSize();
-    aComplexity += kOneItemComplexity;
+      complexity += inputItems[updateItem.IndexInArchive].GetFullSize();
+    complexity += kOneItemComplexity;
   }
-  aCompressIndex = aCopyIndexIndex = 0;
 
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->SetTotal(aComplexity));
+  RINOK(updateCallback->SetTotal(complexity));
 
-  aComplexity = 0;
+  complexity = 0;
 
-  for(i = 0; i < aCompressStatuses.Size(); i++)
+  for(i = 0; i < updateItems.Size(); i++)
   {
-    CItemInfoEx anItem;
-    RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
+    CItemInfoEx item;
+    RINOK(updateCallback->SetCompleted(&complexity));
 
-    CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = 
+    CComObjectNoLock<CLocalProgress> *localProgressSpec = 
       new  CComObjectNoLock<CLocalProgress>;
-    CComPtr<ICompressProgressInfo> aLocalProgress = aLocalProgressSpec;
-    aLocalProgressSpec->Init(anUpdateCallBack, true);
+    CComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+    localProgressSpec->Init(updateCallback, true);
   
-    CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
+    CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
-    CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
+    CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
 
-    aLocalCompressProgressSpec->Init(aLocalProgress, &aComplexity, NULL);
+    localCompressProgressSpec->Init(localProgress, &complexity, NULL);
 
-    if (aCompressStatuses[i])
+    const CUpdateItemInfo &updateItem = updateItems[i];
+    CItemInfo itemInfo;
+    if (updateItem.NewProperties)
     {
-      const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aCompressIndex++];
-
-      CComPtr<IInStream> aFileInStream;
-      RETURN_IF_NOT_S_OK(anUpdateCallBack->CompressOperation(
-          anUpdateItemInfo.IndexInClient, &aFileInStream));
-
-      CItemInfo anItemInfo;
-
-      anItemInfo.Mode = 0777;
-      anItemInfo.Name = (anUpdateItemInfo.Name);
-      if (anUpdateItemInfo.IsDirectory)
+      itemInfo.Mode = 0777;
+      itemInfo.Name = (updateItem.Name);
+      if (updateItem.IsDirectory)
       {
-         anItemInfo.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
-         anItemInfo.Size = 0;
+         itemInfo.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
+         itemInfo.Size = 0;
       }
       else
       {
-         anItemInfo.LinkFlag = NFileHeader::NLinkFlag::kNormal;
-         anItemInfo.Size = anUpdateItemInfo.Size;
+         itemInfo.LinkFlag = NFileHeader::NLinkFlag::kNormal;
+         itemInfo.Size = updateItem.Size;
       }
-      anItemInfo.ModificationTime = anUpdateItemInfo.Time;
-      anItemInfo.DeviceMajorDefined = false;
-      anItemInfo.DeviceMinorDefined = false;
-      anItemInfo.UID = 0;
-      anItemInfo.GID = 0;
-      memmove(anItemInfo.Magic, NFileHeader::NMagic::kEmpty, 8);
-
-      RETURN_IF_NOT_S_OK(anOutArchive.WriteHeader(anItemInfo));
-
-      if (!anUpdateItemInfo.IsDirectory)
-      {
-        RETURN_IF_NOT_S_OK(CopyBlock(aFileInStream, anOutStream, aCompressProgress));
-        RETURN_IF_NOT_S_OK(anOutArchive.FillDataResidual(anItemInfo.Size));
-      }
-      aComplexity += anUpdateItemInfo.Size;
-      RETURN_IF_NOT_S_OK(anUpdateCallBack->OperationResult(
-          NArchiveHandler::NUpdate::NOperationResult::kOK));
+      itemInfo.ModificationTime = updateItem.Time;
+      itemInfo.DeviceMajorDefined = false;
+      itemInfo.DeviceMinorDefined = false;
+      itemInfo.UID = 0;
+      itemInfo.GID = 0;
+      memmove(itemInfo.Magic, NFileHeader::NMagic::kEmpty, 8);
     }
     else
     {
-      CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
-          CComObjectNoLock<CLimitedSequentialInStream>;
-      CComPtr<CLimitedSequentialInStream> anInStreamLimited(aStreamSpec);
-      const CItemInfoEx &anExistItemInfo = anInputItems[aCopyIndexes[aCopyIndexIndex++]];
-      RETURN_IF_NOT_S_OK(anInStream->Seek(anExistItemInfo.HeaderPosition, 
-          STREAM_SEEK_SET, NULL));
-      aStreamSpec->Init(anInStream, anExistItemInfo.GetFullSize());
-      RETURN_IF_NOT_S_OK(CopyBlock(anInStreamLimited, anOutStream, aCompressProgress));
-      RETURN_IF_NOT_S_OK(anOutArchive.FillDataResidual(anExistItemInfo.Size));
-      aComplexity += anExistItemInfo.GetFullSize();
+      const CItemInfoEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      itemInfo = existItemInfo;
     }
-    aComplexity += kOneItemComplexity;
+    if (updateItem.NewData)
+    {
+      itemInfo.Size = updateItem.Size;
+    }
+    else
+    {
+      const CItemInfoEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      itemInfo.Size = existItemInfo.Size;
+    }
+    if (updateItem.NewData || updateItem.NewProperties)
+    {
+      RINOK(outArchive.WriteHeader(itemInfo));
+    }
+
+    if (updateItem.NewData)
+    {
+      CComPtr<IInStream> fileInStream;
+      RINOK(updateCallback->GetStream(updateItem.IndexInClient, &fileInStream));
+      if (!updateItem.IsDirectory)
+      {
+        RINOK(CopyBlock(fileInStream, outStream, compressProgress));
+        RINOK(outArchive.FillDataResidual(itemInfo.Size));
+      }
+      complexity += updateItem.Size;
+      RINOK(updateCallback->SetOperationResult(
+          NArchive::NUpdate::NOperationResult::kOK));
+    }
+    else
+    {
+      CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
+          CComObjectNoLock<CLimitedSequentialInStream>;
+      CComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
+      const CItemInfoEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      if (updateItem.NewProperties)
+      {
+        RINOK(inStream->Seek(existItemInfo.GetDataPosition(), 
+            STREAM_SEEK_SET, NULL));
+        streamSpec->Init(inStream, existItemInfo.Size);
+      }
+      else
+      {
+        RINOK(inStream->Seek(existItemInfo.HeaderPosition, 
+            STREAM_SEEK_SET, NULL));
+        streamSpec->Init(inStream, existItemInfo.GetFullSize());
+      }
+      RINOK(CopyBlock(inStreamLimited, outStream, compressProgress));
+      RINOK(outArchive.FillDataResidual(existItemInfo.Size));
+      complexity += existItemInfo.GetFullSize();
+    }
+    complexity += kOneItemComplexity;
   }
-  return anOutArchive.WriteFinishHeader();
+  return outArchive.WriteFinishHeader();
 }
 
 }}

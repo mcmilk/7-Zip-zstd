@@ -31,13 +31,13 @@ class CEncoder :
   public CComCoClass<CEncoder, &CLSID_CompressPPMDEncoder>
 {
 public:
-  NStream::CInByte m_InStream;
+  NStream::CInByte _inStream;
 
-  CMyRangeEncoder m_RangeEncoder;
+  CMyRangeEncoder _rangeEncoder;
 
-  CEncodeInfo m_Info;
-  UINT32 m_UsedMemorySize;
-  BYTE m_Order;
+  CEncodeInfo _info;
+  UINT32 _usedMemorySize;
+  BYTE _order;
 
 public:
 
@@ -50,28 +50,30 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CEncoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CEncoder, TEXT("Compress.PPMDEncoder.1"), 
-                 TEXT("Compress.PPMDEncoder"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CEncoder, 
+    // TEXT("Compress.PPMDEncoder.1"), TEXT("Compress.PPMDEncoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   // ICoder interface
   HRESULT Flush();
   void ReleaseStreams()
   {
-    m_InStream.ReleaseStream();
-    m_RangeEncoder.ReleaseStream();
+    _inStream.ReleaseStream();
+    _rangeEncoder.ReleaseStream();
   }
 
-  HRESULT CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
-  STDMETHOD(SetCoderProperties2)(const PROPID *aPropIDs, 
-      const PROPVARIANT *aProperties, UINT32 aNumProperties);
+  STDMETHOD(SetCoderProperties2)(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
 
-  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *anOutStreams);
+  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
 
   CEncoder();
 

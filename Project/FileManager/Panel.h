@@ -296,6 +296,9 @@ public:
       }
   };
 
+  // bool _passwordIsDefined;
+  // UString _password;
+
   void OpenDrivesFolder();
   void SetCurrentPathText();
   void RefreshListCtrl();

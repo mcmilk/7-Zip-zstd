@@ -12,11 +12,11 @@
 #include "../../../Compress/Interface/CompressInterface.h"
 #include "Interface/StreamObjects.h"
 
-static HRESULT WriteBytes(IOutStream *aStream, const void *aData, UINT32 aSize)
+static HRESULT WriteBytes(IOutStream *stream, const void *data, UINT32 size)
 {
-  UINT32 aProcessedSize;
-  RETURN_IF_NOT_S_OK(aStream->Write(aData, aSize, &aProcessedSize));
-  if(aProcessedSize != aSize)
+  UINT32 processedSize;
+  RETURN_IF_NOT_S_OK(stream->Write(data, size, &processedSize));
+  if(processedSize != size)
     return E_FAIL;
   return S_OK;
 }
@@ -26,153 +26,161 @@ extern const CLSID *g_MatchFinders[];
 namespace NArchive {
 namespace N7z {
 
-HRESULT COutArchive::Create(IOutStream *aStream)
+HRESULT COutArchive::Create(IOutStream *stream)
 {
   Close();
-  RETURN_IF_NOT_S_OK(::WriteBytes(aStream, kSignature, kSignatureSize));
-  CArchiveVersion anArchiveVersion;
-  anArchiveVersion.Major = kMajorVersion;
-  anArchiveVersion.Minor = 1;
-  RETURN_IF_NOT_S_OK(::WriteBytes(aStream, &anArchiveVersion, sizeof(anArchiveVersion)));
-  RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_CUR, &m_PrefixHeaderPos));
-  m_Stream = aStream;
+  RETURN_IF_NOT_S_OK(::WriteBytes(stream, kSignature, kSignatureSize));
+  CArchiveVersion archiveVersion;
+  archiveVersion.Major = kMajorVersion;
+  archiveVersion.Minor = 2;
+  RETURN_IF_NOT_S_OK(::WriteBytes(stream, &archiveVersion, sizeof(archiveVersion)));
+  RETURN_IF_NOT_S_OK(stream->Seek(0, STREAM_SEEK_CUR, &_prefixHeaderPos));
+  Stream = stream;
   return S_OK;
 }
 
 void COutArchive::Close()
 {
-  m_Stream.Release();
+  Stream.Release();
 }
 
 HRESULT COutArchive::SkeepPrefixArchiveHeader()
 {
-  return m_Stream->Seek(sizeof(CStartHeader) + sizeof(UINT32), STREAM_SEEK_CUR, NULL);
+  return Stream->Seek(sizeof(CStartHeader) + sizeof(UINT32), STREAM_SEEK_CUR, NULL);
 }
 
-HRESULT COutArchive::WriteBytes(const void *aData, UINT32 aSize)
+HRESULT COutArchive::WriteBytes(const void *data, UINT32 size)
 {
-  return ::WriteBytes(m_Stream, aData, aSize);
+  return ::WriteBytes(Stream, data, size);
 }
 
 
-HRESULT COutArchive::WriteBytes2(const void *aData, UINT32 aSize)
+HRESULT COutArchive::WriteBytes2(const void *data, UINT32 size)
 {
-  if (m_MainMode)
+  if (_mainMode)
   {
-    m_OutByte.WriteBytes(aData, aSize);
-    m_CRC.Update(aData, aSize);
+    if (_dynamicMode)
+      _dynamicBuffer.Write(data, size);
+    else
+      _outByte.WriteBytes(data, size);
+    _crc.Update(data, size);
   }
   else
   {
-    if (m_CountMode)
-      m_CountSize += aSize;
+    if (_countMode)
+      _countSize += size;
     else
-      RETURN_IF_NOT_S_OK(m_OutByte2.Write(aData, aSize));
+      RETURN_IF_NOT_S_OK(_outByte2.Write(data, size));
   }
   return S_OK;
 }
 
-HRESULT COutArchive::WriteBytes2(const CByteBuffer &aData)
+HRESULT COutArchive::WriteBytes2(const CByteBuffer &data)
 {
-  return  WriteBytes2(aData, aData.GetCapacity());
+  return  WriteBytes2(data, data.GetCapacity());
 }
 
-HRESULT COutArchive::WriteByte2(BYTE aByte)
+HRESULT COutArchive::WriteByte2(BYTE b)
 {
-  return WriteBytes2(&aByte, 1);
+  return WriteBytes2(&b, 1);
 }
 
-HRESULT COutArchive::WriteNumber(UINT64 aValue)
+HRESULT COutArchive::WriteNumber(UINT64 value)
 {
-  BYTE aFirstByte = 0;
-  BYTE aMask = 0x80;
+  BYTE firstByte = 0;
+  BYTE mask = 0x80;
   int i;
   for (i = 0; i < 8; i++)
   {
-    if (aValue < ((UINT64(1) << ( 7  * (i + 1)))))
+    if (value < ((UINT64(1) << ( 7  * (i + 1)))))
     {
-      aFirstByte |= BYTE(aValue >> (8 * i));
+      firstByte |= BYTE(value >> (8 * i));
       break;
     }
-    aFirstByte |= aMask;
-    aMask >>= 1;
+    firstByte |= mask;
+    mask >>= 1;
   }
-  RETURN_IF_NOT_S_OK(WriteByte2(aFirstByte));
-  return WriteBytes2(&aValue, i);
+  RETURN_IF_NOT_S_OK(WriteByte2(firstByte));
+  return WriteBytes2(&value, i);
 }
 
-static UINT32 GetBigNumberSize(UINT64 aValue)
+static UINT32 GetBigNumberSize(UINT64 value)
 {
   int i;
   for (i = 0; i < 8; i++)
-    if (aValue < ((UINT64(1) << ( 7  * (i + 1)))))
+    if (value < ((UINT64(1) << ( 7  * (i + 1)))))
       break;
   return 1 + i;
 }
 
-HRESULT COutArchive::WriteFolderHeader(const CFolderItemInfo &anItemInfo)
+HRESULT COutArchive::WriteFolderHeader(const CFolderItemInfo &itemInfo)
 {
-  RETURN_IF_NOT_S_OK(WriteNumber(anItemInfo.CodersInfo.Size()));
+  RETURN_IF_NOT_S_OK(WriteNumber(itemInfo.CodersInfo.Size()));
   int i;
-  for (i = 0; i < anItemInfo.CodersInfo.Size(); i++)
+  for (i = 0; i < itemInfo.CodersInfo.Size(); i++)
   {
-    const CCoderInfo &aCoderInfo = anItemInfo.CodersInfo[i];
-    UINT64 aPropertiesSize = aCoderInfo.Properties.GetCapacity();
-
-    BYTE aByte;
-    aByte = aCoderInfo.DecompressionMethod.IDSize & 0xF;
-    bool anIsComplex = (aCoderInfo.NumInStreams != 1) ||  
-        (aCoderInfo.NumOutStreams != 1);
-    aByte |= (anIsComplex ? 0x10 : 0);
-    aByte |= ((aPropertiesSize != 0) ? 0x20 : 0 );
-    RETURN_IF_NOT_S_OK(WriteByte2(aByte));
-    RETURN_IF_NOT_S_OK(WriteBytes2(&aCoderInfo.DecompressionMethod.ID[0], 
-        aCoderInfo.DecompressionMethod.IDSize));
-    if (anIsComplex)
+    const CCoderInfo &coderInfo = itemInfo.CodersInfo[i];
+    for (int j = 0; j < coderInfo.AltCoders.Size(); j++)
     {
-      RETURN_IF_NOT_S_OK(WriteNumber(aCoderInfo.NumInStreams));
-      RETURN_IF_NOT_S_OK(WriteNumber(aCoderInfo.NumOutStreams));
+      const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders[j];
+      UINT64 propertiesSize = altCoderInfo.Properties.GetCapacity();
+      
+      BYTE b;
+      b = altCoderInfo.DecompressionMethod.IDSize & 0xF;
+      bool isComplex = (coderInfo.NumInStreams != 1) ||  
+        (coderInfo.NumOutStreams != 1);
+      b |= (isComplex ? 0x10 : 0);
+      b |= ((propertiesSize != 0) ? 0x20 : 0 );
+      b |= ((j == coderInfo.AltCoders.Size() - 1) ? 0 : 0x80 );
+      RETURN_IF_NOT_S_OK(WriteByte2(b));
+      RETURN_IF_NOT_S_OK(WriteBytes2(&altCoderInfo.DecompressionMethod.ID[0], 
+        altCoderInfo.DecompressionMethod.IDSize));
+      if (isComplex)
+      {
+        RETURN_IF_NOT_S_OK(WriteNumber(coderInfo.NumInStreams));
+        RETURN_IF_NOT_S_OK(WriteNumber(coderInfo.NumOutStreams));
+      }
+      if (propertiesSize == 0)
+        continue;
+      RETURN_IF_NOT_S_OK(WriteNumber(propertiesSize));
+      RETURN_IF_NOT_S_OK(WriteBytes2(altCoderInfo.Properties, propertiesSize));
     }
-    if (aPropertiesSize == 0)
-      continue;
-    RETURN_IF_NOT_S_OK(WriteNumber(aPropertiesSize));
-    RETURN_IF_NOT_S_OK(WriteBytes2(aCoderInfo.Properties, aPropertiesSize));
   }
-  // RETURN_IF_NOT_S_OK(WriteNumber(anItemInfo.BindPairs.Size()));
-  for (i = 0; i < anItemInfo.BindPairs.Size(); i++)
+  // RETURN_IF_NOT_S_OK(WriteNumber(itemInfo.BindPairs.Size()));
+  for (i = 0; i < itemInfo.BindPairs.Size(); i++)
   {
-    const CBindPair &aBindPair = anItemInfo.BindPairs[i];
-    RETURN_IF_NOT_S_OK(WriteNumber(aBindPair.InIndex));
-    RETURN_IF_NOT_S_OK(WriteNumber(aBindPair.OutIndex));
+    const CBindPair &bindPair = itemInfo.BindPairs[i];
+    RETURN_IF_NOT_S_OK(WriteNumber(bindPair.InIndex));
+    RETURN_IF_NOT_S_OK(WriteNumber(bindPair.OutIndex));
   }
-  if (anItemInfo.PackStreams.Size() > 1)
-    for (i = 0; i < anItemInfo.PackStreams.Size(); i++)
+  if (itemInfo.PackStreams.Size() > 1)
+    for (i = 0; i < itemInfo.PackStreams.Size(); i++)
     {
-      const CPackStreamInfo &aPackStreamInfo = anItemInfo.PackStreams[i];
-      RETURN_IF_NOT_S_OK(WriteNumber(aPackStreamInfo.Index));
+      const CPackStreamInfo &packStreamInfo = itemInfo.PackStreams[i];
+      RETURN_IF_NOT_S_OK(WriteNumber(packStreamInfo.Index));
     }
   return S_OK;
 }
 
-HRESULT COutArchive::WriteBoolVector(const CBoolVector &aVector)
+HRESULT COutArchive::WriteBoolVector(const CBoolVector &boolVector)
 {
-  BYTE aByte = 0;
-  BYTE aMask = 0x80;
-  for(UINT32 i = 0; i < aVector.Size(); i++)
+  BYTE b = 0;
+  BYTE mask = 0x80;
+  for(UINT32 i = 0; i < boolVector.Size(); i++)
   {
-    if (aVector[i])
-      aByte |= aMask;
-    aMask >>= 1;
-    if (aMask == 0)
+    if (boolVector[i])
+      b |= mask;
+    mask >>= 1;
+    if (mask == 0)
     {
-      RETURN_IF_NOT_S_OK(WriteBytes2(&aByte, 1));
-      aMask = 0x80;
-      aByte = 0;
+      RETURN_IF_NOT_S_OK(WriteBytes2(&b, 1));
+      mask = 0x80;
+      b = 0;
     }
   }
-  if (aMask != 0x80)
+  if (mask != 0x80)
   {
-    RETURN_IF_NOT_S_OK(WriteBytes2(&aByte, 1));
+    RETURN_IF_NOT_S_OK(WriteBytes2(&b, 1));
   }
   return S_OK;
 }
@@ -182,15 +190,15 @@ HRESULT COutArchive::WriteHashDigests(
     const CRecordVector<bool> &digestsDefined,
     const CRecordVector<UINT32> &digests)
 {
-  int aNumDefined = 0;
+  int numDefined = 0;
   for(int i = 0; i < digestsDefined.Size(); i++)
     if (digestsDefined[i])
-      aNumDefined++;
-  if (aNumDefined == 0)
+      numDefined++;
+  if (numDefined == 0)
     return S_OK;
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kCRC));
-  if (aNumDefined == digestsDefined.Size())
+  if (numDefined == digestsDefined.Size())
   {
     RETURN_IF_NOT_S_OK(WriteByte2(1));
   }
@@ -208,261 +216,267 @@ HRESULT COutArchive::WriteHashDigests(
 }
 
 HRESULT COutArchive::WritePackInfo(
-    UINT64 aDataOffset,
-    const CRecordVector<UINT64> &aPackSizes,
-    const CRecordVector<bool> &aPackCRCsDefined,
-    const CRecordVector<UINT32> &aPackCRCs)
+    UINT64 dataOffset,
+    const CRecordVector<UINT64> &packSizes,
+    const CRecordVector<bool> &packCRCsDefined,
+    const CRecordVector<UINT32> &packCRCs)
 {
-  if (aPackSizes.IsEmpty())
+  if (packSizes.IsEmpty())
     return S_OK;
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kPackInfo));
-  RETURN_IF_NOT_S_OK(WriteNumber(aDataOffset));
-  RETURN_IF_NOT_S_OK(WriteNumber(aPackSizes.Size()));
+  RETURN_IF_NOT_S_OK(WriteNumber(dataOffset));
+  RETURN_IF_NOT_S_OK(WriteNumber(packSizes.Size()));
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kSize));
-  for(UINT64 i = 0; i < aPackSizes.Size(); i++)
-    RETURN_IF_NOT_S_OK(WriteNumber(aPackSizes[i]));
+  for(UINT64 i = 0; i < packSizes.Size(); i++)
+    RETURN_IF_NOT_S_OK(WriteNumber(packSizes[i]));
 
-  RETURN_IF_NOT_S_OK(WriteHashDigests(aPackCRCsDefined, aPackCRCs));
+  RETURN_IF_NOT_S_OK(WriteHashDigests(packCRCsDefined, packCRCs));
   
   return WriteByte2(NID::kEnd);
 }
 
 HRESULT COutArchive::WriteUnPackInfo(
     bool externalFolders,
-    UINT64 anExternalFoldersStreamIndex,
-    const CObjectVector<CFolderItemInfo> &aFolders)
+    UINT64 externalFoldersStreamIndex,
+    const CObjectVector<CFolderItemInfo> &folders)
 {
-  if (aFolders.IsEmpty())
+  if (folders.IsEmpty())
     return S_OK;
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kUnPackInfo));
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kFolder));
-  RETURN_IF_NOT_S_OK(WriteNumber(aFolders.Size()));
+  RETURN_IF_NOT_S_OK(WriteNumber(folders.Size()));
   if (externalFolders)
   {
     RETURN_IF_NOT_S_OK(WriteByte2(1));
-    RETURN_IF_NOT_S_OK(WriteNumber(anExternalFoldersStreamIndex));
+    RETURN_IF_NOT_S_OK(WriteNumber(externalFoldersStreamIndex));
   }
   else
   {
     RETURN_IF_NOT_S_OK(WriteByte2(0));
-    for(int i = 0; i < aFolders.Size(); i++)
-      RETURN_IF_NOT_S_OK(WriteFolderHeader(aFolders[i]));
+    for(int i = 0; i < folders.Size(); i++)
+      RETURN_IF_NOT_S_OK(WriteFolderHeader(folders[i]));
   }
   
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kCodersUnPackSize));
-  for(int i = 0; i < aFolders.Size(); i++)
+  for(int i = 0; i < folders.Size(); i++)
   {
-    const CFolderItemInfo &aFolder = aFolders[i];
-    for (int j = 0; j < aFolder.UnPackSizes.Size(); j++)
-      RETURN_IF_NOT_S_OK(WriteNumber(aFolder.UnPackSizes[j]));
+    const CFolderItemInfo &folder = folders[i];
+    for (int j = 0; j < folder.UnPackSizes.Size(); j++)
+      RETURN_IF_NOT_S_OK(WriteNumber(folder.UnPackSizes[j]));
   }
 
-  CRecordVector<bool> anUnPackCRCsDefined;
-  CRecordVector<UINT32> anUnPackCRCs;
-  for(i = 0; i < aFolders.Size(); i++)
+  CRecordVector<bool> unPackCRCsDefined;
+  CRecordVector<UINT32> unPackCRCs;
+  for(i = 0; i < folders.Size(); i++)
   {
-    const CFolderItemInfo &aFolder = aFolders[i];
-    anUnPackCRCsDefined.Add(aFolder.UnPackCRCDefined);
-    anUnPackCRCs.Add(aFolder.UnPackCRC);
+    const CFolderItemInfo &folder = folders[i];
+    unPackCRCsDefined.Add(folder.UnPackCRCDefined);
+    unPackCRCs.Add(folder.UnPackCRC);
   }
-  RETURN_IF_NOT_S_OK(WriteHashDigests(anUnPackCRCsDefined, anUnPackCRCs));
+  RETURN_IF_NOT_S_OK(WriteHashDigests(unPackCRCsDefined, unPackCRCs));
 
   return WriteByte2(NID::kEnd);
 }
 
 HRESULT COutArchive::WriteSubStreamsInfo(
-    const CObjectVector<CFolderItemInfo> &aFolders,
-    const CRecordVector<UINT64> &aNumUnPackStreamsInFolders,
+    const CObjectVector<CFolderItemInfo> &folders,
+    const CRecordVector<UINT64> &numUnPackStreamsInFolders,
     const CRecordVector<UINT64> &unPackSizes,
     const CRecordVector<bool> &digestsDefined,
     const CRecordVector<UINT32> &digests)
 {
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kSubStreamsInfo));
 
-  for(int i = 0; i < aNumUnPackStreamsInFolders.Size(); i++)
+  for(int i = 0; i < numUnPackStreamsInFolders.Size(); i++)
   {
-    if (aNumUnPackStreamsInFolders[i] != 1)
+    if (numUnPackStreamsInFolders[i] != 1)
     {
       RETURN_IF_NOT_S_OK(WriteByte2(NID::kNumUnPackStream));
-      for(i = 0; i < aNumUnPackStreamsInFolders.Size(); i++)
-        RETURN_IF_NOT_S_OK(WriteNumber(aNumUnPackStreamsInFolders[i]));
+      for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
+        RETURN_IF_NOT_S_OK(WriteNumber(numUnPackStreamsInFolders[i]));
       break;
     }
   }
  
 
-  UINT32 aNeedFlag = true;
-  UINT32 anIndex = 0;
-  for(i = 0; i < aNumUnPackStreamsInFolders.Size(); i++)
-    for (UINT32 j = 0; j < aNumUnPackStreamsInFolders[i]; j++)
+  UINT32 needFlag = true;
+  UINT32 index = 0;
+  for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
+    for (UINT32 j = 0; j < numUnPackStreamsInFolders[i]; j++)
     {
-      if (j + 1 != aNumUnPackStreamsInFolders[i])
+      if (j + 1 != numUnPackStreamsInFolders[i])
       {
-        if (aNeedFlag)
+        if (needFlag)
           RETURN_IF_NOT_S_OK(WriteByte2(NID::kSize));
-        aNeedFlag = false;
-        RETURN_IF_NOT_S_OK(WriteNumber(unPackSizes[anIndex]));
+        needFlag = false;
+        RETURN_IF_NOT_S_OK(WriteNumber(unPackSizes[index]));
       }
-      anIndex++;
+      index++;
     }
 
-  CRecordVector<bool> aDigestsDefined2;
-  CRecordVector<UINT32> aDigests2;
+  CRecordVector<bool> digestsDefined2;
+  CRecordVector<UINT32> digests2;
 
-  int anDigestIndex = 0;
-  for (i = 0; i < aFolders.Size(); i++)
+  int digestIndex = 0;
+  for (i = 0; i < folders.Size(); i++)
   {
-    int aNumSubstreams = aNumUnPackStreamsInFolders[i];
-    if (aNumSubstreams == 1 && aFolders[i].UnPackCRCDefined)
-      anDigestIndex++;
+    int numSubStreams = numUnPackStreamsInFolders[i];
+    if (numSubStreams == 1 && folders[i].UnPackCRCDefined)
+      digestIndex++;
     else
-      for (int j = 0; j < aNumSubstreams; j++, anDigestIndex++)
+      for (int j = 0; j < numSubStreams; j++, digestIndex++)
       {
-        aDigestsDefined2.Add(digestsDefined[anDigestIndex]);
-        aDigests2.Add(digests[anDigestIndex]);
+        digestsDefined2.Add(digestsDefined[digestIndex]);
+        digests2.Add(digests[digestIndex]);
       }
   }
-  RETURN_IF_NOT_S_OK(WriteHashDigests(aDigestsDefined2, aDigests2));
+  RETURN_IF_NOT_S_OK(WriteHashDigests(digestsDefined2, digests2));
   return WriteByte2(NID::kEnd);
 }
 
 HRESULT COutArchive::WriteTime(
-    const CObjectVector<CFileItemInfo> &aFiles, BYTE aType,
-    bool anIsExternal, int anExternalDataIndex)
+    const CObjectVector<CFileItemInfo> &files, BYTE type,
+    bool isExternal, int externalDataIndex)
 {
   /////////////////////////////////////////////////
   // CreationTime
-  CBoolVector aBoolVector;
-  aBoolVector.Reserve(aFiles.Size());
-  bool aThereAreDefined = false;
-  bool anAllDefined = true;
-  for(int i = 0; i < aFiles.Size(); i++)
+  CBoolVector boolVector;
+  boolVector.Reserve(files.Size());
+  bool thereAreDefined = false;
+  bool allDefined = true;
+  for(int i = 0; i < files.Size(); i++)
   {
-    const CFileItemInfo &anItem = aFiles[i];
-    bool aDefined;
-    switch(aType)
+    const CFileItemInfo &item = files[i];
+    bool defined;
+    switch(type)
     {
       case NID::kCreationTime:
-        aDefined = anItem.IsCreationTimeDefined;
+        defined = item.IsCreationTimeDefined;
         break;
       case NID::kLastWriteTime:
-        aDefined = anItem.IsLastWriteTimeDefined;
+        defined = item.IsLastWriteTimeDefined;
         break;
       case NID::kLastAccessTime:
-        aDefined = anItem.IsLastAccessTimeDefined;
+        defined = item.IsLastAccessTimeDefined;
         break;
       default:
         throw 1;
     }
-    aBoolVector.Add(aDefined);
-    aThereAreDefined = (aThereAreDefined || aDefined);
-    anAllDefined = (anAllDefined && aDefined);
+    boolVector.Add(defined);
+    thereAreDefined = (thereAreDefined || defined);
+    allDefined = (allDefined && defined);
   }
-  if (!aThereAreDefined)
+  if (!thereAreDefined)
     return S_OK;
-  RETURN_IF_NOT_S_OK(WriteByte2(aType));
-  UINT32 aDataSize = 1 + 1;
-  if (anIsExternal)
-    aDataSize += GetBigNumberSize(anExternalDataIndex);
+  RETURN_IF_NOT_S_OK(WriteByte2(type));
+  UINT32 dataSize = 1 + 1;
+  if (isExternal)
+    dataSize += GetBigNumberSize(externalDataIndex);
   else
-    aDataSize += aFiles.Size() * sizeof(CArchiveFileTime);
-  if (anAllDefined)
+    dataSize += files.Size() * sizeof(CArchiveFileTime);
+  if (allDefined)
   {
-    RETURN_IF_NOT_S_OK(WriteNumber(aDataSize));
+    RETURN_IF_NOT_S_OK(WriteNumber(dataSize));
     WriteByte2(1);
   }
   else
   {
-    RETURN_IF_NOT_S_OK(WriteNumber(1 + (aBoolVector.Size() + 7) / 8 + aDataSize));
+    RETURN_IF_NOT_S_OK(WriteNumber(1 + (boolVector.Size() + 7) / 8 + dataSize));
     WriteByte2(0);
-    RETURN_IF_NOT_S_OK(WriteBoolVector(aBoolVector));
+    RETURN_IF_NOT_S_OK(WriteBoolVector(boolVector));
   }
-  if (anIsExternal)
+  if (isExternal)
   {
     RETURN_IF_NOT_S_OK(WriteByte2(1));
-    RETURN_IF_NOT_S_OK(WriteNumber(anExternalDataIndex));
+    RETURN_IF_NOT_S_OK(WriteNumber(externalDataIndex));
     return S_OK;
   }
   RETURN_IF_NOT_S_OK(WriteByte2(0));
-  for(i = 0; i < aFiles.Size(); i++)
+  for(i = 0; i < files.Size(); i++)
   {
-    if (aBoolVector[i])
+    if (boolVector[i])
     {
-      const CFileItemInfo &anItem = aFiles[i];
-      CArchiveFileTime aTime;
-      switch(aType)
+      const CFileItemInfo &item = files[i];
+      CArchiveFileTime timeValue;
+      switch(type)
       {
         case NID::kCreationTime:
-          aTime = anItem.CreationTime;
+          timeValue = item.CreationTime;
           break;
         case NID::kLastWriteTime:
-          aTime = anItem.LastWriteTime;
+          timeValue = item.LastWriteTime;
           break;
         case NID::kLastAccessTime:
-          aTime = anItem.LastAccessTime;
+          timeValue = item.LastAccessTime;
           break;
       }
-      RETURN_IF_NOT_S_OK(WriteBytes2(&aTime, sizeof(aTime)));
+      RETURN_IF_NOT_S_OK(WriteBytes2(&timeValue, sizeof(timeValue)));
     }
   }
   return S_OK;
 }
 
-HRESULT COutArchive::EncodeStream(CEncoder &anEncoder, const CByteBuffer &aData, 
-    CRecordVector<UINT64> &aPackSizes, CObjectVector<CFolderItemInfo> &aFolders)
+HRESULT COutArchive::EncodeStream(CEncoder &encoder, const BYTE *data, UINT32 dataSize,
+    CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders)
 {
-  CComObjectNoLock<CSequentialInStreamImp> *aStreamSpec = 
+  CComObjectNoLock<CSequentialInStreamImp> *streamSpec = 
     new CComObjectNoLock<CSequentialInStreamImp>;
-  CComPtr<ISequentialInStream> anStream = aStreamSpec;
-  aStreamSpec->Init(aData, aData.GetCapacity());
-  CFolderItemInfo aFolderItem;
-  aFolderItem.UnPackCRCDefined = true;
-  aFolderItem.UnPackCRC = CCRC::CalculateDigest(aData, aData.GetCapacity());
-  RETURN_IF_NOT_S_OK(anEncoder.Encode(anStream, NULL,
-      aFolderItem, m_Stream,
-      aPackSizes, NULL));
-  aFolders.Add(aFolderItem);
+  CComPtr<ISequentialInStream> stream = streamSpec;
+  streamSpec->Init(data, dataSize);
+  CFolderItemInfo folderItem;
+  folderItem.UnPackCRCDefined = true;
+  folderItem.UnPackCRC = CCRC::CalculateDigest(data, dataSize);
+  RETURN_IF_NOT_S_OK(encoder.Encode(stream, NULL,
+      folderItem, Stream,
+      packSizes, NULL));
+  folders.Add(folderItem);
   return S_OK;
+}
+
+HRESULT COutArchive::EncodeStream(CEncoder &encoder, const CByteBuffer &data, 
+    CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders)
+{
+  return EncodeStream(encoder, data, data.GetCapacity(), packSizes, folders);
 }
 
 
 
 HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
-    const CCompressionMethodMode *anOptions, UINT64 &aHeaderOffset)
+    const CCompressionMethodMode *options, UINT64 &headerOffset)
 {
-  CObjectVector<CFolderItemInfo> aFolders;
+  CObjectVector<CFolderItemInfo> folders;
 
-  bool compressHeaders = (anOptions != NULL);
-  std::auto_ptr<CEncoder> anEncoder;
+  bool compressHeaders = (options != NULL);
+  std::auto_ptr<CEncoder> encoder;
   if (compressHeaders)
-    anEncoder = std::auto_ptr<CEncoder>(new CEncoder(anOptions));
+    encoder = std::auto_ptr<CEncoder>(new CEncoder(options));
 
-  CRecordVector<UINT64> aPackSizes;
+  CRecordVector<UINT64> packSizes;
 
-  UINT64 aDataIndex = 0;
+  UINT64 dataIndex = 0;
 
   //////////////////////////
   // Folders
 
-  UINT64 anExternalFoldersStreamIndex;
+  UINT64 externalFoldersStreamIndex;
   bool externalFolders = (compressHeaders && database.Folders.Size() > 8);
   if (externalFolders)
   {
-    m_MainMode = false;
-    m_CountMode = true;
-    m_CountSize = 0;
+    _mainMode = false;
+    _countMode = true;
+    _countSize = 0;
     for(int i = 0; i < database.Folders.Size(); i++)
     {
       RETURN_IF_NOT_S_OK(WriteFolderHeader(database.Folders[i]));
     }
     
-    m_CountMode = false;
+    _countMode = false;
     
-    CByteBuffer aFoldersData;
-    aFoldersData.SetCapacity(m_CountSize);
-    m_OutByte2.Init(aFoldersData, aFoldersData.GetCapacity());
+    CByteBuffer foldersData;
+    foldersData.SetCapacity(_countSize);
+    _outByte2.Init(foldersData, foldersData.GetCapacity());
     
     for(i = 0; i < database.Folders.Size(); i++)
     {
@@ -470,8 +484,8 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
     }
     
     {
-      anExternalFoldersStreamIndex = aDataIndex++;
-      RETURN_IF_NOT_S_OK(EncodeStream(*anEncoder, aFoldersData, aPackSizes, aFolders));
+      externalFoldersStreamIndex = dataIndex++;
+      RETURN_IF_NOT_S_OK(EncodeStream(*encoder, foldersData, packSizes, folders));
     }
   }
 
@@ -479,127 +493,127 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   /////////////////////////////////
   // Names
 
-  CByteBuffer aNamesData;
-  UINT64 anExternalNamesStreamIndex;
-  bool anExternalNames = (compressHeaders && database.Files.Size() > 8);
+  CByteBuffer namesData;
+  UINT64 externalNamesStreamIndex;
+  bool externalNames = (compressHeaders && database.Files.Size() > 8);
   {
-    UINT64 aNamesDataSize = 0;
+    UINT64 namesDataSize = 0;
     for(int i = 0; i < database.Files.Size(); i++)
-      aNamesDataSize += (database.Files[i].Name.Length() + 1) * sizeof(wchar_t);
-    aNamesData.SetCapacity(aNamesDataSize);
-    UINT32 aPos = 0;
+      namesDataSize += (database.Files[i].Name.Length() + 1) * sizeof(wchar_t);
+    namesData.SetCapacity(namesDataSize);
+    UINT32 pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
-      const UString &aName = database.Files[i].Name;
-      int aLength = aName.Length() * sizeof(wchar_t);
-      memmove(aNamesData + aPos, aName, aLength);
-      aPos += aLength;
-      aNamesData[aPos++] = 0;
-      aNamesData[aPos++] = 0;
+      const UString &name = database.Files[i].Name;
+      int length = name.Length() * sizeof(wchar_t);
+      memmove(namesData + pos, name, length);
+      pos += length;
+      namesData[pos++] = 0;
+      namesData[pos++] = 0;
     }
 
-    if (anExternalNames)
+    if (externalNames)
     {
-      anExternalNamesStreamIndex = aDataIndex++;
-      RETURN_IF_NOT_S_OK(EncodeStream(*anEncoder, aNamesData, aPackSizes, aFolders));
+      externalNamesStreamIndex = dataIndex++;
+      RETURN_IF_NOT_S_OK(EncodeStream(*encoder, namesData, packSizes, folders));
     }
   }
 
   /////////////////////////////////
   // Write Attributes
-  CBoolVector anAttributesBoolVector;
-  anAttributesBoolVector.Reserve(database.Files.Size());
-  UINT32 aNumDefinedAttributes = 0;
+  CBoolVector attributesBoolVector;
+  attributesBoolVector.Reserve(database.Files.Size());
+  UINT32 numDefinedAttributes = 0;
   for(int i = 0; i < database.Files.Size(); i++)
   {
-    bool aDefined = database.Files[i].AreAttributesDefined;
-    anAttributesBoolVector.Add(aDefined);
-    if (aDefined)
-      aNumDefinedAttributes++;
+    bool defined = database.Files[i].AreAttributesDefined;
+    attributesBoolVector.Add(defined);
+    if (defined)
+      numDefinedAttributes++;
   }
 
-  CByteBuffer anAttributesData;
-  UINT64 anExternalAttributesStreamIndex;
-  bool anExternalAttributes = (compressHeaders && aNumDefinedAttributes > 8);
-  if (aNumDefinedAttributes > 0)
+  CByteBuffer attributesData;
+  UINT64 externalAttributesStreamIndex;
+  bool externalAttributes = (compressHeaders && numDefinedAttributes > 8);
+  if (numDefinedAttributes > 0)
   {
-    anAttributesData.SetCapacity(aNumDefinedAttributes * sizeof(UINT32));
-    UINT32 aPos = 0;
+    attributesData.SetCapacity(numDefinedAttributes * sizeof(UINT32));
+    UINT32 pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
-      const CFileItemInfo &aFile = database.Files[i];
-      if (aFile.AreAttributesDefined)
+      const CFileItemInfo &fileInfo = database.Files[i];
+      if (fileInfo.AreAttributesDefined)
       {
-        memmove(anAttributesData + aPos, &database.Files[i].Attributes, sizeof(UINT32));
-        aPos += sizeof(UINT32);
+        memmove(attributesData + pos, &database.Files[i].Attributes, sizeof(UINT32));
+        pos += sizeof(UINT32);
       }
     }
-    if (anExternalAttributes)
+    if (externalAttributes)
     {
-      anExternalAttributesStreamIndex = aDataIndex++;
-      RETURN_IF_NOT_S_OK(EncodeStream(*anEncoder, anAttributesData, aPackSizes, aFolders));
+      externalAttributesStreamIndex = dataIndex++;
+      RETURN_IF_NOT_S_OK(EncodeStream(*encoder, attributesData, packSizes, folders));
     }
   }
   
   /////////////////////////////////
   // Write Last Write Time
-  UINT64 anExternalLastWriteTimeStreamIndex;
-  bool anExternalLastWriteTime = false;
+  UINT64 externalLastWriteTimeStreamIndex;
+  bool externalLastWriteTime = false;
   // /*
-  UINT32 aNumDefinedLastWriteTimes = 0;
+  UINT32 numDefinedLastWriteTimes = 0;
   for(i = 0; i < database.Files.Size(); i++)
     if (database.Files[i].IsLastWriteTimeDefined)
-      aNumDefinedLastWriteTimes++;
+      numDefinedLastWriteTimes++;
 
-  anExternalLastWriteTime = (compressHeaders && aNumDefinedLastWriteTimes > 64);
-  if (aNumDefinedLastWriteTimes > 0)
+  externalLastWriteTime = (compressHeaders && numDefinedLastWriteTimes > 64);
+  if (numDefinedLastWriteTimes > 0)
   {
-    CByteBuffer aLastWriteTimeData;
-    aLastWriteTimeData.SetCapacity(aNumDefinedLastWriteTimes * sizeof(CArchiveFileTime));
-    UINT32 aPos = 0;
+    CByteBuffer lastWriteTimeData;
+    lastWriteTimeData.SetCapacity(numDefinedLastWriteTimes * sizeof(CArchiveFileTime));
+    UINT32 pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
-      const CFileItemInfo &aFile = database.Files[i];
-      if (aFile.IsLastWriteTimeDefined)
+      const CFileItemInfo &fileInfo = database.Files[i];
+      if (fileInfo.IsLastWriteTimeDefined)
       {
-        memmove(aLastWriteTimeData + aPos, &database.Files[i].LastWriteTime, sizeof(CArchiveFileTime));
-        aPos += sizeof(CArchiveFileTime);
+        memmove(lastWriteTimeData + pos, &database.Files[i].LastWriteTime, sizeof(CArchiveFileTime));
+        pos += sizeof(CArchiveFileTime);
       }
     }
-    if (anExternalLastWriteTime)
+    if (externalLastWriteTime)
     {
-      anExternalLastWriteTimeStreamIndex = aDataIndex++;
-      RETURN_IF_NOT_S_OK(EncodeStream(*anEncoder, aLastWriteTimeData, aPackSizes, aFolders));
+      externalLastWriteTimeStreamIndex = dataIndex++;
+      RETURN_IF_NOT_S_OK(EncodeStream(*encoder, lastWriteTimeData, packSizes, folders));
     }
   }
   // */
   
 
-  UINT64 aPackedSize = 0;
+  UINT64 packedSize = 0;
   for(i = 0; i < database.PackSizes.Size(); i++)
-    aPackedSize += database.PackSizes[i];
-  UINT64 aHeaderPackSize = 0;
-  for (i = 0; i < aPackSizes.Size(); i++)
-    aHeaderPackSize += aPackSizes[i];
+    packedSize += database.PackSizes[i];
+  UINT64 headerPackSize = 0;
+  for (i = 0; i < packSizes.Size(); i++)
+    headerPackSize += packSizes[i];
 
-  aHeaderOffset = aPackedSize + aHeaderPackSize;
+  headerOffset = packedSize + headerPackSize;
 
-  m_MainMode = true;
+  _mainMode = true;
 
-  m_OutByte.Init(m_Stream);
-  m_CRC.Init();
+  _outByte.Init(Stream);
+  _crc.Init();
 
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kHeader));
 
   // Archive Properties
 
-  if (aFolders.Size() > 0)
+  if (folders.Size() > 0)
   {
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kAdditionalStreamsInfo));
-    RETURN_IF_NOT_S_OK(WritePackInfo(aPackedSize, aPackSizes, 
+    RETURN_IF_NOT_S_OK(WritePackInfo(packedSize, packSizes, 
         CRecordVector<bool>(), CRecordVector<UINT32>()));
-    RETURN_IF_NOT_S_OK(WriteUnPackInfo(false, 0, aFolders));
+    RETURN_IF_NOT_S_OK(WriteUnPackInfo(false, 0, folders));
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kEnd));
   }
 
@@ -613,19 +627,19 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
         database.PackCRCs));
 
     RETURN_IF_NOT_S_OK(WriteUnPackInfo(
-        externalFolders, anExternalFoldersStreamIndex, database.Folders));
+        externalFolders, externalFoldersStreamIndex, database.Folders));
 
     CRecordVector<UINT64> unPackSizes;
     CRecordVector<bool> digestsDefined;
     CRecordVector<UINT32> digests;
     for (i = 0; i < database.Files.Size(); i++)
     {
-      const CFileItemInfo &aFile = database.Files[i];
-      if (aFile.IsDirectory || aFile.UnPackSize == 0)
+      const CFileItemInfo &fileInfo = database.Files[i];
+      if (fileInfo.IsDirectory || fileInfo.UnPackSize == 0)
         continue;
-      unPackSizes.Add(aFile.UnPackSize);
-      digestsDefined.Add(aFile.FileCRCIsDefined);
-      digests.Add(aFile.FileCRC);
+      unPackSizes.Add(fileInfo.UnPackSize);
+      digestsDefined.Add(fileInfo.FileCRCIsDefined);
+      digests.Add(fileInfo.FileCRC);
     }
 
     RETURN_IF_NOT_S_OK(WriteSubStreamsInfo(
@@ -640,88 +654,88 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   if (database.Files.IsEmpty())
   {
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kEnd));
-    return m_OutByte.Flush();
+    return _outByte.Flush();
   }
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kFilesInfo));
   RETURN_IF_NOT_S_OK(WriteNumber(database.Files.Size()));
 
-  CBoolVector anEmptyStreamVector;
-  anEmptyStreamVector.Reserve(database.Files.Size());
-  UINT64 aNumEmptyStreams = 0;
+  CBoolVector emptyStreamVector;
+  emptyStreamVector.Reserve(database.Files.Size());
+  UINT64 numEmptyStreams = 0;
   for(i = 0; i < database.Files.Size(); i++)
   {
-    const CFileItemInfo &aFile = database.Files[i];
-    if (aFile.IsAnti || aFile.IsDirectory || aFile.UnPackSize == 0)
+    const CFileItemInfo &fileInfo = database.Files[i];
+    if (fileInfo.IsAnti || fileInfo.IsDirectory || fileInfo.UnPackSize == 0)
     {
-      anEmptyStreamVector.Add(true);
-      aNumEmptyStreams++;
+      emptyStreamVector.Add(true);
+      numEmptyStreams++;
     }
     else
-      anEmptyStreamVector.Add(false);
+      emptyStreamVector.Add(false);
   }
-  if (aNumEmptyStreams > 0)
+  if (numEmptyStreams > 0)
   {
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kEmptyStream));
-    RETURN_IF_NOT_S_OK(WriteNumber((anEmptyStreamVector.Size() + 7) / 8));
-    RETURN_IF_NOT_S_OK(WriteBoolVector(anEmptyStreamVector));
+    RETURN_IF_NOT_S_OK(WriteNumber((emptyStreamVector.Size() + 7) / 8));
+    RETURN_IF_NOT_S_OK(WriteBoolVector(emptyStreamVector));
 
-    CBoolVector anEmptyFileVector, anAntiVector;
-    anEmptyFileVector.Reserve(aNumEmptyStreams);
-    anAntiVector.Reserve(aNumEmptyStreams);
-    UINT64 aNumEmptyFiles = 0, aNumAntiItems = 0;
+    CBoolVector emptyFileVector, antiVector;
+    emptyFileVector.Reserve(numEmptyStreams);
+    antiVector.Reserve(numEmptyStreams);
+    UINT64 numEmptyFiles = 0, numAntiItems = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
-      const CFileItemInfo &aFile = database.Files[i];
-      if (aFile.IsAnti || aFile.IsDirectory || aFile.UnPackSize == 0)
+      const CFileItemInfo &fileInfo = database.Files[i];
+      if (fileInfo.IsAnti || fileInfo.IsDirectory || fileInfo.UnPackSize == 0)
       {
-        if (aFile.IsDirectory)
-          anEmptyFileVector.Add(false);
+        if (fileInfo.IsDirectory)
+          emptyFileVector.Add(false);
         else
         {
-          anEmptyFileVector.Add(true);
-          aNumEmptyFiles++;
+          emptyFileVector.Add(true);
+          numEmptyFiles++;
         }
-        if (aFile.IsAnti)
+        if (fileInfo.IsAnti)
         {
-          anAntiVector.Add(true);
-          aNumAntiItems++;
+          antiVector.Add(true);
+          numAntiItems++;
         }
         else
-          anAntiVector.Add(false);
+          antiVector.Add(false);
       }
     }
 
-    if (aNumEmptyFiles > 0)
+    if (numEmptyFiles > 0)
     {
       RETURN_IF_NOT_S_OK(WriteByte2(NID::kEmptyFile));
-      RETURN_IF_NOT_S_OK(WriteNumber((anEmptyFileVector.Size() + 7) / 8));
-      RETURN_IF_NOT_S_OK(WriteBoolVector(anEmptyFileVector));
+      RETURN_IF_NOT_S_OK(WriteNumber((emptyFileVector.Size() + 7) / 8));
+      RETURN_IF_NOT_S_OK(WriteBoolVector(emptyFileVector));
     }
 
-    if (aNumAntiItems > 0)
+    if (numAntiItems > 0)
     {
       RETURN_IF_NOT_S_OK(WriteByte2(NID::kAnti));
-      RETURN_IF_NOT_S_OK(WriteNumber((anAntiVector.Size() + 7) / 8));
-      RETURN_IF_NOT_S_OK(WriteBoolVector(anAntiVector));
+      RETURN_IF_NOT_S_OK(WriteNumber((antiVector.Size() + 7) / 8));
+      RETURN_IF_NOT_S_OK(WriteBoolVector(antiVector));
     }
   }
 
   {
     /////////////////////////////////////////////////
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kName));
-    if (anExternalNames)
+    if (externalNames)
     {
       RETURN_IF_NOT_S_OK(WriteNumber(1 + 
-          GetBigNumberSize(anExternalNamesStreamIndex)));
+          GetBigNumberSize(externalNamesStreamIndex)));
       RETURN_IF_NOT_S_OK(WriteByte2(1));
-      RETURN_IF_NOT_S_OK(WriteNumber(anExternalNamesStreamIndex));
+      RETURN_IF_NOT_S_OK(WriteNumber(externalNamesStreamIndex));
     }
     else
     {
-      RETURN_IF_NOT_S_OK(WriteNumber(1 + aNamesData.GetCapacity()));
+      RETURN_IF_NOT_S_OK(WriteNumber(1 + namesData.GetCapacity()));
       RETURN_IF_NOT_S_OK(WriteByte2(0));
-      RETURN_IF_NOT_S_OK(WriteBytes2(aNamesData));
+      RETURN_IF_NOT_S_OK(WriteBytes2(namesData));
     }
 
   }
@@ -730,68 +744,124 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   RETURN_IF_NOT_S_OK(WriteTime(database.Files, NID::kLastAccessTime, false, 0));
   RETURN_IF_NOT_S_OK(WriteTime(database.Files, NID::kLastWriteTime, 
       // false, 0));
-      anExternalLastWriteTime, anExternalLastWriteTimeStreamIndex));
+      externalLastWriteTime, externalLastWriteTimeStreamIndex));
 
-  if (aNumDefinedAttributes > 0)
+  if (numDefinedAttributes > 0)
   {
     /////////////////////////////////////////////////
     RETURN_IF_NOT_S_OK(WriteByte2(NID::kWinAttributes));
-    UINT32 aSize = 2;
-    if (aNumDefinedAttributes != database.Files.Size())
-      aSize += (anAttributesBoolVector.Size() + 7) / 8 + 1;
-    if (anExternalAttributes)
-      aSize += GetBigNumberSize(anExternalAttributesStreamIndex);
+    UINT32 size = 2;
+    if (numDefinedAttributes != database.Files.Size())
+      size += (attributesBoolVector.Size() + 7) / 8 + 1;
+    if (externalAttributes)
+      size += GetBigNumberSize(externalAttributesStreamIndex);
     else
-      aSize += anAttributesData.GetCapacity();
+      size += attributesData.GetCapacity();
 
-    RETURN_IF_NOT_S_OK(WriteNumber(aSize));
-    if (aNumDefinedAttributes == database.Files.Size())
+    RETURN_IF_NOT_S_OK(WriteNumber(size));
+    if (numDefinedAttributes == database.Files.Size())
     {
       RETURN_IF_NOT_S_OK(WriteByte2(1));
     }
     else
     {
       RETURN_IF_NOT_S_OK(WriteByte2(0));
-      RETURN_IF_NOT_S_OK(WriteBoolVector(anAttributesBoolVector));
+      RETURN_IF_NOT_S_OK(WriteBoolVector(attributesBoolVector));
     }
 
-    if (anExternalAttributes)
+    if (externalAttributes)
     {
       RETURN_IF_NOT_S_OK(WriteByte2(1));
-      RETURN_IF_NOT_S_OK(WriteNumber(anExternalAttributesStreamIndex));
+      RETURN_IF_NOT_S_OK(WriteNumber(externalAttributesStreamIndex));
     }
     else
     {
       RETURN_IF_NOT_S_OK(WriteByte2(0));
-      RETURN_IF_NOT_S_OK(WriteBytes2(anAttributesData));
+      RETURN_IF_NOT_S_OK(WriteBytes2(attributesData));
     }
   }
 
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kEnd)); // for files
   RETURN_IF_NOT_S_OK(WriteByte2(NID::kEnd)); // for headers
 
-  return m_OutByte.Flush();
+  return _outByte.Flush();
 }
 
 HRESULT COutArchive::WriteDatabase(const CArchiveDatabase &database,
-    const CCompressionMethodMode *anOptions)
+    const CCompressionMethodMode *options, 
+    bool useAdditionalStreams, bool compressMainHeader)
 {
-  UINT64 aHeaderOffset;
-  RETURN_IF_NOT_S_OK(WriteHeader(database, anOptions, aHeaderOffset));
+  UINT64 headerOffset;
+  UINT32 headerCRC;
+  UINT64 headerSize;
+  if (database.IsEmpty())
+  {
+    headerSize = 0;
+    headerOffset = 0;
+    headerCRC = CCRC::CalculateDigest(0, 0);
+  }
+  else
+  {
+    _dynamicBuffer.Init();
+    _dynamicMode = false;
 
-  UINT32 aHeaderCRC = m_CRC.GetDigest();
-  UINT64 aHeaderSize = m_OutByte.GetProcessedSize();
+    if (options != 0)
+      if (options->IsEmpty())
+        options = 0;
+    const CCompressionMethodMode *additionalStreamsOptions = options;
+    if (!useAdditionalStreams)
+      additionalStreamsOptions = 0;
+    /*
+    if (database.Files.Size() < 2)
+      compressMainHeader = false;
+    */
+    if (options != 0)
+      if (options->PasswordIsDefined || compressMainHeader)
+        _dynamicMode = true;
+    RETURN_IF_NOT_S_OK(WriteHeader(database, additionalStreamsOptions, headerOffset));
 
-  RETURN_IF_NOT_S_OK(m_Stream->Seek(m_PrefixHeaderPos, STREAM_SEEK_SET, NULL));
+    if (_dynamicMode)
+    {
+      CCompressionMethodMode encryptOptions;
+      encryptOptions.PasswordIsDefined = options->PasswordIsDefined;
+      encryptOptions.Password = options->Password;
+      CEncoder encoder(compressMainHeader ? 
+          options : &encryptOptions);
+      CRecordVector<UINT64> packSizes;
+      CObjectVector<CFolderItemInfo> folders;
+      RETURN_IF_NOT_S_OK(EncodeStream(encoder, _dynamicBuffer, 
+          _dynamicBuffer.GetSize(), packSizes, folders));
+      _dynamicMode = false;
+      _mainMode = true;
+      
+      _outByte.Init(Stream);
+      _crc.Init();
+      
+      if (folders.Size() == 0)
+        throw 1;
+
+      RETURN_IF_NOT_S_OK(WriteID(NID::kEncodedHeader));
+      RETURN_IF_NOT_S_OK(WritePackInfo(headerOffset, packSizes, 
+        CRecordVector<bool>(), CRecordVector<UINT32>()));
+      RETURN_IF_NOT_S_OK(WriteUnPackInfo(false, 0, folders));
+      RETURN_IF_NOT_S_OK(WriteByte2(NID::kEnd));
+      for (int i = 0; i < packSizes.Size(); i++)
+        headerOffset += packSizes[i];
+      RETURN_IF_NOT_S_OK(_outByte.Flush());
+    }
+    headerCRC = _crc.GetDigest();
+    headerSize = _outByte.GetProcessedSize();
+  }
+  RETURN_IF_NOT_S_OK(Stream->Seek(_prefixHeaderPos, STREAM_SEEK_SET, NULL));
   
-  CStartHeader aStartHeader;
-  aStartHeader.NextHeaderOffset = aHeaderOffset;
-  aStartHeader.NextHeaderSize = aHeaderSize;
-  aStartHeader.NextHeaderCRC = aHeaderCRC;
+  CStartHeader startHeader;
+  startHeader.NextHeaderOffset = headerOffset;
+  startHeader.NextHeaderSize = headerSize;
+  startHeader.NextHeaderCRC = headerCRC;
 
-  UINT32 aCRC = CCRC::CalculateDigest(&aStartHeader, sizeof(aStartHeader));
-  RETURN_IF_NOT_S_OK(WriteBytes(&aCRC, sizeof(aCRC)));
-  return WriteBytes(&aStartHeader, sizeof(aStartHeader));
+  UINT32 crc = CCRC::CalculateDigest(&startHeader, sizeof(startHeader));
+  RETURN_IF_NOT_S_OK(WriteBytes(&crc, sizeof(crc)));
+  return WriteBytes(&startHeader, sizeof(startHeader));
 }
 
 }}

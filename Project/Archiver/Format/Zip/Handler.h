@@ -5,7 +5,7 @@
 #ifndef __ZIP_HANDLER_H
 #define __ZIP_HANDLER_H
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 #include "Archive/Zip/InEngine.h"
 #include "Common/DynamicBuffer.h"
 #include "../../../Compress/Interface/CompressInterface.h"
@@ -20,47 +20,43 @@ namespace NArchive {
 namespace NZip {
 
 class CZipHandler: 
-  public IArchiveHandler200,
-  public IOutArchiveHandler200,
+  public IInArchive,
+  public IOutArchive,
   public ISetProperties,
   public CComObjectRoot,
   public CComCoClass<CZipHandler,&CLSID_CZipHandler>
 {
 public:
 BEGIN_COM_MAP(CZipHandler)
-  COM_INTERFACE_ENTRY(IArchiveHandler200)
-  COM_INTERFACE_ENTRY(IOutArchiveHandler200)
+  COM_INTERFACE_ENTRY(IInArchive)
+  COM_INTERFACE_ENTRY(IOutArchive)
   COM_INTERFACE_ENTRY(ISetProperties)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CZipHandler)
 
-DECLARE_REGISTRY(CZipHandler, TEXT("SevenZip.FormatZip.1"), 
-  TEXT("SevenZip.FormatZip"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CZipHandler, 
+    // TEXT("SevenZip.FormatZip.1"), TEXT("SevenZip.FormatZip"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"), 
+    UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *aStream, 
       const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+      IArchiveOpenCallback *anOpenArchiveCallback);  
   STDMETHOD(Close)();  
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(
-      UINT32 index, 
-      PROPID propID,  
-      PROPVARIANT *value);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID,  PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IArchiveExtractCallback *anExtractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, 
+      IArchiveExtractCallback *anExtractCallback);
 
 
-  // IOutArchiveHandler
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, 
-      const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack);
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, UINT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack);
-
-  STDMETHOD(GetFileTimeType)(UINT32 *aType);  
+  // IOutArchive
+  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+      IArchiveUpdateCallback *updateCallback);
+  STDMETHOD(GetFileTimeType)(UINT32 *timeType);  
 
   // ISetProperties
   STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties);

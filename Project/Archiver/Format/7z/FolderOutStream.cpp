@@ -24,7 +24,7 @@ HRESULT CFolderOutStream::Init(
     NArchive::N7z::CArchiveDatabaseEx *archiveDatabase,
     UINT32 startIndex,
     const CBoolVector *extractStatuses, 
-    IExtractCallback200 *extractCallback,
+    IArchiveExtractCallback *extractCallback,
     bool testMode)
 {
   _archiveDatabase = archiveDatabase;
@@ -44,23 +44,23 @@ HRESULT CFolderOutStream::OpenFile()
   INT32 askMode;
   if((*_extractStatuses)[_currentIndex])
     askMode = _testMode ? 
-        NArchiveHandler::NExtract::NAskMode::kTest :
-        NArchiveHandler::NExtract::NAskMode::kExtract;
+        NArchive::NExtract::NAskMode::kTest :
+        NArchive::NExtract::NAskMode::kExtract;
   else
-    askMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+    askMode = NArchive::NExtract::NAskMode::kSkip;
   CComPtr<ISequentialOutStream> realOutStream;
 
   UINT32 index = _startIndex + _currentIndex;
-  RETURN_IF_NOT_S_OK(_extractCallback->Extract(index, &realOutStream, askMode));
+  RINOK(_extractCallback->GetStream(index, &realOutStream, askMode));
 
   _outStreamWithHashSpec->Init(realOutStream);
-  if (askMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
+  if (askMode == NArchive::NExtract::NAskMode::kExtract &&
       (!realOutStream)) 
   {
     UINT32 index = _startIndex + _currentIndex;
     const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory)
-      askMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+      askMode = NArchive::NExtract::NAskMode::kSkip;
   }
   return _extractCallback->PrepareOperation(askMode);
 }
@@ -73,9 +73,9 @@ HRESULT CFolderOutStream::WriteEmptyFiles()
     const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory && fileInfo.UnPackSize != 0)
       return S_OK;
-    RETURN_IF_NOT_S_OK(OpenFile());
-    RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(
-        NArchiveHandler::NExtract::NOperationResult::kOK));
+    RINOK(OpenFile());
+    RINOK(_extractCallback->SetOperationResult(
+        NArchive::NExtract::NOperationResult::kOK));
     _outStreamWithHashSpec->ReleaseStream();
   }
   return S_OK;
@@ -97,7 +97,7 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
           UINT64(size - realProcessedSize));
       
       UINT32 processedSizeLocal;
-      RETURN_IF_NOT_S_OK(_outStreamWithHash->Write((const BYTE *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
+      RINOK(_outStreamWithHash->Write((const BYTE *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
 
       _filePos += processedSizeLocal;
       realProcessedSize += processedSizeLocal;
@@ -109,10 +109,10 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
         else
           digestsAreEqual = true;
 
-        RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(
+        RINOK(_extractCallback->SetOperationResult(
             digestsAreEqual ? 
-            NArchiveHandler::NExtract::NOperationResult::kOK :
-            NArchiveHandler::NExtract::NOperationResult::kCRCError));
+            NArchive::NExtract::NOperationResult::kOK :
+            NArchive::NExtract::NOperationResult::kCRCError));
         _outStreamWithHashSpec->ReleaseStream();
         _fileIsOpen = false;
         _currentIndex++;
@@ -126,7 +126,7 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
     }
     else
     {
-      RETURN_IF_NOT_S_OK(OpenFile());
+      RINOK(OpenFile());
       _fileIsOpen = true;
       _filePos = 0;
     }
@@ -142,20 +142,20 @@ STDMETHODIMP CFolderOutStream::WritePart(const void *data,
   return Write(data, size, processedSize);
 }
 
-HRESULT CFolderOutStream::FlushCorrupted()
+HRESULT CFolderOutStream::FlushCorrupted(INT32 resultEOperationResult)
 {
   while(_currentIndex < _extractStatuses->Size())
   {
     if (_fileIsOpen)
     {
-      RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(NArchiveHandler::NExtract::NOperationResult::kDataError));
+      RINOK(_extractCallback->SetOperationResult(resultEOperationResult));
       _outStreamWithHashSpec->ReleaseStream();
       _fileIsOpen = false;
       _currentIndex++;
     }
     else
     {
-      RETURN_IF_NOT_S_OK(OpenFile());
+      RINOK(OpenFile());
       _fileIsOpen = true;
     }
   }

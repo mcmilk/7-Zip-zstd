@@ -26,16 +26,18 @@
 #include "ExtractDialog.h"
 #include "../../FileManager/ExtractCallback.h"
 
-#include "../Agent/ExtractCallback200.h"
+#include "../Agent/ArchiveExtractCallback.h"
+
+#include "../../FileManager/OpenCallback.h"
 
 using namespace NWindows;
 
 struct CThreadExtracting
 {
-  CComPtr<IArchiveHandler200> ArchiveHandler;
+  CComPtr<IInArchive> Archive;
   CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
-  CComPtr<IExtractCallback2> ExtractCallback;
-  CComPtr<IExtractCallback200> ExtractCallback200;
+  CComPtr<IFolderArchiveExtractCallback> ExtractCallback2;
+  CComPtr<IArchiveExtractCallback> ArchiveExtractCallback;
 
   HRESULT Result;
   
@@ -46,8 +48,8 @@ struct CThreadExtracting
     #ifndef _SFX
     ExtractCallbackSpec->_appTitle.Window = (HWND)ExtractCallbackSpec->_progressDialog;
     #endif
-    Result = ArchiveHandler->ExtractAllItems(BoolToInt(false), 
-        ExtractCallback200);
+    Result = Archive->ExtractAllItems(BoolToInt(false), 
+        ArchiveExtractCallback);
     ExtractCallbackSpec->_progressDialog.MyClose();
     return 0;
   }
@@ -67,8 +69,13 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
 
   NZipRootRegistry::CArchiverInfo archiverInfo;
 
-  RETURN_IF_NOT_S_OK(OpenArchive(fileName, &extracter.ArchiveHandler, 
-      archiverInfo, NULL));
+  CComObjectNoLock<COpenArchiveCallback> *openCallbackSpec = 
+      new CComObjectNoLock<COpenArchiveCallback>;
+  CComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
+  openCallbackSpec->_passwordIsDefined = false;
+  openCallbackSpec->_parentWindow = parentWindow;
+  RETURN_IF_NOT_S_OK(OpenArchive(fileName, &extracter.Archive, 
+      archiverInfo, openCallback));
 
   NFile::NFind::CFileInfo fileInfo;
   if (!NFile::NFind::FindFile(fileName, fileInfo))
@@ -79,6 +86,8 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   CSysString directoryPath;
   NExtractionDialog::CModeInfo extractModeInfo;
   UString password;
+  if (openCallbackSpec->_passwordIsDefined)
+    password = openCallbackSpec->_password;
   if (!assumeYes)
   {
     CExtractDialog dialog;
@@ -90,6 +99,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     dialog._filesMode = NExtractionDialog::NFilesMode::kAll;
     dialog._enableSelectedFilesButton = false;
     dialog._enableFilesButton = false;
+    dialog._password = GetSystemString(password);
     
     if(dialog.Create(parentWindow) != IDOK)
       return E_ABORT;
@@ -124,7 +134,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   
   extracter.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
 
-  extracter.ExtractCallback = extracter.ExtractCallbackSpec;
+  extracter.ExtractCallback2 = extracter.ExtractCallbackSpec;
   
   extracter.ExtractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
@@ -180,12 +190,12 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
       throw 12334455;
   }
 
-  CComObjectNoLock<CExtractCallBack200Imp> *extractCallback200Spec = new 
-      CComObjectNoLock<CExtractCallBack200Imp>;
-  extracter.ExtractCallback200 = extractCallback200Spec;
+  CComObjectNoLock<CArchiveExtractCallback> *extractCallbackSpec = new 
+      CComObjectNoLock<CArchiveExtractCallback>;
+  extracter.ArchiveExtractCallback = extractCallbackSpec;
 
-  extractCallback200Spec->Init(extracter.ArchiveHandler, 
-      extracter.ExtractCallback, 
+  extractCallbackSpec->Init(extracter.Archive, 
+      extracter.ExtractCallback2, 
       directoryPath, pathMode, 
       overwriteMode, UStringVector(),
       GetCurrentFileCodePage(), 

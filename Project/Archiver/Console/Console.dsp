@@ -357,6 +357,14 @@ SOURCE=..\..\..\SDK\Windows\System.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Interface\FileStreams.cpp
 # End Source File
 # Begin Source File
@@ -386,14 +394,6 @@ SOURCE=..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Format\Common\IArchiveHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 
@@ -526,6 +526,14 @@ SOURCE=.\Main.cpp
 # Begin Source File
 
 SOURCE=.\MainAr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\OpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\OpenCallback.h
 # End Source File
 # Begin Source File
 

@@ -14,12 +14,20 @@
 namespace NArchive {
 namespace N7z {
 
-struct CCoderInfo
+struct CAltCoderInfo
 {
   CMethodID DecompressionMethod;
+  CByteBuffer Properties;
+};
+
+struct CCoderInfo
+{
+  // CMethodID DecompressionMethod;
   UINT64 NumInStreams;
   UINT64 NumOutStreams;
-  CByteBuffer Properties;
+  CObjectVector<CAltCoderInfo> AltCoders;
+
+  // CByteBuffer Properties;
   bool IsSimpleCoder() const 
     { return (NumInStreams == 1) && (NumOutStreams == 1); }
 };
@@ -155,6 +163,15 @@ struct CArchiveDatabase
     Folders.Clear();
     NumUnPackStreamsVector.Clear();
     Files.Clear();
+  }
+  bool IsEmpty() const
+  {
+    return (PackSizes.IsEmpty() && 
+      PackCRCsDefined.IsEmpty() && 
+      PackCRCs.IsEmpty() && 
+      Folders.IsEmpty() && 
+      NumUnPackStreamsVector.IsEmpty() && 
+      Files.IsEmpty());
   }
 };
 

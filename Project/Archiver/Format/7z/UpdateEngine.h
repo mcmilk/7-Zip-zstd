@@ -13,7 +13,7 @@
 #include "InEngine.h"
 #include "OutEngine.h"
 
-#include "../Common/IArchiveHandler.h"
+#include "../Common/ArchiveInterface.h"
 #include "CompressionMethod.h"
 #include "Interface/ICoder.h"
 #include "Windows/PropVariant.h"
@@ -32,12 +32,14 @@ HRESULT CopyBlock(ISequentialInStream *inStream,
 HRESULT UpdateArchiveStd(NArchive::N7z::COutArchive &archive, 
     IInStream *inStream,
     const CCompressionMethodMode *options, 
-    const CCompressionMethodMode *headerMethod, 
+    const CCompressionMethodMode *headerMethod,
+    bool useAdditionalHeaderStreams, 
+    bool compressMainHeader,
     const NArchive::N7z::CArchiveDatabaseEx &database,
-    const CRecordVector<bool> &compressStatuses,
-    const CObjectVector<CUpdateItemInfo> &updateItems,
-    const CRecordVector<UINT32> &copyIndices,    
-    IUpdateCallBack *updateCallback);
+    // const CRecordVector<bool> &compressStatuses,
+    CObjectVector<CUpdateItemInfo> &updateItems,
+    // const CRecordVector<UINT32> &copyIndices,    
+    IArchiveUpdateCallback *updateCallback);
 
 }}
 

@@ -16,7 +16,7 @@ CFolderInStream::CFolderInStream()
   _inStreamWithHash = _inStreamWithHashSpec;
 }
 
-void CFolderInStream::Init(IUpdateCallBack *updateCallback, 
+void CFolderInStream::Init(IArchiveUpdateCallback *updateCallback, 
     const UINT32 *fileIndices, UINT32 numFiles)
 {
   _updateCallback = updateCallback;
@@ -36,13 +36,13 @@ HRESULT CFolderInStream::OpenStream()
   {
     _currentSizeIsDefined = false;
     CComPtr<IInStream> stream;
-    RETURN_IF_NOT_S_OK(_updateCallback->CompressOperation(
+    RINOK(_updateCallback->GetStream(
         _fileIndices[_fileIndex], &stream));
     _fileIndex++;
     _inStreamWithHashSpec->Init(stream);
     if (!stream)
     {
-      RETURN_IF_NOT_S_OK(_updateCallback->OperationResult(NArchiveHandler::NUpdate::NOperationResult::kOK));
+      RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
       Sizes.Add(0);
       AddDigest();
       continue;
@@ -51,7 +51,7 @@ HRESULT CFolderInStream::OpenStream()
     if (stream.QueryInterface(&streamGetSize) == S_OK)
     {
       _currentSizeIsDefined = true;
-      RETURN_IF_NOT_S_OK(streamGetSize->GetSize(&_currentSize));
+      RINOK(streamGetSize->GetSize(&_currentSize));
     }
 
     _fileIsOpen = true;
@@ -67,7 +67,7 @@ void CFolderInStream::AddDigest()
 
 HRESULT CFolderInStream::CloseStream()
 {
-  RETURN_IF_NOT_S_OK(_updateCallback->OperationResult(NArchiveHandler::NUpdate::NOperationResult::kOK));
+  RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
   _inStreamWithHashSpec->ReleaseStream();
   _fileIsOpen = false;
   Sizes.Add(_filePos);
@@ -83,11 +83,11 @@ STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSiz
     if (_fileIsOpen)
     {
       UINT32 localProcessedSize;
-      RETURN_IF_NOT_S_OK(_inStreamWithHash->Read(
+      RINOK(_inStreamWithHash->Read(
           ((BYTE *)data) + realProcessedSize, size, &localProcessedSize));
       if (localProcessedSize == 0)
       {
-        RETURN_IF_NOT_S_OK(CloseStream());
+        RINOK(CloseStream());
         continue;
       }
       realProcessedSize += localProcessedSize;
@@ -96,7 +96,7 @@ STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSiz
     }
     else
     {
-      RETURN_IF_NOT_S_OK(OpenStream());
+      RINOK(OpenStream());
     }
   }
   if (processedSize != 0)

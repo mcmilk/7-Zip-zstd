@@ -21,15 +21,17 @@
 #include "../../Console/ArError.h"
 #include "../../Console/ListArchive.h"
 
-#include "../../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"
 #include "../../../Compress/Interface/CompressInterface.h"
+
+#include "../../../Crypto/Cipher/Common/CipherInterface.h"
 
 using namespace NWindows;
 using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 2.30 Beta 24  Copyright (c) 1999-2002 Igor Pavlov  2002-11-01\n";
+"\n7-Zip SFX 2.30 Beta 25  Copyright (c) 1999-2003 Igor Pavlov  2003-01-02\n";
 
 static const int kNumSwitches = 6;
 
@@ -354,7 +356,7 @@ static void ThrowPrintFileIsNotArchiveException(const CSysString &fileName)
 
 void MyOpenArhive(const CSysString &archiveName, 
   const NFind::CFileInfo &archiveFileInfo,
-  IArchiveHandler200 **archiveHandler,
+  IInArchive **archiveHandler,
   UString &defaultItemName)
 {
   NZipRootRegistry::CArchiverInfo archiverInfo;
@@ -464,7 +466,7 @@ int Main2(int numArguments, const char *arguments[])
       throw "there is no such archive";
 
     UString defaultItemName;
-    CComPtr<IArchiveHandler200> archiveHandler;
+    CComPtr<IInArchive> archiveHandler;
     NZipRootRegistry::CArchiverInfo archiverInfo;
     MyOpenArhive(archiveName, archiveFileInfo, &archiveHandler, defaultItemName);
     if(isExtractGroupCommand)

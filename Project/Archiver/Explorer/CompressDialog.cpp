@@ -220,7 +220,8 @@ void CCompressDialog::CheckPasswordEnable()
   int formatIndex = m_Format.GetCurSel();
   const NZipRootRegistry::CArchiverInfo &archiverInfo = 
       m_ArchiverInfoList[formatIndex];
-  bool enable = (archiverInfo.Name.CompareNoCase(TEXT("zip")) == 0);
+  bool enable = (archiverInfo.Name.CompareNoCase(TEXT("zip")) == 0) || 
+      (archiverInfo.Name.CompareNoCase(TEXT("7z")) == 0);
   CWindow window = GetItem(IDC_COMPRESS_PASSWORD);
   window.Enable(enable);
   window = GetItem(IDC_COMPRESS_EDIT_PASSWORD);

@@ -4,9 +4,9 @@
 
 #include "RegistryInfo.h"
 
+#include "Common/StringConvert.h"
 #include "Windows/Registry.h"
 #include "Windows/COM.h"
-#include "Common/StringConvert.h"
 
 using namespace NWindows;
 using namespace NRegistry;
@@ -25,6 +25,7 @@ static LPCTSTR kEncoderPropertiesValueName = _T("EncoderProperties");
 static LPCTSTR kDescriptionValueName = _T("Description");
 static LPCTSTR kInStreamsValueName = _T("InStreams");
 static LPCTSTR kOutStreamsValueName = _T("OutStreams");
+static LPCTSTR kCryptoValueName = _T("Crypto");
 
 void MyReadCLSID(CKey &key, LPCTSTR valueName, bool &itemIsAssigned, CLSID &clsID)
 {
@@ -60,6 +61,10 @@ bool ReadMethodInfo(HKEY parentKey, LPCTSTR keyName, CMethodInfo &methodInfo)
     methodInfo.NumInStreams = 1;
   if (key.QueryValue(kOutStreamsValueName, methodInfo.NumOutStreams) != ERROR_SUCCESS)
     methodInfo.NumOutStreams = 1;
+  /*
+  if (key.QueryValue(kCryptoValueName, methodInfo.Crypto) != ERROR_SUCCESS)
+    methodInfo.Crypto = false;
+  */
   return true;
 }
 

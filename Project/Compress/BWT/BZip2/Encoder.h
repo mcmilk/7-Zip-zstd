@@ -37,8 +37,10 @@ public:
   DECLARE_NOT_AGGREGATABLE(CCoder)
 
   // DECLARE_NO_REGISTRY()
-  DECLARE_REGISTRY(CEncoder, TEXT("Compress.BZip2Encoder.1"), 
-  TEXT("Compress.BZip2Encoder"), UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CEncoder, 
+    // TEXT("Compress.BZip2Encoder.1"), TEXT("Compress.BZip2Encoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 
   // STDMETHOD(ReleaseStreams)();
 

@@ -24,16 +24,18 @@ public:
   BYTE Method;
   UINT32 Attributes;
   AString Name;
+  UString UnicodeName;
 
-  UINT64 ExtraData;
+  BYTE Salt[8];
   
   bool IsEncrypted() const;
   bool IsSolid() const;
   bool IsCommented() const;
   bool IsSplitBefore() const;
   bool IsSplitAfter() const;
-  bool HasExtra() const;
-
+  bool HasSalt() const;
+  bool HasUnicodeName() const;
+  bool IsOldVersion() const;
   
   UINT32 GetDictSize() const;
   bool IsDirectory() const;

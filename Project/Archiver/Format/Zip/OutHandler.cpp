@@ -9,11 +9,11 @@
 #include "Common/StringConvert.h"
 #include "UpdateMain.h"
 
+#include "Interface/CryptoInterface.h"
+
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 #include "Windows/COMTry.h"
-
-#include "../Common/FormatCryptoInterface.h"
 
 using namespace NArchive;
 using namespace NZip;
@@ -22,127 +22,143 @@ using namespace NWindows;
 using namespace NCOM;
 using namespace NTime;
 
-STDMETHODIMP CZipHandler::GetFileTimeType(UINT32 *aType)
+STDMETHODIMP CZipHandler::GetFileTimeType(UINT32 *timeType)
 {
-  *aType = NFileTimeType::kDOS;
+  *timeType = NFileTimeType::kDOS;
   return S_OK;
 }
 
-STDMETHODIMP CZipHandler::DeleteItems(IOutStream *anOutStream, 
-    const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack)
+STDMETHODIMP CZipHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+    IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
-  CRecordVector<bool> aCompressStatuses;
-  CRecordVector<UINT32> aCopyIndexes;
-  int anIndex = 0;
-  for(int i = 0; i < m_Items.Size(); i++)
+  CObjectVector<CUpdateItemInfo> updateItems;
+  for(int i = 0; i < numItems; i++)
   {
-    if(anIndex < aNumItems && i == anIndexes[anIndex])
-      anIndex++;
-    else
+    CUpdateItemInfo updateItem;
+    INT32 newData;
+    INT32 newProperties;
+    UINT32 indexInArchive;
+    if (!updateCallback)
+      return E_FAIL;
+    RINOK(updateCallback->GetUpdateItemInfo(i,
+        &newData, // 1 - compress 0 - copy
+        &newProperties,
+        &indexInArchive));
+    updateItem.NewProperties = IntToBool(newProperties);
+    updateItem.NewData = IntToBool(newData);
+    updateItem.IndexInArchive = indexInArchive;
+    updateItem.IndexInClient = i;
+    bool existInArchive = (indexInArchive != UINT32(-1));
+    if (IntToBool(newProperties))
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(i);
-    }
-  }
-  UpdateMain(m_Items, aCompressStatuses,
-      CObjectVector<CUpdateItemInfo>(), aCopyIndexes, 
-      anOutStream, m_ArchiveIsOpen ? &m_Archive : NULL, NULL, anUpdateCallBack);
-  return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CZipHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
-    IUpdateCallBack *anUpdateCallBack)
-{
-  COM_TRY_BEGIN
-  CRecordVector<bool> aCompressStatuses;
-  CObjectVector<CUpdateItemInfo> anUpdateItems;
-  CRecordVector<UINT32> aCopyIndexes;
-  int anIndex = 0;
-  for(int i = 0; i < aNumItems; i++)
-  {
-    CUpdateItemInfo anUpdateItemInfo;
-    INT32 anCompress;
-    INT32 anExistInArchive;
-    INT32 anIndexInServer;
-    FILETIME anUTCFileTime;
-    UINT64 aSize;
-    CComBSTR aName;
-    HRESULT aResult = anUpdateCallBack->GetUpdateItemInfo(i,
-        &anCompress, // 1 - compress 0 - copy
-        &anExistInArchive,
-        &anIndexInServer,
-        &anUpdateItemInfo.Attributes,
-        NULL,
-        NULL,
-        &anUTCFileTime,
-        &aSize, 
-        &aName);
-    if (aResult != S_OK)
-      return aResult;
-    if (MyBoolToBool(anCompress))
-    {
-      FILETIME aLocalFileTime;
-      if(!FileTimeToLocalFileTime(&anUTCFileTime, &aLocalFileTime))
-        return E_FAIL;
-      if(!FileTimeToDosTime(aLocalFileTime, anUpdateItemInfo.Time))
-        return E_FAIL;
-      if(aSize > _UI32_MAX)
-        return E_FAIL;
-      anUpdateItemInfo.Size = aSize;
-      anUpdateItemInfo.Name = UnicodeStringToMultiByte(
-          NItemName::MakeLegalName((BSTR)aName), CP_OEMCP);
-      if (anUpdateItemInfo.IsDirectory())
-        anUpdateItemInfo.Name += '/';
-      anUpdateItemInfo.IndexInClient = i;
-      if(MyBoolToBool(anExistInArchive))
+      FILETIME utcFileTime;
+      UString name;
+      bool isDirectoryStatusDefined;
       {
-        const NArchive::NZip::CItemInfoEx &anItemInfo = m_Items[anIndexInServer];
-        anUpdateItemInfo.Commented = anItemInfo.IsCommented();
-        if(anUpdateItemInfo.Commented)
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          updateItem.Attributes = 0;
+        else if (propVariant.vt != VT_UI4)
+          return E_INVALIDARG;
+        else
+          updateItem.Attributes = propVariant.ulVal;
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
+        if (propVariant.vt != VT_FILETIME)
+          return E_INVALIDARG;
+        utcFileTime = propVariant.filetime;
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          name.Empty();
+        else if (propVariant.vt != VT_BSTR)
+          return E_INVALIDARG;
+        else
+          name = propVariant.bstrVal;
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          isDirectoryStatusDefined = false;
+        else if (propVariant.vt != VT_BOOL)
+          return E_INVALIDARG;
+        else
         {
-          anUpdateItemInfo.CommentRange.Position = anItemInfo.GetCommentPosition();
-          anUpdateItemInfo.CommentRange.Size  = anItemInfo.CommentSize;
+          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          isDirectoryStatusDefined = true;
+        }
+      }
+      FILETIME localFileTime;
+      if(!FileTimeToLocalFileTime(&utcFileTime, &localFileTime))
+        return E_INVALIDARG;
+      if(!FileTimeToDosTime(localFileTime, updateItem.Time))
+        return E_INVALIDARG;
+      updateItem.Name = UnicodeStringToMultiByte(
+          NItemName::MakeLegalName(name), CP_OEMCP);
+      if (!isDirectoryStatusDefined)
+        updateItem.IsDirectory = ((updateItem.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+      if (updateItem.IsDirectory)
+        updateItem.Name += '/';
+      updateItem.IndexInClient = i;
+      if(existInArchive)
+      {
+        const NArchive::NZip::CItemInfoEx &itemInfo = m_Items[indexInArchive];
+        // updateItem.Commented = itemInfo.IsCommented();
+        updateItem.Commented = false;
+        if(updateItem.Commented)
+        {
+          updateItem.CommentRange.Position = itemInfo.GetCommentPosition();
+          updateItem.CommentRange.Size  = itemInfo.CommentSize;
         }
       }
       else
-        anUpdateItemInfo.Commented = false;
-      aCompressStatuses.Add(true);
-      anUpdateItems.Add(anUpdateItemInfo);
+        updateItem.Commented = false;
     }
-    else
+    if (IntToBool(newData))
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(anIndexInServer);
+      UINT64 size;
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
+        if (propVariant.vt != VT_UI8)
+          return E_INVALIDARG;
+        size = *(UINT64 *)(&propVariant.uhVal);
+      }
+      if(size > _UI32_MAX)
+        return E_INVALIDARG;
+      updateItem.Size = size;
     }
+    updateItems.Add(updateItem);
   }
-  
+
   CComPtr<ICryptoGetTextPassword2> getTextPassword;
   if (!getTextPassword)
   {
-    CComPtr<IUpdateCallBack> udateCallBack2(anUpdateCallBack);
+    CComPtr<IArchiveUpdateCallback> udateCallBack2(updateCallback);
     udateCallBack2.QueryInterface(&getTextPassword);
   }
-  
   if (getTextPassword)
   {
     CComBSTR password;
     INT32 passwordIsDefined;
-    RETURN_IF_NOT_S_OK(getTextPassword->CryptoGetTextPassword2(
+    RINOK(getTextPassword->CryptoGetTextPassword2(
         &passwordIsDefined, &password));
     if (m_Method.PasswordIsDefined = IntToBool(passwordIsDefined))
       m_Method.Password = UnicodeStringToMultiByte(
           (const wchar_t *)password, CP_OEMCP);
   }
   else
-  {
     m_Method.PasswordIsDefined = false;
-  }
 
-  return UpdateMain(m_Items, aCompressStatuses,
-      anUpdateItems, aCopyIndexes, anOutStream, m_ArchiveIsOpen ? &m_Archive : NULL, 
-      &m_Method, anUpdateCallBack);
+  return UpdateMain(m_Items, updateItems, outStream, 
+      m_ArchiveIsOpen ? &m_Archive : NULL, &m_Method, updateCallback);
   COM_TRY_END
 }
 

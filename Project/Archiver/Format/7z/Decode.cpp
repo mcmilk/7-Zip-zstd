@@ -12,6 +12,8 @@
 
 #include "MethodInfo.h"
 
+#include "../../../Crypto/Cipher/Common/CipherInterface.h"
+
 using namespace NArchive;
 using namespace N7z;
 
@@ -50,6 +52,11 @@ static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 static CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
+#ifdef CRYPTO_7ZAES
+#include "../../../Crypto/Cipher/7zAES/7zAES.h"
+static CMethodID k_7zAES = { { 0x6, 0xF1, 0x07, 0x01 }, 4 };
+#endif
+
 
 static void ConvertFolderItemInfoToBindInfo(const CFolderItemInfo &folderItemInfo,
     CBindInfoEx &bindInfo)
@@ -74,7 +81,8 @@ static void ConvertFolderItemInfoToBindInfo(const CFolderItemInfo &folderItemInf
     coderStreamsInfo.NumInStreams = coderInfo.NumInStreams;
     coderStreamsInfo.NumOutStreams = coderInfo.NumOutStreams;
     bindInfo.CodersInfo.Add(coderStreamsInfo);
-    bindInfo.CoderMethodIDs.Add(coderInfo.DecompressionMethod);
+    const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
+    bindInfo.CoderMethodIDs.Add(altCoderInfo.DecompressionMethod);
     for (int j = 0; j < coderStreamsInfo.NumOutStreams; j++, outStreamIndex++)
       if (folderItemInfo.FindBindPairForOutStream(outStreamIndex) < 0)
         bindInfo.OutStreams.Add(outStreamIndex);
@@ -128,7 +136,8 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     const UINT64 *packSizes,
     const CFolderItemInfo &folderInfo, 
     ISequentialOutStream *outStream,
-    ICompressProgressInfo *compressProgress)
+    ICompressProgressInfo *compressProgress,
+    ICryptoGetTextPassword *getTextPassword)
 {
   CObjectVector< CComPtr<ISequentialInStream> > inStreams;
   
@@ -174,10 +183,10 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     for (i = 0; i < numCoders; i++)
     {
       const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
-
+      const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
       #ifndef EXCLUDE_COM
       CLSID classID;
-      if (!_methodMap.GetCLSIDAlways(coderInfo.DecompressionMethod, classID)) 
+      if (!_methodMap.GetCLSIDAlways(altCoderInfo.DecompressionMethod, classID)) 
         return E_NOTIMPL;
       #endif
 
@@ -186,33 +195,38 @@ HRESULT CDecoder::Decode(IInStream *inStream,
         _decoders.Add(CComPtr<ICompressCoder>());
 
         #ifdef COMPRESS_LZMA
-        if (coderInfo.DecompressionMethod == k_LZMA)
+        if (altCoderInfo.DecompressionMethod == k_LZMA)
           _decoders.Back() = new CComObjectNoLock<NCompress::NLZMA::CDecoder>;
         #endif
 
         #ifdef COMPRESS_PPMD
-        if (coderInfo.DecompressionMethod == k_PPMD)
+        if (altCoderInfo.DecompressionMethod == k_PPMD)
           _decoders.Back() = new CComObjectNoLock<NCompress::NPPMD::CDecoder>;
         #endif
 
         #ifdef COMPRESS_BCJ_X86
-        if (coderInfo.DecompressionMethod == k_BCJ_X86)
+        if (altCoderInfo.DecompressionMethod == k_BCJ_X86)
           _decoders.Back() = new CComObjectNoLock<CBCJ_x86_Decoder>;
         #endif
 
         #ifdef COMPRESS_DEFLATE
-        if (coderInfo.DecompressionMethod == k_Deflate)
+        if (altCoderInfo.DecompressionMethod == k_Deflate)
           _decoders.Back() = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
         #endif
 
         #ifdef COMPRESS_BZIP2
-        if (coderInfo.DecompressionMethod == k_BZip2)
+        if (altCoderInfo.DecompressionMethod == k_BZip2)
           _decoders.Back() = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
         #endif
 
         #ifdef COMPRESS_COPY
-        if (coderInfo.DecompressionMethod == k_Copy)
+        if (altCoderInfo.DecompressionMethod == k_Copy)
           _decoders.Back() = new CComObjectNoLock<NCompression::CCopyCoder>;
+        #endif
+
+        #ifdef CRYPTO_7ZAES
+        if (altCoderInfo.DecompressionMethod == k_7zAES)
+          _decoders.Back() = new CComObjectNoLock<NCrypto::NSevenZ::CDecoder>;
         #endif
 
         #ifndef EXCLUDE_COM
@@ -232,7 +246,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
         _decoders2.Add(CComPtr<ICompressCoder2>());
 
         #ifdef COMPRESS_BCJ2
-        if (coderInfo.DecompressionMethod == k_BCJ2)
+        if (altCoderInfo.DecompressionMethod == k_BCJ2)
           _decoders2.Back() = new CComObjectNoLock<CBCJ2_x86_Decoder>;
         #endif
 
@@ -261,16 +275,18 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   
   for (i = 0; i < numCoders; i++)
   {
+    const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+    const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
     CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
     HRESULT result;
-    if (folderInfo.CodersInfo[i].IsSimpleCoder())
-      result = _decoders[coderIndex++]->QueryInterface(&compressSetDecoderProperties);
+    if (coderInfo.IsSimpleCoder())
+      result = _decoders[coderIndex]->QueryInterface(&compressSetDecoderProperties);
     else
-      result = _decoders2[coder2Index++]->QueryInterface(&compressSetDecoderProperties);
+      result = _decoders2[coder2Index]->QueryInterface(&compressSetDecoderProperties);
     
     if (result == S_OK)
     {
-      const CByteBuffer &properties = folderInfo.CodersInfo[i].Properties;
+      const CByteBuffer &properties = altCoderInfo.Properties;
       UINT32 size = properties.GetCapacity();
       if (size > 0)
       {
@@ -283,8 +299,32 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     }
     else if (result != E_NOINTERFACE)
       return result;
+
+    CComPtr<ICryptoSetPassword> cryptoSetPassword;
+    if (coderInfo.IsSimpleCoder())
+      result = _decoders[coderIndex]->QueryInterface(&cryptoSetPassword);
+    else
+      result = _decoders2[coder2Index]->QueryInterface(&cryptoSetPassword);
+
+    if (result == S_OK)
+    {
+      if (getTextPassword == 0)
+        return E_FAIL;
+      CComBSTR password;
+      RETURN_IF_NOT_S_OK(getTextPassword->CryptoGetTextPassword(&password));
+      UString unicodePassword = password;
+      RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(
+        (const BYTE *)(const wchar_t *)unicodePassword, 
+        unicodePassword.Length() * sizeof(wchar_t)));
+    }
+    else if (result != E_NOINTERFACE)
+      return result;
+
+    if (coderInfo.IsSimpleCoder())
+      coderIndex++;
+    else
+      coder2Index++;
     
-    const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
     UINT32 numInStreams = coderInfo.NumInStreams;
     UINT32 numOutStreams = coderInfo.NumOutStreams;
     CRecordVector<const UINT64 *> packSizesPointers;

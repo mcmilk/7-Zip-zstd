@@ -5,6 +5,10 @@
 #include "Handler.h"
 #include "OutEngine.h"
 #include "Common/StringConvert.h"
+#include "Interface/CryptoInterface.h"
+
+#include "Archive/Common/ItemNameUtils.h"
+
 #include "UpdateMain.h"
 
 #include "Windows/PropVariant.h"
@@ -49,7 +53,6 @@ static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
 
 const char *kLZMAMethodName = "LZMA";
-// const char *kDeflateMethodName = "Deflate";
 
 const UINT32 kAlgorithmForX = (2);
 const UINT32 kDicSizeForX = (1 << 22);
@@ -64,16 +67,9 @@ const char *kDefaultMethodName = kLZMAMethodName;
 const char *kDefaultMatchFinderForFast = "HC3";
 
 static bool IsLZMAMethod(const AString &methodName)
-{
-  return (methodName.CompareNoCase(kLZMAMethodName) == 0);
-}
-
+  { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }
 static bool IsLZMethod(const AString &methodName)
-{
-  return (IsLZMAMethod(methodName) 
-      // || methodName.CompareNoCase(kDeflateMethodName) == 0
-      );
-}
+  { return IsLZMAMethod(methodName); }
 
 STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
 {
@@ -81,15 +77,38 @@ STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
   return S_OK;
 }
 
+HRESULT CHandler::SetPassword(CCompressionMethodMode &methodMode,
+    IArchiveUpdateCallback *updateCallback)
+{
+  CComPtr<ICryptoGetTextPassword2> getTextPassword;
+  if (!getTextPassword)
+  {
+    CComPtr<IArchiveUpdateCallback> udateCallback2(updateCallback);
+    udateCallback2.QueryInterface(&getTextPassword);
+  }
+  
+  if (getTextPassword)
+  {
+    CComBSTR password;
+    INT32 passwordIsDefined;
+    RINOK(getTextPassword->CryptoGetTextPassword2(
+        &passwordIsDefined, &password));
+    if (methodMode.PasswordIsDefined = IntToBool(passwordIsDefined))
+      methodMode.Password = password;
+  }
+  else
+    methodMode.PasswordIsDefined = false;
+  return S_OK;
+}
 
-// it's work only fopr non-solid archives
-
+// it's work only for non-solid archives
+/*
 STDMETHODIMP CHandler::DeleteItems(IOutStream *outStream, 
-    const UINT32* indices, UINT32 numItems, IUpdateCallBack *updateCallback)
+    const UINT32* indices, UINT32 numItems, IUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
   CRecordVector<bool> compressStatuses;
-  CRecordVector<UINT32> copyIndexes;
+  CRecordVector<UINT32> copyIndices;
   int index = 0;
   int i;
   for(i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
@@ -105,25 +124,29 @@ STDMETHODIMP CHandler::DeleteItems(IOutStream *outStream,
     else
     {
       compressStatuses.Add(false);
-      copyIndexes.Add(i);
+      copyIndices.Add(i);
     }
   }
   CCompressionMethodMode methodMode, headerMethod;
-  RETURN_IF_NOT_S_OK(SetCompressionMethod(methodMode, headerMethod));
+  RINOK(SetCompressionMethod(methodMode, headerMethod));
   methodMode.MultiThread = _multiThread;
   methodMode.MultiThreadMult = _multiThreadMult;
-  headerMethod.MultiThread = _multiThread;
-  headerMethod.MultiThreadMult = _multiThreadMult;
+  
+  headerMethod.MultiThread = false;
+  bool useAdditionalHeaderStreams = true;
+  bool compressMainHeader = false; 
 
-  UpdateMain(_database, compressStatuses,
-      CObjectVector<CUpdateItemInfo>(), copyIndexes,
+  // headerMethod.MultiThreadMult = _multiThreadMult;
+
+  return UpdateMain(_database, compressStatuses,
+      CObjectVector<CUpdateItemInfo>(), copyIndices,
       outStream, _inStream, &_database.ArchiveInfo, 
       NULL, (_compressHeaders ? &headerMethod: 0), 
-      updateCallback, false);
-  return S_OK;
+      useAdditionalHeaderStreams, compressMainHeader,
+      updateCallback, false, _removeSfxBlock);
   COM_TRY_END
 }
-
+*/
 struct CNameToPropID
 {
   PROPID PropID;
@@ -179,6 +202,47 @@ int FindPropIdFromStringName(const AString &name)
 HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &methodMode,
     CCompressionMethodMode &headerMethod)
 {
+  RINOK(SetCompressionMethod(methodMode, _methods));
+  methodMode.Binds = _binds;
+  if (_compressHeadersFull)
+    _compressHeaders = true;
+
+  if (_compressHeaders)
+  {
+    // headerMethod.Methods.Add(methodMode.Methods.Back());
+
+    CObjectVector<COneMethodInfo> headerMethodInfoVector;
+    COneMethodInfo oneMethodInfo;
+    oneMethodInfo.MethodName = "LZMA";
+    oneMethodInfo.MatchFinderIsDefined = true;
+    oneMethodInfo.MatchFinderName = TEXT("BT2");
+    {
+      CProperty property;
+      property.PropID = NEncodingProperies::kAlgorithm;
+      property.Value = kAlgorithmForX;
+      oneMethodInfo.EncoderProperties.Add(property);
+    }
+    {
+      CProperty property;
+      property.PropID = NEncodingProperies::kNumFastBytes;
+      property.Value = UINT32(254);
+      oneMethodInfo.EncoderProperties.Add(property);
+    }
+    {
+      CProperty property;
+      property.PropID = NEncodedStreamProperies::kDictionarySize;
+      property.Value = UINT32(1 << 20);
+      oneMethodInfo.CoderProperties.Add(property);
+    }
+    headerMethodInfoVector.Add(oneMethodInfo);
+    RINOK(SetCompressionMethod(headerMethod, headerMethodInfoVector));
+  }
+  return S_OK;
+}
+
+HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &methodMode,
+    CObjectVector<COneMethodInfo> &methodsInfo)
+{
   #ifndef EXCLUDE_COM
   CObjectVector<NRegistryInfo::CMethodInfo2> methodInfoVector;
   if (!NRegistryInfo::EnumerateAllMethods(methodInfoVector))
@@ -186,17 +250,17 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &methodMode,
   #endif
  
 
-  if (_methods.IsEmpty())
+  if (methodsInfo.IsEmpty())
   {
     COneMethodInfo oneMethodInfo;
     oneMethodInfo.MethodName = kDefaultMethodName;
     oneMethodInfo.MatchFinderIsDefined = false;
-    _methods.Add(oneMethodInfo);
+    methodsInfo.Add(oneMethodInfo);
   }
 
-  for(int i = 0; i < _methods.Size(); i++)
+  for(int i = 0; i < methodsInfo.Size(); i++)
   {
-    COneMethodInfo &oneMethodInfo = _methods[i];
+    COneMethodInfo &oneMethodInfo = methodsInfo[i];
     if (oneMethodInfo.MethodName.IsEmpty())
       oneMethodInfo.MethodName = kDefaultMethodName;
 
@@ -355,124 +419,191 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &methodMode,
     
     methodMode.Methods.Add(methodFull);
   }
-  methodMode.Binds = _binds;
-  if (_compressHeaders)
-    headerMethod.Methods.Add(methodMode.Methods.Back());
   return S_OK;
 }
 
 STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
-    IUpdateCallBack *updateCallback)
+    IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
 
-  CRecordVector<bool> compressStatuses;
+  // CRecordVector<bool> compressStatuses;
   CObjectVector<CUpdateItemInfo> updateItems;
-  CRecordVector<UINT32> copyIndexes;
+  // CRecordVector<UINT32> copyIndices;
   
-  CComPtr<IUpdateCallBack2> updateCallback2;
-  updateCallback->QueryInterface(&updateCallback2);
+  // CComPtr<IUpdateCallback2> updateCallback2;
+  // updateCallback->QueryInterface(&updateCallback2);
 
+  bool thereIsCopyData = false;
   int index = 0;
   for(int i = 0; i < numItems; i++)
   {
+    INT32 newData;
+    INT32 newProperties;
+    UINT32 indexInArchive;
+    if (!updateCallback)
+      return E_FAIL;
+    RINOK(updateCallback->GetUpdateItemInfo(i,
+        &newData, &newProperties, &indexInArchive));
     CUpdateItemInfo updateItemInfo;
-    INT32 compress;
-    INT32 existInArchive;
-    INT32 indexInServer;
-    CComBSTR name;
-    bool isAnti;
-    if (updateCallback2)
+    updateItemInfo.NewProperties = IntToBool(newProperties);
+    updateItemInfo.NewData = IntToBool(newData);
+    updateItemInfo.IndexInArchive = indexInArchive;
+    updateItemInfo.IndexInClient = i;
+
+    if (updateItemInfo.NewProperties)
     {
-      INT32 _anIsAnti;
-      RETURN_IF_NOT_S_OK(updateCallback2->GetUpdateItemInfo2(i,
-        &compress, // 1 - compress 0 - copy
-        &existInArchive,
-        &indexInServer,
-        &updateItemInfo.Attributes,
-        &updateItemInfo.CreationTime,
-        NULL,
-        &updateItemInfo.LastWriteTime,
-        &updateItemInfo.Size, 
-        &name,
-        &_anIsAnti));
-        isAnti = MyBoolToBool(_anIsAnti);
-    }
-    else
-    {
-      RETURN_IF_NOT_S_OK(updateCallback->GetUpdateItemInfo(i,
-        &compress, // 1 - compress 0 - copy
-        &existInArchive,
-        &indexInServer,
-        &updateItemInfo.Attributes,
-        &updateItemInfo.CreationTime,
-        NULL,
-        &updateItemInfo.LastWriteTime,
-        &updateItemInfo.Size, 
-        &name));
-      isAnti = false;
-    }
-    if (MyBoolToBool(compress))
-    {
-      updateItemInfo.IsAnti = isAnti;
-      updateItemInfo.SetDirectoryStatusFromAttributes();
+      bool nameIsDefined;
+      bool folderStatusIsDefined;
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          updateItemInfo.AttributesAreDefined = false;
+        else if (propVariant.vt != VT_UI4)
+          return E_INVALIDARG;
+        else
+        {
+          updateItemInfo.Attributes = propVariant.ulVal;
+          updateItemInfo.AttributesAreDefined = true;
+        }
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidCreationTime, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          updateItemInfo.CreationTimeIsDefined = false;
+        else if (propVariant.vt != VT_FILETIME)
+          return E_INVALIDARG;
+        else
+        {
+          updateItemInfo.CreationTime = propVariant.filetime;
+          updateItemInfo.CreationTimeIsDefined = true;
+        }
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          updateItemInfo.LastWriteTimeIsDefined = false;
+        else if (propVariant.vt != VT_FILETIME)
+          return E_INVALIDARG;
+        else
+        {
+          updateItemInfo.LastWriteTime = propVariant.filetime;
+          updateItemInfo.LastWriteTimeIsDefined = true;
+        }
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          nameIsDefined = false;
+        else if (propVariant.vt != VT_BSTR)
+          return E_INVALIDARG;
+        else
+        {
+          updateItemInfo.Name = NItemName::MakeLegalName(propVariant.bstrVal);
+          nameIsDefined = true;
+        }
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          folderStatusIsDefined = false;
+        else if (propVariant.vt != VT_BOOL)
+          return E_INVALIDARG;
+        else
+        {
+          updateItemInfo.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          folderStatusIsDefined = true;
+        }
+      }
 
-      if (name)
-        updateItemInfo.Name = name;
+      {
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidIsAnti, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          updateItemInfo.IsAnti = false;
+        else if (propVariant.vt != VT_BOOL)
+          return E_INVALIDARG;
+        else
+          updateItemInfo.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
+      }
 
-      updateItemInfo.AttributesAreDefined = true;
-      updateItemInfo.CreationTimeIsDefined = true;
-      updateItemInfo.LastWriteTimeIsDefined = true;
+      if (!folderStatusIsDefined)
+        updateItemInfo.SetDirectoryStatusFromAttributes();
 
-      updateItemInfo.IndexInClient = i;
-
-      if (isAnti)
+      if (updateItemInfo.IsAnti)
       {
         updateItemInfo.AttributesAreDefined = false;
         updateItemInfo.CreationTimeIsDefined = false;
         updateItemInfo.LastWriteTimeIsDefined = false;
         updateItemInfo.Size = 0;
-        if (MyBoolToBool(existInArchive) && !name)
-        {
-          const CFileItemInfo &item = _database.Files[indexInServer];
-          updateItemInfo.Name = _database.Files[indexInServer].Name;
-          updateItemInfo.IsDirectory = item.IsDirectory;
-        }
       }
+    }
 
-      if(MyBoolToBool(existInArchive))
+    if (updateItemInfo.NewData)
+    {
       {
-        // const CFolderInfo &aFolderInfo = m_Folders[indexInServer];
-        updateItemInfo.Commented = false;
-        if(updateItemInfo.Commented)
-        {
-          // updateItemInfo.CommentRange.Position = itemInfo.GetCommentPosition();
-          // updateItemInfo.CommentRange.Size  = itemInfo.CommentSize;
-        }
+        NCOM::CPropVariant propVariant;
+        RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
+        if (propVariant.vt != VT_UI8)
+          return E_INVALIDARG;
+        updateItemInfo.Size = *(const  *)(&propVariant.uhVal);
       }
-      else
-        updateItemInfo.Commented = false;
-      compressStatuses.Add(true);
-      updateItems.Add(updateItemInfo);
     }
     else
     {
-      compressStatuses.Add(false);
-      copyIndexes.Add(indexInServer);
+      thereIsCopyData = true;
+      // compressStatuses.Add(false);
+      // copyIndices.Add(indexInArchive);
     }
+
+    updateItems.Add(updateItemInfo);
   }
 
-  if (!copyIndexes.IsEmpty())
+  if (thereIsCopyData)
+  {
     for(int i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
       if (_database.NumUnPackStreamsVector[i] != 1)
         return E_NOTIMPL;
+    if (!_solidIsSpecified)
+      _solid = false;
+    if (_solid)
+      return E_NOTIMPL;
+  }
+
 
   CCompressionMethodMode methodMode, headerMethod;
-  RETURN_IF_NOT_S_OK(SetCompressionMethod(methodMode, headerMethod));
+  RINOK(SetCompressionMethod(methodMode, headerMethod));
   methodMode.MultiThread = _multiThread;
   methodMode.MultiThreadMult = _multiThreadMult;
-  headerMethod.MultiThread = _multiThread;
-  headerMethod.MultiThreadMult = _multiThreadMult;
+
+  headerMethod.MultiThread = false;
+  // headerMethod.MultiThreadMult = _multiThreadMult;
+
+  RINOK(SetPassword(methodMode, updateCallback));
+
+  bool useAdditionalHeaderStreams = true;
+  bool compressMainHeader = false; 
+
+  if (_compressHeadersFull)
+  {
+    useAdditionalHeaderStreams = false;
+    compressMainHeader = true; 
+  }
+  if (methodMode.PasswordIsDefined)
+  {
+    useAdditionalHeaderStreams = false;
+    compressMainHeader = true; 
+    if(_encryptHeaders)
+      RINOK(SetPassword(headerMethod, updateCallback));
+  }
+
+  if (numItems < 2)
+    compressMainHeader = false;
 
   NArchive::N7z::CInArchiveInfo *inArchiveInfo;
   if (!_inStream)
@@ -480,10 +611,17 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   else
     inArchiveInfo = &_database.ArchiveInfo;
 
-  return UpdateMain(_database, compressStatuses,
-      updateItems, copyIndexes, outStream, _inStream, inArchiveInfo, 
-      &methodMode, _compressHeaders ? &headerMethod: 0, 
-      updateCallback, _solid);
+  return UpdateMain(_database, 
+      // compressStatuses,
+      updateItems, 
+      // copyIndices, 
+      outStream, _inStream, inArchiveInfo, 
+      &methodMode, 
+        (_compressHeaders || 
+        (methodMode.PasswordIsDefined && _encryptHeaders)) ? 
+        &headerMethod : 0, 
+      useAdditionalHeaderStreams, compressMainHeader,
+      updateCallback, _solid, _removeSfxBlock);
   COM_TRY_END
 }
 
@@ -614,7 +752,7 @@ static HRESULT SetComplexProperty(bool &boolStatus, UINT32 &number,
     case VT_EMPTY:
     case VT_BSTR:
     {
-      RETURN_IF_NOT_S_OK(SetBoolProperty(boolStatus, value));
+      RINOK(SetBoolProperty(boolStatus, value));
       return S_OK;
     }
     case VT_UI4:
@@ -648,11 +786,11 @@ static HRESULT GetBindInfoPart(AString &srcString, UINT32 &coder, UINT32 &stream
 
 static HRESULT GetBindInfo(AString &srcString, CBind &bind)
 {
-  RETURN_IF_NOT_S_OK(GetBindInfoPart(srcString, bind.OutCoder, bind.OutStream));
+  RINOK(GetBindInfoPart(srcString, bind.OutCoder, bind.OutStream));
   if (srcString[0] != ':')
     return E_INVALIDARG;
   srcString.Delete(0);
-  RETURN_IF_NOT_S_OK(GetBindInfoPart(srcString, bind.InCoder, bind.InStream));
+  RINOK(GetBindInfoPart(srcString, bind.InCoder, bind.InStream));
   if (!srcString.IsEmpty())
     return E_INVALIDARG;
   return S_OK;
@@ -723,7 +861,7 @@ HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, c
     {
       BYTE logDicSize;
       UINT32 dicSize;
-      RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(value), 
+      RINOK(ParseDictionaryValues(UnicodeStringToMultiByte(value), 
           logDicSize, dicSize));
       if (name.CompareNoCase(L"D") == 0)
         property.PropID = NEncodedStreamProperies::kDictionarySize;
@@ -772,7 +910,7 @@ HRESULT CHandler::SetParams(COneMethodInfo &oneMethodInfo, const UString &srcStr
     const UString &param = params[i];
     UString name, value;
     SplitParam(param, name, value);
-    RETURN_IF_NOT_S_OK(SetParam(oneMethodInfo, name, value));
+    RINOK(SetParam(oneMethodInfo, name, value));
   }
   return S_OK;
 }
@@ -822,7 +960,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     {
       name.Delete(0);
       CBind bind;
-      RETURN_IF_NOT_S_OK(GetBindInfo(name, bind));
+      RINOK(GetBindInfo(name, bind));
       _binds.Add(bind);
       continue;
     }
@@ -833,21 +971,37 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     AString realName = name.Mid(index);
     if (index == 0)
     {
+      if (name.CompareNoCase("RSFX") == 0)
+      {
+        RINOK(SetBoolProperty(_removeSfxBlock, value));
+        continue;
+      }
       if (name.CompareNoCase("S") == 0)
       {
-        RETURN_IF_NOT_S_OK(SetBoolProperty(_solid, value));
+        RINOK(SetBoolProperty(_solid, value));
+        _solidIsSpecified = true;
         continue;
       }
       else if (name.CompareNoCase("HC") == 0)
       {
-        RETURN_IF_NOT_S_OK(SetBoolProperty(_compressHeaders, value));
+        RINOK(SetBoolProperty(_compressHeaders, value));
+        continue;
+      }
+      else if (name.CompareNoCase("HCF") == 0)
+      {
+        RINOK(SetBoolProperty(_compressHeadersFull, value));
+        continue;
+      }
+      else if (name.CompareNoCase("HE") == 0)
+      {
+        RINOK(SetBoolProperty(_encryptHeaders, value));
         continue;
       }
       else if (name.CompareNoCase("MT") == 0)
       {
         _multiThreadMult = 200;
-        RETURN_IF_NOT_S_OK(SetBoolProperty(_multiThread, value));
-        // RETURN_IF_NOT_S_OK(SetComplexProperty(MultiThread, _multiThreadMult, value));
+        RINOK(SetBoolProperty(_multiThread, value));
+        // RINOK(SetComplexProperty(MultiThread, _multiThreadMult, value));
         continue;
       }
       number = 0;
@@ -883,7 +1037,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         return E_INVALIDARG;
       
       // oneMethodInfo.MethodName = UnicodeStringToMultiByte(UString(value.bstrVal));
-      RETURN_IF_NOT_S_OK(SetParams(oneMethodInfo, value.bstrVal));
+      RINOK(SetParams(oneMethodInfo, value.bstrVal));
     }
     else if (realName.CompareNoCase("MF") == 0)
     {
@@ -908,7 +1062,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         }
         else if (value.vt == VT_BSTR)
         {
-          RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(value.bstrVal), 
+          RINOK(ParseDictionaryValues(UnicodeStringToMultiByte(value.bstrVal), 
               logDicSize, dicSize));
         }
         else 

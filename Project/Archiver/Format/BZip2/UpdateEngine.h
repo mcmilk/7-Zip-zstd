@@ -7,16 +7,16 @@
 
 #include "Common/Types.h"
 
-#include "../../Common/IArchiveHandler2.h"
+#include "../Common/ArchiveInterface.h"
 
 namespace NArchive {
 namespace NBZip2 {
 
 HRESULT UpdateArchive(
-    UINT64 anUnpackSize,
-    IOutStream *anOutStream,
-    int anIndexInClient,
-    IUpdateCallBack *anUpdateCallBack);
+    UINT64 unpackSize,
+    IOutStream *outStream,
+    int indexInClient,
+    IArchiveUpdateCallback *updateCallback);
 
 }}
 

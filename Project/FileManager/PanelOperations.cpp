@@ -10,6 +10,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/ResourceString.h"
 #include "Windows/Thread.h"
+#include "Windows/COM.h"
 
 #include "Resource/ComboDialog/ComboDialog.h"
 
@@ -26,12 +27,13 @@ struct CThreadDelete
 {
   CComPtr<IFolderOperations> FolderOperations;
   CRecordVector<UINT32> Indices;
-  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComPtr<IFolderArchiveUpdateCallback> UpdateCallback;
   CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
   HRESULT Result;
   
   DWORD Process()
   {
+    NCOM::CComInitializer comInitializer;
     Result = FolderOperations->Delete(&Indices.Front(), 
         Indices.Size(), UpdateCallback);
     UpdateCallbackSpec->_progressDialog.MyClose();

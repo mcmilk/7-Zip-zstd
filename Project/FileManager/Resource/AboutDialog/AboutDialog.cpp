@@ -17,20 +17,21 @@ static CIDLangPair kIDLangPairs[] =
 
 static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
 static LPCTSTR kRegisterRegNowURL = TEXT("https://www.regnow.com/softsell/nph-softsell.cgi?item=2521-1&vreferrer=program");
+static LPCTSTR kEmailAction = 
+  TEXT("mailto:support@7-zip.org?subject=7-Zip:");
 
-static LPCTSTR kRegisterTopic = _T("gui/7-zipCfg/info.htm");
+static LPCTSTR kHelpTopic = _T("start.htm");
 
 bool CAboutDialog::OnInit() 
 {
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   return CModalDialog::OnInit();
 }
-/*
-void CAboutDialog::OnNotifyHelp()
+
+void CAboutDialog::OnHelp()
 {
-  ShowHelpWindow(NULL, kRegisterTopic);
+  ShowHelpWindow(NULL, kHelpTopic);
 }
-*/
 
 bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
@@ -46,6 +47,11 @@ bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       if (aLCID == 0x0419 || aLCID == 0x422 || aLCID == 0x0423)
         aRegisterURL = TEXT("http://www.7-zip.org/ru/donate.html");
       ::ShellExecute(NULL, NULL, aRegisterURL, NULL, NULL, SW_SHOWNORMAL);
+      break;
+    }
+    case IDC_ABOUT_BUTTON_EMAIL:
+    {
+      ::ShellExecute(NULL, NULL, kEmailAction, NULL, NULL, SW_SHOWNORMAL);
       break;
     }
     default:

@@ -37,7 +37,10 @@ BEGIN_COM_MAP(CByteSwap2)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CByteSwap2)
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CByteSwap2, "Compress.ConvertSwap2.1", "Compress.ConvertSwap2", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CByteSwap2, 
+  // "Compress.ConvertSwap2.1", "Compress.ConvertSwap2", 
+  TEXT("SevenZip.1"), TEXT("SevenZip"),
+  UINT(0), THREADFLAGS_APARTMENT)
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
       ICompressProgressInfo *progress);
@@ -55,7 +58,10 @@ BEGIN_COM_MAP(CByteSwap2)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CByteSwap4)
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CByteSwap2, "Compress.ConvertSwap4.1", "Compress.ConvertSwap4", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CByteSwap2, 
+  // "Compress.ConvertSwap4.1", "Compress.ConvertSwap4", 
+  TEXT("SevenZip.1"), TEXT("SevenZip"),
+  UINT(0), THREADFLAGS_APARTMENT)
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
       ICompressProgressInfo *progress);

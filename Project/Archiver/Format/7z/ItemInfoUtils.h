@@ -6,7 +6,7 @@
 #define __7Z_ITEMINFOUTILS_H
 
 #include "ItemInfo.h"
-#include "../Common/IArchiveHandler.h"
+#include "../Common/ArchiveInterface.h"
 
 namespace NArchive {
 namespace N7z {

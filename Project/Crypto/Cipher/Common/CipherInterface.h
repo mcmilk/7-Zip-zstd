@@ -13,7 +13,7 @@ DEFINE_GUID(IID_ICryptoSetPassword,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000200250000")
 ICryptoSetPassword: public IUnknown
 {
-  STDMETHOD(CryptoSetPassword)(const BYTE *aData, UINT32 aSize) PURE;
+  STDMETHOD(CryptoSetPassword)(const BYTE *data, UINT32 size) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000200251000}

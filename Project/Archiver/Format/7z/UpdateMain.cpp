@@ -15,16 +15,17 @@ namespace NArchive {
 namespace N7z {
 
 HRESULT UpdateMain(const NArchive::N7z::CArchiveDatabaseEx &database,
-    const CRecordVector<bool> &compressStatuses,
-    const CObjectVector<CUpdateItemInfo> &updateItems,
-    const CRecordVector<UINT32> &copyIndices,
+    CObjectVector<CUpdateItemInfo> &updateItems,
     IOutStream *outStream,
     IInStream *inStream,
     NArchive::N7z::CInArchiveInfo *inArchiveInfo,
     CCompressionMethodMode *method,
     CCompressionMethodMode *headerMethod,
-    IUpdateCallBack *updateCallback,
-    bool solid)
+    bool useAdditionalHeaderStreams, 
+    bool compressMainHeader,
+    IArchiveUpdateCallback *updateCallback,
+    bool solid,
+    bool removeSfxBlock)
 {
   UINT64 startBlockSize;
   if(inArchiveInfo != 0)
@@ -34,26 +35,32 @@ HRESULT UpdateMain(const NArchive::N7z::CArchiveDatabaseEx &database,
   
   if (startBlockSize > 0)
   {
-    CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
+    if (!removeSfxBlock)
+    {
+      CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
         CComObjectNoLock<CLimitedSequentialInStream>;
-    CComPtr<ISequentialInStream> limitedStream(streamSpec);
-    RETURN_IF_NOT_S_OK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    streamSpec->Init(inStream, startBlockSize);
-    RETURN_IF_NOT_S_OK(CopyBlock(limitedStream, outStream, NULL));
+      CComPtr<ISequentialInStream> limitedStream(streamSpec);
+      RETURN_IF_NOT_S_OK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+      streamSpec->Init(inStream, startBlockSize);
+      RETURN_IF_NOT_S_OK(CopyBlock(limitedStream, outStream, NULL));
+    }
+    else
+    {
+      // maybe need seek?
+    }
   }
+
 
   COutArchive outArchive;
   outArchive.Create(outStream);
   if (solid)
     return UpdateSolidStd(outArchive, inStream, 
-        method, headerMethod,
-        database, compressStatuses,
-        updateItems, copyIndices, updateCallback);
+        method, headerMethod, useAdditionalHeaderStreams, compressMainHeader, 
+        database, updateItems, updateCallback);
   else
     return UpdateArchiveStd(outArchive, inStream, 
-        method, headerMethod,
-        database, compressStatuses,
-        updateItems, copyIndices, updateCallback);
+        method, headerMethod, useAdditionalHeaderStreams, compressMainHeader,
+        database, updateItems, updateCallback);
 }
 
 }}

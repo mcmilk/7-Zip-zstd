@@ -8,7 +8,7 @@
 #include "Common/Wildcard.h"
 #include "Windows/FileFind.h"
 
-#include "../Common/IArchiveHandler2.h"
+#include "../Format/Common/ArchiveInterface.h"
 #include "../Common/ZipSettings.h"
 
 namespace NExtractMode {
@@ -37,15 +37,15 @@ public:
   NZipSettings::NExtraction::NOverwriteMode::EEnum OverwriteMode;
 
   
-  CExtractOptions(NExtractMode::EEnum anExtractMode, const CSysString &anOutputBaseDir,
-      bool anYesToAll, bool aPasswordEnabled, const UString &aPassword,
-      NZipSettings::NExtraction::NOverwriteMode::EEnum anOverwriteMode):
-    ExtractMode(anExtractMode),
-    OutputBaseDir(anOutputBaseDir),
-    YesToAll(anYesToAll),
-    PasswordEnabled(aPasswordEnabled), 
-    Password(aPassword),
-    OverwriteMode(anOverwriteMode)
+  CExtractOptions(NExtractMode::EEnum extractMode, const CSysString &outputBaseDir,
+      bool yesToAll, bool passwordEnabled, const UString &password,
+      NZipSettings::NExtraction::NOverwriteMode::EEnum overwriteMode):
+    ExtractMode(extractMode),
+    OutputBaseDir(outputBaseDir),
+    YesToAll(yesToAll),
+    PasswordEnabled(passwordEnabled), 
+    Password(password),
+    OverwriteMode(overwriteMode)
     {}
 
   bool TestMode() const {  return (ExtractMode == NExtractMode::kTest); }
@@ -53,9 +53,9 @@ public:
     (ExtractMode == NExtractMode::kFullPath); }
 };
 
-HRESULT DeCompressArchiveSTD(IArchiveHandler200 *anArchive,
-    const NWildcard::CCensor &aWildcardCensor,
-    const CExtractOptions &anOptions);
+HRESULT DeCompressArchiveSTD(IInArchive *archive,
+    const NWildcard::CCensor &wildcardCensor,
+    const CExtractOptions &options);
 
 /*
 bool DeCompressArchiveSTD(TTWildCardInputArchive &anArchive, 

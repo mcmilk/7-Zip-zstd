@@ -44,11 +44,12 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
     IFolderFolder **resultFolder, IProgress *progress)
 {
   LoadFormats();
-  CComPtr<IOpenArchive2CallBack> openArchive2CallBack;
+  CComPtr<IArchiveOpenCallback> openArchiveCallback;
   if (progress != 0)
   {
     CComPtr<IProgress> progressWrapper = progress;
-    RETURN_IF_NOT_S_OK(progressWrapper.QueryInterface(&openArchive2CallBack));
+    // RETURN_IF_NOT_S_OK(progressWrapper.QueryInterface(&openArchiveCallback));
+    progressWrapper.QueryInterface(&openArchiveCallback);
   }
   UString defaultName;
   UINT codePage = GetCurrentFileCodePage();
@@ -62,16 +63,16 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
       return E_FAIL;
     NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
   }
-  std::vector<int> orderIndices;
+  CIntVector orderIndices;
   for(int firstArchiverIndex = 0; 
       firstArchiverIndex < _formats.Size(); firstArchiverIndex++)
     if(extension.CollateNoCase(_formats[firstArchiverIndex].Extension) == 0)
       break;
   if(firstArchiverIndex < _formats.Size())
-    orderIndices.push_back(firstArchiverIndex);
+    orderIndices.Add(firstArchiverIndex);
   for(int j = 0; j < _formats.Size(); j++)
     if(j != firstArchiverIndex)
-      orderIndices.push_back(j);
+      orderIndices.Add(j);
   
   NCOM::CComInitializer comInitializer;
   CComObjectNoLock<CInFileStream> *inStreamSpec = new 
@@ -85,7 +86,7 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
     return E_FAIL;
 
   HRESULT badResult = S_OK;
-  for(int i = 0; i < orderIndices.size(); i++)
+  for(int i = 0; i < orderIndices.Size(); i++)
   {
     inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
     const NZipRootRegistry::CArchiverInfo &archiverInfo = 
@@ -109,7 +110,7 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
         &archiverInfo.ClassID, 
         #endif
 
-        openArchive2CallBack);
+        openArchiveCallback);
 
     if(result == S_FALSE)
       continue;
@@ -131,7 +132,7 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
 
 
 HRESULT CAgent::FolderReOpen(
-    IOpenArchive2CallBack *openArchive2CallBack)
+    IArchiveOpenCallback *openArchiveCallback)
 {
   CSysString fileName = _archiveFilePath;
   NFile::NFind::CFileInfo fileInfo;
@@ -148,7 +149,7 @@ HRESULT CAgent::FolderReOpen(
   UString defaultName = _defaultName;
   return ReOpen(inStream, defaultName, 
         &fileInfo.LastWriteTime, fileInfo.Attributes, 
-        &kMaxCheckStartPosition, openArchive2CallBack);
+        &kMaxCheckStartPosition, openArchiveCallback);
 }
 
 STDMETHODIMP CAgent::GetTypes(BSTR *types)

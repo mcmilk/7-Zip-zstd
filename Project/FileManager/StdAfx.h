@@ -25,9 +25,9 @@ extern CComModule _Module;
 #include <mbstring.h>
 #include <new.h>
 #include <regstr.h>
+#include <limits.h>
 
-#include <vector>
-#include <algorithm>
+#include <memory>
 
 
 #endif

@@ -5,45 +5,43 @@
 #ifndef __EXTRACTCALLBACK_H
 #define __EXTRACTCALLBACK_H
 
-#include "../Common/IArchiveHandler2.h"
 #include "Common/String.h"
-
-
 #include "Interface/FileStreams.h"
-#include "../Common/ZipSettings.h"
-#include "../../Compress/Interface./CompressInterface.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"
 
-class CExtractCallBackImp: 
-  public IExtractCallback200,
+#include "../Format/Common/ArchiveInterface.h"
+#include "../Common/ZipSettings.h"
+
+class CExtractCallbackImp: 
+  public IArchiveExtractCallback,
   public ICryptoGetTextPassword,
   public CComObjectRoot
 {
 public:
-BEGIN_COM_MAP(CExtractCallBackImp)
-  COM_INTERFACE_ENTRY(IExtractCallback200)
+BEGIN_COM_MAP(CExtractCallbackImp)
+  COM_INTERFACE_ENTRY(IArchiveExtractCallback)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CExtractCallBackImp)
+DECLARE_NOT_AGGREGATABLE(CExtractCallbackImp)
 
 DECLARE_NO_REGISTRY()
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 size);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
   // IExtractCallback200
-  STDMETHOD(Extract)(UINT32 anIndex, ISequentialOutStream **anOutStream, 
-      INT32 anAskExtractMode);
-  STDMETHOD(PrepareOperation)(INT32 anAskExtractMode);
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult);
+  STDMETHOD(GetStream)(UINT32 index, ISequentialOutStream **outStream, 
+      INT32 askExtractMode);
+  STDMETHOD(PrepareOperation)(INT32 askExtractMode);
+  STDMETHOD(SetOperationResult)(INT32 resultEOperationResult);
 
   // ICryptoGetTextPassword
-  STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
+  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
 private:
-  CComPtr<IArchiveHandler200> m_ArchiveHandler;
+  CComPtr<IInArchive> m_ArchiveHandler;
   CSysString m_DirectoryPath;
   NZipSettings::NExtraction::CInfo m_ExtractModeInfo;
 
@@ -72,16 +70,16 @@ private:
   bool m_PasswordIsDefined;
   UString m_Password;
 
-  void CreateComplexDirectory(const UStringVector &aDirPathParts);
-  bool IsEncrypted(UINT32 anIndex);
+  void CreateComplexDirectory(const UStringVector &dirPathParts);
+  bool IsEncrypted(UINT32 index);
 public:
-  void Init(IArchiveHandler200 *anArchiveHandler, const CSysString &aDirectoryPath,
+  void Init(IInArchive *archive, const CSysString &directoryPath,
       const NZipSettings::NExtraction::CInfo &anExtractModeInfo, 
-      const UStringVector &aRemovePathParts,
-      UINT aCodePage, 
-      const UString &anItemDefaultName,
-      const FILETIME &anUTCLastWriteTimeDefault, UINT32 anAttributesDefault,
-      bool aPasswordIsDefined, const UString &aPassword);
+      const UStringVector &removePathParts,
+      UINT codePage, 
+      const UString &itemDefaultName,
+      const FILETIME &utcLastWriteTimeDefault, UINT32 attributesDefault,
+      bool passwordIsDefined, const UString &password);
 
   UINT64 m_NumErrors;
 };

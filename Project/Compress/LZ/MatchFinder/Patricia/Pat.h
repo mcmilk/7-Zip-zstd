@@ -203,8 +203,8 @@ struct CNode
 #endif
 
 
-#undef kIDString
-#define kIDString TEXT("Compress.MatchFinderPat") kIDNumBitsString kIDManualRemoveString kIDUse3BytesString kIDPaddingString kIDHash3String
+// #undef kIDString
+// #define kIDString TEXT("Compress.MatchFinderPat") kIDNumBitsString kIDManualRemoveString kIDUse3BytesString kIDPaddingString kIDHash3String
 
 // {23170F69-40C1-278C-01XX-0000000000}
 
@@ -230,7 +230,10 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CPatricia)
 
-  DECLARE_REGISTRY(CPatricia, kIDString TEXT(".1"), kIDString, UINT(0), THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CPatricia, 
+  // kIDString TEXT(".1"), kIDString, 
+  TEXT("SevenZip.1"), TEXT("SevenZip"),
+  UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

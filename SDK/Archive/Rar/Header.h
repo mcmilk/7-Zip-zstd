@@ -69,8 +69,14 @@ namespace NFile
   const kDictMask         = (1 << kNumDictBits) - 1;
   const kDictDirectoryValue  = 0x7;
   
-  const kSize64Bits   = 1 << 8;
-  const kExtraData    = 1 << 10; // some new 2.90 encrypted extra data
+  const kSize64Bits    = 1 << 8;
+  const kUnicodeName   = 1 << 9;
+  const kSalt          = 1 << 10;
+  const kOldVersion    = 1 << 11;
+  // const kExtTime       = 1 << 12;
+  // const kExtFlags      = 1 << 13;
+  // const kSkipIfUnknown = 1 << 14;
+
   const kLongBlock    = 1 << 15;
   
   struct CBlock32
@@ -89,7 +95,7 @@ namespace NFile
     UINT16 NameSize;
     UINT32 Attributes;
     UINT16 GetRealCRC(const void *aName, UINT32 aNameSize, 
-        bool anExtraDataDefined = false, UINT64 anExtraData = 0) const;
+        bool anExtraDataDefined = false, BYTE *anExtraData = 0) const;
   };
   struct CBlock64
   {

@@ -3,6 +3,8 @@
 #include "StdAfx.h"
 #include "ListViewDialog.h"
 
+#include "Common/Vector.h"
+
 #ifdef LANG        
 #include "../../LangUtils.h"
 static CIDLangPair kIDLangPairs[] = 
@@ -30,21 +32,71 @@ bool CListViewDialog::OnInit()
 
   for(int i = 0; i < Strings.Size(); i++)
   {
-    LVITEM anItem;
-    anItem.mask = LVIF_TEXT;
-    anItem.iItem = i;
-    anItem.pszText = (LPTSTR)(LPCTSTR)Strings[i];
-    anItem.iSubItem = 0;
-    _listView.InsertItem(&anItem);
+    LVITEM item;
+    item.mask = LVIF_TEXT;
+    item.iItem = i;
+    item.pszText = (LPTSTR)(LPCTSTR)Strings[i];
+    item.iSubItem = 0;
+    _listView.InsertItem(&item);
   }
   if (Strings.Size() > 0)
     _listView.SetItemState(0, LVIS_FOCUSED | LVIS_SELECTED, LVIS_FOCUSED | LVIS_SELECTED);
-
+  StringsWereChanged = false;
   return CModalDialog::OnInit();
+}
+
+bool CListViewDialog::OnNotify(UINT controlID, LPNMHDR header)
+{
+  if (header->hwndFrom != _listView)
+    return false;
+  switch(header->code)
+  {
+    case LVN_KEYDOWN:
+    {
+      LPNMLVKEYDOWN keyDownInfo = LPNMLVKEYDOWN(header);
+      switch(keyDownInfo->wVKey)
+      {
+        case VK_DELETE:
+        {
+          if (!DeleteIsAllowed)
+            return false;
+          int focusedIndex = _listView.GetFocusedItem();
+          if (focusedIndex < 0)
+            focusedIndex = 0;
+          while(true)
+          {
+            int index = _listView.GetNextSelectedItem(-1);
+            if (index < 0)
+              break;
+            StringsWereChanged = true;
+            _listView.DeleteItem(index);
+            Strings.Delete(index);
+          }
+          if (focusedIndex >= _listView.GetItemCount())
+            focusedIndex = _listView.GetItemCount() - 1;
+          if (focusedIndex >= 0)
+            _listView.SetItemState(focusedIndex, LVIS_FOCUSED | LVIS_SELECTED, LVIS_FOCUSED | LVIS_SELECTED);
+          return true;
+        }
+        case 'A':
+        {
+          bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+          if (ctrl)
+          {
+            int numItems = _listView.GetItemCount();
+            for (int i = 0; i < numItems; i++)
+              _listView.SetItemState(i, LVIS_SELECTED, LVIS_SELECTED);
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
 
 void CListViewDialog::OnOK()
 {
-  ItemIndex = _listView.GetFocusedItem();
+  FocusedItemIndex = _listView.GetFocusedItem();
   CModalDialog::OnOK();
 }

@@ -1,9 +1,99 @@
-7z Format description (2.30 Beta 18)
+7z Format description (2.30 Beta 25)
 -----------------------------------
 
 This file contain descrition of 7z archive format. 
 7z archive can contain files compressed with any method.
 See "Methods.txt" for description for defined compressing methods.
+
+
+Format structure Overview
+-------------------------
+
+Some fields can be optional.
+
+Archive structure
+~~~~~~~~~~~~~~~~~  
+SignatureHeader
+[PackedStreams]
+[PackedStreamsForHeaders]
+[
+  Header 
+  or 
+  {
+    Packed Header
+    HeaderInfo
+  }
+]
+
+
+
+Header structure
+~~~~~~~~~~~~~~~~  
+{
+  ArchiveProperties
+  AdditionalStreams
+  {
+    PackInfo
+    {
+      PackPos
+      NumPackStreams
+      Sizes[NumPackStreams]
+      CRCs[NumPackStreams]
+    }
+    CodersInfo
+    {
+      NumFolders
+      Folders[NumFolders]
+      {
+        NumCoders
+        CodersInfo[NumCoders]
+        {
+          ID
+          NumInStreams;
+          NumOutStreams;
+          PropertiesSize
+          Properties[PropertiesSize]
+        }
+        NumBindPairs
+        BindPairsInfo[NumBindPairs]
+        {
+          InIndex;
+          OutIndex;
+        }
+        PackedIndices
+      }
+      UnPackSize[Folders][Folders.NumOutstreams]
+      CRCs[NumFolders]
+    }
+    SubStreamsInfo
+    {
+      NumUnPackStreamsInFolders[NumFolders];
+      UnPackSizes[]
+      CRCs[]
+    }
+  }
+  MainStreamsInfo
+  {
+    (Same as in AdditionalStreams)
+  }
+  FilesInfo
+  {
+    NumFiles
+    Properties[]
+    {
+      ID
+      Size
+      Data
+    }
+  }
+}
+
+HeaderInfo structure
+~~~~~~~~~~~~~~~~~~~~
+{
+  (Same as in AdditionalStreams)
+}
+
 
 
 Notes about Notation and encoding
@@ -33,17 +123,56 @@ UINT64 means real UINT64 encoded with the following scheme:
 
 
 
+Property IDs
+------------
+
+0x00 = kEnd,
+
+0x01 = kHeader,
+
+0x02 = kArchiveProperties,
+    
+0x03 = kAdditionalStreamsInfo,
+0x04 = kMainStreamsInfo,
+0x05 = kFilesInfo,
+    
+0x06 = kPackInfo,
+0x07 = kUnPackInfo,
+0x08 = kSubStreamsInfo,
+
+0x09 = kSize,
+0x0A = kCRC,
+
+0x0B = kFolder,
+
+0x0C = kCodersUnPackSize,
+0x0D = kNumUnPackStream,
+
+0x0E = kEmptyStream,
+0x0F = kEmptyFile,
+0x10 = kAnti,
+
+0x11 = kName,
+0x12 = kCreationTime,
+0x13 = kLastAccessTime,
+0x14 = kLastWriteTime,
+0x15 = kWinAttributes,
+0x16 = kComment,
+
+0x17 = kEncodedHeader,
+
+
 7z format headers
 -----------------
 
-StartHeader
-~~~~~~~~~~~
+SignatureHeader
+~~~~~~~~~~~~~~~
   BYTE kSignature[6] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
   ArchiveVersion
   {
-    BYTE Major;
-    BYTE Minor;
+    BYTE Major;   // now it = 0
+    BYTE Minor;   // now it = 1
   };
 
   UINT32 StartHeaderCRC;
@@ -61,7 +190,7 @@ StartHeader
 
 ArchiveProperties
 ~~~~~~~~~~~~~~~~~
-BYTE NID::kArchiveProperties
+BYTE NID::kArchiveProperties (0x02)
 while(true)
 {
   BYTE PropertyType;
@@ -71,31 +200,32 @@ while(true)
   BYTE PropertyData[PropertySize];
 }
 
-Digests (aNumStreams)
+
+Digests (NumStreams)
 ~~~~~~~~~~~~~~~~~~~~~
-  BYTE anAllAreDefined
-  if (anAllAreDefined == 0)
+  BYTE AllAreDefined
+  if (AllAreDefined == 0)
   {
-    for(aNumStreams)
+    for(NumStreams)
       BIT Defined
   }
-  UINT32 aCRCs[NumDefined]
+  UINT32 CRCs[NumDefined]
 
 
 PackInfo
 ~~~~~~~~~~~~
-  BYTE NID::kPackInfo
-  UINT64 aPackPos
-  UINT64 aNumPackStreams
+  BYTE NID::kPackInfo  (0x06)
+  UINT64 PackPos
+  UINT64 NumPackStreams
 
   []
-  BYTE NID::kSize
-  UINT64 aPackSizes[aNumPackStreams]
+  BYTE NID::kSize    (0x09)
+  UINT64 PackSizes[NumPackStreams]
   []
 
   []
-  BYTE NID::kCRC
-  PackStreamDigests[aNumPackStreams]
+  BYTE NID::kCRC      (0x0A)
+  PackStreamDigests[NumPackStreams]
   []
 
   BYTE NID::kEnd
@@ -115,6 +245,9 @@ Folder
       5:
         0 - No Attributes
         1 - There Are Attributes
+      7:
+        0 - Last Method in Alternative_Method_List
+        1 - There are more alternative methods
     } 
     BYTE DecompressionMethod.ID[DecompressionMethod.IDSize]
     if (!IsSimple)
@@ -137,7 +270,7 @@ Folder
     UINT64 OutIndex;
   }
 
-  NumPackedStreams = aNumInStreamsTotal - aNumBindPairs;
+  NumPackedStreams = NumInStreamsTotal - NumBindPairs;
   if (NumPackedStreams > 1)
     for(NumPackedStreams)
     {
@@ -150,31 +283,30 @@ Folder
 Coders Info
 ~~~~~~~~~~~
 
-  BYTE NID::kUnPackInfo
+  BYTE NID::kUnPackInfo  (0x07)
 
 
-  BYTE NID::kFolder
-  UINT64 aNumFolders
-  switch(BYTE anExternal)
-  case 0:
+  BYTE NID::kFolder  (0x0B)
+  UINT64 NumFolders
+  BYTE External
+  switch(External)
   {
-    Folders[aNumFolders]
-  }
-  case 1:
-  {
-    UINT64 DataStreamIndex
+    case 0:
+      Folders[NumFolders]
+    case 1:
+      UINT64 DataStreamIndex
   }
 
 
-  BYTE ID::kCodersUnPackSize
+  BYTE ID::kCodersUnPackSize  (0x0C)
   for(Folders)
     for(Folder.NumOutStreams)
      UINT64 UnPackSize;
 
 
   []
-  BYTE NID::kCRC
-  UnPackDigests[aNumFolders]
+  BYTE NID::kCRC   (0x0A)
+  UnPackDigests[NumFolders]
   []
 
   
@@ -185,23 +317,23 @@ Coders Info
 
 SubStreams Info
 ~~~~~~~~~~~~~~
-
-
-  []
-  BYTE NID::kNumUnPackStream;
-  UINT64 aNumUnPackStreamsInFolders[aNumFolders];
-  []
-
+  BYTE NID::kSubStreamsInfo; (0x08)
 
   []
-  BYTE NID::kSize
-  UINT64 anUnPackSizes[]
+  BYTE NID::kNumUnPackStream; (0x0D)
+  UINT64 NumUnPackStreamsInFolders[NumFolders];
   []
 
 
   []
-  BYTE NID::kCRC
-  Digests[Number of SubStreams that have no Folder.UnPackDigest]
+  BYTE NID::kSize  (0x09)
+  UINT64 UnPackSizes[]
+  []
+
+
+  []
+  BYTE NID::kCRC  (0x0A)
+  Digests[Number of streams with unknown CRC]
   []
 
   
@@ -230,7 +362,7 @@ Streams Info
 
 FilesInfo
 ~~~~~~~~~
-  BYTE NID::kFilesInfo;
+  BYTE NID::kFilesInfo;  (0x05)
   UINT64 NumFiles
 
   while(true)
@@ -239,56 +371,61 @@ FilesInfo
     if (aType == 0)
       break;
 
-    UINT64 aSize;
+    UINT64 Size;
 
     switch(PropertyType)
     {
-      kEmptyStream:
+      kEmptyStream:   (0x0E)
         for(NumFiles)
           BIT IsEmptyStream
 
-      kEmptyFile:
+      kEmptyFile:     (0x0F)
         for(EmptyStreams)
           BIT IsEmptyFile
 
-      kAnti:
+      kAnti:          (0x10)
         for(EmptyStreams)
           BIT IsAntiFile
       
-      case kCreationTime:
-      case kLastWriteTime:
-      case kLastAccessTime:
-        BYTE anAllAreDefined
-        if (anAllAreDefined == 0)
+      case kCreationTime:   (0x12)
+      case kLastAccessTime: (0x13)
+      case kLastWriteTime:  (0x14)
+        BYTE AllAreDefined
+        if (AllAreDefined == 0)
         {
           for(NumFiles)
-            BIT LastWriteTimeDefined
+            BIT TimeDefined
         }
-        for(NumFiles when LastWriteTimeDefined)
-          UINT32 LastWriteTime
-      
-      kNames:
         BYTE External;
         if(External != 0)
-          UINT64 aDataIndex
+          UINT64 DataIndex
+        []
+        for(Definded Items)
+          UINT32 Time
+        []
+      
+      kNames:     (0x11)
+        BYTE External;
+        if(External != 0)
+          UINT64 DataIndex
         []
         for(Files)
         {
-          BYTE Names[NameSize];
-          BYTE 0;
+          wchar_t Names[NameSize];
+          wchar_t 0;
         }
         []
 
-      kAttributes:
-        BYTE anAllAreDefined
-        if (anAllAreDefined == 0)
+      kAttributes:  (0x15)
+        BYTE AllAreDefined
+        if (AllAreDefined == 0)
         {
           for(NumFiles)
             BIT AttributesAreDefined
         }
         BYTE External;
         if(External != 0)
-          UINT64 aDataIndex
+          UINT64 DataIndex
         []
         for(Definded Attributes)
           UINT32 Attributes
@@ -299,19 +436,19 @@ FilesInfo
 
 Header
 ~~~~~~
-  BYTE NID::kHeader
+  BYTE NID::kHeader (0x01)
 
   []
   ArchiveProperties
   []
 
   []
-  BYTE NID::kAdditionalStreamsInfo;
+  BYTE NID::kAdditionalStreamsInfo; (0x03)
   StreamsInfo
   []
 
   []
-  BYTE NID::kMainStreamsInfo;
+  BYTE NID::kMainStreamsInfo;    (0x04)
   StreamsInfo
   []
 
@@ -319,9 +456,16 @@ Header
   FilesInfo
   []
 
-  BYTE NID::kEnd;
+  BYTE NID::kEnd
 
 
- 
+HeaderInfo
+~~~~~~~~~~
+  []
+  BYTE NID::kEncodedHeader; (0x17)
+  StreamsInfo for Encoded Header
+  []
+
+
 ---
 End of document

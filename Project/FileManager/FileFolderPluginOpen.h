@@ -5,8 +5,7 @@
 #ifndef __FILEFOLDERPLUGINOPEN_H
 #define __FILEFOLDERPLUGINOPEN_H
 
-#include "../Archiver/Common/IArchiveHandler2.h" 
-
-HRESULT OpenFileFolderPlugin(const UString &path, IFolderFolder **resultFolder);
+HRESULT OpenFileFolderPlugin(const UString &path, 
+  IFolderFolder **resultFolder, HWND parentWindow);
 
 #endif

@@ -12,30 +12,30 @@ using namespace NWindows;
 using namespace NCOM;
 using namespace NTime;
 
-static int MyCompareTime(NFileTimeType::EEnum aFileTimeType, 
-    const FILETIME &aTime1, const FILETIME &aTime2)
+static int MyCompareTime(NFileTimeType::EEnum fileTimeType, 
+    const FILETIME &time1, const FILETIME &time2)
 {
-  switch(aFileTimeType)
+  switch(fileTimeType)
   {
     case NFileTimeType::kWindows:
-      return ::CompareFileTime(&aTime1, &aTime2);
+      return ::CompareFileTime(&time1, &time2);
     case NFileTimeType::kUnix:
       {
-        time_t anUnixTime1, anUnixTime2;
-        if (!FileTimeToUnixTime(aTime1, anUnixTime1))
+        time_t unixTime1, unixTime2;
+        if (!FileTimeToUnixTime(time1, unixTime1))
           throw 4191614;
-        if (!FileTimeToUnixTime(aTime2, anUnixTime2))
+        if (!FileTimeToUnixTime(time2, unixTime2))
           throw 4191615;
-        return MyCompare(anUnixTime1, anUnixTime2);
+        return MyCompare(unixTime1, unixTime2);
       }
     case NFileTimeType::kDOS:
       {
-        UINT32 aDOSTime1, aDOSTime2;
-        if (!FileTimeToDosTime(aTime1, aDOSTime1))
+        UINT32 dosTime1, dosTime2;
+        if (!FileTimeToDosTime(time1, dosTime1))
           throw 4191616;
-        if (!FileTimeToDosTime(aTime2, aDOSTime2))
+        if (!FileTimeToDosTime(time2, dosTime2))
           throw 4191617;
-        return MyCompare(aDOSTime1, aDOSTime2);
+        return MyCompare(dosTime1, dosTime2);
       }
   }
   throw 4191618;
@@ -49,106 +49,106 @@ static const char *kSameTimeChangedSizeCollisionMessaged =
     "Collision between files with same date/time and different sizes:\n";
 */
 
-static void TestDuplicateString(const UStringVector &aStrings, 
-    const vector<int> &aIndexes)
+static void TestDuplicateString(const UStringVector &strings, 
+    const CIntVector &indices)
 {
-  for(vector<int>::size_type i = 0; i + 1 < aIndexes.size(); i++)
-    if (aStrings[aIndexes[i]].CollateNoCase(aStrings[aIndexes[i + 1]]) == 0)
+  for(int i = 0; i + 1 < indices.Size(); i++)
+    if (strings[indices[i]].CollateNoCase(strings[indices[i + 1]]) == 0)
     {
-      UString aString = kDuplicateFileNameMessage;
-      aString += L"\n";
-      aString += aStrings[aIndexes[i]];
-      aString += L"\n";
-      aString += aStrings[aIndexes[i+1]];
-      throw aString;
+      UString message = kDuplicateFileNameMessage;
+      message += L"\n";
+      message += strings[indices[i]];
+      message += L"\n";
+      message += strings[indices[i+1]];
+      throw message;
     }
 }
 
-void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &aDirItems, 
-    const CArchiveItemInfoVector &anArchiveItems,
-    NFileTimeType::EEnum aFileTimeType,
-    CUpdatePairInfoVector &anUpdatePairs)
+void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &dirItems, 
+    const CArchiveItemInfoVector &archiveItems,
+    NFileTimeType::EEnum fileTimeType,
+    CUpdatePairInfoVector &updatePairs)
 {
-  vector<int> aDirIndexes, anArchiveIndexes;
-  UStringVector aDirNames, anArchiveNames;
+  CIntVector dirIndices, archiveIndices;
+  UStringVector dirNames, archiveNames;
   
-  int aNumDirItems = aDirItems.Size(); 
+  int numDirItems = dirItems.Size(); 
   int i;
-  for(i = 0; i < aNumDirItems; i++)
-    aDirNames.Add(aDirItems[i].Name);
-  SortStringsToIndexes(aDirNames, aDirIndexes);
-  TestDuplicateString(aDirNames, aDirIndexes);
+  for(i = 0; i < numDirItems; i++)
+    dirNames.Add(dirItems[i].Name);
+  SortStringsToIndexes(dirNames, dirIndices);
+  TestDuplicateString(dirNames, dirIndices);
 
-  int aNumArchiveItems = anArchiveItems.Size(); 
-  for(i = 0; i < aNumArchiveItems; i++)
-    anArchiveNames.Add(anArchiveItems[i].Name);
-  SortStringsToIndexes(anArchiveNames, anArchiveIndexes);
-  TestDuplicateString(anArchiveNames, anArchiveIndexes);
+  int numArchiveItems = archiveItems.Size(); 
+  for(i = 0; i < numArchiveItems; i++)
+    archiveNames.Add(archiveItems[i].Name);
+  SortStringsToIndexes(archiveNames, archiveIndices);
+  TestDuplicateString(archiveNames, archiveIndices);
   
-  int aDirItemIndex = 0, anArchiveItemIndex = 0; 
-  CUpdatePairInfo aPairInfo;
-  while(aDirItemIndex < aNumDirItems && anArchiveItemIndex < aNumArchiveItems)
+  int dirItemIndex = 0, archiveItemIndex = 0; 
+  CUpdatePairInfo pairInfo;
+  while(dirItemIndex < numDirItems && archiveItemIndex < numArchiveItems)
   {
-    int aDirItemIndex2 = aDirIndexes[aDirItemIndex],
-        anArchiveItemIndex2 = anArchiveIndexes[anArchiveItemIndex]; 
-    const CArchiveStyleDirItemInfo &aDirItem = aDirItems[aDirItemIndex2];
-    const CArchiveItemInfo &anArchiveItem = anArchiveItems[anArchiveItemIndex2];
-    int aCompareResult = aDirItem.Name.CollateNoCase(anArchiveItem.Name);
-    if (aCompareResult < 0)
+    int dirItemIndex2 = dirIndices[dirItemIndex],
+        archiveItemIndex2 = archiveIndices[archiveItemIndex]; 
+    const CArchiveStyleDirItemInfo &dirItem = dirItems[dirItemIndex2];
+    const CArchiveItemInfo &archiveItem = archiveItems[archiveItemIndex2];
+    int compareResult = dirItem.Name.CollateNoCase(archiveItem.Name);
+    if (compareResult < 0)
     {
-        aPairInfo.State = NUpdateArchive::NPairState::kOnlyOnDisk;
-        aPairInfo.DirItemIndex = aDirItemIndex2;
-        aDirItemIndex++;
+        pairInfo.State = NUpdateArchive::NPairState::kOnlyOnDisk;
+        pairInfo.DirItemIndex = dirItemIndex2;
+        dirItemIndex++;
     }
-    else if (aCompareResult > 0)
+    else if (compareResult > 0)
     {
-      aPairInfo.State = anArchiveItem.Censored ? 
+      pairInfo.State = archiveItem.Censored ? 
         NUpdateArchive::NPairState::kOnlyInArchive: NUpdateArchive::NPairState::kNotMasked;
-      aPairInfo.ArchiveItemIndex = anArchiveItemIndex2;
-      anArchiveItemIndex++;
+      pairInfo.ArchiveItemIndex = archiveItemIndex2;
+      archiveItemIndex++;
     }
     else
     {
-      if (!anArchiveItem.Censored)
-        throw 1082022;; // TTString(kNotCensoredCollisionMessaged + aDirItem.Name);
-      aPairInfo.DirItemIndex = aDirItemIndex2;
-      aPairInfo.ArchiveItemIndex = anArchiveItemIndex2;
-      switch (MyCompareTime(aFileTimeType, aDirItem.LastWriteTime, anArchiveItem.LastWriteTime))
+      if (!archiveItem.Censored)
+        throw 1082022;; // TTString(kNotCensoredCollisionMessaged + dirItem.Name);
+      pairInfo.DirItemIndex = dirItemIndex2;
+      pairInfo.ArchiveItemIndex = archiveItemIndex2;
+      switch (MyCompareTime(fileTimeType, dirItem.LastWriteTime, archiveItem.LastWriteTime))
       {
         case -1:
-          aPairInfo.State = NUpdateArchive::NPairState::kNewInArchive;
+          pairInfo.State = NUpdateArchive::NPairState::kNewInArchive;
           break;
         case 1:
-          aPairInfo.State = NUpdateArchive::NPairState::kOldInArchive;
+          pairInfo.State = NUpdateArchive::NPairState::kOldInArchive;
           break;
         default:
-          if (anArchiveItem.SizeIsDefined)
-            if (aDirItem.Size != anArchiveItem.Size)
+          if (archiveItem.SizeIsDefined)
+            if (dirItem.Size != archiveItem.Size)
               // throw 1082034; // kSameTimeChangedSizeCollisionMessaged;
-              aPairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
+              pairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
             else
-              aPairInfo.State = NUpdateArchive::NPairState::kSameFiles;
+              pairInfo.State = NUpdateArchive::NPairState::kSameFiles;
           else
-              aPairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
+              pairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
       }
-      aDirItemIndex++;
-      anArchiveItemIndex++;
+      dirItemIndex++;
+      archiveItemIndex++;
     }
-    anUpdatePairs.Add(aPairInfo);
+    updatePairs.Add(pairInfo);
   }
-  for(;aDirItemIndex < aNumDirItems; aDirItemIndex++)
+  for(;dirItemIndex < numDirItems; dirItemIndex++)
   {
-    aPairInfo.State = NUpdateArchive::NPairState::kOnlyOnDisk;
-    aPairInfo.DirItemIndex = aDirIndexes[aDirItemIndex];
-    anUpdatePairs.Add(aPairInfo);
+    pairInfo.State = NUpdateArchive::NPairState::kOnlyOnDisk;
+    pairInfo.DirItemIndex = dirIndices[dirItemIndex];
+    updatePairs.Add(pairInfo);
   }
-  for(;anArchiveItemIndex < aNumArchiveItems; anArchiveItemIndex++)
+  for(;archiveItemIndex < numArchiveItems; archiveItemIndex++)
   {
-    int anArchiveItemIndex2 = anArchiveIndexes[anArchiveItemIndex]; 
-    const CArchiveItemInfo &anArchiveItem = anArchiveItems[anArchiveItemIndex2];
-    aPairInfo.State = anArchiveItem.Censored ?  
+    int archiveItemIndex2 = archiveIndices[archiveItemIndex]; 
+    const CArchiveItemInfo &archiveItem = archiveItems[archiveItemIndex2];
+    pairInfo.State = archiveItem.Censored ?  
         NUpdateArchive::NPairState::kOnlyInArchive: NUpdateArchive::NPairState::kNotMasked;
-    aPairInfo.ArchiveItemIndex = anArchiveItemIndex2;
-    anUpdatePairs.Add(aPairInfo);
+    pairInfo.ArchiveItemIndex = archiveItemIndex2;
+    updatePairs.Add(pairInfo);
   }
 }

@@ -8,12 +8,12 @@
 #include "Common/Wildcard.h"
 #include "UpdateArchiveOptions.h"
 // #include "ProxyHandler.h"
-#include "../Common/IArchiveHandler2.h"
 #include "Windows/FileFind.h"
+#include "../Format/Common/ArchiveInterface.h"
 
 HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &censor, 
     CUpdateArchiveOptions &options, const CSysString &workingDir,
-    IArchiveHandler200 *archive,
+    IInArchive *archive,
     const UString *defaultItemName,
     const NWindows::NFile::NFind::CFileInfo *archiveFileInfo,
     bool enablePercents);

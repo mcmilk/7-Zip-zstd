@@ -15,7 +15,7 @@ namespace NPPMD {
 struct CEncodeInfo: public CInfo
 {
 
-  void EncodeBinSymbol(int symbol, CMyRangeEncoder *aRangeEncoder)
+  void EncodeBinSymbol(int symbol, CMyRangeEncoder *rangeEncoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
     WORD &bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
@@ -23,14 +23,14 @@ struct CEncodeInfo: public CInfo
     {
       FoundState = &rs;
       rs.Freq += (rs.Freq < 128);
-      aRangeEncoder->EncodeBit(bs, TOT_BITS, 0);
+      rangeEncoder->EncodeBit(bs, TOT_BITS, 0);
       bs += UINT16(INTERVAL-GET_MEAN(bs,PERIOD_BITS, 2));
       PrevSuccess = 1;
       RunLength++;
     } 
     else 
     {
-      aRangeEncoder->EncodeBit(bs, TOT_BITS, 1);
+      rangeEncoder->EncodeBit(bs, TOT_BITS, 1);
       bs -= UINT16(GET_MEAN(bs,PERIOD_BITS, 2));
       InitEsc = ExpEscape[bs >> 10];
       NumMasked = 1;                        
@@ -40,14 +40,14 @@ struct CEncodeInfo: public CInfo
     }
   }
 
-  void EncodeSymbol1(int symbol, CMyRangeEncoder *aRangeEncoder)
+  void EncodeSymbol1(int symbol, CMyRangeEncoder *rangeEncoder)
   {
     PPM_CONTEXT::STATE* p = MinContext->Stats;
     if (p->Symbol == symbol) 
     {
       PrevSuccess = (2 * (p->Freq) > MinContext->SummFreq);
       RunLength += PrevSuccess;
-      aRangeEncoder->Encode(0, MinContext->Stats->Freq, MinContext->SummFreq);
+      rangeEncoder->Encode(0, MinContext->Stats->Freq, MinContext->SummFreq);
       (FoundState = p)->Freq += 4;          
       MinContext->SummFreq += 4;
       if (p->Freq > MAX_FREQ)             
@@ -66,74 +66,75 @@ struct CEncodeInfo: public CInfo
         i=(NumMasked = MinContext->NumStats)-1;       
         FoundState = NULL;
         do { CharMask[(--p)->Symbol] = EscCount; } while ( --i );
-        aRangeEncoder->Encode(LoCnt, MinContext->SummFreq - LoCnt, MinContext->SummFreq);
+        rangeEncoder->Encode(LoCnt, MinContext->SummFreq - LoCnt, MinContext->SummFreq);
         return;
       }
     }
-    aRangeEncoder->Encode(LoCnt, p->Freq, MinContext->SummFreq);
+    rangeEncoder->Encode(LoCnt, p->Freq, MinContext->SummFreq);
     update1(p);
   }
 
-  void EncodeSymbol2(int symbol, CMyRangeEncoder *aRangeEncoder)
+  void EncodeSymbol2(int symbol, CMyRangeEncoder *rangeEncoder)
   {
-    int HiCnt, i = MinContext->NumStats - NumMasked;
-    UINT32 aScale;
-    SEE2_CONTEXT* psee2c = makeEscFreq2(i, aScale);
+    int hiCnt, i = MinContext->NumStats - NumMasked;
+    UINT32 scale;
+    SEE2_CONTEXT* psee2c = makeEscFreq2(i, scale);
     PPM_CONTEXT::STATE* p = MinContext->Stats - 1;                       
-    HiCnt = 0;
+    hiCnt = 0;
     do 
     {
       do { p++; } while (CharMask[p->Symbol] == EscCount);
-      HiCnt += p->Freq;
+      hiCnt += p->Freq;
       if (p->Symbol == symbol)            
         goto SYMBOL_FOUND;
       CharMask[p->Symbol] = EscCount;
     } 
     while ( --i );
     
-    aRangeEncoder->Encode(HiCnt, aScale, HiCnt + aScale);
-    aScale += HiCnt;
+    rangeEncoder->Encode(hiCnt, scale, hiCnt + scale);
+    scale += hiCnt;
     
-    psee2c->Summ += aScale;         
+    psee2c->Summ += scale;         
     NumMasked = MinContext->NumStats;
     return;
 SYMBOL_FOUND:
     
-    UINT32 aHighCount = HiCnt;
-    UINT32 aLowCount = aHighCount - p->Freq;
+    UINT32 highCount = hiCnt;
+    UINT32 lowCount = highCount - p->Freq;
     if ( --i ) 
     {
       PPM_CONTEXT::STATE* p1 = p;
       do 
       {
         do { p1++; } while (CharMask[p1->Symbol] == EscCount);
-        HiCnt += p1->Freq;
+        hiCnt += p1->Freq;
       } 
       while ( --i );
     }
-    // SubRange.scale += HiCnt;
-    aScale += HiCnt;
-    aRangeEncoder->Encode(aLowCount, aHighCount - aLowCount, aScale);
+    // SubRange.scale += hiCnt;
+    scale += hiCnt;
+    rangeEncoder->Encode(lowCount, highCount - lowCount, scale);
     psee2c->update();                       
     update2(p);
   }
 
-  void EncodeSymbol(int c, CMyRangeEncoder *aRangeEncoder)
+  void EncodeSymbol(int c, CMyRangeEncoder *rangeEncoder)
   {
     if (MinContext->NumStats != 1) 
-      EncodeSymbol1(c, aRangeEncoder);   
+      EncodeSymbol1(c, rangeEncoder);   
     else 
-      EncodeBinSymbol(c, aRangeEncoder); 
+      EncodeBinSymbol(c, rangeEncoder); 
     while ( !FoundState ) 
     {
       do 
       {
         OrderFall++;                
         MinContext = MinContext->Suffix;
-        // if ( !MinContext ) return; //  S_OK;
+        if ( !MinContext ) 
+          return; //  S_OK;
       } 
       while (MinContext->NumStats == NumMasked);
-      EncodeSymbol2(c, aRangeEncoder);   
+      EncodeSymbol2(c, rangeEncoder);   
     }
     NextContext();
   }

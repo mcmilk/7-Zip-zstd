@@ -11,7 +11,7 @@
 
 #include "Interface/IInOutStreams.h"
 
-#include "../Common/IArchiveHandler.h"
+#include "../Common/ArchiveInterface.h"
 #include "../Common/InStreamWithCRC.h"
 #include "../../../Compress/Interface/CompressInterface.h"
 
@@ -37,7 +37,7 @@ DECLARE_NO_REGISTRY()
 private:
   CComObjectNoLock<CInStreamWithCRC> *_inStreamWithHashSpec;
   CComPtr<ISequentialInStream> _inStreamWithHash;
-  CComPtr<IUpdateCallBack> _updateCallback;
+  CComPtr<IArchiveUpdateCallback> _updateCallback;
 
   bool _currentSizeIsDefined;
   UINT64 _currentSize;
@@ -53,7 +53,7 @@ private:
   HRESULT CloseStream();
   void AddDigest();
 public:
-  void Init(IUpdateCallBack *updateCallback, 
+  void Init(IArchiveUpdateCallback *updateCallback, 
       const UINT32 *fileIndices, UINT32 numFiles);
   CRecordVector<UINT32> CRCs;
   CRecordVector<UINT64> Sizes;

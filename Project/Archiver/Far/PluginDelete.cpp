@@ -25,104 +25,103 @@ using namespace NDirectory;
 
 static LPCTSTR kTempArcivePrefix = "7zi";
 
-int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
-    int anOpMode)
+int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
+    int opMode)
 {
-  if (anItemsNumber == 0)
+  if (numItems == 0)
     return FALSE;
   if (!m_ArchiverInfo.UpdateEnabled)
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;
   }
-  if ((anOpMode & OPM_SILENT) == 0)
+  if ((opMode & OPM_SILENT) == 0)
   {
-    const char *aMsgItems[]=
+    const char *msgItems[]=
     {
       g_StartupInfo.GetMsgString(NMessageID::kDeleteTitle),
       g_StartupInfo.GetMsgString(NMessageID::kDeleteFiles),
       g_StartupInfo.GetMsgString(NMessageID::kDeleteDelete),
       g_StartupInfo.GetMsgString(NMessageID::kDeleteCancel)
     };
-    char aMsg[1024];
-    if (anItemsNumber == 1)
+    char msg[1024];
+    if (numItems == 1)
     {
-      sprintf(aMsg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile),
-          aPanelItems[0].FindData.cFileName);
-      aMsgItems[1] = aMsg;
+      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile),
+          panelItems[0].FindData.cFileName);
+      msgItems[1] = msg;
     }
-    else if (anItemsNumber > 1)
+    else if (numItems > 1)
     {
-      sprintf(aMsg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), 
-          anItemsNumber);
-      aMsgItems[1] = aMsg;
+      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), 
+          numItems);
+      msgItems[1] = msg;
     }
-    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, aMsgItems, 
-        sizeof(aMsgItems) / sizeof(aMsgItems[0]), 2) != 0)
+    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, 
+        sizeof(msgItems) / sizeof(msgItems[0]), 2) != 0)
       return (FALSE);
   }
 
-  CScreenRestorer aScreenRestorer;
-  CProgressBox aProgressBox;
-  CProgressBox *aProgressBoxPointer = NULL;
-  if ((anOpMode & OPM_SILENT) == 0 && (anOpMode & OPM_FIND ) == 0)
+  CScreenRestorer screenRestorer;
+  CProgressBox progressBox;
+  CProgressBox *progressBoxPointer = NULL;
+  if ((opMode & OPM_SILENT) == 0 && (opMode & OPM_FIND ) == 0)
   {
-    aScreenRestorer.Save();
+    screenRestorer.Save();
 
-    aProgressBoxPointer = &aProgressBox;
-    aProgressBox.Init(g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
+    progressBoxPointer = &progressBox;
+    progressBox.Init(g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
         g_StartupInfo.GetMsgString(NMessageID::kDeleting), 1 << 17);
   }
 
-  // CZipRegistryManager aZipRegistryManager;
-  NZipSettings::NWorkDir::CInfo aWorkDirInfo;
-  NZipRegistryManager::ReadWorkDirInfo(aWorkDirInfo);
-  CSysString aWorkDir = GetWorkDir(aWorkDirInfo, m_FileName);
-  CreateComplexDirectory(aWorkDir);
+  NZipSettings::NWorkDir::CInfo workDirInfo;
+  NZipRegistryManager::ReadWorkDirInfo(workDirInfo);
+  CSysString workDir = GetWorkDir(workDirInfo, m_FileName);
+  CreateComplexDirectory(workDir);
 
-  CTempFile aTempFile;
-  CSysString aTempFileName;
-  if (aTempFile.Create(aWorkDir, kTempArcivePrefix, aTempFileName) == 0)
+  CTempFile tempFile;
+  CSysString tempFileName;
+  if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
     return FALSE;
 
 
-  CRecordVector<UINT32> anIndexes;
-  anIndexes.Reserve(anItemsNumber);
-  for(int i = 0; i < anItemsNumber; i++)
-    anIndexes.Add(aPanelItems[i].UserData);
+  CRecordVector<UINT32> indices;
+  indices.Reserve(numItems);
+  for(int i = 0; i < numItems; i++)
+    indices.Add(panelItems[i].UserData);
 
   ////////////////////////////
   // Save _folder;
 
-  UStringVector aPathVector;
-  GetPathParts(aPathVector);
+  UStringVector pathVector;
+  GetPathParts(pathVector);
   
-  CComPtr<IOutArchiveHandler100> anOutArchive;
-  HRESULT aResult = m_ArchiveHandler.QueryInterface(&anOutArchive);
-  if(aResult != S_OK)
+  CComPtr<IOutFolderArchive> outArchive;
+  HRESULT result = m_ArchiveHandler.QueryInterface(&outArchive);
+  if(result != S_OK)
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;
   }
-  anOutArchive->SetFolder(_folder);
+  outArchive->SetFolder(_folder);
 
-  CComObjectNoLock<CUpdateCallBack100Imp> *anUpdateCallBackSpec =
+  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec =
     new CComObjectNoLock<CUpdateCallBack100Imp>;
-  CComPtr<IUpdateCallback100> anUpdateCallBack(anUpdateCallBackSpec );
+  CComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
-  anUpdateCallBackSpec->Init(m_ArchiveHandler, &aProgressBox);
+  updateCallbackSpec->Init(m_ArchiveHandler, &progressBox);
 
 
-  aResult = anOutArchive->DeleteItems(
-      MultiByteToUnicodeString(aTempFileName, CP_OEMCP), 
-      &anIndexes.Front(), anIndexes.Size(),
-      anUpdateCallBack);
-  anUpdateCallBack.Release();
-  anOutArchive.Release();
+  result = outArchive->DeleteItems(
+      MultiByteToUnicodeString(tempFileName, CP_OEMCP), 
+      &indices.Front(), indices.Size(),
+      updateCallback);
+  updateCallback.Release();
+  outArchive.Release();
 
-  if (aResult != S_OK)
+  if (result != S_OK)
   {
-    ShowErrorMessage(aResult);
+    ShowErrorMessage(result);
     return FALSE;
   }
 
@@ -135,17 +134,17 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
     return FALSE;
   }
 
-  aTempFile.DisableDeleting();
-  if (!MoveFile(aTempFileName, m_FileName))
+  tempFile.DisableDeleting();
+  if (!MoveFile(tempFileName, m_FileName))
   {
     ShowLastErrorMessage();
     return FALSE;
   }
   
-  aResult = ReOpenArchive(m_ArchiveHandler, m_DefaultName, m_FileName);
-  if (aResult != S_OK)
+  result = ReOpenArchive(m_ArchiveHandler, m_DefaultName, m_FileName);
+  if (result != S_OK)
   {
-    ShowErrorMessage(aResult);
+    ShowErrorMessage(result);
     return FALSE;
   }
 
@@ -154,13 +153,13 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
   // Restore _folder;
 
   m_ArchiveHandler->BindToRootFolder(&_folder);
-  for (i = 0; i < aPathVector.Size(); i++)
+  for (i = 0; i < pathVector.Size(); i++)
   {
-    CComPtr<IFolderFolder> aNewFolder;
-    _folder->BindToFolder(aPathVector[i], &aNewFolder);
-    if(!aNewFolder  )
+    CComPtr<IFolderFolder> newFolder;
+    _folder->BindToFolder(pathVector[i], &newFolder);
+    if(!newFolder  )
       break;
-    _folder = aNewFolder;
+    _folder = newFolder;
   }
 
   return(TRUE);

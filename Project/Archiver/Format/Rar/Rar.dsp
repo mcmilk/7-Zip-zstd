@@ -218,14 +218,6 @@ SOURCE=..\Common\FormatCryptoInterface.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Handler\IArchiveHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\IArchiveHandler2.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
 # End Source File
 # Begin Source File
@@ -263,6 +255,14 @@ SOURCE=..\Common\CoderMixer.cpp
 # Begin Source File
 
 SOURCE=..\Common\CoderMixer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\CoderMixer2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 

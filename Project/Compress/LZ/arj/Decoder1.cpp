@@ -7,7 +7,7 @@
 #include "Windows/Defs.h"
 
 namespace NCompress{
-namespace Narj {
+namespace NArj {
 namespace NDecoder1 {
 
 static const UINT32 kHistorySize = 26624;

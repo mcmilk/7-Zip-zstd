@@ -55,7 +55,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-Zip\7zg.exe"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-Zip\7zg.exe" /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "GUI - Win32 Debug"
 
@@ -108,7 +109,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zg.exe"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-Zip\7zgn.exe"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-Zip\7zgn.exe" /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "GUI - Win32 DebugU"
 
@@ -462,6 +464,14 @@ SOURCE=..\..\..\SDK\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Interface\FileStreams.cpp
 # End Source File
 # Begin Source File
@@ -520,10 +530,6 @@ SOURCE=..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 
@@ -735,6 +741,10 @@ SOURCE=..\..\FileManager\ExtractCallback.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\FileManager\FolderInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\FileManager\FormatUtils.cpp
 # End Source File
 # Begin Source File
@@ -756,6 +766,14 @@ SOURCE=..\..\FileManager\LangUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\FileManager\LangUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\OpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\OpenCallback.h
 # End Source File
 # Begin Source File
 
@@ -803,11 +821,19 @@ SOURCE=..\Agent\AgentProxyHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ExtractCallback200.cpp
+SOURCE=..\Agent\ArchiveExtractCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ExtractCallback200.h
+SOURCE=..\Agent\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Agent\ArchiveUpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Agent\ArchiveUpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -820,14 +846,6 @@ SOURCE=..\Agent\Handler.h
 # Begin Source File
 
 SOURCE=..\Agent\OutHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallback.h
 # End Source File
 # End Group
 # Begin Source File

@@ -198,10 +198,6 @@ SOURCE=..\..\Handler\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\IArchiveHandler2.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # End Group

@@ -63,8 +63,10 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CDecoder)
 
-DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"), 
-                 TEXT("Compress.LZMADecoder"), UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CDecoder, 
+    // TEXT("Compress.LZMADecoder.1"), TEXT("Compress.LZMADecoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
 //DECLARE_NO_REGISTRY()
 
   CDecoder();
@@ -81,16 +83,16 @@ DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"),
 
   class CDecoderFlusher
   {
-    CDecoder *m_Decoder;
+    CDecoder *_decoder;
   public:
-    bool m_NeedFlush;
-    CDecoderFlusher(CDecoder *aDecoder): 
-          m_Decoder(aDecoder), m_NeedFlush(true) {}
+    bool NeedFlush;
+    CDecoderFlusher(CDecoder *decoder): 
+          _decoder(decoder), NeedFlush(true) {}
     ~CDecoderFlusher() 
     { 
-      if (m_NeedFlush)
-        m_Decoder->Flush();
-      m_Decoder->ReleaseStreams(); 
+      if (NeedFlush)
+        _decoder->Flush();
+      _decoder->ReleaseStreams(); 
     }
   };
 

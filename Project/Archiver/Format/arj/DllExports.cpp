@@ -13,7 +13,7 @@ CNewHandlerSetter g_NewHandlerSetter;
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CarjHandler, NArchive::Narj::CHandler)
+  OBJECT_ENTRY(CLSID_CArjHandler, NArchive::NArj::CHandler)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

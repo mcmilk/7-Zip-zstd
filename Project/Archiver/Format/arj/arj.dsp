@@ -134,6 +134,18 @@ SOURCE=..\..\..\..\SDK\Common\CRC.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Exception.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -167,6 +179,10 @@ SOURCE=..\..\..\..\SDK\Common\Vector.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\COMTry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Defs.h
 # End Source File
 # Begin Source File
 
@@ -230,6 +246,18 @@ SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IProgress.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
 # End Source File
 # Begin Source File
@@ -254,6 +282,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\StreamObjects.cpp
 # End Source File
 # Begin Source File
@@ -274,10 +306,6 @@ SOURCE=.\Handler.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Header.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Header.h
 # End Source File
 # Begin Source File
@@ -287,10 +315,6 @@ SOURCE=.\InEngine.cpp
 # Begin Source File
 
 SOURCE=.\InEngine.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\ItemInfo.cpp
 # End Source File
 # Begin Source File
 

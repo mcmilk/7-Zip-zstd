@@ -4,10 +4,9 @@
 
 #include "Handler.h"
 
-#include "Common/StringConvert.h"
-
 #include "Windows/FileFind.h"
 #include "Windows/Defs.h"
+#include "Windows/PropVariant.h"
 
 #include "Compression/CopyCoder.h"
 
@@ -20,97 +19,77 @@ static const kNumItemInArchive = 1;
 namespace NArchive {
 namespace NBZip2 {
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *aType)
+STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
 {
-  *aType = NFileTimeType::kUnix;
+  *type = NFileTimeType::kUnix;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::DeleteItems(IOutStream *anOutStream, 
-    const UINT32* anIndexes, 
-    UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack)
+static HRESULT CopyStreams(IInStream *inStream, IOutStream *outStream, 
+    IArchiveUpdateCallback *updateCallback)
 {
-  return E_FAIL;
-}
-
-
-static HRESULT CopyStreams(IInStream *anInStream, IOutStream *anOutStream, 
-    IUpdateCallBack *anUpdateCallBack)
-{
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 
+  CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
-  CComPtr<ICompressCoder> m_CopyCoder = aCopyCoderSpec;
-  return m_CopyCoder->Code(anInStream, anOutStream, NULL, NULL, NULL);
+  CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+  return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
-    IUpdateCallBack *anUpdateCallBack)
+STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+    IArchiveUpdateCallback *updateCallback)
 {
-  if (aNumItems > 2)
+  if (numItems != 1)
+    return E_INVALIDARG;
+
+  INT32 newData;
+  INT32 newProperties;
+  UINT32 indexInArchive;
+  if (!updateCallback)
     return E_FAIL;
-
-  CItemInfo aNewItemInfo;
-
-  bool aCompressItemDefined = false;
-  bool aCopyItemDefined = false;
-
-  int anIndexInClient;
-
-  UINT64 aSize;
-  for(UINT32 i = 0; i < aNumItems; i++)
+  RINOK(updateCallback->GetUpdateItemInfo(0,
+      &newData, &newProperties, &indexInArchive));
+ 
+  if (IntToBool(newProperties))
   {
-    INT32 anCompress;
-    INT32 anExistInArchive;
-    INT32 anIndexInServer;
-    UINT32 anAttributes;
-    FILETIME aTime;
-    CComBSTR aName;
-    RETURN_IF_NOT_S_OK(anUpdateCallBack->GetUpdateItemInfo(i,
-      &anCompress, // 1 - compress 0 - copy
-      &anExistInArchive,
-      &anIndexInServer,
-      &anAttributes,
-      NULL,
-      NULL,
-      &aTime, 
-      &aSize, 
-      &aName));
-    if (MyBoolToBool(anCompress))
     {
-      if (aCompressItemDefined)
-        return E_FAIL;
-      aCompressItemDefined = true;
-
-      if (NFile::NFind::NAttributes::IsDirectory(anAttributes))
-        return E_FAIL;
-
-      aNewItemInfo.UnPackSize = aSize;
-
-      anIndexInClient = i;
-      // aNewItemInfo.IndexInClient = i;
-      // aNewItemInfo.ExistInArchive = MyBoolToBool(anExistInArchive);
+      NCOM::CPropVariant propVariant;
+      RINOK(updateCallback->GetProperty(0, kpidAttributes, &propVariant));
+      if (propVariant.vt == VT_UI4)
+      {
+        if (NFile::NFind::NAttributes::IsDirectory(propVariant.ulVal))
+          return E_INVALIDARG;
+      }
+      else if (propVariant.vt != VT_EMPTY)
+        return E_INVALIDARG;
     }
-    else
     {
-      if (anIndexInServer != 0)
-        return E_FAIL;
-      aCopyItemDefined = true;
+      NCOM::CPropVariant propVariant;
+      RINOK(updateCallback->GetProperty(0, kpidIsFolder, &propVariant));
+      if (propVariant.vt == VT_BOOL)
+      {
+        if (propVariant.boolVal != VARIANT_FALSE)
+          return E_INVALIDARG;
+      }
+      else if (propVariant.vt != VT_EMPTY)
+        return E_INVALIDARG;
     }
   }
-
-  if (aCompressItemDefined)
+  
+  if (IntToBool(newData))
   {
-    if (aCopyItemDefined)
-      return E_FAIL;
+    UINT64 size;
+    {
+      NCOM::CPropVariant propVariant;
+      RINOK(updateCallback->GetProperty(0, kpidSize, &propVariant));
+      if (propVariant.vt != VT_UI8)
+        return E_INVALIDARG;
+      size = *(UINT64 *)(&propVariant.uhVal);
+    }
+    return UpdateArchive(size, outStream, 0, updateCallback);
   }
-  else
-  {
-    if (!aCopyItemDefined)
-      return E_FAIL;
-    return CopyStreams(m_Stream, anOutStream, anUpdateCallBack);
-  }
-
-  return UpdateArchive(aSize, anOutStream, anIndexInClient, anUpdateCallBack);
+  if (indexInArchive != 0)
+    return E_INVALIDARG;
+  RINOK(_stream->Seek(_streamStartPosition, STREAM_SEEK_SET, NULL));
+  return CopyStreams(_stream, outStream, updateCallback);
 }
 
 }}

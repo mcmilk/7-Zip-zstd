@@ -2,19 +2,12 @@
 
 #include "StdAfx.h"
 
+#include "Common/Defs.h"
 #include "Windows/Defs.h"
 
 #include "UpdateEngine.h"
 
-#include "Compression/CopyCoder.h"
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-
 #include "Interface/ProgressUtils.h"
-
-#include "Handler.h"
-
-#include "Interface/LimitedStreams.h"
 
 #ifdef COMPRESS_BZIP2
 #include "../../../Compress/BWT/BZip2/Encoder.h"
@@ -33,49 +26,35 @@ static const kOneItemComplexity = 30;
 // Main Function UpdateArchiveStd
 
 
-HRESULT UpdateArchive(UINT64 anUnpackSize,
-    IOutStream *anOutStream,
-    int anIndexInClient,
-    IUpdateCallBack *anUpdateCallBack)
+HRESULT UpdateArchive(UINT64 unpackSize,
+    IOutStream *outStream,
+    int indexInClient,
+    IArchiveUpdateCallback *updateCallback)
 {
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->SetTotal(anUnpackSize));
+  RINOK(updateCallback->SetTotal(unpackSize));
   
-  UINT64 aComplexity = 0;
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
+  UINT64 complexity = 0;
+  RINOK(updateCallback->SetCompleted(&complexity));
 
-  CComPtr<IInStream> aFileInStream;
+  CComPtr<IInStream> fileInStream;
 
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->CompressOperation(
-      anIndexInClient, &aFileInStream));
+  RINOK(updateCallback->GetStream(indexInClient, &fileInStream));
 
-  CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = 
+  CComObjectNoLock<CLocalProgress> *localProgressSpec = 
     new  CComObjectNoLock<CLocalProgress>;
-  CComPtr<ICompressProgressInfo> aLocalProgress = aLocalProgressSpec;
-  aLocalProgressSpec->Init(anUpdateCallBack, true);
+  CComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+  localProgressSpec->Init(updateCallback, true);
   
-  CComPtr<ICompressCoder> anEncoder;
+  CComPtr<ICompressCoder> encoder;
   #ifdef COMPRESS_BZIP2
-  anEncoder = new CComObjectNoLock<NCompress::NBZip2::NEncoder::CCoder>;
+  encoder = new CComObjectNoLock<NCompress::NBZip2::NEncoder::CCoder>;
   #else
-  RETURN_IF_NOT_S_OK(anEncoder.CoCreateInstance(CLSID_CCompressBZip2Encoder));
+  RINOK(encoder.CoCreateInstance(CLSID_CCompressBZip2Encoder));
   #endif
   
-  /*
-  NWindows::NCOM::CPropVariant aProperties[2] = 
-  {
-  m_Options.MaximizeRatio ? UINT32(kNumPassesMX) : UINT32(kNumPassesNormal),
-  m_Options.MaximizeRatio ? UINT32(kMatchFastLenMX) : UINT32(kMatchFastLenNormal)
-  };
-  CComPtr<ICompressSetEncoderProperties> aSetEncoderProperties;
-  RETURN_IF_NOT_S_OK(m_DeflateEncoder.QueryInterface(&aSetEncoderProperties));
-  aSetEncoderProperties->SetEncoderProperties(aProperties, 2);
-  */
-  RETURN_IF_NOT_S_OK(anEncoder->Code(aFileInStream, anOutStream, NULL, NULL, aLocalProgress));
+  RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
   
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->OperationResult(
-      NArchiveHandler::NUpdate::NOperationResult::kOK));
-
-  return S_OK;
+  return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
 }
 
 }}

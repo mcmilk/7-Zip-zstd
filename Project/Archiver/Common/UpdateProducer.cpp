@@ -40,7 +40,7 @@ void UpdateProduce(
         {
           if (aPairInfo.State == NPairState::kOnlyOnDisk)
             throw kUpdateActionSetCollision;
-          aPairInfo2.OperationIsCompress = false;
+          aPairInfo2.NewData = aPairInfo2.NewProperties = false;
           anOperationChain.Add(aPairInfo2);
           break;
         }
@@ -49,14 +49,14 @@ void UpdateProduce(
           if (aPairInfo.State == NPairState::kOnlyInArchive || 
             aPairInfo.State == NPairState::kNotMasked)
             throw kUpdateActionSetCollision;
-          aPairInfo2.OperationIsCompress = true;
+          aPairInfo2.NewData = aPairInfo2.NewProperties = true;
           anOperationChain.Add(aPairInfo2);
           break;
         }
       case NPairAction::kCompressAsAnti:
         {
           aPairInfo2.IsAnti = true;
-          aPairInfo2.OperationIsCompress = true;
+          aPairInfo2.NewData = aPairInfo2.NewProperties = true;
           anOperationChain.Add(aPairInfo2);
           break;
         }

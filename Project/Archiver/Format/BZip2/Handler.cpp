@@ -5,17 +5,14 @@
 #include "Handler.h"
 
 #include "Common/Defs.h"
-#include "Common/StringConvert.h"
 
 #include "Interface/ProgressUtils.h"
 #include "Interface/EnumStatProp.h"
-#include "Interface/StreamObjects.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
 #include "Windows/COMTry.h"
 
-#include "../../../Compress/Interface/CompressInterface.h"
 #include "../Common/DummyOutStream.h"
 
 #ifdef COMPRESS_BZIP2
@@ -50,57 +47,54 @@ STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *aNumItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
-  *aNumItems = kNumItemInArchive;
+  *numItems = kNumItemInArchive;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(
-    UINT32 anIndex, 
-    PROPID aPropID,  
-    PROPVARIANT *aValue)
+STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  if (anIndex != 0)
+  NWindows::NCOM::CPropVariant propVariant;
+  if (index != 0)
     return E_INVALIDARG;
-  switch(aPropID)
+  switch(propID)
   {
     case kpidIsFolder:
-      aPropVariant = false;
+      propVariant = false;
       break;
     case kpidPackedSize:
-      aPropVariant = m_Item.PackSize;
+      propVariant = _item.PackSize;
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(value);
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *aStream, 
-    const UINT64 *aMaxCheckStartPosition,
-    IOpenArchive2CallBack *anOpenArchiveCallBack)
+STDMETHODIMP CHandler::Open(IInStream *stream, 
+    const UINT64 *maxCheckStartPosition,
+    IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   try
   {
-    RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_CUR, &m_StreamStartPosition));
+    RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
     const kSignatureSize = 3;
-    BYTE aBuffer[kSignatureSize];
-    UINT32 aProcessedSize;
-    RETURN_IF_NOT_S_OK(aStream->Read(aBuffer, kSignatureSize, &aProcessedSize));
-    if (aProcessedSize != kSignatureSize)
+    BYTE buffer[kSignatureSize];
+    UINT32 processedSize;
+    RINOK(stream->Read(buffer, kSignatureSize, &processedSize));
+    if (processedSize != kSignatureSize)
       return S_FALSE;
-    if (aBuffer[0] != 'B' || aBuffer[1] != 'Z' || aBuffer[2] != 'h')
+    if (buffer[0] != 'B' || buffer[1] != 'Z' || buffer[2] != 'h')
       return S_FALSE;
 
-    UINT64 anEndPosition;
-    RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_END, &anEndPosition));
-    m_Item.PackSize = anEndPosition - m_StreamStartPosition;
+    UINT64 endPosition;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &endPosition));
+    _item.PackSize = endPosition - _streamStartPosition;
     
-    m_Stream = aStream;
+    _stream = stream;
   }
   catch(...)
   {
@@ -112,82 +106,83 @@ STDMETHODIMP CHandler::Open(IInStream *aStream,
 
 STDMETHODIMP CHandler::Close()
 {
-  m_Stream.Release();
+  _stream.Release();
   return S_OK;
 }
 
 
-STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
-    INT32 _aTestMode, IExtractCallback200 *anExtractCallBack)
+STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
+    INT32 testModeSpec, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  if (aNumItems == 0)
+  if (numItems == 0)
     return S_OK;
-  if (aNumItems != kNumItemInArchive)
+  if (numItems != kNumItemInArchive)
     return E_INVALIDARG;
-  if (anIndexes[0] != 0)
+  if (indices[0] != 0)
     return E_INVALIDARG;
 
-  bool aTestMode = (_aTestMode != 0);
+  bool testMode = (testModeSpec != 0);
 
-  anExtractCallBack->SetTotal(m_Item.PackSize);
+  extractCallback->SetTotal(_item.PackSize);
 
-  UINT64 aCurrentTotalPacked = 0;
+  UINT64 currentTotalPacked = 0;
   
-  RETURN_IF_NOT_S_OK(anExtractCallBack->SetCompleted(&aCurrentTotalPacked));
+  RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   
-  CComPtr<ISequentialOutStream> aRealOutStream;
-  INT32 anAskMode;
-  anAskMode = aTestMode ? NArchiveHandler::NExtract::NAskMode::kTest :
-  NArchiveHandler::NExtract::NAskMode::kExtract;
+  CComPtr<ISequentialOutStream> realOutStream;
+  INT32 askMode;
+  askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+  NArchive::NExtract::NAskMode::kExtract;
   
-  RETURN_IF_NOT_S_OK(anExtractCallBack->Extract(0, &aRealOutStream, anAskMode));
+  RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
   
   
-  if(!aTestMode && !aRealOutStream)
+  if(!testMode && !realOutStream)
     return S_OK;
 
-  anExtractCallBack->PrepareOperation(anAskMode);
+  extractCallback->PrepareOperation(askMode);
 
-  CComObjectNoLock<CDummyOutStream> *anOutStreamSpec = 
+  CComObjectNoLock<CDummyOutStream> *outStreamSpec = 
     new CComObjectNoLock<CDummyOutStream>;
-  CComPtr<ISequentialOutStream> anOutStream(anOutStreamSpec);
-  anOutStreamSpec->Init(aRealOutStream);
+  CComPtr<ISequentialOutStream> outStream(outStreamSpec);
+  outStreamSpec->Init(realOutStream);
   
-  aRealOutStream.Release();
+  realOutStream.Release();
 
-  CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
-  CComPtr<ICompressProgressInfo> aProgress = aLocalProgressSpec;
-  aLocalProgressSpec->Init(anExtractCallBack, true);
+  CComObjectNoLock<CLocalProgress> *localProgressSpec = new  CComObjectNoLock<CLocalProgress>;
+  CComPtr<ICompressProgressInfo> progress = localProgressSpec;
+  localProgressSpec->Init(extractCallback, true);
   
-  RETURN_IF_NOT_S_OK(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL));
+  RINOK(_stream->Seek(_streamStartPosition, STREAM_SEEK_SET, NULL));
 
-  CComPtr<ICompressCoder> aDecoder;
+  CComPtr<ICompressCoder> decoder;
   #ifdef COMPRESS_BZIP2
-  aDecoder = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
+  decoder = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
   #else
-  RETURN_IF_NOT_S_OK(aDecoder.CoCreateInstance(CLSID_CCompressBZip2Decoder));
+  RINOK(decoder.CoCreateInstance(CLSID_CCompressBZip2Decoder));
   #endif
 
-  HRESULT aResult = aDecoder->Code(m_Stream, anOutStream, NULL, NULL, aProgress);
-  anOutStream.Release();
-  if (aResult == S_FALSE)
-    RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-        NArchiveHandler::NExtract::NOperationResult::kDataError))
-  else if (aResult == S_OK)
-    RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(
-      NArchiveHandler::NExtract::NOperationResult::kOK))
+  HRESULT result = decoder->Code(_stream, outStream, NULL, NULL, progress);
+  outStream.Release();
+  if (result == S_FALSE)
+    RINOK(extractCallback->SetOperationResult(
+        NArchive::NExtract::NOperationResult::kDataError))
+  else if (result == S_OK)
+    RINOK(extractCallback->SetOperationResult(
+      NArchive::NExtract::NOperationResult::kOK))
   else
-    return aResult;
+    return result;
  
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::ExtractAllItems(INT32 aTestMode, IExtractCallback200 *anExtractCallBack)
+STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode, 
+    IArchiveExtractCallback *extractCallback)
 {
-  UINT32 anIndex = 0;
-  return Extract(&anIndex, 1, aTestMode, anExtractCallBack);
+  UINT32 index = 0;
+  return Extract(&index, 1, testMode, extractCallback);
 }
 
 }}

@@ -60,23 +60,34 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_LOGO                ICON    DISCARDABLE     "7zipLogo.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
-IDD_ABOUT DIALOG DISCARDABLE  0, 0, 231, 154
+IDD_ABOUT DIALOG DISCARDABLE  0, 0, 237, 172
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
 CAPTION "About"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    PUSHBUTTON      "OK",IDOK,174,133,50,14
-    LTEXT           "7-Zip 2.30 Beta 24",IDC_STATIC,7,7,119,9
-    LTEXT           "Copyright (c) 1999-2002 Igor Pavlov",IDC_STATIC,7,20,
+    PUSHBUTTON      "OK",IDOK,180,151,50,14
+    PUSHBUTTON      "www.7-zip.org",IDC_ABOUT_BUTTON_HOMEPAGE,136,7,94,14
+    PUSHBUTTON      "support@7-zip.org",IDC_ABOUT_BUTTON_EMAIL,136,30,94,14
+    PUSHBUTTON      "Donate",IDC_ABOUT_BUTTON_REGISTER,136,53,94,14
+    ICON            IDI_LOGO,IDC_STATIC,7,7,20,20,SS_REALSIZEIMAGE
+    LTEXT           "7-Zip 2.30 Beta 25",IDC_STATIC,7,54,119,9
+    LTEXT           "Copyright (c) 1999-2003 Igor Pavlov",IDC_STATIC,7,67,
                     119,17
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please donate some money to 7-Zip Project.",
-                    IDC_ABOUT_STATIC_REGISTER_INFO,7,62,217,60
-    PUSHBUTTON      "www.7-zip.org",IDC_ABOUT_BUTTON_HOMEPAGE,136,7,88,14
-    PUSHBUTTON      "Donate",IDC_ABOUT_BUTTON_REGISTER,136,31,88,14
+                    IDC_ABOUT_STATIC_REGISTER_INFO,7,91,223,54
 END
 
 
@@ -91,11 +102,11 @@ BEGIN
     IDD_ABOUT, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 224
+        RIGHTMARGIN, 230
         VERTGUIDE, 126
         VERTGUIDE, 136
         TOPMARGIN, 7
-        BOTTOMMARGIN, 147
+        BOTTOMMARGIN, 165
     END
 END
 #endif    // APSTUDIO_INVOKED

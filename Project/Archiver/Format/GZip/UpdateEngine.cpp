@@ -11,79 +11,74 @@
 #include "Windows/Defs.h"
 
 #include "Interface/ProgressUtils.h"
+#include "Interface/LimitedStreams.h"
 
 #include "AddCommon.h"
 #include "Handler.h"
 
 #include "../Common/InStreamWithCRC.h"
 
-#include "Interface/LimitedStreams.h"
-
 namespace NArchive {
 namespace NGZip {
 
-static const kOneItemComplexity = 30;
-
 static const BYTE kHostOS = NFileHeader::NHostOS::kFAT;
 
-HRESULT UpdateArchive(IInStream *anInStream, 
-    const CItemInfoEx *anItemInfoExist,
-    UINT64 anUnpackSize,
-    IOutStream *anOutStream,
-    const CItemInfo &aNewItemInfo,
-    const CCompressionMethodMode &aCompressionMethod,
-    int anIndexInClient,
-    IUpdateCallBack *anUpdateCallBack)
+HRESULT UpdateArchive(IInStream *inStream, 
+    // const CItemInfoEx *existingItemInfo,
+    UINT64 unpackSize,
+    IOutStream *outStream,
+    const CItemInfo &newItemInfo,
+    const CCompressionMethodMode &compressionMethod,
+    int indexInClient,
+    IArchiveUpdateCallback *updateCallback)
 {
-  UINT64 aComplexity = 0;
+  UINT64 complexity = 0;
 
-  aComplexity += anUnpackSize;
+  complexity += unpackSize;
 
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->SetTotal(aComplexity));
+  RINOK(updateCallback->SetTotal(complexity));
 
-  CAddCommon aCompressor(aCompressionMethod);
+  CAddCommon compressor(compressionMethod);
   
-  aComplexity = 0;
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
+  complexity = 0;
+  RINOK(updateCallback->SetCompleted(&complexity));
 
 
-  CComPtr<IInStream> aFileInStream;
+  CComPtr<IInStream> fileInStream;
 
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->CompressOperation(
-      anIndexInClient, &aFileInStream));
+  RINOK(updateCallback->GetStream(indexInClient, &fileInStream));
 
-  CComObjectNoLock<CInStreamWithCRC> *anInStreamSpec = 
-  new CComObjectNoLock<CInStreamWithCRC>;
-  CComPtr<ISequentialInStream> aCRCStream(anInStreamSpec);
-  anInStreamSpec->Init(aFileInStream);
+  CComObjectNoLock<CInStreamWithCRC> *inStreamSpec = 
+      new CComObjectNoLock<CInStreamWithCRC>;
+  CComPtr<ISequentialInStream> crcStream(inStreamSpec);
+  inStreamSpec->Init(fileInStream);
 
-  CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = 
+  CComObjectNoLock<CLocalProgress> *localProgressSpec = 
     new  CComObjectNoLock<CLocalProgress>;
-  CComPtr<ICompressProgressInfo> aLocalProgress = aLocalProgressSpec;
-  aLocalProgressSpec->Init(anUpdateCallBack, true);
+  CComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+  localProgressSpec->Init(updateCallback, true);
   
-  CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
+  CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
     new  CComObjectNoLock<CLocalCompressProgressInfo>;
-  CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
+  CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
   
-  COutArchive anOutArchive;
-  anOutArchive.Create(anOutStream);
+  COutArchive outArchive;
+  outArchive.Create(outStream);
 
-  CItemInfo anItemInfo = aNewItemInfo;
-  anItemInfo.CompressionMethod = NFileHeader::NCompressionMethod::kDefalate;
-  anItemInfo.ExtraFlags = 0;
-  anItemInfo.HostOS = kHostOS;
+  CItemInfo itemInfo = newItemInfo;
+  itemInfo.CompressionMethod = NFileHeader::NCompressionMethod::kDefalate;
+  itemInfo.ExtraFlags = 0;
+  itemInfo.HostOS = kHostOS;
 
-  RETURN_IF_NOT_S_OK(anOutArchive.WriteHeader(anItemInfo));
+  RINOK(outArchive.WriteHeader(itemInfo));
 
-  aLocalCompressProgressSpec->Init(aLocalProgress, &aComplexity, NULL);
+  localCompressProgressSpec->Init(localProgress, &complexity, NULL);
 
-  RETURN_IF_NOT_S_OK(aCompressor.Compress(aCRCStream, anOutStream, aCompressProgress));
+  RINOK(compressor.Compress(crcStream, outStream, compressProgress));
 
-  RETURN_IF_NOT_S_OK(anOutArchive.WritePostInfo(anInStreamSpec->GetCRC(), anItemInfo.UnPackSize32));
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->OperationResult(
-      NArchiveHandler::NUpdate::NOperationResult::kOK));
-  return S_OK;
+  RINOK(outArchive.WritePostInfo(inStreamSpec->GetCRC(), itemInfo.UnPackSize32));
+  return updateCallback->SetOperationResult(
+      NArchive::NUpdate::NOperationResult::kOK);
 }
 
 }}

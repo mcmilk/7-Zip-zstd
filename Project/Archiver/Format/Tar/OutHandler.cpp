@@ -21,92 +21,101 @@ using namespace NWindows;
 using namespace NCOM;
 using namespace NTime;
 
-STDMETHODIMP CTarHandler::GetFileTimeType(UINT32 *aType)
+STDMETHODIMP CTarHandler::GetFileTimeType(UINT32 *type)
 {
-  *aType = NFileTimeType::kUnix;
+  *type = NFileTimeType::kUnix;
   return S_OK;
 }
 
-STDMETHODIMP CTarHandler::DeleteItems(IOutStream *anOutStream, 
-    const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack)
+STDMETHODIMP CTarHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+    IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
-  CRecordVector<bool> aCompressStatuses;
-  CRecordVector<UINT32> aCopyIndexes;
-  UINT32 anIndex = 0;
-  for(UINT32 i = 0; i < (UINT32)m_Items.Size(); i++)
+  CObjectVector<CUpdateItemInfo> updateItems;
+  for(UINT32 i = 0; i < numItems; i++)
   {
-    if(anIndex < aNumItems && i == anIndexes[anIndex])
-      anIndex++;
-    else
+    CUpdateItemInfo updateItem;
+    INT32 newData;
+    INT32 newProperties;
+    UINT32 indexInArchive;
+    if (!updateCallback)
+      return E_FAIL;
+    RINOK(updateCallback->GetUpdateItemInfo(i,
+        &newData, &newProperties, &indexInArchive));
+    updateItem.NewProperties = IntToBool(newProperties);
+    updateItem.NewData = IntToBool(newData);
+    updateItem.IndexInArchive = indexInArchive;
+    updateItem.IndexInClient = i;
+
+    if (IntToBool(newProperties))
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(i);
-    }
-  }
-  return UpdateArchive(m_InStream, anOutStream, m_Items, aCompressStatuses,
-      CObjectVector<CUpdateItemInfo>(), aCopyIndexes, anUpdateCallBack);
-  COM_TRY_END
-}
-
-STDMETHODIMP CTarHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
-    IUpdateCallBack *anUpdateCallBack)
-{
-  COM_TRY_BEGIN
-  CRecordVector<bool> aCompressStatuses;
-  CObjectVector<CUpdateItemInfo> anUpdateItems;
-  CRecordVector<UINT32> aCopyIndexes;
-  int anIndex = 0;
-  for(UINT32 i = 0; i < aNumItems; i++)
-  {
-    CUpdateItemInfo anUpdateItemInfo;
-    INT32 anCompress;
-    INT32 anExistInArchive;
-    INT32 anIndexInServer;
-    FILETIME aTime;
-    UINT64 aSize;
-    CComBSTR aName;
-    UINT32 anAttributes;
-    HRESULT aResult = anUpdateCallBack->GetUpdateItemInfo(i,
-        &anCompress, // 1 - compress 0 - copy
-        &anExistInArchive,
-        &anIndexInServer,
-        &anAttributes,
-        NULL,
-        NULL,
-        &aTime, 
-        &aSize, 
-        &aName);
-
-    if (aResult != S_OK)
-      return aResult;
-    if (MyBoolToBool(anCompress))
-    {
-      if(!FileTimeToUnixTime(aTime, anUpdateItemInfo.Time))
-        return E_FAIL;
-
-      anUpdateItemInfo.IsDirectory = ((anAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-      anUpdateItemInfo.Size = aSize;
-      anUpdateItemInfo.Name = UnicodeStringToMultiByte(
-        NItemName::MakeLegalName((BSTR)aName), CP_OEMCP);
-      if (anUpdateItemInfo.IsDirectory)
-        anUpdateItemInfo.Name += '/';
-
-      anUpdateItemInfo.IndexInClient = i;
-      if(MyBoolToBool(anExistInArchive))
+      FILETIME utcTime;
+      UString name;
+      bool isDirectoryStatusDefined;
+      UINT32 attributes;
       {
-        // const NArchive::NTar::CItemInfoEx &anItemInfo = m_Items[anIndexInServer];
+        NCOM::CPropVariant propVariant;
+        RETURN_IF_NOT_S_OK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          attributes = 0;
+        else if (propVariant.vt != VT_UI4)
+          return E_INVALIDARG;
+        else
+          attributes = propVariant.ulVal;
       }
-      aCompressStatuses.Add(true);
-      anUpdateItems.Add(anUpdateItemInfo);
+      {
+        NCOM::CPropVariant propVariant;
+        RETURN_IF_NOT_S_OK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
+        if (propVariant.vt != VT_FILETIME)
+          return E_INVALIDARG;
+        utcTime = propVariant.filetime;
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RETURN_IF_NOT_S_OK(updateCallback->GetProperty(i, kpidPath, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          name.Empty();
+        else if (propVariant.vt != VT_BSTR)
+          return E_INVALIDARG;
+        else
+          name = propVariant.bstrVal;
+      }
+      {
+        NCOM::CPropVariant propVariant;
+        RETURN_IF_NOT_S_OK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
+        if (propVariant.vt == VT_EMPTY)
+          isDirectoryStatusDefined = false;
+        else if (propVariant.vt != VT_BOOL)
+          return E_INVALIDARG;
+        else
+        {
+          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          isDirectoryStatusDefined = true;
+        }
+      }
+      updateItem.Name = UnicodeStringToMultiByte(
+          NItemName::MakeLegalName(name), CP_OEMCP);
+      if (!isDirectoryStatusDefined)
+        updateItem.IsDirectory = ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+      if (updateItem.IsDirectory)
+        updateItem.Name += '/';
+      if(!FileTimeToUnixTime(utcTime, updateItem.Time))
+        return E_INVALIDARG;
     }
-    else
+    if (IntToBool(newData))
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(anIndexInServer);
+      UINT64 size;
+      {
+        NCOM::CPropVariant propVariant;
+        RETURN_IF_NOT_S_OK(updateCallback->GetProperty(i, kpidSize, &propVariant));
+        if (propVariant.vt != VT_UI8)
+          return E_INVALIDARG;
+        size = *(UINT64 *)(&propVariant.uhVal);
+      }
+      updateItem.Size = size;
     }
+    updateItems.Add(updateItem);
   }
-  return UpdateArchive(m_InStream, anOutStream, m_Items, aCompressStatuses,
-      anUpdateItems, aCopyIndexes, anUpdateCallBack);
+  return UpdateArchive(_inStream, outStream, _items, updateItems, updateCallback);
   COM_TRY_END
 }

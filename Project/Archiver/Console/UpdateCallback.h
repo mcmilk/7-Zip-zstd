@@ -5,8 +5,8 @@
 #ifndef __UPDATECALLBACK_H
 #define __UPDATECALLBACK_H
 
-#include "../Format/Common/IArchiveHandler.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "../Format/Common/ArchiveInterface.h"
+#include "Interface/CryptoInterface.h"
 
 #include "Common/String.h"
 
@@ -15,55 +15,36 @@
 
 #include "PercentPrinter.h"
 
-class CUpdateCallBackImp: 
-  public IUpdateCallBack2,
+class CUpdateCallbackImp: 
+  public IArchiveUpdateCallback,
   public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
-BEGIN_COM_MAP(CUpdateCallBackImp)
-  COM_INTERFACE_ENTRY(IUpdateCallBack)
-  COM_INTERFACE_ENTRY(IUpdateCallBack2)
+BEGIN_COM_MAP(CUpdateCallbackImp)
+  COM_INTERFACE_ENTRY(IArchiveUpdateCallback)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CUpdateCallBackImp)
+DECLARE_NOT_AGGREGATABLE(CUpdateCallbackImp)
 
 DECLARE_NO_REGISTRY()
 
   // IProfress
 
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 size);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
-  // IUpdateCallBack
-  STDMETHOD(GetUpdateItemInfo)(INT32 anIndex, 
-      INT32 *anCompress, // 1 - compress 0 - copy
-      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
-      INT32 *anIndexInServer,
-      UINT32 *anAttributes,
-      FILETIME *aCreationTime, 
-      FILETIME *aLastAccessTime, 
-      FILETIME *aLastWriteTime, 
-      UINT64 *aSize, 
-      BSTR *aName);
+  // IUpdateCallback
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
+  STDMETHOD(GetUpdateItemInfo)(UINT32 index, 
+      INT32 *newData, INT32 *newProperties, UINT32 *indexInArchive);
 
-  STDMETHOD(GetUpdateItemInfo2)(INT32 anIndex, 
-      INT32 *anCompress, // 1 - compress 0 - copy
-      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
-      INT32 *anIndexInServer,
-      UINT32 *anAttributes,
-      FILETIME *aCreationTime, 
-      FILETIME *aLastAccessTime, 
-      FILETIME *aLastWriteTime, 
-      UINT64 *aSize, 
-      BSTR *aName,
-      INT32 *anIsAnti);
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
 
-  STDMETHOD(CompressOperation)(INT32 anIndex, IInStream **anInStream);
-  STDMETHOD(DeleteOperation)(LPITEMIDLIST anItemIDList);
+  STDMETHOD(GetStream)(UINT32 index, IInStream **inStream);
   
-  STDMETHOD(OperationResult)(INT32 aOperationResult);
+  STDMETHOD(SetOperationResult)(INT32 operationResult);
 
   STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 
@@ -83,10 +64,10 @@ private:
   bool _askPassword;
 
 public:
-  CUpdateCallBackImp();
-  ~CUpdateCallBackImp()
+  CUpdateCallbackImp();
+  ~CUpdateCallbackImp()
     { Finilize(); }
-  void Init(const CArchiveStyleDirItemInfoVector *DirItems, 
+  void Init(const CArchiveStyleDirItemInfoVector *dirItems, 
       const CArchiveItemInfoVector *anArchiveItems, // test CItemInfoExList
       CUpdatePairInfo2Vector *anUpdatePairs, bool anEnablePercents,
       bool passwordIsDefined, const UString &password, bool askPassword);

@@ -130,6 +130,18 @@ static CMethodID k_PPMD  = { { 0x3, 0x4, 0x1 }, 3 };
 static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 
+static inline char GetHex(BYTE value)
+{
+  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
+}
+static inline UString GetHex2(BYTE value)
+{
+  UString result;
+  result += GetHex(value >> 4);
+  result += GetHex(value & 0xF);
+  return result;
+}
+
 #endif
 
 STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
@@ -201,65 +213,91 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
             NRegistryInfo::CMethodInfo methodInfo;
 
             bool methodIsKnown;
-            UString methodName;
 
-            #ifdef NO_REGISTRY
-
-            methodIsKnown = true;
-            if (coderInfo.DecompressionMethod == k_Copy)
-              methodName = L"Copy";            
-            else if (coderInfo.DecompressionMethod == k_LZMA)
-              methodName = L"LZMA";
-            else if (coderInfo.DecompressionMethod == k_BCJ)
-              methodName = L"BCJ";
-            else if (coderInfo.DecompressionMethod == k_BCJ2)
-              methodName = L"BCJ2";
-            else if (coderInfo.DecompressionMethod == k_PPMD)
-              methodName = L"PPMD";
-            else if (coderInfo.DecompressionMethod == k_Deflate)
-              methodName = L"Deflate";
-            else if (coderInfo.DecompressionMethod == k_BZip2)
-              methodName = L"BZip2";
-            else
-              methodIsKnown = false;
-            
-            #else
-            
-            methodIsKnown = _methodMap.GetMethodInfoAlways(coderInfo.DecompressionMethod, methodInfo);
-            methodName = GetUnicodeString(methodInfo.Name);
-
-            #endif
-
-            if (methodIsKnown)
+            for (int j = 0; j < coderInfo.AltCoders.Size(); j++)
             {
-              methodsString += methodName;
-              if (coderInfo.DecompressionMethod == k_LZMA)
+              if (j > 0)
+                methodsString += L"|";
+              const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders[j];
+
+              UString methodName;
+              #ifdef NO_REGISTRY
+
+              methodIsKnown = true;
+              if (altCoderInfo.DecompressionMethod == k_Copy)
+                methodName = L"Copy";            
+              else if (altCoderInfo.DecompressionMethod == k_LZMA)
+                methodName = L"LZMA";
+              else if (altCoderInfo.DecompressionMethod == k_BCJ)
+                methodName = L"BCJ";
+              else if (altCoderInfo.DecompressionMethod == k_BCJ2)
+                methodName = L"BCJ2";
+              else if (altCoderInfo.DecompressionMethod == k_PPMD)
+                methodName = L"PPMD";
+              else if (altCoderInfo.DecompressionMethod == k_Deflate)
+                methodName = L"Deflate";
+              else if (altCoderInfo.DecompressionMethod == k_BZip2)
+                methodName = L"BZip2";
+              else
+                methodIsKnown = false;
+              
+              #else
+            
+              methodIsKnown = _methodMap.GetMethodInfoAlways(
+                altCoderInfo.DecompressionMethod, methodInfo);
+              methodName = GetUnicodeString(methodInfo.Name);
+              
+              #endif
+
+              if (methodIsKnown)
               {
-                if (coderInfo.Properties.GetCapacity() == 5)
+                methodsString += methodName;
+                if (altCoderInfo.DecompressionMethod == k_LZMA)
                 {
-                  methodsString += L":";
-                  UINT32 dicSize = *(const UINT32 *)
-                    ((const BYTE *)coderInfo.Properties + 1);
-                  methodsString += GetStringForSizeValue(dicSize);
+                  if (altCoderInfo.Properties.GetCapacity() == 5)
+                  {
+                    methodsString += L":";
+                    UINT32 dicSize = *(const UINT32 *)
+                      ((const BYTE *)altCoderInfo.Properties + 1);
+                    methodsString += GetStringForSizeValue(dicSize);
+                  }
+                }
+                else if (altCoderInfo.DecompressionMethod == k_PPMD)
+                {
+                  if (altCoderInfo.Properties.GetCapacity() == 5)
+                  {
+                    BYTE order = *(const BYTE *)altCoderInfo.Properties;
+                    methodsString += L":o";
+                    methodsString += ConvertUINT32ToString(order);
+                    methodsString += L":mem";
+                    UINT32 dicSize = *(const UINT32 *)
+                      ((const BYTE *)altCoderInfo.Properties + 1);
+                    methodsString += GetStringForSizeValue(dicSize);
+                  }
+                }
+                else
+                {
+                  if (altCoderInfo.Properties.GetCapacity() > 0)
+                  {
+                    methodsString += L":[";
+                    for (int bi = 0; bi < altCoderInfo.Properties.GetCapacity(); bi++)
+                    {
+                      if (bi > 2 && bi + 1 < altCoderInfo.Properties.GetCapacity())
+                      {
+                        methodsString += L"..";
+                        break;
+                      }
+                      else
+                        methodsString += GetHex2(altCoderInfo.Properties[bi]);
+                    }
+                    methodsString += L"]";
+                  }
                 }
               }
-              else if (coderInfo.DecompressionMethod == k_PPMD)
+              else
               {
-                if (coderInfo.Properties.GetCapacity() == 5)
-                {
-                  BYTE order = *(const BYTE *)coderInfo.Properties;
-                  methodsString += L":o";
-                  methodsString += ConvertUINT32ToString(order);
-                  methodsString += L":mem";
-                  UINT32 dicSize = *(const UINT32 *)
-                    ((const BYTE *)coderInfo.Properties + 1);
-                  methodsString += GetStringForSizeValue(dicSize);
-                }
+                methodsString += MultiByteToUnicodeString(altCoderInfo.DecompressionMethod.ConvertToString());
               }
-            }
-            else
-            {
-              methodsString += MultiByteToUnicodeString(coderInfo.DecompressionMethod.ConvertToString());
             }
           }
           propVariant = methodsString;
@@ -306,7 +344,8 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
 }
 
 STDMETHODIMP CHandler::Open(IInStream *stream,
-    const UINT64 *maxCheckStartPosition, IOpenArchive2CallBack *openArchiveCallback)
+    const UINT64 *maxCheckStartPosition, 
+    IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   _inStream.Release();
@@ -314,9 +353,16 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   try
   {
     CInArchive archive;
-    RETURN_IF_NOT_S_OK(archive.Open(stream, maxCheckStartPosition))
+    RETURN_IF_NOT_S_OK(archive.Open(stream, maxCheckStartPosition));
 
-    RETURN_IF_NOT_S_OK(archive.ReadDatabase(_database));
+    CComPtr<ICryptoGetTextPassword> getTextPassword;
+    if (openArchiveCallback)
+    {
+      CComPtr<IArchiveOpenCallback> openArchiveCallbackTemp = openArchiveCallback;
+      openArchiveCallbackTemp.QueryInterface(&getTextPassword);
+    }
+
+    RETURN_IF_NOT_S_OK(archive.ReadDatabase(_database, getTextPassword));
     HRESULT result = archive.CheckIntegrity();
     if (result != S_OK)
       return E_FAIL;

@@ -62,7 +62,7 @@ namespace NFileHeader
       kImploded = 6,
       kReservedTokenizing = 7, // reserved for tokenizing
       kDeflated = 8, 
-      kReservedDeflated = 9, // reserved for tokenizing
+      kDeflated64 = 9,
       kPKImploding = 10
     };
     const kNumCompressionMethods = 11;

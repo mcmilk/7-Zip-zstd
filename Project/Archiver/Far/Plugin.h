@@ -12,7 +12,7 @@
 #include "Far/FarUtils.h"
 
 #include "../Common/ZipRegistryMain.h"
-#include "../Common/IArchiveHandler2.h"
+#include "../Common/FolderArchiveInterface.h"
 
 class CPlugin
 {
@@ -42,13 +42,17 @@ public:
   NWindows::NFile::NFind::CFileInfo m_FileInfo;
 
   // std::auto_ptr<CProxyHandler> m_ProxyHandler; 
-  CComPtr<IArchiveHandler100> m_ArchiveHandler;
+  CComPtr<IInFolderArchive> m_ArchiveHandler;
   CComPtr<IFolderFolder> _folder;
   
   NZipRootRegistry::CArchiverInfo m_ArchiverInfo;
 
+  bool PasswordIsDefined;
+  UString Password;
+
+
   CPlugin(const CSysString &aFileName, const UString &aDefaultName, 
-        IArchiveHandler100 *anArchiveHandler,
+        IInFolderArchive *anArchiveHandler,
         const NZipRootRegistry::CArchiverInfo &anArchiverInfo);
   ~CPlugin();
 

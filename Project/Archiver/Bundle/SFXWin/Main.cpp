@@ -6,9 +6,11 @@
 
 #include "Windows/FileDir.h"
 
+#include "Interface/CryptoInterface.h"
+
 #include "../../../Compress/Interface/CompressInterface.h"
-#include "../../Format/Common/FormatCryptoInterface.h"
-#include "../../Common/IArchiveHandler2.h"
+#include "../../../Crypto/Cipher/Common/CipherInterface.h"
+#include "../../Format/Common/ArchiveInterface.h"
 #include "../../Agent/Handler.h"
 #include "../../Explorer/ExtractEngine.h"
 #include "../../Explorer/MyMessages.h"

@@ -129,18 +129,6 @@ SOURCE=..\..\..\..\SDK\Common\CRC.cpp
 SOURCE=..\..\..\..\SDK\Common\CRC.h
 # End Source File
 # End Group
-# Begin Group "Rar"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\Crypto.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Crypto.h
-# End Source File
-# End Group
 # Begin Group "Interface"
 
 # PROP Default_Filter ""
@@ -151,11 +139,19 @@ SOURCE=..\Common\CipherInterface.h
 # End Group
 # Begin Source File
 
-SOURCE=.\Coder.cpp
+SOURCE=.\Rar20Cipher.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Coder.h
+SOURCE=.\Rar20Cipher.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Rar20Crypto.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Rar20Crypto.h
 # End Source File
 # End Target
 # End Project

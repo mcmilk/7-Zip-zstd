@@ -13,7 +13,7 @@
 #include "ItemInfo.h"
 #include "MethodInfo.h"
 
-#include "../Common/IArchiveHandler.h"
+#include "../Common/ArchiveInterface.h"
 #include "CompressionMethod.h"
 #include "Interface/ICoder.h"
 #include "Windows/PropVariant.h"
@@ -25,12 +25,12 @@ namespace N7z {
 HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive, 
     IInStream *inStream,
     const CCompressionMethodMode *method, 
-    const CCompressionMethodMode *headerMethod, 
+    const CCompressionMethodMode *headerMethod,
+    bool useAdditionalHeaderStreams, 
+    bool compressMainHeader,
     const NArchive::N7z::CArchiveDatabaseEx &database,
-    const CRecordVector<bool> &compressStatuses,
     const CObjectVector<CUpdateItemInfo> &updateItems,
-    const CRecordVector<UINT32> &copyIndices,
-    IUpdateCallBack *updateCallback);
+    IArchiveUpdateCallback *updateCallback);
 
 }}
 

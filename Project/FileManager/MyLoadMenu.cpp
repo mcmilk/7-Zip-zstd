@@ -178,6 +178,7 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
   for (int i = 0; i < menu.GetItemCount(); i++)
   {
     MENUITEMINFO menuInfo;
+    ZeroMemory(&menuInfo, sizeof(menuInfo));
     menuInfo.cbSize = sizeof(menuInfo);
     menuInfo.fMask = MIIM_STRING | MIIM_SUBMENU | MIIM_ID;
     menuInfo.fType = MFT_STRING;
@@ -268,6 +269,7 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
   for (int i = 0; i < srcMenu.GetItemCount(); i++)
   {
     MENUITEMINFO menuInfo;
+    ZeroMemory(&menuInfo, sizeof(menuInfo));
     menuInfo.cbSize = sizeof(menuInfo);
 
     /*
@@ -322,8 +324,10 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
   while (destMenu.GetItemCount() > 0)
   {
     MENUITEMINFO menuInfo;
+    ZeroMemory(&menuInfo, sizeof(menuInfo));
     menuInfo.cbSize = sizeof(menuInfo);
     menuInfo.fMask = MIIM_TYPE;
+    menuInfo.dwTypeData = 0;
     int lastIndex = destMenu.GetItemCount() - 1;
     if (!destMenu.GetItemInfo(lastIndex, true, &menuInfo))
       break;

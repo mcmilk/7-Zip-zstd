@@ -23,6 +23,11 @@ struct CUpdateRange
 
 struct CUpdateItemInfo
 {
+  bool NewData;
+  bool NewProperties;
+
+  int IndexInArchive;
+
   int IndexInClient;
   
   UINT32 Attributes;
@@ -42,6 +47,9 @@ struct CUpdateItemInfo
   bool AttributesAreDefined;
 
   CUpdateRange CommentRange;
+
+  CUpdateItemInfo(): 
+    Commented(false), IsAnti(false) {}
   void SetDirectoryStatusFromAttributes()
     { IsDirectory = ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
 };

@@ -1,4 +1,4 @@
-// arj/Decoder2.h
+// Arj/Decoder2.h
 
 #pragma once
 
@@ -6,21 +6,18 @@
 #define __COMPRESS_ARJ_DECODER2_H
 
 #include "Interface/ICoder.h"
-#include "../../Interface/CompressInterface.h"
 
 #include "Stream/WindowOut.h"
 #include "Stream/MSBFDecoder.h"
 #include "Stream/InByte.h"
 
-#include "Compression/HuffmanDecoder.h"
-
 // {23170F69-40C1-278B-0404-020000000000}
 DEFINE_GUID(CLSID_CCompressArj2Decoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
 
-namespace NCompress{
-namespace Narj{
-namespace NDecoder2{
+namespace NCompress {
+namespace NArj {
+namespace NDecoder2 {
 
 class CCoder :
   public ICompressCoder,

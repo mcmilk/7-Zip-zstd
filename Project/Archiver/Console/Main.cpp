@@ -6,7 +6,7 @@
 
 #include "../../Crypto/Cipher/Common/CipherInterface.h"
 #include "../../Compress/Interface/CompressInterface.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"
 
 #include "Common/CommandLineParser.h"
 #include "Common/StdOutStream.h"
@@ -33,6 +33,7 @@
 #include "AddSTD.h"
 
 #include "UpdateArchiveOptions.h"
+#include "OpenCallback.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -48,7 +49,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 24  Copyright (c) 1999-2002 Igor Pavlov  2002-11-01\n";
+" 2.30 Beta 25  Copyright (c) 1999-2003 Igor Pavlov  2003-01-02\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -769,19 +770,32 @@ static void SetMethodOptions(const CParser &parser,
   }
 }
 
-void MyOpenArhive(const CSysString &archiveName, 
+static void MyOpenArhive(const CSysString &archiveName, 
   const NFind::CFileInfo &archiveFileInfo,
-  IArchiveHandler200 **archiveHandler,
-  UString &defaultItemName)
+  IInArchive **archiveHandler,
+  UString &defaultItemName,
+  bool &passwordEnabled, 
+  UString &password)
 {
+  CComObjectNoLock<COpenCallbackImp> *openCallbackSpec = 
+    new CComObjectNoLock<COpenCallbackImp>;
+  CComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
+  if (passwordEnabled)
+  {
+    openCallbackSpec->PasswordIsDefined = passwordEnabled;
+    openCallbackSpec->Password = password;
+  }
   NZipRootRegistry::CArchiverInfo archiverInfo;
-  HRESULT result  = OpenArchive(archiveName, archiveHandler, archiverInfo);
+  HRESULT result = OpenArchive(archiveName, archiveHandler, archiverInfo, 
+      openCallback);
   if (result == S_FALSE)
     throw "file is not supported archive";
   if (result != S_OK)
     throw "error";
   defaultItemName = GetDefaultName(archiveName, archiverInfo.Extension, 
       GetUnicodeString(archiverInfo.AddExtension));
+  passwordEnabled = openCallbackSpec->PasswordIsDefined;
+  password = openCallbackSpec->Password;
 }
 
 #ifndef EXCLUDE_COM
@@ -976,9 +990,16 @@ int Main2(int numArguments, const char *arguments[])
       throw "there is no such archive";
 
     UString defaultItemName;
-    CComPtr<IArchiveHandler200> archiveHandler;
+    CComPtr<IInArchive> archiveHandler;
     NZipRootRegistry::CArchiverInfo archiverInfo;
-    MyOpenArhive(archiveName, archiveFileInfo, &archiveHandler, defaultItemName);
+
+    CComObjectNoLock<COpenCallbackImp> *openCallbackSpec = 
+        new CComObjectNoLock<COpenCallbackImp>;
+    CComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
+
+    MyOpenArhive(archiveName, archiveFileInfo, &archiveHandler, 
+        defaultItemName, passwordEnabled, password);
+
     if(isExtractGroupCommand)
     {
       PrintProcessTitle(kExtractGroupProcessMessage, archiveName);
@@ -1058,15 +1079,26 @@ int Main2(int numArguments, const char *arguments[])
     SetMethodOptions(defaultSwitchesParser, options); 
     SetMethodOptions(parser, options); 
 
+    if (options.SfxMode)
+    {
+      CProperty property;
+      property.Name = L"rsfx";
+      property.Value = L"on";
+      options.MethodMode.Properties.Add(property);
+    }
+
     NFind::CFileInfo archiveFileInfo;
-    CComPtr<IArchiveHandler200> archive;
+    CComPtr<IInArchive> archive;
 
     UString defaultItemName;
     if (NFind::FindFile(archiveName, archiveFileInfo))
     {
       if (archiveFileInfo.IsDirectory())
         throw "there is no such archive";
-      MyOpenArhive(archiveName, archiveFileInfo, &archive, defaultItemName);
+      CComObjectNoLock<COpenCallbackImp> *openCallbackSpec = 
+        new CComObjectNoLock<COpenCallbackImp>;
+      MyOpenArhive(archiveName, archiveFileInfo, &archive, 
+          defaultItemName, passwordEnabled, password);
     }
     else
       if (archiveType.IsEmpty())

@@ -18,5 +18,6 @@ inline bool VARIANT_BOOLToBool(VARIANT_BOOL value)
   { return (value != VARIANT_FALSE); }
 
 #define RETURN_IF_NOT_S_OK(x) { HRESULT __result_ = (x); if(__result_ != S_OK) return __result_; }
-
+#define RINOK(x) RETURN_IF_NOT_S_OK(x)
+ 
 #endif

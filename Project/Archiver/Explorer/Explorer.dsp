@@ -370,6 +370,14 @@ SOURCE=..\Agent\AgentProxyHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Agent\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Agent\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Agent\ArchiveFolder.cpp
 # End Source File
 # Begin Source File
@@ -378,11 +386,11 @@ SOURCE=..\Agent\ArchiveFolderOpen.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ExtractCallback200.cpp
+SOURCE=..\Agent\ArchiveUpdateCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ExtractCallback200.h
+SOURCE=..\Agent\ArchiveUpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -399,14 +407,6 @@ SOURCE=..\Agent\Handler.h
 # Begin Source File
 
 SOURCE=..\Agent\OutHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallback.h
 # End Source File
 # End Group
 # Begin Group "Spec Interfaces"
@@ -443,6 +443,10 @@ SOURCE=..\..\FileManager\ExtractCallback.cpp
 # Begin Source File
 
 SOURCE=..\..\FileManager\ExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\FolderInterface.h
 # End Source File
 # Begin Source File
 
@@ -805,23 +809,19 @@ SOURCE=..\..\..\SDK\Compression\CopyCoder.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Interface\FileStreams.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Interface\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\FolderInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Format\Common\IArchiveHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 

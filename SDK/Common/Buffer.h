@@ -47,6 +47,25 @@ public:
   }
 };
 
+template <class T>
+bool operator==(const CBuffer<T>& b1, const CBuffer<T>& b2)
+{
+  if (b1.GetCapacity() != b2.GetCapacity())
+    return false;
+  for (size_t i = 0; i < b1.GetCapacity(); i++)
+    if (b1[i] != b2[i])
+      return false;
+  return true;
+}
+
+template <class T>
+bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
+{
+  return !(b1 == b2);
+}
+
+
+
 typedef CBuffer<char> CCharBuffer;
 typedef CBuffer<wchar_t> CWCharBuffer;
 typedef CBuffer<unsigned char> CByteBuffer;

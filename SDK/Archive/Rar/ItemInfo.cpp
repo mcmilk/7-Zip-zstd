@@ -18,8 +18,12 @@ bool CItemInfo::IsSplitBefore() const
   { return (Flags & NHeader::NFile::kSplitBefore) != 0; }
 bool CItemInfo::IsSplitAfter() const
   { return (Flags & NHeader::NFile::kSplitAfter) != 0; }
-bool CItemInfo::HasExtra() const
-  { return (Flags & NHeader::NFile::kExtraData) != 0; }
+bool CItemInfo::HasSalt() const
+  { return (Flags & NHeader::NFile::kSalt) != 0; }
+bool CItemInfo::HasUnicodeName() const
+  { return (Flags & NHeader::NFile::kUnicodeName) != 0; }
+bool CItemInfo::IsOldVersion() const
+  { return (Flags & NHeader::NFile::kOldVersion) != 0; }
 
 bool CItemInfo::IgnoreItem() const
 { 

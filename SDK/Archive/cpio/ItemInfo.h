@@ -2,8 +2,8 @@
 
 #pragma once
 
-#ifndef __ARCHIVE_cpio_ITEMINFO_H
-#define __ARCHIVE_cpio_ITEMINFO_H
+#ifndef __ARCHIVE_CPIO_ITEMINFO_H
+#define __ARCHIVE_CPIO_ITEMINFO_H
 
 #include <sys/stat.h>
 

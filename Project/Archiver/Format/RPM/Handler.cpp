@@ -21,8 +21,6 @@
 #include "Archive/Common/ItemNameUtils.h"
 #include "Archive/RPM/InEngine.h"
 
-
-
 using namespace NWindows;
 
 namespace NArchive {
@@ -45,20 +43,20 @@ STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *aStream, 
-    const UINT64 *aMaxCheckStartPosition,
-    IOpenArchive2CallBack *anOpenArchiveCallBack)
+STDMETHODIMP CHandler::Open(IInStream *inStream, 
+    const UINT64 *maxCheckStartPosition,
+    IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   try
   {
-    if(OpenArchive(aStream) != S_OK)
+    if(OpenArchive(inStream) != S_OK)
       return S_FALSE;
-    RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_CUR, &m_Pos));
-    m_InStream = aStream;
-    UINT64 anEndPosition;
-    RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_END, &anEndPosition));
-    m_Size = anEndPosition - m_Pos;
+    RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Pos));
+    m_InStream = inStream;
+    UINT64 endPosition;
+    RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPosition));
+    m_Size = endPosition - m_Pos;
     return S_OK;
   }
   catch(...)
@@ -74,36 +72,33 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *aNumItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
-  *aNumItems = 1;
+  *numItems = 1;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(
-    UINT32 anIndex, 
-    PROPID aPropID,  
-    PROPVARIANT *aValue)
+STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
+  NWindows::NCOM::CPropVariant propVariant;
 
-  switch(aPropID)
+  switch(propID)
   {
     /*
     case kpidPath:
-      aPropVariant = (const wchar_t *)L"a.cpio.gz";
+      propVariant = (const wchar_t *)L"a.cpio.gz";
       break;
     */
     case kpidIsFolder:
-      aPropVariant = false;
+      propVariant = false;
       break;
     case kpidSize:
     case kpidPackedSize:
-      aPropVariant = m_Size;
+      propVariant = m_Size;
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -111,76 +106,76 @@ STDMETHODIMP CHandler::GetProperty(
 //////////////////////////////////////
 // CHandler::DecompressItems
 
-STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
-    INT32 _aTestMode, IExtractCallback200 *_anExtractCallBack)
+STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
+    INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
-  bool aTestMode = (_aTestMode != 0);
-  CComPtr<IExtractCallback200> anExtractCallBack = _anExtractCallBack;
-  UINT64 aTotalSize = 0;
-  if(aNumItems == 0)
+  bool testMode = (_aTestMode != 0);
+  CComPtr<IArchiveExtractCallback> extractCallback = _anExtractCallback;
+  UINT64 totalSize = 0;
+  if(numItems == 0)
     return S_OK;
-  if(aNumItems != 1)
+  if(numItems != 1)
     return E_FAIL;
-  if (anIndexes[0] != 0)
+  if (indices[0] != 0)
     return E_FAIL;
 
-  UINT64 aCurrentTotalSize = 0;
+  UINT64 currentTotalSize = 0;
   
-  RETURN_IF_NOT_S_OK(anExtractCallBack->SetTotal(m_Size));
-  RETURN_IF_NOT_S_OK(anExtractCallBack->SetCompleted(&aCurrentTotalSize));
-  CComPtr<ISequentialOutStream> aRealOutStream;
-  INT32 anAskMode;
-  anAskMode = aTestMode ? NArchiveHandler::NExtract::NAskMode::kTest :
-      NArchiveHandler::NExtract::NAskMode::kExtract;
-  INT32 anIndex = 0;
+  RINOK(extractCallback->SetTotal(m_Size));
+  RINOK(extractCallback->SetCompleted(&currentTotalSize));
+  CComPtr<ISequentialOutStream> realOutStream;
+  INT32 askMode;
+  askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+      NArchive::NExtract::NAskMode::kExtract;
+  INT32 index = 0;
  
-  RETURN_IF_NOT_S_OK(anExtractCallBack->Extract(anIndex, &aRealOutStream, anAskMode));
+  RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-  if(!aTestMode && (!aRealOutStream))
+  if(!testMode && (!realOutStream))
     return S_OK;
 
-  RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
+  RINOK(extractCallback->PrepareOperation(askMode));
 
-  if (aTestMode)
+  if (testMode)
   {
-    RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+    RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
     return S_OK;
   }
 
-  RETURN_IF_NOT_S_OK(m_InStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
+  RINOK(m_InStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
 
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 
+  CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
-  CComPtr<ICompressCoder> aCopyCoder = aCopyCoderSpec;
+  CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
-  CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
-  CComPtr<ICompressProgressInfo> aProgress = aLocalProgressSpec;
-  aLocalProgressSpec->Init(anExtractCallBack, false);
+  CComObjectNoLock<CLocalProgress> *localProgressSpec = new  CComObjectNoLock<CLocalProgress>;
+  CComPtr<ICompressProgressInfo> progress = localProgressSpec;
+  localProgressSpec->Init(extractCallback, false);
   
   try
   {
-    RETURN_IF_NOT_S_OK(aCopyCoder->Code(m_InStream, aRealOutStream,
-        NULL, NULL, aProgress));
+    RINOK(copyCoder->Code(m_InStream, realOutStream,
+        NULL, NULL, progress));
   }
   catch(...)
   {
-    aRealOutStream.Release();
-    RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kDataError));
+    realOutStream.Release();
+    RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
     return S_OK;
   }
-  aRealOutStream.Release();
-  RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+  realOutStream.Release();
+  RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::ExtractAllItems(INT32 aTestMode,
-      IExtractCallback200 *anExtractCallBack)
+STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode,
+      IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  UINT32 anIndex = 0;
-  return Extract(&anIndex, 1, aTestMode, anExtractCallBack);
+  UINT32 index = 0;
+  return Extract(&index, 1, testMode, extractCallback);
   COM_TRY_END
 }
 

@@ -11,7 +11,7 @@
 #include "Archive/Zip/OutEngine.h"
 
 #include "UpdateItemInfo.h"
-#include "../Common/IArchiveHandler.h"
+#include "../Common/ArchiveInterface.h"
 #include "CompressionMethod.h"
 #include "Interface/ICoder.h"
 #include "Archive/Zip/ItemInfoEx.h"
@@ -19,19 +19,17 @@
 namespace NArchive {
 namespace NZip {
 
-HRESULT CopyBlockToArchive(ISequentialInStream *anInStream, 
-    NArchive::NZip::COutArchive &anOutArchive, ICompressProgressInfo *aProgress);
+HRESULT CopyBlockToArchive(ISequentialInStream *inStream, 
+    NArchive::NZip::COutArchive &outArchive, ICompressProgressInfo *progress);
 
-HRESULT UpdateArchiveStd(NArchive::NZip::COutArchive &anArchive, 
-    IInStream *anInStream,
-    const NArchive::NZip::CItemInfoExVector &anInputItems,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
-    const CCompressionMethodMode *anOptions, 
-    bool aCommentRangeAssigned,
-    const CUpdateRange &aCommentRange,
-    IUpdateCallBack *anUpdateCallBack);
+HRESULT UpdateArchiveStd(NArchive::NZip::COutArchive &archive, 
+    IInStream *inStream,
+    const NArchive::NZip::CItemInfoExVector &inputItems,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CCompressionMethodMode *options, 
+    bool commentRangeAssigned,
+    const CUpdateRange &commentRange,
+    IArchiveUpdateCallback *updateCallback);
 
 }}
 

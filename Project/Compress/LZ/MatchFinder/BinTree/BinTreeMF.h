@@ -47,9 +47,9 @@ namespace BT_NAMESPACE {
   #define kIDUse3BytesString TEXT("")
 #endif
 
-#undef kIDStringFull
+// #undef kIDStringFull
 
-#define kIDStringFull TEXT("Compress.MatchFinderBT") kIDString kIDUse3BytesString
+// #define kIDStringFull TEXT("Compress.MatchFinderBT") kIDString kIDUse3BytesString
 
 // {23170F69-40C1-278C-02XX-0000000000}
 DEFINE_GUID(BT_CLSID, 
@@ -81,7 +81,10 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CMatchFinderBinTree)
 
-DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, UINT(0), THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CMatchFinderBinTree, 
+  // kIDStringFull TEXT(".1"), kIDStringFull, 
+  TEXT("SevenZip.1"), TEXT("SevenZip"),
+  UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *stream);
   STDMETHOD_(void, ReleaseStream)();

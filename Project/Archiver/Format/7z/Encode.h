@@ -33,6 +33,8 @@ class CEncoder
   NCoderMixer2::CBindReverseConverter *_bindReverseConverter;
   CRecordVector<CMethodID> _decompressionMethods;
 
+  HRESULT CreateMixerCoder();
+
 public:
   CEncoder(const CCompressionMethodMode *options);
   HRESULT Encode(ISequentialInStream *inStream,

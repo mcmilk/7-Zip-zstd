@@ -123,7 +123,7 @@ public:
   void Init(const CFieldInfoInit *standardFieldTable, int numItems);
   void PrintTitle();
   void PrintTitleLines();
-  HRESULT PrintItemInfo(IArchiveHandler200 *archive, 
+  HRESULT PrintItemInfo(IInArchive *archive, 
       const UString &defaultItemName,
       const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
       UINT32 index);
@@ -197,7 +197,7 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
   }
 }
 
-HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *archive, 
+HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive, 
     const UString &defaultItemName, 
     const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
     UINT32 index)
@@ -301,7 +301,7 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles,
   return S_OK;
 }
 
-bool GetUINT64Value(IArchiveHandler200 *archive, UINT32 index, 
+bool GetUINT64Value(IInArchive *archive, UINT32 index, 
     PROPID propID, UINT64 &value)
 {
   NCOM::CPropVariant propVariant;
@@ -313,7 +313,7 @@ bool GetUINT64Value(IArchiveHandler200 *archive, UINT32 index,
   return true;
 }
 
-HRESULT ListArchive(IArchiveHandler200 *archive, 
+HRESULT ListArchive(IInArchive *archive, 
     const UString &defaultItemName,
     const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
     const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode,

@@ -10,7 +10,7 @@
 #include "ArchiveStyleDirItemInfo.h"
 #include "UpdatePairBasic.h"
 
-#include "../Format/Common/IArchiveHandler.h"
+#include "../Format/Common/ArchiveInterface.h"
 
 struct CUpdatePairInfo
 {
@@ -21,9 +21,9 @@ struct CUpdatePairInfo
 
 typedef CObjectVector<CUpdatePairInfo> CUpdatePairInfoVector;
 
-void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &aDirItems, 
-    const CArchiveItemInfoVector &anArchiveItems,
-    NFileTimeType::EEnum aFileTimeType,
-    CUpdatePairInfoVector &anUpdatePairs);
+void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &dirItems, 
+    const CArchiveItemInfoVector &archiveItems,
+    NFileTimeType::EEnum fileTimeType,
+    CUpdatePairInfoVector &updatePairs);
 
 #endif

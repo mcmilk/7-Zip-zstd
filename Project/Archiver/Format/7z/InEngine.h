@@ -6,11 +6,12 @@
 #define __7Z_INENGINE_H
 
 #include "Interface/IInOutStreams.h"
+#include "Interface/CryptoInterface.h"
 
 #include "Header.h"
 #include "ItemInfo.h"
 #include "Stream/InByte.h"
-
+ 
 namespace NArchive {
 namespace N7z {
   
@@ -34,6 +35,10 @@ struct CInArchiveInfo
   UINT64 DataStartPosition;
   UINT64 DataStartPosition2;
   CRecordVector<UINT32> FileInfoPopIDs;
+  void Clear()
+  {
+    FileInfoPopIDs.Clear();
+  }
 };
 
 
@@ -44,6 +49,16 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   CRecordVector<UINT64> FolderStartPackStreamIndex;
   CRecordVector<UINT64> FolderStartFileIndex;
   CRecordVector<int> FileIndexToFolderIndexMap;
+
+  void Clear()
+  {
+    CArchiveDatabase::Clear();
+    ArchiveInfo.Clear();
+    PackStreamStartPositions.Clear();
+    FolderStartPackStreamIndex.Clear();
+    FolderStartFileIndex.Clear();
+    FolderStartFileIndex.Clear();
+  }
 
   void FillFolderStartPackStream();
   void FillStartPos();
@@ -171,12 +186,17 @@ private:
   }
 
   HRESULT ReadNumber(UINT64 &value);
+
+  HRESULT ReadID(UINT64 &value)
+  {
+    return ReadNumber(value);
+  }
   
   HRESULT SkeepData(UINT64 size);
   HRESULT SkeepData();
-  HRESULT WaitAttribute(BYTE attribute);
+  HRESULT WaitAttribute(UINT64 attribute);
 
-  HRESULT ReadArhiveProperties(CInArchiveInfo &archiveInfo);
+  HRESULT ReadArchiveProperties(CInArchiveInfo &archiveInfo);
   HRESULT GetNextFolderItem(CFolderItemInfo &itemInfo);
   HRESULT ReadHashDigests(int numItems,
       CRecordVector<bool> &digestsDefined, CRecordVector<UINT32> &digests);
@@ -217,12 +237,17 @@ private:
   HRESULT ReadBoolVector2(UINT32 numItems, CBoolVector &vector);
   HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
       CObjectVector<CFileItemInfo> &files, BYTE type);
-  HRESULT ReadHeader(CArchiveDatabaseEx &database);
+  HRESULT ReadAndDecodePackedStreams(UINT64 baseOffset, UINT64 &dataOffset,
+      CObjectVector<CByteBuffer> &dataVector, 
+      ICryptoGetTextPassword *getTextPassword);
+  HRESULT ReadHeader(CArchiveDatabaseEx &database, 
+      ICryptoGetTextPassword *getTextPassword);
 public:
   HRESULT Open(IInStream *stream, const UINT64 *searchHeaderSizeLimit); // S_FALSE means is not archive
   void Close();
 
-  HRESULT ReadDatabase(CArchiveDatabaseEx &database);
+  HRESULT ReadDatabase(CArchiveDatabaseEx &database, 
+      ICryptoGetTextPassword *getTextPassword);
   HRESULT CheckIntegrity();
 };
   

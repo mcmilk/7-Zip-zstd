@@ -175,19 +175,94 @@ void CInArchive::GetArchiveInfo(CInArchiveInfo &anArchiveInfo) const
   anArchiveInfo.CommentSize = m_ArchiveHeader.Size - sizeof(m_ArchiveHeader);
 }
 
+static void DecodeUnicodeFileName(const char *name, const BYTE *encName, 
+    int encSize, wchar_t *unicodeName, int maxDecSize)
+{
+  int encPos = 0;
+  int decPos = 0;
+  int flagBits = 0;
+  BYTE flags = 0;
+  BYTE highByte = encName[encPos++];
+  while (encPos < encSize && decPos < maxDecSize)
+  {
+    if (flagBits == 0)
+    {
+      flags = encName[encPos++];
+      flagBits = 8;
+    }
+    switch(flags >> 6)
+    {
+      case 0:
+        unicodeName[decPos++] = encName[encPos++];
+        break;
+      case 1:
+        unicodeName[decPos++] = encName[encPos++] + (highByte << 8);
+        break;
+      case 2:
+        unicodeName[decPos++] = encName[encPos] + (encName[encPos + 1] << 8);
+        encPos += 2;
+        break;
+      case 3:
+        {
+          int length = encName[encPos++];
+          if (length & 0x80)
+          {
+            BYTE correction = encName[encPos++];
+            for (length = (length & 0x7f) + 2; 
+                length > 0 && decPos < maxDecSize; length--, decPos++)
+              unicodeName[decPos] = ((name[decPos] + correction) & 0xff) + (highByte << 8);
+          }
+          else
+            for (length += 2; length > 0 && decPos < maxDecSize; length--, decPos++)
+              unicodeName[decPos] = name[decPos];
+        }
+        break;
+    }
+    flags <<= 2;
+    flagBits -= 2;
+  }
+  unicodeName[decPos < maxDecSize ? decPos : maxDecSize - 1] = 0;
+}
+
+void CInArchive::ReadName(CItemInfoEx &anItemInfo)
+{
+  UINT32 aSizeFileName = m_FileHeader32.NameSize;
+  anItemInfo.UnicodeName.Empty();
+  if (aSizeFileName > 0)
+  {
+    m_NameBuffer.EnsureCapacity(aSizeFileName + 1);
+    char *buffer = (char *)m_NameBuffer;
+
+    ReadBytesAndTestResult(buffer, aSizeFileName);
+
+    int mainLen;
+    for (mainLen = 0; mainLen < aSizeFileName; mainLen++)
+      if (buffer[mainLen] == '\0')
+        break;
+    buffer[mainLen] = '\0';
+    anItemInfo.Name = buffer;
+
+    UINT32 unicodeNameSizeMax = MyMin(aSizeFileName, UINT32(0x400));
+    _unicodeNameBuffer.EnsureCapacity(unicodeNameSizeMax + 1);
+
+    if((m_BlockHeader.Flags & NHeader::NFile::kUnicodeName) != 0  && 
+        mainLen < aSizeFileName)
+    {
+      DecodeUnicodeFileName(buffer, (const BYTE *)buffer + mainLen + 1, 
+          aSizeFileName - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
+      anItemInfo.UnicodeName = _unicodeNameBuffer;
+    }
+  }
+  else
+    anItemInfo.Name.Empty();
+}
 void CInArchive::ReadHeader32Real(CItemInfoEx &anItemInfo)
 {
   ReadBytesAndTestResult((BYTE*)(&m_FileHeader32) + sizeof(m_BlockHeader), 
     sizeof(m_FileHeader32) - sizeof(m_BlockHeader));
   UINT32 aSizeFileName = m_FileHeader32.NameSize;
-  if (aSizeFileName > 0)
-  {
-    ReadBytesAndTestResult(m_NameBuffer.GetBuffer(aSizeFileName), aSizeFileName);
-    m_NameBuffer.ReleaseBuffer(aSizeFileName);
-    anItemInfo.Name = m_NameBuffer;
-  }
-  else
-    anItemInfo.Name.Empty();
+
+  ReadName(anItemInfo);
   
   anItemInfo.Flags = m_FileHeader32.Flags; 
   anItemInfo.PackSize = m_FileHeader32.PackSize;
@@ -205,11 +280,11 @@ void CInArchive::ReadHeader32Real(CItemInfoEx &anItemInfo)
   anItemInfo.MainPartSize = aFileHeaderWithNameSize;
   anItemInfo.CommentSize = m_FileHeader32.HeadSize - aFileHeaderWithNameSize;
   
-  if (anItemInfo.HasExtra())
-    ReadBytesAndTestResult(&anItemInfo.ExtraData, sizeof(anItemInfo.ExtraData));
+  if (anItemInfo.HasSalt())
+    ReadBytesAndTestResult(&anItemInfo.Salt, sizeof(anItemInfo.Salt));
   if(m_FileHeader32.HeadCRC != 
       m_FileHeader32.GetRealCRC(m_NameBuffer, aSizeFileName, 
-          anItemInfo.HasExtra(), anItemInfo.ExtraData))
+          anItemInfo.HasSalt(), anItemInfo.Salt))
     ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
   AddToSeekValue(m_FileHeader32.HeadSize);
 }
@@ -219,14 +294,7 @@ void CInArchive::ReadHeader64Real(CItemInfoEx &anItemInfo)
   ReadBytesAndTestResult((BYTE*)(&m_FileHeader64) + sizeof(m_BlockHeader), 
     sizeof(m_FileHeader64) - sizeof(m_BlockHeader));
   UINT32 aSizeFileName = m_FileHeader64.NameSize;
-  if (aSizeFileName > 0)
-  {
-    ReadBytesAndTestResult(m_NameBuffer.GetBuffer(aSizeFileName), aSizeFileName);
-    m_NameBuffer.ReleaseBuffer(aSizeFileName);
-    anItemInfo.Name = m_NameBuffer;
-  }
-  else
-    anItemInfo.Name.Empty();
+  ReadName(anItemInfo);
   
   anItemInfo.Flags = m_FileHeader64.Flags; 
   anItemInfo.PackSize = (((UINT64)m_FileHeader64.PackSizeHigh) << 32) + m_FileHeader64.PackSizeLow;

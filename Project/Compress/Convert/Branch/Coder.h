@@ -33,8 +33,9 @@ BEGIN_COM_MAP(C ## Name) \
   COM_INTERFACE_ENTRY(ICompressCoder) \
 END_COM_MAP() \
 DECLARE_NOT_AGGREGATABLE(C ## Name) \
-  DECLARE_REGISTRY(C ## Name, TEXT("Compress.ConvertBranch.1"), \
-  TEXT("Compress.ConvertBranch"), UINT(0), THREADFLAGS_APARTMENT) \
+  DECLARE_REGISTRY(C ## Name, \
+    TEXT("SevenZip.1"), TEXT("SevenZip"), \
+    UINT(0), THREADFLAGS_APARTMENT) \
   STDMETHOD(Code)(ISequentialInStream *inStream, \
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize, \
       ICompressProgressInfo *progress); \

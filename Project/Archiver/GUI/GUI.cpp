@@ -4,12 +4,6 @@
 
 #include <initguid.h>
 
-#include "../Agent/Handler.h"
-
-#include "../../Compress/Interface/CompressInterface.h"
-#include "../Format/Common/FormatCryptoInterface.h"
-#include "../Resource/Extract/resource.h"
-
 #include "Common/NewHandler.h"
 #include "Common/StringConvert.h"
 
@@ -18,12 +12,17 @@
 #include "Windows/Synchronization.h"
 
 #include "Interface/IInOutStreams.h"
+#include "Interface/CryptoInterface.h"
+
+#include "../../Compress/Interface/CompressInterface.h"
 
 #include "../../FileManager/FolderInterface.h"
 #include "../../FileManager/StringUtils.h"
 
-#include "../Common/IArchiveHandler2.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "../Resource/Extract/resource.h"
+#include "../Agent/Handler.h"
+
+#include "../Common/FolderArchiveInterface.h"
 
 #include "../Explorer/TestEngine.h"
 #include "../Explorer/ExtractEngine.h"

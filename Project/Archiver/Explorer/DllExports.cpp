@@ -9,7 +9,7 @@
 #include <windows.h>
 
 #include "../../Compress/Interface/CompressInterface.h"
-#include "../Format/Common/FormatCryptoInterface.h"
+#include "Interface/CryptoInterface.h"
 #include "../Agent/Handler.h"
 
 #include "ContextMenu.h"

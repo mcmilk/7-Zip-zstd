@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -247,10 +247,6 @@ SOURCE=..\..\Format\Common\CrossThreadProgress.cpp
 # Begin Source File
 
 SOURCE=..\..\Format\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
@@ -453,11 +449,11 @@ SOURCE=..\..\Agent\AgentProxyHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Agent\ExtractCallback200.cpp
+SOURCE=..\..\Agent\ArchiveExtractCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Agent\ExtractCallback200.h
+SOURCE=..\..\Agent\ArchiveExtractCallback.h
 # End Source File
 # Begin Source File
 
@@ -482,6 +478,81 @@ SOURCE=..\..\Agent\Handler.h
 # Begin Group "Crypto"
 
 # PROP Default_Filter ""
+# Begin Group "Cipher"
+
+# PROP Default_Filter ""
+# Begin Group "AES"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\AES_CBC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aescpp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aescrypt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aeskey.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aesopt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\aestab.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\MyAES.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\AES\MyAES.h
+# End Source File
+# End Group
+# Begin Group "7zAES"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\7zAES\7zAES.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Cipher\7zAES\7zAES.h
+# End Source File
+# End Group
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
+# Begin Group "SHA256"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Hash\SHA256\SHA256.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Crypto\Hash\SHA256\SHA256.h
+# End Source File
+# End Group
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Format\Common\FormatCryptoInterface.h
@@ -914,6 +985,14 @@ SOURCE=..\..\..\FileManager\FormatUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\FileManager\FormatUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\FileManager\OpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\FileManager\OpenCallback.h
 # End Source File
 # End Group
 # Begin Source File

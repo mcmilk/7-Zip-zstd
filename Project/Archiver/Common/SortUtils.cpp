@@ -4,26 +4,27 @@
 
 #include "SortUtils.h"
 
-static int CompareStrings( const void *anElem1, const void *anElem2)
+static int CompareStrings(const void *a1, const void *a2)
 {
-  const UString &aString1 = *(*(*((const UString ***)anElem1)));
-  const UString &aString2 = *(*(*((const UString ***)anElem2)));
-  return aString1.CompareNoCase(aString2);
+  const UString &s1 = *(*(*((const UString ***)a1)));
+  const UString &s2 = *(*(*((const UString ***)a2)));
+  return s1.CompareNoCase(s2);
 }
 
-void SortStringsToIndexes(UStringVector &aStrings, std::vector<int> &anIndexes)
+void SortStringsToIndexes(UStringVector &strings, CIntVector &indices)
 {
-  anIndexes.clear();
-  if (aStrings.IsEmpty())
+  indices.Clear();
+  if (strings.IsEmpty())
     return;
-  int aNumItems = aStrings.Size();
-  CPointerVector aPointers;
-  aPointers.Reserve(aNumItems);
+  int numItems = strings.Size();
+  CPointerVector pointers;
+  pointers.Reserve(numItems);
+  indices.Reserve(numItems);
   int i;
-  for(i = 0; i < aNumItems; i++)
-    aPointers.Add(&aStrings.CPointerVector::operator[](i));
-  void **aStringsBase  = (void **)aPointers[0];
-  qsort(&aPointers[0], aNumItems, sizeof(void *), CompareStrings);
-  for(i = 0; i < aNumItems; i++)
-    anIndexes.push_back((void **)aPointers[i] - aStringsBase);
+  for(i = 0; i < numItems; i++)
+    pointers.Add(&strings.CPointerVector::operator[](i));
+  void **stringsBase  = (void **)pointers[0];
+  qsort(&pointers[0], numItems, sizeof(void *), CompareStrings);
+  for(i = 0; i < numItems; i++)
+    indices.Add((void **)pointers[i] - stringsBase);
 }
