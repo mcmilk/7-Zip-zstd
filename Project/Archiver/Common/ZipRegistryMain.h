@@ -21,7 +21,7 @@ namespace NZipRootRegistry {
     bool KeepName;
   };
 
-  void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &anInfoList);
+  void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &infoList);
 }
 
 

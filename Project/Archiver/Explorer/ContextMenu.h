@@ -26,6 +26,7 @@ class CZipContextMenu:
     kCommandInternalIDOpen,
     kCommandInternalIDExtract,
     kCommandInternalIDCompress,
+    // kCommandInternalIDCompressEmail,
     kCommandInternalIDTest
   };
   
@@ -76,7 +77,7 @@ private:
   HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
   UINT FindVerb(const CSysString &verb);
 
-  void CompressFiles(HWND aHWND);
+  void CompressFiles(HWND aHWND, bool email);
 };
 
 #endif

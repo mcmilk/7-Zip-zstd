@@ -114,7 +114,7 @@ CBase::CBase():
 
 void CBase::CalculateDigest()
 {
-  NSynchronization::CSingleLock lock(&g_GlobalKeyCacheCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
   if (_cachedKeys.Find(_key))
     g_GlobalKeyCache.Add(_key);
   else

@@ -18,7 +18,7 @@ namespace NZipRootRegistry {
 
 }
 
-bool GetProgramDirPrefix(CSysString &aFolder);
+bool GetProgramDirPrefix(CSysString &folder);
 
 
 #endif

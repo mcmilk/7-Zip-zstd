@@ -10,14 +10,14 @@
 
 namespace NZipRegistryManager
 {
-  void SaveExtractionInfo(const NZipSettings::NExtraction::CInfo &anInfo);
-  void ReadExtractionInfo(NZipSettings::NExtraction::CInfo &anInfo);
+  void SaveExtractionInfo(const NZipSettings::NExtraction::CInfo &info);
+  void ReadExtractionInfo(NZipSettings::NExtraction::CInfo &info);
 
-  void SaveCompressionInfo(const NZipSettings::NCompression::CInfo &anInfo);
-  void ReadCompressionInfo(NZipSettings::NCompression::CInfo &anInfo);
+  void SaveCompressionInfo(const NZipSettings::NCompression::CInfo &info);
+  void ReadCompressionInfo(NZipSettings::NCompression::CInfo &info);
 
-  void SaveWorkDirInfo(const NZipSettings::NWorkDir::CInfo &anInfo);
-  void ReadWorkDirInfo(NZipSettings::NWorkDir::CInfo &anInfo);
+  void SaveWorkDirInfo(const NZipSettings::NWorkDir::CInfo &info);
+  void ReadWorkDirInfo(NZipSettings::NWorkDir::CInfo &info);
   
 };
 

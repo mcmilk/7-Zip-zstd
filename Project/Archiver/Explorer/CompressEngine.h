@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-HRESULT CompressArchive(const CSysStringVector &fileNames);
+HRESULT CompressArchive(const CSysStringVector &fileNames, bool email);
 
 #endif

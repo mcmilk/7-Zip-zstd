@@ -72,7 +72,7 @@ static HRESULT WriteRange(IInStream *inStream,
   return result;
 }
 
-static int CompareUpdateItems(const void *p1, const void *p2)
+static int __cdecl CompareUpdateItems(const void *p1, const void *p2)
 {
   const CUpdateItemInfo &a1 = **(const CUpdateItemInfo **)p1;
   const CUpdateItemInfo &a2 = **(const CUpdateItemInfo **)p2;

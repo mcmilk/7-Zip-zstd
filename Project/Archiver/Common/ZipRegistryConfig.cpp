@@ -30,20 +30,20 @@ static const TCHAR *kRootKeyNameForFile = _T("*");
 static const TCHAR *kRootKeyNameForFolder = _T("Folder");
 static const TCHAR *kRootKeyNameForDirectory = _T("Directory");
 
-static CSysString GetFullContextMenuKeyName(const CSysString &aKeyName)
-  { return (aKeyName + kContextMenuKeyName); }
+static CSysString GetFullContextMenuKeyName(const CSysString &keyName)
+  { return (keyName + kContextMenuKeyName); }
 
-static bool CheckContextMenuHandlerCommon(const CSysString &aKeyName)
+static bool CheckContextMenuHandlerCommon(const CSysString &keyName)
 {
-  NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
-  CKey aKey;
-  if (aKey.Open(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(aKeyName), KEY_READ)
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+  CKey key;
+  if (key.Open(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(keyName), KEY_READ)
       != ERROR_SUCCESS)
     return false;
-  CSysString aValue;
-  if (aKey.QueryValue(NULL, aValue) != ERROR_SUCCESS)
+  CSysString value;
+  if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  return (aValue.CollateNoCase(kContextMenuHandlerCLASSIDValue) == 0);
+  return (value.CollateNoCase(kContextMenuHandlerCLASSIDValue) == 0);
 }
 
 bool CheckContextMenuHandler()
@@ -53,12 +53,12 @@ bool CheckContextMenuHandler()
     CheckContextMenuHandlerCommon(kRootKeyNameForDirectory);
 }
 
-static void DeleteContextMenuHandlerCommon(const CSysString &aKeyName)
+static void DeleteContextMenuHandlerCommon(const CSysString &keyName)
 {
-  CKey aRootKey;
-  aRootKey.Attach(HKEY_CLASSES_ROOT);
-  aRootKey.RecurseDeleteKey(GetFullContextMenuKeyName(aKeyName));
-  aRootKey.Detach();
+  CKey rootKey;
+  rootKey.Attach(HKEY_CLASSES_ROOT);
+  rootKey.RecurseDeleteKey(GetFullContextMenuKeyName(keyName));
+  rootKey.Detach();
 }
 
 void DeleteContextMenuHandler()
@@ -68,13 +68,13 @@ void DeleteContextMenuHandler()
   DeleteContextMenuHandlerCommon(kRootKeyNameForDirectory);
 }
 
-static void AddContextMenuHandlerCommon(const CSysString &aKeyName)
+static void AddContextMenuHandlerCommon(const CSysString &keyName)
 {
-  DeleteContextMenuHandlerCommon(aKeyName);
-  NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
-  CKey aKey;
-  aKey.Create(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(aKeyName));
-  aKey.SetValue(NULL, kContextMenuHandlerCLASSIDValue);
+  DeleteContextMenuHandlerCommon(keyName);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+  CKey key;
+  key.Create(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(keyName));
+  key.SetValue(NULL, kContextMenuHandlerCLASSIDValue);
 }
 
 void AddContextMenuHandler()

@@ -22,28 +22,28 @@ public:
 
   bool GetStopped()
   {
-    NWindows::NSynchronization::CSingleLock aLock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     return _stopped;
   }
   void SetStopped(bool value)
   {
-    NWindows::NSynchronization::CSingleLock aLock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _stopped = value;
   }
   void SetProgress(UINT64 total, UINT64 completed)
   {
-    NWindows::NSynchronization::CSingleLock aLock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _total = total;
     _completed = completed;
   }
   void SetPos(UINT64 completed)
   {
-    NWindows::NSynchronization::CSingleLock aLock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _completed = completed;
   }
   void GetProgress(UINT64 &total, UINT64 &completed)
   {
-    NWindows::NSynchronization::CSingleLock aLock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     total = _total;
     completed = _completed;
   }

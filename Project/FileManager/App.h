@@ -130,7 +130,12 @@ public:
   void RefreshAllPanels()
   { 
     for (int i = 0; i < NumPanels; i++)
-      Panels[i].OnReload();
+    {
+      int index = i;
+      if (g_App.NumPanels == 1)
+        index = LastFocusedPanel;
+      Panels[index].OnReload();
+    }
   }
   void SetListSettings();
   void SetShowSystemMenu();

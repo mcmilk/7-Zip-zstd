@@ -34,7 +34,7 @@ static inline bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-int main(int aNumArguments, const char *anArguments[])
+int __cdecl main(int aNumArguments, const char *anArguments[])
 {
   #ifdef UNICODE
   if (!IsItWindowsNT())

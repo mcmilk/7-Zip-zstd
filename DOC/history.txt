@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 31        2003-04-29
+  --------------------------------------
+      Common/NewHandler.cpp
+        HeapAlloc in (included to beta 30) was changed to malloc.
+        HeapAlloc worked slower in Win95/98/Me.
+     
+
   Version 2.30 Beta 30        2003-04-21
   --------------------------------------
       new file: Common/String.cpp

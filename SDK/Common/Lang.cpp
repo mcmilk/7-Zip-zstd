@@ -63,7 +63,7 @@ static bool WaitNextLine(const AString &string, int &pos)
   return false;
 }
 
-static int CompareLangItems( const void *elem1, const void *elem2)
+static int __cdecl CompareLangItems( const void *elem1, const void *elem2)
 {
   const CLangPair &langPair1 = *(*((const CLangPair **)elem1));
   const CLangPair &langPair2 = *(*((const CLangPair **)elem2));

@@ -72,7 +72,7 @@ public:
   T& Front()   { return operator[](0); }
 	const T& Back() const { return operator[](_size - 1); }
   T& Back()   { return operator[](_size - 1); }
-  static int CompareRecordItems(const void *a1, const void *a2)
+  static int __cdecl CompareRecordItems(const void *a1, const void *a2)
     { return MyCompare(*((const T *)a1), *((const T *)a2)); }
   void Sort()
     { qsort(&Front(), Size(), _itemSize, CompareRecordItems); }
@@ -165,7 +165,7 @@ public:
     Insert(right, item);
     return right;
   }
-  static int CompareObjectItems(const void *a1, const void *a2)
+  static int __cdecl CompareObjectItems(const void *a1, const void *a2)
     { return MyCompare(*(*((const T **)a1)), *(*((const T **)a2))); }
   void Sort()
   {

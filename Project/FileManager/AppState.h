@@ -25,26 +25,26 @@ public:
   UStringVector Strings;
   void SetString(int index, const UString &string)
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     while(Strings.Size() <= index)
       Strings.Add(UString());
     Strings[index] = string;
   }
   UString GetString(int index)
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     if (index >= Strings.Size())
       return UString();
     return Strings[index];
   }
   void Save()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     SaveFastFolders(Strings);
   }
   void Read()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     ReadFastFolders(Strings);
   }
 };
@@ -57,13 +57,13 @@ public:
   
   void GetList(UStringVector &foldersHistory)
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     foldersHistory = Strings;
   }
   
   void Normalize()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     const int kMaxSize = 100;
     if (Strings.Size() > kMaxSize)
       Strings.Delete(kMaxSize, Strings.Size() - kMaxSize + 1);
@@ -71,26 +71,26 @@ public:
   
   void AddString(const UString &string)
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     AddUniqueStringToHead(Strings, string);
     Normalize();
   }
   
   void RemoveAll()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     Strings.Clear();
   }
   
   void Save()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     SaveFolderHistory(Strings);
   }
   
   void Read()
   {
-    NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     ReadFolderHistory(Strings);
     Normalize();
   }

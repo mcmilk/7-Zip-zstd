@@ -189,7 +189,7 @@ struct CThreadUpdateCompress
   }
 };
 
-HRESULT CompressArchive(const CSysStringVector &fileNames)
+HRESULT CompressArchive(const CSysStringVector &fileNames, bool email)
 {
   if (fileNames.Size() == 0)
     return S_OK;

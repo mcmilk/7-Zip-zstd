@@ -392,7 +392,8 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
     name = fullName.Mid(index);
   }
 
-  m_PannelTitle = m_ArchiverInfo.Name + ':' + name;
+  m_PannelTitle = CSysString(' ') + m_ArchiverInfo.Name + ':' + name +
+      CSysString(' ');
   if(!m_CurrentDir.IsEmpty())
   {
     // m_PannelTitle += '\\';

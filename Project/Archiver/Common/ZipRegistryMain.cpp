@@ -47,103 +47,103 @@ static CSysString GetArchiversKeyName()
 }
 #endif
 
-void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &anInfoList)
+void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &infoList)
 {
-  anInfoList.Clear();
+  infoList.Clear();
   
   #ifdef NO_REGISTRY
   
-  CArchiverInfo anItemInfo;
+  CArchiverInfo itemInfo;
   #ifdef FORMAT_7Z
-  anItemInfo.UpdateEnabled = true;
-  anItemInfo.KeepName = false;
-  anItemInfo.Name = TEXT("7z");
-  anItemInfo.Extension = TEXT("7z");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = true;
+  itemInfo.KeepName = false;
+  itemInfo.Name = TEXT("7z");
+  itemInfo.Extension = TEXT("7z");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_BZIP2
-  anItemInfo.UpdateEnabled = true;
-  anItemInfo.KeepName = true;
-  anItemInfo.Name = TEXT("BZip2");
-  anItemInfo.Extension = TEXT("bz2");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = true;
+  itemInfo.KeepName = true;
+  itemInfo.Name = TEXT("BZip2");
+  itemInfo.Extension = TEXT("bz2");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_GZIP
-  anItemInfo.UpdateEnabled = true;
-  anItemInfo.KeepName = false;
-  anItemInfo.Name = TEXT("GZip");
-  anItemInfo.Extension = TEXT("gz");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = true;
+  itemInfo.KeepName = false;
+  itemInfo.Name = TEXT("GZip");
+  itemInfo.Extension = TEXT("gz");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_TAR
-  anItemInfo.UpdateEnabled = true;
-  anItemInfo.KeepName = false;
-  anItemInfo.Name = TEXT("Tar");
-  anItemInfo.Extension = TEXT("tar");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = true;
+  itemInfo.KeepName = false;
+  itemInfo.Name = TEXT("Tar");
+  itemInfo.Extension = TEXT("tar");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_ZIP
-  anItemInfo.UpdateEnabled = true;
-  anItemInfo.KeepName = false;
-  anItemInfo.Name = TEXT("Zip");
-  anItemInfo.Extension = TEXT("zip");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = true;
+  itemInfo.KeepName = false;
+  itemInfo.Name = TEXT("Zip");
+  itemInfo.Extension = TEXT("zip");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_CPIO
-  anItemInfo.UpdateEnabled = false;
-  anItemInfo.Name = TEXT("cpio");
-  anItemInfo.Extension = TEXT("cpio");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = false;
+  itemInfo.Name = TEXT("cpio");
+  itemInfo.Extension = TEXT("cpio");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_RPM
-  anItemInfo.UpdateEnabled = false;
-  anItemInfo.Name = TEXT("RPM");
-  anItemInfo.Extension = TEXT("rpm");
-  anItemInfo.AddExtension = TEXT(".cpio.gz");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = false;
+  itemInfo.Name = TEXT("RPM");
+  itemInfo.Extension = TEXT("rpm");
+  itemInfo.AddExtension = TEXT(".cpio.gz");
+  infoList.Add(itemInfo);
   #endif
 
   #ifdef FORMAT_ARJ
-  anItemInfo.UpdateEnabled = false;
-  anItemInfo.Name = TEXT("arj");
-  anItemInfo.Extension = TEXT("arj");
-  anInfoList.Add(anItemInfo);
+  itemInfo.UpdateEnabled = false;
+  itemInfo.Name = TEXT("arj");
+  itemInfo.Extension = TEXT("arj");
+  infoList.Add(itemInfo);
   #endif
   
   #else
 
-  NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
 
-  CKey anArchiversKey;
-  if(anArchiversKey.Open(HKEY_LOCAL_MACHINE, GetArchiversKeyName(), KEY_READ) != ERROR_SUCCESS)
+  CKey archiversKey;
+  if(archiversKey.Open(HKEY_LOCAL_MACHINE, GetArchiversKeyName(), KEY_READ) != ERROR_SUCCESS)
     return;
  
-  CSysStringVector aClassIDs;
-  anArchiversKey.EnumKeys(aClassIDs);
-  for(int i = 0; i < aClassIDs.Size(); i++)
+  CSysStringVector classIDs;
+  archiversKey.EnumKeys(classIDs);
+  for(int i = 0; i < classIDs.Size(); i++)
   {
-    const CSysString aClassIDString = aClassIDs[i];
-    CArchiverInfo anItemInfo;
-    anItemInfo.UpdateEnabled = false;
-    anItemInfo.KeepName = false;
-    CKey aClassIDKey;
-    if(aClassIDKey.Open(anArchiversKey, aClassIDString, KEY_READ) != ERROR_SUCCESS)
+    const CSysString classIDString = classIDs[i];
+    CArchiverInfo itemInfo;
+    itemInfo.UpdateEnabled = false;
+    itemInfo.KeepName = false;
+    CKey classIDKey;
+    if(classIDKey.Open(archiversKey, classIDString, KEY_READ) != ERROR_SUCCESS)
       return;
 
-    if(StringToGUID(aClassIDString, anItemInfo.ClassID) != NOERROR)
+    if(StringToGUID(classIDString, itemInfo.ClassID) != NOERROR)
       return; // test it maybe creation;
-    aClassIDKey.QueryValue(NULL, anItemInfo.Name);
-    aClassIDKey.QueryValue(NArchiveType::kExtension, anItemInfo.Extension);
-    aClassIDKey.QueryValue(NArchiveType::kAddExtension, anItemInfo.AddExtension);
-    aClassIDKey.QueryValue(NArchiveType::kUpdate, anItemInfo.UpdateEnabled);
-    aClassIDKey.QueryValue(NArchiveType::kKeepName, anItemInfo.KeepName);
-    anInfoList.Add(anItemInfo);
+    classIDKey.QueryValue(NULL, itemInfo.Name);
+    classIDKey.QueryValue(NArchiveType::kExtension, itemInfo.Extension);
+    classIDKey.QueryValue(NArchiveType::kAddExtension, itemInfo.AddExtension);
+    classIDKey.QueryValue(NArchiveType::kUpdate, itemInfo.UpdateEnabled);
+    classIDKey.QueryValue(NArchiveType::kKeepName, itemInfo.KeepName);
+    infoList.Add(itemInfo);
   }
   #endif
 }

@@ -11,32 +11,11 @@
 namespace NWindows {
 namespace NSynchronization {
 
-class CSingleLock;
-
 class CObject: public CHandle
 {
 public:
   bool Lock(DWORD timeoutInterval = INFINITE)
     { return (::WaitForSingleObject(_handle, timeoutInterval) == WAIT_OBJECT_0); }
-};
-
-class CSyncObject
-{
-public:
-  HANDLE  _object;
-
-  CSyncObject(LPCTSTR name): _object(NULL) {};
-  operator HANDLE() const
-    { return _object;}
-
-  virtual bool Lock(DWORD timeoutInterval = INFINITE);
-  virtual bool Unlock() = 0;
-  virtual bool Unlock(LONG /* count */, LPLONG /* prevCount = NULL */)
-    { return true; }
-
-public:
-  virtual ~CSyncObject();
-  friend class CSingleLock;
 };
 
 class CEvent: public CObject
@@ -45,12 +24,11 @@ public:
   CEvent() {};
   CEvent(bool manualReset, bool initiallyOwn, 
       LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
-
   bool Create(bool manualReset, bool initiallyOwn, LPCTSTR name = NULL,
       LPSECURITY_ATTRIBUTES securityAttributes = NULL)
   {
     _handle = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
-      BoolToBOOL(initiallyOwn), name);
+        BoolToBOOL(initiallyOwn), name);
     return (_handle != 0);
   }
 
@@ -81,54 +59,26 @@ public:
     CEvent(false, initiallyOwn, name, securityAttributes) {};
 };
 
-
-class CCriticalSection: public CSyncObject
+class CCriticalSection
 {
   CRITICAL_SECTION _object;
+  // void Initialize() { ::InitializeCriticalSection(&_object); }
+  // void Delete() { ::DeleteCriticalSection(&_object); }
 public:
-  CCriticalSection(): CSyncObject(NULL)
-    { ::InitializeCriticalSection(&_object); }
-
-  // operator CRITICAL_SECTION*() { return (CRITICAL_SECTION*) &_object; }
-
-  bool Unlock()
-  { 
-    ::LeaveCriticalSection(&_object); 
-    return true; 
-  }
-  bool Lock()
-  { 
-    ::EnterCriticalSection(&_object); 
-    return true; 
-  }
-  bool Lock(DWORD timeoutInterval)
-    { return Lock(); }
-
-public:
-  virtual ~CCriticalSection()
-    { ::DeleteCriticalSection(&_object); }
-
+  CCriticalSection() { ::InitializeCriticalSection(&_object); }
+  ~CCriticalSection() { ::DeleteCriticalSection(&_object); }
+  void Enter() { ::EnterCriticalSection(&_object); }
+  void Leave() { ::LeaveCriticalSection(&_object); }
 };
 
-
-class CSingleLock
+class CCriticalSectionLock
 {
+  CCriticalSection &_object;
+  void Unlock()  { _object.Leave(); }
 public:
-  CSingleLock(CSyncObject* object, bool initialLock = false);
-public:
-  bool Lock(DWORD timeoutInterval = INFINITE);
-  bool Unlock();
-  bool Unlock(LONG count, LPLONG prevCount = NULL);
-  bool IsLocked()
-    { return _acquired; }
-
-  ~CSingleLock()
-    { Unlock(); }
-
-protected:
-  CSyncObject* _syncObject;
-  HANDLE _object;
-  bool _acquired;
+  CCriticalSectionLock(CCriticalSection &object): _object(object) 
+    {_object.Enter(); } 
+  ~CCriticalSectionLock() { Unlock(); }
 };
 
 }}

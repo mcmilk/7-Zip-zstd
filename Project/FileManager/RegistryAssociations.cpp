@@ -31,7 +31,7 @@ static const TCHAR *kExtEnabled = _T("Enabled");
 
 bool ReadInternalAssociation(const TCHAR *ext, CExtInfo &extInfo)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey key;
   if(key.Open(HKEY_CURRENT_USER, CSysString(kCUKeyPath) 
       + CSysString('\\') + CSysString(kAssociations)
@@ -46,7 +46,7 @@ bool ReadInternalAssociation(const TCHAR *ext, CExtInfo &extInfo)
 void ReadInternalAssociations(CObjectVector<CExtInfo> &items)
 {
   items.Clear();
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey associationsKey;
   if(associationsKey.Open(HKEY_CURRENT_USER, CSysString(kCUKeyPath) 
       + CSysString('\\') + CSysString(kAssociations), KEY_READ) != ERROR_SUCCESS)
@@ -75,7 +75,7 @@ void ReadInternalAssociations(CObjectVector<CExtInfo> &items)
 
 void WriteInternalAssociations(const CObjectVector<CExtInfo> &items)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey mainKey;
   mainKey.Create(HKEY_CURRENT_USER, kCUKeyPath);
   mainKey.RecurseDeleteKey(kAssociations);
@@ -116,7 +116,7 @@ static CSysString GetExtProgramKeyName(const CSysString &extension)
 
 bool CheckShellExtensionInfo(const CSysString &extension)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey extKey;
   if (extKey.Open(HKEY_CLASSES_ROOT, GetExtensionKeyName(extension), KEY_READ) != ERROR_SUCCESS)
     return false;
@@ -132,7 +132,7 @@ bool CheckShellExtensionInfo(const CSysString &extension)
 
 static void DeleteShellExtensionKey(const CSysString &extension)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey rootKey;
   rootKey.Attach(HKEY_CLASSES_ROOT);
   rootKey.RecurseDeleteKey(GetExtensionKeyName(extension));
@@ -141,7 +141,7 @@ static void DeleteShellExtensionKey(const CSysString &extension)
 
 static void DeleteShellExtensionProgramKey(const CSysString &extension)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey rootKey;
   rootKey.Attach(HKEY_CLASSES_ROOT);
   rootKey.RecurseDeleteKey(GetExtProgramKeyName(extension));
@@ -163,7 +163,7 @@ void AddShellExtensionInfo(const CSysString &extension,
 {
   DeleteShellExtensionKey(extension);
   DeleteShellExtensionProgramKey(extension);
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CSysString programKeyName = GetExtProgramKeyName(extension);
   {
     CKey extKey;
@@ -225,7 +225,7 @@ static CSysString GetFullContextMenuKeyName(const CSysString &aKeyName)
 
 static bool CheckContextMenuHandlerCommon(const CSysString &aKeyName)
 {
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(&g_CriticalSection, true);
   CKey aKey;
   if (aKey.Open(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(aKeyName), KEY_READ)
       != ERROR_SUCCESS)
@@ -259,7 +259,7 @@ void DeleteContextMenuHandler()
 static void AddContextMenuHandlerCommon(const CSysString &aKeyName)
 {
   DeleteContextMenuHandlerCommon(aKeyName);
-  NSynchronization::CSingleLock lock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(&g_CriticalSection, true);
   CKey aKey;
   aKey.Create(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(aKeyName));
   aKey.SetValue(NULL, kContextMenuHandlerCLASSIDValue);

@@ -95,6 +95,7 @@ static LPCTSTR kOpenVerb = _T("SevenOpen");
 static LPCTSTR kExtractVerb = _T("SevenExtract");
 static LPCTSTR kTestVerb = _T("SevenTest");
 static LPCTSTR kCompressVerb = _T("SevenCompress");
+static LPCTSTR kCompressEmailVerb = _T("SevenCompressEmail");
 
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
@@ -174,6 +175,18 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     popupMenu.AppendItem(MF_STRING, currentCommandID++, 
         LangLoadString(IDS_CONTEXT_COMPRESS, 0x02000107)); 
     _commandMap.push_back(commandMapItem);
+
+    /*
+    commandMapItem.CommandInternalID = kCommandInternalIDCompressEmail;
+    commandMapItem.Verb = kCompressEmailVerb;
+    // commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_COMPRESS_HELP, 0x02000108);
+    commandMapItem.HelpString = TEXT("Compresses the selected items to archive and sends archive via E-Mail");
+    popupMenu.AppendItem(MF_STRING, currentCommandID++, 
+        // LangLoadString(IDS_CONTEXT_COMPRESS, 0x02000107)
+        TEXT("Compress and email")
+        ); 
+    _commandMap.push_back(commandMapItem);
+    */
   }
 
 
@@ -321,7 +334,7 @@ static void MyCreateProcess(HWND window, const CSysString &params,
   }
 }
 
-void CZipContextMenu::CompressFiles(HWND aHWND)
+void CZipContextMenu::CompressFiles(HWND aHWND, bool email)
 {
   CSysString params;
   params = Get7zGuiPath();
@@ -389,7 +402,9 @@ void CZipContextMenu::CompressFiles(HWND aHWND)
   
   params += TEXT(":");
   params += eventName;
-  
+
+  if (email)
+    params += TEXT(" -email");
   
   LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);
   if (data == NULL)
@@ -530,9 +545,16 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       }
       case kCommandInternalIDCompress:
       {
-        CompressFiles(aHWND);
+        CompressFiles(aHWND, false);
         break;
       }
+      /*
+      case kCommandInternalIDCompressEmail:
+      {
+        CompressFiles(aHWND, true);
+        break;
+      }
+      */
     }
   }
   catch(...)

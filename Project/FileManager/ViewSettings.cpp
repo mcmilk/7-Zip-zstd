@@ -83,7 +83,7 @@ void SaveListViewInfo(const CSysString &id, const CListViewInfo &viewInfo)
     columnInfoSpec.GetFromColumnInfo(columns[i]);
   }
   {
-    NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+    NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
     CSysString keyName = kCUBasePath;
     keyName += kKeyNameDelimiter;
     keyName += kCulumnsKeyName;
@@ -100,7 +100,7 @@ void ReadListViewInfo(const CSysString &id, CListViewInfo &viewInfo)
   CByteBuffer buffer;
   UINT32 size;
   {
-    NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+    NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
     CSysString keyName = kCUBasePath;
     keyName += kKeyNameDelimiter;
     keyName += kCulumnsKeyName;
@@ -158,7 +158,7 @@ void SaveWindowSize(const RECT &rect, bool maximized)
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, keyName);
   CWindowPosition position;
   position.Rect = rect;
@@ -170,7 +170,7 @@ bool ReadWindowSize(RECT &rect, bool &maximized)
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   CByteBuffer buffer;
@@ -189,7 +189,7 @@ void SavePanelsInfo(UINT32 numPanels, UINT32 currentPanel, UINT32 splitterPos)
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, keyName);
   CPanelsInfo block;
   block.NumPanels = numPanels;
@@ -202,7 +202,7 @@ bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   CByteBuffer buffer;
@@ -232,7 +232,7 @@ void SavePanelPath(UINT32 panel, const CSysString &path)
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, keyName);
   key.SetValue(GetPanelPathName(panel), path);
 }
@@ -241,7 +241,7 @@ bool ReadPanelPath(UINT32 panel, CSysString &path)
 {
   CSysString keyName = kCUBasePath;
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   return (key.QueryValue(GetPanelPathName(panel), path) == ERROR_SUCCESS);
@@ -262,7 +262,7 @@ void SaveStringList(LPCTSTR valueName, const UStringVector &folders)
     aPos += folders[i].Length() + 1;
   }
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, kCUBasePath);
   key.SetValue(valueName, buffer, sizeInChars * sizeof(wchar_t));
 }
@@ -271,7 +271,7 @@ void ReadStringList(LPCTSTR valueName, UStringVector &folders)
 {
   folders.Clear();
   CKey key;
-  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
     return;
   CByteBuffer buffer;

@@ -4,7 +4,7 @@
 
 #include "SortUtils.h"
 
-static int CompareStrings(const void *a1, const void *a2)
+static int __cdecl CompareStrings(const void *a1, const void *a2)
 {
   const UString &s1 = *(*(*((const UString ***)a1)));
   const UString &s2 = *(*(*((const UString ***)a2)));

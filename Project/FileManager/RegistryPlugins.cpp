@@ -35,22 +35,22 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 {
   plugins.Clear();
   
-  NSynchronization::CSingleLock aLock(&g_CriticalSection, true);
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
 
-  CKey aPluginsKey;
-  if(aPluginsKey.Open(HKEY_LOCAL_MACHINE, GetFileFolderPluginsKeyName(), 
+  CKey pluginsKey;
+  if(pluginsKey.Open(HKEY_LOCAL_MACHINE, GetFileFolderPluginsKeyName(), 
       KEY_READ) != ERROR_SUCCESS)
     return;
  
   CSysStringVector pluginsNames;
-  aPluginsKey.EnumKeys(pluginsNames);
+  pluginsKey.EnumKeys(pluginsNames);
   for(int i = 0; i < pluginsNames.Size(); i++)
   {
     const CSysString pluginName = pluginsNames[i];
     CPluginInfo plugin;
     plugin.Name = GetUnicodeString(pluginName);
     CKey pluginKey;
-    if(pluginKey.Open(aPluginsKey, pluginName, KEY_READ) != ERROR_SUCCESS)
+    if(pluginKey.Open(pluginsKey, pluginName, KEY_READ) != ERROR_SUCCESS)
       return;
     
     CSysString classID;

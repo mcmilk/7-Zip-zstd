@@ -42,7 +42,7 @@ struct CRefItem
   UINT32 NamePos;
 };
 
-static int CompareUpdateItems(const void *p1, const void *p2)
+static int __cdecl CompareUpdateItems(const void *p1, const void *p2)
 {
   const CRefItem &a1 = *((CRefItem *)p1);
   const CRefItem &a2 = *((CRefItem *)p2);

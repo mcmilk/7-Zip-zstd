@@ -99,13 +99,16 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
     else if (paramString == UString(L"a"))
     {
+      UString mapString, emailString;
+      SplitStringToTwoStrings(tailString, mapString, emailString);
+      bool emailMode = (emailString.CompareNoCase(L"-email") == 0);
       UString switchName = L"-map=";
-      if (switchName.CompareNoCase(tailString.Left(switchName.Length())) != 0)
+      if (switchName.CompareNoCase(mapString.Left(switchName.Length())) != 0)
       {
         MessageBoxW(0, L"Bad switch", L"7-Zip GUI", 0);
         return 1;
       }
-      UString switchParam = tailString.Mid(switchName.Length());
+      UString switchParam = mapString.Mid(switchName.Length());
       
       int splitPos = switchParam.Find(L':');
       if (splitPos < 0)
@@ -188,7 +191,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         event.Set();
       }
 
-      HRESULT result = CompressArchive(fileNames);
+      HRESULT result = CompressArchive(fileNames, emailMode);
       // if (result != S_OK)
       //   ShowErrorMessage(result);
     }

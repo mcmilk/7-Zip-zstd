@@ -8,7 +8,7 @@
 HRESULT CLockedInStream::Read(UINT64 startPos, void *data, UINT32 size, 
     UINT32 *processedSize)
 {
-  NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+  NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
   RETURN_IF_NOT_S_OK(_stream->Seek(startPos, STREAM_SEEK_SET, NULL));
   return _stream->Read(data, size, processedSize);
 }
@@ -16,7 +16,7 @@ HRESULT CLockedInStream::Read(UINT64 startPos, void *data, UINT32 size,
 HRESULT CLockedInStream::ReadPart(UINT64 startPos, void *data, UINT32 size, 
   UINT32 *processedSize)
 {
-  NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+  NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
   RETURN_IF_NOT_S_OK(_stream->Seek(startPos, STREAM_SEEK_SET, NULL));
   return _stream->ReadPart(data, size, processedSize);
 }

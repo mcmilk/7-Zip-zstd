@@ -27,6 +27,7 @@ bool CCopyDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _path.Attach(GetItem(IDC_COPY_COMBO));
+  SetText(Title);
 
   NControl::CStatic staticContol;
   staticContol.Attach(GetItem(IDC_COPY_STATIC));

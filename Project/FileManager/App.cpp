@@ -27,7 +27,6 @@ using namespace NFind;
 void CPanelCallbackImp::OnTab()
 {
   if (g_App.NumPanels != 1)
-
     _app->Panels[1 - _index].SetFocusToList();  
 }
 
@@ -76,17 +75,15 @@ void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
     return;
   m_PanelCallbackImp[panelIndex].Init(this, panelIndex);
   UString path;
-  if (/*i == 0 && */ !mainPath.IsEmpty())
-  {
-    path = mainPath;
-  }
-  else
+  if (mainPath.IsEmpty())
   {
     CSysString sysPath; 
     if (!::ReadPanelPath(panelIndex, sysPath))
       sysPath.Empty();
     path = GetUnicodeString(sysPath);
   }
+  else
+    path = mainPath;
   int id = 1000 + 100 * panelIndex;
   Panels[panelIndex].Create(_window, _window, 
       id, 0, path, &m_PanelCallbackImp[panelIndex], &_appState);
@@ -104,14 +101,11 @@ void CApp::Create(HWND hwnd, const UString &mainPath)
   SetListSettings();
   SetShowSystemMenu();
   UString mainPathSpec = mainPath;
+  if (LastFocusedPanel >= kNumPanelsMax)
+    LastFocusedPanel = 0;
   for (i = 0; i < kNumPanelsMax; i++)
-  {
     if (NumPanels > 1 || i == LastFocusedPanel)
-    {
-      CreateOnePanel(i, mainPathSpec);
-      mainPathSpec.Empty();
-    }
-  }
+      CreateOnePanel(i, (i == LastFocusedPanel) ? mainPath : L"");
   Panels[LastFocusedPanel].SetFocusToList();
 }
 

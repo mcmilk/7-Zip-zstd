@@ -8,19 +8,24 @@
 
 #ifndef DEBUG_MEMORY_LEAK
 
-void * operator new(size_t size)
+
+void * __cdecl operator new(size_t size)
 {
-  void *p = ::HeapAlloc(::GetProcessHeap(), 0, size);
+  // void *p = ::HeapAlloc(::GetProcessHeap(), 0, size);
+  void *p = ::malloc(size);
   if (p == 0)
     throw CNewException();
   return p;
 }
 
-void operator delete(void *p)
+void __cdecl operator delete(void *p)
 {
+  /*
   if (p == 0)
     return;
   ::HeapFree(::GetProcessHeap(), 0, p);
+  */
+  ::free(p);
 }
 
 #else
@@ -31,7 +36,7 @@ static void *a[kDebugSize];
 static int index = 0;
 
 static int numAllocs = 0;
-void * operator new(size_t size)
+void * __cdecl operator new(size_t size)
 {
   numAllocs++;
   void *p = HeapAlloc(GetProcessHeap(), 0, size);
@@ -67,7 +72,7 @@ public:
 } g_CC;
 
 
-void operator delete(void *p)
+void __cdecl operator delete(void *p)
 {
   if (p == 0)
     return;

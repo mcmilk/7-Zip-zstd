@@ -119,7 +119,7 @@ static int ComparePairIDs(const UString &s1, const UString &s2)
   { return s1.CollateNoCase(s2); }
 static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
   { return ComparePairIDs(p1.ID, p2.ID); }
-static int ComparePairItems(const void *a1, const void *a2)
+static int __cdecl ComparePairItems(const void *a1, const void *a2)
 {   
   return ComparePairItems(
       *(*((const CTextPair **)a1)),
