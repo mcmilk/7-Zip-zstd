@@ -78,7 +78,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8},
 
-  { NULL, kpidComment, VT_BOOL},
+  { NULL, kpidCommented, VT_BOOL},
   // { NULL, kpidMethod, VT_UI1},
   { NULL, kpidHostOS, VT_BSTR}
     
@@ -133,7 +133,7 @@ STDMETHODIMP CGZipHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT
     case kpidPackedSize:
       propVariant = m_Item.PackSize;
       break;
-    case kpidComment:
+    case kpidCommented:
       propVariant = m_Item.CommentIsPresent();
       break;
     case kpidHostOS:
@@ -277,7 +277,7 @@ STDMETHODIMP CGZipHandler::Extract(const UINT32* indices, UINT32 numItems,
         if(!deflateDecoder)
         {
           #ifdef COMPRESS_DEFLATE
-          deflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
+          deflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCOMCoder>;
           #else
           RINOK(deflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
           #endif

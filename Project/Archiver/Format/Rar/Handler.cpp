@@ -62,7 +62,7 @@ STATPROPSTG kProperties[] =
 
   { NULL, kpidEncrypted, VT_BOOL},
   { NULL, kpidSolid, VT_BOOL},
-  { NULL, kpidComment, VT_BOOL},
+  { NULL, kpidCommented, VT_BOOL},
   { NULL, kpidSplitBefore, VT_BOOL},
   { NULL, kpidSplitAfter, VT_BOOL},
   { NULL, kpidCRC, VT_UI4},
@@ -130,7 +130,7 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT 
     case kpidSolid:
       propVariant = item.IsSolid();
       break;
-    case kpidComment:
+    case kpidCommented:
       propVariant = item.IsCommented();
       break;
     case kpidSplitBefore:
@@ -275,7 +275,9 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
   UINT64 currentImportantTotalPacked = 0;
   UINT64 currentUnPackSize, currentPackSize;
 
-  CComPtr<ICompressCoder> decoder;
+  CComPtr<ICompressCoder> decoder15;
+  CComPtr<ICompressCoder> decoder20;
+  CComPtr<ICompressCoder> decoder29;
 
   CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = NULL;
   CComPtr<ICompressCoder> copyCoder;
@@ -291,7 +293,6 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
   int mixerCryptoVersion;
 
   CComPtr<ICompressCoder> rar20CryptoDecoder;
-  
   CComPtr<ICompressCoder> rar29CryptoDecoder;
 
   for(int i = 0; i < importantIndexes.Size(); i++, 
@@ -481,17 +482,30 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* indices, UINT32 numItems,
           continue;
         }
         */
-
-        if(!decoder)
+        CComPtr<ICompressCoder> decoder;
+        if (itemInfo.UnPackVersion < 20)
         {
-          if (itemInfo.UnPackVersion < 29)
+          if(!decoder15)
           {
-            RINOK(decoder.CoCreateInstance(CLSID_CCompressRar20Decoder));
+            RINOK(decoder15.CoCreateInstance(CLSID_CCompressRar15Decoder));
           }
-          else
+          decoder = decoder15;
+        }
+        else if (itemInfo.UnPackVersion < 29)
+        {
+          if(!decoder20)
           {
-            RINOK(decoder.CoCreateInstance(CLSID_CCompressRar29Decoder));
+            RINOK(decoder20.CoCreateInstance(CLSID_CCompressRar20Decoder));
           }
+          decoder = decoder20;
+        }
+        else
+        {
+          if(!decoder29)
+          {
+            RINOK(decoder29.CoCreateInstance(CLSID_CCompressRar29Decoder));
+          }
+          decoder = decoder29;
         }
 
         CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;

@@ -76,7 +76,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidAttributes, VT_UI4},
 
   { NULL, kpidEncrypted, VT_BOOL},
-  // { NULL, kpidComment, VT_BOOL},
+  // { NULL, kpidCommented, VT_BOOL},
     
   { NULL, kpidCRC, VT_UI4},
 
@@ -150,7 +150,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
       propVariant = item.IsEncrypted();
       break;
     /*
-    case kpidComment:
+    case kpidCommented:
       propVariant = item.IsCommented();
       break;
     */

@@ -172,7 +172,7 @@ HRESULT CEncoder::CreateMixerCoder()
       
       #ifdef COMPRESS_DEFLATE
       if (methodFull.MethodInfoEx.MethodID == k_Deflate)
-        encoder = new CComObjectNoLock<NDeflate::NEncoder::CCoder>;
+        encoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder>;
       #endif
       
       #ifdef CRYPTO_7ZAES

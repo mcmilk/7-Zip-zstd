@@ -29,7 +29,7 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidLastAccessTime, IDS_PROPERTY_LAST_ACCESS_TIME, 0x0200020B },
   { kpidLastWriteTime, IDS_PROPERTY_LAST_WRITE_TIME, 0x0200020C },
   { kpidSolid, IDS_PROPERTY_SOLID, 0x0200020D },
-  { kpidComment, IDS_PROPERTY_C0MMENT, 0x0200020E },
+  { kpidCommented, IDS_PROPERTY_C0MMENTED, 0x0200020E },
   { kpidEncrypted, IDS_PROPERTY_ENCRYPTED, 0x0200020F },
   { kpidSplitBefore, IDS_PROPERTY_SPLIT_BEFORE, 0x02000210 },
   { kpidSplitAfter, IDS_PROPERTY_SPLIT_AFTER, 0x02000211 },
@@ -42,6 +42,7 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidFileSystem, IDS_PROPERTY_FILE_SYSTEM, 0x02000218},
   { kpidUser, IDS_PROPERTY_USER, 0x02000219},
   { kpidGroup, IDS_PROPERTY_GROUP, 0x0200021A},
+  { kpidComment, IDS_PROPERTY_C0MMENTED, 0x0200020E },
 
   { kpidTotalSize, IDS_PROPERTY_TOTAL_SIZE, 0x03031100 },
   { kpidFreeSpace, IDS_PROPERTY_FREE_SPACE, 0x03031101 }, 

@@ -13,7 +13,7 @@
 #define IDS_PROPERTY_LAST_ACCESS_TIME   11
 #define IDS_PROPERTY_LAST_WRITE_TIME    12
 #define IDS_PROPERTY_SOLID              13
-#define IDS_PROPERTY_C0MMENT            14
+#define IDS_PROPERTY_C0MMENTED          14
 #define IDS_PROPERTY_ENCRYPTED          15
 #define IDS_PROPERTY_DICTIONARY_SIZE    16
 #define IDS_PROPERTY_SPLIT_BEFORE       17
@@ -26,6 +26,8 @@
 #define IDS_PROPERTY_FILE_SYSTEM        24
 #define IDS_PROPERTY_USER               25
 #define IDS_PROPERTY_GROUP              26
+#define IDS_PROPERTY_BLOCK              27
+#define IDS_PROPERTY_COMMENT            28
 
 // Next default values for new objects
 // 

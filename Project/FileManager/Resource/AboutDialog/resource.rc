@@ -83,7 +83,7 @@ BEGIN
     PUSHBUTTON      "support@7-zip.org",IDC_ABOUT_BUTTON_EMAIL,136,30,94,14
     PUSHBUTTON      "Donate",IDC_ABOUT_BUTTON_REGISTER,136,53,94,14
     ICON            IDI_LOGO,IDC_STATIC,7,7,20,20,SS_REALSIZEIMAGE
-    LTEXT           "7-Zip 2.30 Beta 25",IDC_STATIC,7,54,119,9
+    LTEXT           "7-Zip 2.30 Beta 26",IDC_STATIC,7,54,119,9
     LTEXT           "Copyright (c) 1999-2003 Igor Pavlov",IDC_STATIC,7,67,
                     119,17
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please donate some money to 7-Zip Project.",

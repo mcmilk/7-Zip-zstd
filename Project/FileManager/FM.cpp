@@ -212,12 +212,52 @@ static void GetCommands(const UString &aCommandLine, UString &aCommands)
 }
 */
 
+DWORD GetDllVersion(LPCTSTR lpszDllName)
+{
+  HINSTANCE hinstDll;
+  DWORD dwVersion = 0;
+  hinstDll = LoadLibrary(lpszDllName);
+  if(hinstDll)
+  {
+    DLLGETVERSIONPROC pDllGetVersion;
+    pDllGetVersion = (DLLGETVERSIONPROC) GetProcAddress(hinstDll, "DllGetVersion");
+    
+    /*Because some DLLs might not implement this function, you
+    must test for it explicitly. Depending on the particular 
+    DLL, the lack of a DllGetVersion function can be a useful
+    indicator of the version.
+    */
+    if(pDllGetVersion)
+    {
+      DLLVERSIONINFO dvi;
+      HRESULT hr;
+      
+      ZeroMemory(&dvi, sizeof(dvi));
+      dvi.cbSize = sizeof(dvi);
+      
+      hr = (*pDllGetVersion)(&dvi);
+      
+      if(SUCCEEDED(hr))
+      {
+        dwVersion = MAKELONG(dvi.dwMinorVersion, dvi.dwMajorVersion);
+      }
+    }
+    FreeLibrary(hinstDll);
+  }
+  return dwVersion;
+}
+
+DWORD g_ComCtl32Version;
+
 int WINAPI WinMain(	HINSTANCE hInstance,
 					HINSTANCE hPrevInstance,
 					LPSTR    lpCmdLine,
 					int       nCmdShow)
 {
   InitCommonControls();
+
+  g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
+
   NCOM::CComInitializer comInitializer;
 
   UString programString, commandsString;

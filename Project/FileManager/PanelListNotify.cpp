@@ -146,6 +146,8 @@ LRESULT CPanel::SetItemText(LVITEM &item)
   return 0;
 }
 
+extern DWORD g_ComCtl32Version;
+
 bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 {
   switch(header->code)
@@ -221,7 +223,10 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case NM_CLICK:
     {
       RefreshStatusBar();
-      OnLeftClick((LPNMITEMACTIVATE)header);
+      if(g_ComCtl32Version >= MAKELONG(71, 4))
+      {
+        OnLeftClick((LPNMITEMACTIVATE)header);
+      }
       return false;
     }
     case LVN_BEGINLABELEDIT:

@@ -274,14 +274,15 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidLastAccessTime, NMessageID::kLastAccessTime },
   { kpidLastWriteTime, NMessageID::kLastWriteTime },
   { kpidSolid, NMessageID::kSolid },
-  { kpidComment, NMessageID::kComment },
+  { kpidCommented, NMessageID::kComment },
   { kpidEncrypted, NMessageID::kEncrypted },
   { kpidSplitBefore, NMessageID::kSplitBefore },
   { kpidSplitAfter, NMessageID::kSplitAfter },
   { kpidDictionarySize, NMessageID::kDictionarySize },
   { kpidCRC, NMessageID::kCRC },
   { kpidMethod, NMessageID::kMethod },
-  { kpidHostOS, NMessageID::kHostOS }
+  { kpidHostOS, NMessageID::kHostOS },
+  { kpidComment, NMessageID::kComment }
 };
 
 static const kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);

@@ -31,7 +31,7 @@ HRESULT CAddCommon::Compress(ISequentialInStream *anInStream,
   {
     // RETURN_IF_NOT_S_OK(m_MatchFinder.CoCreateInstance(CLSID_CMatchFinderBT3));
     #ifdef COMPRESS_DEFLATE
-    m_DeflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCoder>;
+    m_DeflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder>;
     #else
     RETURN_IF_NOT_S_OK(m_DeflateEncoder.CoCreateInstance(CLSID_CCompressDeflateEncoder));
     #endif

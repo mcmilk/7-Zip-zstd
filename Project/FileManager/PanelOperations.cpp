@@ -34,6 +34,7 @@ struct CThreadDelete
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
+    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
     Result = FolderOperations->Delete(&Indices.Front(), 
         Indices.Size(), UpdateCallback);
     UpdateCallbackSpec->_progressDialog.MyClose();

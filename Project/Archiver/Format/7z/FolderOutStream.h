@@ -6,10 +6,9 @@
 #define __7Z_FOLDEROUTSTREAM_H
 
 #include "ItemInfo.h"
-#include "Header.h"
 
 #include "Interface/IInOutStreams.h"
-#include "ItemInfoUtils.h"
+#include "../Common/ArchiveInterface.h"
 #include "../Common/OutStreamWithCRC.h"
 
 #include "InEngine.h"

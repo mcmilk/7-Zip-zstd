@@ -37,6 +37,14 @@ DEFINE_GUID(CLSID_CCompressDeflateDecoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00);
 #endif
 
+#ifdef COMPRESS_DEFLATE64
+#include "../../../Compress/LZ/Deflate/Decoder.h"
+#else
+// {23170F69-40C1-278B-0401-090000000000}
+DEFINE_GUID(CLSID_CCompressDeflate64Decoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00);
+#endif
+
 #ifdef COMPRESS_IMPLODE
 #include "../../../Compress/LZ/Implode/Decoder.h"
 #else
@@ -108,7 +116,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidAttributes, VT_UI4},
 
   { NULL, kpidEncrypted, VT_BOOL},
-  { NULL, kpidComment, VT_BOOL},
+  { NULL, kpidCommented, VT_BOOL},
     
   { NULL, kpidCRC, VT_UI4},
 
@@ -198,7 +206,7 @@ STDMETHODIMP CZipHandler::GetProperty(UINT32 index, PROPID aPropID,  PROPVARIANT
     case kpidEncrypted:
       propVariant = item.IsEncrypted();
       break;
-    case kpidComment:
+    case kpidCommented:
       propVariant = item.IsCommented();
       break;
     case kpidCRC:
@@ -303,8 +311,8 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
   UINT64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   UINT64 currentItemUnPacked, currentItemPacked;
   
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = NULL;
   CComPtr<ICompressCoder> deflateDecoder;
+  CComPtr<ICompressCoder> deflate64Decoder;
   CComPtr<ICompressCoder> implodeDecoder;
   CComPtr<ICompressCoder> copyCoder;
   CComPtr<ICompressCoder> cryptoDecoder;
@@ -403,10 +411,9 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
       {
         case NFileHeader::NCompressionMethod::kStored:
           {
-            if(aCopyCoderSpec == NULL)
+            if(!copyCoder)
             {
-              aCopyCoderSpec = new CComObjectNoLock<NCompression::CCopyCoder>;
-              copyCoder = aCopyCoderSpec;
+              copyCoder = new CComObjectNoLock<NCompression::CCopyCoder>;
             }
             try
             {
@@ -510,15 +517,32 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
             break;
           }
         case NFileHeader::NCompressionMethod::kDeflated:
+        case NFileHeader::NCompressionMethod::kDeflated64:
           {
-            if(!deflateDecoder)
+            bool deflate64Mode = itemInfo.CompressionMethod == NFileHeader::NCompressionMethod::kDeflated64;
+            if (deflate64Mode)
             {
-              #ifdef COMPRESS_DEFLATE
-              deflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
-              #else
-              RINOK(deflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
-              #endif
+              if(!deflate64Decoder)
+              {
+                #ifdef COMPRESS_DEFLATE64
+                deflate64Decoder = new CComObjectNoLock<NDeflate::NDecoder::CCOMCoder64>;
+                #else
+                RINOK(deflate64Decoder.CoCreateInstance(CLSID_CCompressDeflate64Decoder));
+                #endif
+              }
             }
+            else
+            {
+              if(!deflateDecoder)
+              {
+                #ifdef COMPRESS_DEFLATE
+                deflateDecoder = new CComObjectNoLock<NDeflate::NDecoder::CCOMCoder>;
+                #else
+                RINOK(deflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
+                #endif
+              }
+            }
+
             try
             {
               HRESULT result;
@@ -530,7 +554,10 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                   mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
                   mixerCoder = mixerCoderSpec;
                   mixerCoderSpec->AddCoder(cryptoDecoder);
-                  mixerCoderSpec->AddCoder(deflateDecoder);
+                  if (deflate64Mode)
+                    mixerCoderSpec->AddCoder(deflate64Decoder);
+                  else
+                    mixerCoderSpec->AddCoder(deflateDecoder);
                   mixerCoderSpec->FinishAddingCoders();
                   mixerCoderMethod = itemInfo.CompressionMethod;
                 }
@@ -542,8 +569,12 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
               }   
               else
               {
-                result = deflateDecoder->Code(anInStream, outStream,
-                    NULL, &currentItemUnPacked, compressProgress);
+                if (deflate64Mode)
+                  result = deflate64Decoder->Code(anInStream, outStream,
+                      NULL, &currentItemUnPacked, compressProgress);
+                else
+                  result = deflateDecoder->Code(anInStream, outStream,
+                      NULL, &currentItemUnPacked, compressProgress);
               }
               if (result == S_FALSE)
                 throw "data error";

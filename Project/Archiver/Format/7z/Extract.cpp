@@ -44,7 +44,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   COM_TRY_BEGIN
   bool testMode = (testModeSpec != 0);
   CComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
-  UINT64 importantTotalUnPacked = 0, importantTotalPacked = 0;
+  UINT64 importantTotalUnPacked = 0;
   UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
   if(numItems == 0)
     return S_OK;
@@ -61,7 +61,15 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     }
     if (extractFolderInfoVector.IsEmpty() || 
         folderIndex != extractFolderInfoVector.Back().FolderIndex)
+    {
       extractFolderInfoVector.Add(CExtractFolderInfo(-1, folderIndex));
+      const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+      // Count full_folder_size
+      UINT64 unPackSize = folderInfo.GetUnPackSize();
+      importantTotalUnPacked += unPackSize;
+      extractFolderInfoVector.Back().UnPackSize = unPackSize;
+    }
+
     CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector.Back();
 
     // const CFolderInfo &folderInfo = m_dam_Folders[folderIndex];
@@ -70,8 +78,9 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
         index <= fileIndex - startIndex; index++)
     {
       UINT64 unPackSize = _database.Files[startIndex + index].UnPackSize;
-      extractFolderInfo.UnPackSize += unPackSize;
-      importantTotalUnPacked += unPackSize;
+      // Count partial_folder_size
+      // extractFolderInfo.UnPackSize += unPackSize;
+      // importantTotalUnPacked += unPackSize;
       extractFolderInfo.ExtractStatuses.Add(index == fileIndex - startIndex);
     }
   }
@@ -91,9 +100,9 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 
     RINOK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
 
-    CComObjectNoLock<CFolderOutStream> *aFolderOutStream = 
+    CComObjectNoLock<CFolderOutStream> *folderOutStream = 
       new CComObjectNoLock<CFolderOutStream>;
-    CComPtr<ISequentialOutStream> outStream(aFolderOutStream);
+    CComPtr<ISequentialOutStream> outStream(folderOutStream);
 
     UINT32 startIndex;
     if (extractFolderInfo.FileIndex >= 0)
@@ -102,7 +111,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       startIndex = _database.FolderStartFileIndex[extractFolderInfo.FolderIndex];
 
 
-    RINOK(aFolderOutStream->Init(&_database, startIndex, 
+    RINOK(folderOutStream->Init(&_database, startIndex, 
         &extractFolderInfo.ExtractStatuses, extractCallback, testMode));
 
     if (extractFolderInfo.FileIndex >= 0)
@@ -164,21 +173,21 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 
       if (result == S_FALSE)
       {
-        RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
         continue;
       }
       if (result == E_NOTIMPL)
       {
-        RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
         continue;
       }
       if (result != S_OK)
         return result;
-      RINOK(aFolderOutStream->WasWritingFinished());
+      RINOK(folderOutStream->WasWritingFinished());
     }
     catch(...)
     {
-      RINOK(aFolderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+      RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
       continue;
     }
   }

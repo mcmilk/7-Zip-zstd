@@ -54,6 +54,8 @@ namespace NArchive
     UINT32 Reserved2;
     UINT16 GetRealCRC() const;
   };
+
+  const kBlockHeadersAreEncrypted = 0x80;
 }
 
 namespace NFile

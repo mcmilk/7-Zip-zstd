@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 25)
+Compression method IDs (2.30 Beta 26)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -44,9 +44,11 @@ List of defined IDs
    01 - Zip
       06 - Imploded
       08 - Deflate
+      09 - Deflate64
    02 - BZip
       02 - BZip2
    03 - Rar
+      01 - Rar15
       02 - Rar20
       03 - Rar29
    04 - Arj

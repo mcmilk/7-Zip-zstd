@@ -20,6 +20,10 @@
 DEFINE_GUID(CLSID_CCompressDeflateDecoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00);
 
+// {23170F69-40C1-278B-0401-090000000000}
+DEFINE_GUID(CLSID_CCompressDeflate64Decoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00);
+
 namespace NDeflate{
 namespace NDecoder{
 
@@ -36,11 +40,7 @@ public:
 typedef NStream::NLSBF::CDecoder<NStream::CInByte> CInBit;
 typedef NCompression::NHuffman::CDecoder<kNumHuffmanBits> CHuffmanDecoder;
 
-class CCoder :
-  public ICompressCoder,
-  public IGetInStreamProcessedSize,
-  public CComObjectRoot,
-  public CComCoClass<CCoder, &CLSID_CCompressDeflateDecoder>
+class CCoder
 {
   NStream::NWindow::COut m_OutWindowStream;
   CInBit m_InBitStream;
@@ -52,7 +52,9 @@ class CCoder :
   bool m_StoredMode;
   UINT32 m_StoredBlockSize;
 
-  void DeCodeLevelTable(BYTE *aNewLevels, int aNumLevels);
+  bool _deflate64Mode;
+
+  void DeCodeLevelTable(BYTE *newLevels, int numLevels);
   void ReadTables();
   
   void CCoder::ReleaseStreams()
@@ -64,7 +66,7 @@ class CCoder :
   {
     CCoder *m_Coder;
   public:
-    CCoderReleaser(CCoder *aCoder): m_Coder(aCoder) {}
+    CCoderReleaser(CCoder *coder): m_Coder(coder) {}
     ~CCoderReleaser()
     {
       m_Coder->m_OutWindowStream.Flush();
@@ -74,32 +76,82 @@ class CCoder :
   friend class CCoderReleaser;
 
 public:
-  CCoder();
+  CCoder(bool deflate64Mode = false);
 
-  BEGIN_COM_MAP(CCoder)
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  HRESULT BaseCode(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  // IGetInStreamProcessedSize
+  HRESULT BaseGetInStreamProcessedSize(UINT64 *aValue);
+};
+
+class CCOMCoder :
+  public ICompressCoder,
+  public IGetInStreamProcessedSize,
+  public CComObjectRoot,
+  public CComCoClass<CCOMCoder, &CLSID_CCompressDeflateDecoder>,
+  public CCoder
+{
+public:
+  BEGIN_COM_MAP(CCOMCoder)
     COM_INTERFACE_ENTRY(ICompressCoder)
     COM_INTERFACE_ENTRY(IGetInStreamProcessedSize)
   END_COM_MAP()
 
-  DECLARE_NOT_AGGREGATABLE(CCoder)
+  DECLARE_NOT_AGGREGATABLE(CCOMCoder)
 
   // DECLARE_NO_REGISTRY()
 
-  DECLARE_REGISTRY(CEncoder, 
+  DECLARE_REGISTRY(CCOMCoder, 
     // TEXT("Compress.DeflateDecoder.1"), TEXT("Compress.DeflateDecoder"), 
     TEXT("SevenZip.1"), TEXT("SevenZip"),
     UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
-
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
   // IGetInStreamProcessedSize
   STDMETHOD(GetInStreamProcessedSize)(UINT64 *aValue);
+
+  CCOMCoder(): CCoder(false) {}
+};
+
+class CCOMCoder64 :
+  public ICompressCoder,
+  public IGetInStreamProcessedSize,
+  public CComObjectRoot,
+  public CComCoClass<CCOMCoder64, &CLSID_CCompressDeflate64Decoder>,
+  public CCoder
+{
+public:
+  BEGIN_COM_MAP(CCOMCoder64)
+    COM_INTERFACE_ENTRY(ICompressCoder)
+    COM_INTERFACE_ENTRY(IGetInStreamProcessedSize)
+  END_COM_MAP()
+
+  DECLARE_NOT_AGGREGATABLE(CCOMCoder64)
+
+  // DECLARE_NO_REGISTRY()
+
+  DECLARE_REGISTRY(CCOMCoder64, 
+    // TEXT("Compress.DeflateDecoder.1"), TEXT("Compress.DeflateDecoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
+
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  // IGetInStreamProcessedSize
+  STDMETHOD(GetInStreamProcessedSize)(UINT64 *aValue);
+
+  CCOMCoder64(): CCoder(true) {}
 };
 
 }}

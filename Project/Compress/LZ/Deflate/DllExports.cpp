@@ -14,8 +14,10 @@ CComModule _Module;
 CNewHandlerSetter g_NewHandlerSetter;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CCompressDeflateEncoder, NDeflate::NEncoder::CCoder)
-  OBJECT_ENTRY(CLSID_CCompressDeflateDecoder, NDeflate::NDecoder::CCoder)
+  OBJECT_ENTRY(CLSID_CCompressDeflateEncoder, NDeflate::NEncoder::CCOMCoder)
+  OBJECT_ENTRY(CLSID_CCompressDeflate64Encoder, NDeflate::NEncoder::CCOMCoder64)
+  OBJECT_ENTRY(CLSID_CCompressDeflateDecoder, NDeflate::NDecoder::CCOMCoder)
+  OBJECT_ENTRY(CLSID_CCompressDeflate64Decoder, NDeflate::NDecoder::CCOMCoder64)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

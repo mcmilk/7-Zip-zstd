@@ -19,6 +19,15 @@ DEFINE_GUID(CLSID_CCompressDeflateEncoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00);
 #endif
 
+#ifdef COMPRESS_DEFLATE64
+#include "../../../Compress/LZ/Deflate/Encoder.h"
+#else
+// {23170F69-40C1-278B-0401-090000000100}
+DEFINE_GUID(CLSID_CCompressDeflate64Encoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00);
+#endif
+
+
 #ifdef CRYPTO_ZIP
 #include "../../../Crypto/Cipher/Zip/ZipCipher.h"
 #else
@@ -141,11 +150,23 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
         if(!_deflateEncoder)
         {
           // RETURN_IF_NOT_S_OK(m_MatchFinder.CoCreateInstance(CLSID_CMatchFinderBT3));
-          #ifdef COMPRESS_DEFLATE
-            _deflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCoder>;
-          #else
-          RETURN_IF_NOT_S_OK(_deflateEncoder.CoCreateInstance(CLSID_CCompressDeflateEncoder));
-          #endif
+          if (method == NFileHeader::NCompressionMethod::kDeflated64)
+          {
+            #ifdef COMPRESS_DEFLATE64
+              _deflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder64>;
+            #else
+            RETURN_IF_NOT_S_OK(_deflateEncoder.CoCreateInstance(CLSID_CCompressDeflate64Encoder));
+            #endif
+          }
+          else
+          {
+            #ifdef COMPRESS_DEFLATE
+              _deflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder>;
+            #else
+            RETURN_IF_NOT_S_OK(_deflateEncoder.CoCreateInstance(CLSID_CCompressDeflateEncoder));
+            #endif
+          }
+
 
           /*
           CComPtr<IInitMatchFinder> anInitMatchFinder;

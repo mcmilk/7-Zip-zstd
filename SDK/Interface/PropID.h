@@ -21,7 +21,7 @@ enum
   kpidLastAccessTime,
   kpidLastWriteTime,
   kpidSolid, 
-  kpidComment, 
+  kpidCommented, 
   kpidEncrypted, 
   kpidSplitBefore, 
   kpidSplitAfter, 
@@ -35,6 +35,7 @@ enum
   kpidUser,
   kpidGroup,
   kpidBlock,
+  kpidComment,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace, 

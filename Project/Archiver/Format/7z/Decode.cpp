@@ -211,7 +211,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
 
         #ifdef COMPRESS_DEFLATE
         if (altCoderInfo.DecompressionMethod == k_Deflate)
-          _decoders.Back() = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
+          _decoders.Back() = new CComObjectNoLock<NDeflate::NDecoder::CCOMCoder>;
         #endif
 
         #ifdef COMPRESS_BZIP2

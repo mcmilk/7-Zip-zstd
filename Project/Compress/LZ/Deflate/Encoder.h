@@ -17,6 +17,10 @@
 DEFINE_GUID(CLSID_CCompressDeflateEncoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00);
 
+// {23170F69-40C1-278B-0401-090000000100}
+DEFINE_GUID(CLSID_CCompressDeflate64Encoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00);
+
 namespace NDeflate {
 namespace NEncoder {
 
@@ -37,9 +41,9 @@ public:
   UINT16 *MatchDistances;
   UINT16 LongestMatchLength;    
   UINT16 LongestMatchDistance;
-  void Init(UINT16 *aMatchDistances)
+  void Init(UINT16 *matchDistances)
   {
-    MatchDistances = aMatchDistances;
+    MatchDistances = matchDistances;
   };
 };
 
@@ -52,12 +56,7 @@ struct COptimal
 
 const kNumOpts = 0x1000;
 
-class CCoder :
-  public ICompressCoder,
-  // public IInitMatchFinder,
-  public ICompressSetEncoderProperties2,
-  public CComObjectRoot,
-  public CComCoClass<CCoder, &CLSID_CCompressDeflateEncoder>
+class CCoder
 {
   UINT32 m_FinderPos;
   
@@ -73,7 +72,7 @@ class CCoder :
   NCompression::NHuffman::CEncoder m_DistCoder;
   NCompression::NHuffman::CEncoder m_LevelCoder;
 
-  BYTE m_LastLevels[kMaxTableSize];
+  BYTE m_LastLevels[kMaxTableSize64];
 
   UINT32 m_ValueIndex;
   CCodeValue *m_Values;
@@ -91,8 +90,8 @@ class CCoder :
 
   BYTE  m_LiteralPrices[256];
   
-  BYTE  m_LenPrices[kNumLenCombinations];
-  BYTE  m_PosPrices[kDistTableSize];
+  BYTE  m_LenPrices[kNumLenCombinations32];
+  BYTE  m_PosPrices[kDistTableSize64];
 
   UINT32 m_CurrentBlockUncompressedSize;
 
@@ -104,21 +103,27 @@ class CCoder :
 
   bool m_Created;
 
+  bool _deflate64Mode;
+  UINT32 m_NumLenCombinations;
+  UINT32 m_MatchMaxLen;
+  const BYTE *m_LenStart;
+  const BYTE *m_LenDirectBits;
+
   HRESULT Create();
   void Free();
 
   void GetBacks(UINT32 aPos);
 
   void ReadGoodBacks();
-  void MovePos(UINT32 aNum);
-  UINT32 Backward(UINT32 &aBackRes, UINT32 aCur);
-  UINT32 GetOptimal(UINT32 &aBackRes);
+  void MovePos(UINT32 num);
+  UINT32 Backward(UINT32 &backRes, UINT32 cur);
+  UINT32 GetOptimal(UINT32 &backRes);
 
   void InitStructures();
-  void CodeLevelTable(BYTE *aNewLevels, int aNumLevels, bool aCodeMode);
-  int WriteTables(bool aWriteMode, bool anFinalBlock);
-  void CopyBackBlockOp(UINT32 aDistance, UINT32 aLength);
-  void WriteBlockData(bool aWriteMode, bool anFinalBlock);
+  void CodeLevelTable(BYTE *newLevels, int numLevels, bool codeMode);
+  int WriteTables(bool writeMode, bool finalBlock);
+  void CopyBackBlockOp(UINT32 distance, UINT32 length);
+  void WriteBlockData(bool writeMode, bool finalBlock);
 
   void CCoder::ReleaseStreams()
   {
@@ -138,38 +143,80 @@ class CCoder :
   friend class CCoderReleaser;
 
 public:
-  CCoder();
+  CCoder(bool deflate64Mode = false);
   ~CCoder();
 
-  BEGIN_COM_MAP(CCoder)
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  HRESULT BaseCode(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  // ICompressSetEncoderProperties2
+  HRESULT BaseSetEncoderProperties2(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
+};
+
+///////////////////////////////////////////////////////////////
+
+class CCOMCoder :
+  public ICompressCoder,
+  // public IInitMatchFinder,
+  public ICompressSetEncoderProperties2,
+  public CComObjectRoot,
+  public CComCoClass<CCoder, &CLSID_CCompressDeflateEncoder>,
+  public CCoder
+{
+public:
+  CCOMCoder(): CCoder(false) {};
+  BEGIN_COM_MAP(CCOMCoder)
     COM_INTERFACE_ENTRY(ICompressCoder)
-    // COM_INTERFACE_ENTRY(IInitMatchFinder)
     COM_INTERFACE_ENTRY(ICompressSetEncoderProperties2)
   END_COM_MAP()
-
-  DECLARE_NOT_AGGREGATABLE(CCoder)
-
+  DECLARE_NOT_AGGREGATABLE(CCOMCoder)
   // DECLARE_NO_REGISTRY()
-  DECLARE_REGISTRY(CEncoder, 
+  DECLARE_REGISTRY(CCOMCoder, 
     // TEXT("Compress.DeflateEncoder.1"), TEXT("Compress.DeflateEncoder"), 
     TEXT("SevenZip.1"), TEXT("SevenZip"),
     UINT(0), THREADFLAGS_APARTMENT)
-
-  HRESULT CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
-
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
-
-  // IInitMatchFinder interface
-  // STDMETHOD(InitMatchFinder)(IInWindowStreamMatch *aMatchFinder);
-
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
   // ICompressSetEncoderProperties2
-  STDMETHOD(SetEncoderProperties2)(const PROPID *aPropIDs, 
-      const PROPVARIANT *aProperties, UINT32 aNumProperties);
+  STDMETHOD(SetEncoderProperties2)(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
 };
+
+class CCOMCoder64 :
+  public ICompressCoder,
+  // public IInitMatchFinder,
+  public ICompressSetEncoderProperties2,
+  public CComObjectRoot,
+  public CComCoClass<CCOMCoder64, &CLSID_CCompressDeflate64Encoder>,
+  public CCoder
+{
+public:
+  CCOMCoder64(): CCoder(true) {};
+  BEGIN_COM_MAP(CCOMCoder64)
+    COM_INTERFACE_ENTRY(ICompressCoder)
+    COM_INTERFACE_ENTRY(ICompressSetEncoderProperties2)
+  END_COM_MAP()
+  DECLARE_NOT_AGGREGATABLE(CCOMCoder64)
+  // DECLARE_NO_REGISTRY()
+  DECLARE_REGISTRY(CCOMCoder64, 
+    // TEXT("Compress.DeflateEncoder.1"), TEXT("Compress.DeflateEncoder"), 
+    TEXT("SevenZip.1"), TEXT("SevenZip"),
+    UINT(0), THREADFLAGS_APARTMENT)
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+  // ICompressSetEncoderProperties2
+  STDMETHOD(SetEncoderProperties2)(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
+};
+
 
 }}
 

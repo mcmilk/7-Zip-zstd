@@ -172,7 +172,7 @@ static const UINT32 kMatchFastLenMX  = 64;
 STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties)
 {
   InitMethodProperties();
-  bool aM0 = false;
+  BYTE mainMethod = NFileHeader::NCompressionMethod::kDeflated;
   for (int i = 0; i < aNumProperties; i++)
   {
     UString aString = UString(aNames[i]);
@@ -182,14 +182,49 @@ STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *a
     {
       m_Method.NumPasses = kNumPassesMX;
       m_Method.NumFastBytes = kMatchFastLenMX;
-      aM0 = false;
+      if (mainMethod == NFileHeader::NCompressionMethod::kStored)
+        mainMethod = NFileHeader::NCompressionMethod::kDeflated;
     }
     else if (aString == L"0")
-      aM0 = true;
+    {
+      mainMethod = NFileHeader::NCompressionMethod::kStored;
+    }
     else if (aString == L"1")
     {
-      aM0 = false;
       InitMethodProperties();
+      if (mainMethod == NFileHeader::NCompressionMethod::kStored)
+        mainMethod = NFileHeader::NCompressionMethod::kDeflated;
+    }
+    else if (aString == L"M")
+    {
+      if (aValue.vt == VT_BSTR)
+      {
+        UString valueString = aValue.bstrVal;
+        valueString.MakeUpper();
+        if (valueString == L"COPY")
+          mainMethod = NFileHeader::NCompressionMethod::kStored;
+        else if (valueString == L"DEFLATE")
+          mainMethod = NFileHeader::NCompressionMethod::kDeflated;
+        else if (valueString == L"DEFLATE64")
+          mainMethod = NFileHeader::NCompressionMethod::kDeflated64;
+        else 
+          return E_INVALIDARG;
+      }
+      else if (aValue.vt == VT_UI4)
+      {
+        switch(aValue.ulVal)
+        {
+          case NFileHeader::NCompressionMethod::kStored:
+          case NFileHeader::NCompressionMethod::kDeflated:
+          case NFileHeader::NCompressionMethod::kDeflated64:
+            mainMethod = aValue.ulVal;
+            break;
+          default:
+            return E_INVALIDARG;
+        }
+      }
+      else
+        return E_INVALIDARG;
     }
     else if (aString == L"PASS")
     {
@@ -211,8 +246,8 @@ STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *a
       return E_INVALIDARG;
   }
   m_Method.MethodSequence.Clear();
-  if (!aM0)
-    m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kDeflated);
+  if (mainMethod != NFileHeader::NCompressionMethod::kStored)
+    m_Method.MethodSequence.Add(mainMethod);
   m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
   return S_OK;
 }  

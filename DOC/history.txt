@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 26        2003-01-12
+  --------------------------------------
+      SDK/Interface/PropID.h:
+        kpidComment now is kpidCommented
+
+
   Version 2.30 Beta 25        2003-01-02
   --------------------------------------
       Main archive interfaces were changed.

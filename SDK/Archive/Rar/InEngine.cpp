@@ -326,6 +326,9 @@ void CInArchive::AddToSeekValue(UINT64 anAddValue)
 
 bool CInArchive::GetNextItem(CItemInfoEx &anItemInfo)
 {
+  if ((m_ArchiveHeader.Flags & 
+      NHeader::NArchive::kBlockHeadersAreEncrypted) != 0)
+    return false;
   if (m_SeekOnArchiveComment)
     SkipArchiveComment();
   while (true)

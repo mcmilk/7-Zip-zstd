@@ -353,6 +353,7 @@ struct CThreadExtractInArchive
   DWORD Extract()
   {
     NCOM::CComInitializer comInitializer;
+    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
     Result = FolderOperations->CopyTo(
         &Indices.Front(), Indices.Size(), 
         DestPath, ExtractCallback);
