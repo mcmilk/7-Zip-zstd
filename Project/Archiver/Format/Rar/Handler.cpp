@@ -440,6 +440,12 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         
         if (anItemInfo.IsEncrypted())
         {
+          if (anItemInfo.UnPackVersion >= 29)
+          {
+            anOutStream.Release();
+            RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod));
+            continue;
+          }
           if (!aMixerCoder || !aMixerCoderStoreMethod)
           {
             aMixerCoder.Release();
@@ -471,16 +477,25 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
       case '4':
       case '5':
       {
+        /*
         if (anItemInfo.UnPackVersion >= 29)
         {
           anOutStream.Release();
           RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod));
           continue;
         }
+        */
 
         if(!aDecoder)
         {
-          RETURN_IF_NOT_S_OK(aDecoder.CoCreateInstance(CLSID_CCompressRar20Decoder));
+          if (anItemInfo.UnPackVersion < 29)
+          {
+            RETURN_IF_NOT_S_OK(aDecoder.CoCreateInstance(CLSID_CCompressRar20Decoder));
+          }
+          else
+          {
+            RETURN_IF_NOT_S_OK(aDecoder.CoCreateInstance(CLSID_CCompressRar29Decoder));
+          }
         }
 
         CComPtr<ICompressSetDecoderProperties> aCompressSetDecoderProperties;
@@ -496,6 +511,12 @@ STDMETHODIMP CRarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         HRESULT aResult;
         if (anItemInfo.IsEncrypted())
         {
+          if (anItemInfo.UnPackVersion >= 29)
+          {
+            anOutStream.Release();
+            RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod));
+            continue;
+          }
           if (!aMixerCoder || aMixerCoderStoreMethod)
           {
             aMixerCoder.Release();

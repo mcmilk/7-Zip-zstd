@@ -124,7 +124,7 @@ STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Info"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "7-Zip 2.30 Beta 18",IDC_STATIC,7,7,97,9
+    LTEXT           "7-Zip 2.30 Beta 19",IDC_STATIC,7,7,97,9
     LTEXT           "Copyright (c) 1999-2002 Igor Pavlov",IDC_STATIC,7,20,97,
                     17
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please donate some money to 7-Zip Project.",
@@ -196,8 +196,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,18,0
- PRODUCTVERSION 2,30,18,0
+ FILEVERSION 2,30,19,0
+ PRODUCTVERSION 2,30,19,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -215,14 +215,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Configuration\0"
-            VALUE "FileVersion", "2, 30, 18, 0\0"
+            VALUE "FileVersion", "2, 30, 19, 0\0"
             VALUE "InternalName", "7-ZipCfg\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-ZipCfg.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 18, 0\0"
+            VALUE "ProductVersion", "2, 30, 19, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 19        2002-04-11
+  --------------------------------------
+    - SDK/Archive/Rar/Handler.cpp
+        supporting RAR29
+
   Version 2.30 Beta 18        2002-03-25
   --------------------------------------
     - SDK/Archive/Cab/MSZipDecoder.cpp
