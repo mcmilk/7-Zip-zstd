@@ -119,6 +119,13 @@ static const EMethodID g_7zMethods[] =
   kDeflate
 };
 
+static const EMethodID g_7zSfxMethods[] = 
+{
+  kCopy,
+  kLZMA,
+  kPPMd
+};
+
 static EMethodID g_ZipMethods[] = 
 {
   kDeflate,
@@ -188,6 +195,14 @@ static const CFormatInfo g_Formats[] =
     0, 0,
     false, false, false, false, false
   }
+};
+
+static bool IsMethodSupportedBySfx(int methodID)
+{
+  for (int i = 0; i < MY_SIZE_OF_ARRAY(g_7zSfxMethods); i++)
+    if (methodID == g_7zSfxMethods[i])
+      return true;
+  return false;
 };
 
 class CDoubleZeroStringList
@@ -339,16 +354,8 @@ void CCompressDialog::CheckSFXControlsEnable()
   bool enable = fi.SFX;
   if (enable)
   {
-    switch(GetMethodID())
-    {
-      case -1:
-      case kLZMA:
-      case kPPMd:
-      case kCopy:
-        break;
-      default:
-        enable = false;
-    }
+    int methodID = GetMethodID();
+    enable = (methodID == -1 || IsMethodSupportedBySfx(methodID));
   }
   if (!enable)
     CheckButton(IDC_COMPRESS_SFX, false);
@@ -384,6 +391,8 @@ bool CCompressDialog::IsSFX()
 
 void CCompressDialog::OnButtonSFX()
 {
+  SetMethod();
+
   UString fileName;
   m_ArchivePath.GetText(fileName);
   int dotPos = fileName.ReverseFind(L'.');
@@ -820,9 +829,14 @@ void CCompressDialog::SetMethod()
     const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
     defaultMethod = GetUnicodeString(fo.Method); 
   }
+  bool isSfx = IsSFX();
   for(int m = 0; m < fi.NumMethods; m++)
   {
-    const LPCWSTR method = kMethodsNames[fi.MathodIDs[m]];
+    EMethodID methodID = fi.MathodIDs[m];
+    if (isSfx)
+      if (!IsMethodSupportedBySfx(methodID))
+        continue;
+    const LPCWSTR method = kMethodsNames[methodID];
     int itemIndex = m_Method.AddString(GetSystemString(method));
     if (defaultMethod.CompareNoCase(method) == 0 || m == 0)
       m_Method.SetCurSel(itemIndex);

@@ -1,5 +1,5 @@
-7-Zip 4.07 Sources
-------------------
+7-Zip 4.08 beta Sources
+-----------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
 

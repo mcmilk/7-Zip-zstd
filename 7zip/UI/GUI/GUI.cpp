@@ -99,12 +99,14 @@ int Main2()
           options.WildcardCensor.Pairs.Front().Head, 
           eo, options.ShowDialog, &openCallback, ecs);
     if (result == S_FALSE)
-      MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
-    else if (result != S_OK)
-      ShowErrorMessage(0, result);
-    else 
     {
+      MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
+      return NExitCode::kFatalError;    
     }
+    else if (result != S_OK)
+      throw CSystemException(result);
+    if (ecs->Messages.Size() > 0)
+      return NExitCode::kFatalError;    
   }
   else if (options.Command.IsFromUpdateGroup())
   {
@@ -136,9 +138,10 @@ int Main2()
     {
       if (!errorInfo.Message.IsEmpty())
         ErrorMessage(errorInfo.Message);
-      else
-        ShowErrorMessage(0, result);
+      throw CSystemException(result);
     }
+    if (callback.FailedFiles.Size() > 0)
+      return NExitCode::kWarning;    
   }
   else
   {
@@ -188,7 +191,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     }
     if (systemError.ErrorCode == E_ABORT)
     {
-      MyMessageBox(kUserBreak);
+      // MyMessageBox(kUserBreak);
       return (NExitCode::kUserBreak);
     }
     UString message;
