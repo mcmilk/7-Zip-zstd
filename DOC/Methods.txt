@@ -1,0 +1,48 @@
+Compression method IDs (2.30 Beta 5)
+------------------------------------
+
+Each compression method in 7z has unique binary value (ID).
+The length of ID in bytes is arbitrary but it can not exceed 15 bytes.
+
+List of defined IDs
+-------------------
+      
+00 - Copy
+01 - Reserved
+02 - Common
+   03 Swap
+      - 2 Swap2
+      - 4 Swap4
+
+03 - 7z
+   01 - LZMA
+      01 - Version
+  
+   03 - Branch
+      01 - x86
+      02 - PPC
+      03 - Alpha
+      04 - IA64
+      05 - ARM
+      06 - M68
+      SubID Masks (can be combined):
+         - 01 - Call
+         - 02 - Jump
+         - 04 - Big Endian
+
+   04 PPMD
+      01 - Version
+
+04 - Misc
+   00 - Reserved
+   01 - PK
+      06 Imploded
+      08 Deflate
+   02 - BZip
+      02 BZip2
+   03 - Rar
+      02 Rar20
+
+
+---
+End of document

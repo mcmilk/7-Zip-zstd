@@ -1,0 +1,441 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_COLUMNS DIALOG DISCARDABLE  0, 0, 259, 197
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Columns"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Check the columns that you would like visible in this view.  Use the Move Up and Move Down buttons to reorder the columns however you like.",
+                    IDC_STATIC,7,7,245,19
+    CONTROL         "List1",IDC_COLUMNS_LISTVIEW,"SysListView32",LVS_REPORT | 
+                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
+                    WS_TABSTOP,7,36,183,85
+    PUSHBUTTON      "Move &Up",IDC_COLUMNS_BUTTON_MOVE_UP,202,36,50,14
+    PUSHBUTTON      "Move &Down",IDC_COLUMNS_BUTTON_MOVE_DOWN,202,56,50,14
+    PUSHBUTTON      "&Show",IDC_COLUMNS_BUTTON_SHOW,202,76,50,14
+    PUSHBUTTON      "&Hide",IDC_COLUMNS_BUTTON_HIDE,202,96,50,14
+    LTEXT           "The selected column should be",IDC_STATIC,7,140,100,8
+    EDITTEXT        IDC_COLUMN_EDIT_WIDTH,113,138,36,14,ES_AUTOHSCROLL
+    LTEXT           "pixels &wide.",IDC_STATIC,156,141,37,8
+    PUSHBUTTON      "Set",IDC_COLUMNS_BUTTON_SET_WIDTH,202,138,50,14
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,164,245,1
+    DEFPUSHBUTTON   "OK",IDOK,82,176,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,142,176,50,14
+    PUSHBUTTON      "Help",IDHELP,202,176,50,14
+END
+
+IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 228, 198
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Extract"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "E&xtract to:",IDC_STATIC,7,7,33,8
+    COMBOBOX        IDC_EXTRACT_COMBO_PATH,7,21,184,126,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "...",IDC_EXTRACT_BUTTON_SET_PATH,203,20,18,14,WS_GROUP
+    GROUPBOX        "Path mode",IDC_EXTRACT_PATH_MODE,7,44,90,57
+    CONTROL         "Full pathnames",IDC_EXTRACT_RADIO_FULL_PATHNAMES,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,13,57,63,10
+    CONTROL         "Current pathnames",IDC_EXTRACT_RADIO_CURRENT_PATHNAMES,
+                    "Button",BS_AUTORADIOBUTTON,13,71,75,10
+    CONTROL         "No pathnames",IDC_EXTRACT_RADIO_NO_PATHNAMES,"Button",
+                    BS_AUTORADIOBUTTON,13,85,62,10
+    GROUPBOX        "Overwrite mode",IDC_EXTRACT_OVERWRITE_MODE,118,44,102,
+                    57,WS_GROUP
+    CONTROL         "Ask before overwrite",
+                    IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,124,57,81,10
+    CONTROL         "Overwrite without prompt",
+                    IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,"Button",
+                    BS_AUTORADIOBUTTON,124,71,94,10
+    CONTROL         "Skip existing files",
+                    IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,"Button",
+                    BS_AUTORADIOBUTTON,124,85,69,10
+    GROUPBOX        "Files",IDC_EXTRACT_FILES,7,113,90,48,WS_GROUP
+    CONTROL         "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES,
+                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,13,125,58,10
+    CONTROL         "&All files",IDC_EXTRACT_RADIO_ALL_FILES,"Button",
+                    BS_AUTORADIOBUTTON,13,139,37,10
+    EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,128,125,84,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,51,177,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,111,177,50,14
+    PUSHBUTTON      "Help",IDHELP,171,177,50,14
+    GROUPBOX        "Password",IDC_STATIC,120,113,101,48
+END
+
+IDD_DIALOG_OVERWRITE DIALOG DISCARDABLE  0, 0, 303, 175
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Confirm File Replace"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Destination folder already contains processed file.",
+                    IDC_STATIC,6,7,156,8
+    LTEXT           "Would you like to replace the existing file",IDC_STATIC,
+                    7,28,129,8
+    ICON            "",IDC_STATIC_OVERWRITE_OLD_FILE_ICON,7,44,20,20
+    CONTROL         "",IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,"Static",
+                    SS_LEFTNOWORDWRAP | WS_GROUP,39,44,257,32
+    LTEXT           "with this one?",IDC_STATIC,7,83,44,8
+    ICON            "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,7,103,20,20
+    LTEXT           "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,39,103,257,32
+    PUSHBUTTON      "&Yes",IDYES,7,154,50,14
+    PUSHBUTTON      "Yes to &All",IDC_BUTTON_OVERWRITE_YES_TO_ALL,66,154,50,
+                    14
+    PUSHBUTTON      "&No",IDNO,125,154,50,14
+    PUSHBUTTON      "No to A&ll",IDC_BUTTON_OVERWRITE_NO_TO_ALL,184,154,50,
+                    14
+    PUSHBUTTON      "&Cancel",IDCANCEL,243,154,50,14
+END
+
+IDD_DIALOG_MESSAGES DIALOG DISCARDABLE  0, 0, 266, 135
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "7-Zip: Diagnostic messages"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Close",IDOK,108,114,50,14
+    CONTROL         "List1",IDC_MESSAGE_LIST,"SysListView32",LVS_REPORT | 
+                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
+                    WS_TABSTOP,7,7,252,101
+END
+
+IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 225, 149
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Add to archive"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Archive:",IDC_STATIC,7,7,27,8
+    COMBOBOX        IDC_COMPRESS_COMBO_ARCHIVE,7,21,184,126,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "...",IDC_COMPRESS_BUTTON_SET_ARCHIVE,200,21,18,14,
+                    WS_GROUP
+    LTEXT           "&Archive format:",IDC_STATIC,7,41,48,8
+    COMBOBOX        IDC_COMPRESS_COMBO_FORMAT,7,54,81,80,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&Compression method:",IDC_STATIC,7,75,68,8
+    COMBOBOX        IDC_COMPRESS_COMBO_METHOD,7,88,81,80,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&Update mode:",IDC_STATIC,113,41,46,8
+    COMBOBOX        IDC_COMPRESS_COMBO_UPDATE_MODE,113,54,105,80,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Options",IDC_STATIC,113,75,105,29
+    CONTROL         "Create SFX archive",IDC_COMPRESS_SFX,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,121,88,77,10
+    DEFPUSHBUTTON   "OK",IDOK,48,128,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,108,128,50,14
+    PUSHBUTTON      "Help",IDHELP,168,128,50,14
+END
+
+IDD_DIALOG_PASSWORD DIALOG DISCARDABLE  0, 0, 186, 77
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Enter password"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Enter password:",IDC_STATIC,7,7,172,8
+    EDITTEXT        IDC_EDIT_PASSWORD,7,26,172,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,67,56,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,56,50,14
+END
+
+IDD_DIALOG_PROGRESS DIALOG DISCARDABLE  0, 0, 186, 55
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Progress"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Stop",IDCANCEL,69,34,50,14
+    CONTROL         "Progress1",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | 
+                    WS_BORDER,7,7,172,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DIALOG_COLUMNS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 252
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 190
+        HORZGUIDE, 36
+    END
+
+    IDD_DIALOG_EXTRACT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 221
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 191
+    END
+
+    IDD_DIALOG_OVERWRITE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 296
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 168
+    END
+
+    IDD_DIALOG_MESSAGES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 259
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 128
+    END
+
+    IDD_DIALOG_COMPRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 218
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 142
+    END
+
+    IDD_DIALOG_PASSWORD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 70
+    END
+
+    IDD_DIALOG_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,30,5,0
+ PRODUCTVERSION 2,30,5,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Igor Pavlov\0"
+            VALUE "FileDescription", "7-Zip Shell Extension\0"
+            VALUE "FileVersion", "2, 30, 5, 0\0"
+            VALUE "InternalName", "7-zip\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2001 Igor Pavlov\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "7-zip.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "7-Zip\0"
+            VALUE "ProductVersion", "2, 30, 5, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_EXTRACT             BITMAP  DISCARDABLE     "Extract.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CONTEXT_EXTRACT     "Extract files..."
+    IDS_CONTEXT_EXTRACT_HELP "Extract files. Additional options are allowed."
+    IDS_CONTEXT_COMPRESS    "Add to archive..."
+    IDS_CONTEXT_COMPRESS_HELP 
+                            "Add to archive...  Additional options are allowed."
+    IDS_CONTEXT_POPUP_CAPTION "7-Zip"
+    IDS_CONTEXT_OPEN        "Open"
+    IDS_CONTEXT_OPEN_HELP   "Open Archive"
+    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
+    IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
+    IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
+    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC 
+                            "CRC failed in '%s'. File is broken."
+    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 
+                            "Data error in '%s'. File is broken."
+    IDS_FILE_SIZE_TIME      "%s\n%s\nmodified on %s, %s"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_FILE_SIZE           "%s bytes"
+    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD 
+                            "Unsupported compression method for '%s'."
+    IDS_TOOLBAR_EXTRACT     "Extract"
+    IDS_QUERY_UPDATE_INTERFACE_FAIL 
+                            "Update operations are not supported for this archive."
+    IDS_CONFIRM_FILE_DELETE "Are you sure you want to delete '%s'?"
+    IDS_CONFIRM_FOLDER_DELETE 
+                            "Are you sure you want to delete folder  '%s' and all its contents?"
+    IDS_CONFIRM_ITEMS_DELETE "Are you sure you want to delete these %s items?"
+    IDS_CONFIRM_FILE_DELETE_CAPTION "Confirm File Delete"
+    IDS_CONFIRM_FOLDER_DELETE_CAPTION "Confirm Folder Delete"
+    IDS_CONFIRM_ITEMS_DELETE_CAPTION "Confirm Multiple File Delete"
+    IDS_N_SELECTED_ITEMS    "%s object(s) selected"
+    IDS_N_OBJECTS           "%s object(s)"
+    IDS_COLUMN_TITLE        "Title"
+    IDS_COLUMN_WIDTH        "Width"
+    IDS_METHOD_STORE        "Store"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_METHOD_NORMAL       "Normal"
+    IDS_METHOD_MAXIMUM      "Maximum"
+    IDS_OPEN_TYPE_ALL_FILES "All Files"
+    IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE "Browse"
+    IDS_COMPRESS_UPDATE_MODE_ADD "Add and replace files"
+    IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
+    IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
+    IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
+    IDS_CANT_UPDATE_ARCHIVE "Can not update archive %s"
+    IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
+    IDS_PROPERTY_NAME       "Name"
+    IDS_PROPERTY_SIZE       "Size"
+    IDS_PROPERTY_PACKED_SIZE "Packed Size"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROPERTY_ATTRIBUTES "Attributes"
+    IDS_PROPERTY_CREATION_TIME "Creation Time"
+    IDS_PROPERTY_LAST_ACCESS_TIME "Last Access Time"
+    IDS_PROPERTY_LAST_WRITE_TIME "Last Write Time"
+    IDS_PROPERTY_SOLID      "Solid"
+    IDS_PROPERTY_C0MMENT    "Comment"
+    IDS_PROPERTY_ENCRYPTED  "Encrypted"
+    IDS_PROPERTY_DICTIONARY_SIZE "Dictionary Size"
+    IDS_PROPERTY_SPLIT_BEFORE "Split Before"
+    IDS_PROPERTY_SPLIT_AFTER "Split After"
+    IDS_PROPERTY_CRC        "CRC"
+    IDS_PROPERTY_FILE_TYPE  "Type"
+    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE 
+                            "Can not open output file '%s'."
+    IDS_LISTVIEW_COLUMNS_CONTEXT_MENU "&Columns..."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_LISTVIEW_CONTEXT_MENU_OPEN "&Open"
+    IDS_LISTVIEW_CONTEXT_MENU_EXTRACT "&Extract..."
+    IDS_CONTEXT_CAPTION_HELP "7-Zip commands"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

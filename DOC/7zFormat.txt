@@ -1,0 +1,324 @@
+7z Format description (2.30 Beta 5)
+-----------------------------------
+
+This file contain descrition of 7z archive format. 
+7z archive can contain files compressed with any method.
+See "Methods.txt" for description for defined compressing methods.
+
+
+Notes about Notation and encoding
+---------------------------------
+
+7z uses little endian encoding.
+
+7z archive format has optional headers that are marked as
+[]
+Header
+[]
+
+REAL_UINT64 means real UINT64.
+
+UINT64 means real UINT64 encoded with the following scheme:
+
+  Size of encoding sequence depends from first byte:
+  First_Byte  Extra_Bytes        Value
+  (binary)   
+  0xxxxxxx               : ( xxxxxxx           )
+  10xxxxxx    BYTE y[1]  : (  xxxxxx << (8 * 1)) + y
+  110xxxxx    BYTE y[2]  : (   xxxxx << (8 * 2)) + y
+  ...
+  1111110x    BYTE y[6]  : (       x << (8 * 6)) + y
+  11111110    BYTE y[7]  :                         y
+  11111111    BYTE y[8]  :                         y
+
+
+
+7z format headers
+-----------------
+
+StartHeader
+~~~~~~~~~~~
+  BYTE kSignature[6] = {'7', 'Z', 0xBC, 0xAF, 0x27, 0x1C};
+
+  ArchiveVersion
+  {
+    BYTE Major;
+    BYTE Minor;
+  };
+
+  UINT32 StartHeaderCRC;
+
+  StartHeader
+  {
+    REAL_UINT64 NextHeaderOffset
+    REAL_UINT64 NextHeaderSize
+    UINT32 NextHeaderCRC
+  }
+
+
+...........................
+
+
+ArchiveProperties
+~~~~~~~~~~~~~~~~~
+BYTE NID::kArchiveProperties
+while(true)
+{
+  BYTE PropertyType;
+  if (aType == 0)
+    break;
+  UINT64 PropertySize;
+  BYTE PropertyData[PropertySize];
+}
+
+Digests (aNumStreams)
+~~~~~~~~~~~~~~~~~~~~~
+  BYTE anAllAreDefined
+  if (anAllAreDefined == 0)
+  {
+    for(aNumStreams)
+      BIT Defined
+  }
+  UINT32 aCRCs[NumDefined]
+
+
+PackInfo
+~~~~~~~~~~~~
+  BYTE NID::kPackInfo
+  UINT64 aPackPos
+  UINT64 aNumPackStreams
+
+  []
+  BYTE NID::kSize
+  UINT64 aPackSizes[aNumPackStreams]
+  []
+
+  []
+  BYTE NID::kCRC
+  PackStreamDigests[aNumPackStreams]
+  []
+
+  BYTE NID::kEnd
+
+
+Folder
+~~~~~~
+  UINT64 NumCoders;
+  for (NumCoders)
+  {
+    BYTE 
+    {
+      0:3 DecompressionMethod.IDSize
+      4:
+        0 - IsSimple
+        1 - Is not simple
+      5:
+        0 - No Attributes
+        1 - There Are Attributes
+    } 
+    BYTE DecompressionMethod.ID[DecompressionMethod.IDSize]
+    if (!IsSimple)
+    {
+      UINT64 NumInStreams;
+      UINT64 NumOutStreams;
+    }
+    if (DecompressionMethod[0] != 0)
+    {
+      UINT64 PropertiesSize
+      BYTE Properties[PropertiesSize]
+    }
+  }
+    
+  NumBindPairs = NumOutStreamsTotal - 1;
+
+  for (NumBindPairs)
+  {
+    UINT64 InIndex;
+    UINT64 OutIndex;
+  }
+
+  NumPackedStreams = aNumInStreamsTotal - aNumBindPairs;
+  if (NumPackedStreams > 1)
+    for(NumPackedStreams)
+    {
+      UINT64 Index;
+    };
+
+
+
+
+Coders Info
+~~~~~~~~~~~
+
+  BYTE NID::kUnPackInfo
+
+
+  BYTE NID::kFolder
+  UINT64 aNumFolders
+  switch(BYTE anExternal)
+  case 0:
+  {
+    Folders[aNumFolders]
+  }
+  case 1:
+  {
+    UINT64 DataStreamIndex
+  }
+
+
+  BYTE ID::kCodersUnPackSize
+  for(Folders)
+    for(Folder.NumOutStreams)
+     UINT64 UnPackSize;
+
+
+  []
+  BYTE NID::kCRC
+  UnPackDigests[aNumFolders]
+  []
+
+  
+
+  BYTE NID::kEnd
+
+
+
+SubStreams Info
+~~~~~~~~~~~~~~
+
+
+  []
+  BYTE NID::kNumUnPackStream;
+  UINT64 aNumUnPackStreamsInFolders[aNumFolders];
+  []
+
+
+  []
+  BYTE NID::kSize
+  UINT64 anUnPackSizes[]
+  []
+
+
+  []
+  BYTE NID::kCRC
+  Digests[Number of SubStreams that have no Folder.UnPackDigest]
+  []
+
+  
+  BYTE NID::kEnd
+
+
+Streams Info
+~~~~~~~~~~~~
+
+  []
+  PackInfo
+  []
+
+
+  []
+  CodersInfo
+  []
+
+
+  []
+  SubStreamsInfo
+  []
+
+  BYTE NID::kEnd
+
+
+FilesInfo
+~~~~~~~~~
+  BYTE NID::kFilesInfo;
+  UINT64 NumFiles
+
+  while(true)
+  {
+    BYTE PropertyType;
+    if (aType == 0)
+      break;
+
+    UINT64 aSize;
+
+    switch(PropertyType)
+    {
+      kIsDir:
+        for(NumFiles)
+            BIT IsDir
+
+      kNumNonEmpty:
+        UINT64 aNumEmptyFiles
+        for(aNumEmptyFiles)
+          UINT64 aNumSkipFiles
+      
+      case kCreationTime:
+      case kLastWriteTime:
+      case kLastAccessTime:
+        BYTE anAllAreDefined
+        if (anAllAreDefined == 0)
+        {
+          for(NumFiles)
+            BIT LastWriteTimeDefined
+        }
+        for(NumFiles when LastWriteTimeDefined)
+          UINT32 LastWriteTime
+      
+      kNames:
+        BYTE External;
+        if(External != 0)
+          UINT64 aDataIndex
+        []
+        for(Files)
+        {
+          BYTE Names[NameSize];
+          BYTE 0;
+        }
+        []
+
+      kAttributes:
+        BYTE anAllAreDefined
+        if (anAllAreDefined == 0)
+        {
+          for(NumFiles)
+            BIT AttributesAreDefined
+        }
+        BYTE External;
+        if(External != 0)
+          UINT64 aDataIndex
+        []
+        for(Definded Attributes)
+          UINT32 Attributes
+        []
+    }
+  }
+
+
+Header
+~~~~~~
+  BYTE NID::kHeader
+
+  []
+  ArchiveProperties
+  []
+
+  []
+  BYTE NID::kAdditionalStreamsInfo;
+  StreamsInfo
+  []
+
+  []
+  BYTE NID::kMainStreamsInfo;
+  StreamsInfo
+  []
+
+  []
+  FilesInfo
+  []
+
+  BYTE NID::kEnd;
+
+
+ 
+---
+End of document
