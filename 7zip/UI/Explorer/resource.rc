@@ -68,8 +68,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,13,0,0
- PRODUCTVERSION 4,13,0,0
+ FILEVERSION 4,14,0,0
+ PRODUCTVERSION 4,14,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -87,14 +87,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "4, 13, 0, 0\0"
+            VALUE "FileVersion", "4, 14, 0, 0\0"
             VALUE "InternalName", "7-zip\0"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2004 Igor Pavlov\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2005 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "4, 13, 0, 0\0"
+            VALUE "ProductVersion", "4, 14, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

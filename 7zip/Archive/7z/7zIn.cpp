@@ -735,10 +735,10 @@ HRESULT CInArchive::ReadFileNames(CObjectVector<CFileItem> &files)
   return S_OK;
 }
 
-HRESULT CInArchive::ReadBoolVector(UInt32 numItems, CBoolVector &vector)
+HRESULT CInArchive::ReadBoolVector(UInt32 numItems, CBoolVector &v)
 {
-  vector.Clear();
-  vector.Reserve(numItems);
+  v.Clear();
+  v.Reserve(numItems);
   Byte b;
   Byte mask = 0;
   for(UInt32 i = 0; i < numItems; i++)
@@ -748,22 +748,22 @@ HRESULT CInArchive::ReadBoolVector(UInt32 numItems, CBoolVector &vector)
       RINOK(ReadByte(b));
       mask = 0x80;
     }
-    vector.Add((b & mask) != 0);
+    v.Add((b & mask) != 0);
     mask >>= 1;
   }
   return S_OK;
 }
 
-HRESULT CInArchive::ReadBoolVector2(UInt32 numItems, CBoolVector &vector)
+HRESULT CInArchive::ReadBoolVector2(UInt32 numItems, CBoolVector &v)
 {
   Byte allAreDefined;
   RINOK(ReadByte(allAreDefined));
   if (allAreDefined == 0)
-    return ReadBoolVector(numItems, vector);
-  vector.Clear();
-  vector.Reserve(numItems);
+    return ReadBoolVector(numItems, v);
+  v.Clear();
+  v.Reserve(numItems);
   for (UInt32 j = 0; j < numItems; j++)
-    vector.Add(true);
+    v.Add(true);
   return S_OK;
 }
 

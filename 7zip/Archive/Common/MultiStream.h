@@ -5,7 +5,7 @@
 
 #include "../../../Common/MyCom.h"
 #include "../../../Common/Vector.h"
-#include "../../IStream.h"
+#include "../../Archive/IArchive.h"
 
 class CMultiStream: 
   public IInStream,
@@ -39,5 +39,40 @@ public:
   STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
 };
+
+/*
+class COutMultiStream: 
+  public IOutStream,
+  public CMyUnknownImp
+{
+  int _streamIndex; // required stream
+  UInt64 _offsetPos; // offset from start of _streamIndex index
+  UInt64 _absPos;
+  UInt64 _length;
+
+  struct CSubStreamInfo
+  {
+    CMyComPtr<ISequentialOutStream> Stream;
+    UInt64 Size;
+    UInt64 Pos;
+ };
+  CObjectVector<CSubStreamInfo> Streams;
+public:
+  CMyComPtr<IArchiveUpdateCallback2> VolumeCallback;
+  void Init()
+  {
+    _streamIndex = 0;
+    _offsetPos = 0;
+    _absPos = 0;
+    _length = 0;
+  }
+
+  MY_UNKNOWN_IMP1(IOutStream)
+
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+};
+*/
 
 #endif

@@ -7,6 +7,7 @@
 #include "Windows/Shell.h"
 #include "Windows/FileName.h"
 
+#include "../../SplitUtils.h"
 #ifdef LANG        
 #include "../../LangUtils.h"
 #endif
@@ -40,9 +41,7 @@ bool CSplitDialog::OnInit()
     SetText(title);
   }
   _pathCombo.SetText(Path);
-  _volumeCombo.AddString(TEXT("1457664 - 3.5 Floppy"));
-  _volumeCombo.AddString(TEXT("650M - CD"));
-  _volumeCombo.AddString(TEXT("700M - CD"));
+  AddVolumeItems(_volumeCombo);
   _volumeCombo.SetCurSel(0);
   return CModalDialog::OnInit();
 }
@@ -71,46 +70,13 @@ void CSplitDialog::OnButtonSetPath()
   _pathCombo.SetText(resultPath);
 }
 
-static bool ParseVolumeSize(const UString &s, UInt64 &value)
-{
-  const wchar_t *start = s;
-  const wchar_t *end;
-  value = ConvertStringToUInt64(start, &end);
-  if (start == end)
-    return false;
-  while (true)
-  {
-    wchar_t c = *end++;
-    c = MyCharUpper(c);
-    switch(c)
-    {
-      case L'\0':
-      case L'B':
-        return true;
-      case L'K':
-        value <<= 10;
-        return true;
-      case L'M':
-        value <<= 20;
-        return true;
-      case L'G':
-        value <<= 30;
-        return true;
-      case L' ':
-        continue;
-      default:
-        return true;
-    }
-  }
-}
-
 void CSplitDialog::OnOK()
 {
   _pathCombo.GetText(Path);
   UString volumeString;
   _volumeCombo.GetText(volumeString);
   volumeString.Trim();
-  if (!ParseVolumeSize(volumeString, VolSize))
+  if (!ParseVolumeSizes(volumeString, VolumeSizes))
   {
     MessageBox((HWND)*this, TEXT("Incorrect volume size"), TEXT("7-Zip"), MB_ICONERROR);
     return;

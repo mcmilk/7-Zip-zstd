@@ -87,7 +87,7 @@ struct CVolSeqName
   }
 };
 
-static const UInt32 kBufSize = (4 << 20);
+static const UInt32 kBufSize = (1 << 20);
 
 struct CThreadSplit
 {
@@ -96,7 +96,7 @@ struct CThreadSplit
   CProgressDialog *ProgressDialog;
   UString FilePath;
   UString VolBasePath;
-  UInt64 VolSize;
+  CRecordVector<UInt64> VolumeSizes;
   UString Error;
   
   void Process2()
@@ -120,9 +120,17 @@ struct CThreadSplit
     ProgressDialog->ProgressSynch.SetProgress(length, 0);
     UInt64 pos = 0;
 
+    int volIndex = 0;
+
     while(true)
     {
-      UInt32 needSize = (UInt32)(MyMin((UInt64)kBufSize, VolSize - curVolSize));
+      UInt64 volSize;
+      if (volIndex < VolumeSizes.Size())
+        volSize = VolumeSizes[volIndex];
+      else
+        volSize = VolumeSizes.Back();
+
+      UInt32 needSize = (UInt32)(MyMin((UInt64)kBufSize, volSize - curVolSize));
       UInt32 processedSize;
       if (!inFile.Read(buffer, needSize, processedSize))
         throw L"Can not read input file";
@@ -143,9 +151,10 @@ struct CThreadSplit
       if (needSize != processedSize)
         throw L"Can not write output file";
       curVolSize += processedSize;
-      if (curVolSize == VolSize)
+      if (curVolSize == volSize)
       {
         outFile.Close();
+        volIndex++;
         curVolSize = 0;
       }
       pos += processedSize;
@@ -228,7 +237,12 @@ void CApp::Split()
 
   spliter.FilePath = srcPath + itemName;
   spliter.VolBasePath = path  + itemName;
-  spliter.VolSize = splitDialog.VolSize;
+  spliter.VolumeSizes = splitDialog.VolumeSizes;
+  if (splitDialog.VolumeSizes.Size() == 0)
+  {
+    srcPanel.MessageBoxMyError(L"Incorrect volume size");
+    return;
+  }
 
   NFile::NFind::CFileInfoW fileInfo;
   if (!NFile::NFind::FindFile(spliter.FilePath, fileInfo))
@@ -236,7 +250,7 @@ void CApp::Split()
     srcPanel.MessageBoxMyError(L"Can not find file");
     return;
   }
-  if (fileInfo.Size <= splitDialog.VolSize)
+  if (fileInfo.Size <= splitDialog.VolumeSizes.Front())
   {
     srcPanel.MessageBoxMyError(L"File is not larger than volume");
     return;

@@ -5,13 +5,14 @@
 #include "resource.h"
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
-#include "Common/StringToInt.h"
 #include "Common/IntToString.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/ResourceString.h"
 
 #include "../../FileManager/HelpUtils.h"
+#include "../../FileManager/SplitUtils.h"
+
 #include "../Common/ZipRegistry.h"
 
 #include "CompressDialog.h"
@@ -250,9 +251,7 @@ bool CCompressDialog::OnInit()
   m_Volume.Attach(GetItem(IDC_COMPRESS_COMBO_VOLUME));
   m_Params.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
 
-  m_Volume.AddString(TEXT("1457664 - 3.5 Floppy"));
-  m_Volume.AddString(TEXT("650M - CD-650MB"));
-  m_Volume.AddString(TEXT("700M - CD-700MB"));
+  AddVolumeItems(m_Volume);
 
   ReadCompressionInfo(m_RegistryInfo);
   CheckButton(IDC_COMPRESS_CHECK_SHOW_PASSWORD, m_RegistryInfo.ShowPassword);
@@ -399,7 +398,8 @@ void CCompressDialog::OnButtonSFX()
   int slashPos = fileName.ReverseFind(L'\\');
   if (dotPos < 0 || dotPos <= slashPos)
     dotPos = -1;
-  if (IsSFX())
+  bool isSFX = IsSFX();
+  if (isSFX)
   {
     if (dotPos >= 0)
       fileName = fileName.Left(dotPos);
@@ -419,6 +419,10 @@ void CCompressDialog::OnButtonSFX()
     }
     SetArchiveName2(false); // it's for OnInit
   }
+
+  m_Volume.Enable(!isSFX);
+  if (isSFX)
+    m_Volume.SetText(TEXT(""));
 }
 
 void CCompressDialog::OnButtonSetArchive() 
@@ -491,38 +495,6 @@ void CCompressDialog::OnButtonSetArchive()
 // in ExtractDialog.cpp
 extern void AddUniqueString(CSysStringVector &strings, const CSysString &srcString);
 
-bool ParseVolumeSize(const CSysString &s, UInt64 &value)
-{
-  const TCHAR *start = s;
-  const TCHAR *end;
-  value = ConvertStringToUInt64(start, &end);
-  if (start == end)
-    return false;
-  while (true)
-  {
-    TCHAR c = *end++;
-    c = MyCharUpper(c);
-    switch(c)
-    {
-      case TEXT('\0'):
-      case TEXT('B'):
-        return true;
-      case TEXT('K'):
-        value <<= 10;
-        return true;
-      case TEXT('M'):
-        value <<= 20;
-        return true;
-      case TEXT('G'):
-        value <<= 30;
-        return true;
-      case TEXT(' '):
-        continue;
-      default:
-        return true;
-    }
-  }
-}
 
 void CCompressDialog::OnOK() 
 {
@@ -563,14 +535,16 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.EncryptHeaders = Info.EncryptHeaders = IsButtonCheckedBool(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
 
   m_Params.GetText(Info.Options);
-  CSysString volumeString;
+  UString volumeString;
   m_Volume.GetText(volumeString);
   volumeString.Trim();
-  Info.VolumeSizeIsDefined = ParseVolumeSize(volumeString, Info.VolumeSize);
-  /*
-  if (!Info.VolumeSizeIsDefined && !volumeString.IsEmpty())
-    MessageBox(0, TEXT("Incorrect volume size"), TEXT("7-Zip"), 0);
-  */
+  Info.VolumeSizes.Clear();
+  if (!volumeString.IsEmpty())
+    if (!ParseVolumeSizes(volumeString, Info.VolumeSizes))
+    {
+      MessageBox(*this, TEXT("Incorrect volume size"), TEXT("7-Zip"), 0);
+      return;
+    }
 
   for(int i = 0; i < m_ArchivePath.GetCount(); i++)
     if(i != currentItem)

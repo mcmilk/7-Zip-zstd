@@ -1,9 +1,9 @@
-7-Zip 4.13 beta Sources
+7-Zip 4.14 beta Sources
 -----------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
 
-7-Zip Copyright (C) 1999-2004 Igor Pavlov.
+7-Zip Copyright (C) 1999-2005 Igor Pavlov.
 
 
 License Info
@@ -27,8 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 License notes
 -------------
 
-You can support development of 7-Zip by registering and 
-paying $20.
+You can support development of 7-Zip by registering.
 
 7-Zip is free software distributed under the GNU LGPL.
 If you need license with other conditions, write to
@@ -91,6 +90,7 @@ DOC                Documentation
   Methods.txt    - Compression method IDs
   readme.txt     - Readme file
   lzma.txt       - LZMA SDK description
+  7zip.nsi       - installer script for NSIS
 
 
 Common            Common modules

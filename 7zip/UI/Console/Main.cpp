@@ -53,10 +53,14 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.13 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-12-14\n";
+" 4.14 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-11\n";
 
 static const char *kHelpString = 
-    "\nUsage: 7z <command> [<switches>...] <archive_name> [<file_names>...]\n"
+    "\nUsage: 7z"
+#ifdef EXCLUDE_COM
+    "a"
+#endif
+    " <command> [<switches>...] <archive_name> [<file_names>...]\n"
     "       [<@listfiles...>]\n"
     "\n"
     "<Commands>\n"
@@ -72,20 +76,23 @@ static const char *kHelpString =
     "  u: Update files to archive\n"
     "  x: eXtract files with full pathname\n"
     "<Switches>\n"
-    "  -bd Disable percentage indicator\n"
+    "  -ai[r[-|0]]{@listfile|!wildcard}: Include archives\n"
+    "  -ax[r[-|0]]{@listfile|!wildcard}: eXclude archives\n"
+    "  -bd: Disable percentage indicator\n"
     "  -i[r[-|0]]{@listfile|!wildcard}: Include filenames\n"
     "  -m{Parameters}: set compression Method\n"
     "  -o{Directory}: set Output directory\n"
     "  -p{Password}: set Password\n"
     "  -r[-|0]: Recurse subdirectories\n"
     "  -sfx[{name}]: Create SFX archive\n"
+    "  -si: read data from stdin\n"
+    "  -so: write data to stdout\n"
     "  -t{Type}: Set type of archive\n"
+    "  -v{Size}}[b|k|m|g]: Create volumes\n"
     "  -u[-][p#][q#][r#][x#][y#][z#][!newArchiveName]: Update options\n"
     "  -w[{path}]: assign Work directory. Empty path means a temporary directory\n"
     "  -x[r[-|0]]]{@listfile|!wildcard}: eXclude filenames\n"
-    "  -y: assume Yes on all queries\n"
-    "  -si: read data from stdin\n"
-    "  -so: write data to stdout\n";
+    "  -y: assume Yes on all queries\n";
 
 // ---------------------------
 // exception messages
@@ -150,8 +157,9 @@ int Main2(
 
   if(commandStrings.Size() == 1)
   {
-    g_StdErr << kCopyrightString;
-    PrintHelp();
+    g_StdOut << kCopyrightString;
+    g_StdOut << kHelpString;
+    // PrintHelp();
     return 0;
   }
   commandStrings.Delete(0);
@@ -161,14 +169,17 @@ int Main2(
   if (result != 0)
     return result;
 
+  if(options.HelpMode)
+  {
+    g_StdOut << kCopyrightString;
+    g_StdOut << kHelpString;
+    // PrintHelp();
+    return 0;
+  }
+
   if (options.EnableHeaders)
     g_StdErr << kCopyrightString;
 
-  if(options.HelpMode)
-  {
-    PrintHelp();
-    return 0;
-  }
 
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
   if(isExtractGroupCommand || 

@@ -175,6 +175,17 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
   }
   #endif
 
+  #ifdef FORMAT_SPLIT
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = false;
+    item.KeepName = true;
+    item.Name = L"Split";
+    item.Extensions.Add(CArchiverExtInfo(L"001"));
+    archivers.Add(item);
+  }
+  #endif
+
   #ifdef FORMAT_TAR
   {
     CArchiverInfo item;

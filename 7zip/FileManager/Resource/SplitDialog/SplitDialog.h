@@ -19,7 +19,7 @@ class CSplitDialog: public NWindows::NControl::CModalDialog
 public:
   UString FilePath;
   UString Path;
-  UInt64 VolSize;
+  CRecordVector<UInt64> VolumeSizes;
   INT_PTR Create(HWND parentWindow = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_SPLIT), parentWindow); }
 };

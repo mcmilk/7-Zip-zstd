@@ -330,7 +330,7 @@ void MyLoadMenu(HWND hWnd)
   HMENU baseMenu = ::LoadMenu(g_hInstance, MAKEINTRESOURCE(IDM_MENU));
   ::SetMenu(hWnd, baseMenu);
   ::DestroyMenu(oldMenu);
-  if (!g_LangPath.IsEmpty())
+  if (!g_LangID.IsEmpty())
   {
     HMENU menuOld = ::GetMenu(hWnd);
     MyChangeMenu(menuOld, 0, 0);

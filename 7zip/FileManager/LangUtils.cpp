@@ -7,25 +7,34 @@
 #include "Windows/ResourceString.h"
 #include "Windows/Window.h"
 #include "RegistryUtils.h"
+#include "ProgramLocation.h"
 
-CLang g_Lang;
-CSysString g_LangPath;
+static CLang g_Lang;
+CSysString g_LangID;
 
 void ReloadLang()
 {
-  ReadRegLang(g_LangPath);
+  ReadRegLang(g_LangID);
   g_Lang.Clear();
-  if (!g_LangPath.IsEmpty())
-    g_Lang.Open(g_LangPath);
+  if (!g_LangID.IsEmpty())
+  {
+    CSysString langPath = g_LangID;
+    if (langPath.Find('\\') < 0)
+    {
+      if (langPath.Find('.') < 0)
+        langPath += TEXT(".txt");
+      UString folderPath;
+      if (GetProgramFolderPath(folderPath))
+        langPath = GetSystemString(folderPath) + CSysString(TEXT("Lang\\")) + langPath;
+    }
+    g_Lang.Open(langPath);
+  }
 }
 
 class CLangLoader
 {
 public:
-  CLangLoader()
-  {
-    ReloadLang();
-  }
+  CLangLoader() { ReloadLang(); }
 } g_LangLoader;
 
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems)

@@ -5,7 +5,7 @@
 
 #include "Common/Lang.h"
 
-extern CSysString g_LangPath;
+extern CSysString g_LangID;
 
 struct CIDLangPair
 {

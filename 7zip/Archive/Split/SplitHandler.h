@@ -41,10 +41,12 @@ public:
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
 
   // IOutArchiveHandler
+  /*
   STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback);
 
   STDMETHOD(GetFileTimeType)(UInt32 *type);  
+  */
 
 private:
   UString _subName;

@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.14 beta           2005-01-11
+  --------------------------------------
+   -  STL using was reduced
+   -  7za now supports Split(001) archves
+
+  
   Version 4.10 beta           2004-10-21
   --------------------------------------
    -  Codecs now use new interface: ICompressSetDecoderProperties2

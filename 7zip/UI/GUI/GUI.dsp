@@ -810,6 +810,14 @@ SOURCE=..\..\FileManager\RegistryUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\FileManager\SplitUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\SplitUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\FileManager\StringUtils.cpp
 # End Source File
 # Begin Source File

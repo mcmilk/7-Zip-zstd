@@ -12,12 +12,12 @@ using namespace NWindows;
 namespace NArchive {
 namespace NSplit {
 
+/*
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
   *type = NFileTimeType::kWindows;
   return S_OK;
 }
-
 
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
@@ -97,5 +97,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   return S_OK;
   COM_TRY_END
 }
+*/
 
 }}

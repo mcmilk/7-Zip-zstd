@@ -185,7 +185,7 @@ static HANDLE StartApplication(CSysString &path, HWND window)
 {
   SHELLEXECUTEINFO execInfo;
   execInfo.cbSize = sizeof(execInfo);
-  execInfo.fMask = SEE_MASK_NOCLOSEPROCESS; // 
+  execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
   execInfo.hwnd = NULL;
   execInfo.lpVerb = NULL;
   execInfo.lpFile = path;
@@ -227,7 +227,9 @@ void CPanel::OpenFolderExternal(int index)
 {
   CSysString fullPath = GetSystemString((_currentFolderPrefix + 
       GetItemName(index)), GetCurrentFileCodePage());
-  StartApplication(fullPath, (HWND)*this);
+  HANDLE hProcess = StartApplication(fullPath, (HWND)*this);
+  if (hProcess != 0)
+    ::CloseHandle(hProcess);
 }
 
 void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)

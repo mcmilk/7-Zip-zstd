@@ -35,7 +35,11 @@ struct CItem
   UInt32 Align;
 
   bool IsDirectory() const 
+#ifdef _WIN32
     { return (Mode & _S_IFMT) == _S_IFDIR; }
+#else
+    { return (Mode & S_IFMT) == S_IFDIR; }
+#endif
 };
 
 class CItemEx: public CItem

@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
 #include <mapi.h>
-
-#include <vector>
+#endif
 
 #include "Update.h"
 
@@ -23,6 +23,7 @@
 #include "Windows/FileName.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
+// #include "Windows/Synchronization.h"
 
 #include "../../Common/FileStreams.h"
 #include "../../Compress/Copy/CopyCoder.h"
@@ -93,6 +94,184 @@ static HRESULT CopyBlock(ISequentialInStream *inStream, ISequentialOutStream *ou
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
   return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
 }
+
+class COutMultiVolStream: 
+  public IOutStream,
+  public CMyUnknownImp
+{
+  size_t _streamIndex; // required stream
+  UInt64 _offsetPos; // offset from start of _streamIndex index
+  UInt64 _absPos;
+  UInt64 _length;
+
+  struct CSubStreamInfo
+  {
+    CMyComPtr<IOutStream> Stream;
+    UString Name;
+    UInt64 Pos;
+    UInt64 RealSize;
+  };
+  CObjectVector<CSubStreamInfo> Streams;
+public:
+  // CMyComPtr<IArchiveUpdateCallback2> VolumeCallback;
+  CRecordVector<UInt64> Sizes;
+  UString Prefix;
+  CTempFiles *TempFiles;
+
+  void Init()
+  {
+    _streamIndex = 0;
+    _offsetPos = 0;
+    _absPos = 0;
+    _length = 0;
+  }
+
+  MY_UNKNOWN_IMP1(IOutStream)
+
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+  STDMETHOD(SetSize)(Int64 newSize);
+};
+
+// static NSynchronization::CCriticalSection g_TempPathsCS;
+
+STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  if(processedSize != NULL)
+    *processedSize = 0;
+  while(size > 0)
+  {
+    if (_streamIndex >= (size_t)Streams.Size())
+    {
+      CSubStreamInfo subStream;
+
+      wchar_t temp[32];
+      ConvertUInt64ToString(_streamIndex + 1, temp);
+      UString res = temp;
+      while (res.Length() < 3)
+        res = UString(L'0') + res;
+      UString name = Prefix + res;
+      COutFileStream *streamSpec = new COutFileStream;
+      subStream.Stream = streamSpec;
+      if(!streamSpec->Create(name, false))
+        return ::GetLastError();
+      {
+        // NSynchronization::CCriticalSectionLock lock(g_TempPathsCS);
+        TempFiles->Paths.Add(name);
+      }
+
+      subStream.Pos = 0;
+      subStream.RealSize = 0;
+      subStream.Name = name;
+      Streams.Add(subStream);
+      continue;
+    }
+    CSubStreamInfo &subStream = Streams[_streamIndex];
+
+    int index = _streamIndex;
+    if (index >= Sizes.Size())
+      index = Sizes.Size() - 1;
+    UInt64 volSize = Sizes[index];
+
+    if (_offsetPos >= volSize)
+    {
+      _offsetPos -= volSize;
+      _streamIndex++;
+      continue;
+    }
+    if (_offsetPos != subStream.Pos)
+    {
+      // CMyComPtr<IOutStream> outStream;
+      // RINOK(subStream.Stream.QueryInterface(IID_IOutStream, &outStream));
+      RINOK(subStream.Stream->Seek(_offsetPos, STREAM_SEEK_SET, NULL));
+      subStream.Pos = _offsetPos;
+    }
+
+    UInt32 curSize = (UInt32)MyMin((UInt64)size, volSize - subStream.Pos);
+    UInt32 realProcessed;
+    RINOK(subStream.Stream->Write(data, curSize, &realProcessed));
+    data = (void *)((Byte *)data + realProcessed);
+    size -= realProcessed;
+    subStream.Pos += realProcessed;
+    _offsetPos += realProcessed;
+    _absPos += realProcessed;
+    if (_absPos > _length)
+      _length = _absPos;
+    if (_offsetPos > subStream.RealSize)
+      subStream.RealSize = _offsetPos;
+    if(processedSize != NULL)
+      *processedSize += realProcessed;
+    if (subStream.Pos == volSize)
+    {
+      _streamIndex++;
+      _offsetPos = 0;
+    }
+    if (realProcessed != curSize)
+      return E_FAIL;
+  }
+  return S_OK;
+}
+
+STDMETHODIMP COutMultiVolStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  return Write(data, size, processedSize);
+}
+
+STDMETHODIMP COutMultiVolStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  if(seekOrigin >= 3)
+    return STG_E_INVALIDFUNCTION;
+  switch(seekOrigin)
+  {
+    case STREAM_SEEK_SET:
+      _absPos = offset;
+      break;
+    case STREAM_SEEK_CUR:
+      _absPos += offset;
+      break;
+    case STREAM_SEEK_END:
+      _absPos = _length + offset;
+      break;
+  }
+  _offsetPos = _absPos;
+  if (newPosition != NULL)
+    *newPosition = _absPos;
+  _streamIndex = 0;
+  return S_OK;
+}
+
+STDMETHODIMP COutMultiVolStream::SetSize(Int64 newSize)
+{
+  if (newSize < 0)
+    return E_INVALIDARG;
+  int i = 0;
+  while (i < Streams.Size())
+  {
+    CSubStreamInfo &subStream = Streams[i++];
+    if ((UInt64)newSize < subStream.RealSize)
+    {
+      RINOK(subStream.Stream->SetSize(newSize));
+      subStream.RealSize = newSize;
+      break;
+    }
+    newSize -= subStream.RealSize;
+  }
+  while (i < Streams.Size())
+  {
+    {
+      CSubStreamInfo &subStream = Streams.Back();
+      subStream.Stream.Release();
+      NDirectory::DeleteFileAlways(subStream.Name);
+    }
+    Streams.DeleteBack();
+  }
+  _offsetPos = _absPos;
+  _streamIndex = 0;
+  _length = newSize;
+  return S_OK;
+}
+
 
 static HRESULT Compress(
     const CActionSet &actionSet, 
@@ -248,33 +427,52 @@ static HRESULT Compress(
   }
   else
   {
+    if (stdOutMode)
+      return E_FAIL;
+    COutMultiVolStream *volStreamSpec = new COutMultiVolStream;
+    outStream = volStreamSpec;
+    volStreamSpec->Sizes = volumesSizes;
+    volStreamSpec->Prefix = archivePath.GetFinalPath() + UString(L".");
+    volStreamSpec->TempFiles = &tempFiles;
+    volStreamSpec->Init();
+
+    /*
     updateCallbackSpec->VolumesSizes = volumesSizes;
     updateCallbackSpec->VolName = archivePath.Prefix + archivePath.Name;
     if (!archivePath.VolExtension.IsEmpty())
       updateCallbackSpec->VolExt = UString(L'.') + archivePath.VolExtension;
+    */
   }
 
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive.QueryInterface(IID_ISetProperties, &setProperties) == S_OK)
   {
     UStringVector realNames;
-    std::vector<CPropVariant> values;
-	  int i;
-    for(i = 0; i < compressionMethod.Properties.Size(); i++)
+    CPropVariant *values = new CPropVariant[compressionMethod.Properties.Size()];
+    try
     {
-      const CProperty &property = compressionMethod.Properties[i];
-      NCOM::CPropVariant propVariant;
-      if (!property.Value.IsEmpty())
-        ParseNumberString(property.Value, propVariant);
-      realNames.Add(property.Name);
-      values.push_back(propVariant);
+      int i;
+      for(i = 0; i < compressionMethod.Properties.Size(); i++)
+      {
+        const CProperty &property = compressionMethod.Properties[i];
+        NCOM::CPropVariant propVariant;
+        if (!property.Value.IsEmpty())
+          ParseNumberString(property.Value, propVariant);
+        realNames.Add(property.Name);
+        values[i] = propVariant;
+      }
+      CRecordVector<const wchar_t *> names;
+      for(i = 0; i < realNames.Size(); i++)
+        names.Add((const wchar_t *)realNames[i]);
+      
+      RINOK(setProperties->SetProperties(&names.Front(), values, names.Size()));
     }
-    CRecordVector<const wchar_t *> names;
-    for(i = 0; i < realNames.Size(); i++)
-      names.Add((const wchar_t *)realNames[i]);
- 
-    RINOK(setProperties->SetProperties(&names.Front(), 
-       &values.front(), names.Size()));
+    catch(...)
+    {
+      delete []values;
+      throw;
+    }
+    delete []values;
   }
 
   if (sfxMode)
@@ -288,7 +486,24 @@ static HRESULT Compress(
       errorInfo.FileName = sfxModule;
       return E_FAIL;
     }
-    RINOK(CopyBlock(sfxStream, outStream));
+
+    CMyComPtr<ISequentialOutStream> sfxOutStream;
+    if (volumesSizes.Size() == 0)
+      sfxOutStream = outStream;
+    else
+    {
+      COutFileStream *outStreamSpec = new COutFileStream;
+      sfxOutStream = outStreamSpec;
+      UString realPath = archivePath.GetFinalPath();
+      if (!outStreamSpec->Create(realPath, false))
+      {
+        errorInfo.SystemError = ::GetLastError();
+        errorInfo.FileName = realPath;
+        errorInfo.Message = L"Can not open file";
+        return E_FAIL;
+      }
+    }
+    RINOK(CopyBlock(sfxStream, sfxOutStream));
   }
 
   HRESULT result = outArchive->UpdateItems(outStream, updatePairs2.Size(),
@@ -397,6 +612,9 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
   if (options.StdOutMode && options.EMailMode)
     return E_FAIL;
 
+  if (options.VolumesSizes.Size() > 0 && (options.EMailMode || options.SfxMode))
+    return E_NOTIMPL;
+
   if (options.SfxMode)
   {
     CProperty property;
@@ -427,6 +645,8 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
   {
     if (archiveFileInfo.IsDirectory())
       throw "there is no such archive";
+    if (options.VolumesSizes.Size() > 0)
+      return E_NOTIMPL;
     HRESULT result = MyOpenArchive(archiveName, archiveLink, openCallback);
     RINOK(callback->OpenResult(archiveName, result));
     RINOK(result);
@@ -477,9 +697,6 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
     }
   }
 
-  if (options.VolumesSizes.Size() > 0 && archive)
-    return E_NOTIMPL;
-
   UString tempDirPrefix;
   bool usesTempDir = false;
   
@@ -501,7 +718,8 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
   {
     CArchivePath &ap = options.Commands[0].ArchivePath;
     ap = options.ArchivePath;
-    if ((archive != 0 && !usesTempDir) || !options.WorkingDir.IsEmpty())
+    // if ((archive != 0 && !usesTempDir) || !options.WorkingDir.IsEmpty())
+    if ((archive != 0 || !options.WorkingDir.IsEmpty()) && !usesTempDir && options.VolumesSizes.Size() == 0)
     {
       createTempFile = true;
       ap.Temp = true;

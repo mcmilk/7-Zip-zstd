@@ -1166,6 +1166,14 @@ SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\SplitUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SplitUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\StringUtils.cpp
 # End Source File
 # Begin Source File

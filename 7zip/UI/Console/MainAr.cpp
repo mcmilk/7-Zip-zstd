@@ -62,7 +62,11 @@ int numArguments, const char *arguments[]
   NConsoleClose::CCtrlHandlerSetter ctrlHandlerSetter;
   try
   {
-    return Main2();
+    return Main2(
+#ifndef _WIN32
+      numArguments, arguments
+#endif
+    );
   }
   catch(const CNewException &)
   {
@@ -105,6 +109,11 @@ int numArguments, const char *arguments[]
   }
   */
   catch(const UString &s)
+  {
+    g_StdErr << kExceptionErrorMessage << s << endl;
+    return (NExitCode::kFatalError);
+  }
+  catch(const AString &s)
   {
     g_StdErr << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);

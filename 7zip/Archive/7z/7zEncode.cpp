@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include <vector>
-
 #include "7zEncode.h"
 #include "7zSpecStream.h"
 #include "7zMethods.h"
@@ -196,29 +194,36 @@ HRESULT CEncoder::CreateMixerCoder()
     
     if (methodFull.CoderProperties.Size() > 0)
     {
-      std::vector<NWindows::NCOM::CPropVariant> properties;
       CRecordVector<PROPID> propIDs;
-      Int32 numProperties = methodFull.CoderProperties.Size();
-      for (int i = 0; i < numProperties; i++)
+      int numProperties = methodFull.CoderProperties.Size();
+      NWindows::NCOM::CPropVariant *values = new NWindows::NCOM::CPropVariant[numProperties];
+      try
       {
-        const CProperty &property = methodFull.CoderProperties[i];
-        propIDs.Add(property.PropID);
-        properties.push_back(property.Value);
-      }
-      CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-      if (methodFull.IsSimpleCoder())
-      {
-        RINOK(encoder.QueryInterface(IID_ICompressSetCoderProperties, 
+        for (int i = 0; i < numProperties; i++)
+        {
+          const CProperty &property = methodFull.CoderProperties[i];
+          propIDs.Add(property.PropID);
+          values[i] = property.Value;
+        }
+        CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
+        if (methodFull.IsSimpleCoder())
+        {
+          RINOK(encoder.QueryInterface(IID_ICompressSetCoderProperties, 
             &setCoderProperties));
-      }
-      else
-      {
-        RINOK(encoder2.QueryInterface(IID_ICompressSetCoderProperties, 
+        }
+        else
+        {
+          RINOK(encoder2.QueryInterface(IID_ICompressSetCoderProperties, 
             &setCoderProperties));
+        }
+        RINOK(setCoderProperties->SetCoderProperties(&propIDs.Front(), values, numProperties));
       }
-      
-      RINOK(setCoderProperties->SetCoderProperties(&propIDs.Front(),
-        &properties.front(), numProperties));
+      catch(...)
+      {
+        delete []values;
+        throw;
+      }
+      delete []values;
     }
     
     CMyComPtr<ICompressWriteCoderProperties> writeCoderProperties;

@@ -244,14 +244,16 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
   if(dialog.Create(0) != IDOK)
     return E_ABORT;
     
+  options.VolumesSizes = di.VolumeSizes;
+  /*
   if (di.VolumeSizeIsDefined)
   {
     MyMessageBox(L"Splitting to volumes is not supported");
     return E_FAIL;
   }
+  */
   
-  NUpdateArchive::CActionSet &actionSet = 
-    options.Commands.Front().ActionSet;
+  NUpdateArchive::CActionSet &actionSet = options.Commands.Front().ActionSet;
   
   switch(di.UpdateMode)
   {

@@ -70,7 +70,9 @@ static bool EnhancedMaskTest(const UString &mask, int maskPos,
   {
     wchar_t c = name[namePos];
     if (maskChar != c)
+#ifdef _WIN32
       if (MyCharUpper(maskChar) != MyCharUpper(c))
+#endif
         return false;
     return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
   }

@@ -47,12 +47,19 @@ bool CLangPage::OnInit()
         continue;
       CLang lang;
       UString filePath = folderPath + fileInfo.Name;
+      UString shortName;
+      const kExtSize = 4;
+      if (fileInfo.Name.Right(kExtSize) != L".txt")
+        continue;
+      shortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
       if (lang.Open(GetSystemString(filePath)))
       {
         UString name; 
         UString englishName, nationalName;
         if (lang.GetMessage(0x00000000, englishName))
-          name += englishName;
+          name = englishName;
+        else
+          name = shortName;
         if (lang.GetMessage(0x00000001, nationalName))
         {
           if (!nationalName.IsEmpty())
@@ -62,12 +69,11 @@ bool CLangPage::OnInit()
             name += L")";
           }
         }
-        if (name.IsEmpty())
-          name = fileInfo.Name;
         index = _langCombo.AddString(GetSystemString(name));
         _langCombo.SetItemData(index, _paths.Size());
-        _paths.Add(GetSystemString(filePath));
-        if (g_LangPath.CollateNoCase(GetSystemString(filePath)) == 0)
+        _paths.Add(GetSystemString(shortName));
+        if (g_LangID.CollateNoCase(GetSystemString(shortName)) == 0 || 
+            g_LangID.CollateNoCase(GetSystemString(filePath)) == 0)
           _langCombo.SetCurSel(index);
       }
     }

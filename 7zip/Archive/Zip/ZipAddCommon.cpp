@@ -220,7 +220,7 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
     else if(resultSize < inSize) 
       break;
   }
-  outStream->SetSize(resultSize);
+  RINOK(outStream->SetSize(resultSize));
   operationResult.PackSize = resultSize;
   operationResult.Method = method;
   return S_OK;

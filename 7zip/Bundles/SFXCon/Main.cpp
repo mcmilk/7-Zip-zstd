@@ -35,7 +35,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.13 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-12-14\n";
+"\n7-Zip SFX 4.14 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-11\n";
 
 static const int kNumSwitches = 6;
 
@@ -149,6 +149,8 @@ static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in com
 // static const CSysString kFileIsNotArchiveMessageAfter = "\" is not archive";
 
 static const char *kProcessArchiveMessage = " archive: ";
+
+static const char *kCantFindSFX = " cannot find sfx";
 
 
 // ---------------------------
@@ -400,11 +402,10 @@ int Main2(
     password = parser[NKey::kPassword].PostStrings[0];
 
   NFind::CFileInfoW archiveFileInfo;
-  if (!NFind::FindFile(archiveName, archiveFileInfo) || archiveFileInfo.IsDirectory())
-    throw "there is no such archive";
-
+  if (!NFind::FindFile(archiveName, archiveFileInfo))
+    throw kCantFindSFX;
   if (archiveFileInfo.IsDirectory())
-    throw "there is no such archive";
+    throw kCantFindSFX;
   
   UString outputDir;
   if(parser[NKey::kOutputDir].ThereIs)

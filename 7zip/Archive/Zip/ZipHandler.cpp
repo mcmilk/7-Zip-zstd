@@ -1,4 +1,4 @@
-// Zip/Handler.cpp
+// ZipHandler.cpp
 
 #include "StdAfx.h"
 
@@ -62,8 +62,6 @@ DEFINE_GUID(CLSID_CCompressBZip2Decoder,
 #ifndef EXCLUDE_COM
 #include "../Common/CoderLoader.h"
 #endif
-
-// using namespace std;
 
 using namespace NWindows;
 using namespace NTime;

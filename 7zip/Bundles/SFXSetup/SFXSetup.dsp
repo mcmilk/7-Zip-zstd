@@ -245,14 +245,6 @@ SOURCE=..\..\Archive\Common\ItemNameUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\MultiStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\MultiStream.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
 # End Source File
 # Begin Source File

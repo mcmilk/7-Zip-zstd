@@ -32,8 +32,7 @@ namespace NCompressDialog
     bool MultiThreadIsAllowed;
     bool MultiThread;
 
-    bool VolumeSizeIsDefined;
-    UInt64 VolumeSize;
+    CRecordVector<UInt64> VolumeSizes;
 
     UInt32 Level;
     UString Method;

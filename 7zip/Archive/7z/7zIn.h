@@ -257,8 +257,8 @@ private:
 
 
   HRESULT GetNextFileItem(CFileItem &itemInfo);
-  HRESULT ReadBoolVector(UInt32 numItems, CBoolVector &vector);
-  HRESULT ReadBoolVector2(UInt32 numItems, CBoolVector &vector);
+  HRESULT ReadBoolVector(UInt32 numItems, CBoolVector &v);
+  HRESULT ReadBoolVector2(UInt32 numItems, CBoolVector &v);
   HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
       CObjectVector<CFileItem> &files, UInt64 type);
   HRESULT ReadAndDecodePackedStreams(UInt64 baseOffset, UInt64 &dataOffset,
