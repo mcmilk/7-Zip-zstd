@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\..\SDK" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ZIP_EXPORTS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -192,6 +192,18 @@ SOURCE=..\..\..\..\SDK\Windows\Thread.h
 # Begin Group "Header"
 
 # PROP Default_Filter ""
+# Begin Group "Common Header"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Archive\Zip\Header.cpp
@@ -219,14 +231,6 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\ItemInfo.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Archive\Zip\ItemInfoEx.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Archive\Zip\ItemNameUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Archive\Zip\ItemNameUtils.h
 # End Source File
 # Begin Source File
 

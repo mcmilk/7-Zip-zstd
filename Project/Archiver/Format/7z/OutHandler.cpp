@@ -103,6 +103,7 @@ STDMETHODIMP CHandler::DeleteItems(IOutStream *anOutStream,
   }
   CCompressionMethodMode aMethodMode, aHeaderMethod;
   RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));
+
   UpdateMain(m_Database, aCompressStatuses,
       CObjectVector<CUpdateItemInfo>(), aCopyIndexes,
       anOutStream, m_InStream, &m_Database.m_ArchiveInfo, 
@@ -435,6 +436,10 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
 
   CCompressionMethodMode aMethodMode, aHeaderMethod;
   RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));
+  aMethodMode.m_MultiThread = m_MultiThread;
+  aMethodMode.m_MultiThreadMult = m_MultiThreadMult;
+  aHeaderMethod.m_MultiThread = m_MultiThread;
+  aHeaderMethod.m_MultiThreadMult = m_MultiThreadMult;
 
   NArchive::N7z::CInArchiveInfo *anInArchiveInfo;
   if (!m_InStream)
@@ -566,6 +571,29 @@ static HRESULT SetBoolProperty(bool &aDest, const PROPVARIANT &aValue)
   return S_OK;
 }
 
+/*
+static HRESULT SetComplexProperty(bool &aBoolStatus, UINT32 &aNumber, 
+    const PROPVARIANT &aValue)
+{
+  switch(aValue.vt)
+  {
+    case VT_EMPTY:
+    case VT_BSTR:
+    {
+      RETURN_IF_NOT_S_OK(SetBoolProperty(aBoolStatus, aValue));
+      return S_OK;
+    }
+    case VT_UI4:
+      aBoolStatus = true;
+      aNumber = (aValue.ulVal);
+      break;
+    default:
+      return E_INVALIDARG;
+  }
+  return S_OK;
+}
+*/
+
 static HRESULT GetBindInfoPart(AString &aString, UINT32 &aCoder, UINT32 &aStream)
 {
   aStream = 0;
@@ -649,6 +677,13 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
       else if (aName.CompareNoCase("HC") == 0)
       {
         RETURN_IF_NOT_S_OK(SetBoolProperty(m_CompressHeaders, aValue));
+        continue;
+      }
+      else if (aName.CompareNoCase("MT") == 0)
+      {
+        m_MultiThreadMult = 200;
+        RETURN_IF_NOT_S_OK(SetBoolProperty(m_MultiThread, aValue));
+        // RETURN_IF_NOT_S_OK(SetComplexProperty(m_MultiThread, m_MultiThreadMult, aValue));
         continue;
       }
       aNumber = 0;

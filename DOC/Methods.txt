@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 5)
+Compression method IDs (2.30 Beta 14)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -46,12 +46,10 @@ List of defined IDs
    03 - Rar
       02 Rar20
 
-05 - ECC
-   01 Reed-Solomon
-     01 Version
+05 - ECC (will be)
   
    
-06 - Crypto
+06 - Crypto (will be)
 
 
 ---

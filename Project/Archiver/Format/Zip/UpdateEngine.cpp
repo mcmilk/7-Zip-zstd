@@ -15,7 +15,6 @@
 #include "AddCommon.h"
 #include "Handler.h"
 
-#include "Archive/Zip/ItemNameUtils.h"
 #include "../Common/InStreamWithCRC.h"
 
 #include "Interface/LimitedStreams.h"
@@ -107,9 +106,9 @@ HRESULT UpdateOneFile(IInStream *anInStream,
 
   aFileHeaderInfo.InternalAttributes = 0; // test it
   aFileHeaderInfo.ClearFlags();
+  aFileHeaderInfo.Name = anUpdateItem.Name; 
   if(anIsDirectory)
   {
-    aFileHeaderInfo.Name = NItemName::MakeLegalDirName(anUpdateItem.Name); // test it
     aFileHeaderInfo.ExtractVersion.Version = kExtractVersionForDirectory;
     aFileHeaderInfo.CompressionMethod = kMethodForDirectory;
 
@@ -118,7 +117,6 @@ HRESULT UpdateOneFile(IInStream *anInStream,
   }
   else
   {
-    aFileHeaderInfo.Name = NItemName::MakeLegalName(anUpdateItem.Name); 
     {
       CComObjectNoLock<CInStreamWithCRC> *anInStreamSpec = 
         new CComObjectNoLock<CInStreamWithCRC>;

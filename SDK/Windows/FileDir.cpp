@@ -115,6 +115,17 @@ bool RemoveDirectoryWithSubItems(const CSysString &aPath)
 
 
 #ifndef _WIN32_WCE
+
+bool MyGetShortPathName(LPCTSTR aLongPath, CSysString &aShortPath)
+{
+  DWORD aNeedLength = ::GetShortPathName(aLongPath, 
+      aShortPath.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+  aShortPath.ReleaseBuffer();
+  if (aNeedLength == 0 || aNeedLength >= MAX_PATH)
+    return false;
+  return true;
+}
+
 bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath, 
     int &aFileNamePartStartIndex)
 {

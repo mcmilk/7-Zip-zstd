@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 13 Sources
+7-Zip 2.30 Beta 14 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -45,7 +45,14 @@ DOC                Documentation
 SDK                 Common files
 ---
 
+  Alien             Must contains third party sources
+    Compress
+      BZip2         BZip2 compression sources from
+                    http://sources.redhat.com/bzip2/index.html
+
+
   Archive           Common archive modules
+    Common
     Cab             
     GZip            
     Rar             

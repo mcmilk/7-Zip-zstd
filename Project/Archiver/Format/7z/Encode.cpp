@@ -17,6 +17,7 @@
 
 #include "StreamObjects2.h"
 
+#include "../../../Compress/LZ/MatchFinder/MT/MT.h"
 
 #ifdef COMPRESS_COPY
 static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
@@ -222,8 +223,6 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
         if (aMatchFinder == 0)
           return E_FAIL;
 
-        
-        
         CComPtr<IInitMatchFinder> anInitMatchFinder;
         if (aMethodFull.MethodInfoEx.IsSimpleCoder())
         {
@@ -233,7 +232,18 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
         {
           RETURN_IF_NOT_S_OK(anEncoder2->QueryInterface(&anInitMatchFinder));
         }
-        anInitMatchFinder->InitMatchFinder(aMatchFinder);
+        
+        if (m_Options.m_MultiThread)
+        {
+          CComObjectNoLock<CMatchFinderMT> *aMatchFinderMTSpec = new 
+              CComObjectNoLock<CMatchFinderMT>;
+          CComPtr<IInWindowStreamMatch> aMatchFinderMT = aMatchFinderMTSpec;
+          aMatchFinderMTSpec->m_MultiThreadMult = m_Options.m_MultiThreadMult;
+          RETURN_IF_NOT_S_OK(aMatchFinderMTSpec->SetMatchFinder(aMatchFinder));
+          anInitMatchFinder->InitMatchFinder(aMatchFinderMT);
+        }
+        else
+          anInitMatchFinder->InitMatchFinder(aMatchFinder);
       }
       
       if (aMethodFull.EncoderProperties.Size() > 0)

@@ -52,7 +52,11 @@ public:
   
   bool HasDescriptor() const;
   
-  
+  #ifdef WIN32
+  WORD GetCodePage() const
+    { return (MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT) ? CP_OEMCP : CP_ACP; }
+  #endif
+
 private:
   void SetFlagBits(int aStartBitNumber, int aNumBits, int aValue);
   void SetBitMask(int aBitMask, bool anEnable);

@@ -11,7 +11,7 @@
 
 #include "Compression/CopyCoder.h"
 
-#include "Archive/Zip/ItemNameUtils.h"
+#include "Archive/Common/ItemNameUtils.h"
 
 #include "Common/Defs.h"
 #include "Common/CRC.h"
@@ -226,10 +226,8 @@ STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
   switch(aPropID)
   {
     case kaipidPath:
-      aPropVariant = NItemName::GetOSName(
-          MultiByteToUnicodeString(anItem.Name, 
-          anItem.MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT ? 
-              CP_OEMCP : CP_ACP));
+      aPropVariant = NItemName::GetOSName2(
+          MultiByteToUnicodeString(anItem.Name, anItem.GetCodePage()));
       break;
     case kaipidIsFolder:
       aPropVariant = anItem.IsDirectory();

@@ -7,7 +7,6 @@
 #include "Common/StringConvert.h"
 #include "Interface/LimitedStreams.h"
 #include "Common/DynamicBuffer.h"
-#include "Archive/Zip/ItemNameUtils.h"
 
 namespace NArchive {
 namespace NZip {

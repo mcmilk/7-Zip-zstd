@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zSfx.exe"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zSfx.exe" /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
 
@@ -69,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -468,6 +469,18 @@ SOURCE=..\..\..\..\SDK\Interface\StreamObjects.h
 # Begin Group "7z"
 
 # PROP Default_Filter ""
+# Begin Group "Common Header"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Format\7z\CompressionMethod.h
@@ -519,14 +532,6 @@ SOURCE=..\..\Format\7z\InEngine.h
 # Begin Source File
 
 SOURCE=..\..\Format\7z\ItemInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.h
 # End Source File
 # Begin Source File
 

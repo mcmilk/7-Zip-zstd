@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\..\SDK" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"C:\Program Files\7-ZIP\Format\7z.dll" /opt:NOWIN98
-# SUBTRACT LINK32 /pdb:none
+# SUBTRACT LINK32 /pdb:none /debug
 
 !ELSEIF  "$(CFG)" == "7z - Win32 Debug"
 
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -120,6 +120,18 @@ SOURCE=.\StdAfx.h
 # Begin Group "Header"
 
 # PROP Default_Filter ""
+# Begin Group "Common Header"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\Header.cpp
@@ -143,14 +155,6 @@ SOURCE=.\ItemInfo.cpp
 # Begin Source File
 
 SOURCE=.\ItemInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\ItemNameUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ItemNameUtils.h
 # End Source File
 # Begin Source File
 
@@ -584,6 +588,14 @@ SOURCE=.\FolderOutStream.cpp
 # Begin Source File
 
 SOURCE=.\FolderOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.h
 # End Source File
 # Begin Source File
 

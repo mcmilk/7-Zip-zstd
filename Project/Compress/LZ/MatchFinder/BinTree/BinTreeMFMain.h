@@ -7,6 +7,20 @@
 
 namespace BT_NAMESPACE {
 
+void CInTree2::BeforeMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->BeforeChangingBufferPos();
+  CInTree::BeforeMoveBlock();
+}
+
+void CInTree2::AfterMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->AfterChangingBufferPos();
+  CInTree::AfterMoveBlock();
+}
+
 STDMETHODIMP CMatchFinderBinTree::Init(ISequentialInStream *aStream)
   { return m_MatchFinder.Init(aStream); }
 
@@ -61,5 +75,13 @@ STDMETHODIMP_(const BYTE *) CMatchFinderBinTree::GetPointerToCurrentPos()
 {
   return m_MatchFinder.GetPointerToCurrentPos();
 }
+
+// IMatchFinderSetCallback
+STDMETHODIMP CMatchFinderBinTree::SetCallback(IMatchFinderCallback *aCallback)
+{
+  m_MatchFinder.SetCallback(aCallback);
+  return S_OK;
+}
+
 
 }

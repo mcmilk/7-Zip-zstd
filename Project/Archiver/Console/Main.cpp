@@ -48,7 +48,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 13  Copyright (c) 1999-2002 Igor Pavlov  2002-01-31\n";
+" 2.30 Beta 14  Copyright (c) 1999-2002 Igor Pavlov  2002-02-10\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -573,24 +573,27 @@ bool ParseUpdateCommandString2(const AString &aString, NUpdateArchive::CActionSe
   return true;
 }
 
-CSysString MakeFullArchiveName(const CSysString &aName, const CSysString &anExtension)
+UString MakeFullArchiveName(const UString &aName, const UString &anExtension)
 {
   if (anExtension.IsEmpty())
     return aName;
   if (aName.IsEmpty())
     return aName;
-  TCHAR aLastChar = *CharPrev(aName, ((LPCTSTR)(aName)) + aName.Length());   
-  if (aLastChar == '.')
+  if (aName[aName.Length() - 1] == L'.')
     return aName.Left(aName.Length() - 1);
-  if (aName.Find(TCHAR('.')) >= 0)
+  int aSlash1Pos = aName.ReverseFind(L'\\');
+  int aSlash2Pos = aName.ReverseFind(L'/');
+  int aSlashPos = MyMax(aSlash1Pos, aSlash2Pos);
+  int aDotPos = aName.ReverseFind(L'.');
+  if (aDotPos > 0 && (aDotPos > aSlashPos || aSlashPos < 0))
     return aName;
-  return aName + TCHAR('.') + anExtension;
+  return aName + L'.' + anExtension;
 }
 
 void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions, 
     const AStringVector &anUpdatePostStrings, 
     const NUpdateArchive::CActionSet &aDefaultActionSet,
-    const CSysString &anExtension)
+    const UString &anExtension)
 {
   for(int i = 0; i < anUpdatePostStrings.Size(); i++)
   {
@@ -629,11 +632,14 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions,
           PrintHelpAndExit();
         */
 
-        anUpdateCommand.ArchivePath = GetSystemString(aPostString.Mid(1), CP_OEMCP);
+        
+        UString anArchivePathU = MultiByteToUnicodeString(
+              aPostString.Mid(1), CP_OEMCP);
 
-        if (anUpdateCommand.ArchivePath.IsEmpty())
+        if (anArchivePathU.IsEmpty())
           PrintHelpAndExit();
-        anUpdateCommand.ArchivePath = MakeFullArchiveName(anUpdateCommand.ArchivePath, anExtension);
+        anUpdateCommand.ArchivePath = GetSystemString(
+            MakeFullArchiveName(anArchivePathU, anExtension), CP_OEMCP);
         anUpdateCommand.ActionSet = anActionSet;
         anOptions.Commands.Add(anUpdateCommand);
       }
@@ -644,7 +650,7 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions,
 static void SetAddCommandOptions(NCommandType::EEnum aCommandType, 
     const NComandLineParser::CParser &aParser, const CSysString &anArchivePath, 
     CUpdateArchiveOptions &anOptions, CSysString &aWorkingDir, 
-    const CSysString &anExtension)
+    const UString &anExtension)
 {
   NUpdateArchive::CActionSet aDefaultActionSet;
   switch(aCommandType)
@@ -1014,11 +1020,15 @@ int Main2(int aNumArguments, const char *anArguments[])
     }
     if(aParser[NKey::kSfx].ThereIs)
       anExtension = kSFXExtension;
-    anArchiveName = MakeFullArchiveName(anArchiveName, anExtension);
+    UString anExtensionU = GetUnicodeString(anExtension);
+    anArchiveName = 
+        GetSystemString(
+        MakeFullArchiveName(GetUnicodeString(anArchiveName, CP_OEMCP), 
+        anExtensionU), CP_OEMCP);
 
 
     SetAddCommandOptions(aCommand.CommandType, aParser, anArchiveName, anOptions,
-        aWorkingDir, anExtension); 
+        aWorkingDir, anExtensionU); 
     
     SetMethodOptions(aDefaultSwitchesParser, anOptions); 
     SetMethodOptions(aParser, anOptions); 

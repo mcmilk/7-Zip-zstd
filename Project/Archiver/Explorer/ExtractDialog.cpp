@@ -119,19 +119,16 @@ bool CExtractDialog::Init(
   #ifdef _SFX
   NDirectory::GetOnlyDirPrefix(aFileName, m_DirectoryPath);
   #else
-  CParsedPath aParsedPath;
-  aParsedPath.ParsePath(aFileName);
-  if(aParsedPath.PathParts.Size() == 0)
-    return false; // Error
-
+  int aFileNamePartStartIndex;
+  CSysString aFullPathName;
+  NDirectory::MyGetFullPathName(aFileName, aFullPathName, aFileNamePartStartIndex);
+  m_DirectoryPath = aFileName.Left(aFileNamePartStartIndex);
+  CSysString aName = aFileName.Mid(aFileNamePartStartIndex);
   CSysString aPureName, aDot, anExtension;
-  SplitNameToPureNameAndExtension(aParsedPath.PathParts.Back(), 
-     aPureName, aDot, anExtension);
-  if (aDot.IsEmpty())
-    aParsedPath.PathParts.DeleteBack();
-  else
-    aParsedPath.PathParts.Back() = aPureName;
-  m_DirectoryPath = aParsedPath.MergePath();
+  SplitNameToPureNameAndExtension(aName, 
+      aPureName, aDot, anExtension);
+  if (!aDot.IsEmpty())
+    m_DirectoryPath += aPureName;
   #endif
   return true;
 }

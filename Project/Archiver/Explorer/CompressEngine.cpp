@@ -151,32 +151,52 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
 {
   if (aFileNames.Size() == 0)
     return S_OK;
-  CSysString aResultPath;
+
+  UString aCurrentDirU;
+  const CSysString &aFrontName = aFileNames.Front();
+  UString aFrontNameU = GetUnicodeString(aFrontName);
+  /*
+  if (!GetOnlyDirPrefix(aFrontName, aCurrentDir))
+    return E_FAIL;
+  */
+
+  UString aResultPathU;
   {
+    /*
+    bool aPrevFolderOK = false;
+    if (aCurrentDir.Length() > 3)
+      aPrevFolderOK = GetOnlyName(aCurrentDir.Left(aCurrentDir.Length() - 1), aResultPath);
+    if (aFileNames.Size() == 1 || !aPrevFolderOK)
+    {
+      if (!GetOnlyName(aFrontName, aResultPath))
+        return E_FAIL;
+    }
+    */
     CParsedPath aParsedPath;
-    aParsedPath.ParsePath(aFileNames.Front());
+    aParsedPath.ParsePath(aFrontNameU);
     if(aParsedPath.PathParts.Size() == 0)
       return E_FAIL; // Error
     if (aFileNames.Size() == 1 || aParsedPath.PathParts.Size() == 1)
     {
       CSysString aPureName, aDot, anExtension;
-      aResultPath = aParsedPath.PathParts.Back();
+      aResultPathU = aParsedPath.PathParts.Back();
     }
     else
     {
       aParsedPath.PathParts.DeleteBack();
-      aResultPath = aParsedPath.PathParts.Back();
+      aResultPathU = aParsedPath.PathParts.Back();
     }
   }
-  CSysString aCurrentDir;
+  
   {
     CParsedPath aParsedPath;
-    aParsedPath.ParsePath(aFileNames.Front());
+    aParsedPath.ParsePath(aFrontNameU);
     aParsedPath.PathParts.DeleteBack();
-    aCurrentDir = aParsedPath.MergePath();
+    aCurrentDirU = aParsedPath.MergePath();
     if (aParsedPath.PathParts.Size() > 0)
-      aCurrentDir += NFile::NName::kDirDelimiter;
+      aCurrentDirU += NFile::NName::kDirDelimiter;
   }
+
   CCompressDialog aDialog;
   CZipRegistryManager aZipRegistryManager;
   aDialog.m_ZipRegistryManager = &aZipRegistryManager;
@@ -196,8 +216,8 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
     return E_FAIL;
   }
 
-  aDialog.m_Info.ArchiveName = aResultPath;
-  aDialog.m_Info.CurrentDirPrefix = aCurrentDir;
+  aDialog.m_Info.ArchiveName = GetSystemString(aResultPathU);
+  aDialog.m_Info.CurrentDirPrefix = GetSystemString(aCurrentDirU);
   aDialog.m_Info.SFXMode = false;
   aDialog.m_Info.SolidMode = true;
 

@@ -4,7 +4,6 @@
 
 #include "Header.h"
 #include "ItemInfo.h"
-#include "ItemNameUtils.h"
 
 namespace NArchive {
 namespace N7z {

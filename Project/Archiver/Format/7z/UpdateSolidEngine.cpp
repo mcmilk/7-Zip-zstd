@@ -15,7 +15,7 @@
 
 #include "../Common/InStreamWithCRC.h"
 
-#include "ItemNameUtils.h"
+#include "Archive/Common/ItemNameUtils.h"
 
 #include "Windows/Defs.h"
 

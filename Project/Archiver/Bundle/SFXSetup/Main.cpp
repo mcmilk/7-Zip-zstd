@@ -87,19 +87,19 @@ static bool ReadDataString(LPCTSTR aFileName, LPCSTR aStartID,
 }
 
 static void GetArchiveName(
-    const CSysString &aCommandLine, 
-    CSysString &anArchiveName, 
-    CSysString &aSwitches)
+    const UString &aCommandLine, 
+    UString &anArchiveName, 
+    UString &aSwitches)
 {
   anArchiveName.Empty();
   aSwitches.Empty();
   bool aQuoteMode = false;
   for (int i = 0; i < aCommandLine.Length(); i++)
   {
-    TCHAR aChar = aCommandLine[i];
-    if (aChar == '\"')
+    wchar_t aChar = aCommandLine[i];
+    if (aChar == L'\"')
       aQuoteMode = !aQuoteMode;
-    else if (aChar == ' ' && !aQuoteMode)
+    else if (aChar == L' ' && !aQuoteMode)
     {
       if (!aQuoteMode)
       {
@@ -110,7 +110,7 @@ static void GetArchiveName(
     else 
       anArchiveName += aChar;
   }
-  aSwitches = aCommandLine + i;
+  aSwitches = aCommandLine.Mid(i);
 }
 
 static char aStartID[] = ",!@Install@!UTF-8!";
@@ -137,11 +137,8 @@ public:
     { RestoreDirectory();}
   bool RestoreDirectory()
     { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
-  /*
-  bool SetDirectory(const TTString &aPath)
-    { return TTFile::MySetCurrentDirectory(aPath); }
-    */
 };
+
 
 int APIENTRY WinMain(
   HINSTANCE hInstance,
@@ -151,11 +148,11 @@ int APIENTRY WinMain(
 {
   InitCommonControls();
   g_hInstance = (HINSTANCE)hInstance;
-  CSysString anArchiveName, aSwitches;
-  GetArchiveName(GetCommandLine(), anArchiveName, aSwitches);
+  UString anArchiveName, aSwitches;
+  GetArchiveName(GetCommandLineW(), anArchiveName, aSwitches);
   CSysString aFullPath;
-  int aFileNamePartStartIndex;
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(anArchiveName, aFullPath, aFileNamePartStartIndex))
+  if (!NWindows::NFile::NDirectory::MyGetFullPathName(
+      GetSystemString(anArchiveName), aFullPath))
   {
     MessageBox(NULL, "can't get archive name", "7-Zip", 0);
     return 1;
@@ -169,7 +166,7 @@ int APIENTRY WinMain(
   }
   aSwitches.Trim();
   bool anAssumeYes = false;
-  if (aSwitches.Left(2) == CSysString("-y"))
+  if (aSwitches.Left(2) == UString(L"-y"))
   {
     anAssumeYes = true;
     aSwitches = aSwitches.Mid(2);
@@ -213,9 +210,13 @@ int APIENTRY WinMain(
       ShowErrorMessage(aResult);
     return  1;
   }
+
   CCurrentDirRestorer aCurrentDirRestorer;
+
   if (!SetCurrentDirectory(aTempDir.GetPath()))
     return 1;
+
+  
   if (anAppLaunched.IsEmpty())
   {
     anAppLaunched = L"Setup.exe";
@@ -233,14 +234,23 @@ int APIENTRY WinMain(
   
   PROCESS_INFORMATION aProcessInformation;
 
-  CSysString anAppLaunchedSys = GetSystemString(anAppLaunched);
-  anAppLaunchedSys.Replace(TEXT("%%T"), aTempDir.GetPath());
 
-  anAppLaunchedSys += TEXT(' ');
-  anAppLaunchedSys += aSwitches;
+  CSysString aShortPath;
+  if (!NFile::NDirectory::MyGetShortPathName(aTempDir.GetPath(), aShortPath))
+    return 1;
+
+  UString anAppLaunchedSysU = anAppLaunched;
+  anAppLaunchedSysU.Replace(TEXT(L"%%T"), GetUnicodeString(aShortPath));
+
+  anAppLaunchedSysU += L' ';
+  anAppLaunchedSysU += aSwitches;
+  
+  CSysString aTempDirPathNormalized = aShortPath;
+  NFile::NName::NormalizeDirPathPrefix(aShortPath);
+  CSysString anAppLaunchedSys = aShortPath + GetSystemString(anAppLaunchedSysU);
 
   BOOL aCreateResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)anAppLaunchedSys, 
-    NULL, NULL, FALSE, 0, NULL, NULL, 
+    NULL, NULL, FALSE, 0, NULL, NULL /*aTempDir.GetPath() */, 
     &aStartupInfo, &aProcessInformation);
   if (aCreateResult == 0)
   {
@@ -248,8 +258,8 @@ int APIENTRY WinMain(
     return 1;
   }
   WaitForSingleObject(aProcessInformation.hProcess, INFINITE);
+  ::CloseHandle(aProcessInformation.hThread);
   ::CloseHandle(aProcessInformation.hProcess);
-  // MessageBox(0, "Was finished", "7-Zip", 0);
   return 0;
 }
 

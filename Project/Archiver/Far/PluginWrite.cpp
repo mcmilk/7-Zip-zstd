@@ -394,10 +394,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &aPluginPanelItems)
     throw "There is no update achivers";
 
 
-  CSysString aResultPath;
+  UString aResultPath;
   {
     NName::CParsedPath aParsedPath;
-    aParsedPath.ParsePath(UnicodeStringToMultiByte(aFileNames.Front(), CP_OEMCP));
+    aParsedPath.ParsePath(aFileNames.Front());
     if(aParsedPath.PathParts.Size() == 0)
       return E_FAIL;
     if (aFileNames.Size() == 1 || aParsedPath.PathParts.Size() == 1)
@@ -411,7 +411,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &aPluginPanelItems)
       aResultPath = aParsedPath.PathParts.Back();
     }
   }
-  CSysString anArchiveNameSrc = aResultPath;
+  CSysString anArchiveNameSrc = UnicodeStringToMultiByte(aResultPath, CP_OEMCP);
   CSysString anArchiveName = anArchiveNameSrc;
 
   const NZipRootRegistry::CArchiverInfo &anArchiverInfo = anArchiverInfoList[anArchiverIndex];

@@ -28,7 +28,9 @@ protected:
   UINT32 m_KeepSizeReserv;  // how many BYTEs must be kept as reserv
   UINT32 m_StreamPos;   // offset (from m_Buffer) of first not read byte from Stream
 
-  virtual void MoveBlock(UINT32 anOffset);
+  virtual void BeforeMoveBlock() {};
+  virtual void AfterMoveBlock() {};
+  void MoveBlock();
   virtual HRESULT ReadBlock();
   void Free();
 public:
@@ -51,7 +53,7 @@ public:
     {
       const BYTE *aPointerToPostion = m_Buffer + m_Pos;
       if(aPointerToPostion > m_PointerToLastSafePosition)
-        MoveBlock((m_Buffer + m_Pos - m_KeepSizeBefore) - m_BufferBase);
+        MoveBlock();
       return ReadBlock();
     }
     else

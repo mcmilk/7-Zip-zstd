@@ -218,12 +218,14 @@ kIDManualRemoveByte | kIDHash3Byte | kIDUse3BytesByte | kIDPaddingByte,
 
 class CPatricia: 
   public IInWindowStreamMatch,
+  public IMatchFinderSetCallback,
   public CComObjectRoot,
   public CComCoClass<CPatricia, &PAT_CLSID>,
   NStream::NWindow::CIn
 {
 BEGIN_COM_MAP(CPatricia)
   COM_INTERFACE_ENTRY(IInWindowStreamMatch)
+  COM_INTERFACE_ENTRY(IMatchFinderSetCallback)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CPatricia)
@@ -274,6 +276,13 @@ public:
 
   CAlignedBuffer m_AlignBuffer;
 
+  CComPtr<IMatchFinderCallback> m_Callback;
+
+  virtual void BeforeMoveBlock();
+  virtual void AfterMoveBlock();
+
+  // IMatchFinderSetCallback
+  STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback);
 
   void ChangeLastMatch(UINT32 aHashValue);
   

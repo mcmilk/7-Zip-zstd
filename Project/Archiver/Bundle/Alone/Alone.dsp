@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "UNICODE" /D "_UNICODE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "UNICODE" /D "_UNICODE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -121,7 +121,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_UNICODE" /D "UNICODE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_UNICODE" /D "UNICODE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -544,33 +544,6 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\ItemInfoEx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Archive\Zip\ItemNameUtils.cpp
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /Fo"Release\Zip\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-# ADD CPP /Fo"Debug\Zip\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /Fo"ReleaseU\Zip\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-# ADD CPP /Fo"DebugU\Zip\ItemNameUtils.obj"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Archive\Zip\ItemNameUtils.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Archive\Zip\OutEngine.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -684,33 +657,6 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\ItemInfo.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Archive\Tar\ItemInfoEx.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Archive\Tar\ItemNameUtils.cpp
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /Fo"Release\Tar\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-# ADD CPP /Fo"Debug\Tar\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /Fo"ReleaseU\Tar\ItemNameUtils.obj"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-# ADD CPP /Fo"DebugU\Tar\ItemNameUtils.obj"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Archive\Tar\ItemNameUtils.h
 # End Source File
 # Begin Source File
 
@@ -854,6 +800,18 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\OutEngine.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Archive\GZip\OutEngine.h
+# End Source File
+# End Group
+# Begin Group "Common Header"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
 # End Source File
 # End Group
 # End Group
@@ -1138,14 +1096,6 @@ SOURCE=..\..\Format\7z\ItemInfoUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Format\7z\ItemInfoUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.h
 # End Source File
 # Begin Source File
 
@@ -1850,6 +1800,18 @@ SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTreeMF.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTreeMFMain.h
+# End Source File
+# End Group
+# Begin Group "MT"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.h
 # End Source File
 # End Group
 # End Group

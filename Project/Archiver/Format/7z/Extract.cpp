@@ -5,7 +5,6 @@
 #include "Handler.h"
 #include "Util/MultiStream.h"
 #include "FolderOutStream.h"
-#include "ItemNameUtils.h"
 
 #include "RegistryInfo.h"
 

@@ -8,7 +8,6 @@
 #include "Common/Types.h"
 #include "Common/String.h"
 #include "Archive/Tar/Header.h"
-#include "Archive/Tar/ItemNameUtils.h"
 
 namespace NArchive {
 namespace NTar {
@@ -39,7 +38,15 @@ public:
         return true;
       if (LinkFlag == NFileHeader::NLinkFlag::kOldNormal || 
           LinkFlag == NFileHeader::NLinkFlag::kNormal)
-        return NItemName::IsItDirName(Name);
+      {
+        if (Name.IsEmpty())
+          return false;
+        #ifdef WIN32
+        return (*CharPrevExA(CP_OEMCP, Name, &Name[Name.Length()], 0) == '/');
+        #else
+        return (Name[Name.Length() - 1) == '/');
+        #endif
+      }
       return false;
     }
 };

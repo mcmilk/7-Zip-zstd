@@ -36,6 +36,25 @@ IInWindowStreamMatch: public IInWindowStream
   STDMETHOD_(void, DummyLongestMatch)() PURE;
 };
 
+// {23170F69-40C1-278A-0000-000200020100}
+DEFINE_GUID(IID_IMatchFinderCallback, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x01, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000200020100")
+IMatchFinderCallback: public IUnknown
+{
+  STDMETHOD(BeforeChangingBufferPos)() PURE;
+  STDMETHOD(AfterChangingBufferPos)() PURE;
+};
+
+// {23170F69-40C1-278A-0000-000200020200}
+DEFINE_GUID(IID_IMatchFinderSetCallback, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x02, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000200020200")
+IMatchFinderSetCallback: public IUnknown
+{
+  STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback) PURE;
+};
+
 // {23170F69-40C1-278A-0000-000200030000}
 DEFINE_GUID(IID_IInitMatchFinder, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00);

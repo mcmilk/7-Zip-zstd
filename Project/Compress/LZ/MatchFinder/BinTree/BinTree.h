@@ -78,11 +78,12 @@ class CInTree: public NStream::NWindow::CIn
 
   UINT32 m_CutValue;
 
-  virtual void MoveBlock(UINT32 anOffset);
   void NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue);
   void Normalize();
   void FreeMemory();
 
+protected:
+  virtual void AfterMoveBlock();
 public:
   CInTree();
   ~CInTree();

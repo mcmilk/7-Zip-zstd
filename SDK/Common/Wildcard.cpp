@@ -96,6 +96,7 @@ void SplitPathToParts(const UString &aPath, UStringVector &aPathParts)
   aPathParts.Add(aName);
 }
 
+/*
 void SplitPathToParts(const AString &aPath, AStringVector &aPathParts)
 {
   aPathParts.Clear();
@@ -116,6 +117,7 @@ void SplitPathToParts(const AString &aPath, AStringVector &aPathParts)
   }
   aPathParts.Add(aName);
 }
+*/
 
 // --------------------------------------------------
 // ExtractFileNameFromPath

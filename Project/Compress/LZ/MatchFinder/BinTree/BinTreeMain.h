@@ -467,8 +467,9 @@ void CInTree::DummyLongestMatch()
   m_Hash3[aHash3Value] = m_Pos;
   #else
   UINT32 aHashValue = Hash(aCur, aHash2Value);
-  m_Hash2[aHash2Value] = m_Pos;
   #endif
+  m_Hash2[aHash2Value] = m_Pos;
+
   
   #else // no hash
   UINT32 aHashValue = Hash(aCur);
@@ -548,7 +549,7 @@ void CInTree::DummyLongestMatch()
   *aPtrRight = kEmptyHashValue;
 }
 
-void CInTree::MoveBlock(UINT32 anOffset)
+void CInTree::AfterMoveBlock()
 {
   UINT32 aNumBytesToMove = m_HistorySize * sizeof(CIndex);
   UINT32 aSpecOffset = ((m_LeftSon + m_Pos) - m_LeftBase) - m_HistorySize;
@@ -556,7 +557,6 @@ void CInTree::MoveBlock(UINT32 anOffset)
   m_LeftSon -= aSpecOffset;
   memmove(m_RightBase, m_RightBase + aSpecOffset, aNumBytesToMove);
   m_RightSon -= aSpecOffset;
-  CIn::MoveBlock(anOffset);
 }
 
 void CInTree::NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue)

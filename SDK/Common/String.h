@@ -97,6 +97,7 @@ public:
   int Replace(const CStringBase &anOldString, const CStringBase &aNewString);
 
   int Delete(int anIndex, int aCount = 1 );
+  // void DeleteBack() {   Delete(Length() - 1); }
 };
 
 template <class T>
@@ -663,6 +664,18 @@ int CStringBase<T>::Replace(T anOldChar, T aNewChar)
   if (anOldChar == aNewChar)
     return 0;
   int aNumber  = 0;
+  int aPos  = 0;
+  while (aPos < Length())
+  {
+    aPos = Find(anOldChar, aPos);
+    if (aPos < 0) 
+      break;
+    m_Chars[aPos] = aNewChar;
+    aPos++;
+    aNumber++;
+  }
+  return aNumber;
+  /*
   for (int i = 0; i < m_Length; i++)
   {
     if (m_Chars[i] == anOldChar)
@@ -671,6 +684,7 @@ int CStringBase<T>::Replace(T anOldChar, T aNewChar)
       aNumber++;
     }
   }
+  */
   return aNumber;
 }
 

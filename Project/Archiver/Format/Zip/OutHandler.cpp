@@ -5,6 +5,7 @@
 // #include "../../Handler/FileTimeType.h"
 #include "Handler.h"
 #include "Archive/Zip/OutEngine.h"
+#include "Archive/Common/ItemNameUtils.h"
 #include "Common/StringConvert.h"
 #include "UpdateMain.h"
 
@@ -88,7 +89,10 @@ STDMETHODIMP CZipHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
       if(aSize > _UI32_MAX)
         return E_FAIL;
       anUpdateItemInfo.Size = aSize;
-      anUpdateItemInfo.Name = UnicodeStringToMultiByte((BSTR)aName, CP_OEMCP);
+      anUpdateItemInfo.Name = UnicodeStringToMultiByte(
+          NItemName::MakeLegalName((BSTR)aName), CP_OEMCP);
+      if (anUpdateItemInfo.IsDirectory())
+        anUpdateItemInfo.Name += '/';
       anUpdateItemInfo.IndexInClient = i;
       if(MyBoolToBool(anExistInArchive))
       {

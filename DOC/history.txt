@@ -1,6 +1,14 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 14        2002-02-10
+  --------------------------------------
+    - Supporting multithreading for LZMA:
+        Project/Compress/LZ/MatchFinder/MT 
+    - Common/String.h:
+        CStringBase::Replace function was fixed.
+
+  
   Version 2.30 Beta 13        2002-01-27
   --------------------------------------
     - Compress/LZ/MatchFinder/BinTree3.h: 

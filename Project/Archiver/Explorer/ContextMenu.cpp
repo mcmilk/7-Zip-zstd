@@ -271,7 +271,10 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
             NULL, NULL, FALSE, 0, NULL, NULL, 
             &aStartupInfo, &aProcessInformation);
       if (aResult != 0)
+      {
+        ::CloseHandle(aProcessInformation.hThread);
         ::CloseHandle(aProcessInformation.hProcess);
+      }
 
       break;
     }

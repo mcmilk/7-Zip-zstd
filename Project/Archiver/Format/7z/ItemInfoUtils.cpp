@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "ItemInfoUtils.h"
-#include "ItemNameUtils.h"
 
 #include "Windows/COM.h"
 #include "Windows/Time.h"

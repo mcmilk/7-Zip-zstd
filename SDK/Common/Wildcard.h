@@ -8,7 +8,7 @@
 #include "Common/String.h"
 
 void SplitPathToParts(const UString &aPath, UStringVector &aPathParts);
-void SplitPathToParts(const AString &aPath, AStringVector &aPathParts);
+// void SplitPathToParts(const AString &aPath, AStringVector &aPathParts);
 UString ExtractFileNameFromPath(const UString &aPathName);
 bool DoesNameContainWildCard(const UString &aPathName);
 bool CompareWildCardWithName(const UString &aMask, const UString &aName);

@@ -18,6 +18,8 @@ bool DeleteFileAlways(LPCTSTR aName);
 bool RemoveDirectoryWithSubItems(const CSysString &aPath);
 
 #ifndef _WIN32_WCE
+bool MyGetShortPathName(LPCTSTR aLongPath, CSysString &aShortPath);
+
 bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath, 
     int &aFileNamePartStartIndex);
 bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath);

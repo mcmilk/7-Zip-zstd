@@ -33,7 +33,7 @@ class CPlugin
   void AddColumn(PROPID aPropID);
 
 
-  void EnterToDirectory(const CSysString &aDirName);
+  void EnterToDirectory(const UString &aDirName);
 
   void GetPathParts(UStringVector &aPathParts);
 public:

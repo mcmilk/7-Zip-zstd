@@ -51,13 +51,27 @@ DEFINE_GUID(BT_CLSID,
 0x23170F69, 0x40C1, 0x278C, 0x02, kIDByte | kIDUse3BytesByte, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
+class CInTree2: public CInTree
+{
+  CComPtr<IMatchFinderCallback> m_Callback;
+  virtual void BeforeMoveBlock();
+  virtual void AfterMoveBlock();
+public:
+  void SetCallback(IMatchFinderCallback *aCallback)
+  {
+    m_Callback = aCallback;
+  }
+};
+
 class CMatchFinderBinTree: 
   public IInWindowStreamMatch,
+  public IMatchFinderSetCallback,
   public CComObjectRoot,
   public CComCoClass<CMatchFinderBinTree, &BT_CLSID>
 {
 BEGIN_COM_MAP(CMatchFinderBinTree)
   COM_INTERFACE_ENTRY(IInWindowStreamMatch)
+  COM_INTERFACE_ENTRY(IMatchFinderSetCallback)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CMatchFinderBinTree)
@@ -77,9 +91,12 @@ DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, 0
   STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *aDistances);
   STDMETHOD_(void, DummyLongestMatch)();
 
+  // IMatchFinderSetCallback
+  STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback);
+
 private:
   // UINT32 m_WindowReservSize;
-  CInTree m_MatchFinder;
+  CInTree2 m_MatchFinder;
 public:
   // CMatchFinderBinTree(): m_WindowReservSize((1 << 19) + 256) {};
   void SetCutValue(UINT32 aCutValue) 

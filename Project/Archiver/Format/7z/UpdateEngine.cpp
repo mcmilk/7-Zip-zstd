@@ -18,7 +18,7 @@
 
 #include "../Common/InStreamWithCRC.h"
 
-#include "ItemNameUtils.h"
+#include "Archive/Common/ItemNameUtils.h"
 #include "Handler.h"
 
 #include "Encode.h"

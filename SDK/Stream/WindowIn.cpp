@@ -98,11 +98,14 @@ HRESULT CIn::ReadBlock()
 
 // UINT32 CIn::GetMatchLen(UINT32 aIndex, UINT32 aBack, UINT32 aLimit)const
 
-void CIn::MoveBlock(UINT32 anOffset)
+void CIn::MoveBlock()
 {
+  BeforeMoveBlock();
+  UINT32 anOffset = (m_Buffer + m_Pos - m_KeepSizeBefore) - m_BufferBase;
   UINT32 aNumBytes = (m_Buffer + m_StreamPos) -  (m_BufferBase + anOffset);
   memmove(m_BufferBase, m_BufferBase + anOffset, aNumBytes);
   m_Buffer -= anOffset;
+  AfterMoveBlock();
 }
 
 

@@ -10,7 +10,7 @@
 #include "Windows/COMTry.h"
 
 #include "Compression/CopyCoder.h"
-#include "Archive/Tar/ItemNameUtils.h"
+#include "Archive/Common/ItemNameUtils.h"
 #include "Archive/Tar/InEngine.h"
 
 #include "Common/Defs.h"
@@ -209,7 +209,7 @@ STDMETHODIMP CTarHandler::GetProperty(
   switch(aPropID)
   {
     case kaipidPath:
-      aPropVariant = (const wchar_t *)NItemName::GetOSName(
+      aPropVariant = (const wchar_t *)NItemName::GetOSName2(
           MultiByteToUnicodeString(anItem.Name, CP_OEMCP));
       break;
     case kaipidIsFolder:

@@ -23,15 +23,15 @@ namespace NPathType
     kLocal,
     kUNC
   };
-  EEnum GetPathType(const CSysString &aPath);
+  EEnum GetPathType(const UString &aPath);
 }
 
 struct CParsedPath
 {
-  CSysString Prefix; // Disk or UNC with slash
-  CSysStringVector PathParts;
-  void ParsePath(const CSysString &aPath);
-  CSysString MergePath() const;
+  UString Prefix; // Disk or UNC with slash
+  UStringVector PathParts;
+  void ParsePath(const UString &aPath);
+  UString MergePath() const;
 };
 
 void SplitNameToPureNameAndExtension(const CSysString &aFullName, CSysString &aPureName,

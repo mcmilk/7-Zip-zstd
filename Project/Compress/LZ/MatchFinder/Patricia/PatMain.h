@@ -7,6 +7,26 @@
 
 namespace PAT_NAMESPACE {
 
+STDMETHODIMP CPatricia::SetCallback(IMatchFinderCallback *aCallback)
+{
+  m_Callback = aCallback;
+  return S_OK;
+}
+
+void CPatricia::BeforeMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->BeforeChangingBufferPos();
+  CIn::BeforeMoveBlock();
+}
+
+void CPatricia::AfterMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->AfterChangingBufferPos();
+  CIn::AfterMoveBlock();
+}
+
 const UINT32 kMatchStartValue2 = 2;
 const UINT32 kDescendantEmptyValue2 = kMatchStartValue2 - 1;
 const UINT32 kDescendantsNotInitilized2 = kDescendantEmptyValue2 - 1;

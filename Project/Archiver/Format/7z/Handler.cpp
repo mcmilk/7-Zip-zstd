@@ -13,7 +13,7 @@
 
 #include "../../../Compress/Interface/CompressInterface.h"
 
-#include "ItemNameUtils.h"
+#include "Archive/Common/ItemNameUtils.h"
 
 using namespace std;
 
@@ -97,7 +97,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
   {
     case kaipidPath:
     {
-      aPropVariant = NItemName::GetOSName(anItem.Name);
+      aPropVariant = NArchive::NItemName::GetOSName(anItem.Name);
       break;
     }
     case kaipidIsFolder:

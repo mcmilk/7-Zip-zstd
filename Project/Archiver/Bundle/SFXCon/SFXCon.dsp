@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O1 /D "NDEBUG" /D "COMPRESS_BCJ2" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "COMPRESS_BCJ2" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -459,6 +459,18 @@ SOURCE=..\..\..\..\SDK\Interface\StreamObjects.h
 # Begin Group "7z"
 
 # PROP Default_Filter ""
+# Begin Group "Header Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Format\7z\CompressionMethod.h
@@ -510,14 +522,6 @@ SOURCE=..\..\Format\7z\InEngine.h
 # Begin Source File
 
 SOURCE=..\..\Format\7z\ItemInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Format\7z\ItemNameUtils.h
 # End Source File
 # Begin Source File
 

@@ -12,7 +12,6 @@
 #include "Interface/ProgressUtils.h"
 #include "Interface/LimitedStreams.h"
 
-#include "Archive/Tar/ItemNameUtils.h"
 #include "Archive/Tar/OutEngine.h"
 
 #include "Windows/Defs.h"
@@ -87,15 +86,14 @@ HRESULT UpdateArchive(IInStream *anInStream, ISequentialOutStream *anOutStream,
       CItemInfo anItemInfo;
 
       anItemInfo.Mode = 0777;
+      anItemInfo.Name = (anUpdateItemInfo.Name);
       if (anUpdateItemInfo.IsDirectory)
       {
-         anItemInfo.Name = NItemName::MakeLegalDirName(anUpdateItemInfo.Name);
          anItemInfo.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
          anItemInfo.Size = 0;
       }
       else
       {
-         anItemInfo.Name = NItemName::MakeLegalName(anUpdateItemInfo.Name);
          anItemInfo.LinkFlag = NFileHeader::NLinkFlag::kNormal;
          anItemInfo.Size = anUpdateItemInfo.Size;
       }

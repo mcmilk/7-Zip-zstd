@@ -11,10 +11,12 @@ namespace NName {
 
 static const wchar_t kDiskDelimiter = L':';
 
+/*
 static bool IsCharAPrefixDelimiter(wchar_t aChar)
 {
   return (aChar == kDirDelimiter || aChar == kDiskDelimiter);
 }
+*/
 
 void NormalizeDirPathPrefix(CSysString &aDirPath)
 {
@@ -26,7 +28,7 @@ void NormalizeDirPathPrefix(CSysString &aDirPath)
 
 namespace NPathType
 {
-  EEnum GetPathType(const CSysString &aPath)
+  EEnum GetPathType(const UString &aPath)
   {
     if (aPath.Length() <= 2)
       return kLocal;
@@ -36,7 +38,7 @@ namespace NPathType
   }
 }
 
-void CParsedPath::ParsePath(const CSysString &aPath)
+void CParsedPath::ParsePath(const UString &aPath)
 {
   int aCurPos = 0;
   switch (NPathType::GetPathType(aPath))
@@ -66,9 +68,9 @@ void CParsedPath::ParsePath(const CSysString &aPath)
   SplitPathToParts(aPath.Mid(aCurPos), PathParts);
 }
 
-CSysString CParsedPath::MergePath() const
+UString CParsedPath::MergePath() const
 {
-  CSysString aResult = Prefix;
+  UString aResult = Prefix;
   for(int i = 0; i < PathParts.Size(); i++)
   {
     if (i != 0)

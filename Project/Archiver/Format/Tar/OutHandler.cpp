@@ -12,6 +12,7 @@
 
 #include "UpdateEngine.h"
 
+#include "Archive/Common/ItemNameUtils.h"
 
 using namespace NArchive;
 using namespace NTar;
@@ -86,7 +87,11 @@ STDMETHODIMP CTarHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
 
       anUpdateItemInfo.IsDirectory = ((anAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
       anUpdateItemInfo.Size = aSize;
-      anUpdateItemInfo.Name = UnicodeStringToMultiByte((BSTR)aName, CP_OEMCP);
+      anUpdateItemInfo.Name = UnicodeStringToMultiByte(
+        NItemName::MakeLegalName((BSTR)aName), CP_OEMCP);
+      if (anUpdateItemInfo.IsDirectory)
+        anUpdateItemInfo.Name += '/';
+
       anUpdateItemInfo.IndexInClient = i;
       if(MyBoolToBool(anExistInArchive))
       {

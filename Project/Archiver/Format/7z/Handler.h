@@ -96,7 +96,9 @@ private:
   bool m_Solid;
   bool m_CompressHeaders;
   UINT32 m_DefaultDicSize;
-  
+  bool m_MultiThread;
+  UINT32 m_MultiThreadMult;
+
   HRESULT SetCompressionMethod(CCompressionMethodMode &aMethod,
       CCompressionMethodMode &aHeaderMethod);
   #endif
@@ -106,6 +108,7 @@ private:
     #ifndef EXTRACT_ONLY
     m_Solid = true;
     m_CompressHeaders = true;
+    m_MultiThread = false;
     m_DefaultDicSize = (1 << 20);
     #endif
   }

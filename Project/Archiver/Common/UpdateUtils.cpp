@@ -28,11 +28,21 @@ CSysString GetWorkDir(const NZipSettings::NWorkDir::CInfo &aWorkDirInfo,
   NZipSettings::NWorkDir::NMode::EEnum aMode = aWorkDirInfo.Mode;
   if (aWorkDirInfo.ForRemovableOnly)
   {
+    aMode = NZipSettings::NWorkDir::NMode::kCurrent;
+    CSysString aPrefix = anArchiveName.Left(3);
+    if (aPrefix[1] == TEXT(':') && aPrefix[2] == TEXT('\\'))
+    {
+      UINT aDriveType = GetDriveType(aPrefix);
+      if (aDriveType == DRIVE_CDROM || aDriveType == DRIVE_REMOVABLE)
+        aMode = aWorkDirInfo.Mode;
+    }
+    /*
     CParsedPath aParsedPath;
     aParsedPath.ParsePath(anArchiveName);
     UINT aDriveType = GetDriveType(aParsedPath.Prefix);
     if ((aDriveType != DRIVE_CDROM) && (aDriveType != DRIVE_REMOVABLE))
       aMode = NZipSettings::NWorkDir::NMode::kCurrent;
+    */
   }
   switch(aMode)
   {

@@ -183,10 +183,10 @@ void CPlugin::FreeFindData(struct PluginPanelItem *aPanelItems,
 }
 
 
-void CPlugin::EnterToDirectory(const CSysString &aDirName)
+void CPlugin::EnterToDirectory(const UString &aDirName)
 {
   CComPtr<IArchiveFolder> aNewFolder;
-  m_ArchiveFolder->BindToFolder(MultiByteToUnicodeString(aDirName, CP_OEMCP), &aNewFolder);
+  m_ArchiveFolder->BindToFolder(aDirName, &aNewFolder);
   if(aNewFolder == NULL)
     if (aDirName.IsEmpty())
       return;
@@ -197,13 +197,13 @@ void CPlugin::EnterToDirectory(const CSysString &aDirName)
 
 int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
 {
-  CSysString aDir = aszDir;
-  if (aDir == "\\")
+  UString aDir = MultiByteToUnicodeString(aszDir, CP_OEMCP);
+  if (aDir == L"\\")
   {
     m_ArchiveFolder.Release();
     m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);  
   }
-  else if (aDir == "..")
+  else if (aDir == L"..")
   {
     CComPtr<IArchiveFolder> aNewFolder;
     m_ArchiveFolder->BindToParentFolder(&aNewFolder);  
@@ -215,13 +215,13 @@ int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
     EnterToDirectory(aDir);
   else
   {
-    if (aDir[0] == '\\')
+    if (aDir[0] == L'\\')
     {
       m_ArchiveFolder.Release();
       m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);  
       aDir = aDir.Mid(1);
     }
-    CSysStringVector aPathParts;
+    UStringVector aPathParts;
     SplitPathToParts(aDir, aPathParts);
     for(int i = 0; i < aPathParts.Size(); i++)
       EnterToDirectory(aPathParts[i]);
