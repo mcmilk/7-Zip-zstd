@@ -23,13 +23,16 @@ void COutArchive::MoveBasePosition(UInt64 distanceToMove)
 
 void COutArchive::PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64)
 {
+  m_IsZip64 = isZip64;
   m_ExtraSize = isZip64 ? (4 + 8 + 8) : 0;
   m_LocalFileHeaderSize = 4 + NFileHeader::kLocalBlockSize + fileNameLength + m_ExtraSize;
 }
 
 void COutArchive::PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize)
 {
-  PrepareWriteCompressedDataZip64(fileNameLength, unPackSize >= 0xF0000000);
+  // We test it to 0xF8000000 to support case when compressed size 
+  // can be larger than uncompressed size.
+  PrepareWriteCompressedDataZip64(fileNameLength, unPackSize >= 0xF8000000);
 }
 
 void COutArchive::PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize)
@@ -86,11 +89,7 @@ HRESULT COutArchive::WriteLocalHeader(const CItem &item)
 {
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
   
-  bool isPack64 = item.PackSize >= 0xFFFFFFFF;
-  bool isUnPack64 = item.UnPackSize >= 0xFFFFFFFF;
-  bool isZip64  = isPack64 || isUnPack64;
-  isPack64 = isZip64;
-  isUnPack64 = isZip64;
+  bool isZip64 = m_IsZip64 || item.PackSize >= 0xFFFFFFFF || item.UnPackSize >= 0xFFFFFFFF;
   
   WriteUInt32(NSignature::kLocalFileHeader);
   WriteByte(item.ExtractVersion.Version);
@@ -99,15 +98,10 @@ HRESULT COutArchive::WriteLocalHeader(const CItem &item)
   WriteUInt16(item.CompressionMethod);
   WriteUInt32(item.Time);
   WriteUInt32(item.FileCRC);
-  WriteUInt32(isPack64 ? 0xFFFFFFFF: (UInt32)item.PackSize);
-  WriteUInt32(isUnPack64 ? 0xFFFFFFFF: (UInt32)item.UnPackSize);
+  WriteUInt32(isZip64 ? 0xFFFFFFFF: (UInt32)item.PackSize);
+  WriteUInt32(isZip64 ? 0xFFFFFFFF: (UInt32)item.UnPackSize);
   WriteUInt16(item.Name.Length());
-  UInt16 localExtraSize = 
-      isZip64 ? 
-      (4 + 
-        (isUnPack64 ? 8: 0) + 
-        (isPack64 ? 8: 0)
-      ):0;
+  UInt16 localExtraSize = isZip64 ? (4 + 16): 0;
   if (localExtraSize > m_ExtraSize)
     return E_FAIL;
   WriteUInt16(m_ExtraSize); // test it;
@@ -119,19 +113,12 @@ HRESULT COutArchive::WriteLocalHeader(const CItem &item)
     WriteUInt16(remain);
     if (isZip64)
     {
-      if(isUnPack64)
-      {
-        WriteUInt64(item.UnPackSize);
-        remain -= 8;
-      }
-      if(isPack64)
-      {
-        WriteUInt64(item.PackSize);
-        remain -= 8;
-      }
-      for (int i = 0; i < remain; i++)
-        WriteByte(0);
+      WriteUInt64(item.UnPackSize);
+      WriteUInt64(item.PackSize);
+      remain -= 16;
     }
+    for (int i = 0; i < remain; i++)
+      WriteByte(0);
   }
   MoveBasePosition(item.PackSize);
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);

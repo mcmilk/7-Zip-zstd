@@ -19,6 +19,7 @@ class COutArchive
   UInt64 m_BasePosition;
   UInt32 m_LocalFileHeaderSize;
   UInt32 m_ExtraSize;
+  bool m_IsZip64;
 
   void WriteBytes(const void *buffer, UInt32 size);
   void WriteByte(Byte b);
