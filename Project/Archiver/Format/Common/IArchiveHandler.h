@@ -40,6 +40,8 @@ enum // CArchiveItemPropertyID
   kaipidCRC, 
   kaipidType,
   kaipidIsAnti,
+  kaipidMethod,
+  kaipidHostOS,
   kaipidUserDefined = 0x10000
 };
 

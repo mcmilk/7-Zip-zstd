@@ -327,11 +327,6 @@ STDMETHODIMP CExtractCallBackImp::PrepareOperation(INT32 anAskExtractMode)
   return S_OK;
 }
 
-void CExtractCallBackImp::AddErrorMessage(LPCTSTR aMessage)
-{
-  m_Messages.Add(aMessage);
-}
-
 STDMETHODIMP CExtractCallBackImp::OperationResult(INT32 aResultEOperationResult)
 {
   switch(aResultEOperationResult)

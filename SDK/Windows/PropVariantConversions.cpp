@@ -39,6 +39,7 @@ static CSysString ConvertINT32ToString(INT32 aValue)
 }
 
 
+/*
 CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime)
 {
   SYSTEMTIME aSystemTime;
@@ -70,6 +71,7 @@ CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime
     #endif
   return aStringDate + _T(" ") + aStringTime;
 }
+*/
 
 CSysString ConvertFileTimeToString2(const FILETIME &aFileTime, 
     bool anIncludeTime, bool anIncludeSeconds)
@@ -107,7 +109,7 @@ CSysString ConvertPropVariantToString(const PROPVARIANT &aPropVariant)
     case VT_UI8:
       return ConvertUINT64ToString(*(UINT64 *)(&aPropVariant.uhVal));
     case VT_FILETIME:
-      return ConvertFileTimeToString(aPropVariant.filetime);
+      return ConvertFileTimeToString2(aPropVariant.filetime, true, true);
 
 
     /*

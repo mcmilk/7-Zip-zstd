@@ -15,21 +15,26 @@ CIn::CIn():
   m_BufferBase(0)
 {}
 
+void CIn::Free()
+{
+  delete []m_BufferBase;
+  m_BufferBase = 0;
+}
+
 void CIn::Create(UINT32 aKeepSizeBefore, UINT32 aKeepSizeAfter, UINT32 aKeepSizeReserv)
 {
   m_KeepSizeBefore = aKeepSizeBefore;
   m_KeepSizeAfter = aKeepSizeAfter;
   m_KeepSizeReserv = aKeepSizeReserv;
   m_BlockSize = aKeepSizeBefore + aKeepSizeAfter + aKeepSizeReserv;
-  delete []m_BufferBase;
-  m_BufferBase = 0;
+  Free();
   m_BufferBase = new BYTE[m_BlockSize];
   m_PointerToLastSafePosition = m_BufferBase + m_BlockSize - aKeepSizeAfter;
 }
 
 CIn::~CIn()
 {
-  delete []m_BufferBase;
+  Free();
 }
 
 HRESULT CIn::Init(ISequentialInStream *aStream)

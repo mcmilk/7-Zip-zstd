@@ -313,8 +313,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,10,0
- PRODUCTVERSION 2,30,10,0
+ FILEVERSION 2,30,11,0
+ PRODUCTVERSION 2,30,11,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -332,14 +332,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "2, 30, 10, 0\0"
+            VALUE "FileVersion", "2, 30, 11, 0\0"
             VALUE "InternalName", "7-zip\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 10, 0\0"
+            VALUE "ProductVersion", "2, 30, 11, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -367,13 +367,12 @@ IDB_EXTRACT             BITMAP  DISCARDABLE     "Extract.bmp"
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_CONTEXT_EXTRACT     "Extract files..."
-    IDS_CONTEXT_EXTRACT_HELP "Extract files. Additional options are allowed."
+    IDS_CONTEXT_EXTRACT_HELP "Extracts files from the selected archive."
     IDS_CONTEXT_COMPRESS    "Add to archive..."
-    IDS_CONTEXT_COMPRESS_HELP 
-                            "Add to archive. Additional options are allowed."
+    IDS_CONTEXT_COMPRESS_HELP "Adds the selected items to archive."
     IDS_CONTEXT_POPUP_CAPTION "7-Zip"
     IDS_CONTEXT_OPEN        "Open"
-    IDS_CONTEXT_OPEN_HELP   "Open Archive"
+    IDS_CONTEXT_OPEN_HELP   "Opens the selected archive."
     IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
     IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
     IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
@@ -381,7 +380,7 @@ BEGIN
                             "CRC failed in '%s'. File is broken."
     IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 
                             "Data error in '%s'. File is broken."
-    IDS_FILE_SIZE_TIME      "%s\n%s\nmodified on %s, %s"
+    IDS_FILE_MODIFIED       "modified on"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -454,6 +453,12 @@ BEGIN
     IDS_ERROR_TOO_MUCH_ITEMS "Too much items"
     IDS_ERROR_NO_ASSOCIATION 
                             "There is no application associated with the given file name extension"
+    IDS_CONTEXT_TEST        "Test archive"
+    IDS_CONTEXT_TEST_HELP   "Tests integrity of the selected archive."
+    IDS_PROGRESS_TESTING    "Testing"
+    IDS_MESSAGE_NO_ERRORS   "There are no errors"
+    IDS_PROPERTY_METHOD     "Method"
+    IDS_PROPERTY_HOST_OS    "Host OS"
 END
 
 #endif    // English (U.S.) resources

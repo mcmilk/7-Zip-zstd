@@ -3,6 +3,7 @@
 #include "Common/Defs.h"
 
 #include "Windows/Defs.h"
+#include "Common/NewHandler.h"
 
 namespace PAT_NAMESPACE {
 
@@ -33,12 +34,47 @@ CPatricia::CPatricia():
   #ifdef __HASH_3
   m_Hash2Descendants(0),
   #endif
-  m_TmpBacks(0)
-  {}
+  m_TmpBacks(0),
+  m_Nodes(0)
+{
+}
+
+CPatricia::~CPatricia()
+{
+  FreeMemory();
+}
+
+void CPatricia::FreeMemory()
+{
+  if (m_TmpBacks != 0)
+    delete []m_TmpBacks;
+  m_TmpBacks = 0;
+
+  #ifdef _WINDOWS
+  VirtualFree(m_Nodes, 0, MEM_DECOMMIT | MEM_RELEASE);
+  m_Nodes = 0;
+  #else
+  m_AlignBuffer.Free();
+  #endif
+
+  if (m_HashDescendants != 0)
+    delete []m_HashDescendants;
+  m_HashDescendants = 0;
+
+  #ifdef __HASH_3
+
+  if (m_HashDescendants != 0)
+    delete []m_Hash2Descendants;
+  m_Hash2Descendants = 0;
+
+  #endif
+
+}
   
 STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, 
     UINT32 aMatchMaxLen, UINT32 aKeepAddBufferAfter)
 {
+  FreeMemory();
   const kNumBitsInNumSameBits = sizeof(CSameBitsType) * 8;
   if (kNumBitsInNumSameBits < 32 && ((aMatchMaxLen * MY_BYTE_SIZE) > (1 << kNumBitsInNumSameBits)))
     return E_INVALIDARG;
@@ -63,8 +99,9 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #ifdef __HASH_3
     m_Hash2Descendants = new CDescendant[kHash2Size + 1];
     #endif
+
     #ifdef __AUTO_REMOVE
-    
+   
     #ifdef __HASH_3
     m_NumNodes = aSizeHistory + m_SizeHistory * 4 / 8 + (1 << 19);
     #else
@@ -72,27 +109,29 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #endif
 
     #else
+
     UINT32 m_NumNodes = aSizeHistory;
+    
     #endif
+    
     const kMaxNumNodes = UINT32(1) << (sizeof(CIndex) * 8 - 1);
     if (m_NumNodes + 32 > kMaxNumNodes)
       return E_INVALIDARG;
+
+    #ifdef _WINDOWS
+    m_Nodes = (CNode *)::VirtualAlloc(0, (m_NumNodes + 2) * sizeof(CNode), MEM_COMMIT, PAGE_READWRITE);
+    if (m_Nodes == 0)
+      throw CNewException();
+    #else
     m_Nodes = (CNode *)m_AlignBuffer.Allocate(m_NumNodes + 2, sizeof(CNode), 0x40);
-    try 
-    {
-      delete []m_TmpBacks;
-      m_TmpBacks = 0;
-      m_TmpBacks = new UINT32[m_MatchMaxLen + 1];
-    }
-    catch(...)
-    {
-      m_AlignBuffer.Free();
-      throw;
-    }
+    #endif
+
+    m_TmpBacks = new UINT32[m_MatchMaxLen + 1];
     return S_OK;
   }
   catch(...)
   {
+    FreeMemory();
     return E_OUTOFMEMORY;
   }
 }
@@ -121,15 +160,6 @@ STDMETHODIMP CPatricia::Init(ISequentialInStream *aStream)
   #endif
   m_SpecialMode = false;
   return S_OK;
-}
-
-CPatricia::~CPatricia()
-{ 
-  delete []m_TmpBacks;
-  delete []m_HashDescendants; 
-  #ifdef __HASH_3
-  delete []m_Hash2Descendants; 
-  #endif
 }
 
 STDMETHODIMP_(void) CPatricia::ReleaseStream()

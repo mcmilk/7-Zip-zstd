@@ -30,6 +30,7 @@ protected:
 
   virtual void MoveBlock(UINT32 anOffset);
   virtual HRESULT ReadBlock();
+  void Free();
 public:
   CIn();
   void Create(UINT32 aKeepSizeBefore, UINT32 aKeepSizeAfter, 

@@ -22,7 +22,7 @@
 #define IDC_BUTTON_OVERWRITE_AUTO_RENAME 11
 #define IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC 12
 #define IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 14
-#define IDS_FILE_SIZE_TIME              15
+#define IDS_FILE_MODIFIED               15
 #define IDS_FILE_SIZE                   16
 #define IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD 17
 #define IDS_TOOLBAR_EXTRACT             18
@@ -78,6 +78,12 @@
 #define IDS_ERROR                       70
 #define IDS_ERROR_TOO_MUCH_ITEMS        71
 #define IDS_ERROR_NO_ASSOCIATION        72
+#define IDS_CONTEXT_TEST                73
+#define IDS_CONTEXT_TEST_HELP           74
+#define IDS_PROGRESS_TESTING            75
+#define IDS_MESSAGE_NO_ERRORS           76
+#define IDS_PROPERTY_METHOD             77
+#define IDS_PROPERTY_HOST_OS            78
 #define IDB_EXTRACT                     135
 #define IDB_B2                          136
 #define IDD_DIALOG_EXTRACT              137

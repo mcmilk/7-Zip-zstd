@@ -663,7 +663,7 @@ LRESULT CZipViewObject::SetItemText(LV_DISPINFO *aDispInfo, UINT32 anIndex)
         // PrintMessage("GetPropertyValue error");
         return 0;
       }
-      aString = ConvertPropertyToString(aProperty, aPropID);
+      aString = ConvertPropertyToString(aProperty, aPropID, false);
     }
   }
   

@@ -51,8 +51,6 @@ private:
 
   CSysString m_DiskFilePath;
 
-  CSysStringVector m_Messages;
-
   bool m_ExtractMode;
   struct CProcessedFileInfo
   {
@@ -75,7 +73,6 @@ private:
 
   void CreateComplexDirectory(const UStringVector &aDirPathParts);
   bool IsEncrypted(UINT32 anIndex);
-  void AddErrorMessage(LPCTSTR aMessage);
 public:
   void Init(IArchiveHandler200 *anArchiveHandler, const CSysString &aDirectoryPath,
       const NZipSettings::NExtraction::CInfo &anExtractModeInfo, 

@@ -73,7 +73,10 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kaipidSplitAfter, IDS_PROPERTY_SPLIT_AFTER, 0x02000211 },
   { kaipidDictionarySize, IDS_PROPERTY_DICTIONARY_SIZE, 0x02000212 },
   { kaipidCRC, IDS_PROPERTY_CRC, 0x02000213 },
-  { kaipidIsAnti, IDS_PROPERTY_ANTI, 0x02000215 }
+  { kaipidIsAnti, IDS_PROPERTY_ANTI, 0x02000215 },
+  { kaipidMethod, IDS_PROPERTY_METHOD, 0x02000216 },
+  { kaipidHostOS, IDS_PROPERTY_HOST_OS, 0x02000217 }
+  
   // { kaipidType, L"Type" }
 };
 

@@ -1,6 +1,26 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 11        2002-01-15
+  --------------------------------------
+    - Compress/LZ/MatchFinder/BinTreemain.h: 
+      Compress/LZ/MatchFinder/Patricia.h: 
+      Compress/PPM/PPMd/SubAlloc.h: 
+        using VirtualAlloc for memory allocating
+    - Exlorer/ContextMenu.cpp: 
+        Testing supporting.
+        CreateProcess instead WinExec
+    - Format/Common/IArchiveHandler.h:
+      Exlorer/ProxyHandler.cpp:
+      FAR/Plugin.cpp:
+        New properties names: Method, HostOS.
+    - Exlorer/OverwriteDialog.cpp:
+      FAR/OverwriteDialog.cpp:
+      Windows/PropVariantConversions.h
+        Using National time format was eliminated.
+
+
+
   Version 2.30 Beta 10        2002-01-11
   --------------------------------------
     - Exlorer/ContextMenu.cpp: bug with context menu on 

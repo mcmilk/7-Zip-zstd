@@ -1,8 +1,8 @@
-// ExtractEngine.h
+// TestEngine.h
 
 #include "StdAfx.h"
 
-#include "ExtractEngine.h"
+#include "TestEngine.h"
 
 #include "Common/StringConvert.h"
 
@@ -18,12 +18,11 @@
 #include "MyMessages.h"
 #include "FormatUtils.h"
 
-#include "ExtractDialog.h"
 #include "ExtractCallback.h"
 
 using namespace NWindows;
 
-HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
+HRESULT TestArchive(HWND aParentWindow, const CSysString &aFileName)
 {
   CComPtr<IArchiveHandler100> anArchiveHandler;
   NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
@@ -34,53 +33,27 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
   if (aResult != S_OK)
     return aResult;
 
-  #ifndef  NO_REGISTRY
-  CZipRegistryManager aZipRegistryManager;
-  #endif
-
-  CExtractDialog aDialog;
-  aDialog.Init(
-      #ifndef  NO_REGISTRY
-      &aZipRegistryManager, 
-      #endif
-      aFileName);
-  aDialog.m_FilesMode = NExtractionDialog::NFilesMode::kAll;
-  aDialog.m_EnableSelectedFilesButton = false;
-  aDialog.m_EnableFilesButton = false;
-
-  if(aDialog.Create(aParentWindow) != IDOK)
-    return E_ABORT;
-
-  CSysString aDirectoryPath = aDialog.m_DirectoryPath;
-  if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
-  {
-    MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, 
-        #ifdef LANG        
-        0x02000603, 
-        #endif 
-        (LPCTSTR)aDirectoryPath));
-    return E_FAIL;
-  }
-  
   CComObjectNoLock<CExtractCallBackImp> *anExtractCallBackSpec =
     new CComObjectNoLock<CExtractCallBackImp>;
 
   CComPtr<IExtractCallback2> anExtractCallBack(anExtractCallBackSpec);
   
   anExtractCallBackSpec->m_ParentWindow = 0;
-  anExtractCallBackSpec->StartProgressDialog();
+  anExtractCallBackSpec->StartProgressDialog(true);
 
   // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
-  NExtractionDialog::CModeInfo anExtractModeInfo;
-  aDialog.GetModeInfo(anExtractModeInfo);
-  UStringVector aRemovePathParts;
-
-  UString aPassword = GetUnicodeString((LPCTSTR)aDialog.m_Password);
+  UString aPassword;
 
   NFile::NFind::CFileInfo anArchiveFileInfo;
   if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))
     throw "there is no archive file";
+
+  NExtractionDialog::CModeInfo anExtractModeInfo;
+  anExtractModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::kAskBefore;
+  anExtractModeInfo.PathMode = NExtractionDialog::NPathMode::kFullPathnames;
+  anExtractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
+  anExtractModeInfo.FileList.Clear();
 
   anExtractCallBackSpec->Init(anArchiveHandler, anExtractModeInfo,
       !aPassword.IsEmpty(), aPassword);
@@ -119,10 +92,15 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
       throw 12334455;
   }
 
-  return anArchiveHandler->Extract(
-      aPathMode, anOverwriteMode, GetUnicodeString(aDirectoryPath), 
-      BoolToMyBool(false), anExtractCallBack);
+  aResult = anArchiveHandler->Extract(
+      aPathMode, anOverwriteMode, L"", 
+      true, anExtractCallBack);
+
+  if (anExtractCallBackSpec->m_Messages.IsEmpty())
+  {
+    anExtractCallBackSpec->DestroyWindows();
+    MessageBox(0, LangLoadString(IDS_MESSAGE_NO_ERRORS, 0x02000608),
+      LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
+  }
+  return aResult;
 }
-
-
-

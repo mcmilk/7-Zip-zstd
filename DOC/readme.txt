@@ -1,7 +1,7 @@
-7-Zip 2.30 Beta 5 Sources
--------------------------
+7-Zip 2.30 Beta 11 Sources
+--------------------------
 
-7-Zip is a file archiver for Windows 95/98/ME/NT/2000. 
+7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
 
 7-Zip is free software distributed under the GNU LGPL. 
 
@@ -10,6 +10,18 @@ documentation, please, send some report to the author.
 
 You may freely send your comments and suggestions to 
 Igor Pavlov, the author of the 7-Zip:
+
+
+How to compile
+--------------
+To compile sources you need Visual C++ 6.0.
+For compiling some files you also need 
+new Platform SDK from Microsoft' Site.
+
+Also you must add SDK folder to include paths.
+
+
+
 
 WWW:
      http://www.7-zip.org

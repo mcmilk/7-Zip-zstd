@@ -45,9 +45,7 @@ const wchar_t *kUnknownOS = L"Unknown";
 
 enum // PropID
 {
-  kaipidHostOS = kaipidUserDefined,
-  kaipidUnPackVersion, 
-  kaipidMethod, 
+  kaipidUnPackVersion = kaipidUserDefined
 };
 
 STATPROPSTG kProperties[] = 
@@ -69,9 +67,9 @@ STATPROPSTG kProperties[] =
   { NULL, kaipidDictionarySize, VT_UI4},
   { NULL, kaipidCRC, VT_UI4},
 
-  { L"UnPack Version", kaipidUnPackVersion, VT_UI1},
-  { L"Method", kaipidMethod, VT_UI1},
-  { L"Host OS", kaipidHostOS, VT_BSTR}
+  { NULL, kaipidHostOS, VT_BSTR},
+  { NULL, kaipidMethod, VT_UI1},
+  { L"UnPack Version", kaipidUnPackVersion, VT_UI1}
 };
 
 static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);

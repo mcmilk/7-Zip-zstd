@@ -23,6 +23,7 @@ class CZipContextMenu:
     kCommandInternalIDOpen,
     kCommandInternalIDExtract,
     kCommandInternalIDCompress,
+    kCommandInternalIDTest
   };
   
   struct CCommandMapItem

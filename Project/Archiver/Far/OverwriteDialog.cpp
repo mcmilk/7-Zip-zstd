@@ -4,9 +4,9 @@
 
 #include "OverwriteDialog.h"
 
-#include "Windows/NationalTime.h"
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
+#include "Windows/PropVariantConversions.h"
 
 #include "Common/String.h"
 #include "Common/StringConvert.h"
@@ -20,22 +20,6 @@ namespace NOverwriteDialog {
 
 static const char *kHelpTopic = "OverwriteDialog";
 
-void ConvertFileTimeToStrings(const FILETIME &aFileTime, CSysString &aDateString,
-    CSysString &aTimeString)
-{
-  SYSTEMTIME aSystemTime;
-  if(!BOOLToBool(FileTimeToSystemTime(&aFileTime, &aSystemTime)))
-    throw 311907;
-  const kBufferSize = 64;
-  if(!NNational::NTime::MyGetDateFormat(LOCALE_USER_DEFAULT, 
-      DATE_LONGDATE, &aSystemTime, NULL, aDateString))
-    throw 311908;
-  
-  if(!NNational::NTime::MyGetTimeFormat(LOCALE_USER_DEFAULT, 
-      0, &aSystemTime, NULL, aTimeString))
-    throw 311909;
-}
- 
 struct CFileInfoStrings
 {
   CSysString Size;
@@ -58,16 +42,14 @@ void SetFileInfoStrings(const CFileInfo &aFileInfo,
     aFileInfoStrings.Size = "";
   }
 
-  CSysString aDateString, aTimeString;
   FILETIME aLocalFileTime; 
   if (!FileTimeToLocalFileTime(&aFileInfo.Time, &aLocalFileTime))
     throw 4190402;
-  ConvertFileTimeToStrings(aLocalFileTime, aDateString, aTimeString);
+  CSysString aTimeString = ConvertFileTimeToString2(aLocalFileTime);
 
-  sprintf(aBuffer, g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn), 
-      (LPCTSTR)SystemStringToOemString(aDateString), 
-      (LPCTSTR)SystemStringToOemString(aTimeString));
-  aFileInfoStrings.Time = aBuffer;
+  aFileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
+  aFileInfoStrings.Time += " ";
+  aFileInfoStrings.Time += aTimeString;
 }
 
 NResult::EEnum Execute(const CFileInfo &anOldFileInfo, const CFileInfo &aNewFileInfo)

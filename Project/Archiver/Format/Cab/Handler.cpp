@@ -25,8 +25,7 @@ using namespace NCab;
 
 enum // PropID
 {
-  kaipidMethod,
-  kaipidFolderIndex,
+  kaipidFolderIndex = kaipidUserDefined,
 };
 
 STATPROPSTG kProperties[] = 
@@ -37,7 +36,7 @@ STATPROPSTG kProperties[] =
   { NULL, kaipidLastWriteTime, VT_FILETIME},
   { NULL, kaipidAttributes, VT_UI4},
 
-  { L"Method", kaipidMethod, VT_UI1},
+  { NULL, kaipidMethod, VT_UI1},
   { NULL, kaipidDictionarySize, VT_UI4},
 
   { L"Folder Index", kaipidFolderIndex, VT_UI2}

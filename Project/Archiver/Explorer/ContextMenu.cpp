@@ -23,6 +23,7 @@
 #include "resource.h"
 
 #include "ExtractEngine.h"
+#include "TestEngine.h"
 #include "CompressEngine.h"
 #include "MyMessages.h"
 
@@ -70,9 +71,11 @@ STDMETHODIMP CZipContextMenu::Initialize(LPCITEMIDLIST pidlFolder,
 // IContextMenu
 
 static LPCTSTR kMainVerb = _T("SevenOpen");
-static LPCTSTR kExtractVerb = _T("SevenExtract");
-static LPCTSTR kCompressVerb = _T("SevenCompress");
+
 static LPCTSTR kOpenVerb = _T("SevenOpen");
+static LPCTSTR kExtractVerb = _T("SevenExtract");
+static LPCTSTR kTestVerb = _T("SevenTest");
+static LPCTSTR kCompressVerb = _T("SevenCompress");
 
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
       UINT aCommandIDFirst, UINT aCommandIDLast, UINT aFlags)
@@ -130,6 +133,15 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
       aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
           LangLoadString(IDS_CONTEXT_EXTRACT, 0x02000105)); 
       m_CommandMap.push_back(aCommandMapItem);
+
+      //////////////////////////
+      // Test command
+      aCommandMapItem.CommandInternalID = kCommandInternalIDTest;
+      aCommandMapItem.Verb = kTestVerb;
+      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_TEST_HELP, 0x0200010A);
+      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+          LangLoadString(IDS_CONTEXT_TEST, 0x02000109)); 
+      m_CommandMap.push_back(aCommandMapItem);
     }
   }
 
@@ -175,8 +187,12 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
 {
   int aCommandOffset;
   
+  if(HIWORD(aCommandInfo->lpVerb) == 0)
+    aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+  else
+    aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
+  /*
   #ifdef _UNICODE
-  
   if(aCommandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX))
   {
     if ((aCommandInfo->fMask & CMIC_MASK_UNICODE) != 0)
@@ -189,15 +205,15 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
         MessageBox(0, TEXT("1"), TEXT("1"), 0);
         return E_FAIL;
       }
-      /*
-      if(HIWORD(aCommandInfoEx->lpVerbW) == 0)
-      aCommandOffset = LOWORD(aCommandInfoEx->lpVerbW);
-      else
-      aCommandOffset = FindVerb(GetSystemString(aCommandInfoEx->lpVerbW));
-      */
     }
     else
-      return E_FAIL;
+    {
+      if(HIWORD(aCommandInfo->lpVerb) == 0)
+        aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+      else
+        aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
+    }
+    //  return E_FAIL;
   }
   else
   {
@@ -217,6 +233,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
   }
 
   #endif
+  */
 
   if(aCommandOffset < 0 || aCommandOffset >= m_CommandMap.size())
     return E_FAIL;
@@ -229,19 +246,6 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
   {
     case kCommandInternalIDOpen:
     {
-      /*
-      SHELLEXECUTEINFO anExecInfo;
-      anExecInfo.cbSize = sizeof(anExecInfo);
-      anExecInfo.fMask = SEE_MASK_CLASSNAME;
-      anExecInfo.hwnd = NULL;
-      anExecInfo.lpVerb = NULL;
-      anExecInfo.lpFile = m_FileNames[0];
-      anExecInfo.lpParameters = NULL;
-      anExecInfo.lpDirectory = NULL;
-      anExecInfo.nShow = SW_SHOWNORMAL;
-      anExecInfo.lpClass = kFileClassIDString; // kShellFolderClassIDString;
-      ::ShellExecuteEx(&anExecInfo);
-      */
       CSysString aParams;
       if (!NSystem::MyGetWindowsDirectory(aParams))
         return E_FAIL;
@@ -251,13 +255,22 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
       aParams += m_FileNames[0];
       aParams += _T("\"");
 
-      WinExec(GetAnsiString(aParams), SW_SHOWNORMAL);
-      /*
-      aParams = "/e,/root,{23170F69-40C1-278A-1000-000100010000}, ";
-      BOOL aResult = CreateProcess("c:\\windows\\explorer.exe", 
-        (LPTSTR)(LPCTSTR)aParams, NULL, NULL, FALSE,
-        NORMAL_PRIORITY_CLASS, NULL, NULL, NULL, NULL);
-      */
+      // WinExec(GetAnsiString(aParams), SW_SHOWNORMAL);
+
+      STARTUPINFO aStartupInfo;
+      aStartupInfo.cb = sizeof(aStartupInfo);
+      aStartupInfo.lpReserved = 0;
+      aStartupInfo.lpDesktop = 0;
+      aStartupInfo.lpTitle = 0;
+      aStartupInfo.dwFlags = 0;
+      aStartupInfo.cbReserved2 = 0;
+      aStartupInfo.lpReserved2 = 0;
+
+      PROCESS_INFORMATION aProcessInformation;
+      BOOL aResult = CreateProcess(NULL, (TCHAR *)(const TCHAR *)aParams, 
+            NULL, NULL, FALSE, 0, NULL, NULL, 
+            &aStartupInfo, &aProcessInformation);
+      ::CloseHandle(aProcessInformation.hProcess);
 
       break;
     }
@@ -265,11 +278,21 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     {
       try
       {
-        HRESULT aResult = ExtractArchive(aHWND, m_FileNames[0]);
-        if (aResult == S_FALSE)
-        {
+        if (ExtractArchive(aHWND, m_FileNames[0]) == S_FALSE)
           MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
-        }
+      }
+      catch(...)
+      {
+        MyMessageBox(IDS_ERROR, 0x02000605);
+      }
+      break;
+    }
+    case kCommandInternalIDTest:
+    {
+      try
+      {
+        if (TestArchive(aHWND, m_FileNames[0]) == S_FALSE)
+          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
       }
       catch(...)
       {

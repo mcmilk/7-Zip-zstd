@@ -13,6 +13,11 @@
 #include "ProcessMessages.h"
 #include "FormatUtils.h"
 
+void CExtractCallBackImp::DestroyWindows()
+{
+  m_ProgressDialog.Destroy();
+}
+
 CExtractCallBackImp::~CExtractCallBackImp()
 {
   m_ProgressDialog.Destroy();
@@ -35,6 +40,7 @@ void CExtractCallBackImp::Init(IArchiveHandler100 *anArchiveHandler,
   m_PasswordIsDefined = aPasswordIsDefined;
   m_Password = aPassword;
   m_ExtractModeInfo = anExtractModeInfo;
+  m_Messages.Clear();
 }
 
 void CExtractCallBackImp::AddErrorMessage(LPCTSTR aMessage)

@@ -306,14 +306,6 @@ SOURCE=..\..\..\SDK\Windows\FileName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\SDK\Windows\NationalTime.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\Windows\NationalTime.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\SDK\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File

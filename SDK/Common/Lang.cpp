@@ -84,14 +84,7 @@ bool CLang::Open(LPCTSTR aFileName)
   if (aString.Mid(aPos, aStringID.Length()) != aStringID)
     return false;
   aPos += aStringID.Length();
-  int aFindFinish = aString.Find('!', aPos);
-  if (aFindFinish < 0)
-    return false;
-
-  if (!ConvertUTF8ToUnicode(aString.Mid(aPos, aFindFinish - aPos), m_Name))
-    return false;
-
-  aPos = aFindFinish + 1;
+  
   if (!WaitNextLine(aString, aPos))
     return false;
 

@@ -63,11 +63,9 @@ const wchar_t *kUnknownOS = L"Unknown";
 
 enum // PropID
 {
-  kaipidMethod = kaipidUserDefined, 
-  kaipidIsText,
-  kaipidExtraIsPresent,
+  kaipidExtraIsPresent = kaipidUserDefined,
   kaipidExtraFlags,
-  kaipidHostOS
+  kaipidIsText
 };
 
 STATPROPSTG kProperties[] = 
@@ -79,13 +77,13 @@ STATPROPSTG kProperties[] =
   { NULL, kaipidPackedSize, VT_UI8},
 
   { NULL, kaipidComment, VT_BOOL},
+  // { NULL, kaipidMethod, VT_UI1},
+  { NULL, kaipidHostOS, VT_BSTR}
     
   // { NULL, kaipidCRC, VT_UI4},
-  { L"Extra flags", kaipidExtraFlags, VT_UI1},
-  { L"Method", kaipidMethod, VT_UI1},
-  { L"Is Text", kaipidIsText, VT_BOOL},
-  { L"Extra", kaipidExtraIsPresent, VT_BOOL},
-  { L"Host OS", kaipidHostOS, VT_BSTR}
+  // { L"Extra", kaipidExtraIsPresent, VT_BOOL}
+  // { L"Extra flags", kaipidExtraFlags, VT_UI1},
+  // { L"Is Text", kaipidIsText, VT_BOOL},
 };
 
 static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
@@ -213,6 +211,13 @@ STDMETHODIMP CGZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARI
     case kaipidComment:
       aPropVariant = m_Item.CommentIsPresent();
       break;
+    case kaipidHostOS:
+      aPropVariant = (m_Item.HostOS < kNumHostOSes) ?
+          kHostOS[m_Item.HostOS] : kUnknownOS;
+      break;
+    case kaipidMethod:
+      aPropVariant = m_Item.CompressionMethod;
+      break;
     case kaipidExtraFlags:
       aPropVariant = m_Item.ExtraFlags;
       break;
@@ -221,10 +226,6 @@ STDMETHODIMP CGZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARI
       break;
     case kaipidExtraIsPresent:
       aPropVariant = m_Item.ExtraFieldIsPresent();
-      break;
-    case kaipidHostOS:
-      aPropVariant = (m_Item.HostOS < kNumHostOSes) ?
-          kHostOS[m_Item.HostOS] : kUnknownOS;
       break;
   }
   aPropVariant.Detach(aValue);

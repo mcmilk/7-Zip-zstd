@@ -74,41 +74,72 @@ CInTree::CInTree():
 {
 }
 
+void CInTree::FreeMemory()
+{
+  #ifdef _WINDOWS
+  if (m_LeftBase != 0)
+    VirtualFree(m_LeftBase, 0, MEM_DECOMMIT | MEM_RELEASE);
+  #else
+  if (m_LeftBase != 0)
+    delete []m_LeftBase;
+  #endif
+  m_LeftBase = 0;
+  CIn::Free();
+}
+
+CInTree::~CInTree()
+{ 
+  FreeMemory();
+}
+
 HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, 
     UINT32 aMatchMaxLen, UINT32 aKeepAddBufferAfter, UINT32 aSizeReserv)
 {
-  CIn::Create(aSizeHistory + aKeepAddBufferBefore, 
-                 aMatchMaxLen + aKeepAddBufferAfter, aSizeReserv);
-
-  if (m_BlockSize + 256 > kMaxValForNormalize)
-    return E_INVALIDARG;
-
-  m_HistorySize = aSizeHistory;
-  m_MatchMaxLen = aMatchMaxLen;
+  FreeMemory();
+  try
+  {
+    CIn::Create(aSizeHistory + aKeepAddBufferBefore, 
+      aMatchMaxLen + aKeepAddBufferAfter, aSizeReserv);
     
-  delete []m_LeftBase;
-  m_LeftBase = 0;
-
-  UINT32 aSize = m_BlockSize * 2 + kHashSize;
-  #ifdef HASH_ARRAY_2
-  aSize += kHash2Size;
-  #ifdef HASH_ARRAY_3
-  aSize += kHash3Size;
-  #endif
-  #endif
-  
-  m_LeftBase = new CIndex[aSize + 1];
-  m_RightBase = &m_LeftBase[m_BlockSize];
-
-  m_Hash = &m_RightBase[m_BlockSize];
-  #ifdef HASH_ARRAY_2
-  m_Hash2 = &m_Hash[kHashSize]; 
-  #ifdef HASH_ARRAY_3
-  m_Hash3 = &m_Hash2[kHash2Size]; 
-  #endif
-  #endif
-
-  return S_OK;
+    if (m_BlockSize + 256 > kMaxValForNormalize)
+      return E_INVALIDARG;
+    
+    m_HistorySize = aSizeHistory;
+    m_MatchMaxLen = aMatchMaxLen;
+    
+    
+    UINT32 aSize = m_BlockSize * 2 + kHashSize;
+    #ifdef HASH_ARRAY_2
+    aSize += kHash2Size;
+    #ifdef HASH_ARRAY_3
+    aSize += kHash3Size;
+    #endif
+    #endif
+    
+    #ifdef _WINDOWS
+    m_LeftBase = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
+    if (m_LeftBase == 0)
+      throw CNewException();
+    #else
+    m_LeftBase = new CIndex[aSize + 1];
+    #endif
+    
+    m_RightBase = &m_LeftBase[m_BlockSize];
+    
+    m_Hash = &m_RightBase[m_BlockSize];
+    #ifdef HASH_ARRAY_2
+    m_Hash2 = &m_Hash[kHashSize]; 
+    #ifdef HASH_ARRAY_3
+    m_Hash3 = &m_Hash2[kHash2Size]; 
+    #endif
+    #endif
+    return S_OK;
+  }
+  catch(...)
+  {
+    FreeMemory();
+    return E_OUTOFMEMORY;
+  }
 }
 
 static const UINT32 kEmptyHashValue = 0;
@@ -135,10 +166,6 @@ HRESULT CInTree::Init(ISequentialInStream *aStream)
   return S_OK;
 }
 
-CInTree::~CInTree()
-{ 
-  delete []m_LeftBase;
-}
 
 #ifdef HASH_ARRAY_2
 #ifdef HASH_ARRAY_3

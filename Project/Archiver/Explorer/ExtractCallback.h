@@ -58,7 +58,6 @@ private:
   NExtractionDialog::CModeInfo m_ExtractModeInfo;
 
   // bool m_MessagesDialogWasCreated;
-  CSysStringVector m_Messages;
   CSysString m_DiskFilePath;
   
   bool m_ExtractMode;
@@ -76,18 +75,31 @@ private:
   bool IsEncrypted(LPITEMIDLIST anItemIDList);
   void AddErrorMessage(LPCTSTR aMessage);
 public:
+  CSysStringVector m_Messages;
   HWND m_ParentWindow;
   DWORD m_ThreadID;
   // CProgressDialog m_ProcessDialog;
-  HRESULT StartProgressDialog()
+  HRESULT StartProgressDialog(bool aTestMode = false)
   {
     m_ThreadID = GetCurrentThreadId();
     m_ProgressDialog.Create(m_ParentWindow);
-    #ifdef LANG        
-    m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
-    #else
-    m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
-    #endif
+    if (aTestMode)
+    {
+      #ifdef LANG        
+      m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90));
+      #else
+      m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_TESTING));
+      #endif
+    }
+    else
+    {
+      #ifdef LANG        
+      m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
+      #else
+      m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
+      #endif
+    }
+
     m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);    
     // m_ProgressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
@@ -97,6 +109,7 @@ public:
   void Init(IArchiveHandler100 *anArchiveHandler, 
       NExtractionDialog::CModeInfo anExtractModeInfo,
       bool aPasswordIsDefined, const UString &aPassword);
+  void DestroyWindows();
 };
 
 #endif

@@ -479,7 +479,7 @@ static UINT32 ParseUINT32String(const AString &aString, UINT32 &aNumber)
   return aPos;
 }
 
-static const kMaxLogarithmicSize = 31;
+static const kLogarithmicSizeLimit = 32;
 
 static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
@@ -496,8 +496,8 @@ HRESULT ParseDictionaryValues(const AString &_aString,
     return E_FAIL;
   if (aString.Length() == aNumDigits)
   {
-    if (aNumber > kMaxLogarithmicSize)
-      return E_FAIL;
+    if (aNumber >= kLogarithmicSizeLimit)
+      return E_INVALIDARG;
     aLogDicSize = aNumber;
     aDicSize = 1 << aNumber;
     return S_OK;
@@ -505,24 +505,26 @@ HRESULT ParseDictionaryValues(const AString &_aString,
   switch (aString[aNumDigits])
   {
   case kByteSymbol:
+    /*
     if (aNumber > (UINT32(1) << kMaxLogarithmicSize))
-      return E_FAIL;
+      return E_INVALIDARG;
+    */
     aDicSize = aNumber;
     break;
   case kKiloByteSymbol:
-    if (aNumber > (1 << (kMaxLogarithmicSize - 10)))
-      return E_FAIL;
+    if (aNumber >= (1 << (kLogarithmicSizeLimit - 10)))
+      return E_INVALIDARG;
     aDicSize = aNumber << 10;
     break;
   case kMegaByteSymbol:
-    if (aNumber > (1 << (kMaxLogarithmicSize - 20)))
-      return E_FAIL;
+    if (aNumber >= (1 << (kLogarithmicSizeLimit - 20)))
+      return E_INVALIDARG;
     aDicSize = aNumber << 20;
     break;
   default:
-    return E_FAIL;
+    return E_INVALIDARG;
   }
-  for (int i = 0; i <= kMaxLogarithmicSize; i++)
+  for (int i = 0; i < kLogarithmicSizeLimit; i++)
     if (aDicSize <= (1 << i))
       break;
   aLogDicSize = i;

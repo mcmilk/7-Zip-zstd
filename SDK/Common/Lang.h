@@ -16,12 +16,9 @@ struct CLangPair
 
 class CLang
 {
-  UString m_Name;
   CObjectVector<CLangPair> m_LangPairs;
 public:
-  const UString &GetName() const { return m_Name; }
   bool Open(LPCTSTR aFileName);
-  const UString &GetMessage(UINT32 Value) const;
   int FindItem(UINT32 aValue) const;
   bool GetMessage(UINT32 aValue, UString &aMessage) const;
 };

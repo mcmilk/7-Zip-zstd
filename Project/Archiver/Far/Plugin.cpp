@@ -279,7 +279,9 @@ static CPROPIDToName kPROPIDToName[] =
   { kaipidSplitBefore, NMessageID::kSplitBefore },
   { kaipidSplitAfter, NMessageID::kSplitAfter },
   { kaipidDictionarySize, NMessageID::kDictionarySize },
-  { kaipidCRC, NMessageID::kCRC }
+  { kaipidCRC, NMessageID::kCRC },
+  { kaipidMethod, NMessageID::kMethod },
+  { kaipidHostOS, NMessageID::kHostOS }
 };
 
 static const kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);

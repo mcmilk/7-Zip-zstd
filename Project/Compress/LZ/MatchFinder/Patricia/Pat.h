@@ -243,6 +243,7 @@ DECLARE_NOT_AGGREGATABLE(CPatricia)
   STDMETHOD_(void, DummyLongestMatch)();
   STDMETHOD_(const BYTE *, GetPointerToCurrentPos)();
 
+  void FreeMemory();
 public:
   CPatricia();
   ~CPatricia();
@@ -270,6 +271,7 @@ public:
   bool  m_SpecialMode;
   UINT32 m_NumNotChangedCycles;
   UINT32 *m_TmpBacks;
+
   CAlignedBuffer m_AlignBuffer;
 
 

@@ -37,6 +37,8 @@ enum EEnum
   kSplitAfter, 
   kDictionarySize, 
   kCRC, 
+  kMethod, 
+  kHostOS, 
 
   kGetPasswordTitle,
   kEnterPasswordForFile,

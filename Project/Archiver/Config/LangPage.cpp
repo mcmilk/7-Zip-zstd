@@ -27,7 +27,7 @@ bool CLangPage::OnInit()
 
   m_Lang.Attach(GetItem(IDC_COMBO_LANG_LANG));
 
-  int anIndex = m_Lang.AddString(TEXT("English (Default)"));
+  int anIndex = m_Lang.AddString(TEXT("English (English)"));
   m_Lang.SetItemData(anIndex, m_Paths.Size());
   m_Paths.Add(TEXT(""));
   m_Lang.SetCurSel(0);
@@ -46,7 +46,22 @@ bool CLangPage::OnInit()
       CSysString aFilePath = aFolderPath + aFileInfo.Name;
       if (aLang.Open(aFilePath))
       {
-        anIndex = m_Lang.AddString(GetSystemString(aLang.GetName()));
+        CSysString aName; 
+        UString anEnglishName, aNationalName;
+        if (aLang.GetMessage(0x00000000, anEnglishName))
+          aName += GetSystemString(anEnglishName);
+        if (aLang.GetMessage(0x00000001, aNationalName))
+        {
+          if (!aNationalName.IsEmpty())
+          {
+            aName += TEXT(" (");
+            aName += GetSystemString(aNationalName);
+            aName += TEXT(")");
+          }
+        }
+        if (aName.IsEmpty())
+          aName = aFileInfo.Name;
+        anIndex = m_Lang.AddString(aName);
         m_Lang.SetItemData(anIndex, m_Paths.Size());
         m_Paths.Add(aFilePath);
         if (aLangPath.CollateNoCase(aFilePath) == 0)

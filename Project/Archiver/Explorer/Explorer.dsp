@@ -294,14 +294,6 @@ SOURCE=..\..\..\SDK\Windows\Menu.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\SDK\Windows\NationalTime.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\Windows\NationalTime.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\SDK\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File
@@ -751,6 +743,14 @@ SOURCE=.\ProxyHandler.cpp
 # Begin Source File
 
 SOURCE=.\ProxyHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TestEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\TestEngine.h
 # End Source File
 # Begin Source File
 

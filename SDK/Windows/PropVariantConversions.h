@@ -1,4 +1,4 @@
-// PropVariantConversions.h
+// Windows/PropVariantConversions.h
 
 #pragma once
 
@@ -7,7 +7,7 @@
 
 #include "Common/String.h"
 
-CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime = true);
+// CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime = true);
 CSysString ConvertFileTimeToString2(const FILETIME &aFileTime, bool anIncludeTime = true, 
     bool anIncludeSeconds = true);
 CSysString ConvertPropVariantToString(const PROPVARIANT &aPropVariant);

@@ -17,7 +17,8 @@ static CSysString ConvertUINT32ToString(UINT32 aValue)
   return _ultot(aValue, aBuffer, 10);
 }
 
-CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aPropID)
+CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aPropID,
+    bool aFull)
 {
   switch(aPropID)
   {
@@ -30,7 +31,7 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
       FILETIME aLocalFileTime;
       if (!::FileTimeToLocalFileTime(&aPropVariant.filetime, &aLocalFileTime))
         return CSysString(); // It is error;
-      return ConvertFileTimeToString(aLocalFileTime);
+      return ConvertFileTimeToString2(aLocalFileTime, true, aFull);
     }
     case kaipidCRC:
     {

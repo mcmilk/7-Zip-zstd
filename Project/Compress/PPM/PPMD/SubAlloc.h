@@ -81,8 +81,13 @@ DWORD _STDCALL GetUsedMemory()
   {
     if ( SubAllocatorSize ) 
     {
-        SubAllocatorSize = 0;
-        delete[] HeapStart;
+      #ifdef _WINDOWS
+      VirtualFree(HeapStart, 0, MEM_DECOMMIT | MEM_RELEASE);
+      #else
+      delete[] HeapStart;
+      #endif
+      SubAllocatorSize = 0;
+      HeapStart = 0;
     }
   }
 
@@ -91,8 +96,13 @@ DWORD _STDCALL GetUsedMemory()
     if (SubAllocatorSize == aSize)              
       return true;
     StopSubAllocator();
+    #ifdef _WINDOWS
+    if ((HeapStart = (BYTE *)::VirtualAlloc(0, aSize, MEM_COMMIT, PAGE_READWRITE)) == 0)
+      return false;
+    #else
     if ((HeapStart = new BYTE[aSize]) == NULL)    
       return false;
+    #endif
     SubAllocatorSize = aSize;                     
     return true;
   }

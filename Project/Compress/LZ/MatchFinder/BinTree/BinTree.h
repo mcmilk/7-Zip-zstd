@@ -81,9 +81,11 @@ class CInTree: public NStream::NWindow::CIn
   virtual void MoveBlock(UINT32 anOffset);
   void NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue);
   void Normalize();
+  void FreeMemory();
 
 public:
   CInTree();
+  ~CInTree();
   HRESULT Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
       UINT32 aKeepAddBufferAfter, UINT32 _dwSizeReserv = (1<<17));
 	HRESULT Init(ISequentialInStream *aStream);
@@ -103,7 +105,6 @@ public:
     m_LeftSon += aSubValue;
     m_RightSon += aSubValue;
   }
-  ~CInTree();
 };
 
 }

@@ -4,11 +4,11 @@
 
 #include "OverwriteDialog.h"
 
-#include "Windows/NationalTime.h"
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/ResourceString.h"
 #include "Windows/Control/Static.h"
+#include "Windows/PropVariantConversions.h"
 
 #include "FormatUtils.h"
 
@@ -33,22 +33,6 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
-void ConvertFileTimeToStrings(const FILETIME &aFileTime, CSysString &aDateString,
-    CSysString &aTimeString)
-{
-  SYSTEMTIME aSystemTime;
-  if(!BOOLToBool(FileTimeToSystemTime(&aFileTime, &aSystemTime)))
-    throw 311907;
-  const kBufferSize = 64;
-  if(!NNational::NTime::MyGetDateFormat(LOCALE_USER_DEFAULT, 
-      DATE_LONGDATE, &aSystemTime, NULL, aDateString))
-    throw 311908;
-  
-  if(!NNational::NTime::MyGetTimeFormat(LOCALE_USER_DEFAULT, 
-      0, &aSystemTime, NULL, aTimeString))
-    throw 311909;
-}
- 
 void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID, 
     const NOverwriteDialog::CFileInfo &aFileInfo) 
 {
@@ -60,13 +44,11 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
         #endif
         NumberToString(aFileInfo.Size));
 
-  CSysString aDateString, aTimeString;
   FILETIME aLocalFileTime; 
   if (!FileTimeToLocalFileTime(&aFileInfo.Time, &aLocalFileTime))
     throw 4190402;
-  ConvertFileTimeToStrings(aLocalFileTime, aDateString, aTimeString);
-  TCHAR sz[512];
-  
+  CSysString aTimeString = ConvertFileTimeToString2(aLocalFileTime);
+
   CSysString aReducedName;
   const kLineSize = 88;
   for (int i = 0; i < aFileInfo.Name.Length();)
@@ -76,17 +58,23 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
     i += kLineSize;
   }
 
-  _stprintf(sz, 
+  CSysString aFullString = aReducedName;
+  aFullString += TEXT("\n");
+  aFullString += aSizeString;
+  aFullString += TEXT("\n");
+
+  aFullString += 
       #ifdef LANG
-      LangLoadString(IDS_FILE_SIZE_TIME, 0x02000981),
+      LangLoadString(IDS_FILE_MODIFIED, 0x02000983);
       #else
-      MyLoadString(IDS_FILE_SIZE_TIME), 
+      MyLoadString(IDS_FILE_MODIFIED);
       #endif
-      (LPCTSTR)aReducedName, (LPCTSTR)aSizeString, 
-      (LPCTSTR)aDateString, (LPCTSTR)aTimeString);
+  aFullString += TEXT(" ");
+  aFullString += aTimeString;
+
   NWindows::NControl::CDialogChildControl m_Control;
   m_Control.Init(*this, aTextID);
-  m_Control.SetText(sz);
+  m_Control.SetText(aFullString);
 
   SHFILEINFO aShellFileInfo;
   if (::SHGetFileInfo(aFileInfo.Name, FILE_ATTRIBUTE_NORMAL, &aShellFileInfo, 
