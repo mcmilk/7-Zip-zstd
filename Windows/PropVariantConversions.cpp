@@ -94,7 +94,7 @@ UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
     case VT_UI4:
       return ConvertUInt64ToString(propVariant.ulVal);
     case VT_UI8:
-      return ConvertUInt64ToString(*(UINT64 *)(&propVariant.uhVal));
+      return ConvertUInt64ToString(propVariant.uhVal.QuadPart);
     case VT_FILETIME:
       return ConvertFileTimeToString2(propVariant.filetime, true, true);
 
@@ -108,7 +108,7 @@ UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
     case VT_I4:
       return ConvertInt64ToString(propVariant.lVal);
     case VT_I8:
-      return ConvertInt64ToString(*(Int64 *)(&propVariant.hVal));
+      return ConvertInt64ToString(propVariant.hVal.QuadPart);
 
     case VT_BOOL:
       return VARIANT_BOOLToBool(propVariant.boolVal) ? L"1" : L"0";
@@ -132,7 +132,7 @@ UINT64 ConvertPropVariantToUINT64(const PROPVARIANT &propVariant)
     case VT_UI4:
       return propVariant.ulVal;
     case VT_UI8:
-      return (*(UINT64 *)(&propVariant.uhVal));
+      return propVariant.uhVal.QuadPart;
     default:
       #ifndef _WIN32_WCE
       throw 151199;

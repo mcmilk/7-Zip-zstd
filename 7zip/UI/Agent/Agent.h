@@ -262,7 +262,7 @@ public:
   #endif
 
   IInArchive *GetArchive() { return _archiveLink.GetArchive(); }
-  bool CanUpdate() const { return _archiveLink.GetNumLevels() == 1; }
+  bool CanUpdate() const { return _archiveLink.GetNumLevels() <= 1; }
 };
 
 #ifdef NEW_FOLDER_INTERFACE

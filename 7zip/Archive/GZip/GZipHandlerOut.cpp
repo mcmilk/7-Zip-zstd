@@ -97,11 +97,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     if (isDirectory || NFile::NFind::NAttributes::IsDirectory(attributes))
       return E_INVALIDARG;
-    time_t unixTime;
-    if(!FileTimeToUnixTime(utcTime, unixTime))
+    if(!FileTimeToUnixTime(utcTime, newItem.Time))
       return E_INVALIDARG;
-    
-    newItem.Time = unixTime;
     newItem.Name = UnicodeStringToMultiByte(name, CP_ACP);
     int dirDelimiterPos = newItem.Name.ReverseFind('\\');
     if (dirDelimiterPos >= 0)
@@ -117,7 +114,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       RINOK(updateCallback->GetProperty(itemIndex, kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      size = *(UInt64 *)(&propVariant.uhVal);
+      size = propVariant.uhVal.QuadPart;
     }
     newItem.UnPackSize32 = (UInt32)size;
     return UpdateArchive(m_Stream, size, outStream, newItem, 

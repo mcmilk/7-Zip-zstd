@@ -224,7 +224,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       RINOK(openVolumeCallback->GetProperty(kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      size = *(UInt64 *)(&propVariant.uhVal);
+      size = propVariant.uhVal.QuadPart;
     }
     _totalSize += size;
     _sizes.Add(size);
@@ -252,7 +252,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         RINOK(openVolumeCallback->GetProperty(kpidSize, &propVariant));
         if (propVariant.vt != VT_UI8)
           return E_INVALIDARG;
-        size = *(UInt64 *)(&propVariant.uhVal);
+        size = propVariant.uhVal.QuadPart;
       }
       _totalSize += size;
       _sizes.Add(size);

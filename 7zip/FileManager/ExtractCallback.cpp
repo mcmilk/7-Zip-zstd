@@ -14,7 +14,7 @@
 #include "Resource/MessagesDialog/MessagesDialog.h"
 #include "../UI/Resource/Extract/resource.h"
 
-#include "Common/WildCard.h"
+#include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
 #include "FormatUtils.h"

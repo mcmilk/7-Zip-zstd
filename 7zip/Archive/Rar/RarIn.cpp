@@ -399,15 +399,12 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
         m_RarAES = m_RarAESSpec;
       }
       // Salt
-      CSequentialInStreamImp * saltStreamSpec = new CSequentialInStreamImp;
-      CMyComPtr<ISequentialInStream> saltStream(saltStreamSpec);
       const UInt32 kSaltSize = 8;
       Byte salt[kSaltSize];
       if(!ReadBytesAndTestSize(salt, kSaltSize))
         return false;
-      saltStreamSpec->Init(salt, kSaltSize);
       m_Position += kSaltSize;
-      RINOK(m_RarAESSpec->SetDecoderProperties(saltStream))
+      RINOK(m_RarAESSpec->SetDecoderProperties2(salt, kSaltSize))
       // Password
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password))

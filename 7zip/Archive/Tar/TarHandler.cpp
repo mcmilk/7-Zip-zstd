@@ -163,7 +163,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       FILETIME utcFileTime;
       if (item.ModificationTime != 0)
-        NTime::UnixTimeToFileTime(item.ModificationTime, utcFileTime);
+        NTime::UnixTimeToFileTime((UInt32)item.ModificationTime, utcFileTime);
       else
       {
         utcFileTime.dwLowDateTime = 0;

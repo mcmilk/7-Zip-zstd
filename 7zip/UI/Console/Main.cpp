@@ -53,7 +53,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.09 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-05\n";
+" 4.10 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-21\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z <command> [<switches>...] <archive_name> [<file_names>...]\n"
@@ -178,12 +178,20 @@ int Main2()
           options.WildcardCensor.Pairs.Front().Head, 
           eo, &openCallback, ecs);
 
+      if (ecs->NumArchives > 1)
+      {
+        g_StdErr << endl << endl << "Total:" << endl;
+        g_StdErr << "Archives: " << ecs->NumArchives << endl;
+      }
       if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {
-        if (ecs->NumArchiveErrors != 0)
-          g_StdErr << endl << "Archive Errors: " << ecs->NumArchiveErrors << endl;
-        if (ecs->NumFileErrors != 0)
-          g_StdErr << endl << "Sub items Errors: " << ecs->NumFileErrors << endl;
+        if (ecs->NumArchives > 1)
+        {
+          if (ecs->NumArchiveErrors != 0)
+            g_StdErr << "Archive Errors: " << ecs->NumArchiveErrors << endl;
+          if (ecs->NumFileErrors != 0)
+            g_StdErr << "Sub items Errors: " << ecs->NumFileErrors << endl;
+        }
         return NExitCode::kFatalError;
       }
       if (result != S_OK)

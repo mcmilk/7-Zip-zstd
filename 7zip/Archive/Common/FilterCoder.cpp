@@ -78,6 +78,7 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
   return S_OK;
 }
 
+// #ifdef _ST_MODE
 STDMETHODIMP CFilterCoder::SetOutStream(ISequentialOutStream *outStream)
 {
   _bufferPos = 0;
@@ -221,6 +222,8 @@ STDMETHODIMP CFilterCoder::ReadPart(void *data, UInt32 size, UInt32 *processedSi
   return Read(data, size, processedSize);
 }
 
+// #endif // _ST_MODE
+
 #ifndef _NO_CRYPTO
 STDMETHODIMP CFilterCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
@@ -235,7 +238,7 @@ STDMETHODIMP CFilterCoder::WriteCoderProperties(ISequentialOutStream *outStream)
 }
 #endif
 
-STDMETHODIMP CFilterCoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CFilterCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
-  return _setDecoderProperties->SetDecoderProperties(inStream);
+  return _setDecoderProperties->SetDecoderProperties2(data, size);
 }

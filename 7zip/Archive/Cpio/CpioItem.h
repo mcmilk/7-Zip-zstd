@@ -20,7 +20,7 @@ struct CItem
   UInt32 UID;
   UInt32 GID;
   UInt32 Size;
-  time_t ModificationTime;
+  UInt32 ModificationTime;
 
   // char LinkFlag;
   // AString LinkName; ?????

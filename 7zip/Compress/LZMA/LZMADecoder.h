@@ -144,7 +144,7 @@ public:
 
 class CDecoder: 
   public ICompressCoder,
-  public ICompressSetDecoderProperties,
+  public ICompressSetDecoderProperties2,
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
@@ -187,7 +187,7 @@ class CDecoder:
   HRESULT CodeSpec(Byte *buffer, UInt32 size);
 public:
   MY_UNKNOWN_IMP4(
-      ICompressSetDecoderProperties, 
+      ICompressSetDecoderProperties2, 
       ICompressSetInStream, 
       ICompressSetOutStreamSize, 
       ISequentialInStream)
@@ -223,8 +223,7 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
 

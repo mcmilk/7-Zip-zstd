@@ -43,7 +43,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   {
     m_InBuffer = (Byte *)BigAlloc(kBufferSize * 2);
     if (m_InBuffer == 0)
-      E_OUTOFMEMORY;
+      return E_OUTOFMEMORY;
   }
   Byte *outBuffer = m_InBuffer + kBufferSize;
 

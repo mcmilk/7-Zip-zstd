@@ -30,9 +30,9 @@ void CInArchive::Close()
 //////////////////////////////////////
 // Markers
 
-inline bool TestMarkerCandidate(const void *testBytes, UInt32 &value)
+static inline bool TestMarkerCandidate(const Byte *p, UInt32 &value)
 {
-  value = *((const UInt32 *)(testBytes));
+  value = p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
   return (value == NSignature::kLocalFileHeader) ||
     (value == NSignature::kEndOfCentralDir);
 }

@@ -109,14 +109,14 @@ public:
 
 class CDecoder: 
   public CBaseCoder,
-  public ICompressSetDecoderProperties
+  public ICompressSetDecoderProperties2
 {
   virtual HRESULT CreateFilter();
 public:
   MY_UNKNOWN_IMP2(
       ICryptoSetPassword,
-      ICompressSetDecoderProperties)
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
+      ICompressSetDecoderProperties2)
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };
 
 }}

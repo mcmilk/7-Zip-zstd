@@ -50,10 +50,10 @@ public:
   
   bool HasDescriptor() const;
   
-  #ifdef WIN32
   WORD GetCodePage() const
-    { return (MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT) ? CP_OEMCP : CP_ACP; }
-  #endif
+  {
+    return (MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT) ? CP_OEMCP : CP_ACP;
+  }
 
 private:
   void SetFlagBits(int startBitNumber, int numBits, int value);

@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "Windows/FileName.h"
-#include "Common/WildCard.h"
+#include "Common/Wildcard.h"
 
 namespace NWindows {
 namespace NFile {

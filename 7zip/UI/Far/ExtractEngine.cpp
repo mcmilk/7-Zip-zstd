@@ -4,7 +4,7 @@
 
 #include "ExtractEngine.h"
 
-#include "Common/WildCard.h"
+#include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/Defs.h"

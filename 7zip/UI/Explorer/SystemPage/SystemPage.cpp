@@ -143,15 +143,16 @@ void CSystemPage::OnNotifyHelp()
   ShowHelpWindow(NULL, kSystemTopic);
 }
 
-bool CSystemPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
+bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 { 
-  switch(aButtonID)
+  switch(buttonID)
   {
+    case IDC_SYSTEM_CASCADED_MENU:
     case IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU:
       Changed();
       return true;
   }
-  return CPropertyPage::OnButtonClicked(aButtonID, aButtonHWND);
+  return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 
 }
 

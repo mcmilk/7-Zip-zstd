@@ -21,9 +21,10 @@ class CData
   }
 
   void UpdateKeys(const Byte *data);
+  void CryptBlock(Byte *buf, bool encrypt);
 public:
-  void EncryptBlock(Byte *buf);
-  void DecryptBlock(Byte *buf);
+  void EncryptBlock(Byte *buf) { CryptBlock(buf, true); }
+  void DecryptBlock(Byte *buf) { CryptBlock(buf, false); }
   void SetPassword(const Byte *password, UInt32 passwordLength);
 };
 

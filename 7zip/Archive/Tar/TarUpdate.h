@@ -20,7 +20,7 @@ struct CUpdateItemInfo
   int IndexInArchive;
   int IndexInClient;
 
-  time_t Time;
+  UInt32 Time;
   UInt64 Size;
   AString Name;
   bool IsDirectory;

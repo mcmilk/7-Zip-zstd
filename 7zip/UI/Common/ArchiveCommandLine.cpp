@@ -27,7 +27,7 @@ using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
 
-static const int kNumSwitches = 23;
+static const int kNumSwitches = 24;
 
 namespace NKey {
 enum Enum
@@ -46,7 +46,7 @@ enum Enum
   kExclude,
   kArInclude,
   kArExclude,
-  // kNoArName,
+  kNoArName,
   kUpdate,
   kVolume,
   kRecursed,
@@ -108,7 +108,7 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"X",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
     { L"AI",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
     { L"AX",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
-    // { L"AN", NSwitchType::kSimple, false },
+    { L"AN", NSwitchType::kSimple, false },
     { L"U",  NSwitchType::kUnLimitedPostString, true, 1},
     { L"V",  NSwitchType::kUnLimitedPostString, true, 1},
     { L"R",  NSwitchType::kPostChar, false, 0, 0, kRecursedPostCharSet },
@@ -787,10 +787,9 @@ int ParseCommandLine(UStringVector commandStrings,
         parser[NKey::kExclude].PostStrings, false, recursedType);
  
   int curCommandIndex = kCommandIndex + 1;
-  bool thereIsArchiveName = false;
-  if (!parser[NKey::kArInclude].ThereIs)
+  bool thereIsArchiveName = !parser[NKey::kNoArName].ThereIs;
+  if (thereIsArchiveName)
   {
-    thereIsArchiveName = true;
     if(curCommandIndex >= numNonSwitchStrings)  
       throw kUserErrorMessage;
     options.ArchiveName = nonSwitchStrings[curCommandIndex++];

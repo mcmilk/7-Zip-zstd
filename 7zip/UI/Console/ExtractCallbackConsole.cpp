@@ -136,6 +136,7 @@ STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult)
       break;
     default:
     {
+      NumFileErrorsInCurrentArchive++;
       NumFileErrors++;
       g_StdErr << "     ";
       switch(operationResult)
@@ -174,6 +175,8 @@ STDMETHODIMP CExtractCallbackConsole::CryptoGetTextPassword(BSTR *password)
 
 HRESULT CExtractCallbackConsole::BeforeOpen(const wchar_t *name)
 {
+  NumArchives++;
+  NumFileErrorsInCurrentArchive = 0;
   g_StdErr << endl << kProcessing << name << endl;
   return S_OK;
 }
@@ -198,7 +201,16 @@ HRESULT CExtractCallbackConsole::ThereAreNoFiles()
 HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
 {
   if (result == S_OK)
-    g_StdErr << endl << kEverythingIsOk << endl;
+  {
+    g_StdErr << endl;
+    if (NumFileErrorsInCurrentArchive == 0)
+      g_StdErr << kEverythingIsOk << endl;
+    else 
+    {
+      NumArchiveErrors++;
+      g_StdErr << "Sub items Errors: " << NumFileErrorsInCurrentArchive << endl;
+    }
+  }
   if (result == S_OK)
     return result;
   if (result == E_ABORT)

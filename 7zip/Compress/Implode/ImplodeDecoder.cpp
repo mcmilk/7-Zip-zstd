@@ -197,13 +197,11 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *inStream,
   catch(...) { return S_FALSE; }
 }
 
-STDMETHODIMP CCoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
-  Byte flag;
-  UInt32 processedSize;
-  RINOK(inStream->Read(&flag, 1, &processedSize));
-  if (processedSize != 1)
+  if (size < 1)
     return E_INVALIDARG;
+  Byte flag = data[0];
   m_BigDictionaryOn = ((flag & 2) != 0);
   m_NumDistanceLowDirectBits = m_BigDictionaryOn ? 
       kNumDistanceLowDirectBitsForBigDict:

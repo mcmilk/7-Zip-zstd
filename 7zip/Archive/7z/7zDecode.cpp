@@ -317,9 +317,9 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   {
     const CCoderInfo &coderInfo = folderInfo.Coders[i];
     const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-    CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
+    CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
     HRESULT result = _decoders[coderIndex].QueryInterface(
-        IID_ICompressSetDecoderProperties, &compressSetDecoderProperties);
+        IID_ICompressSetDecoderProperties2, &compressSetDecoderProperties);
     
     if (result == S_OK)
     {
@@ -327,10 +327,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
       UInt32 size = properties.GetCapacity();
       if (size > 0)
       {
-        CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-        CMyComPtr<ISequentialInStream> inStream(inStreamSpec);
-        inStreamSpec->Init((const Byte *)properties, size);
-        RINOK(compressSetDecoderProperties->SetDecoderProperties(inStream));
+        RINOK(compressSetDecoderProperties->SetDecoderProperties2((const Byte *)properties, size));
       }
     }
     else if (result != E_NOINTERFACE)

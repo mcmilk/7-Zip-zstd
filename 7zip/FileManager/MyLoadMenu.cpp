@@ -191,6 +191,35 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
 }
 */
 
+static bool g_IsNew_fMask = true;
+
+class CInit_fMask
+{
+public:
+  CInit_fMask()
+  {
+    g_IsNew_fMask = false;
+    OSVERSIONINFO vi;
+    vi.dwOSVersionInfoSize = sizeof(vi);
+    if (::GetVersionEx(&vi)) 
+    {
+      g_IsNew_fMask = (vi.dwMajorVersion > 4 || 
+        (vi.dwMajorVersion == 4 && vi.dwMinorVersion > 0));
+    }
+    g_IsNew_fMask = false;
+  }
+} g_Init_fMask;
+
+static UINT Get_fMaskForString()
+{
+  return g_IsNew_fMask ? MIIM_STRING : MIIM_TYPE;
+}
+
+static UINT Get_fMaskForFTypeAndString()
+{
+  return g_IsNew_fMask ? (MIIM_STRING | MIIM_FTYPE) : MIIM_TYPE;
+}
+
 static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 {
   CMenu menu;
@@ -200,7 +229,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
     MENUITEMINFO menuInfo;
     ZeroMemory(&menuInfo, sizeof(menuInfo));
     menuInfo.cbSize = sizeof(menuInfo);
-    menuInfo.fMask = MIIM_STRING | MIIM_SUBMENU | MIIM_ID;
+    menuInfo.fMask = Get_fMaskForString() | MIIM_SUBMENU | MIIM_ID;
     menuInfo.fType = MFT_STRING;
     const int kBufferSize = 1024;
     TCHAR buffer[kBufferSize + 1];
@@ -252,9 +281,9 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
           newString += shorcutString.Mid(tabPos);
       }
       menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)newString;
-      menuInfo.fMask = MIIM_STRING;
+      menuInfo.fMask = Get_fMaskForString();
+      menuInfo.fType = MFT_STRING;
       menu.SetItemInfo(i, true, &menuInfo);
-      // HMENU subMenu = menu.GetSubMenu(i);
     }
   }
 }
@@ -306,7 +335,7 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
     MENUITEMINFO menuInfo;
     ZeroMemory(&menuInfo, sizeof(menuInfo));
     menuInfo.cbSize = sizeof(menuInfo);
-    menuInfo.fMask = MIIM_STATE | MIIM_ID | MIIM_FTYPE | MIIM_STRING;
+    menuInfo.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
     menuInfo.fType = MFT_STRING;
     const int kBufferSize = 1024;
     TCHAR buffer[kBufferSize + 1];
@@ -466,7 +495,7 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode,
     menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)menuString;
     */
     
-    menuInfo.fMask = MIIM_STATE | MIIM_ID | MIIM_FTYPE | MIIM_STRING;
+    menuInfo.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
     menuInfo.fType = MFT_STRING;
     const int kBufferSize = 1024;
     TCHAR buffer[kBufferSize + 1];
@@ -478,9 +507,9 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode,
       if (!programMenu)
         if (menuInfo.wID == IDCLOSE)
           continue;
+      /*
       bool createItem = (menuInfo.wID == IDM_CREATE_FOLDER || 
           menuInfo.wID == IDM_CREATE_FILE);
-      /*
       if (forFileMode)
       {
         if (createItem)

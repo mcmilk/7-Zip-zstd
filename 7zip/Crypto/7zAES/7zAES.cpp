@@ -178,16 +178,16 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   _key.Init();
-  for (int i = 0; i < sizeof(_iv); i++)
+  UInt32 i;
+  for (i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
-  UInt32 processedSize;
-  Byte firstByte;
-  RINOK(inStream->Read(&firstByte, 1, &processedSize));
-  if (processedSize == 0)
+  if (size == 0)
     return S_OK;
+  UInt32 pos = 0;
+  Byte firstByte = data[pos++];
 
   _key.NumCyclesPower = firstByte & 0x3F;
   if ((firstByte & 0xC0) == 0)
@@ -195,22 +195,19 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
   _key.SaltSize = (firstByte >> 7) & 1;
   UInt32 ivSize = (firstByte >> 6) & 1;
 
-  Byte secondByte;
-  RINOK(inStream->Read(&secondByte, 1, &processedSize));
-  if (processedSize == 0)
+  if (pos >= size)
     return E_INVALIDARG;
+  Byte secondByte = data[pos++];
   
   _key.SaltSize += (secondByte >> 4);
   ivSize += (secondByte & 0x0F);
   
-  RINOK(inStream->Read(_key.Salt, _key.SaltSize, &processedSize));
-  if (processedSize != _key.SaltSize)
+  if (pos + _key.SaltSize + ivSize > size)
     return E_INVALIDARG;
-
-  RINOK(inStream->Read(_iv, ivSize, &processedSize));
-  if (processedSize != ivSize)
-    return E_INVALIDARG;
-
+  for (i = 0; i < _key.SaltSize; i++)
+    _key.Salt[i] = data[pos++];
+  for (i = 0; i < ivSize; i++)
+    _iv[i] = data[pos++];
   return S_OK;
 }
 

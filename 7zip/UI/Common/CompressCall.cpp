@@ -20,6 +20,7 @@ using namespace NWindows;
 static LPCWSTR kShowDialogSwitch = L" -ad";
 static LPCWSTR kEmailSwitch = L" -seml.";
 static LPCWSTR kMapSwitch = L" -i#";
+static LPCWSTR kArchiveNoNameSwitch = L" -an";
 static LPCWSTR kArchiveMapSwitch = L" -ai#";
 
 
@@ -301,6 +302,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &archivePaths,
     const UString &params)
 {
   UString params2 = params;
+  params2 += kArchiveNoNameSwitch;
   params2 += kArchiveMapSwitch;
   CFileMapping fileMapping;
   NSynchronization::CEvent event;

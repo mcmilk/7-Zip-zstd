@@ -7,15 +7,16 @@
 #include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 
-#include "../../Common/StreamObjects.h"
-// #include "Interface/EnumStatProp.h"
-#include "../../Common//ProgressUtils.h"
-#include "../../IPassword.h"
-
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
+#include "../../IPassword.h"
+
+#include "../../Common//ProgressUtils.h"
 #include "../../Compress/Copy/CopyCoder.h"
+
+#include "../../Crypto/Rar20/Rar20Cipher.h"
+#include "../../Crypto/RarAES/RarAES.h"
 
 #include "../Common/OutStreamWithCRC.h"
 #include "../Common/CoderLoader.h"
@@ -24,10 +25,6 @@
 
 #include "../7z/7zMethods.h"
 
-// #include "../../../Compress/Interface/CompressInterface.h"
-// #include "../../../Crypto/Cipher/Common/CipherInterface.h"
-#include "../../Crypto/Rar20/Rar20Cipher.h"
-#include "../../Crypto/RarAES/RarAES.h"
 using namespace NWindows;
 using namespace NTime;
 
@@ -169,13 +166,13 @@ static bool RarTimeToFileTime(const CRarTime &rarTime, FILETIME &result)
 {
   if (!DosTimeToFileTime(rarTime.DosTime, result))
     return false;
-  UInt64 &value = *(UInt64 *)&result;
-  value += (int)rarTime.LowSecond * 10000000;
-  UInt64 subTime = ((UInt64)rarTime.SubTime[2] << 16) + 
+  UInt64 value =  (((UInt64)result.dwHighDateTime) << 32) + result.dwLowDateTime;
+  value += (UInt64)rarTime.LowSecond * 10000000;
+  value += ((UInt64)rarTime.SubTime[2] << 16) + 
     ((UInt64)rarTime.SubTime[1] << 8) +
     ((UInt64)rarTime.SubTime[0]);
-  // value += (subTime * 10000000) >> 24;
-  value += subTime;
+  result.dwLowDateTime = (DWORD)value;
+  result.dwHighDateTime = DWORD(value >> 32);
   return true;
 }
 
@@ -731,13 +728,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           rar29CryptoDecoder = new NCrypto::NRar29::CDecoder;
           // RINOK(rar29CryptoDecoder.CoCreateInstance(CLSID_CCryptoRar29Decoder));
         }
-        CMyComPtr<ICompressSetDecoderProperties> cryptoProperties;
-        RINOK(rar29CryptoDecoder.QueryInterface(IID_ICompressSetDecoderProperties, 
+        CMyComPtr<ICompressSetDecoderProperties2> cryptoProperties;
+        RINOK(rar29CryptoDecoder.QueryInterface(IID_ICompressSetDecoderProperties2, 
             &cryptoProperties));
-        CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-        CMyComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
-        inStreamSpec->Init(item.Salt, item.HasSalt() ? sizeof(item.Salt) : 0);
-        RINOK(cryptoProperties->SetDecoderProperties(inStreamProperties));
+        RINOK(cryptoProperties->SetDecoderProperties2(item.Salt, item.HasSalt() ? sizeof(item.Salt) : 0));
         filterStreamSpec->Filter = rar29CryptoDecoder;
       }
       else if (item.UnPackVersion >= 20)
@@ -858,21 +852,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         }
         CMyComPtr<ICompressCoder> decoder = methodItems[m].Coder;
 
-        CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
-        RINOK(decoder.QueryInterface(IID_ICompressSetDecoderProperties, 
+        CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
+        RINOK(decoder.QueryInterface(IID_ICompressSetDecoderProperties2, 
             &compressSetDecoderProperties));
         
-        Byte isSolid = (
-          // item.IsSolid() 
-          IsSolid(index)
-          || 
-          item.IsSplitBefore())
-            ? 1: 0;
+        Byte isSolid = 
+          (IsSolid(index) || item.IsSplitBefore()) ? 1: 0;
 
-        CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-        CMyComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
-        inStreamSpec->Init(&isSolid, 1);
-        RINOK(compressSetDecoderProperties->SetDecoderProperties(inStreamProperties));
+        RINOK(compressSetDecoderProperties->SetDecoderProperties2(&isSolid, 1));
           
         commonCoder = decoder;
         break;

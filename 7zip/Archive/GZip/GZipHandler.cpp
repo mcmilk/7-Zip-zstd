@@ -143,7 +143,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       FILETIME utcTime;
       if (m_Item.Time != 0)
       {
-        NTime::UnixTimeToFileTime(m_Item.Time, utcTime);
+        NTime::UnixTimeToFileTime((UInt32)m_Item.Time, utcTime);
         propVariant = utcTime;
       }
       else

@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "WildCard.h"
+#include "Wildcard.h"
 
 static const wchar_t kPeriodChar = L'.';
 static const wchar_t kAnyCharsChar = L'*';
@@ -148,6 +148,23 @@ static inline int BoolToIndex(bool value)
   return value ? 1: 0;
 }
 
+
+/*
+M = MaskParts.Size();
+N = TestNameParts.Size();
+
+                           File                          Dir
+ForFile     req   M<=N  [N-M, N)                          -
+         nonreq   M=N   [0, M)                            -  
+ 
+ForDir      req   M<N   [0, M) ... [N-M-1, N-1)  same as ForBoth-File
+         nonreq         [0, M)                   same as ForBoth-File
+
+ForBoth     req   m<=N  [0, M) ... [N-M, N)      same as ForBoth-File
+         nonreq         [0, M)                   same as ForBoth-File
+
+*/
+
 bool CItem::CheckPath(const UStringVector &pathParts, bool isFile) const
 {
   if (!isFile && !ForDir)
@@ -163,7 +180,7 @@ bool CItem::CheckPath(const UStringVector &pathParts, bool isFile) const
       return false;
     if (!ForFile && delta == 0)
       return false;
-    if (ForFile && Recursive)
+    if (!ForDir && Recursive)
       start = delta;
   }
   if (Recursive)
@@ -354,6 +371,18 @@ void CCensor::AddItem(const UString &path, bool include, bool recursive)
     isAbs = true;
   else if (front.Length() == 2 && front[1] == L':')
     isAbs = true;
+  else
+  {
+    for (int i = 0; i < pathParts.Size(); i++)
+    {
+      const UString &part = pathParts[i];
+      if (part == L".." || part == L".")
+      {
+        isAbs = true;
+        break;
+      }
+    }
+  }
   int numAbsParts = 0;
   if (isAbs)
     if (pathParts.Size() > 1)

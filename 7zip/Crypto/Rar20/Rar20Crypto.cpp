@@ -73,58 +73,38 @@ void CData::SetPassword(const Byte *password, UInt32 passwordLength)
     EncryptBlock(&psw[i]);
 }
 
-void CData::EncryptBlock(Byte *buf)
+static inline UInt32 GetUInt32FromMemLE(const Byte *p)
 {
-  UInt32 A, B, C, D, T, TA, TB;
-
-  UInt32 *bufPtr;
-  bufPtr = (UInt32 *)buf;
-  
-  A = bufPtr[0] ^ Keys[0];
-  B = bufPtr[1] ^ Keys[1];
-  C = bufPtr[2] ^ Keys[2];
-  D = bufPtr[3] ^ Keys[3];
-
-  for(int i = 0; i < kNumRounds; i++)
-  {
-    T = ((C + rol(D, 11)) ^ Keys[i & 3]);
-    TA = A ^ SubstLong(T);
-    T=((D ^ rol(C, 17)) + Keys[i & 3]);
-    TB = B ^ SubstLong(T);
-    A = C;
-    B = D;
-    C = TA;
-    D = TB;
-  }
-
-  bufPtr[0] = C ^ Keys[0];
-  bufPtr[1] = D ^ Keys[1];
-  bufPtr[2] = A ^ Keys[2];
-  bufPtr[3] = B ^ Keys[3];
-
-  UpdateKeys(buf);
+  return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
 }
 
-void CData::DecryptBlock(Byte *buf)
+static inline void WriteUInt32ToMemLE(UInt32 v, Byte *p)
+{
+  p[0] = (Byte)v;
+  p[1] = (Byte)(v >> 8);
+  p[2] = (Byte)(v >> 16);
+  p[3] = (Byte)(v >> 24);
+}
+
+void CData::CryptBlock(Byte *buf, bool encrypt)
 {
   Byte inBuf[16];
   UInt32 A, B, C, D, T, TA, TB;
 
-  UInt32 *bufPtr;
-  bufPtr = (UInt32 *)buf;
-  
-  A = bufPtr[0] ^ Keys[0];
-  B = bufPtr[1] ^ Keys[1];
-  C = bufPtr[2] ^ Keys[2];
-  D = bufPtr[3] ^ Keys[3];
+  A = GetUInt32FromMemLE(buf + 0) ^ Keys[0];
+  B = GetUInt32FromMemLE(buf + 4) ^ Keys[1];
+  C = GetUInt32FromMemLE(buf + 8) ^ Keys[2];
+  D = GetUInt32FromMemLE(buf + 12) ^ Keys[3];
 
-  memcpy(inBuf, buf, sizeof(inBuf));
+  if (!encrypt)
+    memcpy(inBuf, buf, sizeof(inBuf));
   
-  for(int i = kNumRounds - 1; i >= 0; i--)
+  for(int i = 0; i < kNumRounds; i++)
   {
-    T = ((C + rol(D, 11)) ^ Keys[i & 3]);
+    UInt32 key = Keys[(encrypt ? i : (kNumRounds - 1 - i)) & 3];
+    T = ((C + rol(D, 11)) ^ key);
     TA = A ^ SubstLong(T);
-    T = ((D ^ rol(C, 17)) + Keys[i & 3]);
+    T = ((D ^ rol(C, 17)) + key);
     TB = B ^ SubstLong(T);
     A = C;
     B = D;
@@ -132,12 +112,13 @@ void CData::DecryptBlock(Byte *buf)
     D = TB;
   }
 
-  bufPtr[0] = C ^ Keys[0];
-  bufPtr[1] = D ^ Keys[1];
-  bufPtr[2] = A ^ Keys[2];
-  bufPtr[3] = B ^ Keys[3];
+  WriteUInt32ToMemLE(C ^ Keys[0], buf + 0);
+  WriteUInt32ToMemLE(D ^ Keys[1], buf + 4);
+  WriteUInt32ToMemLE(A ^ Keys[2], buf + 8);
+  WriteUInt32ToMemLE(B ^ Keys[3], buf + 12);
 
-  UpdateKeys(inBuf);
+  UpdateKeys(encrypt ? buf : inBuf);
 }
+
 
 }}

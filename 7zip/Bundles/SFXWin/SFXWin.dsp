@@ -170,11 +170,27 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -389,22 +405,6 @@ SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2MT.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2ST.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2ST.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Common\FilePathAutoRename.cpp
 # End Source File
 # Begin Source File
@@ -418,14 +418,6 @@ SOURCE=..\..\Common\FileStreams.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\FilterCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 

@@ -283,13 +283,9 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
   #endif
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *properties, UInt32 size)
 {
-  UInt32 processesedSize;
-  const UInt32 kPropSize = 5;
-  Byte properties[kPropSize];
-  RINOK(inStream->Read(properties, kPropSize, &processesedSize));
-  if (processesedSize != kPropSize)
+  if (size < 5)
     return E_INVALIDARG;
   int lc = properties[0] % 9;
   Byte remainder = (Byte)(properties[0] / 9);

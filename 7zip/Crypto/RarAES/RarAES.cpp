@@ -23,16 +23,13 @@ CDecoder::CDecoder():
     _salt[i] = 0;
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   bool thereIsSaltPrev = _thereIsSalt;
   _thereIsSalt = false;
-  UInt32 processedSize;
-  Byte salt[8];
-  RINOK(inStream->Read(salt, sizeof(salt), &processedSize));
-  if (processedSize == 0)
-    _thereIsSalt = false;
-  if (processedSize != sizeof(salt))
+  if (size == 0)
+    return S_OK;
+  if (size < 8)
     return E_INVALIDARG;
   _thereIsSalt = true;
   bool same = false;
@@ -42,7 +39,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
     if (_thereIsSalt)
     {
       for (int i = 0; i < sizeof(_salt); i++)
-        if (_salt[i] != salt[i])
+        if (_salt[i] != data[i])
         {
           same = false;
           break;
@@ -50,7 +47,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
     }
   }
   for (int i = 0; i < sizeof(_salt); i++)
-    _salt[i] = salt[i];
+    _salt[i] = data[i];
   if (!_needCalculate && !same)
     _needCalculate = true;
   return S_OK;

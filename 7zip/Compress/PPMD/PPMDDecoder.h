@@ -16,7 +16,7 @@ namespace NPPMD {
 
 class CDecoder : 
   public ICompressCoder,
-  public ICompressSetDecoderProperties,
+  public ICompressSetDecoderProperties2,
   public CMyUnknownImp
 {
   NRangeCoder::CDecoder _rangeDecoder;
@@ -30,7 +30,7 @@ class CDecoder :
 
 public:
 
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties)
+  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
 
   void ReleaseStreams()
   {
@@ -50,9 +50,7 @@ public:
       ICompressProgressInfo *progress);
 
 
-  // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
-
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };
 
 }}

@@ -64,7 +64,8 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 
 STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
 {
-  for (UInt32 i = 0; i < size; i++)
+  UInt32 i;
+  for (i = 0; i < size; i++)
     data[i] = _cipher.EncryptByte(data[i]);
   return i;
 }
@@ -94,7 +95,8 @@ STDMETHODIMP CDecoder::Init()
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 {
-  for (UInt32 i = 0; i < size; i++)
+  UInt32 i;
+  for (i = 0; i < size; i++)
     data[i] = _cipher.DecryptByte(data[i]);
   return i;
 }

@@ -21,6 +21,16 @@ HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
   return result;
 }
 
+static inline UInt16 GetUInt16FromMemLE(const Byte *p)
+{
+  return p[0] | (((UInt32)p[1]) << 8);
+}
+
+static inline UInt32 GetUInt32FromMemLE(const Byte *p)
+{
+  return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
+}
+
 inline bool TestMarkerCandidate(const void *testBytes, UInt32 maxSize)
 {
   if (maxSize < 2 + 2 + 4)
@@ -28,13 +38,13 @@ inline bool TestMarkerCandidate(const void *testBytes, UInt32 maxSize)
   const Byte *block = ((const Byte *)(testBytes));
   if (block[0] != NSignature::kSig0 || block[1] != NSignature::kSig1)
     return false;
-  UInt32 blockSize = *((const UInt16 *)(block + 2));
+  UInt32 blockSize = GetUInt16FromMemLE(block + 2);
   if (maxSize < 2 + 2 + blockSize + 4)
     return false;
   block += 4;
   if (blockSize == 0 || blockSize > 2600)
     return false;
-  UInt32 crcFromFile = *(const UInt32 *)(block + blockSize);
+  UInt32 crcFromFile = GetUInt32FromMemLE(block + blockSize);
   return (CCRC::VerifyDigest(crcFromFile, block, blockSize));
 }
 
@@ -251,7 +261,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   /*
   UInt32 extraData;
   if ((header.Flags & NFileHeader::NFlags::kExtFile) != 0)
-    extraData = *(const UInt32 *)(_block + pos);
+    extraData = GetUInt32FromMemLE(_block + pos);
   */
   _blockPos = firstHeaderSize;
 

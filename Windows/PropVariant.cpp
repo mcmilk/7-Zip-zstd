@@ -93,7 +93,7 @@ CPropVariant& CPropVariant::operator=(UInt64 value)
     InternalClear();
     vt = VT_UI8;
   }
-  uhVal = *(ULARGE_INTEGER*)&value;
+  uhVal.QuadPart = value;
   return *this;
 }
 
@@ -287,9 +287,9 @@ int CPropVariant::Compare(const CPropVariant &a)
       return MyCompare(uintVal, a.uintVal);
     */
     case VT_I8:
-      return MyCompare(Int64(*(const Int64 *)&hVal), Int64(*(const Int64 *)&a.hVal));
+      return MyCompare(hVal.QuadPart, a.hVal.QuadPart);
     case VT_UI8:
-      return MyCompare(UInt64(*(const UInt64 *)&uhVal), UInt64(*(const UInt64 *)&a.uhVal));
+      return MyCompare(uhVal.QuadPart, a.uhVal.QuadPart);
 
     case VT_BOOL:    
       return -MyCompare(boolVal, a.boolVal);

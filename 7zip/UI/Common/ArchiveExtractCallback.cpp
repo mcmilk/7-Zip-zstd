@@ -113,7 +113,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
   {
     if (propVariant.vt != VT_UI8)
       return E_FAIL;
-    _position = *(const UInt64 *)(&propVariant.uhVal);
+    _position = propVariant.uhVal.QuadPart;
     _isSplit = true;
   }
 

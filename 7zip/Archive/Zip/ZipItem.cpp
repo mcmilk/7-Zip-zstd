@@ -48,7 +48,7 @@ bool CItem::IsDirectory() const
       if (*prev == '/')
         return true;
     #else
-      if (Name[Name.Length() - 1) == '/')
+      if (Name[Name.Length() - 1] == '/')
         return true;
     #endif
   }

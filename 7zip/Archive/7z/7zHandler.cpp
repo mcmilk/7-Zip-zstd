@@ -101,16 +101,8 @@ STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,
 static void MySetFileTime(bool timeDefined, FILETIME unixTime, 
     NWindows::NCOM::CPropVariant &propVariant)
 {
-  // FILETIME fileTime;
   if (timeDefined)
     propVariant = unixTime;
-    // NTime::UnixTimeToFileTime((time_t)unixTime, fileTime);
-  else
-  {
-    return;
-    // fileTime.dwHighDateTime = fileTime.dwLowDateTime = 0;
-  }
-  // propVariant = fileTime;
 }
 
 /*
@@ -135,7 +127,7 @@ static UString ConvertBytesToHexString(const Byte *data, UInt32 size)
 
 #ifndef _SFX
 
-static UString ConvertUINT32ToString(UInt32 value)
+static UString ConvertUInt32ToString(UInt32 value)
 {
   wchar_t buffer[32];
   ConvertUInt64ToString(value, buffer);
@@ -146,21 +138,21 @@ static UString GetStringForSizeValue(UInt32 value)
 {
   for (int i = 31; i >= 0; i--)
     if ((UInt32(1) << i) == value)
-      return ConvertUINT32ToString(i);
+      return ConvertUInt32ToString(i);
   UString result;
   if (value % (1 << 20) == 0)
   {
-    result += ConvertUINT32ToString(value >> 20);
+    result += ConvertUInt32ToString(value >> 20);
     result += L"m";
   }
   else if (value % (1 << 10) == 0)
   {
-    result += ConvertUINT32ToString(value >> 10);
+    result += ConvertUInt32ToString(value >> 10);
     result += L"k";
   }
   else
   {
-    result += ConvertUINT32ToString(value);
+    result += ConvertUInt32ToString(value);
     result += L"b";
   }
   return result;
@@ -187,6 +179,11 @@ static inline UString GetHex2(Byte value)
 }
 
 #endif
+
+static inline UInt32 GetUInt32FromMemLE(const Byte *p)
+{
+  return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
+}
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
@@ -331,24 +328,24 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                 methodsString += methodName;
                 if (altCoderInfo.MethodID == k_LZMA)
                 {
-                  if (altCoderInfo.Properties.GetCapacity() == 5)
+                  if (altCoderInfo.Properties.GetCapacity() >= 5)
                   {
                     methodsString += L":";
-                    UInt32 dicSize = *(const UInt32 *)
-                      ((const Byte *)altCoderInfo.Properties + 1);
+                    UInt32 dicSize = GetUInt32FromMemLE(
+                      ((const Byte *)altCoderInfo.Properties + 1));
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
                 else if (altCoderInfo.MethodID == k_PPMD)
                 {
-                  if (altCoderInfo.Properties.GetCapacity() == 5)
+                  if (altCoderInfo.Properties.GetCapacity() >= 5)
                   {
                     Byte order = *(const Byte *)altCoderInfo.Properties;
                     methodsString += L":o";
-                    methodsString += ConvertUINT32ToString(order);
+                    methodsString += ConvertUInt32ToString(order);
                     methodsString += L":mem";
-                    UInt32 dicSize = *(const UInt32 *)
-                      ((const Byte *)altCoderInfo.Properties + 1);
+                    UInt32 dicSize = GetUInt32FromMemLE(
+                      ((const Byte *)altCoderInfo.Properties + 1));
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }

@@ -141,7 +141,6 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
 
   item.LinkFlag = *cur++;
   Byte linkFlag = item.LinkFlag;
-  cur += 1;
 
   ReadString(cur, NFileHeader::kNameSize, item.LinkName);
   cur += NFileHeader::kNameSize;

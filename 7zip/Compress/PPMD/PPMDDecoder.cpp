@@ -10,13 +10,9 @@
 namespace NCompress {
 namespace NPPMD {
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *properties, UInt32 size)
 {
-  const UInt32 kPropSize = 5;
-  Byte properties[kPropSize];
-  UInt32 processedSize;
-  RINOK(inStream->Read(properties, kPropSize, &processedSize));
-  if (processedSize != kPropSize)
+  if (size < 5)
     return E_INVALIDARG;
   _order = properties[0];
   _usedMemorySize = 0;

@@ -5,7 +5,7 @@
 #include "Plugin.h"
 
 #include "Common/StringConvert.h"
-#include "Common/WildCard.h"
+#include "Common/Wildcard.h"
 
 #include "Windows/PropVariantConversions.h"
 #include "Windows/FileName.h"

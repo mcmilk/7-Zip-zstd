@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "ZipCipher.h"
-#include "../../../Common/Crc.h"
+#include "../../../Common/CRC.h"
 
 namespace NCrypto {
 namespace NZip {

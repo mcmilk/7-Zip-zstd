@@ -98,6 +98,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         updateItem.IsDirectory = ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
       if (updateItem.IsDirectory)
         updateItem.Name += '/';
+
       if(!FileTimeToUnixTime(utcTime, updateItem.Time))
         return E_INVALIDARG;
     }
@@ -109,7 +110,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
         if (propVariant.vt != VT_UI8)
           return E_INVALIDARG;
-        size = *(UInt64 *)(&propVariant.uhVal);
+        size = propVariant.uhVal.QuadPart;
       }
       updateItem.Size = size;
     }

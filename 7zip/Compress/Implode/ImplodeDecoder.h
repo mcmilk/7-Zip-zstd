@@ -16,7 +16,7 @@ namespace NDecoder {
 
 class CCoder :
   public ICompressCoder,
-  public ICompressSetDecoderProperties,
+  public ICompressSetDecoderProperties2,
   public CMyUnknownImp
 {
   CLZOutWindow m_OutWindowStream;
@@ -39,7 +39,7 @@ class CCoder :
 public:
   CCoder();
 
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties)
+  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
 
   void ReleaseStreams();
   HRESULT (Flush)() { return m_OutWindowStream.Flush(); }
@@ -53,7 +53,7 @@ public:
       ICompressProgressInfo *progress);
 
   // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };
 
 }}}

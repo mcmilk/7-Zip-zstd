@@ -129,7 +129,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.07 Copyright (c) 1999-2004 Igor Pavlov  2004-10-03\n");
+  fprintf(stderr, "\nLZMA 4.10 Copyright (c) 1999-2004 Igor Pavlov  2004-10-21\n");
 
   if (n == 1)
   {
@@ -360,7 +360,20 @@ int main2(int n, const char *args[])
     NCompress::NLZMA::CDecoder *decoderSpec = 
         new NCompress::NLZMA::CDecoder;
     CMyComPtr<ICompressCoder> decoder = decoderSpec;
-    if (decoderSpec->SetDecoderProperties(inStream) != S_OK)
+    const kPropertiesSize = 5;
+    Byte properties[kPropertiesSize];
+    UInt32 processedSize;
+    if (inStream->Read(properties, kPropertiesSize, &processedSize) != S_OK)
+    {
+      fprintf(stderr, "Read error");
+      return 1;
+    }
+    if (processedSize != kPropertiesSize)
+    {
+      fprintf(stderr, "Read error");
+      return 1;
+    }
+    if (decoderSpec->SetDecoderProperties2(properties, kPropertiesSize) != S_OK)
     {
       fprintf(stderr, "SetDecoderProperties error");
       return 1;
@@ -369,7 +382,6 @@ int main2(int n, const char *args[])
     for (int i = 0; i < 8; i++)
     {
       Byte b;
-      UInt32 processedSize;
       if (inStream->Read(&b, sizeof(b), &processedSize) != S_OK)
       {
         fprintf(stderr, "Read error");

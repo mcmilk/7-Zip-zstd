@@ -71,6 +71,7 @@ ICompressSetCoderProperties: public IUnknown
       const PROPVARIANT *properties, UInt32 numProperties) PURE;
 };
 
+/*
 // {23170F69-40C1-278A-0000-000200210000}
 DEFINE_GUID(IID_ICompressSetDecoderProperties, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x21, 0x00, 0x00);
@@ -78,6 +79,16 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000200210000")
 ICompressSetDecoderProperties: public IUnknown
 {
   STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream) PURE;
+};
+*/
+
+// {23170F69-40C1-278A-0000-000200210200}
+DEFINE_GUID(IID_ICompressSetDecoderProperties2, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x21, 0x02, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000200210200")
+ICompressSetDecoderProperties2: public IUnknown
+{
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000200230000}

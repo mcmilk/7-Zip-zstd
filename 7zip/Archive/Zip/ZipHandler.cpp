@@ -13,15 +13,11 @@
 #include "Windows/PropVariant.h"
 
 #include "../../IPassword.h"
-// #include "../../../Compress/Interface/CompressInterface.h"
 
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamObjects.h"
-// #include "Interface/EnumStatProp.h"
-#include "../../Common/StreamObjects.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
-
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
@@ -526,15 +522,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       ICompressCoder *coder = methodItems[m].Coder;
 
-      CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
-      if (coder->QueryInterface(IID_ICompressSetDecoderProperties, (void **)&compressSetDecoderProperties) == S_OK)
+      CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
+      if (coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&compressSetDecoderProperties) == S_OK)
       {
-        // Byte properties = (item.Flags & 6);
         Byte properties = item.Flags;
-        CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-        CMyComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
-        inStreamSpec->Init(&properties, 1);
-        RINOK(compressSetDecoderProperties->SetDecoderProperties(inStreamProperties));
+        RINOK(compressSetDecoderProperties->SetDecoderProperties2(&properties, 1));
       }
 
       // case NFileHeader::NCompressionMethod::kImploded:

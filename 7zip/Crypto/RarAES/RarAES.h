@@ -16,7 +16,7 @@ namespace NRar29 {
 
 class CDecoder: 
   public ICompressFilter,
-  public ICompressSetDecoderProperties,
+  public ICompressSetDecoderProperties2,
   public ICryptoSetPassword,
   public CMyUnknownImp
 {
@@ -37,7 +37,7 @@ public:
 
   MY_UNKNOWN_IMP2(
     ICryptoSetPassword,
-    ICompressSetDecoderProperties)
+    ICompressSetDecoderProperties2)
 
   STDMETHOD(Init)();
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
@@ -45,7 +45,7 @@ public:
   STDMETHOD(CryptoSetPassword)(const Byte *aData, UInt32 aSize);
 
   // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 
   CDecoder();
 };

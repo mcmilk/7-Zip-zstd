@@ -67,7 +67,13 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
   _comboBoxID = _baseID + 3;
   _statusBarID = _comboBoxID + 1;
 
-  BindToPath(currentFolderPrefix);
+  UString cfp = currentFolderPrefix;
+
+  if (!currentFolderPrefix.IsEmpty())
+    if (currentFolderPrefix[0] == L'.')
+      if (!NFile::NDirectory::MyGetFullPathName(currentFolderPrefix, cfp))
+        cfp = currentFolderPrefix;
+  BindToPath(cfp);
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE, 
       0, 0, _xSize, 260, 

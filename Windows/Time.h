@@ -4,50 +4,50 @@
 #define __WINDOWS_TIME_H
 
 #include "Common/Types.h"
-// #include <windows.h>
-// #include <time.h>
 #include "Windows/Defs.h"
 
 namespace NWindows {
 namespace NTime {
 
-inline bool DosTimeToFileTime(UINT32 dosTime, FILETIME &fileTime)
+inline bool DosTimeToFileTime(UInt32 dosTime, FILETIME &fileTime)
 {
-  return BOOLToBool(::DosDateTimeToFileTime(UINT16(dosTime >> 16), 
-      UINT16(dosTime & 0xFFFF), &fileTime));
+  return BOOLToBool(::DosDateTimeToFileTime(UInt16(dosTime >> 16), 
+      UInt16(dosTime & 0xFFFF), &fileTime));
 }
 
-inline bool FileTimeToDosTime(const FILETIME &fileTime, UINT32 &dosTime)
+inline bool FileTimeToDosTime(const FILETIME &fileTime, UInt32 &dosTime)
 {
-  return BOOLToBool(::FileTimeToDosDateTime(&fileTime, 
-      ((LPWORD)&dosTime) + 1, (LPWORD)&dosTime));
+  WORD datePart, timePart;
+  if (!::FileTimeToDosDateTime(&fileTime, &datePart, &timePart))
+    return false;
+  dosTime = (((UInt32)datePart) << 16) + timePart;
+  return true;
 }
 
-const UINT64 kUnixTimeStartValue = 
+const UInt64 kUnixTimeStartValue = 
       #if ( __GNUC__)
       116444736000000000LL;
       #else
       116444736000000000;
       #endif
-const UINT32 kNumTimeQuantumsInSecond = 10000000;
+const UInt32 kNumTimeQuantumsInSecond = 10000000;
 
-inline void UnixTimeToFileTime(long unixTime, FILETIME &fileTime)
+inline void UnixTimeToFileTime(UInt32 unixTime, FILETIME &fileTime)
 {
-  ULONGLONG ll = UInt32x32To64(unixTime, kNumTimeQuantumsInSecond) + 
-      kUnixTimeStartValue;
-  fileTime.dwLowDateTime = (DWORD) ll;
-  fileTime.dwHighDateTime = DWORD(ll >> 32);
+  UInt64 v = kUnixTimeStartValue + ((UInt64)unixTime) * kNumTimeQuantumsInSecond;
+  fileTime.dwLowDateTime = (DWORD)v;
+  fileTime.dwHighDateTime = (DWORD)(v >> 32);
 }
 
-inline bool FileTimeToUnixTime(const FILETIME &fileTime, long &unixTime)
+inline bool FileTimeToUnixTime(const FILETIME &fileTime, UInt32 &unixTime)
 {
-  UINT64 winTime = (((UINT64)fileTime.dwHighDateTime) << 32) + fileTime.dwLowDateTime;
+  UInt64 winTime = (((UInt64)fileTime.dwHighDateTime) << 32) + fileTime.dwLowDateTime;
   if (winTime < kUnixTimeStartValue)
     return false;
   winTime = (winTime - kUnixTimeStartValue) / kNumTimeQuantumsInSecond;
-  if (winTime >= 0xFFFFFFFF)
+  if (winTime > 0xFFFFFFFF)
     return false;
-  unixTime = (long)winTime;
+  unixTime = (UInt32)winTime;
   return true;
 }
 

@@ -65,7 +65,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       RINOK(updateCallback->GetProperty(0, kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      size = *(UInt64 *)(&propVariant.uhVal);
+      size = propVariant.uhVal.QuadPart;
     }
     return UpdateArchive(size, outStream, 0, updateCallback);
   }

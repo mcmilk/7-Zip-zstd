@@ -7,7 +7,7 @@
 
 #include "Plugin.h"
 
-#include "Common/WildCard.h"
+#include "Common/Wildcard.h"
 #include "Common/DynamicBuffer.h"
 #include "Common/StringConvert.h"
 #include "Common/Defs.h"

@@ -44,15 +44,18 @@ public:
   bool PasswordIsDefined;
   UString Password;
   
-  int NumFileErrors;
-  int NumArchiveErrors;
+  UInt64 NumArchives;
+  UInt64 NumArchiveErrors;
+  UInt64 NumFileErrors;
+  UInt64 NumFileErrorsInCurrentArchive;
 
   void CExtractCallbackConsole::Init()
   {
-    NumFileErrors = 0;
+    NumArchives = 0;
     NumArchiveErrors = 0;
+    NumFileErrors = 0;
+    NumFileErrorsInCurrentArchive = 0;
   }
-
 };
 
 #endif

@@ -410,9 +410,6 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
   CMyComPtr<ISequentialOutStream> propStream = propStreamSpec;
   propStreamSpec->Init(f, kMaxLzmaPropSize);
   
-  CBenchmarkInStream *propDecoderStreamSpec = new CBenchmarkInStream;
-  CMyComPtr<ISequentialInStream> propDecoderStream = propDecoderStreamSpec;
-
   PROPID propIDs[] = 
   { 
     NCoderPropID::kDictionarySize,  
@@ -488,8 +485,7 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
       inStreamSpec->Init(outStreamSpec->Buffer, compressedSize);
       crcOutStreamSpec->Init();
       
-      propDecoderStreamSpec->Init(propStreamSpec->Buffer, propStreamSpec->Pos);
-      if (decoderSpec->SetDecoderProperties(propDecoderStream) != S_OK)
+      if (decoderSpec->SetDecoderProperties2(propStreamSpec->Buffer, propStreamSpec->Pos) != S_OK)
       {
         fprintf(f, "\nError: Set Decoder Properties Error\n");
         return 1;

@@ -20,7 +20,7 @@ public:
   UInt32 UID;
   UInt32 GID;
   UInt64 Size;
-  time_t ModificationTime;
+  UInt32 ModificationTime;
   char LinkFlag;
   AString LinkName;
   char Magic[8];
@@ -44,7 +44,7 @@ public:
         #ifdef WIN32
         return (*CharPrevExA(CP_OEMCP, Name, &Name[Name.Length()], 0) == '/');
         #else
-        return (Name[Name.Length() - 1) == '/');
+        return (Name[Name.Length() - 1] == '/');
         #endif
       }
       return false;

@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.10 beta           2004-10-21
+  --------------------------------------
+   -  Codecs now use new interface: ICompressSetDecoderProperties2
+
+  
   Version 4.07 beta           2004-10-03
   --------------------------------------
    -  some interfaces were changed slightly to support 
