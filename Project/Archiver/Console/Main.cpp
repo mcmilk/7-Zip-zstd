@@ -44,7 +44,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " (Alone)"
 #endif
 
-" 2.30 Beta 7  Copyright (c) 1999-2001 Igor Pavlov  04-Nov-2001\n";
+" 2.30 Beta 8  Copyright (c) 1999-2001 Igor Pavlov  21-Dec-2001\n";
 
 const char *kDefaultArchiveType = "7z";
 const char *kDefaultSfxModule = "7zCon.sfx";
@@ -196,10 +196,10 @@ static const CCommandSubCharsSet kListSets[kNumListSets] =
 
 //  OnlyOnDisk , OnlyInArchive, NewInArchive, OldInArchive,   
 //  SameFiles, NotMasked
-const CSysString kUpdatePairStateIDSet = "PQRXYZ";
-const int kUpdatePairStateNotSupportedActions[] = {2, 2, 1, -1, -1, -1};
+const CSysString kUpdatePairStateIDSet = "PQRXYZW";
+const int kUpdatePairStateNotSupportedActions[] = {2, 2, 1, -1, -1, -1, -1};
 
-const CSysString kUpdatePairActionIDSet = "012"; //Ignore, Copy, Compress
+const CSysString kUpdatePairActionIDSet = "0123"; //Ignore, Copy, Compress
 
 const CSysString kUpdateIgnoreItselfPostStringID = "-"; 
 const char kUpdateNewArchivePostCharID = '!'; 
@@ -535,6 +535,7 @@ static NUpdateArchive::NPairAction::EEnum GetUpdatePairActionType(int i)
     case NUpdateArchive::NPairAction::kIgnore: return NUpdateArchive::NPairAction::kIgnore;
     case NUpdateArchive::NPairAction::kCopy: return NUpdateArchive::NPairAction::kCopy;
     case NUpdateArchive::NPairAction::kCompress: return NUpdateArchive::NPairAction::kCompress;
+    case NUpdateArchive::NPairAction::kCompressAsAnti: return NUpdateArchive::NPairAction::kCompressAsAnti;
   }
   throw 98111603;
 }

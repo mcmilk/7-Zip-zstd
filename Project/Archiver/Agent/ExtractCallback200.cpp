@@ -153,6 +153,15 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
     if (aNewFileSizeDefined)
       aNewFileSize = ConvertPropVariantToUINT64(aPropVariant);
 
+    bool anIsAnti = false;
+    {
+      NCOM::CPropVariant aPropVariantTemp;
+      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsAnti, 
+          &aPropVariantTemp));
+      if (aPropVariantTemp.vt != VT_EMPTY)
+        anIsAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
+    }
+
     UStringVector aPathParts; 
     SplitPathToParts(aFullPath, aPathParts);
     if(aPathParts.IsEmpty())
@@ -186,8 +195,10 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
     }
     if(!m_ProcessedFileInfo.IsDirectory)
       aPathParts.DeleteBack();
-    if (!aPathParts.IsEmpty())
-      CreateComplexDirectory(aPathParts);
+    
+    if (!anIsAnti)
+      if (!aPathParts.IsEmpty())
+        CreateComplexDirectory(aPathParts);
 
 
     UString aFullProcessedPathUnicode = 
@@ -198,6 +209,8 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
     if(m_ProcessedFileInfo.IsDirectory)
     {
       m_DiskFilePath = aFullProcessedPath;
+      if (anIsAnti)
+        ::RemoveDirectory(m_DiskFilePath);
       return S_OK;
     }
 
@@ -255,17 +268,20 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
           return E_ABORT;
         }
     }
-    m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
-    CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
-    if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
+    if (!anIsAnti)
     {
-      RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
+      m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
+      CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
+      if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
+      {
+        RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
             L"can not open output file "));
-      return E_ABORT;
+        return E_ABORT;
+      }
+      m_OutFileStream = anOutStreamLoc;
+      *anOutStream = anOutStreamLoc.Detach();
     }
     m_DiskFilePath = aFullProcessedPath;
-    m_OutFileStream = anOutStreamLoc;
-    *anOutStream = anOutStreamLoc.Detach();
   }
   else
   {

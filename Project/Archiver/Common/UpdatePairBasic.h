@@ -9,7 +9,7 @@ namespace NUpdateArchive{
 
   namespace NPairState 
   {
-    const kNumValues = 6;
+    const kNumValues = 7;
     enum EEnum
     {
       kNotMasked = 0,
@@ -17,7 +17,8 @@ namespace NUpdateArchive{
       kOnlyOnDisk,
       kNewInArchive,
       kOldInArchive,
-      kSameFiles,      
+      kSameFiles,
+      kUnknowNewerFiles
     };
   }
   namespace NPairAction
@@ -26,7 +27,8 @@ namespace NUpdateArchive{
     {
       kIgnore = 0,
       kCopy,
-      kCompress
+      kCompress,
+      kCompressAsAnti
     };
   }
   struct CActionSet

@@ -9,6 +9,8 @@
 
 #include "Common/StdOutStream.h"
 #include "Common/NewHandler.h"
+#include "Common/StringConvert.h"
+
 #include "ConsoleCloseUtils.h"
 #include "ArError.h"
 
@@ -56,7 +58,8 @@ int main(int aNumArguments, const char *anArguments[])
   {
     CSysString aMessage;
     NError::MyFormatMessage(aSystemError.ErrorValue, aMessage);
-    g_StdOut << endl << endl << "System error:" << endl << aMessage << endl;
+    g_StdOut << endl << endl << "System error:" << endl << 
+        SystemStringToOemString(aMessage) << endl;
     exit(NExitCode::kFatalError);
   }
   catch(const NExitCode::CMultipleErrors &aMultipleErrors)

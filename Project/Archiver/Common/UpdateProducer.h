@@ -5,13 +5,14 @@
 #ifndef __UPDATEPRODUCER_H
 #define __UPDATEPRODUCER_H
 
-//#include "UpdateItemInfo.h"
 #include "UpdatePairInfo.h"
 
 struct CUpdatePairInfo2
 {
   bool OperationIsCompress;
   bool ExistInArchive;
+  bool ExistOnDisk;
+  bool IsAnti;
   int ArchiveItemIndex;
   int DirItemIndex;
 };

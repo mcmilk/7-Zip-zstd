@@ -22,9 +22,11 @@ void UpdateProduce(
     const CUpdatePairInfo &aPairInfo = anUpdatePairs[i];
 
     CUpdatePairInfo2 aPairInfo2;
+    aPairInfo2.IsAnti = false;
     aPairInfo2.ArchiveItemIndex = aPairInfo.ArchiveItemIndex;
     aPairInfo2.DirItemIndex = aPairInfo.DirItemIndex;
     aPairInfo2.ExistInArchive = (aPairInfo.State != NPairState::kOnlyOnDisk);
+    aPairInfo2.ExistOnDisk = (aPairInfo.State != NPairState::kOnlyInArchive);
     switch(anActionSet.StateActions[aPairInfo.State])
     {
       case NPairAction::kIgnore:
@@ -42,11 +44,18 @@ void UpdateProduce(
           anOperationChain.Add(aPairInfo2);
           break;
         }
-      default:
+      case NPairAction::kCompress:
         {
           if (aPairInfo.State == NPairState::kOnlyInArchive || 
             aPairInfo.State == NPairState::kNotMasked)
             throw kUpdateActionSetCollision;
+          aPairInfo2.OperationIsCompress = true;
+          anOperationChain.Add(aPairInfo2);
+          break;
+        }
+      case NPairAction::kCompressAsAnti:
+        {
+          aPairInfo2.IsAnti = true;
           aPairInfo2.OperationIsCompress = true;
           anOperationChain.Add(aPairInfo2);
           break;

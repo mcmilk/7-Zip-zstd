@@ -243,14 +243,17 @@ FilesInfo
 
     switch(PropertyType)
     {
-      kIsDir:
+      kEmptyStream:
         for(NumFiles)
-            BIT IsDir
+          BIT IsEmptyStream
 
-      kNumNonEmpty:
-        UINT64 aNumEmptyFiles
-        for(aNumEmptyFiles)
-          UINT64 aNumSkipFiles
+      kEmptyFile:
+        for(EmptyStreams)
+          BIT IsEmptyFile
+
+      kAnti:
+        for(EmptyStreams)
+          BIT IsAntiFile
       
       case kCreationTime:
       case kLastWriteTime:

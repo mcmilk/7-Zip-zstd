@@ -72,6 +72,37 @@ static HRESULT WriteRange(IInStream *anInStream,
   return aResult;
 }
 
+struct CRefItem2
+{
+  bool IsCompressItem;
+  bool IsAnti;
+  bool IsDirectory;
+  UINT32 CompressIndex;
+  UINT32 CopyIndex;
+  const wchar_t *Name;
+};
+
+static int CompareUpdateItems(const void *p1, const void *p2)
+{
+  const CRefItem2 &a1 = *((CRefItem2 *)p1);
+  const CRefItem2 &a2 = *((CRefItem2 *)p2);
+  int n;
+  if (a1.IsDirectory != a2.IsDirectory)
+  {
+    if (a1.IsDirectory)
+      return a1.IsAnti ? 1: -1;
+    return a2.IsAnti ? -1: 1;
+  }
+  if (a1.IsDirectory)
+  {
+    if (a1.IsAnti != a2.IsAnti)
+      return (a1.IsAnti ? 1 : -1);
+    n = _wcsicmp(a1.Name, a2.Name);
+    return (a1.IsAnti ? (-n) : n);
+  }
+  return _wcsicmp(a1.Name, a2.Name);
+}
+
 
 HRESULT UpdateOneFile(IInStream *anInStream,
     const CCompressionMethodMode *anOptions,                       
@@ -104,16 +135,15 @@ HRESULT UpdateOneFile(IInStream *anInStream,
   }
 
   UINT64 aFileSize = anUpdateItem.Size;
-  bool anIsDirectory = anUpdateItem.IsDirectory();
   
   // ConvertUnicodeToUTF(NItemName::MakeLegalName(anUpdateItem.Name), aFileHeaderInfo.Name); // test it
   aFileHeaderInfo.Name = NItemName::MakeLegalName(anUpdateItem.Name);
 
-  if(anIsDirectory || aFileSize == 0)
-  {
+  aFileHeaderInfo.IsDirectory = anUpdateItem.IsDirectory;
+  aFileHeaderInfo.IsAnti = anUpdateItem.IsAnti;
+
+  if(anUpdateItem.IsAnti || anUpdateItem.IsDirectory || aFileSize == 0)
     aFolderItemIsDefined = false;
-    aFileHeaderInfo.IsDirectory = anIsDirectory;
-  }
   else
   {
     aFolderItemIsDefined = true;
@@ -141,13 +171,18 @@ HRESULT UpdateOneFile(IInStream *anInStream,
     aFileHeaderInfo.FileCRC = anInStreamSpec->GetCRC();
     aFileHeaderInfo.FileCRCIsDefined = true;
 
-    aFileHeaderInfo.IsDirectory = false;
   }
   aFileHeaderInfo.UnPackSize = aFileSize;
   // aFolderItem.NumFiles = 1;
-  aFileHeaderInfo.SetAttributes(anUpdateItem.Attributes);
-  // aFileHeaderInfo.SetCreationTime(anUpdateItem.CreationTime);
-  aFileHeaderInfo.SetLastWriteTime(anUpdateItem.LastWriteTime);
+  
+  if (anUpdateItem.AttributesAreDefined)
+    aFileHeaderInfo.SetAttributes(anUpdateItem.Attributes);
+
+  // if (anUpdateItem.CreationTimeIsDefined)
+    // aFileHeaderInfo.SetCreationTime(anUpdateItem.CreationTime);
+  
+  if (anUpdateItem.LastWriteTimeIsDefined)
+    aFileHeaderInfo.SetLastWriteTime(anUpdateItem.LastWriteTime);
 
   aCurrentComplexity += aFileSize;
   return anUpdateCallBack->OperationResult(NArchiveHandler::NUpdate::NOperationResult::kOK);
@@ -191,57 +226,91 @@ HRESULT UpdateArchiveStd(COutArchive &anArchive,
   
   anUpdateCallBack->SetTotal(aComplexity);
 
-  aComplexity = 0;
   aCompressIndex = aCopyIndexIndex = 0;
-  
-  CArchiveDatabase aNewDatabase;
+
+  int aNumFiles = anUpdateItems.Size();
+  CRecordVector<CRefItem2> aRefItems;
+  aRefItems.Reserve(aNumFiles);
+  for (i = 0; i < aNumFiles; i++)
   {
-  std::auto_ptr<CEncoder> anEncoder;
-  for(i = 0; i < aCompressStatuses.Size(); i++)
-  {
-    CFileItemInfo aFileItem;
-    CFolderItemInfo aFolderItem;
-    RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
+    CRefItem2 aRefItem;
     if (aCompressStatuses[i])
     {
-      if (anEncoder.get() == 0)
-        anEncoder = (auto_ptr<CEncoder>)(new CEncoder(aMethod));
-      // aMixerCoderSpec->SetCoderInfo(0, NULL, NULL, aProgress);
-      const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aCompressIndex++];
-      bool aFolderItemIsDefined;
-      RETURN_IF_NOT_S_OK(UpdateOneFile(anInStream, aMethod, 
+      const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aCompressIndex];
+      aRefItem.IsCompressItem = true;
+      aRefItem.CompressIndex = aCompressIndex;
+      aRefItem.IsAnti = anUpdateItemInfo.IsAnti;
+      aRefItem.IsDirectory = anUpdateItemInfo.IsDirectory;
+      aRefItem.Name = anUpdateItemInfo.Name;
+      aCompressIndex++;
+    }
+    else
+    {
+      int aFileIndex = aCopyIndexes[aCopyIndexIndex];
+      const CFileItemInfo &aFileItem = aDatabase.m_Files[aFileIndex];
+      aRefItem.CopyIndex = aFileIndex;
+      aRefItem.IsCompressItem = false;
+      aRefItem.IsAnti = false;
+      aRefItem.IsDirectory = aFileItem.IsDirectory;
+      aRefItem.Name = aFileItem.Name;
+      aCopyIndexIndex++;
+    }
+    aRefItems.Add(aRefItem);
+  }
+  
+  qsort(&aRefItems.Front(), aRefItems.Size(), sizeof(aRefItems[0]), CompareUpdateItems);
+
+  CArchiveDatabase aNewDatabase;
+  {
+    aComplexity = 0;
+    
+    std::auto_ptr<CEncoder> anEncoder;
+    for(i = 0; i < aCompressStatuses.Size(); i++)
+    {
+      const CRefItem2 &aRefItem = aRefItems[i];
+      CFileItemInfo aFileItem;
+      CFolderItemInfo aFolderItem;
+      RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
+      if (aRefItem.IsCompressItem)
+      {
+        if (anEncoder.get() == 0)
+          anEncoder = (auto_ptr<CEncoder>)(new CEncoder(aMethod));
+        // aMixerCoderSpec->SetCoderInfo(0, NULL, NULL, aProgress);
+        const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aRefItem.CompressIndex];
+        bool aFolderItemIsDefined;
+        RETURN_IF_NOT_S_OK(UpdateOneFile(anInStream, aMethod, 
           anArchive, *anEncoder, 
           anUpdateItemInfo, 
           aComplexity,  anUpdateCallBack, aFileItem, aFolderItem, 
           aNewDatabase.m_PackSizes, aFolderItemIsDefined));
-      if (aFolderItemIsDefined)
-        aNewDatabase.m_Folders.Add(aFolderItem);
-    }
-    else
-    {
-      int aFileIndex = aCopyIndexes[aCopyIndexIndex++];
-      int aFolderIndex = aDatabase.m_FileIndexToFolderIndexMap[aFileIndex];
-      aFileItem = aDatabase.m_Files[aFileIndex];
-      if (aFolderIndex >= 0)
-      {
-        CUpdateRange aRange(aDatabase.GetFolderStreamPos(aFolderIndex, 0),
-            aDatabase.GetFolderFullPackSize(aFolderIndex));
-        RETURN_IF_NOT_S_OK(WriteRange(anInStream, anArchive.m_Stream, aRange, 
-            anUpdateCallBack, aComplexity));
-        const CFolderItemInfo &aFolder = aDatabase.m_Folders[aFolderIndex];
-        UINT64 aPackStreamIndex = aDatabase.m_FolderStartPackStreamIndex[aFolderIndex];
-        for (int i = 0; i < aFolder.PackStreams.Size(); i++)
-          aNewDatabase.m_PackSizes.Add(aDatabase.m_PackSizes[aPackStreamIndex + i]);
-        aNewDatabase.m_Folders.Add(aFolder);
+        if (aFolderItemIsDefined)
+          aNewDatabase.m_Folders.Add(aFolderItem);
       }
+      else
+      {
+        int aFileIndex = aRefItem.CopyIndex;
+        int aFolderIndex = aDatabase.m_FileIndexToFolderIndexMap[aFileIndex];
+        aFileItem = aDatabase.m_Files[aFileIndex];
+        if (aFolderIndex >= 0)
+        {
+          CUpdateRange aRange(aDatabase.GetFolderStreamPos(aFolderIndex, 0),
+            aDatabase.GetFolderFullPackSize(aFolderIndex));
+          RETURN_IF_NOT_S_OK(WriteRange(anInStream, anArchive.m_Stream, aRange, 
+            anUpdateCallBack, aComplexity));
+          const CFolderItemInfo &aFolder = aDatabase.m_Folders[aFolderIndex];
+          UINT64 aPackStreamIndex = aDatabase.m_FolderStartPackStreamIndex[aFolderIndex];
+          for (int j = 0; j < aFolder.PackStreams.Size(); j++)
+            aNewDatabase.m_PackSizes.Add(aDatabase.m_PackSizes[aPackStreamIndex + j]);
+          aNewDatabase.m_Folders.Add(aFolder);
+        }
+      }
+      aNewDatabase.m_Files.Add(aFileItem);
+      aComplexity += kOneItemComplexity;
     }
-    aNewDatabase.m_Files.Add(aFileItem);
-    aComplexity += kOneItemComplexity;
-  }
-
-  aNewDatabase.m_NumUnPackStreamsVector.Reserve(aNewDatabase.m_Folders.Size());
-  for (i = 0; i < aNewDatabase.m_Folders.Size(); i++)
-    aNewDatabase.m_NumUnPackStreamsVector.Add(1);
+    
+    aNewDatabase.m_NumUnPackStreamsVector.Reserve(aNewDatabase.m_Folders.Size());
+    for (i = 0; i < aNewDatabase.m_Folders.Size(); i++)
+      aNewDatabase.m_NumUnPackStreamsVector.Add(1);
   }
 
   return anArchive.WriteDatabase(aNewDatabase, aHeaderMethod);

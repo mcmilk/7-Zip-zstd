@@ -49,21 +49,29 @@ static int CompareUpdateItems(const void *p1, const void *p2)
   const CUpdateItemInfo &u1 = *a1.Data;
   const CUpdateItemInfo &u2 = *a2.Data;
   int n;
-  if (u1.IsDirectory() != u2.IsDirectory())
+  if (u1.IsDirectory != u2.IsDirectory)
   {
-    if (u1.IsDirectory())
-      return -1;
-    return 1;
+    if (u1.IsDirectory)
+      return u1.IsAnti ? 1: -1;
+    return u2.IsAnti ? -1: 1;
+  }
+  if (u1.IsDirectory)
+  {
+    if (u1.IsAnti != u2.IsAnti)
+      return (u1.IsAnti ? 1 : -1);
+    n = _wcsicmp(u1.Name, u2.Name);
+    return (u1.IsAnti ? (-n) : n);
   }
   if((n = _wcsicmp(u1.Name + a1.ExtensionPos, u2.Name + a2.ExtensionPos)) != 0)
     return n;
   if((n = _wcsicmp(u1.Name + a1.NamePos, u2.Name + a2.NamePos)) != 0)
     return n;
   // if((n = MyCompare(u1.LastWriteTime, u2.LastWriteTime)) != 0)
-  if((n = CompareFileTime(&u1.LastWriteTime, &u2.LastWriteTime)) != 0)
-  
-    return n;
-  if (!u1.IsDirectory())
+
+  if (u1.LastWriteTimeIsDefined && u2.LastWriteTimeIsDefined)
+    if((n = CompareFileTime(&u1.LastWriteTime, &u2.LastWriteTime)) != 0)
+      return n;
+  if (!u1.IsDirectory)
   {
     if((n = MyCompare(u1.Size, u2.Size)) != 0)
       return n;
@@ -84,8 +92,10 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &anArchive,
   if (aCopyIndexes.Size() != 0)
     return E_FAIL;
 
+  /*
   if (anInStream != NULL)
     return E_FAIL;
+  */
 
   RETURN_IF_NOT_S_OK(anArchive.SkeepPrefixArchiveHeader());
 
@@ -153,12 +163,20 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &anArchive,
     // ConvertUnicodeToUTF(NItemName::MakeLegalName(anUpdateItem.Name), aFileItem.Name); // test it
     aFileItem.Name = NItemName::MakeLegalName(anUpdateItem.Name);
 
-    // aFileItem.SetCreationTime(anOperation.ItemInfo.CreationTime);
-    aFileItem.SetLastWriteTime(anUpdateItem.LastWriteTime);
-    aFileItem.SetAttributes(anUpdateItem.Attributes);
+    if (anUpdateItem.AttributesAreDefined)
+      aFileItem.SetAttributes(anUpdateItem.Attributes);
+
+    // if (anUpdateItem.CreationTimeIsDefined)
+      // aFileItem.SetCreationTime(anOperation.ItemInfo.CreationTime);
+    
+    if (anUpdateItem.LastWriteTimeIsDefined)
+      aFileItem.SetLastWriteTime(anUpdateItem.LastWriteTime);
+    
+    
     aFileItem.UnPackSize = anUpdateItem.Size;
-    aFileItem.IsDirectory = anUpdateItem.IsDirectory();
-    if (!aFileItem.IsDirectory && anUpdateItem.Size != 0)
+    aFileItem.IsDirectory = anUpdateItem.IsDirectory;
+    aFileItem.IsAnti = anUpdateItem.IsAnti;
+    if (!aFileItem.IsAnti && !aFileItem.IsDirectory && anUpdateItem.Size != 0)
       aThereIsPackStream = true;
     aNewDatabase.m_Files.Add(aFileItem);
   }
@@ -199,7 +217,7 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &anArchive,
       aFileItem.FileCRCIsDefined = true;
 
       aFileItem.UnPackSize = anInStreamSpec->m_Sizes[i];
-      if (!aFileItem.IsDirectory && aFileItem.UnPackSize != 0)
+      if (!aFileItem.IsAnti && !aFileItem.IsDirectory && aFileItem.UnPackSize != 0)
         aNumUnPackStreams++;
     }
     aNewDatabase.m_NumUnPackStreamsVector.Reserve(1);

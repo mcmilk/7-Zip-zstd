@@ -38,7 +38,8 @@ enum // CArchiveItemPropertyID
   kaipidSplitAfter, 
   kaipidDictionarySize, 
   kaipidCRC, 
-  kaipidType, 
+  kaipidType,
+  kaipidIsAnti,
   kaipidUserDefined = 0x10000
 };
 
@@ -125,6 +126,27 @@ public:
   STDMETHOD(DeleteOperation)(LPITEMIDLIST anItemIDList) PURE;
 
   STDMETHOD(OperationResult)(INT32 aOperationResult) PURE;
+};
+
+// {23170F69-40C1-278A-0000-000100040002}
+DEFINE_GUID(IID_IUpdateCallBack2, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x02);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040002")
+IUpdateCallBack2: public IUpdateCallBack
+{
+public:
+  STDMETHOD(GetUpdateItemInfo2)(INT32 anIndex, 
+      INT32 *anCompress, // 1 - compress 0 - copy
+      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
+      INT32 *anIndexInServer, // set if anExistInArchive == true
+      UINT32 *anAttributes,
+      FILETIME *aCreationTime, 
+      FILETIME *aLastAccessTime, 
+      FILETIME *aLastWriteTime, 
+      UINT64 *aSize, 
+      BSTR *aName, 
+      INT32 *anIsAnti) // 1 - File 0 - AntiFile) 
+        PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100010001}

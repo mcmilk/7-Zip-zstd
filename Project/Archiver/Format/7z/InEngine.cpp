@@ -820,6 +820,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &aDatabase)
   for(i = 0; i < aNumFiles; i++)
     anEmptyStreamVector.Add(false);
   CBoolVector anEmptyFileVector;
+  CBoolVector anAntiFileVector;
   UINT32 aNumEmptyStreams = 0;
 
   while(true)
@@ -873,13 +874,22 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &aDatabase)
           if (anEmptyStreamVector[i])
             aNumEmptyStreams++;
         anEmptyFileVector.Reserve(aNumEmptyStreams);
+        anAntiFileVector.Reserve(aNumEmptyStreams);
         for (i = 0; i < aNumEmptyStreams; i++)
+        {
           anEmptyFileVector.Add(false);
+          anAntiFileVector.Add(false);
+        }
         break;
       }
       case NID::kEmptyFile:
       {
         RETURN_IF_NOT_S_OK(ReadBoolVector(aNumEmptyStreams, anEmptyFileVector))
+        break;
+      }
+      case NID::kAnti:
+      {
+        RETURN_IF_NOT_S_OK(ReadBoolVector(aNumEmptyStreams, anAntiFileVector))
         break;
       }
       case NID::kCreationTime:
@@ -905,7 +915,9 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &aDatabase)
     CFileItemInfo &anItemInfo = aDatabase.m_Files[i];
     if(anEmptyStreamVector[i])
     {
-      anItemInfo.IsDirectory = !anEmptyFileVector[anEmptyFileIndex++];
+      anItemInfo.IsDirectory = !anEmptyFileVector[anEmptyFileIndex];
+      anItemInfo.IsAnti = anAntiFileVector[anEmptyFileIndex];
+      anEmptyFileIndex++;
       anItemInfo.UnPackSize = 0;
       anItemInfo.FileCRCIsDefined = false;
     }

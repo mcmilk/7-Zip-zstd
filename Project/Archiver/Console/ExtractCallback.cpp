@@ -139,6 +139,15 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsFolder, &aPropVariant));
     m_ProcessedFileInfo.IsDirectory = VARIANT_BOOLToBool(aPropVariant.boolVal);
 
+    bool anIsAnti = false;
+    {
+      NCOM::CPropVariant aPropVariantTemp;
+      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsAnti, 
+          &aPropVariantTemp));
+      if (aPropVariantTemp.vt != VT_EMPTY)
+        anIsAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
+    }
+
     RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidLastWriteTime, &aPropVariant));
     switch(aPropVariant.vt)
     {
@@ -189,8 +198,10 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     if(!m_ProcessedFileInfo.IsDirectory)
       aPathParts.DeleteBack();
     if (!aPathParts.IsEmpty())
-      CreateComplexDirectory(aPathParts);
-
+    {
+      if (!anIsAnti)
+        CreateComplexDirectory(aPathParts);
+    }
 
     CSysString aFullProcessedPath = m_DirectoryPath + 
         GetSystemString(aProcessedPath, m_CodePage);
@@ -198,6 +209,9 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     if(m_ProcessedFileInfo.IsDirectory)
     {
       m_DiskFilePath = aFullProcessedPath;
+
+      if (anIsAnti)
+        ::RemoveDirectory(m_DiskFilePath);
       return S_OK;
     }
 
@@ -270,17 +284,21 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
           return E_ABORT;
         }
     }
-    m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
-    CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
-    if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
+
+    if (!anIsAnti)
     {
-      g_StdOut << "can not open output file " << endl;
-      g_StdOut << aFullProcessedPath;
-      return E_ABORT;
+      m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
+      CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
+      if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
+      {
+        g_StdOut << "can not open output file " << endl;
+        g_StdOut << aFullProcessedPath;
+        return E_ABORT;
+      }
+      m_OutFileStream = anOutStreamLoc;
+      *anOutStream = anOutStreamLoc.Detach();
     }
     m_DiskFilePath = aFullProcessedPath;
-    m_OutFileStream = anOutStreamLoc;
-    *anOutStream = anOutStreamLoc.Detach();
   }
   else
   {

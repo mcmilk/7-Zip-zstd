@@ -65,6 +65,28 @@ STDMETHODIMP CUpdateCallBackImp::SetCompleted(const UINT64 *aCompleteValue)
   return S_OK;
 }
 
+STDMETHODIMP CUpdateCallBackImp::GetUpdateItemInfo2(INT32 anIndex, 
+      INT32 *anCompress, // 1 - compress 0 - copy
+      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
+      INT32 *anIndexInServer,
+      UINT32 *anAttributes,
+      FILETIME *aCreationTime, 
+      FILETIME *aLastAccessTime, 
+      FILETIME *aLastWriteTime, 
+      UINT64 *aSize, 
+      BSTR *aName, 
+      INT32 *anIsAnti)
+{
+  if (anIsAnti != NULL)
+  {
+    const CUpdatePairInfo2 &anUpdatePair = (*m_UpdatePairs)[anIndex];
+    *anIsAnti = BoolToMyBool(anUpdatePair.IsAnti);
+  }
+  return GetUpdateItemInfo(anIndex, anCompress, anExistInArchive, 
+      anIndexInServer, anAttributes, aCreationTime, aLastAccessTime, 
+      aLastWriteTime, aSize, aName);
+}
+
 STDMETHODIMP CUpdateCallBackImp::GetUpdateItemInfo(INT32 anIndex, 
       INT32 *anCompress, // 1 - compress 0 - copy
       INT32 *anExistInArchive, // 1 - exist, 0 - not exist
@@ -85,7 +107,7 @@ STDMETHODIMP CUpdateCallBackImp::GetUpdateItemInfo(INT32 anIndex,
     *anExistInArchive = BoolToMyBool(anUpdatePair.ExistInArchive);
   if(anIndexInServer != NULL && anUpdatePair.ExistInArchive)
     *anIndexInServer = (*m_ArchiveItems)[anUpdatePair.ArchiveItemIndex].IndexInServer;
-  if(anUpdatePair.OperationIsCompress)
+  if(anUpdatePair.OperationIsCompress && anUpdatePair.ExistOnDisk)
   {
     const CArchiveStyleDirItemInfo &aDirItemInfo = 
         (*m_DirItems)[anUpdatePair.DirItemIndex];
@@ -116,23 +138,39 @@ STDMETHODIMP CUpdateCallBackImp::CompressOperation(INT32 anIndex,
   const CUpdatePairInfo2 &anUpdatePair = (*m_UpdatePairs)[anIndex];
   if(!anUpdatePair.OperationIsCompress)
     return E_FAIL;
-  const CArchiveStyleDirItemInfo &aDirItemInfo = 
-      (*m_DirItems)[anUpdatePair.DirItemIndex];
-
+  
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
 
   Finilize();
 
-  m_PercentPrinter.PrintString("Compressing  ");
-  m_PercentPrinter.PrintString(UnicodeStringToMultiByte(aDirItemInfo.Name, CP_OEMCP));
+  if(anUpdatePair.IsAnti)
+  {
+    m_PercentPrinter.PrintString("Anti item    ");
+    m_PercentPrinter.PrintString(UnicodeStringToMultiByte(
+      (*m_ArchiveItems)[anUpdatePair.ArchiveItemIndex].Name, CP_OEMCP));
+  }
+  else
+  {
+    const CArchiveStyleDirItemInfo &aDirItemInfo = 
+      (*m_DirItems)[anUpdatePair.DirItemIndex];
+  
+    m_PercentPrinter.PrintString("Compressing  ");
+    m_PercentPrinter.PrintString(UnicodeStringToMultiByte(aDirItemInfo.Name, CP_OEMCP));
+  }
   if (m_EnablePercents)
   {
     m_PercentCanBePrint = true;
     m_PercentPrinter.PreparePrint();
     m_PercentPrinter.RePrintRatio();
   }
-
+  
+  if(anUpdatePair.IsAnti)
+    return S_OK;
+ 
+  const CArchiveStyleDirItemInfo &aDirItemInfo = 
+      (*m_DirItems)[anUpdatePair.DirItemIndex];
+ 
   if(aDirItemInfo.IsDirectory())
     return S_OK;
 

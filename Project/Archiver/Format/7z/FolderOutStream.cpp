@@ -56,7 +56,12 @@ HRESULT CFolderOutStream::OpenFile()
   m_OutStreamWithHashSpec->Init(aRealOutStream);
   if (anAskMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
       (!aRealOutStream)) 
-    anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+  {
+    UINT32 anIndex = m_StartIndex + m_CurrentIndex;
+    const CFileItemInfo &aFileInfo = m_ArchiveDatabase->m_Files[anIndex];
+    if (!aFileInfo.IsAnti && !aFileInfo.IsDirectory)
+      anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+  }
   return m_ExtractCallBack->PrepareOperation(anAskMode);
 }
 
@@ -66,7 +71,7 @@ HRESULT CFolderOutStream::WriteEmptyFiles()
   {
     UINT32 anIndex = m_StartIndex + m_CurrentIndex;
     const CFileItemInfo &aFileInfo = m_ArchiveDatabase->m_Files[anIndex];
-    if (!aFileInfo.IsDirectory && aFileInfo.UnPackSize != 0)
+    if (!aFileInfo.IsAnti && !aFileInfo.IsDirectory && aFileInfo.UnPackSize != 0)
       return S_OK;
     RETURN_IF_NOT_S_OK(OpenFile());
     RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(

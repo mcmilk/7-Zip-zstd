@@ -652,7 +652,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &aDatabase,
   for(i = 0; i < aDatabase.m_Files.Size(); i++)
   {
     const CFileItemInfo &aFile = aDatabase.m_Files[i];
-    if (aFile.IsDirectory || aFile.UnPackSize == 0)
+    if (aFile.IsAnti || aFile.IsDirectory || aFile.UnPackSize == 0)
     {
       anEmptyStreamVector.Add(true);
       aNumEmptyStreams++;
@@ -666,26 +666,44 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &aDatabase,
     RETURN_IF_NOT_S_OK(WriteNumber((anEmptyStreamVector.Size() + 7) / 8));
     RETURN_IF_NOT_S_OK(WriteBoolVector(anEmptyStreamVector));
 
-    CBoolVector aEmptyFileVector;
-    aEmptyFileVector.Reserve(aNumEmptyStreams);
-    UINT64 aNumEmptyFiles = 0;
+    CBoolVector anEmptyFileVector, anAntiVector;
+    anEmptyFileVector.Reserve(aNumEmptyStreams);
+    anAntiVector.Reserve(aNumEmptyStreams);
+    UINT64 aNumEmptyFiles = 0, aNumAntiItems = 0;
     for(i = 0; i < aDatabase.m_Files.Size(); i++)
     {
       const CFileItemInfo &aFile = aDatabase.m_Files[i];
-      if (aFile.IsDirectory || aFile.UnPackSize == 0)
+      if (aFile.IsAnti || aFile.IsDirectory || aFile.UnPackSize == 0)
+      {
         if (aFile.IsDirectory)
-          aEmptyFileVector.Add(false);
+          anEmptyFileVector.Add(false);
         else
         {
-          aEmptyFileVector.Add(true);
+          anEmptyFileVector.Add(true);
           aNumEmptyFiles++;
         }
+        if (aFile.IsAnti)
+        {
+          anAntiVector.Add(true);
+          aNumAntiItems++;
+        }
+        else
+          anAntiVector.Add(false);
+      }
     }
+
     if (aNumEmptyFiles > 0)
     {
       RETURN_IF_NOT_S_OK(WriteByte2(NID::kEmptyFile));
-      RETURN_IF_NOT_S_OK(WriteNumber((aEmptyFileVector.Size() + 7) / 8));
-      RETURN_IF_NOT_S_OK(WriteBoolVector(aEmptyFileVector));
+      RETURN_IF_NOT_S_OK(WriteNumber((anEmptyFileVector.Size() + 7) / 8));
+      RETURN_IF_NOT_S_OK(WriteBoolVector(anEmptyFileVector));
+    }
+
+    if (aNumAntiItems > 0)
+    {
+      RETURN_IF_NOT_S_OK(WriteByte2(NID::kAnti));
+      RETURN_IF_NOT_S_OK(WriteNumber((anAntiVector.Size() + 7) / 8));
+      RETURN_IF_NOT_S_OK(WriteBoolVector(anAntiVector));
     }
   }
 

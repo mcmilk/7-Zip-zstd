@@ -287,6 +287,8 @@ STDMETHODIMP CZipFolder::CompareIDs( LPARAM lParam,
       int i = aName1.CollateNoCase(aName2);
       if(i != 0)
         return i;
+      if (!anIsFolder1 && !anIsFolder2)
+        return 0;
     }
     if (anIsFolder1)
     {

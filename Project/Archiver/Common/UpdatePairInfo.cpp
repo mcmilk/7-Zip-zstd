@@ -116,8 +116,12 @@ void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &aDirItems,
         default:
           if (anArchiveItem.SizeIsDefined)
             if (aDirItem.Size != anArchiveItem.Size)
-              throw 1082034; // kSameTimeChangedSizeCollisionMessaged;
-          aPairInfo.State = NUpdateArchive::NPairState::kSameFiles;
+              // throw 1082034; // kSameTimeChangedSizeCollisionMessaged;
+              aPairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
+            else
+              aPairInfo.State = NUpdateArchive::NPairState::kSameFiles;
+          else
+              aPairInfo.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
       }
       aDirItemIndex++;
       anArchiveItemIndex++;

@@ -76,6 +76,7 @@ const CActionSet kAddActionSet =
   NPairAction::kCompress,
   NPairAction::kCompress,
   NPairAction::kCompress,
+  NPairAction::kCompress,
   NPairAction::kCompress
 };
 
@@ -86,7 +87,8 @@ const CActionSet kUpdateActionSet =
   NPairAction::kCompress,
   NPairAction::kCopy,
   NPairAction::kCompress,
-  NPairAction::kCopy
+  NPairAction::kCopy,
+  NPairAction::kCompress
 };
 
 const CActionSet kFreshActionSet = 
@@ -96,7 +98,8 @@ const CActionSet kFreshActionSet =
   NPairAction::kIgnore,
   NPairAction::kCopy,
   NPairAction::kCompress,
-  NPairAction::kCopy
+  NPairAction::kCopy,
+  NPairAction::kCompress
 };
 
 const CActionSet kSynchronizeActionSet = 
@@ -106,12 +109,14 @@ const CActionSet kSynchronizeActionSet =
   NPairAction::kCompress,
   NPairAction::kCopy,
   NPairAction::kCompress,
-  NPairAction::kCopy
+  NPairAction::kCopy,
+  NPairAction::kCompress,
 };
 
 const CActionSet kDeleteActionSet = 
 {
   NPairAction::kCopy,
+  NPairAction::kIgnore,
   NPairAction::kIgnore,
   NPairAction::kIgnore,
   NPairAction::kIgnore,

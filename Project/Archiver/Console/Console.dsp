@@ -329,7 +329,7 @@ SOURCE=..\Common\ExtractAutoRename.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Handler\IArchiveHandler.h
+SOURCE=..\Format\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
@@ -358,6 +358,10 @@ SOURCE=..\Common\SortUtils.cpp
 # Begin Source File
 
 SOURCE=..\Common\SortUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdatePairBasic.h
 # End Source File
 # Begin Source File
 

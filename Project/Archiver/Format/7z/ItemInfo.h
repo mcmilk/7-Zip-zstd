@@ -93,6 +93,7 @@ class CFileItemInfo
 {
 public:
   bool IsDirectory;
+  bool IsAnti;
   CArchiveFileTime CreationTime;
   CArchiveFileTime LastWriteTime;
   CArchiveFileTime LastAccessTime;
@@ -113,7 +114,8 @@ public:
     IsLastWriteTimeDefined(false), 
     IsLastAccessTimeDefined(false),
     IsDirectory(false),
-    FileCRCIsDefined(false)
+    FileCRCIsDefined(false),
+    IsAnti(false)
       {}
   void SetAttributes(UINT32 anAttributes) 
   { 

@@ -24,20 +24,28 @@ struct CUpdateRange
 struct CUpdateItemInfo
 {
   int IndexInClient;
+  
   UINT32 Attributes;
   FILETIME CreationTime;
   FILETIME LastWriteTime;
 
   UINT64 Size;
   UString Name;
+  
   bool ExistInArchive;
   bool Commented;
+  bool IsAnti;
+  bool IsDirectory;
+
+  bool CreationTimeIsDefined;
+  bool LastWriteTimeIsDefined;
+  bool AttributesAreDefined;
+
   CUpdateRange CommentRange;
-  bool IsDirectory() const 
-    { return ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
+  void SetDirectoryStatusFromAttributes()
+    { IsDirectory = ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
 };
 
-// typedef CObjectVector<CUpdateItemInfo> CUpdateRangeVector;
 typedef CObjectVector<CUpdateItemInfo> CUpdateItemInfoVector;
 
 }}

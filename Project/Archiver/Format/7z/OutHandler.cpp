@@ -332,56 +332,80 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
 {
   COM_TRY_BEGIN
 
-  for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
-  {
-    if (m_Database.m_NumUnPackStreamsVector[i] != 1)
-      return E_FAIL;
-  }
-
   CRecordVector<bool> aCompressStatuses;
   CObjectVector<CUpdateItemInfo> anUpdateItems;
   CRecordVector<UINT32> aCopyIndexes;
+  
+  CComPtr<IUpdateCallBack2> anUpdateCallBack2;
+  anUpdateCallBack->QueryInterface(&anUpdateCallBack2);
+
   int anIndex = 0;
-  for(i = 0; i < aNumItems; i++)
+  for(int i = 0; i < aNumItems; i++)
   {
     CUpdateItemInfo anUpdateItemInfo;
     INT32 anCompress;
     INT32 anExistInArchive;
     INT32 anIndexInServer;
-    FILETIME anUTCCreationTime;
-    FILETIME anUTCLastWriteTime;
-    UINT64 aSize;
     CComBSTR aName;
-    HRESULT aResult = anUpdateCallBack->GetUpdateItemInfo(i,
+    bool anIsAnti;
+    if (anUpdateCallBack2)
+    {
+      INT32 _anIsAnti;
+      RETURN_IF_NOT_S_OK(anUpdateCallBack2->GetUpdateItemInfo2(i,
         &anCompress, // 1 - compress 0 - copy
         &anExistInArchive,
         &anIndexInServer,
         &anUpdateItemInfo.Attributes,
-        &anUTCCreationTime,
+        &anUpdateItemInfo.CreationTime,
         NULL,
-        &anUTCLastWriteTime,
-        &aSize, 
-        &aName);
-    if (aResult != S_OK)
-      return aResult;
+        &anUpdateItemInfo.LastWriteTime,
+        &anUpdateItemInfo.Size, 
+        &aName,
+        &_anIsAnti));
+        anIsAnti = MyBoolToBool(_anIsAnti);
+    }
+    else
+    {
+      RETURN_IF_NOT_S_OK(anUpdateCallBack->GetUpdateItemInfo(i,
+        &anCompress, // 1 - compress 0 - copy
+        &anExistInArchive,
+        &anIndexInServer,
+        &anUpdateItemInfo.Attributes,
+        &anUpdateItemInfo.CreationTime,
+        NULL,
+        &anUpdateItemInfo.LastWriteTime,
+        &anUpdateItemInfo.Size, 
+        &aName));
+      anIsAnti = false;
+    }
     if (MyBoolToBool(anCompress))
     {
-      /*
-      time_t aCreationTime, aLastWriteTime;
-      if(!FileTimeToUnixTime(anUTCCreationTime, aCreationTime))
-        return E_FAIL;
-      if(!FileTimeToUnixTime(anUTCLastWriteTime, aLastWriteTime))
-        return E_FAIL;
-      anUpdateItemInfo.CreationTime = (UINT32)aCreationTime;
-      anUpdateItemInfo.LastWriteTime = (UINT32)aLastWriteTime;
-      */
-      anUpdateItemInfo.CreationTime = anUTCCreationTime;
-      anUpdateItemInfo.LastWriteTime = anUTCLastWriteTime;
+      anUpdateItemInfo.IsAnti = anIsAnti;
+      anUpdateItemInfo.SetDirectoryStatusFromAttributes();
 
+      if (aName)
+        anUpdateItemInfo.Name = aName;
 
-      anUpdateItemInfo.Size = aSize;
-      anUpdateItemInfo.Name = aName;
+      anUpdateItemInfo.AttributesAreDefined = true;
+      anUpdateItemInfo.CreationTimeIsDefined = true;
+      anUpdateItemInfo.LastWriteTimeIsDefined = true;
+
       anUpdateItemInfo.IndexInClient = i;
+
+      if (anIsAnti)
+      {
+        anUpdateItemInfo.AttributesAreDefined = false;
+        anUpdateItemInfo.CreationTimeIsDefined = false;
+        anUpdateItemInfo.LastWriteTimeIsDefined = false;
+        anUpdateItemInfo.Size = 0;
+        if (MyBoolToBool(anExistInArchive) && !aName)
+        {
+          const CFileItemInfo &anItem = m_Database.m_Files[anIndexInServer];
+          anUpdateItemInfo.Name = m_Database.m_Files[anIndexInServer].Name;
+          anUpdateItemInfo.IsDirectory = anItem.IsDirectory;
+        }
+      }
+
       if(MyBoolToBool(anExistInArchive))
       {
         // const CFolderInfo &aFolderInfo = m_Folders[anIndexInServer];
@@ -403,6 +427,11 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
       aCopyIndexes.Add(anIndexInServer);
     }
   }
+
+  if (!aCopyIndexes.IsEmpty())
+    for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
+      if (m_Database.m_NumUnPackStreamsVector[i] != 1)
+        return E_FAIL;
 
   CCompressionMethodMode aMethodMode, aHeaderMethod;
   RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));

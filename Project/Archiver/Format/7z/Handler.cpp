@@ -129,7 +129,8 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
       MySetFileTime(anItem.IsLastWriteTimeDefined, anItem.LastWriteTime, aPropVariant);
       break;
     case kaipidAttributes:
-      aPropVariant = anItem.Attributes;
+      if (anItem.AreAttributesDefined)
+        aPropVariant = anItem.Attributes;
       break;
     case kaipidCRC:
       if (anItem.FileCRCIsDefined)
@@ -156,6 +157,9 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
         else
           aPropVariant = UINT64(0);
       }
+      break;
+    case kaipidIsAnti:
+      aPropVariant = anItem.IsAnti;
       break;
   }
   aPropVariant.Detach(aValue);

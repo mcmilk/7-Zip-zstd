@@ -43,8 +43,10 @@ CPropMap kPropMap[] =
   { NID::kLastAccessTime, NULL, kaipidLastAccessTime, VT_FILETIME},
   { NID::kWinAttributes, NULL, kaipidAttributes, VT_UI4},
 
+
   { NID::kCRC, NULL, kaipidCRC, VT_UI4},
   
+  { NID::kAnti, L"Anti", kaipidIsAnti, VT_BOOL}
   // { L"ID", kaipidID, VT_BSTR},
   // { L"UnPack Version", kaipidUnPackVersion, VT_UI1},
   // { L"Host OS", kaipidHostOS, VT_BSTR}
@@ -89,6 +91,7 @@ void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &_aFileInfoPopID
   RemoveOneItem(aFileInfoPopIDs, NID::kEmptyFile);
 
   CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kName);
+  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kAnti);
   CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kSize);
   CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kPackInfo);
   CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kCreationTime);

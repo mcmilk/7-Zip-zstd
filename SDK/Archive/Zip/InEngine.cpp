@@ -198,26 +198,50 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     anItemInfo.LocalExtraSize = aLocalHeader.ExtraSize;
     anItemInfo.FileHeaderWithNameSize = sizeof(UINT32) + sizeof(aLocalHeader) + aFileNameSize;
 
-    anItems.Add(anItemInfo);
-
     IncreaseRealPosition(aLocalHeader.ExtraSize + aLocalHeader.PackSize);
 
     if (anItemInfo.HasDescriptor())
     {
-      NFileHeader::CDataDescriptor aDescriptor;
-      SafeReadBytes(&aDescriptor, sizeof(aDescriptor));
-      /*
-      if (aDescriptor.Signature != NSignature::kDataDescriptor ||
-          anItemInfo.FileCRC != aDescriptor.FileCRC ||
-          anItemInfo.PackSize != aDescriptor.PackSize ||
-          anItemInfo.UnPackSize != aDescriptor.UnPackSize)
-        throw CInArchiveException(CInArchiveException::kIncorrectArchive);;
-      */
-      anItemInfo.FileCRC = aDescriptor.FileCRC;
-      anItemInfo.PackSize = aDescriptor.PackSize;
-      anItemInfo.UnPackSize = aDescriptor.UnPackSize;
-      IncreaseRealPosition(0);
+      const kBufferSize = (1 << 12);
+      BYTE aBuffer[kBufferSize];
+      UINT32 aNumBytesInBuffer = 0;
+      UINT32 aPackedSize = 0;
+
+      bool aDescriptorWasFound = false;
+      while (true)
+      {
+        UINT32 aProcessedSize;
+        RETURN_IF_NOT_S_OK(ReadBytes(aBuffer + aNumBytesInBuffer, 
+            kBufferSize - aNumBytesInBuffer, &aProcessedSize));
+        aNumBytesInBuffer += aProcessedSize;
+        if (aNumBytesInBuffer < sizeof(NFileHeader::CDataDescriptor))
+          ThrowIncorrectArchiveException();
+        for (int i = 0; i <= aNumBytesInBuffer - 
+            sizeof(NFileHeader::CDataDescriptor); i++)
+        {
+          const NFileHeader::CDataDescriptor &aDescriptor = 
+            *(NFileHeader::CDataDescriptor *)(aBuffer + i);
+          if (aDescriptor.Signature == NSignature::kDataDescriptor &&
+            aDescriptor.PackSize == aPackedSize + i)
+          {
+            aDescriptorWasFound = true;
+            anItemInfo.FileCRC = aDescriptor.FileCRC;
+            anItemInfo.PackSize = aDescriptor.PackSize;
+            anItemInfo.UnPackSize = aDescriptor.UnPackSize;
+            IncreaseRealPosition(INT64(INT32(0 - (aNumBytesInBuffer - i - 
+                sizeof(NFileHeader::CDataDescriptor)))));
+            break;
+          };
+        }
+        if (aDescriptorWasFound)
+          break;
+        aPackedSize += i;
+        for (int j = 0; i < aNumBytesInBuffer; i++, j++)
+          aBuffer[j] = aBuffer[i];    
+        aNumBytesInBuffer = j;
+      }
     }
+    anItems.Add(anItemInfo);
     if (aProgress != 0)
     {
       UINT64 aNumItems = anItems.Size();
@@ -291,8 +315,8 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     // May be these strings must be deleted
     if (anItemInfo.IsDirectory())
     {
-      if (anItemInfo.PackSize != 0 /*  || anItemInfo.UnPackSize != 0 */)
-        ThrowIncorrectArchiveException();
+      // if (anItemInfo.PackSize != 0 /*  || anItemInfo.UnPackSize != 0 */)
+      //   ThrowIncorrectArchiveException();
       anItemInfo.UnPackSize = 0;
     }
 

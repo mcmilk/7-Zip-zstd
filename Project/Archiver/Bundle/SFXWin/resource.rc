@@ -75,8 +75,8 @@ IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,7,0
- PRODUCTVERSION 2,30,7,0
+ FILEVERSION 2,30,8,0
+ PRODUCTVERSION 2,30,8,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -94,14 +94,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Palvov\0"
             VALUE "FileDescription", "7z SFX (GUI version)\0"
-            VALUE "FileVersion", "2, 30, 7, 0\0"
+            VALUE "FileVersion", "2, 30, 8, 0\0"
             VALUE "InternalName", "7zWin.sfx\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2001 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zWin.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 7, 0\0"
+            VALUE "ProductVersion", "2, 30, 8, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
