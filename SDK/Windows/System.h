@@ -10,8 +10,8 @@
 namespace NWindows {
 namespace NSystem {
 
-bool MyGetWindowsDirectory(CSysString &aPath);
-bool MyGetSystemDirectory(CSysString &aPath);
+bool MyGetWindowsDirectory(CSysString &path);
+bool MyGetSystemDirectory(CSysString &path);
 
 }}
 

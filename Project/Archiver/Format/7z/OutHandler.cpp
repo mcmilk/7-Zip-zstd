@@ -94,7 +94,7 @@ STDMETHODIMP CHandler::DeleteItems(IOutStream *anOutStream,
   for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
   {
     if (m_Database.m_NumUnPackStreamsVector[i] != 1)
-      return E_FAIL;
+      return E_NOTIMPL;
   }
   for(i = 0; i < m_Database.m_Files.Size(); i++)
   {
@@ -463,7 +463,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
   if (!aCopyIndexes.IsEmpty())
     for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
       if (m_Database.m_NumUnPackStreamsVector[i] != 1)
-        return E_FAIL;
+        return E_NOTIMPL;
 
   CCompressionMethodMode aMethodMode, aHeaderMethod;
   RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));

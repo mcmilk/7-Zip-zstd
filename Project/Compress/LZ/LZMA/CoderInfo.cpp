@@ -1,4 +1,4 @@
-// LZArithmetic/CoderInfo.cpp
+// LZMA/CoderInfo.cpp
 
 #include "StdAfx.h"
 
@@ -9,7 +9,6 @@
 
 namespace NCompress {
 namespace NLZMA {
-
 
 STATPROPSTG kCoderProperties[] = 
 {
@@ -25,26 +24,26 @@ STATPROPSTG kEncoderProperties[] =
 
 static const kNumEncoderProperties = sizeof(kEncoderProperties) / sizeof(kEncoderProperties[0]);
 
-HRESULT DecodeProperties(ISequentialInStream *anInStream, 
-    UINT32 &aNumPosStateBits, 
-    UINT32 &aLiteralPosStateBits, 
-    UINT32 &aLiteralContextBits, 
-    UINT32 &aDictionarySize)
+HRESULT DecodeProperties(ISequentialInStream *inStream, 
+    UINT32 &numPosStateBits, 
+    UINT32 &numLiteralPosStateBits, 
+    UINT32 &numLiteralContextBits, 
+    UINT32 &dictionarySize)
 {
-  UINT32 aProcessesedSize;
+  UINT32 processesedSize;
 
-  BYTE aByte;
-  RETURN_IF_NOT_S_OK(anInStream->Read(&aByte, sizeof(aByte), &aProcessesedSize));
-  if (aProcessesedSize != sizeof(aByte))
+  BYTE firstByte;
+  RETURN_IF_NOT_S_OK(inStream->Read(&firstByte, sizeof(firstByte), &processesedSize));
+  if (processesedSize != sizeof(firstByte))
     return E_INVALIDARG;
 
-  aLiteralContextBits = aByte % 9;
-  BYTE aRemainder = aByte / 9;
-  aLiteralPosStateBits = aRemainder % 5;
-  aNumPosStateBits = aRemainder / 5;
+  numLiteralContextBits = firstByte % 9;
+  BYTE remainder = firstByte / 9;
+  numLiteralPosStateBits = remainder % 5;
+  numPosStateBits = remainder / 5;
 
-  RETURN_IF_NOT_S_OK(anInStream->Read(&aDictionarySize, sizeof(aDictionarySize), &aProcessesedSize));
-  if (aProcessesedSize != sizeof(aDictionarySize))
+  RETURN_IF_NOT_S_OK(inStream->Read(&dictionarySize, sizeof(dictionarySize), &processesedSize));
+  if (processesedSize != sizeof(dictionarySize))
     return E_INVALIDARG;
   return S_OK;
 }
@@ -55,24 +54,24 @@ STDMETHODIMP CCoderInfo::GetPropertyInfoEnumerator(IEnumSTATPROPSTG *anEnumPrope
   return GetPropertyEnumerator(kCoderProperties, kNumCoderProperties, anEnumProperty);
 }
 
-STDMETHODIMP CCoderInfo::GetPropertyValueRange(UINT32 aPropID, UINT32 *aMinValue, UINT32 *aMaxValue)
+STDMETHODIMP CCoderInfo::GetPropertyValueRange(UINT32 propID, UINT32 *minValue, UINT32 *maxValue)
 {
-  if (aPropID != NEncodedStreamProperies::kDictionarySize)
+  if (propID != NEncodedStreamProperies::kDictionarySize)
     return E_FAIL;
-  *aMinValue = (1 << kDictionaryLogaritmicSizeMin);
-  *aMaxValue = (1 << kDictionaryLogaritmicSizeMax);
+  *minValue = (1 << kDictionaryLogaritmicSizeMin);
+  *maxValue = (1 << kDictionaryLogaritmicSizeMax);
   return S_OK;
 }
 
-STDMETHODIMP CCoderInfo::GetDecoderProperties(ISequentialInStream *anInStream, 
+STDMETHODIMP CCoderInfo::GetDecoderProperties(ISequentialInStream *inStream, 
       PROPVARIANT *aProperties, UINT32 aNumProperties)
 {
   if (aNumProperties != 1)
     return E_INVALIDARG;
-  UINT32 aDictionarySize;
-  RETURN_IF_NOT_S_OK(DecodeProperties(anInStream, aDictionarySize));
+  UINT32 dictionarySize;
+  RETURN_IF_NOT_S_OK(DecodeProperties(inStream, dictionarySize));
   aProperties[0].vt = VT_UI4;
-  aProperties[0].ulVal = aDictionarySize;
+  aProperties[0].ulVal = dictionarySize;
   return S_OK;
 }
 
@@ -81,17 +80,17 @@ STDMETHODIMP CEncoderInfo::GetPropertyInfoEnumerator(IEnumSTATPROPSTG *anEnumPro
   return GetPropertyEnumerator(kEncoderProperties, kNumEncoderProperties, anEnumProperty);
 }
 
-STDMETHODIMP CEncoderInfo::GetPropertyValueRange(UINT32 aPropID, UINT32 *aMinValue, UINT32 *aMaxValue)
+STDMETHODIMP CEncoderInfo::GetPropertyValueRange(UINT32 propID, UINT32 *minValue, UINT32 *maxValue)
 {
-  switch(aPropID)
+  switch(propID)
   {
     case NEncodedStreamProperies::kDictionarySize:
-      *aMinValue = (1 << kDictionaryLogaritmicSizeMin);
-      *aMaxValue = (1 << kDictionaryLogaritmicSizeMax);
+      *minValue = (1 << kDictionaryLogaritmicSizeMin);
+      *maxValue = (1 << kDictionaryLogaritmicSizeMax);
       break;
     case NEncodingProperies::kNumFastBytes:
-      *aMinValue = 4;
-      *aMaxValue = kMatchMaxLen;
+      *minValue = 4;
+      *maxValue = kMatchMaxLen;
       break;
     default:
       return E_INVALIDARG;

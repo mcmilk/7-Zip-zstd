@@ -7,14 +7,16 @@
 
 
 #include "../Common/IArchiveHandler2.h"
+#include "../Common/UpdatePairBasic.h"
 // #include "../../Compress/Interface/CompressInterface.h"
 
 #include "AgentProxyHandler.h"
+#include "../Common/ZipRegistryMain.h"
 
 #include "Windows/PropVariant.h"
 
 #ifdef NEW_FOLDER_INTERFACE
-#include "../../Util/FAM/FolderInterface.h"
+#include "../../FileManager/FolderInterface.h"
 #endif
 
 class CAgentFolder;
@@ -32,6 +34,7 @@ public:
 class CAgent;
 
 class CAgentFolder: 
+  public IFolderFolder,
   public IArchiveFolder,
   public IArchiveFolderInternal,
 #ifdef NEW_FOLDER_INTERFACE
@@ -44,6 +47,7 @@ class CAgentFolder:
 {
 public:
 BEGIN_COM_MAP(CAgentFolder)
+  COM_INTERFACE_ENTRY(IFolderFolder)
   COM_INTERFACE_ENTRY(IArchiveFolder)
   COM_INTERFACE_ENTRY(IArchiveFolderInternal)
 #ifdef NEW_FOLDER_INTERFACE
@@ -58,16 +62,15 @@ DECLARE_NOT_AGGREGATABLE(CAgentFolder)
 
 DECLARE_NO_REGISTRY()
 
+  STDMETHOD(LoadItems)();
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder);
+  STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder);
+  STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder);
+  STDMETHOD(GetName)(BSTR *name);
 
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetNumberOfSubFolders)(UINT32 *aNumSubFolders);  
-  STDMETHOD(GetProperty)(UINT32 anItemIndex, PROPID aPropID, PROPVARIANT *aValue);
-  STDMETHOD(BindToFolder)(UINT32 anIndex, IArchiveFolder **aFolder);
-  STDMETHOD(BindToFolder)(const WCHAR *aFolderName, IArchiveFolder **aFolder);
-  STDMETHOD(BindToParentFolder)(IArchiveFolder **aFolder);
-  STDMETHOD(GetName)(BSTR *aName);
-
-  STDMETHOD(Extract)(const UINT32 *anIndexes, UINT32 aNumItems, 
+  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
       NExtractionMode::NPath::EEnum aPathMode, 
       NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
       const wchar_t *aPath,
@@ -77,45 +80,54 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(GetAgentFolder)(CAgentFolder **anAgentFolder);
 
 #ifdef NEW_FOLDER_INTERFACE
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetTypeID)(BSTR *aName);
-  STDMETHOD(GetPath)(BSTR *aPath);
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
+  STDMETHOD(GetTypeID)(BSTR *name);
+  STDMETHOD(GetPath)(BSTR *path);
 
 
   // IFolderOperations
 
-  STDMETHOD(Delete)(const UINT32 *anIndexes, UINT32 aNumItems);
-  STDMETHOD(Rename)(UINT32 anIndex, const wchar_t *aNewName);
-  STDMETHOD(CreateFolder)(const wchar_t *aName);
-  STDMETHOD(CreateFile)(const wchar_t *aName);
-  STDMETHOD(Copy)(const UINT32 *anIndexes, UINT32 aNumItems, 
-      const wchar_t *aPath, 
-      IExtractCallback3 *anExtractCallBack);
-  STDMETHOD(Move)(const UINT32 *anIndexes, UINT32 aNumItems, 
-      const wchar_t *aPath, 
-      IExtractCallback3 *anExtractCallBack);
+  STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress);
+  STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress);
+  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress);
+  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress);
+  STDMETHOD(CopyTo)(const UINT32 *indices, UINT32 numItems, 
+      const wchar_t *path, IFolderOperationsExtractCallback *callback);
+  STDMETHOD(MoveTo)(const UINT32 *indices, UINT32 numItems, 
+      const wchar_t *path, IFolderOperationsExtractCallback *callback);
+  STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
+      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
+
 #endif
 
-  CAgentFolder(): m_ProxyFolderItem(NULL) {}
+  CAgentFolder(): _proxyFolderItem(NULL) {}
 
   void Init(CAgentProxyHandler *aProxyHandler,
       CFolderItem *aProxyFolderItem,
-      IArchiveFolder *aParentFolder,
-      CAgent *anAgent)
+      IFolderFolder *aParentFolder,
+      CAgent *agent)
   {
-    m_ProxyHandler = aProxyHandler;
-    m_ProxyFolderItem = aProxyFolderItem;
-    m_ParentFolder = aParentFolder;
-    m_Agent = (IArchiveHandler100 *)anAgent;
-    m_AgentSpec = anAgent;
+    _proxyHandler = aProxyHandler;
+    _proxyFolderItem = aProxyFolderItem;
+    _parentFolder = aParentFolder;
+    _agent = (IArchiveHandler100 *)agent;
+    _agentSpec = agent;
   }
 
+  void GetPathParts(UStringVector &pathParts);
+  HRESULT CommonUpdateOperation(
+      bool deleteOperation,
+      const NUpdateArchive::CActionSet *actionSet,
+      const UINT32 *indices, UINT32 numItems,
+      IUpdateCallback100 *updateCallback100);
+
+
 public:
-  CAgentProxyHandler *m_ProxyHandler;
-  CFolderItem *m_ProxyFolderItem;
-  CComPtr<IArchiveFolder> m_ParentFolder;
-  CComPtr<IArchiveHandler100> m_Agent;
-  CAgent *m_AgentSpec;
+  CAgentProxyHandler *_proxyHandler;
+  CFolderItem *_proxyFolderItem;
+  CComPtr<IFolderFolder> _parentFolder;
+  CComPtr<IArchiveHandler100> _agent;
+  CAgent *_agentSpec;
 };
 
 // {23170F69-40C1-278A-1000-000100030000}
@@ -124,7 +136,8 @@ DEFINE_GUID(CLSID_CAgentArchiveHandler,
 class CAgent: 
   public IArchiveHandler100,
 #ifdef NEW_FOLDER_INTERFACE
-  public IFolderOpen,
+  public IFolderManager,
+  public IFolderManagerGetIconPath,
 #endif
   #ifndef EXTRACT_ONLY
   public IOutArchiveHandler100,
@@ -140,7 +153,8 @@ BEGIN_COM_MAP(CAgent)
   COM_INTERFACE_ENTRY(IOutArchiveHandler100)
   COM_INTERFACE_ENTRY(ISetProperties)
 #ifdef NEW_FOLDER_INTERFACE
-  COM_INTERFACE_ENTRY(IFolderOpen)
+  COM_INTERFACE_ENTRY(IFolderManager)
+  COM_INTERFACE_ENTRY(IFolderManagerGetIconPath)
 #endif
   #endif
 END_COM_MAP()
@@ -148,27 +162,27 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CAgent)
 
 // DECLARE_NO_REGISTRY();
-DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Agent.1"), TEXT("SevenZip.Agent"), 
+DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Plugin7zip.1"), TEXT("SevenZip.Plugin7zip"), 
     UINT(0), THREADFLAGS_APARTMENT)
 
 
-  STDMETHOD(Open)(IInStream *aStream, 
-      const wchar_t *aDefaultName,
-      const FILETIME *aDefaultTime,
-      UINT32 aDefaultAttributes,
-      const UINT64 *aMaxCheckStartPosition,
+  STDMETHOD(Open)(IInStream *stream, 
+      const wchar_t *defaultName,
+      const FILETIME *defaultTime,
+      UINT32 defaultAttributes,
+      const UINT64 *maxCheckStartPosition,
       const CLSID *aCLSID, 
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+      IOpenArchive2CallBack *openArchiveCallback);  
 
-  STDMETHOD(ReOpen)(IInStream *aStream, 
-      const wchar_t *aDefaultName,
-      const FILETIME *aDefaultTime,
-      UINT32 aDefaultAttributes,
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+  STDMETHOD(ReOpen)(IInStream *stream, 
+      const wchar_t *defaultName,
+      const FILETIME *defaultTime,
+      UINT32 defaultAttributes,
+      const UINT64 *maxCheckStartPosition,
+      IOpenArchive2CallBack *openArchiveCallback);  
   STDMETHOD(Close)();  
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(BindToRootFolder)(IArchiveFolder **aFolder);  
+  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder);  
   STDMETHOD(Extract)(
       NExtractionMode::NPath::EEnum aPathMode, 
       NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
@@ -177,13 +191,13 @@ DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Agent.1"), TEXT("SevenZip.Agent"),
       IExtractCallback2 *anExtractCallBack2);
 
   #ifndef EXTRACT_ONLY
-  STDMETHOD(SetFolder)(IArchiveFolder *aFolder);
-  STDMETHOD(SetFiles)(const wchar_t **aNames, UINT32 aNumNames);
-  STDMETHOD(DeleteItems)(const wchar_t *aNewArchiveName, const UINT32 *anIndexes, 
-      UINT32 aNumItems, IUpdateCallback100 *anUpdateCallback);
+  STDMETHOD(SetFolder)(IFolderFolder *folder);
+  STDMETHOD(SetFiles)(const wchar_t *aFolderPrefix, const wchar_t **aNames, UINT32 aNumNames);
+  STDMETHOD(DeleteItems)(const wchar_t *aNewArchiveName, const UINT32 *indices, 
+      UINT32 numItems, IUpdateCallback100 *anUpdateCallback);
   STDMETHOD(DoOperation)(const CLSID *aCLSID, 
       const wchar_t *aNewArchiveName, 
-      const BYTE aStateActions[6], 
+      const BYTE *aStateActions, 
       const wchar_t *aSfxModule,
       IUpdateCallback100 *anUpdateCallback);
 
@@ -192,30 +206,45 @@ DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Agent.1"), TEXT("SevenZip.Agent"),
   #endif
 
 #ifdef NEW_FOLDER_INTERFACE
-  // IFolderOpen
+  // IFolderManager
+  STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress);
+  STDMETHOD(GetTypes)(BSTR *types);
+  STDMETHOD(GetExtension)(const wchar_t *type, BSTR *extension);
+  STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress);
+  STDMETHOD(GetIconPath)(const wchar_t *type, BSTR *iconPath);
+  /*
   STDMETHOD(FolderOpen)(
       const wchar_t *aFileName, 
       IOpenArchive2CallBack *anOpenArchive2CallBack);
+  */
+  HRESULT FolderReOpen(IOpenArchive2CallBack *openArchiveCallback);  
 #endif
-
 
   CAgent();
   ~CAgent();
 private:
   HRESULT ReadItems();
+  void LoadFormats();
+  int FindFormat(const UString &type); 
 public:
-  CAgentProxyHandler *m_ProxyHandler;
-  CComPtr<IArchiveHandler200> m_Archive;
-  CLSID m_CLSID;
+  CAgentProxyHandler *_proxyHandler;
+  CComPtr<IArchiveHandler200> _archive;
+  CLSID _CLSID;
   // CComPtr<IArchiveFolder> m_RootFolder;
-  UString m_DefaultName;
-  FILETIME m_DefaultTime;
-  UINT32 m_DefaultAttributes;
+  UString _defaultName;
+  FILETIME _defaultTime;
+  UINT32 _defaultAttributes;
 
-  UStringVector m_Names;
-  UString m_ArchiveNamePrefix;
-  CFolderItem *m_ArchiveFolderItem;
+  UStringVector _names;
+  UString _folderPrefix;
 
+  UString _archiveNamePrefix;
+  CFolderItem *_archiveFolderItem;
+
+  CSysString _archiveFilePath;
+
+  bool _formatsLoaded;
+  CObjectVector<NZipRootRegistry::CArchiverInfo> _formats;
 
   CObjectVector<CComBSTR> m_PropNames;
   std::vector<NWindows::NCOM::CPropVariant> m_PropValues;

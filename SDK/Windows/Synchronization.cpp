@@ -9,31 +9,31 @@ namespace NSynchronization {
 
 CObject::~CObject()
 {
-  if (m_Object != NULL)
+  if (_object != NULL)
   {
-    ::CloseHandle(m_Object);
-    m_Object = NULL;
+    ::CloseHandle(_object);
+    _object = NULL;
   }
 }
 
-bool CObject::Lock(DWORD aTimeout)
+bool CObject::Lock(DWORD timeoutInterval)
 {
-  return (::WaitForSingleObject(m_Object, aTimeout) == WAIT_OBJECT_0);
+  return (::WaitForSingleObject(_object, timeoutInterval) == WAIT_OBJECT_0);
 }
 
 
 CSyncObject::~CSyncObject()
 {
-  if (m_Object != NULL)
+  if (_object != NULL)
   {
-    ::CloseHandle(m_Object);
-    m_Object = NULL;
+    ::CloseHandle(_object);
+    _object = NULL;
   }
 }
 
-bool CSyncObject::Lock(DWORD aTimeout)
+bool CSyncObject::Lock(DWORD timeoutInterval)
 {
-  if (::WaitForSingleObject(m_Object, aTimeout) == WAIT_OBJECT_0)
+  if (::WaitForSingleObject(_object, timeoutInterval) == WAIT_OBJECT_0)
     return true;
   else
     return false;
@@ -43,36 +43,36 @@ bool CSyncObject::Lock(DWORD aTimeout)
 /////////////////////
 // CSemaphore
 
-CSemaphore::CSemaphore(LONG anInitialCount, LONG aMaxCount,
-  LPCTSTR aName, LPSECURITY_ATTRIBUTES lpsaAttributes)
-  :  CSyncObject(aName)
+CSemaphore::CSemaphore(LONG initialCount, LONG maxCount,
+  LPCTSTR name, LPSECURITY_ATTRIBUTES securityAttributes)
+  :  CSyncObject(name)
 {
-  // // ASSERT(aMaxCount > 0);
-  // // ASSERT(anInitialCount <= aMaxCount);
+  // // ASSERT(maxCount > 0);
+  // // ASSERT(initialCount <= maxCount);
 
-  m_Object = ::CreateSemaphore(lpsaAttributes, anInitialCount, aMaxCount,
-      aName);
-  if (m_Object == NULL)
+  _object = ::CreateSemaphore(securityAttributes, initialCount, maxCount,
+      name);
+  if (_object == NULL)
     throw "CreateSemaphore error";
 }
 
 CSemaphore::~CSemaphore()
 {}
 
-bool CSemaphore::Unlock(LONG aCount, LPLONG aPrevCount)
+bool CSemaphore::Unlock(LONG count, LPLONG prevCount)
 {
-  return BOOLToBool(::ReleaseSemaphore(m_Object, aCount, aPrevCount));
+  return BOOLToBool(::ReleaseSemaphore(_object, count, prevCount));
 }
 
 /////////////////////
 // CMutex
 
-CMutex::CMutex(bool anInitiallyOwn, LPCTSTR aName,
-  LPSECURITY_ATTRIBUTES aSecurityAttributes)
-  : CSyncObject(aName)
+CMutex::CMutex(bool initiallyOwn, LPCTSTR name,
+  LPSECURITY_ATTRIBUTES securityAttributes)
+  : CSyncObject(name)
 {
-  m_Object = ::CreateMutex(aSecurityAttributes, BoolToBOOL(anInitiallyOwn), aName);
-  if (m_Object == NULL)
+  _object = ::CreateMutex(securityAttributes, BoolToBOOL(initiallyOwn), name);
+  if (_object == NULL)
     throw "CreateMutex error";
 }
 
@@ -81,20 +81,20 @@ CMutex::~CMutex()
 
 bool CMutex::Unlock()
 {
-  return BOOLToBool(::ReleaseMutex(m_Object));
+  return BOOLToBool(::ReleaseMutex(_object));
 }
 */
 
 /////////////////////
 // CEvent
 
-CEvent::CEvent(bool anInitiallyOwn, bool aManualReset, LPCTSTR aName,
-  LPSECURITY_ATTRIBUTES aSecurityAttributes)
-  /*: CSyncObject(aName)*/
+CEvent::CEvent(bool initiallyOwn, bool manualReset, LPCTSTR name,
+  LPSECURITY_ATTRIBUTES securityAttributes)
+  /*: CSyncObject(name)*/
 {
-  m_Object = ::CreateEvent(aSecurityAttributes, BoolToBOOL(aManualReset),
-      BoolToBOOL(anInitiallyOwn), aName);
-  if (m_Object == NULL)
+  _object = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
+      BoolToBOOL(initiallyOwn), name);
+  if (_object == NULL)
     throw "CreateEvent error";
 }
 
@@ -111,46 +111,46 @@ bool CEvent::Unlock()
 /////////////////////
 // CSingleLock
 
-CSingleLock::CSingleLock(CSyncObject* anObject, bool anInitialLock)
+CSingleLock::CSingleLock(CSyncObject* object, bool initialLock)
 {
-  // ASSERT(anObject != NULL);
-  // ASSERT(anObject->IsKindOf(RUNTIME_CLASS(CSyncObject)));
+  // ASSERT(object != NULL);
+  // ASSERT(object->IsKindOf(RUNTIME_CLASS(CSyncObject)));
 
-  m_SyncObject = anObject;
-  m_Object = anObject->m_Object;
-  m_Acquired = false;
+  _syncObject = object;
+  _object = object->_object;
+  _acquired = false;
 
-  if (anInitialLock)
+  if (initialLock)
     Lock();
 }
 
-bool CSingleLock::Lock(DWORD aTimeOut /* = INFINITE */)
+bool CSingleLock::Lock(DWORD timeoutInterval /* = INFINITE */)
 {
-  // ASSERT(m_SyncObject != NULL || m_Object != NULL);
-  // ASSERT(!m_Acquired);
+  // ASSERT(_syncObject != NULL || _object != NULL);
+  // ASSERT(!_acquired);
 
-  m_Acquired = m_SyncObject->Lock(aTimeOut);
-  return m_Acquired;
+  _acquired = _syncObject->Lock(timeoutInterval);
+  return _acquired;
 }
 
 bool CSingleLock::Unlock()
 {
-  // ASSERT(m_SyncObject != NULL);
-  if (m_Acquired)
-    m_Acquired = !m_SyncObject->Unlock();
+  // ASSERT(_syncObject != NULL);
+  if (_acquired)
+    _acquired = !_syncObject->Unlock();
 
   // successfully unlocking means it isn't acquired
-  return !m_Acquired;
+  return !_acquired;
 }
 
-bool CSingleLock::Unlock(LONG aCount, LPLONG aPrevCount /* = NULL */)
+bool CSingleLock::Unlock(LONG count, LPLONG prevCount /* = NULL */)
 {
-  // ASSERT(m_SyncObject != NULL);
-  if (m_Acquired)
-    m_Acquired = !m_SyncObject->Unlock(aCount, aPrevCount);
+  // ASSERT(_syncObject != NULL);
+  if (_acquired)
+    _acquired = !_syncObject->Unlock(count, prevCount);
 
   // successfully unlocking means it isn't acquired
-  return !m_Acquired;
+  return !_acquired;
 }
 
 }}

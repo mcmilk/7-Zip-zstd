@@ -170,6 +170,14 @@ SOURCE=..\..\..\..\SDK\Windows\PropVariant.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
 # End Source File
 # Begin Source File

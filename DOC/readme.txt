@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 21 Sources
+7-Zip 2.30 Beta 22 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -81,7 +81,7 @@ Project
     Common          Common modules
     Console         7z.exe Console version
     Explorer        Explorer plugin
-    Resources       Resources
+    Resource        Resources
     Far             FAR plugin  
     Format          Archive format modules
       7z
@@ -95,7 +95,6 @@ Project
       Tar
       Zip
       arj
-    Config          7-Zip Configuration program
 
   Compress
   --------
@@ -128,6 +127,10 @@ Project
       Common        Interfaces
       Rar20         Cipher for Rar
       Zip           Cipher for Zip
+
+  FileManager       File Manager
+  ------
+    Resource        Resources
 
 ---
 End of document

@@ -9,47 +9,47 @@ namespace BT_NAMESPACE {
 
 void CInTree2::BeforeMoveBlock()
 {
-  if (m_Callback)
-    m_Callback->BeforeChangingBufferPos();
+  if (_callback)
+    _callback->BeforeChangingBufferPos();
   CInTree::BeforeMoveBlock();
 }
 
 void CInTree2::AfterMoveBlock()
 {
   CInTree::AfterMoveBlock();
-  if (m_Callback)
-    m_Callback->AfterChangingBufferPos();
+  if (_callback)
+    _callback->AfterChangingBufferPos();
 }
 
-STDMETHODIMP CMatchFinderBinTree::Init(ISequentialInStream *aStream)
-  { return m_MatchFinder.Init(aStream); }
+STDMETHODIMP CMatchFinderBinTree::Init(ISequentialInStream *stream)
+  { return _matchFinder.Init(stream); }
 
 STDMETHODIMP_(void) CMatchFinderBinTree::ReleaseStream()
-  { m_MatchFinder.ReleaseStream(); }
+  { _matchFinder.ReleaseStream(); }
 
 STDMETHODIMP CMatchFinderBinTree::MovePos()
-  { return m_MatchFinder.MovePos(); }
+  { return _matchFinder.MovePos(); }
 
-STDMETHODIMP_(BYTE) CMatchFinderBinTree::GetIndexByte(UINT32 anIndex)
-  { return m_MatchFinder.GetIndexByte(anIndex); }
+STDMETHODIMP_(BYTE) CMatchFinderBinTree::GetIndexByte(UINT32 index)
+  { return _matchFinder.GetIndexByte(index); }
 
-STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetMatchLen(UINT32 aIndex, 
-    UINT32 aBack, UINT32 aLimit)
-  { return m_MatchFinder.GetMatchLen(aIndex, aBack, aLimit); }
+STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetMatchLen(UINT32 index, 
+    UINT32 back, UINT32 limit)
+  { return _matchFinder.GetMatchLen(index, back, limit); }
 
 STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetNumAvailableBytes()
-  { return m_MatchFinder.GetNumAvailableBytes(); }
+  { return _matchFinder.GetNumAvailableBytes(); }
   
-STDMETHODIMP CMatchFinderBinTree::Create(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter)
+STDMETHODIMP CMatchFinderBinTree::Create(UINT32 sizeHistory, 
+      UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
+      UINT32 keepAddBufferAfter)
 { 
-  UINT32 aWindowReservSize = (aSizeHistory + aKeepAddBufferBefore + 
-      aMatchMaxLen + aKeepAddBufferAfter) / 2 + 256;
+  UINT32 windowReservSize = (sizeHistory + keepAddBufferBefore + 
+      matchMaxLen + keepAddBufferAfter) / 2 + 256;
   try 
   {
-    return m_MatchFinder.Create(aSizeHistory, aKeepAddBufferBefore, 
-        aMatchMaxLen, aKeepAddBufferAfter, aWindowReservSize); 
+    return _matchFinder.Create(sizeHistory, keepAddBufferBefore, 
+        matchMaxLen, keepAddBufferAfter, windowReservSize); 
   }
   catch(...)
   {
@@ -57,21 +57,21 @@ STDMETHODIMP CMatchFinderBinTree::Create(UINT32 aSizeHistory,
   }
 }
 
-STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetLongestMatch(UINT32 *aDistances)
-  { return m_MatchFinder.GetLongestMatch(aDistances); }
+STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetLongestMatch(UINT32 *distances)
+  { return _matchFinder.GetLongestMatch(distances); }
 
 STDMETHODIMP_(void) CMatchFinderBinTree::DummyLongestMatch()
-  { m_MatchFinder.DummyLongestMatch(); }
+  { _matchFinder.DummyLongestMatch(); }
 
 STDMETHODIMP_(const BYTE *) CMatchFinderBinTree::GetPointerToCurrentPos()
 {
-  return m_MatchFinder.GetPointerToCurrentPos();
+  return _matchFinder.GetPointerToCurrentPos();
 }
 
 // IMatchFinderSetCallback
-STDMETHODIMP CMatchFinderBinTree::SetCallback(IMatchFinderCallback *aCallback)
+STDMETHODIMP CMatchFinderBinTree::SetCallback(IMatchFinderCallback *callback)
 {
-  m_MatchFinder.SetCallback(aCallback);
+  _matchFinder.SetCallback(callback);
   return S_OK;
 }
 

@@ -12,10 +12,8 @@ namespace NLength {
 const kNumPosStatesBitsMax = 4;
 const kNumPosStatesMax = (1 << kNumPosStatesBitsMax);
 
-
 const kNumPosStatesBitsEncodingMax = 4;
 const kNumPosStatesEncodingMax = (1 << kNumPosStatesBitsEncodingMax);
-
 
 const kNumMoveBits = 5;
 
@@ -30,91 +28,91 @@ const kNumSymbolsTotal = kNumLowSymbols + kNumMidSymbols + (1 << kNumHighBits);
 
 class CEncoder
 {
-  CMyBitEncoder<kNumMoveBits> m_Choice;
-  CBitTreeEncoder<kNumMoveBits, kNumLenBits>  m_LowCoder[kNumPosStatesEncodingMax];
-  CMyBitEncoder<kNumMoveBits>  m_Choice2;
-  CBitTreeEncoder<kNumMoveBits, kNumMidBits>  m_MidCoder[kNumPosStatesEncodingMax];
-  CBitTreeEncoder<kNumMoveBits, kNumHighBits>  m_HighCoder;
+  CMyBitEncoder<kNumMoveBits> _choice;
+  CBitTreeEncoder<kNumMoveBits, kNumLenBits>  _lowCoder[kNumPosStatesEncodingMax];
+  CMyBitEncoder<kNumMoveBits>  _choice2;
+  CBitTreeEncoder<kNumMoveBits, kNumMidBits>  _midCoder[kNumPosStatesEncodingMax];
+  CBitTreeEncoder<kNumMoveBits, kNumHighBits>  _highCoder;
 protected:
-  UINT32 m_NumPosStates;
+  UINT32 _numPosStates;
 public:
-  void Create(UINT32 aNumPosStates)
-    { m_NumPosStates = aNumPosStates; }
+  void Create(UINT32 numPosStates)
+    { _numPosStates = numPosStates; }
   void Init();
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol, UINT32 aPosState);
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol, UINT32 posState);
 
-  UINT32 GetPrice(UINT32 aSymbol, UINT32 aPosState) const;
+  UINT32 GetPrice(UINT32 symbol, UINT32 posState) const;
 };
 
 const kNumSpecSymbols = kNumLowSymbols + kNumMidSymbols;
 
 class CPriceTableEncoder: public CEncoder
 {
-  UINT32 m_Prices[kNumSymbolsTotal][kNumPosStatesEncodingMax];
-  UINT32 m_TableSize;
-  UINT32 m_Counters[kNumPosStatesEncodingMax];
+  UINT32 _prices[kNumSymbolsTotal][kNumPosStatesEncodingMax];
+  UINT32 _tableSize;
+  UINT32 _counters[kNumPosStatesEncodingMax];
 public:
-  void SetTableSize(UINT32 aTableSize)
-    { m_TableSize = aTableSize;  }
-  UINT32 GetPrice(UINT32 aSymbol, UINT32 aPosState) const
-    { return m_Prices[aSymbol][aPosState]; }
-  void UpdateTable(UINT32 aPosState)
+  void SetTableSize(UINT32 tableSize)
+    { _tableSize = tableSize;  }
+  UINT32 GetPrice(UINT32 symbol, UINT32 posState) const
+    { return _prices[symbol][posState]; }
+  void UpdateTable(UINT32 posState)
   {
-    for (UINT32 aLen = 0; aLen < m_TableSize; aLen++)
-      m_Prices[aLen][aPosState] = CEncoder::GetPrice(aLen , aPosState);
-    m_Counters[aPosState] = m_TableSize;
+    for (UINT32 len = 0; len < _tableSize; len++)
+      _prices[len][posState] = CEncoder::GetPrice(len , posState);
+    _counters[posState] = _tableSize;
   }
   void UpdateTables()
   {
-    for (UINT32 aPosState = 0; aPosState < m_NumPosStates; aPosState++)
-      UpdateTable(aPosState);
+    for (UINT32 posState = 0; posState < _numPosStates; posState++)
+      UpdateTable(posState);
   }
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol, UINT32 aPosState)
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol, UINT32 posState)
   {
-    CEncoder::Encode(aRangeEncoder, aSymbol, aPosState);
-    if (--m_Counters[aPosState] == 0)
-      UpdateTable(aPosState);
+    CEncoder::Encode(rangeEncoder, symbol, posState);
+    if (--_counters[posState] == 0)
+      UpdateTable(posState);
   }
 };
 
 
 class CDecoder
 {
-  CMyBitDecoder<kNumMoveBits> m_Choice;
-  CBitTreeDecoder<kNumMoveBits, kNumLenBits>  m_LowCoder[kNumPosStatesMax];
-  CMyBitDecoder<kNumMoveBits> m_Choice2;
-  CBitTreeDecoder<kNumMoveBits, kNumMidBits>  m_MidCoder[kNumPosStatesMax];
-  CBitTreeDecoder<kNumMoveBits, kNumHighBits> m_HighCoder; 
-  UINT32 m_NumPosStates;
+  CMyBitDecoder<kNumMoveBits> _choice;
+  CBitTreeDecoder<kNumMoveBits, kNumLenBits>  _lowCoder[kNumPosStatesMax];
+  CMyBitDecoder<kNumMoveBits> _choice2;
+  CBitTreeDecoder<kNumMoveBits, kNumMidBits>  _midCoder[kNumPosStatesMax];
+  CBitTreeDecoder<kNumMoveBits, kNumHighBits> _highCoder; 
+  UINT32 _numPosStates;
 public:
-  void Create(UINT32 aNumPosStates)
-    { m_NumPosStates = aNumPosStates; }
+  void Create(UINT32 numPosStates)
+    { _numPosStates = numPosStates; }
   void Init()
   {
-    m_Choice.Init();
-    for (UINT32 aPosState = 0; aPosState < m_NumPosStates; aPosState++)
+    _choice.Init();
+    for (UINT32 posState = 0; posState < _numPosStates; posState++)
     {
-      m_LowCoder[aPosState].Init();
-      m_MidCoder[aPosState].Init();
+      _lowCoder[posState].Init();
+      _midCoder[posState].Init();
     }
-    m_Choice2.Init();
-    m_HighCoder.Init();
+    _choice2.Init();
+    _highCoder.Init();
   }
-  UINT32 Decode(CMyRangeDecoder *aRangeDecoder, UINT32 aPosState)
+  UINT32 Decode(CMyRangeDecoder *rangeDecoder, UINT32 posState)
   {
-    if(m_Choice.Decode(aRangeDecoder) == 0)
-      return m_LowCoder[aPosState].Decode(aRangeDecoder);
+    if(_choice.Decode(rangeDecoder) == 0)
+      return _lowCoder[posState].Decode(rangeDecoder);
     else
     {
-      UINT32 aSymbol = kNumLowSymbols;
-      if(m_Choice2.Decode(aRangeDecoder) == 0)
-        aSymbol += m_MidCoder[aPosState].Decode(aRangeDecoder);
+      UINT32 symbol = kNumLowSymbols;
+      if(_choice2.Decode(rangeDecoder) == 0)
+        symbol += _midCoder[posState].Decode(rangeDecoder);
       else
       {
-        aSymbol += kNumMidSymbols;
-        aSymbol += m_HighCoder.Decode(aRangeDecoder);
+        symbol += kNumMidSymbols;
+        symbol += _highCoder.Decode(rangeDecoder);
       }
-      return aSymbol;
+      return symbol;
     }
   }
 

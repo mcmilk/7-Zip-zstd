@@ -11,12 +11,11 @@ namespace NWindows {
 namespace NNational {
 namespace NTime {
 
+bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+    LPCTSTR format, CSysString &resultString);
 
-bool MyGetTimeFormat(LCID aLocale, DWORD aFlags, CONST SYSTEMTIME *aTime, 
-    LPCTSTR aFormat, CSysString &aResultString);
-
-bool MyGetDateFormat(LCID aLocale, DWORD aFlags, CONST SYSTEMTIME *aTime, 
-    LPCTSTR aFormat, CSysString &aResultString);
+bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+    LPCTSTR format, CSysString &resultString);
 
 }}}
 

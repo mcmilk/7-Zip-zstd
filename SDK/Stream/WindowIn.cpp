@@ -12,24 +12,24 @@ namespace NStream {
 namespace NWindow {
 
 CIn::CIn():
-  m_BufferBase(0)
+  _bufferBase(0)
 {}
 
 void CIn::Free()
 {
-  delete []m_BufferBase;
-  m_BufferBase = 0;
+  delete []_bufferBase;
+  _bufferBase = 0;
 }
 
-void CIn::Create(UINT32 aKeepSizeBefore, UINT32 aKeepSizeAfter, UINT32 aKeepSizeReserv)
+void CIn::Create(UINT32 keepSizeBefore, UINT32 keepSizeAfter, UINT32 keepSizeReserv)
 {
-  m_KeepSizeBefore = aKeepSizeBefore;
-  m_KeepSizeAfter = aKeepSizeAfter;
-  m_KeepSizeReserv = aKeepSizeReserv;
-  m_BlockSize = aKeepSizeBefore + aKeepSizeAfter + aKeepSizeReserv;
+  _keepSizeBefore = keepSizeBefore;
+  _keepSizeAfter = keepSizeAfter;
+  _keepSizeReserv = keepSizeReserv;
+  _blockSize = keepSizeBefore + keepSizeAfter + keepSizeReserv;
   Free();
-  m_BufferBase = new BYTE[m_BlockSize];
-  m_PointerToLastSafePosition = m_BufferBase + m_BlockSize - aKeepSizeAfter;
+  _bufferBase = new BYTE[_blockSize];
+  _pointerToLastSafePosition = _bufferBase + _blockSize - keepSizeAfter;
 }
 
 CIn::~CIn()
@@ -37,19 +37,19 @@ CIn::~CIn()
   Free();
 }
 
-HRESULT CIn::Init(ISequentialInStream *aStream)
+HRESULT CIn::Init(ISequentialInStream *stream)
 {
-  m_Stream = aStream;
-  m_Buffer = m_BufferBase;
-  m_Pos = 0;
-  m_StreamPos = 0;
-  m_StreamEndWasReached = false;
+  _stream = stream;
+  _buffer = _bufferBase;
+  _pos = 0;
+  _streamPos = 0;
+  _streamEndWasReached = false;
   return ReadBlock();
 }
 
 void CIn::ReleaseStream()
 {
-  m_Stream.Release();
+  _stream.Release();
 }
 
 
@@ -57,54 +57,52 @@ void CIn::ReleaseStream()
 // ReadBlock
 
 // In State:
-//   (m_Buffer + m_StreamPos) <= (m_BufferBase + m_BlockSize)
+//   (_buffer + _streamPos) <= (_bufferBase + _blockSize)
 // Out State:
-//   m_PosLimit <= m_BlockSize - m_KeepSizeAfter;
-//   if(m_StreamEndWasReached == false):
-//     m_StreamPos >= m_Pos + m_KeepSizeAfter
-//     m_PosLimit = m_StreamPos - m_KeepSizeAfter;
+//   _posLimit <= _blockSize - _keepSizeAfter;
+//   if(_streamEndWasReached == false):
+//     _streamPos >= _pos + _keepSizeAfter
+//     _posLimit = _streamPos - _keepSizeAfter;
 //   else
 //          
   
 HRESULT CIn::ReadBlock()
 {
-  if(m_StreamEndWasReached)
+  if(_streamEndWasReached)
     return S_OK;
   while(true)
   {
-    UINT32 aSize = (m_BufferBase + m_BlockSize) - (m_Buffer + m_StreamPos);
-    if(aSize == 0)
+    UINT32 size = (_bufferBase + _blockSize) - (_buffer + _streamPos);
+    if(size == 0)
       return S_OK;
-    UINT32 aNumReadBytes;
-    RETURN_IF_NOT_S_OK(m_Stream->ReadPart(m_Buffer + m_StreamPos, 
-        aSize, &aNumReadBytes));
-    if(aNumReadBytes == 0)
+    UINT32 numReadBytes;
+    RETURN_IF_NOT_S_OK(_stream->ReadPart(_buffer + _streamPos, 
+        size, &numReadBytes));
+    if(numReadBytes == 0)
     {
-      m_PosLimit = m_StreamPos;
-      const BYTE *aPointerToPostion = m_Buffer + m_PosLimit;
-      if(aPointerToPostion > m_PointerToLastSafePosition)
-        m_PosLimit = m_PointerToLastSafePosition - m_Buffer;
-      m_StreamEndWasReached = true;
+      _posLimit = _streamPos;
+      const BYTE *pointerToPostion = _buffer + _posLimit;
+      if(pointerToPostion > _pointerToLastSafePosition)
+        _posLimit = _pointerToLastSafePosition - _buffer;
+      _streamEndWasReached = true;
       return S_OK;
     }
-    m_StreamPos += aNumReadBytes;
-    if(m_StreamPos >= m_Pos + m_KeepSizeAfter)
+    _streamPos += numReadBytes;
+    if(_streamPos >= _pos + _keepSizeAfter)
     {
-      m_PosLimit = m_StreamPos - m_KeepSizeAfter;
+      _posLimit = _streamPos - _keepSizeAfter;
       return S_OK;
     }
   }
 }
 
-// UINT32 CIn::GetMatchLen(UINT32 aIndex, UINT32 aBack, UINT32 aLimit)const
-
 void CIn::MoveBlock()
 {
   BeforeMoveBlock();
-  UINT32 anOffset = (m_Buffer + m_Pos - m_KeepSizeBefore) - m_BufferBase;
-  UINT32 aNumBytes = (m_Buffer + m_StreamPos) -  (m_BufferBase + anOffset);
-  memmove(m_BufferBase, m_BufferBase + anOffset, aNumBytes);
-  m_Buffer -= anOffset;
+  UINT32 offset = (_buffer + _pos - _keepSizeBefore) - _bufferBase;
+  UINT32 numBytes = (_buffer + _streamPos) -  (_bufferBase + offset);
+  memmove(_bufferBase, _bufferBase + offset, numBytes);
+  _buffer -= offset;
   AfterMoveBlock();
 }
 

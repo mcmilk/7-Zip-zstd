@@ -8,18 +8,18 @@ extern HINSTANCE g_hInstance;
 
 namespace NWindows {
 
-CSysString MyLoadString(UINT anID)
+CSysString MyLoadString(UINT resourceID)
 {
-  CSysString aString;
-  int aSize = 256;
-  int aLen;
+  CSysString string;
+  int size = 256;
+  int len;
   do
   {
-    aSize += 256;
-    aLen = ::LoadString(g_hInstance, anID, aString.GetBuffer(aSize - 1), aSize);
-  } while (aSize - aLen <= 1);
-  aString.ReleaseBuffer();
-  return aString;
+    size += 256;
+    len = ::LoadString(g_hInstance, resourceID, string.GetBuffer(size - 1), size);
+  } while (size - len <= 1);
+  string.ReleaseBuffer();
+  return string;
 }
 
 }

@@ -753,9 +753,9 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *anInStream,
   {
     return anOutWriteException.m_Result;
   }
-  catch(const NStream::COutByteWriteException &anException)
+  catch(const NStream::COutByteWriteException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
   catch(...)
   {

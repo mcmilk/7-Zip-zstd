@@ -210,11 +210,23 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\OutEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Handler\IArchiveHandler.h
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Common\IArchiveHandler2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -235,6 +247,10 @@ SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\PropVariant.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Time.h
 # End Source File
 # End Group
 # Begin Group "SDK Interface"

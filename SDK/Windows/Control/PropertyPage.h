@@ -11,17 +11,17 @@
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY ProperyPageProcedure(HWND aDialogHWND, UINT aMessage, UINT wParam, LONG lParam);
+BOOL APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message, UINT wParam, LONG lParam);
 
 class CPropertyPage: public CDialog
 {
 public:
-  CPropertyPage(HWND aWindowNew = NULL): CDialog(aWindowNew){};
+  CPropertyPage(HWND window = NULL): CDialog(window){};
   
   void Changed() { PropSheet_Changed(GetParent(), HWND(*this)); }
   void UnChanged() { PropSheet_UnChanged(GetParent(), HWND(*this)); }
 
-  virtual bool OnNotify(UINT aControlID, LPNMHDR lParam);
+  virtual bool OnNotify(UINT controlID, LPNMHDR lParam);
 
   virtual bool OnKillActive() { return false; } // false = OK
   virtual bool OnKillActive(const PSHNOTIFY *aPSHNOTIFY) { return OnKillActive(); }

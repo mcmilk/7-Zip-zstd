@@ -33,8 +33,8 @@ DECLARE_NOT_AGGREGATABLE(CTarHandler)
 DECLARE_REGISTRY(CTarHandler, TEXT("SevenZip.FormatTar.1"), 
     TEXT("SevenZip.FormatTar"), 0, THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
+  STDMETHOD(Open)(IInStream *stream, 
+      const UINT64 *maxCheckStartPosition,
       IOpenArchive2CallBack *anOpenArchiveCallBack);  
   STDMETHOD(Close)();  
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  

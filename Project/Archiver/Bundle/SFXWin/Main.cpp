@@ -11,6 +11,7 @@
 #include "../../Common/IArchiveHandler2.h"
 #include "../../Agent/Handler.h"
 #include "../../Explorer/ExtractEngine.h"
+#include "../../Explorer/MyMessages.h"
 
 HINSTANCE g_hInstance;
 
@@ -61,7 +62,11 @@ int APIENTRY WinMain(
   bool anAssumeYes = false;
   if (aSwitches == CSysString("-y"))
     anAssumeYes = true;
-  ExtractArchive(NULL, aFullPath, anAssumeYes);
+  HRESULT aResult = ExtractArchive(NULL, aFullPath, anAssumeYes);
+  if (aResult == S_FALSE)
+    MyMessageBox(L"Archive is not supported");
+  else if (aResult != S_OK)
+    ShowErrorMessage(0, aResult);
   return 0;
 }
 

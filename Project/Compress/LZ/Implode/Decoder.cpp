@@ -297,9 +297,9 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *anInStream,
   {
     return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
   }
-  catch(const NStream::NWindow::COutWriteException &anOutWriteException)
+  catch(const NStream::NWindow::COutWriteException &outWriteException)
   {
-    return anOutWriteException.m_Result;
+    return outWriteException.Result;
   }
   catch(...)
   {

@@ -15,18 +15,18 @@ namespace NFind {
 
 namespace NAttributes
 {
-  inline bool IsReadOnly(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_READONLY) != 0; }
-  inline bool IsHidden(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_HIDDEN) != 0; }
-  inline bool IsSystem(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_SYSTEM) != 0; }
-  inline bool IsDirectory(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0; }
-  inline bool IsArchived(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_ARCHIVE) != 0; }
-  inline bool IsCompressed(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_COMPRESSED) != 0; }
-  inline bool IsEncrypted(DWORD anAttributes) { return (anAttributes & FILE_ATTRIBUTE_ENCRYPTED) != 0; }
+  inline bool IsReadOnly(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_READONLY) != 0; }
+  inline bool IsHidden(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_HIDDEN) != 0; }
+  inline bool IsSystem(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_SYSTEM) != 0; }
+  inline bool IsDirectory(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0; }
+  inline bool IsArchived(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_ARCHIVE) != 0; }
+  inline bool IsCompressed(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_COMPRESSED) != 0; }
+  inline bool IsEncrypted(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_ENCRYPTED) != 0; }
 }
 
 class CFileInfo
 { 
-  bool MatchesMask(UINT32 aMask) const  { return ((Attributes & aMask) != 0); }
+  bool MatchesMask(UINT32 mask) const  { return ((Attributes & mask) != 0); }
 public:
   DWORD Attributes;
   FILETIME CreationTime;  
@@ -61,57 +61,57 @@ public:
 class CFindFile
 {
   friend class CEnumerator;
-  HANDLE m_Handle;
-  bool m_HandleAllocated;
+  HANDLE _handle;
+  bool _handleAllocated;
 protected:
-  bool IsHandleAllocated() const { return m_HandleAllocated; }
+  bool IsHandleAllocated() const { return _handleAllocated; }
 public:
-  CFindFile(): m_HandleAllocated(false) {}
+  CFindFile(): _handleAllocated(false) {}
   ~CFindFile() {  Close(); }
-  bool FindFirst(LPCTSTR aWildcard, CFileInfo &aFileInfo);
-  bool FindNext(CFileInfo &aFileInfo);
+  bool FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo);
+  bool FindNext(CFileInfo &fileInfo);
   bool Close();
 };
 
-bool FindFile(LPCTSTR aWildcard, CFileInfo &aFileInfo);
-bool DoesFileExist(LPCTSTR aName);
+bool FindFile(LPCTSTR wildcard, CFileInfo &fileInfo);
+bool DoesFileExist(LPCTSTR name);
 
 class CEnumerator
 {
-  CFindFile m_FindFile;
-  CSysString m_Wildcard;
-  bool NextAny(CFileInfo &aFileInfo);
+  CFindFile _findFile;
+  CSysString _wildcard;
+  bool NextAny(CFileInfo &fileInfo);
 public:
-  CEnumerator(): m_Wildcard(NName::kAnyStringWildcard) {}
-  CEnumerator(const CSysString &aWildcard): m_Wildcard(aWildcard) {}
-  bool Next(CFileInfo &aFileInfo);
+  CEnumerator(): _wildcard(NName::kAnyStringWildcard) {}
+  CEnumerator(const CSysString &wildcard): _wildcard(wildcard) {}
+  bool Next(CFileInfo &fileInfo);
 };
 
 class CFindChangeNotification
 {
-  HANDLE m_Handle;
+  HANDLE _handle;
 public:
-  operator HANDLE () { return m_Handle; }
-  CFindChangeNotification(): m_Handle(INVALID_HANDLE_VALUE) {}
+  operator HANDLE () { return _handle; }
+  CFindChangeNotification(): _handle(INVALID_HANDLE_VALUE) {}
   ~CFindChangeNotification() {  Close(); }
   bool Close();
-  HANDLE FindFirst(LPCTSTR aPathName, bool aWatchSubtree, DWORD aNotifyFilter);
+  HANDLE FindFirst(LPCTSTR pathName, bool watchSubtree, DWORD notifyFilter);
   bool FindNext()
-    { return BOOLToBool(::FindNextChangeNotification(m_Handle)); }
+    { return BOOLToBool(::FindNextChangeNotification(_handle)); }
 };
 
 #ifndef _WIN32_WCE
-bool MyGetLogicalDriveStrings(CSysStringVector &aDriveStrings);
+bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings);
 #endif
 
-inline bool GetCompressedFileSize(LPCTSTR aFileName, UINT64 &aSize)
+inline bool GetCompressedFileSize(LPCTSTR fileName, UINT64 &size)
 {
-  DWORD aHighPart;
-  DWORD aLowPart = ::GetCompressedFileSize(aFileName, &aHighPart);
-  if (aLowPart == INVALID_FILE_SIZE)
+  DWORD highPart;
+  DWORD lowPart = ::GetCompressedFileSize(fileName, &highPart);
+  if (lowPart == INVALID_FILE_SIZE)
     if (::GetLastError() != NO_ERROR)
       return false;
-  aSize = (UINT64(aHighPart) << 32) | aLowPart;
+  size = (UINT64(highPart) << 32) | lowPart;
   return true;
 }
 

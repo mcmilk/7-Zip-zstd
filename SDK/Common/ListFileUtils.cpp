@@ -13,42 +13,42 @@ static const char kTabChar       = '\t';
 static const char kQuoteChar     = '\"';
 static const char kEndOfLine     = '\0';
 
-static bool IsSeparatorChar(char aChar)
+static bool IsSeparatorChar(char c)
 {
-  return (aChar == kSpaceChar || aChar == kTabChar);
+  return (c == kSpaceChar || c == kTabChar);
 }
 
-bool ReadNamesFromListFile(LPCTSTR aFileName, AStringVector &aStrings)
+bool ReadNamesFromListFile(LPCTSTR fileName, AStringVector &strings)
 {
-  CStdInStream aFile;
-  if (!aFile.Open(aFileName))
+  CStdInStream file;
+  if (!file.Open(fileName))
     return false;
-  AString aString;
-  bool aQuotes = false;
-  int aIntChar;
-  while((aIntChar = aFile.GetChar()) != EOF)
+  AString string;
+  bool quotes = false;
+  int intChar;
+  while((intChar = file.GetChar()) != EOF)
   {
-    char c = aIntChar;
+    char c = intChar;
     if (c == kEndOfLine)
       return false;
-    if (c == kNewLineChar || (IsSeparatorChar(c) && !aQuotes) || (c == kQuoteChar && aQuotes)) 
+    if (c == kNewLineChar || (IsSeparatorChar(c) && !quotes) || (c == kQuoteChar && quotes)) 
     {
-      if (!aString.IsEmpty())
+      if (!string.IsEmpty())
       {
-        aStrings.Add(aString);
-        aString.Empty ();
-        aQuotes = false;
+        strings.Add(string);
+        string.Empty ();
+        quotes = false;
       }
     }
     else if (c == kQuoteChar)
-      aQuotes = true;
+      quotes = true;
     else
-      aString += c;
+      string += c;
   }
-  if (!aString.IsEmpty())
-    if (aQuotes)
+  if (!string.IsEmpty())
+    if (quotes)
       return false;
     else
-      aStrings.Add(aString);
+      strings.Add(string);
   return true;
 }

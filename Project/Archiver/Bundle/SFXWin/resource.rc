@@ -40,10 +40,10 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""..\\..\\Resource\\OverwriteDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\Resource\\PasswordDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\Resource\\MessagesDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
     "#include ""..\\..\\Resource\\Extract\\resource.rc""\r\n"
     "\r\n"
     "\0"
@@ -80,8 +80,8 @@ IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,20,0
- PRODUCTVERSION 2,30,20,0
+ FILEVERSION 2,30,22,0
+ PRODUCTVERSION 2,30,22,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -98,15 +98,15 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
-            VALUE "FileDescription", "7z SFX (GUI version)\0"
-            VALUE "FileVersion", "2, 30, 20, 0\0"
+            VALUE "FileDescription", "7z SFX\0"
+            VALUE "FileVersion", "2, 30, 22, 0\0"
             VALUE "InternalName", "7zWin.sfx\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zWin.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 20, 0\0"
+            VALUE "ProductVersion", "2, 30, 22, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -137,7 +137,6 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,171,57,50,14
 END
 
-
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -148,10 +147,10 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-#include "..\..\Resource\OverwriteDialog\resource.rc"
-#include "..\..\Resource\PasswordDialog\resource.rc"
-#include "..\..\Resource\MessagesDialog\resource.rc"
-#include "..\..\Resource\ProgressDialog\resource.rc"
+#include "..\..\..\FileManager\Resource\OverwriteDialog\resource.rc"
+#include "..\..\..\FileManager\Resource\PasswordDialog\resource.rc"
+#include "..\..\..\FileManager\Resource\MessagesDialog\resource.rc"
+#include "..\..\..\FileManager\Resource\ProgressDialog\resource.rc"
 #include "..\..\Resource\Extract\resource.rc"
 
 

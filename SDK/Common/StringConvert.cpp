@@ -4,49 +4,47 @@
 
 #include "StringConvert.h"
 
-UString MultiByteToUnicodeString(const AString &aSrcString, 
-    UINT aCodePage)
+UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 {
-  UString aResultString;
-  if(!aSrcString.IsEmpty())
+  UString resultString;
+  if(!srcString.IsEmpty())
   {
-    int aNumChars = MultiByteToWideChar(aCodePage, 0, aSrcString, 
-      aSrcString.Length(), aResultString.GetBuffer(aSrcString.Length()), 
-      aSrcString.Length() + 1);
+    int numChars = MultiByteToWideChar(codePage, 0, srcString, 
+      srcString.Length(), resultString.GetBuffer(srcString.Length()), 
+      srcString.Length() + 1);
     #ifndef _WIN32_WCE
-    if(aNumChars == 0)
+    if(numChars == 0)
       throw 282228;
     #endif
-    aResultString.ReleaseBuffer(aNumChars);
+    resultString.ReleaseBuffer(numChars);
   }
-  return aResultString;
+  return resultString;
 }
 
-AString UnicodeStringToMultiByte(const UString &aSrcString, 
-    unsigned int aCodePage)
+AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
 {
-  AString aResultString;
-  if(!aSrcString.IsEmpty())
+  AString resultString;
+  if(!srcString.IsEmpty())
   {
-    int aNumRequiredBytes = aSrcString.Length() * 2;
-    int aNumChars = WideCharToMultiByte(aCodePage, 0, aSrcString, 
-      aSrcString.Length(), aResultString.GetBuffer(aNumRequiredBytes), 
-      aNumRequiredBytes + 1, NULL, NULL);
+    int numRequiredBytes = srcString.Length() * 2;
+    int numChars = WideCharToMultiByte(codePage, 0, srcString, 
+      srcString.Length(), resultString.GetBuffer(numRequiredBytes), 
+      numRequiredBytes + 1, NULL, NULL);
     #ifndef _WIN32_WCE
-    if(aNumChars == 0)
+    if(numChars == 0)
       throw 282229;
     #endif
-    aResultString.ReleaseBuffer(aNumChars);
+    resultString.ReleaseBuffer(numChars);
   }
-  return aResultString;
+  return resultString;
 }
 
 #ifndef _WIN32_WCE
-AString SystemStringToOemString(const CSysString &aSrcString)
+AString SystemStringToOemString(const CSysString &srcString)
 {
-  AString aResult;
-  CharToOem(aSrcString, aResult.GetBuffer(aSrcString.Length() * 2));
-  aResult.ReleaseBuffer();
-  return aResult;
+  AString result;
+  CharToOem(srcString, result.GetBuffer(srcString.Length() * 2));
+  result.ReleaseBuffer();
+  return result;
 }
 #endif

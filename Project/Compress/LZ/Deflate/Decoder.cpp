@@ -235,13 +235,13 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *anInStream,
   {
     return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
   }
-  catch(const NStream::CInByteReadException &anException)
+  catch(const NStream::CInByteReadException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
-  catch(const NStream::NWindow::COutWriteException &anOutWriteException)
+  catch(const NStream::NWindow::COutWriteException &outWriteException)
   {
-    return anOutWriteException.m_Result;
+    return outWriteException.Result;
   }
   catch(...)
   {

@@ -7,72 +7,79 @@
 namespace NStream {
 namespace NWindow {
 
-void COut::Create(UINT32 aWindowSize)
+void COut::Create(UINT32 windowSize)
 {
-  m_Pos = 0;
-  m_StreamPos = 0;
-  UINT32 aNewBlockSize = aWindowSize;
+  _pos = 0;
+  _streamPos = 0;
+  UINT32 newBlockSize = windowSize;
   const UINT32 kMinBlockSize = 1;
-  if (aNewBlockSize < kMinBlockSize)
-    aNewBlockSize = kMinBlockSize;
-  if (m_Buffer != 0 && m_WindowSize == aNewBlockSize)
+  if (newBlockSize < kMinBlockSize)
+    newBlockSize = kMinBlockSize;
+  if (_buffer != 0 && _windowSize == newBlockSize)
     return;
-  delete []m_Buffer;
-  m_Buffer = 0;
-  m_WindowSize = aNewBlockSize;
-  m_Buffer = new BYTE[m_WindowSize];
+  delete []_buffer;
+  _buffer = 0;
+  _windowSize = newBlockSize;
+  _buffer = new BYTE[_windowSize];
 }
 
 COut::~COut()
 {
   ReleaseStream();
-  delete []m_Buffer;
+  delete []_buffer;
 }
 
 /*
-void COut::SetWindowSize(UINT32 aWindowSize)
+void COut::SetWindowSize(UINT32 windowSize)
 {
-  m_WindowSize = aWindowSize;
+  _windowSize = windowSize;
 }
 */
 
-void COut::Init(ISequentialOutStream *aStream, bool aSolid)
+void COut::Init(ISequentialOutStream *stream, bool solid)
 {
   ReleaseStream();
-  m_Stream = aStream;
-  m_Stream->AddRef();
+  _stream = stream;
+  _stream->AddRef();
 
-  if(!aSolid)
+  if(!solid)
   {
-    m_StreamPos = 0;
-    m_Pos = 0;
+    _streamPos = 0;
+    _pos = 0;
   }
 }
 
 void COut::ReleaseStream()
 {
-  if(m_Stream != 0)
+  if(_stream != 0)
   {
     Flush();
-    m_Stream->Release();
-    m_Stream = 0;
+    _stream->Release();
+    _stream = 0;
   }
+}
+
+void COut::FlushWithCheck()
+{
+  HRESULT result = Flush();
+  if (result != S_OK)
+    throw COutWriteException(result);
 }
 
 HRESULT COut::Flush()
 {
-  UINT32 aSize = m_Pos - m_StreamPos;
-  if(aSize == 0)
+  UINT32 size = _pos - _streamPos;
+  if(size == 0)
     return S_OK;
-  UINT32 aProcessedSize;
-  HRESULT aResult = m_Stream->Write(m_Buffer + m_StreamPos, aSize, &aProcessedSize);
-  if (aResult != S_OK)
-    return aResult;
-  if (aSize != aProcessedSize)
+  UINT32 processedSize;
+  HRESULT result = _stream->Write(_buffer + _streamPos, size, &processedSize);
+  if (result != S_OK)
+    return result;
+  if (size != processedSize)
     return E_FAIL;
-  if (m_Pos >= m_WindowSize)
-    m_Pos = 0;
-  m_StreamPos = m_Pos;
+  if (_pos >= _windowSize)
+    _pos = 0;
+  _streamPos = _pos;
   return S_OK;
 }
 

@@ -7,156 +7,152 @@
 namespace NWindows {
 namespace NNet {
 
-DWORD CEnum::Open(DWORD dwScope, DWORD dwType, DWORD dwUsage, 
-    LPNETRESOURCE lpNetResource)
+DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResource)
 {
   Close();
-  DWORD aResult = ::WNetOpenEnum(dwScope, dwType, dwUsage, 
-      lpNetResource, &m_Handle);
-  m_HandleAllocated = (aResult == NO_ERROR);
-  return aResult;
+  DWORD result = ::WNetOpenEnum(scope, type, usage, netResource, &_handle);
+  _handleAllocated = (result == NO_ERROR);
+  return result;
 }
 
-static void SetComplexString(bool &aBool, CSysString &aStringTo, LPCTSTR aStringFrom)
+static void SetComplexString(bool &defined, CSysString &destString, 
+    LPCTSTR srsString)
 {
-  aBool = (aStringFrom != 0);
-  if (aBool)
-    aStringTo = aStringFrom;
+  defined = (srsString != 0);
+  if (defined)
+    destString = srsString;
   else
-    aStringTo.Empty();
+    destString.Empty();
 }
 
-static void ConvertNETRESOURCEToCResource(const NETRESOURCE &aNETRESOURCE, 
-    CResource &aResource)
+static void ConvertNETRESOURCEToCResource(const NETRESOURCE &netResource, 
+    CResource &resource)
 {
-  aResource.Scope = aNETRESOURCE.dwScope;
-  aResource.Type = aNETRESOURCE.dwType;
-  aResource.DisplayType = aNETRESOURCE.dwDisplayType;
-  aResource.Usage = aNETRESOURCE.dwUsage;
-  SetComplexString(aResource.LocalNameIsDefined, aResource.LocalName, aNETRESOURCE.lpLocalName);
-  SetComplexString(aResource.RemoteNameIsDefined, aResource.RemoteName, aNETRESOURCE.lpRemoteName);
-  SetComplexString(aResource.CommentIsDefined, aResource.Comment, aNETRESOURCE.lpComment);
-  SetComplexString(aResource.ProviderIsDefined, aResource.Provider, aNETRESOURCE.lpProvider);
+  resource.Scope = netResource.dwScope;
+  resource.Type = netResource.dwType;
+  resource.DisplayType = netResource.dwDisplayType;
+  resource.Usage = netResource.dwUsage;
+  SetComplexString(resource.LocalNameIsDefined, resource.LocalName, netResource.lpLocalName);
+  SetComplexString(resource.RemoteNameIsDefined, resource.RemoteName, netResource.lpRemoteName);
+  SetComplexString(resource.CommentIsDefined, resource.Comment, netResource.lpComment);
+  SetComplexString(resource.ProviderIsDefined, resource.Provider, netResource.lpProvider);
 }
 
-static void SetComplexString2(LPCTSTR &aStringTo, bool aBool, 
-    const CSysString &aStringFrom)
+static void SetComplexString2(LPCTSTR &destString, bool defined, 
+    const CSysString &srsString)
 {
-  if (aBool)
-    aStringTo = aStringFrom;
+  if (defined)
+    destString = srsString;
   else
-    aStringTo = 0;
+    destString = 0;
 }
 
-static void ConvertCResourceToNETRESOURCE(const CResource &aResource, 
-    NETRESOURCE &aNETRESOURCE)
+static void ConvertCResourceToNETRESOURCE(const CResource &resource, 
+    NETRESOURCE &netResource)
 {
-  aNETRESOURCE.dwScope = aResource.Scope;
-  aNETRESOURCE.dwType = aResource.Type;
-  aNETRESOURCE.dwDisplayType = aResource.DisplayType;
-  aNETRESOURCE.dwUsage = aResource.Usage;
-  SetComplexString2(aNETRESOURCE.lpLocalName, aResource.LocalNameIsDefined, aResource.LocalName);
-  SetComplexString2(aNETRESOURCE.lpRemoteName, aResource.RemoteNameIsDefined, aResource.RemoteName);
-  SetComplexString2(aNETRESOURCE.lpComment, aResource.CommentIsDefined, aResource.Comment);
-  SetComplexString2(aNETRESOURCE.lpProvider, aResource.ProviderIsDefined, aResource.Provider);
+  netResource.dwScope = resource.Scope;
+  netResource.dwType = resource.Type;
+  netResource.dwDisplayType = resource.DisplayType;
+  netResource.dwUsage = resource.Usage;
+  SetComplexString2(netResource.lpLocalName, resource.LocalNameIsDefined, resource.LocalName);
+  SetComplexString2(netResource.lpRemoteName, resource.RemoteNameIsDefined, resource.RemoteName);
+  SetComplexString2(netResource.lpComment, resource.CommentIsDefined, resource.Comment);
+  SetComplexString2(netResource.lpProvider, resource.ProviderIsDefined, resource.Provider);
 }
 
-DWORD CEnum::Open(DWORD dwScope, DWORD dwType, DWORD dwUsage, 
-    const CResource *aResource)
+DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, 
+    const CResource *resource)
 {
-  NETRESOURCE aNETRESOURCE;
-  LPNETRESOURCE aPointer;
-  if (aResource == 0)
-    aPointer = 0;
+  NETRESOURCE netResource;
+  LPNETRESOURCE pointer;
+  if (resource == 0)
+    pointer = 0;
   else
   {
-    ConvertCResourceToNETRESOURCE(*aResource, aNETRESOURCE);
-    aPointer = &aNETRESOURCE;
+    ConvertCResourceToNETRESOURCE(*resource, netResource);
+    pointer = &netResource;
   }
-  return Open(dwScope, dwType, dwUsage, aPointer);
+  return Open(scope, type, usage, pointer);
 }
 
 DWORD CEnum::Close()
 {
-  if(!m_HandleAllocated)
+  if(!_handleAllocated)
     return NO_ERROR;
-  DWORD aResult = ::WNetCloseEnum(m_Handle);
-  m_HandleAllocated = (aResult != NO_ERROR);
-  return aResult;
+  DWORD result = ::WNetCloseEnum(_handle);
+  _handleAllocated = (result != NO_ERROR);
+  return result;
 }
 
 DWORD CEnum::Next(LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBufferSize)
 {
-  return ::WNetEnumResource(m_Handle, lpcCount, lpBuffer, lpBufferSize);
+  return ::WNetEnumResource(_handle, lpcCount, lpBuffer, lpBufferSize);
 }
 
-DWORD CEnum::Next(CResource &aResource)
+DWORD CEnum::Next(CResource &resource)
 {
-  CByteBuffer aByteBuffer;
+  CByteBuffer byteBuffer;
   const DWORD kBufferSize = 16384;
-  aByteBuffer.SetCapacity(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(aByteBuffer);
+  byteBuffer.SetCapacity(kBufferSize);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
-  DWORD aBufferSize = kBufferSize;
-  DWORD cEntries = 1;
-  DWORD aResult = Next(&cEntries,  lpnrLocal, &aBufferSize);
-  if (aResult != NO_ERROR)
-    return aResult;
-  if (cEntries != 1)
+  DWORD bufferSize = kBufferSize;
+  DWORD numEntries = 1;
+  DWORD result = Next(&numEntries,  lpnrLocal, &bufferSize);
+  if (result != NO_ERROR)
+    return result;
+  if (numEntries != 1)
     return E_FAIL;
-  ConvertNETRESOURCEToCResource(lpnrLocal[0], aResource);
-  return aResult;
+  ConvertNETRESOURCEToCResource(lpnrLocal[0], resource);
+  return result;
 }
 
-DWORD GetResourceParent(const CResource &aResource, CResource &aResourceParent)
+DWORD GetResourceParent(const CResource &resource, CResource &parentResource)
 {
-  CByteBuffer aByteBuffer;
+  CByteBuffer byteBuffer;
   const DWORD kBufferSize = 16384;
-  aByteBuffer.SetCapacity(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(aByteBuffer);
+  byteBuffer.SetCapacity(kBufferSize);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
-  DWORD aBufferSize = kBufferSize;
-  NETRESOURCE aNETRESOURCE;
-  ConvertCResourceToNETRESOURCE(aResource, aNETRESOURCE);
-  DWORD aResult = ::WNetGetResourceParent(&aNETRESOURCE,  lpnrLocal, &aBufferSize);
-  if (aResult != NO_ERROR)
-    return aResult;
-  ConvertNETRESOURCEToCResource(lpnrLocal[0], aResourceParent);
-  return aResult;
+  DWORD bufferSize = kBufferSize;
+  NETRESOURCE netResource;
+  ConvertCResourceToNETRESOURCE(resource, netResource);
+  DWORD result = ::WNetGetResourceParent(&netResource,  lpnrLocal, &bufferSize);
+  if (result != NO_ERROR)
+    return result;
+  ConvertNETRESOURCEToCResource(lpnrLocal[0], parentResource);
+  return result;
 }
 
-DWORD GetResourceInformation(const CResource &aResource, 
-    CResource &aDestResource, CSysString &aSystemPathPart)
+DWORD GetResourceInformation(const CResource &resource, 
+    CResource &destResource, CSysString &systemPathPart)
 {
-  CByteBuffer aByteBuffer;
+  CByteBuffer byteBuffer;
   const DWORD kBufferSize = 16384;
-  aByteBuffer.SetCapacity(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(aByteBuffer);
+  byteBuffer.SetCapacity(kBufferSize);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
-  DWORD aBufferSize = kBufferSize;
-  NETRESOURCE aNETRESOURCE;
-  ConvertCResourceToNETRESOURCE(aResource, aNETRESOURCE);
+  DWORD bufferSize = kBufferSize;
+  NETRESOURCE netResource;
+  ConvertCResourceToNETRESOURCE(resource, netResource);
   LPTSTR lplpSystem; 
-  DWORD aResult = ::WNetGetResourceInformation(&aNETRESOURCE, 
-      lpnrLocal, &aBufferSize, &lplpSystem);
-  if (aResult != NO_ERROR)
-    return aResult;
+  DWORD result = ::WNetGetResourceInformation(&netResource, 
+      lpnrLocal, &bufferSize, &lplpSystem);
+  if (result != NO_ERROR)
+    return result;
   if (lplpSystem != 0)
-    aSystemPathPart = lplpSystem;
-  ConvertNETRESOURCEToCResource(lpnrLocal[0], aDestResource);
-  return aResult;
+    systemPathPart = lplpSystem;
+  ConvertNETRESOURCEToCResource(lpnrLocal[0], destResource);
+  return result;
 }
 
-DWORD AddConnection2(const CResource &aResource, 
-    LPCTSTR lpPassword, LPCTSTR lpUsername, DWORD dwFlags)
+DWORD AddConnection2(const CResource &resource, 
+    LPCTSTR password, LPCTSTR userName, DWORD flags)
 {
-  NETRESOURCE aNETRESOURCE;
-  ConvertCResourceToNETRESOURCE(aResource, aNETRESOURCE);
-  return ::WNetAddConnection2(&aNETRESOURCE,
-    lpPassword, lpUsername, dwFlags);
+  NETRESOURCE netResource;
+  ConvertCResourceToNETRESOURCE(resource, netResource);
+  return ::WNetAddConnection2(&netResource,
+    password, userName, flags);
 }
-
 
 }}
-
-

@@ -14,98 +14,98 @@ namespace NControl {
 class CListView: public NWindows::CWindow
 {
 public:
-  bool CreateEx(DWORD anExStyle, DWORD aStyle,
-      int x, int y, int aWidth, int aHeight,
-      HWND aParentWindow, HMENU anIDorHMenu, 
-      HINSTANCE anInstance, LPVOID aCreateParam);
+  bool CreateEx(DWORD exStyle, DWORD style,
+      int x, int y, int width, int height,
+      HWND parentWindow, HMENU idOrHMenu, 
+      HINSTANCE instance, LPVOID createParam);
   
   bool DeleteAllItems()
-    { return BOOLToBool(ListView_DeleteAllItems(m_Window)); }
-  int InsertColumn(int aColumnIndex, const LVCOLUMN *aColumnInfo)
-    { return ListView_InsertColumn(m_Window, aColumnIndex, aColumnInfo); }
-  bool DeleteColumn(int aColumnIndex)
-    { return BOOLToBool(ListView_DeleteColumn(m_Window, aColumnIndex)); }
+    { return BOOLToBool(ListView_DeleteAllItems(_window)); }
+  int InsertColumn(int columnIndex, const LVCOLUMN *columnInfo)
+    { return ListView_InsertColumn(_window, columnIndex, columnInfo); }
+  bool DeleteColumn(int columnIndex)
+    { return BOOLToBool(ListView_DeleteColumn(_window, columnIndex)); }
 
-  int InsertItem(const LVITEM* anItem)
-    { return ListView_InsertItem(m_Window, anItem); }
-  bool SetItem(const LVITEM* anItem)
-    { return BOOLToBool(ListView_SetItem(m_Window, anItem)); }
-  bool DeleteItem(int anItemIndex)
-    { return BOOLToBool(ListView_DeleteItem(m_Window, anItemIndex)); }
+  int InsertItem(const LVITEM* item)
+    { return ListView_InsertItem(_window, item); }
+  bool SetItem(const LVITEM* item)
+    { return BOOLToBool(ListView_SetItem(_window, item)); }
+  bool DeleteItem(int itemIndex)
+    { return BOOLToBool(ListView_DeleteItem(_window, itemIndex)); }
 
   UINT GetSelectedCount() const
-    { return ListView_GetSelectedCount(m_Window); }
+    { return ListView_GetSelectedCount(_window); }
   int GetItemCount() const
-    { return ListView_GetItemCount(m_Window); }
+    { return ListView_GetItemCount(_window); }
 
   INT GetSelectionMark()
-    { return ListView_GetSelectionMark(m_Window); }
+    { return ListView_GetSelectionMark(_window); }
 
-  void SetItemCount(int aNumItems)
-    {  ListView_SetItemCount(m_Window, aNumItems); }
-  void SetItemCountEx(int aNumItems, DWORD aFlags)
-    {  ListView_SetItemCountEx(m_Window, aNumItems, aFlags); }
+  void SetItemCount(int numItems)
+    {  ListView_SetItemCount(_window, numItems); }
+  void SetItemCountEx(int numItems, DWORD flags)
+    {  ListView_SetItemCountEx(_window, numItems, flags); }
 
-  int GetNextItem(int aStartIndex, UINT aFlags) const
-    { return ListView_GetNextItem(m_Window, aStartIndex, aFlags); }
-  int GetNextSelectedItem(int aStartIndex) const
-    { return GetNextItem(aStartIndex, LVNI_SELECTED); }
+  int GetNextItem(int startIndex, UINT flags) const
+    { return ListView_GetNextItem(_window, startIndex, flags); }
+  int GetNextSelectedItem(int startIndex) const
+    { return GetNextItem(startIndex, LVNI_SELECTED); }
   int GetFocusedItem() const
     { return GetNextItem(-1, LVNI_FOCUSED); }
   
-  bool GetItem(LVITEM* anItem) const 
-    { return BOOLToBool(ListView_GetItem(m_Window, anItem)); }
-  bool GetItemParam(int anItemIndex, LPARAM &aParam) const;
-  void GetItemText(int anItemIndex, int aSubItemIndex, LPTSTR aText, int aTextSizeMax) const 
-    { ListView_GetItemText(m_Window, anItemIndex, aSubItemIndex, aText, aTextSizeMax); }
-  bool SortItems(PFNLVCOMPARE aCompareFunction, LPARAM aDataParam)
-    { return BOOLToBool(ListView_SortItems(m_Window, aCompareFunction, aDataParam)); }
+  bool GetItem(LVITEM* item) const 
+    { return BOOLToBool(ListView_GetItem(_window, item)); }
+  bool GetItemParam(int itemIndex, LPARAM &param) const;
+  void GetItemText(int itemIndex, int aSubItemIndex, LPTSTR aText, int aTextSizeMax) const 
+    { ListView_GetItemText(_window, itemIndex, aSubItemIndex, aText, aTextSizeMax); }
+  bool SortItems(PFNLVCOMPARE compareFunction, LPARAM dataParam)
+    { return BOOLToBool(ListView_SortItems(_window, compareFunction, dataParam)); }
 
-  void SetItemState(int anIndex, UINT aState, UINT aMask)
-    { ListView_SetItemState(m_Window, anIndex, aState, aMask); }
-  UINT GetItemState(int anIndex, UINT aMask)
-    { return ListView_GetItemState(m_Window, anIndex, aMask); }
+  void SetItemState(int index, UINT state, UINT mask)
+    { ListView_SetItemState(_window, index, state, mask); }
+  UINT GetItemState(int index, UINT mask)
+    { return ListView_GetItemState(_window, index, mask); }
 
-  bool GetColumn(int ColumnIndex, LVCOLUMN* aColumnInfo) const
-    { return BOOLToBool(ListView_GetColumn(m_Window, ColumnIndex, aColumnInfo)); }
+  bool GetColumn(int columnIndex, LVCOLUMN* columnInfo) const
+    { return BOOLToBool(ListView_GetColumn(_window, columnIndex, columnInfo)); }
 
-  HIMAGELIST SetImageList(HIMAGELIST anImageList, int anImageListType)
-    { return ListView_SetImageList(m_Window, anImageList, anImageListType); }		
+  HIMAGELIST SetImageList(HIMAGELIST imageList, int imageListType)
+    { return ListView_SetImageList(_window, imageList, imageListType); }		
 
   // version 4.70: NT5 | (NT4 + ie3) | w98 | (w95 + ie3)
   DWORD GetExtendedListViewStyle()
-    { return ListView_GetExtendedListViewStyle(m_Window); }
-  void SetExtendedListViewStyle(DWORD anExStyle)
-    { ListView_SetExtendedListViewStyle(m_Window, anExStyle); }
-  void SetExtendedListViewStyle(DWORD anExMask, DWORD anExStyle)
-    { ListView_SetExtendedListViewStyleEx(m_Window, anExMask, anExStyle); }
+    { return ListView_GetExtendedListViewStyle(_window); }
+  void SetExtendedListViewStyle(DWORD exStyle)
+    { ListView_SetExtendedListViewStyle(_window, exStyle); }
+  void SetExtendedListViewStyle(DWORD exMask, DWORD exStyle)
+    { ListView_SetExtendedListViewStyleEx(_window, exMask, exStyle); }
 
   #ifndef _WIN32_WCE
-  void SetCheckState(UINT anIndex, bool aCheckState)
-    { ListView_SetCheckState(m_Window, anIndex, BoolToBOOL(aCheckState)); }
+  void SetCheckState(UINT index, bool checkState)
+    { ListView_SetCheckState(_window, index, BoolToBOOL(checkState)); }
   #endif
-  bool GetCheckState(UINT anIndex)
-    { return BOOLToBool(ListView_GetCheckState(m_Window, anIndex)); }
+  bool GetCheckState(UINT index)
+    { return BOOLToBool(ListView_GetCheckState(_window, index)); }
 
 
-  bool EnsureVisible(int anIndex, bool aPartialOK)
-    { return BOOLToBool(ListView_EnsureVisible(m_Window, anIndex, BoolToBOOL(aPartialOK))); }
+  bool EnsureVisible(int index, bool partialOK)
+    { return BOOLToBool(ListView_EnsureVisible(_window, index, BoolToBOOL(partialOK))); }
 
-  bool GetItemRect(int anIndex, RECT *aRect, int code)
-    { return BOOLToBool(ListView_GetItemRect(m_Window, anIndex, aRect, code)); }
+  bool GetItemRect(int index, RECT *rect, int code)
+    { return BOOLToBool(ListView_GetItemRect(_window, index, rect, code)); }
 
   HWND GetEditControl()
-    { return ListView_GetEditControl(m_Window) ; }
-  HWND EditLabel(int anItemIndex)
-    { return ListView_EditLabel(m_Window, anItemIndex) ; }
+    { return ListView_GetEditControl(_window) ; }
+  HWND EditLabel(int itemIndex)
+    { return ListView_EditLabel(_window, itemIndex) ; }
 
-  bool RedrawItems(int aFirstIndex, int aLastIndex)
-    { return BOOLToBool(ListView_RedrawItems(m_Window, aFirstIndex, aLastIndex)); }
-  bool RedrawItem(int anIndex)
-    { return RedrawItems(anIndex, anIndex); }
+  bool RedrawItems(int firstIndex, int lastIndex)
+    { return BOOLToBool(ListView_RedrawItems(_window, firstIndex, lastIndex)); }
+  bool RedrawItem(int index)
+    { return RedrawItems(index, index); }
  
-  int HitTest(LPLVHITTESTINFO anInfo)
-    { return ListView_HitTest(m_Window, anInfo); }
+  int HitTest(LPLVHITTESTINFO info)
+    { return ListView_HitTest(_window, info); }
 };
 
 }}

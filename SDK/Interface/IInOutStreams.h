@@ -12,9 +12,9 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000010000")
 ISequentialInStream : public IUnknown
 {
 public:
-  // out: if (aProcessedSize == 0) then there are no more bytes
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize) = 0;
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize) = 0;
+  // out: if (processedSize == 0) then there are no more bytes
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize) = 0;
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000020000}
@@ -24,8 +24,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000020000")
 ISequentialOutStream : public IUnknown
 {
 public:
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize) = 0;
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize) = 0;
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize) = 0;
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000030000}
@@ -35,7 +35,7 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000030000")
 IInStream : public ISequentialInStream
 {
 public:
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition) = 0;
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000040000}
@@ -45,7 +45,7 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000040000")
 IOutStream : public ISequentialOutStream
 {
 public:
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition) = 0;
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition) = 0;
   STDMETHOD(SetSize)(INT64 aNewSize) = 0;
 };
 
@@ -56,7 +56,7 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000060000")
 IStreamGetSize : public IUnknown
 {
 public:
-  STDMETHOD(GetSize)(UINT64 *aSize) = 0;
+  STDMETHOD(GetSize)(UINT64 *size) = 0;
 };
 
 #endif

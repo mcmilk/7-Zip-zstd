@@ -15,7 +15,7 @@
 #include "Interface/FileStreams.h"
 #include "../../Common/ZipSettings.h"
 #include "../../../Compress/Interface./CompressInterface.h"
-#include "../../Resource/ProgressDialog/ProgressDialog.h"
+#include "../../../FileManager/Resource/ProgressDialog/ProgressDialog.h"
 #include "../../Explorer/MyMessages.h"
 
 class CExtractCallBackImp: 
@@ -88,7 +88,7 @@ public:
       #endif
     }
 
-    m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);    
+    m_ProgressDialog.Show(SW_SHOWNORMAL);    
     // m_ProgressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }

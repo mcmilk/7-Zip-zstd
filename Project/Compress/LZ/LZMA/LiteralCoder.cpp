@@ -13,45 +13,45 @@ void CEncoder2::Init()
 {
   for (int i = 0; i < 3; i++)
     for (int j = 1; j < (1 << 8); j++)
-      m_Encoders[i][j].Init();
+      _encoders[i][j].Init();
 }
 
-void CEncoder2::Encode(CMyRangeEncoder *aRangeEncoder, 
-    bool aMatchMode, BYTE aMatchByte, BYTE aSymbol)
+void CEncoder2::Encode(CMyRangeEncoder *rangeEncoder, 
+    bool matchMode, BYTE matchByte, BYTE symbol)
 {
-  UINT32 aContext = 1;
-  bool aSame = true;
+  UINT32 context = 1;
+  bool same = true;
   for (int i = 7; i >= 0; i--)
   {
-    UINT32 aBit = (aSymbol >> i) & 1;
-    UINT aState;
-    if (aMatchMode && aSame)
+    UINT32 bit = (symbol >> i) & 1;
+    UINT state;
+    if (matchMode && same)
     {
-      UINT32 aMatchBit = (aMatchByte >> i) & 1;
-      aState = 1 + aMatchBit;
-      aSame = (aMatchBit == aBit);
+      UINT32 matchBit = (matchByte >> i) & 1;
+      state = 1 + matchBit;
+      same = (matchBit == bit);
     }
     else
-      aState = 0;
-    m_Encoders[aState][aContext].Encode(aRangeEncoder, aBit);
-    aContext = (aContext << 1) | aBit;
+      state = 0;
+    _encoders[state][context].Encode(rangeEncoder, bit);
+    context = (context << 1) | bit;
   }
 }
 
-UINT32 CEncoder2::GetPrice(bool aMatchMode, BYTE aMatchByte, BYTE aSymbol) const
+UINT32 CEncoder2::GetPrice(bool matchMode, BYTE matchByte, BYTE symbol) const
 {
-  UINT32 aPrice = 0;
-  UINT32 aContext = 1;
+  UINT32 price = 0;
+  UINT32 context = 1;
   int i = 7;
-  if (aMatchMode)
+  if (matchMode)
   {
     for (; i >= 0; i--)
     {
-      UINT32 aMatchBit = (aMatchByte >> i) & 1;
-      UINT32 aBit = (aSymbol >> i) & 1;
-      aPrice += m_Encoders[1 + aMatchBit][aContext].GetPrice(aBit);
-      aContext = (aContext << 1) | aBit;
-      if (aMatchBit != aBit)
+      UINT32 matchBit = (matchByte >> i) & 1;
+      UINT32 bit = (symbol >> i) & 1;
+      price += _encoders[1 + matchBit][context].GetPrice(bit);
+      context = (context << 1) | bit;
+      if (matchBit != bit)
       {
         i--;
         break;
@@ -60,11 +60,11 @@ UINT32 CEncoder2::GetPrice(bool aMatchMode, BYTE aMatchByte, BYTE aSymbol) const
   }
   for (; i >= 0; i--)
   {
-    UINT32 aBit = (aSymbol >> i) & 1;
-    aPrice += m_Encoders[0][aContext].GetPrice(aBit);
-    aContext = (aContext << 1) | aBit;
+    UINT32 bit = (symbol >> i) & 1;
+    price += _encoders[0][context].GetPrice(bit);
+    context = (context << 1) | bit;
   }
-  return aPrice;
+  return price;
 };
 
 }

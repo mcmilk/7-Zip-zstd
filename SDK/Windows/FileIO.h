@@ -24,36 +24,35 @@ struct CByHandleFileInfo
 class CFileBase
 {
 protected:
-  bool m_FileIsOpen;
-  HANDLE m_Handle;
-  bool Create(LPCTSTR aFileName, DWORD aDesiredAccess,
-      DWORD aShareMode, DWORD aCreationDisposition,  DWORD aFlagsAndAttributes);
+  bool _fileIsOpen;
+  HANDLE _handle;
+  bool Create(LPCTSTR fileName, DWORD desiredAccess,
+      DWORD shareMode, DWORD creationDisposition,  DWORD flagsAndAttributes);
 public:
   CFileBase():
-    m_FileIsOpen(false){};
+    _fileIsOpen(false){};
   virtual ~CFileBase();
 
   virtual bool Close();
 
-  bool GetPosition(UINT64 &aPosition) const;
-  bool GetLength(UINT64 &aLength) const;
+  bool GetPosition(UINT64 &position) const;
+  bool GetLength(UINT64 &length) const;
 
-  bool Seek(INT64 aDistanceToMove, 
-      DWORD aMoveMethod, UINT64 &aNewFilePosition) const;
-  bool Seek(UINT64 aPosition, UINT64 &aNewPosition); 
+  bool Seek(INT64 distanceToMove, DWORD moveMethod, UINT64 &newPosition) const;
+  bool Seek(UINT64 position, UINT64 &newPosition); 
   bool SeekToBegin(); 
-  bool SeekToEnd(UINT64 &aNewPosition); 
+  bool SeekToEnd(UINT64 &newPosition); 
   
-  bool GetFileInformation(CByHandleFileInfo &aFileInfo) const;
+  bool GetFileInformation(CByHandleFileInfo &fileInfo) const;
 };
 
 class CInFile: public CFileBase
 {
 public:
-  bool Open(LPCTSTR aFileName,
-      DWORD aShareMode, DWORD aCreationDisposition,  DWORD aFlagsAndAttributes);
-  bool Open(LPCTSTR aFileName);
-  bool Read(void *aData, UINT32 aSize, UINT32 &aProcessedSize);
+  bool Open(LPCTSTR fileName, DWORD shareMode, 
+      DWORD creationDisposition,  DWORD flagsAndAttributes);
+  bool Open(LPCTSTR fileName);
+  bool Read(void *data, UINT32 size, UINT32 &processedSize);
 };
 
 class COutFile: public CFileBase
@@ -61,21 +60,21 @@ class COutFile: public CFileBase
   DWORD m_CreationDisposition;
 public:
   COutFile(): m_CreationDisposition(CREATE_NEW){};
-  bool Open(LPCTSTR aFileName, DWORD aShareMode, 
-      DWORD aCreationDisposition, DWORD aFlagsAndAttributes);
-  bool Open(LPCTSTR aFileName);
+  bool Open(LPCTSTR fileName, DWORD shareMode, 
+      DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool Open(LPCTSTR fileName);
 
-  void SetOpenCreationDisposition(DWORD aCreationDisposition)
-    { m_CreationDisposition = aCreationDisposition; }
+  void SetOpenCreationDisposition(DWORD creationDisposition)
+    { m_CreationDisposition = creationDisposition; }
   void SetOpenCreationDispositionCreateAlways()
     { m_CreationDisposition = CREATE_ALWAYS; }
 
-  bool SetTime(const FILETIME *aCreationTime,
-      const FILETIME *aLastAccessTime, const FILETIME *aLastWriteTime);
-  bool SetLastWriteTime(const FILETIME *aLastWriteTime);
-  bool Write(const void *aData, UINT32 aSize, UINT32 &aProcessedSize);
+  bool SetTime(const FILETIME *creationTime,
+      const FILETIME *lastAccessTime, const FILETIME *lastWriteTime);
+  bool SetLastWriteTime(const FILETIME *lastWriteTime);
+  bool Write(const void *data, UINT32 size, UINT32 &processedSize);
   bool SetEndOfFile();
-  bool SetLength(UINT64 aLength);
+  bool SetLength(UINT64 length);
 };
 
 }}}

@@ -1,9 +1,9 @@
-// LZArithmetic/CoderInfo.h
+// LZMA/CoderInfo.h
 
 #pragma once 
 
-#ifndef __LZARITHMETIC_CODERINFO_H
-#define __LZARITHMETIC_CODERINFO_H
+#ifndef __LZMA_CODERINFO_H
+#define __LZMA_CODERINFO_H
 
 #include "Interface/ICoder.h"
 
@@ -11,7 +11,7 @@
 
 /*
 // {23170F69-40C1-278A-1000-000200060001}
-DEFINE_GUID(CLSID_CLZArithmeticCoderInfo, 
+DEFINE_GUID(CLSID_CLZMACoderInfo, 
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x00, 0x06, 0x00, 0x01);
 
 // {23170F69-40C1-278A-1000-000200060002}
@@ -22,18 +22,18 @@ DEFINE_GUID(CLSID_CLZHuffmanEncoderInfo,
 namespace NCompress {
 namespace NLZMA {
 
-HRESULT DecodeProperties(ISequentialInStream *anInStream, 
-    UINT32 &aNumPosStateBits, 
-    UINT32 &aLiteralPosStateBits, 
-    UINT32 &aLiteralContextBits, 
-    UINT32 &aDictionarySize);
+HRESULT DecodeProperties(ISequentialInStream *inStream, 
+    UINT32 &numPosStateBits, 
+    UINT32 &numLiteralPosStateBits, 
+    UINT32 &numLiteralContextBits, 
+    UINT32 &dictionarySize);
 
 /*
 class CCoderInfo : 
   public IGetPropertiesInfo,
   public ICompressGetDecoderProperties,
   public CComObjectRoot,
-  public CComCoClass<CCoderInfo, &CLSID_CLZArithmeticCoderInfo>
+  public CComCoClass<CCoderInfo, &CLSID_CLZMACoderInfo>
 {
 public:
 
@@ -44,15 +44,15 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CCoderInfo)
 
-DECLARE_REGISTRY(CCoderInfo, "Compress.LZArithmeticCoderInfo.1", "Compress.LZArithmeticCoderInfo", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CCoderInfo, "Compress.LZMACoderInfo.1", "Compress.LZMACoderInfo", 0, THREADFLAGS_APARTMENT)
 
   //DECLARE_NO_REGISTRY()
 
 
   // IGetPropertyInfoEnumerator interface
   STDMETHOD(GetPropertyInfoEnumerator)(IEnumSTATPROPSTG *anEnumProperty);
-  STDMETHOD(GetPropertyValueRange)(UINT32 aPropID, UINT32 *aMinValue, UINT32 *aMaxValue);
-  STDMETHOD(GetDecoderProperties)(ISequentialInStream *anInStream, 
+  STDMETHOD(GetPropertyValueRange)(UINT32 aPropID, UINT32 *minValue, UINT32 *maxValue);
+  STDMETHOD(GetDecoderProperties)(ISequentialInStream *inStream, 
       PROPVARIANT *aProperties, UINT32 aNumProperties);
 };
 
@@ -69,13 +69,13 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CEncoderInfo)
 
-DECLARE_REGISTRY(CCoderInfo, "Compress.LZArithmeticEncoderInfo.1", "Compress.LZArithmeticEncoderInfo", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CCoderInfo, "Compress.LZMAEncoderInfo.1", "Compress.LZMAEncoderInfo", 0, THREADFLAGS_APARTMENT)
 
   //DECLARE_NO_REGISTRY()
 
   // IGetPropertyInfoEnumerator interface
   STDMETHOD(GetPropertyInfoEnumerator)(IEnumSTATPROPSTG *anEnumProperty);
-  STDMETHOD(GetPropertyValueRange)(UINT32 aPropID, UINT32 *aMinValue, UINT32 *aMaxValue);
+  STDMETHOD(GetPropertyValueRange)(UINT32 aPropID, UINT32 *minValue, UINT32 *maxValue);
 };
 */
 

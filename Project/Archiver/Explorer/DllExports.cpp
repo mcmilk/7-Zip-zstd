@@ -12,21 +12,16 @@
 #include "../Format/Common/FormatCryptoInterface.h"
 #include "../Agent/Handler.h"
 
-#include "ZipFolder.h"
 #include "ContextMenu.h"
-#include "ZipViewObject.h"
 
-/*
-// {23170F69-40C1-278A-1000-000100030000}
-DEFINE_GUID(CLSID_CAgentArchiveHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
-*/
+#include "OptionsDialog.h"
 
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CZipFolder, CZipFolder)
+	OBJECT_ENTRY(CLSID_CAgentArchiveHandler, CAgent)
   OBJECT_ENTRY(CLSID_CZipContextMenu, CZipContextMenu)
+  OBJECT_ENTRY(CLSID_CSevenZipOptions, CSevenZipOptions)
 END_OBJECT_MAP()
 
 

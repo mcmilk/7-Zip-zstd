@@ -6,7 +6,7 @@
 
 static const UINT32 kCRCPoly = 0xEDB88320;
 
-UINT32 CCRC::m_Table[256];
+UINT32 CCRC::Table[256];
 
 class CCRCTableInit
 {
@@ -21,13 +21,13 @@ CCRCTableInit()
         r = (r >> 1) ^ kCRCPoly;
       else     
         r >>= 1;
-    CCRC::m_Table[i] = r;
+    CCRC::Table[i] = r;
   }
 }
 } g_CRCTableInit;
 
 /*
-const UINT32 CCRC::m_Table[] = {
+const UINT32 CCRC::Table[] = {
    0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
    0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
    0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -83,28 +83,28 @@ const UINT32 CCRC::m_Table[] = {
 };
 */
 
-#define UPDATE aValueLoc = m_Table[(BYTE)aValueLoc] ^ (aValueLoc >> 8)
+#define UPDATE valueLoc = Table[(BYTE)valueLoc] ^ (valueLoc >> 8)
 #define UPDATE4 UPDATE; UPDATE; UPDATE; UPDATE;
 
-void CCRC::Update(const void *aData, UINT32 aNum)
+void CCRC::Update(const void *data, UINT32 size)
 {
-  UINT32 aValueLoc = m_Value;
-  const BYTE *aByteBuffer = (const BYTE *)aData;
+  UINT32 valueLoc = _value;
+  const BYTE *byteBuffer = (const BYTE *)data;
   
-  for(; (UINT_PTR(aByteBuffer) & 3) != 0 && aNum > 0; aNum--, aByteBuffer++)
-    aValueLoc = m_Table[(((BYTE)(aValueLoc)) ^ (*aByteBuffer))] ^ 
-        (aValueLoc >> 8);
+  for(; (UINT_PTR(byteBuffer) & 3) != 0 && size > 0; size--, byteBuffer++)
+    valueLoc = Table[(((BYTE)(valueLoc)) ^ (*byteBuffer))] ^ 
+        (valueLoc >> 8);
   
   const kBlockSize = 4;
-  while (aNum >= kBlockSize)
+  while (size >= kBlockSize)
   {
-    aNum -= kBlockSize;
-    aValueLoc ^= *(const UINT32 *)aByteBuffer;
+    size -= kBlockSize;
+    valueLoc ^= *(const UINT32 *)byteBuffer;
     UPDATE4
-    aByteBuffer += kBlockSize;
+    byteBuffer += kBlockSize;
   }
-  for(UINT32 i = 0; i < aNum; i++)
-    aValueLoc = m_Table[(((BYTE)(aValueLoc)) ^ (aByteBuffer)[i])] ^ 
-        (aValueLoc >> 8);
-  m_Value = aValueLoc;
+  for(UINT32 i = 0; i < size; i++)
+    valueLoc = Table[(((BYTE)(valueLoc)) ^ (byteBuffer)[i])] ^ 
+        (valueLoc >> 8);
+  _value = valueLoc;
 }

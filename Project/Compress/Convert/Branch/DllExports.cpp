@@ -10,6 +10,7 @@
 #include "Alpha.h"
 #include "IA64.h"
 #include "ARM.h"
+#include "ARMThumb.h"
 #include "M68.h"
 #include "Interface/ICoder.h"
 #include "x86_2.h"
@@ -28,6 +29,7 @@ BEGIN_OBJECT_MAP(ObjectMap)
   MyOBJECT_ENTRY(BC_Alpha)
   MyOBJECT_ENTRY(BC_IA64)
   MyOBJECT_ENTRY(BC_ARM)
+  MyOBJECT_ENTRY(BC_ARMThumb)
   MyOBJECT_ENTRY(BC_M68_B)
 END_OBJECT_MAP()
 

@@ -17,7 +17,8 @@ void AddDirFileInfo(const UString &aPrefix, const CSysString &aFullPathName,
     CArchiveStyleDirItemInfoVector &aDirFileInfoVector,
     UINT aCodePage);
 
-void EnumerateItems(const CSysStringVector &aFileNames,
+void EnumerateItems(const CSysString &aBaseFolderPrefix,
+    const CSysStringVector &aFileNames,
     const UString &anArchiveNamePrefix, 
     CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage);
 

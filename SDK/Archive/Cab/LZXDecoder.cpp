@@ -12,8 +12,7 @@ namespace NArchive {
 namespace NCab {
 namespace NLZX {
 
-static const UINT32 kWindowReservSize = (1 << 22) + 256;
-static const UINT32 kHistorySize = (1 << 22);
+static const UINT32 kHistorySize = (1 << 21);
 
 const kMainTableSize = 256 + kNumPosSlotLenSlotSymbols;
 
@@ -23,7 +22,7 @@ CDecoder::CDecoder():
   m_AlignDecoder(kAlignTableSize),
   m_LevelDecoder(kLevelTableSize)
 {
-  m_OutWindowStream.Create(kHistorySize, kMatchMaxLen, kWindowReservSize);
+  m_OutWindowStream.Create(kHistorySize);
   m_i86TranslationOutStreamSpec = new CComObjectNoLock<Ci86TranslationOutStream>;
   m_i86TranslationOutStream = m_i86TranslationOutStreamSpec;
 }

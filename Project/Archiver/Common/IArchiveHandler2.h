@@ -7,6 +7,8 @@
 
 #include "../Format/Common/IArchiveHandler.h"
 
+#include "../../FileManager/FolderInterface.h"
+
 namespace NExtractionMode {
   namespace NPath
   {
@@ -51,12 +53,12 @@ IExtractCallback2: public IProgress
 {
 public:
   STDMETHOD(AskOverwrite)(
-      const wchar_t *anExistName, const FILETIME *anExistTime, const UINT64 *anExistSize,
-      const wchar_t *aNewName, const FILETIME *aNewTime, const UINT64 *aNewSize,
-      INT32 *aResult);
-  STDMETHOD(PrepareOperation)(const wchar_t *aName, INT32 anAskExtractMode) PURE;
-  STDMETHOD(MessageError)(const wchar_t *aMessage) PURE;
-  STDMETHOD(OperationResult)(INT32 anOperationResult) PURE;
+      const wchar_t *existName, const FILETIME *existTime, const UINT64 *existSize,
+      const wchar_t *newName, const FILETIME *newTime, const UINT64 *newSize,
+      INT32 *answer);
+  STDMETHOD(PrepareOperation)(const wchar_t *name, INT32 askExtractMode) PURE;
+  STDMETHOD(MessageError)(const wchar_t *message) PURE;
+  STDMETHOD(OperationResult)(INT32 operationResult) PURE;
 };
 
 
@@ -68,10 +70,10 @@ IExtractCallback3: public IExtractCallback2
 {
 public:
   STDMETHOD(AskWrite)(
-      const wchar_t *aSrcPath, INT32 aSrcIsFolder, 
-      const FILETIME *aSrcTime, const UINT64 *aSrcSize,
-      const wchar_t *aDestPathRequest, BSTR *aDestPathResult, 
-      INT32 *aResult);
+      const wchar_t *srcPath, INT32 aSrcIsFolder, 
+      const FILETIME *srcTime, const UINT64 *srcSize,
+      const wchar_t *destPathRequest, BSTR *destPathResult, 
+      INT32 *result);
 };
 
 // {23170F69-40C1-278A-0000-000100050000}
@@ -81,20 +83,22 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100050000")
 IArchiveFolder: public IUnknown
 {
 public:
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems) PURE;  
+  /*
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) PURE;  
   STDMETHOD(GetNumberOfSubFolders)(UINT32 *aNumSubFolders) PURE;  
-  STDMETHOD(GetProperty)(UINT32 anItemIndex, PROPID aPropID, PROPVARIANT *aValue) PURE;
-  STDMETHOD(BindToFolder)(UINT32 anIndex, IArchiveFolder **aFolder) PURE;
-  STDMETHOD(BindToFolder)(const WCHAR *aFolderName, IArchiveFolder **aFolder) PURE;
-  STDMETHOD(BindToParentFolder)(IArchiveFolder **aFolder) PURE;
-  STDMETHOD(GetName)(BSTR *aName) PURE;
+  STDMETHOD(GetProperty)(UINT32 anItemIndex, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(BindToFolder)(UINT32 index, IArchiveFolder **folder) PURE;
+  STDMETHOD(BindToFolder)(const WCHAR *aFolderName, IArchiveFolder **folder) PURE;
+  STDMETHOD(BindToParentFolder)(IArchiveFolder **folder) PURE;
+  STDMETHOD(GetName)(BSTR *name) PURE;
+  */
 
-  STDMETHOD(Extract)(const UINT32 *anIndexes, UINT32 aNumItems, 
-      NExtractionMode::NPath::EEnum aPathMode, 
-      NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
-      const wchar_t *aPath,
-      INT32 aTestMode,
-      IExtractCallback2 *anExtractCallback2) PURE;
+  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
+      NExtractionMode::NPath::EEnum pathMode, 
+      NExtractionMode::NOverwrite::EEnum overwriteMode, 
+      const wchar_t *path,
+      INT32 testMode,
+      IExtractCallback2 *extractCallback2) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100060000}
@@ -104,28 +108,28 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100060000")
 IArchiveHandler100: public IUnknown
 {
 public:
-  STDMETHOD(Open)(IInStream *aStream, 
-      const wchar_t *anItemDefaultName,
-      const FILETIME *anItemDefaultTime,
-      UINT32 anItemDefaultAttributes,
-      const UINT64 *aMaxCheckStartPosition,
-      const CLSID *aCLSID, 
-      IOpenArchive2CallBack *anOpenArchiveCallBack) PURE;  
-  STDMETHOD(ReOpen)(IInStream *aStream, 
-      const wchar_t *anItemDefaultName,
-      const FILETIME *anItemDefaultTime,
-      UINT32 anItemDefaultAttributes,
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack) PURE;  
+  STDMETHOD(Open)(IInStream *stream, 
+      const wchar_t *itemDefaultName,
+      const FILETIME *itemDefaultTime,
+      UINT32 itemDefaultAttributes,
+      const UINT64 *maxCheckStartPosition,
+      const CLSID *clsID, 
+      IOpenArchive2CallBack *openArchiveCallBack) PURE;  
+  STDMETHOD(ReOpen)(IInStream *stream, 
+      const wchar_t *itemDefaultName,
+      const FILETIME *itemDefaultTime,
+      UINT32 itemDefaultAttributes,
+      const UINT64 *maxCheckStartPosition,
+      IOpenArchive2CallBack *openArchiveCallBack) PURE;  
   STDMETHOD(Close)() PURE;  
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty) PURE;  
-  STDMETHOD(BindToRootFolder)(IArchiveFolder **aFolder) PURE;  
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) PURE;  
+  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder) PURE;  
   STDMETHOD(Extract)(
-      NExtractionMode::NPath::EEnum aPathMode, 
-      NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
-      const wchar_t *aPath, 
-      INT32 aTestMode,
-      IExtractCallback2 *anExtractCallback2) PURE;
+      NExtractionMode::NPath::EEnum pathMode, 
+      NExtractionMode::NOverwrite::EEnum overwriteMode, 
+      const wchar_t *path, 
+      INT32 testMode,
+      IExtractCallback2 *extractCallback2) PURE;
 };
 
 // {23170F69-40C1-278A-0000-0001000B0000}
@@ -135,9 +139,9 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000B0000")
 IUpdateCallback100: public IProgress
 {
 public:
-  STDMETHOD(CompressOperation)(const wchar_t *aName) PURE;
-  STDMETHOD(DeleteOperation)(const wchar_t *aName) PURE;
-  STDMETHOD(OperationResult)(INT32 aOperationResult) PURE;
+  STDMETHOD(CompressOperation)(const wchar_t *name) PURE;
+  STDMETHOD(DeleteOperation)(const wchar_t *name) PURE;
+  STDMETHOD(OperationResult)(INT32 operationResult) PURE;
 };
 
 // {23170F69-40C1-278A-0000-0001000A0000}
@@ -146,14 +150,14 @@ DEFINE_GUID(IID_IOutArchiveHandler100,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000A0000")
 IOutArchiveHandler100: public IUnknown
 {
-  STDMETHOD(SetFolder)(IArchiveFolder *aFolder) PURE;
-  STDMETHOD(SetFiles)(const wchar_t **aNames, UINT32 aNumNames) PURE;
-  STDMETHOD(DeleteItems)(const wchar_t *aNewArchiveName, 
-      const UINT32 *anIndexes, UINT32 aNumItems, IUpdateCallback100 *anUpdateCallback) PURE;
-  STDMETHOD(DoOperation)(const CLSID *aCLSID, 
-      const wchar_t *aNewArchiveName, const BYTE aStateActions[6],
-      const wchar_t *aSfxModule,
-      IUpdateCallback100 *anUpdateCallback) PURE;
+  STDMETHOD(SetFolder)(IFolderFolder *folder) PURE;
+  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UINT32 numNames) PURE;
+  STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, 
+      const UINT32 *indices, UINT32 numItems, IUpdateCallback100 *updateCallback) PURE;
+  STDMETHOD(DoOperation)(const CLSID *clsID, 
+      const wchar_t *newArchiveName, const BYTE *stateActions,
+      const wchar_t *sfxModule,
+      IUpdateCallback100 *updateCallback) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100090000}
@@ -163,10 +167,10 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100090000")
 IExtractCallback200: public IProgress
 {
 public:
-  STDMETHOD(Extract)(UINT32 anIndex, ISequentialOutStream **anOutStream, 
-      INT32 anAskExtractMode) PURE;
-  STDMETHOD(PrepareOperation)(INT32 anAskExtractMode) PURE;
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult) PURE;
+  STDMETHOD(Extract)(UINT32 index, ISequentialOutStream **outStream, 
+      INT32 askExtractMode) PURE;
+  STDMETHOD(PrepareOperation)(INT32 askExtractMode) PURE;
+  STDMETHOD(OperationResult)(INT32 resultEOperationResult) PURE;
 };
 
 /*
@@ -178,7 +182,7 @@ IArchivePropertiesInfo: public IUnknown
 {
 public:
   STDMETHOD(GetNumberOfProperties)(UINT32 *aNumProperties) PURE;  
-  STDMETHOD(GetPropertyInfo)(UINT32 anIndex, STATPROPSTG *aPropertyInfo) PURE;  
+  STDMETHOD(GetPropertyInfo)(UINT32 index, STATPROPSTG *aPropertyInfo) PURE;  
 };
 */
 
@@ -189,15 +193,15 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100080000")
 IArchiveHandler200: public IUnknown
 {
 public:
-  STDMETHOD(Open)(IInStream *aStream, const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack) PURE;  
+  STDMETHOD(Open)(IInStream *stream, const UINT64 *maxCheckStartPosition,
+      IOpenArchive2CallBack *openArchiveCallBack) PURE;  
   STDMETHOD(Close)() PURE;  
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems) PURE;  
-  STDMETHOD(GetProperty)(UINT32 anIndex, PROPID aPropID, PROPVARIANT *aValue) PURE;
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack) PURE;
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, IExtractCallback200 *anExtractCallBack) PURE;
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) PURE;  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IExtractCallback200 *extractCallback) PURE;
+  STDMETHOD(ExtractAllItems)(INT32 testMode, IExtractCallback200 *extractCallback) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100020010}
@@ -206,11 +210,11 @@ DEFINE_GUID(IID_IOutArchiveHandler200,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100020010")
 IOutArchiveHandler200: public IUnknown
 {
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, const UINT32* anIndexes, 
-      UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack) PURE;
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, UINT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack) PURE;
-  STDMETHOD(GetFileTimeType)(UINT32 *aType) PURE;  
+  STDMETHOD(DeleteItems)(IOutStream *outStream, const UINT32* indices, 
+      UINT32 numItems, IUpdateCallBack *updateCallback) PURE;
+  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+      IUpdateCallBack *updateCallback) PURE;
+  STDMETHOD(GetFileTimeType)(UINT32 *type) PURE;  
 };
 
 

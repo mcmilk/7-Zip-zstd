@@ -10,7 +10,7 @@ namespace NZip {
 
 inline UINT32 CRC32(UINT32 c, BYTE  b)
 {
-  return CCRC::m_Table[(c ^ b) & 0xFF] ^ (c >> 8);
+  return CCRC::Table[(c ^ b) & 0xFF] ^ (c >> 8);
 }
 
 void CData::UpdateKeys(BYTE c)

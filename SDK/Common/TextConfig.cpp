@@ -7,131 +7,131 @@
 #include "Defs.h"
 #include "Common/UTFConvert.h"
 
-static bool IsDelimitChar(char aChar)
+static bool IsDelimitChar(char c)
 {
-  return (aChar == ' ' || aChar == 0x0A || aChar == 0x0D ||
-      aChar == '\0' || aChar == '\t');
+  return (c == ' ' || c == 0x0A || c == 0x0D ||
+      c == '\0' || c == '\t');
 }
     
-static AString GetIDString(const char *aString, int &aFinishPos)
+static AString GetIDString(const char *string, int &finishPos)
 {
-  AString aResult;
-  for (aFinishPos = 0; true; aFinishPos++)
+  AString result;
+  for (finishPos = 0; true; finishPos++)
   {
-    char aChar = aString[aFinishPos];
-    if (IsDelimitChar(aChar) || aChar == '=')
-      return aResult;
-    aResult += aChar;
+    char c = string[finishPos];
+    if (IsDelimitChar(c) || c == '=')
+      return result;
+    result += c;
   }
 }
 
-static bool WaitNextLine(const AString &aString, int &aPos)
+static bool WaitNextLine(const AString &string, int &pos)
 {
-  for (;aPos < aString.Length(); aPos++)
-    if (aString[aPos] == 0x0A)
+  for (;pos < string.Length(); pos++)
+    if (string[pos] == 0x0A)
       return true;
   return false;
 }
 
-static bool SkipSpaces(const AString &aString, int &aPos)
+static bool SkipSpaces(const AString &string, int &pos)
 {
-  for (;aPos < aString.Length(); aPos++)
+  for (;pos < string.Length(); pos++)
   {
-    char aChar = aString[aPos];
-    if (!IsDelimitChar(aChar))
+    char c = string[pos];
+    if (!IsDelimitChar(c))
     {
-      if (aChar != ';')
+      if (c != ';')
         return true;
-      if (!WaitNextLine(aString, aPos))
+      if (!WaitNextLine(string, pos))
         return false;
     }
   }
   return false;
 }
 
-bool GetTextConfig(const AString &aString, CObjectVector<CTextConfigPair> &aPairs)
+bool GetTextConfig(const AString &string, CObjectVector<CTextConfigPair> &pairs)
 {
-  aPairs.Clear();
-  int aPos = 0;
+  pairs.Clear();
+  int pos = 0;
 
   /////////////////////
   // read strings
 
   while (true)
   {
-    if (!SkipSpaces(aString, aPos))
+    if (!SkipSpaces(string, pos))
       break;
-    CTextConfigPair aPair;
-    int aFinishPos;
-    AString aTemp = GetIDString(((const char *)aString) + aPos, aFinishPos);
-    if (!ConvertUTF8ToUnicode(aTemp, aPair.ID))
+    CTextConfigPair pair;
+    int finishPos;
+    AString temp = GetIDString(((const char *)string) + pos, finishPos);
+    if (!ConvertUTF8ToUnicode(temp, pair.ID))
       return false;
-    if (aFinishPos == 0)
+    if (finishPos == 0)
       return false;
-    aPos += aFinishPos;
-    if (!SkipSpaces(aString, aPos))
+    pos += finishPos;
+    if (!SkipSpaces(string, pos))
       return false;
-    if (aString[aPos] != '=')
+    if (string[pos] != '=')
       return false;
-    aPos++;
-    if (!SkipSpaces(aString, aPos))
+    pos++;
+    if (!SkipSpaces(string, pos))
       return false;
-    if (aString[aPos] != '\"')
+    if (string[pos] != '\"')
       return false;
-    aPos++;
-    AString aMessage;
+    pos++;
+    AString message;
     while(true)
     {
-      if (aPos >= aString.Length())
+      if (pos >= string.Length())
         return false;
-      char aChar = aString[aPos++];
-      if (aChar == '\"')
+      char c = string[pos++];
+      if (c == '\"')
         break;
-      if (aChar == '\\')
+      if (c == '\\')
       {
-        char aChar = aString[aPos++];
-        switch(aChar)
+        char c = string[pos++];
+        switch(c)
         {
           case 'n':
-            aMessage += '\n';
+            message += '\n';
             break;
           case 't':
-            aMessage += '\t';
+            message += '\t';
             break;
           case '\\':
-            aMessage += '\\';
+            message += '\\';
             break;
           case '\"':
-            aMessage += '\"';
+            message += '\"';
             break;
           default:
-            aMessage += '\\';
-            aMessage += aChar;
+            message += '\\';
+            message += c;
             break;
         }
       }
       else
-        aMessage += aChar;
+        message += c;
     }
-    if (!ConvertUTF8ToUnicode(aMessage, aPair.String))
+    if (!ConvertUTF8ToUnicode(message, pair.String))
       return false;
-    aPairs.Add(aPair);
+    pairs.Add(pair);
   }
   return true;
 }
 
-int FindItem(const CObjectVector<CTextConfigPair> &aPairs, const UString &anID)
+int FindItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
 {
-  for (int  i = 0; i < aPairs.Size(); i++)
-    if (aPairs[i].ID.Compare(anID) == 0)
+  for (int  i = 0; i < pairs.Size(); i++)
+    if (pairs[i].ID.Compare(id) == 0)
       return i;
   return -1;
 }
 
-UString GetTextConfigValue(const CObjectVector<CTextConfigPair> &aPairs, const UString &anID)
+UString GetTextConfigValue(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
 {
-  int anIndex = FindItem(aPairs, anID);
-  if (anIndex < 0)
+  int index = FindItem(pairs, id);
+  if (index < 0)
     return UString();
-  return aPairs[anIndex].String;
+  return pairs[index].String;
 }

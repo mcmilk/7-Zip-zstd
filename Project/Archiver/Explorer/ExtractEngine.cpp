@@ -18,136 +18,132 @@
 #include "../Resource/Extract/resource.h"
 
 #include "MyMessages.h"
-#include "FormatUtils.h"
+#include "../../FileManager/FormatUtils.h"
 
 #include "ExtractDialog.h"
-#include "ExtractCallback.h"
+#include "../../FileManager/ExtractCallback.h"
 
 using namespace NWindows;
 
-HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName, 
-    bool anAssumeYes)
+HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName, 
+    bool assumeYes)
 {
-  CComPtr<IArchiveHandler100> anArchiveHandler;
-  NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
+  CComPtr<IArchiveHandler100> archiveHandler;
+  NZipRootRegistry::CArchiverInfo archiverInfoResult;
 
-  UString aDefaultName;
-  HRESULT aResult = OpenArchive(aFileName, &anArchiveHandler, 
-      anArchiverInfoResult, aDefaultName, NULL);
-  if (aResult != S_OK)
-    return aResult;
+  UString defaultName;
+  HRESULT result = OpenArchive(fileName, &archiveHandler, 
+      archiverInfoResult, defaultName, NULL);
+  if (result != S_OK)
+    return result;
 
-  #ifndef  NO_REGISTRY
-  CZipRegistryManager aZipRegistryManager;
-  #endif
-
-  CSysString aDirectoryPath;
-  NExtractionDialog::CModeInfo anExtractModeInfo;
-  UString aPassword;
-  if (!anAssumeYes)
+  CSysString directoryPath;
+  NExtractionDialog::CModeInfo extractModeInfo;
+  UString password;
+  if (!assumeYes)
   {
-    CExtractDialog aDialog;
-    aDialog.Init(
+    CExtractDialog dialog;
+    dialog.Init(
     #ifndef  NO_REGISTRY
-      &aZipRegistryManager, 
+      // &aZipRegistryManager, 
     #endif
-      aFileName);
-    aDialog.m_FilesMode = NExtractionDialog::NFilesMode::kAll;
-    aDialog.m_EnableSelectedFilesButton = false;
-    aDialog.m_EnableFilesButton = false;
+      fileName);
+    dialog._filesMode = NExtractionDialog::NFilesMode::kAll;
+    dialog._enableSelectedFilesButton = false;
+    dialog._enableFilesButton = false;
     
-    if(aDialog.Create(aParentWindow) != IDOK)
+    if(dialog.Create(parentWindow) != IDOK)
       return E_ABORT;
-    aDirectoryPath = aDialog.m_DirectoryPath;
-    aDialog.GetModeInfo(anExtractModeInfo);
+    directoryPath = dialog._directoryPath;
+    dialog.GetModeInfo(extractModeInfo);
 
-    aPassword = GetUnicodeString((LPCTSTR)aDialog.m_Password);
+    password = GetUnicodeString((LPCTSTR)dialog._password);
   }
   else
   {
     CSysString aFullPath;
     int aFileNamePartStartIndex;
-    if (!NWindows::NFile::NDirectory::MyGetFullPathName(aFileName, aFullPath, aFileNamePartStartIndex))
+    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, aFullPath, aFileNamePartStartIndex))
     {
       MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
       return E_FAIL;
     }
-    aDirectoryPath = aFullPath.Left(aFileNamePartStartIndex);
-    anExtractModeInfo.PathMode = NExtractionDialog::NPathMode::kFullPathnames;
-    anExtractModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::kWithoutPrompt;
-    anExtractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
+    directoryPath = aFullPath.Left(aFileNamePartStartIndex);
+    extractModeInfo.PathMode = NExtractionDialog::NPathMode::kFullPathnames;
+    extractModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::kWithoutPrompt;
+    extractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
   }
-  if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
+  if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))
   {
-    MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, 
+    MyMessageBox(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
         #ifdef LANG        
         0x02000603, 
         #endif 
-        (LPCTSTR)aDirectoryPath));
+        GetUnicodeString((LPCTSTR)directoryPath)));
     return E_FAIL;
   }
   
-  CComObjectNoLock<CExtractCallBackImp> *anExtractCallBackSpec =
-    new CComObjectNoLock<CExtractCallBackImp>;
+  CComObjectNoLock<CExtractCallbackImp> *extractCallBackSpec =
+    new CComObjectNoLock<CExtractCallbackImp>;
 
-  CComPtr<IExtractCallback2> anExtractCallBack(anExtractCallBackSpec);
+  CComPtr<IExtractCallback2> extractCallBack(extractCallBackSpec);
   
-  anExtractCallBackSpec->m_ParentWindow = 0;
+  extractCallBackSpec->_parentWindow = 0;
   #ifdef LANG        
-  const CSysString aTitle = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+  const CSysString title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
   #else
-  const CSysString aTitle = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
   #endif
-  anExtractCallBackSpec->StartProgressDialog(aTitle);
+  extractCallBackSpec->StartProgressDialog(title);
 
-  // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
+  // extractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
   UStringVector aRemovePathParts;
 
-  NFile::NFind::CFileInfo anArchiveFileInfo;
-  if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))
+  NFile::NFind::CFileInfo archiveFileInfo;
+  if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
     throw "there is no archive file";
 
-  anExtractCallBackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
-      !aPassword.IsEmpty(), aPassword);
+  extractCallBackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
+      !password.IsEmpty(), password);
 
-  NExtractionMode::NPath::EEnum aPathMode;
-  NExtractionMode::NOverwrite::EEnum anOverwriteMode;
-  switch (anExtractModeInfo.OverwriteMode)
+  NExtractionMode::NPath::EEnum pathMode;
+  NExtractionMode::NOverwrite::EEnum overwriteMode;
+  switch (extractModeInfo.OverwriteMode)
   {
     case NExtractionDialog::NOverwriteMode::kAskBefore:
-      anOverwriteMode = NExtractionMode::NOverwrite::kAskBefore;
+      overwriteMode = NExtractionMode::NOverwrite::kAskBefore;
       break;
     case NExtractionDialog::NOverwriteMode::kWithoutPrompt:
-      anOverwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
+      overwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
       break;
     case NExtractionDialog::NOverwriteMode::kSkipExisting:
-      anOverwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+      overwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
       break;
     case NExtractionDialog::NOverwriteMode::kAutoRename:
-      anOverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+      overwriteMode = NExtractionMode::NOverwrite::kAutoRename;
       break;
     default:
       throw 12334454;
   }
-  switch (anExtractModeInfo.PathMode)
+  switch (extractModeInfo.PathMode)
   {
     case NExtractionDialog::NPathMode::kFullPathnames:
-      aPathMode = NExtractionMode::NPath::kFullPathnames;
+      pathMode = NExtractionMode::NPath::kFullPathnames;
       break;
     case NExtractionDialog::NPathMode::kCurrentPathnames:
-      aPathMode = NExtractionMode::NPath::kCurrentPathnames;
+      pathMode = NExtractionMode::NPath::kCurrentPathnames;
       break;
     case NExtractionDialog::NPathMode::kNoPathnames:
-      aPathMode = NExtractionMode::NPath::kNoPathnames;
+      pathMode = NExtractionMode::NPath::kNoPathnames;
       break;
     default:
       throw 12334455;
   }
 
-  return anArchiveHandler->Extract(
-      aPathMode, anOverwriteMode, GetUnicodeString(aDirectoryPath), 
-      BoolToMyBool(false), anExtractCallBack);
+  return archiveHandler->Extract(
+      pathMode, overwriteMode, GetUnicodeString(directoryPath), 
+      BoolToMyBool(false), extractCallBack);
 }
 
 

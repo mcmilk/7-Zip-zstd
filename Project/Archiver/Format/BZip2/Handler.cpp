@@ -3,16 +3,17 @@
 #include "StdAfx.h"
 
 #include "Handler.h"
-#include "Interface/StreamObjects.h"
-
-#include "Windows/PropVariant.h"
-#include "Windows/Defs.h"
-#include "Windows/COMTry.h"
 
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
 
 #include "Interface/ProgressUtils.h"
+#include "Interface/EnumStatProp.h"
+#include "Interface/StreamObjects.h"
+
+#include "Windows/PropVariant.h"
+#include "Windows/Defs.h"
+#include "Windows/COMTry.h"
 
 #include "../../../Compress/Interface/CompressInterface.h"
 #include "../Common/DummyOutStream.h"
@@ -35,132 +36,17 @@ static const kNumItemInArchive = 1;
 
 STATPROPSTG kProperties[] = 
 {
-  { NULL, kaipidPath, VT_BSTR},
-  { NULL, kaipidIsFolder, VT_BOOL},
-  // { NULL, kaipidLastWriteTime, VT_FILETIME},
-  // { NULL, kaipidSize, VT_UI8},
-  { NULL, kaipidPackedSize, VT_UI8},
+  { NULL, kpidPath, VT_BSTR},
+  // { NULL, kpidIsFolder, VT_BOOL},
+  // { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackedSize, VT_UI8},
 };
 
-static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
-class CEnumIDList: 
-  public IEnumIDList,
-  public CComObjectRoot
-{
-  int m_Index;
-  CItemInfoEx m_Item;
-public:
-
-  BEGIN_COM_MAP(CEnumIDList)
-  COM_INTERFACE_ENTRY(IEnumIDList)
-END_COM_MAP()
-
-DECLARE_NOT_AGGREGATABLE(CEnumIDList)
-
-DECLARE_NO_REGISTRY()
-  
-  CEnumIDList(): m_Index(0) {};
-  void Init(const CItemInfoEx &anItem);
-
-  STDMETHODIMP Next(ULONG, LPITEMIDLIST *, ULONG *);
-  STDMETHODIMP Skip(ULONG );
-  STDMETHODIMP Reset();
-  STDMETHODIMP Clone(IEnumIDList **);
-};
-
-void CEnumIDList::Init(const CItemInfoEx &anItem)
-{
-  m_Item = anItem;
-}
-
-STDMETHODIMP CEnumIDList::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-
-/////////////////////////////////////////////////
-// CEnumArchiveItemProperty
-
-class CEnumArchiveItemProperty:
-  public IEnumSTATPROPSTG,
-  public CComObjectRoot
-{
-public:
-  int m_Index;
-
-  BEGIN_COM_MAP(CEnumArchiveItemProperty)
-    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
-  END_COM_MAP()
-    
-  DECLARE_NOT_AGGREGATABLE(CEnumArchiveItemProperty)
-    
-  DECLARE_NO_REGISTRY()
-public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
-  STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
-};
-
-STDMETHODIMP CEnumArchiveItemProperty::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
+STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
-    return E_INVALIDARG;
-
-  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
-  {
-    if(m_Index >= kNumProperties)
-    {
-      aResult =  S_FALSE;
-      break;
-    }
-    const STATPROPSTG &aSrcItem = kProperties[m_Index];
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
-    {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
-    }
-    else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-  }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
-  COM_TRY_END
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
-{
-  COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (anEnumObject == NULL)
-    return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  return CStatPropEnumerator::CreateEnumerator(kProperties, 
+      sizeof(kProperties) / sizeof(kProperties[0]), enumerator);
   COM_TRY_END
 }
 
@@ -181,10 +67,10 @@ STDMETHODIMP CHandler::GetProperty(
     return E_INVALIDARG;
   switch(aPropID)
   {
-    case kaipidIsFolder:
+    case kpidIsFolder:
       aPropVariant = false;
       break;
-    case kaipidPackedSize:
+    case kpidPackedSize:
       aPropVariant = m_Item.PackSize;
       break;
   }

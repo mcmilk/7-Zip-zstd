@@ -11,73 +11,73 @@
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY DialogProcedure(HWND aDialogHWND, UINT aMessage, UINT wParam, LPARAM lParam);
+BOOL APIENTRY DialogProcedure(HWND dialogHWND, UINT message, UINT wParam, LPARAM lParam);
 
 class CDialog: public CWindow
 {
 public:
-  CDialog(HWND aWindowNew = NULL): CWindow(aWindowNew){};
+  CDialog(HWND wndow = NULL): CWindow(wndow){};
   virtual ~CDialog() {};
 
-  bool End(INT_PTR aResult)
-    { return BOOLToBool(EndDialog(m_Window, aResult)); }
+  bool End(INT_PTR result)
+    { return BOOLToBool(EndDialog(_window, result)); }
 
-  HWND GetItem(int anItemID) const
-    { return GetDlgItem(m_Window, anItemID); }
+  HWND GetItem(int itemID) const
+    { return GetDlgItem(_window, itemID); }
 
-  bool SetItemText(int anItemID, LPCTSTR aString)
-    { return BOOLToBool(SetDlgItemText(m_Window, anItemID, aString)); }
-  UINT GetItemText(int anItemID, LPTSTR aString, int aMaxCount)
-    { return GetDlgItemText(m_Window, anItemID, aString, aMaxCount); }
-  bool SetItemInt(int anItemID, UINT aValue, bool aSigned)
-    { return BOOLToBool(SetDlgItemInt(m_Window, anItemID, aValue, BoolToBOOL(aSigned))); }
-  bool GetItemInt(int anItemID, bool aSigned, UINT &aValue)
+  bool SetItemText(int itemID, LPCTSTR string)
+    { return BOOLToBool(SetDlgItemText(_window, itemID, string)); }
+  UINT GetItemText(int itemID, LPTSTR string, int aMaxCount)
+    { return GetDlgItemText(_window, itemID, string, aMaxCount); }
+  bool SetItemInt(int itemID, UINT value, bool isSigned)
+    { return BOOLToBool(SetDlgItemInt(_window, itemID, value, BoolToBOOL(isSigned))); }
+  bool GetItemInt(int itemID, bool isSigned, UINT &value)
     { 
-      BOOL aResult;
-      aValue = GetDlgItemInt(m_Window, aValue, &aResult, BoolToBOOL(aSigned));
-      return BOOLToBool(aResult);
+      BOOL result;
+      value = GetDlgItemInt(_window, value, &result, BoolToBOOL(isSigned));
+      return BOOLToBool(result);
     }
 
-  HWND GetNextGroupItem(HWND aControl, bool aPrevious)
-    { return GetNextDlgGroupItem(m_Window, aControl, BoolToBOOL(aPrevious)); }
-  HWND GetNextTabItem(HWND aControl, bool aPrevious)
-    { return GetNextDlgTabItem(m_Window, aControl, BoolToBOOL(aPrevious)); }
+  HWND GetNextGroupItem(HWND control, bool previous)
+    { return GetNextDlgGroupItem(_window, control, BoolToBOOL(previous)); }
+  HWND GetNextTabItem(HWND control, bool previous)
+    { return GetNextDlgTabItem(_window, control, BoolToBOOL(previous)); }
 
-  bool MapRect(LPRECT aRect)
-    { return BOOLToBool(MapDialogRect(m_Window, aRect)); }
+  bool MapRect(LPRECT rect)
+    { return BOOLToBool(MapDialogRect(_window, rect)); }
 
-  bool IsMessage(LPMSG aMessage)
-    { return BOOLToBool(IsDialogMessage(m_Window, aMessage)); }
+  bool IsMessage(LPMSG message)
+    { return BOOLToBool(IsDialogMessage(_window, message)); }
 
-  LRESULT SendItemMessage(int anItemID, UINT aMessage, WPARAM wParam, LPARAM lParam)
-    { return SendDlgItemMessage(m_Window, anItemID, aMessage, wParam, lParam); }
+  LRESULT SendItemMessage(int itemID, UINT message, WPARAM wParam, LPARAM lParam)
+    { return SendDlgItemMessage(_window, itemID, message, wParam, lParam); }
 
-  bool CheckButton(int aButtonID, UINT aCheckState)
-    { return BOOLToBool(CheckDlgButton(m_Window, aButtonID, aCheckState)); }
-  bool CheckButton(int aButtonID, bool aCheckState)
-    { return CheckButton(aButtonID, UINT(aCheckState ? BST_CHECKED : BST_UNCHECKED)); }
+  bool CheckButton(int buttonID, UINT checkState)
+    { return BOOLToBool(CheckDlgButton(_window, buttonID, checkState)); }
+  bool CheckButton(int buttonID, bool checkState)
+    { return CheckButton(buttonID, UINT(checkState ? BST_CHECKED : BST_UNCHECKED)); }
 
-  UINT IsButtonChecked(int aButtonID) const
-    { return IsDlgButtonChecked(m_Window, aButtonID); }
-  bool IsButtonCheckedBool(int aButtonID) const
-    { return (IsButtonChecked(aButtonID) == BST_CHECKED); }
+  UINT IsButtonChecked(int buttonID) const
+    { return IsDlgButtonChecked(_window, buttonID); }
+  bool IsButtonCheckedBool(int buttonID) const
+    { return (IsButtonChecked(buttonID) == BST_CHECKED); }
 
-  bool CheckRadioButton(int aFirstButtonID, int nLastButtonID, int aCheckButtonID)
-    { return BOOLToBool(::CheckRadioButton(m_Window, aFirstButtonID, nLastButtonID, aCheckButtonID)); }
+  bool CheckRadioButton(int firstButtonID, int lastButtonID, int checkButtonID)
+    { return BOOLToBool(::CheckRadioButton(_window, firstButtonID, lastButtonID, checkButtonID)); }
 
   virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
   virtual bool OnInit() { return true; }
   virtual bool OnCommand(WPARAM wParam, LPARAM lParam);
-  virtual bool OnCommand(int aCode, int anItemID, LPARAM lParam);
-  virtual void OnHelp(LPHELPINFO aHelpInfo) { OnHelp(); };
+  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
+  virtual void OnHelp(LPHELPINFO helpInfo) { OnHelp(); };
   virtual void OnHelp() {};
-  virtual bool OnButtonClicked(int aButtonID, HWND aButtonHWND);
+  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK() {};
   virtual void OnCancel() {};
-  virtual bool OnNotify(UINT aControlID, LPNMHDR lParam) { return false; }
+  virtual bool OnNotify(UINT controlID, LPNMHDR lParam) { return false; }
 
-  LONG_PTR SetMsgResult(LONG_PTR aNewLongPtr )
-    { return SetLongPtr(DWLP_MSGRESULT, aNewLongPtr); }
+  LONG_PTR SetMsgResult(LONG_PTR newLongPtr )
+    { return SetLongPtr(DWLP_MSGRESULT, newLongPtr); }
   LONG_PTR GetMsgResult() const
     { return GetLongPtr(DWLP_MSGRESULT); }
 };
@@ -85,7 +85,7 @@ public:
 class CModelessDialog: public CDialog
 {
 public:
-  bool Create(LPCTSTR aTemplateName, HWND hWndParent);
+  bool Create(LPCTSTR templateName, HWND parentWindow);
   virtual void OnOK() { Destroy(); }
   virtual void OnCancel() { Destroy(); }
 };
@@ -93,7 +93,7 @@ public:
 class CModalDialog: public CDialog
 {
 public:
-  INT_PTR Create(LPCTSTR aTemplateName, HWND hWndParent);
+  INT_PTR Create(LPCTSTR templateName, HWND parentWindow);
   virtual void OnOK() { End(IDOK); }
   virtual void OnCancel() { End(IDCANCEL); }
 };
@@ -102,10 +102,10 @@ class CDialogChildControl: public NWindows::CWindow
 {
 public:
   int m_ID;
-  void Init(const NWindows::NControl::CDialog &aParentDialog, int anID)
+  void Init(const NWindows::NControl::CDialog &parentDialog, int id)
   {
-    m_ID = anID;
-    Attach(aParentDialog.GetItem(anID));
+    m_ID = id;
+    Attach(parentDialog.GetItem(id));
   }
 };
 

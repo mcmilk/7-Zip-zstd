@@ -13,51 +13,51 @@ namespace NRegistry {
 
 const TCHAR kKeyNameDelimiter = _T('\\');
 
-LONG SetValue(HKEY aParentKey, LPCTSTR aKeyName,
-    LPCTSTR aValueName, LPCTSTR aValue);
+LONG SetValue(HKEY parentKey, LPCTSTR keyName, 
+    LPCTSTR valueName, LPCTSTR value);
 
 class CKey
 {
-  HKEY m_Object;
+  HKEY _object;
 public:
-  CKey(): m_Object(NULL) {}
+  CKey(): _object(NULL) {}
   ~CKey();
 
-  operator HKEY() const { return m_Object; }
+  operator HKEY() const { return _object; }
 
   HKEY Detach();
-  void Attach(HKEY aKey);
-  LONG Create(HKEY aParentKey, LPCTSTR aKeyName,
-      LPTSTR aClass = REG_NONE, DWORD anOptions = REG_OPTION_NON_VOLATILE,
-      REGSAM anAccessMask = KEY_ALL_ACCESS,
-      LPSECURITY_ATTRIBUTES aSecurityAttributes = NULL,
-      LPDWORD aDisposition = NULL);
-  LONG Open(HKEY aParentKey, LPCTSTR aKeyName,
-      REGSAM anAccessMask = KEY_ALL_ACCESS);
+  void Attach(HKEY key);
+  LONG Create(HKEY parentKey, LPCTSTR keyName,
+      LPTSTR keyClass = REG_NONE, DWORD options = REG_OPTION_NON_VOLATILE,
+      REGSAM accessMask = KEY_ALL_ACCESS,
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL,
+      LPDWORD disposition = NULL);
+  LONG Open(HKEY parentKey, LPCTSTR keyName,
+      REGSAM accessMask = KEY_ALL_ACCESS);
 
   LONG Close();
 
-  LONG DeleteSubKey(LPCTSTR aSubKeyName);
-  LONG RecurseDeleteKey(LPCTSTR aSubKeyName);
+  LONG DeleteSubKey(LPCTSTR subKeyName);
+  LONG RecurseDeleteKey(LPCTSTR subKeyName);
 
-  LONG DeleteValue(LPCTSTR aValue);
-  LONG SetValue(LPCTSTR aValueName, UINT32 aValue);
-  LONG SetValue(LPCTSTR aValueName, bool aValue);
-  LONG SetValue(LPCTSTR aValueName, LPCTSTR aValue);
-  LONG SetValue(LPCTSTR aValueName, const CSysString &aValue);
-  LONG SetValue(LPCTSTR aValueName, const void *aValue, UINT32 aSize);
+  LONG DeleteValue(LPCTSTR value);
+  LONG SetValue(LPCTSTR valueName, UINT32 value);
+  LONG SetValue(LPCTSTR valueName, bool value);
+  LONG SetValue(LPCTSTR valueName, LPCTSTR value);
+  LONG SetValue(LPCTSTR valueName, const CSysString &value);
+  LONG SetValue(LPCTSTR valueName, const void *value, UINT32 size);
 
-  LONG SetKeyValue(LPCTSTR aKeyName, LPCTSTR aValueName, LPCTSTR aValue);
+  LONG SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value);
 
-  LONG QueryValue(LPCTSTR aValueName, UINT32 &aValue);
-  LONG QueryValue(LPCTSTR aValueName, bool &aValue);
-  LONG QueryValue(LPCTSTR aValueName, LPTSTR szValue, UINT32 &aDataSize);
-  LONG QueryValue(LPCTSTR aValueName, CSysString &aValue);
+  LONG QueryValue(LPCTSTR valueName, UINT32 &value);
+  LONG QueryValue(LPCTSTR valueName, bool &value);
+  LONG QueryValue(LPCTSTR valueName, LPTSTR value, UINT32 &dataSize);
+  LONG QueryValue(LPCTSTR valueName, CSysString &value);
 
-  LONG QueryValue(LPCTSTR aValueName, void *aValue, UINT32 &aDataSize);
-  LONG QueryValue(LPCTSTR aValueName, CByteBuffer &aValue, UINT32 &aDataSize);
+  LONG QueryValue(LPCTSTR valueName, void *value, UINT32 &dataSize);
+  LONG QueryValue(LPCTSTR valueName, CByteBuffer &value, UINT32 &dataSize);
 
-  LONG EnumKeys(CSysStringVector &aKeyNames);
+  LONG EnumKeys(CSysStringVector &keyNames);
 };
 
 }}

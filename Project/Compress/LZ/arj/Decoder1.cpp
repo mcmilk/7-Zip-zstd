@@ -16,8 +16,6 @@ static const UINT32 kMatchMinLen = 3;
 
 static const UINT32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
 
-static const UINT32 kWindowReservSize = (1 << 17) + 256;
-
 CCoder::CCoder()
 {}
 
@@ -258,11 +256,11 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *anInStream,
   if (anOutSize == NULL)
     return E_INVALIDARG;
 
-  if (m_OutWindowStream.GetBuffer() == 0)
+  if (!m_OutWindowStream.IsCreated())
   {
     try
     {
-      m_OutWindowStream.Create(kHistorySize, kMatchMaxLen, kWindowReservSize);
+      m_OutWindowStream.Create(kHistorySize);
     }
     catch(...)
     {
@@ -320,13 +318,13 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *anInStream,
   {
     return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
   }
-  catch(const NStream::CInByteReadException &anException)
+  catch(const NStream::CInByteReadException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
   catch(const NStream::NWindow::COutWriteException &anOutWriteException)
   {
-    return anOutWriteException.m_Result;
+    return anOutWriteException.Result;
   }
   catch(...)
   {

@@ -7,16 +7,23 @@
 #include "Common/StringConvert.h"
 #include "Common/Defs.h"
 
+#include "Windows/FileName.h"
+
 #include "Interface/FileStreams.h"
 
 #include "Windows/Defs.h"
 
-void CUpdateCallBackImp::Init(const CArchiveStyleDirItemInfoVector *aDirItems, 
+using namespace NWindows;
+
+void CUpdateCallBackImp::Init(const CSysString &aBaseFolderPrefix,
+    const CArchiveStyleDirItemInfoVector *aDirItems, 
     const CArchiveItemInfoVector *anArchiveItems, // test CItemInfoExList
     CUpdatePairInfo2Vector *anUpdatePairs,
     UINT aCodePage,
     IUpdateCallback100 *anUpdateCallback)
 {
+  m_BaseFolderPrefix = aBaseFolderPrefix;
+  NFile::NName::NormalizeDirPathPrefix(m_BaseFolderPrefix);
   m_DirItems = aDirItems;
   m_ArchiveItems = anArchiveItems;
   m_UpdatePairs = anUpdatePairs;
@@ -26,12 +33,16 @@ void CUpdateCallBackImp::Init(const CArchiveStyleDirItemInfoVector *aDirItems,
 
 STDMETHODIMP CUpdateCallBackImp::SetTotal(UINT64 aSize)
 {
-  return m_UpdateCallback->SetTotal(aSize);
+  if (m_UpdateCallback)
+    return m_UpdateCallback->SetTotal(aSize);
+  return S_OK;
 }
 
 STDMETHODIMP CUpdateCallBackImp::SetCompleted(const UINT64 *aCompleteValue)
 {
-  return m_UpdateCallback->SetCompleted(aCompleteValue);
+  if (m_UpdateCallback)
+    return m_UpdateCallback->SetCompleted(aCompleteValue);
+  return S_OK;
 }
 
 STDMETHODIMP CUpdateCallBackImp::GetUpdateItemInfo(INT32 anIndex, 
@@ -94,8 +105,11 @@ STDMETHODIMP CUpdateCallBackImp::CompressOperation(INT32 anIndex,
   m_PercentPrinter.RePrintRatio();
   */
 
-  RETURN_IF_NOT_S_OK(m_UpdateCallback->CompressOperation(
-      GetUnicodeString(aDirItemInfo.FullPathDiskName, m_CodePage)));
+  if (m_UpdateCallback)
+  {
+    RETURN_IF_NOT_S_OK(m_UpdateCallback->CompressOperation(
+        GetUnicodeString(aDirItemInfo.FullPathDiskName, m_CodePage)));
+  }
 
   if(aDirItemInfo.IsDirectory())
     return S_OK;
@@ -103,7 +117,7 @@ STDMETHODIMP CUpdateCallBackImp::CompressOperation(INT32 anIndex,
   CComObjectNoLock<CInFileStream> *anInStreamSpec =
       new CComObjectNoLock<CInFileStream>;
   CComPtr<IInStream> anInStreamLoc(anInStreamSpec);
-  if(!anInStreamSpec->Open(aDirItemInfo.FullPathDiskName))
+  if(!anInStreamSpec->Open(m_BaseFolderPrefix + aDirItemInfo.FullPathDiskName))
     return E_FAIL;
 
   *anInStream = anInStreamLoc.Detach();
@@ -121,5 +135,7 @@ STDMETHODIMP CUpdateCallBackImp::DeleteOperation(LPITEMIDLIST anItemIDList)
 
 STDMETHODIMP CUpdateCallBackImp::OperationResult(INT32 aOperationResult)
 {
-  return m_UpdateCallback->OperationResult(aOperationResult);
+  if (m_UpdateCallback)
+    return m_UpdateCallback->OperationResult(aOperationResult);
+  return S_OK;
 }

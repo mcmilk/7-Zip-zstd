@@ -1,9 +1,9 @@
-// Windows/Resource/Menu.h
+// Windows/Menu.h
 
 #pragma once
 
-#ifndef __WINDOWS_RESOURCE_MENU_H
-#define __WINDOWS_RESOURCE_MENU_H
+#ifndef __WINDOWS_MENU_H
+#define __WINDOWS_MENU_H
 
 #include "Common/String.h"
 #include "Windows/Defs.h"
@@ -12,42 +12,96 @@ namespace NWindows {
 
 class CMenu
 {
-  HMENU m_Menu;
+  HMENU _menu;
 public:
-  CMenu(): m_Menu(NULL) {};
-  ~CMenu() { Destroy(); }
-  operator HMENU() const { return m_Menu; }
-  void Attach(HMENU aWindowNew) { m_Menu = aWindowNew; }
+  CMenu(): _menu(NULL) {};
+  operator HMENU() const { return _menu; }
+  void Attach(HMENU menu) { _menu = menu; }
   
   HMENU Detach()
   {
-    HMENU aMenu = m_Menu;
-    m_Menu = NULL;
-    return aMenu;
+    HMENU menu = _menu;
+    _menu = NULL;
+    return menu;
+  }
+  
+  bool Create()
+  { 
+    _menu = ::CreateMenu();
+    return (_menu != NULL); 
+  }
+
+  bool CreatePopup()
+  { 
+    _menu = ::CreatePopupMenu();
+    return (_menu != NULL); 
   }
   
   bool Destroy()
   { 
-    if (m_Menu == NULL)
+    if (_menu == NULL)
       return false;
     return BOOLToBool(::DestroyMenu(Detach()));
   }
   
-  bool CreatePopup()
-  { 
-    m_Menu = ::CreatePopupMenu();
-    return (m_Menu != NULL); 
+  int GetItemCount()
+    { return GetMenuItemCount(_menu); }
+
+  HMENU GetSubMenu(int pos)
+    { return ::GetSubMenu(_menu, pos); }
+  bool GetItemString(UINT idItem, UINT flag, CSysString &result)
+  {
+    result.Empty();
+    int len = ::GetMenuString(_menu, idItem, 0, 0, flag);
+    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2), 
+        len + 1, flag);
+    result.ReleaseBuffer();
+    return (len != 0);
   }
+  UINT GetItemID(int pos)
+    { return ::GetMenuItemID(_menu, pos);   }
+  UINT GetItemState(UINT id, UINT flags)
+    { return ::GetMenuState(_menu, id, flags);   }
   
-  bool AppendItem(UINT uFlags, UINT_PTR uIDNewItem, LPCTSTR aNewItem)
-    { return BOOLToBool(::AppendMenu(m_Menu, uFlags, uIDNewItem, aNewItem)); }
+  bool AppendItem(UINT flags, UINT_PTR newItemID, LPCTSTR newItem)
+    { return BOOLToBool(::AppendMenu(_menu, flags, newItemID, newItem)); }
 
-  bool InsertItem(UINT aItem, bool aByPosition, LPCMENUITEMINFO anItem)
-    { return BOOLToBool(::InsertMenuItem(m_Menu, aItem, 
-        BoolToBOOL(aByPosition), anItem)); }
+  bool InsertItem(UINT itemIndex, bool byPosition, LPCMENUITEMINFO itemInfo)
+    { return BOOLToBool(::InsertMenuItem(_menu, itemIndex, 
+        BoolToBOOL(byPosition), itemInfo)); }
 
-  int Track(UINT uFlags, int x, int y, HWND hWnd)
-    { return ::TrackPopupMenuEx(m_Menu, uFlags, x, y, hWnd, NULL); }
+  bool RemoveItem(UINT item, UINT flags)
+    { return BOOLToBool(::RemoveMenu(_menu, item, flags)); }
+
+  bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
+    { return BOOLToBool(::GetMenuItemInfo(_menu, itemIndex, 
+        BoolToBOOL(byPosition), itemInfo)); }
+  bool SetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
+    { return BOOLToBool(::SetMenuItemInfo(_menu, itemIndex, 
+        BoolToBOOL(byPosition), itemInfo)); }
+
+  int Track(UINT flags, int x, int y, HWND hWnd)
+    { return ::TrackPopupMenuEx(_menu, flags, x, y, hWnd, NULL); }
+
+  bool CheckRadioItem(UINT idFirst, UINT idLast, UINT idCheck, UINT flags)
+    { return BOOLToBool(::CheckMenuRadioItem(_menu, idFirst, idLast, idCheck, flags)); }
+
+};
+
+class CMenuDestroyer
+{
+  CMenu *_menu;
+public:
+  CMenuDestroyer(CMenu &menu): _menu(&menu) {}
+  void Disable()
+  {
+    _menu = 0;
+  }
+  ~CMenuDestroyer()
+  {
+    if (_menu)
+      _menu->Destroy();
+  }
 };
 
 }

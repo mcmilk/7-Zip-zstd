@@ -16,7 +16,7 @@
 
 #include "Windows/PropVariantConversions.h"
 
-#include "../Common/ExtractAutoRename.h"
+#include "Util/FilePathAutoRename.h"
 
 using namespace NWindows;
 
@@ -105,7 +105,7 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
   *anOutStream = 0;
   m_OutFileStream.Release();
   NCOM::CPropVariant aPropVariant;
-  RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidPath, &aPropVariant));
+  RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidPath, &aPropVariant));
   
   UString aFullPath;
   if(aPropVariant.vt == VT_EMPTY)
@@ -122,7 +122,7 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
 
   if(anAskExtractMode == NArchiveHandler::NExtract::NAskMode::kExtract)
   {
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidAttributes, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidAttributes, &aPropVariant));
     if (aPropVariant.vt == VT_EMPTY)
     {
       m_ProcessedFileInfo.Attributes = m_AttributesDefault;
@@ -136,10 +136,10 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
       m_ProcessedFileInfo.AttributesAreDefined = true;
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsFolder, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsFolder, &aPropVariant));
     m_ProcessedFileInfo.IsDirectory = VARIANT_BOOLToBool(aPropVariant.boolVal);
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidLastWriteTime, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidLastWriteTime, &aPropVariant));
     switch(aPropVariant.vt)
     {
       case VT_EMPTY:
@@ -152,7 +152,7 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
         return E_FAIL;
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidSize, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidSize, &aPropVariant));
     bool aNewFileSizeDefined = (aPropVariant.vt != VT_EMPTY);
     UINT64 aNewFileSize;
     if (aNewFileSizeDefined)
@@ -161,7 +161,7 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
     bool anIsAnti = false;
     {
       NCOM::CPropVariant aPropVariantTemp;
-      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsAnti, 
+      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsAnti, 
           &aPropVariantTemp));
       if (aPropVariantTemp.vt != VT_EMPTY)
         anIsAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
@@ -327,7 +327,7 @@ STDMETHODIMP CExtractCallBack200Imp::OperationResult(INT32 anOperationResult)
       return E_FAIL;
   }
   if(m_OutFileStream != NULL)
-    m_OutFileStreamSpec->m_File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
+    m_OutFileStreamSpec->File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
   m_OutFileStream.Release();
   if (m_ExtractMode && m_ProcessedFileInfo.AttributesAreDefined)
     SetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);

@@ -7,9 +7,9 @@
 
 #include "Common/String.h"
 
-void MyMessageBox(HWND aWindow, LPCTSTR aMessage);
+void MyMessageBox(HWND aWindow, LPCWSTR aMessage);
 
-inline void MyMessageBox(LPCTSTR aMessage)
+inline void MyMessageBox(LPCWSTR aMessage)
   {  MyMessageBox(0, aMessage); }
 
 void MyMessageBox(UINT32 anId

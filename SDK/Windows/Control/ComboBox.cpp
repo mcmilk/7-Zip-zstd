@@ -8,14 +8,14 @@
 namespace NWindows {
 namespace NControl {
 
-int CComboBox::GetLBText(int anIndex, CSysString &aString)
+int CComboBox::GetLBText(int index, CSysString &string)
 {
-  aString.Empty();
-  int aLength = GetLBTextLen(anIndex);
+  string.Empty();
+  int aLength = GetLBTextLen(index);
   if (aLength == CB_ERR)
     return aLength;
-  aLength = GetLBText(anIndex, aString.GetBuffer(aLength));
-  aString.ReleaseBuffer();
+  aLength = GetLBText(index, string.GetBuffer(aLength));
+  string.ReleaseBuffer();
   return aLength;
 }
 

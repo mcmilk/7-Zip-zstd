@@ -6,17 +6,11 @@
 
 #include "Common/Random.h"
 
-void CRandom::Init(unsigned int anInit)
-{
-  srand(anInit);
-}
+void CRandom::Init(unsigned int seed)
+  { srand(seed); }
 
 void CRandom::Init()
-{
-  Init(time(NULL));
-}
+  { Init(time(NULL)); }
 
 int CRandom::Generate() const
-{
-  return rand();
-}
+  { return rand(); }

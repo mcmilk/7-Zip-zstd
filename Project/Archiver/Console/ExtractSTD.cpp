@@ -10,6 +10,7 @@
 #include "../../Compress/Interface/CompressInterface.h"
 #include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
+#include "Windows/FileDir.h"
 
 using namespace std;
 using namespace NZipSettings;
@@ -30,7 +31,7 @@ HRESULT DeCompressArchiveSTD(
   for(UINT32 i = 0; i < aNumItems; i++)
   {
     NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kaipidPath, &aPropVariant));
+    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariant));
     UString aFilePath;
     if(aPropVariant.vt == VT_EMPTY)
       aFilePath = anOptions.DefaultItemName;
@@ -66,6 +67,11 @@ HRESULT DeCompressArchiveSTD(
 
   }
 
+  if(!anOptions.OutputBaseDir.IsEmpty())
+    if(!NFile::NDirectory::CreateComplexDirectory(anOptions.OutputBaseDir))
+    {
+      throw "Can not create output directory";
+    }
 
   anExtractCallBackSpec->Init(anArchive, 
       anOptions.OutputBaseDir, anExtractionInfo, aRemovePathParts, CP_OEMCP,

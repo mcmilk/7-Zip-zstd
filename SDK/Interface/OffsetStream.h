@@ -11,10 +11,10 @@ class COffsetOutStream:
   public IOutStream,
   public CComObjectRoot
 {
-  UINT64 m_Offset;
-  CComPtr<IOutStream> m_Stream;
+  UINT64 _offset;
+  CComPtr<IOutStream> _stream;
 public:
-  HRESULT Init(IOutStream *aStream, UINT64 anOffset);
+  HRESULT Init(IOutStream *stream, UINT64 offset);
   
 BEGIN_COM_MAP(COffsetOutStream)
   COM_INTERFACE_ENTRY(IOutStream)
@@ -22,10 +22,10 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(COffsetOutStream)
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition);
-  STDMETHOD(SetSize)(INT64 aNewSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition);
+  STDMETHOD(SetSize)(INT64 newSize);
 };
 
 #endif

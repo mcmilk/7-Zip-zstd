@@ -15,10 +15,9 @@ class CInFileStream:
   public CComObjectRoot
 {
 public:
-  NWindows::NFile::NIO::CInFile m_File;
+  NWindows::NFile::NIO::CInFile File;
   CInFileStream() {}
-  bool Open(LPCTSTR aFileName);
-  
+  bool Open(LPCTSTR fileName);
 
 BEGIN_COM_MAP(CInFileStream)
   COM_INTERFACE_ENTRY(IInStream)
@@ -29,11 +28,11 @@ DECLARE_NOT_AGGREGATABLE(CInFileStream)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition);
 
-  STDMETHOD(GetSize)(UINT64 *aSize);
+  STDMETHOD(GetSize)(UINT64 *size);
 };
 
 class COutFileStream: 
@@ -41,9 +40,9 @@ class COutFileStream:
   public CComObjectRoot
 {
 public:
-  NWindows::NFile::NIO::COutFile m_File;
+  NWindows::NFile::NIO::COutFile File;
   COutFileStream() {}
-  bool Open(LPCTSTR aFileName);
+  bool Open(LPCTSTR fileName);
   
 
 BEGIN_COM_MAP(COutFileStream)
@@ -55,10 +54,10 @@ DECLARE_NOT_AGGREGATABLE(COutFileStream)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition);
-  STDMETHOD(SetSize)(INT64 aNewSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition);
+  STDMETHOD(SetSize)(INT64 newSize);
 };
 
 #endif

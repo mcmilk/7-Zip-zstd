@@ -85,81 +85,81 @@ CPropVariant& CPropVariant::operator=(bool bSrc)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(UINT32 aValue)
+CPropVariant& CPropVariant::operator=(UINT32 value)
 {
   if (vt != VT_UI4)
   {
     InternalClear();
     vt = VT_UI4;
   }
-  ulVal = aValue;
+  ulVal = value;
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(UINT64 aValue)
+CPropVariant& CPropVariant::operator=(UINT64 value)
 {
   if (vt != VT_UI8)
   {
     InternalClear();
     vt = VT_UI8;
   }
-  uhVal = *(ULARGE_INTEGER*)&aValue;
+  uhVal = *(ULARGE_INTEGER*)&value;
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(const FILETIME &aValue)
+CPropVariant& CPropVariant::operator=(const FILETIME &value)
 {
   if (vt != VT_FILETIME)
   {
     InternalClear();
     vt = VT_FILETIME;
   }
-  filetime = aValue;
+  filetime = value;
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(int aValue)
+CPropVariant& CPropVariant::operator=(int value)
 {
   if (vt != VT_I4)
   {
     InternalClear();
     vt = VT_I4;
   }
-  lVal = aValue;
+  lVal = value;
   
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(BYTE aValue)
+CPropVariant& CPropVariant::operator=(BYTE value)
 {
   if (vt != VT_UI1)
   {
     InternalClear();
     vt = VT_UI1;
   }
-  bVal = aValue;
+  bVal = value;
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(short aValue)
+CPropVariant& CPropVariant::operator=(short value)
 {
   if (vt != VT_I2)
   {
     InternalClear();
     vt = VT_I2;
   }
-  iVal = aValue;
+  iVal = value;
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(long aValue)
+CPropVariant& CPropVariant::operator=(long value)
 {
   if (vt != VT_I4)
   {
     InternalClear();
     vt = VT_I4;
   }
-  lVal = aValue;
+  lVal = value;
   return *this;
 }
 
@@ -282,9 +282,9 @@ void CPropVariant::InternalCopy(const PROPVARIANT* pSrc)
   }
 }
 
-HRESULT CPropVariant::WriteToStream(ISequentialStream *aStream) const
+HRESULT CPropVariant::WriteToStream(ISequentialStream *stream) const
 {
-  HRESULT aResult = aStream->Write(&vt, sizeof(vt), NULL);
+  HRESULT aResult = stream->Write(&vt, sizeof(vt), NULL);
   if (FAILED(aResult))
     return aResult;
 
@@ -322,21 +322,21 @@ HRESULT CPropVariant::WriteToStream(ISequentialStream *aStream) const
     break;
   }
   if (aNumBytes != 0)
-    return aStream->Write(&bVal, aNumBytes, NULL);
+    return stream->Write(&bVal, aNumBytes, NULL);
 
   if (vt == VT_BSTR)
   {
     UINT32 aLen = 0;
     if(bstrVal != NULL)
       aLen = SysStringLen(bstrVal);
-    HRESULT aResult = aStream->Write(&aLen, sizeof(UINT32), NULL);
+    HRESULT aResult = stream->Write(&aLen, sizeof(UINT32), NULL);
     if (FAILED(aResult))
       return aResult;
     if(bstrVal == NULL)
       return S_OK;
     if(aLen == 0)
       return S_OK;
-    return aStream->Write(bstrVal, aLen * sizeof(wchar_t), NULL);
+    return stream->Write(bstrVal, aLen * sizeof(wchar_t), NULL);
   }
   else
   {
@@ -351,14 +351,14 @@ HRESULT CPropVariant::WriteToStream(ISequentialStream *aStream) const
   }
 }
 
-HRESULT CPropVariant::ReadFromStream(ISequentialStream *aStream)
+HRESULT CPropVariant::ReadFromStream(ISequentialStream *stream)
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
     return hr;
 
   VARTYPE vtRead;
-  hr = aStream->Read(&vtRead, sizeof(VARTYPE), NULL);
+  hr = stream->Read(&vtRead, sizeof(VARTYPE), NULL);
   if (hr == S_FALSE)
     hr = E_FAIL;
   if (FAILED(hr))
@@ -399,7 +399,7 @@ HRESULT CPropVariant::ReadFromStream(ISequentialStream *aStream)
   }
   if (aNumBytes != 0)
   {
-    hr = aStream->Read(&bVal, aNumBytes, NULL);
+    hr = stream->Read(&bVal, aNumBytes, NULL);
     if (hr == S_FALSE)
       hr = E_FAIL;
     return hr;
@@ -409,13 +409,13 @@ HRESULT CPropVariant::ReadFromStream(ISequentialStream *aStream)
   {
     bstrVal = NULL;
     UINT32 aLen = 0;
-    hr = aStream->Read(&aLen, sizeof(UINT32), NULL);
+    hr = stream->Read(&aLen, sizeof(UINT32), NULL);
     if (hr != S_OK)
       return E_FAIL;
     bstrVal = SysAllocStringLen(NULL, aLen);
     if(bstrVal == NULL)
       return E_OUTOFMEMORY;
-    hr = aStream->Read(bstrVal, aLen * sizeof(wchar_t), NULL);
+    hr = stream->Read(bstrVal, aLen * sizeof(wchar_t), NULL);
     if (hr == S_FALSE)
       hr = E_FAIL;
     return hr;

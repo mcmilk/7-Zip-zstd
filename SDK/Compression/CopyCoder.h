@@ -1,4 +1,4 @@
-// Compression::CopyCoder.h
+// Compression/CopyCoder.h
 
 #pragma once
 
@@ -7,18 +7,18 @@
 
 #include "Interface/ICoder.h"
 
-// {3D3BBF41-6593-11d3-BFBD-000001009116}
-DEFINE_GUID(CLSID_CCopyCoder, 
-0x3d3bbf41, 0x6593, 0x11d3, 0xbf, 0xbd, 0x0, 0x0, 0x1, 0x0, 0x91, 0x16);
+// {23170F69-40C1-278B-0000-000000000000}
+DEFINE_GUID(CLSID_CCompressionCopyCoder, 
+0x23170F69, 0x40C1, 0x278B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 namespace NCompression {
 
 class CCopyCoder :
   public ICompressCoder,
   public CComObjectRoot,
-  public CComCoClass<CCopyCoder , &CLSID_CCopyCoder>
+  public CComCoClass<CCopyCoder, &CLSID_CCompressionCopyCoder>
 {
-  BYTE *m_Buffer;
+  BYTE *_buffer;
 public:
   CCopyCoder();
   ~CCopyCoder();
@@ -29,20 +29,14 @@ public:
 
   DECLARE_NOT_AGGREGATABLE(CCopyCoder)
 
-  DECLARE_NO_REGISTRY()
+  // DECLARE_NO_REGISTRY()
+  DECLARE_REGISTRY(CCopyCoder, TEXT("Compress.CopyCoder.1"), 
+    TEXT("Compress.CopyCoder"), 0, THREADFLAGS_APARTMENT)
 
-  /*
-  STDMETHOD(Init)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream);
-  STDMETHOD(ReleaseStreams)();
-  STDMETHOD(Code)(UINT32 aSize, UINT32 &aProcessedSize);
-  STDMETHOD(Flush)();
-  */
-
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, 
-      const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 };
 
 }

@@ -29,28 +29,25 @@ struct CResource
 
 class CEnum
 {
-  HANDLE m_Handle;
-  bool m_HandleAllocated;
+  HANDLE _handle;
+  bool _handleAllocated;
 protected:
-  bool IsHandleAllocated() const { return m_HandleAllocated; }
+  bool IsHandleAllocated() const { return _handleAllocated; }
 public:
-  CEnum(): m_HandleAllocated(false) {}
+  CEnum(): _handleAllocated(false) {}
   ~CEnum() {  Close(); }
-  DWORD Open(DWORD dwScope, DWORD dwType, DWORD dwUsage, 
-      LPNETRESOURCE lpNetResource);
-  DWORD Open(DWORD dwScope, DWORD dwType, DWORD dwUsage, 
-      const CResource *aNetResource);
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResource);
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, const CResource *resource);
   DWORD Close();
   DWORD Next(LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBufferSize);
-  DWORD Next(CResource &aResource);
+  DWORD Next(CResource &resource);
 };
 
-DWORD GetResourceParent(const CResource &aResource, CResource &aResourceParent);
-DWORD GetResourceInformation(const CResource &aResource, 
-    CResource &aDestResource, CSysString &aSystemPathPart);
-DWORD AddConnection2(const CResource &aResource, 
-    LPCTSTR lpPassword, LPCTSTR lpUsername, DWORD dwFlags);
-
+DWORD GetResourceParent(const CResource &resource, CResource &parentResource);
+DWORD GetResourceInformation(const CResource &resource, 
+    CResource &destResource, CSysString &systemPathPart);
+DWORD AddConnection2(const CResource &resource, 
+    LPCTSTR password, LPCTSTR userName, DWORD flags);
 
 }}
 

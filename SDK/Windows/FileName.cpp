@@ -12,91 +12,89 @@ namespace NName {
 static const wchar_t kDiskDelimiter = L':';
 
 /*
-static bool IsCharAPrefixDelimiter(wchar_t aChar)
-{
-  return (aChar == kDirDelimiter || aChar == kDiskDelimiter);
-}
+static bool IsCharAPrefixDelimiter(wchar_t c)
+  { return (c == kDirDelimiter || c == kDiskDelimiter); }
 */
 
-void NormalizeDirPathPrefix(CSysString &aDirPath)
+void NormalizeDirPathPrefix(CSysString &dirPath)
 {
-  if (aDirPath.IsEmpty())
+  if (dirPath.IsEmpty())
     return;
-  if (aDirPath.ReverseFind(kDirDelimiter) != aDirPath.Length() - 1)
-    aDirPath += kDirDelimiter;
+  if (dirPath.ReverseFind(kDirDelimiter) != dirPath.Length() - 1)
+    dirPath += kDirDelimiter;
 }
 
 namespace NPathType
 {
-  EEnum GetPathType(const UString &aPath)
+  EEnum GetPathType(const UString &path)
   {
-    if (aPath.Length() <= 2)
+    if (path.Length() <= 2)
       return kLocal;
-    if (aPath[0] == kDirDelimiter && aPath[1] == kDirDelimiter)
+    if (path[0] == kDirDelimiter && path[1] == kDirDelimiter)
       return kUNC;
     return kLocal;
   }
 }
 
-void CParsedPath::ParsePath(const UString &aPath)
+void CParsedPath::ParsePath(const UString &path)
 {
-  int aCurPos = 0;
-  switch (NPathType::GetPathType(aPath))
+  int curPos = 0;
+  switch (NPathType::GetPathType(path))
   {
     case NPathType::kLocal:
     {
-      int aPosDiskDelimiter = aPath.Find(kDiskDelimiter);
-      if(aPosDiskDelimiter >= 0)
+      int posDiskDelimiter = path.Find(kDiskDelimiter);
+      if(posDiskDelimiter >= 0)
       {
-        aCurPos = aPosDiskDelimiter + 1;
-        if (aPath.Length() > aCurPos)
-          if(aPath[aCurPos] == kDirDelimiter)
-            aCurPos++;
+        curPos = posDiskDelimiter + 1;
+        if (path.Length() > curPos)
+          if(path[curPos] == kDirDelimiter)
+            curPos++;
       }
       break;
     }
     case NPathType::kUNC:
     {
-      int aCurPos = aPath.Find(kDirDelimiter, 2);
-      if(aCurPos < 0)
-        aCurPos = aPath.Length();
+      int curPos = path.Find(kDirDelimiter, 2);
+      if(curPos < 0)
+        curPos = path.Length();
       else
-        aCurPos++;
+        curPos++;
     }
   }
-  Prefix = aPath.Left(aCurPos);
-  SplitPathToParts(aPath.Mid(aCurPos), PathParts);
+  Prefix = path.Left(curPos);
+  SplitPathToParts(path.Mid(curPos), PathParts);
 }
 
 UString CParsedPath::MergePath() const
 {
-  UString aResult = Prefix;
+  UString result = Prefix;
   for(int i = 0; i < PathParts.Size(); i++)
   {
     if (i != 0)
-      aResult += kDirDelimiter;
-    aResult += PathParts[i];
+      result += kDirDelimiter;
+    result += PathParts[i];
   }
-  return aResult;
+  return result;
 }
 
 const TCHAR kExtensionDelimiter = '.';
 
-void SplitNameToPureNameAndExtension(const CSysString &aFullName, CSysString &aPureName,
-  CSysString &anExtensionDelimiter, CSysString &anExtension)
+void SplitNameToPureNameAndExtension(const CSysString &fullName, 
+    CSysString &pureName, CSysString &extensionDelimiter, CSysString &extension)
 {
-  int anIndex = aFullName.ReverseFind(kExtensionDelimiter);
-  if (anIndex < 0)
+  int index = fullName.ReverseFind(kExtensionDelimiter);
+  if (index < 0)
   {
-    aPureName = aFullName;
-    anExtensionDelimiter.Empty();
-    anExtension.Empty();
+    pureName = fullName;
+    extensionDelimiter.Empty();
+    extension.Empty();
   }
   else
   {
-    aPureName = aFullName.Left(anIndex);
-    anExtensionDelimiter = kExtensionDelimiter;
-    anExtension = aFullName.Mid(anIndex + 1);
+    pureName = fullName.Left(index);
+    extensionDelimiter = kExtensionDelimiter;
+    extension = fullName.Mid(index + 1);
   }
 }
 

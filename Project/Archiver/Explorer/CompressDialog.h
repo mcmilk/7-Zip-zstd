@@ -70,7 +70,6 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SaveOptions();
   void SetOptions();
 public:
-	CZipRegistryManager *m_ZipRegistryManager;
   CObjectVector<NZipRootRegistry::CArchiverInfo> m_ArchiverInfoList;
 
   NCompressDialog::CInfo m_Info;

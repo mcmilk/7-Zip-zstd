@@ -14,81 +14,87 @@ const BYTE kBranchTable[32] =
 };
 
 
-static HRESULT BC_IA64_Code(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress, BYTE *aBuffer, bool anEncoding)
+static HRESULT BC_IA64_Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress, BYTE *buffer, bool encoding)
 {
-  UINT32 aNowPos = 0;
-  UINT32 aBufferPos = 0;
-  UINT32 aProcessedSize;
+  UINT32 nowPos = 0;
+  UINT64 nowPos64 = 0;
+  UINT32 bufferPos = 0;
   while(true)
   {
-    UINT32 aSize = kBufferSize - aBufferPos;
-    RETURN_IF_NOT_S_OK(anInStream->Read(aBuffer + aBufferPos, aSize, &aProcessedSize));
-    UINT32 anEndPos = aBufferPos + aProcessedSize;
-    if (anEndPos < 16)
+    UINT32 processedSize;
+    UINT32 size = kBufferSize - bufferPos;
+    RETURN_IF_NOT_S_OK(inStream->Read(buffer + bufferPos, size, &processedSize));
+    UINT32 endPos = bufferPos + processedSize;
+    if (endPos < 16)
     {
-      if (anEndPos > 0)
+      if (endPos > 0)
       {
-        RETURN_IF_NOT_S_OK(anOutStream->Write(aBuffer, anEndPos, &aProcessedSize));
-        if (anEndPos != aProcessedSize)
+        RETURN_IF_NOT_S_OK(outStream->Write(buffer, endPos, &processedSize));
+        if (endPos != processedSize)
           return E_FAIL;
       }
       return S_OK;
     }
-    for (aBufferPos = 0; aBufferPos <= anEndPos - 16; aBufferPos += 16)
+    for (bufferPos = 0; bufferPos <= endPos - 16; bufferPos += 16)
     {
-      UINT32 aTemplate = aBuffer[aBufferPos] & 0x1F;
-      // ofs << hex << setw(4) << aTemplate << endl;
-      UINT32 aMask = kBranchTable[aTemplate];
-      UINT32 aBitPos = 5;
-      for (int aSlot = 0; aSlot < 3; aSlot++, aBitPos += 41)
+      UINT32 instrTemplate = buffer[bufferPos] & 0x1F;
+      // ofs << hex << setw(4) << instrTemplate << endl;
+      UINT32 mask = kBranchTable[instrTemplate];
+      UINT32 bitPos = 5;
+      for (int slot = 0; slot < 3; slot++, bitPos += 41)
       {
-        if (((aMask >> aSlot) & 1) == 0)
+        if (((mask >> slot) & 1) == 0)
           continue;
-        UINT32 aBytePos = (aBitPos >> 3);
-        UINT32 aBitRes = aBitPos & 0x7;
-        UINT64 aInstruction = *(UINT64 *)(aBuffer + aBufferPos + aBytePos);
-        UINT64 aInstNorm = aInstruction >> aBitRes;
-        if (((aInstNorm >> 37) & 0xF) == 0x5 
-            &&  ((aInstNorm >> 9) & 0x7) == 0 
-            // &&  (aInstNorm & 0x3F)== 0 
+        UINT32 bytePos = (bitPos >> 3);
+        UINT32 bitRes = bitPos & 0x7;
+        UINT64 instruction = *(UINT64 *)(buffer + bufferPos + bytePos);
+        UINT64 instNorm = instruction >> bitRes;
+        if (((instNorm >> 37) & 0xF) == 0x5 
+            &&  ((instNorm >> 9) & 0x7) == 0 
+            // &&  (instNorm & 0x3F)== 0 
             )
         {
-          UINT32 aSrc = UINT32((aInstNorm >> 13) & 0xFFFFF);
-          aSrc |= ((aInstNorm >> 36) & 1) << 20;
+          UINT32 src = UINT32((instNorm >> 13) & 0xFFFFF);
+          src |= ((instNorm >> 36) & 1) << 20;
   
-          aSrc <<= 4;
+          src <<= 4;
 
-          UINT32 aDest;
-          if (anEncoding)
-            aDest = aNowPos + aBufferPos + aSrc;
+          UINT32 dest;
+          if (encoding)
+            dest = nowPos + bufferPos + src;
           else
-            aDest = aSrc - (aNowPos + aBufferPos);
+            dest = src - (nowPos + bufferPos);
 
-          aDest >>= 4;
+          dest >>= 4;
 
-          UINT64  aInstNorm2 = aInstNorm;
+          UINT64  instNorm2 = instNorm;
 
-          aInstNorm &= ~(UINT64(0x8FFFFF) << 13);
-          aInstNorm |= (UINT64(aDest & 0xFFFFF) << 13);
-          aInstNorm |= (UINT64(aDest & 0x100000) << (36 - 20));
+          instNorm &= ~(UINT64(0x8FFFFF) << 13);
+          instNorm |= (UINT64(dest & 0xFFFFF) << 13);
+          instNorm |= (UINT64(dest & 0x100000) << (36 - 20));
 
-          aInstruction &= (1 << aBitRes) - 1;
-          aInstruction |= (aInstNorm << aBitRes);
-          *(UINT64 *)(aBuffer + aBufferPos + aBytePos) = aInstruction;
+          instruction &= (1 << bitRes) - 1;
+          instruction |= (instNorm << bitRes);
+          *(UINT64 *)(buffer + bufferPos + bytePos) = instruction;
         }
       }
     }
-    aNowPos += aBufferPos;
-    RETURN_IF_NOT_S_OK(anOutStream->Write(aBuffer, aBufferPos, &aProcessedSize));
-    if (aBufferPos != aProcessedSize)
+    nowPos += bufferPos;
+    nowPos64 += bufferPos;
+    RETURN_IF_NOT_S_OK(outStream->Write(buffer, bufferPos, &processedSize));
+    if (bufferPos != processedSize)
       return E_FAIL;
+    if (progress != NULL)
+    {
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &nowPos64));
+    }
     
     UINT32 i = 0;
-    while(aBufferPos < anEndPos)
-      aBuffer[i++] = aBuffer[aBufferPos++];
-    aBufferPos = i;
+    while(bufferPos < endPos)
+      buffer[i++] = buffer[bufferPos++];
+    bufferPos = i;
   }
 }
 

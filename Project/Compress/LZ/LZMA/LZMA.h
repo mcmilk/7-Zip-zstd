@@ -22,33 +22,33 @@ const BYTE kShortRepNextStates[kNumStates]= {9, 9, 9, 9, 9, 9, 9, 11, 11, 11, 11
 class CState
 {
 public:
-  BYTE m_Index;
+  BYTE Index;
   void Init()
-    { m_Index = 0; }
+    { Index = 0; }
   void UpdateChar()
-    { m_Index = kLiteralNextStates[m_Index]; }
+    { Index = kLiteralNextStates[Index]; }
   void UpdateMatch()
-    { m_Index = kMatchNextStates[m_Index]; }
+    { Index = kMatchNextStates[Index]; }
   void UpdateRep()
-    { m_Index = kRepNextStates[m_Index]; }
+    { Index = kRepNextStates[Index]; }
   void UpdateShortRep()
-    { m_Index = kShortRepNextStates[m_Index]; }
+    { Index = kShortRepNextStates[Index]; }
 };
 
 class CBaseCoder
 {
 protected:
-  CState m_State;
-  BYTE m_PreviousByte;
-  bool m_PeviousIsMatch;
-  UINT32 m_RepDistances[kNumRepDistances];
+  CState _state;
+  BYTE _previousByte;
+  bool _peviousIsMatch;
+  UINT32 _repDistances[kNumRepDistances];
   void Init()
   {
-    m_State.Init();
-    m_PreviousByte = 0;
-    m_PeviousIsMatch = false;
+    _state.Init();
+    _previousByte = 0;
+    _peviousIsMatch = false;
     for(int i = 0 ; i < kNumRepDistances; i++)
-      m_RepDistances[i] = 0;
+      _repDistances[i] = 0;
   }
 };
 
@@ -66,11 +66,11 @@ const BYTE kDistDirectBits[kDistTableSizeMax] =
 };
 
 const UINT32 kNumLenToPosStates = 4;
-inline UINT32 GetLenToPosState(UINT32 aLen)
+inline UINT32 GetLenToPosState(UINT32 len)
 {
-  aLen -= 2;
-  if (aLen < kNumLenToPosStates)
-    return aLen;
+  len -= 2;
+  if (len < kNumLenToPosStates)
+    return len;
   return kNumLenToPosStates - 1;
 }
 

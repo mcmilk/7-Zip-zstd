@@ -23,11 +23,11 @@ struct CIndex
 {
   BYTE Data[3];
   CIndex(){}
-  CIndex(UINT32 aValue)
+  CIndex(UINT32 value)
   { 
-    Data[0] = aValue & 0xFF;
-    Data[1] = (aValue >> 8) & 0xFF;
-    Data[2] = (aValue >> 16) & 0xFF;
+    Data[0] = value & 0xFF;
+    Data[1] = (value >> 8) & 0xFF;
+    Data[2] = (value >> 16) & 0xFF;
   }
   operator UINT32() const { return (*((const UINT32 *)Data)) & 0xFFFFFF; }
 };
@@ -71,44 +71,44 @@ struct CPair
 
 class CInTree: public NStream::NWindow::CIn
 {
-  UINT32 m_CyclicBufferPos;
-  UINT32 m_CyclicBufferSize;
-  UINT32 m_HistorySize;
-  UINT32 m_MatchMaxLen;
+  UINT32 _cyclicBufferPos;
+  UINT32 _cyclicBufferSize;
+  UINT32 _historySize;
+  UINT32 _matchMaxLen;
 
-  CIndex *m_Hash;
+  CIndex *_hash;
   
   #ifdef HASH_ARRAY_2
-  CIndex *m_Hash2;
+  CIndex *_hash2;
   #ifdef HASH_ARRAY_3
-  CIndex *m_Hash3;
+  CIndex *_hash3;
   #endif
   #endif
   
-  CPair *m_Son;
+  CPair *_son;
 
-  UINT32 m_CutValue;
+  UINT32 _cutValue;
 
-  void NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue);
+  void NormalizeLinks(CIndex *array, UINT32 numItems, UINT32 subValue);
   void Normalize();
   void FreeMemory();
 
 public:
   CInTree();
   ~CInTree();
-  HRESULT Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter, UINT32 _dwSizeReserv = (1<<17));
-	HRESULT Init(ISequentialInStream *aStream);
-  void SetCutValue(UINT32 aCutValue) { m_CutValue = aCutValue; }
-  UINT32 GetLongestMatch(UINT32 *aDistances);
+  HRESULT Create(UINT32 sizeHistory, UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
+      UINT32 keepAddBufferAfter, UINT32 sizeReserv = (1<<17));
+	HRESULT Init(ISequentialInStream *stream);
+  void SetCutValue(UINT32 cutValue) { _cutValue = cutValue; }
+  UINT32 GetLongestMatch(UINT32 *distances);
   void DummyLongestMatch();
   HRESULT MovePos()
   {
-    m_CyclicBufferPos++;
-    if (m_CyclicBufferPos >= m_CyclicBufferSize)
-      m_CyclicBufferPos = 0;
+    _cyclicBufferPos++;
+    if (_cyclicBufferPos >= _cyclicBufferSize)
+      _cyclicBufferPos = 0;
     RETURN_IF_NOT_S_OK(CIn::MovePos());
-    if (m_Pos == kMaxValForNormalize)
+    if (_pos == kMaxValForNormalize)
       Normalize();
     return S_OK;
   }

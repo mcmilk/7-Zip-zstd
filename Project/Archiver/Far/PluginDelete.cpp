@@ -74,9 +74,9 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
         g_StartupInfo.GetMsgString(NMessageID::kDeleting), 1 << 17);
   }
 
-  CZipRegistryManager aZipRegistryManager;
+  // CZipRegistryManager aZipRegistryManager;
   NZipSettings::NWorkDir::CInfo aWorkDirInfo;
-  aZipRegistryManager.ReadWorkDirInfo(aWorkDirInfo);
+  NZipRegistryManager::ReadWorkDirInfo(aWorkDirInfo);
   CSysString aWorkDir = GetWorkDir(aWorkDirInfo, m_FileName);
   CreateComplexDirectory(aWorkDir);
 
@@ -92,7 +92,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
     anIndexes.Add(aPanelItems[i].UserData);
 
   ////////////////////////////
-  // Save m_ArchiveFolder;
+  // Save _folder;
 
   UStringVector aPathVector;
   GetPathParts(aPathVector);
@@ -104,7 +104,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;
   }
-  anOutArchive->SetFolder(m_ArchiveFolder);
+  anOutArchive->SetFolder(_folder);
 
   CComObjectNoLock<CUpdateCallBack100Imp> *anUpdateCallBackSpec =
     new CComObjectNoLock<CUpdateCallBack100Imp>;
@@ -126,7 +126,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
     return FALSE;
   }
 
-  m_ArchiveFolder.Release();
+  _folder.Release();
   m_ArchiveHandler->Close();
   
   if (!DeleteFileAlways(m_FileName))
@@ -151,16 +151,16 @@ int CPlugin::DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber,
 
  
   ////////////////////////////
-  // Restore m_ArchiveFolder;
+  // Restore _folder;
 
-  m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);
+  m_ArchiveHandler->BindToRootFolder(&_folder);
   for (i = 0; i < aPathVector.Size(); i++)
   {
-    CComPtr<IArchiveFolder> aNewFolder;
-    m_ArchiveFolder->BindToFolder(aPathVector[i], &aNewFolder);
+    CComPtr<IFolderFolder> aNewFolder;
+    _folder->BindToFolder(aPathVector[i], &aNewFolder);
     if(!aNewFolder  )
       break;
-    m_ArchiveFolder = aNewFolder;
+    _folder = aNewFolder;
   }
 
   return(TRUE);

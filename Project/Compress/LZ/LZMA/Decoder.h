@@ -29,32 +29,30 @@ class CDecoder :
   public CComObjectRoot,
   public CComCoClass<CDecoder, &CLSID_CLZMADecoder>
 {
-  NStream::NWindow::COut m_OutWindowStream;
-  CMyRangeDecoder m_RangeDecoder;
+  NStream::NWindow::COut _outWindowStream;
+  CMyRangeDecoder _rangeDecoder;
 
-  CMyBitDecoder2 m_MainChoiceDecoders[kNumStates][NLength::kNumPosStatesMax];
-  CMyBitDecoder2 m_MatchChoiceDecoders[kNumStates];
-  CMyBitDecoder2 m_MatchRepChoiceDecoders[kNumStates];
-  CMyBitDecoder2 m_MatchRep1ChoiceDecoders[kNumStates];
-  CMyBitDecoder2 m_MatchRep2ChoiceDecoders[kNumStates];
-  CMyBitDecoder2 m_MatchRepShortChoiceDecoders[kNumStates][NLength::kNumPosStatesMax];
+  CMyBitDecoder2 _mainChoiceDecoders[kNumStates][NLength::kNumPosStatesMax];
+  CMyBitDecoder2 _matchChoiceDecoders[kNumStates];
+  CMyBitDecoder2 _matchRepChoiceDecoders[kNumStates];
+  CMyBitDecoder2 _matchRep1ChoiceDecoders[kNumStates];
+  CMyBitDecoder2 _matchRep2ChoiceDecoders[kNumStates];
+  CMyBitDecoder2 _matchRepShortChoiceDecoders[kNumStates][NLength::kNumPosStatesMax];
 
-  CBitTreeDecoder<kNumMoveBitsForPosSlotCoder, kNumPosSlotBits> m_PosSlotDecoder[kNumLenToPosStates];
+  CBitTreeDecoder<kNumMoveBitsForPosSlotCoder, kNumPosSlotBits> _posSlotDecoder[kNumLenToPosStates];
 
-  CReverseBitTreeDecoder2<kNumMoveBitsForPosCoders> m_PosDecoders[kNumPosModels];
-  CReverseBitTreeDecoder<kNumMoveBitsForAlignCoders, kNumAlignBits> m_PosAlignDecoder;
-  // CBitTreeDecoder2<kNumMoveBitsForPosCoders> m_PosDecoders[kNumPosModels];
-  // CBitTreeDecoder<kNumMoveBitsForAlignCoders, kNumAlignBits> m_PosAlignDecoder;
+  CReverseBitTreeDecoder2<kNumMoveBitsForPosCoders> _posDecoders[kNumPosModels];
+  CReverseBitTreeDecoder<kNumMoveBitsForAlignCoders, kNumAlignBits> _posAlignDecoder;
   
-  NLength::CDecoder m_LenDecoder;
-  NLength::CDecoder m_RepMatchLenDecoder;
+  NLength::CDecoder _lenDecoder;
+  NLength::CDecoder _repMatchLenDecoder;
 
-  NLiteral::CDecoder m_LiteralDecoder;
+  NLiteral::CDecoder _literalDecoder;
 
-  UINT32 m_DictionarySize;
-  UINT32 m_DictionarySizeCheck;
+  UINT32 _dictionarySize;
+  UINT32 _dictionarySizeCheck;
   
-  UINT32 m_PosStateMask;
+  UINT32 _posStateMask;
 
 public:
 
@@ -73,12 +71,12 @@ DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"),
   HRESULT Create();
 
 
-  HRESULT Init(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream);
+  HRESULT Init(ISequentialInStream *inStream, 
+      ISequentialOutStream *outStream);
   void ReleaseStreams()
   {
-    m_OutWindowStream.ReleaseStream();
-    m_RangeDecoder.ReleaseStream();
+    _outWindowStream.ReleaseStream();
+    _rangeDecoder.ReleaseStream();
   }
 
   class CDecoderFlusher
@@ -97,23 +95,24 @@ DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"),
   };
 
   HRESULT Flush()
-    {  return m_OutWindowStream.Flush(); }  
+    {  return _outWindowStream.Flush(); }  
 
   // ICompressCoder interface
-  STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
   
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
   // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *anInStream);
+  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
 
-  HRESULT SetDictionarySize(UINT32 aDictionarySize);
-  HRESULT SetLiteralProperties(UINT32 aLiteralPosStateBits, UINT32 aLiteralContextBits);
-  HRESULT SetPosBitsProperties(UINT32 aNumPosStateBits);
+  HRESULT SetDictionarySize(UINT32 dictionarySize);
+  HRESULT SetLiteralProperties(UINT32 numLiteralPosStateBits, 
+      UINT32 numLiteralContextBits);
+  HRESULT SetPosBitsProperties(UINT32 numPosStateBits);
 };
 
 }}

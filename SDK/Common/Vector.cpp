@@ -6,64 +6,64 @@
 
 static const kMaxVectorSize = 0x20000000;
 
-CBaseRecordVector::CBaseRecordVector(size_t anItemSize):
-  m_Size(0),
-  m_Capacity(0),
-  m_Items(NULL),
-  m_ItemSize(anItemSize)
+CBaseRecordVector::CBaseRecordVector(size_t itemSize):
+  _size(0),
+  _capacity(0),
+  _items(NULL),
+  _itemSize(itemSize)
 {}
 
 CBaseRecordVector::~CBaseRecordVector()
 {
   //  Clear();
-  delete []((BYTE *)m_Items);
+  delete []((BYTE *)_items);
 }
 
 void CBaseRecordVector::Grow()
 {
-  int aDelta;
-  if (m_Capacity > 64)
-    aDelta = m_Capacity / 2;
-  else if (m_Capacity > 8)
-    aDelta = 16;
+  int delta;
+  if (_capacity > 64)
+    delta = _capacity / 2;
+  else if (_capacity > 8)
+    delta = 16;
   else
-    aDelta = 4;
-  Reserve(m_Capacity + aDelta);
+    delta = 4;
+  Reserve(_capacity + delta);
 }
 
 void CBaseRecordVector::ReserveOnePosition()
 {
-  if(m_Size == m_Capacity)
+  if(_size == _capacity)
     Grow();
 }
 
-void CBaseRecordVector::Reserve(int aNewCapacity)
+void CBaseRecordVector::Reserve(int newCapacity)
 {
-  if(aNewCapacity <= m_Capacity)
+  if(newCapacity <= _capacity)
     return;
   #ifndef _WIN32_WCE
-  if(aNewCapacity < m_Size || aNewCapacity > kMaxVectorSize) 
+  if(newCapacity < _size || newCapacity > kMaxVectorSize) 
     throw 1052354;
   #endif
-  if(aNewCapacity != m_Capacity)
+  if(newCapacity != _capacity)
   {
     BYTE *p;
-    if (aNewCapacity == 0)
+    if (newCapacity == 0)
       p = NULL;
     else
     {
-      p = new BYTE[aNewCapacity * m_ItemSize];
-      int aNumRecordsToMove;
-      if(aNewCapacity<m_Capacity)
-        aNumRecordsToMove = aNewCapacity;
+      p = new BYTE[newCapacity * _itemSize];
+      int numRecordsToMove;
+      if(newCapacity<_capacity)
+        numRecordsToMove = newCapacity;
       else
-        aNumRecordsToMove = m_Capacity;
-      memmove(p, m_Items, m_ItemSize * aNumRecordsToMove);
+        numRecordsToMove = _capacity;
+      memmove(p, _items, _itemSize * numRecordsToMove);
     }
-    delete []m_Items;
-    m_Items = p;
+    delete []_items;
+    _items = p;
   }
-  m_Capacity = aNewCapacity;
+  _capacity = newCapacity;
 }
 
 void CBaseRecordVector::Clear()
@@ -71,44 +71,44 @@ void CBaseRecordVector::Clear()
   DeleteFrom(0);
 }
 
-void CBaseRecordVector::TestIndexAndCorrectNum(int anIndex, int &aNum) const
+void CBaseRecordVector::TestIndexAndCorrectNum(int index, int &num) const
 {
-  if (anIndex + aNum > m_Size)
-    aNum = m_Size - anIndex;
+  if (index + num > _size)
+    num = _size - index;
 }
 
-void CBaseRecordVector::MoveItems(int aDestinationIndex, int aSourceIndex)
+void CBaseRecordVector::MoveItems(int destIndex, int srcIndex)
 {
-  memmove((BYTE *)m_Items + aDestinationIndex * m_ItemSize, 
-    (BYTE *)m_Items + aSourceIndex * m_ItemSize, 
-    m_ItemSize * (m_Size - aSourceIndex));
+  memmove((BYTE *)_items + destIndex * _itemSize, 
+    (BYTE *)_items + srcIndex * _itemSize, 
+    _itemSize * (_size - srcIndex));
 }
 
-void CBaseRecordVector::InsertOneItem(int anIndex)
+void CBaseRecordVector::InsertOneItem(int index)
 {
-  int aNum = 1;
-  TestIndexAndCorrectNum(anIndex, aNum);
+  int num = 1;
+  TestIndexAndCorrectNum(index, num);
   ReserveOnePosition();
-  MoveItems(anIndex + 1, anIndex);
-  m_Size++;
+  MoveItems(index + 1, index);
+  _size++;
 }
 
-void CBaseRecordVector::Delete(int anIndex, int aNum)
+void CBaseRecordVector::Delete(int index, int num)
 {
-  TestIndexAndCorrectNum(anIndex, aNum);
-  if (aNum > 0)
+  TestIndexAndCorrectNum(index, num);
+  if (num > 0)
   {
-    MoveItems(anIndex, anIndex + aNum);
-    m_Size -= aNum;
+    MoveItems(index, index + num);
+    _size -= num;
   }
 }
 
-void CBaseRecordVector::DeleteFrom(int anIndex)
+void CBaseRecordVector::DeleteFrom(int index)
 {
-  Delete(anIndex, m_Size - anIndex); // m_Size - anIndex may be < 0 
+  Delete(index, _size - index); // _size - index may be < 0 
 }
 
 void CBaseRecordVector::DeleteBack()
 {
-  DeleteFrom(m_Size - 1); // m_Size must be > 0
+  DeleteFrom(_size - 1); // _size must be > 0
 }

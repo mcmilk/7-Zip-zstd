@@ -4,7 +4,7 @@
 
 #include "Plugin.h"
 
-#include "Windows/Time.h"
+// #include "Windows/Time.h"
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
 
@@ -34,14 +34,14 @@ CPlugin::CPlugin(const CSysString &aFileName,
 {
   if (!NFile::NFind::FindFile(m_FileName, m_FileInfo))
     throw "error";
-  anArchiveHandler->BindToRootFolder(&m_ArchiveFolder);
+  anArchiveHandler->BindToRootFolder(&_folder);
 }
 
 CPlugin::~CPlugin()
 {
 }
 
-static void MyGetFileTime(IArchiveFolder *anArchiveFolder, UINT32 anItemIndex,
+static void MyGetFileTime(IFolderFolder *anArchiveFolder, UINT32 anItemIndex,
     PROPID aPropID, FILETIME &aFileTime)
 {
   NCOM::CPropVariant aPropVariant;
@@ -63,7 +63,7 @@ static void MyGetFileTime(IArchiveFolder *anArchiveFolder, UINT32 anItemIndex,
 void CPlugin::ReadPluginPanelItem(PluginPanelItem &aPanelItem, UINT32 anItemIndex)
 {
   NCOM::CPropVariant aPropVariant;
-  if (m_ArchiveFolder->GetProperty(anItemIndex, kaipidName, &aPropVariant) != S_OK)
+  if (_folder->GetProperty(anItemIndex, kpidName, &aPropVariant) != S_OK)
     throw 271932;
 
   if (aPropVariant.vt != VT_BSTR)
@@ -73,7 +73,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &aPanelItem, UINT32 anItemInde
   strcpy(aPanelItem.FindData.cFileName, anOemString);
   aPanelItem.FindData.cAlternateFileName[0] = 0;
 
-  if (m_ArchiveFolder->GetProperty(anItemIndex, kaipidAttributes, &aPropVariant) != S_OK)
+  if (_folder->GetProperty(anItemIndex, kpidAttributes, &aPropVariant) != S_OK)
     throw 271932;
   if (aPropVariant.vt == VT_UI4)
     aPanelItem.FindData.dwFileAttributes  = aPropVariant.ulVal;
@@ -82,7 +82,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &aPanelItem, UINT32 anItemInde
   else
     throw 21631;
 
-  if (m_ArchiveFolder->GetProperty(anItemIndex, kaipidIsFolder, &aPropVariant) != S_OK)
+  if (_folder->GetProperty(anItemIndex, kpidIsFolder, &aPropVariant) != S_OK)
     throw 271932;
   if (aPropVariant.vt == VT_BOOL)
   {
@@ -92,7 +92,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &aPanelItem, UINT32 anItemInde
   else if (aPropVariant.vt != VT_EMPTY)
     throw 21632;
 
-  if (m_ArchiveFolder->GetProperty(anItemIndex, kaipidSize, &aPropVariant) != S_OK)
+  if (_folder->GetProperty(anItemIndex, kpidSize, &aPropVariant) != S_OK)
     throw 271932;
   UINT64 aLength;
   if (aPropVariant.vt == VT_EMPTY)
@@ -102,15 +102,15 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &aPanelItem, UINT32 anItemInde
   aPanelItem.FindData.nFileSizeLow = UINT32(aLength);
   aPanelItem.FindData.nFileSizeHigh = UINT32(aLength >> 32);
 
-  MyGetFileTime(m_ArchiveFolder, anItemIndex, kaipidCreationTime, aPanelItem.FindData.ftCreationTime);
-  MyGetFileTime(m_ArchiveFolder, anItemIndex, kaipidLastAccessTime, aPanelItem.FindData.ftLastAccessTime);
-  MyGetFileTime(m_ArchiveFolder, anItemIndex, kaipidLastWriteTime, aPanelItem.FindData.ftLastWriteTime);
+  MyGetFileTime(_folder, anItemIndex, kpidCreationTime, aPanelItem.FindData.ftCreationTime);
+  MyGetFileTime(_folder, anItemIndex, kpidLastAccessTime, aPanelItem.FindData.ftLastAccessTime);
+  MyGetFileTime(_folder, anItemIndex, kpidLastWriteTime, aPanelItem.FindData.ftLastWriteTime);
 
   if (aPanelItem.FindData.ftLastWriteTime.dwHighDateTime == 0 && 
       aPanelItem.FindData.ftLastWriteTime.dwLowDateTime == 0)
     aPanelItem.FindData.ftLastWriteTime = m_FileInfo.LastWriteTime;
 
-  if (m_ArchiveFolder->GetProperty(anItemIndex, kaipidPackedSize, &aPropVariant) != S_OK)
+  if (_folder->GetProperty(anItemIndex, kpidPackedSize, &aPropVariant) != S_OK)
     throw 271932;
   if (aPropVariant.vt == VT_EMPTY)
     aLength = 0;
@@ -153,7 +153,7 @@ int CPlugin::GetFindData(PluginPanelItem **aPanelItems,
   }
 
   UINT32 aNumItems;
-  m_ArchiveFolder->GetNumberOfItems(&aNumItems);
+  _folder->GetNumberOfItems(&aNumItems);
   *aPanelItems = new PluginPanelItem[aNumItems];
   try
   {
@@ -185,14 +185,14 @@ void CPlugin::FreeFindData(struct PluginPanelItem *aPanelItems,
 
 void CPlugin::EnterToDirectory(const UString &aDirName)
 {
-  CComPtr<IArchiveFolder> aNewFolder;
-  m_ArchiveFolder->BindToFolder(aDirName, &aNewFolder);
+  CComPtr<IFolderFolder> aNewFolder;
+  _folder->BindToFolder(aDirName, &aNewFolder);
   if(aNewFolder == NULL)
     if (aDirName.IsEmpty())
       return;
     else
       throw 40325;
-  m_ArchiveFolder = aNewFolder;
+  _folder = aNewFolder;
 }
 
 int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
@@ -200,16 +200,16 @@ int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
   UString aDir = MultiByteToUnicodeString(aszDir, CP_OEMCP);
   if (aDir == L"\\")
   {
-    m_ArchiveFolder.Release();
-    m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);  
+    _folder.Release();
+    m_ArchiveHandler->BindToRootFolder(&_folder);  
   }
   else if (aDir == L"..")
   {
-    CComPtr<IArchiveFolder> aNewFolder;
-    m_ArchiveFolder->BindToParentFolder(&aNewFolder);  
+    CComPtr<IFolderFolder> aNewFolder;
+    _folder->BindToParentFolder(&aNewFolder);  
     if (aNewFolder == NULL)
       throw 40312;
-    m_ArchiveFolder = aNewFolder;
+    _folder = aNewFolder;
   }
   else if (aDir.IsEmpty())
     EnterToDirectory(aDir);
@@ -217,8 +217,8 @@ int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
   {
     if (aDir[0] == L'\\')
     {
-      m_ArchiveFolder.Release();
-      m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);  
+      _folder.Release();
+      m_ArchiveHandler->BindToRootFolder(&_folder);  
       aDir = aDir.Mid(1);
     }
     UStringVector aPathParts;
@@ -240,10 +240,10 @@ int CPlugin::SetDirectory(const char *aszDir, int anOpMode)
 void CPlugin::GetPathParts(UStringVector &aPathParts)
 {
   aPathParts.Clear();
-  CComPtr<IArchiveFolder> aFolderItem = m_ArchiveFolder;
+  CComPtr<IFolderFolder> aFolderItem = _folder;
   while (true)
   {
-    CComPtr<IArchiveFolder> aNewFolder;
+    CComPtr<IFolderFolder> aNewFolder;
     aFolderItem->BindToParentFolder(&aNewFolder);  
     if (aNewFolder == NULL)
       break;
@@ -265,23 +265,23 @@ struct CPROPIDToName
 
 static CPROPIDToName kPROPIDToName[] =  
 {
-  { kaipidName, NMessageID::kName },
-  { kaipidIsFolder, NMessageID::kIsFolder }, 
-  { kaipidSize, NMessageID::kSize },
-  { kaipidPackedSize, NMessageID::kPackedSize },
-  { kaipidAttributes, NMessageID::kAttributes },
-  { kaipidCreationTime, NMessageID::kCreationTime },
-  { kaipidLastAccessTime, NMessageID::kLastAccessTime },
-  { kaipidLastWriteTime, NMessageID::kLastWriteTime },
-  { kaipidSolid, NMessageID::kSolid },
-  { kaipidComment, NMessageID::kComment },
-  { kaipidEncrypted, NMessageID::kEncrypted },
-  { kaipidSplitBefore, NMessageID::kSplitBefore },
-  { kaipidSplitAfter, NMessageID::kSplitAfter },
-  { kaipidDictionarySize, NMessageID::kDictionarySize },
-  { kaipidCRC, NMessageID::kCRC },
-  { kaipidMethod, NMessageID::kMethod },
-  { kaipidHostOS, NMessageID::kHostOS }
+  { kpidName, NMessageID::kName },
+  { kpidIsFolder, NMessageID::kIsFolder }, 
+  { kpidSize, NMessageID::kSize },
+  { kpidPackedSize, NMessageID::kPackedSize },
+  { kpidAttributes, NMessageID::kAttributes },
+  { kpidCreationTime, NMessageID::kCreationTime },
+  { kpidLastAccessTime, NMessageID::kLastAccessTime },
+  { kpidLastWriteTime, NMessageID::kLastWriteTime },
+  { kpidSolid, NMessageID::kSolid },
+  { kpidComment, NMessageID::kComment },
+  { kpidEncrypted, NMessageID::kEncrypted },
+  { kpidSplitBefore, NMessageID::kSplitBefore },
+  { kpidSplitAfter, NMessageID::kSplitAfter },
+  { kpidDictionarySize, NMessageID::kDictionarySize },
+  { kpidCRC, NMessageID::kCRC },
+  { kpidMethod, NMessageID::kMethod },
+  { kpidHostOS, NMessageID::kHostOS }
 };
 
 static const kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);
@@ -305,23 +305,23 @@ struct CPropertyIDInfo
 
 static CPropertyIDInfo kPropertyIDInfos[] =  
 {
-  { kaipidName, "N", 0},
-  { kaipidSize, "S", 8},
-  { kaipidPackedSize, "P", 8},
-  { kaipidAttributes, "A", 0},
-  { kaipidCreationTime, "DC", 14},
-  { kaipidLastAccessTime, "DA", 14},
-  { kaipidLastWriteTime, "DM", 14},
+  { kpidName, "N", 0},
+  { kpidSize, "S", 8},
+  { kpidPackedSize, "P", 8},
+  { kpidAttributes, "A", 0},
+  { kpidCreationTime, "DC", 14},
+  { kpidLastAccessTime, "DA", 14},
+  { kpidLastWriteTime, "DM", 14},
   
-  { kaipidSolid, NULL, 0, 'S'},
-  { kaipidEncrypted, NULL, 0, 'P'}
+  { kpidSolid, NULL, 0, 'S'},
+  { kpidEncrypted, NULL, 0, 'P'}
 
-  { kaipidDictionarySize, IDS_PROPERTY_DICTIONARY_SIZE },
-  { kaipidSplitBefore, NULL, 'B'},
-  { kaipidSplitAfter, NULL, 'A'},
-  { kaipidComment, , NULL, 'C'},
-  { kaipidCRC, IDS_PROPERTY_CRC }
-  // { kaipidType, L"Type" }
+  { kpidDictionarySize, IDS_PROPERTY_DICTIONARY_SIZE },
+  { kpidSplitBefore, NULL, 'B'},
+  { kpidSplitAfter, NULL, 'A'},
+  { kpidComment, , NULL, 'C'},
+  { kpidCRC, IDS_PROPERTY_CRC }
+  // { kpidType, L"Type" }
 };
 
 static const kNumPropertyIDInfos = sizeof(kPropertyIDInfos) /  
@@ -420,13 +420,13 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *anInfo)
   PanelModeColumnWidths.Empty();
 
   /*
-  AddColumn(kaipidName);
-  AddColumn(kaipidSize);
-  AddColumn(kaipidPackedSize);
-  AddColumn(kaipidLastWriteTime);
-  AddColumn(kaipidCreationTime);
-  AddColumn(kaipidLastAccessTime);
-  AddColumn(kaipidAttributes);
+  AddColumn(kpidName);
+  AddColumn(kpidSize);
+  AddColumn(kpidPackedSize);
+  AddColumn(kpidLastWriteTime);
+  AddColumn(kpidCreationTime);
+  AddColumn(kpidLastAccessTime);
+  AddColumn(kpidAttributes);
   
   PanelMode.ColumnTypes = (char *)(const char *)PanelModeColumnTypes;
   PanelMode.ColumnWidths = (char *)(const char *)PanelModeColumnWidths;
@@ -491,8 +491,8 @@ HRESULT CPlugin::ShowAttributesWindow()
     CArchiveItemProperty aDestProperty;
     aDestProperty.Type = aSrcProperty.vt;
     aDestProperty.ID = aSrcProperty.propid;
-    if (aDestProperty.ID  == kaipidPath)
-      aDestProperty.ID  = kaipidName;
+    if (aDestProperty.ID  == kpidPath)
+      aDestProperty.ID  = kpidName;
     UINT aPropID = aSrcProperty.propid;
     AString aPropName;
     {
@@ -549,7 +549,7 @@ HRESULT CPlugin::ShowAttributesWindow()
     anInitDialogItems.Add(anInitDialogItem);
     
     NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(m_ArchiveFolder->GetProperty(anItemIndex, 
+    RETURN_IF_NOT_S_OK(_folder->GetProperty(anItemIndex, 
         aProperty.ID, &aPropVariant));
     CSysString aString = ConvertPropertyToString2(aPropVariant, aProperty.ID);
     aValues.Add(aString);

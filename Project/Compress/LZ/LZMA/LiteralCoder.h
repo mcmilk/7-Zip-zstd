@@ -15,64 +15,64 @@ const kNumMoveBits = 5;
 
 class CEncoder2
 {
-  CMyBitEncoder<kNumMoveBits> m_Encoders[3][1 << 8];
+  CMyBitEncoder<kNumMoveBits> _encoders[3][1 << 8];
 public:
   void Init();
-  void Encode(CMyRangeEncoder *aRangeEncoder, bool aMatchMode, BYTE aMatchByte, BYTE aSymbol);
-  UINT32 GetPrice(bool aMatchMode, BYTE aMatchByte, BYTE aSymbol) const;
+  void Encode(CMyRangeEncoder *rangeEncoder, bool matchMode, BYTE matchByte, BYTE symbol);
+  UINT32 GetPrice(bool matchMode, BYTE matchByte, BYTE symbol) const;
 };
 
 class CDecoder2
 {
-  CMyBitDecoder<kNumMoveBits> m_Decoders[3][1 << 8];
+  CMyBitDecoder<kNumMoveBits> _decoders[3][1 << 8];
 public:
   void Init()
   {
     for (int i = 0; i < 3; i++)
       for (int j = 1; j < (1 << 8); j++)
-        m_Decoders[i][j].Init();
+        _decoders[i][j].Init();
   }
 
-  BYTE DecodeNormal(CMyRangeDecoder *aRangeDecoder)
+  BYTE DecodeNormal(CMyRangeDecoder *rangeDecoder)
   {
-    UINT32 aSymbol = 1;
+    UINT32 symbol = 1;
     RC_INIT_VAR
     do
     {
-      // aSymbol = (aSymbol << 1) | m_Decoders[0][aSymbol].Decode(aRangeDecoder);
-      RC_GETBIT(kNumMoveBits, m_Decoders[0][aSymbol].m_Probability, aSymbol)
+      // symbol = (symbol << 1) | _decoders[0][symbol].Decode(rangeDecoder);
+      RC_GETBIT(kNumMoveBits, _decoders[0][symbol].Probability, symbol)
     }
-    while (aSymbol < 0x100);
+    while (symbol < 0x100);
     RC_FLUSH_VAR
-    return aSymbol;
+    return symbol;
   }
 
-  BYTE DecodeWithMatchByte(CMyRangeDecoder *aRangeDecoder, BYTE aMatchByte)
+  BYTE DecodeWithMatchByte(CMyRangeDecoder *rangeDecoder, BYTE matchByte)
   {
-    UINT32 aSymbol = 1;
+    UINT32 symbol = 1;
     RC_INIT_VAR
     do
     {
-      UINT32 aMatchBit = (aMatchByte >> 7) & 1;
-      aMatchByte <<= 1;
-      // UINT32 aBit = m_Decoders[1 + aMatchBit][aSymbol].Decode(aRangeDecoder);
-      // aSymbol = (aSymbol << 1) | aBit;
-      UINT32 aBit;
-      RC_GETBIT2(kNumMoveBits, m_Decoders[1 + aMatchBit][aSymbol].m_Probability, aSymbol, 
-          aBit = 0, aBit = 1)
-      if (aMatchBit != aBit)
+      UINT32 matchBit = (matchByte >> 7) & 1;
+      matchByte <<= 1;
+      // UINT32 bit = _decoders[1 + matchBit][symbol].Decode(rangeDecoder);
+      // symbol = (symbol << 1) | bit;
+      UINT32 bit;
+      RC_GETBIT2(kNumMoveBits, _decoders[1 + matchBit][symbol].Probability, symbol, 
+          bit = 0, bit = 1)
+      if (matchBit != bit)
       {
-        while (aSymbol < 0x100)
+        while (symbol < 0x100)
         {
-          // aSymbol = (aSymbol << 1) | m_Decoders[0][aSymbol].Decode(aRangeDecoder);
-          RC_GETBIT(kNumMoveBits, m_Decoders[0][aSymbol].m_Probability, aSymbol)
+          // symbol = (symbol << 1) | _decoders[0][symbol].Decode(rangeDecoder);
+          RC_GETBIT(kNumMoveBits, _decoders[0][symbol].Probability, symbol)
         }
         break;
       }
     }
-    while (aSymbol < 0x100);
+    while (symbol < 0x100);
     RC_FLUSH_VAR
-    return aSymbol;
+    return symbol;
   }
 };
 
@@ -80,84 +80,84 @@ public:
 const UINT32 kNumPrevByteBits = 1;
 const UINT32 kNumPrevByteStates =  (1 << kNumPrevByteBits);
 
-inline UINT32 GetLiteralState(BYTE aPrevByte)
-  { return (aPrevByte >> (8 - kNumPrevByteBits)); }
+inline UINT32 GetLiteralState(BYTE prevByte)
+  { return (prevByte >> (8 - kNumPrevByteBits)); }
 */
 
 class CEncoder
 {
-  CEncoder2 *m_Coders;
-  UINT32 m_NumPrevBits;
-  UINT32 m_NumPosBits;
-  UINT32 m_PosMask;
+  CEncoder2 *_coders;
+  UINT32 _numPrevBits;
+  UINT32 _numPosBits;
+  UINT32 _posMask;
 public:
-  CEncoder(): m_Coders(0) {}
+  CEncoder(): _coders(0) {}
   ~CEncoder()  { Free(); }
   void Free()
   { 
-    delete []m_Coders;
-    m_Coders = 0;
+    delete []_coders;
+    _coders = 0;
   }
-  void Create(UINT32 aNumPosBits, UINT32 aNumPrevBits)
+  void Create(UINT32 numPosBits, UINT32 numPrevBits)
   {
     Free();
-    m_NumPosBits = aNumPosBits;
-    m_PosMask = (1 << aNumPosBits) - 1;
-    m_NumPrevBits = aNumPrevBits;
-    UINT32 aNumStates = 1 << (m_NumPrevBits + m_NumPosBits);
-    m_Coders = new CEncoder2[aNumStates];
+    _numPosBits = numPosBits;
+    _posMask = (1 << numPosBits) - 1;
+    _numPrevBits = numPrevBits;
+    UINT32 numStates = 1 << (_numPrevBits + _numPosBits);
+    _coders = new CEncoder2[numStates];
   }
   void Init()
   {
-    UINT32 aNumStates = 1 << (m_NumPrevBits + m_NumPosBits);
-    for (UINT32 i = 0; i < aNumStates; i++)
-      m_Coders[i].Init();
+    UINT32 numStates = 1 << (_numPrevBits + _numPosBits);
+    for (UINT32 i = 0; i < numStates; i++)
+      _coders[i].Init();
   }
-  UINT32 GetState(UINT32 aPos, BYTE aPrevByte) const
-    { return ((aPos & m_PosMask) << m_NumPrevBits) + (aPrevByte >> (8 - m_NumPrevBits)); }
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aPos, BYTE aPrevByte, 
-      bool aMatchMode, BYTE aMatchByte, BYTE aSymbol)
-    { m_Coders[GetState(aPos, aPrevByte)].Encode(aRangeEncoder, aMatchMode, 
-          aMatchByte, aSymbol); }
-  UINT32 GetPrice(UINT32 aPos, BYTE aPrevByte, bool aMatchMode, BYTE aMatchByte, BYTE aSymbol) const
-    { return m_Coders[GetState(aPos, aPrevByte)].GetPrice(aMatchMode, aMatchByte, aSymbol); }
+  UINT32 GetState(UINT32 pos, BYTE prevByte) const
+    { return ((pos & _posMask) << _numPrevBits) + (prevByte >> (8 - _numPrevBits)); }
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 pos, BYTE prevByte, 
+      bool matchMode, BYTE matchByte, BYTE symbol)
+    { _coders[GetState(pos, prevByte)].Encode(rangeEncoder, matchMode, 
+          matchByte, symbol); }
+  UINT32 GetPrice(UINT32 pos, BYTE prevByte, bool matchMode, BYTE matchByte, BYTE symbol) const
+    { return _coders[GetState(pos, prevByte)].GetPrice(matchMode, matchByte, symbol); }
 };
 
 class CDecoder
 {
-  CDecoder2 *m_Coders;
-  UINT32 m_NumPrevBits;
-  UINT32 m_NumPosBits;
-  UINT32 m_PosMask;
+  CDecoder2 *_coders;
+  UINT32 _numPrevBits;
+  UINT32 _numPosBits;
+  UINT32 _posMask;
 public:
-  CDecoder(): m_Coders(0) {}
+  CDecoder(): _coders(0) {}
   ~CDecoder()  { Free(); }
   void Free()
   { 
-    delete []m_Coders;
-    m_Coders = 0;
+    delete []_coders;
+    _coders = 0;
   }
-  void Create(UINT32 aNumPosBits, UINT32 aNumPrevBits)
+  void Create(UINT32 numPosBits, UINT32 numPrevBits)
   {
     Free();
-    m_NumPosBits = aNumPosBits;
-    m_PosMask = (1 << aNumPosBits) - 1;
-    m_NumPrevBits = aNumPrevBits;
-    UINT32 aNumStates = 1 << (m_NumPrevBits + m_NumPosBits);
-    m_Coders = new CDecoder2[aNumStates];
+    _numPosBits = numPosBits;
+    _posMask = (1 << numPosBits) - 1;
+    _numPrevBits = numPrevBits;
+    UINT32 numStates = 1 << (_numPrevBits + _numPosBits);
+    _coders = new CDecoder2[numStates];
   }
   void Init()
   {
-    UINT32 aNumStates = 1 << (m_NumPrevBits + m_NumPosBits);
-    for (UINT32 i = 0; i < aNumStates; i++)
-      m_Coders[i].Init();
+    UINT32 numStates = 1 << (_numPrevBits + _numPosBits);
+    for (UINT32 i = 0; i < numStates; i++)
+      _coders[i].Init();
   }
-  UINT32 GetState(UINT32 aPos, BYTE aPrevByte) const
-    { return ((aPos & m_PosMask) << m_NumPrevBits) + (aPrevByte >> (8 - m_NumPrevBits)); }
-  BYTE DecodeNormal(CMyRangeDecoder *aRangeDecoder, UINT32 aPos, BYTE aPrevByte)
-    { return m_Coders[GetState(aPos, aPrevByte)].DecodeNormal(aRangeDecoder); }
-  BYTE DecodeWithMatchByte(CMyRangeDecoder *aRangeDecoder, UINT32 aPos, BYTE aPrevByte, BYTE aMatchByte)
-    { return m_Coders[GetState(aPos, aPrevByte)].DecodeWithMatchByte(aRangeDecoder, aMatchByte); }
+  UINT32 GetState(UINT32 pos, BYTE prevByte) const
+    { return ((pos & _posMask) << _numPrevBits) + (prevByte >> (8 - _numPrevBits)); }
+  BYTE DecodeNormal(CMyRangeDecoder *rangeDecoder, UINT32 pos, BYTE prevByte)
+    { return _coders[GetState(pos, prevByte)].DecodeNormal(rangeDecoder); }
+  BYTE DecodeWithMatchByte(CMyRangeDecoder *rangeDecoder, UINT32 pos, BYTE prevByte, BYTE matchByte)
+    { return _coders[GetState(pos, prevByte)].DecodeWithMatchByte(rangeDecoder, matchByte); }
 };
 
 }

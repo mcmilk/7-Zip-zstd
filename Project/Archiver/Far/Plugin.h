@@ -43,7 +43,7 @@ public:
 
   // std::auto_ptr<CProxyHandler> m_ProxyHandler; 
   CComPtr<IArchiveHandler100> m_ArchiveHandler;
-  CComPtr<IArchiveFolder> m_ArchiveFolder;
+  CComPtr<IFolderFolder> _folder;
   
   NZipRootRegistry::CArchiverInfo m_ArchiverInfo;
 

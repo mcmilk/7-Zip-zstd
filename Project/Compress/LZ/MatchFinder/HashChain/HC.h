@@ -59,24 +59,24 @@ const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
 
 class CInTree: public NStream::NWindow::CIn
 {
-  UINT32 m_CyclicBufferPos;
-  UINT32 m_CyclicBufferSize;
+  UINT32 _cyclicBufferPos;
+  UINT32 _cyclicBufferSize;
 
-  UINT32 m_HistorySize;
-  UINT32 m_MatchMaxLen;
+  UINT32 _historySize;
+  UINT32 _matchMaxLen;
 
-  CIndex *m_Hash;
+  CIndex *_hash;
   
   #ifdef HASH_ARRAY_2
-  CIndex *m_Hash2;
+  CIndex *_hash2;
   #ifdef HASH_ARRAY_3
-  CIndex *m_Hash3;
+  CIndex *_hash3;
   #endif
   #endif
   
-  CIndex *m_Chain;
+  CIndex *_chain;
 
-  UINT32 m_CutValue;
+  UINT32 _cutValue;
 
   void NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue);
   void Normalize();
@@ -88,16 +88,16 @@ public:
   HRESULT Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
       UINT32 aKeepAddBufferAfter, UINT32 _dwSizeReserv = (1<<17));
 	HRESULT Init(ISequentialInStream *aStream);
-  void SetCutValue(UINT32 aCutValue) { m_CutValue = aCutValue; }
+  void SetCutValue(UINT32 aCutValue) { _cutValue = aCutValue; }
   UINT32 GetLongestMatch(UINT32 *aDistances);
   void DummyLongestMatch();
   HRESULT MovePos()
   {
-    m_CyclicBufferPos++;
-    if (m_CyclicBufferPos >= m_CyclicBufferSize)
-      m_CyclicBufferPos = 0;
+    _cyclicBufferPos++;
+    if (_cyclicBufferPos >= _cyclicBufferSize)
+      _cyclicBufferPos = 0;
     RETURN_IF_NOT_S_OK(CIn::MovePos());
-    if (m_Pos == kMaxValForNormalize)
+    if (_pos == kMaxValForNormalize)
       Normalize();
     return S_OK;
   }

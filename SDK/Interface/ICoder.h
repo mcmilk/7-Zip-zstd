@@ -13,7 +13,7 @@ DEFINE_GUID(IID_ICompressProgressInfo,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000200040000")
 ICompressProgressInfo: public IUnknown
 {
-  STDMETHOD(SetRatioInfo)(const UINT64 *anInSize, const UINT64 *anOutSize) = 0;
+  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000200050000}
@@ -23,9 +23,9 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000200050000")
 ICompressCoder: public IUnknown
 {
   // STDMETHOD(Create)(UINT32 aHistorySize, UINT32 aMatchFastLen) = 0;
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress) = 0;
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000200180000}
@@ -34,13 +34,13 @@ DEFINE_GUID(IID_ICompressCoder2,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000200180000")
 ICompressCoder2: public IUnknown
 {
-  STDMETHOD(Code)(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes, 
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams, 
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress) PURE;
+  STDMETHOD(Code)(ISequentialInStream **inStreams,
+      const UINT64 **inSizes, 
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams, 
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress) PURE;
 };
 
 #endif

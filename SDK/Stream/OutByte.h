@@ -13,40 +13,40 @@ namespace NStream {
 class COutByteWriteException
 {
 public:
-  HRESULT m_Result;
-  COutByteWriteException(HRESULT aResult): m_Result (aResult) {}
+  HRESULT Result;
+  COutByteWriteException(HRESULT result): Result (result) {}
 };
 
 class COutByte
 {
-  BYTE *m_Buffer;
-  UINT32 m_Pos;
-  UINT32 m_BufferSize;
-  CComPtr<ISequentialOutStream> m_Stream;
-  UINT64 m_ProcessedSize;
+  BYTE *_buffer;
+  UINT32 _pos;
+  UINT32 _bufferSize;
+  CComPtr<ISequentialOutStream> _stream;
+  UINT64 _processedSize;
 
   void WriteBlock();
 public:
-  COutByte(UINT32 aBufferSize = (1 << 20));
+  COutByte(UINT32 bufferSize = (1 << 20));
   ~COutByte();
 
-  void Init(ISequentialOutStream *aStream);
+  void Init(ISequentialOutStream *stream);
   HRESULT Flush();
   void ReleaseStream();
 
-  void WriteByte(BYTE aByte)
+  void WriteByte(BYTE b)
   {
-    m_Buffer[m_Pos++] = aByte;
-    if(m_Pos >= m_BufferSize)
+    _buffer[_pos++] = b;
+    if(_pos >= _bufferSize)
       WriteBlock();
   }
-  void WriteBytes(const void *aBytes, UINT32 aSize)
+  void WriteBytes(const void *data, UINT32 size)
   {
-    for (UINT32 i = 0; i < aSize; i++)
-      WriteByte(((const BYTE *)aBytes)[i]);
+    for (UINT32 i = 0; i < size; i++)
+      WriteByte(((const BYTE *)data)[i]);
   }
 
-  UINT64 GetProcessedSize() const { return m_ProcessedSize + m_Pos; }
+  UINT64 GetProcessedSize() const { return _processedSize + _pos; }
 };
 
 }

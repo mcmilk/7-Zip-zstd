@@ -82,11 +82,11 @@ struct CFieldInfoInit
 
 CFieldInfoInit kStandardFieldTable[] = 
 {
-  { kaipidLastWriteTime, "   Date      Time", kLeft, kLeft, 0, 19 },
-  { kaipidAttributes, "Attr", kRight, kCenter, 1, 5 },
-  { kaipidSize, "Size", kRight, kRight, 1, 12 },
-  { kaipidPackedSize, "Compressed", kRight, kRight, 1, 12 },
-  { kaipidPath, "Name", kLeft, kLeft, 2, 12 }
+  { kpidLastWriteTime, "   Date      Time", kLeft, kLeft, 0, 19 },
+  { kpidAttributes, "Attr", kRight, kCenter, 1, 5 },
+  { kpidSize, "Size", kRight, kRight, 1, 12 },
+  { kpidPackedSize, "Compressed", kRight, kRight, 1, 12 },
+  { kpidPath, "Name", kLeft, kLeft, 2, 12 }
 };
 
 void PrintSpaces(int aNumSpaces)
@@ -213,10 +213,10 @@ HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *anArchive,
     {
       switch(aFieldInfo.PropID)
       {
-        case kaipidPath:
+        case kpidPath:
           aPropVariant = aDefaultItemName;
           break;
-        case kaipidLastWriteTime:
+        case kpidLastWriteTime:
           aPropVariant = anArchiveFileInfo.LastWriteTime;
           break;
         default:
@@ -225,19 +225,19 @@ HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *anArchive,
       }
     }
 
-    if (aFieldInfo.PropID == kaipidLastWriteTime)
+    if (aFieldInfo.PropID == kpidLastWriteTime)
     {
       PrintTime(aPropVariant);
       continue;
     }
-    if (aFieldInfo.PropID == kaipidAttributes)
+    if (aFieldInfo.PropID == kpidAttributes)
     {
       if (aPropVariant.vt != VT_UI4)
         throw "incorrect item";
       UINT32 anAttributes = aPropVariant.ulVal;
       NCOM::CPropVariant aPropVariantIsFolder;
       RETURN_IF_NOT_S_OK(anArchive->GetProperty(anIndex, 
-          kaipidIsFolder, &aPropVariantIsFolder));
+          kpidIsFolder, &aPropVariantIsFolder));
       if(aPropVariantIsFolder.vt != VT_BOOL)
         return E_FAIL;
       g_StdOut << GetAttributesString(anAttributes, VARIANT_BOOLToBool(aPropVariantIsFolder.boolVal));
@@ -283,11 +283,11 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 aNumFiles,
     const CFieldInfo &aFieldInfo = m_Fields[i];
     PrintSpaces(aFieldInfo.PrefixSpacesWidth);
     NCOM::CPropVariant aPropVariant;
-    if (aFieldInfo.PropID == kaipidSize)
+    if (aFieldInfo.PropID == kpidSize)
       PrintNumberString(aFieldInfo.TextAdjustment, aFieldInfo.Width, aSize);
-    else if (aFieldInfo.PropID == kaipidPackedSize)
+    else if (aFieldInfo.PropID == kpidPackedSize)
       PrintNumberString(aFieldInfo.TextAdjustment, aFieldInfo.Width, aCompressedSize);
-    else if (aFieldInfo.PropID == kaipidPath)
+    else if (aFieldInfo.PropID == kpidPath)
     {
       AString aTmp = NumberToString(aNumFiles);
       aTmp += " ";
@@ -336,7 +336,7 @@ HRESULT ListArchive(IArchiveHandler200 *anArchive,
     if (NConsoleClose::TestBreakSignal())
       return E_ABORT;
     NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kaipidPath, &aPropVariant));
+    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariant));
     UString aFilePath;
     if(aPropVariant.vt == VT_EMPTY)
       aFilePath = aDefaultItemName;
@@ -352,11 +352,11 @@ HRESULT ListArchive(IArchiveHandler200 *anArchive,
     aFieldPrinter.PrintItemInfo(anArchive, aDefaultItemName, anArchiveFileInfo, i);
 
     UINT64 aPackSize, anUnpackSize;
-    if (!GetUINT64Value(anArchive, i, kaipidSize, anUnpackSize))
+    if (!GetUINT64Value(anArchive, i, kpidSize, anUnpackSize))
       anUnpackSize = 0;
     else
       aTotalUnPackSizePointer = &aTotalUnPackSize;
-    if (!GetUINT64Value(anArchive, i, kaipidPackedSize, aPackSize))
+    if (!GetUINT64Value(anArchive, i, kpidPackedSize, aPackSize))
       aPackSize = 0;
     else
       aTotalPackSizePointer = &aTotalPackSize;

@@ -1,4 +1,4 @@
-// LZArithmetic/Encoder.cpp
+// LZMA/Encoder.cpp
 
 #include "StdAfx.h"
 
@@ -26,11 +26,11 @@ public:
     int c = 0;
     const kFastSlots = 20;
     c = 0;
-    for (BYTE aSlotFast = 0; aSlotFast < kFastSlots; aSlotFast++)
+    for (BYTE slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
-      UINT32 k = (1 << kDistDirectBits[aSlotFast]);
+      UINT32 k = (1 << kDistDirectBits[slotFast]);
       for (UINT32 j = 0; j < k; j++, c++)
-        g_FastPos[c] = aSlotFast;
+        g_FastPos[c] = slotFast;
     }
   }
 } g_FastPosInit;
@@ -39,64 +39,64 @@ const kDefaultDictionaryLogSize = 20;
 const kNumFastBytesDefault = 0x20;
 
 CEncoder::CEncoder():
-  m_DictionarySize(1 << kDefaultDictionaryLogSize),
-  m_DictionarySizePrev(UINT32(-1)),
-  m_NumFastBytes(kNumFastBytesDefault),
-  m_NumFastBytesPrev(UINT32(-1)),
-  m_DistTableSize(kDefaultDictionaryLogSize * 2),
-  m_PosStateBits(2),
-  m_PosStateMask(4 - 1),
-  m_LiteralPosStateBits(0),
-  m_LiteralContextBits(3)
+  _dictionarySize(1 << kDefaultDictionaryLogSize),
+  _dictionarySizePrev(UINT32(-1)),
+  _numFastBytes(kNumFastBytesDefault),
+  _numFastBytesPrev(UINT32(-1)),
+  _distTableSize(kDefaultDictionaryLogSize * 2),
+  _posStateBits(2),
+  _posStateMask(4 - 1),
+  _numLiteralPosStateBits(0),
+  _numLiteralContextBits(3)
 {
-  m_MaxMode = false;
-  m_FastMode = false;
-  m_PosAlignEncoder.Create(kNumAlignBits);
+  _maxMode = false;
+  _fastMode = false;
+  _posAlignEncoder.Create(kNumAlignBits);
   for(int i = 0; i < kNumPosModels; i++)
-    m_PosEncoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]);
+    _posEncoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]);
 }
 
 HRESULT CEncoder::Create()
 {
-  if (m_DictionarySize == m_DictionarySizePrev && m_NumFastBytesPrev == m_NumFastBytes)
+  if (_dictionarySize == _dictionarySizePrev && _numFastBytesPrev == _numFastBytes)
     return S_OK;
-  RETURN_IF_NOT_S_OK(m_MatchFinder->Create(m_DictionarySize, kNumOpts, m_NumFastBytes, 
-      kMatchMaxLen - m_NumFastBytes));
-  m_DictionarySizePrev = m_DictionarySize;
-  m_NumFastBytesPrev = m_NumFastBytes;
-  m_LiteralEncoder.Create(m_LiteralPosStateBits, m_LiteralContextBits);
-  m_LenEncoder.Create(1 << m_PosStateBits);
-  m_RepMatchLenEncoder.Create(1 << m_PosStateBits);
+  RETURN_IF_NOT_S_OK(_matchFinder->Create(_dictionarySize, kNumOpts, _numFastBytes, 
+      kMatchMaxLen - _numFastBytes));
+  _dictionarySizePrev = _dictionarySize;
+  _numFastBytesPrev = _numFastBytes;
+  _literalEncoder.Create(_numLiteralPosStateBits, _numLiteralContextBits);
+  _lenEncoder.Create(1 << _posStateBits);
+  _repMatchLenEncoder.Create(1 << _posStateBits);
   return S_OK;
 }
 
 
 // ICompressSetEncoderProperties2
-STDMETHODIMP CEncoder::SetEncoderProperties2(const PROPID *aPropIDs, 
-    const PROPVARIANT *aProperties, UINT32 aNumProperties)
+STDMETHODIMP CEncoder::SetEncoderProperties2(const PROPID *propIDs, 
+    const PROPVARIANT *properties, UINT32 numProperties)
 {
-  for (UINT32 i = 0; i < aNumProperties; i++)
+  for (UINT32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &aProperty = aProperties[i];
-    switch(aPropIDs[i])
+    const PROPVARIANT &property = properties[i];
+    switch(propIDs[i])
     {
       case NEncodingProperies::kNumFastBytes:
       {
-        if (aProperties[i].vt != VT_UI4)
+        if (properties[i].vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aNumFastBytes = aProperties[i].ulVal;
-        if(aNumFastBytes < 2 || aNumFastBytes > kMatchMaxLen)
+        UINT32 numFastBytes = properties[i].ulVal;
+        if(numFastBytes < 2 || numFastBytes > kMatchMaxLen)
           return E_INVALIDARG;
-        m_NumFastBytes = aNumFastBytes;
+        _numFastBytes = numFastBytes;
         break;
       }
       case NEncodingProperies::kAlgorithm:
       {
-        if (aProperties[i].vt != VT_UI4)
+        if (properties[i].vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aMaximize = aProperties[i].ulVal;
-        m_FastMode = (aMaximize == 0); 
-        m_MaxMode = (aMaximize >= 2);
+        UINT32 maximize = properties[i].ulVal;
+        _fastMode = (maximize == 0); 
+        _maxMode = (maximize >= 2);
         break;
       }
       default:
@@ -107,59 +107,59 @@ STDMETHODIMP CEncoder::SetEncoderProperties2(const PROPID *aPropIDs,
 }
 
 // ICompressSetCoderProperties
-STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *aPropIDs, 
-    const PROPVARIANT *aProperties, UINT32 aNumProperties)
+STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *propIDs, 
+    const PROPVARIANT *properties, UINT32 numProperties)
 {
-  for (UINT32 i = 0; i < aNumProperties; i++)
+  for (UINT32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &aProperty = aProperties[i];
-    switch(aPropIDs[i])
+    const PROPVARIANT &property = properties[i];
+    switch(propIDs[i])
     {
       case NEncodedStreamProperies::kDictionarySize:
       {
-        if (aProperty.vt != VT_UI4)
+        if (property.vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aDictionarySize = aProperty.ulVal;
-        if (aDictionarySize < UINT32(1 << kDicLogSizeMin) ||
-            aDictionarySize > UINT32(1 << kDicLogSizeMax))
+        UINT32 dictionarySize = property.ulVal;
+        if (dictionarySize < UINT32(1 << kDicLogSizeMin) ||
+            dictionarySize > UINT32(1 << kDicLogSizeMax))
           return E_INVALIDARG;
-        m_DictionarySize = aDictionarySize;
-        UINT32 aDicLogSize;
-        for(aDicLogSize = 0; aDicLogSize < kDicLogSizeMax; aDicLogSize++)
-          if (aDictionarySize <= (UINT32(1) << aDicLogSize))
+        _dictionarySize = dictionarySize;
+        UINT32 dicLogSize;
+        for(dicLogSize = 0; dicLogSize < kDicLogSizeMax; dicLogSize++)
+          if (dictionarySize <= (UINT32(1) << dicLogSize))
             break;
-        m_DistTableSize = aDicLogSize * 2;
+        _distTableSize = dicLogSize * 2;
         break;
       }
       case NEncodedStreamProperies::kPosStateBits:
       {
-        if (aProperty.vt != VT_UI4)
+        if (property.vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aValue = aProperty.ulVal;
-        if (aValue > NLength::kNumPosStatesBitsEncodingMax)
+        UINT32 value = property.ulVal;
+        if (value > NLength::kNumPosStatesBitsEncodingMax)
           return E_INVALIDARG;
-        m_PosStateBits = aValue;
-        m_PosStateMask = (1 << m_PosStateBits) - 1;
+        _posStateBits = value;
+        _posStateMask = (1 << _posStateBits) - 1;
         break;
       }
       case NEncodedStreamProperies::kLitPosBits:
       {
-        if (aProperty.vt != VT_UI4)
+        if (property.vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aValue = aProperty.ulVal;
-        if (aValue > kNumLitPosStatesBitsEncodingMax)
+        UINT32 value = property.ulVal;
+        if (value > kNumLitPosStatesBitsEncodingMax)
           return E_INVALIDARG;
-        m_LiteralPosStateBits = aValue;
+        _numLiteralPosStateBits = value;
         break;
       }
       case NEncodedStreamProperies::kLitContextBits:
       {
-        if (aProperty.vt != VT_UI4)
+        if (property.vt != VT_UI4)
           return E_INVALIDARG;
-        UINT32 aValue = aProperty.ulVal;
-        if (aValue > kNumLitContextBitsMax)
+        UINT32 value = property.ulVal;
+        if (value > kNumLitContextBitsMax)
           return E_INVALIDARG;
-        m_LiteralContextBits = aValue;
+        _numLiteralContextBits = value;
         break;
       }
       default:
@@ -169,477 +169,477 @@ STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *aPropIDs,
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *anOutStream)
+STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
-  BYTE aByte = (m_PosStateBits * 5 + m_LiteralPosStateBits) * 9 + m_LiteralContextBits;
-  RETURN_IF_NOT_S_OK(anOutStream->Write(&aByte, sizeof(aByte), NULL));
-  return anOutStream->Write(&m_DictionarySize, sizeof(m_DictionarySize), NULL);
+  BYTE firstByte = (_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits;
+  RETURN_IF_NOT_S_OK(outStream->Write(&firstByte, sizeof(firstByte), NULL));
+  return outStream->Write(&_dictionarySize, sizeof(_dictionarySize), NULL);
 }
 
 
-STDMETHODIMP CEncoder::Init(ISequentialInStream *anInStream, 
-    ISequentialOutStream *anOutStream)
+STDMETHODIMP CEncoder::Init(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream)
 {
   CBaseCoder::Init();
 
-  RETURN_IF_NOT_S_OK(m_MatchFinder->Init(anInStream));
-  m_RangeEncoder.Init(anOutStream);
+  RETURN_IF_NOT_S_OK(_matchFinder->Init(inStream));
+  _rangeEncoder.Init(outStream);
 
   int i;
   for(i = 0; i < kNumStates; i++)
   {
-    for (UINT32 j = 0; j <= m_PosStateMask; j++)
+    for (UINT32 j = 0; j <= _posStateMask; j++)
     {
-      m_MainChoiceEncoders[i][j].Init();
-      m_MatchRepShortChoiceEncoders[i][j].Init();
+      _mainChoiceEncoders[i][j].Init();
+      _matchRepShortChoiceEncoders[i][j].Init();
     }
-    m_MatchChoiceEncoders[i].Init();
-    m_MatchRepChoiceEncoders[i].Init();
-    m_MatchRep1ChoiceEncoders[i].Init();
-    m_MatchRep2ChoiceEncoders[i].Init();
+    _matchChoiceEncoders[i].Init();
+    _matchRepChoiceEncoders[i].Init();
+    _matchRep1ChoiceEncoders[i].Init();
+    _matchRep2ChoiceEncoders[i].Init();
   }
 
-  m_LiteralEncoder.Init();
+  _literalEncoder.Init();
 
-  // m_RepMatchLenEncoder.Init();
+  // _repMatchLenEncoder.Init();
   
   for(i = 0; i < kNumLenToPosStates; i++)
-    m_PosSlotEncoder[i].Init();
+    _posSlotEncoder[i].Init();
 
   for(i = 0; i < kNumPosModels; i++)
-    m_PosEncoders[i].Init();
+    _posEncoders[i].Init();
 
-  m_LenEncoder.Init();
-  m_RepMatchLenEncoder.Init();
+  _lenEncoder.Init();
+  _repMatchLenEncoder.Init();
 
-  m_PosAlignEncoder.Init();
+  _posAlignEncoder.Init();
 
-  m_LongestMatchWasFound = false;
-  m_OptimumEndIndex = 0;
-  m_OptimumCurrentIndex = 0;
-  m_AdditionalOffset = 0;
+  _longestMatchWasFound = false;
+  _optimumEndIndex = 0;
+  _optimumCurrentIndex = 0;
+  _additionalOffset = 0;
 
   return S_OK;
 }
 
-void CEncoder::MovePos(UINT32 aNum)
+void CEncoder::MovePos(UINT32 num)
 {
-  for (;aNum > 0; aNum--)
+  for (;num > 0; num--)
   {
-    m_MatchFinder->DummyLongestMatch();
-    HRESULT aResult = m_MatchFinder->MovePos();
-    if (aResult != S_OK)
-      throw CMatchFinderException(aResult);
-    m_AdditionalOffset++;
+    _matchFinder->DummyLongestMatch();
+    HRESULT result = _matchFinder->MovePos();
+    if (result != S_OK)
+      throw CMatchFinderException(result);
+    _additionalOffset++;
   }
 }
 
-UINT32 CEncoder::Backward(UINT32 &aBackRes, UINT32 aCur)
+UINT32 CEncoder::Backward(UINT32 &backRes, UINT32 cur)
 {
-  m_OptimumEndIndex = aCur;
-  UINT32 aPosMem = m_Optimum[aCur].PosPrev;
-  UINT32 aBackMem = m_Optimum[aCur].BackPrev;
+  _optimumEndIndex = cur;
+  UINT32 posMem = _optimum[cur].PosPrev;
+  UINT32 backMem = _optimum[cur].BackPrev;
   do
   {
-    if (m_Optimum[aCur].Prev1IsChar)
+    if (_optimum[cur].Prev1IsChar)
     {
-      m_Optimum[aPosMem].MakeAsChar();
-      m_Optimum[aPosMem].PosPrev = aPosMem - 1;
-      if (m_Optimum[aCur].Prev2)
+      _optimum[posMem].MakeAsChar();
+      _optimum[posMem].PosPrev = posMem - 1;
+      if (_optimum[cur].Prev2)
       {
-        m_Optimum[aPosMem - 1].Prev1IsChar = false;
-        m_Optimum[aPosMem - 1].PosPrev = m_Optimum[aCur].PosPrev2;
-        m_Optimum[aPosMem - 1].BackPrev = m_Optimum[aCur].BackPrev2;
+        _optimum[posMem - 1].Prev1IsChar = false;
+        _optimum[posMem - 1].PosPrev = _optimum[cur].PosPrev2;
+        _optimum[posMem - 1].BackPrev = _optimum[cur].BackPrev2;
       }
     }
-    UINT32 aPosPrev = aPosMem;
-    UINT32 aBackCur = aBackMem;
+    UINT32 posPrev = posMem;
+    UINT32 backCur = backMem;
 
-    aBackMem = m_Optimum[aPosPrev].BackPrev;
-    aPosMem = m_Optimum[aPosPrev].PosPrev;
+    backMem = _optimum[posPrev].BackPrev;
+    posMem = _optimum[posPrev].PosPrev;
 
-    m_Optimum[aPosPrev].BackPrev = aBackCur;
-    m_Optimum[aPosPrev].PosPrev = aCur;
-    aCur = aPosPrev;
+    _optimum[posPrev].BackPrev = backCur;
+    _optimum[posPrev].PosPrev = cur;
+    cur = posPrev;
   }
-  while(aCur > 0);
-  aBackRes = m_Optimum[0].BackPrev;
-  m_OptimumCurrentIndex  = m_Optimum[0].PosPrev;
-  return m_OptimumCurrentIndex; 
+  while(cur > 0);
+  backRes = _optimum[0].BackPrev;
+  _optimumCurrentIndex  = _optimum[0].PosPrev;
+  return _optimumCurrentIndex; 
 }
 
 /*
-inline UINT32 GetMatchLen(const BYTE *aData, UINT32 aBack, UINT32 aLimit)
+inline UINT32 GetMatchLen(const BYTE *data, UINT32 back, UINT32 limit)
 {  
-  aBack++;
-  for(UINT32 i = 0; i < aLimit && aData[i] == aData[i - aBack]; i++);
+  back++;
+  for(UINT32 i = 0; i < limit && data[i] == data[i - back]; i++);
   return i;
 }
 */
 
-UINT32 CEncoder::GetOptimum(UINT32 &aBackRes, UINT32 aPosition)
+UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
 {
-  if(m_OptimumEndIndex != m_OptimumCurrentIndex)
+  if(_optimumEndIndex != _optimumCurrentIndex)
   {
-    UINT32 aLen = m_Optimum[m_OptimumCurrentIndex].PosPrev - m_OptimumCurrentIndex;
-    aBackRes = m_Optimum[m_OptimumCurrentIndex].BackPrev;
-    m_OptimumCurrentIndex = m_Optimum[m_OptimumCurrentIndex].PosPrev;
-    return aLen;
+    UINT32 len = _optimum[_optimumCurrentIndex].PosPrev - _optimumCurrentIndex;
+    backRes = _optimum[_optimumCurrentIndex].BackPrev;
+    _optimumCurrentIndex = _optimum[_optimumCurrentIndex].PosPrev;
+    return len;
   }
-  m_OptimumCurrentIndex = 0;
-  m_OptimumEndIndex = 0; // test it;
+  _optimumCurrentIndex = 0;
+  _optimumEndIndex = 0; // test it;
   
-  UINT32 aLenMain;
-  if (!m_LongestMatchWasFound)
-    aLenMain = ReadMatchDistances();
+  UINT32 lenMain;
+  if (!_longestMatchWasFound)
+    lenMain = ReadMatchDistances();
   else
   {
-    aLenMain = m_LongestMatchLength;
-    m_LongestMatchWasFound = false;
+    lenMain = _longestMatchLength;
+    _longestMatchWasFound = false;
   }
 
 
-  UINT32 aReps[kNumRepDistances];
-  UINT32 aRepLens[kNumRepDistances];
-  UINT32 RepMaxIndex = 0;
+  UINT32 reps[kNumRepDistances];
+  UINT32 repLens[kNumRepDistances];
+  UINT32 repMaxIndex = 0;
   int i;
   for(i = 0; i < kNumRepDistances; i++)
   {
-    aReps[i] = m_RepDistances[i];
-    aRepLens[i] = m_MatchFinder->GetMatchLen(0 - 1, aReps[i], kMatchMaxLen);
-    if (i == 0 || aRepLens[i] > aRepLens[RepMaxIndex])
-      RepMaxIndex = i;
+    reps[i] = _repDistances[i];
+    repLens[i] = _matchFinder->GetMatchLen(0 - 1, reps[i], kMatchMaxLen);
+    if (i == 0 || repLens[i] > repLens[repMaxIndex])
+      repMaxIndex = i;
   }
-  if(aRepLens[RepMaxIndex] > m_NumFastBytes)
+  if(repLens[repMaxIndex] > _numFastBytes)
   {
-    aBackRes = RepMaxIndex;
-    MovePos(aRepLens[RepMaxIndex] - 1);
-    return aRepLens[RepMaxIndex];
+    backRes = repMaxIndex;
+    MovePos(repLens[repMaxIndex] - 1);
+    return repLens[repMaxIndex];
   }
 
-  if(aLenMain > m_NumFastBytes)
+  if(lenMain > _numFastBytes)
   {
-    UINT32 aBackMain = (aLenMain < m_NumFastBytes) ? m_MatchDistances[aLenMain] :
-        m_MatchDistances[m_NumFastBytes];
-    aBackRes = aBackMain + kNumRepDistances; 
-    MovePos(aLenMain - 1);
-    return aLenMain;
+    UINT32 backMain = (lenMain < _numFastBytes) ? _matchDistances[lenMain] :
+        _matchDistances[_numFastBytes];
+    backRes = backMain + kNumRepDistances; 
+    MovePos(lenMain - 1);
+    return lenMain;
   }
-  BYTE aCurrentByte = m_MatchFinder->GetIndexByte(0 - 1);
+  BYTE currentByte = _matchFinder->GetIndexByte(0 - 1);
 
-  m_Optimum[0].State = m_State;
+  _optimum[0].State = _state;
 
-  BYTE aMatchByte;
+  BYTE matchByte;
   
-  aMatchByte = m_MatchFinder->GetIndexByte(0 - m_RepDistances[0] - 1 - 1);
+  matchByte = _matchFinder->GetIndexByte(0 - _repDistances[0] - 1 - 1);
 
-  UINT32 aPosState = (aPosition & m_PosStateMask);
+  UINT32 posState = (position & _posStateMask);
 
-  m_Optimum[1].Price = m_MainChoiceEncoders[m_State.m_Index][aPosState].GetPrice(kMainChoiceLiteralIndex) + 
-      m_LiteralEncoder.GetPrice(aPosition, m_PreviousByte, m_PeviousIsMatch, aMatchByte, aCurrentByte);
-  m_Optimum[1].MakeAsChar();
+  _optimum[1].Price = _mainChoiceEncoders[_state.Index][posState].GetPrice(kMainChoiceLiteralIndex) + 
+      _literalEncoder.GetPrice(position, _previousByte, _peviousIsMatch, matchByte, currentByte);
+  _optimum[1].MakeAsChar();
 
-  m_Optimum[1].PosPrev = 0;
+  _optimum[1].PosPrev = 0;
 
   for (i = 0; i < kNumRepDistances; i++)
-    m_Optimum[0].Backs[i] = aReps[i];
+    _optimum[0].Backs[i] = reps[i];
 
-  UINT32 aMatchPrice = m_MainChoiceEncoders[m_State.m_Index][aPosState].GetPrice(kMainChoiceMatchIndex);
-  UINT32 aRepMatchPrice = aMatchPrice + 
-      m_MatchChoiceEncoders[m_State.m_Index].GetPrice(kMatchChoiceRepetitionIndex);
+  UINT32 matchPrice = _mainChoiceEncoders[_state.Index][posState].GetPrice(kMainChoiceMatchIndex);
+  UINT32 repMatchPrice = matchPrice + 
+      _matchChoiceEncoders[_state.Index].GetPrice(kMatchChoiceRepetitionIndex);
 
-  if(aMatchByte == aCurrentByte)
+  if(matchByte == currentByte)
   {
-    UINT32 aShortRepPrice = aRepMatchPrice + GetRepLen1Price(m_State, aPosState);
-    if(aShortRepPrice < m_Optimum[1].Price)
+    UINT32 shortRepPrice = repMatchPrice + GetRepLen1Price(_state, posState);
+    if(shortRepPrice < _optimum[1].Price)
     {
-      m_Optimum[1].Price = aShortRepPrice;
-      m_Optimum[1].MakeAsShortRep();
+      _optimum[1].Price = shortRepPrice;
+      _optimum[1].MakeAsShortRep();
     }
   }
-  if(aLenMain < 2)
+  if(lenMain < 2)
   {
-    aBackRes = m_Optimum[1].BackPrev;
+    backRes = _optimum[1].BackPrev;
     return 1;
   }
 
   
-  UINT32 aNormalMatchPrice = aMatchPrice + 
-      m_MatchChoiceEncoders[m_State.m_Index].GetPrice(kMatchChoiceDistanceIndex);
+  UINT32 normalMatchPrice = matchPrice + 
+      _matchChoiceEncoders[_state.Index].GetPrice(kMatchChoiceDistanceIndex);
 
-  if (aLenMain <= aRepLens[RepMaxIndex])
-    aLenMain = 0;
+  if (lenMain <= repLens[repMaxIndex])
+    lenMain = 0;
 
-  UINT32 aLen;
-  for(aLen = 2; aLen <= aLenMain; aLen++)
+  UINT32 len;
+  for(len = 2; len <= lenMain; len++)
   {
-    m_Optimum[aLen].PosPrev = 0;
-    m_Optimum[aLen].BackPrev = m_MatchDistances[aLen] + kNumRepDistances;
-    m_Optimum[aLen].Price = aNormalMatchPrice + 
-        GetPosLenPrice(m_MatchDistances[aLen], aLen, aPosState);
-    m_Optimum[aLen].Prev1IsChar = false;
+    _optimum[len].PosPrev = 0;
+    _optimum[len].BackPrev = _matchDistances[len] + kNumRepDistances;
+    _optimum[len].Price = normalMatchPrice + 
+        GetPosLenPrice(_matchDistances[len], len, posState);
+    _optimum[len].Prev1IsChar = false;
   }
 
-  if (aLenMain < aRepLens[RepMaxIndex])
-    aLenMain = aRepLens[RepMaxIndex];
+  if (lenMain < repLens[repMaxIndex])
+    lenMain = repLens[repMaxIndex];
 
-  for (; aLen <= aLenMain; aLen++)
-    m_Optimum[aLen].Price = kIfinityPrice;
+  for (; len <= lenMain; len++)
+    _optimum[len].Price = kIfinityPrice;
 
   for(i = 0; i < kNumRepDistances; i++)
   {
-    UINT aRepLen = aRepLens[i];
-    for(UINT32 aLenTest = 2; aLenTest <= aRepLen; aLenTest++)
+    UINT repLen = repLens[i];
+    for(UINT32 lenTest = 2; lenTest <= repLen; lenTest++)
     {
-      UINT32 aCurAndLenPrice = aRepMatchPrice + GetRepPrice(i, aLenTest, m_State, aPosState);
-      COptimal &anOptimum = m_Optimum[aLenTest];
-      if (aCurAndLenPrice < anOptimum.Price) 
+      UINT32 curAndLenPrice = repMatchPrice + GetRepPrice(i, lenTest, _state, posState);
+      COptimal &optimum = _optimum[lenTest];
+      if (curAndLenPrice < optimum.Price) 
       {
-        anOptimum.Price = aCurAndLenPrice;
-        anOptimum.PosPrev = 0;
-        anOptimum.BackPrev = i;
-        anOptimum.Prev1IsChar = false;
+        optimum.Price = curAndLenPrice;
+        optimum.PosPrev = 0;
+        optimum.BackPrev = i;
+        optimum.Prev1IsChar = false;
       }
     }
   }
 
-  UINT32 aCur = 0;
-  UINT32 aLenEnd = aLenMain;
+  UINT32 cur = 0;
+  UINT32 lenEnd = lenMain;
 
   while(true)
   {
-    aCur++;
-    if(aCur == aLenEnd)  
-      return Backward(aBackRes, aCur);
-    aPosition++;
-    UINT32 aPosPrev = m_Optimum[aCur].PosPrev;
-    CState aState;
-    if (m_Optimum[aCur].Prev1IsChar)
+    cur++;
+    if(cur == lenEnd)  
+      return Backward(backRes, cur);
+    position++;
+    UINT32 posPrev = _optimum[cur].PosPrev;
+    CState state;
+    if (_optimum[cur].Prev1IsChar)
     {
-      aPosPrev--;
-      if (m_Optimum[aCur].Prev2)
+      posPrev--;
+      if (_optimum[cur].Prev2)
       {
-        aState = m_Optimum[m_Optimum[aCur].PosPrev2].State;
-        if (m_Optimum[aCur].BackPrev2 < kNumRepDistances)
-          aState.UpdateRep();
+        state = _optimum[_optimum[cur].PosPrev2].State;
+        if (_optimum[cur].BackPrev2 < kNumRepDistances)
+          state.UpdateRep();
         else
-          aState.UpdateMatch();
+          state.UpdateMatch();
       }
       else
-        aState = m_Optimum[aPosPrev].State;
-      aState.UpdateChar();
+        state = _optimum[posPrev].State;
+      state.UpdateChar();
     }
     else
-      aState = m_Optimum[aPosPrev].State;
-    bool aPrevWasMatch;
-    if (aPosPrev == aCur - 1)
+      state = _optimum[posPrev].State;
+    bool prevWasMatch;
+    if (posPrev == cur - 1)
     {
-      if (m_Optimum[aCur].IsShortRep())
+      if (_optimum[cur].IsShortRep())
       {
-        aPrevWasMatch = true;
-        aState.UpdateShortRep();
+        prevWasMatch = true;
+        state.UpdateShortRep();
       }
       else
       {
-        aPrevWasMatch = false;
-        aState.UpdateChar();
+        prevWasMatch = false;
+        state.UpdateChar();
       }
       /*
-      if (m_Optimum[aCur].Prev1IsChar)
+      if (_optimum[cur].Prev1IsChar)
         for(int i = 0; i < kNumRepDistances; i++)
-          aReps[i] = m_Optimum[aPosPrev].Backs[i];
+          reps[i] = _optimum[posPrev].Backs[i];
       */
     }
     else
     {
-      aPrevWasMatch = true;
-      UINT32 aPos;
-      if (m_Optimum[aCur].Prev1IsChar && m_Optimum[aCur].Prev2)
+      prevWasMatch = true;
+      UINT32 pos;
+      if (_optimum[cur].Prev1IsChar && _optimum[cur].Prev2)
       {
-        aPosPrev = m_Optimum[aCur].PosPrev2;
-        aPos = m_Optimum[aCur].BackPrev2;
-        aState.UpdateRep();
+        posPrev = _optimum[cur].PosPrev2;
+        pos = _optimum[cur].BackPrev2;
+        state.UpdateRep();
       }
       else
       {
-        aPos = m_Optimum[aCur].BackPrev;
-        if (aPos < kNumRepDistances)
-          aState.UpdateRep();
+        pos = _optimum[cur].BackPrev;
+        if (pos < kNumRepDistances)
+          state.UpdateRep();
         else
-          aState.UpdateMatch();
+          state.UpdateMatch();
       }
-      if (aPos < kNumRepDistances)
+      if (pos < kNumRepDistances)
       {
-        aReps[0] = m_Optimum[aPosPrev].Backs[aPos];
+        reps[0] = _optimum[posPrev].Backs[pos];
     		UINT32 i;
-        for(i = 1; i <= aPos; i++)
-          aReps[i] = m_Optimum[aPosPrev].Backs[i - 1];
+        for(i = 1; i <= pos; i++)
+          reps[i] = _optimum[posPrev].Backs[i - 1];
         for(; i < kNumRepDistances; i++)
-          aReps[i] = m_Optimum[aPosPrev].Backs[i];
+          reps[i] = _optimum[posPrev].Backs[i];
       }
       else
       {
-        aReps[0] = (aPos - kNumRepDistances);
+        reps[0] = (pos - kNumRepDistances);
         for(UINT32 i = 1; i < kNumRepDistances; i++)
-          aReps[i] = m_Optimum[aPosPrev].Backs[i - 1];
+          reps[i] = _optimum[posPrev].Backs[i - 1];
       }
     }
-    m_Optimum[aCur].State = aState;
+    _optimum[cur].State = state;
     for(UINT32 i = 0; i < kNumRepDistances; i++)
-      m_Optimum[aCur].Backs[i] = aReps[i];
-    UINT32 aNewLen = ReadMatchDistances();
-    if(aNewLen > m_NumFastBytes)
+      _optimum[cur].Backs[i] = reps[i];
+    UINT32 newLen = ReadMatchDistances();
+    if(newLen > _numFastBytes)
     {
-      m_LongestMatchLength = aNewLen;
-      m_LongestMatchWasFound = true;
-      return Backward(aBackRes, aCur);
+      _longestMatchLength = newLen;
+      _longestMatchWasFound = true;
+      return Backward(backRes, cur);
     }
-    UINT32 aCurPrice = m_Optimum[aCur].Price; 
-    // BYTE aCurrentByte  = m_MatchFinder->GetIndexByte(0 - 1);
-    // BYTE aMatchByte = m_MatchFinder->GetIndexByte(0 - aReps[0] - 1 - 1);
-    const BYTE *aData = m_MatchFinder->GetPointerToCurrentPos() - 1;
-    BYTE aCurrentByte = *aData;
-    BYTE aMatchByte = aData[0 - aReps[0] - 1];
+    UINT32 curPrice = _optimum[cur].Price; 
+    // BYTE currentByte  = _matchFinder->GetIndexByte(0 - 1);
+    // BYTE matchByte = _matchFinder->GetIndexByte(0 - reps[0] - 1 - 1);
+    const BYTE *data = _matchFinder->GetPointerToCurrentPos() - 1;
+    BYTE currentByte = *data;
+    BYTE matchByte = data[0 - reps[0] - 1];
 
-    UINT32 aPosState = (aPosition & m_PosStateMask);
+    UINT32 posState = (position & _posStateMask);
 
-    UINT32 aCurAnd1Price = aCurPrice +
-        m_MainChoiceEncoders[aState.m_Index][aPosState].GetPrice(kMainChoiceLiteralIndex) +
-        m_LiteralEncoder.GetPrice(aPosition, aData[-1], aPrevWasMatch, aMatchByte, aCurrentByte);
+    UINT32 curAnd1Price = curPrice +
+        _mainChoiceEncoders[state.Index][posState].GetPrice(kMainChoiceLiteralIndex) +
+        _literalEncoder.GetPrice(position, data[-1], prevWasMatch, matchByte, currentByte);
 
-    COptimal &aNextOptimum = m_Optimum[aCur + 1];
+    COptimal &nextOptimum = _optimum[cur + 1];
 
-    bool aNextIsChar = false;
-    if (aCurAnd1Price < aNextOptimum.Price) 
+    bool nextIsChar = false;
+    if (curAnd1Price < nextOptimum.Price) 
     {
-      aNextOptimum.Price = aCurAnd1Price;
-      aNextOptimum.PosPrev = aCur;
-      aNextOptimum.MakeAsChar();
-      aNextIsChar = true;
+      nextOptimum.Price = curAnd1Price;
+      nextOptimum.PosPrev = cur;
+      nextOptimum.MakeAsChar();
+      nextIsChar = true;
     }
 
-    UINT32 aMatchPrice = aCurPrice + m_MainChoiceEncoders[aState.m_Index][aPosState].GetPrice(kMainChoiceMatchIndex);
-    UINT32 aRepMatchPrice = aMatchPrice + m_MatchChoiceEncoders[aState.m_Index].GetPrice(kMatchChoiceRepetitionIndex);
+    UINT32 matchPrice = curPrice + _mainChoiceEncoders[state.Index][posState].GetPrice(kMainChoiceMatchIndex);
+    UINT32 repMatchPrice = matchPrice + _matchChoiceEncoders[state.Index].GetPrice(kMatchChoiceRepetitionIndex);
     
-    if(aMatchByte == aCurrentByte &&
-        !(aNextOptimum.PosPrev < aCur && aNextOptimum.BackPrev == 0))
+    if(matchByte == currentByte &&
+        !(nextOptimum.PosPrev < cur && nextOptimum.BackPrev == 0))
     {
-      UINT32 aShortRepPrice = aRepMatchPrice + GetRepLen1Price(aState, aPosState);
-      if(aShortRepPrice <= aNextOptimum.Price)
+      UINT32 shortRepPrice = repMatchPrice + GetRepLen1Price(state, posState);
+      if(shortRepPrice <= nextOptimum.Price)
       {
-        aNextOptimum.Price = aShortRepPrice;
-        aNextOptimum.PosPrev = aCur;
-        aNextOptimum.MakeAsShortRep();
-        // aNextIsChar = false;
+        nextOptimum.Price = shortRepPrice;
+        nextOptimum.PosPrev = cur;
+        nextOptimum.MakeAsShortRep();
+        // nextIsChar = false;
       }
     }
     /*
-    if(aNewLen == 2 && m_MatchDistances[2] >= kDistLimit2) // test it maybe set 2000 ?
+    if(newLen == 2 && _matchDistances[2] >= kDistLimit2) // test it maybe set 2000 ?
       continue;
     */
 
-    UINT32 aNumAvailableBytes = m_MatchFinder->GetNumAvailableBytes() + 1;
-    aNumAvailableBytes = MyMin(kNumOpts - 1 - aCur, aNumAvailableBytes);
+    UINT32 numAvailableBytes = _matchFinder->GetNumAvailableBytes() + 1;
+    numAvailableBytes = MyMin(kNumOpts - 1 - cur, numAvailableBytes);
 
-    if (aNumAvailableBytes < 2)
+    if (numAvailableBytes < 2)
       continue;
-    if (aNumAvailableBytes > m_NumFastBytes)
-      aNumAvailableBytes = m_NumFastBytes;
-    if (aNumAvailableBytes >= 3 && !aNextIsChar)
+    if (numAvailableBytes > _numFastBytes)
+      numAvailableBytes = _numFastBytes;
+    if (numAvailableBytes >= 3 && !nextIsChar)
     {
-      UINT32 aBackOffset = aReps[0] + 1;
-      UINT32 aTemp;
-      for (aTemp = 1; aTemp < aNumAvailableBytes; aTemp++)
-        if (aData[aTemp] != aData[aTemp - aBackOffset])
+      UINT32 backOffset = reps[0] + 1;
+      UINT32 temp;
+      for (temp = 1; temp < numAvailableBytes; temp++)
+        if (data[temp] != data[temp - backOffset])
           break;
-      UINT32 aLenTest2 = aTemp - 1;
-      if (aLenTest2 >= 2)
+      UINT32 lenTest2 = temp - 1;
+      if (lenTest2 >= 2)
       {
-        CState aState2 = aState;
-        aState2.UpdateChar();
-        UINT32 aPosStateNext = (aPosition + 1) & m_PosStateMask;
-        UINT32 aNextRepMatchPrice = aCurAnd1Price + 
-            m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceMatchIndex) +
-            m_MatchChoiceEncoders[aState2.m_Index].GetPrice(kMatchChoiceRepetitionIndex);
-        // for (; aLenTest2 >= 2; aLenTest2--)
+        CState state2 = state;
+        state2.UpdateChar();
+        UINT32 posStateNext = (position + 1) & _posStateMask;
+        UINT32 nextRepMatchPrice = curAnd1Price + 
+            _mainChoiceEncoders[state2.Index][posStateNext].GetPrice(kMainChoiceMatchIndex) +
+            _matchChoiceEncoders[state2.Index].GetPrice(kMatchChoiceRepetitionIndex);
+        // for (; lenTest2 >= 2; lenTest2--)
         {
-          while(aLenEnd < aCur + 1 + aLenTest2)
-            m_Optimum[++aLenEnd].Price = kIfinityPrice;
-          UINT32 aCurAndLenPrice = aNextRepMatchPrice + GetRepPrice(
-              0, aLenTest2, aState2, aPosStateNext);
-          COptimal &anOptimum = m_Optimum[aCur + 1 + aLenTest2];
-          if (aCurAndLenPrice < anOptimum.Price) 
+          while(lenEnd < cur + 1 + lenTest2)
+            _optimum[++lenEnd].Price = kIfinityPrice;
+          UINT32 curAndLenPrice = nextRepMatchPrice + GetRepPrice(
+              0, lenTest2, state2, posStateNext);
+          COptimal &optimum = _optimum[cur + 1 + lenTest2];
+          if (curAndLenPrice < optimum.Price) 
           {
-            anOptimum.Price = aCurAndLenPrice;
-            anOptimum.PosPrev = aCur + 1;
-            anOptimum.BackPrev = 0;
-            anOptimum.Prev1IsChar = true;
-            anOptimum.Prev2 = false;
+            optimum.Price = curAndLenPrice;
+            optimum.PosPrev = cur + 1;
+            optimum.BackPrev = 0;
+            optimum.Prev1IsChar = true;
+            optimum.Prev2 = false;
           }
         }
       }
     }
-    for(UINT32 aRepIndex = 0; aRepIndex < kNumRepDistances; aRepIndex++)
+    for(UINT32 repIndex = 0; repIndex < kNumRepDistances; repIndex++)
     {
-      // UINT32 aRepLen = m_MatchFinder->GetMatchLen(0 - 1, aReps[aRepIndex], aNewLen); // test it;
-      UINT32 aBackOffset = aReps[aRepIndex] + 1;
-      UINT32 aLenTest;
-      for (aLenTest = 0; aLenTest < aNumAvailableBytes; aLenTest++)
-        if (aData[aLenTest] != aData[aLenTest - aBackOffset])
+      // UINT32 repLen = _matchFinder->GetMatchLen(0 - 1, reps[repIndex], newLen); // test it;
+      UINT32 backOffset = reps[repIndex] + 1;
+      UINT32 lenTest;
+      for (lenTest = 0; lenTest < numAvailableBytes; lenTest++)
+        if (data[lenTest] != data[lenTest - backOffset])
           break;
-      for(; aLenTest >= 2; aLenTest--)
+      for(; lenTest >= 2; lenTest--)
       {
-        while(aLenEnd < aCur + aLenTest)
-          m_Optimum[++aLenEnd].Price = kIfinityPrice;
-        UINT32 aCurAndLenPrice = aRepMatchPrice + GetRepPrice(aRepIndex, aLenTest, aState, aPosState);
-        COptimal &anOptimum = m_Optimum[aCur + aLenTest];
-        if (aCurAndLenPrice < anOptimum.Price) 
+        while(lenEnd < cur + lenTest)
+          _optimum[++lenEnd].Price = kIfinityPrice;
+        UINT32 curAndLenPrice = repMatchPrice + GetRepPrice(repIndex, lenTest, state, posState);
+        COptimal &optimum = _optimum[cur + lenTest];
+        if (curAndLenPrice < optimum.Price) 
         {
-          anOptimum.Price = aCurAndLenPrice;
-          anOptimum.PosPrev = aCur;
-          anOptimum.BackPrev = aRepIndex;
-          anOptimum.Prev1IsChar = false;
+          optimum.Price = curAndLenPrice;
+          optimum.PosPrev = cur;
+          optimum.BackPrev = repIndex;
+          optimum.Prev1IsChar = false;
         }
 
         /*
-        if (m_MaxMode)
+        if (_maxMode)
         {
-          UINT32 aTemp;
-          for (aTemp = aLenTest + 1; aTemp < aNumAvailableBytes; aTemp++)
-            if (aData[aTemp] != aData[aTemp - aBackOffset])
+          UINT32 temp;
+          for (temp = lenTest + 1; temp < numAvailableBytes; temp++)
+            if (data[temp] != data[temp - backOffset])
               break;
-          UINT32 aLenTest2 = aTemp - (aLenTest + 1);
-          if (aLenTest2 >= 2)
+          UINT32 lenTest2 = temp - (lenTest + 1);
+          if (lenTest2 >= 2)
           {
-            CState aState2 = aState;
-            aState2.UpdateRep();
-            UINT32 aPosStateNext = (aPosition + aLenTest) & m_PosStateMask;
-            UINT32 aCurAndLenCharPrice = aCurAndLenPrice + 
-                m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceLiteralIndex) +
-                m_LiteralEncoder.GetPrice(aPosition + aLenTest, aData[aLenTest - 1], 
-                true, aData[aLenTest - aBackOffset], aData[aLenTest]);
-            aState2.UpdateChar();
-            aPosStateNext = (aPosition + aLenTest + 1) & m_PosStateMask;
-            UINT32 aNextMatchPrice = aCurAndLenCharPrice + m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceMatchIndex);
-            UINT32 aNextRepMatchPrice = aNextMatchPrice + m_MatchChoiceEncoders[aState2.m_Index].GetPrice(kMatchChoiceRepetitionIndex);
+            CState state2 = state;
+            state2.UpdateRep();
+            UINT32 posStateNext = (position + lenTest) & _posStateMask;
+            UINT32 curAndLenCharPrice = curAndLenPrice + 
+                _mainChoiceEncoders[state2.Index][posStateNext].GetPrice(kMainChoiceLiteralIndex) +
+                _literalEncoder.GetPrice(position + lenTest, data[lenTest - 1], 
+                true, data[lenTest - backOffset], data[lenTest]);
+            state2.UpdateChar();
+            posStateNext = (position + lenTest + 1) & _posStateMask;
+            UINT32 nextMatchPrice = curAndLenCharPrice + _mainChoiceEncoders[state2.Index][posStateNext].GetPrice(kMainChoiceMatchIndex);
+            UINT32 nextRepMatchPrice = nextMatchPrice + _matchChoiceEncoders[state2.Index].GetPrice(kMatchChoiceRepetitionIndex);
             
-            // for(; aLenTest2 >= 2; aLenTest2--)
+            // for(; lenTest2 >= 2; lenTest2--)
             {
-              UINT32 anOffset = aLenTest + 1 + aLenTest2;
-              while(aLenEnd < aCur + anOffset)
-                m_Optimum[++aLenEnd].Price = kIfinityPrice;
-              UINT32 aCurAndLenPrice = aNextRepMatchPrice + GetRepPrice(
-                  0, aLenTest2, aState2, aPosStateNext);
-              COptimal &anOptimum = m_Optimum[aCur + anOffset];
-              if (aCurAndLenPrice < anOptimum.Price) 
+              UINT32 offset = lenTest + 1 + lenTest2;
+              while(lenEnd < cur + offset)
+                _optimum[++lenEnd].Price = kIfinityPrice;
+              UINT32 curAndLenPrice = nextRepMatchPrice + GetRepPrice(
+                  0, lenTest2, state2, posStateNext);
+              COptimal &optimum = _optimum[cur + offset];
+              if (curAndLenPrice < optimum.Price) 
               {
-                anOptimum.Price = aCurAndLenPrice;
-                anOptimum.PosPrev = aCur + aLenTest + 1;
-                anOptimum.BackPrev = 0;
-                anOptimum.Prev1IsChar = true;
-                anOptimum.Prev2 = true;
-                anOptimum.PosPrev2 = aCur;
-                anOptimum.BackPrev2 = aRepIndex;
+                optimum.Price = curAndLenPrice;
+                optimum.PosPrev = cur + lenTest + 1;
+                optimum.BackPrev = 0;
+                optimum.Prev1IsChar = true;
+                optimum.Prev2 = true;
+                optimum.PosPrev2 = cur;
+                optimum.BackPrev2 = repIndex;
               }
             }
           }
@@ -648,70 +648,70 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBackRes, UINT32 aPosition)
       }
     }
     
-    //    for(UINT32 aLenTest = 2; aLenTest <= aNewLen; aLenTest++)
-    if (aNewLen > aNumAvailableBytes)
-      aNewLen = aNumAvailableBytes;
-    if (aNewLen >= 2)
+    //    for(UINT32 lenTest = 2; lenTest <= newLen; lenTest++)
+    if (newLen > numAvailableBytes)
+      newLen = numAvailableBytes;
+    if (newLen >= 2)
     {
-      if (aNewLen == 2 && m_MatchDistances[2] >= 0x80)
+      if (newLen == 2 && _matchDistances[2] >= 0x80)
         continue;
-      UINT32 aNormalMatchPrice = aMatchPrice + 
-        m_MatchChoiceEncoders[aState.m_Index].GetPrice(kMatchChoiceDistanceIndex);
-      while(aLenEnd < aCur + aNewLen)
-        m_Optimum[++aLenEnd].Price = kIfinityPrice;
+      UINT32 normalMatchPrice = matchPrice + 
+        _matchChoiceEncoders[state.Index].GetPrice(kMatchChoiceDistanceIndex);
+      while(lenEnd < cur + newLen)
+        _optimum[++lenEnd].Price = kIfinityPrice;
 
-      for(UINT32 aLenTest = aNewLen; aLenTest >= 2; aLenTest--)
+      for(UINT32 lenTest = newLen; lenTest >= 2; lenTest--)
       {
-        UINT32 aCurBack = m_MatchDistances[aLenTest];
-        UINT32 aCurAndLenPrice = aNormalMatchPrice + GetPosLenPrice(aCurBack, aLenTest, aPosState);
-        COptimal &anOptimum = m_Optimum[aCur + aLenTest];
-        if (aCurAndLenPrice < anOptimum.Price) 
+        UINT32 curBack = _matchDistances[lenTest];
+        UINT32 curAndLenPrice = normalMatchPrice + GetPosLenPrice(curBack, lenTest, posState);
+        COptimal &optimum = _optimum[cur + lenTest];
+        if (curAndLenPrice < optimum.Price) 
         {
-          anOptimum.Price = aCurAndLenPrice;
-          anOptimum.PosPrev = aCur;
-          anOptimum.BackPrev = aCurBack + kNumRepDistances;
-          anOptimum.Prev1IsChar = false;
+          optimum.Price = curAndLenPrice;
+          optimum.PosPrev = cur;
+          optimum.BackPrev = curBack + kNumRepDistances;
+          optimum.Prev1IsChar = false;
         }
 
-        if (m_MaxMode)
+        if (_maxMode)
         {
-          UINT32 aBackOffset = aCurBack + 1;
-          UINT32 aTemp;
-          for (aTemp = aLenTest + 1; aTemp < aNumAvailableBytes; aTemp++)
-            if (aData[aTemp] != aData[aTemp - aBackOffset])
+          UINT32 backOffset = curBack + 1;
+          UINT32 temp;
+          for (temp = lenTest + 1; temp < numAvailableBytes; temp++)
+            if (data[temp] != data[temp - backOffset])
               break;
-          UINT32 aLenTest2 = aTemp - (aLenTest + 1);
-          if (aLenTest2 >= 2)
+          UINT32 lenTest2 = temp - (lenTest + 1);
+          if (lenTest2 >= 2)
           {
-            CState aState2 = aState;
-            aState2.UpdateMatch();
-            UINT32 aPosStateNext = (aPosition + aLenTest) & m_PosStateMask;
-            UINT32 aCurAndLenCharPrice = aCurAndLenPrice + 
-                m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceLiteralIndex) +
-                m_LiteralEncoder.GetPrice(aPosition + aLenTest, aData[aLenTest - 1], 
-                true, aData[aLenTest - aBackOffset], aData[aLenTest]);
-            aState2.UpdateChar();
-            aPosStateNext = (aPosition + aLenTest + 1) & m_PosStateMask;
-            UINT32 aNextMatchPrice = aCurAndLenCharPrice + m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceMatchIndex);
-            UINT32 aNextRepMatchPrice = aNextMatchPrice + m_MatchChoiceEncoders[aState2.m_Index].GetPrice(kMatchChoiceRepetitionIndex);
+            CState state2 = state;
+            state2.UpdateMatch();
+            UINT32 posStateNext = (position + lenTest) & _posStateMask;
+            UINT32 curAndLenCharPrice = curAndLenPrice + 
+                _mainChoiceEncoders[state2.Index][posStateNext].GetPrice(kMainChoiceLiteralIndex) +
+                _literalEncoder.GetPrice(position + lenTest, data[lenTest - 1], 
+                true, data[lenTest - backOffset], data[lenTest]);
+            state2.UpdateChar();
+            posStateNext = (position + lenTest + 1) & _posStateMask;
+            UINT32 nextMatchPrice = curAndLenCharPrice + _mainChoiceEncoders[state2.Index][posStateNext].GetPrice(kMainChoiceMatchIndex);
+            UINT32 nextRepMatchPrice = nextMatchPrice + _matchChoiceEncoders[state2.Index].GetPrice(kMatchChoiceRepetitionIndex);
             
-            // for(; aLenTest2 >= 2; aLenTest2--)
+            // for(; lenTest2 >= 2; lenTest2--)
             {
-              UINT32 anOffset = aLenTest + 1 + aLenTest2;
-              while(aLenEnd < aCur + anOffset)
-                m_Optimum[++aLenEnd].Price = kIfinityPrice;
-              UINT32 aCurAndLenPrice = aNextRepMatchPrice + GetRepPrice(
-                  0, aLenTest2, aState2, aPosStateNext);
-              COptimal &anOptimum = m_Optimum[aCur + anOffset];
-              if (aCurAndLenPrice < anOptimum.Price) 
+              UINT32 offset = lenTest + 1 + lenTest2;
+              while(lenEnd < cur + offset)
+                _optimum[++lenEnd].Price = kIfinityPrice;
+              UINT32 curAndLenPrice = nextRepMatchPrice + GetRepPrice(
+                  0, lenTest2, state2, posStateNext);
+              COptimal &optimum = _optimum[cur + offset];
+              if (curAndLenPrice < optimum.Price) 
               {
-                anOptimum.Price = aCurAndLenPrice;
-                anOptimum.PosPrev = aCur + aLenTest + 1;
-                anOptimum.BackPrev = 0;
-                anOptimum.Prev1IsChar = true;
-                anOptimum.Prev2 = true;
-                anOptimum.PosPrev2 = aCur;
-                anOptimum.BackPrev2 = aCurBack + kNumRepDistances;
+                optimum.Price = curAndLenPrice;
+                optimum.PosPrev = cur + lenTest + 1;
+                optimum.BackPrev = 0;
+                optimum.Prev1IsChar = true;
+                optimum.Prev2 = true;
+                optimum.PosPrev2 = cur;
+                optimum.BackPrev2 = curBack + kNumRepDistances;
               }
             }
           }
@@ -721,287 +721,288 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBackRes, UINT32 aPosition)
   }
 }
 
-static bool inline ChangePair(UINT32 aSmall, UINT32 aBig)
+static bool inline ChangePair(UINT32 smallDist, UINT32 bigDist)
 {
   const kDif = 7;
-  return (aSmall < (UINT32(1) << (32-kDif)) && aBig >= (aSmall << kDif));
+  return (smallDist < (UINT32(1) << (32-kDif)) && bigDist >= (smallDist << kDif));
 }
 
 
-UINT32 CEncoder::GetOptimumFast(UINT32 &aBackRes, UINT32 aPosition)
+UINT32 CEncoder::GetOptimumFast(UINT32 &backRes, UINT32 position)
 {
-  UINT32 aLenMain;
-  if (!m_LongestMatchWasFound)
-    aLenMain = ReadMatchDistances();
+  UINT32 lenMain;
+  if (!_longestMatchWasFound)
+    lenMain = ReadMatchDistances();
   else
   {
-    aLenMain = m_LongestMatchLength;
-    m_LongestMatchWasFound = false;
+    lenMain = _longestMatchLength;
+    _longestMatchWasFound = false;
   }
-  UINT32 aRepLens[kNumRepDistances];
-  UINT32 RepMaxIndex = 0;
+  UINT32 repLens[kNumRepDistances];
+  UINT32 repMaxIndex = 0;
   for(int i = 0; i < kNumRepDistances; i++)
   {
-    aRepLens[i] = m_MatchFinder->GetMatchLen(0 - 1, m_RepDistances[i], kMatchMaxLen);
-    if (i == 0 || aRepLens[i] > aRepLens[RepMaxIndex])
-      RepMaxIndex = i;
+    repLens[i] = _matchFinder->GetMatchLen(0 - 1, _repDistances[i], kMatchMaxLen);
+    if (i == 0 || repLens[i] > repLens[repMaxIndex])
+      repMaxIndex = i;
   }
-  if(aRepLens[RepMaxIndex] >= m_NumFastBytes)
+  if(repLens[repMaxIndex] >= _numFastBytes)
   {
-    aBackRes = RepMaxIndex;
-    MovePos(aRepLens[RepMaxIndex] - 1);
-    return aRepLens[RepMaxIndex];
+    backRes = repMaxIndex;
+    MovePos(repLens[repMaxIndex] - 1);
+    return repLens[repMaxIndex];
   }
-  if(aLenMain >= m_NumFastBytes)
+  if(lenMain >= _numFastBytes)
   {
-    aBackRes = m_MatchDistances[m_NumFastBytes] + kNumRepDistances; 
-    MovePos(aLenMain - 1);
-    return aLenMain;
+    backRes = _matchDistances[_numFastBytes] + kNumRepDistances; 
+    MovePos(lenMain - 1);
+    return lenMain;
   }
-  while (aLenMain > 2)
+  while (lenMain > 2)
   {
-    if (!ChangePair(m_MatchDistances[aLenMain - 1], 
-        m_MatchDistances[aLenMain]))
+    if (!ChangePair(_matchDistances[lenMain - 1], _matchDistances[lenMain]))
       break;
-    aLenMain--;
+    lenMain--;
   }
-  if (aLenMain == 2 && m_MatchDistances[2] >= 0x80)
-    aLenMain = 1;
+  if (lenMain == 2 && _matchDistances[2] >= 0x80)
+    lenMain = 1;
 
-  UINT32 aBackMain = m_MatchDistances[aLenMain];
-  if (aRepLens[RepMaxIndex] >= 2)
+  UINT32 backMain = _matchDistances[lenMain];
+  if (repLens[repMaxIndex] >= 2)
   {
-    if (aRepLens[RepMaxIndex] + 1 >= aLenMain || 
-        aRepLens[RepMaxIndex] + 2 >= aLenMain && (aBackMain > (1<<12)))
+    if (repLens[repMaxIndex] + 1 >= lenMain || 
+        repLens[repMaxIndex] + 2 >= lenMain && (backMain > (1<<12)))
     {
-      aBackRes = RepMaxIndex;
-      MovePos(aRepLens[RepMaxIndex] - 1);
-      return aRepLens[RepMaxIndex];
+      backRes = repMaxIndex;
+      MovePos(repLens[repMaxIndex] - 1);
+      return repLens[repMaxIndex];
     }
   }
   
 
-  if (aLenMain >= 2)
+  if (lenMain >= 2)
   {
-    m_LongestMatchLength = ReadMatchDistances();
-    if (m_LongestMatchLength >= 2 &&
+    _longestMatchLength = ReadMatchDistances();
+    if (_longestMatchLength >= 2 &&
       (
-        (m_LongestMatchLength >= aLenMain && 
-          m_MatchDistances[aLenMain] < aBackMain) || 
-        m_LongestMatchLength == aLenMain + 1 && 
-          !ChangePair(aBackMain, m_MatchDistances[m_LongestMatchLength]) ||
-        m_LongestMatchLength > aLenMain + 1 ||
-        m_LongestMatchLength + 1 >= aLenMain && 
-          ChangePair(m_MatchDistances[aLenMain - 1], aBackMain)
+        (_longestMatchLength >= lenMain && 
+          _matchDistances[lenMain] < backMain) || 
+        _longestMatchLength == lenMain + 1 && 
+          !ChangePair(backMain, _matchDistances[_longestMatchLength]) ||
+        _longestMatchLength > lenMain + 1 ||
+        _longestMatchLength + 1 >= lenMain && 
+          ChangePair(_matchDistances[lenMain - 1], backMain)
       )
       )
     {
-      m_LongestMatchWasFound = true;
-      aBackRes = UINT32(-1);
+      _longestMatchWasFound = true;
+      backRes = UINT32(-1);
       return 1;
     }
     for(int i = 0; i < kNumRepDistances; i++)
     {
-      UINT32 aRepLen = m_MatchFinder->GetMatchLen(0 - 1, m_RepDistances[i], kMatchMaxLen);
-      if (aRepLen >= 2 && aRepLen + 1 >= aLenMain)
+      UINT32 repLen = _matchFinder->GetMatchLen(0 - 1, _repDistances[i], kMatchMaxLen);
+      if (repLen >= 2 && repLen + 1 >= lenMain)
       {
-        m_LongestMatchWasFound = true;
-        aBackRes = UINT32(-1);
+        _longestMatchWasFound = true;
+        backRes = UINT32(-1);
         return 1;
       }
     }
-    aBackRes = aBackMain + kNumRepDistances; 
-    MovePos(aLenMain - 2);
-    return aLenMain;
+    backRes = backMain + kNumRepDistances; 
+    MovePos(lenMain - 2);
+    return lenMain;
   }
-  aBackRes = UINT32(-1);
+  backRes = UINT32(-1);
   return 1;
 }
 
-STDMETHODIMP CEncoder::InitMatchFinder(IInWindowStreamMatch *aMatchFinder)
+STDMETHODIMP CEncoder::InitMatchFinder(IInWindowStreamMatch *matchFinder)
 {
-  m_MatchFinder = aMatchFinder;
+  _matchFinder = matchFinder;
   return S_OK;
 }
 
 HRESULT CEncoder::Flush()
 {
-  m_RangeEncoder.FlushData();
-  return m_RangeEncoder.FlushStream();
+  _rangeEncoder.FlushData();
+  return _rangeEncoder.FlushStream();
 }
 
-HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, 
-      const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress)
+HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
 {
   RETURN_IF_NOT_S_OK(Create());
-  Init(anInStream, anOutStream);
-  CCoderReleaser aReleaser(this);
+  Init(inStream, outStream);
+  CCoderReleaser releaser(this);
 
-  if (m_MatchFinder->GetNumAvailableBytes() == 0)
+  if (_matchFinder->GetNumAvailableBytes() == 0)
     return Flush();
 
-  if (!m_FastMode)
+  if (!_fastMode)
   {
     FillPosSlotPrices();
     FillDistancesPrices();
     FillAlignPrices();
   }
 
-  m_LenEncoder.SetTableSize(m_NumFastBytes);
-  m_LenEncoder.UpdateTables();
-  m_RepMatchLenEncoder.SetTableSize(m_NumFastBytes);
-  m_RepMatchLenEncoder.UpdateTables();
+  _lenEncoder.SetTableSize(_numFastBytes);
+  _lenEncoder.UpdateTables();
+  _repMatchLenEncoder.SetTableSize(_numFastBytes);
+  _repMatchLenEncoder.UpdateTables();
 
-  UINT64 aLastPosSlotFillingPos = 0;
+  UINT64 lastPosSlotFillingPos = 0;
 
-  UINT64 aProgressPosValuePrev = 0;
-  UINT64 aNowPos64 = 0;
+  UINT64 progressPosValuePrev = 0;
+  UINT64 nowPos64 = 0;
   ReadMatchDistances();
-  UINT32 aPosState = UINT32(aNowPos64) & m_PosStateMask;
-  m_MainChoiceEncoders[m_State.m_Index][aPosState].Encode(&m_RangeEncoder, kMainChoiceLiteralIndex);
-  m_State.UpdateChar();
-  BYTE aByte = m_MatchFinder->GetIndexByte(0 - m_AdditionalOffset);
-  m_LiteralEncoder.Encode(&m_RangeEncoder, UINT32(aNowPos64), m_PreviousByte, false, 0, aByte);
-  m_PreviousByte = aByte;
-  m_AdditionalOffset--;
-  aNowPos64++;
-  if (m_MatchFinder->GetNumAvailableBytes() == 0)
+  UINT32 posState = UINT32(nowPos64) & _posStateMask;
+  _mainChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, kMainChoiceLiteralIndex);
+  _state.UpdateChar();
+  BYTE curByte = _matchFinder->GetIndexByte(0 - _additionalOffset);
+  _literalEncoder.Encode(&_rangeEncoder, UINT32(nowPos64), _previousByte, 
+      false, 0, curByte);
+  _previousByte = curByte;
+  _additionalOffset--;
+  nowPos64++;
+  if (_matchFinder->GetNumAvailableBytes() == 0)
     return Flush();
   while(true)
   {
-    UINT32 aPos;
-    UINT32 aPosState = UINT32(aNowPos64) & m_PosStateMask;
+    UINT32 pos;
+    UINT32 posState = UINT32(nowPos64) & _posStateMask;
 
-    UINT32 aLen;
-    if (m_FastMode)
-      aLen = GetOptimumFast(aPos, UINT32(aNowPos64));
+    UINT32 len;
+    if (_fastMode)
+      len = GetOptimumFast(pos, UINT32(nowPos64));
     else
-      aLen = GetOptimum(aPos, UINT32(aNowPos64));
+      len = GetOptimum(pos, UINT32(nowPos64));
 
-    if(aLen == 1 && aPos == (-1))
+    if(len == 1 && pos == (-1))
     {
-      m_MainChoiceEncoders[m_State.m_Index][aPosState].Encode(&m_RangeEncoder, kMainChoiceLiteralIndex);
-      m_State.UpdateChar();
-      BYTE aMatchByte;
-      if(m_PeviousIsMatch)
-        aMatchByte = m_MatchFinder->GetIndexByte(0 - m_RepDistances[0] - 1 - m_AdditionalOffset);
-      BYTE aByte = m_MatchFinder->GetIndexByte(0 - m_AdditionalOffset);
-      m_LiteralEncoder.Encode(&m_RangeEncoder, UINT32(aNowPos64), m_PreviousByte, m_PeviousIsMatch, aMatchByte, aByte);
-      m_PreviousByte = aByte;
-      m_PeviousIsMatch = false;
+      _mainChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, kMainChoiceLiteralIndex);
+      _state.UpdateChar();
+      BYTE matchByte;
+      if(_peviousIsMatch)
+        matchByte = _matchFinder->GetIndexByte(0 - _repDistances[0] - 1 - _additionalOffset);
+      BYTE curByte = _matchFinder->GetIndexByte(0 - _additionalOffset);
+      _literalEncoder.Encode(&_rangeEncoder, UINT32(nowPos64), _previousByte, _peviousIsMatch, 
+          matchByte, curByte);
+      _previousByte = curByte;
+      _peviousIsMatch = false;
     }
     else
     {
-      m_PeviousIsMatch = true;
-      m_MainChoiceEncoders[m_State.m_Index][aPosState].Encode(&m_RangeEncoder, kMainChoiceMatchIndex);
-      if(aPos < kNumRepDistances)
+      _peviousIsMatch = true;
+      _mainChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, kMainChoiceMatchIndex);
+      if(pos < kNumRepDistances)
       {
-        m_MatchChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, kMatchChoiceRepetitionIndex);
-        if(aPos == 0)
+        _matchChoiceEncoders[_state.Index].Encode(&_rangeEncoder, kMatchChoiceRepetitionIndex);
+        if(pos == 0)
         {
-          m_MatchRepChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, 0);
-          if(aLen == 1)
-            m_MatchRepShortChoiceEncoders[m_State.m_Index][aPosState].Encode(&m_RangeEncoder, 0);
+          _matchRepChoiceEncoders[_state.Index].Encode(&_rangeEncoder, 0);
+          if(len == 1)
+            _matchRepShortChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, 0);
           else
-            m_MatchRepShortChoiceEncoders[m_State.m_Index][aPosState].Encode(&m_RangeEncoder, 1);
+            _matchRepShortChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, 1);
         }
         else
         {
-          m_MatchRepChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, 1);
-          if (aPos == 1)
-            m_MatchRep1ChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, 0);
+          _matchRepChoiceEncoders[_state.Index].Encode(&_rangeEncoder, 1);
+          if (pos == 1)
+            _matchRep1ChoiceEncoders[_state.Index].Encode(&_rangeEncoder, 0);
           else
           {
-            m_MatchRep1ChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, 1);
-            m_MatchRep2ChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, aPos - 2);
+            _matchRep1ChoiceEncoders[_state.Index].Encode(&_rangeEncoder, 1);
+            _matchRep2ChoiceEncoders[_state.Index].Encode(&_rangeEncoder, pos - 2);
           }
         }
-        if (aLen == 1)
-          m_State.UpdateShortRep();
+        if (len == 1)
+          _state.UpdateShortRep();
         else
         {
-          m_RepMatchLenEncoder.Encode(&m_RangeEncoder, aLen - kMatchMinLen, aPosState);
-          m_State.UpdateRep();
+          _repMatchLenEncoder.Encode(&_rangeEncoder, len - kMatchMinLen, posState);
+          _state.UpdateRep();
         }
 
 
-        UINT32 aDistance = m_RepDistances[aPos];
-        if (aPos != 0)
+        UINT32 distance = _repDistances[pos];
+        if (pos != 0)
         {
-          for(UINT32 i = aPos; i >= 1; i--)
-            m_RepDistances[i] = m_RepDistances[i - 1];
-          m_RepDistances[0] = aDistance;
+          for(UINT32 i = pos; i >= 1; i--)
+            _repDistances[i] = _repDistances[i - 1];
+          _repDistances[0] = distance;
         }
       }
       else
       {
-        m_MatchChoiceEncoders[m_State.m_Index].Encode(&m_RangeEncoder, kMatchChoiceDistanceIndex);
-        m_State.UpdateMatch();
-        m_LenEncoder.Encode(&m_RangeEncoder, aLen - kMatchMinLen, aPosState);
-        aPos -= kNumRepDistances;
-        UINT32 aPosSlot = GetPosSlot(aPos);
-        UINT32 aLenToPosState = GetLenToPosState(aLen);
-        m_PosSlotEncoder[aLenToPosState].Encode(&m_RangeEncoder, aPosSlot);
+        _matchChoiceEncoders[_state.Index].Encode(&_rangeEncoder, kMatchChoiceDistanceIndex);
+        _state.UpdateMatch();
+        _lenEncoder.Encode(&_rangeEncoder, len - kMatchMinLen, posState);
+        pos -= kNumRepDistances;
+        UINT32 posSlot = GetPosSlot(pos);
+        UINT32 lenToPosState = GetLenToPosState(len);
+        _posSlotEncoder[lenToPosState].Encode(&_rangeEncoder, posSlot);
         
-        UINT32 aFooterBits = kDistDirectBits[aPosSlot];
-        UINT32 aPosReduced = aPos - kDistStart[aPosSlot];
-        if (aPosSlot >= kStartPosModelIndex)
+        UINT32 footerBits = kDistDirectBits[posSlot];
+        UINT32 posReduced = pos - kDistStart[posSlot];
+        if (posSlot >= kStartPosModelIndex)
         {
-          if (aPosSlot < kEndPosModelIndex)
-            m_PosEncoders[aPosSlot - kStartPosModelIndex].Encode(&m_RangeEncoder, aPosReduced);
+          if (posSlot < kEndPosModelIndex)
+            _posEncoders[posSlot - kStartPosModelIndex].Encode(&_rangeEncoder, posReduced);
           else
           {
-            m_RangeEncoder.EncodeDirectBits(aPosReduced >> kNumAlignBits, aFooterBits - kNumAlignBits);
-            m_PosAlignEncoder.Encode(&m_RangeEncoder, aPosReduced & kAlignMask);
-            if (!m_FastMode)
-              if (--m_AlignPriceCount == 0)
+            _rangeEncoder.EncodeDirectBits(posReduced >> kNumAlignBits, footerBits - kNumAlignBits);
+            _posAlignEncoder.Encode(&_rangeEncoder, posReduced & kAlignMask);
+            if (!_fastMode)
+              if (--_alignPriceCount == 0)
                 FillAlignPrices();
           }
         }
-        UINT32 aDistance = aPos;
+        UINT32 distance = pos;
         for(UINT32 i = kNumRepDistances - 1; i >= 1; i--)
-          m_RepDistances[i] = m_RepDistances[i - 1];
-        m_RepDistances[0] = aDistance;
+          _repDistances[i] = _repDistances[i - 1];
+        _repDistances[0] = distance;
       }
-      m_PreviousByte = m_MatchFinder->GetIndexByte(aLen - 1 - m_AdditionalOffset);
+      _previousByte = _matchFinder->GetIndexByte(len - 1 - _additionalOffset);
     }
-    m_AdditionalOffset -= aLen;
-    aNowPos64 += aLen;
-    if (!m_FastMode)
-      if (aNowPos64 - aLastPosSlotFillingPos >= (1 << 9))
+    _additionalOffset -= len;
+    nowPos64 += len;
+    if (!_fastMode)
+      if (nowPos64 - lastPosSlotFillingPos >= (1 << 9))
       {
         FillPosSlotPrices();
         FillDistancesPrices();
-        aLastPosSlotFillingPos = aNowPos64;
+        lastPosSlotFillingPos = nowPos64;
       }
-    if (aNowPos64 - aProgressPosValuePrev >= (1 << 12) && aProgress != NULL)
+    if (nowPos64 - progressPosValuePrev >= (1 << 12) && progress != NULL)
     {
-      UINT64 anOutSize = m_RangeEncoder.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&aNowPos64, &anOutSize));
-      aProgressPosValuePrev = aNowPos64;
+      UINT64 outSize = _rangeEncoder.GetProcessedSize();
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &outSize));
+      progressPosValuePrev = nowPos64;
     }
-    if (m_AdditionalOffset == 0 && m_MatchFinder->GetNumAvailableBytes() == 0)
+    if (_additionalOffset == 0 && _matchFinder->GetNumAvailableBytes() == 0)
       return Flush();
   }
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
+    return CodeReal(inStream, outStream, inSize, outSize, progress);
   }
-  catch(CMatchFinderException &anException)
+  catch(CMatchFinderException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
-  catch(const NStream::COutByteWriteException &anException)
+  catch(const NStream::COutByteWriteException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
   catch(...)
   {
@@ -1011,29 +1012,29 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *anInStream,
   
 void CEncoder::FillPosSlotPrices()
 {
-  for (int aLenToPosState = 0; aLenToPosState < kNumLenToPosStates; aLenToPosState++)
+  for (int lenToPosState = 0; lenToPosState < kNumLenToPosStates; lenToPosState++)
   {
-	  UINT32 aPosSlot;
-    for (aPosSlot = 0; aPosSlot < kEndPosModelIndex && aPosSlot < m_DistTableSize; aPosSlot++)
-      m_PosSlotPrices[aLenToPosState][aPosSlot] = m_PosSlotEncoder[aLenToPosState].GetPrice(aPosSlot);
-    for (; aPosSlot < m_DistTableSize; aPosSlot++)
-      m_PosSlotPrices[aLenToPosState][aPosSlot] = m_PosSlotEncoder[aLenToPosState].GetPrice(aPosSlot) + 
-          ((kDistDirectBits[aPosSlot] - kNumAlignBits) << kNumBitPriceShiftBits);
+	  UINT32 posSlot;
+    for (posSlot = 0; posSlot < kEndPosModelIndex && posSlot < _distTableSize; posSlot++)
+      _posSlotPrices[lenToPosState][posSlot] = _posSlotEncoder[lenToPosState].GetPrice(posSlot);
+    for (; posSlot < _distTableSize; posSlot++)
+      _posSlotPrices[lenToPosState][posSlot] = _posSlotEncoder[lenToPosState].GetPrice(posSlot) + 
+          ((kDistDirectBits[posSlot] - kNumAlignBits) << kNumBitPriceShiftBits);
   }
 }
 
 void CEncoder::FillDistancesPrices()
 {
-  for (int aLenToPosState = 0; aLenToPosState < kNumLenToPosStates; aLenToPosState++)
+  for (int lenToPosState = 0; lenToPosState < kNumLenToPosStates; lenToPosState++)
   {
 	  UINT32 i;
     for (i = 0; i < kStartPosModelIndex; i++)
-      m_DistancesPrices[aLenToPosState][i] = m_PosSlotPrices[aLenToPosState][i];
+      _distancesPrices[lenToPosState][i] = _posSlotPrices[lenToPosState][i];
     for (; i < kNumFullDistances; i++)
     { 
-      UINT32 aPosSlot = GetPosSlot(i);
-      m_DistancesPrices[aLenToPosState][i] = m_PosSlotPrices[aLenToPosState][aPosSlot] +
-          m_PosEncoders[aPosSlot - kStartPosModelIndex].GetPrice(i - kDistStart[aPosSlot]);
+      UINT32 posSlot = GetPosSlot(i);
+      _distancesPrices[lenToPosState][i] = _posSlotPrices[lenToPosState][posSlot] +
+          _posEncoders[posSlot - kStartPosModelIndex].GetPrice(i - kDistStart[posSlot]);
     }
   }
 }
@@ -1041,8 +1042,8 @@ void CEncoder::FillDistancesPrices()
 void CEncoder::FillAlignPrices()
 {
   for (int i = 0; i < kAlignTableSize; i++)
-    m_AlignPrices[i] = m_PosAlignEncoder.GetPrice(i);
-  m_AlignPriceCount = kAlignTableSize;
+    _alignPrices[i] = _posAlignEncoder.GetPrice(i);
+  _alignPriceCount = kAlignTableSize;
 }
 
 }}

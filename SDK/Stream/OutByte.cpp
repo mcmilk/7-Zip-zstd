@@ -6,50 +6,50 @@
 
 namespace NStream {
 
-COutByte::COutByte(UINT32 aBufferSize):
-  m_BufferSize(aBufferSize)
+COutByte::COutByte(UINT32 bufferSize):
+  _bufferSize(bufferSize)
 {
-  m_Buffer = new BYTE[m_BufferSize];
+  _buffer = new BYTE[_bufferSize];
 }
 
 COutByte::~COutByte()
 {
-  delete []m_Buffer;
+  delete []_buffer;
 }
 
-void COutByte::Init(ISequentialOutStream *aStream)
+void COutByte::Init(ISequentialOutStream *stream)
 {
-  m_Stream = aStream;
-  m_ProcessedSize = 0;
-  m_Pos = 0;
+  _stream = stream;
+  _processedSize = 0;
+  _pos = 0;
 }
 
 void COutByte::ReleaseStream()
 {
-  m_Stream.Release();
+  _stream.Release();
 }
 
 
 HRESULT COutByte::Flush()
 {
-  if (m_Pos == 0)
+  if (_pos == 0)
     return S_OK;
-  UINT32 aProcessedSize;
-  HRESULT aResult = m_Stream->Write(m_Buffer, m_Pos, &aProcessedSize);
-  if (aResult != S_OK)
-    return aResult;
-  if (m_Pos != aProcessedSize)
+  UINT32 processedSize;
+  HRESULT result = _stream->Write(_buffer, _pos, &processedSize);
+  if (result != S_OK)
+    return result;
+  if (_pos != processedSize)
     return E_FAIL;
-  m_ProcessedSize += aProcessedSize;
-  m_Pos = 0;
+  _processedSize += processedSize;
+  _pos = 0;
   return S_OK;
 }
 
 void COutByte::WriteBlock()
 {
-  HRESULT aResult = Flush();
-  if (aResult != S_OK)
-    throw COutByteWriteException(aResult);
+  HRESULT result = Flush();
+  if (result != S_OK)
+    throw COutByteWriteException(result);
 }
 
 }

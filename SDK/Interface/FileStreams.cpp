@@ -3,47 +3,47 @@
 #include "StdAfx.h"
 #include "FileStreams.h"
 
-static inline HRESULT ConvertBoolToHRESULT(bool aResult)
+static inline HRESULT ConvertBoolToHRESULT(bool result)
 {
-  // return aResult ? S_OK: E_FAIL;
-  return aResult ? S_OK: (::GetLastError());
+  // return result ? S_OK: E_FAIL;
+  return result ? S_OK: (::GetLastError());
 }
 
-bool CInFileStream::Open(LPCTSTR aFileName)
+bool CInFileStream::Open(LPCTSTR fileName)
 {
-  return m_File.Open(aFileName);
+  return File.Open(fileName);
 }
 
-STDMETHODIMP CInFileStream::Read(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CInFileStream::Read(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  bool aResult = m_File.Read(aData, aSize, aProcessedSizeReal);
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return ConvertBoolToHRESULT(aResult);
+  UINT32 realProcessedSize;
+  bool result = File.Read(data, size, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return ConvertBoolToHRESULT(result);
 }
   
-STDMETHODIMP CInFileStream::ReadPart(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CInFileStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
 {
-  return Read(aData, aSize, aProcessedSize);
+  return Read(data, size, processedSize);
 }
 
 
-STDMETHODIMP CInFileStream::Seek(INT64 anOffset, UINT32 aSeekOrigin, 
-    UINT64 *aNewPosition)
+STDMETHODIMP CInFileStream::Seek(INT64 offset, UINT32 seekOrigin, 
+    UINT64 *newPosition)
 {
-  if(aSeekOrigin >= 3)
+  if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
-  UINT64 aNewPositionReal;
-  bool aResult = m_File.Seek(anOffset, aSeekOrigin, aNewPositionReal);
-  if(aNewPosition != NULL)
-    *aNewPosition = aNewPositionReal;
-  return ConvertBoolToHRESULT(aResult);
+  UINT64 realNewPosition;
+  bool result = File.Seek(offset, seekOrigin, realNewPosition);
+  if(newPosition != NULL)
+    *newPosition = realNewPosition;
+  return ConvertBoolToHRESULT(result);
 }
 
-STDMETHODIMP CInFileStream::GetSize(UINT64 *aSize)
+STDMETHODIMP CInFileStream::GetSize(UINT64 *size)
 {
-  return ConvertBoolToHRESULT(m_File.GetLength(*aSize));
+  return ConvertBoolToHRESULT(File.GetLength(*size));
 }
 
 
@@ -51,46 +51,46 @@ STDMETHODIMP CInFileStream::GetSize(UINT64 *aSize)
 // COutFileStream
 
 
-bool COutFileStream::Open(LPCTSTR aFileName)
+bool COutFileStream::Open(LPCTSTR fileName)
 {
-  m_File.SetOpenCreationDispositionCreateAlways();
-  return m_File.Open(aFileName);
+  File.SetOpenCreationDispositionCreateAlways();
+  return File.Open(fileName);
 }
 
-STDMETHODIMP COutFileStream::Write(const void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP COutFileStream::Write(const void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  bool aResult = m_File.Write(aData, aSize, aProcessedSizeReal);
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return ConvertBoolToHRESULT(aResult);
+  UINT32 realProcessedSize;
+  bool result = File.Write(data, size, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return ConvertBoolToHRESULT(result);
 }
   
-STDMETHODIMP COutFileStream::WritePart(const void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP COutFileStream::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
 {
-  return Write(aData, aSize, aProcessedSize);
+  return Write(data, size, processedSize);
 }
 
 
-STDMETHODIMP COutFileStream::Seek(INT64 anOffset, UINT32 aSeekOrigin, 
-    UINT64 *aNewPosition)
+STDMETHODIMP COutFileStream::Seek(INT64 offset, UINT32 seekOrigin, 
+    UINT64 *newPosition)
 {
-  if(aSeekOrigin >= 3)
+  if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
-  UINT64 aNewPositionReal;
-  bool aResult = m_File.Seek(anOffset, aSeekOrigin, aNewPositionReal);
-  if(aNewPosition != NULL)
-    *aNewPosition = aNewPositionReal;
-  return ConvertBoolToHRESULT(aResult);
+  UINT64 realNewPosition;
+  bool result = File.Seek(offset, seekOrigin, realNewPosition);
+  if(newPosition != NULL)
+    *newPosition = realNewPosition;
+  return ConvertBoolToHRESULT(result);
 }
 
-STDMETHODIMP COutFileStream::SetSize(INT64 aNewSize)
+STDMETHODIMP COutFileStream::SetSize(INT64 newSize)
 {
-  UINT64 aCurrentPos;
-  if(!m_File.Seek(0, FILE_CURRENT, aCurrentPos))
+  UINT64 currentPos;
+  if(!File.Seek(0, FILE_CURRENT, currentPos))
     return E_FAIL;
-  bool aResult = m_File.SetLength(aNewSize);
-  UINT64 aCurrentPos2;
-  aResult = aResult && m_File.Seek(aCurrentPos, aCurrentPos2);
-  return aResult ? S_OK : E_FAIL;
+  bool result = File.SetLength(newSize);
+  UINT64 currentPos2;
+  result = result && File.Seek(currentPos, currentPos2);
+  return result ? S_OK : E_FAIL;
 }

@@ -10,58 +10,58 @@ namespace NFile {
 namespace NSystem {
 
 bool MyGetVolumeInformation(
-    LPCTSTR aRootPathName,
-    CSysString &aVolumeName,
-    LPDWORD aVolumeSerialNumber,
-    LPDWORD aMaximumComponentLength,
-    LPDWORD aFileSystemFlags,
-    CSysString &aFileSystemName)
+    LPCTSTR rootPathName,
+    CSysString &volumeName,
+    LPDWORD volumeSerialNumber,
+    LPDWORD maximumComponentLength,
+    LPDWORD fileSystemFlags,
+    CSysString &fileSystemName)
 {
-  bool aResult = BOOLToBool(GetVolumeInformation(
-      aRootPathName,
-      aVolumeName.GetBuffer(MAX_PATH), MAX_PATH,
-      aVolumeSerialNumber,
-      aMaximumComponentLength,
-      aFileSystemFlags,
-      aFileSystemName.GetBuffer(MAX_PATH), MAX_PATH));
-  aVolumeName.ReleaseBuffer();
-  aFileSystemName.ReleaseBuffer();
-  return aResult;
+  bool result = BOOLToBool(GetVolumeInformation(
+      rootPathName,
+      volumeName.GetBuffer(MAX_PATH), MAX_PATH,
+      volumeSerialNumber,
+      maximumComponentLength,
+      fileSystemFlags,
+      fileSystemName.GetBuffer(MAX_PATH), MAX_PATH));
+  volumeName.ReleaseBuffer();
+  fileSystemName.ReleaseBuffer();
+  return result;
 }
 
-bool MyGetDiskFreeSpace(LPCTSTR aRootPathName,
-    UINT64 &aClusterSize, UINT64 &aTotalSize, UINT64 &aFreeSize)
+bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
+    UINT64 &clusterSize, UINT64 &totalSize, UINT64 &freeSize)
 {
   FARPROC pGetDiskFreeSpaceEx = 
       GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
 
-  bool aSizeIsDetected = false;
+  bool sizeIsDetected = false;
   if (pGetDiskFreeSpaceEx)
   {
     UINT64 i64FreeBytesToCaller;
-    aSizeIsDetected = BOOLToBool(::GetDiskFreeSpaceEx(aRootPathName,
+    sizeIsDetected = BOOLToBool(::GetDiskFreeSpaceEx(rootPathName,
                 (PULARGE_INTEGER)&i64FreeBytesToCaller,
-                (PULARGE_INTEGER)&aTotalSize,
-                (PULARGE_INTEGER)&aFreeSize));
+                (PULARGE_INTEGER)&totalSize,
+                (PULARGE_INTEGER)&freeSize));
   }
 
-  DWORD aSectorsPerCluster;     // sectors per cluster
-  DWORD aBytesPerSector;        // bytes per sector
-  DWORD aNumberOfFreeClusters;  // free clusters
-  DWORD aTotalNumberOfClusters; // total clusters
+  DWORD numSectorsPerCluster;
+  DWORD bytesPerSector;
+  DWORD numberOfFreeClusters;
+  DWORD totalNumberOfClusters;
 
-  if (!::GetDiskFreeSpace(aRootPathName,
-      &aSectorsPerCluster,
-      &aBytesPerSector,
-      &aNumberOfFreeClusters,
-      &aTotalNumberOfClusters))
+  if (!::GetDiskFreeSpace(rootPathName,
+      &numSectorsPerCluster,
+      &bytesPerSector,
+      &numberOfFreeClusters,
+      &totalNumberOfClusters))
     return false;
 
-  aClusterSize = UINT64(aBytesPerSector) * UINT64(aSectorsPerCluster);
-  if (!aSizeIsDetected)
+  clusterSize = UINT64(bytesPerSector) * UINT64(numSectorsPerCluster);
+  if (!sizeIsDetected)
   {
-    aTotalSize =  aClusterSize * UINT64(aTotalNumberOfClusters);
-    aFreeSize =  aClusterSize * UINT64(aNumberOfFreeClusters);
+    totalSize =  clusterSize * UINT64(totalNumberOfClusters);
+    freeSize =  clusterSize * UINT64(numberOfFreeClusters);
   }
   return true;
 }

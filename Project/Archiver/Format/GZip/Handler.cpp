@@ -3,17 +3,19 @@
 #include "StdAfx.h"
 
 #include "Handler.h"
-#include "Interface/StreamObjects.h"
-
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
-#include "Windows/COMTry.h"
 
 #include "Common/Defs.h"
 #include "Common/CRC.h"
 #include "Common/StringConvert.h"
 
 #include "Interface/ProgressUtils.h"
+#include "Interface/EnumStatProp.h"
+#include "Interface/StreamObjects.h"
+
+#include "Windows/PropVariant.h"
+#include "Windows/Time.h"
+#include "Windows/COMTry.h"
+
 
 #include "../Common/OutStreamWithCRC.h"
 
@@ -63,111 +65,34 @@ const wchar_t *kUnknownOS = L"Unknown";
 
 enum // PropID
 {
-  kaipidExtraIsPresent = kaipidUserDefined,
-  kaipidExtraFlags,
-  kaipidIsText
+  kpidExtraIsPresent = kpidUserDefined,
+  kpidExtraFlags,
+  kpidIsText
 };
 
 STATPROPSTG kProperties[] = 
 {
-  { NULL, kaipidPath, VT_BSTR},
-  { NULL, kaipidIsFolder, VT_BOOL},
-  { NULL, kaipidLastWriteTime, VT_FILETIME},
-  { NULL, kaipidSize, VT_UI8},
-  { NULL, kaipidPackedSize, VT_UI8},
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackedSize, VT_UI8},
 
-  { NULL, kaipidComment, VT_BOOL},
-  // { NULL, kaipidMethod, VT_UI1},
-  { NULL, kaipidHostOS, VT_BSTR}
+  { NULL, kpidComment, VT_BOOL},
+  // { NULL, kpidMethod, VT_UI1},
+  { NULL, kpidHostOS, VT_BSTR}
     
-  // { NULL, kaipidCRC, VT_UI4},
-  // { L"Extra", kaipidExtraIsPresent, VT_BOOL}
-  // { L"Extra flags", kaipidExtraFlags, VT_UI1},
-  // { L"Is Text", kaipidIsText, VT_BOOL},
+  // { NULL, kpidCRC, VT_UI4},
+  // { L"Extra", kpidExtraIsPresent, VT_BOOL}
+  // { L"Extra flags", kpidExtraFlags, VT_UI1},
+  // { L"Is Text", kpidIsText, VT_BOOL},
 };
 
-static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
-/////////////////////////////////////////////////
-// CEnumArchiveItemProperty
-
-class CEnumArchiveItemProperty:
-  public IEnumSTATPROPSTG,
-  public CComObjectRoot
-{
-public:
-  int m_Index;
-
-  BEGIN_COM_MAP(CEnumArchiveItemProperty)
-    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
-  END_COM_MAP()
-    
-  DECLARE_NOT_AGGREGATABLE(CEnumArchiveItemProperty)
-    
-  DECLARE_NO_REGISTRY()
-public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
-  STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
-};
-
-STDMETHODIMP CEnumArchiveItemProperty::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
+STDMETHODIMP CGZipHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
-    return E_INVALIDARG;
-
-  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
-  {
-    if(m_Index >= kNumProperties)
-    {
-      aResult =  S_FALSE;
-      break;
-    }
-    const STATPROPSTG &aSrcItem = kProperties[m_Index];
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
-    {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
-    }
-    else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-  }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
-  COM_TRY_END
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CGZipHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
-{
-  COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (anEnumObject == NULL)
-    return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  return CStatPropEnumerator::CreateEnumerator(kProperties, 
+      sizeof(kProperties) / sizeof(kProperties[0]), enumerator);
   COM_TRY_END
 }
 
@@ -179,56 +104,56 @@ STDMETHODIMP CGZipHandler::GetNumberOfItems(UINT32 *aNumItems)
   COM_TRY_END
 }
 
-STDMETHODIMP CGZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
+STDMETHODIMP CGZipHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  switch(aPropID)
+  NWindows::NCOM::CPropVariant propVariant;
+  switch(propID)
   {
-    case kaipidPath:
+    case kpidPath:
       if (m_Item.NameIsPresent())
-        aPropVariant = MultiByteToUnicodeString(m_Item.Name, CP_ACP);
+        propVariant = MultiByteToUnicodeString(m_Item.Name, CP_ACP);
       break;
-    case kaipidIsFolder:
-      aPropVariant = false;
+    case kpidIsFolder:
+      propVariant = false;
       break;
-    case kaipidLastWriteTime:
+    case kpidLastWriteTime:
     {
       FILETIME anUTCFileTime;
       if (m_Item.Time != 0)
         NTime::UnixTimeToFileTime(m_Item.Time, anUTCFileTime);
       else
         anUTCFileTime.dwLowDateTime = anUTCFileTime.dwHighDateTime = 0;
-      aPropVariant = anUTCFileTime;
+      propVariant = anUTCFileTime;
       break;
     }
-    case kaipidSize:
-      aPropVariant = UINT64(m_Item.UnPackSize32);
+    case kpidSize:
+      propVariant = UINT64(m_Item.UnPackSize32);
       break;
-    case kaipidPackedSize:
-      aPropVariant = m_Item.PackSize;
+    case kpidPackedSize:
+      propVariant = m_Item.PackSize;
       break;
-    case kaipidComment:
-      aPropVariant = m_Item.CommentIsPresent();
+    case kpidComment:
+      propVariant = m_Item.CommentIsPresent();
       break;
-    case kaipidHostOS:
-      aPropVariant = (m_Item.HostOS < kNumHostOSes) ?
+    case kpidHostOS:
+      propVariant = (m_Item.HostOS < kNumHostOSes) ?
           kHostOS[m_Item.HostOS] : kUnknownOS;
       break;
-    case kaipidMethod:
-      aPropVariant = m_Item.CompressionMethod;
+    case kpidMethod:
+      propVariant = m_Item.CompressionMethod;
       break;
-    case kaipidExtraFlags:
-      aPropVariant = m_Item.ExtraFlags;
+    case kpidExtraFlags:
+      propVariant = m_Item.ExtraFlags;
       break;
-    case kaipidIsText:
-      aPropVariant = m_Item.IsText();
+    case kpidIsText:
+      propVariant = m_Item.IsText();
       break;
-    case kaipidExtraIsPresent:
-      aPropVariant = m_Item.ExtraFieldIsPresent();
+    case kpidExtraIsPresent:
+      propVariant = m_Item.ExtraFieldIsPresent();
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -415,8 +340,8 @@ STDMETHODIMP CGZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
 STDMETHODIMP CGZipHandler::ExtractAllItems(INT32 aTestMode,
       IExtractCallback200 *anExtractCallBack)
 {
-  UINT32 anIndex = 0;
-  return Extract(&anIndex, 1, aTestMode, anExtractCallBack);
+  UINT32 index = 0;
+  return Extract(&index, 1, aTestMode, anExtractCallBack);
 }
 
 }}

@@ -19,34 +19,34 @@ public:
 
 class CStgMedium
 {
-  STGMEDIUM m_Object;
+  STGMEDIUM _object;
 public:
-  bool m_MustBeReleased;
-  CStgMedium(): m_MustBeReleased(false) {}
+  bool _mustBeReleased;
+  CStgMedium(): _mustBeReleased(false) {}
   ~CStgMedium() { Free(); }
   void Free() 
   { 
-    if(m_MustBeReleased) 
-      ReleaseStgMedium(&m_Object); 
-    m_MustBeReleased = false;
+    if(_mustBeReleased) 
+      ReleaseStgMedium(&_object); 
+    _mustBeReleased = false;
   }
-  const STGMEDIUM* operator->() const { return &m_Object;}
-  STGMEDIUM* operator->() { return &m_Object;}
-  STGMEDIUM* operator&() { return &m_Object; }
+  const STGMEDIUM* operator->() const { return &_object;}
+  STGMEDIUM* operator->() { return &_object;}
+  STGMEDIUM* operator&() { return &_object; }
 };
 
 //////////////////////////////////
 // GUID <--> String Conversions
-UString GUIDToStringW(REFGUID aGUID);
-AString GUIDToStringA(REFGUID aGUID);
+UString GUIDToStringW(REFGUID guid);
+AString GUIDToStringA(REFGUID guid);
 #ifdef UNICODE
   #define GUIDToString GUIDToStringW
 #else
   #define GUIDToString GUIDToStringA
 #endif // !UNICODE
 
-HRESULT StringToGUIDW(const wchar_t *aString, GUID &aClassID);
-HRESULT StringToGUIDA(const char *aString, GUID &aClassID);
+HRESULT StringToGUIDW(const wchar_t *string, GUID &classID);
+HRESULT StringToGUIDA(const char *string, GUID &classID);
 #ifdef UNICODE
   #define StringToGUID StringToGUIDW
 #else

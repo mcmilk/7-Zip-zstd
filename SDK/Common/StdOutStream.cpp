@@ -16,20 +16,20 @@ static LPCTSTR kFileOpenMode = _T("wt");
 CStdOutStream  g_StdOut(stdout);
 CStdOutStream  g_StdErr(stderr);
 
-bool CStdOutStream::Open(LPCTSTR aFileName)
+bool CStdOutStream::Open(LPCTSTR fileName)
 {
   Close();
-  m_Stream = _tfopen(aFileName, kFileOpenMode);
-  m_StreamIsOpen = (m_Stream != 0);
-  return m_StreamIsOpen;
+  _stream = _tfopen(fileName, kFileOpenMode);
+  _streamIsOpen = (_stream != 0);
+  return _streamIsOpen;
 }
 
 bool CStdOutStream::Close()
 {
-  if(!m_StreamIsOpen)
+  if(!_streamIsOpen)
     return true;
-  m_StreamIsOpen = (fclose(m_Stream) != 0);
-  return !m_StreamIsOpen;
+  _streamIsOpen = (fclose(_stream) != 0);
+  return !_streamIsOpen;
 }
 
 CStdOutStream ::~CStdOutStream ()
@@ -44,37 +44,37 @@ CStdOutStream & CStdOutStream ::operator<<(CStdOutStream & (*aFunction)(CStdOutS
   return *this;
 }
 
-CStdOutStream & endl(CStdOutStream & anOut)
+CStdOutStream & endl(CStdOutStream & outStream)
 {
-  return anOut << kNewLineChar;
+  return outStream << kNewLineChar;
 }
 
-CStdOutStream & CStdOutStream::operator<<(const char *aChars)
+CStdOutStream & CStdOutStream::operator<<(const char *string)
 {
-  fprintf(m_Stream, kOneStringFormat, aChars);
+  fprintf(_stream, kOneStringFormat, string);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(char aChar)
+CStdOutStream & CStdOutStream::operator<<(char c)
 {
-  putc(aChar, m_Stream);
+  putc(c, _stream);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(int aNumber)
+CStdOutStream & CStdOutStream::operator<<(int number)
 {
-  fprintf(m_Stream, kOneIntFormat, aNumber);
+  fprintf(_stream, kOneIntFormat, number);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(UINT32 aNumber)
+CStdOutStream & CStdOutStream::operator<<(UINT32 number)
 {
-  fprintf(m_Stream, kOneUINT32Format, aNumber);
+  fprintf(_stream, kOneUINT32Format, number);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(UINT64 aNumber)
+CStdOutStream & CStdOutStream::operator<<(UINT64 number)
 {
-  fprintf(m_Stream, kOneUINT64Format, aNumber);
+  fprintf(_stream, kOneUINT64Format, number);
   return *this;
 }

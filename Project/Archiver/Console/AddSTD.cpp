@@ -120,12 +120,12 @@ void EnumerateItems(const NWildcard::CCensorNode &aCurNode,
         aDirFileInfoVector, aCodePage);
     }
   }
-  for (int i = 0; i < aCurNode.m_SubNodes.Size(); i++)
+  for (int i = 0; i < aCurNode._subNodes.Size(); i++)
   {
-    const NWildcard::CCensorNode &aNextNode = aCurNode.m_SubNodes[i];
+    const NWildcard::CCensorNode &aNextNode = aCurNode._subNodes[i];
     EnumerateItems(aNextNode, 
-        aDirectory + GetSystemString(aNextNode.m_Name, aCodePage) + TCHAR(kDirDelimiter), 
-        aPrefix + aNextNode.m_Name + wchar_t(kDirDelimiter),
+        aDirectory + GetSystemString(aNextNode._name, aCodePage) + TCHAR(kDirDelimiter), 
+        aPrefix + aNextNode._name + wchar_t(kDirDelimiter),
         aDirFileInfoVector, aCodePage);
   }
 }
@@ -134,7 +134,7 @@ HRESULT GetFileTime(IArchiveHandler200 *anArchive, UINT32 anIndex,
     FILETIME &aFileTime, const FILETIME &aDefaultFileTime)
 {
   CPropVariant aProperty;
-  RETURN_IF_NOT_S_OK(anArchive->GetProperty(anIndex, kaipidLastWriteTime, &aProperty));
+  RETURN_IF_NOT_S_OK(anArchive->GetProperty(anIndex, kpidLastWriteTime, &aProperty));
   if (aProperty.vt == VT_FILETIME)
     aFileTime = aProperty.filetime;
   else if (aProperty.vt == VT_EMPTY)
@@ -158,7 +158,7 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &aCensor,
   {
     CArchiveItemInfo anItemInfo;
     NCOM::CPropVariant aPropVariantPath;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kaipidPath, &aPropVariantPath));
+    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariantPath));
     UString aFilePath;
     if(aPropVariantPath.vt == VT_EMPTY)
       anItemInfo.Name = aDefaultItemName;
@@ -174,12 +174,12 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &aCensor,
         anArchiveFileInfo.LastWriteTime));
 
     CPropVariant aPropertySize;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kaipidSize, &aPropertySize));
+    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidSize, &aPropertySize));
     if (anItemInfo.SizeIsDefined = (aPropertySize.vt != VT_EMPTY))
       anItemInfo.Size = ConvertPropVariantToUINT64(aPropertySize);
 
     CPropVariant aPropertyIsFolder;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kaipidIsFolder, &aPropertyIsFolder));
+    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidIsFolder, &aPropertyIsFolder));
     if(aPropertyIsFolder.vt != VT_BOOL)
       return E_FAIL;
     anItemInfo.IsDirectory = VARIANT_BOOLToBool(aPropertyIsFolder.boolVal);
@@ -232,7 +232,7 @@ HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &aCensor,
 {
   CArchiveStyleDirItemInfoVector aDirItems;
   g_StdOut << kScanningMessage;
-  EnumerateItems(aCensor.m_Head, _T(""), L"", aDirItems, CP_OEMCP);
+  EnumerateItems(aCensor._head, _T(""), L"", aDirItems, CP_OEMCP);
   g_StdOut << endl;
 
   CFileVectorBundle aFileVectorBundle;

@@ -72,8 +72,13 @@ HRESULT CPlugin::ExtractFiles(
     return m_ArchiveHandler->Extract(aPathMode, anOverwriteMode,
         MultiByteToUnicodeString(aDestPath, CP_OEMCP), BoolToMyBool(false), anExtractCallBack);
   else
-    return m_ArchiveFolder->Extract(anIndexes, aNumIndexes, aPathMode, anOverwriteMode,
+  {
+    CComPtr<IArchiveFolder> archiveFolder;
+    _folder.QueryInterface(&archiveFolder);
+
+    return archiveFolder->Extract(anIndexes, aNumIndexes, aPathMode, anOverwriteMode,
         MultiByteToUnicodeString(aDestPath, CP_OEMCP), BoolToMyBool(false), anExtractCallBack);
+  }
 }
 
 NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *aPanelItems, 
@@ -108,8 +113,8 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
   {
     const kPathIndex = 2;
 
-    CZipRegistryManager aZipRegistryManager;
-    aZipRegistryManager.ReadExtractionInfo(anExtractionInfo);
+    // CZipRegistryManager aZipRegistryManager;
+    NZipRegistryManager::ReadExtractionInfo(anExtractionInfo);
 
     const kPathModeRadioIndex = 4;
     const kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
@@ -220,7 +225,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
     else
       throw 31806;
 
-    aZipRegistryManager.SaveExtractionInfo(anExtractionInfo);
+    NZipRegistryManager::SaveExtractionInfo(anExtractionInfo);
 
     if (aDialogItems[kFilesModeIndex].Selected)
       anExtractSelectedFiles = true;

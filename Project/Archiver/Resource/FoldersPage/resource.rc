@@ -1,0 +1,109 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FOLDERS DIALOG DISCARDABLE  0, 0, 210, 154
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Folders"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "&Working folder",IDC_FOLDERS_STATIC_WORKING_FOLDER,7,7,
+                    196,98
+    CONTROL         "&System temp folder",IDC_FOLDERS_WORK_RADIO_SYSTEM,
+                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,19,20,150,10
+    CONTROL         "&Current",IDC_FOLDERS_WORK_RADIO_CURRENT,"Button",
+                    BS_AUTORADIOBUTTON,19,34,150,10
+    CONTROL         "Specified:",IDC_FOLDERS_WORK_RADIO_SPECIFIED,"Button",
+                    BS_AUTORADIOBUTTON,19,48,151,10
+    EDITTEXT        IDC_FOLDERS_WORK_EDIT_PATH,39,63,130,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_FOLDERS_WORK_BUTTON_PATH,178,63,18,14
+    CONTROL         "Use for removable drives only",
+                    IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,87,180,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_FOLDERS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 203
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 147
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+

@@ -6,40 +6,40 @@
 
 namespace NStream{
 
-CInByte::CInByte(UINT32 aBufferSize):
-  m_BufferSize(aBufferSize),
-  m_BufferBase(0)
+CInByte::CInByte(UINT32 bufferSize):
+  _bufferSize(bufferSize),
+  _bufferBase(0)
 {
-  m_BufferBase = new BYTE[m_BufferSize];
+  _bufferBase = new BYTE[_bufferSize];
 }
 
 CInByte::~CInByte()
 {
-  delete []m_BufferBase;
+  delete []_bufferBase;
 }
 
-void CInByte::Init(ISequentialInStream *aStream)
+void CInByte::Init(ISequentialInStream *stream)
 {
-  m_Stream = aStream;
-  m_ProcessedSize = 0;
-  m_Buffer = m_BufferBase;
-  m_BufferLimit = m_Buffer;
-  m_StreamWasExhausted = false;
+  _stream = stream;
+  _processedSize = 0;
+  _buffer = _bufferBase;
+  _bufferLimit = _buffer;
+  _streamWasExhausted = false;
 }
 
 bool CInByte::ReadBlock()
 {
-  if (m_StreamWasExhausted)
+  if (_streamWasExhausted)
     return false;
-  m_ProcessedSize += (m_Buffer - m_BufferBase);
-  UINT32 aNumProcessedBytes;
-  HRESULT aResult = m_Stream->ReadPart(m_BufferBase, m_BufferSize, &aNumProcessedBytes);
-  if (aResult != S_OK)
-    throw CInByteReadException(aResult);
-  m_Buffer = m_BufferBase;
-  m_BufferLimit = m_Buffer + aNumProcessedBytes;
-  m_StreamWasExhausted = (aNumProcessedBytes == 0);
-  return (!m_StreamWasExhausted);
+  _processedSize += (_buffer - _bufferBase);
+  UINT32 numProcessedBytes;
+  HRESULT result = _stream->ReadPart(_bufferBase, _bufferSize, &numProcessedBytes);
+  if (result != S_OK)
+    throw CInByteReadException(result);
+  _buffer = _bufferBase;
+  _bufferLimit = _buffer + numProcessedBytes;
+  _streamWasExhausted = (numProcessedBytes == 0);
+  return (!_streamWasExhausted);
 }
 
 }

@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 20)
+Compression method IDs (2.30 Beta 22)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -34,6 +34,8 @@ List of defined IDs
          01 - BC_ARM
       06 - M68
          05 - BC_M68_B
+      07
+         01 - BC_ARMThumb
 
    04 - PPMD
       01 - Version

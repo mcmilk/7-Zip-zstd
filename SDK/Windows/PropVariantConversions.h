@@ -7,11 +7,11 @@
 
 #include "Common/String.h"
 
-// CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime = true);
-CSysString ConvertFileTimeToString2(const FILETIME &aFileTime, bool anIncludeTime = true, 
-    bool anIncludeSeconds = true);
-CSysString ConvertPropVariantToString(const PROPVARIANT &aPropVariant);
+// CSysString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime = true);
+CSysString ConvertFileTimeToString2(const FILETIME &fileTime, bool includeTime = true, 
+    bool includeSeconds = true);
+CSysString ConvertPropVariantToString(const PROPVARIANT &propVariant);
 
-UINT64 ConvertPropVariantToUINT64(const PROPVARIANT &aPropVariant);
+UINT64 ConvertPropVariantToUINT64(const PROPVARIANT &propVariant);
 
 #endif

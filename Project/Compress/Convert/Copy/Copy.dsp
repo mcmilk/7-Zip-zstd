@@ -109,14 +109,18 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
+# Begin Group "Compression"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Coder.cpp
+SOURCE=..\..\..\..\SDK\Compression\CopyCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Coder.h
+SOURCE=..\..\..\..\SDK\Compression\CopyCoder.h
 # End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\resource.h

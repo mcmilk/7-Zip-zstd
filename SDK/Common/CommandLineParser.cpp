@@ -11,192 +11,192 @@ static const char kSwitchID2 = '/';
 
 static const char kSwitchMinus = '-';
 
-static bool IsItSwitchChar(char aChar)
+static bool IsItSwitchChar(char c)
 { 
-  return (aChar == kSwitchID1 || aChar == kSwitchID2); 
+  return (c == kSwitchID1 || c == kSwitchID2); 
 }
 
-CParser::CParser(int aNumSwitches):
-  m_NumSwitches(aNumSwitches)
+CParser::CParser(int numSwitches):
+  _numSwitches(numSwitches)
 {
-  m_Switches = new CSwitchResult[m_NumSwitches];
+  _switches = new CSwitchResult[_numSwitches];
 }
 
 CParser::~CParser()
 {
-  delete []m_Switches;
+  delete []_switches;
 }
 
-void CParser::ParseStrings(const CSwitchForm *aSwitchForms, 
-  const AStringVector &aCommandStrings)
+void CParser::ParseStrings(const CSwitchForm *switchForms, 
+  const AStringVector &commandStrings)
 {
-  int aNumCommandStrings = aCommandStrings.Size();
-  for (int i = 0; i < aNumCommandStrings; i++)
-    if (!ParseString(aCommandStrings[i], aSwitchForms))
-      m_NonSwitchStrings.Add(aCommandStrings[i]);
+  int numCommandStrings = commandStrings.Size();
+  for (int i = 0; i < numCommandStrings; i++)
+    if (!ParseString(commandStrings[i], switchForms))
+      _nonSwitchStrings.Add(commandStrings[i]);
 }
 
-// if aString contains switch then function updates switch structures
-// out: (aString is a switch)
-bool CParser::ParseString(const AString &aString, 
-  const CSwitchForm *aSwitchForms)
+// if string contains switch then function updates switch structures
+// out: (string is a switch)
+bool CParser::ParseString(const AString &string, const CSwitchForm *switchForms)
 {
-  int aLen = aString.Length();
-  if (aLen == 0) 
+  int len = string.Length();
+  if (len == 0) 
     return false;
-  int aPos = 0;
-  if (!IsItSwitchChar(aString[aPos]))
+  int pos = 0;
+  if (!IsItSwitchChar(string[pos]))
     return false;
-  while(aPos < aLen)
+  while(pos < len)
   {
-    if (IsItSwitchChar(aString[aPos]))
-      aPos++;
+    if (IsItSwitchChar(string[pos]))
+      pos++;
     const int kNoLen = -1;
-    int aMatchedSwitchIndex, aMaxLen = kNoLen;
-    for(int aSwitch = 0; aSwitch < m_NumSwitches; aSwitch++)
+    int matchedSwitchIndex;
+    int maxLen = kNoLen;
+    for(int switchIndex = 0; switchIndex < _numSwitches; switchIndex++)
     {
-      int aSwitchLen = strlen(aSwitchForms[aSwitch].IDString);
-      if (aSwitchLen <= aMaxLen || aPos + aSwitchLen > aLen) 
+      int switchLen = strlen(switchForms[switchIndex].IDString);
+      if (switchLen <= maxLen || pos + switchLen > len) 
         continue;
-      if(_strnicmp(aSwitchForms[aSwitch].IDString, LPCSTR(aString) + aPos, aSwitchLen) == 0)
+      if(_strnicmp(switchForms[switchIndex].IDString, LPCSTR(string) + pos, switchLen) == 0)
       {
-        aMatchedSwitchIndex = aSwitch;
-        aMaxLen = aSwitchLen;
+        matchedSwitchIndex = switchIndex;
+        maxLen = switchLen;
       }
     }
-    if (aMaxLen == kNoLen)
-      throw "aMaxLen == kNoLen";
-    CSwitchResult &aMatchedSwitch = m_Switches[aMatchedSwitchIndex];
-    const CSwitchForm &aSwitchForm = aSwitchForms[aMatchedSwitchIndex];
-    if ((!aSwitchForm.Multi) && aMatchedSwitch.ThereIs)
+    if (maxLen == kNoLen)
+      throw "maxLen == kNoLen";
+    CSwitchResult &matchedSwitch = _switches[matchedSwitchIndex];
+    const CSwitchForm &switchForm = switchForms[matchedSwitchIndex];
+    if ((!switchForm.Multi) && matchedSwitch.ThereIs)
       throw "switch must be single";
-    aMatchedSwitch.ThereIs = true;
-    aPos += aMaxLen;
-    int aTailSize = aLen - aPos;
-    NSwitchType::EEnum aType = aSwitchForm.Type;
-    switch(aType)
+    matchedSwitch.ThereIs = true;
+    pos += maxLen;
+    int tailSize = len - pos;
+    NSwitchType::EEnum type = switchForm.Type;
+    switch(type)
     {
       case (NSwitchType::kPostMinus):
         {
-          if (aTailSize == 0)
-            aMatchedSwitch.WithMinus = false;
+          if (tailSize == 0)
+            matchedSwitch.WithMinus = false;
           else
           {
-            aMatchedSwitch.WithMinus = (aString[aPos] == kSwitchMinus);
-            if (aMatchedSwitch.WithMinus)
-              aPos++;
+            matchedSwitch.WithMinus = (string[pos] == kSwitchMinus);
+            if (matchedSwitch.WithMinus)
+              pos++;
           }
           break;
         }
       case (NSwitchType::kPostChar):
         {
-          if (aTailSize < aSwitchForm.MinLen)
+          if (tailSize < switchForm.MinLen)
             throw "switch is not full";
-          AString aSet = aSwitchForm.PostCharSet;
+          AString set = switchForm.PostCharSet;
           const kEmptyCharValue = -1;
-          if (aTailSize == 0)
-            aMatchedSwitch.PostCharIndex = kEmptyCharValue;
+          if (tailSize == 0)
+            matchedSwitch.PostCharIndex = kEmptyCharValue;
           else
           {
-            int anIndex = aSet.Find(aString[aPos]);
-            if (anIndex < 0)
-              aMatchedSwitch.PostCharIndex =  kEmptyCharValue;
+            int index = set.Find(string[pos]);
+            if (index < 0)
+              matchedSwitch.PostCharIndex =  kEmptyCharValue;
             else
             {
-              aMatchedSwitch.PostCharIndex = anIndex;
-              aPos++;
+              matchedSwitch.PostCharIndex = index;
+              pos++;
             }
           }
           break;
         }
       case NSwitchType::kLimitedPostString: case NSwitchType::kUnLimitedPostString: 
         {
-          int aMinLen = aSwitchForm.MinLen;
-          if (aTailSize < aMinLen)
+          int minLen = switchForm.MinLen;
+          if (tailSize < minLen)
             throw "switch is not full";
-          if (aType == NSwitchType::kUnLimitedPostString)
+          if (type == NSwitchType::kUnLimitedPostString)
           {
-            aMatchedSwitch.PostStrings.Add(aString.Mid(aPos));
+            matchedSwitch.PostStrings.Add(string.Mid(pos));
             return true;
           }
-          int aMaxLen = aSwitchForm.MaxLen;
-          AString aStringSwitch = aString.Mid(aPos, aMinLen);
-          aPos += aMinLen;
-          for(int i = aMinLen; i < aMaxLen && aPos < aLen; i++, aPos++)
+          int maxLen = switchForm.MaxLen;
+          AString stringSwitch = string.Mid(pos, minLen);
+          pos += minLen;
+          for(int i = minLen; i < maxLen && pos < len; i++, pos++)
           {
-            char aChar = aString[aPos];
+            char aChar = string[pos];
             if (IsItSwitchChar(aChar))
               break;
-            aStringSwitch += aChar;
+            stringSwitch += aChar;
           }
-          aMatchedSwitch.PostStrings.Add(aStringSwitch);
+          matchedSwitch.PostStrings.Add(stringSwitch);
         }
     }
   }
   return true;
 }
 
-const CSwitchResult& CParser::operator[](size_t anIndex) const
+const CSwitchResult& CParser::operator[](size_t index) const
 {
-  return m_Switches[anIndex];
+  return _switches[index];
 }
 
 /////////////////////////////////
 // Command parsing procedures
 
-int ParseCommand(int aNumCommandForms, const CCommandForm *aCommandForms, 
-    const AString &aCommandString, AString &aPostString)
+int ParseCommand(int numCommandForms, const CCommandForm *commandForms, 
+    const AString &commandString, AString &postString)
 {
-  for(int i = 0; i < aNumCommandForms; i++)
+  for(int i = 0; i < numCommandForms; i++)
   {
-    const AString anID = aCommandForms[i].IDString;
-    if (aCommandForms[i].PostStringMode)
+    const AString id = commandForms[i].IDString;
+    if (commandForms[i].PostStringMode)
     {
-      if(aCommandString.Find(anID) == 0)
+      if(commandString.Find(id) == 0)
       {
-        aPostString = aCommandString.Mid(anID.Length());
+        postString = commandString.Mid(id.Length());
         return i;
       }
     }
     else
-      if (aCommandString == anID)
+      if (commandString == id)
       {
-        aPostString.Empty();
+        postString.Empty();
         return i;
       }
   }
   return -1;
 }
    
-bool ParseSubCharsCommand(int aNumForms, const CCommandSubCharsSet *aForms, 
-    const CSysString &aCommandString, CIntVector &anIndexes)
+bool ParseSubCharsCommand(int numForms, const CCommandSubCharsSet *forms, 
+    const CSysString &commandString, CIntVector &indices)
 {
-  anIndexes.Clear();
-  int aNumUsedChars = 0;
-  for(int i = 0; i < aNumForms; i++)
+  indices.Clear();
+  int numUsedChars = 0;
+  for(int i = 0; i < numForms; i++)
   {
-    const CCommandSubCharsSet &aSet = aForms[i];
-    int aCurrentIndex = -1;
-    int aLen = strlen(aSet.Chars);
-    for(int j = 0; j < aLen; j++)
+    const CCommandSubCharsSet &set = forms[i];
+    int currentIndex = -1;
+    int len = strlen(set.Chars);
+    for(int j = 0; j < len; j++)
     {
-      char aChar = aSet.Chars[j];
-      int aNewIndex = aCommandString.Find(aChar);
-      if (aNewIndex >= 0)
+      char c = set.Chars[j];
+      int newIndex = commandString.Find(c);
+      if (newIndex >= 0)
       {
-        if (aCurrentIndex >= 0)
+        if (currentIndex >= 0)
           return false;
-        if (aCommandString.Find(aChar, aNewIndex + 1) >= 0)
+        if (commandString.Find(c, newIndex + 1) >= 0)
           return false;
-        aCurrentIndex = j;
-        aNumUsedChars++;
+        currentIndex = j;
+        numUsedChars++;
       }
     }
-    if(aCurrentIndex == -1 && !aSet.EmptyAllowed)
+    if(currentIndex == -1 && !set.EmptyAllowed)
       return false;
-    anIndexes.Add(aCurrentIndex);
+    indices.Add(currentIndex);
   }
-  return (aNumUsedChars == aCommandString.Length());
+  return (numUsedChars == commandString.Length());
 }
 
 }

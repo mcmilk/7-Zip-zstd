@@ -13,35 +13,35 @@ namespace NWindows {
 namespace NFile {
 namespace NDirectory {
 
-bool MyCreateDirectory(LPCTSTR aPathName)
+bool MyCreateDirectory(LPCTSTR pathName)
 {  
-  return BOOLToBool(::CreateDirectory(aPathName, NULL)); 
+  return BOOLToBool(::CreateDirectory(pathName, NULL)); 
 }
 
 /*
-bool CreateComplexDirectory(LPCTSTR aPathName)
+bool CreateComplexDirectory(LPCTSTR pathName)
 {
-  NName::CParsedPath aPath;
-  aPath.ParsePath(aPathName);
-  CSysString aFullPath = aPath.Prefix;
-  DWORD anErrorCode = ERROR_SUCCESS;
-  for(int i = 0; i < aPath.PathParts.Size(); i++)
+  NName::CParsedPath path;
+  path.ParsePath(pathName);
+  CSysString fullPath = path.Prefix;
+  DWORD errorCode = ERROR_SUCCESS;
+  for(int i = 0; i < path.PathParts.Size(); i++)
   {
-    const CSysString &aString = aPath.PathParts[i];
-    if(aString.IsEmpty())
+    const CSysString &string = path.PathParts[i];
+    if(string.IsEmpty())
     {
-      if(i != aPath.PathParts.Size() - 1)
+      if(i != path.PathParts.Size() - 1)
         return false;
       return true;
     }
-    aFullPath += aPath.PathParts[i];
-    if(!MyCreateDirectory(aFullPath))
+    fullPath += path.PathParts[i];
+    if(!MyCreateDirectory(fullPath))
     {
-      DWORD anErrorCode = GetLastError();
-      if(anErrorCode != ERROR_ALREADY_EXISTS)
+      DWORD errorCode = GetLastError();
+      if(errorCode != ERROR_ALREADY_EXISTS)
         return false;
     }
-    aFullPath += NName::kDirDelimiter;
+    fullPath += NName::kDirDelimiter;
   }
   return true;
 }
@@ -49,226 +49,235 @@ bool CreateComplexDirectory(LPCTSTR aPathName)
 
 bool CreateComplexDirectory(LPCTSTR _aPathName)
 {
-  CSysString aPathName = _aPathName;
-  int aPos = aPathName.ReverseFind(TEXT('\\'));
-  if (aPos > 0 && aPos == aPathName.Length() - 1)
+  CSysString pathName = _aPathName;
+  int pos = pathName.ReverseFind(TEXT('\\'));
+  if (pos > 0 && pos == pathName.Length() - 1)
   {
-    if (aPathName.Length() == 3 && aPathName[1] == ':')
+    if (pathName.Length() == 3 && pathName[1] == ':')
       return true; // Disk folder;
-    aPathName.Delete(aPos);
+    pathName.Delete(pos);
   }
-  CSysString aPathName2 = aPathName;
-  aPos = aPathName.Length();
+  CSysString pathName2 = pathName;
+  pos = pathName.Length();
   while(true)
   {
-    if(MyCreateDirectory(aPathName))
+    if(MyCreateDirectory(pathName))
       break;
-    if(::GetLastError() == ERROR_ALREADY_EXISTS)
+    DWORD lastError = ::GetLastError();
+    if(lastError == ERROR_ALREADY_EXISTS)
+    {
+      NFind::CFileInfo fileInfo;
+      if (!NFind::FindFile(pathName, fileInfo)) // For network folders
+        return true;
+      if (!fileInfo.IsDirectory())
+        return false;
       break;
-    aPos = aPathName.ReverseFind(TEXT('\\'));
-    if (aPos < 0 || aPos == 0)
+    }
+    pos = pathName.ReverseFind(TEXT('\\'));
+    if (pos < 0 || pos == 0)
       return false;
-    if (aPathName[aPos - 1] == ':')
+    if (pathName[pos - 1] == ':')
       return false;
-    aPathName = aPathName.Left(aPos);
+    pathName = pathName.Left(pos);
   }
-  aPathName = aPathName2;
-  while(aPos < aPathName.Length())
+  pathName = pathName2;
+  while(pos < pathName.Length())
   {
-    aPos = aPathName.Find(TEXT('\\'), aPos + 1);
-    if (aPos < 0)
-      aPos = aPathName.Length();
-    if(!MyCreateDirectory(aPathName.Left(aPos)))
+    pos = pathName.Find(TEXT('\\'), pos + 1);
+    if (pos < 0)
+      pos = pathName.Length();
+    if(!MyCreateDirectory(pathName.Left(pos)))
       return false;
   }
   return true;
 }
 
-bool DeleteFileAlways(LPCTSTR aName)
+bool DeleteFileAlways(LPCTSTR name)
 {
-  if(!BOOLToBool(::SetFileAttributes(aName, 0)))
+  if(!BOOLToBool(::SetFileAttributes(name, 0)))
     return false;
-  return BOOLToBool(::DeleteFile(aName));
+  return BOOLToBool(::DeleteFile(name));
 }
 
-static bool RemoveDirectorySubItems2(const CSysString aPathPrefix,
-    const NFind::CFileInfo &aFileInfo)
+static bool RemoveDirectorySubItems2(const CSysString pathPrefix,
+    const NFind::CFileInfo &fileInfo)
 {
-  if(aFileInfo.IsDirectory())
-    return RemoveDirectoryWithSubItems(aPathPrefix + aFileInfo.Name);
+  if(fileInfo.IsDirectory())
+    return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
   else
-    return DeleteFileAlways(aPathPrefix + aFileInfo.Name);
+    return DeleteFileAlways(pathPrefix + fileInfo.Name);
 }
 
-bool RemoveDirectoryWithSubItems(const CSysString &aPath)
+bool RemoveDirectoryWithSubItems(const CSysString &path)
 {
-  NFind::CFileInfo aFileInfo;
-  CSysString aPathPrefix = aPath + NName::kDirDelimiter;
+  NFind::CFileInfo fileInfo;
+  CSysString pathPrefix = path + NName::kDirDelimiter;
   {
-    NFind::CEnumerator anEnumerator(aPathPrefix + TCHAR(NName::kAnyStringWildcard));
-    while(anEnumerator.Next(aFileInfo))
-      if(!RemoveDirectorySubItems2(aPathPrefix, aFileInfo))
+    NFind::CEnumerator enumerator(pathPrefix + TCHAR(NName::kAnyStringWildcard));
+    while(enumerator.Next(fileInfo))
+      if(!RemoveDirectorySubItems2(pathPrefix, fileInfo))
         return false;
   }
-  return BOOLToBool(::RemoveDirectory(aPath));
+  return BOOLToBool(::RemoveDirectory(path));
 }
 
 
 #ifndef _WIN32_WCE
 
-bool MyGetShortPathName(LPCTSTR aLongPath, CSysString &aShortPath)
+bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath)
 {
-  DWORD aNeedLength = ::GetShortPathName(aLongPath, 
-      aShortPath.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
-  aShortPath.ReleaseBuffer();
-  if (aNeedLength == 0 || aNeedLength >= MAX_PATH)
+  DWORD needLength = ::GetShortPathName(longPath, 
+      shortPath.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+  shortPath.ReleaseBuffer();
+  if (needLength == 0 || needLength >= MAX_PATH)
     return false;
   return true;
 }
 
-bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath, 
-    int &aFileNamePartStartIndex)
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, 
+    int &fileNamePartStartIndex)
 {
-  LPTSTR aFileNamePointer;
-  LPTSTR aBuffer = aResultPath.GetBuffer(MAX_PATH);
-  DWORD aNeedLength = ::GetFullPathName(aFileName, MAX_PATH + 1, 
-      aBuffer, &aFileNamePointer);
-  aResultPath.ReleaseBuffer();
-  if (aNeedLength == 0 || aNeedLength >= MAX_PATH)
+  LPTSTR fileNamePointer;
+  LPTSTR buffer = resultPath.GetBuffer(MAX_PATH);
+  DWORD needLength = ::GetFullPathName(fileName, MAX_PATH + 1, 
+      buffer, &fileNamePointer);
+  resultPath.ReleaseBuffer();
+  if (needLength == 0 || needLength >= MAX_PATH)
     return false;
-  aFileNamePartStartIndex = aFileNamePointer - aBuffer;
+  fileNamePartStartIndex = fileNamePointer - buffer;
   return true;
 }
 
-bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath)
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath)
 {
-  int anIndex;
-  return MyGetFullPathName(aFileName, aResultPath, anIndex);
+  int index;
+  return MyGetFullPathName(fileName, resultPath, index);
 }
 
-bool GetOnlyName(LPCTSTR aFileName, CSysString &aResultName)
+bool GetOnlyName(LPCTSTR fileName, CSysString &resultName)
 {
-  int anIndex;
-  if (!MyGetFullPathName(aFileName, aResultName, anIndex))
+  int index;
+  if (!MyGetFullPathName(fileName, resultName, index))
     return false;
-  aResultName = aResultName.Mid(anIndex);
+  resultName = resultName.Mid(index);
   return true;
 }
 
-bool GetOnlyDirPrefix(LPCTSTR aFileName, CSysString &aResultName)
+bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName)
 {
-  int anIndex;
-  if (!MyGetFullPathName(aFileName, aResultName, anIndex))
+  int index;
+  if (!MyGetFullPathName(fileName, resultName, index))
     return false;
-  aResultName = aResultName.Left(anIndex);
+  resultName = resultName.Left(index);
   return true;
 }
 
-bool MyGetCurrentDirectory(CSysString &aResultPath)
+bool MyGetCurrentDirectory(CSysString &resultPath)
 {
-  DWORD aNeedLength = ::GetCurrentDirectory(MAX_PATH + 1, 
-      aResultPath.GetBuffer(MAX_PATH));
-  aResultPath.ReleaseBuffer();
-  return (aNeedLength > 0 && aNeedLength < MAX_PATH);
+  DWORD needLength = ::GetCurrentDirectory(MAX_PATH + 1, 
+      resultPath.GetBuffer(MAX_PATH));
+  resultPath.ReleaseBuffer();
+  return (needLength > 0 && needLength < MAX_PATH);
 }
 #endif
 
-bool MySearchPath(LPCTSTR aPath, LPCTSTR aFileName, LPCTSTR anExtension, 
-  CSysString &aResultPath, UINT32 &aFilePart)
+bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, 
+  CSysString &resultPath, UINT32 &filePart)
 {
-  LPTSTR lpFilePart;
-  DWORD aValue = SearchPath(aPath, aFileName, anExtension, 
-    MAX_PATH, aResultPath.GetBuffer(MAX_PATH), &lpFilePart);
-  aResultPath.ReleaseBuffer();
-  if (aValue == 0 || aValue > MAX_PATH)
+  LPTSTR filePartPointer;
+  DWORD value = ::SearchPath(path, fileName, extension, 
+    MAX_PATH, resultPath.GetBuffer(MAX_PATH), &filePartPointer);
+  filePart = filePartPointer - (LPCTSTR)resultPath;
+  resultPath.ReleaseBuffer();
+  if (value == 0 || value > MAX_PATH)
     return false;
   return true;
 }
 
 
-bool MyGetTempPath(CSysString &aResultPath)
+bool MyGetTempPath(CSysString &resultPath)
 {
-  DWORD aNeedLength = ::GetTempPath(MAX_PATH + 1, 
-      aResultPath.GetBuffer(MAX_PATH));
-  aResultPath.ReleaseBuffer();
-  return (aNeedLength > 0 && aNeedLength <= MAX_PATH);
+  DWORD needLength = ::GetTempPath(MAX_PATH + 1, 
+      resultPath.GetBuffer(MAX_PATH));
+  resultPath.ReleaseBuffer();
+  return (needLength > 0 && needLength <= MAX_PATH);
 }
 
-UINT MyGetTempFileName(LPCTSTR aDirPath, LPCTSTR aPrefix, CSysString &aResultPath)
+UINT MyGetTempFileName(LPCTSTR dirPath, LPCTSTR prefix, CSysString &resultPath)
 {
-  UINT aNumber = ::GetTempFileName(aDirPath, aPrefix, 0,
-      aResultPath.GetBuffer(MAX_PATH));
-  aResultPath.ReleaseBuffer();
-  return aNumber;
+  UINT number = ::GetTempFileName(dirPath, prefix, 0,
+      resultPath.GetBuffer(MAX_PATH));
+  resultPath.ReleaseBuffer();
+  return number;
 }
 
-UINT CTempFile::Create(LPCTSTR aDirPath, LPCTSTR aPrefix, 
-    CSysString &aResultPath)
+UINT CTempFile::Create(LPCTSTR dirPath, LPCTSTR prefix, 
+    CSysString &resultPath)
 {
   Remove();
-  UINT aNumber = MyGetTempFileName(aDirPath, aPrefix, aResultPath);
-  if(aNumber != 0)
+  UINT number = MyGetTempFileName(dirPath, prefix, resultPath);
+  if(number != 0)
   {
-    m_FileName = aResultPath;
-    m_MustBeDeleted = true;
+    _fileName = resultPath;
+    _mustBeDeleted = true;
   }
-  return aNumber;
+  return number;
 }
 
-bool CTempFile::Create(LPCTSTR aPrefix, CSysString &aResultPath)
+bool CTempFile::Create(LPCTSTR prefix, CSysString &resultPath)
 {
-  CSysString aTempPath;
-  if(!MyGetTempPath(aTempPath))
+  CSysString tempPath;
+  if(!MyGetTempPath(tempPath))
     return false;
-  if (Create(aTempPath, aPrefix, aResultPath) != 0)
+  if (Create(tempPath, prefix, resultPath) != 0)
     return true;
-  if(!NSystem::MyGetWindowsDirectory(aTempPath))
+  if(!NSystem::MyGetWindowsDirectory(tempPath))
     return false;
-  return (Create(aTempPath, aPrefix, aResultPath) != 0);
+  return (Create(tempPath, prefix, resultPath) != 0);
 }
 
 bool CTempFile::Remove()
 {
-  if (!m_MustBeDeleted)
+  if (!_mustBeDeleted)
     return true;
-  m_MustBeDeleted = !DeleteFileAlways(m_FileName);
-  return !m_MustBeDeleted;
+  _mustBeDeleted = !DeleteFileAlways(_fileName);
+  return !_mustBeDeleted;
 }
 
-bool CreateTempDirectory(LPCTSTR aPrefix, CSysString &aDirName)
+bool CreateTempDirectory(LPCTSTR prefix, CSysString &dirName)
 {
   /*
-  CSysString aPrefix = aTempPath + aPrefixChars;
-  CRandom aRandom;
-  aRandom.Init();
+  CSysString prefix = tempPath + prefixChars;
+  CRandom random;
+  random.Init();
   */
   while(true)
   {
-    CTempFile aTempFile;
-    if (!aTempFile.Create(aPrefix, aDirName))
+    CTempFile tempFile;
+    if (!tempFile.Create(prefix, dirName))
       return false;
-    if (!::DeleteFile(aDirName))
+    if (!::DeleteFile(dirName))
       return false;
     /*
-    UINT32 aRandomNumber = aRandom.Generate();
-    TCHAR aRandomNumberString[32];
-    _stprintf(aRandomNumberString, _T("%04X"), aRandomNumber);
-    aDirName = aPrefix + aRandomNumberString;
+    UINT32 randomNumber = random.Generate();
+    TCHAR randomNumberString[32];
+    _stprintf(randomNumberString, _T("%04X"), randomNumber);
+    dirName = prefix + randomNumberString;
     */
-    if(NFile::NFind::DoesFileExist(aDirName))
+    if(NFile::NFind::DoesFileExist(dirName))
       continue;
-    bool aResult = NFile::NDirectory::MyCreateDirectory(aDirName);
-    if (aResult)
+    bool result = NFile::NDirectory::MyCreateDirectory(dirName);
+    if (result)
       return true;
     if (::GetLastError() != ERROR_ALREADY_EXISTS)
       return false;
   }
 }
 
-bool CTempDirectory::Create(LPCTSTR aPrefix)
+bool CTempDirectory::Create(LPCTSTR prefix)
 { 
   Remove();
-  return (m_MustBeDeleted = CreateTempDirectory(aPrefix, m_TempDir)); 
+  return (_mustBeDeleted = CreateTempDirectory(prefix, _tempDir)); 
 }
 
 

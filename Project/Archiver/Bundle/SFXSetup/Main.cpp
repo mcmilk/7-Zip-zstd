@@ -25,6 +25,8 @@ using namespace NWindows;
 
 static LPCTSTR kTempDirPrefix = _T("7zS"); 
 
+const LPCWSTR aDefaultExt = L".exe";
+
 static bool ReadDataString(LPCTSTR aFileName, LPCSTR aStartID, 
     LPCSTR anEndID, AString &aString)
 {
@@ -151,6 +153,10 @@ int APIENTRY WinMain(
   UString anArchiveName, aSwitches;
   GetArchiveName(GetCommandLineW(), anArchiveName, aSwitches);
   CSysString aFullPath;
+
+  if (anArchiveName.Right(4).CompareNoCase(aDefaultExt) != 0)
+    anArchiveName += aDefaultExt;
+
   if (!NWindows::NFile::NDirectory::MyGetFullPathName(
       GetSystemString(anArchiveName), aFullPath))
   {
@@ -247,8 +253,9 @@ int APIENTRY WinMain(
   
   CSysString aTempDirPathNormalized = aShortPath;
   NFile::NName::NormalizeDirPathPrefix(aShortPath);
-  CSysString anAppLaunchedSys = aShortPath + GetSystemString(anAppLaunchedSysU);
-
+  // CSysString anAppLaunchedSys = aShortPath + GetSystemString(anAppLaunchedSysU);
+  CSysString anAppLaunchedSys = CSysString(TEXT(".\\")) + GetSystemString(anAppLaunchedSysU);
+  
   BOOL aCreateResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)anAppLaunchedSys, 
     NULL, NULL, FALSE, 0, NULL, NULL /*aTempDir.GetPath() */, 
     &aStartupInfo, &aProcessInformation);

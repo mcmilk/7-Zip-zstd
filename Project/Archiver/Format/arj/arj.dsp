@@ -222,6 +222,14 @@ SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
 # End Source File
 # Begin Source File

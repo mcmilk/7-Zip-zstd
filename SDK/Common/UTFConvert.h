@@ -7,7 +7,7 @@
 
 #include "Common/String.h"
 
-bool ConvertUTF8ToUnicode(const AString &anUTFString, UString &anResultString);
-void ConvertUnicodeToUTF8(const UString &anUnicodeString, AString &anResultString);
+bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString);
+void ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString);
 
 #endif

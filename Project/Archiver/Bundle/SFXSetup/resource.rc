@@ -40,7 +40,7 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""..\\..\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
     "\r\n"
     "\0"
 END
@@ -76,8 +76,8 @@ IDI_ICON3               ICON    DISCARDABLE     "setup.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,20,0
- PRODUCTVERSION 2,30,20,0
+ FILEVERSION 2,30,22,0
+ PRODUCTVERSION 2,30,22,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -95,14 +95,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7z Self-Extractor Setup\0"
-            VALUE "FileVersion", "2, 30, 20, 0\0"
+            VALUE "FileVersion", "2, 30, 22, 0\0"
             VALUE "InternalName", "7zS.sfx\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zS.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 20, 0\0"
+            VALUE "ProductVersion", "2, 30, 22, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -122,7 +122,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
+    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -140,7 +140,7 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-#include "..\..\Resource\ProgressDialog\resource.rc"
+#include "..\..\..\FileManager\Resource\ProgressDialog\resource.rc"
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -12,59 +12,59 @@ namespace NStream {
 class CInByteReadException
 {
 public:
-  HRESULT m_Result;
-  CInByteReadException(HRESULT aResult): m_Result (aResult) {}
+  HRESULT Result;
+  CInByteReadException(HRESULT result): Result (result) {}
 };
 
 class CInByte
 {
-  UINT64 m_ProcessedSize;
-  BYTE *m_BufferBase;
-  UINT32 m_BufferSize;
-  BYTE *m_Buffer;
-  BYTE *m_BufferLimit;
-  CComPtr<ISequentialInStream> m_Stream;
-  bool m_StreamWasExhausted;
+  UINT64 _processedSize;
+  BYTE *_bufferBase;
+  UINT32 _bufferSize;
+  BYTE *_buffer;
+  BYTE *_bufferLimit;
+  CComPtr<ISequentialInStream> _stream;
+  bool _streamWasExhausted;
 
   bool ReadBlock();
 
 public:
-  CInByte(UINT32 aBufferSize = 0x100000);
+  CInByte(UINT32 bufferSize = 0x100000);
   ~CInByte();
   
-  void Init(ISequentialInStream *aStream);
+  void Init(ISequentialInStream *stream);
   void ReleaseStream()
-    { m_Stream.Release(); }
+    { _stream.Release(); }
 
 
-  bool ReadByte(BYTE &aByte)
+  bool ReadByte(BYTE &b)
     {
-      if(m_Buffer >= m_BufferLimit)
+      if(_buffer >= _bufferLimit)
         if(!ReadBlock())
           return false;
-      aByte = *m_Buffer++;
+      b = *_buffer++;
       return true;
     }
   BYTE ReadByte()
     {
-      if(m_Buffer >= m_BufferLimit)
+      if(_buffer >= _bufferLimit)
         if(!ReadBlock())
           return 0x0;
-      return *m_Buffer++;
+      return *_buffer++;
     }
-  void ReadBytes(void *aData, UINT32 aSize, UINT32 &aProcessedSize)
+  void ReadBytes(void *data, UINT32 size, UINT32 &processedSize)
     {
-      for(aProcessedSize = 0; aProcessedSize < aSize; aProcessedSize++)
-        if (!ReadByte(((BYTE *)aData)[aProcessedSize]))
+      for(processedSize = 0; processedSize < size; processedSize++)
+        if (!ReadByte(((BYTE *)data)[processedSize]))
           return;
     }
-  bool ReadBytes(void *aData, UINT32 aSize)
+  bool ReadBytes(void *data, UINT32 size)
     {
-      UINT32 aProcessedSize;
-      ReadBytes(aData, aSize, aProcessedSize);
-      return (aProcessedSize == aSize);
+      UINT32 processedSize;
+      ReadBytes(data, size, processedSize);
+      return (processedSize == size);
     }
-  UINT64 GetProcessedSize() const { return m_ProcessedSize + (m_Buffer - m_BufferBase); }
+  UINT64 GetProcessedSize() const { return _processedSize + (_buffer - _bufferBase); }
 };
 
 }

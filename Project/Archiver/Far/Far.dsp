@@ -390,14 +390,6 @@ SOURCE=..\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ExtractAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractAutoRename.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\OpenEngine2.cpp
 # End Source File
 # Begin Source File
@@ -419,6 +411,10 @@ SOURCE=..\Common\SortUtils.cpp
 # Begin Source File
 
 SOURCE=..\Common\SortUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdatePairBasic.h
 # End Source File
 # Begin Source File
 
@@ -459,10 +455,6 @@ SOURCE=..\Common\ZipRegistryMain.cpp
 # Begin Source File
 
 SOURCE=..\Common\ZipRegistryMain.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ZipSettings.cpp
 # End Source File
 # Begin Source File
 
@@ -519,6 +511,18 @@ SOURCE=..\..\..\SDK\Compression\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Compression\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "Utils"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Util\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Util\FilePathAutoRename.h
 # End Source File
 # End Group
 # End Target

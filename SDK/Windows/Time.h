@@ -11,38 +11,38 @@
 namespace NWindows {
 namespace NTime {
 
-inline bool DosTimeToFileTime(UINT32 aDosTime, FILETIME &aFileTime)
+inline bool DosTimeToFileTime(UINT32 dosTime, FILETIME &fileTime)
 {
-  return BOOLToBool(::DosDateTimeToFileTime(UINT16(aDosTime >> 16), 
-      UINT16(aDosTime & 0xFFFF), &aFileTime));
+  return BOOLToBool(::DosDateTimeToFileTime(UINT16(dosTime >> 16), 
+      UINT16(dosTime & 0xFFFF), &fileTime));
 }
 
-inline bool FileTimeToDosTime(const FILETIME &aFileTime, UINT32 &aDosTime)
+inline bool FileTimeToDosTime(const FILETIME &fileTime, UINT32 &dosTime)
 {
-  return BOOLToBool(::FileTimeToDosDateTime(&aFileTime, 
-      ((LPWORD)&aDosTime) + 1, (LPWORD)&aDosTime));
+  return BOOLToBool(::FileTimeToDosDateTime(&fileTime, 
+      ((LPWORD)&dosTime) + 1, (LPWORD)&dosTime));
 }
 
 const UINT64 kUnixTimeStartValue = 116444736000000000;
 const kNumTimeQuantumsInSecond = 10000000;
 
-inline void UnixTimeToFileTime(time_t anUnixTime, FILETIME &aFileTime)
+inline void UnixTimeToFileTime(time_t unixTime, FILETIME &fileTime)
 {
-  ULONGLONG ll = UInt32x32To64(anUnixTime, kNumTimeQuantumsInSecond) + 
+  ULONGLONG ll = UInt32x32To64(unixTime, kNumTimeQuantumsInSecond) + 
       kUnixTimeStartValue;
-  aFileTime.dwLowDateTime = (DWORD) ll;
-  aFileTime.dwHighDateTime = DWORD(ll >> 32);
+  fileTime.dwLowDateTime = (DWORD) ll;
+  fileTime.dwHighDateTime = DWORD(ll >> 32);
 }
 
-inline bool FileTimeToUnixTime(const FILETIME &aFileTime, time_t &anUnixTime)
+inline bool FileTimeToUnixTime(const FILETIME &fileTime, time_t &unixTime)
 {
-  UINT64 aWinTime = (((UINT64)aFileTime.dwHighDateTime) << 32) + aFileTime.dwLowDateTime;
-  if (aWinTime < kUnixTimeStartValue)
+  UINT64 winTime = (((UINT64)fileTime.dwHighDateTime) << 32) + fileTime.dwLowDateTime;
+  if (winTime < kUnixTimeStartValue)
     return false;
-  aWinTime = (aWinTime - kUnixTimeStartValue) / kNumTimeQuantumsInSecond;
-  if (aWinTime >= 0xFFFFFFFF)
+  winTime = (winTime - kUnixTimeStartValue) / kNumTimeQuantumsInSecond;
+  if (winTime >= 0xFFFFFFFF)
     return false;
-  anUnixTime = (time_t)aWinTime;
+  unixTime = (time_t)winTime;
   return true;
 }
 

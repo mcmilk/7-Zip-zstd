@@ -3,15 +3,6 @@
 #include "StdAfx.h"
 
 #include "Handler.h"
-#include "Interface/StreamObjects.h"
-
-#include "Windows/Time.h"
-#include "Windows/PropVariant.h"
-#include "Windows/COMTry.h"
-
-#include "Compression/CopyCoder.h"
-#include "Archive/Common/ItemNameUtils.h"
-#include "Archive/Tar/InEngine.h"
 
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
@@ -19,6 +10,17 @@
 
 #include "Interface/ProgressUtils.h"
 #include "Interface/LimitedStreams.h"
+#include "Interface/StreamObjects.h"
+#include "Interface/EnumStatProp.h"
+
+#include "Windows/Time.h"
+#include "Windows/PropVariant.h"
+#include "Windows/COMTry.h"
+
+#include "Compression/CopyCoder.h"
+
+#include "Archive/Common/ItemNameUtils.h"
+#include "Archive/Tar/InEngine.h"
 
 #include "../Common/DummyOutStream.h"
 
@@ -28,109 +30,27 @@ using namespace NTime;
 namespace NArchive {
 namespace NTar {
 
-enum // PropID
-{
-  kaipidUserName = kaipidUserDefined,
-  kaipidGroupName, 
-};
-
 STATPROPSTG kProperties[] = 
 {
-  { NULL, kaipidPath, VT_BSTR},
-  { NULL, kaipidIsFolder, VT_BOOL},
-  { NULL, kaipidSize, VT_UI8},
-  { NULL, kaipidPackedSize, VT_UI8},
-  { NULL, kaipidLastWriteTime, VT_FILETIME},
-  { L"User Name", kaipidUserName, VT_BSTR},
-  { L"Group Name", kaipidGroupName, VT_BSTR},
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { L"User", kpidUser, VT_BSTR},
+  { L"Group", kpidGroup, VT_BSTR},
 };
 
-static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
-/////////////////////////////////////////////////
-// CEnumArchiveItemProperty
-
-class CEnumArchiveItemProperty:
-  public IEnumSTATPROPSTG,
-  public CComObjectRoot
-{
-public:
-  int m_Index;
-
-  BEGIN_COM_MAP(CEnumArchiveItemProperty)
-    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
-  END_COM_MAP()
-    
-  DECLARE_NOT_AGGREGATABLE(CEnumArchiveItemProperty)
-    
-  DECLARE_NO_REGISTRY()
-public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
-  STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
-};
-
-STDMETHODIMP CEnumArchiveItemProperty::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
-{
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
-    return E_INVALIDARG;
-
-  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
-  {
-    if(m_Index >= kNumProperties)
-    {
-      aResult =  S_FALSE;
-      break;
-    }
-    const STATPROPSTG &aSrcItem = kProperties[m_Index];
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
-    {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
-    }
-    else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-  }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CTarHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
+STDMETHODIMP CTarHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  // if (anEnumObject == NULL)
-  //   return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  // ((CComObjectNoLock<CTestEnumIDList>*)(anEnumObject))->Init(this, m_IDList, aFlags); // TODO : Add any addl. params as needed
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  return CStatPropEnumerator::CreateEnumerator(kProperties, 
+      sizeof(kProperties) / sizeof(kProperties[0]), enumerator);
   COM_TRY_END
 }
 
-STDMETHODIMP CTarHandler::Open(IInStream *aStream, 
-    const UINT64 *aMaxCheckStartPosition,
+STDMETHODIMP CTarHandler::Open(IInStream *stream, 
+    const UINT64 *maxCheckStartPosition,
     IOpenArchive2CallBack *anOpenArchiveCallBack)
 {
   COM_TRY_BEGIN
@@ -139,7 +59,7 @@ STDMETHODIMP CTarHandler::Open(IInStream *aStream,
   {
     CInArchive anArchive;
 
-    if(anArchive.Open(aStream) != S_OK)
+    if(anArchive.Open(stream) != S_OK)
       return S_FALSE;
 
     m_Items.Clear();
@@ -173,7 +93,7 @@ STDMETHODIMP CTarHandler::Open(IInStream *aStream,
     if (m_Items.Size() == 0)
       return S_FALSE;
 
-    m_InStream = aStream;
+    m_InStream = stream;
   }
   /*
   catch(...)
@@ -208,18 +128,18 @@ STDMETHODIMP CTarHandler::GetProperty(
 
   switch(aPropID)
   {
-    case kaipidPath:
+    case kpidPath:
       aPropVariant = (const wchar_t *)NItemName::GetOSName2(
           MultiByteToUnicodeString(anItem.Name, CP_OEMCP));
       break;
-    case kaipidIsFolder:
+    case kpidIsFolder:
       aPropVariant = anItem.IsDirectory();
       break;
-    case kaipidSize:
-    case kaipidPackedSize:
+    case kpidSize:
+    case kpidPackedSize:
       aPropVariant = anItem.Size;
       break;
-    case kaipidLastWriteTime:
+    case kpidLastWriteTime:
     {
       FILETIME anUTCFileTime;
       if (anItem.ModificationTime != 0)
@@ -232,11 +152,11 @@ STDMETHODIMP CTarHandler::GetProperty(
       aPropVariant = anUTCFileTime;
       break;
     }
-    case kaipidUserName:
+    case kpidUser:
       aPropVariant = (const wchar_t *)
           MultiByteToUnicodeString(anItem.UserName, CP_OEMCP);
       break;
-    case kaipidGroupName:
+    case kpidGroup:
       aPropVariant = (const wchar_t *)
           MultiByteToUnicodeString(anItem.GroupName, CP_OEMCP);
       break;

@@ -10,64 +10,43 @@
 template <class T> class CBuffer
 {    
 protected:
-	size_t m_Capacity;
-  T *m_Items;
+	size_t _capacity;
+  T *_items;
+  void Free()
+  {
+    delete []_items;
+    _items = 0;
+    _capacity = 0;
+  }
 public:
-  CBuffer(): m_Capacity(0), m_Items(0) {};
-  CBuffer(const CBuffer &aBuffer);
-  CBuffer& operator=(const CBuffer &aBuffer);
-  CBuffer(size_t aSize);
-  virtual ~CBuffer();
-  operator T *() { return m_Items; };
-  operator const T *()const { return m_Items; };
-  size_t GetCapacity() const { return  m_Capacity; }
-  void SetCapacity(size_t aNewCapacity);
+  CBuffer(): _capacity(0), _items(0) {};
+  CBuffer(const CBuffer &buffer): _capacity(0), _items(0) { *this = buffer; }
+  CBuffer(size_t size): _items(0),  _capacity(0) {  SetCapacity(size); }
+  virtual ~CBuffer() { delete []_items; }
+  operator T *() { return _items; };
+  operator const T *() const { return _items; };
+  size_t GetCapacity() const { return  _capacity; }
+  void SetCapacity(size_t newCapacity)
+  {
+    T *newBuffer = new T[newCapacity];
+    if(_capacity > 0)
+      memmove(newBuffer, _items, MyMin(_capacity, newCapacity) * sizeof(T));
+    delete []_items;
+    _items = newBuffer;
+    _capacity = newCapacity;
+  }
+  CBuffer& operator=(const CBuffer &buffer)
+  {
+    Free();
+    if(buffer._capacity > 0)
+    {
+      SetCapacity(buffer._capacity);
+      memmove(_items, buffer._items, buffer._capacity * sizeof(T));
+    }
+    return *this;
+  }
 };
 
-template <class T>
-CBuffer<T>::CBuffer(const CBuffer<T> &aBuffer):
-  m_Capacity(0),
-  m_Items(0)
-{
-  *this = aBuffer;
-}
-
-template <class T>
-CBuffer<T>& CBuffer<T>::operator=(const CBuffer<T> &aBuffer)
-{
-  if(aBuffer.m_Capacity > 0)
-  {
-    SetCapacity(aBuffer.m_Capacity);
-    memmove(m_Items, aBuffer.m_Items, aBuffer.m_Capacity * sizeof(T));
-  }
-  return *this;
-}
-
-template <class T> 
-void CBuffer<T>::SetCapacity(size_t aCapacity)
-{
-  T *aNewBuffer = new T[aCapacity];
-  if(m_Capacity > 0)
-    memmove(aNewBuffer, m_Items, MyMin(m_Capacity, aCapacity) * sizeof(T));
-  delete []m_Items;
-  m_Items = aNewBuffer;
-  m_Capacity = aCapacity;
-}
-
-template <class T> 
-CBuffer<T>::CBuffer(size_t aCapacity):
-  m_Items(0),
-  m_Capacity(0)
-{
-  SetCapacity(aCapacity);
-}
-
-template <class T> 
-CBuffer<T>::~CBuffer()
-{
-  delete []m_Items;
-}
-    
 typedef CBuffer<char> CCharBuffer;
 typedef CBuffer<wchar_t> CWCharBuffer;
 typedef CBuffer<unsigned char> CByteBuffer;

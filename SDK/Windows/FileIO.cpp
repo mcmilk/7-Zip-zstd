@@ -17,154 +17,153 @@ CFileBase::~CFileBase()
   Close();
 }
 
-bool CFileBase::Create(LPCTSTR aFileName, DWORD aDesiredAccess,
-    DWORD aShareMode, DWORD aCreationDisposition, DWORD aFlagsAndAttributes)
+bool CFileBase::Create(LPCTSTR fileName, DWORD desiredAccess,
+    DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
   Close();
-  m_Handle = ::CreateFile(aFileName, aDesiredAccess, aShareMode, 
-      (LPSECURITY_ATTRIBUTES)NULL, aCreationDisposition, 
-      aFlagsAndAttributes, (HANDLE) NULL);
-  m_FileIsOpen = m_Handle != INVALID_HANDLE_VALUE;
-  return m_FileIsOpen;
+  _handle = ::CreateFile(fileName, desiredAccess, shareMode, 
+      (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+      flagsAndAttributes, (HANDLE) NULL);
+  _fileIsOpen = _handle != INVALID_HANDLE_VALUE;
+  return _fileIsOpen;
 }
 
 bool CFileBase::Close()
 {
-  if(!m_FileIsOpen)
+  if(!_fileIsOpen)
     return true;
-  bool aResult = BOOLToBool(::CloseHandle(m_Handle));
-  m_FileIsOpen = !aResult;
-  return aResult;
+  bool result = BOOLToBool(::CloseHandle(_handle));
+  _fileIsOpen = !result;
+  return result;
 }
 
-bool CFileBase::GetPosition(UINT64 &aPosition) const
+bool CFileBase::GetPosition(UINT64 &position) const
 {
-  return Seek(0, FILE_CURRENT, aPosition);
+  return Seek(0, FILE_CURRENT, position);
 }
 
-bool CFileBase::GetLength(UINT64 &aLength) const
+bool CFileBase::GetLength(UINT64 &length) const
 {
-  DWORD aSizeHigh;
-  DWORD aSizeLow = ::GetFileSize(m_Handle, &aSizeHigh);
-  if(aSizeLow == 0xFFFFFFFF)
+  DWORD sizeHigh;
+  DWORD sizeLow = ::GetFileSize(_handle, &sizeHigh);
+  if(sizeLow == 0xFFFFFFFF)
     if(::GetLastError() != NO_ERROR )
       return false;
-  aLength = (((UINT64)aSizeHigh) << 32) + aSizeLow;
+  length = (((UINT64)sizeHigh) << 32) + sizeLow;
   return true;
 }
 
-bool CFileBase::Seek(INT64 aDistanceToMove, 
-    DWORD aMoveMethod, UINT64 &aNewFilePosition) const
+bool CFileBase::Seek(INT64 distanceToMove, DWORD moveMethod, UINT64 &newPosition) const
 {
-  LARGE_INTEGER *aPointer = (LARGE_INTEGER *)&aDistanceToMove;
-  aPointer->LowPart = ::SetFilePointer(m_Handle, aPointer->LowPart, 
-      &aPointer->HighPart, aMoveMethod);
-  if (aPointer->LowPart == 0xFFFFFFFF)
+  LARGE_INTEGER *pointer = (LARGE_INTEGER *)&distanceToMove;
+  pointer->LowPart = ::SetFilePointer(_handle, pointer->LowPart, 
+      &pointer->HighPart, moveMethod);
+  if (pointer->LowPart == 0xFFFFFFFF)
     if(::GetLastError() != NO_ERROR) 
       return false;
-  aNewFilePosition = *((UINT64 *)aPointer);
+  newPosition = *((UINT64 *)pointer);
   return true;
 }
 
-bool CFileBase::Seek(UINT64 aPosition, UINT64 &aNewPosition)
+bool CFileBase::Seek(UINT64 position, UINT64 &newPosition)
 {
-  return Seek(aPosition, FILE_BEGIN, aNewPosition);
+  return Seek(position, FILE_BEGIN, newPosition);
 }
 
 bool CFileBase::SeekToBegin()
 {
-  UINT64 aNewPosition;
-  return Seek(0, aNewPosition);
+  UINT64 newPosition;
+  return Seek(0, newPosition);
 }
 
-bool CFileBase::SeekToEnd(UINT64 &aNewPosition)
+bool CFileBase::SeekToEnd(UINT64 &newPosition)
 {
-  return Seek(0, FILE_END, aNewPosition);
+  return Seek(0, FILE_END, newPosition);
 }
 
-bool CFileBase::GetFileInformation(CByHandleFileInfo &aFileInfo) const
+bool CFileBase::GetFileInformation(CByHandleFileInfo &fileInfo) const
 {
-  BY_HANDLE_FILE_INFORMATION aWinFileInfo;
-  if(!::GetFileInformationByHandle(m_Handle, &aWinFileInfo))
+  BY_HANDLE_FILE_INFORMATION winFileInfo;
+  if(!::GetFileInformationByHandle(_handle, &winFileInfo))
     return false;
-  aFileInfo.Attributes = aWinFileInfo.dwFileAttributes;
-  aFileInfo.CreationTime = aWinFileInfo.ftCreationTime;
-  aFileInfo.LastAccessTime = aWinFileInfo.ftLastAccessTime;
-  aFileInfo.LastWriteTime = aWinFileInfo.ftLastWriteTime;
-  aFileInfo.VolumeSerialNumber = aWinFileInfo.dwFileAttributes; 
-  aFileInfo.Size = (((UINT64)aWinFileInfo.nFileSizeHigh) << 32) + 
-      aWinFileInfo.nFileSizeLow;
-  aFileInfo.NumberOfLinks = aWinFileInfo.nNumberOfLinks;
-  aFileInfo.FileIndex = (((UINT64)aWinFileInfo.nFileIndexHigh) << 32) + 
-      aWinFileInfo.nFileIndexLow;
+  fileInfo.Attributes = winFileInfo.dwFileAttributes;
+  fileInfo.CreationTime = winFileInfo.ftCreationTime;
+  fileInfo.LastAccessTime = winFileInfo.ftLastAccessTime;
+  fileInfo.LastWriteTime = winFileInfo.ftLastWriteTime;
+  fileInfo.VolumeSerialNumber = winFileInfo.dwFileAttributes; 
+  fileInfo.Size = (((UINT64)winFileInfo.nFileSizeHigh) << 32) + 
+      winFileInfo.nFileSizeLow;
+  fileInfo.NumberOfLinks = winFileInfo.nNumberOfLinks;
+  fileInfo.FileIndex = (((UINT64)winFileInfo.nFileIndexHigh) << 32) + 
+      winFileInfo.nFileIndexLow;
   return true;
 }
 
 /////////////////////////
 // CInFile
 
-bool CInFile::Open(LPCTSTR aFileName, DWORD aShareMode, 
-    DWORD aCreationDisposition,  DWORD aFlagsAndAttributes)
+bool CInFile::Open(LPCTSTR fileName, DWORD shareMode, 
+    DWORD creationDisposition,  DWORD flagsAndAttributes)
 {
-  return Create(aFileName, GENERIC_READ, aShareMode, 
-      aCreationDisposition, aFlagsAndAttributes);
+  return Create(fileName, GENERIC_READ, shareMode, 
+      creationDisposition, flagsAndAttributes);
 }
 
-bool CInFile::Open(LPCTSTR aFileName)
+bool CInFile::Open(LPCTSTR fileName)
 {
-  return Open(aFileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL);
+  return Open(fileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL);
 }
 
-bool CInFile::Read(void *aData, UINT32 aSize, UINT32 &aProcessedSize)
+bool CInFile::Read(void *data, UINT32 size, UINT32 &processedSize)
 {
-  return BOOLToBool(::ReadFile(m_Handle, aData, aSize, 
-      (DWORD *)&aProcessedSize, NULL));
+  return BOOLToBool(::ReadFile(_handle, data, size, 
+      (DWORD *)&processedSize, NULL));
 }
 
 /////////////////////////
 // COutFile
 
-bool COutFile::Open(LPCTSTR aFileName, DWORD aShareMode, 
-    DWORD aCreationDisposition, DWORD aFlagsAndAttributes)
+bool COutFile::Open(LPCTSTR fileName, DWORD shareMode, 
+    DWORD creationDisposition, DWORD flagsAndAttributes)
 {
-  return Create(aFileName, GENERIC_WRITE, aShareMode, 
-      aCreationDisposition, aFlagsAndAttributes);
+  return Create(fileName, GENERIC_WRITE, shareMode, 
+      creationDisposition, flagsAndAttributes);
 }
 
-bool COutFile::Open(LPCTSTR aFileName)
+bool COutFile::Open(LPCTSTR fileName)
 {
-  return Open(aFileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
+  return Open(fileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
 }
 
-bool COutFile::SetTime(const FILETIME *aCreationTime,
-  const FILETIME *aLastAccessTime, const FILETIME *aLastWriteTime)
+bool COutFile::SetTime(const FILETIME *creationTime,
+  const FILETIME *lastAccessTime, const FILETIME *lastWriteTime)
 {
-  return BOOLToBool(::SetFileTime(m_Handle, aCreationTime,
-      aLastAccessTime, aLastWriteTime));
+  return BOOLToBool(::SetFileTime(_handle, creationTime,
+      lastAccessTime, lastWriteTime));
 }
 
-bool COutFile::SetLastWriteTime(const FILETIME *aLastWriteTime)
+bool COutFile::SetLastWriteTime(const FILETIME *lastWriteTime)
 {
-  return SetTime(NULL, NULL, aLastWriteTime);
+  return SetTime(NULL, NULL, lastWriteTime);
 }
 
-bool COutFile::Write(const void *aData, UINT32 aSize, UINT32 &aProcessedSize)
+bool COutFile::Write(const void *data, UINT32 size, UINT32 &processedSize)
 {
-  return BOOLToBool(::WriteFile(m_Handle, aData, aSize, 
-      (DWORD *)&aProcessedSize, NULL));
+  return BOOLToBool(::WriteFile(_handle, data, size, 
+      (DWORD *)&processedSize, NULL));
 }
 
 bool COutFile::SetEndOfFile()
 {
-  return BOOLToBool(::SetEndOfFile(m_Handle));
+  return BOOLToBool(::SetEndOfFile(_handle));
 }
 
-bool COutFile::SetLength(UINT64 aLength)
+bool COutFile::SetLength(UINT64 length)
 {
-  UINT64 aNewPosition;
-  if(!Seek(aLength, aNewPosition))
+  UINT64 newPosition;
+  if(!Seek(length, newPosition))
     return false;
-  if(aNewPosition != aLength)
+  if(newPosition != length)
     return false;
   return SetEndOfFile();
 }

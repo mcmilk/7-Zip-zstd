@@ -32,74 +32,74 @@ static HRESULT CopyBlock(ISequentialInStream *anInStream, ISequentialOutStream *
   return aCopyCoder->Code(anInStream, anOutStream, NULL, NULL, NULL);
 }
 
-STDMETHODIMP CAgent::SetFolder(IArchiveFolder *aFolder)
+STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
 {
-  m_ArchiveNamePrefix.Empty();
-  if (aFolder == NULL)
+  _archiveNamePrefix.Empty();
+  if (folder == NULL)
   {
-    m_ArchiveFolderItem = NULL;
+    _archiveFolderItem = NULL;
     return S_OK;
-    // aFolder = m_RootFolder;
+    // folder = m_RootFolder;
   }
   else
   {
-    CComPtr<IArchiveFolder> anArchiveFolder = aFolder;
+    CComPtr<IFolderFolder> archiveFolder = folder;
     CComPtr<IArchiveFolderInternal> anArchiveFolderInternal;
-    RETURN_IF_NOT_S_OK(anArchiveFolder.QueryInterface(&anArchiveFolderInternal));
-    CAgentFolder *anAgentFolder;
-    RETURN_IF_NOT_S_OK(anArchiveFolderInternal->GetAgentFolder(&anAgentFolder));
-    m_ArchiveFolderItem = anAgentFolder->m_ProxyFolderItem;
+    RETURN_IF_NOT_S_OK(archiveFolder.QueryInterface(&anArchiveFolderInternal));
+    CAgentFolder *agentFolder;
+    RETURN_IF_NOT_S_OK(anArchiveFolderInternal->GetAgentFolder(&agentFolder));
+    _archiveFolderItem = agentFolder->_proxyFolderItem;
   }
 
   UStringVector aPathParts;
   aPathParts.Clear();
-  CComPtr<IArchiveFolder> aFolderItem = aFolder;
-  if (m_ArchiveFolderItem != NULL)
+  CComPtr<IFolderFolder> folderItem = folder;
+  if (_archiveFolderItem != NULL)
     while (true)
     {
-      CComPtr<IArchiveFolder> aNewFolder;
-      aFolderItem->BindToParentFolder(&aNewFolder);  
-      if (aNewFolder == NULL)
+      CComPtr<IFolderFolder> newFolder;
+      folderItem->BindToParentFolder(&newFolder);  
+      if (newFolder == NULL)
         break;
       CComBSTR aName;
-      aFolderItem->GetName(&aName);
+      folderItem->GetName(&aName);
       aPathParts.Insert(0, (const wchar_t *)aName);
-      aFolderItem = aNewFolder;
+      folderItem = newFolder;
     }
 
   for(int i = 0; i < aPathParts.Size(); i++)
   {
-    m_ArchiveNamePrefix += aPathParts[i];
-    m_ArchiveNamePrefix += L'\\';
+    _archiveNamePrefix += aPathParts[i];
+    _archiveNamePrefix += L'\\';
   }
   return S_OK;
 }
 
-STDMETHODIMP CAgent::SetFiles(const wchar_t **aNames, UINT32 aNumNames)
+STDMETHODIMP CAgent::SetFiles(const wchar_t *aFolderPrefix, const wchar_t **aNames, UINT32 aNumNames)
 {
-  m_Names.Clear();
-  m_Names.Reserve(aNumNames);
+  _folderPrefix = aFolderPrefix;
+  _names.Clear();
+  _names.Reserve(aNumNames);
   for (int i = 0; i < aNumNames; i++)
-    m_Names.Add(aNames[i]);
+    _names.Add(aNames[i]);
 
   return S_OK;
 }
 
 
-static void GetFileTime(CAgent *anAgent, 
-    UINT32 anItemIndex, FILETIME &aFileTime)
+static void GetFileTime(CAgent *agent, UINT32 itemIndex, FILETIME &fileTime)
 {
   CPropVariant aProperty;
-  anAgent->m_Archive->GetProperty(anItemIndex, kaipidLastWriteTime, &aProperty);
+  agent->_archive->GetProperty(itemIndex, kpidLastWriteTime, &aProperty);
   if (aProperty.vt == VT_FILETIME)
-    aFileTime = aProperty.filetime;
+    fileTime = aProperty.filetime;
   else if (aProperty.vt == VT_EMPTY)
-    aFileTime = anAgent->m_DefaultTime;
+    fileTime = agent->_defaultTime;
   else
     throw 4190407;
 }
 
-static void EnumerateInArchiveItems(CAgent *anAgent,
+static void EnumerateInArchiveItems(CAgent *agent,
     const CFolderItem &anItem, 
     const UString &aPrefix,
     CArchiveItemInfoVector &anArchiveItems)
@@ -109,10 +109,10 @@ static void EnumerateInArchiveItems(CAgent *anAgent,
     const CFileItem &aFileItem = anItem.m_FileSubItems[i];
     CArchiveItemInfo anItemInfo;
 
-    GetFileTime(anAgent, aFileItem.m_Index, anItemInfo.LastWriteTime);
+    GetFileTime(agent, aFileItem.m_Index, anItemInfo.LastWriteTime);
 
     CPropVariant aProperty;
-    anAgent->m_Archive->GetProperty(aFileItem.m_Index, kaipidSize, &aProperty);
+    agent->_archive->GetProperty(aFileItem.m_Index, kpidSize, &aProperty);
     if (anItemInfo.SizeIsDefined = (aProperty.vt != VT_EMPTY))
       anItemInfo.Size = ConvertPropVariantToUINT64(aProperty);
     anItemInfo.IsDirectory = false;
@@ -124,43 +124,47 @@ static void EnumerateInArchiveItems(CAgent *anAgent,
   for(i = 0; i < anItem.m_FolderSubItems.Size(); i++)
   {
     const CFolderItem &aDirItem = anItem.m_FolderSubItems[i];
-    if(!aDirItem.m_IsLeaf)
-      continue;
-    CArchiveItemInfo anItemInfo;
-    GetFileTime(anAgent, aDirItem.m_Index, anItemInfo.LastWriteTime);
-    anItemInfo.IsDirectory = true;
-    anItemInfo.SizeIsDefined = false;
-    anItemInfo.Name = aPrefix + aDirItem.m_Name;
-    anItemInfo.Censored = true; // test it
-    anItemInfo.IndexInServer = aDirItem.m_Index;
-    anArchiveItems.Add(anItemInfo);
-    EnumerateInArchiveItems(anAgent, aDirItem, anItemInfo.Name + 
-        wchar_t(L'\\'), anArchiveItems);
+    UString fullName = aPrefix + aDirItem.m_Name;
+    if(aDirItem.m_IsLeaf)
+    {
+      CArchiveItemInfo anItemInfo;
+      GetFileTime(agent, aDirItem.m_Index, anItemInfo.LastWriteTime);
+      anItemInfo.IsDirectory = true;
+      anItemInfo.SizeIsDefined = false;
+      anItemInfo.Name = fullName;
+      anItemInfo.Censored = true; // test it
+      anItemInfo.IndexInServer = aDirItem.m_Index;
+      anArchiveItems.Add(anItemInfo);
+    }
+    EnumerateInArchiveItems(agent, aDirItem, fullName + wchar_t(L'\\'), anArchiveItems);
   }
 }
 
 STDMETHODIMP CAgent::DoOperation(const CLSID *aCLSID, 
     const wchar_t *aNewArchiveName, 
-    const BYTE aStateActions[6], 
+    const BYTE *aStateActions, 
     const wchar_t *aSfxModule,
     IUpdateCallback100 *anUpdateCallback100)
 {
   UINT aCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   NUpdateArchive::CActionSet anActionSet;
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     anActionSet.StateActions[i] = (NUpdateArchive::NPairAction::EEnum)aStateActions[i];
 
   CSysStringVector aSystemFileNames;
-  aSystemFileNames.Reserve(m_Names.Size());
-  for (i = 0; i < m_Names.Size(); i++)
-    aSystemFileNames.Add(GetSystemString(m_Names[i], aCodePage));
+  aSystemFileNames.Reserve(_names.Size());
+  for (i = 0; i < _names.Size(); i++)
+    aSystemFileNames.Add(GetSystemString(_names[i], aCodePage));
   CArchiveStyleDirItemInfoVector aDirItems;
-  EnumerateItems(aSystemFileNames, m_ArchiveNamePrefix, aDirItems, aCodePage);
+
+  CSysString aFolderPrefix = GetSystemString(_folderPrefix, aCodePage);
+  NFile::NName::NormalizeDirPathPrefix(aFolderPrefix);
+  EnumerateItems(aFolderPrefix, aSystemFileNames, _archiveNamePrefix, aDirItems, aCodePage);
 
   CComPtr<IOutArchiveHandler200> anOutArchive;
-  if (m_Archive)
+  if (_archive)
   {
-    RETURN_IF_NOT_S_OK(m_Archive.QueryInterface(&anOutArchive));
+    RETURN_IF_NOT_S_OK(_archive.QueryInterface(&anOutArchive));
   }
   else
   {
@@ -185,10 +189,10 @@ STDMETHODIMP CAgent::DoOperation(const CLSID *aCLSID,
   CUpdatePairInfoVector anUpdatePairs;
 
   CArchiveItemInfoVector anArchiveItems;
-  if (m_Archive)
+  if (_archive)
   {
     RETURN_IF_NOT_S_OK(ReadItems());
-    EnumerateInArchiveItems(this, m_ProxyHandler->m_FolderItemHead,  L"", anArchiveItems);
+    EnumerateInArchiveItems(this, _proxyHandler->_folderItemHead,  L"", anArchiveItems);
   }
 
   GetUpdatePairInfoList(aDirItems, anArchiveItems, aFileTimeType, anUpdatePairs);
@@ -201,8 +205,8 @@ STDMETHODIMP CAgent::DoOperation(const CLSID *aCLSID,
     new CComObjectNoLock<CUpdateCallBackImp>;
   CComPtr<IUpdateCallBack> anUpdateCallBack(anUpdateCallBackSpec );
   
-  anUpdateCallBackSpec->Init(&aDirItems, &anArchiveItems, &anOperationChain, 
-      aCodePage, anUpdateCallback100);
+  anUpdateCallBackSpec->Init(aFolderPrefix,&aDirItems, &anArchiveItems, 
+      &anOperationChain, aCodePage, anUpdateCallback100);
   
   CComObjectNoLock<COutFileStream> *anOutStreamSpec =
     new CComObjectNoLock<COutFileStream>;
@@ -260,13 +264,13 @@ STDMETHODIMP CAgent::DeleteItems(
 {
   UINT aCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   CComPtr<IOutArchiveHandler200> anOutArchive;
-  RETURN_IF_NOT_S_OK(m_Archive.QueryInterface(&anOutArchive));
+  RETURN_IF_NOT_S_OK(_archive.QueryInterface(&anOutArchive));
 
   CComObjectNoLock<CUpdateCallBackImp> *anUpdateCallBackSpec =
     new CComObjectNoLock<CUpdateCallBackImp>;
   CComPtr<IUpdateCallBack> anUpdateCallBack(anUpdateCallBackSpec );
   
-  anUpdateCallBackSpec->Init(NULL, NULL, NULL, aCodePage, anUpdateCallback100);
+  anUpdateCallBackSpec->Init(TEXT(""), NULL, NULL, NULL, aCodePage, anUpdateCallback100);
   
   CComObjectNoLock<COutFileStream> *anOutStreamSpec =
     new CComObjectNoLock<COutFileStream>;
@@ -286,7 +290,7 @@ STDMETHODIMP CAgent::DeleteItems(
   }
   
   std::vector<UINT32> aRealIndexes;
-  m_ProxyHandler->GetRealIndexes(*m_ArchiveFolderItem, anIndexes, aNumItems, 
+  _proxyHandler->GetRealIndexes(*_archiveFolderItem, anIndexes, aNumItems, 
       aRealIndexes);
   RETURN_IF_NOT_S_OK(anOutArchive->DeleteItems(anOutStream, 
       &aRealIndexes.front(), aRealIndexes.size(), anUpdateCallBack));
@@ -305,3 +309,5 @@ STDMETHODIMP CAgent::SetProperties(const BSTR *aNames,
   }
   return S_OK;
 }
+
+

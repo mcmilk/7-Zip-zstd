@@ -2,53 +2,45 @@
 
 #pragma once
 
-#ifndef __DYNAMICBUFFER_H
-#define __DYNAMICBUFFER_H
+#ifndef __COMMON_DYNAMICBUFFER_H
+#define __COMMON_DYNAMICBUFFER_H
 
 #include "Buffer.h"
 
 template <class T> class CDynamicBuffer: public CBuffer<T>
 {    
-  void GrowLength(size_t aSize);
+  void GrowLength(size_t size)
+  {
+    size_t delta;
+    if (_capacity > 64)
+      delta = _capacity / 4;
+    else if (_capacity > 8)
+      delta = 16;
+    else
+      delta = 4;
+    delta = MyMax(delta, size);
+    SetCapacity(_capacity + delta);
+  }
 public:
   CDynamicBuffer(): CBuffer<T>() {};
-  CDynamicBuffer(const CDynamicBuffer &aBuffer): CBuffer<T>(aBuffer) {};
-  CDynamicBuffer(size_t aSize): CBuffer<T>(aSize) {};
-  CDynamicBuffer& operator=(const CDynamicBuffer &aBuffer);
-  void EnsureCapacity(size_t aCapacity);
-};
-
-template <class T>
-CDynamicBuffer<T>& CDynamicBuffer<T>::operator=(const CDynamicBuffer<T> &aBuffer)
-{
-  if(aBuffer.m_Capacity > 0)
+  CDynamicBuffer(const CDynamicBuffer &buffer): CBuffer<T>(buffer) {};
+  CDynamicBuffer(size_t size): CBuffer<T>(size) {};
+  CDynamicBuffer& operator=(const CDynamicBuffer &buffer)
   {
-    SetCapacity(aBuffer.m_Capacity);
-    memmove(m_Items, aBuffer.m_Items, aBuffer.m_Capacity * sizeof(T));
+    Free();
+    if(buffer._capacity > 0)
+    {
+      SetCapacity(buffer._capacity);
+      memmove(_items, buffer._items, buffer._capacity * sizeof(T));
+    }
+    return *this;
   }
-  return *this;
-}
-
-template <class T>
-void CDynamicBuffer<T>::GrowLength(size_t aSize)
-{
-  size_t aDelta;
-  if (m_Capacity > 64)
-    aDelta = m_Capacity / 4;
-  else if (m_Capacity > 8)
-    aDelta = 16;
-  else
-    aDelta = 4;
-  aDelta = MyMax(aDelta, aSize);
-  SetCapacity(m_Capacity + aDelta);
-}
-
-template <class T> 
-void CDynamicBuffer<T>::EnsureCapacity(size_t aCapacity)
-{
-  if (m_Capacity < aCapacity)
-    GrowLength(aCapacity - m_Capacity);
-}
+  void EnsureCapacity(size_t capacity)
+  {
+    if (_capacity < capacity)
+      GrowLength(capacity - _capacity);
+  }
+};
 
 typedef CDynamicBuffer<char> CCharDynamicBuffer;
 typedef CDynamicBuffer<wchar_t> CWCharDynamicBuffer;

@@ -16,248 +16,248 @@ CKey::~CKey()
 
 HKEY CKey::Detach()
 {
-  HKEY hKey = m_Object;
-  m_Object = NULL;
+  HKEY hKey = _object;
+  _object = NULL;
   return hKey;
 }
 
 void CKey::Attach(HKEY hKey)
 {
-  MYASSERT(m_Object == NULL);
-  m_Object = hKey;
+  MYASSERT(_object == NULL);
+  _object = hKey;
 }
 
-LONG CKey::Create(HKEY aParentKey, LPCTSTR aKeyName,
-    LPTSTR aClass, DWORD anOptions, REGSAM anAccessMask,
-    LPSECURITY_ATTRIBUTES aSecurityAttributes, LPDWORD aDisposition)
+LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
+    LPTSTR keyClass, DWORD options, REGSAM accessMask,
+    LPSECURITY_ATTRIBUTES securityAttributes, LPDWORD disposition)
 {
-  MYASSERT(aParentKey != NULL);
-  DWORD aDispositionReal;
-  HKEY aKey = NULL;
-  LONG aRes = RegCreateKeyEx(aParentKey, aKeyName, 0,
-    aClass, anOptions, anAccessMask, aSecurityAttributes, &aKey, &aDispositionReal);
-  if (aDisposition != NULL)
-    *aDisposition = aDispositionReal;
-  if (aRes == ERROR_SUCCESS)
+  MYASSERT(parentKey != NULL);
+  DWORD dispositionReal;
+  HKEY key = NULL;
+  LONG res = RegCreateKeyEx(parentKey, keyName, 0, keyClass, 
+      options, accessMask, securityAttributes, &key, &dispositionReal);
+  if (disposition != NULL)
+    *disposition = dispositionReal;
+  if (res == ERROR_SUCCESS)
   {
-    aRes = Close();
-    m_Object = aKey;
+    res = Close();
+    _object = key;
   }
-  return aRes;
+  return res;
 }
 
-LONG CKey::Open(HKEY aParentKey, LPCTSTR aKeyName, REGSAM anAccessMask)
+LONG CKey::Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask)
 {
-  MYASSERT(aParentKey != NULL);
-  HKEY aKey = NULL;
-  LONG aRes = RegOpenKeyEx(aParentKey, aKeyName, 0, anAccessMask, &aKey);
-  if (aRes == ERROR_SUCCESS)
+  MYASSERT(parentKey != NULL);
+  HKEY key = NULL;
+  LONG res = RegOpenKeyEx(parentKey, keyName, 0, accessMask, &key);
+  if (res == ERROR_SUCCESS)
   {
-    aRes = Close();
-    MYASSERT(aRes == ERROR_SUCCESS);
-    m_Object = aKey;
+    res = Close();
+    MYASSERT(res == ERROR_SUCCESS);
+    _object = key;
   }
-  return aRes;
+  return res;
 }
 
 LONG CKey::Close()
 {
-  LONG aRes = ERROR_SUCCESS;
-  if (m_Object != NULL)
+  LONG res = ERROR_SUCCESS;
+  if (_object != NULL)
   {
-    aRes = RegCloseKey(m_Object);
-    m_Object = NULL;
+    res = RegCloseKey(_object);
+    _object = NULL;
   }
-  return aRes;
+  return res;
 }
 
 // win95, win98: deletes sunkey and all its subkeys
 // winNT to be deleted must not have subkeys
-LONG CKey::DeleteSubKey(LPCTSTR aSubKeyName)
+LONG CKey::DeleteSubKey(LPCTSTR subKeyName)
 {
-  MYASSERT(m_Object != NULL);
-  return RegDeleteKey(m_Object, aSubKeyName);
+  MYASSERT(_object != NULL);
+  return RegDeleteKey(_object, subKeyName);
 }
 
-LONG CKey::RecurseDeleteKey(LPCTSTR aSubKeyName)
+LONG CKey::RecurseDeleteKey(LPCTSTR subKeyName)
 {
-  CKey aKey;
-  LONG aRes = aKey.Open(m_Object, aSubKeyName, KEY_READ | KEY_WRITE);
-  if (aRes != ERROR_SUCCESS)
-    return aRes;
-  FILETIME aTime;
+  CKey key;
+  LONG res = key.Open(_object, subKeyName, KEY_READ | KEY_WRITE);
+  if (res != ERROR_SUCCESS)
+    return res;
+  FILETIME fileTime;
   const UINT32 kBufferSize = MAX_PATH + 1; // 256 in ATL
-  DWORD aSize = kBufferSize;
-  TCHAR aBuffer[kBufferSize];
-  while (RegEnumKeyEx(aKey.m_Object, 0, aBuffer, &aSize, NULL, NULL, NULL,
-      &aTime) == ERROR_SUCCESS)
+  DWORD size = kBufferSize;
+  TCHAR buffer[kBufferSize];
+  while (RegEnumKeyEx(key._object, 0, buffer, &size, NULL, NULL, NULL,
+      &fileTime) == ERROR_SUCCESS)
   {
-    aRes = aKey.RecurseDeleteKey(aBuffer);
-    if (aRes != ERROR_SUCCESS)
-      return aRes;
-    aSize = kBufferSize;
+    res = key.RecurseDeleteKey(buffer);
+    if (res != ERROR_SUCCESS)
+      return res;
+    size = kBufferSize;
   }
-  aKey.Close();
-  return DeleteSubKey(aSubKeyName);
+  key.Close();
+  return DeleteSubKey(subKeyName);
 }
 
 
 /////////////////////////
 // Value Functions
 
-static inline UINT32 BoolToDWORD(bool aValue)
-  {  return (aValue ? 1: 0); }
+static inline UINT32 BoolToUINT32(bool value)
+  {  return (value ? 1: 0); }
 
-static inline bool DWORDToBool(UINT32 aValue)
-  {  return (aValue != 0); }
+static inline bool UINT32ToBool(UINT32 value)
+  {  return (value != 0); }
 
 
-LONG CKey::DeleteValue(LPCTSTR aValue)
+LONG CKey::DeleteValue(LPCTSTR value)
 {
-  MYASSERT(m_Object != NULL);
-  return RegDeleteValue(m_Object, (LPTSTR)aValue);
+  MYASSERT(_object != NULL);
+  return RegDeleteValue(_object, (LPTSTR)value);
 }
 
-LONG CKey::SetValue(LPCTSTR aValueName, UINT32 aValue)
+LONG CKey::SetValue(LPCTSTR valueName, UINT32 value)
 {
-  MYASSERT(m_Object != NULL);
-  return RegSetValueEx(m_Object, aValueName, NULL, REG_DWORD,
-      (BYTE * const)&aValue, sizeof(UINT32));
+  MYASSERT(_object != NULL);
+  return RegSetValueEx(_object, valueName, NULL, REG_DWORD,
+      (BYTE * const)&value, sizeof(UINT32));
 }
 
-LONG CKey::SetValue(LPCTSTR aValueName, bool aValue)
+LONG CKey::SetValue(LPCTSTR valueName, bool value)
 {
-  return SetValue(aValueName, BoolToDWORD(aValue));
+  return SetValue(valueName, BoolToUINT32(value));
 }
 
-LONG CKey::SetValue(LPCTSTR aValueName, LPCTSTR aValue)
+LONG CKey::SetValue(LPCTSTR valueName, LPCTSTR value)
 {
-  MYASSERT(aValue != NULL);
-  MYASSERT(m_Object != NULL);
-  return RegSetValueEx(m_Object, aValueName, NULL, REG_SZ,
-      (const BYTE * )aValue, (lstrlen(aValue) + 1) * sizeof(TCHAR));
+  MYASSERT(value != NULL);
+  MYASSERT(_object != NULL);
+  return RegSetValueEx(_object, valueName, NULL, REG_SZ,
+      (const BYTE * )value, (lstrlen(value) + 1) * sizeof(TCHAR));
 }
 
-LONG CKey::SetValue(LPCTSTR aValueName, const CSysString &aValue)
+LONG CKey::SetValue(LPCTSTR valueName, const CSysString &value)
 {
-  MYASSERT(aValue != NULL);
-  MYASSERT(m_Object != NULL);
-  return RegSetValueEx(m_Object, aValueName, NULL, REG_SZ,
-      (const BYTE *)(const TCHAR *)aValue, (aValue.Length() + 1) * sizeof(TCHAR));
+  MYASSERT(value != NULL);
+  MYASSERT(_object != NULL);
+  return RegSetValueEx(_object, valueName, NULL, REG_SZ,
+      (const BYTE *)(const TCHAR *)value, (value.Length() + 1) * sizeof(TCHAR));
 }
 
-LONG CKey::SetValue(LPCTSTR aValueName, const void *aValue, UINT32 aSize)
+LONG CKey::SetValue(LPCTSTR valueName, const void *value, UINT32 size)
 {
-  MYASSERT(aValue != NULL);
-  MYASSERT(m_Object != NULL);
-  return RegSetValueEx(m_Object, aValueName, NULL, REG_BINARY,
-      (const BYTE *)aValue, aSize);
+  MYASSERT(value != NULL);
+  MYASSERT(_object != NULL);
+  return RegSetValueEx(_object, valueName, NULL, REG_BINARY,
+      (const BYTE *)value, size);
 }
 
-LONG SetValue(HKEY aParentKey, LPCTSTR aKeyName, 
-    LPCTSTR aValueName, LPCTSTR aValue)
+LONG SetValue(HKEY parentKey, LPCTSTR keyName, 
+    LPCTSTR valueName, LPCTSTR value)
 {
-  MYASSERT(aValue != NULL);
-  CKey aKey;
-  LONG aRes = aKey.Create(aParentKey, aKeyName);
-  if (aRes == ERROR_SUCCESS)
-    aRes = aKey.SetValue(aValueName, aValue);
-  return aRes;
+  MYASSERT(value != NULL);
+  CKey key;
+  LONG res = key.Create(parentKey, keyName);
+  if (res == ERROR_SUCCESS)
+    res = key.SetValue(valueName, value);
+  return res;
 }
 
-LONG CKey::SetKeyValue(LPCTSTR aKeyName, LPCTSTR aValueName, LPCTSTR aValue)
+LONG CKey::SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value)
 {
-  MYASSERT(aValue != NULL);
-  CKey aKey;
-  LONG aRes = aKey.Create(m_Object, aKeyName);
-  if (aRes == ERROR_SUCCESS)
-    aRes = aKey.SetValue(aValueName, aValue);
-  return aRes;
+  MYASSERT(value != NULL);
+  CKey key;
+  LONG res = key.Create(_object, keyName);
+  if (res == ERROR_SUCCESS)
+    res = key.SetValue(valueName, value);
+  return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR aValueName, UINT32 &aValue)
+LONG CKey::QueryValue(LPCTSTR valueName, UINT32 &value)
 {
-  DWORD dwType = NULL;
-  DWORD dwCount = sizeof(DWORD);
-  LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &dwType,
-    (LPBYTE)&aValue, &dwCount);
-  MYASSERT((aRes!=ERROR_SUCCESS) || (dwType == REG_DWORD));
-  MYASSERT((aRes!=ERROR_SUCCESS) || (dwCount == sizeof(UINT32)));
-  return aRes;
+  DWORD type = NULL;
+  DWORD count = sizeof(DWORD);
+  LONG res = RegQueryValueEx(_object, (LPTSTR)valueName, NULL, &type,
+    (LPBYTE)&value, &count);
+  MYASSERT((res!=ERROR_SUCCESS) || (type == REG_DWORD));
+  MYASSERT((res!=ERROR_SUCCESS) || (count == sizeof(UINT32)));
+  return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR aValueName, bool &aValue)
+LONG CKey::QueryValue(LPCTSTR valueName, bool &value)
 {
-  UINT32 aDWORDValue = BoolToDWORD(aValue);
-  LONG aRes = QueryValue(aValueName, aDWORDValue);
-  aValue = DWORDToBool(aDWORDValue);
-  return aRes;
+  UINT32 uintValue = BoolToUINT32(value);
+  LONG res = QueryValue(valueName, uintValue);
+  value = UINT32ToBool(uintValue);
+  return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR aValueName, LPTSTR szValue, UINT32 &aCount)
+LONG CKey::QueryValue(LPCTSTR valueName, LPTSTR value, UINT32 &count)
 {
-  MYASSERT(aCount != NULL);
-  DWORD dwType = NULL;
-  LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &dwType,
-    (LPBYTE)szValue, (DWORD *)&aCount);
-  MYASSERT((aRes!=ERROR_SUCCESS) || (dwType == REG_SZ) ||
-       (dwType == REG_MULTI_SZ) || (dwType == REG_EXPAND_SZ));
-  return aRes;
+  MYASSERT(count != NULL);
+  DWORD type = NULL;
+  LONG res = RegQueryValueEx(_object, (LPTSTR)valueName, NULL, &type,
+      (LPBYTE)value, (DWORD *)&count);
+  MYASSERT((res!=ERROR_SUCCESS) || (type == REG_SZ) ||
+      (type == REG_MULTI_SZ) || (type == REG_EXPAND_SZ));
+  return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR aValueName, CSysString &aValue)
+LONG CKey::QueryValue(LPCTSTR valueName, CSysString &value)
 {
-  aValue.Empty();
-  DWORD aType = NULL;
-  UINT32 aCurrentSize = 0;
-  LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &aType,
-      NULL, (DWORD *)&aCurrentSize);
-  if (aRes != ERROR_SUCCESS && aRes != ERROR_MORE_DATA)
-    return aRes;
-  aRes = QueryValue(aValueName, aValue.GetBuffer(aCurrentSize), aCurrentSize);
-  aValue.ReleaseBuffer();
-  return aRes;
+  value.Empty();
+  DWORD type = NULL;
+  UINT32 currentSize = 0;
+  LONG res = RegQueryValueEx(_object, (LPTSTR)valueName, NULL, &type,
+      NULL, (DWORD *)&currentSize);
+  if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
+    return res;
+  res = QueryValue(valueName, value.GetBuffer(currentSize), currentSize);
+  value.ReleaseBuffer();
+  return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR aValueName, void *aValue, UINT32 &aCount)
+LONG CKey::QueryValue(LPCTSTR valueName, void *value, UINT32 &count)
 {
-  DWORD dwType = NULL;
-  LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &dwType,
-    (LPBYTE)aValue, (DWORD *)&aCount);
-  MYASSERT((aRes!=ERROR_SUCCESS) || (dwType == REG_BINARY));
-  return aRes;
+  DWORD type = NULL;
+  LONG res = RegQueryValueEx(_object, (LPTSTR)valueName, NULL, &type,
+    (LPBYTE)value, (DWORD *)&count);
+  MYASSERT((res!=ERROR_SUCCESS) || (type == REG_BINARY));
+  return res;
 }
 
 
-LONG CKey::QueryValue(LPCTSTR aValueName, CByteBuffer &aValue, UINT32 &aDataSize)
+LONG CKey::QueryValue(LPCTSTR valueName, CByteBuffer &value, UINT32 &dataSize)
 {
-  DWORD aType = NULL;
-  aDataSize = 0;
-  LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &aType,
-      NULL, (DWORD *)&aDataSize);
-  if (aRes != ERROR_SUCCESS && aRes != ERROR_MORE_DATA)
-    return aRes;
-  aValue.SetCapacity(aDataSize);
-  return QueryValue(aValueName, (BYTE *)aValue, aDataSize);
+  DWORD type = NULL;
+  dataSize = 0;
+  LONG res = RegQueryValueEx(_object, (LPTSTR)valueName, NULL, &type,
+      NULL, (DWORD *)&dataSize);
+  if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
+    return res;
+  value.SetCapacity(dataSize);
+  return QueryValue(valueName, (BYTE *)value, dataSize);
 }
 
-LONG CKey::EnumKeys(CSysStringVector &aKeyNames)
+LONG CKey::EnumKeys(CSysStringVector &keyNames)
 {
-  aKeyNames.Clear();
-  CSysString aKeyName;
-  for(UINT32 anIndex = 0; true; anIndex++)
+  keyNames.Clear();
+  CSysString keyName;
+  for(UINT32 index = 0; true; index++)
   {
     const UINT32 kBufferSize = MAX_PATH + 1; // 256 in ATL
-    FILETIME aLastWriteTime;
+    FILETIME lastWriteTime;
     UINT32 aNameSize = kBufferSize;
-    LONG aResult = ::RegEnumKeyEx(m_Object, anIndex, aKeyName.GetBuffer(kBufferSize), 
-        (DWORD *)&aNameSize, NULL, NULL, NULL, &aLastWriteTime);
-    aKeyName.ReleaseBuffer();
+    LONG aResult = ::RegEnumKeyEx(_object, index, keyName.GetBuffer(kBufferSize), 
+        (DWORD *)&aNameSize, NULL, NULL, NULL, &lastWriteTime);
+    keyName.ReleaseBuffer();
     if(aResult == ERROR_NO_MORE_ITEMS)
       break;
     if(aResult != ERROR_SUCCESS)
       return aResult;
-    aKeyNames.Add(aKeyName);
+    keyNames.Add(keyName);
   }
   return ERROR_SUCCESS;
 }

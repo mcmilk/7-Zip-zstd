@@ -40,12 +40,14 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""..\\Resource\\OverwriteDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\PasswordDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\MessagesDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\ProgressDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\PropertyName\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\PropertyName\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
     "#include ""..\\Resource\\Extract\\resource.rc""\r\n"
+    "#include ""..\\Resource\\FoldersPage\\resource.rc""\r\n"
+    "#include ""..\\Resource\\SystemPage\\resource.rc""\r\n"
     "\r\n"
     "\0"
 END
@@ -69,33 +71,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 // Dialog
 //
-
-IDD_DIALOG_COLUMNS DIALOG DISCARDABLE  0, 0, 310, 197
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Columns"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Check the columns that you would like visible in this view.  Use the Move Up and Move Down buttons to reorder the columns however you like.",
-                    IDC_STATIC_COLUMNS_HEADER,7,7,296,24
-    CONTROL         "List1",IDC_COLUMNS_LISTVIEW,"SysListView32",LVS_REPORT | 
-                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
-                    WS_TABSTOP,7,36,191,85
-    PUSHBUTTON      "Move &Up",IDC_COLUMNS_BUTTON_MOVE_UP,229,36,74,14
-    PUSHBUTTON      "Move &Down",IDC_COLUMNS_BUTTON_MOVE_DOWN,229,56,74,14
-    PUSHBUTTON      "&Show",IDC_COLUMNS_BUTTON_SHOW,229,77,74,14
-    PUSHBUTTON      "&Hide",IDC_COLUMNS_BUTTON_HIDE,229,96,74,14
-    LTEXT           "The selected column should be",
-                    IDC_STATIC_COLUMNS_WIDTH_BEGIN,7,140,119,18
-    EDITTEXT        IDC_COLUMN_EDIT_WIDTH,132,138,30,14,ES_AUTOHSCROLL
-    LTEXT           "pixels &wide.",IDC_STATIC_COLUMNS_WIDTH_END,169,141,54,
-                    19
-    PUSHBUTTON      "Set",IDC_COLUMNS_BUTTON_SET_WIDTH,229,138,74,14
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,164,296,1
-    DEFPUSHBUTTON   "OK",IDOK,83,176,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,157,176,64,14
-    PUSHBUTTON      "Help",IDHELP,239,176,64,14
-END
 
 IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 299, 199
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
@@ -143,7 +118,7 @@ END
 IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 288, 191
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
-CAPTION "Add to archive"
+CAPTION "Add to Archive"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "&Archive:",IDC_STATIC_COMPRESS_ARCHIVE,7,7,274,8
@@ -184,15 +159,6 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-    IDD_DIALOG_COLUMNS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 303
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 190
-        HORZGUIDE, 36
-    END
-
     IDD_DIALOG_EXTRACT, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -223,8 +189,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,21,0
- PRODUCTVERSION 2,30,21,0
+ FILEVERSION 2,30,22,0
+ PRODUCTVERSION 2,30,22,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -242,14 +208,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "2, 30, 21, 0\0"
+            VALUE "FileVersion", "2, 30, 22, 0\0"
             VALUE "InternalName", "7-zip\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 21, 0\0"
+            VALUE "ProductVersion", "2, 30, 22, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -280,32 +246,21 @@ BEGIN
     IDS_CONTEXT_EXTRACT_HELP "Extracts files from the selected archive."
     IDS_CONTEXT_COMPRESS    "Add to archive..."
     IDS_CONTEXT_COMPRESS_HELP "Adds the selected items to archive."
-    IDS_CONTEXT_POPUP_CAPTION "7-Zip"
     IDS_CONTEXT_OPEN        "Open"
     IDS_CONTEXT_OPEN_HELP   "Opens the selected archive."
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_TOOLBAR_EXTRACT     "Extract"
-    IDS_QUERY_UPDATE_INTERFACE_FAIL 
-                            "Update operations are not supported for this archive."
-    IDS_CONFIRM_FILE_DELETE "Are you sure you want to delete '%s'?"
-    IDS_CONFIRM_FOLDER_DELETE 
-                            "Are you sure you want to delete folder  '%s' and all its contents?"
-    IDS_CONFIRM_ITEMS_DELETE "Are you sure you want to delete these %s items?"
-    IDS_CONFIRM_FILE_DELETE_CAPTION "Confirm File Delete"
-    IDS_CONFIRM_FOLDER_DELETE_CAPTION "Confirm Folder Delete"
-    IDS_CONFIRM_ITEMS_DELETE_CAPTION "Confirm Multiple File Delete"
-    IDS_N_SELECTED_ITEMS    "%s object(s) selected"
-    IDS_N_OBJECTS           "%s object(s)"
-    IDS_COLUMN_TITLE        "Title"
-    IDS_COLUMN_WIDTH        "Width"
-    IDS_METHOD_STORE        "Store"
+    IDS_CONTEXT_TEST        "Test archive"
+    IDS_CONTEXT_TEST_HELP   "Tests integrity of the selected archive."
+    IDS_CONTEXT_CAPTION_HELP "7-Zip commands"
+    IDS_CONTEXT_POPUP_CAPTION "7-Zip"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDS_METHOD_STORE        "Store"
     IDS_METHOD_NORMAL       "Normal"
     IDS_METHOD_MAXIMUM      "Maximum"
     IDS_OPEN_TYPE_ALL_FILES "All Files"
@@ -314,28 +269,16 @@ BEGIN
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
     IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
-    IDS_CANT_UPDATE_ARCHIVE "Can not update archive %s"
+    IDS_CANT_UPDATE_ARCHIVE "Can not update archive '{0}'"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_LISTVIEW_COLUMNS_CONTEXT_MENU "&Columns..."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_LISTVIEW_CONTEXT_MENU_OPEN "&Open"
-    IDS_LISTVIEW_CONTEXT_MENU_EXTRACT "&Extract..."
-    IDS_CONTEXT_CAPTION_HELP "7-Zip commands"
     IDS_PROGRESS_COMPRESSING "Compressing"
-    IDS_ERROR               "Error"
-    IDS_ERROR_TOO_MUCH_ITEMS "Too much items"
-    IDS_ERROR_NO_ASSOCIATION 
-                            "There is no application associated with the given file name extension"
-    IDS_CONTEXT_TEST        "Test archive"
-    IDS_CONTEXT_TEST_HELP   "Tests integrity of the selected archive."
     IDS_PROGRESS_TESTING    "Testing"
+    IDS_ERROR               "Error"
     IDS_MESSAGE_NO_ERRORS   "There are no errors"
+    IDS_CONFIG_DIALOG_CAPTION "7-Zip Options"
 END
 
 #endif    // English (U.S.) resources
@@ -348,12 +291,14 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-#include "..\Resource\OverwriteDialog\resource.rc"
-#include "..\Resource\PasswordDialog\resource.rc"
-#include "..\Resource\MessagesDialog\resource.rc"
-#include "..\Resource\ProgressDialog\resource.rc"
-#include "..\Resource\PropertyName\resource.rc"
+#include "..\..\FileManager\Resource\PropertyName\resource.rc"
+#include "..\..\FileManager\Resource\OverwriteDialog\resource.rc"
+#include "..\..\FileManager\Resource\PasswordDialog\resource.rc"
+#include "..\..\FileManager\Resource\MessagesDialog\resource.rc"
+#include "..\..\FileManager\Resource\ProgressDialog\resource.rc"
 #include "..\Resource\Extract\resource.rc"
+#include "..\Resource\FoldersPage\resource.rc"
+#include "..\Resource\SystemPage\resource.rc"
 
 
 /////////////////////////////////////////////////////////////////////////////

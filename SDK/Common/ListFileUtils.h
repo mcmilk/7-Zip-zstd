@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-bool ReadNamesFromListFile(LPCTSTR aFileName, AStringVector &aStrings);
+bool ReadNamesFromListFile(LPCTSTR fileName, AStringVector &strings);
 
 #endif

@@ -104,206 +104,6 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
-# Begin Group "Windows"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\COMTry.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Defs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Error.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Error.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileDir.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileDir.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileFind.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileFind.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileIO.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileIO.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileName.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\FileName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Handle.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\NationalTime.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\NationalTime.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\PropVariant.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\PropVariantConversions.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\PropVariantConversions.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Synchronization.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Synchronization.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\System.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\Thread.h
-# End Source File
-# End Group
-# Begin Group "Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Buffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\CommandLineParser.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\CommandLineParser.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\CRC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Defs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Exception.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\IntToString.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\IntToString.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\NewHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StdInStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StdInStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StdOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StdOutStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\String.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StringConvert.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\StringConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Types.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Vector.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Wildcard.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\Wildcard.h
-# End Source File
-# End Group
 # Begin Group "Archiver Common"
 
 # PROP Default_Filter ""
@@ -314,14 +114,6 @@ SOURCE=..\..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\ExtractAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\ExtractAutoRename.h
 # End Source File
 # Begin Source File
 
@@ -406,54 +198,6 @@ SOURCE=..\..\Console\UserInputUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Console\UserInputUtils.h
-# End Source File
-# End Group
-# Begin Group "Interface"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\FileStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\ICoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\IProgress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\StreamObjects.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Interface\StreamObjects.h
 # End Source File
 # End Group
 # Begin Group "7z"
@@ -564,74 +308,6 @@ SOURCE=..\..\Format\Common\OutStreamWithCRC.cpp
 SOURCE=..\..\Format\Common\OutStreamWithCRC.h
 # End Source File
 # End Group
-# Begin Group "Utils"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Util\MultiStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Util\MultiStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Util\StreamBinder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Util\StreamBinder.h
-# End Source File
-# End Group
-# Begin Group "Stream"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\InByte.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\InByte.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\OutByte.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\OutByte.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\WindowOut.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Stream\WindowOut.h
-# End Source File
-# End Group
-# Begin Group "Compression"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\AriBitCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\CopyCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\CopyCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
-# End Source File
-# End Group
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
@@ -686,10 +362,6 @@ SOURCE=..\..\..\Compress\LZ\LZMA\RCDefs.h
 # Begin Group "Branch"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Compress\Convert\Branch\Coder.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\Coder.h
@@ -770,6 +442,334 @@ SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 
 SOURCE=..\..\Format\Common\FormatCryptoInterface.h
 # End Source File
+# End Group
+# Begin Group "SDK"
+
+# PROP Default_Filter ""
+# Begin Group "Windows"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\COMTry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Error.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Error.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileDir.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileDir.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileFind.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileIO.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileIO.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\FileName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Handle.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\NationalTime.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\NationalTime.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\PropVariant.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\PropVariantConversions.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\PropVariantConversions.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Synchronization.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\System.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Thread.h
+# End Source File
+# End Group
+# Begin Group "Interface"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\FileStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\IProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\LimitedStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\StreamObjects.h
+# End Source File
+# End Group
+# Begin Group "Utils"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\FilePathAutoRename.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\MultiStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\StreamBinder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\StreamBinder.h
+# End Source File
+# End Group
+# Begin Group "Compression"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\AriBitCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\CopyCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
+# End Source File
+# End Group
+# Begin Group "Stream"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\InByte.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\InByte.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\OutByte.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\OutByte.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\WindowOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\WindowOut.h
+# End Source File
+# End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Buffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\CommandLineParser.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\CommandLineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\CRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\CRC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Exception.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\IntToString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StdInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StdInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StdOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\String.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StringConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\StringConvert.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Types.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Vector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Vector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Wildcard.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Wildcard.h
+# End Source File
+# End Group
 # End Group
 # Begin Source File
 

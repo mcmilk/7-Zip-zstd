@@ -82,17 +82,17 @@ void CAgentProxyHandler::ClearState()
 {
   // m_HandlerProperties.Clear();
   // m_InternalProperties.Clear();
-  m_FolderItemHead.Clear();
+  _folderItemHead.Clear();
 }
 
 HRESULT CAgentProxyHandler::ReInit(IProgress *aProgress)
 {
   ClearState();
-  // RETURN_IF_NOT_S_OK(ReadProperties(m_ArchiveHandler));
+  // RETURN_IF_NOT_S_OK(ReadProperties(_archiveHandler));
 
   // OutputDebugString("before ReadObjects\n");
-  // return ReadObjects(m_ArchiveHandler, aProgress);
-  HRESULT aResult = ReadObjects(m_ArchiveHandler, aProgress);
+  // return ReadObjects(_archiveHandler, aProgress);
+  HRESULT aResult = ReadObjects(_archiveHandler, aProgress);
   // OutputDebugString("after ReadObjects\n");
   return aResult;
 }
@@ -105,11 +105,11 @@ HRESULT CAgentProxyHandler::Init(IArchiveHandler200 *anArchiveHandler,
     IProgress *aProgress)
 {
   // m_ArchiveFileInfo = anArchiveFileInfo;
-  m_ItemDefaultName = anItemDefaultName;
-  m_DefaultTime = aDefaultTime;
-  m_DefaultAttributes = aDefaultAttributes;
+  _itemDefaultName = anItemDefaultName;
+  _defaultTime = aDefaultTime;
+  _defaultAttributes = aDefaultAttributes;
 
-  m_ArchiveHandler = anArchiveHandler;
+  _archiveHandler = anArchiveHandler;
   return ReInit(aProgress);
 }
 
@@ -142,12 +142,12 @@ HRESULT CAgentProxyHandler::ReadProperties(IArchiveHandler200 *anArchiveHandler)
     const CArchiveItemProperty &aHandlerProperty = m_HandlerProperties[i];
     CArchiveItemProperty anInternalProperty = aHandlerProperty;
 
-    if (aHandlerProperty.ID == kaipidPath)
-      anInternalProperty.ID = kaipidName;
+    if (aHandlerProperty.ID == kpidPath)
+      anInternalProperty.ID = kpidName;
     m_InternalProperties.Add(anInternalProperty);
   }
   CArchiveItemProperty anInternalProperty;
-  anInternalProperty.ID = kaipidHandlerItemIndex;
+  anInternalProperty.ID = kpidHandlerItemIndex;
   // anInternalProperty.Name not defined;
   
   anInternalProperty.Type = VT_I4;
@@ -169,11 +169,11 @@ HRESULT CAgentProxyHandler::ReadObjects(IArchiveHandler200 *anArchiveHandler, IP
       RETURN_IF_NOT_S_OK(aProgress->SetCompleted(&aCurrentItemIndex));
     }
     NCOM::CPropVariant aPropVariantPath;
-    RETURN_IF_NOT_S_OK(anArchiveHandler->GetProperty(anItemIndex, kaipidPath, &aPropVariantPath));
-    CFolderItem *aCurrentItem = &m_FolderItemHead;
+    RETURN_IF_NOT_S_OK(anArchiveHandler->GetProperty(anItemIndex, kpidPath, &aPropVariantPath));
+    CFolderItem *aCurrentItem = &_folderItemHead;
     UString aFileName;
     if(aPropVariantPath.vt == VT_EMPTY)
-      aFileName = m_ItemDefaultName;
+      aFileName = _itemDefaultName;
     else
     {
       if(aPropVariantPath.vt != VT_BSTR)
@@ -196,7 +196,7 @@ HRESULT CAgentProxyHandler::ReadObjects(IArchiveHandler200 *anArchiveHandler, IP
 
     NCOM::CPropVariant aPropVariantIsFolder;
     RETURN_IF_NOT_S_OK(anArchiveHandler->GetProperty(anItemIndex, 
-        kaipidIsFolder, &aPropVariantIsFolder));
+        kpidIsFolder, &aPropVariantIsFolder));
     if(aPropVariantIsFolder.vt != VT_BOOL)
       return E_FAIL;
     if(VARIANT_BOOLToBool(aPropVariantIsFolder.boolVal))

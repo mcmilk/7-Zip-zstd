@@ -1,9 +1,9 @@
-// LZArithmetic/Encoder.h
+// LZMA/Encoder.h
 
 #pragma once 
 
-#ifndef __LZARITHMETIC_ENCODER_H
-#define __LZARITHMETIC_ENCODER_H
+#ifndef __LZMA_ENCODER_H
+#define __LZMA_ENCODER_H
 
 #include "../../Interface/CompressInterface.h"
 #include "Compression/AriPrice.h"
@@ -26,8 +26,8 @@ namespace NLZMA {
 class CMatchFinderException
 {
 public:
-  HRESULT m_Result;
-  CMatchFinderException(HRESULT aResult): m_Result (aResult) {}
+  HRESULT Result;
+  CMatchFinderException(HRESULT result): Result (result) {}
 };
 
 struct COptimal
@@ -51,22 +51,22 @@ struct COptimal
 
 
 extern BYTE g_FastPos[1024];
-inline UINT32 GetPosSlot(UINT32 aPos)
+inline UINT32 GetPosSlot(UINT32 pos)
 {
-  if (aPos < (1 << 10))
-    return g_FastPos[aPos];
-  if (aPos < (1 << 19))
-    return g_FastPos[aPos >> 9] + 18;
-  return g_FastPos[aPos >> 18] + 36;
+  if (pos < (1 << 10))
+    return g_FastPos[pos];
+  if (pos < (1 << 19))
+    return g_FastPos[pos >> 9] + 18;
+  return g_FastPos[pos >> 18] + 36;
 }
 
-inline UINT32 GetPosSlot2(UINT32 aPos)
+inline UINT32 GetPosSlot2(UINT32 pos)
 {
-  if (aPos < (1 << 16))
-    return g_FastPos[aPos >> 6] + 12;
-  if (aPos < (1 << 25))
-    return g_FastPos[aPos >> 15] + 30;
-  return g_FastPos[aPos >> 24] + 48;
+  if (pos < (1 << 16))
+    return g_FastPos[pos >> 6] + 12;
+  if (pos < (1 << 25))
+    return g_FastPos[pos >> 15] + 30;
+  return g_FastPos[pos >> 24] + 48;
 }
 
 const kIfinityPrice = 0xFFFFFFF;
@@ -85,142 +85,140 @@ class CEncoder :
   public CComCoClass<CEncoder, &CLSID_CLZMAEncoder>,
   public CBaseCoder
 {
-  COptimal m_Optimum[kNumOpts];
+  COptimal _optimum[kNumOpts];
 public:
-  CComPtr<IInWindowStreamMatch> m_MatchFinder; // test it
-  CMyRangeEncoder m_RangeEncoder;
+  CComPtr<IInWindowStreamMatch> _matchFinder; // test it
+  CMyRangeEncoder _rangeEncoder;
 private:
 
-  CMyBitEncoder2 m_MainChoiceEncoders[kNumStates][NLength::kNumPosStatesEncodingMax];
-  CMyBitEncoder2 m_MatchChoiceEncoders[kNumStates];
-  CMyBitEncoder2 m_MatchRepChoiceEncoders[kNumStates];
-  CMyBitEncoder2 m_MatchRep1ChoiceEncoders[kNumStates];
-  CMyBitEncoder2 m_MatchRep2ChoiceEncoders[kNumStates];
-  CMyBitEncoder2 m_MatchRepShortChoiceEncoders[kNumStates][NLength::kNumPosStatesEncodingMax];
+  CMyBitEncoder2 _mainChoiceEncoders[kNumStates][NLength::kNumPosStatesEncodingMax];
+  CMyBitEncoder2 _matchChoiceEncoders[kNumStates];
+  CMyBitEncoder2 _matchRepChoiceEncoders[kNumStates];
+  CMyBitEncoder2 _matchRep1ChoiceEncoders[kNumStates];
+  CMyBitEncoder2 _matchRep2ChoiceEncoders[kNumStates];
+  CMyBitEncoder2 _matchRepShortChoiceEncoders[kNumStates][NLength::kNumPosStatesEncodingMax];
 
-  CBitTreeEncoder<kNumMoveBitsForPosSlotCoder, kNumPosSlotBits> m_PosSlotEncoder[kNumLenToPosStates];
+  CBitTreeEncoder<kNumMoveBitsForPosSlotCoder, kNumPosSlotBits> _posSlotEncoder[kNumLenToPosStates];
 
-  CReverseBitTreeEncoder2<kNumMoveBitsForPosCoders> m_PosEncoders[kNumPosModels];
-  CReverseBitTreeEncoder2<kNumMoveBitsForAlignCoders> m_PosAlignEncoder;
-  // CBitTreeEncoder2<kNumMoveBitsForPosCoders> m_PosEncoders[kNumPosModels];
-  // CBitTreeEncoder2<kNumMoveBitsForAlignCoders> m_PosAlignEncoder;
+  CReverseBitTreeEncoder2<kNumMoveBitsForPosCoders> _posEncoders[kNumPosModels];
+  CReverseBitTreeEncoder2<kNumMoveBitsForAlignCoders> _posAlignEncoder;
   
-  NLength::CPriceTableEncoder m_LenEncoder;
-  NLength::CPriceTableEncoder m_RepMatchLenEncoder;
+  NLength::CPriceTableEncoder _lenEncoder;
+  NLength::CPriceTableEncoder _repMatchLenEncoder;
 
-  NLiteral::CEncoder m_LiteralEncoder;
+  NLiteral::CEncoder _literalEncoder;
 
-  UINT32 m_MatchDistances[kMatchMaxLen + 1];
+  UINT32 _matchDistances[kMatchMaxLen + 1];
 
-  bool m_FastMode;
-  bool m_MaxMode;
-  UINT32 m_NumFastBytes;
-  UINT32 m_LongestMatchLength;    
+  bool _fastMode;
+  bool _maxMode;
+  UINT32 _numFastBytes;
+  UINT32 _longestMatchLength;    
 
-  UINT32 m_AdditionalOffset;
+  UINT32 _additionalOffset;
 
-  UINT32 m_OptimumEndIndex;
-  UINT32 m_OptimumCurrentIndex;
+  UINT32 _optimumEndIndex;
+  UINT32 _optimumCurrentIndex;
 
-  bool m_LongestMatchWasFound;
+  bool _longestMatchWasFound;
 
-  UINT32 m_PosSlotPrices[kNumLenToPosStates][kDistTableSizeMax];
+  UINT32 _posSlotPrices[kNumLenToPosStates][kDistTableSizeMax];
   
-  UINT32 m_DistancesPrices[kNumLenToPosStates][kNumFullDistances];
+  UINT32 _distancesPrices[kNumLenToPosStates][kNumFullDistances];
 
-  UINT32 m_AlignPrices[kAlignTableSize];
-  UINT32 m_AlignPriceCount;
+  UINT32 _alignPrices[kAlignTableSize];
+  UINT32 _alignPriceCount;
 
-  UINT32 m_DistTableSize;
+  UINT32 _distTableSize;
 
-  UINT32 m_PosStateBits;
-  UINT32 m_PosStateMask;
-  UINT32 m_LiteralPosStateBits;
-  UINT32 m_LiteralContextBits;
+  UINT32 _posStateBits;
+  UINT32 _posStateMask;
+  UINT32 _numLiteralPosStateBits;
+  UINT32 _numLiteralContextBits;
 
-  UINT32 m_DictionarySize;
+  UINT32 _dictionarySize;
 
 
-  UINT32 m_DictionarySizePrev;
-  UINT32 m_NumFastBytesPrev;
+  UINT32 _dictionarySizePrev;
+  UINT32 _numFastBytesPrev;
 
   
   UINT32 ReadMatchDistances()
   {
-    UINT32 aLen = m_MatchFinder->GetLongestMatch(m_MatchDistances);
-    if (aLen == m_NumFastBytes)
-      aLen += m_MatchFinder->GetMatchLen(aLen, m_MatchDistances[aLen], 
-          kMatchMaxLen - aLen);
-    m_AdditionalOffset++;
-    HRESULT aResult = m_MatchFinder->MovePos();
-    if (aResult != S_OK)
-      throw CMatchFinderException(aResult);
-    return aLen;
+    UINT32 len = _matchFinder->GetLongestMatch(_matchDistances);
+    if (len == _numFastBytes)
+      len += _matchFinder->GetMatchLen(len, _matchDistances[len], 
+          kMatchMaxLen - len);
+    _additionalOffset++;
+    HRESULT result = _matchFinder->MovePos();
+    if (result != S_OK)
+      throw CMatchFinderException(result);
+    return len;
   }
 
-  void MovePos(UINT32 aNum);
-  UINT32 GetRepLen1Price(CState aState, UINT32 aPosState) const
+  void MovePos(UINT32 num);
+  UINT32 GetRepLen1Price(CState state, UINT32 posState) const
   {
-    return m_MatchRepChoiceEncoders[aState.m_Index].GetPrice(0) +
-        m_MatchRepShortChoiceEncoders[aState.m_Index][aPosState].GetPrice(0);
+    return _matchRepChoiceEncoders[state.Index].GetPrice(0) +
+        _matchRepShortChoiceEncoders[state.Index][posState].GetPrice(0);
   }
-  UINT32 GetRepPrice(UINT32 aRepIndex, UINT32 aLen, CState aState, UINT32 aPosState) const
+  UINT32 GetRepPrice(UINT32 repIndex, UINT32 len, CState state, UINT32 posState) const
   {
-    UINT32 aPrice = m_RepMatchLenEncoder.GetPrice(aLen - kMatchMinLen, aPosState);
-    if(aRepIndex == 0)
+    UINT32 price = _repMatchLenEncoder.GetPrice(len - kMatchMinLen, posState);
+    if(repIndex == 0)
     {
-      aPrice += m_MatchRepChoiceEncoders[aState.m_Index].GetPrice(0);
-      aPrice += m_MatchRepShortChoiceEncoders[aState.m_Index][aPosState].GetPrice(1);
+      price += _matchRepChoiceEncoders[state.Index].GetPrice(0);
+      price += _matchRepShortChoiceEncoders[state.Index][posState].GetPrice(1);
     }
     else
     {
-      aPrice += m_MatchRepChoiceEncoders[aState.m_Index].GetPrice(1);
-      if (aRepIndex == 1)
-        aPrice += m_MatchRep1ChoiceEncoders[aState.m_Index].GetPrice(0);
+      price += _matchRepChoiceEncoders[state.Index].GetPrice(1);
+      if (repIndex == 1)
+        price += _matchRep1ChoiceEncoders[state.Index].GetPrice(0);
       else
       {
-        aPrice += m_MatchRep1ChoiceEncoders[aState.m_Index].GetPrice(1);
-        aPrice += m_MatchRep2ChoiceEncoders[aState.m_Index].GetPrice(aRepIndex - 2);
+        price += _matchRep1ChoiceEncoders[state.Index].GetPrice(1);
+        price += _matchRep2ChoiceEncoders[state.Index].GetPrice(repIndex - 2);
       }
     }
-    return aPrice;
+    return price;
   }
   /*
-  UINT32 GetPosLen2Price(UINT32 aPos, UINT32 aPosState) const
+  UINT32 GetPosLen2Price(UINT32 pos, UINT32 posState) const
   {
-    if (aPos >= kNumFullDistances)
+    if (pos >= kNumFullDistances)
       return kIfinityPrice;
-    return m_DistancesPrices[0][aPos] + m_LenEncoder.GetPrice(0, aPosState);
+    return _distancesPrices[0][pos] + _lenEncoder.GetPrice(0, posState);
   }
-  UINT32 GetPosLen3Price(UINT32 aPos, UINT32 aLen, UINT32 aPosState) const
+  UINT32 GetPosLen3Price(UINT32 pos, UINT32 len, UINT32 posState) const
   {
-    UINT32 aPrice;
-    UINT32 aLenToPosState = GetLenToPosState(aLen);
-    if (aPos < kNumFullDistances)
-      aPrice = m_DistancesPrices[aLenToPosState][aPos];
+    UINT32 price;
+    UINT32 lenToPosState = GetLenToPosState(len);
+    if (pos < kNumFullDistances)
+      price = _distancesPrices[lenToPosState][pos];
     else
-      aPrice = m_PosSlotPrices[aLenToPosState][GetPosSlot2(aPos)] + 
-          m_AlignPrices[aPos & kAlignMask];
-    return aPrice + m_LenEncoder.GetPrice(aLen - kMatchMinLen, aPosState);
+      price = _posSlotPrices[lenToPosState][GetPosSlot2(pos)] + 
+          _alignPrices[pos & kAlignMask];
+    return price + _lenEncoder.GetPrice(len - kMatchMinLen, posState);
   }
   */
-  UINT32 GetPosLenPrice(UINT32 aPos, UINT32 aLen, UINT32 aPosState) const
+  UINT32 GetPosLenPrice(UINT32 pos, UINT32 len, UINT32 posState) const
   {
-    if (aLen == 2 && aPos >= 0x80)
+    if (len == 2 && pos >= 0x80)
       return kIfinityPrice;
-    UINT32 aPrice;
-    UINT32 aLenToPosState = GetLenToPosState(aLen);
-    if (aPos < kNumFullDistances)
-      aPrice = m_DistancesPrices[aLenToPosState][aPos];
+    UINT32 price;
+    UINT32 lenToPosState = GetLenToPosState(len);
+    if (pos < kNumFullDistances)
+      price = _distancesPrices[lenToPosState][pos];
     else
-      aPrice = m_PosSlotPrices[aLenToPosState][GetPosSlot2(aPos)] + 
-          m_AlignPrices[aPos & kAlignMask];
-    return aPrice + m_LenEncoder.GetPrice(aLen - kMatchMinLen, aPosState);
+      price = _posSlotPrices[lenToPosState][GetPosSlot2(pos)] + 
+          _alignPrices[pos & kAlignMask];
+    return price + _lenEncoder.GetPrice(len - kMatchMinLen, posState);
   }
 
-  UINT32 Backward(UINT32 &aBackRes, UINT32 aCur);
-  UINT32 GetOptimum(UINT32 &aBackRes, UINT32 aPosition);
-  UINT32 GetOptimumFast(UINT32 &aBackRes, UINT32 aPosition);
+  UINT32 Backward(UINT32 &backRes, UINT32 cur);
+  UINT32 GetOptimum(UINT32 &backRes, UINT32 position);
+  UINT32 GetOptimumFast(UINT32 &backRes, UINT32 position);
 
   void FillPosSlotPrices();
   void FillDistancesPrices();
@@ -228,18 +226,18 @@ private:
     
   void ReleaseStreams()
   {
-    m_MatchFinder->ReleaseStream();
-    m_RangeEncoder.ReleaseStream();
+    _matchFinder->ReleaseStream();
+    _rangeEncoder.ReleaseStream();
   }
   HRESULT Flush();
   class CCoderReleaser
   {
-    CEncoder *m_Coder;
+    CEncoder *_coder;
   public:
-    CCoderReleaser(CEncoder *aCoder): m_Coder(aCoder) {}
+    CCoderReleaser(CEncoder *coder): _coder(coder) {}
     ~CCoderReleaser()
     {
-      m_Coder->ReleaseStreams();
+      _coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;
@@ -266,33 +264,33 @@ DECLARE_REGISTRY(CEncoder, TEXT("Compress.LZMAEncoder.1"),
                  TEXT("Compress.LZMAEncoder"), UINT(0), THREADFLAGS_APARTMENT)
 
 
-  STDMETHOD(Init)(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream);
+  STDMETHOD(Init)(ISequentialInStream *inStream, 
+      ISequentialOutStream *outStream);
   
   // ICompressCoder interface
-  HRESULT CodeReal(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, 
-      const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
   
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, 
-      const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
   // IInitMatchFinder interface
-  STDMETHOD(InitMatchFinder)(IInWindowStreamMatch *aMatchFinder);
+  STDMETHOD(InitMatchFinder)(IInWindowStreamMatch *matchFinder);
 
   // ICompressSetCoderProperties2
-  STDMETHOD(SetCoderProperties2)(const PROPID *aPropIDs, 
-      const PROPVARIANT *aProperties, UINT32 aNumProperties);
+  STDMETHOD(SetCoderProperties2)(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
   
   // ICompressSetEncoderProperties2
-  STDMETHOD(SetEncoderProperties2)(const PROPID *aPropIDs, 
-      const PROPVARIANT *aProperties, UINT32 aNumProperties);
+  STDMETHOD(SetEncoderProperties2)(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UINT32 numProperties);
 
   // ICompressWriteCoderProperties
-  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *anOutStream);
+  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
 };
 
 }}

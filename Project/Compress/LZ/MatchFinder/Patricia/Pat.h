@@ -250,8 +250,8 @@ public:
   CPatricia();
   ~CPatricia();
 
-  UINT32 m_SizeHistory;
-  UINT32 m_MatchMaxLen;
+  UINT32 _sizeHistory;
+  UINT32 _matchMaxLen;
 
   CDescendant *m_HashDescendants;
   #ifdef __HASH_3

@@ -14,12 +14,12 @@ static class CConstInit
 public:
   CConstInit()
   {
-    UINT32 aStartValue = 0;
+    UINT32 startValue = 0;
     int i;
     for (i = 0; i < kDistTableSizeMax; i++)
     {
-      kDistStart[i] = aStartValue;
-      aStartValue += (1 << kDistDirectBits[i]);
+      kDistStart[i] = startValue;
+      startValue += (1 << kDistDirectBits[i]);
     }
   }
 } g_ConstInit;

@@ -46,14 +46,14 @@ class CAgentProxyHandler
   // HRESULT ReadProperties(IArchiveHandler200 *aHandler);
   HRESULT ReadObjects(IArchiveHandler200 *aHandler, IProgress *aProgress);
 public:
-  CComPtr<IArchiveHandler200> m_ArchiveHandler;
-  UString m_ItemDefaultName;
-  FILETIME m_DefaultTime;
-  UINT32 m_DefaultAttributes;
+  CComPtr<IArchiveHandler200> _archiveHandler;
+  UString _itemDefaultName;
+  FILETIME _defaultTime;
+  UINT32 _defaultAttributes;
 
   // NWindows::NFile::NFind::CFileInfo m_ArchiveFileInfo;
 
-  CFolderItem m_FolderItemHead;
+  CFolderItem _folderItemHead;
 
   // CArchiveItemPropertyVector m_HandlerProperties;
   // CArchiveItemPropertyVector m_InternalProperties;

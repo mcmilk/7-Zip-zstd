@@ -8,27 +8,6 @@
 #include "Common/String.h"
 namespace NZipSettings {
 
-struct CColumnInfo
-{
-  PROPID PropID;
-  bool IsVisible;
-  // UINT32 Order;
-  UINT32 Width;
-};
-
-typedef std::vector<CColumnInfo> CColumnInfoVector;
-
-struct CListViewInfo
-{
-  CColumnInfoVector ColumnInfoVector;
-  int SortIndex;
-  bool Ascending;
-
-  int FindColumnWithID(PROPID anID) const;
-  void OrderItems();
-};
-
-
 namespace NExtraction{
   
   namespace NPathMode

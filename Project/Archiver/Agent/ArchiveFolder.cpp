@@ -27,106 +27,64 @@ using namespace NWindows;
 using namespace NCOM;
 
 static inline UINT GetCurrentFileCodePage()
-{
-  return AreFileApisANSI() ? CP_ACP : CP_OEMCP;
-}
+  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
-STDMETHODIMP CAgentFolder::Copy(const UINT32 *anIndexes, 
-    UINT32 aNumItems, 
-    const wchar_t *aPath,
-    IExtractCallback3 *anExtractCallBack3)
+STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems, 
+    const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
-  UINT aCodePage = GetCurrentFileCodePage();
-  CComObjectNoLock<CExtractCallBack200Imp> *anExtractCallBackSpec = new 
+  UINT codePage = GetCurrentFileCodePage();
+  CComObjectNoLock<CExtractCallBack200Imp> *extractCallback200Spec = new 
       CComObjectNoLock<CExtractCallBack200Imp>;
-  CComPtr<IExtractCallback200> anExtractCallBack = anExtractCallBackSpec;
-  UStringVector aPathParts;
-  CFolderItem *aCurrentProxyFolder = m_ProxyFolderItem;
-  while (aCurrentProxyFolder->m_Parent)
+  CComPtr<IExtractCallback200> extractCallback200 = extractCallback200Spec;
+  UStringVector pathParts;
+  CFolderItem *currentProxyFolder = _proxyFolderItem;
+  while (currentProxyFolder->m_Parent)
   {
-    aPathParts.Insert(0, aCurrentProxyFolder->m_Name);
-    aCurrentProxyFolder = aCurrentProxyFolder->m_Parent;
+    pathParts.Insert(0, currentProxyFolder->m_Name);
+    currentProxyFolder = currentProxyFolder->m_Parent;
   }
-  anExtractCallBackSpec->Init(m_ProxyHandler->m_ArchiveHandler, 
-      anExtractCallBack3, 
-      GetSystemString(aPath, aCodePage),
+
+  CComPtr<IExtractCallback2> extractCallback2;
+  {
+    CComPtr<IFolderOperationsExtractCallback> callbackWrap = callback;
+    RETURN_IF_NOT_S_OK(callbackWrap.QueryInterface(&extractCallback2));
+  }
+
+  extractCallback200Spec->Init(_proxyHandler->_archiveHandler, 
+      extractCallback2, 
+      GetSystemString(path, codePage),
       NExtractionMode::NPath::kCurrentPathnames, 
       NExtractionMode::NOverwrite::kAskBefore, 
-      aPathParts, 
-      aCodePage, 
-      m_ProxyHandler->m_ItemDefaultName,
-      m_ProxyHandler->m_DefaultTime, 
-      m_ProxyHandler->m_DefaultAttributes, 
+      pathParts, 
+      codePage, 
+      _proxyHandler->_itemDefaultName,
+      _proxyHandler->_defaultTime, 
+      _proxyHandler->_defaultAttributes, 
       false, 
       L"");
-  std::vector<UINT32> aRealIndexes;
-  m_ProxyHandler->GetRealIndexes(*m_ProxyFolderItem, anIndexes, aNumItems, aRealIndexes);
-  return m_ProxyHandler->m_ArchiveHandler->Extract(&aRealIndexes.front(), 
-      aRealIndexes.size(), BoolToMyBool(false), anExtractCallBack);
+  std::vector<UINT32> realIndices;
+  _proxyHandler->GetRealIndexes(*_proxyFolderItem, indices, numItems, realIndices);
+  return _proxyHandler->_archiveHandler->Extract(&realIndices.front(), 
+      realIndices.size(), BoolToMyBool(false), extractCallback200);
 }
 
-STDMETHODIMP CAgentFolder::Move(const UINT32 *anIndexes, 
-    UINT32 aNumItems, 
-    const wchar_t *aPath,
-    IExtractCallback3 *anExtractCallBack3)
+STDMETHODIMP CAgentFolder::MoveTo(const UINT32 *indices, UINT32 numItems, 
+    const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAgentFolder::Delete(const UINT32 *anIndexes, UINT32 aNumItems)
+STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgress *progress)
 {
   return E_NOTIMPL;
-  /*
-  for (UINT32 i = 0; i < aNumItems; i++)
-  {
-    int anIndex = anIndexes[i];
-    const CFileInfo &aFileInfo = m_Files[anIndexes[i]];
-    const CSysString aFullPath = m_Path + aFileInfo.Name;
-    bool aResult;
-    if (aFileInfo.IsDirectory())
-      aResult = NDirectory::RemoveDirectoryWithSubItems(aFullPath);
-    else
-      aResult = NDirectory::DeleteFileAlways(aFullPath);
-    if (!aResult)
-      return GetLastError();
-  }
-  return S_OK;
-  */
 }
 
-STDMETHODIMP CAgentFolder::Rename(UINT32 anIndex, const wchar_t *aNewName)
+STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress)
 {
   return E_NOTIMPL;
-  /*
-  const CFileInfo &aFileInfo = m_Files[anIndex];
-  if (!::MoveFile(m_Path + aFileInfo.Name, m_Path + 
-      GetSystemString(aNewName, m_FileCodePage)))
-    return GetLastError();
-  return S_OK;
-  */
 }
 
-STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *aName)
+STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *name, IProgress *progress)
 {
   return E_NOTIMPL;
-  /*
-  CSysString aProcessedName;
-  RETURN_IF_NOT_S_OK(GetComplexName(aName, aProcessedName));
-  if (!NDirectory::CreateComplexDirectory(aProcessedName))
-    return GetLastError();
-  return S_OK;
-  */
-}
-
-STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *aName)
-{
-  return E_NOTIMPL;
-  /*
-  CSysString aProcessedName;
-  RETURN_IF_NOT_S_OK(GetComplexName(aName, aProcessedName));
-  NIO::COutFile anOutFile;
-  if (!anOutFile.Open(aProcessedName))
-    return GetLastError();
-  return S_OK;
-  */
 }

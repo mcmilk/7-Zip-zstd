@@ -95,18 +95,18 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
 
   switch(aPropID)
   {
-    case kaipidPath:
+    case kpidPath:
     {
       aPropVariant = NArchive::NItemName::GetOSName(anItem.Name);
       break;
     }
-    case kaipidIsFolder:
+    case kpidIsFolder:
       aPropVariant = anItem.IsDirectory;
       break;
-    case kaipidSize:
+    case kpidSize:
       aPropVariant = anItem.UnPackSize;
       break;
-    case kaipidPackedSize:
+    case kpidPackedSize:
     {
       {
         int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[anIndex];
@@ -123,37 +123,37 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
       }
       break;
     }
-    case kaipidLastAccessTime:
+    case kpidLastAccessTime:
       MySetFileTime(anItem.IsLastAccessTimeDefined, anItem.LastAccessTime, aPropVariant);
       break;
-    case kaipidCreationTime:
+    case kpidCreationTime:
       MySetFileTime(anItem.IsCreationTimeDefined, anItem.CreationTime, aPropVariant);
       break;
-    case kaipidLastWriteTime:
+    case kpidLastWriteTime:
       MySetFileTime(anItem.IsLastWriteTimeDefined, anItem.LastWriteTime, aPropVariant);
       break;
-    case kaipidAttributes:
+    case kpidAttributes:
       if (anItem.AreAttributesDefined)
         aPropVariant = anItem.Attributes;
       break;
-    case kaipidCRC:
+    case kpidCRC:
       if (anItem.FileCRCIsDefined)
         aPropVariant = anItem.FileCRC;
       break;
-    case kaipidPackedSize0:
-    case kaipidPackedSize1:
-    case kaipidPackedSize2:
-    case kaipidPackedSize3:
-    case kaipidPackedSize4:
+    case kpidPackedSize0:
+    case kpidPackedSize1:
+    case kpidPackedSize2:
+    case kpidPackedSize3:
+    case kpidPackedSize4:
       {
         int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[anIndex];
         if (aFolderIndex >= 0)
         {
           const CFolderItemInfo &aFolderInfo = m_Database.m_Folders[aFolderIndex];
           if (m_Database.m_FolderStartFileIndex[aFolderIndex] == anIndex &&
-              aFolderInfo.PackStreams.Size() > aPropID - kaipidPackedSize0)
+              aFolderInfo.PackStreams.Size() > aPropID - kpidPackedSize0)
           {
-            aPropVariant = m_Database.GetFolderPackStreamSize(aFolderIndex, aPropID - kaipidPackedSize0);
+            aPropVariant = m_Database.GetFolderPackStreamSize(aFolderIndex, aPropID - kpidPackedSize0);
           }
           else
             aPropVariant = UINT64(0);
@@ -162,7 +162,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
           aPropVariant = UINT64(0);
       }
       break;
-    case kaipidIsAnti:
+    case kpidIsAnti:
       aPropVariant = anItem.IsAnti;
       break;
   }

@@ -1,0 +1,329 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""Resource\\ComboDialog\\resource.rc""\r\n"
+    "#include ""Resource\\ListViewDialog\\resource.rc""\r\n"
+    "#include ""Resource\\PropertyName\\resource.rc""\r\n"
+    "#include ""Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""Resource\\AboutDialog\\resource.rc""\r\n"
+    "#include ""Resource\\LangPage\\resource.rc""\r\n"
+    "#include ""Resource\\PluginsPage\\resource.rc""\r\n"
+    "#include ""Resource\\SystemPage\\resource.rc""\r\n"
+    "#include ""Resource\\EditPage\\resource.rc""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,30,22,0
+ PRODUCTVERSION 2,30,22,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Igor Pavlov\0"
+            VALUE "FileDescription", "7-Zip\0"
+            VALUE "FileVersion", "2, 30, 22, 0\0"
+            VALUE "InternalName", "7zFMn\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "7zFMn.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "7-Zip\0"
+            VALUE "ProductVersion", "2, 30, 22, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
+BEGIN
+    "N",            IDM_CREATE_FILE,        VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          IDM_HELP_CONTENTS,      VIRTKEY, NOINVERT
+    VK_F12,         IDM_FOLDERS_HISTORY,    VIRTKEY, ALT, NOINVERT
+    VK_F7,          IDM_CREATE_FOLDER,      VIRTKEY, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDM_MENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Open\tEnter",                IDM_FILE_OPEN
+        MENUITEM "Open &Inside\tCtrl+PgDn",     IDM_FILE_OPEN_INSIDE
+        MENUITEM "Open O&utside\tShift+Enter",  IDM_FILE_OPEN_OUTSIDE
+        MENUITEM "&View\tF3",                   IDM_FILE_VIEW, GRAYED
+        MENUITEM "&Edit\tF4",                   IDM_FILE_EDIT
+        MENUITEM SEPARATOR
+        MENUITEM "Rena&me\tF2",                 IDM_RENAME
+        MENUITEM "&Copy To...\tF5",             IDM_COPY_TO
+        MENUITEM "&Move To...\tF6",             IDM_MOVE_TO
+        MENUITEM "&Delete\tDel",                IDM_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "P&roperties\tAlt+Enter",      ID_FILE_PROPERTIES, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Create Folder\tF7",           IDM_CREATE_FOLDER
+        MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit\tAlt+F4",               IDCLOSE
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "Cu&t\tCtrl+X",                IDM_EDIT_CUT, GRAYED
+        MENUITEM "&Copy\tCtrl+C",               IDM_EDIT_COPY, GRAYED
+        MENUITEM "&Paste\tCtrl+V",              IDM_EDIT_PASTE, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Select &All\tShift+[Grey +]", IDM_SELECT_ALL
+        MENUITEM "Deselect All\tShift+[Grey -]", IDM_DESELECT_ALL
+        MENUITEM "&Invert Selection\tGrey *",   IDM_INVERT_SELECTION
+        MENUITEM "Select...\tGrey +",           IDM_SELECT
+        MENUITEM "Deselect...\tGrey -",         IDM_DESELECT
+        MENUITEM "Select by Type\tAlt+[Grey+]", IDM_SELECT_BY_TYPE
+        MENUITEM "Deselect by Type\tAlt+[Grey -]", IDM_DESELECT_BY_TYPE
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "Lar&ge Icons\tCtrl+1",        IDM_VIEW_LARGE_ICONS
+        MENUITEM "S&mall Icons\tCtrl+2",        IDM_VIEW_SMALL_ICONS
+        MENUITEM "&List\tCtrl+3",               IDM_VIEW_LIST
+        MENUITEM "&Details\tCtrl+4",            IDM_VIEW_DETAILS, CHECKED
+        MENUITEM SEPARATOR
+        MENUITEM "Name\tCtrl+F3",               IDM_VIEW_ARANGE_BY_NAME
+        MENUITEM "Type\tCtrl+F4",               IDM_VIEW_ARANGE_BY_TYPE
+        MENUITEM "Date\tCtrl+F5",               IDM_VIEW_ARANGE_BY_DATE
+        MENUITEM "Size\tCtrl+F6",               IDM_VIEW_ARANGE_BY_SIZE
+        MENUITEM "Unsorted\tCtrl+F7",           IDM_VIEW_ARANGE_NO_SORT
+        MENUITEM SEPARATOR
+        MENUITEM "Open Root Folder\t\\",        IDM_OPEN_ROOT_FOLDER
+        MENUITEM "Up One Level\tBackspace",     IDM_OPEN_PARENT_FOLDER
+        MENUITEM "Folders History...\tAlt+F12", IDM_FOLDERS_HISTORY
+        MENUITEM SEPARATOR
+        MENUITEM "&Refresh\tCtrl+R",            IDM_VIEW_REFRESH
+    END
+    POPUP "&Tools"
+    BEGIN
+        MENUITEM "&Options...",                 IDM_OPTIONS
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&Contents...\tF1",            IDM_HELP_CONTENTS
+        MENUITEM SEPARATOR
+        MENUITEM "&About 7-Zip...",             IDM_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_FM                  ICON    DISCARDABLE     "FM.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_APP_TITLE           "7-Zip File Manager"
+    IDS_COPY                "Copy"
+    IDS_MOVE                "Move"
+    IDS_COPY_TO             "Copy to:"
+    IDS_MOVE_TO             "Move to:"
+    IDS_COPYING             "Copying..."
+    IDS_MOVING              "Moving..."
+    IDS_CANNOT_COPY         "You cannot move or copy items for such folders."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_OPERATION_IS_NOT_SUPPORTED "Operation is not supported."
+    IDS_CONFIRM_FILE_DELETE "Confirm File Delete"
+    IDS_CONFIRM_FOLDER_DELETE "Confirm Folder Delete"
+    IDS_CONFIRM_ITEMS_DELETE "Confirm Multiple File Delete"
+    IDS_WANT_TO_DELETE_FILE "Are you sure you want to delete '{0}'?"
+    IDS_WANT_TO_DELETE_FOLDER 
+                            "Are you sure you want to delete the folder '{0}' and all its contents?"
+    IDS_WANT_TO_DELETE_ITEMS 
+                            "Are you sure you want to delete these {0} items?"
+    IDS_DELETING            "Deleting..."
+    IDS_ERROR_DELETING      "Error Deleting File or Folder"
+    IDS_RENAMING            "Renaming..."
+    IDS_ERROR_RENAMING      "Error Renaming File or Folder"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CREATE_FOLDER       "Create Folder"
+    IDS_CREATE_FOLDER_NAME  "Folder name:"
+    IDS_CREATE_FOLDER_DEFAULT_NAME "New Folder"
+    IDS_CREATE_FOLDER_ERROR "Error Creating Folder"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CREATE_FILE         "Create File"
+    IDS_CREATE_FILE_NAME    "File Name:"
+    IDS_CREATE_FILE_DEFAULT_NAME "New File"
+    IDS_CREATE_FILE_ERROR   "Error Creating File"
+    IDS_SELECT              "Select"
+    IDS_DESELECT            "Deselect"
+    IDS_SELECT_MASK         "Mask:"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_FOLDERS_HISTORY     "Folders History"
+    IDS_N_SELECTED_ITEMS    "{0} object(s) selected"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROPERTY_TOTAL_SIZE "Total Size"
+    IDS_PROPERTY_FREE_SPACE "Free Space"
+    IDS_PROPERTY_CLUSTER_SIZE "Cluster Size"
+    IDS_PROPERTY_VOLUME_NAME "Label"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROPERTY_LOCAL_NAME "Local Name"
+    IDS_PROPERTY_PROVIDER   "Provider"
+    IDS_OPTIONS             "Options"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_WANT_UPDATE_MODIFIED_FILE 
+                            "File '{0}' was modified.\nDo you want to update it in the archive?"
+    IDS_CANNOT_UPDATE_FILE  "Can not update file\n'{0}'"
+    IDS_CANNOT_START_EDITOR "Cannot start editor."
+    IDS_OPENNING            "Opening..."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_COMPUTER            "Computer"
+    IDS_NETWORK             "Network"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#include "Resource\ComboDialog\resource.rc"
+#include "Resource\ListViewDialog\resource.rc"
+#include "Resource\PropertyName\resource.rc"
+#include "Resource\MessagesDialog\resource.rc"
+#include "Resource\OverwriteDialog\resource.rc"
+#include "Resource\PasswordDialog\resource.rc"
+#include "Resource\ProgressDialog\resource.rc"
+#include "Resource\AboutDialog\resource.rc"
+#include "Resource\LangPage\resource.rc"
+#include "Resource\PluginsPage\resource.rc"
+#include "Resource\SystemPage\resource.rc"
+#include "Resource\EditPage\resource.rc"
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

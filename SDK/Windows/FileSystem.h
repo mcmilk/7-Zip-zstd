@@ -12,15 +12,15 @@ namespace NFile {
 namespace NSystem {
 
 bool MyGetVolumeInformation(
-    LPCTSTR aRootPathName,
-    CSysString &aVolumeName,
-    LPDWORD aVolumeSerialNumber,
-    LPDWORD aMaximumComponentLength,
-    LPDWORD aFileSystemFlags,
-    CSysString &aFileSystemName);
+    LPCTSTR rootPathName,
+    CSysString &volumeName,
+    LPDWORD volumeSerialNumber,
+    LPDWORD maximumComponentLength,
+    LPDWORD fileSystemFlags,
+    CSysString &fileSystemName);
 
-bool MyGetDiskFreeSpace(LPCTSTR aRootPathName,
-    UINT64 &aClusterSize, UINT64 &aTotalSize, UINT64 &aFreeSize);
+bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
+    UINT64 &clusterSize, UINT64 &totalSize, UINT64 &freeSize);
 
 }}}
 

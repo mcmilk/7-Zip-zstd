@@ -10,33 +10,33 @@
 #include "AriConst.h"
 
 #define RC_INIT_VAR                            \
-  UINT32 aRange = aRangeDecoder->m_Range;      \
-  UINT32 aCode = aRangeDecoder->m_Code;        
+  UINT32 range = rangeDecoder->Range;      \
+  UINT32 code = rangeDecoder->Code;        
 
 #define RC_FLUSH_VAR                          \
-  aRangeDecoder->m_Range = aRange;            \
-  aRangeDecoder->m_Code = aCode;
+  rangeDecoder->Range = range;            \
+  rangeDecoder->Code = code;
 
 #define RC_NORMALIZE                                    \
-    if (aRange < NCompression::NArithmetic::kTopValue)               \
+    if (range < NCompression::NArithmetic::kTopValue)               \
     {                                                              \
-      aCode = (aCode << 8) | aRangeDecoder->m_Stream.ReadByte();   \
-      aRange <<= 8; }
+      code = (code << 8) | rangeDecoder->Stream.ReadByte();   \
+      range <<= 8; }
 
 #define RC_GETBIT2(aNumMoveBits, aProb, aModelIndex, Action0, Action1)                        \
-    {UINT32 aNewBound = (aRange >> NCompression::NArithmetic::kNumBitModelTotalBits) * aProb; \
-    if (aCode < aNewBound)                               \
+    {UINT32 aNewBound = (range >> NCompression::NArithmetic::kNumBitModelTotalBits) * aProb; \
+    if (code < aNewBound)                               \
     {                                                             \
       Action0;                                                    \
-      aRange = aNewBound;                                         \
+      range = aNewBound;                                         \
       aProb += (NCompression::NArithmetic::kBitModelTotal - aProb) >> aNumMoveBits;          \
       aModelIndex <<= 1;                                          \
     }                                                             \
     else                                                          \
     {                                                             \
       Action1;                                                    \
-      aRange -= aNewBound;                                        \
-      aCode -= aNewBound;                                          \
+      range -= aNewBound;                                        \
+      code -= aNewBound;                                          \
       aProb -= (aProb) >> aNumMoveBits;                           \
       aModelIndex = (aModelIndex << 1) + 1;                       \
     }}                                                             \

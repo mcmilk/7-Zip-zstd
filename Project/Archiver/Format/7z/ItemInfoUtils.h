@@ -13,11 +13,11 @@ namespace N7z {
 
 enum // PropID
 {
-  kaipidPackedSize0 = kaipidUserDefined,
-  kaipidPackedSize1, 
-  kaipidPackedSize2,
-  kaipidPackedSize3,
-  kaipidPackedSize4,
+  kpidPackedSize0 = kpidUserDefined,
+  kpidPackedSize1, 
+  kpidPackedSize2,
+  kpidPackedSize3,
+  kpidPackedSize4,
 };
 
 class CEnumArchiveItemProperty:

@@ -11,71 +11,71 @@ namespace NWindows {
 namespace NFile {
 namespace NDirectory {
 
-bool MyCreateDirectory(LPCTSTR aPathName);
-bool CreateComplexDirectory(LPCTSTR aPathName);
+bool MyCreateDirectory(LPCTSTR pathName);
+bool CreateComplexDirectory(LPCTSTR pathName);
 
-bool DeleteFileAlways(LPCTSTR aName);
-bool RemoveDirectoryWithSubItems(const CSysString &aPath);
+bool DeleteFileAlways(LPCTSTR name);
+bool RemoveDirectoryWithSubItems(const CSysString &path);
 
 #ifndef _WIN32_WCE
-bool MyGetShortPathName(LPCTSTR aLongPath, CSysString &aShortPath);
+bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath);
 
-bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath, 
-    int &aFileNamePartStartIndex);
-bool MyGetFullPathName(LPCTSTR aFileName, CSysString &aResultPath);
-bool GetOnlyName(LPCTSTR aFileName, CSysString &aResultName);
-bool GetOnlyDirPrefix(LPCTSTR aFileName, CSysString &aResultName);
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, 
+    int &fileNamePartStartIndex);
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath);
+bool GetOnlyName(LPCTSTR fileName, CSysString &resultName);
+bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName);
 
-bool MyGetCurrentDirectory(CSysString &aResultPath);
+bool MyGetCurrentDirectory(CSysString &resultPath);
 #endif
 
-bool MySearchPath(LPCTSTR aPath, LPCTSTR aFileName, LPCTSTR anExtension, 
-  CSysString &aResultPath, UINT32 &aFilePart);
+bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, 
+  CSysString &resultPath, UINT32 &filePart);
 
-inline bool MySearchPath(LPCTSTR aPath, LPCTSTR aFileName, LPCTSTR anExtension, 
-  CSysString &aResultPath)
+inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, 
+  CSysString &resultPath)
 {
-  UINT32 aValue;
-  return MySearchPath(aPath, aFileName, anExtension, aResultPath, aValue);
+  UINT32 value;
+  return MySearchPath(path, fileName, extension, resultPath, value);
 }
 
 
 
-bool MyGetTempPath(CSysString &aResultPath);
+bool MyGetTempPath(CSysString &resultPath);
 
-UINT MyGetTempFileName(LPCTSTR aDirPath, LPCTSTR aPrefix, CSysString &aResultPath);
+UINT MyGetTempFileName(LPCTSTR dirPath, LPCTSTR prefix, CSysString &resultPath);
 
 class CTempFile
 {
-  bool m_MustBeDeleted;
-  CSysString m_FileName;
+  bool _mustBeDeleted;
+  CSysString _fileName;
 public:
-  CTempFile(): m_MustBeDeleted(false) {}
+  CTempFile(): _mustBeDeleted(false) {}
   ~CTempFile() { Remove(); }
-  void DisableDeleting() {  m_MustBeDeleted = false; }
+  void DisableDeleting() {  _mustBeDeleted = false; }
 
-  UINT Create(LPCTSTR aDirPath, LPCTSTR aPrefix, CSysString &aResultPath);
-  bool Create(LPCTSTR aPrefix, CSysString &aResultPath);
+  UINT Create(LPCTSTR dirPath, LPCTSTR prefix, CSysString &resultPath);
+  bool Create(LPCTSTR prefix, CSysString &resultPath);
   bool Remove();
 };
 
-bool CreateTempDirectory(LPCTSTR aPrefixChars, CSysString &aDirName);
+bool CreateTempDirectory(LPCTSTR prefixChars, CSysString &dirName);
 
 class CTempDirectory
 {
-  bool m_MustBeDeleted;
-  CSysString m_TempDir;
+  bool _mustBeDeleted;
+  CSysString _tempDir;
 public:
-  const CSysString &GetPath() const { return m_TempDir; }
-  CTempDirectory(): m_MustBeDeleted(false) {}
+  const CSysString &GetPath() const { return _tempDir; }
+  CTempDirectory(): _mustBeDeleted(false) {}
   ~CTempDirectory() { Remove();  }
-  bool Create(LPCTSTR aPrefix) ;
+  bool Create(LPCTSTR prefix) ;
   bool Remove()
   {
-    if (!m_MustBeDeleted)
+    if (!_mustBeDeleted)
       return true;
-    m_MustBeDeleted = !NFile::NDirectory::RemoveDirectoryWithSubItems(m_TempDir);
-    return (!m_MustBeDeleted);
+    _mustBeDeleted = !NFile::NDirectory::RemoveDirectoryWithSubItems(_tempDir);
+    return (!_mustBeDeleted);
   }
 };
 

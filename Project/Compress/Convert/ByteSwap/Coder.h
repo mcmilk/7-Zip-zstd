@@ -18,7 +18,7 @@ DEFINE_GUID(CLSID_CCompressConvertByteSwap4,
 class CBuffer
 {
 protected:
-  BYTE *m_Buffer;
+  BYTE *_buffer;
 public:
   CBuffer();
   ~CBuffer();
@@ -38,9 +38,9 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CByteSwap2)
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CByteSwap2, "Compress.ConvertSwap2.1", "Compress.ConvertSwap2", 0, THREADFLAGS_APARTMENT)
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 };
 
 class CByteSwap4 : 
@@ -56,9 +56,9 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CByteSwap4)
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CByteSwap2, "Compress.ConvertSwap4.1", "Compress.ConvertSwap4", 0, THREADFLAGS_APARTMENT)
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 };
 
 

@@ -14,14 +14,14 @@ namespace NControl {
 class CStatic: public CWindow
 {
 public:
-  HICON SetIcon(HICON anIcon)
-    { return (HICON)SendMessage(STM_SETICON, (WPARAM)anIcon, 0); }
+  HICON SetIcon(HICON icon)
+    { return (HICON)SendMessage(STM_SETICON, (WPARAM)icon, 0); }
   HICON GetIcon()
     { return (HICON)SendMessage(STM_GETICON, 0, 0); }
-  HANDLE SetImage(WPARAM anImageType, HANDLE aHandle)
-    { return (HANDLE)SendMessage(STM_SETIMAGE, anImageType, (LPARAM)aHandle); }
-  HANDLE GetImage(WPARAM anImageType)
-    { return (HANDLE)SendMessage(STM_GETIMAGE, anImageType, 0); }
+  HANDLE SetImage(WPARAM imageType, HANDLE handle)
+    { return (HANDLE)SendMessage(STM_SETIMAGE, imageType, (LPARAM)handle); }
+  HANDLE GetImage(WPARAM imageType)
+    { return (HANDLE)SendMessage(STM_GETIMAGE, imageType, 0); }
 };
 
 }}

@@ -13,143 +13,150 @@ namespace NWindows {
 class CWindow
 {
 private:
-   // bool ModifyStyleBase(int aStyleOffset, DWORD aRemove, DWORD anAdd, UINT aFlags);
+   // bool ModifyStyleBase(int styleOffset, DWORD remove, DWORD add, UINT flags);
 protected:
-  HWND m_Window;
+  HWND _window;
 public:
-  CWindow(HWND aWindowNew = NULL): m_Window(aWindowNew){};
-  CWindow& operator=(HWND aWindowNew)
+  CWindow(HWND newWindow = NULL): _window(newWindow){};
+  CWindow& operator=(HWND newWindow)
   {
-    m_Window = aWindowNew;
+    _window = newWindow;
     return *this;
   }
-  operator HWND() const { return m_Window; }
-  void Attach(HWND aWindowNew)
-    { m_Window = aWindowNew; }
+  operator HWND() const { return _window; }
+  void Attach(HWND newWindow)
+    { _window = newWindow; }
   HWND Detach()
   {
-    HWND aWindow = m_Window;
-    m_Window = NULL;
-    return aWindow;
+    HWND window = _window;
+    _window = NULL;
+    return window;
   }
 
   HWND GetParent() const 
-    { return ::GetParent(m_Window); }
-  bool GetWindowRect(LPRECT aRect) const
-    { return BOOLToBool(::GetWindowRect(m_Window,aRect )); }
+    { return ::GetParent(_window); }
+  bool GetWindowRect(LPRECT rect) const
+    { return BOOLToBool(::GetWindowRect(_window,rect )); }
+  bool IsZoomed() const
+    { return BOOLToBool(::IsZoomed(_window)); }
 
-  bool ClientToScreen(LPPOINT aPoint) const
-    { return BOOLToBool(::ClientToScreen(m_Window, aPoint)); }
+  bool ClientToScreen(LPPOINT point) const
+    { return BOOLToBool(::ClientToScreen(_window, point)); }
 
-  bool ScreenToClient(LPPOINT aPoint) const
-    { return BOOLToBool(::ScreenToClient(m_Window, aPoint)); }
+  bool ScreenToClient(LPPOINT point) const
+    { return BOOLToBool(::ScreenToClient(_window, point)); }
 
-  bool CreateEx(DWORD anExStyle, LPCTSTR aClassName,
-      LPCTSTR aWindowName, DWORD aStyle,
-      int x, int y, int aWidth, int aHeight,
-      HWND aParentWindow, HMENU anIDorHMenu, 
-      HINSTANCE anInstance, LPVOID aCreateParam)
+  bool CreateEx(DWORD exStyle, LPCTSTR className,
+      LPCTSTR windowName, DWORD style,
+      int x, int y, int width, int height,
+      HWND parentWindow, HMENU idOrHMenu, 
+      HINSTANCE instance, LPVOID createParam)
   {
-    m_Window = ::CreateWindowEx(anExStyle, aClassName, aWindowName,
-      aStyle, x, y, aWidth, aHeight, aParentWindow, 
-      anIDorHMenu, anInstance, aCreateParam);
-    return (m_Window != NULL);
+    _window = ::CreateWindowEx(exStyle, className, windowName,
+      style, x, y, width, height, parentWindow, 
+      idOrHMenu, instance, createParam);
+    return (_window != NULL);
   }
 
   bool Destroy()
   {
-    if (m_Window == NULL)
+    if (_window == NULL)
       return true;
-    bool aResult = BOOLToBool(::DestroyWindow(m_Window));
-    if(aResult)
-      m_Window = NULL;
-    return aResult;
+    bool result = BOOLToBool(::DestroyWindow(_window));
+    if(result)
+      _window = NULL;
+    return result;
   }
   bool IsWindow()
-    {  return BOOLToBool(::IsWindow(m_Window)); }
-  bool MoveWindow(int x, int y, int aWidth, int aHeight, bool aRepaint = true)
-    { return BOOLToBool(::MoveWindow(m_Window, x, y, aWidth, aHeight, BoolToBOOL(aRepaint))); }
-  bool GetClientRect(LPRECT aRect)
-    { return BOOLToBool(::GetClientRect(m_Window, aRect)); }
-  bool ShowWindow(int aCmdShow)
-    { return BOOLToBool(::ShowWindow(m_Window, aCmdShow)); }
-  bool UpdateWindow()
-    { return BOOLToBool(::UpdateWindow(m_Window)); }
-  bool InvalidateRect(LPCRECT aRect, bool aBackgroundErase = true)
-    { return BOOLToBool(::InvalidateRect(m_Window, aRect, BoolToBOOL(aBackgroundErase))); }
-  void SetRedraw(bool aRedraw = true)
-    { SendMessage(WM_SETREDRAW, BoolToBOOL(aRedraw), 0); }
+    {  return BOOLToBool(::IsWindow(_window)); }
+  bool Move(int x, int y, int width, int height, bool repaint = true)
+    { return BOOLToBool(::MoveWindow(_window, x, y, width, height, BoolToBOOL(repaint))); }
+  bool GetClientRect(LPRECT rect)
+    { return BOOLToBool(::GetClientRect(_window, rect)); }
+  bool Show(int cmdShow)
+    { return BOOLToBool(::ShowWindow(_window, cmdShow)); }
+  bool SetPlacement(CONST WINDOWPLACEMENT *placement)
+    { return BOOLToBool(::SetWindowPlacement(_window, placement)); }
+  bool GetPlacement(WINDOWPLACEMENT *placement)
+    { return BOOLToBool(::GetWindowPlacement(_window, placement)); }
+
+  bool Update()
+    { return BOOLToBool(::UpdateWindow(_window)); }
+  bool InvalidateRect(LPCRECT rect, bool backgroundErase = true)
+    { return BOOLToBool(::InvalidateRect(_window, rect, BoolToBOOL(backgroundErase))); }
+  void SetRedraw(bool redraw = true)
+    { SendMessage(WM_SETREDRAW, BoolToBOOL(redraw), 0); }
 
   #ifndef _WIN32_WCE
-  LONG SetStyle(LONG_PTR aStyle)
-    { return SetLongPtr(GWL_STYLE, aStyle); }
+  LONG SetStyle(LONG_PTR style)
+    { return SetLongPtr(GWL_STYLE, style); }
   DWORD GetStyle( ) const
     { return GetLongPtr(GWL_STYLE); }
   #else
-  LONG SetStyle(LONG_PTR aStyle)
-    { return SetLong(GWL_STYLE, aStyle); }
+  LONG SetStyle(LONG_PTR style)
+    { return SetLong(GWL_STYLE, style); }
   DWORD GetStyle( ) const
     { return GetLong(GWL_STYLE); }
   #endif
 
-  LONG_PTR SetLong(int anIndex, LONG_PTR aNewLongPtr )
-    { return ::SetWindowLong(m_Window, anIndex, aNewLongPtr); }
-  LONG_PTR GetLong(int anIndex) const
-    { return ::GetWindowLong(m_Window, anIndex ); }
-  LONG_PTR SetUserDataLong(LONG_PTR aNewLongPtr )
-    { return SetLong(GWL_USERDATA, aNewLongPtr); }
+  LONG_PTR SetLong(int index, LONG_PTR newLongPtr )
+    { return ::SetWindowLong(_window, index, newLongPtr); }
+  LONG_PTR GetLong(int index) const
+    { return ::GetWindowLong(_window, index ); }
+  LONG_PTR SetUserDataLong(LONG_PTR newLongPtr )
+    { return SetLong(GWL_USERDATA, newLongPtr); }
   LONG_PTR GetUserDataLong() const
     { return GetLong(GWL_USERDATA); }
 
   #ifndef _WIN32_WCE
-  LONG_PTR SetLongPtr(int anIndex, LONG_PTR aNewLongPtr )
-    { return ::SetWindowLongPtr(m_Window, anIndex, aNewLongPtr); }
-  LONG_PTR GetLongPtr(int anIndex) const
-    { return ::GetWindowLongPtr(m_Window, anIndex ); }
-  LONG_PTR SetUserDataLongPtr(LONG_PTR aNewLongPtr )
-    { return SetLongPtr(GWLP_USERDATA, aNewLongPtr); }
+  LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr )
+    { return ::SetWindowLongPtr(_window, index, newLongPtr); }
+  LONG_PTR GetLongPtr(int index) const
+    { return ::GetWindowLongPtr(_window, index ); }
+  LONG_PTR SetUserDataLongPtr(LONG_PTR newLongPtr )
+    { return SetLongPtr(GWLP_USERDATA, newLongPtr); }
   LONG_PTR GetUserDataLongPtr() const
     { return GetLongPtr(GWLP_USERDATA); }
   #endif
   
   /*
-  bool ModifyStyle(HWND hWnd, DWORD aRemove, DWORD anAdd, UINT aFlags = 0)
-    {  return ModifyStyleBase(GWL_STYLE, aRemove, anAdd, aFlags); }
-  bool ModifyStyleEx(HWND hWnd, DWORD aRemove, DWORD anAdd, UINT aFlags = 0)
-    { return ModifyStyleBase(GWL_EXSTYLE, aRemove, anAdd, aFlags); }
+  bool ModifyStyle(HWND hWnd, DWORD remove, DWORD add, UINT flags = 0)
+    {  return ModifyStyleBase(GWL_STYLE, remove, add, flags); }
+  bool ModifyStyleEx(HWND hWnd, DWORD remove, DWORD add, UINT flags = 0)
+    { return ModifyStyleBase(GWL_EXSTYLE, remove, add, flags); }
   */
  
   HWND SetFocus()
-    { return ::SetFocus(m_Window); }
+    { return ::SetFocus(_window); }
 
   LRESULT SendMessage(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    {  return ::SendMessage(m_Window, message, wParam, lParam) ;}
+    {  return ::SendMessage(_window, message, wParam, lParam) ;}
   bool PostMessage(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    {  return BOOLToBool(::PostMessage(m_Window, message, wParam, lParam)) ;}
+    {  return BOOLToBool(::PostMessage(_window, message, wParam, lParam)) ;}
 
-  bool SetText(LPCTSTR aString)
-    { return BOOLToBool(::SetWindowText(m_Window, aString)); }
+  bool SetText(LPCTSTR string)
+    { return BOOLToBool(::SetWindowText(_window, string)); }
   int GetTextLength() const 
-    { return GetWindowTextLength(m_Window); }
-  UINT GetText(LPTSTR aString, int aMaxCount) const
-    { return GetWindowText(m_Window, aString, aMaxCount); }
-  bool GetText(CSysString &aString);
+    { return GetWindowTextLength(_window); }
+  UINT GetText(LPTSTR string, int maxCount) const
+    { return GetWindowText(_window, string, maxCount); }
+  bool GetText(CSysString &string);
 
-  bool Enable(bool anEnable)
-    { return BOOLToBool(::EnableWindow(m_Window, BoolToBOOL(anEnable))); }
+  bool Enable(bool enable)
+    { return BOOLToBool(::EnableWindow(_window, BoolToBOOL(enable))); }
   
   bool IsEnabled()
-    { return BOOLToBool(::IsWindowEnabled(m_Window)); }
+    { return BOOLToBool(::IsWindowEnabled(_window)); }
   
   #ifndef _WIN32_WCE
-  HMENU GetSystemMenu(bool aRevert)
-    { return ::GetSystemMenu(m_Window, BoolToBOOL(aRevert)); }
+  HMENU GetSystemMenu(bool revert)
+    { return ::GetSystemMenu(_window, BoolToBOOL(revert)); }
   #endif
 
-  UINT_PTR SetTimer(UINT_PTR anIDEvent, UINT anElapse, TIMERPROC lpTimerFunc = 0)
-    { return ::SetTimer(m_Window, anIDEvent, anElapse, lpTimerFunc); }
-  bool KillTimer(UINT_PTR anIDEvent)
-    {return BOOLToBool(::KillTimer(m_Window, anIDEvent)); }
+  UINT_PTR SetTimer(UINT_PTR idEvent, UINT elapse, TIMERPROC timerFunc = 0)
+    { return ::SetTimer(_window, idEvent, elapse, timerFunc); }
+  bool KillTimer(UINT_PTR idEvent)
+    {return BOOLToBool(::KillTimer(_window, idEvent)); }
 };
 
 }

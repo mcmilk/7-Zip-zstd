@@ -16,34 +16,34 @@ class CComboBox: public CWindow
 public:
   void ResetContent()
     { SendMessage(CB_RESETCONTENT, 0, 0); }
-  int AddString(LPCTSTR aString)
-    { return SendMessage(CB_ADDSTRING, 0, (LPARAM)aString); }
-  int SetCurSel(int anIndex)
-    { return SendMessage(CB_SETCURSEL, anIndex, 0); }
+  int AddString(LPCTSTR string)
+    { return SendMessage(CB_ADDSTRING, 0, (LPARAM)string); }
+  int SetCurSel(int index)
+    { return SendMessage(CB_SETCURSEL, index, 0); }
   int GetCurSel()
     { return SendMessage(CB_GETCURSEL, 0, 0); }
   int GetCount()
     { return SendMessage(CB_GETCOUNT, 0, 0); }
   
-  int GetLBTextLen(int anIndex)
-    { return SendMessage(CB_GETLBTEXTLEN, anIndex, 0); }
-  int GetLBText(int anIndex, LPTSTR aString)
-    { return SendMessage(CB_GETLBTEXT, anIndex, (LPARAM)aString); }
-  int GetLBText(int anIndex, CSysString &aString);
+  int GetLBTextLen(int index)
+    { return SendMessage(CB_GETLBTEXTLEN, index, 0); }
+  int GetLBText(int index, LPTSTR string)
+    { return SendMessage(CB_GETLBTEXT, index, (LPARAM)string); }
+  int GetLBText(int index, CSysString &string);
 
-  int SetItemData(int anIndex, LPARAM lParam)
-    { return SendMessage(CB_SETITEMDATA, anIndex, lParam); }
-  int GetItemData(int anIndex)
-    { return SendMessage(CB_GETITEMDATA, anIndex, 0); }
+  int SetItemData(int index, LPARAM lParam)
+    { return SendMessage(CB_SETITEMDATA, index, lParam); }
+  int GetItemData(int index)
+    { return SendMessage(CB_GETITEMDATA, index, 0); }
 };
 
 class CComboBoxEx: public CWindow
 {
 public:
-  int DeleteItem(int anIndex)
-    { SendMessage(CBEM_DELETEITEM, anIndex, 0); }
-  int InsertItem(COMBOBOXEXITEM *anItem)
-    { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)anItem); }
+  int DeleteItem(int index)
+    { SendMessage(CBEM_DELETEITEM, index, 0); }
+  int InsertItem(COMBOBOXEXITEM *item)
+    { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)item); }
 };
 
 }}

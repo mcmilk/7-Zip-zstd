@@ -14,10 +14,10 @@ class CLimitedSequentialInStream:
   public ISequentialInStream,
   public CComObjectRoot
 {
-  UINT64 m_Size;
-  CComPtr<ISequentialInStream> m_Stream;
+  UINT64 _size;
+  CComPtr<ISequentialInStream> _stream;
 public:
-  void Init(ISequentialInStream *aStream, UINT64 aStreamSize);
+  void Init(ISequentialInStream *stream, UINT64 streamSize);
  
 BEGIN_COM_MAP(CLimitedSequentialInStream)
   COM_INTERFACE_ENTRY(ISequentialInStream)
@@ -26,8 +26,8 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CLimitedSequentialInStream)
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
 };
 
 #endif

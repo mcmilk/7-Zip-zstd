@@ -48,7 +48,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 21  Copyright (c) 1999-2002 Igor Pavlov  2002-07-08\n";
+" 2.30 Beta 22  Copyright (c) 1999-2002 Igor Pavlov  2002-08-31\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -400,9 +400,24 @@ bool ParseArchiveCommand(const AString &aCommandString, CArchiveCommand &aComman
 // ------------------------------------------------------------------
 // filenames functions
 
+static bool TestIsPathLegal(const UString &aName)
+{
+  if (aName.Length() == 0)
+    return false;
+  if (aName[0] == L'\\' || aName[0] == L'/')
+    return false;
+  if (aName.Length() < 3)
+    return true;
+  if (aName[1] == L':' && aName[2] == L'\\')
+    return false;
+  return true;
+}
+
 static bool AddNameToCensor(NWildcard::CCensor &aWildcardCensor, 
     const UString &aName, bool anInclude, NRecursedType::EEnum aType)
 {
+  if (!TestIsPathLegal(aName))
+    throw "Can't use absolute paths";
   /*
   if(!IsWildCardFilePathLegal(aName))
     return false;
@@ -891,7 +906,7 @@ int Main2(int aNumArguments, const char *anArguments[])
     PrintHelp();
     return 0;
   }
-  const AStringVector &aNonSwitchStrings = aParser.m_NonSwitchStrings;
+  const AStringVector &aNonSwitchStrings = aParser._nonSwitchStrings;
 
   int aNumNonSwitchStrings = aNonSwitchStrings.Size();
   if(aNumNonSwitchStrings < kMinNonSwitchWords)  

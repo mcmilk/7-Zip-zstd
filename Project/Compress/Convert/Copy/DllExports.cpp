@@ -5,12 +5,12 @@
 #include <initguid.h>
 
 #include "Interface/ICoder.h"
-#include "Coder.h"
+#include "Compression/CopyCoder.h"
 
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
-  OBJECT_ENTRY(CLSID_CCompressCopyCoder, NCompress::CCopyCoder)
+  OBJECT_ENTRY(CLSID_CCompressionCopyCoder, NCompression::CCopyCoder)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

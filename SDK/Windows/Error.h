@@ -10,12 +10,12 @@
 namespace NWindows {
 namespace NError {
 
-bool MyFormatMessage(DWORD aMessageID, CSysString &aMessage);
-inline CSysString MyFormatMessage(DWORD aMessageID)
+bool MyFormatMessage(DWORD messageID, CSysString &message);
+inline CSysString MyFormatMessage(DWORD messageID)
 {
-  CSysString aMessage;
-  MyFormatMessage(aMessageID, aMessage);
-  return aMessage;
+  CSysString message;
+  MyFormatMessage(messageID, message);
+  return message;
 }
 
 }}

@@ -15,20 +15,20 @@ static LPCTSTR kFileOpenMode = _T("rt");
 
 CStdInStream g_StdIn(stdin);
 
-bool CStdInStream::Open(LPCTSTR aFileName)
+bool CStdInStream::Open(LPCTSTR fileName)
 {
   Close();
-  m_Stream = _tfopen(aFileName, kFileOpenMode);
-  m_StreamIsOpen = (m_Stream != 0);
-  return m_StreamIsOpen;
+  _stream = _tfopen(fileName, kFileOpenMode);
+  _streamIsOpen = (_stream != 0);
+  return _streamIsOpen;
 }
 
 bool CStdInStream::Close()
 {
-  if(!m_StreamIsOpen)
+  if(!_streamIsOpen)
     return true;
-  m_StreamIsOpen = (fclose(m_Stream) != 0);
-  return !m_StreamIsOpen;
+  _streamIsOpen = (fclose(_stream) != 0);
+  return !_streamIsOpen;
 }
 
 CStdInStream::~CStdInStream()
@@ -38,7 +38,7 @@ CStdInStream::~CStdInStream()
 
 AString CStdInStream::ScanStringUntilNewLine()
 {
-  AString aString;
+  AString string;
   while(true)
   {
     int aIntChar = GetChar();
@@ -48,30 +48,30 @@ AString CStdInStream::ScanStringUntilNewLine()
     if (aChar == kIllegalChar)
       throw kIllegalCharMessage;
     if(aChar == kNewLineChar)
-      return aString;
-    aString += aChar;
+      return string;
+    string += aChar;
   }
 }
 
-void CStdInStream::ReadToString(AString &aResult)
+void CStdInStream::ReadToString(AString &resultString)
 {
-  aResult.Empty();
-  int anIntChar;
-  while((anIntChar = GetChar()) != EOF)
-    aResult += char(anIntChar);
+  resultString.Empty();
+  int c;
+  while((c = GetChar()) != EOF)
+    resultString += char(c);
 }
 
 bool CStdInStream::Eof()
 {
-  return (feof(m_Stream) != 0);
+  return (feof(_stream) != 0);
 }
 
 int CStdInStream::GetChar()
 {
-  int aIntChar = getc(m_Stream);
-  if(aIntChar == EOF && !Eof())
+  int c = getc(_stream);
+  if(c == EOF && !Eof())
     throw kReadErrorMessage;
-  return aIntChar;
+  return c;
 }
 
 

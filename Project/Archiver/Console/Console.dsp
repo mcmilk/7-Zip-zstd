@@ -385,14 +385,6 @@ SOURCE=..\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ExtractAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractAutoRename.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Format\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
@@ -570,6 +562,18 @@ SOURCE=..\..\..\SDK\Compression\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Compression\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "Utils"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Util\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Util\FilePathAutoRename.h
 # End Source File
 # End Group
 # End Target

@@ -58,13 +58,13 @@ DEFINE_GUID(BT_CLSID,
 
 class CInTree2: public CInTree
 {
-  CComPtr<IMatchFinderCallback> m_Callback;
+  CComPtr<IMatchFinderCallback> _callback;
   virtual void BeforeMoveBlock();
   virtual void AfterMoveBlock();
 public:
-  void SetCallback(IMatchFinderCallback *aCallback)
+  void SetCallback(IMatchFinderCallback *callback)
   {
-    m_Callback = aCallback;
+    _callback = callback;
   }
 };
 
@@ -83,32 +83,32 @@ DECLARE_NOT_AGGREGATABLE(CMatchFinderBinTree)
 
 DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Init)(ISequentialInStream *aStream);
+  STDMETHOD(Init)(ISequentialInStream *stream);
   STDMETHOD_(void, ReleaseStream)();
   STDMETHOD(MovePos)();
-  STDMETHOD_(BYTE, GetIndexByte)(UINT32 anIndex);
-  STDMETHOD_(UINT32, GetMatchLen)(UINT32 aIndex, UINT32 aBack, UINT32 aLimit);
+  STDMETHOD_(BYTE, GetIndexByte)(UINT32 index);
+  STDMETHOD_(UINT32, GetMatchLen)(UINT32 index, UINT32 back, UINT32 limit);
   STDMETHOD_(UINT32, GetNumAvailableBytes)();
   STDMETHOD_(const BYTE *, GetPointerToCurrentPos)();
-  STDMETHOD(Create)(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter);
-  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *aDistances);
+  STDMETHOD(Create)(UINT32 sizeHistory, 
+      UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
+      UINT32 keepAddBufferAfter);
+  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
 
   // IMatchFinderSetCallback
-  STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback);
+  STDMETHOD(SetCallback)(IMatchFinderCallback *callback);
 
 private:
   // UINT32 m_WindowReservSize;
-  CInTree2 m_MatchFinder;
+  CInTree2 _matchFinder;
 public:
   // CMatchFinderBinTree(): m_WindowReservSize((1 << 19) + 256) {};
-  void SetCutValue(UINT32 aCutValue) 
-    { m_MatchFinder.SetCutValue(aCutValue); }
+  void SetCutValue(UINT32 cutValue) 
+    { _matchFinder.SetCutValue(cutValue); }
   /*
-  void SetWindowReservSize(UINT32 aReservWindowSize)
-    { m_WindowReservSize = aReservWindowSize; }
+  void SetWindowReservSize(UINT32 reservWindowSize)
+    { m_WindowReservSize = reservWindowSize; }
   */
 };
  

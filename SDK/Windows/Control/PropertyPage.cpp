@@ -7,28 +7,30 @@
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY ProperyPageProcedure(HWND aDialogHWND, UINT aMessage, 
+BOOL APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message, 
     UINT wParam, LONG lParam)
 {
-  CDialog aDialogTmp(aDialogHWND);
-  if (aMessage == WM_INITDIALOG)
-    aDialogTmp.SetUserDataLongPtr(((PROPSHEETPAGE *)lParam)->lParam);
-  CDialog *aDialog = (CDialog *)(aDialogTmp.GetUserDataLongPtr());
-  if (aMessage == WM_INITDIALOG)
-    aDialog->Attach(aDialogHWND);
-  switch (aMessage)
+  CDialog tempDialog(dialogHWND);
+  if (message == WM_INITDIALOG)
+    tempDialog.SetUserDataLongPtr(((PROPSHEETPAGE *)lParam)->lParam);
+  CDialog *dialog = (CDialog *)(tempDialog.GetUserDataLongPtr());
+  if (message == WM_INITDIALOG)
+    dialog->Attach(dialogHWND);
+  switch (message)
   {
     case WM_INITDIALOG:
-      return aDialog->OnInit();
+      return dialog->OnInit();
     case WM_COMMAND:
-      return aDialog->OnCommand(wParam, lParam);
+      return dialog->OnCommand(wParam, lParam);
     case WM_NOTIFY:
-      return aDialog->OnNotify(wParam, (LPNMHDR) lParam);
+      return dialog->OnNotify(wParam, (LPNMHDR) lParam);
   }
-  return false;
+  if (dialog == NULL)
+    return false;
+  return dialog->OnMessage(message, wParam, lParam);
 }
 
-bool CPropertyPage::OnNotify(UINT aControlID, LPNMHDR lParam) 
+bool CPropertyPage::OnNotify(UINT controlID, LPNMHDR lParam) 
 {
   switch(lParam->code)
   {

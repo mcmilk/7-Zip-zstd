@@ -29,7 +29,7 @@ using namespace NFile;
 using namespace NComandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 2.30 Beta 20  Copyright (c) 1999-2002 Igor Pavlov  2002-07-01\n";
+"\n7-Zip SFX 2.30 Beta 22  Copyright (c) 1999-2002 Igor Pavlov  2002-08-31\n";
 
 static const int kNumSwitches = 6;
 
@@ -398,7 +398,7 @@ int Main2(int aNumArguments, const char *anArguments[])
     PrintHelp();
     return 0;
   }
-  const AStringVector &aNonSwitchStrings = aParser.m_NonSwitchStrings;
+  const AStringVector &aNonSwitchStrings = aParser._nonSwitchStrings;
 
   int aNumNonSwitchStrings = aNonSwitchStrings.Size();
   /*

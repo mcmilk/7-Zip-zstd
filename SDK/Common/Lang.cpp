@@ -10,42 +10,42 @@
 #include "Defs.h"
 
 /*
-static UINT32 HexStringToNumber(const char *aString, int &aFinishPos)
+static UINT32 HexStringToNumber(const char *string, int &finishPos)
 {
-  UINT32 aNumber = 0;
-  for (aFinishPos = 0; aFinishPos < 8; aFinishPos++)
+  UINT32 number = 0;
+  for (finishPos = 0; finishPos < 8; finishPos++)
   {
-    char aChar = aString[aFinishPos];
+    char c = string[finishPos];
     int a;
-    if (aChar >= '0' && aChar <= '9')
-      a = aChar - '0';
-    else if (aChar >= 'A' && aChar <= 'F')
-      a = 10 + aChar - 'A';
-    else if (aChar >= 'a' && aChar <= 'f')
-      a = 10 + aChar - 'a';
+    if (c >= '0' && c <= '9')
+      a = c - '0';
+    else if (c >= 'A' && c <= 'F')
+      a = 10 + c - 'A';
+    else if (c >= 'a' && c <= 'f')
+      a = 10 + c - 'a';
     else
-      return aNumber;
-    aNumber *= 0x10;
-    aNumber += a;
+      return number;
+    number *= 0x10;
+    number += a;
   }
-  return aNumber;
+  return number;
 }
 */
-static bool HexStringToNumber(const UString &aString, UINT32 &aResultValue)
+static bool HexStringToNumber(const UString &string, UINT32 &aResultValue)
 {
   aResultValue = 0;
-  if (aString.IsEmpty())
+  if (string.IsEmpty())
     return false;
-  for (int i = 0; i < aString.Length(); i++)
+  for (int i = 0; i < string.Length(); i++)
   {
-    wchar_t aChar = aString[i];
+    wchar_t c = string[i];
     int a;
-    if (aChar >= L'0' && aChar <= L'9')
-      a = aChar - L'0';
-    else if (aChar >= L'A' && aChar <= L'F')
-      a = 10 + aChar - L'A';
-    else if (aChar >= L'a' && aChar <= L'f')
-      a = 10 + aChar - L'a';
+    if (c >= L'0' && c <= L'9')
+      a = c - L'0';
+    else if (c >= L'A' && c <= L'F')
+      a = 10 + c - L'A';
+    else if (c >= L'a' && c <= L'f')
+      a = 10 + c - L'a';
     else
       return false;
     aResultValue *= 0x10;
@@ -55,90 +55,90 @@ static bool HexStringToNumber(const UString &aString, UINT32 &aResultValue)
 }
 
 
-static bool WaitNextLine(const AString &aString, int &aPos)
+static bool WaitNextLine(const AString &string, int &pos)
 {
-  for (;aPos < aString.Length(); aPos++)
-    if (aString[aPos] == 0x0A)
+  for (;pos < string.Length(); pos++)
+    if (string[pos] == 0x0A)
       return true;
   return false;
 }
 
-static int CompareLangItems( const void *anElem1, const void *anElem2)
+static int CompareLangItems( const void *elem1, const void *elem2)
 {
-  const CLangPair &aLangPair1 = *(*((const CLangPair **)anElem1));
-  const CLangPair &aLangPair2 = *(*((const CLangPair **)anElem2));
-  return MyCompare(aLangPair1.Value, aLangPair2.Value);
+  const CLangPair &langPair1 = *(*((const CLangPair **)elem1));
+  const CLangPair &langPair2 = *(*((const CLangPair **)elem2));
+  return MyCompare(langPair1.Value, langPair2.Value);
 }
 
-bool CLang::Open(LPCTSTR aFileName)
+bool CLang::Open(LPCTSTR fileName)
 {
-  m_LangPairs.Clear();
-  CStdInStream aFile;
-  if (!aFile.Open(aFileName))
+  _langPairs.Clear();
+  CStdInStream file;
+  if (!file.Open(fileName))
     return false;
-  AString aString;
-  aFile.ReadToString(aString);
-  aFile.Close();
-  int aPos = 0;
-  if (aString.Length() >= 3)
+  AString string;
+  file.ReadToString(string);
+  file.Close();
+  int pos = 0;
+  if (string.Length() >= 3)
   {
-    if (BYTE(aString[0]) == 0xEF && BYTE(aString[1]) == 0xBB && BYTE(aString[2]) == 0xBF)
-      aPos += 3;
+    if (BYTE(string[0]) == 0xEF && BYTE(string[1]) == 0xBB && BYTE(string[2]) == 0xBF)
+      pos += 3;
   }
 
   /////////////////////
   // read header
 
-  AString aStringID = ";!@Lang@!UTF-8!";
-  if (aString.Mid(aPos, aStringID.Length()) != aStringID)
+  AString stringID = ";!@Lang@!UTF-8!";
+  if (string.Mid(pos, stringID.Length()) != stringID)
     return false;
-  aPos += aStringID.Length();
+  pos += stringID.Length();
   
-  if (!WaitNextLine(aString, aPos))
+  if (!WaitNextLine(string, pos))
     return false;
 
-  CObjectVector<CTextConfigPair> aPairs;
-  if (!GetTextConfig(aString.Mid(aPos),  aPairs))
+  CObjectVector<CTextConfigPair> pairs;
+  if (!GetTextConfig(string.Mid(pos),  pairs))
     return false;
 
-  m_LangPairs.Reserve(m_LangPairs.Size());
-  for (int i = 0; i < aPairs.Size(); i++)
+  _langPairs.Reserve(_langPairs.Size());
+  for (int i = 0; i < pairs.Size(); i++)
   {
-    CTextConfigPair aTextConfigPair = aPairs[i];
-    CLangPair aLangPair;
-    if (!HexStringToNumber(aTextConfigPair.ID, aLangPair.Value))
+    CTextConfigPair textConfigPair = pairs[i];
+    CLangPair langPair;
+    if (!HexStringToNumber(textConfigPair.ID, langPair.Value))
       return false;
-    aLangPair.String = aTextConfigPair.String;
-    m_LangPairs.Add(aLangPair);
+    langPair.String = textConfigPair.String;
+    _langPairs.Add(langPair);
   }
 
-  CPointerVector &aPointerVector = m_LangPairs;
-  qsort(&aPointerVector[0], m_LangPairs.Size(), sizeof(void *), CompareLangItems);
+  CPointerVector &pointerVector = _langPairs;
+  qsort(&pointerVector[0], _langPairs.Size(), sizeof(void *), CompareLangItems);
   return true;
 }
 
-int CLang::FindItem(UINT32 aValue) const
+int CLang::FindItem(UINT32 value) const
 {
-  int aLeft = 0, aRight = m_LangPairs.Size(); 
-  while (aLeft != aRight)
+  int left = 0, right = _langPairs.Size(); 
+  while (left != right)
   {
-    int aMid = (aLeft + aRight) / 2;
-    int aMidValue = m_LangPairs[aMid].Value;
-    if (aValue == aMidValue)
-      return aMid;
-    if (aValue < aMidValue)
-      aRight = aMid;
+    int mid = (left + right) / 2;
+    int midValue = _langPairs[mid].Value;
+    if (value == midValue)
+      return mid;
+    if (value < midValue)
+      right = mid;
     else
-      aLeft = aMid + 1;
+      left = mid + 1;
   }
   return -1;
 }
 
-bool CLang::GetMessage(UINT32 aValue, UString &aMessage) const
+bool CLang::GetMessage(UINT32 value, UString &message) const
 {
-  int aIndex =  FindItem(aValue);
-  if (aIndex < 0)
+  int index =  FindItem(value);
+  if (index < 0)
     return false;
-  aMessage = m_LangPairs[aIndex].String;
+  message = _langPairs[index].String;
   return true;
 }

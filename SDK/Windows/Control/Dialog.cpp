@@ -9,24 +9,24 @@ extern HINSTANCE g_hInstance;
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY DialogProcedure(HWND aDialogHWND, UINT aMessage, 
+BOOL APIENTRY DialogProcedure(HWND dialogHWND, UINT message, 
     WPARAM wParam, LPARAM lParam)
 {
-  CWindow aDialogTmp(aDialogHWND);
-  if (aMessage == WM_INITDIALOG)
+  CWindow aDialogTmp(dialogHWND);
+  if (message == WM_INITDIALOG)
     aDialogTmp.SetUserDataLongPtr(lParam);
   CDialog *aDialog = (CDialog *)(aDialogTmp.GetUserDataLongPtr());
   if (aDialog == NULL)
     return FALSE;
-  if (aMessage == WM_INITDIALOG)
-    aDialog->Attach(aDialogHWND);
+  if (message == WM_INITDIALOG)
+    aDialog->Attach(dialogHWND);
 
-  return BoolToBOOL(aDialog->OnMessage(aMessage, wParam, lParam));
+  return BoolToBOOL(aDialog->OnMessage(message, wParam, lParam));
 }
 
-bool CDialog::OnMessage(UINT aMessage, UINT wParam, LPARAM lParam)
+bool CDialog::OnMessage(UINT message, UINT wParam, LPARAM lParam)
 {
-  switch (aMessage)
+  switch (message)
   {
     case WM_INITDIALOG:
       return OnInit();
@@ -49,16 +49,16 @@ bool CDialog::OnCommand(WPARAM wParam, LPARAM lParam)
   return OnCommand(HIWORD(wParam), LOWORD(wParam), lParam);
 }
 
-bool CDialog::OnCommand(int aCode, int anItemID, LPARAM lParam)
+bool CDialog::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (aCode == BN_CLICKED)
-    return OnButtonClicked(anItemID, (HWND)lParam);
+  if (code == BN_CLICKED)
+    return OnButtonClicked(itemID, (HWND)lParam);
   return false; 
 }
 
-bool CDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND) 
+bool CDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
 { 
-  switch(aButtonID)
+  switch(buttonID)
   {
     case IDOK:
       OnOK();
@@ -75,20 +75,20 @@ bool CDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
   return true;
 }
 
-bool CModelessDialog::Create(LPCTSTR aTemplateName, HWND hWndParent)
+bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)
 { 
   HWND aHWND = CreateDialogParam(g_hInstance, 
-      aTemplateName, hWndParent, DialogProcedure, LPARAM(this));
+      templateName, parentWindow, DialogProcedure, LPARAM(this));
   if (aHWND == 0)
     return false;
   Attach(aHWND);
   return true;
 }
 
-INT_PTR CModalDialog::Create(LPCTSTR aTemplateName, HWND hWndParent)
+INT_PTR CModalDialog::Create(LPCTSTR templateName, HWND parentWindow)
 { 
   return DialogBoxParam(g_hInstance, 
-      aTemplateName, hWndParent, DialogProcedure, LPARAM(this));
+      templateName, parentWindow, DialogProcedure, LPARAM(this));
 }
 
 }}

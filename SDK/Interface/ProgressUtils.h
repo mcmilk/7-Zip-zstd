@@ -8,19 +8,18 @@
 #include "Interface/ICoder.h"
 #include "Interface/IProgress.h"
 
-
 class CLocalCompressProgressInfo: 
   public ICompressProgressInfo,
   public CComObjectRoot
 {
-  CComPtr<ICompressProgressInfo> m_Progress;
-  bool m_InStartValueIsAssigned;
-  bool m_OutStartValueIsAssigned;
-  UINT64 m_InStartValue;
-  UINT64 m_OutStartValue;
+  CComPtr<ICompressProgressInfo> _progress;
+  bool _inStartValueIsAssigned;
+  bool _outStartValueIsAssigned;
+  UINT64 _inStartValue;
+  UINT64 _outStartValue;
 public:
-  void Init(ICompressProgressInfo *aProgress, 
-      const UINT64 *anInStartValue, const UINT64 *anOutStartValue);
+  void Init(ICompressProgressInfo *progress, 
+      const UINT64 *inStartValue, const UINT64 *outStartValue);
 
 BEGIN_COM_MAP(CLocalCompressProgressInfo)
   COM_INTERFACE_ENTRY(ICompressProgressInfo)
@@ -30,7 +29,7 @@ DECLARE_NOT_AGGREGATABLE(CLocalCompressProgressInfo)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *anInSize, const UINT64 *anOutSize);
+  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
 };
 
 
@@ -41,10 +40,10 @@ class CLocalProgress:
   public ICompressProgressInfo,
   public CComObjectRoot
 {
-  CComPtr<IProgress> m_Progress;
-  bool m_InSizeIsMain;
+  CComPtr<IProgress> _progress;
+  bool _inSizeIsMain;
 public:
-  void Init(IProgress *aProgress, bool anInSizeIsMain);
+  void Init(IProgress *progress, bool inSizeIsMain);
 
 BEGIN_COM_MAP(CLocalProgress)
   COM_INTERFACE_ENTRY(ICompressProgressInfo)
@@ -54,7 +53,7 @@ DECLARE_NOT_AGGREGATABLE(CLocalProgress)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *anInSize, const UINT64 *anOutSize);
+  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
 };
 
 

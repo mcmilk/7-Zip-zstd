@@ -12,7 +12,7 @@
 #include "../../Common/OpenEngine200.h"
 
 #include "../../Explorer/MyMessages.h"
-#include "../../Explorer/FormatUtils.h"
+#include "../../../FileManager/FormatUtils.h"
 
 #include "ExtractCallback.h"
 
@@ -32,11 +32,11 @@ HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderNam
   CZipRegistryManager aZipRegistryManager;
   #endif
 
-  CSysString aDirectoryPath = aFolderName;
-  NFile::NName::NormalizeDirPathPrefix(aDirectoryPath);
+  CSysString directoryPath = aFolderName;
+  NFile::NName::NormalizeDirPathPrefix(directoryPath);
 
   /*
-  CSysString aDirectoryPath;
+  CSysString directoryPath;
   {
     CSysString aFullPath;
     int aFileNamePartStartIndex;
@@ -45,17 +45,17 @@ HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderNam
       MessageBox(NULL, "Error 1329484", "7-Zip", 0);
       return E_FAIL;
     }
-    aDirectoryPath = aFullPath.Left(aFileNamePartStartIndex);
+    directoryPath = aFullPath.Left(aFileNamePartStartIndex);
   }
   */
 
-  if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
+  if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))
   {
-    MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, 
+    MyMessageBox(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
         #ifdef LANG        
         0x02000603, 
         #endif 
-        (LPCTSTR)aDirectoryPath));
+        GetUnicodeString((LPCTSTR)directoryPath)));
     return E_FAIL;
   }
   
@@ -72,7 +72,7 @@ HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderNam
   if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))
     throw "there is no archive file";
 
-  anExtractCallBackSpec->Init(anArchiveHandler, aDirectoryPath,
+  anExtractCallBackSpec->Init(anArchiveHandler, directoryPath,
       L"Default", anArchiveFileInfo.LastWriteTime, 0);
 
   return anArchiveHandler->ExtractAllItems(BoolToMyBool(false), anExtractCallBack);

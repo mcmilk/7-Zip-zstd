@@ -5,32 +5,32 @@
 #include "Interface/LimitedStreams.h"
 #include "Common/Defs.h"
 
-void CLimitedSequentialInStream::Init(ISequentialInStream *aStream, UINT64 aStreamSize)
+void CLimitedSequentialInStream::Init(ISequentialInStream *stream, UINT64 streamSize)
 {
-  m_Stream = aStream;
-  m_Size = aStreamSize;
+  _stream = stream;
+  _size = streamSize;
 }
 
-STDMETHODIMP CLimitedSequentialInStream::Read(void *aData, 
-    UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CLimitedSequentialInStream::Read(void *data, 
+    UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  UINT32 aSizeToRead = UINT32(MyMin(m_Size, UINT64(aSize)));
-  HRESULT aResult = m_Stream->Read(aData, aSizeToRead, &aProcessedSizeReal);
-  m_Size -= aProcessedSizeReal;
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+  UINT32 processedSizeReal;
+  UINT32 sizeToRead = UINT32(MyMin(_size, UINT64(size)));
+  HRESULT result = _stream->Read(data, sizeToRead, &processedSizeReal);
+  _size -= processedSizeReal;
+  if(processedSize != NULL)
+    *processedSize = processedSizeReal;
+  return result;
 }
   
-STDMETHODIMP CLimitedSequentialInStream::ReadPart(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CLimitedSequentialInStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  UINT32 aSizeToRead = UINT32(MyMin(m_Size, UINT64(aSize)));
-  HRESULT aResult = m_Stream->ReadPart(aData, aSizeToRead, &aProcessedSizeReal);
-  m_Size -= aProcessedSizeReal;
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+  UINT32 processedSizeReal;
+  UINT32 sizeToRead = UINT32(MyMin(_size, UINT64(size)));
+  HRESULT result = _stream->ReadPart(data, sizeToRead, &processedSizeReal);
+  _size -= processedSizeReal;
+  if(processedSize != NULL)
+    *processedSize = processedSizeReal;
+  return result;
 }
 

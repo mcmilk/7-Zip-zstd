@@ -13,31 +13,31 @@ namespace NWindows {
 class CThread: public CHandle
 {
 public:
-  bool Create(LPSECURITY_ATTRIBUTES aThreadAttributes, 
-      SIZE_T aStackSize, LPTHREAD_START_ROUTINE aStartAddress,
-      LPVOID aParameter, DWORD aCreationFlags, LPDWORD aThreadId)
+  bool Create(LPSECURITY_ATTRIBUTES threadAttributes, 
+      SIZE_T stackSize, LPTHREAD_START_ROUTINE startAddress,
+      LPVOID parameter, DWORD creationFlags, LPDWORD threadId)
   {
-    m_Handle = ::CreateThread(aThreadAttributes, aStackSize, aStartAddress,
-        aParameter, aCreationFlags, aThreadId);
-    return (m_Handle != NULL);
+    _handle = ::CreateThread(threadAttributes, stackSize, startAddress,
+        parameter, creationFlags, threadId);
+    return (_handle != NULL);
   }
-  bool Create(LPTHREAD_START_ROUTINE aStartAddress, LPVOID aParameter)
+  bool Create(LPTHREAD_START_ROUTINE startAddress, LPVOID parameter)
   {
-    DWORD aThreadId;
-    return Create(NULL, 0, aStartAddress, aParameter, 0, &aThreadId);
+    DWORD threadId;
+    return Create(NULL, 0, startAddress, parameter, 0, &threadId);
   }
   
   DWORD Resume()
-    { return ::ResumeThread(m_Handle); }
+    { return ::ResumeThread(_handle); }
   DWORD Suspend()
-    { return ::SuspendThread(m_Handle); }
-  bool Terminate(DWORD anExitCode)
-    { return BOOLToBool(::TerminateThread(m_Handle, anExitCode)); }
+    { return ::SuspendThread(_handle); }
+  bool Terminate(DWORD exitCode)
+    { return BOOLToBool(::TerminateThread(_handle, exitCode)); }
   
   int GetPriority()
-    { return ::GetThreadPriority(m_Handle); }
-  bool SetPriority(int aPriority)
-    { return BOOLToBool(::SetThreadPriority(m_Handle, aPriority)); }
+    { return ::GetThreadPriority(_handle); }
+  bool SetPriority(int priority)
+    { return BOOLToBool(::SetThreadPriority(_handle, priority)); }
 };
 
 }

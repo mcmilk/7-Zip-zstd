@@ -11,66 +11,66 @@ namespace NLength {
 
 void CEncoder::Init()
 {
-  m_Choice.Init();
-  for (UINT32 aPosState = 0; aPosState < m_NumPosStates; aPosState++)
+  _choice.Init();
+  for (UINT32 posState = 0; posState < _numPosStates; posState++)
   {
-    m_LowCoder[aPosState].Init();
-    m_MidCoder[aPosState].Init();
+    _lowCoder[posState].Init();
+    _midCoder[posState].Init();
   }
-  m_Choice2.Init();
-  m_HighCoder.Init();
+  _choice2.Init();
+  _highCoder.Init();
 }
 
-void CEncoder::Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol, UINT32 aPosState)
+void CEncoder::Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol, UINT32 posState)
 {
-  if(aSymbol < kNumLowSymbols)
+  if(symbol < kNumLowSymbols)
   {
-    m_Choice.Encode(aRangeEncoder, 0);
-    m_LowCoder[aPosState].Encode(aRangeEncoder, aSymbol);
+    _choice.Encode(rangeEncoder, 0);
+    _lowCoder[posState].Encode(rangeEncoder, symbol);
   }
   else
   {
-    aSymbol -= kNumLowSymbols;
-    m_Choice.Encode(aRangeEncoder, 1);
-    if(aSymbol < kNumMidSymbols)
+    symbol -= kNumLowSymbols;
+    _choice.Encode(rangeEncoder, 1);
+    if(symbol < kNumMidSymbols)
     {
-      m_Choice2.Encode(aRangeEncoder, 0);
-      m_MidCoder[aPosState].Encode(aRangeEncoder, aSymbol);
+      _choice2.Encode(rangeEncoder, 0);
+      _midCoder[posState].Encode(rangeEncoder, symbol);
     }
     else
     {
-      aSymbol -= kNumMidSymbols;
-      m_Choice2.Encode(aRangeEncoder, 1);
-      m_HighCoder.Encode(aRangeEncoder, aSymbol);
+      symbol -= kNumMidSymbols;
+      _choice2.Encode(rangeEncoder, 1);
+      _highCoder.Encode(rangeEncoder, symbol);
     }
   }
 }
 
-UINT32 CEncoder::GetPrice(UINT32 aSymbol, UINT32 aPosState) const
+UINT32 CEncoder::GetPrice(UINT32 symbol, UINT32 posState) const
 {
-  UINT32 aPrice = 0;
-  if(aSymbol < kNumLowSymbols)
+  UINT32 price = 0;
+  if(symbol < kNumLowSymbols)
   {
-    aPrice += m_Choice.GetPrice(0);
-    aPrice += m_LowCoder[aPosState].GetPrice(aSymbol);
+    price += _choice.GetPrice(0);
+    price += _lowCoder[posState].GetPrice(symbol);
   }
   else
   {
-    aSymbol -= kNumLowSymbols;
-    aPrice += m_Choice.GetPrice(1);
-    if(aSymbol < kNumMidSymbols)
+    symbol -= kNumLowSymbols;
+    price += _choice.GetPrice(1);
+    if(symbol < kNumMidSymbols)
     {
-      aPrice += m_Choice2.GetPrice(0);
-      aPrice += m_MidCoder[aPosState].GetPrice(aSymbol);
+      price += _choice2.GetPrice(0);
+      price += _midCoder[posState].GetPrice(symbol);
     }
     else
     {
-      aSymbol -= kNumMidSymbols;
-      aPrice += m_Choice2.GetPrice(1);
-      aPrice += m_HighCoder.GetPrice(aSymbol);
+      symbol -= kNumMidSymbols;
+      price += _choice2.GetPrice(1);
+      price += _highCoder.GetPrice(symbol);
     }
   }
-  return aPrice;
+  return price;
 }
 
 }

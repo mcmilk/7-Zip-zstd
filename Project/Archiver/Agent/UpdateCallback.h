@@ -49,6 +49,7 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(OperationResult)(INT32 aOperationResult);
 
 private:
+  CSysString m_BaseFolderPrefix;
   const CArchiveStyleDirItemInfoVector *m_DirItems;
   const CArchiveItemInfoVector *m_ArchiveItems;
   const CUpdatePairInfo2Vector *m_UpdatePairs;
@@ -56,7 +57,8 @@ private:
   UINT m_CodePage;
 
 public:
-  void Init(const CArchiveStyleDirItemInfoVector *DirItems, 
+  void Init(const CSysString &aBaseFolderPrefix,
+      const CArchiveStyleDirItemInfoVector *DirItems, 
       const CArchiveItemInfoVector *anArchiveItems, // test CItemInfoExList
       CUpdatePairInfo2Vector *anUpdatePairs,
       UINT aCodePage,

@@ -820,6 +820,14 @@ SOURCE=..\..\..\..\SDK\Archive\Common\ItemNameUtils.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\FileStreams.cpp
 # End Source File
 # Begin Source File
@@ -861,6 +869,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # Begin Source File
 
@@ -934,6 +946,14 @@ SOURCE=..\..\..\..\SDK\Stream\WindowOut.h
 # Begin Group "Util"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Util\FilePathAutoRename.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Util\InOutTempBuffer.cpp
@@ -1632,10 +1652,6 @@ SOURCE=..\..\Format\BZip2\UpdateEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Compress\Convert\Branch\Coder.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Compress\Convert\Branch\Coder.h
 # End Source File
 # Begin Source File
@@ -2243,14 +2259,6 @@ SOURCE=..\..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\ExtractAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\ExtractAutoRename.h
 # End Source File
 # Begin Source File
 

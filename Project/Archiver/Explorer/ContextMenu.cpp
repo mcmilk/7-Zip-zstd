@@ -17,8 +17,10 @@
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
 
+#include "../../FileManager/ProgramLocation.h"
+
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../FileManager/LangUtils.h"
 #endif
 
 #include "resource.h"
@@ -37,44 +39,44 @@ static LPCTSTR kFileClassIDString = _T("SevenZip");
 ///////////////////////////////
 // IShellExtInit
 
-HRESULT CZipContextMenu::GetFileNames(LPDATAOBJECT aDataObject, 
-    CSysStringVector &aFileNames)
+HRESULT CZipContextMenu::GetFileNames(LPDATAOBJECT dataObject, 
+    CSysStringVector &fileNames)
 {
-  aFileNames.Clear();
-  if(aDataObject == NULL)
+  fileNames.Clear();
+  if(dataObject == NULL)
     return E_FAIL;
   FORMATETC fmte = {CF_HDROP,  NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
   NCOM::CStgMedium aStgMedium;
-  HRESULT aResult = aDataObject->GetData(&fmte, &aStgMedium);
-  if (aResult != S_OK)
-    return aResult;
-  aStgMedium.m_MustBeReleased = true;
+  HRESULT result = dataObject->GetData(&fmte, &aStgMedium);
+  if (result != S_OK)
+    return result;
+  aStgMedium._mustBeReleased = true;
 
   NShell::CDrop aDrop(false);
   NMemory::CGlobalLock aGlobalLock(aStgMedium->hGlobal);
   aDrop.Attach((HDROP)aGlobalLock.GetPointer());
-  aDrop.QueryFileNames(aFileNames);
+  aDrop.QueryFileNames(fileNames);
 
   return S_OK;
 }
 
 STDMETHODIMP CZipContextMenu::Initialize(LPCITEMIDLIST pidlFolder, 
-    LPDATAOBJECT aDataObject, HKEY hkeyProgID)
+    LPDATAOBJECT dataObject, HKEY hkeyProgID)
 {
   /*
   m_IsFolder = false;
   if (pidlFolder == 0)
   */
   // pidlFolder is NULL :(
-  return GetFileNames(aDataObject, m_FileNames);
+  return GetFileNames(dataObject, _fileNames);
 }
 
-STDMETHODIMP CZipContextMenu::InitContextMenu(const wchar_t *aFolder, 
-    const wchar_t **aNames, UINT32 aNumFiles)
+STDMETHODIMP CZipContextMenu::InitContextMenu(const wchar_t *folder, 
+    const wchar_t **names, UINT32 numFiles)
 {
-  m_FileNames.Clear();
-  for (UINT32 i = 0; i < aNumFiles; i++)
-    m_FileNames.Add(GetSystemString(aNames[i]));
+  _fileNames.Clear();
+  for (UINT32 i = 0; i < numFiles; i++)
+    _fileNames.Add(GetSystemString(names[i]));
   return S_OK;
 }
 
@@ -89,82 +91,84 @@ static LPCTSTR kExtractVerb = _T("SevenExtract");
 static LPCTSTR kTestVerb = _T("SevenTest");
 static LPCTSTR kCompressVerb = _T("SevenCompress");
 
-STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
-      UINT aCommandIDFirst, UINT aCommandIDLast, UINT aFlags)
+STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
+      UINT commandIDFirst, UINT commandIDLast, UINT flags)
 {
-  if(m_FileNames.Size() == 0)
+  if(_fileNames.Size() == 0)
     return E_FAIL;
-  UINT aCurrentCommandID = aCommandIDFirst; 
-  if ((aFlags & 0x000F) != CMF_NORMAL  &&
-      (aFlags & CMF_VERBSONLY) == 0 &&
-      (aFlags & CMF_EXPLORE) == 0) 
-    return MAKE_HRESULT(SEVERITY_SUCCESS, 0, aCurrentCommandID); 
+  UINT currentCommandID = commandIDFirst; 
+  if ((flags & 0x000F) != CMF_NORMAL  &&
+      (flags & CMF_VERBSONLY) == 0 &&
+      (flags & CMF_EXPLORE) == 0) 
+    return MAKE_HRESULT(SEVERITY_SUCCESS, 0, currentCommandID); 
 
-  m_CommandMap.clear();
-  CCommandMapItem aCommandMapItem;
+  _commandMap.clear();
+  CCommandMapItem commandMapItem;
 
-  CMenu aPopupMenu;
-  if(!aPopupMenu.CreatePopup())
+  CMenu popupMenu;
+  CMenuDestroyer menuDestroyer(popupMenu);
+
+  if(!popupMenu.CreatePopup())
     throw 210503;
 
-  aCommandMapItem.CommandInternalID = kCommandInternalNULL;
-  aCommandMapItem.Verb = kMainVerb;
-  aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_CAPTION_HELP, 0x02000102);
-  m_CommandMap.push_back(aCommandMapItem);
+  commandMapItem.CommandInternalID = kCommandInternalNULL;
+  commandMapItem.Verb = kMainVerb;
+  commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_CAPTION_HELP, 0x02000102);
+  _commandMap.push_back(commandMapItem);
 
-  MENUITEMINFO aMenuInfo;
-  aMenuInfo.cbSize = sizeof(aMenuInfo);
-  aMenuInfo.fMask = MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
-  aMenuInfo.fType = MFT_STRING;
-  aMenuInfo.wID = aCurrentCommandID++; 
+  MENUITEMINFO menuItem;
+  menuItem.cbSize = sizeof(menuItem);
+  menuItem.fMask = MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
+  menuItem.fType = MFT_STRING;
+  menuItem.wID = currentCommandID++; 
 
-  int anSubMenuIndex = 0;
-  if(m_FileNames.Size() == 1 && aCurrentCommandID <= aCommandIDLast)
+  int subMenuIndex = 0;
+  if(_fileNames.Size() == 1 && currentCommandID <= commandIDLast)
   {
-    const CSysString &aFileName = m_FileNames.Front();
+    const CSysString &aFileName = _fileNames.Front();
   
-    NFile::NFind::CFileInfo aFileInfo;
-    if (!NFile::NFind::FindFile(m_FileNames.Front(), aFileInfo))
+    NFile::NFind::CFileInfo fileInfo;
+    if (!NFile::NFind::FindFile(_fileNames.Front(), fileInfo))
       return E_FAIL;
-    if (!aFileInfo.IsDirectory())
+    if (!fileInfo.IsDirectory())
     {
       //////////////////////////
       // Open command
-      aCommandMapItem.CommandInternalID = kCommandInternalIDOpen;
-      aCommandMapItem.Verb = kOpenVerb;
-      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_OPEN_HELP, 0x02000104);
-      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+      commandMapItem.CommandInternalID = kCommandInternalIDOpen;
+      commandMapItem.Verb = kOpenVerb;
+      commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_OPEN_HELP, 0x02000104);
+      popupMenu.AppendItem(MF_STRING, currentCommandID++, 
           LangLoadString(IDS_CONTEXT_OPEN, 0x02000103)); 
-      m_CommandMap.push_back(aCommandMapItem);
+      _commandMap.push_back(commandMapItem);
       
       //////////////////////////
       // Extract command
-      aCommandMapItem.CommandInternalID = kCommandInternalIDExtract;
-      aCommandMapItem.Verb = kExtractVerb;
-      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_EXTRACT_HELP, 0x02000106);
-      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+      commandMapItem.CommandInternalID = kCommandInternalIDExtract;
+      commandMapItem.Verb = kExtractVerb;
+      commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_EXTRACT_HELP, 0x02000106);
+      popupMenu.AppendItem(MF_STRING, currentCommandID++, 
           LangLoadString(IDS_CONTEXT_EXTRACT, 0x02000105)); 
-      m_CommandMap.push_back(aCommandMapItem);
+      _commandMap.push_back(commandMapItem);
 
       //////////////////////////
       // Test command
-      aCommandMapItem.CommandInternalID = kCommandInternalIDTest;
-      aCommandMapItem.Verb = kTestVerb;
-      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_TEST_HELP, 0x0200010A);
-      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+      commandMapItem.CommandInternalID = kCommandInternalIDTest;
+      commandMapItem.Verb = kTestVerb;
+      commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_TEST_HELP, 0x0200010A);
+      popupMenu.AppendItem(MF_STRING, currentCommandID++, 
           LangLoadString(IDS_CONTEXT_TEST, 0x02000109)); 
-      m_CommandMap.push_back(aCommandMapItem);
+      _commandMap.push_back(commandMapItem);
     }
   }
 
-  if(m_FileNames.Size() > 0 && aCurrentCommandID <= aCommandIDLast)
+  if(_fileNames.Size() > 0 && currentCommandID <= commandIDLast)
   {
-    aCommandMapItem.CommandInternalID = kCommandInternalIDCompress;
-    aCommandMapItem.Verb = kCompressVerb;
-    aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_COMPRESS_HELP, 0x02000108);
-    aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+    commandMapItem.CommandInternalID = kCommandInternalIDCompress;
+    commandMapItem.Verb = kCompressVerb;
+    commandMapItem.HelpString = LangLoadString(IDS_CONTEXT_COMPRESS_HELP, 0x02000108);
+    popupMenu.AppendItem(MF_STRING, currentCommandID++, 
         LangLoadString(IDS_CONTEXT_COMPRESS, 0x02000107)); 
-    m_CommandMap.push_back(aCommandMapItem);
+    _commandMap.push_back(commandMapItem);
   }
 
 
@@ -176,19 +180,20 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
   // ID: Q214477 
 
 
-  aMenuInfo.hSubMenu = aPopupMenu.Detach();
-  aMenuInfo.dwTypeData = (LPTSTR)(LPCTSTR)aPopupMenuCaption;
+  menuItem.hSubMenu = popupMenu.Detach();
+  menuDestroyer.Disable();
+  menuItem.dwTypeData = (LPTSTR)(LPCTSTR)aPopupMenuCaption;
   
-  InsertMenuItem(hMenu, anIndexMenu++, TRUE, &aMenuInfo);
+  InsertMenuItem(hMenu, indexMenu++, TRUE, &menuItem);
 
-  return MAKE_HRESULT(SEVERITY_SUCCESS, 0, aCurrentCommandID - aCommandIDFirst); 
+  return MAKE_HRESULT(SEVERITY_SUCCESS, 0, currentCommandID - commandIDFirst); 
 }
 
 
-UINT CZipContextMenu::FindVerb(const CSysString &aVerb)
+UINT CZipContextMenu::FindVerb(const CSysString &verb)
 {
-  for(int i = 0; i < m_CommandMap.size(); i++)
-    if(m_CommandMap[i].Verb.Compare(aVerb) == 0)
+  for(int i = 0; i < _commandMap.size(); i++)
+    if(_commandMap[i].Verb.Compare(verb) == 0)
       return i;
   return -1;
 }
@@ -215,24 +220,47 @@ public:
 };
 */
 
-
-STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
+static bool IsItWindowsNT()
 {
-  int aCommandOffset;
-  
-  if(HIWORD(aCommandInfo->lpVerb) == 0)
-    aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+
+static CSysString GetProgramCommand()
+{
+  CSysString path = TEXT("\"");
+  CSysString folder;
+  if (GetProgramFolderPath(folder))
+    path += folder;
+  if (IsItWindowsNT())
+    path += TEXT("7zFMn.exe");
   else
-    aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
+    path += TEXT("7zFM.exe");
+  path += TEXT("\"");
+  // path += TEXT("\" \"%1\"");
+  return path;
+}
+
+STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
+{
+  int commandOffset;
+  
+  if(HIWORD(commandInfo->lpVerb) == 0)
+    commandOffset = LOWORD(commandInfo->lpVerb);
+  else
+    commandOffset = FindVerb(GetSystemString(commandInfo->lpVerb));
   /*
   #ifdef _UNICODE
-  if(aCommandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX))
+  if(commandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX))
   {
-    if ((aCommandInfo->fMask & CMIC_MASK_UNICODE) != 0)
+    if ((commandInfo->fMask & CMIC_MASK_UNICODE) != 0)
     {
-      LPCMINVOKECOMMANDINFOEX aCommandInfoEx = (LPCMINVOKECOMMANDINFOEX)aCommandInfo;
+      LPCMINVOKECOMMANDINFOEX aCommandInfoEx = (LPCMINVOKECOMMANDINFOEX)commandInfo;
       if(HIWORD(aCommandInfoEx->lpVerb) == 0)
-        aCommandOffset = LOWORD(aCommandInfoEx->lpVerb);
+        commandOffset = LOWORD(aCommandInfoEx->lpVerb);
       else
       {
         MessageBox(0, TEXT("1"), TEXT("1"), 0);
@@ -241,74 +269,77 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     }
     else
     {
-      if(HIWORD(aCommandInfo->lpVerb) == 0)
-        aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+      if(HIWORD(commandInfo->lpVerb) == 0)
+        commandOffset = LOWORD(commandInfo->lpVerb);
       else
-        aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
+        commandOffset = FindVerb(GetSystemString(commandInfo->lpVerb));
     }
     //  return E_FAIL;
   }
   else
   {
-    if(HIWORD(aCommandInfo->lpVerb) == 0)
-      aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+    if(HIWORD(commandInfo->lpVerb) == 0)
+      commandOffset = LOWORD(commandInfo->lpVerb);
     else
-      aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
+      commandOffset = FindVerb(GetSystemString(commandInfo->lpVerb));
   }
 
   #else
   
   {
-    if(HIWORD(aCommandInfo->lpVerb) == 0)
-      aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+    if(HIWORD(commandInfo->lpVerb) == 0)
+      commandOffset = LOWORD(commandInfo->lpVerb);
     else
-      aCommandOffset = FindVerb(aCommandInfo->lpVerb);
+      commandOffset = FindVerb(commandInfo->lpVerb);
   }
 
   #endif
   */
 
-  if(aCommandOffset < 0 || aCommandOffset >= m_CommandMap.size())
+  if(commandOffset < 0 || commandOffset >= _commandMap.size())
     return E_FAIL;
 
-  ECommandInternalID aCommandInternalID = 
-      m_CommandMap[aCommandOffset].CommandInternalID;
-  HWND aHWND = aCommandInfo->hwnd;
+  ECommandInternalID commandInternalID = 
+      _commandMap[commandOffset].CommandInternalID;
+  HWND aHWND = commandInfo->hwnd;
 
   // CWindowDisable aWindowDisable(aHWND);
 
-  switch(aCommandInternalID)
+  switch(commandInternalID)
   {
     case kCommandInternalIDOpen:
     {
-      CSysString aParams;
-      if (!NSystem::MyGetWindowsDirectory(aParams))
+      CSysString params;
+      /*
+      if (!NSystem::MyGetWindowsDirectory(params))
         return E_FAIL;
-      NFile::NName::NormalizeDirPathPrefix(aParams);
-      aParams += _T("explorer.exe /e,/root,{23170F69-40C1-278A-1000-000100010000}, ");
-      aParams += _T("\"");
-      aParams += m_FileNames[0];
-      aParams += _T("\"");
+      NFile::NName::NormalizeDirPathPrefix(params);
+      params += _T("7zFM.exe");
+      */
+      params = GetProgramCommand();
+      params += _T(" \"");
+      params += _fileNames[0];
+      params += _T("\"");
 
-      // WinExec(GetAnsiString(aParams), SW_SHOWNORMAL);
+      // WinExec(GetAnsiString(params), SW_SHOWNORMAL);
 
-      STARTUPINFO aStartupInfo;
-      aStartupInfo.cb = sizeof(aStartupInfo);
-      aStartupInfo.lpReserved = 0;
-      aStartupInfo.lpDesktop = 0;
-      aStartupInfo.lpTitle = 0;
-      aStartupInfo.dwFlags = 0;
-      aStartupInfo.cbReserved2 = 0;
-      aStartupInfo.lpReserved2 = 0;
+      STARTUPINFO startupInfo;
+      startupInfo.cb = sizeof(startupInfo);
+      startupInfo.lpReserved = 0;
+      startupInfo.lpDesktop = 0;
+      startupInfo.lpTitle = 0;
+      startupInfo.dwFlags = 0;
+      startupInfo.cbReserved2 = 0;
+      startupInfo.lpReserved2 = 0;
 
-      PROCESS_INFORMATION aProcessInformation;
-      BOOL aResult = CreateProcess(NULL, (TCHAR *)(const TCHAR *)aParams, 
+      PROCESS_INFORMATION processInformation;
+      BOOL result = CreateProcess(NULL, (TCHAR *)(const TCHAR *)params, 
             NULL, NULL, FALSE, 0, NULL, NULL, 
-            &aStartupInfo, &aProcessInformation);
-      if (aResult != 0)
+            &startupInfo, &processInformation);
+      if (result != 0)
       {
-        ::CloseHandle(aProcessInformation.hThread);
-        ::CloseHandle(aProcessInformation.hProcess);
+        ::CloseHandle(processInformation.hThread);
+        ::CloseHandle(processInformation.hProcess);
       }
 
       break;
@@ -317,8 +348,12 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     {
       try
       {
-        if (ExtractArchive(aHWND, m_FileNames[0]) == S_FALSE)
+        HRESULT result = ExtractArchive(aHWND, _fileNames[0]);
+        if (result == S_FALSE)
           MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
+        else if (result != S_OK)
+          ShowErrorMessage(aHWND, result);
+        return result;
       }
       catch(...)
       {
@@ -330,8 +365,12 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     {
       try
       {
-        if (TestArchive(aHWND, m_FileNames[0]) == S_FALSE)
+        HRESULT result = TestArchive(aHWND, _fileNames[0]);
+        if (result == S_FALSE)
           MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
+        else if (result != S_OK)
+          ShowErrorMessage(aHWND, result);
+        return result;
       }
       catch(...)
       {
@@ -343,7 +382,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     {
       try
       {
-        CompressArchive(m_FileNames);
+        CompressArchive(_fileNames);
       }
       catch(...)
       {
@@ -355,37 +394,37 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
   return S_OK;
 }
 
-static void MyCopyString(void *aDestPointer, const TCHAR *aString, bool aWriteInUnicode)
+static void MyCopyString(void *destPointer, const TCHAR *string, bool writeInUnicode)
 {
-  if(aWriteInUnicode)
-    wcscpy((wchar_t *)aDestPointer, GetUnicodeString(aString));
+  if(writeInUnicode)
+    wcscpy((wchar_t *)destPointer, GetUnicodeString(string));
   else
-    strcpy((char *)aDestPointer, GetAnsiString(aString));
+    strcpy((char *)destPointer, GetAnsiString(string));
 }
 
-STDMETHODIMP CZipContextMenu::GetCommandString(UINT aCommandOffset, UINT uType, 
+STDMETHODIMP CZipContextMenu::GetCommandString(UINT commandOffset, UINT uType, 
     UINT *pwReserved, LPSTR pszName, UINT cchMax)
 {
   switch(uType)
   { 
     case GCS_VALIDATEA:
     case GCS_VALIDATEW:
-      if(aCommandOffset < 0 || aCommandOffset >= (UINT)m_CommandMap.size())
+      if(commandOffset < 0 || commandOffset >= (UINT)_commandMap.size())
         return S_FALSE;
       else 
         return S_OK;
   }
-  if(aCommandOffset < 0 || aCommandOffset >= (UINT)m_CommandMap.size())
+  if(commandOffset < 0 || commandOffset >= (UINT)_commandMap.size())
     return E_FAIL;
   if(uType == GCS_HELPTEXTA || uType == GCS_HELPTEXTW)
   {
-    MyCopyString(pszName, m_CommandMap[aCommandOffset].HelpString,
+    MyCopyString(pszName, _commandMap[commandOffset].HelpString,
         uType == GCS_HELPTEXTW);
     return NO_ERROR;
   }
   if(uType == GCS_VERBA || uType == GCS_VERBW)
   {
-    MyCopyString(pszName, m_CommandMap[aCommandOffset].Verb,
+    MyCopyString(pszName, _commandMap[commandOffset].Verb,
         uType == GCS_VERBW);
     return NO_ERROR;
   }

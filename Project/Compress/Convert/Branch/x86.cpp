@@ -5,118 +5,118 @@
 
 #include "Windows/Defs.h"
 
-static bool inline Test86MSByte(BYTE aByte)
+static bool inline Test86MSByte(BYTE b)
 {
-  return (aByte == 0 || aByte == 0xFF);
+  return (b == 0 || b == 0xFF);
 }
 
 const bool kMaskToAllowedStatus[8] = {true, true, true, false, true, false, false, false};
 const BYTE kMaskToBitNumber[8] = {0, 1, 2, 2, 3, 3, 3, 3};
 
-static HRESULT BCJ_x86_Code(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress, BYTE *aBuffer, bool anEncoding)
+static HRESULT BCJ_x86_Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress, BYTE *buffer, bool encoding)
 {
-  UINT64 aNowPos64 = 0;
-  UINT32 aNowPos = 0;
-  UINT32 aBufferPos = 0;
-  UINT32 aProcessedSize;
-  UINT32 aPrevMask = 0;
-  UINT32 aPrevPos = (- 5);
+  UINT64 nowPos64 = 0;
+  UINT32 nowPos = 0;
+  UINT32 bufferPos = 0;
+  UINT32 prevMask = 0;
+  UINT32 prevPos = (- 5);
 
   while(true)
   {
-    UINT32 aSize = kBufferSize - aBufferPos;
-    RETURN_IF_NOT_S_OK(anInStream->Read(aBuffer + aBufferPos, aSize, &aProcessedSize));
-    UINT32 anEndPos = aBufferPos + aProcessedSize;
-    if (anEndPos < 5)
+    UINT32 processedSize;
+    UINT32 size = kBufferSize - bufferPos;
+    RETURN_IF_NOT_S_OK(inStream->Read(buffer + bufferPos, size, &processedSize));
+    UINT32 endPos = bufferPos + processedSize;
+    if (endPos < 5)
     {
-      if (anEndPos > 0)
+      if (endPos > 0)
       {
-        RETURN_IF_NOT_S_OK(anOutStream->Write(aBuffer, anEndPos, &aProcessedSize));
-        if (anEndPos != aProcessedSize)
+        RETURN_IF_NOT_S_OK(outStream->Write(buffer, endPos, &processedSize));
+        if (endPos != processedSize)
           return E_FAIL;
       }
       return S_OK;
     }
-    aBufferPos = 0;
-    if (aNowPos - aPrevPos > 5)
-      aPrevPos = aNowPos - 5;
+    bufferPos = 0;
+    if (nowPos - prevPos > 5)
+      prevPos = nowPos - 5;
 
-    UINT32 aLimit = anEndPos - 5;
-    while(aBufferPos <= aLimit)
+    UINT32 limit = endPos - 5;
+    while(bufferPos <= limit)
     {
-      if (aBuffer[aBufferPos] != 0xE8 && aBuffer[aBufferPos] != 0xE9)
+      if (buffer[bufferPos] != 0xE8 && buffer[bufferPos] != 0xE9)
       {
-        aBufferPos++;
+        bufferPos++;
         continue;
       }
-      UINT32 anOffset = (aNowPos + aBufferPos - aPrevPos);
-      aPrevPos = (aNowPos + aBufferPos);
-      if (anOffset > 5)
-        aPrevMask = 0;
+      UINT32 offset = (nowPos + bufferPos - prevPos);
+      prevPos = (nowPos + bufferPos);
+      if (offset > 5)
+        prevMask = 0;
       else
       {
-        for (UINT32 i = 0; i < anOffset; i++)
+        for (UINT32 i = 0; i < offset; i++)
         {
-          aPrevMask &= 0x77;
-          aPrevMask <<= 1;
+          prevMask &= 0x77;
+          prevMask <<= 1;
         }
       }
-      BYTE &aNextByte = aBuffer[aBufferPos + 4];
-      if (Test86MSByte(aNextByte) && kMaskToAllowedStatus[(aPrevMask >> 1) & 0x7] && 
-        (aPrevMask >> 1) < 0x10)
+      BYTE &nextByte = buffer[bufferPos + 4];
+      if (Test86MSByte(nextByte) && kMaskToAllowedStatus[(prevMask >> 1) & 0x7] && 
+        (prevMask >> 1) < 0x10)
       {
-        UINT32 aSrc = 
-          (UINT32(aNextByte) << 24) |
-          (UINT32(aBuffer[aBufferPos + 3]) << 16) |
-          (UINT32(aBuffer[aBufferPos + 2]) << 8) |
-          (aBuffer[aBufferPos + 1]);
+        UINT32 src = 
+          (UINT32(nextByte) << 24) |
+          (UINT32(buffer[bufferPos + 3]) << 16) |
+          (UINT32(buffer[bufferPos + 2]) << 8) |
+          (buffer[bufferPos + 1]);
 
-        UINT32 aDest;
+        UINT32 dest;
         while(true)
         {
-          if (anEncoding)
-            aDest = (aNowPos + aBufferPos + 5) + aSrc;
+          if (encoding)
+            dest = (nowPos + bufferPos + 5) + src;
           else
-            aDest = aSrc - (aNowPos + aBufferPos + 5);
-          if (aPrevMask == 0)
+            dest = src - (nowPos + bufferPos + 5);
+          if (prevMask == 0)
             break;
-          UINT32 anIndex = kMaskToBitNumber[aPrevMask >> 1];
-          if (!Test86MSByte(aDest >> (24 - anIndex * 8)))
+          UINT32 index = kMaskToBitNumber[prevMask >> 1];
+          if (!Test86MSByte(dest >> (24 - index * 8)))
             break;
-          aSrc = aDest ^ ((1 << (32 - anIndex * 8)) - 1);
-          // aSrc = aDest;
+          src = dest ^ ((1 << (32 - index * 8)) - 1);
+          // src = dest;
         }
-        aNextByte = ~(((aDest >> 24) & 1) - 1);
-        aBuffer[aBufferPos + 3] = (aDest >> 16);
-        aBuffer[aBufferPos + 2] = (aDest >> 8);
-        aBuffer[aBufferPos + 1] = aDest;
-        aBufferPos += 5;
-        aPrevMask = 0;
+        nextByte = ~(((dest >> 24) & 1) - 1);
+        buffer[bufferPos + 3] = (dest >> 16);
+        buffer[bufferPos + 2] = (dest >> 8);
+        buffer[bufferPos + 1] = dest;
+        bufferPos += 5;
+        prevMask = 0;
       }
       else
       {
-        aBufferPos++;
-        aPrevMask |= 1;
-        if (Test86MSByte(aNextByte))
-          aPrevMask |= 0x10;
+        bufferPos++;
+        prevMask |= 1;
+        if (Test86MSByte(nextByte))
+          prevMask |= 0x10;
       }
     }
-    aNowPos += aBufferPos;
-    aNowPos64 += aBufferPos;
-    RETURN_IF_NOT_S_OK(anOutStream->Write(aBuffer, aBufferPos, &aProcessedSize));
-    if (aBufferPos != aProcessedSize)
+    nowPos += bufferPos;
+    nowPos64 += bufferPos;
+    RETURN_IF_NOT_S_OK(outStream->Write(buffer, bufferPos, &processedSize));
+    if (bufferPos != processedSize)
       return E_FAIL;
-    if (aProgress != NULL)
+    if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&aNowPos64, &aNowPos64));
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &nowPos64));
     }
     
     UINT32 i = 0;
-    while(aBufferPos < anEndPos)
-      aBuffer[i++] = aBuffer[aBufferPos++];
-    aBufferPos = i;
+    while(bufferPos < endPos)
+      buffer[i++] = buffer[bufferPos++];
+    bufferPos = i;
   }
 }
 

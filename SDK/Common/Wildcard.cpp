@@ -27,119 +27,119 @@ static const UString kIllegalWildCardFileNameChars=
 static const UString kIllegalFileNameChars = kIllegalWildCardFileNameChars + 
     kWildCardCharSet;
 
-static inline bool IsCharDirLimiter(wchar_t aChar)
+static inline bool IsCharDirLimiter(wchar_t c)
 {
-  return (aChar == kDirDelimiter1 || aChar == kDirDelimiter2);
+  return (c == kDirDelimiter1 || c == kDirDelimiter2);
 }
 
 // -----------------------------------------
-// this function tests is aName matches aMask
+// this function tests is name matches mask
 // ? - any wchar_t or empty
 // * - any characters or empty
 
-static bool EnhancedMaskTest(const UString &aMask, int aMaskPos, 
-    const UString &aName, int aNamePos)
+static bool EnhancedMaskTest(const UString &mask, int maskPos, 
+    const UString &name, int namePos)
 {
-  int aLenMask = aMask.Length() - aMaskPos;
-  int aLenName = aName.Length() - aNamePos;
-  if (aLenMask == 0) 
-    if (aLenName == 0)
+  int maskLen = mask.Length() - maskPos;
+  int nameLen = name.Length() - namePos;
+  if (maskLen == 0) 
+    if (nameLen == 0)
       return true;
     else
       return false;
-  wchar_t aMaskChar = aMask[aMaskPos];
-  if(aMaskChar == kAnyCharChar)
+  wchar_t maskChar = mask[maskPos];
+  if(maskChar == kAnyCharChar)
   {
-    if (EnhancedMaskTest(aMask, aMaskPos + 1, aName, aNamePos))
+    if (EnhancedMaskTest(mask, maskPos + 1, name, namePos))
       return true;
-    if (aLenName == 0) 
+    if (nameLen == 0) 
       return false;
-    return EnhancedMaskTest(aMask,  aMaskPos + 1, aName, aNamePos + 1);
+    return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
   }
-  else if(aMaskChar == kAnyCharsChar)
+  else if(maskChar == kAnyCharsChar)
   {
-    if (EnhancedMaskTest(aMask, aMaskPos + 1, aName, aNamePos))
+    if (EnhancedMaskTest(mask, maskPos + 1, name, namePos))
       return true;
-    if (aLenName == 0) 
+    if (nameLen == 0) 
       return false;
-    return EnhancedMaskTest(aMask, aMaskPos, aName, aNamePos + 1);
+    return EnhancedMaskTest(mask, maskPos, name, namePos + 1);
   }
   else
   {
-    if (toupper(aMaskChar) != toupper(aName[aNamePos]))
+    if (toupper(maskChar) != toupper(name[namePos]))
       return false;
-    return EnhancedMaskTest(aMask,  aMaskPos + 1, aName, aNamePos + 1);
+    return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
   }
 }
 
 // --------------------------------------------------
-// Splits aPath to strings
+// Splits path to strings
 
-void SplitPathToParts(const UString &aPath, UStringVector &aPathParts)
+void SplitPathToParts(const UString &path, UStringVector &pathParts)
 {
-  aPathParts.Clear();
-  UString aName;
-  int aLen = aPath.Length();
-  if (aLen == 0)
+  pathParts.Clear();
+  UString name;
+  int len = path.Length();
+  if (len == 0)
     return;
-  for (int i = 0; i < aLen; i++)
+  for (int i = 0; i < len; i++)
   {
-    wchar_t c = aPath[i];
+    wchar_t c = path[i];
     if (IsCharDirLimiter(c))
     {
-      aPathParts.Add(aName);
-      aName.Empty();
+      pathParts.Add(name);
+      name.Empty();
     }
     else
-      aName += c;
+      name += c;
   }
-  aPathParts.Add(aName);
+  pathParts.Add(name);
 }
 
 /*
-void SplitPathToParts(const AString &aPath, AStringVector &aPathParts)
+void SplitPathToParts(const AString &path, AStringVector &pathParts)
 {
-  aPathParts.Clear();
-  AString aName;
-  int aLen = aPath.Length();
-  if (aLen == 0)
+  pathParts.Clear();
+  AString name;
+  int len = path.Length();
+  if (len == 0)
     return;
-  for (int i = 0; i < aLen; i++)
+  for (int i = 0; i < len; i++)
   {
-    wchar_t c = aPath[i];
+    wchar_t c = path[i];
     if (IsCharDirLimiter(c))
     {
-      aPathParts.Add(aName);
-      aName.Empty();
+      pathParts.Add(name);
+      name.Empty();
     }
     else
-      aName += aPath[i];
+      name += path[i];
   }
-  aPathParts.Add(aName);
+  pathParts.Add(name);
 }
 */
 
 // --------------------------------------------------
 // ExtractFileNameFromPath
 
-UString ExtractFileNameFromPath(const UString &aPathName)
+UString ExtractFileNameFromPath(const UString &pathName)
 {
-  UString aResult;
-  int aLen = aPathName.Length();
-  for(int i = aLen - 1; i >= 0; i--)
-    if(IsCharDirLimiter(aPathName[i]))
-      return aPathName.Mid(i + 1);
-  return aPathName;
+  UString result;
+  int len = pathName.Length();
+  for(int i = len - 1; i >= 0; i--)
+    if(IsCharDirLimiter(pathName[i]))
+      return pathName.Mid(i + 1);
+  return pathName;
 }
 
-bool CompareWildCardWithName(const UString &aMask, const UString &aName)
+bool CompareWildCardWithName(const UString &mask, const UString &name)
 {
-  return EnhancedMaskTest(aMask, 0, aName, 0);
+  return EnhancedMaskTest(mask, 0, name, 0);
 }
 
-bool DoesNameContainWildCard(const UString &aPathName)
+bool DoesNameContainWildCard(const UString &pathName)
 {
-  return (aPathName.FindOneOf(kWildCardCharSet) >= 0);
+  return (pathName.FindOneOf(kWildCardCharSet) >= 0);
 }
 
 
@@ -148,130 +148,130 @@ bool DoesNameContainWildCard(const UString &aPathName)
 
 namespace NWildcard {
 
-static inline BoolToIndex(bool aValue)
+static inline BoolToIndex(bool value)
 {
-  return aValue ? 1: 0;
+  return value ? 1: 0;
 }
 
-const UStringVector& CCensorNode::GetNamesVector(bool anAllowed, bool aRecursed, bool aWildCard) const
+const UStringVector& CCensorNode::GetNamesVector(bool allowed, bool recursed, bool wildCard) const
 {
-  return m_Names[BoolToIndex(anAllowed)][BoolToIndex(aRecursed)][BoolToIndex(aWildCard)];
+  return _names[BoolToIndex(allowed)][BoolToIndex(recursed)][BoolToIndex(wildCard)];
 }
 
-void CCensorNode::AddItem(const UString &aName, bool anAllowed, bool aRecursed, bool aWildCard)
+void CCensorNode::AddItem(const UString &name, bool allowed, bool recursed, bool wildCard)
 {
-  m_Names[BoolToIndex(anAllowed)][BoolToIndex(aRecursed)][BoolToIndex(aWildCard)].Add(aName);
+  _names[BoolToIndex(allowed)][BoolToIndex(recursed)][BoolToIndex(wildCard)].Add(name);
 }
 
-CCensorNode *CCensorNode::FindSubNode(const UString &aName)
+CCensorNode *CCensorNode::FindSubNode(const UString &name)
 {
-  for (int i = 0; i < m_SubNodes.Size(); i++)
-    if (aName.CollateNoCase(m_SubNodes[i].m_Name) == 0)
-      return &m_SubNodes[i];
+  for (int i = 0; i < _subNodes.Size(); i++)
+    if (name.CollateNoCase(_subNodes[i]._name) == 0)
+      return &_subNodes[i];
   return NULL;
 }
 
-CCensorNode *CCensorNode::AddSubNode(const UString &aName)
+CCensorNode *CCensorNode::AddSubNode(const UString &name)
 {
-  CCensorNode *aSubNode = FindSubNode(aName);
-  if (aSubNode != NULL)
-    return aSubNode;
-  m_SubNodes.Add(CCensorNode(this, aName));
-  return &m_SubNodes.Back();
+  CCensorNode *subNode = FindSubNode(name);
+  if (subNode != NULL)
+    return subNode;
+  _subNodes.Add(CCensorNode(this, name));
+  return &_subNodes.Back();
 }
 
-int FindString(const UStringVector &aStrings, const UString &aString)
+int FindString(const UStringVector &strings, const UString &string)
 {
-  for (int i = 0; i < aStrings.Size(); i++)
-    if (aString.CollateNoCase(aStrings[i]) == 0)
+  for (int i = 0; i < strings.Size(); i++)
+    if (string.CollateNoCase(strings[i]) == 0)
       return i;
   return -1;
 }
 
-int FindInWildcardVector(const UStringVector &aStrings, const UString &aString)
+int FindInWildcardVector(const UStringVector &strings, const UString &string)
 {
-  for (int i = 0; i < aStrings.Size(); i++)
-    if (CompareWildCardWithName(aStrings[i], aString))
+  for (int i = 0; i < strings.Size(); i++)
+    if (CompareWildCardWithName(strings[i], string))
       return i;
   return -1;
 }
 
-bool CCensorNode::CheckName(const UString &aName, bool anAllowed, bool aRecursed) const
+bool CCensorNode::CheckName(const UString &name, bool allowed, bool recursed) const
 {
-  if (FindString(m_Names[BoolToIndex(anAllowed)][BoolToIndex(aRecursed)][0], aName) >= 0)
+  if (FindString(_names[BoolToIndex(allowed)][BoolToIndex(recursed)][0], name) >= 0)
     return true;
-  if (FindInWildcardVector(m_Names[BoolToIndex(anAllowed)][BoolToIndex(aRecursed)][1], aName) >= 0)
+  if (FindInWildcardVector(_names[BoolToIndex(allowed)][BoolToIndex(recursed)][1], name) >= 0)
     return true;
   return false;
 }
 
-bool CCensorNode::CheckNameRecursive(const UString &aName, bool anAllowed) const
+bool CCensorNode::CheckNameRecursive(const UString &name, bool allowed) const
 {
-  const CCensorNode *aCurItem = this;
-  while (aCurItem != NULL)
+  const CCensorNode *curItem = this;
+  while (curItem != NULL)
   {
-    if (aCurItem->CheckName(aName, anAllowed, true))
+    if (curItem->CheckName(name, allowed, true))
       return true;
-    aCurItem = aCurItem->m_Parent;
+    curItem = curItem->_parent;
   }
   return false;
 }
 
-bool CCensorNode::CheckNameRecursive(const UString &aName) const
+bool CCensorNode::CheckNameRecursive(const UString &name) const
 {
-  if (!CheckNameRecursive(aName, true))
+  if (!CheckNameRecursive(name, true))
     return false;
-   return !CheckNameRecursive(aName, false);
+   return !CheckNameRecursive(name, false);
 }
 
-bool CCensorNode::CheckNameFull(const UString &aName, bool anAllowed) const
+bool CCensorNode::CheckNameFull(const UString &name, bool allowed) const
 {
-  if (CheckName(aName, anAllowed, false))
+  if (CheckName(name, allowed, false))
     return true;
-  return CheckNameRecursive(aName, anAllowed);
+  return CheckNameRecursive(name, allowed);
 }
 
-bool CCensorNode::CheckNameFull(const UString &aName) const
+bool CCensorNode::CheckNameFull(const UString &name) const
 {
-  if (!CheckNameFull(aName, true))
+  if (!CheckNameFull(name, true))
     return false;
-  return !CheckNameFull(aName, false);
+  return !CheckNameFull(name, false);
 }
 
 ////////////////////////////////////
 // CCensor
 
-void CCensor::AddItem(const UString &aPath, bool anAllowed, bool aRecursed, bool aWildCard)
+void CCensor::AddItem(const UString &path, bool allowed, bool recursed, bool wildCard)
 {
-  UStringVector aPathParts;
-  SplitPathToParts(aPath, aPathParts);
-  int aNumParts = aPathParts.Size();
-  if (aNumParts == 0)
+  UStringVector pathParts;
+  SplitPathToParts(path, pathParts);
+  int numParts = pathParts.Size();
+  if (numParts == 0)
     throw "Empty path";
-  CCensorNode *aCurItem = &m_Head;
-  for(int i = 0; i < aNumParts - 1; i++)
-    aCurItem = aCurItem->AddSubNode(aPathParts[i]);
-  aCurItem->AddItem(aPathParts[i], anAllowed, aRecursed, aWildCard);
+  CCensorNode *curItem = &_head;
+  for(int i = 0; i < numParts - 1; i++)
+    curItem = curItem->AddSubNode(pathParts[i]);
+  curItem->AddItem(pathParts[i], allowed, recursed, wildCard);
 }
 
 
-bool CCensor::CheckName(const UString &aPath) const
+bool CCensor::CheckName(const UString &path) const
 {
-  UStringVector aPathParts;
-  SplitPathToParts(aPath, aPathParts);
-  int aNumParts = aPathParts.Size();
-  if (aNumParts == 0)
+  UStringVector pathParts;
+  SplitPathToParts(path, pathParts);
+  int numParts = pathParts.Size();
+  if (numParts == 0)
     throw "Empty path";
-  const CCensorNode *aCurItem = &m_Head;
-  const UString &aName = aPathParts[aNumParts - 1];
-  for(int i = 0; i < aNumParts - 1; i++)
+  const CCensorNode *curItem = &_head;
+  const UString &name = pathParts[numParts - 1];
+  for(int i = 0; i < numParts - 1; i++)
   {
-    const CCensorNode *aNextItem = ((CCensorNode *)aCurItem)->FindSubNode(aPathParts[i]);
-    if (aNextItem == NULL)
-      return aCurItem->CheckNameRecursive(aName);
-    aCurItem = aNextItem;
+    const CCensorNode *nextItem = ((CCensorNode *)curItem)->FindSubNode(pathParts[i]);
+    if (nextItem == NULL)
+      return curItem->CheckNameRecursive(name);
+    curItem = nextItem;
   }
-  return aCurItem->CheckNameFull(aName);
+  return curItem->CheckNameFull(name);
 }
 
 }
@@ -279,67 +279,67 @@ bool CCensor::CheckName(const UString &aPath) const
 ////////////////////////////////////
 // Filename and WildCard function 
 
-static bool TestStringLengthAndBounds(const UString &aString)
+static bool TestStringLengthAndBounds(const UString &string)
 {
-  if (aString.Length() <= 0)
+  if (string.Length() <= 0)
     return false;
-  return (aString.ReverseFind(kSpaceChar) != aString.Length() - 1);
+  return (string.ReverseFind(kSpaceChar) != string.Length() - 1);
 }
-bool IsFileNameLegal(const UString &aName)
+bool IsFileNameLegal(const UString &name)
 {
-  if (!TestStringLengthAndBounds(aName))
+  if (!TestStringLengthAndBounds(name))
     return false;
-  return (aName.FindOneOf(kIllegalFileNameChars) < 0);
-}
-
-bool IsWildCardFileNameLegal(const UString &aName)
-{
-  if (!TestStringLengthAndBounds(aName))
-    return false;
-  return (aName.FindOneOf(kIllegalWildCardFileNameChars) < 0);
+  return (name.FindOneOf(kIllegalFileNameChars) < 0);
 }
 
-bool IsFilePathLegal(const UString &aPath)
+bool IsWildCardFileNameLegal(const UString &name)
 {
-  UStringVector aPathParts; 
-  SplitPathToParts(aPath, aPathParts);
-  int aCount = aPathParts.Size();
-  if (aCount == 0)
+  if (!TestStringLengthAndBounds(name))
     return false;
-  for(int i = 0; i < aCount; i++)
-    if (!IsFileNameLegal(aPathParts[i]))
+  return (name.FindOneOf(kIllegalWildCardFileNameChars) < 0);
+}
+
+bool IsFilePathLegal(const UString &path)
+{
+  UStringVector pathParts; 
+  SplitPathToParts(path, pathParts);
+  int count = pathParts.Size();
+  if (count == 0)
+    return false;
+  for(int i = 0; i < count; i++)
+    if (!IsFileNameLegal(pathParts[i]))
       return false;
   return true;
 }
 
-bool IsWildCardFilePathLegal(const UString &aPath)
+bool IsWildCardFilePathLegal(const UString &path)
 {
-  UStringVector aPathParts; 
-  SplitPathToParts(aPath, aPathParts);
-  int aCount = aPathParts.Size();
-  if (aCount == 0)
+  UStringVector pathParts; 
+  SplitPathToParts(path, pathParts);
+  int count = pathParts.Size();
+  if (count == 0)
     return false;
-  for(int i = 0; i < aCount - 1; i++)
-    if (!IsFileNameLegal(aPathParts[i]))
+  for(int i = 0; i < count - 1; i++)
+    if (!IsFileNameLegal(pathParts[i]))
       return false;
-  return IsWildCardFileNameLegal(aPathParts[aCount - 1]);
+  return IsWildCardFileNameLegal(pathParts[count - 1]);
 }
 
-static bool IsCharAPrefixDelimiter(wchar_t aChar)
+static bool IsCharAPrefixDelimiter(wchar_t c)
 {
-  return (IsCharDirLimiter(aChar) || aChar == kDiskNameDelimiterChar);
+  return (IsCharDirLimiter(c) || c == kDiskNameDelimiterChar);
 }
 
-bool AreTheFileNamesDirDelimiterEqual(const UString &aName1, const UString &aName2)
+bool AreTheFileNamesDirDelimiterEqual(const UString &name1, const UString &name2)
 {
-  if(aName1.Length() != aName2.Length())
+  if(name1.Length() != name2.Length())
     return false;
-  for(int i = 0; i < aName1.Length(); i++)
+  for(int i = 0; i < name1.Length(); i++)
   {
-    wchar_t aChar1 = aName1[i], aChar2 = aName2[i];
-    if (aChar1 == aChar2)
+    wchar_t char1 = name1[i], char2 = name2[i];
+    if (char1 == char2)
       continue;
-    if (IsCharDirLimiter(aChar1) && IsCharDirLimiter(aChar2))
+    if (IsCharDirLimiter(char1) && IsCharDirLimiter(char2))
       continue;
     return false;
   }

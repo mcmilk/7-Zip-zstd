@@ -110,8 +110,8 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
   {
     CIn::Create(aSizeHistory + aKeepAddBufferBefore, 
       aMatchMaxLen + aKeepAddBufferAfter, aWindowReservSize);
-    m_SizeHistory = aSizeHistory;
-    m_MatchMaxLen = aMatchMaxLen;
+    _sizeHistory = aSizeHistory;
+    _matchMaxLen = aMatchMaxLen;
     m_HashDescendants = new CDescendant[kHashSize + 1];
     #ifdef __HASH_3
     m_Hash2Descendants = new CDescendant[kHash2Size + 1];
@@ -120,9 +120,9 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #ifdef __AUTO_REMOVE
    
     #ifdef __HASH_3
-    m_NumNodes = aSizeHistory + m_SizeHistory * 4 / 8 + (1 << 19);
+    m_NumNodes = aSizeHistory + _sizeHistory * 4 / 8 + (1 << 19);
     #else
-    m_NumNodes = aSizeHistory + m_SizeHistory * 4 / 8 + (1 << 10);
+    m_NumNodes = aSizeHistory + _sizeHistory * 4 / 8 + (1 << 10);
     #endif
 
     #else
@@ -143,7 +143,7 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     m_Nodes = (CNode *)m_AlignBuffer.Allocate(m_NumNodes + 2, sizeof(CNode), 0x40);
     #endif
 
-    m_TmpBacks = new UINT32[m_MatchMaxLen + 1];
+    m_TmpBacks = new UINT32[_matchMaxLen + 1];
     return S_OK;
   }
   catch(...)
@@ -184,15 +184,15 @@ STDMETHODIMP_(void) CPatricia::ReleaseStream()
   CIn::ReleaseStream();
 }
 
-// aPos = m_Pos + kNumHashBytes
+// pos = _pos + kNumHashBytes
 // aFullCurrentLimit = aCurrentLimit + kNumHashBytes
 // aFullMatchLen = aMatchLen + kNumHashBytes
 
 void CPatricia::ChangeLastMatch(UINT32 aHashValue)
 {
-  UINT32 aPos = m_Pos + kNumHashBytes - 1;
-  UINT32 aDescendantIndex;
-  const BYTE *aCurrentBytePointer = m_Buffer + aPos;
+  UINT32 pos = _pos + kNumHashBytes - 1;
+  UINT32 descendantIndex;
+  const BYTE *aCurrentBytePointer = _buffer + pos;
   UINT32 aNumLoadedBits = 0;
   BYTE aByte;
   CNodePointer aNode = &m_Nodes[m_HashDescendants[aHashValue].NodePointer];
@@ -218,33 +218,33 @@ void CPatricia::ChangeLastMatch(UINT32 aHashValue)
       aByte = *aCurrentBytePointer++;
       aNumLoadedBits = MY_BYTE_SIZE; 
     }
-    aDescendantIndex = (aByte & kSubNodesMask);
-    aNode->LastMatch = aPos;
+    descendantIndex = (aByte & kSubNodesMask);
+    aNode->LastMatch = pos;
     aNumLoadedBits -= kNumSubBits;
     aByte >>= kNumSubBits;
-    if(aNode->Descendants[aDescendantIndex].IsNode())
-      aNode = &m_Nodes[aNode->Descendants[aDescendantIndex].NodePointer];
+    if(aNode->Descendants[descendantIndex].IsNode())
+      aNode = &m_Nodes[aNode->Descendants[descendantIndex].NodePointer];
     else
       break;
   }
-  aNode->Descendants[aDescendantIndex].MatchPointer = aPos + kMatchStartValue;
+  aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
 }
 
 UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
 {
   UINT32 aFullCurrentLimit;
-  if (m_Pos + m_MatchMaxLen <= m_StreamPos)
-    aFullCurrentLimit = m_MatchMaxLen;
+  if (_pos + _matchMaxLen <= _streamPos)
+    aFullCurrentLimit = _matchMaxLen;
   else
   {
-    aFullCurrentLimit = m_StreamPos - m_Pos;
+    aFullCurrentLimit = _streamPos - _pos;
     if(aFullCurrentLimit < kNumHashBytes)
       return 0; 
   }
-  UINT32 aPos = m_Pos + kNumHashBytes;
+  UINT32 pos = _pos + kNumHashBytes;
 
   #ifdef __HASH_3
-  UINT32 aHashValueTemp = (*((UINT32 *)(m_Buffer + m_Pos)));
+  UINT32 aHashValueTemp = (*((UINT32 *)(_buffer + _pos)));
   UINT32 aHashValue = ((aHashValueTemp << 8) | 
       ((aHashValueTemp & 0xFFFFFF)>> 16)) & 0xFFFFFF;
   CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
@@ -257,19 +257,19 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
       for (UINT32 i = 0; i < 0x100; i++)
         m_HashDescendants[aBase + i].MakeEmpty();
     }
-    aHash2Descendant.MatchPointer = aPos + kMatchStartValue2;
-    aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+    aHash2Descendant.MatchPointer = pos + kMatchStartValue2;
+    aHashDescendant.MatchPointer = pos + kMatchStartValue;
     return 0;
   }
 
-  aBacks[kNumHash2Bytes] = aPos - (aHash2Descendant.MatchPointer - kMatchStartValue2) - 1;
-  aHash2Descendant.MatchPointer = aPos + kMatchStartValue2;
+  aBacks[kNumHash2Bytes] = pos - (aHash2Descendant.MatchPointer - kMatchStartValue2) - 1;
+  aHash2Descendant.MatchPointer = pos + kMatchStartValue2;
   #ifdef __AUTO_REMOVE
-  if (aBacks[kNumHash2Bytes] >= m_SizeHistory)
+  if (aBacks[kNumHash2Bytes] >= _sizeHistory)
   {
     if (aHashDescendant.IsNode())
       RemoveNode(aHashDescendant.NodePointer);
-    aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+    aHashDescendant.MatchPointer = pos + kMatchStartValue;
     return 0;
   }
   #endif
@@ -286,7 +286,7 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
   {
     if(aHashDescendant.IsMatch())
       m_NumNotChangedCycles = 0;
-    if(m_NumNotChangedCycles >= m_SizeHistory - 1)
+    if(m_NumNotChangedCycles >= _sizeHistory - 1)
     {
       ChangeLastMatch(aHashValue);
       m_NumNotChangedCycles = 0;
@@ -294,7 +294,7 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
     if(GetIndexByte(aFullCurrentLimit - 1) == GetIndexByte(aFullCurrentLimit - 2)) 
     {
       if(aHashDescendant.IsMatch())
-        aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+        aHashDescendant.MatchPointer = pos + kMatchStartValue;
       else
         m_NumNotChangedCycles++;
       for(UINT32 i = kNumHashBytes; i <= aFullCurrentLimit; i++)
@@ -308,7 +308,7 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
 
   if(aHashDescendant.IsEmpty())
   {
-    aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+    aHashDescendant.MatchPointer = pos + kMatchStartValue;
     return kPrevHashSize;
   }
 
@@ -317,25 +317,25 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
   if(aHashDescendant.IsMatch())
   {
     CMatchPointer aMatchPointer = aHashDescendant.MatchPointer;
-    UINT32 aBackReal = aPos - (aMatchPointer - kMatchStartValue);
+    UINT32 aBackReal = pos - (aMatchPointer - kMatchStartValue);
     UINT32 aBack = aBackReal - 1;
     #ifdef __AUTO_REMOVE
-    if (aBack >= m_SizeHistory)
+    if (aBack >= _sizeHistory)
     {
-      aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+      aHashDescendant.MatchPointer = pos + kMatchStartValue;
       return kPrevHashSize;
     }
     #endif
 
     UINT32 aMatchLen;
     aBacks += kNumHashBytes;
-    BYTE *aBuffer = m_Buffer + aPos;
+    BYTE *aBuffer = _buffer + pos;
     for(aMatchLen = 0; true; aMatchLen++)
     {
       *aBacks++ = aBack;
       if (aMatchLen == aCurrentLimit)
       {
-        aHashDescendant.MatchPointer = aPos + kMatchStartValue;
+        aHashDescendant.MatchPointer = pos + kMatchStartValue;
         return kNumHashBytes + aMatchLen;
       }
       if (aBuffer[aMatchLen] != aBuffer[aMatchLen - aBackReal])
@@ -359,7 +359,7 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
       
     for (UINT32 i = 0; i < kNumSubNodes; i++)
       aNode->Descendants[i].NodePointer = kDescendantEmptyValue;
-    aNode->LastMatch = aPos;
+    aNode->LastMatch = pos;
       
     BYTE aByteNew = GetIndexByte(aFullMatchLen);
     BYTE aByteOld = GetIndexByte(aFullMatchLen - aBackReal);
@@ -376,11 +376,11 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
       aNumSameBits += kNumSubBits;
     }
     aNode->NumSameBits = CSameBitsType(aNumSameBits);
-    aNode->Descendants[aBitsNew].MatchPointer = aPos + kMatchStartValue;
+    aNode->Descendants[aBitsNew].MatchPointer = pos + kMatchStartValue;
     aNode->Descendants[aBitsOld].MatchPointer = aMatchPointer;
     return aFullMatchLen;
   }
-  const BYTE *aBaseCurrentBytePointer = m_Buffer + aPos;
+  const BYTE *aBaseCurrentBytePointer = _buffer + pos;
   const BYTE *aCurrentBytePointer = aBaseCurrentBytePointer;
   UINT32 aNumLoadedBits = 0;
   BYTE aByte = 0;
@@ -388,12 +388,12 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
   CNodePointer aNode = &m_Nodes[*aNodePointerPointer];
   aBacks += kNumHashBytes;
   const BYTE *aBytePointerLimit = aBaseCurrentBytePointer + aCurrentLimit;
-  const BYTE *aCurrentAddingOffset = m_Buffer;
+  const BYTE *aCurrentAddingOffset = _buffer;
 
   #ifdef __AUTO_REMOVE
   UINT32 aLowPos;
-  if (aPos > m_SizeHistory)
-    aLowPos = aPos - m_SizeHistory;
+  if (pos > _sizeHistory)
+    aLowPos = pos - _sizeHistory;
   else
     aLowPos = 0;
   #endif
@@ -404,7 +404,7 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
     if (aNode->LastMatch < aLowPos)
     {
       RemoveNode(*aNodePointerPointer);
-      *aNodePointerPointer = aPos + kMatchStartValue;
+      *aNodePointerPointer = pos + kMatchStartValue;
       if (aCurrentBytePointer == aBaseCurrentBytePointer)
         return kPrevHashSize;
       return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
@@ -412,12 +412,12 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
     #endif
     if(aNumLoadedBits == 0)
     {
-      *aBacks++ = aPos - aNode->LastMatch - 1;
+      *aBacks++ = pos - aNode->LastMatch - 1;
       if(aCurrentBytePointer >= aBytePointerLimit)
       {
         for (UINT32 i = 0; i < kNumSubNodes; i++)
-          aNode->Descendants[i].MatchPointer = aPos + kMatchStartValue;
-        aNode->LastMatch = aPos;
+          aNode->Descendants[i].MatchPointer = pos + kMatchStartValue;
+        aNode->LastMatch = pos;
         aNode->NumSameBits = 0;
         return aFullCurrentLimit;
       }
@@ -435,16 +435,16 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
         if(aByteXOR != 0)
         {
           AddInternalNode(aNode, aNodePointerPointer, aByte, aByteXOR,
-              aNumSameBits, aPos);
+              aNumSameBits, pos);
           return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
         }
-        *aBacks++ = aPos - aNode->LastMatch - 1;
+        *aBacks++ = pos - aNode->LastMatch - 1;
         aNumSameBits -= aNumLoadedBits;
         if(aCurrentBytePointer >= aBytePointerLimit)
         {
           for (UINT32 i = 0; i < kNumSubNodes; i++)
-            aNode->Descendants[i].MatchPointer = aPos + kMatchStartValue;
-          aNode->LastMatch = aPos;
+            aNode->Descendants[i].MatchPointer = pos + kMatchStartValue;
+          aNode->LastMatch = pos;
           aNode->NumSameBits = CSameBitsType(aNode->NumSameBits - aNumSameBits);
           return aFullCurrentLimit;
         }
@@ -456,17 +456,17 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
       if((aByteXOR & ((1 << aNumSameBits) - 1)) != 0)
       {
         AddInternalNode(aNode, aNodePointerPointer, aByte, aByteXOR,
-            aNumSameBits, aPos);
+            aNumSameBits, pos);
         return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
       }
       aByte >>= aNumSameBits;
       aNumLoadedBits -= aNumSameBits;
     }
-    UINT32 aDescendantIndex = (aByte & kSubNodesMask);
+    UINT32 descendantIndex = (aByte & kSubNodesMask);
     aNumLoadedBits -= kNumSubBits;
-    aNodePointerPointer = &aNode->Descendants[aDescendantIndex].NodePointer;
+    aNodePointerPointer = &aNode->Descendants[descendantIndex].NodePointer;
     UINT32 aNextNodeIndex = *aNodePointerPointer;
-    aNode->LastMatch = aPos;
+    aNode->LastMatch = pos;
     if (aNextNodeIndex < kDescendantEmptyValue)
     {
       aByte >>= kNumSubBits;
@@ -474,23 +474,23 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
     }
     else if (aNextNodeIndex == kDescendantEmptyValue)
     {
-      aNode->Descendants[aDescendantIndex].MatchPointer = aPos + kMatchStartValue;
+      aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
       return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
     }
     else 
       break;
   }
  
-  UINT32 aDescendantIndex = (aByte & kSubNodesMask);
+  UINT32 descendantIndex = (aByte & kSubNodesMask);
   aByte >>= kNumSubBits;
-  CMatchPointer aMatchPointer = aNode->Descendants[aDescendantIndex].MatchPointer;
+  CMatchPointer aMatchPointer = aNode->Descendants[descendantIndex].MatchPointer;
   CMatchPointer aRealMatchPointer;
   aRealMatchPointer = aMatchPointer - kMatchStartValue;
 
   #ifdef __AUTO_REMOVE
   if (aRealMatchPointer < aLowPos)
   {
-    aNode->Descendants[aDescendantIndex].MatchPointer = aPos + kMatchStartValue;
+    aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
     return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
   }
   #endif
@@ -504,27 +504,27 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
     aByteXOR = aMatchByte ^ aByte;
     if(aByteXOR != 0)
     {
-      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, aPos, aDescendantIndex);
+      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, pos, descendantIndex);
       return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
     }
     aNumSameBits += aNumLoadedBits;
   }
 
-  const BYTE *aMatchBytePointer = m_Buffer + aRealMatchPointer + 
+  const BYTE *aMatchBytePointer = _buffer + aRealMatchPointer + 
       (aCurrentBytePointer - aBaseCurrentBytePointer);
   for(; aCurrentBytePointer < aBytePointerLimit; aNumSameBits += MY_BYTE_SIZE)
   {
     aByte = (*aCurrentBytePointer++);
-    *aBacks++ = aPos - aRealMatchPointer - 1;
+    *aBacks++ = pos - aRealMatchPointer - 1;
     aByteXOR = aByte ^ (*aMatchBytePointer++);
     if(aByteXOR != 0)
     {
-      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, aPos, aDescendantIndex);
+      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, pos, descendantIndex);
       return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
     }
   }
-  *aBacks = aPos - aRealMatchPointer - 1;
-  aNode->Descendants[aDescendantIndex].MatchPointer = aPos + kMatchStartValue;
+  *aBacks = pos - aRealMatchPointer - 1;
+  aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
 
   if(*aBacks == 0)
   {
@@ -553,27 +553,27 @@ void CPatricia::RemoveMatch()
 {
   if(m_SpecialRemoveMode)
   {
-    if(GetIndexByte(m_MatchMaxLen - 1 - m_SizeHistory) ==
-        GetIndexByte(m_MatchMaxLen - m_SizeHistory))
+    if(GetIndexByte(_matchMaxLen - 1 - _sizeHistory) ==
+        GetIndexByte(_matchMaxLen - _sizeHistory))
       return;
     m_SpecialRemoveMode = false;
   }
-  UINT32 aPos = m_Pos + kNumHashBytes - m_SizeHistory;
+  UINT32 pos = _pos + kNumHashBytes - _sizeHistory;
 
   #ifdef __HASH_3
-  // UINT32 aHashValue = (*((UINT32 *)(m_Buffer + m_Pos - m_SizeHistory))) & 0xFFFFFF;
-  UINT32 aHashValueTemp = *((UINT32 *)(m_Buffer + m_Pos - m_SizeHistory));
+  // UINT32 aHashValue = (*((UINT32 *)(_buffer + _pos - _sizeHistory))) & 0xFFFFFF;
+  UINT32 aHashValueTemp = *((UINT32 *)(_buffer + _pos - _sizeHistory));
   UINT32 aHashValue = ((aHashValueTemp << 8) | 
       ((aHashValueTemp & 0xFFFFFF)>> 16)) & 0xFFFFFF;
 
   CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
   CDescendant &aHash2Descendant = m_Hash2Descendants[aHashValueTemp & 0xFFFF];
   if (aHash2Descendant >= kMatchStartValue2)
-    if(aHash2Descendant.MatchPointer == aPos + kMatchStartValue2)
+    if(aHash2Descendant.MatchPointer == pos + kMatchStartValue2)
       aHash2Descendant.MatchPointer = kDescendantEmptyValue2;
   #else
-  UINT32 aHashValue = UINT32(GetIndexByte(1 - m_SizeHistory))  | 
-      (UINT32(GetIndexByte(0 - m_SizeHistory)) << 8);
+  UINT32 aHashValue = UINT32(GetIndexByte(1 - _sizeHistory))  | 
+      (UINT32(GetIndexByte(0 - _sizeHistory)) << 8);
   CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
   #endif
     
@@ -581,13 +581,13 @@ void CPatricia::RemoveMatch()
     return;
   if(aHashDescendant.IsMatch())
   {
-    if(aHashDescendant.MatchPointer == aPos + kMatchStartValue)
+    if(aHashDescendant.MatchPointer == pos + kMatchStartValue)
       aHashDescendant.MakeEmpty();
     return;
   }
   
-  UINT32 aDescendantIndex;
-  const CRemoveDataWord *aCurrentPointer = (const CRemoveDataWord *)(m_Buffer + aPos);
+  UINT32 descendantIndex;
+  const CRemoveDataWord *aCurrentPointer = (const CRemoveDataWord *)(_buffer + pos);
   UINT32 aNumLoadedBits = 0;
   CRemoveDataWord aWord;
 
@@ -616,22 +616,22 @@ void CPatricia::RemoveMatch()
       aWord >>= aNumSameBits;
       aNumLoadedBits -= aNumSameBits;
     }
-    aDescendantIndex = (aWord & kSubNodesMask);
+    descendantIndex = (aWord & kSubNodesMask);
     aNumLoadedBits -= kNumSubBits;
     aWord >>= kNumSubBits;
-    UINT32 aNextNodeIndex = aNode->Descendants[aDescendantIndex].NodePointer;
+    UINT32 aNextNodeIndex = aNode->Descendants[descendantIndex].NodePointer;
     if (aNextNodeIndex < kDescendantEmptyValue)
     {
-      aNodePointerPointer = &aNode->Descendants[aDescendantIndex].NodePointer;
+      aNodePointerPointer = &aNode->Descendants[descendantIndex].NodePointer;
       aNode = &m_Nodes[aNextNodeIndex];
     }
     else
       break;
   }
-  if (aNode->Descendants[aDescendantIndex].MatchPointer != aPos + kMatchStartValue)
+  if (aNode->Descendants[descendantIndex].MatchPointer != pos + kMatchStartValue)
   {
-    const BYTE *aCurrentBytePointer = m_Buffer + m_Pos - m_SizeHistory;
-    const BYTE *aCurrentBytePointerLimit = aCurrentBytePointer + m_MatchMaxLen;
+    const BYTE *aCurrentBytePointer = _buffer + _pos - _sizeHistory;
+    const BYTE *aCurrentBytePointerLimit = aCurrentBytePointer + _matchMaxLen;
     for(;aCurrentBytePointer < aCurrentBytePointerLimit; aCurrentBytePointer++)
       if(*aCurrentBytePointer != *(aCurrentBytePointer+1))
         return;
@@ -652,7 +652,7 @@ void CPatricia::RemoveMatch()
   aNumMatches -= 1;
   if (aNumNodes + aNumMatches > 1)
   {
-    aNode->Descendants[aDescendantIndex].MakeEmpty();
+    aNode->Descendants[descendantIndex].MakeEmpty();
     return;
   }
   if(aNumNodes == 1)
@@ -672,7 +672,7 @@ void CPatricia::RemoveMatch()
   }
   UINT32 aMatchPointer;
   for (i = 0; i < kNumSubNodes; i++)
-    if (aNode->Descendants[i].IsMatch() && i != aDescendantIndex)
+    if (aNode->Descendants[i].IsMatch() && i != descendantIndex)
     {
       aMatchPointer = aNode->Descendants[i].MatchPointer;
       break;
@@ -689,7 +689,7 @@ const UINT32 kNormalizeStartPos = (UINT32(1) << (kNumBitsInIndex)) -
 STDMETHODIMP CPatricia::MovePos()
 {
   #ifndef __AUTO_REMOVE
-  if(m_Pos >= m_SizeHistory)
+  if(_pos >= _sizeHistory)
     RemoveMatch();
   #endif
   RETURN_IF_NOT_S_OK(CIn::MovePos());
@@ -697,7 +697,7 @@ STDMETHODIMP CPatricia::MovePos()
   if (m_NumUsedNodes >= m_NumNodes)
     TestRemoveNodes();
   #endif
-  if (m_Pos >= kNormalizeStartPos)
+  if (_pos >= kNormalizeStartPos)
   {
     #ifdef __AUTO_REMOVE
     TestRemoveNodesAndNormalize();
@@ -727,7 +727,7 @@ void CPatricia::NormalizeDescendant(CDescendant &aDescendant, UINT32 aSubValue)
 
 void CPatricia::Normalize()
 {
-  UINT32 aSubValue = m_Pos - m_SizeHistory;
+  UINT32 aSubValue = _pos - _sizeHistory;
   CIn::ReduceOffsets(aSubValue);
   
   #ifdef __HASH_3
@@ -821,11 +821,11 @@ void CPatricia::RemoveNode(UINT32 anIndex)
 
 void CPatricia::TestRemoveNodes()
 {
-  UINT32 aLimitPos = kMatchStartValue + m_Pos - m_SizeHistory + kNumHashBytes;
+  UINT32 aLimitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
   
   #ifdef __HASH_3
   
-  UINT32 aLimitPos2 = kMatchStartValue2 + m_Pos - m_SizeHistory + kNumHashBytes;
+  UINT32 aLimitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
   for(UINT32 aHash = 0; aHash < kHash2Size; aHash++)
   {
     CDescendant &aDescendant = m_Hash2Descendants[aHash];
@@ -920,13 +920,13 @@ void CPatricia::TestRemoveAndNormalizeDescendant(CDescendant &aDescendant,
 
 void CPatricia::TestRemoveNodesAndNormalize()
 {
-  UINT32 aSubValue = m_Pos - m_SizeHistory;
-  UINT32 aLimitPos = kMatchStartValue + m_Pos - m_SizeHistory + kNumHashBytes;
+  UINT32 aSubValue = _pos - _sizeHistory;
+  UINT32 aLimitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
   CIn::ReduceOffsets(aSubValue);
 
   #ifdef __HASH_3
   
-  UINT32 aLimitPos2 = kMatchStartValue2 + m_Pos - m_SizeHistory + kNumHashBytes;
+  UINT32 aLimitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
   for(UINT32 aHash = 0; aHash < kHash2Size; aHash++)
   {
     CDescendant &aDescendant = m_Hash2Descendants[aHash];

@@ -173,9 +173,9 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *anInStream,
   {
     return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
   }
-  catch(const NStream::COutByteWriteException &anException)
+  catch(const NStream::COutByteWriteException &exception)
   {
-    return anException.m_Result;
+    return exception.Result;
   }
   catch(...)
   {

@@ -6,37 +6,37 @@
 #include "Common/Defs.h"
 
 
-HRESULT COffsetOutStream::Init(IOutStream *aStream, UINT64 anOffset)
+HRESULT COffsetOutStream::Init(IOutStream *stream, UINT64 offset)
 {
-  m_Offset = anOffset;
-  m_Stream = aStream;
-  return m_Stream->Seek(anOffset, STREAM_SEEK_SET, NULL);
+  _offset = offset;
+  _stream = stream;
+  return _stream->Seek(offset, STREAM_SEEK_SET, NULL);
 }
 
-STDMETHODIMP COffsetOutStream::Write(const void *aData, UINT32 aSize, 
-    UINT32 *aProcessedSize)
+STDMETHODIMP COffsetOutStream::Write(const void *data, UINT32 size, 
+    UINT32 *processedSize)
 {
-  return m_Stream->Write(aData, aSize, aProcessedSize);
+  return _stream->Write(data, size, processedSize);
 }
 
-STDMETHODIMP COffsetOutStream::WritePart(const void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP COffsetOutStream::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
 {
-  return m_Stream->WritePart(aData, aSize, aProcessedSize);
+  return _stream->WritePart(data, size, processedSize);
 }
 
-STDMETHODIMP COffsetOutStream::Seek(INT64 anOffset, UINT32 aSeekOrigin, 
-    UINT64 *aNewPosition)
+STDMETHODIMP COffsetOutStream::Seek(INT64 offset, UINT32 seekOrigin, 
+    UINT64 *newPosition)
 {
-  UINT64 anAbsoluteNewPosition;
-  if (aSeekOrigin == STREAM_SEEK_SET)
-    anOffset += m_Offset;
-  HRESULT aResult = m_Stream->Seek(anOffset, aSeekOrigin, &anAbsoluteNewPosition);
-  if (aNewPosition != NULL)
-    *aNewPosition = anAbsoluteNewPosition - m_Offset;
-  return aResult;
+  UINT64 absoluteNewPosition;
+  if (seekOrigin == STREAM_SEEK_SET)
+    offset += _offset;
+  HRESULT result = _stream->Seek(offset, seekOrigin, &absoluteNewPosition);
+  if (newPosition != NULL)
+    *newPosition = absoluteNewPosition - _offset;
+  return result;
 }
 
-STDMETHODIMP COffsetOutStream::SetSize(INT64 aNewSize)
+STDMETHODIMP COffsetOutStream::SetSize(INT64 newSize)
 {
-  return m_Stream->SetSize(m_Offset + aNewSize);
+  return _stream->SetSize(_offset + newSize);
 }

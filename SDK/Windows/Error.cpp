@@ -7,24 +7,23 @@
 namespace NWindows {
 namespace NError {
 
-bool MyFormatMessage(DWORD aMessageID, CSysString &aMessage)
+bool MyFormatMessage(DWORD messageID, CSysString &message)
 {
-  LPVOID lpMsgBuf;
+  LPVOID msgBuf;
   if(::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
       FORMAT_MESSAGE_FROM_SYSTEM | 
       FORMAT_MESSAGE_IGNORE_INSERTS,
       NULL,
-      aMessageID,
+      messageID,
       0, // Default language
-      (LPTSTR) &lpMsgBuf,
+      (LPTSTR) &msgBuf,
       0,
       NULL) == 0)
     return false;
 
-  aMessage = (LPCTSTR)lpMsgBuf;
-  ::LocalFree( lpMsgBuf );
+  message = (LPCTSTR)msgBuf;
+  ::LocalFree(msgBuf);
   return true;
 }
-
 
 }}

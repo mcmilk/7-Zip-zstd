@@ -1,240 +1,240 @@
-// x86_2.h
+// x86_2.cpp
 
 #include "StdAfx.h"
 #include "x86_2.h"
 
 #include "Windows/Defs.h"
 
-inline UINT32 Swap4(UINT32 aValue)
+inline UINT32 Swap4(UINT32 value)
 {
-  return (aValue << 24) | (aValue >> 24) | 
-    ( (aValue >> 8) & 0xFF00) | ( (aValue << 8) & 0xFF0000);
+  return (value << 24) | (value >> 24) | 
+    ( (value >> 8) & 0xFF00) | ( (value << 8) & 0xFF0000);
 }
 
-inline bool IsJcc(BYTE aByte0, BYTE aByte1)
+inline bool IsJcc(BYTE b0, BYTE b1)
 {
-  return (aByte0 == 0x0F && (aByte1 & 0xF0) == 0x80);
+  return (b0 == 0x0F && (b1 & 0xF0) == 0x80);
 }
 
 #ifndef EXTRACT_ONLY
 
-static bool inline Test86MSByte(BYTE aByte)
+static bool inline Test86MSByte(BYTE b)
 {
-  return (aByte == 0 || aByte == 0xFF);
+  return (b == 0 || b == 0xFF);
 }
 
 HRESULT CBCJ2_x86_Encoder::Flush()
 {
-  RETURN_IF_NOT_S_OK(m_MainStream.Flush());
-  RETURN_IF_NOT_S_OK(m_E8Stream.Flush());
-  RETURN_IF_NOT_S_OK(m_JumpStream.Flush());
-  m_RangeEncoder.FlushData();
-  return m_RangeEncoder.FlushStream();
+  RETURN_IF_NOT_S_OK(_mainStream.Flush());
+  RETURN_IF_NOT_S_OK(_callStream.Flush());
+  RETURN_IF_NOT_S_OK(_jumpStream.Flush());
+  _rangeEncoder.FlushData();
+  return _rangeEncoder.FlushStream();
 }
 
 const UINT32 kDefaultLimit = (1 << 24);
 
-HRESULT CBCJ2_x86_Encoder::CodeReal(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes,
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams,
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress)
+HRESULT CBCJ2_x86_Encoder::CodeReal(ISequentialInStream **inStreams,
+      const UINT64 **inSizes,
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams,
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress)
 {
-  if (aNumInStreams != 1 || aNumOutStreams != 4)
+  if (numInStreams != 1 || numOutStreams != 4)
     return E_INVALIDARG;
 
-  bool anSizeIsDefined = false;
-  UINT64 anInSize;
-  if (anInSizes != NULL)
-    if (anInSizes[0] != NULL)
+  bool sizeIsDefined = false;
+  UINT64 inSize;
+  if (inSizes != NULL)
+    if (inSizes[0] != NULL)
     {
-      anInSize = *anInSizes[0];
-      if (anInSize <= kDefaultLimit)
-        anSizeIsDefined = true;
+      inSize = *inSizes[0];
+      if (inSize <= kDefaultLimit)
+        sizeIsDefined = true;
     }
 
 
-  ISequentialInStream *anInStream = anInStreams[0];
+  ISequentialInStream *inStream = inStreams[0];
 
-  m_MainStream.Init(anOutStreams[0]);
-  m_E8Stream.Init(anOutStreams[1]);
-  m_JumpStream.Init(anOutStreams[2]);
-  m_RangeEncoder.Init(anOutStreams[3]);
+  _mainStream.Init(outStreams[0]);
+  _callStream.Init(outStreams[1]);
+  _jumpStream.Init(outStreams[2]);
+  _rangeEncoder.Init(outStreams[3]);
   for (int i = 0; i < 256; i++)
-    m_StatusE8Encoder[i].Init();
-  m_StatusE9Encoder.Init();
-  m_StatusJccEncoder.Init();
-  CCoderReleaser aReleaser(this);
+    _statusE8Encoder[i].Init();
+  _statusE9Encoder.Init();
+  _statusJccEncoder.Init();
+  CCoderReleaser releaser(this);
 
-  CComPtr<ICompressGetSubStreamSize> aGetSubStreamSize;
+  CComPtr<ICompressGetSubStreamSize> getSubStreamSize;
   {
-    anInStream->QueryInterface(IID_ICompressGetSubStreamSize, (void **)&aGetSubStreamSize);
+    inStream->QueryInterface(IID_ICompressGetSubStreamSize, (void **)&getSubStreamSize);
   }
 
 
-  UINT32 aNowPos = 0;
-  UINT64 aNowPos64 = 0;
-  UINT32 aBufferPos = 0;
-  UINT32 aProcessedSize;
+  UINT32 nowPos = 0;
+  UINT64 nowPos64 = 0;
+  UINT32 bufferPos = 0;
+  UINT32 processedSize;
 
-  BYTE aPrevByte = 0;
+  BYTE prevByte = 0;
 
-  UINT64 aSubStreamIndex = 0;
-  UINT64 aSubStreamStartPos  = 0;
-  UINT64 aSubStreamEndPos = 0;
+  UINT64 subStreamIndex = 0;
+  UINT64 subStreamStartPos  = 0;
+  UINT64 subStreamEndPos = 0;
 
   while(true)
   {
-    UINT32 aSize = kBufferSize - aBufferPos;
-    RETURN_IF_NOT_S_OK(anInStream->Read(m_Buffer + aBufferPos, aSize, &aProcessedSize));
-    UINT32 anEndPos = aBufferPos + aProcessedSize;
+    UINT32 size = kBufferSize - bufferPos;
+    RETURN_IF_NOT_S_OK(inStream->Read(_buffer + bufferPos, size, &processedSize));
+    UINT32 endPos = bufferPos + processedSize;
     
-    if (anEndPos < 5)
+    if (endPos < 5)
     {
       // change it 
-      for (aBufferPos = 0; aBufferPos < anEndPos; aBufferPos++)
+      for (bufferPos = 0; bufferPos < endPos; bufferPos++)
       {
-        BYTE aByte = m_Buffer[aBufferPos];
-        m_MainStream.WriteByte(aByte);
-        if (aByte == 0xE8)
-          m_StatusE8Encoder[aPrevByte].Encode(&m_RangeEncoder, 0);
-        else if (aByte == 0xE9)
-          m_StatusE9Encoder.Encode(&m_RangeEncoder, 0);
-        else if (IsJcc(aPrevByte, aByte))
-          m_StatusJccEncoder.Encode(&m_RangeEncoder, 0);
-        aPrevByte = aByte;
+        BYTE b = _buffer[bufferPos];
+        _mainStream.WriteByte(b);
+        if (b == 0xE8)
+          _statusE8Encoder[prevByte].Encode(&_rangeEncoder, 0);
+        else if (b == 0xE9)
+          _statusE9Encoder.Encode(&_rangeEncoder, 0);
+        else if (IsJcc(prevByte, b))
+          _statusJccEncoder.Encode(&_rangeEncoder, 0);
+        prevByte = b;
       }
       return Flush();
     }
 
-    aBufferPos = 0;
+    bufferPos = 0;
 
-    UINT32 aLimit = anEndPos - 5;
-    while(aBufferPos <= aLimit)
+    UINT32 limit = endPos - 5;
+    while(bufferPos <= limit)
     {
-      BYTE aByte = m_Buffer[aBufferPos];
-      m_MainStream.WriteByte(aByte);
-      if (aByte != 0xE8 && aByte != 0xE9 && !IsJcc(aPrevByte, aByte))
+      BYTE b = _buffer[bufferPos];
+      _mainStream.WriteByte(b);
+      if (b != 0xE8 && b != 0xE9 && !IsJcc(prevByte, b))
       {
-        aBufferPos++;
-        aPrevByte = aByte;
+        bufferPos++;
+        prevByte = b;
         continue;
       }
-      BYTE aNextByte = m_Buffer[aBufferPos + 4];
-      UINT32 aSrc = 
-        (UINT32(aNextByte) << 24) |
-        (UINT32(m_Buffer[aBufferPos + 3]) << 16) |
-        (UINT32(m_Buffer[aBufferPos + 2]) << 8) |
-        (m_Buffer[aBufferPos + 1]);
-      UINT32 aDest = (aNowPos + aBufferPos + 5) + aSrc;
-      // if (Test86MSByte(aNextByte))
-      bool aConvert;
-      if (aGetSubStreamSize != NULL)
+      BYTE nextByte = _buffer[bufferPos + 4];
+      UINT32 src = 
+        (UINT32(nextByte) << 24) |
+        (UINT32(_buffer[bufferPos + 3]) << 16) |
+        (UINT32(_buffer[bufferPos + 2]) << 8) |
+        (_buffer[bufferPos + 1]);
+      UINT32 dest = (nowPos + bufferPos + 5) + src;
+      // if (Test86MSByte(nextByte))
+      bool convert;
+      if (getSubStreamSize != NULL)
       {
-        UINT64 aCurrentPos = (aNowPos64 + aBufferPos);
-        while (aSubStreamEndPos < aCurrentPos)
+        UINT64 currentPos = (nowPos64 + bufferPos);
+        while (subStreamEndPos < currentPos)
         {
-          UINT64 aSubStreamSize;
-          HRESULT aResult = aGetSubStreamSize->GetSubStreamSize(aSubStreamIndex, &aSubStreamSize);
-          if (aResult == S_OK)
+          UINT64 subStreamSize;
+          HRESULT result = getSubStreamSize->GetSubStreamSize(subStreamIndex, &subStreamSize);
+          if (result == S_OK)
           {
-            aSubStreamStartPos = aSubStreamEndPos;
-            aSubStreamEndPos += aSubStreamSize;          
-            aSubStreamIndex++;
+            subStreamStartPos = subStreamEndPos;
+            subStreamEndPos += subStreamSize;          
+            subStreamIndex++;
           }
-          else if (aResult == S_FALSE || aResult == E_NOTIMPL)
+          else if (result == S_FALSE || result == E_NOTIMPL)
           {
-            aGetSubStreamSize.Release();
-            aSubStreamStartPos = 0;
-            aSubStreamEndPos = aSubStreamStartPos - 1;          
+            getSubStreamSize.Release();
+            subStreamStartPos = 0;
+            subStreamEndPos = subStreamStartPos - 1;          
           }
           else
-            return aResult;
+            return result;
         }
-        if (aGetSubStreamSize == NULL)
+        if (getSubStreamSize == NULL)
         {
-          if (anSizeIsDefined)
-            aConvert = (aDest < anInSize);
+          if (sizeIsDefined)
+            convert = (dest < inSize);
           else
-            aConvert = Test86MSByte(aNextByte);
+            convert = Test86MSByte(nextByte);
         }
-        else if (aSubStreamEndPos - aSubStreamStartPos > kDefaultLimit)
-          aConvert = Test86MSByte(aNextByte);
+        else if (subStreamEndPos - subStreamStartPos > kDefaultLimit)
+          convert = Test86MSByte(nextByte);
         else
         {
-          UINT64 aDest64 = (aCurrentPos + 5) + INT64(INT32(aSrc));
-          aConvert = (aDest64 >= aSubStreamStartPos && aDest64 < aSubStreamEndPos);
+          UINT64 dest64 = (currentPos + 5) + INT64(INT32(src));
+          convert = (dest64 >= subStreamStartPos && dest64 < subStreamEndPos);
         }
       }
-      else if (anSizeIsDefined)
-        aConvert = (aDest < anInSize);
+      else if (sizeIsDefined)
+        convert = (dest < inSize);
       else
-        aConvert = Test86MSByte(aNextByte);
-      if (aConvert)
+        convert = Test86MSByte(nextByte);
+      if (convert)
       {
-        if (aByte == 0xE8)
-          m_StatusE8Encoder[aPrevByte].Encode(&m_RangeEncoder, 1);
-        else if (aByte == 0xE9)
-          m_StatusE9Encoder.Encode(&m_RangeEncoder, 1);
+        if (b == 0xE8)
+          _statusE8Encoder[prevByte].Encode(&_rangeEncoder, 1);
+        else if (b == 0xE9)
+          _statusE9Encoder.Encode(&_rangeEncoder, 1);
         else 
-          m_StatusJccEncoder.Encode(&m_RangeEncoder, 1);
+          _statusJccEncoder.Encode(&_rangeEncoder, 1);
 
-        aDest = Swap4(aDest);
+        dest = Swap4(dest);
 
-        aBufferPos += 5;
-        if (aByte == 0xE8)
-          m_E8Stream.WriteBytes(&aDest, sizeof(aDest));
+        bufferPos += 5;
+        if (b == 0xE8)
+          _callStream.WriteBytes(&dest, sizeof(dest));
         else 
-          m_JumpStream.WriteBytes(&aDest, sizeof(aDest));
-        aPrevByte = aNextByte;
+          _jumpStream.WriteBytes(&dest, sizeof(dest));
+        prevByte = nextByte;
       }
       else
       {
-        if (aByte == 0xE8)
-          m_StatusE8Encoder[aPrevByte].Encode(&m_RangeEncoder, 0);
-        else if (aByte == 0xE9)
-          m_StatusE9Encoder.Encode(&m_RangeEncoder, 0);
+        if (b == 0xE8)
+          _statusE8Encoder[prevByte].Encode(&_rangeEncoder, 0);
+        else if (b == 0xE9)
+          _statusE9Encoder.Encode(&_rangeEncoder, 0);
         else
-          m_StatusJccEncoder.Encode(&m_RangeEncoder, 0);
-        aBufferPos++;
-        aPrevByte = aByte;
+          _statusJccEncoder.Encode(&_rangeEncoder, 0);
+        bufferPos++;
+        prevByte = b;
       }
     }
-    aNowPos += aBufferPos;
-    aNowPos64 += aBufferPos;
+    nowPos += bufferPos;
+    nowPos64 += bufferPos;
 
-    if (aProgress != NULL)
+    if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&aNowPos64, NULL));
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, NULL));
     }
  
     
     UINT32 i = 0;
-    while(aBufferPos < anEndPos)
-      m_Buffer[i++] = m_Buffer[aBufferPos++];
-    aBufferPos = i;
+    while(bufferPos < endPos)
+      _buffer[i++] = _buffer[bufferPos++];
+    bufferPos = i;
   }
 }
 
-STDMETHODIMP CBCJ2_x86_Encoder::Code(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes,
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams,
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CBCJ2_x86_Encoder::Code(ISequentialInStream **inStreams,
+      const UINT64 **inSizes,
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams,
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStreams, anInSizes, aNumInStreams,
-      anOutStreams, anOutSizes,aNumOutStreams,
-      aProgress);
+    return CodeReal(inStreams, inSizes, numInStreams,
+      outStreams, outSizes,numOutStreams,
+      progress);
   }
-  catch(const NStream::COutByteWriteException &anOutWriteException)
+  catch(const NStream::COutByteWriteException &outWriteException)
   {
-    return anOutWriteException.m_Result;
+    return outWriteException.Result;
   }
   catch(...)
   {
@@ -244,98 +244,98 @@ STDMETHODIMP CBCJ2_x86_Encoder::Code(ISequentialInStream **anInStreams,
 
 #endif
 
-HRESULT CBCJ2_x86_Decoder::CodeReal(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes,
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams,
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress)
+HRESULT CBCJ2_x86_Decoder::CodeReal(ISequentialInStream **inStreams,
+      const UINT64 **inSizes,
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams,
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress)
 {
-  if (aNumInStreams != 4 || aNumOutStreams != 1)
+  if (numInStreams != 4 || numOutStreams != 1)
     return E_INVALIDARG;
 
-  m_MainInStream.Init(anInStreams[0]);
-  m_E8Stream.Init(anInStreams[1]);
-  m_JumpStream.Init(anInStreams[2]);
-  m_RangeDecoder.Init(anInStreams[3]);
+  _mainInStream.Init(inStreams[0]);
+  _callStream.Init(inStreams[1]);
+  _jumpStream.Init(inStreams[2]);
+  _rangeDecoder.Init(inStreams[3]);
   for (int i = 0; i < 256; i++)
-    m_StatusE8Decoder[i].Init();
-  m_StatusE9Decoder.Init();
-  m_StatusJccDecoder.Init();
+    _statusE8Decoder[i].Init();
+  _statusE9Decoder.Init();
+  _statusJccDecoder.Init();
 
-  m_OutStream.Init(anOutStreams[0]);
+  _outStream.Init(outStreams[0]);
 
-  CCoderReleaser aReleaser(this);
+  CCoderReleaser releaser(this);
 
-  BYTE aPrevByte = 0;
-  UINT32 aProcessedBytes = 0;
+  BYTE prevByte = 0;
+  UINT32 processedBytes = 0;
   while(true)
   {
-    if (aProcessedBytes > (1 << 20) && aProgress != NULL)
+    if (processedBytes > (1 << 20) && progress != NULL)
     {
-      UINT64 aNowPos64 = m_OutStream.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(NULL, &aNowPos64));
-      aProcessedBytes = 0;
+      UINT64 nowPos64 = _outStream.GetProcessedSize();
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(NULL, &nowPos64));
+      processedBytes = 0;
     }
-    aProcessedBytes++;
-    BYTE aByte;
-    if (!m_MainInStream.ReadByte(aByte))
+    processedBytes++;
+    BYTE b;
+    if (!_mainInStream.ReadByte(b))
       return Flush();
-    m_OutStream.WriteByte(aByte);
-    if (aByte != 0xE8 && aByte != 0xE9 && !IsJcc(aPrevByte, aByte))
+    _outStream.WriteByte(b);
+    if (b != 0xE8 && b != 0xE9 && !IsJcc(prevByte, b))
     {
-      aPrevByte = aByte;
+      prevByte = b;
       continue;
     }
-    bool aStatus;
-    if (aByte == 0xE8)
-      aStatus = (m_StatusE8Decoder[aPrevByte].Decode(&m_RangeDecoder) == 1);
-    else if (aByte == 0xE9)
-      aStatus = (m_StatusE9Decoder.Decode(&m_RangeDecoder) == 1);
+    bool status;
+    if (b == 0xE8)
+      status = (_statusE8Decoder[prevByte].Decode(&_rangeDecoder) == 1);
+    else if (b == 0xE9)
+      status = (_statusE9Decoder.Decode(&_rangeDecoder) == 1);
     else
-      aStatus = (m_StatusJccDecoder.Decode(&m_RangeDecoder) == 1);
-    if (aStatus)
+      status = (_statusJccDecoder.Decode(&_rangeDecoder) == 1);
+    if (status)
     {
-      UINT32 aSrc;
-      if (aByte == 0xE8)
+      UINT32 src;
+      if (b == 0xE8)
       {
-        if (!m_E8Stream.ReadBytes(&aSrc, sizeof(aSrc)))
+        if (!_callStream.ReadBytes(&src, sizeof(src)))
           return S_FALSE;
       }
       else
       {
-        if (!m_JumpStream.ReadBytes(&aSrc, sizeof(aSrc)))
+        if (!_jumpStream.ReadBytes(&src, sizeof(src)))
           return S_FALSE;
       }
-      aSrc = Swap4(aSrc);
-      UINT32 aDest = aSrc - (UINT32(m_OutStream.GetProcessedSize()) + 4) ;
-      m_OutStream.WriteBytes(&aDest, sizeof(aDest));
-      aPrevByte = (aDest >> 24);
-      aProcessedBytes += 4;
+      src = Swap4(src);
+      UINT32 dest = src - (UINT32(_outStream.GetProcessedSize()) + 4) ;
+      _outStream.WriteBytes(&dest, sizeof(dest));
+      prevByte = (dest >> 24);
+      processedBytes += 4;
     }
     else
-      aPrevByte = aByte;
+      prevByte = b;
   }
 }
 
-STDMETHODIMP CBCJ2_x86_Decoder::Code(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes,
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams,
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CBCJ2_x86_Decoder::Code(ISequentialInStream **inStreams,
+      const UINT64 **inSizes,
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams,
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStreams, anInSizes, aNumInStreams,
-      anOutStreams, anOutSizes,aNumOutStreams,
-      aProgress);
+    return CodeReal(inStreams, inSizes, numInStreams,
+      outStreams, outSizes,numOutStreams,
+      progress);
   }
-  catch(const NStream::COutByteWriteException &anOutWriteException)
+  catch(const NStream::COutByteWriteException &outWriteException)
   {
-    return anOutWriteException.m_Result;
+    return outWriteException.Result;
   }
   catch(...)
   {

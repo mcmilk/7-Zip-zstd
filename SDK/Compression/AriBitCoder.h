@@ -20,7 +20,7 @@ const kNumMoveReducingBits = 2;
 class CPriceTables
 {
 public:
-  UINT32 m_StatePrices[kBitModelTotal >> kNumMoveReducingBits];
+  UINT32 StatePrices[kBitModelTotal >> kNumMoveReducingBits];
   CPriceTables();
 };
 
@@ -34,35 +34,35 @@ template <int aNumMoveBits>
 class CBitModel
 {
 public:
-  UINT32 m_Probability;
-  void UpdateModel(UINT32 aSymbol)
+  UINT32 Probability;
+  void UpdateModel(UINT32 symbol)
   {
     /*
-    m_Probability -= (m_Probability + ((aSymbol - 1) & ((1 << aNumMoveBits) - 1))) >> aNumMoveBits;
-    m_Probability += (1 - aSymbol) << (kNumBitModelTotalBits - aNumMoveBits);
+    Probability -= (Probability + ((symbol - 1) & ((1 << aNumMoveBits) - 1))) >> aNumMoveBits;
+    Probability += (1 - symbol) << (kNumBitModelTotalBits - aNumMoveBits);
     */
-    if (aSymbol == 0)
-      m_Probability += (kBitModelTotal - m_Probability) >> aNumMoveBits;
+    if (symbol == 0)
+      Probability += (kBitModelTotal - Probability) >> aNumMoveBits;
     else
-      m_Probability -= (m_Probability) >> aNumMoveBits;
+      Probability -= (Probability) >> aNumMoveBits;
   }
 public:
-  void Init() { m_Probability = kBitModelTotal / 2; }
+  void Init() { Probability = kBitModelTotal / 2; }
 };
 
 template <int aNumMoveBits>
 class CBitEncoder: public CBitModel<aNumMoveBits>
 {
 public:
-  void Encode(CRangeEncoder *aRangeEncoder, UINT32 aSymbol)
+  void Encode(CRangeEncoder *rangeEncoder, UINT32 symbol)
   {
-    aRangeEncoder->EncodeBit(m_Probability, kNumBitModelTotalBits, aSymbol);
-    UpdateModel(aSymbol);
+    rangeEncoder->EncodeBit(Probability, kNumBitModelTotalBits, symbol);
+    UpdateModel(symbol);
   }
-  UINT32 GetPrice(UINT32 aSymbol) const
+  UINT32 GetPrice(UINT32 symbol) const
   {
-    return g_PriceTables.m_StatePrices[
-      (((m_Probability - aSymbol) ^ ((-(int)aSymbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
+    return g_PriceTables.StatePrices[
+      (((Probability - symbol) ^ ((-(int)symbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
   }
 };
 
@@ -71,29 +71,29 @@ template <int aNumMoveBits>
 class CBitDecoder: public CBitModel<aNumMoveBits>
 {
 public:
-  UINT32 Decode(CRangeDecoder *aRangeDecoder)
+  UINT32 Decode(CRangeDecoder *rangeDecoder)
   {
-    UINT32 aNewBound = (aRangeDecoder->m_Range >> kNumBitModelTotalBits) * m_Probability;
-    if (aRangeDecoder->m_Code < aNewBound)
+    UINT32 newBound = (rangeDecoder->Range >> kNumBitModelTotalBits) * Probability;
+    if (rangeDecoder->Code < newBound)
     {
-      aRangeDecoder->m_Range = aNewBound;
-      m_Probability += (kBitModelTotal - m_Probability) >> aNumMoveBits;
-      if (aRangeDecoder->m_Range < kTopValue)
+      rangeDecoder->Range = newBound;
+      Probability += (kBitModelTotal - Probability) >> aNumMoveBits;
+      if (rangeDecoder->Range < kTopValue)
       {
-        aRangeDecoder->m_Code = (aRangeDecoder->m_Code << 8) | aRangeDecoder->m_Stream.ReadByte();
-        aRangeDecoder->m_Range <<= 8;
+        rangeDecoder->Code = (rangeDecoder->Code << 8) | rangeDecoder->Stream.ReadByte();
+        rangeDecoder->Range <<= 8;
       }
       return 0;
     }
     else
     {
-      aRangeDecoder->m_Range -= aNewBound;
-      aRangeDecoder->m_Code -= aNewBound;
-      m_Probability -= (m_Probability) >> aNumMoveBits;
-      if (aRangeDecoder->m_Range < kTopValue)
+      rangeDecoder->Range -= newBound;
+      rangeDecoder->Code -= newBound;
+      Probability -= (Probability) >> aNumMoveBits;
+      if (rangeDecoder->Range < kTopValue)
       {
-        aRangeDecoder->m_Code = (aRangeDecoder->m_Code << 8) | aRangeDecoder->m_Stream.ReadByte();
-        aRangeDecoder->m_Range <<= 8;
+        rangeDecoder->Code = (rangeDecoder->Code << 8) | rangeDecoder->Stream.ReadByte();
+        rangeDecoder->Range <<= 8;
       }
       return 1;
     }

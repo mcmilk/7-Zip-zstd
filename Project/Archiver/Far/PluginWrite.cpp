@@ -14,10 +14,10 @@
 #include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
 
-#include "../../Archiver/Common/ZipRegistry.h"
-#include "../../Archiver/Common/UpdatePairBasic.h"
-#include "../../Archiver/Common/CompressEngineCommon.h"
-#include "../../Archiver/Common/UpdateUtils.h"
+#include "../Common/ZipRegistry.h"
+#include "../Common/UpdatePairBasic.h"
+#include "../Common/CompressEngineCommon.h"
+#include "../Common/UpdateUtils.h"
 
 #include "../Common/OpenEngine2.h"
 
@@ -102,8 +102,8 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(struct PluginPanelItem *aPanel
 
   NZipSettings::NCompression::CInfo aCompressionInfo;
 
-  CZipRegistryManager aZipRegistryManager;
-  aZipRegistryManager.ReadCompressionInfo(aCompressionInfo);
+  // CZipRegistryManager aZipRegistryManager;
+  NZipRegistryManager::ReadCompressionInfo(aCompressionInfo);
   
   if (!aCompressionInfo.MethodDefined)
     aCompressionInfo.Method = 1;
@@ -171,10 +171,10 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(struct PluginPanelItem *aPanel
   else
     throw 51751;
 
-  aZipRegistryManager.SaveCompressionInfo(aCompressionInfo);
+  NZipRegistryManager::SaveCompressionInfo(aCompressionInfo);
 
   NZipSettings::NWorkDir::CInfo aWorkDirInfo;
-  aZipRegistryManager.ReadWorkDirInfo(aWorkDirInfo);
+  NZipRegistryManager::ReadWorkDirInfo(aWorkDirInfo);
   CSysString aWorkDir = GetWorkDir(aWorkDirInfo, m_FileName);
   CreateComplexDirectory(aWorkDir);
 
@@ -239,11 +239,16 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(struct PluginPanelItem *aPanel
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return NFileOperationReturnCode::kError;
   }
-  anOutArchive->SetFolder(m_ArchiveFolder);
-  anOutArchive->SetFiles(&aFileNamePointers.Front(), aFileNamePointers.Size());
-  m_ArchiveFolder.Release();
-  BYTE anActionSetByte[6];
-  for (i = 0; i < 6; i++)
+  anOutArchive->SetFolder(_folder);
+
+  // CSysString aCurrentFolder;
+  // MyGetCurrentDirectory(aCurrentFolder);
+  // anOutArchive->SetFiles(MultiByteToUnicodeString(aCurrentFolder, CP_OEMCP), 
+  anOutArchive->SetFiles(L"", 
+      &aFileNamePointers.Front(), aFileNamePointers.Size());
+  _folder.Release();
+  BYTE anActionSetByte[NUpdateArchive::NPairState::kNumValues];
+  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     anActionSetByte[i] = anActionSet->StateActions[i];
 
   CComObjectNoLock<CUpdateCallBack100Imp> *anUpdateCallBackSpec =
@@ -306,14 +311,14 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(struct PluginPanelItem *aPanel
   ////////////////////////////
   // Restore FolderItem;
 
-  m_ArchiveHandler->BindToRootFolder(&m_ArchiveFolder);
+  m_ArchiveHandler->BindToRootFolder(&_folder);
   for (i = 0; i < aPathVector.Size(); i++)
   {
-    CComPtr<IArchiveFolder> aNewFolder;
-    m_ArchiveFolder->BindToFolder(aPathVector[i], &aNewFolder);
-    if(!aNewFolder  )
+    CComPtr<IFolderFolder> newFolder;
+    _folder->BindToFolder(aPathVector[i], &newFolder);
+    if(!newFolder  )
       break;
-    m_ArchiveFolder = aNewFolder;
+    _folder = newFolder;
   }
 
   /*
@@ -367,8 +372,8 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &aPluginPanelItems)
   }
 
   NZipSettings::NCompression::CInfo aCompressionInfo;
-  CZipRegistryManager aZipRegistryManager;
-  aZipRegistryManager.ReadCompressionInfo(aCompressionInfo);
+  // CZipRegistryManager aZipRegistryManager;
+  NZipRegistryManager::ReadCompressionInfo(aCompressionInfo);
   if (!aCompressionInfo.MethodDefined)
     aCompressionInfo.Method = 1;
  
@@ -575,10 +580,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &aPluginPanelItems)
 
   const CLSID &aClassID = anArchiverInfoList[anArchiverIndex].ClassID;
   aCompressionInfo.SetLastClassID(aClassID);
-  aZipRegistryManager.SaveCompressionInfo(aCompressionInfo);
+  NZipRegistryManager::SaveCompressionInfo(aCompressionInfo);
 
   NZipSettings::NWorkDir::CInfo aWorkDirInfo;
-  aZipRegistryManager.ReadWorkDirInfo(aWorkDirInfo);
+  NZipRegistryManager::ReadWorkDirInfo(aWorkDirInfo);
 
   CSysString aFullArchiveName;
   if (!MyGetFullPathName(anArchiveName, aFullArchiveName))
@@ -653,9 +658,13 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &aPluginPanelItems)
     aFileNamePointers.Add(aFileNames[i]);
 
   anOutArchive->SetFolder(NULL);
-  anOutArchive->SetFiles(&aFileNamePointers.Front(), aFileNamePointers.Size());
-  BYTE anActionSetByte[6];
-  for (i = 0; i < 6; i++)
+  // CSysString aCurrentFolder;
+  // MyGetCurrentDirectory(aCurrentFolder);
+  // anOutArchive->SetFiles(MultiByteToUnicodeString(aCurrentFolder, CP_OEMCP), 
+  anOutArchive->SetFiles(L"", 
+    &aFileNamePointers.Front(), aFileNamePointers.Size());
+  BYTE anActionSetByte[NUpdateArchive::NPairState::kNumValues];
+  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     anActionSetByte[i] = anActionSet->StateActions[i];
 
   CComObjectNoLock<CUpdateCallBack100Imp> *anUpdateCallBackSpec =

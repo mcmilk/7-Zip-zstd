@@ -206,6 +206,14 @@ SOURCE=..\..\..\Crypto\Cipher\Common\CipherInterface.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\EnumStatProp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\FormatCryptoInterface.h
 # End Source File
 # Begin Source File
@@ -231,6 +239,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
 # End Source File
 # Begin Source File
 

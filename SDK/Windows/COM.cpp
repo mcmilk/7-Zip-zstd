@@ -8,33 +8,30 @@
 namespace NWindows {
 namespace NCOM {
 
-//////////////////////////////////
-// GUID <--> String Conversions
-  
 // CoInitialize (NULL); must be called!
 
-UString GUIDToStringW(REFGUID aGUID)
+UString GUIDToStringW(REFGUID guid)
 {
-  UString aString;
+  UString string;
   const kStringSize = 48;
-  StringFromGUID2(aGUID, aString.GetBuffer(kStringSize), kStringSize);
-  aString.ReleaseBuffer();
-  return aString;
+  StringFromGUID2(guid, string.GetBuffer(kStringSize), kStringSize);
+  string.ReleaseBuffer();
+  return string;
 }
 
-AString GUIDToStringA(REFGUID aGUID)
+AString GUIDToStringA(REFGUID guid)
 {
-  return UnicodeStringToMultiByte(GUIDToStringW(aGUID));
+  return UnicodeStringToMultiByte(GUIDToStringW(guid));
 }
 
-HRESULT StringToGUIDW(const wchar_t *aString, GUID &aClassID)
+HRESULT StringToGUIDW(const wchar_t *string, GUID &classID)
 {
-  return CLSIDFromString((wchar_t *)aString, &aClassID);
+  return CLSIDFromString((wchar_t *)string, &classID);
 }
 
-HRESULT StringToGUIDA(const char *aString, GUID &aClassID)
+HRESULT StringToGUIDA(const char *string, GUID &classID)
 {
-  return StringToGUIDW(MultiByteToUnicodeString(aString), aClassID);
+  return StringToGUIDW(MultiByteToUnicodeString(string), classID);
 }
 
 }}

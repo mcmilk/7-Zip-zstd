@@ -8,12 +8,12 @@
 #include "Windows/FileName.h"
 #include "Windows/ResourceString.h"
 
-#include "../Common/HelpUtils.h"
+#include "../../FileManager/HelpUtils.h"
 
 #include "Common/Defs.h"
 
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../FileManager/LangUtils.h"
 #endif
 
 #ifdef LANG        
@@ -79,7 +79,7 @@ bool CCompressDialog::OnInit()
 
   m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
 
-  m_ZipRegistryManager->ReadCompressionInfo(m_RegistryInfo);
+  NZipRegistryManager::ReadCompressionInfo(m_RegistryInfo);
 
 
   m_Info.ArchiverInfoIndex = 0;
@@ -345,7 +345,7 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.SetLastClassID(m_ArchiverInfoList[
       m_Info.ArchiverInfoIndex].ClassID);
 
-  m_ZipRegistryManager->SaveCompressionInfo(m_RegistryInfo);
+  NZipRegistryManager::SaveCompressionInfo(m_RegistryInfo);
   
   CModalDialog::OnOK();
 }

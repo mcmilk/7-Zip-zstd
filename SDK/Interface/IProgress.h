@@ -12,8 +12,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000050000")
 IProgress: public IUnknown
 {
 public:
-  STDMETHOD(SetTotal)(UINT64 aTotal) PURE;
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue) PURE;
+  STDMETHOD(SetTotal)(UINT64 total) PURE;
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000000050002}
@@ -23,8 +23,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000050002")
 IProgress2: public IUnknown
 {
 public:
-  STDMETHOD(SetTotal)(const UINT64 *aTotal) PURE;
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue) PURE;
+  STDMETHOD(SetTotal)(const UINT64 *total) PURE;
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue) PURE;
 };
 
 #endif

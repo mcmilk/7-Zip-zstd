@@ -9,17 +9,17 @@
 
 class CStdInStream 
 {
-  bool m_StreamIsOpen;
-  FILE *m_Stream;
+  bool _streamIsOpen;
+  FILE *_stream;
 public:
-  CStdInStream(): m_StreamIsOpen(false) {};
-  CStdInStream(FILE *aStream): m_StreamIsOpen(false), m_Stream(aStream) {};
+  CStdInStream(): _streamIsOpen(false) {};
+  CStdInStream(FILE *stream): _streamIsOpen(false), _stream(stream) {};
   ~CStdInStream();
-  bool Open(LPCTSTR aFileName);
+  bool Open(LPCTSTR fileName);
   bool Close();
 
   AString ScanStringUntilNewLine();
-  void ReadToString(AString &aResult);
+  void ReadToString(AString &resultString);
 
   bool Eof();
   int GetChar();

@@ -7,24 +7,24 @@
 
 class CStdOutStream 
 {
-  bool m_StreamIsOpen;
-  FILE *m_Stream;
+  bool _streamIsOpen;
+  FILE *_stream;
 public:
-  CStdOutStream (): m_StreamIsOpen(false) {};
-  CStdOutStream (FILE *aStream): m_StreamIsOpen(false), m_Stream(aStream) {};
+  CStdOutStream (): _streamIsOpen(false) {};
+  CStdOutStream (FILE *stream): _streamIsOpen(false), _stream(stream) {};
   ~CStdOutStream ();
-  bool Open(LPCTSTR aFileName);
+  bool Open(LPCTSTR fileName);
   bool Close();
  
   CStdOutStream & operator<<(CStdOutStream & (* aFunction)(CStdOutStream  &));
-  CStdOutStream & operator<<(const char *aChars);
-  CStdOutStream & operator<<(char aChar);
-  CStdOutStream & operator<<(int aNumber);
-  CStdOutStream & operator<<(UINT32 aNumber);
-  CStdOutStream & operator<<(UINT64 aNumber);
+  CStdOutStream & operator<<(const char *string);
+  CStdOutStream & operator<<(char c);
+  CStdOutStream & operator<<(int number);
+  CStdOutStream & operator<<(UINT32 number);
+  CStdOutStream & operator<<(UINT64 number);
 };
 
-CStdOutStream & endl(CStdOutStream & anOut);
+CStdOutStream & endl(CStdOutStream & outStream);
 
 extern CStdOutStream g_StdOut;
 extern CStdOutStream g_StdErr;

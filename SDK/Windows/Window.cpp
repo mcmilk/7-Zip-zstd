@@ -1,4 +1,4 @@
-// Windows::Window.cpp
+// Windows/Window.cpp
 
 #include "StdAfx.h"
 
@@ -6,33 +6,33 @@
 
 namespace NWindows {
 
-bool CWindow::GetText(CSysString &aString)
+bool CWindow::GetText(CSysString &string)
 {
-  aString.Empty();
-  int aLength = GetTextLength();
-  if (aLength == 0)
+  string.Empty();
+  int length = GetTextLength();
+  if (length == 0)
     return (::GetLastError() != ERROR_SUCCESS);
-  aLength = GetText(aString.GetBuffer(aLength), aLength + 1);
-  aString.ReleaseBuffer();
-  if (aLength == 0)
+  length = GetText(string.GetBuffer(length), length + 1);
+  string.ReleaseBuffer();
+  if (length == 0)
     return (::GetLastError() != ERROR_SUCCESS);
   return true;
 }
   
 /*
-bool CWindow::ModifyStyleBase(int aStyleOffset,
-  DWORD aRemove, DWORD anAdd, UINT aFlags)
+bool CWindow::ModifyStyleBase(int styleOffset,
+  DWORD remove, DWORD add, UINT flags)
 {
-  DWORD aStyle = GetWindowLong(aStyleOffset);
-  DWORD aNewStyle = (aStyle & ~aRemove) | anAdd;
-  if (aStyle == aNewStyle)
+  DWORD style = GetWindowLong(styleOffset);
+  DWORD newStyle = (style & ~remove) | add;
+  if (style == newStyle)
     return false; // it is not good 
 
-  SetWindowLong(aStyleOffset, aNewStyle);
-  if (aFlags != 0)
+  SetWindowLong(styleOffset, newStyle);
+  if (flags != 0)
   {
-    ::SetWindowPos(m_Window, NULL, 0, 0, 0, 0,
-      SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | aFlags);
+    ::SetWindowPos(_window, NULL, 0, 0, 0, 0,
+      SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | flags);
   }
   return TRUE;
 }

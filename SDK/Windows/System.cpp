@@ -7,18 +7,18 @@
 namespace NWindows {
 namespace NSystem {
 
-bool MyGetWindowsDirectory(CSysString &aPath)
+bool MyGetWindowsDirectory(CSysString &path)
 {
-  DWORD aNeedLength = ::GetWindowsDirectory(aPath.GetBuffer(MAX_PATH), MAX_PATH);
-  aPath.ReleaseBuffer();
-  return (aNeedLength < MAX_PATH);
+  DWORD needLength = ::GetWindowsDirectory(path.GetBuffer(MAX_PATH), MAX_PATH);
+  path.ReleaseBuffer();
+  return (needLength < MAX_PATH);
 }
 
-bool MyGetSystemDirectory(CSysString &aPath)
+bool MyGetSystemDirectory(CSysString &path)
 {
-  DWORD aNeedLength = ::GetSystemDirectory(aPath.GetBuffer(MAX_PATH), MAX_PATH);
-  aPath.ReleaseBuffer();
-  return (aNeedLength < MAX_PATH);
+  DWORD needLength = ::GetSystemDirectory(path.GetBuffer(MAX_PATH), MAX_PATH);
+  path.ReleaseBuffer();
+  return (needLength < MAX_PATH);
 }
 
 }}

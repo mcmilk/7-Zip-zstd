@@ -17,224 +17,224 @@ const UINT32 kTopValue = (1 << kNumTopBits);
 
 class CRangeEncoder
 {
-  NStream::COutByte m_Stream;
-  UINT64 m_Low;
-  UINT32 m_Range;
-  UINT32 m_FFNum;
-  BYTE m_Cache;
+  NStream::COutByte Stream;
+  UINT64 Low;
+  UINT32 Range;
+  UINT32 _ffNum;
+  BYTE _cache;
 
 public:
-  void Init(ISequentialOutStream *aStream)
+  void Init(ISequentialOutStream *stream)
   {
-    m_Stream.Init(aStream);
-    m_Low = 0;
-    m_Range = UINT32(-1);
-    m_FFNum = 0;
-    m_Cache = 0;
+    Stream.Init(stream);
+    Low = 0;
+    Range = UINT32(-1);
+    _ffNum = 0;
+    _cache = 0;
   }
 
   void FlushData()
   {
-    // m_Low += 1; 
+    // Low += 1; 
     for(int i = 0; i < 5; i++)
       ShiftLow();
   }
 
   HRESULT FlushStream()
-    { return m_Stream.Flush();  }
+    { return Stream.Flush();  }
 
   void ReleaseStream()
-    { m_Stream.ReleaseStream(); }
+    { Stream.ReleaseStream(); }
 
-  void Encode(UINT32 aStart, UINT32 aSize, UINT32 aTotal)
+  void Encode(UINT32 start, UINT32 size, UINT32 total)
   {
-    m_Low += aStart * (m_Range /= aTotal);
-    m_Range *= aSize;
-    while (m_Range < kTopValue)
+    Low += start * (Range /= total);
+    Range *= size;
+    while (Range < kTopValue)
     {
-      m_Range <<= 8;
+      Range <<= 8;
       ShiftLow();
     }
   }
 
   /*
-  void EncodeDirectBitsDiv(UINT32 aValue, UINT32 aNumTotalBits)
+  void EncodeDirectBitsDiv(UINT32 value, UINT32 numTotalBits)
   {
-    m_Low += aValue * (m_Range >>= aNumTotalBits);
+    Low += value * (Range >>= numTotalBits);
     Normalize();
   }
   
-  void EncodeDirectBitsDiv2(UINT32 aValue, UINT32 aNumTotalBits)
+  void EncodeDirectBitsDiv2(UINT32 value, UINT32 numTotalBits)
   {
-    if (aNumTotalBits <= kNumBottomBits)
-      EncodeDirectBitsDiv(aValue, aNumTotalBits);
+    if (numTotalBits <= kNumBottomBits)
+      EncodeDirectBitsDiv(value, numTotalBits);
     else
     {
-      EncodeDirectBitsDiv(aValue >> kNumBottomBits, (aNumTotalBits - kNumBottomBits));
-      EncodeDirectBitsDiv(aValue & ((1 << kBottomValueBits) - 1), kNumBottomBits);
+      EncodeDirectBitsDiv(value >> kNumBottomBits, (numTotalBits - kNumBottomBits));
+      EncodeDirectBitsDiv(value & ((1 << kBottomValueBits) - 1), kNumBottomBits);
     }
   }
   */
   void ShiftLow()
   {
-    if (m_Low < (UINT32)0xFF000000 || UINT32(m_Low >> 32) == 1) 
+    if (Low < (UINT32)0xFF000000 || UINT32(Low >> 32) == 1) 
     {
-      m_Stream.WriteByte(m_Cache + BYTE(m_Low >> 32));            
-      for (;m_FFNum != 0; m_FFNum--) 
-        m_Stream.WriteByte(0xFF + BYTE(m_Low >> 32));
-      m_Cache = BYTE(UINT32(m_Low) >> 24);                      
+      Stream.WriteByte(_cache + BYTE(Low >> 32));            
+      for (;_ffNum != 0; _ffNum--) 
+        Stream.WriteByte(0xFF + BYTE(Low >> 32));
+      _cache = BYTE(UINT32(Low) >> 24);                      
     } 
     else 
-      m_FFNum++;                               
-    m_Low = UINT32(m_Low) << 8;                           
+      _ffNum++;                               
+    Low = UINT32(Low) << 8;                           
   }
   
-  void EncodeDirectBits(UINT32 aValue, UINT32 aNumTotalBits)
+  void EncodeDirectBits(UINT32 value, UINT32 numTotalBits)
   {
-    for (int i = aNumTotalBits - 1; i >= 0; i--)
+    for (int i = numTotalBits - 1; i >= 0; i--)
     {
-      m_Range >>= 1;
-      if (((aValue >> i) & 1) == 1)
-        m_Low += m_Range;
-      if (m_Range < kTopValue)
+      Range >>= 1;
+      if (((value >> i) & 1) == 1)
+        Low += Range;
+      if (Range < kTopValue)
       {
-        m_Range <<= 8;
+        Range <<= 8;
         ShiftLow();
       }
     }
   }
 
-  void EncodeBit(UINT32 aSize0, UINT32 aNumTotalBits, UINT32 aSymbol)
+  void EncodeBit(UINT32 size0, UINT32 numTotalBits, UINT32 symbol)
   {
-    UINT32 aNewBound = (m_Range >> aNumTotalBits) * aSize0;
-    if (aSymbol == 0)
-      m_Range = aNewBound;
+    UINT32 newBound = (Range >> numTotalBits) * size0;
+    if (symbol == 0)
+      Range = newBound;
     else
     {
-      m_Low += aNewBound;
-      m_Range -= aNewBound;
+      Low += newBound;
+      Range -= newBound;
     }
-    while (m_Range < kTopValue)
+    while (Range < kTopValue)
     {
-      m_Range <<= 8;
+      Range <<= 8;
       ShiftLow();
     }
   }
 
-  UINT64 GetProcessedSize() {  return m_Stream.GetProcessedSize() + m_FFNum; }
+  UINT64 GetProcessedSize() {  return Stream.GetProcessedSize() + _ffNum; }
 };
 
 class CRangeDecoder
 {
 public:
-  NStream::CInByte m_Stream;
-  UINT32 m_Range;
-  UINT32 m_Code;
-  UINT32 m_Word;
+  NStream::CInByte Stream;
+  UINT32 Range;
+  UINT32 Code;
+  // UINT32 m_Word;
   void Normalize()
   {
-    while (m_Range < kTopValue)
+    while (Range < kTopValue)
     {
-      m_Code = (m_Code << 8) | m_Stream.ReadByte();
-      m_Range <<= 8;
+      Code = (Code << 8) | Stream.ReadByte();
+      Range <<= 8;
     }
   }
   
-  void Init(ISequentialInStream *aStream)
+  void Init(ISequentialInStream *stream)
   {
-    m_Stream.Init(aStream);
-    m_Code = 0;
-    m_Range = UINT32(-1);
+    Stream.Init(stream);
+    Code = 0;
+    Range = UINT32(-1);
     for(int i = 0; i < 5; i++)
-      m_Code = (m_Code << 8) | m_Stream.ReadByte();
+      Code = (Code << 8) | Stream.ReadByte();
   }
 
-  void ReleaseStream() { m_Stream.ReleaseStream(); }
+  void ReleaseStream() { Stream.ReleaseStream(); }
 
-  UINT32 GetThreshold(UINT32 aTotal)
+  UINT32 GetThreshold(UINT32 total)
   {
-    return (m_Code) / ( m_Range /= aTotal);
+    return (Code) / ( Range /= total);
   }
 
-  void Decode(UINT32 aStart, UINT32 aSize, UINT32 aTotal)
+  void Decode(UINT32 start, UINT32 size, UINT32 total)
   {
-    m_Code -= aStart * m_Range;
-    m_Range *= aSize;
+    Code -= start * Range;
+    Range *= size;
     Normalize();
   }
 
   /*
-  UINT32 DecodeDirectBitsDiv(UINT32 aNumTotalBits)
+  UINT32 DecodeDirectBitsDiv(UINT32 numTotalBits)
   {
-    m_Range >>= aNumTotalBits;
-    UINT32 aThreshold = m_Code / m_Range;
-    m_Code -= aThreshold * m_Range;
+    Range >>= numTotalBits;
+    UINT32 threshold = Code / Range;
+    Code -= threshold * Range;
     
     Normalize();
-    return aThreshold;
+    return threshold;
   }
 
-  UINT32 DecodeDirectBitsDiv2(UINT32 aNumTotalBits)
+  UINT32 DecodeDirectBitsDiv2(UINT32 numTotalBits)
   {
-    if (aNumTotalBits <= kNumBottomBits)
-      return DecodeDirectBitsDiv(aNumTotalBits);
-    UINT32 aResult = DecodeDirectBitsDiv(aNumTotalBits - kNumBottomBits) << kNumBottomBits;
-    return (aResult | DecodeDirectBitsDiv(kNumBottomBits));
+    if (numTotalBits <= kNumBottomBits)
+      return DecodeDirectBitsDiv(numTotalBits);
+    UINT32 result = DecodeDirectBitsDiv(numTotalBits - kNumBottomBits) << kNumBottomBits;
+    return (result | DecodeDirectBitsDiv(kNumBottomBits));
   }
   */
 
-  UINT32 DecodeDirectBits(UINT32 aNumTotalBits)
+  UINT32 DecodeDirectBits(UINT32 numTotalBits)
   {
-    UINT32 aRange = m_Range;
-    UINT32 aCode = m_Code;        
-    UINT32 aResult = 0;
-    for (UINT32 i = aNumTotalBits; i > 0; i--)
+    UINT32 range = Range;
+    UINT32 code = Code;        
+    UINT32 result = 0;
+    for (UINT32 i = numTotalBits; i > 0; i--)
     {
-      aRange >>= 1;
+      range >>= 1;
       /*
-      aResult <<= 1;
-      if (aCode >= aRange)
+      result <<= 1;
+      if (code >= range)
       {
-        aCode -= aRange;
-        aResult |= 1;
+        code -= range;
+        result |= 1;
       }
       */
-      UINT32 t = (aCode - aRange) >> 31;
-      aCode -= aRange & (t - 1);
-      // aRange = aRangeTmp + ((aRange & 1) & (1 - t));
-      aResult = (aResult << 1) | (1 - t);
+      UINT32 t = (code - range) >> 31;
+      code -= range & (t - 1);
+      // range = rangeTmp + ((range & 1) & (1 - t));
+      result = (result << 1) | (1 - t);
 
-      if (aRange < kTopValue)
+      if (range < kTopValue)
       {
-        aCode = (aCode << 8) | m_Stream.ReadByte();
-        aRange <<= 8; 
+        code = (code << 8) | Stream.ReadByte();
+        range <<= 8; 
       }
     }
-    m_Range = aRange;
-    m_Code = aCode;
-    return aResult;
+    Range = range;
+    Code = code;
+    return result;
   }
 
-  UINT32 DecodeBit(UINT32 aSize0, UINT32 aNumTotalBits)
+  UINT32 DecodeBit(UINT32 size0, UINT32 numTotalBits)
   {
-    UINT32 aNewBound = (m_Range >> aNumTotalBits) * aSize0;
-    UINT32 aSymbol;
-    if (m_Code < aNewBound)
+    UINT32 newBound = (Range >> numTotalBits) * size0;
+    UINT32 symbol;
+    if (Code < newBound)
     {
-      aSymbol = 0;
-      m_Range = aNewBound;
+      symbol = 0;
+      Range = newBound;
     }
     else
     {
-      aSymbol = 1;
-      m_Code -= aNewBound;
-      m_Range -= aNewBound;
+      symbol = 1;
+      Code -= newBound;
+      Range -= newBound;
     }
     Normalize();
-    return aSymbol;
+    return symbol;
   }
 
-  UINT64 GetProcessedSize() {return m_Stream.GetProcessedSize(); }
+  UINT64 GetProcessedSize() {return Stream.GetProcessedSize(); }
 };
 
 }}

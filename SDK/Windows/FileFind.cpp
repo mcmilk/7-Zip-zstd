@@ -20,20 +20,20 @@ bool CFileInfo::IsDots() const
 }
 
 static void ConvertWIN32_FIND_DATA_To_FileInfo(
-    const WIN32_FIND_DATA &aFindData,
-    CFileInfo &aFileInfo)
+    const WIN32_FIND_DATA &findData,
+    CFileInfo &fileInfo)
 {
-  aFileInfo.Attributes = aFindData.dwFileAttributes; 
-  aFileInfo.CreationTime = aFindData.ftCreationTime;  
-  aFileInfo.LastAccessTime = aFindData.ftLastAccessTime; 
-  aFileInfo.LastWriteTime = aFindData.ftLastWriteTime;
-  aFileInfo.Size  = (((UINT64)aFindData.nFileSizeHigh) << 32) + 
-      aFindData.nFileSizeLow; 
-  aFileInfo.Name = aFindData.cFileName;
+  fileInfo.Attributes = findData.dwFileAttributes; 
+  fileInfo.CreationTime = findData.ftCreationTime;  
+  fileInfo.LastAccessTime = findData.ftLastAccessTime; 
+  fileInfo.LastWriteTime = findData.ftLastWriteTime;
+  fileInfo.Size  = (((UINT64)findData.nFileSizeHigh) << 32) + 
+      findData.nFileSizeLow; 
+  fileInfo.Name = findData.cFileName;
   #ifndef _WIN32_WCE
-  aFileInfo.ReparseTag = aFindData.dwReserved0;
+  fileInfo.ReparseTag = findData.dwReserved0;
   #else
-  aFileInfo.ObjectID = aFindData.dwOID;
+  fileInfo.ObjectID = findData.dwOID;
   #endif
 }
   
@@ -42,63 +42,63 @@ static void ConvertWIN32_FIND_DATA_To_FileInfo(
 
 bool CFindFile::Close()
 {
-  if(!m_HandleAllocated)
+  if(!_handleAllocated)
     return true;
-  bool aResult = BOOLToBool(::FindClose(m_Handle));
-  m_HandleAllocated = !aResult;
-  return aResult;
+  bool result = BOOLToBool(::FindClose(_handle));
+  _handleAllocated = !result;
+  return result;
 }
            
-bool CFindFile::FindFirst(LPCTSTR aWildcard, CFileInfo &aFileInfo)
+bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
 {
   Close();
-  WIN32_FIND_DATA aFindData;
-  m_Handle = ::FindFirstFile(aWildcard, &aFindData);
-  m_HandleAllocated = (m_Handle != INVALID_HANDLE_VALUE);
-  if (m_HandleAllocated)
-    ConvertWIN32_FIND_DATA_To_FileInfo(aFindData, aFileInfo);
-  return m_HandleAllocated;
+  WIN32_FIND_DATA findData;
+  _handle = ::FindFirstFile(wildcard, &findData);
+  _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
+  if (_handleAllocated)
+    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+  return _handleAllocated;
 }
 
-bool CFindFile::FindNext(CFileInfo &aFileInfo)
+bool CFindFile::FindNext(CFileInfo &fileInfo)
 {
-  WIN32_FIND_DATA aFindData;
-  bool aResult = BOOLToBool(::FindNextFile(m_Handle, &aFindData));
-  if (aResult)
-    ConvertWIN32_FIND_DATA_To_FileInfo(aFindData, aFileInfo);
-  return aResult;
+  WIN32_FIND_DATA findData;
+  bool result = BOOLToBool(::FindNextFile(_handle, &findData));
+  if (result)
+    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+  return result;
 }
 
-bool FindFile(LPCTSTR aWildcard, CFileInfo &aFileInfo)
+bool FindFile(LPCTSTR wildcard, CFileInfo &fileInfo)
 {
-  CFindFile aFinder;
-  return aFinder.FindFirst(aWildcard, aFileInfo);
+  CFindFile finder;
+  return finder.FindFirst(wildcard, fileInfo);
 }
 
-bool DoesFileExist(LPCTSTR aName)
+bool DoesFileExist(LPCTSTR name)
 {
-  CFileInfo aFileInfo;
-  return FindFile(aName, aFileInfo);
+  CFileInfo fileInfo;
+  return FindFile(name, fileInfo);
 }
 
 /////////////////////////////////////
 // CEnumerator
 
-bool CEnumerator::NextAny(CFileInfo &aFileInfo)
+bool CEnumerator::NextAny(CFileInfo &fileInfo)
 {
-  if(m_FindFile.IsHandleAllocated())
-    return m_FindFile.FindNext(aFileInfo);
+  if(_findFile.IsHandleAllocated())
+    return _findFile.FindNext(fileInfo);
   else
-    return m_FindFile.FindFirst(m_Wildcard, aFileInfo);
+    return _findFile.FindFirst(_wildcard, fileInfo);
 }
 
-bool CEnumerator::Next(CFileInfo &aFileInfo)
+bool CEnumerator::Next(CFileInfo &fileInfo)
 {
   while(true)
   {
-    if(!NextAny(aFileInfo))
+    if(!NextAny(fileInfo))
       return false;
-    if(!aFileInfo.IsDots())
+    if(!fileInfo.IsDots())
       return true;
   }
 }
@@ -109,48 +109,48 @@ bool CEnumerator::Next(CFileInfo &aFileInfo)
 
 bool CFindChangeNotification::Close()
 {
-  if(m_Handle == INVALID_HANDLE_VALUE)
+  if(_handle == INVALID_HANDLE_VALUE)
     return true;
-  bool aResult = BOOLToBool(::FindCloseChangeNotification(m_Handle));
-  if (aResult)
-    m_Handle = INVALID_HANDLE_VALUE;
-  return aResult;
+  bool result = BOOLToBool(::FindCloseChangeNotification(_handle));
+  if (result)
+    _handle = INVALID_HANDLE_VALUE;
+  return result;
 }
            
-HANDLE CFindChangeNotification::FindFirst(LPCTSTR aPathName, bool aWatchSubtree, 
-    DWORD aNotifyFilter)
+HANDLE CFindChangeNotification::FindFirst(LPCTSTR pathName, bool watchSubtree, 
+    DWORD notifyFilter)
 {
-  m_Handle = ::FindFirstChangeNotification(aPathName, 
-      BoolToBOOL(aWatchSubtree), aNotifyFilter);
-  return m_Handle;
+  _handle = ::FindFirstChangeNotification(pathName, 
+      BoolToBOOL(watchSubtree), notifyFilter);
+  return _handle;
 }
 
 #ifndef _WIN32_WCE
-bool MyGetLogicalDriveStrings(CSysStringVector &aDriveStrings)
+bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
 {
-  aDriveStrings.Clear();
-  UINT32 aSize = GetLogicalDriveStrings( 0, NULL); 
-  if(aSize == 0)
+  driveStrings.Clear();
+  UINT32 size = GetLogicalDriveStrings( 0, NULL); 
+  if(size == 0)
     return false;
-  CSysString aBuffer;
-  UINT32 aNewSize = GetLogicalDriveStrings(aSize, aBuffer.GetBuffer(aSize)); 
-  if(aNewSize == 0)
+  CSysString buffer;
+  UINT32 newSize = GetLogicalDriveStrings(size, buffer.GetBuffer(size)); 
+  if(newSize == 0)
     return false;
-  if(aNewSize > aSize)
+  if(newSize > size)
     return false;
-  CSysString aString;
-  for(UINT32 i = 0; i < aNewSize; i++)
+  CSysString string;
+  for(UINT32 i = 0; i < newSize; i++)
   {
-    TCHAR aChar = aBuffer[i];
-    if(aChar == TEXT('\0'))
+    TCHAR c = buffer[i];
+    if(c == TEXT('\0'))
     {
-      aDriveStrings.Add(aString);
-      aString.Empty();
+      driveStrings.Add(string);
+      string.Empty();
     }
     else
-      aString += aChar;
+      string += c;
   }
-  if(!aString.IsEmpty())
+  if(!string.IsEmpty())
     return false;
   return true;
 }

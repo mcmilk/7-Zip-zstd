@@ -13,66 +13,66 @@
 //////////////////////////
 // CBitTreeEncoder
 
-template <int aNumMoveBits, UINT32 m_NumBitLevels>
+template <int numMoveBits, UINT32 NumBitLevels>
 class CBitTreeEncoder
 {
-  CMyBitEncoder<aNumMoveBits> m_Models[1 << m_NumBitLevels];
+  CMyBitEncoder<numMoveBits> Models[1 << NumBitLevels];
 public:
   void Init()
   {
-    for(UINT32 i = 1; i < (1 << m_NumBitLevels); i++)
-      m_Models[i].Init();
+    for(UINT32 i = 1; i < (1 << NumBitLevels); i++)
+      Models[i].Init();
   }
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol)
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol)
   {
-    UINT32 aModelIndex = 1;
-    for (UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0 ;)
+    UINT32 modelIndex = 1;
+    for (UINT32 bitIndex = NumBitLevels; bitIndex > 0 ;)
     {
-      aBitIndex--;
-      UINT32 aBit = (aSymbol >> aBitIndex ) & 1;
-      m_Models[aModelIndex].Encode(aRangeEncoder, aBit);
-      aModelIndex = (aModelIndex << 1) | aBit;
+      bitIndex--;
+      UINT32 bit = (symbol >> bitIndex ) & 1;
+      Models[modelIndex].Encode(rangeEncoder, bit);
+      modelIndex = (modelIndex << 1) | bit;
     }
   };
-  UINT32 GetPrice(UINT32 aSymbol) const
+  UINT32 GetPrice(UINT32 symbol) const
   {
-    UINT32 aPrice = 0;
-    UINT32 aModelIndex = 1;
-    for (UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0 ;)
+    UINT32 price = 0;
+    UINT32 modelIndex = 1;
+    for (UINT32 bitIndex = NumBitLevels; bitIndex > 0 ;)
     {
-      aBitIndex--;
-      UINT32 aBit = (aSymbol >> aBitIndex ) & 1;
-      aPrice += m_Models[aModelIndex].GetPrice(aBit);
-      aModelIndex = (aModelIndex << 1) + aBit;
+      bitIndex--;
+      UINT32 bit = (symbol >> bitIndex ) & 1;
+      price += Models[modelIndex].GetPrice(bit);
+      modelIndex = (modelIndex << 1) + bit;
     }
-    return aPrice;
+    return price;
   }
 };
 
 //////////////////////////
 // CBitTreeDecoder
 
-template <int aNumMoveBits, UINT32 m_NumBitLevels>
+template <int numMoveBits, UINT32 NumBitLevels>
 class CBitTreeDecoder
 {
-  CMyBitDecoder<aNumMoveBits> m_Models[1 << m_NumBitLevels];
+  CMyBitDecoder<numMoveBits> Models[1 << NumBitLevels];
 public:
   void Init()
   {
-    for(UINT32 i = 1; i < (1 << m_NumBitLevels); i++)
-      m_Models[i].Init();
+    for(UINT32 i = 1; i < (1 << NumBitLevels); i++)
+      Models[i].Init();
   }
-  UINT32 Decode(CMyRangeDecoder *aRangeDecoder)
+  UINT32 Decode(CMyRangeDecoder *rangeDecoder)
   {
-    UINT32 aModelIndex = 1;
+    UINT32 modelIndex = 1;
     RC_INIT_VAR
-    for(UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0; aBitIndex--)
+    for(UINT32 bitIndex = NumBitLevels; bitIndex > 0; bitIndex--)
     {
-      // aModelIndex = (aModelIndex << 1) + m_Models[aModelIndex].Decode(aRangeDecoder);
-      RC_GETBIT(aNumMoveBits, m_Models[aModelIndex].m_Probability, aModelIndex)
+      // modelIndex = (modelIndex << 1) + Models[modelIndex].Decode(rangeDecoder);
+      RC_GETBIT(numMoveBits, Models[modelIndex].Probability, modelIndex)
     }
     RC_FLUSH_VAR
-    return aModelIndex - (1 << m_NumBitLevels);
+    return modelIndex - (1 << NumBitLevels);
   };
 };
 
@@ -81,129 +81,129 @@ public:
 ////////////////////////////////
 // CReverseBitTreeEncoder
 
-template <int aNumMoveBits>
+template <int numMoveBits>
 class CReverseBitTreeEncoder2
 {
-  CMyBitEncoder<aNumMoveBits> *m_Models;
-  UINT32 m_NumBitLevels;
+  CMyBitEncoder<numMoveBits> *Models;
+  UINT32 NumBitLevels;
 public:
-  CReverseBitTreeEncoder2(): m_Models(0) { }
-  ~CReverseBitTreeEncoder2() { delete []m_Models; }
-  bool Create(UINT32 aNumBitLevels)
+  CReverseBitTreeEncoder2(): Models(0) { }
+  ~CReverseBitTreeEncoder2() { delete []Models; }
+  bool Create(UINT32 numBitLevels)
   {
-    m_NumBitLevels = aNumBitLevels;
-    m_Models = new CMyBitEncoder<aNumMoveBits>[1 << aNumBitLevels];
-    return (m_Models != 0);
+    NumBitLevels = numBitLevels;
+    Models = new CMyBitEncoder<numMoveBits>[1 << numBitLevels];
+    return (Models != 0);
   }
   void Init()
   {
-    UINT32 aNumModels = 1 << m_NumBitLevels;
-    for(UINT32 i = 1; i < aNumModels; i++)
-      m_Models[i].Init();
+    UINT32 numModels = 1 << NumBitLevels;
+    for(UINT32 i = 1; i < numModels; i++)
+      Models[i].Init();
   }
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol)
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol)
   {
-    UINT32 aModelIndex = 1;
-    for (UINT32 i = 0; i < m_NumBitLevels; i++)
+    UINT32 modelIndex = 1;
+    for (UINT32 i = 0; i < NumBitLevels; i++)
     {
-      UINT32 aBit = aSymbol & 1;
-      m_Models[aModelIndex].Encode(aRangeEncoder, aBit);
-      aModelIndex = (aModelIndex << 1) | aBit;
-      aSymbol >>= 1;
+      UINT32 bit = symbol & 1;
+      Models[modelIndex].Encode(rangeEncoder, bit);
+      modelIndex = (modelIndex << 1) | bit;
+      symbol >>= 1;
     }
   }
-  UINT32 GetPrice(UINT32 aSymbol) const
+  UINT32 GetPrice(UINT32 symbol) const
   {
-    UINT32 aPrice = 0;
-    UINT32 aModelIndex = 1;
-    for (UINT32 i = m_NumBitLevels; i > 0; i--)
+    UINT32 price = 0;
+    UINT32 modelIndex = 1;
+    for (UINT32 i = NumBitLevels; i > 0; i--)
     {
-      UINT32 aBit = aSymbol & 1;
-      aSymbol >>= 1;
-      aPrice += m_Models[aModelIndex].GetPrice(aBit);
-      aModelIndex = (aModelIndex << 1) | aBit;
+      UINT32 bit = symbol & 1;
+      symbol >>= 1;
+      price += Models[modelIndex].GetPrice(bit);
+      modelIndex = (modelIndex << 1) | bit;
     }
-    return aPrice;
+    return price;
   }
 };
 
 /*
-template <int aNumMoveBits, int aNumBitLevels>
-class CReverseBitTreeEncoder: public CReverseBitTreeEncoder2<aNumMoveBits>
+template <int numMoveBits, int numBitLevels>
+class CReverseBitTreeEncoder: public CReverseBitTreeEncoder2<numMoveBits>
 {
 public:
   CReverseBitTreeEncoder() 
-    { Create(aNumBitLevels); }
+    { Create(numBitLevels); }
 };
 */
 ////////////////////////////////
 // CReverseBitTreeDecoder
 
-template <int aNumMoveBits>
+template <int numMoveBits>
 class CReverseBitTreeDecoder2
 {
-  CMyBitDecoder<aNumMoveBits> *m_Models;
-  UINT32 m_NumBitLevels;
+  CMyBitDecoder<numMoveBits> *Models;
+  UINT32 NumBitLevels;
 public:
-  CReverseBitTreeDecoder2(): m_Models(0) { }
-  ~CReverseBitTreeDecoder2() { delete []m_Models; }
-  bool Create(UINT32 aNumBitLevels)
+  CReverseBitTreeDecoder2(): Models(0) { }
+  ~CReverseBitTreeDecoder2() { delete []Models; }
+  bool Create(UINT32 numBitLevels)
   {
-    m_NumBitLevels = aNumBitLevels;
-    m_Models = new CMyBitDecoder<aNumMoveBits>[1 << aNumBitLevels];
-    return (m_Models != 0);
+    NumBitLevels = numBitLevels;
+    Models = new CMyBitDecoder<numMoveBits>[1 << numBitLevels];
+    return (Models != 0);
   }
   void Init()
   {
-    UINT32 aNumModels = 1 << m_NumBitLevels;
-    for(UINT32 i = 1; i < aNumModels; i++)
-      m_Models[i].Init();
+    UINT32 numModels = 1 << NumBitLevels;
+    for(UINT32 i = 1; i < numModels; i++)
+      Models[i].Init();
   }
-  UINT32 Decode(CMyRangeDecoder *aRangeDecoder)
+  UINT32 Decode(CMyRangeDecoder *rangeDecoder)
   {
-    UINT32 aModelIndex = 1;
-    UINT32 aSymbol = 0;
+    UINT32 modelIndex = 1;
+    UINT32 symbol = 0;
     RC_INIT_VAR
-    for(UINT32 aBitIndex = 0; aBitIndex < m_NumBitLevels; aBitIndex++)
+    for(UINT32 bitIndex = 0; bitIndex < NumBitLevels; bitIndex++)
     {
-      // UINT32 aBit = m_Models[aModelIndex].Decode(aRangeDecoder);
-      // aModelIndex <<= 1;
-      // aModelIndex += aBit;
-      // aSymbol |= (aBit << aBitIndex);
-      RC_GETBIT2(aNumMoveBits, m_Models[aModelIndex].m_Probability, aModelIndex, ; , aSymbol |= (1 << aBitIndex))
+      // UINT32 bit = Models[modelIndex].Decode(rangeDecoder);
+      // modelIndex <<= 1;
+      // modelIndex += bit;
+      // symbol |= (bit << bitIndex);
+      RC_GETBIT2(numMoveBits, Models[modelIndex].Probability, modelIndex, ; , symbol |= (1 << bitIndex))
     }
     RC_FLUSH_VAR
-    return aSymbol;
+    return symbol;
   };
 };
 ////////////////////////////
 // CReverseBitTreeDecoder2
 
-template <int aNumMoveBits, UINT32 m_NumBitLevels>
+template <int numMoveBits, UINT32 NumBitLevels>
 class CReverseBitTreeDecoder
 {
-  CMyBitDecoder<aNumMoveBits> m_Models[1 << m_NumBitLevels];
+  CMyBitDecoder<numMoveBits> Models[1 << NumBitLevels];
 public:
   void Init()
   {
-    for(UINT32 i = 1; i < (1 << m_NumBitLevels); i++)
-      m_Models[i].Init();
+    for(UINT32 i = 1; i < (1 << NumBitLevels); i++)
+      Models[i].Init();
   }
-  UINT32 Decode(CMyRangeDecoder *aRangeDecoder)
+  UINT32 Decode(CMyRangeDecoder *rangeDecoder)
   {
-    UINT32 aModelIndex = 1;
-    UINT32 aSymbol = 0;
+    UINT32 modelIndex = 1;
+    UINT32 symbol = 0;
     RC_INIT_VAR
-    for(UINT32 aBitIndex = 0; aBitIndex < m_NumBitLevels; aBitIndex++)
+    for(UINT32 bitIndex = 0; bitIndex < NumBitLevels; bitIndex++)
     {
-      // UINT32 aBit = m_Models[aModelIndex].Decode(aRangeDecoder);
-      // aModelIndex <<= 1;
-      // aModelIndex += aBit;
-      // aSymbol |= (aBit << aBitIndex);
-      RC_GETBIT2(aNumMoveBits, m_Models[aModelIndex].m_Probability, aModelIndex, ; , aSymbol |= (1 << aBitIndex))
+      // UINT32 bit = Models[modelIndex].Decode(rangeDecoder);
+      // modelIndex <<= 1;
+      // modelIndex += bit;
+      // symbol |= (bit << bitIndex);
+      RC_GETBIT2(numMoveBits, Models[modelIndex].Probability, modelIndex, ; , symbol |= (1 << bitIndex))
     }
     RC_FLUSH_VAR
-    return aSymbol;
+    return symbol;
   }
 };
 
@@ -211,47 +211,47 @@ public:
 //////////////////////////
 // CBitTreeEncoder2
 
-template <int aNumMoveBits>
+template <int numMoveBits>
 class CBitTreeEncoder2
 {
-  NCompression::NArithmetic::CBitEncoder<aNumMoveBits> *m_Models;
-  UINT32 m_NumBitLevels;
+  NCompression::NArithmetic::CBitEncoder<numMoveBits> *Models;
+  UINT32 NumBitLevels;
 public:
-  bool Create(UINT32 aNumBitLevels)
+  bool Create(UINT32 numBitLevels)
   { 
-    m_NumBitLevels = aNumBitLevels;
-    m_Models = new NCompression::NArithmetic::CBitEncoder<aNumMoveBits>[1 << aNumBitLevels];
-    return (m_Models != 0);
+    NumBitLevels = numBitLevels;
+    Models = new NCompression::NArithmetic::CBitEncoder<numMoveBits>[1 << numBitLevels];
+    return (Models != 0);
   }
   void Init()
   {
-    UINT32 aNumModels = 1 << m_NumBitLevels;
-    for(UINT32 i = 1; i < aNumModels; i++)
-      m_Models[i].Init();
+    UINT32 numModels = 1 << NumBitLevels;
+    for(UINT32 i = 1; i < numModels; i++)
+      Models[i].Init();
   }
-  void Encode(CMyRangeEncoder *aRangeEncoder, UINT32 aSymbol)
+  void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol)
   {
-    UINT32 aModelIndex = 1;
-    for (UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0 ;)
+    UINT32 modelIndex = 1;
+    for (UINT32 bitIndex = NumBitLevels; bitIndex > 0 ;)
     {
-      aBitIndex--;
-      UINT32 aBit = (aSymbol >> aBitIndex ) & 1;
-      m_Models[aModelIndex].Encode(aRangeEncoder, aBit);
-      aModelIndex = (aModelIndex << 1) | aBit;
+      bitIndex--;
+      UINT32 bit = (symbol >> bitIndex ) & 1;
+      Models[modelIndex].Encode(rangeEncoder, bit);
+      modelIndex = (modelIndex << 1) | bit;
     }
   }
-  UINT32 GetPrice(UINT32 aSymbol) const
+  UINT32 GetPrice(UINT32 symbol) const
   {
-    UINT32 aPrice = 0;
-    UINT32 aModelIndex = 1;
-    for (UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0 ;)
+    UINT32 price = 0;
+    UINT32 modelIndex = 1;
+    for (UINT32 bitIndex = NumBitLevels; bitIndex > 0 ;)
     {
-      aBitIndex--;
-      UINT32 aBit = (aSymbol >> aBitIndex ) & 1;
-      aPrice += m_Models[aModelIndex].GetPrice(aBit);
-      aModelIndex = (aModelIndex << 1) + aBit;
+      bitIndex--;
+      UINT32 bit = (symbol >> bitIndex ) & 1;
+      price += Models[modelIndex].GetPrice(bit);
+      modelIndex = (modelIndex << 1) + bit;
     }
-    return aPrice;
+    return price;
   }
 };
 
@@ -259,35 +259,35 @@ public:
 //////////////////////////
 // CBitTreeDecoder2
 
-template <int aNumMoveBits>
+template <int numMoveBits>
 class CBitTreeDecoder2
 {
-  NCompression::NArithmetic::CBitDecoder<aNumMoveBits> *m_Models;
-  UINT32 m_NumBitLevels;
+  NCompression::NArithmetic::CBitDecoder<numMoveBits> *Models;
+  UINT32 NumBitLevels;
 public:
-  bool Create(UINT32 aNumBitLevels)
+  bool Create(UINT32 numBitLevels)
   { 
-    m_NumBitLevels = aNumBitLevels;
-    m_Models = new NCompression::NArithmetic::CBitDecoder<aNumMoveBits>[1 << aNumBitLevels];
-    return (m_Models != 0);
+    NumBitLevels = numBitLevels;
+    Models = new NCompression::NArithmetic::CBitDecoder<numMoveBits>[1 << numBitLevels];
+    return (Models != 0);
   }
   void Init()
   {
-    UINT32 aNumModels = 1 << m_NumBitLevels;
-    for(UINT32 i = 1; i < aNumModels; i++)
-      m_Models[i].Init();
+    UINT32 numModels = 1 << NumBitLevels;
+    for(UINT32 i = 1; i < numModels; i++)
+      Models[i].Init();
   }
-  UINT32 Decode(CMyRangeDecoder *aRangeDecoder)
+  UINT32 Decode(CMyRangeDecoder *rangeDecoder)
   {
-    UINT32 aModelIndex = 1;
+    UINT32 modelIndex = 1;
     RC_INIT_VAR
-    for(UINT32 aBitIndex = m_NumBitLevels; aBitIndex > 0; aBitIndex--)
+    for(UINT32 bitIndex = NumBitLevels; bitIndex > 0; bitIndex--)
     {
-      // aModelIndex = (aModelIndex << 1) + m_Models[aModelIndex].Decode(aRangeDecoder);
-      RC_GETBIT(aNumMoveBits, m_Models[aModelIndex].m_Probability, aModelIndex)
+      // modelIndex = (modelIndex << 1) + Models[modelIndex].Decode(rangeDecoder);
+      RC_GETBIT(numMoveBits, Models[modelIndex].Probability, modelIndex)
     }
     RC_FLUSH_VAR
-    return aModelIndex - (1 << m_NumBitLevels);
+    return modelIndex - (1 << NumBitLevels);
   }
 };
 */

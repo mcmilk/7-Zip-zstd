@@ -8,15 +8,8 @@
 #include "Windows/Registry.h"
 #include "ZipSettings.h"
 
-class CZipRegistryManager
+namespace NZipRegistryManager
 {
-  NWindows::NRegistry::CKey m_CUKey;
-  // NWindows::NRegistry::CKey m_LMKey;
-public:
-  CZipRegistryManager();
-  void SaveListViewInfo(const CLSID &aClassID, const NZipSettings::CListViewInfo &aViewInfo);
-  void ReadListViewInfo(const CLSID &aClassID, NZipSettings::CListViewInfo &aViewInfo);
-
   void SaveExtractionInfo(const NZipSettings::NExtraction::CInfo &anInfo);
   void ReadExtractionInfo(NZipSettings::NExtraction::CInfo &anInfo);
 
@@ -27,8 +20,5 @@ public:
   void ReadWorkDirInfo(NZipSettings::NWorkDir::CInfo &anInfo);
   
 };
-
-void SaveRegLang(const CSysString &aLang);
-void ReadRegLang(CSysString &aLang);
 
 #endif

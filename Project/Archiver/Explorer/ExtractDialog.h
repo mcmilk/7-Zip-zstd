@@ -56,17 +56,17 @@ namespace NExtractionDialog
 class CExtractDialog: public NWindows::NControl::CModalDialog
 {
   #ifdef NO_REGISTRY
-  NWindows::NControl::CDialogChildControl m_Path;
+  NWindows::NControl::CDialogChildControl _path;
   #else
-  NWindows::NControl::CComboBox	m_Path;
+  NWindows::NControl::CComboBox	_path;
   #endif
   
   #ifndef _SFX
-  NWindows::NControl::CDialogChildControl m_PasswordControl;
+  NWindows::NControl::CDialogChildControl _passwordControl;
   #endif
 
-	int		m_PathMode;
-	int		m_OverwriteMode;
+	int		_pathMode;
+	int		_overwriteMode;
 
   #ifndef _SFX
   int GetPathNameMode() const;
@@ -82,24 +82,17 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   #ifndef  NO_REGISTRY
   virtual void OnHelp();
   #endif
-  #ifndef  NO_REGISTRY
-	CZipRegistryManager *m_ZipRegistryManager;
-  #endif
 	// void UpdateWildCardState();
 public:
-  bool m_EnableSelectedFilesButton;
-  bool m_EnableFilesButton;
-  CSysString m_DirectoryPath;
-	NExtractionDialog::NFilesMode::EEnum m_FilesMode;
-  CSysString m_Password;
+  bool _enableSelectedFilesButton;
+  bool _enableFilesButton;
+  CSysString _directoryPath;
+	NExtractionDialog::NFilesMode::EEnum _filesMode;
+  CSysString _password;
 
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_EXTRACT), aWndParent); }
-  bool Init(
-    #ifndef  NO_REGISTRY
-    CZipRegistryManager *aManager, 
-    #endif
-    const CSysString &aFileName);
+  bool Init(const CSysString &aFileName);
   void GetModeInfo(NExtractionDialog::CModeInfo &aModeInfo); 
 };
 

@@ -4,55 +4,55 @@
 
 #include "ProgressUtils.h"
 
-void CLocalCompressProgressInfo::Init(ICompressProgressInfo *aProgress,
-    const UINT64 *anInStartValue, const UINT64 *anOutStartValue)
+void CLocalCompressProgressInfo::Init(ICompressProgressInfo *progress,
+    const UINT64 *inStartValue, const UINT64 *outStartValue)
 {
-  m_Progress = aProgress;
-  m_InStartValueIsAssigned = (anInStartValue != NULL);
-  if (m_InStartValueIsAssigned)
-    m_InStartValue = *anInStartValue;
-  m_OutStartValueIsAssigned = (anOutStartValue != NULL);
-  if (m_OutStartValueIsAssigned)
-    m_OutStartValue = *anOutStartValue;
+  _progress = progress;
+  _inStartValueIsAssigned = (inStartValue != NULL);
+  if (_inStartValueIsAssigned)
+    _inStartValue = *inStartValue;
+  _outStartValueIsAssigned = (outStartValue != NULL);
+  if (_outStartValueIsAssigned)
+    _outStartValue = *outStartValue;
 }
 
 STDMETHODIMP CLocalCompressProgressInfo::SetRatioInfo(
-    const UINT64 *anInSize, const UINT64 *anOutSize)
+    const UINT64 *inSize, const UINT64 *outSize)
 {
-  UINT64 anInSizeNew, anOutSizeNew;
-  const UINT64 *anInSizeNewPointer;
-  const UINT64 *anOutSizeNewPointer;
-  if (m_InStartValueIsAssigned && anInSize != NULL)
+  UINT64 inSizeNew, outSizeNew;
+  const UINT64 *inSizeNewPointer;
+  const UINT64 *outSizeNewPointer;
+  if (_inStartValueIsAssigned && inSize != NULL)
   {
-    anInSizeNew = m_InStartValue + (*anInSize);
-    anInSizeNewPointer = &anInSizeNew;
+    inSizeNew = _inStartValue + (*inSize);
+    inSizeNewPointer = &inSizeNew;
   }
   else
-    anInSizeNewPointer = NULL;
+    inSizeNewPointer = NULL;
 
-  if (m_OutStartValueIsAssigned && anOutSize != NULL)
+  if (_outStartValueIsAssigned && outSize != NULL)
   {
-    anOutSizeNew = m_OutStartValue + (*anOutSize);
-    anOutSizeNewPointer = &anOutSizeNew;
+    outSizeNew = _outStartValue + (*outSize);
+    outSizeNewPointer = &outSizeNew;
   }
   else
-    anOutSizeNewPointer = NULL;
-  return m_Progress->SetRatioInfo(anInSizeNewPointer, anOutSizeNewPointer);
+    outSizeNewPointer = NULL;
+  return _progress->SetRatioInfo(inSizeNewPointer, outSizeNewPointer);
 }
 
 
 ///////////////////////////////////
 // 
 
-void CLocalProgress::Init(IProgress *aProgress, bool anInSizeIsMain)
+void CLocalProgress::Init(IProgress *progress, bool inSizeIsMain)
 {
-  m_Progress = aProgress;
-  m_InSizeIsMain = anInSizeIsMain;
+  _progress = progress;
+  _inSizeIsMain = inSizeIsMain;
 }
 
 STDMETHODIMP CLocalProgress::SetRatioInfo(
-    const UINT64 *anInSize, const UINT64 *anOutSize)
+    const UINT64 *inSize, const UINT64 *outSize)
 {
-  return m_Progress->SetCompleted(m_InSizeIsMain ? anInSize : anOutSize);
+  return _progress->SetCompleted(_inSizeIsMain ? inSize : outSize);
 }
 

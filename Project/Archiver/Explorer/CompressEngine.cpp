@@ -17,15 +17,15 @@
 #include "../Common/IArchiveHandler2.h"
 
 #include "../Common/OpenEngine2.h"
-#include "../Common/HelpUtils.h"
+#include "../../FileManager/ProgramLocation.h"
 
 #include "../Agent/Handler.h"
 
 #include "../Resource/Extract/resource.h"
 
 #include "MyMessages.h"
-#include "FormatUtils.h"
-#include "UpdateCallback100.h"
+#include "../../FileManager/FormatUtils.h"
+#include "../../FileManager/UpdateCallback100.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -44,346 +44,349 @@ DEFINE_GUID(CLSID_CAgentArchiveHandler,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
 */
 
-static void SplitString(const CSysString &aString, CSysStringVector &aStrings)
+static void SplitString(const CSysString &srcString, CSysStringVector &destStrings)
 {
-  aStrings.Clear();
-  for (int aPos = 0; aPos < aString.Length();)
+  destStrings.Clear();
+  for (int pos = 0; pos < srcString.Length();)
   {
-    int aSpacePos = aString.Find(TEXT(' '), aPos);
-    if (aSpacePos < 0)
+    int spacePos = srcString.Find(TEXT(' '), pos);
+    if (spacePos < 0)
     {
-      aStrings.Add(aString.Mid(aPos));
+      destStrings.Add(srcString.Mid(pos));
       return;
     }
-    if (aSpacePos != aPos)
-      aStrings.Add(aString.Mid(aPos, aSpacePos - aPos));
-    aPos = aSpacePos + 1;
+    if (spacePos != pos)
+      destStrings.Add(srcString.Mid(pos, spacePos - pos));
+    pos = spacePos + 1;
   }
 }
 
-static bool ParseNumberString(const UString &aString, UINT32 &aNumber)
+static bool ParseNumberString(const UString &string, UINT32 &number)
 {
-  wchar_t *anEndPtr;
-  aNumber = wcstoul(aString, &anEndPtr, 10);
-  return (anEndPtr - aString == aString.Length());
+  wchar_t *endPtr;
+  number = wcstoul(string, &endPtr, 10);
+  return (endPtr - string == string.Length());
 }
 
-static void SetOptions(const CSysString &anOptions,
-    CObjectVector<CComBSTR> &aNamesReal,
-    std::vector<NCOM::CPropVariant> &aValues)
+static void SetOptions(const CSysString &options,
+    CObjectVector<CComBSTR> &realNames,
+    std::vector<NCOM::CPropVariant> &values)
 {
-  CSysStringVector aStrings;
-  SplitString(anOptions, aStrings);
-  for(int i = 0; i < aStrings.Size(); i++)
+  CSysStringVector strings;
+  SplitString(options, strings);
+  for(int i = 0; i < strings.Size(); i++)
   {
-    const UString &aString = GetUnicodeString(aStrings[i]);
-    int anIndex = aString.Find(L'=');
-    CComBSTR aName;
-    NCOM::CPropVariant aPropVariant;
-    if (anIndex < 0)
-      aName = aString;
+    const UString &string = GetUnicodeString(strings[i]);
+    int index = string.Find(L'=');
+    CComBSTR name;
+    NCOM::CPropVariant propVariant;
+    if (index < 0)
+      name = string;
     else
     {
-      aName = aString.Left(anIndex);
-      UString aValue = aString.Mid(anIndex + 1);
-      if (!aValue.IsEmpty())
+      name = string.Left(index);
+      UString value = string.Mid(index + 1);
+      if (!value.IsEmpty())
       {
-        UINT32 aNumber;
-        if (ParseNumberString(aValue, aNumber))
-          aPropVariant = aNumber;
+        UINT32 number;
+        if (ParseNumberString(value, number))
+          propVariant = number;
         else
-          aPropVariant = aValue;
+          propVariant = value;
       }
     }
-    aNamesReal.Add(aName);
-    aValues.push_back(aPropVariant);
+    realNames.Add(name);
+    values.push_back(propVariant);
   }
 }
 
-static HRESULT SetOutProperties(IOutArchiveHandler100 * anOutArchive, 
-    UINT32 aMethod, bool aSolidModeIsAllowed, bool aSolidMode, 
-    const CSysString &anOptions)
+static HRESULT SetOutProperties(IOutArchiveHandler100 * outArchive, 
+    UINT32 method, bool solidModeIsAllowed, bool solidMode, 
+    const CSysString &options)
 {
-  CComPtr<ISetProperties> aSetProperties;
-  if (anOutArchive->QueryInterface(&aSetProperties) == S_OK)
+  CComPtr<ISetProperties> setProperties;
+  if (outArchive->QueryInterface(&setProperties) == S_OK)
   {
-    CComBSTR aComBSTR;
-    switch(aMethod)
+    CComBSTR comBSTR;
+    switch(method)
     {
       case 0:
-        aComBSTR = "0";
+        comBSTR = "0";
         break;
       case 1:
-        aComBSTR = "1";
+        comBSTR = "1";
         break;
       case 2:
-        aComBSTR = "X";
+        comBSTR = "X";
         break;
       default:
         return E_INVALIDARG;
     }
-    CObjectVector<CComBSTR> aNamesReal;
-    std::vector<NCOM::CPropVariant> aValues;
-    aNamesReal.Add(aComBSTR);
-    aValues.push_back(NCOM::CPropVariant());
+    CObjectVector<CComBSTR> realNames;
+    std::vector<NCOM::CPropVariant> values;
+    realNames.Add(comBSTR);
+    values.push_back(NCOM::CPropVariant());
     
     // Solid
-    if (aSolidModeIsAllowed)
+    if (solidModeIsAllowed)
     {
-      aNamesReal.Add(L"s");
-      aValues.push_back(NCOM::CPropVariant(aSolidMode ? L"on": L"off"));
+      realNames.Add(L"s");
+      values.push_back(NCOM::CPropVariant(solidMode ? L"on": L"off"));
     }
 
     // Options 
-    SetOptions(anOptions, aNamesReal, aValues);
+    SetOptions(options, realNames, values);
     
-    std::vector<BSTR> aNames;
-    for(int i = 0; i < aNamesReal.Size(); i++)
-      aNames.push_back(aNamesReal[i]);
-    RETURN_IF_NOT_S_OK(aSetProperties->SetProperties(&aNames.front(), 
-      &aValues.front(), aNames.size()));
-
-
+    std::vector<BSTR> names;
+    for(int i = 0; i < realNames.Size(); i++)
+      names.push_back(realNames[i]);
+    RETURN_IF_NOT_S_OK(setProperties->SetProperties(&names.front(), 
+      &values.front(), names.size()));
   }
   return S_OK;
 }
 
-HRESULT CompressArchive(const CSysStringVector &aFileNames)
+HRESULT CompressArchive(const CSysStringVector &fileNames)
 {
-  if (aFileNames.Size() == 0)
+  if (fileNames.Size() == 0)
     return S_OK;
 
-  UString aCurrentDirU;
-  const CSysString &aFrontName = aFileNames.Front();
-  UString aFrontNameU = GetUnicodeString(aFrontName);
+  UString currentDirU;
+  const CSysString &frontName = fileNames.Front();
+  UString frontNameU = GetUnicodeString(frontName);
   /*
-  if (!GetOnlyDirPrefix(aFrontName, aCurrentDir))
+  if (!GetOnlyDirPrefix(frontName, aCurrentDir))
     return E_FAIL;
   */
 
-  UString aResultPathU;
+  UString resultPathU;
   {
     /*
     bool aPrevFolderOK = false;
     if (aCurrentDir.Length() > 3)
       aPrevFolderOK = GetOnlyName(aCurrentDir.Left(aCurrentDir.Length() - 1), aResultPath);
-    if (aFileNames.Size() == 1 || !aPrevFolderOK)
+    if (fileNames.Size() == 1 || !aPrevFolderOK)
     {
-      if (!GetOnlyName(aFrontName, aResultPath))
+      if (!GetOnlyName(frontName, aResultPath))
         return E_FAIL;
     }
     */
-    CParsedPath aParsedPath;
-    aParsedPath.ParsePath(aFrontNameU);
-    if(aParsedPath.PathParts.Size() == 0)
+    CParsedPath parsedPath;
+    parsedPath.ParsePath(frontNameU);
+    if(parsedPath.PathParts.Size() == 0)
       return E_FAIL; // Error
-    if (aFileNames.Size() == 1 || aParsedPath.PathParts.Size() == 1)
+    if (fileNames.Size() == 1 || parsedPath.PathParts.Size() == 1)
     {
-      CSysString aPureName, aDot, anExtension;
-      aResultPathU = aParsedPath.PathParts.Back();
+      CSysString pureName, dot, extension;
+      resultPathU = parsedPath.PathParts.Back();
     }
     else
     {
-      aParsedPath.PathParts.DeleteBack();
-      aResultPathU = aParsedPath.PathParts.Back();
+      parsedPath.PathParts.DeleteBack();
+      resultPathU = parsedPath.PathParts.Back();
     }
   }
   
   {
-    CParsedPath aParsedPath;
-    aParsedPath.ParsePath(aFrontNameU);
-    aParsedPath.PathParts.DeleteBack();
-    aCurrentDirU = aParsedPath.MergePath();
-    if (aParsedPath.PathParts.Size() > 0)
-      aCurrentDirU += NFile::NName::kDirDelimiter;
+    CParsedPath parsedPath;
+    parsedPath.ParsePath(frontNameU);
+    parsedPath.PathParts.DeleteBack();
+    currentDirU = parsedPath.MergePath();
+    if (parsedPath.PathParts.Size() > 0)
+      currentDirU += NFile::NName::kDirDelimiter;
   }
 
-  CCompressDialog aDialog;
-  CZipRegistryManager aZipRegistryManager;
-  aDialog.m_ZipRegistryManager = &aZipRegistryManager;
+  CCompressDialog dialog;
 
-  CObjectVector<NZipRootRegistry::CArchiverInfo> anArchiverInfoList;
-  NZipRootRegistry::ReadArchiverInfoList(anArchiverInfoList);
-  aDialog.m_ArchiverInfoList.Clear();
-  for(int i = 0; i < anArchiverInfoList.Size(); i++)
+  CObjectVector<NZipRootRegistry::CArchiverInfo> archiverInfoList;
+  NZipRootRegistry::ReadArchiverInfoList(archiverInfoList);
+  dialog.m_ArchiverInfoList.Clear();
+  for(int i = 0; i < archiverInfoList.Size(); i++)
   {
-    const NZipRootRegistry::CArchiverInfo &anArchiverInfo = anArchiverInfoList[i];
-    if (anArchiverInfo.UpdateEnabled)
-      aDialog.m_ArchiverInfoList.Add(anArchiverInfo);
+    const NZipRootRegistry::CArchiverInfo &archiverInfo = archiverInfoList[i];
+    if (archiverInfo.UpdateEnabled)
+      dialog.m_ArchiverInfoList.Add(archiverInfo);
   }
-  if(aDialog.m_ArchiverInfoList.Size() == 0)
+  if(dialog.m_ArchiverInfoList.Size() == 0)
   {
-    MyMessageBox(_T("No Update Engines"));
+    MyMessageBox(L"No Update Engines");
     return E_FAIL;
   }
 
-  aDialog.m_Info.ArchiveName = GetSystemString(aResultPathU);
-  aDialog.m_Info.CurrentDirPrefix = GetSystemString(aCurrentDirU);
-  aDialog.m_Info.SFXMode = false;
-  aDialog.m_Info.SolidMode = true;
+  dialog.m_Info.ArchiveName = GetSystemString(resultPathU);
+  dialog.m_Info.CurrentDirPrefix = GetSystemString(currentDirU);
+  dialog.m_Info.SFXMode = false;
+  dialog.m_Info.SolidMode = true;
 
-  if(aDialog.Create(0) != IDOK)
+  if(dialog.Create(0) != IDOK)
     return S_OK;
 
-  CSysString anArcPath;
-  if (!aDialog.m_Info.GetFullPathName(anArcPath))
+  CSysString arcPath;
+  if (!dialog.m_Info.GetFullPathName(arcPath))
   {
-    MyMessageBox(_T("Incorrect archive path"));
+    MyMessageBox(L"Incorrect archive path");
     return E_FAIL;
   }
-  const CActionSet *anActionSet;
-  switch(aDialog.m_Info.UpdateMode)
+  const CActionSet *actionSet;
+  switch(dialog.m_Info.UpdateMode)
   {
     case NCompressDialog::NUpdateMode::kAdd:
-      anActionSet = &kAddActionSet;
+      actionSet = &kAddActionSet;
       break;
     case NCompressDialog::NUpdateMode::kUpdate:
-      anActionSet = &kUpdateActionSet;
+      actionSet = &kUpdateActionSet;
       break;
     case NCompressDialog::NUpdateMode::kFresh:
-      anActionSet = &kFreshActionSet;
+      actionSet = &kFreshActionSet;
       break;
     case NCompressDialog::NUpdateMode::kSynchronize:
-      anActionSet = &kSynchronizeActionSet;
+      actionSet = &kSynchronizeActionSet;
       break;
     default:
       throw 1091756;
   }
 
-  NZipSettings::NWorkDir::CInfo aWorkDirInfo;
-  aZipRegistryManager.ReadWorkDirInfo(aWorkDirInfo);
-  CSysString aWorkDir = GetWorkDir(aWorkDirInfo, anArcPath);
+  NZipSettings::NWorkDir::CInfo workDirInfo;
+  NZipRegistryManager::ReadWorkDirInfo(workDirInfo);
+  CSysString aWorkDir = GetWorkDir(workDirInfo, arcPath);
   NFile::NDirectory::CreateComplexDirectory(aWorkDir);
 
-  NFile::NDirectory::CTempFile aTempFile;
-  CSysString aTempFileName;
-  if (aTempFile.Create(aWorkDir, kTempArcivePrefix, aTempFileName) == 0)
+  NFile::NDirectory::CTempFile tempFile;
+  CSysString tempFileName;
+  if (tempFile.Create(aWorkDir, kTempArcivePrefix, tempFileName) == 0)
     return E_FAIL;
 
-  const CLSID &aClassID = 
-      aDialog.m_ArchiverInfoList[aDialog.m_Info.ArchiverInfoIndex].ClassID;
+  const CLSID &classID = 
+      dialog.m_ArchiverInfoList[dialog.m_Info.ArchiverInfoIndex].ClassID;
   
-  NFind::CFileInfo aFileInfo;
+  NFind::CFileInfo fileInfo;
 
-  CComPtr<IOutArchiveHandler100> anOutArchive;
+  CComPtr<IOutArchiveHandler100> outArchive;
 
-  CComPtr<IArchiveHandler100> anArchiveHandler;
-  if(NFind::FindFile(anArcPath, aFileInfo))
+  CComPtr<IArchiveHandler100> archiveHandler;
+  if(NFind::FindFile(arcPath, fileInfo))
   {
-    if (aFileInfo.IsDirectory())
+    if (fileInfo.IsDirectory())
     {
-      MyMessageBox(TEXT("There is a folder with such name"));
+      MyMessageBox(L"There is a folder with such name");
       return E_FAIL;
     }
-    NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
-    UString aDefaultName;
-    HRESULT aResult = OpenArchive(anArcPath, &anArchiveHandler, 
-        anArchiverInfoResult, aDefaultName, NULL);
-    if (aResult == S_FALSE)
+    NZipRootRegistry::CArchiverInfo archiverInfoResult;
+    UString defaultName;
+    HRESULT result = OpenArchive(arcPath, &archiveHandler, 
+        archiverInfoResult, defaultName, NULL);
+    if (result == S_FALSE)
     {
       MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
       return E_FAIL;
     }
-    if (aResult != S_OK)
+    if (result != S_OK)
     {
-      MyMessageBox(TEXT("Open error"));
+      MyMessageBox(L"Open error");
       return E_FAIL;
     }
-    if (anArchiverInfoResult.ClassID != aClassID)
+    if (archiverInfoResult.ClassID != classID)
     {
-      MyMessageBox(TEXT("Type of existing archive differs from specified type"));
+      MyMessageBox(L"Type of existing archive differs from specified type");
       return E_FAIL;
     }
-    aResult = anArchiveHandler.QueryInterface(&anOutArchive);
-    if(aResult != S_OK)
+    result = archiveHandler.QueryInterface(&outArchive);
+    if(result != S_OK)
     {
-      MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, 0x02000602, anArcPath));
+      MyMessageBox(MyFormatNew(IDS_CANT_UPDATE_ARCHIVE, 0x02000602, 
+          GetUnicodeString(arcPath)));
       return E_FAIL;
     }
   }
   else
   {
-    // HRESULT aResult = anOutArchive.CoCreateInstance(aClassID);
-    CComObjectNoLock<CAgent> *anAgentSpec = new CComObjectNoLock<CAgent>;
-    anOutArchive = anAgentSpec;
+    // HRESULT result = outArchive.CoCreateInstance(classID);
+    CComObjectNoLock<CAgent> *agentSpec = new CComObjectNoLock<CAgent>;
+    outArchive = agentSpec;
 
     /*
-    HRESULT aResult = anOutArchive.CoCreateInstance(CLSID_CAgentArchiveHandler);
-    if (aResult != S_OK)
+    HRESULT result = outArchive.CoCreateInstance(CLSID_CAgentArchiveHandler);
+    if (result != S_OK)
     {
-      MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, anArcPath));
+      MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, arcPath));
       return E_FAIL;
     }
     */
   }
 
-  CRecordVector<const wchar_t *> aFileNamePointers;
-  aFileNamePointers.Reserve(aFileNames.Size());
+  CRecordVector<const wchar_t *> fileNamePointers;
+  fileNamePointers.Reserve(fileNames.Size());
 
-  UStringVector aFileNames2;
-  for(i = 0; i < aFileNames.Size(); i++)
-    aFileNames2.Add(GetUnicodeString(aFileNames[i]));
+  UStringVector fileNames2;
+  for(i = 0; i < fileNames.Size(); i++)
+    fileNames2.Add(GetUnicodeString(fileNames[i]));
 
-  for(i = 0; i < aFileNames.Size(); i++)
-    aFileNamePointers.Add(aFileNames2[i]);
+  for(i = 0; i < fileNames.Size(); i++)
+    fileNamePointers.Add(fileNames2[i]);
 
-  anOutArchive->SetFolder(NULL);
-  anOutArchive->SetFiles(&aFileNamePointers.Front(), aFileNamePointers.Size());
-  BYTE anActionSetByte[6];
-  for (i = 0; i < 6; i++)
-    anActionSetByte[i] = anActionSet->StateActions[i];
+  outArchive->SetFolder(NULL);
 
-  CComObjectNoLock<CUpdateCallBack100Imp> *anUpdateCallBackSpec =
+  // Don't uses CurrentFolder here, since files are absolute paths;
+  // MyGetCurrentDirectory(aCurrentFolder);
+
+  UINT codePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  outArchive->SetFiles(L"", 
+      &fileNamePointers.Front(), fileNamePointers.Size());
+  BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
+  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
+    actionSetByte[i] = actionSet->StateActions[i];
+
+  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec =
     new CComObjectNoLock<CUpdateCallBack100Imp>;
-  CComPtr<IUpdateCallback100> anUpdateCallBack(anUpdateCallBackSpec );
+  CComPtr<IUpdateCallback100> updateCallback(updateCallbackSpec );
   
-  anUpdateCallBackSpec->Init(anArchiveHandler, 0);
+  updateCallbackSpec->Init(/* archiveHandler, */ 0, 
+      LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
 
-  RETURN_IF_NOT_S_OK(SetOutProperties(anOutArchive, aDialog.m_Info.Method, 
-      aDialog.m_Info.SolidModeIsAllowed, aDialog.m_Info.SolidMode, 
-      aDialog.m_Info.Options));
+  RETURN_IF_NOT_S_OK(SetOutProperties(outArchive, dialog.m_Info.Method, 
+      dialog.m_Info.SolidModeIsAllowed, dialog.m_Info.SolidMode, 
+      dialog.m_Info.Options));
 
-  UString aSFXModule;
-  if (aDialog.m_Info.SFXMode)
+  UString sfxModule;
+  if (dialog.m_Info.SFXMode)
   {
-    CSysString aSFXModule2;
-    LPCTSTR aPath = NULL;
-    CSysString aSFXModule3;
-    if (GetProgramDirPrefix(aSFXModule3))
-      aPath = aSFXModule3;
-    if (!NDirectory::MySearchPath(aPath, kDefaultSfxModule, NULL, aSFXModule2))
+    CSysString sfxModule2;
+    LPCTSTR path = NULL;
+    CSysString sfxModule3;
+    if (GetProgramFolderPath(sfxModule3))
+      path = sfxModule3;
+    if (!NDirectory::MySearchPath(path, kDefaultSfxModule, NULL, sfxModule2))
     {
-      MyMessageBox(TEXT("can't find sfx module"));
+      MyMessageBox(L"can't find sfx module");
       return E_FAIL;
     }
-    aSFXModule = GetUnicodeString(aSFXModule2);
+    sfxModule = GetUnicodeString(sfxModule2);
   }
 
-  UINT aCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
-  HRESULT aResult = anOutArchive->DoOperation(&aClassID,
-      GetUnicodeString(aTempFileName, aCodePage), anActionSetByte, 
-      (aDialog.m_Info.SFXMode ? (const wchar_t *)aSFXModule : NULL),
-      anUpdateCallBack);
-  anUpdateCallBack.Release();
-  anOutArchive.Release();
+  HRESULT result = outArchive->DoOperation(&classID,
+      GetUnicodeString(tempFileName, codePage), actionSetByte, 
+      (dialog.m_Info.SFXMode ? (const wchar_t *)sfxModule : NULL),
+      updateCallback);
+  updateCallback.Release();
+  outArchive.Release();
 
-  if (aResult != S_OK)
+  if (result != S_OK)
   {
-    ShowErrorMessage(aResult);
-    return aResult;
+    ShowErrorMessage(result);
+    return result;
   }
  
-  if(anArchiveHandler)
+  if(archiveHandler)
   {
-    anArchiveHandler->Close();
-    if (!DeleteFileAlways(anArcPath))
+    archiveHandler->Close();
+    if (!DeleteFileAlways(arcPath))
     {
       ShowLastErrorMessage();
       return E_FAIL;
     }
   }
-  aTempFile.DisableDeleting();
-  if (!::MoveFile(aTempFileName, anArcPath))
+  tempFile.DisableDeleting();
+  if (!::MoveFile(tempFileName, arcPath))
   {
     ShowLastErrorMessage();
     return E_FAIL;

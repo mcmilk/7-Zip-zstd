@@ -15,25 +15,25 @@ class CSingleLock;
 class CObject
 {
 public:
-  HANDLE  m_Object;
-  CObject(): m_Object(NULL) {};
-  operator HANDLE() const { return m_Object;}
-  bool Lock(DWORD aTimeout = INFINITE);
+  HANDLE  _object;
+  CObject(): _object(NULL) {};
+  operator HANDLE() const { return _object;}
+  bool Lock(DWORD timeoutInterval = INFINITE);
   ~CObject();
 };
 
 class CSyncObject
 {
 public:
-  HANDLE  m_Object;
+  HANDLE  _object;
 
-  CSyncObject(LPCTSTR aName): m_Object(NULL) {};
+  CSyncObject(LPCTSTR name): _object(NULL) {};
   operator HANDLE() const
-    { return m_Object;}
+    { return _object;}
 
-  virtual bool Lock(DWORD aTimeout = INFINITE);
+  virtual bool Lock(DWORD timeoutInterval = INFINITE);
   virtual bool Unlock() = 0;
-  virtual bool Unlock(LONG /* aCount */, LPLONG /* aPrevCount = NULL */)
+  virtual bool Unlock(LONG /* count */, LPLONG /* prevCount = NULL */)
     { return true; }
 
 public:
@@ -46,22 +46,22 @@ public:
 class CSemaphore: public CSyncObject
 {
 public:
-  CSemaphore(LONG anInitialCount = 1, LONG aMaxCount = 1,
-    LPCTSTR aName = NULL, LPSECURITY_ATTRIBUTES lpsaAttributes = NULL);
+  CSemaphore(LONG initialCount = 1, LONG maxCount = 1,
+    LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
 
 public:
   virtual ~CSemaphore();
   virtual bool Unlock()
     { return Unlock(1, NULL); }
-  virtual bool Unlock(LONG aCount, LPLONG aPrevCount = NULL);
+  virtual bool Unlock(LONG count, LPLONG prevCount = NULL);
 };
 
 
 class CMutex: public CSyncObject
 {
 public:
-  CMutex(bool anInitiallyOwn = false, LPCTSTR aName = NULL,
-    LPSECURITY_ATTRIBUTES aSecurityAttributes = NULL);
+  CMutex(bool initiallyOwn = false, LPCTSTR name = NULL,
+    LPSECURITY_ATTRIBUTES securityAttributes = NULL);
 
   virtual ~CMutex();
   bool Unlock();
@@ -71,12 +71,12 @@ public:
 class CEvent: public CObject
 {
 public:
-  CEvent(bool anInitiallyOwn = false, bool aManualReset = false,
-    LPCTSTR aName = NULL, LPSECURITY_ATTRIBUTES aSecurityAttributes = NULL);
+  CEvent(bool initiallyOwn = false, bool manualReset = false,
+    LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
 
-  bool Set() { return BOOLToBool(::SetEvent(m_Object)); }
-  bool Pulse() { return BOOLToBool(::PulseEvent(m_Object)); }
-  bool Reset() { return BOOLToBool(::ResetEvent(m_Object)); }
+  bool Set() { return BOOLToBool(::SetEvent(_object)); }
+  bool Pulse() { return BOOLToBool(::PulseEvent(_object)); }
+  bool Reset() { return BOOLToBool(::ResetEvent(_object)); }
   // bool Unlock();
   // virtual ~CEvent();
 };
@@ -84,45 +84,45 @@ public:
 class CManualResetEvent: public CEvent
 {
 public:
-  CManualResetEvent(bool anInitiallyOwn = false, LPCTSTR aName = NULL, 
-      LPSECURITY_ATTRIBUTES aSecurityAttributes = NULL):
-    CEvent(anInitiallyOwn, true, aName, aSecurityAttributes) {};
+  CManualResetEvent(bool initiallyOwn = false, LPCTSTR name = NULL, 
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL):
+    CEvent(initiallyOwn, true, name, securityAttributes) {};
 };
 
 class CAutoResetEvent: public CEvent
 {
 public:
-  CAutoResetEvent(bool anInitiallyOwn = false, LPCTSTR aName = NULL, 
-      LPSECURITY_ATTRIBUTES aSecurityAttributes = NULL):
-    CEvent(anInitiallyOwn, false, aName, aSecurityAttributes) {};
+  CAutoResetEvent(bool initiallyOwn = false, LPCTSTR name = NULL, 
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL):
+    CEvent(initiallyOwn, false, name, securityAttributes) {};
 };
 
 
 class CCriticalSection: public CSyncObject
 {
-  CRITICAL_SECTION m_Object;
+  CRITICAL_SECTION _object;
 public:
   CCriticalSection(): CSyncObject(NULL)
-    { ::InitializeCriticalSection(&m_Object); }
+    { ::InitializeCriticalSection(&_object); }
 
-  // operator CRITICAL_SECTION*() { return (CRITICAL_SECTION*) &m_Object; }
+  // operator CRITICAL_SECTION*() { return (CRITICAL_SECTION*) &_object; }
 
   bool Unlock()
   { 
-    ::LeaveCriticalSection(&m_Object); 
+    ::LeaveCriticalSection(&_object); 
     return true; 
   }
   bool Lock()
   { 
-    ::EnterCriticalSection(&m_Object); 
+    ::EnterCriticalSection(&_object); 
     return true; 
   }
-  bool Lock(DWORD aTimeout)
+  bool Lock(DWORD timeoutInterval)
     { return Lock(); }
 
 public:
   virtual ~CCriticalSection()
-    { ::DeleteCriticalSection(&m_Object); }
+    { ::DeleteCriticalSection(&_object); }
 
 };
 
@@ -130,21 +130,21 @@ public:
 class CSingleLock
 {
 public:
-  CSingleLock(CSyncObject* anObject, bool anInitialLock = false);
+  CSingleLock(CSyncObject* object, bool initialLock = false);
 public:
-  bool Lock(DWORD aTimeOut = INFINITE);
+  bool Lock(DWORD timeoutInterval = INFINITE);
   bool Unlock();
-  bool Unlock(LONG aCount, LPLONG aPrevCount = NULL);
+  bool Unlock(LONG count, LPLONG prevCount = NULL);
   bool IsLocked()
-    { return m_Acquired; }
+    { return _acquired; }
 
   ~CSingleLock()
     { Unlock(); }
 
 protected:
-  CSyncObject* m_SyncObject;
-  HANDLE  m_Object;
-  bool    m_Acquired;
+  CSyncObject* _syncObject;
+  HANDLE _object;
+  bool _acquired;
 };
 
 }}

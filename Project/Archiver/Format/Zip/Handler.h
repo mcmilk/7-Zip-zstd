@@ -45,9 +45,9 @@ DECLARE_REGISTRY(CZipHandler, TEXT("SevenZip.FormatZip.1"),
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
   STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
   STDMETHOD(GetProperty)(
-      UINT32 anIndex, 
-      PROPID aPropID,  
-      PROPVARIANT *aValue);
+      UINT32 index, 
+      PROPID propID,  
+      PROPVARIANT *value);
   STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
       INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
   STDMETHOD(ExtractAllItems)(INT32 aTestMode, 

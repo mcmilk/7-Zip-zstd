@@ -13,6 +13,7 @@
 #include "Handler.h"
 
 #include "Interface/ProgressUtils.h"
+#include "Interface/EnumStatProp.h"
 
 #include "Common/StringConvert.h"
 #include "Common/Defs.h"
@@ -25,26 +26,27 @@ using namespace NCab;
 
 enum // PropID
 {
-  kaipidFolderIndex = kaipidUserDefined,
+  kpidFolderIndex = kpidUserDefined,
 };
 
 STATPROPSTG kProperties[] = 
 {
-  { NULL, kaipidPath, VT_BSTR},
-  { NULL, kaipidIsFolder, VT_BOOL},
-  { NULL, kaipidSize, VT_UI8},
-  { NULL, kaipidLastWriteTime, VT_FILETIME},
-  { NULL, kaipidAttributes, VT_UI4},
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidAttributes, VT_UI4},
 
-  { NULL, kaipidMethod, VT_UI1},
-  { NULL, kaipidDictionarySize, VT_UI4},
+  { NULL, kpidMethod, VT_UI1},
+  { NULL, kpidDictionarySize, VT_UI4},
 
-  { L"Folder Index", kaipidFolderIndex, VT_UI2}
+  { L"Folder Index", kpidFolderIndex, VT_UI2}
 };
 
 static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
 
 
+/*
 class CEnumIDList: 
   public IEnumIDList,
   public CComObjectRoot
@@ -83,12 +85,12 @@ void CEnumIDList::Init(const CObjectVector<NHeader::CFolder> *aFolders,
 }
 
 
-
 STDMETHODIMP CEnumIDList::Reset()
 {
   m_Index = 0;
   return S_OK;
 }
+*/
 
 bool ConvertUTF8ToUnicode(const AString &anUTFString, UString &anResultString)
 {
@@ -130,85 +132,11 @@ bool ConvertUTF8ToUnicode(const AString &anUTFString, UString &anResultString)
   return true; 
 }
 
-/////////////////////////////////////////////////
-// CEnumArchiveItemProperty
-
-class CEnumArchiveItemProperty:
-  public IEnumSTATPROPSTG,
-  public CComObjectRoot
-{
-public:
-  int m_Index;
-
-  BEGIN_COM_MAP(CEnumArchiveItemProperty)
-    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
-  END_COM_MAP()
-    
-  DECLARE_NOT_AGGREGATABLE(CEnumArchiveItemProperty)
-    
-  DECLARE_NO_REGISTRY()
-public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
-  STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
-};
-
-STDMETHODIMP CEnumArchiveItemProperty::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
-{
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
-    return E_INVALIDARG;
-
-  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
-  {
-    if(m_Index >= kNumProperties)
-    {
-      aResult =  S_FALSE;
-      break;
-    }
-    const STATPROPSTG &aSrcItem = kProperties[m_Index];
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
-    {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
-    }
-    else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-  }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CCabHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
+STDMETHODIMP CCabHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (anEnumObject == NULL)
-    return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  // ((CComObjectNoLock<CEnumIDList>*)(anEnumObject))->Init(this, m_IDList, aFlags); // TODO : Add any addl. params as needed
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  return CStatPropEnumerator::CreateEnumerator(kProperties, 
+      sizeof(kProperties) / sizeof(kProperties[0]), enumerator);
   COM_TRY_END
 }
 
@@ -219,7 +147,7 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
   const NArchive::NCab::CFileInfo &aFileInfo = m_Files[anIndex];
   switch(aPropID)
   {
-    case kaipidPath:
+    case kpidPath:
       if (aFileInfo.IsNameUTF())
       {
         UString aUnicodeName;
@@ -231,13 +159,13 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
       else
         aPropVariant = MultiByteToUnicodeString(aFileInfo.Name, CP_ACP);
       break;
-    case kaipidIsFolder:
+    case kpidIsFolder:
       aPropVariant = false;
       break;
-    case kaipidSize:
+    case kpidSize:
       aPropVariant = aFileInfo.UnPackSize;
       break;
-    case kaipidLastWriteTime:
+    case kpidLastWriteTime:
     {
       FILETIME aLocalFileTime, anUTCFileTime;
       if (DosTimeToFileTime(aFileInfo.Time, aLocalFileTime))
@@ -250,11 +178,11 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
       aPropVariant = anUTCFileTime;
       break;
     }
-    case kaipidAttributes:
+    case kpidAttributes:
       aPropVariant = aFileInfo.GetWinAttributes();
       break;
 
-    case kaipidMethod:
+    case kpidMethod:
     {
       UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
           m_Folders.Size(), aFileInfo.FolderIndex);
@@ -262,7 +190,7 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
       aPropVariant = aFolder.CompressionTypeMajor;
       break;
     }
-    case kaipidDictionarySize:
+    case kpidDictionarySize:
     {
       UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
           m_Folders.Size(), aFileInfo.FolderIndex);
@@ -273,7 +201,7 @@ STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
         aPropVariant = UINT32(0);
       break;
     }
-    case kaipidFolderIndex:
+    case kpidFolderIndex:
       aPropVariant = UINT32(aFileInfo.FolderIndex);
       break;
   }

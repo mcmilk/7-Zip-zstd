@@ -25,30 +25,30 @@ struct CPropMap
 
 CPropMap kPropMap[] = 
 {
-  { NID::kName, NULL, kaipidPath, VT_BSTR},
-  { NID::kSize, NULL, kaipidSize, VT_UI8},
-  { NID::kPackInfo, NULL, kaipidPackedSize, VT_UI8},
+  { NID::kName, NULL, kpidPath, VT_BSTR},
+  { NID::kSize, NULL, kpidSize, VT_UI8},
+  { NID::kPackInfo, NULL, kpidPackedSize, VT_UI8},
   
   #ifdef _MULTI_PACK
-  { 100, L"Pack0", kaipidPackedSize0, VT_UI8},
-  { 101, L"Pack1", kaipidPackedSize1, VT_UI8},
-  { 102, L"Pack2", kaipidPackedSize2, VT_UI8},
-  { 103, L"Pack3", kaipidPackedSize3, VT_UI8},
-  { 104, L"Pack4", kaipidPackedSize4, VT_UI8},
+  { 100, L"Pack0", kpidPackedSize0, VT_UI8},
+  { 101, L"Pack1", kpidPackedSize1, VT_UI8},
+  { 102, L"Pack2", kpidPackedSize2, VT_UI8},
+  { 103, L"Pack3", kpidPackedSize3, VT_UI8},
+  { 104, L"Pack4", kpidPackedSize4, VT_UI8},
   #endif
 
-  { NID::kCreationTime, NULL, kaipidCreationTime, VT_FILETIME},
-  { NID::kLastWriteTime, NULL, kaipidLastWriteTime, VT_FILETIME},
-  { NID::kLastAccessTime, NULL, kaipidLastAccessTime, VT_FILETIME},
-  { NID::kWinAttributes, NULL, kaipidAttributes, VT_UI4},
+  { NID::kCreationTime, NULL, kpidCreationTime, VT_FILETIME},
+  { NID::kLastWriteTime, NULL, kpidLastWriteTime, VT_FILETIME},
+  { NID::kLastAccessTime, NULL, kpidLastAccessTime, VT_FILETIME},
+  { NID::kWinAttributes, NULL, kpidAttributes, VT_UI4},
 
 
-  { NID::kCRC, NULL, kaipidCRC, VT_UI4},
+  { NID::kCRC, NULL, kpidCRC, VT_UI4},
   
-  { NID::kAnti, L"Anti", kaipidIsAnti, VT_BOOL}
-  // { L"ID", kaipidID, VT_BSTR},
-  // { L"UnPack Version", kaipidUnPackVersion, VT_UI1},
-  // { L"Host OS", kaipidHostOS, VT_BSTR}
+  { NID::kAnti, L"Anti", kpidIsAnti, VT_BOOL}
+  // { L"ID", kpidID, VT_BSTR},
+  // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
+  // { L"Host OS", kpidHostOS, VT_BSTR}
 };
 
 static const int kPropMapSize = sizeof(kPropMap) / sizeof(kPropMap[0]);

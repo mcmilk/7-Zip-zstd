@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-HRESULT CompressArchive(const CSysStringVector &aFileNames);
+HRESULT CompressArchive(const CSysStringVector &fileNames);
 
 #endif

@@ -10,27 +10,27 @@ namespace NWindows {
 class CHandle
 {
 protected:
-  HANDLE m_Handle;
+  HANDLE _handle;
 public:
-  operator HANDLE() { return m_Handle; }
-  CHandle(): m_Handle(NULL) {}
+  operator HANDLE() { return _handle; }
+  CHandle(): _handle(NULL) {}
   ~CHandle() { Close(); }
   bool Close()
   {
-    if (m_Handle == NULL)
+    if (_handle == NULL)
       return true;
-    if (!::CloseHandle(m_Handle))
+    if (!::CloseHandle(_handle))
       return false;
-    m_Handle = NULL;
+    _handle = NULL;
     return true;
   }
-  void Attach(HANDLE aHandle) 
-    { m_Handle = aHandle; }
+  void Attach(HANDLE handle) 
+    { _handle = handle; }
   HANDLE Detach() 
   { 
-    HANDLE aHandle = m_Handle;
-    m_Handle = NULL; 
-    return m_Handle;
+    HANDLE handle = _handle;
+    _handle = NULL; 
+    return handle;
   }
 };
 

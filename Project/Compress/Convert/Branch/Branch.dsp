@@ -134,7 +134,11 @@ SOURCE=.\ARM.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Coder.cpp
+SOURCE=.\ARMThumb.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ARMThumb.h
 # End Source File
 # Begin Source File
 

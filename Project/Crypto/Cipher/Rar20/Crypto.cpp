@@ -36,7 +36,7 @@ void CData::UpdateKeys(const BYTE *aData)
 {
   for (int i = 0; i < 16; i += 4)
     for (int j = 0; j < 4; j ++)
-      Keys[j] ^= CCRC::m_Table[aData[i + j]];
+      Keys[j] ^= CCRC::Table[aData[i + j]];
 }
 
 void Swap(BYTE *Ch1, BYTE *Ch2)
@@ -65,8 +65,8 @@ void CData::SetPassword(const BYTE *aPassword, UINT32 aPasswordLength)
   for (UINT32 j = 0; j < 256; j++)
     for (UINT32 i = 0; i < aPasswordLength; i += 2)
     {
-      UINT32 n2 = (BYTE)CCRC::m_Table[(Psw[i + 1] + j) & 0xFF];
-      UINT32 n1 = (BYTE)CCRC::m_Table[(Psw[i] - j) & 0xFF];
+      UINT32 n2 = (BYTE)CCRC::Table[(Psw[i + 1] + j) & 0xFF];
+      UINT32 n1 = (BYTE)CCRC::Table[(Psw[i] - j) & 0xFF];
       for (UINT32 k = 1; (n1 & 0xFF) != n2; n1++, k++)
         Swap(&SubstTable[n1 & 0xFF], &SubstTable[(n1 + i + k) & 0xFF]);
     }

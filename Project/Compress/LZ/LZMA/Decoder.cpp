@@ -15,14 +15,6 @@
 
 ofstream ofs("res.dat");
 
-UINT32 GetTimeCount()
-{
-  unsigned int aValueLow;
-  __asm RDTSC;
-  __asm mov aValueLow, EAX;
-  return aValueLow;
-}
-
 const kNumCounters = 3;
 UINT32 g_Counter[kNumCounters];
 class C1
@@ -45,32 +37,32 @@ class C1
 public:
   ~C1 ()
   {
-    UINT32 aSums[kLenTableMax];
-    for (int aLen = 2; aLen < kLenTableMax; aLen++)
+    UINT32 sums[kLenTableMax];
+    for (int len = 2; len < kLenTableMax; len++)
     {
-      aSums[aLen] = 0;
-      for (int aDist = 0; aDist < kNumDists; aDist++)
-        aSums[aLen] += g_Counts[aLen][aDist];
-      if (aSums[aLen] == 0)
-        aSums[aLen] = 1;
+      sums[len] = 0;
+      for (int dist = 0; dist < kNumDists; dist++)
+        sums[len] += g_Counts[len][dist];
+      if (sums[len] == 0)
+        sums[len] = 1;
     }
-    for (int aDist = 0; aDist < kNumDists; aDist++)
+    for (int dist = 0; dist < kNumDists; dist++)
     {
-      ofs << setw(4) << aDist << "  ";
-      for (int aLen = 2; aLen < kLenTableMax; aLen++)
+      ofs << setw(4) << dist << "  ";
+      for (int len = 2; len < kLenTableMax; len++)
       {
-        ofs << setw(4) << g_Counts[aLen][aDist] * 1000 / aSums[aLen];
+        ofs << setw(4) << g_Counts[len][dist] * 1000 / sums[len];
       }
       ofs << endl;
     }
   }
 } g_Class;
 
-void UpdateStat(UINT32 aLen, UINT32 aDist)
+void UpdateStat(UINT32 len, UINT32 dist)
 {
-  if (aLen >= kLenTableMax)
-    aLen = kLenTableMax - 1;
-  g_Counts[aLen][aDist / 2]++;
+  if (len >= kLenTableMax)
+    len = kLenTableMax - 1;
+  g_Counts[len][dist / 2]++;
 }
 */
 
@@ -79,19 +71,19 @@ void UpdateStat(UINT32 aLen, UINT32 aDist)
 namespace NCompress {
 namespace NLZMA {
 
-HRESULT CDecoder::SetDictionarySize(UINT32 aDictionarySize)
+HRESULT CDecoder::SetDictionarySize(UINT32 dictionarySize)
 {
-  if (aDictionarySize > (1 << kDicLogSizeMax))
+  if (dictionarySize > (1 << kDicLogSizeMax))
     return E_INVALIDARG;
   
-  if (m_DictionarySize != aDictionarySize)
+  if (_dictionarySize != dictionarySize)
   {
-    m_DictionarySize = aDictionarySize;
-    m_DictionarySizeCheck = MyMax(m_DictionarySize, UINT32(1));
-    UINT32 aBlockSize = MyMax(m_DictionarySizeCheck, UINT32(1 << 12));
+    _dictionarySize = dictionarySize;
+    _dictionarySizeCheck = MyMax(_dictionarySize, UINT32(1));
+    UINT32 blockSize = MyMax(_dictionarySizeCheck, UINT32(1 << 12));
     try
     {
-      m_OutWindowStream.Create(aBlockSize /*, kMatchMaxLen */);
+      _outWindowStream.Create(blockSize /*, kMatchMaxLen */);
     }
     catch(...)
     {
@@ -102,29 +94,29 @@ HRESULT CDecoder::SetDictionarySize(UINT32 aDictionarySize)
 }
 
 HRESULT CDecoder::SetLiteralProperties(
-    UINT32 aLiteralPosStateBits, UINT32 aLiteralContextBits)
+    UINT32 numLiteralPosStateBits, UINT32 numLiteralContextBits)
 {
-  if (aLiteralPosStateBits > 8)
+  if (numLiteralPosStateBits > 8)
     return E_INVALIDARG;
-  if (aLiteralContextBits > 8)
+  if (numLiteralContextBits > 8)
     return E_INVALIDARG;
-  m_LiteralDecoder.Create(aLiteralPosStateBits, aLiteralContextBits);
+  _literalDecoder.Create(numLiteralPosStateBits, numLiteralContextBits);
   return S_OK;
 }
 
-HRESULT CDecoder::SetPosBitsProperties(UINT32 aNumPosStateBits)
+HRESULT CDecoder::SetPosBitsProperties(UINT32 numPosStateBits)
 {
-  if (aNumPosStateBits > NLength::kNumPosStatesBitsMax)
+  if (numPosStateBits > NLength::kNumPosStatesBitsMax)
     return E_INVALIDARG;
-  UINT32 aNumPosStates = 1 << aNumPosStateBits;
-  m_LenDecoder.Create(aNumPosStates);
-  m_RepMatchLenDecoder.Create(aNumPosStates);
-  m_PosStateMask = aNumPosStates - 1;
+  UINT32 numPosStates = 1 << numPosStateBits;
+  _lenDecoder.Create(numPosStates);
+  _repMatchLenDecoder.Create(numPosStates);
+  _posStateMask = numPosStates - 1;
   return S_OK;
 }
 
 CDecoder::CDecoder():
-  m_DictionarySize(-1)
+  _dictionarySize(-1)
 {
   Create();
 }
@@ -134,205 +126,197 @@ HRESULT CDecoder::Create()
   for(int i = 0; i < kNumPosModels; i++)
   {
     RETURN_E_OUTOFMEMORY_IF_FALSE(
-        m_PosDecoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]));
+        _posDecoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]));
   }
   return S_OK;
 }
 
 
-HRESULT CDecoder::Init(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream)
+HRESULT CDecoder::Init(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream)
 {
-  m_RangeDecoder.Init(anInStream);
+  _rangeDecoder.Init(inStream);
 
-  m_OutWindowStream.Init(anOutStream);
+  _outWindowStream.Init(outStream);
 
   int i;
   for(i = 0; i < kNumStates; i++)
   {
-    for (UINT32 j = 0; j <= m_PosStateMask; j++)
+    for (UINT32 j = 0; j <= _posStateMask; j++)
     {
-      m_MainChoiceDecoders[i][j].Init();
-      m_MatchRepShortChoiceDecoders[i][j].Init();
+      _mainChoiceDecoders[i][j].Init();
+      _matchRepShortChoiceDecoders[i][j].Init();
     }
-    m_MatchChoiceDecoders[i].Init();
-    m_MatchRepChoiceDecoders[i].Init();
-    m_MatchRep1ChoiceDecoders[i].Init();
-    m_MatchRep2ChoiceDecoders[i].Init();
+    _matchChoiceDecoders[i].Init();
+    _matchRepChoiceDecoders[i].Init();
+    _matchRep1ChoiceDecoders[i].Init();
+    _matchRep2ChoiceDecoders[i].Init();
   }
   
-  m_LiteralDecoder.Init();
+  _literalDecoder.Init();
    
-  // m_RepMatchLenDecoder.Init();
+  // _repMatchLenDecoder.Init();
 
   for (i = 0; i < kNumLenToPosStates; i++)
-    m_PosSlotDecoder[i].Init();
+    _posSlotDecoder[i].Init();
 
   for(i = 0; i < kNumPosModels; i++)
-    m_PosDecoders[i].Init();
+    _posDecoders[i].Init();
   
-  m_LenDecoder.Init();
-  m_RepMatchLenDecoder.Init();
+  _lenDecoder.Init();
+  _repMatchLenDecoder.Init();
 
-  m_PosAlignDecoder.Init();
+  _posAlignDecoder.Init();
   return S_OK;
 
 }
 
 
 
-STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream, 
-    const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream, 
+    const UINT64 *inSize, const UINT64 *outSize,
+    ICompressProgressInfo *progress)
 {
-  if (anOutSize == NULL)
+  if (outSize == NULL)
     return E_INVALIDARG;
 
-  Init(anInStream, anOutStream);
-  CDecoderFlusher aFlusher(this);
+  Init(inStream, outStream);
+  CDecoderFlusher flusher(this);
 
-  CState aState;
-  aState.Init();
-  bool aPeviousIsMatch = false;
-  BYTE aPreviousByte = 0;
-  UINT32 aRepDistances[kNumRepDistances];
+  CState state;
+  state.Init();
+  bool peviousIsMatch = false;
+  BYTE previousByte = 0;
+  UINT32 repDistances[kNumRepDistances];
   for(int i = 0 ; i < kNumRepDistances; i++)
-    aRepDistances[i] = 0;
+    repDistances[i] = 0;
 
-  UINT64 aNowPos64 = 0;
-  UINT64 aSize = *anOutSize;
-  while(aNowPos64 < aSize)
+  UINT64 nowPos64 = 0;
+  UINT64 size = *outSize;
+  while(nowPos64 < size)
   {
-    UINT64 aNext = MyMin(aNowPos64 + (1 << 18), aSize);
-    while(aNowPos64 < aNext)
+    UINT64 nextPos = MyMin(nowPos64 + (1 << 18), size);
+    while(nowPos64 < nextPos)
     {
-      UINT32 aPosState = UINT32(aNowPos64) & m_PosStateMask;
-      if (m_MainChoiceDecoders[aState.m_Index][aPosState].Decode(&m_RangeDecoder) == kMainChoiceLiteralIndex)
+      UINT32 posState = UINT32(nowPos64) & _posStateMask;
+      if (_mainChoiceDecoders[state.Index][posState].Decode(&_rangeDecoder) == kMainChoiceLiteralIndex)
       {
-        // aCounts[0]++;
-        aState.UpdateChar();
-        if(aPeviousIsMatch)
+        state.UpdateChar();
+        if(peviousIsMatch)
         {
-          BYTE aMatchByte = m_OutWindowStream.GetOneByte(0 - aRepDistances[0] - 1);
-          aPreviousByte = m_LiteralDecoder.DecodeWithMatchByte(&m_RangeDecoder, 
-              UINT32(aNowPos64), aPreviousByte, aMatchByte);
-          aPeviousIsMatch = false;
+          BYTE matchByte = _outWindowStream.GetOneByte(0 - repDistances[0] - 1);
+          previousByte = _literalDecoder.DecodeWithMatchByte(&_rangeDecoder, 
+              UINT32(nowPos64), previousByte, matchByte);
+          peviousIsMatch = false;
         }
         else
-          aPreviousByte = m_LiteralDecoder.DecodeNormal(&m_RangeDecoder, 
-              UINT32(aNowPos64), aPreviousByte);
-        m_OutWindowStream.PutOneByte(aPreviousByte);
-        aNowPos64++;
+          previousByte = _literalDecoder.DecodeNormal(&_rangeDecoder, 
+              UINT32(nowPos64), previousByte);
+        _outWindowStream.PutOneByte(previousByte);
+        nowPos64++;
       }
       else             
       {
-        aPeviousIsMatch = true;
-        UINT32 aDistance, aLen;
-        if(m_MatchChoiceDecoders[aState.m_Index].Decode(&m_RangeDecoder) == 
+        peviousIsMatch = true;
+        UINT32 distance, len;
+        if(_matchChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 
             kMatchChoiceRepetitionIndex)
         {
-          if(m_MatchRepChoiceDecoders[aState.m_Index].Decode(&m_RangeDecoder) == 0)
+          if(_matchRepChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 0)
           {
-            if(m_MatchRepShortChoiceDecoders[aState.m_Index][aPosState].Decode(&m_RangeDecoder) == 0)
+            if(_matchRepShortChoiceDecoders[state.Index][posState].Decode(&_rangeDecoder) == 0)
             {
-              aState.UpdateShortRep();
-              aPreviousByte = m_OutWindowStream.GetOneByte(0 - aRepDistances[0] - 1);
-              m_OutWindowStream.PutOneByte(aPreviousByte);
-              aNowPos64++;
-              // aCounts[3 + 4]++;
+              state.UpdateShortRep();
+              previousByte = _outWindowStream.GetOneByte(0 - repDistances[0] - 1);
+              _outWindowStream.PutOneByte(previousByte);
+              nowPos64++;
               continue;
             }
-            // aCounts[3 + 0]++;
-            aDistance = aRepDistances[0];
+            distance = repDistances[0];
           }
           else
           {
-            if(m_MatchRep1ChoiceDecoders[aState.m_Index].Decode(&m_RangeDecoder) == 0)
+            if(_matchRep1ChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 0)
             {
-              aDistance = aRepDistances[1];
-              aRepDistances[1] = aRepDistances[0];
-              // aCounts[3 + 1]++;
+              distance = repDistances[1];
+              repDistances[1] = repDistances[0];
             }
             else 
             {
-              if (m_MatchRep2ChoiceDecoders[aState.m_Index].Decode(&m_RangeDecoder) == 0)
+              if (_matchRep2ChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 0)
               {
-                // aCounts[3 + 2]++;
-                aDistance = aRepDistances[2];
+                distance = repDistances[2];
               }
               else
               {
-                // aCounts[3 + 3]++;
-                aDistance = aRepDistances[3];
-                aRepDistances[3] = aRepDistances[2];
+                distance = repDistances[3];
+                repDistances[3] = repDistances[2];
               }
-              aRepDistances[2] = aRepDistances[1];
-              aRepDistances[1] = aRepDistances[0];
+              repDistances[2] = repDistances[1];
+              repDistances[1] = repDistances[0];
             }
-            aRepDistances[0] = aDistance;
+            repDistances[0] = distance;
           }
-          aLen = m_RepMatchLenDecoder.Decode(&m_RangeDecoder, aPosState) + kMatchMinLen;
-          // aCounts[aLen]++;
-          aState.UpdateRep();
+          len = _repMatchLenDecoder.Decode(&_rangeDecoder, posState) + kMatchMinLen;
+          state.UpdateRep();
         }
         else
         {
-          aLen = kMatchMinLen + m_LenDecoder.Decode(&m_RangeDecoder, aPosState);
-          aState.UpdateMatch();
-          UINT32 aPosSlot = m_PosSlotDecoder[GetLenToPosState(aLen)].Decode(&m_RangeDecoder);
-          // aCounts[aPosSlot]++;
-          if (aPosSlot >= kStartPosModelIndex)
+          len = kMatchMinLen + _lenDecoder.Decode(&_rangeDecoder, posState);
+          state.UpdateMatch();
+          UINT32 posSlot = _posSlotDecoder[GetLenToPosState(len)].Decode(&_rangeDecoder);
+          if (posSlot >= kStartPosModelIndex)
           {
-            aDistance = kDistStart[aPosSlot];
-            if (aPosSlot < kEndPosModelIndex)
-              aDistance += m_PosDecoders[aPosSlot - kStartPosModelIndex].Decode(&m_RangeDecoder);
+            distance = kDistStart[posSlot];
+            if (posSlot < kEndPosModelIndex)
+              distance += _posDecoders[posSlot - kStartPosModelIndex].Decode(&_rangeDecoder);
             else
             {
-              aDistance += (m_RangeDecoder.DecodeDirectBits(kDistDirectBits[aPosSlot] - 
+              distance += (_rangeDecoder.DecodeDirectBits(kDistDirectBits[posSlot] - 
                   kNumAlignBits) << kNumAlignBits);
-              aDistance += m_PosAlignDecoder.Decode(&m_RangeDecoder);
+              distance += _posAlignDecoder.Decode(&_rangeDecoder);
             }
           }
           else
-            aDistance = aPosSlot;
+            distance = posSlot;
 
           
-          aRepDistances[3] = aRepDistances[2];
-          aRepDistances[2] = aRepDistances[1];
-          aRepDistances[1] = aRepDistances[0];
+          repDistances[3] = repDistances[2];
+          repDistances[2] = repDistances[1];
+          repDistances[1] = repDistances[0];
           
-          aRepDistances[0] = aDistance;
-          // UpdateStat(aLen, aPosSlot);
+          repDistances[0] = distance;
+          // UpdateStat(len, posSlot);
         }
-        if (aDistance >= aNowPos64 || aDistance >= m_DictionarySizeCheck)
+        if (distance >= nowPos64 || distance >= _dictionarySizeCheck)
           throw "data error";
-        m_OutWindowStream.CopyBackBlock(aDistance, aLen);
-        aNowPos64 += aLen;
-        aPreviousByte = m_OutWindowStream.GetOneByte(0 - 1);
+        _outWindowStream.CopyBackBlock(distance, len);
+        nowPos64 += len;
+        previousByte = _outWindowStream.GetOneByte(0 - 1);
       }
     }
-    if (aProgress != NULL)
+    if (progress != NULL)
     {
-      UINT64 anInSize = m_RangeDecoder.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&anInSize, &aNowPos64));
+      UINT64 inSize = _rangeDecoder.GetProcessedSize();
+      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
   }
-  aFlusher.m_NeedFlush = false;
+  flusher.m_NeedFlush = false;
   return Flush();
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
+    return CodeReal(inStream, outStream, inSize, outSize, progress);
   }
-  catch(const NStream::NWindow::COutWriteException &anOutWriteException)
+  catch(const NStream::NWindow::COutWriteException &outWriteException)
   {
-    return anOutWriteException.m_Result;
+    return outWriteException.Result;
   }
   catch(...)
   {
@@ -340,20 +324,20 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
   }
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *anInStream)
+STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
-  UINT32 aNumPosStateBits;
-  UINT32 aLiteralPosStateBits;
-  UINT32 aLiteralContextBits;
-  UINT32 aDictionarySize;
-  RETURN_IF_NOT_S_OK(DecodeProperties(anInStream, 
-      aNumPosStateBits,
-      aLiteralPosStateBits,
-      aLiteralContextBits, 
-      aDictionarySize));
-  RETURN_IF_NOT_S_OK(SetDictionarySize(aDictionarySize));
-  RETURN_IF_NOT_S_OK(SetLiteralProperties(aLiteralPosStateBits, aLiteralContextBits));
-  RETURN_IF_NOT_S_OK(SetPosBitsProperties(aNumPosStateBits));
+  UINT32 numPosStateBits;
+  UINT32 numLiteralPosStateBits;
+  UINT32 numLiteralContextBits;
+  UINT32 dictionarySize;
+  RETURN_IF_NOT_S_OK(DecodeProperties(inStream, 
+      numPosStateBits,
+      numLiteralPosStateBits,
+      numLiteralContextBits, 
+      dictionarySize));
+  RETURN_IF_NOT_S_OK(SetDictionarySize(dictionarySize));
+  RETURN_IF_NOT_S_OK(SetLiteralProperties(numLiteralPosStateBits, numLiteralContextBits));
+  RETURN_IF_NOT_S_OK(SetPosBitsProperties(numPosStateBits));
   return S_OK;
 }
 

@@ -11,7 +11,7 @@ DEFINE_GUID(CLSID_CZipContextMenu,
 
 #include "Common/String.h"
 
-#include "PluginInterface.h"
+#include "../../FileManager/PluginInterface.h"
 
 class CZipContextMenu: 
   public IContextMenu,
@@ -53,7 +53,7 @@ DECLARE_REGISTRY(CZipContextMenu, _T("SevenZip.ContextMenu.1"), _T("SevenZip.Con
   // IShellExtInit
 
   STDMETHOD(Initialize)(LPCITEMIDLIST pidlFolder, 
-      LPDATAOBJECT aDataObject, HKEY hkeyProgID);
+      LPDATAOBJECT dataObject, HKEY hkeyProgID);
 
   /////////////////////////////
   // IContextMenu
@@ -66,13 +66,12 @@ DECLARE_REGISTRY(CZipContextMenu, _T("SevenZip.ContextMenu.1"), _T("SevenZip.Con
 
 
   // IInitContextMenu
-  STDMETHOD(InitContextMenu)(const wchar_t *aFolder, const wchar_t **aNames, UINT32 aNumFiles);  
+  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);  
 private:
-  CSysStringVector m_FileNames;
-  std::vector<CCommandMapItem> m_CommandMap;
-  HRESULT GetFileNames(LPDATAOBJECT aDataObject, CSysStringVector &aFileNames);
-  UINT FindVerb(const CSysString &aVerb);
-  STDMETHODIMP OpenArchive(CSysString &FileName);
+  CSysStringVector _fileNames;
+  std::vector<CCommandMapItem> _commandMap;
+  HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
+  UINT FindVerb(const CSysString &verb);
 };
 
 #endif

@@ -10,71 +10,73 @@
 namespace NStream {
 namespace NWindow {
 
-// m_KeepSizeBefore: how mach BYTEs must be in buffer before m_Pos;
-// m_KeepSizeAfter: how mach BYTEs must be in buffer after m_Pos;
+// m_KeepSizeBefore: how mach BYTEs must be in buffer before _pos;
+// m_KeepSizeAfter: how mach BYTEs must be in buffer after _pos;
 // m_KeepSizeReserv: how mach BYTEs must be in buffer for Moving Reserv; 
 //                    must be >= aKeepSizeAfter; // test it
 
 class COutWriteException
 {
 public:
-  HRESULT m_Result;
-  COutWriteException(HRESULT aResult): m_Result (aResult) {}
+  HRESULT Result;
+  COutWriteException(HRESULT result): Result (result) {}
 };
 
 
 class COut
 {
-  BYTE  *m_Buffer;
-  UINT32 m_Pos;
-  UINT32 m_WindowSize;
-  UINT32 m_StreamPos;
-  ISequentialOutStream *m_Stream;
+  BYTE  *_buffer;
+  UINT32 _pos;
+  UINT32 _windowSize;
+  UINT32 _streamPos;
+  ISequentialOutStream *_stream;
+  void FlushWithCheck();
 
 public:
-  COut(): m_Buffer(0), m_Stream(0) {}
+  COut(): _buffer(0), _stream(0) {}
   ~COut();
-	void Create(UINT32 aWindowSize);
+	void Create(UINT32 windowSize);
+  bool IsCreated() const { return _buffer != 0; }
 
-  void Init(ISequentialOutStream *aStream, bool aSolid = false);
+  void Init(ISequentialOutStream *stream, bool solid = false);
   HRESULT Flush();
   void ReleaseStream();
   
-  // UINT32 GetCurPos() const { return m_Pos; }
-  // const BYTE *GetPointerToCurrentPos() const { return m_Buffer + m_Pos;};
+  // UINT32 GetCurPos() const { return _pos; }
+  // const BYTE *GetPointerToCurrentPos() const { return _buffer + _pos;};
 
-  void CopyBackBlock(UINT32 aDistance, UINT32 aLen)
+  void CopyBackBlock(UINT32 distance, UINT32 len)
   {
-		UINT32 aPos = m_Pos - aDistance - 1;
-  	if (aPos >= m_WindowSize)
-  		aPos += m_WindowSize;
-		for(; aLen > 0; aLen--)
+		UINT32 pos = _pos - distance - 1;
+  	if (pos >= _windowSize)
+  		pos += _windowSize;
+		for(; len > 0; len--)
 		{
-			if (aPos >= m_WindowSize)
-				aPos = 0;
-			m_Buffer[m_Pos++] = m_Buffer[aPos++];
-			if (m_Pos >= m_WindowSize)
-				Flush();  
-			// PutOneByte(GetOneByte(0 - aDistance));
+			if (pos >= _windowSize)
+				pos = 0;
+			_buffer[_pos++] = _buffer[pos++];
+			if (_pos >= _windowSize)
+				FlushWithCheck();  
+			// PutOneByte(GetOneByte(0 - distance));
 		}
   }
 
-  void PutOneByte(BYTE aByte)
+  void PutOneByte(BYTE b)
   {
-		m_Buffer[m_Pos++] = aByte;
-		if (m_Pos >= m_WindowSize)
-			Flush();  
+		_buffer[_pos++] = b;
+		if (_pos >= _windowSize)
+			FlushWithCheck();  
   }
 
-  BYTE GetOneByte(UINT32 anIndex) const
+  BYTE GetOneByte(UINT32 index) const
   {
-		UINT32 aPos = m_Pos + anIndex;
-		if (aPos >= m_WindowSize)
-			aPos += m_WindowSize;
-		return m_Buffer[aPos]; 
+		UINT32 pos = _pos + index;
+		if (pos >= _windowSize)
+			pos += _windowSize;
+		return _buffer[pos]; 
   }
 
-  // BYTE *GetBuffer() const { return m_Buffer; }
+  // BYTE *GetBuffer() const { return _buffer; }
 };
 
 }}

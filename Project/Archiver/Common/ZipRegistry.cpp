@@ -18,149 +18,10 @@ static const TCHAR *kCUBasePath = _T("Software\\7-ZIP");
 
 static const TCHAR *kArchiversKeyName = _T("Archivers");
 
-static const TCHAR *kLangValueName = _T("Lang");
-
-void SaveRegLang(const CSysString &aLang)
+namespace NZipRegistryManager
 {
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
-  aCUKey.SetValue(kLangValueName, aLang);
-}
-
-void ReadRegLang(CSysString &aLang)
-{
-  aLang.Empty();
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
-  aCUKey.QueryValue(kLangValueName, aLang);
-}
-
-////////////////////////////////////////////////////////////
-// CZipRegistryManager
-
-CZipRegistryManager::CZipRegistryManager()
-{
-  m_CUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
-}
-
-static const TCHAR *kCulumnsValueName = _T("Columns");
-// static const TCHAR *kCulumnSortValueName = _T("ColumnSort");
-
-#pragma pack( push, PragmaColumnInfoSpec)
-#pragma pack( push, 1)
-
-class CColumnInfoSpec
-{
-  UINT32 PropID;
-  BYTE IsVisible;
-  // UINT32 Order;
-  UINT32 Width;
-public:
-  void GetFromColumnInfo(const CColumnInfo &aSrc) 
-  {
-    PropID = aSrc.PropID;
-    IsVisible = aSrc.IsVisible ? 1: 0;
-    // Order = aSrc.Order;
-    Width = aSrc.Width;
-  }
-  void PutColumnInfo(CColumnInfo &aDest) 
-  {
-    aDest.PropID = PropID;
-    aDest.IsVisible = (IsVisible != 0);
-    // aDest.Order = Order;
-    aDest.Width = Width;
-  }
-};
-
-struct CColumnHeader
-{
-  UINT32 Version;
-  UINT32 SortIndex;
-  BYTE Ascending;
-};
-
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaColumnInfoSpec)
-
+  
 static NSynchronization::CCriticalSection g_RegistryOperationsCriticalSection;
-
-static const UINT32 kAscendingMask = (1UL << 31);
-
-static const UINT32 kColumnInfoVersion = 0;
-
-void CZipRegistryManager::SaveListViewInfo(const CLSID &aClassID, const CListViewInfo &aViewInfo)
-{
-  const CColumnInfoVector &aColumnInfoList = aViewInfo.ColumnInfoVector;
-  CByteBuffer aBuffer;
-  UINT32 aDataSize = sizeof(CColumnHeader) + sizeof(CColumnInfoSpec) * aColumnInfoList.size();
-  aBuffer.SetCapacity(aDataSize);
-
-  BYTE *aDataPointer = (BYTE *)aBuffer;
-
-  CColumnHeader &aColumnHeader = *(CColumnHeader *)aDataPointer;
-  aColumnHeader.Version = kColumnInfoVersion;
-  aColumnHeader.SortIndex = aViewInfo.SortIndex;
-  aColumnHeader.Ascending = aViewInfo.Ascending? 1: 0;
-
-  CColumnInfoSpec *aDestItems = (CColumnInfoSpec *)(aDataPointer + sizeof(CColumnHeader));
-  for(int i = 0; i < aColumnInfoList.size(); i++)
-  {
-    CColumnInfoSpec &aColumnInfoSpec = aDestItems[i];
-    aColumnInfoSpec.GetFromColumnInfo(aColumnInfoList[i]);
-  }
-  {
-    NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
-    CSysString aKeyName = kArchiversKeyName;
-    aKeyName += kKeyNameDelimiter;
-    aKeyName += GUIDToString(aClassID);
-    CKey aKey;
-    aKey.Create(m_CUKey, aKeyName);
-    aKey.SetValue(kCulumnsValueName, aDataPointer, aDataSize);
-  }
-}
-
-void CZipRegistryManager::ReadListViewInfo(const CLSID &aClassID, CListViewInfo &aViewInfo)
-{
-  CColumnInfoVector &aColumnInfoList = aViewInfo.ColumnInfoVector;
-  aViewInfo.SortIndex = -1;
-  aViewInfo.Ascending = true;
-  aColumnInfoList.clear();
-  CByteBuffer aBuffer;
-  UINT32 aSize;
-  {
-    NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
-    CSysString aKeyName = kArchiversKeyName;
-    aKeyName += kKeyNameDelimiter;
-    aKeyName += GUIDToString(aClassID);
-    CKey aKey;
-    if(aKey.Open(m_CUKey, aKeyName, KEY_READ) != ERROR_SUCCESS)
-      return;
-    if (aKey.QueryValue(kCulumnsValueName, aBuffer, aSize) != ERROR_SUCCESS)
-      return;
-  }
-  if (aSize < sizeof(CColumnHeader))
-    return;
-  BYTE *aDataPointer = (BYTE *)aBuffer;
-  const CColumnHeader &aColumnHeader = *(CColumnHeader*)aDataPointer;
-  if (aColumnHeader.Version != kColumnInfoVersion)
-    return;
-  aViewInfo.Ascending = (aColumnHeader.Ascending != 0);
-  aViewInfo.SortIndex = aColumnHeader.SortIndex;
-
-  aSize -= sizeof(CColumnHeader);
-  if (aSize % sizeof(CColumnHeader) != 0)
-    return;
-  int aNumItems = aSize / sizeof(CColumnInfoSpec);
-  CColumnInfoSpec *aSpecItems = (CColumnInfoSpec *)(aDataPointer + sizeof(CColumnHeader));;
-  for(int i = 0; i < aNumItems; i++)
-  {
-    CColumnInfo aColumnInfo;
-    aSpecItems[i].PutColumnInfo(aColumnInfo);
-    aColumnInfoList.push_back(aColumnInfo);
-  }
-}
-
 
 //////////////////////
 // ExtractionInfo
@@ -171,11 +32,16 @@ static const TCHAR *kExtractionPathHistoryKeyName = _T("PathHistory");
 static const TCHAR *kExtractionExtractModeValueName = _T("ExtarctMode");
 static const TCHAR *kExtractionOverwriteModeValueName = _T("OverwriteMode");
 
-void CZipRegistryManager::SaveExtractionInfo(const NExtraction::CInfo &anInfo)
+static CSysString GetKeyPath(const CSysString &aPath)
+{
+  return CSysString(kCUBasePath) + CSysString('\\') + CSysString(aPath);
+}
+
+void SaveExtractionInfo(const NExtraction::CInfo &anInfo)
 {
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
   CKey anExtractionKey;
-  anExtractionKey.Create(m_CUKey, kExtractionInfoKeyName);
+  anExtractionKey.Create(HKEY_CURRENT_USER, GetKeyPath(kExtractionInfoKeyName));
   anExtractionKey.RecurseDeleteKey(kExtractionPathHistoryKeyName);
   {
     CKey aPathHistoryKey;
@@ -191,7 +57,7 @@ void CZipRegistryManager::SaveExtractionInfo(const NExtraction::CInfo &anInfo)
   anExtractionKey.SetValue(kExtractionOverwriteModeValueName, UINT32(anInfo.OverwriteMode));
 }
 
-void CZipRegistryManager::ReadExtractionInfo(NExtraction::CInfo &anInfo)
+void ReadExtractionInfo(NExtraction::CInfo &anInfo)
 {
   anInfo.Paths.Clear();
   anInfo.PathMode = NExtraction::NPathMode::kFullPathnames;
@@ -199,7 +65,7 @@ void CZipRegistryManager::ReadExtractionInfo(NExtraction::CInfo &anInfo)
 
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
   CKey anExtractionKey;
-  if(anExtractionKey.Open(m_CUKey, kExtractionInfoKeyName, KEY_READ) != ERROR_SUCCESS)
+  if(anExtractionKey.Open(HKEY_CURRENT_USER, GetKeyPath(kExtractionInfoKeyName), KEY_READ) != ERROR_SUCCESS)
     return;
   
   {
@@ -255,12 +121,12 @@ static const TCHAR *kCompressionOptionsKeyName = _T("Options");
 static const TCHAR *kCompressionOptionsSolidValueName = _T("Solid");
 static const TCHAR *kCompressionOptionsOptionsValueName = _T("Options");
 
-void CZipRegistryManager::SaveCompressionInfo(const NCompression::CInfo &anInfo)
+void SaveCompressionInfo(const NCompression::CInfo &anInfo)
 {
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
 
   CKey aCompressionKey;
-  aCompressionKey.Create(m_CUKey, kCompressionInfoKeyName);
+  aCompressionKey.Create(HKEY_CURRENT_USER, GetKeyPath(kCompressionInfoKeyName));
   aCompressionKey.RecurseDeleteKey(kCompressionHistoryArchivesKeyName);
   {
     CKey aHistoryArchivesKey;
@@ -295,7 +161,7 @@ void CZipRegistryManager::SaveCompressionInfo(const NCompression::CInfo &anInfo)
   // aCompressionKey.SetValue(kCompressionMaximizeValueName, anInfo.Maximize);
 }
 
-void CZipRegistryManager::ReadCompressionInfo(NCompression::CInfo &anInfo)
+void ReadCompressionInfo(NCompression::CInfo &anInfo)
 {
   anInfo.HistoryArchives.Clear();
 
@@ -309,7 +175,9 @@ void CZipRegistryManager::ReadCompressionInfo(NCompression::CInfo &anInfo)
 
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
   CKey aCompressionKey;
-  if(aCompressionKey.Open(m_CUKey, kCompressionInfoKeyName, KEY_READ) != ERROR_SUCCESS)
+
+  if(aCompressionKey.Open(HKEY_CURRENT_USER, 
+      GetKeyPath(kCompressionInfoKeyName), KEY_READ) != ERROR_SUCCESS)
     return;
   
   {
@@ -373,8 +241,6 @@ void CZipRegistryManager::ReadCompressionInfo(NCompression::CInfo &anInfo)
 }
 
 
-
-
 ///////////////////////////////////
 // WorkDirInfo
 
@@ -384,23 +250,23 @@ static const TCHAR *kWorkDirTypeValueName = _T("WorkDirType");
 static const TCHAR *kWorkDirPathValueName = _T("WorkDirPath");
 static const TCHAR *kTempRemovableOnlyValueName = _T("TempRemovableOnly");
 
-void CZipRegistryManager::SaveWorkDirInfo(const NWorkDir::CInfo &anInfo)
+void SaveWorkDirInfo(const NWorkDir::CInfo &anInfo)
 {
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
   CKey anOptionsKey;
-  anOptionsKey.Create(m_CUKey, kOptionsInfoKeyName);
+  anOptionsKey.Create(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName));
   anOptionsKey.SetValue(kWorkDirTypeValueName, UINT32(anInfo.Mode));
   anOptionsKey.SetValue(kWorkDirPathValueName, anInfo.Path);
   anOptionsKey.SetValue(kTempRemovableOnlyValueName, anInfo.ForRemovableOnly);
 }
 
-void CZipRegistryManager::ReadWorkDirInfo(NWorkDir::CInfo &anInfo)
+void ReadWorkDirInfo(NWorkDir::CInfo &anInfo)
 {
   anInfo.SetDefault();
 
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
   CKey anOptionsKey;
-  if(anOptionsKey.Open(m_CUKey, kOptionsInfoKeyName, KEY_READ) != ERROR_SUCCESS)
+  if(anOptionsKey.Open(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName), KEY_READ) != ERROR_SUCCESS)
     return;
 
   UINT32 aType;
@@ -421,4 +287,5 @@ void CZipRegistryManager::ReadWorkDirInfo(NWorkDir::CInfo &anInfo)
   }
   if (anOptionsKey.QueryValue(kTempRemovableOnlyValueName, anInfo.ForRemovableOnly) != ERROR_SUCCESS)
     anInfo.SetForRemovableOnlyDefault();
+}
 }

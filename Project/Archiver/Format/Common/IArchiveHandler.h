@@ -7,6 +7,7 @@
 
 #include "Interface/IInOutStreams.h"
 #include "Interface/IProgress.h"
+#include "Interface/PropID.h"
 
 namespace NFileTimeType
 {
@@ -18,32 +19,6 @@ namespace NFileTimeType
   };
 }
 
-enum // CArchiveItemPropertyID
-{
-  kaipidHandlerItemIndex = 2,
-  kaipidPath,
-  kaipidName,
-  kaipidExtension,
-  kaipidIsFolder,
-  kaipidSize,
-  kaipidPackedSize,
-  kaipidAttributes,
-  kaipidCreationTime,
-  kaipidLastAccessTime,
-  kaipidLastWriteTime,
-  kaipidSolid, 
-  kaipidComment, 
-  kaipidEncrypted, 
-  kaipidSplitBefore, 
-  kaipidSplitAfter, 
-  kaipidDictionarySize, 
-  kaipidCRC, 
-  kaipidType,
-  kaipidIsAnti,
-  kaipidMethod,
-  kaipidHostOS,
-  kaipidUserDefined = 0x10000
-};
 
 namespace NArchiveHandler{
   namespace NExtract{
@@ -100,10 +75,10 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100030000")
 IExtractCallBack: public IProgress
 {
 public:
-  STDMETHOD(Extract)(LPITEMIDLIST anItemIDList, ISequentialOutStream **anOutStream, 
-      INT32 anAskExtractMode) PURE;
-  STDMETHOD(PrepareOperation)(INT32 anAskExtractMode) PURE;
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult) PURE;
+  STDMETHOD(Extract)(LPITEMIDLIST itemIDList, ISequentialOutStream **outStream, 
+      INT32 askExtractMode) PURE;
+  STDMETHOD(PrepareOperation)(INT32 askExtractMode) PURE;
+  STDMETHOD(OperationResult)(INT32 resultEOperationResult) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100040000}
@@ -113,21 +88,21 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040000")
 IUpdateCallBack: public IProgress
 {
 public:
-  STDMETHOD(GetUpdateItemInfo)(INT32 anIndex, 
-      INT32 *anCompress, // 1 - compress 0 - copy
-      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
-      INT32 *anIndexInServer, // set if anExistInArchive == true
-      UINT32 *anAttributes,
-      FILETIME *aCreationTime, 
-      FILETIME *aLastAccessTime, 
-      FILETIME *aLastWriteTime, 
-      UINT64 *aSize, 
-      BSTR *aName) PURE;
+  STDMETHOD(GetUpdateItemInfo)(INT32 index, 
+      INT32 *compress, // 1 - compress 0 - copy
+      INT32 *existInArchive, // 1 - exist, 0 - not exist
+      INT32 *indexInServer, // set if existInArchive == true
+      UINT32 *attributes,
+      FILETIME *creationTime, 
+      FILETIME *lastAccessTime, 
+      FILETIME *lastWriteTime, 
+      UINT64 *size, 
+      BSTR *name) PURE;
 
-  STDMETHOD(CompressOperation)(INT32 anIndex, IInStream **anInStream) PURE;
-  STDMETHOD(DeleteOperation)(LPITEMIDLIST anItemIDList) PURE;
+  STDMETHOD(CompressOperation)(INT32 index, IInStream **inStream) PURE;
+  STDMETHOD(DeleteOperation)(LPITEMIDLIST itemIDList) PURE;
 
-  STDMETHOD(OperationResult)(INT32 aOperationResult) PURE;
+  STDMETHOD(OperationResult)(INT32 operationResult) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100040002}
@@ -137,20 +112,21 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040002")
 IUpdateCallBack2: public IUpdateCallBack
 {
 public:
-  STDMETHOD(GetUpdateItemInfo2)(INT32 anIndex, 
-      INT32 *anCompress, // 1 - compress 0 - copy
-      INT32 *anExistInArchive, // 1 - exist, 0 - not exist
-      INT32 *anIndexInServer, // set if anExistInArchive == true
-      UINT32 *anAttributes,
-      FILETIME *aCreationTime, 
-      FILETIME *aLastAccessTime, 
-      FILETIME *aLastWriteTime, 
-      UINT64 *aSize, 
-      BSTR *aName, 
-      INT32 *anIsAnti) // 1 - File 0 - AntiFile) 
+  STDMETHOD(GetUpdateItemInfo2)(INT32 index, 
+      INT32 *compress, // 1 - compress 0 - copy
+      INT32 *existInArchive, // 1 - exist, 0 - not exist
+      INT32 *indexInServer, // set if existInArchive == true
+      UINT32 *attributes,
+      FILETIME *creationTime, 
+      FILETIME *lastAccessTime, 
+      FILETIME *lastWriteTime, 
+      UINT64 *size, 
+      BSTR *name, 
+      INT32 *isAnti) // 1 - File 0 - AntiFile) 
         PURE;
 };
 
+/*
 // {23170F69-40C1-278A-0000-000100010001}
 DEFINE_GUID(IID_IArchiveHandler, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01);
@@ -164,17 +140,18 @@ public:
   STDMETHOD(EnumObjects)(LPENUMIDLIST *anEnumIDList) PURE;  
 
   STDMETHOD(GetPropertyValue)(
-      LPCITEMIDLIST anItemIDList, 
+      LPCITEMIDLIST itemIDList, 
       PROPID aPropID,  
-      PROPVARIANT *aValues) PURE;
+      PROPVARIANT *values) PURE;
 
 
-  STDMETHOD(DecompressItems)(const INT32* anIndexes, INT32 aNumItems, INT32 aTestMode,
+  STDMETHOD(DecompressItems)(const INT32* indices, INT32 numItems, INT32 aTestMode,
       IExtractCallBack *anExtractCallBack) PURE;
   STDMETHOD(DecompressAllItems)(INT32 aTestMode, 
       IExtractCallBack *anExtractCallBack) PURE;
 
 };
+*/
 
 // {23170F69-40C1-278A-0000-000100010002}
 DEFINE_GUID(IID_IOpenArchive2CallBack, 
@@ -183,10 +160,11 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100010002")
 IOpenArchive2CallBack: public IUnknown
 {
 public:
-  STDMETHOD(SetTotal)(const UINT64 *aFiles, const UINT64 *aBytes) PURE;
-  STDMETHOD(SetCompleted)(const UINT64 *aFiles, const UINT64 *aBytes) PURE;
+  STDMETHOD(SetTotal)(const UINT64 *files, const UINT64 *bytes) PURE;
+  STDMETHOD(SetCompleted)(const UINT64 *files, const UINT64 *bytes) PURE;
 };
 
+/*
 // {23170F69-40C1-278A-0000-000100010003}
 DEFINE_GUID(IID_IArchiveHandler2, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x03);
@@ -208,12 +186,13 @@ public:
   STDMETHOD(IsArchive4)(IInStream *aStream, const UINT64 *aMaxCheckStartPosition,
       IOpenArchive2CallBack *anOpenArchiveCallBack) PURE;  
 };
+*/
 
-inline INT32 BoolToMyBool(bool aValue)
-  { return (aValue ? 1: 0); }
+inline INT32 BoolToMyBool(bool value)
+  { return (value ? 1: 0); }
 
-inline bool MyBoolToBool(INT32 aValue)
-  { return (aValue != 0); }
+inline bool MyBoolToBool(INT32 value)
+  { return (value != 0); }
 
 
 // {23170F69-40C1-278A-0000-000100020001}
@@ -222,12 +201,12 @@ DEFINE_GUID(IID_IOutArchiveHandler,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100020001")
 IOutArchiveHandler: public IUnknown
 {
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, const INT32* anIndexes, INT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack) PURE;
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, INT32 aNumItems,
-      INT32 aStoreMode, INT32 aMaximizeRatioMode,
-      IUpdateCallBack *anUpdateCallBack) PURE;
-  STDMETHOD(GetFileTimeType)(UINT32 *aType) PURE;  
+  STDMETHOD(DeleteItems)(IOutStream *outStream, const INT32* indices, INT32 numItems,
+      IUpdateCallBack *updateCallback) PURE;
+  STDMETHOD(UpdateItems)(IOutStream *outStream, INT32 numItems,
+      INT32 storeMode, INT32 maximizeRatioMode,
+      IUpdateCallBack *updateCallback) PURE;
+  STDMETHOD(GetFileTimeType)(UINT32 *type) PURE;  
 };
 
 // {23170F69-40C1-278A-0000-000100030000}
@@ -236,7 +215,7 @@ DEFINE_GUID(IID_ISetProperty,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100030000")
 ISetProperty: public IUnknown
 {
-  STDMETHOD(SetProperty)(BSTR aName, const PROPVARIANT *aValue) PURE;
+  STDMETHOD(SetProperty)(BSTR name, const PROPVARIANT *value) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100030001}
@@ -245,7 +224,7 @@ DEFINE_GUID(IID_ISetProperties,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100030001")
 ISetProperties: public IUnknown
 {
-  STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties) PURE;
+  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties) PURE;
 };
 
 #endif

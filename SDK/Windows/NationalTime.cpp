@@ -8,32 +8,30 @@ namespace NWindows {
 namespace NNational {
 namespace NTime {
 
-bool MyGetTimeFormat(LCID aLocale, DWORD aFlags, CONST SYSTEMTIME *aTime, 
-    LPCTSTR aFormat, CSysString &aResultString)
+bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+    LPCTSTR format, CSysString &resultString)
 {
-  aResultString.Empty();
-  int aNumChars = ::GetTimeFormat(aLocale, aFlags, aTime, aFormat,
-      NULL, 0);
-  if(aNumChars == 0)
+  resultString.Empty();
+  int numChars = ::GetTimeFormat(locale, flags, time, format, NULL, 0);
+  if(numChars == 0)
     return false;
-  aNumChars = ::GetTimeFormat(aLocale, aFlags, aTime, aFormat,
-      aResultString.GetBuffer(aNumChars), aNumChars + 1);
-  aResultString.ReleaseBuffer();
-  return (aNumChars != 0);
+  numChars = ::GetTimeFormat(locale, flags, time, format,
+      resultString.GetBuffer(numChars), numChars + 1);
+  resultString.ReleaseBuffer();
+  return (numChars != 0);
 }
 
-bool MyGetDateFormat(LCID aLocale, DWORD aFlags, CONST SYSTEMTIME *aTime, 
-    LPCTSTR aFormat, CSysString &aResultString)
+bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+    LPCTSTR format, CSysString &resultString)
 {
-  aResultString.Empty();
-  int aNumChars = ::GetDateFormat(aLocale, aFlags, aTime, aFormat,
-      NULL, 0);
-  if(aNumChars == 0)
+  resultString.Empty();
+  int numChars = ::GetDateFormat(locale, flags, time, format, NULL, 0);
+  if(numChars == 0)
     return false;
-  aNumChars = ::GetDateFormat(aLocale, aFlags, aTime, aFormat,
-      aResultString.GetBuffer(aNumChars), aNumChars + 1);
-  aResultString.ReleaseBuffer();
-  return (aNumChars != 0);
+  numChars = ::GetDateFormat(locale, flags, time, format,
+      resultString.GetBuffer(numChars), numChars + 1);
+  resultString.ReleaseBuffer();
+  return (numChars != 0);
 }
 
 }}}

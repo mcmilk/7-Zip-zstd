@@ -9,22 +9,22 @@
 
 class CCRC
 {
-  UINT32 m_Value;
+  UINT32 _value;
 public:
-	static UINT32 m_Table[256];
-  CCRC():  m_Value(0xFFFFFFFF){};
-  void Init() { m_Value = 0xFFFFFFFF; }
-  void Update(const void *aData, UINT32 aSize);
-  UINT32 GetDigest() const { return m_Value ^ 0xFFFFFFFF; } 
-  static UINT32 CalculateDigest(const void *aData, UINT32 aSize)
+	static UINT32 Table[256];
+  CCRC():  _value(0xFFFFFFFF){};
+  void Init() { _value = 0xFFFFFFFF; }
+  void Update(const void *data, UINT32 size);
+  UINT32 GetDigest() const { return _value ^ 0xFFFFFFFF; } 
+  static UINT32 CalculateDigest(const void *data, UINT32 size)
   {
-    CCRC aCRC;
-    aCRC.Update(aData, aSize);
-    return aCRC.GetDigest();
+    CCRC crc;
+    crc.Update(data, size);
+    return crc.GetDigest();
   }
-  static bool VerifyDigest(UINT32 aDigest, const void *aData, UINT32 aSize)
+  static bool VerifyDigest(UINT32 digest, const void *data, UINT32 size)
   {
-    return (CalculateDigest(aData, aSize) == aDigest);
+    return (CalculateDigest(data, size) == digest);
   }
 };
 

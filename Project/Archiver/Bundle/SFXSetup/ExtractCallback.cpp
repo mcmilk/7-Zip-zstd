@@ -16,7 +16,7 @@
 
 #include "Windows/PropVariantConversions.h"
 
-#include "../../Explorer/ProcessMessages.h"
+#include "Windows/ProcessMessages.h"
 
 using namespace NWindows;
 using namespace NZipSettings;
@@ -82,7 +82,7 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     return E_ABORT;
   m_OutFileStream.Release();
   NCOM::CPropVariant aPropVariantName;
-  RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidPath, &aPropVariantName));
+  RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidPath, &aPropVariantName));
   UString aFullPath;
   if(aPropVariantName.vt == VT_EMPTY)
     aFullPath = m_ItemDefaultName;
@@ -99,7 +99,7 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
   if(anAskExtractMode == NArchiveHandler::NExtract::NAskMode::kExtract)
   {
     NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidAttributes, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidAttributes, &aPropVariant));
     if (aPropVariant.vt == VT_EMPTY)
       m_ProcessedFileInfo.Attributes = m_AttributesDefault;
     else
@@ -109,19 +109,19 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
       m_ProcessedFileInfo.Attributes = aPropVariant.ulVal;
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsFolder, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsFolder, &aPropVariant));
     m_ProcessedFileInfo.IsDirectory = VARIANT_BOOLToBool(aPropVariant.boolVal);
 
     bool anIsAnti = false;
     {
       NCOM::CPropVariant aPropVariantTemp;
-      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsAnti, 
+      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsAnti, 
           &aPropVariantTemp));
       if (aPropVariantTemp.vt != VT_EMPTY)
         anIsAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidLastWriteTime, &aPropVariant));
+    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidLastWriteTime, &aPropVariant));
     switch(aPropVariant.vt)
     {
       case VT_EMPTY:
@@ -240,7 +240,7 @@ STDMETHODIMP CExtractCallBackImp::OperationResult(INT32 aResultEOperationResult)
     }
   }
   if(m_OutFileStream != NULL)
-    m_OutFileStreamSpec->m_File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
+    m_OutFileStreamSpec->File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
   m_OutFileStream.Release();
   if (m_ExtractMode)
     SetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);

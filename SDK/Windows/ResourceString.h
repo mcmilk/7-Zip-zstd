@@ -9,7 +9,7 @@
 
 namespace NWindows {
 
-CSysString MyLoadString(UINT anID);
+CSysString MyLoadString(UINT resourceID);
 
 }
 

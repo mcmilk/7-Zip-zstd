@@ -14,14 +14,12 @@ namespace NMSZip {
 using namespace NDeflate;
 
 
-static const UINT32 kWindowReservSize = (1 << 17) + 256;
-
 CDecoder::CDecoder():
   m_MainDecoder(kStaticMainTableSize),
   m_DistDecoder(kStaticDistTableSize),
   m_LevelDecoder(kLevelTableSize)
 {
-  m_OutWindowStream.Create(kHistorySize, kMatchMaxLen, kWindowReservSize);
+  m_OutWindowStream.Create(kHistorySize);
 }
 
 HRESULT CDecoder::Flush()

@@ -12,21 +12,21 @@ namespace NWindow {
 
 class CIn
 {
-  BYTE  *m_BufferBase; // pointer to buffer with data
-  CComPtr<ISequentialInStream> m_Stream;
-  UINT32 m_PosLimit;  // offset (from m_Buffer) of first byte when new block reading must be done
-  bool m_StreamEndWasReached; // if (true) then m_StreamPos shows real end of stream
+  BYTE  *_bufferBase; // pointer to buffer with data
+  CComPtr<ISequentialInStream> _stream;
+  UINT32 _posLimit;  // offset (from _buffer) of first byte when new block reading must be done
+  bool _streamEndWasReached; // if (true) then _streamPos shows real end of stream
 
-  const BYTE *m_PointerToLastSafePosition;
+  const BYTE *_pointerToLastSafePosition;
 
 protected:
-  BYTE  *m_Buffer;   // Pointer to virtual Buffer begin
-  UINT32 m_BlockSize;  // Size of Allocated memory block
-  UINT32 m_Pos;             // offset (from m_Buffer) of curent byte
-  UINT32 m_KeepSizeBefore;  // how many BYTEs must be kept in buffer before m_Pos
-  UINT32 m_KeepSizeAfter;   // how many BYTEs must be kept buffer after m_Pos
-  UINT32 m_KeepSizeReserv;  // how many BYTEs must be kept as reserv
-  UINT32 m_StreamPos;   // offset (from m_Buffer) of first not read byte from Stream
+  BYTE  *_buffer;   // Pointer to virtual Buffer begin
+  UINT32 _blockSize;  // Size of Allocated memory block
+  UINT32 _pos;             // offset (from _buffer) of curent byte
+  UINT32 _keepSizeBefore;  // how many BYTEs must be kept in buffer before _pos
+  UINT32 _keepSizeAfter;   // how many BYTEs must be kept buffer after _pos
+  UINT32 _keepSizeReserv;  // how many BYTEs must be kept as reserv
+  UINT32 _streamPos;   // offset (from _buffer) of first not read byte from Stream
 
   virtual void BeforeMoveBlock() {};
   virtual void AfterMoveBlock() {};
@@ -35,24 +35,24 @@ protected:
   void Free();
 public:
   CIn();
-  void Create(UINT32 aKeepSizeBefore, UINT32 aKeepSizeAfter, 
-      UINT32 aKeepSizeReserv = (1<<17));
+  void Create(UINT32 keepSizeBefore, UINT32 keepSizeAfter, 
+      UINT32 keepSizeReserv = (1<<17));
   ~CIn();
 
-  HRESULT Init(ISequentialInStream *aStream);
+  HRESULT Init(ISequentialInStream *stream);
   void ReleaseStream();
 
-  BYTE *GetBuffer() const { return m_Buffer; }
+  BYTE *GetBuffer() const { return _buffer; }
 
-  const BYTE *GetPointerToCurrentPos() const { return m_Buffer + m_Pos; }
+  const BYTE *GetPointerToCurrentPos() const { return _buffer + _pos; }
 
   HRESULT MovePos()
   {
-    m_Pos++;
-    if (m_Pos > m_PosLimit)
+    _pos++;
+    if (_pos > _posLimit)
     {
-      const BYTE *aPointerToPostion = m_Buffer + m_Pos;
-      if(aPointerToPostion > m_PointerToLastSafePosition)
+      const BYTE *pointerToPostion = _buffer + _pos;
+      if(pointerToPostion > _pointerToLastSafePosition)
         MoveBlock();
       return ReadBlock();
     }
@@ -60,32 +60,32 @@ public:
       return S_OK;
   }
   // BYTE GetCurrentByte()const;
-  BYTE GetIndexByte(UINT32 anIndex)const
-    {  return m_Buffer[m_Pos + anIndex]; }
+  BYTE GetIndexByte(UINT32 index)const
+    {  return _buffer[_pos + index]; }
 
-  // UINT32 GetCurPos()const { return m_Pos;};
-  // BYTE *GetBufferBeg()const { return m_Buffer;};
+  // UINT32 GetCurPos()const { return _pos;};
+  // BYTE *GetBufferBeg()const { return _buffer;};
 
-  // aIndex + aLimit have not to exceed m_KeepSizeAfter;
-  UINT32 GetMatchLen(UINT32 aIndex, UINT32 aBack, UINT32 aLimit) const
+  // index + limit have not to exceed _keepSizeAfter;
+  UINT32 GetMatchLen(UINT32 index, UINT32 back, UINT32 limit) const
   {  
-    if(m_StreamEndWasReached)
-      if ((m_Pos + aIndex) + aLimit > m_StreamPos)
-        aLimit = m_StreamPos - (m_Pos + aIndex);
-      aBack++;
-      BYTE *pby = m_Buffer + m_Pos + aIndex;
-      for(UINT32 i = 0; i < aLimit && pby[i] == pby[i - aBack]; i++);
+    if(_streamEndWasReached)
+      if ((_pos + index) + limit > _streamPos)
+        limit = _streamPos - (_pos + index);
+      back++;
+      BYTE *pby = _buffer + _pos + index;
+      for(UINT32 i = 0; i < limit && pby[i] == pby[i - back]; i++);
       return i;
   }
 
-  UINT32 GetNumAvailableBytes() const { return m_StreamPos - m_Pos; }
+  UINT32 GetNumAvailableBytes() const { return _streamPos - _pos; }
 
-  void ReduceOffsets(UINT32 aSubValue)
+  void ReduceOffsets(UINT32 subValue)
   {
-    m_Buffer += aSubValue;
-    m_PosLimit -= aSubValue;
-    m_Pos -= aSubValue;
-    m_StreamPos -= aSubValue;
+    _buffer += subValue;
+    _posLimit -= subValue;
+    _pos -= subValue;
+    _streamPos -= subValue;
   }
 
 };

@@ -16,11 +16,12 @@ struct CLangPair
 
 class CLang
 {
-  CObjectVector<CLangPair> m_LangPairs;
+  CObjectVector<CLangPair> _langPairs;
 public:
-  bool Open(LPCTSTR aFileName);
-  int FindItem(UINT32 aValue) const;
-  bool GetMessage(UINT32 aValue, UString &aMessage) const;
+  bool Open(LPCTSTR fileName);
+  void Clear() { _langPairs.Clear(); }
+  int FindItem(UINT32 value) const;
+  bool GetMessage(UINT32 value, UString &message) const;
 };
 
 #endif

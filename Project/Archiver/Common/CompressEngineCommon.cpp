@@ -30,10 +30,11 @@ void AddDirFileInfo(const UString &aPrefix, const CSysString &aFullPathName,
   aDirFileInfoVector.Add(aDirFileInfo);
 }
 
-void EnumerateDirectory(const CSysString &aDirectory, const UString &aPrefix,
+void EnumerateDirectory(const CSysString &aBaseFolderPrefix,
+    const CSysString &aDirectory, const UString &aPrefix,
     CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage)
 {
-  NFind::CEnumerator anEnumerate(aDirectory + TCHAR(kAnyStringWildcard));
+  NFind::CEnumerator anEnumerate(aBaseFolderPrefix + aDirectory + TCHAR(kAnyStringWildcard));
   NFind::CFileInfo aFileInfo;
   while (anEnumerate.Next(aFileInfo))
   { 
@@ -41,14 +42,15 @@ void EnumerateDirectory(const CSysString &aDirectory, const UString &aPrefix,
         aDirFileInfoVector, aCodePage);
     if (aFileInfo.IsDirectory())
     {
-      EnumerateDirectory(aDirectory + aFileInfo.Name + TCHAR(kDirDelimiter), 
+      EnumerateDirectory(aBaseFolderPrefix, aDirectory + aFileInfo.Name + TCHAR(kDirDelimiter), 
           aPrefix + GetUnicodeString(aFileInfo.Name, aCodePage) + wchar_t(kDirDelimiter), 
           aDirFileInfoVector, aCodePage);
     }
   }
 }
 
-void EnumerateItems(const CSysStringVector &aFileNames,
+void EnumerateItems(const CSysString &aBaseFolderPrefix,
+    const CSysStringVector &aFileNames,
     const UString &anArchiveNamePrefix, 
     CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage)
 {
@@ -56,12 +58,12 @@ void EnumerateItems(const CSysStringVector &aFileNames,
   {
     const CSysString &aFileName = aFileNames[i];
     NFind::CFileInfo aFileInfo;
-    if (!NFind::FindFile(aFileName, aFileInfo))
+    if (!NFind::FindFile(aBaseFolderPrefix + aFileName, aFileInfo))
       throw 1081736;
     AddDirFileInfo(anArchiveNamePrefix, aFileName, aFileInfo, aDirFileInfoVector, aCodePage);
     if (aFileInfo.IsDirectory())
     {
-      EnumerateDirectory(aFileName + TCHAR(kDirDelimiter), 
+      EnumerateDirectory(aBaseFolderPrefix, aFileName + TCHAR(kDirDelimiter), 
           anArchiveNamePrefix + GetUnicodeString(aFileInfo.Name, aCodePage) + 
           wchar_t(kDirDelimiter), 
           aDirFileInfoVector, aCodePage);

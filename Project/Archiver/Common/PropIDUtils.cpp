@@ -22,9 +22,9 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
 {
   switch(aPropID)
   {
-    case kaipidCreationTime:
-    case kaipidLastWriteTime:
-    case kaipidLastAccessTime:
+    case kpidCreationTime:
+    case kpidLastWriteTime:
+    case kpidLastAccessTime:
     {
       if (aPropVariant.vt != VT_FILETIME)
         return CSysString(); // It is error;
@@ -33,7 +33,7 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
         return CSysString(); // It is error;
       return ConvertFileTimeToString2(aLocalFileTime, true, aFull);
     }
-    case kaipidCRC:
+    case kpidCRC:
     {
       if(aPropVariant.vt != VT_UI4)
         break;
@@ -41,7 +41,7 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
       _stprintf(aTmp, _T("%08X"), aPropVariant.ulVal);
       return aTmp;
     }
-    case kaipidAttributes:
+    case kpidAttributes:
     {
       if(aPropVariant.vt != VT_UI4)
         break;
@@ -56,7 +56,7 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
       if (NFile::NFind::NAttributes::IsEncrypted(anAttributes)) aResult += _T('E');
       return aResult;
     }
-    case kaipidDictionarySize:
+    case kpidDictionarySize:
     {
       if(aPropVariant.vt != VT_UI4)
         break;

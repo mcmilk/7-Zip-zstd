@@ -3,6 +3,14 @@
 #include "StdAfx.h"
 
 #include "Handler.h"
+
+#include "Common/Defs.h"
+#include "Common/CRC.h"
+#include "Common/StringConvert.h"
+
+#include "Interface/ProgressUtils.h"
+#include "Interface/StreamObjects.h"
+#include "Interface/EnumStatProp.h"
 #include "Interface/StreamObjects.h"
 
 #include "Windows/Time.h"
@@ -12,13 +20,6 @@
 #include "Compression/CopyCoder.h"
 
 #include "Archive/Common/ItemNameUtils.h"
-
-#include "Common/Defs.h"
-#include "Common/CRC.h"
-#include "Common/StringConvert.h"
-
-#include "Interface/ProgressUtils.h"
-#include "Interface/StreamObjects.h"
 
 #include "../Common/OutStreamWithCRC.h"
 #include "../Common/CoderMixer.h"
@@ -92,103 +93,31 @@ const wchar_t *kUnknownOS = L"Unknown";
 /*
 enum // PropID
 {
-  kaipidHostOS = kaipidUserDefined,
-  kaipidUnPackVersion, 
-  kaipidMethod, 
+  kpidHostOS = kpidUserDefined,
+  kpidUnPackVersion, 
+  kpidMethod, 
 };
 */
 
 STATPROPSTG kProperties[] = 
 {
-  { NULL, kaipidPath, VT_BSTR},
-  { NULL, kaipidIsFolder, VT_BOOL},
-  { NULL, kaipidSize, VT_UI8},
-  { NULL, kaipidPackedSize, VT_UI8},
-  { NULL, kaipidLastWriteTime, VT_FILETIME},
-  { NULL, kaipidAttributes, VT_UI4},
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidAttributes, VT_UI4},
 
-  { NULL, kaipidEncrypted, VT_BOOL},
-  { NULL, kaipidComment, VT_BOOL},
+  { NULL, kpidEncrypted, VT_BOOL},
+  { NULL, kpidComment, VT_BOOL},
     
-  { NULL, kaipidCRC, VT_UI4},
+  { NULL, kpidCRC, VT_UI4},
 
-  { NULL, kaipidMethod, VT_UI1},
-  { NULL, kaipidHostOS, VT_BSTR}
+  { NULL, kpidMethod, VT_UI1},
+  { NULL, kpidHostOS, VT_BSTR}
 
-  // { L"UnPack Version", kaipidUnPackVersion, VT_UI1},
-  // { L"Method", kaipidMethod, VT_UI1},
-  // { L"Host OS", kaipidHostOS, VT_BSTR}
+  // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
 };
-
-static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
-class CEnumArchiveItemProperty:
-  public IEnumSTATPROPSTG,
-  public CComObjectRoot
-{
-public:
-  int m_Index;
-
-  BEGIN_COM_MAP(CEnumArchiveItemProperty)
-    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
-  END_COM_MAP()
-    
-  DECLARE_NOT_AGGREGATABLE(CEnumArchiveItemProperty)
-    
-  DECLARE_NO_REGISTRY()
-public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
-  STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
-};
-
-STDMETHODIMP CEnumArchiveItemProperty::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
-{
-  COM_TRY_BEGIN
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
-    return E_INVALIDARG;
-
-  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
-  {
-    if(m_Index >= kNumProperties)
-    {
-      aResult =  S_FALSE;
-      break;
-    }
-    const STATPROPSTG &aSrcItem = kProperties[m_Index];
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
-    {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
-    }
-    else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-  }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
-  COM_TRY_END
-}
-
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
-  {  return E_NOTIMPL; }
-
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
-  {  return E_NOTIMPL; }
 
 
 CZipHandler::CZipHandler():
@@ -199,16 +128,11 @@ CZipHandler::CZipHandler():
   m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
 }
 
-STDMETHODIMP CZipHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
+STDMETHODIMP CZipHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (anEnumObject == NULL)
-    return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  // ((CComObjectNoLock<CTestEnumIDList>*)(anEnumObject))->Init(this, m_IDList, aFlags); // TODO : Add any addl. params as needed
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  return CStatPropEnumerator::CreateEnumerator(kProperties, 
+      sizeof(kProperties) / sizeof(kProperties[0]), enumerator);
   COM_TRY_END
 }
 
@@ -225,20 +149,20 @@ STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
   const NArchive::NZip::CItemInfoEx &anItem = m_Items[anIndex];
   switch(aPropID)
   {
-    case kaipidPath:
+    case kpidPath:
       aPropVariant = NItemName::GetOSName2(
           MultiByteToUnicodeString(anItem.Name, anItem.GetCodePage()));
       break;
-    case kaipidIsFolder:
+    case kpidIsFolder:
       aPropVariant = anItem.IsDirectory();
       break;
-    case kaipidSize:
+    case kpidSize:
       aPropVariant = anItem.UnPackSize;
       break;
-    case kaipidPackedSize:
+    case kpidPackedSize:
       aPropVariant = anItem.PackSize;
       break;
-    case kaipidLastWriteTime:
+    case kpidLastWriteTime:
     {
       FILETIME aLocalFileTime, anUTCFileTime;
       if (DosTimeToFileTime(anItem.Time, aLocalFileTime))
@@ -251,22 +175,22 @@ STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
       aPropVariant = anUTCFileTime;
       break;
     }
-    case kaipidAttributes:
+    case kpidAttributes:
       aPropVariant = anItem.GetWinAttributes();
       break;
-    case kaipidEncrypted:
+    case kpidEncrypted:
       aPropVariant = anItem.IsEncrypted();
       break;
-    case kaipidComment:
+    case kpidComment:
       aPropVariant = anItem.IsCommented();
       break;
-    case kaipidCRC:
+    case kpidCRC:
       aPropVariant = anItem.FileCRC;
       break;
-    case kaipidMethod:
+    case kpidMethod:
       aPropVariant = anItem.CompressionMethod;
       break;
-    case kaipidHostOS:
+    case kpidHostOS:
       aPropVariant = (anItem.MadeByVersion.HostOS < kNumHostOSes) ?
         (kHostOS[anItem.MadeByVersion.HostOS]) : kUnknownOS;
       break;
