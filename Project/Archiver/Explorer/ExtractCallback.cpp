@@ -4,14 +4,26 @@
 
 #include "ExtractCallback.h"
 
-#include "OverwriteDialog.h"
-#include "PasswordDialog.h"
+#include "Windows/FileFind.h"
+#include "Windows/FileDir.h"
+
+#include "../Resource/OverwriteDialog/OverwriteDialog.h"
+#include "../Resource/PasswordDialog/PasswordDialog.h"
+#include "../Resource/MessagesDialog/MessagesDialog.h"
+#include "../Resource/Extract/resource.h"
 
 #include "Common/WildCard.h"
 #include "Common/StringConvert.h"
 
 #include "ProcessMessages.h"
 #include "FormatUtils.h"
+
+#include "../Common/ExtractAutoRename.h"
+
+
+using namespace NWindows;
+using namespace NFile;
+using namespace NFind;
 
 void CExtractCallBackImp::DestroyWindows()
 {
@@ -31,16 +43,19 @@ CExtractCallBackImp::~CExtractCallBackImp()
   }
 }
 
-void CExtractCallBackImp::Init(IArchiveHandler100 *anArchiveHandler,
-    NExtractionDialog::CModeInfo anExtractModeInfo,
+static inline UINT GetCurrentFileCodePage()
+  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
+
+void CExtractCallBackImp::Init(
+    NExtractionMode::NOverwrite::EEnum anOverwriteMode,
     bool aPasswordIsDefined, 
     const UString &aPassword)
 {
-  m_ArchiveHandler = anArchiveHandler;
+  m_OverwriteMode = anOverwriteMode;
   m_PasswordIsDefined = aPasswordIsDefined;
   m_Password = aPassword;
-  m_ExtractModeInfo = anExtractModeInfo;
   m_Messages.Clear();
+  m_FileCodePage = GetCurrentFileCodePage();
 }
 
 void CExtractCallBackImp::AddErrorMessage(LPCTSTR aMessage)
@@ -195,6 +210,111 @@ STDMETHODIMP CExtractCallBackImp::CryptoGetTextPassword(BSTR *aPassword)
   CComBSTR aTempName = m_Password;
   *aPassword = aTempName.Detach();
 
+  return S_OK;
+}
+
+
+// IExtractCallBack3
+STDMETHODIMP CExtractCallBackImp::AskWrite(
+    const wchar_t *aSrcPath, INT32 _aSrcIsFolder, 
+    const FILETIME *aSrcTime, const UINT64 *aSrcSize,
+    const wchar_t *_aDestPath, 
+    BSTR *_aDestPathResult, 
+    INT32 *aResult)
+{
+  CComBSTR aDestPathResult = _aDestPath;
+  *_aDestPathResult = aDestPathResult.Detach();
+
+  UString aDestPath = _aDestPath;
+  CSysString aDestPathSys = GetSystemString(aDestPath, m_FileCodePage);
+  *aResult = BoolToMyBool(false);
+  bool aSrcIsFolder = MyBoolToBool(_aSrcIsFolder);
+  CFileInfo aDestFileInfo;
+  if (FindFile(aDestPathSys, aDestFileInfo))
+  {
+    if (aSrcIsFolder)
+    {
+      if (!aDestFileInfo.IsDirectory())
+      {
+        UString aMessage = UString(L"can not replace file \'")
+          + aDestPath +
+          UString(L"\' with folder with same name");
+        RETURN_IF_NOT_S_OK(MessageError(aMessage));
+        return E_ABORT;
+      }
+      *aResult = BoolToMyBool(false);
+      return S_OK;
+    }
+    if (aDestFileInfo.IsDirectory())
+    {
+      UString aMessage = UString(L"can not replace folder \'")
+          + aDestPath +
+          UString(L"\' with file with same name");
+      RETURN_IF_NOT_S_OK(MessageError(aMessage));
+      return E_FAIL;
+    }
+
+    switch(m_OverwriteMode)
+    {
+      case NExtractionMode::NOverwrite::kSkipExisting:
+        return S_OK;
+      case NExtractionMode::NOverwrite::kAskBefore:
+      {
+        INT32 aOverwiteResult;
+        RETURN_IF_NOT_S_OK(AskOverwrite(
+            aDestPath, 
+            &aDestFileInfo.LastWriteTime, &aDestFileInfo.Size,
+            GetUnicodeString(aSrcPath, m_FileCodePage),
+            aSrcTime, aSrcSize, 
+            &aOverwiteResult));
+          switch(aOverwiteResult)
+        {
+          case NOverwriteAnswer::kCancel:
+            return E_ABORT;
+          case NOverwriteAnswer::kNo:
+            return S_OK;
+          case NOverwriteAnswer::kNoToAll:
+            m_OverwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+            return S_OK;
+          case NOverwriteAnswer::kYesToAll:
+            m_OverwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
+            break;
+          case NOverwriteAnswer::kYes:
+            break;
+          case NOverwriteAnswer::kAutoRename:
+            m_OverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+            break;
+          default:
+            throw 20413;
+        }
+      }
+    }
+    if (m_OverwriteMode == NExtractionMode::NOverwrite::kAutoRename)
+    {
+      if (!AutoRenamePath(aDestPathSys))
+      {
+        UString aMessage = UString(L"can not create name of file ")
+            + GetUnicodeString(aDestPathSys, m_FileCodePage);
+        RETURN_IF_NOT_S_OK(MessageError(aMessage));
+        return E_ABORT;
+      }
+      {
+        CComBSTR aDestPathResultPrev;
+        aDestPathResult.Attach(*_aDestPathResult);
+      }
+      CComBSTR aDestPathResult = GetUnicodeString(aDestPathSys, m_FileCodePage);
+      *_aDestPathResult = aDestPathResult.Detach();
+    }
+    else
+      if (!NFile::NDirectory::DeleteFileAlways(aDestPathSys))
+      {
+        UString aMessage = UString(L"can not delete output file ")
+            + GetUnicodeString(aDestPathSys, m_FileCodePage);
+        RETURN_IF_NOT_S_OK(MessageError(aMessage));
+        return E_ABORT;
+      }
+  }
+  *aResult = BoolToMyBool(true);
   return S_OK;
 }
 

@@ -6,7 +6,8 @@
 #define __UPDATECALLBACK100_H
 
 #include "../Common/IArchiveHandler2.h"
-#include "ProgressDialog.h"
+#include "../Resource/ProgressDialog/ProgressDialog.h"
+#include "resource.h"
 
 #include "Common/String.h"
 

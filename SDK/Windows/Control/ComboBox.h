@@ -14,6 +14,8 @@ namespace NControl {
 class CComboBox: public CWindow
 {
 public:
+  void ResetContent()
+    { SendMessage(CB_RESETCONTENT, 0, 0); }
   int AddString(LPCTSTR aString)
     { return SendMessage(CB_ADDSTRING, 0, (LPARAM)aString); }
   int SetCurSel(int anIndex)
@@ -33,6 +35,15 @@ public:
     { return SendMessage(CB_SETITEMDATA, anIndex, lParam); }
   int GetItemData(int anIndex)
     { return SendMessage(CB_GETITEMDATA, anIndex, 0); }
+};
+
+class CComboBoxEx: public CWindow
+{
+public:
+  int DeleteItem(int anIndex)
+    { SendMessage(CBEM_DELETEITEM, anIndex, 0); }
+  int InsertItem(COMBOBOXEXITEM *anItem)
+    { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)anItem); }
 };
 
 }}

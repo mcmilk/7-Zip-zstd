@@ -21,6 +21,7 @@
 
 #include "../Agent/Handler.h"
 
+#include "../Resource/Extract/resource.h"
 
 #include "MyMessages.h"
 #include "FormatUtils.h"

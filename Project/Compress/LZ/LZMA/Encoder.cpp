@@ -120,7 +120,8 @@ STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *aPropIDs,
         if (aProperty.vt != VT_UI4)
           return E_INVALIDARG;
         UINT32 aDictionarySize = aProperty.ulVal;
-        if (aDictionarySize > UINT32(1 << kDicLogSizeMax))
+        if (aDictionarySize < UINT32(1 << kDicLogSizeMin) ||
+            aDictionarySize > UINT32(1 << kDicLogSizeMax))
           return E_INVALIDARG;
         m_DictionarySize = aDictionarySize;
         UINT32 aDicLogSize;

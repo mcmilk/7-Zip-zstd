@@ -7,8 +7,11 @@
 #include "Encoder.h"
 #include "Decoder.h"
 #include "CoderInfo.h"
+#include "Common/NewHandler.h"
 
 CComModule _Module;
+
+CNewHandlerSetter g_NewHandlerSetter;
 
 BEGIN_OBJECT_MAP(ObjectMap)
   OBJECT_ENTRY(CLSID_CLZMAEncoder, NCompress::NLZMA::CEncoder)

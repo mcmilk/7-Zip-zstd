@@ -215,6 +215,12 @@ STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
 
   RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
 
+  if (aTestMode)
+  {
+    RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+    return S_OK;
+  }
+
   RETURN_IF_NOT_S_OK(m_InStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
 
   CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 

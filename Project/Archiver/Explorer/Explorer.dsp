@@ -586,6 +586,10 @@ SOURCE=..\..\..\SDK\Interface\FileStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Util\FAM\FolderInteface.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Format\Common\IArchiveHandler.h
 # End Source File
 # Begin Source File
@@ -738,6 +742,10 @@ SOURCE=.\MyMessages.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\PluginInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\ProcessMessages.cpp
 # End Source File
 # Begin Source File
@@ -798,35 +806,35 @@ SOURCE=.\ExtractDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\MessagesDialog.cpp
+SOURCE=..\Resource\MessagesDialog\MessagesDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\MessagesDialog.h
+SOURCE=..\Resource\MessagesDialog\MessagesDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\OverwriteDialog.cpp
+SOURCE=..\Resource\OverwriteDialog\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\OverwriteDialog.h
+SOURCE=..\Resource\OverwriteDialog\OverwriteDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\PasswordDialog.cpp
+SOURCE=..\Resource\PasswordDialog\PasswordDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\PasswordDialog.h
+SOURCE=..\Resource\PasswordDialog\PasswordDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ProgressDialog.cpp
+SOURCE=..\Resource\ProgressDialog\ProgressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\ProgressDialog.h
+SOURCE=..\Resource\ProgressDialog\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Group "Agent"

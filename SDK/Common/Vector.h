@@ -56,6 +56,8 @@ public:
   T& Back()   { return operator[](m_Size - 1); }
 	virtual int Add(T anItem);
 	virtual void Insert(int anIndex, T anItem);
+  static int CompareRecordItems(const void *anElem1, const void *anElem2);
+  void Sort();
 };
 
 template <class T>
@@ -95,6 +97,16 @@ void CRecordVector<T>::Insert(int anIndex, T anItem)
 {
   InsertOneItem(anIndex);
   ((T *)m_Items)[anIndex] = anItem;
+}
+
+template <class T>
+int CRecordVector<T>::CompareRecordItems(const void *anElem1, const void *anElem2)
+  {  return MyCompare(*((const T *)anElem1), *((const T *)anElem2)); }
+
+template <class T>
+void CRecordVector<T>::Sort()
+{
+  qsort(&Front(), Size(), m_ItemSize, CompareRecordItems);
 }
 
 /////////////////////////////
@@ -152,7 +164,7 @@ public:
   int Find(const T& anItem) const;
   int FindInSorted(const T& anItem) const;
   int AddToSorted(const T& anItem);
-  static int CompareStringItems(const void *anElem1, const void *anElem2);
+  static int CompareObjectItems(const void *anElem1, const void *anElem2);
   void Sort();
 };
 
@@ -256,14 +268,14 @@ int CObjectVector<T>::AddToSorted(const T& anItem)
 }
 
 template <class T>
-int CObjectVector<T>::CompareStringItems(const void *anElem1, const void *anElem2)
+int CObjectVector<T>::CompareObjectItems(const void *anElem1, const void *anElem2)
   {  return MyCompare(*(*((const T **)anElem1)), *(*((const T **)anElem2))); }
 
 template <class T>
 void CObjectVector<T>::Sort()
 {
   CPointerVector &aPointerVector = *this;
-  qsort(&aPointerVector[0], Size(), sizeof(void *), CompareStringItems);
+  qsort(&aPointerVector[0], Size(), sizeof(void *), CompareObjectItems);
 }
 
 #endif 

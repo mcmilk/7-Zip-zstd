@@ -705,15 +705,19 @@ SOURCE=..\..\Explorer\ProcessMessages.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Explorer\ProgressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ProgressDialog.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Common\ZipSettings.h
+# End Source File
+# End Group
+# Begin Group "Dialogs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Resource\ProgressDialog\ProgressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\ProgressDialog\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Source File

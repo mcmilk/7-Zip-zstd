@@ -5,7 +5,7 @@
 #include "ProgressDialog.h"
 
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../Common/LangUtils.h"
 #endif
 
 #ifdef LANG        

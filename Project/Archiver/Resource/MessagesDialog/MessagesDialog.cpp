@@ -4,8 +4,10 @@
 #include "MessagesDialog.h"
 #include "Windows/ResourceString.h"
 
+// #include "../resource.h"
+
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../Common/LangUtils.h"
 #endif
 
 using namespace NWindows;

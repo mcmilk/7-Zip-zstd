@@ -109,6 +109,10 @@ STDMETHODIMP CHandler::DeleteItems(IOutStream *anOutStream,
   }
   CCompressionMethodMode aMethodMode, aHeaderMethod;
   RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));
+  aMethodMode.m_MultiThread = m_MultiThread;
+  aMethodMode.m_MultiThreadMult = m_MultiThreadMult;
+  aHeaderMethod.m_MultiThread = m_MultiThread;
+  aHeaderMethod.m_MultiThreadMult = m_MultiThreadMult;
 
   UpdateMain(m_Database, aCompressStatuses,
       CObjectVector<CUpdateItemInfo>(), aCopyIndexes,

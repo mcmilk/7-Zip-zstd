@@ -84,12 +84,19 @@ HRESULT CDecoder::SetDictionarySize(UINT32 aDictionarySize)
   if (aDictionarySize > (1 << kDicLogSizeMax))
     return E_INVALIDARG;
   
-  UINT32 aWindowReservSize = MyMax(aDictionarySize, UINT32(1 << 21));
-
   if (m_DictionarySize != aDictionarySize)
   {
-    m_OutWindowStream.Create(aDictionarySize, kMatchMaxLen, aWindowReservSize);
     m_DictionarySize = aDictionarySize;
+    m_DictionarySizeCheck = MyMax(m_DictionarySize, UINT32(1));
+    UINT32 aBlockSize = MyMax(m_DictionarySizeCheck, UINT32(1 << 12));
+    try
+    {
+      m_OutWindowStream.Create(aBlockSize /*, kMatchMaxLen */);
+    }
+    catch(...)
+    {
+      return E_OUTOFMEMORY;
+    }
   }
   return S_OK;
 }
@@ -298,7 +305,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
           aRepDistances[0] = aDistance;
           // UpdateStat(aLen, aPosSlot);
         }
-        if (aDistance >= aNowPos64)
+        if (aDistance >= aNowPos64 || aDistance >= m_DictionarySizeCheck)
           throw "data error";
         m_OutWindowStream.CopyBackBlock(aDistance, aLen);
         aNowPos64 += aLen;
@@ -311,6 +318,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
       RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&anInSize, &aNowPos64));
     }
   }
+  aFlusher.m_NeedFlush = false;
   return Flush();
 }
 

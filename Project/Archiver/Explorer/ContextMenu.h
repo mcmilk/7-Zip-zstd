@@ -11,9 +11,12 @@ DEFINE_GUID(CLSID_CZipContextMenu,
 
 #include "Common/String.h"
 
+#include "PluginInterface.h"
+
 class CZipContextMenu: 
   public IContextMenu,
   public IShellExtInit,
+  public IInitContextMenu,
   public CComObjectRoot,
   public CComCoClass<CZipContextMenu, &CLSID_CZipContextMenu>
 {
@@ -39,6 +42,7 @@ public:
 BEGIN_COM_MAP(CZipContextMenu)
   COM_INTERFACE_ENTRY(IContextMenu)
   COM_INTERFACE_ENTRY(IShellExtInit)
+  COM_INTERFACE_ENTRY(IInitContextMenu)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CZipContextMenu)
@@ -59,6 +63,10 @@ DECLARE_REGISTRY(CZipContextMenu, _T("SevenZip.ContextMenu.1"), _T("SevenZip.Con
   STDMETHOD(InvokeCommand)(LPCMINVOKECOMMANDINFO lpici);
   STDMETHOD(GetCommandString)(UINT idCmd, UINT uType, UINT *pwReserved,
       LPSTR pszName, UINT cchMax);
+
+
+  // IInitContextMenu
+  STDMETHOD(InitContextMenu)(const wchar_t *aFolder, const wchar_t **aNames, UINT32 aNumFiles);  
 private:
   CSysStringVector m_FileNames;
   std::vector<CCommandMapItem> m_CommandMap;

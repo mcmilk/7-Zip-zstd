@@ -52,6 +52,7 @@ class CDecoder :
   NLiteral::CDecoder m_LiteralDecoder;
 
   UINT32 m_DictionarySize;
+  UINT32 m_DictionarySizeCheck;
   
   UINT32 m_PosStateMask;
 
@@ -84,9 +85,15 @@ DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"),
   {
     CDecoder *m_Decoder;
   public:
-    CDecoderFlusher(CDecoder *aDecoder): m_Decoder(aDecoder) {}
+    bool m_NeedFlush;
+    CDecoderFlusher(CDecoder *aDecoder): 
+          m_Decoder(aDecoder), m_NeedFlush(true) {}
     ~CDecoderFlusher() 
-      { m_Decoder->ReleaseStreams(); }
+    { 
+      if (m_NeedFlush)
+        m_Decoder->Flush();
+      m_Decoder->ReleaseStreams(); 
+    }
   };
 
   HRESULT Flush()

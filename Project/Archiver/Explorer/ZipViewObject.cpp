@@ -35,6 +35,8 @@
 
 #include "MyIDList.h"
 
+#include "../Resource/OverwriteDialog/resource.h"
+
 using namespace NWindows;
 
 extern CComModule _Module;

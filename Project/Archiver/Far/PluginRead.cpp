@@ -59,10 +59,7 @@ HRESULT CPlugin::ExtractFiles(
       new CComObjectNoLock<CExtractCallBackImp>;
   CComPtr<IExtractCallback2> anExtractCallBack(anExtractCallBackSpec);
   
-  anExtractCallBackSpec->Init(m_ArchiveHandler, 
-      /*
-      aDestPath, anExtractionInfo, aRemovePathParts, 
-      */
+  anExtractCallBackSpec->Init(
       CP_OEMCP,
       aProgressBoxPointer,       
       /*

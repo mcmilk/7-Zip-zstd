@@ -5,6 +5,8 @@
 #ifndef __EXTRACTCALLBACK_H
 #define __EXTRACTCALLBACK_H
 
+#include "resource.h"
+
 #include "Common/String.h"
 #include "Windows/ResourceString.h"
 
@@ -13,7 +15,7 @@
 #include "Interface/FileStreams.h"
 #include "../../Common/ZipSettings.h"
 #include "../../../Compress/Interface./CompressInterface.h"
-#include "../../Explorer/ProgressDialog.h"
+#include "../../Resource/ProgressDialog/ProgressDialog.h"
 #include "../../Explorer/MyMessages.h"
 
 class CExtractCallBackImp: 

@@ -34,10 +34,12 @@ static HRESULT CopyBlock(ISequentialInStream *anInStream, ISequentialOutStream *
 
 STDMETHODIMP CAgent::SetFolder(IArchiveFolder *aFolder)
 {
+  m_ArchiveNamePrefix.Empty();
   if (aFolder == NULL)
   {
     m_ArchiveFolderItem = NULL;
-    aFolder = m_RootFolder;
+    return S_OK;
+    // aFolder = m_RootFolder;
   }
   else
   {
@@ -65,7 +67,6 @@ STDMETHODIMP CAgent::SetFolder(IArchiveFolder *aFolder)
       aFolderItem = aNewFolder;
     }
 
-  m_ArchiveNamePrefix.Empty();
   for(int i = 0; i < aPathParts.Size(); i++)
   {
     m_ArchiveNamePrefix += aPathParts[i];

@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 18 Sources
+7-Zip 2.30 Beta 20 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -17,8 +17,6 @@ How to compile
 To compile sources you need Visual C++ 6.0.
 For compiling some files you also need 
 new Platform SDK from Microsoft' Site.
-
-Also you must add SDK folder to include paths.
 
 
 
@@ -83,6 +81,7 @@ Project
     Common          Common modules
     Console         7z.exe Console version
     Explorer        Explorer plugin
+    Resources       Resources
     Far             FAR plugin  
     Format          Archive format modules
       7z

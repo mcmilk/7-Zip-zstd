@@ -4,7 +4,7 @@
 #include "PasswordDialog.h"
 
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../Common/LangUtils.h"
 #endif
 
 #ifdef LANG        
@@ -21,7 +21,7 @@ bool CPasswordDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000B00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
-  m_PasswordControl.Init(*this, IDC_EXTRACT_EDIT_PASSWORD);
+  m_PasswordControl.Init(*this, IDC_EDIT_PASSWORD);
   m_PasswordControl.SetText(_T(""));
   return CModalDialog::OnInit();
 }

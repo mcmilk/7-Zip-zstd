@@ -10,10 +10,12 @@
 #include "Windows/Control/Static.h"
 #include "Windows/PropVariantConversions.h"
 
-#include "FormatUtils.h"
+#include "../../Explorer/FormatUtils.h"
+
+// #include "../resource.h"
 
 #ifdef LANG        
-#include "../Common/LangUtils.h"
+#include "../../Common/LangUtils.h"
 #endif
 
 using namespace NWindows;

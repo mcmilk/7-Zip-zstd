@@ -236,3 +236,4 @@ void CAgentProxyHandler::GetRealIndexes(const CFolderItem &anItem,
   }
   std::sort(aRealIndexes.begin(), aRealIndexes.end());
 }
+

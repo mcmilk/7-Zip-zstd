@@ -26,57 +26,55 @@ public:
 class COut
 {
   BYTE  *m_Buffer;
-  UINT32	m_Pos;
-  UINT32 m_PosLimit;
-  UINT32 m_KeepSizeBefore;
-  UINT32 m_KeepSizeAfter;
-  UINT32 m_KeepSizeReserv;
-  UINT32 m_StreamPos;
-
+  UINT32 m_Pos;
   UINT32 m_WindowSize;
-  UINT32 m_MoveFrom;
-
+  UINT32 m_StreamPos;
   ISequentialOutStream *m_Stream;
 
-  virtual void MoveBlockBackward();
 public:
   COut(): m_Buffer(0), m_Stream(0) {}
   ~COut();
-	void Create(UINT32 aKeepSizeBefore, 
-      UINT32 aKeepSizeAfter, UINT32 aKeepSizeReserv = (1<<17));
-  void SetWindowSize(UINT32 aWindowSize);
+	void Create(UINT32 aWindowSize);
 
   void Init(ISequentialOutStream *aStream, bool aSolid = false);
   HRESULT Flush();
   void ReleaseStream();
   
-  UINT32 GetCurPos() const { return m_Pos; }
-  const BYTE *GetPointerToCurrentPos() const { return m_Buffer + m_Pos;};
+  // UINT32 GetCurPos() const { return m_Pos; }
+  // const BYTE *GetPointerToCurrentPos() const { return m_Buffer + m_Pos;};
 
   void CopyBackBlock(UINT32 aDistance, UINT32 aLen)
   {
-    if (m_Pos >= m_PosLimit)
-      MoveBlockBackward();  
-    BYTE *p = m_Buffer + m_Pos;
-    aDistance++;
-    for(UINT32 i = 0; i < aLen; i++)
-      p[i] = p[i - aDistance];
-    m_Pos += aLen;
+		UINT32 aPos = m_Pos - aDistance - 1;
+  	if (aPos >= m_WindowSize)
+  		aPos += m_WindowSize;
+		for(; aLen > 0; aLen--)
+		{
+			if (aPos >= m_WindowSize)
+				aPos = 0;
+			m_Buffer[m_Pos++] = m_Buffer[aPos++];
+			if (m_Pos >= m_WindowSize)
+				Flush();  
+			// PutOneByte(GetOneByte(0 - aDistance));
+		}
   }
 
   void PutOneByte(BYTE aByte)
   {
-    if (m_Pos >= m_PosLimit)
-      MoveBlockBackward();  
-    m_Buffer[m_Pos++] = aByte;
+		m_Buffer[m_Pos++] = aByte;
+		if (m_Pos >= m_WindowSize)
+			Flush();  
   }
 
   BYTE GetOneByte(UINT32 anIndex) const
   {
-    return m_Buffer[m_Pos + anIndex];
+		UINT32 aPos = m_Pos + anIndex;
+		if (aPos >= m_WindowSize)
+			aPos += m_WindowSize;
+		return m_Buffer[aPos]; 
   }
 
-  BYTE *GetBuffer() const { return m_Buffer; }
+  // BYTE *GetBuffer() const { return m_Buffer; }
 };
 
 }}

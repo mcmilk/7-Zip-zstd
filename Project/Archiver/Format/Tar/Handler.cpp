@@ -296,12 +296,11 @@ STDMETHODIMP CTarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     }
     RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
     {
-      CComObjectNoLock<CDummyOutStream> *anOutStreamSpec = 
-        new CComObjectNoLock<CDummyOutStream>;
-      CComPtr<ISequentialOutStream> anOutStream(anOutStreamSpec);
-      anOutStreamSpec->Init(aRealOutStream);
-
-      aRealOutStream.Release();
+      if (aTestMode)
+      {
+        RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+        continue;
+      }
 
       RETURN_IF_NOT_S_OK(m_InStream->Seek(anItemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));
       CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
@@ -327,16 +326,16 @@ STDMETHODIMP CTarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
       }
       try
       {
-        RETURN_IF_NOT_S_OK(aCopyCoder->Code(anInStream, anOutStream,
+        RETURN_IF_NOT_S_OK(aCopyCoder->Code(anInStream, aRealOutStream,
             NULL, NULL, aCompressProgress));
       }
       catch(...)
       {
-        anOutStream.Release();
+        aRealOutStream.Release();
         RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kDataError));
         continue;
       }
-      anOutStream.Release();
+      aRealOutStream.Release();
       RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
     }
   }

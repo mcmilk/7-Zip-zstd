@@ -6,6 +6,7 @@
 
 #include "Handler.h"
 
+#include "../Format/Common/FormatCryptoInterface.h"
 #include "../../Compress/Interface/CompressInterface.h"
 #include "Interface/ICoder.h"
 #include "Common/NewHandler.h"

@@ -298,14 +298,11 @@ STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     }
     RETURN_IF_NOT_S_OK(anExtractCallBack->PrepareOperation(anAskMode));
     {
-      /*
-      CComObjectNoLock<CDummyOutStream> *anOutStreamSpec = 
-        new CComObjectNoLock<CDummyOutStream>;
-      CComPtr<ISequentialOutStream> anOutStream(anOutStreamSpec);
-      anOutStreamSpec->Init(aRealOutStream);
-
-      aRealOutStream.Release();
-      */
+      if (aTestMode)
+      {
+        RETURN_IF_NOT_S_OK(anExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
+        continue;
+      }
 
       RETURN_IF_NOT_S_OK(m_InStream->Seek(anItemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));
       CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 

@@ -63,6 +63,8 @@ public:
 
   void SetItemState(int anIndex, UINT aState, UINT aMask)
     { ListView_SetItemState(m_Window, anIndex, aState, aMask); }
+  UINT GetItemState(int anIndex, UINT aMask)
+    { return ListView_GetItemState(m_Window, anIndex, aMask); }
 
   bool GetColumn(int ColumnIndex, LVCOLUMN* aColumnInfo) const
     { return BOOLToBool(ListView_GetColumn(m_Window, ColumnIndex, aColumnInfo)); }
@@ -96,6 +98,14 @@ public:
     { return ListView_GetEditControl(m_Window) ; }
   HWND EditLabel(int anItemIndex)
     { return ListView_EditLabel(m_Window, anItemIndex) ; }
+
+  bool RedrawItems(int aFirstIndex, int aLastIndex)
+    { return BOOLToBool(ListView_RedrawItems(m_Window, aFirstIndex, aLastIndex)); }
+  bool RedrawItem(int anIndex)
+    { return RedrawItems(anIndex, anIndex); }
+ 
+  int HitTest(LPLVHITTESTINFO anInfo)
+    { return ListView_HitTest(m_Window, anInfo); }
 };
 
 }}

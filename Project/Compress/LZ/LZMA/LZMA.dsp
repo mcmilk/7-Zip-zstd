@@ -188,6 +188,14 @@ SOURCE=..\..\..\..\SDK\Interface\IInOutStreams.h
 
 SOURCE=..\..\..\..\SDK\Common\Defs.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.h
+# End Source File
 # End Group
 # Begin Group "Windows"
 

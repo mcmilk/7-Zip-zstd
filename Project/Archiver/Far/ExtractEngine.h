@@ -44,13 +44,7 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
 
 private:
-  CComPtr<IArchiveHandler> m_ArchiveHandler;
-  CSysString m_DirectoryPath;
-
   UString m_CurrentFilePath;
-  CSysString m_DiskFilePath;
-
-  bool m_ExtractMode;
 
   struct CProcessedFileInfo
   {
@@ -72,8 +66,7 @@ private:
   void AddErrorMessage(LPCTSTR aMessage);
 public:
   ~CExtractCallBackImp();
-  void Init(IArchiveHandler100 *anArchiveHandler, 
-      UINT aCodePage, 
+  void Init(UINT aCodePage, 
       CProgressBox *aProgressBox, 
       bool aPasswordIsDefined, const UString &aPassword);
 };

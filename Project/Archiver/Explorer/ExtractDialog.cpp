@@ -21,6 +21,8 @@
 #include "../Common/LangUtils.h"
 #endif
 
+#include "../Resource/Extract/resource.h"
+
 // #include "Help/Context/Extract.h"
 
 using namespace NWindows;
@@ -122,8 +124,8 @@ bool CExtractDialog::Init(
   int aFileNamePartStartIndex;
   CSysString aFullPathName;
   NDirectory::MyGetFullPathName(aFileName, aFullPathName, aFileNamePartStartIndex);
-  m_DirectoryPath = aFileName.Left(aFileNamePartStartIndex);
-  CSysString aName = aFileName.Mid(aFileNamePartStartIndex);
+  m_DirectoryPath = aFullPathName.Left(aFileNamePartStartIndex);
+  CSysString aName = aFullPathName.Mid(aFileNamePartStartIndex);
   CSysString aPureName, aDot, anExtension;
   SplitNameToPureNameAndExtension(aName, 
       aPureName, aDot, anExtension);

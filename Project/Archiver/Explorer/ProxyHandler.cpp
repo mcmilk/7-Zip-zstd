@@ -2,11 +2,12 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
+//#include "resource.h"
 #include "ProxyHandler.h"
 #include "Windows/Synchronization.h"
 #include "Windows/ResourceString.h"
 #include "Common/StringConvert.h"
+#include "../Resource/PropertyName/resource.h"
 
 #ifdef LANG        
 #include "../Common/LangUtils.h"

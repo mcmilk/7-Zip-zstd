@@ -18,5 +18,6 @@ extern CComModule _Module;
 #include <atlcom.h>
 
 // #include <fstream>
+#include <new.h>
 
 #endif 

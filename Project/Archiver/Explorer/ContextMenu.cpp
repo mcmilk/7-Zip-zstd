@@ -12,6 +12,7 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
 #include "Windows/System.h"
+#include "Windows/Window.h"
 
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
@@ -26,6 +27,8 @@
 #include "TestEngine.h"
 #include "CompressEngine.h"
 #include "MyMessages.h"
+
+#include "../Resource/Extract/resource.h"
 
 using namespace NWindows;
 
@@ -64,6 +67,15 @@ STDMETHODIMP CZipContextMenu::Initialize(LPCITEMIDLIST pidlFolder,
   */
   // pidlFolder is NULL :(
   return GetFileNames(aDataObject, m_FileNames);
+}
+
+STDMETHODIMP CZipContextMenu::InitContextMenu(const wchar_t *aFolder, 
+    const wchar_t **aNames, UINT32 aNumFiles)
+{
+  m_FileNames.Clear();
+  for (UINT32 i = 0; i < aNumFiles; i++)
+    m_FileNames.Add(GetSystemString(aNames[i]));
+  return S_OK;
 }
 
 
@@ -183,6 +195,27 @@ UINT CZipContextMenu::FindVerb(const CSysString &aVerb)
 
 extern const char *kShellFolderClassIDString;
 
+/*
+class CWindowDisable
+{
+  bool m_WasEnabled;
+  CWindow m_Window;
+public:
+  CWindowDisable(HWND aWindow): m_Window(aWindow) 
+  { 
+    m_WasEnabled = m_Window.IsEnabled();
+    if (m_WasEnabled)
+      m_Window.Enable(false); 
+  }
+  ~CWindowDisable() 
+  { 
+    if (m_WasEnabled)
+      m_Window.Enable(true); 
+  }
+};
+*/
+
+
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
 {
   int aCommandOffset;
@@ -241,6 +274,8 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
   ECommandInternalID aCommandInternalID = 
       m_CommandMap[aCommandOffset].CommandInternalID;
   HWND aHWND = aCommandInfo->hwnd;
+
+  // CWindowDisable aWindowDisable(aHWND);
 
   switch(aCommandInternalID)
   {

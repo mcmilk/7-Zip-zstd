@@ -139,14 +139,13 @@ UINT32 TTImplodeHuffmanTableDe::DecodeSymbol()
 
 // ---------------------------
 
-static const UINT32 kWindowReservSize = (1 << 17) + 256;
 
 CCoder::CCoder():
   m_LiteralDecoder(kLiteralTableSize),
   m_LengthDecoder(kLengthTableSize),
   m_DistanceDecoder(kDistanceTableSize)
 {
-  m_OutWindowStream.Create(kHistorySize, kMatchMaxLenMax, kWindowReservSize);
+  m_OutWindowStream.Create(kHistorySize/*, kMatchMaxLenMax*/);
 }
 
 CCoder::~CCoder()

@@ -53,6 +53,7 @@ protected:
 };
 
 const kNumPosSlotBits = 6; 
+const kDicLogSizeMin = 0; 
 const kDicLogSizeMax = 28; 
 const kDistTableSizeMax = kDicLogSizeMax * 2; 
 

@@ -1,6 +1,14 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 20        2002-07-01
+  --------------------------------------
+    - SRC/VC/SDK/Stream/WindowOut.h 
+        now it uses only required memory (dictionary size).
+    - Project/Archiver/Resource 
+        contains common resurces
+
+
   Version 2.30 Beta 19        2002-04-11
   --------------------------------------
     - SDK/Archive/Rar/Handler.cpp

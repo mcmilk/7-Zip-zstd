@@ -15,6 +15,8 @@
 #include "../Common/ZipRegistry.h"
 #endif
 
+#include "../Resource/Extract/resource.h"
+
 #include "MyMessages.h"
 #include "FormatUtils.h"
 
@@ -91,7 +93,12 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName,
   CComPtr<IExtractCallback2> anExtractCallBack(anExtractCallBackSpec);
   
   anExtractCallBackSpec->m_ParentWindow = 0;
-  anExtractCallBackSpec->StartProgressDialog();
+  #ifdef LANG        
+  const CSysString aTitle = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+  #else
+  const CSysString aTitle = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  #endif
+  anExtractCallBackSpec->StartProgressDialog(aTitle);
 
   // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
@@ -101,7 +108,7 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName,
   if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))
     throw "there is no archive file";
 
-  anExtractCallBackSpec->Init(anArchiveHandler, anExtractModeInfo,
+  anExtractCallBackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
       !aPassword.IsEmpty(), aPassword);
 
   NExtractionMode::NPath::EEnum aPathMode;

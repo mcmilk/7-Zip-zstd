@@ -21,7 +21,7 @@ CExtractCallBackImp::~CExtractCallBackImp()
 {
 }
 
-void CExtractCallBackImp::Init(IArchiveHandler100 *anArchiveHandler,
+void CExtractCallBackImp::Init(
     UINT aCodePage,
     CProgressBox *aProgressBox, 
     bool aPasswordIsDefined, 

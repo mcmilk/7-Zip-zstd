@@ -10,8 +10,6 @@
 namespace NDeflate {
 namespace NDecoder {
 
-static const UINT32 kWindowReservSize = (1 << 17) + 256;
-
 CCoder::CCoder():
   m_MainDecoder(kStaticMainTableSize),
   m_DistDecoder(kStaticDistTableSize),
@@ -158,11 +156,10 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *anInStream,
     ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
     ICompressProgressInfo *aProgress)
 {
-  if (m_OutWindowStream.GetBuffer() == 0)
   {
     try
     {
-      m_OutWindowStream.Create(kHistorySize, kMatchMaxLen, kWindowReservSize);
+      m_OutWindowStream.Create(kHistorySize /*, kMatchMaxLen */);
     }
     catch(...)
     {

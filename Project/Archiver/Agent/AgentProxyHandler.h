@@ -12,17 +12,6 @@
 
 #include "../Common/IArchiveHandler2.h"
 
-/*
-struct CArchiveItemProperty
-{
-  CSysString Name;
-  PROPID ID;
-  VARTYPE Type;
-};
-
-typedef CObjectVector<CArchiveItemProperty> CArchiveItemPropertyVector;
-*/
-
 class CFileItem
 {
 public:
@@ -78,12 +67,13 @@ public:
       IProgress *aProgress);
 
 
-  void CAgentProxyHandler::AddRealIndexes(const CFolderItem &anItem, 
+  void AddRealIndexes(const CFolderItem &anItem, 
       std::vector<UINT32> &aRealIndexes);
-  void CAgentProxyHandler::GetRealIndexes(const CFolderItem &anItem, 
+  void GetRealIndexes(const CFolderItem &anItem, 
       const UINT32 *anIndexes, 
       UINT32 aNumItems, 
       std::vector<UINT32> &aRealIndexes);
+
 };
 
 #endif

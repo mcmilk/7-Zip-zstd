@@ -12,6 +12,7 @@
 
 #include "..\..\Archiver\Common\DefaultName.h"
 #include "Common/StringConvert.h"
+#include "../Resource/Extract/resource.h"
 
 #include "FormatUtils.h"
 
@@ -76,13 +77,17 @@ HRESULT CZipViewObject::ExtractItems(
   CComPtr<IExtractCallback2> anExtractCallBack(anExtractCallBackSpec);
   
   anExtractCallBackSpec->m_ParentWindow = m_Window;
-
   CShellBrowserDisabler aWndEnabledRestorer(m_ShellBrowser);
-  // anExtractCallBackSpec->m_ProcessDialog.ShowWindow(SW_SHOWNORMAL);
-  anExtractCallBackSpec->StartProgressDialog();
+
+  #ifdef LANG        
+  const CSysString aTitle = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+  #else
+  const CSysString aTitle = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  #endif
+  anExtractCallBackSpec->StartProgressDialog(aTitle);
   
-  anExtractCallBackSpec->Init(m_ZipFolder->m_ArchiveHandler, 
-      anExtractModeInfo, aPasswordIsDefined, aPassword);
+  anExtractCallBackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
+      aPasswordIsDefined, aPassword);
 
   NExtractionMode::NPath::EEnum aPathMode;
   NExtractionMode::NOverwrite::EEnum anOverwriteMode;

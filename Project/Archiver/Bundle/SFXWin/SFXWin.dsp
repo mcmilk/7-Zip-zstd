@@ -810,14 +810,6 @@ SOURCE=..\..\Explorer\FormatUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Explorer\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\MessagesDialog.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Explorer\MyMessages.cpp
 # End Source File
 # Begin Source File
@@ -826,35 +818,11 @@ SOURCE=..\..\Explorer\MyMessages.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Explorer\OverwriteDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\OverwriteDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\PasswordDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\PasswordDialog.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Explorer\ProcessMessages.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Explorer\ProcessMessages.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ProgressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ProgressDialog.h
 # End Source File
 # Begin Source File
 
@@ -906,6 +874,42 @@ SOURCE=..\..\Agent\Handler.h
 # Begin Source File
 
 SOURCE=..\..\Format\Common\FormatCryptoInterface.h
+# End Source File
+# End Group
+# Begin Group "Dialogs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Resource\MessagesDialog\MessagesDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\MessagesDialog\MessagesDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\OverwriteDialog\OverwriteDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\OverwriteDialog\OverwriteDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\PasswordDialog\PasswordDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\PasswordDialog\PasswordDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\ProgressDialog\ProgressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Resource\ProgressDialog\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Source File

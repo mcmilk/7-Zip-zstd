@@ -1,6 +1,6 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "../../Explorer/resource.h"
+#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -40,6 +40,11 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
+    "#include ""..\\..\\Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\Resource\\Extract\\resource.rc""\r\n"
     "\r\n"
     "\0"
 END
@@ -75,8 +80,8 @@ IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,16,0
- PRODUCTVERSION 2,30,16,0
+ FILEVERSION 2,30,20,0
+ PRODUCTVERSION 2,30,20,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -94,14 +99,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7z SFX (GUI version)\0"
-            VALUE "FileVersion", "2, 30, 16, 0\0"
+            VALUE "FileVersion", "2, 30, 20, 0\0"
             VALUE "InternalName", "7zWin.sfx\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zWin.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 16, 0\0"
+            VALUE "ProductVersion", "2, 30, 20, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -120,7 +125,8 @@ END
 //
 
 IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 228, 78
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "7-Zip self-extracting archive"
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -132,106 +138,6 @@ BEGIN
 END
 
 
-IDD_DIALOG_OVERWRITE DIALOG DISCARDABLE  0, 0, 371, 218
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Confirm File Replace"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Destination folder already contains processed file.",
-                    IDC_STATIC_OVERWRITE_HEADER,6,7,358,8
-    LTEXT           "Would you like to replace the existing file",
-                    IDC_STATIC_OVERWRITE_QUESTION_BEGIN,7,28,357,8
-    ICON            "",IDC_STATIC_OVERWRITE_OLD_FILE_ICON,7,44,20,20
-    LTEXT           "",IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,39,44,325,50
-    LTEXT           "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END,7,98,
-                    357,8
-    ICON            "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,7,114,20,20
-    LTEXT           "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,39,114,325,50
-    PUSHBUTTON      "&Yes",IDYES,78,173,64,14
-    PUSHBUTTON      "Yes to &All",IDC_BUTTON_OVERWRITE_YES_TO_ALL,152,173,64,
-                    14
-    PUSHBUTTON      "&No",IDNO,226,172,64,14
-    PUSHBUTTON      "No to A&ll",IDC_BUTTON_OVERWRITE_NO_TO_ALL,300,172,64,
-                    14
-    PUSHBUTTON      "A&uto Rename",IDC_BUTTON_OVERWRITE_AUTO_RENAME,226,197,
-                    64,14
-    PUSHBUTTON      "&Cancel",IDCANCEL,300,197,64,14
-END
-
-IDD_DIALOG_MESSAGES DIALOG DISCARDABLE  0, 0, 349, 135
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "7-Zip: Diagnostic messages"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    DEFPUSHBUTTON   "&Close",IDOK,143,114,64,14
-    CONTROL         "List1",IDC_MESSAGE_LIST,"SysListView32",LVS_REPORT | 
-                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
-                    WS_TABSTOP,7,7,335,101
-END
-
-IDD_DIALOG_PASSWORD DIALOG DISCARDABLE  0, 0, 186, 77
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Enter password"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Enter password:",IDC_STATIC_PASSWORD_HEADER,7,7,172,8
-    EDITTEXT        IDC_EDIT_PASSWORD,7,26,172,14,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,41,56,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,115,56,64,14
-END
-
-IDD_DIALOG_PROGRESS DIALOG DISCARDABLE  0, 0, 186, 55
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Progress"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    PUSHBUTTON      "Stop",IDCANCEL,61,34,64,14
-    CONTROL         "Progress1",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | 
-                    WS_BORDER,7,7,172,14
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
-    IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
-    IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC 
-                            "CRC failed in '%s'. File is broken."
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 
-                            "Data error in '%s'. File is broken."
-    IDS_FILE_MODIFIED       "modified on"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_FILE_SIZE           "%s bytes"
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD 
-                            "Unsupported compression method for '%s'."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE 
-                            "Can not open output file '%s'."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_PROGRESS_EXTRACTING "Extracting"
-END
-
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -242,6 +148,11 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
+#include "..\..\Resource\OverwriteDialog\resource.rc"
+#include "..\..\Resource\PasswordDialog\resource.rc"
+#include "..\..\Resource\MessagesDialog\resource.rc"
+#include "..\..\Resource\ProgressDialog\resource.rc"
+#include "..\..\Resource\Extract\resource.rc"
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -16,6 +16,8 @@
 
 #include "MyIDList.h"
 
+#include "../Resource/Extract/resource.h"
+
 using namespace NWindows;
 
 // extern HINSTANCE  g_hInstance;

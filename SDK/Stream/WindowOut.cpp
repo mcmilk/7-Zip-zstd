@@ -7,32 +7,34 @@
 namespace NStream {
 namespace NWindow {
 
-void COut::Create(UINT32 aKeepSizeBefore, UINT32 aKeepSizeAfter, UINT32 aKeepSizeReserv)
+void COut::Create(UINT32 aWindowSize)
 {
   m_Pos = 0;
-  m_PosLimit = aKeepSizeReserv + aKeepSizeBefore;
-  m_KeepSizeBefore = aKeepSizeBefore;
-  m_KeepSizeAfter = aKeepSizeAfter;
-  m_KeepSizeReserv = aKeepSizeReserv;
   m_StreamPos = 0;
-  m_MoveFrom = m_KeepSizeReserv;
-  m_WindowSize = aKeepSizeBefore;
-  UINT32 aBlockSize = m_KeepSizeBefore + m_KeepSizeAfter + m_KeepSizeReserv;
+  UINT32 aNewBlockSize = aWindowSize;
+  const UINT32 kMinBlockSize = 1;
+  if (aNewBlockSize < kMinBlockSize)
+    aNewBlockSize = kMinBlockSize;
+  if (m_Buffer != 0 && m_WindowSize == aNewBlockSize)
+    return;
   delete []m_Buffer;
-  m_Buffer = new BYTE[aBlockSize];
+  m_Buffer = 0;
+  m_WindowSize = aNewBlockSize;
+  m_Buffer = new BYTE[m_WindowSize];
 }
 
 COut::~COut()
 {
-  delete []m_Buffer;
   ReleaseStream();
+  delete []m_Buffer;
 }
 
+/*
 void COut::SetWindowSize(UINT32 aWindowSize)
 {
   m_WindowSize = aWindowSize;
-  m_MoveFrom = m_KeepSizeReserv + m_KeepSizeBefore - aWindowSize;
 }
+*/
 
 void COut::Init(ISequentialOutStream *aStream, bool aSolid)
 {
@@ -40,13 +42,10 @@ void COut::Init(ISequentialOutStream *aStream, bool aSolid)
   m_Stream = aStream;
   m_Stream->AddRef();
 
-  if(aSolid)
-    m_StreamPos = m_Pos;
-  else
+  if(!aSolid)
   {
-    m_Pos = 0;
-    m_PosLimit = m_KeepSizeReserv + m_KeepSizeBefore;
     m_StreamPos = 0;
+    m_Pos = 0;
   }
 }
 
@@ -54,6 +53,7 @@ void COut::ReleaseStream()
 {
   if(m_Stream != 0)
   {
+    Flush();
     m_Stream->Release();
     m_Stream = 0;
   }
@@ -70,18 +70,10 @@ HRESULT COut::Flush()
     return aResult;
   if (aSize != aProcessedSize)
     return E_FAIL;
+  if (m_Pos >= m_WindowSize)
+    m_Pos = 0;
   m_StreamPos = m_Pos;
   return S_OK;
-}
-
-void COut::MoveBlockBackward()
-{
-  HRESULT aResult = Flush();
-  if (aResult != S_OK)
-    throw COutWriteException(aResult);
-  memmove(m_Buffer, m_Buffer + m_MoveFrom, m_WindowSize + m_KeepSizeAfter);
-  m_Pos -= m_MoveFrom;
-  m_StreamPos -= m_MoveFrom;
 }
 
 }}

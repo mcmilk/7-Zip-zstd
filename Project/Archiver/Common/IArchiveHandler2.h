@@ -60,6 +60,20 @@ public:
 };
 
 
+// {23170F69-40C1-278A-0000-000100070300}
+DEFINE_GUID(IID_IExtractCallback3, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x07, 0x03, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000100070300")
+IExtractCallback3: public IExtractCallback2
+{
+public:
+  STDMETHOD(AskWrite)(
+      const wchar_t *aSrcPath, INT32 aSrcIsFolder, 
+      const FILETIME *aSrcTime, const UINT64 *aSrcSize,
+      const wchar_t *aDestPathRequest, BSTR *aDestPathResult, 
+      INT32 *aResult);
+};
+
 // {23170F69-40C1-278A-0000-000100050000}
 DEFINE_GUID(IID_IArchiveFolder, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00);

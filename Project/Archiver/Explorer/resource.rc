@@ -40,6 +40,12 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
+    "#include ""..\\Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""..\\Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""..\\Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""..\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\Resource\\PropertyName\\resource.rc""\r\n"
+    "#include ""..\\Resource\\Extract\\resource.rc""\r\n"
     "\r\n"
     "\0"
 END
@@ -134,45 +140,6 @@ BEGIN
     PUSHBUTTON      "Help",IDHELP,228,178,64,14
 END
 
-IDD_DIALOG_OVERWRITE DIALOG DISCARDABLE  0, 0, 371, 218
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Confirm File Replace"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Destination folder already contains processed file.",
-                    IDC_STATIC_OVERWRITE_HEADER,6,7,358,8
-    LTEXT           "Would you like to replace the existing file",
-                    IDC_STATIC_OVERWRITE_QUESTION_BEGIN,7,28,357,8
-    ICON            "",IDC_STATIC_OVERWRITE_OLD_FILE_ICON,7,44,20,20
-    LTEXT           "",IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,39,44,325,50
-    LTEXT           "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END,7,98,
-                    357,8
-    ICON            "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,7,114,20,20
-    LTEXT           "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,39,114,325,50
-    PUSHBUTTON      "&Yes",IDYES,78,173,64,14
-    PUSHBUTTON      "Yes to &All",IDC_BUTTON_OVERWRITE_YES_TO_ALL,152,173,64,
-                    14
-    PUSHBUTTON      "&No",IDNO,226,172,64,14
-    PUSHBUTTON      "No to A&ll",IDC_BUTTON_OVERWRITE_NO_TO_ALL,300,172,64,
-                    14
-    PUSHBUTTON      "A&uto Rename",IDC_BUTTON_OVERWRITE_AUTO_RENAME,181,197,
-                    109,14
-    PUSHBUTTON      "&Cancel",IDCANCEL,300,197,64,14
-END
-
-IDD_DIALOG_MESSAGES DIALOG DISCARDABLE  0, 0, 349, 135
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "7-Zip: Diagnostic messages"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    DEFPUSHBUTTON   "&Close",IDOK,143,114,64,14
-    CONTROL         "List1",IDC_MESSAGE_LIST,"SysListView32",LVS_REPORT | 
-                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
-                    WS_TABSTOP,7,7,335,101
-END
-
 IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 288, 191
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
@@ -208,30 +175,6 @@ BEGIN
     PUSHBUTTON      "Help",IDHELP,217,170,64,14
 END
 
-IDD_DIALOG_PASSWORD DIALOG DISCARDABLE  0, 0, 186, 77
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Enter password"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Enter password:",IDC_STATIC_PASSWORD_HEADER,7,7,172,8
-    EDITTEXT        IDC_EDIT_PASSWORD,7,26,172,14,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,41,56,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,115,56,64,14
-END
-
-IDD_DIALOG_PROGRESS DIALOG DISCARDABLE  0, 0, 186, 55
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Progress"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    PUSHBUTTON      "Stop",IDCANCEL,61,34,64,14
-    CONTROL         "Progress1",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | 
-                    WS_BORDER,7,7,172,14
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -260,23 +203,6 @@ BEGIN
         BOTTOMMARGIN, 192
     END
 
-    IDD_DIALOG_OVERWRITE, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 364
-        VERTGUIDE, 39
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 211
-    END
-
-    IDD_DIALOG_MESSAGES, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 342
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 128
-    END
-
     IDD_DIALOG_COMPRESS, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -285,22 +211,6 @@ BEGIN
         VERTGUIDE, 142
         TOPMARGIN, 7
         BOTTOMMARGIN, 184
-    END
-
-    IDD_DIALOG_PASSWORD, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 70
-    END
-
-    IDD_DIALOG_PROGRESS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 48
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -313,8 +223,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,18,0
- PRODUCTVERSION 2,30,18,0
+ FILEVERSION 2,30,20,0
+ PRODUCTVERSION 2,30,20,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -332,14 +242,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "2, 30, 18, 0\0"
+            VALUE "FileVersion", "2, 30, 20, 0\0"
             VALUE "InternalName", "7-zip\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 18, 0\0"
+            VALUE "ProductVersion", "2, 30, 20, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -373,21 +283,10 @@ BEGIN
     IDS_CONTEXT_POPUP_CAPTION "7-Zip"
     IDS_CONTEXT_OPEN        "Open"
     IDS_CONTEXT_OPEN_HELP   "Opens the selected archive."
-    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
-    IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
-    IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC 
-                            "CRC failed in '%s'. File is broken."
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 
-                            "Data error in '%s'. File is broken."
-    IDS_FILE_MODIFIED       "modified on"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_FILE_SIZE           "%s bytes"
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD 
-                            "Unsupported compression method for '%s'."
     IDS_TOOLBAR_EXTRACT     "Extract"
     IDS_QUERY_UPDATE_INTERFACE_FAIL 
                             "Update operations are not supported for this archive."
@@ -416,28 +315,10 @@ BEGIN
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
     IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
     IDS_CANT_UPDATE_ARCHIVE "Can not update archive %s"
-    IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
-    IDS_PROPERTY_NAME       "Name"
-    IDS_PROPERTY_SIZE       "Size"
-    IDS_PROPERTY_PACKED_SIZE "Packed Size"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROPERTY_ATTRIBUTES "Attributes"
-    IDS_PROPERTY_CREATION_TIME "Created"
-    IDS_PROPERTY_LAST_ACCESS_TIME "Accessed"
-    IDS_PROPERTY_LAST_WRITE_TIME "Modified"
-    IDS_PROPERTY_SOLID      "Solid"
-    IDS_PROPERTY_C0MMENT    "Comment"
-    IDS_PROPERTY_ENCRYPTED  "Encrypted"
-    IDS_PROPERTY_DICTIONARY_SIZE "Dictionary Size"
-    IDS_PROPERTY_SPLIT_BEFORE "Split Before"
-    IDS_PROPERTY_SPLIT_AFTER "Split After"
-    IDS_PROPERTY_CRC        "CRC"
-    IDS_PROPERTY_FILE_TYPE  "Type"
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE 
-                            "Can not open output file '%s'."
     IDS_LISTVIEW_COLUMNS_CONTEXT_MENU "&Columns..."
 END
 
@@ -446,9 +327,7 @@ BEGIN
     IDS_LISTVIEW_CONTEXT_MENU_OPEN "&Open"
     IDS_LISTVIEW_CONTEXT_MENU_EXTRACT "&Extract..."
     IDS_CONTEXT_CAPTION_HELP "7-Zip commands"
-    IDS_PROPERTY_ANTI       "Anti"
     IDS_PROGRESS_COMPRESSING "Compressing"
-    IDS_PROGRESS_EXTRACTING "Extracting"
     IDS_ERROR               "Error"
     IDS_ERROR_TOO_MUCH_ITEMS "Too much items"
     IDS_ERROR_NO_ASSOCIATION 
@@ -457,8 +336,6 @@ BEGIN
     IDS_CONTEXT_TEST_HELP   "Tests integrity of the selected archive."
     IDS_PROGRESS_TESTING    "Testing"
     IDS_MESSAGE_NO_ERRORS   "There are no errors"
-    IDS_PROPERTY_METHOD     "Method"
-    IDS_PROPERTY_HOST_OS    "Host OS"
 END
 
 #endif    // English (U.S.) resources
@@ -471,6 +348,12 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
+#include "..\Resource\OverwriteDialog\resource.rc"
+#include "..\Resource\PasswordDialog\resource.rc"
+#include "..\Resource\MessagesDialog\resource.rc"
+#include "..\Resource\ProgressDialog\resource.rc"
+#include "..\Resource\PropertyName\resource.rc"
+#include "..\Resource\Extract\resource.rc"
 
 
 /////////////////////////////////////////////////////////////////////////////

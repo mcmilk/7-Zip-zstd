@@ -221,7 +221,6 @@ LONG CKey::QueryValue(LPCTSTR aValueName, CSysString &aValue)
 
 LONG CKey::QueryValue(LPCTSTR aValueName, void *aValue, UINT32 &aCount)
 {
-  MYASSERT(aCount != NULL);
   DWORD dwType = NULL;
   LONG aRes = RegQueryValueEx(m_Object, (LPTSTR)aValueName, NULL, &dwType,
     (LPBYTE)aValue, (DWORD *)&aCount);

@@ -2,10 +2,12 @@
 
 #include "StdAfx.h"
 
+/*
 #include "DeleteEngine.h"
 #include "MessagesDialog.h"
 #include "ProcessMessages.h"
 #include "Common/Defs.h"
+*/
 
 //using namespace NWindows;
 static const kStepSize = 1 << 17;

@@ -5,6 +5,8 @@
 #include "Handler.h"
 #include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
+#include "Windows/COM.h"
+
 #include "ExtractCallback200.h"
 #include "Common/StringConvert.h"
 
@@ -13,6 +15,159 @@
 #endif
 
 using namespace NWindows;
+
+struct CArchiveItemPropertyTemp
+{
+  UString Name;
+  PROPID ID;
+  VARTYPE Type;
+};
+
+
+class CEnumFolderItemProperty:
+  public IEnumSTATPROPSTG,
+  public CComObjectRoot
+{
+public:
+  int m_Index;
+  CObjectVector<CArchiveItemPropertyTemp> m_Properties;
+
+  BEGIN_COM_MAP(CEnumFolderItemProperty)
+    COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
+  END_COM_MAP()
+    
+  DECLARE_NOT_AGGREGATABLE(CEnumFolderItemProperty)
+    
+  DECLARE_NO_REGISTRY()
+public:
+  CEnumFolderItemProperty(): m_Index(0) {};
+
+  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
+  STDMETHOD(Skip)  (ULONG aNumItems);
+  STDMETHOD(Reset) ();
+  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
+};
+
+STDMETHODIMP CEnumFolderItemProperty::Reset()
+{
+  m_Index = 0;
+  return S_OK;
+}
+
+STDMETHODIMP CEnumFolderItemProperty::Next(ULONG aNumItems, 
+    STATPROPSTG *anItems, ULONG *aNumFetched)
+{
+  HRESULT aResult = S_OK;
+  if(aNumItems > 1 && !aNumFetched)
+    return E_INVALIDARG;
+
+  for(DWORD anIndex = 0; anIndex < aNumItems; anIndex++, m_Index++)
+  {
+    if(m_Index >= m_Properties.Size())
+    {
+      aResult =  S_FALSE;
+      break;
+    }
+    const CArchiveItemPropertyTemp &aSrcItem = m_Properties[m_Index];
+    STATPROPSTG &aDestItem = anItems[anIndex];
+    aDestItem.propid = aSrcItem.ID;
+    aDestItem.vt = aSrcItem.Type;
+    if(!aSrcItem.Name.IsEmpty())
+    {
+      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.Name) + 1) * sizeof(wchar_t));
+      wcscpy(aDestItem.lpwstrName, aSrcItem.Name);
+    }
+    else
+      aDestItem.lpwstrName = 0; // aSrcItem.lpwstrName;
+  }
+  if (aNumFetched)
+    *aNumFetched = anIndex;
+  return aResult;
+}
+
+STDMETHODIMP CEnumFolderItemProperty::Skip(ULONG aNumSkip)
+  {  return E_NOTIMPL; }
+
+STDMETHODIMP CEnumFolderItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
+  {  return E_NOTIMPL; }
+
+
+#ifdef NEW_FOLDER_INTERFACE
+
+STDMETHODIMP CAgentFolder::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
+{
+  CComPtr<IEnumSTATPROPSTG> anEnumPropertyArchive;
+  RETURN_IF_NOT_S_OK(m_ProxyHandler->m_ArchiveHandler->EnumProperties(
+      &anEnumPropertyArchive));
+  
+  CComObjectNoLock<CEnumFolderItemProperty> *anEnumObject = 
+        new CComObjectNoLock<CEnumFolderItemProperty>;
+  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
+
+  STATPROPSTG aSrcProperty;
+  while (anEnumPropertyArchive->Next(1, &aSrcProperty, NULL) == S_OK)
+  {
+    CArchiveItemPropertyTemp aDestProperty;
+    aDestProperty.Type = aSrcProperty.vt;
+    aDestProperty.ID = aSrcProperty.propid;
+    if (aDestProperty.ID == kaipidPath)
+      aDestProperty.ID = kaipidName;
+    UINT aPropID = aSrcProperty.propid;
+    AString aPropName;
+    {
+      if (aSrcProperty.lpwstrName != NULL)
+        aDestProperty.Name = aSrcProperty.lpwstrName;
+      /*
+      else
+        aDestProperty.Name = "Error";
+      */
+    }
+    if (aSrcProperty.lpwstrName != NULL)
+      CoTaskMemFree(aSrcProperty.lpwstrName);
+    anEnumObject->m_Properties.Add(aDestProperty);
+  }
+  *anEnumProperty = anEnum.Detach();
+  return S_OK;
+}
+
+STDMETHODIMP CAgentFolder::GetTypeID(BSTR *aName)
+{
+  UString aNameTemp = UString(L"Archive") + 
+      NCOM::GUIDToStringW(m_AgentSpec->m_CLSID);
+  CComBSTR aBSTRName = aNameTemp;
+  *aName = aBSTRName.Detach();
+  return S_OK;
+}
+
+STDMETHODIMP CAgentFolder::GetPath(BSTR *aPath)
+{
+  UStringVector aPathParts;
+  aPathParts.Clear();
+  CComPtr<IArchiveFolder> aFolderItem = this;
+  while (true)
+  {
+    CComPtr<IArchiveFolder> aNewFolder;
+    aFolderItem->BindToParentFolder(&aNewFolder);  
+    if (aNewFolder == NULL)
+      break;
+    CComBSTR aName;
+    aFolderItem->GetName(&aName);
+    aPathParts.Insert(0, (const wchar_t *)aName);
+    aFolderItem = aNewFolder;
+  }
+
+  UString aPrefix;
+  for(int i = 0; i < aPathParts.Size(); i++)
+  {
+    aPrefix += aPathParts[i];
+    aPrefix += L'\\';
+  }
+
+  CComBSTR aBSTRName = aPrefix;
+  *aPath = aBSTRName.Detach();
+  return S_OK;
+}
+#endif
 
 STDMETHODIMP CAgentFolder::GetAgentFolder(CAgentFolder **anAgentFolder)
 { 
@@ -82,7 +237,7 @@ STDMETHODIMP CAgentFolder::BindToFolder(UINT32 anIndex, IArchiveFolder **aFolder
       CComObjectNoLock<CAgentFolder>;
   CComPtr<IArchiveFolder> anAgentFolder = anAgentFolderSpec;
   anAgentFolderSpec->Init(m_ProxyHandler, 
-      &m_ProxyFolderItem->m_FolderSubItems[anIndex], this);
+      &m_ProxyFolderItem->m_FolderSubItems[anIndex], this, m_AgentSpec);
   *aFolder = anAgentFolder.Detach();
   return S_OK;
 }
@@ -180,7 +335,7 @@ STDMETHODIMP CAgent::Open(IInStream *aStream,
   m_DefaultAttributes = aDefaultAttributes;
   m_CLSID = *aCLSID;
 
-  m_RootFolder.Release();
+  // m_RootFolder.Release();
   m_Archive.Release();
   
   #ifdef EXCLUDE_COM
@@ -242,18 +397,17 @@ HRESULT CAgent::ReadItems()
   m_ProxyHandler = new CAgentProxyHandler();
   RETURN_IF_NOT_S_OK(m_ProxyHandler->Init(m_Archive, m_DefaultName, 
     m_DefaultTime, m_DefaultAttributes, NULL));
-  CComObjectNoLock<CAgentFolder> *anAgentFolderSpec = new 
-    CComObjectNoLock<CAgentFolder>;
-  m_RootFolder = anAgentFolderSpec;
-  anAgentFolderSpec->Init(m_ProxyHandler, &m_ProxyHandler->m_FolderItemHead, NULL);
   return S_OK;
 }
 
 STDMETHODIMP CAgent::BindToRootFolder(IArchiveFolder **aFolder)
 {
   RETURN_IF_NOT_S_OK(ReadItems());
-  CComPtr<IArchiveFolder> m_FolderTemp = m_RootFolder;
-  *aFolder = m_FolderTemp.Detach();
+  CComObjectNoLock<CAgentFolder> *anAgentFolderSpec = new 
+    CComObjectNoLock<CAgentFolder>;
+  anAgentFolderSpec->Init(m_ProxyHandler, &m_ProxyHandler->m_FolderItemHead, NULL, this);
+  CComPtr<IArchiveFolder> aRootFolder = anAgentFolderSpec;
+  *aFolder = aRootFolder.Detach();
   return S_OK;
 }
 

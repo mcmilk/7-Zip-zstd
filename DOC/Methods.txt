@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 19)
+Compression method IDs (2.30 Beta 20)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -13,6 +13,8 @@ List of defined IDs
    03 Swap
       - 2 Swap2
       - 4 Swap4
+   04 Delta
+      01 - delta_value [1...256] in properties 
 
 03 - 7z
    01 - LZMA

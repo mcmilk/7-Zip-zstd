@@ -8,9 +8,8 @@
 #include "../Common/IArchiveHandler2.h"
 #include "Common/String.h"
 
-#include "ExtractDialog.h"
-#include "ProgressDialog.h"
-#include "MessagesDialog.h"
+#include "../Resource/ProgressDialog/ProgressDialog.h"
+#include "resource.h"
 
 #include "Windows/ResourceString.h"
 
@@ -21,13 +20,13 @@
 #include "../Format/Common/FormatCryptoInterface.h"
 
 class CExtractCallBackImp: 
-  public IExtractCallback2,
+  public IExtractCallback3,
   public ICryptoGetTextPassword,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CExtractCallBackImp)
-  COM_INTERFACE_ENTRY(IExtractCallback2)
+  COM_INTERFACE_ENTRY(IExtractCallback3)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword)
 END_COM_MAP()
 
@@ -39,7 +38,7 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(SetTotal)(UINT64 aSize);
   STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
 
-  // IExtractCallBack
+  // IExtractCallBack2
   STDMETHOD(AskOverwrite)(
       const wchar_t *anExistName, const FILETIME *anExistTime, const UINT64 *anExistSize,
       const wchar_t *aNewName, const FILETIME *aNewTime, const UINT64 *aNewSize,
@@ -48,21 +47,27 @@ DECLARE_NO_REGISTRY()
 
   STDMETHOD(MessageError)(const wchar_t *aMessage);
   STDMETHOD(OperationResult)(INT32 aResultEOperationResult);
+
+  // IExtractCallBack3
+  STDMETHOD(AskWrite)(
+      const wchar_t *aSrcPath, INT32 aSrcIsFolder, 
+      const FILETIME *aSrcTime, const UINT64 *aSrcSize,
+      const wchar_t *aDestPath, 
+      BSTR *aDestPathResult, 
+      INT32 *aResult);
+
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
 
 private:
-  CComPtr<IArchiveHandler100> m_ArchiveHandler;
   CSysString m_DirectoryPath;
 
-  NExtractionDialog::CModeInfo m_ExtractModeInfo;
-
-  // bool m_MessagesDialogWasCreated;
   CSysString m_DiskFilePath;
   
   bool m_ExtractMode;
 
   UString m_CurrentFilePath;
+  NExtractionMode::NOverwrite::EEnum m_OverwriteMode;
 
   bool m_PasswordIsDefined;
   UString m_Password;
@@ -78,27 +83,13 @@ public:
   CSysStringVector m_Messages;
   HWND m_ParentWindow;
   DWORD m_ThreadID;
+  UINT m_FileCodePage;
   // CProgressDialog m_ProcessDialog;
-  HRESULT StartProgressDialog(bool aTestMode = false)
+  HRESULT StartProgressDialog(const CSysString &aTitle)
   {
     m_ThreadID = GetCurrentThreadId();
     m_ProgressDialog.Create(m_ParentWindow);
-    if (aTestMode)
-    {
-      #ifdef LANG        
-      m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90));
-      #else
-      m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_TESTING));
-      #endif
-    }
-    else
-    {
-      #ifdef LANG        
-      m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
-      #else
-      m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
-      #endif
-    }
+    m_ProgressDialog.SetText(aTitle);
 
     m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);    
     // m_ProgressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
@@ -106,8 +97,7 @@ public:
   }
 
   ~CExtractCallBackImp();
-  void Init(IArchiveHandler100 *anArchiveHandler, 
-      NExtractionDialog::CModeInfo anExtractModeInfo,
+  void Init(NExtractionMode::NOverwrite::EEnum anOverwriteMode,
       bool aPasswordIsDefined, const UString &aPassword);
   void DestroyWindows();
 };
