@@ -54,8 +54,8 @@ void SetFileInfoStrings(const CFileInfo &aFileInfo,
 
 NResult::EEnum Execute(const CFileInfo &anOldFileInfo, const CFileInfo &aNewFileInfo)
 {
-  static const kYSize = 20;
-  static const kXSize = 76;
+  const int kYSize = 20;
+  const int kXSize = 76;
   
   CFileInfoStrings anOldFileInfoStrings;
   CFileInfoStrings aNewFileInfoStrings;
@@ -91,12 +91,12 @@ NResult::EEnum Execute(const CFileInfo &anOldFileInfo, const CFileInfo &aNewFile
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kOverwriteCancel, NULL, NULL  }
   };
   
-  const kNumDialogItems = sizeof(anInitItems) / sizeof(anInitItems[0]);
+  const int kNumDialogItems = sizeof(anInitItems) / sizeof(anInitItems[0]);
   FarDialogItem aDialogItems[kNumDialogItems];
   g_StartupInfo.InitDialogItems(anInitItems, aDialogItems, kNumDialogItems);
   int anAskCode = g_StartupInfo.ShowDialog(kXSize, kYSize, 
       NULL, aDialogItems, kNumDialogItems);
-  const kButtonStartPos = kNumDialogItems - 6;
+  const int kButtonStartPos = kNumDialogItems - 6;
   if (anAskCode >= kButtonStartPos && anAskCode < kNumDialogItems)
     return NResult::EEnum(anAskCode - kButtonStartPos);
   return NResult::kCancel;

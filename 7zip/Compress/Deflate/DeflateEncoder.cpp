@@ -20,10 +20,10 @@ public:
   CMatchFinderException(HRESULT result): m_Result (result) {}
 };
 
-static const kValueBlockSize = 0x2000;
+static const int kValueBlockSize = 0x2000;
 
-static const kMaxCodeBitLength = 15;
-static const kMaxLevelBitLength = 7;
+static const int kMaxCodeBitLength = 15;
+static const int kMaxLevelBitLength = 7;
 
 static const BYTE kFlagImm     = 0;
 static const BYTE kFlagLenPos  = 4;
@@ -33,7 +33,7 @@ static const UINT32 kMaxUncompressedBlockSize = 0xFFFF; // test it !!!
 static const UINT32 kBlockUncompressedSizeThreshold = 
     kMaxUncompressedBlockSize - kMatchMaxLen32 - kNumOpts;
 
-static const kNumGoodBacks = 0x10000; 
+static const int kNumGoodBacks = 0x10000; 
 
 static BYTE kNoLiteralDummy = 13;
 static BYTE kNoLenDummy = 13;
@@ -56,7 +56,7 @@ public:
         g_LenSlots[c] = i;
     }
     
-    const kFastSlots = 18;
+    const int kFastSlots = 18;
     int c = 0;
     for (BYTE slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
@@ -260,7 +260,7 @@ void CCoder::MovePos(UINT32 num)
   }
 }
 
-static const kIfinityPrice = 0xFFFFFFF;
+static const UINT32 kIfinityPrice = 0xFFFFFFF;
 
 UINT32 CCoder::Backward(UINT32 &backRes, UINT32 cur)
 {

@@ -10,7 +10,7 @@
 namespace NArchive {
 namespace NArj {
 
-const kMaxBlockSize = 2600;
+const int kMaxBlockSize = 2600;
 
 namespace NSignature
 {

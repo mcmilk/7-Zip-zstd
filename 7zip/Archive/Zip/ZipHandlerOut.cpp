@@ -131,7 +131,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
           return E_INVALIDARG;
         size = *(UINT64 *)(&propVariant.uhVal);
       }
-      if(size > _UI32_MAX)
+      if(size > 0xFFFFFFFF)
         return E_NOTIMPL;
       updateItem.Size = size;
     }
@@ -206,7 +206,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       {
         mainMethod = NFileHeader::NCompressionMethod::kStored;
       }
-      else if (level < 8)
+      else if (level < 7)
       {
         InitMethodProperties();
         if (mainMethod == NFileHeader::NCompressionMethod::kStored)

@@ -121,8 +121,8 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
 static const TCHAR *kCompressionKeyName = TEXT("Compression");
 
 static const TCHAR *kCompressionHistoryArchivesKeyName = TEXT("ArcHistory");
-static const TCHAR *kCompressionMethodValueName = TEXT("Level");
-static const TCHAR *kCompressionLastClassIDValueName = TEXT("Archiver");
+static const TCHAR *kCompressionLevelValueName = TEXT("Level");
+static const TCHAR *kCompressionLastFormatValueName = TEXT("Archiver");
 static const TCHAR *kCompressionShowPasswordValueName = TEXT("ShowPassword");
 static const TCHAR *kCompressionEncryptHeadersValueName = TEXT("EncryptHeaders");
 // static const TCHAR *kCompressionMaximizeValueName = TEXT("Maximize");
@@ -165,13 +165,9 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     }
   }
 
-  if (info.MethodDefined)
-    compressionKey.SetValue(kCompressionMethodValueName, UINT32(info.Method));
-  if (info.LastClassIDDefined)
-    compressionKey.SetValue(kCompressionLastClassIDValueName, 
-        // GUIDToString(info.LastClassID)
-        GetSystemString(info.LastArchiveType)
-    );
+  compressionKey.SetValue(kCompressionLevelValueName, UINT32(info.Level));
+  compressionKey.SetValue(kCompressionLastFormatValueName, 
+      GetSystemString(info.ArchiveType));
 
   compressionKey.SetValue(kCompressionShowPasswordValueName, info.ShowPassword);
   compressionKey.SetValue(kCompressionEncryptHeadersValueName, info.EncryptHeaders);
@@ -193,12 +189,11 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   info.MultiThread = IsMultiProcessor();
   info.FormatOptionsVector.Clear();
 
-  info.MethodDefined = false;
-  info.LastClassIDDefined = false;
+  info.Level = 5;
+  info.ArchiveType = L"7z";
   // definedStatus.Maximize = false;
   info.ShowPassword = false;
   info.EncryptHeaders = false;
-
 
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey compressionKey;
@@ -253,23 +248,12 @@ void ReadCompressionInfo(NCompression::CInfo &info)
     }
   }
 
-  UINT32 method;
-  if (compressionKey.QueryValue(kCompressionMethodValueName, method) == ERROR_SUCCESS)
-  { 
-    info.Method = BYTE(method);
-    info.MethodDefined = true;
-  }
-  CSysString classIDString;
-  if (compressionKey.QueryValue(kCompressionLastClassIDValueName, classIDString) == ERROR_SUCCESS)
-  { 
-    info.LastClassIDDefined = true;
-    info.LastArchiveType = GetUnicodeString(classIDString);
-
-    /*
-    info.LastClassIDDefined = 
-        (StringToGUID(classIDString, info.LastClassID) == NOERROR);
-    */
-  }
+  UINT32 level;
+  if (compressionKey.QueryValue(kCompressionLevelValueName, level) == ERROR_SUCCESS)
+    info.Level = level;
+  CSysString archiveType;
+  if (compressionKey.QueryValue(kCompressionLastFormatValueName, archiveType) == ERROR_SUCCESS)
+    info.ArchiveType = GetUnicodeString(archiveType);
   if (compressionKey.QueryValue(kCompressionShowPasswordValueName, 
       info.ShowPassword) != ERROR_SUCCESS)
     info.ShowPassword = false;
@@ -277,7 +261,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
       info.EncryptHeaders) != ERROR_SUCCESS)
     info.EncryptHeaders = false;
   /*
-  if (compressionKey.QueryValue(kCompressionMethodValueName, info.Maximize) == ERROR_SUCCESS)
+  if (compressionKey.QueryValue(kCompressionLevelValueName, info.Maximize) == ERROR_SUCCESS)
     definedStatus.Maximize = true;
   */
 }

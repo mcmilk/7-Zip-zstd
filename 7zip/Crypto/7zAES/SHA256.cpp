@@ -6,7 +6,7 @@
 #include "SHA256.h"
 #include "Windows/Defs.h"
 
-const kBufferSize = 1 << 17;
+const int kBufferSize = 1 << 17;
 
 namespace NCrypto {
 namespace NSHA256 {

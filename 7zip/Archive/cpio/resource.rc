@@ -75,8 +75,8 @@ IDI_ICON1               ICON    DISCARDABLE     "cpio.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,9,1,0
- PRODUCTVERSION 3,9,1,0
+ FILEVERSION 3,9,2,0
+ PRODUCTVERSION 3,9,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -94,14 +94,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "cpio Plugin for 7-Zip\0"
-            VALUE "FileVersion", "3, 9, 1, 0\0"
+            VALUE "FileVersion", "3, 9, 2, 0\0"
             VALUE "InternalName", "cpio\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "cpio .dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "3, 9, 1, 0\0"
+            VALUE "ProductVersion", "3, 9, 2, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

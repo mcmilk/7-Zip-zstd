@@ -98,7 +98,7 @@ void PrintSpaces(int numSpaces)
 
 void PrintString(EAdjustment adjustment, int width, const AString &textString)
 {
-  const numSpaces = width - textString.Length();
+  const int numSpaces = width - textString.Length();
   int numLeftSpaces;
   switch (adjustment)
   {

@@ -31,7 +31,7 @@ void __cdecl operator delete(void *p)
 #else
 
 #pragma init_seg(lib)
-const kDebugSize = 1000000;
+const int kDebugSize = 1000000;
 static void *a[kDebugSize];
 static int index = 0;
 

@@ -85,7 +85,7 @@ STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
     Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
     PasswordIsDefined = true;
   }
-  CMyComBSTR temp = Password;
+  CMyComBSTR temp(Password);
   *password = temp.Detach();
   return S_OK;
 }

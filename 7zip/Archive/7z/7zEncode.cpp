@@ -74,7 +74,8 @@ static void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &bindI
   // folder.OutStreams.Clear();
   folder.PackStreams.Clear();
   folder.BindPairs.Clear();
-  for (int i = 0; i < bindInfo.BindPairs.Size(); i++)
+  int i;
+  for (i = 0; i < bindInfo.BindPairs.Size(); i++)
   {
     CBindPair bindPair;
     bindPair.InIndex = bindInfo.BindPairs[i].InIndex;
@@ -292,7 +293,8 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
   CObjectVector<CSequentialOutTempBufferImp *> tempBufferSpecs;
   CObjectVector<CMyComPtr<ISequentialOutStream> > tempBuffers;
   int numMethods = _bindInfo.Coders.Size();
-  for (int i = 1; i < _bindInfo.OutStreams.Size(); i++)
+  int i;
+  for (i = 1; i < _bindInfo.OutStreams.Size(); i++)
   {
     inOutTempBuffers.Add(CInOutTempBuffer());
     inOutTempBuffers.Back().Create();

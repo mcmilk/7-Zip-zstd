@@ -158,7 +158,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
       return 1;
     }
 
-    const UStringVector &nonSwitchStrings = parser._nonSwitchStrings;
+    const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
     int numNonSwitchStrings = nonSwitchStrings.Size();
 
     if(numNonSwitchStrings < 1)  

@@ -21,8 +21,7 @@ class CCtrlBreakException
 
 void CheckCtrlBreak();
 
-
 }
 
+#endif
 
-#endif;

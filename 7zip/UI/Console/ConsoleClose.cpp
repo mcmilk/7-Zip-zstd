@@ -5,7 +5,7 @@
 #include "ConsoleClose.h"
 
 static int g_BreakCounter = 0;
-static const kBreakAbortThreshold = 2;
+static const int kBreakAbortThreshold = 2;
 
 namespace NConsoleClose {
 

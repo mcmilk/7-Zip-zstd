@@ -162,7 +162,10 @@
   #include "aes.h"
 #endif
 
-#if defined(__GNUC__) || defined(__GNU_LIBRARY__)
+// 2003-09-16: Changed by Igor Pavlov. Check it.
+// #if defined(__GNUC__) || defined(__GNU_LIBRARY__)
+#if (defined(__GNUC__) || defined(__GNU_LIBRARY__)) && !defined(WIN32)
+
 #  include <endian.h>
 #  include <byteswap.h>
 #elif defined(__CRYPTLIB__)

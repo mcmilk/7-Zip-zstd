@@ -108,7 +108,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   try
   {
     RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
-    const kSignatureSize = 3;
+    const int kSignatureSize = 3;
     BYTE buffer[kSignatureSize];
     UINT32 processedSize;
     RINOK(stream->Read(buffer, kSignatureSize, &processedSize));

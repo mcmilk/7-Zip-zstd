@@ -305,7 +305,7 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidComment, NMessageID::kComment }
 };
 
-static const kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);
+static const int kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);
 
 static int FindPropertyToName(PROPID propID)
 {
@@ -345,7 +345,7 @@ static CPropertyIDInfo kPropertyIDInfos[] =
   // { kpidType, L"Type" }
 };
 
-static const kNumPropertyIDInfos = sizeof(kPropertyIDInfos) /  
+static const int kNumPropertyIDInfos = sizeof(kPropertyIDInfos) /  
     sizeof(kPropertyIDInfos[0]);
 
 static int FindPropertyInfo(PROPID propID)
@@ -571,8 +571,8 @@ HRESULT CPlugin::ShowAttributesWindow()
   }
   */
 
-  const kPathIndex = 2;
-  const kOkButtonIndex = 4;
+  const int kPathIndex = 2;
+  const int kOkButtonIndex = 4;
   int size = 2;
   CRecordVector<CInitDialogItem> initDialogItems;
   
@@ -636,7 +636,7 @@ HRESULT CPlugin::ShowAttributesWindow()
       maxLen = len;
   }
   int maxLen2 = 0;
-  const kSpace = 10;
+  const int kSpace = 10;
   for (i = 0; i < numLines; i++)
   {
     FarDialogItem &dialogItem = dialogItems[1 + i * 2 + 1];

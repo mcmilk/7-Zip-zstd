@@ -35,7 +35,7 @@ static bool MakeOctalString8(char *s, UINT32 value)
 {
   AString tempString = MakeOctalString(value);
 
-  const kMaxSize = 8;
+  const int kMaxSize = 8;
   if (tempString.Length() >= kMaxSize)
     return false;
   int numSpaces = kMaxSize - (tempString.Length() + 1);
@@ -48,7 +48,7 @@ static bool MakeOctalString8(char *s, UINT32 value)
 static bool MakeOctalString12(char *s, UINT64 value)
 {
   AString tempString  = MakeOctalString(value);
-  const kMaxSize = 12;
+  const int kMaxSize = 12;
   if (tempString.Length() > kMaxSize)
     return false;
   int numSpaces = kMaxSize - tempString.Length();
@@ -71,7 +71,8 @@ static bool CopyString(char *dest, const AString &src, int maxSize)
 HRESULT COutArchive::WriteHeaderReal(const CItem &item)
 {
   NFileHeader::CRecord record;
-  for (int i = 0; i < NFileHeader::kRecordSize; i++)
+  int i;
+  for (i = 0; i < NFileHeader::kRecordSize; i++)
     record.Padding[i] = 0;
 
   NFileHeader::CHeader &header = record.Header;

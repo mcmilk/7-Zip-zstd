@@ -251,7 +251,8 @@ void CCensor::AddItem(const UString &path, bool allowed, bool recursed, bool wil
   if (numParts == 0)
     throw "Empty path";
   CCensorNode *curItem = &_head;
-  for(int i = 0; i < numParts - 1; i++)
+  int i;
+  for(i = 0; i < numParts - 1; i++)
     curItem = curItem->AddSubNode(pathParts[i]);
   curItem->AddItem(pathParts[i], allowed, recursed, wildCard);
 }

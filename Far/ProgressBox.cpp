@@ -18,7 +18,7 @@ static void CopySpaces(char *aString, int aNumSpaces)
 /////////////////////////////////
 // CMessageBox
 
-const kNumStringsMax = 10;
+const int kNumStringsMax = 10;
 
 void CMessageBox::Init(const CSysString &aTitle, const CSysString &aMessage, 
     int aNumStrings, int aWidth)

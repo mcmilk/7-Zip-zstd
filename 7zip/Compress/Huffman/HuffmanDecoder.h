@@ -82,7 +82,7 @@ void CDecoder<kNumBitsInLongestCode>::SetCodeLengths(const BYTE *codeLengths)
   tmpPositions[0] = m_Positions[0] = m_Limitits[0] = 0;
   UINT32 startPos = 0;
   UINT32 index = 0;
-  const kMaxValue = (1 << kNumBitsInLongestCode);
+  const UINT32 kMaxValue = (1 << kNumBitsInLongestCode);
   for (i = 1; i <= kNumBitsInLongestCode; i++)
   {
     startPos += lenCounts[i] << (kNumBitsInLongestCode - i);

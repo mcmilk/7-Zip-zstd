@@ -13,7 +13,7 @@
 #include "../../../ICoder.h"
 #include "../IMatchFinder.h"
 
-const kNumMTBlocks = 3;
+const int kNumMTBlocks = 3;
 
 class CMatchFinderMT: 
   public IMatchFinder,

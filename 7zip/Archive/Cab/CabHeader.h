@@ -20,9 +20,9 @@ namespace NArchive {
   
   namespace NFlags
   {
-    const kPrevCabinet = 0x0001;
-    const kNextCabinet = 0x0002;
-    const kReservePresent = 0x0004;
+    const int kPrevCabinet = 0x0001;
+    const int kNextCabinet = 0x0002;
+    const int kReservePresent = 0x0004;
   }
 
   struct CBlock
@@ -75,13 +75,13 @@ struct CFolder
   // BYTE  abReserve[];	// (optional) per-folder reserved area
 };
 
-const kFileNameIsUTFAttributeMask = 0x80;
+const int kFileNameIsUTFAttributeMask = 0x80;
 
 namespace NFolderIndex
 {
-  const kContinuedFromPrev    = 0xFFFD;
-  const kContinuedToNext      = 0xFFFE;
-  const kContinuedPrevAndNext = 0xFFFF;
+  const int kContinuedFromPrev    = 0xFFFD;
+  const int kContinuedToNext      = 0xFFFE;
+  const int kContinuedPrevAndNext = 0xFFFF;
   inline UINT16 GetRealFolderIndex(UINT16 aNumFolders, UINT16 aFolderIndex)
   {
     switch(aFolderIndex)

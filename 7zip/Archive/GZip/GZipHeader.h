@@ -39,11 +39,11 @@ namespace NFileHeader
   
   namespace NFlags 
   {
-    const kDataIsText = 1 << 0;
-    const kHeaderCRCIsPresent = 1 << 1;
-    const kExtraIsPresent = 1 << 2;
-    const kNameIsPresent = 1 << 3;
-    const kComentIsPresent = 1 << 4;
+    const int kDataIsText = 1 << 0;
+    const int kHeaderCRCIsPresent = 1 << 1;
+    const int kExtraIsPresent = 1 << 2;
+    const int kNameIsPresent = 1 << 3;
+    const int kComentIsPresent = 1 << 4;
   }
   
   namespace NExtraFlags 
@@ -88,7 +88,7 @@ namespace NFileHeader
 
         kUnknown = 255
     };
-    const kNumHostSystems = 19;
+    const int kNumHostSystems = 19;
   }
 }
 

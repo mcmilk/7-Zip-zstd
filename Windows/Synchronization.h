@@ -59,6 +59,31 @@ public:
     CEvent(false, initiallyOwn, name, securityAttributes) {};
 };
 
+class CMutex: public CObject
+{
+public:
+  bool Create(bool initiallyOwn, LPCTSTR name = NULL,
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL)
+  {
+    _handle = ::CreateMutex(securityAttributes, BoolToBOOL(initiallyOwn), name);
+    return (_handle != 0);
+  }
+  bool Open(DWORD desiredAccess, bool inheritHandle, LPCTSTR name)
+  {
+    _handle = ::OpenMutex(desiredAccess, BoolToBOOL(inheritHandle), name);
+    return (_handle != 0);
+  }
+  bool Release() { return BOOLToBool(::ReleaseMutex(_handle)); }
+};
+
+class CMutexLock
+{
+  CMutex &_object;
+public:
+  CMutexLock(CMutex &object): _object(object) { _object.Lock(); } 
+  ~CMutexLock() { _object.Release(); }
+};
+
 class CCriticalSection
 {
   CRITICAL_SECTION _object;

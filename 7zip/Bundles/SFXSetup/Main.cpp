@@ -33,7 +33,7 @@ static bool ReadDataString(LPCTSTR fileName, LPCSTR startID,
   NFile::NIO::CInFile inFile;
   if (!inFile.Open(fileName))
     return false;
-  const kBufferSize = (1 << 12);
+  const int kBufferSize = (1 << 12);
 
   BYTE buffer[kBufferSize];
   int signatureStartSize = lstrlenA(startID);

@@ -42,7 +42,7 @@ void CEncoder::SetFreqs(const UINT32 *freqs)
     m_Items[i].Freq = freqs[i];
 }
 
-static const kSmallest = 1;
+static const int kSmallest = 1;
 
 // ===========================================================================
 // Remove the smallest element from the heap and recreate the heap with

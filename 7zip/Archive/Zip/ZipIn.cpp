@@ -197,7 +197,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
 
     if (itemInfo.HasDescriptor())
     {
-      const kBufferSize = (1 << 12);
+      const int kBufferSize = (1 << 12);
       BYTE buffer[kBufferSize];
       UINT32 numBytesInBuffer = 0;
       UINT32 packedSize = 0;
@@ -211,7 +211,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
         numBytesInBuffer += processedSize;
         if (numBytesInBuffer < sizeof(NFileHeader::CDataDescriptor))
           ThrowIncorrectArchiveException();
-        for (int i = 0; i <= numBytesInBuffer - 
+        int i;
+        for (i = 0; i <= numBytesInBuffer - 
             sizeof(NFileHeader::CDataDescriptor); i++)
         {
           const NFileHeader::CDataDescriptor &descriptor = 
@@ -231,7 +232,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
         if (descriptorWasFound)
           break;
         packedSize += i;
-        for (int j = 0; i < numBytesInBuffer; i++, j++)
+        int j;
+        for (j = 0; i < numBytesInBuffer; i++, j++)
           buffer[j] = buffer[i];    
         numBytesInBuffer = j;
       }

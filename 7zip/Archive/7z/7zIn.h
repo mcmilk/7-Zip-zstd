@@ -126,7 +126,7 @@ public:
 class CStreamSwitch;
 class CInArchive
 {
-  friend CStreamSwitch;
+  friend class CStreamSwitch;
 
   CMyComPtr<IInStream> _stream;
 

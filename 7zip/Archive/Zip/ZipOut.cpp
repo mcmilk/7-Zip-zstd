@@ -127,7 +127,7 @@ void COutArchive::SeekToPackedDataPosition()
 
 void COutArchive::CreateStreamForCopying(ISequentialOutStream **outStream)
 {
-  CMyComPtr<ISequentialOutStream> tempStream = m_Stream;
+  CMyComPtr<ISequentialOutStream> tempStream(m_Stream);
   *outStream = tempStream.Detach();
 }
 

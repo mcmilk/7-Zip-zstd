@@ -52,7 +52,7 @@ const BYTE kCodeLengthAlphabetOrder[kLevelTableSize] = {16, 17, 18, 0, 8, 7, 9, 
 const UINT32 kMatchMinLen = 3; 
 const UINT32 kMatchMaxLen = kNumLenCombinations + kMatchMinLen - 1; //255 + 2; test it
 
-const kFinalBlockFieldSize = 1;
+const int kFinalBlockFieldSize = 1;
 
 namespace NFinalBlockField
 {
@@ -63,7 +63,7 @@ enum
 };
 }
 
-const kBlockTypeFieldSize = 2;
+const int kBlockTypeFieldSize = 2;
 
 namespace NBlockType
 {

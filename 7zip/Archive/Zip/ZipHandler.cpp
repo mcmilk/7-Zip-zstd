@@ -106,9 +106,9 @@ const wchar_t *kHostOS[] =
 };
 
 
-const kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
+static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
-const wchar_t *kUnknownOS = L"Unknown";
+static const wchar_t *kUnknownOS = L"Unknown";
 
 
 /*
@@ -155,7 +155,7 @@ const wchar_t *kMethods[] =
   L"BZip2"
 };
 
-const kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
+const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 const wchar_t *kUnknownMethod = L"Unknown";
 
 CHandler::CHandler():
@@ -536,7 +536,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       ICompressCoder *coder = methodItems[m].Coder;
 
       CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
-      if (coder->QueryInterface(&compressSetDecoderProperties) == S_OK)
+      if (coder->QueryInterface(IID_ICompressSetDecoderProperties, (void **)&compressSetDecoderProperties) == S_OK)
       {
         // BYTE properties = (item.Flags & 6);
         BYTE properties = item.Flags;

@@ -10,10 +10,10 @@ namespace NCab {
 namespace NLZX {
 namespace NBitStream {
 
-const kNumBigValueBits = 8 * 4;
+const int kNumBigValueBits = 8 * 4;
 
-const kNumValueBits = 17;
-const kBitDecoderValueMask = (1 << kNumValueBits) - 1;
+const int kNumValueBits = 17;
+const int kBitDecoderValueMask = (1 << kNumValueBits) - 1;
 
 class CDecoder
 {

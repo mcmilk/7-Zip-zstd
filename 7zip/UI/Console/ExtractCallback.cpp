@@ -381,7 +381,7 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
     m_Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
     m_PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = m_Password;
+  CMyComBSTR tempName(m_Password);
   *password = tempName.Detach();
   return S_OK;
 }

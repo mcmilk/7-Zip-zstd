@@ -35,7 +35,7 @@ using namespace NFar;
 
 static const char *kCommandPrefix = "7-zip";
 
-static const kDescriptionMaxSize = 256;
+static const int kDescriptionMaxSize = 256;
 
 static const char *kRegisrtryMainKeyName = "";
 
@@ -305,7 +305,7 @@ HRESULT GetPassword(UString &password)
     { DI_PSWEDIT, 5, 3, 70, 3, true, false, 0, true, -1, "", NULL }
   };
   
-  const kNumItems = sizeof(initItems)/sizeof(initItems[0]);
+  const int kNumItems = sizeof(initItems)/sizeof(initItems[0]);
   FarDialogItem dialogItems[kNumItems];
   g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumItems);
   
@@ -548,9 +548,9 @@ int WINAPI Configure(int itemNumber)
 {
   MY_TRY_BEGIN;
 
-  const kEnabledCheckBoxIndex = 1;
+  const int kEnabledCheckBoxIndex = 1;
 
-  const kYSize = 7;
+  const int kYSize = 7;
 
   struct CInitDialogItem initItems[]=
   {
@@ -561,8 +561,8 @@ int WINAPI Configure(int itemNumber)
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kCancel, NULL, NULL },
   };
 
-  const kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
-  const kOkButtonIndex = kNumDialogItems - 2;
+  const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+  const int kOkButtonIndex = kNumDialogItems - 2;
 
   FarDialogItem dialogItems[kNumDialogItems];
   g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);

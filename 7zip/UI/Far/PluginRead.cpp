@@ -106,17 +106,17 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
 
   if (!silent)
   {
-    const kPathIndex = 2;
+    const int kPathIndex = 2;
 
     // CZipRegistryManager aZipRegistryManager;
     ReadExtractionInfo(extractionInfo);
 
-    const kPathModeRadioIndex = 4;
-    const kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
-    const kFilesModeIndex = kOverwriteModeRadioIndex + 5;
-    static const kYSize = 18;
+    const int kPathModeRadioIndex = 4;
+    const int kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
+    const int kFilesModeIndex = kOverwriteModeRadioIndex + 5;
+    const int kYSize = 18;
     
-    static const kXMid = 38;
+    const int kXMid = 38;
 
     AString oemPassword = UnicodeStringToMultiByte(password, CP_OEMCP);
     
@@ -166,9 +166,9 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
       { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kExtractCancel, NULL, NULL  }
     };
    
-    const kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
-    const kOkButtonIndex = kNumDialogItems - 2;
-    const kPasswordIndex = kNumDialogItems - 4;
+    const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+    const int kOkButtonIndex = kNumDialogItems - 2;
+    const int kPasswordIndex = kNumDialogItems - 4;
 
     FarDialogItem dialogItems[kNumDialogItems];
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);

@@ -47,6 +47,9 @@ struct CUpdateItem
   CUpdateItem():  IsAnti(false) {}
   void SetDirectoryStatusFromAttributes()
     { IsDirectory = ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
+
+  int GetExtensionPos() const;
+  UString GetExtension() const;
 };
 
 HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
@@ -61,7 +64,7 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
     bool useAdditionalHeaderStreams, 
     bool compressMainHeader,
     IArchiveUpdateCallback *updateCallback,
-    bool solid,
+    UINT64 numSolidFiles, UINT64 numSolidBytes, bool solidExtension,
     bool removeSfxBlock);
 
 }}

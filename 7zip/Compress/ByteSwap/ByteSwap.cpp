@@ -5,7 +5,7 @@
 #include "ByteSwap.h"
 #include "Windows/Defs.h"
 
-const kBufferSize = 1 << 17;
+const int kBufferSize = 1 << 17;
 
 CBuffer::CBuffer():
   _buffer(0)

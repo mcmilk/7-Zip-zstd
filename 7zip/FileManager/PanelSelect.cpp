@@ -70,7 +70,7 @@ void CPanel::OnArrowWithShift()
 void CPanel::OnInsert()
 {
   /*
-  const kState = CDIS_MARKED; // LVIS_DROPHILITED;
+  const int kState = CDIS_MARKED; // LVIS_DROPHILITED;
   UINT state = (_listView.GetItemState(focusedItem, LVIS_CUT) == 0) ?
       LVIS_CUT : 0;
   _listView.SetItemState(focusedItem, state, LVIS_CUT);

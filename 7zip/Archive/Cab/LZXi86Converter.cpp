@@ -40,7 +40,7 @@ inline INT32 Ci86TranslationOutStream::ConvertAbsoluteToOffset(INT32 aPos, INT32
 {
 }
 
-static const kResidue = 6 + 4;
+static const int kResidue = 6 + 4;
 
 void Ci86TranslationOutStream::MakeTranslation()
 {

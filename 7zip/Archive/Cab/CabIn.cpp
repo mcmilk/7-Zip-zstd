@@ -67,7 +67,7 @@ HRESULT CInArchive::Open(IInStream *inStream,
     CInBuffer inBuffer;
     inBuffer.Init(inStream);
     UINT64 value = 0;
-    const kSignatureSize = sizeof(value);
+    const int kSignatureSize = sizeof(value);
     UINT64 kSignature64 = NHeader::NArchive::kSignature;
     while(true)
     {

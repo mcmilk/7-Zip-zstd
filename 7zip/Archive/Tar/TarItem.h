@@ -5,6 +5,8 @@
 #ifndef __ARCHIVE_TAR_ITEM_H
 #define __ARCHIVE_TAR_ITEM_H
 
+#include <time.h>
+
 #include "Common/Types.h"
 #include "Common/String.h"
 #include "TarHeader.h"

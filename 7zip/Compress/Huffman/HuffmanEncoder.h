@@ -10,7 +10,7 @@
 namespace NCompression {
 namespace NHuffman {
 
-const kNumBitsInLongestCode = 15;
+const int kNumBitsInLongestCode = 15;
 
 struct CItem
 {

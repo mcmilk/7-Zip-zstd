@@ -66,11 +66,11 @@ namespace NFileHeader
       
       kBZip2 = 12
     };
-    const kNumCompressionMethods = 11;
+    const int kNumCompressionMethods = 11;
     const BYTE kMadeByProgramVersion = 20;
     
-    const kDeflateExtractVersion = 20;
-    const kStoreExtractVersion = 10;
+    const BYTE kDeflateExtractVersion = 20;
+    const BYTE kStoreExtractVersion = 10;
     
     const BYTE kSupportedVersion   = 20;
   }
@@ -130,19 +130,19 @@ namespace NFileHeader
   
   namespace NFlags 
   {
-    const kNumUsedBits = 4;
-    const kUsedBitsMask = (1 << kNumUsedBits) - 1;
+    const int kNumUsedBits = 4;
+    const int kUsedBitsMask = (1 << kNumUsedBits) - 1;
     
-    const kEncryptedMask   = 1 << 0;
-    const kDescriptorUsedMask   = 1 << 3;
+    const int kEncryptedMask   = 1 << 0;
+    const int kDescriptorUsedMask   = 1 << 3;
     
-    const kImplodeDictionarySizeMask = 1 << 1;
-    const kImplodeLiteralsOnMask     = 1 << 2;
+    const int kImplodeDictionarySizeMask = 1 << 1;
+    const int kImplodeLiteralsOnMask     = 1 << 2;
     
-    const kDeflateTypeBitStart = 1;
-    const kNumDeflateTypeBits = 2;
-    const kNumDeflateTypes = (1 << kNumDeflateTypeBits);
-    const kDeflateTypeMask = (1 << kNumDeflateTypeBits) - 1;
+    const int kDeflateTypeBitStart = 1;
+    const int kNumDeflateTypeBits = 2;
+    const int kNumDeflateTypes = (1 << kNumDeflateTypeBits);
+    const int kDeflateTypeMask = (1 << kNumDeflateTypeBits) - 1;
   }
   
   namespace NHostOS
@@ -171,7 +171,7 @@ namespace NFileHeader
         kTandem   = 17,
         kTHEOS    = 18
     };
-    // const kNumHostSystems = 19;
+    // const int kNumHostSystems = 19;
   }
   namespace NUnixAttribute
   {

@@ -54,9 +54,9 @@ const wchar_t *kHostOS[] =
   L"THEOS"
 };
 
-const kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
+static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
-const wchar_t *kUnknownOS = L"Unknown";
+static const wchar_t *kUnknownOS = L"Unknown";
 
 enum // PropID
 {

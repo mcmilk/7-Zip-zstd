@@ -88,24 +88,22 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
   */
 
-  static const kYSize = 14;
-  static const kXMid = 38;
+  const int kYSize = 14;
+  const int kXMid = 38;
 
   NCompression::CInfo compressionInfo;
   ReadCompressionInfo(compressionInfo);
 
-  if (!compressionInfo.MethodDefined)
-    compressionInfo.Method = 5;
   int methodIndex = 0;
   for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
-    if (compressionInfo.Method >= g_MethodMap[i])
+    if (compressionInfo.Level >= g_MethodMap[i])
     {
       methodIndex = i;
       break;
     }
 
-  const kMethodRadioIndex = 2;
-  const kModeRadioIndex = kMethodRadioIndex + 7;
+  const int kMethodRadioIndex = 2;
+  const int kModeRadioIndex = kMethodRadioIndex + 7;
 
   struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kUpdateTitle, NULL, NULL },
@@ -139,8 +137,8 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kCancel, NULL, NULL  }
   };
   
-  const kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
-  const kOkButtonIndex = kNumDialogItems - 2;
+  const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+  const int kOkButtonIndex = kNumDialogItems - 2;
   FarDialogItem dialogItems[kNumDialogItems];
   g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
   int askCode = g_StartupInfo.ShowDialog(76, kYSize, 
@@ -148,10 +146,10 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   if (askCode != kOkButtonIndex)
     return NFileOperationReturnCode::kInterruptedByUser;
 
-  compressionInfo.SetMethod(g_MethodMap[0]);
+  compressionInfo.Level = g_MethodMap[0];
   for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
     if (dialogItems[kMethodRadioIndex + i].Selected)
-      compressionInfo.SetMethod(g_MethodMap[i]);
+      compressionInfo.Level = g_MethodMap[i];
 
   const CActionSet *actionSet;
 
@@ -250,7 +248,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   
   updateCallbackSpec->Init(m_ArchiveHandler, &progressBox);
 
-  if (SetOutProperties(outArchive, compressionInfo.Method) != S_OK)
+  if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
 
   result = outArchive->DoOperation(NULL, NULL,
@@ -369,9 +367,6 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   // CZipRegistryManager aZipRegistryManager;
   ReadCompressionInfo(compressionInfo);
   
-  if (!compressionInfo.MethodDefined)
-    compressionInfo.Method = 5;
- 
   int archiverIndex = 0;
 
   CObjectVector<CArchiverInfo> archiverInfoList;
@@ -383,8 +378,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       const CArchiverInfo &archiverInfo = fullArchiverInfoList[i];
       if (archiverInfo.UpdateEnabled)
       {
-        if (compressionInfo.LastClassIDDefined &&
-            archiverInfo.Name.CollateNoCase(compressionInfo.LastArchiveType) == 0)
+        if (archiverInfo.Name.CollateNoCase(compressionInfo.ArchiveType) == 0)
           archiverIndex = archiverInfoList.Size();
         archiverInfoList.Add(archiverInfo);
       }
@@ -431,12 +425,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   while(true)
   {
-    static const kYSize = 16;
-    static const kXMid = 38;
+    const int kYSize = 16;
+    const int kXMid = 38;
   
-    const kArchiveNameIndex = 2;
-    const kMethodRadioIndex = kArchiveNameIndex + 2;
-    const kModeRadioIndex = kMethodRadioIndex + 7;
+    const int kArchiveNameIndex = 2;
+    const int kMethodRadioIndex = kArchiveNameIndex + 2;
+    const int kModeRadioIndex = kMethodRadioIndex + 7;
 
     const CArchiverInfo &archiverInfo = archiverInfoList[archiverIndex];
 
@@ -446,7 +440,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
     int methodIndex = 0;
     for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
-      if (compressionInfo.Method >= g_MethodMap[i])
+      if (compressionInfo.Level >= g_MethodMap[i])
       {
         methodIndex = i;
         break;
@@ -496,10 +490,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kCancel, NULL, NULL  }
     };
 
-    const kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+    const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
     
-    const kOkButtonIndex = kNumDialogItems - 3;
-    const kSelectarchiverButtonIndex = kNumDialogItems - 2;
+    const int kOkButtonIndex = kNumDialogItems - 3;
+    const int kSelectarchiverButtonIndex = kNumDialogItems - 2;
 
     FarDialogItem dialogItems[kNumDialogItems];
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
@@ -509,10 +503,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     archiveName = dialogItems[kArchiveNameIndex].Data;
     archiveName.Trim();
 
-    compressionInfo.SetMethod(g_MethodMap[0]);
+    compressionInfo.Level = g_MethodMap[0];
     for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
       if (dialogItems[kMethodRadioIndex + i].Selected)
-        compressionInfo.SetMethod(g_MethodMap[i]);
+        compressionInfo.Level = g_MethodMap[i];
 
     if (dialogItems[kModeRadioIndex].Selected)
       actionSet = &kAddActionSet;
@@ -583,7 +577,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   }
 
   const CArchiverInfo &archiverInfoFinal = archiverInfoList[archiverIndex];
-  compressionInfo.SetLastArchiveType(archiverInfoFinal.Name);
+  compressionInfo.ArchiveType = archiverInfoFinal.Name;
   SaveCompressionInfo(compressionInfo);
 
   NWorkDir::CInfo workDirInfo;
@@ -681,7 +675,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   updateCallbackSpec->Init(archiveHandler, &progressBox);
 
 
-  RINOK(SetOutProperties(outArchive, compressionInfo.Method));
+  RINOK(SetOutProperties(outArchive, compressionInfo.Level));
 
   HRESULT result = outArchive->DoOperation(
       GetUnicodeString(archiverInfoFinal.FilePath, CP_OEMCP),

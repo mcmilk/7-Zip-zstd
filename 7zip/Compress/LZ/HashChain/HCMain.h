@@ -135,7 +135,8 @@ static const UINT32 kEmptyHashValue = 0;
 HRESULT CInTree::Init(ISequentialInStream *aStream)
 {
   RINOK(CLZInWindow::Init(aStream));
-  for(int i = 0; i < kHashSize; i++)
+  int i;
+  for(i = 0; i < kHashSize; i++)
     _hash[i] = kEmptyHashValue;
 
   #ifdef HASH_ARRAY_2
@@ -308,7 +309,8 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   for(UINT32 aCount = _cutValue; aCount > 0; aCount--)
   {
     BYTE *pby1 = _buffer + aCurMatch;
-    for(UINT32 aCurrentLen = aMinSame; aCurrentLen < aCurrentLimit; aCurrentLen++/*, dwComps++*/)
+    UINT32 aCurrentLen;
+    for(aCurrentLen = aMinSame; aCurrentLen < aCurrentLimit; aCurrentLen++/*, dwComps++*/)
       if (pby1[aCurrentLen] != aCur[aCurrentLen])
         break;
     if (aCurrentLen > aMax)

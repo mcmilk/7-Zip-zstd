@@ -21,7 +21,7 @@ MyClass2_a(Name ## _Decoder, id, subId, 0x00)
 
 MyClass_a(BCJ2_x86, 0x01, 0x1B)
 
-const kNumMoveBits = 5;
+const int kNumMoveBits = 5;
 
 #ifndef EXTRACT_ONLY
 

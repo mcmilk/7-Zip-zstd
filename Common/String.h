@@ -37,7 +37,8 @@ inline size_t MyStringLen(const wchar_t *s)
 #else
 inline size_t MyStringLen(const wchar_t *s)
 { 
-  for (int i = 0; s[i] != L'\0'; i++);
+  int i;
+  for (i = 0; s[i] != L'\0'; i++);
   return i;
 }
 #endif

@@ -21,12 +21,6 @@ extern CSysString GetBZip2CodecPath();
 namespace NArchive {
 namespace NBZip2 {
 
-static const kOneItemComplexity = 30;
-
-// -----------------------------------------------------
-// Main Function UpdateArchiveStd
-
-
 HRESULT UpdateArchive(UINT64 unpackSize,
     IOutStream *outStream,
     int indexInClient,

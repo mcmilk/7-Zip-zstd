@@ -16,7 +16,7 @@ namespace N7z {
 #pragma pack( push, Pragma7zHeaders)
 #pragma pack( push, 1)
 
-const kSignatureSize = 6;
+const int kSignatureSize = 6;
 extern BYTE kSignature[kSignatureSize];
 
 struct CArchiveVersion

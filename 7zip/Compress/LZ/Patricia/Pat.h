@@ -5,8 +5,8 @@
 // #ifndef __PATRICIA__H
 // #define __PATRICIA__H
 
-#include "../../../Common/AlignedBuffer.h"
-#include "../../../Common/MyCom.h"
+#include "../../../../Common/AlignedBuffer.h"
+#include "../../../../Common/MyCom.h"
 #include "../LZInWindow.h"
 
 namespace PAT_NAMESPACE {

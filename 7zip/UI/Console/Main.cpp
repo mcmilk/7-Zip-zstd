@@ -49,7 +49,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 3.09.01 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-09-06\n";
+" 3.09.02  Copyright (c) 1999-2003 Igor Pavlov  2003-09-20\n";
 
 const wchar_t *kDefaultArchiveType = L"7z";
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -134,7 +134,7 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"AO",  NSwitchType::kPostChar, false, 1, 1, kOverwritePostCharSet}
   };
 
-static const kNumCommandForms = 7;
+static const int kNumCommandForms = 7;
 
 namespace NCommandType {
 enum EEnum
@@ -174,7 +174,7 @@ static const NRecursedType::EEnum kCommandRecursedDefault[kNumCommandForms] =
 };
 
 /*
-static const kNumListSets = 2;
+static const int kNumListSets = 2;
 
 enum 
 {
@@ -211,12 +211,12 @@ const wchar_t kUpdateNewArchivePostCharID = '!';
 static const bool kTestExtractRecursedDefault = true;
 static const bool kAddRecursedDefault = false;
 
-static const kMaxCmdLineSize = 1000;
+static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
-static const kMinNonSwitchWords = 2;
-static const kCommandIndex = 0;
-static const kArchiveNameIndex = kCommandIndex + 1;
-static const kFirstFileNameIndex = kArchiveNameIndex + 1;
+static const int kMinNonSwitchWords = 2;
+static const int kCommandIndex = 0;
+static const int kArchiveNameIndex = kCommandIndex + 1;
+static const int kFirstFileNameIndex = kArchiveNameIndex + 1;
 
 static const char *kHelpString = 
     "\nUsage: 7z <command> [<switches>...] <archive_name> [<file_names>...]\n"
@@ -703,18 +703,14 @@ static void SetAddCommandOptions(NCommandType::EEnum commandType,
   }
 }
 
-
-// static const kMinLogarithmicSize = 0;
-static const kMaxLogarithmicSize = 31;
-
 static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
 static const char kMegaByteSymbol = 'M';
 
 /*
-static const kNumDicts = 7;
+static const int kNumDicts = 7;
 
-static const kMaxNumberOfDigitsInInputNumber = 9;
+static const int kMaxNumberOfDigitsInInputNumber = 9;
 
 static int ParseNumberString(const AString &srcString, int &number)
 {
@@ -936,7 +932,7 @@ int Main2(int numArguments, const char *arguments[])
     PrintHelp();
     return 0;
   }
-  const UStringVector &nonSwitchStrings = parser._nonSwitchStrings;
+  const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
 
   int numNonSwitchStrings = nonSwitchStrings.Size();
   if(numNonSwitchStrings < kMinNonSwitchWords)  

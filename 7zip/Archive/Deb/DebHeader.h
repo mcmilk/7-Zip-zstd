@@ -15,10 +15,10 @@ namespace NDeb {
 
 namespace NHeader
 {
-  const kNameSize = 16;
-  const kTimeSize = 12;
-  const kModeSize = 8;
-  const kSizeSize = 10;
+  const int kNameSize = 16;
+  const int kTimeSize = 12;
+  const int kModeSize = 8;
+  const int kSizeSize = 10;
 
   struct CHeader
   {

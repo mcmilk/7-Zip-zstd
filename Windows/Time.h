@@ -5,7 +5,7 @@
 #ifndef __WINDOWS_TIME_H
 #define __WINDOWS_TIME_H
 
-// #include "Common/Types.h"
+#include "Common/Types.h"
 // #include <windows.h>
 // #include <time.h>
 #include "Windows/Defs.h"
@@ -25,7 +25,12 @@ inline bool FileTimeToDosTime(const FILETIME &fileTime, UINT32 &dosTime)
       ((LPWORD)&dosTime) + 1, (LPWORD)&dosTime));
 }
 
-const UINT64 kUnixTimeStartValue = 116444736000000000;
+const UINT64 kUnixTimeStartValue = 
+      #if ( __GNUC__)
+      116444736000000000LL;
+      #else
+      116444736000000000;
+      #endif
 const UINT32 kNumTimeQuantumsInSecond = 10000000;
 
 inline void UnixTimeToFileTime(long unixTime, FILETIME &fileTime)

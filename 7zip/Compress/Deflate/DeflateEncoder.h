@@ -48,7 +48,7 @@ struct COptimal
   UINT16 BackPrev;
 };
 
-const kNumOpts = 0x1000;
+const int kNumOpts = 0x1000;
 
 class CCoder
 {

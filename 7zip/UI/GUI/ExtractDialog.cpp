@@ -124,9 +124,9 @@ bool CExtractDialog::Init(const CSysString &aFileName)
   return true;
 }
 
-// static const kWildcardsButtonIndex = 2;
+// static const int kWildcardsButtonIndex = 2;
 
-static const kHistorySize = 8;
+static const int kHistorySize = 8;
 
 bool CExtractDialog::OnInit() 
 {

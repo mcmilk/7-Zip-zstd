@@ -65,7 +65,8 @@ static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
   bindInfo.OutStreams.Clear();
   bindInfo.InStreams.Clear();
   bindInfo.BindPairs.Clear();
-  for (int i = 0; i < folder.BindPairs.Size(); i++)
+  int i;
+  for (i = 0; i < folder.BindPairs.Size(); i++)
   {
     NCoderMixer2::CBindPair bindPair;
     bindPair.InIndex = (UINT32)folder.BindPairs[i].InIndex;
@@ -107,7 +108,8 @@ static bool AreBindInfoExEqual(const CBindInfoEx &a1, const CBindInfoEx &a2)
 {
   if (a1.Coders.Size() != a2.Coders.Size())
     return false;
-  for (int i = 0; i < a1.Coders.Size(); i++)
+  int i;
+  for (i = 0; i < a1.Coders.Size(); i++)
     if (!AreCodersEqual(a1.Coders[i], a2.Coders[i]))
       return false;
   if (a1.BindPairs.Size() != a2.BindPairs.Size())
@@ -317,7 +319,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
         return E_FAIL;
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password));
-      UString unicodePassword = password;
+      UString unicodePassword(password);
       RINOK(cryptoSetPassword->CryptoSetPassword(
         (const BYTE *)(const wchar_t *)unicodePassword, 
         unicodePassword.Length() * sizeof(wchar_t)));
@@ -334,7 +336,8 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     CRecordVector<const UINT64 *> unPackSizesPointers;
     packSizesPointers.Reserve(numInStreams);
     unPackSizesPointers.Reserve(numOutStreams);
-    for (UINT32 j = 0; j < numOutStreams; j++, unPackStreamIndex++)
+    UINT32 j;
+    for (j = 0; j < numOutStreams; j++, unPackStreamIndex++)
       unPackSizesPointers.Add(&folderInfo.UnPackSizes[unPackStreamIndex]);
     
     for (j = 0; j < numInStreams; j++, packStreamIndex++)

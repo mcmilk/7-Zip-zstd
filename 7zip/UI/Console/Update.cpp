@@ -222,7 +222,7 @@ HRESULT Compress(
         else
           propVariant = property.Value;
       }
-      CMyComBSTR comBSTR = property.Name;
+      CMyComBSTR comBSTR(property.Name);
       realNames.Add(comBSTR);
       values.push_back(propVariant);
     }

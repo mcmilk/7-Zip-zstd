@@ -87,8 +87,8 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   return outStream->Write(&_usedMemorySize, sizeof(_usedMemorySize), NULL);
 }
 
-const kUsedMemorySizeDefault = (1 << 24);
-const kOrderDefault = 6;
+const UINT32 kUsedMemorySizeDefault = (1 << 24);
+const int kOrderDefault = 6;
 
 CEncoder::CEncoder():
   _usedMemorySize(kUsedMemorySizeDefault),

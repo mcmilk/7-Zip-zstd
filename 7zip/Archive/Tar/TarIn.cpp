@@ -77,7 +77,8 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   tempString[NFileHeader::kNameSize] = '\0';
   item.Name = tempString;
 
-  for (int i = 0; i < item.Name.Length(); i++)
+  int i;
+  for (i = 0; i < item.Name.Length(); i++)
     if (((BYTE)item.Name[i]) < 0x20)
       return S_FALSE;
   item.LinkFlag = header.LinkFlag;
@@ -175,9 +176,16 @@ HRESULT CInArchive::Skeep(UINT64 numBytes)
   return S_OK;
 }
 
+
 HRESULT CInArchive::SkeepDataRecords(UINT64 dataSize)
 {
-  return Skeep((dataSize + 511) & 0xFFFFFFFFFFFFFE00);
+  return Skeep((dataSize + 511) & 
+      #if ( __GNUC__)
+      0xFFFFFFFFFFFFFE00LL
+      #else
+      0xFFFFFFFFFFFFFE00
+      #endif
+      );
 }
 
 }}

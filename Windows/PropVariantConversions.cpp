@@ -37,7 +37,7 @@ CSysString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime)
     return CSysString();
     #endif
 
-  const kBufferSize = 64;
+  const int kBufferSize = 64;
   CSysString stringDate;
   if(!NNational::NTime::MyGetDateFormat(LOCALE_USER_DEFAULT, 
       0, &systemTime, NULL, stringDate))

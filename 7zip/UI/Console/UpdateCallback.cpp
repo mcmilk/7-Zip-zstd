@@ -253,7 +253,7 @@ STDMETHODIMP CUpdateCallbackImp::CryptoGetTextPassword2(INT32 *passwordIsDefined
     }
   }
   *passwordIsDefined = BoolToInt(_passwordIsDefined);
-  CMyComBSTR tempName = _password;
+  CMyComBSTR tempName(_password);
   *password = tempName.Detach();
   return S_OK;
 }

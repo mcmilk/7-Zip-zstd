@@ -12,7 +12,7 @@ namespace NCompress {
 namespace NImplode {
 namespace NHuffman {
 
-static const kNumBitsInLongestCode = 16;
+const int kNumBitsInLongestCode = 16;
 class CDecoderException{};
 
 typedef NStream::NLSBF::CDecoder<CInBuffer> CInBit;

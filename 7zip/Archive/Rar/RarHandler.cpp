@@ -47,7 +47,7 @@ DEFINE_GUID(CLSID_CCompressRar29Decoder,
 namespace NArchive {
 namespace NRar {
 
-const wchar_t *kHostOS[] =
+static const wchar_t *kHostOS[] =
 {
   L"MS DOS",
   L"OS/2",
@@ -57,9 +57,9 @@ const wchar_t *kHostOS[] =
   L"BeOS"
 };
 
-const kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
+static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
-const wchar_t *kUnknownOS = L"Unknown";
+static const wchar_t *kUnknownOS = L"Unknown";
 
 enum // PropID
 {

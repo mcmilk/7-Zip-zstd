@@ -41,7 +41,7 @@ static void FillInPropertyPage(PROPSHEETPAGE* page,
 
 int OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
 {
-  const kNumPages = 2;
+  const int kNumPages = 2;
 
   PROPSHEETPAGE pages[kNumPages];
   

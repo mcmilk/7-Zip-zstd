@@ -64,7 +64,7 @@ const UINT32 kMatchMinLen = 3;
 const UINT32 kMatchMaxLen32 = kNumLenCombinations32 + kMatchMinLen - 1; //256 + 2; test it
 const UINT32 kMatchMaxLen64 = kNumLenCombinations64 + kMatchMinLen - 1; //255 + 2; test it
 
-const kFinalBlockFieldSize = 1;
+const int kFinalBlockFieldSize = 1;
 
 namespace NFinalBlockField
 {
@@ -75,7 +75,7 @@ enum
 };
 }
 
-const kBlockTypeFieldSize = 2;
+const int kBlockTypeFieldSize = 2;
 
 namespace NBlockType
 {

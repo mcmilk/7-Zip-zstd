@@ -51,7 +51,7 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
   if(_stream->Seek(_streamStartPosition, STREAM_SEEK_SET, NULL) != S_OK)
     return false;
 
-  const kMarkerSizeMax = 2 + 2 + kMaxBlockSize + sizeof(UINT32);
+  const int kMarkerSizeMax = 2 + 2 + kMaxBlockSize + sizeof(UINT32);
 
   CByteBuffer byteBuffer;
   static const UINT32 kSearchMarkerBufferSize = 0x10000;

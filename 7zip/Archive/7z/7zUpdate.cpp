@@ -62,6 +62,22 @@ static HRESULT WriteRange(IInStream *inStream,
   return result;
 }
 
+int CUpdateItem::GetExtensionPos() const
+{
+  int slash1Pos = Name.ReverseFind(L'\\');
+  int slash2Pos = Name.ReverseFind(L'/');
+  int slashPos = MyMax(slash1Pos, slash2Pos);
+  int dotPos = Name.ReverseFind(L'.');
+  if (dotPos < 0 || (dotPos < slashPos && slashPos >= 0))
+    return Name.Length();
+  return dotPos + 1;
+}
+
+UString CUpdateItem::GetExtension() const
+{
+  return Name.Mid(GetExtensionPos());
+}
+
 struct CFolderRef
 {
   const CArchiveDatabaseEx *Database;
@@ -437,9 +453,12 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
     bool useAdditionalHeaderStreams, 
     bool compressMainHeader,
     IArchiveUpdateCallback *updateCallback,
-    bool solid,
+    UINT64 numSolidFiles, UINT64 numSolidBytes, bool solidExtension,
     bool removeSfxBlock)
 {
+  if (numSolidFiles == 0)
+    numSolidFiles = 1;
+
   UINT64 startBlockSize = inArchiveInfo != 0 ? 
       inArchiveInfo->StartPosition: 0;
   if (startBlockSize > 0 && !removeSfxBlock)
@@ -559,7 +578,8 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
     
     const CFolder &folder = database.Folders[folderIndex];
     UINT32 startIndex = database.FolderStartPackStreamIndex[folderIndex];
-    for (int j = 0; j < folder.PackStreams.Size(); j++)
+    int j;
+    for (j = 0; j < folder.PackStreams.Size(); j++)
     {
       newDatabase.PackSizes.Add(database.PackSizes[startIndex + j]);
       // newDatabase.PackCRCsDefined.Add(database.PackCRCsDefined[startIndex + j]);
@@ -614,7 +634,7 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
     refItems.Reserve(numFiles);
     for (i = 0; i < numFiles; i++)
       refItems.Add(CRefItem(group.Indices[i], 
-          updateItems[group.Indices[i]], solid));
+          updateItems[group.Indices[i]], numSolidFiles > 1));
     qsort(&refItems.Front(), refItems.Size(), sizeof(refItems[0]), CompareUpdateItems);
     
     CRecordVector<UINT32> indices;
@@ -638,12 +658,35 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
     
     CEncoder encoder(group.Method);
 
-    if (solid)
+    for (i = 0; i < numFiles;)
     {
+      UINT64 totalSize = 0;
+      int numSubFiles;
+      UString prevExtension;
+      for (numSubFiles = 0; i + numSubFiles < numFiles && 
+          numSubFiles < numSolidFiles; numSubFiles++)
+      {
+        const CUpdateItem &updateItem = updateItems[indices[i + numSubFiles]];
+        totalSize += updateItem.Size;
+        if (totalSize > numSolidBytes)
+          break;
+        if (solidExtension)
+        {
+          UString ext = updateItem.GetExtension();
+          if (numSubFiles == 0)
+            prevExtension = ext;
+          else
+            if (ext.CollateNoCase(prevExtension) != 0)
+              break;
+        }
+      }
+      if (numSubFiles < 1)
+        numSubFiles = 1;
+
       CFolderInStream *inStreamSpec = new CFolderInStream;
       CMyComPtr<ISequentialInStream> solidInStream(inStreamSpec);
-      inStreamSpec->Init(updateCallback, &indices.Front(), numFiles);
-
+      inStreamSpec->Init(updateCallback, &indices[i], numSubFiles);
+      
       CFolder folderItem;
       CLocalProgress *localProgressSpec = new CLocalProgress;
       CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
@@ -661,11 +704,12 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
       newDatabase.Folders.Add(folderItem);
       
       UINT32 numUnPackStreams = 0;
-      for (i = 0; i < numFiles; i++)
+      for (int subIndex = 0; subIndex < numSubFiles; subIndex++)
       {
-        CFileItem &file = newDatabase.Files[startFileIndexInDatabase + i];
-        file.FileCRC = inStreamSpec->CRCs[i];
-        file.UnPackSize = inStreamSpec->Sizes[i];
+        CFileItem &file = newDatabase.Files[
+          startFileIndexInDatabase + i + subIndex];
+        file.FileCRC = inStreamSpec->CRCs[subIndex];
+        file.UnPackSize = inStreamSpec->Sizes[subIndex];
         if (file.UnPackSize != 0)
         {
           file.FileCRCIsDefined = true;
@@ -680,51 +724,7 @@ HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
         }
       }
       newDatabase.NumUnPackStreamsVector.Add(numUnPackStreams);
-    }
-    else // non-solid
-    {
-      for (i = 0; i < numFiles; i++)
-      {
-        CMyComPtr<IInStream> fileInStream;
-        RINOK(updateCallback->GetStream(indices[i], &fileInStream));
-        CInStreamWithCRC *inStreamSpec = new CInStreamWithCRC;
-        CMyComPtr<IInStream> inStream(inStreamSpec);
-        inStreamSpec->Init(fileInStream);
-
-        CFolder folderItem;
-        CLocalProgress *localProgressSpec = new CLocalProgress;
-        CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-        localProgressSpec->Init(updateCallback, true);
-        CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
-        CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-        localCompressProgressSpec->Init(localProgress, &complexity, NULL);
-        
-        RINOK(encoder.Encode(inStream, NULL, folderItem, 
-          archive.Stream, newDatabase.PackSizes, compressProgress));
-        // for()
-        // newDatabase.PackCRCsDefined.Add(false);
-        // newDatabase.PackCRCs.Add(0);
-        
-        newDatabase.Folders.Add(folderItem);
-        
-        CFileItem &file = newDatabase.Files[startFileIndexInDatabase + i];
-        file.UnPackSize = inStreamSpec->GetSize();
-        file.FileCRC = inStreamSpec->GetCRC();
-        if (file.UnPackSize != 0)
-        {
-          file.FileCRCIsDefined = true;
-          file.HasStream = true;
-          complexity += file.UnPackSize;
-          newDatabase.NumUnPackStreamsVector.Add(1);
-        }
-        else
-        {
-          file.FileCRCIsDefined = false;
-          file.HasStream = false;
-          newDatabase.NumUnPackStreamsVector.Add(0);
-        }
-        RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
-      }
+      i += numSubFiles;
     }
   }
   if (newDatabase.Files.Size() != updateItems.Size())

@@ -80,6 +80,9 @@ public:
 
   // ISetProperties
   STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
+  
+  HRESULT SetSolidSettings(const UString &s);
+  HRESULT SetSolidSettings(const PROPVARIANT &value);
   #endif
 
   CHandler();
@@ -93,8 +96,10 @@ private:
   CObjectVector<COneMethodInfo> _methods;
   CRecordVector<CBind> _binds;
   bool _removeSfxBlock;
-  bool _solidIsSpecified;
-  bool _solid;
+  UINT64 _numSolidFiles; 
+  UINT64 _numSolidBytes;
+  bool _solidExtension;
+
   bool _compressHeaders;
   bool _compressHeadersFull;
   bool _encryptHeaders;
@@ -131,13 +136,38 @@ private:
 
   #endif
 
+  #ifndef EXTRACT_ONLY
+
+  UINT64 GetUINT64MAX() const
+  {
+    return
+        #if (__GNUC__)
+        0xFFFFFFFFFFFFFFFFLL
+        #else
+        0xFFFFFFFFFFFFFFFF
+        #endif
+        ;
+  }
+  void InitSolidFiles() { _numSolidFiles = GetUINT64MAX(); }
+  void InitSolidSize()  { _numSolidBytes = GetUINT64MAX(); }
+  void InitSolid()
+  {
+    InitSolidFiles();
+    InitSolidSize();
+    _solidExtension = false;
+  }
+  /*
+  void InitSolidPart()
+  {
+    if (_numSolidFiles <= 1)
+      InitSolidFiles();
+  }
+  */
 
   void Init()
   {
-    #ifndef EXTRACT_ONLY
     _removeSfxBlock = false;
-    _solid = true;
-    _solidIsSpecified = false;
+    InitSolid();
     _compressHeaders = true;
     _compressHeadersFull = true;
     _encryptHeaders = false;
@@ -148,8 +178,8 @@ private:
     _defaultFastBytes = 32;
     _defaultMatchFinder = L"BT4";
     _autoFilter = true;
-    #endif
   }
+  #endif
 };
 
 }}

@@ -47,7 +47,7 @@ const wchar_t *kHostOS[] =
 };
 
 
-const kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
+const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 const wchar_t *kUnknownOS = L"Unknown";
 

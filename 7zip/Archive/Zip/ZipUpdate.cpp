@@ -189,7 +189,7 @@ static HRESULT Update2(COutArchive &archive,
   complexity += updateItems.Size();
   complexity += updateItems.Size();
 
-  if (complexity > _UI32_MAX)
+  if (complexity > 0xFFFFFFFF)
     return E_NOTIMPL;
 
   if (commentRangeAssigned)

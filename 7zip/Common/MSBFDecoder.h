@@ -9,12 +9,12 @@
 namespace NStream {
 namespace NMSBF {
 
-const kNumBigValueBits = 8 * 4;
+const int kNumBigValueBits = 8 * 4;
 
-const kNumValueBytes = 3;
-const kNumValueBits = 8  * kNumValueBytes;
+const int kNumValueBytes = 3;
+const int kNumValueBits = 8  * kNumValueBytes;
 
-const kMask = (1 << kNumValueBits) - 1;
+const UINT32 kMask = (1 << kNumValueBits) - 1;
 
 template<class TInByte>
 class CDecoder

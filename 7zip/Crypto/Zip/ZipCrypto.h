@@ -8,7 +8,7 @@
 namespace NCrypto {
 namespace NZip {
 
-const kHeaderSize = 12;
+const int kHeaderSize = 12;
 class CCipher
 {
   UINT32 Keys[3];

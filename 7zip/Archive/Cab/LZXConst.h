@@ -12,7 +12,7 @@ namespace NLZX {
 
 namespace NBlockType
 {
-  const kNumBits = 3;
+  const int kNumBits = 3;
   enum EEnum
   {
     kVerbatim = 1,
@@ -21,27 +21,27 @@ namespace NBlockType
   };
 }
 
-const kUncompressedBlockSizeNumBits = 24;
+const int kUncompressedBlockSizeNumBits = 24;
 
 const UINT32 kLevelTableSize = 20;
 
 const UINT32 kNumBitsForPreTreeLevel = 4;
 
-const kLevelSymbolZeros = 17;
-const kLevelSymbolZerosBig = 18;
-const kLevelSymbolSame = 19;
+const int kLevelSymbolZeros = 17;
+const int kLevelSymbolZerosBig = 18;
+const int kLevelSymbolSame = 19;
 
-const kLevelSymbolZerosStartValue = 4;
-const kLevelSymbolZerosNumBits = 4;
+const int kLevelSymbolZerosStartValue = 4;
+const int kLevelSymbolZerosNumBits = 4;
 
-const kLevelSymbolZerosBigStartValue = kLevelSymbolZerosStartValue + 
+const int kLevelSymbolZerosBigStartValue = kLevelSymbolZerosStartValue + 
   (1 << kLevelSymbolZerosNumBits);
-const kLevelSymbolZerosBigNumBits = 5;
+const int kLevelSymbolZerosBigNumBits = 5;
 
-const kNumBitsForAlignLevel = 3;
+const int kNumBitsForAlignLevel = 3;
 
-const kLevelSymbolSameNumBits = 1;
-const kLevelSymbolSameStartValue = 4;
+const int kLevelSymbolSameNumBits = 1;
+const int kLevelSymbolSameStartValue = 4;
   
 // const UINT32 kMainTableSize = 256 + kNumPosLenSlots + 1;
 

@@ -15,10 +15,10 @@ namespace NTar {
 
 namespace NFileHeader
 {
-  const kRecordSize = 512;
-  const kNameSize = 100;
-  const kUserNameSize = 32;
-  const kGroupNameSize = 32;
+  const int kRecordSize = 512;
+  const int kNameSize = 100;
+  const int kUserNameSize = 32;
+  const int kGroupNameSize = 32;
 
   struct CHeader
   {
@@ -50,22 +50,22 @@ namespace NFileHeader
 
   namespace NMode
   {
-    const kSetUID   = 04000;  // Set UID on execution
-    const kSetGID   = 02000;  // Set GID on execution 
-    const kSaveText = 01000;  // Save text (sticky bit)
+    const int kSetUID   = 04000;  // Set UID on execution
+    const int kSetGID   = 02000;  // Set GID on execution 
+    const int kSaveText = 01000;  // Save text (sticky bit)
   }
 
   namespace NFilePermissions
   {
-    const kUserRead     = 00400;  // read by owner
-    const kUserWrite    = 00200;  // write by owner
-    const kUserExecute  = 00100;  // execute/search by owner
-    const kGroupRead    = 00040;  // read by group
-    const kGroupWrite   = 00020;  // write by group
-    const kGroupExecute = 00010;  // execute/search by group
-    const kOtherRead    = 00004;  // read by other
-    const kOtherWrite   = 00002;  // write by other
-    const kOtherExecute = 00001;  // execute/search by other
+    const int kUserRead     = 00400;  // read by owner
+    const int kUserWrite    = 00200;  // write by owner
+    const int kUserExecute  = 00100;  // execute/search by owner
+    const int kGroupRead    = 00040;  // read by group
+    const int kGroupWrite   = 00020;  // write by group
+    const int kGroupExecute = 00010;  // execute/search by group
+    const int kOtherRead    = 00004;  // read by other
+    const int kOtherWrite   = 00002;  // write by other
+    const int kOtherExecute = 00001;  // execute/search by other
   }
 
 

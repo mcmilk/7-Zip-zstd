@@ -26,7 +26,7 @@ DEFINE_GUID(CLSID_CCrypto_AES256_Decoder,
 namespace NCrypto {
 namespace NSevenZ {
 
-const kKeySize = 32;
+const int kKeySize = 32;
 
 class CKeyInfo
 {

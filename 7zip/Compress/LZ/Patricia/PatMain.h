@@ -1,7 +1,7 @@
 // PatMain.h
 
-#include "../../../Common/Defs.h"
-#include "../../../Common/NewHandler.h"
+#include "../../../../Common/Defs.h"
+#include "../../../../Common/NewHandler.h"
 
 namespace PAT_NAMESPACE {
 
@@ -90,7 +90,7 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     UINT32 aMatchMaxLen, UINT32 aKeepAddBufferAfter)
 {
   FreeMemory();
-  const kNumBitsInNumSameBits = sizeof(CSameBitsType) * 8;
+  const int kNumBitsInNumSameBits = sizeof(CSameBitsType) * 8;
   if (kNumBitsInNumSameBits < 32 && ((aMatchMaxLen * MY_BYTE_SIZE) > (1 << kNumBitsInNumSameBits)))
     return E_INVALIDARG;
 
@@ -99,7 +99,7 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
   aWindowReservSize += kAlignMask;
   aWindowReservSize &= ~(kAlignMask);
 
-  const kMinReservSize = (1 << 19);
+  const UINT32 kMinReservSize = (1 << 19);
   if (aWindowReservSize < kMinReservSize)
     aWindowReservSize = kMinReservSize;
   aWindowReservSize += 256;
@@ -129,7 +129,7 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     
     #endif
     
-    const kMaxNumNodes = UINT32(1) << (sizeof(CIndex) * 8 - 1);
+    const UINT32 kMaxNumNodes = UINT32(1) << (sizeof(CIndex) * 8 - 1);
     if (m_NumNodes + 32 > kMaxNumNodes)
       return E_INVALIDARG;
 
@@ -543,7 +543,7 @@ STDMETHODIMP_(void) CPatricia::DummyLongestMatch()
 
 typedef BYTE CRemoveDataWord;
 
-static const kSizeRemoveDataWordInBits = MY_BYTE_SIZE * sizeof(CRemoveDataWord);
+static const int kSizeRemoveDataWordInBits = MY_BYTE_SIZE * sizeof(CRemoveDataWord);
 
 #ifndef __AUTO_REMOVE
 
@@ -639,7 +639,8 @@ void CPatricia::RemoveMatch()
 
   UINT32 aNumNodes = 0, aNumMatches = 0;
 
-  for (UINT32 i = 0; i < kNumSubNodes; i++)
+  UINT32 i;
+  for (i = 0; i < kNumSubNodes; i++)
   {
     UINT32 aNodeIndex = aNode->Descendants[i].NodePointer;
     if (aNodeIndex < kDescendantEmptyValue)

@@ -234,6 +234,78 @@ SOURCE=..\LZ\Patricia\Pat4H.h
 SOURCE=..\LZ\Patricia\PatMain.h
 # End Source File
 # End Group
+# Begin Group "BT"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree3.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree4b.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTreeMain.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTreeMF.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTreeMFMain.h
+# End Source File
+# End Group
+# Begin Group "HC"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HC2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HC3.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HC4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HC4b.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HCMain.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HCMF.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\HashChain\HCMFMain.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\LZ\IMatchFinder.h

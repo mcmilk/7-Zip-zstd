@@ -14,7 +14,7 @@ namespace NGZip {
 class CItem
 {
 private:
-  bool TestFlag(BYTE aFlag) const { return ((Flags & aFlag) != 0); }
+  bool TestFlag(BYTE flag) const { return ((Flags & flag) != 0); }
 public:
   BYTE CompressionMethod;
   BYTE Flags;

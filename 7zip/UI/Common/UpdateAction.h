@@ -9,7 +9,7 @@ namespace NUpdateArchive {
 
   namespace NPairState 
   {
-    const kNumValues = 7;
+    const int kNumValues = 7;
     enum EEnum
     {
       kNotMasked = 0,

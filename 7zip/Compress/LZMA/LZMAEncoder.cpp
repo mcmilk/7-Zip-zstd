@@ -181,7 +181,7 @@ HRESULT CEncoder::Create()
   return S_OK;
 }
 
-inline AreStringsEqual(const wchar_t *s, const wchar_t *testString)
+static inline bool AreStringsEqual(const wchar_t *s, const wchar_t *testString)
 {
   while (true)
   {
@@ -231,8 +231,9 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
           return E_INVALIDARG;
         int matchFinderIndexPrev = _matchFinderIndex;
         _matchFinderIndex = 0;
-        const kNumMFs = sizeof(kMatchFinderIDs) / sizeof(kMatchFinderIDs[0]);
-        for (int m = 0; m < kNumMFs; m++)
+        const int kNumMFs = sizeof(kMatchFinderIDs) / sizeof(kMatchFinderIDs[0]);
+        int m;
+        for (m = 0; m < kNumMFs; m++)
         {
           if (AreStringsEqual(kMatchFinderIDs[m], prop.bstrVal))
           {
@@ -861,7 +862,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
   }
 }
 
-static bool inline ChangePair(UINT32 smallDist, UINT32 bigDist)
+static inline bool ChangePair(UINT32 smallDist, UINT32 bigDist)
 {
   const int kDif = 7;
   return (smallDist < (UINT32(1) << (32-kDif)) && bigDist >= (smallDist << kDif));

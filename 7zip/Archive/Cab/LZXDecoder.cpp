@@ -14,7 +14,7 @@ namespace NLZX {
 
 static const UINT32 kHistorySize = (1 << 21);
 
-const kMainTableSize = 256 + kNumPosSlotLenSlotSymbols;
+const int kMainTableSize = 256 + kNumPosSlotLenSlotSymbols;
 
 CDecoder::CDecoder():
   m_MainDecoder(kMainTableSize),

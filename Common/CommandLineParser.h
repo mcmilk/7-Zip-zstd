@@ -45,7 +45,7 @@ class CParser
   CSwitchResult *_switches;
   bool ParseString(const UString &s, const CSwitchForm *switchForms); 
 public:
-  UStringVector _nonSwitchStrings;
+  UStringVector NonSwitchStrings;
   CParser(int numSwitches);
   ~CParser();
   void ParseStrings(const CSwitchForm *switchForms, 

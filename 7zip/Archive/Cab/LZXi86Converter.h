@@ -12,7 +12,7 @@ namespace NArchive {
 namespace NCab {
 namespace NLZX {
 
-const kUncompressedBlockSize = 1 << 15;
+const int kUncompressedBlockSize = 1 << 15;
 
 class Ci86TranslationOutStream: 
   public ISequentialOutStream,

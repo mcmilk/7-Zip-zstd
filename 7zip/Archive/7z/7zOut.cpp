@@ -182,7 +182,8 @@ HRESULT COutArchive::WriteHashDigests(
     const CRecordVector<UINT32> &digests)
 {
   int numDefined = 0;
-  for(int i = 0; i < digestsDefined.Size(); i++)
+  int i;
+  for(i = 0; i < digestsDefined.Size(); i++)
     if (digestsDefined[i])
       numDefined++;
   if (numDefined == 0)
@@ -251,7 +252,8 @@ HRESULT COutArchive::WriteUnPackInfo(
   }
   
   RINOK(WriteByte2(NID::kCodersUnPackSize));
-  for(int i = 0; i < folders.Size(); i++)
+  int i;
+  for(i = 0; i < folders.Size(); i++)
   {
     const CFolder &folder = folders[i];
     for (int j = 0; j < folder.UnPackSizes.Size(); j++)
@@ -280,7 +282,8 @@ HRESULT COutArchive::WriteSubStreamsInfo(
 {
   RINOK(WriteByte2(NID::kSubStreamsInfo));
 
-  for(int i = 0; i < numUnPackStreamsInFolders.Size(); i++)
+  int i;
+  for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
   {
     if (numUnPackStreamsInFolders[i] != 1)
     {
@@ -337,7 +340,8 @@ HRESULT COutArchive::WriteTime(
   boolVector.Reserve(files.Size());
   bool thereAreDefined = false;
   bool allDefined = true;
-  for(int i = 0; i < files.Size(); i++)
+  int i;
+  for(i = 0; i < files.Size(); i++)
   {
     const CFileItem &item = files[i];
     bool defined;
@@ -457,7 +461,8 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
     _mainMode = false;
     _countMode = true;
     _countSize = 0;
-    for(int i = 0; i < database.Folders.Size(); i++)
+    int i;
+    for(i = 0; i < database.Folders.Size(); i++)
     {
       RINOK(WriteFolderHeader(database.Folders[i]));
     }
@@ -488,7 +493,8 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   bool externalNames = (compressHeaders && database.Files.Size() > 8);
   {
     UINT64 namesDataSize = 0;
-    for(int i = 0; i < database.Files.Size(); i++)
+    int i;
+    for(i = 0; i < database.Files.Size(); i++)
       namesDataSize += (database.Files[i].Name.Length() + 1) * sizeof(wchar_t);
     namesData.SetCapacity(namesDataSize);
     UINT32 pos = 0;
@@ -514,7 +520,8 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   CBoolVector attributesBoolVector;
   attributesBoolVector.Reserve(database.Files.Size());
   UINT32 numDefinedAttributes = 0;
-  for(int i = 0; i < database.Files.Size(); i++)
+  int i;
+  for(i = 0; i < database.Files.Size(); i++)
   {
     bool defined = database.Files[i].AreAttributesDefined;
     attributesBoolVector.Add(defined);

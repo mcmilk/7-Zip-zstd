@@ -48,7 +48,7 @@ using namespace NFile;
 using namespace NName;
 using namespace NDirectory;
 
-static const kHistorySize = 8;
+static const int kHistorySize = 8;
 
 static UINT32 g_MethodMap[] = { 0, /*1, */ 3, 5, 7, 9 }; 
 
@@ -109,9 +109,8 @@ bool CCompressDialog::OnInit()
   {
     const CArchiverInfo &archiverInfo = m_ArchiverInfoList[i];
     m_Format.AddString(GetSystemString(archiverInfo.Name));
-    if (m_RegistryInfo.LastClassIDDefined &&
-        archiverInfo.Name.CollateNoCase(
-        m_RegistryInfo.LastArchiveType) == 0)
+    if (archiverInfo.Name.CollateNoCase(
+        m_RegistryInfo.ArchiveType) == 0)
       m_Info.ArchiverInfoIndex = i;
   }
   m_Format.SetCurSel(m_Info.ArchiverInfoIndex);
@@ -157,13 +156,13 @@ bool CCompressDialog::OnInit()
   m_Method.AddString(LangLoadString(IDS_METHOD_MAXIMUM, 0x02000D83));
   m_Method.AddString(LangLoadString(IDS_METHOD_ULTRA, 0x02000D86));
   
-  UINT32 method = 5;
-  if (m_RegistryInfo.MethodDefined && m_RegistryInfo.Method <= 9)
-    method = m_RegistryInfo.Method;
+  UINT32 level = 5;
+  if (m_RegistryInfo.Level <= 9)
+    level = m_RegistryInfo.Level;
   {
     int methodIndex = 0;
     for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
-      if (method >= g_MethodMap[i])
+      if (level >= g_MethodMap[i])
       {
         methodIndex = i;
         break;
@@ -315,7 +314,7 @@ void CCompressDialog::OnButtonSFX()
 
 void CCompressDialog::OnButtonSetArchive() 
 {
-  const kBufferSize = MAX_PATH * 2;
+  const int kBufferSize = MAX_PATH * 2;
   TCHAR buffer[kBufferSize];
   CSysString fileName;
   m_ArchivePath.GetText(fileName);
@@ -337,7 +336,7 @@ void CCompressDialog::OnButtonSetArchive()
   info.hInstance = 0; 
   
 
-  const kFilterBufferSize = MAX_PATH;
+  const int kFilterBufferSize = MAX_PATH;
   TCHAR filterBuffer[kFilterBufferSize];
   CDoubleZeroStringList doubleZeroStringList;
   // doubleZeroStringList.Add(TEXT("Zip Files (*.zip)"));
@@ -469,9 +468,8 @@ void CCompressDialog::OnOK()
   ////////////////////
   // Method
 
-  m_RegistryInfo.SetMethod(m_Info.Method);
-  m_RegistryInfo.SetLastArchiveType(m_ArchiverInfoList[
-      m_Info.ArchiverInfoIndex].Name);
+  m_RegistryInfo.Level = m_Info.Method;
+  m_RegistryInfo.ArchiveType = m_ArchiverInfoList[m_Info.ArchiverInfoIndex].Name;
 
   m_RegistryInfo.ShowPassword = (IsButtonChecked(
       IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED);

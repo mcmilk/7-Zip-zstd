@@ -8,7 +8,7 @@
 namespace NCrypto {
 namespace NZip {
 
-const kBufferSize = 1 << 17;
+const int kBufferSize = 1 << 17;
 
 CBuffer2::CBuffer2():
   _buffer(0)

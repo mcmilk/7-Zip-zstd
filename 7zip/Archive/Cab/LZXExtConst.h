@@ -19,10 +19,10 @@ const UINT32 kAlignTableSize = 1 << kNumAlignBits;
 
 const UINT32 kNumHuffmanBits = 16;
 
-const kNumPosSlotSymbols = 50;
-const kNumPosSlotLenSlotSymbols = kNumPosSlotSymbols * kNumLenSlots;
+const int kNumPosSlotSymbols = 50;
+const int kNumPosSlotLenSlotSymbols = kNumPosSlotSymbols * kNumLenSlots;
 
-const kMaxTableSize = 256 + kNumPosSlotLenSlotSymbols;
+const int kMaxTableSize = 256 + kNumPosSlotLenSlotSymbols;
 
 
 

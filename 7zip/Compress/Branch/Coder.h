@@ -10,7 +10,7 @@
 
 #include "../../ICoder.h"
 
-const kBufferSize = 1 << 17;
+const int kBufferSize = 1 << 17;
 
 class CDataBuffer
 {

@@ -38,9 +38,9 @@ STATPROPSTG kProperties[] =
   { NULL, kpidBlock, VT_UI4}
 };
 
-static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
+static const int kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
 
-const wchar_t *kMethods[] = 
+static const wchar_t *kMethods[] = 
 {
   L"None",
   L"MSZip",
@@ -48,8 +48,8 @@ const wchar_t *kMethods[] =
   L"LZX"
 };
 
-const kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
-const wchar_t *kUnknownMethod = L"Unknown";
+static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
+static const wchar_t *kUnknownMethod = L"Unknown";
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {

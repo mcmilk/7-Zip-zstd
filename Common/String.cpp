@@ -14,7 +14,7 @@ wchar_t MyCharUpper(wchar_t c)
   wchar_t *res = CharUpperW((LPWSTR)c);
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return (wchar_t)res;
-  const kBufferSize = 4;
+  const int kBufferSize = 4;
   char s[kBufferSize];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
   ::CharUpperA(s);
@@ -29,7 +29,7 @@ wchar_t MyCharLower(wchar_t c)
   wchar_t *res = CharLowerW((LPWSTR)c);
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return (wchar_t)res;
-  const kBufferSize = 4;
+  const int kBufferSize = 4;
   char s[kBufferSize];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
   ::CharLowerA(s);

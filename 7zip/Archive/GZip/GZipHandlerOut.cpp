@@ -20,8 +20,6 @@ using namespace NTime;
 namespace NArchive {
 namespace NGZip {
 
-static const kNumItemInArchive = 1;
-
 STDMETHODIMP CHandler::GetFileTimeType(UINT32 *timeType)
 {
   *timeType = NFileTimeType::kUnix;
@@ -181,7 +179,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       }
       else
         return E_INVALIDARG;
-      if (level < 8)
+      if (level < 7)
       {
         InitMethodProperties();
       }

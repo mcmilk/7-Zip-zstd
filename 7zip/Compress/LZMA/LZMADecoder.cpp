@@ -12,7 +12,7 @@
 
 ofstream ofs("res.dat");
 
-const kNumCounters = 3;
+const int kNumCounters = 3;
 UINT32 g_Counter[kNumCounters];
 class C1
 {

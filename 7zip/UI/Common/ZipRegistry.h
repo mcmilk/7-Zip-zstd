@@ -50,11 +50,9 @@ namespace NCompression {
   struct CInfo
   {
     CSysStringVector HistoryArchives;
-    bool MethodDefined;
-    UINT32 Method;
-    bool LastClassIDDefined;
-    // CLSID LastClassID;
-    UString LastArchiveType;
+    // bool LevelIsDefined;
+    UINT32 Level;
+    UString ArchiveType;
 
     bool Solid;
     bool MultiThread;
@@ -62,16 +60,7 @@ namespace NCompression {
 
     bool ShowPassword;
     bool EncryptHeaders;
-
-    void SetMethod(BYTE method) {Method = method; MethodDefined = true; }
-    void SetLastArchiveType(const UString &lastArchiveType) 
-    { 
-      LastArchiveType = lastArchiveType; 
-      LastClassIDDefined = true; 
-    }
-
   };
-
 }
 
 namespace NWorkDir{

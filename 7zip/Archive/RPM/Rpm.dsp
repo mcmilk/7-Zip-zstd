@@ -149,6 +149,18 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\Rpm.ico

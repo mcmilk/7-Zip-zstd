@@ -194,7 +194,7 @@ bool ConvertProperty(PROPVARIANT srcProp, VARTYPE varType,
   return false;
 }
     
-const kNumNameToPropIDItems = sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]);
+const int kNumNameToPropIDItems = sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]);
 
 int FindPropIdFromStringName(const UString &name)
 {
@@ -623,11 +623,12 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
       _level != 0 && _autoFilter, // useFilters
       _level >= 8, // maxFilter
       useAdditionalHeaderStreams, compressMainHeader,
-      updateCallback, _solid, _removeSfxBlock);
+      updateCallback, _numSolidFiles, _numSolidBytes, _solidExtension,
+      _removeSfxBlock);
   COM_TRY_END
 }
 
-static const kMaxNumberOfDigitsInInputNumber = 9;
+static const int kMaxNumberOfDigitsInInputNumber = 9;
 
 static int ParseStringToUINT32(const UString &srcString, UINT32 &number)
 {
@@ -644,7 +645,7 @@ static int ParseStringToUINT32(const UString &srcString, UINT32 &number)
     number = ConvertStringToUINT64(numberString, NULL);
   return i;
 }
-static const kLogarithmicSizeLimit = 32;
+static const int kLogarithmicSizeLimit = 32;
 
 static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
@@ -890,6 +891,75 @@ HRESULT CHandler::SetParams(COneMethodInfo &oneMethodInfo, const UString &srcStr
   return S_OK;
 }
 
+HRESULT CHandler::SetSolidSettings(const UString &s)
+{
+  UString s2 = s;
+  s2.MakeUpper();
+  if (s2.IsEmpty() || s2.Compare(L"ON") == 0)
+  {
+    InitSolid();
+    return S_OK;
+  }
+  if (s2.Compare(L"OFF") == 0)
+  {
+    _numSolidFiles = 1;
+    return S_OK;
+  }
+  for (int i = 0; i < s2.Length();)
+  {
+    const wchar_t *start = ((const wchar_t *)s2) + i;
+    const wchar_t *end;
+    UINT64 v = ConvertStringToUINT64(start, &end);
+    if (start == end)
+    {
+      if (s2[i++] != 'E')
+        return E_INVALIDARG;
+      _solidExtension = true;
+      continue;
+    }
+    i += end - start;
+    if (i == s2.Length())
+      return E_INVALIDARG;
+    wchar_t c = s2[i++];
+    switch(c)
+    {
+      case 'F':
+        if (v < 1)
+          v = 1;
+        _numSolidFiles = v;
+        break;
+      case 'B':
+        _numSolidBytes = v;
+        break;
+      case 'K':
+        _numSolidBytes = (v << 10);
+        break;
+      case 'M':
+        _numSolidBytes = (v << 20);
+        break;
+      case 'G':
+        _numSolidBytes = (v << 30);
+        break;
+      default:
+        return E_INVALIDARG;
+    }
+  }
+  return S_OK;
+}
+
+HRESULT CHandler::SetSolidSettings(const PROPVARIANT &value)
+{
+  switch(value.vt)
+  {
+    case VT_EMPTY:
+      InitSolid();
+      return S_OK;
+    case VT_BSTR:
+      return SetSolidSettings(value.bstrVal);
+    default:
+      return E_INVALIDARG;
+  }
+}
 
 STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *values, INT32 numProperties)
 {
@@ -970,6 +1040,20 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       continue;
     }
 
+    if (name[0] == L'S')
+    {
+      name.Delete(0);
+      if (name.IsEmpty())
+      {
+        RINOK(SetSolidSettings(value));
+      }
+      else
+      {
+        RINOK(SetSolidSettings(name));
+      }
+      continue;
+    }
+    
       
     UINT32 number;
     int index = ParseStringToUINT32(name, number);
@@ -981,13 +1065,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         RINOK(SetBoolProperty(_removeSfxBlock, value));
         continue;
       }
-      if (name.CompareNoCase(L"S") == 0)
-      {
-        RINOK(SetBoolProperty(_solid, value));
-        _solidIsSpecified = true;
-        continue;
-      }
-      else if (name.CompareNoCase(L"F") == 0)
+      if (name.CompareNoCase(L"F") == 0)
       {
         RINOK(SetBoolProperty(_autoFilter, value));
         continue;

@@ -22,7 +22,7 @@ using namespace NWindows;
 static const UINT_PTR kTimerID = 1;
 static const UINT kTimerElapse = 1000;
 
-// static const kCreateFolderID = 101;
+// static const int kCreateFolderID = 101;
 
 // static const UINT kFileChangeNotifyMessage = WM_APP;
 

@@ -402,7 +402,8 @@ HRESULT CInArchive::ReadUnPackInfo(
 
   RINOK(WaitAttribute(NID::kCodersUnPackSize));
 
-  for(UINT32 i = 0; i < numFolders; i++)
+  UINT32 i;
+  for(i = 0; i < numFolders; i++)
   {
     CFolder &folder = folders[i];
     UINT32 numOutStreams = (UINT32)folder.GetNumOutStreams();
@@ -472,7 +473,8 @@ HRESULT CInArchive::ReadSubStreamsInfo(
     for(int i = 0; i < folders.Size(); i++)
       numUnPackStreamsInFolders.Add(1);
 
-  for(int i = 0; i < numUnPackStreamsInFolders.Size(); i++)
+  int i;
+  for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
   {
     UINT64 sum = 0;
     for (UINT64 j = 1; j < numUnPackStreamsInFolders[i]; j++)
@@ -884,7 +886,8 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   UINT64 numFiles;
   RINOK(ReadNumber(numFiles));
   database.Files.Reserve((size_t)numFiles);
-  for(UINT64 i = 0; i < numFiles; i++)
+  UINT64 i;
+  for(i = 0; i < numFiles; i++)
     database.Files.Add(CFileItem());
 
   // int sizePrev = -1;

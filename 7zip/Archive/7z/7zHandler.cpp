@@ -20,7 +20,9 @@ namespace N7z {
 
 CHandler::CHandler()
 {
+  #ifndef EXTRACT_ONLY
   Init();
+  #endif
   #ifndef EXCLUDE_COM
   LoadMethodMap();
   #endif

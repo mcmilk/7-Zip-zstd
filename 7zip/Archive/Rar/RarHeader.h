@@ -14,10 +14,10 @@ namespace NArchive{
 namespace NRar{
 namespace NHeader{
 
-const kMarkerSize = 7;
+const int kMarkerSize = 7;
 extern BYTE kMarker[kMarkerSize];
   
-const kArchiveSolid = 0x1;
+const int kArchiveSolid = 0x1;
 
 namespace NBlockType
 {
@@ -59,31 +59,31 @@ namespace NArchive
     UINT16 GetRealCRC() const;
   };
 
-  const kBlockHeadersAreEncrypted = 0x80;
+  const int kBlockHeadersAreEncrypted = 0x80;
 }
 
 namespace NFile
 {
-  const kSplitBefore = 1 << 0;
-  const kSplitAfter  = 1 << 1;
-  const kEncrypted   = 1 << 2;
-  const kComment     = 1 << 3;
-  const kSolid       = 1 << 4;
+  const int kSplitBefore = 1 << 0;
+  const int kSplitAfter  = 1 << 1;
+  const int kEncrypted   = 1 << 2;
+  const int kComment     = 1 << 3;
+  const int kSolid       = 1 << 4;
   
-  const kDictBitStart     = 5;
-  const kNumDictBits  = 3;
-  const kDictMask         = (1 << kNumDictBits) - 1;
-  const kDictDirectoryValue  = 0x7;
+  const int kDictBitStart     = 5;
+  const int kNumDictBits  = 3;
+  const int kDictMask         = (1 << kNumDictBits) - 1;
+  const int kDictDirectoryValue  = 0x7;
   
-  const kSize64Bits    = 1 << 8;
-  const kUnicodeName   = 1 << 9;
-  const kSalt          = 1 << 10;
-  const kOldVersion    = 1 << 11;
-  const kExtTime       = 1 << 12;
-  // const kExtFlags      = 1 << 13;
-  // const kSkipIfUnknown = 1 << 14;
+  const int kSize64Bits    = 1 << 8;
+  const int kUnicodeName   = 1 << 9;
+  const int kSalt          = 1 << 10;
+  const int kOldVersion    = 1 << 11;
+  const int kExtTime       = 1 << 12;
+  // const int kExtFlags      = 1 << 13;
+  // const int kSkipIfUnknown = 1 << 14;
 
-  const kLongBlock    = 1 << 15;
+  const int kLongBlock    = 1 << 15;
   
   struct CBlock
   {
@@ -142,8 +142,8 @@ namespace NFile
   };
   */
   
-  const kLabelFileAttribute            = 0x08;
-  const kWinFileDirectoryAttributeMask = 0x10;
+  const int kLabelFileAttribute            = 0x08;
+  const int kWinFileDirectoryAttributeMask = 0x10;
   
   enum CHostOS
   { 

@@ -13,7 +13,7 @@
 
 using namespace NWindows;
 
-static const kNumItemInArchive = 1;
+static const int kNumItemInArchive = 1;
 
 namespace NArchive {
 namespace NBZip2 {

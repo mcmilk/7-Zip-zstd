@@ -7,7 +7,7 @@
 
 #include "Common/Defs.h"
 
-const kNumPercentSpaces = 70;
+const int kNumPercentSpaces = 70;
 class CPercentPrinter
 {
   UINT64 m_MinStepSize;

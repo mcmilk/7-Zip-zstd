@@ -11,15 +11,6 @@ namespace NCompress {
 namespace NImplode {
 namespace NDecoder {
 
-/*
-static const kImplodeHuffmanMaxValue = (1 << kBitBufferInValueNumValueBits);
-
-static const kImplodeHuffmanValueMask = ((1 << kHuffmanMaxBits) - 1) << 
-  (kBitBufferInValueNumValueBits - kHuffmanMaxBits);
-
-// Implode consts
-*/
-
 static const int kNumDistanceLowDirectBitsForBigDict = 7;  
 static const int kNumDistanceLowDirectBitsForSmallDict = 6;  
 

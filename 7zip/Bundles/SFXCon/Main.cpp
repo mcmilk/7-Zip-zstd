@@ -30,7 +30,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 3.09.01 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-09-06\n";
+"\n7-Zip SFX 3.09.02  Copyright (c) 1999-2003 Igor Pavlov  2003-09-20\n";
 
 static const int kNumSwitches = 6;
 
@@ -85,7 +85,7 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"O",  NSwitchType::kUnLimitedPostString, false, 1 },
   };
 
-static const kNumCommandForms = 3;
+static const int kNumCommandForms = 3;
 
 namespace NCommandType {
 enum EEnum
@@ -114,15 +114,15 @@ static const NRecursedType::EEnum kCommandRecursedDefault[kNumCommandForms] =
 static const bool kTestExtractRecursedDefault = true;
 static const bool kAddRecursedDefault = false;
 
-static const kMaxCmdLineSize = 1000;
+static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
-static const kMinNonSwitchWords = 1;
-static const kCommandIndex = 0;
+static const int kMinNonSwitchWords = 1;
+static const int kCommandIndex = 0;
 
-// static const kArchiveNameIndex = kCommandIndex + 1;
-// static const kFirstFileNameIndex = kArchiveNameIndex + 1;
+// static const int kArchiveNameIndex = kCommandIndex + 1;
+// static const int kFirstFileNameIndex = kArchiveNameIndex + 1;
 
-// static const kFirstFileNameIndex = kCommandIndex + 1;
+// static const int kFirstFileNameIndex = kCommandIndex + 1;
 
 static const char *kHelpString = 
     "\nUsage: 7zSFX [<command>] [<switches>...]\n"
@@ -396,7 +396,7 @@ int Main2(int numArguments, const char *arguments[])
     PrintHelp();
     return 0;
   }
-  const UStringVector &nonSwitchStrings = parser._nonSwitchStrings;
+  const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
 
   int numNonSwitchStrings = nonSwitchStrings.Size();
   /*

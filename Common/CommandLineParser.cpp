@@ -33,7 +33,7 @@ void CParser::ParseStrings(const CSwitchForm *switchForms,
   int numCommandStrings = commandStrings.Size();
   for (int i = 0; i < numCommandStrings; i++)
     if (!ParseString(commandStrings[i], switchForms))
-      _nonSwitchStrings.Add(commandStrings[i]);
+      NonSwitchStrings.Add(commandStrings[i]);
 }
 
 // if string contains switch then function updates switch structures
@@ -97,7 +97,7 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
           if (tailSize < switchForm.MinLen)
             throw "switch is not full";
           UString set = switchForm.PostCharSet;
-          const kEmptyCharValue = -1;
+          const int kEmptyCharValue = -1;
           if (tailSize == 0)
             matchedSwitch.PostCharIndex = kEmptyCharValue;
           else
