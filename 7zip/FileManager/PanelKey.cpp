@@ -54,12 +54,12 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     int index = keyDownInfo->wVKey - '0';
     if (shift)
     {
-      FastFolderInsert(index);
+      SetBookmark(index);
       return true;
     }
     else
     {
-      FastFolderSelect(index);
+      OpenBookmark(index);
       return true;
     }
   }

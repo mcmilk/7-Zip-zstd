@@ -59,6 +59,7 @@ HRESULT OpenArchive(const CSysString &fileName,
     #endif
     IInArchive **archiveResult, 
     CArchiverInfo &archiverInfoResult,
+    int &subExtIndex,
     IArchiveOpenCallback *openArchiveCallback)
 {
   CInFileStream *inStreamSpec = new CInFileStream;
@@ -100,8 +101,11 @@ HRESULT OpenArchive(const CSysString &fileName,
   int firstArchiverIndex;
   for(firstArchiverIndex = 0; 
       firstArchiverIndex < archiverInfoList.Size(); firstArchiverIndex++)
-    if(extension.CollateNoCase(archiverInfoList[firstArchiverIndex].Extension) == 0)
+  {
+    int subIndex = archiverInfoList[firstArchiverIndex].FindExtension(extension);
+    if (subIndex >= 0)
       break;
+  }
   if(firstArchiverIndex < archiverInfoList.Size())
     orderIndices.Add(firstArchiverIndex);
   for(int j = 0; j < archiverInfoList.Size(); j++)
@@ -171,6 +175,9 @@ HRESULT OpenArchive(const CSysString &fileName,
     *module = loader.Detach();
     #endif
     archiverInfoResult = archiverInfo;
+    subExtIndex = archiverInfo.FindExtension(extension);
+    if (subExtIndex < 0)
+      subExtIndex = 0;
     return S_OK;
   }
   if (badResult != S_OK)

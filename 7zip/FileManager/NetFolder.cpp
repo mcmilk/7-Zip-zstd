@@ -19,9 +19,9 @@ using namespace NNet;
 static const STATPROPSTG kProperties[] = 
 {
   { NULL, kpidName, VT_BSTR},
-  { L"Local Name", kpidLocalName, VT_BSTR},
-  { L"", kpidComment, VT_BSTR},
-  { L"Provider", kpidProvider, VT_BSTR}
+  { NULL, kpidLocalName, VT_BSTR},
+  { NULL, kpidComment, VT_BSTR},
+  { NULL, kpidProvider, VT_BSTR}
 };
 
 static inline UINT GetCurrentFileCodePage()

@@ -758,6 +758,10 @@ SOURCE=.\7z.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\7z1.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\Main.cpp
 # End Source File
 # Begin Source File

@@ -429,7 +429,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       archiveName = archiveName.Left(dotPos);
   }
   archiveName += '.';
-  archiveName += GetSystemString(archiverInfo.Extension, CP_OEMCP);
+  archiveName += GetSystemString(archiverInfo.GetMainExtension(), CP_OEMCP);
   
   const CActionSet *actionSet = &kAddActionSet;
 
@@ -543,7 +543,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         if (prevArchiverInfo.KeepName)
         {
           const CSysString &prevExtension = 
-              GetSystemString(prevArchiverInfo.Extension, CP_OEMCP);
+              GetSystemString(prevArchiverInfo.GetMainExtension(), CP_OEMCP);
           const int prevExtensionLen = prevExtension.Length();
           if (archiveName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
           {
@@ -573,7 +573,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
             archiveName = archiveName.Left(dotPos);
         }
         archiveName += '.';
-        archiveName += GetSystemString(archiverInfo.Extension, CP_OEMCP);
+        archiveName += GetSystemString(archiverInfo.GetMainExtension(), CP_OEMCP);
       }
       continue;
     }

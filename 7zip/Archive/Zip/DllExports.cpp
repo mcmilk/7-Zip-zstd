@@ -108,7 +108,7 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
       return S_OK;
     }
     case NArchive::kExtension:
-      propVariant = L"zip";
+      propVariant = L"zip jar xpi";
       break;
     case NArchive::kUpdate:
       propVariant = true;

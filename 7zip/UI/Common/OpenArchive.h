@@ -14,6 +14,7 @@ HRESULT OpenArchive(const CSysString &fileName,
     #endif
     IInArchive **archive, 
     CArchiverInfo &archiverInfoResult,
+    int &subExtIndex,
     IArchiveOpenCallback *openArchiveCallback);
 
 HRESULT ReOpenArchive(IInArchive *archive, 

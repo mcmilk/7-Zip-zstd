@@ -68,8 +68,9 @@ HRESULT ExtractArchive(
   CThreadExtracting extracter;
 
   CArchiverInfo archiverInfoResult;
+  int subExtIndex;
   HRESULT result = OpenArchive(fileName, &extracter.ArchiveHandler, 
-      archiverInfoResult, NULL);
+      archiverInfoResult, subExtIndex, NULL);
   if (result != S_OK)
   {
     #ifdef _SILENT

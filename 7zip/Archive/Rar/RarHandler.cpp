@@ -161,7 +161,7 @@ STDMETHODIMP CHandler::GetArchivePropertyInfo(UINT32 index,
 
 STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
-  *numItems = _items.Size();
+  *numItems = _refItems.Size();
   return S_OK;
 }
 
@@ -544,7 +544,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
         // importantTotalPacked = 0;
   bool allFilesMode = (numItems == UINT32(-1));
   if (allFilesMode)
-    numItems = _items.Size();
+    numItems = _refItems.Size();
   if(numItems == 0)
     return S_OK;
   int lastIndex = 0;

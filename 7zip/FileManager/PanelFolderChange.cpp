@@ -101,12 +101,12 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
   return S_OK;
 }
 
-void CPanel::FastFolderInsert(int index)
+void CPanel::SetBookmark(int index)
 {
   _appState->FastFolders.SetString(index, _currentFolderPrefix);
 }
 
-void CPanel::FastFolderSelect(int index)
+void CPanel::OpenBookmark(int index)
 {
   BindToPathAndRefresh(_appState->FastFolders.GetString(index));
 }
@@ -324,7 +324,7 @@ void CPanel::CloseOpenFolders()
     _folder.Release();
     _library.Free();
     _folder = _parentFolders.Back().ParentFolder;
-    _library = _parentFolders.Back().Library;
+    _library.Attach(_parentFolders.Back().Library.Detach());
     if (_parentFolders.Size () > 1)
       OpenParentArchiveFolder();
     _parentFolders.DeleteBack();

@@ -40,7 +40,7 @@ public:
   int NumPanels;
   int LastFocusedPanel;
 
-  CAppState _appState;
+  CAppState AppState;
   CPanelCallbackImp m_PanelCallbackImp[kNumPanelsMax];
   CPanel Panels[kNumPanelsMax];
   bool PanelsCreated[kNumPanelsMax];
@@ -147,6 +147,11 @@ public:
   void SetListSettings();
   void SetShowSystemMenu();
   void SwitchOnOffOnePanel();
+
+  void OpenBookmark(int index)
+    { GetFocusedPanel().OpenBookmark(index); }
+  void SetBookmark(int index)
+    { GetFocusedPanel().SetBookmark(index); }
 };
 
 #endif

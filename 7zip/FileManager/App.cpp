@@ -86,7 +86,7 @@ void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
     path = mainPath;
   int id = 1000 + 100 * panelIndex;
   Panels[panelIndex].Create(_window, _window, 
-      id, 0, path, &m_PanelCallbackImp[panelIndex], &_appState);
+      id, 0, path, &m_PanelCallbackImp[panelIndex], &AppState);
   PanelsCreated[panelIndex] = true;
 }
 
@@ -97,7 +97,7 @@ void CApp::Create(HWND hwnd, const UString &mainPath)
     PanelsCreated[i] = false;
 
   _window.Attach(hwnd);
-  _appState.Read();
+  AppState.Read();
   SetListSettings();
   SetShowSystemMenu();
   UString mainPathSpec = mainPath;
@@ -131,7 +131,7 @@ void CApp::SwitchOnOffOnePanel()
 
 void CApp::Save()
 {
-  _appState.Save();
+  AppState.Save();
   for (int i = 0; i < kNumPanelsMax; i++)
   {
     const CPanel &panel = Panels[i];

@@ -259,8 +259,10 @@ public:
   HRESULT BindToPath(const UString &fullPath); // can be prefix 
   HRESULT BindToPathAndRefresh(const UString &path);
   void OpenDrivesFolder();
-  void FastFolderInsert(int index);
-  void FastFolderSelect(int index);
+  
+  void SetBookmark(int index);
+  void OpenBookmark(int index);
+  
   void LoadFullPath();
   void LoadFullPathAndShow();
   void FoldersHistory();

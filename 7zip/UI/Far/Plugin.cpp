@@ -279,6 +279,7 @@ struct CPROPIDToName
 static CPROPIDToName kPROPIDToName[] =  
 {
   { kpidName, NMessageID::kName },
+  { kpidExtension, NMessageID::kExtension },
   { kpidIsFolder, NMessageID::kIsFolder }, 
   { kpidSize, NMessageID::kSize },
   { kpidPackedSize, NMessageID::kPackedSize },
@@ -287,14 +288,20 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidLastAccessTime, NMessageID::kLastAccessTime },
   { kpidLastWriteTime, NMessageID::kLastWriteTime },
   { kpidSolid, NMessageID::kSolid },
-  { kpidCommented, NMessageID::kComment },
+  { kpidCommented, NMessageID::kCommented },
   { kpidEncrypted, NMessageID::kEncrypted },
   { kpidSplitBefore, NMessageID::kSplitBefore },
   { kpidSplitAfter, NMessageID::kSplitAfter },
   { kpidDictionarySize, NMessageID::kDictionarySize },
   { kpidCRC, NMessageID::kCRC },
+  { kpidType, NMessageID::kType },
+  { kpidIsAnti, NMessageID::kAnti },
   { kpidMethod, NMessageID::kMethod },
   { kpidHostOS, NMessageID::kHostOS },
+  { kpidFileSystem, NMessageID::kFileSystem },
+  { kpidUser, NMessageID::kUser },
+  { kpidGroup, NMessageID::kGroup },
+  { kpidBlock, NMessageID::kBlock },
   { kpidComment, NMessageID::kComment }
 };
 

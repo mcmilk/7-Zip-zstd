@@ -17,6 +17,9 @@
 #include "LangUtils.h"
 #include "PluginInterface.h"
 
+static const UINT kOpenBookmarkMenuID = 730;
+static const UINT kSetBookmarkMenuID = 740;
+
 extern HINSTANCE g_hInstance;	
 
 static LPCTSTR kFMHelpTopic = _T("FM/index.htm");
@@ -27,7 +30,7 @@ using namespace NWindows;
 
 static const int kFileMenuIndex = 0;
 static const int kViewMenuIndex = 2;
-
+static const int kBookmarksMenuIndex = kViewMenuIndex + 1;
 
 struct CStringLangPair
 {
@@ -40,10 +43,12 @@ static CStringLangPair kStringLangPairs[] =
   { L"&File",  0x03000102 },
   { L"&Edit",  0x03000103 },
   { L"&View",  0x03000104 },
+  { L"&Bookmarks", 0x03000107 },
   { L"&Tools", 0x03000105 },
   { L"&Help",  0x03000106 },
 };
 
+UINT32 kAddToFavoritesLangID = 0x03000710;
 /*
 static int FindStringLangItem(const UString &anItem)
 {
@@ -176,7 +181,7 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
 }
 */
 
-void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
+static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 {
   CMenu menu;
   menu.Attach(menuLoc);
@@ -196,12 +201,17 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
       CSysString newString;
       if (menuInfo.hSubMenu)
       {
-        MyChangeMenu(menuInfo.hSubMenu);
-        if (baseIndex >= 0 && baseIndex < sizeof(kStringLangPairs) / 
-              sizeof(kStringLangPairs[0]))
-          newString = LangLoadString(kStringLangPairs[baseIndex++].LangID);
+        if (level == 1 && menuIndex == kBookmarksMenuIndex)
+          newString = LangLoadString(kAddToFavoritesLangID);
         else
-          continue;
+        {
+          MyChangeMenu(menuInfo.hSubMenu, level + 1, i);
+          if (level == 0 && i < sizeof(kStringLangPairs) / 
+                sizeof(kStringLangPairs[0]))
+            newString = LangLoadString(kStringLangPairs[i].LangID);
+          else
+            continue;
+        }
         if (newString.IsEmpty())
           continue;
 
@@ -256,7 +266,7 @@ void MyLoadMenu(HWND hWnd)
   if (!g_LangPath.IsEmpty())
   {
     HMENU menuOld = ::GetMenu(hWnd);
-    MyChangeMenu(menuOld, 0);
+    MyChangeMenu(menuOld, 0, 0);
   }
   ::DrawMenuBar(hWnd);
 }
@@ -324,6 +334,50 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
       IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
     menu.CheckItem(IDM_VIEW_TWO_PANELS, MF_BYCOMMAND |
         ((g_App.NumPanels == 2) ? MF_CHECKED : MF_UNCHECKED));
+  }
+  else if (position == kBookmarksMenuIndex)
+  {
+    CMenu menu;
+    menu.Attach(hMenu);
+
+    CMenu subMenu;
+    subMenu.Attach(menu.GetSubMenu(0));
+    while (subMenu.GetItemCount() > 0)
+      subMenu.RemoveItem(subMenu.GetItemCount() - 1, MF_BYPOSITION);
+    int i;
+    for (i = 0; i < 10; i++)
+    {
+      CSysString s = LangLoadString(IDS_BOOKMARK, 0x03000720);
+      s += TEXT(" ");
+      TCHAR c = TEXT('0') + i;
+      s += c;
+      s += TEXT("\tAlt+Shift+");
+      s += c;
+      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
+    }
+
+    while (menu.GetItemCount() > 2)
+      menu.RemoveItem(menu.GetItemCount() - 1, MF_BYPOSITION);
+
+    for (i = 0; i < 10; i++)
+    {
+      UString path = g_App.AppState.FastFolders.GetString(i);
+      const int kMaxSize = 100;
+      const int kFirstPartSize = kMaxSize / 2;
+      if (path.Length() > kMaxSize)
+      {
+        path = path.Left(kFirstPartSize) + UString(L" ... ") +
+          path.Right(kMaxSize - kFirstPartSize);
+      }
+      CSysString s = GetSystemString(path);
+      if (s.IsEmpty())
+        s = TEXT("-");
+      s += TEXT("\tAlt+");
+      s += ('0' + i);
+      menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
+    }
+
+    // menu.AppendItem(MF_STRING, 100, TEXT("Test2\tAlt+2"));
   }
 }
 
@@ -615,7 +669,19 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     }
     default:
+    {
+      if (id >= kOpenBookmarkMenuID && id <= kOpenBookmarkMenuID + 9)
+      {
+        g_App.OpenBookmark(id - kOpenBookmarkMenuID);
+        return true;
+      }
+      else if (id >= kSetBookmarkMenuID && id <= kSetBookmarkMenuID + 9)
+      {
+        g_App.SetBookmark(id - kSetBookmarkMenuID);
+        return true;
+      }
       return false;
+    }
   }
   return true;
 }

@@ -249,14 +249,16 @@ STDMETHODIMP CAgent::Open(
   if (fileInfo.IsDirectory())
     return E_FAIL;
   CArchiverInfo archiverInfo;
+  int subExtIndex;
   HRESULT res = OpenArchive(_archiveFilePath, 
       #ifndef EXCLUDE_COM
       &_library, 
       #endif
-      &_archive, archiverInfo, openArchiveCallback);
+      &_archive, archiverInfo, subExtIndex, openArchiveCallback);
   RINOK(res);
   DefaultName = GetDefaultName(_archiveFilePath, 
-      archiverInfo.Extension, archiverInfo.AddExtension);
+      archiverInfo.Extensions[subExtIndex].Extension, 
+      archiverInfo.Extensions[subExtIndex].AddExtension);
   DefaultTime = fileInfo.LastWriteTime;
   DefaultAttributes = fileInfo.Attributes;
   ArchiveType = archiverInfo.Name;

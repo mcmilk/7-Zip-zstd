@@ -474,7 +474,7 @@ void CCompressDialog::OnSelChangeComboFormat()
   const CArchiverInfo &prevArchiverInfo = m_ArchiverInfoList[m_PrevFormat];
   if (prevArchiverInfo.KeepName || m_Info.KeepName)
   {
-    const CSysString &prevExtension = GetSystemString(prevArchiverInfo.Extension);
+    const CSysString &prevExtension = GetSystemString(prevArchiverInfo.GetMainExtension());
     const int prevExtensionLen = prevExtension.Length();
     if (fileName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
     {
@@ -514,7 +514,7 @@ void CCompressDialog::SetArchiveName(const CSysString &name)
     }
   }
   fileName += '.';
-  fileName += GetSystemString(archiverInfo.Extension);
+  fileName += GetSystemString(archiverInfo.GetMainExtension());
   m_ArchivePath.SetText(fileName);
 }
 

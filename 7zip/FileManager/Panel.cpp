@@ -33,6 +33,7 @@ extern DWORD g_ComCtl32Version;
 void CPanel::Release()
 {
   // It's for unloading COM dll's: don't change it. 
+  CloseOpenFolders();
   _sevenZipContextMenu.Release();
   _systemContextMenu.Release();
 }

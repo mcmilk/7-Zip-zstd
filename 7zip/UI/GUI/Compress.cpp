@@ -308,7 +308,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
     encryptHeaders = dialog.EncryptHeaders;
     compressInfo = dialog.m_Info;
     compressInfo.ArchiveName = MakeFullArchiveName(compressInfo.ArchiveName, 
-        archiverInfo.Extension);
+        archiverInfo.GetMainExtension());
   }
   else
   {

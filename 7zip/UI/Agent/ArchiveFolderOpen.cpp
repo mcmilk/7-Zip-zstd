@@ -72,7 +72,8 @@ STDMETHODIMP CArchiveFolderManager::GetExtension(const wchar_t *type, BSTR *exte
   int formatIndex = FindFormat(type);
   if (formatIndex <  0)
     return E_INVALIDARG;
-  CMyComBSTR valueTemp = _formats[formatIndex].Extension;
+  // CMyComBSTR valueTemp = _formats[formatIndex].GetAllExtensions();
+  CMyComBSTR valueTemp = _formats[formatIndex].Extensions[0].Extension;
   *extension = valueTemp.Detach();
   return S_OK;
 }

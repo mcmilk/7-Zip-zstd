@@ -8,6 +8,8 @@
 #include "PluginInterface.h"
 #include "MyLoadMenu.h"
 #include "App.h"
+#include "LangUtils.h"
+#include "resource.h"
 
 using namespace NWindows;
 
@@ -205,7 +207,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     menuItem.fType = MFT_STRING;
     menuItem.hSubMenu = popupMenu.Detach();
     // menuDestroyer.Disable();
-    CSysString popupMenuCaption = TEXT("System");
+    CSysString popupMenuCaption = LangLoadString(IDS_SYSTEM, 0x030202A0);
     menuItem.dwTypeData = (LPTSTR)(LPCTSTR)popupMenuCaption;
     
     InsertMenuItem(menuSpec, 0, TRUE, &menuItem);

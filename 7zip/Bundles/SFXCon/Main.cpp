@@ -30,7 +30,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 3.08.02 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-20\n";
+"\n7-Zip SFX 3.08.04 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-24\n";
 
 static const int kNumSwitches = 6;
 
@@ -353,13 +353,16 @@ void MyOpenArhive(const CSysString &archiveName,
   UString &defaultItemName)
 {
   CArchiverInfo archiverInfo;
-  HRESULT result = OpenArchive(archiveName, archiveHandler, archiverInfo, 0);
+  int subExtIndex;
+  HRESULT result = OpenArchive(archiveName, archiveHandler, 
+      archiverInfo, subExtIndex, 0);
   if (result == S_FALSE)
     throw "file is not supported archive";
   if (result != S_OK)
     throw "error";
-  defaultItemName = GetDefaultName(archiveName, archiverInfo.Extension, 
-      GetUnicodeString(archiverInfo.AddExtension));
+  defaultItemName = GetDefaultName(archiveName, 
+      archiverInfo.Extensions[subExtIndex].Extension, 
+      archiverInfo.Extensions[subExtIndex].AddExtension);
 }
 
 int Main2(int numArguments, const char *arguments[])

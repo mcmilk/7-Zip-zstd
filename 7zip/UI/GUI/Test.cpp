@@ -12,6 +12,7 @@
 #include "Windows/Thread.h"
 
 #include "../Common/OpenArchive.h"
+#include "../Common/DefaultName.h"
 
 #ifndef EXCLUDE_COM
 #include "../Common/ZipRegistry.h"
@@ -61,8 +62,6 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
 {
   CThreadTesting tester;
 
-  CArchiverInfo archiverInfoResult;
-
   COpenArchiveCallback *openCallbackSpec = new COpenArchiveCallback;
   CMyComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
   openCallbackSpec->_passwordIsDefined = false;
@@ -76,9 +75,15 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
       fullName.Left(fileNamePartStartIndex), 
       fullName.Mid(fileNamePartStartIndex));
 
+  CArchiverInfo archiverInfo;
+  int subExtIndex;
   RINOK(OpenArchive(fileName, 
       &tester.Library, &tester.Archive, 
-      archiverInfoResult, openCallback));
+      archiverInfo, subExtIndex, openCallback));
+
+  UString defaultName = GetDefaultName(fileName, 
+      archiverInfo.Extensions[subExtIndex].Extension, 
+      archiverInfo.Extensions[subExtIndex].AddExtension);
 
   tester.ExtractCallbackSpec = new CExtractCallbackImp;
   tester.ExtractCallback2 = tester.ExtractCallbackSpec;
@@ -101,7 +106,7 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
       tester.ExtractCallback2, 
       TEXT(""), NExtractionMode::NPath::kFullPathnames, 
       NExtractionMode::NOverwrite::kWithoutPrompt, UStringVector(),
-      GetCurrentFileCodePage(), L"", 
+      GetCurrentFileCodePage(), defaultName, 
       fileTomeDefault, 0);
 
 

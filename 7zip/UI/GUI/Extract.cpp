@@ -83,19 +83,20 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
       fullName.Left(fileNamePartStartIndex), 
       fullName.Mid(fileNamePartStartIndex));
 
+  int subExtIndex;
   HRESULT res = OpenArchive(fileName, 
       #ifndef EXCLUDE_COM
       &extracter.Library, 
       #endif
-      &extracter.Archive, 
-      archiverInfo, openCallback);
+      &extracter.Archive, archiverInfo, subExtIndex, openCallback);
   RINOK(res);
 
   NFile::NFind::CFileInfo fileInfo;
   if (!NFile::NFind::FindFile(fileName, fileInfo))
     return E_FAIL;
-  UString defaultName = GetDefaultName(fileName, archiverInfo.Extension, 
-      GetUnicodeString(archiverInfo.AddExtension));
+  UString defaultName = GetDefaultName(fileName, 
+      archiverInfo.Extensions[subExtIndex].Extension, 
+      archiverInfo.Extensions[subExtIndex].AddExtension);
 
   CSysString directoryPath;
   NExtractionDialog::CModeInfo extractModeInfo;

@@ -297,5 +297,9 @@ SOURCE=..\Common\OutStreamWithCRC.cpp
 SOURCE=..\Common\OutStreamWithCRC.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\gz.ico
+# End Source File
 # End Target
 # End Project

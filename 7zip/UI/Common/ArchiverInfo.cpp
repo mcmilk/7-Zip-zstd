@@ -22,6 +22,31 @@ extern HINSTANCE g_hInstance;
 
 #ifndef EXCLUDE_COM
 
+static void SplitString(const UString &srcString, UStringVector &destStrings)
+{
+  destStrings.Clear();
+  UString string;
+  int len = srcString.Length();
+  if (len == 0)
+    return;
+  for (int i = 0; i < len; i++)
+  {
+    wchar_t c = srcString[i];
+    if (c == L' ')
+    {
+      if (!string.IsEmpty())
+      {
+        destStrings.Add(string);
+        string.Empty();
+      }
+    }
+    else
+      string += c;
+  }
+  if (!string.IsEmpty())
+    destStrings.Add(string);
+}
+
 typedef UINT32 (WINAPI * GetHandlerPropertyFunc)(
     PROPID propID, PROPVARIANT *value);
 
@@ -90,67 +115,91 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
   
   #ifdef EXCLUDE_COM
   
-  CArchiverInfo item;
   #ifdef FORMAT_7Z
-  item.UpdateEnabled = true;
-  item.KeepName = false;
-  item.Name = L"7z";
-  item.Extension = L"7z";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = true;
+    item.KeepName = false;
+    item.Name = L"7z";
+    item.Extensions.Add(CArchiverExtInfo(L"7z"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_BZIP2
-  item.UpdateEnabled = true;
-  item.KeepName = true;
-  item.Name = L"BZip2";
-  item.Extension = L"bz2";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = true;
+    item.KeepName = true;
+    item.Name = L"BZip2";
+    item.Extensions.Add(CArchiverExtInfo(L"bz2"));
+    item.Extensions.Add(CArchiverExtInfo(L"tbz2", L".tar"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_GZIP
-  item.UpdateEnabled = true;
-  item.KeepName = false;
-  item.Name = L"GZip";
-  item.Extension = L"gz";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = true;
+    item.KeepName = false;
+    item.Name = L"GZip";
+    item.Extensions.Add(CArchiverExtInfo(L"gz"));
+    item.Extensions.Add(CArchiverExtInfo(L"tgz", L".tar"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_TAR
-  item.UpdateEnabled = true;
-  item.KeepName = false;
-  item.Name = L"Tar";
-  item.Extension = L"tar";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = true;
+    item.KeepName = false;
+    item.Name = L"Tar";
+    item.Extensions.Add(CArchiverExtInfo(L"tar"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_ZIP
-  item.UpdateEnabled = true;
-  item.KeepName = false;
-  item.Name = L"Zip";
-  item.Extension = L"zip";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = true;
+    item.KeepName = false;
+    item.Name = L"Zip";
+    item.Extensions.Add(CArchiverExtInfo(L"zip"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_CPIO
-  item.UpdateEnabled = false;
-  item.Name = L"cpio";
-  item.Extension = L"cpio";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = false;
+    item.Name = L"Cpio";
+    item.Extensions.Add(CArchiverExtInfo(L"cpio"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_RPM
-  item.UpdateEnabled = false;
-  item.Name = L"RPM";
-  item.Extension = L"rpm";
-  item.AddExtension = L".cpio.gz");
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = false;
+    item.Name = L"Rpm";
+    item.Extensions.Add(CArchiverExtInfo(L"rpm", L".cpio.gz"));
+    archivers.Add(item);
+  }
   #endif
 
   #ifdef FORMAT_ARJ
-  item.UpdateEnabled = false;
-  item.Name = L"arj";
-  item.Extension = L"arj";
-  archivers.Add(item);
+  {
+    CArchiverInfo item;
+    item.UpdateEnabled = false;
+    item.Name = L"Arj";
+    item.Extensions.Add(CArchiverExtInfo(L"arj"));
+    archivers.Add(item);
+  }
   #endif
   
   #else
@@ -200,16 +249,37 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
       continue;
     if (prop.vt != VT_BSTR)
       continue;
-    item.Extension = prop.bstrVal;
-    prop.Clear();
+
+    UString ext  = prop.bstrVal;
+    // item.Extension = prop.bstrVal;
+
+    UString addExt;
 
     if (getHandlerProperty(NArchive::kAddExtension, &prop) != S_OK)
       continue;
     if (prop.vt == VT_BSTR)
-      item.AddExtension = prop.bstrVal;
+    {
+      addExt = prop.bstrVal;
+    }
     else if (prop.vt != VT_EMPTY)
       continue;
     prop.Clear();
+
+    UStringVector exts, addExts;
+    SplitString(ext, exts);
+    SplitString(addExt, addExts);
+
+    prop.Clear();
+    for (int i = 0; i < exts.Size(); i++)
+    {
+      CArchiverExtInfo extInfo;
+      extInfo.Extension = exts[i];
+      if (addExts.Size() > 0)
+        extInfo.AddExtension = addExts[i];
+      if (extInfo.AddExtension == L"*")
+        extInfo.AddExtension.Empty();
+      item.Extensions.Add(extInfo);
+    }
 
     if (getHandlerProperty(NArchive::kUpdate, &prop) != S_OK)
       continue;

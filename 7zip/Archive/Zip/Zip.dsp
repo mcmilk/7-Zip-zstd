@@ -433,5 +433,9 @@ SOURCE=".\7-zip.ico"
 
 SOURCE=.\zip.ico
 # End Source File
+# Begin Source File
+
+SOURCE=.\zip1.ico
+# End Source File
 # End Target
 # End Project

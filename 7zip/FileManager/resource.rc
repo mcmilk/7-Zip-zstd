@@ -80,8 +80,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,3,0
- PRODUCTVERSION 3,8,3,0
+ FILEVERSION 3,8,4,0
+ PRODUCTVERSION 3,8,4,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -99,14 +99,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip File Manager\0"
-            VALUE "FileVersion", "3, 8, 3, 0\0"
+            VALUE "FileVersion", "3, 8, 4, 0\0"
             VALUE "InternalName", "7zFM\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "3, 8, 3, 0\0"
+            VALUE "ProductVersion", "3, 8, 4, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -195,6 +195,14 @@ BEGIN
         MENUITEM "Folders History...\tAlt+F12", IDM_FOLDERS_HISTORY
         MENUITEM SEPARATOR
         MENUITEM "&Refresh\tCtrl+R",            IDM_VIEW_REFRESH
+    END
+    POPUP "F&avorites"
+    BEGIN
+        POPUP "&Add folder to Favorites as"
+        BEGIN
+            MENUITEM SEPARATOR
+        END
+        MENUITEM SEPARATOR
     END
     POPUP "&Tools"
     BEGIN
@@ -303,6 +311,7 @@ BEGIN
     IDS_OPTIONS             "Options"
     IDS_COMMENT             "Comment"
     IDS_COMMENT2            "&Comment:"
+    IDS_SYSTEM              "System"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -318,6 +327,11 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDS_COMPUTER            "Computer"
     IDS_NETWORK             "Network"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_BOOKMARK            "Bookmark"
 END
 
 #endif    // English (U.S.) resources

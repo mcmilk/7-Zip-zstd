@@ -47,6 +47,7 @@
 #define IDM_OPTIONS                     510
 #define IDM_HELP_CONTENTS               610
 #define IDM_ABOUT                       620
+#define IDS_BOOKMARK                    720
 #define IDS_APP_TITLE                   2200
 #define IDS_COPY                        2201
 #define IDS_MOVE                        2202
@@ -92,17 +93,18 @@
 #define IDS_PROPERTY_VOLUME_NAME        3103
 #define IDS_PROPERTY_LOCAL_NAME         3200
 #define IDS_PROPERTY_PROVIDER           3201
-
 #define IDS_OPTIONS                     4000
 #define IDS_COMMENT                     4001
-#define IDS_COMMENT2 4002
+#define IDS_COMMENT2                    4002
+#define IDS_SYSTEM                      4010
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        2000
-#define _APS_NEXT_COMMAND_VALUE         40067
+#define _APS_NEXT_COMMAND_VALUE         40071
 #define _APS_NEXT_CONTROL_VALUE         3000
-#define _APS_NEXT_SYMED_VALUE           4001
+#define _APS_NEXT_SYMED_VALUE           4010
 #endif
 #endif

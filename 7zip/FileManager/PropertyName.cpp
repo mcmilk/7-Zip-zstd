@@ -42,8 +42,8 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidFileSystem, IDS_PROPERTY_FILE_SYSTEM, 0x02000218},
   { kpidUser, IDS_PROPERTY_USER, 0x02000219},
   { kpidGroup, IDS_PROPERTY_GROUP, 0x0200021A},
-  { kpidBlock, IDS_PROPERTY_BLOCK, -1 },
-  { kpidComment, IDS_PROPERTY_C0MMENTED, 0x0200020E },
+  { kpidBlock, IDS_PROPERTY_BLOCK, 0x0200021B },
+  { kpidComment, IDS_PROPERTY_COMMENT, 0x0200021C },
 
   { kpidTotalSize, IDS_PROPERTY_TOTAL_SIZE, 0x03031100 },
   { kpidFreeSpace, IDS_PROPERTY_FREE_SPACE, 0x03031101 }, 
