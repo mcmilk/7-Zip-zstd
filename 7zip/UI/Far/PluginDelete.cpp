@@ -163,6 +163,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
       break;
     _folder = newFolder;
   }
+  GetCurrentDir();
 
   return(TRUE);
 }

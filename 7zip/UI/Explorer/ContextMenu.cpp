@@ -270,6 +270,7 @@ static UString GetSubFolderNameForExtract(const UString &archiveName)
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
 {
+  LoadLangOneTime();
   if(_fileNames.Size() == 0)
     return E_FAIL;
   UINT currentCommandID = commandIDFirst; 

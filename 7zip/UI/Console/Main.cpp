@@ -53,7 +53,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.14 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-11\n";
+" 4.15 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-25\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z"
@@ -291,9 +291,12 @@ int Main2(
     else
     {
       g_StdErr << endl;
-      g_StdErr << "WARNINGS for files:" << endl;
+      g_StdErr << "WARNINGS for files:" << endl << endl;
       for (int i = 0; i < numErrors; i++)
-        g_StdErr << callback.FailedFiles[i] << endl;
+      {
+        g_StdErr << callback.FailedFiles[i] << " : ";
+        g_StdErr << NError::MyFormatMessageW(callback.FailedCodes[i]) << endl;
+      }
       g_StdErr << "----------------" << endl;
       g_StdErr << "WARNING: Cannot open " << numErrors << " file";
       if (numErrors > 1)

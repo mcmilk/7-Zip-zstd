@@ -295,8 +295,8 @@ With filter for big-endian ARM code (using additional Swap4 filter):
   7z a a3.7z a.bin -m0=swap4 -m1=bc_arm -m2=lzma
 
 It works in such manner:
-Compressing    = Filter_encodeing + LZMA_encoding
-Decompressing  = LZMA_decoding + Filter_decodeing
+Compressing    = Filter_encoding + LZMA_encoding
+Decompressing  = LZMA_decoding + Filter_decoding
 
 Compressing and decompressing speed of such filters is very high,
 so it will not increase decompressing time too much.

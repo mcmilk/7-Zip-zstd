@@ -1,4 +1,4 @@
-Compression method IDs (3.08 beta)
+Compression method IDs (4.15 beta)
 ----------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -43,9 +43,12 @@ List of defined IDs
 04 - Misc
    00 - Reserved
    01 - Zip
-      06 - Imploded
+      00 - Copy (not used). Use {00} instead
+      01 - Shrink
+      06 - Implode
       08 - Deflate
       09 - Deflate64
+      12 - BZip2 (not used). Use {04 02 02} instead
    02 - BZip
       02 - BZip2
    03 - Rar

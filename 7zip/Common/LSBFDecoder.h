@@ -1,4 +1,4 @@
-// Stream/LSBFDecoder.h
+// LSBFDecoder.h
 
 #ifndef __STREAM_LSBFDECODER_H
 #define __STREAM_LSBFDECODER_H
@@ -19,12 +19,11 @@ extern Byte kInvertTable[256];
 // the Least Significant Bit of byte is First
 
 template<class TInByte>
-class CDecoder
+class CBaseDecoder
 {
+protected:
   UInt32 m_BitPos;
   UInt32 m_Value;
-  UInt32 m_NormalValue;
-protected:
   TInByte m_Stream;
 public:
   UInt32 NumExtraBytes;
@@ -35,14 +34,14 @@ public:
   {
     m_Stream.Init();
     m_BitPos = kNumBigValueBits; 
-    m_NormalValue = 0;
-    m_Value = 0; // to disable "uninitialised value" warning
+    m_Value = 0;
     NumExtraBytes = 0;
   }
   UInt64 GetProcessedSize() const 
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   UInt64 GetProcessedBitsSize() const 
     { return (m_Stream.GetProcessedSize() << 3) - (kNumBigValueBits - m_BitPos); }
+  UInt32 GetBitPosition() const { return (m_BitPos & 7); }
 
   void Normalize()
   {
@@ -54,20 +53,63 @@ public:
         b = 0xFF; // check it
         NumExtraBytes++;
       }
-      m_NormalValue = (b << (kNumBigValueBits - m_BitPos)) | m_NormalValue;
-      m_Value = (m_Value << 8) | kInvertTable[b];
+      m_Value = (b << (kNumBigValueBits - m_BitPos)) | m_Value;
+    }
+  }
+  
+  UInt32 ReadBits(UInt32 numBits)
+  {
+    Normalize();
+    UInt32 res = m_Value & ((1 << numBits) - 1);
+    m_BitPos += numBits;
+    m_Value >>= numBits;
+    return res;
+  }
+  
+  bool ExtraBitsWereRead() const
+  {
+    if (NumExtraBytes == 0)
+      return false;
+    return ((kNumBigValueBits - m_BitPos) < (NumExtraBytes << 3));
+  }
+};
+
+template<class TInByte>
+class CDecoder: public CBaseDecoder<TInByte>
+{
+  UInt32 m_NormalValue;
+
+public:
+  void Init()
+  {
+    CBaseDecoder<TInByte>::Init();
+    m_NormalValue = 0;
+  }
+
+  void Normalize()
+  {
+    for (;this->m_BitPos >= 8; this->m_BitPos -= 8)
+    {
+      Byte b;
+      if (!this->m_Stream.ReadByte(b))
+      {
+        b = 0xFF; // check it
+        this->NumExtraBytes++;
+      }
+      m_NormalValue = (b << (kNumBigValueBits - this->m_BitPos)) | m_NormalValue;
+      this->m_Value = (this->m_Value << 8) | kInvertTable[b];
     }
   }
   
   UInt32 GetValue(UInt32 numBits)
   {
     Normalize();
-    return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - numBits);
+    return ((this->m_Value >> (8 - this->m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
   void MovePos(UInt32 numBits)
   {
-    m_BitPos += numBits;
+    this->m_BitPos += numBits;
     m_NormalValue >>= numBits;
   }
   
@@ -78,12 +120,6 @@ public:
     MovePos(numBits);
     return res;
   }
-  
-  UInt32 GetBitPosition() const
-  {
-    return (m_BitPos & 7);
-  }
-  
 };
 
 }}

@@ -46,6 +46,8 @@ bool ParseVolumeSizes(const UString &s, CRecordVector<UInt64> &values)
     UInt64 value = ConvertStringToUInt64(start, &end);
     if (start == end)
       return false;
+    if (value == 0)
+      return false;
     values.Add(value);
     prevIsNumber = true;
     UString rem = subString.Mid(end - start);

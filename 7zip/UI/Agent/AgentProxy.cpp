@@ -7,6 +7,7 @@
 #include "Common/MyCom.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
+#include "../Common/OpenArchive.h"
 
 using namespace NWindows;
 
@@ -184,11 +185,9 @@ HRESULT CProxyArchive::ReadObjects(IInArchive *archiveHandler, IProgress *progre
     }
 
     NCOM::CPropVariant propVariantIsFolder;
-    RINOK(archiveHandler->GetProperty(i, 
-        kpidIsFolder, &propVariantIsFolder));
-    if(propVariantIsFolder.vt != VT_BOOL)
-      return E_FAIL;
-    if(VARIANT_BOOLToBool(propVariantIsFolder.boolVal))
+    bool isFolder;
+    RINOK(IsArchiveItemFolder(archiveHandler, i, isFolder));
+    if(isFolder)
       currentItem->AddDirSubItem(i, true, fileName);
     else
       currentItem->AddFileSubItem(i, fileName);

@@ -14,6 +14,7 @@ struct CIDLangPair
 };
 
 void ReloadLang();
+void LoadLangOneTime();
 
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems);
 void LangSetWindowText(HWND window, UInt32 langID);

@@ -206,13 +206,13 @@ void CPlugin::EnterToDirectory(const UString &aDirName)
 
 int CPlugin::SetDirectory(const char *aszDir, int opMode)
 {
-  UString aDir = MultiByteToUnicodeString(aszDir, CP_OEMCP);
-  if (aDir == L"\\")
+  UString path = MultiByteToUnicodeString(aszDir, CP_OEMCP);
+  if (path == L"\\")
   {
     _folder.Release();
     m_ArchiveHandler->BindToRootFolder(&_folder);  
   }
-  else if (aDir == L"..")
+  else if (path == L"..")
   {
     CMyComPtr<IFolderFolder> newFolder;
     _folder->BindToParentFolder(&newFolder);  
@@ -220,29 +220,22 @@ int CPlugin::SetDirectory(const char *aszDir, int opMode)
       throw 40312;
     _folder = newFolder;
   }
-  else if (aDir.IsEmpty())
-    EnterToDirectory(aDir);
+  else if (path.IsEmpty())
+    EnterToDirectory(path);
   else
   {
-    if (aDir[0] == L'\\')
+    if (path[0] == L'\\')
     {
       _folder.Release();
       m_ArchiveHandler->BindToRootFolder(&_folder);  
-      aDir = aDir.Mid(1);
+      path = path.Mid(1);
     }
     UStringVector pathParts;
-    SplitPathToParts(aDir, pathParts);
+    SplitPathToParts(path, pathParts);
     for(int i = 0; i < pathParts.Size(); i++)
       EnterToDirectory(pathParts[i]);
   }
-  m_CurrentDir.Empty();
-  UStringVector pathParts;
-  GetPathParts(pathParts);
-  for (int i = 0; i < pathParts.Size(); i++)
-  {
-    m_CurrentDir += L'\\';
-    m_CurrentDir += pathParts[i];
-  }
+  GetCurrentDir();
   return TRUE;
 }
 
@@ -260,6 +253,18 @@ void CPlugin::GetPathParts(UStringVector &pathParts)
     folderItem->GetName(&name);
     pathParts.Insert(0, (const wchar_t *)name);
     folderItem = newFolder;
+  }
+}
+
+void CPlugin::GetCurrentDir()
+{
+  m_CurrentDir.Empty();
+  UStringVector pathParts;
+  GetPathParts(pathParts);
+  for (int i = 0; i < pathParts.Size(); i++)
+  {
+    m_CurrentDir += L'\\';
+    m_CurrentDir += pathParts[i];
   }
 }
 

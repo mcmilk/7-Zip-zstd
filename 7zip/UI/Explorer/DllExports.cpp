@@ -1,4 +1,4 @@
-// DLLExports.cpp : Implementation of DLL Exports.
+// DLLExports.cpp
 
 #include "StdAfx.h"
 
@@ -8,9 +8,9 @@
 #include <ShlGuid.h>
 #include <windows.h>
 
-// #include "../../Compress/Interface/CompressInterface.h"
 #include "../../IPassword.h"
 #include "../Agent/Agent.h"
+#include "../../FileManager/LangUtils.h"
 #include "Common/ComTry.h"
 
 #include "ContextMenu.h"
@@ -44,9 +44,9 @@ extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
   // setlocale(LC_COLLATE, ".ACP");
-  g_hInstance = hInstance;
   if (dwReason == DLL_PROCESS_ATTACH)
   {
+    g_hInstance = hInstance;
     #ifdef UNICODE
     if (!IsItWindowsNT())
       return FALSE;
@@ -56,7 +56,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
   }
   else if (dwReason == DLL_PROCESS_DETACH)
     _Module.Term();
-  return TRUE;    // ok
+  return TRUE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -93,6 +93,7 @@ STDAPI CreateObject(
     const GUID *interfaceID, 
     void **outObject)
 {
+  LoadLangOneTime();
   COM_TRY_BEGIN
   *outObject = 0;
   if (*classID == CLSID_CAgentArchiveHandler)

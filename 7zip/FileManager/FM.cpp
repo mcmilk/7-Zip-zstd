@@ -124,7 +124,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	TCHAR	windowClass[MAX_LOADSTRING];		// The window class name
   lstrcpy(windowClass, TEXT("FM"));
 
-	g_hInstance = hInstance;		// Store instance handle in our global variable
+	g_hInstance = hInstance;
+
+  ReloadLang();
 
   // LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
 

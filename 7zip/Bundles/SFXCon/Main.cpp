@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
+#include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
 #include "Common/StdOutStream.h"
@@ -35,7 +35,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.14 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-11\n";
+"\n7-Zip SFX 4.15 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-25\n";
 
 static const int kNumSwitches = 6;
 

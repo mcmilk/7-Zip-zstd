@@ -286,6 +286,14 @@ SOURCE=..\Common\OutStreamWithCRC.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\InBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\InBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\LimitedStreams.cpp
 # End Source File
 # Begin Source File
@@ -294,11 +302,23 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\LSBFDecoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OffsetStream.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Common\OffsetStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.h
 # End Source File
 # Begin Source File
 
@@ -448,6 +468,22 @@ SOURCE=..\7z\7zMethods.cpp
 
 SOURCE=..\7z\7zMethods.h
 # End Source File
+# End Group
+# Begin Group "Compress"
+
+# PROP Default_Filter ""
+# Begin Group "Shrink"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Shrink\ShrinkDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Shrink\ShrinkDecoder.h
+# End Source File
+# End Group
 # End Group
 # Begin Source File
 

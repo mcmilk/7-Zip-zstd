@@ -18,6 +18,7 @@
 #include "../../Common/FilePathAutoRename.h"
 
 #include "../Common/ExtractingFilePath.h"
+#include "OpenArchive.h"
 
 using namespace NWindows;
 
@@ -140,8 +141,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
       _processedFileInfo.AttributesAreDefined = true;
     }
 
-    RINOK(_archiveHandler->GetProperty(index, kpidIsFolder, &propVariant));
-    _processedFileInfo.IsDirectory = VARIANT_BOOLToBool(propVariant.boolVal);
+    RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.IsDirectory));
 
     RINOK(_archiveHandler->GetProperty(index, kpidLastWriteTime, &propVariant));
     switch(propVariant.vt)

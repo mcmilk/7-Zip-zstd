@@ -109,7 +109,7 @@ HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool isAnti)
 HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError)
 {
   FailedFiles.Add(name);
-  if (systemError == ERROR_SHARING_VIOLATION)
+  // if (systemError == ERROR_SHARING_VIOLATION)
   {
     AddErrorMessage(
       UString(L"WARNING: ") + 

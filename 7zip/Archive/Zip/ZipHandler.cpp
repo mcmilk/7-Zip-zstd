@@ -24,6 +24,7 @@
 #include "../Common/FilterCoder.h"
 #include "../7z/7zMethods.h"
 
+#include "../../Compress/Shrink/ShrinkDecoder.h"
 
 #ifdef COMPRESS_DEFLATE
 #include "../../Compress/Deflate/DeflateDecoder.h"
@@ -129,7 +130,7 @@ STATPROPSTG kProperties[] =
 const wchar_t *kMethods[] = 
 {
   L"Store",
-  L"Shrunk",
+  L"Shrink",
   L"Reduced1",
   L"Reduced2",
   L"Reduced2",
@@ -480,6 +481,12 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         CMethodItem mi;
         mi.ZipMethod = (Byte)item.CompressionMethod;
+        if (item.CompressionMethod == NFileHeader::NCompressionMethod::kShrunk)
+        {
+          mi.Coder = new NCompress::NShrink::CDecoder;
+        }
+        else
+        {
         #ifdef EXCLUDE_COM
         switch(item.CompressionMethod)
         {
@@ -527,6 +534,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         RINOK(libraries.CreateCoder(methodInfo.FilePath, 
               methodInfo.Decoder, &mi.Coder));
         #endif
+        }
         m = methodItems.Add(mi);
       }
       ICompressCoder *coder = methodItems[m].Coder;

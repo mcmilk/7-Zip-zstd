@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 14
+!define VERSION_MINOR 15
 !define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
 !define VERSION_POSTFIX "b"
@@ -122,6 +122,7 @@ Section
   File rpm.dll
   File split.dll
   File tar.dll
+  File z.dll
   File zip.dll
 
   SetOutPath $INSTDIR\Codecs
@@ -168,6 +169,7 @@ Section
   File fi.txt
   File fr.txt
   File fur.txt
+  File fy.txt
   File gl.txt
   File he.txt
   File hr.txt
@@ -323,6 +325,7 @@ Section "Uninstall"
   Delete $INSTDIR\Formats\rpm.dll
   Delete $INSTDIR\Formats\split.dll
   Delete $INSTDIR\Formats\tar.dll
+  Delete $INSTDIR\Formats\z.dll
   Delete $INSTDIR\Formats\zip.dll
 
   RMDir $INSTDIR\Formats
@@ -369,6 +372,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\fi.txt
   Delete $INSTDIR\Lang\fr.txt
   Delete $INSTDIR\Lang\fur.txt
+  Delete $INSTDIR\Lang\fy.txt
   Delete $INSTDIR\Lang\gl.txt
   Delete $INSTDIR\Lang\he.txt
   Delete $INSTDIR\Lang\hr.txt
@@ -455,6 +459,7 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.rpm"
   DeleteRegKey HKCR "7-Zip.split"
   DeleteRegKey HKCR "7-Zip.tar"
+  DeleteRegKey HKCR "7-Zip.z"
   DeleteRegKey HKCR "7-Zip.zip"
 
 SectionEnd

@@ -96,13 +96,8 @@ HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
   HRESULT result = m_Stream->Read(data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
-  IncreasePositionValue(realProcessedSize);
+  m_Position += realProcessedSize;
   return result;
-}
-
-void CInArchive::IncreasePositionValue(UInt64 addValue)
-{
-  m_Position += addValue;
 }
 
 void CInArchive::IncreaseRealPosition(UInt64 addValue)
@@ -341,6 +336,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
         UInt32 i;
         for (i = 0; i <= numBytesInBuffer - NFileHeader::kDataDescriptorSize; i++)
         {
+          // descriptorSignature field is Info-ZIP's extension 
+          // to Zip specification.
           UInt32 descriptorSignature = GetUInt32(buffer + i);
 
           // !!!! It must be fixed for Zip64 archives

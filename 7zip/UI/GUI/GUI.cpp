@@ -163,6 +163,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
   g_hInstance = hInstance;
   InitCommonControls();
 
+  ReloadLang();
+
+
   #ifdef UNICODE
   if (!IsItWindowsNT())
   {

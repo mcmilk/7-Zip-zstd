@@ -36,6 +36,7 @@ class CPlugin
   void EnterToDirectory(const UString &aDirName);
 
   void GetPathParts(UStringVector &aPathParts);
+  void GetCurrentDir();
 public:
   UString m_FileName;
   // UString m_DefaultName;

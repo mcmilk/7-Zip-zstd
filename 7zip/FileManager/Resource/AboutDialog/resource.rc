@@ -83,7 +83,7 @@ BEGIN
     PUSHBUTTON      "Support",IDC_ABOUT_BUTTON_EMAIL,136,30,94,14
     PUSHBUTTON      "Register",IDC_ABOUT_BUTTON_REGISTER,136,53,94,14
     ICON            IDI_LOGO,IDC_STATIC,7,7,20,20,SS_REALSIZEIMAGE
-    LTEXT           "7-Zip 4.14 beta",IDC_STATIC,7,54,119,9
+    LTEXT           "7-Zip 4.15 beta",IDC_STATIC,7,54,119,9
     LTEXT           "Copyright (c) 1999-2005 Igor Pavlov",IDC_STATIC,7,67,
                     119,17
     LTEXT           "7-Zip is free software. However, you can support development of 7-Zip by registering.",

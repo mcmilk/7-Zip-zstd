@@ -15,7 +15,7 @@ namespace NZip {
 class CInArchiveException
 {
 public:
-  enum CCauseType
+  enum ECauseType
   {
     kUnexpectedEndOfArchive = 0,
     kArchiceHeaderCRCError,
@@ -27,7 +27,7 @@ public:
     kSeekStreamError
   } 
   Cause;
-  CInArchiveException(CCauseType cause): Cause(cause) {}
+  CInArchiveException(ECauseType cause): Cause(cause) {}
 };
 
 class CInArchiveInfo
@@ -66,7 +66,6 @@ class CInArchive
   UInt32 ReadUInt32();
   UInt64 ReadUInt64();
   
-  void IncreasePositionValue(UInt64 addValue);
   void IncreaseRealPosition(UInt64 addValue);
   void ThrowIncorrectArchiveException();
  

@@ -34,7 +34,7 @@ HRESULT CUpdateCallbackAgent::Finilize()
 
 HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemError)
 {
-  if (systemError == ERROR_SHARING_VIOLATION)
+  // if (systemError == ERROR_SHARING_VIOLATION)
   {
     if (Callback)
     {

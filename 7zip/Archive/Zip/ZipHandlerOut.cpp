@@ -100,12 +100,26 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       if(!FileTimeToDosTime(localFileTime, updateItem.Time))
         return E_INVALIDARG;
-      updateItem.Name = UnicodeStringToMultiByte(
-          NItemName::MakeLegalName(name), CP_OEMCP);
+
       if (!isDirectoryStatusDefined)
         updateItem.IsDirectory = ((updateItem.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-      if (updateItem.IsDirectory)
-        updateItem.Name += '/';
+
+      name = NItemName::MakeLegalName(name);
+      bool needSlash = updateItem.IsDirectory;
+      const wchar_t kSlash = L'/';
+      if (!name.IsEmpty())
+      {
+        if (name[name.Length() - 1] == kSlash)
+        {
+          if (!updateItem.IsDirectory)
+            return E_INVALIDARG;
+          needSlash = false;
+        }
+      }
+      if (needSlash)
+        name += kSlash;
+      updateItem.Name = UnicodeStringToMultiByte(name, CP_OEMCP);
+
       updateItem.IndexInClient = i;
       /*
       if(existInArchive)

@@ -1371,6 +1371,18 @@ SOURCE=..\..\Compress\RangeCoder\RangeCoderBitTree.h
 SOURCE=..\..\Compress\RangeCoder\RangeCoderOpt.h
 # End Source File
 # End Group
+# Begin Group "Shrink"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Shrink\ShrinkDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Shrink\ShrinkDecoder.h
+# End Source File
+# End Group
 # End Group
 # Begin Group "Archive"
 

@@ -35,6 +35,7 @@ public:
     m_PercentCanBePrint = false;
     m_NeedBeClosed = false;
     FailedFiles.Clear();
+    FailedCodes.Clear();
   }
 
   HRESULT OpenResult(const wchar_t *name, HRESULT result);
@@ -56,6 +57,7 @@ public:
   HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password);
 
   UStringVector FailedFiles;
+  CRecordVector<HRESULT> FailedCodes;
 };
 
 #endif

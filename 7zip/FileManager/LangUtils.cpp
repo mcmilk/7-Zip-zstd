@@ -5,9 +5,12 @@
 #include "LangUtils.h"
 #include "Common/StringConvert.h"
 #include "Windows/ResourceString.h"
+#include "Windows/Synchronization.h"
 #include "Windows/Window.h"
 #include "RegistryUtils.h"
 #include "ProgramLocation.h"
+
+using namespace NWindows;
 
 static CLang g_Lang;
 CSysString g_LangID;
@@ -31,11 +34,25 @@ void ReloadLang()
   }
 }
 
+static bool g_Loaded = false;
+static NSynchronization::CCriticalSection g_CriticalSection;
+
+void LoadLangOneTime()
+{
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
+  if (g_Loaded)
+    return;
+  g_Loaded = true;
+  ReloadLang();
+}
+
+/*
 class CLangLoader
 {
 public:
   CLangLoader() { ReloadLang(); }
 } g_LangLoader;
+*/
 
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems)
 {

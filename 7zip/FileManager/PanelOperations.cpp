@@ -153,7 +153,8 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   // selectedItems.Add(newName);
   // RefreshListCtrl(newName, -1, selectedItems);
   // RefreshListCtrl();
-  PostMessage(kReLoadMessage);
+  RefreshListCtrlSaveFocused();
+  // PostMessage(kReLoadMessage);
   return TRUE;
 }
 
