@@ -89,7 +89,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   NOverwriteDialog::NResult::EEnum aResult = 
     NOverwriteDialog::Execute(anOldFileInfo, aNewFileInfo);
   */
-  int aResult = aDialog.Create(m_ParentWindow);
+  int aResult = aDialog.Create(NULL); // m_ParentWindow doesn't work with 7z
   
   switch(aResult)
   {

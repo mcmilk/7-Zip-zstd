@@ -1,4 +1,4 @@
-// Windows/Th read.h
+// Windows/Thread.h
 
 #pragma once
 

@@ -1752,103 +1752,103 @@ SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Console2\AddSTD.cpp
+SOURCE=..\..\Console\AddSTD.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\AddSTD.h
+SOURCE=..\..\Console\AddSTD.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ArError.h
+SOURCE=..\..\Console\ArError.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\CompressEngine.cpp
+SOURCE=..\..\Console\CompressEngine.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\CompressEngine.h
+SOURCE=..\..\Console\CompressEngine.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\CompressionMethodUtils.h
+SOURCE=..\..\Console\CompressionMethodUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ConsoleCloseUtils.cpp
+SOURCE=..\..\Console\ConsoleCloseUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ConsoleCloseUtils.h
+SOURCE=..\..\Console\ConsoleCloseUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ExtractCallback.cpp
+SOURCE=..\..\Console\ExtractCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ExtractCallback.h
+SOURCE=..\..\Console\ExtractCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ExtractSTD.cpp
+SOURCE=..\..\Console\ExtractSTD.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ExtractSTD.h
+SOURCE=..\..\Console\ExtractSTD.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\FileCreationUtils.cpp
+SOURCE=..\..\Console\FileCreationUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\FileCreationUtils.h
+SOURCE=..\..\Console\FileCreationUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ListArchive.cpp
+SOURCE=..\..\Console\ListArchive.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\ListArchive.h
+SOURCE=..\..\Console\ListArchive.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\Main.cpp
+SOURCE=..\..\Console\Main.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\MainAr.cpp
+SOURCE=..\..\Console\MainAr.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\PercentPrinter.cpp
+SOURCE=..\..\Console\PercentPrinter.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\PercentPrinter.h
+SOURCE=..\..\Console\PercentPrinter.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\UpdateArchiveOptions.h
+SOURCE=..\..\Console\UpdateArchiveOptions.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\UpdateCallback.cpp
+SOURCE=..\..\Console\UpdateCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\UpdateCallback.h
+SOURCE=..\..\Console\UpdateCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\UserInputUtils.cpp
+SOURCE=..\..\Console\UserInputUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Console2\UserInputUtils.h
+SOURCE=..\..\Console\UserInputUtils.h
 # End Source File
 # End Group
 # Begin Group "Archiver Common"

@@ -198,7 +198,7 @@ STDMETHODIMP CRarHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIA
       break;
     }
     case kaipidAttributes:
-      aPropVariant = anItem.Attributes;
+      aPropVariant = anItem.GetWinAttributes();
       break;
     case kaipidEncrypted:
       aPropVariant = anItem.IsEncrypted();

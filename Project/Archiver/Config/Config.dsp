@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="ZipConfig2" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="Config" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=ZipConfig2 - Win32 Debug
+CFG=Config - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "ZipConfig2.mak".
+!MESSAGE NMAKE /f "Config.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "ZipConfig2.mak" CFG="ZipConfig2 - Win32 Debug"
+!MESSAGE NMAKE /f "Config.mak" CFG="Config - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "ZipConfig2 - Win32 Release" (based on "Win32 (x86) Application")
-!MESSAGE "ZipConfig2 - Win32 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "Config - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "Config - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -29,7 +29,7 @@ CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "ZipConfig2 - Win32 Release"
+!IF  "$(CFG)" == "Config - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -56,7 +56,7 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfg.exe " /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "ZipConfig2 - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Config - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -87,8 +87,8 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "ZipConfig2 - Win32 Release"
-# Name "ZipConfig2 - Win32 Debug"
+# Name "Config - Win32 Release"
+# Name "Config - Win32 Debug"
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
@@ -243,7 +243,7 @@ SOURCE=..\Common\HelpUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\res\ZipConfig.ico
+SOURCE=.\res\Config.ico
 # End Source File
 # Begin Source File
 
@@ -316,15 +316,15 @@ SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ZipConfig.cpp
+SOURCE=.\Config.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\ZipConfig.ico
+SOURCE=.\Config.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\ZipConfig.rc
+SOURCE=.\Config.rc
 # End Source File
 # End Target
 # End Project

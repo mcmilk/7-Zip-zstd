@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="SFXCon" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="SFXWin" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
-# TARGTYPE "Win32 (x86) Console Application" 0x0103
+# TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=SFXCon - Win32 Debug
+CFG=SFXWin - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "SFXCon.mak".
+!MESSAGE NMAKE /f "SFXWin.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "SFXCon.mak" CFG="SFXCon - Win32 Debug"
+!MESSAGE NMAKE /f "SFXWin.mak" CFG="SFXWin - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "SFXCon - Win32 Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "SFXCon - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "SFXWin - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "SFXWin - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -26,9 +26,10 @@ CFG=SFXCon - Win32 Debug
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
 CPP=cl.exe
+MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "SFXCon - Win32 Release"
+!IF  "$(CFG)" == "SFXWin - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -41,19 +42,20 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /Yu"StdAfx.h" /FD /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\Util\7z1.sfx" /opt:NOWIN98
-# SUBTRACT LINK32 /pdb:none
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zWin1.exe"
 
-!ELSEIF  "$(CFG)" == "SFXCon - Win32 Debug"
+!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -66,30 +68,28 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /Yu"StdAfx.h" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /Yu"StdAfx.h" /FD /GZ /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\Util\7z1.sfx" /pdbtype:sept
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"C:\UTIL\7zWin1.exe" /pdbtype:sept
 
 !ENDIF 
 
 # Begin Target
 
-# Name "SFXCon - Win32 Release"
-# Name "SFXCon - Win32 Debug"
+# Name "SFXWin - Win32 Release"
+# Name "SFXWin - Win32 Debug"
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\resource.h
-# End Source File
 # Begin Source File
 
 SOURCE=.\resource.rc
@@ -107,6 +107,38 @@ SOURCE=.\StdAfx.h
 # Begin Group "Windows"
 
 # PROP Default_Filter ""
+# Begin Group "Control"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\ComboBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\ComboBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\Dialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\Dialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\ListView.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\ProgressBar.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Control\Static.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\COM.cpp
@@ -193,6 +225,22 @@ SOURCE=..\..\..\..\SDK\Windows\PropVariantConversions.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Windows\ResourceString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\ResourceString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Shell.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Shell.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
@@ -202,6 +250,14 @@ SOURCE=..\..\..\..\SDK\Windows\Synchronization.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\Thread.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Window.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\Window.h
 # End Source File
 # End Group
 # Begin Group "Common"
@@ -321,6 +377,14 @@ SOURCE=..\..\Common\IArchiveHandler2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\OpenEngine2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OpenEngine2.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OpenEngine200.cpp
 # End Source File
 # Begin Source File
@@ -342,62 +406,6 @@ SOURCE=..\..\Common\ZipRegistryMain.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\ZipRegistryMain.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\ZipSettings.h
-# End Source File
-# End Group
-# Begin Group "Console Archiver"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Console\ArError.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ConsoleCloseUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ConsoleCloseUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ExtractSTD.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ExtractSTD.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ListArchive.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\ListArchive.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\MainAr.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\UserInputUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Console\UserInputUtils.h
 # End Source File
 # End Group
 # Begin Group "Interface"
@@ -718,11 +726,11 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Decode.h
 
 SOURCE=..\..\..\Compress\PPM\PPMD\Decoder.cpp
 
-!IF  "$(CFG)" == "SFXCon - Win32 Release"
+!IF  "$(CFG)" == "SFXWin - Win32 Release"
 
 # ADD CPP /Fo"Release\PPMD\Decoder.obj"
 
-!ELSEIF  "$(CFG)" == "SFXCon - Win32 Debug"
+!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
 
 # ADD CPP /Fo"Debug\PPMD\Decoder.obj"
 
@@ -750,6 +758,133 @@ SOURCE=..\..\..\Compress\PPM\PPMD\SubAlloc.h
 SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 # End Source File
 # End Group
+# End Group
+# Begin Group "Explorer"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ExtractEngine.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\FormatUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\FormatUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\MessagesDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\MessagesDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\MyMessages.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\MyMessages.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\OverwriteDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\OverwriteDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\PasswordDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\PasswordDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ProcessMessages.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ProcessMessages.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ProgressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Explorer\ProgressDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ZipSettings.h
+# End Source File
+# End Group
+# Begin Group "Agent"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Agent\AgentProxyHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Agent\AgentProxyHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Agent\ExtractCallback200.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Agent\ExtractCallback200.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Agent\Handler.cpp
+
+!IF  "$(CFG)" == "SFXWin - Win32 Release"
+
+# ADD CPP /Fo"Release\Agent\Handler.obj"
+
+!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
+
+# ADD CPP /Fo"Debug\Agent\Handler.obj"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Agent\Handler.h
+# End Source File
 # End Group
 # Begin Group "Crypto"
 

@@ -10,6 +10,9 @@
 #include "Windows/ItemIDListUtils.h"
 
 const UINT64 kZipViewSignature = 0xF8375A4950273764ui64;
+
+bool CheckIDList(LPCITEMIDLIST anIDList);
+
 struct CPropertySignature
 {
   UINT64 ProgramSignature;

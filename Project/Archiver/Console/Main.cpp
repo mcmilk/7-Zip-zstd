@@ -44,7 +44,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " (Alone)"
 #endif
 
-" 2.30 Beta 5  Copyright (c) 1999-2001 Igor Pavlov  02-Oct-2001\n";
+" 2.30 Beta 6  Copyright (c) 1999-2001 Igor Pavlov  13-Oct-2001\n";
 
 const char *kDefaultArchiveType = "7z";
 const char *kDefaultSfxModule = "7zCon.sfx";

@@ -245,16 +245,30 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
     }
     case kCommandInternalIDExtract:
     {
-      HRESULT aResult = ExtractArchive(aHWND, m_FileNames[0]);
-      if (aResult == S_FALSE)
+      try
       {
-        MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE);
+        HRESULT aResult = ExtractArchive(aHWND, m_FileNames[0]);
+        if (aResult == S_FALSE)
+        {
+          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE);
+        }
+      }
+      catch(...)
+      {
+        MyMessageBox("Error");
       }
       break;
     }
     case kCommandInternalIDCompress:
     {
-      CompressArchive(m_FileNames);
+      try
+      {
+        CompressArchive(m_FileNames);
+      }
+      catch(...)
+      {
+        MyMessageBox("Error");
+      }
       break;
     }
   }

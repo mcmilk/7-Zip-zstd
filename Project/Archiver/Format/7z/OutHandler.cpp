@@ -317,11 +317,18 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
     IUpdateCallBack *anUpdateCallBack)
 {
   COM_TRY_BEGIN
+
+  for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
+  {
+    if (m_Database.m_NumUnPackStreamsVector[i] != 1)
+      return E_FAIL;
+  }
+
   CRecordVector<bool> aCompressStatuses;
   CObjectVector<CUpdateItemInfo> anUpdateItems;
   CRecordVector<UINT32> aCopyIndexes;
   int anIndex = 0;
-  for(int i = 0; i < aNumItems; i++)
+  for(i = 0; i < aNumItems; i++)
   {
     CUpdateItemInfo anUpdateItemInfo;
     INT32 anCompress;

@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "ZipConfig2"=.\ZipConfig2.dsp - Package Owner=<4>
+Project: "Console"=.\Console.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

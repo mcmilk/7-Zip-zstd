@@ -176,6 +176,11 @@ STDMETHODIMP CZipFolder::BindToObject(LPCITEMIDLIST anIDList,
       return E_FAIL;
   }
 
+  if (!CheckIDList(anIDList))
+  {
+    return E_INVALIDARG;
+  }
+
 
   CComObjectNoLock<CZipFolder> *aShellFolderMain = new 
       CComObjectNoLock<CZipFolder>;

@@ -17,9 +17,9 @@
 #include "../../Common/ZipRegistryMain.h"
 #include "../../Common/DefaultName.h"
 
-#include "../../Console2/ExtractSTD.h"
-#include "../../Console2/ArError.h"
-#include "../../Console2/ListArchive.h"
+#include "../../Console/ExtractSTD.h"
+#include "../../Console/ArError.h"
+#include "../../Console/ListArchive.h"
 
 #include "../../Format/Common/FormatCryptoInterface.h"
 #include "../../../Compress/Interface/CompressInterface.h"
@@ -29,7 +29,7 @@ using namespace NFile;
 using namespace NComandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 2.30 Beta 5  Copyright (c) 1999-2001 Igor Pavlov  02-Oct-2001\n";
+"\n7-Zip SFX 2.30 Beta 6  Copyright (c) 1999-2001 Igor Pavlov  13-Oct-2001\n";
 
 static const int kNumSwitches = 6;
 

@@ -57,7 +57,7 @@ Project
       Alone         7za.exe: Standalone version of 7z
       SFXCon        7z.sfx: Console 7z SFX module
     Common          Common modules
-    Console2        7z.exe Console version
+    Console         7z.exe Console version
     Explorer        Explorer plugin
     Far             FAR plugin  
     Format          Archive format modules
@@ -69,7 +69,7 @@ Project
       Rar
       Tar
       Zip
-    ZipConfig2      7-Zip Configuration program
+    Config          7-Zip Configuration program
 
   Compress
   --------

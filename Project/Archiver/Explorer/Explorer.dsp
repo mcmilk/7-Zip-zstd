@@ -218,6 +218,10 @@ SOURCE=..\..\..\SDK\Windows\FileName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Windows\Handle.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Windows\ItemIDListUtils.cpp
 # End Source File
 # Begin Source File
@@ -291,6 +295,10 @@ SOURCE=..\..\..\SDK\Windows\System.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Windows\System.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\Thread.h
 # End Source File
 # Begin Source File
 

@@ -50,7 +50,6 @@ BEGIN
     "LANGUAGE 9, 1\r\n"
     "#pragma code_page(1252)\r\n"
     "#endif //_WIN32\r\n"
-    "#include ""res\\ZipConfig.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
     "#include ""afxres.rc""         // Standard components\r\n"
     "#endif\r\n"
     "\0"
@@ -78,7 +77,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDR_MAINFRAME           ICON    DISCARDABLE     "ZipConfig.ico"
+IDR_MAINFRAME           ICON    DISCARDABLE     "Config.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -123,7 +122,7 @@ STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Info"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "7-Zip 2.30 Beta 5",IDC_STATIC,8,7,115,9
+    LTEXT           "7-Zip 2.30 Beta 6",IDC_STATIC,8,7,115,9
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please register it by paying a fee of $20. You can use credit card or other payment methods.",
                     IDC_STATIC,7,41,116,63
     PUSHBUTTON      "www.7-zip.org",IDC_BUTTON_INFO_HOMEPAGE,140,7,73,14
@@ -177,8 +176,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,5,0
- PRODUCTVERSION 2,30,5,0
+ FILEVERSION 2,30,6,0
+ PRODUCTVERSION 2,30,6,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -196,14 +195,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Palvov\0"
             VALUE "FileDescription", "7-Zip Configuration\0"
-            VALUE "FileVersion", "2, 30, 5, 0\0"
+            VALUE "FileVersion", "2, 30, 6, 0\0"
             VALUE "InternalName", "7-ZipCfg\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2001 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-ZipCfg.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 5, 0\0"
+            VALUE "ProductVersion", "2, 30, 6, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -248,7 +247,6 @@ END
 LANGUAGE 9, 1
 #pragma code_page(1252)
 #endif //_WIN32
-#include "res\ZipConfig.rc2"  // non-Microsoft Visual C++ edited resources
 #include "afxres.rc"         // Standard components
 #endif
 

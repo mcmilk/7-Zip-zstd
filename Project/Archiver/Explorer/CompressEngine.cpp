@@ -178,17 +178,30 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
   if(NFind::FindFile(anArcPath, aFileInfo))
   {
     if (aFileInfo.IsDirectory())
-      throw "There is Directory with such name";
-
+    {
+      MyMessageBox("There is Directory with such name");
+      return E_FAIL;
+    }
     NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
     UString aDefaultName;
-    RETURN_IF_NOT_S_OK(OpenArchive(anArcPath, 
-        &anArchiveHandler, anArchiverInfoResult, aDefaultName, 
-        NULL));
-
+    HRESULT aResult = OpenArchive(anArcPath, &anArchiveHandler, 
+        anArchiverInfoResult, aDefaultName, NULL);
+    if (aResult == S_FALSE)
+    {
+      MyMessageBox("Existing file is not supported archive");
+      return E_FAIL;
+    }
+    if (aResult != S_OK)
+    {
+      MyMessageBox("Open error");
+      return E_FAIL;
+    }
     if (anArchiverInfoResult.ClassID != aClassID)
-      throw "Type of existing archive differs from specified type";
-    HRESULT aResult = anArchiveHandler.QueryInterface(&anOutArchive);
+    {
+      MyMessageBox("Type of existing archive differs from specified type");
+      return E_FAIL;
+    }
+    aResult = anArchiveHandler.QueryInterface(&anOutArchive);
     if(aResult != S_OK)
     {
       MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, anArcPath));
@@ -251,8 +264,9 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
     aSFXModule = GetUnicodeString(aSFXModule2);
   }
 
+  UINT aCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   HRESULT aResult = anOutArchive->DoOperation(&aClassID,
-      MultiByteToUnicodeString(aTempFileName, CP_OEMCP), anActionSetByte, 
+      GetUnicodeString(aTempFileName, aCodePage), anActionSetByte, 
       (aDialog.m_Info.SFXMode ? (const wchar_t *)aSFXModule : NULL),
       anUpdateCallBack);
   anUpdateCallBack.Release();

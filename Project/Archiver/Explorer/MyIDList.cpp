@@ -9,6 +9,11 @@
 using namespace NWindows;
 using namespace NCOM;
 
+bool CheckIDList(LPCITEMIDLIST anIDList)
+{
+  return *(UINT64 *)(anIDList->mkid.abID) == kZipViewSignature;
+}
+
 UINT32 GetIndexFromIDList(LPCITEMIDLIST anIDList)
 {
   return *(UINT32 *)(anIDList->mkid.abID + sizeof(CPropertySignature));

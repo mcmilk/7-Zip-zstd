@@ -11,6 +11,7 @@
 #include "Common/Random.h"
 #include "Common/StringConvert.h"
 #include "MyIDList.h"
+#include "Windows/Thread.h"
 
 using namespace NWindows;
 using namespace NSynchronization;
@@ -132,10 +133,8 @@ void CZipViewObject::OpenItem(UINT32 anIndex)
     g_TmpProcessInfoList.m_Items.Add(aTmpProcessInfo);
   }
   
-  DWORD anID;
-  HANDLE aNewThread = ::CreateThread(NULL, 0, MyThreadFunction, 
-      &g_TmpProcessInfoList.m_Items.Back(), 0, &anID);
-  if (aNewThread == 0)
+  CThread aThread;
+  if (!aThread.Create(MyThreadFunction, &g_TmpProcessInfoList.m_Items.Back()))
     throw 271824;
 }
 
