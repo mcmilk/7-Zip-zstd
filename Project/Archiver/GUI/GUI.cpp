@@ -24,10 +24,11 @@
 
 #include "../Common/FolderArchiveInterface.h"
 
-#include "../Explorer/TestEngine.h"
-#include "../Explorer/ExtractEngine.h"
-#include "../Explorer/CompressEngine.h"
 #include "../Explorer/MyMessages.h"
+
+#include "TestEngine.h"
+#include "ExtractEngine.h"
+#include "CompressEngine.h"
 
 using namespace NWindows;
 

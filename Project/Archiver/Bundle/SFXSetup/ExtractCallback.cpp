@@ -58,8 +58,14 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
 
   ProcessMessages(ProgressDialog);
   */
-  if(ProgressDialog.ProgressSynch.GetStopped())
-    return E_ABORT;
+  while(true)
+  {
+    if(ProgressDialog.ProgressSynch.GetStopped())
+      return E_ABORT;
+    if(!ProgressDialog.ProgressSynch.GetPaused())
+      break;
+    ::Sleep(100);
+  }
   if (completeValue != NULL)
     ProgressDialog.ProgressSynch.SetPos(*completeValue);
   return S_OK;

@@ -6,13 +6,15 @@
 #define __PASSWORDDIALOG_H
 
 #include "Windows/Control/Dialog.h"
+#include "Windows/Control/Edit.h"
 #include "resource.h"
 
 class CPasswordDialog: public NWindows::NControl::CModalDialog
 {
-  NWindows::NControl::CDialogChildControl _passwordControl;
+  NWindows::NControl::CEdit _passwordControl;
   virtual void OnOK();
   virtual bool OnInit();
+  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
   CSysString _password;
   INT_PTR Create(HWND parentWindow = 0)

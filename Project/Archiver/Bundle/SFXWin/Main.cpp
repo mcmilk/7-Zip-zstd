@@ -1,4 +1,4 @@
-// MainCommandLineAr.cpp
+// Main.cpp
 
 #include "StdAfx.h"
 
@@ -12,36 +12,36 @@
 #include "../../../Crypto/Cipher/Common/CipherInterface.h"
 #include "../../Format/Common/ArchiveInterface.h"
 #include "../../Agent/Handler.h"
-#include "../../Explorer/ExtractEngine.h"
+#include "../../GUI/ExtractEngine.h"
 #include "../../Explorer/MyMessages.h"
 
 HINSTANCE g_hInstance;
 
 static void GetArchiveName(
-    const CSysString &aCommandLine, 
-    CSysString &anArchiveName, 
-    CSysString &aSwitches)
+    const CSysString &commandLine, 
+    CSysString &archiveName, 
+    CSysString &switches)
 {
-  anArchiveName.Empty();
-  aSwitches.Empty();
-  bool aQuoteMode = false;
-  for (int i = 0; i < aCommandLine.Length(); i++)
+  archiveName.Empty();
+  switches.Empty();
+  bool quoteMode = false;
+  for (int i = 0; i < commandLine.Length(); i++)
   {
-    TCHAR aChar = aCommandLine[i];
-    if (aChar == '\"')
-      aQuoteMode = !aQuoteMode;
-    else if (aChar == ' ' && !aQuoteMode)
+    TCHAR c = commandLine[i];
+    if (c == '\"')
+      quoteMode = !quoteMode;
+    else if (c == ' ' && !quoteMode)
     {
-      if (!aQuoteMode)
+      if (!quoteMode)
       {
         i++;
         break;
       }
     }
     else 
-      anArchiveName += aChar;
+      archiveName += c;
   }
-  aSwitches = aCommandLine + i;
+  switches = commandLine + i;
 }
 
 int APIENTRY WinMain(
@@ -51,24 +51,24 @@ int APIENTRY WinMain(
   int nCmdShow)
 {
   g_hInstance = (HINSTANCE)hInstance;
-  CSysString anArchiveName, aSwitches;
-  GetArchiveName(GetCommandLine(), anArchiveName, aSwitches);
+  CSysString archiveName, switches;
+  GetArchiveName(GetCommandLine(), archiveName, switches);
   CSysString aFullPath;
   int aFileNamePartStartIndex;
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(anArchiveName, aFullPath, aFileNamePartStartIndex))
+  if (!NWindows::NFile::NDirectory::MyGetFullPathName(archiveName, aFullPath, aFileNamePartStartIndex))
   {
     MessageBox(NULL, "can't get archive name", "7-Zip", 0);
     return 1;
   }
-  aSwitches.Trim();
+  switches.Trim();
   bool anAssumeYes = false;
-  if (aSwitches == CSysString("-y"))
+  if (switches == CSysString("-y"))
     anAssumeYes = true;
-  HRESULT aResult = ExtractArchive(NULL, aFullPath, anAssumeYes);
-  if (aResult == S_FALSE)
+  HRESULT result = ExtractArchive(NULL, aFullPath, anAssumeYes);
+  if (result == S_FALSE)
     MyMessageBox(L"Archive is not supported");
-  else if (aResult != S_OK)
-    ShowErrorMessage(0, aResult);
+  else if (result != S_OK && result != E_ABORT)
+    ShowErrorMessage(0, result);
   return 0;
 }
 

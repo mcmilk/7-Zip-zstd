@@ -7,9 +7,10 @@
 
 #include "../Common/ZipRegistry.h"
 #include "../Common/ZipRegistryMain.h"
-#include "resource.h"
+#include "../Resource/CompressDialog/resource.h"
 
 #include "Windows/Control/Dialog.h"
+#include "Windows/Control/Edit.h"
 #include "Windows/Control/ComboBox.h"
 
 namespace NCompressDialog
@@ -62,7 +63,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 	NWindows::NControl::CComboBox	m_UpdateMode;
   NWindows::NControl::CDialogChildControl m_Options;
 
-  NWindows::NControl::CDialogChildControl _passwordControl;
+  NWindows::NControl::CEdit _passwordControl;
 
 
   NZipSettings::NCompression::CInfo m_RegistryInfo;
@@ -72,6 +73,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int FindFormat(const CSysString &aName);
   void SaveOptions();
   void SetOptions();
+  void UpdatePasswordControl();
 public:
   CObjectVector<NZipRootRegistry::CArchiverInfo> m_ArchiverInfoList;
 

@@ -29,15 +29,17 @@ class CDecoder
 protected:
   TInByte m_Stream;
 public:
-  void Init(ISequentialInStream *aStream)
+  UINT32 NumExtraBytes;
+  void Init(ISequentialInStream *inStream)
   {
-    m_Stream.Init(aStream);
+    m_Stream.Init(inStream);
     Init();
   }
   void Init()
   {
     m_BitPos = kNumBigValueBits; 
     m_NormalValue = 0;
+    NumExtraBytes = 0;
   }
   void ReleaseStream()
   {
@@ -45,35 +47,39 @@ public:
   }
   UINT64 GetProcessedSize() const 
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
+  UINT64 GetProcessedBitsSize() const 
+    { return (m_Stream.GetProcessedSize() << 3) - (kNumBigValueBits - m_BitPos); }
 
   void Normalize()
   {
     for (;m_BitPos >= 8; m_BitPos -= 8)
     {
-      BYTE aByte = m_Stream.ReadByte();
-      m_NormalValue = (aByte << (kNumBigValueBits - m_BitPos)) | m_NormalValue;
-      m_Value = (m_Value << 8) | kInvertTable[aByte];
+      BYTE b;
+      if (!m_Stream.ReadByte(b))
+        NumExtraBytes++;
+      m_NormalValue = (b << (kNumBigValueBits - m_BitPos)) | m_NormalValue;
+      m_Value = (m_Value << 8) | kInvertTable[b];
     }
   }
   
-  UINT32 GetValue(UINT32 aNumBits)
+  UINT32 GetValue(UINT32 numBits)
   {
     Normalize();
-    return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - aNumBits);
+    return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
-  void MovePos(UINT32 aNumBits)
+  void MovePos(UINT32 numBits)
   {
-    m_BitPos += aNumBits;
-    m_NormalValue >>= aNumBits;
+    m_BitPos += numBits;
+    m_NormalValue >>= numBits;
   }
   
-  UINT32 ReadBits(UINT32 aNumBits)
+  UINT32 ReadBits(UINT32 numBits)
   {
     Normalize();
-    UINT32 aRes = m_NormalValue & ( (1 << aNumBits) - 1);
-    MovePos(aNumBits);
-    return aRes;
+    UINT32 res = m_NormalValue & ( (1 << numBits) - 1);
+    MovePos(numBits);
+    return res;
   }
   
   UINT32 GetBitPosition() const

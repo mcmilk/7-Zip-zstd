@@ -22,6 +22,7 @@
 #endif
 
 #include "../Resource/Extract/resource.h"
+#include "../Resource/ExtractDialog/resource.h"
 
 // #include "Help/Context/Extract.h"
 
@@ -137,8 +138,9 @@ bool CExtractDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   #ifndef _SFX
-  _passwordControl.Init(*this, IDC_EXTRACT_EDIT_PASSWORD);
+  _passwordControl.Attach(GetItem(IDC_EXTRACT_EDIT_PASSWORD));
   _passwordControl.SetText(_password);
+  _passwordControl.SetPasswordChar(TEXT('*'));
   #endif
 
   NExtraction::CInfo extractionInfo;
@@ -149,7 +151,10 @@ bool CExtractDialog::OnInit()
   // extractionInfo.Paths = NExtraction::NPathMode::kFullPathnames;
   #else
   NZipRegistryManager::ReadExtractionInfo(extractionInfo);
+  CheckButton(IDC_EXTRACT_CHECK_SHOW_PASSWORD, extractionInfo.ShowPassword);
+  UpdatePasswordControl();
   #endif
+
 
   _path.Attach(GetItem(IDC_EXTRACT_COMBO_PATH));
   _path.SetText(_directoryPath);
@@ -192,6 +197,17 @@ bool CExtractDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
+#ifndef _SFX
+void CExtractDialog::UpdatePasswordControl()
+{
+  _passwordControl.SetPasswordChar((IsButtonChecked(
+    IDC_EXTRACT_CHECK_SHOW_PASSWORD) == BST_CHECKED) ? 0: TEXT('*'));
+  CSysString password;
+  _passwordControl.GetText(password);
+  _passwordControl.SetText(password);
+}
+#endif
+
 bool CExtractDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
 {
   /*
@@ -207,6 +223,13 @@ bool CExtractDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
     case IDC_EXTRACT_BUTTON_SET_PATH:
       OnButtonSetPath();
       return true;
+    #ifndef _SFX
+    case IDC_EXTRACT_CHECK_SHOW_PASSWORD:
+    {
+      UpdatePasswordControl();
+      return true;
+    }
+    #endif
   }
   return CModalDialog::OnButtonClicked(aButtonID, aButtonHWND);
 }
@@ -254,6 +277,8 @@ void CExtractDialog::OnOK()
   NExtraction::CInfo extractionInfo;
   extractionInfo.PathMode = NExtraction::NPathMode::EEnum(_pathMode);
   extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::EEnum(_overwriteMode);
+  extractionInfo.ShowPassword = (IsButtonChecked(
+          IDC_EXTRACT_CHECK_SHOW_PASSWORD) == BST_CHECKED);
   
   CSysString string;
   

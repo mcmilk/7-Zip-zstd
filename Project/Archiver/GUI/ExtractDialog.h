@@ -8,6 +8,7 @@
 #include "resource.h"
 
 #include "Windows/Control/Dialog.h"
+#include "Windows/Control/Edit.h"
 #include "Windows/Control/ComboBox.h"
 
 #ifndef  NO_REGISTRY
@@ -62,7 +63,7 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   #endif
   
   #ifndef _SFX
-  NWindows::NControl::CDialogChildControl _passwordControl;
+  NWindows::NControl::CEdit _passwordControl;
   #endif
 
 	int		_pathMode;
@@ -72,6 +73,7 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   int GetPathNameMode() const;
   int GetOverwriteMode() const;
   int GetFilesMode() const;
+  void UpdatePasswordControl();
   #endif
   
   void OnButtonSetPath();
@@ -82,7 +84,6 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   #ifndef  NO_REGISTRY
   virtual void OnHelp();
   #endif
-	// void UpdateWildCardState();
 public:
   bool _enableSelectedFilesButton;
   bool _enableFilesButton;

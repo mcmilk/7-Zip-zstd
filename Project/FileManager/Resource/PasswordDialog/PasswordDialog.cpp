@@ -21,9 +21,24 @@ bool CPasswordDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000B00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
-  _passwordControl.Init(*this, IDC_EDIT_PASSWORD);
+  _passwordControl.Attach(GetItem(IDC_EDIT_PASSWORD));
   _passwordControl.SetText(_password);
+  _passwordControl.SetPasswordChar(TEXT('*'));
   return CModalDialog::OnInit();
+}
+
+bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+{
+  if (buttonID == IDC_CHECK_PASSWORD_SHOW)
+  {
+    _passwordControl.SetPasswordChar((IsButtonChecked(
+        IDC_CHECK_PASSWORD_SHOW) == BST_CHECKED) ? 0: TEXT('*'));
+    CSysString password;
+    _passwordControl.GetText(password);
+    _passwordControl.SetText(password);
+    return true;
+  }
+  return CDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
 void CPasswordDialog::OnOK()

@@ -44,8 +44,10 @@ BEGIN
     "#include ""..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
     "#include ""..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
     "#include ""..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog2\\resource.rc""\r\n"
     "#include ""..\\Resource\\Extract\\resource.rc""\r\n"
+    "#include ""..\\Resource\\ExtractDialog\\resource.rc""\r\n"
+    "#include ""..\\Resource\\CompressDialog\\resource.rc""\r\n"
     "#include ""..\\Resource\\FoldersPage\\resource.rc""\r\n"
     "#include ""..\\Resource\\SystemPage\\resource.rc""\r\n"
     "\r\n"
@@ -67,124 +69,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 #endif //_WIN32
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 299, 199
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Extract"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "E&xtract to:",IDC_STATIC_EXTRACT_EXTRACT_TO,7,7,127,8
-    COMBOBOX        IDC_EXTRACT_COMBO_PATH,7,21,252,126,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "...",IDC_EXTRACT_BUTTON_SET_PATH,272,20,20,14,WS_GROUP
-    GROUPBOX        "Path mode",IDC_EXTRACT_PATH_MODE,7,44,127,57
-    CONTROL         "Full pathnames",IDC_EXTRACT_RADIO_FULL_PATHNAMES,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,13,57,114,10
-    CONTROL         "Current pathnames",IDC_EXTRACT_RADIO_CURRENT_PATHNAMES,
-                    "Button",BS_AUTORADIOBUTTON,13,71,114,10
-    CONTROL         "No pathnames",IDC_EXTRACT_RADIO_NO_PATHNAMES,"Button",
-                    BS_AUTORADIOBUTTON,13,85,114,10
-    GROUPBOX        "Overwrite mode",IDC_EXTRACT_OVERWRITE_MODE,148,44,144,
-                    75,WS_GROUP
-    CONTROL         "Ask before overwrite",
-                    IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,154,57,130,10
-    CONTROL         "Overwrite without prompt",
-                    IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,"Button",
-                    BS_AUTORADIOBUTTON,154,71,130,10
-    CONTROL         "Skip existing files",
-                    IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,"Button",
-                    BS_AUTORADIOBUTTON,154,85,130,10
-    CONTROL         "Auto rename",IDC_EXTRACT_RADIO_AUTO_RENAME,"Button",
-                    BS_AUTORADIOBUTTON,154,99,130,10
-    GROUPBOX        "Files",IDC_EXTRACT_FILES,7,113,127,48,WS_GROUP
-    CONTROL         "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES,
-                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,13,125,114,10
-    CONTROL         "&All files",IDC_EXTRACT_RADIO_ALL_FILES,"Button",
-                    BS_AUTORADIOBUTTON,13,139,114,10
-    GROUPBOX        "Password",IDC_EXTRACT_PASSWORD,148,126,144,35
-    EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,154,138,100,14,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,80,178,64,14,WS_GROUP
-    PUSHBUTTON      "Cancel",IDCANCEL,154,178,64,14
-    PUSHBUTTON      "Help",IDHELP,228,178,64,14
-END
-
-IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 288, 212
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "Add to Archive"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "&Archive:",IDC_STATIC_COMPRESS_ARCHIVE,7,7,274,8
-    COMBOBOX        IDC_COMPRESS_COMBO_ARCHIVE,7,21,242,126,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "...",IDC_COMPRESS_BUTTON_SET_ARCHIVE,261,21,20,14,
-                    WS_GROUP
-    LTEXT           "Archive &format:",IDC_STATIC_COMPRESS_FORMAT,7,41,119,8
-    COMBOBOX        IDC_COMPRESS_COMBO_FORMAT,7,54,119,80,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Compression &method:",IDC_STATIC_COMPRESS_METHOD,7,75,
-                    119,8
-    COMBOBOX        IDC_COMPRESS_COMBO_METHOD,7,88,119,80,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Create &Solid archive",IDC_COMPRESS_SOLID,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,109,119,10
-    LTEXT           "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS,7,155,274,
-                    8
-    EDITTEXT        IDC_COMPRESS_EDIT_PARAMETERS,7,168,274,14,ES_AUTOHSCROLL
-    LTEXT           "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE,142,41,
-                    139,8
-    COMBOBOX        IDC_COMPRESS_COMBO_UPDATE_MODE,142,54,139,80,
-                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Options",IDC_STATIC_COMPRESS_OPTIONS,142,75,139,32
-    CONTROL         "Create SF&X archive",IDC_COMPRESS_SFX,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,148,89,127,10
-    GROUPBOX        "Password",IDC_COMPRESS_PASSWORD,142,113,139,35
-    EDITTEXT        IDC_COMPRESS_EDIT_PASSWORD,148,126,100,14,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,69,191,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,143,191,64,14
-    PUSHBUTTON      "Help",IDHELP,217,191,64,14
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_DIALOG_EXTRACT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 292
-        VERTGUIDE, 134
-        VERTGUIDE, 148
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 192
-    END
-
-    IDD_DIALOG_COMPRESS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 281
-        VERTGUIDE, 126
-        VERTGUIDE, 142
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 205
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -192,8 +76,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,31,0
- PRODUCTVERSION 2,30,31,0
+ FILEVERSION 2,30,32,0
+ PRODUCTVERSION 2,30,32,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -211,14 +95,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip GUI Module\0"
-            VALUE "FileVersion", "2, 30, 31, 0\0"
+            VALUE "FileVersion", "2, 30, 32, 0\0"
             VALUE "InternalName", "7zg\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zg.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 31, 0\0"
+            VALUE "ProductVersion", "2, 30, 32, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -300,8 +184,10 @@ END
 #include "..\..\FileManager\Resource\OverwriteDialog\resource.rc"
 #include "..\..\FileManager\Resource\PasswordDialog\resource.rc"
 #include "..\..\FileManager\Resource\MessagesDialog\resource.rc"
-#include "..\..\FileManager\Resource\ProgressDialog\resource.rc"
+#include "..\..\FileManager\Resource\ProgressDialog2\resource.rc"
 #include "..\Resource\Extract\resource.rc"
+#include "..\Resource\ExtractDialog\resource.rc"
+#include "..\Resource\CompressDialog\resource.rc"
 #include "..\Resource\FoldersPage\resource.rc"
 #include "..\Resource\SystemPage\resource.rc"
 

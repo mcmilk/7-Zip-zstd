@@ -18,7 +18,7 @@ static const UINT kTimerElapse = 50;
 #ifdef LANG        
 static CIDLangPair kIDLangPairs[] = 
 {
-  { IDCANCEL, 0x02000714 }
+  { IDCANCEL, 0x02000711 }
 };
 #endif
 
@@ -84,6 +84,8 @@ void CProgressDialog::SetPos(UINT64 pos)
 
 bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 {
+  if (ProgressSynch.GetPaused())
+    return true;
   UINT64 total, completed;
   ProgressSynch.GetProgress(total, completed);
   if (total != _range)
@@ -152,3 +154,21 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   return CModalDialog::OnMessage(message, wParam, lParam);
 }
 
+bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
+{ 
+  switch(buttonID)
+  {
+    case IDCANCEL:
+    {
+      bool paused = ProgressSynch.GetPaused();;
+      ProgressSynch.SetPaused(true);
+      int res = ::MessageBox(HWND(*this), TEXT("Are you sure you want to cancel?"), 
+          _title, MB_YESNOCANCEL);
+      ProgressSynch.SetPaused(paused);
+      if (res == IDCANCEL || res == IDNO)
+        return true;
+      break;
+    }
+  }
+  return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
+}

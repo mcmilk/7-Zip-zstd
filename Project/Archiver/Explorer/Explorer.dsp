@@ -300,42 +300,6 @@ SOURCE=.\MyMessages.h
 # Begin Group "Dialogs"
 
 # PROP Default_Filter ""
-# Begin Group "FileManager Dialogs"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
-# End Source File
-# End Group
 # Begin Group "Options"
 
 # PROP Default_Filter ""
@@ -434,14 +398,6 @@ SOURCE=..\Format\Common\FormatCryptoInterface.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\ExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\ExtractCallback.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\FileManager\FolderInterface.h
 # End Source File
 # Begin Source File
@@ -483,14 +439,6 @@ SOURCE=..\..\FileManager\RegistryUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\FileManager\RegistryUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.h
 # End Source File
 # End Group
 # Begin Group "SDK"

@@ -24,8 +24,9 @@
 #include "../Agent/Handler.h"
 
 #include "../Resource/Extract/resource.h"
+#include "resource.h"
 
-#include "MyMessages.h"
+#include "../Explorer/MyMessages.h"
 #include "../../FileManager/FormatUtils.h"
 #include "../../FileManager/UpdateCallback100.h"
 
@@ -427,7 +428,8 @@ HRESULT CompressArchive(const CSysStringVector &fileNames, bool email)
 
   if (result != S_OK)
   {
-    ShowErrorMessage(result);
+    if (result != E_ABORT)
+      ShowErrorMessage(result);
     return result;
   }
  

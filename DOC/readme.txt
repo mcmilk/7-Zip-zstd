@@ -1,9 +1,13 @@
-7-Zip 2.30 Beta 29 Sources
+7-Zip 2.30 Beta 32 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
 
 7-Zip Copyright (C) 1999-2003 Igor Pavlov.
+
+
+License Info
+------------
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -18,6 +22,19 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+License notes
+-------------
+
+You can support development of 7-Zip by registering and 
+paying $20. As registered user, you will be able 
+to get technical support via e-mail support@7-zip.org.
+
+7-Zip is a free software distributed under the GNU LGPL.
+If you need license with other conditions, write to support@7-zip.org.
+You also can request for help in creating code based on 
+7-Zip's code for your custom application. 
 
 
 How to compile
@@ -44,13 +61,6 @@ For example, Project\Archiver\Bundle\Format7z  is a standalone version
 of 7z.dll that works with 7z format.
 So you can use such DLL in your project without additional DLL files and 
 without installing registry items.
-
-
-WWW:
-     http://www.7-zip.org
-E-mail:
-     support@7-zip.org
-
 
 
 Description of 7-Zip sources package
@@ -165,9 +175,15 @@ Project
   ------
     Resource        Resources
 
+
+---
+Igor Pavlov
+http://www.7-zip.org
+support@7-zip.org
+
+
 ---
 End of document
-  
 
 
 

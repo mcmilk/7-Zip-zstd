@@ -14,6 +14,8 @@ namespace NControl {
 class CEdit: public CWindow
 {
 public:
+  void SetPasswordChar(WPARAM c)
+    { SendMessage(EM_SETPASSWORDCHAR, c); }
 };
 
 }}

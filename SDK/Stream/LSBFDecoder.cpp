@@ -16,16 +16,16 @@ public:
   {
     for(int i = 0; i < 256; i++)
     {
-      BYTE aByte = BYTE(i);
-      BYTE aByteInvert = 0;
+      BYTE b = BYTE(i);
+      BYTE bInvert = 0;
       for(int j = 0; j < 8; j++)
       {
-        aByteInvert <<= 1;
-        if (aByte & 1)
-          aByteInvert |= 1;
-        aByte >>= 1;
+        bInvert <<= 1;
+        if (b & 1)
+          bInvert |= 1;
+        b >>= 1;
       }
-      kInvertTable[i] = aByteInvert;
+      kInvertTable[i] = bInvert;
     }
   }
 } g_InverterTableInitializer;

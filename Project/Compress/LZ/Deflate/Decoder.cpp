@@ -191,6 +191,9 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     }
     while(true)
     {
+      if (m_InBitStream.NumExtraBytes > 4)
+        throw CException(CException::kData);
+
       UINT32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
       if (number < 256)
       {

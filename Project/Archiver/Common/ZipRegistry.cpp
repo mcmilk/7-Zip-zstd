@@ -31,6 +31,7 @@ static const TCHAR *kExtractionInfoKeyName = _T("Extraction");
 static const TCHAR *kExtractionPathHistoryKeyName = _T("PathHistory");
 static const TCHAR *kExtractionExtractModeValueName = _T("ExtarctMode");
 static const TCHAR *kExtractionOverwriteModeValueName = _T("OverwriteMode");
+static const TCHAR *kExtractionShowPasswordValueName = _T("ShowPassword");
 
 static CSysString GetKeyPath(const CSysString &path)
 {
@@ -55,6 +56,7 @@ void SaveExtractionInfo(const NExtraction::CInfo &info)
   }
   extractionKey.SetValue(kExtractionExtractModeValueName, UINT32(info.PathMode));
   extractionKey.SetValue(kExtractionOverwriteModeValueName, UINT32(info.OverwriteMode));
+  extractionKey.SetValue(kExtractionShowPasswordValueName, info.ShowPassword);
 }
 
 void ReadExtractionInfo(NExtraction::CInfo &info)
@@ -62,6 +64,7 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
   info.Paths.Clear();
   info.PathMode = NExtraction::NPathMode::kFullPathnames;
   info.OverwriteMode = NExtraction::NOverwriteMode::kAskBefore;
+  info.ShowPassword = false;
 
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey extractionKey;
@@ -85,26 +88,33 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
     }
   }
   UINT32 extractModeIndex;
-  extractionKey.QueryValue(kExtractionExtractModeValueName, extractModeIndex);
-  switch (extractModeIndex)
+  if (extractionKey.QueryValue(kExtractionExtractModeValueName, extractModeIndex) == ERROR_SUCCESS)
   {
-    case NExtraction::NPathMode::kFullPathnames:
-    case NExtraction::NPathMode::kCurrentPathnames:
-    case NExtraction::NPathMode::kNoPathnames:
-      info.PathMode = NExtraction::NPathMode::EEnum(extractModeIndex);
-      break;
+    switch (extractModeIndex)
+    {
+      case NExtraction::NPathMode::kFullPathnames:
+      case NExtraction::NPathMode::kCurrentPathnames:
+      case NExtraction::NPathMode::kNoPathnames:
+        info.PathMode = NExtraction::NPathMode::EEnum(extractModeIndex);
+        break;
+    }
   }
   UINT32 overwriteModeIndex;
-  extractionKey.QueryValue(kExtractionOverwriteModeValueName, overwriteModeIndex);
-  switch (overwriteModeIndex)
+  if (extractionKey.QueryValue(kExtractionOverwriteModeValueName, overwriteModeIndex) == ERROR_SUCCESS)
   {
-    case NExtraction::NOverwriteMode::kAskBefore:
-    case NExtraction::NOverwriteMode::kWithoutPrompt:
-    case NExtraction::NOverwriteMode::kSkipExisting:
-    case NExtraction::NOverwriteMode::kAutoRename:
-      info.OverwriteMode = NExtraction::NOverwriteMode::EEnum(overwriteModeIndex);
-      break;
+    switch (overwriteModeIndex)
+    {
+      case NExtraction::NOverwriteMode::kAskBefore:
+      case NExtraction::NOverwriteMode::kWithoutPrompt:
+      case NExtraction::NOverwriteMode::kSkipExisting:
+      case NExtraction::NOverwriteMode::kAutoRename:
+        info.OverwriteMode = NExtraction::NOverwriteMode::EEnum(overwriteModeIndex);
+        break;
+    }
   }
+  if (extractionKey.QueryValue(kExtractionShowPasswordValueName, 
+      info.ShowPassword) != ERROR_SUCCESS)
+    info.ShowPassword = false;
 }
 
 ///////////////////////////////////
@@ -115,6 +125,7 @@ static const TCHAR *kCompressionInfoKeyName = _T("Compression");
 static const TCHAR *kCompressionHistoryArchivesKeyName = _T("ArcHistory");
 static const TCHAR *kCompressionMethodValueName = _T("Method");
 static const TCHAR *kCompressionLastClassIDValueName = _T("Archiver");
+static const TCHAR *kCompressionShowPasswordValueName = _T("ShowPassword");
 // static const TCHAR *kCompressionMaximizeValueName = _T("Maximize");
 
 static const TCHAR *kCompressionOptionsKeyName = _T("Options");
@@ -158,6 +169,7 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
   if (info.LastClassIDDefined)
     compressionKey.SetValue(kCompressionLastClassIDValueName, GUIDToString(info.LastClassID));
 
+  compressionKey.SetValue(kCompressionShowPasswordValueName, info.ShowPassword);
   // compressionKey.SetValue(kCompressionMaximizeValueName, info.Maximize);
 }
 
@@ -171,6 +183,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   info.MethodDefined = false;
   info.LastClassIDDefined = false;
   // definedStatus.Maximize = false;
+  info.ShowPassword = false;
 
 
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
@@ -234,6 +247,9 @@ void ReadCompressionInfo(NCompression::CInfo &info)
     info.LastClassIDDefined = 
         (StringToGUID(classIDString, info.LastClassID) == NOERROR);
   }
+  if (compressionKey.QueryValue(kCompressionShowPasswordValueName, 
+      info.ShowPassword) != ERROR_SUCCESS)
+    info.ShowPassword = false;
   /*
   if (compressionKey.QueryValue(kCompressionMethodValueName, info.Maximize) == ERROR_SUCCESS)
     definedStatus.Maximize = true;

@@ -60,34 +60,28 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_LOGO                ICON    DISCARDABLE     "7zipLogo.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Dialog
 //
 
-IDD_ABOUT DIALOG DISCARDABLE  0, 0, 237, 172
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
-CAPTION "About"
+IDD_DIALOG_PROGRESS DIALOG DISCARDABLE  0, 0, 246, 79
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Progress"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    PUSHBUTTON      "OK",IDOK,180,151,50,14
-    PUSHBUTTON      "www.7-zip.org",IDC_ABOUT_BUTTON_HOMEPAGE,136,7,94,14
-    PUSHBUTTON      "support@7-zip.org",IDC_ABOUT_BUTTON_EMAIL,136,30,94,14
-    PUSHBUTTON      "Register",IDC_ABOUT_BUTTON_REGISTER,136,53,94,14
-    ICON            IDI_LOGO,IDC_STATIC,7,7,20,20,SS_REALSIZEIMAGE
-    LTEXT           "7-Zip 2.30 Beta 32",IDC_STATIC,7,54,119,9
-    LTEXT           "Copyright (c) 1999-2003 Igor Pavlov",IDC_STATIC,7,67,
-                    119,17
-    LTEXT           "7-Zip is a free software. However, you can support development of 7-Zip by registering and paying $20. As registered user, you will be able to get technical support via e-mail support@7-zip.org.",
-                    IDC_ABOUT_STATIC_REGISTER_INFO,7,91,223,54
+    PUSHBUTTON      "&Background",IDC_BUTTON_PROGRESS_PRIORITY,31,58,64,14
+    PUSHBUTTON      "&Pause",IDC_BUTTON_PAUSE,103,58,64,14
+    PUSHBUTTON      "Cancel",IDCANCEL,175,58,64,14
+    LTEXT           "Elapsed time:",IDC_PROGRESS_ELAPSED,7,7,71,8
+    RTEXT           "00:00:00",IDC_PROGRESS_ELAPSED_VALUE,78,7,42,8
+    LTEXT           "Remaining time:",IDC_PROGRESS_REMAINING,7,18,71,8
+    RTEXT           "",IDC_PROGRESS_REMAINING_VALUE,78,18,42,8
+    LTEXT           "Size:",IDC_PROGRESS_TOTAL,149,7,48,8
+    RTEXT           "",IDC_PROGRESS_SPEED_TOTAL_VALUE,197,7,42,8
+    LTEXT           "Speed:",IDC_PROGRESS_SPEED,149,18,48,8
+    RTEXT           "",IDC_PROGRESS_SPEED_VALUE,197,18,42,8
+    CONTROL         "Progress1",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | 
+                    WS_BORDER,7,34,232,14
 END
 
 
@@ -99,14 +93,16 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-    IDD_ABOUT, DIALOG
+    IDD_DIALOG_PROGRESS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 230
-        VERTGUIDE, 126
-        VERTGUIDE, 136
+        RIGHTMARGIN, 239
+        VERTGUIDE, 78
+        VERTGUIDE, 120
+        VERTGUIDE, 149
+        VERTGUIDE, 197
         TOPMARGIN, 7
-        BOTTOMMARGIN, 165
+        BOTTOMMARGIN, 72
     END
 END
 #endif    // APSTUDIO_INVOKED

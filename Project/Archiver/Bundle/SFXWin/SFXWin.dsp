@@ -405,22 +405,6 @@ SOURCE=..\..\..\Compress\Interface\CompressInterface.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Explorer\ExtractDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ExtractDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ExtractEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Explorer\ExtractEngine.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Explorer\MyMessages.cpp
 # End Source File
 # Begin Source File
@@ -984,6 +968,26 @@ SOURCE=..\..\..\FileManager\OpenCallback.cpp
 # Begin Source File
 
 SOURCE=..\..\..\FileManager\OpenCallback.h
+# End Source File
+# End Group
+# Begin Group "GUI"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\GUI\ExtractDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\GUI\ExtractDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\GUI\ExtractEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\GUI\ExtractEngine.h
 # End Source File
 # End Group
 # Begin Source File

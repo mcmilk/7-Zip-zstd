@@ -54,18 +54,24 @@ void CExtractCallbackImp::AddErrorMessage(LPCTSTR message)
   _messages.Add(message);
 }
 
-STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 aSize)
+STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 total)
 {
-  ProgressDialog.ProgressSynch.SetProgress(aSize, 0);
+  ProgressDialog.ProgressSynch.SetProgress(total, 0);
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *aCompleteValue)
+STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
 {
-  if(ProgressDialog.ProgressSynch.GetStopped())
-    return E_ABORT;
-  if (aCompleteValue != NULL)
-    ProgressDialog.ProgressSynch.SetPos(*aCompleteValue);
+  while(true)
+  {
+    if(ProgressDialog.ProgressSynch.GetStopped())
+      return E_ABORT;
+    if(!ProgressDialog.ProgressSynch.GetPaused())
+      break;
+    ::Sleep(100);
+  }
+  if (completeValue != NULL)
+    ProgressDialog.ProgressSynch.SetPos(*completeValue);
   return S_OK;
 }
 

@@ -8,7 +8,11 @@
 #include "../Archiver/Common/FolderArchiveInterface.h"
 #include "Common/String.h"
 
+#ifdef _SFX
 #include "Resource/ProgressDialog/ProgressDialog.h"
+#else
+#include "Resource/ProgressDialog2/ProgressDialog.h"
+#endif
 // #include "resource.h"
 
 #include "Windows/ResourceString.h"
@@ -38,8 +42,8 @@ DECLARE_NOT_AGGREGATABLE(CExtractCallbackImp)
 DECLARE_NO_REGISTRY()
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 total);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
   // IExtractCallBack2
   STDMETHOD(AskOverwrite)(

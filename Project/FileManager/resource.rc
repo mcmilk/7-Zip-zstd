@@ -47,7 +47,7 @@ BEGIN
     "#include ""Resource\\MessagesDialog\\resource.rc""\r\n"
     "#include ""Resource\\OverwriteDialog\\resource.rc""\r\n"
     "#include ""Resource\\PasswordDialog\\resource.rc""\r\n"
-    "#include ""Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""Resource\\ProgressDialog2\\resource.rc""\r\n"
     "#include ""Resource\\AboutDialog\\resource.rc""\r\n"
     "#include ""Resource\\LangPage\\resource.rc""\r\n"
     "#include ""Resource\\PluginsPage\\resource.rc""\r\n"
@@ -80,8 +80,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,31,0
- PRODUCTVERSION 2,30,31,0
+ FILEVERSION 2,30,32,0
+ PRODUCTVERSION 2,30,32,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -99,14 +99,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip File Manager\0"
-            VALUE "FileVersion", "2, 30, 31, 0\0"
+            VALUE "FileVersion", "2, 30, 32, 0\0"
             VALUE "InternalName", "7zFM\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 31, 0\0"
+            VALUE "ProductVersion", "2, 30, 32, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -327,7 +327,7 @@ END
 #include "Resource\MessagesDialog\resource.rc"
 #include "Resource\OverwriteDialog\resource.rc"
 #include "Resource\PasswordDialog\resource.rc"
-#include "Resource\ProgressDialog\resource.rc"
+#include "Resource\ProgressDialog2\resource.rc"
 #include "Resource\AboutDialog\resource.rc"
 #include "Resource\LangPage\resource.rc"
 #include "Resource\PluginsPage\resource.rc"

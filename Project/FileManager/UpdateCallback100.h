@@ -8,7 +8,7 @@
 #include "Interface/CryptoInterface.h"
 
 #include "../Archiver/Common/FolderArchiveInterface.h"
-#include "Resource/ProgressDialog/ProgressDialog.h"
+#include "Resource/ProgressDialog2/ProgressDialog.h"
 // #include "resource.h"
 
 #include "Common/String.h"

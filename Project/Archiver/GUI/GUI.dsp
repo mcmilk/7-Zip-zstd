@@ -625,35 +625,11 @@ SOURCE=..\Common\ZipSettings.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Explorer\CompressEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\CompressEngine.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\ExtractEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\ExtractEngine.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Explorer\MyMessages.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Explorer\MyMessages.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\TestEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\TestEngine.h
 # End Source File
 # End Group
 # Begin Group "Dialogs"
@@ -664,11 +640,11 @@ SOURCE=..\Explorer\TestEngine.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.cpp
+SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
+SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Group "Messages"
@@ -709,19 +685,19 @@ SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
 # End Group
 # Begin Source File
 
-SOURCE=..\Explorer\CompressDialog.cpp
+SOURCE=.\CompressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Explorer\CompressDialog.h
+SOURCE=.\CompressDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Explorer\ExtractDialog.cpp
+SOURCE=.\ExtractDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Explorer\ExtractDialog.h
+SOURCE=.\ExtractDialog.h
 # End Source File
 # End Group
 # Begin Group "FM Common"
@@ -862,6 +838,34 @@ SOURCE=..\..\..\SDK\Interface\CryptoInterface.h
 # Begin Source File
 
 SOURCE=..\Common\FolderArchiveInterface.h
+# End Source File
+# End Group
+# Begin Group "Engine"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\CompressEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\CompressEngine.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractEngine.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TestEngine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\TestEngine.h
 # End Source File
 # End Group
 # Begin Source File

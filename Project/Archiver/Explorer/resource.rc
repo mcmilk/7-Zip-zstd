@@ -40,12 +40,6 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""..\\..\\FileManager\\Resource\\PropertyName\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\Extract\\resource.rc""\r\n"
     "#include ""..\\Resource\\FoldersPage\\resource.rc""\r\n"
     "#include ""..\\Resource\\SystemPage\\resource.rc""\r\n"
     "\r\n"
@@ -74,8 +68,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,31,0
- PRODUCTVERSION 2,30,31,0
+ FILEVERSION 2,30,32,0
+ PRODUCTVERSION 2,30,32,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -93,14 +87,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "2, 30, 31, 0\0"
+            VALUE "FileVersion", "2, 30, 32, 0\0"
             VALUE "InternalName", "7-zip\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 31, 0\0"
+            VALUE "ProductVersion", "2, 30, 32, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -112,13 +106,6 @@ END
 
 #endif    // !_MAC
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_EXTRACT             BITMAP  DISCARDABLE     "Extract.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -145,24 +132,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_METHOD_STORE        "Store"
-    IDS_METHOD_NORMAL       "Normal"
-    IDS_METHOD_MAXIMUM      "Maximum"
-    IDS_OPEN_TYPE_ALL_FILES "All Files"
-    IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE "Browse"
-    IDS_COMPRESS_UPDATE_MODE_ADD "Add and replace files"
-    IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
-    IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
-    IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
-    IDS_CANT_UPDATE_ARCHIVE "Can not update archive '{0}'"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_PROGRESS_COMPRESSING "Compressing"
-    IDS_PROGRESS_TESTING    "Testing"
     IDS_ERROR               "Error"
-    IDS_MESSAGE_NO_ERRORS   "There are no errors"
     IDS_CONFIG_DIALOG_CAPTION "7-Zip Options"
 END
 
@@ -176,12 +146,6 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-#include "..\..\FileManager\Resource\PropertyName\resource.rc"
-#include "..\..\FileManager\Resource\OverwriteDialog\resource.rc"
-#include "..\..\FileManager\Resource\PasswordDialog\resource.rc"
-#include "..\..\FileManager\Resource\MessagesDialog\resource.rc"
-#include "..\..\FileManager\Resource\ProgressDialog\resource.rc"
-#include "..\Resource\Extract\resource.rc"
 #include "..\Resource\FoldersPage\resource.rc"
 #include "..\Resource\SystemPage\resource.rc"
 

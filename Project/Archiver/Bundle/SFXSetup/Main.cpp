@@ -212,7 +212,7 @@ int APIENTRY WinMain(
   {
     if (result == S_FALSE)
       MessageBox(0, "Can not open archive", "7-Zip", 0);
-    else 
+    else if (result != E_ABORT)
       ShowErrorMessage(result);
     return  1;
   }

@@ -70,6 +70,13 @@ public:
 
 // class CProgressDialog: public NWindows::NControl::CModelessDialog
 
+enum ESpeedMode
+{
+  kSpeedBytes,
+  kSpeedKBytes,
+  kSpeedMBytes
+};
+
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
 private:
@@ -81,7 +88,15 @@ private:
   UINT64 _range;
 	NWindows::NControl::CProgressBar m_ProgressBar;
 
-  int _prevPercentValue;
+  UINT32 _prevPercentValue;
+  UINT32 _pevTime;
+  UINT32 _elapsedTime;
+  UINT32 _prevElapsedSec;
+  UINT32 _prevRemainingSec;
+  ESpeedMode _prevMode;
+  UINT32 _prevSpeed;
+
+  bool _foreground;
 
   bool OnTimer(WPARAM timerID, LPARAM callback);
   void SetRange(UINT64 range);
@@ -92,6 +107,11 @@ private:
   #ifndef _SFX
   void AddToTitle(LPCTSTR string);
   #endif
+
+  void SetPauseText();
+  void SetPriorityText();
+  void OnPauseButton();
+  void OnPriorityButton();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
   CProgressSynch ProgressSynch;

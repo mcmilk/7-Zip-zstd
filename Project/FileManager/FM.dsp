@@ -429,11 +429,11 @@ SOURCE=Resource\PasswordDialog\PasswordDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=Resource\ProgressDialog\ProgressDialog.cpp
+SOURCE=.\Resource\ProgressDialog2\ProgressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=Resource\ProgressDialog\ProgressDialog.h
+SOURCE=.\Resource\ProgressDialog2\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Group "FM Common"

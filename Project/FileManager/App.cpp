@@ -351,6 +351,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     return;
   }
 
+  if (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1)
+    NDirectory::CreateComplexDirectory(destPath);
 
   CSysString title = move ? 
       LangLoadString(IDS_MOVING, 0x03020206):
@@ -421,7 +423,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     disableTimerProcessing2.Restore();
     // For Password:
     srcPanel.SetFocusToList();
-    srcPanel.MessageBoxError(result, L"Error");
+    if (result != E_ABORT)
+      srcPanel.MessageBoxError(result, L"Error");
     return;
   }
   if (copyToSame || move)

@@ -16,6 +16,8 @@
 #include "../../FileManager/LangUtils.h"
 #endif
 
+#include "../Resource/CompressDialog/resource.h"
+
 #ifdef LANG        
 static CIDLangPair kIDLangPairs[] = 
 {
@@ -73,7 +75,7 @@ bool CCompressDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000D00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
-  _passwordControl.Init(*this, IDC_COMPRESS_EDIT_PASSWORD);
+  _passwordControl.Attach(GetItem(IDC_COMPRESS_EDIT_PASSWORD));
   _passwordControl.SetText(_T(""));
 
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_COMBO_ARCHIVE));
@@ -84,7 +86,8 @@ bool CCompressDialog::OnInit()
   m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
 
   NZipRegistryManager::ReadCompressionInfo(m_RegistryInfo);
-
+  CheckButton(IDC_COMPRESS_CHECK_SHOW_PASSWORD, m_RegistryInfo.ShowPassword);
+  UpdatePasswordControl();
 
   m_Info.ArchiverInfoIndex = 0;
   for(int i = 0; i < m_ArchiverInfoList.Size(); i++)
@@ -175,6 +178,15 @@ namespace NCompressDialog
   }
 }
 
+void CCompressDialog::UpdatePasswordControl()
+{
+  _passwordControl.SetPasswordChar((IsButtonChecked(
+      IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED) ? 0: TEXT('*'));
+  CSysString password;
+  _passwordControl.GetText(password);
+  _passwordControl.SetText(password);
+}
+
 bool CCompressDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
 {
   switch(aButtonID)
@@ -187,6 +199,11 @@ bool CCompressDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
     case IDC_COMPRESS_SFX:
     {
       OnButtonSFX();
+      return true;
+    }
+    case IDC_COMPRESS_CHECK_SHOW_PASSWORD:
+    {
+      UpdatePasswordControl();
       return true;
     }
   }
@@ -363,6 +380,9 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.SetMethod(m_Method.GetCurSel());
   m_RegistryInfo.SetLastClassID(m_ArchiverInfoList[
       m_Info.ArchiverInfoIndex].ClassID);
+
+  m_RegistryInfo.ShowPassword = (IsButtonChecked(
+      IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED);
 
   NZipRegistryManager::SaveCompressionInfo(m_RegistryInfo);
   

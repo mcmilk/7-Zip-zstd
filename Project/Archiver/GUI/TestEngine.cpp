@@ -17,7 +17,7 @@
 #include "../Common/ZipRegistry.h"
 #endif
 
-#include "MyMessages.h"
+#include "../Explorer/MyMessages.h"
 #include "../../FileManager/FormatUtils.h"
 
 #include "../../FileManager/ExtractCallback.h"

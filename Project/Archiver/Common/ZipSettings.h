@@ -36,6 +36,7 @@ namespace NExtraction{
     NPathMode::EEnum PathMode;
     NOverwriteMode::EEnum OverwriteMode;
     CSysStringVector Paths;
+    bool ShowPassword;
   };
 }
 
@@ -59,9 +60,11 @@ namespace NCompression{
     bool SolidMode;
     CObjectVector<CFormatOptions> FormatOptionsVector;
 
-    void SetMethod(BYTE aMethod) {Method = aMethod; MethodDefined = true; }
-    void SetLastClassID(const CLSID &aLastClassID) 
-      { LastClassID = aLastClassID; LastClassIDDefined = true; }
+    bool ShowPassword;
+
+    void SetMethod(BYTE method) {Method = method; MethodDefined = true; }
+    void SetLastClassID(const CLSID &lastClassID) 
+      { LastClassID = lastClassID; LastClassIDDefined = true; }
     // bool Maximize;
   };
 
