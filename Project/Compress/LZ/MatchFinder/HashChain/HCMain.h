@@ -49,7 +49,7 @@ CInTree::CInTree():
   #endif
   #endif
   m_Hash(0),
-  m_ChainBase(0),
+  m_Chain(0),
   m_CutValue(16)
 {
 }
@@ -57,16 +57,15 @@ CInTree::CInTree():
 void CInTree::FreeMemory()
 {
   #ifdef WIN32
-  if (m_ChainBase != 0)
-    VirtualFree(m_ChainBase, 0, MEM_RELEASE);
+  if (m_Chain != 0)
+    VirtualFree(m_Chain, 0, MEM_RELEASE);
   if (m_Hash != 0)
     VirtualFree(m_Hash, 0, MEM_RELEASE);
   #else
-  delete []m_LeftBase;
-  delete []m_RightBase;
+  delete []m_Chain;
   delete []m_Hash;
   #endif
-  m_ChainBase = 0;
+  m_Chain = 0;
   m_Hash = 0;
   CIn::Free();
 }
@@ -90,6 +89,7 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     
     m_HistorySize = aSizeHistory;
     m_MatchMaxLen = aMatchMaxLen;
+    m_CyclicBufferSize = aSizeHistory + 1;
     
     
     UINT32 aSize = kHashSize;
@@ -101,15 +101,14 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #endif
     
     #ifdef WIN32
-    m_ChainBase = (CIndex *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
-    if (m_ChainBase == 0)
+    m_Chain = (CIndex *)::VirtualAlloc(0, (m_CyclicBufferSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
+    if (m_Chain == 0)
       throw CNewException();
     m_Hash = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
     if (m_Hash == 0)
       throw CNewException();
     #else
-    m_LeftBase = new CIndex[m_BlockSize + 1];
-    m_RightBase = new CIndex[m_BlockSize + 1];
+    m_Chain = new CIndex[m_CyclicBufferSize + 1];
     m_Hash = new CIndex[aSize + 1];
     #endif
     
@@ -148,7 +147,7 @@ HRESULT CInTree::Init(ISequentialInStream *aStream)
   #endif
   #endif
 
-  m_Chain = m_ChainBase;
+  m_CyclicBufferPos = 0;
 
   ReduceOffsets(0 - 1);
   return S_OK;
@@ -276,7 +275,7 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   m_Hash[aHashValue] = m_Pos;
   if(aCurMatch < aMatchMinPos)
   {
-    m_Chain[m_Pos] = kEmptyHashValue; 
+    m_Chain[m_CyclicBufferPos] = kEmptyHashValue; 
 
     #ifdef HASH_ARRAY_2
     aDistances[2] = aLen2Distance;
@@ -285,10 +284,9 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
     #endif
     #endif
 
-
     return aMatchHashLenMax;
   }
-  m_Chain[m_Pos] = aCurMatch;
+  m_Chain[m_CyclicBufferPos] = aCurMatch;
 
  
   #ifdef HASH_ARRAY_2
@@ -322,7 +320,13 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
     }
     if(aCurrentLen == aCurrentLimit)
       break;
-    aCurMatch = m_Chain[aCurMatch];
+
+    UINT32 aDelta = m_Pos - aCurMatch;
+    UINT32 aCyclicPos = (aDelta <= m_CyclicBufferPos) ?
+        (m_CyclicBufferPos - aDelta):
+        (m_CyclicBufferPos - aDelta + m_CyclicBufferSize);
+
+    aCurMatch = m_Chain[aCyclicPos];
     if(aCurMatch < aMatchMinPos)
       break;
   }
@@ -388,18 +392,10 @@ void CInTree::DummyLongestMatch()
   m_Hash[aHashValue] = m_Pos;
   if(aCurMatch < aMatchMinPos)
   {
-    m_Chain[m_Pos] = kEmptyHashValue; 
+    m_Chain[m_CyclicBufferPos] = kEmptyHashValue; 
     return;
   }
-  m_Chain[m_Pos] = aCurMatch;
-}
-
-void CInTree::AfterMoveBlock()
-{
-  UINT32 aNumBytesToMove = m_HistorySize * sizeof(CIndex);
-  UINT32 aSpecOffset = ((m_Chain + m_Pos) - m_ChainBase) - m_HistorySize;
-  memmove(m_ChainBase, m_ChainBase + aSpecOffset, aNumBytesToMove);
-  m_Chain -= aSpecOffset;
+  m_Chain[m_CyclicBufferPos] = aCurMatch;
 }
 
 void CInTree::NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue)
@@ -419,7 +415,10 @@ void CInTree::Normalize()
 {
   UINT32 aStartItem = m_Pos - m_HistorySize;
   UINT32 aSubValue = aStartItem - 1;
-  NormalizeLinks(m_Chain + aStartItem, m_HistorySize, aSubValue);
+  
+  // NormalizeLinks(m_Chain + aStartItem, m_HistorySize, aSubValue);
+  NormalizeLinks(m_Chain, m_CyclicBufferSize, aSubValue);
+
   NormalizeLinks(m_Hash, kHashSize, aSubValue);
 
   #ifdef HASH_ARRAY_2

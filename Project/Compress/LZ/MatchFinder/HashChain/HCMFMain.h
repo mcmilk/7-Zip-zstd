@@ -41,16 +41,8 @@ STDMETHODIMP CMatchFinderHC::Create(UINT32 aSizeHistory,
       UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
       UINT32 aKeepAddBufferAfter)
 { 
-  const UINT32 kAlignMask = (1 << 10) - 1;
-  UINT32 aWindowReservSize = aSizeHistory / 2;
-  aWindowReservSize += kAlignMask;
-  aWindowReservSize &= ~(kAlignMask);
-
-  const kMinDictSize = (1 << 10);
-  if (aWindowReservSize < kMinDictSize)
-    aWindowReservSize = kMinDictSize;
-  aWindowReservSize += 256;
-
+  UINT32 aWindowReservSize = (aSizeHistory + aKeepAddBufferBefore + 
+      aMatchMaxLen + aKeepAddBufferAfter) / 2 + 256;
   try 
   {
     return m_MatchFinder.Create(aSizeHistory, aKeepAddBufferBefore, aMatchMaxLen, 

@@ -26,7 +26,8 @@ STDMETHODIMP CAgent::FolderOpen(
 {
   UString aDefaultName;
 
-  CSysString aFileName = GetSystemString(_aFileName, CP_OEMCP);
+  UINT aCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  CSysString aFileName = GetSystemString(_aFileName, aCodePage);
   CObjectVector<NZipRootRegistry::CArchiverInfo> anArchiverInfoList;
   NZipRootRegistry::ReadArchiverInfoList(anArchiverInfoList);
   CSysString anExtension;

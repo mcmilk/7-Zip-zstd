@@ -27,7 +27,8 @@ UString GetDefaultName(const CSysString &aFullFileName,
   if (aFileName[aDotPos] != '.')
     return kEmptyFileAlias;
   if (anExtension.CollateNoCase(aFileName.Mid(aDotPos + 1)) == 0)
-    return GetUnicodeString(aFileName.Left(aDotPos)) + anAddSubExtension;
+    return GetUnicodeString(aFileName.Left(aDotPos), 
+        (AreFileApisANSI() ? CP_ACP : CP_OEMCP)) + anAddSubExtension;
   return kEmptyFileAlias;
 }
 

@@ -16,9 +16,9 @@ void CInTree2::BeforeMoveBlock()
 
 void CInTree2::AfterMoveBlock()
 {
+  CInTree::AfterMoveBlock();
   if (m_Callback)
     m_Callback->AfterChangingBufferPos();
-  CInTree::AfterMoveBlock();
 }
 
 STDMETHODIMP CMatchFinderBinTree::Init(ISequentialInStream *aStream)
@@ -44,20 +44,12 @@ STDMETHODIMP CMatchFinderBinTree::Create(UINT32 aSizeHistory,
       UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
       UINT32 aKeepAddBufferAfter)
 { 
-  const UINT32 kAlignMask = (1 << 16) - 1;
-  UINT32 aWindowReservSize = aSizeHistory / 2;
-  aWindowReservSize += kAlignMask;
-  aWindowReservSize &= ~(kAlignMask);
-
-  const kMinDictSize = (1 << 19);
-  if (aWindowReservSize < kMinDictSize)
-    aWindowReservSize = kMinDictSize;
-  aWindowReservSize += 256;
-
+  UINT32 aWindowReservSize = (aSizeHistory + aKeepAddBufferBefore + 
+      aMatchMaxLen + aKeepAddBufferAfter) / 2 + 256;
   try 
   {
-    return m_MatchFinder.Create(aSizeHistory, aKeepAddBufferBefore, aMatchMaxLen, 
-      aKeepAddBufferAfter, aWindowReservSize); 
+    return m_MatchFinder.Create(aSizeHistory, aKeepAddBufferBefore, 
+        aMatchMaxLen, aKeepAddBufferAfter, aWindowReservSize); 
   }
   catch(...)
   {

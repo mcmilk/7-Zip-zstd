@@ -71,6 +71,8 @@ struct CPair
 
 class CInTree: public NStream::NWindow::CIn
 {
+  UINT32 m_CyclicBufferPos;
+  UINT32 m_CyclicBufferSize;
   UINT32 m_HistorySize;
   UINT32 m_MatchMaxLen;
 
@@ -84,7 +86,6 @@ class CInTree: public NStream::NWindow::CIn
   #endif
   
   CPair *m_Son;
-  CPair *m_Base;
 
   UINT32 m_CutValue;
 
@@ -92,8 +93,6 @@ class CInTree: public NStream::NWindow::CIn
   void Normalize();
   void FreeMemory();
 
-protected:
-  virtual void AfterMoveBlock();
 public:
   CInTree();
   ~CInTree();
@@ -105,15 +104,13 @@ public:
   void DummyLongestMatch();
   HRESULT MovePos()
   {
+    m_CyclicBufferPos++;
+    if (m_CyclicBufferPos >= m_CyclicBufferSize)
+      m_CyclicBufferPos = 0;
     RETURN_IF_NOT_S_OK(CIn::MovePos());
     if (m_Pos == kMaxValForNormalize)
       Normalize();
     return S_OK;
-  }
-  void ReduceOffsets(UINT32 aSubValue)
-  {
-    CIn::ReduceOffsets(aSubValue);
-    m_Son += aSubValue;
   }
 };
 

@@ -1,9 +1,18 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 21        2002-07-08
+  --------------------------------------
+      Project/Compress/LZ/MatchFinder/BinTree/BinTree.h
+      Project/Compress/LZ/MatchFinder/BinTree/BinTreeMain.h
+      Project/Compress/LZ/MatchFinder/BinTree/HC.h
+      Project/Compress/LZ/MatchFinder/BinTree/HCMain.h
+        - RAM requirements for LZMA (7z) compression were reduced.
+
+
   Version 2.30 Beta 20        2002-07-01
   --------------------------------------
-    - SRC/VC/SDK/Stream/WindowOut.h 
+    - SDK/Stream/WindowOut.h 
         now it uses only required memory (dictionary size).
     - Project/Archiver/Resource 
         contains common resurces
