@@ -175,40 +175,49 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
 {
   int aCommandOffset;
   
-  // commented for Windows 2000
-  // /*
-
   #ifdef _UNICODE
-  if(aCommandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX) &&
-    (aCommandInfo->fMask & CMIC_MASK_UNICODE) != 0)
+  
+  if(aCommandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX))
   {
-    LPCMINVOKECOMMANDINFOEX aCommandInfoEx = (LPCMINVOKECOMMANDINFOEX)aCommandInfo;
-    if(HIWORD(aCommandInfoEx->lpVerb) == 0)
-      aCommandOffset = LOWORD(aCommandInfoEx->lpVerb);
+    if ((aCommandInfo->fMask & CMIC_MASK_UNICODE) != 0)
+    {
+      LPCMINVOKECOMMANDINFOEX aCommandInfoEx = (LPCMINVOKECOMMANDINFOEX)aCommandInfo;
+      if(HIWORD(aCommandInfoEx->lpVerb) == 0)
+        aCommandOffset = LOWORD(aCommandInfoEx->lpVerb);
+      else
+      {
+        MessageBox(0, TEXT("1"), TEXT("1"), 0);
+        return E_FAIL;
+      }
+      /*
+      if(HIWORD(aCommandInfoEx->lpVerbW) == 0)
+      aCommandOffset = LOWORD(aCommandInfoEx->lpVerbW);
+      else
+      aCommandOffset = FindVerb(GetSystemString(aCommandInfoEx->lpVerbW));
+      */
+    }
     else
       return E_FAIL;
-    /*
-    if(HIWORD(aCommandInfoEx->lpVerbW) == 0)
-      aCommandOffset = LOWORD(aCommandInfoEx->lpVerbW);
-    else
-      aCommandOffset = FindVerb(GetSystemString(aCommandInfoEx->lpVerbW));
-    */
   }
   else
   {
-    return E_FAIL;
+    if(HIWORD(aCommandInfo->lpVerb) == 0)
+      aCommandOffset = LOWORD(aCommandInfo->lpVerb);
+    else
+      aCommandOffset = FindVerb(GetSystemString(aCommandInfo->lpVerb));
   }
 
-  // else
   #else
-  // */
+  
   {
     if(HIWORD(aCommandInfo->lpVerb) == 0)
       aCommandOffset = LOWORD(aCommandInfo->lpVerb);
     else
       aCommandOffset = FindVerb(aCommandInfo->lpVerb);
   }
+
   #endif
+
   if(aCommandOffset < 0 || aCommandOffset >= m_CommandMap.size())
     return E_FAIL;
 

@@ -37,7 +37,7 @@ CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aProp
       if(aPropVariant.vt != VT_UI4)
         break;
       TCHAR aTmp[17];
-      _stprintf(aTmp, _T("%X"), aPropVariant.ulVal);
+      _stprintf(aTmp, _T("%08X"), aPropVariant.ulVal);
       return aTmp;
     }
     case kaipidAttributes:

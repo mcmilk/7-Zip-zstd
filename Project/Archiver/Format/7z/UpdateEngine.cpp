@@ -228,10 +228,9 @@ HRESULT UpdateArchiveStd(COutArchive &anArchive,
 
   aCompressIndex = aCopyIndexIndex = 0;
 
-  int aNumFiles = anUpdateItems.Size();
   CRecordVector<CRefItem2> aRefItems;
-  aRefItems.Reserve(aNumFiles);
-  for (i = 0; i < aNumFiles; i++)
+  aRefItems.Reserve(aCompressStatuses.Size());
+  for (i = 0; i < aCompressStatuses.Size(); i++)
   {
     CRefItem2 aRefItem;
     if (aCompressStatuses[i])

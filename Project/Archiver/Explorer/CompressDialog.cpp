@@ -316,6 +316,7 @@ void CCompressDialog::OnOK()
     m_ArchivePath.GetLBText(aCurrentItem, aString);
   aString.TrimLeft();
   aString.TrimRight();
+  m_RegistryInfo.HistoryArchives.Clear();
   AddUniqueString(m_RegistryInfo.HistoryArchives, (const TCHAR *)aString);
   m_Info.ArchiveName = aString;
   m_Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());

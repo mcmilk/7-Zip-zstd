@@ -1,7 +1,16 @@
 Sources history of the 7-Zip
 ----------------------------
 
-  Version 2.30 Beta 9        08-Jan-2002
+  Version 2.30 Beta 10        2002-01-11
+  --------------------------------------
+    - Exlorer/ContextMenu.cpp: bug with context menu on 
+      Windows NT4 in Unicode version was fixed.
+    - Format/7z/UpdateArchiveEngine.cpp: bug was fixed - 
+      Updating in Beta 8 and 9 didn't work.
+    - Exlorer/CCompressDialog.cpp: history growing bug was fixed.
+
+  
+  Version 2.30 Beta 9         2002-01-08
   --------------------------------------
     - SDK/Common/Vector.h: sopporting sorted object vectors .
     - Lang features.
