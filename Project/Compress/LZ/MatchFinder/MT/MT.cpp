@@ -39,8 +39,10 @@ STDMETHODIMP CMatchFinderCallback::AfterChangingBufferPos()
   return S_OK;
 }
 
-HRESULT CMatchFinderMT::SetMatchFinder(IInWindowStreamMatch *aMatchFinder)
+HRESULT CMatchFinderMT::SetMatchFinder(IInWindowStreamMatch *aMatchFinder, 
+    UINT32 multiThreadMult)
 {
+  _multiThreadMult = multiThreadMult;
   m_MatchFinder = aMatchFinder;
   CComPtr<IMatchFinderSetCallback> aMatchFinderSetCallback;
   if (m_MatchFinder.QueryInterface(&aMatchFinderSetCallback) == S_OK)
@@ -100,7 +102,8 @@ STDMETHODIMP_(UINT32) CMatchFinderMT::GetMatchLen(UINT32 aIndex,
     aLimit = m_NumAvailableBytesCurrent - (aIndex);
   aBack++;
   const BYTE *pby = m_DataCurrentPos + aIndex;
-  for(UINT32 i = 0; i < aLimit && pby[i] == pby[i - aBack]; i++);
+  UINT32 i;
+  for(i = 0; i < aLimit && pby[i] == pby[i - aBack]; i++);
   /*
 
   char aSz[100];
@@ -132,13 +135,13 @@ void CMatchFinderMT::FreeMem()
 }
 
 STDMETHODIMP CMatchFinderMT::Create(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
+      UINT32 aKeepAddBufferBefore, UINT32 matchMaxLen, 
       UINT32 aKeepAddBufferAfter)
 { 
   FreeMem();
-  m_MatchMaxLen = aMatchMaxLen;
+  m_MatchMaxLen = matchMaxLen;
 
-  m_BlockSize = (aMatchMaxLen + 1) * m_MultiThreadMult;
+  m_BlockSize = (matchMaxLen + 1) * _multiThreadMult;
   UINT32 aBufferSize = m_BlockSize * kNumMTBlocks;
   m_Buffer = new UINT32[aBufferSize];
   for (int i = 0; i < kNumMTBlocks; i++)
@@ -149,7 +152,7 @@ STDMETHODIMP CMatchFinderMT::Create(UINT32 aSizeHistory,
   aKeepAddBufferBefore += aBufferSize;
 
   return m_MatchFinder->Create(aSizeHistory, 
-      aKeepAddBufferBefore, aMatchMaxLen, 
+      aKeepAddBufferBefore, matchMaxLen, 
       aKeepAddBufferAfter); 
 }
 
@@ -215,7 +218,7 @@ static DWORD WINAPI MFThread(void *aThreadCoderInfo)
 
 CMatchFinderMT::CMatchFinderMT():
   m_Buffer(0),
-  m_MultiThreadMult(100)
+  _multiThreadMult(100)
 {
   for (int i = 0; i < kNumMTBlocks; i++)
   {
@@ -249,7 +252,8 @@ void CMatchFinderMT::Start()
   m_NeedStart = false;
   m_CurrentPos = 0;
   m_CurrentLimitPos = 0;
-  for (int i = 0; i < kNumMTBlocks; i++)
+  int i;
+  for (i = 0; i < kNumMTBlocks; i++)
     m_CanReadEvents[i].Reset();
   for (i = kNumMTBlocks - 1; i >= 0; i--)
     m_CanWriteEvents[i].Set();

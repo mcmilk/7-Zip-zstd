@@ -7,6 +7,8 @@
 #include "Common/StringConvert.h"
 #include "Windows/FileDir.h"
 #include "Windows/Error.h"
+#include "Windows/COM.h"
+#include "Windows/Thread.h"
 #include "FolderInterface.h"
 
 #include "App.h"
@@ -99,6 +101,87 @@ public:
   }
 };
 
+struct CThreadExtract
+{
+  bool Move;
+  CComPtr<IFolderOperations> FolderOperations;
+  CRecordVector<UINT32> Indices;
+  UString DestPath;
+  CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
+  CComPtr<IFolderOperationsExtractCallback> ExtractCallback;
+  HRESULT Result;
+  
+  DWORD Extract()
+  {
+    NCOM::CComInitializer comInitializer;
+    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    if (Move)
+    {
+      Result = FolderOperations->MoveTo(
+          &Indices.Front(), Indices.Size(), 
+          DestPath, ExtractCallback);
+      // ExtractCallbackSpec->DestroyWindows();
+    }
+    else
+    {
+      Result = FolderOperations->CopyTo(
+          &Indices.Front(), Indices.Size(), 
+          DestPath, ExtractCallback);
+      // ExtractCallbackSpec->DestroyWindows();
+    }
+    ExtractCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadExtract *)param)->Extract();
+  }
+};
+
+struct CThreadUpdate
+{
+  bool Move;
+  CComPtr<IFolderOperations> FolderOperations;
+  UString SrcFolderPrefix;
+  UStringVector FileNames;
+  CRecordVector<const wchar_t *> FileNamePointers;
+  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
+  HRESULT Result;
+  
+  DWORD Process()
+  {
+    NCOM::CComInitializer comInitializer;
+    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    if (Move)
+    {
+      {
+        throw 1;
+        // srcPanel.MessageBoxMyError(L"Move is not supported");
+        return 0;
+      }
+    }
+    else
+    {
+      Result = FolderOperations->CopyFrom(
+          SrcFolderPrefix,
+          &FileNamePointers.Front(),
+          FileNamePointers.Size(),
+          UpdateCallback);
+    }
+    UpdateCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadUpdate *)param)->Process();
+  }
+};
+
+
+
 void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 {
   if (kNumPanels <= 1)
@@ -112,7 +195,14 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   }
 
   bool useSrcPanel = copyToSame || destPanel.IsFSFolder();
-  
+
+  if (move && !useSrcPanel)
+  {
+    srcPanel.MessageBoxMyError(L"Move is not supported");
+    return;
+  }
+
+ 
   CPanel &panel = useSrcPanel ? srcPanel : destPanel;
 
   CComPtr<IFolderOperations> folderOperations;
@@ -161,95 +251,66 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     return;
   }
 
-  CComObjectNoLock<CExtractCallbackImp> *extractCallbackSpec;
-  CComPtr<IFolderOperationsExtractCallback> extractCallback;
-  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec;
-  CComPtr<IUpdateCallback100> updateCallback;
+
   CSysString title = move ? 
       LangLoadString(IDS_MOVING, 0x03020206):
       LangLoadString(IDS_COPYING, 0x03020205);
   CSysString progressWindowTitle = LangLoadString(IDS_APP_TITLE, 0x03000000);
-  if (useSrcPanel)
-  {
-    extractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
-    extractCallback = extractCallbackSpec;
-    extractCallbackSpec->_parentWindow = _window;
-    extractCallbackSpec->_appTitle.Window = _window;
-    extractCallbackSpec->_appTitle.Title = progressWindowTitle;
-    extractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
 
-    extractCallbackSpec->StartProgressDialog(title);
-    extractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
-  }
-  else
-  {
-    updateCallbackSpec = new CComObjectNoLock<CUpdateCallBack100Imp>;
-    updateCallback = updateCallbackSpec;
-    updateCallbackSpec->Init(_window, title, false, L"");
-    updateCallbackSpec->_appTitle.Window = _window;
-    updateCallbackSpec->_appTitle.Title = progressWindowTitle;
-    updateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
-  }
-  
   CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
 
-
-  UStringVector fileNames;
-  CRecordVector<const wchar_t *> fileNamePointers;
-  if (!useSrcPanel)
-  {
-    fileNames.Reserve(indices.Size());
-    for(int i = 0; i < indices.Size(); i++)
-      fileNames.Add(srcPanel.GetItemName(indices[i]));
-    fileNamePointers.Reserve(indices.Size());
-    for(i = 0; i < indices.Size(); i++)
-      fileNamePointers.Add(fileNames[i]);
-  }
-
   HRESULT result;
+  if (useSrcPanel)
   {
-    CWindowDisable windowDisable(_window);
-    if (move)
-    {
-      if (useSrcPanel)
-        result = folderOperations->MoveTo(&indices.Front(), indices.Size(), 
-          GetUnicodeString(destPath),
-          extractCallback);
-      else
-      {
-        srcPanel.MessageBoxMyError(L"Move is not supported");
-        return;
-      }
-    }
-    else
-    {
-      if (useSrcPanel)
-        result = folderOperations->CopyTo(&indices.Front(), indices.Size(), 
-            GetUnicodeString(destPath),
-            extractCallback);
-      else
-      {
-        result = folderOperations->CopyFrom(srcPanel._currentFolderPrefix,
-            &fileNamePointers.Front(),
-            fileNamePointers.Size(),
-            updateCallback);
-      }
-
-      /*
-      if (srcPanel._folder->Extract(&indices.Front(), indices.Size(), 
-      NExtractionMode::NPath::kCurrentPathnames, 
-      NExtractionMode::NOverwrite::kAskBefore, 
-      GetUnicodeString(destPath),
-      BoolToMyBool(false),
-      extractCallback) != S_OK)
-      */
-    }
+    CThreadExtract extracter;
+    extracter.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
+    extracter.ExtractCallback = extracter.ExtractCallbackSpec;
+    extracter.ExtractCallbackSpec->_parentWindow = _window;
+    extracter.ExtractCallbackSpec->_appTitle.Window = _window;
+    extracter.ExtractCallbackSpec->_appTitle.Title = progressWindowTitle;
+    extracter.ExtractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+    extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
+    extracter.Move = move;
+    extracter.FolderOperations = folderOperations;
+    extracter.Indices = indices;;
+    extracter.DestPath = GetUnicodeString(destPath);
+    CThread thread;
+    if (!thread.Create(CThreadExtract::MyThreadFunction, &extracter))
+      throw 271824;
+    extracter.ExtractCallbackSpec->StartProgressDialog(title);
+    result = extracter.Result;
   }
+  else
+  {
+    CThreadUpdate updater;
+    updater.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
+    updater.UpdateCallback = updater.UpdateCallbackSpec;
+    updater.UpdateCallbackSpec->_appTitle.Window = _window;
+    updater.UpdateCallbackSpec->_appTitle.Title = progressWindowTitle;
+    updater.UpdateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+    updater.UpdateCallbackSpec->Init(_window, false, L"");
+    updater.Move = move;
+    updater.FolderOperations = folderOperations;
+    updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
+    updater.FileNames.Reserve(indices.Size());
+    for(int i = 0; i < indices.Size(); i++)
+      updater.FileNames.Add(srcPanel.GetItemName(indices[i]));
+    updater.FileNamePointers.Reserve(indices.Size());
+    for(i = 0; i < indices.Size(); i++)
+      updater.FileNamePointers.Add(updater.FileNames[i]);
+    CThread thread;
+    if (!thread.Create(CThreadUpdate::MyThreadFunction, &updater))
+      throw 271824;
+    updater.UpdateCallbackSpec->StartProgressDialog(title);
+    result = updater.Result;
+  }
+
+  /*
   if (useSrcPanel)
     extractCallbackSpec->DestroyWindows();
+  */
   
-
   if (result != S_OK)
   {
     disableTimerProcessing1.Restore();

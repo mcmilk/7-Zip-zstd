@@ -4,49 +4,38 @@
 
 #include "OutStreamWithCRC.h"
 
-void COutStreamWithCRC::Init(ISequentialOutStream *aStream)
+STDMETHODIMP COutStreamWithCRC::Write(const void *data, 
+    UINT32 size, UINT32 *processedSize)
 {
-  m_Stream = aStream;
-  InitCRC();
-}
-
-void COutStreamWithCRC::InitCRC()
-{
-  m_Crc.Init();
-}
-
-STDMETHODIMP COutStreamWithCRC::Write(const void *aData, 
-    UINT32 aSize, UINT32 *aProcessedSize)
-{
-  HRESULT aResult;
-  UINT32 aProcessedSizeReal;
-  if(!m_Stream)
+  HRESULT result;
+  UINT32 realProcessedSize;
+  if(!_stream)
   {
-    aProcessedSizeReal = aSize;
-    aResult = S_OK;
+    realProcessedSize = size;
+    result = S_OK;
   }
   else
-    aResult = m_Stream->Write(aData, aSize, &aProcessedSizeReal);
-  m_Crc.Update(aData, aProcessedSizeReal);
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+    result = _stream->Write(data, size, &realProcessedSize);
+  _crc.Update(data, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
 }
 
-STDMETHODIMP COutStreamWithCRC::WritePart(const void *aData, 
-    UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP COutStreamWithCRC::WritePart(const void *data, 
+    UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  HRESULT aResult;
-  if(!m_Stream)
+  UINT32 realProcessedSize;
+  HRESULT result;
+  if(!_stream)
   {
-    aProcessedSizeReal = aSize;
-    aResult = S_OK;
+    realProcessedSize = size;
+    result = S_OK;
   }
   else
-    aResult = m_Stream->WritePart(aData, aSize, &aProcessedSizeReal);
-  m_Crc.Update(aData, aProcessedSizeReal);
-  if(aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+    result = _stream->WritePart(data, size, &realProcessedSize);
+  _crc.Update(data, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
 }

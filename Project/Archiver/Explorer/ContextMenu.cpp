@@ -5,14 +5,19 @@
 #include "ContextMenu.h"
 
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
+#include "Common/Random.h"
 
 #include "Windows/Shell.h"
 #include "Windows/Memory.h"
 #include "Windows/COM.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
+#include "Windows/FileMapping.h"
 #include "Windows/System.h"
+#include "Windows/Thread.h"
 #include "Windows/Window.h"
+#include "Windows/Synchronization.h"
 
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
@@ -25,9 +30,9 @@
 
 #include "resource.h"
 
-#include "ExtractEngine.h"
-#include "TestEngine.h"
-#include "CompressEngine.h"
+// #include "ExtractEngine.h"
+// #include "TestEngine.h"
+// #include "CompressEngine.h"
 #include "MyMessages.h"
 
 #include "../Resource/Extract/resource.h"
@@ -52,10 +57,10 @@ HRESULT CZipContextMenu::GetFileNames(LPDATAOBJECT dataObject,
     return result;
   aStgMedium._mustBeReleased = true;
 
-  NShell::CDrop aDrop(false);
-  NMemory::CGlobalLock aGlobalLock(aStgMedium->hGlobal);
-  aDrop.Attach((HDROP)aGlobalLock.GetPointer());
-  aDrop.QueryFileNames(fileNames);
+  NShell::CDrop drop(false);
+  NMemory::CGlobalLock globalLock(aStgMedium->hGlobal);
+  drop.Attach((HDROP)globalLock.GetPointer());
+  drop.QueryFileNames(fileNames);
 
   return S_OK;
 }
@@ -240,8 +245,190 @@ static CSysString GetProgramCommand()
   else
     path += TEXT("7zFM.exe");
   path += TEXT("\"");
-  // path += TEXT("\" \"%1\"");
   return path;
+}
+
+static CSysString Get7zGuiPath()
+{
+  CSysString path = TEXT("\"");
+  CSysString folder;
+  if (GetProgramFolderPath(folder))
+    path += folder;
+  if (IsItWindowsNT())
+    path += TEXT("7zgn.exe");
+  else
+    path += TEXT("7zg.exe");
+  path += TEXT("\"");
+  return path;
+}
+
+/*
+struct CThreadCompressMain
+{
+  CSysStringVector FileNames;
+
+  DWORD Process()
+  {
+    NCOM::CComInitializer comInitializer;
+    try
+    {
+      HRESULT result = CompressArchive(FileNames);
+    }
+    catch(...)
+    {
+      MyMessageBox(IDS_ERROR, 0x02000605);
+    }
+    return 0;
+  }
+
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    CThreadCompressMain *compressor = (CThreadCompressMain *)param;
+    return ((CThreadCompressMain *)param)->Process();
+    delete compressor;
+  }
+};
+*/
+
+static void MyCreateProcess(HWND window, const CSysString &params, 
+    NSynchronization::CEvent *event = NULL)
+{
+  STARTUPINFO startupInfo;
+  startupInfo.cb = sizeof(startupInfo);
+  startupInfo.lpReserved = 0;
+  startupInfo.lpDesktop = 0;
+  startupInfo.lpTitle = 0;
+  startupInfo.dwFlags = 0;
+  startupInfo.cbReserved2 = 0;
+  startupInfo.lpReserved2 = 0;
+  
+  PROCESS_INFORMATION processInformation;
+  BOOL result = ::CreateProcess(NULL, (TCHAR *)(const TCHAR *)params, 
+    NULL, NULL, FALSE, 0, NULL, NULL, 
+    &startupInfo, &processInformation);
+  if (result == 0)
+    ShowLastErrorMessage(window);
+  else
+  {
+    if (event != NULL)
+    {
+      HANDLE handles[] = {processInformation.hProcess, *event };
+      ::WaitForMultipleObjects(sizeof(handles) / sizeof(handles[0]),
+          handles, FALSE, INFINITE);
+    }
+    ::CloseHandle(processInformation.hThread);
+    ::CloseHandle(processInformation.hProcess);
+  }
+}
+
+void CZipContextMenu::CompressFiles(HWND aHWND)
+{
+  CSysString params;
+  params = Get7zGuiPath();
+  params += _T(" a");
+  params += _T(" -map=");
+  // params += _fileNames[0];
+  
+
+  UINT32 extraSize = 2;
+  UINT32 dataSize = 0;
+  for (int i = 0; i < _fileNames.Size(); i++)
+  {
+    UString unicodeString = GetUnicodeString(_fileNames[i]);
+    dataSize += (unicodeString.Length() + 1) * sizeof(wchar_t);
+  }
+  UINT32 totalSize = extraSize + dataSize;
+  
+  CSysString mappingName;
+  CSysString eventName;
+  
+  CFileMapping fileMapping;
+  CRandom random;
+  random.Init(GetTickCount());
+  while(true)
+  {
+    int number = random.Generate();
+    TCHAR temp[32];
+    ConvertUINT64ToString(UINT32(number), temp);
+    mappingName = TEXT("7zCompressMapping");
+    mappingName += temp;
+    if (!fileMapping.Create(INVALID_HANDLE_VALUE, NULL,
+      PAGE_READWRITE, totalSize, mappingName))
+    {
+      MyMessageBox(IDS_ERROR, 0x02000605);
+      return;
+    }
+    if (::GetLastError() != ERROR_ALREADY_EXISTS)
+      break;
+    fileMapping.Close();
+  }
+  
+  NSynchronization::CEvent event;
+  while(true)
+  {
+    int number = random.Generate();
+    TCHAR temp[32];
+    ConvertUINT64ToString(UINT32(number), temp);
+    eventName = TEXT("7zCompressMappingEndEvent");
+    eventName += temp;
+    if (!event.Create(true, false, eventName))
+    {
+      MyMessageBox(IDS_ERROR, 0x02000605);
+      return;
+    }
+    if (::GetLastError() != ERROR_ALREADY_EXISTS)
+      break;
+    event.Close();
+  }
+
+  params += mappingName;
+  params += TEXT(":");
+  TCHAR string [10];
+  ConvertUINT64ToString(totalSize, string);
+  params += string;
+  
+  params += TEXT(":");
+  params += eventName;
+  
+  
+  LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);
+  if (data == NULL)
+  {
+    MyMessageBox(IDS_ERROR, 0x02000605);
+    return;
+  }
+  try
+  {
+    wchar_t *curData = (wchar_t *)data;
+    *curData = 0;
+    curData++;
+    for (int i = 0; i < _fileNames.Size(); i++)
+    {
+      UString unicodeString = GetUnicodeString(_fileNames[i]);
+      memcpy(curData, (const wchar_t *)unicodeString , 
+        unicodeString .Length() * sizeof(wchar_t));
+      curData += unicodeString .Length();
+      *curData++ = L'\0';
+    }
+    MyCreateProcess(aHWND, params, &event);
+  }
+  catch(...)
+  {
+    UnmapViewOfFile(data);
+    throw;
+  }
+  UnmapViewOfFile(data);
+  
+  
+  
+  /*
+  CThreadCompressMain *compressor = new CThreadCompressMain();;
+  compressor->FileNames = _fileNames;
+  CThread thread;
+  if (!thread.Create(CThreadCompressMain::MyThreadFunction, compressor))
+  throw 271824;
+  */
+  return;
 }
 
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
@@ -305,91 +492,52 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
 
   // CWindowDisable aWindowDisable(aHWND);
 
-  switch(commandInternalID)
+  try
   {
-    case kCommandInternalIDOpen:
+    switch(commandInternalID)
     {
-      CSysString params;
-      /*
-      if (!NSystem::MyGetWindowsDirectory(params))
-        return E_FAIL;
-      NFile::NName::NormalizeDirPathPrefix(params);
-      params += _T("7zFM.exe");
-      */
-      params = GetProgramCommand();
-      params += _T(" \"");
-      params += _fileNames[0];
-      params += _T("\"");
-
-      // WinExec(GetAnsiString(params), SW_SHOWNORMAL);
-
-      STARTUPINFO startupInfo;
-      startupInfo.cb = sizeof(startupInfo);
-      startupInfo.lpReserved = 0;
-      startupInfo.lpDesktop = 0;
-      startupInfo.lpTitle = 0;
-      startupInfo.dwFlags = 0;
-      startupInfo.cbReserved2 = 0;
-      startupInfo.lpReserved2 = 0;
-
-      PROCESS_INFORMATION processInformation;
-      BOOL result = CreateProcess(NULL, (TCHAR *)(const TCHAR *)params, 
-            NULL, NULL, FALSE, 0, NULL, NULL, 
-            &startupInfo, &processInformation);
-      if (result != 0)
+      case kCommandInternalIDOpen:
       {
-        ::CloseHandle(processInformation.hThread);
-        ::CloseHandle(processInformation.hProcess);
+        CSysString params;
+        params = GetProgramCommand();
+        params += _T(" \"");
+        params += _fileNames[0];
+        params += _T("\"");
+        MyCreateProcess(aHWND, params);
+        break;
       }
-
-      break;
+      case kCommandInternalIDExtract:
+      {
+        CSysString params;
+        params = Get7zGuiPath();
+        params += _T(" x");
+        params += _T(" \"");
+        params += _fileNames[0];
+        params += _T("\"");
+        MyCreateProcess(aHWND, params);
+        break;
+      }
+      case kCommandInternalIDTest:
+      {
+        CSysString params;
+        params = Get7zGuiPath();
+        params += _T(" t");
+        params += _T(" \"");
+        params += _fileNames[0];
+        params += _T("\"");
+        MyCreateProcess(aHWND, params);
+        break;
+      }
+      case kCommandInternalIDCompress:
+      {
+        CompressFiles(aHWND);
+        break;
+      }
     }
-    case kCommandInternalIDExtract:
-    {
-      try
-      {
-        HRESULT result = ExtractArchive(aHWND, _fileNames[0]);
-        if (result == S_FALSE)
-          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
-        else if (result != S_OK)
-          ShowErrorMessage(aHWND, result);
-        return result;
-      }
-      catch(...)
-      {
-        MyMessageBox(IDS_ERROR, 0x02000605);
-      }
-      break;
-    }
-    case kCommandInternalIDTest:
-    {
-      try
-      {
-        HRESULT result = TestArchive(aHWND, _fileNames[0]);
-        if (result == S_FALSE)
-          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
-        else if (result != S_OK)
-          ShowErrorMessage(aHWND, result);
-        return result;
-      }
-      catch(...)
-      {
-        MyMessageBox(IDS_ERROR, 0x02000605);
-      }
-      break;
-    }
-    case kCommandInternalIDCompress:
-    {
-      try
-      {
-        CompressArchive(_fileNames);
-      }
-      catch(...)
-      {
-        MyMessageBox(IDS_ERROR, 0x02000605);
-      }
-      break;
-    }
+  }
+  catch(...)
+  {
+    MyMessageBox(IDS_ERROR, 0x02000605);
   }
   return S_OK;
 }

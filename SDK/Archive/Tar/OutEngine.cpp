@@ -50,7 +50,7 @@ static bool MakeOctalString12(char *aString, UINT64 aValue)
 {
   AString aTempString  = MakeOctalString(aValue);
   const kMaxSize = 12;
-  if (aTempString.Length() >= kMaxSize)
+  if (aTempString.Length() > kMaxSize)
     return false;
   int aNumSpaces = kMaxSize - aTempString.Length();
   for(int i = 0; i < aNumSpaces; i++)

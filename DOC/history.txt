@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 24        2002-11-01
+  --------------------------------------
+      SDK/Windows/Synchronization.h 
+      SDK/Windows/Synchronization.cpp
+        - some changes.
+
+
   Version 2.30 Beta 23        2002-09-07
   --------------------------------------
       Project/FileManager folder was added.

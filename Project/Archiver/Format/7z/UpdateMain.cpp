@@ -14,46 +14,46 @@
 namespace NArchive {
 namespace N7z {
 
-HRESULT UpdateMain(const NArchive::N7z::CArchiveDatabaseEx &aDatabase,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
-    IOutStream *anOutStream,
-    IInStream *anInStream,
-    NArchive::N7z::CInArchiveInfo *anInArchiveInfo,
-    CCompressionMethodMode *aMethod,
-    CCompressionMethodMode *aHeaderMethod,
-    IUpdateCallBack *anUpdateCallBack,
-    bool aSolid)
+HRESULT UpdateMain(const NArchive::N7z::CArchiveDatabaseEx &database,
+    const CRecordVector<bool> &compressStatuses,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CRecordVector<UINT32> &copyIndices,
+    IOutStream *outStream,
+    IInStream *inStream,
+    NArchive::N7z::CInArchiveInfo *inArchiveInfo,
+    CCompressionMethodMode *method,
+    CCompressionMethodMode *headerMethod,
+    IUpdateCallBack *updateCallback,
+    bool solid)
 {
-  UINT64 aStartBlockSize;
-  if(anInArchiveInfo != 0)
-    aStartBlockSize = anInArchiveInfo->StartPosition;
+  UINT64 startBlockSize;
+  if(inArchiveInfo != 0)
+    startBlockSize = inArchiveInfo->StartPosition;
   else
-    aStartBlockSize = 0;
+    startBlockSize = 0;
   
-  if (aStartBlockSize > 0)
+  if (startBlockSize > 0)
   {
-    CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
+    CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
         CComObjectNoLock<CLimitedSequentialInStream>;
-    CComPtr<ISequentialInStream> aLimitedStream(aStreamSpec);
-    RETURN_IF_NOT_S_OK(anInStream->Seek(0, STREAM_SEEK_SET, NULL));
-    aStreamSpec->Init(anInStream, aStartBlockSize);
-    RETURN_IF_NOT_S_OK(CopyBlock(aLimitedStream, anOutStream, NULL));
+    CComPtr<ISequentialInStream> limitedStream(streamSpec);
+    RETURN_IF_NOT_S_OK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    streamSpec->Init(inStream, startBlockSize);
+    RETURN_IF_NOT_S_OK(CopyBlock(limitedStream, outStream, NULL));
   }
 
-  COutArchive anOutArchive;
-  anOutArchive.Create(anOutStream);
-  if (aSolid)
-    return UpdateSolidStd(anOutArchive, anInStream, 
-        aMethod, aHeaderMethod,
-        aDatabase, aCompressStatuses,
-        anUpdateItems, aCopyIndexes, anUpdateCallBack);
+  COutArchive outArchive;
+  outArchive.Create(outStream);
+  if (solid)
+    return UpdateSolidStd(outArchive, inStream, 
+        method, headerMethod,
+        database, compressStatuses,
+        updateItems, copyIndices, updateCallback);
   else
-    return UpdateArchiveStd(anOutArchive, anInStream, 
-        aMethod, aHeaderMethod,
-        aDatabase, aCompressStatuses,
-        anUpdateItems, aCopyIndexes, anUpdateCallBack);
+    return UpdateArchiveStd(outArchive, inStream, 
+        method, headerMethod,
+        database, compressStatuses,
+        updateItems, copyIndices, updateCallback);
 }
 
 }}

@@ -302,9 +302,7 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *anIndexes,
       aCodePage, 
       _proxyHandler->_itemDefaultName,
       _proxyHandler->_defaultTime, 
-      _proxyHandler->_defaultAttributes, 
-      false, 
-      L"");
+      _proxyHandler->_defaultAttributes);
   std::vector<UINT32> aRealIndexes;
   _proxyHandler->GetRealIndexes(*_proxyFolderItem, anIndexes, aNumItems, aRealIndexes);
   return _proxyHandler->_archiveHandler->Extract(&aRealIndexes.front(), 
@@ -434,9 +432,7 @@ STDMETHODIMP CAgent::Extract(
       aCodePage, 
       _defaultName,
       _defaultTime, 
-      _defaultAttributes, 
-      false, 
-      L"");
+      _defaultAttributes);
   return _archive->ExtractAllItems(aTestMode, anExtractCallBack);
 }
 

@@ -24,21 +24,21 @@ DECLARE_NOT_AGGREGATABLE(CInStreamWithCRC)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition);
 private:
-  CCRC m_Crc;
-  CComPtr<IInStream> m_Stream;
+  CCRC _crc;
+  CComPtr<IInStream> _stream;
 public:
-  void Init(IInStream *aStream)
+  void Init(IInStream *stream)
   {
-    m_Stream = aStream;
-    m_Crc.Init();
+    _stream = stream;
+    _crc.Init();
   }
   void ReleaseStream()
-    { m_Stream.Release(); }
-  UINT32 GetCRC() const { return m_Crc.GetDigest(); }
+    { _stream.Release(); }
+  UINT32 GetCRC() const { return _crc.GetDigest(); }
 };
 
 #endif

@@ -28,32 +28,32 @@ DECLARE_NO_REGISTRY()
 
   CFolderOutStream();
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
 private:
 
-  CComObjectNoLock<COutStreamWithCRC> *m_OutStreamWithHashSpec;
-  CComPtr<ISequentialOutStream> m_OutStreamWithHash;
-  NArchive::N7z::CArchiveDatabaseEx *m_ArchiveDatabase;
-  const CBoolVector *m_ExtractStatuses;
-  UINT32 m_StartIndex;
-  int m_CurrentIndex;
-  UINT64 m_CurrentDataPos;
-  CComPtr<IExtractCallback200> m_ExtractCallBack;
-  bool m_TestMode;
+  CComObjectNoLock<COutStreamWithCRC> *_outStreamWithHashSpec;
+  CComPtr<ISequentialOutStream> _outStreamWithHash;
+  NArchive::N7z::CArchiveDatabaseEx *_archiveDatabase;
+  const CBoolVector *_extractStatuses;
+  UINT32 _startIndex;
+  int _currentIndex;
+  // UINT64 _currentDataPos;
+  CComPtr<IExtractCallback200> _extractCallback;
+  bool _testMode;
 
-  bool m_FileIsOpen;
-  UINT64 m_FilePos;
+  bool _fileIsOpen;
+  UINT64 _filePos;
 
   HRESULT OpenFile();
   HRESULT WriteEmptyFiles();
 public:
   HRESULT Init(
-      NArchive::N7z::CArchiveDatabaseEx *anArchiveDatabase,
-      UINT32 aStartIndex,
-      const CBoolVector *anExtractStatuses, 
-      IExtractCallback200 *anExtractCallBack,
-      bool aTestMode);
+      NArchive::N7z::CArchiveDatabaseEx *archiveDatabase,
+      UINT32 startIndex,
+      const CBoolVector *extractStatuses, 
+      IExtractCallback200 *extractCallback,
+      bool testMode);
   HRESULT FlushCorrupted();
   HRESULT WasWritingFinished();
 };

@@ -88,7 +88,7 @@ CCoderMixer::~CCoderMixer()
 {
   ExitEvent.Set();
   ::WaitForSingleObject(m_MainThread, INFINITE);
-  DWORD aResult = ::WaitForMultipleObjects(m_Threads.Size(), 
+  DWORD result = ::WaitForMultipleObjects(m_Threads.Size(), 
       (const HANDLE *)m_Threads.GetPointer(),  TRUE, INFINITE);
   for(int i = 0; i < m_Threads.Size(); i++)
     ::CloseHandle(m_Threads[i]);
@@ -126,7 +126,8 @@ void CCoderMixer::FinishAddingCoders()
 
 void CCoderMixer::ReInit()
 {
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
+  int i;
+  for(i = 0; i < m_CoderInfoVector.Size(); i++)
   {
     CThreadCoderInfo &aCoderInfo = m_CoderInfoVector[i];
     aCoderInfo.InSizeAssigned = false;
@@ -139,10 +140,10 @@ void CCoderMixer::ReInit()
   }
 }
 
-void CCoderMixer::SetCoderInfo(UINT32 aCoderIndex, const UINT64 *anInSize,
+void CCoderMixer::SetCoderInfo(UINT32 coderIndex, const UINT64 *anInSize,
     const UINT64 *anOutSize)
 {
-  CThreadCoderInfo &aCoderInfo = m_CoderInfoVector[aCoderIndex];
+  CThreadCoderInfo &aCoderInfo = m_CoderInfoVector[coderIndex];
   
   aCoderInfo.InSizeAssigned = (anInSize != NULL);
   if (aCoderInfo.InSizeAssigned)
@@ -177,7 +178,7 @@ bool CCoderMixer::MyCode()
 
   for(int i = 0; i < m_CoderInfoVector.Size(); i++)
     m_CoderInfoVector[i].CompressEvent->Set();
-  DWORD aResult = ::WaitForMultipleObjects(m_CompressingCompletedEvents.Size(), 
+  DWORD result = ::WaitForMultipleObjects(m_CompressingCompletedEvents.Size(), 
       &m_CompressingCompletedEvents.Front(), TRUE, INFINITE);
   
   m_CompressingFinishedEvent.Set();
@@ -188,51 +189,52 @@ bool CCoderMixer::MyCode()
 STDMETHODIMP CCoderMixer::Code(ISequentialInStream *anInStream,
     ISequentialOutStream *anOutStream, 
     const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+    ICompressProgressInfo *progress)
 {
   Init(anInStream, anOutStream);
   
   m_CompressingFinishedEvent.Reset(); // ?
   
-  CComObjectNoLock<CCrossThreadProgress> *aProgressSpec = 
+  CComObjectNoLock<CCrossThreadProgress> *progressSpec = 
       new CComObjectNoLock<CCrossThreadProgress>;
-  CComPtr<ICompressProgressInfo> aCrossProgress = aProgressSpec;
-  aProgressSpec->Init();
+  CComPtr<ICompressProgressInfo> aCrossProgress = progressSpec;
+  progressSpec->Init();
   m_CoderInfoVector[m_ProgressCoderIndex].Progress = aCrossProgress;
 
   m_StartCompressingEvent.Set();
 
   while (true)
   {
-    HANDLE anEvents[2] = {m_CompressingFinishedEvent, aProgressSpec->m_ProgressEvent };
+    HANDLE anEvents[2] = {m_CompressingFinishedEvent, progressSpec->ProgressEvent };
     DWORD anWaitResult = ::WaitForMultipleObjects(2, anEvents, FALSE, INFINITE);
     if (anWaitResult == WAIT_OBJECT_0 + 0)
       break;
-    if (aProgress != NULL)
-      aProgressSpec->m_Result = aProgress->SetRatioInfo(aProgressSpec->m_InSize, 
-          aProgressSpec->m_OutSize);
+    if (progress != NULL)
+      progressSpec->Result = progress->SetRatioInfo(progressSpec->InSize, 
+          progressSpec->OutSize);
     else
-      aProgressSpec->m_Result = S_OK;
-    aProgressSpec->m_WaitEvent.Set();
+      progressSpec->Result = S_OK;
+    progressSpec->WaitEvent.Set();
   }
 
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
+  int i;
+  for(i = 0; i < m_CoderInfoVector.Size(); i++)
   {
-    HRESULT aResult = m_CoderInfoVector[i].Result;
-    if (aResult == S_FALSE)
-      return aResult;
+    HRESULT result = m_CoderInfoVector[i].Result;
+    if (result == S_FALSE)
+      return result;
   }
   for(i = 0; i < m_CoderInfoVector.Size(); i++)
   {
-    HRESULT aResult = m_CoderInfoVector[i].Result;
-    if (aResult != S_OK)
-      return aResult;
+    HRESULT result = m_CoderInfoVector[i].Result;
+    if (result != S_OK)
+      return result;
   }
   return S_OK;
 }
 
-UINT64 CCoderMixer::GetWriteProcessedSize(UINT32 aCoderIndex)
+UINT64 CCoderMixer::GetWriteProcessedSize(UINT32 coderIndex)
 {
-  return m_StreamBinders[aCoderIndex].m_ProcessedSize;
+  return m_StreamBinders[coderIndex].ProcessedSize;
 }
   

@@ -72,10 +72,11 @@ public:
     if(_streamEndWasReached)
       if ((_pos + index) + limit > _streamPos)
         limit = _streamPos - (_pos + index);
-      back++;
-      BYTE *pby = _buffer + _pos + index;
-      for(UINT32 i = 0; i < limit && pby[i] == pby[i - back]; i++);
-      return i;
+    back++;
+    BYTE *pby = _buffer + _pos + index;
+    UINT32 i;
+    for(i = 0; i < limit && pby[i] == pby[i - back]; i++);
+    return i;
   }
 
   UINT32 GetNumAvailableBytes() const { return _streamPos - _pos; }

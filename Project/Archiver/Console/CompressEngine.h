@@ -13,14 +13,14 @@
 
 
 HRESULT Compress(
-    const NUpdateArchive::CActionSet &anActionSet, 
-    IArchiveHandler200 *anArchive,
-    const CCompressionMethodMode &aCompressionMethod,
-    const CSysString &anArchiveName,     
-    const CArchiveItemInfoVector &anArchiveItems,
-    const CArchiveStyleDirItemInfoVector &aDirItems,
-    bool anEnablePercents, 
-    bool aSfxMode,
-    const CSysString &aSfxModule);
+    const NUpdateArchive::CActionSet &actionSet, 
+    IArchiveHandler200 *archive,
+    const CCompressionMethodMode &compressionMethod,
+    const CSysString &archiveName,     
+    const CArchiveItemInfoVector &archiveItems,
+    const CArchiveStyleDirItemInfoVector &dirItems,
+    bool enablePercents, 
+    bool sfxMode,
+    const CSysString &sfxModule);
 
 #endif

@@ -10,30 +10,30 @@
 
 class CStreamBinder
 {
-  NWindows::NSynchronization::CManualResetEvent *m_AllBytesAreWritenEvent;
-  NWindows::NSynchronization::CManualResetEvent *m_ThereAreBytesToReadEvent;
-  NWindows::NSynchronization::CManualResetEvent *m_ReadStreamIsClosedEvent;
-  UINT32 m_BufferSize;
-  const void *m_Buffer;
+  NWindows::NSynchronization::CManualResetEvent *_allBytesAreWritenEvent;
+  NWindows::NSynchronization::CManualResetEvent *_thereAreBytesToReadEvent;
+  NWindows::NSynchronization::CManualResetEvent *_readStreamIsClosedEvent;
+  UINT32 _bufferSize;
+  const void *_buffer;
 public:
   // bool ReadingWasClosed;
-  UINT64 m_ProcessedSize;
+  UINT64 ProcessedSize;
   CStreamBinder():
-    m_AllBytesAreWritenEvent(NULL), 
-    m_ThereAreBytesToReadEvent(NULL),
-    m_ReadStreamIsClosedEvent(NULL)
+    _allBytesAreWritenEvent(NULL), 
+    _thereAreBytesToReadEvent(NULL),
+    _readStreamIsClosedEvent(NULL)
     {}
   ~CStreamBinder();
   void CreateEvents();
 
-  void CreateStreams(ISequentialInStream **anInStream, 
-      ISequentialOutStream **anOutStream);
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  void CreateStreams(ISequentialInStream **inStream, 
+      ISequentialOutStream **outStream);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
   void CloseRead();
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
   void CloseWrite();
   void ReInit();
 };

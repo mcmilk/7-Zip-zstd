@@ -31,7 +31,7 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CTarHandler)
 
 DECLARE_REGISTRY(CTarHandler, TEXT("SevenZip.FormatTar.1"), 
-    TEXT("SevenZip.FormatTar"), 0, THREADFLAGS_APARTMENT)
+    TEXT("SevenZip.FormatTar"), UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *stream, 
       const UINT64 *maxCheckStartPosition,

@@ -72,6 +72,8 @@ private:
   std::vector<CCommandMapItem> _commandMap;
   HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
   UINT FindVerb(const CSysString &verb);
+
+  void CompressFiles(HWND aHWND);
 };
 
 #endif

@@ -22,10 +22,10 @@ class CCensorNode
   bool CheckNameRecursive(const UString &name, bool allowed) const;
   bool CheckNameFull(const UString &name, bool allowed) const;
 public:
-  CObjectVector<CCensorNode> _subNodes;
-  UString _name;
+  UString Name;
+  CObjectVector<CCensorNode> SubNodes;
   CCensorNode(CCensorNode *parent, const UString &name):
-      _parent(parent), _name(name) {};
+      _parent(parent), Name(name) {};
   CCensorNode *FindSubNode(const UString &name);
   CCensorNode *AddSubNode(const UString &name);
   void AddItem(const UString &name, bool allowed, bool recursed, bool wildCard);

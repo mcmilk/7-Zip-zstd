@@ -378,6 +378,10 @@ SOURCE=..\..\..\..\SDK\Interface\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Interface\PropID.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Interface\StreamObjects.cpp
 # End Source File
 # Begin Source File

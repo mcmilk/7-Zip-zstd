@@ -53,7 +53,7 @@ void COut::ReleaseStream()
 {
   if(_stream != 0)
   {
-    Flush();
+    // Flush(); // Test it
     _stream->Release();
     _stream = 0;
   }

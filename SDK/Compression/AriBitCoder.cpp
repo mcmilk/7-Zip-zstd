@@ -17,10 +17,10 @@ static const double kDummyMultMid = (1.0 / kBitPrice) / 2;
 
 CPriceTables::CPriceTables()
 {
-  double ln2 = log(2);
-  double lnAll = log(kBitModelTotal >> kNumMoveReducingBits);
+  double ln2 = log(double(2));
+  double lnAll = log(double(kBitModelTotal >> kNumMoveReducingBits));
   for(UINT32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
-    StatePrices[i] = UINT32((fabs(lnAll - log(i)) / ln2 + kDummyMultMid) * kBitPrice);
+    StatePrices[i] = UINT32((fabs(lnAll - log(double(i))) / ln2 + kDummyMultMid) * kBitPrice);
 }
 
 CPriceTables g_PriceTables;

@@ -13,85 +13,87 @@ using namespace NSynchronization;
 
 namespace NCoderMixer2 {
 
-CBindReverseConverter::CBindReverseConverter(const CBindInfo &aSrcBindInfo):
-  m_SrcBindInfo(aSrcBindInfo)
+CBindReverseConverter::CBindReverseConverter(const CBindInfo &srcBindInfo):
+  _srcBindInfo(srcBindInfo)
 {
-  aSrcBindInfo.GetNumStreams(m_NumSrcInStreams, m_NumSrcOutStreams);
+  srcBindInfo.GetNumStreams(NumSrcInStreams, _numSrcOutStreams);
 
-  for (int j = 0; j < m_NumSrcInStreams; j++)
+  int j;
+  for (j = 0; j < NumSrcInStreams; j++)
   {
-    m_SrcInToDestOutMap.Add(0);
-    m_DestOutToSrcInMap.Add(0);
+    _srcInToDestOutMap.Add(0);
+    DestOutToSrcInMap.Add(0);
   }
-  for (j = 0; j < m_NumSrcOutStreams; j++)
+  for (j = 0; j < _numSrcOutStreams; j++)
   {
-    m_SrcOutToDestInMap.Add(0);
-    m_DestInToSrcOutMap.Add(0);
+    _srcOutToDestInMap.Add(0);
+    _destInToSrcOutMap.Add(0);
   }
 
-  UINT32 aDestInOffset = 0;
-  UINT32 aDestOutOffset = 0;
-  UINT32 aSrcInOffset = m_NumSrcInStreams;
-  UINT32 aSrcOutOffset = m_NumSrcOutStreams;
+  UINT32 destInOffset = 0;
+  UINT32 destOutOffset = 0;
+  UINT32 srcInOffset = NumSrcInStreams;
+  UINT32 srcOutOffset = _numSrcOutStreams;
 
-  for (int i = aSrcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
+  for (int i = srcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
   {
-    const CCoderStreamsInfo &aSrcCoderInfo = aSrcBindInfo.CodersInfo[i];
+    const CCoderStreamsInfo &srcCoderInfo = srcBindInfo.CodersInfo[i];
 
-    aSrcInOffset -= aSrcCoderInfo.NumInStreams;
-    aSrcOutOffset -= aSrcCoderInfo.NumOutStreams;
+    srcInOffset -= srcCoderInfo.NumInStreams;
+    srcOutOffset -= srcCoderInfo.NumOutStreams;
 
-    for (int j = 0; j < aSrcCoderInfo.NumInStreams; j++, aDestOutOffset++)
+    for (int j = 0; j < srcCoderInfo.NumInStreams; j++, destOutOffset++)
     {
-      UINT32 anIndex = aSrcInOffset + j;
-      m_SrcInToDestOutMap[anIndex] = aDestOutOffset;
-      m_DestOutToSrcInMap[aDestOutOffset] = anIndex;
+      UINT32 index = srcInOffset + j;
+      _srcInToDestOutMap[index] = destOutOffset;
+      DestOutToSrcInMap[destOutOffset] = index;
     }
-    for (j = 0; j < aSrcCoderInfo.NumOutStreams; j++, aDestInOffset++)
+    for (j = 0; j < srcCoderInfo.NumOutStreams; j++, destInOffset++)
     {
-      UINT32 anIndex = aSrcOutOffset + j;
-      m_SrcOutToDestInMap[anIndex] = aDestInOffset;
-      m_DestInToSrcOutMap[aDestInOffset] = anIndex;
+      UINT32 index = srcOutOffset + j;
+      _srcOutToDestInMap[index] = destInOffset;
+      _destInToSrcOutMap[destInOffset] = index;
     }
   }
 }
 
-void CBindReverseConverter::CreateReverseBindInfo(CBindInfo &aDestBindInfo)
+void CBindReverseConverter::CreateReverseBindInfo(CBindInfo &destBindInfo)
 {
-  aDestBindInfo.CodersInfo.Clear();
-  aDestBindInfo.BindPairs.Clear();
-  aDestBindInfo.InStreams.Clear();
-  aDestBindInfo.OutStreams.Clear();
+  destBindInfo.CodersInfo.Clear();
+  destBindInfo.BindPairs.Clear();
+  destBindInfo.InStreams.Clear();
+  destBindInfo.OutStreams.Clear();
 
-  for (int i = m_SrcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
+  int i;
+  for (i = _srcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
   {
-    const CCoderStreamsInfo &aSrcCoderInfo = m_SrcBindInfo.CodersInfo[i];
-    CCoderStreamsInfo aDestCoderInfo;
-    aDestCoderInfo.NumInStreams = aSrcCoderInfo.NumOutStreams;
-    aDestCoderInfo.NumOutStreams = aSrcCoderInfo.NumInStreams;
-    aDestBindInfo.CodersInfo.Add(aDestCoderInfo);
+    const CCoderStreamsInfo &srcCoderInfo = _srcBindInfo.CodersInfo[i];
+    CCoderStreamsInfo destCoderInfo;
+    destCoderInfo.NumInStreams = srcCoderInfo.NumOutStreams;
+    destCoderInfo.NumOutStreams = srcCoderInfo.NumInStreams;
+    destBindInfo.CodersInfo.Add(destCoderInfo);
   }
-  for (i = m_SrcBindInfo.BindPairs.Size() - 1; i >= 0; i--)
+  for (i = _srcBindInfo.BindPairs.Size() - 1; i >= 0; i--)
   {
-    const CBindPair &aSrcBindPair = m_SrcBindInfo.BindPairs[i];
-    CBindPair aDestBindPair;
-    aDestBindPair.InIndex = m_SrcOutToDestInMap[aSrcBindPair.OutIndex];
-    aDestBindPair.OutIndex = m_SrcInToDestOutMap[aSrcBindPair.InIndex];
-    aDestBindInfo.BindPairs.Add(aDestBindPair);
+    const CBindPair &srcBindPair = _srcBindInfo.BindPairs[i];
+    CBindPair destBindPair;
+    destBindPair.InIndex = _srcOutToDestInMap[srcBindPair.OutIndex];
+    destBindPair.OutIndex = _srcInToDestOutMap[srcBindPair.InIndex];
+    destBindInfo.BindPairs.Add(destBindPair);
   }
-  for (i = 0; i < m_SrcBindInfo.InStreams.Size(); i++)
-    aDestBindInfo.OutStreams.Add(m_SrcInToDestOutMap[m_SrcBindInfo.InStreams[i]]);
-  for (i = 0; i < m_SrcBindInfo.OutStreams.Size(); i++)
-    aDestBindInfo.InStreams.Add(m_SrcOutToDestInMap[m_SrcBindInfo.OutStreams[i]]);
+  for (i = 0; i < _srcBindInfo.InStreams.Size(); i++)
+    destBindInfo.OutStreams.Add(_srcInToDestOutMap[_srcBindInfo.InStreams[i]]);
+  for (i = 0; i < _srcBindInfo.OutStreams.Size(); i++)
+    destBindInfo.InStreams.Add(_srcOutToDestInMap[_srcBindInfo.OutStreams[i]]);
 }
 
 
-CThreadCoderInfo2::CThreadCoderInfo2(UINT32 aNumInStreams, UINT32 aNumOutStreams): 
+CThreadCoderInfo2::CThreadCoderInfo2(UINT32 numInStreams, UINT32 numOutStreams): 
     ExitEvent(NULL), 
     CompressEvent(NULL), 
     CompressionCompletedEvent(NULL), 
-    NumInStreams(aNumInStreams),
-    NumOutStreams(aNumOutStreams)
+    NumInStreams(numInStreams),
+    NumOutStreams(numOutStreams)
 {
   InStreams.Reserve(NumInStreams);
   InStreamPointers.Reserve(NumInStreams);
@@ -121,10 +123,11 @@ class CCoderInfoFlusher2
 {
   CThreadCoderInfo2 *m_CoderInfo;
 public:
-  CCoderInfoFlusher2(CThreadCoderInfo2 *aCoderInfo): m_CoderInfo(aCoderInfo) {}
+  CCoderInfoFlusher2(CThreadCoderInfo2 *coderInfo): m_CoderInfo(coderInfo) {}
   ~CCoderInfoFlusher2()
   {
-    for (int i = 0; i < m_CoderInfo->InStreams.Size(); i++)
+	  int i;
+    for (i = 0; i < m_CoderInfo->InStreams.Size(); i++)
       m_CoderInfo->InStreams[i].Release();
     for (i = 0; i < m_CoderInfo->OutStreams.Size(); i++)
       m_CoderInfo->OutStreams[i].Release();
@@ -134,15 +137,16 @@ public:
 
 bool CThreadCoderInfo2::WaitAndCode()
 {
-  HANDLE anEvents[2] = { ExitEvent, *CompressEvent };
-  DWORD anWaitResult = ::WaitForMultipleObjects(2, anEvents, FALSE, INFINITE);
-  if (anWaitResult == WAIT_OBJECT_0 + 0)
+  HANDLE events[2] = { ExitEvent, *CompressEvent };
+  DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+  if (waitResult == WAIT_OBJECT_0 + 0)
     return false;
 
   {
     InStreamPointers.Clear();
     OutStreamPointers.Clear();
-    for (int i = 0; i < NumInStreams; i++)
+    int i;
+    for (i = 0; i < NumInStreams; i++)
     {
       if (InSizePointers[i] != NULL)
         InSizePointers[i] = &InSizes[i];
@@ -154,7 +158,7 @@ bool CThreadCoderInfo2::WaitAndCode()
         OutSizePointers[i] = &OutSizes[i];
       OutStreamPointers.Add(OutStreams[i]);
     }
-    CCoderInfoFlusher2 aCoderInfoFlusher(this);
+    CCoderInfoFlusher2 coderInfoFlusher(this);
     if (CompressorIsCoder2)
       Result = Coder2->Code(&InStreamPointers.Front(),
         &InSizePointers.Front(),
@@ -173,40 +177,40 @@ bool CThreadCoderInfo2::WaitAndCode()
   return true;
 }
 
-void SetSizes(const UINT64 **aSrcSizes, CRecordVector<UINT64> &aSizes, 
-    CRecordVector<const UINT64 *> &aSizePointers, UINT32 aNumItems)
+void SetSizes(const UINT64 **srcSizes, CRecordVector<UINT64> &sizes, 
+    CRecordVector<const UINT64 *> &sizePointers, UINT32 numItems)
 {
-  aSizes.Clear();
-  aSizePointers.Clear();
-  for(UINT32 i = 0; i < aNumItems; i++)
+  sizes.Clear();
+  sizePointers.Clear();
+  for(UINT32 i = 0; i < numItems; i++)
   {
-    if (aSrcSizes == 0 || aSrcSizes[i] == NULL)
+    if (srcSizes == 0 || srcSizes[i] == NULL)
     {
-      aSizes.Add(0);
-      aSizePointers.Add(NULL);
+      sizes.Add(0);
+      sizePointers.Add(NULL);
     }
     else
     {
-      aSizes.Add(*aSrcSizes[i]);
-      aSizePointers.Add(&aSizes.Back());
+      sizes.Add(*srcSizes[i]);
+      sizePointers.Add(&sizes.Back());
     }
   }
 }
 
 
-void CThreadCoderInfo2::SetCoderInfo(const UINT64 **anInSizes,
-      const UINT64 **anOutSizes, ICompressProgressInfo *aProgress)
+void CThreadCoderInfo2::SetCoderInfo(const UINT64 **inSizes,
+      const UINT64 **outSizes, ICompressProgressInfo *progress)
 {
-  Progress = aProgress;
-  SetSizes(anInSizes, InSizes, InSizePointers, NumInStreams);
-  SetSizes(anOutSizes, OutSizes, OutSizePointers, NumOutStreams);
+  Progress = progress;
+  SetSizes(inSizes, InSizes, InSizePointers, NumInStreams);
+  SetSizes(outSizes, OutSizes, OutSizePointers, NumOutStreams);
 }
 
-static DWORD WINAPI CoderThread(void *aThreadCoderInfo)
+static DWORD WINAPI CoderThread(void *threadCoderInfo)
 {
   while(true)
   {
-    if (!((CThreadCoderInfo2 *)aThreadCoderInfo)->WaitAndCode())
+    if (!((CThreadCoderInfo2 *)threadCoderInfo)->WaitAndCode())
       return 0;
   }
 }
@@ -214,142 +218,144 @@ static DWORD WINAPI CoderThread(void *aThreadCoderInfo)
 //////////////////////////////////////
 // CCoderMixer2
 
-static DWORD WINAPI MainCoderThread(void *aThreadCoderInfo)
+static DWORD WINAPI MainCoderThread(void *threadCoderInfo)
 {
   while(true)
   {
-    if (!((CCoderMixer2 *)aThreadCoderInfo)->MyCode())
+    if (!((CCoderMixer2 *)threadCoderInfo)->MyCode())
       return 0;
   }
 }
 
 CCoderMixer2::CCoderMixer2()
 {
-  if (!m_MainThread.Create(MainCoderThread, this))
+  if (!_mainThread.Create(MainCoderThread, this))
     throw 271825;
 }
 
 CCoderMixer2::~CCoderMixer2()
 {
-  ExitEvent.Set();
+  _exitEvent.Set();
 
-  ::WaitForSingleObject(m_MainThread, INFINITE);
-  DWORD aResult = ::WaitForMultipleObjects(m_Threads.Size(), 
-      &m_Threads.Front(), TRUE, INFINITE);
-  for(int i = 0; i < m_Threads.Size(); i++)
-    ::CloseHandle(m_Threads[i]);
+  ::WaitForSingleObject(_mainThread, INFINITE);
+  DWORD result = ::WaitForMultipleObjects(_threads.Size(), 
+      &_threads.Front(), TRUE, INFINITE);
+  for(int i = 0; i < _threads.Size(); i++)
+    ::CloseHandle(_threads[i]);
 }
 
-void CCoderMixer2::SetBindInfo(const CBindInfo &aBindInfo)
+void CCoderMixer2::SetBindInfo(const CBindInfo &bindInfo)
 {  
-  m_BindInfo = aBindInfo; 
-  m_StreamBinders.Clear();
-  for(int i = 0; i < m_BindInfo.BindPairs.Size(); i++)
+  _bindInfo = bindInfo; 
+  _streamBinders.Clear();
+  for(int i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
-    m_StreamBinders.Add(CStreamBinder());
-    m_StreamBinders.Back().CreateEvents();
+    _streamBinders.Add(CStreamBinder());
+    _streamBinders.Back().CreateEvents();
   }
 }
 
 void CCoderMixer2::AddCoderCommon()
 {
-  int anIndex = m_CoderInfoVector.Size();
-  const CCoderStreamsInfo &CoderStreamsInfo = m_BindInfo.CodersInfo[anIndex];
+  int index = _coderInfoVector.Size();
+  const CCoderStreamsInfo &CoderStreamsInfo = _bindInfo.CodersInfo[index];
 
-  CThreadCoderInfo2 aThreadCoderInfo(CoderStreamsInfo.NumInStreams, 
+  CThreadCoderInfo2 threadCoderInfo(CoderStreamsInfo.NumInStreams, 
       CoderStreamsInfo.NumOutStreams);
-  m_CoderInfoVector.Add(aThreadCoderInfo);
-  m_CoderInfoVector.Back().CreateEvents();
-  m_CoderInfoVector.Back().ExitEvent = ExitEvent;
-  m_CompressingCompletedEvents.Add(*m_CoderInfoVector.Back().CompressionCompletedEvent);
+  _coderInfoVector.Add(threadCoderInfo);
+  _coderInfoVector.Back().CreateEvents();
+  _coderInfoVector.Back().ExitEvent = _exitEvent;
+  _compressingCompletedEvents.Add(*_coderInfoVector.Back().CompressionCompletedEvent);
 
-  DWORD anID;
-  HANDLE aNewThread = ::CreateThread(NULL, 0, CoderThread, 
-      &m_CoderInfoVector.Back(), 0, &anID);
-  if (aNewThread == 0)
+  DWORD id;
+  HANDLE newThread = ::CreateThread(NULL, 0, CoderThread, 
+      &_coderInfoVector.Back(), 0, &id);
+  if (newThread == 0)
     throw 271824;
-  m_Threads.Add(aNewThread);
+  _threads.Add(newThread);
 }
 
-void CCoderMixer2::AddCoder(ICompressCoder *aCoder)
+void CCoderMixer2::AddCoder(ICompressCoder *coder)
 {
   AddCoderCommon();
-  m_CoderInfoVector.Back().CompressorIsCoder2 = false;
-  m_CoderInfoVector.Back().Coder = aCoder;
+  _coderInfoVector.Back().CompressorIsCoder2 = false;
+  _coderInfoVector.Back().Coder = coder;
 }
 
-void CCoderMixer2::AddCoder2(ICompressCoder2 *aCoder)
+void CCoderMixer2::AddCoder2(ICompressCoder2 *coder)
 {
   AddCoderCommon();
-  m_CoderInfoVector.Back().CompressorIsCoder2 = true;
-  m_CoderInfoVector.Back().Coder2 = aCoder;
+  _coderInfoVector.Back().CompressorIsCoder2 = true;
+  _coderInfoVector.Back().Coder2 = coder;
 }
 
 /*
 void CCoderMixer2::FinishAddingCoders()
 {
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
+  for(int i = 0; i < _coderInfoVector.Size(); i++)
   {
-    DWORD anID;
-    HANDLE aNewThread = ::CreateThread(NULL, 0, CoderThread, 
-        &m_CoderInfoVector[i], 0, &anID);
-    if (aNewThread == 0)
+    DWORD id;
+    HANDLE newThread = ::CreateThread(NULL, 0, CoderThread, 
+        &_coderInfoVector[i], 0, &id);
+    if (newThread == 0)
       throw 271824;
-    m_Threads.Add(aNewThread);
+    _threads.Add(newThread);
   }
 }
 */
 
 void CCoderMixer2::ReInit()
 {
-  for(int i = 0; i < m_StreamBinders.Size(); i++)
-    m_StreamBinders[i].ReInit();
+  for(int i = 0; i < _streamBinders.Size(); i++)
+    _streamBinders[i].ReInit();
 }
 
 
-STDMETHODIMP CCoderMixer2::Init(ISequentialInStream **anInStreams,
-    ISequentialOutStream **anOutStreams) 
+STDMETHODIMP CCoderMixer2::Init(ISequentialInStream **inStreams,
+    ISequentialOutStream **outStreams) 
 {
-  if (m_CoderInfoVector.Size() != m_BindInfo.CodersInfo.Size())
+  if (_coderInfoVector.Size() != _bindInfo.CodersInfo.Size())
     throw 0;
-  UINT32 aNumInStreams = 0, aNumOutStreams = 0;
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
+  UINT32 numInStreams = 0, numOutStreams = 0;
+  int i;
+  for(i = 0; i < _coderInfoVector.Size(); i++)
   {
-    CThreadCoderInfo2 &aCoderInfo = m_CoderInfoVector[i];
-    const CCoderStreamsInfo &aCoderStreamsInfo = m_BindInfo.CodersInfo[i];
-    aCoderInfo.InStreams.Clear();
-    for(int j = 0; j < aCoderStreamsInfo.NumInStreams; j++)
-      aCoderInfo.InStreams.Add(NULL);
-    aCoderInfo.OutStreams.Clear();
-    for(j = 0; j < aCoderStreamsInfo.NumOutStreams; j++)
-      aCoderInfo.OutStreams.Add(NULL);
+    CThreadCoderInfo2 &coderInfo = _coderInfoVector[i];
+    const CCoderStreamsInfo &coderStreamsInfo = _bindInfo.CodersInfo[i];
+    coderInfo.InStreams.Clear();
+    int j;
+    for(j = 0; j < coderStreamsInfo.NumInStreams; j++)
+      coderInfo.InStreams.Add(NULL);
+    coderInfo.OutStreams.Clear();
+    for(j = 0; j < coderStreamsInfo.NumOutStreams; j++)
+      coderInfo.OutStreams.Add(NULL);
   }
 
-  for(i = 0; i < m_BindInfo.BindPairs.Size(); i++)
+  for(i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
-    const CBindPair &aBindPair = m_BindInfo.BindPairs[i];
-    UINT32 anInCoderIndex, anInCoderStreamIndex;
-    UINT32 anOutCoderIndex, anOutCoderStreamIndex;
-    m_BindInfo.FindInStream(aBindPair.InIndex, anInCoderIndex, anInCoderStreamIndex);
-    m_BindInfo.FindOutStream(aBindPair.OutIndex, anOutCoderIndex, anOutCoderStreamIndex);
+    const CBindPair &bindPair = _bindInfo.BindPairs[i];
+    UINT32 inCoderIndex, inCoderStreamIndex;
+    UINT32 outCoderIndex, outCoderStreamIndex;
+    _bindInfo.FindInStream(bindPair.InIndex, inCoderIndex, inCoderStreamIndex);
+    _bindInfo.FindOutStream(bindPair.OutIndex, outCoderIndex, outCoderStreamIndex);
 
-    m_StreamBinders[i].CreateStreams(
-        &m_CoderInfoVector[anInCoderIndex].InStreams[anInCoderStreamIndex],
-        &m_CoderInfoVector[anOutCoderIndex].OutStreams[anOutCoderStreamIndex]);
+    _streamBinders[i].CreateStreams(
+        &_coderInfoVector[inCoderIndex].InStreams[inCoderStreamIndex],
+        &_coderInfoVector[outCoderIndex].OutStreams[outCoderStreamIndex]);
   }
 
-  for(i = 0; i < m_BindInfo.InStreams.Size(); i++)
+  for(i = 0; i < _bindInfo.InStreams.Size(); i++)
   {
-    UINT32 anInCoderIndex, anInCoderStreamIndex;
-    m_BindInfo.FindInStream(m_BindInfo.InStreams[i], anInCoderIndex, anInCoderStreamIndex);
-    m_CoderInfoVector[anInCoderIndex].InStreams[anInCoderStreamIndex] = anInStreams[i];
+    UINT32 inCoderIndex, inCoderStreamIndex;
+    _bindInfo.FindInStream(_bindInfo.InStreams[i], inCoderIndex, inCoderStreamIndex);
+    _coderInfoVector[inCoderIndex].InStreams[inCoderStreamIndex] = inStreams[i];
   }
   
-  for(i = 0; i < m_BindInfo.OutStreams.Size(); i++)
+  for(i = 0; i < _bindInfo.OutStreams.Size(); i++)
   {
-    UINT32 anOutCoderIndex, anOutCoderStreamIndex;
-    m_BindInfo.FindOutStream(m_BindInfo.OutStreams[i], anOutCoderIndex, anOutCoderStreamIndex);
-    m_CoderInfoVector[anOutCoderIndex].OutStreams[anOutCoderStreamIndex] = anOutStreams[i];
+    UINT32 outCoderIndex, outCoderStreamIndex;
+    _bindInfo.FindOutStream(_bindInfo.OutStreams[i], outCoderIndex, outCoderStreamIndex);
+    _coderInfoVector[outCoderIndex].OutStreams[outCoderStreamIndex] = outStreams[i];
   }
   return S_OK;
 }
@@ -357,86 +363,86 @@ STDMETHODIMP CCoderMixer2::Init(ISequentialInStream **anInStreams,
 
 bool CCoderMixer2::MyCode()
 {
-  HANDLE anEvents[2] = { ExitEvent, m_StartCompressingEvent };
-  DWORD anWaitResult = ::WaitForMultipleObjects(2, anEvents, FALSE, INFINITE);
-  if (anWaitResult == WAIT_OBJECT_0 + 0)
+  HANDLE events[2] = { _exitEvent, _startCompressingEvent };
+  DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+  if (waitResult == WAIT_OBJECT_0 + 0)
     return false;
 
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
-    m_CoderInfoVector[i].CompressEvent->Set();
-  DWORD aResult = ::WaitForMultipleObjects(m_CompressingCompletedEvents.Size(), 
-      &m_CompressingCompletedEvents.Front(), TRUE, INFINITE);
+  for(int i = 0; i < _coderInfoVector.Size(); i++)
+    _coderInfoVector[i].CompressEvent->Set();
+  DWORD result = ::WaitForMultipleObjects(_compressingCompletedEvents.Size(), 
+      &_compressingCompletedEvents.Front(), TRUE, INFINITE);
   
-  m_CompressingFinishedEvent.Set();
+  _compressingFinishedEvent.Set();
 
   return true;
 }
 
 
-STDMETHODIMP CCoderMixer2::Code(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes, 
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams, 
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CCoderMixer2::Code(ISequentialInStream **inStreams,
+      const UINT64 **inSizes, 
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams, 
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress)
 {
-  if (aNumInStreams != m_BindInfo.InStreams.Size() ||
-      aNumOutStreams != m_BindInfo.OutStreams.Size())
+  if (numInStreams != _bindInfo.InStreams.Size() ||
+      numOutStreams != _bindInfo.OutStreams.Size())
     return E_INVALIDARG;
 
-  Init(anInStreams, anOutStreams);
+  Init(inStreams, outStreams);
 
-  m_CompressingFinishedEvent.Reset(); // ?
+  _compressingFinishedEvent.Reset(); // ?
   
-  CComObjectNoLock<CCrossThreadProgress> *aProgressSpec = 
+  CComObjectNoLock<CCrossThreadProgress> *progressSpec = 
       new CComObjectNoLock<CCrossThreadProgress>;
-  CComPtr<ICompressProgressInfo> aCrossProgress = aProgressSpec;
-  aProgressSpec->Init();
-  m_CoderInfoVector[m_ProgressCoderIndex].Progress = aCrossProgress;
+  CComPtr<ICompressProgressInfo> crossProgress = progressSpec;
+  progressSpec->Init();
+  _coderInfoVector[_progressCoderIndex].Progress = crossProgress;
 
-  m_StartCompressingEvent.Set();
+  _startCompressingEvent.Set();
 
 
   while (true)
   {
-    HANDLE anEvents[2] = {m_CompressingFinishedEvent, aProgressSpec->m_ProgressEvent };
-    DWORD anWaitResult = ::WaitForMultipleObjects(2, anEvents, FALSE, INFINITE);
-    if (anWaitResult == WAIT_OBJECT_0 + 0)
+    HANDLE events[2] = {_compressingFinishedEvent, progressSpec->ProgressEvent };
+    DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+    if (waitResult == WAIT_OBJECT_0 + 0)
       break;
-    if (aProgress != NULL)
-      aProgressSpec->m_Result = aProgress->SetRatioInfo(aProgressSpec->m_InSize, 
-          aProgressSpec->m_OutSize);
+    if (progress != NULL)
+      progressSpec->Result = progress->SetRatioInfo(progressSpec->InSize, 
+          progressSpec->OutSize);
     else
-      aProgressSpec->m_Result = S_OK;
-    aProgressSpec->m_WaitEvent.Set();
+      progressSpec->Result = S_OK;
+    progressSpec->WaitEvent.Set();
   }
 
-
-  for(int i = 0; i < m_CoderInfoVector.Size(); i++)
+  int i;
+  for(i = 0; i < _coderInfoVector.Size(); i++)
   {
-    HRESULT aResult = m_CoderInfoVector[i].Result;
-    if (aResult == S_FALSE)
-      return aResult;
+    HRESULT result = _coderInfoVector[i].Result;
+    if (result == S_FALSE)
+      return result;
   }
-  for(i = 0; i < m_CoderInfoVector.Size(); i++)
+  for(i = 0; i < _coderInfoVector.Size(); i++)
   {
-    HRESULT aResult = m_CoderInfoVector[i].Result;
-    if (aResult != S_OK && aResult != E_FAIL)
-      return aResult;
+    HRESULT result = _coderInfoVector[i].Result;
+    if (result != S_OK && result != E_FAIL)
+      return result;
   }
-  for(i = 0; i < m_CoderInfoVector.Size(); i++)
+  for(i = 0; i < _coderInfoVector.Size(); i++)
   {
-    HRESULT aResult = m_CoderInfoVector[i].Result;
-    if (aResult != S_OK)
-      return aResult;
+    HRESULT result = _coderInfoVector[i].Result;
+    if (result != S_OK)
+      return result;
   }
   return S_OK;
 }
 
-UINT64 CCoderMixer2::GetWriteProcessedSize(UINT32 aBinderIndex) const
+UINT64 CCoderMixer2::GetWriteProcessedSize(UINT32 binderIndex) const
 {
-  return m_StreamBinders[aBinderIndex].m_ProcessedSize;
+  return _streamBinders[binderIndex].ProcessedSize;
 }
 
 }  

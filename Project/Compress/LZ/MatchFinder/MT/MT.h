@@ -79,13 +79,14 @@ public:
 
   NWindows::CThread m_Thread;
   // bool m_WriteWasClosed;
+  UINT32 _multiThreadMult;
 public:
   CMatchFinderMT();
   ~CMatchFinderMT();
   void Start();
   void FreeMem();
-  HRESULT SetMatchFinder(IInWindowStreamMatch *aMatchFinder);
-  UINT32 m_MultiThreadMult;
+  HRESULT SetMatchFinder(IInWindowStreamMatch *aMatchFinder, 
+      UINT32 multiThreadMult);
 };
  
 

@@ -297,7 +297,8 @@ UINT32 CInTree::GetLongestMatch(UINT32 *distances)
   {
     BYTE *pby1 = _buffer + curMatch;
     // CIndex left = _son[curMatch].Left; // it's prefetch
-    for(UINT32 currentLen = minSame; currentLen < currentLimit; currentLen++/*, dwComps++*/)
+    UINT32 currentLen;
+    for(currentLen = minSame; currentLen < currentLimit; currentLen++/*, dwComps++*/)
       if (pby1[currentLen] != cur[currentLen])
         break;
     while (currentLen > maxLen)
@@ -442,7 +443,8 @@ void CInTree::DummyLongestMatch()
   {
     BYTE *pby1 = _buffer + curMatch;
     // CIndex left = _son[curMatch].Left; // it's prefetch
-    for(UINT32 currentLen = minSame; currentLen < currentLimit; currentLen++/*, dwComps++*/)
+    UINT32 currentLen;
+    for(currentLen = minSame; currentLen < currentLimit; currentLen++/*, dwComps++*/)
       if (pby1[currentLen] != cur[currentLen])
         break;
 

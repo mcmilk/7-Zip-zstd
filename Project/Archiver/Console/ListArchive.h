@@ -21,11 +21,11 @@ namespace NListMode
 }
 */
 
-HRESULT ListArchive(IArchiveHandler200 *anArchive, 
-    const UString &aDefaultItemName,
-    const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-    const NWildcard::CCensor &aWildcardCensor/*, bool aFullPathMode, 
-    NListMode::EEnum aMode*/);
+HRESULT ListArchive(IArchiveHandler200 *archive, 
+    const UString &defaultItemName,
+    const NWindows::NFile::NFind::CFileInfo &srchiveFileInfo,
+    const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode, 
+    NListMode::EEnum mode*/);
 
 #endif
 

@@ -66,7 +66,7 @@ BEGIN_COM_MAP(CBCJ2_x86_Encoder)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CBCJ2_x86_Encoder)
   DECLARE_REGISTRY(CBCJ2_x86_Encoder, TEXT("Compress.ConvertBranch.1"), 
-  TEXT("Compress.ConvertBranch"), 0, THREADFLAGS_APARTMENT)
+  TEXT("Compress.ConvertBranch"), UINT(0), THREADFLAGS_APARTMENT)
   HRESULT CodeReal(ISequentialInStream **inStreams,
       const UINT64 **inSizes,
       UINT32 numInStreams,
@@ -127,7 +127,7 @@ BEGIN_COM_MAP(CBCJ2_x86_Decoder)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CBCJ2_x86_Decoder)
   DECLARE_REGISTRY(CBCJ2_x86_Decoder, TEXT("Compress.ConvertBranch.1"), 
-  TEXT("Compress.ConvertBranch"), 0, THREADFLAGS_APARTMENT)
+  TEXT("Compress.ConvertBranch"), UINT(0), THREADFLAGS_APARTMENT)
   HRESULT CodeReal(ISequentialInStream **inStreams,
       const UINT64 **inSizes,
       UINT32 numInStreams,

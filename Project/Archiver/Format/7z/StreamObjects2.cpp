@@ -5,30 +5,31 @@
 #include "StreamObjects2.h"
 
 
-STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  HRESULT aResult = m_Stream->Read(aData, aSize, &aProcessedSizeReal);
-  m_Size += aProcessedSizeReal;
-  if (aProcessedSize != 0)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult; 
+  UINT32 realProcessedSize;
+  HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  _size += realProcessedSize;
+  if (processedSize != 0)
+    *processedSize = realProcessedSize;
+  return result; 
 }
 
-STDMETHODIMP CSequentialInStreamSizeCount2::ReadPart(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CSequentialInStreamSizeCount2::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal;
-  HRESULT aResult = m_Stream->ReadPart(aData, aSize, &aProcessedSizeReal);
-  m_Size += aProcessedSizeReal;
-  if (aProcessedSize != 0)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult; 
+  UINT32 realProcessedSize;
+  HRESULT result = _stream->ReadPart(data, size, &realProcessedSize);
+  _size += realProcessedSize;
+  if (processedSize != 0)
+    *processedSize = realProcessedSize;
+  return result; 
 }
 
-STDMETHODIMP CSequentialInStreamSizeCount2::GetSubStreamSize(UINT64 aSubStream, UINT64 *aValue)
+STDMETHODIMP CSequentialInStreamSizeCount2::GetSubStreamSize(
+    UINT64 subStream, UINT64 *value)
 {
-  if (m_GetSubStreamSize == NULL)
+  if (_getSubStreamSize == NULL)
     return E_NOTIMPL;
-  return  m_GetSubStreamSize->GetSubStreamSize(aSubStream, aValue);
+  return  _getSubStreamSize->GetSubStreamSize(subStream, value);
 }
 

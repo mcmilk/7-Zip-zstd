@@ -31,7 +31,7 @@ public:
 
   // DECLARE_NO_REGISTRY()
   DECLARE_REGISTRY(CCopyCoder, TEXT("Compress.CopyCoder.1"), 
-    TEXT("Compress.CopyCoder"), 0, THREADFLAGS_APARTMENT)
+    TEXT("Compress.CopyCoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 

@@ -54,9 +54,9 @@ struct CBind
 struct CCompressionMethodMode
 {
   CObjectVector<CMethodFull> Methods;
-  CRecordVector<CBind> m_Binds;
-  bool m_MultiThread;
-  UINT32 m_MultiThreadMult;
+  CRecordVector<CBind> Binds;
+  bool MultiThread;
+  UINT32 MultiThreadMult;
 };
 
 }}

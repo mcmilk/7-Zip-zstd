@@ -9,6 +9,7 @@
 #include "Common/StringConvert.h"
 #include "Windows/FileDir.h"
 #include "Windows/ResourceString.h"
+#include "Windows/Thread.h"
 
 #include "Resource/ComboDialog/ComboDialog.h"
 
@@ -19,6 +20,30 @@
 
 using namespace NWindows;
 using namespace NFile;
+
+
+struct CThreadDelete
+{
+  CComPtr<IFolderOperations> FolderOperations;
+  CRecordVector<UINT32> Indices;
+  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
+  HRESULT Result;
+  
+  DWORD Process()
+  {
+    Result = FolderOperations->Delete(&Indices.Front(), 
+        Indices.Size(), UpdateCallback);
+    UpdateCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+  
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadDelete *)param)->Process();
+  }
+};
+
 
 void CPanel::DeleteItems()
 {
@@ -59,17 +84,26 @@ void CPanel::DeleteItems()
   if (::MessageBoxW(GetParent(), message, title, MB_OKCANCEL | MB_ICONQUESTION) != IDOK)
     return;
 
-  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec =
-      new CComObjectNoLock<CUpdateCallBack100Imp>;
-  CComPtr<IUpdateCallback100> updateCallBack(updateCallbackSpec );
+
+  CThreadDelete deleter;
+  deleter.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
+  deleter.UpdateCallback = deleter.UpdateCallbackSpec;
+  deleter.UpdateCallbackSpec->Init(GetParent(), false, L"");
+  deleter.UpdateCallbackSpec->_appTitle.Window = _mainWindow;
+  deleter.UpdateCallbackSpec->_appTitle.Title = LangLoadString(IDS_APP_TITLE, 0x03000000);
   CSysString progressTitle = LangLoadString(IDS_DELETING, 0x03020216);
-  updateCallbackSpec->Init(GetParent(), progressTitle, false, L"");
-  updateCallbackSpec->_appTitle.Window = _mainWindow;
-  updateCallbackSpec->_appTitle.Title = LangLoadString(IDS_APP_TITLE, 0x03000000);
-  updateCallbackSpec->_appTitle.AddTitle = progressTitle + CSysString(TEXT(" "));
+  deleter.UpdateCallbackSpec->_appTitle.AddTitle = progressTitle + CSysString(TEXT(" "));
+  deleter.FolderOperations = folderOperations;
+  deleter.Indices = indices;
 
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
-  HRESULT result = folderOperations->Delete(&indices.Front(), indices.Size(), updateCallBack);
+
+  CThread thread;
+  if (!thread.Create(CThreadDelete::MyThreadFunction, &deleter))
+    throw 271824;
+  deleter.UpdateCallbackSpec->StartProgressDialog(progressTitle);
+
+  HRESULT result = deleter.Result;
   if (result != S_OK)
     MessageBoxError(result, LangLoadStringW(IDS_ERROR_DELETING, 0x03020217));
 

@@ -5,71 +5,90 @@
 #include "CompressEngineCommon.h"
 #include "Common/StringConvert.h"
 
-
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 
 using namespace NUpdateArchive;
 
-
-
-void AddDirFileInfo(const UString &aPrefix, const CSysString &aFullPathName,
-    NFind::CFileInfo &aFileInfo, CArchiveStyleDirItemInfoVector &aDirFileInfoVector,
-    UINT aCodePage)
+void AddDirFileInfo(const UString &prefix, const CSysString &fullPathName,
+    NFind::CFileInfo &fileInfo, CArchiveStyleDirItemInfoVector &dirFileInfoVector,
+    UINT codePage)
 {
-  CArchiveStyleDirItemInfo aDirFileInfo;
-  aDirFileInfo.Attributes = aFileInfo.Attributes;
-  aDirFileInfo.Size = aFileInfo.Size;
-  // ::FileTimeToLocalFileTime(&aFileInfo.LastWriteTime, &aDirFileInfo.LastWriteTime);
-  aDirFileInfo.CreationTime = aFileInfo.CreationTime;
-  aDirFileInfo.LastAccessTime = aFileInfo.LastAccessTime;
-  aDirFileInfo.LastWriteTime = aFileInfo.LastWriteTime;
-  aDirFileInfo.Name = aPrefix + GetUnicodeString(aFileInfo.Name, aCodePage);
-  aDirFileInfo.FullPathDiskName = aFullPathName;
-  aDirFileInfoVector.Add(aDirFileInfo);
+  CArchiveStyleDirItemInfo dirFileInfo;
+  dirFileInfo.Attributes = fileInfo.Attributes;
+  dirFileInfo.Size = fileInfo.Size;
+  dirFileInfo.CreationTime = fileInfo.CreationTime;
+  dirFileInfo.LastAccessTime = fileInfo.LastAccessTime;
+  dirFileInfo.LastWriteTime = fileInfo.LastWriteTime;
+  dirFileInfo.Name = prefix + GetUnicodeString(fileInfo.Name, codePage);
+  dirFileInfo.FullPathDiskName = fullPathName;
+  dirFileInfoVector.Add(dirFileInfo);
 }
 
-void EnumerateDirectory(const CSysString &aBaseFolderPrefix,
-    const CSysString &aDirectory, const UString &aPrefix,
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage)
+static void EnumerateDirectory(const CSysString &baseFolderPrefix,
+    const CSysString &directory, const UString &prefix,
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage)
 {
-  NFind::CEnumerator anEnumerate(aBaseFolderPrefix + aDirectory + TCHAR(kAnyStringWildcard));
-  NFind::CFileInfo aFileInfo;
-  while (anEnumerate.Next(aFileInfo))
+  NFind::CEnumerator enumerator(baseFolderPrefix + directory + TCHAR(kAnyStringWildcard));
+  NFind::CFileInfo fileInfo;
+  while (enumerator.Next(fileInfo))
   { 
-    AddDirFileInfo(aPrefix, aDirectory + aFileInfo.Name, aFileInfo, 
-        aDirFileInfoVector, aCodePage);
-    if (aFileInfo.IsDirectory())
+    AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
+        dirFileInfoVector, codePage);
+    if (fileInfo.IsDirectory())
     {
-      EnumerateDirectory(aBaseFolderPrefix, aDirectory + aFileInfo.Name + TCHAR(kDirDelimiter), 
-          aPrefix + GetUnicodeString(aFileInfo.Name, aCodePage) + wchar_t(kDirDelimiter), 
-          aDirFileInfoVector, aCodePage);
+      EnumerateDirectory(baseFolderPrefix, directory + fileInfo.Name + TCHAR(kDirDelimiter), 
+          prefix + GetUnicodeString(fileInfo.Name, codePage) + wchar_t(kDirDelimiter), 
+          dirFileInfoVector, codePage);
     }
   }
 }
 
-void EnumerateItems(const CSysString &aBaseFolderPrefix,
-    const CSysStringVector &aFileNames,
-    const UString &anArchiveNamePrefix, 
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage)
+void EnumerateItems(const CSysString &baseFolderPrefix,
+    const CSysStringVector &fileNames,
+    const UString &archiveNamePrefix, 
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage)
 {
-  for(int i = 0; i < aFileNames.Size(); i++)
+  for(int i = 0; i < fileNames.Size(); i++)
   {
-    const CSysString &aFileName = aFileNames[i];
-    NFind::CFileInfo aFileInfo;
-    if (!NFind::FindFile(aBaseFolderPrefix + aFileName, aFileInfo))
+    const CSysString &fileName = fileNames[i];
+    NFind::CFileInfo fileInfo;
+    if (!NFind::FindFile(baseFolderPrefix + fileName, fileInfo))
       throw 1081736;
-    AddDirFileInfo(anArchiveNamePrefix, aFileName, aFileInfo, aDirFileInfoVector, aCodePage);
-    if (aFileInfo.IsDirectory())
+    AddDirFileInfo(archiveNamePrefix, fileName, fileInfo, dirFileInfoVector, codePage);
+    if (fileInfo.IsDirectory())
     {
-      EnumerateDirectory(aBaseFolderPrefix, aFileName + TCHAR(kDirDelimiter), 
-          anArchiveNamePrefix + GetUnicodeString(aFileInfo.Name, aCodePage) + 
+      EnumerateDirectory(baseFolderPrefix, fileName + TCHAR(kDirDelimiter), 
+          archiveNamePrefix + GetUnicodeString(fileInfo.Name, codePage) + 
           wchar_t(kDirDelimiter), 
-          aDirFileInfoVector, aCodePage);
+          dirFileInfoVector, codePage);
     }
   }
 }
+
+/*
+void EnumerateItems(const CSysStringVector &filePaths,
+    const UString &archiveNamePrefix, 
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage)
+{
+  for(int i = 0; i < filePaths.Size(); i++)
+  {
+    const CSysString &filePath = filePaths[i];
+    NFind::CFileInfo fileInfo;
+    if (!NFind::FindFile(filePath, fileInfo))
+      throw 1081736;
+    AddDirFileInfo(archiveNamePrefix, filePath, fileInfo, dirFileInfoVector, codePage);
+    if (fileInfo.IsDirectory())
+    {
+      EnumerateDirectory(TEXT(""), filePath + TCHAR(kDirDelimiter), 
+          archiveNamePrefix + GetUnicodeString(fileInfo.Name, codePage) + 
+          wchar_t(kDirDelimiter), 
+          dirFileInfoVector, codePage);
+    }
+  }
+}
+*/
 
 const CActionSet kAddActionSet = 
 {

@@ -42,7 +42,7 @@ CPanel::~CPanel()
 
 static LPCTSTR kClassName = TEXT("7-Zip::Panel");
 
-LRESULT CPanel::Create(HWND mainWindow, HWND parrentWindow, int index, UINT id, int xPos, 
+LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, int index, UINT id, int xPos, 
     CSysString &currentFolderPrefix, CPanelCallback *panelCallback, CAppState *appState)
 {
   _mainWindow = mainWindow;
@@ -113,7 +113,7 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parrentWindow, int index, UINT id, 
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE, 
       xPos, 0, 116, 260, 
-      parrentWindow, (HMENU)id, g_hInstance))
+      parentWindow, (HMENU)id, g_hInstance))
     return E_FAIL;
   
   return S_OK;

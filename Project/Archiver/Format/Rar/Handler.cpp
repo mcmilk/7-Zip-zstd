@@ -64,12 +64,10 @@ STATPROPSTG kProperties[] =
   { NULL, kpidComment, VT_BOOL},
   { NULL, kpidSplitBefore, VT_BOOL},
   { NULL, kpidSplitAfter, VT_BOOL},
-    
-  { NULL, kpidDictionarySize, VT_UI4},
   { NULL, kpidCRC, VT_UI4},
-
   { NULL, kpidHostOS, VT_BSTR},
-  { NULL, kpidMethod, VT_UI1},
+  { NULL, kpidMethod, VT_BSTR},
+  // { NULL, kpidDictionarySize, VT_UI4},
   { L"UnPack Version", kpidUnPackVersion, VT_UI1}
 };
 
@@ -90,71 +88,98 @@ STDMETHODIMP CRarHandler::GetNumberOfItems(UINT32 *aNumItems)
 STDMETHODIMP CRarHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  const NArchive::NRar::CItemInfoEx &anItem = m_Items[anIndex];
+  NWindows::NCOM::CPropVariant propVariant;
+  const NArchive::NRar::CItemInfoEx &item = m_Items[anIndex];
   switch(aPropID)
   {
     case kpidPath:
-      aPropVariant = (const wchar_t *)MultiByteToUnicodeString(anItem.Name, CP_OEMCP);
+      propVariant = (const wchar_t *)MultiByteToUnicodeString(item.Name, CP_OEMCP);
       break;
     case kpidIsFolder:
-      aPropVariant = anItem.IsDirectory();
+      propVariant = item.IsDirectory();
       break;
     case kpidSize:
-      aPropVariant = anItem.UnPackSize;
+      propVariant = item.UnPackSize;
       break;
     case kpidPackedSize:
-      aPropVariant = anItem.PackSize;
+      propVariant = item.PackSize;
       break;
     case kpidLastWriteTime:
     {
       FILETIME aLocalFileTime, anUTCFileTime;
-      if (DosTimeToFileTime(anItem.Time, aLocalFileTime))
+      if (DosTimeToFileTime(item.Time, aLocalFileTime))
       {
         if (!LocalFileTimeToFileTime(&aLocalFileTime, &anUTCFileTime))
           anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
       }
       else
         anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
-      aPropVariant = anUTCFileTime;
+      propVariant = anUTCFileTime;
       break;
     }
     case kpidAttributes:
-      aPropVariant = anItem.GetWinAttributes();
+      propVariant = item.GetWinAttributes();
       break;
     case kpidEncrypted:
-      aPropVariant = anItem.IsEncrypted();
+      propVariant = item.IsEncrypted();
       break;
     case kpidSolid:
-      aPropVariant = anItem.IsSolid();
+      propVariant = item.IsSolid();
       break;
     case kpidComment:
-      aPropVariant = anItem.IsCommented();
+      propVariant = item.IsCommented();
       break;
     case kpidSplitBefore:
-      aPropVariant = anItem.IsSplitBefore();
+      propVariant = item.IsSplitBefore();
       break;
     case kpidSplitAfter:
-      aPropVariant = anItem.IsSplitAfter();
+      propVariant = item.IsSplitAfter();
       break;
+    /*
     case kpidDictionarySize:
-      aPropVariant = UINT32(0x10000 << anItem.GetDictSize());
+      if (!item.IsDirectory())
+        propVariant = UINT32(0x10000 << item.GetDictSize());
       break;
+    */
     case kpidCRC:
-      aPropVariant = anItem.FileCRC;
+      propVariant = item.FileCRC;
       break;
     case kpidUnPackVersion:
-      aPropVariant = anItem.UnPackVersion;
+      propVariant = item.UnPackVersion;
       break;
     case kpidMethod:
-      aPropVariant = anItem.Method;
+    {
+      UString method;
+      if (item.Method >= BYTE('0') && item.Method <= BYTE('5'))
+      {
+        method = L"m";
+        wchar_t temp[32];
+        _itow (item.Method - BYTE('0'), temp, 10);
+        method += temp;
+        if (!item.IsDirectory())
+        {
+          method += L":";
+          _itow (16 + item.GetDictSize(), temp, 10);
+          method += temp;
+        }
+      }
+      else
+      {
+        wchar_t temp[32];
+        _itow (item.Method, temp, 10);
+        method += temp;
+      }
+      propVariant = method;
+
+      // propVariant = item.Method;
       break;
+    }
     case kpidHostOS:
-      aPropVariant = (anItem.HostOS < kNumHostOSes) ?
-        (kHostOS[anItem.HostOS]) : kUnknownOS;
+      propVariant = (item.HostOS < kNumHostOSes) ?
+        (kHostOS[item.HostOS]) : kUnknownOS;
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(aValue);
   return S_OK;
   COM_TRY_END
 }

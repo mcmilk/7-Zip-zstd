@@ -835,7 +835,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       ICompressProgressInfo *progress)
 {
   RETURN_IF_NOT_S_OK(Create());
-  Init(inStream, outStream);
+  RETURN_IF_NOT_S_OK(Init(inStream, outStream));
   CCoderReleaser releaser(this);
 
   if (_matchFinder->GetNumAvailableBytes() == 0)

@@ -7,6 +7,8 @@
 #include "Windows/FileName.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
+#include "Windows/Thread.h"
+#include "Windows/COM.h"
 
 #include "Common/StringConvert.h"
 
@@ -145,6 +147,42 @@ static HRESULT SetOutProperties(IOutArchiveHandler100 * outArchive,
   }
   return S_OK;
 }
+
+struct CThreadUpdateCompress
+{
+  CComPtr<IOutArchiveHandler100> OutArchive;
+  CLSID ClassID;
+  UString OutArchivePath;
+  BYTE ActionSetByte[NUpdateArchive::NPairState::kNumValues];
+  bool SfxMode;
+  UString SfxModule;
+  
+
+  UStringVector FileNames;
+  CRecordVector<const wchar_t *> FileNamePointers;
+  CComPtr<IUpdateCallback100> UpdateCallback;
+  CComObjectNoLock<CUpdateCallback100Imp> *UpdateCallbackSpec;
+  HRESULT Result;
+  
+  DWORD Process()
+  {
+    NCOM::CComInitializer comInitializer;
+    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    UpdateCallbackSpec->_appTitle.Window = 
+        (HWND)UpdateCallbackSpec->_progressDialog;
+    Result = OutArchive->DoOperation(&ClassID,
+      OutArchivePath, ActionSetByte, 
+      (SfxMode ? (const wchar_t *)SfxModule: NULL),
+      UpdateCallback);
+    UpdateCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadUpdateCompress *)param)->Process();
+  }
+};
 
 HRESULT CompressArchive(const CSysStringVector &fileNames)
 {
@@ -332,19 +370,22 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
   UINT codePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   outArchive->SetFiles(L"", 
       &fileNamePointers.Front(), fileNamePointers.Size());
-  BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
-  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-    actionSetByte[i] = actionSet->StateActions[i];
 
-  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec =
-    new CComObjectNoLock<CUpdateCallBack100Imp>;
-  CComPtr<IUpdateCallback100> updateCallback(updateCallbackSpec );
-  
+  CThreadUpdateCompress updater;
+  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
+    updater.ActionSetByte[i] = actionSet->StateActions[i];
+  updater.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
+  updater.UpdateCallback = updater.UpdateCallbackSpec;
+  // updater.UpdateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+  updater.OutArchive = outArchive;
+  // updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
+
   CSysString title = LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
-  updateCallbackSpec->Init(/* archiveHandler, */ 0, title,
-      !dialog.Password.IsEmpty(), GetUnicodeString(dialog.Password));
-  updateCallbackSpec->_appTitle.Window = (HWND)updateCallbackSpec->m_ProgressDialog;
-  updateCallbackSpec->_appTitle.Title = title;
+  updater.UpdateCallbackSpec->Init(0, !dialog.Password.IsEmpty(), 
+      GetUnicodeString(dialog.Password));
+  // updater.UpdateCallbackSpec->_appTitle.Window = (HWND)updater.UpdateCallbackSpec->_progressDialog;
+  updater.UpdateCallbackSpec->_appTitle.Window = (HWND)0;
+  updater.UpdateCallbackSpec->_appTitle.Title = title;
 
 
   RETURN_IF_NOT_S_OK(SetOutProperties(outArchive, dialog.m_Info.Method, 
@@ -367,11 +408,20 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
     sfxModule = GetUnicodeString(sfxModule2);
   }
 
-  HRESULT result = outArchive->DoOperation(&classID,
-      GetUnicodeString(tempFileName, codePage), actionSetByte, 
-      (dialog.m_Info.SFXMode ? (const wchar_t *)sfxModule : NULL),
-      updateCallback);
-  updateCallback.Release();
+  updater.OutArchivePath = GetUnicodeString(tempFileName, codePage);
+  updater.SfxMode = dialog.m_Info.SFXMode;
+  updater.SfxModule = sfxModule;
+  updater.ClassID = classID;
+
+  CThread thread;
+  if (!thread.Create(CThreadUpdateCompress::MyThreadFunction, &updater))
+    throw 271824;
+  updater.UpdateCallbackSpec->StartProgressDialog(title);
+  HRESULT result = updater.Result;
+
+  updater.UpdateCallback.Release();
+  
+  updater.OutArchive.Release();
   outArchive.Release();
 
   if (result != S_OK)

@@ -5,60 +5,66 @@
 #include "Common/StringConvert.h"
 
 #include "UpdateCallback100.h"
-#include "Windows/ProcessMessages.h"
+// #include "Windows/ProcessMessages.h"
 // #include "Resource/PasswordDialog/PasswordDialog.h"
 
 #include "Common/Defs.h"
 
 using namespace NWindows;
 
-STDMETHODIMP CUpdateCallBack100Imp::SetTotal(UINT64 aSize)
+STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 size)
 {
+  /*
   if (m_ThreadID != GetCurrentThreadId())
     return S_OK;
-  // m_Total = aSize;
+  */
+  // m_Total = size;
   // m_ProgressDialog.Timer(PDTIMER_RESET);
 
-  m_ProgressDialog.SetRange(aSize);
-  m_ProgressDialog.SetPos(0);
-  _appTitle.SetRange(aSize);
+  _progressDialog._progressSynch.SetProgress(size, 0);
+
+  _appTitle.SetRange(size);
   _appTitle.SetPos(0);
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::SetCompleted(const UINT64 *aCompleteValue)
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *completeValue)
 {
+  /*
   if (m_ThreadID != GetCurrentThreadId())
     return S_OK;
-  ProcessMessages(m_ProgressDialog);
-  if(m_ProgressDialog.WasProcessStopped())
+  */
+  // ProcessMessages(m_ProgressDialog);
+  // if(m_ProgressDialog.WasProcessStopped())
   // if(m_ProgressDialog.HasUserCancelled())
+  if(_progressDialog._progressSynch.GetStopped())
     return E_ABORT;
-  if (aCompleteValue != NULL)
+  if (completeValue != NULL)
   {
-    m_ProgressDialog.SetPos(*aCompleteValue);
-    // m_ProgressDialog.SetProgress(*aCompleteValue, m_Total);
-    _appTitle.SetPos(*aCompleteValue);
+    _progressDialog._progressSynch.SetPos(*completeValue);
+    // m_ProgressDialog.SetPos(*completeValue);
+    // m_ProgressDialog.SetProgress(*completeValue, m_Total);
+    _appTitle.SetPos(*completeValue);
   }
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::CompressOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *name)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::DeleteOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *name)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::OperationResult(INT32 aOperationResult)
+STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 operationResult)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::CryptoGetTextPassword2(INT32 *passwordIsDefined, BSTR *password)
+STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(INT32 *passwordIsDefined, BSTR *password)
 {
   *passwordIsDefined = BoolToInt(_passwordIsDefined);
   if (!_passwordIsDefined)

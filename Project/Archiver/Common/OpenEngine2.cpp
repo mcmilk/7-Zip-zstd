@@ -91,11 +91,12 @@ HRESULT OpenArchive(const CSysString &aFileName,
   anArchiveHandler = anAgentSpec;
   
   /*
-  HRESULT aResult = anArchiveHandler.CoCreateInstance(CLSID_CAgentArchiveHandler);
-  if (aResult != S_OK)
-    return aResult;
+  HRESULT result = anArchiveHandler.CoCreateInstance(CLSID_CAgentArchiveHandler);
+  if (result != S_OK)
+    return result;
   */
 
+  HRESULT badResult = S_OK;
   for(int i = 0; i < anOrderIndexes.size(); i++)
   {
     anInStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
@@ -111,7 +112,7 @@ HRESULT OpenArchive(const CSysString &aFileName,
     CLSID aClassID;
     aClassID.Data4[5] = 5;
     #endif
-    HRESULT aResult = anAgentSpec->Open(
+    HRESULT result = anAgentSpec->Open(
         anInStream, aDefaultName, 
         &aFileInfo.LastWriteTime, aFileInfo.Attributes, 
         &kMaxCheckStartPosition, 
@@ -124,14 +125,20 @@ HRESULT OpenArchive(const CSysString &aFileName,
 
         anOpenArchive2CallBack);
 
-    if(aResult == S_FALSE)
+    if(result == S_FALSE)
       continue;
-    if(aResult != S_OK)
-      return aResult;
+    if(result != S_OK)
+    {
+      badResult = result;
+      continue;
+      // return result;
+    }
     *anArchiveHandlerResult = anArchiveHandler.Detach();
     anArchiverInfoResult = anArchiverInfo;
     return S_OK;
   }
+  if (badResult != S_OK)
+    return badResult;
   // OutputDebugString("Fin=======\n");
   return S_FALSE;
 }

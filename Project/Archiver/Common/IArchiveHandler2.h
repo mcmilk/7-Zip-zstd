@@ -61,7 +61,7 @@ public:
   STDMETHOD(OperationResult)(INT32 operationResult) PURE;
 };
 
-
+/*
 // {23170F69-40C1-278A-0000-000100070300}
 DEFINE_GUID(IID_IExtractCallback3, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x07, 0x03, 0x00);
@@ -75,6 +75,7 @@ public:
       const wchar_t *destPathRequest, BSTR *destPathResult, 
       INT32 *result);
 };
+*/
 
 // {23170F69-40C1-278A-0000-000100050000}
 DEFINE_GUID(IID_IArchiveFolder, 

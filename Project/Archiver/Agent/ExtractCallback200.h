@@ -35,82 +35,79 @@ DECLARE_NOT_AGGREGATABLE(CExtractCallBack200Imp)
 DECLARE_NO_REGISTRY()
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 aize);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
   // IExtractCallBack
-  STDMETHOD(Extract)(UINT32 anIndex, ISequentialOutStream **anOutStream, 
-      INT32 anAskExtractMode);
-  STDMETHOD(PrepareOperation)(INT32 anAskExtractMode);
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult);
+  STDMETHOD(Extract)(UINT32 anIndex, ISequentialOutStream **outStream, 
+      INT32 askExtractMode);
+  STDMETHOD(PrepareOperation)(INT32 askExtractMode);
+  STDMETHOD(OperationResult)(INT32 resultEOperationResult);
 
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *aPassword);
 
 private:
-  CComPtr<IArchiveHandler200> m_ArchiveHandler;
-  CComPtr<IExtractCallback2> m_ExtractCallback2;
-  CComPtr<ICryptoGetTextPassword> m_CryptoGetTextPassword;
-  CSysString m_DirectoryPath;
-  NExtractionMode::NPath::EEnum m_PathMode;
-  NExtractionMode::NOverwrite::EEnum m_OverwriteMode;
+  CComPtr<IArchiveHandler200> _archiveHandler;
+  CComPtr<IExtractCallback2> _extractCallback2;
+  CComPtr<ICryptoGetTextPassword> _cryptoGetTextPassword;
+  CSysString _directoryPath;
+  NExtractionMode::NPath::EEnum _pathMode;
+  NExtractionMode::NOverwrite::EEnum _overwriteMode;
 
-  UString m_FilePath;
+  UString _filePath;
 
-  CSysString m_DiskFilePath;
+  CSysString _diskFilePath;
 
-  // bool m_MessagesDialogWasCreated;
-  CSysStringVector m_Messages;
-  // CSysString m_CurrentFilePath;
+  CSysStringVector _messages;
 
-  bool m_ExtractMode;
+  bool _extractMode;
   struct CProcessedFileInfo
   {
     FILETIME UTCLastWriteTime;
     bool IsDirectory;
     bool AttributesAreDefined;
     UINT32 Attributes;
-  } m_ProcessedFileInfo;
+  } _processedFileInfo;
 
 
-  CComObjectNoLock<COutFileStream> *m_OutFileStreamSpec;
-  CComPtr<ISequentialOutStream> m_OutFileStream;
-  UStringVector m_RemovePathParts;
-  // CProgressBox *m_ProgressBox;
-  UINT m_CodePage;
+  CComObjectNoLock<COutFileStream> *_outFileStreamSpec;
+  CComPtr<ISequentialOutStream> _outFileStream;
+  UStringVector _removePathParts;
+  UINT _codePage;
 
-  UString m_ItemDefaultName;
-  FILETIME m_UTCLastWriteTimeDefault;
-  UINT32 m_AttributesDefault;
+  UString _itemDefaultName;
+  FILETIME _utcLastWriteTimeDefault;
+  UINT32 _attributesDefault;
 
-  bool m_PasswordIsDefined;
-  UString m_Password;
+  // bool m_PasswordIsDefined;
+  // UString m_Password;
 
 
-  void CreateComplexDirectory(const UStringVector &aDirPathParts);
+  void CreateComplexDirectory(const UStringVector &dirPathParts);
   /*
   void GetPropertyValue(LPITEMIDLIST anItemIDList, PROPID aPropId, 
       PROPVARIANT *aValue);
   bool IsEncrypted(LPITEMIDLIST anItemIDList);
   */
-  void AddErrorMessage(LPCTSTR aMessage);
+  void AddErrorMessage(LPCTSTR message);
 public:
   // CProgressDialog m_ProcessDialog;
   ~CExtractCallBack200Imp();
   void Init(
-      IArchiveHandler200 *anArchiveHandler, 
-      IExtractCallback2 *anExtractCallback2,
-      const CSysString &aDirectoryPath,
-      NExtractionMode::NPath::EEnum aPathMode,
-      NExtractionMode::NOverwrite::EEnum anOverwriteMode,
-      const UStringVector &aRemovePathParts,
-      // CProgressBox *aProgressBox, 
-      UINT aCodePage, 
-      const UString &anItemDefaultName,
-      const FILETIME &anUTCLastWriteTimeDefault, UINT32 anAttributesDefault,
-      bool aPasswordIsDefined, const UString &aPassword);
+      IArchiveHandler200 *archiveHandler, 
+      IExtractCallback2 *extractCallback2,
+      const CSysString &directoryPath,
+      NExtractionMode::NPath::EEnum pathMode,
+      NExtractionMode::NOverwrite::EEnum overwriteMode,
+      const UStringVector &removePathParts,
+      UINT codePage, 
+      const UString &itemDefaultName,
+      const FILETIME &utcLastWriteTimeDefault, UINT32 anAttributesDefault
+      // bool aPasswordIsDefined, const UString &aPassword
+      );
 
-  UINT64 m_NumErrors;
+  UINT64 _numErrors;
 };
 
 /*
@@ -127,6 +124,6 @@ namespace NExtractResult
 }
 */
 
-HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName);
+// HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName);
 
 #endif

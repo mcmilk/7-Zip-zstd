@@ -55,28 +55,25 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
   CSysString filePath2 = GetSystemString(filePath, codePage);
   _archiveFilePath = filePath2;
   
-  // CObjectVector<NZipRootRegistry::CArchiverInfo> anArchiverInfoList;
-  // NZipRootRegistry::ReadArchiverInfoList(anArchiverInfoList);
-
-  CSysString anExtension;
+  CSysString extension;
   {
     CSysString name, pureName, dot;
     if(!NFile::NDirectory::GetOnlyName(filePath2, name))
       return E_FAIL;
-    NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, anExtension);
+    NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
   }
-  std::vector<int> anOrderIndexes;
-  for(int anFirstArchiverIndex = 0; 
-      anFirstArchiverIndex < _formats.Size(); anFirstArchiverIndex++)
-    if(anExtension.CollateNoCase(_formats[anFirstArchiverIndex].Extension) == 0)
+  std::vector<int> orderIndices;
+  for(int firstArchiverIndex = 0; 
+      firstArchiverIndex < _formats.Size(); firstArchiverIndex++)
+    if(extension.CollateNoCase(_formats[firstArchiverIndex].Extension) == 0)
       break;
-  if(anFirstArchiverIndex < _formats.Size())
-    anOrderIndexes.push_back(anFirstArchiverIndex);
+  if(firstArchiverIndex < _formats.Size())
+    orderIndices.push_back(firstArchiverIndex);
   for(int j = 0; j < _formats.Size(); j++)
-    if(j != anFirstArchiverIndex)
-      anOrderIndexes.push_back(j);
+    if(j != firstArchiverIndex)
+      orderIndices.push_back(j);
   
-  NCOM::CComInitializer aComInitializer;
+  NCOM::CComInitializer comInitializer;
   CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
 
@@ -87,43 +84,46 @@ STDMETHODIMP CAgent::OpenFolderFile(const wchar_t *filePath,
   if (!inStreamSpec->Open(filePath2))
     return E_FAIL;
 
-
-  for(int i = 0; i < anOrderIndexes.size(); i++)
+  HRESULT badResult = S_OK;
+  for(int i = 0; i < orderIndices.size(); i++)
   {
     inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
-    const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
-        _formats[anOrderIndexes[i]];
+    const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+        _formats[orderIndices[i]];
     
-    /*
-    */
-    defaultName = GetDefaultName(filePath2, anArchiverInfo.Extension, 
-        GetUnicodeString(anArchiverInfo.AddExtension));
+    defaultName = GetDefaultName(filePath2, archiverInfo.Extension, 
+        GetUnicodeString(archiverInfo.AddExtension));
 
     #ifdef EXCLUDE_COM
-    CLSID aClassID;
-    aClassID.Data4[5] = 5;
+    CLSID classID;
+    classID.Data4[5] = 5;
     #endif
-    HRESULT aResult = Open(
+    HRESULT result = Open(
         inStream, defaultName, 
         &fileInfo.LastWriteTime, fileInfo.Attributes, 
         &kMaxCheckStartPosition, 
 
         #ifdef EXCLUDE_COM
-        &aClassID,
+        &classID,
         #else
-        &anArchiverInfo.ClassID, 
+        &archiverInfo.ClassID, 
         #endif
 
         openArchive2CallBack);
 
-    if(aResult == S_FALSE)
+    if(result == S_FALSE)
       continue;
-    if(aResult != S_OK)
-      return aResult;
-    //anArchiverInfoResult = anArchiverInfo;
+    if(result != S_OK)
+    {
+      badResult = result;
+      continue;
+      // return result;
+    }
     // CoFreeUnusedLibraries();
     return BindToRootFolder(resultFolder);
   }
+  if (badResult != S_OK)
+    return badResult;
   // OutputDebugString("Fin=======\n");
   // CoFreeUnusedLibraries();
   return S_FALSE;
@@ -137,7 +137,7 @@ HRESULT CAgent::FolderReOpen(
   NFile::NFind::CFileInfo fileInfo;
   if (!NFile::NFind::FindFile(fileName, fileInfo))
     return E_FAIL;
-  NCOM::CComInitializer aComInitializer;
+  NCOM::CComInitializer comInitializer;
   CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
   CComPtr<IInStream> inStream(inStreamSpec);
@@ -186,15 +186,15 @@ STDMETHODIMP CAgent::GetIconPath(const wchar_t *type, BSTR *iconPath)
   int formatIndex = FindFormat(type);
   if (formatIndex <  0)
     return E_INVALIDARG;
-  NRegistry::CKey aKey;
-  CSysString aKeyPath = kCLSIDKeyName;
-  aKeyPath += kKeyNameDelimiter;
-  aKeyPath += GUIDToString(_formats[formatIndex].ClassID);
-  aKeyPath += kKeyNameDelimiter;
-  aKeyPath += kInprocServer32KeyName;
+  NRegistry::CKey key;
+  CSysString keyPath = kCLSIDKeyName;
+  keyPath += kKeyNameDelimiter;
+  keyPath += GUIDToString(_formats[formatIndex].ClassID);
+  keyPath += kKeyNameDelimiter;
+  keyPath += kInprocServer32KeyName;
   CSysString tempPath;
-  if (aKey.Open(HKEY_CLASSES_ROOT, aKeyPath, KEY_READ) == ERROR_SUCCESS)
-    aKey.QueryValue(NULL, tempPath);
+  if (key.Open(HKEY_CLASSES_ROOT, keyPath, KEY_READ) == ERROR_SUCCESS)
+    key.QueryValue(NULL, tempPath);
   CComBSTR iconPathTemp = GetUnicodeString(tempPath);
   *iconPath = iconPathTemp.Detach();
   return S_OK;

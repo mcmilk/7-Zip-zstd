@@ -62,6 +62,7 @@ namespace NCompressionMethodMajor
 {
   const BYTE kNone = 0;
   const BYTE kMSZip = 1;
+  const BYTE kQuantum = 2;
   const BYTE kLZX = 3;
 }
 

@@ -32,44 +32,44 @@ static const kOneItemComplexity = 30;
 namespace NArchive {
 namespace N7z {
 
-HRESULT CopyBlock(ISequentialInStream *anInStream, 
-    ISequentialOutStream *anOutStream, ICompressProgressInfo *aProgress)
+HRESULT CopyBlock(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 
+  CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
-  CComPtr<ICompressCoder> aCopyCoder = aCopyCoderSpec;
+  CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
-  return aCopyCoder->Code(anInStream, anOutStream, NULL, NULL, aProgress);
+  return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
 }
 
-static HRESULT WriteRange(IInStream *anInStream, 
-    ISequentialOutStream *anOutStream, 
-    const CUpdateRange &aRange, 
-    IProgress *aProgress,
-    UINT64 &aCurrentComplexity)
+static HRESULT WriteRange(IInStream *inStream, 
+    ISequentialOutStream *outStream, 
+    const CUpdateRange &range, 
+    IProgress *progress,
+    UINT64 &currentComplexity)
 {
-  UINT64 aPosition;
-  anInStream->Seek(aRange.Position, STREAM_SEEK_SET, &aPosition);
+  UINT64 position;
+  inStream->Seek(range.Position, STREAM_SEEK_SET, &position);
 
-  CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
+  CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
       CComObjectNoLock<CLimitedSequentialInStream>;
-  CComPtr<CLimitedSequentialInStream> aInStreamLimited(aStreamSpec);
-  aStreamSpec->Init(anInStream, aRange.Size);
+  CComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
+  streamSpec->Init(inStream, range.Size);
 
 
-  CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
-  CComPtr<ICompressProgressInfo> aLocalProgress = aLocalProgressSpec;
-  aLocalProgressSpec->Init(aProgress, true);
+  CComObjectNoLock<CLocalProgress> *localProgressSpec = new  CComObjectNoLock<CLocalProgress>;
+  CComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+  localProgressSpec->Init(progress, true);
   
-  CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
+  CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
-  CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
+  CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
 
-  aLocalCompressProgressSpec->Init(aLocalProgress, &aCurrentComplexity, &aCurrentComplexity);
+  localCompressProgressSpec->Init(localProgress, &currentComplexity, &currentComplexity);
 
-  HRESULT aResult = CopyBlock(aInStreamLimited, anOutStream, aCompressProgress);
-  aCurrentComplexity += aRange.Size;
-  return aResult;
+  HRESULT result = CopyBlock(inStreamLimited, outStream, compressProgress);
+  currentComplexity += range.Size;
+  return result;
 }
 
 struct CRefItem2
@@ -104,214 +104,215 @@ static int CompareUpdateItems(const void *p1, const void *p2)
 }
 
 
-HRESULT UpdateOneFile(IInStream *anInStream,
-    const CCompressionMethodMode *anOptions,                       
-    COutArchive &anArchive,
-    CEncoder &anEncoder,
-    const CUpdateItemInfo &anUpdateItem, 
-    UINT64 &aCurrentComplexity,
-    IUpdateCallBack *anUpdateCallBack,
-    CFileItemInfo &aFileHeaderInfo,
-    CFolderItemInfo &aFolderItem,
-    CRecordVector<UINT64> &aPackSizes,
-    bool &aFolderItemIsDefined)
+HRESULT UpdateOneFile(IInStream *inStream,
+    const CCompressionMethodMode *options,                       
+    COutArchive &archive,
+    CEncoder &encoder,
+    const CUpdateItemInfo &updateItem, 
+    UINT64 &currentComplexity,
+    IUpdateCallBack *updateCallback,
+    CFileItemInfo &fileHeaderInfo,
+    CFolderItemInfo &folderItem,
+    CRecordVector<UINT64> &packSizes,
+    bool &folderItemIsDefined)
 {
-  CComPtr<IInStream> aFileInStream;
+  CComPtr<IInStream> fileInStream;
 
-  RETURN_IF_NOT_S_OK(anUpdateCallBack->CompressOperation(
-      anUpdateItem.IndexInClient, &aFileInStream));
+  RETURN_IF_NOT_S_OK(updateCallback->CompressOperation(
+      updateItem.IndexInClient, &fileInStream));
 
-  UINT64 aSize;
-  UINT64 *aSizePointer = NULL;
-  if (aFileInStream != NULL)
+  UINT64 size;
+  UINT64 *sizePointer = NULL;
+  if (fileInStream != NULL)
   {
-    CComPtr<IInStream> aFullInStream;
-    if (aFileInStream.QueryInterface(&aFullInStream) == S_OK)
+    CComPtr<IInStream> fullInStream;
+    if (fileInStream.QueryInterface(&fullInStream) == S_OK)
     {
-      RETURN_IF_NOT_S_OK(aFullInStream->Seek(0, STREAM_SEEK_END, &aSize));
-      RETURN_IF_NOT_S_OK(aFullInStream->Seek(0, STREAM_SEEK_SET, NULL));
-      aSizePointer = &aSize;
+      RETURN_IF_NOT_S_OK(fullInStream->Seek(0, STREAM_SEEK_END, &size));
+      RETURN_IF_NOT_S_OK(fullInStream->Seek(0, STREAM_SEEK_SET, NULL));
+      sizePointer = &size;
     }
   }
 
-  UINT64 aFileSize = anUpdateItem.Size;
+  UINT64 fileSize = updateItem.Size;
   
-  // ConvertUnicodeToUTF(NItemName::MakeLegalName(anUpdateItem.Name), aFileHeaderInfo.Name); // test it
-  aFileHeaderInfo.Name = NItemName::MakeLegalName(anUpdateItem.Name);
+  // ConvertUnicodeToUTF(NItemName::MakeLegalName(updateItem.Name), fileHeaderInfo.Name); // test it
+  fileHeaderInfo.Name = NItemName::MakeLegalName(updateItem.Name);
 
-  aFileHeaderInfo.IsDirectory = anUpdateItem.IsDirectory;
-  aFileHeaderInfo.IsAnti = anUpdateItem.IsAnti;
+  fileHeaderInfo.IsDirectory = updateItem.IsDirectory;
+  fileHeaderInfo.IsAnti = updateItem.IsAnti;
 
-  if(anUpdateItem.IsAnti || anUpdateItem.IsDirectory || aFileSize == 0)
-    aFolderItemIsDefined = false;
+  if(updateItem.IsAnti || updateItem.IsDirectory || fileSize == 0)
+    folderItemIsDefined = false;
   else
   {
-    aFolderItemIsDefined = true;
-    CComObjectNoLock<CInStreamWithCRC> *anInStreamSpec = 
+    folderItemIsDefined = true;
+    CComObjectNoLock<CInStreamWithCRC> *inStreamSpec = 
       new CComObjectNoLock<CInStreamWithCRC>;
-    CComPtr<IInStream> anInStream(anInStreamSpec);
+    CComPtr<IInStream> inStream(inStreamSpec);
 
-    anInStreamSpec->Init(aFileInStream);
+    inStreamSpec->Init(fileInStream);
     
-    CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = 
+    CComObjectNoLock<CLocalProgress> *localProgressSpec = 
       new  CComObjectNoLock<CLocalProgress>;
-    CComPtr<ICompressProgressInfo> aLocalProgress = aLocalProgressSpec;
-    aLocalProgressSpec->Init(anUpdateCallBack, true);
-    CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
+    CComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+    localProgressSpec->Init(updateCallback, true);
+    CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
-    CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
-    aLocalCompressProgressSpec->Init(aLocalProgress, &aCurrentComplexity, NULL);
+    CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+    localCompressProgressSpec->Init(localProgress, &currentComplexity, NULL);
 
-    RETURN_IF_NOT_S_OK(anEncoder.Encode(anInStream, aSizePointer, 
-        aFolderItem,
-        anArchive.m_Stream,
-        aPackSizes,
-        aCompressProgress));
+    RETURN_IF_NOT_S_OK(encoder.Encode(inStream, sizePointer, 
+        folderItem,
+        archive.m_Stream,
+        packSizes,
+        compressProgress));
 
-    aFileHeaderInfo.FileCRC = anInStreamSpec->GetCRC();
-    aFileHeaderInfo.FileCRCIsDefined = true;
+    fileHeaderInfo.FileCRC = inStreamSpec->GetCRC();
+    fileHeaderInfo.FileCRCIsDefined = true;
 
   }
-  aFileHeaderInfo.UnPackSize = aFileSize;
-  // aFolderItem.NumFiles = 1;
+  fileHeaderInfo.UnPackSize = fileSize;
+  // folderItem.NumFiles = 1;
   
-  if (anUpdateItem.AttributesAreDefined)
-    aFileHeaderInfo.SetAttributes(anUpdateItem.Attributes);
+  if (updateItem.AttributesAreDefined)
+    fileHeaderInfo.SetAttributes(updateItem.Attributes);
 
-  // if (anUpdateItem.CreationTimeIsDefined)
-    // aFileHeaderInfo.SetCreationTime(anUpdateItem.CreationTime);
+  // if (updateItem.CreationTimeIsDefined)
+    // fileHeaderInfo.SetCreationTime(updateItem.CreationTime);
   
-  if (anUpdateItem.LastWriteTimeIsDefined)
-    aFileHeaderInfo.SetLastWriteTime(anUpdateItem.LastWriteTime);
+  if (updateItem.LastWriteTimeIsDefined)
+    fileHeaderInfo.SetLastWriteTime(updateItem.LastWriteTime);
 
-  aCurrentComplexity += aFileSize;
-  return anUpdateCallBack->OperationResult(NArchiveHandler::NUpdate::NOperationResult::kOK);
+  currentComplexity += fileSize;
+  return updateCallback->OperationResult(NArchiveHandler::NUpdate::NOperationResult::kOK);
 }
 
 
-HRESULT UpdateArchiveStd(COutArchive &anArchive, 
-    IInStream *anInStream,
-    const CCompressionMethodMode *aMethod, 
-    const CCompressionMethodMode *aHeaderMethod,
-    const NArchive::N7z::CArchiveDatabaseEx &aDatabase,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,    
-    IUpdateCallBack *anUpdateCallBack)
+HRESULT UpdateArchiveStd(COutArchive &archive, 
+    IInStream *inStream,
+    const CCompressionMethodMode *method, 
+    const CCompressionMethodMode *headerMethod,
+    const NArchive::N7z::CArchiveDatabaseEx &database,
+    const CRecordVector<bool> &compressStatuses,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CRecordVector<UINT32> &copyIndices,    
+    IUpdateCallBack *updateCallback)
 {
-  RETURN_IF_NOT_S_OK(anArchive.SkeepPrefixArchiveHeader());
-  UINT64 aComplexity = 0;
+  RETURN_IF_NOT_S_OK(archive.SkeepPrefixArchiveHeader());
+  UINT64 complexity = 0;
 
-  UINT32 aCompressIndex = 0, aCopyIndexIndex = 0;
-  for(int i = 0; i < aCompressStatuses.Size(); i++)
+  UINT32 compressIndex = 0, copyIndexIndex = 0;
+  int i;
+  for(i = 0; i < compressStatuses.Size(); i++)
   {
-    if (aCompressStatuses[i])
+    if (compressStatuses[i])
     {
-      const CUpdateItemInfo &anUpdateItem = anUpdateItems[aCompressIndex++];
-      aComplexity += anUpdateItem.Size;
-      if (anUpdateItem.Commented)
-        aComplexity += anUpdateItem.CommentRange.Size;
+      const CUpdateItemInfo &updateItem = updateItems[compressIndex++];
+      complexity += updateItem.Size;
+      if (updateItem.Commented)
+        complexity += updateItem.CommentRange.Size;
     }
     else
     {
-      int aFileIndex = aCopyIndexes[aCopyIndexIndex++];
-      // const CFileItemInfoEx &anInputItem = aDatabase.m_Files[aCopyIndexes[aCopyIndexIndex++]];
-      int aFolderIndex = aDatabase.m_FileIndexToFolderIndexMap[aFileIndex];
-      if (aFolderIndex >= 0)
-        aComplexity += aDatabase.GetFolderFullPackSize(aFolderIndex);
+      int fileIndex = copyIndices[copyIndexIndex++];
+      // const CFileItemInfoEx &anInputItem = database.Files[copyIndices[copyIndexIndex++]];
+      int folderIndex = database.FileIndexToFolderIndexMap[fileIndex];
+      if (folderIndex >= 0)
+        complexity += database.GetFolderFullPackSize(folderIndex);
     }
-    // aComplexity += kOneItemComplexity * 3;
-    aComplexity += kOneItemComplexity * 2;
+    // complexity += kOneItemComplexity * 3;
+    complexity += kOneItemComplexity * 2;
   }
   
-  anUpdateCallBack->SetTotal(aComplexity);
+  updateCallback->SetTotal(complexity);
 
-  aCompressIndex = aCopyIndexIndex = 0;
+  compressIndex = copyIndexIndex = 0;
 
-  CRecordVector<CRefItem2> aRefItems;
-  aRefItems.Reserve(aCompressStatuses.Size());
-  for (i = 0; i < aCompressStatuses.Size(); i++)
+  CRecordVector<CRefItem2> refItems;
+  refItems.Reserve(compressStatuses.Size());
+  for (i = 0; i < compressStatuses.Size(); i++)
   {
-    CRefItem2 aRefItem;
-    if (aCompressStatuses[i])
+    CRefItem2 refItem;
+    if (compressStatuses[i])
     {
-      const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aCompressIndex];
-      aRefItem.IsCompressItem = true;
-      aRefItem.CompressIndex = aCompressIndex;
-      aRefItem.IsAnti = anUpdateItemInfo.IsAnti;
-      aRefItem.IsDirectory = anUpdateItemInfo.IsDirectory;
-      aRefItem.Name = anUpdateItemInfo.Name;
-      aCompressIndex++;
+      const CUpdateItemInfo &updateItemInfo = updateItems[compressIndex];
+      refItem.IsCompressItem = true;
+      refItem.CompressIndex = compressIndex;
+      refItem.IsAnti = updateItemInfo.IsAnti;
+      refItem.IsDirectory = updateItemInfo.IsDirectory;
+      refItem.Name = updateItemInfo.Name;
+      compressIndex++;
     }
     else
     {
-      int aFileIndex = aCopyIndexes[aCopyIndexIndex];
-      const CFileItemInfo &aFileItem = aDatabase.m_Files[aFileIndex];
-      aRefItem.CopyIndex = aFileIndex;
-      aRefItem.IsCompressItem = false;
-      aRefItem.IsAnti = false;
-      aRefItem.IsDirectory = aFileItem.IsDirectory;
-      aRefItem.Name = aFileItem.Name;
-      aCopyIndexIndex++;
+      int fileIndex = copyIndices[copyIndexIndex];
+      const CFileItemInfo &fileItem = database.Files[fileIndex];
+      refItem.CopyIndex = fileIndex;
+      refItem.IsCompressItem = false;
+      refItem.IsAnti = false;
+      refItem.IsDirectory = fileItem.IsDirectory;
+      refItem.Name = fileItem.Name;
+      copyIndexIndex++;
     }
-    aRefItems.Add(aRefItem);
+    refItems.Add(refItem);
   }
   
-  qsort(&aRefItems.Front(), aRefItems.Size(), sizeof(aRefItems[0]), CompareUpdateItems);
+  qsort(&refItems.Front(), refItems.Size(), sizeof(refItems[0]), CompareUpdateItems);
 
-  CArchiveDatabase aNewDatabase;
+  CArchiveDatabase newDatabase;
   {
-    aComplexity = 0;
+    complexity = 0;
     
-    std::auto_ptr<CEncoder> anEncoder;
-    for(i = 0; i < aCompressStatuses.Size(); i++)
+    std::auto_ptr<CEncoder> encoder;
+    for(i = 0; i < compressStatuses.Size(); i++)
     {
-      const CRefItem2 &aRefItem = aRefItems[i];
-      CFileItemInfo aFileItem;
-      CFolderItemInfo aFolderItem;
-      RETURN_IF_NOT_S_OK(anUpdateCallBack->SetCompleted(&aComplexity));
-      if (aRefItem.IsCompressItem)
+      const CRefItem2 &refItem = refItems[i];
+      CFileItemInfo fileItem;
+      CFolderItemInfo folderItem;
+      RETURN_IF_NOT_S_OK(updateCallback->SetCompleted(&complexity));
+      if (refItem.IsCompressItem)
       {
-        if (anEncoder.get() == 0)
-          anEncoder = (auto_ptr<CEncoder>)(new CEncoder(aMethod));
-        // aMixerCoderSpec->SetCoderInfo(0, NULL, NULL, aProgress);
-        const CUpdateItemInfo &anUpdateItemInfo = anUpdateItems[aRefItem.CompressIndex];
-        bool aFolderItemIsDefined;
-        RETURN_IF_NOT_S_OK(UpdateOneFile(anInStream, aMethod, 
-          anArchive, *anEncoder, 
-          anUpdateItemInfo, 
-          aComplexity,  anUpdateCallBack, aFileItem, aFolderItem, 
-          aNewDatabase.m_PackSizes, aFolderItemIsDefined));
-        if (aFolderItemIsDefined)
-          aNewDatabase.m_Folders.Add(aFolderItem);
+        if (encoder.get() == 0)
+          encoder = (auto_ptr<CEncoder>)(new CEncoder(method));
+        // mixerCoderSpec->SetCoderInfo(0, NULL, NULL, progress);
+        const CUpdateItemInfo &updateItemInfo = updateItems[refItem.CompressIndex];
+        bool folderItemIsDefined;
+        RETURN_IF_NOT_S_OK(UpdateOneFile(inStream, method, 
+          archive, *encoder, 
+          updateItemInfo, 
+          complexity,  updateCallback, fileItem, folderItem, 
+          newDatabase.PackSizes, folderItemIsDefined));
+        if (folderItemIsDefined)
+          newDatabase.Folders.Add(folderItem);
       }
       else
       {
-        int aFileIndex = aRefItem.CopyIndex;
-        int aFolderIndex = aDatabase.m_FileIndexToFolderIndexMap[aFileIndex];
-        aFileItem = aDatabase.m_Files[aFileIndex];
-        if (aFolderIndex >= 0)
+        int fileIndex = refItem.CopyIndex;
+        int folderIndex = database.FileIndexToFolderIndexMap[fileIndex];
+        fileItem = database.Files[fileIndex];
+        if (folderIndex >= 0)
         {
-          CUpdateRange aRange(aDatabase.GetFolderStreamPos(aFolderIndex, 0),
-            aDatabase.GetFolderFullPackSize(aFolderIndex));
-          RETURN_IF_NOT_S_OK(WriteRange(anInStream, anArchive.m_Stream, aRange, 
-            anUpdateCallBack, aComplexity));
-          const CFolderItemInfo &aFolder = aDatabase.m_Folders[aFolderIndex];
-          UINT64 aPackStreamIndex = aDatabase.m_FolderStartPackStreamIndex[aFolderIndex];
-          for (int j = 0; j < aFolder.PackStreams.Size(); j++)
-            aNewDatabase.m_PackSizes.Add(aDatabase.m_PackSizes[aPackStreamIndex + j]);
-          aNewDatabase.m_Folders.Add(aFolder);
+          CUpdateRange range(database.GetFolderStreamPos(folderIndex, 0),
+            database.GetFolderFullPackSize(folderIndex));
+          RETURN_IF_NOT_S_OK(WriteRange(inStream, archive.m_Stream, range, 
+            updateCallback, complexity));
+          const CFolderItemInfo &folder = database.Folders[folderIndex];
+          UINT64 packStreamIndex = database.FolderStartPackStreamIndex[folderIndex];
+          for (int j = 0; j < folder.PackStreams.Size(); j++)
+            newDatabase.PackSizes.Add(database.PackSizes[packStreamIndex + j]);
+          newDatabase.Folders.Add(folder);
         }
       }
-      aNewDatabase.m_Files.Add(aFileItem);
-      aComplexity += kOneItemComplexity;
+      newDatabase.Files.Add(fileItem);
+      complexity += kOneItemComplexity;
     }
     
-    aNewDatabase.m_NumUnPackStreamsVector.Reserve(aNewDatabase.m_Folders.Size());
-    for (i = 0; i < aNewDatabase.m_Folders.Size(); i++)
-      aNewDatabase.m_NumUnPackStreamsVector.Add(1);
+    newDatabase.NumUnPackStreamsVector.Reserve(newDatabase.Folders.Size());
+    for (i = 0; i < newDatabase.Folders.Size(); i++)
+      newDatabase.NumUnPackStreamsVector.Add(1);
   }
 
-  return anArchive.WriteDatabase(aNewDatabase, aHeaderMethod);
+  return archive.WriteDatabase(newDatabase, headerMethod);
 }
 }}

@@ -142,6 +142,14 @@ SOURCE=..\..\..\..\SDK\Common\StringConvert.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\UTFConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\UTFConvert.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\Vector.cpp
 # End Source File
 # Begin Source File

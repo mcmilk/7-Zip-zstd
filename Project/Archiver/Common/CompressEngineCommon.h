@@ -12,15 +12,21 @@
 
 #include "Windows/FileFind.h"
 
-void AddDirFileInfo(const UString &aPrefix, const CSysString &aFullPathName,
-    NWindows::NFile::NFind::CFileInfo &aFileInfo, 
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector,
-    UINT aCodePage);
+void AddDirFileInfo(const UString &prefix, const CSysString &fullPathName,
+    NWindows::NFile::NFind::CFileInfo &fileInfo, 
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector,
+    UINT codePage);
 
-void EnumerateItems(const CSysString &aBaseFolderPrefix,
-    const CSysStringVector &aFileNames,
-    const UString &anArchiveNamePrefix, 
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector, UINT aCodePage);
+void EnumerateItems(const CSysString &baseFolderPrefix,
+    const CSysStringVector &fileNames,
+    const UString &archiveNamePrefix, 
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage);
+
+/*
+void EnumerateItems(const CSysStringVector &filePaths,
+    const UString &archiveNamePrefix, 
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage);
+*/
 
 extern const NUpdateArchive::CActionSet kAddActionSet;
 extern const NUpdateArchive::CActionSet kUpdateActionSet;

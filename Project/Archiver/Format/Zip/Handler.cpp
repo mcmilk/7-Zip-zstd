@@ -93,9 +93,7 @@ const wchar_t *kUnknownOS = L"Unknown";
 /*
 enum // PropID
 {
-  kpidHostOS = kpidUserDefined,
   kpidUnPackVersion, 
-  kpidMethod, 
 };
 */
 
@@ -113,11 +111,29 @@ STATPROPSTG kProperties[] =
     
   { NULL, kpidCRC, VT_UI4},
 
-  { NULL, kpidMethod, VT_UI1},
+  { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidHostOS, VT_BSTR}
 
   // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
 };
+
+const wchar_t *kMethods[] = 
+{
+  L"Store",
+  L"Shrunk",
+  L"Reduced1",
+  L"Reduced2",
+  L"Reduced2",
+  L"Reduced3",
+  L"Implode",
+  L"Tokenizing",
+  L"Deflate",
+  L"Deflate64",
+  L"PKImploding"
+};
+
+const kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
+const wchar_t *kUnknownMethod = L"Unknown";
 
 
 CZipHandler::CZipHandler():
@@ -145,57 +161,65 @@ STDMETHODIMP CZipHandler::GetNumberOfItems(UINT32 *aNumItems)
 STDMETHODIMP CZipHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  const NArchive::NZip::CItemInfoEx &anItem = m_Items[anIndex];
+  NWindows::NCOM::CPropVariant propVariant;
+  const NArchive::NZip::CItemInfoEx &item = m_Items[anIndex];
   switch(aPropID)
   {
     case kpidPath:
-      aPropVariant = NItemName::GetOSName2(
-          MultiByteToUnicodeString(anItem.Name, anItem.GetCodePage()));
+      propVariant = NItemName::GetOSName2(
+          MultiByteToUnicodeString(item.Name, item.GetCodePage()));
       break;
     case kpidIsFolder:
-      aPropVariant = anItem.IsDirectory();
+      propVariant = item.IsDirectory();
       break;
     case kpidSize:
-      aPropVariant = anItem.UnPackSize;
+      propVariant = item.UnPackSize;
       break;
     case kpidPackedSize:
-      aPropVariant = anItem.PackSize;
+      propVariant = item.PackSize;
       break;
     case kpidLastWriteTime:
     {
       FILETIME aLocalFileTime, anUTCFileTime;
-      if (DosTimeToFileTime(anItem.Time, aLocalFileTime))
+      if (DosTimeToFileTime(item.Time, aLocalFileTime))
       {
         if (!LocalFileTimeToFileTime(&aLocalFileTime, &anUTCFileTime))
           anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
       }
       else
         anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
-      aPropVariant = anUTCFileTime;
+      propVariant = anUTCFileTime;
       break;
     }
     case kpidAttributes:
-      aPropVariant = anItem.GetWinAttributes();
+      propVariant = item.GetWinAttributes();
       break;
     case kpidEncrypted:
-      aPropVariant = anItem.IsEncrypted();
+      propVariant = item.IsEncrypted();
       break;
     case kpidComment:
-      aPropVariant = anItem.IsCommented();
+      propVariant = item.IsCommented();
       break;
     case kpidCRC:
-      aPropVariant = anItem.FileCRC;
+      propVariant = item.FileCRC;
       break;
     case kpidMethod:
-      aPropVariant = anItem.CompressionMethod;
+    {
+      UString method;
+      if (item.CompressionMethod < kNumMethods)
+        method = kMethods[item.CompressionMethod];
+      else
+        method = kUnknownMethod;
+      propVariant = method;
+      // propVariant = item.CompressionMethod;
       break;
+    }
     case kpidHostOS:
-      aPropVariant = (anItem.MadeByVersion.HostOS < kNumHostOSes) ?
-        (kHostOS[anItem.MadeByVersion.HostOS]) : kUnknownOS;
+      propVariant = (item.MadeByVersion.HostOS < kNumHostOSes) ?
+        (kHostOS[item.MadeByVersion.HostOS]) : kUnknownOS;
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(aValue);
   return S_OK;
   COM_TRY_END
 }
@@ -266,7 +290,8 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
   UINT64 aTotalUnPacked = 0, aTotalPacked = 0;
   if(aNumItems == 0)
     return S_OK;
-  for(int i = 0; i < aNumItems; i++)
+  int i;
+  for(i = 0; i < aNumItems; i++)
   {
     const CItemInfoEx &anItemInfo = m_Items[anIndexes[i]];
     aTotalUnPacked += anItemInfo.UnPackSize;

@@ -56,6 +56,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib Mpr.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-ZIP\7zFM.exe"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "FM - Win32 Debug"
 
@@ -626,14 +627,6 @@ SOURCE=..\..\SDK\Windows\Net.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\SDK\Windows\ProcessMessages.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\SDK\Windows\ProcessMessages.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\SDK\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File
@@ -889,29 +882,8 @@ SOURCE=.\PropertyName.h
 # Begin Source File
 
 SOURCE=.\resource.rc
-
-!IF  "$(CFG)" == "FM - Win32 Release"
-
 # ADD BASE RSC /l 0x419
 # ADD RSC /l 0x409
-
-!ELSEIF  "$(CFG)" == "FM - Win32 Debug"
-
-# ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409
-
-!ELSEIF  "$(CFG)" == "FM - Win32 ReleaseU"
-
-# ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409
-
-!ELSEIF  "$(CFG)" == "FM - Win32 DebugU"
-
-# ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

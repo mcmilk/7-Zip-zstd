@@ -30,39 +30,39 @@ DECLARE_NO_REGISTRY()
 
   CFolderInStream();
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
 
-  STDMETHOD(GetSubStreamSize)(UINT64 aSubStream, UINT64 *aValue);
+  STDMETHOD(GetSubStreamSize)(UINT64 subStream, UINT64 *value);
 private:
-  CComObjectNoLock<CInStreamWithCRC> *m_InStreamWithHashSpec;
-  CComPtr<ISequentialInStream> m_InStreamWithHash;
-  CComPtr<IUpdateCallBack> m_UpdateCallBack;
+  CComObjectNoLock<CInStreamWithCRC> *_inStreamWithHashSpec;
+  CComPtr<ISequentialInStream> _inStreamWithHash;
+  CComPtr<IUpdateCallBack> _updateCallback;
 
-  bool m_CurrentSizeIsDefined;
-  UINT64 m_CurrentSize;
+  bool _currentSizeIsDefined;
+  UINT64 _currentSize;
 
-  bool m_FileIsOpen;
-  UINT64 m_FilePos;
+  bool _fileIsOpen;
+  UINT64 _filePos;
 
-  const UINT32 *m_FileIndexes;
-  UINT32 m_NumFiles;
-  UINT32 m_FileIndex;
+  const UINT32 *_fileIndices;
+  UINT32 _numFiles;
+  UINT32 _fileIndex;
 
   HRESULT OpenStream();
   HRESULT CloseStream();
   void AddDigest();
 public:
-  void Init(IUpdateCallBack *anUpdateCallBack, 
-      const UINT32 *aFileIndexes, UINT32 aNumFiles);
-  CRecordVector<UINT32> m_CRCs;
-  CRecordVector<UINT64> m_Sizes;
+  void Init(IUpdateCallBack *updateCallback, 
+      const UINT32 *fileIndices, UINT32 numFiles);
+  CRecordVector<UINT32> CRCs;
+  CRecordVector<UINT64> Sizes;
   UINT64 GetFullSize() const
   {
-    UINT64 aSize = 0;
-    for (int i = 0; i < m_Sizes.Size(); i++)      
-      aSize += m_Sizes[i];
-    return aSize;
+    UINT64 size = 0;
+    for (int i = 0; i < Sizes.Size(); i++)      
+      size += Sizes[i];
+    return size;
   }
 };
   

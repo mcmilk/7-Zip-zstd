@@ -230,7 +230,7 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CPatricia)
 
-  DECLARE_REGISTRY(CPatricia, kIDString TEXT(".1"), kIDString, 0, THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CPatricia, kIDString TEXT(".1"), kIDString, UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

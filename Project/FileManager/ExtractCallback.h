@@ -92,24 +92,16 @@ public:
   #endif;
   CSysStringVector _messages;
   HWND _parentWindow;
-  DWORD _threadID;
   UINT _fileCodePage;
-  // CProgressDialog m_ProcessDialog;
-  HRESULT StartProgressDialog(const CSysString &title)
+  void StartProgressDialog(const CSysString &title)
   {
-    _threadID = GetCurrentThreadId();
-    _progressDialog.Create(_parentWindow);
-    _progressDialog.SetText(title);
-
-    _progressDialog.Show(SW_SHOWNORMAL);    
-    // _progressDialog.Start(_parentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
-    return S_OK;
+    _progressDialog.Create(title, _parentWindow);
   }
 
   ~CExtractCallbackImp();
   void Init(NExtractionMode::NOverwrite::EEnum overwriteMode,
       bool passwordIsDefined, const UString &password);
-  void DestroyWindows();
+  // void DestroyWindows();
 };
 
 #endif

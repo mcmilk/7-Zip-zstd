@@ -18,7 +18,7 @@ struct CMethodID
   BYTE ID[kMethodIDSize];
   UINT32 IDSize;
   AString ConvertToString() const;
-  bool ConvertFromString(const AString &aString);
+  bool ConvertFromString(const AString &srcString);
 };
 
 inline bool operator==(const CMethodID &a1, const CMethodID &a2)

@@ -49,7 +49,7 @@ void CGlobal::Unlock() const
 
 bool CGlobal::ReAlloc(DWORD aSize)
 {
-  HGLOBAL aNewBlock = ::GlobalReAlloc(m_MemoryHandle, GMEM_MOVEABLE, aSize);
+  HGLOBAL aNewBlock = ::GlobalReAlloc(m_MemoryHandle, aSize, GMEM_MOVEABLE);
   if (aNewBlock == NULL)
     return false;
   m_MemoryHandle = aNewBlock;

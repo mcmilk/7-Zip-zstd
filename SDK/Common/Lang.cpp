@@ -122,8 +122,8 @@ int CLang::FindItem(UINT32 value) const
   int left = 0, right = _langPairs.Size(); 
   while (left != right)
   {
-    int mid = (left + right) / 2;
-    int midValue = _langPairs[mid].Value;
+    UINT32 mid = (left + right) / 2;
+    UINT32 midValue = _langPairs[mid].Value;
     if (value == midValue)
       return mid;
     if (value < midValue)

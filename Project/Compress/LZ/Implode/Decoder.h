@@ -70,7 +70,7 @@ public:
 
   // DECLARE_NO_REGISTRY()
   DECLARE_REGISTRY(CEncoder, TEXT("Compress.ImplodeDecoder.1"), 
-    TEXT("Compress.ImplodeDecoder"), 0, THREADFLAGS_APARTMENT)
+    TEXT("Compress.ImplodeDecoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream);

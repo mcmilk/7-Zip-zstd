@@ -19,7 +19,8 @@ void SortStringsToIndexes(UStringVector &aStrings, std::vector<int> &anIndexes)
   int aNumItems = aStrings.Size();
   CPointerVector aPointers;
   aPointers.Reserve(aNumItems);
-  for(int i = 0; i < aNumItems; i++)
+  int i;
+  for(i = 0; i < aNumItems; i++)
     aPointers.Add(&aStrings.CPointerVector::operator[](i));
   void **aStringsBase  = (void **)aPointers[0];
   qsort(&aPointers[0], aNumItems, sizeof(void *), CompareStrings);

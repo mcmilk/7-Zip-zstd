@@ -24,17 +24,22 @@ DECLARE_NOT_AGGREGATABLE(COutStreamWithCRC)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
 private:
-  CCRC m_Crc;
-  CComPtr<ISequentialOutStream> m_Stream;
+  CCRC _crc;
+  CComPtr<ISequentialOutStream> _stream;
 public:
-  void Init(ISequentialOutStream *aStream);
+  void Init(ISequentialOutStream *stream)
+  {
+    _stream = stream;
+    _crc.Init();
+  }
   void ReleaseStream()
-    { m_Stream.Release(); }
-  UINT32 GetCRC() const { return m_Crc.GetDigest(); }
-  void InitCRC();
+    { _stream.Release(); }
+  UINT32 GetCRC() const { return _crc.GetDigest(); }
+  void InitCRC() { _crc.Init(); }
+
 };
 
 #endif

@@ -16,147 +16,147 @@ using namespace N7z;
 
 CFolderOutStream::CFolderOutStream()
 {
-  m_OutStreamWithHashSpec = new CComObjectNoLock<COutStreamWithCRC>;
-  m_OutStreamWithHash = m_OutStreamWithHashSpec;
+  _outStreamWithHashSpec = new CComObjectNoLock<COutStreamWithCRC>;
+  _outStreamWithHash = _outStreamWithHashSpec;
 }
 
 HRESULT CFolderOutStream::Init(
-    NArchive::N7z::CArchiveDatabaseEx *anArchiveDatabase,
-    UINT32 aStartIndex,
-    const CBoolVector *anExtractStatuses, 
-    IExtractCallback200 *anExtractCallBack,
-    bool aTestMode)
+    NArchive::N7z::CArchiveDatabaseEx *archiveDatabase,
+    UINT32 startIndex,
+    const CBoolVector *extractStatuses, 
+    IExtractCallback200 *extractCallback,
+    bool testMode)
 {
-  m_ArchiveDatabase = anArchiveDatabase;
-  m_StartIndex = aStartIndex;
+  _archiveDatabase = archiveDatabase;
+  _startIndex = startIndex;
 
-  m_ExtractStatuses = anExtractStatuses;
-  m_ExtractCallBack = anExtractCallBack;
-  m_TestMode = aTestMode;
+  _extractStatuses = extractStatuses;
+  _extractCallback = extractCallback;
+  _testMode = testMode;
 
-  m_CurrentIndex = 0;
-  m_FileIsOpen = false;
+  _currentIndex = 0;
+  _fileIsOpen = false;
   return WriteEmptyFiles();
 }
 
 HRESULT CFolderOutStream::OpenFile()
 {
-  INT32 anAskMode;
-  if((*m_ExtractStatuses)[m_CurrentIndex])
-    anAskMode = m_TestMode ? 
+  INT32 askMode;
+  if((*_extractStatuses)[_currentIndex])
+    askMode = _testMode ? 
         NArchiveHandler::NExtract::NAskMode::kTest :
         NArchiveHandler::NExtract::NAskMode::kExtract;
   else
-    anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
-  CComPtr<ISequentialOutStream> aRealOutStream;
+    askMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+  CComPtr<ISequentialOutStream> realOutStream;
 
-  UINT32 anIndex = m_StartIndex + m_CurrentIndex;
-  RETURN_IF_NOT_S_OK(m_ExtractCallBack->Extract(anIndex, &aRealOutStream, anAskMode));
+  UINT32 index = _startIndex + _currentIndex;
+  RETURN_IF_NOT_S_OK(_extractCallback->Extract(index, &realOutStream, askMode));
 
-  m_OutStreamWithHashSpec->Init(aRealOutStream);
-  if (anAskMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
-      (!aRealOutStream)) 
+  _outStreamWithHashSpec->Init(realOutStream);
+  if (askMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
+      (!realOutStream)) 
   {
-    UINT32 anIndex = m_StartIndex + m_CurrentIndex;
-    const CFileItemInfo &aFileInfo = m_ArchiveDatabase->m_Files[anIndex];
-    if (!aFileInfo.IsAnti && !aFileInfo.IsDirectory)
-      anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
+    UINT32 index = _startIndex + _currentIndex;
+    const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+    if (!fileInfo.IsAnti && !fileInfo.IsDirectory)
+      askMode = NArchiveHandler::NExtract::NAskMode::kSkip;
   }
-  return m_ExtractCallBack->PrepareOperation(anAskMode);
+  return _extractCallback->PrepareOperation(askMode);
 }
 
 HRESULT CFolderOutStream::WriteEmptyFiles()
 {
-  for(;m_CurrentIndex < m_ExtractStatuses->Size(); m_CurrentIndex++)
+  for(;_currentIndex < _extractStatuses->Size(); _currentIndex++)
   {
-    UINT32 anIndex = m_StartIndex + m_CurrentIndex;
-    const CFileItemInfo &aFileInfo = m_ArchiveDatabase->m_Files[anIndex];
-    if (!aFileInfo.IsAnti && !aFileInfo.IsDirectory && aFileInfo.UnPackSize != 0)
+    UINT32 index = _startIndex + _currentIndex;
+    const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+    if (!fileInfo.IsAnti && !fileInfo.IsDirectory && fileInfo.UnPackSize != 0)
       return S_OK;
     RETURN_IF_NOT_S_OK(OpenFile());
-    RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(
+    RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(
         NArchiveHandler::NExtract::NOperationResult::kOK));
-    m_OutStreamWithHashSpec->ReleaseStream();
+    _outStreamWithHashSpec->ReleaseStream();
   }
   return S_OK;
 }
 
-STDMETHODIMP CFolderOutStream::Write(const void *aData, 
-    UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CFolderOutStream::Write(const void *data, 
+    UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal = 0;
-  while(m_CurrentIndex < m_ExtractStatuses->Size())
+  UINT32 realProcessedSize = 0;
+  while(_currentIndex < _extractStatuses->Size())
   {
-    if (m_FileIsOpen)
+    if (_fileIsOpen)
     {
-      UINT32 anIndex = m_StartIndex + m_CurrentIndex;
-      const CFileItemInfo &aFileInfo = m_ArchiveDatabase->m_Files[anIndex];
-      UINT64 aFileSize = aFileInfo.UnPackSize;
+      UINT32 index = _startIndex + _currentIndex;
+      const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+      UINT64 fileSize = fileInfo.UnPackSize;
       
-      UINT32 aNumBytesToWrite = (UINT32)MyMin(aFileSize - m_FilePos, 
-          UINT64(aSize - aProcessedSizeReal));
+      UINT32 numBytesToWrite = (UINT32)MyMin(fileSize - _filePos, 
+          UINT64(size - realProcessedSize));
       
-      UINT32 aProcessedSizeLocal;
-      RETURN_IF_NOT_S_OK(m_OutStreamWithHash->Write((const BYTE *)aData + aProcessedSizeReal, aNumBytesToWrite, &aProcessedSizeLocal));
+      UINT32 processedSizeLocal;
+      RETURN_IF_NOT_S_OK(_outStreamWithHash->Write((const BYTE *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
 
-      m_FilePos += aProcessedSizeLocal;
-      aProcessedSizeReal += aProcessedSizeLocal;
-      if (m_FilePos == aFileSize)
+      _filePos += processedSizeLocal;
+      realProcessedSize += processedSizeLocal;
+      if (_filePos == fileSize)
       {
-        bool aDigestsAreEqual;
-        if (aFileInfo.FileCRCIsDefined)
-          aDigestsAreEqual = aFileInfo.FileCRC == m_OutStreamWithHashSpec->GetCRC();
+        bool digestsAreEqual;
+        if (fileInfo.FileCRCIsDefined)
+          digestsAreEqual = fileInfo.FileCRC == _outStreamWithHashSpec->GetCRC();
         else
-          aDigestsAreEqual = true;
+          digestsAreEqual = true;
 
-        RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(
-            aDigestsAreEqual ? 
+        RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(
+            digestsAreEqual ? 
             NArchiveHandler::NExtract::NOperationResult::kOK :
             NArchiveHandler::NExtract::NOperationResult::kCRCError));
-        m_OutStreamWithHashSpec->ReleaseStream();
-        m_FileIsOpen = false;
-        m_CurrentIndex++;
+        _outStreamWithHashSpec->ReleaseStream();
+        _fileIsOpen = false;
+        _currentIndex++;
       }
-      if (aProcessedSizeReal == aSize)
+      if (realProcessedSize == size)
       {
-        if (aProcessedSize != NULL)
-          *aProcessedSize = aProcessedSizeReal;
+        if (processedSize != NULL)
+          *processedSize = realProcessedSize;
         return WriteEmptyFiles();
       }
     }
     else
     {
       RETURN_IF_NOT_S_OK(OpenFile());
-      m_FileIsOpen = true;
-      m_FilePos = 0;
+      _fileIsOpen = true;
+      _filePos = 0;
     }
   }
-  if (aProcessedSize != NULL)
-    *aProcessedSize = aSize;
+  if (processedSize != NULL)
+    *processedSize = size;
   return S_OK;
 }
 
-STDMETHODIMP CFolderOutStream::WritePart(const void *aData, 
-    UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CFolderOutStream::WritePart(const void *data, 
+    UINT32 size, UINT32 *processedSize)
 {
-  return Write(aData, aSize, aProcessedSize);
+  return Write(data, size, processedSize);
 }
 
 HRESULT CFolderOutStream::FlushCorrupted()
 {
-  while(m_CurrentIndex < m_ExtractStatuses->Size())
+  while(_currentIndex < _extractStatuses->Size())
   {
-    if (m_FileIsOpen)
+    if (_fileIsOpen)
     {
-      RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kDataError));
-      m_OutStreamWithHashSpec->ReleaseStream();
-      m_FileIsOpen = false;
-      m_CurrentIndex++;
+      RETURN_IF_NOT_S_OK(_extractCallback->OperationResult(NArchiveHandler::NExtract::NOperationResult::kDataError));
+      _outStreamWithHashSpec->ReleaseStream();
+      _fileIsOpen = false;
+      _currentIndex++;
     }
     else
     {
       RETURN_IF_NOT_S_OK(OpenFile());
-      m_FileIsOpen = true;
+      _fileIsOpen = true;
     }
   }
   return S_OK;
@@ -164,7 +164,7 @@ HRESULT CFolderOutStream::FlushCorrupted()
 
 HRESULT CFolderOutStream::WasWritingFinished()
 {
-  if (m_CurrentIndex == m_ExtractStatuses->Size())
+  if (_currentIndex == _extractStatuses->Size())
     return S_OK;
   return E_FAIL;
 }

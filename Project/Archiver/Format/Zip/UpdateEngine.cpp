@@ -180,7 +180,8 @@ HRESULT UpdateArchiveStd(COutArchive &anArchive,
   // TTDivideComplexityConverter aCopyistConverter(kCopyRangeComplexityDivider);
   
   UINT32 aCompressIndex = 0, aCopyIndexIndex = 0;
-  for(int i = 0; i < aCompressStatuses.Size(); i++)
+  int i;
+  for(i = 0; i < aCompressStatuses.Size(); i++)
   {
     if (aCompressStatuses[i])
     {

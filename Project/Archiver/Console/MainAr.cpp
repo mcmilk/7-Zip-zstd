@@ -57,7 +57,7 @@ int main(int aNumArguments, const char *anArguments[])
     catch(const NConsoleClose::CCtrlBreakException &)
     {
       g_StdOut << endl << kUserBreak;
-      exit(NExitCode::kUserError);
+      exit(NExitCode::kUserBreak);
     }
   }
   catch(const CNewException)

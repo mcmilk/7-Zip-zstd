@@ -25,12 +25,12 @@ struct CExtractFolderInfo
   int FolderIndex;
   CBoolVector ExtractStatuses;
   UINT64 UnPackSize;
-  CExtractFolderInfo(int aFileIndex, int aFolderIndex): 
-    FileIndex(aFileIndex),
-    FolderIndex(aFolderIndex), 
+  CExtractFolderInfo(int fileIndex, int folderIndex): 
+    FileIndex(fileIndex),
+    FolderIndex(folderIndex), 
     UnPackSize(0) 
   {
-    if (aFileIndex >= 0)
+    if (fileIndex >= 0)
     {
       ExtractStatuses.Reserve(1);
       ExtractStatuses.Add(true);
@@ -38,129 +38,129 @@ struct CExtractFolderInfo
   };
 };
 
-STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
-    INT32 _aTestMode, IExtractCallback200 *_anExtractCallBack)
+STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
+    INT32 testModeSpec, IExtractCallback200 *extractCallBackSpec)
 {
   COM_TRY_BEGIN
-  bool aTestMode = (_aTestMode != 0);
-  CComPtr<IExtractCallback200> anExtractCallBack = _anExtractCallBack;
-  UINT64 anImportantTotalUnPacked = 0, anImportantTotalPacked = 0;
-  UINT64 aCensoredTotalUnPacked = 0, aCensoredTotalPacked = 0;
-  if(aNumItems == 0)
+  bool testMode = (testModeSpec != 0);
+  CComPtr<IExtractCallback200> extractCallback = extractCallBackSpec;
+  UINT64 importantTotalUnPacked = 0, importantTotalPacked = 0;
+  UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
+  if(numItems == 0)
     return S_OK;
 
-  CObjectVector<CExtractFolderInfo> anExtractFolderInfoVector;
-  for(UINT64 anIndexIndex = 0; anIndexIndex < aNumItems; anIndexIndex++)
+  CObjectVector<CExtractFolderInfo> extractFolderInfoVector;
+  for(UINT64 indexIndex = 0; indexIndex < numItems; indexIndex++)
   {
-    int aFileIndex = anIndexes[anIndexIndex];
-    int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[aFileIndex];
-    if (aFolderIndex < 0)
+    int fileIndex = indices[indexIndex];
+    int folderIndex = _database.FileIndexToFolderIndexMap[fileIndex];
+    if (folderIndex < 0)
     {
-      anExtractFolderInfoVector.Add(CExtractFolderInfo(aFileIndex, -1));
+      extractFolderInfoVector.Add(CExtractFolderInfo(fileIndex, -1));
       continue;
     }
-    if (anExtractFolderInfoVector.IsEmpty() || 
-        aFolderIndex != anExtractFolderInfoVector.Back().FolderIndex)
-      anExtractFolderInfoVector.Add(CExtractFolderInfo(-1, aFolderIndex));
-    CExtractFolderInfo &anExtractFolderInfo = anExtractFolderInfoVector.Back();
+    if (extractFolderInfoVector.IsEmpty() || 
+        folderIndex != extractFolderInfoVector.Back().FolderIndex)
+      extractFolderInfoVector.Add(CExtractFolderInfo(-1, folderIndex));
+    CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector.Back();
 
-    // const CFolderInfo &aFolderInfo = m_dam_Folders[aFolderIndex];
-    UINT32 aStartIndex = m_Database.m_FolderStartFileIndex[aFolderIndex];
-    for (UINT64 anIndex = anExtractFolderInfo.ExtractStatuses.Size();
-        anIndex <= aFileIndex - aStartIndex; anIndex++)
+    // const CFolderInfo &folderInfo = m_dam_Folders[folderIndex];
+    UINT32 startIndex = _database.FolderStartFileIndex[folderIndex];
+    for (UINT64 index = extractFolderInfo.ExtractStatuses.Size();
+        index <= fileIndex - startIndex; index++)
     {
-      UINT64 anUnPackSize = m_Database.m_Files[aStartIndex + anIndex].UnPackSize;
-      anExtractFolderInfo.UnPackSize += anUnPackSize;
-      anImportantTotalUnPacked += anUnPackSize;
-      anExtractFolderInfo.ExtractStatuses.Add(anIndex == aFileIndex - aStartIndex);
+      UINT64 unPackSize = _database.Files[startIndex + index].UnPackSize;
+      extractFolderInfo.UnPackSize += unPackSize;
+      importantTotalUnPacked += unPackSize;
+      extractFolderInfo.ExtractStatuses.Add(index == fileIndex - startIndex);
     }
   }
 
-  anExtractCallBack->SetTotal(anImportantTotalUnPacked);
+  extractCallback->SetTotal(importantTotalUnPacked);
 
-  CDecoder aDecoder;
+  CDecoder decoder;
 
-  UINT64 aCurrentImportantTotalUnPacked = 0;
-  UINT64 aTotalFolderUnPacked;
+  UINT64 currentImportantTotalUnPacked = 0;
+  UINT64 totalFolderUnPacked;
 
-  for(int i = 0; i < anExtractFolderInfoVector.Size(); i++, 
-      aCurrentImportantTotalUnPacked += aTotalFolderUnPacked)
+  for(int i = 0; i < extractFolderInfoVector.Size(); i++, 
+      currentImportantTotalUnPacked += totalFolderUnPacked)
   {
-    CExtractFolderInfo &anExtractFolderInfo = anExtractFolderInfoVector[i];
-    aTotalFolderUnPacked = anExtractFolderInfo.UnPackSize;
+    CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector[i];
+    totalFolderUnPacked = extractFolderInfo.UnPackSize;
 
-    RETURN_IF_NOT_S_OK(anExtractCallBack->SetCompleted(&aCurrentImportantTotalUnPacked));
+    RETURN_IF_NOT_S_OK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
 
     CComObjectNoLock<CFolderOutStream> *aFolderOutStream = 
       new CComObjectNoLock<CFolderOutStream>;
-    CComPtr<ISequentialOutStream> anOutStream(aFolderOutStream);
+    CComPtr<ISequentialOutStream> outStream(aFolderOutStream);
 
-    UINT32 aStartIndex;
-    if (anExtractFolderInfo.FileIndex >= 0)
-      aStartIndex = anExtractFolderInfo.FileIndex;
+    UINT32 startIndex;
+    if (extractFolderInfo.FileIndex >= 0)
+      startIndex = extractFolderInfo.FileIndex;
     else
-      aStartIndex = m_Database.m_FolderStartFileIndex[anExtractFolderInfo.FolderIndex];
+      startIndex = _database.FolderStartFileIndex[extractFolderInfo.FolderIndex];
 
 
-    RETURN_IF_NOT_S_OK(aFolderOutStream->Init(&m_Database, aStartIndex, 
-        &anExtractFolderInfo.ExtractStatuses, anExtractCallBack, aTestMode));
+    RETURN_IF_NOT_S_OK(aFolderOutStream->Init(&_database, startIndex, 
+        &extractFolderInfo.ExtractStatuses, extractCallback, testMode));
 
-    if (anExtractFolderInfo.FileIndex >= 0)
+    if (extractFolderInfo.FileIndex >= 0)
       continue;
 
-    UINT32 aFolderIndex = anExtractFolderInfo.FolderIndex;
-    const CFolderItemInfo &aFolderInfo = m_Database.m_Folders[aFolderIndex];
+    UINT32 folderIndex = extractFolderInfo.FolderIndex;
+    const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
 
-    CObjectVector< CComPtr<ISequentialInStream> > anInStreams;
+    CObjectVector< CComPtr<ISequentialInStream> > inStreams;
 
-    CLockedInStream aLockedInStream;
-    aLockedInStream.Init(m_InStream);
+    CLockedInStream lockedInStream;
+    lockedInStream.Init(_inStream);
 
 
-    UINT64 aFolderStartPackStreamIndex = m_Database.m_FolderStartPackStreamIndex[aFolderIndex];
+    UINT64 folderStartPackStreamIndex = _database.FolderStartPackStreamIndex[folderIndex];
 
-    for (int j = 0; j < aFolderInfo.PackStreams.Size(); j++)
+    for (int j = 0; j < folderInfo.PackStreams.Size(); j++)
     {
-      const CPackStreamInfo &aPackStreamInfo = aFolderInfo.PackStreams[j];
-      CComObjectNoLock<CLockedSequentialInStreamImp> *aLockedStreamImpSpec = new 
+      const CPackStreamInfo &packStreamInfo = folderInfo.PackStreams[j];
+      CComObjectNoLock<CLockedSequentialInStreamImp> *lockedStreamImpSpec = new 
         CComObjectNoLock<CLockedSequentialInStreamImp>;
-      CComPtr<ISequentialInStream> aLockedStreamImp = aLockedStreamImpSpec;
-      UINT64 aStreamStartPos = m_Database.GetFolderStreamPos(aFolderIndex, j);
-      aLockedStreamImpSpec->Init(&aLockedInStream, aStreamStartPos);
+      CComPtr<ISequentialInStream> lockedStreamImp = lockedStreamImpSpec;
+      UINT64 streamStartPos = _database.GetFolderStreamPos(folderIndex, j);
+      lockedStreamImpSpec->Init(&lockedInStream, streamStartPos);
 
-      CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
+      CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
         CComObjectNoLock<CLimitedSequentialInStream>;
-      CComPtr<ISequentialInStream> anInStream = aStreamSpec;
-      aStreamSpec->Init(aLockedStreamImp, 
-          m_Database.m_PackSizes[aFolderStartPackStreamIndex + j]);
-      anInStreams.Add(anInStream);
+      CComPtr<ISequentialInStream> inStream = streamSpec;
+      streamSpec->Init(lockedStreamImp, 
+          _database.PackSizes[folderStartPackStreamIndex + j]);
+      inStreams.Add(inStream);
     }
 
-    CComObjectNoLock<CLocalProgress> *aLocalProgressSpec = new  CComObjectNoLock<CLocalProgress>;
-    CComPtr<ICompressProgressInfo> aProgress = aLocalProgressSpec;
-    aLocalProgressSpec->Init(anExtractCallBack, false);
+    CComObjectNoLock<CLocalProgress> *localProgressSpec = new  CComObjectNoLock<CLocalProgress>;
+    CComPtr<ICompressProgressInfo> progress = localProgressSpec;
+    localProgressSpec->Init(extractCallback, false);
 
-    CComObjectNoLock<CLocalCompressProgressInfo> *aLocalCompressProgressSpec = 
+    CComObjectNoLock<CLocalCompressProgressInfo> *localCompressProgressSpec = 
       new  CComObjectNoLock<CLocalCompressProgressInfo>;
-    CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
-    aLocalCompressProgressSpec->Init(aProgress, NULL, &aCurrentImportantTotalUnPacked);
+    CComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+    localCompressProgressSpec->Init(progress, NULL, &currentImportantTotalUnPacked);
 
-    UINT32 aPackStreamIndex = m_Database.m_FolderStartPackStreamIndex[aFolderIndex];
-    UINT64 aFolderStartPackPos = m_Database.GetFolderStreamPos(aFolderIndex, 0);
+    UINT32 packStreamIndex = _database.FolderStartPackStreamIndex[folderIndex];
+    UINT64 folderStartPackPos = _database.GetFolderStreamPos(folderIndex, 0);
 
     try
     {
-      HRESULT aResult = aDecoder.Decode(m_InStream,
-          aFolderStartPackPos, 
-          &m_Database.m_PackSizes[aPackStreamIndex],
-          aFolderInfo,
-          anOutStream,
-          aCompressProgress);
+      HRESULT result = decoder.Decode(_inStream,
+          folderStartPackPos, 
+          &_database.PackSizes[packStreamIndex],
+          folderInfo,
+          outStream,
+          compressProgress);
 
-      if (aResult == S_FALSE)
+      if (result == S_FALSE)
         throw "data error";
-      if (aResult != S_OK)
-        return aResult;
+      if (result != S_OK)
+        return result;
       RETURN_IF_NOT_S_OK(aFolderOutStream->WasWritingFinished());
     }
     catch(...)
@@ -173,15 +173,15 @@ STDMETHODIMP CHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::ExtractAllItems(INT32 aTestMode,
-      IExtractCallback200 *anExtractCallBack)
+STDMETHODIMP CHandler::ExtractAllItems(INT32 testMode,
+      IExtractCallback200 *extractCallback)
 {
   COM_TRY_BEGIN
-  CRecordVector<UINT32> anIndexes;
-  anIndexes.Reserve(m_Database.m_Files.Size());
-  for(int i = 0; i < m_Database.m_Files.Size(); i++)
-    anIndexes.Add(i);
-  return Extract(&anIndexes.Front(), anIndexes.Size(), aTestMode,
-      anExtractCallBack);
+  CRecordVector<UINT32> indices;
+  indices.Reserve(_database.Files.Size());
+  for(int i = 0; i < _database.Files.Size(); i++)
+    indices.Add(i);
+  return Extract(&indices.Front(), indices.Size(), testMode,
+      extractCallback);
   COM_TRY_END
 }

@@ -24,7 +24,7 @@ static const char *kTestingString    =  "Testing     ";
 static const char *kExtractingString =  "Extracting  ";
 static const char *kSkippingString   =  "Skipping    ";
 
-extern void PrintMessage(const char *aMessage);
+extern void PrintMessage(const char *message);
 
 
 CExtractCallBack200Imp::~CExtractCallBack200Imp()
@@ -32,57 +32,57 @@ CExtractCallBack200Imp::~CExtractCallBack200Imp()
 }
 
 void CExtractCallBack200Imp::Init(
-    IArchiveHandler200 *anArchiveHandler,
-    IExtractCallback2 *anExtractCallback2,
-    const CSysString &aDirectoryPath, 
-    NExtractionMode::NPath::EEnum aPathMode,
-    NExtractionMode::NOverwrite::EEnum anOverwriteMode,
-    const UStringVector &aRemovePathParts,
-    UINT aCodePage, 
-    const UString &anItemDefaultName,
-    const FILETIME &anUTCLastWriteTimeDefault,
-    UINT32 anAttributesDefault,
-    bool aPasswordIsDefined, 
-    const UString &aPassword)
+    IArchiveHandler200 *archiveHandler,
+    IExtractCallback2 *extractCallback2,
+    const CSysString &directoryPath, 
+    NExtractionMode::NPath::EEnum pathMode,
+    NExtractionMode::NOverwrite::EEnum overwriteMode,
+    const UStringVector &removePathParts,
+    UINT codePage, 
+    const UString &itemDefaultName,
+    const FILETIME &utcLastWriteTimeDefault,
+    UINT32 attributesDefault
+    // bool aPasswordIsDefined,  const UString &aPassword
+    )
 {
-  m_ExtractCallback2 = anExtractCallback2;
-  m_PasswordIsDefined = aPasswordIsDefined;
-  m_Password = aPassword;
-  m_NumErrors = 0;
+  _extractCallback2 = extractCallback2;
+  // m_PasswordIsDefined = aPasswordIsDefined;
+  // m_Password = aPassword;
+  _numErrors = 0;
 
-  m_ItemDefaultName = anItemDefaultName;
-  m_UTCLastWriteTimeDefault = anUTCLastWriteTimeDefault;
-  m_AttributesDefault = anAttributesDefault;
+  _itemDefaultName = itemDefaultName;
+  _utcLastWriteTimeDefault = utcLastWriteTimeDefault;
+  _attributesDefault = attributesDefault;
   
-  m_CodePage = aCodePage;
-  m_RemovePathParts = aRemovePathParts;
+  _codePage = codePage;
+  _removePathParts = removePathParts;
 
-  m_PathMode = aPathMode;
-  m_OverwriteMode = anOverwriteMode;
+  _pathMode = pathMode;
+  _overwriteMode = overwriteMode;
 
-  m_ArchiveHandler = anArchiveHandler;
-  m_DirectoryPath = aDirectoryPath;
-  NFile::NName::NormalizeDirPathPrefix(m_DirectoryPath);
+  _archiveHandler = archiveHandler;
+  _directoryPath = directoryPath;
+  NFile::NName::NormalizeDirPathPrefix(_directoryPath);
 }
 
-STDMETHODIMP CExtractCallBack200Imp::SetTotal(UINT64 aSize)
+STDMETHODIMP CExtractCallBack200Imp::SetTotal(UINT64 aize)
 {
-  return m_ExtractCallback2->SetTotal(aSize);
+  return _extractCallback2->SetTotal(aize);
 }
 
-STDMETHODIMP CExtractCallBack200Imp::SetCompleted(const UINT64 *aCompleteValue)
+STDMETHODIMP CExtractCallBack200Imp::SetCompleted(const UINT64 *completeValue)
 {
-  return m_ExtractCallback2->SetCompleted(aCompleteValue);
+  return _extractCallback2->SetCompleted(completeValue);
 }
 
 void CExtractCallBack200Imp::CreateComplexDirectory(const UStringVector &aDirPathParts)
 {
-  CSysString aFullPath = m_DirectoryPath;
+  CSysString fullPath = _directoryPath;
   for(int i = 0; i < aDirPathParts.Size(); i++)
   {
-    aFullPath += GetSystemString(aDirPathParts[i], m_CodePage);
-    NFile::NDirectory::MyCreateDirectory(aFullPath);
-    aFullPath += NFile::NName::kDirDelimiter;
+    fullPath += GetSystemString(aDirPathParts[i], _codePage);
+    NFile::NDirectory::MyCreateDirectory(fullPath);
+    fullPath += NFile::NName::kDirDelimiter;
   }
 }
 
@@ -100,138 +100,138 @@ static UString MakePathNameFromParts(const UStringVector &aParts)
 
 
 STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex, 
-    ISequentialOutStream **anOutStream, INT32 anAskExtractMode)
+    ISequentialOutStream **outStream, INT32 askExtractMode)
 {
-  *anOutStream = 0;
-  m_OutFileStream.Release();
+  *outStream = 0;
+  _outFileStream.Release();
   NCOM::CPropVariant aPropVariant;
-  RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidPath, &aPropVariant));
+  RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidPath, &aPropVariant));
   
-  UString aFullPath;
+  UString fullPath;
   if(aPropVariant.vt == VT_EMPTY)
   {
-    aFullPath = m_ItemDefaultName;
+    fullPath = _itemDefaultName;
   }
   else 
   {
     if(aPropVariant.vt != VT_BSTR)
       return E_FAIL;
-    aFullPath = aPropVariant.bstrVal;
+    fullPath = aPropVariant.bstrVal;
   }
-  m_FilePath = aFullPath;
+  _filePath = fullPath;
 
-  if(anAskExtractMode == NArchiveHandler::NExtract::NAskMode::kExtract)
+  if(askExtractMode == NArchiveHandler::NExtract::NAskMode::kExtract)
   {
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidAttributes, &aPropVariant));
+    RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidAttributes, &aPropVariant));
     if (aPropVariant.vt == VT_EMPTY)
     {
-      m_ProcessedFileInfo.Attributes = m_AttributesDefault;
-      m_ProcessedFileInfo.AttributesAreDefined = false;
+      _processedFileInfo.Attributes = _attributesDefault;
+      _processedFileInfo.AttributesAreDefined = false;
     }
     else
     {
       if (aPropVariant.vt != VT_UI4)
         throw "incorrect item";
-      m_ProcessedFileInfo.Attributes = aPropVariant.ulVal;
-      m_ProcessedFileInfo.AttributesAreDefined = true;
+      _processedFileInfo.Attributes = aPropVariant.ulVal;
+      _processedFileInfo.AttributesAreDefined = true;
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsFolder, &aPropVariant));
-    m_ProcessedFileInfo.IsDirectory = VARIANT_BOOLToBool(aPropVariant.boolVal);
+    RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidIsFolder, &aPropVariant));
+    _processedFileInfo.IsDirectory = VARIANT_BOOLToBool(aPropVariant.boolVal);
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidLastWriteTime, &aPropVariant));
+    RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidLastWriteTime, &aPropVariant));
     switch(aPropVariant.vt)
     {
       case VT_EMPTY:
-        m_ProcessedFileInfo.UTCLastWriteTime = m_UTCLastWriteTimeDefault;
+        _processedFileInfo.UTCLastWriteTime = _utcLastWriteTimeDefault;
         break;
       case VT_FILETIME:
-        m_ProcessedFileInfo.UTCLastWriteTime = aPropVariant.filetime;
+        _processedFileInfo.UTCLastWriteTime = aPropVariant.filetime;
         break;
       default:
         return E_FAIL;
     }
 
-    RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidSize, &aPropVariant));
+    RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidSize, &aPropVariant));
     bool aNewFileSizeDefined = (aPropVariant.vt != VT_EMPTY);
     UINT64 aNewFileSize;
     if (aNewFileSizeDefined)
       aNewFileSize = ConvertPropVariantToUINT64(aPropVariant);
 
-    bool anIsAnti = false;
+    bool isAnti = false;
     {
       NCOM::CPropVariant aPropVariantTemp;
-      RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kpidIsAnti, 
+      RETURN_IF_NOT_S_OK(_archiveHandler->GetProperty(anIndex, kpidIsAnti, 
           &aPropVariantTemp));
       if (aPropVariantTemp.vt != VT_EMPTY)
-        anIsAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
+        isAnti = VARIANT_BOOLToBool(aPropVariantTemp.boolVal);
     }
 
-    UStringVector aPathParts; 
-    SplitPathToParts(aFullPath, aPathParts);
-    if(aPathParts.IsEmpty())
+    UStringVector pathParts; 
+    SplitPathToParts(fullPath, pathParts);
+    if(pathParts.IsEmpty())
       return E_FAIL;
-    UString aProcessedPath;
-    switch(m_PathMode)
+    UString processedPath;
+    switch(_pathMode)
     {
       case NExtractionMode::NPath::kFullPathnames:
       {
-        aProcessedPath = aFullPath;
+        processedPath = fullPath;
         break;
       }
       case NExtractionMode::NPath::kCurrentPathnames:
       {
-        int aNumRemovePathParts = m_RemovePathParts.Size();
-        if(aPathParts.Size() <= aNumRemovePathParts)
+        int numRemovePathParts = _removePathParts.Size();
+        if(pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
-        for(int i = 0; i < aNumRemovePathParts; i++)
-          if(m_RemovePathParts[i].CollateNoCase(aPathParts[i]) != 0)
+        for(int i = 0; i < numRemovePathParts; i++)
+          if(_removePathParts[i].CollateNoCase(pathParts[i]) != 0)
             return E_FAIL;
-        aPathParts.Delete(0, aNumRemovePathParts);
-        aProcessedPath = MakePathNameFromParts(aPathParts);
+        pathParts.Delete(0, numRemovePathParts);
+        processedPath = MakePathNameFromParts(pathParts);
         break;
       }
       case NExtractionMode::NPath::kNoPathnames:
       {
-        aProcessedPath = aPathParts.Back(); 
-        aPathParts.Delete(0, aPathParts.Size() - 1); // Test it!!
+        processedPath = pathParts.Back(); 
+        pathParts.Delete(0, pathParts.Size() - 1); // Test it!!
         break;
       }
     }
-    if(!m_ProcessedFileInfo.IsDirectory)
-      aPathParts.DeleteBack();
+    if(!_processedFileInfo.IsDirectory)
+      pathParts.DeleteBack();
     
-    if (!anIsAnti)
-      if (!aPathParts.IsEmpty())
-        CreateComplexDirectory(aPathParts);
+    if (!isAnti)
+      if (!pathParts.IsEmpty())
+        CreateComplexDirectory(pathParts);
 
 
     UString aFullProcessedPathUnicode = 
-        GetUnicodeString(m_DirectoryPath, m_CodePage) + aProcessedPath; 
-    CSysString aFullProcessedPath = m_DirectoryPath + 
-        GetSystemString(aProcessedPath, m_CodePage);
+        GetUnicodeString(_directoryPath, _codePage) + processedPath; 
+    CSysString aFullProcessedPath = _directoryPath + 
+        GetSystemString(processedPath, _codePage);
 
-    if(m_ProcessedFileInfo.IsDirectory)
+    if(_processedFileInfo.IsDirectory)
     {
-      m_DiskFilePath = aFullProcessedPath;
-      if (anIsAnti)
-        ::RemoveDirectory(m_DiskFilePath);
+      _diskFilePath = aFullProcessedPath;
+      if (isAnti)
+        ::RemoveDirectory(_diskFilePath);
       return S_OK;
     }
 
-    NFile::NFind::CFileInfo aFileInfo;
-    if(NFile::NFind::FindFile(aFullProcessedPath, aFileInfo))
+    NFile::NFind::CFileInfo fileInfo;
+    if(NFile::NFind::FindFile(aFullProcessedPath, fileInfo))
     {
-      switch(m_OverwriteMode)
+      switch(_overwriteMode)
       {
         case NExtractionMode::NOverwrite::kSkipExisting:
           return S_OK;
         case NExtractionMode::NOverwrite::kAskBefore:
         {
           INT32 aOverwiteResult;
-          RETURN_IF_NOT_S_OK(m_ExtractCallback2->AskOverwrite(
-              aFullProcessedPathUnicode, &aFileInfo.LastWriteTime, &aFileInfo.Size,
-              aFullPath, &m_ProcessedFileInfo.UTCLastWriteTime, aNewFileSizeDefined?
+          RETURN_IF_NOT_S_OK(_extractCallback2->AskOverwrite(
+              aFullProcessedPathUnicode, &fileInfo.LastWriteTime, &fileInfo.Size,
+              fullPath, &_processedFileInfo.UTCLastWriteTime, aNewFileSizeDefined?
               &aNewFileSize : NULL, &aOverwiteResult))
 
           switch(aOverwiteResult)
@@ -241,76 +241,76 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
             case NOverwriteAnswer::kNo:
               return S_OK;
             case NOverwriteAnswer::kNoToAll:
-              m_OverwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+              _overwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
               return S_OK;
             case NOverwriteAnswer::kYesToAll:
-              m_OverwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
+              _overwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
               break;
             case NOverwriteAnswer::kYes:
               break;
             case NOverwriteAnswer::kAutoRename:
-              m_OverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+              _overwriteMode = NExtractionMode::NOverwrite::kAutoRename;
               break;
             default:
               throw 20413;
           }
         }
       }
-      if (m_OverwriteMode == NExtractionMode::NOverwrite::kAutoRename)
+      if (_overwriteMode == NExtractionMode::NOverwrite::kAutoRename)
       {
         if (!AutoRenamePath(aFullProcessedPath))
         {
-          UString aMessage = L"can not create name of file " + aFullProcessedPathUnicode;
-          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
+          UString message = L"can not create name of file " + aFullProcessedPathUnicode;
+          RETURN_IF_NOT_S_OK(_extractCallback2->MessageError(message));
           return E_ABORT;
         }
       }
       else
         if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
         {
-          UString aMessage = L"can not delete output file " + aFullProcessedPathUnicode;
-          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
+          UString message = L"can not delete output file " + aFullProcessedPathUnicode;
+          RETURN_IF_NOT_S_OK(_extractCallback2->MessageError(message));
           return E_ABORT;
         }
     }
-    if (!anIsAnti)
+    if (!isAnti)
     {
-      m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
-      CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
-      if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
+      _outFileStreamSpec = new CComObjectNoLock<COutFileStream>;
+      CComPtr<ISequentialOutStream> anOutStreamLoc(_outFileStreamSpec);
+      if (!_outFileStreamSpec->Open(aFullProcessedPath))
       {
-        UString aMessage = L"can not open output file " + aFullProcessedPathUnicode;
-        RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
+        UString message = L"can not open output file " + aFullProcessedPathUnicode;
+        RETURN_IF_NOT_S_OK(_extractCallback2->MessageError(message));
         return S_OK;
       }
-      m_OutFileStream = anOutStreamLoc;
-      *anOutStream = anOutStreamLoc.Detach();
+      _outFileStream = anOutStreamLoc;
+      *outStream = anOutStreamLoc.Detach();
     }
-    m_DiskFilePath = aFullProcessedPath;
+    _diskFilePath = aFullProcessedPath;
   }
   else
   {
-    *anOutStream = NULL;
+    *outStream = NULL;
   }
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBack200Imp::PrepareOperation(INT32 anAskExtractMode)
+STDMETHODIMP CExtractCallBack200Imp::PrepareOperation(INT32 askExtractMode)
 {
-  m_ExtractMode = false;
-  switch (anAskExtractMode)
+  _extractMode = false;
+  switch (askExtractMode)
   {
     case NArchiveHandler::NExtract::NAskMode::kExtract:
-      m_ExtractMode = true;
+      _extractMode = true;
   };
-  return m_ExtractCallback2->PrepareOperation(m_FilePath, anAskExtractMode);
+  return _extractCallback2->PrepareOperation(_filePath, askExtractMode);
 
   return S_OK;
 }
 
-void CExtractCallBack200Imp::AddErrorMessage(LPCTSTR aMessage)
+void CExtractCallBack200Imp::AddErrorMessage(LPCTSTR message)
 {
-  m_Messages.Add(aMessage);
+  _messages.Add(message);
 }
 
 STDMETHODIMP CExtractCallBack200Imp::OperationResult(INT32 anOperationResult)
@@ -323,24 +323,24 @@ STDMETHODIMP CExtractCallBack200Imp::OperationResult(INT32 anOperationResult)
     case NArchiveHandler::NExtract::NOperationResult::kDataError:
       break;
     default:
-      m_OutFileStream.Release();
+      _outFileStream.Release();
       return E_FAIL;
   }
-  if(m_OutFileStream != NULL)
-    m_OutFileStreamSpec->File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
-  m_OutFileStream.Release();
-  if (m_ExtractMode && m_ProcessedFileInfo.AttributesAreDefined)
-    SetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);
-  RETURN_IF_NOT_S_OK(m_ExtractCallback2->OperationResult(anOperationResult));
+  if(_outFileStream != NULL)
+    _outFileStreamSpec->File.SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+  _outFileStream.Release();
+  if (_extractMode && _processedFileInfo.AttributesAreDefined)
+    SetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
+  RETURN_IF_NOT_S_OK(_extractCallback2->OperationResult(anOperationResult));
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallBack200Imp::CryptoGetTextPassword(BSTR *aPassword)
 {
-  if (!m_CryptoGetTextPassword)
+  if (!_cryptoGetTextPassword)
   {
-    RETURN_IF_NOT_S_OK(m_ExtractCallback2.QueryInterface(&m_CryptoGetTextPassword));
+    RETURN_IF_NOT_S_OK(_extractCallback2.QueryInterface(&_cryptoGetTextPassword));
   }
-  return m_CryptoGetTextPassword->CryptoGetTextPassword(aPassword);
+  return _cryptoGetTextPassword->CryptoGetTextPassword(aPassword);
 }
 

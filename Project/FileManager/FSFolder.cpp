@@ -215,11 +215,11 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   int pos = _path.ReverseFind(TEXT('\\'));
   if (pos < 0 || pos != _path.Length() - 1)
     return E_FAIL;
-  CSysString parrentPath = _path.Left(pos);
-  pos = parrentPath.ReverseFind(TEXT('\\'));
+  CSysString parentPath = _path.Left(pos);
+  pos = parentPath.ReverseFind(TEXT('\\'));
   if (pos < 0)
   {
-    parrentPath.Empty();
+    parentPath.Empty();
     CComObjectNoLock<CFSDrives> *drivesFolderSpec = new 
       CComObjectNoLock<CFSDrives>;
     CComPtr<IFolderFolder> drivesFolder = drivesFolderSpec;
@@ -227,22 +227,22 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
     *resultFolder = drivesFolder.Detach();
     return S_OK;
   }
-  CSysString parrentPathReduced = parrentPath.Left(pos);
-  parrentPath = parrentPath.Left(pos + 1);
-  pos = parrentPathReduced.ReverseFind(TEXT('\\'));
+  CSysString parentPathReduced = parentPath.Left(pos);
+  parentPath = parentPath.Left(pos + 1);
+  pos = parentPathReduced.ReverseFind(TEXT('\\'));
   if (pos == 1)
   {
-    if (parrentPath[0] != TEXT('\\'))
+    if (parentPath[0] != TEXT('\\'))
       return E_FAIL;
     CComObjectNoLock<CNetFolder> *netFolderSpec = new CComObjectNoLock<CNetFolder>;
     CComPtr<IFolderFolder> netFolder = netFolderSpec;
-    netFolderSpec->Init(GetUnicodeString(parrentPath));
+    netFolderSpec->Init(GetUnicodeString(parentPath));
     *resultFolder = netFolder.Detach();
     return S_OK;
   }
   CComObjectNoLock<CFSFolder> *parentFolderSpec = new  CComObjectNoLock<CFSFolder>;
   CComPtr<IFolderFolder> parentFolder = parentFolderSpec;
-  RETURN_IF_NOT_S_OK(parentFolderSpec->Init(parrentPath, 0));
+  RETURN_IF_NOT_S_OK(parentFolderSpec->Init(parentPath, 0));
   *resultFolder = parentFolder.Detach();
   return S_OK;
 }

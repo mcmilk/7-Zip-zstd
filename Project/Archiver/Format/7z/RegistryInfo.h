@@ -34,20 +34,20 @@ struct CMethodInfo2: public CMethodInfo
   CMethodID MethodID;
 };
 
-bool GetMethodInfo(const CMethodID &aMethodID, CMethodInfo &aMethodInfo);
-bool EnumerateAllMethods(CObjectVector<CMethodInfo2> &aMethodInfoVector);
+bool GetMethodInfo(const CMethodID &methodID, CMethodInfo &methodInfo);
+bool EnumerateAllMethods(CObjectVector<CMethodInfo2> &methodInfoVector);
 
 struct CMatchFinderInfo
 {
   CLSID ClassID;
 };
 
-bool GetMatchFinder(const CSysString &aName, CMatchFinderInfo &aMatchFinderInfo);
+bool GetMatchFinder(const CSysString &name, CMatchFinderInfo &matchFinderInfo);
 
 struct CMethodToCLSIDPair
 {
   CMethodID MethodID;
-  CLSID ClassID;
+  CMethodInfo MethodInfo;
 };
 
 class CMethodToCLSIDMap
@@ -55,8 +55,10 @@ class CMethodToCLSIDMap
   CObjectVector<CMethodToCLSIDPair> m_Pairs;
 public:
   CMethodToCLSIDMap() {}
-  bool GetCLSID(const CMethodID &aMethodID, CLSID &aCLSID);
-  bool GetCLSIDAlways(const CMethodID &aMethodID, CLSID &aCLSID);
+  bool GetCLSID(const CMethodID &methodID, CLSID &clsID);
+  bool GetCLSIDAlways(const CMethodID &methodID, CLSID &clsID);
+  bool GetMethodInfo2(const CMethodID &methodID, CMethodInfo &methodInfo);
+  bool GetMethodInfoAlways(const CMethodID &methodID, CMethodInfo &methodInfo);
 };
 
 }}}

@@ -7,58 +7,58 @@
 namespace NArchive {
 namespace N7z {
 
-inline char GetHex(BYTE aValue)
+inline char GetHex(BYTE value)
 {
-  return (aValue < 10) ? ('0' + aValue) : ('A' + (aValue - 10));
+  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
 }
 
-bool HexCharToInt(char aValue, BYTE &aResult)
+bool HexCharToInt(char value, BYTE &result)
 {
-  if (aValue >= '0' && aValue <= '9')
-    aResult = aValue - '0';
-  else if (aValue >= 'a' && aValue <= 'f')
-    aResult = 10 + aValue - 'a';
-  else if (aValue >= 'A' && aValue <= 'F')
-    aResult = 10 + aValue - 'A';
+  if (value >= '0' && value <= '9')
+    result = value - '0';
+  else if (value >= 'a' && value <= 'f')
+    result = 10 + value - 'a';
+  else if (value >= 'A' && value <= 'F')
+    result = 10 + value - 'A';
   else
     return false;
   return true;
 }
 
-bool TwoHexCharsToInt(char aValueHigh, char aValueLow, BYTE &aResult)
+bool TwoHexCharsToInt(char valueHigh, char valueLow, BYTE &result)
 {
-  BYTE aResultHigh, aResultLow;
-  if (!HexCharToInt(aValueHigh, aResultHigh))
+  BYTE resultHigh, resultLow;
+  if (!HexCharToInt(valueHigh, resultHigh))
     return false;
-  if (!HexCharToInt(aValueLow, aResultLow))
+  if (!HexCharToInt(valueLow, resultLow))
     return false;
-  aResult = (aResultHigh << 4) + aResultLow;
+  result = (resultHigh << 4) + resultLow;
   return true;
 }
 
 AString CMethodID::ConvertToString() const
 {
-  AString aResult;
+  AString result;
   for (int i = 0; i < IDSize; i++)
   {
-    BYTE aByte = ID[i];
-    aResult += GetHex(aByte >> 4);
-    aResult += GetHex(aByte & 0xF);
+    BYTE b = ID[i];
+    result += GetHex(b >> 4);
+    result += GetHex(b & 0xF);
   }
-  return aResult;
+  return result;
 }
 
-bool CMethodID::ConvertFromString(const AString &aString)
+bool CMethodID::ConvertFromString(const AString &srcString)
 {
-  int aLength = aString.Length();
-  if ((aLength & 1) != 0)
+  int length = srcString.Length();
+  if ((length & 1) != 0)
     return false;
-  IDSize = aLength / 2;
+  IDSize = length / 2;
   if (IDSize > kMethodIDSize)
     return false;
   UINT32 i;
   for(i = 0; i < IDSize; i++)
-    if (!TwoHexCharsToInt(aString[i * 2], aString[i * 2 + 1], ID[i]))
+    if (!TwoHexCharsToInt(srcString[i * 2], srcString[i * 2 + 1], ID[i]))
       return false;
   for(i = IDSize; i < kMethodIDSize; i++)
     ID[i] = 0;

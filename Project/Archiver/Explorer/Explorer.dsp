@@ -282,14 +282,6 @@ SOURCE=..\Common\ZipSettings.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\CompressEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\CompressEngine.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\ContextMenu.cpp
 # End Source File
 # Begin Source File
@@ -298,27 +290,11 @@ SOURCE=.\ContextMenu.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ExtractEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractEngine.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\MyMessages.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\MyMessages.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\TestEngine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\TestEngine.h
 # End Source File
 # End Group
 # Begin Group "Dialogs"
@@ -380,22 +356,6 @@ SOURCE=..\Resource\SystemPage\SystemPage.cpp
 SOURCE=..\Resource\SystemPage\SystemPage.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\CompressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\CompressDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractDialog.h
-# End Source File
 # End Group
 # Begin Group "Agent"
 
@@ -729,6 +689,14 @@ SOURCE=..\..\..\SDK\Windows\FileIO.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Windows\FileMapping.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\FileMapping.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Windows\FileName.cpp
 # End Source File
 # Begin Source File
@@ -750,14 +718,6 @@ SOURCE=..\..\..\SDK\Windows\ItemIDListUtils.h
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Windows\Menu.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\Windows\ProcessMessages.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\Windows\ProcessMessages.h
 # End Source File
 # Begin Source File
 

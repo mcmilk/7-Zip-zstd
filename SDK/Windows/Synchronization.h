@@ -6,20 +6,18 @@
 #define __WINDOWS_SYNCHRONIZATION_H
 
 #include "Windows/Defs.h"
+#include "Windows/Handle.h"
 
 namespace NWindows {
 namespace NSynchronization {
 
 class CSingleLock;
 
-class CObject
+class CObject: public CHandle
 {
 public:
-  HANDLE  _object;
-  CObject(): _object(NULL) {};
-  operator HANDLE() const { return _object;}
-  bool Lock(DWORD timeoutInterval = INFINITE);
-  ~CObject();
+  bool Lock(DWORD timeoutInterval = INFINITE)
+    { return (::WaitForSingleObject(_handle, timeoutInterval) == WAIT_OBJECT_0); }
 };
 
 class CSyncObject
@@ -41,44 +39,30 @@ public:
   friend class CSingleLock;
 };
 
-
-/*
-class CSemaphore: public CSyncObject
-{
-public:
-  CSemaphore(LONG initialCount = 1, LONG maxCount = 1,
-    LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
-
-public:
-  virtual ~CSemaphore();
-  virtual bool Unlock()
-    { return Unlock(1, NULL); }
-  virtual bool Unlock(LONG count, LPLONG prevCount = NULL);
-};
-
-
-class CMutex: public CSyncObject
-{
-public:
-  CMutex(bool initiallyOwn = false, LPCTSTR name = NULL,
-    LPSECURITY_ATTRIBUTES securityAttributes = NULL);
-
-  virtual ~CMutex();
-  bool Unlock();
-};
-*/
-
 class CEvent: public CObject
 {
 public:
-  CEvent(bool initiallyOwn = false, bool manualReset = false,
-    LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
+  CEvent() {};
+  CEvent(bool manualReset, bool initiallyOwn, 
+      LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
 
-  bool Set() { return BOOLToBool(::SetEvent(_object)); }
-  bool Pulse() { return BOOLToBool(::PulseEvent(_object)); }
-  bool Reset() { return BOOLToBool(::ResetEvent(_object)); }
-  // bool Unlock();
-  // virtual ~CEvent();
+  bool Create(bool manualReset, bool initiallyOwn, LPCTSTR name = NULL,
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL)
+  {
+    _handle = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
+      BoolToBOOL(initiallyOwn), name);
+    return (_handle != 0);
+  }
+
+  bool Open(DWORD desiredAccess, bool inheritHandle, LPCTSTR name)
+  {
+    _handle = ::OpenEvent(desiredAccess, BoolToBOOL(inheritHandle), name);
+    return (_handle != 0);
+  }
+
+  bool Set() { return BOOLToBool(::SetEvent(_handle)); }
+  bool Pulse() { return BOOLToBool(::PulseEvent(_handle)); }
+  bool Reset() { return BOOLToBool(::ResetEvent(_handle)); }
 };
 
 class CManualResetEvent: public CEvent
@@ -86,7 +70,7 @@ class CManualResetEvent: public CEvent
 public:
   CManualResetEvent(bool initiallyOwn = false, LPCTSTR name = NULL, 
       LPSECURITY_ATTRIBUTES securityAttributes = NULL):
-    CEvent(initiallyOwn, true, name, securityAttributes) {};
+    CEvent(true, initiallyOwn, name, securityAttributes) {};
 };
 
 class CAutoResetEvent: public CEvent
@@ -94,7 +78,7 @@ class CAutoResetEvent: public CEvent
 public:
   CAutoResetEvent(bool initiallyOwn = false, LPCTSTR name = NULL, 
       LPSECURITY_ATTRIBUTES securityAttributes = NULL):
-    CEvent(initiallyOwn, false, name, securityAttributes) {};
+    CEvent(false, initiallyOwn, name, securityAttributes) {};
 };
 
 

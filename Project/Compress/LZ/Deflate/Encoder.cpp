@@ -377,7 +377,8 @@ void CCoder::InitStructures()
   m_MainCoder.StartNewBlock();
   m_DistCoder.StartNewBlock();
  
-  for(int i = 0; i < 256; i++)
+  int i;
+  for(i = 0; i < 256; i++)
     m_LiteralPrices[i] = 8;
   for(i = 0; i < kNumLenCombinations; i++)
     m_LenPrices[i] = 5 + kLenDirectBits[g_LenSlots[i]]; // test it

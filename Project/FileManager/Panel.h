@@ -213,7 +213,7 @@ public:
   bool IsItemFolder(int itemIndex) const;
   UINT64 GetItemSize(int itemIndex) const;
 
-  LRESULT Create(HWND mainWindow, HWND parrentWindow, int index, UINT id, int xPos, 
+  LRESULT Create(HWND mainWindow, HWND parentWindow, int index, UINT id, int xPos, 
       CSysString &currentFolderPrefix, CPanelCallback *panelCallback,
       CAppState *appState);
   void SetFocus();

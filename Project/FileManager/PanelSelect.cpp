@@ -173,6 +173,7 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
 {
   if(itemActivate->hdr.hwndFrom != HWND(_listView))
     return;
+  // It will be work only for Version 4.71 (IE 4);
   int indexInList = itemActivate->iItem;
   if (indexInList < 0)
     return;

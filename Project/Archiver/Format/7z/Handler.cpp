@@ -28,173 +28,307 @@ CHandler::CHandler()
   Init();
 }
 
-STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
+STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
   #ifndef _SFX
   COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
+  CComObjectNoLock<CEnumArchiveItemProperty> *enumeratorSpec = 
       new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (anEnumObject == NULL)
+  if (enumeratorSpec == NULL)
     return E_OUTOFMEMORY;
-  CComPtr<IEnumSTATPROPSTG> anEnum(anEnumObject);
-  anEnumObject->Init(m_Database.m_ArchiveInfo.FileInfoPopIDs);
-  return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
+  CComPtr<IEnumSTATPROPSTG> tempEnumerator(enumeratorSpec);
+  enumeratorSpec->Init(_database.ArchiveInfo.FileInfoPopIDs);
+  *enumerator = tempEnumerator.Detach();
+  return S_OK;
+  // return tempEnumerator->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)enumerator);
   COM_TRY_END
   #else
     return E_NOTIMPL;
   #endif
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *aNumItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
 {
   COM_TRY_BEGIN
-  *aNumItems = m_Database.m_Files.Size();
+  *numItems = _database.Files.Size();
   return S_OK;
   COM_TRY_END
 }
 
-static void MySetFileTime(bool aDefined, FILETIME anUnixTime, 
-    NWindows::NCOM::CPropVariant &aPropVariant)
+static void MySetFileTime(bool timeDefined, FILETIME unixTime, 
+    NWindows::NCOM::CPropVariant &propVariant)
 {
-  // FILETIME aFILETIME;
-  if (aDefined)
-    aPropVariant = anUnixTime;
-    // NTime::UnixTimeToFileTime((time_t)anUnixTime, aFILETIME);
+  // FILETIME fileTime;
+  if (timeDefined)
+    propVariant = unixTime;
+    // NTime::UnixTimeToFileTime((time_t)unixTime, fileTime);
   else
   {
     return;
-    // aFILETIME.dwHighDateTime = aFILETIME.dwLowDateTime = 0;
+    // fileTime.dwHighDateTime = fileTime.dwLowDateTime = 0;
   }
-  // aPropVariant = aFILETIME;
+  // propVariant = fileTime;
 }
 
 /*
-inline static wchar_t GetHex(BYTE aValue)
+inline static wchar_t GetHex(BYTE value)
 {
-  return (aValue < 10) ? ('0' + aValue) : ('A' + (aValue - 10));
+  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
 }
 
-static UString ConvertBytesToHexString(const BYTE *aData, UINT32 aSize)
+static UString ConvertBytesToHexString(const BYTE *data, UINT32 size)
 {
-  UString aResult;
-  for (UINT32 i = 0; i < aSize; i++)
+  UString result;
+  for (UINT32 i = 0; i < size; i++)
   {
-    BYTE aByte = aData[i];
-    aResult += GetHex(aByte >> 4);
-    aResult += GetHex(aByte & 0xF);
+    BYTE b = data[i];
+    result += GetHex(b >> 4);
+    result += GetHex(b & 0xF);
   }
-  return aResult;
+  return result;
 }
 */
 
-STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
+
+#ifndef _SFX
+
+static UString ConvertUINT32ToString(UINT32 value)
+{
+  wchar_t buffer[16];
+  return _ultow(value, buffer, 10);
+}
+
+static UString GetStringForSizeValue(UINT32 value)
+{
+  for (int i = 31; i >= 0; i--)
+    if ((UINT32(1) << i) == value)
+      return ConvertUINT32ToString(i);
+  UString result;
+  if (value % (1 << 20) == 0)
+  {
+    result += ConvertUINT32ToString(value >> 20);
+    result += L"m";
+  }
+  else if (value % (1 << 10) == 0)
+  {
+    result += ConvertUINT32ToString(value >> 10);
+    result += L"k";
+  }
+  else
+  {
+    result += ConvertUINT32ToString(value);
+    result += L"b";
+  }
+  return result;
+}
+
+static CMethodID k_Copy  = { { 0x0 }, 1 };
+static CMethodID k_LZMA  = { { 0x3, 0x1, 0x1 }, 3 };
+static CMethodID k_BCJ   = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
+static CMethodID k_BCJ2  = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+static CMethodID k_PPMD  = { { 0x3, 0x4, 0x1 }, 3 };
+static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
+static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
+
+#endif
+
+STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  const CFileItemInfo &anItem = m_Database.m_Files[anIndex];
+  NWindows::NCOM::CPropVariant propVariant;
+  const CFileItemInfo &item = _database.Files[index];
 
-  switch(aPropID)
+  switch(propID)
   {
     case kpidPath:
     {
-      aPropVariant = NArchive::NItemName::GetOSName(anItem.Name);
+      propVariant = NArchive::NItemName::GetOSName(item.Name);
       break;
     }
     case kpidIsFolder:
-      aPropVariant = anItem.IsDirectory;
+      propVariant = item.IsDirectory;
       break;
     case kpidSize:
-      aPropVariant = anItem.UnPackSize;
+      propVariant = item.UnPackSize;
       break;
     case kpidPackedSize:
     {
       {
-        int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[anIndex];
-        if (aFolderIndex >= 0)
+        int folderIndex = _database.FileIndexToFolderIndexMap[index];
+        if (folderIndex >= 0)
         {
-          const CFolderItemInfo &aFolderInfo = m_Database.m_Folders[aFolderIndex];
-          if (m_Database.m_FolderStartFileIndex[aFolderIndex] == anIndex)
-            aPropVariant = m_Database.GetFolderFullPackSize(aFolderIndex);
+          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          if (_database.FolderStartFileIndex[folderIndex] == index)
+            propVariant = _database.GetFolderFullPackSize(folderIndex);
           else
-            aPropVariant = UINT64(0);
+            propVariant = UINT64(0);
         }
         else
-          aPropVariant = UINT64(0);
+          propVariant = UINT64(0);
       }
       break;
     }
     case kpidLastAccessTime:
-      MySetFileTime(anItem.IsLastAccessTimeDefined, anItem.LastAccessTime, aPropVariant);
+      MySetFileTime(item.IsLastAccessTimeDefined, item.LastAccessTime, propVariant);
       break;
     case kpidCreationTime:
-      MySetFileTime(anItem.IsCreationTimeDefined, anItem.CreationTime, aPropVariant);
+      MySetFileTime(item.IsCreationTimeDefined, item.CreationTime, propVariant);
       break;
     case kpidLastWriteTime:
-      MySetFileTime(anItem.IsLastWriteTimeDefined, anItem.LastWriteTime, aPropVariant);
+      MySetFileTime(item.IsLastWriteTimeDefined, item.LastWriteTime, propVariant);
       break;
     case kpidAttributes:
-      if (anItem.AreAttributesDefined)
-        aPropVariant = anItem.Attributes;
+      if (item.AreAttributesDefined)
+        propVariant = item.Attributes;
       break;
     case kpidCRC:
-      if (anItem.FileCRCIsDefined)
-        aPropVariant = anItem.FileCRC;
+      if (item.FileCRCIsDefined)
+        propVariant = item.FileCRC;
       break;
+    #ifndef _SFX
+    case kpidMethod:
+      {
+        int folderIndex = _database.FileIndexToFolderIndexMap[index];
+        if (folderIndex >= 0)
+        {
+          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          UString methodsString;
+          for (int i = folderInfo.CodersInfo.Size() - 1; i >= 0; i--)
+          {
+            const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+            if (!methodsString.IsEmpty())
+              methodsString += L' ';
+            NRegistryInfo::CMethodInfo methodInfo;
+
+            bool methodIsKnown;
+            UString methodName;
+
+            #ifdef NO_REGISTRY
+
+            methodIsKnown = true;
+            if (coderInfo.DecompressionMethod == k_Copy)
+              methodName = L"Copy";            
+            else if (coderInfo.DecompressionMethod == k_LZMA)
+              methodName = L"LZMA";
+            else if (coderInfo.DecompressionMethod == k_BCJ)
+              methodName = L"BCJ";
+            else if (coderInfo.DecompressionMethod == k_BCJ2)
+              methodName = L"BCJ2";
+            else if (coderInfo.DecompressionMethod == k_PPMD)
+              methodName = L"PPMD";
+            else if (coderInfo.DecompressionMethod == k_Deflate)
+              methodName = L"Deflate";
+            else if (coderInfo.DecompressionMethod == k_BZip2)
+              methodName = L"BZip2";
+            else
+              methodIsKnown = false;
+            
+            #else
+            
+            methodIsKnown = _methodMap.GetMethodInfoAlways(coderInfo.DecompressionMethod, methodInfo);
+            methodName = GetUnicodeString(methodInfo.Name);
+
+            #endif
+
+            if (methodIsKnown)
+            {
+              methodsString += methodName;
+              if (coderInfo.DecompressionMethod == k_LZMA)
+              {
+                if (coderInfo.Properties.GetCapacity() == 5)
+                {
+                  methodsString += L":";
+                  UINT32 dicSize = *(const UINT32 *)
+                    ((const BYTE *)coderInfo.Properties + 1);
+                  methodsString += GetStringForSizeValue(dicSize);
+                }
+              }
+              else if (coderInfo.DecompressionMethod == k_PPMD)
+              {
+                if (coderInfo.Properties.GetCapacity() == 5)
+                {
+                  BYTE order = *(const BYTE *)coderInfo.Properties;
+                  methodsString += L":o";
+                  methodsString += ConvertUINT32ToString(order);
+                  methodsString += L":mem";
+                  UINT32 dicSize = *(const UINT32 *)
+                    ((const BYTE *)coderInfo.Properties + 1);
+                  methodsString += GetStringForSizeValue(dicSize);
+                }
+              }
+            }
+            else
+            {
+              methodsString += MultiByteToUnicodeString(coderInfo.DecompressionMethod.ConvertToString());
+            }
+          }
+          propVariant = methodsString;
+        }
+      }
+      break;
+    case kpidBlock:
+      {
+        int folderIndex = _database.FileIndexToFolderIndexMap[index];
+        if (folderIndex >= 0)
+          propVariant = (UINT32)folderIndex;
+      }
+      break;
+    #endif
     case kpidPackedSize0:
     case kpidPackedSize1:
     case kpidPackedSize2:
     case kpidPackedSize3:
     case kpidPackedSize4:
       {
-        int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[anIndex];
-        if (aFolderIndex >= 0)
+        int folderIndex = _database.FileIndexToFolderIndexMap[index];
+        if (folderIndex >= 0)
         {
-          const CFolderItemInfo &aFolderInfo = m_Database.m_Folders[aFolderIndex];
-          if (m_Database.m_FolderStartFileIndex[aFolderIndex] == anIndex &&
-              aFolderInfo.PackStreams.Size() > aPropID - kpidPackedSize0)
+          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          if (_database.FolderStartFileIndex[folderIndex] == index &&
+              folderInfo.PackStreams.Size() > propID - kpidPackedSize0)
           {
-            aPropVariant = m_Database.GetFolderPackStreamSize(aFolderIndex, aPropID - kpidPackedSize0);
+            propVariant = _database.GetFolderPackStreamSize(folderIndex, propID - kpidPackedSize0);
           }
           else
-            aPropVariant = UINT64(0);
+            propVariant = UINT64(0);
         }
         else
-          aPropVariant = UINT64(0);
+          propVariant = UINT64(0);
       }
       break;
     case kpidIsAnti:
-      aPropVariant = anItem.IsAnti;
+      propVariant = item.IsAnti;
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(value);
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *aStream,
-    const UINT64 *aMaxCheckStartPosition, IOpenArchive2CallBack *anOpenArchiveCallBack)
+STDMETHODIMP CHandler::Open(IInStream *stream,
+    const UINT64 *maxCheckStartPosition, IOpenArchive2CallBack *openArchiveCallback)
 {
   COM_TRY_BEGIN
-  m_InStream.Release();
-  m_Database.Clear();
+  _inStream.Release();
+  _database.Clear();
   try
   {
-    CInArchive anArchive;
-    RETURN_IF_NOT_S_OK(anArchive.Open(aStream, aMaxCheckStartPosition))
+    CInArchive archive;
+    RETURN_IF_NOT_S_OK(archive.Open(stream, maxCheckStartPosition))
 
-    RETURN_IF_NOT_S_OK(anArchive.ReadDatabase(m_Database));
-    HRESULT aResult = anArchive.CheckIntegrity();
-    if (aResult != S_OK)
+    RETURN_IF_NOT_S_OK(archive.ReadDatabase(_database));
+    HRESULT result = archive.CheckIntegrity();
+    if (result != S_OK)
       return E_FAIL;
-    m_Database.FillFolderStartPackStream();
-    m_Database.FillStartPos();
-    m_Database.FillFolderStartFileIndex();
+    _database.FillFolderStartPackStream();
+    _database.FillStartPos();
+    _database.FillFolderStartFileIndex();
   }
   catch(...)
   {
     return S_FALSE;
   }
-  m_InStream = aStream;
+  _inStream = stream;
   return S_OK;
   COM_TRY_END
 }
@@ -202,7 +336,7 @@ STDMETHODIMP CHandler::Open(IInStream *aStream,
 STDMETHODIMP CHandler::Close()
 {
   COM_TRY_BEGIN
-  m_InStream.Release();
+  _inStream.Release();
   return S_OK;
   COM_TRY_END
 }

@@ -23,7 +23,7 @@ public:
     kUnexpectedEndOfArchive = 0,
     kIncorrectHeader,
   } Cause;
-  CInArchiveException(CCauseType aCause);
+  CInArchiveException(CCauseType cause);
 };
 
 struct CInArchiveInfo
@@ -39,67 +39,72 @@ struct CInArchiveInfo
 
 struct CArchiveDatabaseEx: public CArchiveDatabase
 {
-  CInArchiveInfo m_ArchiveInfo;
-  CRecordVector<UINT64> m_PackStreamStartPositions;
-  CRecordVector<UINT64> m_FolderStartPackStreamIndex;
-  CRecordVector<UINT64> m_FolderStartFileIndex;
-  CRecordVector<int> m_FileIndexToFolderIndexMap;
+  CInArchiveInfo ArchiveInfo;
+  CRecordVector<UINT64> PackStreamStartPositions;
+  CRecordVector<UINT64> FolderStartPackStreamIndex;
+  CRecordVector<UINT64> FolderStartFileIndex;
+  CRecordVector<int> FileIndexToFolderIndexMap;
 
   void FillFolderStartPackStream();
   void FillStartPos();
   void FillFolderStartFileIndex();
-  UINT64 GetFolderStreamPos(int aFolderIndex, int anIndexInFolder) const
+  
+  UINT64 GetFolderStreamPos(int folderIndex, int indexInFolder) const
   {
-    return m_ArchiveInfo.DataStartPosition +
-        m_PackStreamStartPositions[m_FolderStartPackStreamIndex[aFolderIndex] +
-        anIndexInFolder];
+    return ArchiveInfo.DataStartPosition +
+        PackStreamStartPositions[FolderStartPackStreamIndex[folderIndex] +
+        indexInFolder];
   }
-  UINT64 GetFolderFullPackSize(int aFolderIndex) const 
+  
+  UINT64 GetFolderFullPackSize(int folderIndex) const 
   {
-    UINT64 aPackStreamIndex = m_FolderStartPackStreamIndex[aFolderIndex];
-    const CFolderItemInfo &aFolder = m_Folders[aFolderIndex];
-    UINT64 aSize = 0;
-    for (int i = 0; i < aFolder.PackStreams.Size(); i++)
-      aSize += m_PackSizes[aPackStreamIndex + i];
-    return aSize;
+    UINT64 packStreamIndex = FolderStartPackStreamIndex[folderIndex];
+    const CFolderItemInfo &folder = Folders[folderIndex];
+    UINT64 size = 0;
+    for (int i = 0; i < folder.PackStreams.Size(); i++)
+      size += PackSizes[packStreamIndex + i];
+    return size;
   }
-  UINT64 GetFolderPackStreamSize(int aFolderIndex, int aStreamIndex) const 
+  
+  UINT64 GetFolderPackStreamSize(int folderIndex, int streamIndex) const 
   {
-    return m_PackSizes[m_FolderStartPackStreamIndex[aFolderIndex] + aStreamIndex];
+    return PackSizes[FolderStartPackStreamIndex[folderIndex] + streamIndex];
   }
 };
 
 class CInByte2
 {
-  const BYTE *m_Buffer;
-  UINT32 m_Size;
-  UINT32 m_Pos;
+  const BYTE *_buffer;
+  UINT32 _size;
+  UINT32 _pos;
 public:
-  void Init(const BYTE *aBuffer, UINT32 aSize)
+  void Init(const BYTE *buffer, UINT32 size)
   {
-    m_Buffer = aBuffer;
-    m_Size = aSize;
-    m_Pos = 0;
+    _buffer = buffer;
+    _size = size;
+    _pos = 0;
   }
-  bool ReadByte(BYTE &aByte)
+  bool ReadByte(BYTE &b)
   {
-    if(m_Pos >= m_Size)
+    if(_pos >= _size)
       return false;
-    aByte = m_Buffer[m_Pos++];
+    b = _buffer[_pos++];
     return true;
   }
-  void ReadBytes(void *aData, UINT32 aSize, UINT32 &aProcessedSize)
+  void ReadBytes(void *data, UINT32 size, UINT32 &processedSize)
   {
-    for(aProcessedSize = 0; aProcessedSize < aSize && m_Pos < m_Size; aProcessedSize++)
-      ((BYTE *)aData)[aProcessedSize] = m_Buffer[m_Pos++];
+    for(processedSize = 0; processedSize < size && _pos < _size; processedSize++)
+      ((BYTE *)data)[processedSize] = _buffer[_pos++];
   }
-  bool ReadBytes(void *aData, UINT32 aSize)
+  
+  bool ReadBytes(void *data, UINT32 size)
   {
-    UINT32 aProcessedSize;
-    ReadBytes(aData, aSize, aProcessedSize);
-    return (aProcessedSize == aSize);
+    UINT32 processedSize;
+    ReadBytes(data, size, processedSize);
+    return (processedSize == size);
   }
-  UINT32 GetProcessedSize() const { return m_Pos; }
+  
+  UINT32 GetProcessedSize() const { return _pos; }
 };
 
 class CStreamSwitch;
@@ -107,114 +112,117 @@ class CInArchive
 {
   friend CStreamSwitch;
 
-  CComPtr<IInStream> m_Stream;
+  CComPtr<IInStream> _stream;
 
-  CObjectVector<CInByte2> m_InByteVector;
-  CInByte2 *m_InByteBack;
+  CObjectVector<CInByte2> _inByteVector;
+  CInByte2 *_inByteBack;
  
-  UINT64 m_ArhiveBeginStreamPosition;
-  UINT64 m_Position;
+  UINT64 _arhiveBeginStreamPosition;
+  UINT64 _position;
 
-  void AddByteStream(const BYTE *aBuffer, UINT32 aSize)
+  void AddByteStream(const BYTE *buffer, UINT32 size)
   {
-    m_InByteVector.Add(CInByte2());
-    m_InByteBack = &m_InByteVector.Back();
-    m_InByteBack->Init(aBuffer, aSize);
+    _inByteVector.Add(CInByte2());
+    _inByteBack = &_inByteVector.Back();
+    _inByteBack->Init(buffer, size);
   }
+  
   void DeleteByteStream()
   {
-    m_InByteVector.DeleteBack();
-    if (!m_InByteVector.IsEmpty())
-      m_InByteBack = &m_InByteVector.Back();
+    _inByteVector.DeleteBack();
+    if (!_inByteVector.IsEmpty())
+      _inByteBack = &_inByteVector.Back();
   }
 
 private:
-  HRESULT FindAndReadSignature(IInStream *aStream, const UINT64 *aSearchHeaderSizeLimit); // S_FALSE means is not archive
+  HRESULT FindAndReadSignature(IInStream *stream, const UINT64 *searchHeaderSizeLimit); // S_FALSE means is not archive
   
-  HRESULT ReadFileNames(CObjectVector<CFileItemInfo> &aFiles);
+  HRESULT ReadFileNames(CObjectVector<CFileItemInfo> &files);
   
-  HRESULT ReadBytes(IInStream *aStream, void *aData, UINT32 aSize, 
-      UINT32 *aProcessedSize);
-  HRESULT ReadBytes(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  HRESULT SafeReadBytes(void *aData, UINT32 aSize);
+  HRESULT ReadBytes(IInStream *stream, void *data, UINT32 size, 
+      UINT32 *processedSize);
+  HRESULT ReadBytes(void *data, UINT32 size, UINT32 *processedSize);
+  HRESULT SafeReadBytes(void *data, UINT32 size);
 
-  HRESULT SafeReadBytes2(void *aData, UINT32 aSize)
+  HRESULT SafeReadBytes2(void *data, UINT32 size)
   {
-    if (!m_InByteBack->ReadBytes(aData, aSize))
+    if (!_inByteBack->ReadBytes(data, size))
       return E_FAIL;
-    return S_OK;
-  }
-  HRESULT SafeReadByte2(BYTE &aByte)
-  {
-    if (!m_InByteBack->ReadByte(aByte))
-      return E_FAIL;
-    return S_OK;
-  }
-  HRESULT SafeReadWideCharLE(wchar_t &aChar)
-  {
-    BYTE aByte1;
-    if (!m_InByteBack->ReadByte(aByte1))
-      return E_FAIL;
-    BYTE aByte2;
-    if (!m_InByteBack->ReadByte(aByte2))
-      return E_FAIL;
-    aChar = (int(aByte2) << 8) + aByte1;
     return S_OK;
   }
 
-  HRESULT ReadNumber(UINT64 &aValue);
+  HRESULT SafeReadByte2(BYTE &b)
+  {
+    if (!_inByteBack->ReadByte(b))
+      return E_FAIL;
+    return S_OK;
+  }
+
+  HRESULT SafeReadWideCharLE(wchar_t &c)
+  {
+    BYTE b1;
+    if (!_inByteBack->ReadByte(b1))
+      return E_FAIL;
+    BYTE b2;
+    if (!_inByteBack->ReadByte(b2))
+      return E_FAIL;
+    c = (int(b2) << 8) + b1;
+    return S_OK;
+  }
+
+  HRESULT ReadNumber(UINT64 &value);
   
-  HRESULT SkeepData(UINT64 aSize);
+  HRESULT SkeepData(UINT64 size);
   HRESULT SkeepData();
-  HRESULT WaitAttribute(BYTE anAttribute);
+  HRESULT WaitAttribute(BYTE attribute);
 
-  HRESULT ReadArhiveProperties(CInArchiveInfo &anArchiveInfo);
-  HRESULT GetNextFolderItem(CFolderItemInfo &anItemInfo);
-  HRESULT ReadHashDigests(int aNumItems,
-      CRecordVector<bool> &aDigestsDefined, CRecordVector<UINT32> &aDigests);
+  HRESULT ReadArhiveProperties(CInArchiveInfo &archiveInfo);
+  HRESULT GetNextFolderItem(CFolderItemInfo &itemInfo);
+  HRESULT ReadHashDigests(int numItems,
+      CRecordVector<bool> &digestsDefined, CRecordVector<UINT32> &digests);
   
   HRESULT ReadPackInfo(
-      UINT64 &aDataOffset,
-      CRecordVector<UINT64> &aPackSizes,
-      CRecordVector<bool> &aPackCRCsDefined,
-      CRecordVector<UINT32> &aPackCRCs);
+      UINT64 &dataOffset,
+      CRecordVector<UINT64> &packSizes,
+      CRecordVector<bool> &packCRCsDefined,
+      CRecordVector<UINT32> &packCRCs);
   
   HRESULT ReadUnPackInfo(
-      const CObjectVector<CByteBuffer> *aDataVector,
-      CObjectVector<CFolderItemInfo> &aFolders);
+      const CObjectVector<CByteBuffer> *dataVector,
+      CObjectVector<CFolderItemInfo> &folders);
   
   HRESULT ReadSubStreamsInfo(
-      const CObjectVector<CFolderItemInfo> &aFolders,
-      CRecordVector<UINT64> &aNumUnPackStreamsInFolders,
-      CRecordVector<UINT64> &anUnPackSizes,
-      CRecordVector<bool> &aDigestsDefined, 
-      CRecordVector<UINT32> &aDigests);
+      const CObjectVector<CFolderItemInfo> &folders,
+      CRecordVector<UINT64> &numUnPackStreamsInFolders,
+      CRecordVector<UINT64> &unPackSizes,
+      CRecordVector<bool> &digestsDefined, 
+      CRecordVector<UINT32> &digests);
 
   HRESULT CInArchive::ReadStreamsInfo(
-      const CObjectVector<CByteBuffer> *aDataVector,
-      UINT64 &aDataOffset,
-      CRecordVector<UINT64> &aPackSizes,
-      CRecordVector<bool> &aPackCRCsDefined,
-      CRecordVector<UINT32> &aPackCRCs,
-      CObjectVector<CFolderItemInfo> &aFolders,
-      CRecordVector<UINT64> &aNumUnPackStreamsInFolders,
-      CRecordVector<UINT64> &anUnPackSizes,
-      CRecordVector<bool> &aDigestsDefined, 
-      CRecordVector<UINT32> &aDigests);
+      const CObjectVector<CByteBuffer> *dataVector,
+      UINT64 &dataOffset,
+      CRecordVector<UINT64> &packSizes,
+      CRecordVector<bool> &packCRCsDefined,
+      CRecordVector<UINT32> &packCRCs,
+      CObjectVector<CFolderItemInfo> &folders,
+      CRecordVector<UINT64> &numUnPackStreamsInFolders,
+      CRecordVector<UINT64> &unPackSizes,
+      CRecordVector<bool> &digestsDefined, 
+      CRecordVector<UINT32> &digests);
 
 
 
-  HRESULT GetNextFileItem(CFileItemInfo &anItemInfo);
-  HRESULT ReadBoolVector(UINT32 aNumItems, CBoolVector &aVector);
-  HRESULT ReadBoolVector2(UINT32 aNumItems, CBoolVector &aVector);
-  HRESULT ReadTime(const CObjectVector<CByteBuffer> &aDataVector,
-      CObjectVector<CFileItemInfo> &aFiles, BYTE aType);
-  HRESULT ReadHeader(CArchiveDatabaseEx &aDatabase);
+  HRESULT GetNextFileItem(CFileItemInfo &itemInfo);
+  HRESULT ReadBoolVector(UINT32 numItems, CBoolVector &vector);
+  HRESULT ReadBoolVector2(UINT32 numItems, CBoolVector &vector);
+  HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
+      CObjectVector<CFileItemInfo> &files, BYTE type);
+  HRESULT ReadHeader(CArchiveDatabaseEx &database);
 public:
-  HRESULT Open(IInStream *aStream, const UINT64 *aSearchHeaderSizeLimit); // S_FALSE means is not archive
+  HRESULT Open(IInStream *stream, const UINT64 *searchHeaderSizeLimit); // S_FALSE means is not archive
   void Close();
 
-  HRESULT ReadDatabase(CArchiveDatabaseEx &aDatabase);
+  HRESULT ReadDatabase(CArchiveDatabaseEx &database);
   HRESULT CheckIntegrity();
 };
   

@@ -178,7 +178,8 @@ STDMETHODIMP CTarHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
   UINT64 aTotalSize = 0;
   if(aNumItems == 0)
     return S_OK;
-  for(UINT32 i = 0; i < aNumItems; i++)
+  UINT32 i;
+  for(i = 0; i < aNumItems; i++)
     aTotalSize += m_Items[anIndexes[i]].Size;
   anExtractCallBack->SetTotal(aTotalSize);
 

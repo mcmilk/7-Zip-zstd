@@ -51,36 +51,36 @@ static CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
 
-static void ConvertFolderItemInfoToBindInfo(const CFolderItemInfo &aFolderItemInfo,
-    CBindInfoEx &aBindInfo)
+static void ConvertFolderItemInfoToBindInfo(const CFolderItemInfo &folderItemInfo,
+    CBindInfoEx &bindInfo)
 {
-  aBindInfo.CodersInfo.Clear();
-  aBindInfo.CoderMethodIDs.Clear();
-  aBindInfo.OutStreams.Clear();
-  aBindInfo.InStreams.Clear();
-  aBindInfo.BindPairs.Clear();
-  for (int i = 0; i < aFolderItemInfo.BindPairs.Size(); i++)
+  bindInfo.CodersInfo.Clear();
+  bindInfo.CoderMethodIDs.Clear();
+  bindInfo.OutStreams.Clear();
+  bindInfo.InStreams.Clear();
+  bindInfo.BindPairs.Clear();
+  for (int i = 0; i < folderItemInfo.BindPairs.Size(); i++)
   {
-    NCoderMixer2::CBindPair aBindPair;
-    aBindPair.InIndex = aFolderItemInfo.BindPairs[i].InIndex;
-    aBindPair.OutIndex = aFolderItemInfo.BindPairs[i].OutIndex;
-    aBindInfo.BindPairs.Add(aBindPair);
+    NCoderMixer2::CBindPair bindPair;
+    bindPair.InIndex = folderItemInfo.BindPairs[i].InIndex;
+    bindPair.OutIndex = folderItemInfo.BindPairs[i].OutIndex;
+    bindInfo.BindPairs.Add(bindPair);
   }
-  UINT32 anOutStreamIndex = 0;
-  for (i = 0; i < aFolderItemInfo.CodersInfo.Size(); i++)
+  UINT32 outStreamIndex = 0;
+  for (i = 0; i < folderItemInfo.CodersInfo.Size(); i++)
   {
-    NCoderMixer2::CCoderStreamsInfo aCoderStreamsInfo;
-    const CCoderInfo &aCoderInfo = aFolderItemInfo.CodersInfo[i];
-    aCoderStreamsInfo.NumInStreams = aCoderInfo.NumInStreams;
-    aCoderStreamsInfo.NumOutStreams = aCoderInfo.NumOutStreams;
-    aBindInfo.CodersInfo.Add(aCoderStreamsInfo);
-    aBindInfo.CoderMethodIDs.Add(aCoderInfo.DecompressionMethod);
-    for (int j = 0; j < aCoderStreamsInfo.NumOutStreams; j++, anOutStreamIndex++)
-      if (aFolderItemInfo.FindBindPairForOutStream(anOutStreamIndex) < 0)
-        aBindInfo.OutStreams.Add(anOutStreamIndex);
+    NCoderMixer2::CCoderStreamsInfo coderStreamsInfo;
+    const CCoderInfo &coderInfo = folderItemInfo.CodersInfo[i];
+    coderStreamsInfo.NumInStreams = coderInfo.NumInStreams;
+    coderStreamsInfo.NumOutStreams = coderInfo.NumOutStreams;
+    bindInfo.CodersInfo.Add(coderStreamsInfo);
+    bindInfo.CoderMethodIDs.Add(coderInfo.DecompressionMethod);
+    for (int j = 0; j < coderStreamsInfo.NumOutStreams; j++, outStreamIndex++)
+      if (folderItemInfo.FindBindPairForOutStream(outStreamIndex) < 0)
+        bindInfo.OutStreams.Add(outStreamIndex);
   }
-  for (i = 0; i < aFolderItemInfo.PackStreams.Size(); i++)
-    aBindInfo.InStreams.Add(aFolderItemInfo.PackStreams[i].Index);
+  for (i = 0; i < folderItemInfo.PackStreams.Size(); i++)
+    bindInfo.InStreams.Add(folderItemInfo.PackStreams[i].Index);
 }
 
 static bool AreCodersEqual(const NCoderMixer2::CCoderStreamsInfo &a1, 
@@ -120,210 +120,210 @@ static bool AreBindInfoExEqual(const CBindInfoEx &a1, const CBindInfoEx &a2)
 
 CDecoder::CDecoder()
 {
-  BindInfoExPrevIsDefinded = false;
+  _bindInfoExPrevIsDefinded = false;
 }
 
-HRESULT CDecoder::Decode(IInStream *anInStream,
-    UINT64 aStartPos,
-    const UINT64 *aPackSizes,
-    const CFolderItemInfo &aFolderInfo, 
-    ISequentialOutStream *anOutStream,
-    ICompressProgressInfo *aCompressProgress)
+HRESULT CDecoder::Decode(IInStream *inStream,
+    UINT64 startPos,
+    const UINT64 *packSizes,
+    const CFolderItemInfo &folderInfo, 
+    ISequentialOutStream *outStream,
+    ICompressProgressInfo *compressProgress)
 {
-  CObjectVector< CComPtr<ISequentialInStream> > anInStreams;
+  CObjectVector< CComPtr<ISequentialInStream> > inStreams;
   
-  CLockedInStream aLockedInStream;
-  aLockedInStream.Init(anInStream);
+  CLockedInStream lockedInStream;
+  lockedInStream.Init(inStream);
   
-  for (int j = 0; j < aFolderInfo.PackStreams.Size(); j++)
+  for (int j = 0; j < folderInfo.PackStreams.Size(); j++)
   {
-    CComObjectNoLock<CLockedSequentialInStreamImp> *aLockedStreamImpSpec = new 
+    CComObjectNoLock<CLockedSequentialInStreamImp> *lockedStreamImpSpec = new 
       CComObjectNoLock<CLockedSequentialInStreamImp>;
-    CComPtr<ISequentialInStream> aLockedStreamImp = aLockedStreamImpSpec;
-    aLockedStreamImpSpec->Init(&aLockedInStream, aStartPos);
-    aStartPos += aPackSizes[j];
+    CComPtr<ISequentialInStream> lockedStreamImp = lockedStreamImpSpec;
+    lockedStreamImpSpec->Init(&lockedInStream, startPos);
+    startPos += packSizes[j];
     
-    CComObjectNoLock<CLimitedSequentialInStream> *aStreamSpec = new 
+    CComObjectNoLock<CLimitedSequentialInStream> *streamSpec = new 
       CComObjectNoLock<CLimitedSequentialInStream>;
-    CComPtr<ISequentialInStream> anInStream = aStreamSpec;
-    aStreamSpec->Init(aLockedStreamImp, aPackSizes[j]);
-    anInStreams.Add(anInStream);
+    CComPtr<ISequentialInStream> inStream = streamSpec;
+    streamSpec->Init(lockedStreamImp, packSizes[j]);
+    inStreams.Add(inStream);
   }
   
-  int aNumCoders = aFolderInfo.CodersInfo.Size();
+  int numCoders = folderInfo.CodersInfo.Size();
   
-  CBindInfoEx aBindInfo;
-  ConvertFolderItemInfoToBindInfo(aFolderInfo, aBindInfo);
-  bool aCreateNewCoders;
-  if (!BindInfoExPrevIsDefinded)
-    aCreateNewCoders = true;
+  CBindInfoEx bindInfo;
+  ConvertFolderItemInfoToBindInfo(folderInfo, bindInfo);
+  bool createNewCoders;
+  if (!_bindInfoExPrevIsDefinded)
+    createNewCoders = true;
   else
-    aCreateNewCoders = !AreBindInfoExEqual(aBindInfo, BindInfoExPrev);
-  if (aCreateNewCoders)
+    createNewCoders = !AreBindInfoExEqual(bindInfo, _bindInfoExPrev);
+  if (createNewCoders)
   {
     int i;
-    aDecoders.Clear();
-    aDecoders2.Clear();
+    _decoders.Clear();
+    _decoders2.Clear();
     
-    MixerCoder.Release();
+    _mixerCoder.Release();
     
-    MixerCoderSpec = new CComObjectNoLock<NCoderMixer2::CCoderMixer2>;
-    MixerCoder = MixerCoderSpec;
+    _mixerCoderSpec = new CComObjectNoLock<NCoderMixer2::CCoderMixer2>;
+    _mixerCoder = _mixerCoderSpec;
     
-    MixerCoderSpec->SetBindInfo(aBindInfo);
-    for (i = 0; i < aNumCoders; i++)
+    _mixerCoderSpec->SetBindInfo(bindInfo);
+    for (i = 0; i < numCoders; i++)
     {
-      const CCoderInfo &aCoderInfo = aFolderInfo.CodersInfo[i];
+      const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
 
       #ifndef EXCLUDE_COM
-      CLSID aClassID;
-      if (!aMethodMap.GetCLSIDAlways(aCoderInfo.DecompressionMethod, aClassID)) 
+      CLSID classID;
+      if (!_methodMap.GetCLSIDAlways(coderInfo.DecompressionMethod, classID)) 
         return E_NOTIMPL;
       #endif
 
-      if (aCoderInfo.IsSimpleCoder())
+      if (coderInfo.IsSimpleCoder())
       {
-        aDecoders.Add(CComPtr<ICompressCoder>());
+        _decoders.Add(CComPtr<ICompressCoder>());
 
         #ifdef COMPRESS_LZMA
-        if (aCoderInfo.DecompressionMethod == k_LZMA)
-          aDecoders.Back() = new CComObjectNoLock<NCompress::NLZMA::CDecoder>;
+        if (coderInfo.DecompressionMethod == k_LZMA)
+          _decoders.Back() = new CComObjectNoLock<NCompress::NLZMA::CDecoder>;
         #endif
 
         #ifdef COMPRESS_PPMD
-        if (aCoderInfo.DecompressionMethod == k_PPMD)
-          aDecoders.Back() = new CComObjectNoLock<NCompress::NPPMD::CDecoder>;
+        if (coderInfo.DecompressionMethod == k_PPMD)
+          _decoders.Back() = new CComObjectNoLock<NCompress::NPPMD::CDecoder>;
         #endif
 
         #ifdef COMPRESS_BCJ_X86
-        if (aCoderInfo.DecompressionMethod == k_BCJ_X86)
-          aDecoders.Back() = new CComObjectNoLock<CBCJ_x86_Decoder>;
+        if (coderInfo.DecompressionMethod == k_BCJ_X86)
+          _decoders.Back() = new CComObjectNoLock<CBCJ_x86_Decoder>;
         #endif
 
         #ifdef COMPRESS_DEFLATE
-        if (aCoderInfo.DecompressionMethod == k_Deflate)
-          aDecoders.Back() = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
+        if (coderInfo.DecompressionMethod == k_Deflate)
+          _decoders.Back() = new CComObjectNoLock<NDeflate::NDecoder::CCoder>;
         #endif
 
         #ifdef COMPRESS_BZIP2
-        if (aCoderInfo.DecompressionMethod == k_BZip2)
-          aDecoders.Back() = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
+        if (coderInfo.DecompressionMethod == k_BZip2)
+          _decoders.Back() = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
         #endif
 
         #ifdef COMPRESS_COPY
-        if (aCoderInfo.DecompressionMethod == k_Copy)
-          aDecoders.Back() = new CComObjectNoLock<NCompression::CCopyCoder>;
+        if (coderInfo.DecompressionMethod == k_Copy)
+          _decoders.Back() = new CComObjectNoLock<NCompression::CCopyCoder>;
         #endif
 
         #ifndef EXCLUDE_COM
-        if (aDecoders.Back() == 0)
+        if (_decoders.Back() == 0)
         {
-          RETURN_IF_NOT_S_OK(aDecoders.Back().CoCreateInstance(aClassID));
+          RETURN_IF_NOT_S_OK(_decoders.Back().CoCreateInstance(classID));
         }
         #endif
 
-        if (aDecoders.Back() == 0)
+        if (_decoders.Back() == 0)
           return E_NOTIMPL;
 
-        MixerCoderSpec->AddCoder(aDecoders.Back());
+        _mixerCoderSpec->AddCoder(_decoders.Back());
       }
       else
       {
-        aDecoders2.Add(CComPtr<ICompressCoder2>());
+        _decoders2.Add(CComPtr<ICompressCoder2>());
 
         #ifdef COMPRESS_BCJ2
-        if (aCoderInfo.DecompressionMethod == k_BCJ2)
-          aDecoders2.Back() = new CComObjectNoLock<CBCJ2_x86_Decoder>;
+        if (coderInfo.DecompressionMethod == k_BCJ2)
+          _decoders2.Back() = new CComObjectNoLock<CBCJ2_x86_Decoder>;
         #endif
 
         #ifndef EXCLUDE_COM
-        if (aDecoders2.Back() == 0)
+        if (_decoders2.Back() == 0)
         {
-          RETURN_IF_NOT_S_OK(aDecoders2.Back().CoCreateInstance(aClassID));
+          RETURN_IF_NOT_S_OK(_decoders2.Back().CoCreateInstance(classID));
         }
         #endif
 
-        if (aDecoders2.Back() == 0)
+        if (_decoders2.Back() == 0)
           return E_NOTIMPL;
 
-        MixerCoderSpec->AddCoder2(aDecoders2.Back());
+        _mixerCoderSpec->AddCoder2(_decoders2.Back());
       }
     }
-    BindInfoExPrev = aBindInfo;
-    BindInfoExPrevIsDefinded = true;
+    _bindInfoExPrev = bindInfo;
+    _bindInfoExPrevIsDefinded = true;
   }
   int i;
-  MixerCoderSpec->ReInit();
+  _mixerCoderSpec->ReInit();
   
-  UINT32 aPackStreamIndex = 0, anUnPackStreamIndex = 0;
-  UINT32 aCoderIndex = 0;
-  UINT32 aCoder2Index = 0;
+  UINT32 packStreamIndex = 0, unPackStreamIndex = 0;
+  UINT32 coderIndex = 0;
+  UINT32 coder2Index = 0;
   
-  for (i = 0; i < aNumCoders; i++)
+  for (i = 0; i < numCoders; i++)
   {
-    CComPtr<ICompressSetDecoderProperties> aCompressSetDecoderProperties;
-    HRESULT aResult;
-    if (aFolderInfo.CodersInfo[i].IsSimpleCoder())
-      aResult = aDecoders[aCoderIndex++]->QueryInterface(&aCompressSetDecoderProperties);
+    CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
+    HRESULT result;
+    if (folderInfo.CodersInfo[i].IsSimpleCoder())
+      result = _decoders[coderIndex++]->QueryInterface(&compressSetDecoderProperties);
     else
-      aResult = aDecoders2[aCoder2Index++]->QueryInterface(&aCompressSetDecoderProperties);
+      result = _decoders2[coder2Index++]->QueryInterface(&compressSetDecoderProperties);
     
-    if (aResult == S_OK)
+    if (result == S_OK)
     {
-      const CByteBuffer &aProperties = aFolderInfo.CodersInfo[i].Properties;
-      UINT32 aSize = aProperties.GetCapacity();
-      if (aSize > 0)
+      const CByteBuffer &properties = folderInfo.CodersInfo[i].Properties;
+      UINT32 size = properties.GetCapacity();
+      if (size > 0)
       {
-        CComObjectNoLock<CSequentialInStreamImp> *anInStreamSpec = new 
+        CComObjectNoLock<CSequentialInStreamImp> *inStreamSpec = new 
           CComObjectNoLock<CSequentialInStreamImp>;
-        CComPtr<ISequentialInStream> anInStream(anInStreamSpec);
-        anInStreamSpec->Init((const BYTE *)aProperties, aSize);
-        RETURN_IF_NOT_S_OK(aCompressSetDecoderProperties->SetDecoderProperties(anInStream));
+        CComPtr<ISequentialInStream> inStream(inStreamSpec);
+        inStreamSpec->Init((const BYTE *)properties, size);
+        RETURN_IF_NOT_S_OK(compressSetDecoderProperties->SetDecoderProperties(inStream));
       }
     }
-    else if (aResult != E_NOINTERFACE)
-      return aResult;
+    else if (result != E_NOINTERFACE)
+      return result;
     
-    const CCoderInfo &aCoderInfo = aFolderInfo.CodersInfo[i];
-    UINT32 aNumInStreams = aCoderInfo.NumInStreams;
-    UINT32 aNumOutStreams = aCoderInfo.NumOutStreams;
-    CRecordVector<const UINT64 *> aPackSizesPointers;
-    CRecordVector<const UINT64 *> anUnPackSizesPointers;
-    aPackSizesPointers.Reserve(aNumInStreams);
-    anUnPackSizesPointers.Reserve(aNumOutStreams);
-    for (int j = 0; j < aNumOutStreams; j++, anUnPackStreamIndex++)
-      anUnPackSizesPointers.Add(&aFolderInfo.UnPackSizes[anUnPackStreamIndex]);
+    const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+    UINT32 numInStreams = coderInfo.NumInStreams;
+    UINT32 numOutStreams = coderInfo.NumOutStreams;
+    CRecordVector<const UINT64 *> packSizesPointers;
+    CRecordVector<const UINT64 *> unPackSizesPointers;
+    packSizesPointers.Reserve(numInStreams);
+    unPackSizesPointers.Reserve(numOutStreams);
+    for (int j = 0; j < numOutStreams; j++, unPackStreamIndex++)
+      unPackSizesPointers.Add(&folderInfo.UnPackSizes[unPackStreamIndex]);
     
-    for (j = 0; j < aNumInStreams; j++, aPackStreamIndex++)
+    for (j = 0; j < numInStreams; j++, packStreamIndex++)
     {
-      int aBindPairIndex = aFolderInfo.FindBindPairForInStream(aPackStreamIndex);
-      if (aBindPairIndex >= 0)
-        aPackSizesPointers.Add(
-        &aFolderInfo.UnPackSizes[aFolderInfo.BindPairs[aBindPairIndex].OutIndex]);
+      int bindPairIndex = folderInfo.FindBindPairForInStream(packStreamIndex);
+      if (bindPairIndex >= 0)
+        packSizesPointers.Add(
+        &folderInfo.UnPackSizes[folderInfo.BindPairs[bindPairIndex].OutIndex]);
       else
       {
-        int anIndex = aFolderInfo.FindPackStreamArrayIndex(aPackStreamIndex);
-        if (anIndex < 0)
+        int index = folderInfo.FindPackStreamArrayIndex(packStreamIndex);
+        if (index < 0)
           return E_FAIL;
-        aPackSizesPointers.Add(&aPackSizes[anIndex]);
+        packSizesPointers.Add(&packSizes[index]);
       }
     }
     
-    MixerCoderSpec->SetCoderInfo(i, 
-      &aPackSizesPointers.Front(), 
-      &anUnPackSizesPointers.Front());
+    _mixerCoderSpec->SetCoderInfo(i, 
+      &packSizesPointers.Front(), 
+      &unPackSizesPointers.Front());
   }
-  UINT32 aMainCoder, aTemp;
-  aBindInfo.FindOutStream(aBindInfo.OutStreams[0], aMainCoder, aTemp);
-  MixerCoderSpec->SetProgressCoderIndex(aMainCoder);
+  UINT32 mainCoder, temp;
+  bindInfo.FindOutStream(bindInfo.OutStreams[0], mainCoder, temp);
+  _mixerCoderSpec->SetProgressCoderIndex(mainCoder);
   
-  if (aNumCoders == 0)
+  if (numCoders == 0)
     return 0;
-  CRecordVector<ISequentialInStream *> anInStreamPointers;
-  anInStreamPointers.Reserve(anInStreams.Size());
-  for (i = 0; i < anInStreams.Size(); i++)
-    anInStreamPointers.Add(anInStreams[i]);
-  ISequentialOutStream *anOutStreamPointer = anOutStream;
-  return MixerCoderSpec->Code(&anInStreamPointers.Front(), NULL, 
-    anInStreams.Size(), &anOutStreamPointer, NULL, 1, aCompressProgress);
+  CRecordVector<ISequentialInStream *> inStreamPointers;
+  inStreamPointers.Reserve(inStreams.Size());
+  for (i = 0; i < inStreams.Size(); i++)
+    inStreamPointers.Add(inStreams[i]);
+  ISequentialOutStream *outStreamPointer = outStream;
+  return _mixerCoderSpec->Code(&inStreamPointers.Front(), NULL, 
+    inStreams.Size(), &outStreamPointer, NULL, 1, compressProgress);
 }

@@ -17,7 +17,7 @@ bool GetProgramFolderPath(CSysString &folder)
 {
   folder.Empty();
   CKey key;
-  if (key.Open(HKEY_LOCAL_MACHINE, kLMBasePath) != ERROR_SUCCESS)
+  if (key.Open(HKEY_LOCAL_MACHINE, kLMBasePath, KEY_READ) != ERROR_SUCCESS)
     return false;
   if (key.QueryValue(kAppPathPathKeyValueName2, folder) != ERROR_SUCCESS)
     return false;

@@ -4,12 +4,12 @@
 
 #include "CrossThreadProgress.h"
 
-STDMETHODIMP CCrossThreadProgress::SetRatioInfo(const UINT64 *anInSize, const UINT64 *anOutSize)
+STDMETHODIMP CCrossThreadProgress::SetRatioInfo(const UINT64 *inSize, const UINT64 *outSize)
 {
-  m_InSize = anInSize;
-  m_OutSize = anOutSize;
-  m_ProgressEvent.Set();
-  m_WaitEvent.Lock();
-  return m_Result;
+  InSize = inSize;
+  OutSize = outSize;
+  ProgressEvent.Set();
+  WaitEvent.Lock();
+  return Result;
 }
 

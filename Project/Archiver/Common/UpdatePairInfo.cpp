@@ -73,7 +73,8 @@ void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &aDirItems,
   UStringVector aDirNames, anArchiveNames;
   
   int aNumDirItems = aDirItems.Size(); 
-  for(int i = 0; i < aNumDirItems; i++)
+  int i;
+  for(i = 0; i < aNumDirItems; i++)
     aDirNames.Add(aDirItems[i].Name);
   SortStringsToIndexes(aDirNames, aDirIndexes);
   TestDuplicateString(aDirNames, aDirIndexes);

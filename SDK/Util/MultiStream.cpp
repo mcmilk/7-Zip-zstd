@@ -5,39 +5,39 @@
 #include "MultiStream.h"
 #include "MultiStream.h"
 
-HRESULT CLockedInStream::Read(UINT64 aStartPos, void *aData, UINT32 aSize, 
-    UINT32 *aProcessedSize)
+HRESULT CLockedInStream::Read(UINT64 startPos, void *data, UINT32 size, 
+    UINT32 *processedSize)
 {
-  NWindows::NSynchronization::CSingleLock aLock(&m_CriticalSection, true);
-  RETURN_IF_NOT_S_OK(m_Stream->Seek(aStartPos, STREAM_SEEK_SET, NULL));
-  return m_Stream->Read(aData, aSize, aProcessedSize);
+  NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+  RETURN_IF_NOT_S_OK(_stream->Seek(startPos, STREAM_SEEK_SET, NULL));
+  return _stream->Read(data, size, processedSize);
 }
 
-HRESULT CLockedInStream::ReadPart(UINT64 aStartPos, void *aData, UINT32 aSize, 
-  UINT32 *aProcessedSize)
+HRESULT CLockedInStream::ReadPart(UINT64 startPos, void *data, UINT32 size, 
+  UINT32 *processedSize)
 {
-  NWindows::NSynchronization::CSingleLock aLock(&m_CriticalSection, true);
-  RETURN_IF_NOT_S_OK(m_Stream->Seek(aStartPos, STREAM_SEEK_SET, NULL));
-  return m_Stream->ReadPart(aData, aSize, aProcessedSize);
+  NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
+  RETURN_IF_NOT_S_OK(_stream->Seek(startPos, STREAM_SEEK_SET, NULL));
+  return _stream->ReadPart(data, size, processedSize);
 }
 
 
-STDMETHODIMP CLockedSequentialInStreamImp::Read(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CLockedSequentialInStreamImp::Read(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal = 0;
-  HRESULT aResult = m_LockedInStream->Read(m_Pos, aData, aSize, &aProcessedSizeReal);
-  m_Pos += aProcessedSizeReal;
-  if (aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+  UINT32 realProcessedSize = 0;
+  HRESULT result = _lockedInStream->Read(_pos, data, size, &realProcessedSize);
+  _pos += realProcessedSize;
+  if (processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
 }
 
-STDMETHODIMP CLockedSequentialInStreamImp::ReadPart(void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP CLockedSequentialInStreamImp::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
 {
-  UINT32 aProcessedSizeReal = 0;
-  HRESULT aResult = m_LockedInStream->ReadPart(m_Pos, aData, aSize, &aProcessedSizeReal);
-  m_Pos += aProcessedSizeReal;
-  if (aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
-  return aResult;
+  UINT32 realProcessedSize = 0;
+  HRESULT result = _lockedInStream->ReadPart(_pos, data, size, &realProcessedSize);
+  _pos += realProcessedSize;
+  if (processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
 }

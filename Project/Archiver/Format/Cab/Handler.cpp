@@ -2,6 +2,10 @@
 
 #include "stdafx.h"
 
+#include "Common/StringConvert.h"
+#include "Common/Defs.h"
+#include "Common/UTFConvert.h"
+
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 #include "Windows/COMTry.h"
@@ -15,19 +19,12 @@
 #include "Interface/ProgressUtils.h"
 #include "Interface/EnumStatProp.h"
 
-#include "Common/StringConvert.h"
-#include "Common/Defs.h"
 
 using namespace NWindows;
 using namespace NTime;
 using namespace std;
 using namespace NArchive;
 using namespace NCab;
-
-enum // PropID
-{
-  kpidFolderIndex = kpidUserDefined,
-};
 
 STATPROPSTG kProperties[] = 
 {
@@ -37,100 +34,24 @@ STATPROPSTG kProperties[] =
   { NULL, kpidLastWriteTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
 
-  { NULL, kpidMethod, VT_UI1},
-  { NULL, kpidDictionarySize, VT_UI4},
+  { NULL, kpidMethod, VT_BSTR},
+  // { NULL, kpidDictionarySize, VT_UI4},
 
-  { L"Folder Index", kpidFolderIndex, VT_UI2}
+  { L"Block", kpidBlock, VT_UI4}
 };
 
 static const kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
 
-
-/*
-class CEnumIDList: 
-  public IEnumIDList,
-  public CComObjectRoot
+const wchar_t *kMethods[] = 
 {
-  int m_Index;
-  const CObjectVector<CFileInfo> *m_Files;
-  const CObjectVector<NHeader::CFolder> *m_Folders;
-public:
-
-  BEGIN_COM_MAP(CEnumIDList)
-  COM_INTERFACE_ENTRY(IEnumIDList)
-END_COM_MAP()
-
-DECLARE_NOT_AGGREGATABLE(CEnumIDList)
-
-DECLARE_NO_REGISTRY()
-  
-  CEnumIDList(): m_Index(0) {};
-  void Init(const CObjectVector<NHeader::CFolder> *aFolders, 
-      const CObjectVector<CFileInfo> *aFiles);
-
-  STDMETHODIMP Next(ULONG, LPITEMIDLIST *, ULONG *);
-  STDMETHODIMP Skip(ULONG );
-  STDMETHODIMP Reset();
-  STDMETHODIMP Clone(IEnumIDList **);
+  L"None",
+  L"MSZip",
+  L"Quantum",
+  L"LZX"
 };
 
-////////////////////////////////////
-// CEnumIDList
-
-void CEnumIDList::Init(const CObjectVector<NHeader::CFolder> *aFolders, 
-    const CObjectVector<CFileInfo> *aFiles)
-{
-  m_Files = aFiles;
-  m_Folders = aFolders;
-}
-
-
-STDMETHODIMP CEnumIDList::Reset()
-{
-  m_Index = 0;
-  return S_OK;
-}
-*/
-
-bool ConvertUTF8ToUnicode(const AString &anUTFString, UString &anResultString)
-{
-  anResultString.Empty();
-  for(int i = 0; i < anUTFString.Length(); i++)
-  {
-    BYTE aChar = anUTFString[i];
-    if (aChar < 0x80)
-    {
-      anResultString += aChar;
-      continue;
-    }
-    if(aChar < 0xC0 || aChar >= 0xF0)
-      return false;
-    i++;
-    if (i >= anUTFString.Length())
-      return false;
-    BYTE aChar2 = anUTFString[i];
-    if (aChar2 < 0x80)
-      return false;
-    aChar2 -= 0x80;
-    if (aChar2 >= 0x40)
-      return false;
-    if (aChar < 0xE0)
-    {
-      anResultString += wchar_t( ((wchar_t(aChar - 0xC0)) << 6) + aChar2);
-      continue;
-    }
-    i++;
-    if (i >= anUTFString.Length())
-      return false;
-    BYTE aChar3 = anUTFString[i];
-    aChar3 -= 0x80;
-    if (aChar3 >= 0x40)
-      return false;
-    anResultString += wchar_t(((wchar_t(aChar - 0xE0)) << 12) + 
-      ((wchar_t(aChar2)) << 6) + aChar3);
-  }
-  return true; 
-}
+const kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
+const wchar_t *kUnknownMethod = L"Unknown";
 
 STDMETHODIMP CCabHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 {
@@ -143,69 +64,84 @@ STDMETHODIMP CCabHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
 STDMETHODIMP CCabHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT *aValue)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant aPropVariant;
-  const NArchive::NCab::CFileInfo &aFileInfo = m_Files[anIndex];
+  NWindows::NCOM::CPropVariant propVariant;
+  const NArchive::NCab::CFileInfo &fileInfo = m_Files[anIndex];
   switch(aPropID)
   {
     case kpidPath:
-      if (aFileInfo.IsNameUTF())
+      if (fileInfo.IsNameUTF())
       {
         UString aUnicodeName;
-        if (!ConvertUTF8ToUnicode(aFileInfo.Name, aUnicodeName))
-          aPropVariant = L"";
+        if (!ConvertUTF8ToUnicode(fileInfo.Name, aUnicodeName))
+          propVariant = L"";
         else
-          aPropVariant = aUnicodeName;
+          propVariant = aUnicodeName;
       }
       else
-        aPropVariant = MultiByteToUnicodeString(aFileInfo.Name, CP_ACP);
+        propVariant = MultiByteToUnicodeString(fileInfo.Name, CP_ACP);
       break;
     case kpidIsFolder:
-      aPropVariant = false;
+      propVariant = false;
       break;
     case kpidSize:
-      aPropVariant = aFileInfo.UnPackSize;
+      propVariant = fileInfo.UnPackSize;
       break;
     case kpidLastWriteTime:
     {
       FILETIME aLocalFileTime, anUTCFileTime;
-      if (DosTimeToFileTime(aFileInfo.Time, aLocalFileTime))
+      if (DosTimeToFileTime(fileInfo.Time, aLocalFileTime))
       {
         if (!LocalFileTimeToFileTime(&aLocalFileTime, &anUTCFileTime))
           anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
       }
       else
         anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
-      aPropVariant = anUTCFileTime;
+      propVariant = anUTCFileTime;
       break;
     }
     case kpidAttributes:
-      aPropVariant = aFileInfo.GetWinAttributes();
+      propVariant = fileInfo.GetWinAttributes();
       break;
 
     case kpidMethod:
     {
       UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
-          m_Folders.Size(), aFileInfo.FolderIndex);
+          m_Folders.Size(), fileInfo.FolderIndex);
       const NHeader::CFolder &aFolder = m_Folders[aRealFolderIndex];
-      aPropVariant = aFolder.CompressionTypeMajor;
+      UString method;
+      if (aFolder.CompressionTypeMajor < kNumMethods)
+        method = kMethods[aFolder.CompressionTypeMajor];
+      else
+        method = kUnknownMethod;
+      if (aFolder.CompressionTypeMajor == NHeader::NCompressionMethodMajor::kLZX)
+      {
+        method += L":";
+        wchar_t temp[32];
+        _itow (aFolder.CompressionTypeMinor, temp, 10);
+        method += temp;
+      }
+      propVariant = method;
+      // propVariant = aFolder.CompressionTypeMajor;
       break;
     }
+    /*
     case kpidDictionarySize:
     {
       UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
-          m_Folders.Size(), aFileInfo.FolderIndex);
+          m_Folders.Size(), fileInfo.FolderIndex);
       const NHeader::CFolder &aFolder = m_Folders[aRealFolderIndex];
       if (aFolder.CompressionTypeMajor == NHeader::NCompressionMethodMajor::kLZX)
-        aPropVariant = UINT32(UINT32(1) << aFolder.CompressionTypeMinor);
+        propVariant = UINT32(UINT32(1) << aFolder.CompressionTypeMinor);
       else
-        aPropVariant = UINT32(0);
+        propVariant = UINT32(0);
       break;
     }
-    case kpidFolderIndex:
-      aPropVariant = UINT32(aFileInfo.FolderIndex);
+    */
+    case kpidBlock:
+      propVariant = UINT32(fileInfo.FolderIndex);
       break;
   }
-  aPropVariant.Detach(aValue);
+  propVariant.Detach(aValue);
   return S_OK;
   COM_TRY_END
 }
@@ -356,13 +292,13 @@ HRESULT CCabFolderOutStream::OpenFile(int anIndexIndex, ISequentialOutStream **a
     anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
   
   int anIndex = (*m_FileIndexes)[aFullIndex];
-  const CFileInfo &aFileInfo = (*m_Files)[anIndex];
+  const CFileInfo &fileInfo = (*m_Files)[anIndex];
   UINT16 aRealFolderIndex = NHeader::NFolderIndex::GetRealFolderIndex(
-      m_Folders->Size(), aFileInfo.FolderIndex);
+      m_Folders->Size(), fileInfo.FolderIndex);
 
   RETURN_IF_NOT_S_OK(m_ExtractCallBack->Extract(anIndex, aRealOutStream, anAskMode));
   
-  UINT64 aCurrentUnPackSize = aFileInfo.UnPackSize;
+  UINT64 aCurrentUnPackSize = fileInfo.UnPackSize;
   
   bool aMustBeProcessedAnywhere = (anIndexIndex < m_NumFiles - 1);
     
@@ -383,8 +319,8 @@ HRESULT CCabFolderOutStream::WriteEmptyFiles()
   for(;m_CurrentIndex < m_NumFiles; m_CurrentIndex++)
   {
     int anIndex = (*m_FileIndexes)[m_StartIndex + m_CurrentIndex];
-    const CFileInfo &aFileInfo = (*m_Files)[anIndex];
-    if (aFileInfo.UnPackSize != 0)
+    const CFileInfo &fileInfo = (*m_Files)[anIndex];
+    if (fileInfo.UnPackSize != 0)
       return S_OK;
     aRealOutStream.Release();
     HRESULT aResult = OpenFile(m_CurrentIndex, &aRealOutStream);
@@ -411,8 +347,8 @@ STDMETHODIMP CCabFolderOutStream::Write(const void *aData,
     if (m_FileIsOpen)
     {
       int anIndex = (*m_FileIndexes)[m_StartIndex + m_CurrentIndex];
-      const CFileInfo &aFileInfo = (*m_Files)[anIndex];
-      UINT64 aFileSize = aFileInfo.UnPackSize;
+      const CFileInfo &fileInfo = (*m_Files)[anIndex];
+      UINT64 aFileSize = fileInfo.UnPackSize;
       
       UINT32 aNumBytesToWrite = (UINT32)MyMin(aFileSize - m_FilePos, 
           UINT64(aSize - aProcessedSizeReal));
@@ -428,7 +364,7 @@ STDMETHODIMP CCabFolderOutStream::Write(const void *aData,
       }
       m_FilePos += aProcessedSizeLocal;
       aProcessedSizeReal += aProcessedSizeLocal;
-      if (m_FilePos == aFileInfo.UnPackSize)
+      if (m_FilePos == fileInfo.UnPackSize)
       {
         aRealOutStream.Release();
         RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kOK));
@@ -465,8 +401,8 @@ STDMETHODIMP CCabFolderOutStream::FlushCorrupted()
     if (m_FileIsOpen)
     {
       int anIndex = (*m_FileIndexes)[m_StartIndex + m_CurrentIndex];
-      const CFileInfo &aFileInfo = (*m_Files)[anIndex];
-      UINT64 aFileSize = aFileInfo.UnPackSize;
+      const CFileInfo &fileInfo = (*m_Files)[anIndex];
+      UINT64 aFileSize = fileInfo.UnPackSize;
       
       aRealOutStream.Release();
       RETURN_IF_NOT_S_OK(m_ExtractCallBack->OperationResult(NArchiveHandler::NExtract::NOperationResult::kCRCError));
@@ -508,10 +444,10 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
   for(int i = 0; i < aNumItems; i++)
   {
     int anIndex = anIndexes[i];
-    const CFileInfo &aFileInfo = m_Files[anIndex];
-    aCensoredTotalUnPacked += aFileInfo.UnPackSize;
+    const CFileInfo &fileInfo = m_Files[anIndex];
+    aCensoredTotalUnPacked += fileInfo.UnPackSize;
 
-    int aFolderIndex = aFileInfo.FolderIndex;
+    int aFolderIndex = fileInfo.FolderIndex;
     if (aFolderIndexes.IsEmpty())
       aFolderIndexes.Add(aFolderIndex);
     else
@@ -525,8 +461,8 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
         break;
     for(j++; j <= anIndex; j++)
     {
-      const CFileInfo &aFileInfo = m_Files[j];
-      anImportantTotalUnPacked += aFileInfo.UnPackSize;
+      const CFileInfo &fileInfo = m_Files[j];
+      anImportantTotalUnPacked += fileInfo.UnPackSize;
       anImportantIndexes.Add(j);
       anExtractStatuses.Add(j == anIndex);
     }
@@ -559,10 +495,10 @@ STDMETHODIMP CCabHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     aTotalFolderUnPacked = 0;
     for (int j = aCurImportantIndexIndex; j < anImportantIndexes.Size(); j++)
     {
-      const CFileInfo &aFileInfo = m_Files[anImportantIndexes[j]];
-      if (aFileInfo.FolderIndex != aFolderIndex)
+      const CFileInfo &fileInfo = m_Files[anImportantIndexes[j]];
+      if (fileInfo.FolderIndex != aFolderIndex)
         break;
-      aTotalFolderUnPacked += aFileInfo.UnPackSize;
+      aTotalFolderUnPacked += fileInfo.UnPackSize;
     }
     
     CComObjectNoLock<CCabFolderOutStream> *aCabFolderOutStream = 

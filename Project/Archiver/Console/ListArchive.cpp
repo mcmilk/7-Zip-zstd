@@ -35,20 +35,20 @@ static const char kHiddenAttributeChar    = 'H';
 static const char kSystemAttributeChar    = 'S';
 static const char kArchiveAttributeChar   = 'A';
 
-static AString GetAttributesString(DWORD anWinAttributes, bool aDirectory)
+static AString GetAttributesString(DWORD winAttributes, bool directory)
 {
   AString s;
-  //  s  = ((anWinAttributes & kLabelFileAttribute) != 0) ? 
+  //  s  = ((winAttributes & kLabelFileAttribute) != 0) ? 
   //                                kVolumeAttributeChar: kEmptyAttributeChar;
-  s += ((anWinAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 || aDirectory) ? 
+  s += ((winAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 || directory) ? 
                                 kDirectoryAttributeChar: kEmptyAttributeChar;
-  s += ((anWinAttributes & FILE_ATTRIBUTE_READONLY) != 0)? 
+  s += ((winAttributes & FILE_ATTRIBUTE_READONLY) != 0)? 
                                 kReadonlyAttributeChar: kEmptyAttributeChar;
-  s += ((anWinAttributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
+  s += ((winAttributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
                                 kHiddenAttributeChar: kEmptyAttributeChar;
-  s += ((anWinAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
+  s += ((winAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
                                 kSystemAttributeChar: kEmptyAttributeChar;
-  s += ((anWinAttributes & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
+  s += ((winAttributes & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
                                 kArchiveAttributeChar: kEmptyAttributeChar;
   return s;
 }
@@ -89,81 +89,82 @@ CFieldInfoInit kStandardFieldTable[] =
   { kpidPath, "Name", kLeft, kLeft, 2, 12 }
 };
 
-void PrintSpaces(int aNumSpaces)
+void PrintSpaces(int numSpaces)
 {
-  for (int i = 0; i < aNumSpaces; i++)
+  for (int i = 0; i < numSpaces; i++)
     g_StdOut << ' ';
 }
 
-void PrintString(EAdjustment anAdjustment, int aWidth, const AString &aString)
+void PrintString(EAdjustment adjustment, int width, const AString &textString)
 {
-  const aNumSpaces = aWidth - aString.Length();
-  int aNumLeftSpaces;
-  switch (anAdjustment)
+  const numSpaces = width - textString.Length();
+  int numLeftSpaces;
+  switch (adjustment)
   {
     case kLeft:
-      aNumLeftSpaces = 0;
+      numLeftSpaces = 0;
       break;
     case kCenter:
-      aNumLeftSpaces = aNumSpaces / 2;
+      numLeftSpaces = numSpaces / 2;
       break;
     case kRight:
-      aNumLeftSpaces = aNumSpaces;
+      numLeftSpaces = numSpaces;
       break;
   }
-  PrintSpaces(aNumLeftSpaces);
-  g_StdOut << aString;
-  PrintSpaces(aNumSpaces - aNumLeftSpaces);
+  PrintSpaces(numLeftSpaces);
+  g_StdOut << textString;
+  PrintSpaces(numSpaces - numLeftSpaces);
 }
 
 class CFieldPrinter
 {
-  CObjectVector<CFieldInfo> m_Fields;
+  CObjectVector<CFieldInfo> _fields;
 public:
-  void Init(const CFieldInfoInit *aStandardFieldTable, int aNumItems);
+  void Init(const CFieldInfoInit *standardFieldTable, int numItems);
   void PrintTitle();
   void PrintTitleLines();
-  HRESULT PrintItemInfo(IArchiveHandler200 *anArchive, 
-      const UString &aDefaultItemName,
-      const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-      UINT32 anIndex);
-  HRESULT PrintSummaryInfo(UINT64 aNumFiles, const UINT64 *aSize, const UINT64 *aFCompressedSize);
+  HRESULT PrintItemInfo(IArchiveHandler200 *archive, 
+      const UString &defaultItemName,
+      const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+      UINT32 index);
+  HRESULT PrintSummaryInfo(UINT64 numFiles, const UINT64 *size, 
+      const UINT64 *compressedSize);
 };
 
-void CFieldPrinter::Init(const CFieldInfoInit *aStandardFieldTable, int aNumItems)
+void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, int numItems)
 {
-  for (int i = 0; i < aNumItems; i++)
+  for (int i = 0; i < numItems; i++)
   {
-    CFieldInfo aFieldInfo;
-    const CFieldInfoInit &aFieldInfoInit = aStandardFieldTable[i];
-    aFieldInfo.PropID = aFieldInfoInit.PropID;
-    aFieldInfo.Name = aFieldInfoInit.Name;
-    aFieldInfo.TitleAdjustment = aFieldInfoInit.TitleAdjustment;
-    aFieldInfo.TextAdjustment = aFieldInfoInit.TextAdjustment;
-    aFieldInfo.PrefixSpacesWidth = aFieldInfoInit.PrefixSpacesWidth;
-    aFieldInfo.Width = aFieldInfoInit.Width;
-    m_Fields.Add(aFieldInfo);
+    CFieldInfo fieldInfo;
+    const CFieldInfoInit &fieldInfoInit = standardFieldTable[i];
+    fieldInfo.PropID = fieldInfoInit.PropID;
+    fieldInfo.Name = fieldInfoInit.Name;
+    fieldInfo.TitleAdjustment = fieldInfoInit.TitleAdjustment;
+    fieldInfo.TextAdjustment = fieldInfoInit.TextAdjustment;
+    fieldInfo.PrefixSpacesWidth = fieldInfoInit.PrefixSpacesWidth;
+    fieldInfo.Width = fieldInfoInit.Width;
+    _fields.Add(fieldInfo);
   }
 }
 
   
 void CFieldPrinter::PrintTitle()
 {
-  for (int i = 0; i < m_Fields.Size(); i++)
+  for (int i = 0; i < _fields.Size(); i++)
   {
-    const CFieldInfo &aFieldInfo = m_Fields[i];
-    PrintSpaces(aFieldInfo.PrefixSpacesWidth);
-    PrintString(aFieldInfo.TitleAdjustment, aFieldInfo.Width, aFieldInfo.Name);
+    const CFieldInfo &fieldInfo = _fields[i];
+    PrintSpaces(fieldInfo.PrefixSpacesWidth);
+    PrintString(fieldInfo.TitleAdjustment, fieldInfo.Width, fieldInfo.Name);
   }
 }
 
 void CFieldPrinter::PrintTitleLines()
 {
-  for (int i = 0; i < m_Fields.Size(); i++)
+  for (int i = 0; i < _fields.Size(); i++)
   {
-    const CFieldInfo &aFieldInfo = m_Fields[i];
-    PrintSpaces(aFieldInfo.PrefixSpacesWidth);
-    for (int i = 0; i < aFieldInfo.Width; i++)
+    const CFieldInfo &fieldInfo = _fields[i];
+    PrintSpaces(fieldInfo.PrefixSpacesWidth);
+    for (int i = 0; i < fieldInfo.Width; i++)
       g_StdOut << '-';
   }
 }
@@ -176,19 +177,19 @@ BOOL IsFileTimeZero(CONST FILETIME *lpFileTime)
 
 
 const char *kEmptyTimeString = "                ";
-void PrintTime(const NCOM::CPropVariant &aPropVariant)
+void PrintTime(const NCOM::CPropVariant &propVariant)
 {
-  if (aPropVariant.vt != VT_FILETIME)
+  if (propVariant.vt != VT_FILETIME)
     throw "incorrect item";
-  if (IsFileTimeZero(&aPropVariant.filetime))
+  if (IsFileTimeZero(&propVariant.filetime))
     printf(kEmptyTimeString);
   else
   {
-    FILETIME aLocalFileTime;
-    if (!FileTimeToLocalFileTime(&aPropVariant.filetime, &aLocalFileTime))
+    FILETIME localFileTime;
+    if (!FileTimeToLocalFileTime(&propVariant.filetime, &localFileTime))
       throw "FileTimeToLocalFileTime error";
     SYSTEMTIME st;
-    if (FileTimeToSystemTime(&aLocalFileTime, &st))
+    if (FileTimeToSystemTime(&localFileTime, &st))
       printf("%04u-%02u-%02u %02u:%02u:%02u",
           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
     else
@@ -196,185 +197,185 @@ void PrintTime(const NCOM::CPropVariant &aPropVariant)
   }
 }
 
-HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *anArchive, 
-    const UString &aDefaultItemName, 
-    const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-    UINT32 anIndex)
+HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *archive, 
+    const UString &defaultItemName, 
+    const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+    UINT32 index)
 {
-  for (int i = 0; i < m_Fields.Size(); i++)
+  for (int i = 0; i < _fields.Size(); i++)
   {
-    const CFieldInfo &aFieldInfo = m_Fields[i];
-    PrintSpaces(aFieldInfo.PrefixSpacesWidth);
+    const CFieldInfo &fieldInfo = _fields[i];
+    PrintSpaces(fieldInfo.PrefixSpacesWidth);
 
-    NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK (anArchive->GetProperty(anIndex, 
-        aFieldInfo.PropID, &aPropVariant));
-    if (aPropVariant.vt == VT_EMPTY)
+    NCOM::CPropVariant propVariant;
+    RETURN_IF_NOT_S_OK (archive->GetProperty(index, 
+        fieldInfo.PropID, &propVariant));
+    if (propVariant.vt == VT_EMPTY)
     {
-      switch(aFieldInfo.PropID)
+      switch(fieldInfo.PropID)
       {
         case kpidPath:
-          aPropVariant = aDefaultItemName;
+          propVariant = defaultItemName;
           break;
         case kpidLastWriteTime:
-          aPropVariant = anArchiveFileInfo.LastWriteTime;
+          propVariant = archiveFileInfo.LastWriteTime;
           break;
         default:
-          PrintSpaces(aFieldInfo.Width);
+          PrintSpaces(fieldInfo.Width);
           continue;
       }
     }
 
-    if (aFieldInfo.PropID == kpidLastWriteTime)
+    if (fieldInfo.PropID == kpidLastWriteTime)
     {
-      PrintTime(aPropVariant);
+      PrintTime(propVariant);
       continue;
     }
-    if (aFieldInfo.PropID == kpidAttributes)
+    if (fieldInfo.PropID == kpidAttributes)
     {
-      if (aPropVariant.vt != VT_UI4)
+      if (propVariant.vt != VT_UI4)
         throw "incorrect item";
-      UINT32 anAttributes = aPropVariant.ulVal;
-      NCOM::CPropVariant aPropVariantIsFolder;
-      RETURN_IF_NOT_S_OK(anArchive->GetProperty(anIndex, 
-          kpidIsFolder, &aPropVariantIsFolder));
-      if(aPropVariantIsFolder.vt != VT_BOOL)
+      UINT32 attributes = propVariant.ulVal;
+      NCOM::CPropVariant propVariantIsFolder;
+      RETURN_IF_NOT_S_OK(archive->GetProperty(index, 
+          kpidIsFolder, &propVariantIsFolder));
+      if(propVariantIsFolder.vt != VT_BOOL)
         return E_FAIL;
-      g_StdOut << GetAttributesString(anAttributes, VARIANT_BOOLToBool(aPropVariantIsFolder.boolVal));
+      g_StdOut << GetAttributesString(attributes, VARIANT_BOOLToBool(propVariantIsFolder.boolVal));
       continue;
     }
 
-    if (aPropVariant.vt == VT_BSTR)
+    if (propVariant.vt == VT_BSTR)
     {
-      PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, 
-          UnicodeStringToMultiByte(aPropVariant.bstrVal, CP_OEMCP));
+      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, 
+          UnicodeStringToMultiByte(propVariant.bstrVal, CP_OEMCP));
       continue;
     }
-    PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, 
-        GetOemString(ConvertPropertyToString(aPropVariant, aFieldInfo.PropID)));
+    PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, 
+        GetOemString(ConvertPropertyToString(propVariant, fieldInfo.PropID)));
   }
   return S_OK;
 }
 
 static const char *kOneUINT64Format = "%I64u";
 
-AString NumberToString(UINT64 aValue)
+AString NumberToString(UINT64 value)
 {
-  char aTmp[32];
-  sprintf(aTmp, kOneUINT64Format, aValue);
-  return aTmp;
+  char temp[32];
+  sprintf(temp, kOneUINT64Format, value);
+  return temp;
 }
 
-void PrintNumberString(EAdjustment anAdjustment, int aWidth, const UINT64 *aValue)
+void PrintNumberString(EAdjustment adjustment, int width, const UINT64 *value)
 {
-  AString aString;
-  if (aValue != NULL)
-    aString = NumberToString(*aValue);
-  PrintString(anAdjustment, aWidth, aString);
+  AString textString;
+  if (value != NULL)
+    textString = NumberToString(*value);
+  PrintString(adjustment, width, textString);
 }
 
 static const char *kFilesMessage = "files";
 
-HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 aNumFiles, 
-    const UINT64 *aSize, const UINT64 *aCompressedSize)
+HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles, 
+    const UINT64 *size, const UINT64 *compressedSize)
 {
-  for (int i = 0; i < m_Fields.Size(); i++)
+  for (int i = 0; i < _fields.Size(); i++)
   {
-    const CFieldInfo &aFieldInfo = m_Fields[i];
-    PrintSpaces(aFieldInfo.PrefixSpacesWidth);
-    NCOM::CPropVariant aPropVariant;
-    if (aFieldInfo.PropID == kpidSize)
-      PrintNumberString(aFieldInfo.TextAdjustment, aFieldInfo.Width, aSize);
-    else if (aFieldInfo.PropID == kpidPackedSize)
-      PrintNumberString(aFieldInfo.TextAdjustment, aFieldInfo.Width, aCompressedSize);
-    else if (aFieldInfo.PropID == kpidPath)
+    const CFieldInfo &fieldInfo = _fields[i];
+    PrintSpaces(fieldInfo.PrefixSpacesWidth);
+    NCOM::CPropVariant propVariant;
+    if (fieldInfo.PropID == kpidSize)
+      PrintNumberString(fieldInfo.TextAdjustment, fieldInfo.Width, size);
+    else if (fieldInfo.PropID == kpidPackedSize)
+      PrintNumberString(fieldInfo.TextAdjustment, fieldInfo.Width, compressedSize);
+    else if (fieldInfo.PropID == kpidPath)
     {
-      AString aTmp = NumberToString(aNumFiles);
-      aTmp += " ";
-      aTmp += kFilesMessage;
-      PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, aTmp);
+      AString temp = NumberToString(numFiles);
+      temp += " ";
+      temp += kFilesMessage;
+      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, temp);
     }
     else 
-      PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, "");
+      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, "");
   }
   return S_OK;
 }
 
-bool GetUINT64Value(IArchiveHandler200 *anArchive, UINT32 anIndex, 
-    PROPID aPropID, UINT64 &aValue)
+bool GetUINT64Value(IArchiveHandler200 *archive, UINT32 index, 
+    PROPID propID, UINT64 &value)
 {
-  NCOM::CPropVariant aPropVariant;
-  if (anArchive->GetProperty(anIndex, aPropID, &aPropVariant) != S_OK)
+  NCOM::CPropVariant propVariant;
+  if (archive->GetProperty(index, propID, &propVariant) != S_OK)
     throw "GetPropertyValue error";
-  if (aPropVariant.vt == VT_EMPTY)
+  if (propVariant.vt == VT_EMPTY)
     return false;
-  aValue = ConvertPropVariantToUINT64(aPropVariant);
+  value = ConvertPropVariantToUINT64(propVariant);
   return true;
 }
 
-HRESULT ListArchive(IArchiveHandler200 *anArchive, 
-    const UString &aDefaultItemName,
-    const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-    const NWildcard::CCensor &aWildcardCensor/*, bool aFullPathMode,
-    NListMode::EEnum aMode*/)
+HRESULT ListArchive(IArchiveHandler200 *archive, 
+    const UString &defaultItemName,
+    const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+    const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode,
+    NListMode::EEnum mode*/)
 {
-  CFieldPrinter aFieldPrinter;
-  aFieldPrinter.Init(kStandardFieldTable, sizeof(kStandardFieldTable) / sizeof(kStandardFieldTable[0]));
-  aFieldPrinter.PrintTitle();
+  CFieldPrinter fieldPrinter;
+  fieldPrinter.Init(kStandardFieldTable, sizeof(kStandardFieldTable) / sizeof(kStandardFieldTable[0]));
+  fieldPrinter.PrintTitle();
   g_StdOut << endl;
-  aFieldPrinter.PrintTitleLines();
+  fieldPrinter.PrintTitleLines();
   g_StdOut << endl;
 
-  // bool aNameFirst = (aFullPathMode && (aMode != NListMode::kDefault)) || (aMode == NListMode::kAll);
+  // bool nameFirst = (fullPathMode && (mode != NListMode::kDefault)) || (mode == NListMode::kAll);
 
-  UINT64 aNumFiles = 0, aTotalPackSize = 0, aTotalUnPackSize = 0;
-  UINT64 *aTotalPackSizePointer = 0, *aTotalUnPackSizePointer = 0;
-  UINT32 aNumItems;
-  RETURN_IF_NOT_S_OK(anArchive->GetNumberOfItems(&aNumItems));
-  for(int i = 0; i < aNumItems; i++)
+  UINT64 numFiles = 0, totalPackSize = 0, totalUnPackSize = 0;
+  UINT64 *totalPackSizePointer = 0, *totalUnPackSizePointer = 0;
+  UINT32 numItems;
+  RETURN_IF_NOT_S_OK(archive->GetNumberOfItems(&numItems));
+  for(int i = 0; i < numItems; i++)
   {
     if (NConsoleClose::TestBreakSignal())
       return E_ABORT;
-    NCOM::CPropVariant aPropVariant;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariant));
-    UString aFilePath;
-    if(aPropVariant.vt == VT_EMPTY)
-      aFilePath = aDefaultItemName;
+    NCOM::CPropVariant propVariant;
+    RETURN_IF_NOT_S_OK(archive->GetProperty(i, kpidPath, &propVariant));
+    UString filePath;
+    if(propVariant.vt == VT_EMPTY)
+      filePath = defaultItemName;
     else
     {
-      if(aPropVariant.vt != VT_BSTR)
+      if(propVariant.vt != VT_BSTR)
         return E_FAIL;
-      aFilePath = aPropVariant.bstrVal;
+      filePath = propVariant.bstrVal;
     }
-    if (!aWildcardCensor.CheckName(aFilePath))
+    if (!wildcardCensor.CheckName(filePath))
       continue;
 
-    aFieldPrinter.PrintItemInfo(anArchive, aDefaultItemName, anArchiveFileInfo, i);
+    fieldPrinter.PrintItemInfo(archive, defaultItemName, archiveFileInfo, i);
 
-    UINT64 aPackSize, anUnpackSize;
-    if (!GetUINT64Value(anArchive, i, kpidSize, anUnpackSize))
-      anUnpackSize = 0;
+    UINT64 packSize, unpackSize;
+    if (!GetUINT64Value(archive, i, kpidSize, unpackSize))
+      unpackSize = 0;
     else
-      aTotalUnPackSizePointer = &aTotalUnPackSize;
-    if (!GetUINT64Value(anArchive, i, kpidPackedSize, aPackSize))
-      aPackSize = 0;
+      totalUnPackSizePointer = &totalUnPackSize;
+    if (!GetUINT64Value(archive, i, kpidPackedSize, packSize))
+      packSize = 0;
     else
-      aTotalPackSizePointer = &aTotalPackSize;
+      totalPackSizePointer = &totalPackSize;
 
     g_StdOut << endl;
 
-    aNumFiles++;
-    aTotalPackSize += aPackSize;
-    aTotalUnPackSize += anUnpackSize;
+    numFiles++;
+    totalPackSize += packSize;
+    totalUnPackSize += unpackSize;
   }
-  aFieldPrinter.PrintTitleLines();
+  fieldPrinter.PrintTitleLines();
   g_StdOut << endl;
   /*
-    if(aNumFiles == 0)
+    if(numFiles == 0)
     printf(kStringFormat, kNoFilesMessage);
   else
   */
-  aFieldPrinter.PrintSummaryInfo(aNumFiles, aTotalUnPackSizePointer, aTotalPackSizePointer);
+  fieldPrinter.PrintSummaryInfo(numFiles, totalUnPackSizePointer, totalPackSizePointer);
   g_StdOut << endl;
   return S_OK;
 }

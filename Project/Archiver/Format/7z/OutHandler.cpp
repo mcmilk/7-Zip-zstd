@@ -63,62 +63,63 @@ const char *kDefaultMethodName = kLZMAMethodName;
 // const char *kDefaultMatchFinder = "BT4";
 const char *kDefaultMatchFinderForFast = "HC3";
 
-static bool IsLZMAMethod(const AString &aMethodName)
+static bool IsLZMAMethod(const AString &methodName)
 {
-  return (aMethodName.CompareNoCase(kLZMAMethodName) == 0);
+  return (methodName.CompareNoCase(kLZMAMethodName) == 0);
 }
 
-static bool IsLZMethod(const AString &aMethodName)
+static bool IsLZMethod(const AString &methodName)
 {
-  return (IsLZMAMethod(aMethodName) 
-      // || aMethodName.CompareNoCase(kDeflateMethodName) == 0
+  return (IsLZMAMethod(methodName) 
+      // || methodName.CompareNoCase(kDeflateMethodName) == 0
       );
 }
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *aType)
+STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
 {
-  *aType = NFileTimeType::kWindows;
+  *type = NFileTimeType::kWindows;
   return S_OK;
 }
 
 
 // it's work only fopr non-solid archives
 
-STDMETHODIMP CHandler::DeleteItems(IOutStream *anOutStream, 
-    const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack)
+STDMETHODIMP CHandler::DeleteItems(IOutStream *outStream, 
+    const UINT32* indices, UINT32 numItems, IUpdateCallBack *updateCallback)
 {
   COM_TRY_BEGIN
-  CRecordVector<bool> aCompressStatuses;
-  CRecordVector<UINT32> aCopyIndexes;
-  int anIndex = 0;
-  for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
+  CRecordVector<bool> compressStatuses;
+  CRecordVector<UINT32> copyIndexes;
+  int index = 0;
+  int i;
+  for(i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
   {
-    if (m_Database.m_NumUnPackStreamsVector[i] != 1)
+    if (_database.NumUnPackStreamsVector[i] != 1)
       return E_NOTIMPL;
   }
-  for(i = 0; i < m_Database.m_Files.Size(); i++)
+  for(i = 0; i < _database.Files.Size(); i++)
   {
-    // bool aCopyMode = true;
-    if(anIndex < aNumItems && i == anIndexes[anIndex])
-      anIndex++;
+    // bool copyMode = true;
+    if(index < numItems && i == indices[index])
+      index++;
     else
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(i);
+      compressStatuses.Add(false);
+      copyIndexes.Add(i);
     }
   }
-  CCompressionMethodMode aMethodMode, aHeaderMethod;
-  RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));
-  aMethodMode.m_MultiThread = m_MultiThread;
-  aMethodMode.m_MultiThreadMult = m_MultiThreadMult;
-  aHeaderMethod.m_MultiThread = m_MultiThread;
-  aHeaderMethod.m_MultiThreadMult = m_MultiThreadMult;
+  CCompressionMethodMode methodMode, headerMethod;
+  RETURN_IF_NOT_S_OK(SetCompressionMethod(methodMode, headerMethod));
+  methodMode.MultiThread = _multiThread;
+  methodMode.MultiThreadMult = _multiThreadMult;
+  headerMethod.MultiThread = _multiThread;
+  headerMethod.MultiThreadMult = _multiThreadMult;
 
-  UpdateMain(m_Database, aCompressStatuses,
-      CObjectVector<CUpdateItemInfo>(), aCopyIndexes,
-      anOutStream, m_InStream, &m_Database.m_ArchiveInfo, 
-      NULL, (m_CompressHeaders ? &aHeaderMethod: 0), 
-      anUpdateCallBack, false);
+  UpdateMain(_database, compressStatuses,
+      CObjectVector<CUpdateItemInfo>(), copyIndexes,
+      outStream, _inStream, &_database.ArchiveInfo, 
+      NULL, (_compressHeaders ? &headerMethod: 0), 
+      updateCallback, false);
   return S_OK;
   COM_TRY_END
 }
@@ -143,22 +144,22 @@ CNameToPropID g_NameToPropID[] =
   { NEncodingProperies::kAlgorithm, VT_UI4, "a", false }
 };
 
-bool ConvertProperty(PROPVARIANT aPropFrom, VARTYPE aVarType, 
-    NCOM::CPropVariant & aPropTo)
+bool ConvertProperty(PROPVARIANT srcProp, VARTYPE varType, 
+    NCOM::CPropVariant &destProp)
 {
-  if (aVarType == aPropFrom.vt)
+  if (varType == srcProp.vt)
   {
-    aPropTo = aPropFrom;
+    destProp = srcProp;
     return true;
   }
-  if (aVarType == VT_UI1)
+  if (varType == VT_UI1)
   {
-    if(aPropFrom.vt == VT_UI4)
+    if(srcProp.vt == VT_UI4)
     {
-      UINT32 aValue = aPropFrom.ulVal;
-      if (aValue > 0xFF)
+      UINT32 value = srcProp.ulVal;
+      if (value > 0xFF)
         return false;
-      aPropTo = BYTE(aValue);
+      destProp = BYTE(value);
       return true;
     }
   }
@@ -167,352 +168,353 @@ bool ConvertProperty(PROPVARIANT aPropFrom, VARTYPE aVarType,
     
 const kNumNameToPropIDItems = sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]);
 
-int FindPropIdFromStringName(const AString &aName)
+int FindPropIdFromStringName(const AString &name)
 {
   for (int i = 0; i < kNumNameToPropIDItems; i++)
-    if (aName.CompareNoCase(g_NameToPropID[i].Name) == 0)
+    if (name.CompareNoCase(g_NameToPropID[i].Name) == 0)
       return i;
   return -1;
 }
 
-HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
-    CCompressionMethodMode &aHeaderMethod)
+HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &methodMode,
+    CCompressionMethodMode &headerMethod)
 {
   #ifndef EXCLUDE_COM
-  CObjectVector<NRegistryInfo::CMethodInfo2> aMethodInfoVector;
-  if (!NRegistryInfo::EnumerateAllMethods(aMethodInfoVector))
+  CObjectVector<NRegistryInfo::CMethodInfo2> methodInfoVector;
+  if (!NRegistryInfo::EnumerateAllMethods(methodInfoVector))
     return E_FAIL;
   #endif
  
 
-  if (m_Methods.IsEmpty())
+  if (_methods.IsEmpty())
   {
-    COneMethodInfo anOneMethodInfo;
-    anOneMethodInfo.MethodName = kDefaultMethodName;
-    anOneMethodInfo.MatchFinderIsDefined = false;
-    m_Methods.Add(anOneMethodInfo);
+    COneMethodInfo oneMethodInfo;
+    oneMethodInfo.MethodName = kDefaultMethodName;
+    oneMethodInfo.MatchFinderIsDefined = false;
+    _methods.Add(oneMethodInfo);
   }
 
-  for(int i = 0; i < m_Methods.Size(); i++)
+  for(int i = 0; i < _methods.Size(); i++)
   {
-    COneMethodInfo &anOneMethodInfo = m_Methods[i];
-    if (anOneMethodInfo.MethodName.IsEmpty())
-      anOneMethodInfo.MethodName = kDefaultMethodName;
+    COneMethodInfo &oneMethodInfo = _methods[i];
+    if (oneMethodInfo.MethodName.IsEmpty())
+      oneMethodInfo.MethodName = kDefaultMethodName;
 
-    if (IsLZMethod(anOneMethodInfo.MethodName))
+    if (IsLZMethod(oneMethodInfo.MethodName))
     {
-      if (!anOneMethodInfo.MatchFinderIsDefined)
+      if (!oneMethodInfo.MatchFinderIsDefined)
       {
-        anOneMethodInfo.MatchFinderName = GetSystemString(m_MatchFinder);
-        anOneMethodInfo.MatchFinderIsDefined = true;
+        oneMethodInfo.MatchFinderName = GetSystemString(_matchFinder);
+        oneMethodInfo.MatchFinderIsDefined = true;
       }
-      if (IsLZMAMethod(anOneMethodInfo.MethodName))
+      if (IsLZMAMethod(oneMethodInfo.MethodName))
       {
-        for (int j = 0; j < anOneMethodInfo.CoderProperties.Size(); j++)
-          if (anOneMethodInfo.CoderProperties[j].PropID == NEncodedStreamProperies::kDictionarySize)
+        int j;
+        for (j = 0; j < oneMethodInfo.CoderProperties.Size(); j++)
+          if (oneMethodInfo.CoderProperties[j].PropID == NEncodedStreamProperies::kDictionarySize)
             break;
-        if (j == anOneMethodInfo.CoderProperties.Size())
+        if (j == oneMethodInfo.CoderProperties.Size())
         {
-          CProperty aProperty;
-          aProperty.PropID = NEncodedStreamProperies::kDictionarySize;
-          aProperty.Value = m_DefaultDicSize;
-          anOneMethodInfo.CoderProperties.Add(aProperty);
+          CProperty property;
+          property.PropID = NEncodedStreamProperies::kDictionarySize;
+          property.Value = _defaultDicSize;
+          oneMethodInfo.CoderProperties.Add(property);
         }
-        for (j = 0; j < anOneMethodInfo.EncoderProperties.Size(); j++)
-          if (anOneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kAlgorithm)
+        for (j = 0; j < oneMethodInfo.EncoderProperties.Size(); j++)
+          if (oneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kAlgorithm)
             break;
-        if (j == anOneMethodInfo.EncoderProperties.Size())
+        if (j == oneMethodInfo.EncoderProperties.Size())
         {
-          CProperty aProperty;
-          aProperty.PropID = NEncodingProperies::kAlgorithm;
-          aProperty.Value = m_DefaultAlgorithm;
-          anOneMethodInfo.EncoderProperties.Add(aProperty);
+          CProperty property;
+          property.PropID = NEncodingProperies::kAlgorithm;
+          property.Value = _defaultAlgorithm;
+          oneMethodInfo.EncoderProperties.Add(property);
         }
-        for (j = 0; j < anOneMethodInfo.EncoderProperties.Size(); j++)
-          if (anOneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kNumFastBytes)
+        for (j = 0; j < oneMethodInfo.EncoderProperties.Size(); j++)
+          if (oneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kNumFastBytes)
             break;
-        if (j == anOneMethodInfo.EncoderProperties.Size())
+        if (j == oneMethodInfo.EncoderProperties.Size())
         {
-          CProperty aProperty;
-          aProperty.PropID = NEncodingProperies::kNumFastBytes;
-          aProperty.Value = (UINT32)m_DefaultFastBytes;
-          anOneMethodInfo.EncoderProperties.Add(aProperty);
+          CProperty property;
+          property.PropID = NEncodingProperies::kNumFastBytes;
+          property.Value = (UINT32)_defaultFastBytes;
+          oneMethodInfo.EncoderProperties.Add(property);
         }
       }
     }
-    CMethodFull aMethodFull;
-    aMethodFull.MethodInfoEx.NumInStreams = 1;
-    aMethodFull.MethodInfoEx.NumOutStreams = 1;
+    CMethodFull methodFull;
+    methodFull.MethodInfoEx.NumInStreams = 1;
+    methodFull.MethodInfoEx.NumOutStreams = 1;
 
-    bool aDefined = false;
+    bool defined = false;
 
     #ifdef COMPRESS_LZMA
-    if (anOneMethodInfo.MethodName.CompareNoCase("LZMA") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("LZMA") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_LZMA;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_LZMA;
     }
     #endif
 
     #ifdef COMPRESS_PPMD
-    if (anOneMethodInfo.MethodName.CompareNoCase("PPMD") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("PPMD") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_PPMD;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_PPMD;
     }
     #endif
 
     #ifdef COMPRESS_BCJ_X86
-    if (anOneMethodInfo.MethodName.CompareNoCase("BCJ") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("BCJ") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_BCJ_X86;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_BCJ_X86;
     }
     #endif
 
     #ifdef COMPRESS_BCJ2
-    if (anOneMethodInfo.MethodName.CompareNoCase("BCJ2") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("BCJ2") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_BCJ2;
-      aMethodFull.MethodInfoEx.NumInStreams = 4;
-      aMethodFull.MethodInfoEx.NumOutStreams = 1;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_BCJ2;
+      methodFull.MethodInfoEx.NumInStreams = 4;
+      methodFull.MethodInfoEx.NumOutStreams = 1;
     }
     #endif
 
     #ifdef COMPRESS_DEFLATE
-    if (anOneMethodInfo.MethodName.CompareNoCase("Deflate") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("Deflate") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_Deflate;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_Deflate;
     }
     #endif
 
     #ifdef COMPRESS_BZIP2
-    if (anOneMethodInfo.MethodName.CompareNoCase("BZip2") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("BZip2") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_BZip2;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_BZip2;
     }
     #endif
 
     #ifdef COMPRESS_COPY
-    if (anOneMethodInfo.MethodName.CompareNoCase("Copy") == 0)
+    if (oneMethodInfo.MethodName.CompareNoCase("Copy") == 0)
     {
-      aDefined = true;
-      aMethodFull.MethodInfoEx.MethodID = k_Copy;
+      defined = true;
+      methodFull.MethodInfoEx.MethodID = k_Copy;
     }
 
     #endif
     
     #ifdef EXCLUDE_COM
     
-    if (aDefined)
+    if (defined)
     {
   
-      aMethodFull.CoderProperties = anOneMethodInfo.CoderProperties;
-      aMethodFull.EncoderProperties = anOneMethodInfo.EncoderProperties;
-      aMethodFull.MatchFinderIsDefined = anOneMethodInfo.MatchFinderIsDefined;
-      aMethodFull.MatchFinderName = anOneMethodInfo.MatchFinderName;
-      aMethodMode.Methods.Add(aMethodFull);
+      methodFull.CoderProperties = oneMethodInfo.CoderProperties;
+      methodFull.EncoderProperties = oneMethodInfo.EncoderProperties;
+      methodFull.MatchFinderIsDefined = oneMethodInfo.MatchFinderIsDefined;
+      methodFull.MatchFinderName = oneMethodInfo.MatchFinderName;
+      methodMode.Methods.Add(methodFull);
       continue;
     }
     
     #else
 
     int j;
-    for (j = 0; j < aMethodInfoVector.Size(); j++)
-      if (aMethodInfoVector[j].Name.CompareNoCase(anOneMethodInfo.MethodName) == 0)
+    for (j = 0; j < methodInfoVector.Size(); j++)
+      if (methodInfoVector[j].Name.CompareNoCase(oneMethodInfo.MethodName) == 0)
         break;
-    if (j == aMethodInfoVector.Size())
+    if (j == methodInfoVector.Size())
       return E_FAIL;
-    const NRegistryInfo::CMethodInfo2 &aMethodInfo = aMethodInfoVector[j];
-    if (!aMethodInfo.EncoderIsAssigned)
+    const NRegistryInfo::CMethodInfo2 &methodInfo = methodInfoVector[j];
+    if (!methodInfo.EncoderIsAssigned)
       return E_FAIL;
 
-    aMethodFull.MethodInfoEx.MethodID = aMethodInfo.MethodID;
-    aMethodFull.MethodInfoEx.NumInStreams = aMethodInfo.NumInStreams;
-    aMethodFull.MethodInfoEx.NumOutStreams = aMethodInfo.NumOutStreams;
+    methodFull.MethodInfoEx.MethodID = methodInfo.MethodID;
+    methodFull.MethodInfoEx.NumInStreams = methodInfo.NumInStreams;
+    methodFull.MethodInfoEx.NumOutStreams = methodInfo.NumOutStreams;
 
-    aMethodFull.EncoderClassID = aMethodInfo.Encoder;
-    aMethodFull.CoderProperties = anOneMethodInfo.CoderProperties;
-    aMethodFull.EncoderProperties = anOneMethodInfo.EncoderProperties;
-    aMethodFull.MatchFinderIsDefined = anOneMethodInfo.MatchFinderIsDefined;
-    if (anOneMethodInfo.MatchFinderIsDefined)
+    methodFull.EncoderClassID = methodInfo.Encoder;
+    methodFull.CoderProperties = oneMethodInfo.CoderProperties;
+    methodFull.EncoderProperties = oneMethodInfo.EncoderProperties;
+    methodFull.MatchFinderIsDefined = oneMethodInfo.MatchFinderIsDefined;
+    if (oneMethodInfo.MatchFinderIsDefined)
     {
-      NRegistryInfo::CMatchFinderInfo aMatchFinderInfo;
-      if (!NRegistryInfo::GetMatchFinder(anOneMethodInfo.MatchFinderName, aMatchFinderInfo))
+      NRegistryInfo::CMatchFinderInfo matchFinderInfo;
+      if (!NRegistryInfo::GetMatchFinder(oneMethodInfo.MatchFinderName, matchFinderInfo))
         return E_INVALIDARG;
-      aMethodFull.MatchFinderClassID = aMatchFinderInfo.ClassID;
+      methodFull.MatchFinderClassID = matchFinderInfo.ClassID;
     }
-    aDefined = true;
+    defined = true;
     
     #endif
-    if (!aDefined)
+    if (!defined)
       return E_FAIL;
     
-    aMethodMode.Methods.Add(aMethodFull);
+    methodMode.Methods.Add(methodFull);
   }
-  aMethodMode.m_Binds = m_Binds;
-  if (m_CompressHeaders)
-    aHeaderMethod.Methods.Add(aMethodMode.Methods.Back());
+  methodMode.Binds = _binds;
+  if (_compressHeaders)
+    headerMethod.Methods.Add(methodMode.Methods.Back());
   return S_OK;
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
-    IUpdateCallBack *anUpdateCallBack)
+STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+    IUpdateCallBack *updateCallback)
 {
   COM_TRY_BEGIN
 
-  CRecordVector<bool> aCompressStatuses;
-  CObjectVector<CUpdateItemInfo> anUpdateItems;
-  CRecordVector<UINT32> aCopyIndexes;
+  CRecordVector<bool> compressStatuses;
+  CObjectVector<CUpdateItemInfo> updateItems;
+  CRecordVector<UINT32> copyIndexes;
   
-  CComPtr<IUpdateCallBack2> anUpdateCallBack2;
-  anUpdateCallBack->QueryInterface(&anUpdateCallBack2);
+  CComPtr<IUpdateCallBack2> updateCallback2;
+  updateCallback->QueryInterface(&updateCallback2);
 
-  int anIndex = 0;
-  for(int i = 0; i < aNumItems; i++)
+  int index = 0;
+  for(int i = 0; i < numItems; i++)
   {
-    CUpdateItemInfo anUpdateItemInfo;
-    INT32 anCompress;
-    INT32 anExistInArchive;
-    INT32 anIndexInServer;
-    CComBSTR aName;
-    bool anIsAnti;
-    if (anUpdateCallBack2)
+    CUpdateItemInfo updateItemInfo;
+    INT32 compress;
+    INT32 existInArchive;
+    INT32 indexInServer;
+    CComBSTR name;
+    bool isAnti;
+    if (updateCallback2)
     {
       INT32 _anIsAnti;
-      RETURN_IF_NOT_S_OK(anUpdateCallBack2->GetUpdateItemInfo2(i,
-        &anCompress, // 1 - compress 0 - copy
-        &anExistInArchive,
-        &anIndexInServer,
-        &anUpdateItemInfo.Attributes,
-        &anUpdateItemInfo.CreationTime,
+      RETURN_IF_NOT_S_OK(updateCallback2->GetUpdateItemInfo2(i,
+        &compress, // 1 - compress 0 - copy
+        &existInArchive,
+        &indexInServer,
+        &updateItemInfo.Attributes,
+        &updateItemInfo.CreationTime,
         NULL,
-        &anUpdateItemInfo.LastWriteTime,
-        &anUpdateItemInfo.Size, 
-        &aName,
+        &updateItemInfo.LastWriteTime,
+        &updateItemInfo.Size, 
+        &name,
         &_anIsAnti));
-        anIsAnti = MyBoolToBool(_anIsAnti);
+        isAnti = MyBoolToBool(_anIsAnti);
     }
     else
     {
-      RETURN_IF_NOT_S_OK(anUpdateCallBack->GetUpdateItemInfo(i,
-        &anCompress, // 1 - compress 0 - copy
-        &anExistInArchive,
-        &anIndexInServer,
-        &anUpdateItemInfo.Attributes,
-        &anUpdateItemInfo.CreationTime,
+      RETURN_IF_NOT_S_OK(updateCallback->GetUpdateItemInfo(i,
+        &compress, // 1 - compress 0 - copy
+        &existInArchive,
+        &indexInServer,
+        &updateItemInfo.Attributes,
+        &updateItemInfo.CreationTime,
         NULL,
-        &anUpdateItemInfo.LastWriteTime,
-        &anUpdateItemInfo.Size, 
-        &aName));
-      anIsAnti = false;
+        &updateItemInfo.LastWriteTime,
+        &updateItemInfo.Size, 
+        &name));
+      isAnti = false;
     }
-    if (MyBoolToBool(anCompress))
+    if (MyBoolToBool(compress))
     {
-      anUpdateItemInfo.IsAnti = anIsAnti;
-      anUpdateItemInfo.SetDirectoryStatusFromAttributes();
+      updateItemInfo.IsAnti = isAnti;
+      updateItemInfo.SetDirectoryStatusFromAttributes();
 
-      if (aName)
-        anUpdateItemInfo.Name = aName;
+      if (name)
+        updateItemInfo.Name = name;
 
-      anUpdateItemInfo.AttributesAreDefined = true;
-      anUpdateItemInfo.CreationTimeIsDefined = true;
-      anUpdateItemInfo.LastWriteTimeIsDefined = true;
+      updateItemInfo.AttributesAreDefined = true;
+      updateItemInfo.CreationTimeIsDefined = true;
+      updateItemInfo.LastWriteTimeIsDefined = true;
 
-      anUpdateItemInfo.IndexInClient = i;
+      updateItemInfo.IndexInClient = i;
 
-      if (anIsAnti)
+      if (isAnti)
       {
-        anUpdateItemInfo.AttributesAreDefined = false;
-        anUpdateItemInfo.CreationTimeIsDefined = false;
-        anUpdateItemInfo.LastWriteTimeIsDefined = false;
-        anUpdateItemInfo.Size = 0;
-        if (MyBoolToBool(anExistInArchive) && !aName)
+        updateItemInfo.AttributesAreDefined = false;
+        updateItemInfo.CreationTimeIsDefined = false;
+        updateItemInfo.LastWriteTimeIsDefined = false;
+        updateItemInfo.Size = 0;
+        if (MyBoolToBool(existInArchive) && !name)
         {
-          const CFileItemInfo &anItem = m_Database.m_Files[anIndexInServer];
-          anUpdateItemInfo.Name = m_Database.m_Files[anIndexInServer].Name;
-          anUpdateItemInfo.IsDirectory = anItem.IsDirectory;
+          const CFileItemInfo &item = _database.Files[indexInServer];
+          updateItemInfo.Name = _database.Files[indexInServer].Name;
+          updateItemInfo.IsDirectory = item.IsDirectory;
         }
       }
 
-      if(MyBoolToBool(anExistInArchive))
+      if(MyBoolToBool(existInArchive))
       {
-        // const CFolderInfo &aFolderInfo = m_Folders[anIndexInServer];
-        anUpdateItemInfo.Commented = false;
-        if(anUpdateItemInfo.Commented)
+        // const CFolderInfo &aFolderInfo = m_Folders[indexInServer];
+        updateItemInfo.Commented = false;
+        if(updateItemInfo.Commented)
         {
-          // anUpdateItemInfo.CommentRange.Position = anItemInfo.GetCommentPosition();
-          // anUpdateItemInfo.CommentRange.Size  = anItemInfo.CommentSize;
+          // updateItemInfo.CommentRange.Position = itemInfo.GetCommentPosition();
+          // updateItemInfo.CommentRange.Size  = itemInfo.CommentSize;
         }
       }
       else
-        anUpdateItemInfo.Commented = false;
-      aCompressStatuses.Add(true);
-      anUpdateItems.Add(anUpdateItemInfo);
+        updateItemInfo.Commented = false;
+      compressStatuses.Add(true);
+      updateItems.Add(updateItemInfo);
     }
     else
     {
-      aCompressStatuses.Add(false);
-      aCopyIndexes.Add(anIndexInServer);
+      compressStatuses.Add(false);
+      copyIndexes.Add(indexInServer);
     }
   }
 
-  if (!aCopyIndexes.IsEmpty())
-    for(int i = 0; i < m_Database.m_NumUnPackStreamsVector.Size(); i++)
-      if (m_Database.m_NumUnPackStreamsVector[i] != 1)
+  if (!copyIndexes.IsEmpty())
+    for(int i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
+      if (_database.NumUnPackStreamsVector[i] != 1)
         return E_NOTIMPL;
 
-  CCompressionMethodMode aMethodMode, aHeaderMethod;
-  RETURN_IF_NOT_S_OK(SetCompressionMethod(aMethodMode, aHeaderMethod));
-  aMethodMode.m_MultiThread = m_MultiThread;
-  aMethodMode.m_MultiThreadMult = m_MultiThreadMult;
-  aHeaderMethod.m_MultiThread = m_MultiThread;
-  aHeaderMethod.m_MultiThreadMult = m_MultiThreadMult;
+  CCompressionMethodMode methodMode, headerMethod;
+  RETURN_IF_NOT_S_OK(SetCompressionMethod(methodMode, headerMethod));
+  methodMode.MultiThread = _multiThread;
+  methodMode.MultiThreadMult = _multiThreadMult;
+  headerMethod.MultiThread = _multiThread;
+  headerMethod.MultiThreadMult = _multiThreadMult;
 
-  NArchive::N7z::CInArchiveInfo *anInArchiveInfo;
-  if (!m_InStream)
-    anInArchiveInfo = 0;
+  NArchive::N7z::CInArchiveInfo *inArchiveInfo;
+  if (!_inStream)
+    inArchiveInfo = 0;
   else
-    anInArchiveInfo = &m_Database.m_ArchiveInfo;
+    inArchiveInfo = &_database.ArchiveInfo;
 
-  return UpdateMain(m_Database, aCompressStatuses,
-      anUpdateItems, aCopyIndexes, anOutStream, m_InStream, anInArchiveInfo, 
-      &aMethodMode, m_CompressHeaders ? &aHeaderMethod: 0, 
-      anUpdateCallBack, m_Solid);
+  return UpdateMain(_database, compressStatuses,
+      updateItems, copyIndexes, outStream, _inStream, inArchiveInfo, 
+      &methodMode, _compressHeaders ? &headerMethod: 0, 
+      updateCallback, _solid);
   COM_TRY_END
 }
 
 static const kMaxNumberOfDigitsInInputNumber = 9;
 
-static int ParseNumberString(const AString &aString, int &aNumber)
+static int ParseNumberString(const AString &srcString, int &number)
 {
-  AString aNumberString;
+  AString numberString;
   int i = 0;
-  for(; i < aString.Length() && i < kMaxNumberOfDigitsInInputNumber; i++)
+  for(; i < srcString.Length() && i < kMaxNumberOfDigitsInInputNumber; i++)
   {
-    char aChar = aString[i];
-    if(!isdigit(aChar) && (aChar != '-' || i > 0))
+    char c = srcString[i];
+    if(!isdigit(c) && (c != '-' || i > 0))
       break;
-    aNumberString += aChar;
+    numberString += c;
   }
   if (i > 0)
-    aNumber = atoi(aNumberString);
+    number = atoi(numberString);
   return i;
 }
 
-static UINT32 ParseUINT32String(const AString &aString, UINT32 &aNumber)
+static UINT32 ParseUINT32String(const AString &srcString, UINT32 &number)
 {
-  int aNumberTemp;
-  int aPos = ParseNumberString(aString, aNumberTemp);
-  if (aPos <= 0)
-    return aPos;
-  if (aNumberTemp < 0)
+  int tempNumber;
+  int pos = ParseNumberString(srcString, tempNumber);
+  if (pos <= 0)
+    return pos;
+  if (tempNumber < 0)
     return 0;
-  aNumber = aNumberTemp;
-  return aPos;
+  number = tempNumber;
+  return pos;
 }
 
 static const kLogarithmicSizeLimit = 32;
@@ -521,49 +523,50 @@ static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
 static const char kMegaByteSymbol = 'M';
 
-HRESULT ParseDictionaryValues(const AString &_aString, 
-    BYTE &aLogDicSize, UINT32 &aDicSize)
+HRESULT ParseDictionaryValues(const AString &srcStringSpec, 
+    BYTE &logDicSize, UINT32 &dicSize)
 {
-  AString aString = _aString;
-  int aNumber;
-  aString.MakeUpper();
-  int aNumDigits = ParseNumberString(aString, aNumber);
-  if (aNumDigits == 0 || aString.Length() > aNumDigits + 1)
+  AString srcString = srcStringSpec;
+  int number;
+  srcString.MakeUpper();
+  int numDigits = ParseNumberString(srcString, number);
+  if (numDigits == 0 || srcString.Length() > numDigits + 1)
     return E_FAIL;
-  if (aString.Length() == aNumDigits)
+  if (srcString.Length() == numDigits)
   {
-    if (aNumber >= kLogarithmicSizeLimit)
+    if (number >= kLogarithmicSizeLimit)
       return E_INVALIDARG;
-    aLogDicSize = aNumber;
-    aDicSize = 1 << aNumber;
+    logDicSize = number;
+    dicSize = 1 << number;
     return S_OK;
   }
-  switch (aString[aNumDigits])
+  switch (srcString[numDigits])
   {
   case kByteSymbol:
     /*
-    if (aNumber > (UINT32(1) << kMaxLogarithmicSize))
+    if (number > (UINT32(1) << kMaxLogarithmicSize))
       return E_INVALIDARG;
     */
-    aDicSize = aNumber;
+    dicSize = number;
     break;
   case kKiloByteSymbol:
-    if (aNumber >= (1 << (kLogarithmicSizeLimit - 10)))
+    if (number >= (1 << (kLogarithmicSizeLimit - 10)))
       return E_INVALIDARG;
-    aDicSize = aNumber << 10;
+    dicSize = number << 10;
     break;
   case kMegaByteSymbol:
-    if (aNumber >= (1 << (kLogarithmicSizeLimit - 20)))
+    if (number >= (1 << (kLogarithmicSizeLimit - 20)))
       return E_INVALIDARG;
-    aDicSize = aNumber << 20;
+    dicSize = number << 20;
     break;
   default:
     return E_INVALIDARG;
   }
-  for (int i = 0; i < kLogarithmicSizeLimit; i++)
-    if (aDicSize <= (1 << i))
+  int i;
+  for (i = 0; i < kLogarithmicSizeLimit; i++)
+    if (dicSize <= (1 << i))
       break;
-  aLogDicSize = i;
+  logDicSize = i;
   return S_OK;
 }
 
@@ -572,26 +575,26 @@ static inline UINT GetCurrentFileCodePage()
   return AreFileApisANSI() ? CP_ACP : CP_OEMCP;
 }
 
-static HRESULT SetBoolProperty(bool &aDest, const PROPVARIANT &aValue)
+static HRESULT SetBoolProperty(bool &dest, const PROPVARIANT &value)
 {
-  switch(aValue.vt)
+  switch(value.vt)
   {
     case VT_EMPTY:
-      aDest = true;
+      dest = true;
       break;
     /*
     case VT_UI4:
-      aDest = (aValue.ulVal != 0);
+      dest = (value.ulVal != 0);
       break;
     */
     case VT_BSTR:
     {
-      UString aValueString = aValue.bstrVal;
-      aValueString.MakeUpper();
-      if (aValueString.Compare(L"ON") == 0)
-        aDest = true;
-      else if (aValueString.Compare(L"OFF") == 0)
-        aDest = false;
+      UString valueString = value.bstrVal;
+      valueString.MakeUpper();
+      if (valueString.Compare(L"ON") == 0)
+        dest = true;
+      else if (valueString.Compare(L"OFF") == 0)
+        dest = false;
       else
         return E_INVALIDARG;
       break;
@@ -603,20 +606,20 @@ static HRESULT SetBoolProperty(bool &aDest, const PROPVARIANT &aValue)
 }
 
 /*
-static HRESULT SetComplexProperty(bool &aBoolStatus, UINT32 &aNumber, 
-    const PROPVARIANT &aValue)
+static HRESULT SetComplexProperty(bool &boolStatus, UINT32 &number, 
+    const PROPVARIANT &value)
 {
-  switch(aValue.vt)
+  switch(value.vt)
   {
     case VT_EMPTY:
     case VT_BSTR:
     {
-      RETURN_IF_NOT_S_OK(SetBoolProperty(aBoolStatus, aValue));
+      RETURN_IF_NOT_S_OK(SetBoolProperty(boolStatus, value));
       return S_OK;
     }
     case VT_UI4:
-      aBoolStatus = true;
-      aNumber = (aValue.ulVal);
+      boolStatus = true;
+      number = (value.ulVal);
       break;
     default:
       return E_INVALIDARG;
@@ -625,192 +628,314 @@ static HRESULT SetComplexProperty(bool &aBoolStatus, UINT32 &aNumber,
 }
 */
 
-static HRESULT GetBindInfoPart(AString &aString, UINT32 &aCoder, UINT32 &aStream)
+static HRESULT GetBindInfoPart(AString &srcString, UINT32 &coder, UINT32 &stream)
 {
-  aStream = 0;
-  int anIndex = ParseUINT32String(aString, aCoder);
-  if (anIndex == 0)
+  stream = 0;
+  int index = ParseUINT32String(srcString, coder);
+  if (index == 0)
     return E_INVALIDARG;
-  aString.Delete(0, anIndex);
-  if (aString[0] == 'S')
+  srcString.Delete(0, index);
+  if (srcString[0] == 'S')
   {
-    aString.Delete(0);
-    int anIndex = ParseUINT32String(aString, aStream);
-    if (anIndex == 0)
+    srcString.Delete(0);
+    int index = ParseUINT32String(srcString, stream);
+    if (index == 0)
       return E_INVALIDARG;
-    aString.Delete(0, anIndex);
+    srcString.Delete(0, index);
   }
   return S_OK;
 }
 
-static HRESULT GetBindInfo(AString &aString, CBind &aBind)
+static HRESULT GetBindInfo(AString &srcString, CBind &bind)
 {
-  RETURN_IF_NOT_S_OK(GetBindInfoPart(aString, aBind.OutCoder, aBind.OutStream));
-  if (aString[0] != ':')
+  RETURN_IF_NOT_S_OK(GetBindInfoPart(srcString, bind.OutCoder, bind.OutStream));
+  if (srcString[0] != ':')
     return E_INVALIDARG;
-  aString.Delete(0);
-  RETURN_IF_NOT_S_OK(GetBindInfoPart(aString, aBind.InCoder, aBind.InStream));
-  if (!aString.IsEmpty())
+  srcString.Delete(0);
+  RETURN_IF_NOT_S_OK(GetBindInfoPart(srcString, bind.InCoder, bind.InStream));
+  if (!srcString.IsEmpty())
     return E_INVALIDARG;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties)
+static void SplitParams(const UString &srcString, UStringVector &subStrings)
 {
-  UINT aCodePage = GetCurrentFileCodePage();
-  COM_TRY_BEGIN
-  m_Methods.Clear();
-  m_Binds.Clear();
-  Init();
-  int aMinNumber = 0;
-
-  for (int i = 0; i < aNumProperties; i++)
+  subStrings.Clear();
+  UString name;
+  int len = srcString.Length();
+  if (len == 0)
+    return;
+  for (int i = 0; i < len; i++)
   {
-    AString aName = UnicodeStringToMultiByte(UString(aNames[i]));
-    aName.MakeUpper();
-
-    const PROPVARIANT &aValue = aValues[i];
-
-    if (aName.CompareNoCase("0") == 0 || 
-        aName.CompareNoCase("1") == 0 || 
-        aName.CompareNoCase("X") == 0)
+    wchar_t c = srcString[i];
+    if (c == L':')
     {
-      if (aValue.vt == VT_EMPTY)
+      subStrings.Add(name);
+      name.Empty();
+    }
+    else
+      name += c;
+  }
+  subStrings.Add(name);
+}
+
+static void SplitParam(const UString &param, UString &name, UString &value)
+{
+  int eqPos = param.Find(L'=');
+  if (eqPos >= 0)
+  {
+    name = param.Left(eqPos);
+    value = param.Mid(eqPos + 1);
+    return;
+  }
+  for(int i = 0; i < param.Length(); i++)
+  {
+    wchar_t c = param[i];
+    if (c >= L'0' && c <= L'9')
+    {
+      name = param.Left(i);
+      value = param.Mid(i);
+      return;
+    }
+  }
+  name = param;
+}
+
+static bool ParseNumberString(const UString &aString, UINT32 &aNumber)
+{
+  wchar_t *anEndPtr;
+  aNumber = wcstoul(aString, &anEndPtr, 10);
+  return (anEndPtr - aString == aString.Length());
+}
+
+
+HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value)
+{
+  if (name.CompareNoCase(L"MF") == 0)
+  {
+    oneMethodInfo.MatchFinderIsDefined = true;
+    oneMethodInfo.MatchFinderName = GetSystemString(value);
+  }
+  else
+  {
+    CProperty property;
+    if (name.CompareNoCase(L"D") == 0 || name.CompareNoCase(L"MEM") == 0)
+    {
+      BYTE logDicSize;
+      UINT32 dicSize;
+      RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(value), 
+          logDicSize, dicSize));
+      if (name.CompareNoCase(L"D") == 0)
+        property.PropID = NEncodedStreamProperies::kDictionarySize;
+      else
+        property.PropID = NEncodedStreamProperies::kUsedMemorySize;
+      property.Value = dicSize;
+      oneMethodInfo.CoderProperties.Add(property);
+    }
+    else
+    {
+      int index = FindPropIdFromStringName(UnicodeStringToMultiByte(name));
+      if (index < 0)
+        return E_INVALIDARG;
+      
+      const CNameToPropID &nameToPropID = g_NameToPropID[index];
+      property.PropID = nameToPropID.PropID;
+
+      NCOM::CPropVariant propValue;
+
+      UINT32 number;
+      if (ParseNumberString(value, number))
+        propValue = number;
+      else
+        propValue = value;
+      
+      if (!ConvertProperty(propValue, nameToPropID.VarType, property.Value))
+        return E_INVALIDARG;
+      
+      if (nameToPropID.CoderProperties)
+        oneMethodInfo.CoderProperties.Add(property);
+      else
+        oneMethodInfo.EncoderProperties.Add(property);
+    }
+  }
+  return S_OK;
+}
+
+HRESULT CHandler::SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString)
+{
+  UStringVector params;
+  SplitParams(srcString, params);
+  if (params.Size() > 0)
+    oneMethodInfo.MethodName = UnicodeStringToMultiByte(params[0]);
+  for (int i = 1; i < params.Size(); i++)
+  {
+    const UString &param = params[i];
+    UString name, value;
+    SplitParam(param, name, value);
+    RETURN_IF_NOT_S_OK(SetParam(oneMethodInfo, name, value));
+  }
+  return S_OK;
+}
+
+
+STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *values, INT32 numProperties)
+{
+  UINT codePage = GetCurrentFileCodePage();
+  COM_TRY_BEGIN
+  _methods.Clear();
+  _binds.Clear();
+  Init();
+  int minNumber = 0;
+
+  for (int i = 0; i < numProperties; i++)
+  {
+    AString name = UnicodeStringToMultiByte(UString(names[i]));
+    name.MakeUpper();
+
+    const PROPVARIANT &value = values[i];
+
+    if (name.CompareNoCase("0") == 0 || 
+        name.CompareNoCase("1") == 0 || 
+        name.CompareNoCase("X") == 0)
+    {
+      if (value.vt == VT_EMPTY)
       {
-        if (aName.CompareNoCase("X") == 0)
+        if (name.CompareNoCase("X") == 0)
         {
-          m_DefaultAlgorithm = kAlgorithmForX;
-          m_DefaultDicSize = kDicSizeForX;
-          m_DefaultFastBytes = kFastBytesForX;
+          _defaultAlgorithm = kAlgorithmForX;
+          _defaultDicSize = kDicSizeForX;
+          _defaultFastBytes = kFastBytesForX;
         }
-        else if (aName.CompareNoCase("0") == 0)
+        else if (name.CompareNoCase("0") == 0)
         {
-          m_DefaultAlgorithm = kAlgorithmForFast;
-          m_MatchFinder = kDefaultMatchFinderForFast;
-          m_DefaultDicSize = kDicSizeForFast;
+          _defaultAlgorithm = kAlgorithmForFast;
+          _matchFinder = kDefaultMatchFinderForFast;
+          _defaultDicSize = kDicSizeForFast;
         }
         continue;
       }
     }
 
-    if (aName.IsEmpty())
+    if (name.IsEmpty())
       return E_INVALIDARG;
-    if (aName[0] == 'B')
+    if (name[0] == 'B')
     {
-      aName.Delete(0);
-      CBind aBind;
-      RETURN_IF_NOT_S_OK(GetBindInfo(aName, aBind));
-      m_Binds.Add(aBind);
+      name.Delete(0);
+      CBind bind;
+      RETURN_IF_NOT_S_OK(GetBindInfo(name, bind));
+      _binds.Add(bind);
       continue;
     }
 
       
-    int aNumber;
-    int anIndex = ParseNumberString(aName, aNumber);
-    AString aRealName = aName.Mid(anIndex);
-    if (anIndex == 0)
+    int number;
+    int index = ParseNumberString(name, number);
+    AString realName = name.Mid(index);
+    if (index == 0)
     {
-      if (aName.CompareNoCase("S") == 0)
+      if (name.CompareNoCase("S") == 0)
       {
-        RETURN_IF_NOT_S_OK(SetBoolProperty(m_Solid, aValue));
+        RETURN_IF_NOT_S_OK(SetBoolProperty(_solid, value));
         continue;
       }
-      else if (aName.CompareNoCase("HC") == 0)
+      else if (name.CompareNoCase("HC") == 0)
       {
-        RETURN_IF_NOT_S_OK(SetBoolProperty(m_CompressHeaders, aValue));
+        RETURN_IF_NOT_S_OK(SetBoolProperty(_compressHeaders, value));
         continue;
       }
-      else if (aName.CompareNoCase("MT") == 0)
+      else if (name.CompareNoCase("MT") == 0)
       {
-        m_MultiThreadMult = 200;
-        RETURN_IF_NOT_S_OK(SetBoolProperty(m_MultiThread, aValue));
-        // RETURN_IF_NOT_S_OK(SetComplexProperty(m_MultiThread, m_MultiThreadMult, aValue));
+        _multiThreadMult = 200;
+        RETURN_IF_NOT_S_OK(SetBoolProperty(_multiThread, value));
+        // RETURN_IF_NOT_S_OK(SetComplexProperty(MultiThread, _multiThreadMult, value));
         continue;
       }
-      aNumber = 0;
+      number = 0;
     }
-    if (aNumber > 100)
+    if (number > 100)
       return E_FAIL;
-    if (aNumber < aMinNumber)
+    if (number < minNumber)
     {
       /*
-      for (int i = aNumber; i < aMinNumber; i++)
+      for (int i = number; i < minNumber; i++)
       {
-        COneMethodInfo anOneMethodInfo;
-        anOneMethodInfo.MatchFinderIsDefined = false;
-        m_Methods.Insert(0, anOneMethodInfo);
+        COneMethodInfo oneMethodInfo;
+        oneMethodInfo.MatchFinderIsDefined = false;
+        _methods.Insert(0, oneMethodInfo);
       }
-      aMinNumber = aNumber;
+      minNumber = number;
       */
       return E_INVALIDARG;
     }
-    aNumber -= aMinNumber;
-    for(int j = m_Methods.Size(); j <= aNumber; j++)
+    number -= minNumber;
+    for(int j = _methods.Size(); j <= number; j++)
     {
-      COneMethodInfo anOneMethodInfo;
-      anOneMethodInfo.MatchFinderIsDefined = false;
-      m_Methods.Add(anOneMethodInfo);
+      COneMethodInfo oneMethodInfo;
+      oneMethodInfo.MatchFinderIsDefined = false;
+      _methods.Add(oneMethodInfo);
     }
 
-    COneMethodInfo &anOneMethodInfo = m_Methods[aNumber];
+    COneMethodInfo &oneMethodInfo = _methods[number];
 
-    if (/*aRealName.CompareNoCase("M") == 0 || */ aRealName.Length() == 0)
+    if (realName.Length() == 0)
     {
-      if (aValue.vt != VT_BSTR)
+      if (value.vt != VT_BSTR)
         return E_INVALIDARG;
-      anOneMethodInfo.MethodName = UnicodeStringToMultiByte(UString(aValue.bstrVal));
+      
+      // oneMethodInfo.MethodName = UnicodeStringToMultiByte(UString(value.bstrVal));
+      RETURN_IF_NOT_S_OK(SetParams(oneMethodInfo, value.bstrVal));
     }
-    else if (aRealName.CompareNoCase("MF") == 0)
+    else if (realName.CompareNoCase("MF") == 0)
     {
-      // if (aValue.vt != VT_UI4)
-      if (aValue.vt != VT_BSTR)
+      // if (value.vt != VT_UI4)
+      if (value.vt != VT_BSTR)
         return E_INVALIDARG;
-      anOneMethodInfo.MatchFinderIsDefined = true;
-      // anOneMethodInfo.MatchFinderIndex = aValue.ulVal;
-      anOneMethodInfo.MatchFinderName = GetSystemString(aValue.bstrVal);
+      oneMethodInfo.MatchFinderIsDefined = true;
+      // oneMethodInfo.MatchFinderIndex = value.ulVal;
+      oneMethodInfo.MatchFinderName = GetSystemString(value.bstrVal);
     }
     else
     {
-      CProperty aProperty;
-      if (aRealName.CompareNoCase("D") == 0 || aRealName.CompareNoCase("MEM") == 0)
+      CProperty property;
+      if (realName.CompareNoCase("D") == 0 || realName.CompareNoCase("MEM") == 0)
       {
-        BYTE aLogDicSize;
-        UINT32 aDicSize;
-        if (aValue.vt == VT_UI4)
+        BYTE logDicSize;
+        UINT32 dicSize;
+        if (value.vt == VT_UI4)
         {
-          aLogDicSize = aValue.ulVal;
-          aDicSize = 1 << aLogDicSize;
+          logDicSize = value.ulVal;
+          dicSize = 1 << logDicSize;
         }
-        else if (aValue.vt == VT_BSTR)
+        else if (value.vt == VT_BSTR)
         {
-          RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(aValue.bstrVal), 
-              aLogDicSize, aDicSize));
+          RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(value.bstrVal), 
+              logDicSize, dicSize));
         }
         else 
           return E_FAIL;
-        if (aRealName.CompareNoCase("D") == 0)
-          aProperty.PropID = NEncodedStreamProperies::kDictionarySize;
+        if (realName.CompareNoCase("D") == 0)
+          property.PropID = NEncodedStreamProperies::kDictionarySize;
         else
-          aProperty.PropID = NEncodedStreamProperies::kUsedMemorySize;
-        aProperty.Value = aDicSize;
-        anOneMethodInfo.CoderProperties.Add(aProperty);
+          property.PropID = NEncodedStreamProperies::kUsedMemorySize;
+        property.Value = dicSize;
+        oneMethodInfo.CoderProperties.Add(property);
       }
       else
       {
-        int anIndex = FindPropIdFromStringName(aRealName);
-        if (anIndex < 0)
+        int index = FindPropIdFromStringName(realName);
+        if (index < 0)
           return E_INVALIDARG;
         
-        const CNameToPropID &aNameToPropID = g_NameToPropID[anIndex];
-        aProperty.PropID = aNameToPropID.PropID;
+        const CNameToPropID &nameToPropID = g_NameToPropID[index];
+        property.PropID = nameToPropID.PropID;
         
-        if (!ConvertProperty(aValue, aNameToPropID.VarType, aProperty.Value))
+        if (!ConvertProperty(value, nameToPropID.VarType, property.Value))
           return E_INVALIDARG;
         
-        if (aNameToPropID.CoderProperties)
-          anOneMethodInfo.CoderProperties.Add(aProperty);
+        if (nameToPropID.CoderProperties)
+          oneMethodInfo.CoderProperties.Add(property);
         else
-          anOneMethodInfo.EncoderProperties.Add(aProperty);
+          oneMethodInfo.EncoderProperties.Add(property);
       }
     }
   }

@@ -32,7 +32,7 @@ void CInStreamImp::Init(BYTE *dataPointer, UINT32 size)
 
 STDMETHODIMP CInStreamImp::Read(void *data, ULONG size, ULONG *processedSize)
 {
-  UINT32 numBytesToRead = MyMin(_pos + size, _size) - _pos;
+  UINT32 numBytesToRead = MyMin(_pos + (UINT32)size, _size) - _pos;
   if(processedSize != NULL)
     *processedSize = numBytesToRead;
   memmove(data, _dataPointer + _pos, numBytesToRead);

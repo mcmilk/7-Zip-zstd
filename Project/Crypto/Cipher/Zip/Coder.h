@@ -51,7 +51,7 @@ DECLARE_NOT_AGGREGATABLE(CEncoder)
 
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CEncoder, TEXT("Crypto.ZipEncoder.1"), 
-    TEXT("Crypto.ZipEncoder"), 0, THREADFLAGS_APARTMENT)
+    TEXT("Crypto.ZipEncoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
@@ -83,7 +83,7 @@ DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CDecoder, TEXT("Crypto.ZipDecoder.1"), 
-                 TEXT("Crypto.ZipDecoder"), 0, THREADFLAGS_APARTMENT)
+                 TEXT("Crypto.ZipDecoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, UINT64 const *inSize, 

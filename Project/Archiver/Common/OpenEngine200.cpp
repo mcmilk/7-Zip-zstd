@@ -40,129 +40,135 @@ using namespace NWindows;
 
 const UINT64 kMaxCheckStartPosition = 1 << 20;
 
-HRESULT ReOpenArchive(IArchiveHandler200 *anArchiveHandler, 
-    const CSysString &aFileName)
+HRESULT ReOpenArchive(IArchiveHandler200 *archiveHandler, 
+    const CSysString &fileName)
 {
   #ifndef EXCLUDE_COM
-  NCOM::CComInitializer aComInitializer; // test it
+  NCOM::CComInitializer comInitializer; // test it
   #endif
-  CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
+  CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
-  CComPtr<IInStream> anInStream(anInStreamSpec);
-  anInStreamSpec->Open(aFileName);
-  return anArchiveHandler->Open(anInStream, &kMaxCheckStartPosition, NULL);
+  CComPtr<IInStream> inStream(inStreamSpec);
+  inStreamSpec->Open(fileName);
+  return archiveHandler->Open(inStream, &kMaxCheckStartPosition, NULL);
 }
 
-HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler200 **anArchiveHandlerResult, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult,
-    IOpenArchive2CallBack *anOpenArchive2CallBack)
+HRESULT OpenArchive(const CSysString &fileName, 
+    IArchiveHandler200 **archiveHandlerResult, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult,
+    IOpenArchive2CallBack *openArchive2CallBack)
 {
   #ifndef EXCLUDE_COM
-  NCOM::CComInitializer aComInitializer;
+  NCOM::CComInitializer comInitializer;
   #endif
-  CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
+  CComObjectNoLock<CInFileStream> *inStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
-  CComPtr<IInStream> anInStream(anInStreamSpec);
-  if (!anInStreamSpec->Open(aFileName))
+  CComPtr<IInStream> inStream(inStreamSpec);
+  if (!inStreamSpec->Open(fileName))
     return E_FAIL;
 
   /*
   #ifdef FORMAT_7Z
 
   CComObjectNoLock<NArchive::N7z::CHandler> *aHandlerSpec = new CComObjectNoLock<NArchive::N7z::CHandler>;
-  CComPtr<IArchiveHandler200> anArchiveHandler = aHandlerSpec;
-  anInStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
-  RETURN_IF_NOT_S_OK(anArchiveHandler->Open(anInStream, 
-      &kMaxCheckStartPosition, anOpenArchive2CallBack));
-  *anArchiveHandlerResult = anArchiveHandler.Detach();
-  anArchiverInfoResult.Name = TEXT("7z");
-  anArchiverInfoResult.Extension = TEXT("7z");
-  anArchiverInfoResult.KeepName = false;
-  anArchiverInfoResult.UpdateEnabled = true;
+  CComPtr<IArchiveHandler200> archiveHandler = aHandlerSpec;
+  inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
+  RETURN_IF_NOT_S_OK(archiveHandler->Open(inStream, 
+      &kMaxCheckStartPosition, openArchive2CallBack));
+  *archiveHandlerResult = archiveHandler.Detach();
+  archiverInfoResult.Name = TEXT("7z");
+  archiverInfoResult.Extension = TEXT("7z");
+  archiverInfoResult.KeepName = false;
+  archiverInfoResult.UpdateEnabled = true;
   return S_OK;
   
   #else
  
   #ifndef EXCLUDE_COM
   */
-  *anArchiveHandlerResult = NULL;
-  CObjectVector<NZipRootRegistry::CArchiverInfo> anArchiverInfoList;
-  NZipRootRegistry::ReadArchiverInfoList(anArchiverInfoList);
-  CSysString anExtension;
+  *archiveHandlerResult = NULL;
+  CObjectVector<NZipRootRegistry::CArchiverInfo> archiverInfoList;
+  NZipRootRegistry::ReadArchiverInfoList(archiverInfoList);
+  CSysString extension;
   {
     CSysString aName, aPureName, aDot;
-    if(!NFile::NDirectory::GetOnlyName(aFileName, aName))
+    if(!NFile::NDirectory::GetOnlyName(fileName, aName))
       return E_FAIL;
-    NFile::NName::SplitNameToPureNameAndExtension(aName, aPureName, aDot, anExtension);
+    NFile::NName::SplitNameToPureNameAndExtension(aName, aPureName, aDot, extension);
   }
-  std::vector<int> anOrderIndexes;
-  for(int anFirstArchiverIndex = 0; 
-      anFirstArchiverIndex < anArchiverInfoList.Size(); anFirstArchiverIndex++)
-    if(anExtension.CollateNoCase(anArchiverInfoList[anFirstArchiverIndex].Extension) == 0)
+  std::vector<int> orderIndexes;
+  int firstArchiverIndex;
+  for(firstArchiverIndex = 0; 
+      firstArchiverIndex < archiverInfoList.Size(); firstArchiverIndex++)
+    if(extension.CollateNoCase(archiverInfoList[firstArchiverIndex].Extension) == 0)
       break;
-  if(anFirstArchiverIndex < anArchiverInfoList.Size())
-    anOrderIndexes.push_back(anFirstArchiverIndex);
-  for(int j = 0; j < anArchiverInfoList.Size(); j++)
-    if(j != anFirstArchiverIndex)
-      anOrderIndexes.push_back(j);
+  if(firstArchiverIndex < archiverInfoList.Size())
+    orderIndexes.push_back(firstArchiverIndex);
+  for(int j = 0; j < archiverInfoList.Size(); j++)
+    if(j != firstArchiverIndex)
+      orderIndexes.push_back(j);
   
-  for(int i = 0; i < anOrderIndexes.size(); i++)
+  HRESULT badResult = S_OK;
+  for(int i = 0; i < orderIndexes.size(); i++)
   {
-    anInStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
-    const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
-        anArchiverInfoList[anOrderIndexes[i]];
-    CComPtr<IArchiveHandler200> anArchiveHandler;
+    inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
+    const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+        archiverInfoList[orderIndexes[i]];
+    CComPtr<IArchiveHandler200> archiveHandler;
 
     #ifdef FORMAT_7Z
-    if (anArchiverInfo.Name.CompareNoCase(TEXT("7z")) == 0)
-      anArchiveHandler = new CComObjectNoLock<NArchive::N7z::CHandler>;
+    if (archiverInfo.Name.CompareNoCase(TEXT("7z")) == 0)
+      archiveHandler = new CComObjectNoLock<NArchive::N7z::CHandler>;
     #endif
 
     #ifdef FORMAT_BZIP2
-    if (anArchiverInfo.Name.CompareNoCase(TEXT("BZip2")) == 0)
-      anArchiveHandler = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
+    if (archiverInfo.Name.CompareNoCase(TEXT("BZip2")) == 0)
+      archiveHandler = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
     #endif
 
     #ifdef FORMAT_GZIP
-    if (anArchiverInfo.Name.CompareNoCase(TEXT("GZip")) == 0)
-      anArchiveHandler = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
+    if (archiverInfo.Name.CompareNoCase(TEXT("GZip")) == 0)
+      archiveHandler = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
     #endif
 
     #ifdef FORMAT_TAR
-    if (anArchiverInfo.Name.CompareNoCase(TEXT("Tar")) == 0)
-      anArchiveHandler = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
+    if (archiverInfo.Name.CompareNoCase(TEXT("Tar")) == 0)
+      archiveHandler = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
     #endif
 
     #ifdef FORMAT_ZIP
-    if (anArchiverInfo.Name.CompareNoCase(TEXT("Zip")) == 0)
-      anArchiveHandler = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
+    if (archiverInfo.Name.CompareNoCase(TEXT("Zip")) == 0)
+      archiveHandler = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
     #endif
 
 
     #ifndef EXCLUDE_COM
-    if (!anArchiveHandler)
+    if (!archiveHandler)
     {
-      HRESULT aResult = anArchiveHandler.CoCreateInstance(anArchiverInfo.ClassID);
-      if (aResult != S_OK)
+      HRESULT result = archiveHandler.CoCreateInstance(archiverInfo.ClassID);
+      if (result != S_OK)
         continue;
     }
     #endif EXCLUDE_COM
     
-    if (!anArchiveHandler)
+    if (!archiveHandler)
       return E_FAIL;
     
-    HRESULT aResult = anArchiveHandler->Open(anInStream, &kMaxCheckStartPosition, anOpenArchive2CallBack);
-    if(aResult == S_FALSE)
+    HRESULT result = archiveHandler->Open(inStream, &kMaxCheckStartPosition, openArchive2CallBack);
+    if(result == S_FALSE)
       continue;
-    if(aResult != S_OK)
+    if(result != S_OK)
     {
-      return aResult;
+      badResult = result;
+      continue;
+      // return result;
     }
-    *anArchiveHandlerResult = anArchiveHandler.Detach();
-    anArchiverInfoResult = anArchiverInfo;
+    *archiveHandlerResult = archiveHandler.Detach();
+    archiverInfoResult = archiverInfo;
     return S_OK;
   }
+  if (badResult != S_OK)
+    return badResult;
   return S_FALSE;
   
   /*
@@ -174,9 +180,9 @@ HRESULT OpenArchive(const CSysString &aFileName,
   */
 }
 
-HRESULT OpenArchive(const CSysString &aFileName, 
-    IArchiveHandler200 **anArchiveHandlerResult, 
-    NZipRootRegistry::CArchiverInfo &anArchiverInfoResult)
+HRESULT OpenArchive(const CSysString &fileName, 
+    IArchiveHandler200 **archiveHandlerResult, 
+    NZipRootRegistry::CArchiverInfo &archiverInfoResult)
 {
-  return OpenArchive(aFileName, anArchiveHandlerResult, anArchiverInfoResult, NULL);
+  return OpenArchive(fileName, archiveHandlerResult, archiverInfoResult, NULL);
 }

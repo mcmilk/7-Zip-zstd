@@ -314,6 +314,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
   {
     return CodeReal(inStream, outStream, inSize, outSize, progress);
   }
+  catch(const NStream::CInByteReadException &exception)
+  {
+    return exception.Result;
+  }
   catch(const NStream::NWindow::COutWriteException &outWriteException)
   {
     return outWriteException.Result;

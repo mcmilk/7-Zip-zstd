@@ -21,23 +21,23 @@ struct CBindInfoEx: public NCoderMixer2::CBindInfo
 
 class CDecoder
 {
-  bool BindInfoExPrevIsDefinded;
-  CBindInfoEx BindInfoExPrev;
+  bool _bindInfoExPrevIsDefinded;
+  CBindInfoEx _bindInfoExPrev;
   #ifndef COMPRESS_LZMA
-  NRegistryInfo::CMethodToCLSIDMap aMethodMap;
+  NRegistryInfo::CMethodToCLSIDMap _methodMap;
   #endif
-  CComObjectNoLock<NCoderMixer2::CCoderMixer2> *MixerCoderSpec;
-  CComPtr<ICompressCoder2> MixerCoder;
-  CObjectVector<CComPtr<ICompressCoder> > aDecoders;
-  CObjectVector<CComPtr<ICompressCoder2> > aDecoders2;
+  CComObjectNoLock<NCoderMixer2::CCoderMixer2> *_mixerCoderSpec;
+  CComPtr<ICompressCoder2> _mixerCoder;
+  CObjectVector<CComPtr<ICompressCoder> > _decoders;
+  CObjectVector<CComPtr<ICompressCoder2> > _decoders2;
 public:
   CDecoder();
-  HRESULT Decode(IInStream *anInStream,
-      UINT64 aStartPos,
-      const UINT64 *aPackSizes,
-      const CFolderItemInfo &aFolderInfo, 
-      ISequentialOutStream *anOutStream,
-      ICompressProgressInfo *aCompressProgress);
+  HRESULT Decode(IInStream *inStream,
+      UINT64 startPos,
+      const UINT64 *packSizes,
+      const CFolderItemInfo &folderInfo, 
+      ISequentialOutStream *outStream,
+      ICompressProgressInfo *compressProgress);
 };
 
 }}

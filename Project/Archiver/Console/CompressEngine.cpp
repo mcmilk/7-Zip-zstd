@@ -60,39 +60,39 @@ using namespace NUpdateArchive;
 
 static LPCTSTR kTempArcivePrefix = _T("7zi");
 
-static bool ParseNumberString(const UString &aString, UINT32 &aNumber)
+static bool ParseNumberString(const UString &srcString, UINT32 &number)
 {
   wchar_t *anEndPtr;
-  aNumber = wcstoul(aString, &anEndPtr, 10);
-  return (anEndPtr - aString == aString.Length());
+  number = wcstoul(srcString, &anEndPtr, 10);
+  return (anEndPtr - srcString == srcString.Length());
 }
 
 
-static HRESULT CopyBlock(ISequentialInStream *anInStream, ISequentialOutStream *anOutStream)
+static HRESULT CopyBlock(ISequentialInStream *inStream, ISequentialOutStream *outStream)
 {
-  CComObjectNoLock<NCompression::CCopyCoder> *aCopyCoderSpec = 
+  CComObjectNoLock<NCompression::CCopyCoder> *copyCoderSpec = 
       new CComObjectNoLock<NCompression::CCopyCoder>;
-  CComPtr<ICompressCoder> aCopyCoder = aCopyCoderSpec;
-  return aCopyCoder->Code(anInStream, anOutStream, NULL, NULL, NULL);
+  CComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+  return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
 }
 
 HRESULT Compress(
-    const CActionSet &anActionSet, 
-    IArchiveHandler200 *anArchive,
+    const CActionSet &actionSet, 
+    IArchiveHandler200 *archive,
     const CCompressionMethodMode &compressionMethod,
-    const CSysString &anArchiveName, 
-    const CArchiveItemInfoVector &anArchiveItems,
-    const CArchiveStyleDirItemInfoVector &aDirItems,
-    bool anEnablePercents,
-    bool aSfxMode,
-    const CSysString &aSfxModule)
+    const CSysString &archiveName, 
+    const CArchiveItemInfoVector &archiveItems,
+    const CArchiveStyleDirItemInfoVector &dirItems,
+    bool enablePercents,
+    bool sfxMode,
+    const CSysString &sfxModule)
 {
-  CComPtr<IOutArchiveHandler200> anOutArchive;
-  if(anArchive != NULL)
+  CComPtr<IOutArchiveHandler200> outArchive;
+  if(archive != NULL)
   {
-    CComPtr<IArchiveHandler200> anArchive2 = anArchive;
-    HRESULT aResult = anArchive2.QueryInterface(&anOutArchive);
-    if(aResult != S_OK)
+    CComPtr<IArchiveHandler200> archive2 = archive;
+    HRESULT result = archive2.QueryInterface(&outArchive);
+    if(result != S_OK)
     {
       throw "update operations are not supported for this archive";
     }
@@ -100,8 +100,8 @@ HRESULT Compress(
   else
   {
     #ifndef EXCLUDE_COM
-    HRESULT aResult = anOutArchive.CoCreateInstance(compressionMethod.ClassID);
-    if (aResult != S_OK)
+    HRESULT result = outArchive.CoCreateInstance(compressionMethod.ClassID);
+    if (result != S_OK)
     {
       throw "update operations are not supported for this archive";
       return E_FAIL;
@@ -110,125 +110,126 @@ HRESULT Compress(
 
     #ifdef FORMAT_7Z
     if (compressionMethod.Name.CompareNoCase(TEXT("7z")) == 0)
-      anOutArchive = new CComObjectNoLock<NArchive::N7z::CHandler>;
+      outArchive = new CComObjectNoLock<NArchive::N7z::CHandler>;
     #endif
 
     #ifdef FORMAT_BZIP2
     if (compressionMethod.Name.CompareNoCase(TEXT("BZip2")) == 0)
-      anOutArchive = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
+      outArchive = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
     #endif
 
     #ifdef FORMAT_GZIP
     if (compressionMethod.Name.CompareNoCase(TEXT("GZip")) == 0)
-      anOutArchive = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
+      outArchive = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
     #endif
 
     #ifdef FORMAT_TAR
     if (compressionMethod.Name.CompareNoCase(TEXT("Tar")) == 0)
-      anOutArchive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
+      outArchive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
     #endif
     
     #ifdef FORMAT_ZIP
     if (compressionMethod.Name.CompareNoCase(TEXT("Zip")) == 0)
-      anOutArchive = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
+      outArchive = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
     #endif
 
 
-    if (anOutArchive == 0)
+    if (outArchive == 0)
     {
       throw "update operations are not supported for this archive";
       return E_FAIL;
     }
   }
   
-  NFileTimeType::EEnum aFileTimeType;
-  UINT32 aValue;
-  RETURN_IF_NOT_S_OK(anOutArchive->GetFileTimeType(&aValue));
+  NFileTimeType::EEnum fileTimeType;
+  UINT32 value;
+  RETURN_IF_NOT_S_OK(outArchive->GetFileTimeType(&value));
 
-  switch(aValue)
+  switch(value)
   {
     case NFileTimeType::kWindows:
     case NFileTimeType::kDOS:
     case NFileTimeType::kUnix:
-      aFileTimeType = NFileTimeType::EEnum(aValue);
+      fileTimeType = NFileTimeType::EEnum(value);
       break;
     default:
       return E_FAIL;
   }
 
-  CUpdatePairInfoVector anUpdatePairs;
-  GetUpdatePairInfoList(aDirItems, anArchiveItems, aFileTimeType, anUpdatePairs); // must be done only once!!!
+  CUpdatePairInfoVector updatePairs;
+  GetUpdatePairInfoList(dirItems, archiveItems, fileTimeType, updatePairs); // must be done only once!!!
   
-  CUpdatePairInfo2Vector anOperationChain;
-  UpdateProduce(aDirItems, anArchiveItems, anUpdatePairs, anActionSet,
-      anOperationChain);
+  CUpdatePairInfo2Vector operationChain;
+  UpdateProduce(dirItems, archiveItems, updatePairs, actionSet,
+      operationChain);
   
-  CComObjectNoLock<CUpdateCallBackImp> *anUpdateCallBackSpec =
+  CComObjectNoLock<CUpdateCallBackImp> *updateCallBackSpec =
     new CComObjectNoLock<CUpdateCallBackImp>;
-  CComPtr<IUpdateCallBack> anUpdateCallBack(anUpdateCallBackSpec );
+  CComPtr<IUpdateCallBack> updateCallback(updateCallBackSpec );
   
-  anUpdateCallBackSpec->Init(&aDirItems, &anArchiveItems, &anOperationChain, anEnablePercents,
+  updateCallBackSpec->Init(&dirItems, &archiveItems, &operationChain, enablePercents,
       compressionMethod.PasswordIsDefined, compressionMethod.Password, 
       compressionMethod.AskPassword);
   
-  CComObjectNoLock<COutFileStream> *anOutStreamSpec =
+  CComObjectNoLock<COutFileStream> *outStreamSpec =
     new CComObjectNoLock<COutFileStream>;
-  CComPtr<IOutStream> anOutStream(anOutStreamSpec);
+  CComPtr<IOutStream> outStream(outStreamSpec);
 
   {
-    CSysString aResultPath;
-    int aPos;
-    if(! NFile::NDirectory::MyGetFullPathName(anArchiveName, aResultPath, aPos))
+    CSysString resultPath;
+    int pos;
+    if(! NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
       throw 141716;
-    NFile::NDirectory::CreateComplexDirectory(aResultPath.Left(aPos));
+    NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
   }
-  if (!anOutStreamSpec->Open(anArchiveName))
+  if (!outStreamSpec->Open(archiveName))
   {
-    CSysString aMessage;
-    NError::MyFormatMessage(::GetLastError(), aMessage);
-    g_StdOut << GetOemString(aMessage) << endl;
+    CSysString message;
+    NError::MyFormatMessage(::GetLastError(), message);
+    g_StdOut << GetOemString(message) << endl;
     return E_FAIL;
   }
 
-  CComPtr<ISetProperties> aSetProperties;
-  if (anOutArchive.QueryInterface(&aSetProperties) == S_OK)
+  CComPtr<ISetProperties> setProperties;
+  if (outArchive.QueryInterface(&setProperties) == S_OK)
   {
-    CObjectVector<CComBSTR> aNamesReal;
-    std::vector<CPropVariant> aValues;
-    for(int i = 0; i < compressionMethod.Properties.Size(); i++)
+    CObjectVector<CComBSTR> realNames;
+    std::vector<CPropVariant> values;
+	  int i;
+    for(i = 0; i < compressionMethod.Properties.Size(); i++)
     {
-      const CProperty &aProperty = compressionMethod.Properties[i];
-      NCOM::CPropVariant aPropVariant;
-      UINT32 aNumber;
-      if (!aProperty.Value.IsEmpty())
+      const CProperty &property = compressionMethod.Properties[i];
+      NCOM::CPropVariant propVariant;
+      UINT32 number;
+      if (!property.Value.IsEmpty())
       {
-        if (ParseNumberString(aProperty.Value, aNumber))
-          aPropVariant = aNumber;
+        if (ParseNumberString(property.Value, number))
+          propVariant = number;
         else
-          aPropVariant = aProperty.Value;
+          propVariant = property.Value;
       }
-      CComBSTR aComBSTR = aProperty.Name;
-      aNamesReal.Add(aComBSTR);
-      aValues.push_back(aPropVariant);
+      CComBSTR comBSTR = property.Name;
+      realNames.Add(comBSTR);
+      values.push_back(propVariant);
     }
-    std::vector<BSTR> aNames;
-    for(i = 0; i < aNamesReal.Size(); i++)
-      aNames.push_back(aNamesReal[i]);
+    std::vector<BSTR> names;
+    for(i = 0; i < realNames.Size(); i++)
+      names.push_back(realNames[i]);
  
-    RETURN_IF_NOT_S_OK(aSetProperties->SetProperties(&aNames.front(), 
-       &aValues.front(), aNames.size()));
+    RETURN_IF_NOT_S_OK(setProperties->SetProperties(&names.front(), 
+       &values.front(), names.size()));
   }
 
 
-  if (aSfxMode)
+  if (sfxMode)
   {
-    CComObjectNoLock<CInFileStream> *aSFXStreamSpec = new CComObjectNoLock<CInFileStream>;
-    CComPtr<IInStream> aSFXStream(aSFXStreamSpec);
-    if (!aSFXStreamSpec->Open(aSfxModule))
+    CComObjectNoLock<CInFileStream> *sfxStreamSpec = new CComObjectNoLock<CInFileStream>;
+    CComPtr<IInStream> sfxStream(sfxStreamSpec);
+    if (!sfxStreamSpec->Open(sfxModule))
       throw "Can't open sfx module";
-    RETURN_IF_NOT_S_OK(CopyBlock(aSFXStream, anOutStream));
+    RETURN_IF_NOT_S_OK(CopyBlock(sfxStream, outStream));
   }
 
-  return anOutArchive->UpdateItems(anOutStream, anOperationChain.Size(),
-     anUpdateCallBack);
+  return outArchive->UpdateItems(outStream, operationChain.Size(),
+     updateCallback);
 }

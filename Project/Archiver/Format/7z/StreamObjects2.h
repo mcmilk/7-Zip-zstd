@@ -14,18 +14,18 @@ class CSequentialInStreamSizeCount2:
   public ICompressGetSubStreamSize,
   public CComObjectRoot
 {
-  CComPtr<ISequentialInStream> m_Stream;
-  CComPtr<ICompressGetSubStreamSize> m_GetSubStreamSize;
-  UINT64 m_Size;
+  CComPtr<ISequentialInStream> _stream;
+  CComPtr<ICompressGetSubStreamSize> _getSubStreamSize;
+  UINT64 _size;
 public:
-  void Init(ISequentialInStream *aStream)
+  void Init(ISequentialInStream *stream)
   {
-    m_Stream = aStream;
-    m_GetSubStreamSize = 0;
-    m_Stream.QueryInterface(&m_GetSubStreamSize);
-    m_Size = 0;
+    _stream = stream;
+    _getSubStreamSize = 0;
+    _stream.QueryInterface(&_getSubStreamSize);
+    _size = 0;
   }
-  UINT64 GetSize() const { return m_Size; }
+  UINT64 GetSize() const { return _size; }
 BEGIN_COM_MAP(CSequentialInStreamSizeCount2)
   COM_INTERFACE_ENTRY(ISequentialInStream)
   COM_INTERFACE_ENTRY(ICompressGetSubStreamSize)
@@ -35,10 +35,10 @@ DECLARE_NOT_AGGREGATABLE(CSequentialInStreamSizeCount2)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
 
-  STDMETHOD(GetSubStreamSize)(UINT64 aSubStream, UINT64 *aValue);
+  STDMETHOD(GetSubStreamSize)(UINT64 subStream, UINT64 *value);
 };
 
 

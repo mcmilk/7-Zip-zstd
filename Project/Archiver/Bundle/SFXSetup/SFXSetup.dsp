@@ -600,14 +600,6 @@ SOURCE=..\..\..\..\SDK\Windows\Handle.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Windows\ProcessMessages.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Windows\ProcessMessages.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File

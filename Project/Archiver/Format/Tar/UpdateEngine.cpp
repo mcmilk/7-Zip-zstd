@@ -45,7 +45,8 @@ HRESULT UpdateArchive(IInStream *anInStream, ISequentialOutStream *anOutStream,
   UINT64 aComplexity = 0;
   UINT32 aCompressIndex = 0, aCopyIndexIndex = 0;
 
-  for(int i = 0; i < aCompressStatuses.Size(); i++)
+  int i;
+  for(i = 0; i < aCompressStatuses.Size(); i++)
   {
     if (aCompressStatuses[i])
       aComplexity += anUpdateItems[aCompressIndex++].Size;

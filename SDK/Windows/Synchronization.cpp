@@ -7,20 +7,6 @@
 namespace NWindows {
 namespace NSynchronization {
 
-CObject::~CObject()
-{
-  if (_object != NULL)
-  {
-    ::CloseHandle(_object);
-    _object = NULL;
-  }
-}
-
-bool CObject::Lock(DWORD timeoutInterval)
-{
-  return (::WaitForSingleObject(_object, timeoutInterval) == WAIT_OBJECT_0);
-}
-
 
 CSyncObject::~CSyncObject()
 {
@@ -33,80 +19,18 @@ CSyncObject::~CSyncObject()
 
 bool CSyncObject::Lock(DWORD timeoutInterval)
 {
-  if (::WaitForSingleObject(_object, timeoutInterval) == WAIT_OBJECT_0)
-    return true;
-  else
-    return false;
+  return (::WaitForSingleObject(_object, timeoutInterval) == WAIT_OBJECT_0);
 }
-
-/*
-/////////////////////
-// CSemaphore
-
-CSemaphore::CSemaphore(LONG initialCount, LONG maxCount,
-  LPCTSTR name, LPSECURITY_ATTRIBUTES securityAttributes)
-  :  CSyncObject(name)
-{
-  // // ASSERT(maxCount > 0);
-  // // ASSERT(initialCount <= maxCount);
-
-  _object = ::CreateSemaphore(securityAttributes, initialCount, maxCount,
-      name);
-  if (_object == NULL)
-    throw "CreateSemaphore error";
-}
-
-CSemaphore::~CSemaphore()
-{}
-
-bool CSemaphore::Unlock(LONG count, LPLONG prevCount)
-{
-  return BOOLToBool(::ReleaseSemaphore(_object, count, prevCount));
-}
-
-/////////////////////
-// CMutex
-
-CMutex::CMutex(bool initiallyOwn, LPCTSTR name,
-  LPSECURITY_ATTRIBUTES securityAttributes)
-  : CSyncObject(name)
-{
-  _object = ::CreateMutex(securityAttributes, BoolToBOOL(initiallyOwn), name);
-  if (_object == NULL)
-    throw "CreateMutex error";
-}
-
-CMutex::~CMutex()
-{}
-
-bool CMutex::Unlock()
-{
-  return BOOLToBool(::ReleaseMutex(_object));
-}
-*/
 
 /////////////////////
 // CEvent
 
-CEvent::CEvent(bool initiallyOwn, bool manualReset, LPCTSTR name,
-  LPSECURITY_ATTRIBUTES securityAttributes)
-  /*: CSyncObject(name)*/
+CEvent::CEvent(bool manualReset, bool initiallyOwn, LPCTSTR name,
+    LPSECURITY_ATTRIBUTES securityAttributes)
 {
-  _object = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
-      BoolToBOOL(initiallyOwn), name);
-  if (_object == NULL)
+  if (!Create(manualReset, initiallyOwn, name, securityAttributes))
     throw "CreateEvent error";
 }
-
-/*
-CEvent::~CEvent()
-{}
-
-bool CEvent::Unlock()
-{
-  return true;
-}
-*/
 
 /////////////////////
 // CSingleLock

@@ -26,18 +26,18 @@ struct CEncodingInfo: public NArchive::N7z::CCoderInfo
 {
 };
 
-HRESULT CopyBlock(ISequentialInStream *anInStream, 
-    ISequentialOutStream *anOutStream, ICompressProgressInfo *aProgress);
+HRESULT CopyBlock(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream, ICompressProgressInfo *progress);
 
-HRESULT UpdateArchiveStd(NArchive::N7z::COutArchive &anArchive, 
-    IInStream *anInStream,
-    const CCompressionMethodMode *anOptions, 
-    const CCompressionMethodMode *aHeaderMethod, 
-    const NArchive::N7z::CArchiveDatabaseEx &aDatabase,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,    
-    IUpdateCallBack *anUpdateCallBack);
+HRESULT UpdateArchiveStd(NArchive::N7z::COutArchive &archive, 
+    IInStream *inStream,
+    const CCompressionMethodMode *options, 
+    const CCompressionMethodMode *headerMethod, 
+    const NArchive::N7z::CArchiveDatabaseEx &database,
+    const CRecordVector<bool> &compressStatuses,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CRecordVector<UINT32> &copyIndices,    
+    IUpdateCallBack *updateCallback);
 
 }}
 

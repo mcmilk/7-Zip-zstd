@@ -12,42 +12,42 @@
 
 class CInOutTempBuffer
 {
-  NWindows::NFile::NDirectory::CTempFile m_TempFile;
-  NWindows::NFile::NIO::COutFile m_OutFile;
-  NWindows::NFile::NIO::CInFile m_InFile;
-  BYTE *m_Buffer;
-  UINT32 m_BufferPosition;
-  UINT32 m_CurrentPositionInBuffer;
-  CSysString m_TmpFileName;
-  bool m_TmpFileCreated;
+  NWindows::NFile::NDirectory::CTempFile _tempFile;
+  NWindows::NFile::NIO::COutFile _outFile;
+  NWindows::NFile::NIO::CInFile _inFile;
+  BYTE *_buffer;
+  UINT32 _bufferPosition;
+  UINT32 _currentPositionInBuffer;
+  CSysString _tmpFileName;
+  bool _tmpFileCreated;
 
-  UINT64 m_FileSize;
+  UINT64 _fileSize;
 
-  bool WriteToFile(const void *aPointer, UINT32 aSize);
+  bool WriteToFile(const void *data, UINT32 size);
 public:
   CInOutTempBuffer();
   ~CInOutTempBuffer();
   void Create();
 
   void InitWriting();
-  bool Write(const void *aPointer, UINT32 aSize);
-  UINT64 GetDataSize() const { return m_FileSize; }
+  bool Write(const void *data, UINT32 size);
+  UINT64 GetDataSize() const { return _fileSize; }
   bool FlushWrite();
   bool InitReading();
-  // bool Read(void *aPointer, UINT32 aMaxSize, UINT32 &aProcessedSize);
-  HRESULT WriteToStream(ISequentialOutStream *aStream);
+  // bool Read(void *data, UINT32 maxSize, UINT32 &processedSize);
+  HRESULT WriteToStream(ISequentialOutStream *stream);
 };
 
 class CSequentialOutTempBufferImp: 
   public ISequentialOutStream,
   public CComObjectRoot
 {
-  CInOutTempBuffer *m_Buffer;
+  CInOutTempBuffer *_buffer;
 public:
-  // CSequentialOutStreamImp(): m_Size(0) {}
-  // UINT32 m_Size;
-  void Init(CInOutTempBuffer *aBuffer)  { m_Buffer = aBuffer; }
-  // UINT32 GetSize() const { return m_Size; }
+  // CSequentialOutStreamImp(): _size(0) {}
+  // UINT32 _size;
+  void Init(CInOutTempBuffer *buffer)  { _buffer = buffer; }
+  // UINT32 GetSize() const { return _size; }
 
 BEGIN_COM_MAP(CSequentialOutTempBufferImp)
   COM_INTERFACE_ENTRY(ISequentialOutStream)
@@ -57,8 +57,8 @@ DECLARE_NOT_AGGREGATABLE(CSequentialOutTempBufferImp)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
 };
 
 

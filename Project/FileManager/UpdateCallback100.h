@@ -18,58 +18,58 @@
 
 #include "AppTitle.h"
 
-class CUpdateCallBack100Imp: 
+class CUpdateCallback100Imp: 
   public IUpdateCallback100,
   public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
-BEGIN_COM_MAP(CUpdateCallBack100Imp)
+BEGIN_COM_MAP(CUpdateCallback100Imp)
   COM_INTERFACE_ENTRY(IUpdateCallback100)
   COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CUpdateCallBack100Imp)
+DECLARE_NOT_AGGREGATABLE(CUpdateCallback100Imp)
 
 DECLARE_NO_REGISTRY()
 
   // IProfress
 
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 size);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
   // IUpdateCallBack
-  STDMETHOD(CompressOperation)(const wchar_t *aName);
-  STDMETHOD(DeleteOperation)(const wchar_t *aName);
-  STDMETHOD(OperationResult)(INT32 aOperationResult);
+  STDMETHOD(CompressOperation)(const wchar_t *name);
+  STDMETHOD(DeleteOperation)(const wchar_t *name);
+  STDMETHOD(OperationResult)(INT32 operationResult);
 
   STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 private:
-  DWORD m_ThreadID;
+  // DWORD m_ThreadID;
   bool _passwordIsDefined;
   UString _password;
 
 public:
-  ~CUpdateCallBack100Imp()
+  ~CUpdateCallback100Imp()
   {
-    m_ProgressDialog.Destroy();
+    // _progressDialog.Close();
   }
   CAppTitle _appTitle;
-  CProgressDialog m_ProgressDialog;
+  CProgressDialog _progressDialog;
   HWND _parentWindow;
-  void Init(/*IArchiveHandler100 *anArchiveHandler, */ HWND aParentWindow, 
-      const CSysString &aTitle, bool passwordIsDefined, const UString &password)
+  void Init(HWND parentWindow, 
+      bool passwordIsDefined, const UString &password)
   {
     _passwordIsDefined = passwordIsDefined;
     _password = password;
-    _parentWindow = aParentWindow;
-    m_ThreadID = GetCurrentThreadId();
-    m_ProgressDialog.Create(aParentWindow);
-    m_ProgressDialog.SetText(aTitle);
-    // LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
-    m_ProgressDialog.Show(SW_SHOWNORMAL);
-    // m_ArchiveHandler = anArchiveHandler;
+    _parentWindow = parentWindow;
+
   }
+  void StartProgressDialog(const CSysString &title)
+  {
+    _progressDialog.Create(title, _parentWindow);
+  }
+
 };
 
 

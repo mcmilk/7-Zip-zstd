@@ -19,9 +19,6 @@ public:
   CDialog(HWND wndow = NULL): CWindow(wndow){};
   virtual ~CDialog() {};
 
-  bool End(INT_PTR result)
-    { return BOOLToBool(EndDialog(_window, result)); }
-
   HWND GetItem(int itemID) const
     { return GetDlgItem(_window, itemID); }
 
@@ -75,6 +72,7 @@ public:
   virtual void OnOK() {};
   virtual void OnCancel() {};
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam) { return false; }
+  virtual bool OnTimer(WPARAM timerID, LPARAM callback) { return false; }
 
   LONG_PTR SetMsgResult(LONG_PTR newLongPtr )
     { return SetLongPtr(DWLP_MSGRESULT, newLongPtr); }
@@ -94,6 +92,8 @@ class CModalDialog: public CDialog
 {
 public:
   INT_PTR Create(LPCTSTR templateName, HWND parentWindow);
+  bool End(INT_PTR result)
+    { return BOOLToBool(::EndDialog(_window, result)); }
   virtual void OnOK() { End(IDOK); }
   virtual void OnCancel() { End(IDCANCEL); }
 };

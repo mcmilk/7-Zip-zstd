@@ -14,6 +14,10 @@
 
 #include "CompressionMethod.h"
 
+#ifndef _SFX
+#include "RegistryInfo.h"
+#endif
+
 namespace NArchive {
 namespace N7z {
 
@@ -55,67 +59,73 @@ DECLARE_NOT_AGGREGATABLE(CHandler)
 DECLARE_REGISTRY(CHandler, TEXT("SevenZip.Format7z.1"), 
                  TEXT("SevenZip.Format7z"), UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
-      IOpenArchive2CallBack *anOpenArchiveCallBack);  
+  STDMETHOD(Open)(IInStream *stream, 
+      const UINT64 *maxCheckStartPosition,
+      IOpenArchive2CallBack *openArchiveCallback);  
   STDMETHOD(Close)();  
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
-  STDMETHOD(GetNumberOfItems)(UINT32 *aNumItems);  
-  STDMETHOD(GetProperty)(
-      UINT32 anIndex, 
-      PROPID aPropID,  
-      PROPVARIANT *aValue);
-  STDMETHOD(Extract)(const UINT32* anIndexes, UINT32 aNumItems, 
-      INT32 aTestMode, IExtractCallback200 *anExtractCallBack);
-  STDMETHOD(ExtractAllItems)(INT32 aTestMode, 
-      IExtractCallback200 *anExtractCallBack);
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
+  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
+      INT32 testMode, IExtractCallback200 *extractCallback);
+  STDMETHOD(ExtractAllItems)(INT32 testMode, IExtractCallback200 *extractCallback);
 
   #ifndef EXTRACT_ONLY
   // IOutArchiveHandler
-  STDMETHOD(DeleteItems)(IOutStream *anOutStream, 
-      const UINT32* anIndexes, UINT32 aNumItems, IUpdateCallBack *anUpdateCallBack);
-  STDMETHOD(UpdateItems)(IOutStream *anOutStream, UINT32 aNumItems,
-      IUpdateCallBack *anUpdateCallBack);
+  STDMETHOD(DeleteItems)(IOutStream *outStream, 
+      const UINT32* indices, UINT32 numItems, IUpdateCallBack *updateCallback);
+  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+      IUpdateCallBack *updateCallback);
 
-  STDMETHOD(GetFileTimeType)(UINT32 *aType);  
+  STDMETHOD(GetFileTimeType)(UINT32 *type);  
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties);
+  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
   #endif
 
   CHandler();
 
 private:
-  CComPtr<IInStream> m_InStream;
+  CComPtr<IInStream> _inStream;
 
-  NArchive::N7z::CArchiveDatabaseEx m_Database;
+  NArchive::N7z::CArchiveDatabaseEx _database;
 
   #ifndef EXTRACT_ONLY
-  CObjectVector<COneMethodInfo> m_Methods;
-  CRecordVector<CBind> m_Binds;
-  bool m_Solid;
-  bool m_CompressHeaders;
-  UINT32 m_DefaultDicSize;
-  UINT32 m_DefaultAlgorithm;
-  UINT32 m_DefaultFastBytes;
-  bool m_MultiThread;
-  UINT32 m_MultiThreadMult;
-  AString m_MatchFinder;
+  CObjectVector<COneMethodInfo> _methods;
+  CRecordVector<CBind> _binds;
+  bool _solid;
+  bool _compressHeaders;
+  UINT32 _defaultDicSize;
+  UINT32 _defaultAlgorithm;
+  UINT32 _defaultFastBytes;
+  bool _multiThread;
+  UINT32 _multiThreadMult;
+  AString _matchFinder;
 
-  HRESULT SetCompressionMethod(CCompressionMethodMode &aMethod,
-      CCompressionMethodMode &aHeaderMethod);
+  HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
+  HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
+
+  HRESULT SetCompressionMethod(CCompressionMethodMode &method,
+      CCompressionMethodMode &headerMethod);
   #endif
   
+  #ifndef _SFX
+
+  NRegistryInfo::CMethodToCLSIDMap _methodMap;
+
+  #endif
+
+
   void Init()
   {
     #ifndef EXTRACT_ONLY
-    m_Solid = true;
-    m_CompressHeaders = true;
-    m_MultiThread = false;
-    m_DefaultDicSize = (1 << 20);
-    m_DefaultAlgorithm = 1;
-    m_DefaultFastBytes = 32;
-    m_MatchFinder = "BT4";
+    _solid = true;
+    _compressHeaders = true;
+    _multiThread = false;
+    _defaultDicSize = (1 << 20);
+    _defaultAlgorithm = 1;
+    _defaultFastBytes = 32;
+    _matchFinder = "BT4";
     #endif
   }
 };

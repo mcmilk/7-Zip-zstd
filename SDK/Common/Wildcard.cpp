@@ -148,7 +148,7 @@ bool DoesNameContainWildCard(const UString &pathName)
 
 namespace NWildcard {
 
-static inline BoolToIndex(bool value)
+static inline int BoolToIndex(bool value)
 {
   return value ? 1: 0;
 }
@@ -165,9 +165,9 @@ void CCensorNode::AddItem(const UString &name, bool allowed, bool recursed, bool
 
 CCensorNode *CCensorNode::FindSubNode(const UString &name)
 {
-  for (int i = 0; i < _subNodes.Size(); i++)
-    if (name.CollateNoCase(_subNodes[i]._name) == 0)
-      return &_subNodes[i];
+  for (int i = 0; i < SubNodes.Size(); i++)
+    if (name.CollateNoCase(SubNodes[i].Name) == 0)
+      return &SubNodes[i];
   return NULL;
 }
 
@@ -176,8 +176,8 @@ CCensorNode *CCensorNode::AddSubNode(const UString &name)
   CCensorNode *subNode = FindSubNode(name);
   if (subNode != NULL)
     return subNode;
-  _subNodes.Add(CCensorNode(this, name));
-  return &_subNodes.Back();
+  SubNodes.Add(CCensorNode(this, name));
+  return &SubNodes.Back();
 }
 
 int FindString(const UStringVector &strings, const UString &string)

@@ -45,7 +45,12 @@ CPropMap kPropMap[] =
 
   { NID::kCRC, NULL, kpidCRC, VT_UI4},
   
-  { NID::kAnti, L"Anti", kpidIsAnti, VT_BOOL}
+  { NID::kAnti, L"Anti", kpidIsAnti, VT_BOOL},
+  // { 97, NULL, kpidSolid, VT_BOOL},
+  #ifndef _SFX
+  { 98, NULL, kpidMethod, VT_BSTR},
+  { 99, L"Block", kpidBlock, VT_UI4}
+  #endif
   // { L"ID", kpidID, VT_BSTR},
   // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
   // { L"Host OS", kpidHostOS, VT_BSTR}
@@ -53,109 +58,114 @@ CPropMap kPropMap[] =
 
 static const int kPropMapSize = sizeof(kPropMap) / sizeof(kPropMap[0]);
 
-static int FindPropInMap(UINT32 aFilePropID)
+static int FindPropInMap(UINT32 filePropID)
 {
   for (int i = 0; i < kPropMapSize; i++)
-    if (kPropMap[i].FilePropID == aFilePropID)
+    if (kPropMap[i].FilePropID == filePropID)
       return i;
   return -1;
 }
 
-void CopyOneItem(CRecordVector<UINT32> &aFrom, CRecordVector<UINT32> &aTo, UINT32 anItem)
+static void CopyOneItem(CRecordVector<UINT32> &src, 
+    CRecordVector<UINT32> &dest, UINT32 item)
 {
-  for (int i = 0; i < aFrom.Size(); i++)
-    if (aFrom[i] == anItem)
+  for (int i = 0; i < src.Size(); i++)
+    if (src[i] == item)
     {
-      aTo.Add(anItem);
-      aFrom.Delete(i);
+      dest.Add(item);
+      src.Delete(i);
       return;
     }
 }
 
-void RemoveOneItem(CRecordVector<UINT32> &aFrom, UINT32 anItem)
+static void RemoveOneItem(CRecordVector<UINT32> &src, UINT32 item)
 {
-  for (int i = 0; i < aFrom.Size(); i++)
-    if (aFrom[i] == anItem)
+  for (int i = 0; i < src.Size(); i++)
+    if (src[i] == item)
     {
-      aFrom.Delete(i);
+      src.Delete(i);
       return;
     }
 }
 
-void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &_aFileInfoPopIDs)
+void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &fileInfoPopIDsSpec)
 { 
-  CRecordVector<UINT32> aFileInfoPopIDs = _aFileInfoPopIDs;
+  CRecordVector<UINT32> fileInfoPopIDs = fileInfoPopIDsSpec;
 
-  RemoveOneItem(aFileInfoPopIDs, NID::kEmptyStream);
-  RemoveOneItem(aFileInfoPopIDs, NID::kEmptyFile);
+  RemoveOneItem(fileInfoPopIDs, NID::kEmptyStream);
+  RemoveOneItem(fileInfoPopIDs, NID::kEmptyFile);
 
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kName);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kAnti);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kSize);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kPackInfo);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kCreationTime);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kLastWriteTime);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kLastAccessTime);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kWinAttributes);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kCRC);
-  CopyOneItem(aFileInfoPopIDs, m_FileInfoPopIDs, NID::kComment);
-  m_FileInfoPopIDs += aFileInfoPopIDs; 
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kName);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kAnti);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kSize);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kPackInfo);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCreationTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kLastWriteTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kLastAccessTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kWinAttributes);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCRC);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kComment);
+  _fileInfoPopIDs += fileInfoPopIDs; 
  
+  #ifndef _SFX
+  _fileInfoPopIDs.Add(98);
+  _fileInfoPopIDs.Add(99);
+  #endif
   #ifdef _MULTI_PACK
-  m_FileInfoPopIDs.Add(100);
-  m_FileInfoPopIDs.Add(101);
-  m_FileInfoPopIDs.Add(102);
-  m_FileInfoPopIDs.Add(103);
-  m_FileInfoPopIDs.Add(104);
+  _fileInfoPopIDs.Add(100);
+  _fileInfoPopIDs.Add(101);
+  _fileInfoPopIDs.Add(102);
+  _fileInfoPopIDs.Add(103);
+  _fileInfoPopIDs.Add(104);
   #endif
 }
 
 
 STDMETHODIMP CEnumArchiveItemProperty::Reset()
 {
-  m_Index = 0;
+  _index = 0;
   return S_OK;
 }
 
-STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG aNumItems, 
-    STATPROPSTG *anItems, ULONG *aNumFetched)
+STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG numItems, 
+    STATPROPSTG *items, ULONG *numFetched)
 {
-  HRESULT aResult = S_OK;
-  if(aNumItems > 1 && !aNumFetched)
+  HRESULT result = S_OK;
+  if(numItems > 1 && !numFetched)
     return E_INVALIDARG;
 
-  for(DWORD anIndex = 0; anIndex < aNumItems; m_Index++)
+  for(DWORD index = 0; index < numItems; _index++)
   {
-    if(m_Index >= m_FileInfoPopIDs.Size())
+    if(_index >= _fileInfoPopIDs.Size())
     {
-      aResult =  S_FALSE;
+      result =  S_FALSE;
       break;
     }
-    int anIndexInMap = FindPropInMap(m_FileInfoPopIDs[m_Index]);
-    if (anIndexInMap == -1)
+    int indexInMap = FindPropInMap(_fileInfoPopIDs[_index]);
+    if (indexInMap == -1)
       continue;
-    const STATPROPSTG &aSrcItem = kPropMap[anIndexInMap].StatPROPSTG;
-    STATPROPSTG &aDestItem = anItems[anIndex];
-    aDestItem.propid = aSrcItem.propid;
-    aDestItem.vt = aSrcItem.vt;
-    if(aSrcItem.lpwstrName != NULL)
+    const STATPROPSTG &srcItem = kPropMap[indexInMap].StatPROPSTG;
+    STATPROPSTG &destItem = items[index];
+    destItem.propid = srcItem.propid;
+    destItem.vt = srcItem.vt;
+    if(srcItem.lpwstrName != NULL)
     {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.lpwstrName);
+      destItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(srcItem.lpwstrName) + 1) * sizeof(wchar_t));
+      wcscpy(destItem.lpwstrName, srcItem.lpwstrName);
     }
     else
-      aDestItem.lpwstrName = aSrcItem.lpwstrName;
-    anIndex++;
+      destItem.lpwstrName = srcItem.lpwstrName;
+    index++;
   }
-  if (aNumFetched)
-    *aNumFetched = anIndex;
-  return aResult;
+  if (numFetched)
+    *numFetched = index;
+  return result;
 }
 
-STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG aNumSkip)
+STDMETHODIMP CEnumArchiveItemProperty::Skip(ULONG numSkip)
   {  return E_NOTIMPL; }
 
-STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
+STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **enumerator)
   {  return E_NOTIMPL; }
 
 }}

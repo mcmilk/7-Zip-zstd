@@ -39,248 +39,249 @@ static const char *kEverythingIsOk = "Everything is Ok";
 
 static const char *kIllegalFileNameMessage = "Illegal file name for temp archive";
 
-void EnumerateRecursed(const NWildcard::CCensorNode &aCurNode, 
-    const CSysString &aDirectory, 
-    const UString &aPrefix, 
-    bool aCheckNameFull,
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector, 
-    UINT aCodePage,
-    bool anEnterToSubFolders)
+static void EnumerateDirItems(const NWildcard::CCensorNode &curNode, 
+    const CSysString &directory, 
+    const UString &prefix, 
+    bool checkNameFull,
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, 
+    UINT codePage,
+    bool enterToSubFolders)
 {
   NConsoleClose::CheckCtrlBreak();
 
-  NFind::CEnumerator anEnumerator(aDirectory + TCHAR(kAnyStringWildcard));
-  NFind::CFileInfo aFileInfo;
-  while (anEnumerator.Next(aFileInfo))
+  NFind::CEnumerator enumerator(directory + TCHAR(kAnyStringWildcard));
+  NFind::CFileInfo fileInfo;
+  while (enumerator.Next(fileInfo))
   {
     NConsoleClose::CheckCtrlBreak();
-    UString anUnicodeName = GetUnicodeString(aFileInfo.Name, aCodePage);
-    if (aCheckNameFull)
+    UString unicodeName = GetUnicodeString(fileInfo.Name, codePage);
+    if (checkNameFull)
     {
-      if (aCurNode.CheckNameFull(anUnicodeName))
-        AddDirFileInfo(aPrefix, aDirectory + aFileInfo.Name, aFileInfo, 
-            aDirFileInfoVector, aCodePage);
+      if (curNode.CheckNameFull(unicodeName))
+        AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
+            dirFileInfoVector, codePage);
     }
     else
     {
-      if (aCurNode.CheckNameRecursive(anUnicodeName))
-        AddDirFileInfo(aPrefix, aDirectory + aFileInfo.Name, aFileInfo, 
-            aDirFileInfoVector, aCodePage);
+      if (curNode.CheckNameRecursive(unicodeName))
+        AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
+            dirFileInfoVector, codePage);
     }
-    if (anEnterToSubFolders && aFileInfo.IsDirectory())
+    if (enterToSubFolders && fileInfo.IsDirectory())
     {
-      const NWildcard::CCensorNode *aNextNode = &aCurNode;
-      if (aCheckNameFull)
+      const NWildcard::CCensorNode *nextNode = &curNode;
+      if (checkNameFull)
       {
-        aNextNode = ((NWildcard::CCensorNode *)&aCurNode)->FindSubNode(anUnicodeName);
-        if (aNextNode == NULL)
-          aNextNode = &aCurNode;
+        nextNode = ((NWildcard::CCensorNode *)&curNode)->FindSubNode(unicodeName);
+        if (nextNode == NULL)
+          nextNode = &curNode;
       }
-      EnumerateRecursed(*aNextNode,   
-          aDirectory + aFileInfo.Name + TCHAR(kDirDelimiter), 
-          aPrefix + anUnicodeName + wchar_t(kDirDelimiter), 
-          aNextNode != (&aCurNode), aDirFileInfoVector, aCodePage, true);
+      EnumerateDirItems(*nextNode,   
+          directory + fileInfo.Name + TCHAR(kDirDelimiter), 
+          prefix + unicodeName + wchar_t(kDirDelimiter), 
+          nextNode != (&curNode), dirFileInfoVector, codePage, true);
     }
   }
 }
 
-void EnumerateItems(const NWildcard::CCensorNode &aCurNode, 
-    const CSysString &aDirectory, 
-    const UString &aPrefix,
-    CArchiveStyleDirItemInfoVector &aDirFileInfoVector, 
-    UINT aCodePage)
+static void EnumerateItems(const NWildcard::CCensorNode &curNode, 
+    const CSysString &directory, 
+    const UString &prefix,
+    CArchiveStyleDirItemInfoVector &dirFileInfoVector, 
+    UINT codePage)
 {
   NConsoleClose::CheckCtrlBreak();
-  if (!aCurNode.GetAllowedRecursedNamesVector(false).IsEmpty() || 
-      !aCurNode.GetAllowedRecursedNamesVector(true).IsEmpty()) 
+  if (!curNode.GetAllowedRecursedNamesVector(false).IsEmpty() || 
+      !curNode.GetAllowedRecursedNamesVector(true).IsEmpty()) 
   {
-    EnumerateRecursed(aCurNode, aDirectory, aPrefix, true, aDirFileInfoVector, 
-        aCodePage, true);
+    EnumerateDirItems(curNode, directory, prefix, true, dirFileInfoVector, 
+        codePage, true);
     return;
   }
-  if (!aCurNode.GetAllowedNamesVector(false, true).IsEmpty())
+  if (!curNode.GetAllowedNamesVector(false, true).IsEmpty())
   {
-    EnumerateRecursed(aCurNode, aDirectory, aPrefix, true, aDirFileInfoVector, 
-        aCodePage, false);
+    EnumerateDirItems(curNode, directory, prefix, true, dirFileInfoVector, 
+        codePage, false);
   }
   else
   {
-    const UStringVector &aDirectNames = aCurNode.GetAllowedNamesVector(false, false);
-    for (int i = 0; i < aDirectNames.Size(); i++)
+    const UStringVector &directNames = curNode.GetAllowedNamesVector(false, false);
+    for (int i = 0; i < directNames.Size(); i++)
     {
-      const UString &aNameSpec = aDirectNames[i];
-      if (aCurNode.CheckName(aNameSpec, false, false))
+      const UString &nameSpec = directNames[i];
+      if (curNode.CheckName(nameSpec, false, false))
         continue;
 
-      NFind::CFileInfo aFileInfo;
-      if (!NFind::FindFile(aDirectory + GetSystemString(aNameSpec, aCodePage), aFileInfo))
+      NFind::CFileInfo fileInfo;
+      if (!NFind::FindFile(directory + GetSystemString(nameSpec, codePage), fileInfo))
         continue;
     
-      AddDirFileInfo(aPrefix, aDirectory + aFileInfo.Name, aFileInfo, 
-        aDirFileInfoVector, aCodePage);
+      AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
+        dirFileInfoVector, codePage);
     }
   }
-  for (int i = 0; i < aCurNode._subNodes.Size(); i++)
+  for (int i = 0; i < curNode.SubNodes.Size(); i++)
   {
-    const NWildcard::CCensorNode &aNextNode = aCurNode._subNodes[i];
-    EnumerateItems(aNextNode, 
-        aDirectory + GetSystemString(aNextNode._name, aCodePage) + TCHAR(kDirDelimiter), 
-        aPrefix + aNextNode._name + wchar_t(kDirDelimiter),
-        aDirFileInfoVector, aCodePage);
+    const NWildcard::CCensorNode &nextNode = curNode.SubNodes[i];
+    EnumerateItems(nextNode, 
+        directory + GetSystemString(nextNode.Name, codePage) + TCHAR(kDirDelimiter), 
+        prefix + nextNode.Name + wchar_t(kDirDelimiter),
+        dirFileInfoVector, codePage);
   }
 }
 
-HRESULT GetFileTime(IArchiveHandler200 *anArchive, UINT32 anIndex, 
-    FILETIME &aFileTime, const FILETIME &aDefaultFileTime)
+HRESULT GetFileTime(IArchiveHandler200 *archive, UINT32 index, 
+    FILETIME &fileTime, const FILETIME &defaultFileTime)
 {
-  CPropVariant aProperty;
-  RETURN_IF_NOT_S_OK(anArchive->GetProperty(anIndex, kpidLastWriteTime, &aProperty));
-  if (aProperty.vt == VT_FILETIME)
-    aFileTime = aProperty.filetime;
-  else if (aProperty.vt == VT_EMPTY)
-    aFileTime = aDefaultFileTime;
+  CPropVariant property;
+  RETURN_IF_NOT_S_OK(archive->GetProperty(index, kpidLastWriteTime, &property));
+  if (property.vt == VT_FILETIME)
+    fileTime = property.filetime;
+  else if (property.vt == VT_EMPTY)
+    fileTime = defaultFileTime;
   else
     throw 4190407;
   return S_OK;
 }
 
-HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &aCensor,
-    IArchiveHandler200 *anArchive,
-    const UString &aDefaultItemName,
-    const NWindows::NFile::NFind::CFileInfo &anArchiveFileInfo,
-    CArchiveItemInfoVector &anArchiveItems)
+HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
+    IArchiveHandler200 *archive,
+    const UString &defaultItemName,
+    const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+    CArchiveItemInfoVector &archiveItems)
 {
-  anArchiveItems.Clear();
-  UINT32 aNumItems;
-  RETURN_IF_NOT_S_OK(anArchive->GetNumberOfItems(&aNumItems));
-  anArchiveItems.Reserve(aNumItems);
-  for(int i = 0; i < aNumItems; i++)
+  archiveItems.Clear();
+  UINT32 numItems;
+  RETURN_IF_NOT_S_OK(archive->GetNumberOfItems(&numItems));
+  archiveItems.Reserve(numItems);
+  for(int i = 0; i < numItems; i++)
   {
-    CArchiveItemInfo anItemInfo;
-    NCOM::CPropVariant aPropVariantPath;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidPath, &aPropVariantPath));
-    UString aFilePath;
-    if(aPropVariantPath.vt == VT_EMPTY)
-      anItemInfo.Name = aDefaultItemName;
+    CArchiveItemInfo itemInfo;
+    NCOM::CPropVariant propVariantPath;
+    RETURN_IF_NOT_S_OK(archive->GetProperty(i, kpidPath, &propVariantPath));
+    UString filePath;
+    if(propVariantPath.vt == VT_EMPTY)
+      itemInfo.Name = defaultItemName;
     else
     {
-      if(aPropVariantPath.vt != VT_BSTR)
+      if(propVariantPath.vt != VT_BSTR)
         return E_FAIL;
-      anItemInfo.Name = aPropVariantPath.bstrVal;
+      itemInfo.Name = propVariantPath.bstrVal;
     }
-    anItemInfo.Censored = aCensor.CheckName(anItemInfo.Name);
+    itemInfo.Censored = censor.CheckName(itemInfo.Name);
 
-    RETURN_IF_NOT_S_OK(GetFileTime(anArchive, i, anItemInfo.LastWriteTime, 
-        anArchiveFileInfo.LastWriteTime));
+    RETURN_IF_NOT_S_OK(GetFileTime(archive, i, itemInfo.LastWriteTime, 
+        archiveFileInfo.LastWriteTime));
 
-    CPropVariant aPropertySize;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidSize, &aPropertySize));
-    if (anItemInfo.SizeIsDefined = (aPropertySize.vt != VT_EMPTY))
-      anItemInfo.Size = ConvertPropVariantToUINT64(aPropertySize);
+    CPropVariant propertySize;
+    RETURN_IF_NOT_S_OK(archive->GetProperty(i, kpidSize, &propertySize));
+    if (itemInfo.SizeIsDefined = (propertySize.vt != VT_EMPTY))
+      itemInfo.Size = ConvertPropVariantToUINT64(propertySize);
 
-    CPropVariant aPropertyIsFolder;
-    RETURN_IF_NOT_S_OK(anArchive->GetProperty(i, kpidIsFolder, &aPropertyIsFolder));
-    if(aPropertyIsFolder.vt != VT_BOOL)
+    CPropVariant propertyIsFolder;
+    RETURN_IF_NOT_S_OK(archive->GetProperty(i, kpidIsFolder, &propertyIsFolder));
+    if(propertyIsFolder.vt != VT_BOOL)
       return E_FAIL;
-    anItemInfo.IsDirectory = VARIANT_BOOLToBool(aPropertyIsFolder.boolVal);
+    itemInfo.IsDirectory = VARIANT_BOOLToBool(propertyIsFolder.boolVal);
 
-    anItemInfo.IndexInServer = i;
-    anArchiveItems.Add(anItemInfo);
+    itemInfo.IndexInServer = i;
+    archiveItems.Add(itemInfo);
   }
   return S_OK;
 }
 
-static HRESULT UpdateWithItemLists(const CUpdateArchiveOptions &anOptions,
-    IArchiveHandler200 *anArchive, 
-    const CArchiveItemInfoVector &anArchiveItems,
-    const CArchiveStyleDirItemInfoVector &aDirItems,
-    bool anEnablePercents)
+static HRESULT UpdateWithItemLists(const CUpdateArchiveOptions &options,
+    IArchiveHandler200 *archive, 
+    const CArchiveItemInfoVector &archiveItems,
+    const CArchiveStyleDirItemInfoVector &dirItems,
+    bool enablePercents)
 {
-  for(int i = 0; i < anOptions.Commands.Size(); i++)
+  for(int i = 0; i < options.Commands.Size(); i++)
   {
-    const CUpdateArchiveCommand &aCommand = anOptions.Commands[i];
-    const CSysString &aRealArchivePath = aCommand.ArchivePath;
-    if (i == 0 && anOptions.UpdateArchiveItself)
+    const CUpdateArchiveCommand &command = options.Commands[i];
+    const CSysString &realArchivePath = command.ArchivePath;
+    if (i == 0 && options.UpdateArchiveItself)
     {
-      if(anArchive != 0)
+      if(archive != 0)
         g_StdOut << kUpdatingArchiveMessage;
       else
         g_StdOut << kCreatingArchiveMessage; 
-      g_StdOut << GetOemString(anOptions.ArchivePath);
+      g_StdOut << GetOemString(options.ArchivePath);
     }
     else
-      g_StdOut << kCreatingArchiveMessage << GetOemString(aRealArchivePath);
+      g_StdOut << kCreatingArchiveMessage << GetOemString(realArchivePath);
 
     g_StdOut << endl << endl;
 
-    RETURN_IF_NOT_S_OK(Compress(aCommand.ActionSet, anArchive,
-        anOptions.MethodMode, aRealArchivePath, 
-        anArchiveItems, aDirItems, anEnablePercents,
-        anOptions.SfxMode, anOptions.SfxModule));
+    RETURN_IF_NOT_S_OK(Compress(command.ActionSet, archive,
+        options.MethodMode, realArchivePath, 
+        archiveItems, dirItems, enablePercents,
+        options.SfxMode, options.SfxModule));
 
     g_StdOut << endl;
   }
   return S_OK;
 }
 
-HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &aCensor, 
-    CUpdateArchiveOptions  &anOptions, const CSysString &aWorkingDir, 
-    IArchiveHandler200 *anArchive,
-    const UString *aDefaultItemName,
-    const NWindows::NFile::NFind::CFileInfo *anArchiveFileInfo,
-    bool anEnablePercents)
+HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &censor, 
+    CUpdateArchiveOptions  &options, const CSysString &workingDir, 
+    IArchiveHandler200 *archive,
+    const UString *defaultItemName,
+    const NWindows::NFile::NFind::CFileInfo *archiveFileInfo,
+    bool enablePercents)
 {
-  CArchiveStyleDirItemInfoVector aDirItems;
+  CArchiveStyleDirItemInfoVector dirItems;
   g_StdOut << kScanningMessage;
-  EnumerateItems(aCensor._head, _T(""), L"", aDirItems, CP_OEMCP);
+  EnumerateItems(censor._head, _T(""), L"", dirItems, CP_OEMCP);
   g_StdOut << endl;
 
-  CFileVectorBundle aFileVectorBundle;
-  if(anOptions.UpdateArchiveItself)
+  CFileVectorBundle fileVectorBundle;
+  if(options.UpdateArchiveItself)
   {
-    if (!NDirectory::MyGetTempFileName(aWorkingDir, kTempArchiveFilePrefixString, 
-        anOptions.Commands[0].ArchivePath))
+    if (!NDirectory::MyGetTempFileName(workingDir, kTempArchiveFilePrefixString, 
+        options.Commands[0].ArchivePath))
       throw "create temp file error";
   }
 
-  for(int i = 0; i < anOptions.Commands.Size(); i++)
+  int i;
+  for(i = 0; i < options.Commands.Size(); i++)
   {
-    aFileVectorBundle.Add(anOptions.Commands[i].ArchivePath, 
-        i > 0 || !anOptions.UpdateArchiveItself);
-    // SetBanOnFile(aCensor, aCurrentDir, anOptions.Commands[i].ArchivePath);
+    fileVectorBundle.Add(options.Commands[i].ArchivePath, 
+        i > 0 || !options.UpdateArchiveItself);
+    // SetBanOnFile(censor,currentDir, options.Commands[i].ArchivePath);
   }
   g_StdOut << endl;
 
-  CArchiveItemInfoVector anArchiveItems;
-  if (anArchive != NULL)
+  CArchiveItemInfoVector archiveItems;
+  if (archive != NULL)
   {
-    RETURN_IF_NOT_S_OK(EnumerateInArchiveItems(aCensor, 
-        anArchive, *aDefaultItemName, *anArchiveFileInfo, anArchiveItems));
+    RETURN_IF_NOT_S_OK(EnumerateInArchiveItems(censor, 
+        archive, *defaultItemName, *archiveFileInfo, archiveItems));
   }
 
-  RETURN_IF_NOT_S_OK(UpdateWithItemLists(anOptions, anArchive, anArchiveItems, aDirItems, anEnablePercents));
+  RETURN_IF_NOT_S_OK(UpdateWithItemLists(options, archive, archiveItems, dirItems, enablePercents));
 
-  if (anArchive != NULL)
+  if (archive != NULL)
   {
-    RETURN_IF_NOT_S_OK(anArchive->Close());
+    RETURN_IF_NOT_S_OK(archive->Close());
   }
 
-  int aFirstNotTempArchiveIndex = anOptions.UpdateArchiveItself ? 1 : 0;
-  for(i = anOptions.Commands.Size() - 1; i >= aFirstNotTempArchiveIndex; i--)
-    aFileVectorBundle.DisableDeleting(i);
-  if(anOptions.UpdateArchiveItself)
+  int firstNotTempArchiveIndex = options.UpdateArchiveItself ? 1 : 0;
+  for(i = options.Commands.Size() - 1; i >= firstNotTempArchiveIndex; i--)
+    fileVectorBundle.DisableDeleting(i);
+  if(options.UpdateArchiveItself)
   {
     try
     {
-      if (anArchive != NULL)
-        if (!NDirectory::DeleteFileAlways(anOptions.ArchivePath))
+      if (archive != NULL)
+        if (!NDirectory::DeleteFileAlways(options.ArchivePath))
           throw "delete file error";
-      if (!::MoveFile(anOptions.Commands[0].ArchivePath, anOptions.ArchivePath))
+      if (!::MoveFile(options.Commands[0].ArchivePath, options.ArchivePath))
         throw "move file error";
     }
     catch(...)
     {
-      aFileVectorBundle.DisableDeleting(0);
+      fileVectorBundle.DisableDeleting(0);
       throw;
     }
   }

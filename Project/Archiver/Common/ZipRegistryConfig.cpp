@@ -28,6 +28,7 @@ static const TCHAR *kContextMenuHandlerCLASSIDValue =
     _T("{23170F69-40C1-278A-1000-000100020000}");
 static const TCHAR *kRootKeyNameForFile = _T("*");
 static const TCHAR *kRootKeyNameForFolder = _T("Folder");
+static const TCHAR *kRootKeyNameForDirectory = _T("Directory");
 
 static CSysString GetFullContextMenuKeyName(const CSysString &aKeyName)
   { return (aKeyName + kContextMenuKeyName); }
@@ -48,7 +49,8 @@ static bool CheckContextMenuHandlerCommon(const CSysString &aKeyName)
 bool CheckContextMenuHandler()
 { 
   return CheckContextMenuHandlerCommon(kRootKeyNameForFile) &&
-    CheckContextMenuHandlerCommon(kRootKeyNameForFolder);
+    CheckContextMenuHandlerCommon(kRootKeyNameForFolder) &&
+    CheckContextMenuHandlerCommon(kRootKeyNameForDirectory);
 }
 
 static void DeleteContextMenuHandlerCommon(const CSysString &aKeyName)
@@ -63,6 +65,7 @@ void DeleteContextMenuHandler()
 { 
   DeleteContextMenuHandlerCommon(kRootKeyNameForFile); 
   DeleteContextMenuHandlerCommon(kRootKeyNameForFolder);
+  DeleteContextMenuHandlerCommon(kRootKeyNameForDirectory);
 }
 
 static void AddContextMenuHandlerCommon(const CSysString &aKeyName)
@@ -78,6 +81,7 @@ void AddContextMenuHandler()
 { 
   AddContextMenuHandlerCommon(kRootKeyNameForFile); 
   AddContextMenuHandlerCommon(kRootKeyNameForFolder);
+  AddContextMenuHandlerCommon(kRootKeyNameForDirectory);
 }
 
 }

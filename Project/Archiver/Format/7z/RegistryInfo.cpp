@@ -18,125 +18,141 @@ namespace NRegistryInfo {
 static LPCTSTR kCoderPath = _T("Software\\7-Zip\\Coder");
 static LPCTSTR kMatchFinderPath = _T("Software\\7-Zip\\MatchFinder");
 
-static LPCTSTR aDecoderValueName = _T("Decoder");
-static LPCTSTR aDecoderPropertiesValueName = _T("DecoderProperties");
-static LPCTSTR anEncoderValueName = _T("Encoder");
-static LPCTSTR anEncoderPropertiesValueName = _T("EncoderProperties");
-static LPCTSTR aDescriptionValueName = _T("Description");
-static LPCTSTR anInStreamsValueName = _T("InStreams");
-static LPCTSTR anOutStreamsValueName = _T("OutStreams");
+static LPCTSTR kDecoderValueName = _T("Decoder");
+static LPCTSTR kDecoderPropertiesValueName = _T("DecoderProperties");
+static LPCTSTR kEncoderValueName = _T("Encoder");
+static LPCTSTR kEncoderPropertiesValueName = _T("EncoderProperties");
+static LPCTSTR kDescriptionValueName = _T("Description");
+static LPCTSTR kInStreamsValueName = _T("InStreams");
+static LPCTSTR kOutStreamsValueName = _T("OutStreams");
 
-void MyReadCLSID(CKey &aKey, LPCTSTR aValueName, bool &ItemIsAssigned, CLSID &aCLSID)
+void MyReadCLSID(CKey &key, LPCTSTR valueName, bool &itemIsAssigned, CLSID &clsID)
 {
-  ItemIsAssigned = false;
-  CSysString aString;
-  if (aKey.QueryValue(aValueName, aString) != ERROR_SUCCESS)
+  itemIsAssigned = false;
+  CSysString value;
+  if (key.QueryValue(valueName, value) != ERROR_SUCCESS)
     return;
-  if(NCOM::StringToGUID(aString, aCLSID) != NOERROR)
+  if(NCOM::StringToGUID(value, clsID) != NOERROR)
     return;
-  ItemIsAssigned = true;
+  itemIsAssigned = true;
 }
 
-bool ReadMethodInfo(HKEY aKeyParrent, LPCTSTR aKeyName, CMethodInfo &aMethodInfo)
+bool ReadMethodInfo(HKEY parentKey, LPCTSTR keyName, CMethodInfo &methodInfo)
 {
-  aMethodInfo.Name.Empty();
-  aMethodInfo.DecoderIsAssigned = false;
-  aMethodInfo.EncoderIsAssigned = false;
-  aMethodInfo.Description.Empty();
+  methodInfo.Name.Empty();
+  methodInfo.DecoderIsAssigned = false;
+  methodInfo.EncoderIsAssigned = false;
+  methodInfo.Description.Empty();
 
-  CKey aKey;
-  if (aKey.Open(aKeyParrent, aKeyName, KEY_READ) != ERROR_SUCCESS)
+  CKey key;
+  if (key.Open(parentKey, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
 
-  aKey.QueryValue(NULL, aMethodInfo.Name);
+  key.QueryValue(NULL, methodInfo.Name);
 
-  MyReadCLSID(aKey, aDecoderValueName, aMethodInfo.DecoderIsAssigned, aMethodInfo.Decoder);
-  MyReadCLSID(aKey, aDecoderPropertiesValueName, aMethodInfo.DecoderPropertiesIsAssigned, aMethodInfo.DecoderProperties);
-  MyReadCLSID(aKey, anEncoderValueName, aMethodInfo.EncoderIsAssigned, aMethodInfo.Encoder);
-  MyReadCLSID(aKey, anEncoderPropertiesValueName, aMethodInfo.EncoderPropertiesIsAssigned, aMethodInfo.EncoderProperties);
+  MyReadCLSID(key, kDecoderValueName, methodInfo.DecoderIsAssigned, methodInfo.Decoder);
+  MyReadCLSID(key, kDecoderPropertiesValueName, methodInfo.DecoderPropertiesIsAssigned, methodInfo.DecoderProperties);
+  MyReadCLSID(key, kEncoderValueName, methodInfo.EncoderIsAssigned, methodInfo.Encoder);
+  MyReadCLSID(key, kEncoderPropertiesValueName, methodInfo.EncoderPropertiesIsAssigned, methodInfo.EncoderProperties);
 
-  aKey.QueryValue(aDescriptionValueName, aMethodInfo.Description);
-  if (aKey.QueryValue(anInStreamsValueName, aMethodInfo.NumInStreams) != ERROR_SUCCESS)
-    aMethodInfo.NumInStreams = 1;
-  if (aKey.QueryValue(anOutStreamsValueName, aMethodInfo.NumOutStreams) != ERROR_SUCCESS)
-    aMethodInfo.NumOutStreams = 1;
+  key.QueryValue(kDescriptionValueName, methodInfo.Description);
+  if (key.QueryValue(kInStreamsValueName, methodInfo.NumInStreams) != ERROR_SUCCESS)
+    methodInfo.NumInStreams = 1;
+  if (key.QueryValue(kOutStreamsValueName, methodInfo.NumOutStreams) != ERROR_SUCCESS)
+    methodInfo.NumOutStreams = 1;
   return true;
 }
 
-bool GetMethodInfo(const CMethodID &aMethodID, CMethodInfo &aMethodInfo)
+bool GetMethodInfo(const CMethodID &methodID, CMethodInfo &methodInfo)
 {
-  CSysString aKeyName = kCoderPath;
-  aKeyName += "\\";
-  aKeyName += GetSystemString(aMethodID.ConvertToString());
-  return ReadMethodInfo(HKEY_LOCAL_MACHINE, aKeyName, aMethodInfo);
+  CSysString keyName = kCoderPath;
+  keyName += "\\";
+  keyName += GetSystemString(methodID.ConvertToString());
+  return ReadMethodInfo(HKEY_LOCAL_MACHINE, keyName, methodInfo);
 }
 
-bool EnumerateAllMethods(CObjectVector<CMethodInfo2> &aMethodInfoVector)
+bool EnumerateAllMethods(CObjectVector<CMethodInfo2> &methodInfoVector)
 {
-  CSysString aKeyName = kCoderPath;
+  CSysString keyName = kCoderPath;
 
-  CKey aKey;
-  if (aKey.Open(HKEY_LOCAL_MACHINE, aKeyName, KEY_READ) != ERROR_SUCCESS)
+  CKey key;
+  if (key.Open(HKEY_LOCAL_MACHINE, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
 
-  CSysStringVector anIDs;
-  aKey.EnumKeys(anIDs);
-  for(int i = 0; i < anIDs.Size(); i++)
+  CSysStringVector idStrings;
+  key.EnumKeys(idStrings);
+  for(int i = 0; i < idStrings.Size(); i++)
   {
-    CMethodInfo2 aMethodInfo;
-    if (!aMethodInfo.MethodID.ConvertFromString(anIDs[i]))
+    CMethodInfo2 methodInfo;
+    if (!methodInfo.MethodID.ConvertFromString(idStrings[i]))
       continue;
-    if (ReadMethodInfo(aKey, anIDs[i], aMethodInfo))
-      aMethodInfoVector.Add(aMethodInfo);
+    if (ReadMethodInfo(key, idStrings[i], methodInfo))
+      methodInfoVector.Add(methodInfo);
   }
 
   return true;
 }
 
-bool GetMatchFinder(const CSysString &aName, CMatchFinderInfo &aMatchFinderInfo)
+bool GetMatchFinder(const CSysString &name, CMatchFinderInfo &matchFinderInfo)
 {
-  CSysString aKeyName = kMatchFinderPath;
-  aKeyName += "\\";
-  aKeyName += aName;
+  CSysString keyName = kMatchFinderPath;
+  keyName += "\\";
+  keyName += name;
 
-  CKey aKey;
-  if (aKey.Open(HKEY_LOCAL_MACHINE, aKeyName, KEY_READ) != ERROR_SUCCESS)
+  CKey key;
+  if (key.Open(HKEY_LOCAL_MACHINE, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
 
-  CSysString aString;
-  if (aKey.QueryValue(NULL, aString) != ERROR_SUCCESS)
+  CSysString value;
+  if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
 
-  if(NCOM::StringToGUID(aString, aMatchFinderInfo.ClassID) != NOERROR)
+  if(NCOM::StringToGUID(value, matchFinderInfo.ClassID) != NOERROR)
     return false;
   return true;
 }
 
 
-bool CMethodToCLSIDMap::GetCLSID(const CMethodID &aMethodID, CLSID &aCLSID)
+bool CMethodToCLSIDMap::GetMethodInfo2(const CMethodID &methodID, CMethodInfo &methodInfo)
 {
   for(int i = 0; i < m_Pairs.Size(); i++)
   {
-    CMethodToCLSIDPair aPair = m_Pairs[i];
-    if (aPair.MethodID == aMethodID)
+    CMethodToCLSIDPair pair = m_Pairs[i];
+    if (pair.MethodID == methodID)
     {
-      aCLSID = aPair.ClassID;
+      methodInfo = pair.MethodInfo;
       return true;
     }
   }
   return false;
 }
 
-bool CMethodToCLSIDMap::GetCLSIDAlways(const CMethodID &aMethodID, CLSID &aCLSID)
+bool CMethodToCLSIDMap::GetMethodInfoAlways(const CMethodID &methodID, CMethodInfo &methodInfo)
 {
-  if (GetCLSID(aMethodID, aCLSID))
+  if (GetMethodInfo2(methodID, methodInfo))
     return true;
-  CMethodInfo aMethodInfo;
-  if (!GetMethodInfo(aMethodID, aMethodInfo))
+  return GetMethodInfo(methodID, methodInfo);
+}
+
+bool CMethodToCLSIDMap::GetCLSID(const CMethodID &methodID, CLSID &clsID)
+{
+  CMethodInfo methodInfo;
+  if (!GetMethodInfo2(methodID, methodInfo))
     return false;
-  if (!aMethodInfo.DecoderIsAssigned)
+  if (!methodInfo.DecoderIsAssigned)
     return false;
-  aCLSID = aMethodInfo.Decoder;
+  clsID = methodInfo.Decoder;
+  return true;
+}
+
+bool CMethodToCLSIDMap::GetCLSIDAlways(const CMethodID &methodID, CLSID &clsID)
+{
+  CMethodInfo methodInfo;
+  if (!GetMethodInfoAlways(methodID, methodInfo))
+    return false;
+  if (!methodInfo.DecoderIsAssigned)
+    return false;
+  clsID = methodInfo.Decoder;
   return true;
 }
 

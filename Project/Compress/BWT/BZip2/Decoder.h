@@ -36,7 +36,7 @@ public:
   // DECLARE_NO_REGISTRY()
 
   DECLARE_REGISTRY(CEncoder, TEXT("Compress.BZip2Decoder.1"), 
-  TEXT("Compress.BZip2Decoder"), 0, THREADFLAGS_APARTMENT)
+  TEXT("Compress.BZip2Decoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   HRESULT Flush();
   // void (ReleaseStreams)();

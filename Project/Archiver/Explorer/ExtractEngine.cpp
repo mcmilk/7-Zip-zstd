@@ -8,8 +8,11 @@
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/COM.h"
+#include "Windows/Thread.h"
 
-#include "../Common/OpenEngine2.h"
+#include "../Common/OpenEngine200.h"
+#include "../Common/DefaultName.h"
 
 #ifndef  NO_REGISTRY
 #include "../Common/ZipRegistry.h"
@@ -23,19 +26,55 @@
 #include "ExtractDialog.h"
 #include "../../FileManager/ExtractCallback.h"
 
+#include "../Agent/ExtractCallback200.h"
+
 using namespace NWindows;
+
+struct CThreadExtracting
+{
+  CComPtr<IArchiveHandler200> ArchiveHandler;
+  CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
+  CComPtr<IExtractCallback2> ExtractCallback;
+  CComPtr<IExtractCallback200> ExtractCallback200;
+
+  HRESULT Result;
+  
+  DWORD Process()
+  {
+    NCOM::CComInitializer comInitializer;
+    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    #ifndef _SFX
+    ExtractCallbackSpec->_appTitle.Window = (HWND)ExtractCallbackSpec->_progressDialog;
+    #endif
+    Result = ArchiveHandler->ExtractAllItems(BoolToInt(false), 
+        ExtractCallback200);
+    ExtractCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadExtracting *)param)->Process();
+  }
+};
+
+static inline UINT GetCurrentFileCodePage()
+  {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
 HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName, 
     bool assumeYes)
 {
-  CComPtr<IArchiveHandler100> archiveHandler;
-  NZipRootRegistry::CArchiverInfo archiverInfoResult;
+  CThreadExtracting extracter;
 
-  UString defaultName;
-  HRESULT result = OpenArchive(fileName, &archiveHandler, 
-      archiverInfoResult, defaultName, NULL);
-  if (result != S_OK)
-    return result;
+  NZipRootRegistry::CArchiverInfo archiverInfo;
+
+  RETURN_IF_NOT_S_OK(OpenArchive(fileName, &extracter.ArchiveHandler, 
+      archiverInfo, NULL));
+
+  NFile::NFind::CFileInfo fileInfo;
+  if (!NFile::NFind::FindFile(fileName, fileInfo))
+    return E_FAIL;
+  UString defaultName = GetDefaultName(fileName, archiverInfo.Extension, 
+      GetUnicodeString(archiverInfo.AddExtension));
 
   CSysString directoryPath;
   NExtractionDialog::CModeInfo extractModeInfo;
@@ -83,33 +122,28 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     return E_FAIL;
   }
   
-  CComObjectNoLock<CExtractCallbackImp> *extractCallbackSpec =
-    new CComObjectNoLock<CExtractCallbackImp>;
+  extracter.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
 
-  CComPtr<IExtractCallback2> extractCallBack(extractCallbackSpec);
+  extracter.ExtractCallback = extracter.ExtractCallbackSpec;
   
-  extractCallbackSpec->_parentWindow = 0;
+  extracter.ExtractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
   const CSysString title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
   #else
   const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
   #endif
-  extractCallbackSpec->StartProgressDialog(title);
   #ifndef _SFX
-  extractCallbackSpec->_appTitle.Window = (HWND)extractCallbackSpec->_progressDialog;
-  extractCallbackSpec->_appTitle.Title = title;
+  // extracter.ExtractCallbackSpec->_appTitle.Window = (HWND)extracter.ExtractCallbackSpec->_progressDialog;
+  extracter.ExtractCallbackSpec->_appTitle.Window = (HWND)0;
+  extracter.ExtractCallbackSpec->_appTitle.Title = title;
   #endif
 
-
-  // extractCallbackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
-
-  UStringVector aRemovePathParts;
 
   NFile::NFind::CFileInfo archiveFileInfo;
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
     throw "there is no archive file";
 
-  extractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
+  extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
       !password.IsEmpty(), password);
 
   NExtractionMode::NPath::EEnum pathMode;
@@ -146,9 +180,23 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
       throw 12334455;
   }
 
-  return archiveHandler->Extract(
-      pathMode, overwriteMode, GetUnicodeString(directoryPath), 
-      BoolToMyBool(false), extractCallBack);
+  CComObjectNoLock<CExtractCallBack200Imp> *extractCallback200Spec = new 
+      CComObjectNoLock<CExtractCallBack200Imp>;
+  extracter.ExtractCallback200 = extractCallback200Spec;
+
+  extractCallback200Spec->Init(extracter.ArchiveHandler, 
+      extracter.ExtractCallback, 
+      directoryPath, pathMode, 
+      overwriteMode, UStringVector(),
+      GetCurrentFileCodePage(), 
+      defaultName, 
+      fileInfo.LastWriteTime, fileInfo.Attributes);
+
+  CThread thread;
+  if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
+    throw 271824;
+  extracter.ExtractCallbackSpec->StartProgressDialog(title);
+  return extracter.Result;
 }
 
 

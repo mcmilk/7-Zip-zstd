@@ -59,9 +59,7 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       codePage, 
       _proxyHandler->_itemDefaultName,
       _proxyHandler->_defaultTime, 
-      _proxyHandler->_defaultAttributes, 
-      false, 
-      L"");
+      _proxyHandler->_defaultAttributes);
   std::vector<UINT32> realIndices;
   _proxyHandler->GetRealIndexes(*_proxyFolderItem, indices, numItems, realIndices);
   return _proxyHandler->_archiveHandler->Extract(&realIndices.front(), 

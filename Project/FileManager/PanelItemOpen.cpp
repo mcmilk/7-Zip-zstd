@@ -14,6 +14,7 @@
 #include "Windows/Synchronization.h"
 #include "Windows/System.h"
 #include "Windows/Error.h"
+#include "Windows/COM.h"
 
 #include "../Archiver/Common/IArchiveHandler2.h" 
 
@@ -91,6 +92,7 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name)
 
 HRESULT CPanel::OpenItemAsArchive(int index)
 {
+  CDisableTimerProcessing disableTimerProcessing1(*this);
   RETURN_IF_NOT_S_OK(OpenItemAsArchive(GetItemName(index)));
   RefreshListCtrl();
   return S_OK;
@@ -224,6 +226,7 @@ void CPanel::OpenFolderExternal(int index)
 
 void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
 {
+  CDisableTimerProcessing disableTimerProcessing1(*this);
   if (!_parentFolders.IsEmpty())
   {
     OpenItemInArchive(index, tryInternal, tryExternal, false);
@@ -334,6 +337,32 @@ static DWORD WINAPI MyThreadFunction(void *param)
 
 static CCriticalSection g_CriticalSection;
 
+struct CThreadExtractInArchive
+{
+  CComPtr<IFolderOperations> FolderOperations;
+  CRecordVector<UINT32> Indices;
+  UString DestPath;
+  CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
+  CComPtr<IFolderOperationsExtractCallback> ExtractCallback;
+  HRESULT Result;
+  
+  DWORD Extract()
+  {
+    NCOM::CComInitializer comInitializer;
+    Result = FolderOperations->CopyTo(
+        &Indices.Front(), Indices.Size(), 
+        DestPath, ExtractCallback);
+    // ExtractCallbackSpec->DestroyWindows();
+    ExtractCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+  
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadExtractInArchive *)param)->Extract();
+  }
+};
+
 void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     bool editMode)
 {
@@ -348,18 +377,23 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   if (!CreateTempDirectory(kTempDirPrefix, tempDir))
     return;
 
-  CComObjectNoLock<CExtractCallbackImp> *extractCallbackSpec =
-      new CComObjectNoLock<CExtractCallbackImp>;
-  CComPtr<IFolderOperationsExtractCallback> extractCallback(extractCallbackSpec);
-  extractCallbackSpec->_parentWindow = GetParent();
-  extractCallbackSpec->StartProgressDialog(LangLoadString(IDS_OPENNING, 0x03020283));
-  extractCallbackSpec->Init(NExtractionMode::NOverwrite::kWithoutPrompt, false, L"");
+  CThreadExtractInArchive extracter;
 
-  CRecordVector<UINT32> indices;
-  indices.Add(index);
-  if (folderOperations->CopyTo(&indices.Front(), indices.Size(),
-      GetUnicodeString(tempDir + NFile::NName::kDirDelimiter), 
-      extractCallback) != S_OK)
+  extracter.ExtractCallbackSpec =
+      new CComObjectNoLock<CExtractCallbackImp>;
+  extracter.ExtractCallback = extracter.ExtractCallbackSpec;
+  extracter.ExtractCallbackSpec->_parentWindow = GetParent();
+  extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kWithoutPrompt, false, L"");
+  extracter.Indices.Add(index);
+  extracter.DestPath = GetUnicodeString(tempDir + NFile::NName::kDirDelimiter);
+  extracter.FolderOperations = folderOperations;
+
+  CThread extractThread;
+  if (!extractThread.Create(CThreadExtractInArchive::MyThreadFunction, &extracter))
+    throw 271824;
+  extracter.ExtractCallbackSpec->StartProgressDialog(LangLoadString(IDS_OPENNING, 0x03020283));
+
+  if (extracter.Result != S_OK)
   {
     // MessageBox(TEXT("Can not extract item"));
     return;

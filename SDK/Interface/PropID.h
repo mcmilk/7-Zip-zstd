@@ -34,6 +34,7 @@ enum
   kpidFileSystem,
   kpidUser,
   kpidGroup,
+  kpidBlock,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace, 

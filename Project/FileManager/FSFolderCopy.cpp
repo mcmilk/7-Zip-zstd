@@ -158,9 +158,9 @@ static HRESULT MyCopyFile(
       GetUnicodeString(destPath, fileCodePage), 
       &destPathResult,
       &writeAskResult));
-  CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
   if (IntToBool(writeAskResult))
   {
+    CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
     if (!::MyCopyFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = GetUnicodeString(NError::MyFormatMessage(GetLastError())) +
@@ -313,9 +313,9 @@ HRESULT MyMoveFile(
       GetUnicodeString(destPath, fileCodePage), 
       &destPathResult,
       &writeAskResult));
-  CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
   if (IntToBool(writeAskResult))
   {
+    CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
     if (!MyMoveFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = UString(L"can not move to file ") + 

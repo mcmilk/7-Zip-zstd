@@ -181,28 +181,28 @@ DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Plugin7zip.1"), TEXT("SevenZip.Plugin7zi
       const UINT64 *maxCheckStartPosition,
       IOpenArchive2CallBack *openArchiveCallback);  
   STDMETHOD(Close)();  
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **anEnumProperty);  
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
   STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder);  
   STDMETHOD(Extract)(
-      NExtractionMode::NPath::EEnum aPathMode, 
-      NExtractionMode::NOverwrite::EEnum anOverwriteMode, 
-      const wchar_t *aPath, 
-      INT32 aTestMode,
-      IExtractCallback2 *anExtractCallBack2);
+      NExtractionMode::NPath::EEnum pathMode, 
+      NExtractionMode::NOverwrite::EEnum overwriteMode, 
+      const wchar_t *path, 
+      INT32 testMode,
+      IExtractCallback2 *extractCallback2);
 
   #ifndef EXTRACT_ONLY
   STDMETHOD(SetFolder)(IFolderFolder *folder);
-  STDMETHOD(SetFiles)(const wchar_t *aFolderPrefix, const wchar_t **aNames, UINT32 aNumNames);
-  STDMETHOD(DeleteItems)(const wchar_t *aNewArchiveName, const UINT32 *indices, 
-      UINT32 numItems, IUpdateCallback100 *anUpdateCallback);
-  STDMETHOD(DoOperation)(const CLSID *aCLSID, 
-      const wchar_t *aNewArchiveName, 
-      const BYTE *aStateActions, 
-      const wchar_t *aSfxModule,
-      IUpdateCallback100 *anUpdateCallback);
+  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UINT32 numNames);
+  STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, const UINT32 *indices, 
+      UINT32 numItems, IUpdateCallback100 *updateCallback);
+  STDMETHOD(DoOperation)(const CLSID *clsID, 
+      const wchar_t *newArchiveName, 
+      const BYTE *stateActions, 
+      const wchar_t *sfxModule,
+      IUpdateCallback100 *updateCallback);
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties);
+  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
   #endif
 
 #ifdef NEW_FOLDER_INTERFACE

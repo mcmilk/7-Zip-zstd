@@ -43,12 +43,13 @@ public:
 UINT32 GetMatchLen(const BYTE *aPointer1, const BYTE *aPointer2, 
     UINT32 aLimit)
 {  
-  for(UINT32 i = 0; i < aLimit && *aPointer1 == *aPointer2; 
+  UINT32 i;
+  for(i = 0; i < aLimit && *aPointer1 == *aPointer2; 
       aPointer1++, aPointer2++, i++);
   return i;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
+STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
       ICompressProgressInfo *aProgress)
 {
@@ -89,6 +90,28 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
     }
   }
   return S_OK;
+}
+
+STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
+    ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
+    ICompressProgressInfo *aProgress)
+{
+  try
+  {
+    return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
+  }
+  catch(const NStream::COutByteWriteException &exception)
+  {
+    return exception.Result;
+  }
+  catch(const NStream::CInByteReadException &exception)
+  {
+    return exception.Result;
+  }
+  catch(...)
+  {
+    return E_FAIL;
+  }
 }
 
 

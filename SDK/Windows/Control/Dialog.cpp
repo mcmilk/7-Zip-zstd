@@ -39,6 +39,10 @@ bool CDialog::OnMessage(UINT message, UINT wParam, LPARAM lParam)
         OnHelp((LPHELPINFO)lParam);
         return true;
       }
+    case WM_TIMER:
+      {
+        return OnTimer(wParam, lParam);
+      }
     default:
       return false;
   }

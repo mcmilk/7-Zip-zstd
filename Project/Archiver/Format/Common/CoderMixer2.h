@@ -31,86 +31,86 @@ struct CBindInfo
   CRecordVector<UINT32> InStreams;
   CRecordVector<UINT32> OutStreams;
   
-  UINT32 GetCoderStartOutStream(UINT32 aCoderIndex) const
+  UINT32 GetCoderStartOutStream(UINT32 coderIndex) const
   {
-    UINT32 aNumOutStreams = 0;
-    for (int i = 0; i < aCoderIndex; i++)
-      aNumOutStreams += CodersInfo[i].NumOutStreams;
-    return aNumOutStreams;
+    UINT32 numOutStreams = 0;
+    for (int i = 0; i < coderIndex; i++)
+      numOutStreams += CodersInfo[i].NumOutStreams;
+    return numOutStreams;
   }
 
 
-  void GetNumStreams(UINT32 &aNumInStreams, UINT32 &aNumOutStreams) const
+  void GetNumStreams(UINT32 &numInStreams, UINT32 &numOutStreams) const
   {
-    aNumInStreams = 0;
-    aNumOutStreams = 0;
+    numInStreams = 0;
+    numOutStreams = 0;
     for (int i = 0; i < CodersInfo.Size(); i++)
     {
-      const CCoderStreamsInfo &aCoderStreamsInfo = CodersInfo[i];
-      aNumInStreams += aCoderStreamsInfo.NumInStreams;
-      aNumOutStreams += aCoderStreamsInfo.NumOutStreams;
+      const CCoderStreamsInfo &coderStreamsInfo = CodersInfo[i];
+      numInStreams += coderStreamsInfo.NumInStreams;
+      numOutStreams += coderStreamsInfo.NumOutStreams;
     }
   }
 
-  int FindBinderForInStream(UINT32 anInStream) const
+  int FindBinderForInStream(UINT32 inStream) const
   {
     for (int i = 0; i < BindPairs.Size(); i++)
-      if (BindPairs[i].InIndex == anInStream)
+      if (BindPairs[i].InIndex == inStream)
         return i;
     return -1;
   }
-  int FindBinderForOutStream(UINT32 anOutStream) const
+  int FindBinderForOutStream(UINT32 outStream) const
   {
     for (int i = 0; i < BindPairs.Size(); i++)
-      if (BindPairs[i].OutIndex == anOutStream)
+      if (BindPairs[i].OutIndex == outStream)
         return i;
     return -1;
   }
 
-  UINT32 GetCoderInStreamIndex(UINT32 aCoderIndex) const
+  UINT32 GetCoderInStreamIndex(UINT32 coderIndex) const
   {
-    UINT32 aStreamIndex = 0;
-    for (UINT32 i = 0; i < aCoderIndex; i++)
-      aStreamIndex += CodersInfo[i].NumInStreams;
-    return aStreamIndex;
+    UINT32 streamIndex = 0;
+    for (UINT32 i = 0; i < coderIndex; i++)
+      streamIndex += CodersInfo[i].NumInStreams;
+    return streamIndex;
   }
 
-  UINT32 GetCoderOutStreamIndex(UINT32 aCoderIndex) const
+  UINT32 GetCoderOutStreamIndex(UINT32 coderIndex) const
   {
-    UINT32 aStreamIndex = 0;
-    for (UINT32 i = 0; i < aCoderIndex; i++)
-      aStreamIndex += CodersInfo[i].NumOutStreams;
-    return aStreamIndex;
+    UINT32 streamIndex = 0;
+    for (UINT32 i = 0; i < coderIndex; i++)
+      streamIndex += CodersInfo[i].NumOutStreams;
+    return streamIndex;
   }
 
 
-  void FindInStream(UINT32 aStreamIndex, UINT32 &aCoderIndex, 
-      UINT32 &aCoderStreamIndex) const
+  void FindInStream(UINT32 streamIndex, UINT32 &coderIndex, 
+      UINT32 &coderStreamIndex) const
   {
-    for (aCoderIndex = 0; aCoderIndex < CodersInfo.Size(); aCoderIndex++)
+    for (coderIndex = 0; coderIndex < CodersInfo.Size(); coderIndex++)
     {
-      UINT32 aCurSize = CodersInfo[aCoderIndex].NumInStreams;
-      if (aStreamIndex < aCurSize)
+      UINT32 curSize = CodersInfo[coderIndex].NumInStreams;
+      if (streamIndex < curSize)
       {
-        aCoderStreamIndex = aStreamIndex;
+        coderStreamIndex = streamIndex;
         return;
       }
-      aStreamIndex -= aCurSize;
+      streamIndex -= curSize;
     }
     throw 1;
   }
-  void FindOutStream(UINT32 aStreamIndex, UINT32 &aCoderIndex, 
-      UINT32 &aCoderStreamIndex) const
+  void FindOutStream(UINT32 streamIndex, UINT32 &coderIndex, 
+      UINT32 &coderStreamIndex) const
   {
-    for (aCoderIndex = 0; aCoderIndex < CodersInfo.Size(); aCoderIndex++)
+    for (coderIndex = 0; coderIndex < CodersInfo.Size(); coderIndex++)
     {
-      UINT32 aCurSize = CodersInfo[aCoderIndex].NumOutStreams;
-      if (aStreamIndex < aCurSize)
+      UINT32 curSize = CodersInfo[coderIndex].NumOutStreams;
+      if (streamIndex < curSize)
       {
-        aCoderStreamIndex = aStreamIndex;
+        coderStreamIndex = streamIndex;
         return;
       }
-      aStreamIndex -= aCurSize;
+      streamIndex -= curSize;
     }
     throw 1;
   }
@@ -118,16 +118,17 @@ struct CBindInfo
 
 class CBindReverseConverter
 {
+  UINT32 _numSrcOutStreams;
+  const NCoderMixer2::CBindInfo _srcBindInfo;
+  CRecordVector<UINT32> _srcInToDestOutMap;
+  CRecordVector<UINT32> _srcOutToDestInMap;
+  CRecordVector<UINT32> _destInToSrcOutMap;
 public:
-  UINT32 m_NumSrcInStreams;
-  UINT32 m_NumSrcOutStreams;
-  const NCoderMixer2::CBindInfo m_SrcBindInfo;
-  CRecordVector<UINT32> m_SrcInToDestOutMap;
-  CRecordVector<UINT32> m_SrcOutToDestInMap;
-  CRecordVector<UINT32> m_DestInToSrcOutMap;
-  CRecordVector<UINT32> m_DestOutToSrcInMap;
-  CBindReverseConverter(const NCoderMixer2::CBindInfo &aSrcBindInfo);
-  void CreateReverseBindInfo(NCoderMixer2::CBindInfo &aDestBindInfo);
+  UINT32 NumSrcInStreams;
+  CRecordVector<UINT32> DestOutToSrcInMap;
+
+  CBindReverseConverter(const NCoderMixer2::CBindInfo &srcBindInfo);
+  void CreateReverseBindInfo(NCoderMixer2::CBindInfo &destBindInfo);
 };
 
 //  CreateEvents();
@@ -162,9 +163,9 @@ struct CThreadCoderInfo2
   CComPtr<ICompressProgressInfo> Progress; // CComPtr
   HRESULT Result;
 
-  CThreadCoderInfo2(UINT32 aNumInStreams, UINT32 aNumOutStreams);
-  void SetCoderInfo(const UINT64 **anInSizes,
-      const UINT64 **anOutSizes, ICompressProgressInfo *aProgress);
+  CThreadCoderInfo2(UINT32 numInStreams, UINT32 numOutStreams);
+  void SetCoderInfo(const UINT64 **inSizes,
+      const UINT64 **outSizes, ICompressProgressInfo *progress);
   ~CThreadCoderInfo2();
   bool WaitAndCode();
   void CreateEvents();
@@ -184,7 +185,7 @@ struct CThreadCoderInfo2
 //    {
 //      SetCoderInfo  
 //    }
-//    SetProgressIndex(UINT32 aCoderIndex);
+//    SetProgressIndex(UINT32 coderIndex);
 //    Code
 //  }
 
@@ -202,52 +203,52 @@ DECLARE_NOT_AGGREGATABLE(CCoderMixer2)
 DECLARE_NO_REGISTRY()
 
 public:
-  STDMETHOD(Init)(ISequentialInStream **anInStreams,
-    ISequentialOutStream **anOutStreams);
+  STDMETHOD(Init)(ISequentialInStream **inStreams,
+    ISequentialOutStream **outStreams);
 
-  STDMETHOD(Code)(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes, 
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams, 
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream **inStreams,
+      const UINT64 **inSizes, 
+      UINT32 numInStreams,
+      ISequentialOutStream **outStreams, 
+      const UINT64 **outSizes,
+      UINT32 numOutStreams,
+      ICompressProgressInfo *progress);
 
 
   CCoderMixer2();
   ~CCoderMixer2();
   void AddCoderCommon();
-  void AddCoder(ICompressCoder *aCoder);
-  void AddCoder2(ICompressCoder2 *aCoder);
+  void AddCoder(ICompressCoder *coder);
+  void AddCoder2(ICompressCoder2 *coder);
 
   void ReInit();
-  void SetCoderInfo(UINT32 aCoderIndex, const UINT64 **anInSize, const UINT64 **anOutSize)
-    {  m_CoderInfoVector[aCoderIndex].SetCoderInfo(anInSize, anOutSize, NULL); }
-  void SetProgressCoderIndex(UINT32 aCoderIndex)
-    {  m_ProgressCoderIndex = aCoderIndex; }
+  void SetCoderInfo(UINT32 coderIndex, const UINT64 **anInSize, const UINT64 **outSize)
+    {  _coderInfoVector[coderIndex].SetCoderInfo(anInSize, outSize, NULL); }
+  void SetProgressCoderIndex(UINT32 coderIndex)
+    {  _progressCoderIndex = coderIndex; }
 
 
-  UINT64 GetWriteProcessedSize(UINT32 aBinderIndex) const;
+  UINT64 GetWriteProcessedSize(UINT32 binderIndex) const;
 
 
   bool MyCode();
 
 private:
-  CBindInfo m_BindInfo;
-  CObjectVector<CStreamBinder> m_StreamBinders;
-  CObjectVector<CThreadCoderInfo2> m_CoderInfoVector;
-  CRecordVector<HANDLE> m_Threads;
-  NWindows::CThread m_MainThread;
+  CBindInfo _bindInfo;
+  CObjectVector<CStreamBinder> _streamBinders;
+  CObjectVector<CThreadCoderInfo2> _coderInfoVector;
+  CRecordVector<HANDLE> _threads;
+  NWindows::CThread _mainThread;
 
-  NWindows::NSynchronization::CAutoResetEvent m_StartCompressingEvent;
-  CRecordVector<HANDLE> m_CompressingCompletedEvents;
-  NWindows::NSynchronization::CAutoResetEvent m_CompressingFinishedEvent;
+  NWindows::NSynchronization::CAutoResetEvent _startCompressingEvent;
+  CRecordVector<HANDLE> _compressingCompletedEvents;
+  NWindows::NSynchronization::CAutoResetEvent _compressingFinishedEvent;
 
-  NWindows::NSynchronization::CManualResetEvent ExitEvent;
-  UINT32 m_ProgressCoderIndex;
+  NWindows::NSynchronization::CManualResetEvent _exitEvent;
+  UINT32 _progressCoderIndex;
 
 public:
-  void SetBindInfo(const CBindInfo &aBindInfo);
+  void SetBindInfo(const CBindInfo &bindInfo);
 
 };
 

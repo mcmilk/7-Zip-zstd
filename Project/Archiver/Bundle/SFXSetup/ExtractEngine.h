@@ -5,7 +5,7 @@
 
 #include "Common/String.h"
 
-HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderName);
+HRESULT ExtractArchive(const CSysString &fileName, const CSysString &folderName);
 
 #endif
 

@@ -126,7 +126,7 @@ bool CCompressDialog::OnInit()
       #ifdef LANG
       LangLoadString(IDS_METHOD_NORMAL, 0x02000D82)
       #else
-      MyLoadString(IDS_METHOD_NORMAL));
+      MyLoadString(IDS_METHOD_NORMAL)
       #endif
       );
   m_Method.AddString(

@@ -173,6 +173,10 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *anInStream,
   {
     return CodeReal(anInStream, anOutStream, anInSize, anOutSize, aProgress);
   }
+  catch(const NStream::CInByteReadException &exception)
+  {
+    return exception.Result;
+  }
   catch(const NStream::COutByteWriteException &exception)
   {
     return exception.Result;

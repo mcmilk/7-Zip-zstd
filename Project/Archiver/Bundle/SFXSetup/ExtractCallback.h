@@ -18,81 +18,85 @@
 #include "../../../FileManager/Resource/ProgressDialog/ProgressDialog.h"
 #include "../../Explorer/MyMessages.h"
 
-class CExtractCallBackImp: 
+class CExtractCallbackImp: 
   public IExtractCallback200,
   public CComObjectRoot
 {
 public:
-BEGIN_COM_MAP(CExtractCallBackImp)
+BEGIN_COM_MAP(CExtractCallbackImp)
   COM_INTERFACE_ENTRY(IExtractCallback200)
 END_COM_MAP()
 
-DECLARE_NOT_AGGREGATABLE(CExtractCallBackImp)
+DECLARE_NOT_AGGREGATABLE(CExtractCallbackImp)
 
 DECLARE_NO_REGISTRY()
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
+  STDMETHOD(SetTotal)(UINT64 size);
+  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
 
   // IExtractCallback200
-  STDMETHOD(Extract)(UINT32 anIndex, ISequentialOutStream **anOutStream, 
-      INT32 anAskExtractMode);
-  STDMETHOD(PrepareOperation)(INT32 anAskExtractMode);
-  STDMETHOD(OperationResult)(INT32 aResultEOperationResult);
+  STDMETHOD(Extract)(UINT32 index, ISequentialOutStream **outStream, 
+      INT32 askExtractMode);
+  STDMETHOD(PrepareOperation)(INT32 askExtractMode);
+  STDMETHOD(OperationResult)(INT32 resultEOperationResult);
 
 private:
-  CComPtr<IArchiveHandler200> m_ArchiveHandler;
-  CProgressDialog m_ProgressDialog;
-  CSysString m_DirectoryPath;
+  CComPtr<IArchiveHandler200> _archiveHandler;
+  CSysString _directoryPath;
 
-  CSysString m_FilePath;
+  CSysString _filePath;
 
-  CSysString m_DiskFilePath;
+  CSysString _diskFilePath;
 
-  bool m_ExtractMode;
+  bool _extractMode;
   struct CProcessedFileInfo
   {
     FILETIME UTCLastWriteTime;
     bool IsDirectory;
     UINT32 Attributes;
-  } m_ProcessedFileInfo;
+  } _processedFileInfo;
 
-  CComObjectNoLock<COutFileStream> *m_OutFileStreamSpec;
-  CComPtr<ISequentialOutStream> m_OutFileStream;
-  UINT m_CodePage;
+  CComObjectNoLock<COutFileStream> *_outFileStreamSpec;
+  CComPtr<ISequentialOutStream> _outFileStream;
+  UINT _codePage;
 
-  UString m_ItemDefaultName;
-  FILETIME m_UTCLastWriteTimeDefault;
-  UINT32 m_AttributesDefault;
+  UString _itemDefaultName;
+  FILETIME _utcLastWriteTimeDefault;
+  UINT32 _attributesDefault;
 
-  void CreateComplexDirectory(const UStringVector &aDirPathParts);
+  void CreateComplexDirectory(const UStringVector &dirPathParts);
 public:
-  DWORD m_ThreadID;
-  void Init(IArchiveHandler200 *anArchiveHandler,     
-    const CSysString &aDirectoryPath, 
-    const UString &anItemDefaultName,
-    const FILETIME &anUTCLastWriteTimeDefault,
-    UINT32 anAttributesDefault);
+  // DWORD _threadID;
+  CProgressDialog _progressDialog;
 
-  UINT64 m_NumErrors;
-  HRESULT StartProgressDialog()
+  void Init(IArchiveHandler200 *archiveHandler,     
+    const CSysString &directoryPath, 
+    const UString &itemDefaultName,
+    const FILETIME &utcLastWriteTimeDefault,
+    UINT32 attributesDefault);
+
+  UINT64 _numErrors;
+
+  HRESULT StartProgressDialog(const CSysString &title)
   {
-    m_ThreadID = GetCurrentThreadId();
-    m_ProgressDialog.Create(0);
+    _progressDialog.Create(title, 0);
+    // _threadID = GetCurrentThreadId();
+    // _progressDialog.Create(0);
     {
       #ifdef LANG        
-      m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
+      _progressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
       #else
-      m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
+      _progressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
       #endif
     }
 
-    m_ProgressDialog.Show(SW_SHOWNORMAL);    
-    // m_ProgressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
+    _progressDialog.Show(SW_SHOWNORMAL);    
+    // _progressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }
-  ~CExtractCallBackImp();
+
+  ~CExtractCallbackImp();
 };
 
 #endif

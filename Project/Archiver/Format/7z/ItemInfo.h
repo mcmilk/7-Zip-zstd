@@ -57,31 +57,31 @@ struct CFolderItemInfo
   }
   UINT64 GetNumOutStreams() const
   {
-    UINT64 aResult = 0;
+    UINT64 result = 0;
     for (int i = 0; i < CodersInfo.Size(); i++)
-      aResult += CodersInfo[i].NumOutStreams;
-    return aResult;
+      result += CodersInfo[i].NumOutStreams;
+    return result;
   }
 
 
-  int FindBindPairForInStream(int anInStreamIndex) const
+  int FindBindPairForInStream(int inStreamIndex) const
   {
     for(int i = 0; i < BindPairs.Size(); i++)
-      if (BindPairs[i].InIndex == anInStreamIndex)
+      if (BindPairs[i].InIndex == inStreamIndex)
         return i;
     return -1;
   }
-  int FindBindPairForOutStream(int anOutStreamIndex) const
+  int FindBindPairForOutStream(int outStreamIndex) const
   {
     for(int i = 0; i < BindPairs.Size(); i++)
-      if (BindPairs[i].OutIndex == anOutStreamIndex)
+      if (BindPairs[i].OutIndex == outStreamIndex)
         return i;
     return -1;
   }
-  int FindPackStreamArrayIndex(int anInStreamIndex) const
+  int FindPackStreamArrayIndex(int inStreamIndex) const
   {
     for(int i = 0; i < PackStreams.Size(); i++)
-      if (PackStreams[i].Index == anInStreamIndex)
+      if (PackStreams[i].Index == inStreamIndex)
         return i;
     return -1;
   }
@@ -117,57 +117,57 @@ public:
     FileCRCIsDefined(false),
     IsAnti(false)
       {}
-  void SetAttributes(UINT32 anAttributes) 
+  void SetAttributes(UINT32 attributes) 
   { 
     AreAttributesDefined = true;
-    Attributes = anAttributes;
+    Attributes = attributes;
   }
-  void SetCreationTime(CArchiveFileTime aCreationTime) 
+  void SetCreationTime(CArchiveFileTime creationTime) 
   { 
     IsCreationTimeDefined = true;
-    CreationTime = aCreationTime;
+    CreationTime = creationTime;
   }
-  void SetLastWriteTime(CArchiveFileTime aLastWriteTime) 
+  void SetLastWriteTime(CArchiveFileTime lastWriteTime) 
   {
     IsLastWriteTimeDefined = true;
-    LastWriteTime = aLastWriteTime;
+    LastWriteTime = lastWriteTime;
   }
-  void SetLastAccessTime(CArchiveFileTime aLastAccessTime) 
+  void SetLastAccessTime(CArchiveFileTime lastAccessTime) 
   { 
     IsLastAccessTimeDefined = true;
-    LastAccessTime = aLastAccessTime;
+    LastAccessTime = lastAccessTime;
   }
 };
 
 struct CArchiveDatabase
 {
-  CRecordVector<UINT64> m_PackSizes;
-  CRecordVector<bool> m_PackCRCsDefined;
-  CRecordVector<UINT32> m_PackCRCs;
-  CObjectVector<CFolderItemInfo> m_Folders;
-  CRecordVector<UINT64> m_NumUnPackStreamsVector;
-  CObjectVector<CFileItemInfo> m_Files;
+  CRecordVector<UINT64> PackSizes;
+  CRecordVector<bool> PackCRCsDefined;
+  CRecordVector<UINT32> PackCRCs;
+  CObjectVector<CFolderItemInfo> Folders;
+  CRecordVector<UINT64> NumUnPackStreamsVector;
+  CObjectVector<CFileItemInfo> Files;
   void Clear()
   {
-    m_PackSizes.Clear();
-    m_PackCRCsDefined.Clear();
-    m_PackCRCs.Clear();
-    m_Folders.Clear();
-    m_NumUnPackStreamsVector.Clear();
-    m_Files.Clear();
+    PackSizes.Clear();
+    PackCRCsDefined.Clear();
+    PackCRCs.Clear();
+    Folders.Clear();
+    NumUnPackStreamsVector.Clear();
+    Files.Clear();
   }
 };
 
 struct CArchiveHeaderDatabase
 {
-  CRecordVector<UINT64> m_PackSizes;
-  CObjectVector<CFolderItemInfo> m_Folders;
-  CRecordVector<UINT32> m_CRCs;
+  CRecordVector<UINT64> PackSizes;
+  CObjectVector<CFolderItemInfo> Folders;
+  CRecordVector<UINT32> CRCs;
   void Clear()
   {
-    m_PackSizes.Clear();
-    m_Folders.Clear();
-    m_CRCs.Clear();
+    PackSizes.Clear();
+    Folders.Clear();
+    CRCs.Clear();
   }
 };
 

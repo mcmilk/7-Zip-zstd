@@ -68,6 +68,7 @@ namespace NArchiveHandler{
 
 }
 
+/*
 // {23170F69-40C1-278A-0000-000100030000}
 DEFINE_GUID(IID_IExtractCallBack, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
@@ -80,6 +81,7 @@ public:
   STDMETHOD(PrepareOperation)(INT32 askExtractMode) PURE;
   STDMETHOD(OperationResult)(INT32 resultEOperationResult) PURE;
 };
+*/
 
 // {23170F69-40C1-278A-0000-000100040000}
 DEFINE_GUID(IID_IUpdateCallBack, 

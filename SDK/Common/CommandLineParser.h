@@ -7,7 +7,7 @@
 
 #include "Common/String.h"
 
-namespace NComandLineParser {
+namespace NCommandLineParser {
 
 namespace NSwitchType {
   enum EEnum

@@ -8,7 +8,7 @@
 #include <ShlGuid.h>
 #include <windows.h>
 
-#include "../../Compress/Interface./CompressInterface.h"
+#include "../../Compress/Interface/CompressInterface.h"
 #include "../Format/Common/FormatCryptoInterface.h"
 #include "../Agent/Handler.h"
 

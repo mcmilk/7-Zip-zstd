@@ -11,11 +11,11 @@
 #include "../Common/IArchiveHandler2.h"
 #include "Windows/FileFind.h"
 
-HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &aCensor, 
-    CUpdateArchiveOptions &anOptions, const CSysString &aWorkingDir,
-    IArchiveHandler200 *anArchive,
-    const UString *aDefaultItemName,
-    const NWindows::NFile::NFind::CFileInfo *anArchiveFileInfo,
-    bool anEnablePercents);
+HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &censor, 
+    CUpdateArchiveOptions &options, const CSysString &workingDir,
+    IArchiveHandler200 *archive,
+    const UString *defaultItemName,
+    const NWindows::NFile::NFind::CFileInfo *archiveFileInfo,
+    bool enablePercents);
 
 #endif

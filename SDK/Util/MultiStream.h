@@ -10,26 +10,26 @@
 
 class CLockedInStream
 {
-  CComPtr<IInStream> m_Stream;
-  NWindows::NSynchronization::CCriticalSection m_CriticalSection;
+  CComPtr<IInStream> _stream;
+  NWindows::NSynchronization::CCriticalSection _criticalSection;
 public:
-  void Init(IInStream *aStream)
-    { m_Stream = aStream; }
-  HRESULT Read(UINT64 aStartPos, void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  HRESULT ReadPart(UINT64 aStartPos, void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  void Init(IInStream *stream)
+    { _stream = stream; }
+  HRESULT Read(UINT64 startPos, void *data, UINT32 size, UINT32 *processedSize);
+  HRESULT ReadPart(UINT64 startPos, void *data, UINT32 size, UINT32 *processedSize);
 };
 
 class CLockedSequentialInStreamImp: 
   public ISequentialInStream,
   public CComObjectRoot
 {
-  CLockedInStream *m_LockedInStream;
-  UINT64 m_Pos;
+  CLockedInStream *_lockedInStream;
+  UINT64 _pos;
 public:
-  void Init(CLockedInStream *aLockedInStream, UINT64 aStartPos)
+  void Init(CLockedInStream *lockedInStream, UINT64 startPos)
   {
-    m_LockedInStream = aLockedInStream;
-    m_Pos = aStartPos;
+    _lockedInStream = lockedInStream;
+    _pos = startPos;
   }
 
 BEGIN_COM_MAP(CLockedSequentialInStreamImp)
@@ -40,8 +40,8 @@ DECLARE_NOT_AGGREGATABLE(CLockedSequentialInStreamImp)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
 };
 
 

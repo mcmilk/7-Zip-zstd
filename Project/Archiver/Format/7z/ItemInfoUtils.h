@@ -24,9 +24,9 @@ class CEnumArchiveItemProperty:
   public IEnumSTATPROPSTG,
   public CComObjectRoot
 {
+  CRecordVector<UINT32> _fileInfoPopIDs;
+  int _index;
 public:
-  CRecordVector<UINT32> m_FileInfoPopIDs;
-  int m_Index;
 
   BEGIN_COM_MAP(CEnumArchiveItemProperty)
     COM_INTERFACE_ENTRY(IEnumSTATPROPSTG)
@@ -36,13 +36,13 @@ public:
     
   DECLARE_NO_REGISTRY()
 public:
-  CEnumArchiveItemProperty(): m_Index(0) {};
-  void Init(const CRecordVector<UINT32> &aFileInfoPopIDs);
+  CEnumArchiveItemProperty(): _index(0) {};
+  void Init(const CRecordVector<UINT32> &fileInfoPopIDs);
 
-  STDMETHOD(Next) (ULONG aNumItems, STATPROPSTG *anItems, ULONG *aNumFetched);
-  STDMETHOD(Skip)  (ULONG aNumItems);
+  STDMETHOD(Next) (ULONG numItems, STATPROPSTG *items, ULONG *numFetched);
+  STDMETHOD(Skip)  (ULONG numItems);
   STDMETHOD(Reset) ();
-  STDMETHOD(Clone) (IEnumSTATPROPSTG **anEnum);
+  STDMETHOD(Clone) (IEnumSTATPROPSTG **enumerator);
 };
 
 }}

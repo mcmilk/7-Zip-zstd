@@ -4,7 +4,7 @@
 
 #include "CommandLineParser.h"
 
-namespace NComandLineParser {
+namespace NCommandLineParser {
 
 static const char kSwitchID1 = '-';
 static const char kSwitchID2 = '/';

@@ -8,6 +8,7 @@
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/Thread.h"
 
 #include "../../Common/OpenEngine200.h"
 
@@ -18,21 +19,40 @@
 
 using namespace NWindows;
 
-HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderName)
+struct CThreadExtracting
 {
-  CComPtr<IArchiveHandler200> anArchiveHandler;
-  NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
+  CComPtr<IArchiveHandler200> ArchiveHandler;
+  CComObjectNoLock<CExtractCallbackImp> *ExtractCallbackSpec;
+  CComPtr<IExtractCallback200> ExtractCallback;
 
-  HRESULT aResult = OpenArchive(aFileName, &anArchiveHandler, 
-      anArchiverInfoResult);
-  if (aResult != S_OK)
-    return aResult;
+  HRESULT Result;
+  
+  DWORD Process()
+  {
+    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    Result = ArchiveHandler->ExtractAllItems(BoolToInt(false), 
+        ExtractCallback);
+    ExtractCallbackSpec->_progressDialog.MyClose();
+    return 0;
+  }
+  static DWORD WINAPI MyThreadFunction(void *param)
+  {
+    return ((CThreadExtracting *)param)->Process();
+  }
+};
 
-  #ifndef  NO_REGISTRY
-  CZipRegistryManager aZipRegistryManager;
-  #endif
 
-  CSysString directoryPath = aFolderName;
+HRESULT ExtractArchive(const CSysString &fileName, const CSysString &folderName)
+{
+  CThreadExtracting extracter;
+
+  NZipRootRegistry::CArchiverInfo archiverInfoResult;
+  HRESULT result = OpenArchive(fileName, &extracter.ArchiveHandler, 
+      archiverInfoResult);
+  if (result != S_OK)
+    return result;
+
+  CSysString directoryPath = folderName;
   NFile::NName::NormalizeDirPathPrefix(directoryPath);
 
   /*
@@ -40,7 +60,7 @@ HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderNam
   {
     CSysString aFullPath;
     int aFileNamePartStartIndex;
-    if (!NWindows::NFile::NDirectory::MyGetFullPathName(aFileName, aFullPath, aFileNamePartStartIndex))
+    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, aFullPath, aFileNamePartStartIndex))
     {
       MessageBox(NULL, "Error 1329484", "7-Zip", 0);
       return E_FAIL;
@@ -59,23 +79,33 @@ HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderNam
     return E_FAIL;
   }
   
-  CComObjectNoLock<CExtractCallBackImp> *anExtractCallBackSpec =
-    new CComObjectNoLock<CExtractCallBackImp>;
-
-  CComPtr<IExtractCallback200> anExtractCallBack(anExtractCallBackSpec);
+  extracter.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
+  extracter.ExtractCallback = extracter.ExtractCallbackSpec;
   
-  anExtractCallBackSpec->StartProgressDialog();
+  // anExtractCallBackSpec->StartProgressDialog();
 
   // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
-  NFile::NFind::CFileInfo anArchiveFileInfo;
-  if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))
+  NFile::NFind::CFileInfo archiveFileInfo;
+  if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
     throw "there is no archive file";
 
-  anExtractCallBackSpec->Init(anArchiveHandler, directoryPath,
-      L"Default", anArchiveFileInfo.LastWriteTime, 0);
+  extracter.ExtractCallbackSpec->Init(extracter.ArchiveHandler, 
+      directoryPath, L"Default", archiveFileInfo.LastWriteTime, 0);
 
-  return anArchiveHandler->ExtractAllItems(BoolToMyBool(false), anExtractCallBack);
+  CThread thread;
+  if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
+    throw 271824;
+
+  CSysString title;
+  #ifdef LANG        
+  title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+  #else
+  title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  #endif
+  extracter.ExtractCallbackSpec->StartProgressDialog(title);
+  
+  return extracter.Result;
 }
 
 

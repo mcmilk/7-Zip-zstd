@@ -13,16 +13,15 @@ class CCrossThreadProgress:
   public CComObjectRoot
 {
 public:
-  const UINT64 *m_InSize;
-  const UINT64 *m_OutSize;
-  HRESULT m_Result;
-
-  NWindows::NSynchronization::CAutoResetEvent m_ProgressEvent;
-  NWindows::NSynchronization::CAutoResetEvent m_WaitEvent;
+  const UINT64 *InSize;
+  const UINT64 *OutSize;
+  HRESULT Result;
+  NWindows::NSynchronization::CAutoResetEvent ProgressEvent;
+  NWindows::NSynchronization::CAutoResetEvent WaitEvent;
   void Init()
   {
-    m_ProgressEvent.Reset();
-    m_WaitEvent.Reset();
+    ProgressEvent.Reset();
+    WaitEvent.Reset();
   }
 
 BEGIN_COM_MAP(CCrossThreadProgress)
@@ -33,7 +32,7 @@ DECLARE_NOT_AGGREGATABLE(CCrossThreadProgress)
 
 DECLARE_NO_REGISTRY()
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *anInSize, const UINT64 *anOutSize);
+  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
 };
 
 #endif

@@ -22,15 +22,15 @@
 namespace NArchive {
 namespace N7z {
 
-HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &anArchive, 
-    IInStream *anInStream,
-    const CCompressionMethodMode *aMethod, 
-    const CCompressionMethodMode *aHeaderMethod, 
-    const NArchive::N7z::CArchiveDatabaseEx &aDatabase,
-    const CRecordVector<bool> &aCompressStatuses,
-    const CObjectVector<CUpdateItemInfo> &anUpdateItems,
-    const CRecordVector<UINT32> &aCopyIndexes,
-    IUpdateCallBack *anUpdateCallBack);
+HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &archive, 
+    IInStream *inStream,
+    const CCompressionMethodMode *method, 
+    const CCompressionMethodMode *headerMethod, 
+    const NArchive::N7z::CArchiveDatabaseEx &database,
+    const CRecordVector<bool> &compressStatuses,
+    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CRecordVector<UINT32> &copyIndices,
+    IUpdateCallBack *updateCallback);
 
 }}
 

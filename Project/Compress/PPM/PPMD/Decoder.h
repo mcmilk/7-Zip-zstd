@@ -62,6 +62,10 @@ DECLARE_REGISTRY(CDecoder, TEXT("Compress.PPMDDecoder.1"),
     { return m_OutStream.Flush(); }
 
 
+  STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
+      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
+      ICompressProgressInfo *aProgress);
+
   STDMETHOD(Code)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
       ICompressProgressInfo *aProgress);

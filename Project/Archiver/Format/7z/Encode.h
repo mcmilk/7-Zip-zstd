@@ -19,28 +19,28 @@ namespace N7z {
 
 class CEncoder
 {
-  CComObjectNoLock<NCoderMixer2::CCoderMixer2> *aMixerCoderSpec;
-  CComPtr<ICompressCoder2> aMixerCoder;
+  CComObjectNoLock<NCoderMixer2::CCoderMixer2> *_mixerCoderSpec;
+  CComPtr<ICompressCoder2> _mixerCoder;
 
-  CObjectVector<CComPtr<ICompressCoder> > m_Encoders;
-  CObjectVector<CComPtr<ICompressCoder2> > m_Encoders2;
+  CObjectVector<CComPtr<ICompressCoder> > _encoders;
+  CObjectVector<CComPtr<ICompressCoder2> > _encoders2;
   
-  CObjectVector<NArchive::N7z::CCoderInfo> m_CodersInfo;
+  CObjectVector<NArchive::N7z::CCoderInfo> _codersInfo;
 
-  CCompressionMethodMode m_Options;
-  NCoderMixer2::CBindInfo m_BindInfo;
-  NCoderMixer2::CBindInfo m_DecompressBindInfo;
-  NCoderMixer2::CBindReverseConverter *m_BindReverseConverter;
-  CRecordVector<CMethodID> m_DecompressionMethods;
+  CCompressionMethodMode _options;
+  NCoderMixer2::CBindInfo _bindInfo;
+  NCoderMixer2::CBindInfo _decompressBindInfo;
+  NCoderMixer2::CBindReverseConverter *_bindReverseConverter;
+  CRecordVector<CMethodID> _decompressionMethods;
 
 public:
-  CEncoder(const CCompressionMethodMode *anOptions);
-  HRESULT Encode(ISequentialInStream *anInStream,
-      const UINT64 *anInStreamSize,
-      NArchive::N7z::CFolderItemInfo &aFolderItem,
-      ISequentialOutStream *anOutStream,
-      CRecordVector<UINT64> &aPackSizes,
-      ICompressProgressInfo *aCompressProgress);
+  CEncoder(const CCompressionMethodMode *options);
+  HRESULT Encode(ISequentialInStream *inStream,
+      const UINT64 *inStreamSize,
+      NArchive::N7z::CFolderItemInfo &folderItem,
+      ISequentialOutStream *outStream,
+      CRecordVector<UINT64> &packSizes,
+      ICompressProgressInfo *compressProgress);
 };
 
 }}
