@@ -49,7 +49,7 @@ public:
       // UInt32 bit = _decoders[1 + matchBit][symbol].Decode(rangeDecoder);
       // symbol = (symbol << 1) | bit;
       UInt32 bit;
-      RC_GETBIT2(kNumMoveBits, _decoders[((1 + matchBit) << 8) + symbol].Prob, symbol, 
+      RC_GETBIT2(kNumMoveBits, _decoders[0x100 + (matchBit << 8) + symbol].Prob, symbol, 
           bit = 0, bit = 1)
       if (matchBit != bit)
       {
@@ -114,20 +114,20 @@ namespace NLength {
 class CDecoder
 {
   CMyBitDecoder _choice;
-  NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesMax];
   CMyBitDecoder _choice2;
+  NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesMax];
   NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumMidBits>  _midCoder[kNumPosStatesMax];
   NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumHighBits> _highCoder; 
 public:
   void Init(UInt32 numPosStates)
   {
     _choice.Init();
+    _choice2.Init();
     for (UInt32 posState = 0; posState < numPosStates; posState++)
     {
       _lowCoder[posState].Init();
       _midCoder[posState].Init();
     }
-    _choice2.Init();
     _highCoder.Init();
   }
   UInt32 Decode(NRangeCoder::CDecoder *rangeDecoder, UInt32 posState)
@@ -180,7 +180,6 @@ class CDecoder:
   UInt64 _nowPos64;
   UInt32 _reps[4];
   CState _state;
-  bool _previousIsMatch;
   Int32 _remainLen; // -1 means end of stream. // -2 means need Init
 
   void Init();
@@ -203,8 +202,7 @@ public:
     CDecoder *_decoder;
   public:
     bool NeedFlush;
-    CDecoderFlusher(CDecoder *decoder): 
-          _decoder(decoder), NeedFlush(true) {}
+    CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
     ~CDecoderFlusher() 
     { 
       if (NeedFlush)

@@ -21,13 +21,11 @@ class CBaseState
 protected:
   CState _state;
   Byte _previousByte;
-  bool _peviousIsMatch;
   UInt32 _repDistances[kNumRepDistances];
   void Init()
   {
     _state.Init();
     _previousByte = 0;
-    _peviousIsMatch = false;
     for(UInt32 i = 0 ; i < kNumRepDistances; i++)
       _repDistances[i] = 0;
   }
@@ -147,8 +145,8 @@ namespace NLength {
 class CEncoder
 {
   CMyBitEncoder _choice;
-  NRangeCoder::CBitTreeEncoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesEncodingMax];
   CMyBitEncoder  _choice2;
+  NRangeCoder::CBitTreeEncoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesEncodingMax];
   NRangeCoder::CBitTreeEncoder<kNumMoveBits, kNumMidBits>  _midCoder[kNumPosStatesEncodingMax];
   NRangeCoder::CBitTreeEncoder<kNumMoveBits, kNumHighBits>  _highCoder;
 public:
@@ -270,25 +268,25 @@ class CEncoder :
   HRESULT MovePos(UInt32 num);
   UInt32 GetRepLen1Price(CState state, UInt32 posState) const
   {
-    return _isRepG0[state.Index].GetPrice(0) +
-        _isRep0Long[state.Index][posState].GetPrice(0);
+    return _isRepG0[state.Index].GetPrice0() +
+        _isRep0Long[state.Index][posState].GetPrice0();
   }
   UInt32 GetRepPrice(UInt32 repIndex, UInt32 len, CState state, UInt32 posState) const
   {
     UInt32 price = _repMatchLenEncoder.GetPrice(len - kMatchMinLen, posState);
     if(repIndex == 0)
     {
-      price += _isRepG0[state.Index].GetPrice(0);
-      price += _isRep0Long[state.Index][posState].GetPrice(1);
+      price += _isRepG0[state.Index].GetPrice0();
+      price += _isRep0Long[state.Index][posState].GetPrice1();
     }
     else
     {
-      price += _isRepG0[state.Index].GetPrice(1);
+      price += _isRepG0[state.Index].GetPrice1();
       if (repIndex == 1)
-        price += _isRepG1[state.Index].GetPrice(0);
+        price += _isRepG1[state.Index].GetPrice0();
       else
       {
-        price += _isRepG1[state.Index].GetPrice(1);
+        price += _isRepG1[state.Index].GetPrice1();
         price += _isRepG2[state.Index].GetPrice(repIndex - 2);
       }
     }

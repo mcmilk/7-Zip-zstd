@@ -39,6 +39,10 @@
 #include "../../Archive/Zip/ZipHandler.h"
 #endif
 
+#ifdef FORMAT_Z
+#include "../../Archive/Z/ZHandler.h"
+#endif
+
 #ifndef EXCLUDE_COM
 #include "HandlerLoader.h"
 #endif
@@ -237,6 +241,11 @@ HRESULT OpenArchive(
     #ifdef FORMAT_ZIP
     if (archiverInfo.Name.CompareNoCase(L"Zip") == 0)
       archive = new NArchive::NZip::CHandler;
+    #endif
+
+    #ifdef FORMAT_Z
+    if (archiverInfo.Name.CompareNoCase(L"Z") == 0)
+      archive = new NArchive::NZ::CHandler;
     #endif
 
 

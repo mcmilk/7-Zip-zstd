@@ -48,7 +48,14 @@ For compiling some files you also need
 new Platform SDK from Microsoft' Site:
 http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm
 or
+http://www.microsoft.com/msdownload/platformsdk/sdkupdate/XPSP2FULLInstall.htm
+or
 http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
+
+If you use MSVC6, specify SDK directories at top of directories lists:
+Tools / Options / Directories
+  - Include files
+  - Library files
 
 
 Also for compiling BZip2 code you must download BZip source to folder

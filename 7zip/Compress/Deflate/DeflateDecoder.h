@@ -12,6 +12,7 @@
 #include "../Huffman/HuffmanDecoder.h"
 
 #include "DeflateExtConst.h"
+#include "DeflateConst.h"
 
 namespace NCompress {
 namespace NDeflate {
@@ -28,15 +29,14 @@ public:
 };
 
 typedef NStream::NLSBF::CDecoder<CInBuffer> CInBit;
-typedef NCompress::NHuffman::CDecoder<kNumHuffmanBits> CHuffmanDecoder;
 
 class CCoder
 {
   CLZOutWindow m_OutWindowStream;
   CInBit m_InBitStream;
-  CHuffmanDecoder m_MainDecoder;
-  CHuffmanDecoder m_DistDecoder;
-  CHuffmanDecoder m_LevelDecoder; // table for decoding other tables;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticMainTableSize> m_MainDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticDistTableSize> m_DistDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
 
   bool m_FinalBlock;
   bool m_StoredMode;

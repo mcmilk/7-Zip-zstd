@@ -31,27 +31,33 @@ void AddDirFileInfo(
   dirItems.Add(item);
 }
 
-static void EnumerateDirectory(
+static HRESULT EnumerateDirectory(
     const UString &baseFolderPrefix,
     const UString &directory, 
     const UString &prefix,
     CObjectVector<CDirItem> &dirItems)
 {
   NFind::CEnumeratorW enumerator(baseFolderPrefix + directory + wchar_t(kAnyStringWildcard));
-  NFind::CFileInfoW fileInfo;
-  while (enumerator.Next(fileInfo))
+  while (true)
   { 
+    NFind::CFileInfoW fileInfo;
+    bool found;
+    if (!enumerator.Next(fileInfo, found))
+      return ::GetLastError();
+    if (!found)
+      break;
     AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
         dirItems);
     if (fileInfo.IsDirectory())
     {
-      EnumerateDirectory(baseFolderPrefix, directory + fileInfo.Name + wchar_t(kDirDelimiter), 
-          prefix + fileInfo.Name + wchar_t(kDirDelimiter), dirItems);
+      RINOK(EnumerateDirectory(baseFolderPrefix, directory + fileInfo.Name + wchar_t(kDirDelimiter), 
+          prefix + fileInfo.Name + wchar_t(kDirDelimiter), dirItems));
     }
   }
+  return S_OK;
 }
 
-void EnumerateDirItems(
+HRESULT EnumerateDirItems(
     const UString &baseFolderPrefix,
     const UStringVector &fileNames,
     const UString &archiveNamePrefix, 
@@ -66,11 +72,12 @@ void EnumerateDirItems(
     AddDirFileInfo(archiveNamePrefix, fileName, fileInfo, dirItems);
     if (fileInfo.IsDirectory())
     {
-      EnumerateDirectory(baseFolderPrefix, fileName + wchar_t(kDirDelimiter), 
+      RINOK(EnumerateDirectory(baseFolderPrefix, fileName + wchar_t(kDirDelimiter), 
           archiveNamePrefix + fileInfo.Name +  wchar_t(kDirDelimiter), 
-          dirItems);
+          dirItems));
     }
   }
+  return S_OK;
 }
 
 static HRESULT EnumerateDirItems(
@@ -88,9 +95,15 @@ static HRESULT EnumerateDirItems(
   if (callback)
     RINOK(callback->CheckBreak());
   NFind::CEnumeratorW enumerator(diskPrefix + wchar_t(kAnyStringWildcard));
-  NFind::CFileInfoW fileInfo;
-  while (enumerator.Next(fileInfo))
+  while (true)
   {
+    NFind::CFileInfoW fileInfo;
+    bool found;
+    if (!enumerator.Next(fileInfo, found))
+      return ::GetLastError();
+    if (!found)
+      break;
+
     if (callback)
       RINOK(callback->CheckBreak());
     UString name = fileInfo.Name;

@@ -302,6 +302,10 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\LSBFDecoder.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\LSBFDecoder.h
 # End Source File
 # Begin Source File
@@ -417,18 +421,6 @@ SOURCE=.\ZipUpdate.cpp
 SOURCE=.\ZipUpdate.h
 # End Source File
 # End Group
-# Begin Group "copy"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.h
-# End Source File
-# End Group
 # Begin Group "Crypto"
 
 # PROP Default_Filter ""
@@ -484,18 +476,54 @@ SOURCE=..\..\Compress\Shrink\ShrinkDecoder.cpp
 SOURCE=..\..\Compress\Shrink\ShrinkDecoder.h
 # End Source File
 # End Group
+# Begin Group "copy"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "Implode"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Implode\ImplodeDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Implode\ImplodeDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Implode\ImplodeHuffmanDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Implode\ImplodeHuffmanDecoder.h
+# End Source File
+# End Group
+# Begin Group "LZ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\LZOutWindow.h
+# End Source File
+# End Group
 # End Group
 # Begin Source File
 
-SOURCE=".\7-zip.ico"
-# End Source File
-# Begin Source File
-
 SOURCE=.\zip.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\zip1.ico
 # End Source File
 # End Target
 # End Project

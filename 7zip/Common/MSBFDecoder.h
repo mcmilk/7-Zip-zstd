@@ -33,6 +33,7 @@ public:
   
   UInt64 GetProcessedSize() const 
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
+  UInt32 GetBitPosition() const { return (m_BitPos & 7); }
   
   void Normalize()
   {

@@ -30,11 +30,4 @@ extern CComModule _Module;
 #include <shlguid.h>
 #include <regstr.h>
 
-
-#undef _MT
-
-#include <vector>
-
-#define _MT
-
 #endif 

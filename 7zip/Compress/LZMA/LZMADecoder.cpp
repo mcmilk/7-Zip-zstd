@@ -38,7 +38,6 @@ void CDecoder::Init()
   _literalDecoder.Init();
 
   _state.Init();
-  _previousIsMatch = false;
   _reps[0] = _reps[1] = _reps[2] = _reps[3] = 0;
 }
 
@@ -54,25 +53,24 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
   }
   if (curSize == 0)
     return S_OK;
-  int len = _remainLen;
+
   UInt64 nowPos64 = _nowPos64;
 
   UInt32 rep0 = _reps[0];
   UInt32 rep1 = _reps[1];
   UInt32 rep2 = _reps[2];
   UInt32 rep3 = _reps[3];
-  bool previousIsMatch = _previousIsMatch;
   CState state = _state;
   Byte previousByte;
 
-  while(len > 0 && curSize > 0)
+  while(_remainLen > 0 && curSize > 0)
   {
     previousByte = _outWindowStream.GetByte(rep0);
     _outWindowStream.PutByte(previousByte);
     if (buffer)
       *buffer++ = previousByte;
     nowPos64++;
-    len--;
+    _remainLen--;
     curSize--;
   }
   if (nowPos64 == 0)
@@ -80,7 +78,6 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
   else
     previousByte = _outWindowStream.GetByte(0);
 
-  _remainLen = len;
   while(curSize > 0)
   {
     {
@@ -93,26 +90,21 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
       UInt32 posState = UInt32(nowPos64) & _posStateMask;
       if (_isMatch[state.Index][posState].Decode(&_rangeDecoder) == 0)
       {
-        state.UpdateChar();
-        if(previousIsMatch)
-        {
-          Byte matchByte = _outWindowStream.GetByte(rep0);
+        if(!state.IsCharState())
           previousByte = _literalDecoder.DecodeWithMatchByte(&_rangeDecoder, 
-              UInt32(nowPos64), previousByte, matchByte);
-          previousIsMatch = false;
-        }
+              (UInt32)nowPos64, previousByte, _outWindowStream.GetByte(rep0));
         else
           previousByte = _literalDecoder.DecodeNormal(&_rangeDecoder, 
-              UInt32(nowPos64), previousByte);
+              (UInt32)nowPos64, previousByte);
         _outWindowStream.PutByte(previousByte);
         if (buffer)
           *buffer++ = previousByte;
+        state.UpdateChar();
         curSize--;
         nowPos64++;
       }
       else             
       {
-        previousIsMatch = true;
         UInt32 len;
         if(_isRep[state.Index].Decode(&_rangeDecoder) == 1)
         {
@@ -179,23 +171,21 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
           }
           else
             rep0 = posSlot;
-        }
-        if (rep0 >= nowPos64 || rep0 >= _dictionarySizeCheck)
-        {
-          if (rep0 == (UInt32)(Int32)(-1))
+          if (rep0 >= nowPos64 || rep0 >= _dictionarySizeCheck)
           {
+            if (rep0 != (UInt32)(Int32)(-1))
+              return S_FALSE;
             _nowPos64 = nowPos64;
             _remainLen = -1;
             return S_OK;
           }
-          return S_FALSE;
         }
         UInt32 locLen = len;
-        if (locLen > curSize)
+        if (len > curSize)
           locLen = (UInt32)curSize;
         if (buffer)
         {
-          for (UInt32 i = 0; i < locLen; i++)
+          for (UInt32 i = locLen; i != 0; i--)
           {
             previousByte = _outWindowStream.GetByte(rep0);
             *buffer++ = previousByte;
@@ -223,12 +213,13 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
       }
     }
   }
+  if (_rangeDecoder.Stream.WasFinished())
+    return S_FALSE;
   _nowPos64 = nowPos64;
   _reps[0] = rep0;
   _reps[1] = rep1;
   _reps[2] = rep2;
   _reps[3] = rep3;
-  _previousIsMatch = previousIsMatch;
   _state = state;
 
   return S_OK;

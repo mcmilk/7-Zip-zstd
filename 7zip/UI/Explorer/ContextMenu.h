@@ -7,9 +7,13 @@
 DEFINE_GUID(CLSID_CZipContextMenu, 
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
 
+#include <vector>
+
 #include "Common/String.h"
 
 #include "../../FileManager/PluginInterface.h"
+
+
 
 class CZipContextMenu: 
   public IContextMenu,

@@ -12,12 +12,13 @@
 #include "LZXBitDecoder.h"
 
 #include "LZXi86Converter.h"
+#include "LZXConst.h"
 
 namespace NArchive {
 namespace NCab {
 namespace NLZX {
 
-typedef NCompress::NHuffman::CDecoder<kNumHuffmanBits> CMSBFHuffmanDecoder;
+const int kMainTableSize = 256 + kNumPosSlotLenSlotSymbols;
 
 class CDecoder : 
   public ICompressCoder,
@@ -26,10 +27,10 @@ class CDecoder :
   CLZOutWindow m_OutWindowStream;
   NBitStream::CDecoder m_InBitStream;
 
-  CMSBFHuffmanDecoder m_MainDecoder;
-  CMSBFHuffmanDecoder m_LenDecoder; // for matches with repeated offsets
-  CMSBFHuffmanDecoder m_AlignDecoder; // for matches with repeated offsets
-  CMSBFHuffmanDecoder m_LevelDecoder; // table for decoding other tables;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kMainTableSize> m_MainDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kNumLenSymbols> m_LenDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kAlignTableSize> m_AlignDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
 
   UInt32 m_RepDistances[kNumRepDistances];
 

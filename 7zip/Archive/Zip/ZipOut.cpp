@@ -148,6 +148,7 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   WriteUInt16(item.Name.Length());
   UInt16 zip64ExtraSize = (isUnPack64 ? 8: 0) +  (isPack64 ? 8: 0) + (isPosition64 ? 8: 0);
   UInt16 centralExtraSize = isZip64 ? (4 + zip64ExtraSize) : 0;
+  centralExtraSize += (UInt16)item.CentralExtra.GetSize();
   WriteUInt16(centralExtraSize); // test it;
   WriteUInt16(item.Comment.GetCapacity());
   WriteUInt16(0); // DiskNumberStart;
@@ -165,6 +166,16 @@ void COutArchive::WriteCentralHeader(const CItem &item)
       WriteUInt64(item.PackSize);
     if(isPosition64)
       WriteUInt64(item.LocalHeaderPosition);
+  }
+  if (item.CentralExtra.SubBlocks.Size() != 0)
+  {
+    for (int i = 0; i < item.CentralExtra.SubBlocks.Size(); i++)
+    {
+      CExtraSubBlock subBlock = item.CentralExtra.SubBlocks[i];
+      WriteUInt16(subBlock.ID);
+      WriteUInt16((UInt16)subBlock.Data.GetCapacity());
+      WriteBytes(subBlock.Data, subBlock.Data.GetCapacity());
+    }
   }
   if (item.Comment.GetCapacity() > 0)
     WriteBytes(item.Comment, item.Comment.GetCapacity());

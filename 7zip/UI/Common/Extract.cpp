@@ -8,8 +8,7 @@
 #include "Windows/PropVariant.h"
 #include "Windows/FileDir.h"
 
-#include "MyOpenArchive.h"
-#include "../Common/OpenArchive.h"
+#include "OpenArchive.h"
 
 #ifndef EXCLUDE_COM
 #include "Windows/DLL.h"

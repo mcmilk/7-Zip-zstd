@@ -407,7 +407,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
     UInt16 headerCommentSize = ReadUInt16();
     UInt32 headerDiskNumberStart = ReadUInt16();
     UInt16 headerInternalAttributes = ReadUInt16();
-    UInt16 headerExternalAttributes = ReadUInt32();
+    UInt32 headerExternalAttributes = ReadUInt32();
     UInt64 localHeaderOffset = ReadUInt32();
     AString centralName = ReadFileName(headerNameSize);
     

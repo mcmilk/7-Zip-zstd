@@ -8,7 +8,7 @@
 #include <ctype.h>
 #endif
 
-#include "String.h"
+#include "Common/String.h"
 
 
 #ifdef _WIN32

@@ -59,8 +59,10 @@ public:
   CHandler() { InitMethodProperties(); }
 
 private:
-  NArchive::NGZip::CItemEx m_Item;
+  NArchive::NGZip::CItem m_Item;
   UInt64 m_StreamStartPosition;
+  UInt64 m_DataOffset;
+  UInt64 m_PackSize;
   CMyComPtr<IInStream> m_Stream;
   CCompressionMethodMode m_Method;
   void InitMethodProperties()

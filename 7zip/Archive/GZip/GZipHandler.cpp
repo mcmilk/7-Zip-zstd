@@ -157,7 +157,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       propVariant = UInt64(m_Item.UnPackSize32);
       break;
     case kpidPackedSize:
-      propVariant = m_Item.PackSize;
+      propVariant = m_PackSize;
       break;
     case kpidCommented:
       propVariant = m_Item.CommentIsPresent();
@@ -199,9 +199,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     CInArchive archive;
     RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_StreamStartPosition));
     RINOK(archive.ReadHeader(inStream, m_Item));
+    m_DataOffset = archive.GetOffset(); 
     UInt64 newPosition;
     RINOK(inStream->Seek(-8, STREAM_SEEK_END, &newPosition));
-    m_Item.PackSize = newPosition - archive.GetPosition();
+    m_PackSize = newPosition - (m_StreamStartPosition + m_DataOffset);
     if (archive.ReadPostHeader(inStream, m_Item) != S_OK)
       return S_FALSE;
     m_Stream = inStream;
@@ -236,27 +237,21 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   }
 
   bool testMode = (_aTestMode != 0);
-  UInt64 totalUnPacked = 0, totalPacked = 0;
 
-  totalUnPacked += m_Item.UnPackSize32;
-  totalPacked += m_Item.PackSize;
-
-  extractCallback->SetTotal(totalUnPacked);
+  extractCallback->SetTotal(m_PackSize);
 
   UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   
-  RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
+  RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
   Int32 askMode;
   askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
-  NArchive::NExtract::NAskMode::kExtract;
+      NArchive::NExtract::NAskMode::kExtract;
   
   RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
   
   if(!testMode && !realOutStream)
-  {
     return S_OK;
-  }
 
   extractCallback->PrepareOperation(askMode);
 
@@ -267,14 +262,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   CLocalProgress *localProgressSpec = new  CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  localProgressSpec->Init(extractCallback, false);
+  localProgressSpec->Init(extractCallback, true);
   
   CLocalCompressProgressInfo *localCompressProgressSpec = 
       new CLocalCompressProgressInfo;
   CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-  localCompressProgressSpec->Init(progress, 
-    &currentTotalPacked,
-    &currentTotalUnPacked);
 
   #ifndef COMPRESS_DEFLATE
   CCoderLibrary lib;
@@ -284,22 +276,25 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   RINOK(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL));
   while(true)
   {
+    localCompressProgressSpec->Init(progress, 
+      &currentTotalPacked,
+      &currentTotalUnPacked);
+
     CInArchive archive;
-    CItemEx item;
+    CItem item;
     HRESULT result = archive.ReadHeader(m_Stream, item);
     if (result != S_OK)
     {
       if (firstItem)
         return E_FAIL;
-      else
-      {
-        outStream.Release();
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK))
-        return S_OK;
-      }
+      outStream.Release();
+      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK))
+      return S_OK;
     }
     firstItem = false;
-    RINOK(m_Stream->Seek(item.DataPosition, STREAM_SEEK_SET, NULL));
+
+    UInt64 dataStartPos;
+    RINOK(m_Stream->Seek(0, STREAM_SEEK_CUR, &dataStartPos));
 
     outStreamSpec->InitCRC();
 
@@ -339,21 +334,20 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         NArchive::NExtract::NOperationResult::kUnSupportedMethod));
       return S_OK;
     }
-    /*
     CMyComPtr<ICompressGetInStreamProcessedSize> getInStreamProcessedSize;
     RINOK(deflateDecoder.QueryInterface(IID_ICompressGetInStreamProcessedSize, 
         &getInStreamProcessedSize));
     UInt64 packSize;
     RINOK(getInStreamProcessedSize->GetInStreamProcessedSize(&packSize));
-    RINOK(m_Stream->Seek(item.DataPosition + packSize, STREAM_SEEK_SET, NULL));
-    
-    UInt32 crc, unpackSize32;
-    if (archive.ReadPostInfo(m_Stream, crc, unpackSize32) != S_OK)
-      return E_FAIL;
-    if((outStreamSpec->GetCRC() != crc))
-    */
+    UInt64 pos;
+    RINOK(m_Stream->Seek(dataStartPos + packSize, STREAM_SEEK_SET, &pos));
 
-    if((outStreamSpec->GetCRC() != m_Item.FileCRC))
+    currentTotalPacked = pos - m_StreamStartPosition;
+    
+    CItem postItem;
+    if (archive.ReadPostHeader(m_Stream, postItem) != S_OK)
+      return E_FAIL;
+    if((outStreamSpec->GetCRC() != postItem.FileCRC))
     {
       RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError))
       return S_OK;

@@ -221,6 +221,17 @@ bool CEnumerator::Next(CFileInfo &fileInfo)
   }
 }
 
+bool CEnumerator::Next(CFileInfo &fileInfo, bool &found)
+{
+  if (Next(fileInfo))
+  {
+    found = true;
+    return true;
+  }
+  found = false;
+  return (::GetLastError() == ERROR_NO_MORE_FILES);
+}
+
 #ifndef _UNICODE
 bool CEnumeratorW::NextAny(CFileInfoW &fileInfo)
 {
@@ -240,6 +251,18 @@ bool CEnumeratorW::Next(CFileInfoW &fileInfo)
       return true;
   }
 }
+
+bool CEnumeratorW::Next(CFileInfoW &fileInfo, bool &found)
+{
+  if (Next(fileInfo))
+  {
+    found = true;
+    return true;
+  }
+  found = false;
+  return (::GetLastError() == ERROR_NO_MORE_FILES);
+}
+
 #endif
 
 ////////////////////////////////

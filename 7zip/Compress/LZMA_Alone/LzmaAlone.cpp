@@ -124,7 +124,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.10 Copyright (c) 1999-2004 Igor Pavlov  2004-10-21\n");
+  fprintf(stderr, "\nLZMA 4.16 Copyright (c) 1999-2004 Igor Pavlov  2005-03-29\n");
 
   if (n == 1)
   {
@@ -189,7 +189,7 @@ int main2(int n, const char *args[])
         mf.CompareNoCase(L"BT4") == 0);
   }
 
-  bool encodeMode;
+  bool encodeMode = false;
   if (command.CompareNoCase(L"e") == 0)
     encodeMode = true;
   else if (command.CompareNoCase(L"d") == 0)

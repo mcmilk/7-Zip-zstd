@@ -1,7 +1,7 @@
 /* 
 LzmaTest.c
 Test application for LZMA Decoder
-LZMA SDK 4.02 Copyright (c) 1999-2004 Igor Pavlov (2004-06-10)
+LZMA SDK 4.16 Copyright (c) 1999-2004 Igor Pavlov (2005-03-18)
 */
 
 #include <stdio.h>
@@ -49,7 +49,7 @@ int main2(int numargs, const char *args[], char *rs)
   CBuffer bo;
   #endif
 
-  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.02 Copyright (c) 1999-2004 Igor Pavlov  2004-06-10\n");
+  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.16 Copyright (c) 1999-2005 Igor Pavlov  2005-03-18\n");
   if (numargs < 2 || numargs > 3)
   {
     sprintf(rs + strlen(rs), "\nUsage:  lzmaDec file.lzma [outFile]\n");
@@ -153,13 +153,15 @@ int main2(int numargs, const char *args[], char *rs)
     int i;
     for (i = 0; i < 4; i++)
       dictionarySize += (UInt32)(properties[1 + i]) << (i * 8);
-    dictionary = malloc(dictionarySize);
+    if (dictionarySize == 0)
+      dictionarySize = 1; /* LZMA decoder can not work with dictionarySize = 0 */
+    dictionary = (unsigned char *)malloc(dictionarySize);
     if (dictionary == 0)
     {
       sprintf(rs + strlen(rs), "\n can't allocate");
       return 1;
     }
-    LzmaDecoderInit((unsigned char *)lzmaInternalData, lzmaInternalSize,
+    res = LzmaDecoderInit((unsigned char *)lzmaInternalData, lzmaInternalSize,
         lc, lp, pb,
         dictionary, dictionarySize,
         #ifdef _LZMA_IN_CB
@@ -168,6 +170,7 @@ int main2(int numargs, const char *args[], char *rs)
         (unsigned char *)inStream, compressedSize
         #endif
         );
+    if (res == 0)
     for (nowPos = 0; nowPos < outSize;)
     {
       UInt32 blockSize = outSize - nowPos;
@@ -177,10 +180,7 @@ int main2(int numargs, const char *args[], char *rs)
       res = LzmaDecode((unsigned char *)lzmaInternalData, 
       ((unsigned char *)outStream) + nowPos, blockSize, &outSizeProcessed);
       if (res != 0)
-      {
-        sprintf(rs + strlen(rs), "\nerror = %d\n", res);
-        return 1;
-      }
+        break;
       if (outSizeProcessed == 0)
       {
         outSize = nowPos;

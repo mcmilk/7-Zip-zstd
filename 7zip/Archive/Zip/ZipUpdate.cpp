@@ -256,7 +256,7 @@ static HRESULT Update2(COutArchive &archive,
         // Test it
         item.Name = updateItem.Name; 
         item.Time = updateItem.Time;
-        // item.CentralExtraSize = 0;
+        item.CentralExtra.Clear();
         item.LocalExtraSize = 0;
 
         archive.PrepareWriteCompressedData2(item.Name.Length(), item.UnPackSize, item.PackSize);

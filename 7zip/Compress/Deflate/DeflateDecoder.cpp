@@ -3,18 +3,12 @@
 #include "StdAfx.h"
 
 #include "DeflateDecoder.h"
-#include "DeflateConst.h"
 
 namespace NCompress {
 namespace NDeflate {
 namespace NDecoder {
 
-CCoder::CCoder(bool deflate64Mode):
-  m_MainDecoder(kStaticMainTableSize),
-  m_DistDecoder(kStaticDistTableSize),
-  m_LevelDecoder(kLevelTableSize),
-  _deflate64Mode(deflate64Mode)
-{}
+CCoder::CCoder(bool deflate64Mode):  _deflate64Mode(deflate64Mode) {}
 
 void CCoder::DeCodeLevelTable(Byte *newLevels, int numLevels)
 {
@@ -158,7 +152,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
 {
   if (!m_OutWindowStream.Create(_deflate64Mode ? kHistorySize64:  kHistorySize32))
     return E_OUTOFMEMORY;
-  if (!m_InBitStream.Create(1 << 20))
+  if (!m_InBitStream.Create(1 << 17))
     return E_OUTOFMEMORY;
   UInt64 pos = 0;
   m_OutWindowStream.SetStream(outStream);

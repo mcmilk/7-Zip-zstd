@@ -150,7 +150,8 @@ void CFieldPrinter::PrintTitle()
   {
     const CFieldInfo &fieldInfo = _fields[i];
     PrintSpaces(fieldInfo.PrefixSpacesWidth);
-    PrintString(fieldInfo.TitleAdjustment, fieldInfo.Width, fieldInfo.Name);
+    PrintString(fieldInfo.TitleAdjustment, 
+      ((fieldInfo.PropID == kpidPath) ? 0: fieldInfo.Width), fieldInfo.Name);
   }
 }
 
@@ -203,6 +204,7 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
 
     NCOM::CPropVariant propVariant;
     RINOK(archive->GetProperty(index, fieldInfo.PropID, &propVariant));
+    int width = (fieldInfo.PropID == kpidPath) ? 0: fieldInfo.Width;
     if (propVariant.vt == VT_EMPTY)
     {
       switch(fieldInfo.PropID)
@@ -214,7 +216,7 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
           propVariant = archiveFileInfo.LastWriteTime;
           break;
         default:
-          PrintSpaces(fieldInfo.Width);
+          PrintSpaces(width);
           continue;
       }
     }
@@ -239,10 +241,10 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
 
     if (propVariant.vt == VT_BSTR)
     {
-      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, propVariant.bstrVal);
+      PrintString(fieldInfo.TextAdjustment, width, propVariant.bstrVal);
       continue;
     }
-    PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, 
+    PrintString(fieldInfo.TextAdjustment, width, 
         ConvertPropertyToString(propVariant, fieldInfo.PropID));
   }
   return S_OK;
@@ -276,7 +278,7 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UInt64 numFiles,
       UString temp = textString;
       temp += L" ";
       temp += kFilesMessage;
-      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, temp);
+      PrintString(fieldInfo.TextAdjustment, 0, temp);
     }
     else 
       PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, L"");

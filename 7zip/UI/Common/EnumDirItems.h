@@ -15,7 +15,7 @@ void AddDirFileInfo(
     CObjectVector<CDirItem> &dirItems);
 
 
-void EnumerateDirItems(
+HRESULT EnumerateDirItems(
     const UString &baseFolderPrefix,
     const UStringVector &fileNames,
     const UString &archiveNamePrefix, 

@@ -10,20 +10,16 @@ namespace NHuffman {
 
 class CDecoderException{};
 
-const UInt32 kValueTableBits = 8;
+const UInt32 kValueTableBits = 9;
 
-template <int kNumBitsInLongestCode>
+template <int kNumBitsInLongestCode, UInt32 m_NumSymbols>
 class CDecoder
 {
   UInt32 m_Limitits[kNumBitsInLongestCode + 1]; // m_Limitits[i] = value limit for symbols with length = i 
   UInt32 m_Positions[kNumBitsInLongestCode + 1];   // m_Positions[i] = index in m_Symbols[] of first symbol with length = i 
-  UInt32 m_NumSymbols;
-  UInt32 *m_Symbols; // symbols: at first with len = 1 then 2, ... 15.
+  UInt32 m_Symbols[m_NumSymbols]; // symbols: at first with len = 1 then 2, ... 15.
   Byte m_Lengths[1 << kValueTableBits];
 public:
-  CDecoder(UInt32 numSymbols): m_NumSymbols(numSymbols)
-    { m_Symbols = new UInt32[m_NumSymbols]; }
-  ~CDecoder() { delete []m_Symbols; }
   void SetNumSymbols(UInt32 numSymbols) { m_NumSymbols = numSymbols; }
   void SetCodeLengths(const Byte *codeLengths);
   template <class TBitDecoder>
@@ -35,17 +31,8 @@ public:
     
     if (value < m_Limitits[kValueTableBits])
       numBits = m_Lengths[value >> (kNumBitsInLongestCode - kValueTableBits)];
-    else if (value < m_Limitits[10])
-      if (value < m_Limitits[9])
-        numBits = 9;
-      else
-        numBits = 10;
-    else if (value < m_Limitits[11])
-      numBits = 11;
-    else if (value < m_Limitits[12])
-      numBits = 12;
     else 
-      for (numBits = 13; numBits < kNumBitsInLongestCode; numBits++)
+      for (numBits = kValueTableBits + 1; numBits < kNumBitsInLongestCode; numBits++)
         if (value < m_Limitits[numBits])
           break;
     bitStream->MovePos(numBits);
@@ -57,8 +44,8 @@ public:
   }
 };
 
-template <int kNumBitsInLongestCode>
-void CDecoder<kNumBitsInLongestCode>::SetCodeLengths(const Byte *codeLengths)
+template <int kNumBitsInLongestCode, UInt32 m_NumSymbols>
+void CDecoder<kNumBitsInLongestCode, m_NumSymbols>::SetCodeLengths(const Byte *codeLengths)
 {
   int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
   int i;

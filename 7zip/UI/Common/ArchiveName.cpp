@@ -29,7 +29,7 @@ UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName)
   {
     NFile::NFind::CFileInfoW fileInfo;
     if (!NFile::NFind::FindFile(srcName, fileInfo))
-      return ::GetLastError();
+      return resultName;
     resultName = fileInfo.Name;
     if (!fileInfo.IsDirectory() && !keepName)
     {

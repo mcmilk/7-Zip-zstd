@@ -25,6 +25,7 @@
 #include "../7z/7zMethods.h"
 
 #include "../../Compress/Shrink/ShrinkDecoder.h"
+#include "../../Compress/Implode/ImplodeDecoder.h"
 
 #ifdef COMPRESS_DEFLATE
 #include "../../Compress/Deflate/DeflateDecoder.h"
@@ -42,13 +43,14 @@ DEFINE_GUID(CLSID_CCompressDeflate64Decoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00);
 #endif
 
+/*
 #ifdef COMPRESS_IMPLODE
-#include "../../Compress/Implode/ImplodeDecoder.h"
 #else
 // {23170F69-40C1-278B-0401-060000000000}
 DEFINE_GUID(CLSID_CCompressImplodeDecoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00);
 #endif
+*/
 
 #ifdef COMPRESS_BZIP2
 #include "../../Compress/BZip2/BZip2Decoder.h"
@@ -481,21 +483,17 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         CMethodItem mi;
         mi.ZipMethod = (Byte)item.CompressionMethod;
-        if (item.CompressionMethod == NFileHeader::NCompressionMethod::kShrunk)
-        {
+        if (item.CompressionMethod == NFileHeader::NCompressionMethod::kStored)
+          mi.Coder = new NCompress::CCopyCoder;
+        else if (item.CompressionMethod == NFileHeader::NCompressionMethod::kShrunk)
           mi.Coder = new NCompress::NShrink::CDecoder;
-        }
+        else if (item.CompressionMethod == NFileHeader::NCompressionMethod::kImploded)
+          mi.Coder = new NCompress::NImplode::NDecoder::CCoder;
         else
         {
         #ifdef EXCLUDE_COM
         switch(item.CompressionMethod)
         {
-          case NFileHeader::NCompressionMethod::kStored:
-            mi.Coder = new NCompress::CCopyCoder;
-            break;
-          case NFileHeader::NCompressionMethod::kImploded:
-            mi.Coder = new NCompress::NImplode::NDecoder::CCoder;
-            break;
           case NFileHeader::NCompressionMethod::kDeflated:
             mi.Coder = new NCompress::NDeflate::NDecoder::CCOMCoder;
             break;

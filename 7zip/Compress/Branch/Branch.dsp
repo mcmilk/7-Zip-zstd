@@ -207,6 +207,14 @@ SOURCE=.\PPC.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\SPARC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SPARC.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\x86.cpp
 
 !IF  "$(CFG)" == "Branch - Win32 Release"

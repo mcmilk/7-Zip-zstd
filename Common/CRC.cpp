@@ -45,7 +45,7 @@ void CCRC::UpdateUInt32(UInt32 v)
     UpdateByte((Byte)(v >> (8 * i)));
 }
 
-void CCRC::UpdateUInt64(const UInt64 &v)
+void CCRC::UpdateUInt64(UInt64 v)
 {
   for (int i = 0; i < 8; i++)
     UpdateByte((Byte)(v >> (8 * i)));

@@ -5,6 +5,7 @@
 
 #include "Common/Types.h"
 #include "Common/String.h"
+#include "Common/Buffer.h"
 
 namespace NArchive {
 namespace NGZip {
@@ -21,11 +22,10 @@ public:
   Byte HostOS;
   UInt32 FileCRC;
   UInt32 UnPackSize32;
-  UInt64 PackSize;
 
   AString Name;
-  UInt16 ExtraFieldSize;
-  UInt16 CommentSize;
+  AString Comment;
+  CByteBuffer Extra;
 
   bool IsText() const
     {  return TestFlag(NFileHeader::NFlags::kDataIsText); }
@@ -45,19 +45,15 @@ public:
     else
       Flags &= (~NFileHeader::NFlags::kNameIsPresent);
   }
-};
 
-class CItemEx: public CItem
-{
-public:
-  UInt64 DataPosition;
-  UInt64 CommentPosition;
-  UInt64 ExtraPosition;
+  void Clear()
+  {
+    Name.Empty();
+    Comment.Empty();;
+    Extra.SetCapacity(0);
+  }
 };
-
 
 }}
 
 #endif
-
-

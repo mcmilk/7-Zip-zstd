@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "MSZipDecoder.h"
-#include "MSZipConst.h"
 
 #include "Windows/Defs.h"
 
@@ -11,12 +10,7 @@ namespace NArchive {
 namespace NCab {
 namespace NMSZip {
 
-CDecoder::CDecoder():
-  m_MainDecoder(kStaticMainTableSize),
-  m_DistDecoder(kStaticDistTableSize),
-  m_LevelDecoder(kLevelTableSize)
-{
-}
+CDecoder::CDecoder(){}
 
 HRESULT CDecoder::Flush()
 {

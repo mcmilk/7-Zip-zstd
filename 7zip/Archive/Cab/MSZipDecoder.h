@@ -11,6 +11,7 @@
 
 #include "CabInBuffer.h"
 #include "MSZipExtConst.h"
+#include "MSZipConst.h"
 
 namespace NArchive {
 namespace NCab {
@@ -40,17 +41,15 @@ public:
   }
 };
 
-typedef NCompress::NHuffman::CDecoder<kNumHuffmanBits> CHuffmanDecoder;
-
 class CDecoder :
   public ICompressCoder,
   public CMyUnknownImp
 {
   CLZOutWindow m_OutWindowStream;
   CMSZipBitDecoder m_InBitStream;
-  CHuffmanDecoder m_MainDecoder;
-  CHuffmanDecoder m_DistDecoder;
-  CHuffmanDecoder m_LevelDecoder; // table for decoding other tables;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticMainTableSize> m_MainDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticDistTableSize> m_DistDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
 
   bool m_FinalBlock;
   bool m_StoredMode;

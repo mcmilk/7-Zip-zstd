@@ -19,13 +19,10 @@
 #include "../../ICoder.h"
 
 #include "../../UI/Common/OpenArchive.h"
-#include "../../UI/Common/ZipRegistry.h"
 #include "../../UI/Common/DefaultName.h"
 #include "../../UI/Common/ExitCode.h"
 #include "../../UI/Common/Extract.h"
 
-// #include "../../UI/Console/Extract.h"
-// #include "../../UI/Console/ArError.h"
 #include "../../UI/Console/List.h"
 #include "../../UI/Console/OpenCallbackConsole.h"
 #include "../../UI/Console/ExtractCallbackConsole.h"
@@ -35,7 +32,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.15 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-25\n";
+"\n7-Zip SFX 4.16 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-03-29\n";
 
 static const int kNumSwitches = 6;
 

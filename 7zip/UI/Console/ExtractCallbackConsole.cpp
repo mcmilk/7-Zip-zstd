@@ -11,7 +11,6 @@
 #include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/COM.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/Time.h"
@@ -215,7 +214,7 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
     return result;
   if (result == E_ABORT)
     return result;
-  g_StdErr << kError;
+  g_StdErr << endl << kError;
   if (result == E_OUTOFMEMORY)
     g_StdErr << kMemoryExceptionMessage;
   else

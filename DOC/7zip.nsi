@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 15
+!define VERSION_MINOR 16
 !define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
 !define VERSION_POSTFIX "b"
@@ -79,6 +79,7 @@ Section
   # delete old unwanted files
   Delete $INSTDIR\7zn.exe
   Delete $INSTDIR\7zan.exe
+  Delete $INSTDIR\Codecs\Implode.dll
 
   # install files
   SetOutPath "$INSTDIR"
@@ -129,7 +130,6 @@ Section
 
   File LZMA.dll
   File Rar29.dll
-  File Implode.dll
   File Deflate.dll
   File Branch.dll
   File Swap.dll
@@ -196,6 +196,7 @@ Section
   File th.txt
   File tr.txt
   File uk.txt
+  File uz.txt
   File va.txt
   File vi.txt
   File vr.txt
@@ -332,7 +333,6 @@ Section "Uninstall"
 
   Delete $INSTDIR\Codecs\LZMA.dll
   Delete $INSTDIR\Codecs\Rar29.dll
-  Delete $INSTDIR\Codecs\Implode.dll
   Delete $INSTDIR\Codecs\Deflate.dll
   Delete $INSTDIR\Codecs\Branch.dll
   Delete $INSTDIR\Codecs\Swap.dll
@@ -399,6 +399,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\th.txt
   Delete $INSTDIR\Lang\tr.txt
   Delete $INSTDIR\Lang\uk.txt
+  Delete $INSTDIR\Lang\uz.txt
   Delete $INSTDIR\Lang\va.txt
   Delete $INSTDIR\Lang\vi.txt
   Delete $INSTDIR\Lang\vr.txt

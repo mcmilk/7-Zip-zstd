@@ -29,7 +29,6 @@ namespace NRecursedType { enum EEnum
 struct CArchiveCommand
 {
   NCommandType::EEnum CommandType;
-  NRecursedType::EEnum DefaultRecursedType() const;
   bool IsFromExtractGroup() const;
   bool IsFromUpdateGroup() const;
   bool IsTestMode() const { return CommandType == NCommandType::kTest; }

@@ -134,20 +134,6 @@ static const CCommandForm g_CommandForms[kNumCommandForms] =
   { L"L", false }
 };
 
-static const NRecursedType::EEnum kCommandRecursedDefault[kNumCommandForms] = 
-{
-  NRecursedType::kNonRecursed, 
-  NRecursedType::kNonRecursed, 
-  NRecursedType::kNonRecursed, 
-  NRecursedType::kRecursed,
-  NRecursedType::kRecursed,
-  NRecursedType::kRecursed,
-  NRecursedType::kRecursed
-};
-
-static const bool kTestExtractRecursedDefault = true;
-static const bool kAddRecursedDefault = false;
-
 static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
 static const int kMinNonSwitchWords = 1;
@@ -168,11 +154,6 @@ static const char *kTerminalOutError = "I won't write compressed data to a termi
 // ---------------------------
 
 static const AString kDefaultWorkingDirectory = "";  // test it maybemust be "."
-
-NRecursedType::EEnum CArchiveCommand::DefaultRecursedType() const
-{
-  return kCommandRecursedDefault[CommandType];
-}
 
 bool CArchiveCommand::IsFromExtractGroup() const
 {
@@ -774,7 +755,7 @@ int ParseCommandLine(UStringVector commandStrings,
   if (parser[NKey::kRecursed].ThereIs)
     recursedType = GetRecursedTypeFromIndex(parser[NKey::kRecursed].PostCharIndex);
   else
-    recursedType = options.Command.DefaultRecursedType();
+    recursedType = NRecursedType::kNonRecursed;
 
   bool thereAreSwitchIncludes = false;
   if (parser[NKey::kInclude].ThereIs)

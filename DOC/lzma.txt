@@ -1,7 +1,7 @@
-LZMA SDK 4.07
+LZMA SDK 4.16 
 -------------
 
-LZMA SDK 4.07  Copyright (C) 1999-2004 Igor Pavlov
+LZMA SDK 4.16  Copyright (C) 1999-2005 Igor Pavlov
 
 LZMA SDK provides developers with documentation, source code,
 and sample code necessary to write software that uses LZMA compression. 
@@ -91,6 +91,9 @@ Files
 ---------------------
 SRC      - directory with source code
 lzma.txt - LZMA SDK description (this file)
+7zFormat.txt - 7z Format description
+7zC.txt  - 7z ANSI-C Decoder description (this file)
+methods.txt  - Compression method IDs for .7z
 LGPL.txt - GNU Lesser General Public License
 CPL.html - Common Public License
 lzma.exe - Compiled file->file LZMA encoder/decoder for Windows
@@ -115,9 +118,12 @@ SRC
       LZMA_Alone   - file->file LZMA compression/decompression
       LZMA_C       - ANSI-C compatible LZMA decompressor
         LzmaDecode.h  - interface for LZMA decoding on ANSI-C
-        LzmaDecode.c  - LZMA decoding on ANSI-C
+        LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
+        LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
         LzmaTest.c    - test application that decodes LZMA encoded file
-      Branch       - Filters for x86, IA-64, ARM, ARM-Thumb and PowerPC code
+      Branch       - Filters for x86, IA-64, ARM, ARM-Thumb, PowerPC and SPARC code
+    Archive - files related to archiving
+      7z_C     - 7z ANSI-C Decoder
 
 Source code of LZMA SDK is only part of big 7-Zip project. That is 
 why LZMA SDK uses such complex source code structure. 
@@ -279,7 +285,7 @@ Using Filters
 You can increase compression ratio for some data types, using
 special filters before compressing. For example, it's possible to 
 increase compression ratio on 5-10% for code for those CPU ISAs: 
-x86, IA-64, ARM, ARM-Thumb, PowerPC.
+x86, IA-64, ARM, ARM-Thumb, PowerPC, SPARC.
 
 You can find C/C++ source code of such filters in folder "7zip/Compress/Branch"
 
@@ -322,6 +328,13 @@ Offset Size Description
 
 ANSI-C LZMA Decoder
 ~~~~~~~~~~~~~~~~~~~
+
+To use ANSI-C LZMA Decoder you need to files:
+LzmaDecode.h and one of the following two files:
+1) LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
+2) LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
+use LzmaDecode.c, if you need fastest code.
+
 
 Memory requirements for LZMA decoding
 -------------------------------------
@@ -448,7 +461,7 @@ How To decompress data
 EXIT codes
 -----------
 
-LZMA decoder can return on of the following codes:
+LZMA decoder can return one of the following codes:
 
 #define LZMA_RESULT_OK 0
 #define LZMA_RESULT_DATA_ERROR 1
@@ -466,7 +479,9 @@ _LZMA_IN_CB    - Use callback for input data
 
 _LZMA_OUT_READ - Use read function for output data
 
-_LZMA_LOC_OPT  - Enable local speed optimizations inside code
+_LZMA_LOC_OPT  - Enable local speed optimizations inside code.
+                 _LZMA_LOC_OPT is only for LzmaDecodeSize.c (size-optimized version).
+                 _LZMA_LOC_OPT doesn't affect LzmaDecode.c (speed-optimized version)
 
 _LZMA_PROB32   - It can increase speed on some 32-bit CPUs, 
                  but memory usage will be doubled in that case

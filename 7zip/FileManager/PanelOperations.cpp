@@ -149,12 +149,8 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
     return FALSE;
   }
   // Can't use RefreshListCtrl here.
-  // UStringVector selectedItems;
-  // selectedItems.Add(newName);
-  // RefreshListCtrl(newName, -1, selectedItems);
-  // RefreshListCtrl();
-  RefreshListCtrlSaveFocused();
-  // PostMessage(kReLoadMessage);
+  // RefreshListCtrlSaveFocused();
+  PostMessage(kReLoadMessage);
   return TRUE;
 }
 

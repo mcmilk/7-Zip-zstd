@@ -53,7 +53,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.15 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-01-25\n";
+" 4.16 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-03-29\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z"

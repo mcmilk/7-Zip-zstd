@@ -11,6 +11,7 @@
 #include "ARM.h"
 #include "ARMThumb.h"
 #include "x86_2.h"
+#include "SPARC.h"
 
 #define MY_CreateClass0(n) \
 if (*clsid == CLSID_CCompressConvert ## n ## _Encoder) { \
@@ -47,6 +48,8 @@ STDAPI CreateObject(
   MY_CreateClass0(BC_IA64)
   else
   MY_CreateClass0(BC_ARMThumb)
+  else
+  MY_CreateClass0(BC_SPARC)
   else
   {
     CMyComPtr<ICompressCoder2> coder2;
@@ -98,7 +101,8 @@ static CBranchMethodItem g_Methods[] =
   METHOD_ITEM(BC_IA64,  0x04, 1, L"BC_IA64", 1),
   METHOD_ITEM(BC_ARM,   0x05, 1, L"BC_ARM", 1),
   // METHOD_ITEM(BC_M68_B, 0x06, 5, L"BC_M68_B", 1),
-  METHOD_ITEM(BC_ARMThumb, 0x07, 1, L"BC_ARMThumb", 1)
+  METHOD_ITEM(BC_ARMThumb, 0x07, 1, L"BC_ARMThumb", 1),
+  METHOD_ITEM(BC_SPARC, 0x08, 0x05, L"BC_SPARC", 1)
 };
 
 STDAPI GetNumberOfMethods(UINT32 *numMethods)

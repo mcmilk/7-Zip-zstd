@@ -129,7 +129,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     COutArchive outArchive;
     outArchive.Create(outStream);
     outArchive.WriteHeader(newItem);
-    RINOK(m_Stream->Seek(m_Item.DataPosition, STREAM_SEEK_SET, NULL));
+    RINOK(m_Stream->Seek(m_StreamStartPosition + m_DataOffset, STREAM_SEEK_SET, NULL));
   }
   else
   {

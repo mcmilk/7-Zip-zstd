@@ -107,6 +107,7 @@ public:
   CEnumerator(): _wildcard(NName::kAnyStringWildcard) {}
   CEnumerator(const CSysString &wildcard): _wildcard(wildcard) {}
   bool Next(CFileInfo &fileInfo);
+  bool Next(CFileInfo &fileInfo, bool &found);
 };
 
 #ifdef _UNICODE
@@ -121,6 +122,7 @@ public:
   CEnumeratorW(): _wildcard(NName::kAnyStringWildcard) {}
   CEnumeratorW(const UString &wildcard): _wildcard(wildcard) {}
   bool Next(CFileInfoW &fileInfo);
+  bool Next(CFileInfoW &fileInfo, bool &found);
 };
 #endif
 

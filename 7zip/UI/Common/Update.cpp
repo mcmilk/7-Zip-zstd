@@ -585,6 +585,7 @@ static HRESULT UpdateWithItemLists(
   return S_OK;
 }
 
+#ifdef _WIN32
 class CCurrentDirRestorer
 {
   CSysString m_CurrentDirectory;
@@ -596,6 +597,7 @@ public:
   bool RestoreDirectory()
     { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
 };
+#endif
 
 struct CEnumDirItemUpdateCallback: public IEnumDirItemCallback
 {

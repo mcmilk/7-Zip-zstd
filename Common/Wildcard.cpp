@@ -11,12 +11,6 @@ static const wchar_t kAnyCharChar = L'?';
 static const wchar_t kDirDelimiter1 = L'\\';
 static const wchar_t kDirDelimiter2 = L'/';
 
-static const wchar_t kDiskNameDelimiterChar = ':';
-
-static const UString kRootDirName = L"";
-
-static const wchar_t kSpaceChar = L' ';
-
 static const UString kWildCardCharSet = L"?*";
 
 static const UString kIllegalWildCardFileNameChars=
@@ -433,61 +427,6 @@ bool CCensor::CheckPath(const UString &path, bool isFile) const
 }
 
 }
-////////////////////////////////////
-// Filename and WildCard function 
-
-/*
-static bool TestStringLengthAndBounds(const UString &string)
-{
-  if (string.Length() <= 0)
-    return false;
-  return (string.ReverseFind(kSpaceChar) != string.Length() - 1);
-}
-bool IsFileNameLegal(const UString &name)
-{
-  if (!TestStringLengthAndBounds(name))
-    return false;
-  return (name.FindOneOf(kIllegalFileNameChars) < 0);
-}
-
-bool IsWildCardFileNameLegal(const UString &name)
-{
-  if (!TestStringLengthAndBounds(name))
-    return false;
-  return (name.FindOneOf(kIllegalWildCardFileNameChars) < 0);
-}
-
-bool IsFilePathLegal(const UString &path)
-{
-  UStringVector pathParts; 
-  SplitPathToParts(path, pathParts);
-  int count = pathParts.Size();
-  if (count == 0)
-    return false;
-  for(int i = 0; i < count; i++)
-    if (!IsFileNameLegal(pathParts[i]))
-      return false;
-  return true;
-}
-
-bool IsWildCardFilePathLegal(const UString &path)
-{
-  UStringVector pathParts; 
-  SplitPathToParts(path, pathParts);
-  int count = pathParts.Size();
-  if (count == 0)
-    return false;
-  for(int i = 0; i < count - 1; i++)
-    if (!IsFileNameLegal(pathParts[i]))
-      return false;
-  return IsWildCardFileNameLegal(pathParts[count - 1]);
-}
-
-static bool IsCharAPrefixDelimiter(wchar_t c)
-{
-  return (IsCharDirLimiter(c) || c == kDiskNameDelimiterChar);
-}
-*/
 
 bool AreTheFileNamesDirDelimiterEqual(const UString &name1, const UString &name2)
 {

@@ -4,7 +4,7 @@
 #ifndef __PPMD_SUBALLOC_H
 #define __PPMD_SUBALLOC_H
 
-#include "PPMdType.h"
+#include "PPMDType.h"
 
 #include "../../../Common/Alloc.h"
 

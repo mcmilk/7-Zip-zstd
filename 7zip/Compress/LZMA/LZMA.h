@@ -24,6 +24,7 @@ public:
   void UpdateMatch() { Index = kMatchNextStates[Index]; }
   void UpdateRep() { Index = kRepNextStates[Index]; }
   void UpdateShortRep() { Index = kShortRepNextStates[Index]; }
+  bool IsCharState() const { return Index < 7; }
 };
 
 const int kNumPosSlotBits = 6; 

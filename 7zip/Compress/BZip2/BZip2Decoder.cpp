@@ -30,7 +30,7 @@ class CBZip2DecompressorReleaser
 {
   CBZip2Decompressor *m_Decompressor;
 public:
-  CBZip2DecompressorReleaser(CBZip2Decompressor *aDecompressor): m_Decompressor(aDecompressor) {}
+  CBZip2DecompressorReleaser(CBZip2Decompressor *decompressor): m_Decompressor(decompressor) {}
   void Diable() { m_Decompressor = NULL; }
   ~CBZip2DecompressorReleaser()  { if (m_Decompressor != NULL) m_Decompressor->End(); }
 };
@@ -39,6 +39,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
+  m_InSize = 0;
   if (m_InBuffer == 0)
   {
     m_InBuffer = (Byte *)BigAlloc(kBufferSize * 2);
@@ -107,8 +108,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
       RINOK(progress->SetRatioInfo(&totalIn, &totalOut));
     }
   }
-  // result = bzStream.End();
-
+  m_InSize = bzStream.GetTotalIn();
   return S_OK;
 }
 
@@ -118,6 +118,14 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
   catch(...) { return S_FALSE; }
+}
+
+STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
+{
+  if (value == NULL)
+    return E_INVALIDARG;
+  *value = m_InSize;
+  return S_OK;
 }
 
 }}

@@ -4,7 +4,6 @@
 
 #include "LZXDecoder.h"
 
-#include "LZXConst.h"
 #include "Common/Defs.h"
 #include "Windows/Defs.h"
 
@@ -14,13 +13,7 @@ namespace NLZX {
 
 static const UInt32 kHistorySize = (1 << 21);
 
-const int kMainTableSize = 256 + kNumPosSlotLenSlotSymbols;
-
-CDecoder::CDecoder():
-  m_MainDecoder(kMainTableSize),
-  m_LenDecoder(kNumLenSymbols),
-  m_AlignDecoder(kAlignTableSize),
-  m_LevelDecoder(kLevelTableSize)
+CDecoder::CDecoder()
 {
   m_i86TranslationOutStreamSpec = new Ci86TranslationOutStream;
   m_i86TranslationOutStream = m_i86TranslationOutStreamSpec;

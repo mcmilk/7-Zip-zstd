@@ -14,11 +14,11 @@ const UInt32 kTopValue = (1 << kNumTopBits);
 
 class CEncoder
 {
-  UInt64 Low;
-  UInt32 Range;
   UInt32 _ffNum;
   Byte _cache;
 public:
+  UInt64 Low;
+  UInt32 Range;
   COutBuffer Stream;
   bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
 
@@ -182,12 +182,12 @@ public:
   }
   */
 
-  UInt32 DecodeDirectBits(UInt32 numTotalBits)
+  UInt32 DecodeDirectBits(int numTotalBits)
   {
     UInt32 range = Range;
     UInt32 code = Code;        
     UInt32 result = 0;
-    for (UInt32 i = numTotalBits; i > 0; i--)
+    for (int i = numTotalBits; i != 0; i--)
     {
       range >>= 1;
       /*
@@ -200,7 +200,6 @@ public:
       */
       UInt32 t = (code - range) >> 31;
       code -= range & (t - 1);
-      // range = rangeTmp + ((range & 1) & (1 - t));
       result = (result << 1) | (1 - t);
 
       if (range < kTopValue)

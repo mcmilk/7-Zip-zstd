@@ -50,9 +50,10 @@ class CBitEncoder: public CBitModel<numMoveBits>
 public:
   void Encode(CEncoder *encoder, UInt32 symbol)
   {
+    /*
     encoder->EncodeBit(this->Prob, kNumBitModelTotalBits, symbol);
     this->UpdateModel(symbol);
-    /*
+    */
     UInt32 newBound = (encoder->Range >> kNumBitModelTotalBits) * this->Prob;
     if (symbol == 0)
     {
@@ -65,18 +66,19 @@ public:
       encoder->Range -= newBound;
       this->Prob -= (this->Prob) >> numMoveBits;
     }
-    while (encoder->Range < kTopValue)
+    if (encoder->Range < kTopValue)
     {
       encoder->Range <<= 8;
       encoder->ShiftLow();
     }
-    */
   }
   UInt32 GetPrice(UInt32 symbol) const
   {
     return CPriceTables::ProbPrices[
       (((this->Prob - symbol) ^ ((-(int)symbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
   }
+  UInt32 GetPrice0() const { return CPriceTables::ProbPrices[this->Prob >> kNumMoveReducingBits]; }
+  UInt32 GetPrice1() const { return CPriceTables::ProbPrices[(kBitModelTotal - this->Prob) >> kNumMoveReducingBits]; }
 };
 
 

@@ -82,7 +82,7 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
           if (!_isParent[i])
             _isFree[i] = true;
         head = 257;
-        while(!_isFree[head] && head < ((UInt32)1 << numBits))
+        while(head < ((UInt32)1 << numBits) && !_isFree[head])
           head++;
         if (head < ((UInt32)1 << numBits))
         {
@@ -112,7 +112,7 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
     }
     while (i > 0)
       outBuffer.WriteByte((_stack[--i]));
-    while(!_isFree[head] && head < ((UInt32)1 << numBits))
+    while(head < ((UInt32)1 << numBits) && !_isFree[head])
       head++;
     if (head < ((UInt32)1 << numBits))
     {
