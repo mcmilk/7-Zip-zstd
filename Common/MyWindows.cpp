@@ -63,7 +63,7 @@ UINT SysStringByteLen(BSTR bstr)
 
 UINT SysStringLen(BSTR bstr)
 {
-  return SysStringByteLen(bstr) >> 1;
+  return SysStringByteLen(bstr) / sizeof(OLECHAR);
 }
 
 HRESULT VariantClear(VARIANTARG *prop)

@@ -107,7 +107,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
   if (propVariant.vt == VT_EMPTY)
     length = 0;
   else
-    length = ::ConvertPropVariantToUINT64(propVariant);
+    length = ::ConvertPropVariantToUInt64(propVariant);
   panelItem.FindData.nFileSizeLow = UINT32(length);
   panelItem.FindData.nFileSizeHigh = UINT32(length >> 32);
 
@@ -124,7 +124,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
   if (propVariant.vt == VT_EMPTY)
     length = 0;
   else
-    length = ::ConvertPropVariantToUINT64(propVariant);
+    length = ::ConvertPropVariantToUInt64(propVariant);
   panelItem.PackSize = UINT32(length);
   panelItem.PackSizeHigh = UINT32(length >> 32);
 

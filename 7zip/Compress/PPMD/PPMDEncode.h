@@ -15,7 +15,7 @@ struct CEncodeInfo: public CInfo
   void EncodeBinSymbol(int symbol, NRangeCoder::CEncoder *rangeEncoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
-    WORD &bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
+    UInt16 &bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
     if (rs.Symbol == symbol) 
     {
       FoundState = &rs;

@@ -53,7 +53,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.12 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-11-18\n";
+" 4.13 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-12-14\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z <command> [<switches>...] <archive_name> [<file_names>...]\n"
@@ -119,13 +119,34 @@ static void PrintProcessTitle(const AString &processTitle, const UString &archiv
       kProcessArchiveMessage << archiveName << endl << endl;
 }
 
-// int Main2(int numArguments, const char *arguments[])
-int Main2()
+#ifndef _WIN32
+static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
 {
+  parts.Clear();
+  for(int i = 0; i < numArguments; i++)
+  {
+    UString s = MultiByteToUnicodeString(arguments[i]);
+    parts.Add(s);
+  }
+}
+#endif
+
+int Main2(
+  #ifndef _WIN32  
+  int numArguments, const char *arguments[]
+  #endif
+)
+{
+  #ifdef _WIN32  
   SetFileApisToOEM();
+  #endif
   
   UStringVector commandStrings;
+  #ifdef _WIN32  
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
+  #else
+  GetArguments(numArguments, arguments, commandStrings);
+  #endif
 
   if(commandStrings.Size() == 1)
   {

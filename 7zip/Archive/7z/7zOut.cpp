@@ -603,7 +603,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   CMyAutoPtr<CEncoder> encoder;
   if (compressHeaders)
   {
-    // FIXED for gcc2.95.2
+    // it's for gcc2.95.2
     CMyAutoPtr<CEncoder> tmp(new CEncoder(*options));
     encoder = tmp;
   }

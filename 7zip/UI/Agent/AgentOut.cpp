@@ -116,7 +116,7 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
     CPropVariant property;
     agent->GetArchive()->GetProperty(fileItem.Index, kpidSize, &property);
     if (archiveItem.SizeIsDefined = (property.vt != VT_EMPTY))
-      archiveItem.Size = ConvertPropVariantToUINT64(property);
+      archiveItem.Size = ConvertPropVariantToUInt64(property);
     archiveItem.IsDirectory = false;
     archiveItem.Name = prefix + fileItem.Name;
     archiveItem.Censored = true; // test it

@@ -232,7 +232,7 @@ UInt32 CInTree::GetLongestMatch(UInt32 *distances)
 
   #ifdef HASH_ARRAY_3
   _hash3[hash3Value] = _pos;
-  UInt32 matchLen3Exist = false;
+  bool matchLen3Exist = false;
   UInt32 len3Distance = 0;
   if(curMatch3 >= matchMinPos)
   {

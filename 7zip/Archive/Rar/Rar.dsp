@@ -146,6 +146,14 @@ SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File

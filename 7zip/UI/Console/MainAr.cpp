@@ -4,7 +4,6 @@
 
 // #include <locale.h>
 
-#include "Windows/COM.h"
 #include "Windows/Error.h"
 
 #include "Common/StdOutStream.h"
@@ -17,8 +16,11 @@
 
 using namespace NWindows;
 
-// extern int Main2(int numArguments, const char *arguments[]);
-extern int Main2();
+extern int Main2(
+  #ifndef _WIN32  
+  int numArguments, const char *arguments[]
+  #endif
+);
 
 static const char *kExceptionErrorMessage = "\n\nError:\n";
 static const char *kUserBreak  = "\nBreak signaled\n";
@@ -27,6 +29,7 @@ static const char *kMemoryExceptionMessage = "\n\nERROR: Can't allocate required
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
+#ifdef UNICODE
 static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -35,12 +38,18 @@ static inline bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 int 
 #ifdef _MSC_VER
 __cdecl 
-  #endif
-main()
+#endif
+main
+(
+#ifndef _WIN32  
+int numArguments, const char *arguments[]
+#endif
+)
 {
   #ifdef UNICODE
   if (!IsItWindowsNT())
@@ -50,7 +59,6 @@ main()
   }
   #endif
   // setlocale(LC_COLLATE, ".OCP");
-  NCOM::CComInitializer comInitializer;
   NConsoleClose::CCtrlHandlerSetter ctrlHandlerSetter;
   try
   {

@@ -48,7 +48,7 @@ void SetFileInfoStrings(const CFileInfo &fileInfo,
   FILETIME localFileTime; 
   if (!FileTimeToLocalFileTime(&fileInfo.Time, &localFileTime))
     throw 4190402;
-  UString timeString = ConvertFileTimeToString2(localFileTime);
+  UString timeString = ConvertFileTimeToString(localFileTime);
 
   fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
   fileInfoStrings.Time += " ";

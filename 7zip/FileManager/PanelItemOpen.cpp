@@ -406,9 +406,15 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     throw 271824;
   extracter.ExtractCallbackSpec->StartProgressDialog(LangLoadStringW(IDS_OPENNING, 0x03020283));
 
-  if (extracter.Result != S_OK)
+  if (extracter.Result != S_OK || extracter.ExtractCallbackSpec->Messages.Size() != 0)
   {
-    MessageBox(L"Can not extract item");
+    if (extracter.Result != S_OK)
+      if (extracter.Result != E_ABORT)
+      {
+        // MessageBox(L"Can not extract item");
+        // NError::MyFormatMessage(systemError.ErrorCode, message);
+        MessageBoxError(extracter.Result, L"7-Zip");
+      }
     return;
   }
 

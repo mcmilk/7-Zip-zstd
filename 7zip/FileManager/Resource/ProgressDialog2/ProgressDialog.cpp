@@ -261,10 +261,13 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
   if (total == 0)
     total = 1;
   UInt32 percentValue = (UInt32)(completed * 100 / total);
-  if (percentValue != _prevPercentValue) 
+  UString titleName;
+  ProgressSynch.GetTitleFileName(titleName);
+  if (percentValue != _prevPercentValue || _prevTitleName != titleName) 
   {
     _prevPercentValue = percentValue;
      SetTitleText();
+     _prevTitleName = titleName;
   }
   UString fileName;
   ProgressSynch.GetCurrentFileName(fileName);

@@ -139,7 +139,7 @@ HRESULT CInArchive::Skeep(UInt64 numBytes)
 
 HRESULT CInArchive::SkeepData(UInt64 dataSize)
 {
-  return Skeep((dataSize + 1) & 0xFFFFFFFFFFFFFFFE);
+  return Skeep((dataSize + 1) & (~((UInt64)0x1)));
 }
 
 }}

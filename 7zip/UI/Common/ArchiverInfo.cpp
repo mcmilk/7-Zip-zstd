@@ -10,7 +10,9 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
 #include "Windows/DLL.h"
+#ifdef _WIN32
 #include "Windows/Registry.h"
+#endif
 #include "Windows/PropVariant.h"
 #include "../../Archive/IArchive.h"
 
@@ -80,6 +82,7 @@ static UString GetBaseFolderPrefixFromRegistry()
     if (fileInfo.IsDirectory())
       return moduleFolderPrefix;
   CSysString pathSys;
+  #ifdef _WIN32
   {
     NRegistry::CKey key;
     if(key.Open(HKEY_CURRENT_USER, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
@@ -100,6 +103,7 @@ static UString GetBaseFolderPrefixFromRegistry()
         return path;
       }
   }
+  #endif
   return moduleFolderPrefix;
 }
 

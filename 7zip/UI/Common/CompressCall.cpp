@@ -22,6 +22,7 @@ static LPCWSTR kEmailSwitch = L" -seml.";
 static LPCWSTR kMapSwitch = L" -i#";
 static LPCWSTR kArchiveNoNameSwitch = L" -an";
 static LPCWSTR kArchiveMapSwitch = L" -ai#";
+static LPCWSTR kStopSwitchParsing = L" --";
 
 
 static bool IsItWindowsNT()
@@ -252,7 +253,9 @@ HRESULT CompressFiles(
   if (showDialog)
     params += kShowDialogSwitch;
 
+  params += kStopSwitchParsing;
   params += L" ";
+  
   params += GetQuotedString(archiveName);
   
   LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);

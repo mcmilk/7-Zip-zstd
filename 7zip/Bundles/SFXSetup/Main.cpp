@@ -238,20 +238,28 @@ int APIENTRY WinMain(
   
   PROCESS_INFORMATION processInformation;
 
+  /*
   CSysString shortPath;
   if (!NFile::NDirectory::MyGetShortPathName(tempDir.GetPath(), shortPath))
     return 1;
+  */
 
   UString appLaunchedSysU = appLaunched;
-  appLaunchedSysU.Replace(TEXT(L"%%T"), GetUnicodeString(shortPath));
+  appLaunchedSysU.Replace(TEXT(L"%%T"), GetUnicodeString(
+      // shortPath
+      tempDir.GetPath()
+      ));
+
 
   appLaunchedSysU += L' ';
   appLaunchedSysU += switches;
   
-  CSysString tempDirPathNormalized = shortPath;
-  NFile::NName::NormalizeDirPathPrefix(shortPath);
+  // CSysString tempDirPathNormalized = shortPath;
+  // NFile::NName::NormalizeDirPathPrefix(shortPath);
   // CSysString appLaunchedSys = shortPath + GetSystemString(appLaunchedSysU);
   CSysString appLaunchedSys = CSysString(TEXT(".\\")) + GetSystemString(appLaunchedSysU);
+
+  // MessageBox(0, appLaunchedSys, "7-Zip", 0);
   
   BOOL createResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)appLaunchedSys, 
       NULL, NULL, FALSE, 0, NULL, NULL /*tempDir.GetPath() */, 

@@ -16,14 +16,11 @@
 #include "Windows/FileDir.h"
 
 #include "../../Archive/IArchive.h"
+
 #include "../Common/PropIDUtils.h"
-
 #include "../Common/OpenArchive.h"
-#include "OpenCallbackConsole.h"
 
-#ifndef EXCLUDE_COM
-#include "Windows/DLL.h"
-#endif
+#include "OpenCallbackConsole.h"
 
 using namespace NWindows;
 
@@ -37,20 +34,19 @@ static const char kArchiveAttributeChar   = 'A';
 static const char *kListing = "Listing archive: ";
 static const wchar_t *kFilesMessage = L"files";
 
-static AString GetAttributesString(DWORD wa, bool directory)
+static void GetAttributesString(DWORD wa, bool directory, char *s)
 {
-  AString s;
-  s += ((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || directory) ? 
+  s[0] = ((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || directory) ? 
       kDirectoryAttributeChar: kEmptyAttributeChar;
-  s += ((wa & FILE_ATTRIBUTE_READONLY) != 0)? 
+  s[1] = ((wa & FILE_ATTRIBUTE_READONLY) != 0)? 
       kReadonlyAttributeChar: kEmptyAttributeChar;
-  s += ((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
+  s[2] = ((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
       kHiddenAttributeChar: kEmptyAttributeChar;
-  s += ((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
+  s[3] = ((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
       kSystemAttributeChar: kEmptyAttributeChar;
-  s += ((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
+  s[4] = ((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
       kArchiveAttributeChar: kEmptyAttributeChar;
-  return s;
+  s[5] = '\0';
 }
 
 enum EAdjustment
@@ -187,14 +183,9 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
     FILETIME localFileTime;
     if (!FileTimeToLocalFileTime(&propVariant.filetime, &localFileTime))
       throw "FileTimeToLocalFileTime error";
-    SYSTEMTIME st;
-    if (FileTimeToSystemTime(&localFileTime, &st))
-    {
-      char s[32];
-      wsprintfA(s, "%04u-%02u-%02u %02u:%02u:%02u",
-          st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    char s[32];
+    if (ConvertFileTimeToString(localFileTime, s, true, true))
       g_StdOut << s;
-    }
     else
       g_StdOut << kEmptyTimeString;
   }
@@ -211,8 +202,7 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
     PrintSpaces(fieldInfo.PrefixSpacesWidth);
 
     NCOM::CPropVariant propVariant;
-    RINOK(archive->GetProperty(index, 
-        fieldInfo.PropID, &propVariant));
+    RINOK(archive->GetProperty(index, fieldInfo.PropID, &propVariant));
     if (propVariant.vt == VT_EMPTY)
     {
       switch(fieldInfo.PropID)
@@ -239,12 +229,11 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
       if (propVariant.vt != VT_UI4)
         throw "incorrect item";
       UInt32 attributes = propVariant.ulVal;
-      NCOM::CPropVariant propVariantIsFolder;
-      RINOK(archive->GetProperty(index, 
-          kpidIsFolder, &propVariantIsFolder));
-      if(propVariantIsFolder.vt != VT_BOOL)
-        return E_FAIL;
-      g_StdOut << GetAttributesString(attributes, VARIANT_BOOLToBool(propVariantIsFolder.boolVal));
+      bool isFolder;
+      RINOK(IsArchiveItemFolder(archive, index, isFolder));
+      char s[8];
+      GetAttributesString(attributes, isFolder, s);
+      g_StdOut << s;
       continue;
     }
 
@@ -295,15 +284,14 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UInt64 numFiles,
   return S_OK;
 }
 
-bool GetUINT64Value(IInArchive *archive, UInt32 index, 
-    PROPID propID, UInt64 &value)
+bool GetUInt64Value(IInArchive *archive, UInt32 index, PROPID propID, UInt64 &value)
 {
   NCOM::CPropVariant propVariant;
   if (archive->GetProperty(index, propID, &propVariant) != S_OK)
     throw "GetPropertyValue error";
   if (propVariant.vt == VT_EMPTY)
     return false;
-  value = ConvertPropVariantToUINT64(propVariant);
+  value = ConvertPropVariantToUInt64(propVariant);
   return true;
 }
 
@@ -392,11 +380,11 @@ HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFul
       fieldPrinter.PrintItemInfo(archive, defaultItemName, archiveFileInfo, i);
       
       UInt64 packSize, unpackSize;
-      if (!GetUINT64Value(archive, i, kpidSize, unpackSize))
+      if (!GetUInt64Value(archive, i, kpidSize, unpackSize))
         unpackSize = 0;
       else
         totalUnPackSizePointer = &totalUnPackSize;
-      if (!GetUINT64Value(archive, i, kpidPackedSize, packSize))
+      if (!GetUInt64Value(archive, i, kpidPackedSize, packSize))
         packSize = 0;
       else
         totalPackSizePointer = &totalPackSize;
@@ -439,6 +427,3 @@ HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFul
     g_StdOut << endl << "Errors: " << numErrors;
   return S_OK;
 }
-
-
-

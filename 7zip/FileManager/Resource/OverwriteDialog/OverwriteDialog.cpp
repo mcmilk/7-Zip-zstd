@@ -67,7 +67,7 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
     FILETIME localFileTime; 
     if (!FileTimeToLocalFileTime(&fileInfo.Time, &localFileTime))
       throw 4190402;
-    timeString = ConvertFileTimeToString2(localFileTime);
+    timeString = ConvertFileTimeToString(localFileTime);
 
     fullString += 
     #ifdef LANG

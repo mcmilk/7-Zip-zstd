@@ -6,6 +6,7 @@
 
 #include "Common/StringConvert.h"
 #include "Common/ComTry.h"
+#include "Common/IntToString.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
@@ -290,19 +291,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       {
         method = L"m";
         wchar_t temp[32];
-        _itow (item.Method - Byte('0'), temp, 10);
+        ConvertUInt64ToString(item.Method - Byte('0'), temp);
         method += temp;
         if (!item.IsDirectory())
         {
           method += L":";
-          _itow (16 + item.GetDictSize(), temp, 10);
+          ConvertUInt64ToString(16 + item.GetDictSize(), temp);
           method += temp;
         }
       }
       else
       {
         wchar_t temp[32];
-        _itow (item.Method, temp, 10);
+        ConvertUInt64ToString(item.Method, temp);
         method += temp;
       }
       propVariant = method;

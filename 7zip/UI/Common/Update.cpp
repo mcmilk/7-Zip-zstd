@@ -322,7 +322,7 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
     CPropVariant propertySize;
     RINOK(archive->GetProperty(i, kpidSize, &propertySize));
     if (ai.SizeIsDefined = (propertySize.vt != VT_EMPTY))
-      ai.Size = ConvertPropVariantToUINT64(propertySize);
+      ai.Size = ConvertPropVariantToUInt64(propertySize);
 
     ai.IndexInServer = i;
     archiveItems.Add(ai);
@@ -482,6 +482,8 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
 
   UString tempDirPrefix;
   bool usesTempDir = false;
+  
+  #ifdef _WIN32
   NDirectory::CTempDirectoryW tempDirectory;
   if (options.EMailMode && options.EMailRemoveAfter)
   {
@@ -490,6 +492,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
     NormalizeDirPathPrefix(tempDirPrefix);
     usesTempDir = true;
   }
+  #endif
 
   CTempFiles tempFiles;
 

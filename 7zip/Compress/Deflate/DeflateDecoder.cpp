@@ -65,7 +65,7 @@ void CCoder::ReadTables(void)
         if (numBitsForAlign > 0)
           m_InBitStream.ReadBits(numBitsForAlign);
         m_StoredBlockSize = m_InBitStream.ReadBits(kDeflateStoredBlockLengthFieldSizeSize);
-        WORD onesComplementReverse = ~WORD(m_InBitStream.ReadBits(kDeflateStoredBlockLengthFieldSizeSize));
+        UInt16 onesComplementReverse = ~(UInt16)(m_InBitStream.ReadBits(kDeflateStoredBlockLengthFieldSizeSize));
         if (m_StoredBlockSize != onesComplementReverse)
           throw CException(CException::kData);
         break;

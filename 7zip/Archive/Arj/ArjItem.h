@@ -46,7 +46,7 @@ public:
   bool IsDirectory() const { return (FileType == NFileHeader::NFileType::kDirectory); }
   UInt32 GetWinAttributes() const 
   {
-    DWORD winAtrributes;
+    UInt32 winAtrributes;
     switch(HostOS)
     {
       case NFileHeader::NHostOS::kMSDOS:

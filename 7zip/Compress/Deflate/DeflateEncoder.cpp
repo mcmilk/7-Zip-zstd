@@ -53,7 +53,7 @@ public:
       int c = kLenStart32[i];
       int j = 1 << kLenDirectBits32[i];
       for(int k = 0; k < j; k++, c++)
-        g_LenSlots[c] = i;
+        g_LenSlots[c] = (Byte)i;
     }
     
     const int kFastSlots = 18;
@@ -197,7 +197,7 @@ void CCoder::ReadGoodBacks()
   UInt32 distanceTmp[kMatchMaxLen32 + 1];
   UInt32 len = m_MatchFinder.GetLongestMatch(distanceTmp);
   for(UInt32 i = kMatchMinLen; i <= len; i++)
-    m_MatchDistances[i] = distanceTmp[i];
+    m_MatchDistances[i] = (UInt16)distanceTmp[i];
 
   m_LongestMatchDistance = m_MatchDistances[len];
   if (len == m_NumFastBytes && m_NumFastBytes != m_MatchMaxLen)
@@ -275,7 +275,7 @@ UInt32 CCoder::Backward(UInt32 &backRes, UInt32 cur)
     backMem = m_Optimum[posPrev].BackPrev;
     posMem = m_Optimum[posPrev].PosPrev;
     m_Optimum[posPrev].BackPrev = backCur;
-    m_Optimum[posPrev].PosPrev = cur;
+    m_Optimum[posPrev].PosPrev = (UInt16)cur;
     cur = posPrev;
   }
   while(cur > 0);
@@ -342,7 +342,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
     if (curAnd1Price < optimum.Price) 
     {
       optimum.Price = curAnd1Price;
-      optimum.PosPrev = cur;
+      optimum.PosPrev = (UInt16)cur;
     }
     if (newLen < kMatchMinLen)
       continue;
@@ -367,7 +367,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
       if (curAndLenPrice < optimum.Price) 
       {
         optimum.Price = curAndLenPrice;
-        optimum.PosPrev = cur;
+        optimum.PosPrev = (UInt16)cur;
         optimum.BackPrev = curBack;
       }
     }
@@ -394,9 +394,9 @@ void CCoder::InitStructures()
   for(i = 0; i < 256; i++)
     m_LiteralPrices[i] = 8;
   for(i = 0; i < m_NumLenCombinations; i++)
-    m_LenPrices[i] = 5 + m_LenDirectBits[g_LenSlots[i]]; // test it
+    m_LenPrices[i] = (Byte)(5 + m_LenDirectBits[g_LenSlots[i]]); // test it
   for(i = 0; i < kDistTableSize64; i++)
-    m_PosPrices[i] = 5 + kDistDirectBits[i];
+    m_PosPrices[i] = (Byte)(5 + kDistDirectBits[i]);
 }
 
 void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
@@ -614,7 +614,7 @@ int CCoder::WriteTables(bool writeMode, bool finalBlock)
     for (i = 0; i < kLevelTableSize; i++)
     {
       int streamPos = kCodeLengthAlphabetOrder[i];
-      int level = levelLevels[streamPos]; 
+      Byte level = levelLevels[streamPos]; 
       if (level > 0 && i >= numLevelCodes)
         numLevelCodes = i + 1;
       levelLevelsStream[i] = level;

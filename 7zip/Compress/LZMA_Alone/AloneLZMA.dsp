@@ -385,6 +385,10 @@ SOURCE=..\..\..\Common\Defs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Defs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File

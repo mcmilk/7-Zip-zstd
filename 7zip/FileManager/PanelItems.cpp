@@ -582,7 +582,7 @@ UINT64 CPanel::GetItemSize(int itemIndex) const
     throw 2723400;
   if (propVariant.vt == VT_EMPTY)
     return 0;
-  return ConvertPropVariantToUINT64(propVariant);
+  return ConvertPropVariantToUInt64(propVariant);
 }
 
 void CPanel::ReadListViewInfo()

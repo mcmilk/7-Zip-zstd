@@ -5,6 +5,7 @@
 #include "TarOut.h"
 #include "TarHeader.h"
 
+#include "Common/IntToString.h"
 #include "Windows/Defs.h"
 
 namespace NArchive {
@@ -27,7 +28,7 @@ void COutArchive::Create(ISequentialOutStream *outStream)
 static AString MakeOctalString(UInt64 value)
 {
   char s[32];
-  _ui64toa(value, s, 8);
+  ConvertUInt64ToString(value, s, 8);
   return AString(s) + ' ';
 }
 

@@ -129,7 +129,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
       &&
       (propVariant.vt == VT_UI8 || propVariant.vt == VT_UI4))
   {
-    string = ConvertSizeToString(ConvertPropVariantToUINT64(propVariant));
+    string = ConvertSizeToString(ConvertPropVariantToUInt64(propVariant));
   }
   else
   {

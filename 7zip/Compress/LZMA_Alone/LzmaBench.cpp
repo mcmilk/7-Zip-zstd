@@ -480,7 +480,7 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
     CMyComPtr<ISequentialOutStream> crcOutStream = crcOutStreamSpec;
     
     UInt64 decodeTime;
-    for (int i = 0; i < 2; i++)
+    for (int j = 0; j < 2; j++)
     {
       inStreamSpec->Init(outStreamSpec->Buffer, compressedSize);
       crcOutStreamSpec->Init();

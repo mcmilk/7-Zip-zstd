@@ -35,7 +35,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.11 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-11-16\n";
+"\n7-Zip SFX 4.13 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-12-14\n";
 
 static const int kNumSwitches = 6;
 
@@ -145,8 +145,8 @@ static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::
 static const char *kIncorrectListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
 
-static const CSysString kFileIsNotArchiveMessageBefore = "File \"";
-static const CSysString kFileIsNotArchiveMessageAfter = "\" is not archive";
+// static const CSysString kFileIsNotArchiveMessageBefore = "File \"";
+// static const CSysString kFileIsNotArchiveMessageAfter = "\" is not archive";
 
 static const char *kProcessArchiveMessage = " archive: ";
 
@@ -309,15 +309,36 @@ static void ThrowPrintFileIsNotArchiveException(const CSysString &fileName)
 }
 */
 
-// int Main2(int numArguments, const char *arguments[])
-int Main2()
+#ifndef _WIN32
+static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
 {
+  parts.Clear();
+  for(int i = 0; i < numArguments; i++)
+  {
+    UString s = MultiByteToUnicodeString(arguments[i]);
+    parts.Add(s);
+  }
+}
+#endif
+
+int Main2(
+  #ifndef _WIN32  
+  int numArguments, const char *arguments[]
+  #endif
+)
+{
+  #ifdef _WIN32  
   SetFileApisToOEM();
+  #endif
   
   g_StdOut << kCopyrightString;
-  
+
   UStringVector commandStrings;
-  SplitCommandLine(GetCommandLineW(), commandStrings);
+  #ifdef _WIN32  
+  NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
+  #else
+  GetArguments(numArguments, arguments, commandStrings);
+  #endif
 
   UString archiveName = commandStrings.Front();
 

@@ -160,7 +160,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     bool newFileSizeDefined = (propVariant.vt != VT_EMPTY);
     UInt64 newFileSize;
     if (newFileSizeDefined)
-      newFileSize = ConvertPropVariantToUINT64(propVariant);
+      newFileSize = ConvertPropVariantToUInt64(propVariant);
 
     bool isAnti = false;
     {

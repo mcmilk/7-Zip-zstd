@@ -6,6 +6,7 @@
 #include "Common/Defs.h"
 #include "Common/UTFConvert.h"
 #include "Common/ComTry.h"
+#include "Common/IntToString.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
@@ -144,7 +145,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       {
         method += L":";
         wchar_t temp[32];
-        _itow (folder.CompressionTypeMinor, temp, 10);
+        ConvertUInt64ToString(folder.CompressionTypeMinor, temp);
         method += temp;
       }
       propVariant = method;

@@ -52,6 +52,7 @@ static const wchar_t kSwitchID1 = '-';
 // static const wchar_t kSwitchID2 = '/';
 
 static const wchar_t kSwitchMinus = '-';
+static const wchar_t *kStopSwitchParsing = L"--";
 
 static bool IsItSwitchChar(wchar_t c)
 { 
@@ -73,9 +74,19 @@ void CParser::ParseStrings(const CSwitchForm *switchForms,
   const UStringVector &commandStrings)
 {
   int numCommandStrings = commandStrings.Size();
+  bool stopSwitch = false;
   for (int i = 0; i < numCommandStrings; i++)
-    if (!ParseString(commandStrings[i], switchForms))
-      NonSwitchStrings.Add(commandStrings[i]);
+  {
+    const UString &s = commandStrings[i];
+    if (stopSwitch)
+      NonSwitchStrings.Add(s);
+    else
+      if (s == kStopSwitchParsing)
+        stopSwitch = true;
+      else
+        if (!ParseString(s, switchForms))
+          NonSwitchStrings.Add(s);
+  }
 }
 
 // if string contains switch then function updates switch structures

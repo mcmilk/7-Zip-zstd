@@ -585,7 +585,7 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
         {
           if (fileInfo.IsDirectory())
           {
-            destPath += TEXT('\\');
+            destPath += L'\\';
             break;
           }
         }
@@ -593,7 +593,12 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
         if (pos < 0)
           destPath.Empty();
         else
+        {
+          destPath = destPath.Left(pos + 1);
+            if (destPath.Length() == 3 && destPath[1] == L':')
+              break;
           destPath = destPath.Left(pos);
+        }
       }
     }
     copyDialog.Value = destPath;

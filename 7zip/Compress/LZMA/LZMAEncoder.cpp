@@ -119,8 +119,7 @@ void CLiteralEncoder2::Encode(NRangeCoder::CEncoder *rangeEncoder, Byte symbol)
   for (int i = 7; i >= 0; i--)
   {
     UInt32 bit = (symbol >> i) & 1;
-    UInt32 state = context;
-    _encoders[state].Encode(rangeEncoder, bit);
+    _encoders[context].Encode(rangeEncoder, bit);
     context = (context << 1) | bit;
   }
 }
@@ -402,7 +401,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
         if (m < 0)
           return E_INVALIDARG;
         _matchFinderIndex = m;
-        if (!_matchFinder && matchFinderIndexPrev != _matchFinderIndex)
+        if (_matchFinder && matchFinderIndexPrev != _matchFinderIndex)
         {
           _dictionarySizePrev = UInt32(-1);
           _matchFinder.Release();

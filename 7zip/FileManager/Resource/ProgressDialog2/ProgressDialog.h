@@ -103,6 +103,7 @@ enum ESpeedMode
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
   UString _prevFileName;
+  UString _prevTitleName;
 private:
   UString backgroundString;
   UString backgroundedString;

@@ -9,6 +9,7 @@
 
 #else
 
+#include <stddef.h> // for wchar_t
 #include <string.h>
 
 #include "Types.h"
@@ -27,9 +28,9 @@ typedef int INT;
 typedef Int32 INT32;
 typedef unsigned int UINT;
 typedef UInt32 UINT32;
-typedef long LONG;
-typedef unsigned long ULONG;
-typedef unsigned long DWORD;
+typedef INT32 LONG;   // LONG, ULONG and DWORD must be 32-bit
+typedef UINT32 ULONG;
+typedef UINT32 DWORD;
 
 typedef Int64 LONGLONG;
 typedef UInt64 ULONGLONG;
@@ -154,20 +155,20 @@ typedef struct tagPROPVARIANT
   };
 } PROPVARIANT;
 
-typedef tagPROPVARIANT tagVARIANT;
+typedef PROPVARIANT tagVARIANT;
 typedef tagVARIANT VARIANT;
 typedef VARIANT VARIANTARG;
 
-BSTR SysAllocStringByteLen(LPCSTR psz, UINT len);
-BSTR SysAllocString(const OLECHAR *sz);
-void SysFreeString(BSTR bstr);
-UINT SysStringByteLen(BSTR bstr);
-UINT SysStringLen(BSTR bstr);
+MY_EXTERN_C BSTR SysAllocStringByteLen(LPCSTR psz, UINT len);
+MY_EXTERN_C BSTR SysAllocString(const OLECHAR *sz);
+MY_EXTERN_C void SysFreeString(BSTR bstr);
+MY_EXTERN_C UINT SysStringByteLen(BSTR bstr);
+MY_EXTERN_C UINT SysStringLen(BSTR bstr);
 
-DWORD GetLastError();
-HRESULT VariantClear(VARIANTARG *prop);
-HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src);
-LONG CompareFileTime(const FILETIME* ft1, const FILETIME* ft2);
+MY_EXTERN_C DWORD GetLastError();
+MY_EXTERN_C HRESULT VariantClear(VARIANTARG *prop);
+MY_EXTERN_C HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src);
+MY_EXTERN_C LONG CompareFileTime(const FILETIME* ft1, const FILETIME* ft2);
 
 #define CP_ACP    0
 #define CP_OEMCP  1
