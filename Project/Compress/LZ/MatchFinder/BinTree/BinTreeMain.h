@@ -47,8 +47,7 @@ CInTree::CInTree():
   #endif
   #endif
   m_Hash(0),
-  m_LeftBase(0),
-  m_RightBase(0),
+  m_Base(0),
   m_CutValue(0xFF)
 {
 }
@@ -56,10 +55,8 @@ CInTree::CInTree():
 void CInTree::FreeMemory()
 {
   #ifdef WIN32
-  if (m_LeftBase != 0)
-    VirtualFree(m_LeftBase, 0, MEM_RELEASE);
-  if (m_RightBase != 0)
-    VirtualFree(m_RightBase, 0, MEM_RELEASE);
+  if (m_Base != 0)
+    VirtualFree(m_Base, 0, MEM_RELEASE);
   if (m_Hash != 0)
     VirtualFree(m_Hash, 0, MEM_RELEASE);
   #else
@@ -67,8 +64,7 @@ void CInTree::FreeMemory()
   delete []m_RightBase;
   delete []m_Hash;
   #endif
-  m_LeftBase = 0;
-  m_RightBase = 0;
+  m_Base = 0;
   m_Hash = 0;
   CIn::Free();
 }
@@ -103,11 +99,8 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #endif
     
     #ifdef WIN32
-    m_LeftBase = (CIndex *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
-    if (m_LeftBase == 0)
-      throw CNewException();
-    m_RightBase = (CIndex *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
-    if (m_RightBase == 0)
+    m_Base = (CPair *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CPair), MEM_COMMIT, PAGE_READWRITE);
+    if (m_Base == 0)
       throw CNewException();
     m_Hash = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
     if (m_Hash == 0)
@@ -153,8 +146,7 @@ HRESULT CInTree::Init(ISequentialInStream *aStream)
   #endif
   #endif
 
-  m_LeftSon = m_LeftBase;
-  m_RightSon = m_RightBase;
+  m_Son = m_Base;
 
   ReduceOffsets(0 - 1);
   return S_OK;
@@ -193,7 +185,6 @@ inline UINT32 Hash(const BYTE *aPointer)
 #endif // HASH_ZIP
 #endif // HASH_ARRAY_2
 
-
 UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
 {
   UINT32 aCurrentLimit;
@@ -212,29 +203,23 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   UINT32 aMatchHashLenMax = 0;
 
   #ifdef HASH_ARRAY_2
- 
   UINT32 aHash2Value;
-  
   #ifdef HASH_ARRAY_3
-  
   UINT32 aHash3Value;
   UINT32 aHashValue = Hash(aCur, aHash2Value, aHash3Value);
-  
-  #else // no HASH_ARRAY_3
-  
+  #else
   UINT32 aHashValue = Hash(aCur, aHash2Value);
-  
-  #endif // HASH_ARRAY_3
-  
-  #else // no HASH_ARRAY_2
-  
+  #endif
+  #else
   UINT32 aHashValue = Hash(aCur);
-
   #endif
 
+  UINT32 aCurMatch = m_Hash[aHashValue];
   #ifdef HASH_ARRAY_2
-
   UINT32 aCurMatch2 = m_Hash2[aHash2Value];
+  #ifdef HASH_ARRAY_3
+  UINT32 aCurMatch3 = m_Hash3[aHash3Value];
+  #endif
   m_Hash2[aHash2Value] = m_Pos;
   bool aMatchLen2Exist = false;
   UINT32 aLen2Distance = 0;
@@ -249,8 +234,6 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   }
 
   #ifdef HASH_ARRAY_3
-  
-  UINT32 aCurMatch3 = m_Hash3[aHash3Value];
   m_Hash3[aHash3Value] = m_Pos;
   UINT32 aMatchLen3Exist = false;
   UINT32 aLen3Distance = 0;
@@ -273,16 +256,14 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
       }
     }
   }
-  
   #endif
   #endif
 
-  UINT32 aCurMatch = m_Hash[aHashValue];
   m_Hash[aHashValue] = m_Pos;
   if(aCurMatch < aMatchMinPos)
   {
-    m_LeftSon[m_Pos] = kEmptyHashValue; 
-    m_RightSon[m_Pos] = kEmptyHashValue; 
+    m_Son[m_Pos].Left = kEmptyHashValue; 
+    m_Son[m_Pos].Right = kEmptyHashValue; 
 
     #ifdef HASH_ARRAY_2
     aDistances[2] = aLen2Distance;
@@ -291,11 +272,10 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
     #endif
     #endif
 
-
     return aMatchHashLenMax;
   }
-  CIndex *aPtrLeft = &m_RightSon[m_Pos];
-  CIndex *aPtrRight = &m_LeftSon[m_Pos];
+  CIndex *aPtrLeft = &m_Son[m_Pos].Right;
+  CIndex *aPtrRight = &m_Son[m_Pos].Left;
 
   UINT32 aMax, aMinSameLeft, aMinSameRight, aMinSame;
   aMax = aMinSameLeft = aMinSameRight = aMinSame = kNumHashDirectBytes;
@@ -315,54 +295,45 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   for(UINT32 aCount = m_CutValue; aCount > 0; aCount--)
   {
     BYTE *pby1 = m_Buffer + aCurMatch;
+    // CIndex aLeft = m_Son[aCurMatch].Left; // it's prefetch
     for(UINT32 aCurrentLen = aMinSame; aCurrentLen < aCurrentLimit; aCurrentLen++/*, dwComps++*/)
-    {
       if (pby1[aCurrentLen] != aCur[aCurrentLen])
-      {
-        if (aCurrentLen > aMax)
-        {
-          UINT32 dwBack =  m_Pos - aCurMatch - 1;
-          for(UINT32 dwLen = aMax + 1; dwLen <= aCurrentLen; dwLen++)
-            aDistances[dwLen] = dwBack;
-          aMax = aCurrentLen;
-        }
-        if (pby1[aCurrentLen] < aCur[aCurrentLen])
-        {
-          *aPtrRight = aCurMatch;
-          aPtrRight = &m_RightSon[aCurMatch];
-          aCurMatch = m_RightSon[aCurMatch];
-          if(aCurrentLen > aMinSameLeft)
-          {
-            aMinSameLeft = aCurrentLen;
-            aMinSame = MyMin(aMinSameLeft, aMinSameRight);
-          }
-        }
-        else
-        {
-          *aPtrLeft = aCurMatch;
-          aPtrLeft = &m_LeftSon[aCurMatch];
-          aCurMatch = m_LeftSon[aCurMatch];
-          if(aCurrentLen > aMinSameRight)
-          {
-            aMinSameRight = aCurrentLen;
-            aMinSame = MyMin(aMinSameLeft, aMinSameRight);
-          }
-        }
         break;
+    while (aCurrentLen > aMax)
+      aDistances[++aMax] = m_Pos - aCurMatch - 1;
+    if (aCurrentLen != aCurrentLimit)
+    {
+      if (pby1[aCurrentLen] < aCur[aCurrentLen])
+      {
+        *aPtrRight = aCurMatch;
+        aPtrRight = &m_Son[aCurMatch].Right;
+        aCurMatch = m_Son[aCurMatch].Right;
+        if(aCurrentLen > aMinSameLeft)
+        {
+          aMinSameLeft = aCurrentLen;
+          aMinSame = MyMin(aMinSameLeft, aMinSameRight);
+        }
+      }
+      else
+      {
+        *aPtrLeft = aCurMatch;
+        aPtrLeft = &m_Son[aCurMatch].Left;
+        // aCurMatch = aLeft;
+        aCurMatch = m_Son[aCurMatch].Left;
+        if(aCurrentLen > aMinSameRight)
+        {
+          aMinSameRight = aCurrentLen;
+          aMinSame = MyMin(aMinSameLeft, aMinSameRight);
+        }
       }
     }
-    if(aCurrentLen == aCurrentLimit)
+    else
     {
-      UINT32 dwBack =  m_Pos - aCurMatch - 1;
-      for(UINT32 dwLen = aMax + 1; dwLen <= aCurrentLen; dwLen++)
-        aDistances[dwLen] = dwBack;
-      aMax = aCurrentLen;
       if(aCurrentLen < m_MatchMaxLen)
       {
-        // assume that cur bytes 
         *aPtrLeft = aCurMatch;
-        aPtrLeft = &m_LeftSon[aCurMatch];
-        aCurMatch = m_LeftSon[aCurMatch];
+        aPtrLeft = &m_Son[aCurMatch].Left;
+        aCurMatch = m_Son[aCurMatch].Left;
         if(aCurrentLen > aMinSameRight)
         {
           aMinSameRight = aCurrentLen;
@@ -371,8 +342,8 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
       }
       else
       {
-        *aPtrLeft = m_RightSon[aCurMatch];
-        *aPtrRight = m_LeftSon[aCurMatch];
+        *aPtrLeft = m_Son[aCurMatch].Right;
+        *aPtrRight = m_Son[aCurMatch].Left;
 
         #ifdef HASH_ARRAY_2
         if (aMatchLen2Exist && aLen2Distance < aDistances[2])
@@ -382,42 +353,12 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
           aDistances[3] = aLen3Distance;
         #endif
         #endif
-      
 
         return aMax;
       }
     }
     if(aCurMatch < aMatchMinPos)
-    {
-      *aPtrLeft = kEmptyHashValue;
-      *aPtrRight = kEmptyHashValue;
-      #ifdef HASH_ARRAY_2
-      if (aMatchLen2Exist)
-      {
-        if (aMax < 2)
-        {
-          aDistances[2] = aLen2Distance;
-          aMax = 2;
-        }
-        else if (aLen2Distance < aDistances[2])
-          aDistances[2] = aLen2Distance;
-      }
-      #ifdef HASH_ARRAY_3
-      if (aMatchLen3Exist)
-      {
-        if (aMax < 3)
-        {
-          aDistances[3] = aLen3Distance;
-          aMax = 3;
-        }
-        else if (aLen3Distance < aDistances[3])
-          aDistances[3] = aLen3Distance;
-      }
-      #endif
-      #endif
-
-      return aMax;
-    }
+      break;
   }
   *aPtrLeft = kEmptyHashValue;
   *aPtrRight = kEmptyHashValue;
@@ -462,7 +403,6 @@ void CInTree::DummyLongestMatch()
   UINT32 aMatchMinPos = (m_Pos > m_HistorySize) ? (m_Pos - m_HistorySize) : 1;
   BYTE *aCur = m_Buffer + m_Pos;
   
-
   #ifdef HASH_ARRAY_2
   UINT32 aHash2Value;
   #ifdef HASH_ARRAY_3
@@ -473,9 +413,7 @@ void CInTree::DummyLongestMatch()
   UINT32 aHashValue = Hash(aCur, aHash2Value);
   #endif
   m_Hash2[aHash2Value] = m_Pos;
-
-  
-  #else // no hash
+  #else
   UINT32 aHashValue = Hash(aCur);
   #endif
 
@@ -483,52 +421,55 @@ void CInTree::DummyLongestMatch()
   m_Hash[aHashValue] = m_Pos;
   if(aCurMatch < aMatchMinPos)
   {
-    m_LeftSon[m_Pos] = kEmptyHashValue; 
-    m_RightSon[m_Pos] = kEmptyHashValue; 
+    m_Son[m_Pos].Left = kEmptyHashValue; 
+    m_Son[m_Pos].Right = kEmptyHashValue; 
     return;
   }
-  CIndex *aPtrLeft = &m_RightSon[m_Pos];
-  CIndex *aPtrRight = &m_LeftSon[m_Pos];
+  CIndex *aPtrLeft = &m_Son[m_Pos].Right;
+  CIndex *aPtrRight = &m_Son[m_Pos].Left;
 
   UINT32 aMax, aMinSameLeft, aMinSameRight, aMinSame;
   aMax = aMinSameLeft = aMinSameRight = aMinSame = kNumHashDirectBytes;
   for(UINT32 aCount = m_CutValue; aCount > 0; aCount--)
   {
     BYTE *pby1 = m_Buffer + aCurMatch;
-    for(UINT32 aCurrentLen = aMinSame; aCurrentLen < aCurrentLimit; aCurrentLen++)
+    // CIndex aLeft = m_Son[aCurMatch].Left; // it's prefetch
+    for(UINT32 aCurrentLen = aMinSame; aCurrentLen < aCurrentLimit; aCurrentLen++/*, dwComps++*/)
       if (pby1[aCurrentLen] != aCur[aCurrentLen])
-      {
-        if (pby1[aCurrentLen] < aCur[aCurrentLen])
-        {
-          *aPtrRight = aCurMatch;
-          aPtrRight = &m_RightSon[aCurMatch];
-          aCurMatch = m_RightSon[aCurMatch];
-          if(aCurrentLen > aMinSameLeft)
-          {
-            aMinSameLeft = aCurrentLen;
-            aMinSame = MyMin(aMinSameLeft, aMinSameRight);
-          }
-        }
-        else 
-        {
-          *aPtrLeft = aCurMatch;
-          aPtrLeft = &m_LeftSon[aCurMatch];
-          aCurMatch = m_LeftSon[aCurMatch];
-          if(aCurrentLen > aMinSameRight)
-          {
-            aMinSameRight = aCurrentLen;
-            aMinSame = MyMin(aMinSameLeft, aMinSameRight);
-          }
-        }
         break;
+    if (aCurrentLen != aCurrentLimit)
+    {
+      if (pby1[aCurrentLen] < aCur[aCurrentLen])
+      {
+        *aPtrRight = aCurMatch;
+        aPtrRight = &m_Son[aCurMatch].Right;
+        aCurMatch = m_Son[aCurMatch].Right;
+        if(aCurrentLen > aMinSameLeft)
+        {
+          aMinSameLeft = aCurrentLen;
+          aMinSame = MyMin(aMinSameLeft, aMinSameRight);
+        }
       }
-    if(aCurrentLen == aCurrentLimit)
+      else 
+      {
+        *aPtrLeft = aCurMatch;
+        aPtrLeft = &m_Son[aCurMatch].Left;
+        aCurMatch = m_Son[aCurMatch].Left;
+        // aCurMatch = aLeft;
+        if(aCurrentLen > aMinSameRight)
+        {
+          aMinSameRight = aCurrentLen;
+          aMinSame = MyMin(aMinSameLeft, aMinSameRight);
+        }
+      }
+    }
+    else
     {
       if(aCurrentLen < m_MatchMaxLen)
       {
         *aPtrLeft = aCurMatch;
-        aPtrLeft = &m_LeftSon[aCurMatch];
-        aCurMatch = m_LeftSon[aCurMatch];
+        aPtrLeft = &m_Son[aCurMatch].Left;
+        aCurMatch = m_Son[aCurMatch].Left;
         if(aCurrentLen > aMinSameRight)
         {
           aMinSameRight = aCurrentLen;
@@ -537,17 +478,13 @@ void CInTree::DummyLongestMatch()
       }
       else
       {
-        *aPtrLeft = m_RightSon[aCurMatch];
-        *aPtrRight = m_LeftSon[aCurMatch];
+        *aPtrLeft = m_Son[aCurMatch].Right;
+        *aPtrRight = m_Son[aCurMatch].Left;
         return;
       }
     }
     if(aCurMatch < aMatchMinPos)
-    {
-      *aPtrLeft = kEmptyHashValue;
-      *aPtrRight = kEmptyHashValue;
-      return;
-    }
+      break;
   }
   *aPtrLeft = kEmptyHashValue;
   *aPtrRight = kEmptyHashValue;
@@ -555,12 +492,10 @@ void CInTree::DummyLongestMatch()
 
 void CInTree::AfterMoveBlock()
 {
-  UINT32 aNumBytesToMove = m_HistorySize * sizeof(CIndex);
-  UINT32 aSpecOffset = ((m_LeftSon + m_Pos) - m_LeftBase) - m_HistorySize;
-  memmove(m_LeftBase, m_LeftBase + aSpecOffset, aNumBytesToMove);
-  m_LeftSon -= aSpecOffset;
-  memmove(m_RightBase, m_RightBase + aSpecOffset, aNumBytesToMove);
-  m_RightSon -= aSpecOffset;
+  UINT32 aNumBytesToMove = m_HistorySize * sizeof(CPair);
+  UINT32 aSpecOffset = ((m_Son + m_Pos) - m_Base) - m_HistorySize;
+  memmove(m_Base, m_Base + aSpecOffset, aNumBytesToMove);
+  m_Son -= aSpecOffset;
 }
 
 void CInTree::NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue)
@@ -580,8 +515,7 @@ void CInTree::Normalize()
 {
   UINT32 aStartItem = m_Pos - m_HistorySize;
   UINT32 aSubValue = aStartItem - 1;
-  NormalizeLinks(m_LeftSon + aStartItem, m_HistorySize, aSubValue);
-  NormalizeLinks(m_RightSon + aStartItem, m_HistorySize, aSubValue);
+  NormalizeLinks((CIndex *)(m_Son + aStartItem), m_HistorySize * 2, aSubValue);
   NormalizeLinks(m_Hash, kHashSize, aSubValue);
 
   #ifdef HASH_ARRAY_2

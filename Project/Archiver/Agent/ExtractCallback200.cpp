@@ -124,12 +124,16 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
   {
     RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidAttributes, &aPropVariant));
     if (aPropVariant.vt == VT_EMPTY)
+    {
       m_ProcessedFileInfo.Attributes = m_AttributesDefault;
+      m_ProcessedFileInfo.AttributesAreDefined = false;
+    }
     else
     {
       if (aPropVariant.vt != VT_UI4)
         throw "incorrect item";
       m_ProcessedFileInfo.Attributes = aPropVariant.ulVal;
+      m_ProcessedFileInfo.AttributesAreDefined = true;
     }
 
     RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidIsFolder, &aPropVariant));
@@ -325,7 +329,7 @@ STDMETHODIMP CExtractCallBack200Imp::OperationResult(INT32 anOperationResult)
   if(m_OutFileStream != NULL)
     m_OutFileStreamSpec->m_File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
   m_OutFileStream.Release();
-  if (m_ExtractMode)
+  if (m_ExtractMode && m_ProcessedFileInfo.AttributesAreDefined)
     SetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);
   RETURN_IF_NOT_S_OK(m_ExtractCallback2->OperationResult(anOperationResult));
   return S_OK;

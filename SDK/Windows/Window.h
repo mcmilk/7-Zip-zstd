@@ -146,6 +146,10 @@ public:
     { return ::GetSystemMenu(m_Window, BoolToBOOL(aRevert)); }
   #endif
 
+  UINT_PTR SetTimer(UINT_PTR anIDEvent, UINT anElapse, TIMERPROC lpTimerFunc = 0)
+    { return ::SetTimer(m_Window, anIDEvent, anElapse, lpTimerFunc); }
+  bool KillTimer(UINT_PTR anIDEvent)
+    {return BOOLToBool(::KillTimer(m_Window, anIDEvent)); }
 };
 
 }

@@ -140,7 +140,8 @@ HRESULT CDecoder::Init(ISequentialInStream *anInStream,
 
   m_OutWindowStream.Init(anOutStream);
 
-  for(int i = 0; i < kNumStates; i++)
+  int i;
+  for(i = 0; i < kNumStates; i++)
   {
     for (UINT32 j = 0; j <= m_PosStateMask; j++)
     {

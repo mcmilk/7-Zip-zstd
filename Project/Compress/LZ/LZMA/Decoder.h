@@ -65,7 +65,7 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 DECLARE_REGISTRY(CDecoder, TEXT("Compress.LZMADecoder.1"), 
-                 TEXT("Compress.LZMADecoder"), 0, THREADFLAGS_APARTMENT)
+                 TEXT("Compress.LZMADecoder"), UINT(0), THREADFLAGS_APARTMENT)
 //DECLARE_NO_REGISTRY()
 
   CDecoder();

@@ -49,7 +49,7 @@ DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CDecoder, TEXT("Compress.PPMDDecoder.1"), 
-                 TEXT("Compress.PPMDDecoder"), 0, THREADFLAGS_APARTMENT)
+                 TEXT("Compress.PPMDDecoder"), UINT(0), THREADFLAGS_APARTMENT)
 
   void ReleaseStreams()
   {

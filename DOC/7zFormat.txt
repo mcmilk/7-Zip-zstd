@@ -1,4 +1,4 @@
-7z Format description (2.30 Beta 17)
+7z Format description (2.30 Beta 18)
 -----------------------------------
 
 This file contain descrition of 7z archive format. 

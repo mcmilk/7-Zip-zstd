@@ -171,6 +171,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
   RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
   if (!aDataAreCorrect)
   {
+    throw "Data Error";
   }
   UINT32 anUncompressedCFDataCurrentValue = 0;
   m_InBitStream.Init();
@@ -199,6 +200,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
       RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
       if (!aDataAreCorrect)
       {
+        throw "Data Error";
       }
       m_InBitStream.Init();
       anUncompressedCFDataCurrentValue = 0;
@@ -219,6 +221,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
           RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
           if (!aDataAreCorrect)
           {
+            throw "Data Error";
           }
           // m_InBitStream.Init();
           anUncompressedCFDataCurrentValue = 0;
@@ -238,6 +241,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
         RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
         if (!aDataAreCorrect)
         {
+          throw "Data Error";
         }
         m_InBitStream.Init();
         anUncompressedCFDataCurrentValue = 0;

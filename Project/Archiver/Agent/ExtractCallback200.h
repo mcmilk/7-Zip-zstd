@@ -68,6 +68,7 @@ private:
   {
     FILETIME UTCLastWriteTime;
     bool IsDirectory;
+    bool AttributesAreDefined;
     UINT32 Attributes;
   } m_ProcessedFileInfo;
 

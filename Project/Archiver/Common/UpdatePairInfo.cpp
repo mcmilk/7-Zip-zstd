@@ -52,7 +52,7 @@ static const char *kSameTimeChangedSizeCollisionMessaged =
 static void TestDuplicateString(const UStringVector &aStrings, 
     const vector<int> &aIndexes)
 {
-  for(int i = 0; i + 1 < aIndexes.size(); i++)
+  for(vector<int>::size_type i = 0; i + 1 < aIndexes.size(); i++)
     if (aStrings[aIndexes[i]].CollateNoCase(aStrings[aIndexes[i + 1]]) == 0)
     {
       UString aString = kDuplicateFileNameMessage;

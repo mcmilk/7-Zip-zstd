@@ -81,7 +81,7 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CMatchFinderBinTree)
 
-DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, UINT(0), THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

@@ -1,6 +1,16 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 18        2002-03-25
+  --------------------------------------
+    - SDK/Archive/Cab/MSZipDecoder.cpp
+      SDK/Archive/Cab/LZXDecoder.cpp:
+        bug with corrupted archives was fixed
+    - Project/Compress/LZ/MatchFinder/BinTree/BinTree.h 
+    - Project/Compress/LZ/MatchFinder/BinTree/BinTreeMain.h 
+        some speed optimization (using prefetching)
+
+
   Version 2.30 Beta 17        2002-03-03
   --------------------------------------
     - ARJ suppport.

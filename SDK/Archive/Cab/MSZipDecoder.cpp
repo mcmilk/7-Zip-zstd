@@ -208,6 +208,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
     RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
     if (!aDataAreCorrect)
     {
+      throw "Data Error";
     }
     m_InBitStream.Init();
     if (m_InBitStream.ReadBits(8) != 0x43)
@@ -248,6 +249,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
           
           aNumber = m_DistDecoder.DecodeSymbol(&m_InBitStream);
           UINT32 aDistance = kDistStart[aNumber] + m_InBitStream.ReadBits(kDistDirectBits[aNumber]);
+          /*
+          if (aDistance >= aNowPos)
+            throw "data error";
+          */
           m_OutWindowStream.CopyBackBlock(aDistance, aLength);
           aNowPos += aLength;
           anUncompressedCFDataCurrentValue += aLength;

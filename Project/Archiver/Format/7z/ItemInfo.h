@@ -55,9 +55,9 @@ struct CFolderItemInfo
         return UnPackSizes[i];
     throw 1;
   }
-  int GetNumOutStreams() const
+  UINT64 GetNumOutStreams() const
   {
-    int aResult = 0;
+    UINT64 aResult = 0;
     for (int i = 0; i < CodersInfo.Size(); i++)
       aResult += CodersInfo[i].NumOutStreams;
     return aResult;

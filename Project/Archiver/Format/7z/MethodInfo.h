@@ -25,7 +25,7 @@ inline bool operator==(const CMethodID &a1, const CMethodID &a2)
 {
   if (a1.IDSize != a2.IDSize)
     return false;
-  for (int i = 0; i < a1.IDSize; i++)
+  for (UINT32 i = 0; i < a1.IDSize; i++)
     if (a1.ID[i] != a2.ID[i])
       return false;
   return true;

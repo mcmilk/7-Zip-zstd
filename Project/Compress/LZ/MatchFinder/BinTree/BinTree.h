@@ -57,6 +57,18 @@ const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
 
 // #endif
 
+#pragma pack(push, PragmaBinTreePair)
+#pragma pack(push, 1)
+
+struct CPair
+{
+  CIndex Left;
+  CIndex Right;
+};
+
+#pragma pack(pop)
+#pragma pack(pop, PragmaBinTreePair)
+
 class CInTree: public NStream::NWindow::CIn
 {
   UINT32 m_HistorySize;
@@ -71,10 +83,8 @@ class CInTree: public NStream::NWindow::CIn
   #endif
   #endif
   
-  CIndex *m_LeftSon;
-  CIndex *m_RightSon;
-  CIndex *m_LeftBase;
-  CIndex *m_RightBase;
+  CPair *m_Son;
+  CPair *m_Base;
 
   UINT32 m_CutValue;
 
@@ -103,8 +113,7 @@ public:
   void ReduceOffsets(UINT32 aSubValue)
   {
     CIn::ReduceOffsets(aSubValue);
-    m_LeftSon += aSubValue;
-    m_RightSon += aSubValue;
+    m_Son += aSubValue;
   }
 };
 
