@@ -148,9 +148,7 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UINT32 index,
 
 STDMETHODIMP CAgentFolder::GetTypeID(BSTR *name)
 {
-  // Change It!!!
-  UString temp = UString(L"7-zip.") + UString(L"zip");
-    //     _agentSpec->_CLSID;
+  UString temp = UString(L"7-Zip.") + _agentSpec->ArchiveType;
   CMyComBSTR bstrTemp = temp;
   *name = bstrTemp.Detach();
   return S_OK;
@@ -261,6 +259,7 @@ STDMETHODIMP CAgent::Open(
       archiverInfo.Extension, archiverInfo.AddExtension);
   DefaultTime = fileInfo.LastWriteTime;
   DefaultAttributes = fileInfo.Attributes;
+  ArchiveType = archiverInfo.Name;
   if (archiveType != 0)
   {
     CMyComBSTR name = archiverInfo.Name;

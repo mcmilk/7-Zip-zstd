@@ -114,7 +114,23 @@ bool CCompressDialog::OnInit()
   }
   m_Format.SetCurSel(m_Info.ArchiverInfoIndex);
 
-  m_Info.ArchiveNameSrc = m_Info.ArchiveName;
+  ArchiveNameSrc = m_Info.ArchiveName;
+  /*
+  ArchiveNameSrc2.Empty();
+  if (!m_Info.KeepName)
+  {
+    int dotPos = m_Info.ArchiveName.ReverseFind('.');
+    int slashPos = MyMax(m_Info.ArchiveName.ReverseFind('\\'), 
+        m_Info.ArchiveName.ReverseFind('/'));
+    if (dotPos > slashPos && dotPos >= 0)
+    {
+      ArchiveNameSrc1 = m_Info.ArchiveName.Left(dotPos);
+      ArchiveNameSrc2 = m_Info.ArchiveName.Mid(dotPos);
+    }
+  }
+  */
+
+
   SetArchiveName(m_Info.ArchiveName);
   SetOptions();
   
@@ -483,16 +499,19 @@ void CCompressDialog::SetArchiveName(const CSysString &name)
   const CArchiverInfo &archiverInfo = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
   m_PrevFormat = m_Info.ArchiverInfoIndex;
 
-  if (archiverInfo.KeepName || m_Info.KeepName)
+  if (archiverInfo.KeepName)
   {
-    fileName = m_Info.ArchiveNameSrc;
+    fileName = ArchiveNameSrc;
   }
   else
   {
-    int dotPos = fileName.ReverseFind('.');
-    int slashPos = MyMax(fileName.ReverseFind('\\'), fileName.ReverseFind('/'));
-    if (dotPos > slashPos)
-      fileName = fileName.Left(dotPos);
+    if (!m_Info.KeepName)
+    {
+      int dotPos = fileName.ReverseFind('.');
+      int slashPos = MyMax(fileName.ReverseFind('\\'), fileName.ReverseFind('/'));
+      if (dotPos > slashPos)
+        fileName = fileName.Left(dotPos);
+    }
   }
   fileName += '.';
   fileName += GetSystemString(archiverInfo.Extension);

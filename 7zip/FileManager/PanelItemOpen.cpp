@@ -80,8 +80,9 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name,
  
   folderLink.ParentFolder = _folder;
   folderLink.ItemName = name;
-
   _parentFolders.Add(folderLink);
+  _parentFolders.Back().Library.Attach(_library.Detach());
+
   _folder.Release();
   _library.Free();
   _folder = newFolder;

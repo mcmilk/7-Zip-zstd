@@ -52,7 +52,6 @@ namespace NCompressDialog
 
     bool SFXMode;
     
-    CSysString ArchiveNameSrc; // in: Relative for ; out: abs
     CSysString ArchiveName; // in: Relative for ; out: abs
     CSysString CurrentDirPrefix;
     bool KeepName;
@@ -65,7 +64,9 @@ namespace NCompressDialog
 
 class CCompressDialog: public NWindows::NControl::CModalDialog
 {
-	NWindows::NControl::CComboBox	m_ArchivePath;
+  CSysString ArchiveNameSrc;
+
+  NWindows::NControl::CComboBox	m_ArchivePath;
 	NWindows::NControl::CComboBox	m_Format;
 	NWindows::NControl::CComboBox	m_Method;
 	NWindows::NControl::CComboBox	m_UpdateMode;

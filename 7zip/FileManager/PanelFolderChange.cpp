@@ -295,11 +295,12 @@ void CPanel::OpenParentFolder()
     {
       _folder.Release();
       _library.Free();
-      _folder = _parentFolders.Back().ParentFolder;
-      _library.Attach(_parentFolders.Back().Library.Detach());
+      CFolderLink &link = _parentFolders.Back();
+      _folder = link.ParentFolder;
+      _library.Attach(link.Library.Detach());
+      focucedName = link.ItemName;
       if (_parentFolders.Size () > 1)
         OpenParentArchiveFolder();
-      focucedName = _parentFolders.Back().ItemName;
       _parentFolders.DeleteBack();
     }
   }

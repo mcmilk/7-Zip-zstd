@@ -247,6 +247,8 @@ public:
   FILETIME DefaultTime;
   UINT32 DefaultAttributes;
 
+  UString ArchiveType;
+
   UStringVector _names;
   UString _folderPrefix;
 

@@ -49,7 +49,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 3.08.02 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-20\n";
+" 3.08.03 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-21\n";
 
 const wchar_t *kDefaultArchiveType = L"7z";
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -587,7 +587,7 @@ UString MakeFullArchiveName(const UString &name, const UString &extension)
   int slash2Pos = name.ReverseFind(L'/');
   int slashPos = MyMax(slash1Pos, slash2Pos);
   int dotPos = name.ReverseFind(L'.');
-  if (dotPos > 0 && (dotPos > slashPos || slashPos < 0))
+  if (dotPos >= 0 && (dotPos > slashPos || slashPos < 0))
     return name;
   return name + L'.' + extension;
 }

@@ -186,6 +186,24 @@ struct CThreadUpdateCompress
   }
 };
 
+static CSysString MakeFullArchiveName(const CSysString &name, 
+    const UString &extension)
+{
+  if (extension.IsEmpty())
+    return name;
+  if (name.IsEmpty())
+    return name;
+  if (name[name.Length() - 1] == '.')
+    return name.Left(name.Length() - 1);
+  int slash1Pos = name.ReverseFind(L'\\');
+  int slash2Pos = name.ReverseFind(L'/');
+  int slashPos = MyMax(slash1Pos, slash2Pos);
+  int dotPos = name.ReverseFind(L'.');
+  if (dotPos >= 0 && (dotPos > slashPos || slashPos < 0))
+    return name;
+  return name + L'.' + GetSystemString(extension);
+}
+
 HRESULT CompressArchive(const CSysStringVector &fileNames, 
     const CSysString &archiveName, bool email)
 {
@@ -289,6 +307,8 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
     encryptHeadersIsAllowed = dialog.EncryptHeadersIsAllowed;
     encryptHeaders = dialog.EncryptHeaders;
     compressInfo = dialog.m_Info;
+    compressInfo.ArchiveName = MakeFullArchiveName(compressInfo.ArchiveName, 
+        archiverInfo.Extension);
   }
   else
   {

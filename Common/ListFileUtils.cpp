@@ -7,20 +7,13 @@
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-/*
-static const char kNewLineChar = '\n';
-
-static const char kSpaceChar     = ' ';
-static const char kTabChar       = '\t';
-
 static const char kQuoteChar     = '\"';
-static const char kEndOfLine     = '\0';
-
-static bool IsSeparatorChar(char c)
+static void RemoveQuote(UString &s)
 {
-  return (c == kSpaceChar || c == kTabChar);
+  if (s.Length() >= 2)
+    if (s[0] == kQuoteChar && s[s.Length() - 1] == kQuoteChar)
+      s = s.Mid(1, s.Length() - 2);
 }
-*/
 
 bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, 
     UINT codePage)
@@ -46,6 +39,7 @@ bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings,
     if (c == L'\n')
     {
       t.Trim();
+      RemoveQuote(t);
       if (!t.IsEmpty())
         resultStrings.Add(t);
       t.Empty();
@@ -54,39 +48,8 @@ bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings,
       t += c;
   }
   t.Trim();
+  RemoveQuote(t);
   if (!t.IsEmpty())
     resultStrings.Add(t);
   return true;
-
-
-  /*
-  AString string;
-  bool quotes = false;
-  int intChar;
-  while((intChar = file.GetChar()) != EOF)
-  {
-    char c = intChar;
-    if (c == kEndOfLine)
-      return false;
-    if (c == kNewLineChar || (IsSeparatorChar(c) && !quotes) || (c == kQuoteChar && quotes)) 
-    {
-      if (!string.IsEmpty())
-      {
-        strings.Add(string);
-        string.Empty ();
-        quotes = false;
-      }
-    }
-    else if (c == kQuoteChar)
-      quotes = true;
-    else
-      string += c;
-  }
-  if (!string.IsEmpty())
-    if (quotes)
-      return false;
-    else
-      strings.Add(string);
-  return true;
-  */
 }

@@ -93,6 +93,7 @@ BEGIN
     IDS_PROPERTY_FILE_SYSTEM "File System"
     IDS_PROPERTY_USER "User"
     IDS_PROPERTY_GROUP "Group"
+    IDS_PROPERTY_BLOCK "Block"
 END
 
 #endif    // English (U.S.) resources
