@@ -38,12 +38,15 @@ namespace NArchive
 
 namespace NFile
 {
-  UINT16 CBlock32::GetRealCRC(const void *aName, UINT32 aNameSize) const
+  UINT16 CBlock32::GetRealCRC(const void *aName, UINT32 aNameSize, 
+      bool anExtraDataDefined, UINT64 anExtraData) const
   {
     CCRC aCRC;
     UpdateCRCBytesWithoutStartBytes(aCRC, this, 
       sizeof(*this), sizeof(HeadCRC));
     aCRC.Update(aName, aNameSize);
+    if (anExtraDataDefined)
+      aCRC.Update(&anExtraData, sizeof(anExtraData));
     return UINT16(aCRC.GetDigest());
   }
   UINT16 CBlock64::GetRealCRC(const void *aName, UINT32 aNameSize) const

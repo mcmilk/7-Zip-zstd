@@ -23,7 +23,8 @@
 
 using namespace NWindows;
 
-HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
+HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName, 
+    bool anAssumeYes)
 {
   CComPtr<IArchiveHandler100> anArchiveHandler;
   NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
@@ -38,20 +39,42 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
   CZipRegistryManager aZipRegistryManager;
   #endif
 
-  CExtractDialog aDialog;
-  aDialog.Init(
-      #ifndef  NO_REGISTRY
+  CSysString aDirectoryPath;
+  NExtractionDialog::CModeInfo anExtractModeInfo;
+  UString aPassword;
+  if (!anAssumeYes)
+  {
+    CExtractDialog aDialog;
+    aDialog.Init(
+    #ifndef  NO_REGISTRY
       &aZipRegistryManager, 
-      #endif
+    #endif
       aFileName);
-  aDialog.m_FilesMode = NExtractionDialog::NFilesMode::kAll;
-  aDialog.m_EnableSelectedFilesButton = false;
-  aDialog.m_EnableFilesButton = false;
+    aDialog.m_FilesMode = NExtractionDialog::NFilesMode::kAll;
+    aDialog.m_EnableSelectedFilesButton = false;
+    aDialog.m_EnableFilesButton = false;
+    
+    if(aDialog.Create(aParentWindow) != IDOK)
+      return E_ABORT;
+    aDirectoryPath = aDialog.m_DirectoryPath;
+    aDialog.GetModeInfo(anExtractModeInfo);
 
-  if(aDialog.Create(aParentWindow) != IDOK)
-    return E_ABORT;
-
-  CSysString aDirectoryPath = aDialog.m_DirectoryPath;
+    aPassword = GetUnicodeString((LPCTSTR)aDialog.m_Password);
+  }
+  else
+  {
+    CSysString aFullPath;
+    int aFileNamePartStartIndex;
+    if (!NWindows::NFile::NDirectory::MyGetFullPathName(aFileName, aFullPath, aFileNamePartStartIndex))
+    {
+      MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
+      return E_FAIL;
+    }
+    aDirectoryPath = aFullPath.Left(aFileNamePartStartIndex);
+    anExtractModeInfo.PathMode = NExtractionDialog::NPathMode::kFullPathnames;
+    anExtractModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::kWithoutPrompt;
+    anExtractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
+  }
   if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
   {
     MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, 
@@ -72,11 +95,7 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
 
   // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
-  NExtractionDialog::CModeInfo anExtractModeInfo;
-  aDialog.GetModeInfo(anExtractModeInfo);
   UStringVector aRemovePathParts;
-
-  UString aPassword = GetUnicodeString((LPCTSTR)aDialog.m_Password);
 
   NFile::NFind::CFileInfo anArchiveFileInfo;
   if (!NFile::NFind::FindFile(aFileName, anArchiveFileInfo))

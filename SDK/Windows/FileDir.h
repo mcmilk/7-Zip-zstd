@@ -53,7 +53,28 @@ public:
   void DisableDeleting() {  m_MustBeDeleted = false; }
 
   UINT Create(LPCTSTR aDirPath, LPCTSTR aPrefix, CSysString &aResultPath);
-  void Remove();
+  bool Create(LPCTSTR aPrefix, CSysString &aResultPath);
+  bool Remove();
+};
+
+bool CreateTempDirectory(LPCTSTR aPrefixChars, CSysString &aDirName);
+
+class CTempDirectory
+{
+  bool m_MustBeDeleted;
+  CSysString m_TempDir;
+public:
+  const CSysString &GetPath() const { return m_TempDir; }
+  CTempDirectory(): m_MustBeDeleted(false) {}
+  ~CTempDirectory() { Remove();  }
+  bool Create(LPCTSTR aPrefix) ;
+  bool Remove()
+  {
+    if (!m_MustBeDeleted)
+      return true;
+    m_MustBeDeleted = !NFile::NDirectory::RemoveDirectoryWithSubItems(m_TempDir);
+    return (!m_MustBeDeleted);
+  }
 };
 
 }}}

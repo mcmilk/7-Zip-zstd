@@ -4,12 +4,15 @@
 
 #include "Common/CRC.h"
 
-/*
 static const UINT32 kCRCPoly = 0xEDB88320;
 
-CCRCTable::CCRCTable()
+UINT32 CCRC::m_Table[256];
+
+class CCRCTableInit
 {
-  FTable = new UINT32[256];
+public:
+CCRCTableInit()
+{
   for (UINT32 i = 0; i < 256; i++)
   {
     UINT32 r = i;
@@ -18,11 +21,12 @@ CCRCTable::CCRCTable()
         r = (r >> 1) ^ kCRCPoly;
       else     
         r >>= 1;
-    FTable[i] = r;
+    CCRC::m_Table[i] = r;
   }
 }
-*/
+} g_CRCTableInit;
 
+/*
 const UINT32 CCRC::m_Table[] = {
    0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
    0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
@@ -77,6 +81,7 @@ const UINT32 CCRC::m_Table[] = {
    0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
    0x2d02ef8dL
 };
+*/
 
 #define UPDATE aValueLoc = m_Table[(BYTE)aValueLoc] ^ (aValueLoc >> 8)
 #define UPDATE4 UPDATE; UPDATE; UPDATE; UPDATE;

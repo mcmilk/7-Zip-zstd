@@ -79,21 +79,6 @@ IGetPropertiesInfo: public IUnknown
   STDMETHOD(GetPropertyValueRange)(UINT32 aPropID, UINT32 *aMinValue, UINT32 *aMaxValue) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200180000}
-DEFINE_GUID(IID_ICompressCoder2, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x18, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200180000")
-ICompressCoder2: public IUnknown
-{
-  STDMETHOD(Code)(ISequentialInStream **anInStreams,
-      const UINT64 **anInSizes, 
-      UINT32 aNumInStreams,
-      ISequentialOutStream **anOutStreams, 
-      const UINT64 **anOutSizes,
-      UINT32 aNumOutStreams,
-      ICompressProgressInfo *aProgress) PURE;
-};
-
 // {23170F69-40C1-278A-0000-000200190000}
 DEFINE_GUID(IID_ICompressSetEncoderProperties, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x19, 0x00, 0x00);

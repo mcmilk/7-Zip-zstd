@@ -3,61 +3,36 @@
 // #include "StdAfx.h"
 
 // #include "BinTree.h"
+#include "Common/NewHandler.h"
+
 #include "Common/Defs.h"
 #include "Common/CRC.h"
 
 namespace BT_NAMESPACE {
 
 #ifdef HASH_ARRAY_2
-
-
-#ifdef HASH_ARRAY_3
-
-static const UINT32 kNumHashDirectBytes = 0;
-static const UINT32 kNumHash2MoveBits = 2;
-static const UINT32 kHash2Size = 1 << (8 + kNumHash2MoveBits);
-
-static const UINT32 kNumHashBytes = 4;
-
-static const UINT32 kNumHash3MoveBits0 = 5;
-static const UINT32 kNumHash3MoveBits1 = 5;
-static const UINT32 kHash3Size = 1 << (8 + kNumHash3MoveBits0 + kNumHash3MoveBits1);
-
-static const UINT32 kNumHashMoveBits0 = 4;
-static const UINT32 kNumHashMoveBits1 = 4;
-static const UINT32 kNumHashMoveBits2 = 4;
-static const UINT32 kHashSize = 1 << (8 + kNumHashMoveBits0 + kNumHashMoveBits1 + kNumHashMoveBits2);
-
-#else // no HASH_ARRAY_3
-
-static const UINT32 kNumHashDirectBytes = 3;
-static const UINT32 kNumHashBytes = 3;
-
-static const UINT32 kHashSize = 1 << 24;
-static const UINT32 kHash2Size = 1 << 16;
-
-#endif // HASH_ARRAY_3
-
-#else // no HASH_ARRAY_2
-
-#ifdef HASH_ZIP 
-
-static const UINT32 kNumHashBytes = 3;
-
-static const UINT32 kNumHashMoveBits0 = 4;
-static const UINT32 kNumHashMoveBits1 = 4;
-static const UINT32 kNumHashDirectBytes = 0;
-static const UINT32 kHashSize = 1 << (8 + kNumHashMoveBits0 + kNumHashMoveBits1);
-
-#else // no HASH_ZIP 
-
-static const UINT32 kNumHashBytes = 2;
-static const UINT32 kNumHashDirectBytes = 2;
-static const UINT32 kHashSize = 1 << (8 * kNumHashBytes);
-
-#endif // HASH_ZIP
-
-#endif // HASH_ARRAY_2
+  static const UINT32 kHash2Size = 1 << 10;
+  #ifdef HASH_ARRAY_3
+    static const UINT32 kNumHashDirectBytes = 0;
+    static const UINT32 kNumHashBytes = 4;
+    static const UINT32 kHash3Size = 1 << 18;
+    static const UINT32 kHashSize = 1 << 20;
+  #else
+    static const UINT32 kNumHashDirectBytes = 3;
+    static const UINT32 kNumHashBytes = 3;
+    static const UINT32 kHashSize = 1 << (8 * kNumHashBytes);
+  #endif
+#else
+  #ifdef HASH_ZIP 
+    static const UINT32 kNumHashDirectBytes = 0;
+    static const UINT32 kNumHashBytes = 3;
+    static const UINT32 kHashSize = 1 << 16;
+  #else
+    static const UINT32 kNumHashDirectBytes = 2;
+    static const UINT32 kNumHashBytes = 2;
+    static const UINT32 kHashSize = 1 << (8 * kNumHashBytes);
+  #endif
+#endif
 
 
 CInTree::CInTree():
@@ -79,10 +54,18 @@ void CInTree::FreeMemory()
   #ifdef WIN32
   if (m_LeftBase != 0)
     VirtualFree(m_LeftBase, 0, MEM_RELEASE);
+  if (m_RightBase != 0)
+    VirtualFree(m_RightBase, 0, MEM_RELEASE);
+  if (m_Hash != 0)
+    VirtualFree(m_Hash, 0, MEM_RELEASE);
   #else
   delete []m_LeftBase;
+  delete []m_RightBase;
+  delete []m_Hash;
   #endif
   m_LeftBase = 0;
+  m_RightBase = 0;
+  m_Hash = 0;
   CIn::Free();
 }
 
@@ -107,7 +90,7 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     m_MatchMaxLen = aMatchMaxLen;
     
     
-    UINT32 aSize = m_BlockSize * 2 + kHashSize;
+    UINT32 aSize = kHashSize;
     #ifdef HASH_ARRAY_2
     aSize += kHash2Size;
     #ifdef HASH_ARRAY_3
@@ -116,16 +99,24 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #endif
     
     #ifdef WIN32
-    m_LeftBase = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
+    m_LeftBase = (CIndex *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
     if (m_LeftBase == 0)
       throw CNewException();
+    m_RightBase = (CIndex *)::VirtualAlloc(0, (m_BlockSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
+    if (m_RightBase == 0)
+      throw CNewException();
+    m_Hash = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
+    if (m_Hash == 0)
+      throw CNewException();
     #else
-    m_LeftBase = new CIndex[aSize + 1];
+    m_LeftBase = new CIndex[m_BlockSize + 1];
+    m_RightBase = new CIndex[m_BlockSize + 1];
+    m_Hash = new CIndex[aSize + 1];
     #endif
     
-    m_RightBase = &m_LeftBase[m_BlockSize];
+    // m_RightBase = &m_LeftBase[m_BlockSize];
     
-    m_Hash = &m_RightBase[m_BlockSize];
+    // m_Hash = &m_RightBase[m_BlockSize];
     #ifdef HASH_ARRAY_2
     m_Hash2 = &m_Hash[kHashSize]; 
     #ifdef HASH_ARRAY_3
@@ -170,65 +161,32 @@ HRESULT CInTree::Init(ISequentialInStream *aStream)
 #ifdef HASH_ARRAY_3
 inline UINT32 Hash(const BYTE *aPointer, UINT32 &aHash2Value, UINT32 &aHash3Value)
 {
-  UINT32 aHash = UINT32(aPointer[0]) ^ CCRC::m_Table[aPointer[1]];
-
-  aHash2Value = aHash & (kHash2Size - 1);
-
-  aHash = (UINT32(aPointer[0]) << (kNumHash3MoveBits0 + kNumHash3MoveBits1)) ^
-      (CCRC::m_Table[aPointer[1]]) ^
-      aPointer[2];
-
-  aHash3Value = aHash & (kHash3Size - 1);
-
-  aHash = 
-      (UINT32(aPointer[0]) << (kNumHashMoveBits0 + kNumHashMoveBits1 + kNumHashMoveBits2)) ^
-      (CCRC::m_Table[aPointer[1]] << (kNumHashMoveBits1 + kNumHashMoveBits2)) ^
-      (CCRC::m_Table[aPointer[2]]) ^
-      aPointer[3];
-  return aHash & (kHashSize - 1);
+  UINT32 aTemp = CCRC::m_Table[aPointer[0]] ^ aPointer[1];
+  aHash2Value = aTemp & (kHash2Size - 1);
+  aHash3Value = (aTemp ^ (UINT32(aPointer[2]) << 8)) & (kHash3Size - 1);
+  return (aTemp ^ (UINT32(aPointer[2]) << 8) ^ (CCRC::m_Table[aPointer[3]] << 5)) & 
+      (kHashSize - 1);
 }
 #else // no HASH_ARRAY_3
 inline UINT32 Hash(const BYTE *aPointer, UINT32 &aHash2Value)
 {
-  UINT32 aHash = (*((const UINT32 *)aPointer));
-  aHash2Value = aHash &  0xFFFF;
-  return aHash & 0xFFFFFF;
-  /*
-  UINT32 aHash = UINT32(aPointer[0]) ^ CCRC::m_Table[aPointer[1]];
-
-  aHash2Value = aHash & (kHash2Size - 1);
-
-  aHash = (UINT32(aPointer[0]) << (kNumHashMoveBits0 + kNumHashMoveBits1)) ^
-      (CCRC::m_Table[aPointer[1]]) ^
-      aPointer[2];
-  return aHash & (kHashSize - 1);
-  */
+  aHash2Value = (CCRC::m_Table[aPointer[0]] ^ aPointer[1]) & (kHash2Size - 1);
+  return (*((const UINT32 *)aPointer)) & 0xFFFFFF;
 }
-
 #endif // HASH_ARRAY_3
 #else // no HASH_ARRAY_2
-
 #ifdef HASH_ZIP 
-
 inline UINT32 Hash(const BYTE *aPointer)
 {
-  /*
-  return (UINT32(aPointer[0]) << (kNumHashMoveBits0 + kNumHashMoveBits1)) ^ 
-    (UINT32(aPointer[1]) << kNumHashMoveBits1) ^ aPointer[2];
-  */
-  return ((UINT32(aPointer[0]) << (kNumHashMoveBits0 + kNumHashMoveBits1)) ^ 
-    CCRC::m_Table[aPointer[1]] ^ aPointer[2]) & (kHashSize - 1);
+  return ((UINT32(aPointer[0]) << 8) ^ 
+      CCRC::m_Table[aPointer[1]] ^ aPointer[2]) & (kHashSize - 1);
 }
-
 #else // no HASH_ZIP 
-
 inline UINT32 Hash(const BYTE *aPointer)
 {
-  return (UINT32(aPointer[0]) << 8) ^ aPointer[1];
+  return aPointer[0] ^ (UINT32(aPointer[1]) << 8);
 }
-
 #endif // HASH_ZIP
-
 #endif // HASH_ARRAY_2
 
 
@@ -262,9 +220,9 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   
   UINT32 aHashValue = Hash(aCur, aHash2Value);
   
-  #endif // HASH_ARRAY_2
+  #endif // HASH_ARRAY_3
   
-  #else // no hash
+  #else // no HASH_ARRAY_2
   
   UINT32 aHashValue = Hash(aCur);
 
@@ -294,7 +252,7 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
   UINT32 aLen3Distance = 0;
   if(aCurMatch3 >= aMatchMinPos)
   {
-    if (m_Buffer[aCurMatch3] == aCur[0] && m_Buffer[aCurMatch3 + 1] == aCur[1])
+    if (m_Buffer[aCurMatch3] == aCur[0])
     {
       aLen3Distance = m_Pos - aCurMatch3 - 1;
       aMatchHashLenMax = 3;
@@ -340,7 +298,11 @@ UINT32 CInTree::GetLongestMatch(UINT32 *aDistances)
 
   #ifdef HASH_ARRAY_2
   #ifndef HASH_ARRAY_3
-  aDistances[2] = aLen2Distance;
+    if (aMatchLen2Exist)
+      aDistances[2] = aLen2Distance;
+    else
+      if (kNumHashDirectBytes >= 2)
+        aDistances[2] = m_Pos - aCurMatch - 1;
   #endif
   #endif
 

@@ -270,7 +270,8 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
       BOOL aResult = CreateProcess(NULL, (TCHAR *)(const TCHAR *)aParams, 
             NULL, NULL, FALSE, 0, NULL, NULL, 
             &aStartupInfo, &aProcessInformation);
-      ::CloseHandle(aProcessInformation.hProcess);
+      if (aResult != 0)
+        ::CloseHandle(aProcessInformation.hProcess);
 
       break;
     }

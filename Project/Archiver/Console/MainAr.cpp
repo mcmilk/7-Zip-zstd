@@ -83,6 +83,12 @@ int main(int aNumArguments, const char *anArguments[])
     g_StdOut << endl << aMultipleErrors.NumErrors << " errors" << endl;
     exit(NExitCode::kFatalError);
   }
+  catch(const UString &aString)
+  {
+    g_StdOut << kExceptionErrorMessage << 
+      UnicodeStringToMultiByte(aString, CP_OEMCP) << endl;
+    exit(NExitCode::kFatalError);
+  }
   catch(const char *aString)
   {
     g_StdOut << kExceptionErrorMessage << aString << endl;

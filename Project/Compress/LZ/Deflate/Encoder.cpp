@@ -7,7 +7,7 @@
 
 #include "Windows/Defs.h"
 #include "Windows/COMTRY.h"
-#include "../MatchFinder/BinTree/BinTree3Main.h"
+#include "../MatchFinder/BinTree/BinTree3ZMain.h"
 
 namespace NDeflate {
 namespace NEncoder {

@@ -178,7 +178,7 @@ HRESULT CDecoder::Decode(IInStream *anInStream,
       #ifndef EXCLUDE_COM
       CLSID aClassID;
       if (!aMethodMap.GetCLSIDAlways(aCoderInfo.DecompressionMethod, aClassID)) 
-        return E_FAIL;
+        return E_NOTIMPL;
       #endif
 
       if (aCoderInfo.IsSimpleCoder())
@@ -223,7 +223,7 @@ HRESULT CDecoder::Decode(IInStream *anInStream,
         #endif
 
         if (aDecoders.Back() == 0)
-          return E_FAIL;
+          return E_NOTIMPL;
 
         MixerCoderSpec->AddCoder(aDecoders.Back());
       }
@@ -244,7 +244,7 @@ HRESULT CDecoder::Decode(IInStream *anInStream,
         #endif
 
         if (aDecoders2.Back() == 0)
-          return E_FAIL;
+          return E_NOTIMPL;
 
         MixerCoderSpec->AddCoder2(aDecoders2.Back());
       }

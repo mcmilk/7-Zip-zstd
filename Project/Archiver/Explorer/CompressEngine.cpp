@@ -34,7 +34,7 @@ using namespace NName;
 using namespace NUpdateArchive;
 
 static LPCTSTR kTempArcivePrefix = TEXT("7zi");
-static LPCTSTR kDefaultSfxModule = TEXT("7zWin.sfx");
+static LPCTSTR kDefaultSfxModule = TEXT("7zC.sfx");
 
 
 /*

@@ -205,8 +205,11 @@ void CInArchive::ReadHeader32Real(CItemInfoEx &anItemInfo)
   anItemInfo.MainPartSize = aFileHeaderWithNameSize;
   anItemInfo.CommentSize = m_FileHeader32.HeadSize - aFileHeaderWithNameSize;
   
+  if (anItemInfo.HasExtra())
+    ReadBytesAndTestResult(&anItemInfo.ExtraData, sizeof(anItemInfo.ExtraData));
   if(m_FileHeader32.HeadCRC != 
-      m_FileHeader32.GetRealCRC(m_NameBuffer, aSizeFileName))
+      m_FileHeader32.GetRealCRC(m_NameBuffer, aSizeFileName, 
+          anItemInfo.HasExtra(), anItemInfo.ExtraData))
     ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
   AddToSeekValue(m_FileHeader32.HeadSize);
 }

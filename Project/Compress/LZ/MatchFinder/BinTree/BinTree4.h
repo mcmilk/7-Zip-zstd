@@ -1,15 +1,15 @@
-// BinTree234.h
+// BinTree4.h
 
 #pragma once
 
-#ifndef __BINTREE234__H
-#define __BINTREE234__H
+#ifndef __BINTREE4__H
+#define __BINTREE4__H
 
 #undef BT_CLSID
-#define BT_CLSID CLSID_CMatchFinderBT234
+#define BT_CLSID CLSID_CMatchFinderBT4
 
 #undef BT_NAMESPACE
-#define BT_NAMESPACE NBT234
+#define BT_NAMESPACE NBT4
 
 #define HASH_ARRAY_2
 #define HASH_ARRAY_3

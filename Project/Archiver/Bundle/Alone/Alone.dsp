@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -437,6 +437,14 @@ SOURCE=..\..\..\..\SDK\Windows\Synchronization.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Windows\System.h
 # End Source File
 # Begin Source File
 
@@ -1789,6 +1797,14 @@ SOURCE=..\..\..\Compress\LZ\MatchFinder\Patricia\Pat2R.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Compress\LZ\MatchFinder\Patricia\Pat3H.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\Patricia\Pat4H.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Compress\LZ\MatchFinder\Patricia\PatMain.h
 # End Source File
 # Begin Source File
@@ -1809,15 +1825,19 @@ SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree234.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree3.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree3Main.h
+SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree3Z.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree3ZMain.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTree4.h
 # End Source File
 # Begin Source File
 

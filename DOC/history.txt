@@ -1,6 +1,17 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 13        2002-01-27
+  --------------------------------------
+    - Compress/LZ/MatchFinder/BinTree3.h: 
+       method
+    - Compress/LZ/MatchFinder/BinTreemain.h: 
+        - one VirtualAlloc array was splitted to 
+          the for 3 arrays.
+        - Hash-functions were changed.
+
+
+  
   Version 2.30 Beta 12        2002-01-16
   --------------------------------------
     - Compress/LZ/MatchFinder/BinTreemain.h: 

@@ -30,6 +30,7 @@ CHandler::CHandler()
 
 STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
 {
+  #ifndef _SFX
   COM_TRY_BEGIN
   CComObjectNoLock<CEnumArchiveItemProperty> *anEnumObject = 
       new CComObjectNoLock<CEnumArchiveItemProperty>;
@@ -39,6 +40,9 @@ STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **anEnumProperty)
   anEnumObject->Init(m_Database.m_ArchiveInfo.FileInfoPopIDs);
   return anEnum->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)anEnumProperty);
   COM_TRY_END
+  #else
+    return E_NOTIMPL;
+  #endif
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *aNumItems)

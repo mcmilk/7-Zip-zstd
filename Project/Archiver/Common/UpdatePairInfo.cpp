@@ -41,7 +41,7 @@ static int MyCompareTime(NFileTimeType::EEnum aFileTimeType,
   throw 4191618;
 }
 
-static const char *kDuplicateFileNameMessage = "Duplicate filename\n";
+static const wchar_t *kDuplicateFileNameMessage = L"Duplicate filename:";
 
 /*
 static const char *kNotCensoredCollisionMessaged = "Internal file name collision:\n";
@@ -54,7 +54,14 @@ static void TestDuplicateString(const UStringVector &aStrings,
 {
   for(int i = 0; i + 1 < aIndexes.size(); i++)
     if (aStrings[aIndexes[i]].CollateNoCase(aStrings[aIndexes[i + 1]]) == 0)
-      throw kDuplicateFileNameMessage;
+    {
+      UString aString = kDuplicateFileNameMessage;
+      aString += L"\n";
+      aString += aStrings[aIndexes[i]];
+      aString += L"\n";
+      aString += aStrings[aIndexes[i+1]];
+      throw aString;
+    }
 }
 
 void GetUpdatePairInfoList(const CArchiveStyleDirItemInfoVector &aDirItems, 

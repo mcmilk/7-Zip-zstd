@@ -422,6 +422,14 @@ SOURCE=..\..\..\SDK\Common\StringConvert.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Common\TextConfig.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\TextConfig.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Common\UTFConvert.cpp
 # End Source File
 # Begin Source File

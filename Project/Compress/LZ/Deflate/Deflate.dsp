@@ -238,11 +238,11 @@ SOURCE=..\MatchFinder\BinTree\BinTree.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\MatchFinder\BinTree\BinTree3.h
+SOURCE=..\MatchFinder\BinTree\BinTree3Z.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\MatchFinder\BinTree\BinTree3Main.h
+SOURCE=..\MatchFinder\BinTree\BinTree3ZMain.h
 # End Source File
 # Begin Source File
 

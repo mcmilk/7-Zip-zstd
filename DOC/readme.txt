@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 12 Sources
+7-Zip 2.30 Beta 13 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -68,7 +68,9 @@ Project
     Agent           Intermediary modules for FAR plugin and Explorer plugin
     Bundle          Modules that are bundles of other modules
       Alone         7za.exe: Standalone version of 7z
-      SFXCon        7z.sfx: Console 7z SFX module
+      SFXCon        7zCon.sfx: Console 7z SFX module
+      SFXWin        7z.sfx: Windows 7z SFX module
+      SFXSetup      7zS.sfx: Windows 7z SFX module for Installers
     Common          Common modules
     Console         7z.exe Console version
     Explorer        Explorer plugin

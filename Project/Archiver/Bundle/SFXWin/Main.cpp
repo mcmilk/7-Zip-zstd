@@ -14,9 +14,13 @@
 
 HINSTANCE g_hInstance;
 
-static CSysString GetArchiveName(const CSysString &aCommandLine)
+static void GetArchiveName(
+    const CSysString &aCommandLine, 
+    CSysString &anArchiveName, 
+    CSysString &aSwitches)
 {
-  CSysString aResult;
+  anArchiveName.Empty();
+  aSwitches.Empty();
   bool aQuoteMode = false;
   for (int i = 0; i < aCommandLine.Length(); i++)
   {
@@ -26,12 +30,15 @@ static CSysString GetArchiveName(const CSysString &aCommandLine)
     else if (aChar == ' ' && !aQuoteMode)
     {
       if (!aQuoteMode)
+      {
+        i++;
         break;
+      }
     }
     else 
-      aResult += aChar;
+      anArchiveName += aChar;
   }
-  return aResult;
+  aSwitches = aCommandLine + i;
 }
 
 int APIENTRY WinMain(
@@ -41,14 +48,20 @@ int APIENTRY WinMain(
   int nCmdShow)
 {
   g_hInstance = (HINSTANCE)hInstance;
-  CSysString anArchiveName = GetArchiveName(GetCommandLine());
+  CSysString anArchiveName, aSwitches;
+  GetArchiveName(GetCommandLine(), anArchiveName, aSwitches);
   CSysString aFullPath;
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(anArchiveName, aFullPath))
+  int aFileNamePartStartIndex;
+  if (!NWindows::NFile::NDirectory::MyGetFullPathName(anArchiveName, aFullPath, aFileNamePartStartIndex))
   {
     MessageBox(NULL, "can't get archive name", "7-Zip", 0);
     return 1;
   }
-  ExtractArchive(NULL, aFullPath);
+  aSwitches.Trim();
+  bool anAssumeYes = false;
+  if (aSwitches == CSysString("-y"))
+    anAssumeYes = true;
+  ExtractArchive(NULL, aFullPath, anAssumeYes);
   return 0;
 }
 

@@ -1,12 +1,12 @@
-// BinTree3Main.h
+// BinTree3ZMain.h
 
 #pragma once
 
-#ifndef __BINTREE3MAIN__H
-#define __BINTREE3MAIN__H
+#ifndef __BINTREE3ZMAIN__H
+#define __BINTREE3ZMAIN__H
 
 #undef BT_NAMESPACE
-#define BT_NAMESPACE NBT3
+#define BT_NAMESPACE NBT3Z
 
 #define HASH_ZIP
 

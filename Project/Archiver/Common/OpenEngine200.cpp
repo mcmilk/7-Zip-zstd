@@ -43,7 +43,9 @@ const UINT64 kMaxCheckStartPosition = 1 << 20;
 HRESULT ReOpenArchive(IArchiveHandler200 *anArchiveHandler, 
     const CSysString &aFileName)
 {
+  #ifndef EXCLUDE_COM
   NCOM::CComInitializer aComInitializer; // test it
+  #endif
   CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
   CComPtr<IInStream> anInStream(anInStreamSpec);
@@ -56,7 +58,9 @@ HRESULT OpenArchive(const CSysString &aFileName,
     NZipRootRegistry::CArchiverInfo &anArchiverInfoResult,
     IOpenArchive2CallBack *anOpenArchive2CallBack)
 {
+  #ifndef EXCLUDE_COM
   NCOM::CComInitializer aComInitializer;
+  #endif
   CComObjectNoLock<CInFileStream> *anInStreamSpec = new 
     CComObjectNoLock<CInFileStream>;
   CComPtr<IInStream> anInStream(anInStreamSpec);

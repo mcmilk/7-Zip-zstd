@@ -181,9 +181,18 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
         return NFileOperationReturnCode::kInterruptedByUser;
       aDestPath = aDialogItems[kPathIndex].Data;
       aDestPath.Trim();
-      if(!aDestPath.IsEmpty() &&
-        aDestPath[aDestPath.Length() - 1] == kDirDelimiter)
+      if (aDestPath.IsEmpty())
+      {
+        if(!NFile::NDirectory::MyGetCurrentDirectory(aDestPath))
+          throw 318016;
+        NFile::NName::NormalizeDirPathPrefix(aDestPath);
         break;
+      }
+      else
+      {
+        if(aDestPath[aDestPath.Length() - 1] == kDirDelimiter)
+          break;
+      }
       g_StartupInfo.ShowMessage("You must specify directory path");
     }
 

@@ -3,11 +3,13 @@
 #include "StdAfx.h"
 
 #include "Common/Lang.h"
+#include "Common/TextConfig.h"
 
 #include "StdInStream.h"
 #include "UTFConvert.h"
 #include "Defs.h"
 
+/*
 static UINT32 HexStringToNumber(const char *aString, int &aFinishPos)
 {
   UINT32 aNumber = 0;
@@ -28,6 +30,29 @@ static UINT32 HexStringToNumber(const char *aString, int &aFinishPos)
   }
   return aNumber;
 }
+*/
+static bool HexStringToNumber(const UString &aString, UINT32 &aResultValue)
+{
+  aResultValue = 0;
+  if (aString.IsEmpty())
+    return false;
+  for (int i = 0; i < aString.Length(); i++)
+  {
+    wchar_t aChar = aString[i];
+    int a;
+    if (aChar >= L'0' && aChar <= L'9')
+      a = aChar - L'0';
+    else if (aChar >= L'A' && aChar <= L'F')
+      a = 10 + aChar - L'A';
+    else if (aChar >= L'a' && aChar <= L'f')
+      a = 10 + aChar - L'a';
+    else
+      return false;
+    aResultValue *= 0x10;
+    aResultValue += a;
+  }
+  return true;
+}
 
 
 static bool WaitNextLine(const AString &aString, int &aPos)
@@ -35,22 +60,6 @@ static bool WaitNextLine(const AString &aString, int &aPos)
   for (;aPos < aString.Length(); aPos++)
     if (aString[aPos] == 0x0A)
       return true;
-  return false;
-}
-
-static bool SkipSpaces(const AString &aString, int &aPos)
-{
-  for (;aPos < aString.Length(); aPos++)
-  {
-    char aChar = aString[aPos];
-    if (aChar != ' ' && aChar != 0x0A && aChar != 0x0D)
-    {
-      if (aChar != ';')
-        return true;
-      if (!WaitNextLine(aString, aPos))
-        return false;
-    }
-  }
   return false;
 }
 
@@ -88,75 +97,21 @@ bool CLang::Open(LPCTSTR aFileName)
   if (!WaitNextLine(aString, aPos))
     return false;
 
-  /////////////////////
-  // read strings
+  CObjectVector<CTextConfigPair> aPairs;
+  if (!GetTextConfig(aString.Mid(aPos),  aPairs))
+    return false;
 
-  while (true)
+  m_LangPairs.Reserve(m_LangPairs.Size());
+  for (int i = 0; i < aPairs.Size(); i++)
   {
-    if (!SkipSpaces(aString, aPos))
-      break;
+    CTextConfigPair aTextConfigPair = aPairs[i];
     CLangPair aLangPair;
-    int aFinishPos;
-    aLangPair.Value = HexStringToNumber(((const char *)aString) + aPos, aFinishPos);
-    if (aFinishPos == 0)
+    if (!HexStringToNumber(aTextConfigPair.ID, aLangPair.Value))
       return false;
-    aPos += aFinishPos;
-    if (!SkipSpaces(aString, aPos))
-      return false;
-    if (aString[aPos] != '=')
-      return false;
-    aPos++;
-    if (!SkipSpaces(aString, aPos))
-      return false;
-    if (aString[aPos] != '\"')
-      return false;
-    aPos++;
-    AString aMessage;
-    while(true)
-    {
-      if (aPos >= aString.Length())
-        return false;
-      char aChar = aString[aPos++];
-      if (aChar == '\"')
-        break;
-      if (aChar == '\\')
-      {
-        char aChar = aString[aPos++];
-        switch(aChar)
-        {
-          case 'n':
-            aMessage += '\n';
-            break;
-          case 't':
-            aMessage += '\t';
-            break;
-          case '\\':
-            aMessage += '\\';
-            break;
-          case '\"':
-            aMessage += '\"';
-            break;
-          default:
-            aMessage += '\\';
-            aMessage += aChar;
-            break;
-        }
-      }
-      else
-        aMessage += aChar;
-    }
-    if (!ConvertUTF8ToUnicode(aMessage, aLangPair.String))
-      return false;
+    aLangPair.String = aTextConfigPair.String;
     m_LangPairs.Add(aLangPair);
   }
 
-  /*
-  CRecordVector<int> anIndexes;
-  anIndexes.Reserve(aLangPairs.Size());
-  m_LangPairs.Reserve(aLangPairs.Size());
-  for (int i = 0; i < aLangPairs.Size(); i++)
-    anIndexes.Add(i);
-    */
   CPointerVector &aPointerVector = m_LangPairs;
   qsort(&aPointerVector[0], m_LangPairs.Size(), sizeof(void *), CompareLangItems);
   return true;

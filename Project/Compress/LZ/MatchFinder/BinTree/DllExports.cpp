@@ -7,7 +7,8 @@
 #include "Interface/ICoder.h"
 #include "Common/NewHandler.h"
 #include "BinTree2.h"
-#include "BinTree234.h"
+#include "BinTree3.h"
+#include "BinTree4.h"
 
 CNewHandlerSetter g_NewHandlerSetter;
 
@@ -18,7 +19,8 @@ CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
   MyOBJECT_ENTRY(BT2)
-  MyOBJECT_ENTRY(BT234)
+  MyOBJECT_ENTRY(BT3)
+  MyOBJECT_ENTRY(BT4)
 END_OBJECT_MAP()
 
 

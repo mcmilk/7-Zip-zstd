@@ -55,7 +55,7 @@ const UINT32 kDicSizeForX = (1 << 22);
 
 const char *kDefaultMethodName = kLZMAMethodName;
 
-const char *kDefaultMatchFinder = "BT234";
+const char *kDefaultMatchFinder = "BT4";
 
 static bool IsLZMAMethod(const AString &aMethodName)
 {

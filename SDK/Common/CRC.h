@@ -11,7 +11,7 @@ class CCRC
 {
   UINT32 m_Value;
 public:
-	static const UINT32 m_Table[256];
+	static UINT32 m_Table[256];
   CCRC():  m_Value(0xFFFFFFFF){};
   void Init() { m_Value = 0xFFFFFFFF; }
   void Update(const void *aData, UINT32 aSize);

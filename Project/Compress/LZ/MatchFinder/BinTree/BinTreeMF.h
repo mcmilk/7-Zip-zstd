@@ -16,15 +16,15 @@ namespace BT_NAMESPACE {
 #ifdef HASH_ARRAY_2
   #ifdef HASH_ARRAY_3
     #define kIDByte 0x3
-    #define kIDString TEXT("234")
+    #define kIDString TEXT("4")
   #else
     #define kIDByte 0x2
-    #define kIDString TEXT("23")
+    #define kIDString TEXT("3")
   #endif
 #else
   #ifdef HASH_ZIP
     #define kIDByte 0x0
-    #define kIDString TEXT("3")
+    #define kIDString TEXT("3Z")
   #else
     #define kIDByte 0x1
     #define kIDString TEXT("2")

@@ -1,6 +1,6 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "resource.h"
+#include "../../Explorer/resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "7-7z.ico"
+IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ VS_VERSION_INFO VERSIONINFO
  FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
- FILETYPE 0x2L
+ FILETYPE 0x1L
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
@@ -92,13 +92,13 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "Comments", "\0"
-            VALUE "CompanyName", "Igor Pavlov\0"
-            VALUE "FileDescription", "7z Plugin for 7-Zip\0"
+            VALUE "CompanyName", "Igor Palvov\0"
+            VALUE "FileDescription", "7z SFX Setup\0"
             VALUE "FileVersion", "2, 30, 13, 0\0"
-            VALUE "InternalName", "7z\0"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Palvov\0"
+            VALUE "InternalName", "7zS.sfx\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "7z.dll\0"
+            VALUE "OriginalFilename", "7zS.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
             VALUE "ProductVersion", "2, 30, 13, 0\0"
@@ -112,6 +112,39 @@ BEGIN
 END
 
 #endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_PROGRESS DIALOG DISCARDABLE  0, 0, 186, 55
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Progress"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    PUSHBUTTON      "Stop",IDCANCEL,61,34,64,14
+    CONTROL         "Progress1",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | 
+                    WS_BORDER,7,7,172,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '%s'"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROGRESS_EXTRACTING "Extracting"
+END
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

@@ -338,6 +338,14 @@ SOURCE=..\..\..\SDK\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\System.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Windows\Time.h
 # End Source File
 # End Group

@@ -6,7 +6,7 @@
 #define __DEFLATE_ENCODER_H
 
 #include "../../Interface/CompressInterface.h"
-#include "../MatchFinder/BinTree/BinTree3.h"
+#include "../MatchFinder/BinTree/BinTree3Z.h"
 #include "Stream/LSBFEncoder.h"
 
 #include "Compression/HuffmanEncoder.h"
@@ -64,7 +64,7 @@ class CCoder :
   COptimal m_Optimum[kNumOpts];
   
   // CComPtr<IInWindowStreamMatch> m_MatchFinder;
-  NBT3::CInTree m_MatchFinder;
+  NBT3Z::CInTree m_MatchFinder;
 
   NStream::NLSBF::CEncoder m_OutStream;
   NStream::NLSBF::CReverseEncoder m_ReverseOutStream;

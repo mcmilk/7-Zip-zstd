@@ -5,8 +5,7 @@
 
 #include "Common/String.h"
 
-HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName, 
-    bool anAssumeYes = false);
+HRESULT ExtractArchive(const CSysString &aFileName, const CSysString &aFolderName);
 
 #endif
 

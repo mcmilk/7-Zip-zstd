@@ -7,6 +7,7 @@
 #include "Windows/FileFind.h"
 
 #include "Windows/Defs.h"
+#include "Windows/System.h"
 
 namespace NWindows {
 namespace NFile {
@@ -52,8 +53,9 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
   int aPos = aPathName.ReverseFind(TEXT('\\'));
   if (aPos > 0 && aPos == aPathName.Length() - 1)
   {
-    if (aPathName[aPos - 1] != ':')
-      aPathName.Delete(aPos);
+    if (aPathName.Length() == 3 && aPathName[1] == ':')
+      return true; // Disk folder;
+    aPathName.Delete(aPos);
   }
   CSysString aPathName2 = aPathName;
   aPos = aPathName.Length();
@@ -202,13 +204,61 @@ UINT CTempFile::Create(LPCTSTR aDirPath, LPCTSTR aPrefix,
   return aNumber;
 }
 
-void CTempFile::Remove()
+bool CTempFile::Create(LPCTSTR aPrefix, CSysString &aResultPath)
 {
-  if (m_MustBeDeleted)
+  CSysString aTempPath;
+  if(!MyGetTempPath(aTempPath))
+    return false;
+  if (Create(aTempPath, aPrefix, aResultPath) != 0)
+    return true;
+  if(!NSystem::MyGetWindowsDirectory(aTempPath))
+    return false;
+  return (Create(aTempPath, aPrefix, aResultPath) != 0);
+}
+
+bool CTempFile::Remove()
+{
+  if (!m_MustBeDeleted)
+    return true;
+  m_MustBeDeleted = !DeleteFileAlways(m_FileName);
+  return !m_MustBeDeleted;
+}
+
+bool CreateTempDirectory(LPCTSTR aPrefix, CSysString &aDirName)
+{
+  /*
+  CSysString aPrefix = aTempPath + aPrefixChars;
+  CRandom aRandom;
+  aRandom.Init();
+  */
+  while(true)
   {
-    DeleteFileAlways(m_FileName);
-    m_MustBeDeleted = false;
+    CTempFile aTempFile;
+    if (!aTempFile.Create(aPrefix, aDirName))
+      return false;
+    if (!::DeleteFile(aDirName))
+      return false;
+    /*
+    UINT32 aRandomNumber = aRandom.Generate();
+    TCHAR aRandomNumberString[32];
+    _stprintf(aRandomNumberString, _T("%04X"), aRandomNumber);
+    aDirName = aPrefix + aRandomNumberString;
+    */
+    if(NFile::NFind::DoesFileExist(aDirName))
+      continue;
+    bool aResult = NFile::NDirectory::MyCreateDirectory(aDirName);
+    if (aResult)
+      return true;
+    if (::GetLastError() != ERROR_ALREADY_EXISTS)
+      return false;
   }
 }
+
+bool CTempDirectory::Create(LPCTSTR aPrefix)
+{ 
+  Remove();
+  return (m_MustBeDeleted = CreateTempDirectory(aPrefix, m_TempDir)); 
+}
+
 
 }}}

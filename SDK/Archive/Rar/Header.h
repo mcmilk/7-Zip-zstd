@@ -30,7 +30,9 @@ namespace NBlockType
     kOldAuthenticity = 0x76,
     kSubBlock       = 0x77,
     kRecoveryRecord = 0x78,
-    kAuthenticity   = 0x79
+    kAuthenticity   = 0x79,
+
+    kEndOfArchive   = 0x7B // Is not safe
   };
 }
 
@@ -68,6 +70,7 @@ namespace NFile
   const kDictDirectoryValue  = 0x7;
   
   const kSize64Bits   = 1 << 8;
+  const kExtraData    = 1 << 10; // some new 2.90 encrypted extra data
   const kLongBlock    = 1 << 15;
   
   struct CBlock32
@@ -85,7 +88,8 @@ namespace NFile
     BYTE Method;
     UINT16 NameSize;
     UINT32 Attributes;
-    UINT16 GetRealCRC(const void *aName, UINT32 aNameSize) const;
+    UINT16 GetRealCRC(const void *aName, UINT32 aNameSize, 
+        bool anExtraDataDefined = false, UINT64 anExtraData = 0) const;
   };
   struct CBlock64
   {

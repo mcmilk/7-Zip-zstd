@@ -18,6 +18,8 @@ bool CItemInfo::IsSplitBefore() const
   { return (Flags & NHeader::NFile::kSplitBefore) != 0; }
 bool CItemInfo::IsSplitAfter() const
   { return (Flags & NHeader::NFile::kSplitAfter) != 0; }
+bool CItemInfo::HasExtra() const
+  { return (Flags & NHeader::NFile::kExtraData) != 0; }
 
 bool CItemInfo::IgnoreItem() const
 { 

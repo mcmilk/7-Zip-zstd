@@ -57,12 +57,15 @@ static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #ifdef COMPRESS_MF_PAT
 #include "../../../Compress/LZ/MatchFinder/Patricia/Pat2.h"
 #include "../../../Compress/LZ/MatchFinder/Patricia/Pat2H.h"
+#include "../../../Compress/LZ/MatchFinder/Patricia/Pat3H.h"
+#include "../../../Compress/LZ/MatchFinder/Patricia/Pat4H.h"
 #include "../../../Compress/LZ/MatchFinder/Patricia/Pat2R.h"
 #endif
 
 #ifdef COMPRESS_MF_BT
 #include "../../../Compress/LZ/MatchFinder/BinTree/BinTree2.h"
-#include "../../../Compress/LZ/MatchFinder/BinTree/BinTree234.h"
+#include "../../../Compress/LZ/MatchFinder/BinTree/BinTree3.h"
+#include "../../../Compress/LZ/MatchFinder/BinTree/BinTree4.h"
 #endif
 
 namespace NArchive {
@@ -194,13 +197,19 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
           aMatchFinder = new CComObjectNoLock<NPat2H::CPatricia>;
         else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("Pat2R")) == 0)
           aMatchFinder = new CComObjectNoLock<NPat2R::CPatricia>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("Pat3H")) == 0)
+          aMatchFinder = new CComObjectNoLock<NPat3H::CPatricia>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("Pat4H")) == 0)
+          aMatchFinder = new CComObjectNoLock<NPat4H::CPatricia>;
         #endif
 
         #ifdef COMPRESS_MF_BT
         if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT2")) == 0)
           aMatchFinder = new CComObjectNoLock<NBT2::CMatchFinderBinTree>;
-        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT234")) == 0)
-          aMatchFinder = new CComObjectNoLock<NBT234::CMatchFinderBinTree>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT3")) == 0)
+          aMatchFinder = new CComObjectNoLock<NBT3::CMatchFinderBinTree>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT4")) == 0)
+          aMatchFinder = new CComObjectNoLock<NBT4::CMatchFinderBinTree>;
         #endif
 
         #ifndef EXCLUDE_COM
