@@ -9,6 +9,7 @@
 #include "BinTree2.h"
 #include "BinTree3.h"
 #include "BinTree4.h"
+#include "BinTree4b.h"
 
 CNewHandlerSetter g_NewHandlerSetter;
 
@@ -21,6 +22,7 @@ BEGIN_OBJECT_MAP(ObjectMap)
   MyOBJECT_ENTRY(BT2)
   MyOBJECT_ENTRY(BT3)
   MyOBJECT_ENTRY(BT4)
+  MyOBJECT_ENTRY(BT4b)
 END_OBJECT_MAP()
 
 

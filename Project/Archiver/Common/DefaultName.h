@@ -7,6 +7,7 @@
 
 #include "Common/String.h"
 
-UString GetDefaultName(const CSysString &aFullFileName, const CSysString &anExtension);
+UString GetDefaultName(const CSysString &aFullFileName, 
+    const CSysString &anExtension, const UString &anAddSubExtension);
 
 #endif

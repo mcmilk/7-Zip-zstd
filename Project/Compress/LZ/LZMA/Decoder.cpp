@@ -192,14 +192,11 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
   for(int i = 0 ; i < kNumRepDistances; i++)
     aRepDistances[i] = 0;
 
-  UINT64 aProgressPosValuePrev = 0;
   UINT64 aNowPos64 = 0;
   UINT64 aSize = *anOutSize;
   while(aNowPos64 < aSize)
   {
-    const UINT64 kStepSize = 1 << 18;
-    UINT64 aNext = (UINT32)MyMin(aNowPos64 + kStepSize, aSize);
-    
+    UINT64 aNext = MyMin(aNowPos64 + (1 << 18), aSize);
     while(aNowPos64 < aNext)
     {
       UINT32 aPosState = UINT32(aNowPos64) & m_PosStateMask;
@@ -307,11 +304,10 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
         aPreviousByte = m_OutWindowStream.GetOneByte(0 - 1);
       }
     }
-    if (aProgress != NULL && aNowPos64 - aProgressPosValuePrev >= kStepSize)
+    if (aProgress != NULL)
     {
       UINT64 anInSize = m_RangeDecoder.GetProcessedSize();
       RETURN_IF_NOT_S_OK(aProgress->SetRatioInfo(&anInSize, &aNowPos64));
-      aProgressPosValuePrev = aNowPos64;
     }
   }
   return Flush();

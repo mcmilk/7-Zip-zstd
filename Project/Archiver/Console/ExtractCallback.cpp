@@ -105,6 +105,7 @@ static UString MakePathNameFromParts(const UStringVector &aParts)
 STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     ISequentialOutStream **anOutStream, INT32 anAskExtractMode)
 {
+  *anOutStream = NULL;
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
   m_OutFileStream.Release();
@@ -291,9 +292,10 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
       CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
       if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
       {
-        g_StdOut << "can not open output file " << endl;
-        g_StdOut << GetOemString(aFullProcessedPath);
-        return E_ABORT;
+        m_NumErrors++;
+        g_StdOut << "Can not open output file " << endl;
+        g_StdOut << GetOemString(aFullProcessedPath) << endl;
+        return S_OK;
       }
       m_OutFileStream = anOutStreamLoc;
       *anOutStream = anOutStreamLoc.Detach();

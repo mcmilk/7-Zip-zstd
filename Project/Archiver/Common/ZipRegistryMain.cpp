@@ -33,6 +33,7 @@ static const TCHAR *kArchiversKeyName = _T("Archivers");
 namespace NArchiveType
 {
   static const TCHAR *kExtension = _T("Extension");
+  static const TCHAR *kAddExtension = _T("AddExtension");
   static const TCHAR *kUpdate = _T("Update");
   static const TCHAR *kKeepName = _T("KeepName");
 }
@@ -93,6 +94,18 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &anInfoList)
   anInfoList.Add(anItemInfo);
   #endif
 
+  #ifdef FORMAT_CPIO
+  anItemInfo.Name = TEXT("cpio");
+  anItemInfo.Extension = TEXT("cpio");
+  anInfoList.Add(anItemInfo);
+  #endif
+
+  #ifdef FORMAT_RPM
+  anItemInfo.Name = TEXT("RPM");
+  anItemInfo.Extension = TEXT("rpm");
+  anItemInfo.AddExtension = TEXT(".cpio.gz");
+  anInfoList.Add(anItemInfo);
+  #endif
   
   #else
 
@@ -118,6 +131,7 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &anInfoList)
       return; // test it maybe creation;
     aClassIDKey.QueryValue(NULL, anItemInfo.Name);
     aClassIDKey.QueryValue(NArchiveType::kExtension, anItemInfo.Extension);
+    aClassIDKey.QueryValue(NArchiveType::kAddExtension, anItemInfo.AddExtension);
     aClassIDKey.QueryValue(NArchiveType::kUpdate, anItemInfo.UpdateEnabled);
     aClassIDKey.QueryValue(NArchiveType::kKeepName, anItemInfo.KeepName);
     anInfoList.Add(anItemInfo);

@@ -102,6 +102,7 @@ static UString MakePathNameFromParts(const UStringVector &aParts)
 STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex, 
     ISequentialOutStream **anOutStream, INT32 anAskExtractMode)
 {
+  *anOutStream = 0;
   m_OutFileStream.Release();
   NCOM::CPropVariant aPropVariant;
   RETURN_IF_NOT_S_OK(m_ArchiveHandler->GetProperty(anIndex, kaipidPath, &aPropVariant));
@@ -276,7 +277,7 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
       {
         UString aMessage = L"can not open output file " + aFullProcessedPathUnicode;
         RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
-        return E_ABORT;
+        return S_OK;
       }
       m_OutFileStream = anOutStreamLoc;
       *anOutStream = anOutStreamLoc.Detach();

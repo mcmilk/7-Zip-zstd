@@ -1,6 +1,17 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 16        2002-02-24
+  --------------------------------------
+    - Project/Compress/LZ/LZMA/Decoder.cpp:
+        Bug was fixed: LZMA could not extract more than 4 GB.
+    - RPM and CPIO formats.
+    - Project/Compress/LZ/LZMA/Encoder.*
+      Project/Archiver/Format/7z/OutHandler.cpp 
+        New fast compression mode for LZMA: -m0a=0.
+    - New match finders for LZMA: bt4b, hc3, hc4.
+ 
+  
   Version 2.30 Beta 15        2002-02-17
   --------------------------------------
     - Compression ratio in LZMA was slightly improved:

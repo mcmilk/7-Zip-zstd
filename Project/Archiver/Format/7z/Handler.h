@@ -100,6 +100,7 @@ private:
   UINT32 m_DefaultFastBytes;
   bool m_MultiThread;
   UINT32 m_MultiThreadMult;
+  AString m_MatchFinder;
 
   HRESULT SetCompressionMethod(CCompressionMethodMode &aMethod,
       CCompressionMethodMode &aHeaderMethod);
@@ -114,6 +115,7 @@ private:
     m_DefaultDicSize = (1 << 20);
     m_DefaultAlgorithm = 1;
     m_DefaultFastBytes = 32;
+    m_MatchFinder = "BT4";
     #endif
   }
 };

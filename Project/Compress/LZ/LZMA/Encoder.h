@@ -112,6 +112,7 @@ private:
 
   UINT32 m_MatchDistances[kMatchMaxLen + 1];
 
+  bool m_FastMode;
   bool m_MaxMode;
   UINT32 m_NumFastBytes;
   UINT32 m_LongestMatchLength;    
@@ -219,6 +220,8 @@ private:
 
   UINT32 Backward(UINT32 &aBackRes, UINT32 aCur);
   UINT32 GetOptimum(UINT32 &aBackRes, UINT32 aPosition);
+  UINT32 GetOptimumFast(UINT32 &aBackRes, UINT32 aPosition);
+
   void FillPosSlotPrices();
   void FillDistancesPrices();
   void FillAlignPrices();

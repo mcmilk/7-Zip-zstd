@@ -67,6 +67,12 @@ static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #include "../../../Compress/LZ/MatchFinder/BinTree/BinTree2.h"
 #include "../../../Compress/LZ/MatchFinder/BinTree/BinTree3.h"
 #include "../../../Compress/LZ/MatchFinder/BinTree/BinTree4.h"
+#include "../../../Compress/LZ/MatchFinder/BinTree/BinTree4b.h"
+#endif
+
+#ifdef COMPRESS_MF_HC
+#include "../../../Compress/LZ/MatchFinder/HashChain/HC3.h"
+#include "../../../Compress/LZ/MatchFinder/HashChain/HC4.h"
 #endif
 
 namespace NArchive {
@@ -211,6 +217,15 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
           aMatchFinder = new CComObjectNoLock<NBT3::CMatchFinderBinTree>;
         else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT4")) == 0)
           aMatchFinder = new CComObjectNoLock<NBT4::CMatchFinderBinTree>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("BT4b")) == 0)
+          aMatchFinder = new CComObjectNoLock<NBT4b::CMatchFinderBinTree>;
+        #endif
+
+        #ifdef COMPRESS_MF_HC
+        if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("HC3")) == 0)
+          aMatchFinder = new CComObjectNoLock<NHC3::CMatchFinderHC>;
+        else if (aMethodFull.MatchFinderName.CompareNoCase(_TEXT("HC4")) == 0)
+          aMatchFinder = new CComObjectNoLock<NHC4::CMatchFinderHC>;
         #endif
 
         #ifndef EXCLUDE_COM

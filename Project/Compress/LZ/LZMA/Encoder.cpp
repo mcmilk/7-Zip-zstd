@@ -50,6 +50,7 @@ CEncoder::CEncoder():
   m_LiteralContextBits(3)
 {
   m_MaxMode = false;
+  m_FastMode = false;
   m_PosAlignEncoder.Create(kNumAlignBits);
   for(int i = 0; i < kNumPosModels; i++)
     m_PosEncoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]);
@@ -94,6 +95,7 @@ STDMETHODIMP CEncoder::SetEncoderProperties2(const PROPID *aPropIDs,
         if (aProperties[i].vt != VT_UI4)
           return E_INVALIDARG;
         UINT32 aMaximize = aProperties[i].ulVal;
+        m_FastMode = (aMaximize == 0); 
         m_MaxMode = (aMaximize >= 2);
         break;
       }
@@ -715,6 +717,102 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBackRes, UINT32 aPosition)
   }
 }
 
+static bool inline ChangePair(UINT32 aSmall, UINT32 aBig)
+{
+  const kDif = 7;
+  return (aSmall < (UINT32(1) << (32-kDif)) && aBig >= (aSmall << kDif));
+}
+
+
+UINT32 CEncoder::GetOptimumFast(UINT32 &aBackRes, UINT32 aPosition)
+{
+  UINT32 aLenMain;
+  if (!m_LongestMatchWasFound)
+    aLenMain = ReadMatchDistances();
+  else
+  {
+    aLenMain = m_LongestMatchLength;
+    m_LongestMatchWasFound = false;
+  }
+  UINT32 aRepLens[kNumRepDistances];
+  UINT32 RepMaxIndex = 0;
+  for(int i = 0; i < kNumRepDistances; i++)
+  {
+    aRepLens[i] = m_MatchFinder->GetMatchLen(0 - 1, m_RepDistances[i], kMatchMaxLen);
+    if (i == 0 || aRepLens[i] > aRepLens[RepMaxIndex])
+      RepMaxIndex = i;
+  }
+  if(aRepLens[RepMaxIndex] >= m_NumFastBytes)
+  {
+    aBackRes = RepMaxIndex;
+    MovePos(aRepLens[RepMaxIndex] - 1);
+    return aRepLens[RepMaxIndex];
+  }
+  if(aLenMain >= m_NumFastBytes)
+  {
+    aBackRes = m_MatchDistances[m_NumFastBytes] + kNumRepDistances; 
+    MovePos(aLenMain - 1);
+    return aLenMain;
+  }
+  while (aLenMain > 2)
+  {
+    if (!ChangePair(m_MatchDistances[aLenMain - 1], 
+        m_MatchDistances[aLenMain]))
+      break;
+    aLenMain--;
+  }
+  if (aLenMain == 2 && m_MatchDistances[2] >= 0x80)
+    aLenMain = 1;
+
+  UINT32 aBackMain = m_MatchDistances[aLenMain];
+  if (aRepLens[RepMaxIndex] >= 2)
+  {
+    if (aRepLens[RepMaxIndex] + 1 >= aLenMain || 
+        aRepLens[RepMaxIndex] + 2 >= aLenMain && (aBackMain > (1<<12)))
+    {
+      aBackRes = RepMaxIndex;
+      MovePos(aRepLens[RepMaxIndex] - 1);
+      return aRepLens[RepMaxIndex];
+    }
+  }
+  
+
+  if (aLenMain >= 2)
+  {
+    m_LongestMatchLength = ReadMatchDistances();
+    if (m_LongestMatchLength >= 2 &&
+      (
+        (m_LongestMatchLength >= aLenMain && 
+          m_MatchDistances[aLenMain] < aBackMain) || 
+        m_LongestMatchLength == aLenMain + 1 && 
+          !ChangePair(aBackMain, m_MatchDistances[m_LongestMatchLength]) ||
+        m_LongestMatchLength > aLenMain + 1 ||
+        m_LongestMatchLength + 1 >= aLenMain && 
+          ChangePair(m_MatchDistances[aLenMain - 1], aBackMain)
+      )
+      )
+    {
+      m_LongestMatchWasFound = true;
+      aBackRes = UINT32(-1);
+      return 1;
+    }
+    for(int i = 0; i < kNumRepDistances; i++)
+    {
+      UINT32 aRepLen = m_MatchFinder->GetMatchLen(0 - 1, m_RepDistances[i], kMatchMaxLen);
+      if (aRepLen >= 2 && aRepLen + 1 >= aLenMain)
+      {
+        m_LongestMatchWasFound = true;
+        aBackRes = UINT32(-1);
+        return 1;
+      }
+    }
+    aBackRes = aBackMain + kNumRepDistances; 
+    MovePos(aLenMain - 2);
+    return aLenMain;
+  }
+  aBackRes = UINT32(-1);
+  return 1;
+}
 
 STDMETHODIMP CEncoder::InitMatchFinder(IInWindowStreamMatch *aMatchFinder)
 {
@@ -740,9 +838,12 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
   if (m_MatchFinder->GetNumAvailableBytes() == 0)
     return Flush();
 
-  FillPosSlotPrices();
-  FillDistancesPrices();
-  FillAlignPrices();
+  if (!m_FastMode)
+  {
+    FillPosSlotPrices();
+    FillDistancesPrices();
+    FillAlignPrices();
+  }
 
   m_LenEncoder.SetTableSize(m_NumFastBytes);
   m_LenEncoder.UpdateTables();
@@ -769,7 +870,11 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
     UINT32 aPos;
     UINT32 aPosState = aNowPos64 & m_PosStateMask;
 
-    UINT32 aLen = GetOptimum(aPos, aNowPos64);
+    UINT32 aLen;
+    if (m_FastMode)
+      aLen = GetOptimumFast(aPos, aNowPos64);
+    else
+      aLen = GetOptimum(aPos, aNowPos64);
 
     if(aLen == 1 && aPos == (-1))
     {
@@ -846,8 +951,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
           {
             m_RangeEncoder.EncodeDirectBits(aPosReduced >> kNumAlignBits, aFooterBits - kNumAlignBits);
             m_PosAlignEncoder.Encode(&m_RangeEncoder, aPosReduced & kAlignMask);
-            if (--m_AlignPriceCount == 0)
-              FillAlignPrices();
+            if (!m_FastMode)
+              if (--m_AlignPriceCount == 0)
+                FillAlignPrices();
           }
         }
         UINT32 aDistance = aPos;
@@ -859,12 +965,13 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
     }
     m_AdditionalOffset -= aLen;
     aNowPos64 += aLen;
-    if (aNowPos64 - aLastPosSlotFillingPos >= (1 << 9))
-    {
-      FillPosSlotPrices();
-      FillDistancesPrices();
-      aLastPosSlotFillingPos = aNowPos64;
-    }
+    if (!m_FastMode)
+      if (aNowPos64 - aLastPosSlotFillingPos >= (1 << 9))
+      {
+        FillPosSlotPrices();
+        FillDistancesPrices();
+        aLastPosSlotFillingPos = aNowPos64;
+      }
     if (aNowPos64 - aProgressPosValuePrev >= (1 << 12) && aProgress != NULL)
     {
       UINT64 anOutSize = m_RangeEncoder.GetProcessedSize();

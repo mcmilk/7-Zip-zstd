@@ -16,7 +16,11 @@ namespace BT_NAMESPACE {
     static const UINT32 kNumHashDirectBytes = 0;
     static const UINT32 kNumHashBytes = 4;
     static const UINT32 kHash3Size = 1 << 18;
+    #ifdef HASH_BIG
+    static const UINT32 kHashSize = 1 << 23;
+    #else
     static const UINT32 kHashSize = 1 << 20;
+    #endif
   #else
     static const UINT32 kNumHashDirectBytes = 3;
     static const UINT32 kNumHashBytes = 3;

@@ -104,7 +104,8 @@ HRESULT OpenArchive(const CSysString &aFileName,
     
     /*
     */
-    aDefaultName = GetDefaultName(aFileName, anArchiverInfo.Extension);
+    aDefaultName = GetDefaultName(aFileName, anArchiverInfo.Extension, 
+        GetUnicodeString(anArchiverInfo.AddExtension));
 
     #ifdef EXCLUDE_COM
     CLSID aClassID;

@@ -16,6 +16,7 @@ namespace NZipRootRegistry {
     #endif
     CSysString Name;
     CSysString Extension;
+    CSysString AddExtension;
     bool UpdateEnabled;
     bool KeepName;
   };

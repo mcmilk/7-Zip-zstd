@@ -1,4 +1,4 @@
-7-Zip 2.30 Beta 15 Sources
+7-Zip 2.30 Beta 16 Sources
 --------------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
@@ -54,8 +54,10 @@ SDK                 Common files
   Archive           Common archive modules
     Common
     Cab             
+    cpio
     GZip            
-    Rar             
+    Rar
+    RPM            
     Tar             
     Zip             
   Common            Common modules
@@ -86,9 +88,11 @@ Project
       7z
       BZip2
       Cab
+      cpio
       Common
       GZip
       Rar
+      RPM            
       Tar
       Zip
     Config          7-Zip Configuration program
@@ -113,6 +117,7 @@ Project
       MatchFinder   Match Finder for LZ modules
         BinTree     Match Finder based on Binary Tree
         Patricia    Match Finder based on Patricia algoritm
+        HashChain   Match Finder based on Hash Chains
     PPM             Prediction by partial match
       PPMd          Dmitry Shkarin's PPMdH with small changes.
 

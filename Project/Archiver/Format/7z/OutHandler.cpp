@@ -51,13 +51,17 @@ static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 const char *kLZMAMethodName = "LZMA";
 // const char *kDeflateMethodName = "Deflate";
 
+const UINT32 kAlgorithmForX = (2);
 const UINT32 kDicSizeForX = (1 << 22);
 const UINT32 kFastBytesForX = (64);
-const UINT32 kAlgorithmForX = (2);
+
+const UINT32 kAlgorithmForFast = (0);
+const UINT32 kDicSizeForFast = (1 << 15);
 
 const char *kDefaultMethodName = kLZMAMethodName;
 
-const char *kDefaultMatchFinder = "BT4";
+// const char *kDefaultMatchFinder = "BT4";
+const char *kDefaultMatchFinderForFast = "HC3";
 
 static bool IsLZMAMethod(const AString &aMethodName)
 {
@@ -195,7 +199,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     {
       if (!anOneMethodInfo.MatchFinderIsDefined)
       {
-        anOneMethodInfo.MatchFinderName = GetSystemString(kDefaultMatchFinder);
+        anOneMethodInfo.MatchFinderName = GetSystemString(m_MatchFinder);
         anOneMethodInfo.MatchFinderIsDefined = true;
       }
       if (IsLZMAMethod(anOneMethodInfo.MethodName))
@@ -671,9 +675,15 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
       {
         if (aName.CompareNoCase("X") == 0)
         {
+          m_DefaultAlgorithm = kAlgorithmForX;
           m_DefaultDicSize = kDicSizeForX;
           m_DefaultFastBytes = kFastBytesForX;
-          m_DefaultAlgorithm = kAlgorithmForX;
+        }
+        else if (aName.CompareNoCase("0") == 0)
+        {
+          m_DefaultAlgorithm = kAlgorithmForFast;
+          m_MatchFinder = kDefaultMatchFinderForFast;
+          m_DefaultDicSize = kDicSizeForFast;
         }
         continue;
       }

@@ -175,6 +175,10 @@ SOURCE=.\BinTree4.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\BinTree4b.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\BinTreeMain.h
 # End Source File
 # Begin Source File

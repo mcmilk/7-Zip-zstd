@@ -48,7 +48,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 15  Copyright (c) 1999-2002 Igor Pavlov  2002-02-17\n";
+" 2.30 Beta 16  Copyright (c) 1999-2002 Igor Pavlov  2002-02-24\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -763,7 +763,8 @@ void MyOpenArhive(const CSysString &anArchiveName,
     throw "file is not supported archive";
   if (aResult != S_OK)
     throw "error";
-  aDefaultItemName = GetDefaultName(anArchiveName, anArchiverInfo.Extension);
+  aDefaultItemName = GetDefaultName(anArchiveName, anArchiverInfo.Extension, 
+      GetUnicodeString(anArchiverInfo.AddExtension));
 }
 
 #ifndef EXCLUDE_COM
