@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "ExtractEngine.h"
 
 #include "Common/Wildcard.h"

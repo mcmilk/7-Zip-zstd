@@ -8,6 +8,10 @@
 
 #include "Vector.h"
 
+#ifdef _WIN32
+#include "MyWindows.h"
+#endif
+
 static const char *kTrimDefaultCharSet  = " \n\t";
 
 template <class T>
@@ -35,7 +39,7 @@ inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, wchar_t *p)
 inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, const wchar_t *p)
   { return (p - 1); }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 inline char* MyStringGetNextCharPointer(char *p)
   { return CharNextA(p); }

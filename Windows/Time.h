@@ -24,13 +24,8 @@ inline bool FileTimeToDosTime(const FILETIME &fileTime, UInt32 &dosTime)
   return true;
 }
 
-const UInt64 kUnixTimeStartValue = 
-      #if ( __GNUC__)
-      116444736000000000LL;
-      #else
-      116444736000000000;
-      #endif
 const UInt32 kNumTimeQuantumsInSecond = 10000000;
+const UInt64 kUnixTimeStartValue = ((UInt64)kNumTimeQuantumsInSecond) * 60 * 60 * 24 * 134774;
 
 inline void UnixTimeToFileTime(UInt32 unixTime, FILETIME &fileTime)
 {

@@ -50,7 +50,7 @@ public:
   STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
 };
 
-const kMaxBlockSize = NHeader::NArchive::kArchiveHeaderSize;
+const UInt32 kMaxBlockSize = NHeader::NArchive::kArchiveHeaderSize;
 
 class CInArchive
 {

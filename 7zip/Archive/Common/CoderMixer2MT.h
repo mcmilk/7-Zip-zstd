@@ -101,7 +101,7 @@ private:
   CBindInfo _bindInfo;
   CObjectVector<CStreamBinder> _streamBinders;
   CObjectVector<CThreadCoderInfo> _coderInfoVector;
-  CRecordVector<HANDLE> _threads;
+  CRecordVector<NWindows::CThread> _threads;
   NWindows::CThread _mainThread;
 
   NWindows::NSynchronization::CAutoResetEvent _startCompressingEvent;

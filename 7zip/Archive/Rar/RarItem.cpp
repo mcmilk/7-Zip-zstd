@@ -1,6 +1,6 @@
 // RarItem.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "RarItem.h"
 #include "RarHeader.h"

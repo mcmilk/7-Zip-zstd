@@ -36,7 +36,7 @@ HRESULT COpenCallbackGUI::CryptoGetTextPassword(BSTR *password)
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = Password;
+  CMyComBSTR tempName(Password);
   *password = tempName.Detach();
   return S_OK;
 }
@@ -49,4 +49,3 @@ HRESULT COpenCallbackGUI::GetPasswordIfAny(UString &password)
 }
 #endif  
 
-  

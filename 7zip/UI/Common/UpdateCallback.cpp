@@ -211,7 +211,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
 {
   if (VolumesSizes.Size() == 0)
     return S_FALSE;
-  if (index >= VolumesSizes.Size())
+  if (index >= (UInt32)VolumesSizes.Size())
     index = VolumesSizes.Size() - 1;
   *size = VolumesSizes[index];
   return S_OK;

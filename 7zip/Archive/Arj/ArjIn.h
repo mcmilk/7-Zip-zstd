@@ -3,11 +3,9 @@
 #ifndef __ARCHIVE_ARJIN_H
 #define __ARCHIVE_ARJIN_H
 
-#include "Common/Exception.h"
 #include "Common/MyCom.h"
 #include "../../IStream.h"
 
-#include "Header.h"
 #include "ArjItem.h"
 
 namespace NArchive {

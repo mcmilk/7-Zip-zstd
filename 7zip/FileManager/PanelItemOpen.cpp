@@ -12,7 +12,6 @@
 #include "Windows/FileFind.h"
 #include "Windows/Thread.h"
 #include "Windows/Synchronization.h"
-#include "Windows/System.h"
 #include "Windows/Error.h"
 #include "Windows/COM.h"
 

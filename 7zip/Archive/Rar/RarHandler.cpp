@@ -558,7 +558,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CItemEx &item = _items[refItem.ItemIndex];
     censoredTotalUnPacked += item.UnPackSize;
     // censoredTotalPacked += item.PackSize;
-    for(int j = lastIndex; j <= index; j++)
+    int j;
+    for(j = lastIndex; j <= index; j++)
       // if(!_items[_refItems[j].ItemIndex].IsSolid())
       if(!IsSolid(j))
         lastIndex = j;

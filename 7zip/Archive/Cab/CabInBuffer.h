@@ -23,7 +23,7 @@ class CInBuffer
   UInt32 m_ReservedSize;
 
 public:
-  CInBuffer(): m_Stream(0) {}
+  CInBuffer(): m_Buffer(0)  {}
   ~CInBuffer() { Free(); }
   bool Create(UInt32 bufferSize);
   void Free();

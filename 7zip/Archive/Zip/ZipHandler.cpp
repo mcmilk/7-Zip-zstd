@@ -118,7 +118,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidAttributes, VT_UI4},
 
   { NULL, kpidEncrypted, VT_BOOL},
-  { NULL, kpidCommented, VT_BOOL},
+  { NULL, kpidComment, VT_BSTR},
     
   { NULL, kpidCRC, VT_UI4},
 
@@ -237,9 +237,20 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
     case kpidEncrypted:
       propVariant = item.IsEncrypted();
       break;
-    case kpidCommented:
-      propVariant = item.IsCommented();
+    case kpidComment:
+    {
+      int size = item.Comment.GetCapacity();
+      if (size > 0)
+      {
+        AString s;
+        char *p = s.GetBuffer(size + 1);
+        strncpy(p, (const char *)(const Byte *)item.Comment, size);
+        p[size] = '\0';
+        s.ReleaseBuffer();
+        propVariant = MultiByteToUnicodeString(s, item.GetCodePage());
+      }
       break;
+    }
     case kpidCRC:
       propVariant = item.FileCRC;
       break;
@@ -470,7 +481,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       if (m == methodItems.Size())
       {
         CMethodItem mi;
-        mi.ZipMethod = item.CompressionMethod;
+        mi.ZipMethod = (Byte)item.CompressionMethod;
         #ifdef EXCLUDE_COM
         switch(item.CompressionMethod)
         {
@@ -496,7 +507,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         }
         #else
         N7z::CMethodID methodID = { { 0x04, 0x01 } , 3 };
-        methodID.ID[2] = item.CompressionMethod;
+        methodID.ID[2] = mi.ZipMethod;
         if (item.CompressionMethod == NFileHeader::NCompressionMethod::kStored)
         {
           methodID.ID[0] = 0;
@@ -525,7 +536,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
       if (coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&compressSetDecoderProperties) == S_OK)
       {
-        Byte properties = item.Flags;
+        Byte properties = (Byte)item.Flags;
         RINOK(compressSetDecoderProperties->SetDecoderProperties2(&properties, 1));
       }
 

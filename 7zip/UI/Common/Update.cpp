@@ -4,6 +4,8 @@
 
 #include <mapi.h>
 
+#include <vector>
+
 #include "Update.h"
 
 #include "Common/IntToString.h"
@@ -496,7 +498,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
   {
     CArchivePath &ap = options.Commands[0].ArchivePath;
     ap = options.ArchivePath;
-    if (archive != 0 && !usesTempDir)
+    if ((archive != 0 && !usesTempDir) || !options.WorkingDir.IsEmpty())
     {
       createTempFile = true;
       ap.Temp = true;

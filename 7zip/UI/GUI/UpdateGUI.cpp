@@ -18,6 +18,7 @@
 #include "../../FileManager/StringUtils.h"
 
 #include "../Common/ArchiveExtractCallback.h"
+#include "../Common/WorkDir.h"
 #include "../Explorer/MyMessages.h"
 #include "../Resource/Extract/resource.h"
 
@@ -301,6 +302,17 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
   else
     options.ArchivePath.BaseExtension = options.ArchivePath.VolExtension;
   options.ArchivePath.ParseFromPath(di.ArchiveName);
+
+  NWorkDir::CInfo workDirInfo;
+  ReadWorkDirInfo(workDirInfo);
+  options.WorkingDir.Empty();
+  if (workDirInfo.Mode != NWorkDir::NMode::kCurrent)
+  {
+    UString fullPath;
+    NDirectory::MyGetFullPathName(di.ArchiveName, fullPath);
+    options.WorkingDir = GetWorkDir(workDirInfo, fullPath);
+    NFile::NDirectory::CreateComplexDirectory(options.WorkingDir);
+  }
   return S_OK;
 }
 

@@ -3,10 +3,7 @@
 #ifndef __WINDOWS_PROPVARIANT_H
 #define __WINDOWS_PROPVARIANT_H
 
-#ifndef WIN32
 #include "../Common/MyWindows.h"
-#endif
-
 #include "../Common/Types.h"
 
 namespace NWindows {

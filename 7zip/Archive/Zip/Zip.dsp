@@ -130,6 +130,14 @@ SOURCE=..\..\..\Common\Alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\AutoPtr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Buffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File

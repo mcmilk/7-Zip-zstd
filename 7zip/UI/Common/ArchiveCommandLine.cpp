@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <io.h>
+#include <stdio.h>
 
 #include "Common/CommandLineParser.h"
 #include "Common/ListFileUtils.h"
@@ -11,7 +12,7 @@
 
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
-#ifdef WIN32
+#ifdef _WIN32
 #include "Windows/FileMapping.h"
 #include "Windows/Synchronization.h"
 #endif
@@ -344,7 +345,7 @@ void AddToCensorFromNonSwitchesStrings(
   }
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 static void ParseMapWithPaths(NWildcard::CCensor &wildcardCensor, 
     const UString &switchParam, bool include, 
     NRecursedType::EEnum commonRecursedType)
@@ -439,7 +440,7 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
       AddCommandLineWildCardToCensr(wildcardCensor, tail, include, recursedType);
     else if (name[pos] == kFileListID)
       AddToCensorFromListFile(wildcardCensor, tail, include, recursedType);
-    #ifdef WIN32
+    #ifdef _WIN32
     else if (name[pos] == kMapNameID)
       ParseMapWithPaths(wildcardCensor, tail, include, recursedType);
     #endif

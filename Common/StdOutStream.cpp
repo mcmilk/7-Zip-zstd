@@ -10,15 +10,15 @@
 
 static const char kNewLineChar =  '\n';
 
-static LPCTSTR kFileOpenMode = TEXT("wt");
+static const char *kFileOpenMode = "wt";
 
 CStdOutStream  g_StdOut(stdout);
 CStdOutStream  g_StdErr(stderr);
 
-bool CStdOutStream::Open(LPCTSTR fileName)
+bool CStdOutStream::Open(const char *fileName)
 {
   Close();
-  _stream = _tfopen(fileName, kFileOpenMode);
+  _stream = fopen(fileName, kFileOpenMode);
   _streamIsOpen = (_stream != 0);
   return _streamIsOpen;
 }

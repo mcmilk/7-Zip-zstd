@@ -136,6 +136,7 @@ struct CThreadSplit
         name += seqName.GetNextName();
         if (!outFile.Create(name, false))
           throw L"Can not create output file";
+        ProgressDialog->ProgressSynch.SetCurrentFileName(name);
       }
       if (!outFile.Write(buffer, needSize, processedSize))
         throw L"Can not write output file";
@@ -204,6 +205,7 @@ void CApp::Split()
     if (destPanel.IsFSFolder())
       path = destPanel._currentFolderPrefix;
   CSplitDialog splitDialog;
+  splitDialog.FilePath = itemName;
   splitDialog.Path = path;
   if (splitDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
@@ -213,6 +215,8 @@ void CApp::Split()
 
   CProgressDialog progressDialog;
   spliter.ProgressDialog = &progressDialog;
+
+  progressDialog.ProgressSynch.SetTitleFileName(itemName);
 
   path = splitDialog.Path;
   NFile::NName::NormalizeDirPathPrefix(path);
@@ -327,6 +331,7 @@ struct CThreadCombine
           break;
         if (!inFile.Open(nextName))
           throw L"Can not open file";
+        ProgressDialog->ProgressSynch.SetCurrentFileName(fileInfo.Name);
         nextName = InputDirPrefix + volSeqName.GetNextName();
         needOpen = false;
       }
@@ -402,6 +407,9 @@ void CApp::Combine()
   CCopyDialog copyDialog;
   copyDialog.Value = path;
   copyDialog.Title = LangLoadStringW(IDS_COMBINE, 0x03020600);
+  copyDialog.Title += ' ';
+  copyDialog.Title += itemName;
+
   copyDialog.Static = LangLoadStringW(IDS_COMBINE_TO, 0x03020601);;
   if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;

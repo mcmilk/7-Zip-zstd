@@ -6,6 +6,6 @@
 #include "Common/String.h"
 
 bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString);
-void ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString);
+bool ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString);
 
 #endif

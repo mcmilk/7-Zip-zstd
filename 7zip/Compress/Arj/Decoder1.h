@@ -26,7 +26,7 @@ namespace NDecoder1 {
 #define MAXDICBIT   16
 #define MATCHBIT     8
 #define MAXMATCH   256
-#define NC          (UCHAR_MAX + MAXMATCH + 2 - THRESHOLD)
+#define NC          (0xFF + MAXMATCH + 2 - THRESHOLD)
 #define NP          (MAXDICBIT + 1)
 #define CBIT         9
 #define NT          (CODE_BIT + 3)

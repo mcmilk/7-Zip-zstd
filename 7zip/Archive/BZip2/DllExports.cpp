@@ -2,10 +2,8 @@
 
 #include "StdAfx.h"
 
-#define INITGUID
-
+#include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
-#include "Common/String.h"
 #include "Windows/PropVariant.h"
 #include "BZip2Handler.h"
 #include "../../ICoder.h"

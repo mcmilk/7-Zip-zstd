@@ -392,7 +392,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   // updateCallback->QueryInterface(&updateCallback2);
 
   int index = 0;
-  for(int i = 0; i < numItems; i++)
+  for(UInt32 i = 0; i < numItems; i++)
   {
     Int32 newData;
     Int32 newProperties;
@@ -600,17 +600,17 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   COM_TRY_END
 }
 
-static int ParseStringToUINT32(const UString &srcString, UInt32 &number)
+static int ParseStringToUInt32(const UString &srcString, UInt32 &number)
 {
   const wchar_t *start = srcString;
   const wchar_t *end;
   UInt64 number64 = ConvertStringToUInt64(start, &end);
-  if (number64 >= (UInt64(1) << 32)) 
+  if (number64 > 0xFFFFFFFF) 
   {
     number = 0;
     return 0;
   }
-  number = number64;
+  number = (UInt32)number64;
   return end - start;
 }
 
@@ -634,7 +634,7 @@ HRESULT ParseDictionaryValues(const UString &srcStringSpec, UInt32 &dicSize)
   {
     if (number >= kLogarithmicSizeLimit)
       return E_INVALIDARG;
-    dicSize = (UInt32)1 << number;
+    dicSize = (UInt32)1 << (int)number;
     return S_OK;
   }
   switch (srcString[numDigits])
@@ -721,14 +721,14 @@ static HRESULT SetComplexProperty(bool &boolStatus, UInt32 &number,
 static HRESULT GetBindInfoPart(UString &srcString, UInt32 &coder, UInt32 &stream)
 {
   stream = 0;
-  int index = ParseStringToUINT32(srcString, coder);
+  int index = ParseStringToUInt32(srcString, coder);
   if (index == 0)
     return E_INVALIDARG;
   srcString.Delete(0, index);
   if (srcString[0] == 'S')
   {
     srcString.Delete(0);
-    int index = ParseStringToUINT32(srcString, stream);
+    int index = ParseStringToUInt32(srcString, stream);
     if (index == 0)
       return E_INVALIDARG;
     srcString.Delete(0, index);
@@ -822,7 +822,7 @@ HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, c
     else
     {
       UInt32 number;
-      if (ParseStringToUINT32(value, number) == value.Length())
+      if (ParseStringToUInt32(value, number) == value.Length())
         propValue = number;
       else
         propValue = value;
@@ -933,7 +933,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
   _methods.Clear();
   _binds.Clear();
   Init();
-  int minNumber = 0;
+  UInt32 minNumber = 0;
 
   for (int i = 0; i < numProperties; i++)
   {
@@ -958,7 +958,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       {
         if(!name.IsEmpty())
         {
-          int index = ParseStringToUINT32(name, _level);
+          int index = ParseStringToUInt32(name, _level);
           if (index != name.Length())
             return E_INVALIDARG;
         }
@@ -1020,7 +1020,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     
       
     UInt32 number;
-    int index = ParseStringToUINT32(name, number);
+    int index = ParseStringToUInt32(name, number);
     UString realName = name.Mid(index);
     if (index == 0)
     {
@@ -1063,14 +1063,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
       number = 0;
     }
-    if (number > 100)
+    if (number > 10000)
       return E_FAIL;
     if (number < minNumber)
-    {
       return E_INVALIDARG;
-    }
     number -= minNumber;
-    for(int j = _methods.Size(); j <= number; j++)
+    for(int j = _methods.Size(); j <= (int)number; j++)
     {
       COneMethodInfo oneMethodInfo;
       _methods.Add(oneMethodInfo);

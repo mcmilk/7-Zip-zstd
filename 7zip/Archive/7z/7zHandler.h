@@ -4,7 +4,6 @@
 #define __7Z_HANDLER_H
 
 #include "../IArchive.h"
-// #include "../../../Compress/Interface/CompressInterface.h"
 #include "7zIn.h"
 
 #include "7zCompressionMode.h"

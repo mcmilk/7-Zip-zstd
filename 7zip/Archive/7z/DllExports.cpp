@@ -2,13 +2,12 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
+#include "../../../Common/MyInitGuid.h"
+#include "../../../Common/ComTry.h"
+
+#include "../../ICoder.h"
 
 #include "7zHandler.h"
-#include "../../ICoder.h"
-#include "../../IPassword.h"
-#include "../../../Common/NewHandler.h"
-#include "../../../Common/ComTry.h"
 
 #ifndef EXCLUDE_COM
 // {23170F69-40C1-278B-06F1-070100000100}

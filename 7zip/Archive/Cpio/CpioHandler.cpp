@@ -205,7 +205,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     return S_OK;
   bool testMode = (_aTestMode != 0);
   UInt64 totalSize = 0;
-  for(UInt32 i = 0; i < numItems; i++)
+  UInt32 i;
+  for(i = 0; i < numItems; i++)
     totalSize += m_Items[allFilesMode ? i : indices[i]].Size;
   extractCallback->SetTotal(totalSize);
 

@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <time.h>
+#include <stdlib.h>
 
 #include "Common/Random.h"
 

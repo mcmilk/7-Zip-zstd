@@ -4,11 +4,11 @@
 
 #include "StringConvert.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <stdlib.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 {
   UString resultString;

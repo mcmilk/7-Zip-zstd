@@ -257,6 +257,10 @@ SOURCE=..\..\..\Common\Alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\AutoPtr.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
@@ -310,6 +314,26 @@ SOURCE=..\..\..\Common\ListFileUtils.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyCom.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyGuidDef.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyInitGuid.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyUnknown.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyWindows.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyWindows.h
 # End Source File
 # Begin Source File
 
@@ -482,14 +506,6 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.h
 # End Source File
 # Begin Source File
 
@@ -1686,14 +1702,6 @@ SOURCE=..\..\Archive\Zip\ZipUpdate.h
 # Begin Group "Archive Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CoderMixer2.cpp

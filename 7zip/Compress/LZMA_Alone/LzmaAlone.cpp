@@ -2,18 +2,13 @@
 
 #include "StdAfx.h"
 
-#ifdef WIN32
-#include <initguid.h>
-#else
-#define INITGUID
-#endif
-
 #include "../../../Common/MyWindows.h"
+#include "../../../Common/MyInitGuid.h"
 
 // #include <limits.h>
 #include <stdio.h>
 
-#if defined(WIN32) || defined(OS2) || defined(MSDOS)
+#if defined(_WIN32) || defined(OS2) || defined(MSDOS)
 #include <fcntl.h>
 #include <io.h>
 #define MY_SET_BINARY_MODE(file) setmode(fileno(file),O_BINARY)
@@ -360,7 +355,7 @@ int main2(int n, const char *args[])
     NCompress::NLZMA::CDecoder *decoderSpec = 
         new NCompress::NLZMA::CDecoder;
     CMyComPtr<ICompressCoder> decoder = decoderSpec;
-    const kPropertiesSize = 5;
+    const UInt32 kPropertiesSize = 5;
     Byte properties[kPropertiesSize];
     UInt32 processedSize;
     if (inStream->Read(properties, kPropertiesSize, &processedSize) != S_OK)

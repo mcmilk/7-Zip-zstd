@@ -153,12 +153,12 @@ CCoderMixer2MT::CCoderMixer2MT()
 CCoderMixer2MT::~CCoderMixer2MT()
 {
   _exitEvent.Set();
-
-  ::WaitForSingleObject(_mainThread, INFINITE);
-  DWORD result = ::WaitForMultipleObjects(_threads.Size(), 
-      &_threads.Front(), TRUE, INFINITE);
+  _mainThread.Wait();
   for(int i = 0; i < _threads.Size(); i++)
-    ::CloseHandle(_threads[i]);
+  {
+    _threads[i].Wait();
+    _threads[i].Close();
+  }
 }
 
 void CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
@@ -184,12 +184,10 @@ void CCoderMixer2MT::AddCoderCommon()
   _coderInfoVector.Back().ExitEvent = _exitEvent;
   _compressingCompletedEvents.Add(*_coderInfoVector.Back().CompressionCompletedEvent);
 
-  DWORD id;
-  HANDLE newThread = ::CreateThread(NULL, 0, CoderThread, 
-      &_coderInfoVector.Back(), 0, &id);
-  if (newThread == 0)
-    throw 271824;
+  NWindows::CThread newThread;
   _threads.Add(newThread);
+  if (!_threads.Back().Create(CoderThread, &_coderInfoVector.Back()))
+    throw 271824;
 }
 
 void CCoderMixer2MT::AddCoder(ICompressCoder *coder)

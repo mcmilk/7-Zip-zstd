@@ -1,6 +1,6 @@
 // FAM.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "resource.h"
 #include "Panel.h"

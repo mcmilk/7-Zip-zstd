@@ -119,20 +119,34 @@ STDMETHODIMP CFSFolder::LoadItems()
   return S_OK;
 }
 
+static const wchar_t *kDescriptionFileName = L"descript.ion";
+
 bool CFSFolder::LoadComments()
 {
   if (_commentsAreLoaded)
     return true;
   _comments.Clear();
   _commentsAreLoaded = true;
-  CStdInStream file;
-  if (!file.Open(GetSystemString(_path + L"descript.ion", _fileCodePage)))
+  NIO::CInFile file;
+  if (!file.Open(_path + kDescriptionFileName))
     return false;
-  AString string;
-  file.ReadToString(string);
+  UInt64 length;
+  if (!file.GetLength(length))
+    return false;
+  if (length >= 0xFFFFFFF)
+    return false;
+  AString s;
+  char *p = s.GetBuffer((size_t)length + 1);
+  UINT32 processedSize;
+  file.Read(p, length, processedSize);
+  p[length] = 0;
+  s.ReleaseBuffer();
+  s.Replace("\r\n", "\n");
+  if (processedSize != length)
+    return false;
   file.Close();
   UString unicodeString;
-  if (!ConvertUTF8ToUnicode(string, unicodeString))
+  if (!ConvertUTF8ToUnicode(s, unicodeString))
     return false;
   return _comments.ReadFromString(unicodeString);
 }
@@ -147,19 +161,21 @@ static bool IsAscii(const UString &testString)
 
 bool CFSFolder::SaveComments()
 {
-  CStdOutStream file;
-  if (!file.Open(GetSystemString(_path + L"descript.ion", _fileCodePage)))
+  NIO::COutFile file;
+  if (!file.Create(_path + kDescriptionFileName, true))
     return false;
   UString unicodeString;
   _comments.SaveToString(unicodeString);
   AString utfString;
   ConvertUnicodeToUTF8(unicodeString, utfString);
+  UINT32 processedSize;
   if (!IsAscii(unicodeString))
   {
-    file << char(0xEF) << char(0xBB) << char(0xBF) << char('\n');
+    Byte bom [] = { 0xEF, 0xBB, 0xBF, 0x0D, 0x0A };
+    file.Write(bom , sizeof(bom), processedSize);
   }
-  file << utfString;
-  file.Close();
+  utfString.Replace("\n", "\r\n");
+  file.Write(utfString, utfString.Length(), processedSize);
   _commentsAreLoaded = false;
   return true;
 }

@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#define INITGUID
+#include "Common/MyInitGuid.h"
+#include "Common/ComTry.h"
 
 #include "DeflateEncoder.h"
 #include "DeflateDecoder.h"
-#include "Common/ComTry.h"
 
 
 // {23170F69-40C1-278B-0401-080000000000}

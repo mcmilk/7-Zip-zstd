@@ -2,8 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "7zOut.h"
+#include "../../../Common/AutoPtr.h"
 #include "../../Common/StreamObjects.h"
+
+#include "7zOut.h"
 
 static HRESULT WriteBytes(ISequentialOutStream *stream, const void *data, UInt32 size)
 {
@@ -476,7 +478,7 @@ HRESULT COutArchive::WriteSubStreamsInfo(
 
 HRESULT COutArchive::WriteTime(
     const CObjectVector<CFileItem> &files, Byte type,
-    bool isExternal, int externalDataIndex)
+    bool isExternal, UInt64 externalDataIndex)
 {
   /////////////////////////////////////////////////
   // CreationTime
@@ -591,15 +593,20 @@ static void WriteUInt64ToBuffer(Byte *data, const UInt64 &value)
     *data++ = (Byte)(value >> (8 * i));
 }
 
+
 HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
     const CCompressionMethodMode *options, UInt64 &headerOffset)
 {
   CObjectVector<CFolder> folders;
 
   bool compressHeaders = (options != NULL);
-  std::auto_ptr<CEncoder> encoder;
+  CMyAutoPtr<CEncoder> encoder;
   if (compressHeaders)
-    encoder = std::auto_ptr<CEncoder>(new CEncoder(*options));
+  {
+    // FIXED for gcc2.95.2
+    CMyAutoPtr<CEncoder> tmp(new CEncoder(*options));
+    encoder = tmp;
+  }
 
   CRecordVector<UInt64> packSizes;
 
@@ -659,7 +666,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   bool externalNames = (compressHeaders && database.Files.Size() > 8);
   if (numDefinedNames > 0)
   {
-    namesData.SetCapacity(namesDataSize);
+    namesData.SetCapacity((size_t)namesDataSize);
     UInt32 pos = 0;
     for(int i = 0; i < database.Files.Size(); i++)
     {
@@ -685,7 +692,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   // Write Attributes
   CBoolVector attributesBoolVector;
   attributesBoolVector.Reserve(database.Files.Size());
-  UInt32 numDefinedAttributes = 0;
+  int numDefinedAttributes = 0;
   for(i = 0; i < database.Files.Size(); i++)
   {
     bool defined = database.Files[i].AreAttributesDefined;
@@ -721,7 +728,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   // Write StartPos
   CBoolVector startsBoolVector;
   startsBoolVector.Reserve(database.Files.Size());
-  UInt32 numDefinedStarts = 0;
+  int numDefinedStarts = 0;
   for(i = 0; i < database.Files.Size(); i++)
   {
     bool defined = database.Files[i].IsStartPosDefined;
@@ -862,7 +869,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
 
   CBoolVector emptyStreamVector;
   emptyStreamVector.Reserve(database.Files.Size());
-  UInt64 numEmptyStreams = 0;
+  int numEmptyStreams = 0;
   for(i = 0; i < database.Files.Size(); i++)
     if (database.Files[i].HasStream)
       emptyStreamVector.Add(false);

@@ -174,8 +174,8 @@ static int __cdecl CompareFolderRefs(const void *p1, const void *p2)
   if (d1.NumUnPackStreamsVector[a1.FolderIndex] == 0)
     return 0;
   return CompareFiles(
-      d1.Files[d1.FolderStartFileIndex[a1.FolderIndex]],
-      d2.Files[d2.FolderStartFileIndex[a2.FolderIndex]]);
+      d1.Files[(size_t)d1.FolderStartFileIndex[a1.FolderIndex]],
+      d2.Files[(size_t)d2.FolderStartFileIndex[a2.FolderIndex]]);
 }
 
 ////////////////////////////////////////////////////////////
@@ -504,7 +504,7 @@ static HRESULT Update2(
     UInt64 indexInFolder = 0;
     UInt64 numCopyItems = 0;
     UInt64 numUnPackStreams = database->NumUnPackStreamsVector[i];
-    for (int fileIndex = database->FolderStartFileIndex[i];
+    for (int fileIndex = (int)database->FolderStartFileIndex[i];
         indexInFolder < numUnPackStreams; fileIndex++)
     {
       if (database->Files[fileIndex].HasStream)
@@ -608,7 +608,7 @@ static HRESULT Update2(
     newDatabase.NumUnPackStreamsVector.Add(numUnPackStreams);
 
     UInt64 indexInFolder = 0;
-    for (j = database->FolderStartFileIndex[folderIndex];
+    for (j = (int)database->FolderStartFileIndex[folderIndex];
         indexInFolder < numUnPackStreams; j++)
     {
       CFileItem file = database->Files[j];

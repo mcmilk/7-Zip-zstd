@@ -224,13 +224,7 @@ HRESULT CInArchive::Skeep(UInt64 numBytes)
 
 HRESULT CInArchive::SkeepDataRecords(UInt64 dataSize)
 {
-  return Skeep((dataSize + 511) & 
-      #if ( __GNUC__)
-      0xFFFFFFFFFFFFFE00LL
-      #else
-      0xFFFFFFFFFFFFFE00
-      #endif
-      );
+  return Skeep((dataSize + 0x1FF) & (~((UInt64)0x1FF)));
 }
 
 }}

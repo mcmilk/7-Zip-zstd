@@ -1,6 +1,6 @@
-// Client7z.cpp : Defines the entry point for the console application.
+// Client7z.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <initguid.h>
 

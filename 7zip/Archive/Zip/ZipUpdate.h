@@ -17,11 +17,10 @@ namespace NZip {
 
 struct CUpdateRange
 {
-  UInt32 Position; 
-  UInt32 Size;
+  UInt64 Position; 
+  UInt64 Size;
   CUpdateRange() {};
-  CUpdateRange(UInt32 position, UInt32 size):
-      Position(position), Size(size) {};
+  CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {};
 };
 
 struct CUpdateItem
@@ -33,15 +32,10 @@ struct CUpdateItem
   int IndexInClient;
   UInt32 Attributes;
   UInt32 Time;
-  UInt32 Size;
+  UInt64 Size;
   AString Name;
-  // bool ExistInArchive;
-  bool Commented;
-  CUpdateRange CommentRange;
-  /*
-  bool IsDirectory() const 
-    { return ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
-  */
+  // bool Commented;
+  // CUpdateRange CommentRange;
 };
 
 HRESULT Update(

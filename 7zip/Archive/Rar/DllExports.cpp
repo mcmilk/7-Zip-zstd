@@ -2,11 +2,9 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
-
+#include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
-
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 #include "../Common/CodecsPath.h"
@@ -18,46 +16,6 @@ DEFINE_GUID(CLSID_CCrypto_AES128_Decoder,
 #include "RarHandler.h"
 
 HINSTANCE g_hInstance;
-
-/*
-static bool GetBaseFolderPrefix(TCHAR *path)
-{
-  TCHAR fullPath[MAX_PATH + 1];
-  if (::GetModuleFileName(g_hInstance, fullPath, MAX_PATH) == 0)
-    return false;
-  // fullPath = "7-zip\Format\Rar.dll"
-  LPTSTR fileNamePointer;
-  TCHAR p[MAX_PATH + 1];
-  DWORD needLength = ::GetFullPathName(fullPath, MAX_PATH + 1, 
-      p, &fileNamePointer);
-  if (needLength == 0 || needLength >= MAX_PATH)
-    return false;
-  *fileNamePointer = 0;
-  // p = "7-zip\Format\"
-  int len = lstrlen(p);
-  if (len == 0)
-    return false;
-  if (p[len - 1] != '\\')
-    return false;
-  p[len - 1] = 0;
-  // p = "7-zip\Format"
-  needLength = ::GetFullPathName(p, MAX_PATH + 1, 
-      path, &fileNamePointer);
-  if (needLength == 0 || needLength >= MAX_PATH)
-    return false;
-  // fileNamePointer -> "7-zip\"+
-  *fileNamePointer = 0;
-  return true;
-}
-
-bool GetCompressFolderPrefix(TCHAR *path)
-{
-  if (!GetBaseFolderPrefix(path))
-    return false;
-  lstrcat(path, TEXT("Codecs\\"));
-  return true;
-}
-*/
 
 void GetCryptoFolderPrefix(TCHAR *path)
 {

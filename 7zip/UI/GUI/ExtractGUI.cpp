@@ -134,13 +134,12 @@ HRESULT ExtractGUI(
     */
   }
   
+  UString title = 
   #ifdef LANG        
-  const UString title = LangLoadStringW(
-      options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING, 
+  LangLoadStringW(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING, 
       options.TestMode ? 0x02000F90: 0x02000890);
   #else
-  const UString title = NWindows::MyLoadStringW(
-      options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING);
+  NWindows::MyLoadStringW(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING);
   #endif
 
   extracter.ExtractCallbackSpec = extractCallback;

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "OverwriteDialog.h"
 
 #include "Common/String.h"

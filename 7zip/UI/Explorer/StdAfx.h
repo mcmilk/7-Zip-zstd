@@ -1,8 +1,11 @@
-// stdafx.h : include file for standard system include files,
+// StdAfx.h
 
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
+#define _WIN32_WINNT 0x0400
+// it's hack for Windows NT supporting 
+#define WINVER 0x0400
 
 // #define _WIN32_IE 0x0500
 #include <windows.h>
@@ -27,13 +30,10 @@ extern CComModule _Module;
 #include <shlguid.h>
 #include <regstr.h>
 
-// #include <new.h>
 
 #undef _MT
 
 #include <vector>
-#include <map>
-#include <algorithm>
 
 #define _MT
 

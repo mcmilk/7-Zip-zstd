@@ -122,6 +122,7 @@ HRESULT CInArchive::Open(IInStream *inStream,
   RINOK(inStream->Seek(startPosition, STREAM_SEEK_SET, NULL));
 
   RINOK(ReadBytes(inStream, _block, NHeader::NArchive::kArchiveHeaderSize));
+  _blockSize = NHeader::NArchive::kArchiveHeaderSize;
   _blockPos = 0;
 
   ReadUInt32(); // Signature;	// cabinet file signature
@@ -147,8 +148,8 @@ HRESULT CInArchive::Open(IInStream *inStream,
 
   if (inArchiveInfo.ReserveBlockPresent())
   {
-    RINOK(SafeRead(inStream, _block, 
-        NHeader::NArchive::kPerDataSizesHeaderSize));
+    RINOK(SafeRead(inStream, _block, NHeader::NArchive::kPerDataSizesHeaderSize));
+    _blockSize = NHeader::NArchive::kPerDataSizesHeaderSize;
     _blockPos = 0;
 
     inArchiveInfo.PerDataSizes.PerCabinetAreaSize = ReadUInt16();	// (optional) size of per-cabinet reserved area
@@ -186,7 +187,8 @@ HRESULT CInArchive::Open(IInStream *inStream,
     RINOK(progressVirt->SetTotal(&numFiles));
   }
   folders.Clear();
-  for(int i = 0; i < inArchiveInfo.NumFolders; i++)
+  int i;
+  for(i = 0; i < inArchiveInfo.NumFolders; i++)
   {
     if (progressVirt != NULL)
     {
@@ -195,6 +197,7 @@ HRESULT CInArchive::Open(IInStream *inStream,
     }
     NHeader::CFolder folder;
     RINOK(SafeRead(inStream, _block, NHeader::kFolderHeaderSize));
+    _blockSize = NHeader::kFolderHeaderSize;
     _blockPos = 0;
 
     folder.DataStart = ReadUInt32();
@@ -228,6 +231,7 @@ HRESULT CInArchive::Open(IInStream *inStream,
   for(i = 0; i < inArchiveInfo.NumFiles; i++)
   {
     SafeInByteRead(inBuffer, _block, NHeader::kFileHeaderSize);
+    _blockSize = NHeader::kFileHeaderSize;
     _blockPos = 0;
     CItem item;
     item.UnPackSize = ReadUInt32();

@@ -117,7 +117,7 @@ class COutArchive
 
 
   HRESULT WriteTime(const CObjectVector<CFileItem> &files, Byte type,
-      bool isExternal, int externalDataIndex);
+      bool isExternal, UInt64 externalDataIndex);
 
   HRESULT EncodeStream(CEncoder &encoder, const Byte *data, UInt32 dataSize,
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);

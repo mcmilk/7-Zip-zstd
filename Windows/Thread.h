@@ -10,6 +10,7 @@ namespace NWindows {
 
 class CThread: public CHandle
 {
+  bool IsOpen() const { return _handle != 0; }
 public:
   bool Create(LPSECURITY_ATTRIBUTES threadAttributes, 
       SIZE_T stackSize, LPTHREAD_START_ROUTINE startAddress,
@@ -36,6 +37,14 @@ public:
     { return ::GetThreadPriority(_handle); }
   bool SetPriority(int priority)
     { return BOOLToBool(::SetThreadPriority(_handle, priority)); }
+
+  bool Wait() 
+  { 
+    if (!IsOpen())
+      return true;
+    return (::WaitForSingleObject(_handle, INFINITE) == WAIT_OBJECT_0); 
+  }
+
 };
 
 }

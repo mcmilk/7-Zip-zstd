@@ -33,7 +33,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 {
   COM_TRY_BEGIN
   CObjectVector<CUpdateItem> updateItems;
-  for(int i = 0; i < numItems; i++)
+  for(UInt32 i = 0; i < numItems; i++)
   {
     CUpdateItem updateItem;
     Int32 newData;
@@ -107,6 +107,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (updateItem.IsDirectory)
         updateItem.Name += '/';
       updateItem.IndexInClient = i;
+      /*
       if(existInArchive)
       {
         const CItemEx &itemInfo = m_Items[indexInArchive];
@@ -120,6 +121,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
       else
         updateItem.Commented = false;
+      */
     }
     if (IntToBool(newData))
     {
@@ -131,8 +133,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
           return E_INVALIDARG;
         size = propVariant.uhVal.QuadPart;
       }
-      if(size > 0xFFFFFFFF)
-        return E_NOTIMPL;
       updateItem.Size = size;
     }
     updateItems.Add(updateItem);
@@ -246,7 +246,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           case NFileHeader::NCompressionMethod::kDeflated:
           case NFileHeader::NCompressionMethod::kDeflated64:
           case NFileHeader::NCompressionMethod::kBZip2:
-            mainMethod = value.ulVal;
+            mainMethod = (Byte)value.ulVal;
             break;
           default:
             return E_INVALIDARG;

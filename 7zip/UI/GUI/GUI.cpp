@@ -110,8 +110,6 @@ int Main2()
   }
   else if (options.Command.IsFromUpdateGroup())
   {
-    UString workingDir;
-
     bool passwordIsDefined = 
         options.PasswordEnabled && !options.Password.IsEmpty();
 

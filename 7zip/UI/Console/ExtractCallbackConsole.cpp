@@ -168,7 +168,7 @@ STDMETHODIMP CExtractCallbackConsole::CryptoGetTextPassword(BSTR *password)
     Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = Password;
+  CMyComBSTR tempName(Password);
   *password = tempName.Detach();
   return S_OK;
 }

@@ -18,6 +18,8 @@ class CProgressSynch
   bool _paused;
   UInt64 _total;
   UInt64 _completed;
+  UString TitleFileName;
+  UString CurrentFileName;
 public:
   CProgressSynch(): _stopped(false), _paused(false), _total(1), _completed(0) {}
 
@@ -59,6 +61,26 @@ public:
     total = _total;
     completed = _completed;
   }
+  void SetTitleFileName(const UString &fileName)
+  {
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    TitleFileName = fileName;
+  }
+  void GetTitleFileName(UString &fileName)
+  {
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    fileName = TitleFileName;
+  }
+  void SetCurrentFileName(const UString &fileName)
+  {
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    CurrentFileName = fileName;
+  }
+  void GetCurrentFileName(UString &fileName)
+  {
+    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    fileName = CurrentFileName;
+  }
 };
 
 class CU64ToI32Converter
@@ -80,6 +102,7 @@ enum ESpeedMode
 
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
+  UString _prevFileName;
 private:
   UString backgroundString;
   UString backgroundedString;
@@ -99,7 +122,7 @@ private:
 	NWindows::NControl::CProgressBar m_ProgressBar;
 
   UInt32 _prevPercentValue;
-  UInt32 _pevTime;
+  UInt32 _prevTime;
   UInt32 _elapsedTime;
   UInt32 _prevElapsedSec;
   UInt64 _prevRemainingSec;
@@ -123,6 +146,8 @@ private:
   void OnPauseButton();
   void OnPriorityButton();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
+
+  void SetTitleText();
 public:
   CProgressSynch ProgressSynch;
 

@@ -17,8 +17,6 @@
 
 #include "ExtractEngine.h"
 
-
-using namespace std;
 using namespace NFar;
 using namespace NWindows;
 

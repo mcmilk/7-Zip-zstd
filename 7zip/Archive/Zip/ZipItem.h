@@ -5,6 +5,9 @@
 
 #include "Common/Types.h"
 #include "Common/String.h"
+#include "Common/Buffer.h"
+
+#include "ZipHeader.h"
 
 namespace NArchive {
 namespace NZip {
@@ -18,6 +21,19 @@ struct CVersion
 bool operator==(const CVersion &v1, const CVersion &v2);
 bool operator!=(const CVersion &v1, const CVersion &v2);
 
+struct CExtraSubBlock
+{
+  UInt16 ID;
+  CByteBuffer Data;
+};
+
+struct CExtraBlock
+{
+  CObjectVector<CExtraSubBlock> SubBlocks;
+  void Clear() { SubBlocks.Clear(); }
+};
+
+
 class CItem
 {
 public:
@@ -27,17 +43,18 @@ public:
   UInt16 CompressionMethod;
   UInt32 Time;
   UInt32 FileCRC;
-  UInt32 PackSize;
-  UInt32 UnPackSize;
+  UInt64 PackSize;
+  UInt64 UnPackSize;
   UInt16 InternalAttributes;
   UInt32 ExternalAttributes;
   
   AString Name;
   
-  UInt32 LocalHeaderPosition;
+  UInt64 LocalHeaderPosition;
   UInt16 LocalExtraSize;
-  UInt16 CentralExtraSize;
-  UInt16 CommentSize;
+  
+  CExtraBlock CentralExtra;
+  CByteBuffer Comment;
   
   bool IsEncrypted() const;
   
@@ -52,7 +69,9 @@ public:
   
   WORD GetCodePage() const
   {
-    return (MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT) ? CP_OEMCP : CP_ACP;
+    return (MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT 
+        || MadeByVersion.HostOS == NFileHeader::NHostOS::kNTFS
+        ) ? CP_OEMCP : CP_ACP;
   }
 
 private:

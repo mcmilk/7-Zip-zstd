@@ -8,6 +8,7 @@
 
 #ifndef DEBUG_MEMORY_LEAK
 
+#include <stdlib.h>
 
 void * __cdecl operator new(size_t size)
 {

@@ -54,3 +54,16 @@ UString GetCorrectPath(const UString &path)
   ReplaceDisk(result);
   return result;
 }
+
+void MakeCorrectPath(UStringVector &pathParts)
+{
+  for (int i = 0; i < pathParts.Size();)
+  {
+    UString &s = pathParts[i];
+    s = GetCorrectFileName(s);
+    if (s.IsEmpty())
+      pathParts.Delete(i);
+    else
+      i++;
+  }
+}

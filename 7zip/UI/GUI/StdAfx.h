@@ -8,6 +8,4 @@
 #include <shlobj.h>
 #include <stdio.h>
 
-#include <vector>
-
 #endif

@@ -2,8 +2,7 @@
 
 #include "StdAfx.h"
 
-#define INITGUID
-
+#include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
 #include "CabHandler.h"

@@ -2,16 +2,16 @@
 
 #include "StdAfx.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "StringConvert.h"
 #else
-#include "ctype.h"
+#include <ctype.h>
 #endif
 
 #include "String.h"
 
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #ifndef _UNICODE
 

@@ -2,8 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
-
+#include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
 #include "../../ICoder.h"

@@ -4,9 +4,11 @@
 
 #include "Plugin.h"
 
+/*
 using namespace NWindows;
 using namespace std;
 using namespace NFar;
+*/
 
 /*
 void CPlugin::AddRealIndexOfFile(const CArchiveFolderItem &aFolder, 

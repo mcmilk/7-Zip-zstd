@@ -34,9 +34,8 @@ class CInArchiveInfo
 {
 public:
   UInt64 StartPosition;
-  UInt64 CommentPosition;
-  UInt16 CommentSize;
-  bool IsCommented() const { return (CommentSize != 0); };
+  CByteBuffer Comment;
+  void Clear() { Comment.SetCapacity(0); }
 };
 
 class CProgressVirt
@@ -61,14 +60,18 @@ class CInArchive
   HRESULT ReadBytes(void *data, UInt32 size, UInt32 *processedSize);
   bool ReadBytesAndTestSize(void *data, UInt32 size);
   void SafeReadBytes(void *data, UInt32 size);
+  void ReadBuffer(CByteBuffer &buffer, UInt32 size);
   Byte ReadByte();
   UInt16 ReadUInt16();
   UInt32 ReadUInt32();
+  UInt64 ReadUInt64();
   
   void IncreasePositionValue(UInt64 addValue);
   void IncreaseRealPosition(UInt64 addValue);
   void ThrowIncorrectArchiveException();
  
+  void ReadExtra(UInt32 extraSize, CExtraBlock &extraBlock, 
+      UInt64 &unpackSize, UInt64 &packSize, UInt64 &localHeaderOffset, UInt32 &diskStartNumber);
 public:
   HRESULT ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress);
   bool Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);

@@ -59,6 +59,7 @@ HRESULT CUpdateCallbackGUI::FinishScanning()
 
 HRESULT CUpdateCallbackGUI::StartArchive(const wchar_t *name, bool updating)
 {
+  ProgressDialog.ProgressSynch.SetTitleFileName(name);
   return S_OK;
 }
 
@@ -101,6 +102,7 @@ HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completeValue)
 
 HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool isAnti)
 {
+  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
   return S_OK;
 }
 

@@ -9,7 +9,6 @@
 #include "Windows/COM.h"
 #include "Windows/Synchronization.h"
 #include "Windows/Registry.h"
-#include "Windows/System.h"
 
 #include "Windows/FileName.h"
 

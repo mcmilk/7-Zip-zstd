@@ -72,7 +72,7 @@ static wchar_t *kFormatFolderName = L"Formats";
 static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
 static LPCTSTR kProgramPathValue = TEXT("Path");
 
-UString GetBaseFolderPrefix()
+static UString GetBaseFolderPrefixFromRegistry()
 {
   UString moduleFolderPrefix = GetModuleFolderPrefix();
   NFind::CFileInfoW fileInfo;
@@ -233,7 +233,7 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
   
   #else
 
-  UString folderPath = GetBaseFolderPrefix() + 
+  UString folderPath = GetBaseFolderPrefixFromRegistry() + 
       kFormatFolderName + L"\\";
   NFind::CEnumeratorW enumerator(folderPath + L"*");
   NFind::CFileInfoW fileInfo;

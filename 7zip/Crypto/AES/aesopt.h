@@ -164,7 +164,7 @@
 
 // 2003-09-16: Changed by Igor Pavlov. Check it.
 // #if defined(__GNUC__) || defined(__GNU_LIBRARY__)
-#if (defined(__GNUC__) || defined(__GNU_LIBRARY__)) && !defined(WIN32)
+#if (defined(__GNUC__) || defined(__GNU_LIBRARY__)) && !defined(_WIN32)
 
 #  include <endian.h>
 #  include <byteswap.h>
@@ -183,7 +183,7 @@
 #  endif
 #elif defined(_MSC_VER)
 #  include <stdlib.h>
-#elif !defined(WIN32)
+#elif !defined(_WIN32)
 #  include <stdlib.h>
 #  if !defined (_ENDIAN_H)
 #    include <sys/param.h>

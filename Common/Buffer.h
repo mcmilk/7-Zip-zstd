@@ -3,7 +3,7 @@
 #ifndef __COMMON_BUFFER_H
 #define __COMMON_BUFFER_H
 
-// #include "Common/Defs.h"
+#include "Defs.h"
 
 template <class T> class CBuffer
 {    
@@ -26,9 +26,15 @@ public:
   size_t GetCapacity() const { return  _capacity; }
   void SetCapacity(size_t newCapacity)
   {
-    T *newBuffer = new T[newCapacity];
-    if(_capacity > 0)
-      memmove(newBuffer, _items, MyMin(_capacity, newCapacity) * sizeof(T));
+    T *newBuffer;
+    if (newCapacity > 0)
+    {
+      newBuffer = new T[newCapacity];
+      if(_capacity > 0)
+        memmove(newBuffer, _items, MyMin(_capacity, newCapacity) * sizeof(T));
+    }
+    else
+      newBuffer = 0;
     delete []_items;
     _items = newBuffer;
     _capacity = newCapacity;

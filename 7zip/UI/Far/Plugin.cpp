@@ -166,7 +166,7 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems,
   *panelItems = new PluginPanelItem[numItems];
   try
   {
-    for(int i = 0; i < numItems; i++)
+    for(UINT32 i = 0; i < numItems; i++)
     {
       PluginPanelItem &panelItem = (*panelItems)[i];
       ReadPluginPanelItem(panelItem, i);
@@ -535,7 +535,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   UINT32 numProps;
   RINOK(m_ArchiveHandler->GetNumberOfProperties(&numProps));
   int i;
-  for (i = 0; i < numProps; i++)
+  for (i = 0; i < (int)numProps; i++)
   {
     CMyComBSTR name;
     PROPID propID;

@@ -11,7 +11,7 @@
 namespace NArchive {
 namespace NCpio {
   
-const kMaxBlockSize = NFileHeader::kRecordSize;
+const UInt32 kMaxBlockSize = NFileHeader::kRecordSize;
 
 class CInArchive
 {

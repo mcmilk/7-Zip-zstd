@@ -3,8 +3,10 @@
 #ifndef __AGENT_AGENT_H
 #define __AGENT_AGENT_H
 
-#include "Windows/PropVariant.h"
+#include <vector>
+
 #include "Common/MyCom.h"
+#include "Windows/PropVariant.h"
 
 #include "../Common/UpdateAction.h"
 #include "../Common/ArchiverInfo.h"

@@ -25,7 +25,6 @@ const int kNumPosSlotLenSlotSymbols = kNumPosSlotSymbols * kNumLenSlots;
 const int kMaxTableSize = 256 + kNumPosSlotLenSlotSymbols;
 
 
-
 }}}
 
-#endif;
+#endif

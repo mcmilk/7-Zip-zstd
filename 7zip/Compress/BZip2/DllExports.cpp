@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#define INITGUID
+#include "Common/MyInitGuid.h"
+#include "Common/ComTry.h"
 
 #include "BZip2Encoder.h"
 #include "BZip2Decoder.h"
-#include "Common/ComTry.h"
 
 // {23170F69-40C1-278B-0402-020000000000}
 DEFINE_GUID(CLSID_CCompressBZip2Decoder, 

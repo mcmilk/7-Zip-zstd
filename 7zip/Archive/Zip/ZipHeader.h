@@ -14,10 +14,15 @@ namespace NSignature
   extern UInt32 kDataDescriptor;
   extern UInt32 kCentralFileHeader;
   extern UInt32 kEndOfCentralDir;
+  extern UInt32 kZip64EndOfCentralDir;
+  extern UInt32 kZip64EndOfCentralDirLocator;
   
   static const UInt32 kMarkerSize = 4;
 }
 
+const kZip64EndOfCentralDirRecordSize = 44;
+
+/*
 struct CEndOfCentralDirectoryRecord
 {
   UInt16 ThisDiskNumber;
@@ -29,7 +34,6 @@ struct CEndOfCentralDirectoryRecord
   UInt16 CommentSize;
 };
 
-/*
 struct CEndOfCentralDirectoryRecordFull
 {
   UInt32 Signature;

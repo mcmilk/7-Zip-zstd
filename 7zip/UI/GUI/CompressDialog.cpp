@@ -751,7 +751,7 @@ void CCompressDialog::SetNearestSelectComboBox(
     NControl::CComboBox &comboBox, UInt32 value)
 {
   for (int i = comboBox.GetCount() - 1; i >= 0; i--)
-    if (comboBox.GetItemData(i) <= value)
+    if ((UInt32)comboBox.GetItemData(i) <= value)
     {
       comboBox.SetCurSel(i);
       return;

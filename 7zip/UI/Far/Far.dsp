@@ -202,10 +202,6 @@ SOURCE=.\Plugin.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\PluginCommon.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\PluginDelete.cpp
 # End Source File
 # Begin Source File
@@ -339,14 +335,6 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.h
 # End Source File
 # End Group
 # Begin Group "UI Common"

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <vector>
+
 #include "7zEncode.h"
 #include "7zSpecStream.h"
 #include "7zMethods.h"
@@ -195,12 +197,12 @@ HRESULT CEncoder::CreateMixerCoder()
     if (methodFull.CoderProperties.Size() > 0)
     {
       std::vector<NWindows::NCOM::CPropVariant> properties;
-      std::vector<PROPID> propIDs;
+      CRecordVector<PROPID> propIDs;
       Int32 numProperties = methodFull.CoderProperties.Size();
       for (int i = 0; i < numProperties; i++)
       {
         const CProperty &property = methodFull.CoderProperties[i];
-        propIDs.push_back(property.PropID);
+        propIDs.Add(property.PropID);
         properties.push_back(property.Value);
       }
       CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
@@ -215,7 +217,7 @@ HRESULT CEncoder::CreateMixerCoder()
             &setCoderProperties));
       }
       
-      RINOK(setCoderProperties->SetCoderProperties(&propIDs.front(),
+      RINOK(setCoderProperties->SetCoderProperties(&propIDs.Front(),
         &properties.front(), numProperties));
     }
     
@@ -334,7 +336,7 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
   if (inStreamSize != NULL)
   {
     CRecordVector<const UInt64 *> sizePointers;
-    for (int i = 0; i < _bindInfo.Coders[mainCoderIndex].NumInStreams; i++)
+    for (UInt32 i = 0; i < _bindInfo.Coders[mainCoderIndex].NumInStreams; i++)
       if (i == mainStreamIndex)
         sizePointers.Add(inStreamSize);
       else
@@ -380,7 +382,7 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
     packSizes.Add(inOutTempBuffer.GetDataSize());
   }
   
-  for (i = 0; i < _bindReverseConverter->NumSrcInStreams; i++)
+  for (i = 0; i < (int)_bindReverseConverter->NumSrcInStreams; i++)
   {
     int binder = _bindInfo.FindBinderForInStream(
         _bindReverseConverter->DestOutToSrcInMap[i]);
@@ -477,7 +479,7 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
 
   if (!options.Binds.IsEmpty())
   {
-    for (int i = 0; i < options.Binds.Size(); i++)
+    for (i = 0; i < options.Binds.Size(); i++)
     {
       NCoderMixer2::CBindPair bindPair;
       const CBind &bind = options.Binds[i];
@@ -485,12 +487,12 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
       bindPair.OutIndex = _bindInfo.GetCoderOutStreamIndex(bind.OutCoder) + bind.OutStream;
       _bindInfo.BindPairs.Add(bindPair);
     }
-    for (i = 0; i < numOutStreams; i++)
+    for (i = 0; i < (int)numOutStreams; i++)
       if (_bindInfo.FindBinderForOutStream(i) == -1)
         _bindInfo.OutStreams.Add(i);
   }
 
-  for (i = 0; i < numInStreams; i++)
+  for (i = 0; i < (int)numInStreams; i++)
     if (_bindInfo.FindBinderForInStream(i) == -1)
       _bindInfo.InStreams.Add(i);
 

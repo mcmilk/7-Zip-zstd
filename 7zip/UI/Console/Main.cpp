@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
 #include <io.h>
 
+#include "Common/MyInitGuid.h"
 #include "Common/CommandLineParser.h"
 #include "Common/StdOutStream.h"
 #include "Common/Wildcard.h"
@@ -53,7 +53,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.10 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-21\n";
+" 4.11 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-11-16\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z <command> [<switches>...] <archive_name> [<file_names>...]\n"

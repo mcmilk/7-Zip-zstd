@@ -10,14 +10,14 @@ template <class T> class CDynamicBuffer: public CBuffer<T>
   void GrowLength(size_t size)
   {
     size_t delta;
-    if (_capacity > 64)
-      delta = _capacity / 4;
-    else if (_capacity > 8)
+    if (this->_capacity > 64)
+      delta = this->_capacity / 4;
+    else if (this->_capacity > 8)
       delta = 16;
     else
       delta = 4;
     delta = MyMax(delta, size);
-    SetCapacity(_capacity + delta);
+    SetCapacity(this->_capacity + delta);
   }
 public:
   CDynamicBuffer(): CBuffer<T>() {};
@@ -25,18 +25,18 @@ public:
   CDynamicBuffer(size_t size): CBuffer<T>(size) {};
   CDynamicBuffer& operator=(const CDynamicBuffer &buffer)
   {
-    Free();
+    this->Free();
     if(buffer._capacity > 0)
     {
       SetCapacity(buffer._capacity);
-      memmove(_items, buffer._items, buffer._capacity * sizeof(T));
+      memmove(this->_items, buffer._items, buffer._capacity * sizeof(T));
     }
     return *this;
   }
   void EnsureCapacity(size_t capacity)
   {
-    if (_capacity < capacity)
-      GrowLength(capacity - _capacity);
+    if (this->_capacity < capacity)
+      GrowLength(capacity - this->_capacity);
   }
 };
 

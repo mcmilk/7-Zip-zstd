@@ -5,40 +5,10 @@
 #include "Common/Defs.h"
 
 #include "LZXi86Converter.h"
-#include "Windows/Defs.h"
 
 namespace NArchive {
 namespace NCab {
 namespace NLZX {
-
-Ci86TranslationOutStream::Ci86TranslationOutStream():
-  m_Pos(0)
-{
-}
-
-Ci86TranslationOutStream::~Ci86TranslationOutStream()
-{
-  Flush();
-}
-
-void Ci86TranslationOutStream::Init(ISequentialOutStream *aStream, 
-    bool aTranslationMode, UInt32 aTranslationSize)
-{
-  m_Stream = aStream;
-  m_TranslationMode = aTranslationMode;
-  m_TranslationSize = aTranslationSize;
-  m_ProcessedSize = 0;
-  m_Pos = 0;
-}
-
-void Ci86TranslationOutStream::ReleaseStream()
-{
-  m_Stream.Release();
-}
-
-inline Int32 Ci86TranslationOutStream::ConvertAbsoluteToOffset(Int32 aPos, Int32 anAbsoluteValue)
-{
-}
 
 static const int kResidue = 6 + 4;
 
@@ -46,30 +16,31 @@ void Ci86TranslationOutStream::MakeTranslation()
 {
   if (m_Pos <= kResidue)
     return;
-  UInt32 aNumBytes = m_Pos - kResidue;
-  for (UInt32 i = 0; i < aNumBytes;)
+  UInt32 numBytes = m_Pos - kResidue;
+  for (UInt32 i = 0; i < numBytes;)
   {
     if (m_Buffer[i] == 0xE8)
     {
       i++;
-      Int32 anAbsoluteValue = 0;
-      for(int j = 0; j < 4; j++)
-        anAbsoluteValue += UInt32(m_Buffer[i + j]) << (j * 8);
+      Int32 absValue = 0;
+      int j;
+      for(j = 0; j < 4; j++)
+        absValue += UInt32(m_Buffer[i + j]) << (j * 8);
 
-      Int32 aPos = m_ProcessedSize + i - 1;
-      UInt32 anOffset;
-      if (anAbsoluteValue < -aPos || anAbsoluteValue >= Int32(m_TranslationSize))
+      Int32 pos = m_ProcessedSize + i - 1;
+      UInt32 offset;
+      if (absValue < -pos || absValue >= Int32(m_TranslationSize))
       {
       }
       else
       {
-        anOffset = (anAbsoluteValue >= 0) ? 
-            anAbsoluteValue - aPos :
-            anAbsoluteValue + m_TranslationSize;
+        offset = (absValue >= 0) ? 
+            absValue - pos :
+            absValue + m_TranslationSize;
         for(j = 0; j < 4; j++)
         {
-          m_Buffer[i + j] = Byte(anOffset & 0xFF);
-          anOffset >>= 8;
+          m_Buffer[i + j] = Byte(offset & 0xFF);
+          offset >>= 8;
         }
       }
       i += 4;
@@ -79,32 +50,32 @@ void Ci86TranslationOutStream::MakeTranslation()
   }
 }
 
-STDMETHODIMP Ci86TranslationOutStream::Write(const void *aData, UInt32 aSize, UInt32 *aProcessedSize)
+STDMETHODIMP Ci86TranslationOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   if (!m_TranslationMode)
-    return m_Stream->Write(aData, aSize, aProcessedSize);
+    return m_Stream->Write(data, size, processedSize);
 
-  UInt32 aProcessedSizeReal = 0;
+  UInt32 realProcessedSize = 0;
 
-  while (aProcessedSizeReal < aSize)
+  while (realProcessedSize < size)
   {
-    UInt32 aWriteSize = MyMin(aSize - aProcessedSizeReal, kUncompressedBlockSize - m_Pos);
-    memmove(m_Buffer + m_Pos, (const Byte *)aData + aProcessedSizeReal, aWriteSize);
-    m_Pos += aWriteSize;
-    aProcessedSizeReal += aWriteSize;
+    UInt32 writeSize = MyMin(size - realProcessedSize, kUncompressedBlockSize - m_Pos);
+    memmove(m_Buffer + m_Pos, (const Byte *)data + realProcessedSize, writeSize);
+    m_Pos += writeSize;
+    realProcessedSize += writeSize;
     if (m_Pos == kUncompressedBlockSize)
     {
       RINOK(Flush());
     }
   }
-  if (aProcessedSize != NULL)
-    *aProcessedSize = aProcessedSizeReal;
+  if (processedSize != NULL)
+    *processedSize = realProcessedSize;
   return S_OK;
 }
 
-STDMETHODIMP Ci86TranslationOutStream::WritePart(const void *aData, UInt32 aSize, UInt32 *aProcessedSize)
+STDMETHODIMP Ci86TranslationOutStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  return Write(aData, aSize, aProcessedSize);
+  return Write(data, size, processedSize);
 }
 
 HRESULT Ci86TranslationOutStream::Flush()
@@ -119,6 +90,4 @@ HRESULT Ci86TranslationOutStream::Flush()
   return S_OK;
 }
 
-
 }}}
-

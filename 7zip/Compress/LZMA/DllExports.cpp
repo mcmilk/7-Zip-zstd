@@ -2,12 +2,11 @@
 
 #include "StdAfx.h"
 
-// #include <initguid.h>
-#define INITGUID
+#include "../../../Common/MyInitGuid.h"
+#include "../../../Common/ComTry.h"
 
 #include "LZMAEncoder.h"
 #include "LZMADecoder.h"
-#include "../../../Common/ComTry.h"
 // #include "../../../Common/CRC.h"
 
 // {23170F69-40C1-278B-0301-010000000000}

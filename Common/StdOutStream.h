@@ -15,7 +15,7 @@ public:
   CStdOutStream (): _streamIsOpen(false) {};
   CStdOutStream (FILE *stream): _streamIsOpen(false), _stream(stream) {};
   ~CStdOutStream ();
-  bool Open(LPCTSTR fileName);
+  bool Open(const char *fileName);
   bool Close();
  
   CStdOutStream & operator<<(CStdOutStream & (* aFunction)(CStdOutStream  &));

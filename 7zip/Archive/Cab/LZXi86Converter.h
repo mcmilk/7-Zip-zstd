@@ -23,20 +23,26 @@ class Ci86TranslationOutStream:
   UInt32 m_Pos;
   UInt32 m_TranslationSize;
 
-  Int32 ConvertAbsoluteToOffset(Int32 aPos, Int32 anAbsoluteValue);
   void MakeTranslation();
 public:
-  Ci86TranslationOutStream();
-  ~Ci86TranslationOutStream();
+  Ci86TranslationOutStream(): m_Pos(0) {}
+  ~Ci86TranslationOutStream() { Flush(); }
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Write)(const void *aData, UInt32 aSize, UInt32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UInt32 aSize, UInt32 *aProcessedSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 public:
-  void Init(ISequentialOutStream *aStream, bool aTranslationMode, UInt32 aTranslationSize);
+  void Init(ISequentialOutStream *outStream, bool translationMode, UInt32 translationSize)
+  {
+    m_Stream = outStream;
+    m_TranslationMode = translationMode;
+    m_TranslationSize = translationSize;
+    m_ProcessedSize = 0;
+    m_Pos = 0;
+  }
+  void ReleaseStream() { m_Stream.Release(); }
   HRESULT Flush();
-  void ReleaseStream();
 };
 
 }}}

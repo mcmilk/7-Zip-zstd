@@ -388,11 +388,19 @@ SOURCE=..\..\..\Common\NewHandler.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Handle.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group
 # Begin Source File

@@ -50,8 +50,10 @@ static bool EnhancedMaskTest(const UString &mask, int maskPos,
   wchar_t maskChar = mask[maskPos];
   if(maskChar == kAnyCharChar)
   {
+    /*
     if (EnhancedMaskTest(mask, maskPos + 1, name, namePos))
       return true;
+    */
     if (nameLen == 0) 
       return false;
     return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);

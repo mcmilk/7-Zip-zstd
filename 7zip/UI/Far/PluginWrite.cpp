@@ -4,7 +4,6 @@
 
 #include "Plugin.h"
 
-
 #include "Common/StringConvert.h"
 
 #include "Windows/FileDir.h"
@@ -22,14 +21,6 @@
 #include "ProgressBox.h"
 #include "Messages.h"
 #include "UpdateCallback100.h"
-
-
-/*
-#include "../../Archiver/Common/DefaultName.h"
-#include "../../Archiver/Common/OpenEngine2.h"
-*/
-
-// #include "CompressEngine.h"
 
 using namespace NWindows;
 using namespace NFile;

@@ -191,6 +191,7 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
 }
 */
 
+/*
 static bool g_IsNew_fMask = true;
 
 class CInit_fMask
@@ -210,6 +211,15 @@ public:
   }
 } g_Init_fMask;
 
+// it's hack for supporting Windows NT
+// constants are from WinUser.h
+
+#if(WINVER < 0x0500)
+#define MIIM_STRING      0x00000040
+#define MIIM_BITMAP      0x00000080
+#define MIIM_FTYPE       0x00000100
+#endif
+
 static UINT Get_fMaskForString()
 {
   return g_IsNew_fMask ? MIIM_STRING : MIIM_TYPE;
@@ -218,6 +228,17 @@ static UINT Get_fMaskForString()
 static UINT Get_fMaskForFTypeAndString()
 {
   return g_IsNew_fMask ? (MIIM_STRING | MIIM_FTYPE) : MIIM_TYPE;
+}
+*/
+
+static UINT Get_fMaskForString()
+{
+  return MIIM_TYPE;
+}
+
+static UINT Get_fMaskForFTypeAndString()
+{
+  return MIIM_TYPE;
 }
 
 static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)

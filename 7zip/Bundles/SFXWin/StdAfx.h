@@ -1,14 +1,10 @@
-// stdafx.h
+// StdAfx.h
 
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#include <windows.h>
+#include "../../../Common/MyWindows.h"
 #include <commctrl.h>
 #include <ShlObj.h>
-#include <tchar.h>
-#include <limits.h>
 
-// #include <vector>
-
-#endif 
+#endif

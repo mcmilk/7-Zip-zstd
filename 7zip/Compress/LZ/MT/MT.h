@@ -1,14 +1,12 @@
-// MT_MF.h
+// LZ/MT.h
 
-#ifndef __MT_MF_H
-#define __MT_MF_H
+#ifndef __LZ_MT_H
+#define __LZ_MT_H
 
 #include "../../../../Common/MyCom.h"
 
-#ifdef WIN32
 #include "../../../../Windows/Thread.h"
 #include "../../../../Windows/Synchronization.h"
-#endif
 
 #include "../../../ICoder.h"
 #include "../IMatchFinder.h"

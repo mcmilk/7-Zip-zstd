@@ -61,7 +61,7 @@ void CProgressDialog::OnCancel()
 void CProgressDialog::SetRange(UINT64 range)
 {
   _range = range;
-  _peviousPos = _UI64_MAX;
+  _peviousPos = (UInt64)(Int64)-1;
   _converter.Init(range);
   m_ProgressBar.SetRange32(0 , _converter.Count(range)); // Test it for 100%
 }

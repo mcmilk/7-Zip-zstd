@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
+#include "../../../Common/MyInitGuid.h"
+#include "../../../Common/ComTry.h"
 
 #include "CopyCoder.h"
-#include "../../../Common/ComTry.h"
 
 // {23170F69-40C1-278B-0000-000000000000}
 DEFINE_GUID(CLSID_CCompressCopyCoder, 

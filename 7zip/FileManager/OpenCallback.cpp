@@ -106,8 +106,7 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = Password;
+  CMyComBSTR tempName(Password);
   *password = tempName.Detach();
-
   return S_OK;
 }

@@ -4,7 +4,7 @@
 
 #include "LzmaBench.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <time.h>
 #endif
 
@@ -243,7 +243,7 @@ STDMETHODIMP CCrcOutStream::WritePart(const void *data, UInt32 size, UInt32 *pro
 
 static UInt64 GetTimeCount()
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   LARGE_INTEGER value;
   if (::QueryPerformanceCounter(&value))
     return value.QuadPart;
@@ -255,7 +255,7 @@ static UInt64 GetTimeCount()
 
 static UInt64 GetFreq()
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   LARGE_INTEGER value;
   if (::QueryPerformanceFrequency(&value))
     return value.QuadPart;

@@ -1,9 +1,8 @@
-// DLLExports.cpp : Implementation of DLL Exports.
+// DLLExports.cpp
 
 #include "StdAfx.h"
 
-#include <initguid.h>
-
+#include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
 #include "SplitHandler.h"

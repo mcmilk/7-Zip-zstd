@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 
 #include "MyWindows.h"
 #include "Types.h"
@@ -11,24 +11,25 @@
 static inline void *AllocateForBSTR(size_t cb) { return ::malloc(cb); }
 static inline void FreeForBSTR(void *pv) { ::free(pv);}
 
-static int MyStringLen(const wchar_t *s)
+static UINT MyStringLen(const wchar_t *s)
 { 
-  int i;
+  UINT i;
   for (i = 0; s[i] != '\0'; i++);
   return i;
 }
 
-BSTR SysAllocStringByteLen(LPCSTR psz, unsigned int len)
+BSTR SysAllocStringByteLen(LPCSTR psz, UINT len)
 {
-  int realLen = len + sizeof(UInt32) + 3;
+  int realLen = len + sizeof(UINT) + sizeof(OLECHAR) + sizeof(OLECHAR);
   void *p = AllocateForBSTR(realLen);
   if (p == 0)
     return 0;
-  *(UInt32 *)p = len;
-  BSTR bstr = (BSTR)((UInt32 *)p + 1);
+  *(UINT *)p = len;
+  BSTR bstr = (BSTR)((UINT *)p + 1);
   memmove(bstr, psz, len);
   Byte *pb = ((Byte *)bstr) + len;
-  pb[0] = pb[1] = pb[2] = 0;
+  for (int i = 0; i < sizeof(OLECHAR) * 2; i++)
+    pb[i] = 0;
   return bstr;
 }
 
@@ -36,13 +37,13 @@ BSTR SysAllocString(const OLECHAR *sz)
 {
   if (sz == 0)
     return 0;
-  UInt32 strLen = MyStringLen(sz);
-  UInt32 len = (strLen + 1) * sizeof(OLECHAR);
-  void *p = AllocateForBSTR(len + sizeof(UInt32));
+  UINT strLen = MyStringLen(sz);
+  UINT len = (strLen + 1) * sizeof(OLECHAR);
+  void *p = AllocateForBSTR(len + sizeof(UINT));
   if (p == 0)
     return 0;
-  *(UInt32 *)p = strLen;
-  BSTR bstr = (BSTR)((UInt32 *)p + 1);
+  *(UINT *)p = strLen;
+  BSTR bstr = (BSTR)((UINT *)p + 1);
   memmove(bstr, sz, len);
   return bstr;
 }
@@ -50,14 +51,14 @@ BSTR SysAllocString(const OLECHAR *sz)
 void SysFreeString(BSTR bstr)
 {
   if (bstr != 0)
-    FreeForBSTR((UInt32 *)bstr - 1);
+    FreeForBSTR((UINT *)bstr - 1);
 }
 
 UINT SysStringByteLen(BSTR bstr)
 {
   if (bstr == 0)
     return 0;
-  return *((UInt32 *)bstr - 1);
+  return *((UINT *)bstr - 1);
 }
 
 UINT SysStringLen(BSTR bstr)

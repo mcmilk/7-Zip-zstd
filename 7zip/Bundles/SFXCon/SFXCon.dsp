@@ -478,14 +478,6 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 
 SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.h
-# End Source File
 # End Group
 # Begin Group "Common"
 

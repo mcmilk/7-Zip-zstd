@@ -13,7 +13,6 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
-#include "Windows/System.h"
 #include "Windows/Thread.h"
 #include "Windows/Window.h"
 
@@ -260,7 +259,11 @@ static UString GetSubFolderNameForExtract(const UString &archiveName)
 {
   int dotPos = archiveName.ReverseFind('.');
   if (dotPos >= 0)
-    return archiveName.Left(dotPos);
+  {
+    UString res = archiveName.Left(dotPos);
+    res.TrimRight();
+    return res;
+  }
   return archiveName + UString(L"~");
 }
 

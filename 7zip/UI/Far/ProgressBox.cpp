@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "ProgressBox.h"
 
 #include "FarUtils.h"

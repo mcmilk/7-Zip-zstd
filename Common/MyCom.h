@@ -50,7 +50,7 @@ public:
     _p = NULL;
     return pt;
   }
-  #ifdef WIN32
+  #ifdef _WIN32
   HRESULT CoCreateInstance(REFCLSID rclsid, REFIID iid, LPUNKNOWN pUnkOuter = NULL, DWORD dwClsContext = CLSCTX_ALL)
   {
     return ::CoCreateInstance(rclsid, pUnkOuter, dwClsContext, iid, (void**)&_p);

@@ -127,8 +127,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 
 STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 askExtractMode, const UInt64 *position)
 {
-  _currentFilePath = name;
-  return S_OK;
+  return SetCurrentFilePath(name);
 }
 
 STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
@@ -191,7 +190,19 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult)
 
 HRESULT CExtractCallbackImp::BeforeOpen(const wchar_t *name)
 {
+  #ifndef _SFX
+  ProgressDialog.ProgressSynch.SetTitleFileName(name);
+  #endif
   _currentArchivePath = name;
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::SetCurrentFilePath(const wchar_t *path)
+{
+  _currentFilePath = path;
+  #ifndef _SFX
+  ProgressDialog.ProgressSynch.SetCurrentFileName(path);
+  #endif
   return S_OK;
 }
 
@@ -241,7 +252,7 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = Password;
+  CMyComBSTR tempName(Password);
   *password = tempName.Detach();
 
   return S_OK;

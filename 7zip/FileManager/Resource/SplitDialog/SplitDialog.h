@@ -17,6 +17,7 @@ class CSplitDialog: public NWindows::NControl::CModalDialog
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   void OnButtonSetPath();
 public:
+  UString FilePath;
   UString Path;
   UInt64 VolSize;
   INT_PTR Create(HWND parentWindow = 0)

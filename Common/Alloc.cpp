@@ -2,12 +2,13 @@
 
 #include "StdAfx.h"
 
-#ifndef WIN32
+#ifdef _WIN32
+#include "MyWindows.h"
+#else
 #include <stdlib.h>
 #endif
 
 #include "Alloc.h"
-// #include "NewHandler.h"
 
 void *MyAlloc(size_t size)
 {
@@ -21,7 +22,7 @@ void MyFree(void *address)
 
 void *BigAlloc(size_t size)
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   return ::VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
   #else
   return ::malloc(size);
@@ -32,7 +33,7 @@ void BigFree(void *address)
 {
   if (address == 0)
     return;
-  #ifdef WIN32
+  #ifdef _WIN32
   ::VirtualFree(address, 0, MEM_RELEASE);
   #else
   ::free(address);

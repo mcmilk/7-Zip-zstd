@@ -1,6 +1,6 @@
 // Cab/Handler.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "Common/StringConvert.h"
 #include "Common/Defs.h"
@@ -12,7 +12,7 @@
 
 #include "CabCopyDecoder.h"
 #include "LZXDecoder.h"
-#include "MSZIPDecoder.h"
+#include "MSZipDecoder.h"
 
 #include "CabHandler.h"
 
@@ -479,7 +479,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         folderIndexes.Add(folderIndex);
     }
 
-    for(int j = index - 1; j >= lastIndex; j--)
+    int j;
+    for(j = index - 1; j >= lastIndex; j--)
       if(m_Files[j].FolderIndex != folderIndex)
         break;
     for(j++; j <= index; j++)
@@ -516,7 +517,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     RINOK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
     totalFolderUnPacked = 0;
-    for (int j = curImportantIndexIndex; j < importantIndices.Size(); j++)
+    int j;
+    for (j = curImportantIndexIndex; j < importantIndices.Size(); j++)
     {
       const CItem &fileInfo = m_Files[importantIndices[j]];
       if (fileInfo.FolderIndex != folderIndex)

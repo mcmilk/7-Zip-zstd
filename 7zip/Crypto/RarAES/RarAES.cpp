@@ -104,8 +104,8 @@ void CDecoder::Calculate()
 {
   if (_needCalculate)
   {
-    const MAXPASSWORD = 128;
-    const SALT_SIZE = 8;
+    const int MAXPASSWORD = 128;
+    const int SALT_SIZE = 8;
     
     Byte rawPassword[2 * MAXPASSWORD+ SALT_SIZE];
     

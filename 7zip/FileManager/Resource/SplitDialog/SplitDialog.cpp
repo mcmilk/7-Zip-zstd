@@ -31,6 +31,14 @@ bool CSplitDialog::OnInit()
   _pathCombo.Attach(GetItem(IDC_COMBO_SPLIT_PATH));
   _volumeCombo.Attach(GetItem(IDC_COMBO_SPLIT_VOLUME));
   
+  if (!FilePath.IsEmpty())
+  {
+    UString title;
+    GetText(title);
+    title += ' ';
+    title += FilePath;
+    SetText(title);
+  }
   _pathCombo.SetText(Path);
   _volumeCombo.AddString(TEXT("1457664 - 3.5 Floppy"));
   _volumeCombo.AddString(TEXT("650M - CD"));

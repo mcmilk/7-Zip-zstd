@@ -74,6 +74,7 @@ public:
       BSTR *destPathResult, 
       Int32 *writeAnswer);
   STDMETHOD(ShowMessage)(const wchar_t *message);
+  STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath);
 
   // ICryptoGetTextPassword
   #ifndef _NO_CRYPTO

@@ -9,7 +9,6 @@ namespace NArchive {
 namespace NCab {
 namespace NLZX {
 
-
 namespace NBlockType
 {
   const int kNumBits = 3;
@@ -105,7 +104,6 @@ const Byte kLevelDirectBits[kLevelTableSize] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 const UInt32 kDistLimit2 = 0x101 - 1;
 */
-
 
 }}}
 

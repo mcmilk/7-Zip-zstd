@@ -10,7 +10,6 @@
 #include "Windows/Error.h"
 
 using namespace NWindows;
-using namespace std;
 
 namespace NFar {
 
@@ -312,7 +311,7 @@ int CStartupInfo::Menu(
     const CSysStringVector &items, 
     int selectedItem)
 {
-  vector<FarMenuItem> farMenuItems;
+  CRecordVector<FarMenuItem> farMenuItems;
   for(int i = 0; i < items.Size(); i++)
   {
     FarMenuItem item;
@@ -322,10 +321,9 @@ int CStartupInfo::Menu(
     CSysString reducedString = 
         items[i].Left(sizeof(item.Text) / sizeof(item.Text[0]) - 1);
     strcpy(item.Text, reducedString);
-    farMenuItems.push_back(item);
+    farMenuItems.Add(item);
   }
-  return Menu(flags, title, helpTopic, &farMenuItems.front(), 
-      farMenuItems.size());
+  return Menu(flags, title, helpTopic, &farMenuItems.Front(), farMenuItems.Size());
 }
 
 

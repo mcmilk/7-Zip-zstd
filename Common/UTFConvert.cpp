@@ -5,66 +5,87 @@
 #include "UTFConvert.h"
 #include "Types.h"
 
-bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString)
+static Byte kUtf8Limits[5] = { 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
+
+// These functions are for UTF8 <-> UTF16 conversion.
+
+bool ConvertUTF8ToUnicode(const AString &src, UString &dest)
 {
-  resultString.Empty();
-  for(int i = 0; i < utfString.Length(); i++)
+  dest.Empty();
+  for(int i = 0; i < src.Length();)
   {
-    Byte c = utfString[i];
+    Byte c = (Byte)src[i++];
     if (c < 0x80)
     {
-      resultString += c;
+      dest += (wchar_t)c;
       continue;
     }
-    if(c < 0xC0 || c >= 0xF0)
+    if(c < 0xC0)
       return false;
-    i++;
-    if (i >= utfString.Length())
-      return false;
-    Byte c2 = utfString[i];
-    if (c2 < 0x80)
-      return false;
-    c2 -= 0x80;
-    if (c2 >= 0x40)
-      return false;
-    if (c < 0xE0)
+    int numAdds;
+    for (numAdds = 1; numAdds < 5; numAdds++)
+      if (c < kUtf8Limits[numAdds])
+        break;
+    UInt32 value = (c - kUtf8Limits[numAdds - 1]);
+    do
     {
-      resultString += wchar_t( ((wchar_t(c - 0xC0)) << 6) + c2);
-      continue;
+      if (i >= src.Length())
+        return false;
+      Byte c2 = (Byte)src[i++];
+      if (c2 < 0x80 || c2 >= 0xC0)
+        return false;
+      value <<= 6;
+      value |= (c2 - 0x80);
+      numAdds--;
     }
-    i++;
-    if (i >= utfString.Length())
-      return false;
-    Byte c3 = utfString[i];
-    c3 -= 0x80;
-    if (c3 >= 0x40)
-      return false;
-    resultString += wchar_t(((wchar_t(c - 0xE0)) << 12) + 
-      ((wchar_t(c2)) << 6) + c3);
+    while(numAdds > 0);
+    if (value < 0x10000)
+      dest += (wchar_t)(value);
+    else
+    {
+      value -= 0x10000;
+      if (value >= 0x100000)
+        return false;
+      dest += (wchar_t)(0xD800 + (value >> 10));
+      dest += (wchar_t)(0xDC00 + (value & 0x3FF));
+    }
   }
   return true; 
 }
 
-void ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString)
+bool ConvertUnicodeToUTF8(const UString &src, AString &dest)
 {
-  resultString.Empty();
-  for(int i = 0; i < unicodeString.Length(); i++)
+  dest.Empty();
+  for(int i = 0; i < src.Length();)
   {
-    wchar_t c = unicodeString[i];
-    if (c < 0x80)
+    UInt32 value = (UInt32)src[i++];
+    if (value < 0x80)
     {
-      resultString += char(c);
+      dest += (char)value;
       continue;
     }
-    if (c < 0x07FF)
+    if (value >= 0xD800 && value < 0xE000)
     {
-      resultString += char(0xC0 + (c >> 6));
-      resultString += char(0x80 + (c & 0x003F));
-      continue;
+      if (value >= 0xDC00)
+        return false;
+      if (i >= src.Length())
+        return false;
+      UInt32 c2 = (UInt32)src[i++];
+      if (c2 < 0xDC00 || c2 >= 0xE000)
+        return false;
+      value = ((value - 0xD800) << 10) | (c2 - 0xDC00);
     }
-    resultString += char(0xE0 + (c >> 12));
-    resultString += char(0x80 + ((c >> 6) & 0x003F));
-    resultString += char(0x80 + (c & 0x003F));
+    int numAdds;
+    for (numAdds = 1; numAdds < 5; numAdds++)
+      if (value < (((UInt32)1) << (numAdds * 5 + 6)))
+        break;
+    dest += (char)(kUtf8Limits[numAdds - 1] + (value >> (6 * numAdds)));
+    do
+    {
+      numAdds--;
+      dest += (char)(0x80 + ((value >> (6 * numAdds)) & 0x3F));
+    }
+    while(numAdds > 0);
   }
+  return true;
 }
-

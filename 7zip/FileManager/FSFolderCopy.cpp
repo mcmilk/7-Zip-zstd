@@ -191,6 +191,7 @@ static HRESULT MyCopyFile(
   if (IntToBool(writeAskResult))
   {
     UString destPathNew = UString(destPathResult);
+    RINOK(callback->SetCurrentFilePath(srcPath));
     if (!::MyCopyFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = GetUnicodeString(NError::MyFormatMessage(GetLastError())) +
@@ -350,6 +351,7 @@ HRESULT MyMoveFile(
   if (IntToBool(writeAskResult))
   {
     UString destPathNew = UString(destPathResult);
+    RINOK(callback->SetCurrentFilePath(srcPath));
     if (!MyMoveFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = UString(L"can not move to file ") + 

@@ -104,7 +104,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     fullPath = propVariant.bstrVal;
   }
 
-  UString fullPathCorrect = GetCorrectPath(fullPath);
+  // UString fullPathCorrect = GetCorrectPath(fullPath);
   _filePath = fullPath;
   _isSplit = false;
 
@@ -172,8 +172,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     }
 
     UStringVector pathParts; 
-    SplitPathToParts(fullPathCorrect, pathParts);
-    // SplitPathToParts(fullPath, pathParts);
+    SplitPathToParts(fullPath, pathParts);
     
     if(pathParts.IsEmpty())
       return E_FAIL;
@@ -182,12 +181,12 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     {
       case NExtract::NPathMode::kFullPathnames:
       {
-        processedPath = fullPathCorrect;
-        // processedPath = GetCorrectPath(fullPath);
+        processedPath = fullPath;
         break;
       }
       case NExtract::NPathMode::kCurrentPathnames:
       {
+        // for incorrect paths: "/dir1/dir2/file"
         int numRemovePathParts = _removePathParts.Size();
         if(pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
@@ -196,7 +195,6 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
             return E_FAIL;
         pathParts.Delete(0, numRemovePathParts);
         processedPath = MakePathNameFromParts(pathParts);
-        processedPath = GetCorrectPath(processedPath);
         break;
       }
       case NExtract::NPathMode::kNoPathnames:
@@ -206,11 +204,11 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
         break;
       }
     }
+    processedPath = GetCorrectPath(processedPath);
     if(!_processedFileInfo.IsDirectory)
       pathParts.DeleteBack();
 
-    for(int i = 0; i < pathParts.Size(); i++)
-      pathParts[i] = GetCorrectFileName(pathParts[i]);
+    MakeCorrectPath(pathParts);
     
     if (!isAnti)
       if (!pathParts.IsEmpty())

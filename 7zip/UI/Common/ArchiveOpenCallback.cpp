@@ -103,7 +103,7 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name,
   *inStream = inStreamTemp.Detach();
   inFile->Name = name;
   inFile->OpenCallbackImp = this;
-  inFile->OpenCallbackImp = this;
+  inFile->OpenCallbackRef = this;
   FileNames.Add(name);
   return S_OK;
 }

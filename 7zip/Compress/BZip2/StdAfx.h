@@ -1,8 +1,8 @@
-// stdafx.h
+// StdAfx.h
 
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#include <windows.h>
+#include "../../../Common/MyWindows.h"
 
-#endif 
+#endif

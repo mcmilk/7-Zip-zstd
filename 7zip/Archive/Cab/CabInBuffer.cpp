@@ -1,6 +1,6 @@
 // Archive/CabInBuffer.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "../../../Common/Alloc.h"
 #include "../../../Common/MyCom.h"

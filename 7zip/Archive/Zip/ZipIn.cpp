@@ -39,6 +39,7 @@ static inline bool TestMarkerCandidate(const Byte *p, UInt32 &value)
 
 bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
 {
+  m_ArchiveInfo.Clear();
   m_ArchiveInfo.StartPosition = 0;
   m_Position = m_StreamStartPosition;
   if(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL) != S_OK)
@@ -124,6 +125,13 @@ void CInArchive::SafeReadBytes(void *data, UInt32 size)
     throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
 }
 
+void CInArchive::ReadBuffer(CByteBuffer &buffer, UInt32 size)
+{
+  buffer.SetCapacity(size);
+  if (size > 0)
+    SafeReadBytes(buffer, size);
+}
+
 Byte CInArchive::ReadByte()
 {
   Byte b;
@@ -135,10 +143,7 @@ UInt16 CInArchive::ReadUInt16()
 {
   UInt16 value = 0;
   for (int i = 0; i < 2; i++)
-  {
-    Byte b = ReadByte();
-    value |= (UInt16(b) << (8 * i));
-  }
+    value |= (((UInt16)ReadByte()) << (8 * i));
   return value;
 }
 
@@ -146,10 +151,15 @@ UInt32 CInArchive::ReadUInt32()
 {
   UInt32 value = 0;
   for (int i = 0; i < 4; i++)
-  {
-    Byte b = ReadByte();
-    value |= (UInt32(b) << (8 * i));
-  }
+    value |= (((UInt32)ReadByte()) << (8 * i));
+  return value;
+}
+
+UInt64 CInArchive::ReadUInt64()
+{
+  UInt64 value = 0;
+  for (int i = 0; i < 8; i++)
+    value |= (((UInt64)ReadByte()) << (8 * i));
   return value;
 }
 
@@ -168,6 +178,7 @@ bool CInArchive::ReadUInt32(UInt32 &value)
   }
   return true;
 }
+
 
 AString CInArchive::ReadFileName(UInt32 nameSize)
 {
@@ -197,6 +208,67 @@ static UInt32 GetUInt32(const Byte *data)
       (((UInt32)(Byte)data[3]) << 24);
 }
 
+
+void CInArchive::ReadExtra(UInt32 extraSize, CExtraBlock &extraBlock, 
+    UInt64 &unpackSize, UInt64 &packSize, UInt64 &localHeaderOffset, UInt32 &diskStartNumber)
+{
+  extraBlock.Clear();
+  UInt32 remain = extraSize;
+  while(remain >= 4)
+  {
+    CExtraSubBlock subBlock;
+    subBlock.ID = ReadUInt16();
+    UInt32 dataSize = ReadUInt16();
+    remain -= 4;
+    if (dataSize > remain) // it's bug
+      dataSize = remain;
+    if (subBlock.ID == 0x1)
+    {
+      if (unpackSize == 0xFFFFFFFF)
+      {
+        if (dataSize < 8)
+          break;
+        unpackSize = ReadUInt64();
+        remain -= 8;
+        dataSize -= 8;
+      }
+      if (packSize == 0xFFFFFFFF)
+      {
+        if (dataSize < 8)
+          break;
+        packSize = ReadUInt64();
+        remain -= 8;
+        dataSize -= 8;
+      }
+      if (localHeaderOffset == 0xFFFFFFFF)
+      {
+        if (dataSize < 8)
+          break;
+        localHeaderOffset = ReadUInt64();
+        remain -= 8;
+        dataSize -= 8;
+      }
+      if (diskStartNumber == 0xFFFF)
+      {
+        if (dataSize < 4)
+          break;
+        diskStartNumber = ReadUInt32();
+        remain -= 4;
+        dataSize -= 4;
+      }
+      for (UInt32 i = 0; i < dataSize; i++)
+        ReadByte();
+    }
+    else
+    {
+      ReadBuffer(subBlock.Data, dataSize);
+      extraBlock.SubBlocks.Add(subBlock);
+    }
+    remain -= dataSize;
+  }
+  IncreaseRealPosition(remain);
+}
+
 HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress)
 {
   // m_Signature must be kLocalFileHeaderSignature or
@@ -210,40 +282,46 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
     UInt64 numItems = items.Size();
     RINOK(progress->SetCompleted(&numItems));
   }
-  // FSeek -=  sizeof(UInt32); // atention it's not real position 
 
   while(m_Signature == NSignature::kLocalFileHeader)
   {
     // FSeek points to next byte after signature
     // NFileHeader::CLocalBlock localHeader;
-    CItemEx itemInfo;
-    itemInfo.LocalHeaderPosition = 
-        UInt32(m_Position - m_StreamStartPosition - 4); // points to signature;
+    CItemEx item;
+    item.LocalHeaderPosition = m_Position - m_StreamStartPosition - 4; // points to signature;
     
     // SafeReadBytes(&localHeader, sizeof(localHeader));
 
-    itemInfo.ExtractVersion.Version = ReadByte();
-    itemInfo.ExtractVersion.HostOS = ReadByte();
-    itemInfo.Flags = ReadUInt16() & NFileHeader::NFlags::kUsedBitsMask; 
-    itemInfo.CompressionMethod = ReadUInt16();
-    itemInfo.Time =  ReadUInt32();
-    itemInfo.FileCRC = ReadUInt32();
-    itemInfo.PackSize = ReadUInt32();
-    itemInfo.UnPackSize = ReadUInt32();
+    item.ExtractVersion.Version = ReadByte();
+    item.ExtractVersion.HostOS = ReadByte();
+    item.Flags = ReadUInt16() & NFileHeader::NFlags::kUsedBitsMask; 
+    item.CompressionMethod = ReadUInt16();
+    item.Time =  ReadUInt32();
+    item.FileCRC = ReadUInt32();
+    item.PackSize = ReadUInt32();
+    item.UnPackSize = ReadUInt32();
     UInt32 fileNameSize = ReadUInt16();
-    itemInfo.LocalExtraSize = ReadUInt16();
-    itemInfo.Name = ReadFileName(fileNameSize);
+    item.LocalExtraSize = ReadUInt16();
+    item.Name = ReadFileName(fileNameSize);
     /*
-    if (!NItemName::IsNameLegal(itemInfo.Name))
+    if (!NItemName::IsNameLegal(item.Name))
       ThrowIncorrectArchiveException();
     */
 
-    itemInfo.FileHeaderWithNameSize = 4 + 
+    item.FileHeaderWithNameSize = 4 + 
         NFileHeader::kLocalBlockSize + fileNameSize;
 
-    IncreaseRealPosition(itemInfo.LocalExtraSize);
+    // IncreaseRealPosition(item.LocalExtraSize);
+    if (item.LocalExtraSize > 0)
+    {
+      UInt64 localHeaderOffset = 0;
+      UInt32 diskStartNumber = 0;
+      CExtraBlock extraBlock;
+      ReadExtra(item.LocalExtraSize, extraBlock, item.UnPackSize, item.PackSize, 
+          localHeaderOffset, diskStartNumber);
+    }
 
-    if (itemInfo.HasDescriptor())
+    if (item.HasDescriptor())
     {
       const int kBufferSize = (1 << 12);
       Byte buffer[kBufferSize];
@@ -260,18 +338,20 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
         numBytesInBuffer += processedSize;
         if (numBytesInBuffer < NFileHeader::kDataDescriptorSize)
           ThrowIncorrectArchiveException();
-        int i;
+        UInt32 i;
         for (i = 0; i <= numBytesInBuffer - NFileHeader::kDataDescriptorSize; i++)
         {
           UInt32 descriptorSignature = GetUInt32(buffer + i);
+
+          // !!!! It must be fixed for Zip64 archives
           UInt32 descriptorPackSize = GetUInt32(buffer + i + 8);
           if (descriptorSignature== NSignature::kDataDescriptor &&
             descriptorPackSize == packedSize + i)
           {
             descriptorWasFound = true;
-            itemInfo.FileCRC = GetUInt32(buffer + i + 4);
-            itemInfo.PackSize = descriptorPackSize;
-            itemInfo.UnPackSize = GetUInt32(buffer + i + 12);
+            item.FileCRC = GetUInt32(buffer + i + 4);
+            item.PackSize = descriptorPackSize;
+            item.UnPackSize = GetUInt32(buffer + i + 12);
             IncreaseRealPosition(Int64(Int32(0 - (numBytesInBuffer - i - 
                 NFileHeader::kDataDescriptorSize))));
             break;
@@ -287,9 +367,9 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       }
     }
     else
-      IncreaseRealPosition(itemInfo.PackSize);
+      IncreaseRealPosition(item.PackSize);
 
-    items.Add(itemInfo);
+    items.Add(item);
     if (progress != 0)
     {
       UInt64 numItems = items.Size();
@@ -298,7 +378,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
     if (!ReadUInt32(m_Signature))
       break;
   }
-  UInt32 centralDirectorySize = 0;
+  UInt64 centralDirectorySize = 0;
   UInt64 centralDirectoryStartOffset = m_Position - 4;
   for(int i = 0; i < items.Size(); i++)
   {
@@ -323,18 +403,24 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
     UInt16 headerCompressionMethod = ReadUInt16();
     UInt32 headerTime =  ReadUInt32();
     UInt32 headerFileCRC = ReadUInt32();
-    UInt32 headerPackSize = ReadUInt32();
-    UInt32 headerUnPackSize = ReadUInt32();
+    UInt64 headerPackSize = ReadUInt32();
+    UInt64 headerUnPackSize = ReadUInt32();
     UInt16 headerNameSize = ReadUInt16();
     UInt16 headerExtraSize = ReadUInt16();
     UInt16 headerCommentSize = ReadUInt16();
-    UInt16 headerDiskNumberStart = ReadUInt16();
+    UInt32 headerDiskNumberStart = ReadUInt16();
     UInt16 headerInternalAttributes = ReadUInt16();
     UInt16 headerExternalAttributes = ReadUInt32();
-    UInt32 localHeaderOffset = ReadUInt32();
+    UInt64 localHeaderOffset = ReadUInt32();
+    AString centralName = ReadFileName(headerNameSize);
     
-    // itemInfo.Name = ReadFileName(fileNameSize);
+    // item.Name = ReadFileName(fileNameSize);
 
+    CExtraBlock centralExtra;
+    if (headerExtraSize > 0)
+    {
+      ReadExtra(headerExtraSize, centralExtra, headerUnPackSize, headerPackSize, localHeaderOffset, headerDiskNumberStart);
+    }
     
     int index;
     int left = 0, right = items.Size();
@@ -343,7 +429,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       if (left >= right)
         ThrowIncorrectArchiveException();
       index = (left + right) / 2;
-      UInt32 position = items[index].LocalHeaderPosition;
+      UInt64 position = items[index].LocalHeaderPosition;
       if (localHeaderOffset == position)
         break;
       if (localHeaderOffset < position)
@@ -351,73 +437,139 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       else
         left = index + 1;
     }
-    CItemEx &itemInfo = items[index];
-    itemInfo.MadeByVersion.Version = headerMadeByVersionVersion;
-    itemInfo.MadeByVersion.HostOS = headerMadeByVersionHostOS;
+    CItemEx &item = items[index];
+    item.MadeByVersion.Version = headerMadeByVersionVersion;
+    item.MadeByVersion.HostOS = headerMadeByVersionHostOS;
+    item.CentralExtra = centralExtra;
 
     if (
-        // itemInfo.ExtractVersion != centalHeaderExtractVersion ||
-        itemInfo.Flags != headerFlags ||
-        itemInfo.CompressionMethod != headerCompressionMethod ||
-        // itemInfo.Time != header.Time ||
-        itemInfo.FileCRC != headerFileCRC ||
-        itemInfo.PackSize != headerPackSize ||
-        itemInfo.UnPackSize != headerUnPackSize)
+        // item.ExtractVersion != centalHeaderExtractVersion ||
+        item.Flags != headerFlags ||
+        item.CompressionMethod != headerCompressionMethod ||
+        // item.Time != header.Time ||
+        item.FileCRC != headerFileCRC)
       ThrowIncorrectArchiveException();
 
-    AString centralName = ReadFileName(headerNameSize);
-    if (itemInfo.Name.Length() != centralName.Length())
+    if (item.Name.Length() != centralName.Length())
       ThrowIncorrectArchiveException(); // test it maybe better compare names
-    itemInfo.Name = centralName;
+    item.Name = centralName;
 
-    itemInfo.CentralExtraPosition = m_Position;
-    itemInfo.CentralExtraSize = headerExtraSize;
-    itemInfo.CommentSize = headerCommentSize;
+    // item.CentralExtraPosition = m_Position;
+    // item.CentralExtraSize = headerExtraSize;
+    // item.CommentSize = headerCommentSize;
     if (headerDiskNumberStart != 0)
       throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
-    itemInfo.InternalAttributes = headerInternalAttributes;
-    itemInfo.ExternalAttributes = headerExternalAttributes;
+    item.InternalAttributes = headerInternalAttributes;
+    item.ExternalAttributes = headerExternalAttributes;
 
     // May be these strings must be deleted
-    if (itemInfo.IsDirectory())
+    if (item.IsDirectory())
     {
-      // if (itemInfo.PackSize != 0 /*  || itemInfo.UnPackSize != 0 */)
+      // if (item.PackSize != 0 /*  || item.UnPackSize != 0 */)
       //   ThrowIncorrectArchiveException();
-      itemInfo.UnPackSize = 0;
+      item.UnPackSize = 0;
     }
 
     UInt32 currentRecordSize = 4 + NFileHeader::kCentralBlockSize + 
         headerNameSize + headerExtraSize + headerCommentSize;
 
     centralDirectorySize += currentRecordSize;
-    IncreaseRealPosition(headerExtraSize + headerCommentSize);
+
+    // IncreaseRealPosition(headerExtraSize);
+
+    if (
+        item.PackSize != headerPackSize ||
+        item.UnPackSize != headerUnPackSize
+        )
+      ThrowIncorrectArchiveException();
+
+    // IncreaseRealPosition(headerCommentSize);
+    ReadBuffer(item.Comment, headerCommentSize);
+
     if (!ReadUInt32(m_Signature))
       break;
+  }
+  UInt32 thisDiskNumber = 0;
+  UInt32 startCDDiskNumber = 0;
+  UInt64 numEntriesInCDOnThisDisk = 0;
+  UInt64 numEntriesInCD = 0;
+  UInt64 cdSize = 0;
+  UInt64 cdStartOffsetFromRecord = 0;
+  bool isZip64 = false;
+  UInt64 zip64EndOfCDStartOffset = m_Position - 4;
+  if(m_Signature == NSignature::kZip64EndOfCentralDir)
+  {
+    isZip64 = true;
+    UInt64 recordSize = ReadUInt64();
+    UInt16 versionMade = ReadUInt16();
+    UInt16 versionNeedExtract = ReadUInt16();
+    thisDiskNumber = ReadUInt32();
+    startCDDiskNumber = ReadUInt32();
+    numEntriesInCDOnThisDisk = ReadUInt64();
+    numEntriesInCD = ReadUInt64();
+    cdSize = ReadUInt64();
+    cdStartOffsetFromRecord = ReadUInt64();
+    IncreaseRealPosition(recordSize - kZip64EndOfCentralDirRecordSize);
+    if (!ReadUInt32(m_Signature))
+      return S_FALSE;
+    if (thisDiskNumber != 0 || startCDDiskNumber != 0)
+      throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
+    if (numEntriesInCDOnThisDisk != items.Size() ||
+        numEntriesInCD != items.Size() ||
+        cdSize != centralDirectorySize ||
+        (cdStartOffsetFromRecord != centralDirectoryStartOffset &&
+        (!items.IsEmpty())))
+      ThrowIncorrectArchiveException();
+  }
+  if(m_Signature == NSignature::kZip64EndOfCentralDirLocator)
+  {
+    UInt32 startEndCDDiskNumber = ReadUInt32();
+    UInt64 endCDStartOffset = ReadUInt64();
+    UInt32 numberOfDisks = ReadUInt32();
+    if (zip64EndOfCDStartOffset != endCDStartOffset)
+      ThrowIncorrectArchiveException();
+    if (!ReadUInt32(m_Signature))
+      return S_FALSE;
   }
   if(m_Signature != NSignature::kEndOfCentralDir)
     ThrowIncorrectArchiveException();
 
-  CEndOfCentralDirectoryRecord eocdh;
-  eocdh.ThisDiskNumber = ReadUInt16();
-  eocdh.StartCentralDirectoryDiskNumber = ReadUInt16();
-  eocdh.NumEntriesInCentaralDirectoryOnThisDisk = ReadUInt16();
-  eocdh.NumEntriesInCentaralDirectory = ReadUInt16();
-  eocdh.CentralDirectorySize = ReadUInt32();
-  eocdh.CentralDirectoryStartOffset = ReadUInt32();
-  eocdh.CommentSize = ReadUInt16();
+  UInt16 thisDiskNumber16 = ReadUInt16();
+  if (!isZip64 || thisDiskNumber16)
+    thisDiskNumber = thisDiskNumber16;
 
-  if (eocdh.ThisDiskNumber != 0 ||
-      eocdh.StartCentralDirectoryDiskNumber != 0)
-     throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
-  if (eocdh.NumEntriesInCentaralDirectoryOnThisDisk != ((UInt16)items.Size()) ||
-      eocdh.NumEntriesInCentaralDirectory != ((UInt16)items.Size()) ||
-      eocdh.CentralDirectorySize != centralDirectorySize ||
-      (eocdh.CentralDirectoryStartOffset != centralDirectoryStartOffset &&
+  UInt16 startCDDiskNumber16 = ReadUInt16();
+  if (!isZip64 || startCDDiskNumber16 != 0xFFFF)
+    startCDDiskNumber = startCDDiskNumber16;
+
+  UInt16 numEntriesInCDOnThisDisk16 = ReadUInt16();
+  if (!isZip64 || numEntriesInCDOnThisDisk16 != 0xFFFF)
+    numEntriesInCDOnThisDisk = numEntriesInCDOnThisDisk16;
+
+  UInt16 numEntriesInCD16 = ReadUInt16();
+  if (!isZip64 || numEntriesInCD16 != 0xFFFF)
+    numEntriesInCD = numEntriesInCD16;
+
+  UInt32 cdSize32 = ReadUInt32();
+  if (!isZip64 || cdSize32 != 0xFFFFFFFF)
+    cdSize = cdSize32;
+
+  UInt32 cdStartOffsetFromRecord32 = ReadUInt32();
+  if (!isZip64 || cdStartOffsetFromRecord32 != 0xFFFFFFFF)
+    cdStartOffsetFromRecord = cdStartOffsetFromRecord32;
+
+  UInt16 commentSize = ReadUInt16();
+  ReadBuffer(m_ArchiveInfo.Comment, commentSize);
+  
+  if (thisDiskNumber != 0 || startCDDiskNumber != 0)
+    throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
+  if ((UInt16)numEntriesInCDOnThisDisk != ((UInt16)items.Size()) ||
+      (UInt16)numEntriesInCD != ((UInt16)items.Size()) ||
+      (UInt32)cdSize != (UInt32)centralDirectorySize ||
+      ((UInt32)(cdStartOffsetFromRecord) != (UInt32)centralDirectoryStartOffset &&
         (!items.IsEmpty())))
     ThrowIncorrectArchiveException();
   
-  m_ArchiveInfo.CommentPosition = m_Position;
-  m_ArchiveInfo.CommentSize = eocdh.CommentSize;
   return S_OK;
 }
 

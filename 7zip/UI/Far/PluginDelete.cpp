@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "Plugin.h"
 #include "Messages.h"
 #include "UpdateCallback100.h"
@@ -14,10 +16,7 @@
 
 #include "../Common/ZipRegistry.h"
 #include "../Common/WorkDir.h"
-// #include "../Common/OpenEngine2.h"
 
-
-using namespace std;
 using namespace NFar;
 using namespace NWindows;
 using namespace NFile;

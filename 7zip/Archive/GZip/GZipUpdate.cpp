@@ -22,7 +22,6 @@
 // {23170F69-40C1-278B-0401-080000000100}
 DEFINE_GUID(CLSID_CCompressDeflateEncoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00);
-extern CSysString GetBaseFolderPrefix();
 #include "../Common/CoderLoader.h"
 extern CSysString GetDeflateCodecPath();
 #endif

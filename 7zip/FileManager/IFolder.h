@@ -104,6 +104,7 @@ public:
       BSTR *destPathResult, 
       INT32 *writeAnswer) = 0;
   STDMETHOD(ShowMessage)(const wchar_t *message) = 0;
+  STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath) = 0;
 };
 
 /*

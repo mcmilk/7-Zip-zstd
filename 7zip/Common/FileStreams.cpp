@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
 #endif
@@ -12,7 +12,7 @@
 static inline HRESULT ConvertBoolToHRESULT(bool result)
 {
   // return result ? S_OK: E_FAIL;
-  #ifdef WIN32
+  #ifdef _WIN32
   return result ? S_OK: (::GetLastError());
   #else
   return result ? S_OK: E_FAIL;
@@ -24,7 +24,7 @@ bool CInFileStream::Open(LPCTSTR fileName)
   return File.Open(fileName);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef _UNICODE
 bool CInFileStream::Open(LPCWSTR fileName)
 {
@@ -35,7 +35,7 @@ bool CInFileStream::Open(LPCWSTR fileName)
 
 STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   
   UInt32 realProcessedSize;
   bool result = File.Read(data, size, realProcessedSize);
@@ -65,7 +65,7 @@ STDMETHODIMP CInFileStream::ReadPart(void *data, UInt32 size, UInt32 *processedS
 #ifndef _WIN32_WCE
 STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   UInt32 realProcessedSize;
   BOOL res = ::ReadFile(GetStdHandle(STD_INPUT_HANDLE), 
       data, size, (DWORD *)&realProcessedSize, NULL);
@@ -101,7 +101,7 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
   if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
 
-  #ifdef WIN32
+  #ifdef _WIN32
 
   UInt64 realNewPosition;
   bool result = File.Seek(offset, seekOrigin, realNewPosition);
@@ -135,7 +135,7 @@ bool COutFileStream::Create(LPCTSTR fileName, bool createAlways)
   return File.Create(fileName, createAlways);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef _UNICODE
 bool COutFileStream::Create(LPCWSTR fileName, bool createAlways)
 {
@@ -146,7 +146,7 @@ bool COutFileStream::Create(LPCWSTR fileName, bool createAlways)
 
 STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  #ifdef WIN32
+  #ifdef _WIN32
 
   UInt32 realProcessedSize;
   bool result = File.Write(data, size, realProcessedSize);
@@ -179,7 +179,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin,
 {
   if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
-  #ifdef WIN32
+  #ifdef _WIN32
 
   UInt64 realNewPosition;
   bool result = File.Seek(offset, seekOrigin, realNewPosition);
@@ -201,7 +201,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin,
 
 STDMETHODIMP COutFileStream::SetSize(Int64 newSize)
 {
-  #ifdef WIN32
+  #ifdef _WIN32
   UInt64 currentPos;
   if(!File.Seek(0, FILE_CURRENT, currentPos))
     return E_FAIL;
@@ -220,7 +220,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   if(processedSize != NULL)
     *processedSize = 0;
 
-  #ifdef WIN32
+  #ifdef _WIN32
   UInt32 realProcessedSize;
   BOOL res = TRUE;
   while (size > 0)

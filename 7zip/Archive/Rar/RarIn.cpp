@@ -474,12 +474,11 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
       AddToSeekValue(dataSize);
       if (m_CryptoMode && dataSize > (1 << 27))
         return E_FAIL; // it's for bad passwords
-      m_CryptoPos = dataSize;
+      m_CryptoPos = m_BlockHeader.HeadSize;
     }
     else
       m_CryptoPos = 0;
     AddToSeekValue(m_BlockHeader.HeadSize);
-    m_CryptoPos += m_BlockHeader.HeadSize;
     FinishCryptoBlock();
     m_CryptoMode = false;
   }

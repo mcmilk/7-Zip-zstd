@@ -18,7 +18,6 @@ public:
   UString Static;
   UString Value;
   CSysStringVector Strings;
-
   // CComboDialog(): Sorted(false) {};
   INT_PTR Create(HWND parentWindow = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_COMBO), parentWindow); }

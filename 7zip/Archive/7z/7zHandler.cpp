@@ -246,8 +246,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
           const CFolder &folderInfo = _database.Folders[folderIndex];
           if (_database.FolderStartFileIndex[folderIndex] == index2)
             propVariant = _database.GetFolderFullPackSize(folderIndex);
+          /*
           else
             propVariant = UInt64(0);
+          */
         }
         else
           propVariant = UInt64(0);
@@ -354,7 +356,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                   if (altCoderInfo.Properties.GetCapacity() > 0)
                   {
                     methodsString += L":[";
-                    for (int bi = 0; bi < altCoderInfo.Properties.GetCapacity(); bi++)
+                    for (size_t bi = 0; bi < altCoderInfo.Properties.GetCapacity(); bi++)
                     {
                       if (bi > 2 && bi + 1 < altCoderInfo.Properties.GetCapacity())
                       {
@@ -396,7 +398,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         {
           const CFolder &folderInfo = _database.Folders[folderIndex];
           if (_database.FolderStartFileIndex[folderIndex] == index2 &&
-              folderInfo.PackStreams.Size() > propID - kpidPackedSize0)
+              folderInfo.PackStreams.Size() > (int)(propID - kpidPackedSize0))
           {
             propVariant = _database.GetFolderPackStreamSize(folderIndex, propID - kpidPackedSize0);
           }

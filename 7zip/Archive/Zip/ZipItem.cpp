@@ -4,6 +4,7 @@
 
 #include "ZipHeader.h"
 #include "ZipItem.h"
+#include "../Common/ItemNameUtils.h"
 
 namespace NArchive {
 namespace NZip {
@@ -41,17 +42,8 @@ static const char *kUnknownAttributes = "Unknown file attributes";
 
 bool CItem::IsDirectory() const
 { 
-  if (!Name.IsEmpty())
-  {
-    #ifdef WIN32
-      LPCSTR prev = CharPrevExA(GetCodePage(), Name, &Name[Name.Length()], 0);
-      if (*prev == '/')
-        return true;
-    #else
-      if (Name[Name.Length() - 1] == '/')
-        return true;
-    #endif
-  }
+  if (NItemName::HasTailSlash(Name, GetCodePage()))
+    return true;
   WORD highAttributes = WORD((ExternalAttributes >> 16 ) & 0xFFFF);
   switch(MadeByVersion.HostOS)
   {
