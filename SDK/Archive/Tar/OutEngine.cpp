@@ -11,7 +11,7 @@
 namespace NArchive {
 namespace NTar {
 
-HRESULT COutArchive::WriteBytes(void *aBuffer, UINT32 aSize)
+HRESULT COutArchive::WriteBytes(const void *aBuffer, UINT32 aSize)
 {
   UINT32 aProcessedSize;
   RETURN_IF_NOT_S_OK(m_Stream->Write(aBuffer, aSize, &aProcessedSize));
@@ -69,7 +69,7 @@ static bool CopyString(char *aDest, const AString &aSrc, int aMaxSize)
 
 #define RETURN_IF_NOT_TRUE(x) { if (!(x)) return E_FAIL; }
 
-HRESULT COutArchive::WriteHeader(const CItemInfo &anItemInfo)
+HRESULT COutArchive::WriteHeaderReal(const CItemInfo &anItemInfo)
 {
   NFileHeader::CRecord aRecord;
   for (int i = 0; i < NFileHeader::kRecordSize; i++)
@@ -77,7 +77,11 @@ HRESULT COutArchive::WriteHeader(const CItemInfo &anItemInfo)
 
   NFileHeader::CHeader &aHeader = aRecord.Header;
 
-  RETURN_IF_NOT_TRUE(CopyString(aHeader.Name, anItemInfo.Name, NFileHeader::kNameSize));
+  // RETURN_IF_NOT_TRUE(CopyString(aHeader.Name, anItemInfo.Name, NFileHeader::kNameSize));
+  if (anItemInfo.Name.Length() > NFileHeader::kNameSize)
+    return E_FAIL;
+  strncpy(aHeader.Name, anItemInfo.Name, NFileHeader::kNameSize);
+
   RETURN_IF_NOT_TRUE(CopyString(aHeader.LinkName, anItemInfo.LinkName, NFileHeader::kNameSize));
   RETURN_IF_NOT_TRUE(CopyString(aHeader.UserName, anItemInfo.UserName, NFileHeader::kUserNameSize));
   RETURN_IF_NOT_TRUE(CopyString(aHeader.GroupName, anItemInfo.GroupName, NFileHeader::kGroupNameSize));
@@ -105,6 +109,27 @@ HRESULT COutArchive::WriteHeader(const CItemInfo &anItemInfo)
   RETURN_IF_NOT_TRUE(MakeOctalString8(aHeader.CheckSum, aCheckSumReal));
 
   return WriteBytes(&aRecord, sizeof(aRecord));
+}
+
+HRESULT COutArchive::WriteHeader(const CItemInfo &anItemInfo)
+{
+  int aNameSize = anItemInfo.Name.Length();
+  if (aNameSize < NFileHeader::kNameSize)
+    return WriteHeaderReal(anItemInfo);
+
+  CItemInfo aModifiedItem = anItemInfo;
+  int aNameStreamSize = aNameSize + 1;
+  aModifiedItem.Size = aNameStreamSize;
+  aModifiedItem.LinkFlag = 'L';
+  aModifiedItem.Name = NFileHeader::kLongLink;
+  aModifiedItem.LinkName.Empty();
+  RETURN_IF_NOT_S_OK(WriteHeaderReal(aModifiedItem));
+  RETURN_IF_NOT_S_OK(WriteBytes(anItemInfo.Name, aNameStreamSize));
+  RETURN_IF_NOT_S_OK(FillDataResidual(aNameStreamSize));
+
+  aModifiedItem = anItemInfo;
+  aModifiedItem.Name = anItemInfo.Name.Left(NFileHeader::kNameSize - 1);
+  return WriteHeaderReal(aModifiedItem);
 }
 
 HRESULT COutArchive::FillDataResidual(UINT64 aDataSize)

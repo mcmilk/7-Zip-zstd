@@ -13,14 +13,17 @@
 
 #include "../Common/IArchiveHandler.h"
 #include "../Common/InStreamWithCRC.h"
+#include "../../../Compress/Interface/CompressInterface.h"
 
 class CFolderInStream: 
   public ISequentialInStream,
+  public ICompressGetSubStreamSize,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CFolderInStream)
   COM_INTERFACE_ENTRY(ISequentialInStream)
+  COM_INTERFACE_ENTRY(ICompressGetSubStreamSize)
 END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CFolderInStream)
 DECLARE_NO_REGISTRY()
@@ -29,10 +32,15 @@ DECLARE_NO_REGISTRY()
 
   STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
   STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+
+  STDMETHOD(GetSubStreamSize)(UINT64 aSubStream, UINT64 *aValue);
 private:
   CComObjectNoLock<CInStreamWithCRC> *m_InStreamWithHashSpec;
   CComPtr<ISequentialInStream> m_InStreamWithHash;
   CComPtr<IUpdateCallBack> m_UpdateCallBack;
+
+  bool m_CurrentSizeIsDefined;
+  UINT64 m_CurrentSize;
 
   bool m_FileIsOpen;
   UINT64 m_FilePos;

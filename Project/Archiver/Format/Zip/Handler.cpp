@@ -189,7 +189,7 @@ STDMETHODIMP CEnumArchiveItemProperty::Clone(IEnumSTATPROPSTG **anEnum)
 CZipHandler::CZipHandler():
   m_ArchiveIsOpen(false)
 {
-  m_Method.MaximizeRatio = false;
+  InitMethodProperties();
   m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kDeflated);
   m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
 }

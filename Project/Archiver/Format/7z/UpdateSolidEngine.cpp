@@ -183,7 +183,9 @@ HRESULT UpdateSolidStd(NArchive::N7z::COutArchive &anArchive,
     CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
     aLocalCompressProgressSpec->Init(aLocalProgress, &aCurrentComplexity, NULL);
 
-    RETURN_IF_NOT_S_OK(anEncoder.Encode(aSolidInStream, aFolderItem, 
+    RETURN_IF_NOT_S_OK(anEncoder.Encode(aSolidInStream, 
+        NULL,
+        aFolderItem, 
         anArchive.m_Stream, aNewDatabase.m_PackSizes, aCompressProgress));
 
     // aFolderItem.NumFiles = aNumFiles;

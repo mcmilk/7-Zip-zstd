@@ -12,7 +12,6 @@
 #include "Stream/OutByte.h"
 
 #include "Compression/RangeCoder.h"
-#include "Compression/AriBitCoder.h"
 
 #include "Decode.h"
 
@@ -40,8 +39,6 @@ class CDecoder :
   UINT32 m_UsedMemorySize;
 
 public:
-  CDecoder();
-  ~CDecoder();
 
 BEGIN_COM_MAP(CDecoder)
   COM_INTERFACE_ENTRY(ICompressCoder)
@@ -53,12 +50,16 @@ DECLARE_NOT_AGGREGATABLE(CDecoder)
 //DECLARE_NO_REGISTRY()
 DECLARE_REGISTRY(CDecoder, "Compress.PPMDDecoder.1", "Compress.PPMDDecoder", 0, THREADFLAGS_APARTMENT)
 
-  // ICoder interface
-  STDMETHOD(Init)(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream);
-  STDMETHOD(ReleaseStreams)();
+  void ReleaseStreams()
+  {
+    m_RangeDecoder.ReleaseStream();
+    m_OutStream.ReleaseStream();
+  }
+
   // STDMETHOD(Code)(UINT32 aNumBytes, UINT32 &aProcessedBytes);
-  STDMETHOD(Flush)();
+  HRESULT Flush()
+    { return m_OutStream.Flush(); }
+
 
   STDMETHOD(Code)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,

@@ -12,6 +12,7 @@
 #include "ARM.h"
 #include "M68.h"
 #include "Interface/ICoder.h"
+#include "x86_2.h"
 
 CComModule _Module;
 
@@ -22,6 +23,7 @@ CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
   MyOBJECT_ENTRY(BCJ_x86)
+  MyOBJECT_ENTRY(BCJ2_x86)
   MyOBJECT_ENTRY(BC_PPC_B)
   MyOBJECT_ENTRY(BC_Alpha)
   MyOBJECT_ENTRY(BC_IA64)

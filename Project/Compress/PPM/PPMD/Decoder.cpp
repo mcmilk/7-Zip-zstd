@@ -28,35 +28,6 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *anInStream)
   return S_OK;
 }
 
-CDecoder::CDecoder()
-{}
-
-CDecoder::~CDecoder()
-{}
-
-STDMETHODIMP CDecoder::Init(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream)
-{
-  m_RangeDecoder.Init(anInStream);
-
-  m_OutStream.Init(anOutStream);
-
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::ReleaseStreams()
-{
-  m_RangeDecoder.ReleaseStream();
-  m_OutStream.ReleaseStream();
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::Flush()
-{
-  m_OutStream.Flush();
-  return S_OK;
-}
-
 class CDecoderFlusher
 {
   CDecoder *m_Coder;
@@ -81,7 +52,9 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
       ICompressProgressInfo *aProgress)
 {
-  Init(anInStream, anOutStream);
+  m_RangeDecoder.Init(anInStream);
+  m_OutStream.Init(anOutStream);
+
   CDecoderFlusher aFlusher(this);
 
   if (anOutSize == NULL)

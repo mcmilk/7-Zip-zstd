@@ -71,10 +71,25 @@ DECLARE_REGISTRY(CDecoder, "Compress.LZMADecoder.1", "Compress.LZMADecoder", 0, 
   HRESULT Create();
 
 
-  STDMETHOD(Init)(ISequentialInStream *anInStream, 
+  HRESULT Init(ISequentialInStream *anInStream, 
       ISequentialOutStream *anOutStream);
-  STDMETHOD(ReleaseStreams)();
-  STDMETHOD(Flush)();
+  void ReleaseStreams()
+  {
+    m_OutWindowStream.ReleaseStream();
+    m_RangeDecoder.ReleaseStream();
+  }
+
+  class CDecoderFlusher
+  {
+    CDecoder *m_Decoder;
+  public:
+    CDecoderFlusher(CDecoder *aDecoder): m_Decoder(aDecoder) {}
+    ~CDecoderFlusher() 
+      { m_Decoder->ReleaseStreams(); }
+  };
+
+  HRESULT Flush()
+    {  return m_OutWindowStream.Flush(); }  
 
   // ICompressCoder interface
   STDMETHOD(CodeReal)(ISequentialInStream *anInStream,

@@ -139,6 +139,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 anIndex, PROPID aPropID,  PROPVARIANT 
     case kaipidPackedSize1:
     case kaipidPackedSize2:
     case kaipidPackedSize3:
+    case kaipidPackedSize4:
       {
         int aFolderIndex = m_Database.m_FileIndexToFolderIndexMap[anIndex];
         if (aFolderIndex >= 0)

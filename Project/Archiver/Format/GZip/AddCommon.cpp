@@ -18,12 +18,6 @@ DEFINE_GUID(CLSID_CCompressDeflateEncoder,
 namespace NArchive {
 namespace NGZip {
 
-static const UINT32 kMatchFastLenNormal  = 32;
-static const UINT32 kMatchFastLenMX  = 64;
-
-static const UINT32 kNumPassesNormal = 1;
-static const UINT32 kNumPassesMX  = 3;
-
 /*
 // {23170F69-40C1-278C-0200-0000000000}
 DEFINE_GUID(CLSID_CMatchFinderBT3, 
@@ -50,8 +44,7 @@ HRESULT CAddCommon::Compress(ISequentialInStream *anInStream,
 
     NWindows::NCOM::CPropVariant aProperties[2] = 
     {
-      m_Options.MaximizeRatio ? UINT32(kNumPassesMX) : UINT32(kNumPassesNormal),
-        m_Options.MaximizeRatio ? UINT32(kMatchFastLenMX) : UINT32(kMatchFastLenNormal)
+      m_Options.NumPasses, m_Options.NumFastBytes
     };
     PROPID aPropIDs[2] = 
     {

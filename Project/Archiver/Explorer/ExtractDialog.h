@@ -41,6 +41,7 @@ namespace NExtractionDialog
       kAskBefore,
       kWithoutPrompt,
       kSkipExisting,
+      kAutoRename
     };
   }
   struct CModeInfo

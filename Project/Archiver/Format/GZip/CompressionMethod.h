@@ -10,7 +10,8 @@ namespace NGZip {
 
 struct CCompressionMethodMode
 {
-  bool MaximizeRatio;
+  UINT32 NumPasses;
+  UINT32 NumFastBytes;
 };
 
 }}

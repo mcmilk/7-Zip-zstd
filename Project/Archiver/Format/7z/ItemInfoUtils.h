@@ -16,7 +16,8 @@ enum // PropID
   kaipidPackedSize0 = kaipidUserDefined,
   kaipidPackedSize1, 
   kaipidPackedSize2,
-  kaipidPackedSize3
+  kaipidPackedSize3,
+  kaipidPackedSize4,
 };
 
 class CEnumArchiveItemProperty:

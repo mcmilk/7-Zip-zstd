@@ -32,6 +32,10 @@ static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
 static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 #endif
 
+#ifdef COMPRESS_BCJ2
+static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+#endif
+
 #ifdef COMPRESS_COPY
 static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
@@ -205,6 +209,8 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
       }
     }
     CMethodFull aMethodFull;
+    aMethodFull.MethodInfoEx.NumInStreams = 1;
+    aMethodFull.MethodInfoEx.NumOutStreams = 1;
 
     bool aDefined = false;
 
@@ -225,10 +231,20 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_BCJ_X86
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BCJ_x86")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BCJ")) == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_BCJ_X86;
+    }
+    #endif
+
+    #ifdef COMPRESS_BCJ2
+    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BCJ2")) == 0)
+    {
+      aDefined = true;
+      aMethodFull.MethodInfoEx.MethodID = k_BCJ2;
+      aMethodFull.MethodInfoEx.NumInStreams = 4;
+      aMethodFull.MethodInfoEx.NumOutStreams = 1;
     }
     #endif
 
@@ -261,8 +277,6 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     
     if (aDefined)
     {
-      aMethodFull.MethodInfoEx.NumInStreams = 1;
-      aMethodFull.MethodInfoEx.NumOutStreams = 1;
   
       aMethodFull.CoderProperties = anOneMethodInfo.CoderProperties;
       aMethodFull.EncoderProperties = anOneMethodInfo.EncoderProperties;
@@ -424,6 +438,18 @@ static int ParseNumberString(const CSysString &aString, int &aNumber)
   return i;
 }
 
+static UINT32 ParseUINT32String(const CSysString &aString, UINT32 &aNumber)
+{
+  int aNumberTemp;
+  int aPos = ParseNumberString(aString, aNumberTemp);
+  if (aPos <= 0)
+    return aPos;
+  if (aNumberTemp < 0)
+    return 0;
+  aNumber = aNumberTemp;
+  return aPos;
+}
+
 static const kMaxLogarithmicSize = 31;
 
 static const char kByteSymbol = 'B';
@@ -509,6 +535,36 @@ static HRESULT SetBoolProperty(bool &aDest, const PROPVARIANT &aValue)
   return S_OK;
 }
 
+static HRESULT GetBindInfoPart(CSysString &aString, UINT32 &aCoder, UINT32 &aStream)
+{
+  aStream = 0;
+  int anIndex = ParseUINT32String(aString, aCoder);
+  if (anIndex == 0)
+    return E_INVALIDARG;
+  aString.Delete(0, anIndex);
+  if (aString[0] == 'S')
+  {
+    aString.Delete(0);
+    int anIndex = ParseUINT32String(aString, aStream);
+    if (anIndex == 0)
+      return E_INVALIDARG;
+    aString.Delete(0, anIndex);
+  }
+  return S_OK;
+}
+
+static HRESULT GetBindInfo(CSysString &aString, CBind &aBind)
+{
+  RETURN_IF_NOT_S_OK(GetBindInfoPart(aString, aBind.OutCoder, aBind.OutStream));
+  if (aString[0] != ':')
+    return E_INVALIDARG;
+  aString.Delete(0);
+  RETURN_IF_NOT_S_OK(GetBindInfoPart(aString, aBind.InCoder, aBind.InStream));
+  if (!aString.IsEmpty())
+    return E_INVALIDARG;
+  return S_OK;
+}
+
 STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties)
 {
   UINT aCodePage = GetCurrentFileCodePage();
@@ -542,20 +598,8 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
     if (aName[0] == 'B')
     {
       aName.Delete(0);
-      int aNumberOut, aNumberIn;
-      int anIndex = ParseNumberString(aName, aNumberOut);
-      if (anIndex == 0)
-        return E_INVALIDARG;
-      aName.Delete(0, anIndex);
-      if (aName[0] != '-')
-        return E_INVALIDARG;
-      aName.Delete(0);
-      anIndex = ParseNumberString(aName, aNumberIn);
-      if (anIndex == 0 || anIndex != aName.Length())
-        return E_INVALIDARG;
       CBind aBind;
-      aBind.OutIndex = aNumberOut;
-      aBind.InIndex = aNumberIn;
+      RETURN_IF_NOT_S_OK(GetBindInfo(aName, aBind));
       m_Binds.Add(aBind);
       continue;
     }
@@ -582,6 +626,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
       return E_FAIL;
     if (aNumber < aMinNumber)
     {
+      /*
       for (int i = aNumber; i < aMinNumber; i++)
       {
         COneMethodInfo anOneMethodInfo;
@@ -589,6 +634,8 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
         m_Methods.Insert(0, anOneMethodInfo);
       }
       aMinNumber = aNumber;
+      */
+      return E_INVALIDARG;
     }
     aNumber -= aMinNumber;
     for(int j = m_Methods.Size(); j <= aNumber; j++)

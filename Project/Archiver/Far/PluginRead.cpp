@@ -116,7 +116,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
 
     const kPathModeRadioIndex = 4;
     const kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
-    const kFilesModeIndex = kOverwriteModeRadioIndex + 4;
+    const kFilesModeIndex = kOverwriteModeRadioIndex + 5;
     static const kYSize = 18;
     
     static const kXMid = 38;
@@ -139,7 +139,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
           anExtractionInfo.PathMode == NExtraction::NPathMode::kNoPathnames, 
           false, 0, NMessageID::kExtractPathNo, NULL, NULL },
       
-      { DI_SINGLEBOX, kXMid, 5, 70, 5 + 4, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
+      { DI_SINGLEBOX, kXMid, 5, 70, 5 + 5, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, 
           anExtractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kAskBefore, 
           DIF_GROUP, false, NMessageID::kExtractOwerwriteAsk, NULL, NULL },
@@ -149,13 +149,16 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
       { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false, 
           anExtractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kSkipExisting, 
           0, false, NMessageID::kExtractOwerwriteSkip, NULL, NULL },
+      { DI_RADIOBUTTON, kXMid + 2, 9, 0, 0, false, 
+          anExtractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kAutoRename, 
+          0, false, NMessageID::kExtractOwerwriteAutoRename, NULL, NULL },
       
       { DI_SINGLEBOX, 4, 10, kXMid- 2, 10 + 3, false, false, 0, false, NMessageID::kExtractFilesMode, NULL, NULL },
       { DI_RADIOBUTTON, 6, 11, 0, 0, false, true, DIF_GROUP, false, NMessageID::kExtractFilesSelected, NULL, NULL },
       { DI_RADIOBUTTON, 6, 12, 0, 0, false, false, 0, false, NMessageID::kExtractFilesAll, NULL, NULL },
       
-      { DI_SINGLEBOX, kXMid, 10, 70, 10 + 3, false, false, 0, false, NMessageID::kExtractPassword, NULL, NULL },
-      { DI_PSWEDIT, kXMid + 2, 11, 70 - 2, 11, false, false, 0, false, -1, "", NULL},
+      { DI_SINGLEBOX, kXMid, 11, 70, 11 + 2, false, false, 0, false, NMessageID::kExtractPassword, NULL, NULL },
+      { DI_PSWEDIT, kXMid + 2, 12, 70 - 2, 12, false, false, 0, false, -1, "", NULL},
       
       { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },  
       
@@ -199,6 +202,8 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
       anExtractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
     else if (aDialogItems[kOverwriteModeRadioIndex + 2].Selected)
       anExtractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kSkipExisting;
+    else if (aDialogItems[kOverwriteModeRadioIndex + 3].Selected)
+      anExtractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kAutoRename;
     else
       throw 31806;
     
@@ -249,6 +254,9 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
       break;
     case NExtraction::NOverwriteMode::kSkipExisting:
       anOverwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+      break;
+    case NExtraction::NOverwriteMode::kAutoRename:
+      anOverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
       break;
     default:
       throw 12334454;

@@ -47,7 +47,8 @@ namespace NExtraction{
     {
       kAskBefore,
       kWithoutPrompt,
-      kSkipExisting
+      kSkipExisting,
+      kAutoRename,
     };
   }
   
@@ -61,6 +62,12 @@ namespace NExtraction{
 
 namespace NCompression{
   
+  struct CFormatOptions
+  {
+    CSysString FormatID;
+    CSysString Options;
+  };
+
   struct CInfo
   {
     CSysStringVector HistoryArchives;
@@ -68,6 +75,10 @@ namespace NCompression{
     BYTE Method;
     bool LastClassIDDefined;
     CLSID LastClassID;
+
+
+    bool SolidMode;
+    CObjectVector<CFormatOptions> FormatOptionsVector;
 
     void SetMethod(BYTE aMethod) {Method = aMethod; MethodDefined = true; }
     void SetLastClassID(const CLSID &aLastClassID) 

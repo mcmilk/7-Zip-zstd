@@ -52,9 +52,9 @@ bool CCompressDialog::OnInit()
 	m_Method.Attach(GetItem(IDC_COMPRESS_COMBO_METHOD));
 	m_UpdateMode.Attach(GetItem(IDC_COMPRESS_COMBO_UPDATE_MODE));
 
-  NZipSettings::NCompression::CInfo aCompressionInfo;
+  m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_OPTIONS));
 
-  m_ZipRegistryManager->ReadCompressionInfo(aCompressionInfo);
+  m_ZipRegistryManager->ReadCompressionInfo(m_RegistryInfo);
 
 
   m_Info.ArchiverInfoIndex = 0;
@@ -62,14 +62,15 @@ bool CCompressDialog::OnInit()
   {
     const NZipRootRegistry::CArchiverInfo &anArchiverInfo = m_ArchiverInfoList[i];
     m_Format.AddString(anArchiverInfo.Name);
-    if (anArchiverInfo.ClassID == aCompressionInfo.LastClassID && 
-       aCompressionInfo.LastClassIDDefined)
+    if (anArchiverInfo.ClassID == m_RegistryInfo.LastClassID && 
+        m_RegistryInfo.LastClassIDDefined)
       m_Info.ArchiverInfoIndex = i;
   }
   m_Format.SetCurSel(m_Info.ArchiverInfoIndex);
 
   m_Info.ArchiveNameSrc = m_Info.ArchiveName;
   SetArchiveName(m_Info.ArchiveName);
+  SetOptions();
   
   /*
   m_Info.ArchiveName += L'.';
@@ -78,9 +79,9 @@ bool CCompressDialog::OnInit()
   */
 
   // m_ArchivePath.AddString(m_ArcPathResult);
-  for(i = 0; i < aCompressionInfo.HistoryArchives.Size() && i < kHistorySize; i++)
-    m_ArchivePath.AddString(aCompressionInfo.HistoryArchives[i]);
-  // if(aCompressionInfo.HistoryArchives.Size() > 0) 
+  for(i = 0; i < m_RegistryInfo.HistoryArchives.Size() && i < kHistorySize; i++)
+    m_ArchivePath.AddString(m_RegistryInfo.HistoryArchives[i]);
+  // if(m_RegistryInfo.HistoryArchives.Size() > 0) 
   //  m_ArchivePath.SetCurSel(0);
   // else
   //  m_ArchivePath.SetCurSel(-1);
@@ -90,8 +91,8 @@ bool CCompressDialog::OnInit()
   m_Method.AddString(MyLoadString(IDS_METHOD_MAXIMUM));
   
   int aMethodIndex = 1;
-  if (aCompressionInfo.MethodDefined && aCompressionInfo.Method < 3)
-    aMethodIndex = aCompressionInfo.Method;
+  if (m_RegistryInfo.MethodDefined && m_RegistryInfo.Method < 3)
+    aMethodIndex = m_RegistryInfo.Method;
   m_Method.SetCurSel(aMethodIndex);
 
   m_UpdateMode.AddString(MyLoadString(IDS_COMPRESS_UPDATE_MODE_ADD));
@@ -101,9 +102,18 @@ bool CCompressDialog::OnInit()
 
   m_UpdateMode.SetCurSel(0);
 
+  m_Info.SolidMode = m_RegistryInfo.SolidMode;
+
+
+  CheckButton(IDC_COMPRESS_SOLID, m_Info.SolidMode);
   CheckButton(IDC_COMPRESS_SFX, m_Info.SFXMode);
+  
+  CheckSolidEnable();
   CheckSFXEnable();
+
   OnButtonSFX();
+
+
 
   return CModalDialog::OnInit();
 }
@@ -135,6 +145,17 @@ bool CCompressDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
   return CModalDialog::OnButtonClicked(aButtonID, aButtonHWND);
 }
 
+void CCompressDialog::CheckSolidEnable()
+{
+  int aFormatIndex = m_Format.GetCurSel();
+  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+      m_ArchiverInfoList[aFormatIndex];
+  bool anEnable = (anArchiverInfo.Name == "7z");
+  m_Info.SolidModeIsAllowed = anEnable;
+  CWindow aSFXButton = GetItem(IDC_COMPRESS_SOLID);
+  aSFXButton.Enable(anEnable);
+}
+
 void CCompressDialog::CheckSFXEnable()
 {
   int aFormatIndex = m_Format.GetCurSel();
@@ -145,6 +166,7 @@ void CCompressDialog::CheckSFXEnable()
   CWindow aSFXButton = GetItem(IDC_COMPRESS_SFX);
   aSFXButton.Enable(anEnable);
 }
+
 
 void CCompressDialog::OnButtonSFX()
 {
@@ -238,8 +260,7 @@ extern void AddUniqueString(CSysStringVector &aList, const CSysString &aString);
 
 void CCompressDialog::OnOK() 
 {
-  NZipSettings::NCompression::CInfo aCompressionInfo;
-
+  SaveOptions();
   int aCurrentItem = m_ArchivePath.GetCurSel();
   CSysString aString;
   if(aCurrentItem == CB_ERR)
@@ -252,7 +273,7 @@ void CCompressDialog::OnOK()
     m_ArchivePath.GetLBText(aCurrentItem, aString);
   aString.TrimLeft();
   aString.TrimRight();
-  AddUniqueString(aCompressionInfo.HistoryArchives, (const TCHAR *)aString);
+  AddUniqueString(m_RegistryInfo.HistoryArchives, (const TCHAR *)aString);
   m_Info.ArchiveName = aString;
   m_Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());
 
@@ -260,6 +281,9 @@ void CCompressDialog::OnOK()
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
   m_Info.SFXMode = IsButtonCheckedBool(IDC_COMPRESS_SFX);
+  m_RegistryInfo.SolidMode = m_Info.SolidMode = IsButtonCheckedBool(IDC_COMPRESS_SOLID);
+
+  m_Options.GetText(m_Info.Options);
 
   for(int i = 0; i < m_ArchivePath.GetCount(); i++)
     if(i != aCurrentItem)
@@ -267,17 +291,17 @@ void CCompressDialog::OnOK()
       m_ArchivePath.GetLBText(i, aString);
       aString.TrimLeft();
       aString.TrimRight();
-      AddUniqueString(aCompressionInfo.HistoryArchives, (const TCHAR *)aString);
+      AddUniqueString(m_RegistryInfo.HistoryArchives, (const TCHAR *)aString);
     }
   
   ////////////////////
   // Method
 
-  aCompressionInfo.SetMethod(m_Method.GetCurSel());
-  aCompressionInfo.SetLastClassID(m_ArchiverInfoList[
+  m_RegistryInfo.SetMethod(m_Method.GetCurSel());
+  m_RegistryInfo.SetLastClassID(m_ArchiverInfoList[
       m_Info.ArchiverInfoIndex].ClassID);
 
-  m_ZipRegistryManager->SaveCompressionInfo(aCompressionInfo);
+  m_ZipRegistryManager->SaveCompressionInfo(m_RegistryInfo);
   
   CModalDialog::OnOK();
 }
@@ -294,6 +318,7 @@ bool CCompressDialog::OnCommand(int aCode, int anItemID, LPARAM lParam)
   if (aCode == CBN_SELCHANGE && anItemID == IDC_COMPRESS_COMBO_FORMAT)
   {
     OnSelChangeComboFormat();
+    CheckSolidEnable();
     CheckSFXEnable();
     CWindow aSFXButton = GetItem(IDC_COMPRESS_SFX);
     bool aSFXMode = aSFXButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
@@ -306,6 +331,7 @@ bool CCompressDialog::OnCommand(int aCode, int anItemID, LPARAM lParam)
 
 void CCompressDialog::OnSelChangeComboFormat() 
 {
+  SaveOptions();
   CSysString aFileName;
   m_ArchivePath.GetText(aFileName);
 
@@ -327,8 +353,8 @@ void CCompressDialog::OnSelChangeComboFormat()
     }
   }
   SetArchiveName(aFileName);
+  SetOptions();
 }
-
 
 void CCompressDialog::SetArchiveName(const CSysString &aName)
 {
@@ -352,3 +378,50 @@ void CCompressDialog::SetArchiveName(const CSysString &aName)
   m_ArchivePath.SetText(aFileName);
 }
 
+int CCompressDialog::FindFormat(const CSysString &aName)
+{
+  for (int i = 0; i < m_RegistryInfo.FormatOptionsVector.Size(); i++)
+  {
+    const NZipSettings::NCompression::CFormatOptions &aFormatOptions = 
+        m_RegistryInfo.FormatOptionsVector[i];
+    if (aFormatOptions.FormatID == aName)
+      return i;
+  }
+  return -1;
+}
+
+
+void CCompressDialog::SaveOptions()
+{
+  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+      m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
+  int anIndex = FindFormat(anArchiverInfo.Name);
+  m_Options.GetText(m_Info.Options);
+  if (anIndex >= 0)
+  {
+    NZipSettings::NCompression::CFormatOptions &aFormatOptions = 
+        m_RegistryInfo.FormatOptionsVector[anIndex];
+    aFormatOptions.Options = m_Info.Options;
+  }
+  else
+  {
+    NZipSettings::NCompression::CFormatOptions aFormatOptions;
+    aFormatOptions.FormatID = anArchiverInfo.Name;
+    aFormatOptions.Options = m_Info.Options;
+    m_RegistryInfo.FormatOptionsVector.Add(aFormatOptions);
+  }
+}
+
+void CCompressDialog::SetOptions()
+{
+  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+      m_ArchiverInfoList[m_Format.GetCurSel()];
+  m_Options.SetText(TEXT(""));
+  int anIndex = FindFormat(anArchiverInfo.Name);
+  if (anIndex >= 0)
+  {
+    const NZipSettings::NCompression::CFormatOptions &aFormatOptions = 
+        m_RegistryInfo.FormatOptionsVector[anIndex];
+    m_Options.SetText(aFormatOptions.Options);
+  }
+}

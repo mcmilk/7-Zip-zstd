@@ -20,17 +20,20 @@ List of defined IDs
   
    03 - Branch
       01 - x86
+         03  - BCJ
+         1B  - BCJ2
       02 - PPC
+         05 - BC_PPC_B
       03 - Alpha
+         01 - BC_Alpha
       04 - IA64
+         01 - BC_IA64
       05 - ARM
+         01 - BC_ARM
       06 - M68
-      SubID Masks (can be combined):
-         - 01 - Call
-         - 02 - Jump
-         - 04 - Big Endian
+         05 - BC_M68_B
 
-   04 PPMD
+   04 - PPMD
       01 - Version
 
 04 - Misc

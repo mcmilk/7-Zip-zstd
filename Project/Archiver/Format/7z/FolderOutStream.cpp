@@ -54,8 +54,7 @@ HRESULT CFolderOutStream::OpenFile()
   RETURN_IF_NOT_S_OK(m_ExtractCallBack->Extract(anIndex, &aRealOutStream, anAskMode));
 
   m_OutStreamWithHashSpec->Init(aRealOutStream);
-  if (m_CurrentIndex + 1 < m_ExtractStatuses->Size() && 
-      anAskMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
+  if (anAskMode == NArchiveHandler::NExtract::NAskMode::kExtract &&
       (!aRealOutStream)) 
     anAskMode = NArchiveHandler::NExtract::NAskMode::kSkip;
   return m_ExtractCallBack->PrepareOperation(anAskMode);

@@ -117,18 +117,53 @@ STDMETHODIMP CZipHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
   COM_TRY_END
 }
 
+static const UINT32 kNumPassesNormal = 1;
+static const UINT32 kNumPassesMX  = 3;
+
+static const UINT32 kMatchFastLenNormal  = 32;
+static const UINT32 kMatchFastLenMX  = 64;
+
+
 STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties)
 {
-  m_Method.MaximizeRatio = false;
+  InitMethodProperties();
   bool aM0 = false;
   for (int i = 0; i < aNumProperties; i++)
   {
     UString aString = UString(aNames[i]);
     aString.MakeUpper();
+    const PROPVARIANT &aValue = aValues[i];
     if (aString == L"X")
-      m_Method.MaximizeRatio = true;
+    {
+      m_Method.NumPasses = kNumPassesMX;
+      m_Method.NumFastBytes = kMatchFastLenMX;
+      aM0 = false;
+    }
     else if (aString == L"0")
       aM0 = true;
+    else if (aString == L"1")
+    {
+      aM0 = false;
+      InitMethodProperties();
+    }
+    else if (aString == L"PASS")
+    {
+      if (aValue.vt != VT_UI4)
+        return E_INVALIDARG;
+      m_Method.NumPasses = aValue.ulVal;
+      if (m_Method.NumPasses < 1 || m_Method.NumPasses > 4)
+        return E_INVALIDARG;
+    }
+    else if (aString == L"FB")
+    {
+      if (aValue.vt != VT_UI4)
+        return E_INVALIDARG;
+      m_Method.NumFastBytes = aValue.ulVal;
+      if (m_Method.NumFastBytes < 3 || m_Method.NumFastBytes > 255)
+        return E_INVALIDARG;
+    }
+    else
+      return E_INVALIDARG;
   }
   m_Method.MethodSequence.Clear();
   if (!aM0)

@@ -19,10 +19,10 @@ bool IsNameLegal(const UString &aName)
 
 bool IsItDirName(const AString &aName)
 {
-  if (aName.IsEmpty() == 0)
+  if (aName.IsEmpty())
     return false;
-  return (aName.ReverseFind(kDirDelimiter) == aName.Length() - 1);
-  // return (aName[aName.Length() - 1] == kDirDelimiter);
+  // return (aName.ReverseFind(kDirDelimiter) == aName.Length() - 1);
+  return (aName[aName.Length() - 1] == kDirDelimiter);
 }
 
 AString MakeLegalName(const AString &aName)

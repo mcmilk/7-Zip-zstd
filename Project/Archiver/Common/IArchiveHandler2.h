@@ -23,7 +23,8 @@ namespace NExtractionMode {
     {
       kAskBefore,
       kWithoutPrompt,
-      kSkipExisting
+      kSkipExisting,
+      kAutoRename
     };
   }
 }
@@ -36,7 +37,8 @@ namespace NOverwriteAnswer
     kYesToAll,
     kNo,
     kNoToAll,
-    kCancel
+    kAutoRename,
+    kCancel,
   };
 }
 

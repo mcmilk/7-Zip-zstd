@@ -26,6 +26,7 @@ void CFolderInStream::Init(IUpdateCallBack *anUpdateCallBack,
   m_CRCs.Clear();
   m_Sizes.Clear();
   m_FileIsOpen = false;
+  m_CurrentSizeIsDefined = false;
 }
 
 HRESULT CFolderInStream::OpenStream()
@@ -33,6 +34,7 @@ HRESULT CFolderInStream::OpenStream()
   m_FilePos = 0;
   while (m_FileIndex < m_NumFiles)
   {
+    m_CurrentSizeIsDefined = false;
     CComPtr<IInStream> aStream;
     RETURN_IF_NOT_S_OK(m_UpdateCallBack->CompressOperation(
         m_FileIndexes[m_FileIndex], &aStream));
@@ -45,6 +47,13 @@ HRESULT CFolderInStream::OpenStream()
       AddDigest();
       continue;
     }
+    CComPtr<IStreamGetSize> aStreamGetSize;
+    if (aStream.QueryInterface(&aStreamGetSize) == S_OK)
+    {
+      m_CurrentSizeIsDefined = true;
+      RETURN_IF_NOT_S_OK(aStreamGetSize->GetSize(&m_CurrentSize));
+    }
+
     m_FileIsOpen = true;
     return S_OK;
   }
@@ -100,3 +109,19 @@ STDMETHODIMP CFolderInStream::ReadPart(void *aData, UINT32 aSize, UINT32 *aProce
   return Read(aData, aSize, aProcessedSize);
 }
 
+
+STDMETHODIMP CFolderInStream::GetSubStreamSize(UINT64 aSubStream, UINT64 *aValue)
+{
+  *aValue = 0;
+  if (aSubStream < m_Sizes.Size())
+  {
+    *aValue= m_Sizes[aSubStream];
+    return S_OK;
+  }
+  if (aSubStream > m_Sizes.Size())
+    return E_FAIL;
+  if (!m_CurrentSizeIsDefined)
+    return S_FALSE;
+  *aValue = m_CurrentSize;
+  return S_OK;
+}

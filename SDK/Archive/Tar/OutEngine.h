@@ -15,9 +15,10 @@ namespace NTar {
 class COutArchive
 {
   CComPtr<ISequentialOutStream> m_Stream;
-  HRESULT WriteBytes(void *aBuffer, UINT32 aSize);
+  HRESULT WriteBytes(const void *aBuffer, UINT32 aSize);
 public:
   void Create(ISequentialOutStream *aStream);
+  HRESULT WriteHeaderReal(const CItemInfo &anItemInfo);
   HRESULT WriteHeader(const CItemInfo &anItemInfo);
   HRESULT FillDataResidual(UINT64 aDataSize);
   HRESULT WriteFinishHeader();

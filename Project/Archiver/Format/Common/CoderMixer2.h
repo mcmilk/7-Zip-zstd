@@ -67,8 +67,25 @@ struct CBindInfo
     return -1;
   }
 
+  UINT32 GetCoderInStreamIndex(UINT32 aCoderIndex) const
+  {
+    UINT32 aStreamIndex = 0;
+    for (UINT32 i = 0; i < aCoderIndex; i++)
+      aStreamIndex += CodersInfo[i].NumInStreams;
+    return aStreamIndex;
+  }
+
+  UINT32 GetCoderOutStreamIndex(UINT32 aCoderIndex) const
+  {
+    UINT32 aStreamIndex = 0;
+    for (UINT32 i = 0; i < aCoderIndex; i++)
+      aStreamIndex += CodersInfo[i].NumOutStreams;
+    return aStreamIndex;
+  }
+
+
   void FindInStream(UINT32 aStreamIndex, UINT32 &aCoderIndex, 
-      UINT32 &aCoderStreamIndex)
+      UINT32 &aCoderStreamIndex) const
   {
     for (aCoderIndex = 0; aCoderIndex < CodersInfo.Size(); aCoderIndex++)
     {
@@ -83,7 +100,7 @@ struct CBindInfo
     throw 1;
   }
   void FindOutStream(UINT32 aStreamIndex, UINT32 &aCoderIndex, 
-      UINT32 &aCoderStreamIndex)
+      UINT32 &aCoderStreamIndex) const
   {
     for (aCoderIndex = 0; aCoderIndex < CodersInfo.Size(); aCoderIndex++)
     {

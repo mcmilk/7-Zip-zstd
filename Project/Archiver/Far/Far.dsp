@@ -390,6 +390,14 @@ SOURCE=..\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractAutoRename.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\OpenEngine2.cpp
 # End Source File
 # Begin Source File

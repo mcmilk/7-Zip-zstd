@@ -20,6 +20,7 @@ class CInArchive
   HRESULT ReadBytes(void *aData, UINT32 aSize, UINT32 &aProcessedSize);
 public:
   HRESULT Open(IInStream *aStream);
+  HRESULT GetNextItemReal(bool &aFilled, CItemInfoEx &anItemInfo);
   HRESULT GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo);
   HRESULT Skeep(UINT64 aNumBytes);
   HRESULT SkeepDataRecords(UINT64 aDataSize);

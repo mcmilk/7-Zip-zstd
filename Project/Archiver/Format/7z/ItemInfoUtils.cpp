@@ -35,6 +35,7 @@ CPropMap kPropMap[] =
   { 101, L"Pack1", kaipidPackedSize1, VT_UI8},
   { 102, L"Pack2", kaipidPackedSize2, VT_UI8},
   { 103, L"Pack3", kaipidPackedSize3, VT_UI8},
+  { 104, L"Pack4", kaipidPackedSize4, VT_UI8},
   #endif
 
   { NID::kCreationTime, NULL, kaipidCreationTime, VT_FILETIME},
@@ -103,6 +104,7 @@ void CEnumArchiveItemProperty::Init(const CRecordVector<UINT32> &_aFileInfoPopID
   m_FileInfoPopIDs.Add(101);
   m_FileInfoPopIDs.Add(102);
   m_FileInfoPopIDs.Add(103);
+  m_FileInfoPopIDs.Add(104);
   #endif
 }
 

@@ -321,6 +321,14 @@ SOURCE=..\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractAutoRename.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Handler\IArchiveHandler.h
 # End Source File
 # Begin Source File
@@ -374,6 +382,10 @@ SOURCE=..\Common\ZipRegistryMain.cpp
 # Begin Source File
 
 SOURCE=..\Common\ZipRegistryMain.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ZipSettings.h
 # End Source File
 # End Group
 # Begin Group "Engine"

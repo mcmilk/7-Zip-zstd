@@ -45,8 +45,10 @@ struct CMethodFull
 
 struct CBind
 {
-  UINT64 InIndex;
-  UINT64 OutIndex;
+  UINT32 InCoder;
+  UINT32 InStream;
+  UINT32 OutCoder;
+  UINT32 OutStream;
 };
 
 struct CCompressionMethodMode

@@ -106,6 +106,9 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   case IDC_BUTTON_OVERWRITE_YES_TO_ALL:
     *anAnswer = NOverwriteAnswer::kYesToAll;
     break;
+  case IDC_BUTTON_OVERWRITE_AUTO_RENAME:
+    *anAnswer = NOverwriteAnswer::kAutoRename;
+    break;
   case IDYES:
     *anAnswer = NOverwriteAnswer::kYes;
     break;

@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -314,6 +314,14 @@ SOURCE=..\..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ExtractAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ExtractAutoRename.h
 # End Source File
 # Begin Source File
 
@@ -697,6 +705,14 @@ SOURCE=..\..\..\Compress\Convert\Branch\x86.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\x86.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\Convert\Branch\x86_2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Compress\Convert\Branch\x86_2.h
 # End Source File
 # End Group
 # Begin Group "PPMD"

@@ -478,6 +478,14 @@ SOURCE=.\OutHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\StreamObjects2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\StreamObjects2.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\UpdateEngine.cpp
 # End Source File
 # Begin Source File

@@ -9,14 +9,17 @@
 #include "Windows/FileFind.h"
 
 #include "../Common/IArchiveHandler2.h"
+#include "../Common/ZipSettings.h"
 
 namespace NExtractMode {
+
 enum EEnum
 {
   kTest,
   kFullPath,
   kExtractToOne
 };
+
 
 }
 
@@ -31,14 +34,18 @@ public:
   bool PasswordEnabled;
   UString Password;
 
+  NZipSettings::NExtraction::NOverwriteMode::EEnum OverwriteMode;
+
   
   CExtractOptions(NExtractMode::EEnum anExtractMode, const CSysString &anOutputBaseDir,
-      bool anYesToAll, bool aPasswordEnabled, const UString &aPassword):
+      bool anYesToAll, bool aPasswordEnabled, const UString &aPassword,
+      NZipSettings::NExtraction::NOverwriteMode::EEnum anOverwriteMode):
     ExtractMode(anExtractMode),
     OutputBaseDir(anOutputBaseDir),
     YesToAll(anYesToAll),
     PasswordEnabled(aPasswordEnabled), 
-    Password(aPassword)
+    Password(aPassword),
+    OverwriteMode(anOverwriteMode)
     {}
 
   bool TestMode() const {  return (ExtractMode == NExtractMode::kTest); }

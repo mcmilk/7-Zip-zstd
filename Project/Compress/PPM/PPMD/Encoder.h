@@ -14,8 +14,6 @@
 #include "Encode.h"
 
 #include "Compression/RangeCoder.h"
-#include "Compression/AriBitCoder.h"
-
 
 // {23170F69-40C1-278B-0304-010000000100}
 DEFINE_GUID(CLSID_CompressPPMDEncoder, 
@@ -55,11 +53,12 @@ DECLARE_NOT_AGGREGATABLE(CEncoder)
 DECLARE_REGISTRY(CEncoder, "Compress.PPMDEncoder.1", "Compress.PPMDEncoder", 0, THREADFLAGS_APARTMENT)
 
   // ICoder interface
-  STDMETHOD(Init)(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream);
-  // STDMETHOD(ReleaseStreams)();
-  // STDMETHOD(Code)(UINT32 aNumBytes, UINT32 &aProcessedBytes);
-  // STDMETHOD(Flush)();
+  HRESULT Flush();
+  void ReleaseStreams()
+  {
+    m_InStream.ReleaseStream();
+    m_RangeEncoder.ReleaseStream();
+  }
 
   HRESULT CodeReal(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
@@ -74,7 +73,6 @@ DECLARE_REGISTRY(CEncoder, "Compress.PPMDEncoder.1", "Compress.PPMDEncoder", 0, 
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *anOutStreams);
 
   CEncoder();
-  ~CEncoder();
 
 };
 

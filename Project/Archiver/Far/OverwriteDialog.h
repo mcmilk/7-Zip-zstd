@@ -24,7 +24,8 @@ namespace NResult
     kYesToAll,
     kNo,
     kNoToAll,
-    kCancel
+    kAutoRename,
+    kCancel,
   };
 }
 NResult::EEnum Execute(const CFileInfo &anOldFileInfo, const CFileInfo &aNewFileInfo);

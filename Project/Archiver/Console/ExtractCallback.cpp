@@ -9,7 +9,6 @@
 
 #include "Common/StdOutStream.h"
 #include "Common/StdInStream.h"
-
 #include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
@@ -21,6 +20,8 @@
 #include "Windows/PropVariant.h"
 
 #include "Windows/PropVariantConversions.h"
+
+#include "../Common/ExtractAutoRename.h"
 
 using namespace NWindows;
 using namespace NZipSettings;
@@ -100,7 +101,6 @@ static UString MakePathNameFromParts(const UStringVector &aParts)
   }
   return aResult;
 }
-
 
 STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
     ISequentialOutStream **anOutStream, INT32 anAskExtractMode)
@@ -244,17 +244,31 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
             break;
           case NUserAnswerMode::kYes:
             break;
+          case NUserAnswerMode::kAutoRename:
+            m_ExtractModeInfo.OverwriteMode = NExtraction::NOverwriteMode::kAutoRename;
+            break;
           default:
             throw 20413;
           }
+          break;
         }
       }
-      if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
+      if (m_ExtractModeInfo.OverwriteMode == NExtraction::NOverwriteMode::kAutoRename)
       {
-        g_StdOut << "can not delete output file " << endl;
-        g_StdOut << aFullProcessedPath;
-        return E_ABORT;
+        if (!AutoRenamePath(aFullProcessedPath))
+        {
+          g_StdOut << "can not create file with auto name " << endl;
+          g_StdOut << aFullProcessedPath;
+          return E_ABORT;
+        }
       }
+      else
+        if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
+        {
+          g_StdOut << "can not delete output file " << endl;
+          g_StdOut << aFullProcessedPath;
+          return E_ABORT;
+        }
     }
     m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
     CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);

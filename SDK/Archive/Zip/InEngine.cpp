@@ -291,8 +291,9 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     // May be these strings must be deleted
     if (anItemInfo.IsDirectory())
     {
-      if (anItemInfo.PackSize != 0 || anItemInfo.UnPackSize != 0)
+      if (anItemInfo.PackSize != 0 /*  || anItemInfo.UnPackSize != 0 */)
         ThrowIncorrectArchiveException();
+      anItemInfo.UnPackSize = 0;
     }
 
     UINT32 aCurrentRecordSize = sizeof(UINT32) + sizeof(aHeader) + 

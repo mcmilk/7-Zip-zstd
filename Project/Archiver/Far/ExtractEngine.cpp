@@ -91,6 +91,9 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   case NOverwriteDialog::NResult::kYes:
     *anAnswer = NOverwriteAnswer::kYes;
     break;
+  case NOverwriteDialog::NResult::kAutoRename:
+    *anAnswer = NOverwriteAnswer::kAutoRename;
+    break;
   default:
     throw 20413;
   }

@@ -38,7 +38,8 @@ static const int kOverwriteButtons[] =
 {
   IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,
   IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,
-  IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES
+  IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,
+  IDC_EXTRACT_RADIO_AUTO_RENAME
 };
 static const int kNumOverwriteButtons = sizeof(kOverwriteButtons) / sizeof(kOverwriteButtons[0]);
 

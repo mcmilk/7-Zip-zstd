@@ -17,8 +17,9 @@ class CItemInfoEx: public CItemInfo
 {
 public:
   UINT64 HeaderPosition;
-  UINT64 GetDataPosition() const { return HeaderPosition + NFileHeader::kRecordSize; };
-  UINT64 GetFullSize() const { return Size + NFileHeader::kRecordSize; };
+  UINT64 LongLinkSize;
+  UINT64 GetDataPosition() const { return HeaderPosition + LongLinkSize + NFileHeader::kRecordSize; };
+  UINT64 GetFullSize() const { return LongLinkSize + NFileHeader::kRecordSize + Size; };
 };
 
 typedef CObjectVector<CItemInfoEx> CItemInfoExVector;

@@ -9,6 +9,9 @@
 
 #define _ATL_NO_UUIDOF
 
+#define _ATL_EXCEPTIONS
+
+
 #include <atlbase.h>
 
 extern CComModule _Module;

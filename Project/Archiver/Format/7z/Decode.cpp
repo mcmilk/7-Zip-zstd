@@ -30,6 +30,11 @@ static CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
 static CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 #endif
 
+#ifdef COMPRESS_BCJ2
+#include "../../../Compress/Convert/Branch/x86_2.h"
+static CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+#endif
+
 #ifdef COMPRESS_DEFLATE
 #include "../../../Compress/LZ/Deflate/Decoder.h"
 static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
@@ -224,13 +229,24 @@ HRESULT CDecoder::Decode(IInStream *anInStream,
       }
       else
       {
-        #ifndef EXCLUDE_COM
         aDecoders2.Add(CComPtr<ICompressCoder2>());
-        RETURN_IF_NOT_S_OK(aDecoders2.Back().CoCreateInstance(aClassID));
-        MixerCoderSpec->AddCoder2(aDecoders2.Back());
-        #else
-        return E_FAIL;
+
+        #ifdef COMPRESS_BCJ2
+        if (aCoderInfo.DecompressionMethod == k_BCJ2)
+          aDecoders2.Back() = new CComObjectNoLock<CBCJ2_x86_Decoder>;
         #endif
+
+        #ifndef EXCLUDE_COM
+        if (aDecoders2.Back() == 0)
+        {
+          RETURN_IF_NOT_S_OK(aDecoders2.Back().CoCreateInstance(aClassID));
+        }
+        #endif
+
+        if (aDecoders2.Back() == 0)
+          return E_FAIL;
+
+        MixerCoderSpec->AddCoder2(aDecoders2.Back());
       }
     }
     BindInfoExPrev = aBindInfo;
@@ -296,8 +312,10 @@ HRESULT CDecoder::Decode(IInStream *anInStream,
     MixerCoderSpec->SetCoderInfo(i, 
       &aPackSizesPointers.Front(), 
       &anUnPackSizesPointers.Front());
-    MixerCoderSpec->SetProgressCoderIndex(0);
   }
+  UINT32 aMainCoder, aTemp;
+  aBindInfo.FindOutStream(aBindInfo.OutStreams[0], aMainCoder, aTemp);
+  MixerCoderSpec->SetProgressCoderIndex(aMainCoder);
   
   if (aNumCoders == 0)
     return 0;

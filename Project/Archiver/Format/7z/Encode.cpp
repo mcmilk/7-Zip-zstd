@@ -15,6 +15,9 @@
 
 #include "Util/InOutTempBuffer.h"
 
+#include "StreamObjects2.h"
+
+
 #ifdef COMPRESS_COPY
 static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
 #include "Compression/CopyCoder.h"
@@ -33,6 +36,11 @@ static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
 #ifdef COMPRESS_BCJ_X86
 static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 #include "../../../Compress/Convert/Branch/x86.h"
+#endif
+
+#ifdef COMPRESS_BCJ2
+static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+#include "../../../Compress/Convert/Branch/x86_2.h"
 #endif
 
 #ifdef COMPRESS_DEFLATE
@@ -94,6 +102,7 @@ void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &aBindInfo,
 }
 
 HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
+    const UINT64 *anInStreamSize,
     CFolderItemInfo &aFolderItem,
     ISequentialOutStream *anOutStream,
     CRecordVector<UINT64> &aPackSizes,
@@ -157,10 +166,20 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
       }
       else
       {
+        #ifdef COMPRESS_BCJ2
+        if (aMethodFull.MethodInfoEx.MethodID == k_BCJ2)
+          anEncoder2 = new CComObjectNoLock<CBCJ2_x86_Encoder>;
+        #endif
+
         #ifndef EXCLUDE_COM
-        RETURN_IF_NOT_S_OK(anEncoder2.CoCreateInstance(aMethodFull.EncoderClassID));
+        if (anEncoder2 == 0)
+        {
+          RETURN_IF_NOT_S_OK(anEncoder2.CoCreateInstance(aMethodFull.EncoderClassID));
+        }
         #else
-        return E_FAIL;
+        
+        if (anEncoder2 == 0)
+          return E_FAIL;
         #endif
       }
       
@@ -319,14 +338,29 @@ HRESULT CEncoder::Encode(ISequentialInStream *anInStream,
 
   for (i = 0; i < aNumMethods; i++)
     aMixerCoderSpec->SetCoderInfo(i, NULL, NULL);
-  aMixerCoderSpec->SetProgressCoderIndex(aNumMethods - 1);
+
+  if (m_BindInfo.InStreams.IsEmpty())
+    return E_FAIL;
+  UINT32 aMainCoderIndex, aMainStreamIndex;
+  m_BindInfo.FindInStream(m_BindInfo.InStreams[0], aMainCoderIndex, aMainStreamIndex);
+  aMixerCoderSpec->SetProgressCoderIndex(aMainCoderIndex);
+  if (anInStreamSize != NULL)
+  {
+    CRecordVector<const UINT64 *> aSizePointers;
+    for (int i = 0; i < m_BindInfo.CodersInfo[aMainCoderIndex].NumInStreams; i++)
+      if (i == aMainStreamIndex)
+        aSizePointers.Add(anInStreamSize);
+      else
+        aSizePointers.Add(NULL);
+    aMixerCoderSpec->SetCoderInfo(aMainCoderIndex, &aSizePointers.Front(), NULL);
+  }
 
   
   // UINT64 anOutStreamStartPos;
   // RETURN_IF_NOT_S_OK(aStream->Seek(0, STREAM_SEEK_CUR, &anOutStreamStartPos));
   
-  CComObjectNoLock<CSequentialInStreamSizeCount> *anInStreamSizeCountSpec = 
-      new CComObjectNoLock<CSequentialInStreamSizeCount>;
+  CComObjectNoLock<CSequentialInStreamSizeCount2> *anInStreamSizeCountSpec = 
+      new CComObjectNoLock<CSequentialInStreamSizeCount2>;
   CComPtr<ISequentialInStream> anInStreamSizeCount = anInStreamSizeCountSpec;
   CComObjectNoLock<CSequentialOutStreamSizeCount> *anOutStreamSizeCountSpec = 
       new CComObjectNoLock<CSequentialOutStreamSizeCount>;
@@ -422,8 +456,8 @@ CEncoder::CEncoder(const CCompressionMethodMode *anOptions)
     {
       NCoderMixer2::CBindPair aBindPair;
       const CBind &aBind = anOptions->m_Binds[i];
-      aBindPair.InIndex = aBind.InIndex;
-      aBindPair.OutIndex = aBind.OutIndex;
+      aBindPair.InIndex = m_BindInfo.GetCoderInStreamIndex(aBind.InCoder) + aBind.InStream;
+      aBindPair.OutIndex = m_BindInfo.GetCoderOutStreamIndex(aBind.OutCoder) + aBind.OutStream;
       m_BindInfo.BindPairs.Add(aBindPair);
     }
     for (i = 0; i < aNumOutStreams; i++)
@@ -434,6 +468,9 @@ CEncoder::CEncoder(const CCompressionMethodMode *anOptions)
   for (i = 0; i < aNumInStreams; i++)
     if (m_BindInfo.FindBinderForInStream(i) == -1)
       m_BindInfo.InStreams.Add(i);
+
+  if (m_BindInfo.InStreams.IsEmpty())
+    return; // this is error
 
   // Make main stream first in list
   int anInIndex = m_BindInfo.InStreams[0];

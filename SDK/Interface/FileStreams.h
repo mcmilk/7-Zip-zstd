@@ -11,6 +11,7 @@
 
 class CInFileStream: 
   public IInStream,
+  public IStreamGetSize,
   public CComObjectRoot
 {
 public:
@@ -21,6 +22,7 @@ public:
 
 BEGIN_COM_MAP(CInFileStream)
   COM_INTERFACE_ENTRY(IInStream)
+  COM_INTERFACE_ENTRY(IStreamGetSize)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CInFileStream)
@@ -30,6 +32,8 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(Read)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
   STDMETHOD(ReadPart)(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
   STDMETHOD(Seek)(INT64 anOffset, UINT32 aSeekOrigin, UINT64 *aNewPosition);
+
+  STDMETHOD(GetSize)(UINT64 *aSize);
 };
 
 class COutFileStream: 

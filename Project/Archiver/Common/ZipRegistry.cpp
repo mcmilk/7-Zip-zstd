@@ -219,6 +219,7 @@ void CZipRegistryManager::ReadExtractionInfo(NExtraction::CInfo &anInfo)
     case NExtraction::NOverwriteMode::kAskBefore:
     case NExtraction::NOverwriteMode::kWithoutPrompt:
     case NExtraction::NOverwriteMode::kSkipExisting:
+    case NExtraction::NOverwriteMode::kAutoRename:
       anInfo.OverwriteMode = NExtraction::NOverwriteMode::EEnum(anOverwriteModeIndex);
       break;
   }
@@ -234,9 +235,14 @@ static const TCHAR *kCompressionMethodValueName = _T("Method");
 static const TCHAR *kCompressionLastClassIDValueName = _T("Archiver");
 // static const TCHAR *kCompressionMaximizeValueName = _T("Maximize");
 
+static const TCHAR *kCompressionOptionsKeyName = _T("Options");
+static const TCHAR *kCompressionOptionsSolidValueName = _T("Solid");
+static const TCHAR *kCompressionOptionsOptionsValueName = _T("Options");
+
 void CZipRegistryManager::SaveCompressionInfo(const NCompression::CInfo &anInfo)
 {
   NSynchronization::CSingleLock aLock(&g_RegistryOperationsCriticalSection, true);
+
   CKey aCompressionKey;
   aCompressionKey.Create(m_CUKey, kCompressionInfoKeyName);
   aCompressionKey.RecurseDeleteKey(kCompressionHistoryArchivesKeyName);
@@ -250,6 +256,21 @@ void CZipRegistryManager::SaveCompressionInfo(const NCompression::CInfo &anInfo)
       aHistoryArchivesKey.SetValue(aNumberString, anInfo.HistoryArchives[i]);
     }
   }
+
+  aCompressionKey.RecurseDeleteKey(kCompressionOptionsKeyName);
+  {
+    CKey anOptionsKey;
+    anOptionsKey.Create(aCompressionKey, kCompressionOptionsKeyName);
+    anOptionsKey.SetValue(kCompressionOptionsSolidValueName, anInfo.SolidMode);
+    for(int i = 0; i < anInfo.FormatOptionsVector.Size(); i++)
+    {
+      const NCompression::CFormatOptions &aFormatOptions = anInfo.FormatOptionsVector[i];
+      CKey aFormatKey;
+      aFormatKey.Create(anOptionsKey, aFormatOptions.FormatID);
+      aFormatKey.SetValue(kCompressionOptionsOptionsValueName, aFormatOptions.Options);
+    }
+  }
+
   if (anInfo.MethodDefined)
     aCompressionKey.SetValue(kCompressionMethodValueName, UINT32(anInfo.Method));
   if (anInfo.LastClassIDDefined)
@@ -261,6 +282,9 @@ void CZipRegistryManager::SaveCompressionInfo(const NCompression::CInfo &anInfo)
 void CZipRegistryManager::ReadCompressionInfo(NCompression::CInfo &anInfo)
 {
   anInfo.HistoryArchives.Clear();
+
+  anInfo.SolidMode = false;
+  anInfo.FormatOptionsVector.Clear();
 
   anInfo.MethodDefined = false;
   anInfo.LastClassIDDefined = false;
@@ -288,6 +312,32 @@ void CZipRegistryManager::ReadCompressionInfo(NCompression::CInfo &anInfo)
       }
     }
   }
+
+  
+  {
+    CKey anOptionsKey;
+    if(anOptionsKey.Open(aCompressionKey, kCompressionOptionsKeyName, KEY_READ) == 
+        ERROR_SUCCESS)
+    { 
+      bool aSolid = false;
+      if (anOptionsKey.QueryValue(kCompressionOptionsSolidValueName, aSolid) == ERROR_SUCCESS)
+        anInfo.SolidMode = aSolid;
+      CSysStringVector aFormatIDs;
+      anOptionsKey.EnumKeys(aFormatIDs);
+      for(int i = 0; i < aFormatIDs.Size(); i++)
+      {
+        NCompression::CFormatOptions aFormatOptions;
+        aFormatOptions.FormatID = aFormatIDs[i];
+        CKey aFormatKey;
+        if(aFormatKey.Open(anOptionsKey, aFormatOptions.FormatID, KEY_READ) == ERROR_SUCCESS)
+           if (aFormatKey.QueryValue(kCompressionOptionsOptionsValueName, 
+                aFormatOptions.Options) == ERROR_SUCCESS)
+              anInfo.FormatOptionsVector.Add(aFormatOptions);
+
+      }
+    }
+  }
+
   UINT32 aMethod;
   if (aCompressionKey.QueryValue(kCompressionMethodValueName, aMethod) == ERROR_SUCCESS)
   { 

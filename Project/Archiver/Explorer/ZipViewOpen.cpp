@@ -116,8 +116,13 @@ void CZipViewObject::OpenItem(UINT32 anIndex)
   {
     switch(aResult)
     {
-    case SE_ERR_NOASSOC:
-      MessageBox(_T("There is no application associated with the given file name extension"));
+      case SE_ERR_NOASSOC:
+      {
+        MessageBox(_T("There is no application associated with the given file name extension"));
+        DeleteFileAlways(aTempFileName);
+        ::RemoveDirectory(aTempDir);
+        return;
+      }
     }
   }
 

@@ -44,13 +44,13 @@ static const char *kCopyrightString = "\n7-Zip"
 " (Alone)"
 #endif
 
-" 2.30 Beta 6  Copyright (c) 1999-2001 Igor Pavlov  13-Oct-2001\n";
+" 2.30 Beta 7  Copyright (c) 1999-2001 Igor Pavlov  04-Nov-2001\n";
 
 const char *kDefaultArchiveType = "7z";
 const char *kDefaultSfxModule = "7zCon.sfx";
 const LPCTSTR kSFXExtension = TEXT("exe");
 
-static const int kNumSwitches = 14;
+static const int kNumSwitches = 15;
 
 namespace NKey {
 enum Enum
@@ -69,6 +69,7 @@ enum Enum
   kUpdate,
   kRecursed,
   kSfx,
+  kOverwrite
 };
 
 }
@@ -99,6 +100,17 @@ static const char kImmediateNameID = '!';
 static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
 static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
 
+static const char *kOverwritePostCharSet = "asu";
+
+NZipSettings::NExtraction::NOverwriteMode::EEnum k_OverwriteModes[] =
+{
+  // NZipSettings::NExtraction::NOverwriteMode::kAskBefore,
+  NZipSettings::NExtraction::NOverwriteMode::kWithoutPrompt,
+  NZipSettings::NExtraction::NOverwriteMode::kSkipExisting,
+  NZipSettings::NExtraction::NOverwriteMode::kAutoRename
+};
+
+
 static const CSwitchForm kSwitchForms[kNumSwitches] = 
   {
     { "?",  NSwitchType::kSimple, false },
@@ -114,7 +126,8 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { "X",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
     { "U",  NSwitchType::kUnLimitedPostString, true, 1},
     { "R",  NSwitchType::kPostChar, false, 0, 0, kRecursedPostCharSet },
-    { "SFX",  NSwitchType::kUnLimitedPostString, false, 0 }
+    { "SFX",  NSwitchType::kUnLimitedPostString, false, 0 },
+    { "AO",  NSwitchType::kPostChar, false, 1, 1, kOverwritePostCharSet}
   };
 
 static const kNumCommandForms = 7;
@@ -934,8 +947,15 @@ int Main2(int aNumArguments, const char *anArguments[])
         anOutputDir = aParser[NKey::kOutputDir].PostStrings[0]; // test this DirPath
         NName::NormalizeDirPathPrefix(anOutputDir);
       }
+
+      NZipSettings::NExtraction::NOverwriteMode::EEnum anOverwriteMode = 
+          NZipSettings::NExtraction::NOverwriteMode::kAskBefore;
+      if(aParser[NKey::kOverwrite].ThereIs)
+        anOverwriteMode = k_OverwriteModes[aParser[NKey::kOverwrite].PostCharIndex];
+     
+
       CExtractOptions anOptions(aExtractMode, anOutputDir, anYesToAll, 
-          aPasswordEnabled, aPassword);
+          aPasswordEnabled, aPassword, anOverwriteMode);
       anOptions.DefaultItemName = aDefaultItemName;
       anOptions.ArchiveFileInfo = anArchiveFileInfo;
       // anOptions.ArchiveFileInfo = anArchiveFileInfo;

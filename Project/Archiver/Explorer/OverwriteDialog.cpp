@@ -43,8 +43,18 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
     throw 4190402;
   ConvertFileTimeToStrings(aLocalFileTime, aDateString, aTimeString);
   TCHAR sz[512];
+  
+  CSysString aReducedName;
+  const kLineSize = 88;
+  for (int i = 0; i < aFileInfo.Name.Length();)
+  {
+    aReducedName += aFileInfo.Name.Mid(i, kLineSize);
+    aReducedName += TEXT(" ");
+    i += kLineSize;
+  }
+
   _stprintf(sz, MyLoadString(IDS_FILE_SIZE_TIME), 
-      (LPCTSTR)aFileInfo.Name, (LPCTSTR)aSizeString, 
+      (LPCTSTR)aReducedName, (LPCTSTR)aSizeString, 
       (LPCTSTR)aDateString, (LPCTSTR)aTimeString);
   NWindows::NControl::CDialogChildControl m_Control;
   m_Control.Init(*this, aTextID);
@@ -77,6 +87,7 @@ bool COverwriteDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
     case IDC_BUTTON_OVERWRITE_YES_TO_ALL:
     case IDNO:
     case IDC_BUTTON_OVERWRITE_NO_TO_ALL:
+    case IDC_BUTTON_OVERWRITE_AUTO_RENAME:
       End(aButtonID);
       return true;
   }

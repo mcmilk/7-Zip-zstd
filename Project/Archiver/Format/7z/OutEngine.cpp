@@ -420,7 +420,8 @@ HRESULT COutArchive::EncodeStream(CEncoder &anEncoder, const CByteBuffer &aData,
   CFolderItemInfo aFolderItem;
   aFolderItem.UnPackCRCDefined = true;
   aFolderItem.UnPackCRC = CCRC::CalculateDigest(aData, aData.GetCapacity());
-  RETURN_IF_NOT_S_OK(anEncoder.Encode(anStream, aFolderItem, m_Stream,
+  RETURN_IF_NOT_S_OK(anEncoder.Encode(anStream, NULL,
+      aFolderItem, m_Stream,
       aPackSizes, NULL));
   aFolders.Add(aFolderItem);
   return S_OK;

@@ -90,6 +90,19 @@ HRESULT UpdateOneFile(IInStream *anInStream,
   RETURN_IF_NOT_S_OK(anUpdateCallBack->CompressOperation(
       anUpdateItem.IndexInClient, &aFileInStream));
 
+  UINT64 aSize;
+  UINT64 *aSizePointer = NULL;
+  if (aFileInStream != NULL)
+  {
+    CComPtr<IInStream> aFullInStream;
+    if (aFileInStream.QueryInterface(&aFullInStream) == S_OK)
+    {
+      RETURN_IF_NOT_S_OK(aFullInStream->Seek(0, STREAM_SEEK_END, &aSize));
+      RETURN_IF_NOT_S_OK(aFullInStream->Seek(0, STREAM_SEEK_SET, NULL));
+      aSizePointer = &aSize;
+    }
+  }
+
   UINT64 aFileSize = anUpdateItem.Size;
   bool anIsDirectory = anUpdateItem.IsDirectory();
   
@@ -119,7 +132,7 @@ HRESULT UpdateOneFile(IInStream *anInStream,
     CComPtr<ICompressProgressInfo> aCompressProgress = aLocalCompressProgressSpec;
     aLocalCompressProgressSpec->Init(aLocalProgress, &aCurrentComplexity, NULL);
 
-    RETURN_IF_NOT_S_OK(anEncoder.Encode(anInStream,
+    RETURN_IF_NOT_S_OK(anEncoder.Encode(anInStream, aSizePointer, 
         aFolderItem,
         anArchive.m_Stream,
         aPackSizes,

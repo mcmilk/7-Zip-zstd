@@ -92,6 +92,9 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
     case NExtractionDialog::NOverwriteMode::kSkipExisting:
       anOverwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
       break;
+    case NExtractionDialog::NOverwriteMode::kAutoRename:
+      anOverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+      break;
     default:
       throw 12334454;
   }

@@ -5,7 +5,7 @@
 #ifndef __ARICONST_H
 #define __ARICONST_H
 
-#include "Compression/AriBitCoder.h"
+#include "Compression/RangeCoder.h"
 
 typedef NCompression::NArithmetic::CRangeEncoder CMyRangeEncoder;
 typedef NCompression::NArithmetic::CRangeDecoder CMyRangeDecoder;

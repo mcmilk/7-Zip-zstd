@@ -16,6 +16,8 @@
 
 #include "Windows/PropVariantConversions.h"
 
+#include "../Common/ExtractAutoRename.h"
+
 using namespace NWindows;
 
 static const char *kTestingString    =  "Testing     ";
@@ -228,17 +230,30 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
               break;
             case NOverwriteAnswer::kYes:
               break;
+            case NOverwriteAnswer::kAutoRename:
+              m_OverwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+              break;
             default:
               throw 20413;
           }
         }
       }
-      if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
+      if (m_OverwriteMode == NExtractionMode::NOverwrite::kAutoRename)
       {
-        RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
-            L"can not delete output file "));
-        return E_ABORT;
+        if (!AutoRenamePath(aFullProcessedPath))
+        {
+          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
+            L"can not create name of file"));
+          return E_ABORT;
+        }
       }
+      else
+        if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
+        {
+          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
+              L"can not delete output file "));
+          return E_ABORT;
+        }
     }
     m_OutFileStreamSpec = new CComObjectNoLock<COutFileStream>;
     CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);

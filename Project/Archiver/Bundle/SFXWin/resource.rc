@@ -75,8 +75,8 @@ IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,6,0
- PRODUCTVERSION 2,30,6,0
+ FILEVERSION 2,30,7,0
+ PRODUCTVERSION 2,30,7,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -94,14 +94,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Palvov\0"
             VALUE "FileDescription", "7z SFX (GUI version)\0"
-            VALUE "FileVersion", "2, 30, 6, 0\0"
+            VALUE "FileVersion", "2, 30, 7, 0\0"
             VALUE "InternalName", "7zWin.sfx\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2001 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zWin.sfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 6, 0\0"
+            VALUE "ProductVersion", "2, 30, 7, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -131,7 +131,7 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,171,57,50,14
 END
 
-IDD_DIALOG_OVERWRITE DIALOG DISCARDABLE  0, 0, 303, 175
+IDD_DIALOG_OVERWRITE DIALOG DISCARDABLE  0, 0, 371, 194
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Confirm File Replace"
 FONT 8, "MS Sans Serif"
@@ -141,18 +141,19 @@ BEGIN
     LTEXT           "Would you like to replace the existing file",IDC_STATIC,
                     7,28,129,8
     ICON            "",IDC_STATIC_OVERWRITE_OLD_FILE_ICON,7,44,20,20
-    CONTROL         "",IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,"Static",
-                    SS_LEFTNOWORDWRAP | WS_GROUP,39,44,257,32
-    LTEXT           "with this one?",IDC_STATIC,7,83,44,8
-    ICON            "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,7,103,20,20
-    LTEXT           "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,39,103,257,32
-    PUSHBUTTON      "&Yes",IDYES,7,154,50,14
-    PUSHBUTTON      "Yes to &All",IDC_BUTTON_OVERWRITE_YES_TO_ALL,66,154,50,
+    LTEXT           "",IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,39,44,325,50
+    LTEXT           "with this one?",IDC_STATIC,7,98,44,8
+    ICON            "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,7,114,20,20
+    LTEXT           "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,39,114,325,50
+    PUSHBUTTON      "&Yes",IDYES,7,173,50,14
+    PUSHBUTTON      "Yes to &All",IDC_BUTTON_OVERWRITE_YES_TO_ALL,66,173,50,
                     14
-    PUSHBUTTON      "&No",IDNO,125,154,50,14
-    PUSHBUTTON      "No to A&ll",IDC_BUTTON_OVERWRITE_NO_TO_ALL,184,154,50,
+    PUSHBUTTON      "&No",IDNO,125,173,50,14
+    PUSHBUTTON      "No to A&ll",IDC_BUTTON_OVERWRITE_NO_TO_ALL,184,173,50,
                     14
-    PUSHBUTTON      "&Cancel",IDCANCEL,243,154,50,14
+    PUSHBUTTON      "A&uto Rename",IDC_BUTTON_OVERWRITE_AUTO_RENAME,243,173,
+                    50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,314,173,50,14
 END
 
 IDD_DIALOG_MESSAGES DIALOG DISCARDABLE  0, 0, 266, 135

@@ -41,6 +41,11 @@ STDMETHODIMP CInFileStream::Seek(INT64 anOffset, UINT32 aSeekOrigin,
   return ConvertBoolToHRESULT(aResult);
 }
 
+STDMETHODIMP CInFileStream::GetSize(UINT64 *aSize)
+{
+  return ConvertBoolToHRESULT(m_File.GetLength(*aSize));
+}
+
 
 //////////////////////////
 // COutFileStream

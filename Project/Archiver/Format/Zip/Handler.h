@@ -70,6 +70,11 @@ private:
   CInArchive m_Archive;
   bool m_ArchiveIsOpen;
   CCompressionMethodMode m_Method;
+  void InitMethodProperties()
+  {
+    m_Method.NumPasses = 1;
+    m_Method.NumFastBytes = 32;
+  }
 };
 
 }}

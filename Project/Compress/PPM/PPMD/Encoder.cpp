@@ -100,18 +100,11 @@ CEncoder::CEncoder():
   // m_SubAllocator.StartSubAllocator(kSubAllocator);
 }
 
-CEncoder::~CEncoder()
+
+HRESULT CEncoder::Flush()
 {
-}
-
-STDMETHODIMP CEncoder::Init(ISequentialInStream *anInStream, 
-      ISequentialOutStream *anOutStream)
-{
-
-  m_InStream.Init(anInStream);
-  m_RangeEncoder.Init(anOutStream);
-
-  return S_OK;
+  m_RangeEncoder.FlushData();
+  return m_RangeEncoder.FlushStream();
 }
 
 class CEncoderFlusher
@@ -121,10 +114,8 @@ public:
   CEncoderFlusher(CEncoder *anEncoder): m_Encoder(anEncoder) {}
   ~CEncoderFlusher()
   {
-    m_Encoder->m_RangeEncoder.FlushData();
-    m_Encoder->m_RangeEncoder.FlushStream();
-    m_Encoder->m_RangeEncoder.ReleaseStream();
-    m_Encoder->m_InStream.ReleaseStream();
+    m_Encoder->Flush();
+    m_Encoder->ReleaseStreams();
   }
 };
 
@@ -135,7 +126,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
       const UINT64 *anInSize, const UINT64 *anOutSize,
       ICompressProgressInfo *aProgress)
 {
-  Init(anInStream, anOutStream);
+  m_InStream.Init(anInStream);
+  m_RangeEncoder.Init(anOutStream);
+
   CEncoderFlusher aFlusher(this);
 
   UINT64 aPos = 0;

@@ -68,7 +68,8 @@ DECLARE_REGISTRY(CGZipHandler, "SevenZip.FormatGZip.1", "SevenZip.FormatGZip", 0
   STDMETHOD(SetProperties)(const BSTR *aNames, const PROPVARIANT *aValues, INT32 aNumProperties);
 
 public:
-  CGZipHandler() { m_Method.MaximizeRatio = false; };
+  CGZipHandler()
+    { InitMethodProperties(); }
 private:
 
   NArchive::NGZip::CItemInfoEx m_Item;
@@ -76,6 +77,11 @@ private:
   CComPtr<IInStream> m_Stream;
 
   CCompressionMethodMode m_Method;
+  void InitMethodProperties()
+  {
+    m_Method.NumPasses = 1;
+    m_Method.NumFastBytes = 32;
+  }
 };
 
 }}

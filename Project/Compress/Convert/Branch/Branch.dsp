@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"C:\Program Files\7-ZIP\Compress\Convert\Branch.dll" /opt:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"C:\Program Files\7-ZIP\Compress\Branch.dll" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"C:\Program Files\7-ZIP\Compress\Convert\Branch.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"C:\Program Files\7-ZIP\Compress\Branch.dll" /pdbtype:sept
 
 !ENDIF 
 
@@ -175,6 +175,54 @@ SOURCE=.\x86.cpp
 # Begin Source File
 
 SOURCE=.\x86.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\x86_2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\x86_2.h
+# End Source File
+# End Group
+# Begin Group "Stream"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\InByte.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\InByte.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\OutByte.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Stream\OutByte.h
+# End Source File
+# End Group
+# Begin Group "Arithmetoc"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\AriBitCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
+# End Source File
+# End Group
+# Begin Group "Interface"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Interface\CompressInterface.h
 # End Source File
 # End Group
 # End Target

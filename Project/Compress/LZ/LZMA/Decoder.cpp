@@ -133,7 +133,7 @@ HRESULT CDecoder::Create()
 }
 
 
-STDMETHODIMP CDecoder::Init(ISequentialInStream *anInStream,
+HRESULT CDecoder::Init(ISequentialInStream *anInStream,
     ISequentialOutStream *anOutStream)
 {
   m_RangeDecoder.Init(anInStream);
@@ -172,31 +172,6 @@ STDMETHODIMP CDecoder::Init(ISequentialInStream *anInStream,
 }
 
 
-STDMETHODIMP CDecoder::ReleaseStreams()
-{
-  m_OutWindowStream.ReleaseStream();
-  //m_InitInCoder->ReleaseStream();
-  m_RangeDecoder.ReleaseStream();
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::Flush()
-{
-  return m_OutWindowStream.Flush();
-}
-
-
-class CDecoderFlusher
-{
-  CDecoder *m_Decoder;
-public:
-  CDecoderFlusher(CDecoder *aDecoder): m_Decoder(aDecoder) {}
-  ~CDecoderFlusher()
-  {
-    m_Decoder->Flush();
-    m_Decoder->ReleaseStreams();
-  }
-};
 
 STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
     ISequentialOutStream *anOutStream, 
@@ -339,7 +314,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *anInStream,
       aProgressPosValuePrev = aNowPos64;
     }
   }
-  return S_OK;
+  return Flush();
 }
 
 STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,

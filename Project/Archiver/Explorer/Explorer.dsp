@@ -314,6 +314,10 @@ SOURCE=..\..\..\SDK\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Common\Defs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -383,6 +387,14 @@ SOURCE=..\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractAutoRename.h
 # End Source File
 # Begin Source File
 
@@ -487,6 +499,18 @@ SOURCE=..\Format\Common\IArchiveHandler.h
 # Begin Source File
 
 SOURCE=..\Common\IArchiveHandler2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\IInOutStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Interface\IProgress.h
 # End Source File
 # End Group
 # Begin Group "Engine"
@@ -755,6 +779,22 @@ SOURCE=..\..\..\SDK\Compression\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Compression\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "Spec Interfaces"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\ArchiveStyleDirItemInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Interface\CompressInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Format\Common\FormatCryptoInterface.h
 # End Source File
 # End Group
 # End Target

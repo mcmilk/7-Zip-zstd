@@ -13,6 +13,7 @@ enum EEnum
   kNo,
   kYesAll,
   kNoAll,
+  kAutoRename,
   kQuit,
 };
 }

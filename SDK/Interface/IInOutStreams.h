@@ -49,4 +49,14 @@ public:
   STDMETHOD(SetSize)(INT64 aNewSize) = 0;
 };
 
+// {23170F69-40C1-278A-0000-000000060000}
+DEFINE_GUID(IID_IStreamGetSize, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000000060000")
+IStreamGetSize : public IUnknown
+{
+public:
+  STDMETHOD(GetSize)(UINT64 *aSize) = 0;
+};
+
 #endif

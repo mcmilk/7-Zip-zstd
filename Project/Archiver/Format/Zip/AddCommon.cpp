@@ -22,12 +22,6 @@ namespace NZip {
 static const BYTE kMethodIDForEmptyStream = NFileHeader::NCompressionMethod::kStored;
 static const BYTE kExtractVersionForEmptyStream = NFileHeader::NCompressionMethod::kStoreExtractVersion;
 
-static const UINT32 kMatchFastLenNormal  = 32;
-static const UINT32 kMatchFastLenMX  = 64;
-
-static const UINT32 kNumPassesNormal = 1;
-static const UINT32 kNumPassesMX  = 3;
-
 CAddCommon::CAddCommon(const CCompressionMethodMode &anOptions):
   m_Options(anOptions),
   m_CopyCoderSpec(NULL)
@@ -92,8 +86,7 @@ HRESULT CAddCommon::Compress(IInStream *anInStream, IOutStream *anOutStream,
 
           NWindows::NCOM::CPropVariant aProperties[2] = 
           {
-            m_Options.MaximizeRatio ? UINT32(kNumPassesMX) : UINT32(kNumPassesNormal),
-            m_Options.MaximizeRatio ? UINT32(kMatchFastLenMX) : UINT32(kMatchFastLenNormal)
+            m_Options.NumPasses, m_Options.NumFastBytes
           };
           PROPID aPropIDs[2] = 
           {

@@ -8,6 +8,7 @@
 #include "Common/Types.h"
 #include "Common/String.h"
 #include "Archive/Tar/Header.h"
+#include "Archive/Tar/ItemNameUtils.h"
 
 namespace NArchive {
 namespace NTar {
@@ -33,7 +34,14 @@ public:
   UINT32 DeviceMinor;
 
   bool IsDirectory() const 
-    {  return (LinkFlag == NFileHeader::NLinkFlag::kDirectory); }
+    {  
+      if (LinkFlag == NFileHeader::NLinkFlag::kDirectory)
+        return true;
+      if (LinkFlag == NFileHeader::NLinkFlag::kOldNormal || 
+          LinkFlag == NFileHeader::NLinkFlag::kNormal)
+        return NItemName::IsItDirName(Name);
+      return false;
+    }
 };
 
 }}

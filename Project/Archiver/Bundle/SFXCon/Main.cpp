@@ -29,7 +29,7 @@ using namespace NFile;
 using namespace NComandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 2.30 Beta 6  Copyright (c) 1999-2001 Igor Pavlov  13-Oct-2001\n";
+"\n7-Zip SFX 2.30 Beta 7  Copyright (c) 1999-2001 Igor Pavlov  04-Nov-2001\n";
 
 static const int kNumSwitches = 6;
 
@@ -475,8 +475,10 @@ int Main2(int aNumArguments, const char *anArguments[])
         anOutputDir = aParser[NKey::kOutputDir].PostStrings[0]; // test this DirPath
         NName::NormalizeDirPathPrefix(anOutputDir);
       }
+      NZipSettings::NExtraction::NOverwriteMode::EEnum anOverwriteMode = 
+          NZipSettings::NExtraction::NOverwriteMode::kAskBefore;
       CExtractOptions anOptions(aExtractMode, anOutputDir, anYesToAll, 
-          aPasswordEnabled, aPassword);
+          aPasswordEnabled, aPassword, anOverwriteMode);
       anOptions.DefaultItemName = aDefaultItemName;
       anOptions.ArchiveFileInfo = anArchiveFileInfo;
       // anOptions.ArchiveFileInfo = anArchiveFileInfo;

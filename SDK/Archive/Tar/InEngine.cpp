@@ -56,34 +56,34 @@ static bool IsRecordLast(const NFileHeader::CRecord &aRecord)
   return true;
 }
 
-HRESULT CInArchive::GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo)
+HRESULT CInArchive::GetNextItemReal(bool &aFilled, CItemInfoEx &anItemInfo)
 {
+  anItemInfo.LongLinkSize = 0;
   NFileHeader::CRecord aRecord;
+  aFilled = false;
 
   UINT32 aProcessedSize;
   anItemInfo.HeaderPosition = m_Position;
   RETURN_IF_NOT_S_OK(ReadBytes(&aRecord, sizeof(aRecord), aProcessedSize));
   if (aProcessedSize == 0 || 
       (aProcessedSize == sizeof(aRecord) && IsRecordLast(aRecord)))
-  {
-    aFilled = false;
     return S_OK;
-  }
   if (aProcessedSize < sizeof(aRecord))
-  { 
     return S_FALSE;
-  }
   
   NFileHeader::CHeader &aHeader = aRecord.Header;
-  anItemInfo.Name = aHeader.Name;
+  
+  char aTempString[NFileHeader::kNameSize + 1];
+  strncpy(aTempString, aHeader.Name, NFileHeader::kNameSize);
+  aTempString[NFileHeader::kNameSize] = '\0';
+  anItemInfo.Name = aTempString;
+
   for (int i = 0; i < anItemInfo.Name.Length(); i++)
     if (((BYTE)anItemInfo.Name[i]) < 0x20)
       return S_FALSE;
   anItemInfo.LinkFlag = aHeader.LinkFlag;
 
   BYTE aLinkFlag = anItemInfo.LinkFlag;
-  if (aLinkFlag > '7' || (aLinkFlag < '0' && aLinkFlag != 0))
-      return S_FALSE;
 
   ReturnIfBadOctal(aHeader.Mode, 8);
   ReturnIfBadOctal(aHeader.UID, 8);
@@ -100,7 +100,6 @@ HRESULT CInArchive::GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo)
   anItemInfo.Size = OctalToNumber(aHeader.Size);
   anItemInfo.ModificationTime = OctalToNumber(aHeader.ModificationTime);
   
-
 
   anItemInfo.LinkName = aHeader.LinkName;
   memmove(anItemInfo.Magic, aHeader.Magic, 8);
@@ -128,9 +127,44 @@ HRESULT CInArchive::GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo)
   if (aCheckSumReal != aCheckSum)
     return S_FALSE;
 
+
   aFilled = true;
   return S_OK;
 }
+
+HRESULT CInArchive::GetNextItem(bool &aFilled, CItemInfoEx &anItemInfo)
+{
+  RETURN_IF_NOT_S_OK(GetNextItemReal(aFilled, anItemInfo));
+  if (!aFilled)
+    return S_OK;
+  // GNUtar extension
+  if (anItemInfo.LinkFlag == 'L')
+  {
+    if (anItemInfo.Name.Compare(NFileHeader::kLongLink) != 0)
+      return S_FALSE;
+    UINT64 aHeaderPosition = anItemInfo.HeaderPosition;
+
+    UINT32 aProcessedSize;
+    AString aFullName;
+    char *aString = aFullName.GetBuffer(anItemInfo.Size + 1);
+    RETURN_IF_NOT_S_OK(ReadBytes(aString, anItemInfo.Size, aProcessedSize));
+    aString[anItemInfo.Size] = '\0';
+    aFullName.ReleaseBuffer();
+    if (aProcessedSize != anItemInfo.Size)
+      return S_FALSE;
+    RETURN_IF_NOT_S_OK(Skeep((0 - anItemInfo.Size) & 0x1FF));
+    RETURN_IF_NOT_S_OK(GetNextItemReal(aFilled, anItemInfo));
+    anItemInfo.Name = aFullName;
+    anItemInfo.LongLinkSize = anItemInfo.HeaderPosition - aHeaderPosition;
+    anItemInfo.HeaderPosition = aHeaderPosition;
+  }
+  else if (anItemInfo.LinkFlag > '7' || (anItemInfo.LinkFlag < '0' && anItemInfo.LinkFlag != 0))
+    return S_FALSE;
+  return S_OK;
+}
+
+
+
 
 HRESULT CInArchive::Skeep(UINT64 aNumBytes)
 {

@@ -37,6 +37,10 @@ namespace NCompressDialog
   {
     NUpdateMode::EEnum UpdateMode;
     NMethod::EEnum Method;
+    bool SolidModeIsAllowed;
+    bool SolidMode;
+
+    CSysString Options;
 
     bool SFXMode;
     
@@ -56,9 +60,15 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 	NWindows::NControl::CComboBox	m_Format;
 	NWindows::NControl::CComboBox	m_Method;
 	NWindows::NControl::CComboBox	m_UpdateMode;
+  NWindows::NControl::CDialogChildControl m_Options;
+
+  NZipSettings::NCompression::CInfo m_RegistryInfo;
 
   int m_PrevFormat;
   void SetArchiveName(const CSysString &aName);
+  int FindFormat(const CSysString &aName);
+  void SaveOptions();
+  void SetOptions();
 public:
 	CZipRegistryManager *m_ZipRegistryManager;
   CObjectVector<NZipRootRegistry::CArchiverInfo> m_ArchiverInfoList;
@@ -70,7 +80,9 @@ public:
 
 protected:
 
+  void CheckSolidEnable();
   void CheckSFXEnable();
+
 	void OnButtonSetArchive();
   void OnButtonSFX();
 

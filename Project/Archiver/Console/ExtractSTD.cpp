@@ -57,8 +57,15 @@ HRESULT DeCompressArchiveSTD(
   NZipSettings::NExtraction::CInfo anExtractionInfo;
   anExtractionInfo.PathMode = anOptions.FullPathMode() ? NExtraction::NPathMode::kFullPathnames:
       NExtraction::NPathMode::kNoPathnames;
-  anExtractionInfo.OverwriteMode = anOptions.YesToAll ? NExtraction::NOverwriteMode::kWithoutPrompt :
-      NExtraction::NOverwriteMode::kAskBefore;
+
+  if (anOptions.YesToAll)
+    anExtractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
+  else
+  {
+    anExtractionInfo.OverwriteMode = anOptions.OverwriteMode;
+
+  }
+
 
   anExtractCallBackSpec->Init(anArchive, 
       anOptions.OutputBaseDir, anExtractionInfo, aRemovePathParts, CP_OEMCP,

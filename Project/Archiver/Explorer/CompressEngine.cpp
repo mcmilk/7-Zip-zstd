@@ -43,7 +43,65 @@ DEFINE_GUID(CLSID_CAgentArchiveHandler,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
 */
 
-static HRESULT SetOutProperties(IOutArchiveHandler100 * anOutArchive, UINT32 aMethod)
+static void SplitString(const CSysString &aString, CSysStringVector &aStrings)
+{
+  aStrings.Clear();
+  for (int aPos = 0; aPos < aString.Length();)
+  {
+    int aSpacePos = aString.Find(TEXT(' '), aPos);
+    if (aSpacePos < 0)
+    {
+      aStrings.Add(aString.Mid(aPos));
+      return;
+    }
+    if (aSpacePos != aPos)
+      aStrings.Add(aString.Mid(aPos, aSpacePos - aPos));
+    aPos = aSpacePos + 1;
+  }
+}
+
+static bool ParseNumberString(const UString &aString, UINT32 &aNumber)
+{
+  wchar_t *anEndPtr;
+  aNumber = wcstoul(aString, &anEndPtr, 10);
+  return (anEndPtr - aString == aString.Length());
+}
+
+static void SetOptions(const CSysString &anOptions,
+    CObjectVector<CComBSTR> &aNamesReal,
+    std::vector<NCOM::CPropVariant> &aValues)
+{
+  CSysStringVector aStrings;
+  SplitString(anOptions, aStrings);
+  for(int i = 0; i < aStrings.Size(); i++)
+  {
+    const UString &aString = GetUnicodeString(aStrings[i]);
+    int anIndex = aString.Find(L'=');
+    CComBSTR aName;
+    NCOM::CPropVariant aPropVariant;
+    if (anIndex < 0)
+      aName = aString;
+    else
+    {
+      aName = aString.Left(anIndex);
+      UString aValue = aString.Mid(anIndex + 1);
+      if (!aValue.IsEmpty())
+      {
+        UINT32 aNumber;
+        if (ParseNumberString(aValue, aNumber))
+          aPropVariant = aNumber;
+        else
+          aPropVariant = aValue;
+      }
+    }
+    aNamesReal.Add(aName);
+    aValues.push_back(aPropVariant);
+  }
+}
+
+static HRESULT SetOutProperties(IOutArchiveHandler100 * anOutArchive, 
+    UINT32 aMethod, bool aSolidModeIsAllowed, bool aSolidMode, 
+    const CSysString &anOptions)
 {
   CComPtr<ISetProperties> aSetProperties;
   if (anOutArchive->QueryInterface(&aSetProperties) == S_OK)
@@ -67,11 +125,24 @@ static HRESULT SetOutProperties(IOutArchiveHandler100 * anOutArchive, UINT32 aMe
     std::vector<NCOM::CPropVariant> aValues;
     aNamesReal.Add(aComBSTR);
     aValues.push_back(NCOM::CPropVariant());
+    
+    // Solid
+    if (aSolidModeIsAllowed)
+    {
+      aNamesReal.Add(L"s");
+      aValues.push_back(NCOM::CPropVariant(aSolidMode ? L"on": L"off"));
+    }
+
+    // Options 
+    SetOptions(anOptions, aNamesReal, aValues);
+    
     std::vector<BSTR> aNames;
     for(int i = 0; i < aNamesReal.Size(); i++)
       aNames.push_back(aNamesReal[i]);
     RETURN_IF_NOT_S_OK(aSetProperties->SetProperties(&aNames.front(), 
       &aValues.front(), aNames.size()));
+
+
   }
   return S_OK;
 }
@@ -128,6 +199,7 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
   aDialog.m_Info.ArchiveName = aResultPath;
   aDialog.m_Info.CurrentDirPrefix = aCurrentDir;
   aDialog.m_Info.SFXMode = false;
+  aDialog.m_Info.SolidMode = true;
 
   if(aDialog.Create(0) != IDOK)
     return S_OK;
@@ -246,7 +318,9 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
   
   anUpdateCallBackSpec->Init(anArchiveHandler, 0);
 
-  RETURN_IF_NOT_S_OK(SetOutProperties(anOutArchive, aDialog.m_Info.Method));
+  RETURN_IF_NOT_S_OK(SetOutProperties(anOutArchive, aDialog.m_Info.Method, 
+      aDialog.m_Info.SolidModeIsAllowed, aDialog.m_Info.SolidMode, 
+      aDialog.m_Info.Options));
 
   UString aSFXModule;
   if (aDialog.m_Info.SFXMode)
