@@ -27,6 +27,7 @@ namespace NExtraction {
       kWithoutPrompt,
       kSkipExisting,
       kAutoRename,
+      kAutoRenameExisting
     };
   }
   

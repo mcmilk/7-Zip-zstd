@@ -9,6 +9,8 @@
 
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
+#include "Windows/COM.h"
+
 #include "../UI/Common/PropIDUtils.h"
 #include "../PropID.h"
 
@@ -256,10 +258,10 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_BEGINDRAG:
     case LVN_BEGINRDRAG:
     {
+      // OnDrag((LPNMLISTVIEW)header);
       RefreshStatusBar();
       break;
     }
-
   }
   return false;
 }

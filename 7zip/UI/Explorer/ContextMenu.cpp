@@ -5,8 +5,6 @@
 #include "ContextMenu.h"
 
 #include "Common/StringConvert.h"
-#include "Common/IntToString.h"
-#include "Common/Random.h"
 
 #include "Windows/Shell.h"
 #include "Windows/Memory.h"
@@ -14,17 +12,15 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
-#include "Windows/FileMapping.h"
 #include "Windows/System.h"
 #include "Windows/Thread.h"
 #include "Windows/Window.h"
-#include "Windows/Synchronization.h"
 
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
 
-#include "../../FileManager/ProgramLocation.h"
 #include "../../FileManager/FormatUtils.h"
+#include "../../FileManager/ProgramLocation.h"
 
 #include "../Common/ZipRegistry.h"
 #include "../Common/ArchiveName.h"
@@ -42,6 +38,7 @@
 #include "MyMessages.h"
 
 #include "../Resource/Extract/resource.h"
+#include "../Common/CompressCall.h"
 
 using namespace NWindows;
 
@@ -252,6 +249,13 @@ static BOOL MyInsertMenu(HMENU hMenu, int pos, UINT id, LPCTSTR s)
   return ::InsertMenuItem(hMenu, pos++, TRUE, &menuItem);
 }
 
+static CSysString GetSubFolderNameForExtract(const CSysString &archiveName)
+{
+  int dotPos = archiveName.ReverseFind('.');
+  if (dotPos >= 0)
+    return archiveName.Left(dotPos);
+  return archiveName + CSysString(TEXT("~"));
+}
 
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
@@ -323,6 +327,9 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       {
         CCommandMapItem commandMapItem;
         FillCommand(kExtract, mainString, commandMapItem);
+        commandMapItem.Folder = folderPrefix + 
+            GetSubFolderNameForExtract(fileInfo.Name) + 
+            CSysString(L'\\');
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString); 
         _commandMap.push_back(commandMapItem);
       }
@@ -343,13 +350,10 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         CCommandMapItem commandMapItem;
         UString s;
         FillCommand2(kExtractTo, s, commandMapItem);
-        UString folder = GetUnicodeString(fileInfo.Name);
-        int dotPos = folder.ReverseFind('.');
-        if (dotPos >= 0)
-          folder = folder.Left(dotPos);
-        folder += L'\\';
-        commandMapItem.Folder = folderPrefix + GetSystemString(folder);
-        s = MyFormatNew(s, folder);
+        CSysString folder = GetSubFolderNameForExtract(fileInfo.Name) + 
+            CSysString(L'\\');
+        commandMapItem.Folder = folderPrefix + folder;
+        s = MyFormatNew(s, GetUnicodeString(folder));
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
         _commandMap.push_back(commandMapItem);
       }
@@ -367,18 +371,22 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
   if(_fileNames.Size() > 0 && currentCommandID + 6 <= commandIDLast)
   {
+    const CSysString &fileName = _fileNames.Front();
+    CSysString archiveName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
+    CSysString archiveName7z = archiveName + TEXT(".7z");
+    CSysString archivePathPrefix;
+    NFile::NDirectory::GetOnlyDirPrefix(fileName, archivePathPrefix);
+
     // Compress
     if ((contextMenuFlags & NContextMenuFlags::kCompress) != 0)
     {
       CCommandMapItem commandMapItem;
+      commandMapItem.Archive = archivePathPrefix + archiveName;
       FillCommand(kCompress, mainString, commandMapItem);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString); 
       _commandMap.push_back(commandMapItem);
     }
 
-    const CSysString &fileName = _fileNames.Front();
-    CSysString archiveName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
-    archiveName += TEXT(".7z");
     
     // CompressTo
     if (contextMenuFlags & NContextMenuFlags::kCompressTo)
@@ -386,8 +394,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       CCommandMapItem commandMapItem;
       UString s;
       FillCommand2(kCompressTo, s, commandMapItem);
-      commandMapItem.Archive = archiveName;
-      UString t = UString(L"\"") + GetUnicodeString(archiveName) + UString(L"\"");
+      commandMapItem.Archive = archivePathPrefix + archiveName7z;
+      UString t = UString(L"\"") + GetUnicodeString(archiveName7z) + UString(L"\"");
       s = MyFormatNew(s, GetUnicodeString(t));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
       _commandMap.push_back(commandMapItem);
@@ -397,6 +405,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     if ((contextMenuFlags & NContextMenuFlags::kCompressEmail) != 0)
     {
       CCommandMapItem commandMapItem;
+      commandMapItem.Archive = archiveName;
       FillCommand(kCompressEmail, mainString, commandMapItem);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString); 
       _commandMap.push_back(commandMapItem);
@@ -408,8 +417,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       CCommandMapItem commandMapItem;
       UString s;
       FillCommand2(kCompressToEmail, s, commandMapItem);
-      commandMapItem.Archive = archiveName;
-      UString t = UString(L"\"") + GetUnicodeString(archiveName) + UString(L"\"");
+      commandMapItem.Archive = archiveName7z;
+      UString t = UString(L"\"") + GetUnicodeString(archiveName7z) + UString(L"\"");
       s = MyFormatNew(s, GetUnicodeString(t));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
       _commandMap.push_back(commandMapItem);
@@ -470,43 +479,6 @@ public:
 };
 */
 
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-
-static CSysString GetProgramCommand()
-{
-  CSysString path = TEXT("\"");
-  CSysString folder;
-  if (GetProgramFolderPath(folder))
-    path += folder;
-  if (IsItWindowsNT())
-    path += TEXT("7zFMn.exe");
-  else
-    path += TEXT("7zFM.exe");
-  path += TEXT("\"");
-  return path;
-}
-
-static CSysString Get7zGuiPath()
-{
-  CSysString path = TEXT("\"");
-  CSysString folder;
-  if (GetProgramFolderPath(folder))
-    path += folder;
-  if (IsItWindowsNT())
-    path += TEXT("7zgn.exe");
-  else
-    path += TEXT("7zg.exe");
-  path += TEXT("\"");
-  return path;
-}
-
 /*
 struct CThreadCompressMain
 {
@@ -535,155 +507,27 @@ struct CThreadCompressMain
 };
 */
 
-static void MyCreateProcess(HWND window, const CSysString &params, 
-    NSynchronization::CEvent *event = NULL)
+static bool IsItWindowsNT()
 {
-  STARTUPINFO startupInfo;
-  startupInfo.cb = sizeof(startupInfo);
-  startupInfo.lpReserved = 0;
-  startupInfo.lpDesktop = 0;
-  startupInfo.lpTitle = 0;
-  startupInfo.dwFlags = 0;
-  startupInfo.cbReserved2 = 0;
-  startupInfo.lpReserved2 = 0;
-  
-  PROCESS_INFORMATION processInformation;
-  BOOL result = ::CreateProcess(NULL, (TCHAR *)(const TCHAR *)params, 
-    NULL, NULL, FALSE, 0, NULL, NULL, 
-    &startupInfo, &processInformation);
-  if (result == 0)
-    ShowLastErrorMessage(window);
-  else
-  {
-    if (event != NULL)
-    {
-      HANDLE handles[] = {processInformation.hProcess, *event };
-      ::WaitForMultipleObjects(sizeof(handles) / sizeof(handles[0]),
-          handles, FALSE, INFINITE);
-    }
-    ::CloseHandle(processInformation.hThread);
-    ::CloseHandle(processInformation.hProcess);
-  }
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-void CZipContextMenu::CompressFiles(HWND aHWND, bool email,
-    const CSysString &archiveName)
+static CSysString GetProgramCommand()
 {
-  CSysString params;
-  params = Get7zGuiPath();
-  params += TEXT(" a");
-  params += TEXT(" -map=");
-  // params += _fileNames[0];
-  
-
-  UINT32 extraSize = 2;
-  UINT32 dataSize = 0;
-  for (int i = 0; i < _fileNames.Size(); i++)
-  {
-    UString unicodeString = GetUnicodeString(_fileNames[i]);
-    dataSize += (unicodeString.Length() + 1) * sizeof(wchar_t);
-  }
-  UINT32 totalSize = extraSize + dataSize;
-  
-  CSysString mappingName;
-  CSysString eventName;
-  
-  CFileMapping fileMapping;
-  CRandom random;
-  random.Init(GetTickCount());
-  while(true)
-  {
-    int number = random.Generate();
-    TCHAR temp[32];
-    ConvertUINT64ToString(UINT32(number), temp);
-    mappingName = TEXT("7zCompressMapping");
-    mappingName += temp;
-    if (!fileMapping.Create(INVALID_HANDLE_VALUE, NULL,
-      PAGE_READWRITE, totalSize, mappingName))
-    {
-      MyMessageBox(IDS_ERROR, 0x02000605);
-      return;
-    }
-    if (::GetLastError() != ERROR_ALREADY_EXISTS)
-      break;
-    fileMapping.Close();
-  }
-  
-  NSynchronization::CEvent event;
-  while(true)
-  {
-    int number = random.Generate();
-    TCHAR temp[32];
-    ConvertUINT64ToString(UINT32(number), temp);
-    eventName = TEXT("7zCompressMappingEndEvent");
-    eventName += temp;
-    if (!event.Create(true, false, eventName))
-    {
-      MyMessageBox(IDS_ERROR, 0x02000605);
-      return;
-    }
-    if (::GetLastError() != ERROR_ALREADY_EXISTS)
-      break;
-    event.Close();
-  }
-
-  params += mappingName;
-  params += TEXT(":");
-  TCHAR string [10];
-  ConvertUINT64ToString(totalSize, string);
-  params += string;
-  
-  params += TEXT(":");
-  params += eventName;
-
-  if (email)
-    params += TEXT(" -email");
-
-  if (!archiveName.IsEmpty())
-  {
-    params += TEXT(" \"");
-    params += archiveName;
-    params += TEXT("\"");
-  }
-  
-  LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);
-  if (data == NULL)
-  {
-    MyMessageBox(IDS_ERROR, 0x02000605);
-    return;
-  }
-  try
-  {
-    wchar_t *curData = (wchar_t *)data;
-    *curData = 0;
-    curData++;
-    for (int i = 0; i < _fileNames.Size(); i++)
-    {
-      UString unicodeString = GetUnicodeString(_fileNames[i]);
-      memcpy(curData, (const wchar_t *)unicodeString , 
-        unicodeString .Length() * sizeof(wchar_t));
-      curData += unicodeString .Length();
-      *curData++ = L'\0';
-    }
-    MyCreateProcess(aHWND, params, &event);
-  }
-  catch(...)
-  {
-    UnmapViewOfFile(data);
-    throw;
-  }
-  UnmapViewOfFile(data);
-  
-  
-  
-  /*
-  CThreadCompressMain *compressor = new CThreadCompressMain();;
-  compressor->FileNames = _fileNames;
-  CThread thread;
-  if (!thread.Create(CThreadCompressMain::MyThreadFunction, compressor))
-  throw 271824;
-  */
-  return;
+  CSysString path = TEXT("\"");
+  CSysString folder;
+  if (GetProgramFolderPath(folder))
+    path += folder;
+  if (IsItWindowsNT())
+    path += TEXT("7zFMn.exe");
+  else
+    path += TEXT("7zFM.exe");
+  path += TEXT("\"");
+  return path;
 }
 
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
@@ -758,41 +602,20 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
         params += TEXT(" \"");
         params += _fileNames[0];
         params += TEXT("\"");
-        MyCreateProcess(aHWND, params);
+        MyCreateProcess(params);
         break;
       }
       case kExtract:
       case kExtractHere:
       case kExtractTo:
       {
-        CSysString params;
-        params = Get7zGuiPath();
-        params += TEXT(" x");
-        params += TEXT(" \"");
-        params += _fileNames[0];
-        params += TEXT("\"");
-        if (commandInternalID == kExtractHere || 
-            commandInternalID == kExtractTo)
-        {
-          params += TEXT(" -o");
-          params += TEXT("\"");
-          params += commandMapItem.Folder;
-          params += TEXT("\"");
-        }
-        if (commandInternalID == kExtract)
-          params += TEXT(" -showDialog");
-        MyCreateProcess(aHWND, params);
+        ExtractArchive(_fileNames[0], commandMapItem.Folder,
+            (commandInternalID == kExtract));
         break;
       }
       case kTest:
       {
-        CSysString params;
-        params = Get7zGuiPath();
-        params += TEXT(" t");
-        params += TEXT(" \"");
-        params += _fileNames[0];
-        params += TEXT("\"");
-        MyCreateProcess(aHWND, params);
+        TestArchive(_fileNames[0]);
         break;
       }
       case kCompress:
@@ -802,7 +625,12 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       {
         bool email = (commandInternalID == kCompressEmail) || 
           (commandInternalID == kCompressToEmail);
-        CompressFiles(aHWND, email, commandMapItem.Archive);
+        bool showDialog = (commandInternalID == kCompress) || 
+          (commandInternalID == kCompressEmail);
+        UStringVector fileNamesUnicode;
+        for (int i = 0; i < _fileNames.Size(); i++)
+          fileNamesUnicode.Add(GetUnicodeString(_fileNames[i]));
+        CompressFiles(commandMapItem.Archive, fileNamesUnicode, email, showDialog);
         break;
       }
     }

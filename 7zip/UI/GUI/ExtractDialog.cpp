@@ -47,12 +47,14 @@ static const int kOverwriteButtons[] =
 };
 static const int kNumOverwriteButtons = sizeof(kOverwriteButtons) / sizeof(kOverwriteButtons[0]);
 
+/*
 static const int kFilesButtons[] =
 {
   IDC_EXTRACT_RADIO_SELECTED_FILES,
   IDC_EXTRACT_RADIO_ALL_FILES
 };
 static const int kNumFilesButtons = sizeof(kFilesButtons) / sizeof(kFilesButtons[0]);
+*/
 
 #ifndef _SFX
 int CExtractDialog::GetPathNameMode() const
@@ -71,6 +73,7 @@ int CExtractDialog::GetOverwriteMode() const
   throw 0;
 }
 
+/*
 int CExtractDialog::GetFilesMode() const
 {
   for (int i = 0; i < kNumFilesButtons; i++)
@@ -78,6 +81,7 @@ int CExtractDialog::GetFilesMode() const
       return i;
   throw 0;
 }
+*/
 
 #endif
 
@@ -106,24 +110,6 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
-bool CExtractDialog::Init(const CSysString &aFileName)
-{
-  #ifdef _SFX
-  NDirectory::GetOnlyDirPrefix(aFileName, _directoryPath);
-  #else
-  int fileNamePartStartIndex;
-  CSysString fullPathName;
-  NDirectory::MyGetFullPathName(aFileName, fullPathName, fileNamePartStartIndex);
-  _directoryPath = fullPathName.Left(fileNamePartStartIndex);
-  CSysString name = fullPathName.Mid(fileNamePartStartIndex);
-  CSysString pureName, dot, extension;
-  SplitNameToPureNameAndExtension(name, pureName, dot, extension);
-  if (!dot.IsEmpty())
-    _directoryPath += pureName;
-  #endif
-  return true;
-}
-
 // static const int kWildcardsButtonIndex = 2;
 
 static const int kHistorySize = 8;
@@ -136,7 +122,7 @@ bool CExtractDialog::OnInit()
   #endif
   #ifndef _SFX
   _passwordControl.Attach(GetItem(IDC_EXTRACT_EDIT_PASSWORD));
-  _passwordControl.SetText(_password);
+  _passwordControl.SetText(Password);
   _passwordControl.SetPasswordChar(TEXT('*'));
   #endif
 
@@ -154,7 +140,7 @@ bool CExtractDialog::OnInit()
 
 
   _path.Attach(GetItem(IDC_EXTRACT_COMBO_PATH));
-  _path.SetText(_directoryPath);
+  _path.SetText(DirectoryPath);
   
   #ifndef NO_REGISTRY
   for(int i = 0; i < extractionInfo.Paths.Size() && i < kHistorySize; i++)
@@ -178,11 +164,14 @@ bool CExtractDialog::OnInit()
   CheckRadioButton(kOverwriteButtons[0], kOverwriteButtons[kNumOverwriteButtons - 1], 
       kOverwriteButtons[_overwriteMode]);
 
+  /*
   CheckRadioButton(kFilesButtons[0], kFilesButtons[kNumFilesButtons - 1], 
       kFilesButtons[_filesMode]);
+  */
 
-  CWindow aSelectedFilesWindow = GetItem(IDC_EXTRACT_RADIO_SELECTED_FILES);
-  aSelectedFilesWindow.Enable(_enableSelectedFilesButton);
+  // CWindow selectedFilesWindow = GetItem(IDC_EXTRACT_RADIO_SELECTED_FILES);
+  // selectedFilesWindow.Enable(_enableSelectedFilesButton);
+
 
   #endif
 
@@ -205,17 +194,17 @@ void CExtractDialog::UpdatePasswordControl()
 }
 #endif
 
-bool CExtractDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
+bool CExtractDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   /*
   for (int i = 0; i < kNumFilesButtons; i++)
-    if (aButtonID == kFilesButtons[i])
+    if (buttonID == kFilesButtons[i])
     {
       UpdateWildCardState();
       return true;
     }
   */
-  switch(aButtonID)
+  switch(buttonID)
   {
     case IDC_EXTRACT_BUTTON_SET_PATH:
       OnButtonSetPath();
@@ -228,7 +217,7 @@ bool CExtractDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
     }
     #endif
   }
-  return CModalDialog::OnButtonClicked(aButtonID, aButtonHWND);
+  return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
 void CExtractDialog::OnButtonSetPath() 
@@ -266,9 +255,9 @@ void CExtractDialog::OnOK()
   #ifndef _SFX
   _pathMode = GetPathNameMode();
   _overwriteMode = GetOverwriteMode();
-  _filesMode = (NExtractionDialog::NFilesMode::EEnum)GetFilesMode();
+  // _filesMode = (NExtractionDialog::NFilesMode::EEnum)GetFilesMode();
 
-  _passwordControl.GetText(_password);
+  _passwordControl.GetText(Password);
   #endif
 
   NExtraction::CInfo extractionInfo;
@@ -300,7 +289,7 @@ void CExtractDialog::OnOK()
   string.TrimLeft();
   string.TrimRight();
   AddUniqueString(extractionInfo.Paths, (const TCHAR *)string);
-  _directoryPath = string;
+  DirectoryPath = string;
   #ifndef  NO_REGISTRY
   for(int i = 0; i < _path.GetCount(); i++)
     if(i != currentItem)
@@ -349,12 +338,12 @@ static DWORD aHelpArray[] =
 */
 
 
-void CExtractDialog::GetModeInfo(NExtractionDialog::CModeInfo &aModeInfo)
+void CExtractDialog::GetModeInfo(NExtractionDialog::CModeInfo &modeInfo)
 {
-  aModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::EEnum(_overwriteMode);
-  aModeInfo.PathMode = NExtractionDialog::NPathMode::EEnum(_pathMode);
-  aModeInfo.FilesMode = NExtractionDialog::NFilesMode::EEnum(_filesMode);
-  aModeInfo.FileList.Clear();
+  modeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::EEnum(_overwriteMode);
+  modeInfo.PathMode = NExtractionDialog::NPathMode::EEnum(_pathMode);
+  // modeInfo.FilesMode = NExtractionDialog::NFilesMode::EEnum(FilesMode);
+  modeInfo.FileList.Clear();
 }
   
 #ifndef  NO_REGISTRY

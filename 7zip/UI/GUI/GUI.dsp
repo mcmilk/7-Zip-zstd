@@ -425,14 +425,6 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Common\ArchiveName.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveName.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File

@@ -25,7 +25,6 @@
 #include "../Common/WorkDir.h"
 #include "../Common/ZipRegistry.h"
 #include "../Common/OpenArchive.h"
-#include "../Common/ArchiveName.h"
 #include "../Resource/Extract/resource.h"
 #include "../Explorer/MyMessages.h"
 
@@ -38,12 +37,12 @@ static LPCTSTR kTempArchivePrefix = TEXT("7zA");
 static LPCTSTR kTempFolderPrefix = TEXT("7zE");
 static LPCTSTR kDefaultSfxModule = TEXT("7zC.sfx");
 
-static void SplitString(const CSysString &srcString, CSysStringVector &destStrings)
+static void SplitString(const UString &srcString, UStringVector &destStrings)
 {
   destStrings.Clear();
   for (int pos = 0; pos < srcString.Length();)
   {
-    int spacePos = srcString.Find(TEXT(' '), pos);
+    int spacePos = srcString.Find(L' ', pos);
     if (spacePos < 0)
     {
       destStrings.Add(srcString.Mid(pos));
@@ -62,24 +61,24 @@ static bool ParseNumberString(const UString &string, UINT32 &number)
   return (endPtr - string == string.Length());
 }
 
-static void SetOptions(const CSysString &options,
+static void SetOptions(const UString &options,
     CObjectVector<CMyComBSTR> &realNames,
     std::vector<NCOM::CPropVariant> &values)
 {
-  CSysStringVector strings;
+  UStringVector strings;
   SplitString(options, strings);
   for(int i = 0; i < strings.Size(); i++)
   {
-    const UString &string = GetUnicodeString(strings[i]);
-    int index = string.Find(L'=');
+    const UString &s = strings[i];
+    int index = s.Find(L'=');
     CMyComBSTR name;
     NCOM::CPropVariant propVariant;
     if (index < 0)
-      name = string;
+      name = s;
     else
     {
-      name = string.Left(index);
-      UString value = string.Mid(index + 1);
+      name = s.Left(index);
+      UString value = s.Mid(index + 1);
       if (!value.IsEmpty())
       {
         UINT32 number;
@@ -100,7 +99,7 @@ static HRESULT SetOutProperties(IOutFolderArchive * outArchive,
     bool multiThreadIsAllowed, bool multiThread, 
     bool encryptHeadersIsAllowed, bool encryptHeaders,
     bool sfxMode,
-    const CSysString &options)
+    const UString &options)
 {
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive->QueryInterface(&setProperties) == S_OK)
@@ -171,11 +170,23 @@ struct CThreadUpdateCompress
   {
     NCOM::CComInitializer comInitializer;
     UpdateCallbackSpec->ProgressDialog.WaitCreating();
-    Result = OutArchive->DoOperation(
-      LibPath, &ClassID,
-      OutArchivePath, ActionSetByte, 
-      (SfxMode ? (const wchar_t *)SfxModule: NULL),
-      UpdateCallback);
+    try
+    {
+      Result = OutArchive->DoOperation(
+        LibPath, &ClassID,
+        OutArchivePath, ActionSetByte, 
+        (SfxMode ? (const wchar_t *)SfxModule: NULL),
+        UpdateCallback);
+    }
+    catch(const UString &s)
+    {
+      MyMessageBox(s);
+      Result = E_FAIL;
+    }
+    catch(...)
+    {
+      Result = E_FAIL;
+    }
     UpdateCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
@@ -209,11 +220,15 @@ static CSysString MakeFullArchiveName(const CSysString &name,
   int dotPos = name.ReverseFind(L'.');
   if (dotPos >= 0 && (dotPos > slashPos || slashPos < 0))
     return name;
-  return name + L'.' + GetSystemString(extension);
+  return name + CSysString(L'.') + GetSystemString(extension);
 }
 
-HRESULT CompressArchive(const CSysStringVector &fileNames, 
-    const CSysString &archiveName, bool email)
+HRESULT CompressArchive(
+    const CSysString &archivePath, 
+    const UStringVector &fileNames, 
+    const UString &archiveType, 
+    bool email,
+    bool showDialog)
 {
   if (fileNames.Size() == 0)
     return S_OK;
@@ -227,31 +242,47 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
   bool encryptHeaders = false;
   const NUpdateArchive::CActionSet *actionSet;
   NCompressDialog::CInfo compressInfo;
-  bool keepName = false;
 
-  const CSysString &frontName = fileNames.Front();
   CSysString tempDirPath;
   CSysString currentDirPrefix;
   bool needTempFile = true;
   NDirectory::CTempDirectory tempDirectory;
+  CSysString archiveName;
+  int pos = archivePath.ReverseFind(TEXT('\\'));
+  if (pos < 0)
+  {
+    archiveName = archivePath;
+    MyGetCurrentDirectory(currentDirPrefix);
+  }
+  else
+  {
+    currentDirPrefix = archivePath.Left(pos + 1);
+    archiveName = archivePath.Mid(pos + 1);
+  }
+  
   if (email)
   {
     tempDirectory.Create(kTempFolderPrefix);
     currentDirPrefix = tempDirectory.GetPath();
     NormalizeDirPathPrefix(currentDirPrefix);
-    // MyMessageBox(currentDirPrefix);
     needTempFile = false;
   }
-  else
-    NDirectory::GetOnlyDirPrefix(frontName, currentDirPrefix);
 
-  if (archiveName.IsEmpty())
+  if (showDialog)
   {
+    bool oneFile = false;
+    NFind::CFileInfo fileInfo;
+    if (!NFind::FindFile(GetSystemString(fileNames.Front()), fileInfo))
+      return ::GetLastError();
+    if (fileNames.Size() == 1)
+      oneFile = !fileInfo.IsDirectory();
+
     CCompressDialog dialog;
     for(int i = 0; i < archivers.Size(); i++)
     {
       const CArchiverInfo &archiverInfo = archivers[i];
-      if (archiverInfo.UpdateEnabled)
+      if (archiverInfo.UpdateEnabled && 
+        (oneFile || !archiverInfo.KeepName))
         dialog.m_ArchiverInfoList.Add(archiverInfo);
     }
     if(dialog.m_ArchiverInfoList.Size() == 0)
@@ -259,30 +290,16 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
       MyMessageBox(L"No Update Engines");
       return E_FAIL;
     }
-    dialog.m_Info.ArchiveName = CreateArchiveName(frontName, 
-        fileNames.Size() > 1, 
-        // dialog.m_ArchiverInfoList[0].KeepName
-        true);
-
+    dialog.m_Info.ArchiveName = archiveName;
+    dialog.OriginalFileName = fileInfo.Name;
+ 
     dialog.m_Info.CurrentDirPrefix = currentDirPrefix;
     dialog.m_Info.SFXMode = false;
     dialog.m_Info.Solid = true;
     dialog.m_Info.MultiThread = false;
-    // dialog.m_Info.KeepName = false;
-    if (!keepName && fileNames.Size() == 1)
-    {
-      NFind::CFileInfo fileInfo;
-      if (NFind::FindFile(fileNames.Front(), fileInfo))
-        keepName = fileInfo.IsDirectory();
-    }
 
-    dialog.m_Info.KeepName = keepName;
+    dialog.m_Info.KeepName = !oneFile;
     
-    /*
-    if (keepName)
-      MessageBeep(-1);
-    */
-
     if(dialog.Create(0) != IDOK)
       return S_OK;
     
@@ -323,7 +340,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
     int i;
     for(i = 0; i < archivers.Size(); i++)
     {
-      if (archivers[i].Name.CollateNoCase(L"7z") == 0)
+      if (archivers[i].Name.CollateNoCase(archiveType) == 0)
       {
         archiverInfo = archivers[i];
         break;
@@ -335,9 +352,10 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
       return E_FAIL;
     }
     actionSet = &NUpdateArchive::kAddActionSet;
-    compressInfo.SolidIsAllowed = true;
+    bool is7z = (archiveType.CollateNoCase(L"7z") == 0);
+    compressInfo.SolidIsAllowed = is7z;
     compressInfo.Solid = true;
-    compressInfo.MultiThreadIsAllowed = true;
+    compressInfo.MultiThreadIsAllowed = is7z;
     compressInfo.MultiThread = false;
     compressInfo.SFXMode = false;
     compressInfo.KeepName = false;
@@ -438,12 +456,9 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
   CRecordVector<const wchar_t *> fileNamePointers;
   fileNamePointers.Reserve(fileNames.Size());
 
-  UStringVector fileNames2;
-  for(int i = 0; i < fileNames.Size(); i++)
-    fileNames2.Add(GetUnicodeString(fileNames[i]));
-
+  int i;
   for(i = 0; i < fileNames.Size(); i++)
-    fileNamePointers.Add(fileNames2[i]);
+    fileNamePointers.Add(fileNames[i]);
 
   outArchive->SetFolder(NULL);
 
@@ -472,7 +487,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
       compressInfo.MultiThreadIsAllowed, compressInfo.MultiThread, 
       encryptHeadersIsAllowed, encryptHeaders,
       compressInfo.SFXMode,
-      compressInfo.Options);
+      GetUnicodeString(compressInfo.Options));
 
   if (result != S_OK)
   {

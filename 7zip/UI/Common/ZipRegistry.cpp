@@ -106,6 +106,7 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
       case NExtraction::NOverwriteMode::kWithoutPrompt:
       case NExtraction::NOverwriteMode::kSkipExisting:
       case NExtraction::NOverwriteMode::kAutoRename:
+      case NExtraction::NOverwriteMode::kAutoRenameExisting:
         info.OverwriteMode = NExtraction::NOverwriteMode::EEnum(overwriteModeIndex);
         break;
     }

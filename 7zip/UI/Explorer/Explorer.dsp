@@ -198,6 +198,14 @@ SOURCE=..\Common\ArchiverInfo.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\CompressCall.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\CompressCall.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\DefaultName.cpp
 # End Source File
 # Begin Source File
@@ -716,6 +724,10 @@ SOURCE=..\..\..\Windows\Shell.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Shell.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 

@@ -69,8 +69,6 @@ namespace NCompressDialog
 
 class CCompressDialog: public NWindows::NControl::CModalDialog
 {
-  CSysString ArchiveNameSrc;
-
   NWindows::NControl::CComboBox	m_ArchivePath;
 	NWindows::NControl::CComboBox	m_Format;
 	NWindows::NControl::CComboBox	m_Method;
@@ -93,6 +91,7 @@ public:
   CObjectVector<CArchiverInfo> m_ArchiverInfoList;
 
   NCompressDialog::CInfo m_Info;
+  CSysString OriginalFileName; // for bzip2, gzip2
 
   CSysString Password;
   bool EncryptHeadersIsAllowed;

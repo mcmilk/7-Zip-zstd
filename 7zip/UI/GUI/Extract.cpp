@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h"
 
 #include "Windows/FileDir.h"
+#include "Windows/Error.h"
 #include "Windows/FileFind.h"
 #ifndef EXCLUDE_COM
 #include "Windows/DLL.h"
@@ -106,22 +107,22 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   if (showDialog)
   {
     CExtractDialog dialog;
-    dialog.Init(
-    #ifndef  NO_REGISTRY
-      // &aZipRegistryManager, 
-    #endif
-      fileName);
-    dialog._filesMode = NExtractionDialog::NFilesMode::kAll;
-    dialog._enableSelectedFilesButton = false;
-    dialog._enableFilesButton = false;
-    dialog._password = GetSystemString(password);
+    if (!NFile::NDirectory::MyGetFullPathName(outputFolder, dialog.DirectoryPath))
+    {
+      MyMessageBox(L"Error 32432432");
+      return E_FAIL;
+    }
+    // dialog.DirectoryPath = outputFolder;
+    // dialog.FilesMode = NExtractionDialog::NFilesMode::kAll;
+    // dialog._enableSelectedFilesButton = false;
+    dialog.Password = GetSystemString(password);
     
     if(dialog.Create(parentWindow) != IDOK)
       return E_ABORT;
-    directoryPath = dialog._directoryPath;
+    directoryPath = dialog.DirectoryPath;
     dialog.GetModeInfo(extractModeInfo);
 
-    password = GetUnicodeString((LPCTSTR)dialog._password);
+    password = GetUnicodeString((LPCTSTR)dialog.Password);
   }
   else
   {
@@ -138,7 +139,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     // NFile::NDirectory::MyGetCurrentDirectory(directoryPath);
     if (!NFile::NDirectory::MyGetFullPathName(outputFolder, directoryPath))
     {
-      MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
+      MyMessageBox(L"Error 98324982");
       return E_FAIL;
     }
     NFile::NName::NormalizeDirPathPrefix(directoryPath);
@@ -147,15 +148,17 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     extractModeInfo.OverwriteMode = assumeYes ?
       NExtractionDialog::NOverwriteMode::kWithoutPrompt:
       NExtractionDialog::NOverwriteMode::kAskBefore;
-    extractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
+    // extractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
   }
   if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))
   {
-    MyMessageBox(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
+    UString s = GetUnicodeString(NError::MyFormatMessage(GetLastError()));
+    UString s2 = MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
         #ifdef LANG        
         0x02000603, 
         #endif 
-        GetUnicodeString((LPCTSTR)directoryPath)));
+        GetUnicodeString((LPCTSTR)directoryPath));
+    MyMessageBox(s2 + UString(L"\n") + s);
     return E_FAIL;
   }
   

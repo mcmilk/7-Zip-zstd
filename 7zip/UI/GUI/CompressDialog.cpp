@@ -115,7 +115,6 @@ bool CCompressDialog::OnInit()
   }
   m_Format.SetCurSel(m_Info.ArchiverInfoIndex);
 
-  ArchiveNameSrc = m_Info.ArchiveName;
   /*
   ArchiveNameSrc2.Empty();
   if (!m_Info.KeepName)
@@ -537,7 +536,7 @@ void CCompressDialog::SetArchiveName(const CSysString &name)
 
   if (archiverInfo.KeepName)
   {
-    fileName = ArchiveNameSrc;
+    fileName = OriginalFileName;
   }
   else
   {

@@ -49,7 +49,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 3.09.02  Copyright (c) 1999-2003 Igor Pavlov  2003-09-20\n";
+" 3.10  Copyright (c) 1999-2003 Igor Pavlov  2003-09-27\n";
 
 const wchar_t *kDefaultArchiveType = L"7z";
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -105,13 +105,14 @@ static const char kImmediateNameID = '!';
 static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
 static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
 
-static const wchar_t *kOverwritePostCharSet = L"asu";
+static const wchar_t *kOverwritePostCharSet = L"asut";
 
 NExtraction::NOverwriteMode::EEnum k_OverwriteModes[] =
 {
   NExtraction::NOverwriteMode::kWithoutPrompt,
   NExtraction::NOverwriteMode::kSkipExisting,
-  NExtraction::NOverwriteMode::kAutoRename
+  NExtraction::NOverwriteMode::kAutoRename,
+  NExtraction::NOverwriteMode::kAutoRenameExisting
 };
 
 

@@ -4,7 +4,10 @@
 
 #include <initguid.h>
 
+#include "Common/StringConvert.h"
+
 #include "Windows/FileDir.h"
+#include "Windows/FileName.h"
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"
@@ -15,31 +18,29 @@
 
 HINSTANCE g_hInstance;
 
-static void GetArchiveName(
-    const CSysString &commandLine, 
-    CSysString &archiveName, 
-    CSysString &switches)
+void SplitStringToSubstrings(const UString &srcString, 
+    UStringVector &destStrings)
 {
-  archiveName.Empty();
-  switches.Empty();
+  UString s;
   bool quoteMode = false;
-  for (int i = 0; i < commandLine.Length(); i++)
+  for (int i = 0; i < srcString.Length(); i++)
   {
-    TCHAR c = commandLine[i];
-    if (c == '\"')
+    wchar_t c = srcString[i];
+    if (c == L'\"')
       quoteMode = !quoteMode;
-    else if (c == ' ' && !quoteMode)
+    else if (c == L' ' && !quoteMode)
     {
-      if (!quoteMode)
+      if (!s.IsEmpty())
       {
-        i++;
-        break;
+        destStrings.Add(s);
+        s.Empty();
       }
     }
     else 
-      archiveName += c;
+      s += c;
   }
-  switches = commandLine + i;
+  if (!s.IsEmpty())
+    destStrings.Add(s);
 }
 
 int APIENTRY WinMain(
@@ -49,21 +50,23 @@ int APIENTRY WinMain(
   int nCmdShow)
 {
   g_hInstance = (HINSTANCE)hInstance;
-  CSysString archiveName, switches;
-  GetArchiveName(GetCommandLine(), archiveName, switches);
-  /*
-  CSysString fullPath;
-  int fileNamePartStartIndex;
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(archiveName, fullPath, fileNamePartStartIndex))
-  {
-    MessageBox(NULL, "can't get archive name", "7-Zip", 0);
-    return 1;
-  }
-  */
-  switches.Trim();
   bool assumeYes = false;
-  if (switches == CSysString("-y"))
-    assumeYes = true;
+  bool outputFolderDefined = false;
+  CSysString outputFolder;
+  UStringVector subStrings;
+  SplitStringToSubstrings(GetCommandLineW(), subStrings);
+  for (int i = 1; i < subStrings.Size(); i++)
+  {
+    const UString &s = subStrings[i];
+    if (s.CompareNoCase(L"-y") == 0)
+      assumeYes = true;
+    else if (s.Left(2).CompareNoCase(L"-o") == 0)
+    {
+      outputFolder = GetSystemString(s.Mid(2));
+      NWindows::NFile::NName::NormalizeDirPathPrefix(outputFolder);
+      outputFolderDefined = !outputFolder.IsEmpty();
+    }
+  }
 
   TCHAR path[MAX_PATH + 1];
   ::GetModuleFileName(NULL, path, MAX_PATH);
@@ -72,14 +75,15 @@ int APIENTRY WinMain(
   int fileNamePartStartIndex;
   if (!NWindows::NFile::NDirectory::MyGetFullPathName(path, fullPath, fileNamePartStartIndex))
   {
-    MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
+    MyMessageBox(L"Error 1329484");
     return 1;
   }
-  HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, fullPath.Left(fileNamePartStartIndex));
+  HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, 
+    outputFolderDefined ? outputFolder : 
+      fullPath.Left(fileNamePartStartIndex));
   if (result == S_FALSE)
     MyMessageBox(L"Archive is not supported");
   else if (result != S_OK && result != E_ABORT)
     ShowErrorMessage(0, result);
   return 0;
 }
-

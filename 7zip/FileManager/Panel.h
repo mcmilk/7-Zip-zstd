@@ -38,7 +38,7 @@ class CPanelCallback
 public:
   virtual void OnTab() = 0;
   virtual void SetFocusToPath(int index) = 0;
-  virtual void OnCopy(bool move, bool copyToSame) = 0;
+  virtual void OnCopy(UStringVector &externalNames, bool move, bool copyToSame) = 0;
   virtual void OnSetSameFolder() = 0;
   virtual void OnSetSubFolder() = 0;
   virtual void PanelWasFocused() = 0;
@@ -155,6 +155,7 @@ class CPanel:public NWindows::NControl::CWindow2
   bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
+  // void OnDrag(LPNMLISTVIEW nmListView);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
   BOOL OnBeginLabelEdit(LV_DISPINFO * lpnmh);
   BOOL OnEndLabelEdit(LV_DISPINFO * lpnmh);
@@ -424,6 +425,8 @@ public:
 
   void RefreshStatusBar();
   void OnRefreshStatusBar();
+
+  void CompressDropFiles(HDROP dr);
 };
 
 #endif

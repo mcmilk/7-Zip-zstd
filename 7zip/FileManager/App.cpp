@@ -39,8 +39,8 @@ void CPanelCallbackImp::SetFocusToPath(int index)
 }
 
 
-void CPanelCallbackImp::OnCopy(bool move, bool copyToSame)
-  { _app->OnCopy(move, copyToSame, _index); }
+void CPanelCallbackImp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame)
+  { _app->OnCopy(externalNames, move, copyToSame, _index); }
 
 void CPanelCallbackImp::OnSetSameFolder()
   { _app->OnSetSameFolder(_index); }
@@ -250,26 +250,31 @@ struct CThreadUpdate
 
 
 
-void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
+void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int srcPanelIndex)
 {
+  bool external = (externalNames.Size() > 0);
+  if (external)
+    copyToSame = true;
+
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &srcPanel = Panels[srcPanelIndex];
   CPanel &destPanel = Panels[destPanelIndex];
   bool useSrcPanel = true;
-  if (NumPanels != 1)
-  {
-    if (!srcPanel.IsFSFolder() && !destPanel.IsFSFolder())
+  if (!external)
+    if (NumPanels != 1)
     {
-      srcPanel.MessageBox(LangLoadStringW(IDS_CANNOT_COPY, 0x03020207));
-      return;
+      if (!srcPanel.IsFSFolder() && !destPanel.IsFSFolder())
+      {
+        srcPanel.MessageBox(LangLoadStringW(IDS_CANNOT_COPY, 0x03020207));
+        return;
+      }
+      useSrcPanel = copyToSame || destPanel.IsFSFolder();
+      if (move && !useSrcPanel)
+      {
+        srcPanel.MessageBoxMyError(L"Move is not supported");
+        return;
+      }
     }
-    useSrcPanel = copyToSame || destPanel.IsFSFolder();
-    if (move && !useSrcPanel)
-    {
-      srcPanel.MessageBoxMyError(L"Move is not supported");
-      return;
-    }
-  }
 
   CPanel &panel = useSrcPanel ? srcPanel : destPanel;
 
@@ -284,7 +289,20 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     }
 
   CRecordVector<UINT32> indices;
+  CSysString destPath;
 
+  if (external)
+  {
+    UString message = L"Are you sure you want to copy files to archive \'";
+    message += srcPanel._currentFolderPrefix;
+    message += L"\'?";
+    int res = MessageBoxW(_window, message, L"Confirm File Copy", 
+        MB_YESNOCANCEL | MB_ICONQUESTION | MB_TASKMODAL);
+    if (res != IDYES)
+      return;
+  }
+  else
+  {
   CCopyDialog copyDialog;
 
   UStringVector copyFolders;
@@ -352,7 +370,6 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   /// ?????
   SetCurrentDirectory(GetSystemString(srcPanel._currentFolderPrefix));
 
-  CSysString destPath;
   if (!NDirectory::MyGetFullPathName(copyDialog.Value, destPath))
   {
     srcPanel.MessageBoxLastError();
@@ -361,6 +378,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
   if (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1)
     NDirectory::CreateComplexDirectory(destPath);
+  }
 
   CSysString title = move ? 
       LangLoadString(IDS_MOVING, 0x03020206):
@@ -371,7 +389,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
 
   HRESULT result;
-  if (useSrcPanel)
+  if (useSrcPanel && !external)
   {
     CThreadExtract extracter;
     extracter.ExtractCallbackSpec = new CExtractCallbackImp;
@@ -406,12 +424,22 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     updater.UpdateCallbackSpec->Init(_window, false, L"");
     updater.Move = move;
     updater.FolderOperations = folderOperations;
-    updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
-    updater.FileNames.Reserve(indices.Size());
-    for(int i = 0; i < indices.Size(); i++)
-      updater.FileNames.Add(srcPanel.GetItemName(indices[i]));
-    updater.FileNamePointers.Reserve(indices.Size());
-    for(i = 0; i < indices.Size(); i++)
+    if (external)
+    {
+      updater.FileNames.Reserve(externalNames.Size());
+      for(int i = 0; i < externalNames.Size(); i++)
+        updater.FileNames.Add(externalNames[i]);
+    }
+    else
+    {
+      updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
+      updater.FileNames.Reserve(indices.Size());
+      for(int i = 0; i < indices.Size(); i++)
+        updater.FileNames.Add(srcPanel.GetItemName(indices[i]));
+    }
+    updater.FileNamePointers.Reserve(updater.FileNames.Size());
+    int i;
+    for(i = 0; i < updater.FileNames.Size(); i++)
       updater.FileNamePointers.Add(updater.FileNames[i]);
     CThread thread;
     if (!thread.Create(CThreadUpdate::MyThreadFunction, &updater))

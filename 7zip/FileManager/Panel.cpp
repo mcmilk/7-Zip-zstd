@@ -8,6 +8,7 @@
 #include "Common/StringConvert.h"
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Shell.h"
 
 #include "../PropID.h"
 
@@ -16,6 +17,9 @@
 #include "FSFolder.h"
 #include "FormatUtils.h"
 #include "App.h"
+
+#include "../UI/Common/CompressCall.h"
+#include "../UI/Common/ArchiveName.h"
 
 using namespace NWindows;
 
@@ -67,7 +71,6 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id, int xPos,
       xPos, 0, 116, 260, 
       parentWindow, (HMENU)id, g_hInstance))
     return E_FAIL;
-  
   return S_OK;
 }
 
@@ -95,6 +98,9 @@ LRESULT CPanel::OnMessage(UINT message, UINT wParam, LPARAM lParam)
     case WM_CONTEXTMENU:
       if (OnContextMenu(HANDLE(wParam), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)))
         return 0;
+    case WM_DROPFILES:
+      CompressDropFiles(HDROP(wParam));
+      return 0;
   }
   return CWindow2::OnMessage(message, wParam, lParam);
 }
@@ -464,11 +470,13 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   // InitListCtrl();
   RefreshListCtrl();
   RefreshStatusBar();
+  ::DragAcceptFiles(HWND(*this), TRUE);  
   return true;
 }
 
 void CPanel::OnDestroy()
 {
+  ::DragAcceptFiles(HWND(*this), FALSE);  
   SaveListViewInfo();
   CWindow2::OnDestroy();
 }
@@ -644,3 +652,34 @@ void CPanel::RefreshStatusBar()
   PostMessage(kRefreshStatusBar);
 }
 
+void CPanel::CompressDropFiles(HDROP dr)
+{
+  NShell::CDrop drop(true);
+  drop.Attach(dr);
+  CSysStringVector fileNames;
+  drop.QueryFileNames(fileNames);
+  if (fileNames.Size() == 0)
+    return;
+  UStringVector fileNamesUnicode;
+  for (int i = 0; i < fileNames.Size(); i++)
+    fileNamesUnicode.Add(GetUnicodeString(fileNames[i]));
+  const CSysString &archiveName = CreateArchiveName(
+    fileNames.Front(), (fileNames.Size() > 1), false);
+  CSysString currentDirectory;
+  if (IsFSFolder())
+  {
+    CompressFiles(GetSystemString(_currentFolderPrefix) + archiveName, 
+        fileNamesUnicode, 
+      false, // email
+      true // showDialog
+      );
+  }
+  else
+  {
+    _panelCallback->OnCopy(fileNamesUnicode, false, true);
+    /*
+    if (!NFile::NDirectory::GetOnlyDirPrefix(fileNames.Front(), currentDirectory))
+      return;
+    */
+  }
+}

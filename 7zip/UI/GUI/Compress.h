@@ -8,8 +8,10 @@
 #include "Common/String.h"
 
 HRESULT CompressArchive(
-    const CSysStringVector &fileNames, 
-    const CSysString &archiveName, 
-    bool email);
+    const CSysString &archivePath, 
+    const UStringVector &fileNames, 
+    const UString &archiveType, 
+    bool email,
+    bool showDialog);
 
 #endif

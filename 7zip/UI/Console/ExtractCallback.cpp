@@ -30,6 +30,9 @@ static const char *kTestingString    =  "Testing     ";
 static const char *kExtractingString =  "Extracting  ";
 static const char *kSkippingString   =  "Skipping    ";
 
+static const char *kCantAutoRename = "can not create file with auto name\n";
+static const char *kCantRenameFile = "can not rename existing file\n";
+
 void CExtractCallbackImp::Init(IInArchive *archive,
     const CSysString &directoryPath, 
     const NExtraction::CInfo &extractModeInfo,
@@ -277,8 +280,23 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
       {
         if (!AutoRenamePath(fullProcessedPath))
         {
-          g_StdOut << "can not create file with auto name " << endl;
+          g_StdOut << kCantAutoRename;
           g_StdOut << GetOemString(fullProcessedPath);
+          return E_ABORT;
+        }
+      }
+      else if (m_ExtractModeInfo.OverwriteMode == NExtraction::NOverwriteMode::kAutoRenameExisting)
+      {
+        CSysString existPath = fullProcessedPath;
+        if (!AutoRenamePath(existPath))
+        {
+          g_StdOut << kCantAutoRename;
+          g_StdOut << GetOemString(fullProcessedPath);
+          return E_ABORT;
+        }
+        if(!MoveFile(fullProcessedPath, existPath))
+        {
+          g_StdOut << kCantRenameFile;
           return E_ABORT;
         }
       }

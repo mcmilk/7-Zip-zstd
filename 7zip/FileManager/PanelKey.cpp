@@ -125,7 +125,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     {
       if (!alt && !ctrl)
       {
-        _panelCallback->OnCopy(false, shift);
+        _panelCallback->OnCopy(UStringVector(), false, shift);
         return true;
       }
       break;
@@ -134,7 +134,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     {
       if (!alt && !ctrl)
       {
-        _panelCallback->OnCopy(true, shift);
+        _panelCallback->OnCopy(UStringVector(), true, shift);
         return true;
       }
       break;

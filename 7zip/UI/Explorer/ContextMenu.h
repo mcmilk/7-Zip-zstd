@@ -83,7 +83,6 @@ private:
   HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
   UINT FindVerb(const CSysString &verb);
 
-  void CompressFiles(HWND aHWND, bool email, const CSysString &archiveName);
   void FillCommand(ECommandInternalID id, CSysString &mainString, 
       CCommandMapItem &commandMapItem);
   void FillCommand2(ECommandInternalID id, UString &mainString, 

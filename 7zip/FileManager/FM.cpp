@@ -435,10 +435,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
       g_App.Create(hWnd, g_MainPath);
       // g_SplitterPos = 0;
+
+      DragAcceptFiles(hWnd, TRUE);
       break;
     }
 		case WM_DESTROY:
     {
+      ::DragAcceptFiles(hWnd, FALSE);  
       g_App.Save();
       g_App.Release();
       SaveWindowInfo(hWnd);
@@ -463,7 +466,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case WM_MOUSEMOVE: 
     {
-      if ((wParam & MK_LBUTTON) != 0)
+      if ((wParam & MK_LBUTTON) != 0 && ::GetCapture() == hWnd)
       {
         g_Splitter.SetPos(hWnd, g_StartCaptureSplitterPos + 
             (short)LOWORD(lParam) - g_StartCaptureMousePos);
@@ -525,6 +528,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_SETTINGCHANGE:
       break;
     */
+    case WM_DROPFILES:
+    {
+      g_App.GetFocusedPanel().CompressDropFiles((HDROP)wParam);
+      return 0 ;
+    }
    }
 	 return DefWindowProc(hWnd, message, wParam, lParam);
 }

@@ -26,7 +26,7 @@ public:
   }
   virtual void OnTab();
   virtual void SetFocusToPath(int index);
-  virtual void OnCopy(bool move, bool copyToSame);
+  virtual void OnCopy(UStringVector &externalNames, bool move, bool copyToSame);
   virtual void OnSetSameFolder();
   virtual void OnSetSubFolder();
   virtual void PanelWasFocused();
@@ -45,7 +45,8 @@ public:
   CPanel Panels[kNumPanelsMax];
   bool PanelsCreated[kNumPanelsMax];
   
-  void OnCopy(bool move, bool copyToSame, int srcPanelIndex);
+  void OnCopy(UStringVector &externalNames, 
+      bool move, bool copyToSame, int srcPanelIndex);
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
@@ -85,9 +86,9 @@ public:
   void Rename()
     { GetFocusedPanel().RenameFile(); }
   void CopyTo()
-    { OnCopy(false, false, GetFocusedPanelIndex()); }
+    { OnCopy(UStringVector(), false, false, GetFocusedPanelIndex()); }
   void MoveTo()
-    { OnCopy(true, false, GetFocusedPanelIndex()); }
+    { OnCopy(UStringVector(), true, false, GetFocusedPanelIndex()); }
   void Delete()
     { GetFocusedPanel().DeleteItems(); }
   void Properties()

@@ -544,10 +544,6 @@ SOURCE=..\Common\WorkDir.cpp
 
 SOURCE=..\Common\WorkDir.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\Common\ZipSettings.h
-# End Source File
 # End Group
 # Begin Group "7-zip Common"
 

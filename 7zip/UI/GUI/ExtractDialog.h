@@ -49,7 +49,7 @@ namespace NExtractionDialog
   {
     NOverwriteMode::EEnum OverwriteMode;
     NPathMode::EEnum PathMode;
-    NFilesMode::EEnum FilesMode;
+    // NFilesMode::EEnum FilesMode;
     CSysStringVector FileList;
   };
 }
@@ -72,29 +72,28 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   #ifndef _SFX
   int GetPathNameMode() const;
   int GetOverwriteMode() const;
-  int GetFilesMode() const;
+  // int GetFilesMode() const;
   void UpdatePasswordControl();
   #endif
   
   void OnButtonSetPath();
 
   virtual bool OnInit();
-  virtual bool OnButtonClicked(int aButtonID, HWND aButtonHWND);
+  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK();
   #ifndef  NO_REGISTRY
   virtual void OnHelp();
   #endif
 public:
-  bool _enableSelectedFilesButton;
-  bool _enableFilesButton;
-  CSysString _directoryPath;
-	NExtractionDialog::NFilesMode::EEnum _filesMode;
-  CSysString _password;
+  // bool _enableSelectedFilesButton;
+  // bool _enableFilesButton;
+  CSysString DirectoryPath;
+	// NExtractionDialog::NFilesMode::EEnum FilesMode;
+  CSysString Password;
 
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_EXTRACT), aWndParent); }
-  bool Init(const CSysString &aFileName);
-  void GetModeInfo(NExtractionDialog::CModeInfo &aModeInfo); 
+  void GetModeInfo(NExtractionDialog::CModeInfo &modeInfo); 
 };
 
 #endif
