@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "UTFConvert.h"
+#include "Types.h"
 
 bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString)
 {

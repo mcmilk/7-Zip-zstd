@@ -6,7 +6,9 @@
 #define __COMMON_STDINSTREAM_H
 
 #include <stdio.h>
-#include "Common/String.h"
+
+#include "String.h"
+#include "Types.h"
 
 class CStdInStream 
 {

@@ -9,6 +9,8 @@
 #include "resource.h"
 
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
+
 #include "Windows/FileName.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
@@ -94,7 +96,12 @@ static void SetOptions(const UString &options,
 }
 
 static HRESULT SetOutProperties(IOutFolderArchive * outArchive, 
-    UINT32 method, 
+    bool is7z,
+    UINT32 level, 
+    const UString &method,
+    UINT32 dictionary,
+    bool orderMode,
+    UINT32 order,
     bool solidModeIsAllowed, bool solidMode, 
     bool multiThreadIsAllowed, bool multiThread, 
     bool encryptHeadersIsAllowed, bool encryptHeaders,
@@ -104,11 +111,59 @@ static HRESULT SetOutProperties(IOutFolderArchive * outArchive,
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive->QueryInterface(&setProperties) == S_OK)
   {
-    CMyComBSTR comBSTR = L"x";
     CObjectVector<CMyComBSTR> realNames;
     std::vector<NCOM::CPropVariant> values;
-    realNames.Add(comBSTR);
-    values.push_back(NCOM::CPropVariant((UINT32)method));
+    if (level != (UINT32)(INT32)-1)
+    {
+      CMyComBSTR comBSTR = L"x";
+      realNames.Add(comBSTR);
+      values.push_back(NCOM::CPropVariant((UINT32)level));
+    }
+    if (!method.IsEmpty())
+    {
+      CMyComBSTR comBSTR;
+      if (is7z)
+        comBSTR = L"0";
+      else
+        comBSTR = L"m";
+      realNames.Add(comBSTR);
+      values.push_back(NCOM::CPropVariant(method));
+    }
+    if (dictionary != (UINT32)(INT32)-1)
+    {
+      CMyComBSTR comBSTR;
+      if (is7z)
+        if (orderMode)
+          comBSTR = L"0mem";
+        else
+          comBSTR = L"0d";
+      else
+        if (orderMode)
+          comBSTR = L"mem";
+        else
+          comBSTR = L"d";
+      realNames.Add(comBSTR);
+      wchar_t s[32];
+      ConvertUINT64ToString(dictionary, s);
+      wcscat(s, L"B");
+      values.push_back(NCOM::CPropVariant(s));
+    }
+    if (order != (UINT32)(INT32)-1)
+    {
+      CMyComBSTR comBSTR;
+      if (is7z)
+        if (orderMode)
+          comBSTR = L"0o";
+        else
+          comBSTR = L"0fb";
+      else
+        if (orderMode)
+          comBSTR = L"o";
+        else
+          comBSTR = L"fb";
+      realNames.Add(comBSTR);
+      values.push_back(NCOM::CPropVariant((UINT32)order));
+    }
 
     if (sfxMode)
     {
@@ -361,7 +416,7 @@ HRESULT CompressArchive(
     compressInfo.KeepName = false;
     compressInfo.ArchiveName = archiveName;
     compressInfo.CurrentDirPrefix = currentDirPrefix;
-    compressInfo.Method = 5;
+    compressInfo.Level = 5;
   }
   UString arcPath;
   if (!compressInfo.GetFullPathName(arcPath))
@@ -479,9 +534,14 @@ HRESULT CompressArchive(
   UString title = LangLoadStringW(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
   updater.UpdateCallbackSpec->Init(0, !password.IsEmpty(), password);
 
-  UINT32 method = MyMin(compressInfo.Method, UINT32(9));
+  // UINT32 level = MyMin(compressInfo.Level, UINT32(9));
+  UINT32 level = compressInfo.Level;
   HRESULT result = SetOutProperties(outArchive, 
-      method, 
+      archiverInfo.Name.CompareNoCase(L"7z") == 0,
+      level, 
+      compressInfo.Method, 
+      compressInfo.Dictionary, 
+      compressInfo.OrderMode, compressInfo.Order,
       compressInfo.SolidIsAllowed, compressInfo.Solid, 
       compressInfo.MultiThreadIsAllowed, compressInfo.MultiThread, 
       encryptHeadersIsAllowed, encryptHeaders,

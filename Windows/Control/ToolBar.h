@@ -19,6 +19,12 @@ public:
   bool EnableButton(UINT buttonID, bool enable)
     { return BOOLToBool(SendMessage(TB_ENABLEBUTTON, buttonID, 
           MAKELONG(BoolToBOOL(enable), 0))); }
+  void ButtonStructSize()
+    { SendMessage(TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON)); }
+  HIMAGELIST SetImageList(UINT listIndex, HIMAGELIST imageList)
+    { return HIMAGELIST(SendMessage(TB_SETIMAGELIST, listIndex, (LPARAM)imageList)); }
+  bool AddButton(UINT numButtons, LPTBBUTTON buttons)
+    { return BOOLToBool(SendMessage(TB_ADDBUTTONS, numButtons, (LPARAM)buttons)); }
 };
 
 }}

@@ -152,11 +152,49 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\Resource\AboutDialog\7zipLogo.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\add.bmp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ClassDefs.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=.\Copy.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Delete.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Extract.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\FM.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\Move.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Parent.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Properties.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\resource.rc
+# ADD BASE RSC /l 0x419
+# ADD RSC /l 0x409
 # End Source File
 # Begin Source File
 
@@ -166,6 +204,10 @@ SOURCE=.\StdAfx.cpp
 # Begin Source File
 
 SOURCE=.\StdAfx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Test.bmp
 # End Source File
 # End Group
 # Begin Group "Archive Interfaces"
@@ -451,6 +493,27 @@ SOURCE=.\Resource\AboutDialog\resource.rc
 # PROP Exclude_From_Build 1
 # End Source File
 # End Group
+# Begin Group "Benchmark"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\resource.rc
+# PROP Exclude_From_Build 1
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\Resource\ComboDialog\ComboDialog.cpp
@@ -576,10 +639,6 @@ SOURCE=..\..\Windows\Control\Dialog.h
 # Begin Source File
 
 SOURCE=..\..\Windows\Control\Edit.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Windows\Control\ImageList.cpp
 # End Source File
 # Begin Source File
 
@@ -816,6 +875,14 @@ SOURCE=..\..\Common\ComTry.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\CRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CRC.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\Defs.h
 # End Source File
 # Begin Source File
@@ -987,6 +1054,14 @@ SOURCE=..\Common\FileStreams.cpp
 
 SOURCE=..\Common\FileStreams.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\StreamObjects.h
+# End Source File
 # End Group
 # Begin Source File
 
@@ -994,7 +1069,19 @@ SOURCE=.\7zFM.exe.manifest
 # End Source File
 # Begin Source File
 
-SOURCE=.\Resource\AboutDialog\7zipLogo.ico
+SOURCE=.\Add2.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Copy2.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Delete2.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Extract2.bmp
 # End Source File
 # Begin Source File
 
@@ -1010,7 +1097,15 @@ SOURCE=.\FM.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\FM.ico
+SOURCE=.\Info.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info2.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Move2.bmp
 # End Source File
 # Begin Source File
 
@@ -1034,10 +1129,6 @@ SOURCE=.\OptionsDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Parent.bmp
-# End Source File
-# Begin Source File
-
 SOURCE=.\PluginInterface.h
 # End Source File
 # Begin Source File
@@ -1054,9 +1145,7 @@ SOURCE=.\PropertyName.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.rc
-# ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409
+SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 
@@ -1073,6 +1162,10 @@ SOURCE=.\SysIconUtils.cpp
 # Begin Source File
 
 SOURCE=.\SysIconUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Test2.bmp
 # End Source File
 # Begin Source File
 

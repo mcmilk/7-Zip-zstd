@@ -48,6 +48,7 @@ BEGIN
     "#include ""Resource\\OverwriteDialog\\resource.rc""\r\n"
     "#include ""Resource\\PasswordDialog\\resource.rc""\r\n"
     "#include ""Resource\\ProgressDialog2\\resource.rc""\r\n"
+    "#include ""Resource\\BenchmarkDialog\\resource.rc""\r\n"
     "#include ""Resource\\AboutDialog\\resource.rc""\r\n"
     "#include ""Resource\\LangPage\\resource.rc""\r\n"
     "#include ""Resource\\PluginsPage\\resource.rc""\r\n"
@@ -80,8 +81,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,11,0,0
- PRODUCTVERSION 3,11,0,0
+ FILEVERSION 3,12,0,0
+ PRODUCTVERSION 3,12,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -99,14 +100,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip File Manager\0"
-            VALUE "FileVersion", "3, 11, 0, 0\0"
+            VALUE "FileVersion", "3, 12, 0, 0\0"
             VALUE "InternalName", "7zFM\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "3, 11, 0, 0\0"
+            VALUE "ProductVersion", "3, 12, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -189,6 +190,17 @@ BEGIN
         MENUITEM "Unsorted\tCtrl+F7",           IDM_VIEW_ARANGE_NO_SORT
         MENUITEM SEPARATOR
         MENUITEM "&2 Panels\tF9",               IDM_VIEW_TWO_PANELS
+        POPUP "Toolbars"
+        BEGIN
+            MENUITEM "Archive Toolbar",             IDM_VIEW_ARCHIVE_TOOLBAR
+            MENUITEM "Standard Toolbar",            IDM_VIEW_STANDARD_TOOLBAR
+
+            MENUITEM SEPARATOR
+            MENUITEM "Large Buttons",               IDM_VIEW_TOOLBARS_LARGE_BUTTONS
+
+            MENUITEM "Show Buttons Text",           IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT
+
+        END
         MENUITEM SEPARATOR
         MENUITEM "Open Root Folder\t\\",        IDM_OPEN_ROOT_FOLDER
         MENUITEM "Up One Level\tBackspace",     IDM_OPEN_PARENT_FOLDER
@@ -207,6 +219,7 @@ BEGIN
     POPUP "&Tools"
     BEGIN
         MENUITEM "&Options...",                 IDM_OPTIONS
+        MENUITEM "&Benchmark",                  IDM_BENCHMARK
     END
     POPUP "&Help"
     BEGIN
@@ -232,6 +245,26 @@ IDI_FM                  ICON    DISCARDABLE     "FM.ico"
 //
 
 1                       24      MOVEABLE PURE   "7zFM.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_ADD                 BITMAP  DISCARDABLE     "Add.bmp"
+IDB_EXTRACT             BITMAP  DISCARDABLE     "Extract.bmp"
+IDB_TEST                BITMAP  DISCARDABLE     "Test.bmp"
+IDB_COPY                BITMAP  DISCARDABLE     "Copy.bmp"
+IDB_MOVE                BITMAP  DISCARDABLE     "Move.bmp"
+IDB_DELETE              BITMAP  DISCARDABLE     "Delete.bmp"
+IDB_INFO                BITMAP  DISCARDABLE     "Info.bmp"
+IDB_ADD2                BITMAP  DISCARDABLE     "Add2.bmp"
+IDB_EXTRACT2            BITMAP  DISCARDABLE     "Extract2.bmp"
+IDB_TEST2               BITMAP  DISCARDABLE     "Test2.bmp"
+IDB_COPY2               BITMAP  DISCARDABLE     "Copy2.bmp"
+IDB_MOVE2               BITMAP  DISCARDABLE     "Move2.bmp"
+IDB_DELETE2             BITMAP  DISCARDABLE     "Delete2.bmp"
+IDB_INFO2               BITMAP  DISCARDABLE     "Info2.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -325,13 +358,24 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_COMPUTER            "Computer"
-    IDS_NETWORK             "Network"
+    IDS_ADD                 "Add"
+    IDS_EXTRACT             "Extract"
+    IDS_TEST                "Test"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_BUTTON_COPY         "Copy"
+    IDS_BUTTON_MOVE         "Move"
+    IDS_BUTTON_DELETE       "Delete"
+    IDS_BUTTON_INFO         "Info"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_BOOKMARK            "Bookmark"
+   IDS_COMPUTER            "Computer"
+    IDS_NETWORK             "Network"
 END
 
 #endif    // English (U.S.) resources
@@ -352,6 +396,7 @@ END
 #include "Resource\OverwriteDialog\resource.rc"
 #include "Resource\PasswordDialog\resource.rc"
 #include "Resource\ProgressDialog2\resource.rc"
+#include "Resource\BenchmarkDialog\resource.rc"
 #include "Resource\AboutDialog\resource.rc"
 #include "Resource\LangPage\resource.rc"
 #include "Resource\PluginsPage\resource.rc"

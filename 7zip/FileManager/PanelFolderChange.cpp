@@ -4,7 +4,6 @@
 
 #include "Common/StringConvert.h"
 #include "Common/Wildcard.h"
-
 #include "Windows/FileDir.h"
 
 #include "Panel.h"
@@ -140,7 +139,7 @@ void CPanel::LoadFullPath()
 void CPanel::LoadFullPathAndShow()
 { 
   LoadFullPath();
-  _appState->FolderHistrory.AddString(_currentFolderPrefix);
+  _appState->FolderHistory.AddString(_currentFolderPrefix);
 
   // _headerComboBox.SendMessage(CB_RESETCONTENT, 0, 0);
   _headerComboBox.SetText(GetSystemString(_currentFolderPrefix)); 
@@ -238,7 +237,7 @@ void CPanel::FoldersHistory()
   // listViewDialog.m_Value = TEXT("*");
   listViewDialog.Title = LangLoadStringW(IDS_FOLDERS_HISTORY, 0x03020260);
   UStringVector strings;
-  _appState->FolderHistrory.GetList(strings);
+  _appState->FolderHistory.GetList(strings);
   int i;
   for(i = 0; i < strings.Size(); i++)
     listViewDialog.Strings.Add(GetSystemString(strings[i]));
@@ -247,9 +246,9 @@ void CPanel::FoldersHistory()
   UString selectString;
   if (listViewDialog.StringsWereChanged)
   {
-    _appState->FolderHistrory.RemoveAll();
+    _appState->FolderHistory.RemoveAll();
     for (i = listViewDialog.Strings.Size() - 1; i >= 0; i--)
-      _appState->FolderHistrory.AddString(GetUnicodeString(listViewDialog.Strings[i]));
+      _appState->FolderHistory.AddString(GetUnicodeString(listViewDialog.Strings[i]));
     if (listViewDialog.FocusedItemIndex >= 0)
       selectString = GetUnicodeString(listViewDialog.Strings[listViewDialog.FocusedItemIndex]);
   }

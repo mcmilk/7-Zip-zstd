@@ -22,6 +22,9 @@ public:
   HWND GetItem(int itemID) const
     { return GetDlgItem(_window, itemID); }
 
+  bool EnableItem(int itemID, bool enable) const
+    { return BOOLToBool(::EnableWindow(GetItem(itemID), BoolToBOOL(enable))); }
+
   bool SetItemText(int itemID, LPCTSTR s)
     { return BOOLToBool(SetDlgItemText(_window, itemID, s)); }
 

@@ -224,7 +224,7 @@ STDMETHODIMP CFSDrives::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
   *iconIndex = 0;
   const CDriveInfo &driveInfo = _drives[index];
   int iconIndexTemp;
-  if (GetRealIconIndex(driveInfo.FullSystemName, 0, iconIndexTemp) != 0)
+  if (GetRealIconIndex(GetSystemString(driveInfo.FullSystemName), 0, iconIndexTemp) != 0)
   {
     *iconIndex = iconIndexTemp;
     return S_OK;

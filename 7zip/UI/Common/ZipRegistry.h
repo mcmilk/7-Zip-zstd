@@ -46,6 +46,17 @@ namespace NCompression {
   {
     CSysString FormatID;
     CSysString Options;
+    UINT32 Level;
+    CSysString Method;
+    UINT32 Dictionary;
+    UINT32 Order;
+    void Init() 
+    { 
+      Level = Dictionary = Order = UINT32(-1); 
+      Method.Empty();
+      // Options.Empty();
+    }
+    CFormatOptions() { Init(); }
   };
 
   struct CInfo

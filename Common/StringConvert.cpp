@@ -4,6 +4,7 @@
 
 #include "StringConvert.h"
 
+#ifdef WIN32
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 {
   UString resultString;
@@ -47,4 +48,24 @@ AString SystemStringToOemString(const CSysString &srcString)
   result.ReleaseBuffer();
   return result;
 }
+#endif
+
+#else
+
+UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
+{
+  UString resultString;
+  for (int i = 0; i < srcString.Length(); i++)
+    resultString += wchar_t(srcString[i]);
+  return resultString;
+}
+
+AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
+{
+  AString resultString;
+  for (int i = 0; i < srcString.Length(); i++)
+    resultString += char(srcString[i]);
+  return resultString;
+}
+
 #endif

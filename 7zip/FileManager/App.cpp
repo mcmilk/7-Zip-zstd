@@ -24,6 +24,9 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
+extern DWORD g_ComCtl32Version;
+extern HINSTANCE g_hInstance;
+
 void CPanelCallbackImp::OnTab()
 {
   if (g_App.NumPanels != 1)
@@ -90,10 +93,220 @@ void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
   PanelsCreated[panelIndex] = true;
 }
 
+static void CreateToolbar(
+    HWND parent,
+    NWindows::NControl::CImageList &imageList,
+    NWindows::NControl::CToolBar &toolBar,
+    bool LargeButtons)
+{
+  toolBar.Attach(::CreateWindowEx(0, 
+      TOOLBARCLASSNAME,
+      NULL, 0
+      | WS_VISIBLE
+      | TBSTYLE_FLAT
+      | TBSTYLE_TOOLTIPS 
+      | WS_CHILD
+      | CCS_NOPARENTALIGN
+      | CCS_NORESIZE 
+      | CCS_NODIVIDER
+      // | TBSTYLE_AUTOSIZE
+      // | CCS_ADJUSTABLE 
+      ,0,0,0,0, parent, NULL, g_hInstance, NULL));
+
+  // TB_BUTTONSTRUCTSIZE message, which is required for 
+  // backward compatibility.
+  toolBar.ButtonStructSize();
+
+  imageList.Create(
+      LargeButtons ? 48: 24, 
+      LargeButtons ? 36: 24, 
+      ILC_MASK, 0, 0);
+  toolBar.SetImageList(0, imageList);
+}
+
+struct CButtonInfo
+{
+  UINT commandID;
+  UINT BitmapResID;
+  UINT Bitmap2ResID;
+  UINT StringResID; 
+  UINT32 LangID;
+  CSysString GetText()const
+    { return LangLoadString(StringResID, LangID); };
+};
+
+static CButtonInfo g_StandardButtons[] = 
+{
+  { IDM_COPY_TO, IDB_COPY, IDB_COPY2, IDS_BUTTON_COPY, 0x03020420},
+  { IDM_MOVE_TO, IDB_MOVE, IDB_MOVE2, IDS_BUTTON_MOVE, 0x03020421},
+  { IDM_DELETE, IDB_DELETE, IDB_DELETE2, IDS_BUTTON_DELETE, 0x03020422} ,
+  { IDM_FILE_PROPERTIES, IDB_INFO, IDB_INFO2, IDS_BUTTON_INFO, 0x03020423} 
+};
+
+static CButtonInfo g_ArchiveButtons[] = 
+{
+  { kAddCommand, IDB_ADD, IDB_ADD2, IDS_ADD, 0x03020400},
+  { kExtractCommand, IDB_EXTRACT, IDB_EXTRACT2, IDS_EXTRACT, 0x03020401},
+  { kTestCommand , IDB_TEST, IDB_TEST2, IDS_TEST, 0x03020402}
+};
+
+bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, CSysString &s)
+{
+  for (int i = 0; i < numButtons; i++)
+  {
+    const CButtonInfo &b = buttons[i];
+    if (b.commandID == commandID)
+    {
+      s = b.GetText();
+      return  true;
+    }
+  }
+  return false;
+}
+
+void SetButtonText(UINT32 commandID, CSysString &s)
+{
+  if (SetButtonText(commandID, g_StandardButtons, sizeof(g_StandardButtons) / 
+      sizeof(g_StandardButtons[0]), s))
+    return;
+  SetButtonText(commandID, g_ArchiveButtons, sizeof(g_StandardButtons) / 
+      sizeof(g_ArchiveButtons[0]), s);
+}
+
+static void AddButton(
+    NControl::CImageList &imageList,
+    NControl::CToolBar &toolBar, 
+    CButtonInfo &butInfo,
+    bool showText,
+    bool large)
+{
+  TBBUTTON but; 
+  but.iBitmap = 0; 
+  but.idCommand = butInfo.commandID; 
+  but.fsState = TBSTATE_ENABLED; 
+  but.fsStyle = BTNS_BUTTON
+    // | BTNS_AUTOSIZE 
+    ;
+  but.dwData = 0;
+
+  CSysString s = butInfo.GetText();
+  but.iString = 0;
+  if (showText)
+    but.iString = (INT_PTR )(LPCTSTR)s; 
+
+  but.iBitmap = imageList.GetImageCount();
+  HBITMAP b = ::LoadBitmap(g_hInstance, 
+    large ? 
+    (LPCTSTR)butInfo.BitmapResID:
+    (LPCTSTR)butInfo.Bitmap2ResID);
+  if (b != 0)
+  {
+    imageList.AddMasked(b, RGB(255, 0, 255));
+    ::DeleteObject(b);
+  }
+  toolBar.AddButton(1, &but);
+}
+
+static void AddBand(NControl::CReBar &reBar, NControl::CToolBar &toolBar)
+{
+  SIZE size;
+  toolBar.GetMaxSize(&size);
+
+  RECT rect;
+  toolBar.GetWindowRect(&rect);
+  
+  REBARBANDINFO rbBand;
+  rbBand.cbSize = sizeof(REBARBANDINFO);  // Required
+  rbBand.fMask  = RBBIM_STYLE 
+    | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
+  rbBand.fStyle = RBBS_CHILDEDGE; // RBBS_NOGRIPPER;
+  rbBand.cxMinChild = size.cx; // rect.right - rect.left;
+  rbBand.cyMinChild = size.cy; // rect.bottom - rect.top;
+  rbBand.cyChild = rbBand.cyMinChild;
+  rbBand.cx = rbBand.cxMinChild;
+  rbBand.cxIdeal = rbBand.cxMinChild;
+  rbBand.hwndChild = toolBar;
+  reBar.InsertBand(-1, &rbBand);
+}
+
+void CApp::ReloadToolbars()
+{ 
+  if (!_rebar)
+    return;
+  HWND parent = _rebar;
+
+  while(_rebar.GetBandCount() > 0)
+    _rebar.DeleteBand(0);
+
+  _archiveToolBar.Destroy();
+  _archiveButtonsImageList.Destroy();
+
+  _standardButtonsImageList.Destroy();
+  _standardToolBar.Destroy();
+
+  if (ShowArchiveToolbar)
+  {
+    CreateToolbar(parent, _archiveButtonsImageList, _archiveToolBar, LargeButtons);
+    for (int i = 0; i < sizeof(g_ArchiveButtons) / sizeof(g_ArchiveButtons[0]); i++)
+      AddButton(_archiveButtonsImageList, _archiveToolBar, g_ArchiveButtons[i], 
+          ShowButtonsLables, LargeButtons);
+    AddBand(_rebar, _archiveToolBar);
+  }
+
+  if (ShowStandardToolbar)
+  {
+    CreateToolbar(parent, _standardButtonsImageList, _standardToolBar, LargeButtons);
+    for (int i = 0; i < sizeof(g_StandardButtons) / sizeof(g_StandardButtons[0]); i++)
+      AddButton(_standardButtonsImageList, _standardToolBar, g_StandardButtons[i], 
+          ShowButtonsLables, LargeButtons);
+    AddBand(_rebar, _standardToolBar);
+  }
+}
+
+void CApp::ReloadRebar(HWND hwnd)
+{
+  _rebar.Destroy();
+  if (!ShowArchiveToolbar && !ShowStandardToolbar)
+    return;
+  if (g_ComCtl32Version >= MAKELONG(71, 4))
+  {
+    INITCOMMONCONTROLSEX icex;
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC  = ICC_COOL_CLASSES | ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icex);
+    
+    _rebar.Attach(::CreateWindowEx(WS_EX_TOOLWINDOW,
+      REBARCLASSNAME,
+      NULL, 
+      WS_VISIBLE 
+      | WS_BORDER 
+      | WS_CHILD 
+      | WS_CLIPCHILDREN 
+      | WS_CLIPSIBLINGS 
+      // | CCS_NODIVIDER  
+      // | CCS_NOPARENTALIGN  // it's bead for moveing of two bands
+      // | CCS_TOP
+      | RBS_VARHEIGHT 
+      | RBS_BANDBORDERS
+      // | RBS_AUTOSIZE
+      ,0,0,0,0, hwnd, NULL, g_hInstance, NULL));
+  }
+  if (_rebar == 0)
+    return;
+  REBARINFO rbi;
+  rbi.cbSize = sizeof(REBARINFO);  // Required when using this struct.
+  rbi.fMask = 0;
+  rbi.himl = (HIMAGELIST)NULL;
+  _rebar.SetBarInfo(&rbi);
+  ReloadToolbars();
+}
+
 void CApp::Create(HWND hwnd, const UString &mainPath)
 {
-  int i;
-  for (i = 0; i < kNumPanelsMax; i++)
+  ReadToolbar();
+  ReloadRebar(hwnd);
+
+  for (int i = 0; i < kNumPanelsMax; i++)
     PanelsCreated[i] = false;
 
   _window.Attach(hwnd);
@@ -540,4 +753,34 @@ int CApp::GetFocusedPanelIndex()
     hwnd = GetParent(hwnd);
   }
   */
+}
+
+static CSysString g_ToolTipBuffer;
+
+void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
+{
+  if (pnmh->hwndFrom == _rebar)
+  {
+    switch(pnmh->code)
+    {
+      case RBN_HEIGHTCHANGE:
+      {
+        MoveSubWindows(g_HWND);
+        return;
+      }
+    }
+    return ;
+  }
+  else 
+  {
+    if (pnmh->code == TTN_GETDISPINFO)
+    {
+      LPNMTTDISPINFO info = (LPNMTTDISPINFO)pnmh;
+      info->hinst = 0;
+      g_ToolTipBuffer.Empty();
+      SetButtonText(info->hdr.idFrom, g_ToolTipBuffer);
+      info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBuffer;
+      return;
+    }
+  }
 }

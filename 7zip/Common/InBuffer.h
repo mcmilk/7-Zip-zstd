@@ -31,38 +31,35 @@ public:
   ~CInBuffer();
   
   void Init(ISequentialInStream *stream);
-  /*
-  void ReleaseStream()
-    { _stream.Release(); }
-  */
+  // void ReleaseStream() { _stream.Release(); }
 
   bool ReadByte(BYTE &b)
-    {
-      if(_buffer >= _bufferLimit)
-        if(!ReadBlock())
-          return false;
-      b = *_buffer++;
-      return true;
-    }
+  {
+    if(_buffer >= _bufferLimit)
+      if(!ReadBlock())
+        return false;
+    b = *_buffer++;
+    return true;
+  }
   BYTE ReadByte()
-    {
-      if(_buffer >= _bufferLimit)
-        if(!ReadBlock())
-          return 0x0;
-      return *_buffer++;
-    }
+  {
+    if(_buffer >= _bufferLimit)
+      if(!ReadBlock())
+        return 0x0;
+    return *_buffer++;
+  }
   void ReadBytes(void *data, UINT32 size, UINT32 &processedSize)
-    {
-      for(processedSize = 0; processedSize < size; processedSize++)
-        if (!ReadByte(((BYTE *)data)[processedSize]))
-          return;
-    }
+  {
+    for(processedSize = 0; processedSize < size; processedSize++)
+      if (!ReadByte(((BYTE *)data)[processedSize]))
+        return;
+  }
   bool ReadBytes(void *data, UINT32 size)
-    {
-      UINT32 processedSize;
-      ReadBytes(data, size, processedSize);
-      return (processedSize == size);
-    }
+  {
+    UINT32 processedSize;
+    ReadBytes(data, size, processedSize);
+    return (processedSize == size);
+  }
   UINT64 GetProcessedSize() const { return _processedSize + (_buffer - _bufferBase); }
 };
 

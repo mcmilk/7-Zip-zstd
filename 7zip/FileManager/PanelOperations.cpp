@@ -22,7 +22,6 @@
 using namespace NWindows;
 using namespace NFile;
 
-
 struct CThreadDelete
 {
   CMyComPtr<IFolderOperations> FolderOperations;

@@ -536,8 +536,8 @@ STDMETHODIMP CFSFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
   const CFileInfoEx &fileInfo = _files[index];
   *iconIndex = 0;
   int iconIndexTemp;
-  if (GetRealIconIndex(_path + fileInfo.Name, fileInfo.Attributes, 
-      iconIndexTemp) != 0)
+  if (GetRealIconIndex(GetSystemString(_path + fileInfo.Name), 
+      fileInfo.Attributes, iconIndexTemp) != 0)
   {
     *iconIndex = iconIndexTemp;
     return S_OK;

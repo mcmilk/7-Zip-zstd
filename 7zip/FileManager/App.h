@@ -7,12 +7,23 @@
 
 #include "Panel.h"
 #include "AppState.h"
+#include "Windows/Control/ImageList.h"
 
 class CApp;
 
 extern CApp g_App;
+extern HWND g_HWND;
 
 const int kNumPanelsMax = 2;
+
+extern void MoveSubWindows(HWND hWnd);
+
+enum 
+{
+  kAddCommand = kToolbarStartID,
+  kExtractCommand,
+  kTestCommand
+};
 
 class CPanelCallbackImp: public CPanelCallback
 {
@@ -40,10 +51,22 @@ public:
   int NumPanels;
   int LastFocusedPanel;
 
+  bool ShowStandardToolbar;
+  bool ShowArchiveToolbar;
+  bool ShowButtonsLables;
+  bool LargeButtons;
+
   CAppState AppState;
   CPanelCallbackImp m_PanelCallbackImp[kNumPanelsMax];
   CPanel Panels[kNumPanelsMax];
   bool PanelsCreated[kNumPanelsMax];
+
+  NWindows::NControl::CImageList _archiveButtonsImageList;
+  NWindows::NControl::CImageList _standardButtonsImageList;
+
+  NWindows::NControl::CReBar _rebar;
+  NWindows::NControl::CToolBar _archiveToolBar;
+  NWindows::NControl::CToolBar _standardToolBar;
   
   void OnCopy(UStringVector &externalNames, 
       bool move, bool copyToSame, int srcPanelIndex);
@@ -153,6 +176,64 @@ public:
     { GetFocusedPanel().OpenBookmark(index); }
   void SetBookmark(int index)
     { GetFocusedPanel().SetBookmark(index); }
+
+  void ReloadRebar(HWND hwnd);
+  void ReloadToolbars();
+  void ReadToolbar()
+  {
+    UINT32 mask = ReadToolbarsMask();
+    ShowButtonsLables = ((mask & 1) != 0);
+    LargeButtons = ((mask & 2) != 0);
+    ShowStandardToolbar = ((mask & 4) != 0);
+    ShowArchiveToolbar  = ((mask & 8) != 0);
+  }
+  void SaveToolbar()
+  {
+    UINT32 mask = 0;
+    if (ShowButtonsLables) mask |= 1;
+    if (LargeButtons) mask |= 2;
+    if (ShowStandardToolbar) mask |= 4;
+    if (ShowArchiveToolbar) mask |= 8;
+    SaveToolbarsMask(mask);
+  }
+  void SwitchStandardToolbar()
+  { 
+    ShowStandardToolbar = !ShowStandardToolbar;
+    SaveToolbar();
+    ReloadRebar(g_HWND);
+    MoveSubWindows(_window);
+  }
+  void SwitchArchiveToolbar()
+  { 
+    ShowArchiveToolbar = !ShowArchiveToolbar;
+    SaveToolbar();
+    ReloadRebar(g_HWND);
+    MoveSubWindows(_window);
+  }
+  void SwitchButtonsLables()
+  { 
+    ShowButtonsLables = !ShowButtonsLables;
+    SaveToolbar();
+    ReloadRebar(g_HWND);
+    MoveSubWindows(_window);
+  }
+  void SwitchLargeButtons()
+  { 
+    LargeButtons = !LargeButtons;
+    SaveToolbar();
+    ReloadRebar(g_HWND);
+    MoveSubWindows(_window);
+  }
+
+
+  void AddToArchive()
+    { GetFocusedPanel().AddToArchive(); }
+  void ExtractArchive()
+    { GetFocusedPanel().ExtractArchive(); }
+  void TestArchive()
+    { GetFocusedPanel().TestArchive(); }
+
+  void OnNotify(int ctrlID, LPNMHDR pnmh);
 };
 
 #endif

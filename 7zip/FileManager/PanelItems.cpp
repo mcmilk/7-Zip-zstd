@@ -405,7 +405,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
       if (_currentFolderPrefix.IsEmpty())
       {
         int iconIndexTemp;
-        GetRealIconIndex(itemName + L"\\", attributes, iconIndexTemp);
+        GetRealIconIndex(GetSystemString(itemName + L"\\"), attributes, iconIndexTemp);
         item.iImage = iconIndexTemp;
       }
       else

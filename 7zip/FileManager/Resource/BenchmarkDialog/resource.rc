@@ -1,0 +1,149 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_BENCHMARK DIALOG DISCARDABLE  0, 0, 219, 242
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Benchmark"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    PUSHBUTTON      "&Restart",IDC_BUTTON_RESTART,151,7,62,14
+    PUSHBUTTON      "&Stop",IDC_BUTTON_STOP,151,27,62,14
+    PUSHBUTTON      "&Help",IDHELP,82,221,62,14
+    PUSHBUTTON      "Cancel",IDCANCEL,151,221,62,14
+    LTEXT           "&Dictionary size:",IDC_BENCHMARK_DICTIONARY,7,8,75,8
+    COMBOBOX        IDC_BENCHMARK_COMBO_DICTIONARY,88,7,44,140,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Memory usage:",IDC_BENCHMARK_MEMORY,7,25,75,8
+    LTEXT           "0 MB",IDC_BENCHMARK_MEMORY_VALUE,88,25,44,8
+    CONTROL         "Multi-threading",IDC_BENCHMARK_MULTITHREADING,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,41,75,10
+    RTEXT           "Speed",IDC_BENCHMARK_SPEED_LABEL,82,53,64,8
+    RTEXT           "Rating",IDC_BENCHMARK_RATING_LABEL,151,53,51,8
+    GROUPBOX        "Compressing",IDC_BENCHMARK_COMPRESSING,7,64,205,40
+    LTEXT           "Current",IDC_BENCHMARK_CURRENT,17,76,65,8
+    RTEXT           "100 KB/s",IDC_BENCHMARK_COMPRESSING_SPEED,82,76,64,8
+    RTEXT           "0",IDC_BENCHMARK_COMPRESSING_RATING,151,76,51,8
+    LTEXT           "Resulting",IDC_BENCHMARK_RESULTING,17,89,65,8
+    RTEXT           "100 KB/s",IDC_BENCHMARK_COMPRESSING_SPEED2,82,89,64,8
+    RTEXT           "0",IDC_BENCHMARK_COMPRESSING_RATING2,151,89,51,8
+    GROUPBOX        "Decompressing",IDC_BENCHMARK_DECOMPRESSING,7,111,205,40
+    LTEXT           "Current",IDC_BENCHMARK_CURRENT2,17,123,65,8
+    RTEXT           "100 KB/s",IDC_BENCHMARK_DECOMPRESSING_SPEED,82,123,64,8
+    RTEXT           "0",IDC_BENCHMARK_DECOMPRESSING_RATING,151,123,51,8
+    LTEXT           "Resulting",IDC_BENCHMARK_RESULTING2,17,136,65,8
+    RTEXT           "100 KB/s",IDC_BENCHMARK_DECOMPRESSING_SPEED2,82,136,64,
+                    8
+    RTEXT           "0",IDC_BENCHMARK_DECOMPRESSING_RATING2,151,136,51,8
+    GROUPBOX        "Total Rating",IDC_BENCHMARK_TOTAL_RATING,137,162,75,38
+    RTEXT           "0",IDC_BENCHMARK_TOTAL_RATING_VALUE,146,180,56,8
+    LTEXT           "Elapsed time:",IDC_BENCHMARK_ELAPSED,7,163,58,8
+    RTEXT           "00:00:00",IDC_BENCHMARK_ELAPSED_VALUE,65,163,36,8
+    LTEXT           "Size:",IDC_BENCHMARK_SIZE,7,176,58,8
+    RTEXT           "0",IDC_BENCHMARK_SIZE_VALUE,65,176,36,8
+    LTEXT           "Passes:",IDC_BENCHMARK_PASSES,7,189,58,8
+    RTEXT           "0",IDC_BENCHMARK_PASSES_VALUE,65,189,36,8
+    LTEXT           "Errors:",IDC_BENCHMARK_ERRORS,7,202,58,8
+    RTEXT           "0",IDC_BENCHMARK_ERRORS_VALUE,65,202,36,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DIALOG_BENCHMARK, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 212
+        VERTGUIDE, 17
+        VERTGUIDE, 65
+        VERTGUIDE, 82
+        VERTGUIDE, 88
+        VERTGUIDE, 101
+        VERTGUIDE, 132
+        VERTGUIDE, 146
+        VERTGUIDE, 151
+        VERTGUIDE, 202
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 235
+        HORZGUIDE, 24
+        HORZGUIDE, 53
+        HORZGUIDE, 76
+        HORZGUIDE, 89
+        HORZGUIDE, 123
+        HORZGUIDE, 136
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+

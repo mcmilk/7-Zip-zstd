@@ -416,12 +416,12 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   {
     CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
     CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = openArchiveCallback;
-    openArchiveCallbackWrap.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
     
     CVolumeName seqName;
 
     if (openArchiveCallback != NULL)
     {
+      openArchiveCallbackWrap.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
       RINOK(openArchiveCallback->SetTotal(NULL, NULL));
       UINT64 numFiles = _items.Size();
       RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));

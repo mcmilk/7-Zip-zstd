@@ -56,5 +56,4 @@ public:
   STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
 };
 
-
 #endif

@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
-// #define INITGUID
+// #include <initguid.h>
+#define INITGUID
 
 #include "LZMAEncoder.h"
 #include "LZMADecoder.h"

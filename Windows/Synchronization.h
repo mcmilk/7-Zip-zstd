@@ -18,12 +18,9 @@ public:
     { return (::WaitForSingleObject(_handle, timeoutInterval) == WAIT_OBJECT_0); }
 };
 
-class CEvent: public CObject
+class CBaseEvent: public CObject
 {
 public:
-  CEvent() {};
-  CEvent(bool manualReset, bool initiallyOwn, 
-      LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
   bool Create(bool manualReset, bool initiallyOwn, LPCTSTR name = NULL,
       LPSECURITY_ATTRIBUTES securityAttributes = NULL)
   {
@@ -41,6 +38,14 @@ public:
   bool Set() { return BOOLToBool(::SetEvent(_handle)); }
   bool Pulse() { return BOOLToBool(::PulseEvent(_handle)); }
   bool Reset() { return BOOLToBool(::ResetEvent(_handle)); }
+};
+
+class CEvent: public CBaseEvent
+{
+public:
+  CEvent() {};
+  CEvent(bool manualReset, bool initiallyOwn, 
+      LPCTSTR name = NULL, LPSECURITY_ATTRIBUTES securityAttributes = NULL);
 };
 
 class CManualResetEvent: public CEvent

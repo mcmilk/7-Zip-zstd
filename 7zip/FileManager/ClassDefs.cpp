@@ -10,6 +10,7 @@
 // #include "../Archiver/Format/Common/ArchiveInterface.h"
 #include "PluginInterface.h"
 #include "ExtractCallback.h"
+#include "../ICoder.h"
 
 /*
 // {23170F69-40C1-278A-1000-000100030000}

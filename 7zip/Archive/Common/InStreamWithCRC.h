@@ -1,6 +1,6 @@
 // InStreamWithCRC.h
 
-#pragma once
+// #pragma once
 
 #ifndef __INSTREAMWITHCRC_H
 #define __INSTREAMWITHCRC_H

@@ -135,11 +135,12 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
           m_Folders.Size(), fileInfo.FolderIndex);
       const NHeader::CFolder &folder = m_Folders[realFolderIndex];
       UString method;
-      if (folder.CompressionTypeMajor < kNumMethods)
-        method = kMethods[folder.CompressionTypeMajor];
+      int methodIndex = folder.GetCompressionMethod();
+      if (methodIndex < kNumMethods)
+        method = kMethods[methodIndex];
       else
         method = kUnknownMethod;
-      if (folder.CompressionTypeMajor == NHeader::NCompressionMethodMajor::kLZX)
+      if (methodIndex == NHeader::NCompressionMethodMajor::kLZX)
       {
         method += L":";
         wchar_t temp[32];
@@ -253,7 +254,8 @@ public:
       IArchiveExtractCallback *extractCallback,
       UINT64 startImportantTotalUnPacked,
       bool testMode);
-  STDMETHOD(FlushCorrupted)();
+  HRESULT FlushCorrupted();
+  HRESULT Unsupported();
 };
 
 void CCabFolderOutStream::Init(
@@ -397,7 +399,7 @@ STDMETHODIMP CCabFolderOutStream::Write(const void *data,
   return S_OK;
 }
 
-STDMETHODIMP CCabFolderOutStream::FlushCorrupted()
+HRESULT CCabFolderOutStream::FlushCorrupted()
 {
   // UINT32 processedSizeReal = 0;
   while(m_CurrentIndex < m_NumFiles)
@@ -420,6 +422,20 @@ STDMETHODIMP CCabFolderOutStream::FlushCorrupted()
         return result;
       m_FileIsOpen = true;
     }
+  }
+  return S_OK;
+}
+
+HRESULT CCabFolderOutStream::Unsupported()
+{
+  while(m_CurrentIndex < m_NumFiles)
+  {
+    HRESULT result = OpenFile(m_CurrentIndex, &realOutStream);
+    if (result != S_FALSE && result != S_OK)
+      return result;
+    realOutStream.Release();
+    RINOK(m_ExtractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+    m_CurrentIndex++;
   }
   return S_OK;
 }
@@ -511,13 +527,16 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     CCabFolderOutStream *cabFolderOutStream =  new CCabFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(cabFolderOutStream);
 
+    const NHeader::CFolder &folder = m_Folders[realFolderIndex];
+
     cabFolderOutStream->Init(&m_Folders, &m_Files, &importantIndices, 
         &extractStatuses, curImportantIndexIndex, j - curImportantIndexIndex, 
-        extractCallback, currentImportantTotalUnPacked, testMode);
+        extractCallback, currentImportantTotalUnPacked, 
+        folder.GetCompressionMethod() == NHeader::NCompressionMethodMajor::kQuantum?
+        true: testMode);
 
     curImportantIndexIndex = j;
   
-    const NHeader::CFolder &folder = m_Folders[realFolderIndex];
     UINT64 pos = folder.DataStart; // test it (+ archiveStart)
     RINOK(m_Stream->Seek(pos, STREAM_SEEK_SET, NULL));
 
@@ -534,7 +553,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     BYTE reservedSize = m_ArchiveInfo.ReserveBlockPresent() ? 
       m_ArchiveInfo.PerDataSizes.PerDatablockAreaSize : 0;
 
-    switch(folder.CompressionTypeMajor)
+    switch(folder.GetCompressionMethod())
     {
       case NHeader::NCompressionMethodMajor::kNone:
       {
@@ -598,7 +617,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
         break;
       }
     default:
-      return E_FAIL;
+      RINOK(cabFolderOutStream->Unsupported());
+      // return E_FAIL;
     }
   }
   return S_OK;

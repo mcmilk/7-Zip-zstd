@@ -98,6 +98,7 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
     g_App.SetListSettings();
     g_App.SetShowSystemMenu();
     g_App.RefreshAllPanels();
+    g_App.ReloadToolbars();
       // ::PostMessage(hwndOwner, kLangWasChangedMessage, 0 , 0);
   }
   /*

@@ -17,6 +17,7 @@ static const TCHAR *kCulumnsKeyName = TEXT("Columns");
 
 static const TCHAR *kPositionValueName = TEXT("Position");
 static const TCHAR *kPanelsInfoValueName = TEXT("Panels");
+static const TCHAR *kToolbars = TEXT("Toolbars");
 
 static const TCHAR *kPanelPathValueName = TEXT("PanelPath");
 static const TCHAR *kFolderHistoryValueName = TEXT("FolderHistory");
@@ -216,6 +217,26 @@ bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos
   currentPanel = block.CurrentPanel;
   splitterPos = block.SplitterPos;
   return true;
+}
+
+void SaveToolbarsMask(UINT32 toolbarMask)
+{
+  CKey key;
+  key.Create(HKEY_CURRENT_USER, kCUBasePath);
+  key.SetValue(kToolbars, toolbarMask);
+}
+
+static const kDefaultToolbarMask = 8 | 4 | 1;
+
+UINT32 ReadToolbarsMask()
+{
+  CKey key;
+  if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
+    return kDefaultToolbarMask;
+  UINT32 mask;
+  if (key.QueryValue(kToolbars, mask) != ERROR_SUCCESS)
+    return kDefaultToolbarMask;
+  return mask;
 }
 
 

@@ -44,10 +44,30 @@
 #define IDM_FOLDERS_HISTORY             432
 #define IDM_VIEW_REFRESH                440
 #define IDM_VIEW_TWO_PANELS             450
+#define IDM_VIEW_TOOLBARS               451
+#define IDM_VIEW_STANDARD_TOOLBAR       460
+#define IDM_VIEW_ARCHIVE_TOOLBAR        461
+#define IDM_VIEW_TOOLBARS_LARGE_BUTTONS 462
+#define IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT 463
 #define IDM_OPTIONS                     510
+#define IDM_BENCHMARK                   511
 #define IDM_HELP_CONTENTS               610
 #define IDM_ABOUT                       620
 #define IDS_BOOKMARK                    720
+#define IDB_ADD                         2002
+#define IDB_EXTRACT                     2003
+#define IDB_TEST                        2004
+#define IDB_COPY                        2010
+#define IDB_MOVE                        2011
+#define IDB_DELETE                      2012
+#define IDB_INFO                        2013
+#define IDB_ADD2                        2082
+#define IDB_EXTRACT2                    2083
+#define IDB_TEST2                       2084
+#define IDB_COPY2                       2090
+#define IDB_MOVE2                       2091
+#define IDB_DELETE2                     2092
+#define IDB_INFO2                       2093
 #define IDS_APP_TITLE                   2200
 #define IDS_COPY                        2201
 #define IDS_MOVE                        2202
@@ -87,6 +107,13 @@
 #define IDS_OPENNING                    2283
 #define IDS_COMPUTER                    2300
 #define IDS_NETWORK                     2301
+#define IDS_ADD                         2400
+#define IDS_EXTRACT                     2401
+#define IDS_TEST                        2402
+#define IDS_BUTTON_COPY                 2420
+#define IDS_BUTTON_MOVE                 2421
+#define IDS_BUTTON_DELETE               2422
+#define IDS_BUTTON_INFO                 2423
 #define IDS_PROPERTY_TOTAL_SIZE         3100
 #define IDS_PROPERTY_FREE_SPACE         3101
 #define IDS_PROPERTY_CLUSTER_SIZE       3102
@@ -102,8 +129,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        2000
-#define _APS_NEXT_COMMAND_VALUE         40071
+#define _APS_NEXT_RESOURCE_VALUE        4020
+#define _APS_NEXT_COMMAND_VALUE         40078
 #define _APS_NEXT_CONTROL_VALUE         3000
 #define _APS_NEXT_SYMED_VALUE           4010
 #endif

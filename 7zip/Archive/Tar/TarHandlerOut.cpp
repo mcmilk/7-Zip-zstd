@@ -118,4 +118,5 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   return UpdateArchive(_inStream, outStream, _items, updateItems, updateCallback);
   COM_TRY_END
 }
+
 }}

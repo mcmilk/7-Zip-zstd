@@ -153,3 +153,4 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 }
 
 }}
+

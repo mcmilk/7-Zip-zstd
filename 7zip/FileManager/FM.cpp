@@ -115,6 +115,7 @@ int g_StartCaptureSplitterPos;
 CApp g_App;
 
 void MoveSubWindows(HWND hWnd);
+void OnSize(HWND hWnd);
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -374,6 +375,22 @@ static void SaveWindowInfo(HWND aWnd)
       g_Splitter.GetPos());
 }
 
+void ExecuteCommand(UINT commandID)
+{
+  switch (commandID)
+  {
+    case kAddCommand:
+      g_App.AddToArchive();
+      break;
+    case kExtractCommand:
+      g_App.ExtractArchive();
+      break;
+    case kTestCommand:
+      g_App.TestArchive();
+      break;
+  }
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -384,6 +401,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			wmEvent = HIWORD(wParam); 
       if ((HWND) lParam != NULL && wmEvent != 0)
         break;
+      if (wmId >= kToolbarStartID)
+      {
+        ExecuteCommand(wmId);
+        return 0;
+      }
       if (OnMenuCommand(hWnd, wmId))
         return 0;
       break;
@@ -485,7 +507,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_CanChangeSplitter = true;
       }
 
-      MoveSubWindows(hWnd);
+      OnSize(hWnd);
       /*
       int xSize = LOWORD(lParam);
       int ySize = HIWORD(lParam);
@@ -528,6 +550,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_SETTINGCHANGE:
       break;
     */
+    case WM_NOTIFY:
+    {
+      g_App.OnNotify(wParam, (LPNMHDR)lParam);
+      break;
+    }
     case WM_DROPFILES:
     {
       g_App.GetFocusedPanel().CompressDropFiles((HDROP)wParam);
@@ -537,13 +564,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	 return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+void OnSize(HWND hWnd)
+{
+  if (g_App._rebar)
+  {
+    RECT rect;
+    ::GetClientRect(hWnd, &rect);
+    int xSize = rect.right;
+    int ySize = rect.bottom;
+    // rect.bottom = 0;
+    // g_App._rebar.SizeToRect(&rect);
+    // g_App._rebar.Move(0, 0, xSize, ySize);
+  }
+  MoveSubWindows(hWnd);
+}
+
 void MoveSubWindows(HWND hWnd)
 {
   RECT rect;
   ::GetClientRect(hWnd, &rect);
-  const int kHeaderSize = 0; // 29;
   int xSize = rect.right;
+  int kHeaderSize = 0;
   int ySize = MyMax(int(rect.bottom - kHeaderSize), 0);
+  if (g_App._rebar)
+  {
+    RECT barRect;
+    g_App._rebar.GetWindowRect(&barRect);
+    kHeaderSize = barRect.bottom - barRect.top;
+    ySize = MyMax(int(rect.bottom - kHeaderSize), 0);
+  }
+ 
+  // g_App._headerToolBar.Move(0, 2, xSize, kHeaderSize - 2);
+  RECT rect2 = rect;
+  rect2.bottom = 0;
+  // g_App._headerReBar.SizeToRect(&rect2);
   if (g_App.NumPanels > 1)
   {
     g_App.Panels[0].Move(0, kHeaderSize, g_Splitter.GetPos(), ySize);

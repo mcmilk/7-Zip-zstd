@@ -6,6 +6,7 @@
 #define __ARCHIVERINFO_H
 
 #include "Common/String.h"
+#include "Common/Types.h"
 
 struct CArchiverExtInfo
 {

@@ -648,6 +648,10 @@ SOURCE=..\..\Common\StreamObjects.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Compress\Branch\Coder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\Branch\x86.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -1099,6 +1103,42 @@ SOURCE=..\..\Compress\LZ\MT\MT.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\LZ\MT\MT.h
+# End Source File
+# End Group
+# Begin Group "HC"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HC2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HC3.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HC4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HC4b.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HCMain.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HCMF.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\HashChain\HCMFMain.h
 # End Source File
 # End Group
 # Begin Source File
@@ -2077,6 +2117,34 @@ SOURCE=..\..\Crypto\7zAES\SHA256.cpp
 SOURCE=..\..\Crypto\7zAES\SHA256.h
 # End Source File
 # End Group
+# End Group
+# Begin Group "7-zip"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IMyUnknown.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IPassword.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\PropID.h
+# End Source File
 # End Group
 # End Target
 # End Project

@@ -22,6 +22,14 @@ public:
     { return BOOLToBool(SendMessage(RB_SETBANDINFO, index, (LPARAM)bandInfo)); }
   void MaximizeBand(int index, bool ideal)
     { SendMessage(RB_MAXIMIZEBAND, index, BoolToBOOL(ideal)); }
+  bool SizeToRect(LPRECT rect)
+    { return BOOLToBool(SendMessage(RB_SIZETORECT, 0, (LPARAM)rect)); }
+  UINT GetHeight()
+    { return SendMessage(RB_GETBARHEIGHT); }
+  UINT GetBandCount()
+    { return SendMessage(RB_GETBANDCOUNT); }
+  bool DeleteBand(UINT index)
+    { return BOOLToBool(SendMessage(RB_DELETEBAND, index)); }
 };
 
 }}

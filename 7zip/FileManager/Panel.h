@@ -32,6 +32,7 @@
 
 const int kParentFolderID = 100;
 const int kPluginMenuStartID = 1000;
+const int kToolbarStartID = 2000;
 
 class CPanelCallback
 {
@@ -325,7 +326,8 @@ public:
       CMyComPtr<IContextMenu> &sevenZipContextMenu);
   void CreateFileMenu(HMENU menu, 
       CMyComPtr<IContextMenu> &sevenZipContextMenu,
-      CMyComPtr<IContextMenu> &systemContextMenu);
+      CMyComPtr<IContextMenu> &systemContextMenu,
+      bool programMenu);
   void CreateFileMenu(HMENU menu);
   bool InvokePluginCommand(int id);
   bool InvokePluginCommand(int id, IContextMenu *sevenZipContextMenu, 
@@ -427,6 +429,10 @@ public:
   void OnRefreshStatusBar();
 
   void CompressDropFiles(HDROP dr);
+
+  void AddToArchive();
+  void ExtractArchive();
+  void TestArchive();
 };
 
 #endif

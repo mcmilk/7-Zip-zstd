@@ -73,6 +73,7 @@ struct CFolder
   BYTE CompressionTypeMajor;
   BYTE CompressionTypeMinor;
   // BYTE  abReserve[];	// (optional) per-folder reserved area
+  BYTE GetCompressionMethod() const { return CompressionTypeMajor & 0xF; }
 };
 
 const int kFileNameIsUTFAttributeMask = 0x80;

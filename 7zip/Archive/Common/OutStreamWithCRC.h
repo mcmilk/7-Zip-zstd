@@ -1,6 +1,6 @@
 // OutStreamWithCRC.h
 
-#pragma once
+// #pragma once
 
 #ifndef __OUTSTREAMWITHCRC_H
 #define __OUTSTREAMWITHCRC_H

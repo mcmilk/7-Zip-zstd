@@ -11,37 +11,13 @@ extern bool g_IsNT;
 
 static const char *kTrimDefaultCharSet  = " \n\t";
 
-inline char* MyStringGetNextCharPointer(char *p)
-  { return CharNextA(p); }
-inline wchar_t* MyStringGetNextCharPointer(wchar_t *p)
-  { return (p + 1); }
-inline const char* MyStringGetNextCharPointer(const char *p)
-  { return CharNextA(p); }
-inline const wchar_t* MyStringGetNextCharPointer(const wchar_t *p)
-  { return (p + 1); }
-
-inline char* MyStringGetPrevCharPointer(char *base, char *p)
-  { return CharPrevA(base, p); }
-inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, wchar_t *p)
-  { return (p - 1); }
-inline const char* MyStringGetPrevCharPointer(const char *base, const char *p)
-  { return CharPrevA(base, p); }
-inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, const wchar_t *p)
-  { return (p - 1); }
-
-inline size_t MyStringLen(const char *s)
-  { return lstrlenA(s); }
-#ifdef _UNICODE
-inline size_t MyStringLen(const wchar_t *s)
-  { return lstrlenW(s); }
-#else
-inline size_t MyStringLen(const wchar_t *s)
+template <class T>
+inline size_t MyStringLen(const T *s)
 { 
   int i;
-  for (i = 0; s[i] != L'\0'; i++);
+  for (i = 0; s[i] != '\0'; i++);
   return i;
 }
-#endif
 
 template <class T>
 inline T * MyStringCopy(T *dest, const T *src)
@@ -50,6 +26,27 @@ inline T * MyStringCopy(T *dest, const T *src)
   while((*dest++ = *src++) != 0);
   return destStart;
 }
+
+inline wchar_t* MyStringGetNextCharPointer(wchar_t *p)
+  { return (p + 1); }
+inline const wchar_t* MyStringGetNextCharPointer(const wchar_t *p)
+  { return (p + 1); }
+inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, wchar_t *p)
+  { return (p - 1); }
+inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, const wchar_t *p)
+  { return (p - 1); }
+
+#ifdef WIN32
+
+inline char* MyStringGetNextCharPointer(char *p)
+  { return CharNextA(p); }
+inline const char* MyStringGetNextCharPointer(const char *p)
+  { return CharNextA(p); }
+
+inline char* MyStringGetPrevCharPointer(char *base, char *p)
+  { return CharPrevA(base, p); }
+inline const char* MyStringGetPrevCharPointer(const char *base, const char *p)
+  { return CharPrevA(base, p); }
 
 inline char MyCharUpper(char c)
   { return (char)CharUpperA((LPSTR)(unsigned char)c); }
@@ -116,6 +113,26 @@ inline int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
 #else
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
 #endif
+
+#else // Standard-C
+
+inline NormalizeCompareResult(int res)
+{
+  if (res < 0)
+    return -1;
+  if (res > 0)
+    return 1;
+  return 0;
+}
+
+inline wchar_t MyCharUpper(wchar_t c)
+  { return towupper(c); }
+
+inline int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
+  { return NormalizeCompareResult(wcscoll(s1, s2)); }
+
+#endif
+
 
 template <class T>
 inline int MyStringCompare(const T *s1, const T *s2)

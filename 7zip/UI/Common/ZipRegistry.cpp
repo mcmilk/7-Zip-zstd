@@ -131,7 +131,12 @@ static const TCHAR *kCompressionEncryptHeadersValueName = TEXT("EncryptHeaders")
 static const TCHAR *kCompressionOptionsKeyName = TEXT("Options");
 static const TCHAR *kSolid = TEXT("Solid");
 static const TCHAR *kMultiThread = TEXT("Multithread");
-static const TCHAR *kCompressionOptionsOptionsValueName = TEXT("Options");
+
+static const TCHAR *kCompressionOptions = TEXT("Options");
+static const TCHAR *kCompressionLevel = TEXT("Level");
+static const TCHAR *kCompressionMethod = TEXT("Method");
+static const TCHAR *kCompressionDictionary = TEXT("Dictionary");
+static const TCHAR *kCompressionOrder = TEXT("Order");
 
 void SaveCompressionInfo(const NCompression::CInfo &info)
 {
@@ -159,10 +164,29 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     optionsKey.Create(compressionKey, kCompressionOptionsKeyName);
     for(int i = 0; i < info.FormatOptionsVector.Size(); i++)
     {
-      const NCompression::CFormatOptions &formatOptions = info.FormatOptionsVector[i];
+      const NCompression::CFormatOptions &fo = info.FormatOptionsVector[i];
       CKey formatKey;
-      formatKey.Create(optionsKey, formatOptions.FormatID);
-      formatKey.SetValue(kCompressionOptionsOptionsValueName, formatOptions.Options);
+      formatKey.Create(optionsKey, fo.FormatID);
+      if (fo.Options.IsEmpty())
+        formatKey.DeleteValue(kCompressionOptions);
+      else
+        formatKey.SetValue(kCompressionOptions, fo.Options);
+      if (fo.Level == UINT32(-1))
+        formatKey.DeleteValue(kCompressionLevel);
+      else
+        formatKey.SetValue(kCompressionLevel, fo.Level);
+      if (fo.Method.IsEmpty())
+        formatKey.DeleteValue(kCompressionMethod);
+      else
+        formatKey.SetValue(kCompressionMethod, fo.Method);
+      if (fo.Dictionary == UINT32(-1))
+        formatKey.DeleteValue(kCompressionDictionary);
+      else
+        formatKey.SetValue(kCompressionDictionary, fo.Dictionary);
+      if (fo.Order == UINT32(-1))
+        formatKey.DeleteValue(kCompressionOrder);
+      else
+        formatKey.SetValue(kCompressionOrder, fo.Order);
     }
   }
 
@@ -237,13 +261,23 @@ void ReadCompressionInfo(NCompression::CInfo &info)
       optionsKey.EnumKeys(formatIDs);
       for(int i = 0; i < formatIDs.Size(); i++)
       {
-        NCompression::CFormatOptions formatOptions;
-        formatOptions.FormatID = formatIDs[i];
         CKey formatKey;
-        if(formatKey.Open(optionsKey, formatOptions.FormatID, KEY_READ) == ERROR_SUCCESS)
-           if (formatKey.QueryValue(kCompressionOptionsOptionsValueName, 
-                formatOptions.Options) == ERROR_SUCCESS)
-              info.FormatOptionsVector.Add(formatOptions);
+        NCompression::CFormatOptions fo;
+        fo.FormatID = formatIDs[i];
+        if(formatKey.Open(optionsKey, fo.FormatID, KEY_READ) == ERROR_SUCCESS)
+        {
+          if (formatKey.QueryValue(kCompressionOptions, fo.Options) != ERROR_SUCCESS)
+            fo.Options.Empty();
+          if (formatKey.QueryValue(kCompressionLevel, fo.Level) != ERROR_SUCCESS)
+            fo.Level = UINT32(-1);
+          if (formatKey.QueryValue(kCompressionMethod, fo.Method) != ERROR_SUCCESS)
+            fo.Method.Empty();;
+          if (formatKey.QueryValue(kCompressionDictionary, fo.Dictionary) != ERROR_SUCCESS)
+            fo.Dictionary = UINT32(-1);
+          if (formatKey.QueryValue(kCompressionOrder, fo.Order) != ERROR_SUCCESS)
+            fo.Order = UINT32(-1);
+          info.FormatOptionsVector.Add(fo);
+        }
 
       }
     }

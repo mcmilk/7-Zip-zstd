@@ -240,7 +240,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
 
 void CPanel::CreateFileMenu(HMENU menuSpec)
 {
-  CreateFileMenu(menuSpec, _sevenZipContextMenu, _systemContextMenu);
+  CreateFileMenu(menuSpec, _sevenZipContextMenu, _systemContextMenu, true);
 }
 
 void CPanel::CreateSevenZipMenu(HMENU menuSpec, 
@@ -292,7 +292,8 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
 
 void CPanel::CreateFileMenu(HMENU menuSpec, 
     CMyComPtr<IContextMenu> &sevenZipContextMenu,
-    CMyComPtr<IContextMenu> &systemContextMenu)
+    CMyComPtr<IContextMenu> &systemContextMenu,
+    bool programMenu)
 {
   sevenZipContextMenu.Release();
   systemContextMenu.Release();
@@ -310,7 +311,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   if (menu.GetItemCount() > 0)
     menu.AppendItem(MF_SEPARATOR, 0, 0);
 
-  LoadFileMenu(menu, menu.GetItemCount(), !operatedIndices.IsEmpty());
+  LoadFileMenu(menu, menu.GetItemCount(), !operatedIndices.IsEmpty(), programMenu);
 }
 
 bool CPanel::InvokePluginCommand(int id)
@@ -409,7 +410,7 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
 
   CMyComPtr<IContextMenu> sevenZipContextMenu;
   CMyComPtr<IContextMenu> systemContextMenu;
-  CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu);
+  CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false);
 
   int result = menu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, 
     xPos, yPos, _listView);

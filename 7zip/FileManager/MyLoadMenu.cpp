@@ -12,6 +12,7 @@
 #include "resource.h"
 #include "App.h"
 #include "Resource/AboutDialog/AboutDialog.h"
+#include "Resource/BenchmarkDialog/BenchmarkDialog.h"
 
 #include "HelpUtils.h"
 #include "LangUtils.h"
@@ -49,6 +50,8 @@ static CStringLangPair kStringLangPairs[] =
 };
 
 UINT32 kAddToFavoritesLangID = 0x03000710;
+UINT32 kToolbarsLangID = 0x03000451;
+
 /*
 static int FindStringLangItem(const UString &anItem)
 {
@@ -109,8 +112,13 @@ static CIDLangPair kIDLangPairs[] =
   { IDM_VIEW_REFRESH, 0x03000440 },
   
   { IDM_VIEW_TWO_PANELS, 0x03000450 },
+  { IDM_VIEW_ARCHIVE_TOOLBAR, 0x03000460 },
+  { IDM_VIEW_STANDARD_TOOLBAR, 0x03000461 },
+  { IDM_VIEW_TOOLBARS_LARGE_BUTTONS, 0x03000462 },
+  { IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT, 0x03000463 },
 
   { IDM_OPTIONS, 0x03000510 },
+  { IDM_BENCHMARK, 0x03000511 },
   
   { IDM_HELP_CONTENTS, 0x03000610 },
   { IDM_ABOUT, 0x03000620 }
@@ -206,11 +214,18 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         else
         {
           MyChangeMenu(menuInfo.hSubMenu, level + 1, i);
-          if (level == 0 && i < sizeof(kStringLangPairs) / 
-                sizeof(kStringLangPairs[0]))
-            newString = GetSystemString(LangLoadString(kStringLangPairs[i].LangID));
+          if (level == 1 && menuIndex == kViewMenuIndex)
+          {
+            newString = GetSystemString(LangLoadString(kToolbarsLangID));
+          }
           else
-            continue;
+          {
+            if (level == 0 && i < sizeof(kStringLangPairs) / 
+              sizeof(kStringLangPairs[0]))
+              newString = GetSystemString(LangLoadString(kStringLangPairs[i].LangID));
+            else
+              continue;
+          }
         }
         if (newString.IsEmpty())
           continue;
@@ -334,6 +349,14 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
       IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
     menu.CheckItem(IDM_VIEW_TWO_PANELS, MF_BYCOMMAND |
         ((g_App.NumPanels == 2) ? MF_CHECKED : MF_UNCHECKED));
+    menu.CheckItem(IDM_VIEW_ARCHIVE_TOOLBAR, MF_BYCOMMAND |
+        (g_App.ShowArchiveToolbar ? MF_CHECKED : MF_UNCHECKED));
+    menu.CheckItem(IDM_VIEW_STANDARD_TOOLBAR, MF_BYCOMMAND |
+        (g_App.ShowStandardToolbar ? MF_CHECKED : MF_UNCHECKED));
+    menu.CheckItem(IDM_VIEW_TOOLBARS_LARGE_BUTTONS, MF_BYCOMMAND |
+        (g_App.LargeButtons ? MF_CHECKED : MF_UNCHECKED));
+    menu.CheckItem(IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT, MF_BYCOMMAND |
+        (g_App.ShowButtonsLables ? MF_CHECKED : MF_UNCHECKED));
   }
   else if (position == kBookmarksMenuIndex)
   {
@@ -397,7 +420,8 @@ void OnMenuUnActivating(HWND hWnd)
 */
 
 
-void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
+void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode, 
+    bool programMenu)
 {
   {
     CMenu srcMenu;
@@ -449,8 +473,9 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
 
     if (g_FileMenu.GetItemInfo(i, true, &menuInfo))
     {
-      if (menuInfo.wID == IDCLOSE)
-        continue;
+      if (!programMenu)
+        if (menuInfo.wID == IDCLOSE)
+          continue;
       bool createItem = (menuInfo.wID == IDM_CREATE_FOLDER || 
           menuInfo.wID == IDM_CREATE_FILE);
       /*
@@ -654,11 +679,27 @@ bool OnMenuCommand(HWND hWnd, int id)
       g_App.SwitchOnOffOnePanel();
       break;
 
+    case IDM_VIEW_STANDARD_TOOLBAR:
+      g_App.SwitchStandardToolbar();
+      break;
+    case IDM_VIEW_ARCHIVE_TOOLBAR:
+      g_App.SwitchArchiveToolbar();
+      break;
+    case IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT:
+      g_App.SwitchButtonsLables();
+      break;
+    case IDM_VIEW_TOOLBARS_LARGE_BUTTONS:
+      g_App.SwitchLargeButtons();
+      break;
+
     // Tools
     case IDM_OPTIONS:
       OptionsDialog(hWnd, g_hInstance);
       break;
           
+    case IDM_BENCHMARK:
+      Benchmark(hWnd);
+      break;
     // Help
     case IDM_HELP_CONTENTS:
       ShowHelpWindow(NULL, kFMHelpTopic);

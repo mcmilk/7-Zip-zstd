@@ -31,6 +31,19 @@ public:
   HRESULT Flush();
   // void ReleaseStream();
 
+  void *GetBuffer(UINT32 &sizeAvail)
+  {
+    sizeAvail = _bufferSize - _pos;
+    return _buffer + _pos;
+  }
+  void MovePos(UINT32 num)
+  {
+    _pos += num;
+    if(_pos >= _bufferSize)
+      WriteBlock();
+  }
+
+
   void WriteByte(BYTE b)
   {
     _buffer[_pos++] = b;

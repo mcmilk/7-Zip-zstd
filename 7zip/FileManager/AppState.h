@@ -49,7 +49,7 @@ public:
   }
 };
 
-class CFolderHistrory
+class CFolderHistory
 {
   NWindows::NSynchronization::CCriticalSection _criticalSection;
   UStringVector Strings;
@@ -66,7 +66,7 @@ public:
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     const int kMaxSize = 100;
     if (Strings.Size() > kMaxSize)
-      Strings.Delete(kMaxSize, Strings.Size() - kMaxSize + 1);
+      Strings.Delete(kMaxSize, Strings.Size() - kMaxSize);
   }
   
   void AddString(const UString &string)
@@ -99,16 +99,16 @@ public:
 struct CAppState
 {
   CFastFolders FastFolders;
-  CFolderHistrory FolderHistrory;
+  CFolderHistory FolderHistory;
   void Save()
   {
     FastFolders.Save();
-    FolderHistrory.Save();
+    FolderHistory.Save();
   }
   void Read()
   {
     FastFolders.Read();
-    FolderHistrory.Read();
+    FolderHistory.Read();
   }
 };
 

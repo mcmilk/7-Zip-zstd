@@ -35,5 +35,4 @@ public:
   STDMETHOD(GetSubStreamSize)(UINT64 subStream, UINT64 *value);
 };
 
-
 #endif

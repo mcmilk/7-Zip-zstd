@@ -36,7 +36,6 @@
 #define IDS_CONFIG_DIALOG_CAPTION       102
 
 
-
 #define IDD_DIALOG_EXTRACT              137
 #define IDB_DELETE                      149
 #define IDC_LIST1                       1067

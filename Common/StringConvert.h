@@ -6,6 +6,7 @@
 #define __COMMON_STRINGCONVERT_H
 
 #include "String.h"
+#include "Types.h"
 
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage = CP_ACP);
 AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage = CP_ACP);

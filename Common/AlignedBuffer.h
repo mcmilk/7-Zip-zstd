@@ -8,8 +8,8 @@ class CAlignedBuffer
   unsigned char *m_Buffer;
 public:
   CAlignedBuffer(): m_Buffer(0) {};
-  ~CAlignedBuffer();
-  void *Allocate(size_t aNumItems, size_t anItemSize, size_t anAlignValue);
+  ~CAlignedBuffer() { Free(); }
+  void *Allocate(size_t numItems, size_t itemSize, size_t alignValue);
   void Free();
 };
 

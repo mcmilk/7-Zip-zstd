@@ -167,6 +167,7 @@ static HRESULT Update2(COutArchive &archive,
     IArchiveUpdateCallback *updateCallback)
 {
   UINT64 complexity = 0;
+  UINT64 estimatedArchiveSize = (1<<20); // sfx part
  
   int i;
   for(i = 0; i < updateItems.Size(); i++)
@@ -177,6 +178,7 @@ static HRESULT Update2(COutArchive &archive,
       complexity += updateItem.Size;
       if (updateItem.Commented)
         complexity += updateItem.CommentRange.Size;
+      estimatedArchiveSize += updateItem.Name.Length() * 2 + 100;
     }
     else
     {
@@ -189,7 +191,8 @@ static HRESULT Update2(COutArchive &archive,
   complexity += updateItems.Size();
   complexity += updateItems.Size();
 
-  if (complexity > 0xFFFFFFFF)
+  estimatedArchiveSize += complexity;
+  if (estimatedArchiveSize > 0xFFFFFFFF)
     return E_NOTIMPL;
 
   if (commentRangeAssigned)

@@ -74,6 +74,9 @@ bool ReadWindowSize(RECT &rect, bool &maximized);
 void SavePanelsInfo(UINT32 numPanels, UINT32 currentPanel, UINT32 splitterPos);
 bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos);
 
+void SaveToolbarsMask(UINT32 toolbarMask);
+UINT32 ReadToolbarsMask();
+
 void SavePanelPath(UINT32 panel, const CSysString &path);
 bool ReadPanelPath(UINT32 panel, CSysString &path);
 

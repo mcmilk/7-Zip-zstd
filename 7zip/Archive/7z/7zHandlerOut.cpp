@@ -628,73 +628,63 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   COM_TRY_END
 }
 
-static const int kMaxNumberOfDigitsInInputNumber = 9;
-
 static int ParseStringToUINT32(const UString &srcString, UINT32 &number)
 {
-  UString numberString;
-  int i = 0;
-  for(; i < srcString.Length() && i < kMaxNumberOfDigitsInInputNumber; i++)
+  const wchar_t *start = srcString;
+  const wchar_t *end;
+  UINT64 number64 = ConvertStringToUINT64(start, &end);
+  if (number64 >= (UINT64(1) << 32)) 
   {
-    wchar_t c = srcString[i];
-    if(!iswdigit(c))
-      break;
-    numberString += c;
+    number = 0;
+    return 0;
   }
-  if (i > 0)
-    number = ConvertStringToUINT64(numberString, NULL);
-  return i;
+  number = number64;
+  return end - start;
 }
-static const int kLogarithmicSizeLimit = 32;
 
+static const int kLogarithmicSizeLimit = 32;
 static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
 static const char kMegaByteSymbol = 'M';
 
-HRESULT ParseDictionaryValues(const UString &srcStringSpec, 
-    BYTE &logDicSize, UINT32 &dicSize)
+HRESULT ParseDictionaryValues(const UString &srcStringSpec, UINT32 &dicSize)
 {
   UString srcString = srcStringSpec;
-  UINT32 number;
   srcString.MakeUpper();
-  int numDigits = ParseStringToUINT32(srcString, number);
+
+  const wchar_t *start = srcString;
+  const wchar_t *end;
+  UINT64 number = ConvertStringToUINT64(start, &end);
+  int numDigits = end - start;
   if (numDigits == 0 || srcString.Length() > numDigits + 1)
-    return E_FAIL;
+    return E_INVALIDARG;
   if (srcString.Length() == numDigits)
   {
     if (number >= kLogarithmicSizeLimit)
       return E_INVALIDARG;
-    logDicSize = number;
-    dicSize = 1 << number;
+    dicSize = (UINT32)1 << number;
     return S_OK;
   }
   switch (srcString[numDigits])
   {
-  case kByteSymbol:
-    /*
-    if (number > (UINT32(1) << kMaxLogarithmicSize))
-      return E_INVALIDARG;
-    */
-    dicSize = number;
-    break;
-  case kKiloByteSymbol:
-    if (number >= (1 << (kLogarithmicSizeLimit - 10)))
-      return E_INVALIDARG;
-    dicSize = number << 10;
-    break;
-  case kMegaByteSymbol:
-    if (number >= (1 << (kLogarithmicSizeLimit - 20)))
-      return E_INVALIDARG;
-    dicSize = number << 20;
-    break;
-  default:
-    return E_INVALIDARG;
-  }
-  int i;
-  for (i = 0; i < kLogarithmicSizeLimit; i++)
-    if (dicSize <= (1 << i))
+    case kByteSymbol:
+      if (number >= ((UINT64)1 << kLogarithmicSizeLimit))
+        return E_INVALIDARG;
+      dicSize = (UINT32)number;
       break;
-  logDicSize = i;
+    case kKiloByteSymbol:
+      if (number >= ((UINT64)1 << (kLogarithmicSizeLimit - 10)))
+        return E_INVALIDARG;
+      dicSize = UINT32(number << 10);
+      break;
+    case kMegaByteSymbol:
+      if (number >= ((UINT64)1 << (kLogarithmicSizeLimit - 20)))
+        return E_INVALIDARG;
+      dicSize = UINT32(number << 20);
+      break;
+    default:
+      return E_INVALIDARG;
+  }
   return S_OK;
 }
 
@@ -834,9 +824,8 @@ HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, c
   CProperty property;
   if (name.CompareNoCase(L"D") == 0 || name.CompareNoCase(L"MEM") == 0)
   {
-    BYTE logDicSize;
     UINT32 dicSize;
-    RINOK(ParseDictionaryValues(value, logDicSize, dicSize));
+    RINOK(ParseDictionaryValues(value, dicSize));
     if (name.CompareNoCase(L"D") == 0)
       property.PropID = NCoderPropID::kDictionarySize;
     else
@@ -1125,16 +1114,17 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       CProperty property;
       if (realName.CompareNoCase(L"D") == 0 || realName.CompareNoCase(L"MEM") == 0)
       {
-        BYTE logDicSize;
         UINT32 dicSize;
         if (value.vt == VT_UI4)
         {
-          logDicSize = value.ulVal;
-          dicSize = 1 << logDicSize;
+          UINT32 logDicSize = value.ulVal;
+          if (logDicSize >= 32)
+            return E_INVALIDARG;
+          dicSize = (UINT32)1 << logDicSize;
         }
         else if (value.vt == VT_BSTR)
         {
-          RINOK(ParseDictionaryValues(value.bstrVal, logDicSize, dicSize));
+          RINOK(ParseDictionaryValues(value.bstrVal, dicSize));
         }
         else 
           return E_FAIL;

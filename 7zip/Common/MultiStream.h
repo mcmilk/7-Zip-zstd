@@ -39,6 +39,4 @@ public:
   STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
 };
 
-
-
 #endif

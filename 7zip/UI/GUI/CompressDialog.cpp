@@ -6,6 +6,7 @@
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
+#include "Common/IntToString.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/ResourceString.h"
@@ -21,12 +22,19 @@
 
 #include "../Resource/CompressDialog/resource.h"
 
+#define MY_SIZE_OF_ARRAY(x) (sizeof(x) / sizeof(x[0]))
+
 #ifdef LANG        
 static CIDLangPair kIDLangPairs[] = 
 {
   { IDC_STATIC_COMPRESS_ARCHIVE, 0x02000D01 },
   { IDC_STATIC_COMPRESS_FORMAT, 0x02000D03 },
+  { IDC_STATIC_COMPRESS_LEVEL, 0x02000D0B },
   { IDC_STATIC_COMPRESS_METHOD, 0x02000D04 },
+  { IDC_STATIC_COMPRESS_DICTIONARY, 0x02000D0C },
+  { IDC_STATIC_COMPRESS_ORDER, 0x02000D0D },
+  { IDC_STATIC_COMPRESS_MEMORY, 0x02000D0E },
+  { IDC_STATIC_COMPRESS_MEMORY_DE, 0x02000D0F },
   { IDC_COMPRESS_SOLID, 0x02000D05 },
   { IDC_COMPRESS_MULTI_THREAD, 0x02000D09 },
   { IDC_STATIC_COMPRESS_VOLUME, 0x02000D40 },
@@ -50,7 +58,137 @@ using namespace NDirectory;
 
 static const int kHistorySize = 8;
 
-static UINT32 g_MethodMap[] = { 0, /*1, */ 3, 5, 7, 9 }; 
+static LPCWSTR kExeExt = L".exe";
+static LPCWSTR k7zFormat = L"7z";
+
+struct CLevelInfo
+{
+  UINT32 ResourceID;
+  UINT32 LangID;
+};
+
+enum ELevel
+{
+  kStore = 0,
+  kFastest = 1,
+  kFast = 3,
+  kNormal = 5,
+  kMaximum = 7,
+  kUltra = 9
+};
+
+static const CLevelInfo g_Levels[] = 
+{
+  { IDS_METHOD_STORE, 0x02000D81 },
+  { IDS_METHOD_FASTEST, 0x02000D85 },
+  { 0, 0 },
+  { IDS_METHOD_FAST, 0x02000D84 },
+  { 0, 0 },
+  { IDS_METHOD_NORMAL, 0x02000D82 },
+  { 0, 0 },
+  { IDS_METHOD_MAXIMUM, 0x02000D83 },
+  { 0, 0 },
+  { IDS_METHOD_ULTRA, 0x02000D86 }
+};
+
+enum EMethodID
+{
+  kCopy,
+  kLZMA,
+  kPPMd,
+  kBZip2,
+  kDeflate,
+  kDeflate64
+};
+
+static const LPCWSTR kMethodsNames[] = 
+{
+  L"Copy",
+  L"LZMA",
+  L"PPMd",
+  L"BZip2",
+  L"Deflate",
+  L"Deflate64"
+};
+
+static const EMethodID g_7zMethods[] = 
+{
+  kLZMA,
+  kPPMd,
+  kBZip2,
+  kDeflate
+};
+
+static EMethodID g_ZipMethods[] = 
+{
+  kDeflate,
+  kDeflate64,
+  kBZip2
+};
+
+static EMethodID g_GZipMethods[] = 
+{
+  kDeflate
+};
+
+static EMethodID g_BZip2Methods[] = 
+{
+  kBZip2
+};
+
+struct CFormatInfo
+{
+  LPCWSTR Name;
+  UINT32 LevelsMask;
+  const EMethodID *MathodIDs;
+  int NumMethods;
+  bool Solid;
+  bool MultiThread;
+  bool SFX;
+  bool Encrypt;
+  bool EncryptFileNames;
+};
+
+static const CFormatInfo g_Formats[] = 
+{
+  { 
+    L"", 
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
+    0, 0,
+    false, false, false, false, false
+  },
+  { 
+    k7zFormat, 
+    (1 << 0) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
+    g_7zMethods, MY_SIZE_OF_ARRAY(g_7zMethods),
+    true, true, true, true, true
+  },
+  { 
+    L"Zip", 
+    (1 << 0) | (1 << 5) | (1 << 9), 
+    g_ZipMethods, MY_SIZE_OF_ARRAY(g_ZipMethods) ,
+    false, false, false, true, false
+  },
+  { 
+    L"GZip", 
+    (1 << 5) | (1 << 9), 
+    g_GZipMethods, MY_SIZE_OF_ARRAY(g_GZipMethods),
+    false, false, false, false, false
+  },
+  { 
+    L"BZip2", 
+    (1 << 5), 
+    g_BZip2Methods, 
+    MY_SIZE_OF_ARRAY(g_BZip2Methods),
+    false, false, false, false, false
+  },
+  { 
+    L"Tar", 
+    (1 << 0), 
+    0, 0,
+    false, false, false, false, false
+  }
+};
 
 class CDoubleZeroStringList
 {
@@ -81,17 +219,21 @@ bool CCompressDialog::OnInit()
 {
   #ifdef LANG        
   LangSetWindowText(HWND(*this), 0x02000D00);
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, MY_SIZE_OF_ARRAY(kIDLangPairs) );
   #endif
   _passwordControl.Attach(GetItem(IDC_COMPRESS_EDIT_PASSWORD));
   _passwordControl.SetText(TEXT(""));
 
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_COMBO_ARCHIVE));
 	m_Format.Attach(GetItem(IDC_COMPRESS_COMBO_FORMAT));
+	m_Level.Attach(GetItem(IDC_COMPRESS_COMBO_LEVEL));
 	m_Method.Attach(GetItem(IDC_COMPRESS_COMBO_METHOD));
+  m_Dictionary.Attach(GetItem(IDC_COMPRESS_COMBO_DICTIONARY));
+  m_Order.Attach(GetItem(IDC_COMPRESS_COMBO_ORDER));
+
 	m_UpdateMode.Attach(GetItem(IDC_COMPRESS_COMBO_UPDATE_MODE));
   m_Volume.Attach(GetItem(IDC_COMPRESS_COMBO_VOLUME));
-  m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
+  m_Params.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
 
   m_Volume.AddString(TEXT("1457664 - 3.5 Floppy"));
   m_Volume.AddString(TEXT("650M - CD-650MB"));
@@ -107,67 +249,20 @@ bool CCompressDialog::OnInit()
   int i;
   for(i = 0; i < m_ArchiverInfoList.Size(); i++)
   {
-    const CArchiverInfo &archiverInfo = m_ArchiverInfoList[i];
-    m_Format.AddString(GetSystemString(archiverInfo.Name));
-    if (archiverInfo.Name.CollateNoCase(
+    const CArchiverInfo &ai = m_ArchiverInfoList[i];
+    m_Format.AddString(GetSystemString(ai.Name));
+    if (ai.Name.CollateNoCase(
         m_RegistryInfo.ArchiveType) == 0)
       m_Info.ArchiverInfoIndex = i;
   }
   m_Format.SetCurSel(m_Info.ArchiverInfoIndex);
 
-  /*
-  ArchiveNameSrc2.Empty();
-  if (!m_Info.KeepName)
-  {
-    int dotPos = m_Info.ArchiveName.ReverseFind('.');
-    int slashPos = MyMax(m_Info.ArchiveName.ReverseFind('\\'), 
-        m_Info.ArchiveName.ReverseFind('/'));
-    if (dotPos > slashPos && dotPos >= 0)
-    {
-      ArchiveNameSrc1 = m_Info.ArchiveName.Left(dotPos);
-      ArchiveNameSrc2 = m_Info.ArchiveName.Mid(dotPos);
-    }
-  }
-  */
-
-
   SetArchiveName(m_Info.ArchiveName);
-  SetOptions();
+  SetLevel();
+  SetParams();
   
-  /*
-  m_Info.ArchiveName += L'.';
-  m_Info.ArchiveName += m_ArchiverInfoList[m_Info.ArchiverInfoIndex].Extension;
-  m_ArchivePath.SetText(m_Info.ArchiveName);
-  */
-
-  // m_ArchivePath.AddString(m_ArcPathResult);
   for(i = 0; i < m_RegistryInfo.HistoryArchives.Size() && i < kHistorySize; i++)
     m_ArchivePath.AddString(m_RegistryInfo.HistoryArchives[i]);
-  // if(m_RegistryInfo.HistoryArchives.Size() > 0) 
-  //  m_ArchivePath.SetCurSel(0);
-  // else
-  //  m_ArchivePath.SetCurSel(-1);
-
-  m_Method.AddString(LangLoadString(IDS_METHOD_STORE, 0x02000D81));
-  // m_Method.AddString(LangLoadString(IDS_METHOD_FASTEST, 0x02000D85));
-  m_Method.AddString(LangLoadString(IDS_METHOD_FAST, 0x02000D84));
-  m_Method.AddString(LangLoadString(IDS_METHOD_NORMAL, 0x02000D82));
-  m_Method.AddString(LangLoadString(IDS_METHOD_MAXIMUM, 0x02000D83));
-  m_Method.AddString(LangLoadString(IDS_METHOD_ULTRA, 0x02000D86));
-  
-  UINT32 level = 5;
-  if (m_RegistryInfo.Level <= 9)
-    level = m_RegistryInfo.Level;
-  {
-    int methodIndex = 0;
-    for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
-      if (level >= g_MethodMap[i])
-      {
-        methodIndex = i;
-        break;
-      }
-      m_Method.SetCurSel(methodIndex);
-  }
 
   m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_ADD, 0x02000DA1));
   m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_UPDATE, 0x02000DA2));
@@ -242,48 +337,33 @@ static bool IsMultiProcessor()
 
 void CCompressDialog::CheckControlsEnable()
 {
-  int formatIndex = m_Format.GetCurSel();
-  const CArchiverInfo &archiverInfo = m_ArchiverInfoList[formatIndex];
-  bool enable = (archiverInfo.Name == L"7z");
-  m_Info.SolidIsAllowed = enable;
-
-  bool multiThreadEnable = enable & IsMultiProcessor();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  m_Info.SolidIsAllowed = fi.Solid;
+  bool multiThreadEnable = fi.MultiThread & IsMultiProcessor();
   m_Info.MultiThreadIsAllowed = multiThreadEnable;
-  EncryptHeadersIsAllowed = enable;
-  CWindow control;
-  control = GetItem(IDC_COMPRESS_SOLID);
-  control.Enable(enable);
-  control = GetItem(IDC_COMPRESS_MULTI_THREAD);
-  control.Enable(multiThreadEnable);
-  control = GetItem(IDC_COMPRESS_SFX);
-  control.Enable(enable);
-  control = GetItem(IDC_STATIC_COMPRESS_VOLUME);
-  control.Enable(enable);
-  control = GetItem(IDC_COMPRESS_COMBO_VOLUME);
-  control.Enable(enable);
+  EncryptHeadersIsAllowed = fi.EncryptFileNames;
   
-  control = GetItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
-  control.Enable(enable);
-
-  enable = (archiverInfo.Name.CompareNoCase(L"zip") == 0) || 
-      (archiverInfo.Name.CompareNoCase(L"7z") == 0);
-  control = GetItem(IDC_COMPRESS_PASSWORD);
-  control.Enable(enable);
-  control = GetItem(IDC_COMPRESS_EDIT_PASSWORD);
-  control.Enable(enable);
-  control = GetItem(IDC_COMPRESS_CHECK_SHOW_PASSWORD);
-  control.Enable(enable);
-
+  EnableItem(IDC_COMPRESS_SOLID, fi.Solid);
+  EnableItem(IDC_COMPRESS_MULTI_THREAD, multiThreadEnable);
+  EnableItem(IDC_COMPRESS_SFX, fi.SFX);
+  
+  // EnableItem(IDC_STATIC_COMPRESS_VOLUME, enable);
+  // EnableItem(IDC_COMPRESS_COMBO_VOLUME, enable);
+  
+  EnableItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
+  EnableItem(IDC_COMPRESS_PASSWORD, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_EDIT_PASSWORD, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_CHECK_SHOW_PASSWORD, fi.Encrypt);
 }
 
 void CCompressDialog::OnButtonSFX()
 {
   CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
   bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
-  CSysString fileName;
+  UString fileName;
   m_ArchivePath.GetText(fileName);
-  int dotPos = fileName.ReverseFind('.');
-  int slashPos = fileName.ReverseFind('\\');
+  int dotPos = fileName.ReverseFind(L'.');
+  int slashPos = fileName.ReverseFind(L'\\');
   if (dotPos >= 0 && dotPos > slashPos)
   {
   }
@@ -293,21 +373,21 @@ void CCompressDialog::OnButtonSFX()
   {
     if (dotPos >= 0)
       fileName = fileName.Left(dotPos);
-    fileName += TEXT(".exe");
+    fileName += kExeExt;
     m_ArchivePath.SetText(fileName);
   }
   else
   {
     if (dotPos >= 0)
     {
-      CSysString ext = fileName.Mid(dotPos +1);
-      if (ext.CompareNoCase(TEXT("exe")) == 0)
+      UString ext = fileName.Mid(dotPos);
+      if (ext.CompareNoCase(kExeExt) == 0)
       {
         fileName = fileName.Left(dotPos);
         m_ArchivePath.SetText(fileName);
       }
     }
-    OnSelChangeComboFormat();
+    OnChangeFormat();
   }
 }
 
@@ -324,7 +404,7 @@ void CCompressDialog::OnButtonSetArchive()
   if (!m_Info.GetFullPathName(fullFileName))
   {
     fullFileName = m_Info.ArchiveName;
-    // AfxMessageBox("Incorrect archive path");;
+    // throw "Incorrect archive path";
     return;
   }
   lstrcpy(buffer, GetSystemString(fullFileName));
@@ -378,7 +458,6 @@ void CCompressDialog::OnButtonSetArchive()
   m_ArchivePath.SetText(buffer);
 }
 
-
 // in ExtractDialog.cpp
 extern void AddUniqueString(CSysStringVector &strings, const CSysString &srcString);
 
@@ -419,7 +498,7 @@ void CCompressDialog::OnOK()
 {
   _passwordControl.GetText(Password);
 
-  SaveOptions();
+  SaveOptionsInMem();
   int currentItem = m_ArchivePath.GetCurSel();
   UString s;
   if(currentItem == CB_ERR)
@@ -440,7 +519,12 @@ void CCompressDialog::OnOK()
   m_Info.ArchiveName = s;
   m_Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());
 
-  m_Info.Method = g_MethodMap[m_Method.GetCurSel()];
+  m_Info.Level = GetLevelSpec();
+  m_Info.Dictionary = GetDictionarySpec();
+  m_Info.Order = GetOrderSpec();
+  m_Info.OrderMode = GetOrderMode();
+  m_Info.Method = GetUnicodeString(GetMethodSpec());
+
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
   m_Info.SFXMode = IsButtonCheckedBool(IDC_COMPRESS_SFX);
@@ -448,7 +532,7 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.MultiThread = m_Info.MultiThread = IsButtonCheckedBool(IDC_COMPRESS_MULTI_THREAD);
   m_RegistryInfo.EncryptHeaders = EncryptHeaders = IsButtonCheckedBool(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
 
-  m_Options.GetText(m_Info.Options);
+  m_Params.GetText(m_Info.Options);
   CSysString volumeString;
   m_Volume.GetText(volumeString);
   volumeString.Trim();
@@ -471,7 +555,7 @@ void CCompressDialog::OnOK()
   ////////////////////
   // Method
 
-  m_RegistryInfo.Level = m_Info.Method;
+  m_RegistryInfo.Level = m_Info.Level;
   m_RegistryInfo.ArchiveType = m_ArchiverInfoList[m_Info.ArchiverInfoIndex].Name;
 
   m_RegistryInfo.ShowPassword = (IsButtonChecked(
@@ -491,54 +575,79 @@ void CCompressDialog::OnHelp()
 
 bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (code == CBN_SELCHANGE && itemID == IDC_COMPRESS_COMBO_FORMAT)
+  if (code == CBN_SELCHANGE)
   {
-    OnSelChangeComboFormat();
-    CheckControlsEnable();
-    CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
-    bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
-    if (sfxMode)
-      OnButtonSFX();
-    return true;
+    switch(itemID)
+    {
+      case IDC_COMPRESS_COMBO_FORMAT:
+      {
+        OnChangeFormat();
+        return true;
+      }
+      case IDC_COMPRESS_COMBO_LEVEL:
+      {
+        const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+        int index = FindRegistryFormat(ai.Name);
+        NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+        fo.Init();
+        SetMethod();
+        return true;
+      }
+      case IDC_COMPRESS_COMBO_METHOD:
+      {
+        SetDictionary();
+        SetOrder();
+        return true;
+      }
+      case IDC_COMPRESS_COMBO_DICTIONARY:
+      case IDC_COMPRESS_COMBO_ORDER:
+      {
+        SetMemoryUsage();
+        return true;
+      }
+    }
   }
   return CModalDialog::OnCommand(code, itemID, lParam);
 }
 
-void CCompressDialog::OnSelChangeComboFormat() 
+void CCompressDialog::OnChangeFormat() 
 {
-  SaveOptions();
+  SaveOptionsInMem();
   UString fileName;
   m_ArchivePath.GetText(fileName);
 
   const CArchiverInfo &prevArchiverInfo = m_ArchiverInfoList[m_PrevFormat];
   if (prevArchiverInfo.KeepName || m_Info.KeepName)
   {
-    const UString &prevExtension = prevArchiverInfo.GetMainExtension();
+    UString prevExtension = prevArchiverInfo.GetMainExtension();
+    if (IsButtonCheckedBool(IDC_COMPRESS_SFX) && 
+        prevArchiverInfo.Name == k7zFormat)
+      prevExtension = kExeExt;
+    else
+      prevExtension = UString('.') + prevExtension;
     const int prevExtensionLen = prevExtension.Length();
-    if (fileName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
-    {
-      int pos = fileName.Length() - prevExtensionLen;
-      UString temp = fileName.Left(pos);
-      if (pos > 1)
-      {
-        int dotPos = fileName.ReverseFind('.');
-        if (dotPos == pos - 1)
-          fileName = fileName.Left(dotPos);
-      }
-    }
+    if (fileName.Length() >= prevExtensionLen)
+      if (fileName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
+        fileName = fileName.Left(fileName.Length() - prevExtensionLen);
   }
   SetArchiveName(fileName);
-  SetOptions();
+  SetLevel();
+  SetParams();
+
+  CheckControlsEnable();
+  CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
+  bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
+  if (sfxMode)
+    OnButtonSFX();
 }
 
 void CCompressDialog::SetArchiveName(const UString &name)
 {
   UString fileName = name;
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
-  const CArchiverInfo &archiverInfo = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
   m_PrevFormat = m_Info.ArchiverInfoIndex;
-
-  if (archiverInfo.KeepName)
+  if (ai.KeepName)
   {
     fileName = OriginalFileName;
   }
@@ -553,52 +662,529 @@ void CCompressDialog::SetArchiveName(const UString &name)
     }
   }
   fileName += L'.';
-  fileName += archiverInfo.GetMainExtension();
+  fileName += ai.GetMainExtension();
   m_ArchivePath.SetText(fileName);
 }
 
-int CCompressDialog::FindFormat(const UString &name)
+int CCompressDialog::FindRegistryFormat(const UString &name)
 {
   for (int i = 0; i < m_RegistryInfo.FormatOptionsVector.Size(); i++)
   {
-    const NCompression::CFormatOptions &formatOptions = 
-        m_RegistryInfo.FormatOptionsVector[i];
-    if (GetUnicodeString(formatOptions.FormatID) == name)
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[i];
+    if (GetUnicodeString(fo.FormatID) == name)
       return i;
   }
   return -1;
 }
 
-
-void CCompressDialog::SaveOptions()
+int CCompressDialog::GetStaticFormatIndex()
 {
-  const CArchiverInfo &archiverInfo = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
-  int index = FindFormat(archiverInfo.Name);
-  m_Options.GetText(m_Info.Options);
+  int formatIndex = m_Format.GetCurSel();
+  const CArchiverInfo &ai = m_ArchiverInfoList[formatIndex];
+  for (int i = 0; i < MY_SIZE_OF_ARRAY(g_Formats); i++)
+    if (ai.Name.CompareNoCase(g_Formats[i].Name) == 0)
+      return i;
+  return 0; // -1;
+}
+
+void CCompressDialog::SetNearestSelectComboBox(
+    NControl::CComboBox &comboBox, UINT32 value)
+{
+  for (int i = comboBox.GetCount() - 1; i >= 0; i--)
+    if (comboBox.GetItemData(i) <= value)
+    {
+      comboBox.SetCurSel(i);
+      return;
+    }
+  if (comboBox.GetCount() > 0)
+    comboBox.SetCurSel(0);
+}
+
+void CCompressDialog::SetLevel()
+{
+  m_Level.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  int index = FindRegistryFormat(ai.Name);
+  UINT32 level = kNormal;
   if (index >= 0)
   {
-    NCompression::CFormatOptions &formatOptions = 
-        m_RegistryInfo.FormatOptionsVector[index];
-    formatOptions.Options = m_Info.Options;
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+    if (fo.Level <= kUltra)
+      level = fo.Level;
+    else
+      level = kUltra;
   }
-  else
+  int i;
+  for (i = 0; i <= kUltra; i++)
   {
-    NCompression::CFormatOptions formatOptions;
-    formatOptions.FormatID = GetSystemString(archiverInfo.Name);
-    formatOptions.Options = m_Info.Options;
-    m_RegistryInfo.FormatOptionsVector.Add(formatOptions);
+    if ((fi.LevelsMask & (1 << i)) != 0)
+    {
+      const CLevelInfo &levelInfo = g_Levels[i];
+      int index = m_Level.AddString(LangLoadString(levelInfo.ResourceID, levelInfo.LangID));
+      m_Level.SetItemData(index, i);
+    }
+  }
+  SetNearestSelectComboBox(m_Level, level);
+  SetMethod();
+}
+
+int CCompressDialog::GetLevel()
+{
+  if (m_Level.GetCount() <= 0)
+    return -1;
+  return m_Level.GetItemData(m_Level.GetCurSel());
+}
+
+int CCompressDialog::GetLevelSpec()
+{
+  if (m_Level.GetCount() <= 1)
+    return -1;
+  return GetLevel();
+}
+
+int CCompressDialog::GetLevel2()
+{
+  int level = GetLevel();
+  if (level < 0)
+    level = 5;
+  return level;
+}
+
+void CCompressDialog::SetMethod() 
+{
+  m_Method.ResetContent();
+  if (GetLevel() <= 0)
+  {
+    SetDictionary();
+    SetOrder();
+    return;
+  }
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  int index = FindRegistryFormat(ai.Name);
+  UString defaultMethod;
+  if (index >= 0)
+  {
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+    defaultMethod = GetUnicodeString(fo.Method); 
+  }
+  for(int m = 0; m < fi.NumMethods; m++)
+  {
+    const LPCWSTR method = kMethodsNames[fi.MathodIDs[m]];
+    int itemIndex = m_Method.AddString(GetSystemString(method));
+    if (defaultMethod.CompareNoCase(method) == 0 || m == 0)
+      m_Method.SetCurSel(itemIndex);
+  }
+  SetDictionary();
+  SetOrder();
+}
+
+int CCompressDialog::GetMethodID()
+{
+  CSysString methodSpec;
+  m_Method.GetText(methodSpec);
+  UString methodName = GetUnicodeString(methodSpec);
+  for (int i = 0; i < MY_SIZE_OF_ARRAY(kMethodsNames); i++)
+    if (methodName.CompareNoCase(kMethodsNames[i]) == 0)
+      return i;
+  return -1;
+}
+
+CSysString CCompressDialog::GetMethodSpec()
+{
+  if (m_Method.GetCount() <= 1)
+    return CSysString();
+  CSysString result;
+  m_Method.GetText(result);
+  return result;
+}
+
+int CCompressDialog::AddDictionarySize(UINT32 size, bool kilo, bool maga)
+{
+  UINT32 sizePrint = size;
+  if (kilo)
+    sizePrint >>= 10;
+  else if (maga)
+    sizePrint >>= 20;
+  TCHAR s[40];
+  ConvertUINT64ToString(sizePrint, s);
+  if (kilo)
+    lstrcat(s, TEXT(" K"));
+  else if (maga)
+    lstrcat(s, TEXT(" M"));
+  else
+    lstrcat(s, TEXT(" "));
+  lstrcat(s, TEXT("B"));
+  int index = m_Dictionary.AddString(s);
+  m_Dictionary.SetItemData(index, size);
+  return index;
+}
+
+int CCompressDialog::AddDictionarySize(UINT32 size)
+{
+  if (size > 0)
+  {
+    if ((size & 0xFFFFF) == 0)
+      return AddDictionarySize(size, false, true);
+    if ((size & 0x3FF) == 0)
+      return AddDictionarySize(size, true, false);
+  }
+  return AddDictionarySize(size, false, false);
+}
+
+void CCompressDialog::SetDictionary()
+{
+  m_Dictionary.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  int index = FindRegistryFormat(ai.Name);
+  UINT32 defaultDictionary = UINT32(-1);
+  if (index >= 0)
+  {
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+    if (fo.Method.CollateNoCase(GetMethodSpec()) == 0)
+      defaultDictionary = fo.Dictionary;
+  }
+  int methodID = GetMethodID();
+  int level = GetLevel2();
+  if (methodID < 0)
+  {
+    SetMemoryUsage();
+    return;
+  }
+  switch (methodID)
+  {
+    case kLZMA:
+    {
+      if (defaultDictionary == UINT32(-1))
+      {
+        if (level >= 9)
+          defaultDictionary = (32 << 20);
+        else if (level >= 7)
+          defaultDictionary = (8 << 20);
+        else if (level >= 5)
+          defaultDictionary = (2 << 20);
+        else
+          defaultDictionary = (32 << 10);
+      }
+      int i;
+      AddDictionarySize(32 << 10);
+      for (i = 20; i < 28; i++)
+        for (int j = 0; j < 2; j++)
+        {
+          if (i == 20 && j > 0)
+            continue;
+          UINT32 dictionary = (1 << i) + (j << (i - 1));
+          AddDictionarySize(dictionary);
+        }
+      SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
+      break;
+    }
+    case kPPMd:
+    {
+      if (defaultDictionary == UINT32(-1))
+      {
+        if (level >= 9)
+          defaultDictionary = (192 << 20);
+        else if (level >= 7)
+          defaultDictionary = (64 << 20);
+        else if (level >= 5)
+          defaultDictionary = (24 << 20);
+        else
+          defaultDictionary = (4 << 20);
+      }
+      int i;
+      for (i = 20; i < 31; i++)
+        for (int j = 0; j < 2; j++)
+        {
+          if (i == 20 && j > 0)
+            continue;
+          UINT32 dictionary = (1 << i) + (j << (i - 1));
+          if (dictionary >= (1 << 31))
+            continue;
+          AddDictionarySize(dictionary);
+        }
+      SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
+      break;
+    }
+    case kDeflate:
+    {
+      AddDictionarySize(32 << 10);
+      m_Dictionary.SetCurSel(0);
+      break;
+    }
+    case kDeflate64:
+    {
+      AddDictionarySize(64 << 10);
+      m_Dictionary.SetCurSel(0);
+      break;
+    }
+    case kBZip2:
+    {
+      AddDictionarySize(900 << 10);
+      m_Dictionary.SetCurSel(0);
+      break;
+    }
+  }
+  SetMemoryUsage();
+}
+
+UINT32 CCompressDialog::GetDictionary()
+{
+  if (m_Dictionary.GetCount() <= 0)
+    return -1;
+  return m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
+}
+
+UINT32 CCompressDialog::GetDictionarySpec()
+{
+  if (m_Dictionary.GetCount() <= 1)
+    return -1;
+  return GetDictionary();
+}
+
+int CCompressDialog::AddOrder(UINT32 size)
+{
+  TCHAR s[40];
+  ConvertUINT64ToString(size, s);
+  int index = m_Order.AddString(s);
+  m_Order.SetItemData(index, size);
+  return index;
+}
+
+void CCompressDialog::SetOrder()
+{
+  m_Order.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  int index = FindRegistryFormat(ai.Name);
+  UINT32 defaultOrder = UINT32(-1);
+  if (index >= 0)
+  {
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+    if (fo.Method.CollateNoCase(GetMethodSpec()) == 0)
+      defaultOrder = fo.Order;
+  }
+  int methodID = GetMethodID();
+  int level = GetLevel2();
+  if (methodID < 0)
+  {
+    SetMemoryUsage();
+    return;
+  }
+  switch (methodID)
+  {
+    case kLZMA:
+    {
+      if (defaultOrder == UINT32(-1))
+      {
+        if (level >= 7)
+          defaultOrder = 64;
+        else
+          defaultOrder = 32;
+      }
+      int i;
+      for (i = 3; i < 8; i++)
+        for (int j = 0; j < 2; j++)
+        {
+          UINT32 order = (1 << i) + (j << (i - 1));
+          if (order < 255)
+            AddOrder(order);
+        }
+      AddOrder(255);
+      SetNearestSelectComboBox(m_Order, defaultOrder);
+      break;
+    }
+    case kPPMd:
+    {
+      if (defaultOrder == UINT32(-1))
+      {
+        if (level >= 9)
+          defaultOrder = 32;
+        else if (level >= 7)
+          defaultOrder = 16;
+        else if (level >= 5)
+          defaultOrder = 6;
+        else
+          defaultOrder = 4;
+      }
+      int i;
+      AddOrder(2);
+      AddOrder(3);
+      for (i = 2; i < 8; i++)
+        for (int j = 0; j < 4; j++)
+        {
+          UINT32 order = (1 << i) + (j << (i - 2));
+          if (order < 32)
+            AddOrder(order);
+        }
+      AddOrder(32);
+      SetNearestSelectComboBox(m_Order, defaultOrder);
+      break;
+    }
+    case kDeflate:
+    case kDeflate64:
+    {
+      if (defaultOrder == UINT32(-1))
+      {
+        if (level >= 7)
+          defaultOrder = 64;
+        else
+          defaultOrder = 32;
+      }
+      int i;
+      for (i = 3; i < 8; i++)
+        for (int j = 0; j < 2; j++)
+        {
+          UINT32 order = (1 << i) + (j << (i - 1));
+          if (order < 255)
+            AddOrder(order);
+        }
+      AddOrder(255);
+      SetNearestSelectComboBox(m_Order, defaultOrder);
+      break;
+    }
+    case kBZip2:
+    {
+      break;
+    }
+  }
+  SetMemoryUsage();
+}
+
+bool CCompressDialog::GetOrderMode()
+{
+  switch (GetMethodID())
+  {
+    case kLZMA:
+    case kDeflate:
+    case kDeflate64:
+      return false;
+    case kPPMd:
+      return true;
+  }
+  return false;
+}
+
+UINT32 CCompressDialog::GetOrder()
+{
+  if (m_Order.GetCount() <= 0)
+    return -1;
+  return m_Order.GetItemData(m_Order.GetCurSel());
+}
+
+UINT32 CCompressDialog::GetOrderSpec()
+{
+  if (m_Order.GetCount() <= 1)
+    return -1;
+  return GetOrder();
+}
+
+UINT64 CCompressDialog::GetMemoryUsage(UINT64 &decompressMemory)
+{
+  decompressMemory = UINT64(INT64(-1));
+  UINT32 dictionary = GetDictionary();
+  int level = GetLevel2();
+  if (level == 0)
+  {
+    decompressMemory = (1 << 20);
+    return decompressMemory;
+  }
+  switch (GetMethodID())
+  {
+    case kLZMA:
+    {
+      UINT64 size;
+      if (level >= 5)
+      {
+        size = ((UINT64)dictionary * 19 / 2) + (2 << 20);
+        if (level >= 9)
+          size += (34 << 20) + (12 << 20) * 2 + (5 << 20);
+        else
+          size += (6 << 20);
+      }
+      else 
+        size = ((UINT64)dictionary * 11 / 2) + (2 << 20);
+      decompressMemory = dictionary + (2 << 20);
+      return size;
+    }
+    case kPPMd:
+    {
+      decompressMemory = dictionary + (2 << 20);
+      return decompressMemory;
+    }
+    case kDeflate:
+    case kDeflate64:
+    {
+      UINT32 order = GetOrder();
+      if (order == UINT32(-1))
+        order = 32;
+      UINT64 size = 0;
+      if (level >= 7)
+        size = (order * 2 + 4) * (64 << 10);
+      size += 3 << 20;
+      decompressMemory = (2 << 20);
+      return size;
+    }
+    case kBZip2:
+    {
+      decompressMemory = (7 << 20);
+      return 10 << 20;
+    }
+  }
+  return UINT64(INT64(-1));
+}
+
+void CCompressDialog::PrintMemUsage(UINT res, UINT64 value)
+{
+  if (value == (UINT64)INT64(-1))
+  {
+    SetItemText(res, TEXT("?"));
+    return;
+  }
+  value = (value + (1 << 20) - 1) >> 20;
+  TCHAR s[40];
+  ConvertUINT64ToString(value, s);
+  lstrcat(s, TEXT(" MB"));
+  SetItemText(res, s);
+}
+    
+void CCompressDialog::SetMemoryUsage()
+{
+  UINT64 decompressMem; 
+  UINT64 memUsage = GetMemoryUsage(decompressMem);
+  PrintMemUsage(IDC_STATIC_COMPRESS_MEMORY_VALUE, memUsage);
+  PrintMemUsage(IDC_STATIC_COMPRESS_MEMORY_DE_VALUE, decompressMem);
+}
+
+void CCompressDialog::SetParams()
+{
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  m_Params.SetText(TEXT(""));
+  int index = FindRegistryFormat(ai.Name);
+  if (index >= 0)
+  {
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+    m_Params.SetText(fo.Options);
   }
 }
 
-void CCompressDialog::SetOptions()
+void CCompressDialog::SaveOptionsInMem()
 {
-  const CArchiverInfo &archiverInfo = m_ArchiverInfoList[m_Format.GetCurSel()];
-  m_Options.SetText(TEXT(""));
-  int index = FindFormat(archiverInfo.Name);
-  if (index >= 0)
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
+  int index = FindRegistryFormat(ai.Name);
+  m_Params.GetText(m_Info.Options);
+  if (index < 0)
   {
-    const NCompression::CFormatOptions &formatOptions = 
-        m_RegistryInfo.FormatOptionsVector[index];
-    m_Options.SetText(formatOptions.Options);
+    NCompression::CFormatOptions fo;
+    fo.FormatID = GetSystemString(ai.Name);
+    index = m_RegistryInfo.FormatOptionsVector.Add(fo);
   }
+  NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+  fo.Options = m_Info.Options;
+  fo.Level = GetLevelSpec();
+  fo.Dictionary = GetDictionarySpec();
+  fo.Order = GetOrderSpec();
+  fo.Method = GetMethodSpec();
 }

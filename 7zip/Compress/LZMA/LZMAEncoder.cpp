@@ -244,7 +244,10 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
         if (m == kNumMFs)
           return E_INVALIDARG;
         if (!_matchFinder && matchFinderIndexPrev != _matchFinderIndex)
+        {
+          _dictionarySizePrev = UINT32(-1);
           _matchFinder.Release();
+        }
         break;
       }
       #ifdef COMPRESS_MF_MT
@@ -252,7 +255,13 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
       {
         if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
-        _multiThread = (prop.boolVal != VARIANT_FALSE);
+        bool newMultiThread = (prop.boolVal != VARIANT_FALSE);
+        if (newMultiThread != _multiThread)
+        {
+          _dictionarySizePrev = UINT32(-1);
+          _matchFinder.Release();
+        }
+        _multiThread = newMultiThread;
         break;
       }
       #endif

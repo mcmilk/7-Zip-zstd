@@ -26,6 +26,9 @@ using namespace NWindows;
 static const UINT_PTR kTimerID = 1;
 static const UINT kTimerElapse = 1000;
 
+static LPCWSTR kSelectOneFile = L"Select one file";
+static LPCWSTR kSelectFiles = L"Select files";
+
 // static const int kCreateFolderID = 101;
 
 // static const UINT kFileChangeNotifyMessage = WM_APP;
@@ -98,6 +101,7 @@ LRESULT CPanel::OnMessage(UINT message, UINT wParam, LPARAM lParam)
     case WM_CONTEXTMENU:
       if (OnContextMenu(HANDLE(wParam), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)))
         return 0;
+      break;
     case WM_DROPFILES:
       CompressDropFiles(HDROP(wParam));
       return 0;
@@ -397,7 +401,7 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   _headerComboBox.CreateEx(0, WC_COMBOBOXEX, NULL,
     WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
       0, 0, 100, 20,
-      ((_headerReBar != 0) ? HWND(*this) : _headerToolBar),
+      ((_headerReBar == 0) ? HWND(*this) : _headerToolBar),
       (HMENU)(_comboBoxID),
       g_hInstance, NULL);
   _headerComboBox.SetExtendedStyle(CBES_EX_PATHWORDBREAKPROC, CBES_EX_PATHWORDBREAKPROC);
@@ -663,7 +667,7 @@ void CPanel::CompressDropFiles(HDROP dr)
   UStringVector fileNamesUnicode;
   for (int i = 0; i < fileNames.Size(); i++)
     fileNamesUnicode.Add(GetUnicodeString(fileNames[i]));
-  const UString &archiveName = CreateArchiveName(
+  const UString archiveName = CreateArchiveName(
     fileNamesUnicode.Front(), (fileNamesUnicode.Size() > 1), false);
   UString currentDirectory;
   if (IsFSFolder())
@@ -682,3 +686,78 @@ void CPanel::CompressDropFiles(HDROP dr)
     */
   }
 }
+
+void CPanel::AddToArchive()
+{
+  CRecordVector<UINT32> indices;
+  GetOperatedItemIndices(indices);
+  if (!IsFSFolder())
+  {
+    MessageBox(L"Compress operation is not supported for that folder");
+    return;
+  }
+  if (indices.Size() == 0)
+  {
+    MessageBox(kSelectFiles);
+    return;
+  }
+  UStringVector names;
+  for (int i = 0; i < indices.Size(); i++)
+  {
+    int index = indices[i];
+    names.Add(_currentFolderPrefix + GetItemName(index));
+  }
+  const UString archiveName = CreateArchiveName(
+      names.Front(), (names.Size() > 1), false);
+  CompressFiles(_currentFolderPrefix + archiveName, names, false, true);
+  KillSelection();
+}
+
+void CPanel::ExtractArchive()
+{
+  if (_parentFolders.Size() > 0)
+  {
+    _panelCallback->OnCopy(UStringVector(), false, false);
+    return;
+  }
+  CRecordVector<UINT32> indices;
+  GetOperatedItemIndices(indices);
+  if (indices.Size() != 1)
+  {
+    MessageBox(kSelectOneFile);
+    return;
+  }
+  int index = indices[0];
+  if (IsItemFolder(index))
+  {
+    MessageBox(kSelectOneFile);
+    return;
+  }
+  UString fullPath = _currentFolderPrefix + GetItemName(index);
+  ::ExtractArchive(fullPath, _currentFolderPrefix, true);
+}
+
+void CPanel::TestArchive()
+{
+  CRecordVector<UINT32> indices;
+  GetOperatedItemIndices(indices);
+  if (!IsFSFolder())
+  {
+    MessageBox(L"Test archive operation is not supported for that folder");
+    return;
+  }
+  if (indices.Size() != 1)
+  {
+    MessageBox(kSelectOneFile);
+    return;
+  }
+  int index = indices[0];
+  if (IsItemFolder(index))
+  {
+    MessageBox(kSelectOneFile);
+    return;
+  }
+  UString fullPath = _currentFolderPrefix + GetItemName(index);
+  ::TestArchive(fullPath);
+}
+
