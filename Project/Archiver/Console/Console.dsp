@@ -363,6 +363,10 @@ SOURCE=..\..\..\SDK\Interface\FileStreams.cpp
 
 SOURCE=..\..\..\SDK\Interface\FileStreams.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\Format\Common\FormatCryptoInterface.h
+# End Source File
 # End Group
 # Begin Group "Archiver Common"
 

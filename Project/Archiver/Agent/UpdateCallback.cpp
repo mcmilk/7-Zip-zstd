@@ -139,3 +139,15 @@ STDMETHODIMP CUpdateCallBackImp::OperationResult(INT32 aOperationResult)
     return m_UpdateCallback->OperationResult(aOperationResult);
   return S_OK;
 }
+
+STDMETHODIMP CUpdateCallBackImp::CryptoGetTextPassword2(INT32 *passwordIsDefined, BSTR *password)
+{
+  *passwordIsDefined = BoolToInt(false);
+  if (!_cryptoGetTextPassword)
+  {
+    HRESULT result = m_UpdateCallback.QueryInterface(&_cryptoGetTextPassword);
+    if (result != S_OK)
+      return S_OK;
+  }
+  return _cryptoGetTextPassword->CryptoGetTextPassword2(passwordIsDefined, password);
+}

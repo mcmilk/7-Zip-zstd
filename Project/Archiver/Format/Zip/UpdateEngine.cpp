@@ -147,7 +147,7 @@ HRESULT UpdateOneFile(IInStream *anInStream,
     }
   }
   aFileHeaderInfo.UnPackSize = aFileSize;
-  aFileHeaderInfo.SetEncrypted(false);
+  aFileHeaderInfo.SetEncrypted(anOptions.PasswordIsDefined);
   aFileHeaderInfo.CommentSize = (anUpdateItem.Commented) ? 
       WORD(anUpdateItem.CommentRange.Size) : 0;
 

@@ -12,14 +12,17 @@
 
 #include "../Common/UpdatePairInfo.h"
 #include "../Common/UpdateProducer.h"
+#include "../Format/Common/FormatCryptoInterface.h"
 
 class CUpdateCallBackImp: 
   public IUpdateCallBack,
+  public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CUpdateCallBackImp)
   COM_INTERFACE_ENTRY(IUpdateCallBack)
+  COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CUpdateCallBackImp)
@@ -47,6 +50,7 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(DeleteOperation)(LPITEMIDLIST anItemIDList);
   
   STDMETHOD(OperationResult)(INT32 aOperationResult);
+  STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 
 private:
   CSysString m_BaseFolderPrefix;
@@ -54,6 +58,7 @@ private:
   const CArchiveItemInfoVector *m_ArchiveItems;
   const CUpdatePairInfo2Vector *m_UpdatePairs;
   CComPtr<IUpdateCallback100> m_UpdateCallback;
+  CComPtr<ICryptoGetTextPassword2> _cryptoGetTextPassword;
   UINT m_CodePage;
 
 public:

@@ -83,20 +83,25 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     return E_FAIL;
   }
   
-  CComObjectNoLock<CExtractCallbackImp> *extractCallBackSpec =
+  CComObjectNoLock<CExtractCallbackImp> *extractCallbackSpec =
     new CComObjectNoLock<CExtractCallbackImp>;
 
-  CComPtr<IExtractCallback2> extractCallBack(extractCallBackSpec);
+  CComPtr<IExtractCallback2> extractCallBack(extractCallbackSpec);
   
-  extractCallBackSpec->_parentWindow = 0;
+  extractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
   const CSysString title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
   #else
   const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
   #endif
-  extractCallBackSpec->StartProgressDialog(title);
+  extractCallbackSpec->StartProgressDialog(title);
+  #ifndef _SFX
+  extractCallbackSpec->_appTitle.Window = (HWND)extractCallbackSpec->_progressDialog;
+  extractCallbackSpec->_appTitle.Title = title;
+  #endif
 
-  // extractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
+
+  // extractCallbackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
   UStringVector aRemovePathParts;
 
@@ -104,7 +109,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
     throw "there is no archive file";
 
-  extractCallBackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
+  extractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
       !password.IsEmpty(), password);
 
   NExtractionMode::NPath::EEnum pathMode;

@@ -69,6 +69,10 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 aSize)
     return S_OK;
   _progressDialog.SetRange(aSize);
   _progressDialog.SetPos(0);
+  #ifndef _SFX
+  _appTitle.SetRange(aSize);
+  _appTitle.SetPos(0);
+  #endif;
   return S_OK;
 }
 
@@ -81,7 +85,12 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *aCompleteValue)
   // if(_progressDialog.HasUserCancelled())
     return E_ABORT;
   if (aCompleteValue != NULL)
+  {
     _progressDialog.SetPos(*aCompleteValue);
+    #ifndef _SFX
+    _appTitle.SetPos(*aCompleteValue);
+    #endif;
+  }
   // _progressDialog.SetProgress(*aCompleteValue, m_Total);
   return S_OK;
 }

@@ -221,7 +221,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
     item.mask = LVIF_TEXT | LVIF_PARAM;
     if (!_listView.GetItem(&item))
       continue;
-    if (_selectedStatusVector[item.lParam])
+    if (_selectedStatusVector[GetRealIndex(item)])
       selectedNames.Add(GetUnicodeString(item.pszText));
   }
   selectedNames.Sort();
@@ -258,6 +258,8 @@ void CPanel::RefreshListCtrlSaveFocused()
 void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     const UStringVector &selectedNames)
 {
+  CDisableTimerProcessing timerProcessing(*this);
+
   if (focusedPos < 0)
     focusedPos = 0;
 
@@ -269,6 +271,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   
   _listView.DeleteAllItems();
   _selectedStatusVector.Clear();
+  _realIndices.Clear();
   _startGroupSelect = 0;
 
   _selectionIsDefined = false;
@@ -279,16 +282,18 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   if (!_folder)
     SetToRootFolder();
   
+
   _folder->LoadItems();
 
   SetCurrentPathText();
 
   InitColumns();
 
-  // OutputDebugString("Start Dir\n");
 
+  // OutputDebugString(TEXT("Start Dir\n"));
   UINT32 numItems;
   _folder->GetNumberOfItems(&numItems);
+
   _listView.SetItemCount(numItems);
   _selectedStatusVector.Reserve(numItems);
   int cursorIndex = -1;  
@@ -301,9 +306,6 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     UString itemName = GetItemName(i);
     if (itemName.CompareNoCase(focusedName) == 0)
       cursorIndex = i;
-
-    item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
-
     bool selected = false;
     if (selectedNames.FindInSorted(itemName) >= 0)
     {
@@ -311,6 +313,17 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
       // item.state = LVIS_SELECTED;
       selected = true;
     }
+    _selectedStatusVector.Add(selected);
+    if (_virtualMode)
+    {
+      _realIndices.Add(i);
+    }
+    else
+    {
+
+    item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+    // item.mask = LVIF_TEXT | LVIF_PARAM;
+
   
     int subItem = 0;
     item.iItem = i;
@@ -335,35 +348,31 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     }
 
     bool defined  = false;
+
     if (folderGetSystemIconIndex)
     {
       folderGetSystemIconIndex->GetSystemIconIndex(i, &item.iImage);
       defined = (item.iImage > 0);
     }
     if (!defined)
+    {
       if (_currentFolderPrefix.IsEmpty())
       {
         item.iImage = GetRealIconIndex(
             attributes, (GetSystemString(itemName) + TEXT("\\")));
       }
       else
+      {
         item.iImage = _extToIconMap.GetIconIndex(attributes, 
             GetSystemString(itemName));
+      }
+    }
+    if (item.iImage < 0)
+      item.iImage = 0;
+
     if(_listView.InsertItem(&item) == -1)
       return; // error
-    _selectedStatusVector.Add(selected);
-    
-    /*
-    item.mask = LVIF_TEXT;
-    
-    item.iSubItem = subItem++;
-    if (aFileInfo.IsDirectory())
-      lstrcpy(string, TEXT(""));
-    else
-      ConvertSizeToString(aFileInfo.Size, string);
-    if(!_listView.SetItem(&item))
-      return; // error
-    */
+    }
   }
 
   if(_listView.GetItemCount() > 0 && cursorIndex >= 0)
@@ -372,7 +381,6 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     _listView.SetItemState(cursorIndex, state, state);
   }
   _listView.SortItems(CompareItems, (LPARAM)this);
-  // OutputDebugString("End Dir\n");
   if (cursorIndex < 0 && _listView.GetItemCount() > 0)
   {
     if (focusedPos >= _listView.GetItemCount())
@@ -384,6 +392,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
   _listView.SetRedraw(true);
   _listView.InvalidateRect(NULL, true);
+  // OutputDebugString(TEXT("End Dir\n"));
   /*
   _listView.UpdateWindow();
   if (numItems > 0)

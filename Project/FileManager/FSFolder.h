@@ -16,6 +16,7 @@ class CFSFolder;
 
 struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfo
 {
+  bool CompressedSizeIsDefined;
   UINT64 CompressedSize;
 };
 
@@ -29,6 +30,7 @@ class CFSFolder:
   public IFolderOperations,
   public IFolderGetItemFullSize,
   public IFolderClone,
+  // public IFolderGetSystemIconIndex,
   public CComObjectRoot
 {
   UINT64 GetSizeOfItem(int anIndex) const;
@@ -42,6 +44,7 @@ BEGIN_COM_MAP(CFSFolder)
   COM_INTERFACE_ENTRY(IFolderOperations)
   COM_INTERFACE_ENTRY(IFolderGetItemFullSize)
   COM_INTERFACE_ENTRY(IFolderClone)
+  // COM_INTERFACE_ENTRY(IFolderGetSystemIconIndex)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CFSFolder)
@@ -75,6 +78,7 @@ DECLARE_NO_REGISTRY()
       const wchar_t *path, IFolderOperationsExtractCallback *callback);
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
+  // STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
 
 private:
   UINT _fileCodePage;

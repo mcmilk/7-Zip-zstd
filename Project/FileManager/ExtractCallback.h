@@ -17,6 +17,10 @@
 #include "LangUtils.h"
 #endif
 
+#ifndef _SFX
+#include "AppTitle.h"
+#endif;
+
 #include "../Archiver/Format/Common/FormatCryptoInterface.h"
 #include "FolderInterface.h"
 
@@ -74,7 +78,6 @@ private:
 
   bool _passwordIsDefined;
   UString _password;
-  CProgressDialog _progressDialog;
 
 
   void CreateComplexDirectory(const UStringVector &aDirPathParts);
@@ -83,6 +86,10 @@ private:
   bool IsEncrypted(LPITEMIDLIST anItemIDList);
   void AddErrorMessage(LPCTSTR aMessage);
 public:
+  CProgressDialog _progressDialog;
+  #ifndef _SFX
+  CAppTitle _appTitle;
+  #endif;
   CSysStringVector _messages;
   HWND _parentWindow;
   DWORD _threadID;

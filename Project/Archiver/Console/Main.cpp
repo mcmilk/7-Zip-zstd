@@ -48,7 +48,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 22  Copyright (c) 1999-2002 Igor Pavlov  2002-08-31\n";
+" 2.30 Beta 23  Copyright (c) 1999-2002 Igor Pavlov  2002-09-07\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -122,7 +122,7 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { "BD", NSwitchType::kSimple, false },
     { "T",  NSwitchType::kUnLimitedPostString, false, 1 },
     { "Y",  NSwitchType::kSimple, false },
-    { "P",  NSwitchType::kUnLimitedPostString, false, 1 },
+    { "P",  NSwitchType::kUnLimitedPostString, false, 0 },
     { "M", NSwitchType::kUnLimitedPostString, true, 1 },
     { "O",  NSwitchType::kUnLimitedPostString, false, 1 },
     { "W",  NSwitchType::kUnLimitedPostString, false, 0 },
@@ -1012,6 +1012,11 @@ int Main2(int aNumArguments, const char *anArguments[])
   else if(aCommand.IsFromUpdateGroup())
   {
     CUpdateArchiveOptions anOptions;
+
+    anOptions.MethodMode.PasswordIsDefined = aPasswordEnabled && !aPassword.IsEmpty();
+    anOptions.MethodMode.AskPassword = aPasswordEnabled && aPassword.IsEmpty();
+    anOptions.MethodMode.Password = aPassword;
+
     CSysString aWorkingDir;
 
     CSysString anArchiveType;

@@ -340,8 +340,12 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
     new CComObjectNoLock<CUpdateCallBack100Imp>;
   CComPtr<IUpdateCallback100> updateCallback(updateCallbackSpec );
   
-  updateCallbackSpec->Init(/* archiveHandler, */ 0, 
-      LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
+  CSysString title = LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
+  updateCallbackSpec->Init(/* archiveHandler, */ 0, title,
+      !dialog.Password.IsEmpty(), GetUnicodeString(dialog.Password));
+  updateCallbackSpec->_appTitle.Window = (HWND)updateCallbackSpec->m_ProgressDialog;
+  updateCallbackSpec->_appTitle.Title = title;
+
 
   RETURN_IF_NOT_S_OK(SetOutProperties(outArchive, dialog.m_Info.Method, 
       dialog.m_Info.SolidModeIsAllowed, dialog.m_Info.SolidMode, 

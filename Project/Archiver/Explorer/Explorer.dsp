@@ -470,6 +470,14 @@ SOURCE=..\Format\Common\FormatCryptoInterface.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\FileManager\AppTitle.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\AppTitle.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\FileManager\ExtractCallback.cpp
 # End Source File
 # Begin Source File

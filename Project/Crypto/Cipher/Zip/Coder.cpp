@@ -5,66 +5,114 @@
 #include "Coder.h"
 #include "Windows/Defs.h"
 
-
 namespace NCrypto {
 namespace NZip {
 
 const kBufferSize = 1 << 17;
 
 CBuffer2::CBuffer2():
-  m_Buffer(0)
+  _buffer(0)
 {
-  m_Buffer = new BYTE[kBufferSize];
+  _buffer = new BYTE[kBufferSize];
 }
 
 CBuffer2::~CBuffer2()
 {
-  delete []m_Buffer;
+  delete []_buffer;
 }
 
-
-STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *aData, UINT32 aSize)
+CEncoder::CEncoder()
 {
-  m_Data.SetPassword(aData, aSize);
+}
+
+STDMETHODIMP CEncoder::CryptoSetPassword(const BYTE *data, UINT32 size)
+{
+  _cipher.SetPassword(data, size);
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress)
+STDMETHODIMP CEncoder::CryptoSetCRC(UINT32 crc)
 {
-  UINT64 aNowPos = 0;
+  _crc = crc;
+  return S_OK;
+}
 
-  BYTE aHeader[kHeaderSize];
-  UINT32 aProcessedSize;
-  RETURN_IF_NOT_S_OK(anInStream->Read(aHeader, kHeaderSize, &aProcessedSize));
-  if (aProcessedSize != kHeaderSize)
+STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
+{
+  CRandom random;
+  random.Init(::GetTickCount());
+
+  UINT64 nowPos = 0;
+  BYTE header[kHeaderSize];
+  for (int i = 0; i < kHeaderSize - 2; i++)
+  {
+    header[i] = BYTE(random.Generate());
+  }
+  header[kHeaderSize - 1] = BYTE(_crc >> 24);
+  header[kHeaderSize - 2] = BYTE(_crc >> 16);
+
+  UINT32 processedSize;
+  _cipher.EncryptHeader(header);
+  RETURN_IF_NOT_S_OK(outStream->Write(header, kHeaderSize, &processedSize));
+  if (processedSize != kHeaderSize)
     return E_FAIL;
-  m_Data.DecryptHeader(aHeader);
 
   while(true)
   {
-    UINT32 aBufferPos = 0;
-    UINT32 aSize = kBufferSize - aBufferPos;
-    RETURN_IF_NOT_S_OK(anInStream->Read(m_Buffer + aBufferPos, aSize, &aProcessedSize));
-
-    UINT32 anEndPos = aBufferPos + aProcessedSize;
-    for (;aBufferPos < anEndPos; aBufferPos++)
-      m_Buffer[aBufferPos] = m_Data.DecryptByte(m_Buffer[aBufferPos]);
-
-    if (aBufferPos == 0)
+    if (outSize != NULL && nowPos == *outSize)
       return S_OK;
-
-    if (anOutSize != NULL && aNowPos + aBufferPos > *anOutSize)
-       aBufferPos = UINT32(*anOutSize - aNowPos);
-
-    RETURN_IF_NOT_S_OK(anOutStream->Write(m_Buffer, aBufferPos, &aProcessedSize));
-    if (aBufferPos != aProcessedSize)
+    RETURN_IF_NOT_S_OK(inStream->Read(_buffer, kBufferSize, &processedSize));
+    if (processedSize == 0)
+      return S_OK;
+    for (UINT32 i = 0; i < processedSize; i++)
+      _buffer[i] = _cipher.EncryptByte(_buffer[i]);
+    UINT32 size = processedSize;
+    if (outSize != NULL && nowPos + size > *outSize)
+       size = UINT32(*outSize - nowPos);
+    RETURN_IF_NOT_S_OK(outStream->Write(_buffer, size, &processedSize));
+    if (size != processedSize)
       return E_FAIL;
+    nowPos +=  processedSize;
+  }
+}
 
-    aNowPos +=  aProcessedSize;
-    if (anOutSize != NULL && aNowPos == *anOutSize)
+STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
+{
+  _cipher.SetPassword(data, size);
+  return S_OK;
+}
+
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress)
+{
+  UINT64 nowPos = 0;
+
+  BYTE header[kHeaderSize];
+  UINT32 processedSize;
+  RETURN_IF_NOT_S_OK(inStream->Read(header, kHeaderSize, &processedSize));
+  if (processedSize != kHeaderSize)
+    return E_FAIL;
+  _cipher.DecryptHeader(header);
+
+  while(true)
+  {
+    if (outSize != NULL && nowPos == *outSize)
       return S_OK;
+    RETURN_IF_NOT_S_OK(inStream->Read(_buffer, kBufferSize, &processedSize));
+    if (processedSize == 0)
+      return S_OK;
+    for (UINT32 i = 0; i < processedSize; i++)
+      _buffer[i] = _cipher.DecryptByte(_buffer[i]);
+    UINT32 size = processedSize;
+    if (outSize != NULL && nowPos + size > *outSize)
+       size = UINT32(*outSize - nowPos);
+    RETURN_IF_NOT_S_OK(outStream->Write(_buffer, size, &processedSize));
+    if (size != processedSize)
+      return E_FAIL;
+    nowPos +=  processedSize;
   }
 }
 

@@ -4,6 +4,7 @@
 
 #include "UpdateCallback.h"
 
+#include "Common/StdInStream.h"
 #include "Common/StdOutStream.h"
 #include "Common/StringConvert.h"
 #include "Common/Defs.h"
@@ -17,8 +18,13 @@ CUpdateCallBackImp::CUpdateCallBackImp():
 
 void CUpdateCallBackImp::Init(const CArchiveStyleDirItemInfoVector *aDirItems, 
     const CArchiveItemInfoVector *anArchiveItems, // test CItemInfoExList
-    CUpdatePairInfo2Vector *anUpdatePairs, bool anEnablePercents)
+    CUpdatePairInfo2Vector *anUpdatePairs, bool anEnablePercents,
+    bool passwordIsDefined, const UString &password, bool askPassword)
 {
+  _passwordIsDefined = passwordIsDefined;
+  _password = password;
+  _askPassword = askPassword;
+
   m_EnablePercents = anEnablePercents;
   m_DirItems = aDirItems;
   m_ArchiveItems = anArchiveItems;
@@ -125,8 +131,8 @@ STDMETHODIMP CUpdateCallBackImp::GetUpdateItemInfo(INT32 anIndex,
       *aSize = aDirItemInfo.Size;
     if(aName != NULL)
     {
-      CComBSTR aTempName = aDirItemInfo.Name;
-      *aName = aTempName.Detach();
+      CComBSTR tempName = aDirItemInfo.Name;
+      *aName = tempName.Detach();
     }
   }
   return S_OK;
@@ -192,5 +198,24 @@ STDMETHODIMP CUpdateCallBackImp::DeleteOperation(LPITEMIDLIST anItemIDList)
 STDMETHODIMP CUpdateCallBackImp::OperationResult(INT32 aOperationResult)
 {
   m_NeedBeClosed = true;
+  return S_OK;
+}
+
+
+STDMETHODIMP CUpdateCallBackImp::CryptoGetTextPassword2(INT32 *passwordIsDefined, BSTR *password)
+{
+  if (!_passwordIsDefined) 
+  {
+    if (_askPassword)
+    {
+      g_StdOut << "\nEnter password:";
+      AString oemPassword = g_StdIn.ScanStringUntilNewLine();
+      _password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+      _passwordIsDefined = true;
+    }
+  }
+  *passwordIsDefined = BoolToInt(_passwordIsDefined);
+  CComBSTR tempName = _password;
+  *password = tempName.Detach();
   return S_OK;
 }

@@ -70,7 +70,7 @@ CAPTION "About"
 FONT 8, "MS Shell Dlg"
 BEGIN
     PUSHBUTTON      "OK",IDOK,174,133,50,14
-    LTEXT           "7-Zip 2.30 Beta 22",IDC_STATIC,7,7,119,9
+    LTEXT           "7-Zip 2.30 Beta 23",IDC_STATIC,7,7,119,9
     LTEXT           "Copyright (c) 1999-2002 Igor Pavlov",IDC_STATIC,7,20,
                     119,17
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please donate some money to 7-Zip Project.",

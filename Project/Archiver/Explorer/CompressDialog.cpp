@@ -27,6 +27,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_STATIC_COMPRESS_UPDATE_MODE, 0x02000D02 },
   { IDC_STATIC_COMPRESS_OPTIONS, 0x02000D07 },
   { IDC_COMPRESS_SFX, 0x02000D08 },
+  { IDC_COMPRESS_PASSWORD, 0x02000802 },
   { IDOK, 0x02000702 },
   { IDCANCEL, 0x02000710 },
   { IDHELP, 0x02000720 }
@@ -72,6 +73,9 @@ bool CCompressDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000D00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
+  _passwordControl.Init(*this, IDC_COMPRESS_EDIT_PASSWORD);
+  _passwordControl.SetText(_T(""));
+
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_COMBO_ARCHIVE));
 	m_Format.Attach(GetItem(IDC_COMPRESS_COMBO_FORMAT));
 	m_Method.Attach(GetItem(IDC_COMPRESS_COMBO_METHOD));
@@ -85,9 +89,9 @@ bool CCompressDialog::OnInit()
   m_Info.ArchiverInfoIndex = 0;
   for(int i = 0; i < m_ArchiverInfoList.Size(); i++)
   {
-    const NZipRootRegistry::CArchiverInfo &anArchiverInfo = m_ArchiverInfoList[i];
-    m_Format.AddString(anArchiverInfo.Name);
-    if (anArchiverInfo.ClassID == m_RegistryInfo.LastClassID && 
+    const NZipRootRegistry::CArchiverInfo &archiverInfo = m_ArchiverInfoList[i];
+    m_Format.AddString(archiverInfo.Name);
+    if (archiverInfo.ClassID == m_RegistryInfo.LastClassID && 
         m_RegistryInfo.LastClassIDDefined)
       m_Info.ArchiverInfoIndex = i;
   }
@@ -153,6 +157,7 @@ bool CCompressDialog::OnInit()
   
   CheckSolidEnable();
   CheckSFXEnable();
+  CheckPasswordEnable();
 
   OnButtonSFX();
 
@@ -190,24 +195,36 @@ bool CCompressDialog::OnButtonClicked(int aButtonID, HWND aButtonHWND)
 
 void CCompressDialog::CheckSolidEnable()
 {
-  int aFormatIndex = m_Format.GetCurSel();
-  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
-      m_ArchiverInfoList[aFormatIndex];
-  bool anEnable = (anArchiverInfo.Name == TEXT("7z"));
-  m_Info.SolidModeIsAllowed = anEnable;
+  int formatIndex = m_Format.GetCurSel();
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+      m_ArchiverInfoList[formatIndex];
+  bool enable = (archiverInfo.Name == TEXT("7z"));
+  m_Info.SolidModeIsAllowed = enable;
   CWindow aSFXButton = GetItem(IDC_COMPRESS_SOLID);
-  aSFXButton.Enable(anEnable);
+  aSFXButton.Enable(enable);
 }
 
 void CCompressDialog::CheckSFXEnable()
 {
-  int aFormatIndex = m_Format.GetCurSel();
-  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
-      m_ArchiverInfoList[aFormatIndex];
-  bool anEnable = (anArchiverInfo.Name == TEXT("7z"));
+  int formatIndex = m_Format.GetCurSel();
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+      m_ArchiverInfoList[formatIndex];
+  bool enable = (archiverInfo.Name == TEXT("7z"));
 
   CWindow aSFXButton = GetItem(IDC_COMPRESS_SFX);
-  aSFXButton.Enable(anEnable);
+  aSFXButton.Enable(enable);
+}
+
+void CCompressDialog::CheckPasswordEnable()
+{
+  int formatIndex = m_Format.GetCurSel();
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
+      m_ArchiverInfoList[formatIndex];
+  bool enable = (archiverInfo.Name.CompareNoCase(TEXT("zip")) == 0);
+  CWindow window = GetItem(IDC_COMPRESS_PASSWORD);
+  window.Enable(enable);
+  window = GetItem(IDC_COMPRESS_EDIT_PASSWORD);
+  window.Enable(enable);
 }
 
 
@@ -303,6 +320,7 @@ extern void AddUniqueString(CSysStringVector &aList, const CSysString &aString);
 
 void CCompressDialog::OnOK() 
 {
+  _passwordControl.GetText(Password);
   SaveOptions();
   int aCurrentItem = m_ArchivePath.GetCurSel();
   CSysString aString;
@@ -350,7 +368,7 @@ void CCompressDialog::OnOK()
   CModalDialog::OnOK();
 }
 
-static LPCTSTR kHelpTopic = _T("gui/add.htm");
+static LPCTSTR kHelpTopic = _T("fm/plugins/7-zip/add.htm");
 
 void CCompressDialog::OnHelp() 
 {
@@ -364,6 +382,7 @@ bool CCompressDialog::OnCommand(int aCode, int anItemID, LPARAM lParam)
     OnSelChangeComboFormat();
     CheckSolidEnable();
     CheckSFXEnable();
+    CheckPasswordEnable();
     CWindow aSFXButton = GetItem(IDC_COMPRESS_SFX);
     bool aSFXMode = aSFXButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
     if (aSFXMode)
@@ -404,11 +423,11 @@ void CCompressDialog::SetArchiveName(const CSysString &aName)
 {
   CSysString aFileName = aName;
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
-  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
       m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
   m_PrevFormat = m_Info.ArchiverInfoIndex;
 
-  if (anArchiverInfo.KeepName)
+  if (archiverInfo.KeepName)
     aFileName = m_Info.ArchiveNameSrc;
   else
   {
@@ -418,7 +437,7 @@ void CCompressDialog::SetArchiveName(const CSysString &aName)
       aFileName = aFileName.Left(aDotPos);
   }
   aFileName += '.';
-  aFileName += anArchiverInfo.Extension;
+  aFileName += archiverInfo.Extension;
   m_ArchivePath.SetText(aFileName);
 }
 
@@ -437,9 +456,9 @@ int CCompressDialog::FindFormat(const CSysString &aName)
 
 void CCompressDialog::SaveOptions()
 {
-  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
       m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
-  int anIndex = FindFormat(anArchiverInfo.Name);
+  int anIndex = FindFormat(archiverInfo.Name);
   m_Options.GetText(m_Info.Options);
   if (anIndex >= 0)
   {
@@ -450,7 +469,7 @@ void CCompressDialog::SaveOptions()
   else
   {
     NZipSettings::NCompression::CFormatOptions aFormatOptions;
-    aFormatOptions.FormatID = anArchiverInfo.Name;
+    aFormatOptions.FormatID = archiverInfo.Name;
     aFormatOptions.Options = m_Info.Options;
     m_RegistryInfo.FormatOptionsVector.Add(aFormatOptions);
   }
@@ -458,10 +477,10 @@ void CCompressDialog::SaveOptions()
 
 void CCompressDialog::SetOptions()
 {
-  const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
+  const NZipRootRegistry::CArchiverInfo &archiverInfo = 
       m_ArchiverInfoList[m_Format.GetCurSel()];
   m_Options.SetText(TEXT(""));
-  int anIndex = FindFormat(anArchiverInfo.Name);
+  int anIndex = FindFormat(archiverInfo.Name);
   if (anIndex >= 0)
   {
     const NZipSettings::NCompression::CFormatOptions &aFormatOptions = 

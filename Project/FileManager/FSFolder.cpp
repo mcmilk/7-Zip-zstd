@@ -12,6 +12,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileIO.h"
 
+#include "SysIconUtils.h"
 #include "FSDrives.h"
 #include "NetFolder.h"
 
@@ -95,9 +96,12 @@ STDMETHODIMP CFSFolder::LoadItems()
   CFileInfoEx fileInfo;
   while (enumerator.Next(fileInfo))
   {
+    fileInfo.CompressedSizeIsDefined = false;
+    /*
     if (!GetCompressedFileSize(_path + fileInfo.Name, 
         fileInfo.CompressedSize))
       fileInfo.CompressedSize = fileInfo.Size;
+    */
     if (fileInfo.IsDirectory())
     {
       // fileInfo.Size = GetFolderSize(_path + fileInfo.Name);
@@ -132,7 +136,7 @@ STDMETHODIMP CFSFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
   NCOM::CPropVariant propVariant;
   if (itemIndex >= _files.Size())
     return E_INVALIDARG;
-  const CFileInfoEx &fileInfo = _files[itemIndex];
+  CFileInfoEx &fileInfo = _files[itemIndex];
   switch(propID)
   {
     case kpidIsFolder:
@@ -145,6 +149,14 @@ STDMETHODIMP CFSFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
       propVariant = fileInfo.Size;
       break;
     case kpidPackedSize:
+      if (!fileInfo.CompressedSizeIsDefined)
+      {
+        fileInfo.CompressedSizeIsDefined = true;
+        if (fileInfo.IsDirectory () || 
+            !GetCompressedFileSize(_path + fileInfo.Name, 
+                fileInfo.CompressedSize))
+          fileInfo.CompressedSize = fileInfo.Size;
+      }
       propVariant = fileInfo.CompressedSize;
       break;
     case kpidAttributes:
@@ -411,5 +423,15 @@ STDMETHODIMP CFSFolder::Delete(const UINT32 *indices, UINT32 numItems,
   return S_OK;
 }
 
+/*
+STDMETHODIMP CFSFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
+{
+  if (index >= _files.Size())
+    return E_INVALIDARG;
+  const CFileInfoEx &fileInfo = _files[index];
+  *iconIndex = GetRealIconIndex(fileInfo.Attributes, _path + fileInfo.Name);
+  return S_OK;
+}
+*/
 // static const LPCTSTR kInvalidFileChars = TEXT("\\/:*?\"<>|");
 

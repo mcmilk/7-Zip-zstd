@@ -10,6 +10,7 @@
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
+  OBJECT_ENTRY(CLSID_CCryptoZipEncoder, NCrypto::NZip::CEncoder)
   OBJECT_ENTRY(CLSID_CCryptoZipDecoder, NCrypto::NZip::CDecoder)
 END_OBJECT_MAP()
 

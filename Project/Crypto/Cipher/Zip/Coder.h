@@ -5,13 +5,14 @@
 
 #include "Interface/ICoder.h"
 #include "../Common/CipherInterface.h"
+#include "Common/Random.h"
 
 #include "Common/Types.h"
 #include "Crypto.h"
 
-// {23170F69-40C1-278A-1000-000205020000}
-DEFINE_GUID(CLSID_CZipCryptoEncoder, 
-0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x50, 0x02, 0x00, 0x00);
+// {23170F69-40C1-278A-1000-000250030100}
+DEFINE_GUID(CLSID_CCryptoZipEncoder, 
+0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x02, 0x50, 0x03, 0x01, 0x00);
 
 // {23170F69-40C1-278A-1000-000250030000}
 DEFINE_GUID(CLSID_CCryptoZipDecoder, 
@@ -23,34 +24,44 @@ namespace NZip {
 class CBuffer2
 {
 protected:
-  BYTE *m_Buffer;
+  BYTE *_buffer;
 public:
   CBuffer2();
   ~CBuffer2();
 };
 
-/*
 class CEncoder : 
   public ICompressCoder,
-  public CBuffer,
+  public ICryptoSetPassword,
+  public ICryptoSetCRC,
+  public CBuffer2,
   public CComObjectRoot,
-  public CComCoClass<CEncoder, &CLSID_CZipCryptoEncoder>
+  public CComCoClass<CEncoder, &CLSID_CCryptoZipEncoder>
 {
+  CCipher _cipher;
+  UINT32 _crc;
 public:
 BEGIN_COM_MAP(CEncoder)
   COM_INTERFACE_ENTRY(ICompressCoder)
+  COM_INTERFACE_ENTRY(ICryptoSetPassword)
+  COM_INTERFACE_ENTRY(ICryptoSetCRC)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CEncoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CEncoder, "Compress.ZipCryptoEncoder.1", "Compress.ZipCryptoEncoder", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CEncoder, TEXT("Crypto.ZipEncoder.1"), 
+    TEXT("Crypto.ZipEncoder"), 0, THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
+
+  STDMETHOD(CryptoSetPassword)(const BYTE *data, UINT32 size);
+  STDMETHOD(CryptoSetCRC)(UINT32 crc);
+
+  CEncoder();
 };
-*/
 
 
 class CDecoder: 
@@ -60,8 +71,8 @@ class CDecoder:
   public CComObjectRoot,
   public CComCoClass<CDecoder, &CLSID_CCryptoZipDecoder>
 {
+  CCipher _cipher;
 public:
-  CData m_Data;
 
 BEGIN_COM_MAP(CDecoder)
   COM_INTERFACE_ENTRY(ICompressCoder)
@@ -74,12 +85,12 @@ DECLARE_NOT_AGGREGATABLE(CDecoder)
 DECLARE_REGISTRY(CDecoder, TEXT("Crypto.ZipDecoder.1"), 
                  TEXT("Crypto.ZipDecoder"), 0, THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, UINT64 const *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, UINT64 const *inSize, 
+      const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
-  STDMETHOD(CryptoSetPassword)(const BYTE *aData, UINT32 aSize);
-
+  STDMETHOD(CryptoSetPassword)(const BYTE *data, UINT32 size);
 };
 
 }}

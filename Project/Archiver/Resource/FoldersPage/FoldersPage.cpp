@@ -154,7 +154,7 @@ LONG CFoldersPage::OnApply()
   return PSNRET_NOERROR;
 }
 
-static LPCTSTR kFoldersTopic = _T("gui/7-zipCfg/folders.htm");
+static LPCTSTR kFoldersTopic = _T("fm/plugins/7-zip/options.htm#folders");
 
 void CFoldersPage::OnNotifyHelp() 
 {

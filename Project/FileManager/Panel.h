@@ -109,6 +109,8 @@ public:
 
 class CPanel:public NWindows::NControl::CWindow2
 {
+  HWND _mainWindow;
+
   CExtToIconMap _extToIconMap;
   int _index;
   UINT _baseID;
@@ -163,7 +165,7 @@ public:
 private:
 
   CSysString GetFileType(UINT32 index);
-  LRESULT SetItemText(LV_DISPINFO *dispInfo, UINT32 index);
+  LRESULT SetItemText(LVITEM &item);
 
   // CRecordVector<PROPID> m_ColumnsPropIDs;
 
@@ -174,13 +176,34 @@ public:
   NWindows::NControl::CStatusBar _statusBar;
   // NWindows::NControl::CStatusBar _statusBar2;
 
+  bool _virtualMode;
   CBoolVector _selectedStatusVector;
+  CUIntVector _realIndices;
+
+  UINT32 GetRealIndex(const LVITEM &item) const
+  {
+    if (_virtualMode)
+      return _realIndices[item.iItem];
+    return item.lParam;
+  }
+  int GetRealItemIndex(int indexInListView) const
+  {
+    if (_virtualMode)
+      return indexInListView;
+    LPARAM param;
+    if (!_listView.GetItemParam(indexInListView, param))
+      throw 1;
+    return param;
+  }
+
   UINT32 _ListViewMode;
 
   UString _currentFolderPrefix;
   
   CObjectVector<CFolderLink> _parentFolders;
   CComPtr<IFolderFolder> _folder;
+  // CComPtr<IFolderGetSystemIconIndex> _folderGetSystemIconIndex;
+
   UStringVector _fastFolders;
 
   void GetSelectedNames(UStringVector &selectedNames);
@@ -190,7 +213,7 @@ public:
   bool IsItemFolder(int itemIndex) const;
   UINT64 GetItemSize(int itemIndex) const;
 
-  LRESULT Create(HWND parrentWindow, int index, UINT id, int xPos, 
+  LRESULT Create(HWND mainWindow, HWND parrentWindow, int index, UINT id, int xPos, 
       CSysString &currentFolderPrefix, CPanelCallback *panelCallback,
       CAppState *appState);
   void SetFocus();
@@ -222,13 +245,6 @@ public:
   void SetToRootFolder();
   bool OnContextMenu(HANDLE windowHandle, int xPos, int yPos);
 
-  int GetRealItemIndex(int indexInListView) const
-  {
-    LPARAM param;
-    if (!_listView.GetItemParam(indexInListView, param))
-      throw 1;
-    return param;
-  }
 
   void FoldersHistory();
 
@@ -257,17 +273,26 @@ public:
 
   class CDisableTimerProcessing
   {
+    bool _processTimerMem;
+    bool _processNotifyMem;
+
     CPanel &_panel;
     public:
       CDisableTimerProcessing(CPanel &panel): _panel(panel) 
       { 
+        _processTimerMem = _panel._processTimer;
+        _processNotifyMem = _panel._processNotify;
         _panel._processTimer = false; 
         _panel._processNotify = false; 
       }
+      void Restore()
+      {
+        _panel._processTimer = _processTimerMem; 
+        _panel._processNotify = _processNotifyMem; 
+      }
       ~CDisableTimerProcessing() 
       { 
-        _panel._processTimer = true; 
-        _panel._processNotify = true; 
+        Restore();
       }
   };
 

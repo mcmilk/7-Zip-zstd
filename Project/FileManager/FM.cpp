@@ -19,6 +19,7 @@
 
 #include "MyLoadMenu.h"
 #include "WindowMessages.h"
+#include "LangUtils.h"
 
 using namespace NWindows;
 
@@ -95,14 +96,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	HWND	hWnd = NULL;
-	TCHAR	title[MAX_LOADSTRING];			// The title bar text
 	TCHAR	windowClass[MAX_LOADSTRING];		// The window class name
   lstrcpy(windowClass, TEXT("FM"));
 
 	g_hInstance = hInstance;		// Store instance handle in our global variable
-	// Initialize global strings
-	// LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
-	LoadString(hInstance, IDS_APP_TITLE, title, MAX_LOADSTRING);
+
+  // LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
+
+  // LoadString(hInstance, IDS_APP_TITLE, title, MAX_LOADSTRING);
+  CSysString title = LangLoadString(IDS_APP_TITLE, 0x03000000);
 
 	/*
   //If it is already running, then focus on the window

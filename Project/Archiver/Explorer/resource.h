@@ -64,6 +64,8 @@
 #define IDC_STATIC_COMPRESS_UPDATE_MODE 1101
 #define IDC_STATIC_COMPRESS_OPTIONS     1102
 #define IDC_EXTRACT_PASSWORD            1106
+#define IDC_COMPRESS_PASSWORD           1107
+#define IDC_COMPRESS_EDIT_PASSWORD      1108
 
 // Next default values for new objects
 // 
@@ -71,7 +73,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1107
+#define _APS_NEXT_CONTROL_VALUE         1109
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -7,6 +7,7 @@
 
 #include "../Archiver/Common/IArchiveHandler2.h"
 #include "Resource/ProgressDialog/ProgressDialog.h"
+#include "../Archiver/Format/Common/FormatCryptoInterface.h"
 // #include "resource.h"
 
 #include "Common/String.h"
@@ -15,13 +16,17 @@
 #include "LangUtils.h"
 #endif
 
+#include "AppTitle.h"
+
 class CUpdateCallBack100Imp: 
   public IUpdateCallback100,
+  public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CUpdateCallBack100Imp)
   COM_INTERFACE_ENTRY(IUpdateCallback100)
+  COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CUpdateCallBack100Imp)
@@ -38,21 +43,26 @@ DECLARE_NO_REGISTRY()
   STDMETHOD(DeleteOperation)(const wchar_t *aName);
   STDMETHOD(OperationResult)(INT32 aOperationResult);
 
+  STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 private:
-  // CComPtr<IArchiveHandler100> m_ArchiveHandler;
-  CProgressDialog m_ProgressDialog;
   DWORD m_ThreadID;
-  // UINT64 m_Total;
-  // NWindows::NShell::CProgressDialog m_ProgressDialog;
+  bool _passwordIsDefined;
+  UString _password;
 
 public:
   ~CUpdateCallBack100Imp()
   {
     m_ProgressDialog.Destroy();
   }
+  CAppTitle _appTitle;
+  CProgressDialog m_ProgressDialog;
+  HWND _parentWindow;
   void Init(/*IArchiveHandler100 *anArchiveHandler, */ HWND aParentWindow, 
-      const CSysString &aTitle)
+      const CSysString &aTitle, bool passwordIsDefined, const UString &password)
   {
+    _passwordIsDefined = passwordIsDefined;
+    _password = password;
+    _parentWindow = aParentWindow;
     m_ThreadID = GetCurrentThreadId();
     m_ProgressDialog.Create(aParentWindow);
     m_ProgressDialog.SetText(aTitle);

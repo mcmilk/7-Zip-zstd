@@ -79,7 +79,7 @@ static HRESULT CopyBlock(ISequentialInStream *anInStream, ISequentialOutStream *
 HRESULT Compress(
     const CActionSet &anActionSet, 
     IArchiveHandler200 *anArchive,
-    const CCompressionMethodMode &aCompressionMethod,
+    const CCompressionMethodMode &compressionMethod,
     const CSysString &anArchiveName, 
     const CArchiveItemInfoVector &anArchiveItems,
     const CArchiveStyleDirItemInfoVector &aDirItems,
@@ -100,7 +100,7 @@ HRESULT Compress(
   else
   {
     #ifndef EXCLUDE_COM
-    HRESULT aResult = anOutArchive.CoCreateInstance(aCompressionMethod.ClassID);
+    HRESULT aResult = anOutArchive.CoCreateInstance(compressionMethod.ClassID);
     if (aResult != S_OK)
     {
       throw "update operations are not supported for this archive";
@@ -109,27 +109,27 @@ HRESULT Compress(
     #endif
 
     #ifdef FORMAT_7Z
-    if (aCompressionMethod.Name.CompareNoCase(TEXT("7z")) == 0)
+    if (compressionMethod.Name.CompareNoCase(TEXT("7z")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::N7z::CHandler>;
     #endif
 
     #ifdef FORMAT_BZIP2
-    if (aCompressionMethod.Name.CompareNoCase(TEXT("BZip2")) == 0)
+    if (compressionMethod.Name.CompareNoCase(TEXT("BZip2")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
     #endif
 
     #ifdef FORMAT_GZIP
-    if (aCompressionMethod.Name.CompareNoCase(TEXT("GZip")) == 0)
+    if (compressionMethod.Name.CompareNoCase(TEXT("GZip")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
     #endif
 
     #ifdef FORMAT_TAR
-    if (aCompressionMethod.Name.CompareNoCase(TEXT("Tar")) == 0)
+    if (compressionMethod.Name.CompareNoCase(TEXT("Tar")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
     #endif
     
     #ifdef FORMAT_ZIP
-    if (aCompressionMethod.Name.CompareNoCase(TEXT("Zip")) == 0)
+    if (compressionMethod.Name.CompareNoCase(TEXT("Zip")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
     #endif
 
@@ -167,7 +167,9 @@ HRESULT Compress(
     new CComObjectNoLock<CUpdateCallBackImp>;
   CComPtr<IUpdateCallBack> anUpdateCallBack(anUpdateCallBackSpec );
   
-  anUpdateCallBackSpec->Init(&aDirItems, &anArchiveItems, &anOperationChain, anEnablePercents);
+  anUpdateCallBackSpec->Init(&aDirItems, &anArchiveItems, &anOperationChain, anEnablePercents,
+      compressionMethod.PasswordIsDefined, compressionMethod.Password, 
+      compressionMethod.AskPassword);
   
   CComObjectNoLock<COutFileStream> *anOutStreamSpec =
     new CComObjectNoLock<COutFileStream>;
@@ -193,9 +195,9 @@ HRESULT Compress(
   {
     CObjectVector<CComBSTR> aNamesReal;
     std::vector<CPropVariant> aValues;
-    for(int i = 0; i < aCompressionMethod.Properties.Size(); i++)
+    for(int i = 0; i < compressionMethod.Properties.Size(); i++)
     {
-      const CProperty &aProperty = aCompressionMethod.Properties[i];
+      const CProperty &aProperty = compressionMethod.Properties[i];
       NCOM::CPropVariant aPropVariant;
       UINT32 aNumber;
       if (!aProperty.Value.IsEmpty())

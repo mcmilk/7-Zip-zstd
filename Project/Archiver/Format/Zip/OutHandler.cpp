@@ -13,6 +13,8 @@
 #include "Windows/Time.h"
 #include "Windows/COMTry.h"
 
+#include "../Common/FormatCryptoInterface.h"
+
 using namespace NArchive;
 using namespace NZip;
 
@@ -115,6 +117,29 @@ STDMETHODIMP CZipHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
       aCopyIndexes.Add(anIndexInServer);
     }
   }
+  
+  CComPtr<ICryptoGetTextPassword2> getTextPassword;
+  if (!getTextPassword)
+  {
+    CComPtr<IUpdateCallBack> udateCallBack2(anUpdateCallBack);
+    udateCallBack2.QueryInterface(&getTextPassword);
+  }
+  
+  if (getTextPassword)
+  {
+    CComBSTR password;
+    INT32 passwordIsDefined;
+    RETURN_IF_NOT_S_OK(getTextPassword->CryptoGetTextPassword2(
+        &passwordIsDefined, &password));
+    if (m_Method.PasswordIsDefined = IntToBool(passwordIsDefined))
+      m_Method.Password = UnicodeStringToMultiByte(
+          (const wchar_t *)password, CP_OEMCP);
+  }
+  else
+  {
+    m_Method.PasswordIsDefined = false;
+  }
+
   return UpdateMain(m_Items, aCompressStatuses,
       anUpdateItems, aCopyIndexes, anOutStream, m_ArchiveIsOpen ? &m_Archive : NULL, 
       &m_Method, anUpdateCallBack);

@@ -60,7 +60,7 @@ void CApp::Create(HWND hwnd, UString &mainPath)
       if (!ReadPanelPath(i, path))
         path.Empty();
     int id = 1000 + 100 * i;
-    _panel[i].Create(hwnd, i, id, 0, path, 
+    _panel[i].Create(hwnd, hwnd, i, id, 0, path, 
       &m_PanelCallbackImp[i], &_appState);
   }
   _panel[0].SetFocus();
@@ -168,11 +168,16 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   CSysString title = move ? 
       LangLoadString(IDS_MOVING, 0x03020206):
       LangLoadString(IDS_COPYING, 0x03020205);
+  CSysString progressWindowTitle = LangLoadString(IDS_APP_TITLE, 0x03000000);
   if (useSrcPanel)
   {
     extractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
     extractCallback = extractCallbackSpec;
     extractCallbackSpec->_parentWindow = _window;
+    extractCallbackSpec->_appTitle.Window = _window;
+    extractCallbackSpec->_appTitle.Title = progressWindowTitle;
+    extractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+
     extractCallbackSpec->StartProgressDialog(title);
     extractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
   }
@@ -180,7 +185,10 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   {
     updateCallbackSpec = new CComObjectNoLock<CUpdateCallBack100Imp>;
     updateCallback = updateCallbackSpec;
-    updateCallbackSpec->Init(_window, title);
+    updateCallbackSpec->Init(_window, title, false, L"");
+    updateCallbackSpec->_appTitle.Window = _window;
+    updateCallbackSpec->_appTitle.Title = progressWindowTitle;
+    updateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
   }
   
   CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
@@ -240,10 +248,13 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   }
   if (useSrcPanel)
     extractCallbackSpec->DestroyWindows();
-
+  
 
   if (result != S_OK)
   {
+    disableTimerProcessing1.Restore();
+    disableTimerProcessing2.Restore();
+    srcPanel.SetFocus();
     srcPanel.MessageBoxError(result, L"Error");
     return;
   }
@@ -256,6 +267,9 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     destPanel.RefreshListCtrlSaveFocused();
     srcPanel.KillSelection();
   }
+  disableTimerProcessing1.Restore();
+  disableTimerProcessing2.Restore();
+  srcPanel.SetFocus();
 }
 
 

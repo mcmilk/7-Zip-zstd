@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 23        2002-09-07
+  --------------------------------------
+      Project/FileManager folder was added.
+      Notation of some source files was changed.
+
+
   Version 2.30 Beta 22        2002-08-28
   --------------------------------------
       Project/FileManager folder was added.

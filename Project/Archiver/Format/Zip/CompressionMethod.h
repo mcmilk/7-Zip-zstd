@@ -6,6 +6,7 @@
 #define __ZIP_COMPRESSIONMETHOD_H
 
 #include "Common/Vector.h"
+#include "Common/String.h"
 
 namespace NArchive {
 namespace NZip {
@@ -16,6 +17,8 @@ struct CCompressionMethodMode
   // bool MaximizeRatio;
   UINT32 NumPasses;
   UINT32 NumFastBytes;
+  bool PasswordIsDefined;
+  AString Password;
 };
 
 }}

@@ -336,7 +336,7 @@ void CExtractDialog::GetModeInfo(NExtractionDialog::CModeInfo &aModeInfo)
 }
   
 #ifndef  NO_REGISTRY
-static LPCTSTR kHelpTopic = _T("gui/extract.htm");
+static LPCTSTR kHelpTopic = _T("fm/plugins/7-zip/extract.htm");
 void CExtractDialog::OnHelp() 
 {
   ShowHelpWindow(NULL, kHelpTopic);

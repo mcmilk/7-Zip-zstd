@@ -8,6 +8,7 @@
 
 #include "Common/StringConvert.h"
 #include "Windows/FileDir.h"
+#include "Windows/ResourceString.h"
 
 #include "Resource/ComboDialog/ComboDialog.h"
 
@@ -58,10 +59,15 @@ void CPanel::DeleteItems()
   if (::MessageBoxW(GetParent(), message, title, MB_OKCANCEL | MB_ICONQUESTION) != IDOK)
     return;
 
-  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallBackSpec =
+  CComObjectNoLock<CUpdateCallBack100Imp> *updateCallbackSpec =
       new CComObjectNoLock<CUpdateCallBack100Imp>;
-  CComPtr<IUpdateCallback100> updateCallBack(updateCallBackSpec );
-  updateCallBackSpec->Init(GetParent(), LangLoadString(IDS_DELETING, 0x03020216));
+  CComPtr<IUpdateCallback100> updateCallBack(updateCallbackSpec );
+  CSysString progressTitle = LangLoadString(IDS_DELETING, 0x03020216);
+  updateCallbackSpec->Init(GetParent(), progressTitle, false, L"");
+  updateCallbackSpec->_appTitle.Window = _mainWindow;
+  updateCallbackSpec->_appTitle.Title = LangLoadString(IDS_APP_TITLE, 0x03000000);
+  updateCallbackSpec->_appTitle.AddTitle = progressTitle + CSysString(TEXT(" "));
+
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
   HRESULT result = folderOperations->Delete(&indices.Front(), indices.Size(), updateCallBack);
   if (result != S_OK)
@@ -90,7 +96,7 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   }
   UString newName = GetUnicodeString(lpnmh->item.pszText);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
-  HRESULT result = folderOperations->Rename(lpnmh->item.lParam, newName, 0);
+  HRESULT result = folderOperations->Rename(GetRealIndex(lpnmh->item), newName, 0);
   if (result != S_OK)
   {
     MessageBoxError(result, LangLoadStringW(IDS_ERROR_RENAMING, 0x03020221));

@@ -6,6 +6,7 @@
 #define __UPDATECALLBACK_H
 
 #include "../Format/Common/IArchiveHandler.h"
+#include "../Format/Common/FormatCryptoInterface.h"
 
 #include "Common/String.h"
 
@@ -16,12 +17,14 @@
 
 class CUpdateCallBackImp: 
   public IUpdateCallBack2,
+  public ICryptoGetTextPassword2,
   public CComObjectRoot
 {
 public:
 BEGIN_COM_MAP(CUpdateCallBackImp)
   COM_INTERFACE_ENTRY(IUpdateCallBack)
   COM_INTERFACE_ENTRY(IUpdateCallBack2)
+  COM_INTERFACE_ENTRY(ICryptoGetTextPassword2)
 END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CUpdateCallBackImp)
@@ -62,6 +65,8 @@ DECLARE_NO_REGISTRY()
   
   STDMETHOD(OperationResult)(INT32 aOperationResult);
 
+  STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
+
 private:
   const CArchiveStyleDirItemInfoVector *m_DirItems;
   const CArchiveItemInfoVector *m_ArchiveItems;
@@ -72,13 +77,19 @@ private:
   bool m_EnablePercents;
   bool m_PercentCanBePrint;
   bool m_NeedBeClosed;
+
+  bool _passwordIsDefined;
+  UString _password;
+  bool _askPassword;
+
 public:
   CUpdateCallBackImp();
   ~CUpdateCallBackImp()
     { Finilize(); }
   void Init(const CArchiveStyleDirItemInfoVector *DirItems, 
       const CArchiveItemInfoVector *anArchiveItems, // test CItemInfoExList
-      CUpdatePairInfo2Vector *anUpdatePairs, bool anEnablePercents);
+      CUpdatePairInfo2Vector *anUpdatePairs, bool anEnablePercents,
+      bool passwordIsDefined, const UString &password, bool askPassword);
   void Finilize();
 };
 

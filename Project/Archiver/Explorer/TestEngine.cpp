@@ -41,11 +41,14 @@ HRESULT TestArchive(HWND aParentWindow, const CSysString &aFileName)
   
   extractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
-  const CSysString aTitle = LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90);
+  const CSysString title = LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90);
   #else
-  const CSysString aTitle = NWindows::MyLoadString(IDS_PROGRESS_TESTING);
+  const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_TESTING);
   #endif
-  extractCallbackSpec->StartProgressDialog(aTitle);
+  extractCallbackSpec->StartProgressDialog(title);
+  extractCallbackSpec->_appTitle.Window = (HWND)extractCallbackSpec->_progressDialog;
+  extractCallbackSpec->_appTitle.Title = title;
+
   UString aPassword;
   extractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
       !aPassword.IsEmpty(), aPassword);

@@ -19,6 +19,9 @@ struct CCompressionMethodMode
   CSysString Name;
   #endif
   CObjectVector<CProperty> Properties;
+  bool PasswordIsDefined;
+  bool AskPassword;
+  UString Password;
 };
 
 #endif

@@ -106,6 +106,9 @@ public:
  
   int HitTest(LPLVHITTESTINFO info)
     { return ListView_HitTest(_window, info); }
+
+  COLORREF GetBkColor()
+    { return ListView_GetBkColor(_window); }
 };
 
 }}

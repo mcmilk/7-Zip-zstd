@@ -128,10 +128,22 @@ SOURCE=..\..\..\..\SDK\Common\CRC.cpp
 
 SOURCE=..\..\..\..\SDK\Common\CRC.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Random.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Random.h
+# End Source File
 # End Group
 # Begin Group "Interface"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\CipherInterface.h
+# End Source File
 # End Group
 # Begin Source File
 

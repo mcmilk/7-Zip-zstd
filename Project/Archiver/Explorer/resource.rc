@@ -115,7 +115,7 @@ BEGIN
     PUSHBUTTON      "Help",IDHELP,228,178,64,14
 END
 
-IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 288, 191
+IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 288, 212
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
 CAPTION "Add to Archive"
@@ -135,9 +135,9 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Create &Solid archive",IDC_COMPRESS_SOLID,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,109,119,10
-    LTEXT           "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS,7,129,274,
+    LTEXT           "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS,7,155,274,
                     8
-    EDITTEXT        IDC_COMPRESS_EDIT_PARAMETERS,7,142,274,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_COMPRESS_EDIT_PARAMETERS,7,168,274,14,ES_AUTOHSCROLL
     LTEXT           "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE,142,41,
                     139,8
     COMBOBOX        IDC_COMPRESS_COMBO_UPDATE_MODE,142,54,139,80,
@@ -145,9 +145,12 @@ BEGIN
     GROUPBOX        "Options",IDC_STATIC_COMPRESS_OPTIONS,142,75,139,32
     CONTROL         "Create SF&X archive",IDC_COMPRESS_SFX,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,148,89,127,10
-    DEFPUSHBUTTON   "OK",IDOK,69,170,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,143,170,64,14
-    PUSHBUTTON      "Help",IDHELP,217,170,64,14
+    GROUPBOX        "Password",IDC_COMPRESS_PASSWORD,142,113,139,35
+    EDITTEXT        IDC_COMPRESS_EDIT_PASSWORD,148,126,100,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,69,191,64,14
+    PUSHBUTTON      "Cancel",IDCANCEL,143,191,64,14
+    PUSHBUTTON      "Help",IDHELP,217,191,64,14
 END
 
 
@@ -176,7 +179,7 @@ BEGIN
         VERTGUIDE, 126
         VERTGUIDE, 142
         TOPMARGIN, 7
-        BOTTOMMARGIN, 184
+        BOTTOMMARGIN, 205
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -189,8 +192,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,22,0
- PRODUCTVERSION 2,30,22,0
+ FILEVERSION 2,30,23,0
+ PRODUCTVERSION 2,30,23,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -208,14 +211,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip Shell Extension\0"
-            VALUE "FileVersion", "2, 30, 22, 0\0"
+            VALUE "FileVersion", "2, 30, 23, 0\0"
             VALUE "InternalName", "7-zip\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-zip.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 22, 0\0"
+            VALUE "ProductVersion", "2, 30, 23, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -42,9 +42,10 @@ CPanel::~CPanel()
 
 static LPCTSTR kClassName = TEXT("7-Zip::Panel");
 
-LRESULT CPanel::Create(HWND parrentWindow, int index, UINT id, int xPos, 
+LRESULT CPanel::Create(HWND mainWindow, HWND parrentWindow, int index, UINT id, int xPos, 
     CSysString &currentFolderPrefix, CPanelCallback *panelCallback, CAppState *appState)
 {
+  _mainWindow = mainWindow;
   _processTimer = true;
   _processNotify = true;
 
@@ -214,6 +215,7 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
 bool CPanel::OnCreate(CREATESTRUCT *createStruct)
 {
+  _virtualMode = false;
   // _sortIndex = 0;
   _sortID = kpidName;
   _ascending = true;
@@ -228,6 +230,10 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   style |= WS_CLIPSIBLINGS;
 
   style |= WS_TABSTOP |  LVS_REPORT | LVS_EDITLABELS | LVS_SINGLESEL;
+
+  if (_virtualMode)
+    style |= LVS_OWNERDATA;
+
   DWORD exStyle;
   exStyle = WS_EX_CLIENTEDGE;
 

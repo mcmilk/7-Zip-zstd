@@ -836,6 +836,14 @@ SOURCE=..\..\SDK\Util\FilePathAutoRename.h
 # End Group
 # Begin Source File
 
+SOURCE=.\AppTitle.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\AppTitle.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\FilePlugins.cpp
 # End Source File
 # Begin Source File
@@ -895,12 +903,12 @@ SOURCE=.\resource.rc
 !ELSEIF  "$(CFG)" == "FM - Win32 ReleaseU"
 
 # ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409 /d "_UNICODE" /d "UNICODE"
+# ADD RSC /l 0x409
 
 !ELSEIF  "$(CFG)" == "FM - Win32 DebugU"
 
 # ADD BASE RSC /l 0x419
-# ADD RSC /l 0x409 /d "_UNICODE" /d "UNICODE"
+# ADD RSC /l 0x409
 
 !ENDIF 
 

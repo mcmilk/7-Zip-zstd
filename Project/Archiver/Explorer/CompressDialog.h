@@ -62,6 +62,9 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 	NWindows::NControl::CComboBox	m_UpdateMode;
   NWindows::NControl::CDialogChildControl m_Options;
 
+  NWindows::NControl::CDialogChildControl _passwordControl;
+
+
   NZipSettings::NCompression::CInfo m_RegistryInfo;
 
   int m_PrevFormat;
@@ -74,6 +77,8 @@ public:
 
   NCompressDialog::CInfo m_Info;
 
+  CSysString Password;
+
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_COMPRESS ), aWndParent); }
 
@@ -81,6 +86,7 @@ protected:
 
   void CheckSolidEnable();
   void CheckSFXEnable();
+  void CheckPasswordEnable();
 
 	void OnButtonSetArchive();
   void OnButtonSFX();

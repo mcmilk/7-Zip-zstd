@@ -21,7 +21,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 0x01000301}
 };
 
-static LPCTSTR kSystemTopic = _T("gui/7-zipCfg/system.htm");
+static LPCTSTR kSystemTopic = _T("fm/plugins/7-zip/options.htm#system");
 
 
 bool CSystemPage::OnInit()

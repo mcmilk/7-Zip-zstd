@@ -10,6 +10,7 @@
 #include "Interface/ICoder.h"
 #include "Interface/IProgress.h"
 #include "../../../Compress/Interface/CompressInterface.h"
+#include "../Common/CoderMixer.h"
 
 namespace NArchive {
 namespace NZip {
@@ -23,15 +24,22 @@ struct CCompressingResult
 
 class CAddCommon
 {
-  CCompressionMethodMode m_Options; // Why not &
-  CComObjectNoLock<NCompression::CCopyCoder> *m_CopyCoderSpec;
-  CComPtr<ICompressCoder> m_CopyCoder;
-  CComPtr<ICompressCoder> m_DeflateEncoder;
-  // CComPtr<IInWindowStreamMatch> m_MatchFinder;
+  CCompressionMethodMode _options;
+  CComObjectNoLock<NCompression::CCopyCoder> *_copyCoderSpec;
+  CComPtr<ICompressCoder> _copyCoder;
+  CComPtr<ICompressCoder> _deflateEncoder;
+
+  CComPtr<ICompressCoder> _cryptoEncoder;
+  CComObjectNoLock<CCoderMixer> *_mixerCoderSpec;
+  CComPtr<ICompressCoder> _mixerCoder;
+  BYTE _mixerCoderMethod;
+  // CComPtr<ICryptoGetTextPassword> getTextPassword;
+
+
 public:
-  CAddCommon(const CCompressionMethodMode &anOptions);
-  HRESULT Compress(IInStream *anInStream, IOutStream *anOutStream, 
-      UINT64 anInSize, ICompressProgressInfo *aProgress, CCompressingResult &aResult);
+  CAddCommon(const CCompressionMethodMode &options);
+  HRESULT Compress(IInStream *inStream, IOutStream *outStream, 
+      UINT64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 
 }}

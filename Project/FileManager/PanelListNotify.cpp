@@ -41,10 +41,48 @@ static void ConvertSizeToString(UINT64 value, TCHAR *string)
   return;
 }
 
-LRESULT CPanel::SetItemText(LV_DISPINFO *dispInfo, UINT32 index)
+LRESULT CPanel::SetItemText(LVITEM &item)
 {
+  UINT32 index = GetRealIndex(item);
+  /*
+  if ((item.mask & LVIF_IMAGE) != 0)
+  {
+    bool defined  = false;
+    CComPtr<IFolderGetSystemIconIndex> folderGetSystemIconIndex;
+    _folder.QueryInterface(&folderGetSystemIconIndex);
+    if (folderGetSystemIconIndex)
+    {
+      folderGetSystemIconIndex->GetSystemIconIndex(index, &item.iImage);
+      defined = (item.iImage > 0);
+    }
+    if (!defined)
+    {
+      NCOM::CPropVariant propVariant;
+      _folder->GetProperty(index, kpidAttributes, &propVariant);
+      UINT32 attributes = 0;
+      if (propVariant.vt == VT_UI4)
+        attributes = propVariant.ulVal;
+      else
+      {
+        if (IsItemFolder(index))
+          attributes |= FILE_ATTRIBUTE_DIRECTORY;
+      }
+      if (_currentFolderPrefix.IsEmpty())
+      {
+        throw 1;
+      }
+      else
+        item.iImage = _extToIconMap.GetIconIndex(attributes, 
+            GetSystemString(GetItemName(index)));
+    }
+    // item.iImage = 1;
+  }
+  */
+
+  if ((item.mask & LVIF_TEXT) == 0)
+    return 0;
   CSysString string;
-  UINT32 subItemIndex = dispInfo->item.iSubItem;
+  UINT32 subItemIndex = item.iSubItem;
   PROPID propID = _visibleProperties[subItemIndex].ID;
   /*
   {
@@ -79,7 +117,7 @@ LRESULT CPanel::SetItemText(LV_DISPINFO *dispInfo, UINT32 index)
   }
   if (needRead)
   */
-    if (_folder->GetProperty(index, propID, &propVariant) != S_OK)
+  if (_folder->GetProperty(index, propID, &propVariant) != S_OK)
       throw 2723407;
 
   if ((propID == kpidSize || propID == kpidPackedSize || 
@@ -98,12 +136,12 @@ LRESULT CPanel::SetItemText(LV_DISPINFO *dispInfo, UINT32 index)
     string = ConvertPropertyToString(propVariant, propID, false);
   }
 
-  int size = dispInfo->item.cchTextMax;
+  int size = item.cchTextMax;
   if(size > 0)
   {
     if(string.Length() + 1 > size)
       string = string.Left(size - 1);
-    lstrcpy(dispInfo->item.pszText, string);
+    lstrcpy(item.pszText, string);
   }
   return 0;
 }
@@ -125,10 +163,11 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       LV_DISPINFO  *dispInfo = (LV_DISPINFO *)header;
 
       //is the sub-item information being requested?
-      UINT32 index = dispInfo->item.lParam;
+      // UINT32 index = GetRealIndex(dispInfo->item);
 
-      if((dispInfo->item.mask & LVIF_TEXT) != 0)
-        SetItemText(dispInfo, index);
+      if((dispInfo->item.mask & LVIF_TEXT) != 0 || 
+        (dispInfo->item.mask & LVIF_IMAGE) != 0)
+        SetItemText(dispInfo->item);
       return false;
     }
     case LVN_KEYDOWN:
@@ -227,7 +266,7 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
       lplvcd->clrTextBk = RGB(255, 192, 192);
     // lplvcd->clrText = RGB(255, 0, 128);
     else
-      lplvcd->clrTextBk = RGB(255, 255, 255);
+      lplvcd->clrTextBk = _listView.GetBkColor();
     // lplvcd->clrText = RGB(0, 0, 0);
     // result = CDRF_NEWFONT;
     result = CDRF_NOTIFYITEMDRAW;

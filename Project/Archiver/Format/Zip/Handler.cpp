@@ -260,7 +260,7 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
     INT32 _aTestMode, IExtractCallback200 *_anExtractCallBack)
 {
   COM_TRY_BEGIN
-  CComPtr<ICryptoGetTextPassword> aGetTextPassword;
+  CComPtr<ICryptoGetTextPassword> getTextPassword;
   bool aTestMode = (_aTestMode != 0);
   CComPtr<IExtractCallback200> anExtractCallBack = _anExtractCallBack;
   UINT64 aTotalUnPacked = 0, aTotalPacked = 0;
@@ -281,11 +281,11 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
   CComPtr<ICompressCoder> aDeflateDecoder;
   CComPtr<ICompressCoder> anImplodeDecoder;
   CComPtr<ICompressCoder> aCopyCoder;
-  CComPtr<ICompressCoder> aCryptoDecoder;
-  CComObjectNoLock<CCoderMixer> *aMixerCoderSpec;
-  CComPtr<ICompressCoder> aMixerCoder;
+  CComPtr<ICompressCoder> cryptoDecoder;
+  CComObjectNoLock<CCoderMixer> *mixerCoderSpec;
+  CComPtr<ICompressCoder> mixerCoder;
 
-  UINT16 aMixerCoderMethod;
+  UINT16 mixerCoderMethod;
 
   for(i = 0; i < aNumItems; i++, aCurrentTotalUnPacked += aCurrentItemUnPacked,
       aCurrentTotalPacked += aCurrentItemPacked)
@@ -344,32 +344,32 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
 
       if (anItemInfo.IsEncrypted())
       {
-        if (!aCryptoDecoder)
+        if (!cryptoDecoder)
         {
           #ifdef CRYPTO_ZIP
-          aCryptoDecoder = new CComObjectNoLock<NCrypto::NZip::CDecoder>;
+          cryptoDecoder = new CComObjectNoLock<NCrypto::NZip::CDecoder>;
           #else
-          RETURN_IF_NOT_S_OK(aCryptoDecoder.CoCreateInstance(CLSID_CCryptoZipDecoder));
+          RETURN_IF_NOT_S_OK(cryptoDecoder.CoCreateInstance(CLSID_CCryptoZipDecoder));
           #endif
         }
-        CComPtr<ICryptoSetPassword> aCryptoSetPassword;
-        RETURN_IF_NOT_S_OK(aCryptoDecoder.QueryInterface(&aCryptoSetPassword));
+        CComPtr<ICryptoSetPassword> cryptoSetPassword;
+        RETURN_IF_NOT_S_OK(cryptoDecoder.QueryInterface(&cryptoSetPassword));
 
-        if (!aGetTextPassword)
-          anExtractCallBack.QueryInterface(&aGetTextPassword);
+        if (!getTextPassword)
+          anExtractCallBack.QueryInterface(&getTextPassword);
 
-        if (aGetTextPassword)
+        if (getTextPassword)
         {
-          CComBSTR aPassword;
-          RETURN_IF_NOT_S_OK(aGetTextPassword->CryptoGetTextPassword(&aPassword));
+          CComBSTR password;
+          RETURN_IF_NOT_S_OK(getTextPassword->CryptoGetTextPassword(&password));
           AString anOemPassword = UnicodeStringToMultiByte(
-              (const wchar_t *)aPassword, CP_OEMCP);
-          RETURN_IF_NOT_S_OK(aCryptoSetPassword->CryptoSetPassword(
+              (const wchar_t *)password, CP_OEMCP);
+          RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(
               (const BYTE *)(const char *)anOemPassword, anOemPassword.Length()));
         }
         else
         {
-          RETURN_IF_NOT_S_OK(aCryptoSetPassword->CryptoSetPassword(0, 0));
+          RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(0, 0));
         }
       }
 
@@ -386,21 +386,21 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
             {
               if (anItemInfo.IsEncrypted())
               {
-                if (!aMixerCoder || aMixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
                 {
-                  aMixerCoder.Release();
-                  aMixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
-                  aMixerCoder = aMixerCoderSpec;
-                  aMixerCoderSpec->AddCoder(aCryptoDecoder);
-                  aMixerCoderSpec->AddCoder(aCopyCoder);
-                  aMixerCoderSpec->FinishAddingCoders();
-                  aMixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoder.Release();
+                  mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
+                  mixerCoder = mixerCoderSpec;
+                  mixerCoderSpec->AddCoder(cryptoDecoder);
+                  mixerCoderSpec->AddCoder(aCopyCoder);
+                  mixerCoderSpec->FinishAddingCoders();
+                  mixerCoderMethod = anItemInfo.CompressionMethod;
                 }
-                aMixerCoderSpec->ReInit();
-                aMixerCoderSpec->SetCoderInfo(0, NULL, &aCurrentItemUnPacked);
-                aMixerCoderSpec->SetCoderInfo(1, NULL, NULL);
-                aMixerCoderSpec->SetProgressCoderIndex(1);
-                RETURN_IF_NOT_S_OK(aMixerCoder->Code(anInStream, anOutStream,
+                mixerCoderSpec->ReInit();
+                mixerCoderSpec->SetCoderInfo(0, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
+                mixerCoderSpec->SetProgressCoderIndex(1);
+                RETURN_IF_NOT_S_OK(mixerCoder->Code(anInStream, anOutStream,
                   NULL, NULL, aCompressProgress));
               }
               else
@@ -448,20 +448,20 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
               HRESULT aResult;
               if (anItemInfo.IsEncrypted())
               {
-                if (!aMixerCoder || aMixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
                 {
-                  aMixerCoder.Release();
-                  aMixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
-                  aMixerCoder = aMixerCoderSpec;
-                  aMixerCoderSpec->AddCoder(aCryptoDecoder);
-                  aMixerCoderSpec->AddCoder(anImplodeDecoder);
-                  aMixerCoderSpec->FinishAddingCoders();
-                  aMixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoder.Release();
+                  mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
+                  mixerCoder = mixerCoderSpec;
+                  mixerCoderSpec->AddCoder(cryptoDecoder);
+                  mixerCoderSpec->AddCoder(anImplodeDecoder);
+                  mixerCoderSpec->FinishAddingCoders();
+                  mixerCoderMethod = anItemInfo.CompressionMethod;
                 }
-                aMixerCoderSpec->ReInit();
-                aMixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
-                aMixerCoderSpec->SetProgressCoderIndex(1);
-                aResult = aMixerCoder->Code(anInStream, anOutStream, 
+                mixerCoderSpec->ReInit();
+                mixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetProgressCoderIndex(1);
+                aResult = mixerCoder->Code(anInStream, anOutStream, 
                     NULL, NULL, aCompressProgress);
               }   
               else
@@ -498,20 +498,20 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* anIndexes, UINT32 aNumItems,
               HRESULT aResult;
               if (anItemInfo.IsEncrypted())
               {
-                if (!aMixerCoder || aMixerCoderMethod != anItemInfo.CompressionMethod)
+                if (!mixerCoder || mixerCoderMethod != anItemInfo.CompressionMethod)
                 {
-                  aMixerCoder.Release();
-                  aMixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
-                  aMixerCoder = aMixerCoderSpec;
-                  aMixerCoderSpec->AddCoder(aCryptoDecoder);
-                  aMixerCoderSpec->AddCoder(aDeflateDecoder);
-                  aMixerCoderSpec->FinishAddingCoders();
-                  aMixerCoderMethod = anItemInfo.CompressionMethod;
+                  mixerCoder.Release();
+                  mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
+                  mixerCoder = mixerCoderSpec;
+                  mixerCoderSpec->AddCoder(cryptoDecoder);
+                  mixerCoderSpec->AddCoder(aDeflateDecoder);
+                  mixerCoderSpec->FinishAddingCoders();
+                  mixerCoderMethod = anItemInfo.CompressionMethod;
                 }
-                aMixerCoderSpec->ReInit();
-                aMixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
-                aMixerCoderSpec->SetProgressCoderIndex(1);
-                aResult = aMixerCoder->Code(anInStream, anOutStream, 
+                mixerCoderSpec->ReInit();
+                mixerCoderSpec->SetCoderInfo(1, NULL, &aCurrentItemUnPacked);
+                mixerCoderSpec->SetProgressCoderIndex(1);
+                aResult = mixerCoder->Code(anInStream, anOutStream, 
                     NULL, NULL, aCompressProgress);
               }   
               else
