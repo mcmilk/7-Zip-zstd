@@ -46,29 +46,26 @@ CPatricia::~CPatricia()
 
 void CPatricia::FreeMemory()
 {
-  if (m_TmpBacks != 0)
-    delete []m_TmpBacks;
+  delete []m_TmpBacks;
   m_TmpBacks = 0;
 
-  #ifdef _WINDOWS
-  VirtualFree(m_Nodes, 0, MEM_DECOMMIT | MEM_RELEASE);
+  #ifdef WIN32
+  if (m_Nodes != 0)
+    VirtualFree(m_Nodes, 0, MEM_RELEASE);
   m_Nodes = 0;
   #else
   m_AlignBuffer.Free();
   #endif
 
-  if (m_HashDescendants != 0)
-    delete []m_HashDescendants;
+  delete []m_HashDescendants;
   m_HashDescendants = 0;
 
   #ifdef __HASH_3
 
-  if (m_HashDescendants != 0)
-    delete []m_Hash2Descendants;
+  delete []m_Hash2Descendants;
   m_Hash2Descendants = 0;
 
   #endif
-
 }
   
 STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, 
@@ -118,7 +115,7 @@ STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     if (m_NumNodes + 32 > kMaxNumNodes)
       return E_INVALIDARG;
 
-    #ifdef _WINDOWS
+    #ifdef WIN32
     m_Nodes = (CNode *)::VirtualAlloc(0, (m_NumNodes + 2) * sizeof(CNode), MEM_COMMIT, PAGE_READWRITE);
     if (m_Nodes == 0)
       throw CNewException();

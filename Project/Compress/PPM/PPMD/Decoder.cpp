@@ -62,8 +62,15 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
 
   UINT64 aProgressPosValuePrev = 0, aPos = 0;
 
-  if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
+  try
+  {
+    if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
+      return E_OUTOFMEMORY;
+  }
+  catch(...)
+  {
     return E_OUTOFMEMORY;
+  }
 
   // m_Info.Init();
   // m_Info.MaxOrder = m_Order; 

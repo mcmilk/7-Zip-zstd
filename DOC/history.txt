@@ -1,6 +1,18 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 12        2002-01-16
+  --------------------------------------
+    - Compress/LZ/MatchFinder/BinTreemain.h: 
+      Compress/LZ/MatchFinder/Patricia.h: 
+      Compress/PPM/PPMd/SubAlloc.h: 
+        Beta 11 bugs were fixed:
+          - VirtualFree was used incorrectly
+          - checking WIN32 instead _WINDOWS.
+      Compress/LZ/MatchFinder/Patricia.h: 
+        Beta 11 bug with deleting m_Hash2Descendants was fixed.
+
+  
   Version 2.30 Beta 11        2002-01-15
   --------------------------------------
     - Compress/LZ/MatchFinder/BinTreemain.h: 

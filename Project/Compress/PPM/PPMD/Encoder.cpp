@@ -134,8 +134,16 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *anInStream,
   UINT64 aPos = 0;
   UINT64 aProgressPosValuePrev = 0;
 
-  if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
-    return E_OUTOFMEMORY; // E_OUTOFMEMORY;
+  try
+  {
+    if ( !m_Info.m_SubAllocator.StartSubAllocator(m_UsedMemorySize) ) 
+      return E_OUTOFMEMORY;
+  }
+  catch(...)
+  {
+    return E_OUTOFMEMORY;
+  }
+
 
   m_Info.MaxOrder = 0;
   m_Info.StartModelRare(m_Order);

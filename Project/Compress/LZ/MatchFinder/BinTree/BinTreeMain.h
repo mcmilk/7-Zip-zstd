@@ -76,12 +76,11 @@ CInTree::CInTree():
 
 void CInTree::FreeMemory()
 {
-  #ifdef _WINDOWS
+  #ifdef WIN32
   if (m_LeftBase != 0)
-    VirtualFree(m_LeftBase, 0, MEM_DECOMMIT | MEM_RELEASE);
+    VirtualFree(m_LeftBase, 0, MEM_RELEASE);
   #else
-  if (m_LeftBase != 0)
-    delete []m_LeftBase;
+  delete []m_LeftBase;
   #endif
   m_LeftBase = 0;
   CIn::Free();
@@ -116,7 +115,7 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     #endif
     #endif
     
-    #ifdef _WINDOWS
+    #ifdef WIN32
     m_LeftBase = (CIndex *)::VirtualAlloc(0, (aSize + 1) * sizeof(CIndex), MEM_COMMIT, PAGE_READWRITE);
     if (m_LeftBase == 0)
       throw CNewException();
