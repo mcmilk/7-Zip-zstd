@@ -24,16 +24,15 @@ using namespace NWindows;
 void CArchiveExtractCallback::Init(
     IInArchive *archiveHandler,
     IFolderArchiveExtractCallback *extractCallback2,
-    const CSysString &directoryPath, 
+    const UString &directoryPath, 
     NExtractionMode::NPath::EEnum pathMode,
     NExtractionMode::NOverwrite::EEnum overwriteMode,
     const UStringVector &removePathParts,
-    UINT codePage, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
     UINT32 attributesDefault)
     // bool passwordIsDefined, const UString &password
-    // CSysString srcDirectoryPrefix)
+    // UString srcDirectoryPrefix)
 {
   _extractCallback2 = extractCallback2;
   // m_PasswordIsDefined = passwordIsDefined;
@@ -44,7 +43,6 @@ void CArchiveExtractCallback::Init(
   _utcLastWriteTimeDefault = utcLastWriteTimeDefault;
   _attributesDefault = attributesDefault;
   
-  _codePage = codePage;
   _removePathParts = removePathParts;
 
   _pathMode = pathMode;
@@ -69,12 +67,12 @@ STDMETHODIMP CArchiveExtractCallback::SetCompleted(const UINT64 *completeValue)
 
 void CArchiveExtractCallback::CreateComplexDirectory(const UStringVector &dirPathParts)
 {
-  CSysString fullPath = _directoryPath;
+  UString fullPath = _directoryPath;
   for(int i = 0; i < dirPathParts.Size(); i++)
   {
-    fullPath += GetSystemString(dirPathParts[i], _codePage);
+    fullPath += dirPathParts[i];
     NFile::NDirectory::MyCreateDirectory(fullPath);
-    fullPath += NFile::NName::kDirDelimiter;
+    fullPath += wchar_t(NFile::NName::kDirDelimiter);
   }
 }
 
@@ -111,8 +109,8 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     fullPath = propVariant.bstrVal;
   }
 
-  UString fullPathCorrect = GetCorrectPath(fullPath);
-  _filePath = fullPathCorrect;
+  // UString fullPathCorrect = GetCorrectPath(fullPath);
+  _filePath = fullPath;
 
   if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
@@ -162,7 +160,10 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     }
 
     UStringVector pathParts; 
-    SplitPathToParts(fullPathCorrect, pathParts);
+    
+    // SplitPathToParts(fullPathCorrect, pathParts);
+    SplitPathToParts(fullPath, pathParts);
+    
     if(pathParts.IsEmpty())
       return E_FAIL;
     UString processedPath;
@@ -170,7 +171,8 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     {
       case NExtractionMode::NPath::kFullPathnames:
       {
-        processedPath = fullPathCorrect;
+        // processedPath = fullPathCorrect;
+        processedPath = GetCorrectPath(fullPath);
         break;
       }
       case NExtractionMode::NPath::kCurrentPathnames:
@@ -183,6 +185,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
             return E_FAIL;
         pathParts.Delete(0, numRemovePathParts);
         processedPath = MakePathNameFromParts(pathParts);
+        processedPath = GetCorrectPath(processedPath);
         break;
       }
       case NExtractionMode::NPath::kNoPathnames:
@@ -194,26 +197,27 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     }
     if(!_processedFileInfo.IsDirectory)
       pathParts.DeleteBack();
+
+    for(int i = 0; i < pathParts.Size(); i++)
+      pathParts[i] = GetCorrectFileName(pathParts[i]);
     
     if (!isAnti)
       if (!pathParts.IsEmpty())
         CreateComplexDirectory(pathParts);
 
 
-    UString fullProcessedPathUnicode = 
-        GetUnicodeString(_directoryPath, _codePage) + processedPath; 
-    CSysString fullProcessedPath = _directoryPath + 
-        GetSystemString(processedPath, _codePage);
+    const UString fullProcessedPathUnicode = _directoryPath + processedPath; 
+    UString fullProcessedPath = _directoryPath + processedPath;
 
     if(_processedFileInfo.IsDirectory)
     {
       _diskFilePath = fullProcessedPath;
       if (isAnti)
-        ::RemoveDirectory(_diskFilePath);
+        NFile::NDirectory::MyRemoveDirectory(_diskFilePath);
       return S_OK;
     }
 
-    NFile::NFind::CFileInfo fileInfo;
+    NFile::NFind::CFileInfoW fileInfo;
     if(NFile::NFind::FindFile(fullProcessedPath, fileInfo))
     {
       switch(_overwriteMode)
@@ -225,7 +229,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
           INT32 overwiteResult;
           RINOK(_extractCallback2->AskOverwrite(
               fullProcessedPathUnicode, &fileInfo.LastWriteTime, &fileInfo.Size,
-              fullPathCorrect, &_processedFileInfo.UTCLastWriteTime, newFileSizeDefined?
+              fullPath, &_processedFileInfo.UTCLastWriteTime, newFileSizeDefined?
               &newFileSize : NULL, &overwiteResult))
 
           switch(overwiteResult)
@@ -254,7 +258,8 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
       {
         if (!AutoRenamePath(fullProcessedPath))
         {
-          UString message = L"can not create name of file " + fullProcessedPathUnicode;
+          UString message = UString(L"can not create name of file ") + 
+              fullProcessedPathUnicode;
           RINOK(_extractCallback2->MessageError(message));
           return E_ABORT;
         }
@@ -262,7 +267,8 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
       else
         if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
         {
-          UString message = L"can not delete output file " + fullProcessedPathUnicode;
+          UString message = UString(L"can not delete output file ") + 
+              fullProcessedPathUnicode;
           RINOK(_extractCallback2->MessageError(message));
           return E_ABORT;
         }
@@ -298,8 +304,6 @@ STDMETHODIMP CArchiveExtractCallback::PrepareOperation(INT32 askExtractMode)
       _extractMode = true;
   };
   return _extractCallback2->PrepareOperation(_filePath, askExtractMode);
-
-  // return S_OK;
 }
 
 void CArchiveExtractCallback::AddErrorMessage(LPCTSTR message)
@@ -324,7 +328,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(INT32 operationResult)
     _outFileStreamSpec->File.SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
   _outFileStream.Release();
   if (_extractMode && _processedFileInfo.AttributesAreDefined)
-    SetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
+    NFile::NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
   RINOK(_extractCallback2->SetOperationResult(operationResult));
   return S_OK;
 }

@@ -120,10 +120,10 @@ void CPanel::SelectSpec(bool selectMode)
 {
   CComboDialog comboDialog;
   comboDialog.Title = selectMode ? 
-    LangLoadString(IDS_SELECT, 0x03020250):
-    LangLoadString(IDS_DESELECT, 0x03020251);
-  comboDialog.Static = LangLoadString(IDS_SELECT_MASK, 0x03020252);
-  comboDialog.Value = TEXT("*");
+      LangLoadStringW(IDS_SELECT, 0x03020250):
+      LangLoadStringW(IDS_DESELECT, 0x03020251);
+  comboDialog.Static = LangLoadStringW(IDS_SELECT_MASK, 0x03020252);
+  comboDialog.Value = L"*";
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString mask = GetUnicodeString(comboDialog.Value);

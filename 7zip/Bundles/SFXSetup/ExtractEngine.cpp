@@ -47,14 +47,14 @@ static const LPCTSTR kCantFindArchive = TEXT("Can not find archive file");
 static const LPCTSTR kCantOpenArchive = TEXT("File is not correct archive");
 
 HRESULT ExtractArchive(
-    const CSysString &fileName, 
-    const CSysString &folderName
+    const UString &fileName, 
+    const UString &folderName
     #ifdef _SILENT
-    , CSysString &resultMessage
+    , UString &resultMessage
     #endif
     )
 {
-  NFile::NFind::CFileInfo archiveFileInfo;
+  NFile::NFind::CFileInfoW archiveFileInfo;
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
   {
     #ifndef _SILENT
@@ -79,13 +79,13 @@ HRESULT ExtractArchive(
     return E_FAIL;
   }
 
-  CSysString directoryPath = folderName;
+  UString directoryPath = folderName;
   NFile::NName::NormalizeDirPathPrefix(directoryPath);
 
   /*
-  CSysString directoryPath;
+  UString directoryPath;
   {
-    CSysString aFullPath;
+    UString aFullPath;
     int aFileNamePartStartIndex;
     if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, aFullPath, aFileNamePartStartIndex))
     {
@@ -103,7 +103,7 @@ HRESULT ExtractArchive(
         #ifdef LANG        
         0x02000603, 
         #endif 
-        GetUnicodeString((LPCTSTR)directoryPath)));
+        directoryPath));
     #else
     resultMessage = TEXT("Can not create output folder");
     #endif
@@ -126,11 +126,11 @@ HRESULT ExtractArchive(
   if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
     throw 271824;
 
-  CSysString title;
+  UString title;
   #ifdef LANG        
   title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
   #else
-  title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
   #endif
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
   return extracter.Result;

@@ -27,9 +27,6 @@ static const STATPROPSTG kProperties[] =
 // static const wchar_t *kMyComputerTitle = L"Computer";
 // static const wchar_t *kMyNetworkTitle = L"Network";
 
-static inline UINT GetCurrentFileCodePage()
-  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 void CRootFolder::Init() 
 {
   _computerName = LangLoadStringW(IDS_COMPUTER, 0x03020300);
@@ -119,7 +116,7 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
     name2 += L'\\';
   CFSFolder *fsFolderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-  if (fsFolderSpec->Init(GetSystemString(name2, GetCurrentFileCodePage()), 0) == S_OK)
+  if (fsFolderSpec->Init(name2, 0) == S_OK)
   {
     *resultFolder = subFolder.Detach();
     return S_OK;

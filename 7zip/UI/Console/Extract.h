@@ -27,17 +27,17 @@ class CExtractOptions
 {
 public:
   NExtractMode::EEnum ExtractMode;
-  CSysString OutputBaseDir;
+  UString OutputBaseDir;
   bool YesToAll;
   UString DefaultItemName;
-  NWindows::NFile::NFind::CFileInfo ArchiveFileInfo;
+  NWindows::NFile::NFind::CFileInfoW ArchiveFileInfo;
   bool PasswordEnabled;
   UString Password;
 
   NExtraction::NOverwriteMode::EEnum OverwriteMode;
 
   
-  CExtractOptions(NExtractMode::EEnum extractMode, const CSysString &outputBaseDir,
+  CExtractOptions(NExtractMode::EEnum extractMode, const UString &outputBaseDir,
       bool yesToAll, bool passwordEnabled, const UString &password,
       NExtraction::NOverwriteMode::EEnum overwriteMode):
     ExtractMode(extractMode),

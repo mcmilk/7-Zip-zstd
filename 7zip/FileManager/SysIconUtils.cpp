@@ -3,6 +3,9 @@
 #include "StdAfx.h"
 
 #include "SysIconUtils.h"
+#ifndef _UNICODE
+#include "Common/StringConvert.h"
+#endif
 
 int GetIconIndexForCSIDL(int aCSIDL)
 {
@@ -26,23 +29,40 @@ int GetIconIndexForCSIDL(int aCSIDL)
   return 0;
 }
 
-int GetRealIconIndex(UINT32 attributes, const CSysString &fileName)
+DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex)
 {
   SHFILEINFO shellInfo;
-  ::SHGetFileInfo(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+  DWORD_PTR res = ::SHGetFileInfo(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
-  return shellInfo.iIcon;
+  iconIndex = shellInfo.iIcon;
+  return res;
 }
 
-int GetRealIconIndex(UINT32 attributes, const CSysString &fileName, 
-    CSysString &typeName)
+#ifndef _UNICODE
+static inline UINT GetCurrentCodePage() 
+  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
+{
+  SHFILEINFOW shellInfo;
+  DWORD_PTR res = ::SHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
+  if (res == 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+    return GetRealIconIndex(UnicodeStringToMultiByte(path, GetCurrentCodePage()), attributes, iconIndex);
+  iconIndex = shellInfo.iIcon;
+  return res;
+}
+#endif
+
+DWORD_PTR GetRealIconIndex(const CSysString &fileName, UINT32 attributes, 
+    int &iconIndex, CSysString &typeName)
 {
   SHFILEINFO shellInfo;
-  ::SHGetFileInfo(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+  DWORD_PTR res = ::SHGetFileInfo(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
       | SHGFI_TYPENAME);
   typeName = shellInfo.szTypeName;
-  return shellInfo.iIcon;
+  iconIndex = shellInfo.iIcon;
+  return res;
 }
 
 int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpec,
@@ -53,7 +73,7 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpe
   {
     fileName = TEXT("__Fldr__");
     if (_dirIconIndex < 0)
-      _dirIconIndex = GetRealIconIndex(attributes, fileName, _dirTypeName);
+      GetRealIconIndex(fileName, attributes, _dirIconIndex, _dirTypeName);
     typeName = _dirTypeName;
     return _dirIconIndex;
   }
@@ -62,7 +82,10 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpe
   {
     fileName = TEXT("__File__");
     if (_noExtIconIndex < 0)
-      _noExtIconIndex = GetRealIconIndex(attributes, fileName, _noExtTypeName);
+    {
+      int iconIndexTemp;
+      GetRealIconIndex(fileName, attributes, iconIndexTemp, _noExtTypeName);
+    }
     typeName = _noExtTypeName;
     return _noExtIconIndex;
   }
@@ -72,7 +95,7 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpe
   if (anIndex >= 0)
     return _map[anIndex].IconIndex;
   fileName = fileName.Mid(dotPos);
-  extIconPair.IconIndex = GetRealIconIndex(attributes, fileName, extIconPair.TypeName);
+  GetRealIconIndex(fileName, attributes, extIconPair.IconIndex, extIconPair.TypeName);
   _map.AddToSorted(extIconPair);
   typeName = extIconPair.TypeName;
   return extIconPair.IconIndex;

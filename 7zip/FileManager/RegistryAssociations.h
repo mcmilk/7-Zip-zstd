@@ -16,7 +16,7 @@ namespace NRegistryAssociations {
     UStringVector Plugins;
     // bool Enabled;
   };
-  bool ReadInternalAssociation(const TCHAR *ext, CExtInfo &extInfo);
+  bool ReadInternalAssociation(const wchar_t *ext, CExtInfo &extInfo);
   void ReadInternalAssociations(CObjectVector<CExtInfo> &items);
   void WriteInternalAssociations(const CObjectVector<CExtInfo> &items);
 

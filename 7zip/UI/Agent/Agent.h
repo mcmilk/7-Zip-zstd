@@ -255,14 +255,12 @@ public:
   UString _archiveNamePrefix;
   CProxyFolder *_archiveFolderItem;
 
-  CSysString _archiveFilePath;
+  UString _archiveFilePath;
 
   #ifndef EXTRACT_ONLY
   CObjectVector<CMyComBSTR> m_PropNames;
   std::vector<NWindows::NCOM::CPropVariant> m_PropValues;
   #endif
-
-  // CSysString _srcDirectoryPrefix;
 };
 
 #ifdef NEW_FOLDER_INTERFACE

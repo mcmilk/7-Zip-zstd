@@ -4,15 +4,15 @@
 
 #include <HtmlHelp.h>
 
+#include "Common/StringConvert.h"
 #include "HelpUtils.h"
 #include "ProgramLocation.h"
 
-static LPCTSTR kHelpFileName = TEXT("7-zip.chm::/");
+static LPCWSTR kHelpFileName = L"7-zip.chm::/";
 
-
-void ShowHelpWindow(HWND hwnd, LPCTSTR topicFile)
+void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile)
 {
-  CSysString path;
+  UString path;
   if (!::GetProgramFolderPath(path))
   {
     // AfxMessageBox(TEXT("App Path Registry Item not found"));
@@ -20,7 +20,7 @@ void ShowHelpWindow(HWND hwnd, LPCTSTR topicFile)
   }
   path += kHelpFileName;
   path += topicFile;
-  HtmlHelp(hwnd, path, HH_DISPLAY_TOPIC, NULL);
+  HtmlHelp(hwnd, GetSystemString(path), HH_DISPLAY_TOPIC, NULL);
 }
 
 

@@ -45,8 +45,11 @@ public:
   int GetIconIndex(UINT32 attributes, const CSysString &fileName);
 };
 
-int GetRealIconIndex(UINT32 attributes, const CSysString &fileName);
-int GetRealIconIndex(UINT32 attributes, const CSysString &fileName, CSysString &typeName);
+DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex);
+#ifndef _UNICODE
+DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex);
+#endif
+DWORD_PTR GetRealIconIndex(const CSysString &fileName, UINT32 attributes, int &iconIndex, CSysString &typeName);
 int GetIconIndexForCSIDL(int aCSIDL);
 
 

@@ -34,7 +34,7 @@ STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
   case kpidName:
-    propVariant = GetUnicodeString(_fileInfo.Name, CP_OEMCP);
+    propVariant = _fileInfo.Name;
     break;
   case kpidIsFolder:
     propVariant = _fileInfo.IsDirectory();
@@ -63,7 +63,7 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name,
     IInStream **inStream)
 {
   *inStream = NULL;
-  CSysString fullPath = _folderPrefix + GetSystemString(name, CP_OEMCP);
+  UString fullPath = _folderPrefix + name;
   if (!NWindows::NFile::NFind::FindFile(fullPath, _fileInfo))
     return S_FALSE;
   if (_fileInfo.IsDirectory())

@@ -115,12 +115,12 @@ class COpenArchiveCallback:
   bool m_NumBytesDefined;
   UINT32 m_PrevTickCount;
 
-  NWindows::NFile::NFind::CFileInfo _fileInfo;
+  NWindows::NFile::NFind::CFileInfoW _fileInfo;
 public:
   bool PasswordIsDefined;
   UString Password;
 
-  CSysString _folderPrefix;
+  UString _folderPrefix;
 
 public:
   MY_UNKNOWN_IMP3(
@@ -155,8 +155,8 @@ public:
   }
   void ShowMessage(const UINT64 *completed);
 
-  void LoadFileInfo(const CSysString &folderPrefix,  
-      const CSysString &fileName)
+  void LoadFileInfo(const UString &folderPrefix,  
+      const UString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
@@ -250,7 +250,7 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
     IInStream **inStream)
 {
   *inStream = NULL;
-  CSysString fullPath = _folderPrefix + GetSystemString(name, CP_OEMCP);
+  UString fullPath = _folderPrefix + name;
   if (!NWindows::NFile::NFind::FindFile(fullPath, _fileInfo))
     return S_FALSE;
   if (_fileInfo.IsDirectory())
@@ -349,12 +349,14 @@ HRESULT OpenArchive(const CSysString &fileName,
 
 static HANDLE MyOpenFilePlugin(const char *name)
 {
-  CSysString normalizedName = name;
+  UINT codePage = ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+ 
+  UString normalizedName = GetUnicodeString(name, codePage);
   normalizedName.Trim();
-  CSysString fullName;
+  UString fullName;
   int fileNamePartStartIndex;
   NFile::NDirectory::MyGetFullPathName(normalizedName, fullName, fileNamePartStartIndex);
-  NFile::NFind::CFileInfo fileInfo;
+  NFile::NFind::CFileInfoW fileInfo;
   if (!NFile::NFind::FindFile(fullName, fileInfo))
     return INVALID_HANDLE_VALUE;
   if (fileInfo.IsDirectory())
@@ -410,7 +412,8 @@ static HANDLE MyOpenFilePlugin(const char *name)
   // ::OutputDebugString("after Init\n");
   */
 
-  CPlugin *plugin = new CPlugin(fullName, 
+  CPlugin *plugin = new CPlugin(
+      fullName, 
       // defaultName, 
       archiveHandler,
       (const wchar_t *)archiveType

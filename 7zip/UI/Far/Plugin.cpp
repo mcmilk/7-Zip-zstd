@@ -28,13 +28,13 @@ CSysString ConvertPropertyToString2(const PROPVARIANT &propVariant, PROPID propI
   if (propVariant.vt == VT_BSTR)
     return GetSystemString(propVariant.bstrVal, CP_OEMCP);
   if (propVariant.vt != VT_BOOL)
-    return ConvertPropertyToString(propVariant, propID);
+    return GetSystemString(ConvertPropertyToString(propVariant, propID), CP_OEMCP);
   int messageID = VARIANT_BOOLToBool(propVariant.boolVal) ? 
       NMessageID::kYes : NMessageID::kNo;
   return g_StartupInfo.GetMsgString(messageID);
 }
 
-CPlugin::CPlugin(const CSysString &fileName, 
+CPlugin::CPlugin(const UString &fileName, 
     // const UString &defaultName, 
     IInFolderArchive *archiveHandler,
     UString archiveTypeName
@@ -244,8 +244,8 @@ int CPlugin::SetDirectory(const char *aszDir, int opMode)
   GetPathParts(pathParts);
   for (int i = 0; i < pathParts.Size(); i++)
   {
-    m_CurrentDir += CSysString('\\');
-    m_CurrentDir += UnicodeStringToMultiByte(pathParts[i], CP_OEMCP);
+    m_CurrentDir += L'\\';
+    m_CurrentDir += pathParts[i];
   }
   return TRUE;
 }
@@ -396,34 +396,37 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   info->Flags = OPIF_USEFILTER | OPIF_USESORTGROUPS| OPIF_USEHIGHLIGHTING|
               OPIF_ADDDOTS | OPIF_COMPAREFATTIME;
 
-  strcpy(m_FileNameBuffer, m_FileName);
+  UINT codePage = ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+
+  strcpy(m_FileNameBuffer, UnicodeStringToMultiByte(m_FileName, codePage));
   info->HostFile = m_FileNameBuffer; // test it it is not static
   
-  strcpy(m_CurrentDirBuffer, m_CurrentDir);
+  strcpy(m_CurrentDirBuffer, UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
   info->CurDir = m_CurrentDirBuffer;
 
   info->Format = kPluginFormatName;
 
-  CSysString name;
+  UString name;
   {
-    CSysString fullName;
+    UString fullName;
     int index;
     NFile::NDirectory::MyGetFullPathName(m_FileName, fullName, index);
     name = fullName.Mid(index);
   }
 
-  m_PannelTitle = CSysString(' ') + 
-      GetSystemString(_archiveTypeName, CP_OEMCP) + 
-      ':' + 
+  m_PannelTitle = 
+      UString(L' ') + 
+      _archiveTypeName + 
+      UString(L':') + 
       name +
-      CSysString(' ');
+      UString(L' ');
   if(!m_CurrentDir.IsEmpty())
   {
     // m_PannelTitle += '\\';
     m_PannelTitle += m_CurrentDir;
   }
  
-  strcpy(m_PannelTitleBuffer, m_PannelTitle);
+  strcpy(m_PannelTitleBuffer, UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
   info->PanelTitle = m_PannelTitleBuffer;
 
   memset(m_InfoLines,0,sizeof(m_InfoLines));
@@ -668,14 +671,14 @@ int CPlugin::ProcessKey(int aKey, unsigned int controlState)
   }
   if ((controlState & PKF_ALT) != 0 && aKey == VK_F6)
   {
-    CSysString folderPath;
+    UString folderPath;
     if (!NFile::NDirectory::GetOnlyDirPrefix(m_FileName, folderPath))
       return FALSE;
     PanelInfo panelInfo;
     g_StartupInfo.ControlGetActivePanelInfo(panelInfo);
     GetFilesReal(panelInfo.SelectedItems,
         panelInfo.SelectedItemsNumber, FALSE, 
-        (char *)(const char *)folderPath, OPM_SILENT, true);  
+        UnicodeStringToMultiByte(folderPath, CP_OEMCP), OPM_SILENT, true);  
     g_StartupInfo.Control(this, FCTL_UPDATEPANEL, NULL);
     g_StartupInfo.Control(this, FCTL_REDRAWPANEL, NULL);
     g_StartupInfo.Control(this, FCTL_UPDATEANOTHERPANEL, NULL);

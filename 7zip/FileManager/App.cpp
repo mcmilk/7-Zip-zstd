@@ -289,7 +289,7 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     }
 
   CRecordVector<UINT32> indices;
-  CSysString destPath;
+  UString destPath;
 
   if (external)
   {
@@ -321,19 +321,19 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     if (realIndex == -1)
       return;
     indices.Add(realIndex);
-    copyDialog.Value = GetSystemString(srcPanel.GetItemName(realIndex));
+    copyDialog.Value = srcPanel.GetItemName(realIndex);
   }
   else
   {
     srcPanel.GetOperatedItemIndices(indices);
     if (indices.Size() == 0)
       return;
-    CSysString destPath = GetSystemString(destPanel._currentFolderPrefix);
+    UString destPath = destPanel._currentFolderPrefix;
     if (NumPanels == 1)
     {
       while(!destPath.IsEmpty())
       {
-        CFileInfo fileInfo;
+        CFileInfoW fileInfo;
         if (FindFile(destPath, fileInfo))
         {
           if (fileInfo.IsDirectory())
@@ -352,11 +352,11 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     copyDialog.Value = destPath;
   }
   copyDialog.Title = move ? 
-    LangLoadString(IDS_MOVE, 0x03020202):
-    LangLoadString(IDS_COPY, 0x03020201);
+    LangLoadStringW(IDS_MOVE, 0x03020202):
+    LangLoadStringW(IDS_COPY, 0x03020201);
   copyDialog.Static = move ? 
-    LangLoadString(IDS_MOVE_TO, 0x03020204):
-    LangLoadString(IDS_COPY_TO, 0x03020203);
+    LangLoadStringW(IDS_MOVE_TO, 0x03020204):
+    LangLoadStringW(IDS_COPY_TO, 0x03020203);
   if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
 
@@ -380,10 +380,10 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     NDirectory::CreateComplexDirectory(destPath);
   }
 
-  CSysString title = move ? 
-      LangLoadString(IDS_MOVING, 0x03020206):
-      LangLoadString(IDS_COPYING, 0x03020205);
-  CSysString progressWindowTitle = LangLoadString(IDS_APP_TITLE, 0x03000000);
+  UString title = move ? 
+      LangLoadStringW(IDS_MOVING, 0x03020206):
+      LangLoadStringW(IDS_COPYING, 0x03020205);
+  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
 
   CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
@@ -398,7 +398,7 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
 
     extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = _window;
     extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
-    extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + CSysString(TEXT(" "));
+    extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + L" ";
 
     extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
     extracter.Move = move;
@@ -419,7 +419,7 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     
     updater.UpdateCallbackSpec->ProgressDialog.MainWindow = _window;
     updater.UpdateCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
-    updater.UpdateCallbackSpec->ProgressDialog.MainAddTitle = title + CSysString(TEXT(" "));
+    updater.UpdateCallbackSpec->ProgressDialog.MainAddTitle = title + UString(L" ");
 
     updater.UpdateCallbackSpec->Init(_window, false, L"");
     updater.Move = move;

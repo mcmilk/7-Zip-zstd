@@ -78,16 +78,13 @@ STDMETHODIMP CArchiveFolderManager::GetExtension(const wchar_t *type, BSTR *exte
   return S_OK;
 }
 
-// static const TCHAR *kCLSIDKeyName = TEXT("CLSID");
-// static const TCHAR *kInprocServer32KeyName = TEXT("InprocServer32");
-
 STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *type, BSTR *iconPath)
 {
   *iconPath = 0;
   int formatIndex = FindFormat(type);
   if (formatIndex <  0)
     return E_INVALIDARG;
-  CMyComBSTR iconPathTemp = GetUnicodeString(_formats[formatIndex].FilePath);
+  CMyComBSTR iconPathTemp = _formats[formatIndex].FilePath;
   *iconPath = iconPathTemp.Detach();
   return S_OK;
 }

@@ -19,6 +19,9 @@ public:
   NWindows::NFile::NIO::CInFile File;
   CInFileStream() {}
   bool Open(LPCTSTR fileName);
+  #ifndef _UNICODE
+  bool Open(LPCWSTR fileName);
+  #endif
 
   MY_UNKNOWN_IMP1(IStreamGetSize)
 
@@ -37,6 +40,9 @@ public:
   NWindows::NFile::NIO::COutFile File;
   COutFileStream() {}
   bool Open(LPCTSTR fileName);
+  #ifndef _UNICODE
+  bool Open(LPCWSTR fileName);
+  #endif
   
   MY_UNKNOWN_IMP
 

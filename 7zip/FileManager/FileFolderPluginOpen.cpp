@@ -36,25 +36,24 @@ HRESULT OpenFileFolderPlugin(
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
 
-  CSysString pathSys = GetSystemString(path);
-  CSysString extension;
-  CSysString name, pureName, dot;
+  UString extension;
+  UString name, pureName, dot;
 
-  if(!NFile::NDirectory::GetOnlyName(pathSys, name))
+  if(!NFile::NDirectory::GetOnlyName(path, name))
     return E_FAIL;
   NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
 
 
-  int slashPos = pathSys.ReverseFind('\\');
-  CSysString dirPrefix;
-  CSysString fileName;
+  int slashPos = path.ReverseFind(L'\\');
+  UString dirPrefix;
+  UString fileName;
   if (slashPos >= 0)
   {
-    dirPrefix = pathSys.Left(slashPos + 1);
-    fileName = pathSys.Mid(slashPos + 1);
+    dirPrefix = path.Left(slashPos + 1);
+    fileName = path.Mid(slashPos + 1);
   }
   else
-    fileName = pathSys;
+    fileName = path;
 
   if (!extension.IsEmpty())
   {

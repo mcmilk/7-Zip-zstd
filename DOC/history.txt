@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 3.11                2003-10-06
+  --------------------------------------
+      File functions support unicode strings even
+      on Windows 95/98/ME.
+   
+
   Version 3.08.02             2003-09-20
   --------------------------------------
       More compatible with GCC.

@@ -20,6 +20,7 @@ public:
  
   CStdOutStream & operator<<(CStdOutStream & (* aFunction)(CStdOutStream  &));
   CStdOutStream & operator<<(const char *string);
+  CStdOutStream & operator<<(const wchar_t *string);
   CStdOutStream & operator<<(char c);
   CStdOutStream & operator<<(int number);
   CStdOutStream & operator<<(UINT64 number);

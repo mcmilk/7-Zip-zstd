@@ -6,6 +6,7 @@
 
 #include "StdOutStream.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
 static const char kNewLineChar =  '\n';
 
@@ -49,6 +50,12 @@ CStdOutStream & endl(CStdOutStream & outStream)
 CStdOutStream & CStdOutStream::operator<<(const char *string)
 {
   fputs(string, _stream);
+  return *this;
+}
+
+CStdOutStream & CStdOutStream::operator<<(const wchar_t *string)
+{
+  *this << (const char *)UnicodeStringToMultiByte(string, CP_OEMCP);
   return *this;
 }
 

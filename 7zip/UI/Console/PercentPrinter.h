@@ -25,7 +25,8 @@ public:
     m_PrevValue = 0;
     m_StringIsPrinted = false;
   }
-  void PrintString(const char *aString);
+  void PrintString(const char *s);
+  void PrintString(const wchar_t *s);
   void PrintNewLine();
   void PreparePrint();
   void ClosePrint();

@@ -24,6 +24,16 @@ void NormalizeDirPathPrefix(CSysString &dirPath)
     dirPath += kDirDelimiter;
 }
 
+#ifndef _UNICODE
+void NormalizeDirPathPrefix(UString &dirPath)
+{
+  if (dirPath.IsEmpty())
+    return;
+  if (dirPath.ReverseFind(wchar_t(kDirDelimiter)) != dirPath.Length() - 1)
+    dirPath += wchar_t(kDirDelimiter);
+}
+#endif
+
 namespace NPathType
 {
   EEnum GetPathType(const UString &path)
@@ -78,10 +88,10 @@ UString CParsedPath::MergePath() const
   return result;
 }
 
-const TCHAR kExtensionDelimiter = '.';
+const wchar_t kExtensionDelimiter = L'.';
 
-void SplitNameToPureNameAndExtension(const CSysString &fullName, 
-    CSysString &pureName, CSysString &extensionDelimiter, CSysString &extension)
+void SplitNameToPureNameAndExtension(const UString &fullName, 
+    UString &pureName, UString &extensionDelimiter, UString &extension)
 {
   int index = fullName.ReverseFind(kExtensionDelimiter);
   if (index < 0)

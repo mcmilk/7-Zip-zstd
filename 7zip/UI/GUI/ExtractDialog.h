@@ -50,7 +50,7 @@ namespace NExtractionDialog
     NOverwriteMode::EEnum OverwriteMode;
     NPathMode::EEnum PathMode;
     // NFilesMode::EEnum FilesMode;
-    CSysStringVector FileList;
+    UStringVector FileList;
   };
 }
 
@@ -87,9 +87,9 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
 public:
   // bool _enableSelectedFilesButton;
   // bool _enableFilesButton;
-  CSysString DirectoryPath;
+  UString DirectoryPath;
 	// NExtractionDialog::NFilesMode::EEnum FilesMode;
-  CSysString Password;
+  UString Password;
 
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_EXTRACT), aWndParent); }

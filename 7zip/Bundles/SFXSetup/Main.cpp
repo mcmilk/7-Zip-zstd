@@ -7,11 +7,13 @@
 #include "Common/StringConvert.h"
 #include "Common/Random.h"
 #include "Common/TextConfig.h"
+#include "Common/CommandLineParser.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileIO.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
+#include "Windows/DLL.h"
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
@@ -26,7 +28,7 @@ using namespace NWindows;
 
 static LPCTSTR kTempDirPrefix = TEXT("7zS"); 
 
-static bool ReadDataString(LPCTSTR fileName, LPCSTR startID, 
+static bool ReadDataString(LPCWSTR fileName, LPCSTR startID, 
     LPCSTR endID, AString &stringResult)
 {
   stringResult.Empty();
@@ -87,43 +89,16 @@ static bool ReadDataString(LPCTSTR fileName, LPCSTR startID,
   }
 }
 
-static void GetArchiveName(
-    const UString &commandLine, 
-    UString &archiveName, 
-    UString &switches)
-{
-  archiveName.Empty();
-  switches.Empty();
-  bool quoteMode = false;
-  for (int i = 0; i < commandLine.Length(); i++)
-  {
-    wchar_t c = commandLine[i];
-    if (c == L'\"')
-      quoteMode = !quoteMode;
-    else if (c == L' ' && !quoteMode)
-    {
-      if (!quoteMode)
-      {
-        i++;
-        break;
-      }
-    }
-    else 
-      archiveName += c;
-  }
-  switches = commandLine.Mid(i);
-}
-
-static char startID[] = ",!@Install@!UTF-8!";
-static char endID[] = ",!@InstallEnd@!";
+static char kStartID[] = ",!@Install@!UTF-8!";
+static char kEndID[] = ",!@InstallEnd@!";
 
 class CInstallIDInit
 {
 public:
   CInstallIDInit()
   {
-    startID[0] = ';';
-    endID[0] = ';';
+    kStartID[0] = ';';
+    kEndID[0] = ';';
   };
 } g_CInstallIDInit;
 
@@ -149,20 +124,20 @@ int APIENTRY WinMain(
   InitCommonControls();
   g_hInstance = (HINSTANCE)hInstance;
   UString archiveName, switches;
-  GetArchiveName(GetCommandLineW(), archiveName, switches);
+  NCommandLineParser::SplitCommandLine(GetCommandLineW(), archiveName, switches);
 
-  TCHAR fullPath[MAX_PATH + 1];
-  ::GetModuleFileName(NULL, fullPath, MAX_PATH);
+  UString fullPath;
+  NDLL::MyGetModuleFileName(g_hInstance, fullPath);
 
   AString config;
-  if (!ReadDataString(fullPath, startID, endID, config))
+  if (!ReadDataString(fullPath, kStartID, kEndID, config))
   {
-    MessageBox(NULL, "Can't load config info", "7-Zip", 0);
+    MyMessageBox(L"Can't load config info");
     return 1;
   }
   switches.Trim();
   bool assumeYes = false;
-  if (switches.Left(2) == UString(L"-y"))
+  if (switches.Left(2).CompareNoCase(UString(L"-y")) == 0)
   {
     assumeYes = true;
     switches = switches.Mid(2);
@@ -175,7 +150,7 @@ int APIENTRY WinMain(
     CObjectVector<CTextConfigPair> pairs;
     if (!GetTextConfig(config, pairs))
     {
-      MessageBox(NULL, "Config failed", "7-Zip", 0);
+      MyMessageBox(L"Config failed");
       return 1;
     }
     UString friendlyName = GetTextConfigValue(pairs, L"Title");
@@ -193,15 +168,15 @@ int APIENTRY WinMain(
   NFile::NDirectory::CTempDirectory tempDir;
   if (!tempDir.Create(kTempDirPrefix))
   {
-    MessageBox(0, "Can not create temp folder archive", "7-Zip", 0);
+    MyMessageBox(L"Can not create temp folder archive");
     return 1;
   }
 
-  HRESULT result = ExtractArchive(fullPath, tempDir.GetPath());
+  HRESULT result = ExtractArchive(fullPath, GetUnicodeString(tempDir.GetPath()));
   if (result != S_OK)
   {
     if (result == S_FALSE)
-      MessageBox(0, "Can not open archive", "7-Zip", 0);
+      MyMessageBox(L"Can not open archive");
     else if (result != E_ABORT)
       ShowErrorMessage(result);
     return  1;

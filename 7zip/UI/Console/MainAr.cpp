@@ -16,7 +16,8 @@
 
 using namespace NWindows;
 
-extern int Main2(int aNumArguments, const char *anArguments[]);
+// extern int Main2(int numArguments, const char *arguments[]);
+extern int Main2();
 
 static const char *kExceptionErrorMessage = "\n\nError:\n";
 static const char *kUserBreak  = "\nBreak signaled\n";
@@ -34,7 +35,8 @@ static inline bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-int __cdecl main(int aNumArguments, const char *anArguments[])
+int __cdecl main()
+// int __cdecl main(int numArguments, const char *arguments[])
 {
   #ifdef UNICODE
   if (!IsItWindowsNT())
@@ -45,14 +47,14 @@ int __cdecl main(int aNumArguments, const char *anArguments[])
   #endif
   // setlocale(LC_COLLATE, ".OCP");
   int result=1;
-  // CNewHandlerSetter aNewHandlerSetter;
   NCOM::CComInitializer comInitializer;
   try
   {
     NConsoleClose::CCtrlHandlerSetter aCtrlHandlerSetter;
     try
     {
-      result = Main2(aNumArguments, anArguments);
+      // result = Main2(numArguments, arguments);
+      result = Main2();
     }
     catch(const NConsoleClose::CCtrlBreakException &)
     {
@@ -75,28 +77,27 @@ int __cdecl main(int aNumArguments, const char *anArguments[])
     g_StdOut << kInternalExceptionMessage << aExitCode << endl;
     return (aExitCode);
   }
-  catch(const NExitCode::CSystemError &aSystemError)
+  catch(const NExitCode::CSystemError &systemError)
   {
-    CSysString aMessage;
-    NError::MyFormatMessage(aSystemError.ErrorValue, aMessage);
+    UString message;
+    NError::MyFormatMessage(systemError.ErrorValue, message);
     g_StdOut << endl << endl << "System error:" << endl << 
-        SystemStringToOemString(aMessage) << endl;
+        message << endl;
     return (NExitCode::kFatalError);
   }
-  catch(const NExitCode::CMultipleErrors &aMultipleErrors)
+  catch(const NExitCode::CMultipleErrors &multipleErrors)
   {
-    g_StdOut << endl << aMultipleErrors.NumErrors << " errors" << endl;
+    g_StdOut << endl << multipleErrors.NumErrors << " errors" << endl;
     return (NExitCode::kFatalError);
   }
-  catch(const UString &aString)
+  catch(const UString &s)
   {
-    g_StdOut << kExceptionErrorMessage << 
-      UnicodeStringToMultiByte(aString, CP_OEMCP) << endl;
+    g_StdOut << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
-  catch(const char *aString)
+  catch(const char *s)
   {
-    g_StdOut << kExceptionErrorMessage << aString << endl;
+    g_StdOut << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(int t)

@@ -21,7 +21,7 @@ struct CArchiverExtInfo
 struct CArchiverInfo
 {
   #ifndef EXCLUDE_COM
-  CSysString FilePath;
+  UString FilePath;
   CLSID ClassID;
   #endif
   UString Name;

@@ -93,11 +93,11 @@ void CPanel::DeleteItems()
   deleter.UpdateCallback = deleter.UpdateCallbackSpec;
   deleter.UpdateCallbackSpec->Init(GetParent(), false, L"");
 
-  CSysString progressTitle = LangLoadString(IDS_DELETING, 0x03020216);
+  UString progressTitle = LangLoadStringW(IDS_DELETING, 0x03020216);
 
   deleter.UpdateCallbackSpec->ProgressDialog.MainWindow = _mainWindow;
-  deleter.UpdateCallbackSpec->ProgressDialog.MainTitle = LangLoadString(IDS_APP_TITLE, 0x03000000);
-  deleter.UpdateCallbackSpec->ProgressDialog.MainAddTitle = progressTitle + CSysString(TEXT(" "));
+  deleter.UpdateCallbackSpec->ProgressDialog.MainTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+  deleter.UpdateCallbackSpec->ProgressDialog.MainAddTitle = progressTitle + UString(L" ");
 
   deleter.FolderOperations = folderOperations;
   deleter.Indices = indices;
@@ -167,9 +167,9 @@ void CPanel::CreateFolder()
     return;
   }
   CComboDialog comboDialog;
-  comboDialog.Title = LangLoadString(IDS_CREATE_FOLDER, 0x03020230);
-  comboDialog.Static = LangLoadString(IDS_CREATE_FOLDER_NAME, 0x03020231);
-  comboDialog.Value = LangLoadString(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ (UINT32)-1);
+  comboDialog.Title = LangLoadStringW(IDS_CREATE_FOLDER, 0x03020230);
+  comboDialog.Static = LangLoadStringW(IDS_CREATE_FOLDER_NAME, 0x03020231);
+  comboDialog.Value = LangLoadStringW(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ (UINT32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
@@ -198,9 +198,9 @@ void CPanel::CreateFile()
     return;
   }
   CComboDialog comboDialog;
-  comboDialog.Title = LangLoadString(IDS_CREATE_FILE, 0x03020240);
-  comboDialog.Static = LangLoadString(IDS_CREATE_FILE_NAME, 0x03020241);
-  comboDialog.Value = LangLoadString(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ (UINT32)-1);
+  comboDialog.Title = LangLoadStringW(IDS_CREATE_FILE, 0x03020240);
+  comboDialog.Static = LangLoadStringW(IDS_CREATE_FILE_NAME, 0x03020241);
+  comboDialog.Value = LangLoadStringW(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ (UINT32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
@@ -254,10 +254,9 @@ void CPanel::ChangeComment()
   }
   UString name = GetItemName(realIndex);
   CComboDialog comboDialog;
-  comboDialog.Title = GetSystemString(name) + TEXT(" ") +
-      LangLoadString(IDS_COMMENT, 0x03020290);
-  comboDialog.Value = GetSystemString(comment);
-  comboDialog.Static = LangLoadString(IDS_COMMENT2, 0x03020291);
+  comboDialog.Title = name + L" " + LangLoadStringW(IDS_COMMENT, 0x03020290);
+  comboDialog.Value = comment;
+  comboDialog.Static = LangLoadStringW(IDS_COMMENT2, 0x03020291);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   NCOM::CPropVariant propVariant = GetUnicodeString(comboDialog.Value);

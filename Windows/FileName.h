@@ -15,6 +15,9 @@ const TCHAR kDirDelimiter = '\\';
 const TCHAR kAnyStringWildcard = '*';
 
 void NormalizeDirPathPrefix(CSysString &dirPath); // ensures that it ended with '\\'
+#ifndef _UNICODE
+void NormalizeDirPathPrefix(UString &dirPath); // ensures that it ended with '\\'
+#endif
 
 namespace NPathType
 {
@@ -34,8 +37,8 @@ struct CParsedPath
   UString MergePath() const;
 };
 
-void SplitNameToPureNameAndExtension(const CSysString &fullName, 
-    CSysString &pureName, CSysString &extensionDelimiter, CSysString &extension); 
+void SplitNameToPureNameAndExtension(const UString &fullName, 
+    UString &pureName, UString &extensionDelimiter, UString &extension); 
 
 }}}
 

@@ -98,6 +98,7 @@ private:
   bool _removeSfxBlock;
   UINT64 _numSolidFiles; 
   UINT64 _numSolidBytes;
+  bool _numSolidBytesDefined;
   bool _solidExtension;
 
   bool _compressHeaders;
@@ -155,6 +156,7 @@ private:
     InitSolidFiles();
     InitSolidSize();
     _solidExtension = false;
+    _numSolidBytesDefined = false;
   }
   /*
   void InitSolidPart()
@@ -163,11 +165,27 @@ private:
       InitSolidFiles();
   }
   */
+  void SetSolidBytesLimit()
+  {
+    _numSolidBytes = ((UINT64)_defaultDicSize) << 7;
+    const UINT64 kMinSize = (1<<24);
+    if (_numSolidBytes < kMinSize)
+      _numSolidBytes = kMinSize;
+  }
+  void CheckAndSetSolidBytesLimit()
+  {
+    if (!_numSolidBytesDefined)
+    {
+      if (_copyMode)
+        _numSolidBytes = 0;
+      else
+        SetSolidBytesLimit();
+    }
+  }
 
   void Init()
   {
     _removeSfxBlock = false;
-    InitSolid();
     _compressHeaders = true;
     _compressHeadersFull = true;
     _encryptHeaders = false;
@@ -177,7 +195,10 @@ private:
     _defaultAlgorithm = 1;
     _defaultFastBytes = 32;
     _defaultMatchFinder = L"BT4";
+    _level = 5;
     _autoFilter = true;
+    InitSolid();
+    SetSolidBytesLimit();
   }
   #endif
 };

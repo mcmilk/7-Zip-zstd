@@ -7,6 +7,7 @@
 
 #include "Common/String.h"
 
+UString GetCorrectFileName(const UString &path);
 UString GetCorrectPath(const UString &path);
 
 #endif

@@ -64,9 +64,9 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
     IInStream **inStream)
 {
   *inStream = NULL;
-  NWindows::NFile::NFind::CFileInfo fileInfo;
+  NWindows::NFile::NFind::CFileInfoW fileInfo;
 
-  CSysString fullPath = _folderPrefix + GetSystemString(name);
+  UString fullPath = _folderPrefix + name;
   if (!NWindows::NFile::NFind::FindFile(fullPath, fileInfo))
     return S_FALSE;
   _fileInfo = fileInfo;

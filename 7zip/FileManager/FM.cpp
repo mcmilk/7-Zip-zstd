@@ -130,7 +130,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   // LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
 
   // LoadString(hInstance, IDS_APP_TITLE, title, MAX_LOADSTRING);
-  CSysString title = LangLoadString(IDS_APP_TITLE, 0x03000000);
+  UString title = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
 
 	/*
   //If it is already running, then focus on the window
@@ -200,7 +200,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   g_App.NumPanels = numPanels;
   g_App.LastFocusedPanel = currentPanel;
 
-	hWnd = CreateWindow(windowClass, title, style,
+	hWnd = CreateWindow(windowClass, GetSystemString(title), style,
 		  x, y, xSize, ySize, NULL, NULL, hInstance, NULL);
 	if (!hWnd)
 		return FALSE;

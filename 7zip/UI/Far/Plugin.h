@@ -17,9 +17,9 @@
 class CPlugin
 {
   NWindows::NCOM::CComInitializer m_ComInitializer;
-  CSysString m_CurrentDir;
+  UString m_CurrentDir;
 
-  CSysString m_PannelTitle;
+  UString m_PannelTitle;
   
   InfoPanelLine m_InfoLines[30]; // Change it;
 
@@ -37,9 +37,9 @@ class CPlugin
 
   void GetPathParts(UStringVector &aPathParts);
 public:
-  CSysString m_FileName;
+  UString m_FileName;
   // UString m_DefaultName;
-  NWindows::NFile::NFind::CFileInfo m_FileInfo;
+  NWindows::NFile::NFind::CFileInfoW m_FileInfo;
 
   // std::auto_ptr<CProxyHandler> m_ProxyHandler; 
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;
@@ -52,7 +52,7 @@ public:
   UString Password;
 
 
-  CPlugin(const CSysString &fileName, 
+  CPlugin(const UString &fileName, 
         // const UString &aDefaultName, 
         IInFolderArchive *archiveHandler,
         UString archiveTypeName
@@ -64,10 +64,10 @@ public:
 
   int GetFindData(PluginPanelItem **pPanelItem,int *pItemsNumber,int OpMode);
   void FreeFindData(PluginPanelItem *PanelItem,int ItemsNumber);
-  int SetDirectory(const char *aDir, int anOpMode);
+  int SetDirectory(const char *aDir, int opMode);
   void GetOpenPluginInfo(struct OpenPluginInfo *anInfo);
 
-  int DeleteFiles(PluginPanelItem *aPanelItems, int anItemsNumber, int anOpMode);
+  int DeleteFiles(PluginPanelItem *aPanelItems, int itemsNumber, int opMode);
 
 
   /*
@@ -75,28 +75,28 @@ public:
       std::vector<int> &aRealIndexes);
   void AddRealIndexes(const CArchiveFolderItem &anItem, 
       std::vector<int> &aRealIndexes);
-  void GetRealIndexes(PluginPanelItem *aPanelItems, int anItemsNumber,
+  void GetRealIndexes(PluginPanelItem *aPanelItems, int itemsNumber,
       std::vector<int> &aRealIndexes);
   */
 
   HRESULT ExtractFiles(
       bool aDecompressAllItems,
       const UINT32 *anIndexes, 
-      UINT32 aNumIndexes, 
+      UINT32 numIndices, 
       bool aSilent, 
       NExtractionMode::NPath::EEnum aPathMode, 
-      NExtractionMode::NOverwrite::EEnum anOverwriteMode,
-      const CSysString &aDestPath,
-      bool aPasswordIsDefined, const UString &aPassword);
+      NExtractionMode::NOverwrite::EEnum overwriteMode,
+      const UString &destPath,
+      bool aPasswordIsDefined, const UString &password);
 
-  NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *aPanelItem, int anItemsNumber,
-    int aMove, char *aDestPath, int anOpMode);
+  NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *aPanelItem, int itemsNumber,
+    int move, char *destPath, int opMode);
   
   NFar::NFileOperationReturnCode::EEnum GetFilesReal(struct PluginPanelItem *aPanelItems, 
-    int anItemsNumber, int aMove, char *_aDestPath, int anOpMode, bool aShowBox);
+    int itemsNumber, int move, const char *_aDestPath, int opMode, bool aShowBox);
 
-  NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *aPanelItems, int anItemsNumber,
-    int aMove, int anOpMode);
+  NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *aPanelItems, int itemsNumber,
+    int move, int opMode);
 
   HRESULT ShowAttributesWindow();
 

@@ -285,7 +285,7 @@ void SaveWorkDirInfo(const NWorkDir::CInfo &info)
   CKey optionsKey;
   optionsKey.Create(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName));
   optionsKey.SetValue(kWorkDirTypeValueName, UINT32(info.Mode));
-  optionsKey.SetValue(kWorkDirPathValueName, info.Path);
+  optionsKey.SetValue(kWorkDirPathValueName, GetSystemString(info.Path));
   optionsKey.SetValue(kTempRemovableOnlyValueName, info.ForRemovableOnly);
 }
 
@@ -308,12 +308,14 @@ void ReadWorkDirInfo(NWorkDir::CInfo &info)
     case NWorkDir::NMode::kSpecified:
       info.Mode = NWorkDir::NMode::EEnum(dirType);
   }
-  if (optionsKey.QueryValue(kWorkDirPathValueName, info.Path) != ERROR_SUCCESS)
+  CSysString sysWorkDir;
+  if (optionsKey.QueryValue(kWorkDirPathValueName, sysWorkDir) != ERROR_SUCCESS)
   {
     info.Path.Empty();
     if (info.Mode == NWorkDir::NMode::kSpecified)
       info.Mode = NWorkDir::NMode::kSystem;
   }
+  info.Path = GetUnicodeString(sysWorkDir);
   if (optionsKey.QueryValue(kTempRemovableOnlyValueName, info.ForRemovableOnly) != ERROR_SUCCESS)
     info.SetForRemovableOnlyDefault();
 }

@@ -17,7 +17,7 @@ struct CDirItem
   FILETIME LastWriteTime;
   UINT64 Size;
   UString Name;
-  CSysString FullPath;
+  UString FullPath;
   bool IsDirectory() const { return (Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
 };
 

@@ -27,7 +27,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_SYSTEM_STATIC_CONTEXT_MENU_ITEMS, 0x01000310}
 };
 
-static LPCTSTR kSystemTopic = TEXT("fm/plugins/7-zip/options.htm#system");
+static LPCWSTR kSystemTopic = L"fm/plugins/7-zip/options.htm#system";
 
 struct CContextMenuItem
 {

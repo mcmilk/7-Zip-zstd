@@ -151,20 +151,15 @@ STDMETHODIMP CAgent::DoOperation(
     const wchar_t *sfxModule,
     IFolderArchiveUpdateCallback *updateCallback100)
 {
-  UINT codePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   NUpdateArchive::CActionSet actionSet;
   for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSet.StateActions[i] = (NUpdateArchive::NPairAction::EEnum)stateActions[i];
 
-  CSysStringVector systemFileNames;
-  systemFileNames.Reserve(_names.Size());
-  for (i = 0; i < _names.Size(); i++)
-    systemFileNames.Add(GetSystemString(_names[i], codePage));
   CObjectVector<CDirItem> dirItems;
 
-  CSysString folderPrefix = GetSystemString(_folderPrefix, codePage);
+  UString folderPrefix = _folderPrefix;
   NFile::NName::NormalizeDirPathPrefix(folderPrefix);
-  ::EnumerateDirItems(folderPrefix, systemFileNames, _archiveNamePrefix, dirItems, codePage);
+  ::EnumerateDirItems(folderPrefix, _names, _archiveNamePrefix, dirItems);
 
   CMyComPtr<IOutArchive> outArchive;
   if (_archive)
@@ -174,9 +169,7 @@ STDMETHODIMP CAgent::DoOperation(
   else
   {
     CHandlerLoader loader;
-    RINOK(loader.CreateHandler(
-        GetSystemString(filePath, codePage), *clsID, 
-        (void **)&outArchive, true));
+    RINOK(loader.CreateHandler(filePath, *clsID, (void **)&outArchive, true));
     _library.Attach(loader.Detach());
   }
 
@@ -218,9 +211,9 @@ STDMETHODIMP CAgent::DoOperation(
   
   COutFileStream *outStreamSpec = new COutFileStream;
   CMyComPtr<IOutStream> outStream(outStreamSpec);
-  CSysString archiveName = GetSystemString(newArchiveName, codePage);
+  UString archiveName = newArchiveName;
   {
-    CSysString resultPath;
+    UString resultPath;
     int pos;
     if(!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
       throw 141716;
@@ -255,7 +248,7 @@ STDMETHODIMP CAgent::DoOperation(
   {
     CInFileStream *sfxStreamSpec = new CInFileStream;
     CMyComPtr<IInStream> sfxStream(sfxStreamSpec);
-    if (!sfxStreamSpec->Open(GetSystemString(sfxModule, codePage)))
+    if (!sfxStreamSpec->Open(sfxModule))
       throw "Can't open sfx module";
     RINOK(CopyBlock(sfxStream, outStream));
   }
@@ -269,15 +262,14 @@ HRESULT CAgent::CommonUpdate(const wchar_t *newArchiveName,
     int numUpdateItems,
     IArchiveUpdateCallback *updateCallback)
 {
-  UINT codePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   CMyComPtr<IOutArchive> outArchive;
   RINOK(_archive.QueryInterface(IID_IOutArchive, &outArchive));
 
   COutFileStream *outStreamSpec = new COutFileStream;
   CMyComPtr<IOutStream> outStream(outStreamSpec);
-  CSysString archiveName = GetSystemString(newArchiveName, codePage);
+  UString archiveName = newArchiveName;
   {
-    CSysString resultPath;
+    UString resultPath;
     int pos;
     if(!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
       throw 141716;
@@ -323,7 +315,7 @@ STDMETHODIMP CAgent::DeleteItems(
     updatePair.ArchiveItemIndex = i;
     updatePairs.Add(updatePair);
   }
-  updateCallbackSpec->Init(TEXT(""), NULL, NULL, &updatePairs, NULL, updateCallback100);
+  updateCallbackSpec->Init(L"", NULL, NULL, &updatePairs, NULL, updateCallback100);
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
 
@@ -374,7 +366,7 @@ HRESULT CAgent::CreateFolder(
 
   dirItems.Add(dirItem);
 
-  updateCallbackSpec->Init(TEXT(""), &dirItems, NULL, &updatePairs, NULL, updateCallback100);
+  updateCallbackSpec->Init(L"", &dirItems, NULL, &updatePairs, NULL, updateCallback100);
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
 
@@ -455,7 +447,7 @@ HRESULT CAgent::RenameItem(
     updatePair.ArchiveItemIndex = i;
     updatePairs.Add(updatePair);
   }
-  updateCallbackSpec->Init(TEXT(""), NULL, NULL, &updatePairs, _archive, updateCallback100);
+  updateCallbackSpec->Init(L"", NULL, NULL, &updatePairs, _archive, updateCallback100);
   return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
 }
 

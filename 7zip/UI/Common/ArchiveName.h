@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-CSysString CreateArchiveName(const CSysString &srcName, bool fromPrev, bool keepName);
+UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName);
 
 #endif

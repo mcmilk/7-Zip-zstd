@@ -40,10 +40,10 @@ public:
   struct CCommandMapItem
   {
     ECommandInternalID CommandInternalID;
-    CSysString Verb;
-    CSysString HelpString;
-    CSysString Folder;
-    CSysString Archive;
+    UString Verb;
+    UString HelpString;
+    UString Folder;
+    UString Archive;
   };
 
 BEGIN_COM_MAP(CZipContextMenu)
@@ -78,12 +78,12 @@ DECLARE_REGISTRY(CZipContextMenu,
   // IInitContextMenu
   STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);  
 private:
-  CSysStringVector _fileNames;
+  UStringVector _fileNames;
   std::vector<CCommandMapItem> _commandMap;
   HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
-  UINT FindVerb(const CSysString &verb);
+  UINT FindVerb(const UString &verb);
 
-  void FillCommand(ECommandInternalID id, CSysString &mainString, 
+  void FillCommand(ECommandInternalID id, UString &mainString, 
       CCommandMapItem &commandMapItem);
   void FillCommand2(ECommandInternalID id, UString &mainString, 
       CCommandMapItem &commandMapItem);

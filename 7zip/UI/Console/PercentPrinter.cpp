@@ -4,6 +4,7 @@
 
 #include "Common/StdOutStream.h"
 #include "Common/IntToString.h"
+#include "Common/String.h"
 
 #include "PercentPrinter.h"
 
@@ -37,10 +38,16 @@ void CPercentPrinter::ClosePrint()
   m_StringIsPrinted = false;
 }
 
-void CPercentPrinter::PrintString(const char *aString)
+void CPercentPrinter::PrintString(const char *s)
 {
-  m_ScreenPos += lstrlenA(aString);
-  g_StdOut << aString;
+  m_ScreenPos += MyStringLen(s);
+  g_StdOut << s;
+}
+
+void CPercentPrinter::PrintString(const wchar_t *s)
+{
+  m_ScreenPos += MyStringLen(s);
+  g_StdOut << s;
 }
 
 void CPercentPrinter::PrintNewLine()

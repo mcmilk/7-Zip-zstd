@@ -15,33 +15,31 @@
 
 using namespace NWindows;
 
-void MyMessageBox(HWND aWindow, LPCWSTR aMessage)
+void MyMessageBox(HWND window, LPCWSTR message)
 { 
-  ::MessageBoxW(aWindow, aMessage, L"7-Zip", 0); 
+  ::MessageBoxW(window, message, L"7-Zip", 0); 
 }
 
-void MyMessageBox(UINT32 anId
+void MyMessageBox(UINT32 id
     #ifdef LANG        
-    ,UINT32 aLangID
+    ,UINT32 langID
     #endif
     )
 {
   #ifdef LANG        
-  MyMessageBox(LangLoadStringW(anId, aLangID));
+  MyMessageBox(LangLoadStringW(id, langID));
   #else
-  MyMessageBox(GetUnicodeString(MyLoadString(anId)));
+  MyMessageBox(MyLoadStringW(id));
   #endif
 }
 
-void ShowErrorMessage(HWND aWindow, DWORD anError)
+void ShowErrorMessage(HWND window, DWORD message)
 {
-  CSysString aMessage;
-  NError::MyFormatMessage(anError, aMessage);
-  MyMessageBox(aWindow, GetUnicodeString(aMessage));
+  MyMessageBox(window, NError::MyFormatMessageW(message));
 }
 
-void ShowLastErrorMessage(HWND aWindow)
+void ShowLastErrorMessage(HWND window)
 {
-  ShowErrorMessage(aWindow, ::GetLastError());
+  ShowErrorMessage(window, ::GetLastError());
 }
 

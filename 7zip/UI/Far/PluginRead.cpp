@@ -31,11 +31,11 @@ static const char *kExractPathHistoryName  = "7-ZipExtractPath";
 HRESULT CPlugin::ExtractFiles(
     bool decompressAllItems,
     const UINT32 *indices, 
-    UINT32 aNumIndexes, 
+    UINT32 numIndices, 
     bool silent,
     NExtractionMode::NPath::EEnum pathMode, 
     NExtractionMode::NOverwrite::EEnum overwriteMode,
-    const CSysString &destPath,
+    const UString &destPath,
     bool passwordIsDefined, const UString &password)
 {
   CScreenRestorer screenRestorer;
@@ -65,27 +65,28 @@ HRESULT CPlugin::ExtractFiles(
 
   if (decompressAllItems)
     return m_ArchiveHandler->Extract(pathMode, overwriteMode,
-        MultiByteToUnicodeString(destPath, CP_OEMCP), BoolToInt(false), extractCallback);
+        destPath, BoolToInt(false), extractCallback);
   else
   {
     CMyComPtr<IArchiveFolder> archiveFolder;
     _folder.QueryInterface(IID_IArchiveFolder, &archiveFolder);
 
-    return archiveFolder->Extract(indices, aNumIndexes, pathMode, overwriteMode,
-        MultiByteToUnicodeString(destPath, CP_OEMCP), BoolToInt(false), extractCallback);
+    return archiveFolder->Extract(indices, numIndices, pathMode, overwriteMode,
+        destPath, BoolToInt(false), extractCallback);
   }
 }
 
-NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *aPanelItems, 
-    int itemsNumber, int aMove, char *_aDestPath, int anOpMode)
+NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *panelItems, 
+    int itemsNumber, int move, char *_aDestPath, int opMode)
 {
-  return GetFilesReal(aPanelItems, itemsNumber, aMove, _aDestPath, anOpMode, (anOpMode & OPM_SILENT) == 0);
+  return GetFilesReal(panelItems, itemsNumber, move, 
+      _aDestPath, opMode, (opMode & OPM_SILENT) == 0);
 }
 
-NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aPanelItems, 
-    int itemsNumber, int aMove, char *_aDestPath, int anOpMode, bool showBox)
+NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *panelItems, 
+    int itemsNumber, int move, const char *_aDestPath, int opMode, bool showBox)
 {
-  if(aMove != 0)
+  if(move != 0)
   {
     g_StartupInfo.ShowMessage(NMessageID::kMoveIsNotSupported);
     return NFileOperationReturnCode::kError;
@@ -99,7 +100,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
   extractionInfo.PathMode = NExtraction::NPathMode::kCurrentPathnames;
   extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
 
-  bool silent = (anOpMode & OPM_SILENT) != 0;
+  bool silent = (opMode & OPM_SILENT) != 0;
   bool decompressAllItems = false;
   UString password = Password;
   bool passwordIsDefined = PasswordIsDefined;
@@ -108,7 +109,6 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
   {
     const int kPathIndex = 2;
 
-    // CZipRegistryManager aZipRegistryManager;
     ReadExtractionInfo(extractionInfo);
 
     const int kPathModeRadioIndex = 4;
@@ -239,14 +239,14 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
   NFile::NDirectory::CreateComplexDirectory(destPath);
 
   /*
-  vector<int> aRealIndexes;
+  vector<int> realIndices;
   if (!decompressAllItems)
-    GetRealIndexes(aPanelItems, itemsNumber, aRealIndexes);
+    GetRealIndexes(panelItems, itemsNumber, realIndices);
   */
   CRecordVector<UINT32> indices;
   indices.Reserve(itemsNumber);
   for (int i = 0; i < itemsNumber; i++)
-    indices.Add(aPanelItems[i].UserData);
+    indices.Add(panelItems[i].UserData);
 
   NExtractionMode::NPath::EEnum pathMode;
   NExtractionMode::NOverwrite::EEnum overwriteMode;
@@ -282,8 +282,10 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
       throw 12334455;
   }
   HRESULT result = ExtractFiles(decompressAllItems, &indices.Front(), itemsNumber, 
-      !showBox, pathMode, overwriteMode, destPath, passwordIsDefined, password);
-  // HRESULT result = ExtractFiles(decompressAllItems, aRealIndexes, !showBox, 
+      !showBox, pathMode, overwriteMode, 
+      MultiByteToUnicodeString(destPath, CP_OEMCP), 
+      passwordIsDefined, password);
+  // HRESULT result = ExtractFiles(decompressAllItems, realIndices, !showBox, 
   //     extractionInfo, destPath, passwordIsDefined, password);
   if (result != S_OK)
   {
@@ -293,9 +295,9 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *aP
     return NFileOperationReturnCode::kError;
   }
 
-  // if(aMove != 0)
+  // if(move != 0)
   // {
-  //   if(DeleteFiles(aPanelItems, itemsNumber, anOpMode) == FALSE)
+  //   if(DeleteFiles(panelItems, itemsNumber, opMode) == FALSE)
   //     return NFileOperationReturnCode::kError;
   // }
   return NFileOperationReturnCode::kSuccess;

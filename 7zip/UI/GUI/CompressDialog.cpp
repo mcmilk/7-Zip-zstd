@@ -194,9 +194,9 @@ bool CCompressDialog::OnInit()
 
 namespace NCompressDialog
 {
-  bool CInfo::GetFullPathName(CSysString &result) const
+  bool CInfo::GetFullPathName(UString &result) const
   {
-    ::SetCurrentDirectory(CurrentDirPrefix);
+    NDirectory::MySetCurrentDirectory(CurrentDirPrefix);
     return MyGetFullPathName(ArchiveName, result);
   }
 }
@@ -315,19 +315,19 @@ void CCompressDialog::OnButtonSetArchive()
 {
   const int kBufferSize = MAX_PATH * 2;
   TCHAR buffer[kBufferSize];
-  CSysString fileName;
+  UString fileName;
   m_ArchivePath.GetText(fileName);
   fileName.TrimLeft();
   fileName.TrimRight();
   m_Info.ArchiveName = fileName;
-  CSysString fullFileName;
+  UString fullFileName;
   if (!m_Info.GetFullPathName(fullFileName))
   {
     fullFileName = m_Info.ArchiveName;
     // AfxMessageBox("Incorrect archive path");;
     return;
   }
-  lstrcpy(buffer, fullFileName);
+  lstrcpy(buffer, GetSystemString(fullFileName));
 
   OPENFILENAME info;
   info.lStructSize = sizeof(info); 
@@ -340,9 +340,9 @@ void CCompressDialog::OnButtonSetArchive()
   CDoubleZeroStringList doubleZeroStringList;
   // doubleZeroStringList.Add(TEXT("Zip Files (*.zip)"));
   // doubleZeroStringList.Add(TEXT("*.zip"));
-  CSysString s = LangLoadString(IDS_OPEN_TYPE_ALL_FILES, 0x02000DB1);
-  s += TEXT(" (*.*)");
-  doubleZeroStringList.Add(s);
+  UString s = LangLoadStringW(IDS_OPEN_TYPE_ALL_FILES, 0x02000DB1);
+  s += L" (*.*)";
+  doubleZeroStringList.Add(GetSystemString(s));
   doubleZeroStringList.Add(TEXT("*.*"));
   doubleZeroStringList.SetForBuffer(filterBuffer);
   info.lpstrFilter = filterBuffer; 
@@ -421,7 +421,7 @@ void CCompressDialog::OnOK()
 
   SaveOptions();
   int currentItem = m_ArchivePath.GetCurSel();
-  CSysString s;
+  UString s;
   if(currentItem == CB_ERR)
   {
     m_ArchivePath.GetText(s);
@@ -429,11 +429,14 @@ void CCompressDialog::OnOK()
       currentItem = m_ArchivePath.GetCount() - 1;
   }
   else
-    m_ArchivePath.GetLBText(currentItem, s);
-  s.TrimLeft();
-  s.TrimRight();
+  {
+    CSysString sTemp;
+    m_ArchivePath.GetLBText(currentItem, sTemp);
+    s = GetUnicodeString(sTemp);
+  }
+  s.Trim();
   m_RegistryInfo.HistoryArchives.Clear();
-  AddUniqueString(m_RegistryInfo.HistoryArchives, (const TCHAR *)s);
+  AddUniqueString(m_RegistryInfo.HistoryArchives, GetSystemString(s));
   m_Info.ArchiveName = s;
   m_Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());
 
@@ -459,9 +462,10 @@ void CCompressDialog::OnOK()
   for(int i = 0; i < m_ArchivePath.GetCount(); i++)
     if(i != currentItem)
     {
-      m_ArchivePath.GetLBText(i, s);
-      s.Trim();
-      AddUniqueString(m_RegistryInfo.HistoryArchives, (const TCHAR *)s);
+      CSysString sTemp;
+      m_ArchivePath.GetLBText(i, sTemp);
+      sTemp.Trim();
+      AddUniqueString(m_RegistryInfo.HistoryArchives, sTemp);
     }
   
   ////////////////////
@@ -478,7 +482,7 @@ void CCompressDialog::OnOK()
   CModalDialog::OnOK();
 }
 
-static LPCTSTR kHelpTopic = TEXT("fm/plugins/7-zip/add.htm");
+static LPCWSTR kHelpTopic = L"fm/plugins/7-zip/add.htm";
 
 void CCompressDialog::OnHelp() 
 {
@@ -503,18 +507,18 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
 void CCompressDialog::OnSelChangeComboFormat() 
 {
   SaveOptions();
-  CSysString fileName;
+  UString fileName;
   m_ArchivePath.GetText(fileName);
 
   const CArchiverInfo &prevArchiverInfo = m_ArchiverInfoList[m_PrevFormat];
   if (prevArchiverInfo.KeepName || m_Info.KeepName)
   {
-    const CSysString &prevExtension = GetSystemString(prevArchiverInfo.GetMainExtension());
+    const UString &prevExtension = prevArchiverInfo.GetMainExtension();
     const int prevExtensionLen = prevExtension.Length();
     if (fileName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
     {
       int pos = fileName.Length() - prevExtensionLen;
-      CSysString temp = fileName.Left(pos);
+      UString temp = fileName.Left(pos);
       if (pos > 1)
       {
         int dotPos = fileName.ReverseFind('.');
@@ -527,9 +531,9 @@ void CCompressDialog::OnSelChangeComboFormat()
   SetOptions();
 }
 
-void CCompressDialog::SetArchiveName(const CSysString &name)
+void CCompressDialog::SetArchiveName(const UString &name)
 {
-  CSysString fileName = name;
+  UString fileName = name;
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
   const CArchiverInfo &archiverInfo = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
   m_PrevFormat = m_Info.ArchiverInfoIndex;
@@ -548,8 +552,8 @@ void CCompressDialog::SetArchiveName(const CSysString &name)
         fileName = fileName.Left(dotPos);
     }
   }
-  fileName += '.';
-  fileName += GetSystemString(archiverInfo.GetMainExtension());
+  fileName += L'.';
+  fileName += archiverInfo.GetMainExtension();
   m_ArchivePath.SetText(fileName);
 }
 

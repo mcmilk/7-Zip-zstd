@@ -14,6 +14,13 @@ bool CInFileStream::Open(LPCTSTR fileName)
   return File.Open(fileName);
 }
 
+#ifndef _UNICODE
+bool CInFileStream::Open(LPCWSTR fileName)
+{
+  return File.Open(fileName);
+}
+#endif
+
 STDMETHODIMP CInFileStream::Read(void *data, UINT32 size, UINT32 *processedSize)
 {
   UINT32 realProcessedSize;
@@ -50,12 +57,19 @@ STDMETHODIMP CInFileStream::GetSize(UINT64 *size)
 //////////////////////////
 // COutFileStream
 
-
 bool COutFileStream::Open(LPCTSTR fileName)
 {
   File.SetOpenCreationDispositionCreateAlways();
   return File.Open(fileName);
 }
+
+#ifndef _UNICODE
+bool COutFileStream::Open(LPCWSTR fileName)
+{
+  File.SetOpenCreationDispositionCreateAlways();
+  return File.Open(fileName);
+}
+#endif
 
 STDMETHODIMP COutFileStream::Write(const void *data, UINT32 size, UINT32 *processedSize)
 {

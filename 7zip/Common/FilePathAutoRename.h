@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-bool AutoRenamePath(CSysString &fullProcessedPath);
+bool AutoRenamePath(UString &fullProcessedPath);
 
 #endif

@@ -6,10 +6,10 @@
 #include "Common/String.h"
 
 HRESULT ExtractArchive(
-    const CSysString &fileName, 
-    const CSysString &folderName
+    const UString &fileName, 
+    const UString &folderName
     #ifdef _SILENT
-    , CSysString &resultMessage
+    , UString &resultMessage
     #endif
     );
 

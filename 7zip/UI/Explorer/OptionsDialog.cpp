@@ -6,6 +6,7 @@
 
 #include "OptionsDialog.h"
 
+#include "Common/StringConvert.h"
 #include "Windows/Control/PropertyPage.h"
 
 #include "../../FileManager/LangUtils.h"
@@ -51,7 +52,7 @@ int OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
   CSysStringVector titles;
   UINT32 langIDs[] = { 0x01000300, 0x01000200};
   for (int i = 0; i < sizeof(langIDs) / sizeof(langIDs[0]); i++)
-    titles.Add(LangLoadString(langIDs[i]));
+    titles.Add(GetSystemString(LangLoadString(langIDs[i])));
 
   FillInPropertyPage(&pages[0], hInstance, IDD_SYSTEM, &systemPage, titles[0]);
   FillInPropertyPage(&pages[1], hInstance, IDD_FOLDERS, &foldersPage, titles[1]);

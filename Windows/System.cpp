@@ -3,23 +3,13 @@
 #include "StdAfx.h"
 
 #include "System.h"
+#ifndef _UNICODE
+#include "../Common/StringConvert.h"
+#endif
 
 namespace NWindows {
 namespace NSystem {
 
-bool MyGetWindowsDirectory(CSysString &path)
-{
-  DWORD needLength = ::GetWindowsDirectory(path.GetBuffer(MAX_PATH), MAX_PATH);
-  path.ReleaseBuffer();
-  return (needLength < MAX_PATH);
-}
-
-bool MyGetSystemDirectory(CSysString &path)
-{
-  DWORD needLength = ::GetSystemDirectory(path.GetBuffer(MAX_PATH), MAX_PATH);
-  path.ReleaseBuffer();
-  return (needLength < MAX_PATH);
-}
 
 }}
 

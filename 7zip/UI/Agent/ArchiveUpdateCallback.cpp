@@ -16,7 +16,7 @@
 
 using namespace NWindows;
 
-void CArchiveUpdateCallback::Init(const CSysString &baseFolderPrefix,
+void CArchiveUpdateCallback::Init(const UString &baseFolderPrefix,
     const CObjectVector<CDirItem> *dirItems, 
     const CObjectVector<CArchiveItem> *archiveItems, // test CItemInfoExList
     CObjectVector<CUpdatePair2> *updatePairs,

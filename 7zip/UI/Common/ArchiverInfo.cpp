@@ -6,6 +6,7 @@
 
 #ifndef EXCLUDE_COM
 
+#include "Common/StringConvert.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
 #include "Windows/DLL.h"
@@ -50,37 +51,41 @@ static void SplitString(const UString &srcString, UStringVector &destStrings)
 typedef UINT32 (WINAPI * GetHandlerPropertyFunc)(
     PROPID propID, PROPVARIANT *value);
 
-CSysString GetCurrentModulePath()
+/*
+UString GetCurrentModulePath()
 {
   TCHAR fullPath[MAX_PATH + 1];
   ::GetModuleFileName(g_hInstance, fullPath, MAX_PATH);
   return fullPath;
 }
+*/
 
-static CSysString GetModuleFolderPrefix()
+static UString GetModuleFolderPrefix()
 {
-  CSysString path = GetCurrentModulePath();
-  int pos = path.ReverseFind(TEXT('\\'));
+  UString path;
+  NDLL::MyGetModuleFileName(g_hInstance, path);
+  int pos = path.ReverseFind(L'\\');
   return path.Left(pos + 1);
 }
 
-static LPCTSTR kFormatFolderName = TEXT("Formats");
+static wchar_t *kFormatFolderName = L"Formats";
 static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
 static LPCTSTR kProgramPathValue = TEXT("Path");
 
-CSysString GetBaseFolderPrefix()
+UString GetBaseFolderPrefix()
 {
-  CSysString moduleFolderPrefix = GetModuleFolderPrefix();
-  NFind::CFileInfo fileInfo;
+  UString moduleFolderPrefix = GetModuleFolderPrefix();
+  NFind::CFileInfoW fileInfo;
   if (NFind::FindFile(moduleFolderPrefix + kFormatFolderName, fileInfo))
     if (fileInfo.IsDirectory())
       return moduleFolderPrefix;
-  CSysString path;
+  CSysString pathSys;
   {
     NRegistry::CKey key;
     if(key.Open(HKEY_CURRENT_USER, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
-      if (key.QueryValue(kProgramPathValue, path) == ERROR_SUCCESS)
+      if (key.QueryValue(kProgramPathValue, pathSys) == ERROR_SUCCESS)
       {
+        UString path = GetUnicodeString(pathSys);
         NName::NormalizeDirPathPrefix(path);
         return path;
       }
@@ -88,19 +93,15 @@ CSysString GetBaseFolderPrefix()
   {
     NRegistry::CKey key;
     if(key.Open(HKEY_LOCAL_MACHINE, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
-      if (key.QueryValue(kProgramPathValue, path) == ERROR_SUCCESS)
+      if (key.QueryValue(kProgramPathValue, pathSys) == ERROR_SUCCESS)
       {
+        UString path = GetUnicodeString(pathSys);
         NName::NormalizeDirPathPrefix(path);
         return path;
       }
   }
   return moduleFolderPrefix;
 }
-
-// static const TCHAR *kExtension = TEXT("Extension");
-// static const TCHAR *kAddExtension = TEXT("AddExtension");
-// static const TCHAR *kUpdate = TEXT("Update");
-// static const TCHAR *kKeepName = TEXT("KeepName");
 
 typedef UINT32 (WINAPI *CreateObjectPointer)(
     const GUID *clsID, 
@@ -204,15 +205,15 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
   
   #else
 
-  CSysString folderPath = GetBaseFolderPrefix() + 
-      kFormatFolderName + TEXT("\\");
-  NFind::CEnumerator enumerator(folderPath + TEXT("*"));
-  NFind::CFileInfo fileInfo;
+  UString folderPath = GetBaseFolderPrefix() + 
+      kFormatFolderName + L"\\";
+  NFind::CEnumeratorW enumerator(folderPath + L"*");
+  NFind::CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))
   {
     if (fileInfo.IsDirectory())
       continue;
-    CSysString filePath = folderPath + fileInfo.Name;
+    UString filePath = folderPath + fileInfo.Name;
     {
       NDLL::CLibrary library;
       if (!library.LoadEx(filePath, LOAD_LIBRARY_AS_DATAFILE))

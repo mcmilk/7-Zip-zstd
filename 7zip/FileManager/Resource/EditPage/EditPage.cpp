@@ -22,7 +22,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_EDIT_STATIC_EDITOR, 0x03010201}
 };
 
-static LPCTSTR kEditTopic = TEXT("FM/options.htm#editor");
+static LPCWSTR kEditTopic = L"FM/options.htm#editor";
 
 bool CEditPage::OnInit()
 {

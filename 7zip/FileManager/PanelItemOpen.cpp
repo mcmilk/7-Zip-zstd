@@ -150,7 +150,7 @@ static HANDLE StartEditApplication(CSysString &path, HWND window)
   ReadRegEditor(command);
   if (command.IsEmpty())
   {
-    if (!NSystem::MyGetWindowsDirectory(command))
+    if (!MyGetWindowsDirectory(command))
       return 0;
     NFile::NName::NormalizeDirPathPrefix(command);
     command += TEXT("notepad.exe");
@@ -404,7 +404,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   CThread extractThread;
   if (!extractThread.Create(CThreadExtractInArchive::MyThreadFunction, &extracter))
     throw 271824;
-  extracter.ExtractCallbackSpec->StartProgressDialog(LangLoadString(IDS_OPENNING, 0x03020283));
+  extracter.ExtractCallbackSpec->StartProgressDialog(LangLoadStringW(IDS_OPENNING, 0x03020283));
 
   if (extracter.Result != S_OK)
   {

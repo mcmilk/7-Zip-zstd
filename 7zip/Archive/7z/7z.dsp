@@ -510,14 +510,6 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group

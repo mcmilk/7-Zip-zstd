@@ -6,6 +6,7 @@
 
 #include "ExtractDialog.h"
 
+#include "Common/StringConvert.h"
 #include "Windows/Shell.h"
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
@@ -226,28 +227,28 @@ void CExtractDialog::OnButtonSetPath()
   _path.GetText(currentPath);
 
   #ifdef LANG        
-  CSysString title = LangLoadString(IDS_EXTRACT_SET_FOLDER, 0x02000881);
+  UString title = LangLoadStringW(IDS_EXTRACT_SET_FOLDER, 0x02000881);
   #else
-  CSysString title = MyLoadString(IDS_EXTRACT_SET_FOLDER);
+  UString title = MyLoadStringW(IDS_EXTRACT_SET_FOLDER);
   #endif
 
 
-  CSysString aResultPath;
-  if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, aResultPath))
+  CSysString resultPath;
+  if (!NShell::BrowseForFolder(HWND(*this), GetSystemString(title), 
+      currentPath, resultPath))
     return;
   #ifndef NO_REGISTRY
   _path.SetCurSel(-1);
   #endif
-  _path.SetText(aResultPath);
+  _path.SetText(resultPath);
 }
 
-void AddUniqueString(CSysStringVector &list, const CSysString &string)
+void AddUniqueString(CSysStringVector &list, const CSysString &s)
 {
-  CSysString stringLoc = string;
   for(int i = 0; i < list.Size(); i++)
-    if (stringLoc.CollateNoCase(list[i]) == 0)
+    if (s.CollateNoCase(list[i]) == 0)
       return;
-  list.Add(stringLoc);
+  list.Add(s);
 }
 
 void CExtractDialog::OnOK() 
@@ -266,38 +267,43 @@ void CExtractDialog::OnOK()
   extractionInfo.ShowPassword = (IsButtonChecked(
           IDC_EXTRACT_CHECK_SHOW_PASSWORD) == BST_CHECKED);
   
-  CSysString string;
+  UString s;
   
   #ifdef NO_REGISTRY
   
-  _path.GetText(string);
+  _path.GetText(s);
   
   #else
 
   int currentItem = _path.GetCurSel();
   if(currentItem == CB_ERR)
   {
-    _path.GetText(string);
+    _path.GetText(s);
     if(_path.GetCount() >= kHistorySize)
       currentItem = _path.GetCount() - 1;
   }
   else
-    _path.GetLBText(currentItem, string);
+  {
+    CSysString sTemp;
+    _path.GetLBText(currentItem, sTemp);
+    s = GetUnicodeString(sTemp);
+  }
   
   #endif
 
-  string.TrimLeft();
-  string.TrimRight();
-  AddUniqueString(extractionInfo.Paths, (const TCHAR *)string);
-  DirectoryPath = string;
+  s.Trim();
+  #ifndef _SFX
+  AddUniqueString(extractionInfo.Paths, GetSystemString(s));
+  #endif
+  DirectoryPath = s;
   #ifndef  NO_REGISTRY
   for(int i = 0; i < _path.GetCount(); i++)
     if(i != currentItem)
     {
-      _path.GetLBText(i, string);
-      string.TrimLeft();
-      string.TrimRight();
-      AddUniqueString(extractionInfo.Paths, (const TCHAR *)string);
+      CSysString sTemp;
+      _path.GetLBText(i, sTemp);
+      sTemp.Trim();
+      AddUniqueString(extractionInfo.Paths, sTemp);
     }
   SaveExtractionInfo(extractionInfo);
   #endif
@@ -347,7 +353,7 @@ void CExtractDialog::GetModeInfo(NExtractionDialog::CModeInfo &modeInfo)
 }
   
 #ifndef  NO_REGISTRY
-static LPCTSTR kHelpTopic = TEXT("fm/plugins/7-zip/extract.htm");
+static LPCWSTR kHelpTopic = L"fm/plugins/7-zip/extract.htm";
 void CExtractDialog::OnHelp() 
 {
   ShowHelpWindow(NULL, kHelpTopic);

@@ -35,13 +35,13 @@ public:
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
 private:
-  CSysString _folderPrefix;
-  NWindows::NFile::NFind::CFileInfo _fileInfo;
+  UString _folderPrefix;
+  NWindows::NFile::NFind::CFileInfoW _fileInfo;
 public:
   bool PasswordIsDefined;
   UString Password;
   COpenCallbackImp(): PasswordIsDefined(false) {}
-  void LoadFileInfo(const CSysString &folderPrefix,  const CSysString &fileName)
+  void LoadFileInfo(const UString &folderPrefix,  const UString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))

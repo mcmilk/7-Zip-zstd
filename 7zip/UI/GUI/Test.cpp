@@ -32,9 +32,6 @@
 
 using namespace NWindows;
 
-static inline UINT GetCurrentFileCodePage()
-  {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 struct CThreadTesting
 {
   NDLL::CLibrary Library;
@@ -58,7 +55,7 @@ struct CThreadTesting
   }
 };
 
-HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
+HRESULT TestArchive(HWND parentWindow, const UString &fileName)
 {
   CThreadTesting tester;
 
@@ -67,7 +64,7 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   openCallbackSpec->_passwordIsDefined = false;
   openCallbackSpec->_parentWindow = parentWindow;
 
-  CSysString fullName;
+  UString fullName;
   int fileNamePartStartIndex;
   NFile::NDirectory::MyGetFullPathName(fileName, fullName, fileNamePartStartIndex);
 
@@ -90,9 +87,9 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   
   tester.ExtractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
-  const CSysString title = LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90);
+  const UString title = LangLoadStringW(IDS_PROGRESS_TESTING, 0x02000F90);
   #else
-  const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_TESTING);
+  const UString title = NWindows::MyLoadStringW(IDS_PROGRESS_TESTING);
   #endif
   
   tester.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
@@ -104,9 +101,9 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   FILETIME fileTomeDefault;
   extractCallback200Spec->Init(tester.Archive, 
       tester.ExtractCallback2, 
-      TEXT(""), NExtractionMode::NPath::kFullPathnames, 
+      L"", NExtractionMode::NPath::kFullPathnames, 
       NExtractionMode::NOverwrite::kWithoutPrompt, UStringVector(),
-      GetCurrentFileCodePage(), defaultName, 
+      defaultName, 
       fileTomeDefault, 0);
 
 
@@ -118,8 +115,8 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   if (tester.Result == S_OK && tester.ExtractCallbackSpec->_messages.IsEmpty())
   {
     // extractCallbackSpec->DestroyWindows();
-    MessageBox(0, LangLoadString(IDS_MESSAGE_NO_ERRORS, 0x02000608),
-      LangLoadString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
+    MessageBoxW(0, LangLoadStringW(IDS_MESSAGE_NO_ERRORS, 0x02000608),
+        LangLoadStringW(IDS_PROGRESS_TESTING, 0x02000F90), 0);
   }
   return tester.Result;
 }

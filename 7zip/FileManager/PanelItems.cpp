@@ -119,9 +119,9 @@ void CPanel::InitColumns()
       else
         destProperty.Name = L"Error";
     }
-    CSysString propName = GetNameOfProperty(propID);
+    UString propName = GetNameOfProperty(propID);
     if (!propName.IsEmpty())
-      destProperty.Name = GetUnicodeString(propName);
+      destProperty.Name = propName;
     destProperty.Order = -1;
     destProperty.IsVisible = true;
     destProperty.Width = 100;
@@ -192,10 +192,10 @@ void CPanel::InsertColumn(int index)
   column.fmt = GetColumnAlign(property.ID, property.Type);
   column.iOrder = property.Order;
   column.iSubItem = index;
-  CSysString propertyName = GetNameOfProperty(property.ID);
+  UString propertyName = GetNameOfProperty(property.ID);
   if (propertyName.IsEmpty())
-    propertyName = GetSystemString(property.Name);
-  lstrcpy(string, propertyName);
+    propertyName = property.Name;
+  lstrcpy(string, GetSystemString(propertyName));
   _listView.InsertColumn(index, &column);
 }
 
@@ -404,8 +404,9 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     {
       if (_currentFolderPrefix.IsEmpty())
       {
-        item.iImage = GetRealIconIndex(
-            attributes, (GetSystemString(itemName) + TEXT("\\")));
+        int iconIndexTemp;
+        GetRealIconIndex(itemName + L"\\", attributes, iconIndexTemp);
+        item.iImage = iconIndexTemp;
       }
       else
       {

@@ -16,6 +16,9 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
+static inline UINT GetCurrentCodePage() 
+  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -61,54 +64,79 @@ static DWORD CALLBACK CopyProgressRoutine(
 }
 
 typedef BOOL (WINAPI * CopyFileExPointer)(
-    IN LPCTSTR lpExistingFileName,
-    IN LPCTSTR lpNewFileName,
+    IN LPCSTR lpExistingFileName,
+    IN LPCSTR lpNewFileName,
     IN LPPROGRESS_ROUTINE lpProgressRoutine OPTIONAL,
     IN LPVOID lpData OPTIONAL,
     IN LPBOOL pbCancel OPTIONAL,
     IN DWORD dwCopyFlags
     );
 
-static bool MyCopyFile(LPCTSTR existingFile, LPCTSTR newFile,    
+typedef BOOL (WINAPI * CopyFileExPointerW)(
+    IN LPCWSTR lpExistingFileName,
+    IN LPCWSTR lpNewFileName,
+    IN LPPROGRESS_ROUTINE lpProgressRoutine OPTIONAL,
+    IN LPVOID lpData OPTIONAL,
+    IN LPBOOL pbCancel OPTIONAL,
+    IN DWORD dwCopyFlags
+    );
+
+static bool MyCopyFile(LPCWSTR existingFile, LPCWSTR newFile,    
     IProgress *progress, UINT64 &completedSize)
 {
-  if (IsItWindowsNT())
-  {
+  // if (IsItWindowsNT())
+  // {
     CProgressInfo progressInfo;
     progressInfo.Progress = progress;
     progressInfo.StartPos = completedSize;
     BOOL CancelFlag = FALSE;
+    CopyFileExPointerW copyFunctionW = (CopyFileExPointerW)
+        ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
+        "CopyFileExW");
+    if (copyFunctionW != 0)
+    {
+      if (copyFunctionW(existingFile, newFile, CopyProgressRoutine,
+          &progressInfo, &CancelFlag, COPY_FILE_FAIL_IF_EXISTS))
+        return true;
+      if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+        return false;
+    }
+
     CopyFileExPointer copyFunction = (CopyFileExPointer)
         ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
-    #ifdef UNICODE
-        "CopyFileExW"
-    #else
-        "CopyFileExA"
-    #endif
-          );
-
-    if (copyFunction == 0)
-      return false;
-    return BOOLToBool(copyFunction(existingFile, newFile, CopyProgressRoutine,
-        &progressInfo, &CancelFlag, COPY_FILE_FAIL_IF_EXISTS));
-  }
-  else
-    return BOOLToBool(::CopyFile(existingFile, newFile, TRUE));
+        "CopyFileExA");
+    UINT codePage = GetCurrentCodePage();
+    if (copyFunction != 0)
+    {
+      if (copyFunction(
+          UnicodeStringToMultiByte(existingFile, codePage),
+          UnicodeStringToMultiByte(newFile, codePage),
+          CopyProgressRoutine,
+          &progressInfo, &CancelFlag, COPY_FILE_FAIL_IF_EXISTS))
+        return true;
+      if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+        return false;
+    }
+  // }
+  return BOOLToBool(::CopyFile(
+      GetSystemString(existingFile, codePage),
+      GetSystemString(newFile, codePage),
+      TRUE));
 }
 
 typedef BOOL (WINAPI * MoveFileWithProgressPointer)(
-    IN LPCTSTR lpExistingFileName,
-    IN LPCTSTR lpNewFileName,
+    IN LPCWSTR lpExistingFileName,
+    IN LPCWSTR lpNewFileName,
     IN LPPROGRESS_ROUTINE lpProgressRoutine OPTIONAL,
     IN LPVOID lpData OPTIONAL,
     IN DWORD dwFlags
     );
 
-static bool MyMoveFile(LPCTSTR existingFile, LPCTSTR newFile,    
+static bool MyMoveFile(LPCWSTR existingFile, LPCWSTR newFile,    
     IProgress *progress, UINT64 &completedSize)
 {
-  if (IsItWindows2000orHigher())
-  {
+  // if (IsItWindows2000orHigher())
+  // {
     CProgressInfo progressInfo;
     progressInfo.Progress = progress;
     progressInfo.StartPos = completedSize;
@@ -116,31 +144,33 @@ static bool MyMoveFile(LPCTSTR existingFile, LPCTSTR newFile,
 
     MoveFileWithProgressPointer moveFunction = (MoveFileWithProgressPointer)
         ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
-    #ifdef UNICODE
-        "MoveFileWithProgressW"
-    #else
-        "MoveFileWithProgressA"
-    #endif
-      );
-    if (moveFunction == 0)
-      return false;
-    return BOOLToBool(moveFunction(
-        existingFile, newFile, CopyProgressRoutine,
-        &progressInfo, MOVEFILE_COPY_ALLOWED));
-  }
-  else
-    return BOOLToBool(::MoveFile(existingFile, newFile));
+        "MoveFileWithProgressW");
+    if (moveFunction != 0)
+    {
+      if (moveFunction(
+          existingFile, newFile, CopyProgressRoutine,
+          &progressInfo, MOVEFILE_COPY_ALLOWED))
+        return true;
+      if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+        return false;
+    }
+
+
+
+  // }
+  // else
+    return NDirectory::MyMoveFile(existingFile, newFile);
 }
 
 static HRESULT MyCopyFile(
-    const CSysString &srcPath,
-    const CFileInfo &srcFileInfo,
-    const CSysString &destPathSpec,
+    const UString &srcPath,
+    const CFileInfoW &srcFileInfo,
+    const UString &destPathSpec,
     IFolderOperationsExtractCallback *callback,
     UINT fileCodePage,
     UINT64 &completedSize)
 {
-  CSysString destPath = destPathSpec;
+  UString destPath = destPathSpec;
   if (destPath.CollateNoCase(srcPath) == 0)
   {
     UString message = UString(L"can not move file \'") + 
@@ -160,7 +190,7 @@ static HRESULT MyCopyFile(
       &writeAskResult));
   if (IntToBool(writeAskResult))
   {
-    CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
+    UString destPathNew = UString(destPathResult);
     if (!::MyCopyFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = GetUnicodeString(NError::MyFormatMessage(GetLastError())) +
@@ -175,20 +205,20 @@ static HRESULT MyCopyFile(
   return callback->SetCompleted(&completedSize);
 }
 
-HRESULT CopyFolder(
-    const CSysString &srcPath,
-    const CSysString &destPathSpec,
+static HRESULT CopyFolder(
+    const UString &srcPath,
+    const UString &destPathSpec,
     IFolderOperationsExtractCallback *callback,
     UINT fileCodePage,
     UINT64 &completedSize)
 {
   RINOK(callback->SetCompleted(&completedSize));
 
-  CSysString destPath = destPathSpec;
+  UString destPath = destPathSpec;
   int len = srcPath.Length();
   if (destPath.Length() >= len && srcPath.CollateNoCase(destPath.Left(len)) == 0)
   {
-    if (destPath.Length() == len || destPath[len] == TEXT('\\'))
+    if (destPath.Length() == len || destPath[len] == L'\\')
     {
       UString message = UString(L"can not copy folder \'") + 
           GetUnicodeString(destPath, fileCodePage) + UString(L"\' onto itself");
@@ -204,12 +234,12 @@ HRESULT CopyFolder(
     RINOK(callback->ShowMessage(message));
     return E_ABORT;
   }
-  CEnumerator enumerator(srcPath + CSysString(TEXT("\\*")));
+  CEnumeratorW enumerator(srcPath + UString(L"\\*"));
   CFileInfoEx fileInfo;
   while (enumerator.Next(fileInfo))
   {
-    const CSysString srcPath2 = srcPath + CSysString(TEXT("\\")) + fileInfo.Name;
-    const CSysString destPath2 = destPath + CSysString(TEXT("\\")) + fileInfo.Name;
+    const UString srcPath2 = srcPath + UString(L"\\") + fileInfo.Name;
+    const UString destPath2 = destPath + UString(L"\\") + fileInfo.Name;
     if (fileInfo.IsDirectory())
     {
       RINOK(CopyFolder(srcPath2, destPath2,
@@ -268,11 +298,11 @@ STDMETHODIMP CFSFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
   RINOK(callback->SetCompleted(&completedSize));
   for (i = 0; i < numItems; i++)
   {
-    const CFileInfo &fileInfo = _files[indices[i]];
-    CSysString destPath2 = GetSystemString(destPath);
+    const CFileInfoW &fileInfo = _files[indices[i]];
+    UString destPath2 = destPath;
     if (!directName)
       destPath2 += fileInfo.Name;
-    CSysString srcPath = _path + fileInfo.Name;
+    UString srcPath = _path + fileInfo.Name;
     if (fileInfo.IsDirectory())
     {
       RINOK(CopyFolder(srcPath, destPath2, callback,
@@ -291,14 +321,14 @@ STDMETHODIMP CFSFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
 // Move Operations
 
 HRESULT MyMoveFile(
-    const CSysString &srcPath,
-    const CFileInfo &srcFileInfo,
-    const CSysString &destPathSpec,
+    const UString &srcPath,
+    const CFileInfoW &srcFileInfo,
+    const UString &destPathSpec,
     IFolderOperationsExtractCallback *callback,
     UINT fileCodePage,
     UINT64 &completedSize)
 {
-  CSysString destPath = destPathSpec;
+  UString destPath = destPathSpec;
   if (destPath.CollateNoCase(srcPath) == 0)
   {
     UString message = UString(L"can not move file \'")
@@ -319,7 +349,7 @@ HRESULT MyMoveFile(
       &writeAskResult));
   if (IntToBool(writeAskResult))
   {
-    CSysString destPathNew = GetSystemString(UString(destPathResult), fileCodePage);
+    UString destPathNew = UString(destPathResult);
     if (!MyMoveFile(srcPath, destPathNew, callback, completedSize))
     {
       UString message = UString(L"can not move to file ") + 
@@ -333,17 +363,17 @@ HRESULT MyMoveFile(
 }
 
 HRESULT MyMoveFolder(
-    const CSysString &srcPath,
-    const CSysString &destPathSpec,
+    const UString &srcPath,
+    const UString &destPathSpec,
     IFolderOperationsExtractCallback *callback,
     UINT fileCodePage,
     UINT64 &completedSize)
 {
-  CSysString destPath = destPathSpec;
+  UString destPath = destPathSpec;
   int len = srcPath.Length();
   if (destPath.Length() >= len && srcPath.CollateNoCase(destPath.Left(len)) == 0)
   {
-    if (destPath.Length() == len || destPath[len] == TEXT('\\'))
+    if (destPath.Length() == len || destPath[len] == L'\\')
     {
       UString message = UString(L"can not move folder \'")
         + GetUnicodeString(destPath, fileCodePage) +
@@ -364,12 +394,12 @@ HRESULT MyMoveFolder(
     return E_ABORT;
   }
   {
-    CEnumerator enumerator(srcPath + CSysString(TEXT("\\*")));
+    CEnumeratorW enumerator(srcPath + UString(L"\\*"));
     CFileInfoEx fileInfo;
     while (enumerator.Next(fileInfo))
     {
-      const CSysString srcPath2 = srcPath + CSysString(TEXT("\\")) + fileInfo.Name;
-      const CSysString destPath2 = destPath + CSysString(TEXT("\\")) + fileInfo.Name;
+      const UString srcPath2 = srcPath + UString(L"\\") + fileInfo.Name;
+      const UString destPath2 = destPath + UString(L"\\") + fileInfo.Name;
       if (fileInfo.IsDirectory())
       {
         RINOK(MyMoveFolder(srcPath2, destPath2,
@@ -382,7 +412,7 @@ HRESULT MyMoveFolder(
       }
     }
   }
-  if (!::RemoveDirectory(srcPath))
+  if (!NDirectory::MyRemoveDirectory(srcPath))
   {
     UString message = UString(L"can not remove folder") + 
         GetUnicodeString(srcPath, fileCodePage);
@@ -436,11 +466,11 @@ STDMETHODIMP CFSFolder::MoveTo(
   RINOK(callback->SetCompleted(&completedSize));
   for (i = 0; i < numItems; i++)
   {
-    const CFileInfo &fileInfo = _files[indices[i]];
-    CSysString destPath2 = GetSystemString(destPath);
+    const CFileInfoW &fileInfo = _files[indices[i]];
+    UString destPath2 = destPath;
     if (!directName)
       destPath2 += fileInfo.Name;
-    CSysString srcPath = _path + fileInfo.Name;
+    UString srcPath = _path + fileInfo.Name;
     if (fileInfo.IsDirectory())
     {
       RINOK(MyMoveFolder(srcPath, destPath2, callback,

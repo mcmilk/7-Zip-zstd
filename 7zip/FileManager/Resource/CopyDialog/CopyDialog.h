@@ -17,9 +17,9 @@ class CCopyDialog: public NWindows::NControl::CModalDialog
   void OnButtonSetPath();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
-  CSysString Title;
-  CSysString Static;
-  CSysString Value;
+  UString Title;
+  UString Static;
+  UString Value;
   CSysStringVector Strings;
 
   INT_PTR Create(HWND parentWindow = 0)

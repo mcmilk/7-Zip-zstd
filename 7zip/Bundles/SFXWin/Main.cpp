@@ -5,9 +5,11 @@
 #include <initguid.h>
 
 #include "Common/StringConvert.h"
+#include "Common/CommandLineParser.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
+#include "Windows/DLL.h"
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"
@@ -18,31 +20,6 @@
 
 HINSTANCE g_hInstance;
 
-void SplitStringToSubstrings(const UString &srcString, 
-    UStringVector &destStrings)
-{
-  UString s;
-  bool quoteMode = false;
-  for (int i = 0; i < srcString.Length(); i++)
-  {
-    wchar_t c = srcString[i];
-    if (c == L'\"')
-      quoteMode = !quoteMode;
-    else if (c == L' ' && !quoteMode)
-    {
-      if (!s.IsEmpty())
-      {
-        destStrings.Add(s);
-        s.Empty();
-      }
-    }
-    else 
-      s += c;
-  }
-  if (!s.IsEmpty())
-    destStrings.Add(s);
-}
-
 int APIENTRY WinMain(
   HINSTANCE hInstance,
   HINSTANCE hPrevInstance,
@@ -52,9 +29,9 @@ int APIENTRY WinMain(
   g_hInstance = (HINSTANCE)hInstance;
   bool assumeYes = false;
   bool outputFolderDefined = false;
-  CSysString outputFolder;
+  UString outputFolder;
   UStringVector subStrings;
-  SplitStringToSubstrings(GetCommandLineW(), subStrings);
+  NCommandLineParser::SplitCommandLine(GetCommandLineW(), subStrings);
   for (int i = 1; i < subStrings.Size(); i++)
   {
     const UString &s = subStrings[i];
@@ -62,16 +39,16 @@ int APIENTRY WinMain(
       assumeYes = true;
     else if (s.Left(2).CompareNoCase(L"-o") == 0)
     {
-      outputFolder = GetSystemString(s.Mid(2));
+      outputFolder = s.Mid(2);
       NWindows::NFile::NName::NormalizeDirPathPrefix(outputFolder);
       outputFolderDefined = !outputFolder.IsEmpty();
     }
   }
 
-  TCHAR path[MAX_PATH + 1];
-  ::GetModuleFileName(NULL, path, MAX_PATH);
+  UString path;
+  NWindows::NDLL::MyGetModuleFileName(g_hInstance, path);
 
-  CSysString fullPath;
+  UString fullPath;
   int fileNamePartStartIndex;
   if (!NWindows::NFile::NDirectory::MyGetFullPathName(path, fullPath, fileNamePartStartIndex))
   {
@@ -79,7 +56,7 @@ int APIENTRY WinMain(
     return 1;
   }
   HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, 
-    outputFolderDefined ? outputFolder : 
+      outputFolderDefined ? outputFolder : 
       fullPath.Left(fileNamePartStartIndex));
   if (result == S_FALSE)
     MyMessageBox(L"Archive is not supported");

@@ -32,16 +32,17 @@ static CIDLangPair kIDLangPairs[] =
 #ifndef _SFX
 CProgressDialog::~CProgressDialog()
 {
-  AddToTitle(TEXT(""));
+  AddToTitle(L"");
 }
-void CProgressDialog::AddToTitle(LPCTSTR string)
+void CProgressDialog::AddToTitle(LPCWSTR s)
 {
   if (MainWindow != 0)
-    ::SetWindowText(MainWindow, string + CSysString(MainTitle));
+  {
+    CWindow window(MainWindow);
+    window.SetText(s + UString(MainTitle));
+  }
 }
 #endif
-
-
 
 bool CProgressDialog::OnInit() 
 {
@@ -60,21 +61,18 @@ bool CProgressDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
 
-  const int kBufferSize = 500;
-  GetItemText(IDC_BUTTON_PROGRESS_PRIORITY, 
-      backgroundString.GetBuffer(kBufferSize), kBufferSize);
-  backgroundString.ReleaseBuffer();
+
+  CWindow window(GetItem(IDC_BUTTON_PROGRESS_PRIORITY));
+  window.GetText(backgroundString);
   backgroundedString = backgroundString;
-  backgroundedString.Replace(TEXT("&"), TEXT(""));
+  backgroundedString.Replace(L"&", L"");
 
-  GetItemText(IDC_BUTTON_PAUSE, 
-      pauseString.GetBuffer(kBufferSize), kBufferSize);
-  pauseString.ReleaseBuffer();
+  window = GetItem(IDC_BUTTON_PAUSE);
+  window.GetText(pauseString);
 
-  foregroundString = LangLoadString(IDS_PROGRESS_FOREGROUND, 0x02000C11);
-  continueString = LangLoadString(IDS_PROGRESS_CONTINUE, 0x02000C13);
-  pausedString = LangLoadString(IDS_PROGRESS_PAUSED, 0x02000C20);
-
+  foregroundString = LangLoadStringW(IDS_PROGRESS_FOREGROUND, 0x02000C11);
+  continueString = LangLoadStringW(IDS_PROGRESS_CONTINUE, 0x02000C13);
+  pausedString = LangLoadStringW(IDS_PROGRESS_PAUSED, 0x02000C20);
 
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));
   _timer = SetTimer(kTimerID, kTimerElapse);
@@ -90,28 +88,28 @@ void CProgressDialog::OnCancel()
   ProgressSynch.SetStopped(true);
 }
 
-static void ConvertSizeToString(UINT64 value, TCHAR *string)
+static void ConvertSizeToString(UINT64 value, wchar_t *s)
 {
   if (value < (UINT64(10000) <<  0))
   {
-    ConvertUINT64ToString(value, string);
-    lstrcat(string, TEXT(" B"));
+    ConvertUINT64ToString(value, s);
+    lstrcatW(s, L" B");
     return;
   }
   if (value < (UINT64(10000) <<  10))
   {
-    ConvertUINT64ToString((value >> 10), string);
-    lstrcat(string, TEXT(" KB"));
+    ConvertUINT64ToString((value >> 10), s);
+    lstrcatW(s, L" KB");
     return;
   }
   if (value < (UINT64(10000) <<  20))
   {
-    ConvertUINT64ToString((value >> 20), string);
-    lstrcat(string, TEXT(" MB"));
+    ConvertUINT64ToString((value >> 20), s);
+    lstrcatW(s, L" MB");
     return;
   }
-  ConvertUINT64ToString((value >> 30), string);
-  lstrcat(string, TEXT(" GB"));
+  ConvertUINT64ToString((value >> 30), s);
+  lstrcatW(s, L" GB");
   return;
 }
 
@@ -122,7 +120,7 @@ void CProgressDialog::SetRange(UINT64 range)
   _converter.Init(range);
   m_ProgressBar.SetRange32(0 , _converter.Count(range)); // Test it for 100%
 
-  TCHAR s[32];
+  wchar_t s[32];
   ConvertSizeToString(_range, s);
   SetItemText(IDC_PROGRESS_SPEED_TOTAL_VALUE, s);
 }
@@ -142,9 +140,9 @@ void CProgressDialog::SetPos(UINT64 pos)
   }
 }
 
-static void GetTimeString(UINT64 timeValue, TCHAR *string)
+static void GetTimeString(UINT64 timeValue, TCHAR *s)
 {
-  wsprintf(string, TEXT("%02d:%02d:%02d"), 
+  wsprintf(s, TEXT("%02d:%02d:%02d"), 
       UINT32(timeValue / 3600),
       UINT32((timeValue / 60) % 60), 
       UINT32(timeValue % 60));
@@ -242,14 +240,14 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
   UINT32 percentValue = (UINT32)(completed * 100 / total);
   if (percentValue != _prevPercentValue) 
   {
-    TCHAR string[64];
-    ConvertUINT64ToString(percentValue, string);
-    CSysString title = string;
-    title += TEXT("% ");
+    wchar_t s[64];
+    ConvertUINT64ToString(percentValue, s);
+    UString title = s;
+    title += L"% ";
     if (!_foreground)
     {
       title += backgroundedString;
-      title += TEXT(" ");
+      title += L" ";
     }
     SetText(title + _title);
     #ifndef _SFX
@@ -308,8 +306,8 @@ void CProgressDialog::SetPauseText()
   SetItemText(IDC_BUTTON_PAUSE, ProgressSynch.GetPaused() ? 
     continueString : pauseString);
 
-  SetText(LangLoadString(IDS_PROGRESS_PAUSED, 0x02000C20) + 
-      CSysString(TEXT(" ")) + _title);
+  SetText(LangLoadStringW(IDS_PROGRESS_PAUSED, 0x02000C20) + 
+      UString(L" ") + _title);
 }
 
 void CProgressDialog::OnPauseButton()
@@ -348,8 +346,8 @@ bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       // ProgressSynch.SetPaused(true);
       if (!paused)
         OnPauseButton();
-      int res = ::MessageBox(HWND(*this), 
-          LangLoadString(IDS_PROGRESS_ASK_CANCEL, 0x02000C30), 
+      int res = ::MessageBoxW(HWND(*this), 
+          LangLoadStringW(IDS_PROGRESS_ASK_CANCEL, 0x02000C30), 
           _title, MB_YESNOCANCEL);
       // ProgressSynch.SetPaused(paused);
       if (!paused)

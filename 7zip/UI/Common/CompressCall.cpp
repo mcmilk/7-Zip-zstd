@@ -7,6 +7,7 @@
 #include "Common/Random.h"
 #include "Common/IntToString.h"
 #include "Common/MyCom.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/Synchronization.h"
 #include "Windows/FileMapping.h"
@@ -15,9 +16,9 @@
 
 using namespace NWindows;
 
-static LPCTSTR kShowDialogSwitch = TEXT(" -ad");
-static LPCTSTR kEmailSwitch = TEXT(" -seml");
-static LPCTSTR kMapSwitch = TEXT(" -i#");
+static LPCWSTR kShowDialogSwitch = L" -ad";
+static LPCWSTR kEmailSwitch = L" -seml";
+static LPCWSTR kMapSwitch = L" -i#";
 
 
 static bool IsItWindowsNT()
@@ -29,7 +30,7 @@ static bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-HRESULT MyCreateProcess(const CSysString &params, 
+HRESULT MyCreateProcess(const UString &params, 
     NWindows::NSynchronization::CEvent *event)
 {
   STARTUPINFO startupInfo;
@@ -42,7 +43,8 @@ HRESULT MyCreateProcess(const CSysString &params,
   startupInfo.lpReserved2 = 0;
   
   PROCESS_INFORMATION processInformation;
-  BOOL result = ::CreateProcess(NULL, (TCHAR *)(const TCHAR *)params, 
+  BOOL result = ::CreateProcess(NULL, (TCHAR *)(const TCHAR *)
+    GetSystemString(params), 
     NULL, NULL, FALSE, 0, NULL, NULL, 
     &startupInfo, &processInformation);
   if (result == 0)
@@ -61,35 +63,35 @@ HRESULT MyCreateProcess(const CSysString &params,
   return S_OK;
 }
 
-static CSysString GetQuotedString(const CSysString &s)
+static UString GetQuotedString(const UString &s)
 {
-  return CSysString(TEXT("\"")) + s + CSysString(TEXT("\""));
+  return UString(L"\"") + s + UString(L"\"");
 }
 
-static CSysString Get7zGuiPath()
+static UString Get7zGuiPath()
 {
-  CSysString path = TEXT("\"");
-  CSysString folder;
+  UString path = L"\"";
+  UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
   if (IsItWindowsNT())
-    path += TEXT("7zgn.exe");
+    path += L"7zgn.exe";
   else
-    path += TEXT("7zg.exe");
-  path += TEXT("\"");
+    path += L"7zg.exe";
+  path += L"\"";
   return path;
 }
 
 HRESULT CompressFiles(
-    const CSysString &archiveName,
+    const UString &archiveName,
     const UStringVector &names, 
     // const UString &outFolder, 
     bool email,
     bool showDialog)
 {
-  CSysString params;
+  UString params;
   params = Get7zGuiPath();
-  params += TEXT(" a");
+  params += L" a";
   params += kMapSwitch;
   // params += _fileNames[0];
   
@@ -99,8 +101,8 @@ HRESULT CompressFiles(
     dataSize += (names[i].Length() + 1) * sizeof(wchar_t);
   UINT32 totalSize = extraSize + dataSize;
   
-  CSysString mappingName;
-  CSysString eventName;
+  UString mappingName;
+  UString eventName;
   
   CFileMapping fileMapping;
   CRandom random;
@@ -108,12 +110,12 @@ HRESULT CompressFiles(
   while(true)
   {
     int number = random.Generate();
-    TCHAR temp[32];
+    wchar_t temp[32];
     ConvertUINT64ToString(UINT32(number), temp);
-    mappingName = TEXT("7zCompressMapping");
+    mappingName = L"7zCompressMapping";
     mappingName += temp;
     if (!fileMapping.Create(INVALID_HANDLE_VALUE, NULL,
-      PAGE_READWRITE, totalSize, mappingName))
+      PAGE_READWRITE, totalSize, GetSystemString(mappingName)))
     {
       // MyMessageBox(IDS_ERROR, 0x02000605);
       return E_FAIL;
@@ -127,11 +129,11 @@ HRESULT CompressFiles(
   while(true)
   {
     int number = random.Generate();
-    TCHAR temp[32];
+    wchar_t temp[32];
     ConvertUINT64ToString(UINT32(number), temp);
-    eventName = TEXT("7zCompressMappingEndEvent");
+    eventName = L"7zCompressMappingEndEvent";
     eventName += temp;
-    if (!event.Create(true, false, eventName))
+    if (!event.Create(true, false, GetSystemString(eventName)))
     {
       // MyMessageBox(IDS_ERROR, 0x02000605);
       return E_FAIL;
@@ -142,12 +144,12 @@ HRESULT CompressFiles(
   }
 
   params += mappingName;
-  params += TEXT(":");
-  TCHAR string [10];
+  params += L":";
+  wchar_t string[10];
   ConvertUINT64ToString(totalSize, string);
   params += string;
   
-  params += TEXT(":");
+  params += L":";
   params += eventName;
 
   if (email)
@@ -156,7 +158,7 @@ HRESULT CompressFiles(
   if (showDialog)
     params += kShowDialogSwitch;
 
-  params += TEXT(" ");
+  params += L" ";
   params += GetQuotedString(archiveName);
   
   LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);
@@ -200,16 +202,16 @@ HRESULT CompressFiles(
   return S_OK;
 }
 
-HRESULT ExtractArchive(const CSysString &archiveName,
-    const CSysString &outFolder, bool showDialog)
+HRESULT ExtractArchive(const UString &archiveName,
+    const UString &outFolder, bool showDialog)
 {
-  CSysString params;
+  UString params;
   params = Get7zGuiPath();
-  params += TEXT(" x ");
+  params += L" x ";
   params += GetQuotedString(archiveName);
   if (!outFolder.IsEmpty())
   {
-    params += TEXT(" -o");
+    params += L" -o";
     params += GetQuotedString(outFolder);
   }
   if (showDialog)
@@ -217,11 +219,11 @@ HRESULT ExtractArchive(const CSysString &archiveName,
   return MyCreateProcess(params);
 }
 
-HRESULT TestArchive(const CSysString &archiveName)
+HRESULT TestArchive(const UString &archiveName)
 {
-  CSysString params;
+  UString params;
   params = Get7zGuiPath();
-  params += TEXT(" t ");
+  params += L" t ";
   params += GetQuotedString(archiveName);
   return MyCreateProcess(params);
 }

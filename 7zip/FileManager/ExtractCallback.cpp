@@ -19,7 +19,6 @@
 
 #include "../Common/FilePathAutoRename.h"
 
-
 using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
@@ -34,9 +33,6 @@ CExtractCallbackImp::~CExtractCallbackImp()
   }
 }
 
-static inline UINT GetCurrentFileCodePage()
-  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 void CExtractCallbackImp::Init(
     NExtractionMode::NOverwrite::EEnum overwriteMode,
     bool passwordIsDefined, 
@@ -46,7 +42,6 @@ void CExtractCallbackImp::Init(
   _passwordIsDefined = passwordIsDefined;
   _password = password;
   _messages.Clear();
-  _fileCodePage = GetCurrentFileCodePage();
 }
 
 void CExtractCallbackImp::AddErrorMessage(LPCTSTR message)
@@ -82,24 +77,22 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 {
   COverwriteDialog dialog;
 
-  // NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
-  dialog._oldFileInfo.Time = *existTime;
-  if (dialog._oldFileInfo.SizeIsDefined = (existSize != NULL))
-    dialog._oldFileInfo.Size = *existSize;
-  dialog._oldFileInfo.Name = GetSystemString(existName);
-
+  dialog.OldFileInfo.Time = *existTime;
+  if (dialog.OldFileInfo.SizeIsDefined = (existSize != NULL))
+    dialog.OldFileInfo.Size = *existSize;
+  dialog.OldFileInfo.Name = existName;
 
   if (newTime == 0)
-    dialog._newFileInfo.TimeIsDefined = false;
+    dialog.NewFileInfo.TimeIsDefined = false;
   else
   {
-    dialog._newFileInfo.TimeIsDefined = true;
-    dialog._newFileInfo.Time = *newTime;
+    dialog.NewFileInfo.TimeIsDefined = true;
+    dialog.NewFileInfo.Time = *newTime;
   }
   
-  if (dialog._newFileInfo.SizeIsDefined = (newSize != NULL))
-    dialog._newFileInfo.Size = *newSize;
-  dialog._newFileInfo.Name = GetSystemString(newName);
+  if (dialog.NewFileInfo.SizeIsDefined = (newSize != NULL))
+    dialog.NewFileInfo.Size = *newSize;
+  dialog.NewFileInfo.Name = newName;
   
   /*
   NOverwriteDialog::NResult::EEnum writeAnswer = 
@@ -229,9 +222,9 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   *writeAnswer = BoolToInt(false);
 
   UString destPathSpec = destPath;
-  CSysString destPathSys = GetSystemString(destPathSpec, _fileCodePage);
+  UString destPathSys = destPathSpec;
   bool srcIsFolderSpec = IntToBool(srcIsFolder);
-  CFileInfo destFileInfo;
+  CFileInfoW destFileInfo;
   if (FindFile(destPathSys, destFileInfo))
   {
     if (srcIsFolderSpec)
@@ -266,7 +259,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
         RINOK(AskOverwrite(
             destPathSpec, 
             &destFileInfo.LastWriteTime, &destFileInfo.Size,
-            GetUnicodeString(srcPath, _fileCodePage),
+            srcPath,
             srcTime, srcSize, 
             &overwiteResult));
           switch(overwiteResult)
@@ -296,26 +289,17 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
       if (!AutoRenamePath(destPathSys))
       {
         UString message = UString(L"can not create name of file ")
-            + GetUnicodeString(destPathSys, _fileCodePage);
+            + destPathSys;
         RINOK(MessageError(message));
         return E_ABORT;
       }
-      
-      /*
-      {
-        CMyComBSTR destPathResultPrev;
-        destPathResultBSTR.Attach(*destPathResult);
-      }
-      */
-      // CMyComBSTR destPathResultBSTR = GetUnicodeString(destPathSys, _fileCodePage);
-      // *destPathResult = destPathResultBSTR.Detach();
-      destPathResultTemp = GetUnicodeString(destPathSys, _fileCodePage);
+      destPathResultTemp = destPathSys;
     }
     else
       if (!NFile::NDirectory::DeleteFileAlways(destPathSys))
       {
         UString message = UString(L"can not delete output file ")
-            + GetUnicodeString(destPathSys, _fileCodePage);
+            + destPathSys;
         RINOK(MessageError(message));
         return E_ABORT;
       }

@@ -64,7 +64,7 @@ enum EAdjustment
 struct CFieldInfo
 {
   PROPID PropID;
-  AString Name;
+  UString Name;
   EAdjustment TitleAdjustment;
   EAdjustment TextAdjustment;
   int PrefixSpacesWidth;
@@ -74,7 +74,7 @@ struct CFieldInfo
 struct CFieldInfoInit
 {
   PROPID PropID;
-  const char *Name;
+  const wchar_t *Name;
   EAdjustment TitleAdjustment;
   EAdjustment TextAdjustment;
   int PrefixSpacesWidth;
@@ -83,11 +83,11 @@ struct CFieldInfoInit
 
 CFieldInfoInit kStandardFieldTable[] = 
 {
-  { kpidLastWriteTime, "   Date      Time", kLeft, kLeft, 0, 19 },
-  { kpidAttributes, "Attr", kRight, kCenter, 1, 5 },
-  { kpidSize, "Size", kRight, kRight, 1, 12 },
-  { kpidPackedSize, "Compressed", kRight, kRight, 1, 12 },
-  { kpidPath, "Name", kLeft, kLeft, 2, 12 }
+  { kpidLastWriteTime, L"   Date      Time", kLeft, kLeft, 0, 19 },
+  { kpidAttributes, L"Attr", kRight, kCenter, 1, 5 },
+  { kpidSize, L"Size", kRight, kRight, 1, 12 },
+  { kpidPackedSize, L"Compressed", kRight, kRight, 1, 12 },
+  { kpidPath, L"Name", kLeft, kLeft, 2, 12 }
 };
 
 void PrintSpaces(int numSpaces)
@@ -96,7 +96,7 @@ void PrintSpaces(int numSpaces)
     g_StdOut << ' ';
 }
 
-void PrintString(EAdjustment adjustment, int width, const AString &textString)
+void PrintString(EAdjustment adjustment, int width, const UString &textString)
 {
   const int numSpaces = width - textString.Length();
   int numLeftSpaces;
@@ -126,7 +126,7 @@ public:
   void PrintTitleLines();
   HRESULT PrintItemInfo(IInArchive *archive, 
       const UString &defaultItemName,
-      const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+      const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
       UINT32 index);
   HRESULT PrintSummaryInfo(UINT64 numFiles, const UINT64 *size, 
       const UINT64 *compressedSize);
@@ -204,7 +204,7 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
 
 HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive, 
     const UString &defaultItemName, 
-    const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+    const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
     UINT32 index)
 {
   for (int i = 0; i < _fields.Size(); i++)
@@ -252,25 +252,24 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
 
     if (propVariant.vt == VT_BSTR)
     {
-      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, 
-          UnicodeStringToMultiByte(propVariant.bstrVal, CP_OEMCP));
+      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, propVariant.bstrVal);
       continue;
     }
     PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, 
-        GetOemString(ConvertPropertyToString(propVariant, fieldInfo.PropID)));
+        ConvertPropertyToString(propVariant, fieldInfo.PropID));
   }
   return S_OK;
 }
 
 void PrintNumberString(EAdjustment adjustment, int width, const UINT64 *value)
 {
-  char textString[32] = { 0 };
+  wchar_t textString[32] = { 0 };
   if (value != NULL)
     ConvertUINT64ToString(*value, textString);
   PrintString(adjustment, width, textString);
 }
 
-static const char *kFilesMessage = "files";
+static const wchar_t *kFilesMessage = L"files";
 
 HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles, 
     const UINT64 *size, const UINT64 *compressedSize)
@@ -286,15 +285,15 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles,
       PrintNumberString(fieldInfo.TextAdjustment, fieldInfo.Width, compressedSize);
     else if (fieldInfo.PropID == kpidPath)
     {
-      char textString[32];
+      wchar_t textString[32];
       ConvertUINT64ToString(numFiles, textString);
-      AString temp = textString;
-      temp += " ";
+      UString temp = textString;
+      temp += L" ";
       temp += kFilesMessage;
       PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, temp);
     }
     else 
-      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, "");
+      PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, L"");
   }
   return S_OK;
 }
@@ -313,7 +312,7 @@ bool GetUINT64Value(IInArchive *archive, UINT32 index,
 
 HRESULT ListArchive(IInArchive *archive, 
     const UString &defaultItemName,
-    const NWindows::NFile::NFind::CFileInfo &archiveFileInfo,
+    const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
     const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode,
     NListMode::EEnum mode*/)
 {

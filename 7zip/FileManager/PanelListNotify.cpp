@@ -19,29 +19,26 @@
 
 using namespace NWindows;
 
-static void ConvertSizeToString(UINT64 value, TCHAR *string)
+static UString ConvertSizeToString(UINT64 value)
 {
+  wchar_t s[64];
   if (value < (UINT64(10000) <<  0) /*&& ((value & 0x3FF) != 0 || value == 0)*/)
   {
-    ConvertUINT64ToString(value, string);
-    lstrcat(string, TEXT(" B"));
-    return;
+    ConvertUINT64ToString(value, s);
+    return UString(s) + L" B";
   }
   if (value < (UINT64(10000) <<  10))
   {
-    ConvertUINT64ToString((value >> 10), string);
-    lstrcat(string, TEXT(" K"));
-    return;
+    ConvertUINT64ToString((value >> 10), s);
+    return UString(s) + L" K";
   }
   if (value < (UINT64(10000) <<  20))
   {
-    ConvertUINT64ToString((value >> 20), string);
-    lstrcat(string, TEXT(" M"));
-    return;
+    ConvertUINT64ToString((value >> 20), s);
+    return UString(s) + L" M";
   }
-  ConvertUINT64ToString((value >> 30), string);
-  lstrcat(string, TEXT(" G"));
-  return;
+  ConvertUINT64ToString((value >> 30), s);
+  return UString(s) + L" G";
 }
 
 LRESULT CPanel::SetItemText(LVITEM &item)
@@ -87,7 +84,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
 
   if (realIndex == (UINT32)-1)
     return 0;
-  CSysString string;
+  UString string;
   UINT32 subItemIndex = item.iSubItem;
   PROPID propID = _visibleProperties[subItemIndex].ID;
   /*
@@ -132,10 +129,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
       &&
       (propVariant.vt == VT_UI8 || propVariant.vt == VT_UI4))
   {
-    UINT64 size = ConvertPropVariantToUINT64(propVariant);
-    TCHAR stringTemp[32];
-    ConvertSizeToString(size, stringTemp);
-    string = stringTemp;
+    string = ConvertSizeToString(ConvertPropVariantToUINT64(propVariant));
   }
   else
   {
@@ -147,7 +141,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
   {
     if(string.Length() + 1 > size)
       string = string.Left(size - 1);
-    lstrcpy(item.pszText, string);
+    lstrcpy(item.pszText, GetSystemString(string));
   }
   return 0;
 }
@@ -331,37 +325,35 @@ void CPanel::OnRefreshStatusBar()
   _statusBar.SetText(0, GetSystemString(MyFormatNew(IDS_N_SELECTED_ITEMS, 
       0x02000301, NumberToStringW(indices.Size()))));
   
-  CSysString selectSizeString;
+  UString selectSizeString;
 
   if (indices.Size() > 0)
   {
     UINT64 totalSize = 0;
     for (int i = 0; i < indices.Size(); i++)
       totalSize += GetItemSize(indices[i]);
-    TCHAR tempString[64];
-    ConvertSizeToString(totalSize, tempString);
-    selectSizeString = tempString;
+    selectSizeString = ConvertSizeToString(totalSize);
   }
-  _statusBar.SetText(1, selectSizeString);
+  _statusBar.SetText(1, GetSystemString(selectSizeString));
 
   int focusedItem = _listView.GetFocusedItem();
-  TCHAR sizeString[64] = { 0 };
-  CSysString dateString;
+  UString sizeString;
+  UString dateString;
   // CSysString nameString;
   if (focusedItem >= 0 && _listView.GetSelectedCount() > 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
     if (realIndex != -1)
     {
-      ConvertSizeToString(GetItemSize(realIndex), sizeString);
+      sizeString = ConvertSizeToString(GetItemSize(realIndex));
       NCOM::CPropVariant propVariant;
       if (_folder->GetProperty(realIndex, kpidLastWriteTime, &propVariant) == S_OK)
         dateString = ConvertPropertyToString(propVariant, kpidLastWriteTime, false);
     }
     // nameString = GetSystemString(GetItemName(realIndex));
   }
-  _statusBar.SetText(2, sizeString);
-  _statusBar.SetText(3, dateString);
+  _statusBar.SetText(2, GetSystemString(sizeString));
+  _statusBar.SetText(3, GetSystemString(dateString));
   // _statusBar.SetText(4, nameString);
 
 
@@ -369,5 +361,5 @@ void CPanel::OnRefreshStatusBar()
   _statusBar2.SetText(1, GetSystemString(MyFormatNew(L"{0} bytes", 
       NumberToStringW(totalSize))));
   */
-  // _statusBar.SetText(TEXT("yyy"));
+  // _statusBar.SetText(L"yyy"));
 }

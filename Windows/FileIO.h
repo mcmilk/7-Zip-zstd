@@ -28,6 +28,11 @@ protected:
   HANDLE _handle;
   bool Create(LPCTSTR fileName, DWORD desiredAccess,
       DWORD shareMode, DWORD creationDisposition,  DWORD flagsAndAttributes);
+  #ifndef _UNICODE
+  bool Create(LPCWSTR fileName, DWORD desiredAccess,
+      DWORD shareMode, DWORD creationDisposition,  DWORD flagsAndAttributes);
+  #endif
+
 public:
   CFileBase():
     _fileIsOpen(false){};
@@ -52,6 +57,11 @@ public:
   bool Open(LPCTSTR fileName, DWORD shareMode, 
       DWORD creationDisposition,  DWORD flagsAndAttributes);
   bool Open(LPCTSTR fileName);
+  #ifndef _UNICODE
+  bool Open(LPCWSTR fileName, DWORD shareMode, 
+      DWORD creationDisposition,  DWORD flagsAndAttributes);
+  bool Open(LPCWSTR fileName);
+  #endif
   bool Read(void *data, UINT32 size, UINT32 &processedSize);
 };
 
@@ -63,6 +73,12 @@ public:
   bool Open(LPCTSTR fileName, DWORD shareMode, 
       DWORD creationDisposition, DWORD flagsAndAttributes);
   bool Open(LPCTSTR fileName);
+
+  #ifndef _UNICODE
+  bool Open(LPCWSTR fileName, DWORD shareMode, 
+      DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool Open(LPCWSTR fileName);
+  #endif
 
   void SetOpenCreationDisposition(DWORD creationDisposition)
     { m_CreationDisposition = creationDisposition; }

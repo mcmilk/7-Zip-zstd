@@ -3,21 +3,60 @@
 #include "StdAfx.h"
 
 #include "Windows/Window.h"
+#ifndef _UNICODE
+#include "Common/StringConvert.h"
+#endif
 
 namespace NWindows {
 
-bool CWindow::GetText(CSysString &string)
+#ifndef _UNICODE
+bool CWindow::SetText(LPCWSTR s)
+{ 
+  if (::SetWindowTextW(_window, s))
+    return true;
+  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+    return false;
+  return SetText(UnicodeStringToMultiByte(s));
+}
+#endif
+
+bool CWindow::GetText(CSysString &s)
 {
-  string.Empty();
+  s.Empty();
   int length = GetTextLength();
   if (length == 0)
-    return (::GetLastError() != ERROR_SUCCESS);
-  length = GetText(string.GetBuffer(length), length + 1);
-  string.ReleaseBuffer();
+    return (::GetLastError() == ERROR_SUCCESS);
+  length = GetText(s.GetBuffer(length), length + 1);
+  s.ReleaseBuffer();
   if (length == 0)
     return (::GetLastError() != ERROR_SUCCESS);
   return true;
 }
+
+#ifndef _UNICODE
+bool CWindow::GetText(UString &s)
+{
+  s.Empty();
+  int length = GetWindowTextLengthW(_window);
+  if (length == 0)
+  {
+    UINT lastError = ::GetLastError();
+    if (lastError == ERROR_SUCCESS)
+      return true;
+    if (lastError != ERROR_CALL_NOT_IMPLEMENTED)
+      return false;
+    CSysString sysString;
+    bool result = GetText(sysString);
+    s = GetUnicodeString(sysString);
+    return result;
+  }
+  length = GetWindowTextW(_window, s.GetBuffer(length), length + 1);
+  s.ReleaseBuffer();
+  if (length == 0)
+    return (::GetLastError() == ERROR_SUCCESS);
+  return true;
+}
+#endif
   
 /*
 bool CWindow::ModifyStyleBase(int styleOffset,

@@ -930,15 +930,19 @@ HRESULT CHandler::SetSolidSettings(const UString &s)
         break;
       case 'B':
         _numSolidBytes = v;
+        _numSolidBytesDefined = true;
         break;
       case 'K':
         _numSolidBytes = (v << 10);
+        _numSolidBytesDefined = true;
         break;
       case 'M':
         _numSolidBytes = (v << 20);
+        _numSolidBytesDefined = true;
         break;
       case 'G':
         _numSolidBytes = (v << 30);
+        _numSolidBytesDefined = true;
         break;
       default:
         return E_INVALIDARG;
@@ -969,7 +973,6 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
   _binds.Clear();
   Init();
   int minNumber = 0;
-  _level = 5;
 
   for (int i = 0; i < numProperties; i++)
   {
@@ -1158,6 +1161,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       }
     }
   }
+  CheckAndSetSolidBytesLimit();
 
   return S_OK;
   COM_TRY_END

@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "FoldersPage.h"
 
+#include "Common/StringConvert.h"
 #include "Windows/Defs.h"
 #include "Windows/Shell.h"
 #include "Windows/ResourceString.h"
@@ -134,14 +135,15 @@ bool CFoldersPage::OnCommand(int aCode, int anItemID, LPARAM lParam)
 
 void CFoldersPage::OnFoldersWorkButtonPath() 
 {
-  CSysString aCurrentPath;
-  m_WorkPath.GetText(aCurrentPath);
+  CSysString currentPath;
+  m_WorkPath.GetText(currentPath);
   
-  CSysString aTitle = LangLoadString(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
+  UString title = LangLoadStringW(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
 
-  CSysString aResultPath;
-  if (NShell::BrowseForFolder(HWND(*this), aTitle, aCurrentPath, aResultPath))
-    m_WorkPath.SetText(aResultPath);
+  CSysString resultPath;
+  if (NShell::BrowseForFolder(HWND(*this), GetSystemString(title), 
+      currentPath, resultPath))
+    m_WorkPath.SetText(resultPath);
 }
 
 LONG CFoldersPage::OnApply() 
@@ -151,7 +153,7 @@ LONG CFoldersPage::OnApply()
   return PSNRET_NOERROR;
 }
 
-static LPCTSTR kFoldersTopic = TEXT("fm/plugins/7-zip/options.htm#folders");
+static LPCWSTR kFoldersTopic = L"fm/plugins/7-zip/options.htm#folders";
 
 void CFoldersPage::OnNotifyHelp() 
 {

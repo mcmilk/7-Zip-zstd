@@ -5,8 +5,8 @@
 
 #include "Common/String.h"
 
-HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName, 
-    bool assumeYes, bool showDialog, const CSysString &outputFolder);
+HRESULT ExtractArchive(HWND parentWindow, const UString &fileName, 
+    bool assumeYes, bool showDialog, const UString &outputFolder);
 
 #endif
 

@@ -11,10 +11,10 @@
 
 using namespace NWindows;
 
-static bool MakeAutoName(const CSysString &name, const CSysString &extension, 
-    int value, CSysString &path)
+static bool MakeAutoName(const UString &name, 
+    const UString &extension, int value, UString &path)
 {
-  TCHAR number[32];
+  wchar_t number[32];
   ConvertUINT64ToString(value, number);
   path = name;
   path += number;
@@ -22,14 +22,14 @@ static bool MakeAutoName(const CSysString &name, const CSysString &extension,
   return NFile::NFind::DoesFileExist(path);
 }
 
-bool AutoRenamePath(CSysString &fullProcessedPath)
+bool AutoRenamePath(UString &fullProcessedPath)
 {
-  CSysString path;
-  int dotPos = fullProcessedPath.ReverseFind(TEXT('.'));
-  int slashDot1 = fullProcessedPath.ReverseFind(TEXT('\\'));
-  int slashDot2 = fullProcessedPath.ReverseFind(TEXT('/'));
+  UString path;
+  int dotPos = fullProcessedPath.ReverseFind(L'.');
+  int slashDot1 = fullProcessedPath.ReverseFind(L'\\');
+  int slashDot2 = fullProcessedPath.ReverseFind(L'/');
   int slashDot = MyMin(slashDot1, slashDot2);
-  CSysString name, extension;
+  UString name, extension;
   if (dotPos > slashDot &&  dotPos > 0)
   {
     name = fullProcessedPath.Left(dotPos);
@@ -37,7 +37,7 @@ bool AutoRenamePath(CSysString &fullProcessedPath)
   }
   else
     name = fullProcessedPath;
-  name += TEXT('_');
+  name += L'_';
   int indexLeft = 1, indexRight = (1 << 30);
   while (indexLeft != indexRight)
   {

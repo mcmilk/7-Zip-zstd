@@ -70,7 +70,8 @@ HRESULT DeCompressArchiveSTD(
     }
 
   extractCallbackSpec->Init(archive, 
-      options.OutputBaseDir, extractionInfo, removePathParts, CP_OEMCP,
+      options.OutputBaseDir, 
+      extractionInfo, removePathParts, 
       options.DefaultItemName, 
       options.ArchiveFileInfo.LastWriteTime,
       options.ArchiveFileInfo.Attributes,

@@ -42,7 +42,7 @@ using namespace NUpdateArchive;
 
 static const char *kHelpTopic =  "Update";
 
-static LPCTSTR kTempArcivePrefix = "7zi";
+static LPCWSTR kTempArcivePrefix = L"7zA";
 
 static const char *kArchiveHistoryKeyName = "7-ZipArcName"; 
 
@@ -168,11 +168,11 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
 
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
-  CSysString workDir = GetWorkDir(workDirInfo, m_FileName);
+  UString workDir = GetWorkDir(workDirInfo, m_FileName);
   CreateComplexDirectory(workDir);
 
-  CTempFile tempFile;
-  CSysString tempFileName;
+  CTempFileW tempFile;
+  UString tempFileName;
   if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
     return NFileOperationReturnCode::kError;
 
@@ -252,8 +252,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
     return NFileOperationReturnCode::kError;
 
   result = outArchive->DoOperation(NULL, NULL,
-      MultiByteToUnicodeString(tempFileName, CP_OEMCP), actionSetByte, 
-      NULL, updateCallback);
+      tempFileName, actionSetByte, NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
 
@@ -282,7 +281,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
 
   tempFile.DisableDeleting();
-  if (!MoveFile(tempFileName, m_FileName))
+  if (!MyMoveFile(tempFileName, m_FileName))
   {
     ShowLastErrorMessage();
     return NFileOperationReturnCode::kError;
@@ -405,8 +404,8 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       resultPath = parsedPath.PathParts.Back();
     }
   }
-  CSysString archiveNameSrc = UnicodeStringToMultiByte(resultPath, CP_OEMCP);
-  CSysString archiveName = archiveNameSrc;
+  UString archiveNameSrc = resultPath;
+  UString archiveName = archiveNameSrc;
 
   const CArchiverInfo &archiverInfo = archiverInfoList[archiverIndex];
   int prevFormat = archiverIndex;
@@ -418,13 +417,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     if (dotPos > slashPos)
       archiveName = archiveName.Left(dotPos);
   }
-  archiveName += '.';
-  archiveName += GetSystemString(archiverInfo.GetMainExtension(), CP_OEMCP);
+  archiveName += L'.';
+  archiveName += archiverInfo.GetMainExtension();
   
   const CActionSet *actionSet = &kAddActionSet;
 
   while(true)
   {
+    AString archiveNameA = UnicodeStringToMultiByte(archiveName, CP_OEMCP);
     const int kYSize = 16;
     const int kXMid = 38;
   
@@ -452,7 +452,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
       { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, -1, updateAddToArchiveString, NULL },
       
-      { DI_EDIT, 5, 3, 70, 3, true, false, DIF_HISTORY, false, -1, archiveName, kArchiveHistoryKeyName},
+      { DI_EDIT, 5, 3, 70, 3, true, false, DIF_HISTORY, false, -1, archiveNameA, kArchiveHistoryKeyName},
       // { DI_EDIT, 5, 3, 70, 3, true, false, 0, false, -1, archiveName, NULL},
       
       { DI_SINGLEBOX, 4, 4, kXMid - 2, 4 + 7, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
@@ -500,8 +500,9 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     int askCode = g_StartupInfo.ShowDialog(76, kYSize, 
         kHelpTopic, dialogItems, kNumDialogItems);
 
-    archiveName = dialogItems[kArchiveNameIndex].Data;
-    archiveName.Trim();
+    archiveNameA = dialogItems[kArchiveNameIndex].Data;
+    archiveNameA.Trim();
+    archiveName = MultiByteToUnicodeString(archiveNameA, CP_OEMCP);
 
     compressionInfo.Level = g_MethodMap[0];
     for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
@@ -534,13 +535,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         const CArchiverInfo &prevArchiverInfo = archiverInfoList[prevFormat];
         if (prevArchiverInfo.KeepName)
         {
-          const CSysString &prevExtension = 
-              GetSystemString(prevArchiverInfo.GetMainExtension(), CP_OEMCP);
+          const UString &prevExtension = prevArchiverInfo.GetMainExtension();
           const int prevExtensionLen = prevExtension.Length();
           if (archiveName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
           {
             int pos = archiveName.Length() - prevExtensionLen;
-            CSysString temp = archiveName.Left(pos);
+            UString temp = archiveName.Left(pos);
             if (pos > 1)
             {
               int dotPos = archiveName.ReverseFind('.');
@@ -564,8 +564,8 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
           if (dotPos > slashPos)
             archiveName = archiveName.Left(dotPos);
         }
-        archiveName += '.';
-        archiveName += GetSystemString(archiverInfo.GetMainExtension(), CP_OEMCP);
+        archiveName += L'.';
+        archiveName += archiverInfo.GetMainExtension();
       }
       continue;
     }
@@ -583,15 +583,15 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
 
-  CSysString fullArchiveName;
+  UString fullArchiveName;
   if (!MyGetFullPathName(archiveName, fullArchiveName))
     return E_FAIL;
    
-  CSysString workDir = GetWorkDir(workDirInfo, fullArchiveName);
+  UString workDir = GetWorkDir(workDirInfo, fullArchiveName);
   CreateComplexDirectory(workDir);
 
-  CTempFile tempFile;
-  CSysString tempFileName;
+  CTempFileW tempFile;
+  UString tempFileName;
   if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
     return E_FAIL;
 
@@ -608,7 +608,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
 
   // std::auto_ptr<CProxyHandler> proxyHandler;
-  NFind::CFileInfo fileInfo;
+  NFind::CFileInfoW fileInfo;
 
   CMyComPtr<IOutFolderArchive> outArchive;
 
@@ -680,7 +680,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   HRESULT result = outArchive->DoOperation(
       GetUnicodeString(archiverInfoFinal.FilePath, CP_OEMCP),
       &archiverInfoFinal.ClassID,
-      MultiByteToUnicodeString(tempFileName, CP_OEMCP), actionSetByte, 
+      tempFileName, actionSetByte, 
       NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
@@ -701,7 +701,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     }
   }
   tempFile.DisableDeleting();
-  if (!MoveFile(tempFileName, fullArchiveName))
+  if (!MyMoveFile(tempFileName, fullArchiveName))
   {
     ShowLastErrorMessage();
     return E_FAIL;

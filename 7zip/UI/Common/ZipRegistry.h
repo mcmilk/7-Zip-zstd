@@ -78,7 +78,7 @@ namespace NWorkDir{
   struct CInfo
   {
     NMode::EEnum Mode;
-    CSysString Path;
+    UString Path;
     bool ForRemovableOnly;
     void SetForRemovableOnlyDefault() { ForRemovableOnly = true; }
     void SetDefault()

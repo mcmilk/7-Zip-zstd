@@ -64,8 +64,8 @@ struct CThreadExtracting
 static inline UINT GetCurrentFileCodePage()
   {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
-HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName, 
-    bool assumeYes, bool showDialog, const CSysString &outputFolder)
+HRESULT ExtractArchive(HWND parentWindow, const UString &fileName, 
+    bool assumeYes, bool showDialog, const UString &outputFolder)
 {
   CThreadExtracting extracter;
 
@@ -76,7 +76,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   openCallbackSpec->_passwordIsDefined = false;
   openCallbackSpec->_parentWindow = parentWindow;
 
-  CSysString fullName;
+  UString fullName;
   int fileNamePartStartIndex;
   NFile::NDirectory::MyGetFullPathName(fileName, fullName, fileNamePartStartIndex);
 
@@ -92,14 +92,14 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
       &extracter.Archive, archiverInfo, subExtIndex, openCallback);
   RINOK(res);
 
-  NFile::NFind::CFileInfo fileInfo;
+  NFile::NFind::CFileInfoW fileInfo;
   if (!NFile::NFind::FindFile(fileName, fileInfo))
     return E_FAIL;
   UString defaultName = GetDefaultName(fileName, 
       archiverInfo.Extensions[subExtIndex].Extension, 
       archiverInfo.Extensions[subExtIndex].AddExtension);
 
-  CSysString directoryPath;
+  UString directoryPath;
   NExtractionDialog::CModeInfo extractModeInfo;
   UString password;
   if (openCallbackSpec->_passwordIsDefined)
@@ -115,28 +115,17 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     // dialog.DirectoryPath = outputFolder;
     // dialog.FilesMode = NExtractionDialog::NFilesMode::kAll;
     // dialog._enableSelectedFilesButton = false;
-    dialog.Password = GetSystemString(password);
+    dialog.Password = password;
     
     if(dialog.Create(parentWindow) != IDOK)
       return E_ABORT;
     directoryPath = dialog.DirectoryPath;
     dialog.GetModeInfo(extractModeInfo);
 
-    password = GetUnicodeString((LPCTSTR)dialog.Password);
+    password = dialog.Password;
   }
   else
   {
-    /*
-    CSysString fullPath;
-    int fileNamePartStartIndex;
-    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, fullPath, fileNamePartStartIndex))
-    {
-      MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
-      return E_FAIL;
-    }
-    directoryPath = fullPath.Left(fileNamePartStartIndex);
-    */
-    // NFile::NDirectory::MyGetCurrentDirectory(directoryPath);
     if (!NFile::NDirectory::MyGetFullPathName(outputFolder, directoryPath))
     {
       MyMessageBox(L"Error 98324982");
@@ -157,7 +146,7 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
         #ifdef LANG        
         0x02000603, 
         #endif 
-        GetUnicodeString((LPCTSTR)directoryPath));
+        directoryPath);
     MyMessageBox(s2 + UString(L"\n") + s);
     return E_FAIL;
   }
@@ -168,12 +157,12 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   
   extracter.ExtractCallbackSpec->_parentWindow = 0;
   #ifdef LANG        
-  const CSysString title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+  const UString title = LangLoadStringW(IDS_PROGRESS_EXTRACTING, 0x02000890);
   #else
-  const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
+  const UString title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
   #endif
 
-  NFile::NFind::CFileInfo archiveFileInfo;
+  NFile::NFind::CFileInfoW archiveFileInfo;
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
     throw "there is no archive file";
 
@@ -222,7 +211,6 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
       extracter.ExtractCallback2, 
       directoryPath, pathMode, 
       overwriteMode, UStringVector(),
-      GetCurrentFileCodePage(), 
       defaultName, 
       fileInfo.LastWriteTime, fileInfo.Attributes);
 

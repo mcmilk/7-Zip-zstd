@@ -104,26 +104,6 @@ static void MyMessageBoxError(const char *message)
   ::MessageBoxA(0, message, "Error", 0);
 }
 
-void GetArguments(UStringVector &strings)
-{
-  UString s = GetCommandLineW();
-  // MessageBoxW(0, s, 0, 0);
-  s.Trim();
-  UString s1, s2;
-  strings.Clear();
-  while (true)
-  {
-    SplitStringToTwoStrings(s, s1, s2);
-    s1.Trim();
-    s2.Trim();
-    if (!s1.IsEmpty())
-      strings.Add(s1);
-    if (s2.IsEmpty())
-      return;
-    s = s2;
-  }
-}
-
 static wchar_t *kIncorrectCommandMessage = L"Incorrect command";
 
 static void ErrorMessage(const wchar_t *message)
@@ -254,6 +234,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                      int       nCmdShow)
 {
   g_hInstance = hInstance;
+  InitCommonControls();
 
   #ifdef UNICODE
   if (!IsItWindowsNT())
@@ -264,12 +245,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
   #endif
   // setlocale(LC_COLLATE, ".ACP");
   int result = 0;
-  // CNewHandlerSetter newHandlerSetter;
-  // NCOM::CComInitializer comInitializer;
   try
   {
     UStringVector commandStrings;
-    GetArguments(commandStrings);
+    SplitCommandLine(GetCommandLineW(), commandStrings);
     if (commandStrings.Size() > 0)
       commandStrings.Delete(0);
     CParser parser(kNumSwitches);
@@ -301,7 +280,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         MyMessageBox(kIncorrectCommandMessage);
         return 1;
       }
-      CSysString archiveName = GetSystemString(nonSwitchStrings[1]);
+      UString archiveName = nonSwitchStrings[1];
       HRESULT result = TestArchive(0, archiveName);
       if (result == S_FALSE)
         MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
@@ -315,12 +294,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         MyMessageBox(kIncorrectCommandMessage);
         return 1;
       }
-      CSysString archiveName = GetSystemString(nonSwitchStrings[1]);
+      UString archiveName = nonSwitchStrings[1];
 
-      CSysString outputDir;
+      UString outputDir;
       bool outputDirDefined = parser[NKey::kOutputDir].ThereIs;
       if(outputDirDefined)
-        outputDir = GetSystemString(parser[NKey::kOutputDir].PostStrings[0]);
+        outputDir = parser[NKey::kOutputDir].PostStrings[0];
       else
         NFile::NDirectory::MyGetCurrentDirectory(outputDir);
       NFile::NName::NormalizeDirPathPrefix(outputDir);
@@ -338,7 +317,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         MyMessageBox(kIncorrectCommandMessage);
         return 1;
       }
-      const CSysString &archiveName = GetSystemString(nonSwitchStrings[1]);
+      const UString &archiveName = nonSwitchStrings[1];
 
       UString mapString, emailString;
       bool emailMode = parser[NKey::kEmail].ThereIs;

@@ -21,7 +21,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_LANG_STATIC_LANG, 0x01000401}
 };
 
-static LPCTSTR kLangTopic = TEXT("FM/options.htm#language");
+static LPCWSTR kLangTopic = L"FM/options.htm#language";
 
 bool CLangPage::OnInit()
 {
@@ -35,39 +35,39 @@ bool CLangPage::OnInit()
   _paths.Add(TEXT(""));
   _langCombo.SetCurSel(0);
 
-  CSysString folderPath;
+  UString folderPath;
   if (::GetProgramFolderPath(folderPath))
   {
-    folderPath += TEXT("Lang\\");
-    NWindows::NFile::NFind::CEnumerator enumerator(folderPath + TEXT("*.txt"));
-    NWindows::NFile::NFind::CFileInfo fileInfo;
+    folderPath += L"Lang\\";
+    NWindows::NFile::NFind::CEnumeratorW enumerator(folderPath + L"*.txt");
+    NWindows::NFile::NFind::CFileInfoW fileInfo;
     while (enumerator.Next(fileInfo))
     {
       if (fileInfo.IsDirectory())
         continue;
       CLang lang;
-      CSysString filePath = folderPath + fileInfo.Name;
-      if (lang.Open(filePath))
+      UString filePath = folderPath + fileInfo.Name;
+      if (lang.Open(GetSystemString(filePath)))
       {
-        CSysString name; 
+        UString name; 
         UString englishName, nationalName;
         if (lang.GetMessage(0x00000000, englishName))
-          name += GetSystemString(englishName);
+          name += englishName;
         if (lang.GetMessage(0x00000001, nationalName))
         {
           if (!nationalName.IsEmpty())
           {
-            name += TEXT(" (");
-            name += GetSystemString(nationalName);
-            name += TEXT(")");
+            name += L" (";
+            name += nationalName;
+            name += L")";
           }
         }
         if (name.IsEmpty())
           name = fileInfo.Name;
-        index = _langCombo.AddString(name);
+        index = _langCombo.AddString(GetSystemString(name));
         _langCombo.SetItemData(index, _paths.Size());
-        _paths.Add(filePath);
-        if (g_LangPath.CollateNoCase(filePath) == 0)
+        _paths.Add(GetSystemString(filePath));
+        if (g_LangPath.CollateNoCase(GetSystemString(filePath)) == 0)
           _langCombo.SetCurSel(index);
       }
     }

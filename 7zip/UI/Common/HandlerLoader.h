@@ -16,7 +16,7 @@ typedef UINT32 (WINAPI * CreateObjectFunc)(
 class CHandlerLoader: public NWindows::NDLL::CLibrary
 {
 public:
-  HRESULT CreateHandler(LPCTSTR filepath, REFGUID clsID, 
+  HRESULT CreateHandler(LPCWSTR filepath, REFGUID clsID, 
       void **archive, bool outHandler)
   {
     if (!Load(filepath))

@@ -7,10 +7,7 @@
 
 #include "Common/String.h"
 
-CSysString ConvertPropertyToString(const PROPVARIANT &aPropVariant, PROPID aPropID, 
-    bool aFull = true);
-
+UString ConvertPropertyToString(const PROPVARIANT &aPropVariant, 
+    PROPID aPropID, bool aFull = true);
 
 #endif
-
-

@@ -12,16 +12,16 @@
 
 using namespace NWindows;
 
-static CSysString ConvertUINT64ToString(UINT64 value)
+static UString ConvertUINT64ToString(UINT64 value)
 {
-  TCHAR buffer[32];
+  wchar_t buffer[32];
   ConvertUINT64ToString(value, buffer);
   return buffer;
 }
 
-static CSysString ConvertINT64ToString(INT64 value)
+static UString ConvertINT64ToString(INT64 value)
 {
-  TCHAR buffer[32];
+  wchar_t buffer[32];
   ConvertINT64ToString(value, buffer);
   return buffer;
 }
@@ -60,13 +60,13 @@ CSysString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime)
 }
 */
 
-CSysString ConvertFileTimeToString2(const FILETIME &fileTime, 
+UString ConvertFileTimeToString2(const FILETIME &fileTime, 
     bool includeTime, bool includeSeconds)
 {
   CSysString string;
   SYSTEMTIME systemTime;
   if(!BOOLToBool(FileTimeToSystemTime(&fileTime, &systemTime)))
-    return string;
+    return UString();
   TCHAR buffer[64];
   wsprintf(buffer, TEXT("%04d-%02d-%02d"), systemTime.wYear, systemTime.wMonth, systemTime.wDay);
   if (includeTime)
@@ -75,18 +75,18 @@ CSysString ConvertFileTimeToString2(const FILETIME &fileTime,
     if (includeSeconds)
       wsprintf(buffer + lstrlen(buffer), TEXT(":%02d"), systemTime.wSecond);
   }
-  return buffer;
+  return GetUnicodeString(buffer);
 }
  
 
-CSysString ConvertPropVariantToString(const PROPVARIANT &propVariant)
+UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
 {
   switch (propVariant.vt)
   {
     case VT_EMPTY:
-      return CSysString();
+      return UString();
     case VT_BSTR:
-      return GetSystemString(propVariant.bstrVal);
+      return propVariant.bstrVal;
     case VT_UI1:
       return ConvertUINT64ToString(propVariant.bVal);
     case VT_UI2:
@@ -111,7 +111,7 @@ CSysString ConvertPropVariantToString(const PROPVARIANT &propVariant)
       return ConvertINT64ToString(*(INT64 *)(&propVariant.hVal));
 
     case VT_BOOL:
-      return VARIANT_BOOLToBool(propVariant.boolVal) ? TEXT("1") : TEXT("0");
+      return VARIANT_BOOLToBool(propVariant.boolVal) ? L"1" : L"0";
     default:
       #ifndef _WIN32_WCE
       throw 150245;

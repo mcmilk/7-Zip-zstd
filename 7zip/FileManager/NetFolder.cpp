@@ -24,9 +24,6 @@ static const STATPROPSTG kProperties[] =
   { NULL, kpidProvider, VT_BSTR}
 };
 
-static inline UINT GetCurrentFileCodePage()
-  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 void CNetFolder::Init(const UString &path)
 {
   /*
@@ -191,6 +188,9 @@ STDMETHODIMP CNetFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIAN
   return S_OK;
 }
 
+static inline UINT GetCurrentCodePage() 
+  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+
 STDMETHODIMP CNetFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
@@ -200,7 +200,9 @@ STDMETHODIMP CNetFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder
   {
     CFSFolder *fsFolderSpec = new CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(resource.RemoteName + TEXT('\\'), this));
+    RINOK(fsFolderSpec->Init(
+        GetUnicodeString(resource.RemoteName, GetCurrentCodePage()) 
+        + L'\\', this));
     *resultFolder = subFolder.Detach();
   }
   else
@@ -289,14 +291,28 @@ STDMETHODIMP CNetFolder::GetPath(BSTR *path)
 
 STDMETHODIMP CNetFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
 {
+  if (index >= (UINT32)_items.Size())
+    return E_INVALIDARG;
+  *iconIndex = 0;
   const CResource &resource = _items[index];
+  int iconIndexTemp;
   if (resource.DisplayType == RESOURCEDISPLAYTYPE_SERVER || 
       resource.Usage == RESOURCEUSAGE_CONNECTABLE)
-    *iconIndex = GetRealIconIndex(0, resource.RemoteName);
+  {
+    if (GetRealIconIndex(resource.RemoteName, 0, iconIndexTemp))
+    {
+      *iconIndex = iconIndexTemp;
+      return S_OK;
+    }
+  }
   else
   {
-    *iconIndex = GetRealIconIndex(FILE_ATTRIBUTE_DIRECTORY, TEXT(""));
+    if (GetRealIconIndex(TEXT(""), FILE_ATTRIBUTE_DIRECTORY, iconIndexTemp))
+    {
+      *iconIndex = iconIndexTemp;
+      return S_OK;
+    }
     // *anIconIndex = GetRealIconIndex(0, L"\\\\HOME");
   }
-  return S_OK;
+  return GetLastError();
 }

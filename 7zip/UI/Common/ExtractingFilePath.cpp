@@ -3,6 +3,23 @@
 #include "StdAfx.h"
 #include "ExtractingFilePath.h"
 
+UString GetCorrectFileName(const UString &path)
+{
+  UString result = path;
+  result.Trim();
+  result.Replace(L"..\\", L"");
+  result.Replace(L"../", L"");
+  if (result.Length() > 1)
+  {
+    if (result[1] == L':')
+    {
+      result.Delete(1);
+      // result.Insert(first + 1, L'_');
+    }
+  }
+  return result;
+}
+
 UString GetCorrectPath(const UString &path)
 {
   UString result = path;

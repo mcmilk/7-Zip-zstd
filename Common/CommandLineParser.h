@@ -9,6 +9,9 @@
 
 namespace NCommandLineParser {
 
+void SplitCommandLine(const UString &src, UString &dest1, UString &dest2);
+void SplitCommandLine(const UString &s, UStringVector &parts);
+
 namespace NSwitchType {
   enum EEnum
   { 

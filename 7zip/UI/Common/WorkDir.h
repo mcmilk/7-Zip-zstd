@@ -7,8 +7,8 @@
 
 #include "../Common/ZipRegistry.h"
 
-CSysString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
-    const CSysString &archiveName);
+UString GetWorkDir(const NWorkDir::CInfo &workDirInfo, 
+    const UString &archiveName);
 
 #endif
 

@@ -21,7 +21,7 @@ void ReloadLang();
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems);
 void LangSetWindowText(HWND window, UINT32 langID);
 
-CSysString LangLoadString(UINT32 langID);
+UString LangLoadString(UINT32 langID);
 CSysString LangLoadString(UINT resourceID, UINT32 langID);
 UString LangLoadStringW(UINT resourceID, UINT32 langID);
 

@@ -9,11 +9,11 @@
 
 class CFileVectorBundle
 {
-  CSysStringVector m_FileNames;
+  UStringVector m_FileNames;
 public:
-  ~CFileVectorBundle();
-  bool Add(const CSysString &aFilePath, bool aTryToOpen = true);
-  void DisableDeleting(int anIndex);
+  ~CFileVectorBundle() { Clear(); }
+  bool Add(const UString &filePath, bool tryToOpen = true);
+  void DisableDeleting(int index);
   void Clear();
 };
 

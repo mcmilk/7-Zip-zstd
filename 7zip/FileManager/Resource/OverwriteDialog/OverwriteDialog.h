@@ -16,7 +16,7 @@ namespace NOverwriteDialog
     UINT64 Size;
     bool TimeIsDefined;
 	  FILETIME Time;
-    CSysString Name;
+    UString Name;
   };
 }
 
@@ -30,8 +30,8 @@ public:
   INT_PTR Create(HWND parent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_OVERWRITE), parent); }
 
-  NOverwriteDialog::CFileInfo _oldFileInfo;
-  NOverwriteDialog::CFileInfo _newFileInfo;
+  NOverwriteDialog::CFileInfo OldFileInfo;
+  NOverwriteDialog::CFileInfo NewFileInfo;
 };
 
 #endif

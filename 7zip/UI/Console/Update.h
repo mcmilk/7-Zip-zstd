@@ -14,7 +14,7 @@
 
 struct CUpdateArchiveCommand
 {
-  CSysString ArchivePath;
+  UString ArchivePath;
   NUpdateArchive::CActionSet ActionSet;
 };
 
@@ -24,18 +24,18 @@ struct CUpdateArchiveOptions
   bool UpdateArchiveItself;
 
   bool SfxMode;
-  CSysString SfxModule;
+  UString SfxModule;
 
-  CSysString ArchivePath;
+  UString ArchivePath;
   CCompressionMethodMode MethodMode;
 };
 
 
 HRESULT UpdateArchiveStdMain(const NWildcard::CCensor &censor, 
-    CUpdateArchiveOptions &options, const CSysString &workingDir,
+    CUpdateArchiveOptions &options, const UString &workingDir,
     IInArchive *archive,
     const UString *defaultItemName,
-    const NWindows::NFile::NFind::CFileInfo *archiveFileInfo,
+    const NWindows::NFile::NFind::CFileInfoW *archiveFileInfo,
     bool enablePercents);
 
 #endif

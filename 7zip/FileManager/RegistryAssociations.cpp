@@ -29,13 +29,14 @@ static const TCHAR *kAssociations = TEXT("Associations");
 static const TCHAR *kExtPlugins = TEXT("Plugins");
 static const TCHAR *kExtEnabled = TEXT("Enabled");
 
-bool ReadInternalAssociation(const TCHAR *ext, CExtInfo &extInfo)
+bool ReadInternalAssociation(const wchar_t *ext, CExtInfo &extInfo)
 {
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey key;
   if(key.Open(HKEY_CURRENT_USER, CSysString(kCUKeyPath) 
       + CSysString('\\') + CSysString(kAssociations)
-      + CSysString('\\') + CSysString(ext), KEY_READ) != ERROR_SUCCESS)
+      + CSysString('\\') + CSysString(GetSystemString(ext)), 
+      KEY_READ) != ERROR_SUCCESS)
     return false;
   CSysString pluginsString;
   key.QueryValue(kExtPlugins, pluginsString);

@@ -15,10 +15,7 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
 
-static LPCTSTR kTempArcivePrefix = TEXT("7zi");
-
-static inline UINT GetCurrentFileCodePage()
-  {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
+static LPCWSTR kTempArcivePrefix = L"7zA";
 
 void CAgentFolder::GetPathParts(UStringVector &pathParts)
 {
@@ -46,20 +43,16 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     const UINT32 *indices, UINT32 numItems,
     IFolderArchiveUpdateCallback *updateCallback100)
 {
-  UINT codePage = GetCurrentFileCodePage();
-  // CZipRegistryManager aZipRegistryManager;
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
-  CSysString archiveFilePath  = _agentSpec->_archiveFilePath;
-  CSysString workDir = GetWorkDir(workDirInfo, archiveFilePath );
+  UString archiveFilePath  = _agentSpec->_archiveFilePath;
+  UString workDir = GetWorkDir(workDirInfo, archiveFilePath );
   CreateComplexDirectory(workDir);
 
-  CTempFile tempFile;
-  CSysString tempFileName;
+  CTempFileW tempFile;
+  UString tempFileName;
   if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
     return E_FAIL;
-
-
 
   /*
   if (SetOutProperties(anOutArchive, aCompressionInfo.Method) != S_OK)
@@ -74,17 +67,17 @@ HRESULT CAgentFolder::CommonUpdateOperation(
 
   HRESULT result;
   if (deleteOperation)
-    result = _agentSpec->DeleteItems(GetUnicodeString(tempFileName, codePage),
+    result = _agentSpec->DeleteItems(tempFileName,
         indices, numItems, updateCallback100);
   else if (createFolderOperation)
   {
-    result = _agentSpec->CreateFolder(GetUnicodeString(tempFileName, codePage),
+    result = _agentSpec->CreateFolder(tempFileName,
         newItemName, updateCallback100);
   }
   else if (renameOperation)
   {
     result = _agentSpec->RenameItem(
-        GetUnicodeString(tempFileName, codePage),
+        tempFileName,
         indices, numItems, 
         newItemName, 
         updateCallback100);
@@ -95,8 +88,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
       actionSetByte[i] = actionSet->StateActions[i];
     result = _agentSpec->DoOperation(NULL, NULL,
-        GetUnicodeString(tempFileName, codePage),
-        actionSetByte, NULL, updateCallback100);
+        tempFileName, actionSetByte, NULL, updateCallback100);
   }
   
   if (result != S_OK)
@@ -110,7 +102,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     return GetLastError();
 
   tempFile.DisableDeleting();
-  if (!MoveFile(tempFileName, archiveFilePath ))
+  if (!MyMoveFile(tempFileName, archiveFilePath ))
     return GetLastError();
   
   RINOK(_agentSpec->ReOpen(NULL));

@@ -22,10 +22,29 @@ public:
   HWND GetItem(int itemID) const
     { return GetDlgItem(_window, itemID); }
 
-  bool SetItemText(int itemID, LPCTSTR string)
-    { return BOOLToBool(SetDlgItemText(_window, itemID, string)); }
-  UINT GetItemText(int itemID, LPTSTR string, int aMaxCount)
-    { return GetDlgItemText(_window, itemID, string, aMaxCount); }
+  bool SetItemText(int itemID, LPCTSTR s)
+    { return BOOLToBool(SetDlgItemText(_window, itemID, s)); }
+
+  #ifndef _UNICODE
+  bool SetItemText(int itemID, LPCWSTR s)
+  { 
+    CWindow window(GetItem(itemID));
+    return window.SetText(s); 
+  }
+  #endif
+
+  UINT GetItemText(int itemID, LPTSTR string, int maxCount)
+    { return GetDlgItemText(_window, itemID, string, maxCount); }
+  #ifndef _UNICODE
+  /*
+  bool GetItemText(int itemID, LPWSTR string, int maxCount)
+  { 
+    CWindow window(GetItem(itemID));
+    return window.GetText(string, maxCount); 
+  }
+  */
+  #endif
+
   bool SetItemInt(int itemID, UINT value, bool isSigned)
     { return BOOLToBool(SetDlgItemInt(_window, itemID, value, BoolToBOOL(isSigned))); }
   bool GetItemInt(int itemID, bool isSigned, UINT &value)
@@ -92,6 +111,7 @@ class CModalDialog: public CDialog
 {
 public:
   INT_PTR Create(LPCTSTR templateName, HWND parentWindow);
+  // INT_PTR Create(LPCWSTR templateName, HWND parentWindow);
   bool End(INT_PTR result)
     { return BOOLToBool(::EndDialog(_window, result)); }
   virtual void OnOK() { End(IDOK); }

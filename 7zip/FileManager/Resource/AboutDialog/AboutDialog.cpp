@@ -16,11 +16,13 @@ static CIDLangPair kIDLangPairs[] =
 };
 
 static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
-static LPCTSTR kRegisterRegNowURL = TEXT("https://secure.shareit.com/shareit/checkout.html?PRODUCT[104808]=1&languageid=1");
+// static LPCTSTR kRegisterRegNowURL = TEXT("https://secure.shareit.com/shareit/checkout.html?PRODUCT[104808]=1&languageid=1");
+static LPCTSTR kRegisterRegNowURL = TEXT("https://www.regnow.com/softsell/nph-softsell.cgi?item=2521-1&vreferrer=program");
+
 static LPCTSTR kEmailAction = 
   TEXT("mailto:support@7-zip.org?subject=7-Zip");
 
-static LPCTSTR kHelpTopic = TEXT("start.htm");
+static LPCWSTR kHelpTopic = L"start.htm";
 
 bool CAboutDialog::OnInit() 
 {

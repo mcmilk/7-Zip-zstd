@@ -57,11 +57,11 @@ namespace NCompressDialog
 
     bool SFXMode;
     
-    CSysString ArchiveName; // in: Relative for ; out: abs
-    CSysString CurrentDirPrefix;
+    UString ArchiveName; // in: Relative for ; out: abs
+    UString CurrentDirPrefix;
     bool KeepName;
 
-    bool GetFullPathName(CSysString &result) const;
+    bool GetFullPathName(UString &result) const;
 
     int ArchiverInfoIndex;
   };
@@ -82,7 +82,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NCompression::CInfo m_RegistryInfo;
 
   int m_PrevFormat;
-  void SetArchiveName(const CSysString &name);
+  void SetArchiveName(const UString &name);
   int FindFormat(const UString &name);
   void SaveOptions();
   void SetOptions();
@@ -91,7 +91,7 @@ public:
   CObjectVector<CArchiverInfo> m_ArchiverInfoList;
 
   NCompressDialog::CInfo m_Info;
-  CSysString OriginalFileName; // for bzip2, gzip2
+  UString OriginalFileName; // for bzip2, gzip2
 
   CSysString Password;
   bool EncryptHeadersIsAllowed;

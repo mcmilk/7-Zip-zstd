@@ -6,17 +6,17 @@
 #include "Common/String.h"
 #include "Windows/Synchronization.h"
 
-HRESULT MyCreateProcess(const CSysString &params, 
+HRESULT MyCreateProcess(const UString &params, 
     NWindows::NSynchronization::CEvent *event = NULL);
-HRESULT CompressFiles(const CSysString &archiveName,
+HRESULT CompressFiles(const UString &archiveName,
     const UStringVector &names, 
     // const UString &outFolder, 
     bool email, bool showDialog);
 
-HRESULT ExtractArchive(const CSysString &archiveName,
-    const CSysString &outFolder, bool showDialog);
+HRESULT ExtractArchive(const UString &archiveName,
+    const UString &outFolder, bool showDialog);
 
-HRESULT TestArchive(const CSysString &archiveName);
+HRESULT TestArchive(const UString &archiveName);
 
 #endif
 

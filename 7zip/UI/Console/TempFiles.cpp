@@ -10,20 +10,20 @@
 using namespace NWindows;
 using namespace NFile;
 
-void CFileVectorBundle::DisableDeleting(int anIndex)
+void CFileVectorBundle::DisableDeleting(int index)
 {
-  m_FileNames.Delete(anIndex);
+  m_FileNames.Delete(index);
 }
 
-bool CFileVectorBundle::Add(const CSysString &aFilePath, bool aTryToOpen)
+bool CFileVectorBundle::Add(const UString &filePath, bool tryToOpen)
 {
-  if (aTryToOpen)
+  if (tryToOpen)
   {
-    NIO::COutFile aFile;
-    if (!aFile.Open(aFilePath))
+    NIO::COutFile file;
+    if (!file.Open(filePath))
       return false;
   }
-  m_FileNames.Add(aFilePath);
+  m_FileNames.Add(filePath);
   return true;
 }
 
@@ -34,11 +34,6 @@ void CFileVectorBundle::Clear()
     NDirectory::DeleteFileAlways(m_FileNames.Back());
     m_FileNames.DeleteBack();
   }
-}
-
-CFileVectorBundle::~CFileVectorBundle()
-{
-  Clear();
 }
 
 

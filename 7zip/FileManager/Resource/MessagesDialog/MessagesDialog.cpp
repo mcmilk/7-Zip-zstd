@@ -62,12 +62,12 @@ bool CMessagesDialog::OnInit()
   columnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
   columnInfo.fmt = LVCFMT_LEFT;
   #ifdef LANG
-  CSysString string = LangLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
+  CSysString s = LangLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
   #else
-  CSysString string = MyLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
+  CSysString s = MyLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
   #endif
 
-  columnInfo.pszText = (LPTSTR)(LPCTSTR)string;
+  columnInfo.pszText = (LPTSTR)(LPCTSTR)s;
   columnInfo.iSubItem = 1;
   columnInfo.cx = 450;
 

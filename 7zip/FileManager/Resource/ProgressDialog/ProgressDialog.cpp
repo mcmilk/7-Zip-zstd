@@ -27,10 +27,10 @@ CProgressDialog::~CProgressDialog()
 {
   AddToTitle(TEXT(""));
 }
-void CProgressDialog::AddToTitle(LPCTSTR string)
+void CProgressDialog::AddToTitle(LPCTSTR s)
 {
   if (MainWindow != 0)
-    ::SetWindowText(MainWindow, string + CSysString(MainTitle));
+    ::SetWindowText(MainWindow, s + UString(MainTitle));
 }
 #endif
 
@@ -98,10 +98,10 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
   int percentValue = (int)(completed * 100 / total);
   if (percentValue != _prevPercentValue) 
   {
-    TCHAR string[64];
-    ConvertUINT64ToString(percentValue, string);
-    CSysString title = string;
-    title += TEXT("% ");
+    wchar_t s[64];
+    ConvertUINT64ToString(percentValue, s);
+    UString title = s;
+    title += L"% ";
     SetText(title + _title);
     #ifndef _SFX
     AddToTitle(title + MainAddTitle);
@@ -162,7 +162,8 @@ bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
     {
       bool paused = ProgressSynch.GetPaused();;
       ProgressSynch.SetPaused(true);
-      int res = ::MessageBox(HWND(*this), TEXT("Are you sure you want to cancel?"), 
+      int res = ::MessageBoxW(HWND(*this), 
+          L"Are you sure you want to cancel?", 
           _title, MB_YESNOCANCEL);
       ProgressSynch.SetPaused(paused);
       if (res == IDCANCEL || res == IDNO)

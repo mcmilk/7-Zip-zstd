@@ -23,7 +23,7 @@ namespace NListMode
 
 HRESULT ListArchive(IInArchive *archive, 
     const UString &defaultItemName,
-    const NWindows::NFile::NFind::CFileInfo &srchiveFileInfo,
+    const NWindows::NFile::NFind::CFileInfoW &srchiveFileInfo,
     const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode, 
     NListMode::EEnum mode*/);
 

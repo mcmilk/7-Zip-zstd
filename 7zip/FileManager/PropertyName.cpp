@@ -54,19 +54,19 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidProvider, IDS_PROPERTY_PROVIDER, 0x03031201 }
 };
 
-int FindProperty(PROPID aPropID)
+int FindProperty(PROPID propID)
 {
   for (int i = 0; i < sizeof(kPropertyIDNamePairs) / sizeof(kPropertyIDNamePairs[0]); i++)
-    if(kPropertyIDNamePairs[i].PropID == aPropID)
+    if(kPropertyIDNamePairs[i].PropID == propID)
       return i;
   return -1;
 }
 
-CSysString GetNameOfProperty(PROPID aPropID)
+UString GetNameOfProperty(PROPID propID)
 {
-  int anIndex = FindProperty(aPropID);
-  if (anIndex < 0)
-    return CSysString();
-  const CPropertyIDNamePair &pair = kPropertyIDNamePairs[anIndex];
-  return LangLoadString(pair.ResourceID, pair.LangID);
+  int index = FindProperty(propID);
+  if (index < 0)
+    return UString();
+  const CPropertyIDNamePair &pair = kPropertyIDNamePairs[index];
+  return LangLoadStringW(pair.ResourceID, pair.LangID);
 }

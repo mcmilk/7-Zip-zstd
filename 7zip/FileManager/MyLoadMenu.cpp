@@ -22,7 +22,7 @@ static const UINT kSetBookmarkMenuID = 740;
 
 extern HINSTANCE g_hInstance;	
 
-static LPCTSTR kFMHelpTopic = _T("FM/index.htm");
+static LPCWSTR kFMHelpTopic = L"FM/index.htm";
 
 extern void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 
@@ -202,13 +202,13 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
       if (menuInfo.hSubMenu)
       {
         if (level == 1 && menuIndex == kBookmarksMenuIndex)
-          newString = LangLoadString(kAddToFavoritesLangID);
+          newString = GetSystemString(LangLoadString(kAddToFavoritesLangID));
         else
         {
           MyChangeMenu(menuInfo.hSubMenu, level + 1, i);
           if (level == 0 && i < sizeof(kStringLangPairs) / 
                 sizeof(kStringLangPairs[0]))
-            newString = LangLoadString(kStringLangPairs[i].LangID);
+            newString = GetSystemString(LangLoadString(kStringLangPairs[i].LangID));
           else
             continue;
         }
@@ -226,7 +226,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         int langPos = FindLangItem(menuInfo.wID);
         if (langPos < 0)
           continue;
-        newString = LangLoadString(kIDLangPairs[langPos].LangID);
+        newString = GetSystemString(LangLoadString(kIDLangPairs[langPos].LangID));
         if (newString.IsEmpty())
           continue;
         CSysString shorcutString = menuInfo.dwTypeData;
@@ -347,13 +347,14 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
     int i;
     for (i = 0; i < 10; i++)
     {
-      CSysString s = LangLoadString(IDS_BOOKMARK, 0x03000720);
-      s += TEXT(" ");
-      TCHAR c = TEXT('0') + i;
+      UString s = LangLoadStringW(IDS_BOOKMARK, 0x03000720);
+      s += L" ";
+      wchar_t c = L'0' + i;
       s += c;
-      s += TEXT("\tAlt+Shift+");
+      s += L"\tAlt+Shift+";
       s += c;
-      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
+      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, 
+        GetSystemString(s));
     }
 
     while (menu.GetItemCount() > 2)

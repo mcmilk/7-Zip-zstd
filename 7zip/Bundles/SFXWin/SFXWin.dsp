@@ -541,6 +541,14 @@ SOURCE=..\..\..\Windows\Control\Dialog.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\Windows\DLL.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\DLL.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Error.cpp
 # End Source File
 # Begin Source File
@@ -621,14 +629,6 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\System.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\System.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Windows\Window.cpp
 # End Source File
 # Begin Source File
@@ -639,6 +639,14 @@ SOURCE=..\..\..\Windows\Window.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\CommandLineParser.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CommandLineParser.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CRC.cpp

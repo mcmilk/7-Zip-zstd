@@ -5,6 +5,7 @@
 #include "LangUtils.h"
 #include "Common/StringConvert.h"
 #include "Windows/ResourceString.h"
+#include "Windows/Window.h"
 #include "RegistryUtils.h"
 
 CLang g_Lang;
@@ -34,7 +35,10 @@ void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numIte
     const CIDLangPair &idLangPair = idLangPairs[i];
     UString message;
     if (g_Lang.GetMessage(idLangPair.LangID, message))
-      SetDlgItemText(dialogWindow, idLangPair.ControlID, GetSystemString(message));
+    {
+      NWindows::CWindow window(GetDlgItem(dialogWindow, idLangPair.ControlID));
+      window.SetText(message);
+    }
   }
 }
 
@@ -45,12 +49,12 @@ void LangSetWindowText(HWND window, UINT32 langID)
     SetWindowText(window, GetSystemString(message));
 }
 
-CSysString LangLoadString(UINT32 langID)
+UString LangLoadString(UINT32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
-    return GetSystemString(message);
-  return CSysString();
+    return message;
+  return UString();
 }
 
 CSysString LangLoadString(UINT resourceID, UINT32 langID)
@@ -66,5 +70,5 @@ UString LangLoadStringW(UINT resourceID, UINT32 langID)
   UString message;
   if (g_Lang.GetMessage(langID, message))
     return message;
-  return GetUnicodeString(NWindows::MyLoadString(resourceID));
+  return NWindows::MyLoadStringW(resourceID);
 }

@@ -34,12 +34,12 @@ public:
 
 private:
   CMyComPtr<IInArchive> m_ArchiveHandler;
-  CSysString m_DirectoryPath;
+  UString m_DirectoryPath;
   NExtraction::CInfo m_ExtractModeInfo;
 
-  CSysString m_FilePath;
+  UString m_FilePath;
 
-  CSysString m_DiskFilePath;
+  UString m_DiskFilePath;
 
   bool m_ExtractMode;
   struct CProcessedFileInfo
@@ -53,7 +53,6 @@ private:
   COutFileStream *m_OutFileStreamSpec;
   CMyComPtr<ISequentialOutStream> m_OutFileStream;
   UStringVector m_RemovePathParts;
-  UINT m_CodePage;
 
   UString m_ItemDefaultName;
   FILETIME m_UTCLastWriteTimeDefault;
@@ -65,10 +64,9 @@ private:
   void CreateComplexDirectory(const UStringVector &dirPathParts);
   bool IsEncrypted(UINT32 index);
 public:
-  void Init(IInArchive *archive, const CSysString &directoryPath,
+  void Init(IInArchive *archive, const UString &directoryPath,
       const NExtraction::CInfo &anExtractModeInfo, 
       const UStringVector &removePathParts,
-      UINT codePage, 
       const UString &itemDefaultName,
       const FILETIME &utcLastWriteTimeDefault, UINT32 attributesDefault,
       bool passwordIsDefined, const UString &password);

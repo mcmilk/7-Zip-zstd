@@ -236,7 +236,7 @@ void CPanel::FoldersHistory()
   CListViewDialog listViewDialog;
   listViewDialog.DeleteIsAllowed = true;
   // listViewDialog.m_Value = TEXT("*");
-  listViewDialog.Title = LangLoadString(IDS_FOLDERS_HISTORY, 0x03020260);
+  listViewDialog.Title = LangLoadStringW(IDS_FOLDERS_HISTORY, 0x03020260);
   UStringVector strings;
   _appState->FolderHistrory.GetList(strings);
   int i;

@@ -16,9 +16,9 @@ class CComboDialog: public NWindows::NControl::CModalDialog
   virtual bool OnInit();
 public:
   // bool Sorted;
-  CSysString Title;
-  CSysString Static;
-  CSysString Value;
+  UString Title;
+  UString Static;
+  UString Value;
   CSysStringVector Strings;
 
   // CComboDialog(): Sorted(false) {};

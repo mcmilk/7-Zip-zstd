@@ -23,7 +23,7 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
 
-static LPCTSTR kTempArcivePrefix = "7zi";
+static LPCWSTR kTempArchivePrefix = L"7zA";
 
 int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
     int opMode)
@@ -78,12 +78,13 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
 
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
-  CSysString workDir = GetWorkDir(workDirInfo, m_FileName);
+
+  UString workDir = GetWorkDir(workDirInfo, m_FileName);
   CreateComplexDirectory(workDir);
 
-  CTempFile tempFile;
-  CSysString tempFileName;
-  if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
+  CTempFileW tempFile;
+  UString tempFileName;
+  if (tempFile.Create(workDir, kTempArchivePrefix, tempFileName) == 0)
     return FALSE;
 
 
@@ -115,7 +116,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
 
 
   result = outArchive->DeleteItems(
-      MultiByteToUnicodeString(tempFileName, CP_OEMCP), 
+      tempFileName, 
       &indices.Front(), indices.Size(),
       updateCallback);
   updateCallback.Release();
@@ -137,7 +138,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
   }
 
   tempFile.DisableDeleting();
-  if (!MoveFile(tempFileName, m_FileName))
+  if (!MyMoveFile(tempFileName, m_FileName))
   {
     ShowLastErrorMessage();
     return FALSE;

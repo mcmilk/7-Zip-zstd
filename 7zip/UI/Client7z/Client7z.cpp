@@ -4,6 +4,7 @@
 
 #include <initguid.h>
 
+#include "Common/StringConvert.h"
 #include "../../Common/FileStreams.h"
 #include "../../Archive/IArchive.h"
 #include "Windows/PropVariant.h"
@@ -64,8 +65,8 @@ int main(int argc, char* argv[])
   {
     NWindows::NCOM::CPropVariant propVariant;
     archive->GetProperty(i, kpidPath, &propVariant);
-    CSysString string = ConvertPropVariantToString(propVariant);
-    printf("%s\n", (LPCTSTR)string);
+    UString s = ConvertPropVariantToString(propVariant);
+    printf("%s\n", (LPCSTR)GetOemString(s));
   }
   return 0;
 }

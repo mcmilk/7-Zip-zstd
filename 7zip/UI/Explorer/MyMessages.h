@@ -7,20 +7,20 @@
 
 #include "Common/String.h"
 
-void MyMessageBox(HWND aWindow, LPCWSTR aMessage);
+void MyMessageBox(HWND window, LPCWSTR message);
 
-inline void MyMessageBox(LPCWSTR aMessage)
-  {  MyMessageBox(0, aMessage); }
+inline void MyMessageBox(LPCWSTR message)
+  {  MyMessageBox(0, message); }
 
-void MyMessageBox(UINT32 anId
+void MyMessageBox(UINT32 id
     #ifdef LANG        
-    ,UINT32 aLangID
+    ,UINT32 langID
     #endif
     );
 
-void ShowErrorMessage(HWND aWindow, DWORD anError);
-inline void ShowErrorMessage(DWORD anError)
-  { ShowErrorMessage(0, anError); }
-void ShowLastErrorMessage(HWND aWindow = 0);
+void ShowErrorMessage(HWND window, DWORD errorMessage);
+inline void ShowErrorMessage(DWORD errorMessage)
+  { ShowErrorMessage(0, errorMessage); }
+void ShowLastErrorMessage(HWND window = 0);
 
 #endif

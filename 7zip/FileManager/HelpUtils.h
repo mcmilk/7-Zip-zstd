@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-void ShowHelpWindow(HWND hwnd, LPCTSTR topicFile);
+void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile);
 
 #endif

@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-bool GetProgramFolderPath(CSysString &folder); // normalized
+bool GetProgramFolderPath(UString &folder); // normalized
 
 #endif

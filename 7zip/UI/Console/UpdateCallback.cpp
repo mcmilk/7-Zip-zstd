@@ -198,8 +198,8 @@ STDMETHODIMP CUpdateCallbackImp::GetStream(UINT32 index,
   if(updatePair.IsAnti)
   {
     m_PercentPrinter.PrintString("Anti item    ");
-    m_PercentPrinter.PrintString(UnicodeStringToMultiByte(
-      (*m_ArchiveItems)[updatePair.ArchiveItemIndex].Name, CP_OEMCP));
+    m_PercentPrinter.PrintString(
+        (*m_ArchiveItems)[updatePair.ArchiveItemIndex].Name);
   }
   else
   {
@@ -207,7 +207,7 @@ STDMETHODIMP CUpdateCallbackImp::GetStream(UINT32 index,
       (*m_DirItems)[updatePair.DirItemIndex];
   
     m_PercentPrinter.PrintString("Compressing  ");
-    m_PercentPrinter.PrintString(UnicodeStringToMultiByte(dirItem.Name, CP_OEMCP));
+    m_PercentPrinter.PrintString(dirItem.Name);
   }
   if (m_EnablePercents)
   {

@@ -30,11 +30,11 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 3.10  Copyright (c) 1999-2003 Igor Pavlov  2003-09-27\n";
+"\n7-Zip SFX 3.11  Copyright (c) 1999-2003 Igor Pavlov  2003-10-06\n";
 
 static const int kNumSwitches = 6;
 
-const LPTSTR defaultExt = TEXT(".exe");
+const wchar_t *defaultExt = L".exe";
 
 namespace NKey {
 enum Enum
@@ -59,7 +59,7 @@ enum EEnum
 }
 
 static const char kRecursedIDChar = 'R';
-static const char *kRecursedPostCharSet = "0-";
+static const wchar_t *kRecursedPostCharSet = L"0-";
 
 namespace NRecursedPostCharIndex {
   enum EEnum 
@@ -119,11 +119,6 @@ static const wchar_t *kUniversalWildcard = L"*";
 static const int kMinNonSwitchWords = 1;
 static const int kCommandIndex = 0;
 
-// static const int kArchiveNameIndex = kCommandIndex + 1;
-// static const int kFirstFileNameIndex = kArchiveNameIndex + 1;
-
-// static const int kFirstFileNameIndex = kCommandIndex + 1;
-
 static const char *kHelpString = 
     "\nUsage: 7zSFX [<command>] [<switches>...]\n"
     "\n"
@@ -134,7 +129,7 @@ static const char *kHelpString =
     "<Switches>\n"
     // "  -bd Disable percentage indicator\n"
     "  -o{Directory}: set Output directory\n"
-    // "  -p{Password}: set Password\n"
+    "  -p{Password}: set Password\n"
     "  -y: assume Yes on all queries\n";
 
 
@@ -222,18 +217,11 @@ static void PrintHelpAndExit() // yyy
   ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
 }
 
-static void PrintProcessTitle(const CSysString &processTitle, const CSysString &archiveName)
+static void PrintProcessTitle(const CSysString &processTitle, const UString &archiveName)
 {
-  g_StdOut << endl << processTitle << kProcessArchiveMessage << archiveName << endl << endl;
+  g_StdOut << endl << processTitle << kProcessArchiveMessage << 
+      archiveName << endl << endl;
 }
-
-void WriteArgumentsToStringList(int numArguments, const char *arguments[], 
-    UStringVector &strings)
-{
-  for(int i = 1; i < numArguments; i++)
-    strings.Add(MultiByteToUnicodeString(arguments[i]));
-}
-
 
 bool ParseArchiveCommand(const UString &commandString, CArchiveCommand &command)
 {
@@ -284,7 +272,7 @@ void AddCommandLineWildCardToCensr(NWildcard::CCensor &wildcardCensor,
     ShowMessageAndThrowException(kIncorrectWildCardInCommandLine, NExitCode::kUserError);
 }
 
-static bool AreEqualNoCase(char c1, char c2)
+static bool AreEqualNoCase(wchar_t c1, wchar_t c2)
 {
   return ::MyCharUpper(c1) == ::MyCharUpper(c2);
 }
@@ -293,27 +281,15 @@ void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor,
     const UStringVector &nonSwitchStrings, NRecursedType::EEnum type, 
     bool thereAreSwitchIncludeWildCards)
 {
-  /*
-  int numNonSwitchStrings = nonSwitchStrings.Size();
-  if(numNonSwitchStrings == kMinNonSwitchWords && (!thereAreSwitchIncludeWildCards)) 
-  */
-    AddCommandLineWildCardToCensr(wildcardCensor, kUniversalWildcard, true, type);
-  /*
-  for(int i = kFirstFileNameIndex; i < numNonSwitchStrings; i++)
-  {
-    const AString &string = nonSwitchStrings[i];
-    AddCommandLineWildCardToCensr(wildcardCensor, 
-      MultiByteToUnicodeString(string, CP_OEMCP), true, type);
-  }
-  */
+  AddCommandLineWildCardToCensr(wildcardCensor, kUniversalWildcard, true, type);
 }
 
 void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor, 
-    const AStringVector &strings, bool include, NRecursedType::EEnum commonRecursedType)
+    const UStringVector &strings, bool include, NRecursedType::EEnum commonRecursedType)
 {
   for(int i = 0; i < strings.Size(); i++)
   {
-    const AString &string = strings[i];
+    const UString &string = strings[i];
     NRecursedType::EEnum recursedType;
     int pos = 0;
     if (string.Length() < kSomeCludePostStringMinSize)
@@ -321,7 +297,7 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
     if (AreEqualNoCase(string[pos], kRecursedIDChar))
     {
       pos++;
-      int index = CSysString(kRecursedPostCharSet).Find(string[pos]);
+      int index = UString(kRecursedPostCharSet).Find(string[pos]);
       recursedType = GetRecursedTypeFromIndex(index);
       if (index >= 0)
         pos++;
@@ -330,10 +306,10 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
       recursedType = commonRecursedType;
     if (string.Length() < pos + kSomeCludeAfterRecursedPostStringMinSize)
       PrintHelpAndExit();
-    AString tail = string.Mid(pos + 1);
+    UString tail = string.Mid(pos + 1);
     if (AreEqualNoCase(string[pos], kImmediateNameID))
       AddCommandLineWildCardToCensr(wildcardCensor, 
-          MultiByteToUnicodeString(tail, CP_OEMCP), include, recursedType);
+          tail, include, recursedType);
     else 
       PrintHelpAndExit();
   }
@@ -347,8 +323,8 @@ static void ThrowPrintFileIsNotArchiveException(const CSysString &fileName)
   ShowMessageAndThrowException(message, NExitCode::kFileIsNotArchive);
 }
 
-void MyOpenArhive(const CSysString &archiveName, 
-  const NFind::CFileInfo &archiveFileInfo,
+void MyOpenArhive(const UString &archiveName, 
+  const NFind::CFileInfoW &archiveFileInfo,
   IInArchive **archiveHandler,
   UString &defaultItemName)
 {
@@ -365,21 +341,19 @@ void MyOpenArhive(const CSysString &archiveName,
       archiverInfo.Extensions[subExtIndex].AddExtension);
 }
 
-int Main2(int numArguments, const char *arguments[])
+// int Main2(int numArguments, const char *arguments[])
+int Main2()
 {
   SetFileApisToOEM();
   
   g_StdOut << kCopyrightString;
   
-  /*
-  if(numArguments == 1)
-  {
-    PrintHelp();
-    return 0;
-  }
-  */
   UStringVector commandStrings;
-  WriteArgumentsToStringList(numArguments, arguments, commandStrings);
+  SplitCommandLine(GetCommandLineW(), commandStrings);
+
+  UString archiveName = commandStrings.Front();
+
+  commandStrings.Delete(0);
 
   NCommandLineParser::CParser parser(kNumSwitches);
   try
@@ -399,10 +373,7 @@ int Main2(int numArguments, const char *arguments[])
   const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
 
   int numNonSwitchStrings = nonSwitchStrings.Size();
-  /*
-  if(numNonSwitchStrings < kMinNonSwitchWords)  
-    PrintHelpAndExit();
-  */
+
   CArchiveCommand command;
   if (numNonSwitchStrings == 0)
     command.CommandType = NCommandType::kFullExtract;
@@ -425,16 +396,7 @@ int Main2(int numArguments, const char *arguments[])
   AddToCensorFromNonSwitchesStrings(wildcardCensor, nonSwitchStrings, recursedType,
       thereAreSwitchIncludeWildCards);
 
-
   bool yesToAll = parser[NKey::kYes].ThereIs;
-
-  CSysString archiveName;
-  
-  // archiveName = nonSwitchStrings[kArchiveNameIndex];
-  archiveName = arguments[0];
-  
-  // g_StdOut << archiveName << endl;
-  // g_StdOut << GetCommandLine() << endl;
 
   if (archiveName.Right(4).CompareNoCase(defaultExt) != 0)
     archiveName += defaultExt;
@@ -451,7 +413,7 @@ int Main2(int numArguments, const char *arguments[])
 
   if(isExtractGroupCommand || command.CommandType == NCommandType::kList)
   {
-    NFind::CFileInfo archiveFileInfo;
+    NFind::CFileInfoW archiveFileInfo;
     if (!NFind::FindFile(archiveName, archiveFileInfo) || archiveFileInfo.IsDirectory())
       throw "there is no such archive";
 
@@ -465,10 +427,10 @@ int Main2(int numArguments, const char *arguments[])
     if(isExtractGroupCommand)
     {
       PrintProcessTitle(kExtractGroupProcessMessage, archiveName);
-      CSysString outputDir;
+      UString outputDir;
       if(parser[NKey::kOutputDir].ThereIs)
       {
-        outputDir = GetSystemString(parser[NKey::kOutputDir].PostStrings[0]);
+        outputDir = parser[NKey::kOutputDir].PostStrings[0];
         NName::NormalizeDirPathPrefix(outputDir);
       }
       NExtraction::NOverwriteMode::EEnum overwriteMode = 

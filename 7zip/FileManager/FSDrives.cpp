@@ -58,21 +58,22 @@ STDMETHODIMP CFSDrives::LoadItems()
   {
     CDriveInfo driveInfo;
 
-    driveInfo.FullSystemName = driveStrings[i];
+    const CSysString &driveName = driveStrings[i];
 
-    driveInfo.Name = GetUnicodeString(
-        driveInfo.FullSystemName.Left(driveInfo.FullSystemName.Length() - 1),
-        fileCodePage);
+    driveInfo.FullSystemName = GetUnicodeString(driveName, fileCodePage);
+
+    driveInfo.Name = driveInfo.FullSystemName.Left(
+        driveInfo.FullSystemName.Length() - 1);
     driveInfo.ClusterSize = 0;
     driveInfo.DriveSize = 0;
     driveInfo.FreeSpace = 0;
-    UINT aDriveType = ::GetDriveType(driveInfo.FullSystemName);
-    if (aDriveType < sizeof(kDriveTypes) / sizeof(kDriveTypes[0]))
+    UINT driveType = ::GetDriveType(driveName);
+    if (driveType < sizeof(kDriveTypes) / sizeof(kDriveTypes[0]))
     {
-      driveInfo.Type = kDriveTypes[aDriveType];
+      driveInfo.Type = kDriveTypes[driveType];
     }
     bool needRead = true;
-    if (aDriveType == DRIVE_CDROM || aDriveType == DRIVE_REMOVABLE)
+    if (driveType == DRIVE_CDROM || driveType == DRIVE_REMOVABLE)
     {
       /*
       DWORD dwSerialNumber;`
@@ -88,14 +89,14 @@ STDMETHODIMP CFSDrives::LoadItems()
     {
       CSysString volumeName, fileSystemName;
       DWORD volumeSerialNumber, maximumComponentLength, fileSystemFlags;
-      NFile::NSystem::MyGetVolumeInformation(driveInfo.FullSystemName, 
+      NFile::NSystem::MyGetVolumeInformation(driveName, 
           volumeName,
           &volumeSerialNumber, &maximumComponentLength, &fileSystemFlags, 
           fileSystemName);
       driveInfo.VolumeName = GetUnicodeString(volumeName, fileCodePage);
       driveInfo.FileSystemName = GetUnicodeString(fileSystemName, fileCodePage);
 
-      NFile::NSystem::MyGetDiskFreeSpace(driveInfo.FullSystemName,
+      NFile::NSystem::MyGetDiskFreeSpace(driveName,
           driveInfo.ClusterSize, driveInfo.DriveSize, driveInfo.FreeSpace);
       driveInfo.KnownSizes = true;
     }
@@ -150,7 +151,7 @@ STDMETHODIMP CFSDrives::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
   return S_OK;
 }
 
-HRESULT CFSDrives::BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFolder)
+HRESULT CFSDrives::BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
   CFSFolder *fsFolderSpec = new CFSFolder;
@@ -170,7 +171,7 @@ STDMETHODIMP CFSDrives::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 
 STDMETHODIMP CFSDrives::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
 {
-  return BindToFolderSpec(GetSystemString(name, GetCurrentFileCodePage()), resultFolder);
+  return BindToFolderSpec(name, resultFolder);
 }
 
 STDMETHODIMP CFSDrives::BindToParentFolder(IFolderFolder **resultFolder)
@@ -220,8 +221,14 @@ STDMETHODIMP CFSDrives::GetPath(BSTR *path)
 
 STDMETHODIMP CFSDrives::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
 {
+  *iconIndex = 0;
   const CDriveInfo &driveInfo = _drives[index];
-  *iconIndex = GetRealIconIndex(0, driveInfo.FullSystemName);
-  return S_OK;
+  int iconIndexTemp;
+  if (GetRealIconIndex(driveInfo.FullSystemName, 0, iconIndexTemp) != 0)
+  {
+    *iconIndex = iconIndexTemp;
+    return S_OK;
+  }
+  return GetLastError();
 }
 

@@ -42,11 +42,11 @@ public:
 
 private:
   CMyComPtr<IInArchive> _archiveHandler;
-  CSysString _directoryPath;
+  UString _directoryPath;
 
-  CSysString _filePath;
+  UString _filePath;
 
-  CSysString _diskFilePath;
+  UString _diskFilePath;
 
   bool _extractMode;
   struct CProcessedFileInfo
@@ -58,7 +58,6 @@ private:
 
   COutFileStream *_outFileStreamSpec;
   CMyComPtr<ISequentialOutStream> _outFileStream;
-  UINT _codePage;
 
   UString _itemDefaultName;
   FILETIME _utcLastWriteTimeDefault;
@@ -71,13 +70,11 @@ public:
   #endif
 
   #ifdef _SILENT
-  CSysString _message;
+  UString _message;
   #endif
 
-
-
   void Init(IInArchive *archiveHandler,     
-    const CSysString &directoryPath, 
+    const UString &directoryPath, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
     UINT32 attributesDefault);
@@ -85,14 +82,14 @@ public:
   UINT64 _numErrors;
 
   #ifndef _NO_PROGRESS
-  HRESULT StartProgressDialog(const CSysString &title)
+  HRESULT StartProgressDialog(const UString &title)
   {
     ProgressDialog.Create(title, 0);
     {
       #ifdef LANG        
       ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
       #else
-      ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
+      ProgressDialog.SetText(NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING));
       #endif
     }
 

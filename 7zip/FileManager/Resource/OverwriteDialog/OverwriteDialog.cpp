@@ -39,32 +39,31 @@ static CIDLangPair kIDLangPairs[] =
 void COverwriteDialog::SetFileInfoControl(int textID, int iconID, 
     const NOverwriteDialog::CFileInfo &fileInfo) 
 {
-  CSysString sizeString;
+  UString sizeString;
   if (fileInfo.SizeIsDefined)
-    sizeString = GetSystemString(
-        MyFormatNew(IDS_FILE_SIZE, 
+    sizeString = MyFormatNew(IDS_FILE_SIZE, 
         #ifdef LANG        
         0x02000982, 
         #endif
-        NumberToStringW(fileInfo.Size)));
+        NumberToStringW(fileInfo.Size));
 
-  CSysString reducedName;
+  UString reducedName;
   const int kLineSize = 88;
   for (int i = 0; i < fileInfo.Name.Length();)
   {
     reducedName += fileInfo.Name.Mid(i, kLineSize);
-    reducedName += TEXT(" ");
+    reducedName += L" ";
     i += kLineSize;
   }
 
-  CSysString fullString = reducedName;
-  fullString += TEXT("\n");
+  UString fullString = reducedName;
+  fullString += L"\n";
   fullString += sizeString;
-  fullString += TEXT("\n");
+  fullString += L"\n";
 
   if (fileInfo.TimeIsDefined)
   {
-    CSysString timeString;
+    UString timeString;
     FILETIME localFileTime; 
     if (!FileTimeToLocalFileTime(&fileInfo.Time, &localFileTime))
       throw 4190402;
@@ -72,11 +71,11 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
 
     fullString += 
     #ifdef LANG
-        LangLoadString(IDS_FILE_MODIFIED, 0x02000983);
+        LangLoadStringW(IDS_FILE_MODIFIED, 0x02000983);
     #else
-    MyLoadString(IDS_FILE_MODIFIED);
+    MyLoadStringW(IDS_FILE_MODIFIED);
     #endif
-    fullString += TEXT(" ");
+    fullString += L" ";
     fullString += timeString;
   }
 
@@ -85,7 +84,8 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
   control.SetText(fullString);
 
   SHFILEINFO shellFileInfo;
-  if (::SHGetFileInfo(fileInfo.Name, FILE_ATTRIBUTE_NORMAL, &shellFileInfo, 
+  if (::SHGetFileInfo(
+      GetSystemString(fileInfo.Name), FILE_ATTRIBUTE_NORMAL, &shellFileInfo, 
       sizeof(shellFileInfo), SHGFI_ICON | SHGFI_USEFILEATTRIBUTES | SHGFI_LARGEICON)) 
   {
     NControl::CStatic staticContol;
@@ -101,9 +101,9 @@ bool COverwriteDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   SetFileInfoControl(IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME, 
-      IDC_STATIC_OVERWRITE_OLD_FILE_ICON, _oldFileInfo);
+      IDC_STATIC_OVERWRITE_OLD_FILE_ICON, OldFileInfo);
   SetFileInfoControl(IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME, 
-      IDC_STATIC_OVERWRITE_NEW_FILE_ICON, _newFileInfo);
+      IDC_STATIC_OVERWRITE_NEW_FILE_ICON, NewFileInfo);
 	return CModalDialog::OnInit();
 }
 

@@ -25,7 +25,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_PLUGINS_BUTTON_OPTIONS, 0x03010110}
 };
 
-static LPCTSTR kPluginsTopic = TEXT("FM/options.htm#plugins");
+static LPCWSTR kPluginsTopic = L"FM/options.htm#plugins";
 
 bool CPluginsPage::OnInit()
 {
@@ -120,7 +120,7 @@ public:
 STDMETHODIMP CPluginOptionsCallback::GetProgramFolderPath(BSTR *value)
 {
   *value = 0;
-  CSysString folder;
+  UString folder;
   if (!::GetProgramFolderPath(folder))
     return E_FAIL;
   CMyComBSTR valueTemp = GetUnicodeString(folder);
@@ -148,10 +148,10 @@ static UString GetDefaultProgramName()
 STDMETHODIMP CPluginOptionsCallback::GetProgramPath(BSTR *value)
 {
   *value = 0;
-  CSysString folder;
+  UString folder;
   if (!::GetProgramFolderPath(folder))
     return E_FAIL;
-  CMyComBSTR valueTemp = GetUnicodeString(folder) + GetDefaultProgramName();
+  CMyComBSTR valueTemp = folder + GetDefaultProgramName();
   *value = valueTemp.Detach();
   return S_OK;
 }

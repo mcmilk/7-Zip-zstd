@@ -40,7 +40,7 @@ static STATPROPSTG kProperties[] =
 static inline UINT GetCurrentFileCodePage()
   { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
-HRESULT CFSFolder::Init(const CSysString &path, IFolderFolder *parentFolder)
+HRESULT CFSFolder::Init(const UString &path, IFolderFolder *parentFolder)
 {
   _parentFolder = parentFolder;
   _path = path;
@@ -59,8 +59,8 @@ HRESULT CFSFolder::Init(const CSysString &path, IFolderFolder *parentFolder)
     DWORD lastError = GetLastError();
     // return GetLastError();
     CFindFile findFile;
-    CFileInfo fileInfo;
-    if (!findFile.FindFirst(_path + TEXT("*"), fileInfo))
+    CFileInfoW fileInfo;
+    if (!findFile.FindFirst(_path + UString(L"*"), fileInfo))
       return lastError;
     _findChangeNotificationDefined = false;
   }
@@ -70,18 +70,18 @@ HRESULT CFSFolder::Init(const CSysString &path, IFolderFolder *parentFolder)
   return S_OK;
 }
 
-static HRESULT GetFolderSize(const CSysString &path, UINT64 &size, IProgress *progress)
+static HRESULT GetFolderSize(const UString &path, UINT64 &size, IProgress *progress)
 {
   RINOK(progress->SetCompleted(NULL));
   size = 0;
-  CEnumerator enumerator(path + CSysString(TEXT("\\*")));
-  CFileInfo fileInfo;
+  CEnumeratorW enumerator(path + UString(L"\\*"));
+  CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))
   {
     if (fileInfo.IsDirectory())
     {
       UINT64 subSize;
-      RINOK(GetFolderSize(path + CSysString(TEXT("\\")) + fileInfo.Name, 
+      RINOK(GetFolderSize(path + UString(L"\\") + fileInfo.Name, 
           subSize, progress));
       size += subSize;
     }
@@ -97,7 +97,7 @@ STDMETHODIMP CFSFolder::LoadItems()
   INT32 dummy;
   WasChanged(&dummy);
   _files.Clear();
-  CEnumerator enumerator(_path + TEXT("*"));
+  CEnumeratorW enumerator(_path + L"*");
   CFileInfoEx fileInfo;
   while (enumerator.Next(fileInfo))
   {
@@ -126,7 +126,7 @@ bool CFSFolder::LoadComments()
   _comments.Clear();
   _commentsAreLoaded = true;
   CStdInStream file;
-  if (!file.Open(_path + TEXT("descript.ion")))
+  if (!file.Open(GetSystemString(_path + L"descript.ion", _fileCodePage)))
     return false;
   AString string;
   file.ReadToString(string);
@@ -148,7 +148,7 @@ static bool IsAscii(const UString &testString)
 bool CFSFolder::SaveComments()
 {
   CStdOutStream file;
-  if (!file.Open(_path + TEXT("descript.ion")))
+  if (!file.Open(GetSystemString(_path + L"descript.ion", _fileCodePage)))
     return false;
   UString unicodeString;
   _comments.SaveToString(unicodeString);
@@ -204,7 +204,7 @@ STDMETHODIMP CFSFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
       {
         fileInfo.CompressedSizeIsDefined = true;
         if (fileInfo.IsDirectory () || 
-            !GetCompressedFileSize(_path + fileInfo.Name, 
+            !MyGetCompressedFileSizeW(_path + fileInfo.Name, 
                 fileInfo.CompressedSize))
           fileInfo.CompressedSize = fileInfo.Size;
       }
@@ -233,13 +233,13 @@ STDMETHODIMP CFSFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
   return S_OK;
 }
 
-HRESULT CFSFolder::BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFolder)
+HRESULT CFSFolder::BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
   CFSFolder *folderSpec = new CFSFolder;
-  CMyComPtr<IFolderFolder> aSubFolder = folderSpec;
-  RINOK(folderSpec ->Init(_path + name + TEXT('\\'), 0));
-  *resultFolder = aSubFolder.Detach();
+  CMyComPtr<IFolderFolder> subFolder = folderSpec;
+  RINOK(folderSpec ->Init(_path + name + UString(L'\\'), 0));
+  *resultFolder = subFolder.Detach();
   return S_OK;
 }
 
@@ -247,7 +247,7 @@ HRESULT CFSFolder::BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFol
 STDMETHODIMP CFSFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
-  const NFind::CFileInfo &fileInfo = _files[index];
+  const NFind::CFileInfoW &fileInfo = _files[index];
   if (!fileInfo.IsDirectory())
     return E_INVALIDARG;
   return BindToFolderSpec(fileInfo.Name, resultFolder);
@@ -255,7 +255,7 @@ STDMETHODIMP CFSFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 
 STDMETHODIMP CFSFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
 {
-  return BindToFolderSpec(GetSystemString(name, GetCurrentFileCodePage()), resultFolder);
+  return BindToFolderSpec(name, resultFolder);
 }
 
 STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
@@ -272,7 +272,7 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   int pos = _path.ReverseFind(TEXT('\\'));
   if (pos < 0 || pos != _path.Length() - 1)
     return E_FAIL;
-  CSysString parentPath = _path.Left(pos);
+  UString parentPath = _path.Left(pos);
   pos = parentPath.ReverseFind(TEXT('\\'));
   if (pos < 0)
   {
@@ -283,7 +283,7 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
     *resultFolder = drivesFolder.Detach();
     return S_OK;
   }
-  CSysString parentPathReduced = parentPath.Left(pos);
+  UString parentPathReduced = parentPath.Left(pos);
   parentPath = parentPath.Left(pos + 1);
   pos = parentPathReduced.ReverseFind(TEXT('\\'));
   if (pos == 1)
@@ -383,19 +383,19 @@ STDMETHODIMP CFSFolder::Clone(IFolderFolder **resultFolder)
 
 HRESULT CFSFolder::GetItemFullSize(int index, UINT64 &size, IProgress *progress)
 {
-  const CFileInfo &fileInfo = _files[index];
+  const CFileInfoW &fileInfo = _files[index];
   if (fileInfo.IsDirectory())
   {
     /*
-    CMyComPtr<IFolderFolder> aSubFolder;
-    RINOK(BindToFolder(index, &aSubFolder));
+    CMyComPtr<IFolderFolder> subFolder;
+    RINOK(BindToFolder(index, &subFolder));
     CMyComPtr<IFolderReload> aFolderReload;
-    aSubFolder.QueryInterface(&aFolderReload);
+    subFolder.QueryInterface(&aFolderReload);
     aFolderReload->Reload();
     UINT32 numItems;
-    RINOK(aSubFolder->GetNumberOfItems(&numItems));  
+    RINOK(subFolder->GetNumberOfItems(&numItems));  
     CMyComPtr<IFolderGetItemFullSize> aGetItemFullSize;
-    aSubFolder.QueryInterface(&aGetItemFullSize);
+    subFolder.QueryInterface(&aGetItemFullSize);
     for (UINT32 i = 0; i < numItems; i++)
     {
       UINT64 size;
@@ -421,27 +421,27 @@ STDMETHODIMP CFSFolder::GetItemFullSize(UINT32 index, PROPVARIANT *value, IProgr
   return result;
 }
 
-HRESULT CFSFolder::GetComplexName(const wchar_t *name, CSysString &resultPath)
+HRESULT CFSFolder::GetComplexName(const wchar_t *name, UString &resultPath)
 {
   UString newName = name;
-  resultPath = _path + GetSystemString(newName, _fileCodePage);
+  resultPath = _path + newName;
   if (newName.Length() < 1)
     return S_OK;
   if (newName[0] == L'\\')
   {
-    resultPath = GetSystemString(newName, _fileCodePage);
+    resultPath = newName;
     return S_OK;
   }
   if (newName.Length() < 2)
     return S_OK;
   if (newName[1] == L':')
-    resultPath = GetSystemString(newName, _fileCodePage);
+    resultPath = newName;
   return S_OK;
 }
 
 STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress *progress)
 {
-  CSysString processedName;
+  UString processedName;
   RINOK(GetComplexName(name, processedName));
   if(NDirectory::MyCreateDirectory(processedName))
     return S_OK;
@@ -454,7 +454,7 @@ STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress *progress)
 
 STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress *progress)
 {
-  CSysString processedName;
+  UString processedName;
   RINOK(GetComplexName(name, processedName));
   NIO::COutFile outFile;
   if (!outFile.Open(processedName))
@@ -464,8 +464,8 @@ STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress *progress)
 
 STDMETHODIMP CFSFolder::Rename(UINT32 index, const wchar_t *newName, IProgress *progress)
 {
-  const CFileInfo &fileInfo = _files[index];
-  if (!::MoveFile(_path + fileInfo.Name, _path + GetSystemString(newName, _fileCodePage)))
+  const CFileInfoW &fileInfo = _files[index];
+  if (!NDirectory::MyMoveFile(_path + fileInfo.Name, _path + newName))
     return GetLastError();
   return S_OK;
 }
@@ -477,8 +477,8 @@ STDMETHODIMP CFSFolder::Delete(const UINT32 *indices, UINT32 numItems,
   for (UINT32 i = 0; i < numItems; i++)
   {
     int index = indices[i];
-    const CFileInfo &fileInfo = _files[indices[i]];
-    const CSysString fullPath = _path + fileInfo.Name;
+    const CFileInfoW &fileInfo = _files[indices[i]];
+    const UString fullPath = _path + fileInfo.Name;
     bool result;
     if (fileInfo.IsDirectory())
       result = NDirectory::RemoveDirectoryWithSubItems(fullPath);
@@ -534,8 +534,15 @@ STDMETHODIMP CFSFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
   if (index >= (UINT32)_files.Size())
     return E_INVALIDARG;
   const CFileInfoEx &fileInfo = _files[index];
-  *iconIndex = GetRealIconIndex(fileInfo.Attributes, _path + fileInfo.Name);
-  return S_OK;
+  *iconIndex = 0;
+  int iconIndexTemp;
+  if (GetRealIconIndex(_path + fileInfo.Name, fileInfo.Attributes, 
+      iconIndexTemp) != 0)
+  {
+    *iconIndex = iconIndexTemp;
+    return S_OK;
+  }
+  return GetLastError();
 }
 
 // static const LPCTSTR kInvalidFileChars = TEXT("\\/:*?\"<>|");

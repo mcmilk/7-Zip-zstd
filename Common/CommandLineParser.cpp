@@ -6,6 +6,47 @@
 
 namespace NCommandLineParser {
 
+void SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
+{
+  dest1.Empty();
+  dest2.Empty();
+  bool quoteMode = false;
+  for (int i = 0; i < src.Length(); i++)
+  {
+    wchar_t c = src[i];
+    if (c == L'\"')
+      quoteMode = !quoteMode;
+    else if (c == L' ' && !quoteMode)
+    {
+      i++;
+      break;
+    }
+    else 
+      dest1 += c;
+  }
+  dest2 = src.Mid(i);
+}
+
+void SplitCommandLine(const UString &s, UStringVector &parts)
+{
+  UString sTemp = s;
+  sTemp.Trim();
+  parts.Clear();
+  while (true)
+  {
+    UString s1, s2;
+    SplitCommandLine(sTemp, s1, s2);
+    s1.Trim();
+    s2.Trim();
+    if (!s1.IsEmpty())
+      parts.Add(s1);
+    if (s2.IsEmpty())
+      return;
+    sTemp = s2;
+  }
+}
+
+
 static const wchar_t kSwitchID1 = '-';
 static const wchar_t kSwitchID2 = '/';
 

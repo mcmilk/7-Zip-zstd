@@ -44,13 +44,13 @@ private:
   CMyComPtr<IInArchive> _archiveHandler;
   CMyComPtr<IFolderArchiveExtractCallback> _extractCallback2;
   CMyComPtr<ICryptoGetTextPassword> _cryptoGetTextPassword;
-  CSysString _directoryPath;
+  UString _directoryPath;
   NExtractionMode::NPath::EEnum _pathMode;
   NExtractionMode::NOverwrite::EEnum _overwriteMode;
 
   UString _filePath;
 
-  CSysString _diskFilePath;
+  UString _diskFilePath;
 
   CSysStringVector _messages;
 
@@ -67,7 +67,6 @@ private:
   COutFileStream *_outFileStreamSpec;
   CMyComPtr<ISequentialOutStream> _outFileStream;
   UStringVector _removePathParts;
-  UINT _codePage;
 
   UString _itemDefaultName;
   FILETIME _utcLastWriteTimeDefault;
@@ -77,7 +76,7 @@ private:
   // UString m_Password;
 
   
-  // CSysString _srcDirectoryPrefix;
+  // UString _srcDirectoryPrefix;
 
   void CreateComplexDirectory(const UStringVector &dirPathParts);
   /*
@@ -91,35 +90,18 @@ public:
   void Init(
       IInArchive *archiveHandler, 
       IFolderArchiveExtractCallback *extractCallback2,
-      const CSysString &directoryPath,
+      const UString &directoryPath,
       NExtractionMode::NPath::EEnum pathMode,
       NExtractionMode::NOverwrite::EEnum overwriteMode,
       const UStringVector &removePathParts,
-      UINT codePage, 
       const UString &itemDefaultName,
       const FILETIME &utcLastWriteTimeDefault, 
       UINT32 anAttributesDefault
-      // bool aPasswordIsDefined, const UString &aPassword
-      // CSysString srcDirectoryPrefix
+      // bool passwordIsDefined, const UString &password
+      // UString srcDirectoryPrefix
       );
 
   UINT64 _numErrors;
 };
-
-/*
-namespace NExtractResult
-{
-  enum EEnum
-  {
-    kSuccess,
-    kError,
-    kNotArchive,
-    kCanNotCreateInstance,
-    kUserCancel
-  };
-}
-*/
-
-// HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName);
 
 #endif

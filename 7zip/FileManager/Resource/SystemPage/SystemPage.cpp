@@ -29,7 +29,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_SYSTEM_STATIC_ASSOCIATE,          0x03010302}
 };
 
-static LPCTSTR kSystemTopic = TEXT("FM/options.htm#system");
+static LPCWSTR kSystemTopic = L"FM/options.htm#system";
 
 
 bool CSystemPage::OnInit()
@@ -124,17 +124,17 @@ static bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-CSysString GetProgramCommand()
+static UString GetProgramCommand()
 {
-  CSysString path = TEXT("\"");
-  CSysString folder;
+  UString path = L"\"";
+  UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
   if (IsItWindowsNT())
-    path += TEXT("7zFMn.exe");
+    path += L"7zFMn.exe";
   else
-    path += TEXT("7zFM.exe");
-  path += TEXT("\" \"%1\"");
+    path += L"7zFM.exe";
+  path += L"\" \"%1\"";
   return path;
 }
 
@@ -175,15 +175,15 @@ static CSysString GetIconPath(const CSysString &filePath,
 LONG CSystemPage::OnApply()
 {
   _extDatabase.Save();
-  CSysString command = GetProgramCommand();
+  UString command = GetProgramCommand();
   
   for (int i = 0; i < _extDatabase.ExtBigItems.Size(); i++)
   {
     const CExtInfoBig &extInfo = _extDatabase.ExtBigItems[i];
     if (extInfo.Associated)
     {
-      CSysString title = GetSystemString(extInfo.Ext) + CSysString(TEXT(" Archive"));
-      CSysString command = GetProgramCommand();
+      UString title = extInfo.Ext + UString(L" Archive");
+      UString command = GetProgramCommand();
       CSysString iconPath;
       if (!extInfo.PluginsPairs.IsEmpty())
       {
@@ -191,7 +191,10 @@ LONG CSystemPage::OnApply()
         iconPath = GetIconPath(plugin.FilePath, plugin.ClassID, extInfo.Ext);
       }
       NRegistryAssociations::AddShellExtensionInfo(
-            GetSystemString(extInfo.Ext), title, command, iconPath, NULL, 0);
+            GetSystemString(extInfo.Ext), 
+            GetSystemString(title), 
+            GetSystemString(command), 
+            iconPath, NULL, 0);
     }
     else
       NRegistryAssociations::DeleteShellExtensionInfo(GetSystemString(extInfo.Ext));

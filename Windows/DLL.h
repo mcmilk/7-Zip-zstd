@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "../Common/String.h"
+
 namespace NWindows {
 namespace NDLL {
 
@@ -36,9 +38,18 @@ public:
   bool Free();
   bool LoadEx(LPCTSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
   bool Load(LPCTSTR fileName);
+  #ifndef _UNICODE
+  bool LoadEx(LPCWSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
+  bool Load(LPCWSTR fileName);
+  #endif
   FARPROC GetProcAddress(LPCSTR procName) const
     { return ::GetProcAddress(_module, procName); }
 };
+
+bool MyGetModuleFileName(HMODULE hModule, CSysString &result);
+#ifndef _UNICODE
+bool MyGetModuleFileName(HMODULE hModule, UString &result);
+#endif
 
 }}
 

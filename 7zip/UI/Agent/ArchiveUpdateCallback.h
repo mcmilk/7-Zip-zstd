@@ -45,7 +45,7 @@ public:
   STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 
 private:
-  CSysString m_BaseFolderPrefix;
+  UString m_BaseFolderPrefix;
   const CObjectVector<CDirItem> *m_DirItems;
   const CObjectVector<CArchiveItem> *m_ArchiveItems;
   const CObjectVector<CUpdatePair2> *m_UpdatePairs;
@@ -56,7 +56,7 @@ private:
   CMyComPtr<IInArchive> _inArchive;
 
 public:
-  void Init(const CSysString &baseFolderPrefix,
+  void Init(const UString &baseFolderPrefix,
       const CObjectVector<CDirItem> *dirItems, 
       const CObjectVector<CArchiveItem> *archiveItems, // test CItemInfoExList
       CObjectVector<CUpdatePair2> *updatePairs,

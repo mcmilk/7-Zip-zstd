@@ -13,14 +13,12 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
 
-UString GetDefaultName(const CSysString &fullFileName, 
+UString GetDefaultName(const UString &fullFileName, 
     const UString &extension, const UString &addSubExtension)
 {
-  CSysString fileNameSys;
-  if (!GetOnlyName(fullFileName, fileNameSys))
+  UString fileName;
+  if (!GetOnlyName(fullFileName, fileName))
     throw 5011749;
-  UString fileName = GetUnicodeString(fileNameSys, 
-        (AreFileApisANSI() ? CP_ACP : CP_OEMCP));
   int extLength = extension.Length();
   int fileNameLength = fileName.Length();
   if (fileNameLength <= extLength + 1)

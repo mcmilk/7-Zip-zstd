@@ -16,7 +16,7 @@
 
 class CFSFolder;
 
-struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfo
+struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfoW
 {
   bool CompressedSizeIsDefined;
   UINT64 CompressedSize;
@@ -84,7 +84,7 @@ public:
 
 private:
   UINT _fileCodePage;
-  CSysString _path;
+  UString _path;
   CObjectVector<CFileInfoEx> _files;
   CMyComPtr<IFolderFolder> _parentFolder;
 
@@ -96,13 +96,13 @@ private:
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
   HRESULT GetItemFullSize(int index, UINT64 &size, IProgress *progress);
-  HRESULT GetComplexName(const wchar_t *name, CSysString &resultPath);
-  HRESULT BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFolder);
+  HRESULT GetComplexName(const wchar_t *name, UString &resultPath);
+  HRESULT BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder);
 
   bool LoadComments();
   bool SaveComments();
 public:
-  HRESULT Init(const CSysString &aPath, IFolderFolder *aParentFolder);
+  HRESULT Init(const UString &path, IFolderFolder *parentFolder);
 };
 
 #endif

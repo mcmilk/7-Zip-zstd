@@ -4,6 +4,9 @@
 
 #include "FileIO.h"
 #include "Defs.h"
+#ifndef _UNICODE
+#include "../Common/StringConvert.h"
+#endif
 
 namespace NWindows {
 namespace NFile {
@@ -24,6 +27,24 @@ bool CFileBase::Create(LPCTSTR fileName, DWORD desiredAccess,
   _fileIsOpen = _handle != INVALID_HANDLE_VALUE;
   return _fileIsOpen;
 }
+
+#ifndef _UNICODE
+bool CFileBase::Create(LPCWSTR fileName, DWORD desiredAccess,
+    DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
+{
+  Close();
+  // MessageBoxW(0, fileName, 0, 0);
+  // ::SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+  _handle = ::CreateFileW(fileName, desiredAccess, shareMode, 
+      (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+      flagsAndAttributes, (HANDLE) NULL);
+  if ((_handle == INVALID_HANDLE_VALUE ||  _handle == 0) &&
+      ::GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+    return Create(UnicodeStringToMultiByte(fileName, ::AreFileApisANSI() ? CP_ACP : CP_OEMCP), 
+      desiredAccess, shareMode, creationDisposition, flagsAndAttributes);
+  return (_fileIsOpen = _handle != INVALID_HANDLE_VALUE);
+}
+#endif
 
 bool CFileBase::Close()
 {
@@ -111,6 +132,20 @@ bool CInFile::Open(LPCTSTR fileName)
   return Open(fileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL);
 }
 
+#ifndef _UNICODE
+bool CInFile::Open(LPCWSTR fileName, DWORD shareMode, 
+    DWORD creationDisposition,  DWORD flagsAndAttributes)
+{
+  return Create(fileName, GENERIC_READ, shareMode, 
+      creationDisposition, flagsAndAttributes);
+}
+
+bool CInFile::Open(LPCWSTR fileName)
+{
+  return Open(fileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL);
+}
+#endif
+
 bool CInFile::Read(void *data, UINT32 size, UINT32 &processedSize)
 {
   return BOOLToBool(::ReadFile(_handle, data, size, 
@@ -131,6 +166,22 @@ bool COutFile::Open(LPCTSTR fileName)
 {
   return Open(fileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
 }
+
+#ifndef _UNICODE
+
+bool COutFile::Open(LPCWSTR fileName, DWORD shareMode, 
+    DWORD creationDisposition, DWORD flagsAndAttributes)
+{
+  return Create(fileName, GENERIC_WRITE, shareMode, 
+      creationDisposition, flagsAndAttributes);
+}
+
+bool COutFile::Open(LPCWSTR fileName)
+{
+  return Open(fileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
+}
+
+#endif
 
 bool COutFile::SetTime(const FILETIME *creationTime,
   const FILETIME *lastAccessTime, const FILETIME *lastWriteTime)

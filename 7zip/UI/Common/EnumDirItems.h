@@ -14,17 +14,15 @@
 
 void AddDirFileInfo(
     const UString &prefix, 
-    const CSysString &fullPathName,
-    NWindows::NFile::NFind::CFileInfo &fileInfo, 
-    CObjectVector<CDirItem> &dirItems,
-    UINT codePage);
+    const UString &fullPathName,
+    NWindows::NFile::NFind::CFileInfoW &fileInfo, 
+    CObjectVector<CDirItem> &dirItems);
 
 void EnumerateDirItems(
-    const CSysString &baseFolderPrefix,
-    const CSysStringVector &fileNames,
+    const UString &baseFolderPrefix,
+    const UStringVector &fileNames,
     const UString &archiveNamePrefix, 
-    CObjectVector<CDirItem> &dirItems, 
-    UINT codePage);
+    CObjectVector<CDirItem> &dirItems);
 
 /*
 void EnumerateItems(const CSysStringVector &filePaths,

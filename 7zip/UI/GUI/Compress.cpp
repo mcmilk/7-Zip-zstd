@@ -33,9 +33,9 @@ using namespace NFile;
 using namespace NDirectory;
 using namespace NName;
 
-static LPCTSTR kTempArchivePrefix = TEXT("7zA");
-static LPCTSTR kTempFolderPrefix = TEXT("7zE");
-static LPCTSTR kDefaultSfxModule = TEXT("7zC.sfx");
+static LPCWSTR kTempArchivePrefix = L"7zA";
+static LPCWSTR kTempFolderPrefix = L"7zE";
+static LPCWSTR kDefaultSfxModule = L"7zC.sfx";
 
 static void SplitString(const UString &srcString, UStringVector &destStrings)
 {
@@ -197,12 +197,12 @@ struct CThreadUpdateCompress
   }
 };
 
-static CSysString MakeFullArchiveName(const CSysString &name, 
+static UString MakeFullArchiveName(const UString &name, 
     const UString &extension, bool sfx)
 {
   if (sfx)
   {
-    CSysString sfxExt = TEXT(".exe");
+    UString sfxExt = L".exe";
     if (sfxExt.CollateNoCase(name.Right(sfxExt.Length())) == 0)
       return name;
     return name + sfxExt;
@@ -220,11 +220,11 @@ static CSysString MakeFullArchiveName(const CSysString &name,
   int dotPos = name.ReverseFind(L'.');
   if (dotPos >= 0 && (dotPos > slashPos || slashPos < 0))
     return name;
-  return name + CSysString(L'.') + GetSystemString(extension);
+  return name + UString(L'.') + extension;
 }
 
 HRESULT CompressArchive(
-    const CSysString &archivePath, 
+    const UString &archivePath, 
     const UStringVector &fileNames, 
     const UString &archiveType, 
     bool email,
@@ -243,12 +243,12 @@ HRESULT CompressArchive(
   const NUpdateArchive::CActionSet *actionSet;
   NCompressDialog::CInfo compressInfo;
 
-  CSysString tempDirPath;
-  CSysString currentDirPrefix;
+  UString tempDirPath;
+  UString currentDirPrefix;
   bool needTempFile = true;
-  NDirectory::CTempDirectory tempDirectory;
-  CSysString archiveName;
-  int pos = archivePath.ReverseFind(TEXT('\\'));
+  NDirectory::CTempDirectoryW tempDirectory;
+  UString archiveName;
+  int pos = archivePath.ReverseFind(L'\\');
   if (pos < 0)
   {
     archiveName = archivePath;
@@ -271,8 +271,8 @@ HRESULT CompressArchive(
   if (showDialog)
   {
     bool oneFile = false;
-    NFind::CFileInfo fileInfo;
-    if (!NFind::FindFile(GetSystemString(fileNames.Front()), fileInfo))
+    NFind::CFileInfoW fileInfo;
+    if (!NFind::FindFile(fileNames.Front(), fileInfo))
       return ::GetLastError();
     if (fileNames.Size() == 1)
       oneFile = !fileInfo.IsDirectory();
@@ -305,8 +305,7 @@ HRESULT CompressArchive(
     
     if (dialog.m_Info.VolumeSizeIsDefined)
     {
-      MessageBox(0, TEXT("Splitting to volumes is not supported"), 
-          TEXT("7-Zip"), 0);
+      MyMessageBox(L"Splitting to volumes is not supported");
       return E_FAIL;
     }
 
@@ -332,7 +331,8 @@ HRESULT CompressArchive(
     encryptHeadersIsAllowed = dialog.EncryptHeadersIsAllowed;
     encryptHeaders = dialog.EncryptHeaders;
     compressInfo = dialog.m_Info;
-    compressInfo.ArchiveName = MakeFullArchiveName(compressInfo.ArchiveName, 
+    compressInfo.ArchiveName = MakeFullArchiveName(
+        compressInfo.ArchiveName, 
         archiverInfo.GetMainExtension(), compressInfo.SFXMode);
   }
   else
@@ -359,12 +359,11 @@ HRESULT CompressArchive(
     compressInfo.MultiThread = false;
     compressInfo.SFXMode = false;
     compressInfo.KeepName = false;
-    // MessageBox(0, archiveName, TEXT(""), 0);
     compressInfo.ArchiveName = archiveName;
     compressInfo.CurrentDirPrefix = currentDirPrefix;
     compressInfo.Method = 5;
   }
-  CSysString arcPath;
+  UString arcPath;
   if (!compressInfo.GetFullPathName(arcPath))
   {
     MyMessageBox(L"Incorrect archive path");
@@ -379,25 +378,25 @@ HRESULT CompressArchive(
 
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
-  CSysString workDir = GetWorkDir(workDirInfo, arcPath);
+  UString workDir = GetWorkDir(workDirInfo, arcPath);
   NFile::NDirectory::CreateComplexDirectory(workDir);
 
-  NFile::NDirectory::CTempFile tempFile;
-  CSysString tempFileName;
+  NFile::NDirectory::CTempFileW tempFile;
+  UString tempFileName;
   if (needTempFile)
   {
     if (tempFile.Create(workDir, kTempArchivePrefix, tempFileName) == 0)
       return E_FAIL;
   }
   else
-     tempFileName = arcPath;
+    tempFileName = arcPath;
 
 
   /*
   const CLSID &classID = 
       dialog.m_ArchiverInfoList[dialog.m_Info.ArchiverInfoIndex].ClassID;
   */
-  NFind::CFileInfo fileInfo;
+  NFind::CFileInfoW fileInfo;
 
   CMyComPtr<IOutFolderArchive> outArchive;
 
@@ -477,7 +476,7 @@ HRESULT CompressArchive(
   updater.OutArchive = outArchive;
   // updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
 
-  CSysString title = LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
+  UString title = LangLoadStringW(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
   updater.UpdateCallbackSpec->Init(0, !password.IsEmpty(), password);
 
   UINT32 method = MyMin(compressInfo.Method, UINT32(9));
@@ -500,9 +499,9 @@ HRESULT CompressArchive(
   UString sfxModule;
   if (compressInfo.SFXMode)
   {
-    CSysString sfxModule2;
-    LPCTSTR path = NULL;
-    CSysString sfxModule3;
+    UString sfxModule2;
+    LPCWSTR path = NULL;
+    UString sfxModule3;
     if (GetProgramFolderPath(sfxModule3))
       path = sfxModule3;
     if (!NDirectory::MySearchPath(path, kDefaultSfxModule, NULL, sfxModule2))
@@ -510,7 +509,7 @@ HRESULT CompressArchive(
       MyMessageBox(L"can't find sfx module");
       return E_FAIL;
     }
-    sfxModule = GetUnicodeString(sfxModule2);
+    sfxModule = sfxModule2;
   }
 
   updater.OutArchivePath = GetUnicodeString(tempFileName, codePage);
@@ -549,7 +548,7 @@ HRESULT CompressArchive(
   if (needTempFile)
   {
     tempFile.DisableDeleting();
-    if (!::MoveFile(tempFileName, arcPath))
+    if (!NDirectory::MyMoveFile(tempFileName, arcPath))
     {
       ShowLastErrorMessage();
       return E_FAIL;
@@ -566,7 +565,7 @@ HRESULT CompressArchive(
     if (fnSend == 0)
       return E_FAIL;
 
-    CSysString fileName;
+    UString fileName;
     GetOnlyName(arcPath, fileName);
     AString path = GetAnsiString(arcPath);
     AString name = GetAnsiString(fileName);

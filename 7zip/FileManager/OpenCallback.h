@@ -20,8 +20,8 @@ class COpenArchiveCallback:
   public ICryptoGetTextPassword,
   public CMyUnknownImp
 {
-  CSysString _folderPrefix;
-  NWindows::NFile::NFind::CFileInfo _fileInfo;
+  UString _folderPrefix;
+  NWindows::NFile::NFind::CFileInfoW _fileInfo;
 public:
   bool _passwordIsDefined;
   UString _password;
@@ -53,7 +53,7 @@ public:
   {
     _passwordIsDefined = false;
   }
-  void LoadFileInfo(const CSysString &folderPrefix,  const CSysString &fileName)
+  void LoadFileInfo(const UString &folderPrefix,  const UString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))

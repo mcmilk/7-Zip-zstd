@@ -663,13 +663,12 @@ void CPanel::CompressDropFiles(HDROP dr)
   UStringVector fileNamesUnicode;
   for (int i = 0; i < fileNames.Size(); i++)
     fileNamesUnicode.Add(GetUnicodeString(fileNames[i]));
-  const CSysString &archiveName = CreateArchiveName(
-    fileNames.Front(), (fileNames.Size() > 1), false);
-  CSysString currentDirectory;
+  const UString &archiveName = CreateArchiveName(
+    fileNamesUnicode.Front(), (fileNamesUnicode.Size() > 1), false);
+  UString currentDirectory;
   if (IsFSFolder())
   {
-    CompressFiles(GetSystemString(_currentFolderPrefix) + archiveName, 
-        fileNamesUnicode, 
+    CompressFiles(_currentFolderPrefix + archiveName, fileNamesUnicode, 
       false, // email
       true // showDialog
       );

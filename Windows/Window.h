@@ -134,13 +134,24 @@ public:
   bool PostMessage(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
     {  return BOOLToBool(::PostMessage(_window, message, wParam, lParam)) ;}
 
-  bool SetText(LPCTSTR string)
-    { return BOOLToBool(::SetWindowText(_window, string)); }
+  bool SetText(LPCTSTR s)
+    { return BOOLToBool(::SetWindowText(_window, s)); }
+  #ifndef _UNICODE
+  bool CWindow::SetText(LPCWSTR s);
+  #endif
+
   int GetTextLength() const 
     { return GetWindowTextLength(_window); }
   UINT GetText(LPTSTR string, int maxCount) const
     { return GetWindowText(_window, string, maxCount); }
-  bool GetText(CSysString &string);
+  bool GetText(CSysString &s);
+  #ifndef _UNICODE
+  /*
+  UINT GetText(LPWSTR string, int maxCount) const
+    { return GetWindowTextW(_window, string, maxCount); }
+  */
+  bool GetText(UString &s);
+  #endif
 
   bool Enable(bool enable)
     { return BOOLToBool(::EnableWindow(_window, BoolToBOOL(enable))); }

@@ -22,7 +22,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_SETTINGS_SHOW_SYSTEM_MENU, 0x03010410}
 };
 
-static LPCTSTR kEditTopic = TEXT("FM/options.htm#settings");
+static LPCWSTR kEditTopic = L"FM/options.htm#settings";
 
 bool CSettingsPage::OnInit()
 {

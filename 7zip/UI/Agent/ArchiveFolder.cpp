@@ -18,13 +18,9 @@
 using namespace NWindows;
 using namespace NCOM;
 
-static inline UINT GetCurrentFileCodePage()
-  { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems, 
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
-  UINT codePage = GetCurrentFileCodePage();
   CArchiveExtractCallback *extractCallbackSpec = new 
       CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
@@ -45,11 +41,10 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
 
   extractCallbackSpec->Init(_agentSpec->_archive, 
       extractCallback2, 
-      GetSystemString(path, codePage),
+      path,
       NExtractionMode::NPath::kCurrentPathnames, 
       NExtractionMode::NOverwrite::kAskBefore, 
       pathParts, 
-      codePage, 
       _agentSpec->DefaultName,
       _agentSpec->DefaultTime, 
       _agentSpec->DefaultAttributes

@@ -13,7 +13,6 @@
 #else
 #include "Resource/ProgressDialog2/ProgressDialog.h"
 #endif
-// #include "resource.h"
 
 #include "Windows/ResourceString.h"
 
@@ -77,23 +76,21 @@ private:
   bool _passwordIsDefined;
   UString _password;
 
-  void CreateComplexDirectory(const UStringVector &aDirPathParts);
+  // void CreateComplexDirectory(const UStringVector &aDirPathParts);
 
   void AddErrorMessage(LPCTSTR message);
 public:
   CProgressDialog ProgressDialog;
   CSysStringVector _messages;
   HWND _parentWindow;
-  UINT _fileCodePage;
-  void StartProgressDialog(const CSysString &title)
+  INT_PTR StartProgressDialog(const UString &title)
   {
-    ProgressDialog.Create(title, _parentWindow);
+    return ProgressDialog.Create(title, _parentWindow);
   }
 
   ~CExtractCallbackImp();
   void Init(NExtractionMode::NOverwrite::EEnum overwriteMode,
       bool passwordIsDefined, const UString &password);
-  // void DestroyWindows();
 };
 
 #endif

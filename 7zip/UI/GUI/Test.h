@@ -7,7 +7,7 @@
 
 #include "Common/String.h"
 
-HRESULT TestArchive(HWND aParentWindow, const CSysString &aFileName);
+HRESULT TestArchive(HWND parentWindow, const UString &fileName);
 
 #endif
 

@@ -42,7 +42,7 @@ using namespace NWindows;
 const UINT64 kMaxCheckStartPosition = 1 << 20;
 
 HRESULT ReOpenArchive(IInArchive *archive, 
-    const CSysString &fileName)
+    const UString &fileName)
 {
   CInFileStream *inStreamSpec = new CInFileStream;
   CMyComPtr<IInStream> inStream(inStreamSpec);
@@ -50,10 +50,7 @@ HRESULT ReOpenArchive(IInArchive *archive,
   return archive->Open(inStream, &kMaxCheckStartPosition, NULL);
 }
 
-static inline UINT GetCurrentFileCodePage()
-  {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
-HRESULT OpenArchive(const CSysString &fileName, 
+HRESULT OpenArchive(const UString &fileName, 
     #ifndef EXCLUDE_COM
     HMODULE *module,
     #endif
@@ -67,35 +64,15 @@ HRESULT OpenArchive(const CSysString &fileName,
   if (!inStreamSpec->Open(fileName))
     return GetLastError();
 
-  /*
-  #ifdef FORMAT_7Z
-
-  CComObjectNoLock<NArchive::N7z::CHandler> *aHandlerSpec = new CComObjectNoLock<NArchive::N7z::CHandler>;
-  CMyComPtr<IArchiveHandler200> archive = aHandlerSpec;
-  inStreamSpec->Seek(0, STREAM_SEEK_SET, NULL);
-  RETURN_IF_NOT_S_OK(archive->Open(inStream, 
-      &kMaxCheckStartPosition, openArchiveCallback));
-  *archiveResult = archive.Detach();
-  archiverInfoResult.Name = TEXT("7z");
-  archiverInfoResult.Extension = TEXT("7z");
-  archiverInfoResult.KeepName = false;
-  archiverInfoResult.UpdateEnabled = true;
-  return S_OK;
-  
-  #else
- 
-  #ifndef EXCLUDE_COM
-  */
   *archiveResult = NULL;
   CObjectVector<CArchiverInfo> archiverInfoList;
   ReadArchiverInfoList(archiverInfoList);
   UString extension;
   {
-    CSysString name, pureName, dot, extSys;
+    UString name, pureName, dot;
     if(!NFile::NDirectory::GetOnlyName(fileName, name))
       return E_FAIL;
-    NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extSys);
-    extension = GetUnicodeString(extSys, GetCurrentFileCodePage());
+    NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
   }
   CIntVector orderIndices;
   int firstArchiverIndex;

@@ -25,6 +25,8 @@
 #include "../Common/ExtractingFilePath.h"
 
 using namespace NWindows;
+using namespace NFile;
+using namespace NDirectory;
 
 static const char *kTestingString    =  "Testing     ";
 static const char *kExtractingString =  "Extracting  ";
@@ -32,12 +34,11 @@ static const char *kSkippingString   =  "Skipping    ";
 
 static const char *kCantAutoRename = "can not create file with auto name\n";
 static const char *kCantRenameFile = "can not rename existing file\n";
-
+static const char *kCantDeleteOutputFile = "can not delete output file ";
 void CExtractCallbackImp::Init(IInArchive *archive,
-    const CSysString &directoryPath, 
+    const UString &directoryPath, 
     const NExtraction::CInfo &extractModeInfo,
     const UStringVector &removePathParts,
-    UINT codePage, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
     UINT32 attributesDefault,
@@ -52,7 +53,6 @@ void CExtractCallbackImp::Init(IInArchive *archive,
   m_UTCLastWriteTimeDefault = utcLastWriteTimeDefault;
   m_AttributesDefault = attributesDefault;
   
-  m_CodePage = codePage;
   m_RemovePathParts = removePathParts;
   m_ExtractModeInfo = extractModeInfo;
   m_ArchiveHandler = archive;
@@ -84,12 +84,12 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
 
 void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathParts)
 {
-  CSysString fullPath = m_DirectoryPath;
+  UString fullPath = m_DirectoryPath;
   for(int i = 0; i < dirPathParts.Size(); i++)
   {
-    fullPath += GetSystemString(dirPathParts[i], m_CodePage);
-    NFile::NDirectory::MyCreateDirectory(fullPath);
-    fullPath += NFile::NName::kDirDelimiter;
+    fullPath += dirPathParts[i];
+    MyCreateDirectory(fullPath);
+    fullPath += (wchar_t)NFile::NName::kDirDelimiter;
   }
 }
 
@@ -124,7 +124,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     fullPath = propVariantName.bstrVal;
   }
 
-  m_FilePath = GetSystemString(fullPath, m_CodePage);
+  m_FilePath = fullPath;
 
   UString fullPathCorrect = GetCorrectPath(fullPath);
 
@@ -212,19 +212,18 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
         CreateComplexDirectory(pathParts);
     }
 
-    CSysString fullProcessedPath = m_DirectoryPath + 
-        GetSystemString(GetCorrectPath(processedPath), m_CodePage);
+    UString fullProcessedPath = m_DirectoryPath + GetCorrectPath(processedPath);
 
     if(m_ProcessedFileInfo.IsDirectory)
     {
       m_DiskFilePath = fullProcessedPath;
 
       if (isAnti)
-        ::RemoveDirectory(m_DiskFilePath);
+        MyRemoveDirectory(m_DiskFilePath);
       return S_OK;
     }
 
-    NFile::NFind::CFileInfo fileInfo;
+    NFile::NFind::CFileInfoW fileInfo;
     if(NFile::NFind::FindFile(fullProcessedPath, fileInfo))
     {
       switch(m_ExtractModeInfo.OverwriteMode)
@@ -241,15 +240,15 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
           
           newFileInfo.Time = m_ProcessedFileInfo.UTCLastWriteTime;
           newFileInfo.Size = newFileSize;
-          newFileInfo.Name = GetSystemString(fullPath, m_CodePage);
+          newFileInfo.Name = fullPath;
 
           NOverwriteDialog::NResult::EEnum result = 
               NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
           */
 
-          g_StdOut << "file " << GetOemString(fullProcessedPath) << 
+          g_StdOut << "file " << fullProcessedPath << 
               "\nalready exists. Overwrite with " << endl;
-          g_StdOut << UnicodeStringToMultiByte(fullPathCorrect, CP_OEMCP);
+          g_StdOut << fullPathCorrect;
 
           NUserAnswerMode::EEnum overwriteAnswer = ScanUserYesNoAllQuit();
 
@@ -281,30 +280,30 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
         if (!AutoRenamePath(fullProcessedPath))
         {
           g_StdOut << kCantAutoRename;
-          g_StdOut << GetOemString(fullProcessedPath);
+          g_StdOut << fullProcessedPath;
           return E_ABORT;
         }
       }
       else if (m_ExtractModeInfo.OverwriteMode == NExtraction::NOverwriteMode::kAutoRenameExisting)
       {
-        CSysString existPath = fullProcessedPath;
+        UString existPath = fullProcessedPath;
         if (!AutoRenamePath(existPath))
         {
           g_StdOut << kCantAutoRename;
-          g_StdOut << GetOemString(fullProcessedPath);
+          g_StdOut << fullProcessedPath;
           return E_ABORT;
         }
-        if(!MoveFile(fullProcessedPath, existPath))
+        if(!MyMoveFile(fullProcessedPath, existPath))
         {
           g_StdOut << kCantRenameFile;
           return E_ABORT;
         }
       }
       else
-        if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
+        if (!DeleteFileAlways(fullProcessedPath))
         {
-          g_StdOut << "can not delete output file " << endl;
-          g_StdOut << GetOemString(fullProcessedPath);
+          g_StdOut << kCantDeleteOutputFile << endl;
+          g_StdOut << fullProcessedPath;
           return E_ABORT;
         }
     }
@@ -317,7 +316,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
       {
         m_NumErrors++;
         g_StdOut << "Can not open output file " << endl;
-        g_StdOut << GetOemString(fullProcessedPath) << endl;
+        g_StdOut << fullProcessedPath << endl;
         return S_OK;
       }
       m_OutFileStream = outStreamLoc;
@@ -348,7 +347,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(INT32 askExtractMode)
       g_StdOut << kSkippingString;
       break;
   };
-  g_StdOut << GetOemString(m_FilePath);
+  g_StdOut << m_FilePath;
   return S_OK;
 }
 
@@ -385,7 +384,7 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
     m_OutFileStreamSpec->File.SetLastWriteTime(&m_ProcessedFileInfo.UTCLastWriteTime);
   m_OutFileStream.Release();
   if (m_ExtractMode && m_ProcessedFileInfo.AttributesAreDefined)
-    SetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);
+    MySetFileAttributes(m_DiskFilePath, m_ProcessedFileInfo.Attributes);
   g_StdOut << endl;
   return S_OK;
 }

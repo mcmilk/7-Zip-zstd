@@ -7,6 +7,6 @@
 
 #include "Common/String.h"
 
-CSysString GetNameOfProperty(PROPID aPropID);
+UString GetNameOfProperty(PROPID propID);
 
 #endif

@@ -52,7 +52,7 @@ public:
     _parentWindow = parentWindow;
 
   }
-  void StartProgressDialog(const CSysString &title)
+  void StartProgressDialog(const UString &title)
   {
     ProgressDialog.Create(title, _parentWindow);
   }

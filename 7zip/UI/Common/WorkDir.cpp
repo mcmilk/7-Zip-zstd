@@ -4,40 +4,45 @@
 
 #include "WorkDir.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
+
+static inline UINT GetCurrentCodePage() 
+  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 
-static CSysString GetContainingDir(const CSysString &aPath)
+static UString GetContainingDir(const UString &path)
 {
-  CSysString resultPath;
+  UString resultPath;
   int pos;
-  if(! NFile::NDirectory::MyGetFullPathName(aPath, resultPath, pos))
+  if(!NFile::NDirectory::MyGetFullPathName(path, resultPath, pos))
     throw 141716;
   return resultPath.Left(pos);
 }
 
-CSysString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
-    const CSysString &archiveName)
+UString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
+    const UString &archiveName)
 {
   NWorkDir::NMode::EEnum mode = workDirInfo.Mode;
   if (workDirInfo.ForRemovableOnly)
   {
     mode = NWorkDir::NMode::kCurrent;
-    CSysString prefix = archiveName.Left(3);
-    if (prefix[1] == TEXT(':') && prefix[2] == TEXT('\\'))
+    UString prefix = archiveName.Left(3);
+    if (prefix[1] == L':' && prefix[2] == L'\\')
     {
-      UINT driveType = GetDriveType(prefix);
+      UINT driveType = GetDriveType(GetSystemString(prefix, GetCurrentCodePage()));
       if (driveType == DRIVE_CDROM || driveType == DRIVE_REMOVABLE)
         mode = workDirInfo.Mode;
     }
     /*
-    CParsedPath aParsedPath;
-    aParsedPath.ParsePath(archiveName);
-    UINT driveType = GetDriveType(aParsedPath.Prefix);
+    CParsedPath parsedPath;
+    parsedPath.ParsePath(archiveName);
+    UINT driveType = GetDriveType(parsedPath.Prefix);
     if ((driveType != DRIVE_CDROM) && (driveType != DRIVE_REMOVABLE))
       mode = NZipSettings::NWorkDir::NMode::kCurrent;
     */
@@ -50,13 +55,13 @@ CSysString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
     }
     case NWorkDir::NMode::kSpecified:
     {
-      CSysString tempDir = workDirInfo.Path;
+      UString tempDir = workDirInfo.Path;
       NormalizeDirPathPrefix(tempDir);
       return tempDir;
     }
     default: // NZipSettings::NWorkDir::NMode::kSystem:
     {
-      CSysString tempDir;
+      UString tempDir;
       if(!NFile::NDirectory::MyGetTempPath(tempDir))
         throw 141717;
       return tempDir;

@@ -14,7 +14,7 @@ struct CProperty
 struct CCompressionMethodMode
 {
   #ifndef EXCLUDE_COM
-  CSysString FilePath;
+  UString FilePath;
   CLSID ClassID1;
   #else
   UString Name;

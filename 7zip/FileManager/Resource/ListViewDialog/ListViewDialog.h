@@ -17,14 +17,14 @@ class CListViewDialog: public NWindows::NControl::CModalDialog
   virtual bool OnNotify(UINT controlID, LPNMHDR header);
 
 public:
-  CSysString Title;
+  UString Title;
   bool DeleteIsAllowed;
   CSysStringVector Strings;
   bool StringsWereChanged;
   int FocusedItemIndex;
 
-  INT_PTR Create(HWND aWndParent = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_LISTVIEW), aWndParent); }
+  INT_PTR Create(HWND wndParent = 0)
+    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_LISTVIEW), wndParent); }
 
   CListViewDialog(): DeleteIsAllowed(false) {}
 

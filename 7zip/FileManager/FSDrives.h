@@ -15,7 +15,7 @@
 struct CDriveInfo
 {
   UString Name;
-  CSysString FullSystemName;
+  UString FullSystemName;
   bool KnownSizes;
   UINT64 DriveSize;
   UINT64 FreeSpace;
@@ -57,7 +57,7 @@ public:
   STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
 
 private:
-  HRESULT BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFolder);
+  HRESULT BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder);
   CObjectVector<CDriveInfo> _drives;
 public:
   void Init() {}

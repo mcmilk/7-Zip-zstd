@@ -8,7 +8,7 @@
 #include "../../Archive/IArchive.h"
 #include "ArchiverInfo.h"
 
-HRESULT OpenArchive(const CSysString &fileName, 
+HRESULT OpenArchive(const UString &fileName, 
     #ifndef EXCLUDE_COM
     HMODULE *module,
     #endif
@@ -18,7 +18,7 @@ HRESULT OpenArchive(const CSysString &fileName,
     IArchiveOpenCallback *openArchiveCallback);
 
 HRESULT ReOpenArchive(IInArchive *archive, 
-    const CSysString &fileName);
+    const UString &fileName);
 
 
 #endif

@@ -95,4 +95,12 @@ INT_PTR CModalDialog::Create(LPCTSTR templateName, HWND parentWindow)
       templateName, parentWindow, DialogProcedure, LPARAM(this));
 }
 
+/*
+INT_PTR CModalDialog::Create(LPCWSTR templateName, HWND parentWindow)
+{ 
+  return DialogBoxParamW(g_hInstance, 
+      templateName, parentWindow, DialogProcedure, LPARAM(this));
+}
+*/
+
 }}

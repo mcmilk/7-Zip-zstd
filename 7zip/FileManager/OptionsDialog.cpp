@@ -4,6 +4,8 @@
 
 #include "resource.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/Control/PropertyPage.h"
 #include "Windows/Error.h"
 
@@ -62,7 +64,7 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
   UINT32 langIDs[] = { 0x03010300, 0x03010100, 0x03010200, 0x03010400, 0x01000400};
   const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
   for (int i = 0; i < kNumPages; i++)
-    titles.Add(LangLoadString(langIDs[i]));
+    titles.Add(GetSystemString(LangLoadString(langIDs[i])));
   
   PROPSHEETPAGE pages[kNumPages];
 
@@ -82,7 +84,6 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
   sheet.hInstance = hInstance;
 
   CSysString title = LangLoadString(IDS_OPTIONS, 0x03010000);
-  // CSysString title = TEXT("Options");
 
   sheet.pszCaption = title;
   sheet.nPages = sizeof(pages) / sizeof(PROPSHEETPAGE);

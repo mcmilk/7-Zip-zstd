@@ -18,9 +18,6 @@
 
 using namespace NWindows;
 
-static inline UINT GetCurrentFileCodePage()
-  {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-
 STDMETHODIMP CAgentFolder::GetAgentFolder(CAgentFolder **agentFolder)
 { 
   *agentFolder = this; 
@@ -193,7 +190,6 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
     INT32 testMode,
     IFolderArchiveExtractCallback *extractCallback2)
 {
-  UINT codePage = GetCurrentFileCodePage();
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UStringVector pathParts;
@@ -205,11 +201,10 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
   }
   extractCallbackSpec->Init(_agentSpec->_archive, 
       extractCallback2, 
-      GetSystemString(path, codePage),
+      path,
       pathMode, 
       overwriteMode, 
       pathParts, 
-      codePage, 
       _agentSpec->DefaultName,
       _agentSpec->DefaultTime, 
       _agentSpec->DefaultAttributes
@@ -242,8 +237,8 @@ STDMETHODIMP CAgent::Open(
     // CLSID *clsIDResult,
     IArchiveOpenCallback *openArchiveCallback)
 {
-  _archiveFilePath = GetSystemString(filePath, GetCurrentFileCodePage());
-  NFile::NFind::CFileInfo fileInfo;
+  _archiveFilePath = filePath;
+  NFile::NFind::CFileInfoW fileInfo;
   if (!NFile::NFind::FindFile(_archiveFilePath, fileInfo))
     return ::GetLastError();
   if (fileInfo.IsDirectory())
@@ -274,7 +269,6 @@ STDMETHODIMP CAgent::ReOpen(
     // const wchar_t *filePath, 
     IArchiveOpenCallback *openArchiveCallback)
 {
-  UINT codePage = GetCurrentFileCodePage();
   if (_proxyArchive != NULL)
   {
     delete _proxyArchive;
@@ -326,16 +320,14 @@ STDMETHODIMP CAgent::Extract(
     INT32 testMode,
     IFolderArchiveExtractCallback *extractCallback2)
 {
-  UINT codePage = GetCurrentFileCodePage();
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   extractCallbackSpec->Init(_archive, 
       extractCallback2, 
-      GetSystemString(path, codePage),
+      path,
       pathMode, 
       overwriteMode, 
       UStringVector(), 
-      codePage, 
       DefaultName,
       DefaultTime, 
       DefaultAttributes

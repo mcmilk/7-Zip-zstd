@@ -70,7 +70,7 @@ UString MyFormatNew(UINT32 resourceID,
     #ifdef LANG
     LangLoadStringW(resourceID, aLangID), 
     #else
-    GetUnicodeString(NWindows::MyLoadString(resourceID)), 
+    NWindows::MyLoadStringW(resourceID), 
     #endif
     argument);
 }

@@ -24,7 +24,7 @@ namespace NAttributes
   inline bool IsEncrypted(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_ENCRYPTED) != 0; }
 }
 
-class CFileInfo
+class CFileInfoBase
 { 
   bool MatchesMask(UINT32 mask) const  { return ((Attributes & mask) != 0); }
 public:
@@ -41,7 +41,6 @@ public:
   #endif
 
 
-  CSysString Name;
   bool IsArchived() const { return MatchesMask(FILE_ATTRIBUTE_ARCHIVE); }
   bool IsCompressed() const { return MatchesMask(FILE_ATTRIBUTE_COMPRESSED); }
   bool IsDirectory() const { return MatchesMask(FILE_ATTRIBUTE_DIRECTORY); }
@@ -55,26 +54,51 @@ public:
   bool IsSystem() const { return MatchesMask(FILE_ATTRIBUTE_SYSTEM); }
   bool IsTemporary() const { return MatchesMask(FILE_ATTRIBUTE_TEMPORARY); }
 
+};
+
+class CFileInfo: public CFileInfoBase
+{ 
+public:
+  CSysString Name;
   bool IsDots() const;
 };
+
+#ifdef _UNICODE
+typedef CFileInfo CFileInfoW;
+#else
+class CFileInfoW: public CFileInfoBase
+{ 
+public:
+  UString Name;
+  bool IsDots() const;
+};
+#endif
 
 class CFindFile
 {
   friend class CEnumerator;
   HANDLE _handle;
   bool _handleAllocated;
-protected:
-  bool IsHandleAllocated() const { return _handleAllocated; }
 public:
+  bool IsHandleAllocated() const { return _handleAllocated; }
   CFindFile(): _handleAllocated(false) {}
   ~CFindFile() {  Close(); }
   bool FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo);
   bool FindNext(CFileInfo &fileInfo);
+  #ifndef _UNICODE
+  bool FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo);
+  bool FindNext(CFileInfoW &fileInfo);
+  #endif
   bool Close();
 };
 
 bool FindFile(LPCTSTR wildcard, CFileInfo &fileInfo);
+
 bool DoesFileExist(LPCTSTR name);
+#ifndef _UNICODE
+bool FindFile(LPCWSTR wildcard, CFileInfoW &fileInfo);
+bool DoesFileExist(LPCWSTR name);
+#endif
 
 class CEnumerator
 {
@@ -87,6 +111,21 @@ public:
   bool Next(CFileInfo &fileInfo);
 };
 
+#ifdef _UNICODE
+typedef CEnumerator CEnumeratorW;
+#else
+class CEnumeratorW
+{
+  CFindFile _findFile;
+  UString _wildcard;
+  bool NextAny(CFileInfoW &fileInfo);
+public:
+  CEnumeratorW(): _wildcard(NName::kAnyStringWildcard) {}
+  CEnumeratorW(const UString &wildcard): _wildcard(wildcard) {}
+  bool Next(CFileInfoW &fileInfo);
+};
+#endif
+
 class CFindChangeNotification
 {
   HANDLE _handle;
@@ -96,6 +135,9 @@ public:
   ~CFindChangeNotification() {  Close(); }
   bool Close();
   HANDLE FindFirst(LPCTSTR pathName, bool watchSubtree, DWORD notifyFilter);
+  #ifndef _UNICODE
+  HANDLE FindFirst(LPCWSTR pathName, bool watchSubtree, DWORD notifyFilter);
+  #endif
   bool FindNext()
     { return BOOLToBool(::FindNextChangeNotification(_handle)); }
 };
@@ -104,10 +146,21 @@ public:
 bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings);
 #endif
 
-inline bool GetCompressedFileSize(LPCTSTR fileName, UINT64 &size)
+inline bool MyGetCompressedFileSize(LPCTSTR fileName, UINT64 &size)
 {
   DWORD highPart;
   DWORD lowPart = ::GetCompressedFileSize(fileName, &highPart);
+  if (lowPart == INVALID_FILE_SIZE)
+    if (::GetLastError() != NO_ERROR)
+      return false;
+  size = (UINT64(highPart) << 32) | lowPart;
+  return true;
+}
+
+inline bool MyGetCompressedFileSizeW(LPCWSTR fileName, UINT64 &size)
+{
+  DWORD highPart;
+  DWORD lowPart = ::GetCompressedFileSizeW(fileName, &highPart);
   if (lowPart == INVALID_FILE_SIZE)
     if (::GetLastError() != NO_ERROR)
       return false;

@@ -80,18 +80,18 @@ enum ESpeedMode
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
 private:
-  CSysString backgroundString;
-  CSysString backgroundedString;
-  CSysString foregroundString;
-  CSysString pauseString;
-  CSysString continueString;
-  CSysString pausedString;
+  UString backgroundString;
+  UString backgroundedString;
+  UString foregroundString;
+  UString pauseString;
+  UString continueString;
+  UString pausedString;
 
 
 
   UINT_PTR _timer;
 
-  CSysString _title;
+  UString _title;
   CU64ToI32Converter _converter;
   UINT64 _previousPos;
   UINT64 _range;
@@ -114,7 +114,7 @@ private:
 	virtual void OnCancel();
   NWindows::NSynchronization::CManualResetEvent _dialogCreatedEvent;
   #ifndef _SFX
-  void AddToTitle(LPCTSTR string);
+  void AddToTitle(LPCWSTR string);
   #endif
 
   void SetPauseText();
@@ -127,8 +127,8 @@ public:
 
   #ifndef _SFX
   HWND MainWindow;
-  CSysString MainTitle;
-  CSysString MainAddTitle;
+  UString MainTitle;
+  UString MainAddTitle;
   ~CProgressDialog();
   #endif
 
@@ -141,7 +141,7 @@ public:
   void WaitCreating() { _dialogCreatedEvent.Lock(); }
 
 
-  INT_PTR Create(const CSysString &title, HWND aWndParent = 0)
+  INT_PTR Create(const UString &title, HWND aWndParent = 0)
   { 
     _title = title;
     return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PROGRESS), aWndParent); 
