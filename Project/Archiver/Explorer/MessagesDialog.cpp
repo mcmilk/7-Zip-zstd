@@ -4,7 +4,18 @@
 #include "MessagesDialog.h"
 #include "Windows/ResourceString.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 using namespace NWindows;
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDOK, 0x02000713 }
+};
+#endif
 
 void CMessagesDialog::AddMessage(LPCTSTR aMessage)
 {
@@ -30,6 +41,10 @@ void CMessagesDialog::AddMessage(LPCTSTR aMessage)
 
 bool CMessagesDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000A00);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   m_MessageList.Attach(GetItem(IDC_MESSAGE_LIST));
 
   LVCOLUMN aColumnInfo;
@@ -44,10 +59,15 @@ bool CMessagesDialog::OnInit()
 
   aColumnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
   aColumnInfo.fmt = LVCFMT_LEFT;
+  #ifdef LANG
+  CSysString aString = LangLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
+  #else
   CSysString aString = MyLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
+  #endif
+
   aColumnInfo.pszText = (LPTSTR)(LPCTSTR)aString;
   aColumnInfo.iSubItem = 1;
-  aColumnInfo.cx = 300;
+  aColumnInfo.cx = 450;
 
   m_MessageList.InsertColumn(1, &aColumnInfo);
 

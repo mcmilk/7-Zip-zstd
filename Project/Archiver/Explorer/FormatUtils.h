@@ -8,7 +8,11 @@
 #include "Common/String.h"
 
 CSysString MyFormat(const CSysString &aFormat, const CSysString &aString);
-CSysString MyFormat(UINT32 anID, const CSysString &aString);
+CSysString MyFormat(UINT32 aResourceID, 
+    #ifdef LANG
+    UINT32 aLangID, 
+    #endif
+    const CSysString &aString);
 CSysString NumberToString(UINT64 aNumber);
 
 #endif

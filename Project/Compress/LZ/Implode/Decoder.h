@@ -69,7 +69,8 @@ public:
   DECLARE_NOT_AGGREGATABLE(CCoder)
 
   // DECLARE_NO_REGISTRY()
-  DECLARE_REGISTRY(CEncoder, "Compress.ImplodeDecoder.1", "Compress.ImplodeDecoder", 0, THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CEncoder, TEXT("Compress.ImplodeDecoder.1"), 
+    TEXT("Compress.ImplodeDecoder"), 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream);

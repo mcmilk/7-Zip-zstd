@@ -255,16 +255,16 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
       {
         if (!AutoRenamePath(aFullProcessedPath))
         {
-          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
-            L"can not create name of file"));
+          UString aMessage = L"can not create name of file " + aFullProcessedPathUnicode;
+          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
           return E_ABORT;
         }
       }
       else
         if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
         {
-          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
-              L"can not delete output file "));
+          UString aMessage = L"can not delete output file " + aFullProcessedPathUnicode;
+          RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
           return E_ABORT;
         }
     }
@@ -274,8 +274,8 @@ STDMETHODIMP CExtractCallBack200Imp::Extract(UINT32 anIndex,
       CComPtr<ISequentialOutStream> anOutStreamLoc(m_OutFileStreamSpec);
       if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
       {
-        RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(
-            L"can not open output file "));
+        UString aMessage = L"can not open output file " + aFullProcessedPathUnicode;
+        RETURN_IF_NOT_S_OK(m_ExtractCallback2->MessageError(aMessage));
         return E_ABORT;
       }
       m_OutFileStream = anOutStreamLoc;

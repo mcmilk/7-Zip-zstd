@@ -10,7 +10,29 @@
 
 #include "../Common/HelpUtils.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 using namespace NWindows;
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDC_STATIC_COLUMNS_HEADER, 0x02000E01 },
+  { IDC_STATIC_COLUMNS_WIDTH_BEGIN, 0x02000E02 },
+  { IDC_STATIC_COLUMNS_WIDTH_END, 0x02000E03 },
+  { IDC_COLUMNS_BUTTON_MOVE_UP, 0x02000E10 },
+  { IDC_COLUMNS_BUTTON_MOVE_DOWN, 0x02000E11 },
+  { IDC_COLUMNS_BUTTON_SHOW, 0x02000E12 },
+  { IDC_COLUMNS_BUTTON_HIDE, 0x02000E13 },
+  { IDC_COLUMNS_BUTTON_SET_WIDTH, 0x02000E14 },
+  { IDOK, 0x02000702 },
+  { IDCANCEL, 0x02000710 },
+  { IDHELP, 0x02000720 }
+};
+#endif
+
 
 static bool LessFunc(const NColumnsDialog::CColumnInfo &a1, const NColumnsDialog::CColumnInfo &a2)
 {
@@ -134,6 +156,10 @@ void CColumnsDialog::RefreshButtons()
 
 bool CColumnsDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000E00);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   m_Width.Init(*this, IDC_COLUMN_EDIT_WIDTH);
   m_Width.SetText(_T(""));
   m_ListView.Attach(GetItem(IDC_COLUMNS_LISTVIEW));
@@ -150,17 +176,19 @@ bool CColumnsDialog::OnInit()
   UINT32 aNewFlags = LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT;
   m_ListView.SetExtendedListViewStyle(aNewFlags, aNewFlags);
 
-  CSysString aString = MyLoadString(IDS_COLUMN_TITLE);
+  CSysString aString = LangLoadString(IDS_COLUMN_TITLE, 0x02000E81);
   LVCOLUMN aColumn;
-  aColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCFMT_LEFT | LVCF_SUBITEM;
-  aColumn.cx = 130;
+  aColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
+  aColumn.cx = 160;
+  aColumn.fmt = LVCFMT_LEFT;
   aColumn.pszText = (LPTSTR)(LPCTSTR)aString;
   aColumn.iSubItem = 0;
   m_ListView.InsertColumn(0, &aColumn);
 
-  aString = MyLoadString(IDS_COLUMN_WIDTH);
-  aColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCFMT_RIGHT | LVCF_SUBITEM;
-  aColumn.cx = 60;
+  aString = LangLoadString(IDS_COLUMN_WIDTH, 0x02000E82);
+  aColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
+  aColumn.cx = 80;
+  aColumn.fmt = LVCFMT_RIGHT;
   aColumn.pszText = (LPTSTR)(LPCTSTR)aString;
   aColumn.iSubItem = 1;
   m_ListView.InsertColumn(1, &aColumn);

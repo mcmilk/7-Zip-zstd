@@ -55,21 +55,31 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
     if (aPathName[aPos - 1] != ':')
       aPathName.Delete(aPos);
   }
+  CSysString aPathName2 = aPathName;
+  aPos = aPathName.Length();
   while(true)
   {
     if(MyCreateDirectory(aPathName))
-      return true;
+      break;
     if(::GetLastError() == ERROR_ALREADY_EXISTS)
-      return true;
-    int aPos = aPathName.ReverseFind(TEXT('\\'));
-    if (aPos < 0)
+      break;
+    aPos = aPathName.ReverseFind(TEXT('\\'));
+    if (aPos < 0 || aPos == 0)
       return false;
-    if (aPos == 0)
-      return true;
     if (aPathName[aPos - 1] == ':')
-      return true;
+      return false;
     aPathName = aPathName.Left(aPos);
   }
+  aPathName = aPathName2;
+  while(aPos < aPathName.Length())
+  {
+    aPos = aPathName.Find(TEXT('\\'), aPos + 1);
+    if (aPos < 0)
+      aPos = aPathName.Length();
+    if(!MyCreateDirectory(aPathName.Left(aPos)))
+      return false;
+  }
+  return true;
 }
 
 bool DeleteFileAlways(LPCTSTR aName)

@@ -34,7 +34,7 @@ using namespace NCOM;
 using namespace NFile;
 using namespace NName;
 
-static const char *kTempArchiveFilePrefixString = "7zi";
+static LPCTSTR kTempArchiveFilePrefixString = _T("7zi");
 static const char *kEverythingIsOk = "Everything is Ok";
 
 static const char *kIllegalFileNameMessage = "Illegal file name for temp archive";
@@ -113,7 +113,7 @@ void EnumerateItems(const NWildcard::CCensorNode &aCurNode,
         continue;
 
       NFind::CFileInfo aFileInfo;
-      if (!NFind::FindFile(aDirectory + UnicodeStringToMultiByte(aNameSpec, aCodePage), aFileInfo))
+      if (!NFind::FindFile(aDirectory + GetSystemString(aNameSpec, aCodePage), aFileInfo))
         continue;
     
       AddDirFileInfo(aPrefix, aDirectory + aFileInfo.Name, aFileInfo, 
@@ -124,7 +124,7 @@ void EnumerateItems(const NWildcard::CCensorNode &aCurNode,
   {
     const NWildcard::CCensorNode &aNextNode = aCurNode.m_SubNodes[i];
     EnumerateItems(aNextNode, 
-        aDirectory + UnicodeStringToMultiByte(aNextNode.m_Name, aCodePage) + TCHAR(kDirDelimiter), 
+        aDirectory + GetSystemString(aNextNode.m_Name, aCodePage) + TCHAR(kDirDelimiter), 
         aPrefix + aNextNode.m_Name + wchar_t(kDirDelimiter),
         aDirFileInfoVector, aCodePage);
   }
@@ -206,10 +206,10 @@ static HRESULT UpdateWithItemLists(const CUpdateArchiveOptions &anOptions,
         g_StdOut << kUpdatingArchiveMessage;
       else
         g_StdOut << kCreatingArchiveMessage; 
-      g_StdOut << anOptions.ArchivePath;
+      g_StdOut << GetOemString(anOptions.ArchivePath);
     }
     else
-      g_StdOut << kCreatingArchiveMessage << aRealArchivePath;
+      g_StdOut << kCreatingArchiveMessage << GetOemString(aRealArchivePath);
 
     g_StdOut << endl << endl;
 

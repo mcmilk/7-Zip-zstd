@@ -9,6 +9,7 @@
 #define IDS_CONFIG_DIALOG_CAPTION       102
 #define IDD_SYSTEM                      102
 #define IDS_FOLDERS_SET_WORK_PATH_TITLE 103
+#define IDD_LANG                        106
 #define IDD_FOLDER                      129
 #define IDD_FOLDERS                     129
 #define IDD_INFO                        130
@@ -21,6 +22,12 @@
 #define IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU 1010
 #define IDC_SYSTEM_LIST_ASSOCIATE       1012
 #define IDC_EDIT_REGCODE_CODE           1013
+#define IDC_STATIC_INFO_REGISTER_INFO   1016
+#define IDC_STATIC_SYSTEM_ASSOCIATE     1017
+#define IDC_STATIC_FOLDERS_WORKING_FOLDER 1019
+#define IDC_COMBO_LANG_LANG             1021
+#define IDC_STATIC_LANG_LANG            1022
+#define IDC_RICHEDIT1                   1023
 #define IDC_BUTTON_INFO_REGISTER        1078
 #define IDC_BUTTON_INFO_HOMEPAGE        1079
 
@@ -30,7 +37,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1016
+#define _APS_NEXT_CONTROL_VALUE         1024
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

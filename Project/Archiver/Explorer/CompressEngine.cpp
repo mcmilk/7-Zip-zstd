@@ -33,8 +33,8 @@ using namespace NName;
 
 using namespace NUpdateArchive;
 
-static LPCTSTR kTempArcivePrefix = _T("7zi");
-static LPCTSTR kDefaultSfxModule = "7zWin.sfx";
+static LPCTSTR kTempArcivePrefix = TEXT("7zi");
+static LPCTSTR kDefaultSfxModule = TEXT("7zWin.sfx");
 
 
 /*
@@ -251,7 +251,7 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
   {
     if (aFileInfo.IsDirectory())
     {
-      MyMessageBox("There is Directory with such name");
+      MyMessageBox(TEXT("There is a folder with such name"));
       return E_FAIL;
     }
     NZipRootRegistry::CArchiverInfo anArchiverInfoResult;
@@ -260,23 +260,23 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
         anArchiverInfoResult, aDefaultName, NULL);
     if (aResult == S_FALSE)
     {
-      MyMessageBox("Existing file is not supported archive");
+      MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
       return E_FAIL;
     }
     if (aResult != S_OK)
     {
-      MyMessageBox("Open error");
+      MyMessageBox(TEXT("Open error"));
       return E_FAIL;
     }
     if (anArchiverInfoResult.ClassID != aClassID)
     {
-      MyMessageBox("Type of existing archive differs from specified type");
+      MyMessageBox(TEXT("Type of existing archive differs from specified type"));
       return E_FAIL;
     }
     aResult = anArchiveHandler.QueryInterface(&anOutArchive);
     if(aResult != S_OK)
     {
-      MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, anArcPath));
+      MyMessageBox(MyFormat(IDS_CANT_UPDATE_ARCHIVE, 0x02000602, anArcPath));
       return E_FAIL;
     }
   }
@@ -332,7 +332,7 @@ HRESULT CompressArchive(const CSysStringVector &aFileNames)
       aPath = aSFXModule3;
     if (!NDirectory::MySearchPath(aPath, kDefaultSfxModule, NULL, aSFXModule2))
     {
-      MyMessageBox("can't find sfx module");
+      MyMessageBox(TEXT("can't find sfx module"));
       return E_FAIL;
     }
     aSFXModule = GetUnicodeString(aSFXModule2);

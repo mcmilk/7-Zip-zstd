@@ -10,6 +10,7 @@
 class CInfoPage: public NWindows::NControl::CPropertyPage
 {
 public:
+  virtual bool OnInit();
   virtual void OnNotifyHelp();
   virtual bool OnButtonClicked(int aButtonID, HWND aButtonHWND);
 };

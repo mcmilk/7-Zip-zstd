@@ -53,7 +53,8 @@ void CZipViewObject::CommandExtract()
   CSysString aDirectoryPath = aDialog.m_DirectoryPath;
   if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
   {
-    CSysString aString = MyFormat(MyLoadString(IDS_CANNOT_CREATE_FOLDER), (LPCTSTR)aDirectoryPath);
+    CSysString aString = 
+        MyFormat(IDS_CANNOT_CREATE_FOLDER, 0x02000603, (LPCTSTR)aDirectoryPath);
     MessageBox(aString);
     return;
   }

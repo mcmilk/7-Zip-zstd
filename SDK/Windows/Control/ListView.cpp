@@ -16,6 +16,17 @@ bool CListView::CreateEx(DWORD anExStyle, DWORD aStyle,
       aHeight, aParentWindow, anIDorHMenu, anInstance, aCreateParam);
 }
 
+bool CListView::GetItemParam(int anItemIndex, LPARAM &aParam) const 
+{ 
+  LVITEM anItem;
+  anItem.iItem = anItemIndex;
+  anItem.iSubItem = 0;
+  anItem.mask = LVIF_PARAM;
+  bool aResult = GetItem(&anItem);
+  aParam = anItem.lParam;
+  return aResult;
+}
+
 /*
 int CListView::InsertItem(UINT aMask, int anItem, LPCTSTR lpszItem, 
     UINT nState, UINT nStateMask, int nImage, LPARAM lParam)

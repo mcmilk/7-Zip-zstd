@@ -35,6 +35,15 @@ END_OBJECT_MAP()
 
 HINSTANCE g_hInstance;
 
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO aVersionInfo;
+  aVersionInfo.dwOSVersionInfoSize = sizeof(aVersionInfo);
+  if (!::GetVersionEx(&aVersionInfo)) 
+    return false;
+  return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
@@ -42,6 +51,10 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
   g_hInstance = hInstance;
   if (dwReason == DLL_PROCESS_ATTACH)
   {
+    #ifdef UNICODE
+    if (!IsItWindowsNT())
+      return FALSE;
+    #endif    
     _Module.Init(ObjectMap, hInstance);
     //DisableThreadLibraryCalls(hInstance);
   }

@@ -16,18 +16,18 @@ namespace BT_NAMESPACE {
 #ifdef HASH_ARRAY_2
   #ifdef HASH_ARRAY_3
     #define kIDByte 0x3
-    #define kIDString "234"
+    #define kIDString TEXT("234")
   #else
     #define kIDByte 0x2
-    #define kIDString "23"
+    #define kIDString TEXT("23")
   #endif
 #else
   #ifdef HASH_ZIP
     #define kIDByte 0x0
-    #define kIDString "3"
+    #define kIDString TEXT("3")
   #else
     #define kIDByte 0x1
-    #define kIDString "2"
+    #define kIDString TEXT("2")
   #endif
 #endif
 
@@ -36,15 +36,15 @@ namespace BT_NAMESPACE {
 
 #ifdef __USE_3_BYTES
   #define kIDUse3BytesByte 0x80
-  #define kIDUse3BytesString "T"
+  #define kIDUse3BytesString TEXT("T")
 #else
   #define kIDUse3BytesByte 0x00
-  #define kIDUse3BytesString ""
+  #define kIDUse3BytesString TEXT("")
 #endif
 
 #undef kIDStringFull
 
-#define kIDStringFull "Compress.MatchFinderBT" kIDString kIDUse3BytesString
+#define kIDStringFull TEXT("Compress.MatchFinderBT") kIDString kIDUse3BytesString
 
 // {23170F69-40C1-278C-02XX-0000000000}
 DEFINE_GUID(BT_CLSID, 
@@ -62,7 +62,7 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CMatchFinderBinTree)
 
-DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull ".1", kIDStringFull, 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CMatchFinderBinTree, kIDStringFull TEXT(".1"), kIDStringFull, 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

@@ -23,10 +23,11 @@ Description of 7-Zip sources package
 
 DOC                Documentation
 ---
-  readme.txt     - Readme file
-  Methods.txt    - Compression method IDs
   7zFormat.txt   - 7z format description
   copying.txt    - GNU LGPL license
+  history.txt    - Sources history
+  Methods.txt    - Compression method IDs
+  readme.txt     - Readme file
 
   
 SDK                 Common files

@@ -12,10 +12,19 @@
 #include "../Common/HelpUtils.h"
 #include "../Common/ZipRegistry.h"
 
+#include "../Common/LangUtils.h"
 
 using namespace NZipSettings;
 using namespace NWindows;
 
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDC_STATIC_FOLDERS_WORKING_FOLDER,    0x01000210 },
+  { IDC_FOLDERS_WORK_RADIO_SYSTEM,        0x01000211 },
+  { IDC_FOLDERS_WORK_RADIO_CURRENT,       0x01000212 },
+  { IDC_FOLDERS_WORK_RADIO_SPECIFIED,     0x01000213 },
+  { IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, 0x01000214 }
+};
 
 static const int kWorkModeButtons[] =
 {
@@ -28,6 +37,7 @@ static const int kNumWorkModeButtons = sizeof(kWorkModeButtons) / sizeof(kWorkMo
  
 bool CFoldersPage::OnInit() 
 {
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   CZipRegistryManager aRegistryManager;
   aRegistryManager.ReadWorkDirInfo(m_WorkDirInfo);
 
@@ -128,7 +138,7 @@ void CFoldersPage::OnFoldersWorkButtonPath()
   CSysString aCurrentPath;
   m_WorkPath.GetText(aCurrentPath);
   
-  CSysString aTitle = MyLoadString(IDS_FOLDERS_SET_WORK_PATH_TITLE);
+  CSysString aTitle = LangLoadString(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
 
   CSysString aResultPath;
   if (NShell::BrowseForFolder(HWND(*this), aTitle, aCurrentPath, aResultPath))

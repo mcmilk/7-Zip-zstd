@@ -71,7 +71,8 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CDecoder, "Crypto.ZipDecoder.1", "Crypto.ZipDecoder", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CDecoder, TEXT("Crypto.ZipDecoder.1"), 
+                 TEXT("Crypto.ZipDecoder"), 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Code)(ISequentialInStream *anInStream,
       ISequentialOutStream *anOutStream, UINT64 const *anInSize, const UINT64 *anOutSize,

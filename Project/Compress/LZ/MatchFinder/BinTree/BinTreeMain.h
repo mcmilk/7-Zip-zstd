@@ -74,36 +74,6 @@ CInTree::CInTree():
 {
 }
 
-template <class T>
-class CArrayPtr
-{
-  T *m_Pointer;
-public:
-  CArrayPtr(): m_Pointer(0) {};
-  CArrayPtr(T *p): m_Pointer(p) {};
-  ~CArrayPtr()
-  {
-    if (m_Pointer != 0)
-      delete []m_Pointer;
-  }
-  T *Release()
-  {
-    T *aTemp = m_Pointer;
-    m_Pointer = 0;
-    return aTemp;
-  }
-  CArrayPtr<T> & operator=(T *p)
-  {
-    if (m_Pointer != 0)
-      delete []m_Pointer;
-    m_Pointer = p;
-    return *this;
-  }
-  operator T* () { return m_Pointer; }
-};
-
-typedef CArrayPtr<CIndex> CIndexArrayPtr;
-
 HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, 
     UINT32 aMatchMaxLen, UINT32 aKeepAddBufferAfter, UINT32 aSizeReserv)
 {
@@ -118,44 +88,26 @@ HRESULT CInTree::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore,
     
   delete []m_LeftBase;
   m_LeftBase = 0;
-  delete []m_RightBase;
-  m_RightBase = 0;
 
-  CIndexArrayPtr aHash = m_Hash;
-  m_Hash = 0;
+  UINT32 aSize = m_BlockSize * 2 + kHashSize;
   #ifdef HASH_ARRAY_2
-  CIndexArrayPtr aHash2 = m_Hash2;
-  m_Hash2 = 0; 
+  aSize += kHash2Size;
   #ifdef HASH_ARRAY_3
-  CIndexArrayPtr aHash3 = m_Hash3;
-  m_Hash3 = 0; 
+  aSize += kHash3Size;
   #endif
   #endif
   
-  if (aHash == 0)
-    aHash = new CIndex[kHashSize + 1];
+  m_LeftBase = new CIndex[aSize + 1];
+  m_RightBase = &m_LeftBase[m_BlockSize];
+
+  m_Hash = &m_RightBase[m_BlockSize];
   #ifdef HASH_ARRAY_2
-  if (aHash2 == 0)
-    aHash2 = new CIndex[kHash2Size + 1]; 
+  m_Hash2 = &m_Hash[kHashSize]; 
   #ifdef HASH_ARRAY_3
-  if (aHash3 == 0)
-    aHash3 = new CIndex[kHash3Size + 1]; 
+  m_Hash3 = &m_Hash2[kHash2Size]; 
   #endif
   #endif
 
-  CArrayPtr<CIndex> aLeftBase = new CIndex[m_BlockSize + 1];
-  CArrayPtr<CIndex> aRightBase = new CIndex[m_BlockSize + 1];
-
-  m_Hash = aHash.Release();
-  #ifdef HASH_ARRAY_2
-  m_Hash2 = aHash2.Release(); 
-  #ifdef HASH_ARRAY_3
-  m_Hash3 = aHash3.Release(); 
-  #endif
-  #endif
-
-  m_LeftBase = aLeftBase.Release();
-  m_RightBase = aRightBase.Release();
   return S_OK;
 }
 
@@ -185,17 +137,7 @@ HRESULT CInTree::Init(ISequentialInStream *aStream)
 
 CInTree::~CInTree()
 { 
-  delete []m_RightBase;
   delete []m_LeftBase;
-  delete []m_Hash; 
-
-  #ifdef HASH_ARRAY_2
-  delete []m_Hash2; 
-  #ifdef HASH_ARRAY_3
-  delete []m_Hash3; 
-  #endif
-  #endif
-
 }
 
 #ifdef HASH_ARRAY_2

@@ -7,6 +7,8 @@
 #include "Pat2.h"
 #include "Pat2R.h"
 #include "Pat2H.h"
+#include "Pat3H.h"
+#include "Pat4H.h"
 
 #include "Interface/ICoder.h"
 #include "Common/NewHandler.h"
@@ -21,6 +23,8 @@ BEGIN_OBJECT_MAP(ObjectMap)
   MyOBJECT_ENTRY(Pat2)
   MyOBJECT_ENTRY(Pat2R)
   MyOBJECT_ENTRY(Pat2H)
+  MyOBJECT_ENTRY(Pat3H)
+  MyOBJECT_ENTRY(Pat4H)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

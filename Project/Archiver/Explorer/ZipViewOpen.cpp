@@ -118,7 +118,7 @@ void CZipViewObject::OpenItem(UINT32 anIndex)
     {
       case SE_ERR_NOASSOC:
       {
-        MessageBox(_T("There is no application associated with the given file name extension"));
+        MyMessageBox(IDS_ERROR_NO_ASSOCIATION, 0x02000607);
         DeleteFileAlways(aTempFileName);
         ::RemoveDirectory(aTempDir);
         return;

@@ -52,7 +52,8 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CHandler)
 
-DECLARE_REGISTRY(CHandler, "SevenZip.Format7z.1", "SevenZip.Format7z", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CHandler, TEXT("SevenZip.Format7z.1"), 
+                 TEXT("SevenZip.Format7z"), 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *aStream, 
       const UINT64 *aMaxCheckStartPosition,

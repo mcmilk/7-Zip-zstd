@@ -4,6 +4,8 @@
 
 #include "ContextMenu.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/Shell.h"
 #include "Windows/Memory.h"
 #include "Windows/COM.h"
@@ -14,11 +16,14 @@
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 #include "resource.h"
+
 #include "ExtractEngine.h"
 #include "CompressEngine.h"
-#include "Common/StringConvert.h"
-
 #include "MyMessages.h"
 
 using namespace NWindows;
@@ -89,7 +94,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
 
   aCommandMapItem.CommandInternalID = kCommandInternalNULL;
   aCommandMapItem.Verb = kMainVerb;
-  aCommandMapItem.HelpString = MyLoadString(IDS_CONTEXT_CAPTION_HELP);
+  aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_CAPTION_HELP, 0x02000102);
   m_CommandMap.push_back(aCommandMapItem);
 
   MENUITEMINFO aMenuInfo;
@@ -112,16 +117,18 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
       // Open command
       aCommandMapItem.CommandInternalID = kCommandInternalIDOpen;
       aCommandMapItem.Verb = kOpenVerb;
-      aCommandMapItem.HelpString = MyLoadString(IDS_CONTEXT_OPEN_HELP);
-      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, MyLoadString(IDS_CONTEXT_OPEN)); 
+      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_OPEN_HELP, 0x02000104);
+      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+          LangLoadString(IDS_CONTEXT_OPEN, 0x02000103)); 
       m_CommandMap.push_back(aCommandMapItem);
       
       //////////////////////////
       // Extract command
       aCommandMapItem.CommandInternalID = kCommandInternalIDExtract;
       aCommandMapItem.Verb = kExtractVerb;
-      aCommandMapItem.HelpString = MyLoadString(IDS_CONTEXT_EXTRACT_HELP);
-      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, MyLoadString(IDS_CONTEXT_EXTRACT)); 
+      aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_EXTRACT_HELP, 0x02000106);
+      aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+          LangLoadString(IDS_CONTEXT_EXTRACT, 0x02000105)); 
       m_CommandMap.push_back(aCommandMapItem);
     }
   }
@@ -130,13 +137,15 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT anIndexMenu,
   {
     aCommandMapItem.CommandInternalID = kCommandInternalIDCompress;
     aCommandMapItem.Verb = kCompressVerb;
-    aCommandMapItem.HelpString = MyLoadString(IDS_CONTEXT_COMPRESS_HELP);
-    aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, MyLoadString(IDS_CONTEXT_COMPRESS)); 
+    aCommandMapItem.HelpString = LangLoadString(IDS_CONTEXT_COMPRESS_HELP, 0x02000108);
+    aPopupMenu.AppendItem(MF_STRING, aCurrentCommandID++, 
+        LangLoadString(IDS_CONTEXT_COMPRESS, 0x02000107)); 
     m_CommandMap.push_back(aCommandMapItem);
   }
 
 
-  CSysString aPopupMenuCaption = MyLoadString(IDS_CONTEXT_POPUP_CAPTION);
+  // CSysString aPopupMenuCaption = MyLoadString(IDS_CONTEXT_POPUP_CAPTION);
+  CSysString aPopupMenuCaption = LangLoadString(IDS_CONTEXT_POPUP_CAPTION, 0x02000101);
 
   // don't use InsertMenu:  See MSDN:
   // PRB: Duplicate Menu Items In the File Menu For a Shell Context Menu Extension
@@ -250,12 +259,12 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
         HRESULT aResult = ExtractArchive(aHWND, m_FileNames[0]);
         if (aResult == S_FALSE)
         {
-          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE);
+          MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
         }
       }
       catch(...)
       {
-        MyMessageBox("Error");
+        MyMessageBox(IDS_ERROR, 0x02000605);
       }
       break;
     }
@@ -267,7 +276,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO aCommandInfo)
       }
       catch(...)
       {
-        MyMessageBox("Error");
+        MyMessageBox(IDS_ERROR, 0x02000605);
       }
       break;
     }

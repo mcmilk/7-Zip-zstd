@@ -58,7 +58,7 @@ using namespace NCOM;
 
 using namespace NUpdateArchive;
 
-static LPCTSTR kTempArcivePrefix = "7zi";
+static LPCTSTR kTempArcivePrefix = _T("7zi");
 
 static bool ParseNumberString(const UString &aString, UINT32 &aNumber)
 {
@@ -109,27 +109,27 @@ HRESULT Compress(
     #endif
 
     #ifdef FORMAT_7Z
-    if (aCompressionMethod.Name.CompareNoCase("7z") == 0)
+    if (aCompressionMethod.Name.CompareNoCase(TEXT("7z")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::N7z::CHandler>;
     #endif
 
     #ifdef FORMAT_BZIP2
-    if (aCompressionMethod.Name.CompareNoCase("BZip2") == 0)
+    if (aCompressionMethod.Name.CompareNoCase(TEXT("BZip2")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
     #endif
 
     #ifdef FORMAT_GZIP
-    if (aCompressionMethod.Name.CompareNoCase("GZip") == 0)
+    if (aCompressionMethod.Name.CompareNoCase(TEXT("GZip")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
     #endif
 
     #ifdef FORMAT_TAR
-    if (aCompressionMethod.Name.CompareNoCase("Tar") == 0)
+    if (aCompressionMethod.Name.CompareNoCase(TEXT("Tar")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
     #endif
     
     #ifdef FORMAT_ZIP
-    if (aCompressionMethod.Name.CompareNoCase("Zip") == 0)
+    if (aCompressionMethod.Name.CompareNoCase(TEXT("Zip")) == 0)
       anOutArchive = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
     #endif
 
@@ -184,7 +184,7 @@ HRESULT Compress(
   {
     CSysString aMessage;
     NError::MyFormatMessage(::GetLastError(), aMessage);
-    g_StdOut << aMessage << endl;
+    g_StdOut << GetOemString(aMessage) << endl;
     return E_FAIL;
   }
 

@@ -146,21 +146,29 @@ STDMETHODIMP CExtractCallBackImp::OperationResult(INT32 anOperationResult)
     default:
     {
       UINT anIDMessage;
+      UINT32 aLangID;
       switch(anOperationResult)
       {
         case NArchiveHandler::NExtract::NOperationResult::kUnSupportedMethod:
           anIDMessage = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD;
-          break;
-        case NArchiveHandler::NExtract::NOperationResult::kCRCError:
-          anIDMessage = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
+          aLangID = 0x02000A91;
           break;
         case NArchiveHandler::NExtract::NOperationResult::kDataError:
           anIDMessage = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR;
+          aLangID = 0x02000A92;
+          break;
+        case NArchiveHandler::NExtract::NOperationResult::kCRCError:
+          anIDMessage = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
+          aLangID = 0x02000A93;
           break;
         default:
           return E_FAIL;
       }
-      AddErrorMessage(MyFormat(anIDMessage, GetSystemString(m_CurrentFilePath)));
+      AddErrorMessage(MyFormat(anIDMessage, 
+          #ifdef LANG 
+          aLangID, 
+          #endif 
+          GetSystemString(m_CurrentFilePath)));
     }
   }
   return S_OK;

@@ -70,6 +70,24 @@ CSysString ConvertFileTimeToString(const FILETIME &aFileTime, bool anIncludeTime
     #endif
   return aStringDate + _T(" ") + aStringTime;
 }
+
+CSysString ConvertFileTimeToString2(const FILETIME &aFileTime, 
+    bool anIncludeTime, bool anIncludeSeconds)
+{
+  CSysString aString;
+  SYSTEMTIME aTime;
+  if(!BOOLToBool(FileTimeToSystemTime(&aFileTime, &aTime)))
+    return aString;
+  TCHAR aBuffer[64];
+  _stprintf(aBuffer, TEXT("%04d-%02d-%02d"), aTime.wYear, aTime.wMonth, aTime.wDay);
+  if (anIncludeTime)
+  {
+    _stprintf(aBuffer + _tcslen(aBuffer), TEXT(" %02d:%02d"), aTime.wHour, aTime.wMinute);
+    if (anIncludeSeconds)
+      _stprintf(aBuffer + _tcslen(aBuffer), TEXT(":%02d"), aTime.wSecond);
+  }
+  return aBuffer;
+}
  
 
 CSysString ConvertPropVariantToString(const PROPVARIANT &aPropVariant)

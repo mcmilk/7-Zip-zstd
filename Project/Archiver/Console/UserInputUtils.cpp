@@ -15,7 +15,7 @@ static const char kQuit    = 'Q';
 
 static const char *kFirstQuestionMessage = "?\n";
 static const char *kHelpQuestionMessage = 
-  "(Y)es / (N)o / (A)lways / (S)kip all / A(u)to raname / (Q)uit? ";
+  "(Y)es / (N)o / (A)lways / (S)kip all / A(u)to rename / (Q)uit? ";
 
 // return true if pressed Quite;
 // in: anAll

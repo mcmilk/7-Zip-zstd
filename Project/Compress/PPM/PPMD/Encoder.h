@@ -50,7 +50,8 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CEncoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CEncoder, "Compress.PPMDEncoder.1", "Compress.PPMDEncoder", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CEncoder, TEXT("Compress.PPMDEncoder.1"), 
+                 TEXT("Compress.PPMDEncoder"), 0, THREADFLAGS_APARTMENT)
 
   // ICoder interface
   HRESULT Flush();

@@ -198,7 +198,7 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     anItemInfo.LocalExtraSize = aLocalHeader.ExtraSize;
     anItemInfo.FileHeaderWithNameSize = sizeof(UINT32) + sizeof(aLocalHeader) + aFileNameSize;
 
-    IncreaseRealPosition(aLocalHeader.ExtraSize + aLocalHeader.PackSize);
+    IncreaseRealPosition(aLocalHeader.ExtraSize);
 
     if (anItemInfo.HasDescriptor())
     {
@@ -241,6 +241,9 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
         aNumBytesInBuffer = j;
       }
     }
+    else
+      IncreaseRealPosition(aLocalHeader.PackSize);
+
     anItems.Add(anItemInfo);
     if (aProgress != 0)
     {
@@ -259,6 +262,8 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
       UINT64 aNumItems = anItems.Size();
       RETURN_IF_NOT_S_OK(aProgress->SetCompleted(&aNumItems));
     }
+    // if(m_Signature == NSignature::kEndOfCentralDir)
+    //   break;
     if(m_Signature != NSignature::kCentralFileHeader)
       ThrowIncorrectArchiveException();
   

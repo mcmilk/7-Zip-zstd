@@ -25,8 +25,24 @@ static const char *kMemoryExceptionMessage = "\n\nMemory Error! Can't allocate!\
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO aVersionInfo;
+  aVersionInfo.dwOSVersionInfoSize = sizeof(aVersionInfo);
+  if (!::GetVersionEx(&aVersionInfo)) 
+    return false;
+  return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+
 int main(int aNumArguments, const char *anArguments[])
 {
+  #ifdef UNICODE
+  if (!IsItWindowsNT())
+  {
+    g_StdOut << "This program requires Windows NT/2000/XP";
+    return NExitCode::kFatalError;
+  }
+  #endif
   setlocale(LC_COLLATE, ".OCP");
   int result=1;
   CNewHandlerSetter aNewHandlerSetter;

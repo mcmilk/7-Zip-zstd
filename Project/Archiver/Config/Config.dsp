@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=Config - Win32 Debug
+CFG=Config - Win32 DebugU
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,12 +13,14 @@ CFG=Config - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Config.mak" CFG="Config - Win32 Debug"
+!MESSAGE NMAKE /f "Config.mak" CFG="Config - Win32 DebugU"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "Config - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE "Config - Win32 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "Config - Win32 ReleaseU" (based on "Win32 (x86) Application")
+!MESSAGE "Config - Win32 DebugU" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -83,12 +85,72 @@ LINK32=link.exe
 # ADD LINK32 htmlhelp.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfg.exe " /pdbtype:sept
 # SUBTRACT LINK32 /nodefaultlib
 
+!ELSEIF  "$(CFG)" == "Config - Win32 ReleaseU"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "ReleaseU"
+# PROP BASE Intermediate_Dir "ReleaseU"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "ReleaseU"
+# PROP Intermediate_Dir "ReleaseU"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /Yu"stdafx.h" /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x419 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfg.exe " /opt:NOWIN98
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfn.exe " /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
+
+!ELSEIF  "$(CFG)" == "Config - Win32 DebugU"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "DebugU"
+# PROP BASE Intermediate_Dir "DebugU"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "DebugU"
+# PROP Intermediate_Dir "DebugU"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /Yu"stdafx.h" /FD /GZ /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x419 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 htmlhelp.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfg.exe " /pdbtype:sept
+# SUBTRACT BASE LINK32 /nodefaultlib
+# ADD LINK32 htmlhelp.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /pdb:"DebugU/7-zipCfg.pdb" /debug /machine:I386 /out:"C:\Program Files\7-ZIP\7-zipCfn.exe" /pdbtype:sept
+# SUBTRACT LINK32 /pdb:none
+
 !ENDIF 
 
 # Begin Target
 
 # Name "Config - Win32 Release"
 # Name "Config - Win32 Debug"
+# Name "Config - Win32 ReleaseU"
+# Name "Config - Win32 DebugU"
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
@@ -108,6 +170,14 @@ SOURCE=.\StdAfx.h
 # Begin Group "Control"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\Control\ComboBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\Control\ComboBox.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Windows\Control\Dialog.cpp
@@ -144,6 +214,14 @@ SOURCE=..\..\..\SDK\Windows\COM.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Windows\COM.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\FileFind.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Windows\FileFind.h
 # End Source File
 # Begin Source File
 
@@ -223,6 +301,14 @@ SOURCE=.\InfoPage.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\LangPage.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\LangPage.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\SystemPage.cpp
 # End Source File
 # Begin Source File
@@ -235,6 +321,10 @@ SOURCE=.\SystemPage.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\res\Config.ico
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\HelpUtils.cpp
 # End Source File
 # Begin Source File
@@ -243,7 +333,11 @@ SOURCE=..\Common\HelpUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\res\Config.ico
+SOURCE=..\Common\LangUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LangUtils.h
 # End Source File
 # Begin Source File
 
@@ -279,6 +373,14 @@ SOURCE=..\Common\ZipSettings.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Common\Lang.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\Lang.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Common\String.h
 # End Source File
 # Begin Source File
@@ -312,10 +414,6 @@ SOURCE=..\..\..\SDK\Common\Wildcard.h
 # End Group
 # Begin Source File
 
-SOURCE=.\resource.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Config.cpp
 # End Source File
 # Begin Source File
@@ -325,6 +423,26 @@ SOURCE=.\Config.ico
 # Begin Source File
 
 SOURCE=.\Config.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\StdInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\StdInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\UTFConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\UTFConvert.h
 # End Source File
 # End Target
 # End Project

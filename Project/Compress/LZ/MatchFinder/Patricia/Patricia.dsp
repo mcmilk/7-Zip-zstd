@@ -175,6 +175,14 @@ SOURCE=.\Pat2R.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Pat3H.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Pat4H.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\PatMain.h
 # End Source File
 # End Target

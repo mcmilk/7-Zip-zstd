@@ -41,13 +41,17 @@ using namespace NComandLineParser;
 
 static const char *kCopyrightString = "\n7-Zip"
 #ifdef EXCLUDE_COM
-" (Alone)"
+" (A)"
 #endif
 
-" 2.30 Beta 8  Copyright (c) 1999-2001 Igor Pavlov  21-Dec-2001\n";
+#ifdef UNICODE
+" [NT]"
+#endif
 
-const char *kDefaultArchiveType = "7z";
-const char *kDefaultSfxModule = "7zCon.sfx";
+" 2.30 Beta 9  Copyright (c) 1999-2002 Igor Pavlov  08-Jan-2002\n";
+
+const LPCTSTR kDefaultArchiveType = _T("7z");
+const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
 const LPCTSTR kSFXExtension = TEXT("exe");
 
 static const int kNumSwitches = 15;
@@ -196,12 +200,12 @@ static const CCommandSubCharsSet kListSets[kNumListSets] =
 
 //  OnlyOnDisk , OnlyInArchive, NewInArchive, OldInArchive,   
 //  SameFiles, NotMasked
-const CSysString kUpdatePairStateIDSet = "PQRXYZW";
+const AString kUpdatePairStateIDSet = "PQRXYZW";
 const int kUpdatePairStateNotSupportedActions[] = {2, 2, 1, -1, -1, -1, -1};
 
-const CSysString kUpdatePairActionIDSet = "0123"; //Ignore, Copy, Compress
+const AString kUpdatePairActionIDSet = "0123"; //Ignore, Copy, Compress
 
-const CSysString kUpdateIgnoreItselfPostStringID = "-"; 
+const char *kUpdateIgnoreItselfPostStringID = "-"; 
 const char kUpdateNewArchivePostCharID = '!'; 
 
 static const bool kTestExtractRecursedDefault = true;
@@ -256,18 +260,18 @@ static const char *kIncorrectListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
 
-static const CSysString kFileIsNotArchiveMessageBefore = "File \"";
-static const CSysString kFileIsNotArchiveMessageAfter = "\" is not archive";
+static const AString kFileIsNotArchiveMessageBefore = "File \"";
+static const AString kFileIsNotArchiveMessageAfter = "\" is not archive";
 
 static const char *kProcessArchiveMessage = " archive: ";
 
 
 // ---------------------------
 
-static const CSysString kExtractGroupProcessMessage = "Processing";
-static const CSysString kListingProcessMessage = "Listing";
+static const AString kExtractGroupProcessMessage = "Processing";
+static const AString kListingProcessMessage = "Listing";
 
-static const CSysString kDefaultWorkingDirectory = "";  // test it maybemust be "."
+static const AString kDefaultWorkingDirectory = "";  // test it maybemust be "."
 
 struct CArchiveCommand
 {
@@ -327,7 +331,7 @@ void PrintHelp(void)
   g_StdOut << kHelpString;
 }
 
-static void ShowMessageAndThrowException(LPCTSTR aMessage, NExitCode::EEnum aCode)
+static void ShowMessageAndThrowException(LPCSTR aMessage, NExitCode::EEnum aCode)
 {
   g_StdOut << aMessage << endl;
   throw aCode;
@@ -339,30 +343,31 @@ static void PrintHelpAndExit() // yyy
   ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
 }
 
-static void PrintProcessTitle(const CSysString &aProcessTitle, const CSysString &anArchiveName)
+static void PrintProcessTitle(const AString &aProcessTitle, const CSysString &anArchiveName)
 {
-  g_StdOut << endl << aProcessTitle << kProcessArchiveMessage << anArchiveName << endl << endl;
+  g_StdOut << endl << aProcessTitle << 
+      kProcessArchiveMessage << GetOemString(anArchiveName) << endl << endl;
 }
 
 void WriteArgumentsToStringList(int aNumArguments, const char *anArguments[], 
-    CSysStringVector &aStrings)
+    AStringVector &aStrings)
 {
   for(int i = 1; i < aNumArguments; i++)
   {
     char aCmdLineBuffer[kMaxCmdLineSize];
     strcpy(aCmdLineBuffer, anArguments[i]);
-    CharToOem(aCmdLineBuffer, aCmdLineBuffer);
+    CharToOemA(aCmdLineBuffer, aCmdLineBuffer);
     if (strlen(aCmdLineBuffer) > 0)
       aStrings.Add(aCmdLineBuffer);
   }
 }
 
 
-bool ParseArchiveCommand(const CSysString &aCommandString, CArchiveCommand &aCommand)
+bool ParseArchiveCommand(const AString &aCommandString, CArchiveCommand &aCommand)
 {
-  CSysString aCommandStringUpper = aCommandString;
+  AString aCommandStringUpper = aCommandString;
   aCommandStringUpper.MakeUpper();
-  CSysString aPostString;
+  AString aPostString;
   int anCommandIndex = ParseCommand(kNumCommandForms, aCommandForms, aCommandStringUpper, 
       aPostString) ;
   if (anCommandIndex < 0)
@@ -457,7 +462,8 @@ void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &aWildcardCensor,
   {
     const AString &aString = aNonSwitchStrings[i];
     if (AreEqualNoCase(aString[0], kFileListID))
-      AddToCensorFromListFile(aWildcardCensor, aString.Mid(1), true, aType);
+      AddToCensorFromListFile(aWildcardCensor, 
+          GetSystemString(aString.Mid(1), CP_OEMCP), true, aType);
     else
       AddCommandLineWildCardToCensr(aWildcardCensor, 
       MultiByteToUnicodeString(aString, CP_OEMCP), true, aType);
@@ -477,7 +483,7 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &aWildcardCensor,
     if (AreEqualNoCase(aString[aPos], kRecursedIDChar))
     {
       aPos++;
-      int anIndex = CSysString(kRecursedPostCharSet).Find(aString[aPos]);
+      int anIndex = AString(kRecursedPostCharSet).Find(aString[aPos]);
       aRecursedType = GetRecursedTypeFromIndex(anIndex);
       if (anIndex >= 0)
         aPos++;
@@ -491,7 +497,7 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &aWildcardCensor,
       AddCommandLineWildCardToCensr(aWildcardCensor, 
           MultiByteToUnicodeString(aTail, CP_OEMCP), anInclude, aRecursedType);
     else if (AreEqualNoCase(aString[aPos], kFileListID))
-      AddToCensorFromListFile(aWildcardCensor, aTail, anInclude, aRecursedType);
+      AddToCensorFromListFile(aWildcardCensor, GetSystemString(aTail, CP_OEMCP), anInclude, aRecursedType);
     else
       PrintHelpAndExit();
   }
@@ -500,8 +506,8 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &aWildcardCensor,
 // ------------------------------------------------------------------
 static void ThrowPrintFileIsNotArchiveException(const CSysString &aFileName)
 {
-  CSysString aMessage;
-  aMessage = kFileIsNotArchiveMessageBefore + aFileName + kFileIsNotArchiveMessageAfter;
+  AString aMessage;
+  aMessage = kFileIsNotArchiveMessageBefore + GetOemString(aFileName) + kFileIsNotArchiveMessageAfter;
   ShowMessageAndThrowException(aMessage, NExitCode::kFileIsNotArchive);
 }
 
@@ -540,8 +546,8 @@ static NUpdateArchive::NPairAction::EEnum GetUpdatePairActionType(int i)
   throw 98111603;
 }
 
-bool ParseUpdateCommandString2(const CSysString &aString, NUpdateArchive::CActionSet &anActionSet, 
-    CSysString &aPostString)
+bool ParseUpdateCommandString2(const AString &aString, NUpdateArchive::CActionSet &anActionSet, 
+    AString &aPostString)
 {
   for(int i = 0; i < aString.Length();)
   {
@@ -588,7 +594,7 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions,
 {
   for(int i = 0; i < anUpdatePostStrings.Size(); i++)
   {
-    const CSysString &anUpdateString = anUpdatePostStrings[i];
+    const AString &anUpdateString = anUpdatePostStrings[i];
     if(anUpdateString.CompareNoCase(kUpdateIgnoreItselfPostStringID) == 0)
     {
       if(anOptions.UpdateArchiveItself)
@@ -601,7 +607,7 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions,
     {
       NUpdateArchive::CActionSet anActionSet = aDefaultActionSet;
 
-      CSysString aPostString;
+      AString aPostString;
       if (!ParseUpdateCommandString2(anUpdateString, anActionSet, aPostString))
         PrintHelpAndExit();
       if(aPostString.IsEmpty())
@@ -623,7 +629,7 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &anOptions,
           PrintHelpAndExit();
         */
 
-        anUpdateCommand.ArchivePath = aPostString.Mid(1);
+        anUpdateCommand.ArchivePath = GetSystemString(aPostString.Mid(1), CP_OEMCP);
 
         if (anUpdateCommand.ArchivePath.IsEmpty())
           PrintHelpAndExit();
@@ -666,11 +672,11 @@ static void SetAddCommandOptions(NCommandType::EEnum aCommandType,
         aDefaultActionSet, anExtension);
   if(aParser[NKey::kWorkingDir].ThereIs)
   {
-    const CSysString &aPostString = aParser[NKey::kWorkingDir].PostStrings[0];
+    const AString &aPostString = aParser[NKey::kWorkingDir].PostStrings[0];
     if (aPostString.IsEmpty())
       NDirectory::MyGetTempPath(aWorkingDir);
     else
-      aWorkingDir = aPostString;
+      aWorkingDir = GetSystemString(aPostString, CP_OEMCP);
   }
   else
   {
@@ -681,7 +687,7 @@ static void SetAddCommandOptions(NCommandType::EEnum aCommandType,
   }
   if(anOptions.SfxMode = aParser[NKey::kSfx].ThereIs)
   {
-    CSysString aModuleName = aParser[NKey::kSfx].PostStrings[0];
+    CSysString aModuleName = GetSystemString(aParser[NKey::kSfx].PostStrings[0], CP_OEMCP);
     if (aModuleName.IsEmpty())
       aModuleName = kDefaultSfxModule;
     if (!NDirectory::MySearchPath(NULL, aModuleName, NULL, anOptions.SfxModule))
@@ -701,9 +707,9 @@ static const kNumDicts = 7;
 
 static const kMaxNumberOfDigitsInInputNumber = 9;
 
-static int ParseNumberString(const CSysString &aString, int &aNumber)
+static int ParseNumberString(const AString &aString, int &aNumber)
 {
-  CSysString aNumberString;
+  AString aNumberString;
   int i = 0;
   for(; i < aString.Length() && i < kMaxNumberOfDigitsInInputNumber; i++)
   {
@@ -795,21 +801,29 @@ void SetArchiveType(const CSysString &anArchiveType, CSysString &aFormatName, CS
 static const TCHAR *kCUBasePath = _T("Software\\7-ZIP");
 static const TCHAR *kSwitchesValueName = _T("Switches");
 
-CSysString GetDefaultSwitches()
+AString GetDefaultSwitches()
 {
   NRegistry::CKey aKey;
   if (aKey.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
-    return CSysString();
+    return AString();
   CSysString aString;
   if (aKey.QueryValue(kSwitchesValueName, aString) != ERROR_SUCCESS)
-    return CSysString();
-  return aString;
+    return AString();
+  #ifdef _UNICODE
+  return GetOemString(aString);
+  #else
+  char aCmdLineBuffer[kMaxCmdLineSize];
+  strcpy(aCmdLineBuffer, aString);
+  CharToOemA(aCmdLineBuffer, aCmdLineBuffer);
+  return aCmdLineBuffer;
+  #endif
 }
 
-void SplitSpaceDelimetedStrings(const CSysString &aString, CSysStringVector &aStrings)
+
+void SplitSpaceDelimetedStrings(const AString &aString, AStringVector &aStrings)
 {
   aStrings.Clear();
-  CSysString aCurrentString;
+  AString aCurrentString;
   for (int i = 0; i < aString.Length(); i++)
   {
     char aChar = aString[i];
@@ -845,7 +859,7 @@ int Main2(int aNumArguments, const char *anArguments[])
   NComandLineParser::CParser aDefaultSwitchesParser(kNumSwitches);
   try
   {
-    CSysStringVector aDefaultSwitchesVector;
+    AStringVector aDefaultSwitchesVector;
     SplitSpaceDelimetedStrings(GetDefaultSwitches(), aDefaultSwitchesVector);
     aDefaultSwitchesParser.ParseStrings(kSwitchForms, aDefaultSwitchesVector);
   }
@@ -912,7 +926,7 @@ int Main2(int aNumArguments, const char *anArguments[])
       kArchiveTagExtension, anArchiveName))
     PrintHelpAndExit();
   */
-  anArchiveName = aNonSwitchStrings[kArchiveNameIndex];
+  anArchiveName = GetSystemString(aNonSwitchStrings[kArchiveNameIndex], CP_OEMCP);
 
   NExtractMode::EEnum aExtractMode;
   bool anIsExtractGroupCommand = aCommand.IsFromExtractGroup(aExtractMode);
@@ -945,7 +959,7 @@ int Main2(int aNumArguments, const char *anArguments[])
       CSysString anOutputDir;
       if(aParser[NKey::kOutputDir].ThereIs)
       {
-        anOutputDir = aParser[NKey::kOutputDir].PostStrings[0]; // test this DirPath
+        anOutputDir = GetSystemString(aParser[NKey::kOutputDir].PostStrings[0], CP_OEMCP); // test this DirPath
         NName::NormalizeDirPathPrefix(anOutputDir);
       }
 
@@ -980,10 +994,12 @@ int Main2(int aNumArguments, const char *anArguments[])
 
     CSysString anArchiveType;
     if(aParser[NKey::kArchiveType].ThereIs)
-      anArchiveType = aParser[NKey::kArchiveType].PostStrings[0];
+      anArchiveType = GetSystemString(
+          aParser[NKey::kArchiveType].PostStrings[0], CP_OEMCP);
     else
       if(aDefaultSwitchesParser[NKey::kArchiveType].ThereIs)
-        anArchiveType = aDefaultSwitchesParser[NKey::kArchiveType].PostStrings[0];
+        anArchiveType = GetSystemString(
+            aDefaultSwitchesParser[NKey::kArchiveType].PostStrings[0], CP_OEMCP);
       else
         anArchiveType = kDefaultArchiveType;
 

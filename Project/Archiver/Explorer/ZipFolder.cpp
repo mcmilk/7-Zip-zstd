@@ -141,7 +141,7 @@ HRESULT CZipFolder::MyInitialize()
     if(!g_HandlersManager.GetProxyHandler(GetSystemString(m_FileName), 
         true, &m_ProxyHandlerSpec, &m_ProxyHandler, &m_ArchiveHandler, aHandlerIsNew/*, m_HandlerCookie*/))
     {
-      MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE);
+      MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
       m_ArchiveHandler.Release();
       return S_FALSE;
       // return S_OK

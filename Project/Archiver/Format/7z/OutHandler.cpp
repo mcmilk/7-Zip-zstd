@@ -57,12 +57,12 @@ const char *kDefaultMethodName = kLZMAMethodName;
 
 const char *kDefaultMatchFinder = "BT234";
 
-static bool IsLZMAMethod(const CSysString &aMethodName)
+static bool IsLZMAMethod(const AString &aMethodName)
 {
   return (aMethodName.CompareNoCase(kLZMAMethodName) == 0);
 }
 
-static bool IsLZMethod(const CSysString &aMethodName)
+static bool IsLZMethod(const AString &aMethodName)
 {
   return (IsLZMAMethod(aMethodName) 
       // || aMethodName.CompareNoCase(kDeflateMethodName) == 0
@@ -191,7 +191,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     {
       if (!anOneMethodInfo.MatchFinderIsDefined)
       {
-        anOneMethodInfo.MatchFinderName = kDefaultMatchFinder;
+        anOneMethodInfo.MatchFinderName = GetSystemString(kDefaultMatchFinder);
         anOneMethodInfo.MatchFinderIsDefined = true;
       }
       if (IsLZMAMethod(anOneMethodInfo.MethodName))
@@ -215,7 +215,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     bool aDefined = false;
 
     #ifdef COMPRESS_LZMA
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("LZMA")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("LZMA") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_LZMA;
@@ -223,7 +223,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_PPMD
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("PPMD")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("PPMD") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_PPMD;
@@ -231,7 +231,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_BCJ_X86
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BCJ")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("BCJ") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_BCJ_X86;
@@ -239,7 +239,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_BCJ2
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BCJ2")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("BCJ2") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_BCJ2;
@@ -249,7 +249,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_DEFLATE
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("Deflate")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("Deflate") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_Deflate;
@@ -257,7 +257,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_BZIP2
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("BZip2")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("BZip2") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_BZip2;
@@ -265,7 +265,7 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
     #endif
 
     #ifdef COMPRESS_COPY
-    if (anOneMethodInfo.MethodName.CompareNoCase(TEXT("Copy")) == 0)
+    if (anOneMethodInfo.MethodName.CompareNoCase("Copy") == 0)
     {
       aDefined = true;
       aMethodFull.MethodInfoEx.MethodID = k_Copy;
@@ -451,9 +451,9 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *anOutStream, UINT32 aNumItems,
 
 static const kMaxNumberOfDigitsInInputNumber = 9;
 
-static int ParseNumberString(const CSysString &aString, int &aNumber)
+static int ParseNumberString(const AString &aString, int &aNumber)
 {
-  CSysString aNumberString;
+  AString aNumberString;
   int i = 0;
   for(; i < aString.Length() && i < kMaxNumberOfDigitsInInputNumber; i++)
   {
@@ -467,7 +467,7 @@ static int ParseNumberString(const CSysString &aString, int &aNumber)
   return i;
 }
 
-static UINT32 ParseUINT32String(const CSysString &aString, UINT32 &aNumber)
+static UINT32 ParseUINT32String(const AString &aString, UINT32 &aNumber)
 {
   int aNumberTemp;
   int aPos = ParseNumberString(aString, aNumberTemp);
@@ -485,10 +485,10 @@ static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
 static const char kMegaByteSymbol = 'M';
 
-HRESULT ParseDictionaryValues(const CSysString &_aString, 
+HRESULT ParseDictionaryValues(const AString &_aString, 
     BYTE &aLogDicSize, UINT32 &aDicSize)
 {
-  CSysString aString = _aString;
+  AString aString = _aString;
   int aNumber;
   aString.MakeUpper();
   int aNumDigits = ParseNumberString(aString, aNumber);
@@ -564,7 +564,7 @@ static HRESULT SetBoolProperty(bool &aDest, const PROPVARIANT &aValue)
   return S_OK;
 }
 
-static HRESULT GetBindInfoPart(CSysString &aString, UINT32 &aCoder, UINT32 &aStream)
+static HRESULT GetBindInfoPart(AString &aString, UINT32 &aCoder, UINT32 &aStream)
 {
   aStream = 0;
   int anIndex = ParseUINT32String(aString, aCoder);
@@ -582,7 +582,7 @@ static HRESULT GetBindInfoPart(CSysString &aString, UINT32 &aCoder, UINT32 &aStr
   return S_OK;
 }
 
-static HRESULT GetBindInfo(CSysString &aString, CBind &aBind)
+static HRESULT GetBindInfo(AString &aString, CBind &aBind)
 {
   RETURN_IF_NOT_S_OK(GetBindInfoPart(aString, aBind.OutCoder, aBind.OutStream));
   if (aString[0] != ':')
@@ -689,7 +689,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
         return E_INVALIDARG;
       anOneMethodInfo.MatchFinderIsDefined = true;
       // anOneMethodInfo.MatchFinderIndex = aValue.ulVal;
-      anOneMethodInfo.MatchFinderName = GetAnsiString(aValue.bstrVal);
+      anOneMethodInfo.MatchFinderName = GetSystemString(aValue.bstrVal);
     }
     else
     {
@@ -705,7 +705,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
         }
         else if (aValue.vt == VT_BSTR)
         {
-          RETURN_IF_NOT_S_OK(ParseDictionaryValues(GetSystemString(aValue.bstrVal), 
+          RETURN_IF_NOT_S_OK(ParseDictionaryValues(UnicodeStringToMultiByte(aValue.bstrVal), 
               aLogDicSize, aDicSize));
         }
         else 

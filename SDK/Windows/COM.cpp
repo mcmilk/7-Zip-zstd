@@ -24,7 +24,7 @@ UString GUIDToStringW(REFGUID aGUID)
 
 AString GUIDToStringA(REFGUID aGUID)
 {
-  return GetAnsiString(GUIDToStringW(aGUID));
+  return UnicodeStringToMultiByte(GUIDToStringW(aGUID));
 }
 
 HRESULT StringToGUIDW(const wchar_t *aString, GUID &aClassID)

@@ -44,7 +44,7 @@ bool ConvertUTF8ToUnicode(const AString &anUTFString, UString &anResultString)
   return true; 
 }
 
-void ConvertUnicodeToUTF(const UString &anUnicodeString, AString &anResultString)
+void ConvertUnicodeToUTF8(const UString &anUnicodeString, AString &anResultString)
 {
   anResultString.Empty();
   for(int i = 0; i < anUnicodeString.Length(); i++)

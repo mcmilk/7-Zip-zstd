@@ -52,7 +52,11 @@ HRESULT ExtractArchive(HWND aParentWindow, const CSysString &aFileName)
   CSysString aDirectoryPath = aDialog.m_DirectoryPath;
   if(!NFile::NDirectory::CreateComplexDirectory(aDirectoryPath))
   {
-    MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, (LPCTSTR)aDirectoryPath));
+    MyMessageBox(MyFormat(IDS_CANNOT_CREATE_FOLDER, 
+        #ifdef LANG        
+        0x02000603, 
+        #endif 
+        (LPCTSTR)aDirectoryPath));
     return E_FAIL;
   }
   

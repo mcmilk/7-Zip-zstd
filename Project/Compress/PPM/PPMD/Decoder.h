@@ -48,7 +48,8 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CDecoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CDecoder, "Compress.PPMDDecoder.1", "Compress.PPMDDecoder", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CDecoder, TEXT("Compress.PPMDDecoder.1"), 
+                 TEXT("Compress.PPMDDecoder"), 0, THREADFLAGS_APARTMENT)
 
   void ReleaseStreams()
   {

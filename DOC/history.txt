@@ -1,0 +1,12 @@
+Sources history of the 7-Zip
+----------------------------
+
+  Version 2.30 Beta 9        08-Jan-2002
+  --------------------------------------
+    - SDK/Common/Vector.h: sopporting sorted object vectors .
+    - Lang features.
+    - Two new match finders: pat3h and pat4h.
+    - SDK/Archive/Zip/InEngine.cpp: bug was fixed.
+    - SDK/Windows/FileDir.cpp: function CreateComplexDirectory
+      was changed.
+

@@ -46,6 +46,13 @@ List of defined IDs
    03 - Rar
       02 Rar20
 
+05 - ECC
+   01 Reed-Solomon
+     01 Version
+  
+   
+06 - Crypto
+
 
 ---
 End of document

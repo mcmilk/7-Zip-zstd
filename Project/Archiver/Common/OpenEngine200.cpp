@@ -111,27 +111,27 @@ HRESULT OpenArchive(const CSysString &aFileName,
     CComPtr<IArchiveHandler200> anArchiveHandler;
 
     #ifdef FORMAT_7Z
-    if (anArchiverInfo.Name.CompareNoCase("7z") == 0)
+    if (anArchiverInfo.Name.CompareNoCase(TEXT("7z")) == 0)
       anArchiveHandler = new CComObjectNoLock<NArchive::N7z::CHandler>;
     #endif
 
     #ifdef FORMAT_BZIP2
-    if (anArchiverInfo.Name.CompareNoCase("BZip2") == 0)
+    if (anArchiverInfo.Name.CompareNoCase(TEXT("BZip2")) == 0)
       anArchiveHandler = new CComObjectNoLock<NArchive::NBZip2::CHandler>;
     #endif
 
     #ifdef FORMAT_GZIP
-    if (anArchiverInfo.Name.CompareNoCase("GZip") == 0)
+    if (anArchiverInfo.Name.CompareNoCase(TEXT("GZip")) == 0)
       anArchiveHandler = new CComObjectNoLock<NArchive::NGZip::CGZipHandler>;
     #endif
 
     #ifdef FORMAT_TAR
-    if (anArchiverInfo.Name.CompareNoCase("Tar") == 0)
+    if (anArchiverInfo.Name.CompareNoCase(TEXT("Tar")) == 0)
       anArchiveHandler = new CComObjectNoLock<NArchive::NTar::CTarHandler>;
     #endif
 
     #ifdef FORMAT_ZIP
-    if (anArchiverInfo.Name.CompareNoCase("Zip") == 0)
+    if (anArchiverInfo.Name.CompareNoCase(TEXT("Zip")) == 0)
       anArchiveHandler = new CComObjectNoLock<NArchive::NZip::CZipHandler>;
     #endif
 

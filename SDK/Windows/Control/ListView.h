@@ -52,8 +52,10 @@ public:
     { return GetNextItem(aStartIndex, LVNI_SELECTED); }
   int GetFocusedItem() const
     { return GetNextItem(-1, LVNI_FOCUSED); }
+  
   bool GetItem(LVITEM* anItem) const 
     { return BOOLToBool(ListView_GetItem(m_Window, anItem)); }
+  bool GetItemParam(int anItemIndex, LPARAM &aParam) const;
   void GetItemText(int anItemIndex, int aSubItemIndex, LPTSTR aText, int aTextSizeMax) const 
     { ListView_GetItemText(m_Window, anItemIndex, aSubItemIndex, aText, aTextSizeMax); }
   bool SortItems(PFNLVCOMPARE aCompareFunction, LPARAM aDataParam)

@@ -7,19 +7,14 @@
 
 #include "Common/Vector.h"
 
-#ifndef UNICODE
 inline char* MyStringGetNextCharPointer(char *aPointer)
   { return (char *)_mbsinc((unsigned char *)aPointer); }
-#endif
-
 
 inline wchar_t* MyStringGetNextCharPointer(wchar_t *aPointer)
   { return (wchar_t*)(aPointer + 1); }
 
-#ifndef UNICODE
 inline const char* MyStringGetNextCharPointer(const char *aPointer)
   { return (const char *)_mbsinc((const unsigned char *)aPointer); }
-#endif
 
 inline const wchar_t* MyStringGetNextCharPointer(const wchar_t *aPointer)
   { return (const wchar_t*)(aPointer + 1); }
@@ -137,76 +132,52 @@ inline char * MyStringNCopy(char *strDestination, const char *strSource, size_t 
 inline wchar_t * MyStringNCopy(wchar_t *strDestination, const wchar_t *strSource, size_t count)
   { return wcsncpy(strDestination, strSource, count); }
 
-#ifndef UNICODE
 inline char * MyStringUpperCase(char *aString)
   { return (char *)_mbsupr((unsigned char *)aString); }
-#endif
 inline wchar_t * MyStringUpperCase(wchar_t *aString)
   { return _wcsupr(aString); }
 
-#ifndef UNICODE
 inline char * MyStringLowerCase(char *aString)
   { return (char *)_mbsupr((unsigned char *)aString); }
-#endif
 inline wchar_t * MyStringLowerCase(wchar_t *aString)
   { return _wcslwr(aString); }
 
-#ifndef UNICODE
 inline int MyStringCompare(const char *aString1, const char *aString2)
   { return _mbscmp((const unsigned char *)aString1, (const unsigned char *)aString2); }
-#endif
 inline int MyStringCompare(const wchar_t *aString1, const wchar_t *aString2)
   { return wcscmp(aString1, aString2); }
 
-#ifndef UNICODE
 inline int MyStringCompareNoCase(const char *aString1, const char *aString2)
   { return _mbsicmp((const unsigned char *)aString1, (const unsigned char *)aString2); }
-#endif
-
 inline int MyStringCompareNoCase(const wchar_t *aString1, const wchar_t *aString2)
   { return _wcsicmp(aString1, aString2); }
 
 #ifndef _WIN32_WCE
 
-#ifndef UNICODE
 inline int MyStringCollate(const char *aString1, const char *aString2)
   { return _mbscoll((const unsigned char *)aString1, (const unsigned char *)aString2); }
-#endif
-
 inline int MyStringCollate(const wchar_t *aString1, const wchar_t *aString2)
   { return wcscoll(aString1, aString2); }
 
-#ifndef UNICODE
 inline int MyStringCollateNoCase(const char *aString1, const char *aString2)
   { return _mbsicoll((const unsigned char *)aString1, (const unsigned char *)aString2); }
-#endif
-
 inline int MyStringCollateNoCase(const wchar_t *aString1, const wchar_t *aString2)
   { return _wcsicoll(aString1, aString2); }
 
 #endif
 
-#ifndef UNICODE
 inline char* MyStringFindChar(const char *aString, int aChar)
   { return (char *)_mbschr((const unsigned char *)aString, aChar); }
-#endif
-
 inline wchar_t* MyStringFindChar(const wchar_t *aString, wint_t aChar)
   { return wcschr(aString, aChar); }
 
-#ifndef UNICODE
 inline char* MyStringFindSubString(const char *aString, const char *aStrCharSet)
   { return (char *)_mbsstr((const unsigned char *)aString, (const unsigned char *)aStrCharSet); }  
-#endif
-
 inline wchar_t* MyStringFindSubString(const wchar_t *aString, const wchar_t *aStrCharSet)
   { return wcsstr(aString, aStrCharSet); }  
 
-#ifndef UNICODE
 inline char* MyStringReverseFind(const char *aString, int aChar)
   { return (char *)_mbsrchr((const unsigned char *)aString, aChar); }
-#endif
-
 inline wchar_t* MyStringReverseFind(const wchar_t *aString, wint_t aChar)
   { return wcsrchr(aString, aChar); }
 
@@ -795,39 +766,27 @@ bool operator==(const CStringBase<T>& s1, const CStringBase<T>& s2)
 
 template <class T>
 bool operator<(const CStringBase<T>& s1, const CStringBase<T>& s2)
-{
-  return (s1.Compare(s2) < 0);
-}
+  { return (s1.Compare(s2) < 0); }
 
 template <class T>
 bool operator==(const T *s1, const CStringBase<T>& s2)
-{
-  return (s2.Compare(s1) == 0);
-}
+  { return (s2.Compare(s1) == 0); }
 
 template <class T>
 bool operator==(const CStringBase<T>& s1, const T *s2)
-{
-  return (s1.Compare(s2) == 0);
-}
+  { return (s1.Compare(s2) == 0); }
 
 template <class T>
 bool operator!=(const CStringBase<T>& s1, const CStringBase<T>& s2)
-{
-  return (s1.Compare(s2) != 0);
-}
+  { return (s1.Compare(s2) != 0); }
 
 template <class T>
 bool operator!=(const T *s1, const CStringBase<T>& s2)
-{
-  return (s2.Compare(s1) != 0);
-}
+  { return (s2.Compare(s1) != 0); }
 
 template <class T>
 bool operator!=(const CStringBase<T>& s1, const T *s2)
-{
-  return (s1.Compare(s2) != 0);
-}
+  { return (s1.Compare(s2) != 0); }
 
 typedef CStringBase<char> AString;
 typedef CStringBase<wchar_t> UString;

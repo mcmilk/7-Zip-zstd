@@ -10,6 +10,10 @@
 
 #include "Common/String.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 class CUpdateCallBack100Imp: 
   public IUpdateCallback100,
   public CComObjectRoot
@@ -49,7 +53,7 @@ public:
   {
     m_ThreadID = GetCurrentThreadId();
     m_ProgressDialog.Create(aParentWindow);
-    m_ProgressDialog.SetText(_T("Compressing"));
+    m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
     m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
     m_ArchiveHandler = anArchiveHandler;
   }

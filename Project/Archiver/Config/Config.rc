@@ -84,51 +84,63 @@ IDR_MAINFRAME           ICON    DISCARDABLE     "Config.ico"
 // Dialog
 //
 
-IDD_FOLDERS DIALOG DISCARDABLE  0, 0, 220, 111
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_FOLDERS DIALOG DISCARDABLE  0, 0, 210, 154
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Folders"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "&Working folder",IDC_STATIC,7,7,205,97
+    GROUPBOX        "&Working folder",IDC_STATIC_FOLDERS_WORKING_FOLDER,7,7,
+                    196,98
     CONTROL         "&System temp folder",IDC_FOLDERS_WORK_RADIO_SYSTEM,
-                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,19,20,100,10
+                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,19,20,150,10
     CONTROL         "&Current",IDC_FOLDERS_WORK_RADIO_CURRENT,"Button",
-                    BS_AUTORADIOBUTTON,19,34,100,10
+                    BS_AUTORADIOBUTTON,19,34,150,10
     CONTROL         "Specified:",IDC_FOLDERS_WORK_RADIO_SPECIFIED,"Button",
-                    BS_AUTORADIOBUTTON,19,48,100,10
-    EDITTEXT        IDC_FOLDERS_WORK_EDIT_PATH,39,65,134,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_FOLDERS_WORK_BUTTON_PATH,182,65,18,14
+                    BS_AUTORADIOBUTTON,19,48,151,10
+    EDITTEXT        IDC_FOLDERS_WORK_EDIT_PATH,39,63,130,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_FOLDERS_WORK_BUTTON_PATH,178,63,18,14
     CONTROL         "Use for removable drives only",
                     IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,19,87,134,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,87,180,10
 END
 
-IDD_SYSTEM DIALOG DISCARDABLE  0, 0, 195, 103
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_SYSTEM DIALOG DISCARDABLE  0, 0, 210, 154
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "System"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Integrate 7-Zip to shell context menu",
                     IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,7,143,10
-    LTEXT           "Associate 7-Zip with",IDC_STATIC,7,26,91,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,7,196,10
+    LTEXT           "Associate 7-Zip with",IDC_STATIC_SYSTEM_ASSOCIATE,7,26,
+                    196,8
     CONTROL         "List1",IDC_SYSTEM_LIST_ASSOCIATE,"SysListView32",
-                    LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | 
-                    WS_BORDER | WS_TABSTOP,7,40,106,56
+                    LVS_LIST | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | 
+                    WS_BORDER | WS_TABSTOP,7,40,196,68
 END
 
-IDD_INFO DIALOG DISCARDABLE  0, 0, 220, 111
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_INFO DIALOG DISCARDABLE  0, 0, 210, 154
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Info"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "7-Zip 2.30 Beta 8",IDC_STATIC,8,7,115,9
+    LTEXT           "7-Zip 2.30 Beta 9",IDC_STATIC,7,7,97,9
+    LTEXT           "Copyright (c) 1999-2002 Igor Pavlov",IDC_STATIC,7,20,97,
+                    17
     LTEXT           "7-Zip is a free software. However, if you like 7-Zip and want to support further development, please register it by paying a fee of $20. You can use credit card or other payment methods.",
-                    IDC_STATIC,7,41,116,63
-    PUSHBUTTON      "www.7-zip.org",IDC_BUTTON_INFO_HOMEPAGE,140,7,73,14
-    PUSHBUTTON      "Register",IDC_BUTTON_INFO_REGISTER,140,31,73,14
-    LTEXT           "Copyright (c) 1999-2001 Igor Pavlov",IDC_STATIC,7,20,
-                    116,17
+                    IDC_STATIC_INFO_REGISTER_INFO,7,62,196,85
+    PUSHBUTTON      "www.7-zip.org",IDC_BUTTON_INFO_HOMEPAGE,112,7,91,14
+    PUSHBUTTON      "Register",IDC_BUTTON_INFO_REGISTER,112,31,91,14
+END
+
+IDD_LANG DIALOG DISCARDABLE  0, 0, 210, 154
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Language"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    COMBOBOX        IDC_COMBO_LANG_LANG,7,20,128,124,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Language:",IDC_STATIC_LANG_LANG,7,7,196,8
 END
 
 
@@ -143,27 +155,35 @@ BEGIN
     IDD_FOLDERS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 213
+        RIGHTMARGIN, 203
         TOPMARGIN, 7
-        BOTTOMMARGIN, 104
+        BOTTOMMARGIN, 147
     END
 
     IDD_SYSTEM, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 188
+        RIGHTMARGIN, 203
         TOPMARGIN, 7
-        BOTTOMMARGIN, 96
+        BOTTOMMARGIN, 147
     END
 
     IDD_INFO, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 213
-        VERTGUIDE, 123
-        VERTGUIDE, 140
+        RIGHTMARGIN, 203
+        VERTGUIDE, 104
+        VERTGUIDE, 112
         TOPMARGIN, 7
-        BOTTOMMARGIN, 104
+        BOTTOMMARGIN, 147
+    END
+
+    IDD_LANG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 203
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 147
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -176,15 +196,15 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,8,0
- PRODUCTVERSION 2,30,8,0
+ FILEVERSION 2,30,9,0
+ PRODUCTVERSION 2,30,9,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
 #else
  FILEFLAGS 0x0L
 #endif
- FILEOS 0x4L
+ FILEOS 0x40004L
  FILETYPE 0x1L
  FILESUBTYPE 0x0L
 BEGIN
@@ -195,14 +215,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Palvov\0"
             VALUE "FileDescription", "7-Zip Configuration\0"
-            VALUE "FileVersion", "2, 30, 8, 0\0"
+            VALUE "FileVersion", "2, 30, 9, 0\0"
             VALUE "InternalName", "7-ZipCfg\0"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2001 Igor Pavlov\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2002 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7-ZipCfg.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 8, 0\0"
+            VALUE "ProductVersion", "2, 30, 9, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

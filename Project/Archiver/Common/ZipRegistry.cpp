@@ -18,6 +18,22 @@ static const TCHAR *kCUBasePath = _T("Software\\7-ZIP");
 
 static const TCHAR *kArchiversKeyName = _T("Archivers");
 
+static const TCHAR *kLangValueName = _T("Lang");
+
+void SaveRegLang(const CSysString &aLang)
+{
+  CKey aCUKey;
+  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
+  aCUKey.SetValue(kLangValueName, aLang);
+}
+
+void ReadRegLang(CSysString &aLang)
+{
+  aLang.Empty();
+  CKey aCUKey;
+  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
+  aCUKey.QueryValue(kLangValueName, aLang);
+}
 
 ////////////////////////////////////////////////////////////
 // CZipRegistryManager

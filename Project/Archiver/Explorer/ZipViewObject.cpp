@@ -27,6 +27,10 @@
 #include "../Common/HelpUtils.h"
 #include "../Common/PropIDUtils.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 #include "FormatUtils.h"
 
 #include "MyIDList.h"
@@ -106,9 +110,9 @@ void CZipViewObject::Init(CZipFolder *aFolder,
 
   m_ProxyHandler = aProxyHandler;
   
-  m_FileSizeFormat = MyLoadString(IDS_FILE_SIZE);
-  m_NSelectedItemsFormat = MyLoadString(IDS_N_SELECTED_ITEMS);
-  m_NObjectsFormat = MyLoadString(IDS_N_OBJECTS);
+  m_FileSizeFormat = LangLoadString(IDS_FILE_SIZE, 0x02000982);
+  m_NSelectedItemsFormat = LangLoadString(IDS_N_SELECTED_ITEMS, 0x02000301);
+  m_NObjectsFormat = LangLoadString(IDS_N_OBJECTS, 0x02000302);
 
 
   // PrintNumber(m_ProxyHandler->m_Properties.size(), "Init:m_Properties.size()");
@@ -460,8 +464,10 @@ bool CZipViewObject::OnContextMenu(HANDLE aWindowHandle, int xPos, int yPos)
   aMenu.CreatePopup();
 
   if (aNumSelectedItems > 0)
-    aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_OPEN, MyLoadString(IDS_LISTVIEW_CONTEXT_MENU_OPEN));
-  aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_EXTRACT, MyLoadString(IDS_LISTVIEW_CONTEXT_MENU_EXTRACT));
+    aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_OPEN, 
+        LangLoadString(IDS_LISTVIEW_CONTEXT_MENU_OPEN, 0x02000411));
+  aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_EXTRACT, 
+        LangLoadString(IDS_LISTVIEW_CONTEXT_MENU_EXTRACT, 0x02000412));
     
   int aResult = aMenu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, 
     xPos, yPos, m_ListView);
@@ -544,7 +550,7 @@ void CZipViewObject::OpenSelectedItems()
   GetSelectedItemsIndexes(anIndexes);
   if (anIndexes.Size() > 30)
   {
-    MessageBox(_T("Too much items"));
+    MyMessageBox(IDS_ERROR_TOO_MUCH_ITEMS, 0x02000606);
     return;
   }
   bool aDirIsStarted = false;
@@ -745,24 +751,9 @@ LRESULT CZipViewObject::onColumnClick(LPNMLISTVIEW aListView)
     m_RegistryListViewInfo.Ascending = true;
     m_RegistryListViewInfo.SortIndex = aNewSortIndex;
   }
-  /*
-  UINT64 anEnd, aStart;
-  NTimer::QueryPerformanceCounter(aStart);
-  char sz[100];
-  OutputDebugString("\n======= Insert Items =============\n");
-  */
 
   // Sort the items...
   m_ListView.SortItems(CompareItems, (LPARAM)this);
-
-  /*
-  NTimer::QueryPerformanceCounter(anEnd);
-  ultoa(int(anEnd - aStart), sz, 10);
-  OutputDebugString("======= Sort Items =============\n");
-  OutputDebugString(sz);
-  OutputDebugString("\n");
-  */
-
   return 0;
 }
 
@@ -849,7 +840,8 @@ LRESULT CZipViewObject::onRightClick(LPNMITEMACTIVATE anItemActiveate)
   CMenu aMenu;
   aMenu.CreatePopup();
 
-  aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_COLUMN, MyLoadString(IDS_LISTVIEW_COLUMNS_CONTEXT_MENU));
+  aMenu.AppendItem(MF_STRING, IDC_MY_CONTEXT_MENU_COLUMN, 
+      LangLoadString(IDS_LISTVIEW_COLUMNS_CONTEXT_MENU, 0x02000401));
   
   int aResult = aMenu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, 
       aPoint.x, aPoint.y, m_ListView);
@@ -1243,25 +1235,9 @@ void CZipViewObject::RefreshListCtrl()
       // PrintMessage("InsertItem Error");
     }
   }
-  /*
-  NTimer::QueryPerformanceCounter(anEnd);
-  char sz[100];
-  ultoa(int(anEnd - aStart), sz, 10);
-  OutputDebugString("======= Insert Items =============\n");
-  OutputDebugString(sz);
-  OutputDebugString("\n");
-  */
 
   // Sort the items...
   m_ListView.SortItems(CompareItems, (LPARAM)this);
-
-  /*
-  NTimer::QueryPerformanceCounter(aStart);
-  ultoa(int(aStart - anEnd), sz, 10);
-  OutputDebugString("======= Sort Items =============\n");
-  OutputDebugString(sz);
-  OutputDebugString("\n");
-  */
 
   m_ListView.SetItemState(0, LVIS_FOCUSED, LVIS_FOCUSED);
   m_RedrawEnabled = true;
@@ -1390,11 +1366,11 @@ void CZipViewObject::RestoreViewState()
 /////////////////////////////////////
 // Buttons
 
-static void AddButtonString(IShellBrowser *aShellBrowser, UINT anStringID, 
-    int &anIndex)
+static void AddButtonString(IShellBrowser *aShellBrowser, 
+    UINT anStringID, UINT32 aLangID, int &anIndex)
 {
   LRESULT aTmpIndex;
-  CSysString aString = MyLoadString(anStringID);
+  CSysString aString = LangLoadString(anStringID, aLangID);
   int aStringLength = aString.Length();
   LPTSTR aPointer = aString.GetBuffer(aStringLength + 2);
   aPointer[aStringLength] = 0;
@@ -1515,7 +1491,7 @@ void CZipViewObject::MergeToolBar()
   int aStringIndex[kNumMaxString];
   if (aShowButtonText)
   {
-    AddButtonString(m_ShellBrowser, IDS_TOOLBAR_EXTRACT, aStringIndex[0]);
+    AddButtonString(m_ShellBrowser, IDS_TOOLBAR_EXTRACT, 0x02000501, aStringIndex[0]);
   }
 
 

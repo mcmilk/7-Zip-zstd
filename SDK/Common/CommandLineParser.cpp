@@ -28,7 +28,7 @@ CParser::~CParser()
 }
 
 void CParser::ParseStrings(const CSwitchForm *aSwitchForms, 
-  const CSysStringVector &aCommandStrings)
+  const AStringVector &aCommandStrings)
 {
   int aNumCommandStrings = aCommandStrings.Size();
   for (int i = 0; i < aNumCommandStrings; i++)
@@ -38,7 +38,7 @@ void CParser::ParseStrings(const CSwitchForm *aSwitchForms,
 
 // if aString contains switch then function updates switch structures
 // out: (aString is a switch)
-bool CParser::ParseString(const CSysString &aString, 
+bool CParser::ParseString(const AString &aString, 
   const CSwitchForm *aSwitchForms)
 {
   int aLen = aString.Length();
@@ -58,7 +58,7 @@ bool CParser::ParseString(const CSysString &aString,
       int aSwitchLen = strlen(aSwitchForms[aSwitch].IDString);
       if (aSwitchLen <= aMaxLen || aPos + aSwitchLen > aLen) 
         continue;
-      if(_strnicmp(aSwitchForms[aSwitch].IDString, LPCTSTR(aString) + aPos, aSwitchLen) == 0)
+      if(_strnicmp(aSwitchForms[aSwitch].IDString, LPCSTR(aString) + aPos, aSwitchLen) == 0)
       {
         aMatchedSwitchIndex = aSwitch;
         aMaxLen = aSwitchLen;
@@ -92,7 +92,7 @@ bool CParser::ParseString(const CSysString &aString,
         {
           if (aTailSize < aSwitchForm.MinLen)
             throw "switch is not full";
-          CSysString aSet = aSwitchForm.PostCharSet;
+          AString aSet = aSwitchForm.PostCharSet;
           const kEmptyCharValue = -1;
           if (aTailSize == 0)
             aMatchedSwitch.PostCharIndex = kEmptyCharValue;
@@ -120,7 +120,7 @@ bool CParser::ParseString(const CSysString &aString,
             return true;
           }
           int aMaxLen = aSwitchForm.MaxLen;
-          CSysString aStringSwitch = aString.Mid(aPos, aMinLen);
+          AString aStringSwitch = aString.Mid(aPos, aMinLen);
           aPos += aMinLen;
           for(int i = aMinLen; i < aMaxLen && aPos < aLen; i++, aPos++)
           {
@@ -145,11 +145,11 @@ const CSwitchResult& CParser::operator[](size_t anIndex) const
 // Command parsing procedures
 
 int ParseCommand(int aNumCommandForms, const CCommandForm *aCommandForms, 
-    const CSysString &aCommandString, CSysString &aPostString)
+    const AString &aCommandString, AString &aPostString)
 {
   for(int i = 0; i < aNumCommandForms; i++)
   {
-    const CSysString anID = aCommandForms[i].IDString;
+    const AString anID = aCommandForms[i].IDString;
     if (aCommandForms[i].PostStringMode)
     {
       if(aCommandString.Find(anID) == 0)

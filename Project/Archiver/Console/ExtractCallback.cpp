@@ -238,9 +238,9 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
               NOverwriteDialog::Execute(anOldFileInfo, aNewFileInfo);
           */
 
-          g_StdOut << "file " << aFullProcessedPath << 
-            "\nalready exists. Overwrite with " << endl;
-          g_StdOut << GetSystemString(aFullPath, m_CodePage);
+          g_StdOut << "file " << GetOemString(aFullProcessedPath) << 
+              "\nalready exists. Overwrite with " << endl;
+          g_StdOut << UnicodeStringToMultiByte(aFullPath, CP_OEMCP);
 
           NUserAnswerMode::EEnum anOverwriteAnswer = ScanUserYesNoAllQuit();
 
@@ -272,7 +272,7 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
         if (!AutoRenamePath(aFullProcessedPath))
         {
           g_StdOut << "can not create file with auto name " << endl;
-          g_StdOut << aFullProcessedPath;
+          g_StdOut << GetOemString(aFullProcessedPath);
           return E_ABORT;
         }
       }
@@ -280,7 +280,7 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
         if (!NFile::NDirectory::DeleteFileAlways(aFullProcessedPath))
         {
           g_StdOut << "can not delete output file " << endl;
-          g_StdOut << aFullProcessedPath;
+          g_StdOut << GetOemString(aFullProcessedPath);
           return E_ABORT;
         }
     }
@@ -292,7 +292,7 @@ STDMETHODIMP CExtractCallBackImp::Extract(UINT32 anIndex,
       if (!m_OutFileStreamSpec->Open(aFullProcessedPath))
       {
         g_StdOut << "can not open output file " << endl;
-        g_StdOut << aFullProcessedPath;
+        g_StdOut << GetOemString(aFullProcessedPath);
         return E_ABORT;
       }
       m_OutFileStream = anOutStreamLoc;
@@ -323,7 +323,7 @@ STDMETHODIMP CExtractCallBackImp::PrepareOperation(INT32 anAskExtractMode)
       g_StdOut << kSkippingString;
       break;
   };
-  g_StdOut << m_FilePath;
+  g_StdOut << GetOemString(m_FilePath);
   return S_OK;
 }
 

@@ -4,8 +4,23 @@
 #include "resource.h"
 #include "ProgressDialog.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDCANCEL, 0x02000714 }
+};
+#endif
+
 bool CProgressDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000C00);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   m_ProcessStopped = false;
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));
 	return CModelessDialog::OnInit();

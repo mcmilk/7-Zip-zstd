@@ -12,6 +12,27 @@
 
 #include "Common/Defs.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDC_STATIC_COMPRESS_ARCHIVE, 0x02000D01 },
+  { IDC_STATIC_COMPRESS_FORMAT, 0x02000D03 },
+  { IDC_STATIC_COMPRESS_METHOD, 0x02000D04 },
+  { IDC_COMPRESS_SOLID, 0x02000D05 },
+  { IDC_STATIC_COMPRESS_PARAMETERS, 0x02000D06 },
+  { IDC_STATIC_COMPRESS_UPDATE_MODE, 0x02000D02 },
+  { IDC_STATIC_COMPRESS_OPTIONS, 0x02000D07 },
+  { IDC_COMPRESS_SFX, 0x02000D08 },
+  { IDOK, 0x02000702 },
+  { IDCANCEL, 0x02000710 },
+  { IDHELP, 0x02000720 }
+};
+#endif
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
@@ -47,12 +68,16 @@ void CDoubleZeroStringList::SetForBuffer(LPTSTR aBuffer)
 
 bool CCompressDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000D00);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_COMBO_ARCHIVE));
 	m_Format.Attach(GetItem(IDC_COMPRESS_COMBO_FORMAT));
 	m_Method.Attach(GetItem(IDC_COMPRESS_COMBO_METHOD));
 	m_UpdateMode.Attach(GetItem(IDC_COMPRESS_COMBO_UPDATE_MODE));
 
-  m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_OPTIONS));
+  m_Options.Attach(GetItem(IDC_COMPRESS_EDIT_PARAMETERS));
 
   m_ZipRegistryManager->ReadCompressionInfo(m_RegistryInfo);
 
@@ -86,19 +111,37 @@ bool CCompressDialog::OnInit()
   // else
   //  m_ArchivePath.SetCurSel(-1);
 
-  m_Method.AddString(MyLoadString(IDS_METHOD_STORE));
-  m_Method.AddString(MyLoadString(IDS_METHOD_NORMAL));
-  m_Method.AddString(MyLoadString(IDS_METHOD_MAXIMUM));
+  m_Method.AddString(
+      #ifdef LANG
+      LangLoadString(IDS_METHOD_STORE, 0x02000D81)
+      #else
+      MyLoadString(IDS_METHOD_STORE)
+      #endif
+      );
+  m_Method.AddString(
+      #ifdef LANG
+      LangLoadString(IDS_METHOD_NORMAL, 0x02000D82)
+      #else
+      MyLoadString(IDS_METHOD_NORMAL));
+      #endif
+      );
+  m_Method.AddString(
+      #ifdef LANG
+      LangLoadString(IDS_METHOD_MAXIMUM, 0x02000D83)
+      #else
+      MyLoadString(IDS_METHOD_MAXIMUM)
+      #endif
+      );
   
   int aMethodIndex = 1;
   if (m_RegistryInfo.MethodDefined && m_RegistryInfo.Method < 3)
     aMethodIndex = m_RegistryInfo.Method;
   m_Method.SetCurSel(aMethodIndex);
 
-  m_UpdateMode.AddString(MyLoadString(IDS_COMPRESS_UPDATE_MODE_ADD));
-  m_UpdateMode.AddString(MyLoadString(IDS_COMPRESS_UPDATE_MODE_UPDATE));
-  m_UpdateMode.AddString(MyLoadString(IDS_COMPRESS_UPDATE_MODE_FRESH));
-  m_UpdateMode.AddString(MyLoadString(IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE));
+  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_ADD, 0x02000DA1));
+  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_UPDATE, 0x02000DA2));
+  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_FRESH, 0x02000DA3));
+  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE, 0x02000DA4));
 
   m_UpdateMode.SetCurSel(0);
 
@@ -150,7 +193,7 @@ void CCompressDialog::CheckSolidEnable()
   int aFormatIndex = m_Format.GetCurSel();
   const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
       m_ArchiverInfoList[aFormatIndex];
-  bool anEnable = (anArchiverInfo.Name == "7z");
+  bool anEnable = (anArchiverInfo.Name == TEXT("7z"));
   m_Info.SolidModeIsAllowed = anEnable;
   CWindow aSFXButton = GetItem(IDC_COMPRESS_SOLID);
   aSFXButton.Enable(anEnable);
@@ -161,7 +204,7 @@ void CCompressDialog::CheckSFXEnable()
   int aFormatIndex = m_Format.GetCurSel();
   const NZipRootRegistry::CArchiverInfo &anArchiverInfo = 
       m_ArchiverInfoList[aFormatIndex];
-  bool anEnable = (anArchiverInfo.Name == "7z");
+  bool anEnable = (anArchiverInfo.Name == TEXT("7z"));
 
   CWindow aSFXButton = GetItem(IDC_COMPRESS_SFX);
   aSFXButton.Enable(anEnable);
@@ -214,9 +257,9 @@ void CCompressDialog::OnButtonSetArchive()
   const kFilterBufferSize = MAX_PATH;
   TCHAR aFilterBuffer[kFilterBufferSize];
   CDoubleZeroStringList aDoubleZeroStringList;
-  aDoubleZeroStringList.Add(_T("Zip Files (*.zip)"));
-  aDoubleZeroStringList.Add(_T("*.zip"));
-  CSysString aString = MyLoadString(IDS_OPEN_TYPE_ALL_FILES);
+  // aDoubleZeroStringList.Add(_T("Zip Files (*.zip)"));
+  // aDoubleZeroStringList.Add(_T("*.zip"));
+  CSysString aString = LangLoadString(IDS_OPEN_TYPE_ALL_FILES, 0x02000DB1);
   aString += _T(" (*.*)");
   aDoubleZeroStringList.Add(aString);
   aDoubleZeroStringList.Add(_T("*.*"));
@@ -236,7 +279,7 @@ void CCompressDialog::OnButtonSetArchive()
   
   anInfo.lpstrInitialDir= NULL; 
 
-  CSysString aTitle = MyLoadString(IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE);
+  CSysString aTitle = LangLoadString(IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE, 0x02000D90);
   
   anInfo.lpstrTitle = aTitle;
 

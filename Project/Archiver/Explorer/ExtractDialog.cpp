@@ -17,12 +17,17 @@
 
 #include "../Common/ZipSettings.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 // #include "Help/Context/Extract.h"
 
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 using namespace NShell;
+
 
 using namespace NZipSettings;
 
@@ -74,6 +79,31 @@ int CExtractDialog::GetFilesMode() const
       return i;
   throw 0;
 }
+
+#endif
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDC_STATIC_EXTRACT_EXTRACT_TO,      0x02000801 },
+  { IDC_EXTRACT_PATH_MODE,               0x02000810 },
+  { IDC_EXTRACT_RADIO_FULL_PATHNAMES,    0x02000811 },
+  { IDC_EXTRACT_RADIO_CURRENT_PATHNAMES, 0x02000812 },
+  { IDC_EXTRACT_RADIO_NO_PATHNAMES,      0x02000813 },
+  { IDC_EXTRACT_OVERWRITE_MODE,                 0x02000820 },
+  { IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,     0x02000821 },
+  { IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT, 0x02000822 },
+  { IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,      0x02000823 },
+  { IDC_EXTRACT_RADIO_AUTO_RENAME,              0x02000824 },
+  { IDC_EXTRACT_FILES,                0x02000830 },
+  { IDC_EXTRACT_RADIO_SELECTED_FILES, 0x02000831 },
+  { IDC_EXTRACT_RADIO_ALL_FILES,      0x02000832 },
+  { IDC_EXTRACT_PASSWORD,        0x02000802 },
+  { IDOK,     0x02000702 },
+  { IDCANCEL, 0x02000710 },
+  { IDHELP,   0x02000720 }
+
+};
 #endif
 
 bool CExtractDialog::Init(
@@ -112,6 +142,10 @@ static const kHistorySize = 8;
 
 bool CExtractDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000800);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   #ifndef _SFX
   m_PasswordControl.Init(*this, IDC_EXTRACT_EDIT_PASSWORD);
   m_PasswordControl.SetText(_T(""));
@@ -191,7 +225,14 @@ void CExtractDialog::OnButtonSetPath()
 {
   CSysString aCurrentPath;
   m_Path.GetText(aCurrentPath);
+
+  #ifdef LANG        
+  CSysString aTitle = LangLoadString(IDS_EXTRACT_SET_FOLDER, 0x02000881);
+  #else
   CSysString aTitle = MyLoadString(IDS_EXTRACT_SET_FOLDER);
+  #endif
+
+
   CSysString aResultPath;
   if (!NShell::BrowseForFolder(HWND(*this), aTitle, aCurrentPath, aResultPath))
     return;

@@ -12,8 +12,8 @@ using namespace NWindows;
 static bool MakeAutoName(const CSysString &aName, const CSysString &anExtension, 
     int aValue, CSysString &aPath)
 {
-  char aNumber[32];
-  itoa(aValue, aNumber, 10);
+  TCHAR aNumber[32];
+  _itot(aValue, aNumber, 10);
   aPath = aName;
   aPath += aNumber;
   aPath += anExtension;

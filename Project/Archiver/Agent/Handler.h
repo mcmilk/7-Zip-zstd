@@ -98,7 +98,7 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CAgent)
 
-DECLARE_REGISTRY(CAgent, "SevenZip.Agent.1", "SevenZip.Agent", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CAgent, TEXT("SevenZip.Agent.1"), TEXT("SevenZip.Agent"), 0, THREADFLAGS_APARTMENT)
 
 
   STDMETHOD(Open)(IInStream *aStream, 

@@ -12,6 +12,12 @@
 #include "ProgressDialog.h"
 #include "MessagesDialog.h"
 
+#include "Windows/ResourceString.h"
+
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 #include "../Format/Common/FormatCryptoInterface.h"
 
 class CExtractCallBackImp: 
@@ -77,9 +83,12 @@ public:
   {
     m_ThreadID = GetCurrentThreadId();
     m_ProgressDialog.Create(m_ParentWindow);
-    m_ProgressDialog.SetText(_T("Extracting"));
-    m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
-    // m_ProgressDialog.SetTitle(L"Extracting");
+    #ifdef LANG        
+    m_ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
+    #else
+    m_ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
+    #endif
+    m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);    
     // m_ProgressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }

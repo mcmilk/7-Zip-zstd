@@ -19,6 +19,8 @@ public:
   bool Close();
 
   AString ScanStringUntilNewLine();
+  void ReadToString(AString &aResult);
+
   bool Eof();
   int GetChar();
 };

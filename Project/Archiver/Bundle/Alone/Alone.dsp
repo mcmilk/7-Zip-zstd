@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
-CFG=Alone - Win32 Debug
+CFG=Alone - Win32 DebugU
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,12 +13,14 @@ CFG=Alone - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Alone.mak" CFG="Alone - Win32 Debug"
+!MESSAGE NMAKE /f "Alone.mak" CFG="Alone - Win32 DebugU"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "Alone - Win32 Release" (based on "Win32 (x86) Console Application")
 !MESSAGE "Alone - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "Alone - Win32 ReleaseU" (based on "Win32 (x86) Console Application")
+!MESSAGE "Alone - Win32 DebugU" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -42,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -67,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -77,12 +79,66 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\7za.exe" /pdbtype:sept
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "ReleaseU"
+# PROP BASE Intermediate_Dir "ReleaseU"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "ReleaseU"
+# PROP Intermediate_Dir "ReleaseU"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "UNICODE" /D "_UNICODE" /Yu"StdAfx.h" /FD /c
+# ADD BASE RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x419 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"c:\UTIL\7za.exe" /opt:NOWIN98
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"c:\UTIL\7zan.exe" /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "DebugU"
+# PROP BASE Intermediate_Dir "DebugU"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "DebugU"
+# PROP Intermediate_Dir "DebugU"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_UNICODE" /D "UNICODE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD BASE RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x419 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\7za.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\7zan.exe" /pdbtype:sept
+
 !ENDIF 
 
 # Begin Target
 
 # Name "Alone - Win32 Release"
 # Name "Alone - Win32 Debug"
+# Name "Alone - Win32 ReleaseU"
+# Name "Alone - Win32 DebugU"
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
@@ -405,6 +461,14 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\Header.cpp
 
 # ADD CPP /Fo"Debug\Zip\Header.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\Header.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\Header.obj"
+
 !ENDIF 
 
 # End Source File
@@ -424,6 +488,14 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\InEngine.cpp
 
 # ADD CPP /Fo"Debug\Zip\InEngine.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\InEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\InEngine.obj"
+
 !ENDIF 
 
 # End Source File
@@ -442,6 +514,14 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\ItemInfo.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Zip\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\ItemInfo.obj"
 
 !ENDIF 
 
@@ -466,6 +546,14 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\ItemNameUtils.cpp
 
 # ADD CPP /Fo"Debug\Zip\ItemNameUtils.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\ItemNameUtils.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\ItemNameUtils.obj"
+
 !ENDIF 
 
 # End Source File
@@ -484,6 +572,14 @@ SOURCE=..\..\..\..\SDK\Archive\Zip\OutEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Zip\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\OutEngine.obj"
 
 !ENDIF 
 
@@ -508,6 +604,14 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\Header.cpp
 
 # ADD CPP /Fo"Debug\Tar\Header.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\Header.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\Header.obj"
+
 !ENDIF 
 
 # End Source File
@@ -527,6 +631,14 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\InEngine.cpp
 
 # ADD CPP /Fo"Debug\Tar\InEngine.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\InEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\InEngine.obj"
+
 !ENDIF 
 
 # End Source File
@@ -545,6 +657,14 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\ItemInfo.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Tar\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\ItemInfo.obj"
 
 !ENDIF 
 
@@ -569,6 +689,14 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\ItemNameUtils.cpp
 
 # ADD CPP /Fo"Debug\Tar\ItemNameUtils.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\ItemNameUtils.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\ItemNameUtils.obj"
+
 !ENDIF 
 
 # End Source File
@@ -587,6 +715,14 @@ SOURCE=..\..\..\..\SDK\Archive\Tar\OutEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Tar\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\OutEngine.obj"
 
 !ENDIF 
 
@@ -611,6 +747,14 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\Header.cpp
 
 # ADD CPP /Fo"Debug\GZip\Header.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\Header.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\Header.obj"
+
 !ENDIF 
 
 # End Source File
@@ -630,6 +774,14 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\InEngine.cpp
 
 # ADD CPP /Fo"Debug\GZip\InEngine.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\InEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\InEngine.obj"
+
 !ENDIF 
 
 # End Source File
@@ -648,6 +800,14 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\ItemInfo.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\GZip\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\ItemInfo.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\ItemInfo.obj"
 
 !ENDIF 
 
@@ -671,6 +831,14 @@ SOURCE=..\..\..\..\SDK\Archive\GZip\OutEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\GZip\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\OutEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\OutEngine.obj"
 
 !ENDIF 
 
@@ -1119,6 +1287,14 @@ SOURCE=..\..\Format\Zip\Handler.cpp
 
 # ADD CPP /Fo"Debug\Zip\Handler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\Handler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\Handler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1138,6 +1314,14 @@ SOURCE=..\..\Format\Zip\OutHandler.cpp
 
 # ADD CPP /Fo"Debug\Zip\OutHandler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\OutHandler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\OutHandler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1152,6 +1336,14 @@ SOURCE=..\..\Format\Zip\UpdateEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Zip\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\UpdateEngine.obj"
 
 !ENDIF 
 
@@ -1176,6 +1368,14 @@ SOURCE=..\..\Format\Zip\UpdateMain.cpp
 
 # ADD CPP /Fo"Debug\Zip\UpdateMain.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Zip\UpdateMain.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Zip\UpdateMain.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1199,6 +1399,14 @@ SOURCE=..\..\Format\Tar\Handler.cpp
 
 # ADD CPP /Fo"Debug\Tar\Handler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\Handler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\Handler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1218,6 +1426,14 @@ SOURCE=..\..\Format\Tar\OutHandler.cpp
 
 # ADD CPP /Fo"Debug\Tar\OutHandler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\OutHandler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\OutHandler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1232,6 +1448,14 @@ SOURCE=..\..\Format\Tar\UpdateEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Tar\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Tar\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Tar\UpdateEngine.obj"
 
 !ENDIF 
 
@@ -1256,6 +1480,14 @@ SOURCE=..\..\Format\GZip\AddCommon.cpp
 
 # ADD CPP /Fo"Debug\GZip\AddCommon.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\AddCommon.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\AddCommon.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1279,6 +1511,14 @@ SOURCE=..\..\Format\GZip\Handler.cpp
 
 # ADD CPP /Fo"Debug\GZip\Handler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\Handler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\Handler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1298,6 +1538,14 @@ SOURCE=..\..\Format\GZip\OutHandler.cpp
 
 # ADD CPP /Fo"Debug\GZip\OutHandler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\OutHandler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\OutHandler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1312,6 +1560,14 @@ SOURCE=..\..\Format\GZip\UpdateEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\GZip\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\GZip\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\GZip\UpdateEngine.obj"
 
 !ENDIF 
 
@@ -1336,6 +1592,14 @@ SOURCE=..\..\Format\BZip2\Handler.cpp
 
 # ADD CPP /Fo"Debug\BZip2\Handler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\BZip2\Handler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\BZip2\Handler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1359,6 +1623,14 @@ SOURCE=..\..\Format\BZip2\OutHandler.cpp
 
 # ADD CPP /Fo"Debug\BZip2\OutHandler.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\BZip2\OutHandler.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\BZip2\OutHandler.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1373,6 +1645,14 @@ SOURCE=..\..\Format\BZip2\UpdateEngine.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\BZip2\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\BZip2\UpdateEngine.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\BZip2\UpdateEngine.obj"
 
 !ENDIF 
 
@@ -1572,6 +1852,14 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Decoder.cpp
 
 # ADD CPP /Fo"Debug\Deflate\Decoder.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Deflate\Decoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Deflate\Decoder.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1590,6 +1878,14 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Encoder.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Deflate\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Deflate\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Deflate\Encoder.obj"
 
 !ENDIF 
 
@@ -1618,6 +1914,14 @@ SOURCE=..\..\..\Compress\LZ\Implode\Decoder.cpp
 
 # ADD CPP /Fo"Debug\Implode\Decoder.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Implode\Decoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Implode\Decoder.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1636,6 +1940,14 @@ SOURCE=..\..\..\Compress\LZ\Implode\HuffmanDecoder.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\Implode\HuffmanDecoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\Implode\HuffmanDecoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\Implode\HuffmanDecoder.obj"
 
 !ENDIF 
 
@@ -1673,6 +1985,14 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Decoder.cpp
 
 # ADD CPP /Fo"Debug\PPMD\Decoder.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\PPMD\Decoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\PPMD\Decoder.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1695,6 +2015,14 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Encoder.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\PPMD\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\PPMD\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\PPMD\Encoder.obj"
 
 !ENDIF 
 
@@ -1727,6 +2055,14 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Decoder.cpp
 
 # ADD CPP /Fo"Debug\BZip2\Decoder.obj"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\BZip2\Decoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\BZip2\Decoder.obj"
+
 !ENDIF 
 
 # End Source File
@@ -1745,6 +2081,14 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Encoder.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\BZip2\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\BZip2\Encoder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\BZip2\Encoder.obj"
 
 !ENDIF 
 
@@ -1987,6 +2331,14 @@ SOURCE=..\..\..\Crypto\Cipher\Zip\Coder.cpp
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
 # ADD CPP /Fo"Debug\ZipCrypto\Coder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /Fo"ReleaseU\ZipCrypto\Coder.obj"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# ADD CPP /Fo"DebugU\ZipCrypto\Coder.obj"
 
 !ENDIF 
 

@@ -35,7 +35,8 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CZipHandler)
 
-DECLARE_REGISTRY(CZipHandler, "SevenZip.FormatZip.1", "SevenZip.FormatZip", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CZipHandler, TEXT("SevenZip.FormatZip.1"), 
+  TEXT("SevenZip.FormatZip"), 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Open)(IInStream *aStream, 
       const UINT64 *aMaxCheckStartPosition,

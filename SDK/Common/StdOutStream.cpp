@@ -11,7 +11,7 @@ static const char *kOneIntFormat = "%d";
 static const char *kOneUINT32Format = "%u";
 static const char *kOneUINT64Format = "%I64u";
 
-static LPCTSTR kFileOpenMode = "wt";
+static LPCTSTR kFileOpenMode = _T("wt");
 
 CStdOutStream  g_StdOut(stdout);
 CStdOutStream  g_StdErr(stderr);

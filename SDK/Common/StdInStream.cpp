@@ -53,6 +53,14 @@ AString CStdInStream::ScanStringUntilNewLine()
   }
 }
 
+void CStdInStream::ReadToString(AString &aResult)
+{
+  aResult.Empty();
+  int anIntChar;
+  while((anIntChar = GetChar()) != EOF)
+    aResult += char(anIntChar);
+}
+
 bool CStdInStream::Eof()
 {
   return (feof(m_Stream) != 0);

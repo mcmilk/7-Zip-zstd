@@ -8,6 +8,10 @@
 #include "Windows/ResourceString.h"
 #include "Common/StringConvert.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 using namespace NWindows;
 
 static NSynchronization::CCriticalSection g_ColumnsInfoCriticalSection;
@@ -15,7 +19,7 @@ static NSynchronization::CCriticalSection g_ColumnsInfoCriticalSection;
 
 CProxyHandlerSpec::CProxyHandlerSpec()
 {
-  m_FileTypePropertyCaption = MyLoadString(IDS_PROPERTY_FILE_TYPE);
+  m_FileTypePropertyCaption = LangLoadString(IDS_PROPERTY_FILE_TYPE, 0x02000214);
 }
 
 CProxyHandlerSpec::~CProxyHandlerSpec()
@@ -47,28 +51,29 @@ struct CPropertyIDNamePair
 {
   PROPID PropID;
   UINT ResourceID; // wchar_t *Name;
+  UINT LangID; // wchar_t *Name;
 };
 
 static CPropertyIDNamePair kPropertyIDNamePairs[] =  
 {
-  { kaipidName, IDS_PROPERTY_NAME },
+  { kaipidName, IDS_PROPERTY_NAME, 0x02000204 },
   // { kaipidPath, L"Path" },
   // { kaipidExtension, L"Extension" },
   // { kaipidIsFolder, L"Is Folder" },
-  { kaipidSize, IDS_PROPERTY_SIZE },
-  { kaipidPackedSize, IDS_PROPERTY_PACKED_SIZE },
-  { kaipidAttributes, IDS_PROPERTY_ATTRIBUTES },
-  { kaipidCreationTime, IDS_PROPERTY_CREATION_TIME },
-  { kaipidLastAccessTime, IDS_PROPERTY_LAST_ACCESS_TIME },
-  { kaipidLastWriteTime, IDS_PROPERTY_LAST_WRITE_TIME },
-  { kaipidSolid, IDS_PROPERTY_SOLID },
-  { kaipidComment, IDS_PROPERTY_C0MMENT },
-  { kaipidEncrypted, IDS_PROPERTY_ENCRYPTED },
-  { kaipidDictionarySize, IDS_PROPERTY_DICTIONARY_SIZE },
-
-  { kaipidSplitBefore, IDS_PROPERTY_SPLIT_BEFORE },
-  { kaipidSplitAfter, IDS_PROPERTY_SPLIT_AFTER },
-  { kaipidCRC, IDS_PROPERTY_CRC }
+  { kaipidSize, IDS_PROPERTY_SIZE, 0x02000207},
+  { kaipidPackedSize, IDS_PROPERTY_PACKED_SIZE, 0x02000208 }, 
+  { kaipidAttributes, IDS_PROPERTY_ATTRIBUTES, 0x02000209 },
+  { kaipidCreationTime, IDS_PROPERTY_CREATION_TIME, 0x0200020A },
+  { kaipidLastAccessTime, IDS_PROPERTY_LAST_ACCESS_TIME, 0x0200020B },
+  { kaipidLastWriteTime, IDS_PROPERTY_LAST_WRITE_TIME, 0x0200020C },
+  { kaipidSolid, IDS_PROPERTY_SOLID, 0x0200020D },
+  { kaipidComment, IDS_PROPERTY_C0MMENT, 0x0200020E },
+  { kaipidEncrypted, IDS_PROPERTY_ENCRYPTED, 0x0200020F },
+  { kaipidSplitBefore, IDS_PROPERTY_SPLIT_BEFORE, 0x02000210 },
+  { kaipidSplitAfter, IDS_PROPERTY_SPLIT_AFTER, 0x02000211 },
+  { kaipidDictionarySize, IDS_PROPERTY_DICTIONARY_SIZE, 0x02000212 },
+  { kaipidCRC, IDS_PROPERTY_CRC, 0x02000213 },
+  { kaipidIsAnti, IDS_PROPERTY_ANTI, 0x02000215 }
   // { kaipidType, L"Type" }
 };
 
@@ -82,8 +87,7 @@ static bool GetDefaultPropertyName(PROPID aPropID, CSysString &aName)
     const CPropertyIDNamePair &aPair = kPropertyIDNamePairs[i];
     if(aPair.PropID == aPropID)
     {
-      CSysString aString = MyLoadString(aPair.ResourceID);
-      aName = aString; 
+      aName = LangLoadString(aPair.ResourceID, aPair.LangID);
       return true;
     }
   }

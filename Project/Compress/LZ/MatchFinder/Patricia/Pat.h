@@ -96,6 +96,7 @@ union CDescendant
 #pragma pack( push, PragmaBackNode)
 #pragma pack( push, 1)
 
+#undef MY_BYTE_SIZE
 
 #ifdef __NODE_4_BITS
   #define MY_BYTE_SIZE 8
@@ -141,18 +142,18 @@ struct CNode
 
 #ifdef __NODE_4_BITS
   #define kIDNumBitsByte 0x30
-  #define kIDNumBitsString "4"
+  #define kIDNumBitsString TEXT("4")
 #else
 #ifdef __NODE_3_BITS
   #define kIDNumBitsByte 0x20
-  #define kIDNumBitsString "3"
+  #define kIDNumBitsString TEXT("3")
 #else
 #ifdef __NODE_2_BITS
   #define kIDNumBitsByte 0x10
-  #define kIDNumBitsString "2"
+  #define kIDNumBitsString TEXT("2")
 #else
   #define kIDNumBitsByte 0x00
-  #define kIDNumBitsString "1"
+  #define kIDNumBitsString TEXT("1")
 #endif
 #endif
 #endif
@@ -162,10 +163,10 @@ struct CNode
 
 #ifdef __AUTO_REMOVE
   #define kIDManualRemoveByte 0x00
-  #define kIDManualRemoveString ""
+  #define kIDManualRemoveString TEXT("")
 #else
   #define kIDManualRemoveByte 0x08
-  #define kIDManualRemoveString "R"
+  #define kIDManualRemoveString TEXT("R")
 #endif
 
 #undef kIDHash3Byte
@@ -173,10 +174,10 @@ struct CNode
 
 #ifdef __HASH_3
   #define kIDHash3Byte 0x04
-  #define kIDHash3String "H"
+  #define kIDHash3String TEXT("H")
 #else
   #define kIDHash3Byte 0x00
-  #define kIDHash3String ""
+  #define kIDHash3String TEXT("")
 #endif
 
 #undef kIDUse3BytesByte
@@ -184,10 +185,10 @@ struct CNode
 
 #ifdef __USE_3_BYTES
   #define kIDUse3BytesByte 0x02
-  #define kIDUse3BytesString "T"
+  #define kIDUse3BytesString TEXT("T")
 #else
   #define kIDUse3BytesByte 0x00
-  #define kIDUse3BytesString ""
+  #define kIDUse3BytesString TEXT("")
 #endif
 
 #undef kIDPaddingByte
@@ -195,15 +196,15 @@ struct CNode
 
 #ifdef __NODE_2_BITS_PADDING
   #define kIDPaddingByte 0x01
-  #define kIDPaddingString "P"
+  #define kIDPaddingString TEXT("P")
 #else
   #define kIDPaddingByte 0x00
-  #define kIDPaddingString ""
+  #define kIDPaddingString TEXT("")
 #endif
 
 
 #undef kIDString
-#define kIDString "Compress.MatchFinderPat" kIDNumBitsString kIDManualRemoveString kIDUse3BytesString kIDPaddingString kIDHash3String
+#define kIDString TEXT("Compress.MatchFinderPat") kIDNumBitsString kIDManualRemoveString kIDUse3BytesString kIDPaddingString kIDHash3String
 
 // {23170F69-40C1-278C-01XX-0000000000}
 
@@ -227,7 +228,7 @@ END_COM_MAP()
 
 DECLARE_NOT_AGGREGATABLE(CPatricia)
 
-  DECLARE_REGISTRY(CPatricia, kIDString ".1", kIDString, 0, THREADFLAGS_APARTMENT)
+  DECLARE_REGISTRY(CPatricia, kIDString TEXT(".1"), kIDString, 0, THREADFLAGS_APARTMENT)
 
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();

@@ -28,6 +28,11 @@ public:
   int GetLBText(int anIndex, LPTSTR aString)
     { return SendMessage(CB_GETLBTEXT, anIndex, (LPARAM)aString); }
   int GetLBText(int anIndex, CSysString &aString);
+
+  int SetItemData(int anIndex, LPARAM lParam)
+    { return SendMessage(CB_SETITEMDATA, anIndex, lParam); }
+  int GetItemData(int anIndex)
+    { return SendMessage(CB_GETITEMDATA, anIndex, 0); }
 };
 
 }}

@@ -12,7 +12,7 @@ using namespace NDirectory;
 
 static UINT32 kTmpBufferMemorySize = (1 << 20);
 
-static const char *kTempFilePrefixString = _T("iot");
+static LPCTSTR kTempFilePrefixString = _T("iot");
 
 CInOutTempBuffer::CInOutTempBuffer():
   m_Buffer(NULL)

@@ -28,4 +28,7 @@ public:
   
 };
 
+void SaveRegLang(const CSysString &aLang);
+void ReadRegLang(CSysString &aLang);
+
 #endif

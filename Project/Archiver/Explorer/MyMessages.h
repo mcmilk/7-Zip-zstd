@@ -12,7 +12,11 @@ void MyMessageBox(HWND aWindow, LPCTSTR aMessage);
 inline void MyMessageBox(LPCTSTR aMessage)
   {  MyMessageBox(0, aMessage); }
 
-void MyMessageBox(UINT32 anId);
+void MyMessageBox(UINT32 anId
+    #ifdef LANG        
+    ,UINT32 aLangID
+    #endif
+    );
 
 void ShowErrorMessage(HWND aWindow, DWORD anError);
 inline void ShowErrorMessage(DWORD anError)

@@ -12,7 +12,26 @@
 
 #include "FormatUtils.h"
 
+#ifdef LANG        
+#include "../Common/LangUtils.h"
+#endif
+
 using namespace NWindows;
+
+#ifdef LANG        
+static CIDLangPair kIDLangPairs[] = 
+{
+  { IDC_STATIC_OVERWRITE_HEADER,         0x02000901},
+  { IDC_STATIC_OVERWRITE_QUESTION_BEGIN, 0x02000902 },
+  { IDC_STATIC_OVERWRITE_QUESTION_END,   0x02000903 },
+  { IDYES, 0x02000705 },
+  { IDC_BUTTON_OVERWRITE_YES_TO_ALL, 0x02000707 },
+  { IDNO,  0x02000709 },
+  { IDC_BUTTON_OVERWRITE_NO_TO_ALL,0x0200070B },
+  { IDC_BUTTON_OVERWRITE_AUTO_RENAME, 0x02000911 },
+  { IDCANCEL, 0x02000711 }
+};
+#endif
 
 void ConvertFileTimeToStrings(const FILETIME &aFileTime, CSysString &aDateString,
     CSysString &aTimeString)
@@ -35,7 +54,11 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
 {
   CSysString aSizeString;
   if (aFileInfo.SizeIsDefined)
-    aSizeString = MyFormat(MyLoadString(IDS_FILE_SIZE), NumberToString(aFileInfo.Size));
+    aSizeString = MyFormat(IDS_FILE_SIZE, 
+        #ifdef LANG        
+        0x02000982, 
+        #endif
+        NumberToString(aFileInfo.Size));
 
   CSysString aDateString, aTimeString;
   FILETIME aLocalFileTime; 
@@ -53,7 +76,12 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
     i += kLineSize;
   }
 
-  _stprintf(sz, MyLoadString(IDS_FILE_SIZE_TIME), 
+  _stprintf(sz, 
+      #ifdef LANG
+      LangLoadString(IDS_FILE_SIZE_TIME, 0x02000981),
+      #else
+      MyLoadString(IDS_FILE_SIZE_TIME), 
+      #endif
       (LPCTSTR)aReducedName, (LPCTSTR)aSizeString, 
       (LPCTSTR)aDateString, (LPCTSTR)aTimeString);
   NWindows::NControl::CDialogChildControl m_Control;
@@ -72,6 +100,10 @@ void COverwriteDialog::SetFileInfoControl(int aTextID, int anIconID,
 
 bool COverwriteDialog::OnInit() 
 {
+  #ifdef LANG        
+  LangSetWindowText(HWND(*this), 0x02000900);
+  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  #endif
   SetFileInfoControl(IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME, 
       IDC_STATIC_OVERWRITE_OLD_FILE_ICON, m_OldFileInfo);
   SetFileInfoControl(IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME, 

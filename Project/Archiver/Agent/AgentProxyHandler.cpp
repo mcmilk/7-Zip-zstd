@@ -90,10 +90,10 @@ HRESULT CAgentProxyHandler::ReInit(IProgress *aProgress)
   ClearState();
   // RETURN_IF_NOT_S_OK(ReadProperties(m_ArchiveHandler));
 
-  OutputDebugString("before ReadObjects\n");
+  // OutputDebugString("before ReadObjects\n");
   // return ReadObjects(m_ArchiveHandler, aProgress);
   HRESULT aResult = ReadObjects(m_ArchiveHandler, aProgress);
-  OutputDebugString("after ReadObjects\n");
+  // OutputDebugString("after ReadObjects\n");
   return aResult;
 }
 

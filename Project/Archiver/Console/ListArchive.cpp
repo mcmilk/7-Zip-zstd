@@ -35,9 +35,9 @@ static const char kHiddenAttributeChar    = 'H';
 static const char kSystemAttributeChar    = 'S';
 static const char kArchiveAttributeChar   = 'A';
 
-static CSysString GetAttributesString(DWORD anWinAttributes, bool aDirectory)
+static AString GetAttributesString(DWORD anWinAttributes, bool aDirectory)
 {
-  CSysString s;
+  AString s;
   //  s  = ((anWinAttributes & kLabelFileAttribute) != 0) ? 
   //                                kVolumeAttributeChar: kEmptyAttributeChar;
   s += ((anWinAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 || aDirectory) ? 
@@ -174,23 +174,25 @@ BOOL IsFileTimeZero(CONST FILETIME *lpFileTime)
   return (lpFileTime->dwLowDateTime == 0) && (lpFileTime->dwHighDateTime == 0);
 }
 
+
+const char *kEmptyTimeString = "                ";
 void PrintTime(const NCOM::CPropVariant &aPropVariant)
 {
   if (aPropVariant.vt != VT_FILETIME)
     throw "incorrect item";
   if (IsFileTimeZero(&aPropVariant.filetime))
-  {
-    printf("                ");
-  }
+    printf(kEmptyTimeString);
   else
   {
     FILETIME aLocalFileTime;
     if (!FileTimeToLocalFileTime(&aPropVariant.filetime, &aLocalFileTime))
       throw "FileTimeToLocalFileTime error";
     SYSTEMTIME st;
-    FileTimeToSystemTime(&aLocalFileTime, &st);
-    printf("%04u-%02u-%02u %02u:%02u:%02u",
-      st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    if (FileTimeToSystemTime(&aLocalFileTime, &st))
+      printf("%04u-%02u-%02u %02u:%02u:%02u",
+          st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    else
+      printf(kEmptyTimeString);
   }
 }
 
@@ -245,11 +247,11 @@ HRESULT CFieldPrinter::PrintItemInfo(IArchiveHandler200 *anArchive,
     if (aPropVariant.vt == VT_BSTR)
     {
       PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, 
-          GetSystemString(aPropVariant.bstrVal, CP_OEMCP));
+          UnicodeStringToMultiByte(aPropVariant.bstrVal, CP_OEMCP));
       continue;
     }
     PrintString(aFieldInfo.TextAdjustment, aFieldInfo.Width, 
-        ConvertPropertyToString(aPropVariant, aFieldInfo.PropID));
+        GetOemString(ConvertPropertyToString(aPropVariant, aFieldInfo.PropID)));
   }
   return S_OK;
 }

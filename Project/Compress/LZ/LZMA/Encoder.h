@@ -249,7 +249,8 @@ END_COM_MAP()
 DECLARE_NOT_AGGREGATABLE(CEncoder)
 
 //DECLARE_NO_REGISTRY()
-DECLARE_REGISTRY(CEncoder, "Compress.LZMAEncoder.1", "Compress.LZMAEncoder", 0, THREADFLAGS_APARTMENT)
+DECLARE_REGISTRY(CEncoder, TEXT("Compress.LZMAEncoder.1"), 
+                 TEXT("Compress.LZMAEncoder"), 0, THREADFLAGS_APARTMENT)
 
 
   STDMETHOD(Init)(ISequentialInStream *anInStream, 

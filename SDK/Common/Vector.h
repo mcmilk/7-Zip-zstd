@@ -147,6 +147,11 @@ public:
 	virtual int Add(const T& anItem);
 	virtual void Insert(int anIndex, const T& anItem);
 	virtual void Delete(int anIndex, int aNum = 1);
+  int Find(const T& anItem) const;
+  int FindInSorted(const T& anItem) const;
+  int AddToSorted(const T& anItem);
+  static int CompareStringItems(const void *anElem1, const void *anElem2);
+  void Sort();
 };
 
 template <class T>
@@ -197,6 +202,66 @@ void CObjectVector<T>::Delete(int anIndex, int aNum)
   for(int i = 0; i < aNum; i++)
     delete (T *)(((void **)m_Items)[anIndex + i]);
   CPointerVector::Delete(anIndex, aNum);
+}
+
+template <class T>
+int CObjectVector<T>::Find(const T& anItem) const
+{
+  for(int i = 0; i < Size(); i++)
+    if (anItem == (*this)[aMid])
+      return i;
+  return -1;
+}
+
+template <class T>
+int CObjectVector<T>::FindInSorted(const T& anItem) const
+{
+  int aLeft = 0, aRight = Size(); 
+  while (aLeft != aRight)
+  {
+    int aMid = (aLeft + aRight) / 2;
+    const T& aMidValue = (*this)[aMid];
+    if (anItem == aMidValue)
+      return aMid;
+    if (anItem < aMidValue)
+      aRight = aMid;
+    else
+      aLeft = aMid + 1;
+  }
+  return -1;
+}
+
+template <class T>
+int CObjectVector<T>::AddToSorted(const T& anItem)
+{
+  int aLeft = 0, aRight = Size(); 
+  while (aLeft != aRight)
+  {
+    int aMid = (aLeft + aRight) / 2;
+    const T& aMidValue = (*this)[aMid];
+    if (anItem == aMidValue)
+    {
+      aRight = aMid + 1;
+      break;
+    }
+    if (anItem < aMidValue)
+      aRight = aMid;
+    else
+      aLeft = aMid + 1;
+  }
+  Insert(aRight, anItem);
+  return aRight;
+}
+
+template <class T>
+int CObjectVector<T>::CompareStringItems(const void *anElem1, const void *anElem2)
+  {  return MyCompare(*(*((const T **)anElem1)), *(*((const T **)anElem2))); }
+
+template <class T>
+void CObjectVector<T>::Sort()
+{
+  CPointerVector &aPointerVector = *this;
+  qsort(&aPointerVector[0], Size(), sizeof(void *), CompareStringItems);
 }
 
 #endif 

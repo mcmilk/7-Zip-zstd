@@ -34,7 +34,7 @@ struct CSwitchResult
 {
   bool ThereIs;
   bool WithMinus;
-  CSysStringVector PostStrings;
+  AStringVector PostStrings;
   int PostCharIndex;
   CSwitchResult(): ThereIs(false) {};
 };
@@ -43,13 +43,13 @@ class CParser
 {
   int m_NumSwitches;
   CSwitchResult *m_Switches;
-  bool ParseString(const CSysString &aString, const CSwitchForm *aSwitchForms); 
+  bool ParseString(const AString &aString, const CSwitchForm *aSwitchForms); 
 public:
-  CSysStringVector m_NonSwitchStrings;
+  AStringVector m_NonSwitchStrings;
   CParser(int aNumSwitches);
   ~CParser();
   void ParseStrings(const CSwitchForm *aSwitchForms, 
-    const CSysStringVector &aCommandStrings);
+    const AStringVector &aCommandStrings);
   const CSwitchResult& operator[](size_t anIndex) const;
 };
 
@@ -64,7 +64,7 @@ struct CCommandForm
 
 // Returns: Index of form and aPostString; -1, if there is no match
 int ParseCommand(int aNumCommandForms, const CCommandForm *aCommandForms, 
-    const CSysString &aCommandString, CSysString &aPostString);
+    const AString &aCommandString, AString &aPostString);
 
 struct CCommandSubCharsSet
 {
@@ -74,7 +74,7 @@ struct CCommandSubCharsSet
 
 // Returns: anIndexes of finded chars; -1 if there is no match
 bool ParseSubCharsCommand(int aNumForms, const CCommandSubCharsSet *aForms, 
-    const CSysString &aCommandString, CIntVector &anIndexes);
+    const AString &aCommandString, CIntVector &anIndexes);
 
 }
 
