@@ -1,0 +1,116 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 299, 202
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Extract"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "E&xtract to:",IDC_STATIC_EXTRACT_EXTRACT_TO,7,7,127,8
+    COMBOBOX        IDC_EXTRACT_COMBO_PATH,7,21,252,126,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "...",IDC_EXTRACT_BUTTON_SET_PATH,272,20,20,14,WS_GROUP
+    GROUPBOX        "Path mode",IDC_EXTRACT_PATH_MODE,7,44,127,57
+    CONTROL         "Full pathnames",IDC_EXTRACT_RADIO_FULL_PATHNAMES,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,13,57,114,10
+    CONTROL         "Current pathnames",IDC_EXTRACT_RADIO_CURRENT_PATHNAMES,
+                    "Button",BS_AUTORADIOBUTTON,13,71,114,10
+    CONTROL         "No pathnames",IDC_EXTRACT_RADIO_NO_PATHNAMES,"Button",
+                    BS_AUTORADIOBUTTON,13,85,114,10
+    GROUPBOX        "Overwrite mode",IDC_EXTRACT_OVERWRITE_MODE,148,44,144,
+                    75,WS_GROUP
+    CONTROL         "Ask before overwrite",
+                    IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,154,57,130,10
+    CONTROL         "Overwrite without prompt",
+                    IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,"Button",
+                    BS_AUTORADIOBUTTON,154,71,130,10
+    CONTROL         "Skip existing files",
+                    IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,"Button",
+                    BS_AUTORADIOBUTTON,154,85,130,10
+    CONTROL         "Auto rename",IDC_EXTRACT_RADIO_AUTO_RENAME,"Button",
+                    BS_AUTORADIOBUTTON,154,99,130,10
+    GROUPBOX        "Files",IDC_EXTRACT_FILES,7,125,127,48,NOT WS_VISIBLE | 
+                    WS_GROUP
+    CONTROL         "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES,
+                    "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_GROUP,
+                    13,137,114,10
+    CONTROL         "&All files",IDC_EXTRACT_RADIO_ALL_FILES,"Button",
+                    BS_AUTORADIOBUTTON | NOT WS_VISIBLE,13,151,114,10
+    GROUPBOX        "Password",IDC_EXTRACT_PASSWORD,148,126,144,46
+    EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,154,138,130,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    CONTROL         "Show Password",IDC_EXTRACT_CHECK_SHOW_PASSWORD,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,157,129,10
+    DEFPUSHBUTTON   "OK",IDOK,80,181,64,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,154,181,64,14
+    PUSHBUTTON      "Help",IDHELP,228,181,64,14
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+

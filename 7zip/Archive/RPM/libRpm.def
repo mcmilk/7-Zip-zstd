@@ -1,0 +1,4 @@
+; dlltool --base-file G:\DOCUME~1\ADMINI~1\LOCALS~1\Temp/cca01344.base --output-exp Rpm.exp --dllname Rpm.dll --output-def libRpm.def --no-export-all-symbols --add-stdcall-alias --exclude-symbol=DllMainCRTStartup@12 --def Rpm.def --output-lib libRpm.a
+EXPORTS
+	GetHandlerProperty @ 1 ; 
+	CreateObject @ 2 ; 

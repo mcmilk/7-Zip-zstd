@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 3.08 beta           2003-08-19
+  --------------------------------------
+      Big source code reconstruction.
+     
+
   Version 2.30 Beta 32        2003-05-15
   --------------------------------------
       Small changes in Deflate decoder.

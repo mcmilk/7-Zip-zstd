@@ -1,0 +1,8 @@
+; GZip.def
+
+LIBRARY gz.dll
+
+EXPORTS
+  CreateObject PRIVATE
+  GetHandlerProperty PRIVATE
+

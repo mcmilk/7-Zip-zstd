@@ -1,0 +1,9 @@
+; Zip.def
+
+LIBRARY Zip.dll
+
+EXPORTS
+  CreateObject PRIVATE
+  GetNumberOfMethods PRIVATE
+  GetMethodProperty PRIVATE
+

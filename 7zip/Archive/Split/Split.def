@@ -1,0 +1,8 @@
+; split.def
+
+LIBRARY split
+
+EXPORTS
+  CreateObject
+  GetHandlerProperty
+

@@ -1,0 +1,8 @@
+; BZip2.def
+
+LIBRARY bz2.dll
+
+EXPORTS
+  CreateObject PRIVATE
+  GetHandlerProperty PRIVATE
+

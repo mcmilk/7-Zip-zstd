@@ -1,0 +1,671 @@
+# Microsoft Developer Studio Project File - Name="SFXCon" - Package Owner=<4>
+# Microsoft Developer Studio Generated Build File, Format Version 6.00
+# ** DO NOT EDIT **
+
+# TARGTYPE "Win32 (x86) Console Application" 0x0103
+
+CFG=SFXCon - Win32 Debug
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
+!MESSAGE 
+!MESSAGE NMAKE /f "SFXCon.mak".
+!MESSAGE 
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "SFXCon.mak" CFG="SFXCon - Win32 Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "SFXCon - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "SFXCon - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE 
+
+# Begin Project
+# PROP AllowPerConfigDependencies 0
+# PROP Scc_ProjName ""
+# PROP Scc_LocalPath ""
+CPP=cl.exe
+RSC=rc.exe
+
+!IF  "$(CFG)" == "SFXCon - Win32 Release"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /Gz /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "COMPRESS_BCJ2" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD BASE RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x419 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\Util\7zSfxCon.exe" /opt:NOWIN98
+# SUBTRACT LINK32 /pdb:none
+
+!ELSEIF  "$(CFG)" == "SFXCon - Win32 Debug"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Debug"
+# PROP BASE Intermediate_Dir "Debug"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "..\..\..\..\\" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /GZ /c
+# ADD BASE RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x419 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\Util\7zSfxCon.exe" /pdbtype:sept
+
+!ENDIF 
+
+# Begin Target
+
+# Name "SFXCon - Win32 Release"
+# Name "SFXCon - Win32 Debug"
+# Begin Group "Spec"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\resource.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\StdAfx.cpp
+# ADD CPP /Yc"StdAfx.h"
+# End Source File
+# Begin Source File
+
+SOURCE=.\StdAfx.h
+# End Source File
+# End Group
+# Begin Group "Archive Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
+# End Source File
+# End Group
+# Begin Group "Console Archiver"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ConsoleClose.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ConsoleClose.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\Extract.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\List.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\List.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\MainAr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\UserInputUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\UserInputUtils.h
+# End Source File
+# End Group
+# Begin Group "7z"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zExtract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zItem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zItem.h
+# End Source File
+# End Group
+# Begin Group "Compress"
+
+# PROP Default_Filter ""
+# Begin Group "LZMA"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
+# End Source File
+# End Group
+# Begin Group "Branch"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\x86.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\x86_2.cpp
+# End Source File
+# End Group
+# Begin Group "PPMD"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\PPMD\PPMDDecoder.cpp
+# End Source File
+# End Group
+# Begin Group "LZ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZ\LZOutWindow.h
+# End Source File
+# End Group
+# Begin Group "Copy"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# End Group
+# Begin Group "Crypto"
+
+# PROP Default_Filter ""
+# Begin Group "7zAES"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\7zAES.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\7zAES.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\MySHA256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\SHA256.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\SHA256.h
+# End Source File
+# End Group
+# Begin Group "AES"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\AES_CBC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aescpp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aescrypt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aeskey.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aesopt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\aestab.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\MyAES.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AES\MyAES.h
+# End Source File
+# End Group
+# End Group
+# Begin Group "SDK"
+
+# PROP Default_Filter ""
+# End Group
+# Begin Group "Windows"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Error.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Error.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileDir.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileDir.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileFind.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileIO.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileIO.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariant.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariant.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariantConversions.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariantConversions.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Synchronization.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.h
+# End Source File
+# End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\CommandLineParser.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CommandLineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CRC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StdInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StdInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StdOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\String.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\String.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringConvert.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Vector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Vector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Wildcard.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Wildcard.h
+# End Source File
+# End Group
+# Begin Group "7zip Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\InBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\InBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\LimitedStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\LimitedStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MultiStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OffsetStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OffsetStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamBinder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamBinder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.h
+# End Source File
+# End Group
+# Begin Group "UI"
+
+# PROP Default_Filter ""
+# Begin Group "UI Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiverInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiverInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\DefaultName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\OpenArchive.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\OpenArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\PropIDUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\PropIDUtils.h
+# End Source File
+# End Group
+# End Group
+# Begin Source File
+
+SOURCE=.\7z.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\Main.cpp
+# End Source File
+# End Target
+# End Project

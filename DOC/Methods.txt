@@ -1,5 +1,5 @@
-Compression method IDs (2.30 Beta 29)
-------------------------------------
+Compression method IDs (3.08 beta)
+----------------------------------
 
 Each compression method in 7z has unique binary value (ID).
 The length of ID in bytes is arbitrary but it can not exceed 15 bytes.

@@ -1,0 +1,10 @@
+; Rar20.def
+
+LIBRARY Rar20.dll
+
+EXPORTS
+
+  CreateObject PRIVATE
+  GetNumberOfMethods PRIVATE
+  GetMethodProperty PRIVATE
+

@@ -1,0 +1,81 @@
+// Common/CommandLineParser.h
+
+#pragma once
+
+#ifndef __COMMON_COMMANDLINEPARSER_H
+#define __COMMON_COMMANDLINEPARSER_H
+
+#include "Common/String.h"
+
+namespace NCommandLineParser {
+
+namespace NSwitchType {
+  enum EEnum
+  { 
+    kSimple,
+    kPostMinus,
+    kLimitedPostString,
+    kUnLimitedPostString,
+    kPostChar
+  };
+}
+
+struct CSwitchForm
+{
+  const wchar_t *IDString;
+  NSwitchType::EEnum Type;
+  bool Multi;
+  int MinLen;
+  int MaxLen;
+  const wchar_t *PostCharSet;
+};
+
+struct CSwitchResult
+{
+  bool ThereIs;
+  bool WithMinus;
+  UStringVector PostStrings;
+  int PostCharIndex;
+  CSwitchResult(): ThereIs(false) {};
+};
+  
+class CParser
+{
+  int _numSwitches;
+  CSwitchResult *_switches;
+  bool ParseString(const UString &s, const CSwitchForm *switchForms); 
+public:
+  UStringVector _nonSwitchStrings;
+  CParser(int numSwitches);
+  ~CParser();
+  void ParseStrings(const CSwitchForm *switchForms, 
+    const UStringVector &commandStrings);
+  const CSwitchResult& operator[](size_t index) const;
+};
+
+/////////////////////////////////
+// Command parsing procedures
+
+struct CCommandForm
+{
+  wchar_t *IDString;
+  bool PostStringMode;
+};
+
+// Returns: Index of form and postString; -1, if there is no match
+int ParseCommand(int numCommandForms, const CCommandForm *commandForms, 
+    const UString &commandString, UString &postString);
+
+struct CCommandSubCharsSet
+{
+  wchar_t *Chars;
+  bool EmptyAllowed;
+};
+
+// Returns: indices of finded chars; -1 if there is no match
+bool ParseSubCharsCommand(int numForms, const CCommandSubCharsSet *forms, 
+    const UString &commandString, CIntVector &indices);
+
+}
+
+#endif

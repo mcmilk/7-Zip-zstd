@@ -1,0 +1,7 @@
+LIBRARY LZMA
+
+EXPORTS
+  CreateObject 
+  GetNumberOfMethods
+  GetMethodProperty
+

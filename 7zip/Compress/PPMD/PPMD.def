@@ -1,0 +1,9 @@
+; PPMD.def
+
+LIBRARY   PPMD.dll
+
+EXPORTS
+  CreateObject PRIVATE
+  GetNumberOfMethods PRIVATE
+  GetMethodProperty PRIVATE
+

@@ -1,0 +1,8 @@
+; rpm.def
+
+LIBRARY rpm
+
+EXPORTS
+  CreateObject
+  GetHandlerProperty
+

@@ -1,0 +1,159 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog\\resource.rc""\r\n"
+    "#include ""..\\..\\UI\\Resource\\Extract\\resource.rc""\r\n"
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON3               ICON    DISCARDABLE     "7z.ico"
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 3,8,1,0
+ PRODUCTVERSION 3,8,1,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Igor Pavlov\0"
+            VALUE "FileDescription", "7z SFX\0"
+            VALUE "FileVersion", "3, 8, 1, 0\0"
+            VALUE "InternalName", "7zWin.sfx\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "7zWin.sfx\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "7-Zip\0"
+            VALUE "ProductVersion", "3, 8, 1, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 228, 78
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "7-Zip self-extracting archive"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "E&xtract to:",IDC_STATIC_EXTRACT_EXTRACT_TO,7,7,33,8
+    EDITTEXT        IDC_EXTRACT_COMBO_PATH,7,21,184,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_EXTRACT_BUTTON_SET_PATH,203,20,18,14,WS_GROUP
+    DEFPUSHBUTTON   "Extract",IDOK,111,57,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,171,57,50,14
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#include "..\..\FileManager\Resource\OverwriteDialog\resource.rc"
+#include "..\..\FileManager\Resource\PasswordDialog\resource.rc"
+#include "..\..\FileManager\Resource\MessagesDialog\resource.rc"
+#include "..\..\FileManager\Resource\ProgressDialog\resource.rc"
+#include "..\..\UI\Resource\Extract\resource.rc"
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
