@@ -75,7 +75,7 @@ HRESULT CFolderInStream::CloseStream()
   return S_OK;
 }
 
-STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CFolderInStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
 {
   UINT32 realProcessedSize = 0;
   while ((_fileIndex < _numFiles || _fileIsOpen) && size > 0)
@@ -93,6 +93,7 @@ STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSiz
       realProcessedSize += localProcessedSize;
       _filePos += localProcessedSize;
       size -= localProcessedSize;
+      break;
     }
     else
     {
@@ -104,9 +105,21 @@ STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSiz
   return S_OK;
 }
 
-STDMETHODIMP CFolderInStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSize)
 {
-  return Read(data, size, processedSize);
+  UINT32 realProcessedSize = 0;
+  while (size > 0)
+  {
+    UINT32 localProcessedSize;
+    RINOK(ReadPart(((BYTE *)data) + realProcessedSize, size, &localProcessedSize));
+    if (localProcessedSize == 0)
+      break;
+    size -= localProcessedSize;
+    realProcessedSize += localProcessedSize;
+  }
+  if (processedSize != 0)
+    *processedSize = realProcessedSize;
+  return S_OK;
 }
 
 

@@ -90,6 +90,9 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
 {
   UINT64 nowPos = 0;
 
+  if (inSize != NULL && *inSize == 0)
+    return S_OK;
+
   BYTE header[kHeaderSize];
   UINT32 processedSize;
   RETURN_IF_NOT_S_OK(inStream->Read(header, kHeaderSize, &processedSize));

@@ -44,11 +44,12 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
   bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
   bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
   bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-  bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+  bool rightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
   bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   result = 0;
 
-  if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' && RightCtrl)
+  if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' && 
+      (rightCtrl || alt))
   {
     int index = keyDownInfo->wVKey - '0';
     if (shift)
@@ -265,6 +266,13 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
       if(ctrl)
       {
         OnReload();
+        return true;
+      }
+      return false;
+    case 'Z':
+      if(ctrl)
+      {
+        ChangeComment();
         return true;
       }
       return false;

@@ -81,8 +81,7 @@ private:
 
 
   void CreateComplexDirectory(const UStringVector &aDirPathParts);
-  void GetPropertyValue(LPITEMIDLIST anItemIDList, PROPID aPropId, 
-      PROPVARIANT *aValue);
+
   bool IsEncrypted(LPITEMIDLIST anItemIDList);
   void AddErrorMessage(LPCTSTR aMessage);
 public:

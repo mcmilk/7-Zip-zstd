@@ -71,6 +71,7 @@ static HRESULT GetStreamCRC(IInStream *inStream, UINT32 &resultCRC)
 HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream, 
       UINT64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
+  /*
   if(inSize == 0)
   {
     operationResult.PackSize = 0;
@@ -78,9 +79,10 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
     operationResult.ExtractVersion = kExtractVersionForEmptyStream;
     return S_OK;
   }
+  */
   int aNumTestMethods = _options.MethodSequence.Size();
   BYTE method;
-  UINT64 aResultSize = 0;
+  UINT64 resultSize = 0;
   for(int i = 0; i < aNumTestMethods; i++)
   {
     if (_options.PasswordIsDefined)
@@ -215,12 +217,17 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
         break;
       }
     }
-    outStream->Seek(0, STREAM_SEEK_CUR, &aResultSize);
-    if(aResultSize < inSize) 
+    outStream->Seek(0, STREAM_SEEK_CUR, &resultSize);
+    if (_options.PasswordIsDefined)
+    {
+      if(resultSize < inSize  + 12) 
+        break;
+    }
+    else if(resultSize < inSize) 
       break;
   }
-  outStream->SetSize(aResultSize);
-  operationResult.PackSize = aResultSize;
+  outStream->SetSize(resultSize);
+  operationResult.PackSize = resultSize;
   operationResult.Method = method;
   return S_OK;
 }

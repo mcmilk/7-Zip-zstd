@@ -56,7 +56,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidCreationTime, VT_FILETIME},
   { NULL, kpidLastWriteTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
-
+  { NULL, kpidIsAnti, VT_BOOL}
 };
 
 STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG **enumerator)
@@ -93,6 +93,31 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UINT32 index, PROPID propID, PR
 {
   const CUpdatePairInfo2 &updatePair = (*m_UpdatePairs)[index];
   NWindows::NCOM::CPropVariant propVariant;
+
+  if (propID == kpidIsAnti)
+  {
+    propVariant = updatePair.IsAnti;
+    propVariant.Detach(value);
+    return S_OK;
+  }
+  
+  if (updatePair.IsAnti)
+  {
+    switch(propID)
+    {
+      case kpidIsFolder:
+      case kpidPath:
+        break;
+      case kpidSize:
+        propVariant = (UINT64)0;
+        propVariant.Detach(value);
+        return S_OK;
+      default:
+        propVariant.Detach(value);
+        return S_OK;
+    }
+  }
+ 
   if(updatePair.ExistOnDisk)
   {
     const CArchiveStyleDirItemInfo &dirItemInfo = 
@@ -120,11 +145,6 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UINT32 index, PROPID propID, PR
       case kpidLastWriteTime:
         propVariant = dirItemInfo.LastWriteTime;
         break;
-      /*
-      case kpidIsAnti:
-        propVariant = updatePair.IsAnti;
-        break;
-      */
     }
   }
   else

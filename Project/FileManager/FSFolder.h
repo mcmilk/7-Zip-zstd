@@ -12,6 +12,8 @@
 
 #include "FolderInterface.h"
 
+#include "TextPairs.h"
+
 class CFSFolder;
 
 struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfo
@@ -78,6 +80,7 @@ DECLARE_NO_REGISTRY()
       const wchar_t *path, IFolderOperationsExtractCallback *callback);
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
+  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
   // STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
 
 private:
@@ -87,11 +90,18 @@ private:
   CComPtr<IFolderFolder> _parentFolder;
 
   bool _findChangeNotificationDefined;
+
+  bool _commentsAreLoaded;
+  CPairsStorage _comments;
+
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
   HRESULT GetItemFullSize(int index, UINT64 &size, IProgress *progress);
   HRESULT GetComplexName(const wchar_t *name, CSysString &resultPath);
   HRESULT BindToFolderSpec(const TCHAR *name, IFolderFolder **resultFolder);
+
+  bool LoadComments();
+  bool SaveComments();
 public:
   HRESULT Init(const CSysString &aPath, IFolderFolder *aParentFolder);
 };

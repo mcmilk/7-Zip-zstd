@@ -336,6 +336,7 @@ public:
   void EditItem(int index);
 
   void RenameFile();
+  void ChangeComment();
 
   void SetListViewMode(UINT32 index);
   UINT32 GetListViewMode() { return _ListViewMode; };

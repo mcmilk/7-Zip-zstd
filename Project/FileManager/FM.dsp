@@ -720,6 +720,14 @@ SOURCE=..\..\SDK\Common\StdInStream.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\SDK\Common\StdOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\SDK\Common\String.h
 # End Source File
 # Begin Source File
@@ -905,6 +913,14 @@ SOURCE=.\SysIconUtils.cpp
 # Begin Source File
 
 SOURCE=.\SysIconUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TextPairs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\TextPairs.h
 # End Source File
 # End Target
 # End Project

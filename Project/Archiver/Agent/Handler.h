@@ -97,6 +97,8 @@ DECLARE_NO_REGISTRY()
       const wchar_t *path, IFolderOperationsExtractCallback *callback);
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
+  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
+
 
 #endif
 

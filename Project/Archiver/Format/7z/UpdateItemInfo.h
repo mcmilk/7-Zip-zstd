@@ -17,8 +17,8 @@ struct CUpdateRange
   UINT64 Position; 
   UINT64 Size;
   CUpdateRange() {};
-  CUpdateRange(UINT32 aPosition, UINT32 aSize):
-      Position(aPosition), Size(aSize) {};
+  CUpdateRange(UINT64 position, UINT64 size):
+      Position(position), Size(size) {};
 };
 
 struct CUpdateItemInfo

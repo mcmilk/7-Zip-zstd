@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 28        2003-02-16
+  --------------------------------------
+      Processing anti-files was corrected.
+
+  
   Version 2.30 Beta 27        2003-01-24
   --------------------------------------
       Project/Archiver/Format/Common/ArchiveInterface.h:

@@ -7,7 +7,7 @@
 
 #include "Common/Defs.h"
 
-const kNumPercentSpaces = 64;
+const kNumPercentSpaces = 70;
 class CPercentPrinter
 {
   UINT64 m_MinStepSize;
@@ -18,10 +18,10 @@ class CPercentPrinter
   char m_Spaces[kNumPercentSpaces + 1];
   bool m_StringIsPrinted;
 public:
-  CPercentPrinter(UINT64 aMinStepSize = 1);
-  void SetTotal(UINT64 aTotal)
+  CPercentPrinter(UINT64 minStepSize = 1);
+  void SetTotal(UINT64 total)
   {
-    m_Total = aTotal;
+    m_Total = total;
     m_PrevValue = 0;
     m_StringIsPrinted = false;
   }
@@ -29,7 +29,7 @@ public:
   void PrintNewLine();
   void PreparePrint();
   void ClosePrint();
-  void SetRatio(UINT64 aDoneValue);
+  void SetRatio(UINT64 doneValue);
   void RePrintRatio();
   void PrintRatio();
 };

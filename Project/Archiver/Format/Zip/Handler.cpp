@@ -430,7 +430,8 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                   mixerCoderMethod = itemInfo.CompressionMethod;
                 }
                 mixerCoderSpec->ReInit();
-                mixerCoderSpec->SetCoderInfo(0, NULL, &currentItemUnPacked);
+                mixerCoderSpec->SetCoderInfo(0, &currentItemPacked, 
+                    &currentItemUnPacked);
                 mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
                 mixerCoderSpec->SetProgressCoderIndex(1);
                 RINOK(mixerCoder->Code(anInStream, outStream,
@@ -492,6 +493,7 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                   mixerCoderMethod = itemInfo.CompressionMethod;
                 }
                 mixerCoderSpec->ReInit();
+                mixerCoderSpec->SetCoderInfo(0, &currentItemPacked, NULL);
                 mixerCoderSpec->SetCoderInfo(1, NULL, &currentItemUnPacked);
                 mixerCoderSpec->SetProgressCoderIndex(1);
                 result = mixerCoder->Code(anInStream, outStream, 

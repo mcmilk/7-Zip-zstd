@@ -133,6 +133,7 @@ public:
       const wchar_t *path, IFolderOperationsExtractCallback *callback) = 0;
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress) = 0;
+  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000800070000}

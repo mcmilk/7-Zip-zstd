@@ -55,7 +55,7 @@ static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 const char *kLZMAMethodName = "LZMA";
 
 const UINT32 kAlgorithmForX = (2);
-const UINT32 kDicSizeForX = (1 << 22);
+const UINT32 kDicSizeForX = (1 << 23);
 const UINT32 kFastBytesForX = (64);
 
 const UINT32 kAlgorithmForFast = (0);
@@ -450,6 +450,15 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
     updateItemInfo.NewData = IntToBool(newData);
     updateItemInfo.IndexInArchive = indexInArchive;
     updateItemInfo.IndexInClient = i;
+    updateItemInfo.IsAnti = false;
+    updateItemInfo.Size = 0;
+
+    if (updateItemInfo.IndexInArchive != -1)
+    {
+      const CFileItemInfo &fileItem = _database.Files[updateItemInfo.IndexInArchive];
+      updateItemInfo.Name = fileItem.Name;
+      updateItemInfo.IsDirectory = fileItem.IsDirectory;
+    }
 
     if (updateItemInfo.NewProperties)
     {
@@ -532,9 +541,6 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
           updateItemInfo.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
       }
 
-      if (!folderStatusIsDefined)
-        updateItemInfo.SetDirectoryStatusFromAttributes();
-
       if (updateItemInfo.IsAnti)
       {
         updateItemInfo.AttributesAreDefined = false;
@@ -542,10 +548,13 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
         updateItemInfo.LastWriteTimeIsDefined = false;
         updateItemInfo.Size = 0;
       }
+
+      if (!folderStatusIsDefined && updateItemInfo.AttributesAreDefined)
+        updateItemInfo.SetDirectoryStatusFromAttributes();
     }
 
-    if (updateItemInfo.NewData)
-    {
+    if (!updateItemInfo.IsAnti)
+      if (updateItemInfo.NewData)
       {
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
@@ -553,13 +562,8 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
           return E_INVALIDARG;
         updateItemInfo.Size = *(const UINT64 *)(&propVariant.uhVal);
       }
-    }
-    else
-    {
-      thereIsCopyData = true;
-      // compressStatuses.Add(false);
-      // copyIndices.Add(indexInArchive);
-    }
+      else
+        thereIsCopyData = true;
 
     updateItems.Add(updateItemInfo);
   }

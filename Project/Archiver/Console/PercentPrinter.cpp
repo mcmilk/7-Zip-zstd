@@ -5,18 +5,12 @@
 #include "PercentPrinter.h"
 #include "Common/StdOutStream.h"
 
-static const DWORD kDecimalBaseAfterPoint = 10;
-static const DWORD kRatioBase = 100 * kDecimalBaseAfterPoint;
+static const char *kPrepareString = "    ";
+static const char *kCloseString = "\b\b\b\b    \b\b\b\b";
+static const char *kPercentFormatString =  "\b\b\b\b%3I64u%%";
 
-static const char *kPrepareString = "      ";
-static const char *kCloseString = "\b\b\b\b\b\b      \b\b\b\b\b\b";
-
-static const char *kPercentFormatString =  "\b\b\b\b\b\b%3I64u.%1u%%";
-
-const kPercentScreePos = 64;
-
-CPercentPrinter::CPercentPrinter(UINT64 aMinStepSize):
-  m_MinStepSize(aMinStepSize),
+CPercentPrinter::CPercentPrinter(UINT64 minStepSize):
+  m_MinStepSize(minStepSize),
   m_ScreenPos(0),
   m_StringIsPrinted(false)
 {
@@ -52,18 +46,17 @@ void CPercentPrinter::PrintNewLine()
   m_StringIsPrinted = false;
 }
 
-void CPercentPrinter::SetRatio(UINT64 aDoneValue)
-  { m_CurValue = aDoneValue; }
+void CPercentPrinter::SetRatio(UINT64 doneValue)
+  { m_CurValue = doneValue; }
 
 void CPercentPrinter::RePrintRatio()
 {
   if (m_Total == 0)
     return;
-  char aString[32];
-  UINT64 aRatio = m_CurValue * 1000 / m_Total;
-  sprintf(aString, kPercentFormatString, aRatio / kDecimalBaseAfterPoint, 
-      UINT32(aRatio % kDecimalBaseAfterPoint));
-  g_StdOut << aString;
+  char temp[32];
+  UINT64 ratio = m_CurValue * 100 / m_Total;
+  sprintf(temp, kPercentFormatString, ratio);
+  g_StdOut << temp;
   m_PrevValue = m_CurValue;
   m_StringIsPrinted = true;
 }

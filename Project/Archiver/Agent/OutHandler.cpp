@@ -420,15 +420,28 @@ HRESULT CAgent::RenameItem(
 
         updatePair.NewName = newItemName;
 
-        NCOM::CPropVariant propVariant;
-        RETURN_IF_NOT_S_OK(_archive->GetProperty(
+        UString oldFullPath;
+        {
+          NCOM::CPropVariant propVariant;
+          RINOK(_archive->GetProperty(
             updatePair.ArchiveItemIndex, kpidPath, &propVariant));
-        if (propVariant.vt != VT_BSTR)
-          return E_INVALIDARG;
-
-        UString oldFullPath = propVariant.bstrVal;
+          if (propVariant.vt != VT_BSTR)
+            return E_INVALIDARG;
+          oldFullPath = propVariant.bstrVal;
+        }
         if (oldItemPath.CollateNoCase(oldFullPath.Left(oldItemPath.Length())) != 0)
           return E_INVALIDARG;
+
+        {
+          NCOM::CPropVariant propVariant;
+          RINOK(_archive->GetProperty(i, kpidIsAnti, &propVariant));
+          if (propVariant.vt == VT_EMPTY)
+            updatePair.IsAnti = false;
+          else if (propVariant.vt != VT_BOOL)
+            return E_INVALIDARG;
+          else
+            updatePair.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
+        }
 
         updatePair.NewName = newItemPath + oldFullPath.Mid(oldItemPath.Length());
 

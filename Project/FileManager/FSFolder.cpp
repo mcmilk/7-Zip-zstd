@@ -5,6 +5,10 @@
 #include "FSFolder.h"
 
 #include "Common/StringConvert.h"
+#include "Common/StdInStream.h"
+#include "Common/StdOutStream.h"
+#include "Common/UTFConvert.h"
+
 #include "Interface/PropID.h"
 #include "Interface/EnumStatProp.h"
 #include "Windows/Defs.h"
@@ -29,7 +33,8 @@ static STATPROPSTG kProperties[] =
   { NULL, kpidCreationTime, VT_FILETIME},
   { NULL, kpidLastAccessTime, VT_FILETIME},
   { NULL, kpidLastWriteTime, VT_FILETIME},
-  { NULL, kpidAttributes, VT_UI4}
+  { NULL, kpidAttributes, VT_UI4},
+  { NULL, kpidComment, VT_BSTR}
 };
 
 static inline UINT GetCurrentFileCodePage()
@@ -110,7 +115,53 @@ STDMETHODIMP CFSFolder::LoadItems()
     _files.Add(fileInfo);
   }
   // OutputDebugString(TEXT("Finish\n"));
+  _commentsAreLoaded = false;
   return S_OK;
+}
+
+bool CFSFolder::LoadComments()
+{
+  if (_commentsAreLoaded)
+    return true;
+  _comments.Clear();
+  _commentsAreLoaded = true;
+  CStdInStream file;
+  if (!file.Open(_path + TEXT("descript.ion")))
+    return false;
+  AString string;
+  file.ReadToString(string);
+  file.Close();
+  UString unicodeString;
+  if (!ConvertUTF8ToUnicode(string, unicodeString))
+    return false;
+  return _comments.ReadFromString(unicodeString);
+}
+
+static bool IsAscii(const UString &testString)
+{
+  for (int i = 0; i < testString.Length(); i++)
+    if (testString[i] >= 0x80)
+      return false;
+  return true;
+}
+
+bool CFSFolder::SaveComments()
+{
+  CStdOutStream file;
+  if (!file.Open(_path + TEXT("descript.ion")))
+    return false;
+  UString unicodeString;
+  _comments.SaveToString(unicodeString);
+  AString utfString;
+  ConvertUnicodeToUTF8(unicodeString, utfString);
+  if (!IsAscii(unicodeString))
+  {
+    file << char(0xEF) << char(0xBB) << char(0xBF) << char('\n');
+  }
+  file << utfString;
+  file.Close();
+  _commentsAreLoaded = false;
+  return true;
 }
 
 STDMETHODIMP CFSFolder::GetNumberOfItems(UINT32 *numItems)
@@ -170,6 +221,12 @@ STDMETHODIMP CFSFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT
       break;
     case kpidLastWriteTime:
       propVariant = fileInfo.LastWriteTime;
+      break;
+    case kpidComment:
+      LoadComments();
+      UString comment;
+      if (_comments.GetValue(GetUnicodeString(fileInfo.Name), comment))
+        propVariant = comment;
       break;
   }
   propVariant.Detach(value);
@@ -419,6 +476,43 @@ STDMETHODIMP CFSFolder::Delete(const UINT32 *indices, UINT32 numItems,
       return GetLastError();
     UINT64 completed = i;
     RETURN_IF_NOT_S_OK(progress->SetCompleted(&completed));
+  }
+  return S_OK;
+}
+
+STDMETHODIMP CFSFolder::SetProperty(UINT32 index, PROPID propID, 
+    const PROPVARIANT *value, IProgress *progress)
+{
+  if (index >= _files.Size())
+    return E_INVALIDARG;
+  CFileInfoEx &fileInfo = _files[index];
+  switch(propID)
+  {
+    case kpidComment:
+    {
+      UString filename = GetUnicodeString(fileInfo.Name);
+      filename.Trim();
+      if (value->vt == VT_EMPTY)
+        _comments.DeletePair(filename);
+      else if (value->vt == VT_BSTR)
+      {
+        CTextPair pair;
+        pair.ID = filename;
+        pair.ID.Trim();
+        pair.Value = value->bstrVal;
+        pair.Value.Trim();
+        if (pair.Value.IsEmpty())
+          _comments.DeletePair(filename);
+        else
+          _comments.AddPair(pair);
+      }
+      else
+        return E_INVALIDARG;
+      SaveComments();
+      break;
+    }
+    default:
+      return E_NOTIMPL;
   }
   return S_OK;
 }

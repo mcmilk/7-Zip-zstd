@@ -31,14 +31,14 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
   while(true)
   {
     UINT32 realProcessedSize;
-    RETURN_IF_NOT_S_OK(inStream->Read(_buffer, kBufferSize, &realProcessedSize));
+    RINOK(inStream->ReadPart(_buffer, kBufferSize, &realProcessedSize));
     if(realProcessedSize == 0)
       break;
-    RETURN_IF_NOT_S_OK(outStream->Write(_buffer, realProcessedSize, NULL));
+    RINOK(outStream->Write(_buffer, realProcessedSize, NULL));
     TotalSize += realProcessedSize;
     if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&TotalSize, &TotalSize));
+      RINOK(progress->SetRatioInfo(&TotalSize, &TotalSize));
     }
   }
   return S_OK;

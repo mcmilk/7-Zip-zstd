@@ -72,30 +72,6 @@ STDMETHODIMP CUpdateCallbackImp::SetCompleted(const UINT64 *completeValue)
   return S_OK;
 }
 
-/*
-STDMETHODIMP CUpdateCallbackImp::GetUpdateItemInfo2(INT32 index, 
-      INT32 *compress, // 1 - compress 0 - copy
-      INT32 *existInArchive, // 1 - exist, 0 - not exist
-      INT32 *indexInServer,
-      UINT32 *attributes,
-      FILETIME *creationTime, 
-      FILETIME *lastAccessTime, 
-      FILETIME *lastWriteTime, 
-      UINT64 *size, 
-      BSTR *name, 
-      INT32 *isAnti)
-{
-  if (isAnti != NULL)
-  {
-    const CUpdatePairInfo2 &updatePair = (*m_UpdatePairs)[index];
-    *isAnti = BoolToInt(updatePair.IsAnti);
-  }
-  return GetUpdateItemInfo(index, compress, existInArchive, 
-      indexInServer, attributes, creationTime, lastAccessTime, 
-      lastWriteTime, size, name);
-}
-*/
-
 STATPROPSTG kProperties[] = 
 {
   { NULL, kpidPath, VT_BSTR},
@@ -105,7 +81,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidCreationTime, VT_FILETIME},
   { NULL, kpidLastWriteTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
-
+  { NULL, kpidIsAnti, VT_BOOL}
 };
 
 STDMETHODIMP CUpdateCallbackImp::EnumProperties(IEnumSTATPROPSTG **enumerator)
@@ -138,6 +114,31 @@ STDMETHODIMP CUpdateCallbackImp::GetProperty(UINT32 index, PROPID propID, PROPVA
 {
   const CUpdatePairInfo2 &updatePair = (*m_UpdatePairs)[index];
   NWindows::NCOM::CPropVariant propVariant;
+  
+  if (propID == kpidIsAnti)
+  {
+    propVariant = updatePair.IsAnti;
+    propVariant.Detach(value);
+    return S_OK;
+  }
+
+  if (updatePair.IsAnti)
+  {
+    switch(propID)
+    {
+      case kpidIsFolder:
+      case kpidPath:
+        break;
+      case kpidSize:
+        propVariant = (UINT64)0;
+        propVariant.Detach(value);
+        return S_OK;
+      default:
+        propVariant.Detach(value);
+        return S_OK;
+    }
+  }
+  
   if(updatePair.ExistOnDisk)
   {
     const CArchiveStyleDirItemInfo &dirItemInfo = 
@@ -165,10 +166,7 @@ STDMETHODIMP CUpdateCallbackImp::GetProperty(UINT32 index, PROPID propID, PROPVA
       case kpidLastWriteTime:
         propVariant = dirItemInfo.LastWriteTime;
         break;
-      case kpidIsAnti:
-        propVariant = updatePair.IsAnti;
-        break;
-     }
+    }
   }
   propVariant.Detach(value);
   return S_OK;

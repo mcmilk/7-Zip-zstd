@@ -422,6 +422,10 @@ SOURCE=..\..\Compress\Interface\CompressInterface.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\FolderArchiveInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Format\Common\FormatCryptoInterface.h
 # End Source File
 # End Group

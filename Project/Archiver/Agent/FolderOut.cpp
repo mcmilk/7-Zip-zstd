@@ -206,3 +206,9 @@ STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *name, IProgress *progress)
 {
   return E_NOTIMPL;
 }
+
+STDMETHODIMP CAgentFolder::SetProperty(UINT32 index, PROPID propID, 
+    const PROPVARIANT *value, IProgress *progress)
+{
+  return E_NOTIMPL;
+}

@@ -217,3 +217,42 @@ void CPanel::RenameFile()
     _listView.EditLabel(index);
 }
 
+void CPanel::ChangeComment()
+{
+  int index = _listView.GetFocusedItem();
+  if (index < 0)
+    return;
+  CComPtr<IFolderOperations> folderOperations;
+  if (_folder.QueryInterface(&folderOperations) != S_OK)
+  {
+    MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    return;
+  }
+
+  int realIndex = GetRealItemIndex(index);
+  UString comment; 
+  {
+    NCOM::CPropVariant propVariant;
+    if (_folder->GetProperty(realIndex, kpidComment, &propVariant) != S_OK)
+      return;
+    if (propVariant.vt == VT_BSTR)
+      comment = propVariant.bstrVal;
+    else if (propVariant.vt != VT_EMPTY)
+      return;
+  }
+  UString name = GetItemName(realIndex);
+  CComboDialog comboDialog;
+  comboDialog.Title = GetSystemString(name) + TEXT(" comment");
+  comboDialog.Value = GetSystemString(comment);
+  comboDialog.Static = TEXT("&Comment:");
+  if (comboDialog.Create(GetParent()) == IDCANCEL)
+    return;
+  NCOM::CPropVariant propVariant = GetUnicodeString(comboDialog.Value);
+  HRESULT result = folderOperations->SetProperty(realIndex, kpidComment, &propVariant, NULL);
+  if (result != S_OK)
+  {
+    MessageBoxError(result, L"Set Comment Error");
+  }
+  RefreshListCtrlSaveFocused();
+}
+
