@@ -48,7 +48,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 14  Copyright (c) 1999-2002 Igor Pavlov  2002-02-10\n";
+" 2.30 Beta 15  Copyright (c) 1999-2002 Igor Pavlov  2002-02-17\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");

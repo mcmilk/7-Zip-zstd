@@ -52,6 +52,8 @@ const char *kLZMAMethodName = "LZMA";
 // const char *kDeflateMethodName = "Deflate";
 
 const UINT32 kDicSizeForX = (1 << 22);
+const UINT32 kFastBytesForX = (64);
+const UINT32 kAlgorithmForX = (2);
 
 const char *kDefaultMethodName = kLZMAMethodName;
 
@@ -129,7 +131,8 @@ CNameToPropID g_NameToPropID[] =
   { NEncodedStreamProperies::kLitPosBits, VT_UI4, "LP", true  },
 
   { NEncodingProperies::kNumPasses, VT_UI4, "Pass", false },
-  { NEncodingProperies::kNumFastBytes, VT_UI4, "fb", false }
+  { NEncodingProperies::kNumFastBytes, VT_UI4, "fb", false },
+  { NEncodingProperies::kAlgorithm, VT_UI4, "a", false }
 };
 
 bool ConvertProperty(PROPVARIANT aPropFrom, VARTYPE aVarType, 
@@ -206,6 +209,26 @@ HRESULT CHandler::SetCompressionMethod(CCompressionMethodMode &aMethodMode,
           aProperty.PropID = NEncodedStreamProperies::kDictionarySize;
           aProperty.Value = m_DefaultDicSize;
           anOneMethodInfo.CoderProperties.Add(aProperty);
+        }
+        for (j = 0; j < anOneMethodInfo.EncoderProperties.Size(); j++)
+          if (anOneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kAlgorithm)
+            break;
+        if (j == anOneMethodInfo.EncoderProperties.Size())
+        {
+          CProperty aProperty;
+          aProperty.PropID = NEncodingProperies::kAlgorithm;
+          aProperty.Value = m_DefaultAlgorithm;
+          anOneMethodInfo.EncoderProperties.Add(aProperty);
+        }
+        for (j = 0; j < anOneMethodInfo.EncoderProperties.Size(); j++)
+          if (anOneMethodInfo.EncoderProperties[j].PropID == NEncodingProperies::kNumFastBytes)
+            break;
+        if (j == anOneMethodInfo.EncoderProperties.Size())
+        {
+          CProperty aProperty;
+          aProperty.PropID = NEncodingProperies::kNumFastBytes;
+          aProperty.Value = (UINT32)m_DefaultFastBytes;
+          anOneMethodInfo.EncoderProperties.Add(aProperty);
         }
       }
     }
@@ -647,7 +670,11 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *aVal
       if (aValue.vt == VT_EMPTY)
       {
         if (aName.CompareNoCase("X") == 0)
+        {
           m_DefaultDicSize = kDicSizeForX;
+          m_DefaultFastBytes = kFastBytesForX;
+          m_DefaultAlgorithm = kAlgorithmForX;
+        }
         continue;
       }
     }

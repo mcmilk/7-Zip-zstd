@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 15        2002-02-17
+  --------------------------------------
+    - Compression ratio in LZMA was slightly improved:
+        Project/Compress/LZ/LZMA/Encoder.*
+        Project/Archiver/Format/7z/OutHandler.cpp 
+
+  
   Version 2.30 Beta 14        2002-02-10
   --------------------------------------
     - Supporting multithreading for LZMA:

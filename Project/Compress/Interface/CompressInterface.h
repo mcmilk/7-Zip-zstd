@@ -83,7 +83,8 @@ namespace NEncodingProperies
   enum EEnum
   {
     kNumPasses = 0x800, 
-    kNumFastBytes
+    kNumFastBytes,
+    kAlgorithm = 0x810
   };
 }
 

@@ -96,6 +96,8 @@ private:
   bool m_Solid;
   bool m_CompressHeaders;
   UINT32 m_DefaultDicSize;
+  UINT32 m_DefaultAlgorithm;
+  UINT32 m_DefaultFastBytes;
   bool m_MultiThread;
   UINT32 m_MultiThreadMult;
 
@@ -110,6 +112,8 @@ private:
     m_CompressHeaders = true;
     m_MultiThread = false;
     m_DefaultDicSize = (1 << 20);
+    m_DefaultAlgorithm = 1;
+    m_DefaultFastBytes = 32;
     #endif
   }
 };

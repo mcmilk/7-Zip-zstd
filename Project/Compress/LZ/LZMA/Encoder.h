@@ -33,12 +33,19 @@ public:
 struct COptimal
 {
   CState State;
+
+  bool Prev1IsChar;
+  bool Prev2;
+
+  UINT32 PosPrev2;
+  UINT32 BackPrev2;     
+
   UINT32 Price;    
   UINT32 PosPrev;         // posNext;
   UINT32 BackPrev;     
   UINT32 Backs[kNumRepDistances];
-  void MakeAsChar() { BackPrev = UINT32(-1); }
-  void MakeAsShortRep() { BackPrev = 0; }
+  void MakeAsChar() { BackPrev = UINT32(-1); Prev1IsChar = false; }
+  void MakeAsShortRep() { BackPrev = 0; ; Prev1IsChar = false; }
   bool IsShortRep() { return (BackPrev == 0); }
 };
 
@@ -105,6 +112,7 @@ private:
 
   UINT32 m_MatchDistances[kMatchMaxLen + 1];
 
+  bool m_MaxMode;
   UINT32 m_NumFastBytes;
   UINT32 m_LongestMatchLength;    
 
@@ -176,6 +184,7 @@ private:
     }
     return aPrice;
   }
+  /*
   UINT32 GetPosLen2Price(UINT32 aPos, UINT32 aPosState) const
   {
     if (aPos >= kNumFullDistances)
@@ -193,6 +202,7 @@ private:
           m_AlignPrices[aPos & kAlignMask];
     return aPrice + m_LenEncoder.GetPrice(aLen - kMatchMinLen, aPosState);
   }
+  */
   UINT32 GetPosLenPrice(UINT32 aPos, UINT32 aLen, UINT32 aPosState) const
   {
     if (aLen == 2 && aPos >= 0x80)

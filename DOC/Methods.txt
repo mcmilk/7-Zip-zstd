@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 14)
+Compression method IDs (2.30 Beta 15)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
