@@ -79,6 +79,7 @@ bool CItemInfo::IsDirectory() const
     case NFileHeader::NHostOS::kMVS:
       return false; // change it throw kUnknownAttributes;
     default:
+      /*
       switch (aHighAttributes & NFileHeader::NUnixAttribute::kIFMT) 
       {
         case NFileHeader::NUnixAttribute::kIFDIR:
@@ -86,6 +87,8 @@ bool CItemInfo::IsDirectory() const
         default:
           return false;
       }
+      */
+      return false;
   }
 }
 

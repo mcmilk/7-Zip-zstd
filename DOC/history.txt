@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 29        2003-04-07
+  --------------------------------------
+      Small changes in LZMA code.
+
+
   Version 2.30 Beta 28        2003-02-16
   --------------------------------------
       Processing anti-files was corrected.

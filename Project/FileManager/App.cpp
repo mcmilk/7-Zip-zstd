@@ -13,10 +13,11 @@
 
 #include "App.h"
 
-#include "Resource/ComboDialog/ComboDialog.h"
+#include "Resource/CopyDialog/CopyDialog.h"
 
 #include "ExtractCallback.h"
 #include "UpdateCallback100.h"
+#include "ViewSettings.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -114,7 +115,7 @@ struct CThreadExtract
   DWORD Extract()
   {
     NCOM::CComInitializer comInitializer;
-    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    ExtractCallbackSpec->ProgressDialog.WaitCreating();
     if (Move)
     {
       Result = FolderOperations->MoveTo(
@@ -129,7 +130,7 @@ struct CThreadExtract
           DestPath, ExtractCallback);
       // ExtractCallbackSpec->DestroyWindows();
     }
-    ExtractCallbackSpec->_progressDialog.MyClose();
+    ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
 
@@ -153,7 +154,7 @@ struct CThreadUpdate
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
-    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    UpdateCallbackSpec->ProgressDialog.WaitCreating();
     if (Move)
     {
       {
@@ -170,7 +171,7 @@ struct CThreadUpdate
           FileNamePointers.Size(),
           UpdateCallback);
     }
-    UpdateCallbackSpec->_progressDialog.MyClose();
+    UpdateCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
 
@@ -216,7 +217,14 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
   CRecordVector<UINT32> indices;
 
-  CComboDialog comboDialog;
+  CCopyDialog copyDialog;
+
+  UStringVector copyFolders;
+  ReadCopyHistory(copyFolders);
+
+  int i;
+  for (i = 0; i < copyFolders.Size(); i++)
+    copyDialog.Strings.Add(GetSystemString(copyFolders[i]));
 
   if (copyToSame)
   {
@@ -225,27 +233,34 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       return;
     UINT32 realIndex = srcPanel.GetRealItemIndex(focusedItem);
     indices.Add(realIndex);
-    comboDialog.Value = GetSystemString(srcPanel.GetItemName(realIndex));
+    copyDialog.Value = GetSystemString(srcPanel.GetItemName(realIndex));
   }
   else
   {
     srcPanel.GetOperatedItemIndexes(indices);
-    comboDialog.Value = GetSystemString(destPanel._currentFolderPrefix);
+    copyDialog.Value = GetSystemString(destPanel._currentFolderPrefix);
   }
-  comboDialog.Title = move ? 
+  copyDialog.Title = move ? 
     LangLoadString(IDS_MOVE, 0x03020202):
     LangLoadString(IDS_COPY, 0x03020201);
-  comboDialog.Static = move ? 
+  copyDialog.Static = move ? 
     LangLoadString(IDS_MOVE_TO, 0x03020204):
     LangLoadString(IDS_COPY_TO, 0x03020203);
-  if (comboDialog.Create(srcPanel.GetParent()) == IDCANCEL)
+  if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
+
+  AddUniqueStringToHeadOfList(copyFolders, GetUnicodeString(
+      copyDialog.Value));
+  while (copyFolders.Size() > 20)
+    copyFolders.DeleteBack();
+
+  SaveCopyHistory(copyFolders);
   
   /// ?????
   SetCurrentDirectory(GetSystemString(srcPanel._currentFolderPrefix));
 
   CSysString destPath;
-  if (!NDirectory::MyGetFullPathName(comboDialog.Value, destPath))
+  if (!NDirectory::MyGetFullPathName(copyDialog.Value, destPath))
   {
     srcPanel.MessageBoxLastError();
     return;
@@ -267,9 +282,11 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     extracter.ExtractCallbackSpec = new CComObjectNoLock<CExtractCallbackImp>;
     extracter.ExtractCallback = extracter.ExtractCallbackSpec;
     extracter.ExtractCallbackSpec->_parentWindow = _window;
-    extracter.ExtractCallbackSpec->_appTitle.Window = _window;
-    extracter.ExtractCallbackSpec->_appTitle.Title = progressWindowTitle;
-    extracter.ExtractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+
+    extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = _window;
+    extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
+    extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + CSysString(TEXT(" "));
+
     extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
     extracter.Move = move;
     extracter.FolderOperations = folderOperations;
@@ -286,9 +303,11 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     CThreadUpdate updater;
     updater.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
     updater.UpdateCallback = updater.UpdateCallbackSpec;
-    updater.UpdateCallbackSpec->_appTitle.Window = _window;
-    updater.UpdateCallbackSpec->_appTitle.Title = progressWindowTitle;
-    updater.UpdateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
+    
+    updater.UpdateCallbackSpec->ProgressDialog.MainWindow = _window;
+    updater.UpdateCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
+    updater.UpdateCallbackSpec->ProgressDialog.MainAddTitle = title + CSysString(TEXT(" "));
+
     updater.UpdateCallbackSpec->Init(_window, false, L"");
     updater.Move = move;
     updater.FolderOperations = folderOperations;

@@ -187,8 +187,20 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       OpenSelectedItems(true);
       return false;
     case NM_RETURN:
+    {
+      bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+      bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+      bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
+      bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+      bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      if (!shift && alt && !ctrl)
+      {
+        Properties();
+        return false;
+      }
       OpenSelectedItems(true);
       return false;
+    }
     case NM_RCLICK:
       RefreshStatusBar();
       break;
@@ -314,7 +326,7 @@ void CPanel::OnRefreshStatusBar()
 
   if (indices.Size() > 0)
   {
-    UINT totalSize = 0;
+    UINT64 totalSize = 0;
     for (int i = 0; i < indices.Size(); i++)
       totalSize += GetItemSize(indices[i]);
     TCHAR tempString[64];

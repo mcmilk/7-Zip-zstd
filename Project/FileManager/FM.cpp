@@ -330,6 +330,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_INITMENUPOPUP:
       OnMenuActivating(hWnd, HMENU(wParam), LOWORD(lParam));
       break;
+
+    /*
+    It doesn't help
+    case WM_EXITMENULOOP:
+      {
+        OnMenuUnActivating(hWnd);
+        break;
+      }
+    case WM_UNINITMENUPOPUP:
+      OnMenuUnActivating(hWnd, HMENU(wParam), lParam);
+      break;
+    */
+
     case WM_CREATE:
     {
 

@@ -79,12 +79,30 @@ namespace NFile
   const kUnicodeName   = 1 << 9;
   const kSalt          = 1 << 10;
   const kOldVersion    = 1 << 11;
-  // const kExtTime       = 1 << 12;
+  const kExtTime       = 1 << 12;
   // const kExtFlags      = 1 << 13;
   // const kSkipIfUnknown = 1 << 14;
 
   const kLongBlock    = 1 << 15;
   
+  struct CBlock
+  {
+    // UINT16 HeadCRC;
+    // BYTE Type;
+    // UINT16 Flags;
+    // UINT16 HeadSize;
+    UINT32 PackSize;
+    UINT32 UnPackSize;
+    BYTE HostOS;
+    UINT32 FileCRC;
+    UINT32 Time;
+    BYTE UnPackVersion;
+    BYTE Method;
+    UINT16 NameSize;
+    UINT32 Attributes;
+  };
+
+    /*
   struct CBlock32
   {
     UINT16 HeadCRC;
@@ -122,6 +140,7 @@ namespace NFile
     UINT32 UnPackSizeHigh;
     UINT16 GetRealCRC(const void *aName, UINT32 aNameSize) const;
   };
+  */
   
   const kLabelFileAttribute            = 0x08;
   const kWinFileDirectoryAttributeMask = 0x10;

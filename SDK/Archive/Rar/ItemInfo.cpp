@@ -20,6 +20,8 @@ bool CItemInfo::IsSplitAfter() const
   { return (Flags & NHeader::NFile::kSplitAfter) != 0; }
 bool CItemInfo::HasSalt() const
   { return (Flags & NHeader::NFile::kSalt) != 0; }
+bool CItemInfo::HasExtTime() const
+  { return (Flags & NHeader::NFile::kExtTime) != 0; }
 bool CItemInfo::HasUnicodeName() const
   { return (Flags & NHeader::NFile::kUnicodeName) != 0; }
 bool CItemInfo::IsOldVersion() const

@@ -158,10 +158,6 @@ SOURCE=..\..\..\..\SDK\Compression\AriBitCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Compression\AriPrice.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
 # End Source File
 # End Group
@@ -252,10 +248,6 @@ SOURCE=.\LiteralCoder.cpp
 # Begin Source File
 
 SOURCE=.\LiteralCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZMA.cpp
 # End Source File
 # Begin Source File
 

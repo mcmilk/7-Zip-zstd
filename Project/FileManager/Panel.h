@@ -26,6 +26,8 @@
 
 #include "AppState.h"
 
+const kPluginMenuStartID = 1000;
+
 class CPanelCallback
 {
 public:
@@ -245,6 +247,29 @@ public:
   void SetToRootFolder();
   bool OnContextMenu(HANDLE windowHandle, int xPos, int yPos);
 
+  CComPtr<IContextMenu> _sevenZipContextMenu;
+  CComPtr<IContextMenu> _systemContextMenu;
+  void CreateShellContextMenu(
+      const CRecordVector<UINT32> &operatedIndices,
+      CComPtr<IContextMenu> &systemContextMenu);
+  void CreateSystemMenu(HMENU menu, 
+      const CRecordVector<UINT32> &operatedIndices,
+      CComPtr<IContextMenu> &systemContextMenu);
+  void CreateSevenZipMenu(HMENU menu, 
+      const CRecordVector<UINT32> &operatedIndices,
+      CComPtr<IContextMenu> &sevenZipContextMenu);
+  void CreateFileMenu(HMENU menu, 
+      CComPtr<IContextMenu> &sevenZipContextMenu,
+      CComPtr<IContextMenu> &systemContextMenu);
+  void CreateFileMenu(HMENU menu);
+  bool InvokePluginCommand(int id);
+  bool InvokePluginCommand(int id, IContextMenu *sevenZipContextMenu, 
+      IContextMenu *systemContextMenu);
+
+  void InvokeSystemCommand(const char *command);
+  void Properties();
+  void EditCopy();
+  void EditPaste();
 
   void FoldersHistory();
 

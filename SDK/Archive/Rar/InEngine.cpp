@@ -3,6 +3,8 @@
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
+#include "Common/CRC.h"
+
 #include "Archive/Rar/InEngine.h"
 #include "Interface/LimitedStreams.h"
 
@@ -214,99 +216,122 @@ static void DecodeUnicodeFileName(const char *name, const BYTE *encName,
   unicodeName[decPos < maxDecSize ? decPos : maxDecSize - 1] = 0;
 }
 
-void CInArchive::ReadName(CItemInfoEx &anItemInfo)
+void CInArchive::ReadName(const BYTE *data, CItemInfoEx &itemInfo, int nameSize)
 {
-  UINT32 aSizeFileName = m_FileHeader32.NameSize;
-  anItemInfo.UnicodeName.Empty();
-  if (aSizeFileName > 0)
+  UINT32 sizeFileName = nameSize;
+  itemInfo.UnicodeName.Empty();
+  if (sizeFileName > 0)
   {
-    m_NameBuffer.EnsureCapacity(aSizeFileName + 1);
+    m_NameBuffer.EnsureCapacity(sizeFileName + 1);
     char *buffer = (char *)m_NameBuffer;
 
-    ReadBytesAndTestResult(buffer, aSizeFileName);
+    memmove(buffer, data, sizeFileName);
 
     int mainLen;
-    for (mainLen = 0; mainLen < aSizeFileName; mainLen++)
+    for (mainLen = 0; mainLen < sizeFileName; mainLen++)
       if (buffer[mainLen] == '\0')
         break;
     buffer[mainLen] = '\0';
-    anItemInfo.Name = buffer;
+    itemInfo.Name = buffer;
 
-    UINT32 unicodeNameSizeMax = MyMin(aSizeFileName, UINT32(0x400));
+    UINT32 unicodeNameSizeMax = MyMin(sizeFileName, UINT32(0x400));
     _unicodeNameBuffer.EnsureCapacity(unicodeNameSizeMax + 1);
 
     if((m_BlockHeader.Flags & NHeader::NFile::kUnicodeName) != 0  && 
-        mainLen < aSizeFileName)
+        mainLen < sizeFileName)
     {
       DecodeUnicodeFileName(buffer, (const BYTE *)buffer + mainLen + 1, 
-          aSizeFileName - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
-      anItemInfo.UnicodeName = _unicodeNameBuffer;
+          sizeFileName - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
+      itemInfo.UnicodeName = _unicodeNameBuffer;
     }
   }
   else
-    anItemInfo.Name.Empty();
-}
-void CInArchive::ReadHeader32Real(CItemInfoEx &anItemInfo)
-{
-  ReadBytesAndTestResult((BYTE*)(&m_FileHeader32) + sizeof(m_BlockHeader), 
-    sizeof(m_FileHeader32) - sizeof(m_BlockHeader));
-  UINT32 aSizeFileName = m_FileHeader32.NameSize;
-
-  ReadName(anItemInfo);
-  
-  anItemInfo.Flags = m_FileHeader32.Flags; 
-  anItemInfo.PackSize = m_FileHeader32.PackSize;
-  anItemInfo.UnPackSize = m_FileHeader32.UnPackSize;
-  anItemInfo.HostOS = m_FileHeader32.HostOS;
-  anItemInfo.FileCRC = m_FileHeader32.FileCRC;
-  anItemInfo.Time = m_FileHeader32.Time;
-  anItemInfo.UnPackVersion = m_FileHeader32.UnPackVersion;
-  anItemInfo.Method = m_FileHeader32.Method;
-  anItemInfo.Attributes = m_FileHeader32.Attributes;
-  
-  UINT16 aFileHeaderWithNameSize = sizeof(m_FileHeader32) + aSizeFileName;
-  
-  anItemInfo.Position = m_Position;
-  anItemInfo.MainPartSize = aFileHeaderWithNameSize;
-  anItemInfo.CommentSize = m_FileHeader32.HeadSize - aFileHeaderWithNameSize;
-  
-  if (anItemInfo.HasSalt())
-    ReadBytesAndTestResult(&anItemInfo.Salt, sizeof(anItemInfo.Salt));
-  if(m_FileHeader32.HeadCRC != 
-      m_FileHeader32.GetRealCRC(m_NameBuffer, aSizeFileName, 
-          anItemInfo.HasSalt(), anItemInfo.Salt))
-    ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
-  AddToSeekValue(m_FileHeader32.HeadSize);
+    itemInfo.Name.Empty();
 }
 
-void CInArchive::ReadHeader64Real(CItemInfoEx &anItemInfo)
+static const BYTE *ReadTime(const BYTE *data, BYTE mask, CRarTime &rarTime)
 {
-  ReadBytesAndTestResult((BYTE*)(&m_FileHeader64) + sizeof(m_BlockHeader), 
-    sizeof(m_FileHeader64) - sizeof(m_BlockHeader));
-  UINT32 aSizeFileName = m_FileHeader64.NameSize;
-  ReadName(anItemInfo);
+  rarTime.LowSecond = ((mask & 4) != 0) ? 1 : 0;
+  int numDigits = (mask & 3);
+  rarTime.SubTime[0] = rarTime.SubTime[1] = rarTime.SubTime[2] = 0;
+  for (int i = 0; i < numDigits; i++)
+    rarTime.SubTime[3 - numDigits + i] = *data++;
+  return data;
+}
+
+void CInArchive::ReadHeaderReal(const BYTE *data, CItemInfoEx &itemInfo)
+{
+  const BYTE *dataStart = data;
+  const NHeader::NFile::CBlock &fileHeader = 
+      *(const NHeader::NFile::CBlock *)data;
+  // UINT32 sizeFileName = fileHeader.NameSize;
   
-  anItemInfo.Flags = m_FileHeader64.Flags; 
-  anItemInfo.PackSize = (((UINT64)m_FileHeader64.PackSizeHigh) << 32) + m_FileHeader64.PackSizeLow;
-  anItemInfo.UnPackSize = (((UINT64)m_FileHeader64.UnPackSizeHigh) << 32) + m_FileHeader64.UnPackSizeLow;
-  anItemInfo.HostOS = m_FileHeader64.HostOS;
-  anItemInfo.FileCRC = m_FileHeader64.FileCRC;
-  anItemInfo.Time = m_FileHeader64.Time;
-  anItemInfo.UnPackVersion = m_FileHeader64.UnPackVersion;
-  anItemInfo.Method = m_FileHeader64.Method;
-  anItemInfo.Attributes = m_FileHeader64.Attributes;
+  itemInfo.Flags = m_BlockHeader.Flags; 
+  itemInfo.PackSize = fileHeader.PackSize;
+  itemInfo.UnPackSize = fileHeader.UnPackSize;
+  itemInfo.HostOS = fileHeader.HostOS;
+  itemInfo.FileCRC = fileHeader.FileCRC;
+  itemInfo.LastWriteTime.DosTime = fileHeader.Time;
+  itemInfo.LastWriteTime.LowSecond = 0;
+  itemInfo.LastWriteTime.SubTime[0] = 
+    itemInfo.LastWriteTime.SubTime[1] = 
+    itemInfo.LastWriteTime.SubTime[2] = 0;
+
+
+  itemInfo.UnPackVersion = fileHeader.UnPackVersion;
+  itemInfo.Method = fileHeader.Method;
+  itemInfo.Attributes = fileHeader.Attributes;
   
-  UINT16 aFileHeaderWithNameSize = sizeof(m_FileHeader64) + aSizeFileName;
+  data += sizeof(fileHeader);
+
+  if((itemInfo.Flags & NHeader::NFile::kSize64Bits) != 0)
+  {
+    itemInfo.PackSize |= (*((const UINT64 *)data)) << 32;
+    data += sizeof(UINT32);
+    itemInfo.UnPackSize |= (*((const UINT64 *)data)) << 32;
+    data += sizeof(UINT32);
+  }
+
+  ReadName(data, itemInfo, fileHeader.NameSize);
+  data += fileHeader.NameSize;
+
+  if (itemInfo.HasSalt())
+  {
+    memmove(itemInfo.Salt, data, sizeof(itemInfo.Salt));
+    data += sizeof(itemInfo.Salt);
+  }
+
+  if (itemInfo.HasExtTime())
+  {
+    BYTE access = (*data) >> 4;
+    data++;
+    BYTE modif = (*data) >> 4;
+    BYTE creat = (*data) & 0xF;
+    data++;
+    if ((modif & 8) != 0)
+      data = ReadTime(data, modif, itemInfo.LastWriteTime);
+    if (itemInfo.IsCreationTimeDefined = ((creat & 8) != 0))
+    {
+      itemInfo.CreationTime.DosTime = *(const UINT32 *)data;
+      data += sizeof(UINT32);
+      data = ReadTime(data, creat, itemInfo.CreationTime);
+    }
+    if (itemInfo.IsLastAccessTimeDefined = ((access & 8) != 0))
+    {
+      itemInfo.LastAccessTime.DosTime = *(const UINT32 *)data;
+      data += sizeof(UINT32);
+      data = ReadTime(data, access, itemInfo.LastAccessTime);
+    }
+  }
+
+  UINT16 fileHeaderWithNameSize = 
+    sizeof(NHeader::NBlock::CBlock) + data - dataStart;
   
-  anItemInfo.Position = m_Position;
-  anItemInfo.MainPartSize = aFileHeaderWithNameSize;
-  anItemInfo.CommentSize = m_FileHeader64.HeadSize - 
-      aFileHeaderWithNameSize;
+  itemInfo.Position = m_Position;
+  itemInfo.MainPartSize = fileHeaderWithNameSize;
+  itemInfo.CommentSize = m_BlockHeader.HeadSize - fileHeaderWithNameSize;
   
-  if(m_FileHeader64.HeadCRC != 
-      m_FileHeader64.GetRealCRC(m_NameBuffer, aSizeFileName))
-    ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
-  AddToSeekValue(m_FileHeader64.HeadSize);
+  AddToSeekValue(m_BlockHeader.HeadSize);
 }
 
 void CInArchive::AddToSeekValue(UINT64 anAddValue)
@@ -314,7 +339,7 @@ void CInArchive::AddToSeekValue(UINT64 anAddValue)
   m_Position += anAddValue;
 }
 
-bool CInArchive::GetNextItem(CItemInfoEx &anItemInfo)
+bool CInArchive::GetNextItem(CItemInfoEx &itemInfo)
 {
   if ((m_ArchiveHeader.Flags & 
       NHeader::NArchive::kBlockHeadersAreEncrypted) != 0)
@@ -333,12 +358,21 @@ bool CInArchive::GetNextItem(CItemInfoEx &anItemInfo)
 
     if (m_BlockHeader.Type == NHeader::NBlockType::kFileHeader) 
     {
-      if((m_BlockHeader.Flags & NHeader::NFile::kSize64Bits) != 0)
-        ReadHeader64Real(anItemInfo); 
-      else
-        ReadHeader32Real(anItemInfo); 
-      SeekInArchive(m_Position);              // Move Position to compressed Data;    
-      AddToSeekValue(anItemInfo.PackSize);  // m_Position points Tto next header;
+      m_FileHeaderData.EnsureCapacity(m_BlockHeader.HeadSize);
+      UINT32 headerSize = m_BlockHeader.HeadSize - sizeof(m_BlockHeader);
+      ReadBytesAndTestResult(m_FileHeaderData, headerSize);
+      CCRC crc;
+      crc.Update(&m_BlockHeader.Type, sizeof(m_BlockHeader) - 
+          sizeof(m_BlockHeader.CRC));
+          
+      ReadHeaderReal(m_FileHeaderData, itemInfo); 
+
+      crc.Update(m_FileHeaderData, headerSize - itemInfo.CommentSize);
+      if ((crc.GetDigest() & 0xFFFF) != m_BlockHeader.CRC)
+        ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
+
+      SeekInArchive(m_Position); // Move Position to compressed Data;    
+      AddToSeekValue(itemInfo.PackSize);  // m_Position points Tto next header;
       return true;
     }
     if ((m_BlockHeader.Flags & NHeader::NBlock::kLongBlock) != 0)

@@ -6,7 +6,6 @@
 #define __LZMA_ENCODER_H
 
 #include "../../Interface/CompressInterface.h"
-#include "Compression/AriPrice.h"
 
 #include "Common/Types.h"
 

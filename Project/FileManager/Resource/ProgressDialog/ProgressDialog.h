@@ -62,30 +62,49 @@ public:
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
 private:
+  UINT_PTR _timer;
+
   CSysString _title;
   CU64ToI32Converter _converter;
-  // bool _processStopped;
   UINT64 _peviousPos;
   UINT64 _range;
 	NWindows::NControl::CProgressBar m_ProgressBar;
+
+  int _prevPercentValue;
+
   bool OnTimer(WPARAM timerID, LPARAM callback);
   void SetRange(UINT64 range);
   void SetPos(UINT64 pos);
 	virtual bool OnInit();
 	virtual void OnCancel();
-public:
-  CProgressSynch _progressSynch;
   NWindows::NSynchronization::CManualResetEvent _dialogCreatedEvent;
+  #ifndef _SFX
+  void AddToTitle(LPCTSTR string);
+  #endif
+public:
+  CProgressSynch ProgressSynch;
 
-	// CProgressDialog(CWnd* pParent = NULL);   // standard constructor
-  // bool Create(HWND aWndParent = 0)
-  //   { return CModelessDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PROGRESS), aWndParent); }
+  #ifndef _SFX
+  HWND MainWindow;
+  CSysString MainTitle;
+  CSysString MainAddTitle;
+  ~CProgressDialog();
+  #endif
+
+  CProgressDialog(): _timer(-1)
+    #ifndef _SFX
+    ,MainWindow(0) 
+    #endif
+  {}
+
+  void WaitCreating() { _dialogCreatedEvent.Lock(); }
+
+
   INT_PTR Create(const CSysString &title, HWND aWndParent = 0)
   { 
     _title = title;
     return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PROGRESS), aWndParent); 
   }
-  // bool WasProcessStopped() const { return _processStopped;}
 
   static const UINT kCloseMessage;
 

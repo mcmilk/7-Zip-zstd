@@ -176,10 +176,6 @@ SOURCE=..\..\..\..\SDK\Compression\AriBitCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Compression\AriPrice.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Compression\CopyCoder.cpp
 # End Source File
 # Begin Source File
@@ -1721,10 +1717,6 @@ SOURCE=..\..\..\Compress\LZ\LZMA\LiteralCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\LiteralCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Compress\LZ\LZMA\LZMA.cpp
 # End Source File
 # Begin Source File
 

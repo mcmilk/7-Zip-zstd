@@ -44,13 +44,10 @@ struct CThreadExtracting
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
-    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
-    #ifndef _SFX
-    ExtractCallbackSpec->_appTitle.Window = (HWND)ExtractCallbackSpec->_progressDialog;
-    #endif
+    ExtractCallbackSpec->ProgressDialog.WaitCreating();
     Result = Archive->ExtractAllItems(BoolToInt(false), 
         ArchiveExtractCallback);
-    ExtractCallbackSpec->_progressDialog.MyClose();
+    ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
   static DWORD WINAPI MyThreadFunction(void *param)
@@ -152,12 +149,6 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
   #else
   const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING);
   #endif
-  #ifndef _SFX
-  // extracter.ExtractCallbackSpec->_appTitle.Window = (HWND)extracter.ExtractCallbackSpec->_progressDialog;
-  extracter.ExtractCallbackSpec->_appTitle.Window = (HWND)0;
-  extracter.ExtractCallbackSpec->_appTitle.Title = title;
-  #endif
-
 
   NFile::NFind::CFileInfo archiveFileInfo;
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))

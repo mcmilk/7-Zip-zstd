@@ -9,22 +9,22 @@
 
 namespace NLength {
 
-const kNumPosStatesBitsMax = 4;
-const kNumPosStatesMax = (1 << kNumPosStatesBitsMax);
+const int kNumMoveBits = 5;
 
-const kNumPosStatesBitsEncodingMax = 4;
-const kNumPosStatesEncodingMax = (1 << kNumPosStatesBitsEncodingMax);
+const int kNumPosStatesBitsMax = 4;
+const UINT32 kNumPosStatesMax = (1 << kNumPosStatesBitsMax);
 
-const kNumMoveBits = 5;
+const int kNumPosStatesBitsEncodingMax = 4;
+const UINT32 kNumPosStatesEncodingMax = (1 << kNumPosStatesBitsEncodingMax);
 
-const kNumLenBits = 3;
-const kNumLowSymbols = 1 << kNumLenBits;
-const kNumMidBits = 3;
-const kNumMidSymbols = 1 << kNumMidBits;
+const int kNumLenBits = 3;
+const UINT32 kNumLowSymbols = 1 << kNumLenBits;
+const int kNumMidBits = 3;
+const UINT32 kNumMidSymbols = 1 << kNumMidBits;
 
-const kNumHighBits = 8;
+const int kNumHighBits = 8;
 
-const kNumSymbolsTotal = kNumLowSymbols + kNumMidSymbols + (1 << kNumHighBits);
+const UINT32 kNumSymbolsTotal = kNumLowSymbols + kNumMidSymbols + (1 << kNumHighBits);
 
 class CEncoder
 {
@@ -40,7 +40,6 @@ public:
     { _numPosStates = numPosStates; }
   void Init();
   void Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol, UINT32 posState);
-
   UINT32 GetPrice(UINT32 symbol, UINT32 posState) const;
 };
 
@@ -102,23 +101,12 @@ public:
   {
     if(_choice.Decode(rangeDecoder) == 0)
       return _lowCoder[posState].Decode(rangeDecoder);
-    else
-    {
-      UINT32 symbol = kNumLowSymbols;
-      if(_choice2.Decode(rangeDecoder) == 0)
-        symbol += _midCoder[posState].Decode(rangeDecoder);
-      else
-      {
-        symbol += kNumMidSymbols;
-        symbol += _highCoder.Decode(rangeDecoder);
-      }
-      return symbol;
-    }
+    if(_choice2.Decode(rangeDecoder) == 0)
+      return kNumLowSymbols + _midCoder[posState].Decode(rangeDecoder);
+    return kNumLowSymbols + kNumMidSymbols + _highCoder.Decode(rangeDecoder);
   }
-
 };
 
 }
-
 
 #endif

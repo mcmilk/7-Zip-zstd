@@ -34,10 +34,10 @@ struct CThreadDelete
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
-    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    UpdateCallbackSpec->ProgressDialog.WaitCreating();
     Result = FolderOperations->Delete(&Indices.Front(), 
         Indices.Size(), UpdateCallback);
-    UpdateCallbackSpec->_progressDialog.MyClose();
+    UpdateCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
   
@@ -92,10 +92,13 @@ void CPanel::DeleteItems()
   deleter.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
   deleter.UpdateCallback = deleter.UpdateCallbackSpec;
   deleter.UpdateCallbackSpec->Init(GetParent(), false, L"");
-  deleter.UpdateCallbackSpec->_appTitle.Window = _mainWindow;
-  deleter.UpdateCallbackSpec->_appTitle.Title = LangLoadString(IDS_APP_TITLE, 0x03000000);
+
   CSysString progressTitle = LangLoadString(IDS_DELETING, 0x03020216);
-  deleter.UpdateCallbackSpec->_appTitle.AddTitle = progressTitle + CSysString(TEXT(" "));
+
+  deleter.UpdateCallbackSpec->ProgressDialog.MainWindow = _mainWindow;
+  deleter.UpdateCallbackSpec->ProgressDialog.MainTitle = LangLoadString(IDS_APP_TITLE, 0x03000000);
+  deleter.UpdateCallbackSpec->ProgressDialog.MainAddTitle = progressTitle + CSysString(TEXT(" "));
+
   deleter.FolderOperations = folderOperations;
   deleter.Indices = indices;
 

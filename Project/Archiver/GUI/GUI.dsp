@@ -725,14 +725,6 @@ SOURCE=..\Explorer\ExtractDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\AppTitle.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\AppTitle.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\FileManager\ExtractCallback.cpp
 # End Source File
 # Begin Source File
@@ -868,6 +860,10 @@ SOURCE=..\..\..\SDK\Interface\CryptoInterface.h
 SOURCE=..\Common\FolderArchiveInterface.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\FM.ico
+# End Source File
 # Begin Source File
 
 SOURCE=.\GUI.cpp

@@ -11,11 +11,13 @@
 namespace NCompression {
 namespace NArithmetic {
 
-const kNumBitModelTotalBits  = 11;
+const int kNumBitModelTotalBits  = 11;
 const UINT32 kBitModelTotal = (1 << kNumBitModelTotalBits);
 
-const kNumMoveReducingBits = 2;
+const int kNumMoveReducingBits = 2;
 
+const int kNumBitPriceShiftBits = 6;
+const UINT32 kBitPrice = 1 << kNumBitPriceShiftBits;
 
 class CPriceTables
 {

@@ -46,12 +46,9 @@ struct CThreadTesting
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
-    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
-    ExtractCallbackSpec->_appTitle.Window = 
-        (HWND)ExtractCallbackSpec->_progressDialog;
-    Result = ArchiveHandler->ExtractAllItems(BoolToInt(true), 
-        ExtractCallback);
-    ExtractCallbackSpec->_progressDialog.MyClose();
+    ExtractCallbackSpec->ProgressDialog.WaitCreating();
+    Result = ArchiveHandler->ExtractAllItems(BoolToInt(true), ExtractCallback);
+    ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
   static DWORD WINAPI MyThreadFunction(void *param)
@@ -93,11 +90,6 @@ HRESULT TestArchive(HWND parentWindow, const CSysString &fileName)
   const CSysString title = NWindows::MyLoadString(IDS_PROGRESS_TESTING);
   #endif
   
-  // tester.ExtractCallbackSpec->_appTitle.Window = (HWND)extractCallbackSpec->_progressDialog;
-  tester.ExtractCallbackSpec->_appTitle.Window = 0;
-  
-  tester.ExtractCallbackSpec->_appTitle.Title = title;
-
   tester.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, 
       openCallbackSpec->_passwordIsDefined, openCallbackSpec->_password);
 

@@ -14,38 +14,16 @@ using namespace NWindows;
 
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 size)
 {
-  /*
-  if (m_ThreadID != GetCurrentThreadId())
-    return S_OK;
-  */
-  // m_Total = size;
-  // m_ProgressDialog.Timer(PDTIMER_RESET);
-
-  _progressDialog._progressSynch.SetProgress(size, 0);
-
-  _appTitle.SetRange(size);
-  _appTitle.SetPos(0);
+  ProgressDialog.ProgressSynch.SetProgress(size, 0);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *completeValue)
 {
-  /*
-  if (m_ThreadID != GetCurrentThreadId())
-    return S_OK;
-  */
-  // ProcessMessages(m_ProgressDialog);
-  // if(m_ProgressDialog.WasProcessStopped())
-  // if(m_ProgressDialog.HasUserCancelled())
-  if(_progressDialog._progressSynch.GetStopped())
+  if(ProgressDialog.ProgressSynch.GetStopped())
     return E_ABORT;
   if (completeValue != NULL)
-  {
-    _progressDialog._progressSynch.SetPos(*completeValue);
-    // m_ProgressDialog.SetPos(*completeValue);
-    // m_ProgressDialog.SetProgress(*completeValue, m_Total);
-    _appTitle.SetPos(*completeValue);
-  }
+    ProgressDialog.ProgressSynch.SetPos(*completeValue);
   return S_OK;
 }
 

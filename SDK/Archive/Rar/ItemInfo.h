@@ -11,6 +11,13 @@
 namespace NArchive{
 namespace NRar{
 
+struct CRarTime
+{
+  UINT32 DosTime;
+  BYTE LowSecond;
+  BYTE SubTime[3];
+};
+
 class CItemInfo
 {
 public:
@@ -19,7 +26,14 @@ public:
   UINT64 UnPackSize;
   BYTE HostOS;
   UINT32 FileCRC;
-  UINT32 Time;
+  
+  CRarTime CreationTime;
+  CRarTime LastWriteTime;
+  CRarTime LastAccessTime;
+  bool IsCreationTimeDefined;
+  // bool IsLastWriteTimeDefined;
+  bool IsLastAccessTimeDefined;
+
   BYTE UnPackVersion;
   BYTE Method;
   UINT32 Attributes;
@@ -34,6 +48,8 @@ public:
   bool IsSplitBefore() const;
   bool IsSplitAfter() const;
   bool HasSalt() const;
+  bool HasExtTime() const;
+
   bool HasUnicodeName() const;
   bool IsOldVersion() const;
   
@@ -42,7 +58,7 @@ public:
   bool IgnoreItem() const;
   UINT32 GetWinAttributes() const;
   
-  
+  CItemInfo(): IsCreationTimeDefined(false),  IsLastAccessTimeDefined(false) {}
 private:
   void SetFlagBits(int aStartBitNumber, int aNumBits, int aValue);
   void SetBitMask(int aBitMask, bool anEnable);

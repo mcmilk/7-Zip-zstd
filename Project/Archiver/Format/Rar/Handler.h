@@ -78,9 +78,22 @@ private:
   CRecordVector<CRefItem> _refItems;
   CObjectVector<NArchive::NRar::CItemInfoEx> _items;
   CObjectVector<NArchive::NRar::CInArchive> _archives;
+  NArchive::NRar::CInArchiveInfo _archiveInfo;
 
   UINT64 GetPackSize(int refIndex) const;
   // NArchive::NRar::CInArchive _archive;
+
+  bool IsSolid(int refIndex)
+  {
+    const CItemInfoEx &item = _items[_refItems[refIndex].ItemIndex];
+    if (item.UnPackVersion < 20)
+    {
+      if (_archiveInfo.IsSolid())
+        return (refIndex > 0);
+      return false;
+    }
+    return item.IsSolid();
+  }
 };
 
 }}

@@ -80,4 +80,10 @@ void ReadFolderHistory(UStringVector &folders);
 void SaveFastFolders(const UStringVector &folders);
 void ReadFastFolders(UStringVector &folders);
 
+void SaveCopyHistory(const UStringVector &folders);
+void ReadCopyHistory(UStringVector &folders);
+
+void AddUniqueStringToHeadOfList(UStringVector &list, 
+    const UString &string);
+
 #endif

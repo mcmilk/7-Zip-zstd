@@ -3,6 +3,10 @@
 #include "StdAfx.h"
 #include "resource.h"
 #include "ProgressDialog.h"
+#include "Common/IntToString.h"
+#include "Common/IntToString.h"
+
+using namespace NWindows;
 
 static const UINT_PTR kTimerID = 3;
 static const UINT kTimerElapse = 50;
@@ -18,28 +22,40 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
+#ifndef _SFX
+CProgressDialog::~CProgressDialog()
+{
+  AddToTitle(TEXT(""));
+}
+void CProgressDialog::AddToTitle(LPCTSTR string)
+{
+  if (MainWindow != 0)
+    ::SetWindowText(MainWindow, string + CSysString(MainTitle));
+}
+#endif
+
+
+
 bool CProgressDialog::OnInit() 
 {
   _range = UINT64(-1);
+  _prevPercentValue = -1;
 
   #ifdef LANG        
   // LangSetWindowText(HWND(*this), 0x02000C00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
 
-  SetText(_title);
-  // _processStopped = false;
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));
-  SetTimer(kTimerID, kTimerElapse);
+  _timer = SetTimer(kTimerID, kTimerElapse);
   _dialogCreatedEvent.Set();
+  SetText(_title);
 	return CModalDialog::OnInit();
 }
 
 void CProgressDialog::OnCancel() 
 {
-  _progressSynch.SetStopped(true);
-  // _processStopped = true;
-	// CModelessDialog::OnCancel();
+  ProgressSynch.SetStopped(true);
 }
 
 void CProgressDialog::SetRange(UINT64 range)
@@ -69,10 +85,27 @@ void CProgressDialog::SetPos(UINT64 pos)
 bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 {
   UINT64 total, completed;
-  _progressSynch.GetProgress(total, completed);
+  ProgressSynch.GetProgress(total, completed);
   if (total != _range)
     SetRange(total);
   SetPos(completed);
+
+  if (total == 0)
+    total = 1;
+
+  int percentValue = (int)(completed * 100 / total);
+  if (percentValue != _prevPercentValue) 
+  {
+    TCHAR string[64];
+    ConvertUINT64ToString(percentValue, string);
+    CSysString title = string;
+    title += TEXT("% ");
+    SetText(title + _title);
+    #ifndef _SFX
+    AddToTitle(title + MainAddTitle);
+    #endif
+    _prevPercentValue = percentValue;
+  }
   return true;
 }
 
@@ -105,8 +138,15 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   {
     case kCloseMessage:
     {
+      KillTimer(_timer);
+      _timer = (-1);
       End(0);
-      // return true;
+      return true;
+    }
+    case WM_SETTEXT:
+    {
+      if (_timer == (-1))
+        return true;
     }
   }
   return CModalDialog::OnMessage(message, wParam, lParam);

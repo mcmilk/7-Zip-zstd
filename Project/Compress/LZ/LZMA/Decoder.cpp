@@ -123,7 +123,7 @@ HRESULT CDecoder::Create()
   for(int i = 0; i < kNumPosModels; i++)
   {
     RETURN_E_OUTOFMEMORY_IF_FALSE(
-        _posDecoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]));
+        _posDecoders[i].Create(((kStartPosModelIndex + i) >> 1) - 1));
   }
   return S_OK;
 }
@@ -237,24 +237,19 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
           else
           {
             if(_matchRep1ChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 0)
-            {
               distance = repDistances[1];
-              repDistances[1] = repDistances[0];
-            }
             else 
             {
               if (_matchRep2ChoiceDecoders[state.Index].Decode(&_rangeDecoder) == 0)
-              {
                 distance = repDistances[2];
-              }
               else
               {
                 distance = repDistances[3];
                 repDistances[3] = repDistances[2];
               }
               repDistances[2] = repDistances[1];
-              repDistances[1] = repDistances[0];
             }
+            repDistances[1] = repDistances[0];
             repDistances[0] = distance;
           }
           len = _repMatchLenDecoder.Decode(&_rangeDecoder, posState) + kMatchMinLen;
@@ -267,24 +262,24 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
           UINT32 posSlot = _posSlotDecoder[GetLenToPosState(len)].Decode(&_rangeDecoder);
           if (posSlot >= kStartPosModelIndex)
           {
-            distance = kDistStart[posSlot];
+            UINT32 numDirectBits = (posSlot >> 1) - 1;
+            distance = ((2 | (posSlot & 1)) << numDirectBits);
+
             if (posSlot < kEndPosModelIndex)
               distance += _posDecoders[posSlot - kStartPosModelIndex].Decode(&_rangeDecoder);
             else
             {
-              distance += (_rangeDecoder.DecodeDirectBits(kDistDirectBits[posSlot] - 
-                  kNumAlignBits) << kNumAlignBits);
+              distance += (_rangeDecoder.DecodeDirectBits(
+                  numDirectBits - kNumAlignBits) << kNumAlignBits);
               distance += _posAlignDecoder.Decode(&_rangeDecoder);
             }
           }
           else
             distance = posSlot;
 
-          
           repDistances[3] = repDistances[2];
           repDistances[2] = repDistances[1];
           repDistances[1] = repDistances[0];
-          
           repDistances[0] = distance;
           // UpdateStat(len, posSlot);
         }

@@ -39,9 +39,8 @@ void CEncoder::Encode(CMyRangeEncoder *rangeEncoder, UINT32 symbol, UINT32 posSt
     }
     else
     {
-      symbol -= kNumMidSymbols;
       _choice2.Encode(rangeEncoder, 1);
-      _highCoder.Encode(rangeEncoder, symbol);
+      _highCoder.Encode(rangeEncoder, symbol - kNumMidSymbols);
     }
   }
 }
@@ -65,9 +64,8 @@ UINT32 CEncoder::GetPrice(UINT32 symbol, UINT32 posState) const
     }
     else
     {
-      symbol -= kNumMidSymbols;
       price += _choice2.GetPrice(1);
-      price += _highCoder.GetPrice(symbol);
+      price += _highCoder.GetPrice(symbol - kNumMidSymbols);
     }
   }
   return price;

@@ -6,6 +6,8 @@
 #define __MYLOADMENU_H
 
 void OnMenuActivating(HWND hWnd, HMENU hMenu, int position);
+// void OnMenuUnActivating(HWND hWnd, HMENU hMenu, int id);
+// void OnMenuUnActivating(HWND hWnd);
 
 void MyLoadMenu(HWND hWnd);
 bool OnMenuCommand(HWND hWnd, int id);

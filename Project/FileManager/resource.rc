@@ -41,6 +41,7 @@ END
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "#include ""Resource\\ComboDialog\\resource.rc""\r\n"
+    "#include ""Resource\\CopyDialog\\resource.rc""\r\n"
     "#include ""Resource\\ListViewDialog\\resource.rc""\r\n"
     "#include ""Resource\\PropertyName\\resource.rc""\r\n"
     "#include ""Resource\\MessagesDialog\\resource.rc""\r\n"
@@ -78,8 +79,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,28,0
- PRODUCTVERSION 2,30,28,0
+ FILEVERSION 2,30,29,0
+ PRODUCTVERSION 2,30,29,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -97,14 +98,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip\0"
-            VALUE "FileVersion", "2, 30, 28, 0\0"
+            VALUE "FileVersion", "2, 30, 29, 0\0"
             VALUE "InternalName", "7zFM\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 28, 0\0"
+            VALUE "ProductVersion", "2, 30, 29, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -151,7 +152,7 @@ BEGIN
         MENUITEM "&Move To...\tF6",             IDM_MOVE_TO
         MENUITEM "&Delete\tDel",                IDM_DELETE
         MENUITEM SEPARATOR
-        MENUITEM "P&roperties\tAlt+Enter",      ID_FILE_PROPERTIES, GRAYED
+        MENUITEM "P&roperties\tAlt+Enter",      ID_FILE_PROPERTIES
         MENUITEM SEPARATOR
         MENUITEM "Create Folder\tF7",           IDM_CREATE_FOLDER
         MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
@@ -317,6 +318,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 #include "Resource\ComboDialog\resource.rc"
+#include "Resource\CopyDialog\resource.rc"
 #include "Resource\ListViewDialog\resource.rc"
 #include "Resource\PropertyName\resource.rc"
 #include "Resource\MessagesDialog\resource.rc"

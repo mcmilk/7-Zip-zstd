@@ -353,12 +353,12 @@ struct CThreadExtractInArchive
   DWORD Extract()
   {
     NCOM::CComInitializer comInitializer;
-    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    ExtractCallbackSpec->ProgressDialog.WaitCreating();
     Result = FolderOperations->CopyTo(
         &Indices.Front(), Indices.Size(), 
         DestPath, ExtractCallback);
     // ExtractCallbackSpec->DestroyWindows();
-    ExtractCallbackSpec->_progressDialog.MyClose();
+    ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
   

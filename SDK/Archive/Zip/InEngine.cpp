@@ -294,7 +294,8 @@ HRESULT CInArchive::ReadHeaders(CItemInfoExVector &anItems, CProgressVirt *aProg
     aCentalHeaderExtractVersion.Version = aHeader.ExtractVersion.Version;
     aCentalHeaderExtractVersion.HostOS = aHeader.ExtractVersion.HostOS;
 
-    if (anItemInfo.ExtractVersion != aCentalHeaderExtractVersion ||
+    if (
+        // anItemInfo.ExtractVersion != aCentalHeaderExtractVersion ||
         anItemInfo.Flags != aHeader.Flags ||
         anItemInfo.CompressionMethod != aHeader.CompressionMethod ||
         // anItemInfo.Time != aHeader.Time ||

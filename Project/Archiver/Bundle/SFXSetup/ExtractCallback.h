@@ -68,7 +68,7 @@ private:
   void CreateComplexDirectory(const UStringVector &dirPathParts);
 public:
   // DWORD _threadID;
-  CProgressDialog _progressDialog;
+  CProgressDialog ProgressDialog;
 
   void Init(IInArchive *archiveHandler,     
     const CSysString &directoryPath, 
@@ -80,18 +80,18 @@ public:
 
   HRESULT StartProgressDialog(const CSysString &title)
   {
-    _progressDialog.Create(title, 0);
+    ProgressDialog.Create(title, 0);
     // _threadID = GetCurrentThreadId();
     // _progressDialog.Create(0);
     {
       #ifdef LANG        
-      _progressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
+      ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
       #else
-      _progressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
+      ProgressDialog.SetText(NWindows::MyLoadString(IDS_PROGRESS_EXTRACTING));
       #endif
     }
 
-    _progressDialog.Show(SW_SHOWNORMAL);    
+    ProgressDialog.Show(SW_SHOWNORMAL);    
     // _progressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }

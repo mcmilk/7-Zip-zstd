@@ -21,7 +21,7 @@ using namespace NZipSettings;
 
 CExtractCallbackImp::~CExtractCallbackImp()
 {
-  _progressDialog.Destroy();
+  ProgressDialog.Destroy();
 }
 
 void CExtractCallbackImp::Init(IInArchive *archiveHandler,
@@ -46,7 +46,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 size)
   if (_threadID != GetCurrentThreadId())
     return S_OK;
   */
-  _progressDialog._progressSynch.SetProgress(size, 0);
+  ProgressDialog.ProgressSynch.SetProgress(size, 0);
   return S_OK;
 }
 
@@ -56,12 +56,12 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
   if (_threadID != GetCurrentThreadId())
     return S_OK;
 
-  ProcessMessages(_progressDialog);
+  ProcessMessages(ProgressDialog);
   */
-  if(_progressDialog._progressSynch.GetStopped())
+  if(ProgressDialog.ProgressSynch.GetStopped())
     return E_ABORT;
   if (completeValue != NULL)
-    _progressDialog._progressSynch.SetPos(*completeValue);
+    ProgressDialog.ProgressSynch.SetPos(*completeValue);
   return S_OK;
 }
 
@@ -79,8 +79,8 @@ void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathPar
 STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     ISequentialOutStream **outStream, INT32 askExtractMode)
 {
-  // ProcessMessages(_progressDialog);
-  if(_progressDialog._progressSynch.GetStopped())
+  // ProcessMessages(ProgressDialog);
+  if(ProgressDialog.ProgressSynch.GetStopped())
     return E_ABORT;
   _outFileStream.Release();
   NCOM::CPropVariant propVariantName;

@@ -2,16 +2,13 @@
 
 #include "StdAfx.h"
 
-#include <new>
+#include "Common/Defs.h"
 
 #include "Encoder.h"
-
 #include "Windows/Defs.h"
 
 using namespace NCompression;
 using namespace NArithmetic;
-
-#define RETURN_E_OUTOFMEMORY_IF_FALSE(x) { if (!(x)) return E_OUTOFMEMORY; }
 
 namespace NCompress {
 namespace NLZMA {
@@ -23,12 +20,14 @@ class CFastPosInit
 public:
   CFastPosInit()
   {
-    int c = 0;
-    const kFastSlots = 20;
-    c = 0;
-    for (BYTE slotFast = 0; slotFast < kFastSlots; slotFast++)
+    const BYTE kFastSlots = 20;
+    int c = 2;
+    g_FastPos[0] = 0;
+    g_FastPos[1] = 1;
+
+    for (BYTE slotFast = 2; slotFast < kFastSlots; slotFast++)
     {
-      UINT32 k = (1 << kDistDirectBits[slotFast]);
+      UINT32 k = (1 << ((slotFast >> 1) - 1));
       for (UINT32 j = 0; j < k; j++, c++)
         g_FastPos[c] = slotFast;
     }
@@ -53,14 +52,14 @@ CEncoder::CEncoder():
   _fastMode = false;
   _posAlignEncoder.Create(kNumAlignBits);
   for(int i = 0; i < kNumPosModels; i++)
-    _posEncoders[i].Create(kDistDirectBits[kStartPosModelIndex + i]);
+    _posEncoders[i].Create(((kStartPosModelIndex + i) >> 1) - 1);
 }
 
 HRESULT CEncoder::Create()
 {
   if (_dictionarySize == _dictionarySizePrev && _numFastBytesPrev == _numFastBytes)
     return S_OK;
-  RETURN_IF_NOT_S_OK(_matchFinder->Create(_dictionarySize, kNumOpts, _numFastBytes, 
+  RINOK(_matchFinder->Create(_dictionarySize, kNumOpts, _numFastBytes, 
       kMatchMaxLen - _numFastBytes));
   _dictionarySizePrev = _dictionarySize;
   _numFastBytesPrev = _numFastBytes;
@@ -173,7 +172,7 @@ STDMETHODIMP CEncoder::SetCoderProperties2(const PROPID *propIDs,
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
   BYTE firstByte = (_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits;
-  RETURN_IF_NOT_S_OK(outStream->Write(&firstByte, sizeof(firstByte), NULL));
+  RINOK(outStream->Write(&firstByte, sizeof(firstByte), NULL));
   return outStream->Write(&_dictionarySize, sizeof(_dictionarySize), NULL);
 }
 
@@ -183,7 +182,7 @@ STDMETHODIMP CEncoder::Init(ISequentialInStream *inStream,
 {
   CBaseCoder::Init();
 
-  RETURN_IF_NOT_S_OK(_matchFinder->Init(inStream));
+  RINOK(_matchFinder->Init(inStream));
   _rangeEncoder.Init(outStream);
 
   int i;
@@ -856,8 +855,8 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       const UINT64 *inSize, const UINT64 *outSize,
       ICompressProgressInfo *progress)
 {
-  RETURN_IF_NOT_S_OK(Create());
-  RETURN_IF_NOT_S_OK(Init(inStream, outStream));
+  RINOK(Create());
+  RINOK(Init(inStream, outStream));
   CCoderReleaser releaser(this);
 
   if (_matchFinder->GetNumAvailableBytes() == 0)
@@ -971,10 +970,11 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
         UINT32 lenToPosState = GetLenToPosState(len);
         _posSlotEncoder[lenToPosState].Encode(&_rangeEncoder, posSlot);
         
-        UINT32 footerBits = kDistDirectBits[posSlot];
-        UINT32 posReduced = pos - kDistStart[posSlot];
         if (posSlot >= kStartPosModelIndex)
         {
+          UINT32 footerBits = ((posSlot >> 1) - 1);
+          UINT32 posReduced = pos - ((2 | (posSlot & 1)) << footerBits);
+
           if (posSlot < kEndPosModelIndex)
             _posEncoders[posSlot - kStartPosModelIndex].Encode(&_rangeEncoder, posReduced);
           else
@@ -1005,7 +1005,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
     if (nowPos64 - progressPosValuePrev >= (1 << 12) && progress != NULL)
     {
       UINT64 outSize = _rangeEncoder.GetProcessedSize();
-      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &outSize));
+      RINOK(progress->SetRatioInfo(&nowPos64, &outSize));
       progressPosValuePrev = nowPos64;
     }
     if (_additionalOffset == 0 && _matchFinder->GetNumAvailableBytes() == 0)
@@ -1047,7 +1047,7 @@ void CEncoder::FillPosSlotPrices()
       _posSlotPrices[lenToPosState][posSlot] = _posSlotEncoder[lenToPosState].GetPrice(posSlot);
     for (; posSlot < _distTableSize; posSlot++)
       _posSlotPrices[lenToPosState][posSlot] = _posSlotEncoder[lenToPosState].GetPrice(posSlot) + 
-          ((kDistDirectBits[posSlot] - kNumAlignBits) << kNumBitPriceShiftBits);
+          ((((posSlot >> 1) - 1) - kNumAlignBits) << kNumBitPriceShiftBits);
   }
 }
 
@@ -1062,7 +1062,8 @@ void CEncoder::FillDistancesPrices()
     { 
       UINT32 posSlot = GetPosSlot(i);
       _distancesPrices[lenToPosState][i] = _posSlotPrices[lenToPosState][posSlot] +
-          _posEncoders[posSlot - kStartPosModelIndex].GetPrice(i - kDistStart[posSlot]);
+          _posEncoders[posSlot - kStartPosModelIndex].GetPrice(i - 
+          ((2 | (posSlot & 1)) << (((posSlot >> 1) - 1))));
     }
   }
 }

@@ -17,10 +17,6 @@
 #include "LangUtils.h"
 #endif
 
-#ifndef _SFX
-#include "AppTitle.h"
-#endif;
-
 #include "Interface/CryptoInterface.h"
 #include "FolderInterface.h"
 
@@ -85,16 +81,13 @@ private:
   bool IsEncrypted(LPITEMIDLIST anItemIDList);
   void AddErrorMessage(LPCTSTR aMessage);
 public:
-  CProgressDialog _progressDialog;
-  #ifndef _SFX
-  CAppTitle _appTitle;
-  #endif;
+  CProgressDialog ProgressDialog;
   CSysStringVector _messages;
   HWND _parentWindow;
   UINT _fileCodePage;
   void StartProgressDialog(const CSysString &title)
   {
-    _progressDialog.Create(title, _parentWindow);
+    ProgressDialog.Create(title, _parentWindow);
   }
 
   ~CExtractCallbackImp();

@@ -6,7 +6,6 @@
 
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
-// #include "Windows/ProcessMessages.h"
 
 #include "Resource/OverwriteDialog/OverwriteDialog.h"
 #include "Resource/PasswordDialog/PasswordDialog.h"
@@ -25,17 +24,8 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-/*
-void CExtractCallbackImp::DestroyWindows()
-{
-  // _progressDialog.Destroy();
-  // _progressDialog.Close();
-}
-*/
 CExtractCallbackImp::~CExtractCallbackImp()
 {
-  // _progressDialog.Close();
-
   if (!_messages.IsEmpty())
   {
     CMessagesDialog messagesDialog;
@@ -66,38 +56,16 @@ void CExtractCallbackImp::AddErrorMessage(LPCTSTR message)
 
 STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 aSize)
 {
-  /*
-  if (_threadID != GetCurrentThreadId())
-    return S_OK;
-  */
-  _progressDialog._progressSynch.SetProgress(aSize, 0);
-  #ifndef _SFX
-  _appTitle.SetRange(aSize);
-  _appTitle.SetPos(0);
-  #endif;
+  ProgressDialog.ProgressSynch.SetProgress(aSize, 0);
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *aCompleteValue)
 {
-  /*
-  if (_threadID != GetCurrentThreadId())
-    return S_OK;
-  */
-  // ProcessMessages(_progressDialog);
-  // if(_progressDialog.WasProcessStopped())
-  if(_progressDialog._progressSynch.GetStopped())
-  // if(_progressDialog.HasUserCancelled())
+  if(ProgressDialog.ProgressSynch.GetStopped())
     return E_ABORT;
   if (aCompleteValue != NULL)
-  {
-    // _progressDialog.SetPos(*aCompleteValue);
-    _progressDialog._progressSynch.SetPos(*aCompleteValue);
-    #ifndef _SFX
-    _appTitle.SetPos(*aCompleteValue);
-    #endif;
-  }
-  // _progressDialog.SetProgress(*aCompleteValue, m_Total);
+    ProgressDialog.ProgressSynch.SetPos(*aCompleteValue);
   return S_OK;
 }
 

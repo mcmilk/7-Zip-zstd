@@ -17,8 +17,6 @@
 #include "LangUtils.h"
 #endif
 
-#include "AppTitle.h"
-
 class CUpdateCallback100Imp: 
   public IFolderArchiveUpdateCallback,
   public ICryptoGetTextPassword2,
@@ -34,7 +32,7 @@ DECLARE_NOT_AGGREGATABLE(CUpdateCallback100Imp)
 
 DECLARE_NO_REGISTRY()
 
-  // IProfress
+  // IProgress
 
   STDMETHOD(SetTotal)(UINT64 size);
   STDMETHOD(SetCompleted)(const UINT64 *completeValue);
@@ -46,17 +44,11 @@ DECLARE_NO_REGISTRY()
 
   STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 private:
-  // DWORD m_ThreadID;
   bool _passwordIsDefined;
   UString _password;
 
 public:
-  ~CUpdateCallback100Imp()
-  {
-    // _progressDialog.Close();
-  }
-  CAppTitle _appTitle;
-  CProgressDialog _progressDialog;
+  CProgressDialog ProgressDialog;
   HWND _parentWindow;
   void Init(HWND parentWindow, 
       bool passwordIsDefined, const UString &password)
@@ -68,7 +60,7 @@ public:
   }
   void StartProgressDialog(const CSysString &title)
   {
-    _progressDialog.Create(title, _parentWindow);
+    ProgressDialog.Create(title, _parentWindow);
   }
 
 };

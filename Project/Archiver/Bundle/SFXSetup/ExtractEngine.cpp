@@ -29,10 +29,10 @@ struct CThreadExtracting
   
   DWORD Process()
   {
-    ExtractCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
+    ExtractCallbackSpec->ProgressDialog.WaitCreating();
     Result = ArchiveHandler->ExtractAllItems(BoolToInt(false), 
         ExtractCallback);
-    ExtractCallbackSpec->_progressDialog.MyClose();
+    ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
   static DWORD WINAPI MyThreadFunction(void *param)

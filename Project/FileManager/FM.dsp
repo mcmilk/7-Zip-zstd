@@ -381,6 +381,14 @@ SOURCE=.\Resource\ComboDialog\ComboDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Resource\CopyDialog\CopyDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\CopyDialog\CopyDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Resource\ListViewDialog\ListViewDialog.cpp
 # End Source File
 # Begin Source File
@@ -656,6 +664,14 @@ SOURCE=..\..\SDK\Windows\ResourceString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\SDK\Windows\Shell.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SDK\Windows\Shell.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\SDK\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
@@ -832,14 +848,6 @@ SOURCE=..\..\SDK\Util\FilePathAutoRename.h
 # End Source File
 # End Group
 # End Group
-# Begin Source File
-
-SOURCE=.\AppTitle.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\AppTitle.h
-# End Source File
 # Begin Source File
 
 SOURCE=.\FilePlugins.cpp

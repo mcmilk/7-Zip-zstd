@@ -19,6 +19,7 @@ static const TCHAR *kPositionValueName = _T("Position");
 static const TCHAR *kPanelPathValueName = _T("PanelPath");
 static const TCHAR *kFolderHistoryValueName = _T("FolderHistory");
 static const TCHAR *kFastFoldersValueName = _T("FolderShortcuts");
+static const TCHAR *kCopyHistoryValueName = _T("CopyHistory");
 
 
 #pragma pack( push, PragmaColumnInfoSpec)
@@ -262,3 +263,20 @@ void SaveFastFolders(const UStringVector &folders)
   { SaveStringList(kFastFoldersValueName, folders); }
 void ReadFastFolders(UStringVector &folders)
   { ReadStringList(kFastFoldersValueName, folders); }
+
+void SaveCopyHistory(const UStringVector &folders)
+  { SaveStringList(kCopyHistoryValueName, folders); }
+void ReadCopyHistory(UStringVector &folders)
+  { ReadStringList(kCopyHistoryValueName, folders); }
+
+void AddUniqueStringToHeadOfList(UStringVector &list, 
+    const UString &string)
+{
+  for(int i = 0; i < list.Size();)
+    if (string.CollateNoCase(list[i]) == 0)
+      list.Delete(i);
+    else
+      i++;
+  list.Insert(0, string);
+}
+

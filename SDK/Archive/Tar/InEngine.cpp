@@ -96,7 +96,11 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemInfoEx &itemInfo)
   itemInfo.Mode = OctalToNumber(header.Mode);
   itemInfo.UID = OctalToNumber(header.UID);
   itemInfo.GID = OctalToNumber(header.GID);
+  
   itemInfo.Size = OctalToNumber(header.Size);
+  if (itemInfo.LinkFlag == NFileHeader::NLinkFlag::kLink)
+    itemInfo.Size = 0;
+
   itemInfo.ModificationTime = OctalToNumber(header.ModificationTime);
   
 

@@ -55,6 +55,8 @@ STATPROPSTG kProperties[] =
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8},
   { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidCreationTime, VT_FILETIME},
+  { NULL, kpidLastAccessTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
 
 
@@ -93,6 +95,20 @@ STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
   return S_OK;
 }
 
+static bool RarTimeToFileTime(const CRarTime &rarTime, FILETIME &result)
+{
+  if (!DosTimeToFileTime(rarTime.DosTime, result))
+    return false;
+  UINT64 &value = *(UINT64 *)&result;
+  value += (int)rarTime.LowSecond * 10000000;
+  UINT64 subTime = ((UINT64)rarTime.SubTime[2] << 16) + 
+    ((UINT64)rarTime.SubTime[1] << 8) +
+    ((UINT64)rarTime.SubTime[0]);
+  // value += (subTime * 10000000) >> 24;
+  value += subTime;
+  return true;
+}
+
 STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
@@ -121,7 +137,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
     case kpidLastWriteTime:
     {
       FILETIME localFileTime, utcFileTime;
-      if (DosTimeToFileTime(item.Time, localFileTime))
+      if (RarTimeToFileTime(item.LastWriteTime, localFileTime))
       {
         if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
           utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
@@ -131,6 +147,38 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
       propVariant = utcFileTime;
       break;
     }
+    case kpidCreationTime:
+    {
+      if (item.IsCreationTimeDefined)
+      {
+        FILETIME localFileTime, utcFileTime;
+        if (RarTimeToFileTime(item.CreationTime, localFileTime))
+        {
+          if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+            utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+        }
+        else
+          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+        propVariant = utcFileTime;
+      }
+      break;
+    }
+    case kpidLastAccessTime:
+    {
+      if (item.IsLastAccessTimeDefined)
+      {
+        FILETIME localFileTime, utcFileTime;
+        if (RarTimeToFileTime(item.LastAccessTime, localFileTime))
+        {
+          if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+            utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+        }
+        else
+          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+        propVariant = utcFileTime;
+      }
+      break;
+    }
     case kpidAttributes:
       propVariant = item.GetWinAttributes();
       break;
@@ -138,7 +186,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
       propVariant = item.IsEncrypted();
       break;
     case kpidSolid:
-      propVariant = item.IsSolid();
+      propVariant = IsSolid(index);
       break;
     case kpidCommented:
       propVariant = item.IsCommented();
@@ -309,7 +357,6 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
     }
 
-    CInArchiveInfo archiveInfo;
     while(true)
     {
       CComPtr<IInStream> inStream;
@@ -320,7 +367,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         
         if(_archives.Size() == 1)
         {
-          if (!archiveInfo.IsVolume())
+          if (!_archiveInfo.IsVolume())
             break;
           UString baseName;
           {
@@ -330,7 +377,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
               break;
             baseName = propVariant.bstrVal;
           }
-          seqName.InitName(baseName, archiveInfo.HaveNewVolumeName());
+          seqName.InitName(baseName, _archiveInfo.HaveNewVolumeName());
         }
 
         UString fullName = seqName.GetNextName();
@@ -351,7 +398,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
       if (_archives.IsEmpty())
       {
-        archive.GetArchiveInfo(archiveInfo);
+        archive.GetArchiveInfo(_archiveInfo);
       }
 
       
@@ -433,7 +480,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     censoredTotalUnPacked += itemInfo.UnPackSize;
     // censoredTotalPacked += itemInfo.PackSize;
     for(int j = lastIndex; j <= index; j++)
-      if(!_items[_refItems[j].ItemIndex].IsSolid())
+      // if(!_items[_refItems[j].ItemIndex].IsSolid())
+      if(!IsSolid(j))
         lastIndex = j;
     for(j = lastIndex; j <= index; j++)
     {
@@ -517,9 +565,10 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     bool mustBeProcessedAnywhere = false;
     if(i < importantIndexes.Size() - 1)
     {
-      const CRefItem &nextRefItem = _refItems[importantIndexes[i + 1]];
-      const CItemInfoEx &nextItemInfo = _items[nextRefItem.ItemIndex];
-      mustBeProcessedAnywhere = nextItemInfo.IsSolid();
+      // const CRefItem &nextRefItem = _refItems[importantIndexes[i + 1]];
+      // const CItemInfoEx &nextItemInfo = _items[nextRefItem.ItemIndex];
+      // mustBeProcessedAnywhere = nextItemInfo.IsSolid();
+      mustBeProcessedAnywhere = IsSolid(importantIndexes[i + 1]);
     }
     
     if (!mustBeProcessedAnywhere && !testMode && !realOutStream)
@@ -722,7 +771,11 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
         CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
         RINOK(decoder.QueryInterface(&compressSetDecoderProperties));
         
-        BYTE isSolid = (itemInfo.IsSolid() || itemInfo.IsSplitBefore())
+        BYTE isSolid = (
+          // itemInfo.IsSolid() 
+          IsSolid(index)
+          || 
+          itemInfo.IsSplitBefore())
             ? 1: 0;
 
         CComObjectNoLock<CSequentialInStreamImp> *inStreamSpec = new 

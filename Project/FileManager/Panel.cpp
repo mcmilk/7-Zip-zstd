@@ -173,6 +173,20 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
       return 0;
     }
   }
+  else if (message == WM_SYSCHAR)
+  {
+    // For Alt+Enter Beep disabling
+    UINT scanCode = (lParam >> 16) & 0xFF;
+    UINT virtualKey = MapVirtualKey(scanCode, 1);
+    if (virtualKey == VK_RETURN)
+      return 0;
+  }
+  /*
+  else if (message == WM_SYSKEYDOWN)
+  {
+    // return 0;
+  }
+  */
   else if (message == WM_KEYDOWN)
   {
     bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
@@ -319,7 +333,7 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   InitCommonControlsEx(&icex);
   
   _headerComboBox.CreateEx(0, WC_COMBOBOXEX, NULL,
-      WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN,
+    WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
       0, 0, 0, 400,
       _headerToolBar, 
       (HMENU)(_comboBoxID),

@@ -14,6 +14,7 @@
 
 #include "HelpUtils.h"
 #include "LangUtils.h"
+#include "PluginInterface.h"
 
 extern CApp g_App;
 extern HINSTANCE g_hInstance;	
@@ -24,6 +25,7 @@ extern void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 
 using namespace NWindows;
 
+static const int kFileMenuIndex = 0;
 static const int kViewMenuIndex = 2;
 
 
@@ -227,8 +229,23 @@ void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
   }
 }
 
+CMenu g_FileMenu;
+
+class CFileMenuDestroyer
+{
+public:
+  ~CFileMenuDestroyer()
+  {
+    if ((HMENU)g_FileMenu != 0)
+      g_FileMenu.Destroy();
+  }
+} g_FileMenuDestroyer;
+
+
 void MyLoadMenu(HWND hWnd)
 {
+  if ((HMENU)g_FileMenu != 0)
+    g_FileMenu.Destroy();
   HMENU oldMenu = ::GetMenu(hWnd);
   HMENU baseMenu = ::LoadMenu(g_hInstance, MAKEINTRESOURCE(IDM_MENU));
   ::SetMenu(hWnd, baseMenu);
@@ -247,9 +264,55 @@ void MyLoadMenu()
   MyLoadMenu(g_HWND);
 }
 
+static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
+{
+  CMenu srcMenu;
+  srcMenu.Attach(srcMenuSpec);
+  CMenu destMenu;
+  destMenu.Attach(destMenuSpec);
+  int startPos = 0;
+  for (int i = 0; i < srcMenu.GetItemCount(); i++)
+  {
+    MENUITEMINFO menuInfo;
+    ZeroMemory(&menuInfo, sizeof(menuInfo));
+    menuInfo.cbSize = sizeof(menuInfo);
+    menuInfo.fMask = MIIM_STATE | MIIM_ID | MIIM_FTYPE | MIIM_STRING;
+    menuInfo.fType = MFT_STRING;
+    const int kBufferSize = 1024;
+    TCHAR buffer[kBufferSize + 1];
+    menuInfo.dwTypeData = buffer;
+    menuInfo.cch = kBufferSize;
+    if (srcMenu.GetItemInfo(i, true, &menuInfo))
+    {
+      if (destMenu.InsertItem(startPos, true, &menuInfo))
+        startPos++;
+    }
+  }
+}
+
 void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
 {
-  if (position == kViewMenuIndex)
+  if (::GetSubMenu(::GetMenu(g_HWND), position) != hMenu)
+    return;
+  if (position == kFileMenuIndex)
+  {
+    if ((HMENU)g_FileMenu == 0)
+    {
+      g_FileMenu.CreatePopup();
+      CopyMenu(hMenu, g_FileMenu);
+    }
+    CMenu menu;
+    menu.Attach(hMenu);
+    while (menu.GetItemCount() > 0)
+    {
+      if (!menu.RemoveItem(0, MF_BYPOSITION))
+        break;
+    }
+    // CopyMenu(g_FileMenu, hMenu);
+    g_App.GetFocusedPanel().CreateFileMenu(hMenu);
+
+  }
+  else if (position == kViewMenuIndex)
   {
     // View;
     CMenu menu;
@@ -259,14 +322,37 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
   }
 }
 
+/*
+It doesn't help
+void OnMenuUnActivating(HWND hWnd, HMENU hMenu, int id)
+{
+  if (::GetSubMenu(::GetMenu(g_HWND), 0) != hMenu)
+    return;
+  // g_App.GetFocusedPanel()._contextMenu.Release();
+}
+
+void OnMenuUnActivating(HWND hWnd)
+{
+}
+*/
+
+
 void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
 {
+  {
+    CMenu srcMenu;
+    srcMenu.Attach(::GetSubMenu(::GetMenu(g_HWND), 0));
+    if ((HMENU)g_FileMenu == 0)
+    {
+      g_FileMenu.CreatePopup();
+      CopyMenu(srcMenu, g_FileMenu);
+    }
+  }
+
   CMenu destMenu;
   destMenu.Attach(hMenu);
-  CMenu srcMenu;
-  srcMenu.Attach(::GetSubMenu(::GetMenu(g_HWND), 0));
   
-  for (int i = 0; i < srcMenu.GetItemCount(); i++)
+  for (int i = 0; i < g_FileMenu.GetItemCount(); i++)
   {
     MENUITEMINFO menuInfo;
     ZeroMemory(&menuInfo, sizeof(menuInfo));
@@ -301,12 +387,13 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
     menuInfo.dwTypeData = buffer;
     menuInfo.cch = kBufferSize;
 
-    if (srcMenu.GetItemInfo(i, true, &menuInfo))
+    if (g_FileMenu.GetItemInfo(i, true, &menuInfo))
     {
       if (menuInfo.wID == IDCLOSE)
         continue;
       bool createItem = (menuInfo.wID == IDM_CREATE_FOLDER || 
           menuInfo.wID == IDM_CREATE_FILE);
+      /*
       if (forFileMode)
       {
         if (createItem)
@@ -317,6 +404,7 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
         if (!createItem)
          continue;
       }
+      */
       if (destMenu.InsertItem(startPos, true, &menuInfo))
         startPos++;
     }
@@ -340,6 +428,14 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode)
 
 bool ExecuteFileCommand(int id)
 {
+  if (id >= kPluginMenuStartID)
+  {
+    g_App.GetFocusedPanel().InvokePluginCommand(id);
+    g_App.GetFocusedPanel()._sevenZipContextMenu.Release();
+    g_App.GetFocusedPanel()._systemContextMenu.Release();
+    return true;
+  }
+
   switch (id)
   {	
     // File
@@ -369,6 +465,9 @@ bool ExecuteFileCommand(int id)
     case IDM_DELETE:
       g_App.Delete();
       break;
+    case ID_FILE_PROPERTIES:
+      g_App.Properties();
+      break;
 
     case IDM_CREATE_FOLDER:
       g_App.CreateFolder();
@@ -396,8 +495,11 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     
     // Edit
-    case IDM_SELECT_ALL:
-      g_App.SelectAll(true);
+    case IDM_EDIT_COPY:
+      g_App.EditCopy();
+      break;
+    case IDM_EDIT_PASTE:
+      g_App.EditPaste();
       break;
     case IDM_DESELECT_ALL:
       g_App.SelectAll(false);

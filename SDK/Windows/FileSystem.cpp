@@ -29,17 +29,25 @@ bool MyGetVolumeInformation(
   return result;
 }
 
+typedef (WINAPI * GetDiskFreeSpaceExPointer)(
+  LPCTSTR lpDirectoryName,                 // directory name
+  PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
+  PULARGE_INTEGER lpTotalNumberOfBytes,    // bytes on disk
+  PULARGE_INTEGER lpTotalNumberOfFreeBytes // free bytes on disk
+);
+
 bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
     UINT64 &clusterSize, UINT64 &totalSize, UINT64 &freeSize)
 {
-  FARPROC pGetDiskFreeSpaceEx = 
-      GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
+  GetDiskFreeSpaceExPointer pGetDiskFreeSpaceEx = 
+      (GetDiskFreeSpaceExPointer)GetProcAddress(
+      GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
 
   bool sizeIsDetected = false;
   if (pGetDiskFreeSpaceEx)
   {
     UINT64 i64FreeBytesToCaller;
-    sizeIsDetected = BOOLToBool(::GetDiskFreeSpaceEx(rootPathName,
+    sizeIsDetected = BOOLToBool(pGetDiskFreeSpaceEx(rootPathName,
                 (PULARGE_INTEGER)&i64FreeBytesToCaller,
                 (PULARGE_INTEGER)&totalSize,
                 (PULARGE_INTEGER)&freeSize));

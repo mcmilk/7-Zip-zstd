@@ -174,14 +174,12 @@ struct CThreadUpdateCompress
   DWORD Process()
   {
     NCOM::CComInitializer comInitializer;
-    UpdateCallbackSpec->_progressDialog._dialogCreatedEvent.Lock();
-    UpdateCallbackSpec->_appTitle.Window = 
-        (HWND)UpdateCallbackSpec->_progressDialog;
+    UpdateCallbackSpec->ProgressDialog.WaitCreating();
     Result = OutArchive->DoOperation(&ClassID,
       OutArchivePath, ActionSetByte, 
       (SfxMode ? (const wchar_t *)SfxModule: NULL),
       UpdateCallback);
-    UpdateCallbackSpec->_progressDialog.MyClose();
+    UpdateCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
 
@@ -383,17 +381,12 @@ HRESULT CompressArchive(const CSysStringVector &fileNames)
     updater.ActionSetByte[i] = actionSet->StateActions[i];
   updater.UpdateCallbackSpec = new CComObjectNoLock<CUpdateCallback100Imp>;
   updater.UpdateCallback = updater.UpdateCallbackSpec;
-  // updater.UpdateCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
   updater.OutArchive = outArchive;
   // updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
 
   CSysString title = LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
   updater.UpdateCallbackSpec->Init(0, !dialog.Password.IsEmpty(), 
       GetUnicodeString(dialog.Password));
-  // updater.UpdateCallbackSpec->_appTitle.Window = (HWND)updater.UpdateCallbackSpec->_progressDialog;
-  updater.UpdateCallbackSpec->_appTitle.Window = (HWND)0;
-  updater.UpdateCallbackSpec->_appTitle.Title = title;
-
 
   RETURN_IF_NOT_S_OK(SetOutProperties(outArchive, dialog.m_Info.Method, 
       dialog.m_Info.SolidModeIsAllowed, dialog.m_Info.SolidMode, 

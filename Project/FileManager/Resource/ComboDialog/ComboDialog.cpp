@@ -25,7 +25,18 @@ bool CComboDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _comboBox.Attach(GetItem(IDC_COMBO_COMBO));
+
+  /*
+  // why it doesn't work ?
+  DWORD style = _comboBox.GetStyle();
+  if (Sorted)
+    style |= CBS_SORT;
+  else
+    style &= ~CBS_SORT;
+  _comboBox.SetStyle(style);
+  */
   SetText(Title);
+  
   NControl::CStatic staticContol;
   staticContol.Attach(GetItem(IDC_COMBO_STATIC));
   staticContol.SetText(Static);

@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <initguid.h>
+#include <io.h>
 
 #include "../../Crypto/Cipher/Common/CipherInterface.h"
 #include "../../Compress/Interface/CompressInterface.h"
@@ -49,7 +50,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 28  Copyright (c) 1999-2003 Igor Pavlov  2003-02-16\n";
+" 2.30 Beta 29  Copyright (c) 1999-2003 Igor Pavlov  2003-04-07\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -1106,6 +1107,11 @@ int Main2(int numArguments, const char *arguments[])
       if (archiveType.IsEmpty())
         throw "type of archive is not specified";
     bool enableParcents = !parser[NKey::kDisablePercents].ThereIs;
+    if (enableParcents)
+    {
+      if (!isatty(fileno(stdout)))  
+        enableParcents = false;
+    }
     HRESULT result  = UpdateArchiveStdMain(wildcardCensor, options, workingDir, 
         archive, &defaultItemName, &archiveFileInfo, enableParcents);
     if (result != S_OK)

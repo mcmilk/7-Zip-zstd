@@ -356,10 +356,6 @@ SOURCE=..\..\..\Compress\LZ\LZMA\LiteralCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Compress\LZ\LZMA\LZMA.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Compress\LZ\LZMA\LZMA.h
 # End Source File
 # Begin Source File

@@ -134,7 +134,7 @@ void CCoder::read_pt_len(int nn, int nbit, int i_special)
     }
     while (i < nn)
       pt_len[i++] = 0;
-    make_table(nn, pt_len, 8, pt_table, sizeof(pt_table));
+    make_table(nn, pt_len, 8, pt_table, PTABLESIZE);
   }
 }
 
@@ -188,7 +188,7 @@ void CCoder::read_c_len()
     }
     while (i < NC)
       c_len[i++] = 0;
-    make_table(NC, c_len, 12, c_table, sizeof(c_table));
+    make_table(NC, c_len, 12, c_table, CTABLESIZE);
   }
 }
 

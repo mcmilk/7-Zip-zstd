@@ -1,4 +1,4 @@
-Compression method IDs (2.30 Beta 26)
+Compression method IDs (2.30 Beta 29)
 ------------------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -33,8 +33,9 @@ List of defined IDs
          01 - BC_ARM
       06 - M68
          05 - BC_M68_B (Big Endian)
-      07
+      07 - ARM Thumb
          01 - BC_ARMThumb
+      08 - reserved for SPARC
 
    04 - PPMD
       01 - Version

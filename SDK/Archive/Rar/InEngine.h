@@ -55,9 +55,8 @@ class CInArchive
   bool m_SeekOnArchiveComment;
   UINT64 m_ArchiveCommentPosition;
   
-  void CInArchive::ReadName(CItemInfoEx &anItemInfo);
-  void ReadHeader32Real(CItemInfoEx &anItemInfo);
-  void ReadHeader64Real(CItemInfoEx &anItemInfo);
+  void ReadName(const BYTE *data, CItemInfoEx &anItemInfo, int nameSize);
+  void ReadHeaderReal(const BYTE *data, CItemInfoEx &anItemInfo);
   
   HRESULT ReadBytes(void *aData, UINT32 aSize, UINT32 *aProcessedSize);
   bool ReadBytesAndTestSize(void *aData, UINT32 aSize);
@@ -70,12 +69,10 @@ class CInArchive
   void AddToSeekValue(UINT64 anAddValue);
   
 protected:
-  union
-  {
-    NHeader::NBlock::CBlock m_BlockHeader;
-    NHeader::NFile::CBlock32 m_FileHeader32;
-    NHeader::NFile::CBlock64 m_FileHeader64;
-  };
+
+  CDynamicBuffer<BYTE> m_FileHeaderData;
+
+  NHeader::NBlock::CBlock m_BlockHeader;
   
   bool ReadMarkerAndArchiveHeader(const UINT64 *aSearchHeaderSizeLimit);
 public:

@@ -47,55 +47,65 @@ public:
 
   int GetFocusedPanelIndex();
 
+  CPanel &GetFocusedPanel()
+    { return _panel[GetFocusedPanelIndex()]; }
+
   // File Menu
   void OpenItem()
-    { _panel[GetFocusedPanelIndex()].OpenSelectedItems(true); }
+    { GetFocusedPanel().OpenSelectedItems(true); }
   void OpenItemInside()
-    { _panel[GetFocusedPanelIndex()].OpenFocusedItemAsInternal(); }
+    { GetFocusedPanel().OpenFocusedItemAsInternal(); }
   void OpenItemOutside()
-    { _panel[GetFocusedPanelIndex()].OpenSelectedItems(false); }
+    { GetFocusedPanel().OpenSelectedItems(false); }
   void EditItem()
-    { _panel[GetFocusedPanelIndex()].EditItem(); }
+    { GetFocusedPanel().EditItem(); }
   void Rename()
-    { _panel[GetFocusedPanelIndex()].RenameFile(); }
+    { GetFocusedPanel().RenameFile(); }
   void CopyTo()
     { OnCopy(false, false, GetFocusedPanelIndex()); }
   void MoveTo()
     { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete()
-    { _panel[GetFocusedPanelIndex()].DeleteItems(); }
+    { GetFocusedPanel().DeleteItems(); }
+  void Properties()
+    { GetFocusedPanel().Properties(); }
 
   void CreateFolder()
-    { _panel[GetFocusedPanelIndex()].CreateFolder(); }
+    { GetFocusedPanel().CreateFolder(); }
   void CreateFile()
-    { _panel[GetFocusedPanelIndex()].CreateFile(); }
+    { GetFocusedPanel().CreateFile(); }
 
   // Edit
+  void EditCopy()
+    { GetFocusedPanel().EditCopy(); }
+  void EditPaste()
+    { GetFocusedPanel().EditPaste(); }
+
   void SelectAll(bool selectMode)
-    { _panel[GetFocusedPanelIndex()].SelectAll(selectMode); }
+    { GetFocusedPanel().SelectAll(selectMode); }
   void InvertSelection()
-    { _panel[GetFocusedPanelIndex()].InvertSelection(); }
+    { GetFocusedPanel().InvertSelection(); }
   void SelectSpec(bool selectMode)
-    { _panel[GetFocusedPanelIndex()].SelectSpec(selectMode); }
+    { GetFocusedPanel().SelectSpec(selectMode); }
   void SelectByType(bool selectMode)
-    { _panel[GetFocusedPanelIndex()].SelectByType(selectMode); }
+    { GetFocusedPanel().SelectByType(selectMode); }
 
   void SetListViewMode(UINT32 index)
-    { _panel[GetFocusedPanelIndex()].SetListViewMode(index); }
+    { GetFocusedPanel().SetListViewMode(index); }
   UINT32 GetListViewMode()
-    { return  _panel[GetFocusedPanelIndex()].GetListViewMode(); }
+    { return  GetFocusedPanel().GetListViewMode(); }
 
   void SortItemsWithPropID(PROPID propID)
-    { _panel[GetFocusedPanelIndex()].SortItemsWithPropID(propID); }
+    { GetFocusedPanel().SortItemsWithPropID(propID); }
 
   void OpenRootFolder()
-    { _panel[GetFocusedPanelIndex()].OpenDrivesFolder(); }
+    { GetFocusedPanel().OpenDrivesFolder(); }
   void OpenParentFolder()
-    { _panel[GetFocusedPanelIndex()].OpenParentFolder(); }
+    { GetFocusedPanel().OpenParentFolder(); }
   void FoldersHistory()
-    { _panel[GetFocusedPanelIndex()].FoldersHistory(); }
+    { GetFocusedPanel().FoldersHistory(); }
   void RefreshView()
-    { _panel[GetFocusedPanelIndex()].OnReload(); }
+    { GetFocusedPanel().OnReload(); }
 };
 
 #endif
