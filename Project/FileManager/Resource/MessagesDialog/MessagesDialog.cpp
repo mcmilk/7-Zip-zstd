@@ -28,7 +28,7 @@ void CMessagesDialog::AddMessage(LPCTSTR aMessage)
 
   CSysString stringNumber;
   TCHAR sz[32];
-  _stprintf(sz, _T("%d"), itemIndex);
+  wsprintf(sz, _T("%d"), itemIndex);
   stringNumber = sz;
 
   item.pszText = (LPTSTR)(LPCTSTR)stringNumber;
@@ -83,5 +83,5 @@ bool CMessagesDialog::OnInit()
     _messageList.SetItemState(0, aState, aState);
   }
   */
-	return CModalDialog::OnInit();
+  return CModalDialog::OnInit();
 }

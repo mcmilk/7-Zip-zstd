@@ -29,7 +29,7 @@ bool MyGetVolumeInformation(
   return result;
 }
 
-typedef (WINAPI * GetDiskFreeSpaceExPointer)(
+typedef BOOL (WINAPI * GetDiskFreeSpaceExPointer)(
   LPCTSTR lpDirectoryName,                 // directory name
   PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
   PULARGE_INTEGER lpTotalNumberOfBytes,    // bytes on disk

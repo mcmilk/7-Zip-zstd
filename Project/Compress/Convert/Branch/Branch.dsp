@@ -229,5 +229,17 @@ SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
 SOURCE=..\..\Interface\CompressInterface.h
 # End Source File
 # End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\NewHandler.h
+# End Source File
+# End Group
 # End Target
 # End Project

@@ -42,6 +42,7 @@
 #define IDM_OPEN_PARENT_FOLDER          431
 #define IDM_FOLDERS_HISTORY             432
 #define IDM_VIEW_REFRESH                440
+#define IDM_VIEW_TWO_PANELS             450
 #define IDM_OPTIONS                     510
 #define IDM_HELP_CONTENTS               610
 #define IDM_ABOUT                       620

@@ -175,17 +175,18 @@ STDMETHODIMP CEnumFolderItemProperty::Next(ULONG numItems,
       result =  S_FALSE;
       break;
     }
-    const CArchiveItemPropertyTemp &aSrcItem = m_Properties[Index];
-    STATPROPSTG &aDestItem = items[index];
-    aDestItem.propid = aSrcItem.ID;
-    aDestItem.vt = aSrcItem.Type;
-    if(!aSrcItem.Name.IsEmpty())
+    const CArchiveItemPropertyTemp &srcItem = m_Properties[Index];
+    STATPROPSTG &destItem = items[index];
+    destItem.propid = srcItem.ID;
+    destItem.vt = srcItem.Type;
+    if(!srcItem.Name.IsEmpty())
     {
-      aDestItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(aSrcItem.Name) + 1) * sizeof(wchar_t));
-      wcscpy(aDestItem.lpwstrName, aSrcItem.Name);
+      int len = (lstrlenW(srcItem.Name) + 1) * sizeof(wchar_t);
+      destItem.lpwstrName = (wchar_t *)CoTaskMemAlloc(len);
+      memmove(destItem.lpwstrName, srcItem.Name, len);
     }
     else
-      aDestItem.lpwstrName = 0; // aSrcItem.lpwstrName;
+      destItem.lpwstrName = 0; // srcItem.lpwstrName;
   }
   if (numFetched)
     *numFetched = index;

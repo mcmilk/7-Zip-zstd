@@ -101,6 +101,12 @@ public:
 
   bool RedrawItems(int firstIndex, int lastIndex)
     { return BOOLToBool(ListView_RedrawItems(_window, firstIndex, lastIndex)); }
+  bool RedrawAllItems()
+  { 
+    if (GetItemCount() > 0)
+      return RedrawItems(0, GetItemCount() - 1);
+    return true;
+  }
   bool RedrawItem(int index)
     { return RedrawItems(index, index); }
  

@@ -5,14 +5,8 @@
 #ifndef __COMMON_NEWHANDLER_H
 #define __COMMON_NEWHANDLER_H
 
-class CNewException{};
+#include "Common/Exception.h"
 
-class CNewHandlerSetter
-{
-  _PNH MemErrorOldVCFunction;
-public:
-  CNewHandlerSetter();
-  ~CNewHandlerSetter();
-};
+class CNewException: public CSystemException{};
 
 #endif 

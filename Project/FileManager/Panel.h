@@ -5,7 +5,8 @@
 #ifndef __PANEL_H
 #define __PANEL_H
 
-#include "Windows/Control/Toolbar.h"
+#include "Windows/Control/ToolBar.h"
+#include "Windows/Control/ReBar.h"
 #include "Windows/Control/ListView.h"
 #include "Windows/Control/Static.h"
 #include "Windows/Control/Edit.h"
@@ -26,16 +27,18 @@
 
 #include "AppState.h"
 
-const kPluginMenuStartID = 1000;
+const int kParentFolderID = 100;
+const int kPluginMenuStartID = 1000;
 
 class CPanelCallback
 {
 public:
   virtual void OnTab() = 0;
-  virtual void OnSetFocusToPath(int index) = 0;
+  virtual void SetFocusToPath(int index) = 0;
   virtual void OnCopy(bool move, bool copyToSame) = 0;
   virtual void OnSetSameFolder() = 0;
   virtual void OnSetSubFolder() = 0;
+  virtual void PanelWasFocused() = 0;
 };
 
 void PanelCopyItems();
@@ -109,17 +112,33 @@ public:
   LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 };
 
+/*
+class CMyComboBox: public NWindows::NControl::CComboBoxEx
+{
+public:
+  WNDPROC _origWindowProc;
+  CPanel *_panel;
+  LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
+};
+*/
+class CMyComboBoxEdit: public NWindows::NControl::CEdit
+{
+public:
+  WNDPROC _origWindowProc;
+  CPanel *_panel;
+  LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
+};
+
 class CPanel:public NWindows::NControl::CWindow2
 {
   HWND _mainWindow;
 
   CExtToIconMap _extToIconMap;
-  int _index;
+  // int _index;
   UINT _baseID;
   UINT _comboBoxID;
   UINT _statusBarID;
 
-  CPanelCallback *_panelCallback;
   CAppState *_appState;
 
   bool OnCommand(int code, int itemID, LPARAM lParam, LRESULT &result);
@@ -130,6 +149,7 @@ class CPanel:public NWindows::NControl::CWindow2
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam, LRESULT &result);
   void OnComboBoxCommand(UINT code, LPARAM &aParam);
   bool OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result);
+  bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
@@ -138,13 +158,16 @@ class CPanel:public NWindows::NControl::CWindow2
   void OnColumnClick(LPNMLISTVIEW info);
   bool OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result);
 
-
 public:
+  CPanelCallback *_panelCallback;
+
   void DeleteItems();
   void CreateFolder();
   void CreateFile();
 
 private:
+
+  void ChangeWindowSize(int xSize, int ySize);
  
   void InitColumns();
   // void InitColumns2(PROPID sortID);
@@ -172,26 +195,36 @@ private:
   // CRecordVector<PROPID> m_ColumnsPropIDs;
 
 public:
+  NWindows::NControl::CReBar _headerReBar;
   NWindows::NControl::CToolBar _headerToolBar;
   NWindows::NControl::CComboBoxEx _headerComboBox;
+  // CMyComboBox _headerComboBox;
+  CMyComboBoxEdit _comboBoxEdit;
   CMyListView _listView;
   NWindows::NControl::CStatusBar _statusBar;
+  bool _lastFocusedIsList;
   // NWindows::NControl::CStatusBar _statusBar2;
 
-  bool _virtualMode;
+  bool _showDots;
+  bool _showRealFileIcons;
+  // bool _virtualMode;
   CBoolVector _selectedStatusVector;
   CUIntVector _realIndices;
 
   UINT32 GetRealIndex(const LVITEM &item) const
   {
+    /*
     if (_virtualMode)
       return _realIndices[item.iItem];
+    */
     return item.lParam;
   }
   int GetRealItemIndex(int indexInListView) const
   {
+    /*
     if (_virtualMode)
       return indexInListView;
+    */
     LPARAM param;
     if (!_listView.GetItemParam(indexInListView, param))
       throw 1;
@@ -215,17 +248,43 @@ public:
   bool IsItemFolder(int itemIndex) const;
   UINT64 GetItemSize(int itemIndex) const;
 
-  LRESULT Create(HWND mainWindow, HWND parentWindow, int index, UINT id, int xPos, 
-      CSysString &currentFolderPrefix, CPanelCallback *panelCallback,
+  ////////////////////////
+  // PanelFolderChange.cpp
+
+  void SetToRootFolder();
+  HRESULT BindToPath(const UString &fullPath); // can be prefix 
+  HRESULT BindToPathAndRefresh(const UString &path);
+  void OpenDrivesFolder();
+  void FastFolderInsert(int index);
+  void FastFolderSelect(int index);
+  void LoadFullPath();
+  void LoadFullPathAndShow();
+  void FoldersHistory();
+  void OpenParentFolder();
+  void CloseOpenFolders();
+  void OpenRootFolder();
+
+
+  LRESULT Create(HWND mainWindow, HWND parentWindow, 
+      UINT id, int xPos, 
+      const UString &currentFolderPrefix, 
+      CPanelCallback *panelCallback,
       CAppState *appState);
-  void SetFocus();
+  void SetFocusToList();
+  void SetFocusToLastRememberedItem();
 
 
   void ReadListViewInfo();
   void SaveListViewInfo();
 
-  CPanel() : _needSaveInfo(false), _startGroupSelect(0), 
-      _selectionIsDefined(false){} 
+  CPanel() : 
+      // _virtualMode(flase),
+      _showDots(false),
+      _showRealFileIcons(false),
+      _needSaveInfo(false), 
+      _startGroupSelect(0), 
+      _selectionIsDefined(false)
+      {} 
 
   bool _needSaveInfo;
   CSysString _typeIDString;
@@ -241,10 +300,8 @@ public:
   void OnLeftClick(LPNMITEMACTIVATE itemActivate);
   bool OnRightClick(LPNMITEMACTIVATE itemActivate, LRESULT &result);
 
-  void LoadCurrentPath();
   void OnTimer();
   void OnReload();
-  void SetToRootFolder();
   bool OnContextMenu(HANDLE windowHandle, int xPos, int yPos);
 
   CComPtr<IContextMenu> _sevenZipContextMenu;
@@ -271,26 +328,22 @@ public:
   void EditCopy();
   void EditPaste();
 
-  void FoldersHistory();
-
   int _startGroupSelect;
 
   bool _selectionIsDefined;
   bool _selectMark;
   int _prevFocusedItem;
 
-  HRESULT BindToFolder(const UString &path);
-  
-  void FastFolderInsert(int index);
-  void FastFolderSelect(int index);
-
+ 
   // void SortItems(int index);
   void SortItemsWithPropID(PROPID propID);
 
-  void GetSelectedItemsIndexes(CRecordVector<UINT32> &indices) const;
-  void GetOperatedItemIndexes(CRecordVector<UINT32> &indices) const;
+  void GetSelectedItemsIndices(CRecordVector<UINT32> &indices) const;
+  void GetOperatedItemIndices(CRecordVector<UINT32> &indices) const;
   void KillSelection();
 
+  UString GetFolderTypeID() const;
+  bool IsRootFolder() const;
   bool IsFSFolder() const;
 
   bool _processTimer;
@@ -324,8 +377,6 @@ public:
   // bool _passwordIsDefined;
   // UString _password;
 
-  void OpenDrivesFolder();
-  void SetCurrentPathText();
   void RefreshListCtrl();
 
   void MessageBox(LPCWSTR message);
@@ -340,9 +391,7 @@ public:
   void OpenSelectedItems(bool internal);
 
   void OpenFolderExternal(int index);
-  void OpenRootFolder();
-  void OpenParentFolder();
-  void CloseOpenFolders();
+
   void OpenFolder(int index);
   HRESULT OpenParentArchiveFolder();
   HRESULT OpenItemAsArchive(const UString &name, 

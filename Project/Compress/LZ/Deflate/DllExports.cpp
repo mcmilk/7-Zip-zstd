@@ -11,8 +11,6 @@
 
 CComModule _Module;
 
-CNewHandlerSetter g_NewHandlerSetter;
-
 BEGIN_OBJECT_MAP(ObjectMap)
   OBJECT_ENTRY(CLSID_CCompressDeflateEncoder, NDeflate::NEncoder::CCOMCoder)
   OBJECT_ENTRY(CLSID_CCompressDeflate64Encoder, NDeflate::NEncoder::CCOMCoder64)

@@ -472,6 +472,10 @@ SOURCE=..\..\..\..\SDK\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\String.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\String.h
 # End Source File
 # Begin Source File

@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_UNICODE" /D "UNICODE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_UNICODE" /D "UNICODE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -177,6 +177,10 @@ SOURCE=..\..\..\SDK\Common\Defs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\SDK\Common\Exception.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\SDK\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -214,6 +218,10 @@ SOURCE=..\..\..\SDK\Common\StdOutStream.cpp
 # Begin Source File
 
 SOURCE=..\..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\SDK\Common\String.cpp
 # End Source File
 # Begin Source File
 

@@ -23,7 +23,7 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   if(lpData == NULL)
     return 0;
   CPanel *panel = (CPanel*)lpData;
-
+  
   switch(panel->_sortID)
   {
     // if (panel->_sortIndex == 0)
@@ -71,6 +71,11 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
   if(lpData == NULL)
     return 0;
+  if (lParam1 == -1)
+    return -1;
+  if (lParam2 == -1)
+    return 1;
+
   CPanel *panel = (CPanel*)lpData;
 
   bool isDirectory1 = panel->IsItemFolder(lParam1);

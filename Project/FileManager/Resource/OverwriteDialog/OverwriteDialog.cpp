@@ -49,7 +49,7 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
         NumberToStringW(fileInfo.Size)));
 
   CSysString reducedName;
-  const kLineSize = 88;
+  const int kLineSize = 88;
   for (int i = 0; i < fileInfo.Name.Length();)
   {
     reducedName += fileInfo.Name.Mid(i, kLineSize);

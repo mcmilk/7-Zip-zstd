@@ -3,13 +3,9 @@
 #include "StdAfx.h"
 
 #include "StdOutStream.h"
+#include "Common/IntToString.h"
 
 static const char kNewLineChar =  '\n';
-
-static const char *kOneStringFormat = "%s";
-static const char *kOneIntFormat = "%d";
-static const char *kOneUINT32Format = "%u";
-static const char *kOneUINT64Format = "%I64u";
 
 static LPCTSTR kFileOpenMode = _T("wt");
 
@@ -32,13 +28,12 @@ bool CStdOutStream::Close()
   return !_streamIsOpen;
 }
 
-CStdOutStream ::~CStdOutStream ()
+CStdOutStream::~CStdOutStream ()
 {
   Close();
 }
 
-
-CStdOutStream & CStdOutStream ::operator<<(CStdOutStream & (*aFunction)(CStdOutStream  &))
+CStdOutStream & CStdOutStream::operator<<(CStdOutStream & (*aFunction)(CStdOutStream  &))
 {
   (*aFunction)(*this);    
   return *this;
@@ -51,30 +46,26 @@ CStdOutStream & endl(CStdOutStream & outStream)
 
 CStdOutStream & CStdOutStream::operator<<(const char *string)
 {
-  fprintf(_stream, kOneStringFormat, string);
+  fputs(string, _stream);
   return *this;
 }
 
 CStdOutStream & CStdOutStream::operator<<(char c)
 {
-  putc(c, _stream);
+  fputc(c, _stream);
   return *this;
 }
 
 CStdOutStream & CStdOutStream::operator<<(int number)
 {
-  fprintf(_stream, kOneIntFormat, number);
-  return *this;
-}
-
-CStdOutStream & CStdOutStream::operator<<(UINT32 number)
-{
-  fprintf(_stream, kOneUINT32Format, number);
-  return *this;
+  char textString[16];
+  ConvertINT64ToString(number, textString);
+  return operator<<(textString);
 }
 
 CStdOutStream & CStdOutStream::operator<<(UINT64 number)
 {
-  fprintf(_stream, kOneUINT64Format, number);
-  return *this;
+  char textString[32];
+  ConvertUINT64ToString(number, textString);
+  return operator<<(textString);
 }

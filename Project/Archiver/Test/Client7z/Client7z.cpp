@@ -46,13 +46,13 @@ int main(int argc, char* argv[])
       (void **)&classFactory);
   if (result != 0)
   {
-    printf("Can not get GetProcAddress");
+    printf("Can not get class object");
     return 1;
   }
   result = classFactory->CreateInstance(0, IID_IInArchive, (void **)&archive);
   if (result != 0)
   {
-    printf("Can not get GetProcAddress");
+    printf("Can not create object Instance");
     return 1;
   }
 
@@ -82,5 +82,5 @@ int main(int argc, char* argv[])
     CSysString string = ConvertPropVariantToString(propVariant);
     printf("%s\n", (LPCTSTR)string);
   }
-	return 0;
+  return 0;
 }

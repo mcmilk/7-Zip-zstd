@@ -13,38 +13,72 @@ static const TCHAR *kCUBasePath = _T("Software\\7-ZIP");
 static const TCHAR *kCU_FMPath = _T("Software\\7-ZIP\\FM");
 static const TCHAR *kLangValueName = _T("Lang");
 static const TCHAR *kEditorValueName = _T("Editor");
+static const TCHAR *kShowDotsValueName = _T("ShowDots");
+static const TCHAR *kShowRealFileIconsValueName = _T("ShowRealFileIcons");
+static const TCHAR *kShowSystemMenuValueName = _T("ShowSystemMenu");
 
 void SaveRegLang(const CSysString &langFile)
 {
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
-  aCUKey.SetValue(kLangValueName, langFile);
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCUBasePath);
+  cuKey.SetValue(kLangValueName, langFile);
 }
 
 void ReadRegLang(CSysString &langFile)
 {
   langFile.Empty();
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCUBasePath);
-  aCUKey.QueryValue(kLangValueName, langFile);
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCUBasePath);
+  cuKey.QueryValue(kLangValueName, langFile);
 }
 
 void SaveRegEditor(const CSysString &editorPath)
 {
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
-  aCUKey.SetValue(kEditorValueName, editorPath);
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
+  cuKey.SetValue(kEditorValueName, editorPath);
 }
 
 void ReadRegEditor(CSysString &editorPath)
 {
   editorPath.Empty();
-  CKey aCUKey;
-  aCUKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
-  aCUKey.QueryValue(kEditorValueName, editorPath);
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
+  cuKey.QueryValue(kEditorValueName, editorPath);
   /*
   if (editorPath.IsEmpty())
     editorPath = TEXT("notepad.exe");
   */
 }
 
+static void SaveOption(const TCHAR *value, bool enabled)
+{
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
+  cuKey.SetValue(value, enabled);
+}
+
+static bool ReadOption(const TCHAR *value, bool defaultValue)
+{
+  CKey cuKey;
+  cuKey.Create(HKEY_CURRENT_USER, kCU_FMPath);
+  bool enabled;
+  if (cuKey.QueryValue(value, enabled) != ERROR_SUCCESS)
+    return defaultValue;
+  return enabled;
+}
+
+void SaveShowDots(bool showDots)
+  { SaveOption(kShowDotsValueName, showDots); }
+bool ReadShowDots()
+  { return ReadOption(kShowDotsValueName, false); }
+
+void SaveShowRealFileIcons(bool show)
+  { SaveOption(kShowRealFileIconsValueName, show); }
+bool ReadShowRealFileIcons()
+  { return ReadOption(kShowRealFileIconsValueName, false); }
+
+void SaveShowSystemMenu(bool show)
+  { SaveOption(kShowSystemMenuValueName, show); }
+bool ReadShowSystemMenu()
+  { return ReadOption(kShowSystemMenuValueName, false); }

@@ -16,7 +16,6 @@
 #include "LangUtils.h"
 #include "PluginInterface.h"
 
-extern CApp g_App;
 extern HINSTANCE g_hInstance;	
 
 static LPCTSTR kFMHelpTopic = _T("FM/index.htm");
@@ -319,6 +318,8 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
     menu.Attach(hMenu);
     menu.CheckRadioItem(IDM_VIEW_LARGE_ICONS, IDM_VIEW_DETAILS, 
       IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
+    menu.CheckItem(IDM_VIEW_TWO_PANELS, MF_BYCOMMAND |
+        ((g_App.NumPanels == 2) ? MF_CHECKED : MF_UNCHECKED));
   }
 }
 
@@ -501,6 +502,9 @@ bool OnMenuCommand(HWND hWnd, int id)
     case IDM_EDIT_PASTE:
       g_App.EditPaste();
       break;
+    case IDM_SELECT_ALL:
+      g_App.SelectAll(true);
+      break;
     case IDM_DESELECT_ALL:
       g_App.SelectAll(false);
       break;
@@ -576,6 +580,9 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     case IDM_VIEW_REFRESH:
       g_App.RefreshView();
+      break;
+    case IDM_VIEW_TWO_PANELS:
+      g_App.SwitchOnOffOnePanel();
       break;
 
     // Tools

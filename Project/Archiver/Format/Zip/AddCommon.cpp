@@ -27,6 +27,14 @@ DEFINE_GUID(CLSID_CCompressDeflate64Encoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00);
 #endif
 
+#ifdef COMPRESS_BZIP2
+#include "../../../Compress/BWT/BZip2/Encoder.h"
+#else
+// {23170F69-40C1-278B-0402-020000000100}
+DEFINE_GUID(CLSID_CCompressBZip2Encoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00);
+#endif
+
 
 #ifdef CRYPTO_ZIP
 #include "../../../Crypto/Cipher/Zip/ZipCipher.h"
@@ -58,7 +66,7 @@ static HRESULT GetStreamCRC(IInStream *inStream, UINT32 &resultCRC)
   while(true)
   {
     UINT32 realProcessedSize;
-    RETURN_IF_NOT_S_OK(inStream->Read(buffer, kBufferSize, &realProcessedSize));
+    RINOK(inStream->Read(buffer, kBufferSize, &realProcessedSize));
     if(realProcessedSize == 0)
     {
       resultCRC = crc.GetDigest();
@@ -80,10 +88,10 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
     return S_OK;
   }
   */
-  int aNumTestMethods = _options.MethodSequence.Size();
+  int numTestMethods = _options.MethodSequence.Size();
   BYTE method;
   UINT64 resultSize = 0;
-  for(int i = 0; i < aNumTestMethods; i++)
+  for(int i = 0; i < numTestMethods; i++)
   {
     if (_options.PasswordIsDefined)
     {
@@ -92,23 +100,23 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
         #ifdef CRYPTO_ZIP
         _cryptoEncoder = new CComObjectNoLock<NCrypto::NZip::CEncoder>;
         #else
-        RETURN_IF_NOT_S_OK(_cryptoEncoder.CoCreateInstance(CLSID_CCryptoZipEncoder));
+        RINOK(_cryptoEncoder.CoCreateInstance(CLSID_CCryptoZipEncoder));
         #endif
       }
       CComPtr<ICryptoSetPassword> cryptoSetPassword;
-      RETURN_IF_NOT_S_OK(_cryptoEncoder.QueryInterface(&cryptoSetPassword));
-      RETURN_IF_NOT_S_OK(cryptoSetPassword->CryptoSetPassword(
+      RINOK(_cryptoEncoder.QueryInterface(&cryptoSetPassword));
+      RINOK(cryptoSetPassword->CryptoSetPassword(
           (const BYTE *)(const char *)_options.Password, _options.Password.Length()));
       UINT32 crc;
-      RETURN_IF_NOT_S_OK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-      RETURN_IF_NOT_S_OK(GetStreamCRC(inStream, crc));
+      RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+      RINOK(GetStreamCRC(inStream, crc));
       CComPtr<ICryptoSetCRC> cryptoSetCRC;
-      RETURN_IF_NOT_S_OK(_cryptoEncoder.QueryInterface(&cryptoSetCRC));
-      RETURN_IF_NOT_S_OK(cryptoSetCRC->CryptoSetCRC(crc));
+      RINOK(_cryptoEncoder.QueryInterface(&cryptoSetCRC));
+      RINOK(cryptoSetCRC->CryptoSetCRC(crc));
     }
 
-    RETURN_IF_NOT_S_OK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
-    RETURN_IF_NOT_S_OK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
     
     method = _options.MethodSequence[i];
     switch(method)
@@ -136,12 +144,12 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
           _mixerCoderSpec->SetCoderInfo(0, NULL, NULL);
           _mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
           _mixerCoderSpec->SetProgressCoderIndex(0);
-          RETURN_IF_NOT_S_OK(_mixerCoder->Code(inStream, outStream,
+          RINOK(_mixerCoder->Code(inStream, outStream,
               NULL, NULL, progress));
         }
         else
         {
-          RETURN_IF_NOT_S_OK(_copyCoder->Code(inStream, outStream, 
+          RINOK(_copyCoder->Code(inStream, outStream, 
               NULL, NULL, progress));
         }
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kStoreExtractVersion;
@@ -149,45 +157,56 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
       }
       default:
       {
-        if(!_deflateEncoder)
+        if(!_compressEncoder)
         {
-          // RETURN_IF_NOT_S_OK(m_MatchFinder.CoCreateInstance(CLSID_CMatchFinderBT3));
-          if (method == NFileHeader::NCompressionMethod::kDeflated64)
+          // RINOK(m_MatchFinder.CoCreateInstance(CLSID_CMatchFinderBT3));
+          switch(method)
           {
-            #ifdef COMPRESS_DEFLATE64
-              _deflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder64>;
-            #else
-            RETURN_IF_NOT_S_OK(_deflateEncoder.CoCreateInstance(CLSID_CCompressDeflate64Encoder));
-            #endif
+            case NFileHeader::NCompressionMethod::kDeflated:
+            {
+              #ifdef COMPRESS_DEFLATE
+              _compressEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder>;
+              #else
+              RINOK(_compressEncoder.CoCreateInstance(CLSID_CCompressDeflateEncoder));
+              #endif
+              break;
+            }
+            case NFileHeader::NCompressionMethod::kDeflated64:
+            {
+              #ifdef COMPRESS_DEFLATE64
+              _compressEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder64>;
+              #else
+              RINOK(_compressEncoder.CoCreateInstance(CLSID_CCompressDeflate64Encoder));
+              #endif
+              break;
+            }
+            case NFileHeader::NCompressionMethod::kBZip2:
+            {
+              #ifdef COMPRESS_BZIP2
+              _compressEncoder = new CComObjectNoLock<NCompress::NBZip2::NEncoder::CCoder>;
+              #else
+              RINOK(_compressEncoder.CoCreateInstance(CLSID_CCompressBZip2Encoder));
+              #endif
+              break;
+            }
           }
-          else
+
+          if (method == NFileHeader::NCompressionMethod::kDeflated ||
+              method == NFileHeader::NCompressionMethod::kDeflated64)
           {
-            #ifdef COMPRESS_DEFLATE
-              _deflateEncoder = new CComObjectNoLock<NDeflate::NEncoder::CCOMCoder>;
-            #else
-            RETURN_IF_NOT_S_OK(_deflateEncoder.CoCreateInstance(CLSID_CCompressDeflateEncoder));
-            #endif
+            NWindows::NCOM::CPropVariant properties[2] = 
+            {
+              _options.NumPasses, _options.NumFastBytes
+            };
+            PROPID propIDs[2] = 
+            {
+              NEncodingProperies::kNumPasses,
+              NEncodingProperies::kNumFastBytes
+            };
+            CComPtr<ICompressSetEncoderProperties2> setEncoderProperties;
+            RINOK(_compressEncoder.QueryInterface(&setEncoderProperties));
+            setEncoderProperties->SetEncoderProperties2(propIDs, properties, 2);
           }
-
-
-          /*
-          CComPtr<IInitMatchFinder> anInitMatchFinder;
-          RETURN_IF_NOT_S_OK(_deflateEncoder->QueryInterface(&anInitMatchFinder));
-          anInitMatchFinder->InitMatchFinder(m_MatchFinder);
-          */
-
-          NWindows::NCOM::CPropVariant properties[2] = 
-          {
-            _options.NumPasses, _options.NumFastBytes
-          };
-          PROPID aPropIDs[2] = 
-          {
-            NEncodingProperies::kNumPasses,
-            NEncodingProperies::kNumFastBytes
-          };
-          CComPtr<ICompressSetEncoderProperties2> aSetEncoderProperties;
-          RETURN_IF_NOT_S_OK(_deflateEncoder.QueryInterface(&aSetEncoderProperties));
-          aSetEncoderProperties->SetEncoderProperties2(aPropIDs, properties, 2);
         }
         if (_options.PasswordIsDefined)
         {
@@ -196,7 +215,7 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
             _mixerCoder.Release();
             _mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
             _mixerCoder = _mixerCoderSpec;
-            _mixerCoderSpec->AddCoder(_deflateEncoder);
+            _mixerCoderSpec->AddCoder(_compressEncoder);
             _mixerCoderSpec->AddCoder(_cryptoEncoder);
             _mixerCoderSpec->FinishAddingCoders();
             _mixerCoderMethod = method;
@@ -205,13 +224,12 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
           _mixerCoderSpec->SetCoderInfo(0, NULL, NULL);
           _mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
           _mixerCoderSpec->SetProgressCoderIndex(0);
-          RETURN_IF_NOT_S_OK(_mixerCoder->Code(inStream, outStream,
+          RINOK(_mixerCoder->Code(inStream, outStream,
               NULL, NULL, progress));
         }
         else
         {
-          RETURN_IF_NOT_S_OK(_deflateEncoder->Code(inStream, outStream, 
-            NULL, NULL, progress));
+          RINOK(_compressEncoder->Code(inStream, outStream, NULL, NULL, progress));
         }
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kDeflateExtractVersion;
         break;

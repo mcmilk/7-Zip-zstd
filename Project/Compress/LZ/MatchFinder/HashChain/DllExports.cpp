@@ -5,13 +5,10 @@
 #include <initguid.h>
 
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
 // #include "HC2.h"
 #include "HC3.h"
 #include "HC4.h"
 // #include "HC4b.h"
-
-CNewHandlerSetter g_NewHandlerSetter;
 
 CComModule _Module;
 

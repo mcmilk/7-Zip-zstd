@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <locale.h>
+// #include <locale.h>
 #include <initguid.h>
 
 #include "Plugin.h"
@@ -70,10 +70,12 @@ extern "C"
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
+  /*
   if (dwReason == DLL_PROCESS_ATTACH)
   {
     setlocale(LC_COLLATE, ".OCP");
   }
+  */
   return TRUE;
 }
 

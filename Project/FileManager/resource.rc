@@ -53,6 +53,7 @@ BEGIN
     "#include ""Resource\\PluginsPage\\resource.rc""\r\n"
     "#include ""Resource\\SystemPage\\resource.rc""\r\n"
     "#include ""Resource\\EditPage\\resource.rc""\r\n"
+    "#include ""Resource\\SettingsPage\\resource.rc""\r\n"
     "#include ""..\\Archiver\\Resource\\Extract\\resource.rc""\r\n"
     "\0"
 END
@@ -79,8 +80,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,30,29,0
- PRODUCTVERSION 2,30,29,0
+ FILEVERSION 2,30,30,0
+ PRODUCTVERSION 2,30,30,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -98,14 +99,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip\0"
-            VALUE "FileVersion", "2, 30, 29, 0\0"
+            VALUE "FileVersion", "2, 30, 30, 0\0"
             VALUE "InternalName", "7zFM\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "2, 30, 29, 0\0"
+            VALUE "ProductVersion", "2, 30, 30, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -185,6 +186,8 @@ BEGIN
         MENUITEM "Date\tCtrl+F5",               IDM_VIEW_ARANGE_BY_DATE
         MENUITEM "Size\tCtrl+F6",               IDM_VIEW_ARANGE_BY_SIZE
         MENUITEM "Unsorted\tCtrl+F7",           IDM_VIEW_ARANGE_NO_SORT
+        MENUITEM SEPARATOR
+        MENUITEM "&2 Panels\tF9",               IDM_VIEW_TWO_PANELS
         MENUITEM SEPARATOR
         MENUITEM "Open Root Folder\t\\",        IDM_OPEN_ROOT_FOLDER
         MENUITEM "Up One Level\tBackspace",     IDM_OPEN_PARENT_FOLDER
@@ -330,6 +333,7 @@ END
 #include "Resource\PluginsPage\resource.rc"
 #include "Resource\SystemPage\resource.rc"
 #include "Resource\EditPage\resource.rc"
+#include "Resource\SettingsPage\resource.rc"
 #include "..\Archiver\Resource\Extract\resource.rc"
 
 /////////////////////////////////////////////////////////////////////////////

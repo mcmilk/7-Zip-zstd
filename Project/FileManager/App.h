@@ -10,7 +10,9 @@
 
 class CApp;
 
-const kNumPanels = 2;
+extern CApp g_App;
+
+const int kNumPanelsMax = 2;
 
 class CPanelCallbackImp: public CPanelCallback
 {
@@ -23,32 +25,51 @@ public:
     _index = index; 
   }
   virtual void OnTab();
-  virtual void OnSetFocusToPath(int index);
+  virtual void SetFocusToPath(int index);
   virtual void OnCopy(bool move, bool copyToSame);
   virtual void OnSetSameFolder();
   virtual void OnSetSubFolder();
+  virtual void PanelWasFocused();
 }; 
 
 class CApp
 {
   NWindows::CWindow _window;
 public:
+  bool ShowSystemMenu;
+  int NumPanels;
+  int LastFocusedPanel;
+
   CAppState _appState;
-  CPanelCallbackImp m_PanelCallbackImp[kNumPanels];
-  CPanel _panel[kNumPanels];
+  CPanelCallbackImp m_PanelCallbackImp[kNumPanelsMax];
+  CPanel Panels[kNumPanelsMax];
+  bool PanelsCreated[kNumPanelsMax];
   
   void OnCopy(bool move, bool copyToSame, int srcPanelIndex);
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
-  void Create(HWND hwnd, UString &path);
+  void CreateOnePanel(int panelIndex, const UString &mainPath);
+  void Create(HWND hwnd, const UString &mainPath);
   void Read();
   void Save();
 
-  int GetFocusedPanelIndex();
+  /*
+  void SetFocus(int panelIndex)
+    { Panels[panelIndex].SetFocusToList(); }
+  */
+  void SetFocusToLastItem()
+    { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }
 
+  int GetFocusedPanelIndex();
+  /*
+  void SetCurrentIndex()
+    { CurrentPanel = GetFocusedPanelIndex(); }
+  */
+
+  CApp(): NumPanels(2), LastFocusedPanel(0) {}
   CPanel &GetFocusedPanel()
-    { return _panel[GetFocusedPanelIndex()]; }
+    { return Panels[GetFocusedPanelIndex()]; }
 
   // File Menu
   void OpenItem()
@@ -106,6 +127,14 @@ public:
     { GetFocusedPanel().FoldersHistory(); }
   void RefreshView()
     { GetFocusedPanel().OnReload(); }
+  void RefreshAllPanels()
+  { 
+    for (int i = 0; i < NumPanels; i++)
+      Panels[i].OnReload();
+  }
+  void SetListSettings();
+  void SetShowSystemMenu();
+  void SwitchOnOffOnePanel();
 };
 
 #endif

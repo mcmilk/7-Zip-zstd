@@ -17,14 +17,6 @@
 using namespace NWindows;
 using namespace NNet;
 
-enum // PropID
-{
-  /*
-  kpidLocalName = kpidUserDefined,
-  kpidProvider,
-  */
-};
-
 static const STATPROPSTG kProperties[] = 
 {
   { NULL, kpidName, VT_BSTR},

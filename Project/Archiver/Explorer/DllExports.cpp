@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <locale.h>
+// #include <locale.h>
 
 #include <initguid.h>
 #include <ShlGuid.h>
@@ -42,7 +42,7 @@ static bool IsItWindowsNT()
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
-  setlocale(LC_COLLATE, ".ACP");
+  // setlocale(LC_COLLATE, ".ACP");
   g_hInstance = hInstance;
   if (dwReason == DLL_PROCESS_ATTACH)
   {

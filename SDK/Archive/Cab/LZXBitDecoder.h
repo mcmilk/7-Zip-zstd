@@ -31,7 +31,7 @@ public:
   UINT64 GetProcessedSize() const 
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   UINT32 GetBitPosition() const
-    { return (m_Stream.GetProcessedSize() * 8 - (kNumBigValueBits - m_BitPos)); }
+    { return UINT32(m_Stream.GetProcessedSize() * 8 - (kNumBigValueBits - m_BitPos)); }
   
   void Init()
   {

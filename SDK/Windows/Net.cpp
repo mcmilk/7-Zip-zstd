@@ -102,7 +102,7 @@ DWORD CEnum::Next(CResource &resource)
   if (result != NO_ERROR)
     return result;
   if (numEntries != 1)
-    return E_FAIL;
+    return (DWORD)E_FAIL;
   ConvertNETRESOURCEToCResource(lpnrLocal[0], resource);
   return result;
 }

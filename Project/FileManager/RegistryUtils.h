@@ -13,4 +13,13 @@ void ReadRegLang(CSysString &langFile);
 void SaveRegEditor(const CSysString &langFile);
 void ReadRegEditor(CSysString &langFile);
 
+void SaveShowDots(bool showDots);
+bool ReadShowDots();
+
+void SaveShowRealFileIcons(bool show);
+bool ReadShowRealFileIcons();
+
+void SaveShowSystemMenu(bool showSystemMenu);
+bool ReadShowSystemMenu();
+
 #endif

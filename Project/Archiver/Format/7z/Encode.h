@@ -37,6 +37,7 @@ class CEncoder
 
 public:
   CEncoder(const CCompressionMethodMode *options);
+  ~CEncoder();
   HRESULT Encode(ISequentialInStream *inStream,
       const UINT64 *inStreamSize,
       NArchive::N7z::CFolderItemInfo &folderItem,

@@ -66,8 +66,10 @@ static bool EnhancedMaskTest(const UString &mask, int maskPos,
   }
   else
   {
-    if (toupper(maskChar) != toupper(name[namePos]))
-      return false;
+    wchar_t c = name[namePos];
+    if (maskChar != c)
+      if (MyCharUpper(maskChar) != MyCharUpper(c))
+        return false;
     return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
   }
 }

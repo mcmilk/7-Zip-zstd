@@ -4,7 +4,22 @@
 
 #include "IntToString.h"
 
-void ConvertUINT64ToWideString(UINT64 value, wchar_t *string)
+void ConvertUINT64ToString(UINT64 value, char *s)
+{
+  char temp[32];
+  int pos = 0;
+  do 
+  {
+    temp[pos++] = '0' + int(value % 10);
+    value /= 10;
+  }
+  while (value != 0);
+  while(pos > 0)
+    *s++ = temp[--pos];
+  *s = L'\0';
+}
+
+void ConvertUINT64ToString(UINT64 value, wchar_t *s)
 {
   wchar_t temp[32];
   int pos = 0;
@@ -15,33 +30,28 @@ void ConvertUINT64ToWideString(UINT64 value, wchar_t *string)
   }
   while (value != 0);
   while(pos > 0)
-    *string++ = temp[--pos];
-  *string = L'\0';
+    *s++ = temp[--pos];
+  *s = L'\0';
 }
 
-void ConvertUINT64ToString(UINT64 value, TCHAR *string)
+void ConvertINT64ToString(INT64 value, char *s)
 {
-  TCHAR temp[32];
-  int pos = 0;
-  do 
-  {
-    temp[pos++] = TEXT('0') + int(value % 10);
-    value /= 10;
-  }
-  while (value != 0);
-  while(pos > 0)
-    *string++ = temp[--pos];
-  *string = TEXT('\0');
-}
-
-void ConvertINT64ToString(__int64 value, TCHAR *string)
-{
-  if (value > 0)
-    ConvertUINT64ToString(value, string);
+  if (value >= 0)
+    ConvertUINT64ToString(value, s);
   else
   {
-    *string++ = '-';
-    ConvertUINT64ToString(-value, string);
+    *s++ = '-';
+    ConvertUINT64ToString(-value, s);
   }
 }
 
+void ConvertINT64ToString(INT64 value, wchar_t *s)
+{
+  if (value >= 0)
+    ConvertUINT64ToString(value, s);
+  else
+  {
+    *s++ = L'-';
+    ConvertUINT64ToString(-value, s);
+  }
+}

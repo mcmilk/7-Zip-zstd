@@ -50,7 +50,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 2.30 Beta 29  Copyright (c) 1999-2003 Igor Pavlov  2003-04-07\n";
+" 2.30 Beta 30  Copyright (c) 1999-2003 Igor Pavlov  2003-04-19\n";
 
 const LPCTSTR kDefaultArchiveType = _T("7z");
 const LPCTSTR kDefaultSfxModule = TEXT("7zCon.sfx");
@@ -357,9 +357,9 @@ void WriteArgumentsToStringList(int numArguments, const char *arguments[],
   for(int i = 1; i < numArguments; i++)
   {
     char cmdLineBuffer[kMaxCmdLineSize];
-    strcpy(cmdLineBuffer, arguments[i]);
+    lstrcpyA(cmdLineBuffer, arguments[i]);
     CharToOemA(cmdLineBuffer, cmdLineBuffer);
-    if (strlen(cmdLineBuffer) > 0)
+    if (lstrlenA(cmdLineBuffer) > 0)
       strings.Add(cmdLineBuffer);
   }
 }
@@ -463,11 +463,6 @@ void AddCommandLineWildCardToCensr(NWildcard::CCensor &wildcardCensor,
     ShowMessageAndThrowException(kIncorrectWildCardInCommandLine, NExitCode::kUserError);
 }
 
-static bool AreEqualNoCase(char aChar1, char aChar2)
-{
-  return (toupper(aChar1) == toupper(aChar2));
-}
-
 void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor, 
     const AStringVector &nonSwitchStrings, NRecursedType::EEnum type, 
     bool thereAreSwitchIncludeWildCards)
@@ -478,7 +473,7 @@ void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor,
   for(int i = kFirstFileNameIndex; i < numNonSwitchStrings; i++)
   {
     const AString &aString = nonSwitchStrings[i];
-    if (AreEqualNoCase(aString[0], kFileListID))
+    if (aString[0] == kFileListID)
       AddToCensorFromListFile(wildcardCensor, 
           GetSystemString(aString.Mid(1), CP_OEMCP), true, type);
     else
@@ -498,7 +493,7 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
     int pos = 0;
     if (name.Length() < kSomeCludePostStringMinSize)
       PrintHelpAndExit();
-    if (AreEqualNoCase(name[pos], kRecursedIDChar))
+    if (::MyCharUpper(name[pos]) == kRecursedIDChar)
     {
       pos++;
       int index = AString(kRecursedPostCharSet).Find(name[pos]);
@@ -511,10 +506,10 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
     if (name.Length() < pos + kSomeCludeAfterRecursedPostStringMinSize)
       PrintHelpAndExit();
     AString tail = name.Mid(pos + 1);
-    if (AreEqualNoCase(name[pos], kImmediateNameID))
+    if (name[pos] == kImmediateNameID)
       AddCommandLineWildCardToCensr(wildcardCensor, 
           MultiByteToUnicodeString(tail, CP_OEMCP), include, recursedType);
-    else if (AreEqualNoCase(name[pos], kFileListID))
+    else if (name[pos] == kFileListID)
       AddToCensorFromListFile(wildcardCensor, GetSystemString(tail, CP_OEMCP), include, recursedType);
     else
       PrintHelpAndExit();
@@ -569,7 +564,7 @@ bool ParseUpdateCommandString2(const AString &command,
 {
   for(int i = 0; i < command.Length();)
   {
-    char c = toupper(command[i]);
+    char c = MyCharUpper(command[i]);
     int statePos = kUpdatePairStateIDSet.Find(c);
     if (statePos < 0)
     {
@@ -579,7 +574,7 @@ bool ParseUpdateCommandString2(const AString &command,
     i++;
     if (i >= command.Length())
       return false;
-    int actionPos = kUpdatePairActionIDSet.Find(toupper(command[i]));
+    int actionPos = kUpdatePairActionIDSet.Find(::MyCharUpper(command[i]));
     if (actionPos < 0)
       return false;
     actionSet.StateActions[statePos] = GetUpdatePairActionType(actionPos);
@@ -640,7 +635,7 @@ void ParseUpdateCommandString(CUpdateArchiveOptions &options,
       }
       else
       {
-        if(toupper(postString[0]) != kUpdateNewArchivePostCharID)
+        if(MyCharUpper(postString[0]) != kUpdateNewArchivePostCharID)
           PrintHelpAndExit();
         CUpdateArchiveCommand updateCommand;
 
@@ -861,7 +856,7 @@ AString GetDefaultSwitches()
   return GetOemString(switchesString);
   #else
   char cmdLineBuffer[kMaxCmdLineSize];
-  strcpy(cmdLineBuffer, switchesString);
+  lstrcpyA(cmdLineBuffer, switchesString);
   CharToOemA(cmdLineBuffer, cmdLineBuffer);
   return cmdLineBuffer;
   #endif
@@ -893,6 +888,7 @@ void SplitSpaceDelimetedStrings(const AString &srcString,
 
 int Main2(int numArguments, const char *arguments[])
 {
+  // int *t = new int[1<<29];
   SetFileApisToOEM();
   
   g_StdOut << kCopyrightString;

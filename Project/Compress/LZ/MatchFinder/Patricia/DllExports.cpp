@@ -11,9 +11,7 @@
 #include "Pat4H.h"
 
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
 
-CNewHandlerSetter g_NewHandlerSetter;
 CComModule _Module;
 
 #define MyOBJECT_ENTRY(Name) \

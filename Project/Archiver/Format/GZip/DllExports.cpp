@@ -6,9 +6,6 @@
 
 #include "Handler.h"
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
-
-CNewHandlerSetter g_NewHandlerSetter;
 
 /*
 // {23170F69-40C1-278C-0200-0000000000}

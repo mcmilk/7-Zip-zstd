@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 2.30 Beta 30        2003-04-21
+  --------------------------------------
+      new file: Common/String.cpp
+      Common/NewHandler.*  were changed
+
+
   Version 2.30 Beta 29        2003-04-07
   --------------------------------------
       Small changes in LZMA code.

@@ -1,15 +1,21 @@
-// Common::Exception.h
+// Common/Exception.h
 
 #pragma once
 
 #ifndef __COMMON_EXCEPTION_H
 #define __COMMON_EXCEPTION_H
 
-class CCException
+struct CCException
 {
-public:
   CCException() {}
   virtual ~CCException() {}
+};
+
+struct CSystemException
+{
+  DWORD ErrorCode;
+  CSystemException(): ErrorCode(::GetLastError()) {}
+  CSystemException(DWORD errorCode): ErrorCode(errorCode) {}
 };
 
 #endif

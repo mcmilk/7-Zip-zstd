@@ -45,11 +45,11 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\SDK" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\SDK" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
-# ADD RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -76,7 +76,7 @@ LINK32=link.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
-# ADD RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -99,11 +99,11 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\SDK" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\SDK" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
-# ADD RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -131,7 +131,7 @@ LINK32=link.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
-# ADD RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -356,6 +356,14 @@ SOURCE=.\Resource\PluginsPage\PluginsPage.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Resource\SettingsPage\SettingsPage.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\SettingsPage\SettingsPage.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Resource\SystemPage\SystemPage.cpp
 # End Source File
 # Begin Source File
@@ -528,6 +536,10 @@ SOURCE=..\..\SDK\Windows\Control\PropertyPage.cpp
 # Begin Source File
 
 SOURCE=..\..\SDK\Windows\Control\PropertyPage.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SDK\Windows\Control\ReBar.h
 # End Source File
 # Begin Source File
 
@@ -728,6 +740,14 @@ SOURCE=..\..\SDK\Common\Lang.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\SDK\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SDK\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\SDK\Common\StdInStream.cpp
 # End Source File
 # Begin Source File
@@ -741,6 +761,10 @@ SOURCE=..\..\SDK\Common\StdOutStream.cpp
 # Begin Source File
 
 SOURCE=..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SDK\Common\String.cpp
 # End Source File
 # Begin Source File
 

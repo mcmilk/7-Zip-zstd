@@ -16,8 +16,8 @@ extern CComModule _Module;
 #include <atlcom.h>
 
 #include <crtdbg.h>
-#include <string.h>
-#include <mbstring.h>
+// #include <string.h>
+// #include <mbstring.h>
 #include <tchar.h>
 #include <shlobj.h>
 #include <shlguid.h>

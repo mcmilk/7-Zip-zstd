@@ -5,7 +5,6 @@
 #include <initguid.h>
 
 #include "Decoder.h"
-// #include "CoderInfo.h"
 #include "Interface/ICoder.h"
 
 CComModule _Module;

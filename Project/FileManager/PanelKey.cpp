@@ -6,9 +6,9 @@
 #include "HelpUtils.h"
 
 #include "Interface/PropID.h"
+#include "App.h"
 
-// static LPCTSTR kFoldersTopic = _T("FM/index.htm");
-
+// static LPCTSTR kHelpTopic = _T("FM/index.htm");
 
 struct CVKeyPropIDPair
 {
@@ -67,8 +67,13 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
   if ((keyDownInfo->wVKey == VK_F2 || 
     keyDownInfo->wVKey == VK_F1) && alt && !ctrl && !shift)
   {
-    _panelCallback->OnSetFocusToPath(keyDownInfo->wVKey == VK_F1 ? 0 : 1);
+    _panelCallback->SetFocusToPath(keyDownInfo->wVKey == VK_F1 ? 0 : 1);
     return true;
+  }
+
+  if ((keyDownInfo->wVKey == VK_F9) && !alt && !ctrl && !shift)
+  {
+    g_App.SwitchOnOffOnePanel();
   }
 
   if(keyDownInfo->wVKey >= VK_F3 && keyDownInfo->wVKey <= VK_F12 && ctrl)
@@ -89,7 +94,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     /*
     case VK_F1:
     {
-      // ShowHelpWindow(NULL, kFoldersTopic);
+      // ShowHelpWindow(NULL, kHelpTopic);
       break;
     }
     */
@@ -241,18 +246,8 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     case 'A':
       if(ctrl)
       {
-        int numItems = _listView.GetItemCount();
-        for (int i = 0; i < numItems; i++)
-          _selectedStatusVector[i] = true;
-        if (numItems > 0)
-          _listView.RedrawItems(0, numItems - 1);
-
-        // m_RedrawEnabled = false;
-        // _listView.SetItemState(-1, LVIS_SELECTED, LVIS_SELECTED);
-        // m_RedrawEnabled = true;
-        // ShowStatusBar();
+        SelectAll(true);
         return true;
-
       }
       return false;
     case 'N':

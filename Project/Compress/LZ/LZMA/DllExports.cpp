@@ -11,8 +11,6 @@
 
 CComModule _Module;
 
-CNewHandlerSetter g_NewHandlerSetter;
-
 BEGIN_OBJECT_MAP(ObjectMap)
   OBJECT_ENTRY(CLSID_CLZMAEncoder, NCompress::NLZMA::CEncoder)
 	OBJECT_ENTRY(CLSID_CLZMADecoder, NCompress::NLZMA::CDecoder)

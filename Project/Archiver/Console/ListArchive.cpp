@@ -7,6 +7,7 @@
 
 #include "Common/StringConvert.h"
 #include "Common/StdOutStream.h"
+#include "Common/IntToString.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
@@ -182,7 +183,7 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
   if (propVariant.vt != VT_FILETIME)
     throw "incorrect item";
   if (IsFileTimeZero(&propVariant.filetime))
-    printf(kEmptyTimeString);
+    g_StdOut << kEmptyTimeString;
   else
   {
     FILETIME localFileTime;
@@ -190,10 +191,14 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
       throw "FileTimeToLocalFileTime error";
     SYSTEMTIME st;
     if (FileTimeToSystemTime(&localFileTime, &st))
-      printf("%04u-%02u-%02u %02u:%02u:%02u",
+    {
+      char s[32];
+      wsprintfA(s, "%04u-%02u-%02u %02u:%02u:%02u",
           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+      g_StdOut << s;
+    }
     else
-      printf(kEmptyTimeString);
+      g_StdOut << kEmptyTimeString;
   }
 }
 
@@ -257,20 +262,11 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
   return S_OK;
 }
 
-static const char *kOneUINT64Format = "%I64u";
-
-AString NumberToString(UINT64 value)
-{
-  char temp[32];
-  sprintf(temp, kOneUINT64Format, value);
-  return temp;
-}
-
 void PrintNumberString(EAdjustment adjustment, int width, const UINT64 *value)
 {
-  AString textString;
+  char textString[32] = { 0 };
   if (value != NULL)
-    textString = NumberToString(*value);
+    ConvertUINT64ToString(*value, textString);
   PrintString(adjustment, width, textString);
 }
 
@@ -290,7 +286,9 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles,
       PrintNumberString(fieldInfo.TextAdjustment, fieldInfo.Width, compressedSize);
     else if (fieldInfo.PropID == kpidPath)
     {
-      AString temp = NumberToString(numFiles);
+      char textString[32];
+      ConvertUINT64ToString(numFiles, textString);
+      AString temp = textString;
       temp += " ";
       temp += kFilesMessage;
       PrintString(fieldInfo.TextAdjustment, fieldInfo.Width, temp);
@@ -371,8 +369,8 @@ HRESULT ListArchive(IInArchive *archive,
   fieldPrinter.PrintTitleLines();
   g_StdOut << endl;
   /*
-    if(numFiles == 0)
-    printf(kStringFormat, kNoFilesMessage);
+  if(numFiles == 0)
+      g_StdOut << kNoFilesMessage);
   else
   */
   fieldPrinter.PrintSummaryInfo(numFiles, totalUnPackSizePointer, totalPackSizePointer);

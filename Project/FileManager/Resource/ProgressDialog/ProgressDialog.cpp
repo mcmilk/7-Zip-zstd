@@ -139,13 +139,13 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     case kCloseMessage:
     {
       KillTimer(_timer);
-      _timer = (-1);
+      _timer = 0;
       End(0);
       return true;
     }
     case WM_SETTEXT:
     {
-      if (_timer == (-1))
+      if (_timer == 0)
         return true;
     }
   }

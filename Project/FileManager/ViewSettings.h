@@ -71,6 +71,9 @@ void ReadListViewInfo(const CSysString &anID, CListViewInfo &viewInfo);
 void SaveWindowSize(const RECT &rect, bool maximized);
 bool ReadWindowSize(RECT &rect, bool &maximized);
 
+void SavePanelsInfo(UINT32 numPanels, UINT32 currentPanel, UINT32 splitterPos);
+bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos);
+
 void SavePanelPath(UINT32 panel, const CSysString &path);
 bool ReadPanelPath(UINT32 panel, CSysString &path);
 

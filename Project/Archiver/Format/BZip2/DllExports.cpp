@@ -7,10 +7,6 @@
 #include "Handler.h"
 #include "Interface/ICoder.h"
 
-#include "Common/NewHandler.h"
-
-CNewHandlerSetter g_NewHandlerSetter;
-
 // {23170F69-40C1-278B-0402-020000000100}
 DEFINE_GUID(CLSID_CCompressBZip2Encoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00);

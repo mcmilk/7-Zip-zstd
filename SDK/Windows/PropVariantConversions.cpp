@@ -26,19 +26,6 @@ static CSysString ConvertINT64ToString(INT64 value)
   return buffer;
 }
 
-static CSysString ConvertUINT32ToString(UINT32 value)
-{
-  TCHAR buffer[16];
-  return _ultot(value, buffer, 10);
-}
-
-static CSysString ConvertINT32ToString(INT32 value)
-{
-  TCHAR buffer[16];
-  return _ultot(value, buffer, 10);
-}
-
-
 /*
 CSysString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime)
 {
@@ -81,12 +68,12 @@ CSysString ConvertFileTimeToString2(const FILETIME &fileTime,
   if(!BOOLToBool(FileTimeToSystemTime(&fileTime, &systemTime)))
     return string;
   TCHAR buffer[64];
-  _stprintf(buffer, TEXT("%04d-%02d-%02d"), systemTime.wYear, systemTime.wMonth, systemTime.wDay);
+  wsprintf(buffer, TEXT("%04d-%02d-%02d"), systemTime.wYear, systemTime.wMonth, systemTime.wDay);
   if (includeTime)
   {
-    _stprintf(buffer + _tcslen(buffer), TEXT(" %02d:%02d"), systemTime.wHour, systemTime.wMinute);
+    wsprintf(buffer + lstrlen(buffer), TEXT(" %02d:%02d"), systemTime.wHour, systemTime.wMinute);
     if (includeSeconds)
-      _stprintf(buffer + _tcslen(buffer), TEXT(":%02d"), systemTime.wSecond);
+      wsprintf(buffer + lstrlen(buffer), TEXT(":%02d"), systemTime.wSecond);
   }
   return buffer;
 }
@@ -101,11 +88,11 @@ CSysString ConvertPropVariantToString(const PROPVARIANT &propVariant)
     case VT_BSTR:
       return GetSystemString(propVariant.bstrVal);
     case VT_UI1:
-      return ConvertUINT32ToString(propVariant.bVal);
+      return ConvertUINT64ToString(propVariant.bVal);
     case VT_UI2:
-      return ConvertUINT32ToString(propVariant.uiVal);
+      return ConvertUINT64ToString(propVariant.uiVal);
     case VT_UI4:
-      return ConvertUINT32ToString(propVariant.ulVal);
+      return ConvertUINT64ToString(propVariant.ulVal);
     case VT_UI8:
       return ConvertUINT64ToString(*(UINT64 *)(&propVariant.uhVal));
     case VT_FILETIME:
@@ -117,9 +104,9 @@ CSysString ConvertPropVariantToString(const PROPVARIANT &propVariant)
       return ConvertINT64ToString(propVariant.cVal);
     */
     case VT_I2:
-      return ConvertINT32ToString(propVariant.iVal);
+      return ConvertINT64ToString(propVariant.iVal);
     case VT_I4:
-      return ConvertINT32ToString(propVariant.lVal);
+      return ConvertINT64ToString(propVariant.lVal);
     case VT_I8:
       return ConvertINT64ToString(*(INT64 *)(&propVariant.hVal));
 

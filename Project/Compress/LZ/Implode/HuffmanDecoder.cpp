@@ -7,8 +7,8 @@
 namespace NImplode {
 namespace NHuffman {
 
-CDecoder::CDecoder(UINT32 aNumSymbols):
-  m_NumSymbols(aNumSymbols)
+CDecoder::CDecoder(UINT32 numSymbols):
+  m_NumSymbols(numSymbols)
 {
   m_Symbols = new UINT32[m_NumSymbols];
 }
@@ -18,72 +18,70 @@ CDecoder::~CDecoder()
   delete []m_Symbols;
 }
 
-void CDecoder::SetCodeLengths(const BYTE *aCodeLengths)
+void CDecoder::SetCodeLengths(const BYTE *codeLengths)
 {
-  // int aLenCounts[kNumBitsInLongestCode + 1], aTmpPositions[kNumBitsInLongestCode + 1];
-  int aLenCounts[kNumBitsInLongestCode + 2], aTmpPositions[kNumBitsInLongestCode + 1];
+  // int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
+  int lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
   int i;
   for(i = 0; i <= kNumBitsInLongestCode; i++)
-    aLenCounts[i] = 0;
-  UINT32 aSymbolIndex;
-  for (aSymbolIndex = 0; aSymbolIndex < m_NumSymbols; aSymbolIndex++)
-    aLenCounts[aCodeLengths[aSymbolIndex]]++;
-  // aLenCounts[0] = 0;
+    lenCounts[i] = 0;
+  UINT32 symbolIndex;
+  for (symbolIndex = 0; symbolIndex < m_NumSymbols; symbolIndex++)
+    lenCounts[codeLengths[symbolIndex]]++;
+  // lenCounts[0] = 0;
   
-  // aTmpPositions[0] = m_Positions[0] = m_Limitits[0] = 0;
+  // tmpPositions[0] = m_Positions[0] = m_Limitits[0] = 0;
   m_Limitits[kNumBitsInLongestCode + 1] = 0;
   m_Positions[kNumBitsInLongestCode + 1] = 0;
-  aLenCounts[kNumBitsInLongestCode + 1] =  0;
+  lenCounts[kNumBitsInLongestCode + 1] =  0;
 
 
-  UINT32 aStartPos = 0;
-  // UINT32 anIndex = 0;
-  static const kMaxValue = (1 << kNumBitsInLongestCode);
+  UINT32 startPos = 0;
+  static const UINT32 kMaxValue = (1 << kNumBitsInLongestCode);
 
   for (i = kNumBitsInLongestCode; i > 0; i--)
   {
-    aStartPos += aLenCounts[i] << (kNumBitsInLongestCode - i);
-    if (aStartPos > kMaxValue)
+    startPos += lenCounts[i] << (kNumBitsInLongestCode - i);
+    if (startPos > kMaxValue)
       throw CDecoderException();
-    m_Limitits[i] = aStartPos;
-    m_Positions[i] = m_Positions[i + 1] + aLenCounts[i + 1];
-    aTmpPositions[i] = m_Positions[i] + aLenCounts[i];
+    m_Limitits[i] = startPos;
+    m_Positions[i] = m_Positions[i + 1] + lenCounts[i + 1];
+    tmpPositions[i] = m_Positions[i] + lenCounts[i];
 
   }
 
   // if _ZIP_MODE do not throw exception for trees containing only one node 
   // #ifndef _ZIP_MODE 
-  if (aStartPos != kMaxValue)
+  if (startPos != kMaxValue)
     throw CDecoderException();
   // #endif
 
-  for (aSymbolIndex = 0; aSymbolIndex < m_NumSymbols; aSymbolIndex++)
-    if (aCodeLengths[aSymbolIndex] != 0)
-      m_Symbols[--aTmpPositions[aCodeLengths[aSymbolIndex]]] = aSymbolIndex;
+  for (symbolIndex = 0; symbolIndex < m_NumSymbols; symbolIndex++)
+    if (codeLengths[symbolIndex] != 0)
+      m_Symbols[--tmpPositions[codeLengths[symbolIndex]]] = symbolIndex;
 }
 
-UINT32 CDecoder::DecodeSymbol(CInBit *anInStream)
+UINT32 CDecoder::DecodeSymbol(CInBit *inStream)
 {
-  UINT32 aNumBits;
-  UINT32 aValue = anInStream->GetValue(kNumBitsInLongestCode);
-
+  UINT32 numBits;
+  UINT32 value = inStream->GetValue(kNumBitsInLongestCode);
   int i;
   for(i = kNumBitsInLongestCode; i > 0; i--)
   {
-    if (aValue < m_Limitits[i])
+    if (value < m_Limitits[i])
     {
-      aNumBits = i;
+      numBits = i;
       break;
     }
   }
   if (i == 0)
     throw CDecoderException();
-  anInStream->MovePos(aNumBits);
-  UINT32 anIndex = m_Positions[aNumBits] + 
-      ((aValue - m_Limitits[aNumBits + 1]) >> (kNumBitsInLongestCode - aNumBits));
-  if (anIndex >= m_NumSymbols)
+  inStream->MovePos(numBits);
+  UINT32 index = m_Positions[numBits] + 
+      ((value - m_Limitits[numBits + 1]) >> (kNumBitsInLongestCode - numBits));
+  if (index >= m_NumSymbols)
     throw CDecoderException(); // test it
-  return m_Symbols[anIndex];
+  return m_Symbols[index];
 }
 
 }}

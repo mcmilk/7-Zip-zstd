@@ -40,61 +40,62 @@ STDMETHODIMP CDecoder::Flush()
   return m_i86TranslationOutStreamSpec->Flush();
 }
 
-void CDecoder::ReadTable(BYTE *aLastLevels, BYTE *aNewLevels, UINT32 aNumSymbols)
+void CDecoder::ReadTable(BYTE *lastLevels, BYTE *newLevels, UINT32 numSymbols)
 {
-  BYTE aLevelLevels[kLevelTableSize];
-  for (int i = 0; i < kLevelTableSize; i++)
-    aLevelLevels[i] = BYTE(m_InBitStream.ReadBits(kNumBitsForPreTreeLevel));
-  m_LevelDecoder.SetCodeLengths(aLevelLevels);
-  for (i = 0; i < aNumSymbols;)
+  BYTE levelLevels[kLevelTableSize];
+  UINT32 i;
+  for (i = 0; i < kLevelTableSize; i++)
+    levelLevels[i] = BYTE(m_InBitStream.ReadBits(kNumBitsForPreTreeLevel));
+  m_LevelDecoder.SetCodeLengths(levelLevels);
+  for (i = 0; i < numSymbols;)
   {
-    UINT32 aNumber = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-    if (aNumber <= kNumHuffmanBits)
-      aNewLevels[i++] = BYTE((17 + aLastLevels[i] - aNumber) % (kNumHuffmanBits + 1));
-    else if (aNumber == kLevelSymbolZeros || aNumber == kLevelSymbolZerosBig)
+    UINT32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
+    if (number <= kNumHuffmanBits)
+      newLevels[i++] = BYTE((17 + lastLevels[i] - number) % (kNumHuffmanBits + 1));
+    else if (number == kLevelSymbolZeros || number == kLevelSymbolZerosBig)
     {
-      int aNum;
-      if (aNumber == kLevelSymbolZeros)
-        aNum = kLevelSymbolZerosStartValue + 
+      int num;
+      if (number == kLevelSymbolZeros)
+        num = kLevelSymbolZerosStartValue + 
             m_InBitStream.ReadBits(kLevelSymbolZerosNumBits);
       else
-        aNum = kLevelSymbolZerosBigStartValue + 
+        num = kLevelSymbolZerosBigStartValue + 
             m_InBitStream.ReadBits(kLevelSymbolZerosBigNumBits);
-      for (;aNum > 0 && i < aNumSymbols; aNum--, i++)
-        aNewLevels[i] = 0;
+      for (;num > 0 && i < numSymbols; num--, i++)
+        newLevels[i] = 0;
     }
-    else if (aNumber == kLevelSymbolSame)
+    else if (number == kLevelSymbolSame)
     {
-      int aNum = kLevelSymbolSameStartValue + m_InBitStream.ReadBits(kLevelSymbolSameNumBits);
-      UINT32 aNumber = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-      if (aNumber > kNumHuffmanBits)
+      int num = kLevelSymbolSameStartValue + m_InBitStream.ReadBits(kLevelSymbolSameNumBits);
+      UINT32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
+      if (number > kNumHuffmanBits)
         throw "bad data";
-      BYTE aSymbol = BYTE((17 + aLastLevels[i] - aNumber) % (kNumHuffmanBits + 1));
-      for (; aNum > 0 && i < aNumSymbols; aNum--, i++)
-        aNewLevels[i] = aSymbol;
+      BYTE symbol = BYTE((17 + lastLevels[i] - number) % (kNumHuffmanBits + 1));
+      for (; num > 0 && i < numSymbols; num--, i++)
+        newLevels[i] = symbol;
     }
     else
         throw "bad data";
   }
 
-  memmove(aLastLevels, aNewLevels, aNumSymbols);
+  memmove(lastLevels, newLevels, numSymbols);
 }
 
 void CDecoder::ReadTables(void)
 {
-  int aBlockType = m_InBitStream.ReadBits(NBlockType::kNumBits);
+  int blockType = m_InBitStream.ReadBits(NBlockType::kNumBits);
 
-  if (aBlockType != NBlockType::kVerbatim && aBlockType != NBlockType::kAligned && 
-      aBlockType != NBlockType::kUncompressed)
+  if (blockType != NBlockType::kVerbatim && blockType != NBlockType::kAligned && 
+      blockType != NBlockType::kUncompressed)
     throw "bad data";
 
   m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
 
-  if (aBlockType == NBlockType::kUncompressed)
+  if (blockType == NBlockType::kUncompressed)
   {
     m_UncompressedBlock = true;
-    UINT32 aBitPos = m_InBitStream.GetBitPosition() % 16;
-    m_InBitStream.ReadBits(16 - aBitPos);
+    UINT32 bitPos = m_InBitStream.GetBitPosition() % 16;
+    m_InBitStream.ReadBits(16 - bitPos);
     for (int i = 0; i < kNumRepDistances; i++)
     {
       m_RepDistances[i] = 0;
@@ -107,25 +108,25 @@ void CDecoder::ReadTables(void)
   
   m_UncompressedBlock = false;
 
-  m_AlignIsUsed = (aBlockType == NBlockType::kAligned);
+  m_AlignIsUsed = (blockType == NBlockType::kAligned);
 
-  BYTE aNewLevels[kMaxTableSize];
+  BYTE newLevels[kMaxTableSize];
 
   if (m_AlignIsUsed)
   {
     for(int i = 0; i < kAlignTableSize; i++)
-      aNewLevels[i] = m_InBitStream.ReadBits(kNumBitsForAlignLevel);
-    m_AlignDecoder.SetCodeLengths(aNewLevels);
+      newLevels[i] = m_InBitStream.ReadBits(kNumBitsForAlignLevel);
+    m_AlignDecoder.SetCodeLengths(newLevels);
   }
 
-  ReadTable(m_LastByteLevels, aNewLevels, 256);
-  ReadTable(m_LastPosLenLevels, aNewLevels + 256, m_NumPosLenSlots);
+  ReadTable(m_LastByteLevels, newLevels, 256);
+  ReadTable(m_LastPosLenLevels, newLevels + 256, m_NumPosLenSlots);
   for (int i = m_NumPosLenSlots; i < kNumPosSlotLenSlotSymbols; i++)
-    aNewLevels[256 + i] = 0;
-  m_MainDecoder.SetCodeLengths(aNewLevels);
+    newLevels[256 + i] = 0;
+  m_MainDecoder.SetCodeLengths(newLevels);
 
-  ReadTable(m_LastLenLevels, aNewLevels, kNumLenSymbols);
-  m_LenDecoder.SetCodeLengths(aNewLevels);
+  ReadTable(m_LastLenLevels, newLevels, kNumLenSymbols);
+  m_LenDecoder.SetCodeLengths(newLevels);
   
 }
 
@@ -133,7 +134,7 @@ class CDecoderFlusher
 {
   CDecoder *m_Decoder;
 public:
-  CDecoderFlusher(CDecoder *aDecoder): m_Decoder(aDecoder) {}
+  CDecoderFlusher(CDecoder *decoder): m_Decoder(decoder) {}
   ~CDecoderFlusher()
   {
     m_Decoder->Flush();
@@ -150,162 +151,159 @@ void CDecoder::ClearPrevLeveles()
 };
 
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *anInStream,
-    ISequentialOutStream *anOutStream, 
-    const UINT64 *anInSize, const UINT64 *anOutSize,
-    ICompressProgressInfo *aProgress)
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
+    ISequentialOutStream *outStream, 
+    const UINT64 *inSize, const UINT64 *outSize,
+    ICompressProgressInfo *progress)
 {
-  if (anOutSize == NULL)
+  if (outSize == NULL)
     return E_INVALIDARG;
-  UINT64 aSize = *anOutSize;
+  UINT64 size = *outSize;
 
 
   m_OutWindowStream.Init(m_i86TranslationOutStream);
-  m_InBitStream.InitStream(anInStream, m_ReservedSize, m_NumInDataBlocks);
+  m_InBitStream.InitStream(inStream, m_ReservedSize, m_NumInDataBlocks);
 
-  CDecoderFlusher aFlusher(this);
+  CDecoderFlusher flusher(this);
 
-  UINT32 anUncompressedCFDataBlockSize;
-  bool aDataAreCorrect;
-  RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
-  if (!aDataAreCorrect)
+  UINT32 uncompressedCFDataBlockSize;
+  bool dataAreCorrect;
+  RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(uncompressedCFDataBlockSize, dataAreCorrect));
+  if (!dataAreCorrect)
   {
     throw "Data Error";
   }
-  UINT32 anUncompressedCFDataCurrentValue = 0;
+  UINT32 uncompressedCFDataCurrentValue = 0;
   m_InBitStream.Init();
 
   ClearPrevLeveles();
 
   if (m_InBitStream.ReadBits(1) == 0)
-    m_i86TranslationOutStreamSpec->Init(anOutStream, false, 0);
+    m_i86TranslationOutStreamSpec->Init(outStream, false, 0);
   else
   {
-    UINT32 ani86TranslationSize = m_InBitStream.ReadBits(16) << 16;
-    ani86TranslationSize |= m_InBitStream.ReadBits(16);
-    m_i86TranslationOutStreamSpec->Init(anOutStream, true , ani86TranslationSize);
+    UINT32 i86TranslationSize = m_InBitStream.ReadBits(16) << 16;
+    i86TranslationSize |= m_InBitStream.ReadBits(16);
+    m_i86TranslationOutStreamSpec->Init(outStream, true , i86TranslationSize);
   }
   
-
   for(int i = 0 ; i < kNumRepDistances; i++)
     m_RepDistances[i] = 0;
 
-  UINT64 aNowPos64 = 0;
-  while(aNowPos64 < aSize)
+  UINT64 nowPos64 = 0;
+  while(nowPos64 < size)
   {
-    if (anUncompressedCFDataCurrentValue == anUncompressedCFDataBlockSize)
+    if (uncompressedCFDataCurrentValue == uncompressedCFDataBlockSize)
     {
-      bool aDataAreCorrect;
-      RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
-      if (!aDataAreCorrect)
+      bool dataAreCorrect;
+      RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(uncompressedCFDataBlockSize, dataAreCorrect));
+      if (!dataAreCorrect)
       {
         throw "Data Error";
       }
       m_InBitStream.Init();
-      anUncompressedCFDataCurrentValue = 0;
+      uncompressedCFDataCurrentValue = 0;
     }
     ReadTables();
-    UINT32 aNowPos = 0;
-    UINT32 aNext = (UINT32)MyMin((UINT64)m_UnCompressedBlockSize, aSize - aNowPos64);
+    UINT32 nowPos = 0;
+    UINT32 next = (UINT32)MyMin((UINT64)m_UnCompressedBlockSize, size - nowPos64);
     if (m_UncompressedBlock)
     {
-      while(aNowPos < aNext)
+      while(nowPos < next)
       {
         m_OutWindowStream.PutOneByte(m_InBitStream.DirectReadByte());
-        aNowPos++;
-        anUncompressedCFDataCurrentValue++;
-        if (anUncompressedCFDataCurrentValue == anUncompressedCFDataBlockSize)
+        nowPos++;
+        uncompressedCFDataCurrentValue++;
+        if (uncompressedCFDataCurrentValue == uncompressedCFDataBlockSize)
         {
-          bool aDataAreCorrect;
-          RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
-          if (!aDataAreCorrect)
+          bool dataAreCorrect;
+          RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(uncompressedCFDataBlockSize, dataAreCorrect));
+          if (!dataAreCorrect)
           {
             throw "Data Error";
           }
           // m_InBitStream.Init();
-          anUncompressedCFDataCurrentValue = 0;
+          uncompressedCFDataCurrentValue = 0;
           continue;
         }
       }
-      int aBitPos = m_InBitStream.GetBitPosition() % 16;
-      if (aBitPos == 8)
+      int bitPos = m_InBitStream.GetBitPosition() % 16;
+      if (bitPos == 8)
         m_InBitStream.DirectReadByte();
       m_InBitStream.Normalize();
     }
-    else for (;aNowPos < aNext;)
+    else for (;nowPos < next;)
     {
-      if (anUncompressedCFDataCurrentValue == anUncompressedCFDataBlockSize)
+      if (uncompressedCFDataCurrentValue == uncompressedCFDataBlockSize)
       {
-        bool aDataAreCorrect;
-        RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(anUncompressedCFDataBlockSize, aDataAreCorrect));
-        if (!aDataAreCorrect)
+        bool dataAreCorrect;
+        RETURN_IF_NOT_S_OK(m_InBitStream.ReadBlock(uncompressedCFDataBlockSize, dataAreCorrect));
+        if (!dataAreCorrect)
         {
           throw "Data Error";
         }
         m_InBitStream.Init();
-        anUncompressedCFDataCurrentValue = 0;
+        uncompressedCFDataCurrentValue = 0;
       }
-      UINT32 aNumber = m_MainDecoder.DecodeSymbol(&m_InBitStream);
-      if (aNumber < 256)
+      UINT32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
+      if (number < 256)
       {
-        m_OutWindowStream.PutOneByte(BYTE(aNumber));
-        aNowPos++;
-        anUncompressedCFDataCurrentValue++;
+        m_OutWindowStream.PutOneByte(BYTE(number));
+        nowPos++;
+        uncompressedCFDataCurrentValue++;
         // continue;
       }
-      else if (aNumber < 256 + m_NumPosLenSlots)
+      else if (number < 256 + m_NumPosLenSlots)
       {
-        UINT32 aPosLenSlot =  aNumber - 256;
-        UINT32 aPosSlot = aPosLenSlot / kNumLenSlots;
-        UINT32 aLenSlot = aPosLenSlot % kNumLenSlots;
-        UINT32 aLength = 2 + aLenSlot;
-        if (aLenSlot == kNumLenSlots - 1)
-          aLength += m_LenDecoder.DecodeSymbol(&m_InBitStream);
+        UINT32 posLenSlot =  number - 256;
+        UINT32 posSlot = posLenSlot / kNumLenSlots;
+        UINT32 lenSlot = posLenSlot % kNumLenSlots;
+        UINT32 length = 2 + lenSlot;
+        if (lenSlot == kNumLenSlots - 1)
+          length += m_LenDecoder.DecodeSymbol(&m_InBitStream);
         
-        if (aPosSlot < kNumRepDistances)
+        if (posSlot < kNumRepDistances)
         {
-          UINT32 aDistance = m_RepDistances[aPosSlot];
-          m_OutWindowStream.CopyBackBlock(aDistance, aLength);
-          if (aPosSlot != 0)
+          UINT32 distance = m_RepDistances[posSlot];
+          m_OutWindowStream.CopyBackBlock(distance, length);
+          if (posSlot != 0)
           {
-            m_RepDistances[aPosSlot] = m_RepDistances[0];
-            m_RepDistances[0] = aDistance;
+            m_RepDistances[posSlot] = m_RepDistances[0];
+            m_RepDistances[0] = distance;
           }
         }
         else
         {
-          UINT32 aPos = kDistStart[aPosSlot];
-          UINT32 aPosDirectBits = kDistDirectBits[aPosSlot];
-          if (m_AlignIsUsed && aPosDirectBits >= kNumAlignBits)
+          UINT32 pos = kDistStart[posSlot];
+          UINT32 posDirectBits = kDistDirectBits[posSlot];
+          if (m_AlignIsUsed && posDirectBits >= kNumAlignBits)
           {
-            aPos += (m_InBitStream.ReadBits(aPosDirectBits - kNumAlignBits) << kNumAlignBits);
-            aPos += m_AlignDecoder.DecodeSymbol(&m_InBitStream);
+            pos += (m_InBitStream.ReadBits(posDirectBits - kNumAlignBits) << kNumAlignBits);
+            pos += m_AlignDecoder.DecodeSymbol(&m_InBitStream);
           }
           else
-            aPos += m_InBitStream.ReadBits(aPosDirectBits);
-          UINT32 aDistance = aPos - kNumRepDistances;
-          if (aDistance >= aNowPos64 + aNowPos)
+            pos += m_InBitStream.ReadBits(posDirectBits);
+          UINT32 distance = pos - kNumRepDistances;
+          if (distance >= nowPos64 + nowPos)
             throw 777123;
-          m_OutWindowStream.CopyBackBlock(aDistance, aLength);
+          m_OutWindowStream.CopyBackBlock(distance, length);
           m_RepDistances[2] = m_RepDistances[1];
           m_RepDistances[1] = m_RepDistances[0];
-          m_RepDistances[0] = aDistance;
+          m_RepDistances[0] = distance;
         }
-        aNowPos += aLength;
-        anUncompressedCFDataCurrentValue += aLength;
+        nowPos += length;
+        uncompressedCFDataCurrentValue += length;
       }
       else
         throw 98112823;
     }
-    if (aProgress != NULL)
+    if (progress != NULL)
     {
-      UINT64 anInSize = m_InBitStream.GetProcessedSize();
-      UINT64 anOutSize = aNowPos64 + aNowPos;
-      HRESULT aResult = aProgress->SetRatioInfo(&anInSize, &anOutSize);
-      if (aResult != S_OK)
-        return aResult;
+      UINT64 inSize = m_InBitStream.GetProcessedSize();
+      UINT64 outSize = nowPos64 + nowPos;
+      RINOK(progress->SetRatioInfo(&inSize, &outSize));
     }
-    aNowPos64 += aNowPos;
+    nowPos64 += nowPos;
   }
   return S_OK;
 }

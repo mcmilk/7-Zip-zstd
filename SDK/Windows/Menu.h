@@ -85,7 +85,8 @@ public:
 
   bool CheckRadioItem(UINT idFirst, UINT idLast, UINT idCheck, UINT flags)
     { return BOOLToBool(::CheckMenuRadioItem(_menu, idFirst, idLast, idCheck, flags)); }
-
+  DWORD CheckItem(UINT id, UINT uCheck)
+    { return ::CheckMenuItem(_menu, id, uCheck); }
 };
 
 class CMenuDestroyer

@@ -43,7 +43,7 @@ static void ConvertSizeToString(UINT64 value, TCHAR *string)
 
 LRESULT CPanel::SetItemText(LVITEM &item)
 {
-  UINT32 index = GetRealIndex(item);
+  UINT32 realIndex = GetRealIndex(item);
   /*
   if ((item.mask & LVIF_IMAGE) != 0)
   {
@@ -81,6 +81,9 @@ LRESULT CPanel::SetItemText(LVITEM &item)
 
   if ((item.mask & LVIF_TEXT) == 0)
     return 0;
+
+  if (realIndex == (UINT32)-1)
+    return 0;
   CSysString string;
   UINT32 subItemIndex = item.iSubItem;
   PROPID propID = _visibleProperties[subItemIndex].ID;
@@ -117,7 +120,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
   }
   if (needRead)
   */
-  if (_folder->GetProperty(index, propID, &propVariant) != S_OK)
+  if (_folder->GetProperty(realIndex, propID, &propVariant) != S_OK)
       throw 2723407;
 
   if ((propID == kpidSize || propID == kpidPackedSize || 
@@ -165,7 +168,6 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       LV_DISPINFO  *dispInfo = (LV_DISPINFO *)header;
 
       //is the sub-item information being requested?
-      // UINT32 index = GetRealIndex(dispInfo->item);
 
       if((dispInfo->item.mask & LVIF_TEXT) != 0 || 
         (dispInfo->item.mask & LVIF_IMAGE) != 0)
@@ -279,7 +281,11 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
     lplvcd->clrTextBk = GetBkColorForItem(lplvcd->nmcd.dwItemSpec,
     lplvcd->nmcd.lItemlParam);
     */
-    if (_selectedStatusVector[lplvcd->nmcd.lItemlParam])
+    int realIndex = lplvcd->nmcd.lItemlParam;
+    bool selected = false;
+    if (realIndex != -1)
+      selected = _selectedStatusVector[realIndex];
+    if (selected)
       lplvcd->clrTextBk = RGB(255, 192, 192);
     // lplvcd->clrText = RGB(255, 0, 128);
     else
@@ -317,7 +323,7 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
 void CPanel::OnRefreshStatusBar()
 {
   CRecordVector<UINT32> indices;
-  GetOperatedItemIndexes(indices);
+  GetOperatedItemIndices(indices);
   
   _statusBar.SetText(0, GetSystemString(MyFormatNew(IDS_N_SELECTED_ITEMS, 
       0x02000301, NumberToStringW(indices.Size()))));
@@ -342,10 +348,13 @@ void CPanel::OnRefreshStatusBar()
   if (focusedItem >= 0 && _listView.GetSelectedCount() > 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
-    ConvertSizeToString(GetItemSize(realIndex), sizeString);
-    NCOM::CPropVariant propVariant;
-    if (_folder->GetProperty(realIndex, kpidLastWriteTime, &propVariant) == S_OK)
-      dateString = ConvertPropertyToString(propVariant, kpidLastWriteTime, false);
+    if (realIndex != -1)
+    {
+      ConvertSizeToString(GetItemSize(realIndex), sizeString);
+      NCOM::CPropVariant propVariant;
+      if (_folder->GetProperty(realIndex, kpidLastWriteTime, &propVariant) == S_OK)
+        dateString = ConvertPropertyToString(propVariant, kpidLastWriteTime, false);
+    }
     // nameString = GetSystemString(GetItemName(realIndex));
   }
   _statusBar.SetText(2, sizeString);

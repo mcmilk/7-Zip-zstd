@@ -7,11 +7,8 @@
 #include "Handler.h"
 
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
 
 CComModule _Module;
-
-CNewHandlerSetter g_NewHandlerSetter;
 
 BEGIN_OBJECT_MAP(ObjectMap)
 	OBJECT_ENTRY(CLSID_CCabHandler, CCabHandler)

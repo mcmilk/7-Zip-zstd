@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <locale.h>
+// #include <locale.h>
 
 #include "Windows/COM.h"
 #include "Windows/Error.h"
@@ -25,13 +25,13 @@ static const char *kMemoryExceptionMessage = "\n\nMemory Error! Can't allocate!\
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
-static bool IsItWindowsNT()
+static inline bool IsItWindowsNT()
 {
-  OSVERSIONINFO aVersionInfo;
-  aVersionInfo.dwOSVersionInfoSize = sizeof(aVersionInfo);
-  if (!::GetVersionEx(&aVersionInfo)) 
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
     return false;
-  return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
 int main(int aNumArguments, const char *anArguments[])
@@ -43,10 +43,10 @@ int main(int aNumArguments, const char *anArguments[])
     return NExitCode::kFatalError;
   }
   #endif
-  setlocale(LC_COLLATE, ".OCP");
+  // setlocale(LC_COLLATE, ".OCP");
   int result=1;
-  CNewHandlerSetter aNewHandlerSetter;
-  NCOM::CComInitializer aComInitializer;
+  // CNewHandlerSetter aNewHandlerSetter;
+  NCOM::CComInitializer comInitializer;
   try
   {
     NConsoleClose::CCtrlHandlerSetter aCtrlHandlerSetter;
@@ -57,18 +57,23 @@ int main(int aNumArguments, const char *anArguments[])
     catch(const NConsoleClose::CCtrlBreakException &)
     {
       g_StdOut << endl << kUserBreak;
-      exit(NExitCode::kUserBreak);
+      return (NExitCode::kUserBreak);
     }
   }
   catch(const CNewException)
   {
     g_StdOut << kMemoryExceptionMessage;
-    exit(NExitCode::kMemoryError);
+    return (NExitCode::kMemoryError);
+  }
+  catch(const CSystemException &e)
+  {
+    g_StdOut << "System Error: " << (UINT64)(e.ErrorCode);
+    return (NExitCode::kFatalError);
   }
   catch(NExitCode::EEnum &aExitCode)
   {
     g_StdOut << kInternalExceptionMessage << aExitCode << endl;
-    exit(aExitCode);
+    return (aExitCode);
   }
   catch(const NExitCode::CSystemError &aSystemError)
   {
@@ -76,33 +81,33 @@ int main(int aNumArguments, const char *anArguments[])
     NError::MyFormatMessage(aSystemError.ErrorValue, aMessage);
     g_StdOut << endl << endl << "System error:" << endl << 
         SystemStringToOemString(aMessage) << endl;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   catch(const NExitCode::CMultipleErrors &aMultipleErrors)
   {
     g_StdOut << endl << aMultipleErrors.NumErrors << " errors" << endl;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   catch(const UString &aString)
   {
     g_StdOut << kExceptionErrorMessage << 
       UnicodeStringToMultiByte(aString, CP_OEMCP) << endl;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   catch(const char *aString)
   {
     g_StdOut << kExceptionErrorMessage << aString << endl;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   catch(int t)
   {
     g_StdOut << kInternalExceptionMessage << t << endl;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   catch(...)
   {
     g_StdOut << kUnknownExceptionMessage;
-    exit(NExitCode::kFatalError);
+    return (NExitCode::kFatalError);
   }
   return result;
 }

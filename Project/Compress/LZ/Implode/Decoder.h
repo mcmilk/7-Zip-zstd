@@ -53,13 +53,12 @@ class CCoder :
   int m_NumDistanceLowDirectBits; 
   UINT32 m_MinMatchLength;
 
-  void ReadLevelItems(NImplode::NHuffman::CDecoder &aTable, 
-      BYTE *aLevels, int aNumLevelItems);
+  void ReadLevelItems(NImplode::NHuffman::CDecoder &table, 
+      BYTE *levels, int numLevelItems);
   void ReadTables();
-  void DeCodeLevelTable(BYTE *aNewLevels, int aNumLevels);
+  void DeCodeLevelTable(BYTE *newLevels, int numLevels);
 public:
   CCoder();
-  ~CCoder();
 
   BEGIN_COM_MAP(CCoder)
     COM_INTERFACE_ENTRY(ICompressCoder)
@@ -74,23 +73,21 @@ public:
     TEXT("SevenZip.1"), TEXT("SevenZip"),
     UINT(0), THREADFLAGS_APARTMENT)
 
-  STDMETHOD(Init)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream);
   STDMETHOD(ReleaseStreams)();
   // STDMETHOD(Code)(UINT32 aSize, UINT32 &aProcessedSize);
   STDMETHOD(Flush)();
 
-  STDMETHOD(CodeReal)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
   // ICompressSetDecoderProperties
   // STDMETHOD(SetCoderProperties)(PROPVARIANT *aProperties, UINT32 aNumProperties);
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *anInStream);
+  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
 };
 
 }}

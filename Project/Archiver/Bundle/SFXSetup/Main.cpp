@@ -26,106 +26,106 @@ using namespace NWindows;
 
 static LPCTSTR kTempDirPrefix = _T("7zS"); 
 
-const LPCWSTR aDefaultExt = L".exe";
+const LPCWSTR defaultExt = L".exe";
 
-static bool ReadDataString(LPCTSTR aFileName, LPCSTR aStartID, 
-    LPCSTR anEndID, AString &aString)
+static bool ReadDataString(LPCTSTR fileName, LPCSTR startID, 
+    LPCSTR endID, AString &stringResult)
 {
-  aString.Empty();
-  NFile::NIO::CInFile anInFile;
-  if (!anInFile.Open(aFileName))
+  stringResult.Empty();
+  NFile::NIO::CInFile inFile;
+  if (!inFile.Open(fileName))
     return false;
   const kBufferSize = (1 << 12);
 
-  BYTE aBuffer[kBufferSize];
-  int aSignatureStartSize = strlen(aStartID);
-  int aSignatureEndSize = strlen(anEndID);
+  BYTE buffer[kBufferSize];
+  int signatureStartSize = lstrlenA(startID);
+  int signatureEndSize = lstrlenA(endID);
   
-  UINT32 aNumBytesPrev = 0;
-  bool aWriteMode = false;
-  UINT64 aPosTotal = 0;
+  UINT32 numBytesPrev = 0;
+  bool writeMode = false;
+  UINT64 posTotal = 0;
   while(true)
   {
-    if (aPosTotal > (1 << 20))
-      return (aString.IsEmpty());
-    UINT32 aNumReadBytes = kBufferSize - aNumBytesPrev;
-    UINT32 aProcessedSize;
-    if (!anInFile.Read(aBuffer + aNumBytesPrev, aNumReadBytes, aProcessedSize))
+    if (posTotal > (1 << 20))
+      return (stringResult.IsEmpty());
+    UINT32 numReadBytes = kBufferSize - numBytesPrev;
+    UINT32 processedSize;
+    if (!inFile.Read(buffer + numBytesPrev, numReadBytes, processedSize))
       return false;
-    if (aProcessedSize == 0)
+    if (processedSize == 0)
       return true;
-    UINT32 aNumBytesInBuffer = aNumBytesPrev + aProcessedSize;
-    UINT32 aPos = 0;
+    UINT32 numBytesInBuffer = numBytesPrev + processedSize;
+    UINT32 pos = 0;
     while (true)
     { 
-      if (aWriteMode)
+      if (writeMode)
       {
-        if (aPos > aNumBytesInBuffer - aSignatureEndSize)
+        if (pos > numBytesInBuffer - signatureEndSize)
           break;
-        if (memcmp(aBuffer + aPos, anEndID, aSignatureEndSize) == 0)
+        if (memcmp(buffer + pos, endID, signatureEndSize) == 0)
           return true;
-        char aByte = aBuffer[aPos];
-        if (aByte == 0)
+        char b = buffer[pos];
+        if (b == 0)
           return false;
-        aString += aByte;
-        aPos++;
+        stringResult += b;
+        pos++;
       }
       else
       {
-        if (aPos > aNumBytesInBuffer - aSignatureStartSize)
+        if (pos > numBytesInBuffer - signatureStartSize)
           break;
-        if (memcmp(aBuffer + aPos, aStartID, aSignatureStartSize) == 0)
+        if (memcmp(buffer + pos, startID, signatureStartSize) == 0)
         {
-          aWriteMode = true;
-          aPos += aSignatureStartSize;
+          writeMode = true;
+          pos += signatureStartSize;
         }
         else
-          aPos++;
+          pos++;
       }
     }
-    aNumBytesPrev = aNumBytesInBuffer - aPos;
-    aPosTotal += aPos;
-    memmove(aBuffer, aBuffer + aPos, aNumBytesPrev);
+    numBytesPrev = numBytesInBuffer - pos;
+    posTotal += pos;
+    memmove(buffer, buffer + pos, numBytesPrev);
   }
 }
 
 static void GetArchiveName(
-    const UString &aCommandLine, 
-    UString &anArchiveName, 
-    UString &aSwitches)
+    const UString &commandLine, 
+    UString &archiveName, 
+    UString &switches)
 {
-  anArchiveName.Empty();
-  aSwitches.Empty();
-  bool aQuoteMode = false;
-  for (int i = 0; i < aCommandLine.Length(); i++)
+  archiveName.Empty();
+  switches.Empty();
+  bool quoteMode = false;
+  for (int i = 0; i < commandLine.Length(); i++)
   {
-    wchar_t aChar = aCommandLine[i];
-    if (aChar == L'\"')
-      aQuoteMode = !aQuoteMode;
-    else if (aChar == L' ' && !aQuoteMode)
+    wchar_t c = commandLine[i];
+    if (c == L'\"')
+      quoteMode = !quoteMode;
+    else if (c == L' ' && !quoteMode)
     {
-      if (!aQuoteMode)
+      if (!quoteMode)
       {
         i++;
         break;
       }
     }
     else 
-      anArchiveName += aChar;
+      archiveName += c;
   }
-  aSwitches = aCommandLine.Mid(i);
+  switches = commandLine.Mid(i);
 }
 
-static char aStartID[] = ",!@Install@!UTF-8!";
-static char anEndID[] = ",!@InstallEnd@!";
+static char startID[] = ",!@Install@!UTF-8!";
+static char endID[] = ",!@InstallEnd@!";
 
 class CInstallIDInit
 {
 public:
   CInstallIDInit()
   {
-    aStartID[0] = ';';
-    anEndID[0] = ';';
+    startID[0] = ';';
+    endID[0] = ';';
   };
 } g_CInstallIDInit;
 
@@ -135,13 +135,12 @@ class CCurrentDirRestorer
   CSysString m_CurrentDirectory;
 public:
   CCurrentDirRestorer()
-    { NWindows::NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
+    { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
   ~CCurrentDirRestorer()
     { RestoreDirectory();}
   bool RestoreDirectory()
     { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
 };
-
 
 int APIENTRY WinMain(
   HINSTANCE hInstance,
@@ -151,123 +150,122 @@ int APIENTRY WinMain(
 {
   InitCommonControls();
   g_hInstance = (HINSTANCE)hInstance;
-  UString anArchiveName, aSwitches;
-  GetArchiveName(GetCommandLineW(), anArchiveName, aSwitches);
-  CSysString aFullPath;
+  UString archiveName, switches;
+  GetArchiveName(GetCommandLineW(), archiveName, switches);
+  CSysString fullPath;
 
-  if (anArchiveName.Right(4).CompareNoCase(aDefaultExt) != 0)
-    anArchiveName += aDefaultExt;
+  if (archiveName.Right(4).CompareNoCase(defaultExt) != 0)
+    archiveName += defaultExt;
 
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(
-      GetSystemString(anArchiveName), aFullPath))
+  if (!NFile::NDirectory::MyGetFullPathName(
+      GetSystemString(archiveName), fullPath))
   {
     MessageBox(NULL, "can't get archive name", "7-Zip", 0);
     return 1;
   }
 
-  AString aConfig;
-  if (!ReadDataString(aFullPath, aStartID, anEndID, aConfig))
+  AString config;
+  if (!ReadDataString(fullPath, startID, endID, config))
   {
     MessageBox(NULL, "Can't load config info", "7-Zip", 0);
     return 1;
   }
-  aSwitches.Trim();
-  bool anAssumeYes = false;
-  if (aSwitches.Left(2) == UString(L"-y"))
+  switches.Trim();
+  bool assumeYes = false;
+  if (switches.Left(2) == UString(L"-y"))
   {
-    anAssumeYes = true;
-    aSwitches = aSwitches.Mid(2);
-    aSwitches.Trim();
+    assumeYes = true;
+    switches = switches.Mid(2);
+    switches.Trim();
   }
 
-  UString anAppLaunched;
-  if (!aConfig.IsEmpty())
+  UString appLaunched;
+  if (!config.IsEmpty())
   {
-    CObjectVector<CTextConfigPair> aPairs;
-    if (!GetTextConfig(aConfig, aPairs))
+    CObjectVector<CTextConfigPair> pairs;
+    if (!GetTextConfig(config, pairs))
     {
       MessageBox(NULL, "Config failed", "7-Zip", 0);
       return 1;
     }
-    UString aFriendlyName = GetTextConfigValue(aPairs, L"Title");
-    UString anInstallPrompt = GetTextConfigValue(aPairs, L"BeginPrompt");
+    UString friendlyName = GetTextConfigValue(pairs, L"Title");
+    UString installPrompt = GetTextConfigValue(pairs, L"BeginPrompt");
 
-    if (!anInstallPrompt.IsEmpty() && !anAssumeYes)
+    if (!installPrompt.IsEmpty() && !assumeYes)
     {
-      if (MessageBoxW(0, anInstallPrompt, aFriendlyName, MB_YESNO | 
+      if (MessageBoxW(0, installPrompt, friendlyName, MB_YESNO | 
           MB_ICONQUESTION) != IDYES)
         return 0;
     }
-    anAppLaunched = GetTextConfigValue(aPairs, L"RunProgram");
+    appLaunched = GetTextConfigValue(pairs, L"RunProgram");
   }
 
-  NFile::NDirectory::CTempDirectory aTempDir;
-  if (!aTempDir.Create(kTempDirPrefix))
+  NFile::NDirectory::CTempDirectory tempDir;
+  if (!tempDir.Create(kTempDirPrefix))
   {
     MessageBox(0, "Can not create temp folder archive", "7-Zip", 0);
     return 1;
   }
 
-  HRESULT aResult = ExtractArchive(aFullPath, aTempDir.GetPath());
-  if (aResult != S_OK)
+  HRESULT result = ExtractArchive(fullPath, tempDir.GetPath());
+  if (result != S_OK)
   {
-    if (aResult == S_FALSE)
+    if (result == S_FALSE)
       MessageBox(0, "Can not open archive", "7-Zip", 0);
     else 
-      ShowErrorMessage(aResult);
+      ShowErrorMessage(result);
     return  1;
   }
 
-  CCurrentDirRestorer aCurrentDirRestorer;
+  CCurrentDirRestorer currentDirRestorer;
 
-  if (!SetCurrentDirectory(aTempDir.GetPath()))
+  if (!SetCurrentDirectory(tempDir.GetPath()))
     return 1;
 
   
-  if (anAppLaunched.IsEmpty())
+  if (appLaunched.IsEmpty())
   {
-    anAppLaunched = L"Setup.exe";
-    if (!NFile::NFind::DoesFileExist(GetSystemString(anAppLaunched)))
+    appLaunched = L"Setup.exe";
+    if (!NFile::NFind::DoesFileExist(GetSystemString(appLaunched)))
       return 1;
   }
-  STARTUPINFO aStartupInfo;
-  aStartupInfo.cb = sizeof(aStartupInfo);
-  aStartupInfo.lpReserved = 0;
-  aStartupInfo.lpDesktop = 0;
-  aStartupInfo.lpTitle = 0;
-  aStartupInfo.dwFlags = 0;
-  aStartupInfo.cbReserved2 = 0;
-  aStartupInfo.lpReserved2 = 0;
+  STARTUPINFO startupInfo;
+  startupInfo.cb = sizeof(startupInfo);
+  startupInfo.lpReserved = 0;
+  startupInfo.lpDesktop = 0;
+  startupInfo.lpTitle = 0;
+  startupInfo.dwFlags = 0;
+  startupInfo.cbReserved2 = 0;
+  startupInfo.lpReserved2 = 0;
   
-  PROCESS_INFORMATION aProcessInformation;
+  PROCESS_INFORMATION processInformation;
 
-
-  CSysString aShortPath;
-  if (!NFile::NDirectory::MyGetShortPathName(aTempDir.GetPath(), aShortPath))
+  CSysString shortPath;
+  if (!NFile::NDirectory::MyGetShortPathName(tempDir.GetPath(), shortPath))
     return 1;
 
-  UString anAppLaunchedSysU = anAppLaunched;
-  anAppLaunchedSysU.Replace(TEXT(L"%%T"), GetUnicodeString(aShortPath));
+  UString appLaunchedSysU = appLaunched;
+  appLaunchedSysU.Replace(TEXT(L"%%T"), GetUnicodeString(shortPath));
 
-  anAppLaunchedSysU += L' ';
-  anAppLaunchedSysU += aSwitches;
+  appLaunchedSysU += L' ';
+  appLaunchedSysU += switches;
   
-  CSysString aTempDirPathNormalized = aShortPath;
-  NFile::NName::NormalizeDirPathPrefix(aShortPath);
-  // CSysString anAppLaunchedSys = aShortPath + GetSystemString(anAppLaunchedSysU);
-  CSysString anAppLaunchedSys = CSysString(TEXT(".\\")) + GetSystemString(anAppLaunchedSysU);
+  CSysString tempDirPathNormalized = shortPath;
+  NFile::NName::NormalizeDirPathPrefix(shortPath);
+  // CSysString appLaunchedSys = shortPath + GetSystemString(appLaunchedSysU);
+  CSysString appLaunchedSys = CSysString(TEXT(".\\")) + GetSystemString(appLaunchedSysU);
   
-  BOOL aCreateResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)anAppLaunchedSys, 
-    NULL, NULL, FALSE, 0, NULL, NULL /*aTempDir.GetPath() */, 
-    &aStartupInfo, &aProcessInformation);
-  if (aCreateResult == 0)
+  BOOL createResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)appLaunchedSys, 
+      NULL, NULL, FALSE, 0, NULL, NULL /*tempDir.GetPath() */, 
+      &startupInfo, &processInformation);
+  if (createResult == 0)
   {
     ShowLastErrorMessage();
     return 1;
   }
-  WaitForSingleObject(aProcessInformation.hProcess, INFINITE);
-  ::CloseHandle(aProcessInformation.hThread);
-  ::CloseHandle(aProcessInformation.hProcess);
+  WaitForSingleObject(processInformation.hProcess, INFINITE);
+  ::CloseHandle(processInformation.hThread);
+  ::CloseHandle(processInformation.hProcess);
   return 0;
 }
 

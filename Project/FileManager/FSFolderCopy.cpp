@@ -60,7 +60,7 @@ static DWORD CALLBACK CopyProgressRoutine(
   return PROGRESS_CONTINUE;
 }
 
-typedef (WINAPI * CopyFileExPointer)(
+typedef BOOL (WINAPI * CopyFileExPointer)(
     IN LPCTSTR lpExistingFileName,
     IN LPCTSTR lpNewFileName,
     IN LPPROGRESS_ROUTINE lpProgressRoutine OPTIONAL,
@@ -96,7 +96,7 @@ static bool MyCopyFile(LPCTSTR existingFile, LPCTSTR newFile,
     return BOOLToBool(::CopyFile(existingFile, newFile, TRUE));
 }
 
-typedef (WINAPI * MoveFileWithProgressPointer)(
+typedef BOOL (WINAPI * MoveFileWithProgressPointer)(
     IN LPCTSTR lpExistingFileName,
     IN LPCTSTR lpNewFileName,
     IN LPPROGRESS_ROUTINE lpProgressRoutine OPTIONAL,

@@ -27,7 +27,7 @@ class CAddCommon
   CCompressionMethodMode _options;
   CComObjectNoLock<NCompression::CCopyCoder> *_copyCoderSpec;
   CComPtr<ICompressCoder> _copyCoder;
-  CComPtr<ICompressCoder> _deflateEncoder;
+  CComPtr<ICompressCoder> _compressEncoder;
 
   CComPtr<ICompressCoder> _cryptoEncoder;
   CComObjectNoLock<CCoderMixer> *_mixerCoderSpec;

@@ -91,7 +91,7 @@ public:
   ~CProgressDialog();
   #endif
 
-  CProgressDialog(): _timer(-1)
+  CProgressDialog(): _timer(0)
     #ifndef _SFX
     ,MainWindow(0) 
     #endif

@@ -33,13 +33,13 @@ using namespace NWindows;
 
 HINSTANCE g_hInstance;
 
-static bool IsItWindowsNT()
+static bool inline IsItWindowsNT()
 {
-  OSVERSIONINFO aVersionInfo;
-  aVersionInfo.dwOSVersionInfoSize = sizeof(aVersionInfo);
-  if (!::GetVersionEx(&aVersionInfo)) 
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
     return false;
-  return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
 static void MyMessageBoxError(const char *message)
@@ -61,11 +61,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     return 0;
   }
   #endif
-  setlocale(LC_COLLATE, ".ACP");
-  // setlocale(LC_COLLATE, ".OCP");
+  // setlocale(LC_COLLATE, ".ACP");
   int result = 0;
-  CNewHandlerSetter aNewHandlerSetter;
-  NCOM::CComInitializer aComInitializer;
+  // CNewHandlerSetter newHandlerSetter;
+  NCOM::CComInitializer comInitializer;
   try
   {
     UString programString, commandsString;
@@ -199,8 +198,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
       return 0;
     }
     return 0;
-
-    // result = Main2(aNumArguments, anArguments);
   }
   catch(const CNewException)
   {

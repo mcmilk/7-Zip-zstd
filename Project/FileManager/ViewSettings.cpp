@@ -16,6 +16,8 @@ static const TCHAR *kCUBasePath = TEXT("Software\\7-Zip\\FM");
 static const TCHAR *kCulumnsKeyName = _T("Columns");
 
 static const TCHAR *kPositionValueName = _T("Position");
+static const TCHAR *kPanelsInfoValueName = _T("Panels");
+
 static const TCHAR *kPanelPathValueName = _T("PanelPath");
 static const TCHAR *kFolderHistoryValueName = _T("FolderHistory");
 static const TCHAR *kFastFoldersValueName = _T("FolderShortcuts");
@@ -142,6 +144,13 @@ struct CWindowPosition
   UINT32 Maximized;
 };
 
+struct CPanelsInfo
+{
+  UINT32 NumPanels;
+  UINT32 CurrentPanel;
+  UINT32 SplitterPos;
+};
+
 #pragma pack(pop)
 #pragma pack(pop, PragmaWindowPosition)
 
@@ -173,6 +182,39 @@ bool ReadWindowSize(RECT &rect, bool &maximized)
   const CWindowPosition &position = *(const CWindowPosition *)(const BYTE *)buffer;
   rect = position.Rect;
   maximized = (position.Maximized != 0);
+  return true;
+}
+
+void SavePanelsInfo(UINT32 numPanels, UINT32 currentPanel, UINT32 splitterPos)
+{
+  CSysString keyName = kCUBasePath;
+  CKey key;
+  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  key.Create(HKEY_CURRENT_USER, keyName);
+  CPanelsInfo block;
+  block.NumPanels = numPanels;
+  block.CurrentPanel = currentPanel;
+  block.SplitterPos = splitterPos;
+  key.SetValue(kPanelsInfoValueName, &block, sizeof(block));
+}
+
+bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos)
+{
+  CSysString keyName = kCUBasePath;
+  CKey key;
+  NSynchronization::CSingleLock lock(&g_RegistryOperationsCriticalSection, true);
+  if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
+    return false;
+  CByteBuffer buffer;
+  UINT32 size;
+  if (key.QueryValue(kPanelsInfoValueName, buffer, size) != ERROR_SUCCESS)
+    return false;
+  if (size != sizeof(CPanelsInfo))
+    return false;
+  const CPanelsInfo &block = *(const CPanelsInfo *)(const BYTE *)buffer;
+  numPanels = block.NumPanels;
+  currentPanel = block.CurrentPanel;
+  splitterPos = block.SplitterPos;
   return true;
 }
 

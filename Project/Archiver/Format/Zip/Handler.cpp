@@ -53,6 +53,15 @@ DEFINE_GUID(CLSID_CCompressImplodeDecoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00);
 #endif
 
+#ifdef COMPRESS_BZIP2
+#include "../../../Compress/BWT/BZip2/Decoder.h"
+#else
+// {23170F69-40C1-278B-0402-020000000000}
+DEFINE_GUID(CLSID_CCompressBZip2Decoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
+#endif
+
+
 #ifdef CRYPTO_ZIP
 #include "../../../Crypto/Cipher/Zip/ZipCipher.h"
 #else
@@ -60,6 +69,8 @@ DEFINE_GUID(CLSID_CCompressImplodeDecoder,
 DEFINE_GUID(CLSID_CCryptoZipDecoder, 
 0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00);
 #endif
+
+
 
 using namespace std;
 
@@ -138,7 +149,9 @@ const wchar_t *kMethods[] =
   L"Tokenizing",
   L"Deflate",
   L"Deflate64",
-  L"PKImploding"
+  L"PKImploding",
+  L"Unknown",
+  L"Bzip2"
 };
 
 const kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
@@ -311,10 +324,11 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
   UINT64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   UINT64 currentItemUnPacked, currentItemPacked;
   
+  CComPtr<ICompressCoder> copyCoder;
+  CComPtr<ICompressCoder> implodeDecoder;
   CComPtr<ICompressCoder> deflateDecoder;
   CComPtr<ICompressCoder> deflate64Decoder;
-  CComPtr<ICompressCoder> implodeDecoder;
-  CComPtr<ICompressCoder> copyCoder;
+  CComPtr<ICompressCoder> bzip2Decoder;
   CComPtr<ICompressCoder> cryptoDecoder;
   CComObjectNoLock<CCoderMixer> *mixerCoderSpec;
   CComPtr<ICompressCoder> mixerCoder;
@@ -464,20 +478,14 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
             }
             try
             {
-              CComPtr<ICompressSetDecoderProperties> aCompressSetDecoderProperties;
-              RINOK(implodeDecoder->QueryInterface(&aCompressSetDecoderProperties));
-
-              BYTE aProperties[2] = 
-              {
-                itemInfo.IsImplodeBigDictionary() ? 1: 0,
-                itemInfo.IsImplodeLiteralsOn() ? 1: 0
-              };
-
-              CComObjectNoLock<CSequentialInStreamImp> *anInStreamSpec = new 
+              CComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
+              RINOK(implodeDecoder->QueryInterface(&compressSetDecoderProperties));
+              BYTE properties = (itemInfo.Flags & 6);
+              CComObjectNoLock<CSequentialInStreamImp> *inStreamSpec = new 
                  CComObjectNoLock<CSequentialInStreamImp>;
-              CComPtr<ISequentialInStream> anInStreamProperties(anInStreamSpec);
-              anInStreamSpec->Init((const BYTE *)aProperties, 2);
-              RINOK(aCompressSetDecoderProperties->SetDecoderProperties(anInStreamProperties));
+              CComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
+              inStreamSpec->Init(&properties, 1);
+              RINOK(compressSetDecoderProperties->SetDecoderProperties(inStreamProperties));
 
               HRESULT result;
               if (itemInfo.IsEncrypted())
@@ -520,9 +528,13 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
           }
         case NFileHeader::NCompressionMethod::kDeflated:
         case NFileHeader::NCompressionMethod::kDeflated64:
+        case NFileHeader::NCompressionMethod::kBZip2:
+        {
+          // bool deflate64Mode = itemInfo.CompressionMethod == NFileHeader::NCompressionMethod::kDeflated64;
+          CComPtr<ICompressCoder> decoder;
+          switch(itemInfo.CompressionMethod)
           {
-            bool deflate64Mode = itemInfo.CompressionMethod == NFileHeader::NCompressionMethod::kDeflated64;
-            if (deflate64Mode)
+            case NFileHeader::NCompressionMethod::kDeflated64:
             {
               if(!deflate64Decoder)
               {
@@ -532,8 +544,10 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                 RINOK(deflate64Decoder.CoCreateInstance(CLSID_CCompressDeflate64Decoder));
                 #endif
               }
+              decoder = deflate64Decoder;
+              break;
             }
-            else
+            case NFileHeader::NCompressionMethod::kDeflated:
             {
               if(!deflateDecoder)
               {
@@ -543,6 +557,22 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                 RINOK(deflateDecoder.CoCreateInstance(CLSID_CCompressDeflateDecoder));
                 #endif
               }
+              decoder = deflateDecoder;
+              break;
+            }
+            case NFileHeader::NCompressionMethod::kBZip2:
+            {
+              if(!bzip2Decoder)
+              {
+                #ifdef COMPRESS_BZIP2
+                bzip2Decoder = new CComObjectNoLock<NCompress::NBZip2::NDecoder::CCoder>;
+                #else
+                RINOK(bzip2Decoder.CoCreateInstance(CLSID_CCompressBZip2Decoder));
+                #endif
+              }
+              decoder = bzip2Decoder;
+              break;
+            }
             }
 
             try
@@ -556,10 +586,7 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
                   mixerCoderSpec = new CComObjectNoLock<CCoderMixer>;
                   mixerCoder = mixerCoderSpec;
                   mixerCoderSpec->AddCoder(cryptoDecoder);
-                  if (deflate64Mode)
-                    mixerCoderSpec->AddCoder(deflate64Decoder);
-                  else
-                    mixerCoderSpec->AddCoder(deflateDecoder);
+                  mixerCoderSpec->AddCoder(decoder);
                   mixerCoderSpec->FinishAddingCoders();
                   mixerCoderMethod = itemInfo.CompressionMethod;
                 }
@@ -571,11 +598,7 @@ STDMETHODIMP CZipHandler::Extract(const UINT32* indices, UINT32 numItems,
               }   
               else
               {
-                if (deflate64Mode)
-                  result = deflate64Decoder->Code(anInStream, outStream,
-                      NULL, &currentItemUnPacked, compressProgress);
-                else
-                  result = deflateDecoder->Code(anInStream, outStream,
+                result = decoder->Code(anInStream, outStream,
                       NULL, &currentItemUnPacked, compressProgress);
               }
               if (result == S_FALSE)

@@ -64,8 +64,6 @@ bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
   return !(b1 == b2);
 }
 
-
-
 typedef CBuffer<char> CCharBuffer;
 typedef CBuffer<wchar_t> CWCharBuffer;
 typedef CBuffer<unsigned char> CByteBuffer;

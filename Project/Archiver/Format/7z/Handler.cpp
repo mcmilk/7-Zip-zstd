@@ -10,6 +10,7 @@
 #include "Common/Defs.h"
 #include "Common/CRC.h"
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
 
 #include "../../../Compress/Interface/CompressInterface.h"
 
@@ -94,8 +95,9 @@ static UString ConvertBytesToHexString(const BYTE *data, UINT32 size)
 
 static UString ConvertUINT32ToString(UINT32 value)
 {
-  wchar_t buffer[16];
-  return _ultow(value, buffer, 10);
+  wchar_t buffer[32];
+  ConvertUINT64ToString(value, buffer);
+  return buffer;
 }
 
 static UString GetStringForSizeValue(UINT32 value)

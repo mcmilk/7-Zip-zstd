@@ -6,7 +6,6 @@
 #include "Panel.h"
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
-#include "Windows/FileDir.h"
 #include "Interface/PropID.h"
 
 #include "Common/StringConvert.h"
@@ -16,23 +15,22 @@
 #include "FSFolder.h"
 
 #include "FormatUtils.h"
+#include "App.h"
 
 #include <Windowsx.h>
 
 using namespace NWindows;
-using namespace NFile;
-using namespace NFind;
 
 static const UINT_PTR kTimerID = 1;
 static const UINT kTimerElapse = 1000;
 
-static const kParentFolderID = 100;
 // static const kCreateFolderID = 101;
 
 // static const UINT kFileChangeNotifyMessage = WM_APP;
 
 
 extern HINSTANCE g_hInstance;
+extern DWORD g_ComCtl32Version;
 
 
 CPanel::~CPanel()
@@ -42,8 +40,9 @@ CPanel::~CPanel()
 
 static LPCTSTR kClassName = TEXT("7-Zip::Panel");
 
-LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, int index, UINT id, int xPos, 
-    CSysString &currentFolderPrefix, CPanelCallback *panelCallback, CAppState *appState)
+
+LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id, int xPos, 
+    const UString &currentFolderPrefix, CPanelCallback *panelCallback, CAppState *appState)
 {
   _mainWindow = mainWindow;
   _processTimer = true;
@@ -51,65 +50,13 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, int index, UINT id, i
 
   _panelCallback = panelCallback;
   _appState = appState;
-  _index = index;
+  // _index = index;
   _baseID = id;
   _comboBoxID = _baseID + 3;
   _statusBarID = _comboBoxID + 1;
   _ListViewMode = 0;
   
-  SetToRootFolder();
-  CComPtr<IFolderFolder> newFolder;
-
-  CSysString path = currentFolderPrefix;
-  CFileInfo fileInfo;
-  while(!path.IsEmpty())
-  {
-    if (FindFile(path, fileInfo))
-      break;
-    int pos = path.ReverseFind('\\');
-    if (pos < 0)
-      path.Empty();
-    else
-      path = path.Left(pos);
-  }
-  if (path.IsEmpty())
-  {
-    if (_folder->BindToFolder(GetUnicodeString(currentFolderPrefix), 
-      &newFolder) == S_OK)
-    {
-      _folder = newFolder;
-      SetCurrentPathText();
-    }
-  }
-  else
-  {
-    if (fileInfo.IsDirectory())
-    {
-      NName::NormalizeDirPathPrefix(path);
-      if (_folder->BindToFolder(GetUnicodeString(path), &newFolder) == S_OK)
-      {
-        _folder = newFolder;
-        SetCurrentPathText();
-      }
-    }
-    else
-    {
-      CSysString dirPrefix;
-      if (!NDirectory::GetOnlyDirPrefix(path, dirPrefix))
-        dirPrefix.Empty();
-      if (_folder->BindToFolder(GetUnicodeString(dirPrefix), &newFolder) == S_OK)
-      {
-        _folder = newFolder;
-        SetCurrentPathText();
-        CSysString fileName;
-        if (NDirectory::GetOnlyName(path, fileName))
-        {
-          OpenItemAsArchive(GetUnicodeString(fileName));
-          SetCurrentPathText();
-        }
-      }
-    }
-  }
+  BindToPath(currentFolderPrefix);
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE, 
       xPos, 0, 116, 260, 
@@ -147,13 +94,13 @@ LRESULT CPanel::OnMessage(UINT message, UINT wParam, LPARAM lParam)
   return CWindow2::OnMessage(message, wParam, lParam);
 }
 
-LRESULT APIENTRY EditSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
+static LRESULT APIENTRY ListViewSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 { 
   CWindow tempDialog(hwnd);
-  CMyListView *dialog = (CMyListView *)(tempDialog.GetUserDataLongPtr());
-  if (dialog == NULL)
+  CMyListView *w = (CMyListView *)(tempDialog.GetUserDataLongPtr());
+  if (w == NULL)
     return 0;
-  return dialog->OnMessage(message, wParam, lParam);
+  return w->OnMessage(message, wParam, lParam);
 } 
 
 LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -178,7 +125,8 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     // For Alt+Enter Beep disabling
     UINT scanCode = (lParam >> 16) & 0xFF;
     UINT virtualKey = MapVirtualKey(scanCode, 1);
-    if (virtualKey == VK_RETURN)
+    if (virtualKey == VK_RETURN || virtualKey == VK_MULTIPLY || 
+        virtualKey == VK_ADD || virtualKey == VK_SUBTRACT)
       return 0;
   }
   /*
@@ -222,31 +170,116 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
       }
     }
   }
-
+  else if (message == WM_SETFOCUS)
+  {
+    _panel->_lastFocusedIsList = true;
+    _panel->_panelCallback->PanelWasFocused();
+  }
   return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
 }
 
+/*
+static LRESULT APIENTRY ComboBoxSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
+{ 
+  CWindow tempDialog(hwnd);
+  CMyComboBox *w = (CMyComboBox *)(tempDialog.GetUserDataLongPtr());
+  if (w == NULL)
+    return 0;
+  return w->OnMessage(message, wParam, lParam);
+} 
+
+LRESULT CMyComboBox::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
+}
+*/
+static LRESULT APIENTRY ComboBoxEditSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
+{ 
+  CWindow tempDialog(hwnd);
+  CMyComboBoxEdit *w = (CMyComboBoxEdit *)(tempDialog.GetUserDataLongPtr());
+  if (w == NULL)
+    return 0;
+  return w->OnMessage(message, wParam, lParam);
+} 
+
+LRESULT CMyComboBoxEdit::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  // See MSDN / Subclassing a Combo Box / Creating a Combo-box Toolbar
+  switch (message) 
+  { 
+    case WM_SYSKEYDOWN: 
+      switch (wParam) 
+      { 
+        case VK_F1: 
+        case VK_F2: 
+        {
+          // check ALT
+          if ((lParam & (1<<29)) == 0)
+            break;
+          bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+          bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+          bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+          if (alt && !ctrl && !shift)
+          {
+            _panel->_panelCallback->SetFocusToPath(wParam == VK_F1 ? 0 : 1);
+            return 0; 
+          }
+          break; 
+        }
+      }
+      break;
+    case WM_KEYDOWN: 
+      switch (wParam) 
+      { 
+        case VK_TAB: 
+          // SendMessage(hwndMain, WM_ENTER, 0, 0); 
+          _panel->SetFocusToList();
+          return 0; 
+        case VK_F9: 
+        {
+          bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+          bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+          bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+          if (!alt && !ctrl && !shift)
+          {
+            g_App.SwitchOnOffOnePanel();;
+            return 0; 
+          }
+          break; 
+        }
+      }
+      break;
+    case WM_CHAR: 
+      switch (wParam) 
+      { 
+        case VK_TAB: 
+        case VK_ESCAPE: 
+          return 0; 
+      } 
+  }
+  return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
+}
 
 bool CPanel::OnCreate(CREATESTRUCT *createStruct)
 {
-  _virtualMode = false;
+  // _virtualMode = false;
   // _sortIndex = 0;
   _sortID = kpidName;
   _ascending = true;
+  _lastFocusedIsList = true;
 
   DWORD style = WS_CHILD | WS_VISIBLE; //  | WS_BORDER ; // | LVS_SHAREIMAGELISTS; //  | LVS_SHOWSELALWAYS;;
 
   style |= LVS_SHAREIMAGELISTS;
   // style  |= LVS_AUTOARRANGE;
-  
   style  |= WS_CLIPCHILDREN;
-  
   style |= WS_CLIPSIBLINGS;
-
   style |= WS_TABSTOP |  LVS_REPORT | LVS_EDITLABELS | LVS_SINGLESEL;
 
+  /*
   if (_virtualMode)
     style |= LVS_OWNERDATA;
+  */
 
   DWORD exStyle;
   exStyle = WS_EX_CLIENTEDGE;
@@ -259,7 +292,7 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   _listView.SetUserDataLongPtr(LONG_PTR(&_listView));
   _listView._panel = this;
   _listView._origWindowProc = (WNDPROC)_listView.SetLongPtr(GWLP_WNDPROC,
-      LONG_PTR(EditSubclassProc));
+      LONG_PTR(ListViewSubclassProc));
 
   SHFILEINFO shellInfo;
   HIMAGELIST imageList = (HIMAGELIST)SHGetFileInfo(TEXT(""), 
@@ -289,25 +322,14 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   _listView.InvalidateRect(NULL, true);
   _listView.Update();
   
-  // InitListCtrl();
-  RefreshListCtrl();
 
   // Ensure that the common control DLL is loaded. 
   INITCOMMONCONTROLSEX icex;
+
   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
   icex.dwICC  = ICC_BAR_CLASSES;
   InitCommonControlsEx(&icex);
 
-  /*
-  _headerToolBar.CreateEx(0, TOOLBARCLASSNAME, NULL,
-      WS_VISIBLE | WS_CHILD, // | CCS_NODIVIDER | CCS_TOP
-                0, 0, 0, 0, // set size in WM_SIZE message 
-                (*this),  // parent window 
-                (HMENU)(_baseID + 1), // edit control ID 
-                g_hInstance, NULL);
-  */
-
-  // Toolbar buttons used to create the first 4 buttons.
   TBBUTTON tbb [ ] = 
   {
     // {0, 0, TBSTATE_ENABLED, BTNS_SEP, 0L, 0},
@@ -316,17 +338,46 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
     // {VIEW_NEWFOLDER, kCreateFolderID, TBSTATE_ENABLED, BTNS_BUTTON, 0L, 0},
   };
 
-  _headerToolBar.Attach(::CreateToolbarEx ((*this), 
-    WS_CHILD | WS_BORDER | WS_VISIBLE | TBSTYLE_TOOLTIPS, //  | TBSTYLE_FLAT 
+  if (g_ComCtl32Version >= MAKELONG(71, 4))
+  {
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC  = ICC_COOL_CLASSES | ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icex);
+    
+    _headerReBar.Attach(::CreateWindowEx(WS_EX_TOOLWINDOW,
+      REBARCLASSNAME,
+      NULL, WS_VISIBLE | WS_BORDER | WS_CHILD | 
+      WS_CLIPCHILDREN | WS_CLIPSIBLINGS 
+      | CCS_NODIVIDER  
+      | CCS_NOPARENTALIGN 
+      | CCS_TOP
+      | RBS_VARHEIGHT 
+      | RBS_BANDBORDERS
+      ,0,0,0,0, HWND(*this), NULL, g_hInstance, NULL));
+  }
+
+  DWORD toolbarStyle =  WS_CHILD | WS_VISIBLE ;
+  if (_headerReBar)
+  {
+    toolbarStyle |= 0
+      // | WS_CLIPCHILDREN 
+      // | WS_CLIPSIBLINGS 
+
+      | TBSTYLE_TOOLTIPS
+      | CCS_NODIVIDER
+      | CCS_NORESIZE
+      | TBSTYLE_FLAT
+      ;
+  }
+
+
+
+  _headerToolBar.Attach(::CreateToolbarEx ((*this), toolbarStyle, 
       _baseID + 2, 11, 
-      (HINSTANCE)HINST_COMMCTRL, IDB_VIEW_SMALL_COLOR, 
+      (HINSTANCE)HINST_COMMCTRL, 
+      IDB_VIEW_SMALL_COLOR, 
       (LPCTBBUTTON)&tbb, sizeof(tbb) / sizeof(tbb[0]), 
-      0, 0, 100, 30, sizeof (TBBUTTON)));
-
-
-  // Send the TB_BUTTONSTRUCTSIZE message, which is required for 
-  // backward compatibility. 
-  // _headerToolBar.SendMessage(TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0); 
+      0, 0, 0, 0, sizeof (TBBUTTON)));
 
   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
   icex.dwICC = ICC_USEREX_CLASSES;
@@ -334,10 +385,61 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   
   _headerComboBox.CreateEx(0, WC_COMBOBOXEX, NULL,
     WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
-      0, 0, 0, 400,
-      _headerToolBar, 
+      0, 0, 100, 20,
+      ((_headerReBar != 0) ? HWND(*this) : _headerToolBar),
       (HMENU)(_comboBoxID),
       g_hInstance, NULL);
+  _headerComboBox.SetExtendedStyle(CBES_EX_PATHWORDBREAKPROC, CBES_EX_PATHWORDBREAKPROC);
+
+  /*
+  _headerComboBox.SetUserDataLongPtr(LONG_PTR(&_headerComboBox));
+  _headerComboBox._panel = this;
+  _headerComboBox._origWindowProc = 
+      (WNDPROC)_headerComboBox.SetLongPtr(GWLP_WNDPROC,
+      LONG_PTR(ComboBoxSubclassProc));
+  */
+  _comboBoxEdit.Attach(_headerComboBox.GetEditControl());
+  _comboBoxEdit.SetUserDataLongPtr(LONG_PTR(&_comboBoxEdit));
+  _comboBoxEdit._panel = this;
+  _comboBoxEdit._origWindowProc = 
+      (WNDPROC)_comboBoxEdit.SetLongPtr(GWLP_WNDPROC,
+      LONG_PTR(ComboBoxEditSubclassProc));
+
+
+  if (_headerReBar)
+  {
+    REBARINFO     rbi;
+    rbi.cbSize = sizeof(REBARINFO);  // Required when using this struct.
+    rbi.fMask  = 0;
+    rbi.himl   = (HIMAGELIST)NULL;
+    _headerReBar.SetBarInfo(&rbi);
+    
+    // Send the TB_BUTTONSTRUCTSIZE message, which is required for 
+    // backward compatibility. 
+    // _headerToolBar.SendMessage(TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0); 
+    SIZE size;
+    _headerToolBar.GetMaxSize(&size);
+    
+    REBARBANDINFO rbBand;
+    rbBand.cbSize = sizeof(REBARBANDINFO);  // Required
+    rbBand.fMask  = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
+    rbBand.fStyle = RBBS_NOGRIPPER;
+    rbBand.cxMinChild = size.cx;
+    rbBand.cyMinChild = size.cy;
+    rbBand.cyChild = size.cy;
+    rbBand.cx = size.cx;
+    rbBand.hwndChild  = _headerToolBar;
+    _headerReBar.InsertBand(-1, &rbBand);
+
+    RECT rc;
+    ::GetWindowRect(_headerComboBox, &rc);
+    rbBand.cxMinChild = 30;
+    rbBand.cyMinChild = rc.bottom - rc.top;
+    rbBand.cx = 1000;
+    rbBand.hwndChild  = _headerComboBox;
+    _headerReBar.InsertBand(-1, &rbBand);
+    // _headerReBar.MaximizeBand(1, false);
+  }
 
   _statusBar.Create(WS_CHILD | WS_VISIBLE, TEXT("Statuys"), (*this), _statusBarID);
   // _statusBar2.Create(WS_CHILD | WS_VISIBLE, TEXT("Statuys"), (*this), _statusBarID + 1);
@@ -345,7 +447,6 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   int sizes[] = {150, 200, 250, -1};
   _statusBar.SetParts(4, sizes);
   // _statusBar2.SetParts(5, sizes);
-
 
   /*
   RECT rect;
@@ -355,10 +456,9 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
 
   SetTimer(kTimerID, kTimerElapse);
 
-  SetCurrentPathText();
-
+  // InitListCtrl();
+  RefreshListCtrl();
   RefreshStatusBar();
-
   return true;
 }
 
@@ -368,14 +468,19 @@ void CPanel::OnDestroy()
   CWindow2::OnDestroy();
 }
 
-bool CPanel::OnSize(WPARAM wParam, int xSize, int ySize) 
-{ 
+void CPanel::ChangeWindowSize(int xSize, int ySize) 
+{
   int kHeaderSize;
   int kStatusBarSize;
   // int kStatusBar2Size;
   RECT rect;
-  _headerToolBar.GetWindowRect(&rect);
+  if (_headerReBar)
+    _headerReBar.GetWindowRect(&rect);
+  else
+    _headerToolBar.GetWindowRect(&rect);
+
   kHeaderSize = rect.bottom - rect.top;
+
   _statusBar.GetWindowRect(&rect);
   kStatusBarSize = rect.bottom - rect.top;
   
@@ -383,16 +488,44 @@ bool CPanel::OnSize(WPARAM wParam, int xSize, int ySize)
   // kStatusBar2Size = rect.bottom - rect.top;
  
   int yListViewSize = MyMax(ySize - kHeaderSize - kStatusBarSize, 0);
-  _headerToolBar.Move(0, 0, xSize, 0);
   const int kStartXPos = 32;
-  _headerComboBox.Move(kStartXPos, 2, 
-      MyMax(xSize - kStartXPos - 10, kStartXPos), 0);
+  if (_headerReBar)
+  {
+  }
+  else
+  {
+    _headerToolBar.Move(0, 0, xSize, 0);
+    _headerComboBox.Move(kStartXPos, 2, 
+        MyMax(xSize - kStartXPos - 10, kStartXPos), 0);
+  }
   _listView.Move(0, kHeaderSize, xSize, yListViewSize);
   _statusBar.Move(0, kHeaderSize + yListViewSize, xSize, kStatusBarSize);
   // _statusBar2.MoveWindow(0, kHeaderSize + yListViewSize + kStatusBarSize, xSize, kStatusBar2Size);
   // _statusBar.MoveWindow(0, 100, xSize, kStatusBarSize);
   // _statusBar2.MoveWindow(0, 200, xSize, kStatusBar2Size);
+}
+
+bool CPanel::OnSize(WPARAM wParam, int xSize, int ySize) 
+{
+  if (_headerReBar)
+    _headerReBar.Move(0, 0, xSize, 0);
+  ChangeWindowSize(xSize, ySize);
   return true;
+}
+
+bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT &result)
+{
+  switch(header->code)
+  {
+    case RBN_HEIGHTCHANGE:
+    {
+      RECT rect;
+      GetWindowRect(&rect);
+      ChangeWindowSize(rect.right - rect.left, rect.bottom - rect.top);
+      return false;
+    }
+  }
+  return false;
 }
 
 bool CPanel::OnNotify(UINT controlID, LPNMHDR header, LRESULT &result)
@@ -400,9 +533,9 @@ bool CPanel::OnNotify(UINT controlID, LPNMHDR header, LRESULT &result)
   if (!_processNotify)
     return false;
   if (header->hwndFrom == _headerComboBox)
-  {
     return OnNotifyComboBox(header, result);
-  }
+  else if (header->hwndFrom == _headerReBar)
+    return OnNotifyReBar(header, result);
   // if (header->hwndFrom == _listView)
   else if (header->hwndFrom == _listView)
     return OnNotifyList(header, result);
@@ -448,28 +581,43 @@ void CPanel::MessageBoxLastError(LPCWSTR caption)
 void CPanel::MessageBoxLastError()
   { MessageBoxLastError(L"Error"); }
 
-
-void CPanel::SetFocus()
+void CPanel::SetFocusToList()
 {
-  HWND a = _listView.SetFocus();
-  SetCurrentPathText();
+  _listView.SetFocus();
+  // SetCurrentPathText();
 }
 
+void CPanel::SetFocusToLastRememberedItem()
+{
+  if (_lastFocusedIsList)
+    SetFocusToList();
+  else
+    _headerComboBox.SetFocus();
+}
 
 CSysString CPanel::GetFileType(UINT32 index)
 {
   return TEXT("Test type");
 }
 
-
-bool CPanel::IsFSFolder() const
+UString CPanel::GetFolderTypeID() const
 {
   CComPtr<IFolderGetTypeID> folderGetTypeID;
   if(_folder.QueryInterface(&folderGetTypeID) != S_OK)
-    return false;
+    return L"";
   CComBSTR typeID;
   folderGetTypeID->GetTypeID(&typeID);
-  return (UString(typeID) == L"FSFolder");
+  return typeID;
+}
+
+bool CPanel::IsRootFolder() const
+{
+  return (GetFolderTypeID() == L"RootFolder");
+}
+
+bool CPanel::IsFSFolder() const
+{
+  return (GetFolderTypeID() == L"FSFolder");
 }
 
 static DWORD kStyles[4] = { LVS_ICON, LVS_SMALLICON, LVS_LIST, LVS_REPORT };

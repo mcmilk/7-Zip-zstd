@@ -6,9 +6,6 @@
 
 #include "SplitHandler.h"
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
-
-CNewHandlerSetter g_NewHandlerSetter;
 
 CComModule _Module;
 

@@ -40,15 +40,15 @@ CSysString MyFormat(UINT32 resourceID,
 
 CSysString NumberToString(UINT64 number)
 {
-  TCHAR aTmp[32];
-  _stprintf(aTmp, _T("%I64u"), number);
-  return aTmp;
+  TCHAR temp[32];
+  ConvertUINT64ToString(number, temp);
+  return temp;
 }
 
 UString NumberToStringW(UINT64 number)
 {
   wchar_t numberString[32];
-  ConvertUINT64ToWideString(number, numberString);
+  ConvertUINT64ToString(number, numberString);
   return numberString;
 }
 

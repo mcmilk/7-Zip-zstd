@@ -41,9 +41,13 @@ class CComboBoxEx: public CWindow
 {
 public:
   int DeleteItem(int index)
-    { SendMessage(CBEM_DELETEITEM, index, 0); }
+    { return SendMessage(CBEM_DELETEITEM, index, 0); }
   int InsertItem(COMBOBOXEXITEM *item)
     { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)item); }
+  DWORD SetExtendedStyle(DWORD exMask, DWORD exStyle)
+    { return SendMessage(CBEM_SETEXTENDEDSTYLE, exMask, exStyle); }
+  HWND GetEditControl()
+    { return (HWND)SendMessage(CBEM_GETEDITCONTROL, 0, 0); }
 };
 
 }}

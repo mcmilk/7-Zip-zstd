@@ -22,27 +22,16 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-enum // PropID
-{
-  /*
-  kpidTotalSize = kpidUserDefined,
-  kpidFreeSpace, 
-  kpidClusterSize,
-  kpidVolumeName,
-  kpidFileSystemName
-  */
-};
-
 static const STATPROPSTG kProperties[] = 
 {
   { NULL, kpidName, VT_BSTR},
   // { NULL, kpidIsFolder, VT_BOOL},
   { L"Total Size", kpidTotalSize, VT_UI8},
   { L"Free Space", kpidFreeSpace, VT_UI8},
-  { L"Cluster Size", kpidClusterSize, VT_UI8},
   { NULL, kpidType, VT_BSTR},
   { L"Label", kpidVolumeName, VT_BSTR},
-  { L"File system", kpidFileSystem, VT_BSTR}
+  { L"File system", kpidFileSystem, VT_BSTR},
+  { L"Cluster Size", kpidClusterSize, VT_UI8} 
 };
 
 static const wchar_t *kDriveTypes[] =

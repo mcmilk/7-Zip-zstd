@@ -4,6 +4,8 @@
 #include "FilePathAutoRename.h"
 
 #include "Common/Defs.h"
+#include "Common/IntToString.h"
+
 #include "Windows/FileName.h"
 #include "Windows/FileFind.h"
 
@@ -13,7 +15,7 @@ static bool MakeAutoName(const CSysString &name, const CSysString &extension,
     int value, CSysString &path)
 {
   TCHAR number[32];
-  _itot(value, number, 10);
+  ConvertUINT64ToString(value, number);
   path = name;
   path += number;
   path += extension;
@@ -39,11 +41,11 @@ bool AutoRenamePath(CSysString &fullProcessedPath)
   int indexLeft = 1, indexRight = (1 << 30);
   while (indexLeft != indexRight)
   {
-    int anIndexMid = (indexLeft + indexRight) / 2;
-    if (MakeAutoName(name, extension, anIndexMid, path))
-      indexLeft = anIndexMid + 1;
+    int indexMid = (indexLeft + indexRight) / 2;
+    if (MakeAutoName(name, extension, indexMid, path))
+      indexLeft = indexMid + 1;
     else
-      indexRight = anIndexMid;
+      indexRight = indexMid;
   }
   if (MakeAutoName(name, extension, indexRight, fullProcessedPath))
     return false;

@@ -13,7 +13,7 @@ namespace NCOM {
 UString GUIDToStringW(REFGUID guid)
 {
   UString string;
-  const kStringSize = 48;
+  const int kStringSize = 48;
   StringFromGUID2(guid, string.GetBuffer(kStringSize), kStringSize);
   string.ReleaseBuffer();
   return string;

@@ -2,9 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "UserInputUtils.h"
 #include "Common/StdInStream.h"
 #include "Common/StdOutStream.h"
+
+#include "UserInputUtils.h"
 
 static const char kYes  = 'Y';
 static const char kNo   = 'N';
@@ -27,10 +28,10 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit()
   do
   {
     g_StdOut << kHelpQuestionMessage;
-    AString aScannedString = g_StdIn.ScanStringUntilNewLine();
-    aScannedString.Trim();
-    if(!aScannedString.IsEmpty())
-      switch(toupper(aScannedString[0]))
+    AString scannedString = g_StdIn.ScanStringUntilNewLine();
+    scannedString.Trim();
+    if(!scannedString.IsEmpty())
+      switch(::MyCharUpper(scannedString[0]))
       {
         case kYes:
           return NUserAnswerMode::kYes;

@@ -168,8 +168,9 @@ STDMETHODIMP CEnumArchiveItemProperty::Next(ULONG numItems,
     destItem.vt = srcItem.vt;
     if(srcItem.lpwstrName != NULL)
     {
-      destItem.lpwstrName = (wchar_t *)CoTaskMemAlloc((wcslen(srcItem.lpwstrName) + 1) * sizeof(wchar_t));
-      wcscpy(destItem.lpwstrName, srcItem.lpwstrName);
+      int len = (lstrlenW(srcItem.lpwstrName) + 1) * sizeof(wchar_t);
+      destItem.lpwstrName = (wchar_t *)CoTaskMemAlloc(len);
+      memmove(destItem.lpwstrName, srcItem.lpwstrName, len);
     }
     else
       destItem.lpwstrName = srcItem.lpwstrName;

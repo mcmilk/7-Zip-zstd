@@ -15,10 +15,12 @@
 #include "Resource/SystemPage/resource.h"
 #include "Resource/EditPage/EditPage.h"
 #include "Resource/EditPage/resource.h"
+#include "Resource/SettingsPage/SettingsPage.h"
+#include "Resource/SettingsPage/resource.h"
 
 #include "LangUtils.h"
-// #include "WindowMessages.h"
 #include "MyLoadMenu.h"
+#include "App.h"
 
 void FillInPropertyPage(PROPSHEETPAGE* page, HINSTANCE instance, int dialogID, 
     NWindows::NControl::CPropertyPage *propertyPage, const CSysString &title)
@@ -50,24 +52,25 @@ void FillInPropertyPage(PROPSHEETPAGE* page, HINSTANCE instance, int dialogID,
 
 void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
 {
-  
   CSystemPage systemPage;
   CPluginsPage pluginsPage;
   CEditPage editPage;
+  CSettingsPage settingsPage;
   CLangPage langPage;
 
   CSysStringVector titles;
-  UINT32 aLangIDs[] = { 0x03010300, 0x03010100, 0x03010200, 0x01000400};
-  const kNumPages = sizeof(aLangIDs) / sizeof(aLangIDs[0]);
+  UINT32 langIDs[] = { 0x03010300, 0x03010100, 0x03010200, (UINT32)-1, 0x01000400};
+  const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
   for (int i = 0; i < kNumPages; i++)
-    titles.Add(LangLoadString(aLangIDs[i]));
+    titles.Add(LangLoadString(langIDs[i]));
   
   PROPSHEETPAGE pages[kNumPages];
 
   FillInPropertyPage(&pages[0], hInstance, IDD_SYSTEM, &systemPage, titles[0]);
   FillInPropertyPage(&pages[1], hInstance, IDD_PLUGINS, &pluginsPage, titles[1]);
   FillInPropertyPage(&pages[2], hInstance, IDD_EDIT, &editPage, titles[2]);
-  FillInPropertyPage(&pages[3], hInstance, IDD_LANG, &langPage, titles[3]);
+  FillInPropertyPage(&pages[3], hInstance, IDD_SETTINGS, &settingsPage, titles[3]);
+  FillInPropertyPage(&pages[4], hInstance, IDD_LANG, &langPage, titles[4]);
 
   PROPSHEETHEADER sheet;
 
@@ -91,6 +94,9 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
   {
     if (langPage._langWasChanged)
       MyLoadMenu();
+    g_App.SetListSettings();
+    g_App.SetShowSystemMenu();
+    g_App.RefreshAllPanels();
       // ::PostMessage(hwndOwner, kLangWasChangedMessage, 0 , 0);
   }
   /*

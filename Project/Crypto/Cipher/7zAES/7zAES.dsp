@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "7zAES_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\..\SDK" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "7zAES_EXPORTS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\..\..\SDK" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "7zAES_EXPORTS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -122,19 +122,19 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Common\Buffer.h
+SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Common\CRC.h
+SOURCE=..\..\..\..\SDK\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\Vector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\Vector.h
 # End Source File
 # End Group
 # Begin Group "Interface"

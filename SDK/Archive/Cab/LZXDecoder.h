@@ -60,7 +60,7 @@ class CDecoder :
   BYTE m_ReservedSize;
   UINT32 m_NumInDataBlocks;
 
-  void ReadTable(BYTE *aLastLevels, BYTE *aNewLevels, UINT32 aNumSymbols);
+  void ReadTable(BYTE *lastLevels, BYTE *newLevels, UINT32 numSymbols);
   void ReadTables();
   void ClearPrevLeveles();
 
@@ -76,24 +76,24 @@ DECLARE_NOT_AGGREGATABLE(CDecoder)
   // DECLARE_REGISTRY(CDecoder, "Compress.LZXDecoder.1", "Compress.LZXDecoder", 0, THREADFLAGS_APARTMENT)
   DECLARE_NO_REGISTRY()
 
-
   void ReleaseStreams();
-  // STDMETHOD(Code)(UINT32 aNumBytes, UINT32 &aProcessedBytes);
   STDMETHOD(Flush)();
 
   // ICompressCoder interface
-  STDMETHOD(Code)(ISequentialInStream *anInStream,
-      ISequentialOutStream *anOutStream, const UINT64 *anInSize, const UINT64 *anOutSize,
-      ICompressProgressInfo *aProgress);
+  STDMETHOD(Code)(ISequentialInStream *inStream, 
+      ISequentialOutStream *outStream, 
+      const UINT64 *inSize, const UINT64 *outSize,
+      ICompressProgressInfo *progress);
 
-  void SetParams(BYTE aReservedSize, UINT32 aNumInDataBlocks, UINT32 aDictionarySizePowerOf2) 
+  void SetParams(BYTE reservedSize, UINT32 numInDataBlocks, 
+      UINT32 dictionarySizePowerOf2) 
     { 
-      m_ReservedSize = aReservedSize;
-      m_NumInDataBlocks = aNumInDataBlocks;
-      m_DictionarySizePowerOf2 = aDictionarySizePowerOf2; 
-      if (aDictionarySizePowerOf2 < 20)
-        m_NumPosSlots = 30 + (aDictionarySizePowerOf2 - 15) * 2;
-      else if (aDictionarySizePowerOf2 == 20)
+      m_ReservedSize = reservedSize;
+      m_NumInDataBlocks = numInDataBlocks;
+      m_DictionarySizePowerOf2 = dictionarySizePowerOf2; 
+      if (dictionarySizePowerOf2 < 20)
+        m_NumPosSlots = 30 + (dictionarySizePowerOf2 - 15) * 2;
+      else if (dictionarySizePowerOf2 == 20)
         m_NumPosSlots = 42;
       else
         m_NumPosSlots = 50;

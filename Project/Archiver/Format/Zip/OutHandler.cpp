@@ -207,6 +207,8 @@ STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *a
           mainMethod = NFileHeader::NCompressionMethod::kDeflated;
         else if (valueString == L"DEFLATE64")
           mainMethod = NFileHeader::NCompressionMethod::kDeflated64;
+        else if (valueString == L"BZIP2")
+          mainMethod = NFileHeader::NCompressionMethod::kBZip2;
         else 
           return E_INVALIDARG;
       }
@@ -217,6 +219,7 @@ STDMETHODIMP CZipHandler::SetProperties(const BSTR *aNames, const PROPVARIANT *a
           case NFileHeader::NCompressionMethod::kStored:
           case NFileHeader::NCompressionMethod::kDeflated:
           case NFileHeader::NCompressionMethod::kDeflated64:
+          case NFileHeader::NCompressionMethod::kBZip2:
             mainMethod = aValue.ulVal;
             break;
           default:

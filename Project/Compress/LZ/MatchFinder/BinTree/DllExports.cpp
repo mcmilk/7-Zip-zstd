@@ -5,13 +5,10 @@
 #include <initguid.h>
 
 #include "Interface/ICoder.h"
-#include "Common/NewHandler.h"
 #include "BinTree2.h"
 #include "BinTree3.h"
 #include "BinTree4.h"
 #include "BinTree4b.h"
-
-CNewHandlerSetter g_NewHandlerSetter;
 
 CComModule _Module;
 

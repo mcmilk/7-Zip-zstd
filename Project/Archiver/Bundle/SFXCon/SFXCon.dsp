@@ -810,6 +810,10 @@ SOURCE=..\..\..\..\SDK\Common\StdOutStream.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\String.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\String.h
 # End Source File
 # Begin Source File

@@ -211,7 +211,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
   */
   for (int i = 0; i < _listView.GetItemCount(); i++)
   {
-    const kSize = 1024;
+    const int kSize = 1024;
     TCHAR name[kSize + 1];
     LVITEM item;
     item.iItem = i;
@@ -221,7 +221,10 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
     item.mask = LVIF_TEXT | LVIF_PARAM;
     if (!_listView.GetItem(&item))
       continue;
-    if (_selectedStatusVector[GetRealIndex(item)])
+    int realIndex = GetRealIndex(item);
+    if (realIndex == -1)
+      continue;
+    if (_selectedStatusVector[realIndex])
       selectedNames.Add(GetUnicodeString(item.pszText));
   }
   selectedNames.Sort();
@@ -239,7 +242,7 @@ void CPanel::RefreshListCtrlSaveFocused()
       // focusedName = m_Files[param].Name;
       focusedName = GetItemName(param);
     */
-    const kSize = 1024;
+    const int kSize = 1024;
     TCHAR name[kSize + 1];
     LVITEM item;
     item.iItem = focusedItem;
@@ -258,6 +261,9 @@ void CPanel::RefreshListCtrlSaveFocused()
 void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     const UStringVector &selectedNames)
 {
+  LoadFullPathAndShow();
+  // OutputDebugStringA("=======\n");
+  // OutputDebugStringA("s1 \n");
   CDisableTimerProcessing timerProcessing(*this);
 
   if (focusedPos < 0)
@@ -280,13 +286,16 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   // _folder.Release();
 
   if (!_folder)
+  {
+    // throw 1;
     SetToRootFolder();
+  }
   
+  bool isRoot = IsRootFolder();
+  _headerToolBar.EnableButton(kParentFolderID, !IsRootFolder());
 
   if (_folder->LoadItems() != S_OK)
     return;
-
-  SetCurrentPathText();
 
   InitColumns();
 
@@ -295,31 +304,58 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   UINT32 numItems;
   _folder->GetNumberOfItems(&numItems);
 
-  _listView.SetItemCount(numItems);
+  bool showDots = _showDots && !IsRootFolder();
+
+  _listView.SetItemCount(numItems + (showDots ? 1 : 0));
+
   _selectedStatusVector.Reserve(numItems);
   int cursorIndex = -1;  
 
   CComPtr<IFolderGetSystemIconIndex> folderGetSystemIconIndex;
-  _folder.QueryInterface(&folderGetSystemIconIndex);
+  if (!IsFSFolder() || _showRealFileIcons)
+    _folder.QueryInterface(&folderGetSystemIconIndex);
+
+  if (showDots)
+  {
+    UString itemName = L"..";
+    item.iItem = _listView.GetItemCount();
+    if (itemName.CompareNoCase(focusedName) == 0)
+      cursorIndex = item.iItem;
+    item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+    int subItem = 0;
+    item.iSubItem = subItem++;
+    item.lParam = -1;
+    const int kMaxNameSize = MAX_PATH * 2;
+    TCHAR string[kMaxNameSize];
+    lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
+    item.pszText = string;
+    UINT32 attributes = FILE_ATTRIBUTE_DIRECTORY;
+    item.iImage = _extToIconMap.GetIconIndex(attributes, 
+        GetSystemString(itemName));
+    if (item.iImage < 0)
+      item.iImage = 0;
+    if(_listView.InsertItem(&item) == -1)
+      return;
+  }
+  
+  // OutputDebugStringA("S1\n");
 
   for(int i = 0; i < numItems; i++)
   {
     UString itemName = GetItemName(i);
     if (itemName.CompareNoCase(focusedName) == 0)
-      cursorIndex = i;
+      cursorIndex = _listView.GetItemCount();
     bool selected = false;
     if (selectedNames.FindInSorted(itemName) >= 0)
-    {
-      // item.mask |= LVIF_STATE;
-      // item.state = LVIS_SELECTED;
       selected = true;
-    }
     _selectedStatusVector.Add(selected);
+    /*
     if (_virtualMode)
     {
       _realIndices.Add(i);
     }
     else
+    */
     {
 
     item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
@@ -327,12 +363,12 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
 
   
     int subItem = 0;
-    item.iItem = i;
+    item.iItem = _listView.GetItemCount();
     
     item.iSubItem = subItem++;
     item.lParam = i;
     
-    const kMaxNameSize = MAX_PATH * 2;
+    const int kMaxNameSize = MAX_PATH * 2;
     TCHAR string[kMaxNameSize];
     lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
     item.pszText = string;
@@ -375,6 +411,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
       return; // error
     }
   }
+  // OutputDebugStringA("End2\n");
 
   if(_listView.GetItemCount() > 0 && cursorIndex >= 0)
   {
@@ -393,15 +430,13 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
   _listView.SetRedraw(true);
   _listView.InvalidateRect(NULL, true);
-  // OutputDebugString(TEXT("End Dir\n"));
+  // OutputDebugStringA("End1\n");
   /*
   _listView.UpdateWindow();
-  if (numItems > 0)
-    _listView.RedrawItems(0, numItems - 1);
   */
 }
 
-void CPanel::GetSelectedItemsIndexes(CRecordVector<UINT32> &indices) const
+void CPanel::GetSelectedItemsIndices(CRecordVector<UINT32> &indices) const
 {
   indices.Clear();
   /*
@@ -419,16 +454,20 @@ void CPanel::GetSelectedItemsIndexes(CRecordVector<UINT32> &indices) const
   indices.Sort();
 }
 
-void CPanel::GetOperatedItemIndexes(CRecordVector<UINT32> &indices) const
+void CPanel::GetOperatedItemIndices(CRecordVector<UINT32> &indices) const
 {
-  GetSelectedItemsIndexes(indices);
+  GetSelectedItemsIndices(indices);
   if (!indices.IsEmpty())
     return;
   if (_listView.GetSelectedCount() == 0)
     return;
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem >= 0)
-    indices.Add(GetRealItemIndex(focusedItem));
+  {
+    int realIndex = GetRealItemIndex(focusedItem);
+    if (realIndex != -1)
+      indices.Add(realIndex);
+  }
 }
 
 void CPanel::EditItem()
@@ -437,6 +476,8 @@ void CPanel::EditItem()
   if (focusedItem < 0)
     return;
   int realIndex = GetRealItemIndex(focusedItem);
+  if (realIndex == -1)
+    return;
   if (!IsItemFolder(realIndex))
     EditItem(realIndex);
 }
@@ -456,20 +497,21 @@ void CPanel::OpenFocusedItemAsInternal()
 void CPanel::OpenSelectedItems(bool tryInternal)
 {
   CRecordVector<UINT32> indices;
-  // GetSelectedItemsIndexes(indices);
-  
-  GetOperatedItemIndexes(indices);
-  /*
-  int focusedItem = _listView.GetFocusedItem();
-  if (focusedItem >= 0)
-    indices.Add(GetRealItemIndex(focusedItem));
-  */
-
+  GetOperatedItemIndices(indices);
   if (indices.Size() > 20)
   {
     MessageBox(L"Too much items");
     return;
   }
+  
+  int focusedItem = _listView.GetFocusedItem();
+  if (focusedItem >= 0)
+  {
+    int realIndex = GetRealItemIndex(focusedItem);
+    if (realIndex == -1 && (tryInternal || indices.Size() == 0))
+      indices.Insert(0, realIndex);
+  }
+
   bool dirIsStarted = false;
   for(int i = 0; i < indices.Size(); i++)
   {
@@ -496,6 +538,8 @@ void CPanel::OpenSelectedItems(bool tryInternal)
 
 UString CPanel::GetItemName(int itemIndex) const
 {
+  if (itemIndex == -1)
+    return L"..";
   NCOM::CPropVariant propVariant;
   if (_folder->GetProperty(itemIndex, kpidName, &propVariant) != S_OK)
     throw 2723400;
@@ -507,6 +551,8 @@ UString CPanel::GetItemName(int itemIndex) const
 
 bool CPanel::IsItemFolder(int itemIndex) const
 {
+  if (itemIndex == -1)
+    return true;
   NCOM::CPropVariant propVariant;
   if (_folder->GetProperty(itemIndex, kpidIsFolder, &propVariant) != S_OK)
     throw 2723400;
@@ -519,6 +565,8 @@ bool CPanel::IsItemFolder(int itemIndex) const
 
 UINT64 CPanel::GetItemSize(int itemIndex) const
 {
+  if (itemIndex == -1)
+    return 0;
   NCOM::CPropVariant propVariant;
   if (_folder->GetProperty(itemIndex, kpidSize, &propVariant) != S_OK)
     throw 2723400;
@@ -603,7 +651,7 @@ bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
 
   menu.CreatePopup();
 
-  const kCommandStart = 100;
+  const int kCommandStart = 100;
   for(int i = 0; i < _properties.Size(); i++)
   {
     const CItemProperty &property = _properties[i];
@@ -655,8 +703,8 @@ bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
 
 void CPanel::OnReload()
 {
-  SaveListViewInfo();
   RefreshListCtrlSaveFocused();
+  OnRefreshStatusBar();
 }
 
 void CPanel::OnTimer()
@@ -672,12 +720,5 @@ void CPanel::OnTimer()
   if (wasChanged == 0)
     return;
   OnReload();
-}
-
-void CPanel::SetToRootFolder()
-{
-  CComObjectNoLock<CRootFolder> *rootFolderSpec = new CComObjectNoLock<CRootFolder>;
-  _folder = rootFolderSpec;
-  rootFolderSpec->Init();
 }
 

@@ -55,10 +55,14 @@ bool CParser::ParseString(const AString &string, const CSwitchForm *switchForms)
     int maxLen = kNoLen;
     for(int switchIndex = 0; switchIndex < _numSwitches; switchIndex++)
     {
-      int switchLen = strlen(switchForms[switchIndex].IDString);
+      int switchLen = lstrlenA(switchForms[switchIndex].IDString);
       if (switchLen <= maxLen || pos + switchLen > len) 
         continue;
-      if(_strnicmp(switchForms[switchIndex].IDString, LPCSTR(string) + pos, switchLen) == 0)
+
+      AString temp = LPCSTR(string) + pos;
+      temp = temp.Left(switchLen);
+      if(temp.CompareNoCase(switchForms[switchIndex].IDString) == 0)
+      // if(_strnicmp(switchForms[switchIndex].IDString, LPCSTR(string) + pos, switchLen) == 0)
       {
         matchedSwitchIndex = switchIndex;
         maxLen = switchLen;
@@ -177,7 +181,7 @@ bool ParseSubCharsCommand(int numForms, const CCommandSubCharsSet *forms,
   {
     const CCommandSubCharsSet &set = forms[i];
     int currentIndex = -1;
-    int len = strlen(set.Chars);
+    int len = lstrlenA(set.Chars);
     for(int j = 0; j < len; j++)
     {
       char c = set.Chars[j];

@@ -503,7 +503,8 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
 }
 
 
-CEncoder::CEncoder(const CCompressionMethodMode *options)
+CEncoder::CEncoder(const CCompressionMethodMode *options):
+  _bindReverseConverter(0)
 {
   if (options == 0 || options->IsEmpty())
     throw 1;
@@ -663,6 +664,11 @@ CEncoder::CEncoder(const CCompressionMethodMode *options)
 
   _bindReverseConverter = new NCoderMixer2::CBindReverseConverter(_bindInfo);
   _bindReverseConverter->CreateReverseBindInfo(_decompressBindInfo);
+}
+
+CEncoder::~CEncoder()
+{
+  delete _bindReverseConverter;
 }
 
 }}

@@ -64,7 +64,7 @@ public:
   void Normalize()
   {
     NWindows::NSynchronization::CSingleLock lock(&_criticalSection, true);
-    const kMaxSize = 100;
+    const int kMaxSize = 100;
     if (Strings.Size() > kMaxSize)
       Strings.Delete(kMaxSize, Strings.Size() - kMaxSize + 1);
   }

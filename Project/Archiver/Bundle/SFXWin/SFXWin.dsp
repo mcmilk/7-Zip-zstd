@@ -691,15 +691,6 @@ SOURCE=..\..\..\..\SDK\Windows\ProcessMessages.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Windows\PropVariant.cpp
-
-!IF  "$(CFG)" == "SFXWin - Win32 Release"
-
-# ADD CPP /MT
-
-!ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -928,6 +919,10 @@ SOURCE=..\..\..\..\SDK\Common\StdOutStream.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\String.cpp
 # End Source File
 # Begin Source File
 

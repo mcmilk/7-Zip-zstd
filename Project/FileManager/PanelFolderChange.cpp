@@ -2,22 +2,100 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
-
 #include "Common/StringConvert.h"
 #include "Common/Wildcard.h"
 
+#include "Windows/FileDir.h"
+
 #include "Panel.h"
-
 #include "Resource/ListViewDialog/ListViewDialog.h"
-
 #include "RootFolder.h"
 #include "ViewSettings.h"
-
 #include "FSDrives.h"
 #include "LangUtils.h"
+#include "resource.h"
 
 using namespace NWindows;
+using namespace NFile;
+using namespace NFind;
+
+void CPanel::SetToRootFolder()
+{
+  CComObjectNoLock<CRootFolder> *rootFolderSpec = new CComObjectNoLock<CRootFolder>;
+  _folder = rootFolderSpec;
+  rootFolderSpec->Init();
+}
+
+HRESULT CPanel::BindToPath(const UString &fullPath)
+{
+  CloseOpenFolders();
+  CSysString sysPath = GetSystemString(fullPath);
+  CFileInfo fileInfo;
+  UStringVector reducedParts;
+  while(!sysPath.IsEmpty())
+  {
+    if (FindFile(sysPath, fileInfo))
+      break;
+    int pos = sysPath.ReverseFind('\\');
+    if (pos < 0)
+      sysPath.Empty();
+    else
+    {
+      if (reducedParts.Size() > 0 || pos < sysPath.Length() - 1)
+        reducedParts.Add(GetUnicodeString(sysPath.Mid(pos + 1)));
+      sysPath = sysPath.Left(pos);
+    }
+  }
+  SetToRootFolder();
+  CComPtr<IFolderFolder> newFolder;
+  if (sysPath.IsEmpty())
+  {
+    if (_folder->BindToFolder(fullPath, &newFolder) == S_OK)
+      _folder = newFolder;
+  }
+  else if (fileInfo.IsDirectory())
+  {
+    NName::NormalizeDirPathPrefix(sysPath);
+    if (_folder->BindToFolder(GetUnicodeString(sysPath), &newFolder) == S_OK)
+      _folder = newFolder;
+  }
+  else
+  {
+    CSysString dirPrefix;
+    if (!NDirectory::GetOnlyDirPrefix(sysPath, dirPrefix))
+      dirPrefix.Empty();
+    if (_folder->BindToFolder(GetUnicodeString(dirPrefix), &newFolder) == S_OK)
+    {
+      _folder = newFolder;
+      LoadFullPath();
+      CSysString fileName;
+      if (NDirectory::GetOnlyName(sysPath, fileName))
+      {
+        if (OpenItemAsArchive(GetUnicodeString(fileName),
+            GetSystemString(_currentFolderPrefix), 
+            GetSystemString(_currentFolderPrefix) + fileName) == S_OK)
+        {
+          for (int i = reducedParts.Size() - 1; i >= 0; i--)
+          {
+            CComPtr<IFolderFolder> newFolder;
+            _folder->BindToFolder(reducedParts[i], &newFolder);
+            if (!newFolder)
+              break;
+            _folder = newFolder;
+          }
+        }
+      }
+    }
+  }
+  return S_OK;
+}
+
+HRESULT CPanel::BindToPathAndRefresh(const UString &path)
+{
+  RINOK(BindToPath(path));
+  RefreshListCtrl(UString(), -1, UStringVector());
+  return S_OK;
+}
 
 void CPanel::FastFolderInsert(int index)
 {
@@ -26,7 +104,7 @@ void CPanel::FastFolderInsert(int index)
 
 void CPanel::FastFolderSelect(int index)
 {
-  BindToFolder(_appState->FastFolders.GetString(index));
+  BindToPathAndRefresh(_appState->FastFolders.GetString(index));
 }
 
 UString GetFolderPath(IFolderFolder * folder)
@@ -41,7 +119,7 @@ UString GetFolderPath(IFolderFolder * folder)
   return UString();
 }
 
-void CPanel::LoadCurrentPath()
+void CPanel::LoadFullPath()
 {
   _currentFolderPrefix.Empty();
   for (int i = 0; i < _parentFolders.Size(); i++)
@@ -55,12 +133,12 @@ void CPanel::LoadCurrentPath()
     _currentFolderPrefix += GetFolderPath(_folder);
 }
 
-void CPanel::SetCurrentPathText()
+void CPanel::LoadFullPathAndShow()
 { 
-  LoadCurrentPath();
+  LoadFullPath();
   _appState->FolderHistrory.AddString(_currentFolderPrefix);
 
-  _headerComboBox.SendMessage(CB_RESETCONTENT, 0, 0);
+  // _headerComboBox.SendMessage(CB_RESETCONTENT, 0, 0);
   _headerComboBox.SetText(GetSystemString(_currentFolderPrefix)); 
 
   /*
@@ -74,27 +152,6 @@ void CPanel::SetCurrentPathText()
     _headerComboBox.InsertItem(&item);
   }
   */
-}
-
-HRESULT CPanel::BindToFolder(const UString &path)
-{
-  while(_parentFolders.Size() > 0)
-  {
-    int numLevels = _parentFolders.Size();
-    OpenParentFolder();
-    if (numLevels == _parentFolders.Size())
-      return E_FAIL;
-  }
-
-  CComObjectNoLock<CRootFolder> *rootFolderSpec = new CComObjectNoLock<CRootFolder>;
-  CComPtr<IFolderFolder> rootFolder = rootFolderSpec;
-  rootFolderSpec->Init();
-  CComPtr<IFolderFolder> newFolder;
-  RETURN_IF_NOT_S_OK(rootFolder->BindToFolder(path, &newFolder));
-  _folder = newFolder;
-  SetCurrentPathText();
-  RefreshListCtrl(UString(), -1, UStringVector());
-  return S_OK;
 }
 
 bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
@@ -112,20 +169,11 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
     return true;
   }
 
-  /*
-  if (info->iWhy == CBENF_DROPDOWN && info->fChanged == FALSE)
-  {
-    result = FALSE;
-    return true;
-  }
-  */
-
-
   if (info->iWhy == CBENF_RETURN)
   {
-    if (BindToFolder(GetUnicodeString(info->szText)) != S_OK)
+    if (BindToPathAndRefresh(GetUnicodeString(info->szText)) != S_OK)
     {
-      MessageBeep(-1);
+      // MessageBeep((UINT)-1);
       result = TRUE;
       return true;
     }
@@ -165,6 +213,11 @@ bool CPanel::OnNotifyComboBox(LPNMHDR header, LRESULT &result)
 {
   switch(header->code)
   {
+    case CBEN_BEGINEDIT:
+    {
+      _lastFocusedIsList = false;
+      _panelCallback->PanelWasFocused();
+    }
     case CBEN_ENDEDIT:
     {
       return OnNotifyComboBoxEndEdit((PNMCBEENDEDIT)header, result);
@@ -194,12 +247,12 @@ void CPanel::FoldersHistory()
       _appState->FolderHistrory.AddString(GetUnicodeString(listViewDialog.Strings[i]));
   }
   if (listViewDialog.FocusedItemIndex >= 0)
-    BindToFolder(strings[listViewDialog.FocusedItemIndex]);
+    BindToPathAndRefresh(strings[listViewDialog.FocusedItemIndex]);
 }
- 
+
 void CPanel::OpenParentFolder()
 {
-  LoadCurrentPath();
+  LoadFullPath(); // Maybe we don't need it ??
   UString focucedName;
   if (!_currentFolderPrefix.IsEmpty())
   {
@@ -235,26 +288,29 @@ void CPanel::OpenParentFolder()
     }
   }
 
-  SetCurrentPathText();
-
   UStringVector selectedItems;
   /*
   if (!focucedName.IsEmpty())
     selectedItems.Add(focucedName);
   */
+  LoadFullPath();
+  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
   RefreshListCtrl(focucedName, -1, selectedItems);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
-  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
+  RefreshStatusBar();
 }
 
 void CPanel::CloseOpenFolders()
 {
-  while(_parentFolders.Size() > 1)
+  while(_parentFolders.Size() > 0)
   {
+    _folder.Release();
     _folder = _parentFolders.Back().ParentFolder;
-    OpenParentArchiveFolder();
+    if (_parentFolders.Size () > 1)
+      OpenParentArchiveFolder();
     _parentFolders.DeleteBack();
   }
+  _folder.Release();
 }
 
 void CPanel::OpenRootFolder()
@@ -262,7 +318,7 @@ void CPanel::OpenRootFolder()
   _parentFolders.Clear();
   SetToRootFolder();
   RefreshListCtrl(UString(), 0, UStringVector());
-  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
+  // ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
   /*
   BeforeChangeFolder();
   _currentFolderPrefix.Empty();
@@ -283,15 +339,20 @@ void CPanel::OpenDrivesFolder()
 
 void CPanel::OpenFolder(int index)
 {
+  if (index == -1)
+  {
+    OpenParentFolder();
+    return;
+  }
   CComPtr<IFolderFolder> newFolder;
   _folder->BindToFolder(index, &newFolder);
   if (!newFolder)
     return;
   _folder = newFolder;
-  SetCurrentPathText();
+  LoadFullPath();
+  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
   RefreshListCtrl();
   UINT state = LVIS_SELECTED;
   _listView.SetItemState(_listView.GetFocusedItem(), state, state);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
-  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
 }

@@ -22,34 +22,33 @@ STDMETHODIMP CByteSwap2::Code(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
       ICompressProgressInfo *progress)
 {
-  const kStep = 2;
-  UINT32 nowPos = 0;
+  const UINT32 kStep = 2;
   UINT32 bufferPos = 0;
   UINT64 nowPos64 = 0;
   while(true)
   {
     UINT32 processedSize;
     UINT32 size = kBufferSize - bufferPos;
-    RETURN_IF_NOT_S_OK(inStream->Read(_buffer + bufferPos, size, &processedSize));
+    RINOK(inStream->Read(_buffer + bufferPos, size, &processedSize));
     if (processedSize == 0)
-      return  outStream->Write(_buffer, bufferPos, NULL);
+      return outStream->Write(_buffer, bufferPos, NULL);
 
     UINT32 endPos = bufferPos + processedSize;
     for (UINT32 curPos = 0; curPos + kStep <= endPos; curPos += kStep)
     {
       BYTE data[kStep];
-      for (int i = 0; i < kStep; i++)
-        data[i] = _buffer[curPos + i];
-      for (i = 0; i < kStep; i++)
-        _buffer[curPos + i] = data[kStep - 1 - i];
+      data[0] = _buffer[curPos + 0];
+      data[1] = _buffer[curPos + 1];
+      _buffer[curPos + 0] = data[1];
+      _buffer[curPos + 1] = data[0];
     }
-    RETURN_IF_NOT_S_OK(outStream->Write(_buffer, curPos, &processedSize));
+    RINOK(outStream->Write(_buffer, curPos, &processedSize));
     if (curPos != processedSize)
       return E_FAIL;
     nowPos64 += curPos;
     if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &nowPos64));
+      RINOK(progress->SetRatioInfo(&nowPos64, &nowPos64));
     }
     bufferPos = 0;
     while(curPos < endPos)
@@ -57,39 +56,41 @@ STDMETHODIMP CByteSwap2::Code(ISequentialInStream *inStream,
   }
 }
 
-
 STDMETHODIMP CByteSwap4::Code(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
       ICompressProgressInfo *progress)
 {
-  const kStep = 4;
-  UINT32 nowPos = 0;
+  const UINT32 kStep = 4;
   UINT32 bufferPos = 0;
   UINT64 nowPos64 = 0;
   while(true)
   {
     UINT32 processedSize;
     UINT32 size = kBufferSize - bufferPos;
-    RETURN_IF_NOT_S_OK(inStream->Read(_buffer + bufferPos, size, &processedSize));
+    RINOK(inStream->Read(_buffer + bufferPos, size, &processedSize));
     if (processedSize == 0)
-      return  outStream->Write(_buffer, bufferPos, NULL);
+      return outStream->Write(_buffer, bufferPos, NULL);
 
     UINT32 endPos = bufferPos + processedSize;
     for (UINT32 curPos = 0; curPos + kStep <= endPos; curPos += kStep)
     {
       BYTE data[kStep];
-      for (int i = 0; i < kStep; i++)
-        data[i] = _buffer[curPos + i];
-      for (i = 0; i < kStep; i++)
-        _buffer[curPos + i] = data[kStep - 1 - i];
+      data[0] = _buffer[curPos + 0];
+      data[1] = _buffer[curPos + 1];
+      data[2] = _buffer[curPos + 2];
+      data[3] = _buffer[curPos + 3];
+      _buffer[curPos + 0] = data[3];
+      _buffer[curPos + 1] = data[2];
+      _buffer[curPos + 2] = data[1];
+      _buffer[curPos + 3] = data[0];
     }
-    RETURN_IF_NOT_S_OK(outStream->Write(_buffer, curPos, &processedSize));
+    RINOK(outStream->Write(_buffer, curPos, &processedSize));
     if (curPos != processedSize)
       return E_FAIL;
     nowPos64 += curPos;
     if (progress != NULL)
     {
-      RETURN_IF_NOT_S_OK(progress->SetRatioInfo(&nowPos64, &nowPos64));
+      RINOK(progress->SetRatioInfo(&nowPos64, &nowPos64));
     }
     bufferPos = 0;
     while(curPos < endPos)

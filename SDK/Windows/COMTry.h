@@ -7,9 +7,8 @@
 
 #include "Common/NewHandler.h"
 
-#define COM_TRY_BEGIN   try {
-
-#define COM_TRY_END  } catch(CNewException) {  return E_OUTOFMEMORY; }\
-  catch(...) { return E_FAIL; }
+#define COM_TRY_BEGIN try {
+#define COM_TRY_END } catch(const CSystemException &e) { return e.ErrorCode; }\
+    catch(...) { return E_FAIL; }
 
 #endif

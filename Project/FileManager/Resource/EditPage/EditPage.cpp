@@ -97,14 +97,14 @@ void CEditPage::OnSetEditorButton()
   info.hwndOwner = HWND(*this); 
   info.hInstance = 0; 
   
-  const kBufferSize = MAX_PATH * 2;
+  const int kBufferSize = MAX_PATH * 2;
   TCHAR buffer[kBufferSize + 1];
   CSysString editorPath;
   _editorEdit.GetText(editorPath);
 
   _tcscpy(buffer, editorPath);
 
-  const kFilterBufferSize = MAX_PATH;
+  const int kFilterBufferSize = MAX_PATH;
   TCHAR filterBuffer[kFilterBufferSize];
   CDoubleZeroStringList doubleZeroStringList;
   CSysString string = _T("*.exe");

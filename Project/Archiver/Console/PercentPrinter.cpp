@@ -2,12 +2,16 @@
 
 #include "StdAfx.h"
 
-#include "PercentPrinter.h"
 #include "Common/StdOutStream.h"
+#include "Common/IntToString.h"
+
+#include "PercentPrinter.h"
 
 static const char *kPrepareString = "    ";
 static const char *kCloseString = "\b\b\b\b    \b\b\b\b";
-static const char *kPercentFormatString =  "\b\b\b\b%3I64u%%";
+// static const char *kPercentFormatString =  "\b\b\b\b%3I64u%%";
+static const char *kPercentFormatString1 = "\b\b\b\b";
+static const int kNumDigits = 3;
 
 CPercentPrinter::CPercentPrinter(UINT64 minStepSize):
   m_MinStepSize(minStepSize),
@@ -35,7 +39,7 @@ void CPercentPrinter::ClosePrint()
 
 void CPercentPrinter::PrintString(const char *aString)
 {
-  m_ScreenPos += strlen(aString);
+  m_ScreenPos += lstrlenA(aString);
   g_StdOut << aString;
 }
 
@@ -53,10 +57,16 @@ void CPercentPrinter::RePrintRatio()
 {
   if (m_Total == 0)
     return;
-  char temp[32];
   UINT64 ratio = m_CurValue * 100 / m_Total;
-  sprintf(temp, kPercentFormatString, ratio);
-  g_StdOut << temp;
+  // char temp[32];
+  // sprintf(temp, kPercentFormatString, ratio);
+  char temp[32 + kNumDigits] = "    "; // for 4 digits;
+  ConvertUINT64ToString(ratio, temp + kNumDigits);
+  int len = lstrlenA(temp + kNumDigits);
+  lstrcatA(temp, "%");
+  int pos = (len > kNumDigits)? kNumDigits : len;
+  g_StdOut << kPercentFormatString1;
+  g_StdOut << (temp + pos);
   m_PrevValue = m_CurValue;
   m_StringIsPrinted = true;
 }

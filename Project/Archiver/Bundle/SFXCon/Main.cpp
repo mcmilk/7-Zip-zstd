@@ -1,4 +1,4 @@
-// MainCommandLineAr.cpp
+// Main.cpp
 
 #include "StdAfx.h"
 
@@ -13,6 +13,8 @@
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 
+#include "Interface/CryptoInterface.h"
+
 #include "../../Common/OpenEngine200.h"
 #include "../../Common/ZipRegistryMain.h"
 #include "../../Common/DefaultName.h"
@@ -21,9 +23,7 @@
 #include "../../Console/ArError.h"
 #include "../../Console/ListArchive.h"
 
-#include "Interface/CryptoInterface.h"
 #include "../../../Compress/Interface/CompressInterface.h"
-
 #include "../../../Crypto/Cipher/Common/CipherInterface.h"
 
 using namespace NWindows;
@@ -31,7 +31,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 2.30 Beta 29  Copyright (c) 1999-2003 Igor Pavlov  2003-04-07\n";
+"\n7-Zip SFX 2.30 Beta 30  Copyright (c) 1999-2003 Igor Pavlov  2003-04-19\n";
 
 static const int kNumSwitches = 6;
 
@@ -234,9 +234,9 @@ void WriteArgumentsToStringList(int numArguments, const char *arguments[],
   for(int i = 1; i < numArguments; i++)
   {
     char cmdLineBuffer[kMaxCmdLineSize];
-    strcpy(cmdLineBuffer, arguments[i]);
+    lstrcpyA(cmdLineBuffer, arguments[i]);
     CharToOem(cmdLineBuffer, cmdLineBuffer);
-    if (strlen(cmdLineBuffer) > 0)
+    if (lstrlenA(cmdLineBuffer) > 0)
       strings.Add(cmdLineBuffer);
   }
 }
@@ -293,7 +293,7 @@ void AddCommandLineWildCardToCensr(NWildcard::CCensor &wildcardCensor,
 
 static bool AreEqualNoCase(char c1, char c2)
 {
-  return (toupper(c1) == toupper(c2));
+  return ::MyCharUpper(c1) == ::MyCharUpper(c2);
 }
 
 void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor, 

@@ -525,12 +525,12 @@ HRESULT CPlugin::ShowAttributesWindow()
   const kPathIndex = 2;
   const kOkButtonIndex = 4;
   int size = 2;
-  CRecordVector<CInitDialogItem> anInitDialogItems;
+  CRecordVector<CInitDialogItem> initDialogItems;
   
   int xSize = 70;
   CInitDialogItem initDialogItem = 
   { DI_DOUBLEBOX, 3, 1, xSize - 4, size - 2, false, false, 0, false, NMessageID::kProperties, NULL, NULL };
-  anInitDialogItems.Add(initDialogItem);
+  initDialogItems.Add(initDialogItem);
   AStringVector aValues;
 
   for (int i = 0; i < m_Properties.Size(); i++)
@@ -547,7 +547,7 @@ HRESULT CPlugin::ShowAttributesWindow()
     }
     else
       initDialogItem.DataMessageId = kPROPIDToName[index].PluginID;
-    anInitDialogItems.Add(initDialogItem);
+    initDialogItems.Add(initDialogItem);
     
     NCOM::CPropVariant propVariant;
     RETURN_IF_NOT_S_OK(_folder->GetProperty(itemIndex, 
@@ -558,25 +558,25 @@ HRESULT CPlugin::ShowAttributesWindow()
     {
       CInitDialogItem initDialogItem = 
       { DI_TEXT, 30, 3 + i, 0, 0, false, false, 0, false, -1, NULL, NULL };
-      anInitDialogItems.Add(initDialogItem);
+      initDialogItems.Add(initDialogItem);
     }
   }
 
   int numLines = aValues.Size();
   for(i = 0; i < numLines; i++)
   {
-    CInitDialogItem &initDialogItem = anInitDialogItems[1 + i * 2 + 1];
+    CInitDialogItem &initDialogItem = initDialogItems[1 + i * 2 + 1];
     initDialogItem.DataString = aValues[i];
   }
   
-  int numDialogItems = anInitDialogItems.Size();
+  int numDialogItems = initDialogItems.Size();
   
   CRecordVector<FarDialogItem> dialogItems;
   dialogItems.Reserve(numDialogItems);
   for(i = 0; i < numDialogItems; i++)
     dialogItems.Add(FarDialogItem());
-  g_StartupInfo.InitDialogItems(anInitDialogItems.GetPointer(), 
-    dialogItems.GetPointer(), numDialogItems);
+  g_StartupInfo.InitDialogItems(&initDialogItems.Front(), 
+      &dialogItems.Front(), numDialogItems);
   
   int maxLen = 0;
   for (i = 0; i < numLines; i++)
@@ -602,7 +602,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   aFirstDialogItem.Y2 = size - 2;
   aFirstDialogItem.X2 = xSize - 4;
   
-  int askCode = g_StartupInfo.ShowDialog(xSize, size, NULL, dialogItems.GetPointer(), numDialogItems);
+  int askCode = g_StartupInfo.ShowDialog(xSize, size, NULL, &dialogItems.Front(), numDialogItems);
   return S_OK;
 }
 

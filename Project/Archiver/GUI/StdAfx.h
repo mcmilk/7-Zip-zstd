@@ -19,7 +19,6 @@ extern CComModule _Module;
 #include <string.h>
 #include <mbstring.h>
 #include <tchar.h>
-#include <locale.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <regstr.h>

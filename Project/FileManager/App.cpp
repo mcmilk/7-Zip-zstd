@@ -18,23 +18,25 @@
 #include "ExtractCallback.h"
 #include "UpdateCallback100.h"
 #include "ViewSettings.h"
+#include "RegistryUtils.h"
 
 using namespace NWindows;
 using namespace NFile;
+using namespace NFind;
 
 void CPanelCallbackImp::OnTab()
 {
-  if (kNumPanels != 1)
-    _app->_panel[1 - _index].SetFocus();  
+  if (g_App.NumPanels != 1)
+
+    _app->Panels[1 - _index].SetFocusToList();  
 }
 
-void CPanelCallbackImp::OnSetFocusToPath(int index)
+void CPanelCallbackImp::SetFocusToPath(int index)
 { 
   int newPanelIndex = index;
-  if (newPanelIndex > kNumPanels)
-    newPanelIndex = 0;
-  _app->_panel[newPanelIndex].SetFocus();  
-  _app->_panel[newPanelIndex]._headerComboBox.SetFocus();
+  if (g_App.NumPanels == 1)
+    newPanelIndex = g_App.LastFocusedPanel;
+  _app->Panels[newPanelIndex]._headerComboBox.SetFocus();
 }
 
 
@@ -47,34 +49,98 @@ void CPanelCallbackImp::OnSetSameFolder()
 void CPanelCallbackImp::OnSetSubFolder()
   { _app->OnSetSubFolder(_index); }
 
-void CApp::Create(HWND hwnd, UString &mainPath)
+void CPanelCallbackImp::PanelWasFocused()
+{ 
+  _app->LastFocusedPanel = _index; 
+}
+
+void CApp::SetListSettings()
 {
+  bool showDots = ReadShowDots();
+  bool showRealFileIcons = ReadShowRealFileIcons();
+  for (int i = 0; i < kNumPanelsMax; i++)
+  {
+    Panels[i]._showDots = showDots;
+    Panels[i]._showRealFileIcons = showRealFileIcons;
+  }
+}
+
+void CApp::SetShowSystemMenu()
+{
+  ShowSystemMenu = ReadShowSystemMenu();
+}
+
+void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
+{
+  if (PanelsCreated[panelIndex])
+    return;
+  m_PanelCallbackImp[panelIndex].Init(this, panelIndex);
+  UString path;
+  if (/*i == 0 && */ !mainPath.IsEmpty())
+  {
+    path = mainPath;
+  }
+  else
+  {
+    CSysString sysPath; 
+    if (!::ReadPanelPath(panelIndex, sysPath))
+      sysPath.Empty();
+    path = GetUnicodeString(sysPath);
+  }
+  int id = 1000 + 100 * panelIndex;
+  Panels[panelIndex].Create(_window, _window, 
+      id, 0, path, &m_PanelCallbackImp[panelIndex], &_appState);
+  PanelsCreated[panelIndex] = true;
+}
+
+void CApp::Create(HWND hwnd, const UString &mainPath)
+{
+  int i;
+  for (i = 0; i < kNumPanelsMax; i++)
+    PanelsCreated[i] = false;
+
   _window.Attach(hwnd);
   _appState.Read();
-  for (int i = 0; i < kNumPanels; i++)
+  SetListSettings();
+  SetShowSystemMenu();
+  UString mainPathSpec = mainPath;
+  for (i = 0; i < kNumPanelsMax; i++)
   {
-    m_PanelCallbackImp[i].Init(this, i);
-    CSysString path;
-    if (i == 0 && !mainPath.IsEmpty())
+    if (NumPanels > 1 || i == LastFocusedPanel)
     {
-      path = GetSystemString(mainPath);
+      CreateOnePanel(i, mainPathSpec);
+      mainPathSpec.Empty();
     }
-    else
-      if (!ReadPanelPath(i, path))
-        path.Empty();
-    int id = 1000 + 100 * i;
-    _panel[i].Create(hwnd, hwnd, i, id, 0, path, 
-      &m_PanelCallbackImp[i], &_appState);
   }
-  _panel[0].SetFocus();
+  Panels[LastFocusedPanel].SetFocusToList();
+}
+
+extern void MoveSubWindows(HWND hWnd);
+
+void CApp::SwitchOnOffOnePanel()
+{
+  if (NumPanels == 1)
+  {
+    NumPanels++;
+    CreateOnePanel(1 - LastFocusedPanel, UString());
+    Panels[1 - LastFocusedPanel].Enable(true);
+    Panels[1 - LastFocusedPanel].Show(SW_SHOWNORMAL);
+  }
+  else
+  {
+    NumPanels--;
+    Panels[1 - LastFocusedPanel].Enable(false);
+    Panels[1 - LastFocusedPanel].Show(SW_HIDE);
+  }
+  MoveSubWindows(_window);
 }
 
 void CApp::Save()
 {
   _appState.Save();
-  for (int i = 0; i < kNumPanels; i++)
+  for (int i = 0; i < NumPanels; i++)
   {
-    const CPanel &panel = _panel[i];
+    const CPanel &panel = Panels[i];
     UString path;
     if (panel._parentFolders.IsEmpty())
       path = panel._currentFolderPrefix;
@@ -185,25 +251,25 @@ struct CThreadUpdate
 
 void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 {
-  if (kNumPanels <= 1)
-    return;
-  CPanel &srcPanel = _panel[srcPanelIndex];
-  CPanel &destPanel = _panel[1 - srcPanelIndex];
-  if (!srcPanel.IsFSFolder() && !destPanel.IsFSFolder())
+  int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
+  CPanel &srcPanel = Panels[srcPanelIndex];
+  CPanel &destPanel = Panels[destPanelIndex];
+  bool useSrcPanel = true;
+  if (NumPanels != 1)
   {
-    srcPanel.MessageBox(LangLoadStringW(IDS_CANNOT_COPY, 0x03020207));
-    return;
+    if (!srcPanel.IsFSFolder() && !destPanel.IsFSFolder())
+    {
+      srcPanel.MessageBox(LangLoadStringW(IDS_CANNOT_COPY, 0x03020207));
+      return;
+    }
+    useSrcPanel = copyToSame || destPanel.IsFSFolder();
+    if (move && !useSrcPanel)
+    {
+      srcPanel.MessageBoxMyError(L"Move is not supported");
+      return;
+    }
   }
 
-  bool useSrcPanel = copyToSame || destPanel.IsFSFolder();
-
-  if (move && !useSrcPanel)
-  {
-    srcPanel.MessageBoxMyError(L"Move is not supported");
-    return;
-  }
-
- 
   CPanel &panel = useSrcPanel ? srcPanel : destPanel;
 
   CComPtr<IFolderOperations> folderOperations;
@@ -231,14 +297,39 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     int focusedItem = srcPanel._listView.GetFocusedItem();
     if (focusedItem < 0)
       return;
-    UINT32 realIndex = srcPanel.GetRealItemIndex(focusedItem);
+    int realIndex = srcPanel.GetRealItemIndex(focusedItem);
+    if (realIndex == -1)
+      return;
     indices.Add(realIndex);
     copyDialog.Value = GetSystemString(srcPanel.GetItemName(realIndex));
   }
   else
   {
-    srcPanel.GetOperatedItemIndexes(indices);
-    copyDialog.Value = GetSystemString(destPanel._currentFolderPrefix);
+    srcPanel.GetOperatedItemIndices(indices);
+    if (indices.Size() == 0)
+      return;
+    CSysString destPath = GetSystemString(destPanel._currentFolderPrefix);
+    if (NumPanels == 1)
+    {
+      while(!destPath.IsEmpty())
+      {
+        CFileInfo fileInfo;
+        if (FindFile(destPath, fileInfo))
+        {
+          if (fileInfo.IsDirectory())
+          {
+            destPath += TEXT('\\');
+            break;
+          }
+        }
+        int pos = destPath.ReverseFind('\\');
+        if (pos < 0)
+          destPath.Empty();
+        else
+          destPath = destPath.Left(pos);
+      }
+    }
+    copyDialog.Value = destPath;
   }
   copyDialog.Title = move ? 
     LangLoadString(IDS_MOVE, 0x03020202):
@@ -334,7 +425,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   {
     disableTimerProcessing1.Restore();
     disableTimerProcessing2.Restore();
-    srcPanel.SetFocus();
+    // For Password:
+    srcPanel.SetFocusToList();
     srcPanel.MessageBoxError(result, L"Error");
     return;
   }
@@ -349,32 +441,33 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   }
   disableTimerProcessing1.Restore();
   disableTimerProcessing2.Restore();
-  srcPanel.SetFocus();
+  srcPanel.SetFocusToList();
 }
 
 
 void CApp::OnSetSameFolder(int srcPanelIndex)
 {
-  if (kNumPanels <= 1)
+  if (NumPanels <= 1)
     return;
-  const CPanel &srcPanel = _panel[srcPanelIndex];
-  CPanel &destPanel = _panel[1 - srcPanelIndex];
-  destPanel.BindToFolder(srcPanel._currentFolderPrefix);
+  const CPanel &srcPanel = Panels[srcPanelIndex];
+  CPanel &destPanel = Panels[1 - srcPanelIndex];
+  destPanel.BindToPathAndRefresh(srcPanel._currentFolderPrefix);
 }
 
 void CApp::OnSetSubFolder(int srcPanelIndex)
 {
-  if (kNumPanels <= 1)
+  if (NumPanels <= 1)
     return;
-  const CPanel &srcPanel = _panel[srcPanelIndex];
-  CPanel &destPanel = _panel[1 - srcPanelIndex];
+  const CPanel &srcPanel = Panels[srcPanelIndex];
+  CPanel &destPanel = Panels[1 - srcPanelIndex];
 
   int focusedItem = srcPanel._listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  UINT32 realIndex = srcPanel.GetRealItemIndex(focusedItem);
+  int realIndex = srcPanel.GetRealItemIndex(focusedItem);
   if (!srcPanel.IsItemFolder(realIndex))
     return;
+
 
   /*
   UString string = srcPanel._currentFolderPrefix + 
@@ -382,24 +475,36 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
   destPanel.BindToFolder(string);
   */
   CComPtr<IFolderFolder> newFolder;
-  if (srcPanel._folder->BindToFolder(realIndex, &newFolder) != S_OK)
-    return;
+  if (realIndex == -1)
+  {
+    if (srcPanel._folder->BindToParentFolder(&newFolder) != S_OK)
+      return;
+  }
+  else
+  {
+    if (srcPanel._folder->BindToFolder(realIndex, &newFolder) != S_OK)
+      return;
+  }
   destPanel._folder = newFolder;
-  destPanel.SetCurrentPathText();
   destPanel.RefreshListCtrl();
 }
 
-
 int CApp::GetFocusedPanelIndex()
 {
+  return LastFocusedPanel;
+  /*
   HWND hwnd = ::GetFocus();
   while(true)
   {
     if (hwnd == 0)
       return 0;
-    for (int i = 0; i < kNumPanels; i++)
-      if ((HWND)_panel[i] == hwnd)
+    for (int i = 0; i < kNumPanelsMax; i++)
+    {
+      if (PanelsCreated[i] && 
+          ((HWND)Panels[i] == hwnd || Panels[i]._listView == hwnd))
         return i;
+    }
     hwnd = GetParent(hwnd);
   }
+  */
 }

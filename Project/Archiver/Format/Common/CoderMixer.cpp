@@ -89,7 +89,7 @@ CCoderMixer::~CCoderMixer()
   ExitEvent.Set();
   ::WaitForSingleObject(m_MainThread, INFINITE);
   DWORD result = ::WaitForMultipleObjects(m_Threads.Size(), 
-      (const HANDLE *)m_Threads.GetPointer(),  TRUE, INFINITE);
+      &m_Threads.Front(), TRUE, INFINITE);
   for(int i = 0; i < m_Threads.Size(); i++)
     ::CloseHandle(m_Threads[i]);
 }

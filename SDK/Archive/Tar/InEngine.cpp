@@ -111,11 +111,11 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemInfoEx &itemInfo)
   itemInfo.GroupName = header.GroupName;
 
 
-  itemInfo.DeviceMajorDefined = strlen(header.DeviceMajor) > 0;
+  itemInfo.DeviceMajorDefined = (header.DeviceMajor[0] != 0);
   if (itemInfo.DeviceMajorDefined)
     itemInfo.DeviceMajor = OctalToNumber(header.DeviceMajor);
   
-  itemInfo.DeviceMinorDefined = strlen(header.DeviceMinor) > 0;
+  itemInfo.DeviceMinorDefined = (header.DeviceMinor[0] != 0);
   if (itemInfo.DeviceMinorDefined)
   itemInfo.DeviceMinor = OctalToNumber(header.DeviceMinor);
   

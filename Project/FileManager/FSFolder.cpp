@@ -29,11 +29,11 @@ static STATPROPSTG kProperties[] =
   { NULL, kpidName, VT_BSTR},
   // { NULL, kpidIsFolder, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidLastWriteTime, VT_FILETIME},
   { NULL, kpidCreationTime, VT_FILETIME},
   { NULL, kpidLastAccessTime, VT_FILETIME},
-  { NULL, kpidLastWriteTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
+  { NULL, kpidPackedSize, VT_UI8},
   { NULL, kpidComment, VT_BSTR}
 };
 
@@ -517,7 +517,6 @@ STDMETHODIMP CFSFolder::SetProperty(UINT32 index, PROPID propID,
   return S_OK;
 }
 
-/*
 STDMETHODIMP CFSFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
 {
   if (index >= _files.Size())
@@ -526,6 +525,6 @@ STDMETHODIMP CFSFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
   *iconIndex = GetRealIconIndex(fileInfo.Attributes, _path + fileInfo.Name);
   return S_OK;
 }
-*/
+
 // static const LPCTSTR kInvalidFileChars = TEXT("\\/:*?\"<>|");
 

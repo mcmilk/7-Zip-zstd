@@ -58,7 +58,7 @@ void CPanel::DeleteItems()
   }
 
   CRecordVector<UINT32> indices;
-  GetOperatedItemIndexes(indices);
+  GetOperatedItemIndices(indices);
   if (indices.IsEmpty())
     return;
   UString title;
@@ -118,6 +118,9 @@ void CPanel::DeleteItems()
 
 BOOL CPanel::OnBeginLabelEdit(LV_DISPINFO * lpnmh)
 {
+  int realIndex = GetRealIndex(lpnmh->item);
+  if (realIndex == -1)
+    return TRUE;
   CComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(&folderOperations) != S_OK)
     return TRUE;
@@ -136,7 +139,11 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   }
   UString newName = GetUnicodeString(lpnmh->item.pszText);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
-  HRESULT result = folderOperations->Rename(GetRealIndex(lpnmh->item), newName, 0);
+
+  int realIndex = GetRealIndex(lpnmh->item);
+  if (realIndex == -1)
+    return FALSE;
+  HRESULT result = folderOperations->Rename(realIndex, newName, 0);
   if (result != S_OK)
   {
     MessageBoxError(result, LangLoadStringW(IDS_ERROR_RENAMING, 0x03020221));
@@ -162,7 +169,7 @@ void CPanel::CreateFolder()
   CComboDialog comboDialog;
   comboDialog.Title = LangLoadString(IDS_CREATE_FOLDER, 0x03020230);
   comboDialog.Static = LangLoadString(IDS_CREATE_FOLDER_NAME, 0x03020231);
-  comboDialog.Value = LangLoadString(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ -1);
+  comboDialog.Value = LangLoadString(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ (UINT32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
@@ -178,7 +185,7 @@ void CPanel::CreateFolder()
   int pos = newName.Find(TEXT('\\'));
   if (pos >= 0)
     newName = newName.Left(pos);
-  SetFocus();
+  // SetFocus();
   RefreshListCtrl(newName, _listView.GetFocusedItem(), selectedNames);
 }
 
@@ -193,7 +200,7 @@ void CPanel::CreateFile()
   CComboDialog comboDialog;
   comboDialog.Title = LangLoadString(IDS_CREATE_FILE, 0x03020240);
   comboDialog.Static = LangLoadString(IDS_CREATE_FILE_NAME, 0x03020241);
-  comboDialog.Value = LangLoadString(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ -1);
+  comboDialog.Value = LangLoadString(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ (UINT32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
@@ -225,6 +232,9 @@ void CPanel::ChangeComment()
   int index = _listView.GetFocusedItem();
   if (index < 0)
     return;
+  int realIndex = GetRealItemIndex(index);
+  if (realIndex == -1)
+    return;
   CComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(&folderOperations) != S_OK)
   {
@@ -232,7 +242,6 @@ void CPanel::ChangeComment()
     return;
   }
 
-  int realIndex = GetRealItemIndex(index);
   UString comment; 
   {
     NCOM::CPropVariant propVariant;

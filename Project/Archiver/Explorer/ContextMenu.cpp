@@ -545,9 +545,11 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
 static void MyCopyString(void *destPointer, const TCHAR *string, bool writeInUnicode)
 {
   if(writeInUnicode)
+  {
     wcscpy((wchar_t *)destPointer, GetUnicodeString(string));
+  }
   else
-    strcpy((char *)destPointer, GetAnsiString(string));
+    lstrcpyA((char *)destPointer, GetAnsiString(string));
 }
 
 STDMETHODIMP CZipContextMenu::GetCommandString(UINT commandOffset, UINT uType, 

@@ -22,9 +22,11 @@ void CPanel::OnShiftSelectMessage()
     return;
   int startItem = MyMin(focusedItem, _prevFocusedItem);
   int finishItem = MyMax(focusedItem, _prevFocusedItem);
-  for (int i = 0; i < _selectedStatusVector.Size(); i++)
+  for (int i = 0; i < _listView.GetItemCount(); i++)
   {
     int realIndex = GetRealItemIndex(i);
+    if (realIndex == -1)
+      continue;
     if (i >= startItem && i <= finishItem)
       if (_selectedStatusVector[realIndex] != _selectMark)
       {
@@ -40,14 +42,25 @@ void CPanel::OnArrowWithShift()
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int index = GetRealItemIndex(focusedItem);
+  int realIndex = GetRealItemIndex(focusedItem);
   if (_selectionIsDefined)
-    _selectedStatusVector[index] = _selectMark;
+  {
+    if (realIndex != -1)
+      _selectedStatusVector[realIndex] = _selectMark;
+  }
   else
   {
-    _selectionIsDefined = true;
-    _selectMark = !_selectedStatusVector[index];
-    _selectedStatusVector[index] = _selectMark;
+    if (realIndex == -1)
+    {
+      _selectionIsDefined = true;
+      _selectMark = true;
+    }
+    else
+    {
+      _selectionIsDefined = true;
+      _selectMark = !_selectedStatusVector[realIndex];
+      _selectedStatusVector[realIndex] = _selectMark;
+    }
   }
   _prevFocusedItem = focusedItem;
   PostMessage(kShiftSelectMessage);
@@ -67,8 +80,9 @@ void CPanel::OnInsert()
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int index = GetRealItemIndex(focusedItem);
-  _selectedStatusVector[index] = !_selectedStatusVector[index];
+  int realIndex = GetRealItemIndex(focusedItem);
+  if (realIndex != -1)
+    _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];
   _listView.RedrawItem(focusedItem);
 
   int nextIndex = focusedItem + 1;
@@ -116,8 +130,7 @@ void CPanel::SelectSpec(bool selectMode)
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     if (CompareWildCardWithName(mask, GetItemName(i)))
        _selectedStatusVector[i] = selectMode;
-  if (_selectedStatusVector.Size() > 0)
-    _listView.RedrawItems(0, _selectedStatusVector.Size() - 1);
+  _listView.RedrawAllItems();
 }
 
 void CPanel::SelectByType(bool selectMode)
@@ -134,40 +147,50 @@ void CPanel::SelectByType(bool selectMode)
   if (_selectedStatusVector.Size() != numItems)
     throw 11111;
 
-  int pos = name.ReverseFind(L'.');
-  if (pos < 0)
+  if (isItemFolder)
   {
     for (int i = 0; i < _selectedStatusVector.Size(); i++)
-      if (IsItemFolder(i) == isItemFolder && GetItemName(i).ReverseFind(L'.') < 0)
+      if (IsItemFolder(i) == isItemFolder)
         _selectedStatusVector[i] = selectMode;
   }
   else
   {
-    UString mask = UString(L'*') + name.Mid(pos);
-    for (int i = 0; i < _selectedStatusVector.Size(); i++)
-      if (IsItemFolder(i) == isItemFolder && CompareWildCardWithName(mask, GetItemName(i)))
-        _selectedStatusVector[i] = selectMode;
+    int pos = name.ReverseFind(L'.');
+    if (pos < 0)
+    {
+      for (int i = 0; i < _selectedStatusVector.Size(); i++)
+        if (IsItemFolder(i) == isItemFolder && GetItemName(i).ReverseFind(L'.') < 0)
+          _selectedStatusVector[i] = selectMode;
+    }
+    else
+    {
+      UString mask = UString(L'*') + name.Mid(pos);
+      for (int i = 0; i < _selectedStatusVector.Size(); i++)
+        if (IsItemFolder(i) == isItemFolder && CompareWildCardWithName(mask, GetItemName(i)))
+          _selectedStatusVector[i] = selectMode;
+    }
   }
-  if (_selectedStatusVector.Size() > 0)
-    _listView.RedrawItems(0, _selectedStatusVector.Size() - 1);
+  _listView.RedrawAllItems();
 }
 
 void CPanel::SelectAll(bool selectMode)
 {
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     _selectedStatusVector[i] = selectMode;
-  if (_selectedStatusVector.Size() > 0)
-    _listView.RedrawItems(0, _selectedStatusVector.Size() - 1);
+  _listView.RedrawAllItems();
 }
 
 void CPanel::InvertSelection()
 {
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     _selectedStatusVector[i] = !_selectedStatusVector[i];
-  if (_selectedStatusVector.Size() > 0)
-    _listView.RedrawItems(0, _selectedStatusVector.Size() - 1);
+  _listView.RedrawAllItems();
 }
 
+void CPanel::KillSelection()
+{
+  SelectAll(false);
+}
 
 void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
 {
@@ -177,7 +200,6 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
   int indexInList = itemActivate->iItem;
   if (indexInList < 0)
     return;
-  int realIndex = GetRealItemIndex(indexInList);
   if ((itemActivate->uKeyFlags & LVKF_SHIFT) != 0)
   {
     // int focusedIndex = _listView.GetFocusedItem();
@@ -189,6 +211,8 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
     for (int i = 0; i < _selectedStatusVector.Size(); i++)
     {
       int realIndex = GetRealItemIndex(i);
+      if (realIndex == -1)
+        continue;
       bool selected = (i >= startItem && i <= finishItem);
       if (_selectedStatusVector[realIndex] != selected)
       {
@@ -202,17 +226,14 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
     _startGroupSelect = indexInList;
     if ((itemActivate->uKeyFlags & LVKF_CONTROL) != 0)
     {
-      _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];
-      _listView.RedrawItem(indexInList);
+      int realIndex = GetRealItemIndex(indexInList);
+      if (realIndex != -1)
+      {
+        _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];
+        _listView.RedrawItem(indexInList);
+      }
     }
   }
   return;
 }
 
-void CPanel::KillSelection()
-{
-  for (int i = 0; i < _selectedStatusVector.Size(); i++)
-    _selectedStatusVector[i] = false;
-  if (_selectedStatusVector.Size() > 0)
-    _listView.RedrawItems(0, _selectedStatusVector.Size() - 1);
-}

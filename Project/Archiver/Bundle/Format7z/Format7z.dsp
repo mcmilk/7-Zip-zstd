@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -206,6 +206,14 @@ SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\SDK\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\IntToString.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\SDK\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -219,6 +227,10 @@ SOURCE=..\..\..\..\SDK\Common\StdInStream.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\StdInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\String.cpp
 # End Source File
 # Begin Source File
 
@@ -466,18 +478,6 @@ SOURCE=..\..\..\..\SDK\Compression\CopyCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Compression\HuffmanDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\HuffmanEncoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\SDK\Compression\HuffmanEncoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\SDK\Compression\RangeCoder.h
 # End Source File
 # End Group
@@ -495,6 +495,16 @@ SOURCE=..\..\Format\7z\Decode.h
 # Begin Source File
 
 SOURCE=..\..\Format\7z\Encode.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -617,6 +627,16 @@ SOURCE=..\..\..\Compress\Convert\Branch\Coder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\x86.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -625,6 +645,16 @@ SOURCE=..\..\..\Compress\Convert\Branch\x86.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\x86_2.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -657,6 +687,16 @@ SOURCE=..\..\..\Compress\LZ\LZMA\CoderInfo.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -665,6 +705,16 @@ SOURCE=..\..\..\Compress\LZ\LZMA\Decoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\Encoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -673,6 +723,16 @@ SOURCE=..\..\..\Compress\LZ\LZMA\Encoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\LenCoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -681,6 +741,16 @@ SOURCE=..\..\..\Compress\LZ\LZMA\LenCoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\LiteralCoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -772,6 +842,16 @@ SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTreeMFMain.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -829,7 +909,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Decoder.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
-# ADD CPP /Fo"Release\PPMD\Decoder.obj"
+# ADD CPP /O2 /Fo"Release\PPMD\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "7z - Win32 Debug"
 
@@ -852,7 +933,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Encoder.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
-# ADD CPP /Fo"Release\PPMD\Encoder.obj"
+# ADD CPP /O2 /Fo"Release\PPMD\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "7z - Win32 Debug"
 
@@ -907,12 +989,34 @@ SOURCE=..\..\..\Crypto\Cipher\AES\aescpp.h
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aescrypt.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aeskey.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -921,11 +1025,32 @@ SOURCE=..\..\..\Crypto\Cipher\AES\aesopt.h
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aestab.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\MyAES.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

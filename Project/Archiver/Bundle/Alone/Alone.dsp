@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\..\SDK" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_DEFLATE64" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_DEFLATE64" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\..\SDK" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_DEFLATE64" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\..\..\..\SDK" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_DEFLATE64" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -189,6 +189,23 @@ SOURCE=..\..\..\..\SDK\Compression\HuffmanDecoder.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Compression\HuffmanEncoder.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -289,6 +306,10 @@ SOURCE=..\..\..\..\SDK\Common\StdOutStream.cpp
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Common\StdOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\SDK\Common\String.cpp
 # End Source File
 # Begin Source File
 
@@ -984,12 +1005,52 @@ SOURCE=..\..\..\..\SDK\Util\StreamBinder.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\blocksort.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\bzlib.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1002,27 +1063,127 @@ SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\bzlib_private.h
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\compress.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\crctable.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\decompress.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\huffman.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\SDK\Alien\Compress\BWT\BZip2\randtable.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # End Group
 # End Group
@@ -1048,6 +1209,23 @@ SOURCE=..\..\Format\7z\Decode.h
 # Begin Source File
 
 SOURCE=..\..\Format\7z\Encode.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1649,6 +1827,23 @@ SOURCE=..\..\..\Compress\Convert\Branch\Coder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\x86.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1657,6 +1852,23 @@ SOURCE=..\..\..\Compress\Convert\Branch\x86.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\Convert\Branch\x86_2.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1689,6 +1901,23 @@ SOURCE=..\..\..\Compress\LZ\LZMA\CoderInfo.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\Decoder.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1697,6 +1926,23 @@ SOURCE=..\..\..\Compress\LZ\LZMA\Decoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\Encoder.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1705,6 +1951,23 @@ SOURCE=..\..\..\Compress\LZ\LZMA\Encoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\LenCoder.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1713,6 +1976,23 @@ SOURCE=..\..\..\Compress\LZ\LZMA\LenCoder.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\LZMA\LiteralCoder.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1812,6 +2092,23 @@ SOURCE=..\..\..\Compress\LZ\MatchFinder\BinTree\BinTreeMFMain.h
 # Begin Source File
 
 SOURCE=..\..\..\Compress\LZ\MatchFinder\MT\MT.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1860,7 +2157,8 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Decoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\Deflate\Decoder.obj"
+# ADD CPP /O2 /Fo"Release\Deflate\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -1868,7 +2166,8 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Decoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\Deflate\Decoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\Deflate\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -1887,7 +2186,8 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Encoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\Deflate\Encoder.obj"
+# ADD CPP /O2 /Fo"Release\Deflate\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -1895,7 +2195,8 @@ SOURCE=..\..\..\Compress\LZ\Deflate\Encoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\Deflate\Encoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\Deflate\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -1993,7 +2294,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Decoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\PPMD\Decoder.obj"
+# ADD CPP /O2 /Fo"Release\PPMD\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -2001,7 +2303,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Decoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\PPMD\Decoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\PPMD\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -2024,7 +2327,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Encoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\PPMD\Encoder.obj"
+# ADD CPP /O2 /Fo"Release\PPMD\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -2032,7 +2336,8 @@ SOURCE=..\..\..\Compress\PPM\PPMD\Encoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\PPMD\Encoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\PPMD\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -2063,7 +2368,8 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Decoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\BZip2\Decoder.obj"
+# ADD CPP /O2 /Fo"Release\BZip2\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -2071,7 +2377,8 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Decoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\BZip2\Decoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\BZip2\Decoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -2090,7 +2397,8 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Encoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
-# ADD CPP /Fo"Release\BZip2\Encoder.obj"
+# ADD CPP /O2 /Fo"Release\BZip2\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
 
@@ -2098,7 +2406,8 @@ SOURCE=..\..\..\Compress\BWT\BZip2\Encoder.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
-# ADD CPP /Fo"ReleaseU\BZip2\Encoder.obj"
+# ADD CPP /O2 /Fo"ReleaseU\BZip2\Encoder.obj"
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -2377,12 +2686,52 @@ SOURCE=..\..\..\Crypto\Cipher\AES\aescpp.h
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aescrypt.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aeskey.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -2391,11 +2740,48 @@ SOURCE=..\..\..\Crypto\Cipher\AES\aesopt.h
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\aestab.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Crypto\Cipher\AES\MyAES.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

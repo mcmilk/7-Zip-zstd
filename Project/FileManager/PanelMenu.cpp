@@ -7,6 +7,7 @@
 #include "Panel.h"
 #include "PluginInterface.h"
 #include "MyLoadMenu.h"
+#include "App.h"
 
 using namespace NWindows;
 
@@ -19,8 +20,10 @@ static const UINT kSystemStartMenuID = kPluginMenuStartID + 100;
 
 void CPanel::InvokeSystemCommand(const char *command)
 {
+  if (!IsFSFolder())
+    return;
   CRecordVector<UINT32> operatedIndices;
-  GetOperatedItemIndexes(operatedIndices);
+  GetOperatedItemIndices(operatedIndices);
   CComPtr<IContextMenu> contextMenu;
   CreateShellContextMenu(operatedIndices, contextMenu);
 
@@ -290,13 +293,14 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   systemContextMenu.Release();
 
   CRecordVector<UINT32> operatedIndices;
-  GetOperatedItemIndexes(operatedIndices);
+  GetOperatedItemIndices(operatedIndices);
 
   CMenu menu;
   menu.Attach(menuSpec);
   
   CreateSevenZipMenu(menu, operatedIndices, sevenZipContextMenu);
-  CreateSystemMenu(menu, operatedIndices, systemContextMenu);
+  if (g_App.ShowSystemMenu)
+    CreateSystemMenu(menu, operatedIndices, systemContextMenu);
 
   if (menu.GetItemCount() > 0)
     menu.AppendItem(MF_SEPARATOR, 0, 0);
@@ -368,7 +372,7 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
   */
 
   CRecordVector<UINT32> operatedIndices;
-  GetOperatedItemIndexes(operatedIndices);
+  GetOperatedItemIndices(operatedIndices);
 
   if (xPos < 0 || yPos < 0)
   {

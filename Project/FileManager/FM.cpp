@@ -18,7 +18,6 @@
 #include "StringUtils.h"
 
 #include "MyLoadMenu.h"
-#include "WindowMessages.h"
 #include "LangUtils.h"
 
 using namespace NWindows;
@@ -35,6 +34,8 @@ HWND g_HWND;
 
 static UString g_MainPath;
 
+const int kNumDefaultPanels = 1;
+
 const int kSplitterWidth = 4;
 int kSplitterRateMax = 1 << 16;
 
@@ -44,6 +45,7 @@ class CSplitterPos
 {
   int _ratio; // 10000 is max
   int _pos;
+  int _fullWidth;
   void SetRatioFromPos(HWND hWnd)
     { _ratio = (_pos + kSplitterWidth / 2) * kSplitterRateMax / 
         MyMax(GetWidth(hWnd), 1); }
@@ -72,21 +74,29 @@ public:
   }
   void SetPos(HWND hWnd, int pos)
   {
+    _fullWidth = GetWidth(hWnd);
     SetPosPure(hWnd, pos);
     SetRatioFromPos(hWnd);
   }
   void SetPosFromRatio(HWND hWnd)
-    { SetPosPure(hWnd, GetWidth(hWnd) * _ratio / kSplitterRateMax - kSplitterWidth / 2); }
+  { 
+    int fullWidth = GetWidth(hWnd);
+    if (_fullWidth != fullWidth)
+    {
+      _fullWidth = fullWidth;
+      SetPosPure(hWnd, GetWidth(hWnd) * _ratio / kSplitterRateMax - kSplitterWidth / 2); 
+    }
+  }
 };
 
+bool g_CanChangeSplitter = false;
+int g_SplitterPos = 0;
 CSplitterPos g_Splitter;
 
 int g_StartCaptureMousePos;
 int g_StartCaptureSplitterPos;
 
 CApp g_App;
-
-int g_FocusIndex = 0;
 
 void MoveSubWindows(HWND hWnd);
 
@@ -124,8 +134,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   wc.cbWndExtra		= 0;
   wc.hInstance		= hInstance;
   wc.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FAM));
-  wc.hCursor			= 0;
+
   // wc.hCursor			= LoadCursor (NULL, IDC_ARROW);
+  wc.hCursor			= ::LoadCursor(0, IDC_SIZEWE);
   // wc.hbrBackground	= (HBRUSH) GetStockObject(WHITE_BRUSH);
   wc.hbrBackground	= (HBRUSH) (COLOR_BTNFACE + 1);
 
@@ -145,6 +156,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   int x , y, xSize, ySize;
   x = y = xSize = ySize = CW_USEDEFAULT;
   bool windowPosIsRead = ReadWindowSize(rect, maximized);
+
   if (windowPosIsRead)
   {
     // x = rect.left;
@@ -152,13 +164,42 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     xSize = rect.right - rect.left;
     ySize = rect.bottom - rect.top;
   }
+
+  UINT32 numPanels, currentPanel;
+  UINT32 splitterPos;
+  bool panelsInfoDefined = ReadPanelsInfo(numPanels, currentPanel, splitterPos);
+  if (panelsInfoDefined)
+  {
+    if (numPanels < 1 || numPanels > 2)
+      numPanels = kNumDefaultPanels;
+    if (currentPanel >= 2)
+      currentPanel = 0;
+  }
+  else
+  {
+    numPanels = kNumDefaultPanels;
+    currentPanel = 0;
+  }
+  g_App.NumPanels = numPanels;
+  g_App.LastFocusedPanel = currentPanel;
+
 	hWnd = CreateWindow(windowClass, title, style,
 		  x, y, xSize, ySize, NULL, NULL, hInstance, NULL);
 	if (!hWnd)
 		return FALSE;
   g_HWND = hWnd;
-  g_Splitter.SetRatio(hWnd, kSplitterRateMax / 2);
-  
+
+  if (panelsInfoDefined)
+  {
+    g_SplitterPos = splitterPos;
+    g_Splitter.SetPos(hWnd, splitterPos);
+  }
+  else
+  {
+    g_Splitter.SetRatio(hWnd, kSplitterRateMax / 2);
+    g_SplitterPos = g_Splitter.GetPos();
+  }
+
   CWindow window(hWnd);
 
   WINDOWPLACEMENT placement;
@@ -169,9 +210,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         nCmdShow == SW_SHOWDEFAULT)
     {
       if (maximized)
-      {
         placement.showCmd = SW_SHOWMAXIMIZED;
-      }
       else
         placement.showCmd = SW_SHOWNORMAL;
     }
@@ -180,6 +219,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     if (windowPosIsRead)
       placement.rcNormalPosition = rect;
     window.SetPlacement(&placement);
+    // window.Show(nCmdShow);
   }
   else
     window.Show(nCmdShow);
@@ -311,7 +351,10 @@ static void SaveWindowInfo(HWND aWnd)
   placement.length = sizeof(placement);
   if (!::GetWindowPlacement(aWnd, &placement))
     return;
-  SaveWindowSize(placement.rcNormalPosition, BOOLToBool(::IsZoomed(aWnd)));
+  SaveWindowSize(placement.rcNormalPosition, 
+      BOOLToBool(::IsZoomed(aWnd)));
+  SavePanelsInfo(g_App.NumPanels, g_App.LastFocusedPanel, 
+      g_Splitter.GetPos());
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -370,6 +413,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         (LPCTBBUTTON)&tbb, sizeof(tbb) / sizeof(tbb[0]), 
         0, 0, 100, 30, sizeof (TBBUTTON)));
       */
+      // HCURSOR cursor = ::LoadCursor(0, IDC_SIZEWE);
+      // ::SetCursor(cursor);
 
       g_App.Create(hWnd, g_MainPath);
       // g_SplitterPos = 0;
@@ -394,8 +439,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       ::SetCapture(hWnd);
 			break;
     case WM_LBUTTONUP:
+    {
       ::ReleaseCapture();
       break;
+    }
     case WM_MOUSEMOVE: 
     {
       if ((wParam & MK_LBUTTON) != 0)
@@ -409,7 +456,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_SIZE:
     {
-      g_Splitter.SetPosFromRatio(hWnd);
+      if (g_CanChangeSplitter)
+        g_Splitter.SetPosFromRatio(hWnd);
+      else
+      {
+        g_Splitter.SetPos(hWnd, g_SplitterPos );
+        g_CanChangeSplitter = true;
+      }
+
       MoveSubWindows(hWnd);
       /*
       int xSize = LOWORD(lParam);
@@ -424,8 +478,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     }
     case WM_SETFOCUS:
-      g_App._panel[g_FocusIndex].SetFocus();
+      // g_App.SetFocus(g_App.LastFocusedPanel);
+      g_App.SetFocusToLastItem();
       break;
+    /*
     case WM_ACTIVATE:
     {
       int fActive = LOWORD(wParam); 
@@ -433,19 +489,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       {
         case WA_INACTIVE:
         {
-          HWND window = ::GetFocus();
-          for (int i = 0; i < kNumPanels; i++)
-          {
-            if (window == g_App._panel[i]._listView)
-            {
-              g_FocusIndex = i;
-              return 0;
-            }
-          }
+          // g_FocusIndex = g_App.LastFocusedPanel;
+          // g_App.LastFocusedPanel = g_App.GetFocusedPanelIndex();
+          // return 0;
         }
       }
       break;
     }
+    */
     /*
     case kLangWasChangedMessage:
       MyLoadMenu(g_HWND);
@@ -464,15 +515,22 @@ void MoveSubWindows(HWND hWnd)
 {
   RECT rect;
   ::GetClientRect(hWnd, &rect);
-  const kHeaderSize = 0; // 29;
+  const int kHeaderSize = 0; // 29;
   int xSize = rect.right;
   int ySize = MyMax(int(rect.bottom - kHeaderSize), 0);
-  if (kNumPanels > 1)
+  if (g_App.NumPanels > 1)
   {
-    g_App._panel[0].Move(0, kHeaderSize, g_Splitter.GetPos(), ySize);
+    g_App.Panels[0].Move(0, kHeaderSize, g_Splitter.GetPos(), ySize);
     int xWidth1 = g_Splitter.GetPos() + kSplitterWidth;
-    g_App._panel[1].Move(xWidth1, kHeaderSize, xSize - xWidth1, ySize);
+    g_App.Panels[1].Move(xWidth1, kHeaderSize, xSize - xWidth1, ySize);
   }
   else
-    g_App._panel[0].Move(0, kHeaderSize, xSize, ySize);
+  {
+    /*
+    int otherPanel = 1 - g_App.LastFocusedPanel;
+    if (g_App.PanelsCreated[otherPanel])
+      g_App.Panels[otherPanel].Move(0, kHeaderSize, 0, ySize);
+    */
+    g_App.Panels[g_App.LastFocusedPanel].Move(0, kHeaderSize, xSize, ySize);
+  }
 }
