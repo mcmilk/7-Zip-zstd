@@ -21,7 +21,9 @@ using namespace NWindows;
 
 struct CThreadExtracting
 {
-  CMyComPtr<IInArchive> ArchiveHandler;
+  // CMyComPtr<IInArchive> ArchiveHandler;
+  CArchiveLink ArchiveLink;
+
   CExtractCallbackImp *ExtractCallbackSpec;
   CMyComPtr<IArchiveExtractCallback> ExtractCallback;
 
@@ -31,7 +33,7 @@ struct CThreadExtracting
   DWORD Process()
   {
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    Result = ArchiveHandler->Extract(0, (UINT32)-1 , BoolToInt(false), 
+    Result = ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), 
         ExtractCallback);
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
@@ -48,7 +50,8 @@ static const LPCTSTR kCantOpenArchive = TEXT("File is not correct archive");
 
 HRESULT ExtractArchive(
     const UString &fileName, 
-    const UString &folderName
+    const UString &folderName,
+    COpenCallbackGUI *openCallback
     #ifdef _SILENT
     , UString &resultMessage
     #endif
@@ -67,10 +70,14 @@ HRESULT ExtractArchive(
 
   CThreadExtracting extracter;
 
+  HRESULT result = MyOpenArchive(fileName, extracter.ArchiveLink, openCallback);
+
+  /*
   CArchiverInfo archiverInfoResult;
   int subExtIndex;
   HRESULT result = OpenArchive(fileName, &extracter.ArchiveHandler, 
       archiverInfoResult, subExtIndex, NULL);
+  */
   if (result != S_OK)
   {
     #ifdef _SILENT
@@ -85,14 +92,14 @@ HRESULT ExtractArchive(
   /*
   UString directoryPath;
   {
-    UString aFullPath;
-    int aFileNamePartStartIndex;
-    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, aFullPath, aFileNamePartStartIndex))
+    UString fullPath;
+    int fileNamePartStartIndex;
+    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, fullPath, fileNamePartStartIndex))
     {
       MessageBox(NULL, "Error 1329484", "7-Zip", 0);
       return E_FAIL;
     }
-    directoryPath = aFullPath.Left(aFileNamePartStartIndex);
+    directoryPath = fullPath.Left(fileNamePartStartIndex);
   }
   */
 
@@ -117,7 +124,8 @@ HRESULT ExtractArchive(
 
   // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
 
-  extracter.ExtractCallbackSpec->Init(extracter.ArchiveHandler, 
+  extracter.ExtractCallbackSpec->Init(
+      extracter.ArchiveLink.GetArchive(), 
       directoryPath, L"Default", archiveFileInfo.LastWriteTime, 0);
 
   #ifndef _NO_PROGRESS
@@ -137,7 +145,7 @@ HRESULT ExtractArchive(
 
   #else
 
-  result = extracter.ArchiveHandler->Extract(0, (UINT32)-1,
+  result = extracter.ArchiveHandler->Extract(0, (UInt32)-1,
         BoolToInt(false), extracter.ExtractCallback);
   #ifdef _SILENT
   resultMessage = extracter.ExtractCallbackSpec->_message;

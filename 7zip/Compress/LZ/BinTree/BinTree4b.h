@@ -1,7 +1,5 @@
 // BinTree4b.h
 
-// #pragma once
-
 #ifndef __BINTREE4B__H
 #define __BINTREE4B__H
 

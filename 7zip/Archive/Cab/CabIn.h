@@ -1,7 +1,5 @@
 // Archive/CabIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_CAB_IN_H
 #define __ARCHIVE_CAB_IN_H
 
@@ -27,14 +25,14 @@ public:
 class CInArchiveInfo
 {
 public:
-  UINT32  Size;	/* size of this cabinet file in bytes */
-  BYTE  VersionMinor;	/* cabinet file format version, minor */
-  BYTE  VersionMajor;	/* cabinet file format version, major */
-  UINT16  NumFolders;	/* number of CFFOLDER entries in this cabinet */
-  UINT16  NumFiles;	/* number of CFFILE entries in this cabinet */
-  UINT16  Flags;	/* cabinet file option indicators */
-  UINT16  SetID;	/* must be the same for all cabinets in a set */
-  UINT16  CabinetNumber;	/* number of this cabinet file in a set */
+  UInt32  Size;	/* size of this cabinet file in bytes */
+  Byte  VersionMinor;	/* cabinet file format version, minor */
+  Byte  VersionMajor;	/* cabinet file format version, major */
+  UInt16  NumFolders;	/* number of CFFOLDER entries in this cabinet */
+  UInt16  NumFiles;	/* number of CFFILE entries in this cabinet */
+  UInt16  Flags;	/* cabinet file option indicators */
+  UInt16  SetID;	/* must be the same for all cabinets in a set */
+  UInt16  CabinetNumber;	/* number of this cabinet file in a set */
 
   bool ReserveBlockPresent() const { return (Flags & NHeader::NArchive::NFlags::kReservePresent) != 0; }
   NHeader::NArchive::CPerDataSizes PerDataSizes;
@@ -48,19 +46,28 @@ public:
 class CProgressVirt
 {
 public:
-  STDMETHOD(SetTotal)(const UINT64 *numFiles) PURE;
-  STDMETHOD(SetCompleted)(const UINT64 *numFiles) PURE;
+  STDMETHOD(SetTotal)(const UInt64 *numFiles) PURE;
+  STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
 };
+
+const kMaxBlockSize = NHeader::NArchive::kArchiveHeaderSize;
 
 class CInArchive
 {
+  UInt16 _blockSize;
+  Byte _block[kMaxBlockSize];
+  UInt32 _blockPos;
+
+  Byte ReadByte();
+  UInt16 ReadUInt16();
+  UInt32 ReadUInt32();
 public:
   HRESULT Open(IInStream *inStream, 
-      const UINT64 *searchHeaderSizeLimit,
+      const UInt64 *searchHeaderSizeLimit,
       CInArchiveInfo &inArchiveInfo,
       CObjectVector<NHeader::CFolder> &folders,
-      CObjectVector<CItem> &aFiles,
-      CProgressVirt *aProgressVirt);
+      CObjectVector<CItem> &files,
+      CProgressVirt *progressVirt);
 };
   
 }}

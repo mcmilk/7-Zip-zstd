@@ -1,7 +1,5 @@
 // StreamBinder.h
 
-#pragma once
-
 #ifndef __STREAMBINDER_H
 #define __STREAMBINDER_H
 
@@ -13,11 +11,11 @@ class CStreamBinder
   NWindows::NSynchronization::CManualResetEvent *_allBytesAreWritenEvent;
   NWindows::NSynchronization::CManualResetEvent *_thereAreBytesToReadEvent;
   NWindows::NSynchronization::CManualResetEvent *_readStreamIsClosedEvent;
-  UINT32 _bufferSize;
+  UInt32 _bufferSize;
   const void *_buffer;
 public:
   // bool ReadingWasClosed;
-  UINT64 ProcessedSize;
+  UInt64 ProcessedSize;
   CStreamBinder():
     _allBytesAreWritenEvent(NULL), 
     _thereAreBytesToReadEvent(NULL),
@@ -28,15 +26,14 @@ public:
 
   void CreateStreams(ISequentialInStream **inStream, 
       ISequentialOutStream **outStream);
-  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
   void CloseRead();
 
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
   void CloseWrite();
   void ReInit();
 };
 
 #endif
-

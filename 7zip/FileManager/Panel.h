@@ -1,7 +1,5 @@
 // Panel.h
 
-#pragma once
-
 #ifndef __PANEL_H
 #define __PANEL_H
 
@@ -54,7 +52,7 @@ struct CItemProperty
   VARTYPE Type;
   int Order;
   bool IsVisible;
-  UINT32 Width;
+  UInt32 Width;
 };
 
 inline bool operator<(const CItemProperty &a1, const CItemProperty &a2)
@@ -170,6 +168,8 @@ public:
   void CreateFolder();
   void CreateFile();
 
+  // void Split();
+
 private:
 
   void ChangeWindowSize(int xSize, int ySize);
@@ -194,7 +194,7 @@ public:
   void InvertSelection();
 private:
 
-  CSysString GetFileType(UINT32 index);
+  CSysString GetFileType(UInt32 index);
   LRESULT SetItemText(LVITEM &item);
 
   // CRecordVector<PROPID> m_ColumnsPropIDs;
@@ -210,13 +210,14 @@ public:
   bool _lastFocusedIsList;
   // NWindows::NControl::CStatusBar _statusBar2;
 
+  DWORD _exStyle;
   bool _showDots;
   bool _showRealFileIcons;
   // bool _virtualMode;
   CBoolVector _selectedStatusVector;
   CUIntVector _realIndices;
 
-  UINT32 GetRealIndex(const LVITEM &item) const
+  UInt32 GetRealIndex(const LVITEM &item) const
   {
     /*
     if (_virtualMode)
@@ -236,7 +237,9 @@ public:
     return param;
   }
 
-  UINT32 _ListViewMode;
+  UInt32 _ListViewMode;
+  int _xSize; 
+
 
   UString _currentFolderPrefix;
   
@@ -252,7 +255,7 @@ public:
 
   UString GetItemName(int itemIndex) const;
   bool IsItemFolder(int itemIndex) const;
-  UINT64 GetItemSize(int itemIndex) const;
+  UInt64 GetItemSize(int itemIndex) const;
 
   ////////////////////////
   // PanelFolderChange.cpp
@@ -274,7 +277,7 @@ public:
 
 
   LRESULT Create(HWND mainWindow, HWND parentWindow, 
-      UINT id, int xPos, 
+      UINT id,
       const UString &currentFolderPrefix, 
       CPanelCallback *panelCallback,
       CAppState *appState);
@@ -287,12 +290,24 @@ public:
 
   CPanel() : 
       // _virtualMode(flase),
+      _exStyle(0),
       _showDots(false),
       _showRealFileIcons(false),
       _needSaveInfo(false), 
       _startGroupSelect(0), 
-      _selectionIsDefined(false)
+      _selectionIsDefined(false),
+      _ListViewMode(3),
+      _xSize(300)
       {} 
+
+  void SetExtendedStyle()
+  {
+    // DWORD extendedStyle = _listView.GetExtendedListViewStyle();
+    if (_listView != 0)
+      _listView.SetExtendedListViewStyle(_exStyle);
+    // extendedStyle |= _exStyle;
+  }
+
 
   bool _needSaveInfo;
   CSysString _typeIDString;
@@ -316,13 +331,13 @@ public:
   CMyComPtr<IContextMenu> _sevenZipContextMenu;
   CMyComPtr<IContextMenu> _systemContextMenu;
   void CreateShellContextMenu(
-      const CRecordVector<UINT32> &operatedIndices,
+      const CRecordVector<UInt32> &operatedIndices,
       CMyComPtr<IContextMenu> &systemContextMenu);
   void CreateSystemMenu(HMENU menu, 
-      const CRecordVector<UINT32> &operatedIndices,
+      const CRecordVector<UInt32> &operatedIndices,
       CMyComPtr<IContextMenu> &systemContextMenu);
   void CreateSevenZipMenu(HMENU menu, 
-      const CRecordVector<UINT32> &operatedIndices,
+      const CRecordVector<UInt32> &operatedIndices,
       CMyComPtr<IContextMenu> &sevenZipContextMenu);
   void CreateFileMenu(HMENU menu, 
       CMyComPtr<IContextMenu> &sevenZipContextMenu,
@@ -348,8 +363,8 @@ public:
   // void SortItems(int index);
   void SortItemsWithPropID(PROPID propID);
 
-  void GetSelectedItemsIndices(CRecordVector<UINT32> &indices) const;
-  void GetOperatedItemIndices(CRecordVector<UINT32> &indices) const;
+  void GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const;
+  void GetOperatedItemIndices(CRecordVector<UInt32> &indices) const;
   void KillSelection();
 
   UString GetFolderTypeID() const;
@@ -422,8 +437,8 @@ public:
   void RenameFile();
   void ChangeComment();
 
-  void SetListViewMode(UINT32 index);
-  UINT32 GetListViewMode() { return _ListViewMode; };
+  void SetListViewMode(UInt32 index);
+  UInt32 GetListViewMode() const { return _ListViewMode; };
 
   void RefreshStatusBar();
   void OnRefreshStatusBar();
@@ -431,8 +446,8 @@ public:
   void CompressDropFiles(HDROP dr);
 
   void AddToArchive();
-  void ExtractArchive();
-  void TestArchive();
+  void ExtractArchives();
+  void TestArchives();
 };
 
 #endif

@@ -1,7 +1,5 @@
 // CompressDialog.h
 
-#pragma once
-
 #ifndef __COMPRESSDIALOG_H
 #define __COMPRESSDIALOG_H
 
@@ -35,14 +33,14 @@ namespace NCompressDialog
     bool MultiThread;
 
     bool VolumeSizeIsDefined;
-    UINT64 VolumeSize;
+    UInt64 VolumeSize;
 
-    UINT32 Level;
+    UInt32 Level;
     UString Method;
-    UINT32 Dictionary;
+    UInt32 Dictionary;
     bool OrderMode;
-    UINT32 Order;
-    CSysString Options;
+    UInt32 Order;
+    UString Options;
 
     bool SFXMode;
     
@@ -54,9 +52,13 @@ namespace NCompressDialog
 
     int ArchiverInfoIndex;
 
+    UString Password;
+    bool EncryptHeadersIsAllowed;
+    bool EncryptHeaders;
+
     void Init() 
     { 
-      Level = Dictionary = Order = UINT32(-1); 
+      Level = Dictionary = Order = UInt32(-1); 
       OrderMode = false;
       Method.Empty();
       Options.Empty();
@@ -97,7 +99,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int GetStaticFormatIndex();
 
   void SetNearestSelectComboBox(
-      NWindows::NControl::CComboBox &comboBox, UINT32 value);
+      NWindows::NControl::CComboBox &comboBox, UInt32 value);
 
   void SetLevel();
   int GetLevel();
@@ -108,21 +110,21 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int GetMethodID();
   CSysString GetMethodSpec();
 
-  AddDictionarySize(UINT32 size, bool kilo, bool maga);
-  AddDictionarySize(UINT32 size);
+  AddDictionarySize(UInt32 size, bool kilo, bool maga);
+  AddDictionarySize(UInt32 size);
   
   void SetDictionary();
-  UINT32 GetDictionary();
-  UINT32 GetDictionarySpec();
+  UInt32 GetDictionary();
+  UInt32 GetDictionarySpec();
 
-  int AddOrder(UINT32 size);
+  int AddOrder(UInt32 size);
   void SetOrder();
   bool GetOrderMode();
-  UINT32 GetOrder();
-  UINT32 GetOrderSpec();
+  UInt32 GetOrder();
+  UInt32 GetOrderSpec();
 
-  UINT64 GetMemoryUsage(UINT64 &decompressMemory);
-  void PrintMemUsage(UINT res, UINT64 value);
+  UInt64 GetMemoryUsage(UInt64 &decompressMemory);
+  void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();
   void SetParams();
   void SaveOptionsInMem();
@@ -131,12 +133,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 public:
   CObjectVector<CArchiverInfo> m_ArchiverInfoList;
 
-  NCompressDialog::CInfo m_Info;
+  NCompressDialog::CInfo Info;
   UString OriginalFileName; // for bzip2, gzip2
-
-  CSysString Password;
-  bool EncryptHeadersIsAllowed;
-  bool EncryptHeaders;
 
   INT_PTR Create(HWND wndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_COMPRESS ), wndParent); }

@@ -1,7 +1,5 @@
 // Tar/Update.h
 
-#pragma once
-
 #ifndef __TAR_UPDATE_H
 #define __TAR_UPDATE_H
 
@@ -23,7 +21,7 @@ struct CUpdateItemInfo
   int IndexInClient;
 
   time_t Time;
-  UINT64 Size;
+  UInt64 Size;
   AString Name;
   bool IsDirectory;
 };

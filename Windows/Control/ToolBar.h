@@ -1,7 +1,5 @@
 // Windows/Control/ToolBar.h
   
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_TOOLBAR_H
 #define __WINDOWS_CONTROL_TOOLBAR_H
 

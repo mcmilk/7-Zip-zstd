@@ -10,36 +10,44 @@ namespace NRar20 {
 
 static const int kBufferSize = 1 << 17;
 
-CDecoder::CDecoder():
-  _buffer(0)
-{
-  _buffer = new BYTE[kBufferSize];
-}
-
-CDecoder::~CDecoder()
-{
-  delete []_buffer;
-}
-
-STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
+STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
   _coder.SetPassword(data, size);
   return S_OK;
 }
 
+STDMETHODIMP CDecoder::Init()
+{
+  return S_OK;
+}
+
+STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+{
+  const UInt16 kBlockSize = 16;
+  if (size > 0 && size < kBlockSize)
+    return kBlockSize;
+  UInt32 i;
+  for (i = 0; i + kBlockSize <= size; i += kBlockSize)
+  {
+    _coder.DecryptBlock(data + i);
+  }
+  return i;
+}
+
+/*
 STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
-  UINT64 nowPos = 0;
-  UINT32 bufferPos = 0;
-  UINT32 processedSize;
+  UInt64 nowPos = 0;
+  UInt32 bufferPos = 0;
+  UInt32 processedSize;
   while(true)
   {
-    UINT32 size = kBufferSize - bufferPos;
+    UInt32 size = kBufferSize - bufferPos;
     RINOK(inStream->Read(_buffer + bufferPos, size, &processedSize));
 
-    UINT32 anEndPos = bufferPos + processedSize;
+    UInt32 anEndPos = bufferPos + processedSize;
     for (;bufferPos + 16 <= anEndPos; bufferPos += 16)
       _coder.DecryptBlock(_buffer + bufferPos);
 
@@ -47,7 +55,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
       return S_OK;
 
     if (outSize != NULL && nowPos + bufferPos > *outSize)
-       bufferPos = UINT32(*outSize - nowPos);
+       bufferPos = UInt32(*outSize - nowPos);
 
     RINOK(outStream->Write(_buffer, bufferPos, &processedSize));
     if (bufferPos != processedSize)
@@ -63,5 +71,6 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     bufferPos = i;
   }
 }
+*/
 
 }}

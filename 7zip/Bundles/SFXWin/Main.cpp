@@ -14,9 +14,9 @@
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 #include "../../Archive/IArchive.h"
-#include "../../UI/Agent/Agent.h"
-#include "../../UI/GUI/Extract.h"
+#include "../../UI/Common/Extract.h"
 #include "../../UI/Explorer/MyMessages.h"
+#include "../../UI/GUI/ExtractGUI.h"
 
 HINSTANCE g_hInstance;
 
@@ -55,9 +55,37 @@ int APIENTRY WinMain(
     MyMessageBox(L"Error 1329484");
     return 1;
   }
+
+  COpenCallbackGUI openCallback;
+
+  CExtractCallbackImp *ecs = new CExtractCallbackImp;
+  CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
+  ecs->Init();
+  
+  CExtractOptions eo;
+  eo.OutputDir = outputFolderDefined ? outputFolder : 
+      fullPath.Left(fileNamePartStartIndex);
+  eo.YesToAll = true;
+  eo.OverwriteMode = assumeYes ? 
+      NExtract::NOverwriteMode::kWithoutPrompt : 
+      NExtract::NOverwriteMode::kAskBefore;
+  eo.PathMode = NExtract::NPathMode::kFullPathnames;
+  eo.TestMode = false;
+  
+  UStringVector v1, v2;
+  v1.Add(fullPath);
+  v2.Add(fullPath);
+  NWildcard::CCensorNode wildcardCensor;
+  wildcardCensor.AddItem(L"*", true, true, true, true);
+
+  HRESULT result = ExtractGUI(v1, v2,
+      wildcardCensor, eo, false, &openCallback, ecs);
+
+  /*
   HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, 
       outputFolderDefined ? outputFolder : 
       fullPath.Left(fileNamePartStartIndex));
+  */
   if (result == S_FALSE)
     MyMessageBox(L"Archive is not supported");
   else if (result != S_OK && result != E_ABORT)

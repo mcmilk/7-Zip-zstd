@@ -1,7 +1,5 @@
 // Windows/Control/ImageList.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_IMAGELIST_H
 #define __WINDOWS_CONTROL_IMAGELIST_H
 

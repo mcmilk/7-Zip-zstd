@@ -1,7 +1,5 @@
 // Windows/Net.h
 
-#pragma once
-
 #ifndef __WINDOWS_NET_H
 #define __WINDOWS_NET_H
 

@@ -1,7 +1,5 @@
 // RarIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_RAR_IN_H
 #define __ARCHIVE_RAR_IN_H
 
@@ -9,6 +7,9 @@
 #include "Common/Exception.h"
 #include "Common/MyCom.h"
 #include "../../IStream.h"
+#include "../../ICoder.h"
+#include "../../Common/StreamObjects.h"
+#include "../../Crypto/RarAES/RarAES.h"
 #include "RarHeader.h"
 #include "RarItem.h"
 
@@ -32,9 +33,9 @@ public:
 class CInArchiveInfo
 {
 public:
-  UINT64 StartPosition;
+  UInt64 StartPosition;
   WORD Flags;
-  UINT64 CommentPosition;
+  UInt64 CommentPosition;
   WORD CommentSize;
   bool IsSolid() const { return (Flags & NHeader::NArchive::kSolid) != 0; }
   bool IsCommented() const {  return (Flags & NHeader::NArchive::kComment) != 0; }
@@ -46,49 +47,75 @@ class CInArchive
 {
   CMyComPtr<IInStream> m_Stream;
   
-  UINT64 m_StreamStartPosition;
-  UINT64 m_Position;
-  UINT64 m_ArchiveStartPosition;
+  UInt64 m_StreamStartPosition;
+  UInt64 m_Position;
+  UInt64 m_ArchiveStartPosition;
   
   NHeader::NArchive::CBlock m_ArchiveHeader;
   CDynamicBuffer<char> m_NameBuffer;
   CDynamicBuffer<wchar_t> _unicodeNameBuffer;
   bool m_SeekOnArchiveComment;
-  UINT64 m_ArchiveCommentPosition;
+  UInt64 m_ArchiveCommentPosition;
   
-  void ReadName(const BYTE *data, CItemEx &item, int nameSize);
-  void ReadHeaderReal(const BYTE *data, CItemEx &item);
+  void ReadName(CItemEx &item, int nameSize);
+  void ReadHeaderReal(CItemEx &item);
   
-  HRESULT ReadBytes(void *data, UINT32 size, UINT32 *aProcessedSize);
-  bool ReadBytesAndTestSize(void *data, UINT32 size);
-  void ReadBytesAndTestResult(void *data, UINT32 size);
+  HRESULT ReadBytes(void *data, UInt32 size, UInt32 *aProcessedSize);
+  bool ReadBytesAndTestSize(void *data, UInt32 size);
+  void ReadBytesAndTestResult(void *data, UInt32 size);
   
-  bool FindAndReadMarker(const UINT64 *searchHeaderSizeLimit);
+  bool FindAndReadMarker(const UInt64 *searchHeaderSizeLimit);
   void ThrowExceptionWithCode(CInArchiveException::CCauseType cause);
   void ThrowUnexpectedEndOfArchiveException();
   
-  void AddToSeekValue(UINT64 addValue);
+  void AddToSeekValue(UInt64 addValue);
   
 protected:
 
-  CDynamicBuffer<BYTE> m_FileHeaderData;
-
-  NHeader::NBlock::CBlock m_BlockHeader;
+  CDynamicBuffer<Byte> m_FileHeaderData;
   
-  bool ReadMarkerAndArchiveHeader(const UINT64 *searchHeaderSizeLimit);
+  NHeader::NBlock::CBlock m_BlockHeader;
+
+  NCrypto::NRar29::CDecoder *m_RarAESSpec;
+  CMyComPtr<ICompressFilter> m_RarAES;
+  
+  Byte *m_CurData; // it must point to start of Rar::Block
+  UInt32 m_CurPos;
+  UInt32 m_PosLimit;
+  Byte ReadByte();
+  UInt16 ReadUInt16();
+  UInt32 ReadUInt32();
+  void ReadTime(Byte mask, CRarTime &rarTime);
+
+  CBuffer<Byte> m_DecryptedData;
+  UInt32 m_DecryptedDataSize;
+
+  bool m_CryptoMode;
+  UInt32 m_CryptoPos;
+  void FinishCryptoBlock()
+  {
+    if (m_CryptoMode)
+      while ((m_CryptoPos & 0xF) != 0)
+      {
+        m_CryptoPos++;
+        m_Position++;
+      }
+  }
+
+  bool ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit);
 public:
-  bool Open(IInStream *inStream, const UINT64 *searchHeaderSizeLimit);
+  bool Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
-  bool GetNextItem(CItemEx &item);
+  HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword);
   
   void SkipArchiveComment();
   
   void GetArchiveInfo(CInArchiveInfo &archiveInfo) const;
   
-  void DirectGetBytes(void *data, UINT32 size);
+  void DirectGetBytes(void *data, UInt32 size);
   
-  bool SeekInArchive(UINT64 position);
-  ISequentialInStream *CreateLimitedStream(UINT64 position, UINT64 size);
+  bool SeekInArchive(UInt64 position);
+  ISequentialInStream *CreateLimitedStream(UInt64 position, UInt64 size);
 };
   
 }}

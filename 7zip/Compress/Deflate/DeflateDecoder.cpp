@@ -5,8 +5,6 @@
 #include "DeflateDecoder.h"
 #include "DeflateConst.h"
 
-#include "Windows/Defs.h"
-
 namespace NCompress {
 namespace NDeflate {
 namespace NDecoder {
@@ -18,14 +16,14 @@ CCoder::CCoder(bool deflate64Mode):
   _deflate64Mode(deflate64Mode)
 {}
 
-void CCoder::DeCodeLevelTable(BYTE *newLevels, int numLevels)
+void CCoder::DeCodeLevelTable(Byte *newLevels, int numLevels)
 {
   int i = 0;
   while (i < numLevels)
   {
-    UINT32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
+    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
     if (number < kTableDirectLevels)
-      newLevels[i++] = BYTE(number);
+      newLevels[i++] = Byte(number);
     else
     {
       if (number == kTableLevelRepNumber)
@@ -62,8 +60,8 @@ void CCoder::ReadTables(void)
     case NBlockType::kStored:
       {
         m_StoredMode = true;
-        UINT32 currentBitPosition = m_InBitStream.GetBitPosition();
-        UINT32 numBitsForAlign = currentBitPosition > 0 ? (8 - currentBitPosition): 0;
+        UInt32 currentBitPosition = m_InBitStream.GetBitPosition();
+        UInt32 numBitsForAlign = currentBitPosition > 0 ? (8 - currentBitPosition): 0;
         if (numBitsForAlign > 0)
           m_InBitStream.ReadBits(numBitsForAlign);
         m_StoredBlockSize = m_InBitStream.ReadBits(kDeflateStoredBlockLengthFieldSizeSize);
@@ -76,8 +74,8 @@ void CCoder::ReadTables(void)
     case NBlockType::kDynamicHuffman:
       {
         m_StoredMode = false;
-        BYTE litLenLevels[kStaticMainTableSize];
-        BYTE distLevels[kStaticDistTableSize];
+        Byte litLenLevels[kStaticMainTableSize];
+        Byte distLevels[kStaticDistTableSize];
         if (blockType == NBlockType::kFixedHuffman)
         {
           int i;
@@ -108,13 +106,13 @@ void CCoder::ReadTables(void)
           int numLevels = _deflate64Mode ? kHeapTablesSizesSum64 :
             kHeapTablesSizesSum32;
           
-          BYTE levelLevels[kLevelTableSize];
+          Byte levelLevels[kLevelTableSize];
           int i;
           for (i = 0; i < kLevelTableSize; i++)
           {
             int position = kCodeLengthAlphabetOrder[i]; 
             if(i < numLevelCodes)
-              levelLevels[position] = BYTE(m_InBitStream.ReadBits(kDeflateLevelCodeFieldSize));
+              levelLevels[position] = Byte(m_InBitStream.ReadBits(kDeflateLevelCodeFieldSize));
             else
               levelLevels[position] = 0;
           }
@@ -128,7 +126,7 @@ void CCoder::ReadTables(void)
             throw CException(CException::kData);
           }
           
-          BYTE tmpLevels[kStaticMaxTableSize];
+          Byte tmpLevels[kStaticMaxTableSize];
           DeCodeLevelTable(tmpLevels, numLitLenLevels + numDistLevels);
           
           memmove(litLenLevels, tmpLevels, numLitLenLevels);
@@ -155,23 +153,19 @@ void CCoder::ReadTables(void)
 }
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
-  {
-    try
-    {
-      m_OutWindowStream.Create(_deflate64Mode ? kHistorySize64:  kHistorySize32 /* , kMatchMaxLen */);
-    }
-    catch(...)
-    {
-      return E_OUTOFMEMORY;
-    }
-  }
-  UINT64 pos = 0;
-  m_OutWindowStream.Init(outStream, false);
-  m_InBitStream.Init(inStream);
-  // CCoderReleaser coderReleaser(this);
+  if (!m_OutWindowStream.Create(_deflate64Mode ? kHistorySize64:  kHistorySize32))
+    return E_OUTOFMEMORY;
+  if (!m_InBitStream.Create(1 << 20))
+    return E_OUTOFMEMORY;
+  UInt64 pos = 0;
+  m_OutWindowStream.SetStream(outStream);
+  m_OutWindowStream.Init(false);
+  m_InBitStream.SetStream(inStream);
+  m_InBitStream.Init();
+  CCoderReleaser coderReleaser(this);
 
   m_FinalBlock = false;
 
@@ -179,14 +173,14 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
   {
     if (progress != NULL)
     {
-      UINT64 packSize = m_InBitStream.GetProcessedSize();
+      UInt64 packSize = m_InBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
     }
     ReadTables();
     if(m_StoredMode)
     {
-      for (UINT32 i = 0; i < m_StoredBlockSize; i++)
-        m_OutWindowStream.PutOneByte(BYTE(m_InBitStream.ReadBits(8)));
+      for (UInt32 i = 0; i < m_StoredBlockSize; i++)
+        m_OutWindowStream.PutByte(Byte(m_InBitStream.ReadBits(8)));
       pos += m_StoredBlockSize;
       continue;
     }
@@ -195,13 +189,13 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
       if (m_InBitStream.NumExtraBytes > 4)
         throw CException(CException::kData);
 
-      UINT32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
+      UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
       if (number < 256)
       {
         if (outSize != NULL)
           if (pos >= *outSize)
             throw CException(CException::kData);
-        m_OutWindowStream.PutOneByte(BYTE(number));
+        m_OutWindowStream.PutByte(Byte(number));
         pos++;
         continue;
       }
@@ -212,28 +206,28 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
             throw CException(CException::kData);
         number -= kMatchNumber;
 
-        UINT32 length;
+        UInt32 length;
         if (_deflate64Mode)
         {
-          length = UINT32(kLenStart64[number]) + kMatchMinLen;
-          UINT32 numBits = kLenDirectBits64[number];
+          length = UInt32(kLenStart64[number]) + kMatchMinLen;
+          UInt32 numBits = kLenDirectBits64[number];
           if (numBits > 0)
             length += m_InBitStream.ReadBits(numBits);
         }
         else
         {
-          length = UINT32(kLenStart32[number]) + kMatchMinLen;
-          UINT32 numBits = kLenDirectBits32[number];
+          length = UInt32(kLenStart32[number]) + kMatchMinLen;
+          UInt32 numBits = kLenDirectBits32[number];
           if (numBits > 0)
             length += m_InBitStream.ReadBits(numBits);
         }
 
         
         number = m_DistDecoder.DecodeSymbol(&m_InBitStream);
-        UINT32 distance = kDistStart[number] + m_InBitStream.ReadBits(kDistDirectBits[number]);
+        UInt32 distance = kDistStart[number] + m_InBitStream.ReadBits(kDistDirectBits[number]);
         if (distance >= pos)
           throw "data error";
-         m_OutWindowStream.CopyBackBlock(distance, length);
+         m_OutWindowStream.CopyBlock(distance, length);
         pos += length;
       }
       else if (number == kReadTableNumber)
@@ -242,11 +236,12 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
         throw CException(CException::kData);
     }
   }
+  coderReleaser.NeedFlush = false;
   return m_OutWindowStream.Flush();
 }
 
 HRESULT CCoder::BaseCode(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
@@ -255,7 +250,7 @@ HRESULT CCoder::BaseCode(ISequentialInStream *inStream,
   catch(...) { return S_FALSE; }
 }
 
-HRESULT CCoder::BaseGetInStreamProcessedSize(UINT64 *value)
+HRESULT CCoder::BaseGetInStreamProcessedSize(UInt64 *value)
 {
   if (value == NULL)
     return E_INVALIDARG;
@@ -263,25 +258,25 @@ HRESULT CCoder::BaseGetInStreamProcessedSize(UINT64 *value)
   return S_OK;
 }
 
-STDMETHODIMP CCOMCoder::GetInStreamProcessedSize(UINT64 *value)
+STDMETHODIMP CCOMCoder::GetInStreamProcessedSize(UInt64 *value)
 {
   return BaseGetInStreamProcessedSize(value);
 }
 
 HRESULT CCOMCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   return BaseCode(inStream, outStream, inSize, outSize, progress);
 }
 
-STDMETHODIMP CCOMCoder64::GetInStreamProcessedSize(UINT64 *value)
+STDMETHODIMP CCOMCoder64::GetInStreamProcessedSize(UInt64 *value)
 {
   return BaseGetInStreamProcessedSize(value);
 }
 
 HRESULT CCOMCoder64::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   return BaseCode(inStream, outStream, inSize, outSize, progress);

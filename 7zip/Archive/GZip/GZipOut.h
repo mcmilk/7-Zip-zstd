@@ -1,7 +1,5 @@
 // Archive/GZipOut.h
 
-#pragma once
-
 #ifndef __ARCHIVE_GZIP_OUT_H
 #define __ARCHIVE_GZIP_OUT_H
 
@@ -15,12 +13,15 @@ namespace NGZip {
 
 class COutArchive
 {
-  CMyComPtr<IOutStream> m_Stream;
-  HRESULT WriteBytes(const void *buffer, UINT32 size);
+  CMyComPtr<ISequentialOutStream> m_Stream;
+  HRESULT WriteBytes(const void *buffer, UInt32 size);
+  HRESULT WriteByte(Byte value);
+  HRESULT WriteUInt16(UInt16 value);
+  HRESULT WriteUInt32(UInt32 value);
 public:
-  void Create(IOutStream *outStream) {  m_Stream = outStream; }
+  void Create(ISequentialOutStream *outStream) {  m_Stream = outStream; }
   HRESULT WriteHeader(const CItem &item);
-  HRESULT WritePostInfo(UINT32 crc, UINT32 anUnpackSize);
+  HRESULT WritePostHeader(const CItem &item);
 };
 
 }}

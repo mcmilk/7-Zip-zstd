@@ -1,7 +1,5 @@
 // Archive/Deb/Header.h
 
-#pragma once
-
 #ifndef __ARCHIVE_DEB_HEADER_H
 #define __ARCHIVE_DEB_HEADER_H
 
@@ -10,16 +8,16 @@
 namespace NArchive {
 namespace NDeb {
 
-#pragma pack( push, PragmaDebHeaders)
-#pragma pack( push, 1)
-
 namespace NHeader
 {
+  const int kSignatureLen = 8;
+  extern const char *kSignature;
   const int kNameSize = 16;
   const int kTimeSize = 12;
   const int kModeSize = 8;
   const int kSizeSize = 10;
 
+  /*
   struct CHeader
   {
     char Name[kNameSize];
@@ -31,13 +29,9 @@ namespace NHeader
     char Quote;
     char NewLine;
   };
-
-  const int kSignatureLen = 8;
-  extern const char *kSignature;
+  */
+  const int kHeaderSize = kNameSize + kTimeSize + 6 + 6 + kModeSize + kSizeSize + 1 + 1;
 }
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaDebHeaders)
 
 }}
 

@@ -1,7 +1,5 @@
 // BinTreeMF.h
 
-// #pragma once
-
 // #ifndef __BINTREEMF_H
 // #define __BINTREEMF_H
 
@@ -39,13 +37,8 @@ namespace BT_NAMESPACE {
 #undef kIDUse3BytesByte
 #undef kIDUse3BytesString
 
-#ifdef __USE_3_BYTES
-  #define kIDUse3BytesByte 0x80
-  #define kIDUse3BytesString TEXT("T")
-#else
-  #define kIDUse3BytesByte 0x00
-  #define kIDUse3BytesString TEXT("")
-#endif
+#define kIDUse3BytesByte 0x00
+#define kIDUse3BytesString TEXT("")
 
 // #undef kIDStringFull
 
@@ -78,30 +71,31 @@ class CMatchFinderBinTree:
   STDMETHOD(Init)(ISequentialInStream *stream);
   STDMETHOD_(void, ReleaseStream)();
   STDMETHOD(MovePos)();
-  STDMETHOD_(BYTE, GetIndexByte)(UINT32 index);
-  STDMETHOD_(UINT32, GetMatchLen)(UINT32 index, UINT32 back, UINT32 limit);
-  STDMETHOD_(UINT32, GetNumAvailableBytes)();
-  STDMETHOD_(const BYTE *, GetPointerToCurrentPos)();
-  STDMETHOD(Create)(UINT32 sizeHistory, 
-      UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
-      UINT32 keepAddBufferAfter);
-  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *distances);
+  STDMETHOD_(Byte, GetIndexByte)(Int32 index);
+  STDMETHOD_(UInt32, GetMatchLen)(Int32 index, UInt32 back, UInt32 limit);
+  STDMETHOD_(UInt32, GetNumAvailableBytes)();
+  STDMETHOD_(const Byte *, GetPointerToCurrentPos)();
+  STDMETHOD(Create)(UInt32 sizeHistory, 
+      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter);
+  STDMETHOD_(UInt32, GetLongestMatch)(UInt32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
 
   // IMatchFinderSetCallback
   STDMETHOD(SetCallback)(IMatchFinderCallback *callback);
 
 private:
-  // UINT32 m_WindowReservSize;
+  // UInt32 m_WindowReservSize;
   CInTree2 _matchFinder;
 public:
   // CMatchFinderBinTree(): m_WindowReservSize((1 << 19) + 256) {};
-  void SetCutValue(UINT32 cutValue) 
+  void SetCutValue(UInt32 cutValue) 
     { _matchFinder.SetCutValue(cutValue); }
   /*
-  void SetWindowReservSize(UINT32 reservWindowSize)
+  void SetWindowReservSize(UInt32 reservWindowSize)
     { m_WindowReservSize = reservWindowSize; }
   */
+  virtual ~CMatchFinderBinTree() {}
 };
  
 }

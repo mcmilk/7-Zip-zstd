@@ -2,36 +2,29 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Defs.h"
 #include "BZip2Encoder.h"
+
+#include "../../../Common/Alloc.h"
 #include "Original/bzlib.h"
 
 namespace NCompress {
 namespace NBZip2 {
 
-static const UINT32 kBufferSize = (1 << 20);
-
-CEncoder::CEncoder()
-{
-  m_InBuffer = new BYTE[kBufferSize];
-  m_OutBuffer = new BYTE[kBufferSize];
-}
+static const UInt32 kBufferSize = (1 << 20);
 
 CEncoder::~CEncoder()
 {
-  delete []m_OutBuffer;
-  delete []m_InBuffer;
+  BigFree(m_InBuffer);
 }
 
 struct CBZip2Compressor: public bz_stream
 {
-public:
   int Init(int blockSize100k, int verbosity, int small) 
     { return BZ2_bzCompressInit(this, blockSize100k, verbosity, small); }
   int Compress(int action )  { return BZ2_bzCompress(this, action ); }
   int End()  { return BZ2_bzCompressEnd(this); }
-  UINT64 GetTotalIn() const { return (UINT64(total_in_hi32) << 32) +  total_in_lo32; }
-  UINT64 GetTotalOut() const { return (UINT64(total_out_hi32) << 32) +  total_out_lo32; }
+  UInt64 GetTotalIn() const { return (UInt64(total_in_hi32) << 32) +  total_in_lo32; }
+  UInt64 GetTotalOut() const { return (UInt64(total_out_hi32) << 32) +  total_out_lo32; }
 };
 
 class CBZip2CompressorReleaser
@@ -45,9 +38,17 @@ public:
 
 
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
+  if (m_InBuffer == 0)
+  {
+    m_InBuffer = (Byte *)BigAlloc(kBufferSize * 2);
+    if (m_InBuffer == 0)
+      E_OUTOFMEMORY;
+  }
+  Byte *outBuffer = m_InBuffer + kBufferSize;
+
   CBZip2Compressor bzStream;
   bzStream.bzalloc = NULL;
   bzStream.bzfree = NULL;
@@ -70,20 +71,20 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     if (bzStream.avail_in == 0)
     {
       bzStream.next_in = (char *)m_InBuffer;
-      UINT32 processedSize;
+      UInt32 processedSize;
       RINOK(inStream->Read(m_InBuffer, kBufferSize, &processedSize));
       bzStream.avail_in = processedSize;
     }
 
-    bzStream.next_out = (char *)m_OutBuffer;
+    bzStream.next_out = (char *)outBuffer;
     bzStream.avail_out = kBufferSize;
     bool askFinish = (bzStream.avail_in == 0);
     result = bzStream.Compress(askFinish ? BZ_FINISH : BZ_RUN);
-    UINT32 numBytesToWrite = kBufferSize - bzStream.avail_out;
+    UInt32 numBytesToWrite = kBufferSize - bzStream.avail_out;
     if (numBytesToWrite > 0)
     {
-      UINT32 processedSize;
-      RINOK(outStream->Write(m_OutBuffer, numBytesToWrite, &processedSize));
+      UInt32 processedSize;
+      RINOK(outStream->Write(outBuffer, numBytesToWrite, &processedSize));
       if (numBytesToWrite != processedSize)
         return E_FAIL;
     }
@@ -107,14 +108,13 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     }
     if (progress != NULL)
     {
-      UINT64 totalIn = bzStream.GetTotalIn();
-      UINT64 totalOut = bzStream.GetTotalOut();
+      UInt64 totalIn = bzStream.GetTotalIn();
+      UInt64 totalOut = bzStream.GetTotalOut();
       RINOK(progress->SetRatioInfo(&totalIn, &totalOut));
     }
   }
   // result = bzStream.End();
   return S_OK;
 }
-
 
 }}

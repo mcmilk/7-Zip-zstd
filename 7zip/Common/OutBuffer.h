@@ -1,62 +1,71 @@
 // OutBuffer.h
 
-// #pragma once
-
 #ifndef __OUTBUFFER_H
 #define __OUTBUFFER_H
 
 #include "../IStream.h"
+#include "../../Common/MyCom.h"
 
-class COutBufferException
+#ifndef _NO_EXCEPTIONS
+struct COutBufferException
 {
-public:
   HRESULT ErrorCode;
   COutBufferException(HRESULT errorCode): ErrorCode(errorCode) {}
 };
+#endif
 
 class COutBuffer
 {
-  BYTE *_buffer;
-  UINT32 _pos;
-  UINT32 _bufferSize;
-  ISequentialOutStream *_stream;
-  UINT64 _processedSize;
+  Byte *_buffer;
+  UInt32 _pos;
+  UInt32 _bufferSize;
+  CMyComPtr<ISequentialOutStream> _stream;
+  UInt64 _processedSize;
 
   void WriteBlock();
 public:
-  COutBuffer(UINT32 bufferSize = (1 << 20));
-  ~COutBuffer();
+  #ifdef _NO_EXCEPTIONS
+  HRESULT ErrorCode;
+  #endif
 
-  void Init(ISequentialOutStream *stream);
+  COutBuffer(): _buffer(0), _pos(0), _stream(0) {}
+  ~COutBuffer() { Free(); }
+  
+  bool Create(UInt32 bufferSize);
+  void Free();
+
+  void SetStream(ISequentialOutStream *stream);
+  void Init();
   HRESULT Flush();
-  // void ReleaseStream();
+  void ReleaseStream() {  _stream.Release(); }
 
-  void *GetBuffer(UINT32 &sizeAvail)
+  /*
+  void *GetBuffer(UInt32 &sizeAvail)
   {
     sizeAvail = _bufferSize - _pos;
     return _buffer + _pos;
   }
-  void MovePos(UINT32 num)
+  void MovePos(UInt32 num)
   {
     _pos += num;
     if(_pos >= _bufferSize)
       WriteBlock();
   }
+  */
 
-
-  void WriteByte(BYTE b)
+  void WriteByte(Byte b)
   {
     _buffer[_pos++] = b;
     if(_pos >= _bufferSize)
       WriteBlock();
   }
-  void WriteBytes(const void *data, UINT32 size)
+  void WriteBytes(const void *data, UInt32 size)
   {
-    for (UINT32 i = 0; i < size; i++)
-      WriteByte(((const BYTE *)data)[i]);
+    for (UInt32 i = 0; i < size; i++)
+      WriteByte(((const Byte *)data)[i]);
   }
 
-  UINT64 GetProcessedSize() const { return _processedSize + _pos; }
+  UInt64 GetProcessedSize() const { return _processedSize + _pos; }
 };
 
 #endif

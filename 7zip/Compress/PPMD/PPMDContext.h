@@ -1,15 +1,13 @@
-// Compress/PPM/PPMD/Context.h
+// Compress/PPMD/Context.h
 // This code is based on Dmitry Shkarin's PPMdH code
 
-#pragma once
+#ifndef __COMPRESS_PPMD_CONTEXT_H
+#define __COMPRESS_PPMD_CONTEXT_H
 
-#ifndef __COMPRESS_PPM_PPMD_CONTEXT_H
-#define __COMPRESS_PPM_PPMD_CONTEXT_H
+#include "../../../Common/Types.h"
 
-#include "Common/Types.h"
-
-#include "PPMDSubAlloc.h"
 #include "../RangeCoder/RangeCoder.h"
+#include "PPMDSubAlloc.h"
 
 namespace NCompress {
 namespace NPPMD {
@@ -20,12 +18,12 @@ const int INT_BITS=7, PERIOD_BITS=7, TOT_BITS=INT_BITS+PERIOD_BITS,
 #pragma pack(1)
 struct SEE2_CONTEXT 
 {   // SEE-contexts for PPM-contexts with masked symbols
-  WORD Summ;
-  BYTE Shift, Count;
+  UInt16 Summ;
+  Byte Shift, Count;
   void init(int InitVal) { Summ=InitVal << (Shift=PERIOD_BITS-4); Count=4; }
-  UINT getMean() 
+  unsigned int getMean() 
   {
-    UINT RetVal=(Summ >> Shift);        
+    unsigned int RetVal=(Summ >> Shift);        
     Summ -= RetVal;
     return RetVal+(RetVal == 0);
   }
@@ -41,14 +39,14 @@ struct SEE2_CONTEXT
 
 struct PPM_CONTEXT 
 {
-  WORD NumStats,SummFreq;                     // sizeof(WORD) > sizeof(BYTE)
-  struct STATE { BYTE Symbol, Freq; PPM_CONTEXT* Successor; } _PACK_ATTR * Stats;
+  UInt16 NumStats,SummFreq;                     // sizeof(UInt16) > sizeof(Byte)
+  struct STATE { Byte Symbol, Freq; PPM_CONTEXT* Successor; } _PACK_ATTR * Stats;
   PPM_CONTEXT* Suffix;
   
-  PPM_CONTEXT* createChild(CSubAllocator &aSubAllocator, STATE* pStats, STATE& FirstState)
+  PPM_CONTEXT* createChild(CSubAllocator &subAllocator, STATE* pStats, STATE& FirstState)
   {
-    PPM_CONTEXT* pc = (PPM_CONTEXT*) aSubAllocator.AllocContext();
-    if ( pc ) 
+    PPM_CONTEXT* pc = (PPM_CONTEXT*) subAllocator.AllocContext();
+    if (pc) 
     {
       pc->NumStats = 1;                     
       pc->oneState() = FirstState;
@@ -64,7 +62,7 @@ struct PPM_CONTEXT
 
 /////////////////////////////////
 
-const WORD InitBinEsc[] =
+const UInt16 InitBinEsc[] =
   {0x3CDD, 0x1F3F, 0x59BF, 0x48F3, 0x64A1, 0x5ABC, 0x6632, 0x6051};
 
 struct CInfo
@@ -75,15 +73,15 @@ struct CInfo
 
   PPM_CONTEXT::STATE* FoundState;      // found next state transition
   int NumMasked, InitEsc, OrderFall, RunLength, InitRL, MaxOrder;
-  BYTE CharMask[256], NS2Indx[256], NS2BSIndx[256], HB2Flag[256];
-  BYTE EscCount, PrintCount, PrevSuccess, HiBitsFlag;
-  WORD BinSumm[128][64];               // binary SEE-contexts
+  Byte CharMask[256], NS2Indx[256], NS2BSIndx[256], HB2Flag[256];
+  Byte EscCount, PrintCount, PrevSuccess, HiBitsFlag;
+  UInt16 BinSumm[128][64];               // binary SEE-contexts
 
-  WORD &GetBinSumm(const PPM_CONTEXT::STATE &rs, int aNumStates)
+  UInt16 &GetBinSumm(const PPM_CONTEXT::STATE &rs, int numStates)
   {
     HiBitsFlag = HB2Flag[FoundState->Symbol];
     return BinSumm[rs.Freq - 1][
-         PrevSuccess + NS2BSIndx[aNumStates - 1] +
+         PrevSuccess + NS2BSIndx[numStates - 1] +
          HiBitsFlag + 2 * HB2Flag[rs.Symbol] + 
          ((RunLength >> 26) & 0x20)];
   }
@@ -114,7 +112,7 @@ struct CInfo
             SEE2Cont[i][k].init(5*i+10);
   }
 
-  void _FASTCALL StartModelRare(int MaxOrder)
+  void StartModelRare(int MaxOrder)
   {
     int i, k, m ,Step;
     EscCount=PrintCount=1;
@@ -156,7 +154,7 @@ struct CInfo
     }
   }
 
-  PPM_CONTEXT* CreateSuccessors(BOOL Skip, PPM_CONTEXT::STATE* p1)
+  PPM_CONTEXT* CreateSuccessors(bool skip, PPM_CONTEXT::STATE* p1)
   {
     // static UpState declaration bypasses IntelC bug
     // static PPM_CONTEXT::STATE UpState;
@@ -164,7 +162,7 @@ struct CInfo
 
     PPM_CONTEXT* pc = MinContext, * UpBranch = FoundState->Successor;
     PPM_CONTEXT::STATE * p, * ps[MAX_O], ** pps = ps;
-    if ( !Skip ) 
+    if ( !skip ) 
     {
         *pps++ = FoundState;
         if ( !pc->Suffix )                  
@@ -198,14 +196,14 @@ LOOP_ENTRY:
 NO_LOOP:
     if (pps == ps)                          
       return pc;
-    UpState.Symbol = *(BYTE*) UpBranch;
-    UpState.Successor = (PPM_CONTEXT*) (((BYTE*) UpBranch)+1);
+    UpState.Symbol = *(Byte*) UpBranch;
+    UpState.Successor = (PPM_CONTEXT*) (((Byte*) UpBranch)+1);
     if (pc->NumStats != 1) 
     {
         if ((p = pc->Stats)->Symbol != UpState.Symbol)
                 do { p++; } while (p->Symbol != UpState.Symbol);
-        UINT cf = p->Freq-1;
-        UINT s0 = pc->SummFreq - pc->NumStats - cf;
+        unsigned int cf = p->Freq-1;
+        unsigned int s0 = pc->SummFreq - pc->NumStats - cf;
         UpState.Freq = 1 + ((2 * cf <= s0) ? (5 * cf > s0) : 
             ((2 * cf + 3 * s0 - 1) / (2 * s0)));
     } 
@@ -225,7 +223,7 @@ NO_LOOP:
   {
     PPM_CONTEXT::STATE fs = *FoundState, * p = NULL;
     PPM_CONTEXT* pc, * Successor;
-    UINT ns1, ns, cf, sf, s0;
+    unsigned int ns1, ns, cf, sf, s0;
     if (fs.Freq < MAX_FREQ/4 && (pc=MinContext->Suffix) != NULL) 
     {
         if (pc->NumStats != 1) 
@@ -253,7 +251,7 @@ NO_LOOP:
     }
     if ( !OrderFall ) 
     {
-        MinContext = MaxContext = FoundState->Successor = CreateSuccessors(TRUE, p);
+        MinContext = MaxContext = FoundState->Successor = CreateSuccessors(true, p);
         if ( !MinContext )                  
           goto RESTART_MODEL;
         return;
@@ -264,8 +262,8 @@ NO_LOOP:
       goto RESTART_MODEL;
     if ( fs.Successor ) 
     {
-        if ((BYTE*) fs.Successor <= SubAllocator.pText &&
-                (fs.Successor=CreateSuccessors(FALSE,p)) == NULL)
+        if ((Byte*) fs.Successor <= SubAllocator.pText &&
+                (fs.Successor=CreateSuccessors(false, p)) == NULL)
                         goto RESTART_MODEL;
         if ( !--OrderFall ) 
         {
@@ -363,19 +361,19 @@ RESTART_MODEL:
     RunLength = InitRL;
   }
   
-  SEE2_CONTEXT* makeEscFreq2(int Diff,  UINT32 &aScale)
+  SEE2_CONTEXT* makeEscFreq2(int Diff, UInt32 &scale)
   {
     SEE2_CONTEXT* psee2c;
     if (MinContext->NumStats != 256) 
     {
       psee2c = SEE2Cont[NS2Indx[Diff-1]] + (Diff < MinContext->Suffix->NumStats - MinContext->NumStats)+
         2 * (MinContext->SummFreq < 11 * MinContext->NumStats) + 4 * (NumMasked > Diff) + HiBitsFlag;
-      aScale = psee2c->getMean();
+      scale = psee2c->getMean();
     } 
     else 
     {
       psee2c = &DummySEE2Cont;              
-      aScale = 1;
+      scale = 1;
     }
     return psee2c;
   }
@@ -427,7 +425,7 @@ RESTART_MODEL:
 
   void NextContext()
   {
-    if (!OrderFall && (BYTE*) FoundState->Successor > SubAllocator.pText)
+    if (!OrderFall && (Byte*) FoundState->Successor > SubAllocator.pText)
       MinContext = MaxContext = FoundState->Successor;
     else 
     {
@@ -439,7 +437,7 @@ RESTART_MODEL:
 };
 
 // Tabulated escapes for exponential symbol distribution
-const BYTE ExpEscape[16]={ 25,14, 9, 7, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2 };
+const Byte ExpEscape[16]={ 25,14, 9, 7, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2 };
 #define GET_MEAN(SUMM,SHIFT,ROUND) ((SUMM+(1 << (SHIFT-ROUND))) >> (SHIFT))
 
 }}

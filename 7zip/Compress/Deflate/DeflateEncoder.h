@@ -1,7 +1,5 @@
 // DeflateEncoder.h
 
-#pragma once
-
 #ifndef __DEFLATE_ENCODER_H
 #define __DEFLATE_ENCODER_H
 
@@ -20,22 +18,22 @@ namespace NEncoder {
 
 struct CCodeValue
 {
-  BYTE Flag;
+  Byte Flag;
   union
   {
-    BYTE Imm;
-    BYTE Len;
+    Byte Imm;
+    Byte Len;
   };
-  UINT16 Pos;
+  UInt16 Pos;
 };
 
 class COnePosMatches
 {
 public:
-  UINT16 *MatchDistances;
-  UINT16 LongestMatchLength;    
-  UINT16 LongestMatchDistance;
-  void Init(UINT16 *matchDistances)
+  UInt16 *MatchDistances;
+  UInt16 LongestMatchLength;    
+  UInt16 LongestMatchDistance;
+  void Init(UInt16 *matchDistances)
   {
     MatchDistances = matchDistances;
   };
@@ -43,16 +41,16 @@ public:
 
 struct COptimal
 {
-  UINT32 Price;
-  UINT16 PosPrev;
-  UINT16 BackPrev;
+  UInt32 Price;
+  UInt16 PosPrev;
+  UInt16 BackPrev;
 };
 
 const int kNumOpts = 0x1000;
 
 class CCoder
 {
-  UINT32 m_FinderPos;
+  UInt32 m_FinderPos;
   
   COptimal m_Optimum[kNumOpts];
   
@@ -66,93 +64,88 @@ class CCoder
   NCompression::NHuffman::CEncoder m_DistCoder;
   NCompression::NHuffman::CEncoder m_LevelCoder;
 
-  BYTE m_LastLevels[kMaxTableSize64];
+  Byte m_LastLevels[kMaxTableSize64];
 
-  UINT32 m_ValueIndex;
+  UInt32 m_ValueIndex;
   CCodeValue *m_Values;
 
-  UINT32 m_OptimumEndIndex;
-  UINT32 m_OptimumCurrentIndex;
-  UINT32 m_AdditionalOffset;
+  UInt32 m_OptimumEndIndex;
+  UInt32 m_OptimumCurrentIndex;
+  UInt32 m_AdditionalOffset;
 
-  UINT32 m_LongestMatchLength;    
-  UINT32 m_LongestMatchDistance;
-  UINT16 *m_MatchDistances;
+  UInt32 m_LongestMatchLength;    
+  UInt32 m_LongestMatchDistance;
+  UInt16 *m_MatchDistances;
 
-  UINT32 m_NumFastBytes;
-  UINT32 m_MatchLengthEdge;
+  UInt32 m_NumFastBytes;
+  UInt32 m_MatchLengthEdge;
 
-  BYTE  m_LiteralPrices[256];
+  Byte  m_LiteralPrices[256];
   
-  BYTE  m_LenPrices[kNumLenCombinations32];
-  BYTE  m_PosPrices[kDistTableSize64];
+  Byte  m_LenPrices[kNumLenCombinations32];
+  Byte  m_PosPrices[kDistTableSize64];
 
-  UINT32 m_CurrentBlockUncompressedSize;
+  UInt32 m_CurrentBlockUncompressedSize;
 
   COnePosMatches *m_OnePosMatchesArray;
-  UINT16 *m_OnePosMatchesMemory;
+  UInt16 *m_OnePosMatchesMemory;
 
-  UINT64 m_BlockStartPostion;
+  UInt64 m_BlockStartPostion;
   int m_NumPasses;
 
   bool m_Created;
 
   bool _deflate64Mode;
-  UINT32 m_NumLenCombinations;
-  UINT32 m_MatchMaxLen;
-  const BYTE *m_LenStart;
-  const BYTE *m_LenDirectBits;
+  UInt32 m_NumLenCombinations;
+  UInt32 m_MatchMaxLen;
+  const Byte *m_LenStart;
+  const Byte *m_LenDirectBits;
 
   HRESULT Create();
   void Free();
 
-  void GetBacks(UINT32 aPos);
+  void GetBacks(UInt32 aPos);
 
   void ReadGoodBacks();
-  void MovePos(UINT32 num);
-  UINT32 Backward(UINT32 &backRes, UINT32 cur);
-  UINT32 GetOptimal(UINT32 &backRes);
+  void MovePos(UInt32 num);
+  UInt32 Backward(UInt32 &backRes, UInt32 cur);
+  UInt32 GetOptimal(UInt32 &backRes);
 
   void InitStructures();
-  void CodeLevelTable(BYTE *newLevels, int numLevels, bool codeMode);
+  void CodeLevelTable(Byte *newLevels, int numLevels, bool codeMode);
   int WriteTables(bool writeMode, bool finalBlock);
-  void CopyBackBlockOp(UINT32 distance, UINT32 length);
+  void CopyBackBlockOp(UInt32 distance, UInt32 length);
   void WriteBlockData(bool writeMode, bool finalBlock);
 
-  /*
   void CCoder::ReleaseStreams()
   {
-    m_MatchFinder.ReleaseStream();
+    // m_MatchFinder.ReleaseStream();
     m_OutStream.ReleaseStream();
   }
   class CCoderReleaser
   {
     CCoder *m_Coder;
   public:
-    CCoderReleaser(CCoder *aCoder): m_Coder(aCoder) {}
-    ~CCoderReleaser()
-    {
-      m_Coder->ReleaseStreams();
-    }
+    CCoderReleaser(CCoder *coder): m_Coder(coder) {}
+    ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
   };
   friend class CCoderReleaser;
-  */
 
 public:
   CCoder(bool deflate64Mode = false);
   ~CCoder();
 
   HRESULT CodeReal(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
   HRESULT BaseCode(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
   // ICompressSetCoderProperties
   HRESULT BaseSetEncoderProperties2(const PROPID *propIDs, 
-      const PROPVARIANT *properties, UINT32 numProperties);
+      const PROPVARIANT *properties, UInt32 numProperties);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -167,11 +160,11 @@ public:
   MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
   CCOMCoder(): CCoder(false) {};
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   // ICompressSetCoderProperties
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
-      const PROPVARIANT *properties, UINT32 numProperties);
+      const PROPVARIANT *properties, UInt32 numProperties);
 };
 
 class CCOMCoder64 :
@@ -184,11 +177,11 @@ public:
   MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
   CCOMCoder64(): CCoder(true) {};
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   // ICompressSetCoderProperties
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
-      const PROPVARIANT *properties, UINT32 numProperties);
+      const PROPVARIANT *properties, UInt32 numProperties);
 };
 
 

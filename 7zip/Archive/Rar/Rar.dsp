@@ -122,7 +122,15 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Common\Buffer.h
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
 
@@ -134,7 +142,7 @@ SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\SDK\Common\DynamicBuffer.h
+SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
@@ -190,27 +198,11 @@ SOURCE=..\Common\CoderLoader.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\CoderMixer.cpp
+SOURCE=..\Common\FilterCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\CoderMixer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderMixer2.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderMixer2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CrossThreadProgress.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CrossThreadProgress.h
+SOURCE=..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -398,14 +390,6 @@ SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\StreamBinder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamBinder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Common\StreamObjects.cpp
 # End Source File
 # Begin Source File
@@ -416,6 +400,14 @@ SOURCE=..\..\Common\StreamObjects.h
 # Begin Group "7z"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\7z\7zMethodID.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\7z\7zMethodID.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\7z\7zMethods.cpp

@@ -1,7 +1,5 @@
 // Archive/GZipIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_GZIP_IN_H
 #define __ARCHIVE_GZIP_IN_H
 
@@ -15,18 +13,21 @@ namespace NGZip {
   
 class CInArchive
 {
-  UINT64 m_StreamStartPosition;
-  UINT64 m_Position;
+  UInt64 m_StreamStartPosition;
+  UInt64 m_Position;
   
-  HRESULT ReadBytes(IInStream *inStream, void *data, UINT32 size);
-  HRESULT UpdateCRCBytes(IInStream *inStream, UINT32 numBytesToSkeep, CCRC &crc);
+  HRESULT ReadBytes(IInStream *inStream, void *data, UInt32 size);
+  HRESULT UpdateCRCBytes(IInStream *inStream, UInt32 numBytesToSkeep, CCRC &crc);
 
   HRESULT ReadZeroTerminatedString(IInStream *inStream, AString &resString);
 
+  HRESULT ReadByte(IInStream *inStream, Byte &value);
+  HRESULT ReadUInt16(IInStream *inStream, UInt16 &value);
+  HRESULT ReadUInt32(IInStream *inStream, UInt32 &value);
 public:
   HRESULT ReadHeader(IInStream *inStream, CItemEx &item);
-  HRESULT ReadPostInfo(IInStream *inStream, UINT32 &crc, UINT32 &unpackSize32);
-  UINT64 GetPosition() const { return m_Position; }
+  HRESULT ReadPostHeader(IInStream *inStream, CItemEx &item);
+  UInt64 GetPosition() const { return m_Position; }
 };
   
 }}

@@ -1,7 +1,5 @@
 // SettingsPage.h
  
-#pragma once
-
 #ifndef __SETTINGSPAGE_H
 #define __SETTINGSPAGE_H
 
@@ -10,6 +8,8 @@
 
 class CSettingsPage: public NWindows::NControl::CPropertyPage
 {
+  // void EnableSubItems();
+  // bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
   virtual bool OnInit();
   virtual void OnNotifyHelp();

@@ -1,7 +1,5 @@
 // Archive/BZip2Item.h
 
-#pragma once
-
 #ifndef __ARCHIVE_BZIP2_ITEM_H
 #define __ARCHIVE_BZIP2_ITEM_H
 
@@ -10,8 +8,8 @@ namespace NBZip2 {
   
 struct CItem
 {
-  UINT64 PackSize;
-  UINT64 UnPackSize;
+  UInt64 PackSize;
+  UInt64 UnPackSize;
 };
 
 }}

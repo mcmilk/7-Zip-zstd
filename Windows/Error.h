@@ -1,7 +1,5 @@
 // Windows/Error.h
 
-#pragma once
-
 #ifndef __WINDOWS_ERROR_H
 #define __WINDOWS_ERROR_H
 

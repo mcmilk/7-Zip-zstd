@@ -1,7 +1,5 @@
 // MatchFinders/IMatchFinder.h
 
-// #pragma once
-
 #ifndef __IMATCHFINDER_H
 #define __IMATCHFINDER_H
 
@@ -14,10 +12,10 @@ IInWindowStream: public IUnknown
   STDMETHOD(Init)(ISequentialInStream *inStream) PURE;
   STDMETHOD_(void, ReleaseStream)() PURE;
   STDMETHOD(MovePos)() PURE;
-  STDMETHOD_(BYTE, GetIndexByte)(UINT32 index) PURE;
-  STDMETHOD_(UINT32, GetMatchLen)(UINT32 index, UINT32 distance, UINT32 limit) PURE;
-  STDMETHOD_(UINT32, GetNumAvailableBytes)() PURE;
-  STDMETHOD_(const BYTE *, GetPointerToCurrentPos)() PURE;
+  STDMETHOD_(Byte, GetIndexByte)(Int32 index) PURE;
+  STDMETHOD_(UInt32, GetMatchLen)(Int32 index, UInt32 distance, UInt32 limit) PURE;
+  STDMETHOD_(UInt32, GetNumAvailableBytes)() PURE;
+  STDMETHOD_(const Byte *, GetPointerToCurrentPos)() PURE;
 };
  
 // {23170F69-40C1-278A-0000-000200020000}
@@ -26,9 +24,9 @@ DEFINE_GUID(IID_IMatchFinder,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000200020000")
 IMatchFinder: public IInWindowStream
 {
-  STDMETHOD(Create)(UINT32 historySize, UINT32 keepAddBufferBefore, 
-      UINT32 matchMaxLen, UINT32 keepAddBufferAfter) PURE;
-  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *distances) PURE;
+  STDMETHOD(Create)(UInt32 historySize, UInt32 keepAddBufferBefore, 
+      UInt32 matchMaxLen, UInt32 keepAddBufferAfter) PURE;
+  STDMETHOD_(UInt32, GetLongestMatch)(UInt32 *distances) PURE;
   STDMETHOD_(void, DummyLongestMatch)() PURE;
 };
 

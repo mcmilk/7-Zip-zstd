@@ -29,6 +29,20 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
+HRESULT CProgressSynch::SetPosAndCheckPaused(UInt64 completed)
+{
+  while(true)
+  {
+    if(GetStopped())
+      return E_ABORT;
+    if(!GetPaused())
+      break;
+    ::Sleep(100);
+  }
+  SetPos(completed);
+  return S_OK;
+}
+
 #ifndef _SFX
 CProgressDialog::~CProgressDialog()
 {
@@ -46,11 +60,11 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
 
 bool CProgressDialog::OnInit() 
 {
-  _range = UINT64(-1);
-  _prevPercentValue = UINT32(-1);
-  _prevElapsedSec = UINT32(-1);
-  _prevRemainingSec = UINT32(-1);
-  _prevSpeed = UINT32(-1);
+  _range = UInt64(-1);
+  _prevPercentValue = UInt32(-1);
+  _prevElapsedSec = UInt32(-1);
+  _prevRemainingSec = UInt32(-1);
+  _prevSpeed = UInt32(-1);
   _prevMode = kSpeedBytes;
   _pevTime = ::GetTickCount();
   _elapsedTime = 0;
@@ -88,32 +102,32 @@ void CProgressDialog::OnCancel()
   ProgressSynch.SetStopped(true);
 }
 
-static void ConvertSizeToString(UINT64 value, wchar_t *s)
+static void ConvertSizeToString(UInt64 value, wchar_t *s)
 {
-  if (value < (UINT64(10000) <<  0))
+  if (value < (UInt64(10000) <<  0))
   {
-    ConvertUINT64ToString(value, s);
+    ConvertUInt64ToString(value, s);
     lstrcatW(s, L" B");
     return;
   }
-  if (value < (UINT64(10000) <<  10))
+  if (value < (UInt64(10000) <<  10))
   {
-    ConvertUINT64ToString((value >> 10), s);
+    ConvertUInt64ToString((value >> 10), s);
     lstrcatW(s, L" KB");
     return;
   }
-  if (value < (UINT64(10000) <<  20))
+  if (value < (UInt64(10000) <<  20))
   {
-    ConvertUINT64ToString((value >> 20), s);
+    ConvertUInt64ToString((value >> 20), s);
     lstrcatW(s, L" MB");
     return;
   }
-  ConvertUINT64ToString((value >> 30), s);
+  ConvertUInt64ToString((value >> 30), s);
   lstrcatW(s, L" GB");
   return;
 }
 
-void CProgressDialog::SetRange(UINT64 range)
+void CProgressDialog::SetRange(UInt64 range)
 {
   _range = range;
   _previousPos = _UI64_MAX;
@@ -125,7 +139,7 @@ void CProgressDialog::SetRange(UINT64 range)
   SetItemText(IDC_PROGRESS_SPEED_TOTAL_VALUE, s);
 }
 
-void CProgressDialog::SetPos(UINT64 pos)
+void CProgressDialog::SetPos(UInt64 pos)
 {
   bool redraw = true;
   if (pos < _range && pos > _previousPos)
@@ -140,22 +154,22 @@ void CProgressDialog::SetPos(UINT64 pos)
   }
 }
 
-static void GetTimeString(UINT64 timeValue, TCHAR *s)
+static void GetTimeString(UInt64 timeValue, TCHAR *s)
 {
   wsprintf(s, TEXT("%02d:%02d:%02d"), 
-      UINT32(timeValue / 3600),
-      UINT32((timeValue / 60) % 60), 
-      UINT32(timeValue % 60));
+      UInt32(timeValue / 3600),
+      UInt32((timeValue / 60) % 60), 
+      UInt32(timeValue % 60));
 }
 
 bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 {
   if (ProgressSynch.GetPaused())
     return true;
-  UINT64 total, completed;
+  UInt64 total, completed;
   ProgressSynch.GetProgress(total, completed);
 
-  UINT32 curTime = ::GetTickCount();
+  UInt32 curTime = ::GetTickCount();
 
   if (total != _range)
     SetRange(total);
@@ -164,7 +178,7 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
   _elapsedTime += (curTime - _pevTime);
   _pevTime = curTime;
 
-  UINT32 elapsedSec = _elapsedTime / 1000;
+  UInt32 elapsedSec = _elapsedTime / 1000;
 
   bool elapsedChanged = false;
   if (elapsedSec != _prevElapsedSec)
@@ -178,10 +192,10 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 
   if (completed != 0 && elapsedChanged)
   {
-    UINT64 remainingTime = 0;
+    UInt64 remainingTime = 0;
     if (completed < total)
       remainingTime = _elapsedTime * (total - completed)  / completed;
-    UINT64 remainingSec = remainingTime / 1000;
+    UInt64 remainingSec = remainingTime / 1000;
     if (remainingSec != _prevRemainingSec)
     {
       TCHAR s[40];
@@ -191,17 +205,17 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
     }
     // if (elapsedChanged)
     {
-      UINT64 speedB = (completed * 1000) / _elapsedTime;
-      UINT64 speedKB = speedB / 1024;
-      UINT64 speedMB = speedKB / 1024;
-      const UINT32 kLimit1 = 10;
+      UInt64 speedB = (completed * 1000) / _elapsedTime;
+      UInt64 speedKB = speedB / 1024;
+      UInt64 speedMB = speedKB / 1024;
+      const UInt32 kLimit1 = 10;
       TCHAR s[40];
       bool needRedraw = false;
       if (speedMB >= kLimit1)
       {
         if (_prevMode != kSpeedMBytes || speedMB != _prevSpeed)
         {
-          ConvertUINT64ToString(speedMB, s);
+          ConvertUInt64ToString(speedMB, s);
           lstrcat(s, TEXT(" MB/s"));
           _prevMode = kSpeedMBytes;
           _prevSpeed = speedMB;
@@ -212,7 +226,7 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
       {
         if (_prevMode != kSpeedKBytes || speedKB != _prevSpeed)
         {
-          ConvertUINT64ToString(speedKB, s);
+          ConvertUInt64ToString(speedKB, s);
           lstrcat(s, TEXT(" KB/s"));
           _prevMode = kSpeedKBytes;
           _prevSpeed = speedKB;
@@ -223,7 +237,7 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
       {
         if (_prevMode != kSpeedBytes || speedB != _prevSpeed)
         {
-          ConvertUINT64ToString(speedB, s);
+          ConvertUInt64ToString(speedB, s);
           lstrcat(s, TEXT(" B/s"));
           _prevMode = kSpeedBytes;
           _prevSpeed = speedB;
@@ -237,11 +251,11 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 
   if (total == 0)
     total = 1;
-  UINT32 percentValue = (UINT32)(completed * 100 / total);
+  UInt32 percentValue = (UInt32)(completed * 100 / total);
   if (percentValue != _prevPercentValue) 
   {
     wchar_t s[64];
-    ConvertUINT64ToString(percentValue, s);
+    ConvertUInt64ToString(percentValue, s);
     UString title = s;
     title += L"% ";
     if (!_foreground)
@@ -262,9 +276,9 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 ////////////////////
 // CU64ToI32Converter
 
-static const UINT64 kMaxIntValue = 0x7FFFFFFF;
+static const UInt64 kMaxIntValue = 0x7FFFFFFF;
 
-void CU64ToI32Converter::Init(UINT64 range)
+void CU64ToI32Converter::Init(UInt64 range)
 {
   _numShiftBits = 0;
   while(range > kMaxIntValue)
@@ -274,7 +288,7 @@ void CU64ToI32Converter::Init(UINT64 range)
   }
 }
 
-int CU64ToI32Converter::Count(UINT64 aValue)
+int CU64ToI32Converter::Count(UInt64 aValue)
 {
   return int(aValue >> _numShiftBits);
 }
@@ -314,7 +328,7 @@ void CProgressDialog::OnPauseButton()
 {
   bool paused = !ProgressSynch.GetPaused();
   ProgressSynch.SetPaused(paused);
-  UINT32 curTime = ::GetTickCount();
+  UInt32 curTime = ::GetTickCount();
   if (paused)
     _elapsedTime += (curTime - _pevTime);
   _pevTime = curTime;

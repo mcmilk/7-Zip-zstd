@@ -7,17 +7,17 @@ namespace NArchive {
 namespace NCab {
 namespace NLZX {
 
-const UINT32 kNumRepDistances = 3;
+const UInt32 kNumRepDistances = 3;
 
-const UINT32 kNumLenSlots = 8;
-const UINT32 kMatchMinLen = 2;
-const UINT32 kNumLenSymbols = 249;
-const UINT32 kMatchMaxLen = kMatchMinLen + (kNumLenSlots - 1) + kNumLenSymbols - 1;
+const UInt32 kNumLenSlots = 8;
+const UInt32 kMatchMinLen = 2;
+const UInt32 kNumLenSymbols = 249;
+const UInt32 kMatchMaxLen = kMatchMinLen + (kNumLenSlots - 1) + kNumLenSymbols - 1;
 
-const BYTE kNumAlignBits = 3;
-const UINT32 kAlignTableSize = 1 << kNumAlignBits;
+const Byte kNumAlignBits = 3;
+const UInt32 kAlignTableSize = 1 << kNumAlignBits;
 
-const UINT32 kNumHuffmanBits = 16;
+const UInt32 kNumHuffmanBits = 16;
 
 const int kNumPosSlotSymbols = 50;
 const int kNumPosSlotLenSlotSymbols = kNumPosSlotSymbols * kNumLenSlots;

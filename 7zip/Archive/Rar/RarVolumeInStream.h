@@ -1,7 +1,5 @@
 // RarVolumeInStream.h
 
-#pragma once
-
 #ifndef __RAR_VOLUME_IN_STREAM_H
 #define __RAR_VOLUME_IN_STREAM_H
 
@@ -26,8 +24,8 @@ class CFolderInStream:
 public:
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
 private:
   CObjectVector<CInArchive> *_archives;
@@ -45,7 +43,7 @@ public:
       const CObjectVector<CItemEx> *items,
       const CRefItem &refItem);
 
-  CRecordVector<UINT32> CRCs;
+  CRecordVector<UInt32> CRCs;
 };
   
 }}

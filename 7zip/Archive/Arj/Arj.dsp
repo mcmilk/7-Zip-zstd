@@ -122,6 +122,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
@@ -201,10 +209,6 @@ SOURCE=.\ArjIn.h
 SOURCE=.\ArjItem.h
 # End Source File
 # End Group
-# Begin Group "Compression"
-
-# PROP Default_Filter ""
-# End Group
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
@@ -271,6 +275,10 @@ SOURCE=..\..\Common\LimitedStreams.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\LimitedStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MSBFDecoder.h
 # End Source File
 # Begin Source File
 

@@ -1,7 +1,5 @@
 // Archive/ZipItem.h
 
-#pragma once
-
 #ifndef __ARCHIVE_ZIP_ITEM_H
 #define __ARCHIVE_ZIP_ITEM_H
 
@@ -13,8 +11,8 @@ namespace NZip {
 
 struct CVersion
 {
-  BYTE Version;
-  BYTE HostOS;
+  Byte Version;
+  Byte HostOS;
 };
 
 bool operator==(const CVersion &v1, const CVersion &v2);
@@ -25,21 +23,21 @@ class CItem
 public:
   CVersion MadeByVersion;
   CVersion ExtractVersion;
-  UINT16 Flags;
-  UINT16 CompressionMethod;
-  UINT32 Time;
-  UINT32 FileCRC;
-  UINT32 PackSize;
-  UINT32 UnPackSize;
-  UINT16 InternalAttributes;
-  UINT32 ExternalAttributes;
+  UInt16 Flags;
+  UInt16 CompressionMethod;
+  UInt32 Time;
+  UInt32 FileCRC;
+  UInt32 PackSize;
+  UInt32 UnPackSize;
+  UInt16 InternalAttributes;
+  UInt32 ExternalAttributes;
   
   AString Name;
   
-  UINT32 LocalHeaderPosition;
-  UINT16 LocalExtraSize;
-  UINT16 CentralExtraSize;
-  UINT16 CommentSize;
+  UInt32 LocalHeaderPosition;
+  UInt16 LocalExtraSize;
+  UInt16 CentralExtraSize;
+  UInt16 CommentSize;
   
   bool IsEncrypted() const;
   
@@ -48,7 +46,7 @@ public:
   
   bool IsDirectory() const;
   bool IgnoreItem() const { return false; }
-  UINT32 GetWinAttributes() const;
+  UInt32 GetWinAttributes() const;
   
   bool HasDescriptor() const;
   

@@ -1,7 +1,5 @@
 // RegistryUtils.h
 
-#pragma once
-
 #include "Common/StringConvert.h"
 
 #ifndef __REGISTRYUTILS_H
@@ -21,5 +19,19 @@ bool ReadShowRealFileIcons();
 
 void SaveShowSystemMenu(bool showSystemMenu);
 bool ReadShowSystemMenu();
+
+void SaveFullRow(bool enable);
+bool ReadFullRow();
+
+void SaveShowGrid(bool enable);
+bool ReadShowGrid();
+
+/*
+void SaveSingleClick(bool enable);
+bool ReadSingleClick();
+
+void SaveUnderline(bool enable);
+bool ReadUnderline();
+*/
 
 #endif

@@ -93,13 +93,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UINT32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
 {
   *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetPropertyInfo(UINT32 index,     
+STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -111,25 +111,25 @@ STDMETHODIMP CHandler::GetPropertyInfo(UINT32 index,
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UINT32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
 {
   *numProperties = 0;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UINT32 index,     
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
@@ -193,24 +193,24 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
   COM_TRY_END
 }
 
+/*
 class CPropgressImp: public CProgressVirt
 {
-  CMyComPtr<IArchiveOpenCallback> m_OpenArchiveCallBack;
 public:
-  STDMETHOD(SetCompleted)(const UINT64 *numFiles);
-  void Init(IArchiveOpenCallback *openArchiveCallback)
-    { m_OpenArchiveCallBack = openArchiveCallback; }
+  CMyComPtr<IArchiveOpenCallback> Callback;
+  STDMETHOD(SetCompleted)(const UInt64 *numFiles);
 };
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *numFiles)
+STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
 {
-  if (m_OpenArchiveCallBack)
-    return m_OpenArchiveCallBack->SetCompleted(numFiles, NULL);
+  if (Callback)
+    return Callback->SetCompleted(numFiles, NULL);
   return S_OK;
 }
+*/
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UINT64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
+    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   try
@@ -219,11 +219,11 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     CInArchive archive;
     if(!archive.Open(inStream, maxCheckStartPosition))
       return S_FALSE;
-    if (openArchiveCallback != NULL)
+    if (callback != NULL)
     {
-      RINOK(openArchiveCallback->SetTotal(NULL, NULL));
-      UINT64 numFiles = _items.Size();
-      RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
+      RINOK(callback->SetTotal(NULL, NULL));
+      UInt64 numFiles = _items.Size();
+      RINOK(callback->SetCompleted(&numFiles, NULL));
     }
     while(true)
     {
@@ -238,10 +238,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         break;
       _items.Add(itemInfo);
       archive.IncreaseRealPosition(itemInfo.PackSize);
-      if (openArchiveCallback != NULL)
+      if (callback != NULL)
       {
-        UINT64 numFiles = _items.Size();
-        RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
+        UInt64 numFiles = _items.Size();
+        RINOK(callback->SetCompleted(&numFiles, NULL));
       }
     }
     _stream = inStream;
@@ -265,18 +265,18 @@ STDMETHODIMP CHandler::Close()
 //////////////////////////////////////
 // CHandler::DecompressItems
 
-STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
-    INT32 testModeSpec, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
+    Int32 testModeSpec, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   bool testMode = (testModeSpec != 0);
-  UINT64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == UINT32(-1));
+  UInt64 totalUnPacked = 0, totalPacked = 0;
+  bool allFilesMode = (numItems == UInt32(-1));
   if (allFilesMode)
     numItems = _items.Size();
   if(numItems == 0)
     return S_OK;
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < numItems; i++)
   {
     const CItemEx &itemInfo = _items[allFilesMode ? i : indices[i]];
@@ -285,8 +285,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   }
   extractCallback->SetTotal(totalUnPacked);
 
-  UINT64 currentTotalUnPacked = 0, currentTotalPacked = 0;
-  UINT64 currentItemUnPacked, currentItemPacked;
+  UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
+  UInt64 currentItemUnPacked, currentItemPacked;
   
   CMyComPtr<ICompressCoder> arj1Decoder;
   CMyComPtr<ICompressCoder> arj2Decoder;
@@ -300,10 +300,10 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 
     RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
     CMyComPtr<ISequentialOutStream> realOutStream;
-    INT32 askMode;
+    Int32 askMode;
     askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
-    INT32 index = allFilesMode ? i : indices[i];
+    Int32 index = allFilesMode ? i : indices[i];
     const CItemEx &itemInfo = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
@@ -333,7 +333,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
       CMyComPtr<ISequentialInStream> inStream(streamSpec);
       
-      UINT64 pos;
+      UInt64 pos;
       _stream->Seek(itemInfo.DataPosition, STREAM_SEEK_SET, &pos);
 
       streamSpec->Init(_stream, itemInfo.PackSize);

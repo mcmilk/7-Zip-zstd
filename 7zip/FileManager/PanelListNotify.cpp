@@ -24,20 +24,20 @@ static UString ConvertSizeToString(UINT64 value)
   wchar_t s[64];
   if (value < (UINT64(10000) <<  0) /*&& ((value & 0x3FF) != 0 || value == 0)*/)
   {
-    ConvertUINT64ToString(value, s);
+    ConvertUInt64ToString(value, s);
     return UString(s) + L" B";
   }
   if (value < (UINT64(10000) <<  10))
   {
-    ConvertUINT64ToString((value >> 10), s);
+    ConvertUInt64ToString((value >> 10), s);
     return UString(s) + L" K";
   }
   if (value < (UINT64(10000) <<  20))
   {
-    ConvertUINT64ToString((value >> 20), s);
+    ConvertUInt64ToString((value >> 20), s);
     return UString(s) + L" M";
   }
-  ConvertUINT64ToString((value >> 30), s);
+  ConvertUInt64ToString((value >> 30), s);
   return UString(s) + L" G";
 }
 
@@ -150,10 +150,18 @@ extern DWORD g_ComCtl32Version;
 
 bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 {
+  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+  bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   switch(header->code)
   {
-    /*
     case LVN_ITEMCHANGED:
+    {
+      RefreshStatusBar();
+      return false;
+    }
+    /*
+
     case LVN_ODSTATECHANGED:
       {
       break;
@@ -181,6 +189,14 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_COLUMNCLICK:
       OnColumnClick(LPNMLISTVIEW(header));
       return false;
+    /*
+    case LVN_ITEMACTIVATE:
+      RefreshStatusBar();
+      if (!alt && !ctrl && !shift)
+        OpenSelectedItems(true);
+      return false;
+    */
+
     case NM_DBLCLK:
       RefreshStatusBar();
       OpenSelectedItems(true);

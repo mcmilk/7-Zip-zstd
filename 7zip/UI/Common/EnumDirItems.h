@@ -1,14 +1,10 @@
 // EnumDirItems.h
 
-#pragma once
-
 #ifndef __ENUM_DIR_ITEMS_H
 #define __ENUM_DIR_ITEMS_H
 
-#include "Common/String.h"
-#include "Common/Vector.h"
+#include "Common/Wildcard.h"
 #include "DirItem.h"
-// #include "UpdatePairBasic.h"
 
 #include "Windows/FileFind.h"
 
@@ -18,16 +14,20 @@ void AddDirFileInfo(
     NWindows::NFile::NFind::CFileInfoW &fileInfo, 
     CObjectVector<CDirItem> &dirItems);
 
+
 void EnumerateDirItems(
     const UString &baseFolderPrefix,
     const UStringVector &fileNames,
     const UString &archiveNamePrefix, 
     CObjectVector<CDirItem> &dirItems);
 
-/*
-void EnumerateItems(const CSysStringVector &filePaths,
-    const UString &archiveNamePrefix, 
-    CArchiveStyleDirItemInfoVector &dirFileInfoVector, UINT codePage);
-*/
+struct IEnumDirItemCallback
+{
+  virtual HRESULT CheckBreak() { return  S_OK; }
+};
+
+
+HRESULT EnumerateItems(const NWildcard::CCensor &censor, 
+    CObjectVector<CDirItem> &dirItems, IEnumDirItemCallback *callback);
 
 #endif

@@ -1,7 +1,5 @@
 // EditPage.h
  
-#pragma once
-
 #ifndef __EDITPAGE_H
 #define __EDITPAGE_H
 

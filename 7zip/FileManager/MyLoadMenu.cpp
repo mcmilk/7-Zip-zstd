@@ -77,6 +77,8 @@ static CIDLangPair kIDLangPairs[] =
   { IDM_DELETE, 0x03000233 },
   { IDM_FILE_PROPERTIES, 0x03000240 },
   { IDM_FILE_COMMENT, 0x03000241 },
+  { IDM_FILE_SPLIT, 0x03000270 },
+  { IDM_FILE_COMBINE, 0x03000271 },
   { IDM_CREATE_FOLDER, 0x03000250 },
   { IDM_CREATE_FILE, 0x03000251 },
   { IDCLOSE, 0x03000260 },
@@ -549,6 +551,12 @@ bool ExecuteFileCommand(int id)
       break;
     case IDM_DELETE:
       g_App.Delete();
+      break;
+    case IDM_FILE_SPLIT:
+      g_App.Split();
+      break;
+    case IDM_FILE_COMBINE:
+      g_App.Combine();
       break;
     case IDM_FILE_PROPERTIES:
       g_App.Properties();

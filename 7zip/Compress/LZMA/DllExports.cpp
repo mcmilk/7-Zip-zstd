@@ -8,6 +8,7 @@
 #include "LZMAEncoder.h"
 #include "LZMADecoder.h"
 #include "../../../Common/ComTry.h"
+// #include "../../../Common/CRC.h"
 
 // {23170F69-40C1-278B-0301-010000000000}
 DEFINE_GUID(CLSID_CLZMADecoder, 
@@ -20,11 +21,15 @@ DEFINE_GUID(CLSID_CLZMAEncoder,
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
+  // NCompress::NRangeCoder::g_PriceTables.Init();
+  // CCRC::InitTable();
 	return TRUE;
 }
 
 STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
+  // NCompress::NRangeCoder::g_PriceTables.Init();
+  // CCRC::InitTable();
   COM_TRY_BEGIN
   *outObject = 0;
   int correctInterface = (*iid == IID_ICompressCoder);

@@ -1,27 +1,26 @@
 // Zip/AddCommon.h
 
-#pragma once
-
 #ifndef __ZIP_ADDCOMMON_H
 #define __ZIP_ADDCOMMON_H
 
 #include "../../ICoder.h"
 #include "../../IProgress.h"
 #include "../../Compress/Copy/CopyCoder.h"
-#include "../Common/CoderMixer.h"
 #ifndef COMPRESS_DEFLATE
 #include "../Common/CoderLoader.h"
 #endif
+#include "../Common/FilterCoder.h"
 #include "ZipCompressionMode.h"
+#include "../../Crypto/Zip/ZipCipher.h"
 
 namespace NArchive {
 namespace NZip {
 
 struct CCompressingResult
 {
-  BYTE Method;
-  UINT64 PackSize;
-  BYTE ExtractVersion;
+  Byte Method;
+  UInt64 PackSize;
+  Byte ExtractVersion;
 };
 
 class CAddCommon
@@ -35,20 +34,15 @@ class CAddCommon
   #endif
   CMyComPtr<ICompressCoder> _compressEncoder;
 
-  #ifndef CRYPTO_ZIP
-  CCoderLibrary _cryptoLib;
-  #endif
-  CMyComPtr<ICompressCoder> _cryptoEncoder;
-  CCoderMixer *_mixerCoderSpec;
-  CMyComPtr<ICompressCoder> _mixerCoder;
-  BYTE _mixerCoderMethod;
-  // CMyComPtr<ICryptoGetTextPassword> getTextPassword;
+  CFilterCoder *_cryptoStreamSpec;
+  CMyComPtr<ISequentialOutStream> _cryptoStream;
 
+  NCrypto::NZip::CEncoder *_filterSpec;
 
 public:
   CAddCommon(const CCompressionMethodMode &options);
   HRESULT Compress(IInStream *inStream, IOutStream *outStream, 
-      UINT64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult);
+      UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 
 }}

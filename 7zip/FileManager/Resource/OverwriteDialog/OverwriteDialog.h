@@ -1,7 +1,5 @@
 // OverwriteDialog.h
 
-#pragma once
-
 #ifndef __OVERWRITEDIALOG_H
 #define __OVERWRITEDIALOG_H
 

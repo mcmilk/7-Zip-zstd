@@ -33,8 +33,6 @@ CPropVariant::CPropVariant(LPCOLESTR lpszSrc)
   *this = lpszSrc;
 }
 
-///////////////////////////
-// Assignment Operators
 CPropVariant& CPropVariant::operator=(const CPropVariant& varSrc)
 {
   InternalCopy(&varSrc);
@@ -48,14 +46,7 @@ CPropVariant& CPropVariant::operator=(const PROPVARIANT& varSrc)
 
 CPropVariant& CPropVariant::operator=(BSTR bstrSrc)
 {
-  InternalClear();
-  vt = VT_BSTR;
-  bstrVal = ::SysAllocString(bstrSrc);
-  if (bstrVal == NULL && bstrSrc != NULL)
-  {
-    vt = VT_ERROR;
-    scode = E_OUTOFMEMORY;
-  }
+  *this = (LPCOLESTR)bstrSrc;
   return *this;
 }
 
@@ -64,7 +55,6 @@ CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
   InternalClear();
   vt = VT_BSTR;
   bstrVal = ::SysAllocString(lpszSrc);
-  
   if (bstrVal == NULL && lpszSrc != NULL)
   {
     vt = VT_ERROR;
@@ -85,7 +75,7 @@ CPropVariant& CPropVariant::operator=(bool bSrc)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(UINT32 value)
+CPropVariant& CPropVariant::operator=(UInt32 value)
 {
   if (vt != VT_UI4)
   {
@@ -96,7 +86,7 @@ CPropVariant& CPropVariant::operator=(UINT32 value)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(UINT64 value)
+CPropVariant& CPropVariant::operator=(UInt64 value)
 {
   if (vt != VT_UI8)
   {
@@ -118,7 +108,7 @@ CPropVariant& CPropVariant::operator=(const FILETIME &value)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(int value)
+CPropVariant& CPropVariant::operator=(Int32 value)
 {
   if (vt != VT_I4)
   {
@@ -130,7 +120,7 @@ CPropVariant& CPropVariant::operator=(int value)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(BYTE value)
+CPropVariant& CPropVariant::operator=(Byte value)
 {
   if (vt != VT_UI1)
   {
@@ -141,7 +131,7 @@ CPropVariant& CPropVariant::operator=(BYTE value)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(short value)
+CPropVariant& CPropVariant::operator=(Int16 value)
 {
   if (vt != VT_I2)
   {
@@ -163,9 +153,9 @@ CPropVariant& CPropVariant::operator=(long value)
   return *this;
 }
 
-static HRESULT MyPropVariantClear(PROPVARIANT *aPropVariant) 
+static HRESULT MyPropVariantClear(PROPVARIANT *propVariant) 
 { 
-  switch(aPropVariant->vt)
+  switch(propVariant->vt)
   {
     case VT_UI1:
     case VT_I1:
@@ -183,10 +173,10 @@ static HRESULT MyPropVariantClear(PROPVARIANT *aPropVariant)
     case VT_R8:
     case VT_CY:
     case VT_DATE:
-      aPropVariant->vt = VT_EMPTY;
+      propVariant->vt = VT_EMPTY;
       return S_OK;
   }
-  return ::VariantClear((tagVARIANT *)aPropVariant); 
+  return ::VariantClear((VARIANTARG *)propVariant); 
 }
 
 HRESULT CPropVariant::Clear() 
@@ -215,7 +205,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
     case VT_R8:
     case VT_CY:
     case VT_DATE:
-      MoveMemory((PROPVARIANT*)this, pSrc, sizeof(PROPVARIANT));
+      memmove((PROPVARIANT*)this, pSrc, sizeof(PROPVARIANT));
       return S_OK;
   }
   return ::VariantCopy((tagVARIANT *)this, (tagVARIANT *)(pSrc)); 
@@ -224,41 +214,22 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
 
 HRESULT CPropVariant::Attach(PROPVARIANT* pSrc)
 {
-  // Clear out the variant
   HRESULT hr = Clear();
-  if (!FAILED(hr))
-  {
-    // Copy the contents and give control to CPropVariant
-    memcpy(this, pSrc, sizeof(PROPVARIANT));
-    pSrc->vt = VT_EMPTY;
-    hr = S_OK;
-  }
-  return hr;
+  if (FAILED(hr))
+    return hr;
+  memcpy(this, pSrc, sizeof(PROPVARIANT));
+  pSrc->vt = VT_EMPTY;
+  return S_OK;
 }
 
 HRESULT CPropVariant::Detach(PROPVARIANT* pDest)
 {
-  // Clear out the variant
   HRESULT hr = MyPropVariantClear(pDest);
-  // HRESULT hr = ::VariantClear((VARIANT* )pDest);
-  if (!FAILED(hr))
-  {
-    // Copy the contents and remove control from CPropVariant
-    memcpy(pDest, this, sizeof(PROPVARIANT));
-    vt = VT_EMPTY;
-    hr = S_OK;
-  }
-  return hr;
-}
-
-HRESULT CPropVariant::ChangeType(VARTYPE vtNew, const PROPVARIANT* pSrc)
-{
-  PROPVARIANT* pVar = const_cast<PROPVARIANT*>(pSrc);
-  // Convert in place if pSrc is NULL
-  if (pVar == NULL)
-    pVar = this;
-  // Do nothing if doing in place convert and vts not different
-  return ::VariantChangeType((VARIANT *)this, (VARIANT *)pVar, 0, vtNew);
+  if (FAILED(hr))
+    return hr;
+  memcpy(pDest, this, sizeof(PROPVARIANT));
+  vt = VT_EMPTY;
+  return S_OK;
 }
 
 HRESULT CPropVariant::InternalClear()
@@ -280,148 +251,6 @@ void CPropVariant::InternalCopy(const PROPVARIANT* pSrc)
     vt = VT_ERROR;
     scode = hr;
   }
-}
-
-HRESULT CPropVariant::WriteToStream(ISequentialStream *stream) const
-{
-  HRESULT aResult = stream->Write(&vt, sizeof(vt), NULL);
-  if (FAILED(aResult))
-    return aResult;
-
-  if (vt == VT_EMPTY)
-    return S_OK;
-
-  int aNumBytes = 0;
-  switch (vt)
-  {
-  case VT_UI1:
-  case VT_I1:
-    aNumBytes = sizeof(BYTE);
-    break;
-  case VT_I2:
-  case VT_UI2:
-  case VT_BOOL:
-    aNumBytes = sizeof(short);
-    break;
-  case VT_I4:
-  case VT_UI4:
-  case VT_R4:
-  case VT_INT:
-  case VT_UINT:
-  case VT_ERROR:
-    aNumBytes = sizeof(long);
-    break;
-  case VT_FILETIME:
-  case VT_UI8:
-  case VT_R8:
-  case VT_CY:
-  case VT_DATE:
-    aNumBytes = sizeof(double);
-    break;
-  default:
-    break;
-  }
-  if (aNumBytes != 0)
-    return stream->Write(&bVal, aNumBytes, NULL);
-
-  if (vt == VT_BSTR)
-  {
-    UINT32 aLen = 0;
-    if(bstrVal != NULL)
-      aLen = SysStringLen(bstrVal);
-    HRESULT aResult = stream->Write(&aLen, sizeof(UINT32), NULL);
-    if (FAILED(aResult))
-      return aResult;
-    if(bstrVal == NULL)
-      return S_OK;
-    if(aLen == 0)
-      return S_OK;
-    return stream->Write(bstrVal, aLen * sizeof(wchar_t), NULL);
-  }
-  else
-  {
-    return E_FAIL;
-    /*
-    CPropVariant varBSTR;
-    HRESULT hr = VariantChangeType(&varBSTR, this, VARIANT_NOVALUEPROP, VT_BSTR);
-    if (FAILED(hr))
-      return;
-    MoveMemory(aMemoryPointer, varBSTR.bstrVal, SysStringLen(varBSTR.bstrVal));
-    */
-  }
-}
-
-HRESULT CPropVariant::ReadFromStream(ISequentialStream *stream)
-{
-  HRESULT hr = Clear();
-  if (FAILED(hr))
-    return hr;
-
-  VARTYPE vtRead;
-  hr = stream->Read(&vtRead, sizeof(VARTYPE), NULL);
-  if (hr == S_FALSE)
-    hr = E_FAIL;
-  if (FAILED(hr))
-    return hr;
-
-  vt = vtRead;
-  if (vt == VT_EMPTY)
-    return S_OK;
-  int aNumBytes = 0;
-  switch (vt)
-  {
-    case VT_UI1:
-    case VT_I1:
-      aNumBytes = sizeof(BYTE);
-      break;
-    case VT_I2:
-    case VT_UI2:
-    case VT_BOOL:
-      aNumBytes = sizeof(short);
-      break;
-    case VT_I4:
-    case VT_UI4:
-    case VT_R4:
-    case VT_INT:
-    case VT_UINT:
-    case VT_ERROR:
-      aNumBytes = sizeof(long);
-      break;
-    case VT_FILETIME:
-    case VT_UI8:
-    case VT_R8:
-    case VT_CY:
-    case VT_DATE:
-      aNumBytes = sizeof(double);
-      break;
-    default:
-      break;
-  }
-  if (aNumBytes != 0)
-  {
-    hr = stream->Read(&bVal, aNumBytes, NULL);
-    if (hr == S_FALSE)
-      hr = E_FAIL;
-    return hr;
-  }
-
-  if (vt == VT_BSTR)
-  {
-    bstrVal = NULL;
-    UINT32 aLen = 0;
-    hr = stream->Read(&aLen, sizeof(UINT32), NULL);
-    if (hr != S_OK)
-      return E_FAIL;
-    bstrVal = SysAllocStringLen(NULL, aLen);
-    if(bstrVal == NULL)
-      return E_OUTOFMEMORY;
-    hr = stream->Read(bstrVal, aLen * sizeof(wchar_t), NULL);
-    if (hr == S_FALSE)
-      hr = E_FAIL;
-    return hr;
-  }
-  else
-    return E_FAIL;
 }
 
 int CPropVariant::Compare(const CPropVariant &a)
@@ -458,12 +287,12 @@ int CPropVariant::Compare(const CPropVariant &a)
       return MyCompare(uintVal, a.uintVal);
     */
     case VT_I8:
-      return MyCompare(INT64(*(const INT64 *)&hVal), INT64(*(const INT64 *)&a.hVal));
+      return MyCompare(Int64(*(const Int64 *)&hVal), Int64(*(const Int64 *)&a.hVal));
     case VT_UI8:
-      return MyCompare(UINT64(*(const UINT64 *)&uhVal), UINT64(*(const UINT64 *)&a.uhVal));
+      return MyCompare(UInt64(*(const UInt64 *)&uhVal), UInt64(*(const UInt64 *)&a.uhVal));
 
     case VT_BOOL:    
-      return -MyCompare(boolVal, a.boolVal); // Test it
+      return -MyCompare(boolVal, a.boolVal);
 
     case VT_FILETIME:
       return ::CompareFileTime(&filetime, &a.filetime);

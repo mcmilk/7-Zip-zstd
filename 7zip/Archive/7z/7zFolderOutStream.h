@@ -1,7 +1,5 @@
 // 7zFolderOutStream.h
 
-#pragma once
-
 #ifndef __7Z_FOLDEROUTSTREAM_H
 #define __7Z_FOLDEROUTSTREAM_H
 
@@ -23,33 +21,35 @@ public:
   
   CFolderOutStream();
 
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
 
   COutStreamWithCRC *_outStreamWithHashSpec;
   CMyComPtr<ISequentialOutStream> _outStreamWithHash;
-  CArchiveDatabaseEx *_archiveDatabase;
+  const CArchiveDatabaseEx *_archiveDatabase;
   const CBoolVector *_extractStatuses;
-  UINT32 _startIndex;
+  UInt32 _startIndex;
+  UInt32 _ref2Offset;
   int _currentIndex;
-  // UINT64 _currentDataPos;
+  // UInt64 _currentDataPos;
   CMyComPtr<IArchiveExtractCallback> _extractCallback;
   bool _testMode;
 
   bool _fileIsOpen;
-  UINT64 _filePos;
+  UInt64 _filePos;
 
   HRESULT OpenFile();
   HRESULT WriteEmptyFiles();
 public:
   HRESULT Init(
-      CArchiveDatabaseEx *archiveDatabase,
-      UINT32 startIndex,
+      const CArchiveDatabaseEx *archiveDatabase,
+      UInt32 ref2Offset,
+      UInt32 startIndex,
       const CBoolVector *extractStatuses, 
       IArchiveExtractCallback *extractCallback,
       bool testMode);
-  HRESULT FlushCorrupted(INT32 resultEOperationResult);
+  HRESULT FlushCorrupted(Int32 resultEOperationResult);
   HRESULT WasWritingFinished();
 };
 

@@ -1,7 +1,5 @@
 // SevenZip/ Messages.h
 
-#pragma once
-
 #ifndef __SEVENZIP_MESSAGES_H
 #define __SEVENZIP_MESSAGES_H
 
@@ -47,6 +45,7 @@ enum EEnum
   kGroup,
   kBlock,
   kComment,
+  kPosition,
 
   kGetPasswordTitle,
   kEnterPasswordForFile,

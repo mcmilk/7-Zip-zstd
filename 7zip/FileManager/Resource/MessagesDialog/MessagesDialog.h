@@ -1,7 +1,5 @@
 // MessagesDialog.h
 
-#pragma once
-
 #ifndef __MESSAGESDIALOG_H
 #define __MESSAGESDIALOG_H
 
@@ -13,10 +11,11 @@
 class CMessagesDialog: public NWindows::NControl::CModalDialog
 {
 	NWindows::NControl::CListView	_messageList;
-	void AddMessage(LPCTSTR string);
+	void AddMessageDirect(LPCTSTR message);
+	void AddMessage(LPCTSTR message);
   virtual bool OnInit();
 public:
-  const CSysStringVector *_messages;
+  const CSysStringVector *Messages;
   INT_PTR Create(HWND parentWindow = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_MESSAGES), parentWindow); }
 };

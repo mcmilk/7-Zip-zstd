@@ -1,21 +1,16 @@
-// Archive::Rar::Header.h
-
-#pragma once
+// Archive/RarHeader.h
 
 #ifndef __ARCHIVE_RAR_HEADER_H
 #define __ARCHIVE_RAR_HEADER_H
 
 #include "Common/Types.h"
 
-#pragma pack(push, PragmaRarHeaders)
-#pragma pack(push, 1)
-
 namespace NArchive{
 namespace NRar{
 namespace NHeader{
 
 const int kMarkerSize = 7;
-extern BYTE kMarker[kMarkerSize];
+extern Byte kMarker[kMarkerSize];
   
 const int kArchiveSolid = 0x1;
 
@@ -38,26 +33,27 @@ namespace NBlockType
 
 namespace NArchive
 {
-  const UINT16 kVolume  = 1;
-  const UINT16 kComment = 2;
-  const UINT16 kLock    = 4;
-  const UINT16 kSolid   = 8;
-  const UINT16 kNewVolName = 0x10; // ('volname.partN.rar')
-  const UINT16 kAuthenticity  = 0x20;
-  const UINT16 kRecovery = 0x40;
-  const UINT16 kBlockEncryption  = 0x80;
-  const UINT16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
+  const UInt16 kVolume  = 1;
+  const UInt16 kComment = 2;
+  const UInt16 kLock    = 4;
+  const UInt16 kSolid   = 8;
+  const UInt16 kNewVolName = 0x10; // ('volname.partN.rar')
+  const UInt16 kAuthenticity  = 0x20;
+  const UInt16 kRecovery = 0x40;
+  const UInt16 kBlockEncryption  = 0x80;
+  const UInt16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
   
   struct CBlock
   {
-    UINT16 CRC;
-    BYTE Type;
-    UINT16 Flags;
-    UINT16 Size;
-    UINT16 Reserved1;
-    UINT32 Reserved2;
-    UINT16 GetRealCRC() const;
+    UInt16 CRC;
+    Byte Type;
+    UInt16 Flags;
+    UInt16 Size;
+    UInt16 Reserved1;
+    UInt32 Reserved2;
+    // UInt16 GetRealCRC() const;
   };
+  const int kArchiveHeaderSize = 13;
 
   const int kBlockHeadersAreEncrypted = 0x80;
 }
@@ -85,60 +81,62 @@ namespace NFile
 
   const int kLongBlock    = 1 << 15;
   
+  /*
   struct CBlock
   {
-    // UINT16 HeadCRC;
-    // BYTE Type;
-    // UINT16 Flags;
-    // UINT16 HeadSize;
-    UINT32 PackSize;
-    UINT32 UnPackSize;
-    BYTE HostOS;
-    UINT32 FileCRC;
-    UINT32 Time;
-    BYTE UnPackVersion;
-    BYTE Method;
-    UINT16 NameSize;
-    UINT32 Attributes;
+    // UInt16 HeadCRC;
+    // Byte Type;
+    // UInt16 Flags;
+    // UInt16 HeadSize;
+    UInt32 PackSize;
+    UInt32 UnPackSize;
+    Byte HostOS;
+    UInt32 FileCRC;
+    UInt32 Time;
+    Byte UnPackVersion;
+    Byte Method;
+    UInt16 NameSize;
+    UInt32 Attributes;
   };
+  */
 
-    /*
+  /*
   struct CBlock32
   {
-    UINT16 HeadCRC;
-    BYTE Type;
-    UINT16 Flags;
-    UINT16 HeadSize;
-    UINT32 PackSize;
-    UINT32 UnPackSize;
-    BYTE HostOS;
-    UINT32 FileCRC;
-    UINT32 Time;
-    BYTE UnPackVersion;
-    BYTE Method;
-    UINT16 NameSize;
-    UINT32 Attributes;
-    UINT16 GetRealCRC(const void *aName, UINT32 aNameSize, 
-        bool anExtraDataDefined = false, BYTE *anExtraData = 0) const;
+    UInt16 HeadCRC;
+    Byte Type;
+    UInt16 Flags;
+    UInt16 HeadSize;
+    UInt32 PackSize;
+    UInt32 UnPackSize;
+    Byte HostOS;
+    UInt32 FileCRC;
+    UInt32 Time;
+    Byte UnPackVersion;
+    Byte Method;
+    UInt16 NameSize;
+    UInt32 Attributes;
+    UInt16 GetRealCRC(const void *aName, UInt32 aNameSize, 
+        bool anExtraDataDefined = false, Byte *anExtraData = 0) const;
   };
   struct CBlock64
   {
-    UINT16 HeadCRC;
-    BYTE Type;
-    UINT16 Flags;
-    UINT16 HeadSize;
-    UINT32 PackSizeLow;
-    UINT32 UnPackSizeLow;
-    BYTE HostOS;
-    UINT32 FileCRC;
-    UINT32 Time;
-    BYTE UnPackVersion;
-    BYTE Method;
-    UINT16 NameSize;
-    UINT32 Attributes;
-    UINT32 PackSizeHigh;
-    UINT32 UnPackSizeHigh;
-    UINT16 GetRealCRC(const void *aName, UINT32 aNameSize) const;
+    UInt16 HeadCRC;
+    Byte Type;
+    UInt16 Flags;
+    UInt16 HeadSize;
+    UInt32 PackSizeLow;
+    UInt32 UnPackSizeLow;
+    Byte HostOS;
+    UInt32 FileCRC;
+    UInt32 Time;
+    Byte UnPackVersion;
+    Byte Method;
+    UInt16 NameSize;
+    UInt32 Attributes;
+    UInt32 PackSizeHigh;
+    UInt32 UnPackSizeHigh;
+    UInt16 GetRealCRC(const void *aName, UInt32 aNameSize) const;
   };
   */
   
@@ -158,57 +156,56 @@ namespace NFile
 
 namespace NBlock
 {
-  const UINT16 kLongBlock = 1 << 15;
+  const UInt16 kLongBlock = 1 << 15;
   struct CBlock
   {
-    UINT16 CRC;
-    BYTE Type;
-    UINT16 Flags;
-    UINT16 HeadSize;
-    //  UINT32 DataSize;
+    UInt16 CRC;
+    Byte Type;
+    UInt16 Flags;
+    UInt16 HeadSize;
+    //  UInt32 DataSize;
   };
 }
 
+/*
 struct CSubBlock
 {
-  UINT16 HeadCRC;
-  BYTE HeadType;
-  UINT16 Flags;
-  UINT16 HeadSize;
-  UINT32 DataSize;
-  UINT16 SubType;
-  BYTE Level; // Reserved : Must be 0
+  UInt16 HeadCRC;
+  Byte HeadType;
+  UInt16 Flags;
+  UInt16 HeadSize;
+  UInt32 DataSize;
+  UInt16 SubType;
+  Byte Level; // Reserved : Must be 0
 };
 
 struct CCommentBlock
 {
-  UINT16 HeadCRC;
-  BYTE HeadType;
-  UINT16 Flags;
-  UINT16 HeadSize;
-  UINT16 UnpSize;
-  BYTE UnpVer;
-  BYTE Method;
-  UINT16 CommCRC;
+  UInt16 HeadCRC;
+  Byte HeadType;
+  UInt16 Flags;
+  UInt16 HeadSize;
+  UInt16 UnpSize;
+  Byte UnpVer;
+  Byte Method;
+  UInt16 CommCRC;
 };
 
 
 struct CProtectHeader
 {
-  UINT16 HeadCRC;
-  BYTE HeadType;
-  UINT16 Flags;
-  UINT16 HeadSize;
-  UINT32 DataSize;
-  BYTE Version;
-  UINT16 RecSectors;
-  UINT32 TotalBlocks;
-  BYTE Mark[8];
+  UInt16 HeadCRC;
+  Byte HeadType;
+  UInt16 Flags;
+  UInt16 HeadSize;
+  UInt32 DataSize;
+  Byte Version;
+  UInt16 RecSectors;
+  UInt32 TotalBlocks;
+  Byte Mark[8];
 };
+*/
 
 }}}
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaRarHeaders)
 
 #endif

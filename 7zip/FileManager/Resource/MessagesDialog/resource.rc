@@ -84,7 +84,6 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-
     IDD_DIALOG_MESSAGES, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -92,8 +91,9 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 128
     END
-
 END
+#endif    // APSTUDIO_INVOKED
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -104,9 +104,6 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
 END
-
-
-#endif    // APSTUDIO_INVOKED
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

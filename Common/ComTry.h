@@ -1,9 +1,7 @@
 // ComTry.h
 
-// #pragma once 
-
-#ifndef __Com_Try_H
-#define __Com_Try_H
+#ifndef __COM_TRY_H
+#define __COM_TRY_H
 
 #include "Exception.h"
 

@@ -5,7 +5,7 @@
 #include "ProgressUtils.h"
 
 void CLocalCompressProgressInfo::Init(ICompressProgressInfo *progress,
-    const UINT64 *inStartValue, const UINT64 *outStartValue)
+    const UInt64 *inStartValue, const UInt64 *outStartValue)
 {
   _progress = progress;
   _inStartValueIsAssigned = (inStartValue != NULL);
@@ -17,11 +17,11 @@ void CLocalCompressProgressInfo::Init(ICompressProgressInfo *progress,
 }
 
 STDMETHODIMP CLocalCompressProgressInfo::SetRatioInfo(
-    const UINT64 *inSize, const UINT64 *outSize)
+    const UInt64 *inSize, const UInt64 *outSize)
 {
-  UINT64 inSizeNew, outSizeNew;
-  const UINT64 *inSizeNewPointer;
-  const UINT64 *outSizeNewPointer;
+  UInt64 inSizeNew, outSizeNew;
+  const UInt64 *inSizeNewPointer;
+  const UInt64 *outSizeNewPointer;
   if (_inStartValueIsAssigned && inSize != NULL)
   {
     inSizeNew = _inStartValue + (*inSize);
@@ -51,7 +51,7 @@ void CLocalProgress::Init(IProgress *progress, bool inSizeIsMain)
 }
 
 STDMETHODIMP CLocalProgress::SetRatioInfo(
-    const UINT64 *inSize, const UINT64 *outSize)
+    const UInt64 *inSize, const UInt64 *outSize)
 {
   return _progress->SetCompleted(_inSizeIsMain ? inSize : outSize);
 }

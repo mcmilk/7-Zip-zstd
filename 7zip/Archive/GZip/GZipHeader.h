@@ -1,7 +1,5 @@
 // Archive/GZip/Header.h
 
-#pragma once
-
 #ifndef __ARCHIVE_GZIP_HEADER_H
 #define __ARCHIVE_GZIP_HEADER_H
 
@@ -10,32 +8,22 @@
 namespace NArchive {
 namespace NGZip {
 
-extern UINT16 kSignature;
-static const UINT32 kSignatureSize = 2;
-
-#pragma pack( push, PragmaGZipHeaders)
-#pragma pack( push, 1)
-
-namespace NCompressionMethod
-{
-  enum EType
-  { 
-    kDeflated = 8, 
-  };
-}
+extern UInt16 kSignature;
+static const UInt32 kSignatureSize = 2;
 
 namespace NFileHeader
 {
+  /*
   struct CBlock
   {
-    UINT16 Id;
-    BYTE CompressionMethod;
-    BYTE Flags;
-    UINT32 Time;
-    BYTE ExtraFlags;
-    BYTE HostOS;
+    UInt16 Id;
+    Byte CompressionMethod;
+    Byte Flags;
+    UInt32 Time;
+    Byte ExtraFlags;
+    Byte HostOS;
   };
-  
+  */
   
   namespace NFlags 
   {
@@ -54,12 +42,12 @@ namespace NFileHeader
       kFastest = 4
     };
   }
-
+  
   namespace NCompressionMethod
   {
-    const BYTE kDefalate = 8;
+    const Byte kDeflate = 8;
   }
-  
+
   namespace NHostOS
   {
     enum EEnum
@@ -91,9 +79,6 @@ namespace NFileHeader
     const int kNumHostSystems = 19;
   }
 }
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaGZipHeaders)
 
 }}
 

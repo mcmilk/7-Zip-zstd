@@ -11,7 +11,7 @@ static int __cdecl CompareStrings(const void *a1, const void *a2)
   return s1.CompareNoCase(s2);
 }
 
-void SortStringsToIndices(UStringVector &strings, CIntVector &indices)
+void SortStringsToIndices(const UStringVector &strings, CIntVector &indices)
 {
   indices.Clear();
   if (strings.IsEmpty())
@@ -22,9 +22,19 @@ void SortStringsToIndices(UStringVector &strings, CIntVector &indices)
   indices.Reserve(numItems);
   int i;
   for(i = 0; i < numItems; i++)
-    pointers.Add(&strings.CPointerVector::operator[](i));
+    pointers.Add((void *)&strings.CPointerVector::operator[](i));
   void **stringsBase  = (void **)pointers[0];
   qsort(&pointers[0], numItems, sizeof(void *), CompareStrings);
   for(i = 0; i < numItems; i++)
     indices.Add((void **)pointers[i] - stringsBase);
+}
+
+void SortStrings(const UStringVector &src, UStringVector &dest)
+{
+  CIntVector indices;
+  SortStringsToIndices(src, indices);
+  dest.Clear();
+  dest.Reserve(indices.Size());
+  for (int i = 0; i < indices.Size(); i++)
+    dest.Add(src[indices[i]]);
 }

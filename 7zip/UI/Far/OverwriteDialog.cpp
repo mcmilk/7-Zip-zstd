@@ -1,16 +1,17 @@
-// OverwriteDialog.cpp : implementation file
+// OverwriteDialog.cpp
 
 #include "StdAfx.h"
 
 #include "OverwriteDialog.h"
 
+#include "Common/String.h"
+#include "Common/StringConvert.h"
+
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/PropVariantConversions.h"
 
-#include "Common/String.h"
-#include "Common/StringConvert.h"
-#include "Far/FarUtils.h"
+#include "FarUtils.h"
 #include "Messages.h"
 
 using namespace NWindows;

@@ -25,7 +25,7 @@
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
-#include "../Common/CoderMixer.h"
+#include "../Common/FilterCoder.h"
 #include "../7z/7zMethods.h"
 
 
@@ -61,13 +61,7 @@ DEFINE_GUID(CLSID_CCompressBZip2Decoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
 #endif
 
-#ifdef CRYPTO_ZIP
 #include "../../Crypto/Zip/ZipCipher.h"
-#else
-// {23170F69-40C1-278B-06F1-0101000000000}
-DEFINE_GUID(CLSID_CCryptoZipDecoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00);
-#endif
 
 #ifndef EXCLUDE_COM
 #include "../Common/CoderLoader.h"
@@ -172,13 +166,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UINT32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
 {
   *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetPropertyInfo(UINT32 index,     
+STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -190,25 +184,25 @@ STDMETHODIMP CHandler::GetPropertyInfo(UINT32 index,
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UINT32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
 {
   *numProperties = 0;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UINT32 index,     
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UINT32 *numItems)
+STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = m_Items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID aPropID,  PROPVARIANT *aValue)
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *aValue)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
@@ -278,12 +272,12 @@ class CPropgressImp: public CProgressVirt
 {
   CMyComPtr<IArchiveOpenCallback> m_OpenArchiveCallback;
 public:
-  STDMETHOD(SetCompleted)(const UINT64 *numFiles);
+  STDMETHOD(SetCompleted)(const UInt64 *numFiles);
   void Init(IArchiveOpenCallback *openArchiveCallback)
     { m_OpenArchiveCallback = openArchiveCallback; }
 };
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *numFiles)
+STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
 {
   if (m_OpenArchiveCallback)
     return m_OpenArchiveCallback->SetCompleted(numFiles, NULL);
@@ -291,7 +285,7 @@ STDMETHODIMP CPropgressImp::SetCompleted(const UINT64 *numFiles)
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UINT64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
+    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
   // try
@@ -330,24 +324,24 @@ STDMETHODIMP CHandler::Close()
 
 struct CMethodItem
 {
-  BYTE ZipMethod;
+  Byte ZipMethod;
   CMyComPtr<ICompressCoder> Coder;
 };
 
-STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
-    INT32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
+    Int32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
 {
   COM_TRY_BEGIN
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
   bool testMode = (_aTestMode != 0);
   CMyComPtr<IArchiveExtractCallback> extractCallback = _anExtractCallback;
-  UINT64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == UINT32(-1));
+  UInt64 totalUnPacked = 0, totalPacked = 0;
+  bool allFilesMode = (numItems == UInt32(-1));
   if (allFilesMode)
     numItems = m_Items.Size();
   if(numItems == 0)
     return S_OK;
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < numItems; i++)
   {
     const CItemEx &item = m_Items[allFilesMode ? i : indices[i]];
@@ -356,8 +350,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   }
   extractCallback->SetTotal(totalUnPacked);
 
-  UINT64 currentTotalUnPacked = 0, currentTotalPacked = 0;
-  UINT64 currentItemUnPacked, currentItemPacked;
+  UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
+  UInt64 currentItemUnPacked, currentItemPacked;
   
  
   #ifndef EXCLUDE_COM
@@ -382,11 +376,12 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   #endif
   */
 
-  CMyComPtr<ICompressCoder> cryptoDecoder;
-  CCoderMixer *mixerCoderSpec;
-  CMyComPtr<ICompressCoder> mixerCoder;
+  NCrypto::NZip::CDecoder *cryptoDecoderSpec;
+  CMyComPtr<ICompressFilter> cryptoDecoder;
+  CFilterCoder *filterStreamSpec;
+  CMyComPtr<ISequentialInStream> filterStream;
 
-  UINT16 mixerCoderMethod;
+  // UInt16 mixerCoderMethod;
 
   for(i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
@@ -396,10 +391,10 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 
     RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
     CMyComPtr<ISequentialOutStream> realOutStream;
-    INT32 askMode;
+    Int32 askMode;
     askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
-    INT32 index = allFilesMode ? i : indices[i];
+    Int32 index = allFilesMode ? i : indices[i];
     const CItemEx &item = m_Items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
@@ -420,6 +415,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     currentItemUnPacked = item.UnPackSize;
     currentItemPacked = item.PackSize;
 
+    CInStreamReleaser inStreamReleaser;
     {
       COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
       CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
@@ -445,13 +441,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       {
         if (!cryptoDecoder)
         {
-          #ifdef CRYPTO_ZIP
-          cryptoDecoder = new NCrypto::NZip::CDecoder;
-          #else
-          RINOK(cryptoLib.LoadAndCreateCoder(
-              GetBaseFolderPrefix() + TEXT("\\Crypto\\Zip.dll"),
-              CLSID_CCryptoZipDecoder, &cryptoDecoder));
-          #endif
+          cryptoDecoderSpec = new NCrypto::NZip::CDecoder;
+          cryptoDecoder = cryptoDecoderSpec;
         }
         CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
         RINOK(cryptoDecoder.QueryInterface(
@@ -468,7 +459,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
           AString anOemPassword = UnicodeStringToMultiByte(
               (const wchar_t *)password, CP_OEMCP);
           RINOK(cryptoSetPassword->CryptoSetPassword(
-              (const BYTE *)(const char *)anOemPassword, anOemPassword.Length()));
+              (const Byte *)(const char *)anOemPassword, anOemPassword.Length()));
         }
         else
         {
@@ -538,8 +529,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
       if (coder->QueryInterface(IID_ICompressSetDecoderProperties, (void **)&compressSetDecoderProperties) == S_OK)
       {
-        // BYTE properties = (item.Flags & 6);
-        BYTE properties = item.Flags;
+        // Byte properties = (item.Flags & 6);
+        Byte properties = item.Flags;
         CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
         CMyComPtr<ISequentialInStream> inStreamProperties(inStreamSpec);
         inStreamSpec->Init(&properties, 1);
@@ -551,20 +542,20 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       try
       {
         HRESULT result;
+        CMyComPtr<ISequentialInStream> inStreamNew;
         if (item.IsEncrypted())
         {
-          if (!mixerCoder || mixerCoderMethod != item.CompressionMethod)
+          if (!filterStream)
           {
-            mixerCoder.Release();
-            mixerCoderSpec = new CCoderMixer;
-            mixerCoder = mixerCoderSpec;
-            mixerCoderSpec->AddCoder(cryptoDecoder);
-            mixerCoderSpec->AddCoder(coder);
-            mixerCoderSpec->FinishAddingCoders();
-            mixerCoderMethod = item.CompressionMethod;
+            filterStreamSpec = new CFilterCoder;
+            filterStream = filterStreamSpec;
+            filterStreamSpec->Filter = cryptoDecoder;
           }
-          mixerCoderSpec->ReInit();
+          RINOK(cryptoDecoderSpec->ReadHeader(inStream));
+          RINOK(filterStreamSpec->SetInStream(inStream));
+          inStreamReleaser.FilterCoder = filterStreamSpec;
 
+          /*
           switch(item.CompressionMethod)
           {
             case NFileHeader::NCompressionMethod::kStored:
@@ -577,16 +568,15 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
               mixerCoderSpec->SetCoderInfo(1, NULL, &currentItemUnPacked);
               break;
           }
-
-          mixerCoderSpec->SetProgressCoderIndex(1);
-          result = mixerCoder->Code(inStream, outStream,
-            NULL, NULL, compressProgress);
+          */
+          inStreamNew = filterStream; 
         }
         else
         {
-          result = coder->Code(inStream, outStream,
-            NULL, &currentItemUnPacked, compressProgress);
+          inStreamNew = inStream; 
         }
+        result = coder->Code(inStreamNew, outStream,
+          NULL, &currentItemUnPacked, compressProgress);
         if (result == S_FALSE)
           throw "data error";
         if (result != S_OK)

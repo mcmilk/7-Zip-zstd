@@ -1,7 +1,5 @@
 // NetFolder.h
 
-#pragma once
-
 #ifndef __NETFOLDER_H
 #define __NETFOLDER_H
 

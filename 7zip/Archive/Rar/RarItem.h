@@ -1,7 +1,5 @@
 // RarItem.h
 
-#pragma once
-
 #ifndef __ARCHIVE_RAR_ITEM_H
 #define __ARCHIVE_RAR_ITEM_H
 
@@ -13,19 +11,19 @@ namespace NRar{
 
 struct CRarTime
 {
-  UINT32 DosTime;
-  BYTE LowSecond;
-  BYTE SubTime[3];
+  UInt32 DosTime;
+  Byte LowSecond;
+  Byte SubTime[3];
 };
 
 class CItem
 {
 public:
-  UINT16 Flags;
-  UINT64 PackSize;
-  UINT64 UnPackSize;
-  BYTE HostOS;
-  UINT32 FileCRC;
+  UInt16 Flags;
+  UInt64 PackSize;
+  UInt64 UnPackSize;
+  Byte HostOS;
+  UInt32 FileCRC;
   
   CRarTime CreationTime;
   CRarTime LastWriteTime;
@@ -34,13 +32,13 @@ public:
   // bool IsLastWriteTimeDefined;
   bool IsLastAccessTimeDefined;
 
-  BYTE UnPackVersion;
-  BYTE Method;
-  UINT32 Attributes;
+  Byte UnPackVersion;
+  Byte Method;
+  UInt32 Attributes;
   AString Name;
   UString UnicodeName;
 
-  BYTE Salt[8];
+  Byte Salt[8];
   
   bool IsEncrypted() const;
   bool IsSolid() const;
@@ -53,10 +51,10 @@ public:
   bool HasUnicodeName() const;
   bool IsOldVersion() const;
   
-  UINT32 GetDictSize() const;
+  UInt32 GetDictSize() const;
   bool IsDirectory() const;
   bool IgnoreItem() const;
-  UINT32 GetWinAttributes() const;
+  UInt32 GetWinAttributes() const;
   
   CItem(): IsCreationTimeDefined(false),  IsLastAccessTimeDefined(false) {}
 private:
@@ -64,7 +62,7 @@ private:
   void SetBitMask(int aBitMask, bool anEnable);
 public:
   void ClearFlags();
-  void SetDictSize(UINT32 aSize);
+  void SetDictSize(UInt32 aSize);
   void SetAsDirectory(bool aDirectory);
   void SetEncrypted(bool anEncrypted);
   void SetSolid(bool aSolid);
@@ -76,13 +74,14 @@ public:
 class CItemEx: public CItem
 {
 public:
-  UINT64 Position;
-  UINT16  MainPartSize;
-  UINT16  CommentSize;
-  UINT64 GetFullSize()  const { return MainPartSize + CommentSize + PackSize; };
+  UInt64 Position;
+  UInt16 MainPartSize;
+  UInt16 CommentSize;
+  UInt16 AlignSize;
+  UInt64 GetFullSize()  const { return MainPartSize + CommentSize + AlignSize + PackSize; };
   //  DWORD GetHeaderWithCommentSize()  const { return MainPartSize + CommentSize; };
-  UINT64 GetCommentPosition() const { return Position + MainPartSize; };
-  UINT64 GetDataPosition()    const { return GetCommentPosition() + CommentSize; };
+  UInt64 GetCommentPosition() const { return Position + MainPartSize; };
+  UInt64 GetDataPosition()    const { return GetCommentPosition() + CommentSize + AlignSize; };
 };
 
 }}

@@ -1,7 +1,5 @@
 // ArchiveName.h
 
-#pragma once
-
 #ifndef __ARCHIVENAME_H
 #define __ARCHIVENAME_H
 

@@ -101,6 +101,10 @@ SOURCE=.\PPMD.def
 # End Source File
 # Begin Source File
 
+SOURCE=.\resource.rc
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc
 # End Source File
@@ -197,9 +201,21 @@ SOURCE=..\..\Common\OutBuffer.h
 SOURCE=..\RangeCoder\RangeCoder.h
 # End Source File
 # End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\resource.rc
+SOURCE=..\..\..\Common\Alloc.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Types.h
+# End Source File
+# End Group
 # End Target
 # End Project

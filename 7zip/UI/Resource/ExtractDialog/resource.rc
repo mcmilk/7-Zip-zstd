@@ -63,7 +63,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 299, 202
+IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, 299, 218
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
 CAPTION "Extract"
@@ -81,7 +81,7 @@ BEGIN
     CONTROL         "No pathnames",IDC_EXTRACT_RADIO_NO_PATHNAMES,"Button",
                     BS_AUTORADIOBUTTON,13,85,114,10
     GROUPBOX        "Overwrite mode",IDC_EXTRACT_OVERWRITE_MODE,148,44,144,
-                    75,WS_GROUP
+                    88,WS_GROUP
     CONTROL         "Ask before overwrite",
                     IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP,154,57,130,10
@@ -93,22 +93,44 @@ BEGIN
                     BS_AUTORADIOBUTTON,154,85,130,10
     CONTROL         "Auto rename",IDC_EXTRACT_RADIO_AUTO_RENAME,"Button",
                     BS_AUTORADIOBUTTON,154,99,130,10
-    GROUPBOX        "Files",IDC_EXTRACT_FILES,7,125,127,48,NOT WS_VISIBLE | 
+    CONTROL         "Auto rename existing files",
+                    IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING,"Button",
+                    BS_AUTORADIOBUTTON,154,113,130,10
+    GROUPBOX        "Files",IDC_EXTRACT_FILES,7,140,127,48,NOT WS_VISIBLE | 
                     WS_GROUP
     CONTROL         "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES,
                     "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_GROUP,
-                    13,137,114,10
+                    13,153,114,10
     CONTROL         "&All files",IDC_EXTRACT_RADIO_ALL_FILES,"Button",
-                    BS_AUTORADIOBUTTON | NOT WS_VISIBLE,13,151,114,10
-    GROUPBOX        "Password",IDC_EXTRACT_PASSWORD,148,126,144,46
-    EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,154,138,130,14,ES_PASSWORD | 
+                    BS_AUTORADIOBUTTON | NOT WS_VISIBLE,13,166,114,10
+    GROUPBOX        "Password",IDC_EXTRACT_PASSWORD,148,142,144,46
+    EDITTEXT        IDC_EXTRACT_EDIT_PASSWORD,154,153,130,14,ES_PASSWORD | 
                     ES_AUTOHSCROLL
     CONTROL         "Show Password",IDC_EXTRACT_CHECK_SHOW_PASSWORD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,154,157,129,10
-    DEFPUSHBUTTON   "OK",IDOK,80,181,64,14,WS_GROUP
-    PUSHBUTTON      "Cancel",IDCANCEL,154,181,64,14
-    PUSHBUTTON      "Help",IDHELP,228,181,64,14
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,172,129,10
+    DEFPUSHBUTTON   "OK",IDOK,80,197,64,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,154,197,64,14
+    PUSHBUTTON      "Help",IDHELP,228,197,64,14
 END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    "IDD_DIALOG_EXTRACT", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 292
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 211
+    END
+END
+#endif    // APSTUDIO_INVOKED
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

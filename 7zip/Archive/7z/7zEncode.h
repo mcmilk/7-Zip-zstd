@@ -1,7 +1,5 @@
 // 7zEncode.h
 
-#pragma once
-
 #ifndef __7Z_ENCODE_H
 #define __7Z_ENCODE_H
 
@@ -10,6 +8,8 @@
 #include "7zCompressionMode.h"
 
 #include "../Common/CoderMixer2.h"
+#include "../Common/CoderMixer2MT.h"
+#include "../Common/CoderMixer2ST.h"
 #ifndef EXCLUDE_COM
 #include "../Common/CoderLoader.h"
 #endif
@@ -27,7 +27,7 @@ class CEncoder
   CCoderLibraries _libraries;
   #endif
 
-  NCoderMixer2::CCoderMixer2 *_mixerCoderSpec;
+  NCoderMixer2::CCoderMixer2MT *_mixerCoderSpec;
   CMyComPtr<ICompressCoder2> _mixerCoder;
 
   CObjectVector<CCoderInfo> _codersInfo;
@@ -44,10 +44,10 @@ public:
   CEncoder(const CCompressionMethodMode &options);
   ~CEncoder();
   HRESULT Encode(ISequentialInStream *inStream,
-      const UINT64 *inStreamSize,
+      const UInt64 *inStreamSize,
       CFolder &folderItem,
       ISequentialOutStream *outStream,
-      CRecordVector<UINT64> &packSizes,
+      CRecordVector<UInt64> &packSizes,
       ICompressProgressInfo *compressProgress);
 };
 

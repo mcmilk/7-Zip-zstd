@@ -1,9 +1,7 @@
 // UpdatePair.h
 
-#pragma once
-
-#ifndef __UPDATEPAIR_H
-#define __UPDATEPAIR_H
+#ifndef __UPDATE_PAIR_H
+#define __UPDATE_PAIR_H
 
 #include "DirItem.h"
 #include "UpdateAction.h"

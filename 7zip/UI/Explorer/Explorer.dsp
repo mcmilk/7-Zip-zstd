@@ -182,11 +182,27 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ArchiveName.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\ArchiveName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
@@ -263,6 +279,14 @@ SOURCE=..\Common\UpdateAction.cpp
 # Begin Source File
 
 SOURCE=..\Common\UpdateAction.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -396,14 +420,6 @@ SOURCE=..\Agent\AgentProxy.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveExtractCallback.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Agent\ArchiveFolder.cpp
 # End Source File
 # Begin Source File
@@ -416,39 +432,19 @@ SOURCE=..\Agent\ArchiveFolderOut.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ArchiveUpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveUpdateCallback.h
+SOURCE=..\Agent\IFileExtractCallback.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\Agent\IFolderArchive.h
 # End Source File
-# End Group
-# Begin Group "Spec Interfaces"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Format\Common\ArchiveInterface.h
+SOURCE=..\Agent\UpdateCallbackAgent.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ArchiveStyleDirItemInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Interface\CompressInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FolderArchiveInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Format\Common\FormatCryptoInterface.h
+SOURCE=..\Agent\UpdateCallbackAgent.h
 # End Source File
 # End Group
 # Begin Group "FileManager"
@@ -505,6 +501,14 @@ SOURCE=..\..\FileManager\RegistryUtils.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\IntToString.cpp

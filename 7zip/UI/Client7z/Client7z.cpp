@@ -59,9 +59,9 @@ int main(int argc, char* argv[])
   }
   if (archive->Open(file, 0, 0) != S_OK)
     return 0;
-  UINT32 numItems = 0;
+  UInt32 numItems = 0;
   archive->GetNumberOfItems(&numItems);  
-  for (UINT32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     NWindows::NCOM::CPropVariant propVariant;
     archive->GetProperty(i, kpidPath, &propVariant);

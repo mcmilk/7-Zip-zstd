@@ -1,7 +1,5 @@
 // SystemPage.h
  
-#pragma once
-
 #ifndef __SYSTEMPAGE_H
 #define __SYSTEMPAGE_H
 

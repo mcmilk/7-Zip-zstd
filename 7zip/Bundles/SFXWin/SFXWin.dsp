@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zSfx.exe" /opt:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Util\7z.sfx" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "SFXWin - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"C:\UTIL\7zSfx.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"C:\Util\7z.sfx" /pdbtype:sept
 
 !ENDIF 
 
@@ -148,6 +148,14 @@ SOURCE=..\..\Archive\7z\7zIn.cpp
 
 SOURCE=..\..\Archive\7z\7zIn.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.h
+# End Source File
 # End Group
 # Begin Group "Archive Common"
 
@@ -199,6 +207,14 @@ SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
 # Begin Group "Branch"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Branch\x86.cpp
@@ -260,34 +276,6 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
-# End Group
-# Begin Group "Agent"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\Agent.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\Agent.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\AgentProxy.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\AgentProxy.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Agent\ArchiveExtractCallback.h
-# End Source File
 # End Group
 # Begin Group "Crypto"
 
@@ -425,6 +413,22 @@ SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2ST.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2ST.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\FilePathAutoRename.cpp
 # End Source File
 # Begin Source File
@@ -438,6 +442,14 @@ SOURCE=..\..\Common\FileStreams.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -457,11 +469,11 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.cpp
+SOURCE=..\..\Common\LockedStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.h
+SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 
@@ -641,6 +653,14 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CommandLineParser.cpp
 # End Source File
 # Begin Source File
@@ -704,6 +724,22 @@ SOURCE=..\..\..\Common\Wildcard.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\UI\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
@@ -717,6 +753,14 @@ SOURCE=..\..\UI\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Extract.h
 # End Source File
 # Begin Source File
 
@@ -740,19 +784,27 @@ SOURCE=..\..\UI\Common\OpenArchive.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\UI\GUI\Extract.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\GUI\Extract.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\UI\GUI\ExtractDialog.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\UI\GUI\ExtractDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\ExtractGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\ExtractGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\OpenCallbackGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\OpenCallbackGUI.h
 # End Source File
 # End Group
 # Begin Group "Explorer"

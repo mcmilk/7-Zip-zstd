@@ -32,40 +32,42 @@ STDMETHODIMP_(void) CMatchFinderBinTree::ReleaseStream()
 STDMETHODIMP CMatchFinderBinTree::MovePos()
   { return _matchFinder.MovePos(); }
 
-STDMETHODIMP_(BYTE) CMatchFinderBinTree::GetIndexByte(UINT32 index)
+STDMETHODIMP_(Byte) CMatchFinderBinTree::GetIndexByte(Int32 index)
   { return _matchFinder.GetIndexByte(index); }
 
-STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetMatchLen(UINT32 index, 
-    UINT32 back, UINT32 limit)
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetMatchLen(Int32 index, 
+    UInt32 back, UInt32 limit)
   { return _matchFinder.GetMatchLen(index, back, limit); }
 
-STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetNumAvailableBytes()
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetNumAvailableBytes()
   { return _matchFinder.GetNumAvailableBytes(); }
   
-STDMETHODIMP CMatchFinderBinTree::Create(UINT32 sizeHistory, 
-      UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
-      UINT32 keepAddBufferAfter)
+STDMETHODIMP CMatchFinderBinTree::Create(UInt32 sizeHistory, 
+      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter)
 { 
-  UINT32 windowReservSize = (sizeHistory + keepAddBufferBefore + 
+  UInt32 windowReservSize = (sizeHistory + keepAddBufferBefore + 
       matchMaxLen + keepAddBufferAfter) / 2 + 256;
-  try 
+  // try 
   {
     return _matchFinder.Create(sizeHistory, keepAddBufferBefore, 
         matchMaxLen, keepAddBufferAfter, windowReservSize); 
   }
+  /*
   catch(...)
   {
     return E_OUTOFMEMORY;
   }
+  */
 }
 
-STDMETHODIMP_(UINT32) CMatchFinderBinTree::GetLongestMatch(UINT32 *distances)
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetLongestMatch(UInt32 *distances)
   { return _matchFinder.GetLongestMatch(distances); }
 
 STDMETHODIMP_(void) CMatchFinderBinTree::DummyLongestMatch()
   { _matchFinder.DummyLongestMatch(); }
 
-STDMETHODIMP_(const BYTE *) CMatchFinderBinTree::GetPointerToCurrentPos()
+STDMETHODIMP_(const Byte *) CMatchFinderBinTree::GetPointerToCurrentPos()
 {
   return _matchFinder.GetPointerToCurrentPos();
 }

@@ -1,7 +1,5 @@
 // Archive/DebIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_DEB_IN_H
 #define __ARCHIVE_DEB_IN_H
 
@@ -15,15 +13,15 @@ namespace NDeb {
 class CInArchive
 {
   CMyComPtr<IInStream> m_Stream;
-  UINT64 m_Position;
+  UInt64 m_Position;
   
-  HRESULT ReadBytes(void *data, UINT32 size, UINT32 &processedSize);
+  HRESULT ReadBytes(void *data, UInt32 size, UInt32 &processedSize);
   HRESULT GetNextItemReal(bool &filled, CItemEx &itemInfo);
-  HRESULT Skeep(UINT64 numBytes);
+  HRESULT Skeep(UInt64 numBytes);
 public:
   HRESULT Open(IInStream *inStream);
   HRESULT GetNextItem(bool &filled, CItemEx &itemInfo);
-  HRESULT SkeepData(UINT64 dataSize);
+  HRESULT SkeepData(UInt64 dataSize);
 };
   
 }}

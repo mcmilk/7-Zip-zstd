@@ -1,7 +1,5 @@
 // RootFolder.h
 
-#pragma once
-
 #ifndef __ROOTFOLDER_H
 #define __ROOTFOLDER_H
 

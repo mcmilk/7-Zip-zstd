@@ -126,6 +126,14 @@ SOURCE=.\Tar.ico
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File

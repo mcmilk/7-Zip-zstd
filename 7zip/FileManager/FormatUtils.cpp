@@ -41,14 +41,14 @@ CSysString MyFormat(UINT32 resourceID,
 CSysString NumberToString(UINT64 number)
 {
   TCHAR temp[32];
-  ConvertUINT64ToString(number, temp);
+  ConvertUInt64ToString(number, temp);
   return temp;
 }
 
 UString NumberToStringW(UINT64 number)
 {
   wchar_t numberString[32];
-  ConvertUINT64ToString(number, numberString);
+  ConvertUInt64ToString(number, numberString);
   return numberString;
 }
 

@@ -1,7 +1,5 @@
 // Windows/Synchronization.h
 
-#pragma once
-
 #ifndef __WINDOWS_SYNCHRONIZATION_H
 #define __WINDOWS_SYNCHRONIZATION_H
 

@@ -1,7 +1,5 @@
 // SysIconUtils.h
 
-#pragma once
-
 #ifndef __SYSICONUTILS_H
 #define __SYSICONUTILS_H
 
@@ -52,6 +50,4 @@ DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex);
 DWORD_PTR GetRealIconIndex(const CSysString &fileName, UINT32 attributes, int &iconIndex, CSysString &typeName);
 int GetIconIndexForCSIDL(int aCSIDL);
 
-
 #endif
-

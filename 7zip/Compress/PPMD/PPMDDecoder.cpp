@@ -12,15 +12,16 @@ namespace NPPMD {
 
 STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
-  UINT32 processedSize;
-  RINOK(inStream->Read(&_order, 
-      sizeof(_order), &processedSize));
-  if (processedSize != sizeof(_order))
-    return E_FAIL;
-  RINOK(inStream->Read(&_usedMemorySize, 
-      sizeof(_usedMemorySize), &processedSize));
-  if (processedSize != sizeof(_usedMemorySize))
-    return E_FAIL;
+  const UInt32 kPropSize = 5;
+  Byte properties[kPropSize];
+  UInt32 processedSize;
+  RINOK(inStream->Read(properties, kPropSize, &processedSize));
+  if (processedSize != kPropSize)
+    return E_INVALIDARG;
+  _order = properties[0];
+  _usedMemorySize = 0;
+  for (int i = 0; i < 4; i++)
+    _usedMemorySize += ((UInt32)(properties[1 + i])) << (i * 8);
   return S_OK;
 }
 
@@ -32,51 +33,46 @@ public:
   ~CDecoderFlusher()
   {
     _coder->Flush();
-    // _coder->ReleaseStreams();
+    _coder->ReleaseStreams();
   }
 };
 
-UINT32 GetMatchLen(const BYTE *pointer1, const BYTE *pointer2, 
-    UINT32 limit)
+UInt32 GetMatchLen(const Byte *pointer1, const Byte *pointer2, 
+    UInt32 limit)
 {  
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < limit && *pointer1 == *pointer2; 
       pointer1++, pointer2++, i++);
   return i;
 }
 
 STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
-  _rangeDecoder.Init(inStream);
-  _outStream.Init(outStream);
+  if (!_rangeDecoder.Create(1 << 20))
+    return E_OUTOFMEMORY;
+  if (!_outStream.Create(1 << 20))
+    return E_OUTOFMEMORY;
+
+  _rangeDecoder.SetStream(inStream);
+  _rangeDecoder.Init();
+  _outStream.SetStream(outStream);
+  _outStream.Init();
 
   CDecoderFlusher flusher(this);
 
-  /*
-  if (outSize == NULL)
-    return E_INVALIDARG;
-  */
+  UInt64 progressPosValuePrev = 0, pos = 0;
 
-  UINT64 progressPosValuePrev = 0, pos = 0;
-
-  try
-  {
-    if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
-      return E_OUTOFMEMORY;
-  }
-  catch(...)
-  {
+  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
     return E_OUTOFMEMORY;
-  }
 
   // _info.Init();
   // _info.MaxOrder = _order; 
   _info.MaxOrder = 0;
   _info.StartModelRare(_order);
 
-  UINT64 size = (outSize == NULL) ? (UINT64)(INT64)(-1) : *outSize;
+  UInt64 size = (outSize == NULL) ? (UInt64)(Int64)(-1) : *outSize;
 
   while(pos < size)
   {
@@ -87,7 +83,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
     _outStream.WriteByte(symbol);
     if (pos - progressPosValuePrev >= (1 << 18) && progress != NULL)
     {
-      UINT64 inSize = _rangeDecoder.GetProcessedSize();
+      UInt64 inSize = _rangeDecoder.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&inSize, &pos));
       progressPosValuePrev = pos;
     }
@@ -96,7 +92,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
 }
 
 STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
@@ -104,6 +100,5 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
   catch(const CInBufferException &e) { return e.ErrorCode; }
   catch(...) { return E_FAIL; }
 }
-
 
 }}

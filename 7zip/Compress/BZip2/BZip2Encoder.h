@@ -1,12 +1,10 @@
 // Compress/BZip2/Encoder.h
 
-#pragma once
-
 #ifndef __COMPRESS_BZIP2_ENCODER_H
 #define __COMPRESS_BZIP2_ENCODER_H
 
-#include "Common/MyCom.h"
 #include "../../ICoder.h"
+#include "../../../Common/MyCom.h"
 
 namespace NCompress {
 namespace NBZip2 {
@@ -15,19 +13,15 @@ class CEncoder :
   public ICompressCoder,
   public CMyUnknownImp
 {
-  BYTE *m_InBuffer;
-  BYTE *m_OutBuffer;
-
+  Byte *m_InBuffer;
 public:
-  CEncoder();
+  CEncoder(): m_InBuffer(0) {};
   ~CEncoder();
 
   MY_UNKNOWN_IMP
 
-  // STDMETHOD(ReleaseStreams)();
-
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 };
 

@@ -1,7 +1,5 @@
-// Stream/MSBFDecoder.h
+// MSBFDecoder.h
 // the Most Significant Bit of byte is First
-
-#pragma once
 
 #ifndef __STREAM_MSBFDECODER_H
 #define __STREAM_MSBFDECODER_H
@@ -10,36 +8,30 @@ namespace NStream {
 namespace NMSBF {
 
 const int kNumBigValueBits = 8 * 4;
-
 const int kNumValueBytes = 3;
 const int kNumValueBits = 8  * kNumValueBytes;
 
-const UINT32 kMask = (1 << kNumValueBits) - 1;
+const UInt32 kMask = (1 << kNumValueBits) - 1;
 
 template<class TInByte>
 class CDecoder
 {
   TInByte m_Stream;
-  UINT32 m_BitPos;
-  UINT32 m_Value;
-
+  UInt32 m_BitPos;
+  UInt32 m_Value;
 public:
-  
-  void Init(ISequentialInStream *aStream)
+  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
+  void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream);}
+  void ReleaseStream() { m_Stream.ReleaseStream();}
+
+  void Init()
   {
-    m_Stream.Init(aStream);
+    m_Stream.Init();
     m_BitPos = kNumBigValueBits; 
     Normalize();
   }
   
-  /*
-  void ReleaseStream()
-  {
-    m_Stream.ReleaseStream();
-  }
-  */
-
-  UINT64 GetProcessedSize() const 
+  UInt64 GetProcessedSize() const 
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   
   void Normalize()
@@ -48,23 +40,23 @@ public:
       m_Value = (m_Value << 8) | m_Stream.ReadByte();
   }
 
-  UINT32 GetValue(UINT32 aNumBits) const
+  UInt32 GetValue(UInt32 numBits) const
   {
-    // return (m_Value << m_BitPos) >> (kNumBigValueBits - aNumBits);
-    return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - aNumBits);
+    // return (m_Value << m_BitPos) >> (kNumBigValueBits - numBits);
+    return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
   
-  void MovePos(UINT32 aNumBits)
+  void MovePos(UInt32 numBits)
   {
-    m_BitPos += aNumBits;
+    m_BitPos += numBits;
     Normalize();
   }
   
-  UINT32 ReadBits(UINT32 aNumBits)
+  UInt32 ReadBits(UInt32 numBits)
   {
-    UINT32 aRes = GetValue(aNumBits);
-    MovePos(aNumBits);
-    return aRes;
+    UInt32 res = GetValue(numBits);
+    MovePos(numBits);
+    return res;
   }
 };
 

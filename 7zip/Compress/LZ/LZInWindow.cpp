@@ -4,27 +4,28 @@
 
 #include "LZInWindow.h"
 #include "../../../Common/MyCom.h"
-
-CLZInWindow::~CLZInWindow()
-{
-  Free();
-}
+#include "../../../Common/Alloc.h"
 
 void CLZInWindow::Free()
 {
-  delete []_bufferBase;
+  ::BigFree(_bufferBase);
   _bufferBase = 0;
 }
 
-void CLZInWindow::Create(UINT32 keepSizeBefore, UINT32 keepSizeAfter, UINT32 keepSizeReserv)
+bool CLZInWindow::Create(UInt32 keepSizeBefore, UInt32 keepSizeAfter, UInt32 keepSizeReserv)
 {
   _keepSizeBefore = keepSizeBefore;
   _keepSizeAfter = keepSizeAfter;
   _keepSizeReserv = keepSizeReserv;
-  _blockSize = keepSizeBefore + keepSizeAfter + keepSizeReserv;
-  Free();
-  _bufferBase = new BYTE[_blockSize];
+  UInt32 blockSize = keepSizeBefore + keepSizeAfter + keepSizeReserv;
+  if (_bufferBase == 0 || _blockSize != blockSize)
+  {
+    Free();
+    _blockSize = blockSize;
+    _bufferBase = (Byte *)::BigAlloc(_blockSize);
+  }
   _pointerToLastSafePosition = _bufferBase + _blockSize - keepSizeAfter;
+  return (_bufferBase != 0);
 }
 
 
@@ -64,17 +65,17 @@ HRESULT CLZInWindow::ReadBlock()
     return S_OK;
   while(true)
   {
-    UINT32 size = (_bufferBase + _blockSize) - (_buffer + _streamPos);
+    UInt32 size = UInt32(_bufferBase - _buffer) + _blockSize - _streamPos;
     if(size == 0)
       return S_OK;
-    UINT32 numReadBytes;
+    UInt32 numReadBytes;
     RINOK(_stream->ReadPart(_buffer + _streamPos, size, &numReadBytes));
     if(numReadBytes == 0)
     {
       _posLimit = _streamPos;
-      const BYTE *pointerToPostion = _buffer + _posLimit;
+      const Byte *pointerToPostion = _buffer + _posLimit;
       if(pointerToPostion > _pointerToLastSafePosition)
-        _posLimit = _pointerToLastSafePosition - _buffer;
+        _posLimit = (UInt32)(_pointerToLastSafePosition - _buffer);
       _streamEndWasReached = true;
       return S_OK;
     }
@@ -90,8 +91,8 @@ HRESULT CLZInWindow::ReadBlock()
 void CLZInWindow::MoveBlock()
 {
   BeforeMoveBlock();
-  UINT32 offset = (_buffer + _pos - _keepSizeBefore) - _bufferBase;
-  UINT32 numBytes = (_buffer + _streamPos) -  (_bufferBase + offset);
+  UInt32 offset = UInt32(_buffer - _bufferBase) + _pos - _keepSizeBefore;
+  UInt32 numBytes = UInt32(_buffer - _bufferBase) + _streamPos -  offset;
   memmove(_bufferBase, _bufferBase + offset, numBytes);
   _buffer -= offset;
   AfterMoveBlock();

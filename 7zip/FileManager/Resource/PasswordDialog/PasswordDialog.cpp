@@ -24,7 +24,7 @@ bool CPasswordDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _passwordControl.Attach(GetItem(IDC_EDIT_PASSWORD));
-  _passwordControl.SetText(_password);
+  _passwordControl.SetText(Password);
   _passwordControl.SetPasswordChar(TEXT('*'));
   return CModalDialog::OnInit();
 }
@@ -45,6 +45,6 @@ bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 void CPasswordDialog::OnOK()
 {
-  _passwordControl.GetText(_password);
+  _passwordControl.GetText(Password);
   CModalDialog::OnOK();
 }

@@ -1,13 +1,13 @@
 // PatMain.h
 
 #include "../../../../Common/Defs.h"
-#include "../../../../Common/NewHandler.h"
+#include "../../../../Common/Alloc.h"
 
 namespace PAT_NAMESPACE {
 
-STDMETHODIMP CPatricia::SetCallback(IMatchFinderCallback *aCallback)
+STDMETHODIMP CPatricia::SetCallback(IMatchFinderCallback *callback)
 {
-  m_Callback = aCallback;
+  m_Callback = callback;
   return S_OK;
 }
 
@@ -25,24 +25,24 @@ void CPatricia::AfterMoveBlock()
   CLZInWindow::AfterMoveBlock();
 }
 
-const UINT32 kMatchStartValue2 = 2;
-const UINT32 kDescendantEmptyValue2 = kMatchStartValue2 - 1;
-const UINT32 kDescendantsNotInitilized2 = kDescendantEmptyValue2 - 1;
+const UInt32 kMatchStartValue2 = 2;
+const UInt32 kDescendantEmptyValue2 = kMatchStartValue2 - 1;
+const UInt32 kDescendantsNotInitilized2 = kDescendantEmptyValue2 - 1;
 
 #ifdef __HASH_3
 
-static const UINT32 kNumHashBytes = 3;
-static const UINT32 kHashSize = 1 << (8 * kNumHashBytes);
+static const UInt32 kNumHashBytes = 3;
+static const UInt32 kHashSize = 1 << (8 * kNumHashBytes);
 
-static const UINT32 kNumHash2Bytes = 2;
-static const UINT32 kHash2Size = 1 << (8 * kNumHash2Bytes);
-static const UINT32 kPrevHashSize = kNumHash2Bytes;
+static const UInt32 kNumHash2Bytes = 2;
+static const UInt32 kHash2Size = 1 << (8 * kNumHash2Bytes);
+static const UInt32 kPrevHashSize = kNumHash2Bytes;
 
 #else
 
-static const UINT32 kNumHashBytes = 2;
-static const UINT32 kHashSize = 1 << (8 * kNumHashBytes);
-static const UINT32 kPrevHashSize = 0;
+static const UInt32 kNumHashBytes = 2;
+static const UInt32 kHashSize = 1 << (8 * kNumHashBytes);
+static const UInt32 kPrevHashSize = 0;
 
 #endif
 
@@ -52,8 +52,8 @@ CPatricia::CPatricia():
   #ifdef __HASH_3
   m_Hash2Descendants(0),
   #endif
-  m_TmpBacks(0),
-  m_Nodes(0)
+  m_Nodes(0),
+  m_TmpBacks(0)
 {
 }
 
@@ -64,91 +64,98 @@ CPatricia::~CPatricia()
 
 void CPatricia::FreeMemory()
 {
-  delete []m_TmpBacks;
+  MyFree(m_TmpBacks);
   m_TmpBacks = 0;
 
-  #ifdef WIN32
-  if (m_Nodes != 0)
-    VirtualFree(m_Nodes, 0, MEM_RELEASE);
+  ::BigFree(m_Nodes);
   m_Nodes = 0;
-  #else
-  m_AlignBuffer.Free();
-  #endif
 
-  delete []m_HashDescendants;
+  ::BigFree(m_HashDescendants);
   m_HashDescendants = 0;
 
   #ifdef __HASH_3
 
-  delete []m_Hash2Descendants;
+  ::BigFree(m_Hash2Descendants);
   m_Hash2Descendants = 0;
+
+  CLZInWindow::Free();
 
   #endif
 }
   
-STDMETHODIMP CPatricia::Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, 
-    UINT32 aMatchMaxLen, UINT32 aKeepAddBufferAfter)
+STDMETHODIMP CPatricia::Create(UInt32 historySize, UInt32 keepAddBufferBefore, 
+    UInt32 matchMaxLen, UInt32 keepAddBufferAfter)
 {
   FreeMemory();
-  const int kNumBitsInNumSameBits = sizeof(CSameBitsType) * 8;
-  if (kNumBitsInNumSameBits < 32 && ((aMatchMaxLen * MY_BYTE_SIZE) > (1 << kNumBitsInNumSameBits)))
+  int kNumBitsInNumSameBits = sizeof(CSameBitsType) * 8;
+  if (kNumBitsInNumSameBits < 32 && ((matchMaxLen * MY_BYTE_SIZE) > ((UInt32)1 << kNumBitsInNumSameBits)))
     return E_INVALIDARG;
 
-  const UINT32 kAlignMask = (1 << 16) - 1;
-  UINT32 aWindowReservSize = aSizeHistory;
-  aWindowReservSize += kAlignMask;
-  aWindowReservSize &= ~(kAlignMask);
+  const UInt32 kAlignMask = (1 << 16) - 1;
+  UInt32 windowReservSize = historySize;
+  windowReservSize += kAlignMask;
+  windowReservSize &= ~(kAlignMask);
 
-  const UINT32 kMinReservSize = (1 << 19);
-  if (aWindowReservSize < kMinReservSize)
-    aWindowReservSize = kMinReservSize;
-  aWindowReservSize += 256;
+  const UInt32 kMinReservSize = (1 << 19);
+  if (windowReservSize < kMinReservSize)
+    windowReservSize = kMinReservSize;
+  windowReservSize += 256;
 
-  try 
-  {
-    CLZInWindow::Create(aSizeHistory + aKeepAddBufferBefore, 
-      aMatchMaxLen + aKeepAddBufferAfter, aWindowReservSize);
-    _sizeHistory = aSizeHistory;
-    _matchMaxLen = aMatchMaxLen;
-    m_HashDescendants = new CDescendant[kHashSize + 1];
-    #ifdef __HASH_3
-    m_Hash2Descendants = new CDescendant[kHash2Size + 1];
-    #endif
+  if (!CLZInWindow::Create(historySize + keepAddBufferBefore, 
+      matchMaxLen + keepAddBufferAfter, windowReservSize))
+    return E_OUTOFMEMORY;
 
-    #ifdef __AUTO_REMOVE
-   
-    #ifdef __HASH_3
-    m_NumNodes = aSizeHistory + _sizeHistory * 4 / 8 + (1 << 19);
-    #else
-    m_NumNodes = aSizeHistory + _sizeHistory * 4 / 8 + (1 << 10);
-    #endif
-
-    #else
-
-    UINT32 m_NumNodes = aSizeHistory;
-    
-    #endif
-    
-    const UINT32 kMaxNumNodes = UINT32(1) << (sizeof(CIndex) * 8 - 1);
-    if (m_NumNodes + 32 > kMaxNumNodes)
-      return E_INVALIDARG;
-
-    #ifdef WIN32
-    m_Nodes = (CNode *)::VirtualAlloc(0, (m_NumNodes + 2) * sizeof(CNode), MEM_COMMIT, PAGE_READWRITE);
-    if (m_Nodes == 0)
-      throw CNewException();
-    #else
-    m_Nodes = (CNode *)m_AlignBuffer.Allocate(m_NumNodes + 2, sizeof(CNode), 0x40);
-    #endif
-
-    m_TmpBacks = new UINT32[_matchMaxLen + 1];
-    return S_OK;
-  }
-  catch(...)
+  _sizeHistory = historySize;
+  _matchMaxLen = matchMaxLen;
+  m_HashDescendants = (CDescendant *)BigAlloc(kHashSize * sizeof(CDescendant));
+  if (m_HashDescendants == 0)
   {
     FreeMemory();
     return E_OUTOFMEMORY;
   }
+
+  #ifdef __HASH_3
+  m_Hash2Descendants = (CDescendant *)BigAlloc(kHash2Size  * sizeof(CDescendant));
+  if (m_Hash2Descendants == 0)
+  {
+    FreeMemory();
+    return E_OUTOFMEMORY;
+  }
+  #endif
+  
+  #ifdef __AUTO_REMOVE
+  
+  #ifdef __HASH_3
+  m_NumNodes = historySize + _sizeHistory * 4 / 8 + (1 << 19);
+  #else
+  m_NumNodes = historySize + _sizeHistory * 4 / 8 + (1 << 10);
+  #endif
+  
+  #else
+  
+  UInt32 m_NumNodes = historySize;
+  
+  #endif
+  
+  const UInt32 kMaxNumNodes = UInt32(1) << (sizeof(CIndex) * 8 - 1);
+  if (m_NumNodes + 32 > kMaxNumNodes)
+    return E_INVALIDARG;
+  
+  // m_Nodes = (CNode *)::BigAlloc((m_NumNodes + 2) * sizeof(CNode));
+  m_Nodes = (CNode *)::BigAlloc((m_NumNodes + 12) * sizeof(CNode));
+  if (m_Nodes == 0)
+  {
+    FreeMemory();
+    return E_OUTOFMEMORY;
+  }
+  
+  m_TmpBacks = (UInt32 *)MyAlloc((_matchMaxLen + 1) * sizeof(UInt32));
+  if (m_TmpBacks == 0)
+  {
+    FreeMemory();
+    return E_OUTOFMEMORY;
+  }
+  return S_OK;
 }
 
 STDMETHODIMP CPatricia::Init(ISequentialInStream *aStream)
@@ -158,10 +165,10 @@ STDMETHODIMP CPatricia::Init(ISequentialInStream *aStream)
   // memset(m_HashDescendants, 0xFF, kHashSize * sizeof(m_HashDescendants[0]));
 
   #ifdef __HASH_3
-  for (UINT32 i = 0; i < kHash2Size; i++)
+  for (UInt32 i = 0; i < kHash2Size; i++)
     m_Hash2Descendants[i].MatchPointer = kDescendantsNotInitilized2;
   #else
-  for (UINT32 i = 0; i < kHashSize; i++)
+  for (UInt32 i = 0; i < kHashSize; i++)
     m_HashDescendants[i].MakeEmpty();
   #endif
 
@@ -183,169 +190,168 @@ STDMETHODIMP_(void) CPatricia::ReleaseStream()
 }
 
 // pos = _pos + kNumHashBytes
-// aFullCurrentLimit = aCurrentLimit + kNumHashBytes
-// aFullMatchLen = aMatchLen + kNumHashBytes
+// fullCurrentLimit = currentLimit + kNumHashBytes
+// fullMatchLen = matchLen + kNumHashBytes
 
-void CPatricia::ChangeLastMatch(UINT32 aHashValue)
+void CPatricia::ChangeLastMatch(UInt32 hashValue)
 {
-  UINT32 pos = _pos + kNumHashBytes - 1;
-  UINT32 descendantIndex;
-  const BYTE *aCurrentBytePointer = _buffer + pos;
-  UINT32 aNumLoadedBits = 0;
-  BYTE aByte;
-  CNodePointer aNode = &m_Nodes[m_HashDescendants[aHashValue].NodePointer];
+  UInt32 pos = _pos + kNumHashBytes - 1;
+  UInt32 descendantIndex;
+  const Byte *currentBytePointer = _buffer + pos;
+  UInt32 numLoadedBits = 0;
+  Byte curByte = 0;  // = 0 to disable warning of GCC
+  CNodePointer node = &m_Nodes[m_HashDescendants[hashValue].NodePointer];
 
   while(true)
   {
-    UINT32 aNumSameBits = aNode->NumSameBits;
-    if(aNumSameBits > 0)
+    UInt32 numSameBits = node->NumSameBits;
+    if(numSameBits > 0)
     {
-      if (aNumLoadedBits < aNumSameBits)
+      if (numLoadedBits < numSameBits)
       {
-        aNumSameBits -= aNumLoadedBits;
-        aCurrentBytePointer += (aNumSameBits / MY_BYTE_SIZE);
-        aNumSameBits %= MY_BYTE_SIZE;
-        aByte = *aCurrentBytePointer++;
-        aNumLoadedBits = MY_BYTE_SIZE; 
+        numSameBits -= numLoadedBits;
+        currentBytePointer += (numSameBits / MY_BYTE_SIZE);
+        numSameBits %= MY_BYTE_SIZE;
+        curByte = *currentBytePointer++;
+        numLoadedBits = MY_BYTE_SIZE; 
       }
-      aByte >>= aNumSameBits;
-      aNumLoadedBits -= aNumSameBits;
+      curByte >>= numSameBits;
+      numLoadedBits -= numSameBits;
     }
-    if(aNumLoadedBits == 0)
+    if(numLoadedBits == 0)
     {
-      aByte = *aCurrentBytePointer++;
-      aNumLoadedBits = MY_BYTE_SIZE; 
+      curByte = *currentBytePointer++;
+      numLoadedBits = MY_BYTE_SIZE; 
     }
-    descendantIndex = (aByte & kSubNodesMask);
-    aNode->LastMatch = pos;
-    aNumLoadedBits -= kNumSubBits;
-    aByte >>= kNumSubBits;
-    if(aNode->Descendants[descendantIndex].IsNode())
-      aNode = &m_Nodes[aNode->Descendants[descendantIndex].NodePointer];
+    descendantIndex = (curByte & kSubNodesMask);
+    node->LastMatch = pos;
+    numLoadedBits -= kNumSubBits;
+    curByte >>= kNumSubBits;
+    if(node->Descendants[descendantIndex].IsNode())
+      node = &m_Nodes[node->Descendants[descendantIndex].NodePointer];
     else
       break;
   }
-  aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
+  node->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
 }
 
-UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
+UInt32 CPatricia::GetLongestMatch(UInt32 *distances)
 {
-  UINT32 aFullCurrentLimit;
+  UInt32 fullCurrentLimit;
   if (_pos + _matchMaxLen <= _streamPos)
-    aFullCurrentLimit = _matchMaxLen;
+    fullCurrentLimit = _matchMaxLen;
   else
   {
-    aFullCurrentLimit = _streamPos - _pos;
-    if(aFullCurrentLimit < kNumHashBytes)
+    fullCurrentLimit = _streamPos - _pos;
+    if(fullCurrentLimit < kNumHashBytes)
       return 0; 
   }
-  UINT32 pos = _pos + kNumHashBytes;
+  UInt32 pos = _pos + kNumHashBytes;
 
   #ifdef __HASH_3
-  UINT32 aHashValueTemp = (*((UINT32 *)(_buffer + _pos)));
-  UINT32 aHashValue = ((aHashValueTemp << 8) | 
-      ((aHashValueTemp & 0xFFFFFF)>> 16)) & 0xFFFFFF;
-  CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
-  CDescendant &aHash2Descendant = m_Hash2Descendants[aHashValueTemp & 0xFFFF];
-  if(aHash2Descendant.MatchPointer <= kDescendantEmptyValue2)
+  UInt32 hash2Value = ((UInt32(_buffer[_pos])) << 8) | _buffer[_pos + 1];
+  UInt32 hashValue = (hash2Value << 8) | _buffer[_pos + 2];
+  CDescendant &hash2Descendant = m_Hash2Descendants[hash2Value];
+  CDescendant &hashDescendant = m_HashDescendants[hashValue];
+  if(hash2Descendant.MatchPointer <= kDescendantEmptyValue2)
   {
-    if(aHash2Descendant.MatchPointer == kDescendantsNotInitilized2)
+    if(hash2Descendant.MatchPointer == kDescendantsNotInitilized2)
     {
-      UINT32 aBase = aHashValue & 0xFFFF00;
-      for (UINT32 i = 0; i < 0x100; i++)
-        m_HashDescendants[aBase + i].MakeEmpty();
+      UInt32 base = hashValue & 0xFFFF00;
+      for (UInt32 i = 0; i < 0x100; i++)
+        m_HashDescendants[base + i].MakeEmpty();
     }
-    aHash2Descendant.MatchPointer = pos + kMatchStartValue2;
-    aHashDescendant.MatchPointer = pos + kMatchStartValue;
+    hash2Descendant.MatchPointer = pos + kMatchStartValue2;
+    hashDescendant.MatchPointer = pos + kMatchStartValue;
     return 0;
   }
 
-  aBacks[kNumHash2Bytes] = pos - (aHash2Descendant.MatchPointer - kMatchStartValue2) - 1;
-  aHash2Descendant.MatchPointer = pos + kMatchStartValue2;
+  distances[kNumHash2Bytes] = pos - (hash2Descendant.MatchPointer - kMatchStartValue2) - 1;
+  hash2Descendant.MatchPointer = pos + kMatchStartValue2;
   #ifdef __AUTO_REMOVE
-  if (aBacks[kNumHash2Bytes] >= _sizeHistory)
+  if (distances[kNumHash2Bytes] >= _sizeHistory)
   {
-    if (aHashDescendant.IsNode())
-      RemoveNode(aHashDescendant.NodePointer);
-    aHashDescendant.MatchPointer = pos + kMatchStartValue;
+    if (hashDescendant.IsNode())
+      RemoveNode(hashDescendant.NodePointer);
+    hashDescendant.MatchPointer = pos + kMatchStartValue;
     return 0;
   }
   #endif
-  if (aFullCurrentLimit == kNumHash2Bytes)
+  if (fullCurrentLimit == kNumHash2Bytes)
     return kNumHash2Bytes;
 
   #else
-  UINT32 aHashValue = UINT32(GetIndexByte(1))  | (UINT32(GetIndexByte(0)) << 8);
-  CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
+  UInt32 hashValue = UInt32(GetIndexByte(1))  | (UInt32(GetIndexByte(0)) << 8);
+  CDescendant &hashDescendant = m_HashDescendants[hashValue];
   #endif
 
 
   if(m_SpecialMode)
   {
-    if(aHashDescendant.IsMatch())
+    if(hashDescendant.IsMatch())
       m_NumNotChangedCycles = 0;
     if(m_NumNotChangedCycles >= _sizeHistory - 1)
     {
-      ChangeLastMatch(aHashValue);
+      ChangeLastMatch(hashValue);
       m_NumNotChangedCycles = 0;
     }
-    if(GetIndexByte(aFullCurrentLimit - 1) == GetIndexByte(aFullCurrentLimit - 2)) 
+    if(GetIndexByte(fullCurrentLimit - 1) == GetIndexByte(fullCurrentLimit - 2)) 
     {
-      if(aHashDescendant.IsMatch())
-        aHashDescendant.MatchPointer = pos + kMatchStartValue;
+      if(hashDescendant.IsMatch())
+        hashDescendant.MatchPointer = pos + kMatchStartValue;
       else
         m_NumNotChangedCycles++;
-      for(UINT32 i = kNumHashBytes; i <= aFullCurrentLimit; i++)
-        aBacks[i] = 0;
-      return aFullCurrentLimit;
+      for(UInt32 i = kNumHashBytes; i <= fullCurrentLimit; i++)
+        distances[i] = 0;
+      return fullCurrentLimit;
     }
     else if(m_NumNotChangedCycles > 0)
-      ChangeLastMatch(aHashValue);
+      ChangeLastMatch(hashValue);
     m_SpecialMode = false;
   }
 
-  if(aHashDescendant.IsEmpty())
+  if(hashDescendant.IsEmpty())
   {
-    aHashDescendant.MatchPointer = pos + kMatchStartValue;
+    hashDescendant.MatchPointer = pos + kMatchStartValue;
     return kPrevHashSize;
   }
 
-  UINT32 aCurrentLimit = aFullCurrentLimit - kNumHashBytes;
+  UInt32 currentLimit = fullCurrentLimit - kNumHashBytes;
 
-  if(aHashDescendant.IsMatch())
+  if(hashDescendant.IsMatch())
   {
-    CMatchPointer aMatchPointer = aHashDescendant.MatchPointer;
-    UINT32 aBackReal = pos - (aMatchPointer - kMatchStartValue);
-    UINT32 aBack = aBackReal - 1;
+    CMatchPointer matchPointer = hashDescendant.MatchPointer;
+    UInt32 backReal = pos - (matchPointer - kMatchStartValue);
+    UInt32 back = backReal - 1;
     #ifdef __AUTO_REMOVE
-    if (aBack >= _sizeHistory)
+    if (back >= _sizeHistory)
     {
-      aHashDescendant.MatchPointer = pos + kMatchStartValue;
+      hashDescendant.MatchPointer = pos + kMatchStartValue;
       return kPrevHashSize;
     }
     #endif
 
-    UINT32 aMatchLen;
-    aBacks += kNumHashBytes;
-    BYTE *aBuffer = _buffer + pos;
-    for(aMatchLen = 0; true; aMatchLen++)
+    UInt32 matchLen;
+    distances += kNumHashBytes;
+    Byte *buffer = _buffer + pos;
+    for(matchLen = 0; true; matchLen++)
     {
-      *aBacks++ = aBack;
-      if (aMatchLen == aCurrentLimit)
+      *distances++ = back;
+      if (matchLen == currentLimit)
       {
-        aHashDescendant.MatchPointer = pos + kMatchStartValue;
-        return kNumHashBytes + aMatchLen;
+        hashDescendant.MatchPointer = pos + kMatchStartValue;
+        return kNumHashBytes + matchLen;
       }
-      if (aBuffer[aMatchLen] != aBuffer[aMatchLen - aBackReal])
+      if (buffer[matchLen] != buffer[(size_t)matchLen - backReal])
         break;
     }
      
-    // UINT32 aMatchLen = GetMatchLen(kNumHashBytes, aBack, aCurrentLimit);
+    // UInt32 matchLen = GetMatchLen(kNumHashBytes, back, currentLimit);
     
-    UINT32 aFullMatchLen = aMatchLen + kNumHashBytes; 
-    aHashDescendant.NodePointer = m_FreeNode;
-    CNodePointer aNode = &m_Nodes[m_FreeNode];
-    m_FreeNode = aNode->NextFreeNode;
+    UInt32 fullMatchLen = matchLen + kNumHashBytes; 
+    hashDescendant.NodePointer = m_FreeNode;
+    CNodePointer node = &m_Nodes[m_FreeNode];
+    m_FreeNode = node->NextFreeNode;
     #ifdef __AUTO_REMOVE
     m_NumUsedNodes++;
     #endif
@@ -355,181 +361,181 @@ UINT32 CPatricia::GetLongestMatch(UINT32 *aBacks)
       m_Nodes[m_FreeNode].NextFreeNode = m_FreeNode + 1;
     }
       
-    for (UINT32 i = 0; i < kNumSubNodes; i++)
-      aNode->Descendants[i].NodePointer = kDescendantEmptyValue;
-    aNode->LastMatch = pos;
+    for (UInt32 i = 0; i < kNumSubNodes; i++)
+      node->Descendants[i].NodePointer = kDescendantEmptyValue;
+    node->LastMatch = pos;
       
-    BYTE aByteNew = GetIndexByte(aFullMatchLen);
-    BYTE aByteOld = GetIndexByte(aFullMatchLen - aBackReal);
-    BYTE aBitsNew, aBitsOld;
-    UINT32 aNumSameBits = aMatchLen * MY_BYTE_SIZE;
+    Byte byteNew = GetIndexByte(fullMatchLen);
+    Byte byteOld = GetIndexByte(fullMatchLen - backReal);
+    Byte bitsNew, bitsOld;
+    UInt32 numSameBits = matchLen * MY_BYTE_SIZE;
     while (true)
     {
-      aBitsNew = (aByteNew & kSubNodesMask);
-      aBitsOld = (aByteOld & kSubNodesMask);
-      if(aBitsNew != aBitsOld) 
+      bitsNew = (byteNew & kSubNodesMask);
+      bitsOld = (byteOld & kSubNodesMask);
+      if(bitsNew != bitsOld) 
         break;
-      aByteNew >>= kNumSubBits;
-      aByteOld >>= kNumSubBits;
-      aNumSameBits += kNumSubBits;
+      byteNew >>= kNumSubBits;
+      byteOld >>= kNumSubBits;
+      numSameBits += kNumSubBits;
     }
-    aNode->NumSameBits = CSameBitsType(aNumSameBits);
-    aNode->Descendants[aBitsNew].MatchPointer = pos + kMatchStartValue;
-    aNode->Descendants[aBitsOld].MatchPointer = aMatchPointer;
-    return aFullMatchLen;
+    node->NumSameBits = CSameBitsType(numSameBits);
+    node->Descendants[bitsNew].MatchPointer = pos + kMatchStartValue;
+    node->Descendants[bitsOld].MatchPointer = matchPointer;
+    return fullMatchLen;
   }
-  const BYTE *aBaseCurrentBytePointer = _buffer + pos;
-  const BYTE *aCurrentBytePointer = aBaseCurrentBytePointer;
-  UINT32 aNumLoadedBits = 0;
-  BYTE aByte = 0;
-  CIndex *aNodePointerPointer = &aHashDescendant.NodePointer;
-  CNodePointer aNode = &m_Nodes[*aNodePointerPointer];
-  aBacks += kNumHashBytes;
-  const BYTE *aBytePointerLimit = aBaseCurrentBytePointer + aCurrentLimit;
-  const BYTE *aCurrentAddingOffset = _buffer;
+  const Byte *baseCurrentBytePointer = _buffer + pos;
+  const Byte *currentBytePointer = baseCurrentBytePointer;
+  UInt32 numLoadedBits = 0;
+  Byte curByte = 0;
+  CIndex *nodePointerPointer = &hashDescendant.NodePointer;
+  CNodePointer node = &m_Nodes[*nodePointerPointer];
+  distances += kNumHashBytes;
+  const Byte *bytePointerLimit = baseCurrentBytePointer + currentLimit;
+  const Byte *currentAddingOffset = _buffer;
 
   #ifdef __AUTO_REMOVE
-  UINT32 aLowPos;
+  UInt32 lowPos;
   if (pos > _sizeHistory)
-    aLowPos = pos - _sizeHistory;
+    lowPos = pos - _sizeHistory;
   else
-    aLowPos = 0;
+    lowPos = 0;
   #endif
 
   while(true)
   {
     #ifdef __AUTO_REMOVE
-    if (aNode->LastMatch < aLowPos)
+    if (node->LastMatch < lowPos)
     {
-      RemoveNode(*aNodePointerPointer);
-      *aNodePointerPointer = pos + kMatchStartValue;
-      if (aCurrentBytePointer == aBaseCurrentBytePointer)
+      RemoveNode(*nodePointerPointer);
+      *nodePointerPointer = pos + kMatchStartValue;
+      if (currentBytePointer == baseCurrentBytePointer)
         return kPrevHashSize;
-      return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+      return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
     }
     #endif
-    if(aNumLoadedBits == 0)
+    if(numLoadedBits == 0)
     {
-      *aBacks++ = pos - aNode->LastMatch - 1;
-      if(aCurrentBytePointer >= aBytePointerLimit)
+      *distances++ = pos - node->LastMatch - 1;
+      if(currentBytePointer >= bytePointerLimit)
       {
-        for (UINT32 i = 0; i < kNumSubNodes; i++)
-          aNode->Descendants[i].MatchPointer = pos + kMatchStartValue;
-        aNode->LastMatch = pos;
-        aNode->NumSameBits = 0;
-        return aFullCurrentLimit;
+        for (UInt32 i = 0; i < kNumSubNodes; i++)
+          node->Descendants[i].MatchPointer = pos + kMatchStartValue;
+        node->LastMatch = pos;
+        node->NumSameBits = 0;
+        return fullCurrentLimit;
       }
-      aByte = (*aCurrentBytePointer++);
-      aCurrentAddingOffset++;
-      aNumLoadedBits = MY_BYTE_SIZE; 
+      curByte = (*currentBytePointer++);
+      currentAddingOffset++;
+      numLoadedBits = MY_BYTE_SIZE; 
     }
-    UINT32 aNumSameBits = aNode->NumSameBits;
-    if(aNumSameBits > 0)
+    UInt32 numSameBits = node->NumSameBits;
+    if(numSameBits > 0)
     {
-      BYTE aByteXOR = ((*(aCurrentAddingOffset + aNode->LastMatch -1)) >> 
-          (MY_BYTE_SIZE - aNumLoadedBits)) ^ aByte;
-      while(aNumLoadedBits <= aNumSameBits)
+      Byte byteXOR = ((*(currentAddingOffset + node->LastMatch -1)) >> 
+          (MY_BYTE_SIZE - numLoadedBits)) ^ curByte;
+      while(numLoadedBits <= numSameBits)
       {
-        if(aByteXOR != 0)
+        if(byteXOR != 0)
         {
-          AddInternalNode(aNode, aNodePointerPointer, aByte, aByteXOR,
-              aNumSameBits, pos);
-          return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+          AddInternalNode(node, nodePointerPointer, curByte, byteXOR,
+              numSameBits, pos);
+          return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
         }
-        *aBacks++ = pos - aNode->LastMatch - 1;
-        aNumSameBits -= aNumLoadedBits;
-        if(aCurrentBytePointer >= aBytePointerLimit)
+        *distances++ = pos - node->LastMatch - 1;
+        numSameBits -= numLoadedBits;
+        if(currentBytePointer >= bytePointerLimit)
         {
-          for (UINT32 i = 0; i < kNumSubNodes; i++)
-            aNode->Descendants[i].MatchPointer = pos + kMatchStartValue;
-          aNode->LastMatch = pos;
-          aNode->NumSameBits = CSameBitsType(aNode->NumSameBits - aNumSameBits);
-          return aFullCurrentLimit;
+          for (UInt32 i = 0; i < kNumSubNodes; i++)
+            node->Descendants[i].MatchPointer = pos + kMatchStartValue;
+          node->LastMatch = pos;
+          node->NumSameBits = CSameBitsType(node->NumSameBits - numSameBits);
+          return fullCurrentLimit;
         }
-        aNumLoadedBits = MY_BYTE_SIZE; 
-        aByte = (*aCurrentBytePointer++);
-        aByteXOR = aByte ^ (*(aCurrentAddingOffset + aNode->LastMatch));
-        aCurrentAddingOffset++;
+        numLoadedBits = MY_BYTE_SIZE; 
+        curByte = (*currentBytePointer++);
+        byteXOR = curByte ^ (*(currentAddingOffset + node->LastMatch));
+        currentAddingOffset++;
       }
-      if((aByteXOR & ((1 << aNumSameBits) - 1)) != 0)
+      if((byteXOR & ((1 << numSameBits) - 1)) != 0)
       {
-        AddInternalNode(aNode, aNodePointerPointer, aByte, aByteXOR,
-            aNumSameBits, pos);
-        return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+        AddInternalNode(node, nodePointerPointer, curByte, byteXOR,
+            numSameBits, pos);
+        return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
       }
-      aByte >>= aNumSameBits;
-      aNumLoadedBits -= aNumSameBits;
+      curByte >>= numSameBits;
+      numLoadedBits -= numSameBits;
     }
-    UINT32 descendantIndex = (aByte & kSubNodesMask);
-    aNumLoadedBits -= kNumSubBits;
-    aNodePointerPointer = &aNode->Descendants[descendantIndex].NodePointer;
-    UINT32 aNextNodeIndex = *aNodePointerPointer;
-    aNode->LastMatch = pos;
-    if (aNextNodeIndex < kDescendantEmptyValue)
+    UInt32 descendantIndex = (curByte & kSubNodesMask);
+    numLoadedBits -= kNumSubBits;
+    nodePointerPointer = &node->Descendants[descendantIndex].NodePointer;
+    UInt32 nextNodeIndex = *nodePointerPointer;
+    node->LastMatch = pos;
+    if (nextNodeIndex < kDescendantEmptyValue)
     {
-      aByte >>= kNumSubBits;
-      aNode = &m_Nodes[aNextNodeIndex];
+      curByte >>= kNumSubBits;
+      node = &m_Nodes[nextNodeIndex];
     }
-    else if (aNextNodeIndex == kDescendantEmptyValue)
+    else if (nextNodeIndex == kDescendantEmptyValue)
     {
-      aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
-      return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+      node->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
+      return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
     }
     else 
       break;
   }
  
-  UINT32 descendantIndex = (aByte & kSubNodesMask);
-  aByte >>= kNumSubBits;
-  CMatchPointer aMatchPointer = aNode->Descendants[descendantIndex].MatchPointer;
-  CMatchPointer aRealMatchPointer;
-  aRealMatchPointer = aMatchPointer - kMatchStartValue;
+  UInt32 descendantIndex = (curByte & kSubNodesMask);
+  curByte >>= kNumSubBits;
+  CMatchPointer matchPointer = node->Descendants[descendantIndex].MatchPointer;
+  CMatchPointer realMatchPointer;
+  realMatchPointer = matchPointer - kMatchStartValue;
 
   #ifdef __AUTO_REMOVE
-  if (aRealMatchPointer < aLowPos)
+  if (realMatchPointer < lowPos)
   {
-    aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
-    return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+    node->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
+    return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
   }
   #endif
 
-  BYTE aByteXOR;
-  UINT32 aNumSameBits = 0;
-  if(aNumLoadedBits != 0)
+  Byte byteXOR;
+  UInt32 numSameBits = 0;
+  if(numLoadedBits != 0)
   {
-    BYTE aMatchByte = *(aCurrentAddingOffset + aRealMatchPointer -1);  
-    aMatchByte >>= (MY_BYTE_SIZE - aNumLoadedBits);
-    aByteXOR = aMatchByte ^ aByte;
-    if(aByteXOR != 0)
+    Byte matchByte = *(currentAddingOffset + realMatchPointer -1);  
+    matchByte >>= (MY_BYTE_SIZE - numLoadedBits);
+    byteXOR = matchByte ^ curByte;
+    if(byteXOR != 0)
     {
-      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, pos, descendantIndex);
-      return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+      AddLeafNode(node, curByte, byteXOR, numSameBits, pos, descendantIndex);
+      return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
     }
-    aNumSameBits += aNumLoadedBits;
+    numSameBits += numLoadedBits;
   }
 
-  const BYTE *aMatchBytePointer = _buffer + aRealMatchPointer + 
-      (aCurrentBytePointer - aBaseCurrentBytePointer);
-  for(; aCurrentBytePointer < aBytePointerLimit; aNumSameBits += MY_BYTE_SIZE)
+  const Byte *matchBytePointer = _buffer + realMatchPointer + 
+      (currentBytePointer - baseCurrentBytePointer);
+  for(; currentBytePointer < bytePointerLimit; numSameBits += MY_BYTE_SIZE)
   {
-    aByte = (*aCurrentBytePointer++);
-    *aBacks++ = pos - aRealMatchPointer - 1;
-    aByteXOR = aByte ^ (*aMatchBytePointer++);
-    if(aByteXOR != 0)
+    curByte = (*currentBytePointer++);
+    *distances++ = pos - realMatchPointer - 1;
+    byteXOR = curByte ^ (*matchBytePointer++);
+    if(byteXOR != 0)
     {
-      AddLeafNode(aNode, aByte, aByteXOR, aNumSameBits, pos, descendantIndex);
-      return kNumHashBytes + (aCurrentBytePointer - aBaseCurrentBytePointer - 1);
+      AddLeafNode(node, curByte, byteXOR, numSameBits, pos, descendantIndex);
+      return kNumHashBytes + (currentBytePointer - baseCurrentBytePointer - 1);
     }
   }
-  *aBacks = pos - aRealMatchPointer - 1;
-  aNode->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
+  *distances = pos - realMatchPointer - 1;
+  node->Descendants[descendantIndex].MatchPointer = pos + kMatchStartValue;
 
-  if(*aBacks == 0)
+  if(*distances == 0)
   {
     m_SpecialMode = true;
     m_NumNotChangedCycles = 0;
   }
-  return aFullCurrentLimit;
+  return fullCurrentLimit;
 }
 
 STDMETHODIMP_(void) CPatricia::DummyLongestMatch()
@@ -541,7 +547,7 @@ STDMETHODIMP_(void) CPatricia::DummyLongestMatch()
 // ------------------------------------
 // Remove Match
 
-typedef BYTE CRemoveDataWord;
+typedef Byte CRemoveDataWord;
 
 static const int kSizeRemoveDataWordInBits = MY_BYTE_SIZE * sizeof(CRemoveDataWord);
 
@@ -556,134 +562,141 @@ void CPatricia::RemoveMatch()
       return;
     m_SpecialRemoveMode = false;
   }
-  UINT32 pos = _pos + kNumHashBytes - _sizeHistory;
+  UInt32 pos = _pos + kNumHashBytes - _sizeHistory;
 
   #ifdef __HASH_3
-  // UINT32 aHashValue = (*((UINT32 *)(_buffer + _pos - _sizeHistory))) & 0xFFFFFF;
-  UINT32 aHashValueTemp = *((UINT32 *)(_buffer + _pos - _sizeHistory));
-  UINT32 aHashValue = ((aHashValueTemp << 8) | 
-      ((aHashValueTemp & 0xFFFFFF)>> 16)) & 0xFFFFFF;
-
-  CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
-  CDescendant &aHash2Descendant = m_Hash2Descendants[aHashValueTemp & 0xFFFF];
-  if (aHash2Descendant >= kMatchStartValue2)
-    if(aHash2Descendant.MatchPointer == pos + kMatchStartValue2)
-      aHash2Descendant.MatchPointer = kDescendantEmptyValue2;
+  const Byte *pp = _buffer + _pos - _sizeHistory;
+  UInt32 hash2Value = ((UInt32(pp[0])) << 8) | pp[1];
+  UInt32 hashValue = (hash2Value << 8) | pp[2];
+  CDescendant &hashDescendant = m_HashDescendants[hashValue];
+  CDescendant &hash2Descendant = m_Hash2Descendants[hash2Value];
+  if (hash2Descendant >= kMatchStartValue2)
+    if(hash2Descendant.MatchPointer == pos + kMatchStartValue2)
+      hash2Descendant.MatchPointer = kDescendantEmptyValue2;
   #else
-  UINT32 aHashValue = UINT32(GetIndexByte(1 - _sizeHistory))  | 
-      (UINT32(GetIndexByte(0 - _sizeHistory)) << 8);
-  CDescendant &aHashDescendant = m_HashDescendants[aHashValue];
+  UInt32 hashValue = UInt32(GetIndexByte(1 - _sizeHistory))  | 
+      (UInt32(GetIndexByte(0 - _sizeHistory)) << 8);
+  CDescendant &hashDescendant = m_HashDescendants[hashValue];
   #endif
     
-  if(aHashDescendant.IsEmpty())
+  if(hashDescendant.IsEmpty())
     return;
-  if(aHashDescendant.IsMatch())
+  if(hashDescendant.IsMatch())
   {
-    if(aHashDescendant.MatchPointer == pos + kMatchStartValue)
-      aHashDescendant.MakeEmpty();
+    if(hashDescendant.MatchPointer == pos + kMatchStartValue)
+      hashDescendant.MakeEmpty();
     return;
   }
   
-  UINT32 descendantIndex;
-  const CRemoveDataWord *aCurrentPointer = (const CRemoveDataWord *)(_buffer + pos);
-  UINT32 aNumLoadedBits = 0;
-  CRemoveDataWord aWord;
+  UInt32 descendantIndex;
+  const CRemoveDataWord *currentPointer = (const CRemoveDataWord *)(_buffer + pos);
+  UInt32 numLoadedBits = 0;
+  CRemoveDataWord curWord = 0; // = 0 to disable GCC warning
 
-  CIndex *aNodePointerPointer = &aHashDescendant.NodePointer;
+  CIndex *nodePointerPointer = &hashDescendant.NodePointer;
 
-  CNodePointer aNode = &m_Nodes[aHashDescendant.NodePointer];
+  CNodePointer node = &m_Nodes[hashDescendant.NodePointer];
   
   while(true)
   {
-    if(aNumLoadedBits == 0)
+    if(numLoadedBits == 0)
     {
-      aWord = *aCurrentPointer++;
-      aNumLoadedBits = kSizeRemoveDataWordInBits; 
+      curWord = *currentPointer++;
+      numLoadedBits = kSizeRemoveDataWordInBits; 
     }
-    UINT32 aNumSameBits = aNode->NumSameBits;
-    if(aNumSameBits > 0)
+    UInt32 numSameBits = node->NumSameBits;
+    if(numSameBits > 0)
     {
-      if (aNumLoadedBits <= aNumSameBits)
+      if (numLoadedBits <= numSameBits)
       {
-        aNumSameBits -= aNumLoadedBits;
-        aCurrentPointer += (aNumSameBits / kSizeRemoveDataWordInBits);
-        aNumSameBits %= kSizeRemoveDataWordInBits;
-        aWord = *aCurrentPointer++;
-        aNumLoadedBits = kSizeRemoveDataWordInBits; 
+        numSameBits -= numLoadedBits;
+        currentPointer += (numSameBits / kSizeRemoveDataWordInBits);
+        numSameBits %= kSizeRemoveDataWordInBits;
+        curWord = *currentPointer++;
+        numLoadedBits = kSizeRemoveDataWordInBits; 
       }
-      aWord >>= aNumSameBits;
-      aNumLoadedBits -= aNumSameBits;
+      curWord >>= numSameBits;
+      numLoadedBits -= numSameBits;
     }
-    descendantIndex = (aWord & kSubNodesMask);
-    aNumLoadedBits -= kNumSubBits;
-    aWord >>= kNumSubBits;
-    UINT32 aNextNodeIndex = aNode->Descendants[descendantIndex].NodePointer;
-    if (aNextNodeIndex < kDescendantEmptyValue)
+    descendantIndex = (curWord & kSubNodesMask);
+    numLoadedBits -= kNumSubBits;
+    curWord >>= kNumSubBits;
+    UInt32 nextNodeIndex = node->Descendants[descendantIndex].NodePointer;
+    if (nextNodeIndex < kDescendantEmptyValue)
     {
-      aNodePointerPointer = &aNode->Descendants[descendantIndex].NodePointer;
-      aNode = &m_Nodes[aNextNodeIndex];
+      nodePointerPointer = &node->Descendants[descendantIndex].NodePointer;
+      node = &m_Nodes[nextNodeIndex];
     }
     else
       break;
   }
-  if (aNode->Descendants[descendantIndex].MatchPointer != pos + kMatchStartValue)
+  if (node->Descendants[descendantIndex].MatchPointer != pos + kMatchStartValue)
   {
-    const BYTE *aCurrentBytePointer = _buffer + _pos - _sizeHistory;
-    const BYTE *aCurrentBytePointerLimit = aCurrentBytePointer + _matchMaxLen;
-    for(;aCurrentBytePointer < aCurrentBytePointerLimit; aCurrentBytePointer++)
-      if(*aCurrentBytePointer != *(aCurrentBytePointer+1))
+    const Byte *currentBytePointer = _buffer + _pos - _sizeHistory;
+    const Byte *currentBytePointerLimit = currentBytePointer + _matchMaxLen;
+    for(;currentBytePointer < currentBytePointerLimit; currentBytePointer++)
+      if(*currentBytePointer != *(currentBytePointer+1))
         return;
     m_SpecialRemoveMode = true;
     return;
   }
 
-  UINT32 aNumNodes = 0, aNumMatches = 0;
+  UInt32 numNodes = 0, numMatches = 0;
 
-  UINT32 i;
+  UInt32 i;
   for (i = 0; i < kNumSubNodes; i++)
   {
-    UINT32 aNodeIndex = aNode->Descendants[i].NodePointer;
-    if (aNodeIndex < kDescendantEmptyValue)
-      aNumNodes++;
-    else if (aNodeIndex > kDescendantEmptyValue)
-      aNumMatches++;
+    UInt32 nodeIndex = node->Descendants[i].NodePointer;
+    if (nodeIndex < kDescendantEmptyValue)
+      numNodes++;
+    else if (nodeIndex > kDescendantEmptyValue)
+      numMatches++;
   }
-  aNumMatches -= 1;
-  if (aNumNodes + aNumMatches > 1)
+  numMatches -= 1;
+  if (numNodes + numMatches > 1)
   {
-    aNode->Descendants[descendantIndex].MakeEmpty();
+    node->Descendants[descendantIndex].MakeEmpty();
     return;
   }
-  if(aNumNodes == 1)
+  if(numNodes == 1)
   {
-    UINT32 i;
+    UInt32 i;
     for (i = 0; i < kNumSubNodes; i++)
-      if (aNode->Descendants[i].IsNode())
+      if (node->Descendants[i].IsNode())
         break;
-    UINT32 aNextNodeIndex = aNode->Descendants[i].NodePointer;
-    CNodePointer aNextNode = &m_Nodes[aNextNodeIndex];
-    aNextNode->NumSameBits += aNode->NumSameBits + kNumSubBits;
-    *aNode = *aNextNode;
+    UInt32 nextNodeIndex = node->Descendants[i].NodePointer;
+    CNodePointer nextNode = &m_Nodes[nextNodeIndex];
+    nextNode->NumSameBits += node->NumSameBits + kNumSubBits;
+    *node = *nextNode;
 
-    aNextNode->NextFreeNode = m_FreeNode;
-    m_FreeNode = aNextNodeIndex;
+    nextNode->NextFreeNode = m_FreeNode;
+    m_FreeNode = nextNodeIndex;
     return;
   }
-  UINT32 aMatchPointer;
+  UInt32 matchPointer = 0; // = 0 to disable GCC warning
   for (i = 0; i < kNumSubNodes; i++)
-    if (aNode->Descendants[i].IsMatch() && i != descendantIndex)
+    if (node->Descendants[i].IsMatch() && i != descendantIndex)
     {
-      aMatchPointer = aNode->Descendants[i].MatchPointer;
+      matchPointer = node->Descendants[i].MatchPointer;
       break;
     }
-  aNode->NextFreeNode = m_FreeNode;
-  m_FreeNode = *aNodePointerPointer;
-  *aNodePointerPointer = aMatchPointer;
+  node->NextFreeNode = m_FreeNode;
+  m_FreeNode = *nodePointerPointer;
+  *nodePointerPointer = matchPointer;
 }
 #endif
 
-const UINT32 kNormalizeStartPos = (UINT32(1) << (kNumBitsInIndex)) - 
+
+// Commented code is more correct, but it gives warning 
+// on GCC: (1 << 32)
+// So we use kMatchStartValue twice:
+// kMatchStartValue = UInt32(1) << (kNumBitsInIndex - 1);
+// must be defined in Pat.h
+/*
+const UInt32 kNormalizeStartPos = (UInt32(1) << (kNumBitsInIndex)) - 
     kMatchStartValue - kNumHashBytes - 1;
+*/
+const UInt32 kNormalizeStartPos = kMatchStartValue - kNumHashBytes - 1;
 
 STDMETHODIMP CPatricia::MovePos()
 {
@@ -709,46 +722,46 @@ STDMETHODIMP CPatricia::MovePos()
 
 #ifndef __AUTO_REMOVE
 
-void CPatricia::NormalizeDescendant(CDescendant &aDescendant, UINT32 aSubValue)
+void CPatricia::NormalizeDescendant(CDescendant &descendant, UInt32 subValue)
 {
-  if (aDescendant.IsEmpty())
+  if (descendant.IsEmpty())
     return;
-  if (aDescendant.IsMatch())
-    aDescendant.MatchPointer = aDescendant.MatchPointer - aSubValue;
+  if (descendant.IsMatch())
+    descendant.MatchPointer = descendant.MatchPointer - subValue;
   else
   {
-    CNode &aNode = m_Nodes[aDescendant.NodePointer];
-    aNode.LastMatch = aNode.LastMatch - aSubValue;
-    for (UINT32 i = 0; i < kNumSubNodes; i++)
-       NormalizeDescendant(aNode.Descendants[i], aSubValue);
+    CNode &node = m_Nodes[descendant.NodePointer];
+    node.LastMatch = node.LastMatch - subValue;
+    for (UInt32 i = 0; i < kNumSubNodes; i++)
+       NormalizeDescendant(node.Descendants[i], subValue);
   }
 }
 
 void CPatricia::Normalize()
 {
-  UINT32 aSubValue = _pos - _sizeHistory;
-  CLZInWindow::ReduceOffsets(aSubValue);
+  UInt32 subValue = _pos - _sizeHistory;
+  CLZInWindow::ReduceOffsets(subValue);
   
   #ifdef __HASH_3
 
-  for(UINT32 aHash = 0; aHash < kHash2Size; aHash++)
+  for(UInt32 hash = 0; hash < kHash2Size; hash++)
   {
-    CDescendant &aDescendant = m_Hash2Descendants[aHash];
-    if (aDescendant.MatchPointer != kDescendantsNotInitilized2)
+    CDescendant &descendant = m_Hash2Descendants[hash];
+    if (descendant.MatchPointer != kDescendantsNotInitilized2)
     {
-      UINT32 aBase = aHash << 8;
-      for (UINT32 i = 0; i < 0x100; i++)
-        NormalizeDescendant(m_HashDescendants[aBase + i], aSubValue);
+      UInt32 base = hash << 8;
+      for (UInt32 i = 0; i < 0x100; i++)
+        NormalizeDescendant(m_HashDescendants[base + i], subValue);
     }
-    if (aDescendant.MatchPointer < kMatchStartValue2)
+    if (descendant.MatchPointer < kMatchStartValue2)
       continue;
-    aDescendant.MatchPointer = aDescendant.MatchPointer - aSubValue;
+    descendant.MatchPointer = descendant.MatchPointer - subValue;
   }
   
   #else
   
-  for(UINT32 aHash = 0; aHash < kHashSize; aHash++)
-    NormalizeDescendant(m_HashDescendants[aHash], aSubValue);
+  for(UInt32 hash = 0; hash < kHashSize; hash++)
+    NormalizeDescendant(m_HashDescendants[hash], subValue);
   
   #endif
 
@@ -756,219 +769,219 @@ void CPatricia::Normalize()
 
 #else
 
-void CPatricia::TestRemoveDescendant(CDescendant &aDescendant, UINT32 aLimitPos)
+void CPatricia::TestRemoveDescendant(CDescendant &descendant, UInt32 limitPos)
 {
-  CNode &aNode = m_Nodes[aDescendant.NodePointer];
-  UINT32 aNumChilds = 0;
-  UINT32 aChildIndex;
-  for (UINT32 i = 0; i < kNumSubNodes; i++)
+  CNode &node = m_Nodes[descendant.NodePointer];
+  UInt32 numChilds = 0;
+  UInt32 childIndex = 0; // = 0 to disable GCC warning
+  for (UInt32 i = 0; i < kNumSubNodes; i++)
   {
-    CDescendant &aDescendant2 = aNode.Descendants[i];
-    if (aDescendant2.IsEmpty())
+    CDescendant &descendant2 = node.Descendants[i];
+    if (descendant2.IsEmpty())
       continue;
-    if (aDescendant2.IsMatch())
+    if (descendant2.IsMatch())
     {
-      if (aDescendant2.MatchPointer < aLimitPos)
-        aDescendant2.MakeEmpty();
+      if (descendant2.MatchPointer < limitPos)
+        descendant2.MakeEmpty();
       else
       {
-        aNumChilds++;
-        aChildIndex = i;
+        numChilds++;
+        childIndex = i;
       }
     }
     else
     {
-      TestRemoveDescendant(aDescendant2, aLimitPos);
-      if (!aDescendant2.IsEmpty())
+      TestRemoveDescendant(descendant2, limitPos);
+      if (!descendant2.IsEmpty())
       {
-        aNumChilds++;
-        aChildIndex = i;
+        numChilds++;
+        childIndex = i;
       }
     }
   }
-  if (aNumChilds > 1)
+  if (numChilds > 1)
     return;
 
-  CIndex aNodePointerTemp = aDescendant.NodePointer;
-  if (aNumChilds == 1)
+  CIndex nodePointerTemp = descendant.NodePointer;
+  if (numChilds == 1)
   {
-    const CDescendant &aDescendant2 = aNode.Descendants[aChildIndex];
-    if (aDescendant2.IsNode())
-      m_Nodes[aDescendant2.NodePointer].NumSameBits += aNode.NumSameBits + kNumSubBits;
-    aDescendant = aDescendant2;
+    const CDescendant &descendant2 = node.Descendants[childIndex];
+    if (descendant2.IsNode())
+      m_Nodes[descendant2.NodePointer].NumSameBits += node.NumSameBits + kNumSubBits;
+    descendant = descendant2;
   }
   else
-    aDescendant.MakeEmpty();
-  aNode.NextFreeNode = m_FreeNode;
-  m_FreeNode = aNodePointerTemp;
+    descendant.MakeEmpty();
+  node.NextFreeNode = m_FreeNode;
+  m_FreeNode = nodePointerTemp;
   m_NumUsedNodes--;
 }
 
-void CPatricia::RemoveNode(UINT32 anIndex)
+void CPatricia::RemoveNode(UInt32 index)
 {
-  CNode &aNode = m_Nodes[anIndex];
-  for (UINT32 i = 0; i < kNumSubNodes; i++)
+  CNode &node = m_Nodes[index];
+  for (UInt32 i = 0; i < kNumSubNodes; i++)
   {
-    CDescendant &aDescendant2 = aNode.Descendants[i];
-    if (aDescendant2.IsNode())
-      RemoveNode(aDescendant2.NodePointer);
+    CDescendant &descendant2 = node.Descendants[i];
+    if (descendant2.IsNode())
+      RemoveNode(descendant2.NodePointer);
   }
-  aNode.NextFreeNode = m_FreeNode;
-  m_FreeNode = anIndex;
+  node.NextFreeNode = m_FreeNode;
+  m_FreeNode = index;
   m_NumUsedNodes--;
 }
 
 void CPatricia::TestRemoveNodes()
 {
-  UINT32 aLimitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
+  UInt32 limitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
   
   #ifdef __HASH_3
   
-  UINT32 aLimitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
-  for(UINT32 aHash = 0; aHash < kHash2Size; aHash++)
+  UInt32 limitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
+  for(UInt32 hash = 0; hash < kHash2Size; hash++)
   {
-    CDescendant &aDescendant = m_Hash2Descendants[aHash];
-    if (aDescendant.MatchPointer != kDescendantsNotInitilized2)
+    CDescendant &descendant = m_Hash2Descendants[hash];
+    if (descendant.MatchPointer != kDescendantsNotInitilized2)
     {
-      UINT32 aBase = aHash << 8;
-      for (UINT32 i = 0; i < 0x100; i++)
+      UInt32 base = hash << 8;
+      for (UInt32 i = 0; i < 0x100; i++)
       {
-        CDescendant &aDescendant = m_HashDescendants[aBase + i];
-        if (aDescendant.IsEmpty())
+        CDescendant &descendant = m_HashDescendants[base + i];
+        if (descendant.IsEmpty())
           continue;
-        if (aDescendant.IsMatch())
+        if (descendant.IsMatch())
         {
-          if (aDescendant.MatchPointer < aLimitPos)
-            aDescendant.MakeEmpty();
+          if (descendant.MatchPointer < limitPos)
+            descendant.MakeEmpty();
         }
         else
-          TestRemoveDescendant(aDescendant, aLimitPos);
+          TestRemoveDescendant(descendant, limitPos);
       }
     }
-    if (aDescendant.MatchPointer < kMatchStartValue2)
+    if (descendant.MatchPointer < kMatchStartValue2)
       continue;
-    if (aDescendant.MatchPointer < aLimitPos2)
-      aDescendant.MatchPointer = kDescendantEmptyValue2;
+    if (descendant.MatchPointer < limitPos2)
+      descendant.MatchPointer = kDescendantEmptyValue2;
   }
   
   #else
   
-  for(UINT32 aHash = 0; aHash < kHashSize; aHash++)
+  for(UInt32 hash = 0; hash < kHashSize; hash++)
   {
-    CDescendant &aDescendant = m_HashDescendants[aHash];
-    if (aDescendant.IsEmpty())
+    CDescendant &descendant = m_HashDescendants[hash];
+    if (descendant.IsEmpty())
       continue;
-    if (aDescendant.IsMatch())
+    if (descendant.IsMatch())
     {
-      if (aDescendant.MatchPointer < aLimitPos)
-        aDescendant.MakeEmpty();
+      if (descendant.MatchPointer < limitPos)
+        descendant.MakeEmpty();
     }
     else
-      TestRemoveDescendant(aDescendant, aLimitPos);
+      TestRemoveDescendant(descendant, limitPos);
   }
   
   #endif
 }
 
-void CPatricia::TestRemoveAndNormalizeDescendant(CDescendant &aDescendant, 
-    UINT32 aLimitPos, UINT32 aSubValue)
+void CPatricia::TestRemoveAndNormalizeDescendant(CDescendant &descendant, 
+    UInt32 limitPos, UInt32 subValue)
 {
-  if (aDescendant.IsEmpty())
+  if (descendant.IsEmpty())
     return;
-  if (aDescendant.IsMatch())
+  if (descendant.IsMatch())
   {
-    if (aDescendant.MatchPointer < aLimitPos)
-      aDescendant.MakeEmpty();
+    if (descendant.MatchPointer < limitPos)
+      descendant.MakeEmpty();
     else
-      aDescendant.MatchPointer = aDescendant.MatchPointer - aSubValue;
+      descendant.MatchPointer = descendant.MatchPointer - subValue;
     return;
   }
-  CNode &aNode = m_Nodes[aDescendant.NodePointer];
-  UINT32 aNumChilds = 0;
-  UINT32 aChildIndex;
-  for (UINT32 i = 0; i < kNumSubNodes; i++)
+  CNode &node = m_Nodes[descendant.NodePointer];
+  UInt32 numChilds = 0;
+  UInt32 childIndex = 0; // = 0 to disable GCC warning
+  for (UInt32 i = 0; i < kNumSubNodes; i++)
   {
-    CDescendant &aDescendant2 = aNode.Descendants[i];
-    TestRemoveAndNormalizeDescendant(aDescendant2, aLimitPos, aSubValue);
-    if (!aDescendant2.IsEmpty())
+    CDescendant &descendant2 = node.Descendants[i];
+    TestRemoveAndNormalizeDescendant(descendant2, limitPos, subValue);
+    if (!descendant2.IsEmpty())
     {
-      aNumChilds++;
-      aChildIndex = i;
+      numChilds++;
+      childIndex = i;
     }
   }
-  if (aNumChilds > 1)
+  if (numChilds > 1)
   {
-    aNode.LastMatch = aNode.LastMatch - aSubValue;
+    node.LastMatch = node.LastMatch - subValue;
     return;
   }
 
-  CIndex aNodePointerTemp = aDescendant.NodePointer;
-  if (aNumChilds == 1)
+  CIndex nodePointerTemp = descendant.NodePointer;
+  if (numChilds == 1)
   {
-    const CDescendant &aDescendant2 = aNode.Descendants[aChildIndex];
-    if (aDescendant2.IsNode())
-      m_Nodes[aDescendant2.NodePointer].NumSameBits += aNode.NumSameBits + kNumSubBits;
-    aDescendant = aDescendant2;
+    const CDescendant &descendant2 = node.Descendants[childIndex];
+    if (descendant2.IsNode())
+      m_Nodes[descendant2.NodePointer].NumSameBits += node.NumSameBits + kNumSubBits;
+    descendant = descendant2;
   }
   else
-    aDescendant.MakeEmpty();
-  aNode.NextFreeNode = m_FreeNode;
-  m_FreeNode = aNodePointerTemp;
+    descendant.MakeEmpty();
+  node.NextFreeNode = m_FreeNode;
+  m_FreeNode = nodePointerTemp;
   m_NumUsedNodes--;
 }
 
 void CPatricia::TestRemoveNodesAndNormalize()
 {
-  UINT32 aSubValue = _pos - _sizeHistory;
-  UINT32 aLimitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
-  CLZInWindow::ReduceOffsets(aSubValue);
+  UInt32 subValue = _pos - _sizeHistory;
+  UInt32 limitPos = kMatchStartValue + _pos - _sizeHistory + kNumHashBytes;
+  CLZInWindow::ReduceOffsets(subValue);
 
   #ifdef __HASH_3
   
-  UINT32 aLimitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
-  for(UINT32 aHash = 0; aHash < kHash2Size; aHash++)
+  UInt32 limitPos2 = kMatchStartValue2 + _pos - _sizeHistory + kNumHashBytes;
+  for(UInt32 hash = 0; hash < kHash2Size; hash++)
   {
-    CDescendant &aDescendant = m_Hash2Descendants[aHash];
-    if (aDescendant.MatchPointer != kDescendantsNotInitilized2)
+    CDescendant &descendant = m_Hash2Descendants[hash];
+    if (descendant.MatchPointer != kDescendantsNotInitilized2)
     {
-      UINT32 aBase = aHash << 8;
-      for (UINT32 i = 0; i < 0x100; i++)
-        TestRemoveAndNormalizeDescendant(m_HashDescendants[aBase + i], aLimitPos, aSubValue);
+      UInt32 base = hash << 8;
+      for (UInt32 i = 0; i < 0x100; i++)
+        TestRemoveAndNormalizeDescendant(m_HashDescendants[base + i], limitPos, subValue);
     }
-    if (aDescendant.MatchPointer < kMatchStartValue2)
+    if (descendant.MatchPointer < kMatchStartValue2)
       continue;
-    if (aDescendant.MatchPointer < aLimitPos2)
-      aDescendant.MatchPointer = kDescendantEmptyValue2;
+    if (descendant.MatchPointer < limitPos2)
+      descendant.MatchPointer = kDescendantEmptyValue2;
     else
-      aDescendant.MatchPointer = aDescendant.MatchPointer - aSubValue;
+      descendant.MatchPointer = descendant.MatchPointer - subValue;
   }
   
   #else
 
-  for(UINT32 aHash = 0; aHash < kHashSize; aHash++)
-    TestRemoveAndNormalizeDescendant(m_HashDescendants[aHash], aLimitPos, aSubValue);
+  for(UInt32 hash = 0; hash < kHashSize; hash++)
+    TestRemoveAndNormalizeDescendant(m_HashDescendants[hash], limitPos, subValue);
 
   #endif
 }
 
 #endif
 
-STDMETHODIMP_(BYTE) CPatricia::GetIndexByte(UINT32 anIndex)
+STDMETHODIMP_(Byte) CPatricia::GetIndexByte(Int32 index)
 {
-  return CLZInWindow::GetIndexByte(anIndex);
+  return CLZInWindow::GetIndexByte(index);
 }
 
-STDMETHODIMP_(UINT32) CPatricia::GetMatchLen(UINT32 aIndex, UINT32 aBack, UINT32 aLimit)
+STDMETHODIMP_(UInt32) CPatricia::GetMatchLen(Int32 index, UInt32 back, UInt32 limit)
 {
-  return CLZInWindow::GetMatchLen(aIndex, aBack, aLimit);
+  return CLZInWindow::GetMatchLen(index, back, limit);
 }
 
-STDMETHODIMP_(UINT32) CPatricia::GetNumAvailableBytes()
+STDMETHODIMP_(UInt32) CPatricia::GetNumAvailableBytes()
 {
   return CLZInWindow::GetNumAvailableBytes();
 }
 
-STDMETHODIMP_(const BYTE *) CPatricia::GetPointerToCurrentPos()
+STDMETHODIMP_(const Byte *) CPatricia::GetPointerToCurrentPos()
 {
   return CLZInWindow::GetPointerToCurrentPos();
 }

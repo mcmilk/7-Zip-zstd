@@ -1,7 +1,5 @@
 // Archive/Cab/MSZipDecoder.h
 
-#pragma once
-
 #ifndef __ARCHIVE_CAB_DECODER_H
 #define __ARCHIVE_CAB_DECODER_H
 
@@ -31,14 +29,14 @@ public:
 class CMSZipBitDecoder: public NStream::NLSBF::CDecoder<NCab::CInBuffer>
 {
 public:
-  void InitMain(ISequentialInStream *aStream, BYTE aReservedSize, UINT32 aNumBlocks)
+  void InitMain(Byte reservedSize, UInt32 aNumBlocks)
   {
-    m_Stream.Init(aStream, aReservedSize, aNumBlocks);
+    m_Stream.Init(reservedSize, aNumBlocks);
     Init();
   }
-  HRESULT ReadBlock(UINT32 &anUncompressedSize, bool &aDataAreCorrect)
+  HRESULT ReadBlock(UInt32 &uncompressedSize, bool &dataAreCorrect)
   {
-    return m_Stream.ReadBlock(anUncompressedSize, aDataAreCorrect);
+    return m_Stream.ReadBlock(uncompressedSize, dataAreCorrect);
   }
 };
 
@@ -56,12 +54,12 @@ class CDecoder :
 
   bool m_FinalBlock;
   bool m_StoredMode;
-  UINT32 m_StoredBlockSize;
+  UInt32 m_StoredBlockSize;
 
-  BYTE m_ReservedSize;
-  UINT32 m_NumInDataBlocks;
+  Byte m_ReservedSize;
+  UInt32 m_NumInDataBlocks;
 
-  void DeCodeLevelTable(BYTE *newLevels, int numLevels);
+  void DeCodeLevelTable(Byte *newLevels, int numLevels);
   void ReadTables();
 public:
   CDecoder();
@@ -72,13 +70,13 @@ public:
   // void ReleaseStreams();
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  void SetParams(BYTE aReservedSize, UINT32 aNumInDataBlocks) 
+  void SetParams(Byte reservedSize, UInt32 numInDataBlocks) 
   { 
-    m_ReservedSize = aReservedSize;
-    m_NumInDataBlocks = aNumInDataBlocks;
+    m_ReservedSize = reservedSize;
+    m_NumInDataBlocks = numInDataBlocks;
   }
 
 };

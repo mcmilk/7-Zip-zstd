@@ -1,46 +1,14 @@
 // BinTree.h
 
-// #pragma once
-
 // #ifndef __BINTREE_H
 // #define __BINTREE_H
 
 #include "../LZInWindow.h"
-// #include "Common/Types.h"
-// #include "Windows/Defs.h"
  
 namespace BT_NAMESPACE {
 
-// #define __USE_3_BYTES
-
-#ifdef __USE_3_BYTES
-
-#pragma pack(push, PragmaBinTree, 1)
-
-struct CIndex
-{
-  BYTE Data[3];
-  CIndex(){}
-  CIndex(UINT32 value)
-  { 
-    Data[0] = value & 0xFF;
-    Data[1] = (value >> 8) & 0xFF;
-    Data[2] = (value >> 16) & 0xFF;
-  }
-  operator UINT32() const { return (*((const UINT32 *)Data)) & 0xFFFFFF; }
-};
-const UINT32 kMaxValForNormalize = CIndex(-1);
-
-#pragma pack(pop, PragmaBinTree)
-
-#else
-
-typedef UINT32 CIndex;
-const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
-
-#endif
-
-
+typedef UInt32 CIndex;
+const UInt32 kMaxValForNormalize = (UInt32(1) << 31) - 1;
 
 // #define HASH_ARRAY_2
 
@@ -54,24 +22,31 @@ const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
 
 // #endif
 
-#pragma pack(push, PragmaBinTreePair, 1)
-// #pragma pack(push, 1)
-
 struct CPair
 {
   CIndex Left;
   CIndex Right;
 };
 
-// #pragma pack(pop)
-#pragma pack(pop, PragmaBinTreePair)
+/*
+const int kNumBundleBits = 2;
+const UInt32 kNumPairsInBundle = 1 << kNumBundleBits;
+const UInt32 kBundleMask = kNumPairsInBundle - 1;
+const UInt32 kNumBundleBytes = kNumPairsInBundle * sizeof(CPair);
+
+struct CBundle
+{
+  CPair Pairs[kNumPairsInBundle];
+  Byte Bytes[kNumBundleBytes];
+};
+*/
 
 class CInTree: public CLZInWindow
 {
-  UINT32 _cyclicBufferPos;
-  UINT32 _cyclicBufferSize;
-  UINT32 _historySize;
-  UINT32 _matchMaxLen;
+  UInt32 _cyclicBufferPos;
+  UInt32 _cyclicBufferSize;
+  UInt32 _historySize;
+  UInt32 _matchMaxLen;
 
   CIndex *_hash;
   
@@ -82,22 +57,23 @@ class CInTree: public CLZInWindow
   #endif
   #endif
   
+  // CBundle *_son;
   CPair *_son;
 
-  UINT32 _cutValue;
+  UInt32 _cutValue;
 
-  void NormalizeLinks(CIndex *array, UINT32 numItems, UINT32 subValue);
+  void NormalizeLinks(CIndex *items, UInt32 numItems, UInt32 subValue);
   void Normalize();
   void FreeMemory();
 
 public:
   CInTree();
   ~CInTree();
-  HRESULT Create(UINT32 sizeHistory, UINT32 keepAddBufferBefore, UINT32 matchMaxLen, 
-      UINT32 keepAddBufferAfter, UINT32 sizeReserv = (1<<17));
+  HRESULT Create(UInt32 sizeHistory, UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter, UInt32 sizeReserv = (1<<17));
 	HRESULT Init(ISequentialInStream *stream);
-  void SetCutValue(UINT32 cutValue) { _cutValue = cutValue; }
-  UINT32 GetLongestMatch(UINT32 *distances);
+  void SetCutValue(UInt32 cutValue) { _cutValue = cutValue; }
+  UInt32 GetLongestMatch(UInt32 *distances);
   void DummyLongestMatch();
   HRESULT MovePos()
   {

@@ -1,7 +1,5 @@
 // OutStreamWithCRC.h
 
-// #pragma once
-
 #ifndef __OUTSTREAMWITHCRC_H
 #define __OUTSTREAMWITHCRC_H
 
@@ -16,8 +14,8 @@ class COutStreamWithCRC:
 public:
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
   CCRC _crc;
   CMyComPtr<ISequentialOutStream> _stream;
@@ -28,7 +26,7 @@ public:
     _crc.Init();
   }
   void ReleaseStream() { _stream.Release(); }
-  UINT32 GetCRC() const { return _crc.GetDigest(); }
+  UInt32 GetCRC() const { return _crc.GetDigest(); }
   void InitCRC() { _crc.Init(); }
 
 };

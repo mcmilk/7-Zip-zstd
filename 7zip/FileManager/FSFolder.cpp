@@ -457,7 +457,7 @@ STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress *progress)
   UString processedName;
   RINOK(GetComplexName(name, processedName));
   NIO::COutFile outFile;
-  if (!outFile.Open(processedName))
+  if (!outFile.Create(processedName, false))
     return ::GetLastError();
   return S_OK;
 }

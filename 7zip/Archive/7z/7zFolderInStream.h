@@ -1,7 +1,5 @@
 // 7z/FolderInStream.h
 
-#pragma once
-
 #ifndef __7Z_FOLDERINSTREAM_H
 #define __7Z_FOLDERINSTREAM_H
 
@@ -27,36 +25,37 @@ public:
 
   CFolderInStream();
 
-  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
-  STDMETHOD(GetSubStreamSize)(UINT64 subStream, UINT64 *value);
+  STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value);
 private:
-  CInStreamWithCRC *_inStreamWithHashSpec;
+  CSequentialInStreamWithCRC *_inStreamWithHashSpec;
   CMyComPtr<ISequentialInStream> _inStreamWithHash;
   CMyComPtr<IArchiveUpdateCallback> _updateCallback;
 
   bool _currentSizeIsDefined;
-  UINT64 _currentSize;
+  UInt64 _currentSize;
 
   bool _fileIsOpen;
-  UINT64 _filePos;
+  UInt64 _filePos;
 
-  const UINT32 *_fileIndices;
-  UINT32 _numFiles;
-  UINT32 _fileIndex;
+  const UInt32 *_fileIndices;
+  UInt32 _numFiles;
+  UInt32 _fileIndex;
 
   HRESULT OpenStream();
   HRESULT CloseStream();
   void AddDigest();
 public:
   void Init(IArchiveUpdateCallback *updateCallback, 
-      const UINT32 *fileIndices, UINT32 numFiles);
-  CRecordVector<UINT32> CRCs;
-  CRecordVector<UINT64> Sizes;
-  UINT64 GetFullSize() const
+      const UInt32 *fileIndices, UInt32 numFiles);
+  CRecordVector<bool> Processed;
+  CRecordVector<UInt32> CRCs;
+  CRecordVector<UInt64> Sizes;
+  UInt64 GetFullSize() const
   {
-    UINT64 size = 0;
+    UInt64 size = 0;
     for (int i = 0; i < Sizes.Size(); i++)      
       size += Sizes[i];
     return size;

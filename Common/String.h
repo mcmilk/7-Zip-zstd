@@ -1,13 +1,12 @@
 // Common/String.h
 
-#pragma once
-
 #ifndef __COMMON_STRING_H
 #define __COMMON_STRING_H
 
-#include "Vector.h"
+#include <string.h>
+// #include <wchar.h>
 
-extern bool g_IsNT;
+#include "Vector.h"
 
 static const char *kTrimDefaultCharSet  = " \n\t";
 
@@ -49,7 +48,7 @@ inline const char* MyStringGetPrevCharPointer(const char *base, const char *p)
   { return CharPrevA(base, p); }
 
 inline char MyCharUpper(char c)
-  { return (char)CharUpperA((LPSTR)(unsigned char)c); }
+  { return (char)(unsigned int)CharUpperA((LPSTR)(unsigned int)(unsigned char)c); }
 #ifdef _UNICODE
 inline wchar_t MyCharUpper(wchar_t c)
   { return (wchar_t)CharUpperW((LPWSTR)c); }
@@ -58,7 +57,7 @@ wchar_t MyCharUpper(wchar_t c);
 #endif
 
 inline char MyCharLower(char c)
-  { return (char)CharLowerA((LPSTR)(unsigned char)c); }
+  { return (char)(unsigned int)CharLowerA((LPSTR)(unsigned int)(unsigned char)c); }
 #ifdef _UNICODE
 inline wchar_t MyCharLower(wchar_t c)
   { return (wchar_t)CharLowerW((LPWSTR)c); }
@@ -66,89 +65,36 @@ inline wchar_t MyCharLower(wchar_t c)
 wchar_t MyCharLower(wchar_t c);
 #endif
 
-
-inline char * MyStringUpper(char *s)
-  { return CharUpperA(s); }
+inline char * MyStringUpper(char *s) { return CharUpperA(s); }
 #ifdef _UNICODE
-inline wchar_t * MyStringUpper(wchar_t *s)
-  { return CharUpperW(s); }
+inline wchar_t * MyStringUpper(wchar_t *s) { return CharUpperW(s); }
 #else
 wchar_t * MyStringUpper(wchar_t *s);
 #endif
 
-inline char * MyStringLower(char *s)
-  { return CharLowerA(s); }
+inline char * MyStringLower(char *s) { return CharLowerA(s); }
 #ifdef _UNICODE
-inline wchar_t * MyStringLower(wchar_t *s)
-  { return CharLowerW(s); }
+inline wchar_t * MyStringLower(wchar_t *s) { return CharLowerW(s); }
 #else
 wchar_t * MyStringLower(wchar_t *s);
 #endif
 
+#else // Standard-C
+wchar_t MyCharUpper(wchar_t c);
+#endif
 
 //////////////////////////////////////
 // Compare
 
-inline int ConvertCompareResult(int r)
-  { return r - 2; }
-
-inline int MyStringCollate(const char *s1, const char *s2)
-  { return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1)); }
-#ifdef _UNICODE
-inline int MyStringCollate(const wchar_t *s1, const wchar_t *s2)
-  { return ConvertCompareResult(CompareStringW(
-    LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1)); }
-#else
+#ifndef _WIN32_WCE
+int MyStringCollate(const char *s1, const char *s2);
+int MyStringCollateNoCase(const char *s1, const char *s2);
+#endif
 int MyStringCollate(const wchar_t *s1, const wchar_t *s2);
-#endif
-
-inline int MyStringCollateNoCase(const char *s1, const char *s2)
-  { return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1)); }
-#ifdef _UNICODE
-inline int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
-  { return ConvertCompareResult(CompareStringW(
-    LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1)); }
-#else
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
-#endif
 
-#else // Standard-C
-
-inline NormalizeCompareResult(int res)
-{
-  if (res < 0)
-    return -1;
-  if (res > 0)
-    return 1;
-  return 0;
-}
-
-inline wchar_t MyCharUpper(wchar_t c)
-  { return towupper(c); }
-
-inline int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
-  { return NormalizeCompareResult(wcscoll(s1, s2)); }
-
-#endif
-
-
-template <class T>
-inline int MyStringCompare(const T *s1, const T *s2)
-{ 
-  while (true)
-  {
-    unsigned int c1 = (unsigned int)*s1++;
-    unsigned int c2 = (unsigned int)*s2++;
-    if (c1 < c2)
-      return -1;
-    if (c1 > c2)
-      return 1;
-    if (c1 == 0)
-      return 0;
-  }
-}
+int MyStringCompare(const char *s1, const char  *s2);
+int MyStringCompare(const wchar_t *s1, const wchar_t *s2);
 
 template <class T>
 inline int MyStringCompareNoCase(const T *s1, const T *s2)
@@ -471,21 +417,24 @@ public:
       p = GetNextCharPointer(p);
     Delete(0, p - _chars);
   }
-  void TrimLeft()
+  private:
+  CStringBase GetTrimDefaultCharSet()
   {
     CStringBase<T> charSet;
-    for(int i = 0; i < sizeof(kTrimDefaultCharSet) /
-      sizeof(kTrimDefaultCharSet[0]); i++)
-      charSet += kTrimDefaultCharSet[i];
-    TrimLeftWithCharSet(charSet);
+    for(int i = 0; i < (int)(sizeof(kTrimDefaultCharSet) /
+      sizeof(kTrimDefaultCharSet[0])); i++)
+      charSet += (T)kTrimDefaultCharSet[i];
+    return charSet;
+  }
+  public:
+
+  void TrimLeft()
+  {
+    TrimLeftWithCharSet(GetTrimDefaultCharSet());
   }
   void TrimRight()
   {
-    CStringBase<T> charSet;
-    for(int i = 0; i < sizeof(kTrimDefaultCharSet) / 
-      sizeof(kTrimDefaultCharSet[0]); i++)
-      charSet += kTrimDefaultCharSet[i];
-    TrimRightWithCharSet(charSet);
+    TrimRightWithCharSet(GetTrimDefaultCharSet());
   }
   void TrimRight(T c)
   {

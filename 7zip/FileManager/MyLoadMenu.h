@@ -1,7 +1,5 @@
 // MyLoadMenu.h
 
-#pragma once
-
 #ifndef __MYLOADMENU_H
 #define __MYLOADMENU_H
 
@@ -16,4 +14,3 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode, bool programMenu)
 bool ExecuteFileCommand(int id);
 
 #endif
-

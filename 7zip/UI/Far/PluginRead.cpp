@@ -33,8 +33,8 @@ HRESULT CPlugin::ExtractFiles(
     const UINT32 *indices, 
     UINT32 numIndices, 
     bool silent,
-    NExtractionMode::NPath::EEnum pathMode, 
-    NExtractionMode::NOverwrite::EEnum overwriteMode,
+    NExtract::NPathMode::EEnum pathMode, 
+    NExtract::NOverwriteMode::EEnum overwriteMode,
     const UString &destPath,
     bool passwordIsDefined, const UString &password)
 {
@@ -96,9 +96,10 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   NFile::NName::NormalizeDirPathPrefix(destPath);
 
   bool extractSelectedFiles = true;
-  NExtraction::CInfo extractionInfo;
-  extractionInfo.PathMode = NExtraction::NPathMode::kCurrentPathnames;
-  extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
+  
+  NExtract::CInfo extractionInfo;
+  extractionInfo.PathMode = NExtract::NPathMode::kCurrentPathnames;
+  extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
 
   bool silent = (opMode & OPM_SILENT) != 0;
   bool decompressAllItems = false;
@@ -129,27 +130,27 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       
       { DI_SINGLEBOX, 4, 5, kXMid - 2, 5 + 4, false, false, 0, false, NMessageID::kExtractPathMode, NULL, NULL },
       { DI_RADIOBUTTON, 6, 6, 0, 0, false, 
-          extractionInfo.PathMode == NExtraction::NPathMode::kFullPathnames, 
+          extractionInfo.PathMode == NExtract::NPathMode::kFullPathnames, 
           DIF_GROUP, false, NMessageID::kExtractPathFull, NULL, NULL },
       { DI_RADIOBUTTON, 6, 7, 0, 0, false, 
-          extractionInfo.PathMode == NExtraction::NPathMode::kCurrentPathnames,
+          extractionInfo.PathMode == NExtract::NPathMode::kCurrentPathnames,
           0, false, NMessageID::kExtractPathCurrent, NULL, NULL },
       { DI_RADIOBUTTON, 6, 8, 0, 0, false,
-          extractionInfo.PathMode == NExtraction::NPathMode::kNoPathnames, 
+          extractionInfo.PathMode == NExtract::NPathMode::kNoPathnames, 
           false, 0, NMessageID::kExtractPathNo, NULL, NULL },
       
       { DI_SINGLEBOX, kXMid, 5, 70, 5 + 5, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kAskBefore, 
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAskBefore, 
           DIF_GROUP, false, NMessageID::kExtractOwerwriteAsk, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 7, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kWithoutPrompt, 
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kWithoutPrompt, 
           0, false, NMessageID::kExtractOwerwritePrompt, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kSkipExisting, 
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kSkipExisting, 
           0, false, NMessageID::kExtractOwerwriteSkip, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 9, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtraction::NOverwriteMode::kAutoRename, 
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRename, 
           0, false, NMessageID::kExtractOwerwriteAutoRename, NULL, NULL },
       
       { DI_SINGLEBOX, 4, 10, kXMid- 2, 10 + 3, false, false, 0, false, NMessageID::kExtractFilesMode, NULL, NULL },
@@ -196,22 +197,22 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     }
 
     if (dialogItems[kPathModeRadioIndex].Selected)
-      extractionInfo.PathMode = NExtraction::NPathMode::kFullPathnames;
+      extractionInfo.PathMode = NExtract::NPathMode::kFullPathnames;
     else if (dialogItems[kPathModeRadioIndex + 1].Selected)
-      extractionInfo.PathMode = NExtraction::NPathMode::kCurrentPathnames;
+      extractionInfo.PathMode = NExtract::NPathMode::kCurrentPathnames;
     else if (dialogItems[kPathModeRadioIndex + 2].Selected)
-      extractionInfo.PathMode = NExtraction::NPathMode::kNoPathnames;
+      extractionInfo.PathMode = NExtract::NPathMode::kNoPathnames;
     else
       throw 31806;
 
     if (dialogItems[kOverwriteModeRadioIndex].Selected)
-      extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kAskBefore;
+      extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
     else if (dialogItems[kOverwriteModeRadioIndex + 1].Selected)
-      extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kWithoutPrompt;
+      extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
     else if (dialogItems[kOverwriteModeRadioIndex + 2].Selected)
-      extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kSkipExisting;
+      extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kSkipExisting;
     else if (dialogItems[kOverwriteModeRadioIndex + 3].Selected)
-      extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kAutoRename;
+      extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kAutoRename;
     else
       throw 31806;
     
@@ -248,35 +249,35 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   for (int i = 0; i < itemsNumber; i++)
     indices.Add(panelItems[i].UserData);
 
-  NExtractionMode::NPath::EEnum pathMode;
-  NExtractionMode::NOverwrite::EEnum overwriteMode;
+  NExtract::NPathMode::EEnum pathMode;
+  NExtract::NOverwriteMode::EEnum overwriteMode;
   switch (extractionInfo.OverwriteMode)
   {
-    case NExtraction::NOverwriteMode::kAskBefore:
-      overwriteMode = NExtractionMode::NOverwrite::kAskBefore;
+    case NExtract::NOverwriteMode::kAskBefore:
+      overwriteMode = NExtract::NOverwriteMode::kAskBefore;
       break;
-    case NExtraction::NOverwriteMode::kWithoutPrompt:
-      overwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
+    case NExtract::NOverwriteMode::kWithoutPrompt:
+      overwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
       break;
-    case NExtraction::NOverwriteMode::kSkipExisting:
-      overwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+    case NExtract::NOverwriteMode::kSkipExisting:
+      overwriteMode = NExtract::NOverwriteMode::kSkipExisting;
       break;
-    case NExtraction::NOverwriteMode::kAutoRename:
-      overwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+    case NExtract::NOverwriteMode::kAutoRename:
+      overwriteMode = NExtract::NOverwriteMode::kAutoRename;
       break;
     default:
       throw 12334454;
   }
   switch (extractionInfo.PathMode)
   {
-    case NExtraction::NPathMode::kFullPathnames:
-      pathMode = NExtractionMode::NPath::kFullPathnames;
+    case NExtract::NPathMode::kFullPathnames:
+      pathMode = NExtract::NPathMode::kFullPathnames;
       break;
-    case NExtraction::NPathMode::kCurrentPathnames:
-      pathMode = NExtractionMode::NPath::kCurrentPathnames;
+    case NExtract::NPathMode::kCurrentPathnames:
+      pathMode = NExtract::NPathMode::kCurrentPathnames;
       break;
-    case NExtraction::NPathMode::kNoPathnames:
-      pathMode = NExtractionMode::NPath::kNoPathnames;
+    case NExtract::NPathMode::kNoPathnames:
+      pathMode = NExtract::NPathMode::kNoPathnames;
       break;
     default:
       throw 12334455;

@@ -10,9 +10,9 @@
 #include "Defs.h"
 
 /*
-static UINT32 HexStringToNumber(const char *string, int &finishPos)
+static UInt32 HexStringToNumber(const char *string, int &finishPos)
 {
-  UINT32 number = 0;
+  UInt32 number = 0;
   for (finishPos = 0; finishPos < 8; finishPos++)
   {
     char c = string[finishPos];
@@ -31,7 +31,7 @@ static UINT32 HexStringToNumber(const char *string, int &finishPos)
   return number;
 }
 */
-static bool HexStringToNumber(const UString &string, UINT32 &aResultValue)
+static bool HexStringToNumber(const UString &string, UInt32 &aResultValue)
 {
   aResultValue = 0;
   if (string.IsEmpty())
@@ -82,7 +82,7 @@ bool CLang::Open(LPCTSTR fileName)
   int pos = 0;
   if (string.Length() >= 3)
   {
-    if (BYTE(string[0]) == 0xEF && BYTE(string[1]) == 0xBB && BYTE(string[2]) == 0xBF)
+    if (Byte(string[0]) == 0xEF && Byte(string[1]) == 0xBB && Byte(string[2]) == 0xBF)
       pos += 3;
   }
 
@@ -117,13 +117,13 @@ bool CLang::Open(LPCTSTR fileName)
   return true;
 }
 
-int CLang::FindItem(UINT32 value) const
+int CLang::FindItem(UInt32 value) const
 {
   int left = 0, right = _langPairs.Size(); 
   while (left != right)
   {
-    UINT32 mid = (left + right) / 2;
-    UINT32 midValue = _langPairs[mid].Value;
+    UInt32 mid = (left + right) / 2;
+    UInt32 midValue = _langPairs[mid].Value;
     if (value == midValue)
       return mid;
     if (value < midValue)
@@ -134,7 +134,7 @@ int CLang::FindItem(UINT32 value) const
   return -1;
 }
 
-bool CLang::GetMessage(UINT32 value, UString &message) const
+bool CLang::GetMessage(UInt32 value, UString &message) const
 {
   int index =  FindItem(value);
   if (index < 0)

@@ -22,13 +22,13 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *timeType)
+STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kDOS;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
@@ -36,9 +36,9 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   for(int i = 0; i < numItems; i++)
   {
     CUpdateItem updateItem;
-    INT32 newData;
-    INT32 newProperties;
-    UINT32 indexInArchive;
+    Int32 newData;
+    Int32 newProperties;
+    UInt32 indexInArchive;
     if (!updateCallback)
       return E_FAIL;
     RINOK(updateCallback->GetUpdateItemInfo(i,
@@ -49,7 +49,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
     updateItem.NewData = IntToBool(newData);
     updateItem.IndexInArchive = indexInArchive;
     updateItem.IndexInClient = i;
-    bool existInArchive = (indexInArchive != UINT32(-1));
+    bool existInArchive = (indexInArchive != UInt32(-1));
     if (IntToBool(newProperties))
     {
       FILETIME utcFileTime;
@@ -123,13 +123,13 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
     }
     if (IntToBool(newData))
     {
-      UINT64 size;
+      UInt64 size;
       {
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
         if (propVariant.vt != VT_UI8)
           return E_INVALIDARG;
-        size = *(UINT64 *)(&propVariant.uhVal);
+        size = *(UInt64 *)(&propVariant.uhVal);
       }
       if(size > 0xFFFFFFFF)
         return E_NOTIMPL;
@@ -147,7 +147,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   if (getTextPassword)
   {
     CMyComBSTR password;
-    INT32 passwordIsDefined;
+    Int32 passwordIsDefined;
     RINOK(getTextPassword->CryptoGetTextPassword2(
         &passwordIsDefined, &password));
     if (m_Method.PasswordIsDefined = IntToBool(passwordIsDefined))
@@ -162,16 +162,16 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   COM_TRY_END
 }
 
-static const UINT32 kNumPassesNormal = 1;
-static const UINT32 kNumPassesMX  = 3;
+static const UInt32 kNumPassesNormal = 1;
+static const UInt32 kNumPassesMX  = 3;
 
-static const UINT32 kMatchFastLenNormal  = 32;
-static const UINT32 kMatchFastLenMX  = 64;
+static const UInt32 kMatchFastLenNormal  = 32;
+static const UInt32 kMatchFastLenMX  = 64;
 
-STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *values, INT32 numProperties)
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   InitMethodProperties();
-  BYTE mainMethod = NFileHeader::NCompressionMethod::kDeflated;
+  Byte mainMethod = NFileHeader::NCompressionMethod::kDeflated;
   for (int i = 0; i < numProperties; i++)
   {
     UString name = UString(names[i]);
@@ -181,7 +181,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     if (name[0] == 'X')
     {
       name.Delete(0);
-      UINT32 level = 9;
+      UInt32 level = 9;
       if (value.vt == VT_UI4)
       {
         if (!name.IsEmpty())
@@ -194,10 +194,10 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         {
           const wchar_t *start = name;
           const wchar_t *end;
-          UINT64 v = ConvertStringToUINT64(start, &end);
+          UInt64 v = ConvertStringToUInt64(start, &end);
           if (end - start != name.Length())
             return E_INVALIDARG;
-          level = (UINT32)v;
+          level = (UInt32)v;
         }
       }
       else

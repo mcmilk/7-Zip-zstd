@@ -1,9 +1,7 @@
-// Archive/Arj/ItemInfo.h
+// Archive/ArjItem.h
 
-#pragma once
-
-#ifndef __ARCHIVE_ARJ_ITEMINFO_H
-#define __ARCHIVE_ARJ_ITEMINFO_H
+#ifndef __ARCHIVE_ARJ_ITEM_H
+#define __ARCHIVE_ARJ_ITEM_H
 
 #include "Common/Types.h"
 #include "Common/String.h"
@@ -14,8 +12,8 @@ namespace NArj {
 
 struct CVersion
 {
-  BYTE Version;
-  BYTE HostOS;
+  Byte Version;
+  Byte HostOS;
 };
 
 inline bool operator==(const CVersion &v1, const CVersion &v2)
@@ -26,27 +24,27 @@ inline bool operator!=(const CVersion &v1, const CVersion &v2)
 class CItem
 {
 public:
-  BYTE Version;
-  BYTE ExtractVersion;
-  BYTE HostOS;
-  BYTE Flags;
-  BYTE Method;
-  BYTE FileType;
-  UINT32 ModifiedTime;
-  UINT32 PackSize;
-  UINT32 Size;
-  UINT32 FileCRC;
+  Byte Version;
+  Byte ExtractVersion;
+  Byte HostOS;
+  Byte Flags;
+  Byte Method;
+  Byte FileType;
+  UInt32 ModifiedTime;
+  UInt32 PackSize;
+  UInt32 Size;
+  UInt32 FileCRC;
 
-  // UINT16 FilespecPositionInFilename;
-  UINT16 FileAccessMode;
-  // BYTE FirstChapter;
-  // BYTE LastChapter;
+  // UInt16 FilespecPositionInFilename;
+  UInt16 FileAccessMode;
+  // Byte FirstChapter;
+  // Byte LastChapter;
   
   AString Name;
   
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kGarbled) != 0; }
   bool IsDirectory() const { return (FileType == NFileHeader::NFileType::kDirectory); }
-  UINT32 GetWinAttributes() const 
+  UInt32 GetWinAttributes() const 
   {
     DWORD winAtrributes;
     switch(HostOS)
@@ -67,7 +65,7 @@ public:
 class CItemEx: public CItem
 {
 public:
-  UINT64 DataPosition;
+  UInt64 DataPosition;
 };
 
 }}

@@ -16,6 +16,8 @@
 #define IDM_COPY_TO                     231
 #define IDM_MOVE_TO                     232
 #define IDM_DELETE                      233
+#define IDM_FILE_SPLIT                  238
+#define IDM_FILE_COMBINE                239
 #define IDM_FILE_PROPERTIES             240
 #define IDM_FILE_COMMENT                241
 #define IDM_CREATE_FOLDER               250
@@ -125,12 +127,18 @@
 #define IDS_COMMENT2                    4002
 #define IDS_SYSTEM                      4010
 
+#define IDS_SPLITTING                   4020
+
+#define IDS_COMBINE                     4030
+#define IDS_COMBINE_TO                  4031
+#define IDS_COMBINING                   4032
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        4020
-#define _APS_NEXT_COMMAND_VALUE         40078
+#define _APS_NEXT_RESOURCE_VALUE        4030
+#define _APS_NEXT_COMMAND_VALUE         40080
 #define _APS_NEXT_CONTROL_VALUE         3000
 #define _APS_NEXT_SYMED_VALUE           4010
 #endif

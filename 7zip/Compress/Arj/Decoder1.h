@@ -1,11 +1,9 @@
 // Arj/Decoder1.h
 
-#pragma once
-
 #ifndef __COMPRESS_ARJ_DECODER1_H
 #define __COMPRESS_ARJ_DECODER1_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 #include "../../ICoder.h"
 #include "../../Common/MSBFDecoder.h"
 #include "../../Common/InBuffer.h"
@@ -52,55 +50,53 @@ class CCoder :
   CLZOutWindow m_OutWindowStream;
   NStream::NMSBF::CDecoder<CInBuffer> m_InBitStream;
 
-  UINT32 left[2 * NC - 1];
-  UINT32 right[2 * NC - 1];
-  BYTE c_len[NC];
-  BYTE pt_len[NPT];
+  UInt32 left[2 * NC - 1];
+  UInt32 right[2 * NC - 1];
+  Byte c_len[NC];
+  Byte pt_len[NPT];
 
-  UINT32 c_table[CTABLESIZE];
-  UINT32 pt_table[PTABLESIZE];
+  UInt32 c_table[CTABLESIZE];
+  UInt32 pt_table[PTABLESIZE];
   
-
-  /*
   void CCoder::ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
     m_InBitStream.ReleaseStream();
   }
-  */
+
   class CCoderReleaser
   {
     CCoder *m_Coder;
   public:
-    CCoderReleaser(CCoder *aCoder): m_Coder(aCoder) {}
+    bool NeedFlush;
+    CCoderReleaser(CCoder *coder): m_Coder(coder), NeedFlush(true) {}
     ~CCoderReleaser()
     {
-      m_Coder->m_OutWindowStream.Flush();
-      // m_Coder->ReleaseStreams();
+      if (NeedFlush)
+        m_Coder->m_OutWindowStream.Flush();
+      m_Coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;
 
-  void make_table(int nchar, BYTE *bitlen, int tablebits, 
-      UINT32 *table, int tablesize);
+  void MakeTable(int nchar, Byte *bitlen, int tablebits, 
+      UInt32 *table, int tablesize);
   
   void read_c_len();
   void read_pt_len(int nn, int nbit, int i_special);
-  UINT32 decode_c();
-  UINT32 decode_p();
-
+  UInt32 decode_c();
+  UInt32 decode_p();
 
 public:
-  CCoder();
-
+  
   MY_UNKNOWN_IMP
 
   STDMETHOD(CodeReal)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
 };

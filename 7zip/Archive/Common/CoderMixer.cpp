@@ -140,8 +140,8 @@ void CCoderMixer::ReInit()
   }
 }
 
-void CCoderMixer::SetCoderInfo(UINT32 coderIndex, const UINT64 *inSize,
-    const UINT64 *outSize)
+void CCoderMixer::SetCoderInfo(UInt32 coderIndex, const UInt64 *inSize,
+    const UInt64 *outSize)
 {
   CThreadCoderInfo &coderInfo = m_CoderInfoVector[coderIndex];
   
@@ -187,7 +187,7 @@ bool CCoderMixer::MyCode()
 
 STDMETHODIMP CCoderMixer::Code(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, 
-    const UINT64 *inSize, const UINT64 *outSize,
+    const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   Init(inStream, outStream);
@@ -231,7 +231,7 @@ STDMETHODIMP CCoderMixer::Code(ISequentialInStream *inStream,
   return S_OK;
 }
 
-UINT64 CCoderMixer::GetWriteProcessedSize(UINT32 coderIndex)
+UInt64 CCoderMixer::GetWriteProcessedSize(UInt32 coderIndex)
 {
   return m_StreamBinders[coderIndex].ProcessedSize;
 }

@@ -1,19 +1,19 @@
 // Common/Types.h
 
-// #pragma once
-
 #ifndef __COMMON_TYPES_H
 #define __COMMON_TYPES_H
 
-#include <basetsd.h>
-
-typedef unsigned char   UINT8;
-typedef unsigned short  UINT16;
-typedef short INT16;
-#ifndef _WINDOWS_ 
-  // typedef unsigned long UINT32;
-  typedef UINT8 BYTE;
+typedef unsigned char Byte;
+typedef short Int16;
+typedef unsigned short UInt16;
+typedef int Int32;
+typedef unsigned int UInt32;
+#ifdef _MSC_VER
+typedef __int64 Int64;
+typedef unsigned __int64 UInt64;
+#else
+typedef long long int Int64;
+typedef unsigned long long int UInt64;
 #endif
 
 #endif
-

@@ -1,7 +1,5 @@
 // AboutDialog.h
  
-#pragma once
-
 #ifndef __ABOUTDIALOG_H
 #define __ABOUTDIALOG_H
 

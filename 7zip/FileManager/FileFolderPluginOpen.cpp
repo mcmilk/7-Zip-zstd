@@ -86,8 +86,8 @@ HRESULT OpenFileFolderPlugin(
 
     COpenArchiveCallback *openCallbackSpec = new COpenArchiveCallback;
     CMyComPtr<IProgress> openCallback = openCallbackSpec;
-    openCallbackSpec->_passwordIsDefined = false;
-    openCallbackSpec->_parentWindow = parentWindow;
+    openCallbackSpec->PasswordIsDefined = false;
+    openCallbackSpec->ParentWindow = parentWindow;
     openCallbackSpec->LoadFileInfo(dirPrefix, fileName);
 
     result = folderManager->OpenFolderFile(path, &folder, openCallback);

@@ -1,6 +1,4 @@
 // Windows/Control/StatusBar.h
-  
-#pragma once
 
 #ifndef __WINDOWS_CONTROL_STATUSBAR_H
 #define __WINDOWS_CONTROL_STATUSBAR_H

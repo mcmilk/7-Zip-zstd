@@ -1,7 +1,5 @@
 // Windows/NationalTime.h
 
-#pragma once
-
 #ifndef __WINDOWS_NATIONALTIME_H
 #define __WINDOWS_NATIONALTIME_H
 

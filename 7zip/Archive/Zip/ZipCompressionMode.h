@@ -1,7 +1,5 @@
 // CompressionMode.h
 
-#pragma once
-
 #ifndef __ZIP_COMPRESSIONMETHOD_H
 #define __ZIP_COMPRESSIONMETHOD_H
 
@@ -13,10 +11,10 @@ namespace NZip {
 
 struct CCompressionMethodMode
 {
-  CRecordVector<BYTE> MethodSequence;
+  CRecordVector<Byte> MethodSequence;
   // bool MaximizeRatio;
-  UINT32 NumPasses;
-  UINT32 NumFastBytes;
+  UInt32 NumPasses;
+  UInt32 NumFastBytes;
   bool PasswordIsDefined;
   AString Password;
 };

@@ -60,10 +60,29 @@ void CApp::SetListSettings()
 {
   bool showDots = ReadShowDots();
   bool showRealFileIcons = ReadShowRealFileIcons();
+
+  DWORD extendedStyle = LVS_EX_HEADERDRAGDROP;
+  if (ReadFullRow())
+    extendedStyle |= LVS_EX_FULLROWSELECT;
+  if (ReadShowGrid())
+    extendedStyle |= LVS_EX_GRIDLINES;
+  
+  /*
+  if (ReadSingleClick())
+  {
+    extendedStyle |= LVS_EX_ONECLICKACTIVATE 
+      | LVS_EX_TRACKSELECT;
+    if (ReadUnderline())
+      extendedStyle |= LVS_EX_UNDERLINEHOT;
+  }
+  */
+
   for (int i = 0; i < kNumPanelsMax; i++)
   {
     Panels[i]._showDots = showDots;
     Panels[i]._showRealFileIcons = showRealFileIcons;
+    Panels[i]._exStyle = extendedStyle;
+    Panels[i].SetExtendedStyle();
   }
 }
 
@@ -89,7 +108,7 @@ void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
     path = mainPath;
   int id = 1000 + 100 * panelIndex;
   Panels[panelIndex].Create(_window, _window, 
-      id, 0, path, &m_PanelCallbackImp[panelIndex], &AppState);
+      id, path, &m_PanelCallbackImp[panelIndex], &AppState);
   PanelsCreated[panelIndex] = true;
 }
 
@@ -301,7 +320,7 @@ void CApp::ReloadRebar(HWND hwnd)
   ReloadToolbars();
 }
 
-void CApp::Create(HWND hwnd, const UString &mainPath)
+void CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2])
 {
   ReadToolbar();
   ReloadRebar(hwnd);
@@ -316,9 +335,21 @@ void CApp::Create(HWND hwnd, const UString &mainPath)
   UString mainPathSpec = mainPath;
   if (LastFocusedPanel >= kNumPanelsMax)
     LastFocusedPanel = 0;
+
+  CListMode listMode;
+  ReadListMode(listMode);
+  for (i = 0; i < kNumPanelsMax; i++)
+  {
+    Panels[i]._ListViewMode = listMode.Panels[i];
+    Panels[i]._xSize = xSizes[i];
+  }
   for (i = 0; i < kNumPanelsMax; i++)
     if (NumPanels > 1 || i == LastFocusedPanel)
+    {
+      if (NumPanels == 1)
+        Panels[i]._xSize = xSizes[0] + xSizes[1];
       CreateOnePanel(i, (i == LastFocusedPanel) ? mainPath : L"");
+    }
   Panels[LastFocusedPanel].SetFocusToList();
 }
 
@@ -345,6 +376,7 @@ void CApp::SwitchOnOffOnePanel()
 void CApp::Save()
 {
   AppState.Save();
+  CListMode listMode;
   for (int i = 0; i < kNumPanelsMax; i++)
   {
     const CPanel &panel = Panels[i];
@@ -354,7 +386,9 @@ void CApp::Save()
     else
       path = GetFolderPath(panel._parentFolders[0].ParentFolder);
     SavePanelPath(i, GetSystemString(path));
+    listMode.Panels[i] = panel.GetListViewMode();
   }
+  SaveListMode(listMode);
 }
 
 void CApp::Release()
@@ -607,13 +641,14 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
     CThreadExtract extracter;
     extracter.ExtractCallbackSpec = new CExtractCallbackImp;
     extracter.ExtractCallback = extracter.ExtractCallbackSpec;
-    extracter.ExtractCallbackSpec->_parentWindow = _window;
+    extracter.ExtractCallbackSpec->ParentWindow = _window;
 
     extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = _window;
     extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
     extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + L" ";
+    extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
 
-    extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kAskBefore, false, L"");
+    extracter.ExtractCallbackSpec->Init();
     extracter.Move = move;
     extracter.FolderOperations = folderOperations;
     extracter.Indices = indices;;
@@ -735,10 +770,10 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
   destPanel.RefreshListCtrl();
 }
 
-int CApp::GetFocusedPanelIndex()
+/*
+int CApp::GetFocusedPanelIndex() const
 {
   return LastFocusedPanel;
-  /*
   HWND hwnd = ::GetFocus();
   while(true)
   {
@@ -752,8 +787,8 @@ int CApp::GetFocusedPanelIndex()
     }
     hwnd = GetParent(hwnd);
   }
-  */
 }
+  */
 
 static CSysString g_ToolTipBuffer;
 

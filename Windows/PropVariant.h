@@ -1,9 +1,13 @@
 // Windows/PropVariant.h
 
-// #pragma once
-
 #ifndef __WINDOWS_PROPVARIANT_H
 #define __WINDOWS_PROPVARIANT_H
+
+#ifndef WIN32
+#include "../Common/MyWindows.h"
+#endif
+
+#include "../Common/Types.h"
 
 namespace NWindows {
 namespace NCOM {
@@ -18,12 +22,12 @@ public:
   CPropVariant(BSTR bstrSrc);
   CPropVariant(LPCOLESTR lpszSrc);
   CPropVariant(bool bSrc) { vt = VT_BOOL; boolVal = (bSrc ? VARIANT_TRUE : VARIANT_FALSE); };
-  CPropVariant(UINT32 value) {  vt = VT_UI4; ulVal = value; }
-  CPropVariant(UINT64 value) {  vt = VT_UI8; uhVal = *(ULARGE_INTEGER*)&value; }
+  CPropVariant(UInt32 value) {  vt = VT_UI4; ulVal = value; }
+  CPropVariant(UInt64 value) {  vt = VT_UI8; uhVal = *(ULARGE_INTEGER*)&value; }
   CPropVariant(const FILETIME &value) {  vt = VT_FILETIME; filetime = value; }
-  CPropVariant(int value) { vt = VT_I4; lVal = value; }
-  CPropVariant(BYTE value) { vt = VT_UI1; bVal = value; }
-  CPropVariant(short value) { vt = VT_I2; iVal = value; }
+  CPropVariant(Int32 value) { vt = VT_I4; lVal = value; }
+  CPropVariant(Byte value) { vt = VT_UI1; bVal = value; }
+  CPropVariant(Int16 value) { vt = VT_I2; iVal = value; }
   CPropVariant(long value, VARTYPE vtSrc = VT_I4) { vt = vtSrc; lVal = value; }
 
   CPropVariant& operator=(const CPropVariant& varSrc);
@@ -31,27 +35,23 @@ public:
   CPropVariant& operator=(BSTR bstrSrc);
   CPropVariant& operator=(LPCOLESTR lpszSrc);
   CPropVariant& operator=(bool bSrc);
-  CPropVariant& operator=(UINT32 value);
-  CPropVariant& operator=(UINT64 value);
+  CPropVariant& operator=(UInt32 value);
+  CPropVariant& operator=(UInt64 value);
   CPropVariant& operator=(const FILETIME &value);
 
-  CPropVariant& operator=(int value);
-  CPropVariant& operator=(BYTE value);
-  CPropVariant& operator=(short value);
+  CPropVariant& operator=(Int32 value);
+  CPropVariant& operator=(Byte value);
+  CPropVariant& operator=(Int16 value);
   CPropVariant& operator=(long value);
 
   HRESULT Clear();
   HRESULT Copy(const PROPVARIANT* pSrc);
   HRESULT Attach(PROPVARIANT* pSrc);
   HRESULT Detach(PROPVARIANT* pDest);
-  HRESULT ChangeType(VARTYPE vtNew, const PROPVARIANT* pSrc = NULL);
 
   HRESULT InternalClear();
   void InternalCopy(const PROPVARIANT* pSrc);
 
-  HRESULT WriteToStream(ISequentialStream *stream) const;
-  HRESULT ReadFromStream(ISequentialStream *stream);
-  
   int Compare(const CPropVariant &a1);
 };
 

@@ -1,7 +1,5 @@
 // Pat3H.h
 
-#pragma once
-
 #ifndef __PAT3H__H
 #define __PAT3H__H
 

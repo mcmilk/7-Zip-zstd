@@ -20,7 +20,10 @@
 #include "../../Archive/IArchive.h"
 #include "../../UI/Explorer/MyMessages.h"
 
+// #include "../../UI/GUI/ExtractGUI.h"
+
 #include "ExtractEngine.h"
+
 
 HINSTANCE g_hInstance;
 
@@ -37,25 +40,25 @@ static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
     return false;
   const int kBufferSize = (1 << 12);
 
-  BYTE buffer[kBufferSize];
+  Byte buffer[kBufferSize];
   int signatureStartSize = lstrlenA(startID);
   int signatureEndSize = lstrlenA(endID);
   
-  UINT32 numBytesPrev = 0;
+  UInt32 numBytesPrev = 0;
   bool writeMode = false;
-  UINT64 posTotal = 0;
+  UInt64 posTotal = 0;
   while(true)
   {
     if (posTotal > (1 << 20))
       return (stringResult.IsEmpty());
-    UINT32 numReadBytes = kBufferSize - numBytesPrev;
-    UINT32 processedSize;
+    UInt32 numReadBytes = kBufferSize - numBytesPrev;
+    UInt32 processedSize;
     if (!inFile.Read(buffer + numBytesPrev, numReadBytes, processedSize))
       return false;
     if (processedSize == 0)
       return true;
-    UINT32 numBytesInBuffer = numBytesPrev + processedSize;
-    UINT32 pos = 0;
+    UInt32 numBytesInBuffer = numBytesPrev + processedSize;
+    UInt32 pos = 0;
     while (true)
     { 
       if (writeMode)
@@ -172,15 +175,45 @@ int APIENTRY WinMain(
     return 1;
   }
 
-  HRESULT result = ExtractArchive(fullPath, GetUnicodeString(tempDir.GetPath()));
+  //////////////////////
+  // New
+
+  COpenCallbackGUI openCallback;
+
+  /*
+  CExtractCallbackImp *ecs = new CExtractCallbackImp;
+  CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
+  ecs->Init();
+  
+  
+  CExtractOptions eo;
+  eo.OutputDir = GetUnicodeString(tempDir.GetPath());
+  eo.YesToAll = true;
+  eo.OverwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
+  eo.PathMode = NExtract::NPathMode::kFullPathnames;
+  eo.TestMode = false;
+  
+  UStringVector v1, v2;
+  v1.Add(fullPath);
+  v2.Add(fullPath);
+  NWildcard::CCensorNode2 wildcardCensor;
+  wildcardCensor.AddItem(L"*", true, true, true, true);
+
+  HRESULT result = ExtractGUI(v1, v2,
+      wildcardCensor, eo, false, &openCallback, ecs);
+  */
+  
+  HRESULT result = ExtractArchive(fullPath, GetUnicodeString(tempDir.GetPath()), &openCallback);
+
   if (result != S_OK)
   {
     if (result == S_FALSE)
       MyMessageBox(L"Can not open archive");
     else if (result != E_ABORT)
       ShowErrorMessage(result);
-    return  1;
+    return 1;
   }
+
 
   CCurrentDirRestorer currentDirRestorer;
 

@@ -39,7 +39,7 @@ bool CItem::IgnoreItem() const
   return false;
 }
 
-UINT32  CItem::GetDictSize() const
+UInt32  CItem::GetDictSize() const
 { return (Flags >> NHeader::NFile::kDictBitStart) & NHeader::NFile::kDictMask; }
 
 bool CItem::IsDirectory() const
@@ -47,22 +47,22 @@ bool CItem::IsDirectory() const
   return (GetDictSize() == NHeader::NFile::kDictDirectoryValue);
 }
 
-UINT32 CItem::GetWinAttributes() const
+UInt32 CItem::GetWinAttributes() const
 {
-  UINT32 aWinAttributes;
+  UInt32 winAttributes;
   switch(HostOS)
   {
   case NHeader::NFile::kHostMSDOS:
   case NHeader::NFile::kHostOS2:
   case NHeader::NFile::kHostWin32:
-    aWinAttributes = Attributes; 
+    winAttributes = Attributes; 
     break;
   default:
-    aWinAttributes = 0; // must be converted from unix value;; 
+    winAttributes = 0; // must be converted from unix value;; 
   }
   if (IsDirectory())       // test it;
-    aWinAttributes |= NHeader::NFile::kWinFileDirectoryAttributeMask;
-  return aWinAttributes;
+    winAttributes |= NHeader::NFile::kWinFileDirectoryAttributeMask;
+  return winAttributes;
 }
 
 void CItem::ClearFlags()
@@ -70,8 +70,8 @@ void CItem::ClearFlags()
 
 void CItem::SetFlagBits(int aStartBitNumber, int aNumBits, int aValue)
 {  
-  UINT16 aMask = ((1 << aNumBits) - 1) << aStartBitNumber;
-  Flags &= ~aMask;
+  UInt16 mask = ((1 << aNumBits) - 1) << aStartBitNumber;
+  Flags &= ~mask;
   Flags |= aValue << aStartBitNumber;
 }
 
@@ -83,7 +83,7 @@ void CItem::SetBitMask(int aBitMask, bool anEnable)
     Flags &= ~aBitMask;
 }
 
-void CItem::SetDictSize(UINT32 aSize)
+void CItem::SetDictSize(UInt32 aSize)
 { 
   SetFlagBits(NHeader::NFile::kDictBitStart, NHeader::NFile::kNumDictBits, (aSize & NHeader::NFile::kDictMask));
 }

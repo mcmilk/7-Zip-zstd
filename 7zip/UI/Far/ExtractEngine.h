@@ -1,16 +1,15 @@
 // ExtractEngine.h
 
-#pragma once
-
 #ifndef __EXTRACTENGINE_H
 #define __EXTRACTENGINE_H
 
 #include "Common/MyCom.h"
 #include "Common/String.h"
-#include "Far/ProgressBox.h"
 
 #include "../../IPassword.h"
 #include "../Agent/IFolderArchive.h"
+
+#include "ProgressBox.h"
 
 class CExtractCallBackImp: 
   public IFolderArchiveExtractCallback,
@@ -29,7 +28,7 @@ public:
       const wchar_t *existName, const FILETIME *existTime, const UINT64 *existSize,
       const wchar_t *newName, const FILETIME *newTime, const UINT64 *newSize,
       INT32 *result);
-  STDMETHOD (PrepareOperation)(const wchar_t *name, INT32 askExtractMode);
+  STDMETHOD (PrepareOperation)(const wchar_t *name, INT32 askExtractMode, const UINT64 *position);
 
   STDMETHOD(MessageError)(const wchar_t *message);
   STDMETHOD(SetOperationResult)(INT32 resultEOperationResult);

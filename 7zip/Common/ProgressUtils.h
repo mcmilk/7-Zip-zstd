@@ -1,7 +1,5 @@
 // ProgressUtils.h
 
-// #pragma once
-
 #ifndef __PROGRESSUTILS_H
 #define __PROGRESSUTILS_H
 
@@ -17,21 +15,17 @@ class CLocalCompressProgressInfo:
   CMyComPtr<ICompressProgressInfo> _progress;
   bool _inStartValueIsAssigned;
   bool _outStartValueIsAssigned;
-  UINT64 _inStartValue;
-  UINT64 _outStartValue;
+  UInt64 _inStartValue;
+  UInt64 _outStartValue;
 public:
   void Init(ICompressProgressInfo *progress, 
-      const UINT64 *inStartValue, const UINT64 *outStartValue);
+      const UInt64 *inStartValue, const UInt64 *outStartValue);
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
-
-///////////////////////////////////////////
-// CLocalProgress
-    
 class CLocalProgress: 
   public ICompressProgressInfo,
   public CMyUnknownImp
@@ -43,8 +37,7 @@ public:
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
-
 
 #endif

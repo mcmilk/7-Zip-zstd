@@ -1,7 +1,5 @@
 // 7zCompressionMode.h
 
-#pragma once
-
 #ifndef __7Z_COMPRESSION_MODE_H
 #define __7Z_COMPRESSION_MODE_H
 
@@ -21,8 +19,8 @@ struct CProperty
 struct CMethodFull
 {
   CMethodID MethodID;
-  UINT32 NumInStreams;
-  UINT32 NumOutStreams;
+  UInt32 NumInStreams;
+  UInt32 NumOutStreams;
   bool IsSimpleCoder() const 
     { return (NumInStreams == 1) && (NumOutStreams == 1); }
 
@@ -37,10 +35,10 @@ struct CMethodFull
 
 struct CBind
 {
-  UINT32 InCoder;
-  UINT32 InStream;
-  UINT32 OutCoder;
-  UINT32 OutStream;
+  UInt32 InCoder;
+  UInt32 InStream;
+  UInt32 OutCoder;
+  UInt32 OutStream;
 };
 
 struct CCompressionMethodMode

@@ -152,6 +152,14 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\7zG.exe.manifest
+# End Source File
+# Begin Source File
+
+SOURCE=.\FM.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.h
 # End Source File
 # Begin Source File
@@ -176,6 +184,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CommandLineParser.cpp
 # End Source File
 # Begin Source File
@@ -197,6 +213,14 @@ SOURCE=..\..\..\Common\Lang.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\Lang.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\ListFileUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\ListFileUtils.h
 # End Source File
 # Begin Source File
 
@@ -417,6 +441,30 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Common\ArchiveCommandLine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveCommandLine.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
@@ -445,6 +493,18 @@ SOURCE=..\Common\EnumDirItems.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExitCode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ExtractingFilePath.cpp
 # End Source File
 # Begin Source File
@@ -453,7 +513,15 @@ SOURCE=..\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractMode.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\HandlerLoader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\IFileExtractCallback.h
 # End Source File
 # Begin Source File
 
@@ -481,11 +549,35 @@ SOURCE=..\Common\SortUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\TempFiles.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\TempFiles.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\UpdateAction.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\UpdateAction.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -519,10 +611,6 @@ SOURCE=..\Common\ZipRegistry.cpp
 
 SOURCE=..\Common\ZipRegistry.h
 # End Source File
-# End Group
-# Begin Group "Console"
-
-# PROP Default_Filter ""
 # End Group
 # Begin Group "Explorer"
 
@@ -570,6 +658,15 @@ SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
 # Begin Source File
 
 SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\MessagesDialog\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\MessagesDialog\resource.rc
+# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Overwtite"
@@ -728,96 +825,44 @@ SOURCE=..\..\FileManager\UpdateCallback100.cpp
 SOURCE=..\..\FileManager\UpdateCallback100.h
 # End Source File
 # End Group
-# Begin Group "Agent"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Agent\Agent.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\Agent.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\AgentOut.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\AgentProxy.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\AgentProxy.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveUpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveUpdateCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\IFolderArchive.h
-# End Source File
-# End Group
-# Begin Group "Archive Interfaces"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Format\Common\ArchiveInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Interface\CompressInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\Interface\CryptoInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FolderArchiveInterface.h
-# End Source File
-# End Group
 # Begin Group "Engine"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Compress.cpp
+SOURCE=.\ExtractGUI.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Compress.h
+SOURCE=.\ExtractGUI.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Extract.cpp
+SOURCE=.\GUI.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Extract.h
+SOURCE=.\OpenCallbackGUI.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Test.cpp
+SOURCE=.\OpenCallbackGUI.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Test.h
+SOURCE=.\UpdateCallbackGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateCallbackGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateGUI.h
 # End Source File
 # End Group
 # Begin Group "7-zip Common"
@@ -852,17 +897,5 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\7zG.exe.manifest
-# End Source File
-# Begin Source File
-
-SOURCE=.\FM.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\GUI.cpp
-# End Source File
 # End Target
 # End Project

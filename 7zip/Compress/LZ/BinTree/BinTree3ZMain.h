@@ -1,7 +1,5 @@
 // BinTree3ZMain.h
 
-// #pragma once
-
 #ifndef __BINTREE3ZMAIN__H
 #define __BINTREE3ZMAIN__H
 

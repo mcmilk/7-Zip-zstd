@@ -13,44 +13,43 @@
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
 #include "Windows/PropVariantConversions.h"
+#include "Windows/FileDir.h"
 
+#include "../../Archive/IArchive.h"
 #include "../Common/PropIDUtils.h"
+
+#include "../Common/OpenArchive.h"
+#include "OpenCallbackConsole.h"
+
+#ifndef EXCLUDE_COM
+#include "Windows/DLL.h"
+#endif
 
 using namespace NWindows;
 
-/*
-static const char kEmptyFlag = '.';
-
-static const char kPasswordFlag    = '*';
-static const char kSolidFlag       = 'S';
-static const char kSplitBeforeFlag = 'B';
-static const char kSplitAfterFlag  = 'A';
-static const char kCommentedFlag   = 'C';
-*/
-
 static const char kEmptyAttributeChar = '.';
-//static const char kVolumeAttributeChar    = 'V';
 static const char kDirectoryAttributeChar = 'D';
 static const char kReadonlyAttributeChar  = 'R';
 static const char kHiddenAttributeChar    = 'H';
 static const char kSystemAttributeChar    = 'S';
 static const char kArchiveAttributeChar   = 'A';
 
-static AString GetAttributesString(DWORD winAttributes, bool directory)
+static const char *kListing = "Listing archive: ";
+static const wchar_t *kFilesMessage = L"files";
+
+static AString GetAttributesString(DWORD wa, bool directory)
 {
   AString s;
-  //  s  = ((winAttributes & kLabelFileAttribute) != 0) ? 
-  //                                kVolumeAttributeChar: kEmptyAttributeChar;
-  s += ((winAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 || directory) ? 
-                                kDirectoryAttributeChar: kEmptyAttributeChar;
-  s += ((winAttributes & FILE_ATTRIBUTE_READONLY) != 0)? 
-                                kReadonlyAttributeChar: kEmptyAttributeChar;
-  s += ((winAttributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
-                                kHiddenAttributeChar: kEmptyAttributeChar;
-  s += ((winAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
-                                kSystemAttributeChar: kEmptyAttributeChar;
-  s += ((winAttributes & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
-                                kArchiveAttributeChar: kEmptyAttributeChar;
+  s += ((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || directory) ? 
+      kDirectoryAttributeChar: kEmptyAttributeChar;
+  s += ((wa & FILE_ATTRIBUTE_READONLY) != 0)? 
+      kReadonlyAttributeChar: kEmptyAttributeChar;
+  s += ((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 
+      kHiddenAttributeChar: kEmptyAttributeChar;
+  s += ((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 
+      kSystemAttributeChar: kEmptyAttributeChar;
+  s += ((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 
+      kArchiveAttributeChar: kEmptyAttributeChar;
   return s;
 }
 
@@ -127,9 +126,9 @@ public:
   HRESULT PrintItemInfo(IInArchive *archive, 
       const UString &defaultItemName,
       const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
-      UINT32 index);
-  HRESULT PrintSummaryInfo(UINT64 numFiles, const UINT64 *size, 
-      const UINT64 *compressedSize);
+      UInt32 index);
+  HRESULT PrintSummaryInfo(UInt64 numFiles, const UInt64 *size, 
+      const UInt64 *compressedSize);
 };
 
 void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, int numItems)
@@ -176,8 +175,7 @@ BOOL IsFileTimeZero(CONST FILETIME *lpFileTime)
   return (lpFileTime->dwLowDateTime == 0) && (lpFileTime->dwHighDateTime == 0);
 }
 
-
-const char *kEmptyTimeString = "                   ";
+static const char *kEmptyTimeString = "                   ";
 void PrintTime(const NCOM::CPropVariant &propVariant)
 {
   if (propVariant.vt != VT_FILETIME)
@@ -205,7 +203,7 @@ void PrintTime(const NCOM::CPropVariant &propVariant)
 HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive, 
     const UString &defaultItemName, 
     const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
-    UINT32 index)
+    UInt32 index)
 {
   for (int i = 0; i < _fields.Size(); i++)
   {
@@ -240,7 +238,7 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
     {
       if (propVariant.vt != VT_UI4)
         throw "incorrect item";
-      UINT32 attributes = propVariant.ulVal;
+      UInt32 attributes = propVariant.ulVal;
       NCOM::CPropVariant propVariantIsFolder;
       RINOK(archive->GetProperty(index, 
           kpidIsFolder, &propVariantIsFolder));
@@ -261,18 +259,17 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
   return S_OK;
 }
 
-void PrintNumberString(EAdjustment adjustment, int width, const UINT64 *value)
+void PrintNumberString(EAdjustment adjustment, int width, const UInt64 *value)
 {
   wchar_t textString[32] = { 0 };
   if (value != NULL)
-    ConvertUINT64ToString(*value, textString);
+    ConvertUInt64ToString(*value, textString);
   PrintString(adjustment, width, textString);
 }
 
-static const wchar_t *kFilesMessage = L"files";
 
-HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles, 
-    const UINT64 *size, const UINT64 *compressedSize)
+HRESULT CFieldPrinter::PrintSummaryInfo(UInt64 numFiles, 
+    const UInt64 *size, const UInt64 *compressedSize)
 {
   for (int i = 0; i < _fields.Size(); i++)
   {
@@ -286,7 +283,7 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles,
     else if (fieldInfo.PropID == kpidPath)
     {
       wchar_t textString[32];
-      ConvertUINT64ToString(numFiles, textString);
+      ConvertUInt64ToString(numFiles, textString);
       UString temp = textString;
       temp += L" ";
       temp += kFilesMessage;
@@ -298,8 +295,8 @@ HRESULT CFieldPrinter::PrintSummaryInfo(UINT64 numFiles,
   return S_OK;
 }
 
-bool GetUINT64Value(IInArchive *archive, UINT32 index, 
-    PROPID propID, UINT64 &value)
+bool GetUINT64Value(IInArchive *archive, UInt32 index, 
+    PROPID propID, UInt64 &value)
 {
   NCOM::CPropVariant propVariant;
   if (archive->GetProperty(index, propID, &propVariant) != S_OK)
@@ -310,70 +307,136 @@ bool GetUINT64Value(IInArchive *archive, UINT32 index,
   return true;
 }
 
-HRESULT ListArchive(IInArchive *archive, 
-    const UString &defaultItemName,
-    const NWindows::NFile::NFind::CFileInfoW &archiveFileInfo,
-    const NWildcard::CCensor &wildcardCensor/*, bool fullPathMode,
-    NListMode::EEnum mode*/)
+HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFull,
+    const NWildcard::CCensorNode &wildcardCensor,
+    bool enableHeaders, bool &passwordEnabled, UString &password)
 {
   CFieldPrinter fieldPrinter;
   fieldPrinter.Init(kStandardFieldTable, sizeof(kStandardFieldTable) / sizeof(kStandardFieldTable[0]));
-  fieldPrinter.PrintTitle();
-  g_StdOut << endl;
-  fieldPrinter.PrintTitleLines();
-  g_StdOut << endl;
 
-  // bool nameFirst = (fullPathMode && (mode != NListMode::kDefault)) || (mode == NListMode::kAll);
-
-  UINT64 numFiles = 0, totalPackSize = 0, totalUnPackSize = 0;
-  UINT64 *totalPackSizePointer = 0, *totalUnPackSizePointer = 0;
-  UINT32 numItems;
-  RINOK(archive->GetNumberOfItems(&numItems));
-  for(UINT32 i = 0; i < numItems; i++)
+  UInt64 numFiles2 = 0, totalPackSize2 = 0, totalUnPackSize2 = 0;
+  UInt64 *totalPackSizePointer2 = 0, *totalUnPackSizePointer2 = 0;
+  int numErrors = 0;
+  for (int i = 0; i < archivePaths.Size(); i++)
   {
-    if (NConsoleClose::TestBreakSignal())
-      return E_ABORT;
-    NCOM::CPropVariant propVariant;
-    RINOK(archive->GetProperty(i, kpidPath, &propVariant));
-    UString filePath;
-    if(propVariant.vt == VT_EMPTY)
-      filePath = defaultItemName;
-    else
+    const UString &archiveName = archivePaths[i];
+    NFile::NFind::CFileInfoW archiveFileInfo;
+    if (!NFile::NFind::FindFile(archiveName, archiveFileInfo) || archiveFileInfo.IsDirectory())
     {
-      if(propVariant.vt != VT_BSTR)
-        return E_FAIL;
-      filePath = propVariant.bstrVal;
-    }
-    if (!wildcardCensor.CheckName(filePath))
+      g_StdOut << endl << "Error: " << archiveName << " is not archive" << endl;
+      numErrors++;
       continue;
+    }
+    if (archiveFileInfo.IsDirectory())
+    {
+      g_StdOut << endl << "Error: " << archiveName << " is not file" << endl;
+      numErrors++;
+      continue;
+    }
 
-    fieldPrinter.PrintItemInfo(archive, defaultItemName, archiveFileInfo, i);
+    CArchiveLink archiveLink;
 
-    UINT64 packSize, unpackSize;
-    if (!GetUINT64Value(archive, i, kpidSize, unpackSize))
-      unpackSize = 0;
-    else
-      totalUnPackSizePointer = &totalUnPackSize;
-    if (!GetUINT64Value(archive, i, kpidPackedSize, packSize))
-      packSize = 0;
-    else
-      totalPackSizePointer = &totalPackSize;
+    COpenCallbackConsole openCallback;
+    openCallback.PasswordIsDefined = passwordEnabled;
+    openCallback.Password = password;
 
-    g_StdOut << endl;
+    HRESULT result = MyOpenArchive(archiveName, archiveLink, &openCallback);
+    if (result != S_OK)
+    {
+      g_StdOut << endl << "Error: " << archiveName << " is not supported archive" << endl;
+      numErrors++;
+      continue;
+    }
 
-    numFiles++;
-    totalPackSize += packSize;
-    totalUnPackSize += unpackSize;
+    for (int v = 0; v < archiveLink.VolumePaths.Size(); v++)
+    {
+      int index = archivePathsFull.FindInSorted(archiveLink.VolumePaths[v]);
+      if (index >= 0 && index > i)
+      {
+        archivePaths.Delete(index);
+        archivePathsFull.Delete(index);
+      }
+    }
+
+    IInArchive *archive = archiveLink.GetArchive();
+    const UString defaultItemName = archiveLink.GetDefaultItemName();
+
+    if (enableHeaders)
+      g_StdOut << endl << kListing << archiveName << endl << endl;
+
+    if (enableHeaders)
+    {
+      fieldPrinter.PrintTitle();
+      g_StdOut << endl;
+      fieldPrinter.PrintTitleLines();
+      g_StdOut << endl;
+    }
+    
+    UInt64 numFiles = 0, totalPackSize = 0, totalUnPackSize = 0;
+    UInt64 *totalPackSizePointer = 0, *totalUnPackSizePointer = 0;
+    UInt32 numItems;
+    RINOK(archive->GetNumberOfItems(&numItems));
+    for(UInt32 i = 0; i < numItems; i++)
+    {
+      if (NConsoleClose::TestBreakSignal())
+        return E_ABORT;
+
+      UString filePath;
+      RINOK(GetArchiveItemPath(archive, i, defaultItemName, filePath));
+
+      bool isFolder;
+      RINOK(IsArchiveItemFolder(archive, i, isFolder));
+      if (!wildcardCensor.CheckPath(filePath, !isFolder))
+        continue;
+      
+      fieldPrinter.PrintItemInfo(archive, defaultItemName, archiveFileInfo, i);
+      
+      UInt64 packSize, unpackSize;
+      if (!GetUINT64Value(archive, i, kpidSize, unpackSize))
+        unpackSize = 0;
+      else
+        totalUnPackSizePointer = &totalUnPackSize;
+      if (!GetUINT64Value(archive, i, kpidPackedSize, packSize))
+        packSize = 0;
+      else
+        totalPackSizePointer = &totalPackSize;
+      
+      g_StdOut << endl;
+      
+      numFiles++;
+      totalPackSize += packSize;
+      totalUnPackSize += unpackSize;
+    }
+    if (enableHeaders)
+    {
+      fieldPrinter.PrintTitleLines();
+      g_StdOut << endl;
+      fieldPrinter.PrintSummaryInfo(numFiles, totalUnPackSizePointer, totalPackSizePointer);
+      g_StdOut << endl;
+    }
+    if (totalPackSizePointer != 0)
+    {
+      totalPackSizePointer2 = &totalPackSize2;
+      totalPackSize2 += totalPackSize;
+    }
+    if (totalUnPackSizePointer != 0)
+    {
+      totalUnPackSizePointer2 = &totalUnPackSize2;
+      totalUnPackSize2 += totalUnPackSize;
+    }
+    numFiles2 += numFiles;
   }
-  fieldPrinter.PrintTitleLines();
-  g_StdOut << endl;
-  /*
-  if(numFiles == 0)
-      g_StdOut << kNoFilesMessage);
-  else
-  */
-  fieldPrinter.PrintSummaryInfo(numFiles, totalUnPackSizePointer, totalPackSizePointer);
-  g_StdOut << endl;
+  if (enableHeaders && archivePaths.Size() > 1)
+  {
+    g_StdOut << endl;
+    fieldPrinter.PrintTitleLines();
+    g_StdOut << endl;
+    fieldPrinter.PrintSummaryInfo(numFiles2, totalUnPackSizePointer2, totalPackSizePointer2);
+    g_StdOut << endl;
+    g_StdOut << "Archives: " << archivePaths.Size() << endl;
+  }
+  if (numErrors > 0)
+    g_StdOut << endl << "Errors: " << numErrors;
   return S_OK;
 }
 

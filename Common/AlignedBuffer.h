@@ -1,7 +1,9 @@
-// AlignedBuffer.h
+// Common/AlignedBuffer.h
 
-#ifndef __ALIGNBUFFER_H
-#define __ALIGNBUFFER_H
+#ifndef __COMMON_ALIGNEDBUFFER_H
+#define __COMMON_ALIGNEDBUFFER_H
+
+#include <stddef.h>
 
 class CAlignedBuffer
 {
@@ -9,7 +11,7 @@ class CAlignedBuffer
 public:
   CAlignedBuffer(): m_Buffer(0) {};
   ~CAlignedBuffer() { Free(); }
-  void *Allocate(size_t numItems, size_t itemSize, size_t alignValue);
+  void *Allocate(size_t size, size_t mask);
   void Free();
 };
 

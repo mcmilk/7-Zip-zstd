@@ -39,18 +39,18 @@ CStdInStream::~CStdInStream()
 
 AString CStdInStream::ScanStringUntilNewLine()
 {
-  AString string;
+  AString s;
   while(true)
   {
-    int aIntChar = GetChar();
-    if(aIntChar == EOF)
+    int intChar = GetChar();
+    if(intChar == EOF)
       throw kEOFMessage;
-    char aChar = char(aIntChar);
-    if (aChar == kIllegalChar)
+    char c = char(intChar);
+    if (c == kIllegalChar)
       throw kIllegalCharMessage;
-    if(aChar == kNewLineChar)
-      return string;
-    string += aChar;
+    if(c == kNewLineChar)
+      return s;
+    s += c;
   }
 }
 

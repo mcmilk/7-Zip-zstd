@@ -19,7 +19,7 @@ STDMETHODIMP COutStreamImp::Write(void const *data, ULONG size, ULONG *processed
   return S_OK; 
 }
 
-void CInStreamImp::Init(BYTE *dataPointer, UINT32 size)
+void CInStreamImp::Init(Byte *dataPointer, UInt32 size)
 {
   _dataPointer = dataPointer;
   _size = size;
@@ -28,7 +28,7 @@ void CInStreamImp::Init(BYTE *dataPointer, UINT32 size)
 
 STDMETHODIMP CInStreamImp::Read(void *data, ULONG size, ULONG *processedSize)
 {
-  UINT32 numBytesToRead = MyMin(_pos + (UINT32)size, _size) - _pos;
+  UInt32 numBytesToRead = MyMin(_pos + (UInt32)size, _size) - _pos;
   if(processedSize != NULL)
     *processedSize = numBytesToRead;
   memmove(data, _dataPointer + _pos, numBytesToRead);
@@ -44,9 +44,9 @@ STDMETHODIMP CInStreamImp::Write(void const *data, ULONG size, ULONG *processedS
 
 
 
-STDMETHODIMP CSequentialInStreamImp::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamImp::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 numBytesToRead = MyMin(_pos + size, _size) - _pos;
+  UInt32 numBytesToRead = MyMin(_pos + size, _size) - _pos;
   memmove(data, _dataPointer + _pos, numBytesToRead);
   _pos += numBytesToRead;
   if(processedSize != NULL)
@@ -54,7 +54,7 @@ STDMETHODIMP CSequentialInStreamImp::Read(void *data, UINT32 size, UINT32 *proce
   return S_OK;
 }
 
-STDMETHODIMP CSequentialInStreamImp::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamImp::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
 {
   return Read(data, size, processedSize);
 }
@@ -62,7 +62,7 @@ STDMETHODIMP CSequentialInStreamImp::ReadPart(void *data, UINT32 size, UINT32 *p
 ////////////////////
 
 
-void CWriteBuffer::Write(const void *data, UINT32 size)
+void CWriteBuffer::Write(const void *data, UInt32 size)
 {
   size_t newCapacity = _size + size;
   _buffer.EnsureCapacity(newCapacity);
@@ -70,7 +70,7 @@ void CWriteBuffer::Write(const void *data, UINT32 size)
   _size += size;
 }
 
-STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   _writeBuffer.Write(data, size);
   if(processedSize != NULL)
@@ -78,14 +78,14 @@ STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UINT32 size, UINT3
   return S_OK; 
 }
 
-STDMETHODIMP CSequentialOutStreamImp::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialOutStreamImp::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
 {
   return Write(data, size, processedSize);
 }
 
-STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 newSize = size;
+  UInt32 newSize = size;
   if (_pos + size > _size)
     newSize = _size - _pos;
   memmove(_buffer + _pos, data, newSize);
@@ -97,16 +97,16 @@ STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UINT32 size, UINT
   return S_OK; 
 }
 
-STDMETHODIMP CSequentialOutStreamImp2::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialOutStreamImp2::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
 {
   return Write(data, size, processedSize);
 }
 
 
 
-STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)
@@ -114,9 +114,9 @@ STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UINT32 size, UINT32 
   return result; 
 }
 
-STDMETHODIMP CSequentialInStreamSizeCount::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamSizeCount::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->ReadPart(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)
@@ -124,10 +124,63 @@ STDMETHODIMP CSequentialInStreamSizeCount::ReadPart(void *data, UINT32 size, UIN
   return result; 
 }
 
-
-STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamRollback::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  HRESULT result = S_OK;
+  UInt32 realProcessedSizeTotal = 0;
+  while (size > 0)
+  {
+    UInt32 realProcessedSize = 0;
+    result = ReadPart(data, size, &realProcessedSize);
+    size -= realProcessedSize;
+    data = ((Byte *)data + realProcessedSize);
+    realProcessedSizeTotal += realProcessedSize;
+    if (realProcessedSize == 0 || result != S_OK)
+      break;
+  }
+  if (processedSize != 0)
+    *processedSize = realProcessedSizeTotal;
+  return result;
+}
+
+STDMETHODIMP CSequentialInStreamRollback::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
+{
+  if (_currentPos != _currentSize)
+  {
+    UInt32 curSize = _currentSize - _currentPos;
+    if (size > curSize)
+      size = curSize;
+    memmove(data, _buffer + _currentPos, size);
+    _currentPos += size;
+    if (processedSize != 0)
+      *processedSize = size;
+    return S_OK;
+  }
+  UInt32 realProcessedSize;
+  if (size > _bufferSize)
+    size = _bufferSize;
+  HRESULT result = _stream->ReadPart(_buffer, size, &realProcessedSize);
+  memmove(data, _buffer, realProcessedSize);
+  _size += realProcessedSize;
+  _currentSize = realProcessedSize;
+  _currentPos = realProcessedSize;
+  if (processedSize != 0)
+    *processedSize = realProcessedSize;
+  return result; 
+}
+
+HRESULT CSequentialInStreamRollback::Rollback(UInt32 rollbackSize)
+{
+  if (rollbackSize > _currentPos)
+    return E_INVALIDARG;
+  _currentPos -= rollbackSize;
+  return S_OK;
+}
+
+
+STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  UInt32 realProcessedSize;
   HRESULT result = _stream->Write(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)
@@ -135,9 +188,9 @@ STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UINT32 size,
   return result; 
 }
 
-STDMETHODIMP CSequentialOutStreamSizeCount::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialOutStreamSizeCount::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->WritePart(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)

@@ -36,7 +36,7 @@ static CSysString GetKeyPath(const CSysString &path)
   return CSysString(kCUBasePath) + CSysString('\\') + CSysString(path);
 }
 
-void SaveExtractionInfo(const NExtraction::CInfo &info)
+void SaveExtractionInfo(const NExtract::CInfo &info)
 {
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey extractionKey;
@@ -48,20 +48,20 @@ void SaveExtractionInfo(const NExtraction::CInfo &info)
     for(int i = 0; i < info.Paths.Size(); i++)
     {
       TCHAR numberString[16];
-      ConvertUINT64ToString(i, numberString);
+      ConvertUInt64ToString(i, numberString);
       pathHistoryKey.SetValue(numberString, info.Paths[i]);
     }
   }
-  extractionKey.SetValue(kExtractionExtractModeValueName, UINT32(info.PathMode));
-  extractionKey.SetValue(kExtractionOverwriteModeValueName, UINT32(info.OverwriteMode));
+  extractionKey.SetValue(kExtractionExtractModeValueName, UInt32(info.PathMode));
+  extractionKey.SetValue(kExtractionOverwriteModeValueName, UInt32(info.OverwriteMode));
   extractionKey.SetValue(kExtractionShowPasswordValueName, info.ShowPassword);
 }
 
-void ReadExtractionInfo(NExtraction::CInfo &info)
+void ReadExtractionInfo(NExtract::CInfo &info)
 {
   info.Paths.Clear();
-  info.PathMode = NExtraction::NPathMode::kFullPathnames;
-  info.OverwriteMode = NExtraction::NOverwriteMode::kAskBefore;
+  info.PathMode = NExtract::NPathMode::kCurrentPathnames;
+  info.OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
   info.ShowPassword = false;
 
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
@@ -77,7 +77,7 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
       while(true)
       {
         TCHAR numberString[16];
-        ConvertUINT64ToString(info.Paths.Size(), numberString);
+        ConvertUInt64ToString(info.Paths.Size(), numberString);
         CSysString path;
         if (pathHistoryKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;
@@ -85,29 +85,29 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
       }
     }
   }
-  UINT32 extractModeIndex;
+  UInt32 extractModeIndex;
   if (extractionKey.QueryValue(kExtractionExtractModeValueName, extractModeIndex) == ERROR_SUCCESS)
   {
     switch (extractModeIndex)
     {
-      case NExtraction::NPathMode::kFullPathnames:
-      case NExtraction::NPathMode::kCurrentPathnames:
-      case NExtraction::NPathMode::kNoPathnames:
-        info.PathMode = NExtraction::NPathMode::EEnum(extractModeIndex);
+      case NExtract::NPathMode::kFullPathnames:
+      case NExtract::NPathMode::kCurrentPathnames:
+      case NExtract::NPathMode::kNoPathnames:
+        info.PathMode = NExtract::NPathMode::EEnum(extractModeIndex);
         break;
     }
   }
-  UINT32 overwriteModeIndex;
+  UInt32 overwriteModeIndex;
   if (extractionKey.QueryValue(kExtractionOverwriteModeValueName, overwriteModeIndex) == ERROR_SUCCESS)
   {
     switch (overwriteModeIndex)
     {
-      case NExtraction::NOverwriteMode::kAskBefore:
-      case NExtraction::NOverwriteMode::kWithoutPrompt:
-      case NExtraction::NOverwriteMode::kSkipExisting:
-      case NExtraction::NOverwriteMode::kAutoRename:
-      case NExtraction::NOverwriteMode::kAutoRenameExisting:
-        info.OverwriteMode = NExtraction::NOverwriteMode::EEnum(overwriteModeIndex);
+      case NExtract::NOverwriteMode::kAskBefore:
+      case NExtract::NOverwriteMode::kWithoutPrompt:
+      case NExtract::NOverwriteMode::kSkipExisting:
+      case NExtract::NOverwriteMode::kAutoRename:
+      case NExtract::NOverwriteMode::kAutoRenameExisting:
+        info.OverwriteMode = NExtract::NOverwriteMode::EEnum(overwriteModeIndex);
         break;
     }
   }
@@ -151,7 +151,7 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     for(int i = 0; i < info.HistoryArchives.Size(); i++)
     {
       TCHAR numberString[16];
-      ConvertUINT64ToString(i, numberString);
+      ConvertUInt64ToString(i, numberString);
       historyArchivesKey.SetValue(numberString, info.HistoryArchives[i]);
     }
   }
@@ -171,7 +171,7 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
         formatKey.DeleteValue(kCompressionOptions);
       else
         formatKey.SetValue(kCompressionOptions, fo.Options);
-      if (fo.Level == UINT32(-1))
+      if (fo.Level == UInt32(-1))
         formatKey.DeleteValue(kCompressionLevel);
       else
         formatKey.SetValue(kCompressionLevel, fo.Level);
@@ -179,18 +179,18 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
         formatKey.DeleteValue(kCompressionMethod);
       else
         formatKey.SetValue(kCompressionMethod, fo.Method);
-      if (fo.Dictionary == UINT32(-1))
+      if (fo.Dictionary == UInt32(-1))
         formatKey.DeleteValue(kCompressionDictionary);
       else
         formatKey.SetValue(kCompressionDictionary, fo.Dictionary);
-      if (fo.Order == UINT32(-1))
+      if (fo.Order == UInt32(-1))
         formatKey.DeleteValue(kCompressionOrder);
       else
         formatKey.SetValue(kCompressionOrder, fo.Order);
     }
   }
 
-  compressionKey.SetValue(kCompressionLevelValueName, UINT32(info.Level));
+  compressionKey.SetValue(kCompressionLevelValueName, UInt32(info.Level));
   compressionKey.SetValue(kCompressionLastFormatValueName, 
       GetSystemString(info.ArchiveType));
 
@@ -235,7 +235,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
       while(true)
       {
         TCHAR numberString[16];
-        ConvertUINT64ToString(info.HistoryArchives.Size(), numberString);
+        ConvertUInt64ToString(info.HistoryArchives.Size(), numberString);
         CSysString path;
         if (historyArchivesKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;
@@ -269,13 +269,13 @@ void ReadCompressionInfo(NCompression::CInfo &info)
           if (formatKey.QueryValue(kCompressionOptions, fo.Options) != ERROR_SUCCESS)
             fo.Options.Empty();
           if (formatKey.QueryValue(kCompressionLevel, fo.Level) != ERROR_SUCCESS)
-            fo.Level = UINT32(-1);
+            fo.Level = UInt32(-1);
           if (formatKey.QueryValue(kCompressionMethod, fo.Method) != ERROR_SUCCESS)
             fo.Method.Empty();;
           if (formatKey.QueryValue(kCompressionDictionary, fo.Dictionary) != ERROR_SUCCESS)
-            fo.Dictionary = UINT32(-1);
+            fo.Dictionary = UInt32(-1);
           if (formatKey.QueryValue(kCompressionOrder, fo.Order) != ERROR_SUCCESS)
-            fo.Order = UINT32(-1);
+            fo.Order = UInt32(-1);
           info.FormatOptionsVector.Add(fo);
         }
 
@@ -283,7 +283,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
     }
   }
 
-  UINT32 level;
+  UInt32 level;
   if (compressionKey.QueryValue(kCompressionLevelValueName, level) == ERROR_SUCCESS)
     info.Level = level;
   CSysString archiveType;
@@ -318,7 +318,7 @@ void SaveWorkDirInfo(const NWorkDir::CInfo &info)
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey optionsKey;
   optionsKey.Create(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName));
-  optionsKey.SetValue(kWorkDirTypeValueName, UINT32(info.Mode));
+  optionsKey.SetValue(kWorkDirTypeValueName, UInt32(info.Mode));
   optionsKey.SetValue(kWorkDirPathValueName, GetSystemString(info.Path));
   optionsKey.SetValue(kTempRemovableOnlyValueName, info.ForRemovableOnly);
 }
@@ -332,7 +332,7 @@ void ReadWorkDirInfo(NWorkDir::CInfo &info)
   if(optionsKey.Open(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName), KEY_READ) != ERROR_SUCCESS)
     return;
 
-  UINT32 dirType;
+  UInt32 dirType;
   if (optionsKey.QueryValue(kWorkDirTypeValueName, dirType) != ERROR_SUCCESS)
     return;
   switch (dirType)
@@ -380,7 +380,7 @@ bool ReadCascadedMenu()
   { return ReadOption(kCascadedMenuValueName, false); }
 
 
-static void SaveValue(const TCHAR *value, UINT32 valueToWrite)
+static void SaveValue(const TCHAR *value, UInt32 valueToWrite)
 {
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey optionsKey;
@@ -388,7 +388,7 @@ static void SaveValue(const TCHAR *value, UINT32 valueToWrite)
   optionsKey.SetValue(value, valueToWrite);
 }
 
-static bool ReadValue(const TCHAR *value, UINT32 &result)
+static bool ReadValue(const TCHAR *value, UInt32 &result)
 {
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey optionsKey;
@@ -397,8 +397,8 @@ static bool ReadValue(const TCHAR *value, UINT32 &result)
   return (optionsKey.QueryValue(value, result) == ERROR_SUCCESS);
 }
 
-void SaveContextMenuStatus(UINT32 value)
+void SaveContextMenuStatus(UInt32 value)
   { SaveValue(kContextMenuValueName, value); }
 
-bool ReadContextMenuStatus(UINT32 &value)
+bool ReadContextMenuStatus(UInt32 &value)
   { return  ReadValue(kContextMenuValueName, value); }

@@ -18,8 +18,8 @@ void CInTree2::AfterMoveBlock()
   CInTree::AfterMoveBlock();
 }
 
-STDMETHODIMP CMatchFinderHC::Init(ISequentialInStream *aStream)
-  { return m_MatchFinder.Init(aStream); }
+STDMETHODIMP CMatchFinderHC::Init(ISequentialInStream *inStream)
+  { return m_MatchFinder.Init(inStream); }
 
 STDMETHODIMP_(void) CMatchFinderHC::ReleaseStream()
 { 
@@ -29,48 +29,50 @@ STDMETHODIMP_(void) CMatchFinderHC::ReleaseStream()
 STDMETHODIMP CMatchFinderHC::MovePos()
   { return m_MatchFinder.MovePos(); }
 
-STDMETHODIMP_(BYTE) CMatchFinderHC::GetIndexByte(UINT32 anIndex)
-  { return m_MatchFinder.GetIndexByte(anIndex); }
+STDMETHODIMP_(Byte) CMatchFinderHC::GetIndexByte(Int32 index)
+  { return m_MatchFinder.GetIndexByte(index); }
 
-STDMETHODIMP_(UINT32) CMatchFinderHC::GetMatchLen(UINT32 aIndex, 
-    UINT32 aBack, UINT32 aLimit)
-  { return m_MatchFinder.GetMatchLen(aIndex, aBack, aLimit); }
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetMatchLen(Int32 index, 
+    UInt32 back, UInt32 limit)
+  { return m_MatchFinder.GetMatchLen(index, back, limit); }
 
-STDMETHODIMP_(UINT32) CMatchFinderHC::GetNumAvailableBytes()
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetNumAvailableBytes()
   { return m_MatchFinder.GetNumAvailableBytes(); }
   
-STDMETHODIMP CMatchFinderHC::Create(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter)
+STDMETHODIMP CMatchFinderHC::Create(UInt32 historySize, 
+      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter)
 { 
-  UINT32 aWindowReservSize = (aSizeHistory + aKeepAddBufferBefore + 
-      aMatchMaxLen + aKeepAddBufferAfter) / 2 + 256;
-  try 
+  UInt32 windowReservSize = (historySize + keepAddBufferBefore + 
+      matchMaxLen + keepAddBufferAfter) / 2 + 256;
+  // try 
   {
-    return m_MatchFinder.Create(aSizeHistory, aKeepAddBufferBefore, aMatchMaxLen, 
-      aKeepAddBufferAfter, aWindowReservSize); 
+    return m_MatchFinder.Create(historySize, keepAddBufferBefore, matchMaxLen, 
+      keepAddBufferAfter, windowReservSize); 
   }
+  /*
   catch(...)
   {
     return E_OUTOFMEMORY;
   }
+  */
 }
 
-STDMETHODIMP_(UINT32) CMatchFinderHC::GetLongestMatch(UINT32 *aDistances)
-  { return m_MatchFinder.GetLongestMatch(aDistances); }
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetLongestMatch(UInt32 *distances)
+  { return m_MatchFinder.GetLongestMatch(distances); }
 
 STDMETHODIMP_(void) CMatchFinderHC::DummyLongestMatch()
   { m_MatchFinder.DummyLongestMatch(); }
 
-STDMETHODIMP_(const BYTE *) CMatchFinderHC::GetPointerToCurrentPos()
+STDMETHODIMP_(const Byte *) CMatchFinderHC::GetPointerToCurrentPos()
 {
   return m_MatchFinder.GetPointerToCurrentPos();
 }
 
 // IMatchFinderSetCallback
-STDMETHODIMP CMatchFinderHC::SetCallback(IMatchFinderCallback *aCallback)
+STDMETHODIMP CMatchFinderHC::SetCallback(IMatchFinderCallback *callback)
 {
-  m_MatchFinder.SetCallback(aCallback);
+  m_MatchFinder.SetCallback(callback);
   return S_OK;
 }
 

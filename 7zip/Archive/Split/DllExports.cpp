@@ -57,6 +57,9 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
     case NArchive::kUpdate:
       propVariant = false;
       break;
+    case NArchive::kKeepName:
+      propVariant = true;
+      break;
   }
   propVariant.Detach(value);
   return S_OK;

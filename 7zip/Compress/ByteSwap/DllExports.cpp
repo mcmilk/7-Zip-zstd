@@ -18,19 +18,19 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   COM_TRY_BEGIN
   *outObject = 0;
-  int correctInterface = (*iid == IID_ICompressCoder);
-  CMyComPtr<ICompressCoder> coder;
+  int correctInterface = (*iid == IID_ICompressFilter);
+  CMyComPtr<ICompressFilter> coder;
   if (*clsid == CLSID_CCompressConvertByteSwap2)
   {
     if (!correctInterface)
       return E_NOINTERFACE;
-    coder = (ICompressCoder *)new CByteSwap2();
+    coder = (ICompressFilter *)new CByteSwap2();
   }
   else if (*clsid == CLSID_CCompressConvertByteSwap4)
   {
     if (!correctInterface)
       return E_NOINTERFACE;
-    coder = (ICompressCoder *)new CByteSwap4();
+    coder = (ICompressFilter *)new CByteSwap4();
   }
   else
     return CLASS_E_CLASSNOTAVAILABLE;

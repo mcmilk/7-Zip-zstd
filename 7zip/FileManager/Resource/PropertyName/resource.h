@@ -28,6 +28,7 @@
 #define IDS_PROPERTY_GROUP              26
 #define IDS_PROPERTY_BLOCK              27
 #define IDS_PROPERTY_COMMENT            28
+#define IDS_PROPERTY_POSITION          29
 
 // Next default values for new objects
 // 

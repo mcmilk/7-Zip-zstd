@@ -1,7 +1,5 @@
 // Common/TextPairs.h
 
-#pragma once
-
 #ifndef __COMMON_TEXTPAIRS_H
 #define __COMMON_TEXTPAIRS_H
 
@@ -32,5 +30,3 @@ public:
 };
 
 #endif
-
-

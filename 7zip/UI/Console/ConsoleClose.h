@@ -1,7 +1,5 @@
 // ConsoleCloseUtils.h
 
-#pragma once
-
 #ifndef __CONSOLECLOSEUTILS_H
 #define __CONSOLECLOSEUTILS_H
 
@@ -24,4 +22,3 @@ void CheckCtrlBreak();
 }
 
 #endif
-

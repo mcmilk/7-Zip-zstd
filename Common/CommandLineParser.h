@@ -1,11 +1,9 @@
 // Common/CommandLineParser.h
 
-#pragma once
-
 #ifndef __COMMON_COMMANDLINEPARSER_H
 #define __COMMON_COMMANDLINEPARSER_H
 
-#include "Common/String.h"
+#include "String.h"
 
 namespace NCommandLineParser {
 

@@ -32,18 +32,15 @@ class CKeyInfo
 {
 public:
   int NumCyclesPower;
-  UINT32 SaltSize;
-  BYTE Salt[16];
+  UInt32 SaltSize;
+  Byte Salt[16];
   CByteBuffer Password;
-  BYTE Key[kKeySize];
+  Byte Key[kKeySize];
 
   bool IsEqualTo(const CKeyInfo &a) const;
   void CalculateDigest();
 
-  CKeyInfo()
-  {
-    Init();
-  }
+  CKeyInfo() { Init(); }
   void Init()
   {
     NumCyclesPower = 0;
@@ -69,69 +66,57 @@ class CBase
   CKeyInfoCache _cachedKeys;
 protected:
   CKeyInfo _key;
-  BYTE _iv[16];
+  Byte _iv[16];
   // int _ivSize;
   void CalculateDigest();
   CBase();
 };
 
-class CEncoder: 
-  public ICompressCoder,
-  public ICompressSetDecoderProperties,
+class CBaseCoder: 
+  public ICompressFilter,
   public ICryptoSetPassword,
-  public ICompressWriteCoderProperties,
   public CMyUnknownImp,
   public CBase
 {
-  MY_UNKNOWN_IMP3(
-      ICryptoSetPassword,
-      ICompressSetDecoderProperties,
-      ICompressWriteCoderProperties
-      )
-
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress);
-  
-  STDMETHOD(CryptoSetPassword)(const BYTE *aData, UINT32 aSize);
-
-  // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
-
-  // ICompressWriteCoderProperties
-  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
-
+protected:
   #ifndef CRYPTO_AES
-  CCoderLibrary _aesEncoderLibrary;
+  CCoderLibrary _aesLibrary;
   #endif
-  CMyComPtr<ICompressCoder2> _aesEncoder;
+  CMyComPtr<ICompressFilter> _aesFilter;
+
+  virtual HRESULT CreateFilter() = 0;
+  #ifndef CRYPTO_AES
+  HRESULT CreateFilterFromDLL(REFCLSID clsID);
+  #endif
+public:
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
+  
+  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
+};
+
+class CEncoder: 
+  public CBaseCoder,
+  public ICompressWriteCoderProperties
+{
+  virtual HRESULT CreateFilter();
+public:
+  MY_UNKNOWN_IMP2(
+      ICryptoSetPassword,
+      ICompressWriteCoderProperties)
+  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
 };
 
 class CDecoder: 
-  public ICompressCoder,
-  public ICompressSetDecoderProperties,
-  public ICryptoSetPassword,
-  public CMyUnknownImp,
-  public CBase
+  public CBaseCoder,
+  public ICompressSetDecoderProperties
 {
+  virtual HRESULT CreateFilter();
+public:
   MY_UNKNOWN_IMP2(
       ICryptoSetPassword,
-      ICompressSetDecoderProperties
-      )
-
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress);
-  
-  STDMETHOD(CryptoSetPassword)(const BYTE *aData, UINT32 aSize);
-  // ICompressSetDecoderProperties
-  
+      ICompressSetDecoderProperties)
   STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
-
-  #ifndef CRYPTO_AES
-  CCoderLibrary _aesDecoderLibrary;
-  #endif
-  CMyComPtr<ICompressCoder2> _aesDecoder;
 };
 
 }}

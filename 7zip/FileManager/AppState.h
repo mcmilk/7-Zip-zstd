@@ -1,7 +1,5 @@
 // AppState.h
 
-#pragma once
-
 #ifndef __APPSTATE_H
 #define __APPSTATE_H
 

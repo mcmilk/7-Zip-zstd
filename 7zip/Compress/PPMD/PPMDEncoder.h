@@ -1,11 +1,9 @@
 // Compress/PPMD/Encoder.h
 
-#pragma once
-
 #ifndef __COMPRESS_PPMD_ENCODER_H
 #define __COMPRESS_PPMD_ENCODER_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 
 #include "../../ICoder.h"
 #include "../../Common/InBuffer.h"
@@ -28,8 +26,8 @@ public:
   NRangeCoder::CEncoder _rangeEncoder;
 
   CEncodeInfo _info;
-  UINT32 _usedMemorySize;
-  BYTE _order;
+  UInt32 _usedMemorySize;
+  Byte _order;
 
 public:
 
@@ -39,23 +37,21 @@ public:
 
   // ICoder interface
   HRESULT Flush();
-  /*
   void ReleaseStreams()
   {
     _inStream.ReleaseStream();
     _rangeEncoder.ReleaseStream();
   }
-  */
 
   HRESULT CodeReal(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
-      const PROPVARIANT *properties, UINT32 numProperties);
+      const PROPVARIANT *properties, UInt32 numProperties);
 
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
 

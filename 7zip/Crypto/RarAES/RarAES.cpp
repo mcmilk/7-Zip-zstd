@@ -3,11 +3,6 @@
 
 #include "StdAfx.h"
 
-#include "../../Common/StreamObjects.h"
-#include "../../Archive/Common/CoderLoader.h"
-
-#include "Windows/Defs.h"
-
 #include "RarAES.h"
 #include "sha1.h"
 
@@ -32,8 +27,8 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
   bool thereIsSaltPrev = _thereIsSalt;
   _thereIsSalt = false;
-  UINT32 processedSize;
-  BYTE salt[8];
+  UInt32 processedSize;
+  Byte salt[8];
   RINOK(inStream->Read(salt, sizeof(salt), &processedSize));
   if (processedSize == 0)
     _thereIsSalt = false;
@@ -61,13 +56,13 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
+STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
   bool same = false;
   if (size == buffer.GetCapacity())
   {
     same = true;
-    for (UINT32 i = 0; i < size; i++)
+    for (UInt32 i = 0; i < size; i++)
       if (data[i] != buffer[i])
       {
         same = false;
@@ -81,16 +76,41 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress)
+STDMETHODIMP CDecoder::Init()
+{
+  Calculate();
+  CreateFilter();
+  CMyComPtr<ICryptoProperties> cp;
+  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
+  RINOK(cp->SetKey(aesKey, 16));
+  RINOK(cp->SetInitVector(aesInit, 16));
+  _aesFilter->Init();
+  return S_OK;
+}
+
+HRESULT CDecoder::CreateFilter()
+{
+  if (_aesFilter)
+    return S_OK;
+  TCHAR aesLibPath[MAX_PATH + 64];
+  GetCryptoFolderPrefix(aesLibPath);
+  lstrcat(aesLibPath, TEXT("AES.dll"));
+  return _aesLib.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES128_Decoder, &_aesFilter);
+}
+
+STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+{
+  return _aesFilter->Filter(data, size);
+}
+
+void CDecoder::Calculate()
 {
   if (_needCalculate)
   {
     const MAXPASSWORD = 128;
     const SALT_SIZE = 8;
     
-    BYTE rawPassword[2 * MAXPASSWORD+ SALT_SIZE];
+    Byte rawPassword[2 * MAXPASSWORD+ SALT_SIZE];
     
     memcpy(rawPassword, buffer, buffer.GetCapacity());
     
@@ -110,27 +130,36 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     for (i = 0; i < hashRounds; i++)
     {
       hash_process(&c, rawPassword, rawLength);
-      BYTE pswNum[3];
-      pswNum[0] = (BYTE)i;
-      pswNum[1] = (BYTE)(i >> 8);
-      pswNum[2] = (BYTE)(i >> 16);
+      Byte pswNum[3];
+      pswNum[0] = (Byte)i;
+      pswNum[1] = (Byte)(i >> 8);
+      pswNum[2] = (Byte)(i >> 16);
       hash_process(&c, pswNum, 3);
       if (i % (hashRounds / 16) == 0)
       {
         hash_context tempc = c;
-        UINT32 digest[5];
+        UInt32 digest[5];
         hash_final(&tempc, digest);
-        aesInit[i / (hashRounds / 16)] = (BYTE)digest[4];
+        aesInit[i / (hashRounds / 16)] = (Byte)digest[4];
       }
     }
-    UINT32 digest[5];
+    UInt32 digest[5];
     hash_final(&c, digest);
     for (i = 0; i < 4; i++)
       for (int j = 0; j < 4; j++)
-        aesKey[i * 4 + j] = (BYTE)(digest[i] >> (j * 8));
+        aesKey[i * 4 + j] = (Byte)(digest[i] >> (j * 8));
   }
   _needCalculate = false;
+}
 
+
+
+/*
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, UInt64 const *inSize, 
+      const UInt64 *outSize,ICompressProgressInfo *progress)
+{
+  Calculate();
   TCHAR aesLibPath[MAX_PATH + 64];
   GetCryptoFolderPrefix(aesLibPath);
   lstrcat(aesLibPath, TEXT("AES.dll"));
@@ -147,11 +176,12 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
   keyStreamSpec->Init(aesKey, 16);
 
   ISequentialInStream *inStreams[3] = { inStream, ivStream, keyStream };
-  UINT64 ivSize = 16;
-  UINT64 keySize = 16;
-  const UINT64 *inSizes[3] = { inSize, &ivSize, &ivSize, };
+  UInt64 ivSize = 16;
+  UInt64 keySize = 16;
+  const UInt64 *inSizes[3] = { inSize, &ivSize, &ivSize, };
   return aesDecoder->Code(inStreams, inSizes, 3, 
       &outStream, &outSize, 1, progress);
 }
+*/
 
 }}

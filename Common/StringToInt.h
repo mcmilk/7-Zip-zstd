@@ -1,14 +1,15 @@
 // Common/StringToInt.h
 
-#pragma once
-
 #ifndef __COMMON_STRINGTOINT_H
 #define __COMMON_STRINGTOINT_H
 
-UINT64 ConvertStringToUINT64(const char *s, const char **end);
-UINT64 ConvertStringToUINT64(const wchar_t *s, const wchar_t **end);
+#include <string.h>
+#include "Types.h"
 
-INT64 ConvertStringToINT64(const char *s, const char **end);
+UInt64 ConvertStringToUInt64(const char *s, const char **end);
+UInt64 ConvertStringToUInt64(const wchar_t *s, const wchar_t **end);
+
+Int64 ConvertStringToInt64(const char *s, const char **end);
 
 #endif
 

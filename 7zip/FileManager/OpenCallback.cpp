@@ -32,6 +32,17 @@ STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *completed)
 STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant propVariant;
+  if (_subArchiveMode)
+  {
+    switch(propID)
+    {
+      case kpidName:
+        propVariant = _subArchiveName;
+        break;
+    }
+    propVariant.Detach(value);
+    return S_OK;
+  }
   switch(propID)
   {
   case kpidName:
@@ -64,6 +75,9 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
     IInStream **inStream)
 {
   *inStream = NULL;
+  if (_subArchiveMode)
+    return S_FALSE;
+
   NWindows::NFile::NFind::CFileInfoW fileInfo;
 
   UString fullPath = _folderPrefix + name;
@@ -82,17 +96,17 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
 
 STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
 {
-  if (!_passwordIsDefined)
+  if (!PasswordIsDefined)
   {
     CPasswordDialog dialog;
    
-    if (dialog.Create(_parentWindow) == IDCANCEL)
+    if (dialog.Create(ParentWindow) == IDCANCEL)
       return E_ABORT;
 
-    _password = GetUnicodeString((LPCTSTR)dialog._password);
-    _passwordIsDefined = true;
+    Password = dialog.Password;
+    PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = _password;
+  CMyComBSTR tempName = Password;
   *password = tempName.Detach();
 
   return S_OK;

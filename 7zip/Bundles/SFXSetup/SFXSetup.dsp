@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zSfxS.exe" /opt:NOWIN98
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Util\7zS.sfx" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "SFXSetup - Win32 Debug"
@@ -109,7 +109,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zWinSR.exe"
 # SUBTRACT BASE LINK32 /debug /nodefaultlib
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\UTIL\7zSfxSD.exe" /opt:NOWIN98
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"C:\Util\7zSD.sfx" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -191,6 +191,14 @@ SOURCE=..\..\Archive\7z\7zIn.h
 
 SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.h
+# End Source File
 # End Group
 # Begin Group "Archive Common"
 
@@ -205,6 +213,14 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File
@@ -213,11 +229,27 @@ SOURCE=..\..\Archive\Common\CrossThreadProgress.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\ItemNameUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\MultiStream.h
 # End Source File
 # Begin Source File
 
@@ -242,6 +274,14 @@ SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
 # Begin Group "Branch"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Branch\x86.cpp
@@ -283,6 +323,14 @@ SOURCE=..\..\Compress\LZ\LZOutWindow.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.cpp
@@ -481,11 +529,11 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.cpp
+SOURCE=..\..\Common\LockedStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.h
+SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 
@@ -540,6 +588,14 @@ SOURCE=..\..\UI\Explorer\MyMessages.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
@@ -548,11 +604,35 @@ SOURCE=..\..\UI\Common\ArchiverInfo.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\DefaultName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractMode.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\OpenArchive.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\UI\Common\OpenArchive.h
+# End Source File
+# End Group
+# Begin Group "GUI"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\OpenCallbackGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\OpenCallbackGUI.h
 # End Source File
 # End Group
 # End Group

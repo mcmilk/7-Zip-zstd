@@ -16,19 +16,19 @@ void COutArchive::Create(IOutStream *outStream)
   m_BasePosition = 0;
 }
 
-void COutArchive::MoveBasePosition(UINT32 distanceToMove)
+void COutArchive::MoveBasePosition(UInt32 distanceToMove)
 {
   m_BasePosition += distanceToMove; // test overflow
 }
 
-void COutArchive::PrepareWriteCompressedData(UINT16 fileNameLength)
+void COutArchive::PrepareWriteCompressedData(UInt16 fileNameLength)
 {
-  m_LocalFileHeaderSize = sizeof(NFileHeader::CLocalBlockFull) + fileNameLength;
+  m_LocalFileHeaderSize = 4 + NFileHeader::kLocalBlockSize + fileNameLength;
 }
 
-void COutArchive::WriteBytes(const void *buffer, UINT32 size)
+void COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
-  UINT32 processedSize;
+  UInt32 processedSize;
   if(m_Stream->Write(buffer, size, &processedSize) != S_OK)
     throw 0;
   if(processedSize != size)
@@ -36,80 +36,83 @@ void COutArchive::WriteBytes(const void *buffer, UINT32 size)
   m_BasePosition += size;
 }
 
+void COutArchive::WriteByte(Byte b)
+{
+  WriteBytes(&b, 1);
+}
+
+void COutArchive::WriteUInt16(UInt16 value)
+{
+  for (int i = 0; i < 2; i++)
+  {
+    WriteByte((Byte)value);
+    value >>= 8;
+  }
+}
+
+void COutArchive::WriteUInt32(UInt32 value)
+{
+  for (int i = 0; i < 4; i++)
+  {
+    WriteByte((Byte)value);
+    value >>= 8;
+  }
+}
+
 void COutArchive::WriteLocalHeader(const CItem &item)
 {
-  NFileHeader::CLocalBlockFull fileHeader;
-  fileHeader.Signature = NSignature::kLocalFileHeader;
-  NFileHeader::CLocalBlock &header = fileHeader.Header;
-
-  header.ExtractVersion.HostOS = item.ExtractVersion.HostOS;
-  header.ExtractVersion.Version = item.ExtractVersion.Version;
-  header.Flags = item.Flags;
-  header.CompressionMethod = item.CompressionMethod;
-  header.Time = item.Time;
-  header.FileCRC = item.FileCRC;
-  header.PackSize = item.PackSize;
-  header.UnPackSize = item.UnPackSize;
-
-  header.NameSize = item.Name.Length();
-  header.ExtraSize = item.LocalExtraSize; // test it;
-
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
-  WriteBytes(&fileHeader, sizeof(fileHeader));
-  WriteBytes((const char *)item.Name, header.NameSize);
-  MoveBasePosition(header.ExtraSize + header.PackSize);
+  WriteUInt32(NSignature::kLocalFileHeader);
+  WriteByte(item.ExtractVersion.Version);
+  WriteByte(item.ExtractVersion.HostOS);
+  WriteUInt16(item.Flags);
+  WriteUInt16(item.CompressionMethod);
+  WriteUInt32(item.Time);
+  WriteUInt32(item.FileCRC);
+  WriteUInt32(item.PackSize);
+  WriteUInt32(item.UnPackSize);
+  WriteUInt16(item.Name.Length());
+  WriteUInt16(item.LocalExtraSize); // test it;
+  WriteBytes((const char *)item.Name, item.Name.Length());
+  MoveBasePosition(item.LocalExtraSize + item.PackSize);
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
 }
 
 void COutArchive::WriteCentralHeader(const CItem &item)
 {
-  NFileHeader::CBlockFull fileHeader;
-  fileHeader.Signature = NSignature::kCentralFileHeader;
-  NFileHeader::CBlock &header = fileHeader.Header;
-
-  header.MadeByVersion.HostOS = item.MadeByVersion.HostOS;
-  header.MadeByVersion.Version = item.MadeByVersion.Version;
-  header.ExtractVersion.HostOS = item.ExtractVersion.HostOS;
-  header.ExtractVersion.Version = item.ExtractVersion.Version;
-  header.Flags = item.Flags;
-  header.CompressionMethod = item.CompressionMethod;
-  header.Time = item.Time;
-  header.FileCRC = item.FileCRC;
-  header.PackSize = item.PackSize;
-  header.UnPackSize = item.UnPackSize;
-
-  header.NameSize = item.Name.Length();
-
-  header.ExtraSize = item.CentralExtraSize; // test it;
-  header.CommentSize = item.CommentSize;
-  header.DiskNumberStart = 0;
-  header.InternalAttributes = item.InternalAttributes;
-  header.ExternalAttributes = item.ExternalAttributes;
-  header.LocalHeaderOffset = item.LocalHeaderPosition;
-
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
-  WriteBytes(&fileHeader, sizeof(fileHeader));
-  WriteBytes((const char *)item.Name, header.NameSize);
+  WriteUInt32(NSignature::kCentralFileHeader);
+  WriteByte(item.MadeByVersion.Version);
+  WriteByte(item.MadeByVersion.HostOS);
+  WriteByte(item.ExtractVersion.Version);
+  WriteByte(item.ExtractVersion.HostOS);
+  WriteUInt16(item.Flags);
+  WriteUInt16(item.CompressionMethod);
+  WriteUInt32(item.Time);
+  WriteUInt32(item.FileCRC);
+  WriteUInt32(item.PackSize);
+  WriteUInt32(item.UnPackSize);
+  WriteUInt16(item.Name.Length());
+  WriteUInt16(item.CentralExtraSize); // test it;
+  WriteUInt16(item.CommentSize);
+  WriteUInt16(0); // DiskNumberStart;
+  WriteUInt16(item.InternalAttributes);
+  WriteUInt32(item.ExternalAttributes);
+  WriteUInt32(item.LocalHeaderPosition);
+  WriteBytes((const char *)item.Name, item.Name.Length());
 }
 
 void COutArchive::WriteEndOfCentralDir(const COutArchiveInfo &archiveInfo)
 {
-  CEndOfCentralDirectoryRecordFull fileHeader;
-  fileHeader.Signature = NSignature::kEndOfCentralDir;
-  CEndOfCentralDirectoryRecord &header = fileHeader.Header;
-  
-  header.ThisDiskNumber = 0;
-  header.StartCentralDirectoryDiskNumber = 0;
-  
-  header.NumEntriesInCentaralDirectoryOnThisDisk = archiveInfo.NumEntriesInCentaralDirectory;
-  header.NumEntriesInCentaralDirectory = archiveInfo.NumEntriesInCentaralDirectory;
-  
-  header.CentralDirectorySize = archiveInfo.CentralDirectorySize;
-  header.CentralDirectoryStartOffset = archiveInfo.CentralDirectoryStartOffset;
-  header.CommentSize = archiveInfo.CommentSize;
-
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
-  WriteBytes(&fileHeader, sizeof(fileHeader));
+  WriteUInt32(NSignature::kEndOfCentralDir);
+  WriteUInt16(0); // ThisDiskNumber = 0;
+  WriteUInt16(0); // StartCentralDirectoryDiskNumber;
+  WriteUInt16(archiveInfo.NumEntriesInCentaralDirectory);
+  WriteUInt16(archiveInfo.NumEntriesInCentaralDirectory);
+  WriteUInt32(archiveInfo.CentralDirectorySize);
+  WriteUInt32(archiveInfo.CentralDirectoryStartOffset);
+  WriteUInt16(archiveInfo.CommentSize);
 }
 
 void COutArchive::CreateStreamForCompressing(IOutStream **outStream)

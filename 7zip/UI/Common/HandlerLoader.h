@@ -1,14 +1,12 @@
 // HandlerLoader.h
 
-#pragma once
-
 #ifndef __HANDLERLOADER_H
 #define __HANDLERLOADER_H
 
 #include "../../ICoder.h"
 #include "Windows/DLL.h"
 
-typedef UINT32 (WINAPI * CreateObjectFunc)(
+typedef UInt32 (WINAPI * CreateObjectFunc)(
     const GUID *clsID, 
     const GUID *interfaceID, 
     void **outObject);
@@ -37,6 +35,4 @@ public:
   }
 };
 
-
 #endif
-

@@ -1,7 +1,5 @@
 // Windows/Control/Window2.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_WINDOW2_H
 #define __WINDOWS_CONTROL_WINDOW2_H
 

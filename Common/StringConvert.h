@@ -1,10 +1,9 @@
 // Common/StringConvert.h
 
-#pragma once
-
 #ifndef __COMMON_STRINGCONVERT_H
 #define __COMMON_STRINGCONVERT_H
 
+#include "MyWindows.h"
 #include "String.h"
 #include "Types.h"
 

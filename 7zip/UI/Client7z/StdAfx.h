@@ -1,6 +1,4 @@
-// stdafx.h
-
-#pragma once
+// StdAfx.h
 
 #ifndef __STDAFX_H
 #define __STDAFX_H
@@ -9,4 +7,3 @@
 #include <stdio.h>
 
 #endif
-

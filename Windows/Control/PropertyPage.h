@@ -1,7 +1,5 @@
 // Windows/Control/PropertyPage.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_PROPERTYPAGE_H
 #define __WINDOWS_CONTROL_PROPERTYPAGE_H
 

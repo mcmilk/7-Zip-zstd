@@ -1,7 +1,5 @@
 // Windows/FileMapping.h
 
-#pragma once
-
 #ifndef __WINDOWS_FILEMAPPING_H
 #define __WINDOWS_FILEMAPPING_H
 

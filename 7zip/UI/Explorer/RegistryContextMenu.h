@@ -1,7 +1,5 @@
 // RegistryContextMenu.h
 
-#pragma once
-
 #ifndef __REGISTRYCONTEXTMENU_H
 #define __REGISTRYCONTEXTMENU_H
 
@@ -13,6 +11,5 @@ namespace NZipRootRegistry {
 }
 
 // bool GetProgramDirPrefix(CSysString &folder);
-
 
 #endif

@@ -126,11 +126,27 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\String.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\String.h
 # End Source File
 # Begin Source File
 

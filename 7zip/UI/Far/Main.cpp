@@ -17,18 +17,16 @@
 #include "Windows/FileDir.h"
 #include "Windows/Defs.h"
 
-#include "Far/FarUtils.h"
-#include "Far/ProgressBox.h"
-
-#include "Messages.h"
-
+#include "../../IPassword.h"
 #include "../../Common/FileStreams.h"
 
 #include "../Common/DefaultName.h"
 #include "../Common/OpenArchive.h"
 #include "../Agent/Agent.h"
-// #include "../../Compress/Interface/CompressInterface.h"
-#include "../../IPassword.h"
+
+#include "ProgressBox.h"
+#include "FarUtils.h"
+#include "Messages.h"
 
 using namespace NWindows;
 using namespace NFar;
@@ -249,6 +247,8 @@ STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *completed)
 STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, 
     IInStream **inStream)
 {
+  if (WasEscPressed())
+    return E_ABORT;
   *inStream = NULL;
   UString fullPath = _folderPrefix + name;
   if (!NWindows::NFile::NFind::FindFile(fullPath, _fileInfo))
@@ -297,6 +297,8 @@ STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value
 
 HRESULT GetPassword(UString &password)
 {
+  if (WasEscPressed())
+    return E_ABORT;
   password.Empty();
   CInitDialogItem initItems[]=
   {
@@ -396,7 +398,11 @@ static HANDLE MyOpenFilePlugin(const char *name)
       archiverInfoResult, defaultName, openArchiveCallback);
   */
   if (result != S_OK)
-     return INVALID_HANDLE_VALUE;
+  {
+    if (result == E_ABORT)
+      return (HANDLE)-2;
+    return INVALID_HANDLE_VALUE;
+  }
 
   // ::OutputDebugString("after OpenArchive\n");
 

@@ -1,7 +1,5 @@
 // MyMessages.h
 
-#pragma once
-
 #ifndef __MYMESSAGES_H
 #define __MYMESSAGES_H
 

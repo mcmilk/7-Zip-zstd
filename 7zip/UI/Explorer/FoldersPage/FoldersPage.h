@@ -1,7 +1,5 @@
 // FoldersPage.h
  
-#pragma once
-
 #ifndef __FOLDERSPAGE_H
 #define __FOLDERSPAGE_H
 

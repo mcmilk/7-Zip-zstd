@@ -1,30 +1,30 @@
 // Crypto/Rar20/Crypto.h
 
-#pragma once
-
 #ifndef __CRYPTO_RAR20_CRYPTO_H
 #define __CRYPTO_RAR20_CRYPTO_H
+
+#include "../../../Common/Types.h"
 
 namespace NCrypto {
 namespace NRar20 {
 
 class CData
 {
-  BYTE SubstTable[256];
-  UINT32 Keys[4];
-  UINT32 SubstLong(UINT32 t)
+  Byte SubstTable[256];
+  UInt32 Keys[4];
+  UInt32 SubstLong(UInt32 t)
   {
-    return (UINT32)SubstTable[(int)t & 255] | 
-           ((UINT32)SubstTable[(int)(t >> 8) & 255] << 8) |
-           ((UINT32)SubstTable[(int)(t >> 16) & 255] << 16) | 
-           ((UINT32)SubstTable[(int)(t >> 24) & 255] << 24);
+    return (UInt32)SubstTable[(int)t & 255] | 
+           ((UInt32)SubstTable[(int)(t >> 8) & 255] << 8) |
+           ((UInt32)SubstTable[(int)(t >> 16) & 255] << 16) | 
+           ((UInt32)SubstTable[(int)(t >> 24) & 255] << 24);
   }
 
-  void UpdateKeys(const BYTE *data);
+  void UpdateKeys(const Byte *data);
 public:
-  void EncryptBlock(BYTE *Buf);
-  void DecryptBlock(BYTE *Buf);
-  void SetPassword(const BYTE *password, UINT32 passwordLength);
+  void EncryptBlock(Byte *buf);
+  void DecryptBlock(Byte *buf);
+  void SetPassword(const Byte *password, UInt32 passwordLength);
 };
 
 }}

@@ -158,13 +158,22 @@ bool CInFile::Read(void *data, UINT32 size, UINT32 &processedSize)
 bool COutFile::Open(LPCTSTR fileName, DWORD shareMode, 
     DWORD creationDisposition, DWORD flagsAndAttributes)
 {
-  return Create(fileName, GENERIC_WRITE, shareMode, 
+  return CFileBase::Create(fileName, GENERIC_WRITE, shareMode, 
       creationDisposition, flagsAndAttributes);
 }
 
-bool COutFile::Open(LPCTSTR fileName)
+static inline DWORD GetCreationDisposition(bool createAlways)
+  {  return createAlways? CREATE_ALWAYS: CREATE_NEW; }
+
+bool COutFile::Open(LPCTSTR fileName, DWORD creationDisposition)
 {
-  return Open(fileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
+  return Open(fileName, FILE_SHARE_READ, 
+      creationDisposition, FILE_ATTRIBUTE_NORMAL);
+}
+
+bool COutFile::Create(LPCTSTR fileName, bool createAlways)
+{
+  return Open(fileName, GetCreationDisposition(createAlways));
 }
 
 #ifndef _UNICODE
@@ -172,13 +181,19 @@ bool COutFile::Open(LPCTSTR fileName)
 bool COutFile::Open(LPCWSTR fileName, DWORD shareMode, 
     DWORD creationDisposition, DWORD flagsAndAttributes)
 {
-  return Create(fileName, GENERIC_WRITE, shareMode, 
+  return CFileBase::Create(fileName, GENERIC_WRITE, shareMode, 
       creationDisposition, flagsAndAttributes);
 }
 
-bool COutFile::Open(LPCWSTR fileName)
+bool COutFile::Open(LPCWSTR fileName, DWORD creationDisposition)
 {
-  return Open(fileName, FILE_SHARE_READ, m_CreationDisposition, FILE_ATTRIBUTE_NORMAL);
+  return Open(fileName, FILE_SHARE_READ, 
+      creationDisposition, FILE_ATTRIBUTE_NORMAL);
+}
+
+bool COutFile::Create(LPCWSTR fileName, bool createAlways)
+{
+  return Open(fileName, GetCreationDisposition(createAlways));
 }
 
 #endif

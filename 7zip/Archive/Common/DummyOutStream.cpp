@@ -10,7 +10,7 @@ void CDummyOutStream::Init(ISequentialOutStream *outStream)
 }
 
 STDMETHODIMP CDummyOutStream::Write(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
   if(m_Stream)
     return m_Stream->Write(data, size, processedSize);
@@ -20,7 +20,7 @@ STDMETHODIMP CDummyOutStream::Write(const void *data,
 }
 
 STDMETHODIMP CDummyOutStream::WritePart(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
   if(m_Stream)
     return m_Stream->WritePart(data, size, processedSize);

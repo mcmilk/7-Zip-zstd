@@ -390,13 +390,14 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
 
   extracter.ExtractCallbackSpec = new CExtractCallbackImp;
   extracter.ExtractCallback = extracter.ExtractCallbackSpec;
-  extracter.ExtractCallbackSpec->_parentWindow = GetParent();
+  extracter.ExtractCallbackSpec->ParentWindow = GetParent();
   
   // extracter.ExtractCallbackSpec->_appTitle.Window = extracter.ExtractCallbackSpec->_parentWindow;
   // extracter.ExtractCallbackSpec->_appTitle.Title = progressWindowTitle;
   // extracter.ExtractCallbackSpec->_appTitle.AddTitle = title + CSysString(TEXT(" "));
 
-  extracter.ExtractCallbackSpec->Init(NExtractionMode::NOverwrite::kWithoutPrompt, false, L"");
+  extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
+  extracter.ExtractCallbackSpec->Init();
   extracter.Indices.Add(index);
   extracter.DestPath = GetUnicodeString(tempDir + NFile::NName::kDirDelimiter);
   extracter.FolderOperations = folderOperations;
@@ -408,7 +409,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
 
   if (extracter.Result != S_OK)
   {
-    // MessageBox(TEXT("Can not extract item"));
+    MessageBox(L"Can not extract item");
     return;
   }
 

@@ -95,6 +95,7 @@ BEGIN
     IDS_PROPERTY_GROUP "Group"
     IDS_PROPERTY_BLOCK "Block"
     IDS_PROPERTY_COMMENT "Comment"
+    IDS_PROPERTY_POSITION "Position"
 END
 
 #endif    // English (U.S.) resources

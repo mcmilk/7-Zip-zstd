@@ -1,7 +1,5 @@
 // FileFolderPluginOpen.h
 
-#pragma once
-
 #ifndef __FILEFOLDERPLUGINOPEN_H
 #define __FILEFOLDERPLUGINOPEN_H
 

@@ -1,7 +1,5 @@
 // DeflateExtConst.h
 
-#pragma once
-
 #ifndef __DEFLATEEXTCONST_H
 #define __DEFLATEEXTCONST_H
 
@@ -11,11 +9,11 @@ namespace NArchive {
 namespace NCab {
 namespace NMSZip {
 
-  const UINT32 kDistTableSize = 30;
-  const UINT32 kHistorySize = 0x8000;
-  const UINT32 kNumLenCombinations = 256;
+  const UInt32 kDistTableSize = 30;
+  const UInt32 kHistorySize = 0x8000;
+  const UInt32 kNumLenCombinations = 256;
 
-  const UINT32 kNumHuffmanBits = 15;
+  const UInt32 kNumHuffmanBits = 15;
 
 }}}
 

@@ -30,8 +30,6 @@ using namespace NWindows;
 
 HINSTANCE	 g_hInstance;	
 HWND g_HWND;
-
-
 static UString g_MainPath;
 
 const int kNumDefaultPanels = 1;
@@ -54,7 +52,6 @@ CSysString GetProgramFolderPrefix()
   int pos = path.ReverseFind(TEXT('\\'));
   return path.Left(pos + 1);
 }
-
 
 
 class CSplitterPos
@@ -106,8 +103,9 @@ public:
 };
 
 bool g_CanChangeSplitter = false;
-int g_SplitterPos = 0;
+UINT32 g_SplitterPos = 0;
 CSplitterPos g_Splitter;
+bool g_PanelsInfoDefined = false;
 
 int g_StartCaptureMousePos;
 int g_StartCaptureSplitterPos;
@@ -184,9 +182,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   }
 
   UINT32 numPanels, currentPanel;
-  UINT32 splitterPos;
-  bool panelsInfoDefined = ReadPanelsInfo(numPanels, currentPanel, splitterPos);
-  if (panelsInfoDefined)
+  g_PanelsInfoDefined = ReadPanelsInfo(numPanels, currentPanel, g_SplitterPos);
+  if (g_PanelsInfoDefined)
   {
     if (numPanels < 1 || numPanels > 2)
       numPanels = kNumDefaultPanels;
@@ -206,17 +203,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	if (!hWnd)
 		return FALSE;
   g_HWND = hWnd;
-
-  if (panelsInfoDefined)
-  {
-    g_SplitterPos = splitterPos;
-    g_Splitter.SetPos(hWnd, splitterPos);
-  }
-  else
-  {
-    g_Splitter.SetRatio(hWnd, kSplitterRateMax / 2);
-    g_SplitterPos = g_Splitter.GetPos();
-  }
 
   CWindow window(hWnd);
 
@@ -383,10 +369,10 @@ void ExecuteCommand(UINT commandID)
       g_App.AddToArchive();
       break;
     case kExtractCommand:
-      g_App.ExtractArchive();
+      g_App.ExtractArchives();
       break;
     case kTestCommand:
-      g_App.TestArchive();
+      g_App.TestArchives();
       break;
   }
 }
@@ -455,7 +441,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       // HCURSOR cursor = ::LoadCursor(0, IDC_SIZEWE);
       // ::SetCursor(cursor);
 
-      g_App.Create(hWnd, g_MainPath);
+      if (g_PanelsInfoDefined)
+        g_Splitter.SetPos(hWnd, g_SplitterPos);
+      else
+      {
+        g_Splitter.SetRatio(hWnd, kSplitterRateMax / 2);
+        g_SplitterPos = g_Splitter.GetPos();
+      }
+
+      RECT rect;
+      ::GetClientRect(hWnd, &rect);
+      int xSize = rect.right;
+      int xSizes[2];
+      xSizes[0] = g_Splitter.GetPos();
+      xSizes[1] = xSize - kSplitterWidth - xSizes[0];
+      if (xSizes[1] < 0)
+        xSizes[1] = 0;
+      g_App.Create(hWnd, g_MainPath, xSizes);
       // g_SplitterPos = 0;
 
       DragAcceptFiles(hWnd, TRUE);

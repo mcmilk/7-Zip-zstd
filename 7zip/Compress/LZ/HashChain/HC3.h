@@ -1,7 +1,5 @@
 // HC3.h
 
-#pragma once
-
 #ifndef __HC3__H
 #define __HC3__H
 

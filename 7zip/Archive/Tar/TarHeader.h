@@ -1,7 +1,5 @@
 // Archive/Tar/Header.h
 
-#pragma once
-
 #ifndef __ARCHIVE_TAR_HEADER_H
 #define __ARCHIVE_TAR_HEADER_H
 
@@ -10,9 +8,6 @@
 namespace NArchive {
 namespace NTar {
 
-#pragma pack( push, PragmaTarHeaders)
-#pragma pack( push, 1)
-
 namespace NFileHeader
 {
   const int kRecordSize = 512;
@@ -20,6 +15,7 @@ namespace NFileHeader
   const int kUserNameSize = 32;
   const int kGroupNameSize = 32;
 
+  /*
   struct CHeader
   {
     char Name[kNameSize];
@@ -36,17 +32,13 @@ namespace NFileHeader
     char GroupName[kGroupNameSize];
     char DeviceMajor[8];
     char DeviceMinor[8];
-    /*
-    BYTE Padding[kRecordSize - (kNameSize + 8 + 8 + 12 + 12 + 8 + 1 + kNameSize + 8 +
-      kUserNameSize + kGroupNameSize + 8 + 8)];
-    */
   };
   union CRecord
   {
     CHeader Header;
-    BYTE Padding[kRecordSize];
+    Byte Padding[kRecordSize];
   };
-
+  */
 
   namespace NMode
   {
@@ -98,9 +90,6 @@ namespace NFileHeader
   }
 
 }
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaTarHeaders)
 
 }}
 

@@ -14,13 +14,15 @@ CFolderOutStream::CFolderOutStream()
 }
 
 HRESULT CFolderOutStream::Init(
-    CArchiveDatabaseEx *archiveDatabase,
-    UINT32 startIndex,
+    const CArchiveDatabaseEx *archiveDatabase,
+    UInt32 ref2Offset,
+    UInt32 startIndex,
     const CBoolVector *extractStatuses, 
     IArchiveExtractCallback *extractCallback,
     bool testMode)
 {
   _archiveDatabase = archiveDatabase;
+  _ref2Offset = ref2Offset;
   _startIndex = startIndex;
 
   _extractStatuses = extractStatuses;
@@ -34,7 +36,7 @@ HRESULT CFolderOutStream::Init(
 
 HRESULT CFolderOutStream::OpenFile()
 {
-  INT32 askMode;
+  Int32 askMode;
   if((*_extractStatuses)[_currentIndex])
     askMode = _testMode ? 
         NArchive::NExtract::NAskMode::kTest :
@@ -43,14 +45,13 @@ HRESULT CFolderOutStream::OpenFile()
     askMode = NArchive::NExtract::NAskMode::kSkip;
   CMyComPtr<ISequentialOutStream> realOutStream;
 
-  UINT32 index = _startIndex + _currentIndex;
-  RINOK(_extractCallback->GetStream(index, &realOutStream, askMode));
+  UInt32 index = _startIndex + _currentIndex;
+  RINOK(_extractCallback->GetStream(_ref2Offset + index, &realOutStream, askMode));
 
   _outStreamWithHashSpec->Init(realOutStream);
   if (askMode == NArchive::NExtract::NAskMode::kExtract &&
       (!realOutStream)) 
   {
-    UINT32 index = _startIndex + _currentIndex;
     const CFileItem &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory)
       askMode = NArchive::NExtract::NAskMode::kSkip;
@@ -62,7 +63,7 @@ HRESULT CFolderOutStream::WriteEmptyFiles()
 {
   for(;_currentIndex < _extractStatuses->Size(); _currentIndex++)
   {
-    UINT32 index = _startIndex + _currentIndex;
+    UInt32 index = _startIndex + _currentIndex;
     const CFileItem &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory && fileInfo.UnPackSize != 0)
       return S_OK;
@@ -75,29 +76,29 @@ HRESULT CFolderOutStream::WriteEmptyFiles()
 }
 
 STDMETHODIMP CFolderOutStream::Write(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize = 0;
+  UInt32 realProcessedSize = 0;
   while(_currentIndex < _extractStatuses->Size())
   {
     if (_fileIsOpen)
     {
-      UINT32 index = _startIndex + _currentIndex;
+      UInt32 index = _startIndex + _currentIndex;
       const CFileItem &fileInfo = _archiveDatabase->Files[index];
-      UINT64 fileSize = fileInfo.UnPackSize;
+      UInt64 fileSize = fileInfo.UnPackSize;
       
-      UINT32 numBytesToWrite = (UINT32)MyMin(fileSize - _filePos, 
-          UINT64(size - realProcessedSize));
+      UInt32 numBytesToWrite = (UInt32)MyMin(fileSize - _filePos, 
+          UInt64(size - realProcessedSize));
       
-      UINT32 processedSizeLocal;
-      RINOK(_outStreamWithHash->Write((const BYTE *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
+      UInt32 processedSizeLocal;
+      RINOK(_outStreamWithHash->Write((const Byte *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
 
       _filePos += processedSizeLocal;
       realProcessedSize += processedSizeLocal;
       if (_filePos == fileSize)
       {
         bool digestsAreEqual;
-        if (fileInfo.FileCRCIsDefined)
+        if (fileInfo.IsFileCRCDefined)
           digestsAreEqual = fileInfo.FileCRC == _outStreamWithHashSpec->GetCRC();
         else
           digestsAreEqual = true;
@@ -130,12 +131,12 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
 }
 
 STDMETHODIMP CFolderOutStream::WritePart(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
   return Write(data, size, processedSize);
 }
 
-HRESULT CFolderOutStream::FlushCorrupted(INT32 resultEOperationResult)
+HRESULT CFolderOutStream::FlushCorrupted(Int32 resultEOperationResult)
 {
   while(_currentIndex < _extractStatuses->Size())
   {

@@ -158,14 +158,6 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\ArError.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\CompressionMode.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\ConsoleClose.cpp
 # End Source File
 # Begin Source File
@@ -174,19 +166,11 @@ SOURCE=.\ConsoleClose.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Extract.cpp
+SOURCE=.\ExtractCallbackConsole.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Extract.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractCallback.h
+SOURCE=.\ExtractCallbackConsole.h
 # End Source File
 # Begin Source File
 
@@ -206,11 +190,11 @@ SOURCE=.\MainAr.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\OpenCallback.cpp
+SOURCE=.\OpenCallbackConsole.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\OpenCallback.h
+SOURCE=.\OpenCallbackConsole.h
 # End Source File
 # Begin Source File
 
@@ -222,27 +206,11 @@ SOURCE=.\PercentPrinter.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\TempFiles.cpp
+SOURCE=.\UpdateCallbackConsole.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\TempFiles.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Update.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Update.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateCallback.h
+SOURCE=.\UpdateCallbackConsole.h
 # End Source File
 # Begin Source File
 
@@ -342,6 +310,18 @@ SOURCE=..\..\..\Windows\System.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Buffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CommandLineParser.cpp
 # End Source File
 # Begin Source File
@@ -422,6 +402,14 @@ SOURCE=..\..\..\Common\StringConvert.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\StringToInt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringToInt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\UTFConvert.cpp
 # End Source File
 # Begin Source File
@@ -450,11 +438,39 @@ SOURCE=..\..\..\Common\Wildcard.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Common\ArchiveCommandLine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveCommandLine.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\ArchiverInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\CompressionMode.h
 # End Source File
 # Begin Source File
 
@@ -478,6 +494,18 @@ SOURCE=..\Common\EnumDirItems.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExitCode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ExtractingFilePath.cpp
 # End Source File
 # Begin Source File
@@ -487,6 +515,10 @@ SOURCE=..\Common\ExtractingFilePath.h
 # Begin Source File
 
 SOURCE=..\Common\HandlerLoader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\IFileExtractCallback.h
 # End Source File
 # Begin Source File
 
@@ -514,11 +546,35 @@ SOURCE=..\Common\SortUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\TempFiles.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\TempFiles.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\UpdateAction.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\UpdateAction.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -543,6 +599,10 @@ SOURCE=..\Common\WorkDir.cpp
 # Begin Source File
 
 SOURCE=..\Common\WorkDir.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ZipRegistry.h
 # End Source File
 # End Group
 # Begin Group "7-zip Common"

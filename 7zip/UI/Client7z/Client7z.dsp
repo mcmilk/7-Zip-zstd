@@ -81,34 +81,18 @@ LINK32=link.exe
 
 # Name "Client7z - Win32 Release"
 # Name "Client7z - Win32 Debug"
-# Begin Group "Source Files"
+# Begin Group "Spec"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Source File
-
-SOURCE=.\Client7z.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"stdafx.h"
 # End Source File
-# End Group
-# Begin Group "Header Files"
-
-# PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
 SOURCE=.\StdAfx.h
 # End Source File
-# End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
-# Begin Group "SDK"
-
-# PROP Default_Filter ""
 # End Group
 # Begin Group "Windows"
 
@@ -186,5 +170,9 @@ SOURCE=..\..\Common\FileStreams.cpp
 SOURCE=..\..\Common\FileStreams.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\Client7z.cpp
+# End Source File
 # End Target
 # End Project

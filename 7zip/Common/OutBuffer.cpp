@@ -1,40 +1,49 @@
-// Stream/OutByte.cpp
+// OutByte.cpp
 
 #include "StdAfx.h"
 
 #include "OutBuffer.h"
 
-COutBuffer::COutBuffer(UINT32 bufferSize):
-  _bufferSize(bufferSize)
+#include "../../Common/Alloc.h"
+
+bool COutBuffer::Create(UInt32 bufferSize)
 {
-  _buffer = new BYTE[_bufferSize];
+  const UInt32 kMinBlockSize = 1;
+  if (bufferSize < kMinBlockSize)
+    bufferSize = kMinBlockSize;
+  if (_buffer != 0 && _bufferSize == bufferSize)
+    return true;
+  Free();
+  _bufferSize = bufferSize;
+  _buffer = (Byte *)::BigAlloc(bufferSize);
+  return (_buffer != 0);
 }
 
-COutBuffer::~COutBuffer()
+void COutBuffer::Free()
 {
-  delete []_buffer;
+  BigFree(_buffer);
+  _buffer = 0;
 }
 
-void COutBuffer::Init(ISequentialOutStream *stream)
+void COutBuffer::SetStream(ISequentialOutStream *stream)
 {
   _stream = stream;
+}
+
+void COutBuffer::Init()
+{
   _processedSize = 0;
   _pos = 0;
+  #ifdef _NO_EXCEPTIONS
+  ErrorCode = S_OK;
+  #endif
 }
-
-/*
-void COutBuffer::ReleaseStream()
-{
-  _stream.Release();
-}
-*/
-
 
 HRESULT COutBuffer::Flush()
 {
   if (_pos == 0)
     return S_OK;
-  UINT32 processedSize;
+  UInt32 processedSize;
   HRESULT result = _stream->Write(_buffer, _pos, &processedSize);
   if (result != S_OK)
     return result;
@@ -47,7 +56,15 @@ HRESULT COutBuffer::Flush()
 
 void COutBuffer::WriteBlock()
 {
+  #ifdef _NO_EXCEPTIONS
+  if (ErrorCode != S_OK)
+    return;
+  #endif
   HRESULT result = Flush();
+  #ifdef _NO_EXCEPTIONS
+  ErrorCode = result;
+  #else
   if (result != S_OK)
     throw COutBufferException(result);
+  #endif
 }

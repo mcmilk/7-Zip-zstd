@@ -1,55 +1,75 @@
 // Common/Wildcard.h
 
-#pragma once
-
 #ifndef __COMMON_WILDCARD_H
 #define __COMMON_WILDCARD_H
 
 #include "Common/String.h"
 
-void SplitPathToParts(const UString &path, UStringVector &aPathParts);
-// void SplitPathToParts(const AString &path, AStringVector &aPathParts);
-UString ExtractFileNameFromPath(const UString &pathName);
-bool DoesNameContainWildCard(const UString &pathName);
+void SplitPathToParts(const UString &path, UStringVector &pathParts);
+void SplitPathToParts(const UString &path, UString &dirPrefix, UString &name);
+UString ExtractDirPrefixFromPath(const UString &path);
+UString ExtractFileNameFromPath(const UString &path);
+bool DoesNameContainWildCard(const UString &path);
 bool CompareWildCardWithName(const UString &mask, const UString &name);
 
 namespace NWildcard {
 
+struct CItem
+{
+  UStringVector PathParts;
+  bool Include;
+  bool Recursive;
+  bool ForFile;
+  bool ForDir;
+  bool CheckPath(const UStringVector &pathParts, bool isFile) const;
+};
+
 class CCensorNode
 {
-  CCensorNode *_parent;
-  UStringVector _names[2][2][2];
-  bool CheckNameRecursive(const UString &name, bool allowed) const;
-  bool CheckNameFull(const UString &name, bool allowed) const;
-public:
   UString Name;
+  CCensorNode *Parent;
+  bool CheckPathCurrent(const UStringVector &pathParts, bool isFile, bool &include) const;
+public:
+  CCensorNode(): Parent(0) { };
+  CCensorNode(const UString &name, CCensorNode *parent): 
+      Name(name), Parent(parent) { };
   CObjectVector<CCensorNode> SubNodes;
-  CCensorNode(CCensorNode *parent, const UString &name):
-      _parent(parent), Name(name) {};
-  CCensorNode *FindSubNode(const UString &name);
-  CCensorNode *AddSubNode(const UString &name);
-  void AddItem(const UString &name, bool allowed, bool recursed, bool wildCard);
-  bool CheckName(const UString &name, bool allowed, bool recursed) const;
-  bool CheckNameRecursive(const UString &name) const;
-  bool CheckNameFull(const UString &name) const;
+  CObjectVector<CItem> Items;
 
-  const UStringVector&GetNamesVector(bool allowed, bool recursed, bool wildCard) const;
-  const UStringVector&GetAllowedNamesVector(bool recursed, bool wildCard) const
-    {   return GetNamesVector(true, recursed, wildCard); } 
-  const UStringVector&GetRecursedNamesVector(bool allowed, bool wildCard) const
-    {   return GetNamesVector(allowed, true, wildCard); } 
-  const UStringVector&GetAllowedRecursedNamesVector(bool wildCard) const
-    {   return GetRecursedNamesVector(true, wildCard); } 
+  int FindSubNode(const UString &path) const;
 
+  void AddItem(CItem &item);
+  void AddItem(const UString &path, bool include, bool recursive, bool forFile, bool forDir);
+  void AddItem2(const UString &path, bool include, bool recursive);
+
+  bool NeedCheckSubDirs() const;
+
+  bool CheckPath(UStringVector &pathParts, bool isFile, bool &include) const;
+  bool CheckPath(const UString &path, bool isFile, bool &include) const;
+  bool CheckPath(const UString &path, bool isFile) const;
+
+  bool CheckPathToRoot(UStringVector &pathParts, bool isFile, bool &include) const;
+  bool CheckPathToRoot(UStringVector &pathParts, bool isFile) const;
+  bool CheckPathToRoot(const UString &path, bool isFile) const;
+
+};
+
+struct CPair
+{
+  UString Prefix;
+  CCensorNode Head;
+  CPair(const UString &prefix): Prefix(prefix) { };
 };
 
 class CCensor
 {
+  int FindPrefix(const UString &prefix) const;
 public:
-  CCensorNode _head;
-  CCensor(): _head(NULL, L"") {}
-  void AddItem(const UString &path, bool allowed, bool recursed, bool wildCard);
-  bool CheckName(const UString &path) const;
+  CObjectVector<CPair> Pairs;
+  bool AllAreRelative() const
+    { return (Pairs.Size() == 1 && Pairs.Front().Prefix.IsEmpty()); }
+  void AddItem(const UString &path, bool include, bool recursive);
+  bool CheckPath(const UString &path, bool isFile) const;
 };
 
 }

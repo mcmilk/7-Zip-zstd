@@ -1,7 +1,5 @@
 // ListViewDialog.h
 
-#pragma once
-
 #ifndef __LISTVIEWDIALOG_H
 #define __LISTVIEWDIALOG_H
 

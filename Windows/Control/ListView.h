@@ -1,7 +1,5 @@
 // Windows/Control/ListView.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_LISTVIEW_H
 #define __WINDOWS_CONTROL_LISTVIEW_H
 

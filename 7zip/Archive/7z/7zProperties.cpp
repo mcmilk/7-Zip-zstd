@@ -13,7 +13,7 @@ namespace N7z {
 
 struct CPropMap
 {
-  UINT64 FilePropID;
+  UInt64 FilePropID;
   STATPROPSTG StatPROPSTG;
 };
 
@@ -35,6 +35,7 @@ CPropMap kPropMap[] =
   { NID::kLastWriteTime, NULL, kpidLastWriteTime, VT_FILETIME},
   { NID::kLastAccessTime, NULL, kpidLastAccessTime, VT_FILETIME},
   { NID::kWinAttributes, NULL, kpidAttributes, VT_UI4},
+  { NID::kStartPos, NULL, kpidPosition, VT_UI4},
 
 
   { NID::kCRC, NULL, kpidCRC, VT_UI4},
@@ -52,7 +53,7 @@ CPropMap kPropMap[] =
 
 static const int kPropMapSize = sizeof(kPropMap) / sizeof(kPropMap[0]);
 
-static int FindPropInMap(UINT64 filePropID)
+static int FindPropInMap(UInt64 filePropID)
 {
   for (int i = 0; i < kPropMapSize; i++)
     if (kPropMap[i].FilePropID == filePropID)
@@ -60,8 +61,8 @@ static int FindPropInMap(UINT64 filePropID)
   return -1;
 }
 
-static void CopyOneItem(CRecordVector<UINT64> &src, 
-    CRecordVector<UINT64> &dest, UINT32 item)
+static void CopyOneItem(CRecordVector<UInt64> &src, 
+    CRecordVector<UInt64> &dest, UInt32 item)
 {
   for (int i = 0; i < src.Size(); i++)
     if (src[i] == item)
@@ -72,7 +73,7 @@ static void CopyOneItem(CRecordVector<UINT64> &src,
     }
 }
 
-static void RemoveOneItem(CRecordVector<UINT64> &src, UINT32 item)
+static void RemoveOneItem(CRecordVector<UInt64> &src, UInt32 item)
 {
   for (int i = 0; i < src.Size(); i++)
     if (src[i] == item)
@@ -82,7 +83,7 @@ static void RemoveOneItem(CRecordVector<UINT64> &src, UINT32 item)
     }
 }
 
-static void InsertToHead(CRecordVector<UINT64> &dest, UINT32 item)
+static void InsertToHead(CRecordVector<UInt64> &dest, UInt32 item)
 {
   for (int i = 0; i < dest.Size(); i++)
     if (dest[i] == item)
@@ -96,7 +97,15 @@ static void InsertToHead(CRecordVector<UINT64> &dest, UINT32 item)
 void CHandler::FillPopIDs()
 { 
   _fileInfoPopIDs.Clear();
-  CRecordVector<UINT64> fileInfoPopIDs = _database.ArchiveInfo.FileInfoPopIDs;
+
+  #ifdef _7Z_VOL
+  if(_volumes.Size() < 1)
+    return;
+  const CVolume &volume = _volumes.Front();
+  const CArchiveDatabaseEx &_database = volume.Database;
+  #endif
+
+  CRecordVector<UInt64> fileInfoPopIDs = _database.ArchiveInfo.FileInfoPopIDs;
 
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyStream);
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyFile);
@@ -133,16 +142,16 @@ void CHandler::FillPopIDs()
   #endif
 }
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UINT32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
 {
   *numProperties = _fileInfoPopIDs.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetPropertyInfo(UINT32 index,     
+STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
-  if(index >= _fileInfoPopIDs.Size())
+  if((int)index >= _fileInfoPopIDs.Size())
     return E_INVALIDARG;
   int indexInMap = FindPropInMap(_fileInfoPopIDs[index]);
   if (indexInMap == -1)

@@ -1,7 +1,5 @@
 // ExtractCallback.h
 
-#pragma once
-
 #ifndef __EXTRACTCALLBACK_H
 #define __EXTRACTCALLBACK_H
 
@@ -31,14 +29,14 @@ public:
   MY_UNKNOWN_IMP
 
   // IProgress
-  STDMETHOD(SetTotal)(UINT64 size);
-  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
+  STDMETHOD(SetTotal)(UInt64 size);
+  STDMETHOD(SetCompleted)(const UInt64 *completeValue);
 
   // IExtractCallback
-  STDMETHOD(GetStream)(UINT32 index, ISequentialOutStream **outStream, 
-      INT32 askExtractMode);
-  STDMETHOD(PrepareOperation)(INT32 askExtractMode);
-  STDMETHOD(SetOperationResult)(INT32 resultEOperationResult);
+  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, 
+      Int32 askExtractMode);
+  STDMETHOD(PrepareOperation)(Int32 askExtractMode);
+  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult);
 
 private:
   CMyComPtr<IInArchive> _archiveHandler;
@@ -53,7 +51,7 @@ private:
   {
     FILETIME UTCLastWriteTime;
     bool IsDirectory;
-    UINT32 Attributes;
+    UInt32 Attributes;
   } _processedFileInfo;
 
   COutFileStream *_outFileStreamSpec;
@@ -61,7 +59,7 @@ private:
 
   UString _itemDefaultName;
   FILETIME _utcLastWriteTimeDefault;
-  UINT32 _attributesDefault;
+  UInt32 _attributesDefault;
 
   void CreateComplexDirectory(const UStringVector &dirPathParts);
 public:
@@ -77,9 +75,9 @@ public:
     const UString &directoryPath, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
-    UINT32 attributesDefault);
+    UInt32 attributesDefault);
 
-  UINT64 _numErrors;
+  UInt64 _numErrors;
 
   #ifndef _NO_PROGRESS
   HRESULT StartProgressDialog(const UString &title)
@@ -97,7 +95,7 @@ public:
     // _progressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }
-  ~CExtractCallbackImp() { ProgressDialog.Destroy(); }
+  virtual ~CExtractCallbackImp() { ProgressDialog.Destroy(); }
   #endif
 
 };

@@ -9,17 +9,18 @@ namespace N7z {
 
 CFolderInStream::CFolderInStream()
 {
-  _inStreamWithHashSpec = new CInStreamWithCRC;
+  _inStreamWithHashSpec = new CSequentialInStreamWithCRC;
   _inStreamWithHash = _inStreamWithHashSpec;
 }
 
 void CFolderInStream::Init(IArchiveUpdateCallback *updateCallback, 
-    const UINT32 *fileIndices, UINT32 numFiles)
+    const UInt32 *fileIndices, UInt32 numFiles)
 {
   _updateCallback = updateCallback;
   _numFiles = numFiles;
   _fileIndex = 0;
   _fileIndices = fileIndices;
+  Processed.Clear();
   CRCs.Clear();
   Sizes.Clear();
   _fileIsOpen = false;
@@ -32,14 +33,17 @@ HRESULT CFolderInStream::OpenStream()
   while (_fileIndex < _numFiles)
   {
     _currentSizeIsDefined = false;
-    CMyComPtr<IInStream> stream;
-    RINOK(_updateCallback->GetStream(_fileIndices[_fileIndex], &stream));
+    CMyComPtr<ISequentialInStream> stream;
+    HRESULT result = _updateCallback->GetStream(_fileIndices[_fileIndex], &stream);
+    if (result != S_OK && result != S_FALSE)
+      return result;
     _fileIndex++;
     _inStreamWithHashSpec->Init(stream);
     if (!stream)
     {
       RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
       Sizes.Add(0);
+      Processed.Add(result == S_OK);
       AddDigest();
       continue;
     }
@@ -69,21 +73,22 @@ HRESULT CFolderInStream::CloseStream()
   RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
   _inStreamWithHashSpec->ReleaseStream();
   _fileIsOpen = false;
+  Processed.Add(true);
   Sizes.Add(_filePos);
   AddDigest();
   return S_OK;
 }
 
-STDMETHODIMP CFolderInStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CFolderInStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize = 0;
+  UInt32 realProcessedSize = 0;
   while ((_fileIndex < _numFiles || _fileIsOpen) && size > 0)
   {
     if (_fileIsOpen)
     {
-      UINT32 localProcessedSize;
+      UInt32 localProcessedSize;
       RINOK(_inStreamWithHash->Read(
-          ((BYTE *)data) + realProcessedSize, size, &localProcessedSize));
+          ((Byte *)data) + realProcessedSize, size, &localProcessedSize));
       if (localProcessedSize == 0)
       {
         RINOK(CloseStream());
@@ -104,13 +109,13 @@ STDMETHODIMP CFolderInStream::ReadPart(void *data, UINT32 size, UINT32 *processe
   return S_OK;
 }
 
-STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize = 0;
+  UInt32 realProcessedSize = 0;
   while (size > 0)
   {
-    UINT32 localProcessedSize;
-    RINOK(ReadPart(((BYTE *)data) + realProcessedSize, size, &localProcessedSize));
+    UInt32 localProcessedSize;
+    RINOK(ReadPart(((Byte *)data) + realProcessedSize, size, &localProcessedSize));
     if (localProcessedSize == 0)
       break;
     size -= localProcessedSize;
@@ -122,7 +127,7 @@ STDMETHODIMP CFolderInStream::Read(void *data, UINT32 size, UINT32 *processedSiz
 }
 
 
-STDMETHODIMP CFolderInStream::GetSubStreamSize(UINT64 subStream, UINT64 *value)
+STDMETHODIMP CFolderInStream::GetSubStreamSize(UInt64 subStream, UInt64 *value)
 {
   *value = 0;
   if (subStream < Sizes.Size())

@@ -1,10 +1,8 @@
-// Decode.h
+// PPMDDecode.h
 // This code is based on Dmitry Shkarin's PPMdH code
 
-#pragma once
-
-#ifndef __COMPRESS_PPM_PPMD_DECODE_H
-#define __COMPRESS_PPM_PPMD_DECODE_H
+#ifndef __COMPRESS_PPMD_DECODE_H
+#define __COMPRESS_PPMD_DECODE_H
 
 #include "PPMDContext.h"
 
@@ -16,18 +14,18 @@ struct CDecodeInfo: public CInfo
   void DecodeBinSymbol(NRangeCoder::CDecoder *rangeDecoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
-    WORD& bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
+    UInt16& bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
     if (rangeDecoder->DecodeBit(bs, TOT_BITS) == 0) 
     {
       FoundState = &rs;
       rs.Freq += (rs.Freq < 128);
-      bs += UINT16(INTERVAL-GET_MEAN(bs,PERIOD_BITS,2));
+      bs += UInt16(INTERVAL-GET_MEAN(bs,PERIOD_BITS,2));
       PrevSuccess = 1;
       RunLength++;
     } 
     else 
     {
-      bs -= UINT16(GET_MEAN(bs,PERIOD_BITS,2));
+      bs -= UInt16(GET_MEAN(bs,PERIOD_BITS,2));
       InitEsc = ExpEscape[bs >> 10];
       NumMasked = 1;                        
       CharMask[rs.Symbol] = EscCount;
@@ -44,7 +42,7 @@ struct CDecodeInfo: public CInfo
     {
       PrevSuccess = (2 * hiCnt > MinContext->SummFreq);
       RunLength += PrevSuccess;
-      rangeDecoder->Decode(0, MinContext->Stats->Freq, MinContext->SummFreq);
+      rangeDecoder->Decode(0, MinContext->Stats->Freq); // MinContext->SummFreq);
       (FoundState = p)->Freq=(hiCnt += 4);  
       MinContext->SummFreq += 4;
       if (hiCnt > MAX_FREQ)
@@ -57,14 +55,14 @@ struct CDecodeInfo: public CInfo
       if (--i == 0) 
       {
         HiBitsFlag = HB2Flag[FoundState->Symbol];
-        rangeDecoder->Decode(hiCnt, MinContext->SummFreq - hiCnt, MinContext->SummFreq);
+        rangeDecoder->Decode(hiCnt, MinContext->SummFreq - hiCnt); // , MinContext->SummFreq);
         CharMask[p->Symbol] = EscCount;
         i = (NumMasked = MinContext->NumStats)-1;       
         FoundState = NULL;
         do { CharMask[(--p)->Symbol] = EscCount; } while ( --i );
         return;
       }
-    rangeDecoder->Decode(hiCnt - p->Freq, p->Freq, MinContext->SummFreq);
+    rangeDecoder->Decode(hiCnt - p->Freq, p->Freq); // , MinContext->SummFreq);
     update1(p);
   }
 
@@ -72,7 +70,7 @@ struct CDecodeInfo: public CInfo
   void DecodeSymbol2(NRangeCoder::CDecoder *rangeDecoder)
   {
     int count, hiCnt, i = MinContext->NumStats - NumMasked;
-    UINT32 freqSum;
+    UInt32 freqSum;
     SEE2_CONTEXT* psee2c = makeEscFreq2(i, freqSum);
     PPM_CONTEXT::STATE* ps[256], ** pps = ps, * p = MinContext->Stats-1;
     hiCnt = 0;
@@ -93,14 +91,14 @@ struct CDecodeInfo: public CInfo
       hiCnt = 0;
       while ((hiCnt += p->Freq) <= count) 
         p=*++pps;
-      rangeDecoder->Decode(hiCnt - p->Freq, p->Freq, freqSum);
+      rangeDecoder->Decode(hiCnt - p->Freq, p->Freq); // , freqSum);
       
       psee2c->update();                   
       update2(p);
     } 
     else 
     {
-      rangeDecoder->Decode(hiCnt, freqSum - hiCnt, freqSum);
+      rangeDecoder->Decode(hiCnt, freqSum - hiCnt); // , freqSum);
       
       i = MinContext->NumStats - NumMasked;               
       pps--;
@@ -128,7 +126,7 @@ struct CDecodeInfo: public CInfo
       while (MinContext->NumStats == NumMasked);
       DecodeSymbol2(rangeDecoder);    
     }
-    BYTE symbol = FoundState->Symbol;
+    Byte symbol = FoundState->Symbol;
     NextContext();
     return symbol;
   }

@@ -91,7 +91,7 @@ bool CItem::IsDirectory() const
   }
 }
 
-UINT32 CItem::GetWinAttributes() const
+UInt32 CItem::GetWinAttributes() const
 {
   DWORD winAttributes;
   switch(MadeByVersion.HostOS)

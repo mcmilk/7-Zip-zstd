@@ -19,8 +19,9 @@ void CInArchive::ThrowExceptionWithCode(
   throw CInArchiveException(cause);
 }
 
-bool CInArchive::Open(IInStream *inStream, const UINT64 *searchHeaderSizeLimit)
+bool CInArchive::Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit)
 {
+  m_CryptoMode = false;
   if(inStream->Seek(0, STREAM_SEEK_CUR, &m_StreamStartPosition) != S_OK)
     return false;
   m_Position = m_StreamStartPosition;
@@ -39,14 +40,13 @@ void CInArchive::Close()
 
 static inline bool TestMarkerCandidate(const void *aTestBytes)
 {
-  // return (memcmp(aTestBytes, NHeader::kMarker, NHeader::kMarkerSize) == 0);
-  for (UINT32 i = 0; i < NHeader::kMarkerSize; i++)
-    if (((const BYTE *)aTestBytes)[i] != NHeader::kMarker[i])
+  for (UInt32 i = 0; i < NHeader::kMarkerSize; i++)
+    if (((const Byte *)aTestBytes)[i] != NHeader::kMarker[i])
       return false;
   return true;
 }
 
-bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
+bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
 {
   // if (m_Length < NHeader::kMarkerSize)
   //   return false;
@@ -55,8 +55,8 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
   if(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL) != S_OK)
     return false;
 
-  BYTE marker[NHeader::kMarkerSize];
-  UINT32 processedSize; 
+  Byte marker[NHeader::kMarkerSize];
+  UInt32 processedSize; 
   ReadBytes(marker, NHeader::kMarkerSize, &processedSize);
   if(processedSize != NHeader::kMarkerSize)
     return false;
@@ -64,24 +64,24 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
     return true;
 
   CByteDynamicBuffer dynamicBuffer;
-  static const UINT32 kSearchMarkerBufferSize = 0x10000;
+  static const UInt32 kSearchMarkerBufferSize = 0x10000;
   dynamicBuffer.EnsureCapacity(kSearchMarkerBufferSize);
-  BYTE *buffer = dynamicBuffer;
-  UINT32 numBytesPrev = NHeader::kMarkerSize - 1;
+  Byte *buffer = dynamicBuffer;
+  UInt32 numBytesPrev = NHeader::kMarkerSize - 1;
   memmove(buffer, marker + 1, numBytesPrev);
-  UINT64 curTestPos = m_StreamStartPosition + 1;
+  UInt64 curTestPos = m_StreamStartPosition + 1;
   while(true)
   {
     if (searchHeaderSizeLimit != NULL)
       if (curTestPos - m_StreamStartPosition > *searchHeaderSizeLimit)
         return false;
-    UINT32 numReadBytes = kSearchMarkerBufferSize - numBytesPrev;
+    UInt32 numReadBytes = kSearchMarkerBufferSize - numBytesPrev;
     ReadBytes(buffer + numBytesPrev, numReadBytes, &processedSize);
-    UINT32 numBytesInBuffer = numBytesPrev + processedSize;
+    UInt32 numBytesInBuffer = numBytesPrev + processedSize;
     if (numBytesInBuffer < NHeader::kMarkerSize)
       return false;
-    UINT32 numTests = numBytesInBuffer - NHeader::kMarkerSize + 1;
-    for(UINT32 pos = 0; pos < numTests; pos++, curTestPos++)
+    UInt32 numTests = numBytesInBuffer - NHeader::kMarkerSize + 1;
+    for(UInt32 pos = 0; pos < numTests; pos++, curTestPos++)
     { 
       if (TestMarkerCandidate(buffer + pos))
       {
@@ -98,29 +98,36 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
   return false;
 }
 
-//bool boolIsItCorrectArchive;
-
 void CInArchive::ThrowUnexpectedEndOfArchiveException()
 {
   ThrowExceptionWithCode(CInArchiveException::kUnexpectedEndOfArchive);
 }
 
-bool CInArchive::ReadBytesAndTestSize(void *data, UINT32 size)
+bool CInArchive::ReadBytesAndTestSize(void *data, UInt32 size)
 {
-  UINT32 processedSize;
+  if (m_CryptoMode)
+  {
+    const Byte *bufData = (const Byte *)m_DecryptedData;
+    UInt32 bufSize = m_DecryptedDataSize;
+    UInt32 i;
+    for (i = 0; i < size && m_CryptoPos < bufSize; i++)
+      ((Byte *)data)[i] = bufData[m_CryptoPos++];
+    return (i == size);
+  }
+  UInt32 processedSize;
   m_Stream->Read(data, size, &processedSize);
   return (processedSize == size);
 }
 
-void CInArchive::ReadBytesAndTestResult(void *data, UINT32 size)
+void CInArchive::ReadBytesAndTestResult(void *data, UInt32 size)
 {
   if(!ReadBytesAndTestSize(data,size))
     ThrowUnexpectedEndOfArchiveException();
 }
 
-HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 *processedSize)
+HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = m_Stream->Read(data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
@@ -128,17 +135,36 @@ HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 *processedSize)
   return result;
 }
 
-bool CInArchive::ReadMarkerAndArchiveHeader(const UINT64 *searchHeaderSizeLimit)
+bool CInArchive::ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit)
 {
   if (!FindAndReadMarker(searchHeaderSizeLimit))
     return false;
 
-  UINT32 processedSize;
-  ReadBytes(&m_ArchiveHeader, sizeof(m_ArchiveHeader), &processedSize);
-  if (processedSize != sizeof(m_ArchiveHeader))
+  Byte buf[NHeader::NArchive::kArchiveHeaderSize];
+  UInt32 processedSize;
+  ReadBytes(buf, sizeof(buf), &processedSize);
+  if (processedSize != sizeof(buf))
     return false;
-  
-  if(m_ArchiveHeader.CRC != m_ArchiveHeader.GetRealCRC())
+  m_CurData = buf;
+  m_CurPos  = 0;
+  m_PosLimit = sizeof(buf);
+
+  m_ArchiveHeader.CRC = ReadUInt16();
+  m_ArchiveHeader.Type = ReadByte();
+  m_ArchiveHeader.Flags = ReadUInt16();
+  m_ArchiveHeader.Size = ReadUInt16();
+  m_ArchiveHeader.Reserved1 = ReadUInt16();
+  m_ArchiveHeader.Reserved2 = ReadUInt32();
+
+  CCRC crc;
+  crc.UpdateByte(m_ArchiveHeader.Type);
+  crc.UpdateUInt16(m_ArchiveHeader.Flags);
+  crc.UpdateUInt16(m_ArchiveHeader.Size);
+  crc.UpdateUInt16(m_ArchiveHeader.Reserved1);
+  crc.UpdateUInt32(m_ArchiveHeader.Reserved2);
+
+  UInt32 u = crc.GetDigest();
+  if(m_ArchiveHeader.CRC != (crc.GetDigest() & 0xFFFF))
     ThrowExceptionWithCode(CInArchiveException::kArchiveHeaderCRCError);
   if (m_ArchiveHeader.Type != NHeader::NBlockType::kArchiveHeader)
     return false;
@@ -151,7 +177,7 @@ void CInArchive::SkipArchiveComment()
 {
   if (!m_SeekOnArchiveComment)
     return;
-  AddToSeekValue(m_ArchiveHeader.Size - sizeof(m_ArchiveHeader));
+  AddToSeekValue(m_ArchiveHeader.Size - NHeader::NArchive::kArchiveHeaderSize);
   m_SeekOnArchiveComment = false;
 }
 
@@ -160,17 +186,17 @@ void CInArchive::GetArchiveInfo(CInArchiveInfo &archiveInfo) const
   archiveInfo.StartPosition = m_ArchiveStartPosition;
   archiveInfo.Flags = m_ArchiveHeader.Flags;
   archiveInfo.CommentPosition = m_ArchiveCommentPosition;
-  archiveInfo.CommentSize = m_ArchiveHeader.Size - sizeof(m_ArchiveHeader);
+  archiveInfo.CommentSize = m_ArchiveHeader.Size - NHeader::NArchive::kArchiveHeaderSize;
 }
 
-static void DecodeUnicodeFileName(const char *name, const BYTE *encName, 
+static void DecodeUnicodeFileName(const char *name, const Byte *encName, 
     int encSize, wchar_t *unicodeName, int maxDecSize)
 {
   int encPos = 0;
   int decPos = 0;
   int flagBits = 0;
-  BYTE flags = 0;
-  BYTE highByte = encName[encPos++];
+  Byte flags = 0;
+  Byte highByte = encName[encPos++];
   while (encPos < encSize && decPos < maxDecSize)
   {
     if (flagBits == 0)
@@ -195,7 +221,7 @@ static void DecodeUnicodeFileName(const char *name, const BYTE *encName,
           int length = encName[encPos++];
           if (length & 0x80)
           {
-            BYTE correction = encName[encPos++];
+            Byte correction = encName[encPos++];
             for (length = (length & 0x7f) + 2; 
                 length > 0 && decPos < maxDecSize; length--, decPos++)
               unicodeName[decPos] = ((name[decPos] + correction) & 0xff) + (highByte << 8);
@@ -212,32 +238,32 @@ static void DecodeUnicodeFileName(const char *name, const BYTE *encName,
   unicodeName[decPos < maxDecSize ? decPos : maxDecSize - 1] = 0;
 }
 
-void CInArchive::ReadName(const BYTE *data, CItemEx &item, int nameSize)
+void CInArchive::ReadName(CItemEx &item, int nameSize)
 {
-  int sizeFileName = nameSize;
   item.UnicodeName.Empty();
-  if (sizeFileName > 0)
+  if (nameSize > 0)
   {
-    m_NameBuffer.EnsureCapacity(sizeFileName + 1);
+    m_NameBuffer.EnsureCapacity(nameSize + 1);
     char *buffer = (char *)m_NameBuffer;
 
-    memmove(buffer, data, sizeFileName);
+    for (int i = 0; i < nameSize; i++)
+      buffer[i] = ReadByte();
 
     int mainLen;
-    for (mainLen = 0; mainLen < sizeFileName; mainLen++)
+    for (mainLen = 0; mainLen < nameSize; mainLen++)
       if (buffer[mainLen] == '\0')
         break;
     buffer[mainLen] = '\0';
     item.Name = buffer;
 
-    int unicodeNameSizeMax = MyMin(sizeFileName, (0x400));
+    int unicodeNameSizeMax = MyMin(nameSize, (0x400));
     _unicodeNameBuffer.EnsureCapacity(unicodeNameSizeMax + 1);
 
     if((m_BlockHeader.Flags & NHeader::NFile::kUnicodeName) != 0  && 
-        mainLen < sizeFileName)
+        mainLen < nameSize)
     {
-      DecodeUnicodeFileName(buffer, (const BYTE *)buffer + mainLen + 1, 
-          sizeFileName - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
+      DecodeUnicodeFileName(buffer, (const Byte *)buffer + mainLen + 1, 
+          nameSize - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
       item.UnicodeName = _unicodeNameBuffer;
     }
   }
@@ -245,157 +271,236 @@ void CInArchive::ReadName(const BYTE *data, CItemEx &item, int nameSize)
     item.Name.Empty();
 }
 
-static const BYTE *ReadTime(const BYTE *data, BYTE mask, CRarTime &rarTime)
+Byte CInArchive::ReadByte()
+{
+  if (m_CurPos >= m_PosLimit)
+    throw CInArchiveException(CInArchiveException::kIncorrectArchive);
+  return m_CurData[m_CurPos++];
+}
+
+UInt16 CInArchive::ReadUInt16()
+{
+  UInt16 value = 0;
+  for (int i = 0; i < 2; i++)
+  {
+    Byte b = ReadByte();
+    value |= (UInt16(b) << (8 * i));
+  }
+  return value;
+}
+
+UInt32 CInArchive::ReadUInt32()
+{
+  UInt32 value = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    Byte b = ReadByte();
+    value |= (UInt32(b) << (8 * i));
+  }
+  return value;
+}
+
+void CInArchive::ReadTime(Byte mask, CRarTime &rarTime)
 {
   rarTime.LowSecond = ((mask & 4) != 0) ? 1 : 0;
   int numDigits = (mask & 3);
   rarTime.SubTime[0] = rarTime.SubTime[1] = rarTime.SubTime[2] = 0;
   for (int i = 0; i < numDigits; i++)
-    rarTime.SubTime[3 - numDigits + i] = *data++;
-  return data;
+    rarTime.SubTime[3 - numDigits + i] = ReadByte();
 }
 
-void CInArchive::ReadHeaderReal(const BYTE *data, CItemEx &item)
+void CInArchive::ReadHeaderReal(CItemEx &item)
 {
-  const BYTE *dataStart = data;
-  const NHeader::NFile::CBlock &fileHeader = 
-      *(const NHeader::NFile::CBlock *)data;
-  // UINT32 sizeFileName = fileHeader.NameSize;
-  
   item.Flags = m_BlockHeader.Flags; 
-  item.PackSize = fileHeader.PackSize;
-  item.UnPackSize = fileHeader.UnPackSize;
-  item.HostOS = fileHeader.HostOS;
-  item.FileCRC = fileHeader.FileCRC;
-  item.LastWriteTime.DosTime = fileHeader.Time;
+  item.PackSize = ReadUInt32();
+  item.UnPackSize = ReadUInt32();
+  item.HostOS = ReadByte();
+  item.FileCRC = ReadUInt32();
+  item.LastWriteTime.DosTime = ReadUInt32();
+  item.UnPackVersion = ReadByte();
+  item.Method = ReadByte();
+  int nameSize = ReadUInt16();
+  item.Attributes = ReadUInt32();
+
   item.LastWriteTime.LowSecond = 0;
   item.LastWriteTime.SubTime[0] = 
-    item.LastWriteTime.SubTime[1] = 
-    item.LastWriteTime.SubTime[2] = 0;
-
-
-  item.UnPackVersion = fileHeader.UnPackVersion;
-  item.Method = fileHeader.Method;
-  item.Attributes = fileHeader.Attributes;
-  
-  data += sizeof(fileHeader);
+      item.LastWriteTime.SubTime[1] = 
+      item.LastWriteTime.SubTime[2] = 0;
 
   if((item.Flags & NHeader::NFile::kSize64Bits) != 0)
   {
-    item.PackSize |= (*((const UINT64 *)data)) << 32;
-    data += sizeof(UINT32);
-    item.UnPackSize |= (*((const UINT64 *)data)) << 32;
-    data += sizeof(UINT32);
+    item.PackSize |= ((UInt64)ReadUInt32() << 32);
+    item.UnPackSize |= ((UInt64)ReadUInt32() << 32);
   }
 
-  ReadName(data, item, fileHeader.NameSize);
-  data += fileHeader.NameSize;
+  ReadName(item, nameSize);
 
   if (item.HasSalt())
-  {
-    memmove(item.Salt, data, sizeof(item.Salt));
-    data += sizeof(item.Salt);
-  }
+    for (int i = 0; i < sizeof(item.Salt); i++)
+      item.Salt[i] = ReadByte();
 
   if (item.HasExtTime())
   {
-    BYTE access = (*data) >> 4;
-    data++;
-    BYTE modif = (*data) >> 4;
-    BYTE creat = (*data) & 0xF;
-    data++;
-    if ((modif & 8) != 0)
-      data = ReadTime(data, modif, item.LastWriteTime);
-    if (item.IsCreationTimeDefined = ((creat & 8) != 0))
+    Byte accessMask = ReadByte() >> 4;
+    Byte b = ReadByte();
+    Byte modifMask = b >> 4;
+    Byte createMask = b & 0xF;
+    if ((modifMask & 8) != 0)
+      ReadTime(modifMask, item.LastWriteTime);
+    if (item.IsCreationTimeDefined = ((createMask & 8) != 0))
     {
-      item.CreationTime.DosTime = *(const UINT32 *)data;
-      data += sizeof(UINT32);
-      data = ReadTime(data, creat, item.CreationTime);
+      item.CreationTime.DosTime = ReadUInt32();
+      ReadTime(createMask, item.CreationTime);
     }
-    if (item.IsLastAccessTimeDefined = ((access & 8) != 0))
+    if (item.IsLastAccessTimeDefined = ((accessMask & 8) != 0))
     {
-      item.LastAccessTime.DosTime = *(const UINT32 *)data;
-      data += sizeof(UINT32);
-      data = ReadTime(data, access, item.LastAccessTime);
+      item.LastAccessTime.DosTime = ReadUInt32();
+      ReadTime(accessMask, item.LastAccessTime);
     }
   }
 
-  UINT16 fileHeaderWithNameSize = 
-    sizeof(NHeader::NBlock::CBlock) + data - dataStart;
+  UInt16 fileHeaderWithNameSize = (UInt16)m_CurPos;
   
   item.Position = m_Position;
   item.MainPartSize = fileHeaderWithNameSize;
   item.CommentSize = m_BlockHeader.HeadSize - fileHeaderWithNameSize;
-  
+
+  if (m_CryptoMode)
+    item.AlignSize = (16 - ((m_BlockHeader.HeadSize) & 0xF)) & 0xF;
+  else
+    item.AlignSize = 0;
   AddToSeekValue(m_BlockHeader.HeadSize);
 }
 
-void CInArchive::AddToSeekValue(UINT64 addValue)
+void CInArchive::AddToSeekValue(UInt64 addValue)
 {
   m_Position += addValue;
 }
 
-bool CInArchive::GetNextItem(CItemEx &item)
+HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword)
 {
-  if ((m_ArchiveHeader.Flags & 
-      NHeader::NArchive::kBlockHeadersAreEncrypted) != 0)
-    return false;
   if (m_SeekOnArchiveComment)
     SkipArchiveComment();
   while (true)
   {
     if(!SeekInArchive(m_Position))
-      return false;
-    if(!ReadBytesAndTestSize(&m_BlockHeader, sizeof(m_BlockHeader)))
-      return false;
+      return S_FALSE;
+    if (!m_CryptoMode && (m_ArchiveHeader.Flags & 
+        NHeader::NArchive::kBlockHeadersAreEncrypted) != 0)
+    {
+      m_CryptoMode = false;
+      if (getTextPassword == 0)
+        return S_FALSE;
+      if(!SeekInArchive(m_Position))
+        return S_FALSE;
+      if (!m_RarAES)
+      {
+        m_RarAESSpec = new NCrypto::NRar29::CDecoder;
+        m_RarAES = m_RarAESSpec;
+      }
+      // Salt
+      CSequentialInStreamImp * saltStreamSpec = new CSequentialInStreamImp;
+      CMyComPtr<ISequentialInStream> saltStream(saltStreamSpec);
+      const UInt32 kSaltSize = 8;
+      Byte salt[kSaltSize];
+      if(!ReadBytesAndTestSize(salt, kSaltSize))
+        return false;
+      saltStreamSpec->Init(salt, kSaltSize);
+      m_Position += kSaltSize;
+      RINOK(m_RarAESSpec->SetDecoderProperties(saltStream))
+      // Password
+      CMyComBSTR password;
+      RINOK(getTextPassword->CryptoGetTextPassword(&password))
+      UString unicodePassword(password);
+
+      RINOK(m_RarAESSpec->CryptoSetPassword(
+          (const Byte *)(const wchar_t *)unicodePassword, 
+          unicodePassword.Length() * 2));
+
+      const UInt32 kDecryptedBufferSize = (1 << 12);
+      if (m_DecryptedData.GetCapacity() == 0)
+      {
+        m_DecryptedData.SetCapacity(kDecryptedBufferSize);
+      }
+      RINOK(m_RarAES->Init());
+      RINOK(m_Stream->Read((Byte *)m_DecryptedData, kDecryptedBufferSize, &m_DecryptedDataSize));
+      m_DecryptedDataSize = m_RarAES->Filter((Byte *)m_DecryptedData, m_DecryptedDataSize);
+
+      m_CryptoMode = true;
+      m_CryptoPos = 0;
+    }
+
+    m_FileHeaderData.EnsureCapacity(7);
+    if(!ReadBytesAndTestSize((Byte *)m_FileHeaderData, 7))
+      return S_FALSE;
+
+    m_CurData = (Byte *)m_FileHeaderData;
+    m_CurPos = 0;
+    m_PosLimit = 7;
+    m_BlockHeader.CRC = ReadUInt16();
+    m_BlockHeader.Type = ReadByte();
+    m_BlockHeader.Flags = ReadUInt16();
+    m_BlockHeader.HeadSize = ReadUInt16();
 
     if (m_BlockHeader.HeadSize < 7)
       ThrowExceptionWithCode(CInArchiveException::kIncorrectArchive);
 
+    if (m_BlockHeader.Type == NHeader::NBlockType::kEndOfArchive) 
+      return S_FALSE;
+
     if (m_BlockHeader.Type == NHeader::NBlockType::kFileHeader) 
     {
       m_FileHeaderData.EnsureCapacity(m_BlockHeader.HeadSize);
-      UINT32 headerSize = m_BlockHeader.HeadSize - sizeof(m_BlockHeader);
-      ReadBytesAndTestResult(m_FileHeaderData, headerSize);
-      CCRC crc;
-      crc.Update(&m_BlockHeader.Type, sizeof(m_BlockHeader) - 
-          sizeof(m_BlockHeader.CRC));
-          
-      ReadHeaderReal(m_FileHeaderData, item); 
-
-      crc.Update(m_FileHeaderData, headerSize - item.CommentSize);
-      if ((crc.GetDigest() & 0xFFFF) != m_BlockHeader.CRC)
+      m_CurData = (Byte *)m_FileHeaderData;
+      m_PosLimit = m_BlockHeader.HeadSize;
+      ReadBytesAndTestResult(m_CurData + m_CurPos, m_BlockHeader.HeadSize - 7);
+      ReadHeaderReal(item); 
+      if ((CCRC::CalculateDigest(m_CurData + 2, 
+          m_BlockHeader.HeadSize - item.CommentSize - 2) & 0xFFFF) != m_BlockHeader.CRC)
         ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
 
+      FinishCryptoBlock();
+      m_CryptoMode = false;
       SeekInArchive(m_Position); // Move Position to compressed Data;    
-      AddToSeekValue(item.PackSize);  // m_Position points Tto next header;
-      return true;
+      AddToSeekValue(item.PackSize);  // m_Position points to next header;
+      return S_OK;
     }
+    if (m_CryptoMode && m_BlockHeader.HeadSize > (1 << 12))
+      return E_FAIL; // it's for bad passwords
     if ((m_BlockHeader.Flags & NHeader::NBlock::kLongBlock) != 0)
     {
-      UINT32 dataSize;
-      ReadBytesAndTestResult(&dataSize, sizeof(dataSize)); // test it
+      m_FileHeaderData.EnsureCapacity(7 + 4);
+      m_CurData = (Byte *)m_FileHeaderData;
+      ReadBytesAndTestResult(m_CurData + m_CurPos, 4); // test it
+      m_PosLimit = 7 + 4;
+      UInt32 dataSize = ReadUInt32();
       AddToSeekValue(dataSize);
+      if (m_CryptoMode && dataSize > (1 << 27))
+        return E_FAIL; // it's for bad passwords
+      m_CryptoPos = dataSize;
     }
+    else
+      m_CryptoPos = 0;
     AddToSeekValue(m_BlockHeader.HeadSize);
+    m_CryptoPos += m_BlockHeader.HeadSize;
+    FinishCryptoBlock();
+    m_CryptoMode = false;
   }
 }
 
-
-void CInArchive::DirectGetBytes(void *data, UINT32 size)
+void CInArchive::DirectGetBytes(void *data, UInt32 size)
 {  
   m_Stream->Read(data, size, NULL);
 }
 
-
-bool CInArchive::SeekInArchive(UINT64 position)
+bool CInArchive::SeekInArchive(UInt64 position)
 {
-  UINT64 newPosition;
+  UInt64 newPosition;
   m_Stream->Seek(position, STREAM_SEEK_SET, &newPosition);
   return newPosition == position;
 }
 
-ISequentialInStream* CInArchive::CreateLimitedStream(UINT64 position, UINT64 size)
+ISequentialInStream* CInArchive::CreateLimitedStream(UInt64 position, UInt64 size)
 {
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> inStream(streamSpec);

@@ -1,9 +1,7 @@
 // Compress/RangeCoder/RangeCoderBit.h
 
-// #pragma once
-
-#ifndef __COMPRESS_RANGECODER_BIT_TREE_H
-#define __COMPRESS_RANGECODER_BIT_TREE_H
+#ifndef __COMPRESS_RANGECODER_BIT_H
+#define __COMPRESS_RANGECODER_BIT_H
 
 #include "RangeCoder.h"
 
@@ -11,74 +9,88 @@ namespace NCompress {
 namespace NRangeCoder {
 
 const int kNumBitModelTotalBits  = 11;
-const UINT32 kBitModelTotal = (1 << kNumBitModelTotalBits);
+const UInt32 kBitModelTotal = (1 << kNumBitModelTotalBits);
 
 const int kNumMoveReducingBits = 2;
 
 const int kNumBitPriceShiftBits = 6;
-const UINT32 kBitPrice = 1 << kNumBitPriceShiftBits;
+const UInt32 kBitPrice = 1 << kNumBitPriceShiftBits;
 
 class CPriceTables
 {
 public:
-  UINT32 StatePrices[kBitModelTotal >> kNumMoveReducingBits];
+  static UInt32 ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
+  static void Init();
   CPriceTables();
 };
 
-extern CPriceTables g_PriceTables;
-
-
-/////////////////////////////
-// CBitModel
-
-template <int aNumMoveBits>
+template <int numMoveBits>
 class CBitModel
 {
 public:
-  UINT32 Probability;
-  void UpdateModel(UINT32 symbol)
+  UInt32 Prob;
+  void UpdateModel(UInt32 symbol)
   {
     /*
-    Probability -= (Probability + ((symbol - 1) & ((1 << aNumMoveBits) - 1))) >> aNumMoveBits;
-    Probability += (1 - symbol) << (kNumBitModelTotalBits - aNumMoveBits);
+    Prob -= (Prob + ((symbol - 1) & ((1 << numMoveBits) - 1))) >> numMoveBits;
+    Prob += (1 - symbol) << (kNumBitModelTotalBits - numMoveBits);
     */
     if (symbol == 0)
-      Probability += (kBitModelTotal - Probability) >> aNumMoveBits;
+      Prob += (kBitModelTotal - Prob) >> numMoveBits;
     else
-      Probability -= (Probability) >> aNumMoveBits;
+      Prob -= (Prob) >> numMoveBits;
   }
 public:
-  void Init() { Probability = kBitModelTotal / 2; }
+  void Init() { Prob = kBitModelTotal / 2; }
 };
 
-template <int aNumMoveBits>
-class CBitEncoder: public CBitModel<aNumMoveBits>
+template <int numMoveBits>
+class CBitEncoder: public CBitModel<numMoveBits>
 {
 public:
-  void Encode(CEncoder *encoder, UINT32 symbol)
+  void Encode(CEncoder *encoder, UInt32 symbol)
   {
-    encoder->EncodeBit(Probability, kNumBitModelTotalBits, symbol);
-    UpdateModel(symbol);
+    encoder->EncodeBit(this->Prob, kNumBitModelTotalBits, symbol);
+    this->UpdateModel(symbol);
+    /*
+    UInt32 newBound = (encoder->Range >> kNumBitModelTotalBits) * this->Prob;
+    if (symbol == 0)
+    {
+      encoder->Range = newBound;
+      this->Prob += (kBitModelTotal - this->Prob) >> numMoveBits;
+    }
+    else
+    {
+      encoder->Low += newBound;
+      encoder->Range -= newBound;
+      this->Prob -= (this->Prob) >> numMoveBits;
+    }
+    while (encoder->Range < kTopValue)
+    {
+      encoder->Range <<= 8;
+      encoder->ShiftLow();
+    }
+    */
   }
-  UINT32 GetPrice(UINT32 symbol) const
+  UInt32 GetPrice(UInt32 symbol) const
   {
-    return g_PriceTables.StatePrices[
-      (((Probability - symbol) ^ ((-(int)symbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
+    return CPriceTables::ProbPrices[
+      (((this->Prob - symbol) ^ ((-(int)symbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
   }
 };
 
 
-template <int aNumMoveBits>
-class CBitDecoder: public CBitModel<aNumMoveBits>
+template <int numMoveBits>
+class CBitDecoder: public CBitModel<numMoveBits>
 {
 public:
-  UINT32 Decode(CDecoder *decoder)
+  UInt32 Decode(CDecoder *decoder)
   {
-    UINT32 newBound = (decoder->Range >> kNumBitModelTotalBits) * Probability;
+    UInt32 newBound = (decoder->Range >> kNumBitModelTotalBits) * this->Prob;
     if (decoder->Code < newBound)
     {
       decoder->Range = newBound;
-      Probability += (kBitModelTotal - Probability) >> aNumMoveBits;
+      this->Prob += (kBitModelTotal - this->Prob) >> numMoveBits;
       if (decoder->Range < kTopValue)
       {
         decoder->Code = (decoder->Code << 8) | decoder->Stream.ReadByte();
@@ -90,7 +102,7 @@ public:
     {
       decoder->Range -= newBound;
       decoder->Code -= newBound;
-      Probability -= (Probability) >> aNumMoveBits;
+      this->Prob -= (this->Prob) >> numMoveBits;
       if (decoder->Range < kTopValue)
       {
         decoder->Code = (decoder->Code << 8) | decoder->Stream.ReadByte();
@@ -102,6 +114,5 @@ public:
 };
 
 }}
-
 
 #endif

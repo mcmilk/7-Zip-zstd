@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_MF_MT" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_MT" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_MF_HC" /D "COMPRESS_MF_MT" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_MT" /D "COMPRESS_PPMD" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -131,6 +131,14 @@ SOURCE=..\..\..\Common\AlignedBuffer.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\AlignedBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
 # End Source File
 # Begin Source File
 
@@ -254,11 +262,27 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -401,6 +425,14 @@ SOURCE=..\..\Compress\PPMD\PPMDType.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\Branch\x86.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
@@ -486,46 +518,6 @@ SOURCE=..\..\Compress\LZMA\LZMAEncoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\LZMA\LZMAEncoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZMA\LZMALen.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZMA\LZMALen.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZMA\LZMALiteral.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZMA\LZMALiteral.h
 # End Source File
 # End Group
 # Begin Group "Copy"
@@ -862,11 +854,11 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.cpp
+SOURCE=..\..\Common\LockedStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.h
+SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 

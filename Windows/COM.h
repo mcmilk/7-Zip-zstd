@@ -1,7 +1,5 @@
 // Windows/COM.h
 
-#pragma once
-
 #ifndef __WINDOWS_COM_H
 #define __WINDOWS_COM_H
 

@@ -1,7 +1,5 @@
 // Archive/TarIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_TAR_IN_H
 #define __ARCHIVE_TAR_IN_H
 
@@ -16,15 +14,15 @@ namespace NTar {
 class CInArchive
 {
   CMyComPtr<IInStream> m_Stream;
-  UINT64 m_Position;
+  UInt64 m_Position;
   
-  HRESULT ReadBytes(void *data, UINT32 size, UINT32 &processedSize);
+  HRESULT ReadBytes(void *data, UInt32 size, UInt32 &processedSize);
 public:
   HRESULT Open(IInStream *inStream);
   HRESULT GetNextItemReal(bool &filled, CItemEx &itemInfo);
   HRESULT GetNextItem(bool &filled, CItemEx &itemInfo);
-  HRESULT Skeep(UINT64 numBytes);
-  HRESULT SkeepDataRecords(UINT64 dataSize);
+  HRESULT Skeep(UInt64 numBytes);
+  HRESULT SkeepDataRecords(UInt64 dataSize);
 };
   
 }}

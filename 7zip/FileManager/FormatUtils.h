@@ -1,7 +1,5 @@
 // FormatUtils.h
 
-#pragma once
-
 #ifndef __FORMATUTILS_H
 #define __FORMATUTILS_H
 

@@ -1,12 +1,8 @@
 // HCMF.h
 
-// #pragma once
-
 // #ifndef __HCMF_H
 // #define __HCMF_H
 
-#include "Common/MyCom.h"
-// #include "../../../Interface/CompressInterface.h"
 #include "HC.h"
 
 namespace HC_NAMESPACE {
@@ -40,13 +36,8 @@ namespace HC_NAMESPACE {
 #undef kIDUse3BytesByte
 #undef kIDUse3BytesString
 
-#ifdef __USE_3_BYTES
-  #define kIDUse3BytesByte 0x80
-  #define kIDUse3BytesString TEXT("T")
-#else
-  #define kIDUse3BytesByte 0x00
-  #define kIDUse3BytesString TEXT("")
-#endif
+#define kIDUse3BytesByte 0x00
+#define kIDUse3BytesString TEXT("")
 
 // #undef kIDStringFull
 
@@ -63,10 +54,7 @@ class CInTree2: public CInTree
   virtual void BeforeMoveBlock();
   virtual void AfterMoveBlock();
 public:
-  void SetCallback(IMatchFinderCallback *aCallback)
-  {
-    m_Callback = aCallback;
-  }
+  void SetCallback(IMatchFinderCallback *callback) { m_Callback = callback; }
 };
 
 class CMatchFinderHC: 
@@ -76,33 +64,33 @@ class CMatchFinderHC:
 {
   MY_UNKNOWN_IMP1(IMatchFinderSetCallback)
 
-  STDMETHOD(Init)(ISequentialInStream *aStream);
+  STDMETHOD(Init)(ISequentialInStream *inStream);
   STDMETHOD_(void, ReleaseStream)();
   STDMETHOD(MovePos)();
-  STDMETHOD_(BYTE, GetIndexByte)(UINT32 anIndex);
-  STDMETHOD_(UINT32, GetMatchLen)(UINT32 aIndex, UINT32 aBack, UINT32 aLimit);
-  STDMETHOD_(UINT32, GetNumAvailableBytes)();
-  STDMETHOD_(const BYTE *, GetPointerToCurrentPos)();
-  STDMETHOD(Create)(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter);
-  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *aDistances);
+  STDMETHOD_(Byte, GetIndexByte)(Int32 index);
+  STDMETHOD_(UInt32, GetMatchLen)(Int32 index, UInt32 back, UInt32 limit);
+  STDMETHOD_(UInt32, GetNumAvailableBytes)();
+  STDMETHOD_(const Byte *, GetPointerToCurrentPos)();
+  STDMETHOD(Create)(UInt32 historySize, UInt32 keepAddBufferBefore, 
+      UInt32 matchMaxLen, UInt32 keepAddBufferAfter);
+  STDMETHOD_(UInt32, GetLongestMatch)(UInt32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
 
   // IMatchFinderSetCallback
   STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback);
 
 private:
-  // UINT32 m_WindowReservSize;
+  // UInt32 m_WindowReservSize;
   CInTree2 m_MatchFinder;
 public:
   // CMatchFinderHC(): m_WindowReservSize((1 << 19) + 256) {};
-  void SetCutValue(UINT32 aCutValue) 
-    { m_MatchFinder.SetCutValue(aCutValue); }
+  void SetCutValue(UInt32 cutValue) 
+    { m_MatchFinder.SetCutValue(cutValue); }
   /*
-  void SetWindowReservSize(UINT32 aReservWindowSize)
+  void SetWindowReservSize(UInt32 aReservWindowSize)
     { m_WindowReservSize = aReservWindowSize; }
   */
+  virtual ~CMatchFinderHC() {}
 };
  
 }

@@ -1,7 +1,5 @@
 // LangPage.h
  
-#pragma once
-
 #ifndef __LANGPAGE_H
 #define __LANGPAGE_H
 

@@ -1,7 +1,5 @@
 // Windows/Window.h
 
-#pragma once
-
 #ifndef __WINDOWS_WINDOW_H
 #define __WINDOWS_WINDOW_H
 

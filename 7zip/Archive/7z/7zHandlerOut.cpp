@@ -51,31 +51,31 @@ static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
 
-const UINT32 kAlgorithmForX7 = 2;
-const UINT32 kDicSizeForX7 = 1 << 23;
-const UINT32 kFastBytesForX7 = 64;
+const UInt32 kAlgorithmForX7 = 2;
+const UInt32 kDicSizeForX7 = 1 << 23;
+const UInt32 kFastBytesForX7 = 64;
 
-const UINT32 kAlgorithmForX9 = 2;
-const UINT32 kDicSizeForX9 = 1 << 25;
-const UINT32 kFastBytesForX9 = 64;
+const UInt32 kAlgorithmForX9 = 2;
+const UInt32 kDicSizeForX9 = 1 << 25;
+const UInt32 kFastBytesForX9 = 64;
 static const wchar_t *kMatchFinderForX9 = L"BT4b";
 
-const UINT32 kAlgorithmForFast = 0;
-const UINT32 kDicSizeForFast = 1 << 15;
+const UInt32 kAlgorithmForFast = 0;
+const UInt32 kDicSizeForFast = 1 << 15;
 static const wchar_t *kMatchFinderForFast = L"HC3";
 
 const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
 static const wchar_t *kMatchFinderForHeaders = L"BT2";
-static const UINT32 kDictionaryForHeaders = 1 << 20;
-static const UINT32 kNumFastBytesForHeaders = 254;
+static const UInt32 kDictionaryForHeaders = 1 << 20;
+static const UInt32 kNumFastBytesForHeaders = 254;
 
 static bool IsLZMAMethod(const UString &methodName)
   { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }
 static bool IsLZMethod(const UString &methodName)
   { return IsLZMAMethod(methodName); }
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
+STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
   *type = NFileTimeType::kWindows;
   return S_OK;
@@ -94,7 +94,7 @@ HRESULT CHandler::SetPassword(CCompressionMethodMode &methodMode,
   if (getTextPassword)
   {
     CMyComBSTR password;
-    INT32 passwordIsDefined;
+    Int32 passwordIsDefined;
     RINOK(getTextPassword->CryptoGetTextPassword2(
         &passwordIsDefined, &password));
     if (methodMode.PasswordIsDefined = IntToBool(passwordIsDefined))
@@ -105,52 +105,6 @@ HRESULT CHandler::SetPassword(CCompressionMethodMode &methodMode,
   return S_OK;
 }
 
-// it's work only for non-solid archives
-/*
-STDMETHODIMP CHandler::DeleteItems(IOutStream *outStream, 
-    const UINT32* indices, UINT32 numItems, IUpdateCallback *updateCallback)
-{
-  COM_TRY_BEGIN
-  CRecordVector<bool> compressStatuses;
-  CRecordVector<UINT32> copyIndices;
-  int index = 0;
-  int i;
-  for(i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
-  {
-    if (_database.NumUnPackStreamsVector[i] != 1)
-      return E_NOTIMPL;
-  }
-  for(i = 0; i < _database.Files.Size(); i++)
-  {
-    // bool copyMode = true;
-    if(index < numItems && i == indices[index])
-      index++;
-    else
-    {
-      compressStatuses.Add(false);
-      copyIndices.Add(i);
-    }
-  }
-  CCompressionMethodMode methodMode, headerMethod;
-  RINOK(SetCompressionMethod(methodMode, headerMethod));
-  methodMode.MultiThread = _multiThread;
-  methodMode.MultiThreadMult = _multiThreadMult;
-  
-  headerMethod.MultiThread = false;
-  bool useAdditionalHeaderStreams = true;
-  bool compressMainHeader = false; 
-
-  // headerMethod.MultiThreadMult = _multiThreadMult;
-
-  return UpdateMain(_database, compressStatuses,
-      CObjectVector<CUpdateItem>(), copyIndices,
-      outStream, _inStream, &_database.ArchiveInfo, 
-      NULL, (_compressHeaders ? &headerMethod: 0), 
-      useAdditionalHeaderStreams, compressMainHeader,
-      updateCallback, false, _removeSfxBlock);
-  COM_TRY_END
-}
-*/
 struct CNameToPropID
 {
   PROPID PropID;
@@ -184,10 +138,10 @@ bool ConvertProperty(PROPVARIANT srcProp, VARTYPE varType,
   {
     if(srcProp.vt == VT_UI4)
     {
-      UINT32 value = srcProp.ulVal;
+      UInt32 value = srcProp.ulVal;
       if (value > 0xFF)
         return false;
-      destProp = BYTE(value);
+      destProp = Byte(value);
       return true;
     }
   }
@@ -235,13 +189,13 @@ HRESULT CHandler::SetCompressionMethod(
     {
       CProperty property;
       property.PropID = NCoderPropID::kNumFastBytes;
-      property.Value = UINT32(kNumFastBytesForHeaders);
+      property.Value = UInt32(kNumFastBytesForHeaders);
       oneMethodInfo.CoderProperties.Add(property);
     }
     {
       CProperty property;
       property.PropID = NCoderPropID::kDictionarySize;
-      property.Value = UINT32(kDictionaryForHeaders);
+      property.Value = UInt32(kDictionaryForHeaders);
       oneMethodInfo.CoderProperties.Add(property);
     }
     headerMethodInfoVector.Add(oneMethodInfo);
@@ -410,14 +364,29 @@ HRESULT CHandler::SetCompressionMethod(
   return S_OK;
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
   COM_TRY_BEGIN
 
+  const CArchiveDatabaseEx *database = 0;
+  #ifdef _7Z_VOL
+  if(_volumes.Size() > 1)
+    return E_FAIL;
+  const CVolume *volume = 0;
+  if (_volumes.Size() == 1)
+  {
+    volume = &_volumes.Front();
+    database = &volume->Database;
+  }
+  #else
+  if (_inStream != 0)
+    database = &_database;
+  #endif
+
   // CRecordVector<bool> compressStatuses;
   CObjectVector<CUpdateItem> updateItems;
-  // CRecordVector<UINT32> copyIndices;
+  // CRecordVector<UInt32> copyIndices;
   
   // CMyComPtr<IUpdateCallback2> updateCallback2;
   // updateCallback->QueryInterface(&updateCallback2);
@@ -425,9 +394,9 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   int index = 0;
   for(int i = 0; i < numItems; i++)
   {
-    INT32 newData;
-    INT32 newProperties;
-    UINT32 indexInArchive;
+    Int32 newData;
+    Int32 newProperties;
+    UInt32 indexInArchive;
     if (!updateCallback)
       return E_FAIL;
     RINOK(updateCallback->GetUpdateItemInfo(i,
@@ -442,7 +411,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
 
     if (updateItem.IndexInArchive != -1)
     {
-      const CFileItem &fileItem = _database.Files[updateItem.IndexInArchive];
+      const CFileItem &fileItem = database->Files[updateItem.IndexInArchive];
       updateItem.Name = fileItem.Name;
       updateItem.IsDirectory = fileItem.IsDirectory;
       updateItem.Size = fileItem.UnPackSize;
@@ -550,7 +519,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
       RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      updateItem.Size = *(const UINT64 *)(&propVariant.uhVal);
+      updateItem.Size = *(const UInt64 *)(&propVariant.uhVal);
       if (updateItem.Size != 0 && updateItem.IsAnti)
         return E_INVALIDARG;
     }
@@ -605,35 +574,38 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   if (numItems < 2)
     compressMainHeader = false;
 
-  CInArchiveInfo *inArchiveInfo;
-  if (!_inStream)
-    inArchiveInfo = 0;
-  else
-    inArchiveInfo = &_database.ArchiveInfo;
-
-  return Update(_database, 
-      // compressStatuses,
-      updateItems, 
-      // copyIndices, 
-      outStream, _inStream, inArchiveInfo, 
-      methodMode, 
-        (_compressHeaders || 
-        (methodMode.PasswordIsDefined && _encryptHeaders)) ? 
-        &headerMethod : 0, 
-      _level != 0 && _autoFilter, // useFilters
-      _level >= 8, // maxFilter
-      useAdditionalHeaderStreams, compressMainHeader,
-      updateCallback, _numSolidFiles, _numSolidBytes, _solidExtension,
-      _removeSfxBlock);
+  CUpdateOptions options;
+  options.Method = &methodMode;
+  options.HeaderMethod = (_compressHeaders || 
+      (methodMode.PasswordIsDefined && _encryptHeaders)) ? 
+      &headerMethod : 0;
+  options.UseFilters = _level != 0 && _autoFilter;
+  options.MaxFilter = _level >= 8;
+  options.UseAdditionalHeaderStreams = useAdditionalHeaderStreams;
+  options.CompressMainHeader = compressMainHeader;
+  options.NumSolidFiles = _numSolidFiles;
+  options.NumSolidBytes = _numSolidBytes;
+  options.SolidExtension = _solidExtension;
+  options.RemoveSfxBlock = _removeSfxBlock;
+  options.VolumeMode = _volumeMode;
+  return Update(
+      #ifdef _7Z_VOL
+      volume ? volume->Stream: 0, 
+      volume ? database: 0, 
+      #else
+      _inStream, 
+      database,
+      #endif
+      updateItems, outStream, updateCallback, options);
   COM_TRY_END
 }
 
-static int ParseStringToUINT32(const UString &srcString, UINT32 &number)
+static int ParseStringToUINT32(const UString &srcString, UInt32 &number)
 {
   const wchar_t *start = srcString;
   const wchar_t *end;
-  UINT64 number64 = ConvertStringToUINT64(start, &end);
-  if (number64 >= (UINT64(1) << 32)) 
+  UInt64 number64 = ConvertStringToUInt64(start, &end);
+  if (number64 >= (UInt64(1) << 32)) 
   {
     number = 0;
     return 0;
@@ -647,14 +619,14 @@ static const char kByteSymbol = 'B';
 static const char kKiloByteSymbol = 'K';
 static const char kMegaByteSymbol = 'M';
 
-HRESULT ParseDictionaryValues(const UString &srcStringSpec, UINT32 &dicSize)
+HRESULT ParseDictionaryValues(const UString &srcStringSpec, UInt32 &dicSize)
 {
   UString srcString = srcStringSpec;
   srcString.MakeUpper();
 
   const wchar_t *start = srcString;
   const wchar_t *end;
-  UINT64 number = ConvertStringToUINT64(start, &end);
+  UInt64 number = ConvertStringToUInt64(start, &end);
   int numDigits = end - start;
   if (numDigits == 0 || srcString.Length() > numDigits + 1)
     return E_INVALIDARG;
@@ -662,25 +634,25 @@ HRESULT ParseDictionaryValues(const UString &srcStringSpec, UINT32 &dicSize)
   {
     if (number >= kLogarithmicSizeLimit)
       return E_INVALIDARG;
-    dicSize = (UINT32)1 << number;
+    dicSize = (UInt32)1 << number;
     return S_OK;
   }
   switch (srcString[numDigits])
   {
     case kByteSymbol:
-      if (number >= ((UINT64)1 << kLogarithmicSizeLimit))
+      if (number >= ((UInt64)1 << kLogarithmicSizeLimit))
         return E_INVALIDARG;
-      dicSize = (UINT32)number;
+      dicSize = (UInt32)number;
       break;
     case kKiloByteSymbol:
-      if (number >= ((UINT64)1 << (kLogarithmicSizeLimit - 10)))
+      if (number >= ((UInt64)1 << (kLogarithmicSizeLimit - 10)))
         return E_INVALIDARG;
-      dicSize = UINT32(number << 10);
+      dicSize = UInt32(number << 10);
       break;
     case kMegaByteSymbol:
-      if (number >= ((UINT64)1 << (kLogarithmicSizeLimit - 20)))
+      if (number >= ((UInt64)1 << (kLogarithmicSizeLimit - 20)))
         return E_INVALIDARG;
-      dicSize = UINT32(number << 20);
+      dicSize = UInt32(number << 20);
       break;
     default:
       return E_INVALIDARG;
@@ -724,7 +696,7 @@ static HRESULT SetBoolProperty(bool &dest, const PROPVARIANT &value)
 }
 
 /*
-static HRESULT SetComplexProperty(bool &boolStatus, UINT32 &number, 
+static HRESULT SetComplexProperty(bool &boolStatus, UInt32 &number, 
     const PROPVARIANT &value)
 {
   switch(value.vt)
@@ -746,7 +718,7 @@ static HRESULT SetComplexProperty(bool &boolStatus, UINT32 &number,
 }
 */
 
-static HRESULT GetBindInfoPart(UString &srcString, UINT32 &coder, UINT32 &stream)
+static HRESULT GetBindInfoPart(UString &srcString, UInt32 &coder, UInt32 &stream)
 {
   stream = 0;
   int index = ParseStringToUINT32(srcString, coder);
@@ -824,7 +796,7 @@ HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, c
   CProperty property;
   if (name.CompareNoCase(L"D") == 0 || name.CompareNoCase(L"MEM") == 0)
   {
-    UINT32 dicSize;
+    UInt32 dicSize;
     RINOK(ParseDictionaryValues(value, dicSize));
     if (name.CompareNoCase(L"D") == 0)
       property.PropID = NCoderPropID::kDictionarySize;
@@ -849,7 +821,7 @@ HRESULT CHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, c
       propValue = value;
     else
     {
-      UINT32 number;
+      UInt32 number;
       if (ParseStringToUINT32(value, number) == value.Length())
         propValue = number;
       else
@@ -898,7 +870,7 @@ HRESULT CHandler::SetSolidSettings(const UString &s)
   {
     const wchar_t *start = ((const wchar_t *)s2) + i;
     const wchar_t *end;
-    UINT64 v = ConvertStringToUINT64(start, &end);
+    UInt64 v = ConvertStringToUInt64(start, &end);
     if (start == end)
     {
       if (s2[i++] != 'E')
@@ -954,7 +926,7 @@ HRESULT CHandler::SetSolidSettings(const PROPVARIANT &value)
   }
 }
 
-STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *values, INT32 numProperties)
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   UINT codePage = GetCurrentFileCodePage();
   COM_TRY_BEGIN
@@ -1047,7 +1019,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     }
     
       
-    UINT32 number;
+    UInt32 number;
     int index = ParseStringToUINT32(name, number);
     UString realName = name.Mid(index);
     if (index == 0)
@@ -1057,7 +1029,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         RINOK(SetBoolProperty(_removeSfxBlock, value));
         continue;
       }
-      if (name.CompareNoCase(L"F") == 0)
+      else if (name.CompareNoCase(L"F") == 0)
       {
         RINOK(SetBoolProperty(_autoFilter, value));
         continue;
@@ -1082,6 +1054,11 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         // _multiThreadMult = 200;
         RINOK(SetBoolProperty(_multiThread, value));
         // RINOK(SetComplexProperty(MultiThread, _multiThreadMult, value));
+        continue;
+      }
+      else if (name.CompareNoCase(L"V") == 0)
+      {
+        RINOK(SetBoolProperty(_volumeMode, value));
         continue;
       }
       number = 0;
@@ -1114,13 +1091,13 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       CProperty property;
       if (realName.CompareNoCase(L"D") == 0 || realName.CompareNoCase(L"MEM") == 0)
       {
-        UINT32 dicSize;
+        UInt32 dicSize;
         if (value.vt == VT_UI4)
         {
-          UINT32 logDicSize = value.ulVal;
+          UInt32 logDicSize = value.ulVal;
           if (logDicSize >= 32)
             return E_INVALIDARG;
-          dicSize = (UINT32)1 << logDicSize;
+          dicSize = (UInt32)1 << logDicSize;
         }
         else if (value.vt == VT_BSTR)
         {

@@ -1,7 +1,5 @@
 // 7z/Handler.h
 
-#pragma once
-
 #ifndef __7Z_HANDLER_H
 #define __7Z_HANDLER_H
 
@@ -18,6 +16,32 @@
 namespace NArchive {
 namespace N7z {
 
+#ifdef _7Z_VOL
+struct CRef
+{
+  int VolumeIndex;
+  int ItemIndex;
+};
+
+/*
+struct CRef2
+{
+  CRecordVector<CRef> Refs;
+  UInt64 UnPackSize;
+  UInt64 PackSize;
+  UInt64 StartPos;
+  CRef2(): UnPackSize(0), PackSize(0), StartPos(0) {}
+};
+*/
+
+struct CVolume
+{
+  int StartRef2Index;
+  CMyComPtr<IInStream> Stream;
+  CArchiveDatabaseEx Database;
+};
+#endif
+
 #ifndef EXTRACT_ONLY
 
 struct COneMethodInfo
@@ -33,6 +57,9 @@ DEFINE_GUID(CLSID_CFormat7z,
 
 class CHandler: 
   public IInArchive,
+  #ifdef _7Z_VOL
+  public IInArchiveGetStream,
+  #endif
   #ifndef EXTRACT_ONLY
   public IOutArchive, 
   public ISetProperties, 
@@ -40,46 +67,50 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
-  #ifdef EXTRACT_ONLY
-  MY_UNKNOWN_IMP
-  #else
-  MY_UNKNOWN_IMP3(
-      IInArchive,
-      IOutArchive,
-      ISetProperties
-      )
+  MY_QUERYINTERFACE_BEGIN
+  #ifdef _7Z_VOL
+  MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
   #endif
+  #ifndef EXTRACT_ONLY
+  MY_QUERYINTERFACE_ENTRY(IOutArchive)
+  MY_QUERYINTERFACE_ENTRY(ISetProperties)
+  #endif
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(Open)(IInStream *stream, 
-      const UINT64 *maxCheckStartPosition,
+      const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
   
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID,  PROPVARIANT *value);
-  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
-      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID,  PROPVARIANT *value);
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
+      Int32 testMode, IArchiveExtractCallback *extractCallback);
 
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
+  #ifdef _7Z_VOL
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
+  #endif
 
   #ifndef EXTRACT_ONLY
   // IOutArchiveHandler
-  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback);
 
-  STDMETHOD(GetFileTimeType)(UINT32 *type);  
+  STDMETHOD(GetFileTimeType)(UInt32 *type);  
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
   
   HRESULT SetSolidSettings(const UString &s);
   HRESULT SetSolidSettings(const PROPVARIANT &value);
@@ -88,16 +119,20 @@ public:
   CHandler();
 
 private:
+  #ifdef _7Z_VOL
+  CObjectVector<CVolume> _volumes;
+  CObjectVector<CRef> _refs;
+  #else
   CMyComPtr<IInStream> _inStream;
-
   NArchive::N7z::CArchiveDatabaseEx _database;
+  #endif
 
   #ifndef EXTRACT_ONLY
   CObjectVector<COneMethodInfo> _methods;
   CRecordVector<CBind> _binds;
   bool _removeSfxBlock;
-  UINT64 _numSolidFiles; 
-  UINT64 _numSolidBytes;
+  UInt64 _numSolidFiles; 
+  UInt64 _numSolidBytes;
   bool _numSolidBytesDefined;
   bool _solidExtension;
 
@@ -106,13 +141,16 @@ private:
   bool _encryptHeaders;
 
   bool _copyMode;
-  UINT32 _defaultDicSize;
-  UINT32 _defaultAlgorithm;
-  UINT32 _defaultFastBytes;
+  UInt32 _defaultDicSize;
+  UInt32 _defaultAlgorithm;
+  UInt32 _defaultFastBytes;
   UString _defaultMatchFinder;
   bool _autoFilter;
   bool _multiThread;
-  UINT32 _level;
+  UInt32 _level;
+
+  bool _volumeMode;
+
 
   HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
@@ -132,25 +170,15 @@ private:
   
   #ifndef _SFX
 
-  CRecordVector<UINT64> _fileInfoPopIDs;
+  CRecordVector<UInt64> _fileInfoPopIDs;
   void FillPopIDs();
 
   #endif
 
   #ifndef EXTRACT_ONLY
 
-  UINT64 GetUINT64MAX() const
-  {
-    return
-        #if (__GNUC__)
-        0xFFFFFFFFFFFFFFFFLL
-        #else
-        0xFFFFFFFFFFFFFFFF
-        #endif
-        ;
-  }
-  void InitSolidFiles() { _numSolidFiles = GetUINT64MAX(); }
-  void InitSolidSize()  { _numSolidBytes = GetUINT64MAX(); }
+  void InitSolidFiles() { _numSolidFiles = UInt64(Int64(-1)); }
+  void InitSolidSize()  { _numSolidBytes = UInt64(Int64(-1)); }
   void InitSolid()
   {
     InitSolidFiles();
@@ -167,8 +195,8 @@ private:
   */
   void SetSolidBytesLimit()
   {
-    _numSolidBytes = ((UINT64)_defaultDicSize) << 7;
-    const UINT64 kMinSize = (1<<24);
+    _numSolidBytes = ((UInt64)_defaultDicSize) << 7;
+    const UInt64 kMinSize = (1<<24);
     if (_numSolidBytes < kMinSize)
       _numSolidBytes = kMinSize;
   }
@@ -197,6 +225,7 @@ private:
     _defaultMatchFinder = L"BT4";
     _level = 5;
     _autoFilter = true;
+    _volumeMode = false;
     InitSolid();
     SetSolidBytesLimit();
   }

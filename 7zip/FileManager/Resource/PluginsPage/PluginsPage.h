@@ -1,7 +1,5 @@
 // PluginsPage.h
  
-#pragma once
-
 #include "Windows/Control/ListView.h"
 
 #ifndef __PLUGINSPAGE_H

@@ -1,7 +1,5 @@
 // PluginLoader.h
 
-#pragma once
-
 #ifndef __PLUGINLOADER_H
 #define __PLUGINLOADER_H
 

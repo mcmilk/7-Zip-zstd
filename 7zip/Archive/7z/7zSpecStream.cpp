@@ -4,9 +4,9 @@
 
 #include "7zSpecStream.h"
 
-STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)
@@ -14,9 +14,9 @@ STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *data, UINT32 size, UINT32
   return result; 
 }
 
-STDMETHODIMP CSequentialInStreamSizeCount2::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamSizeCount2::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->ReadPart(data, size, &realProcessedSize);
   _size += realProcessedSize;
   if (processedSize != 0)
@@ -25,7 +25,7 @@ STDMETHODIMP CSequentialInStreamSizeCount2::ReadPart(void *data, UINT32 size, UI
 }
 
 STDMETHODIMP CSequentialInStreamSizeCount2::GetSubStreamSize(
-    UINT64 subStream, UINT64 *value)
+    UInt64 subStream, UInt64 *value)
 {
   if (_getSubStreamSize == NULL)
     return E_NOTIMPL;

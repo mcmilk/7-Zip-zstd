@@ -1,7 +1,5 @@
 // Archive/ArjIn.h
 
-#pragma once
-
 #ifndef __ARCHIVE_ARJIN_H
 #define __ARCHIVE_ARJIN_H
 
@@ -27,42 +25,51 @@ public:
     kSeekStreamError
   } 
   Cause;
-  CInArchiveException(CCauseType cause);
+  CInArchiveException(CCauseType cause): Cause(cause) {};
 };
 
 class CProgressVirt
 {
 public:
-  STDMETHOD(SetCompleted)(const UINT64 *numFiles) PURE;
+  STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
 };
 
 class CInArchive
 {
   CMyComPtr<IInStream> _stream;
-  UINT64 _streamStartPosition;
-  UINT64 _position;
-  UINT16 _blockSize;
-  BYTE _block[kMaxBlockSize];
+  UInt64 _streamStartPosition;
+  UInt64 _position;
+  UInt16 _blockSize;
+  Byte _block[kMaxBlockSize];
+  UInt32 _blockPos;
+
   
-  bool FindAndReadMarker(const UINT64 *searchHeaderSizeLimit);
+  bool FindAndReadMarker(const UInt64 *searchHeaderSizeLimit);
   
   bool ReadBlock();
   bool ReadBlock2();
 
-  HRESULT ReadBytes(void *data, UINT32 size, UINT32 *processedSize);
-  bool ReadBytesAndTestSize(void *data, UINT32 size);
-  void SafeReadBytes(void *data, UINT32 size);
-  
-  void IncreasePositionValue(UINT64 addValue);
+  Byte ReadByte();
+  UInt16 ReadUInt16();
+  UInt32 ReadUInt32();
+
+  HRESULT ReadBytes(void *data, UInt32 size, UInt32 *processedSize);
+  bool ReadBytesAndTestSize(void *data, UInt32 size);
+  void SafeReadBytes(void *data, UInt32 size);
+  Byte SafeReadByte();
+  UInt16 SafeReadUInt16();
+  UInt32 SafeReadUInt32();
+    
+  void IncreasePositionValue(UInt64 addValue);
   void ThrowIncorrectArchiveException();
  
 public:
   HRESULT GetNextItem(bool &filled, CItemEx &item);
 
-  bool Open(IInStream *inStream, const UINT64 *searchHeaderSizeLimit);
+  bool Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
 
-  void IncreaseRealPosition(UINT64 addValue);
+  void IncreaseRealPosition(UInt64 addValue);
 };
   
 }}

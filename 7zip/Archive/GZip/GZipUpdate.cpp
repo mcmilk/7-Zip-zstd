@@ -30,17 +30,17 @@ extern CSysString GetDeflateCodecPath();
 namespace NArchive {
 namespace NGZip {
 
-static const BYTE kHostOS = NFileHeader::NHostOS::kFAT;
+static const Byte kHostOS = NFileHeader::NHostOS::kFAT;
 
 HRESULT UpdateArchive(IInStream *inStream, 
-    UINT64 unpackSize,
-    IOutStream *outStream,
+    UInt64 unpackSize,
+    ISequentialOutStream *outStream,
     const CItem &newItem,
     const CCompressionMethodMode &compressionMethod,
     int indexInClient,
     IArchiveUpdateCallback *updateCallback)
 {
-  UINT64 complexity = 0;
+  UInt64 complexity = 0;
 
   complexity += unpackSize;
 
@@ -54,11 +54,11 @@ HRESULT UpdateArchive(IInStream *inStream,
   complexity = 0;
   RINOK(updateCallback->SetCompleted(&complexity));
 
-  CMyComPtr<IInStream> fileInStream;
+  CMyComPtr<ISequentialInStream> fileInStream;
 
   RINOK(updateCallback->GetStream(indexInClient, &fileInStream));
 
-  CInStreamWithCRC *inStreamSpec = new CInStreamWithCRC;
+  CSequentialInStreamWithCRC *inStreamSpec = new CSequentialInStreamWithCRC;
   CMyComPtr<ISequentialInStream> crcStream(inStreamSpec);
   inStreamSpec->Init(fileInStream);
 
@@ -74,7 +74,7 @@ HRESULT UpdateArchive(IInStream *inStream,
   outArchive.Create(outStream);
 
   CItem item = newItem;
-  item.CompressionMethod = NFileHeader::NCompressionMethod::kDefalate;
+  item.CompressionMethod = NFileHeader::NCompressionMethod::kDeflate;
   item.ExtraFlags = 0;
   item.HostOS = kHostOS;
 
@@ -101,10 +101,10 @@ HRESULT UpdateArchive(IInStream *inStream,
   }
   RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, compressProgress));
 
-  RINOK(outArchive.WritePostInfo(inStreamSpec->GetCRC(), 
-      (UINT32)inStreamSpec->GetSize()));
-  return updateCallback->SetOperationResult(
-      NArchive::NUpdate::NOperationResult::kOK);
+  item.FileCRC = inStreamSpec->GetCRC();
+  item.UnPackSize32 = (UInt32)inStreamSpec->GetSize();
+  RINOK(outArchive.WritePostHeader(item));
+  return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
 }
 
 }}

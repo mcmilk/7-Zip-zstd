@@ -1,7 +1,5 @@
 // Archive/GZipItem.h
 
-#pragma once
-
 #ifndef __ARCHIVE_GZIP_ITEM_H
 #define __ARCHIVE_GZIP_ITEM_H
 
@@ -14,20 +12,20 @@ namespace NGZip {
 class CItem
 {
 private:
-  bool TestFlag(BYTE flag) const { return ((Flags & flag) != 0); }
+  bool TestFlag(Byte flag) const { return ((Flags & flag) != 0); }
 public:
-  BYTE CompressionMethod;
-  BYTE Flags;
-  UINT32 Time;
-  BYTE ExtraFlags;
-  BYTE HostOS;
-  UINT32 FileCRC;
-  UINT32 UnPackSize32;
-  UINT64 PackSize;
+  Byte CompressionMethod;
+  Byte Flags;
+  UInt32 Time;
+  Byte ExtraFlags;
+  Byte HostOS;
+  UInt32 FileCRC;
+  UInt32 UnPackSize32;
+  UInt64 PackSize;
 
   AString Name;
-  UINT16 ExtraFieldSize;
-  UINT16 CommentSize;
+  UInt16 ExtraFieldSize;
+  UInt16 CommentSize;
 
   bool IsText() const
     {  return TestFlag(NFileHeader::NFlags::kDataIsText); }
@@ -52,9 +50,9 @@ public:
 class CItemEx: public CItem
 {
 public:
-  UINT64 DataPosition;
-  UINT64 CommentPosition;
-  UINT64 ExtraPosition;
+  UInt64 DataPosition;
+  UInt64 CommentPosition;
+  UInt64 ExtraPosition;
 };
 
 

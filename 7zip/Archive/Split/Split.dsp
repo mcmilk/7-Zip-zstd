@@ -126,6 +126,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -184,6 +192,14 @@ SOURCE=..\..\Compress\Copy\CopyCoder.h
 # Begin Group "7zip Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\MultiStream.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Common\ProgressUtils.cpp

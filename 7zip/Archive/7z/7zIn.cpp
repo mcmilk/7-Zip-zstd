@@ -19,7 +19,7 @@ public:
   CStreamSwitch(): _needRemove(false) {}
   ~CStreamSwitch() { Remove(); }
   void Remove();
-  void Set(CInArchive *archive, const BYTE *data, UINT32 size);
+  void Set(CInArchive *archive, const Byte *data, UInt32 size);
   void Set(CInArchive *archive, const CByteBuffer &byteBuffer);
   HRESULT Set(CInArchive *archive, const CObjectVector<CByteBuffer> *dataVector);
 };
@@ -33,7 +33,7 @@ void CStreamSwitch::Remove()
   }
 }
 
-void CStreamSwitch::Set(CInArchive *archive, const BYTE *data, UINT32 size)
+void CStreamSwitch::Set(CInArchive *archive, const Byte *data, UInt32 size)
 {
   Remove();
   _archive = archive;
@@ -49,13 +49,13 @@ void CStreamSwitch::Set(CInArchive *archive, const CByteBuffer &byteBuffer)
 HRESULT CStreamSwitch::Set(CInArchive *archive, const CObjectVector<CByteBuffer> *dataVector)
 {
   Remove();
-  BYTE external;
-  RINOK(archive->SafeReadByte2(external));
+  Byte external;
+  RINOK(archive->ReadByte(external));
   if (external != 0)
   {
-    UINT64 dataIndex;
+    UInt64 dataIndex;
     RINOK(archive->ReadNumber(dataIndex));
-    Set(archive, (*dataVector)[(UINT32)dataIndex]);
+    Set(archive, (*dataVector)[(UInt32)dataIndex]);
   }
   return S_OK;
 }
@@ -65,10 +65,10 @@ CInArchiveException::CInArchiveException(CCauseType cause):
   Cause(cause)
 {}
 
-HRESULT CInArchive::ReadBytes(IInStream *stream, void *data, UINT32 size, 
-    UINT32 *processedSize)
+HRESULT CInArchive::ReadDirect(IInStream *stream, void *data, UInt32 size, 
+    UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = stream->Read(data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
@@ -76,81 +76,147 @@ HRESULT CInArchive::ReadBytes(IInStream *stream, void *data, UINT32 size,
   return result;
 }
 
-HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 *processedSize)
+HRESULT CInArchive::ReadDirect(void *data, UInt32 size, UInt32 *processedSize)
 {
-  return ReadBytes(_stream, data, size, processedSize);
+  return ReadDirect(_stream, data, size, processedSize);
 }
 
-HRESULT CInArchive::SafeReadBytes(void *data, UINT32 size)
+HRESULT CInArchive::SafeReadDirect(void *data, UInt32 size)
 {
-  UINT32 realProcessedSize;
-  RINOK(ReadBytes(data, size, &realProcessedSize));
+  UInt32 realProcessedSize;
+  RINOK(ReadDirect(data, size, &realProcessedSize));
   if (realProcessedSize != size)
     throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
   return S_OK;
 }
 
-HRESULT CInArchive::ReadNumber(UINT64 &value)
+HRESULT CInArchive::SafeReadDirectByte(Byte &b)
 {
-  BYTE firstByte;
-  RINOK(SafeReadByte2(firstByte));
-  BYTE mask = 0x80;
+  return SafeReadDirect(&b, 1);
+}
+
+HRESULT CInArchive::SafeReadDirectUInt32(UInt32 &value)
+{
+  value = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    Byte b;
+    RINOK(SafeReadDirectByte(b));
+    value |= (UInt32(b) << (8 * i));
+  }
+  return S_OK;
+}
+
+HRESULT CInArchive::SafeReadDirectUInt64(UInt64 &value)
+{
+  value = 0;
+  for (int i = 0; i < 8; i++)
+  {
+    Byte b;
+    RINOK(SafeReadDirectByte(b));
+    value |= (UInt64(b) << (8 * i));
+  }
+  return S_OK;
+}
+
+HRESULT CInArchive::ReadNumber(UInt64 &value)
+{
+  Byte firstByte;
+  RINOK(ReadByte(firstByte));
+  Byte mask = 0x80;
+  value = 0;
   for (int i = 0; i < 8; i++)
   {
     if ((firstByte & mask) == 0)
     {
-      value = 0;
-      RINOK(SafeReadBytes2(&value, i));
-      UINT64 highPart = firstByte & (mask - 1);
+      UInt64 highPart = firstByte & (mask - 1);
       value += (highPart << (i * 8));
       return S_OK;
     }
+    Byte b;
+    RINOK(ReadByte(b));
+    value |= (UInt64(b) << (8 * i));
     mask >>= 1;
   }
-  return SafeReadBytes2(&value, 8);
+  return S_OK;
+}
+
+HRESULT CInArchive::ReadUInt32(UInt32 &value)
+{
+  value = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    Byte b;
+    RINOK(ReadByte(b));
+    value |= (UInt32(b) << (8 * i));
+  }
+  return S_OK;
+}
+
+HRESULT CInArchive::ReadUInt64(UInt64 &value)
+{
+  value = 0;
+  for (int i = 0; i < 8; i++)
+  {
+    Byte b;
+    RINOK(ReadByte(b));
+    value |= (UInt64(b) << (8 * i));
+  }
+  return S_OK;
 }
 
 static inline bool TestSignatureCandidate(const void *testBytes)
 {
   // return (memcmp(testBytes, kSignature, kSignatureSize) == 0);
-  for (UINT32 i = 0; i < kSignatureSize; i++)
-    if (((const BYTE *)testBytes)[i] != kSignature[i])
+  for (UInt32 i = 0; i < kSignatureSize; i++)
+    if (((const Byte *)testBytes)[i] != kSignature[i])
       return false;
   return true;
 }
 
-HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UINT64 *searchHeaderSizeLimit)
+#ifdef _7Z_VOL
+static inline bool TestFinishSignatureCandidate(const void *testBytes)
+{
+  // return (memcmp(testBytes, kSignature, kSignatureSize) == 0);
+  for (UInt32 i = 0; i < kSignatureSize; i++)
+    if (((const Byte *)testBytes)[i] != kFinishSignature[i])
+      return false;
+  return true;
+}
+#endif
+
+HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
 {
   _position = _arhiveBeginStreamPosition;
   RINOK(stream->Seek(_arhiveBeginStreamPosition, STREAM_SEEK_SET, NULL));
 
-  BYTE signature[kSignatureSize];
-  UINT32 processedSize; 
-  RINOK(ReadBytes(stream, signature, kSignatureSize, &processedSize));
+  Byte signature[kSignatureSize];
+  UInt32 processedSize; 
+  RINOK(ReadDirect(stream, signature, kSignatureSize, &processedSize));
   if(processedSize != kSignatureSize)
     return S_FALSE;
   if (TestSignatureCandidate(signature))
     return S_OK;
 
   CByteBuffer byteBuffer;
-  static const UINT32 kSearchSignatureBufferSize = 0x10000;
-  byteBuffer.SetCapacity(kSearchSignatureBufferSize);
-  BYTE *buffer = byteBuffer;
-  UINT32 numBytesPrev = kSignatureSize - 1;
-  memmove(buffer, signature + 1, numBytesPrev);
-  UINT64 curTestPos = _arhiveBeginStreamPosition + 1;
+  const UInt32 kBufferSize = (1 << 16);
+  byteBuffer.SetCapacity(kBufferSize);
+  Byte *buffer = byteBuffer;
+  UInt32 numPrevBytes = kSignatureSize - 1;
+  memmove(buffer, signature + 1, numPrevBytes);
+  UInt64 curTestPos = _arhiveBeginStreamPosition + 1;
   while(true)
   {
     if (searchHeaderSizeLimit != NULL)
       if (curTestPos - _arhiveBeginStreamPosition > *searchHeaderSizeLimit)
-        return false;
-    UINT32 numReadBytes = kSearchSignatureBufferSize - numBytesPrev;
-    RINOK(ReadBytes(stream, buffer + numBytesPrev, numReadBytes, &processedSize));
-    UINT32 numBytesInBuffer = numBytesPrev + processedSize;
+        return S_FALSE;
+    UInt32 numReadBytes = kBufferSize - numPrevBytes;
+    RINOK(ReadDirect(stream, buffer + numPrevBytes, numReadBytes, &processedSize));
+    UInt32 numBytesInBuffer = numPrevBytes + processedSize;
     if (numBytesInBuffer < kSignatureSize)
       return S_FALSE;
-    UINT32 numTests = numBytesInBuffer - kSignatureSize + 1;
-    for(UINT32 pos = 0; pos < numTests; pos++, curTestPos++)
+    UInt32 numTests = numBytesInBuffer - kSignatureSize + 1;
+    for(UInt32 pos = 0; pos < numTests; pos++, curTestPos++)
     { 
       if (TestSignatureCandidate(buffer + pos))
       {
@@ -159,18 +225,81 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UINT64 *search
         return stream->Seek(_position, STREAM_SEEK_SET, NULL);
       }
     }
-    numBytesPrev = numBytesInBuffer - numTests;
-    memmove(buffer, buffer + numTests, numBytesPrev);
+    numPrevBytes = numBytesInBuffer - numTests;
+    memmove(buffer, buffer + numTests, numPrevBytes);
   }
 }
 
+// Out: _position must point to end of signature
+
+#ifdef _7Z_VOL
+HRESULT CInArchive::FindFinishSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
+{
+  RINOK(stream->Seek(0, STREAM_SEEK_END, &_position));
+  if (_position < kSignatureSize)
+    return S_FALSE;
+
+  CByteBuffer byteBuffer;
+  const UInt32 kBufferSize = (1 << 18);
+  byteBuffer.SetCapacity(kBufferSize);
+  Byte *buffer = byteBuffer;
+  UInt32 numPrevBytes = 0;
+  UInt64 limitPos = 0;
+  if (searchHeaderSizeLimit != NULL)
+    if (*searchHeaderSizeLimit < _position)
+      limitPos = _position - *searchHeaderSizeLimit;
+
+  while(_position >= limitPos)
+  {
+    UInt32 numReadBytes = kBufferSize - numPrevBytes;
+    if (numReadBytes > _position)
+      numReadBytes = (UInt32)_position;
+    UInt32 numBytesInBuffer = numPrevBytes + numReadBytes;
+    if (numBytesInBuffer < kSignatureSize)
+      return S_FALSE;
+    _position -= numReadBytes;
+    RINOK(stream->Seek(_position, STREAM_SEEK_SET, &_position));
+    UInt32 startPos = kBufferSize - numBytesInBuffer;
+    UInt32 processedSize;
+    RINOK(ReadDirect(stream, buffer + startPos, numReadBytes, &processedSize));
+    if (processedSize != numReadBytes)
+      return S_FALSE;
+    _position -= processedSize;
+    for(UInt32 pos = kBufferSize; pos >= startPos + kSignatureSize; pos--)
+    { 
+      if (TestFinishSignatureCandidate(buffer + pos - kSignatureSize))
+      {
+        _position += pos - startPos;
+        return stream->Seek(_position, STREAM_SEEK_SET, NULL);
+      }
+    }
+    numPrevBytes = kSignatureSize - 1;
+    memmove(buffer + kBufferSize - numPrevBytes, buffer + startPos + 1, numPrevBytes);
+  }
+  return S_FALSE;
+}
+#endif
+
 // S_FALSE means that file is not archive
-HRESULT CInArchive::Open(IInStream *stream, const UINT64 *searchHeaderSizeLimit)
+HRESULT CInArchive::Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
 {
   Close();
   RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_arhiveBeginStreamPosition))
   _position = _arhiveBeginStreamPosition;
+  #ifdef _7Z_VOL
+  HRESULT result = FindFinishSignature(stream, searchHeaderSizeLimit);
+  if (result == S_OK)
+    _finishSignature = true;
+  else
+  {
+    if (result != S_FALSE)
+      return result;
+    _finishSignature = false;
+    RINOK(FindAndReadSignature(stream, searchHeaderSizeLimit));
+  }
+  #else
   RINOK(FindAndReadSignature(stream, searchHeaderSizeLimit));
+  #endif
   _stream = stream;
   return S_OK;
 }
@@ -180,19 +309,19 @@ void CInArchive::Close()
   _stream.Release();
 }
 
-HRESULT CInArchive::SkeepData(UINT64 size)
+HRESULT CInArchive::SkeepData(UInt64 size)
 {
-  for (UINT64 i = 0; i < size; i++)
+  for (UInt64 i = 0; i < size; i++)
   {
-    BYTE temp;
-    RINOK(SafeReadByte2(temp));
+    Byte temp;
+    RINOK(ReadByte(temp));
   }
   return S_OK;
 }
 
 HRESULT CInArchive::SkeepData()
 {
-  UINT64 size;
+  UInt64 size;
   RINOK(ReadNumber(size));
   return SkeepData(size);
 }
@@ -201,7 +330,7 @@ HRESULT CInArchive::ReadArchiveProperties(CInArchiveInfo &archiveInfo)
 {
   while(true)
   {
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     if (type == NID::kEnd)
       break;
@@ -212,62 +341,56 @@ HRESULT CInArchive::ReadArchiveProperties(CInArchiveInfo &archiveInfo)
 
 HRESULT CInArchive::GetNextFolderItem(CFolder &folder)
 {
-  UINT64 numCoders;
+  UInt64 numCoders;
   RINOK(ReadNumber(numCoders));
 
   folder.Coders.Clear();
   folder.Coders.Reserve((int)numCoders);
-  UINT32 numInStreams = 0;
-  UINT32 numOutStreams = 0;
-  UINT32 i;
+  UInt32 numInStreams = 0;
+  UInt32 numOutStreams = 0;
+  UInt32 i;
   for (i = 0; i < numCoders; i++)
   {
     folder.Coders.Add(CCoderInfo());
-    CCoderInfo &coderInfo = folder.Coders.Back();
+    CCoderInfo &coder = folder.Coders.Back();
 
     while (true)
     {
-      coderInfo.AltCoders.Add(CAltCoderInfo());
-      CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Back();
-      BYTE mainByte;
-      RINOK(SafeReadByte2(mainByte));
-      altCoderInfo.MethodID.IDSize = mainByte & 0xF;
-      bool isComplex = (mainByte & 0x10) != 0;
-      bool tereAreProperties = (mainByte & 0x20) != 0;
-      RINOK(SafeReadBytes2(&altCoderInfo.MethodID.ID[0], 
-        altCoderInfo.MethodID.IDSize));
-      if (isComplex)
+      coder.AltCoders.Add(CAltCoderInfo());
+      CAltCoderInfo &altCoder = coder.AltCoders.Back();
+      Byte mainByte;
+      RINOK(ReadByte(mainByte));
+      altCoder.MethodID.IDSize = mainByte & 0xF;
+      RINOK(ReadBytes(altCoder.MethodID.ID, altCoder.MethodID.IDSize));
+      if ((mainByte & 0x10) != 0)
       {
-        RINOK(ReadNumber(coderInfo.NumInStreams));
-        RINOK(ReadNumber(coderInfo.NumOutStreams));
+        RINOK(ReadNumber(coder.NumInStreams));
+        RINOK(ReadNumber(coder.NumOutStreams));
       }
       else
       {
-        coderInfo.NumInStreams = 1;
-        coderInfo.NumOutStreams = 1;
+        coder.NumInStreams = 1;
+        coder.NumOutStreams = 1;
       }
-      UINT64 propertiesSize = 0;
-      if (tereAreProperties)
+      if ((mainByte & 0x20) != 0)
       {
+        UInt64 propertiesSize = 0;
         RINOK(ReadNumber(propertiesSize));
+        altCoder.Properties.SetCapacity((size_t)propertiesSize);
+        RINOK(ReadBytes((Byte *)altCoder.Properties, (UInt32)propertiesSize));
       }
-      altCoderInfo.Properties.SetCapacity((UINT32)propertiesSize);
-      RINOK(SafeReadBytes2((BYTE *)altCoderInfo.Properties, 
-          (UINT32)propertiesSize));
-
-      // coderInfo.AltCoders.Add(coderInfo.AltCoders.Back());
       if ((mainByte & 0x80) == 0)
         break;
     }
-    numInStreams += (UINT32)coderInfo.NumInStreams;
-    numOutStreams += (UINT32)coderInfo.NumOutStreams;
+    numInStreams += (UInt32)coder.NumInStreams;
+    numOutStreams += (UInt32)coder.NumOutStreams;
   }
 
-  UINT64 numBindPairs;
+  UInt64 numBindPairs;
   // RINOK(ReadNumber(numBindPairs));
   numBindPairs = numOutStreams - 1;
   folder.BindPairs.Clear();
-  folder.BindPairs.Reserve((UINT32)numBindPairs);
+  folder.BindPairs.Reserve((UInt32)numBindPairs);
   for (i = 0; i < numBindPairs; i++)
   {
     CBindPair bindPair;
@@ -276,35 +399,33 @@ HRESULT CInArchive::GetNextFolderItem(CFolder &folder)
     folder.BindPairs.Add(bindPair);
   }
 
-  UINT32 numPackedStreams = numInStreams - (UINT32)numBindPairs;
+  UInt32 numPackedStreams = numInStreams - (UInt32)numBindPairs;
   folder.PackStreams.Reserve(numPackedStreams);
   if (numPackedStreams == 1)
   {
-    for (UINT32 j = 0; j < numInStreams; j++)
+    for (UInt32 j = 0; j < numInStreams; j++)
       if (folder.FindBindPairForInStream(j) < 0)
       {
-        CPackStreamInfo packStreamInfo;
-        packStreamInfo.Index = j;
-        folder.PackStreams.Add(packStreamInfo);
+        folder.PackStreams.Add(j);
         break;
       }
   }
   else
     for(i = 0; i < numPackedStreams; i++)
     {
-      CPackStreamInfo packStreamInfo;
-      RINOK(ReadNumber(packStreamInfo.Index));
+      UInt64 packStreamInfo;
+      RINOK(ReadNumber(packStreamInfo));
       folder.PackStreams.Add(packStreamInfo);
     }
 
   return S_OK;
 }
 
-HRESULT CInArchive::WaitAttribute(UINT64 attribute)
+HRESULT CInArchive::WaitAttribute(UInt64 attribute)
 {
   while(true)
   {
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     if (type == attribute)
       return S_OK;
@@ -316,42 +437,42 @@ HRESULT CInArchive::WaitAttribute(UINT64 attribute)
 
 HRESULT CInArchive::ReadHashDigests(int numItems,
     CRecordVector<bool> &digestsDefined, 
-    CRecordVector<UINT32> &digests)
+    CRecordVector<UInt32> &digests)
 {
   RINOK(ReadBoolVector2(numItems, digestsDefined));
   digests.Clear();
   digests.Reserve(numItems);
   for(int i = 0; i < numItems; i++)
   {
-    UINT32 crc;
+    UInt32 crc;
     if (digestsDefined[i])
-      RINOK(SafeReadBytes2(&crc, sizeof(crc)));
+      RINOK(ReadUInt32(crc));
     digests.Add(crc);
   }
   return S_OK;
 }
 
 HRESULT CInArchive::ReadPackInfo(
-    UINT64 &dataOffset,
-    CRecordVector<UINT64> &packSizes,
+    UInt64 &dataOffset,
+    CRecordVector<UInt64> &packSizes,
     CRecordVector<bool> &packCRCsDefined,
-    CRecordVector<UINT32> &packCRCs)
+    CRecordVector<UInt32> &packCRCs)
 {
   RINOK(ReadNumber(dataOffset));
-  UINT64 numPackStreams;
+  UInt64 numPackStreams;
   RINOK(ReadNumber(numPackStreams));
 
   RINOK(WaitAttribute(NID::kSize));
   packSizes.Clear();
-  packSizes.Reserve((UINT32)numPackStreams);
-  for(UINT64 i = 0; i < numPackStreams; i++)
+  packSizes.Reserve((UInt32)numPackStreams);
+  for(UInt64 i = 0; i < numPackStreams; i++)
   {
-    UINT64 size;
+    UInt64 size;
     RINOK(ReadNumber(size));
     packSizes.Add(size);
   }
 
-  UINT64 type;
+  UInt64 type;
   while(true)
   {
     RINOK(ReadID(type));
@@ -359,19 +480,18 @@ HRESULT CInArchive::ReadPackInfo(
       break;
     if (type == NID::kCRC)
     {
-      RINOK(ReadHashDigests(
-          (UINT32)numPackStreams, packCRCsDefined, packCRCs)); 
+      RINOK(ReadHashDigests((UInt32)numPackStreams, packCRCsDefined, packCRCs)); 
       continue;
     }
     RINOK(SkeepData());
   }
   if (packCRCsDefined.IsEmpty())
   {
-    packCRCsDefined.Reserve((UINT32)numPackStreams);
+    packCRCsDefined.Reserve((UInt32)numPackStreams);
     packCRCsDefined.Clear();
-    packCRCs.Reserve((UINT32)numPackStreams);
+    packCRCs.Reserve((UInt32)numPackStreams);
     packCRCs.Clear();
-    for(UINT64 i = 0; i < numPackStreams; i++)
+    for(UInt64 i = 0; i < numPackStreams; i++)
     {
       packCRCsDefined.Add(false);
       packCRCs.Add(0);
@@ -385,15 +505,15 @@ HRESULT CInArchive::ReadUnPackInfo(
     CObjectVector<CFolder> &folders)
 {
   RINOK(WaitAttribute(NID::kFolder));
-  UINT64 numFolders;
+  UInt64 numFolders;
   RINOK(ReadNumber(numFolders));
 
   {
     CStreamSwitch streamSwitch;
     RINOK(streamSwitch.Set(this, dataVector));
     folders.Clear();
-    folders.Reserve((UINT32)numFolders);
-    for(UINT64 i = 0; i < numFolders; i++)
+    folders.Reserve((UInt32)numFolders);
+    for(UInt64 i = 0; i < numFolders; i++)
     {
       folders.Add(CFolder());
       RINOK(GetNextFolderItem(folders.Back()));
@@ -402,15 +522,15 @@ HRESULT CInArchive::ReadUnPackInfo(
 
   RINOK(WaitAttribute(NID::kCodersUnPackSize));
 
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < numFolders; i++)
   {
     CFolder &folder = folders[i];
-    UINT32 numOutStreams = (UINT32)folder.GetNumOutStreams();
+    UInt32 numOutStreams = (UInt32)folder.GetNumOutStreams();
     folder.UnPackSizes.Reserve(numOutStreams);
-    for(UINT32 j = 0; j < numOutStreams; j++)
+    for(UInt32 j = 0; j < numOutStreams; j++)
     {
-      UINT64 unPackSize;
+      UInt64 unPackSize;
       RINOK(ReadNumber(unPackSize));
       folder.UnPackSizes.Add(unPackSize);
     }
@@ -418,15 +538,15 @@ HRESULT CInArchive::ReadUnPackInfo(
 
   while(true)
   {
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     if (type == NID::kEnd)
       return S_OK;
     if (type == NID::kCRC)
     {
       CRecordVector<bool> crcsDefined;
-      CRecordVector<UINT32> crcs;
-      RINOK(ReadHashDigests((UINT32)numFolders, crcsDefined, crcs)); 
+      CRecordVector<UInt32> crcs;
+      RINOK(ReadHashDigests((UInt32)numFolders, crcsDefined, crcs)); 
       for(i = 0; i < numFolders; i++)
       {
         CFolder &folder = folders[i];
@@ -441,14 +561,14 @@ HRESULT CInArchive::ReadUnPackInfo(
 
 HRESULT CInArchive::ReadSubStreamsInfo(
     const CObjectVector<CFolder> &folders,
-    CRecordVector<UINT64> &numUnPackStreamsInFolders,
-    CRecordVector<UINT64> &unPackSizes,
+    CRecordVector<UInt64> &numUnPackStreamsInFolders,
+    CRecordVector<UInt64> &unPackSizes,
     CRecordVector<bool> &digestsDefined, 
-    CRecordVector<UINT32> &digests)
+    CRecordVector<UInt32> &digests)
 {
   numUnPackStreamsInFolders.Clear();
   numUnPackStreamsInFolders.Reserve(folders.Size());
-  UINT64 type;
+  UInt64 type;
   while(true)
   {
     RINOK(ReadID(type));
@@ -456,7 +576,7 @@ HRESULT CInArchive::ReadSubStreamsInfo(
     {
       for(int i = 0; i < folders.Size(); i++)
       {
-        UINT64 value;
+        UInt64 value;
         RINOK(ReadNumber(value));
         numUnPackStreamsInFolders.Add(value);
       }
@@ -476,10 +596,15 @@ HRESULT CInArchive::ReadSubStreamsInfo(
   int i;
   for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
   {
-    UINT64 sum = 0;
-    for (UINT64 j = 1; j < numUnPackStreamsInFolders[i]; j++)
+    // v3.13 incorrectly worked with empty folders
+    // v4.07: we check that folder is empty
+    UInt64 numSubstreams = numUnPackStreamsInFolders[i];
+    if (numSubstreams == 0)
+      continue;
+    UInt64 sum = 0;
+    for (UInt64 j = 1; j < numSubstreams; j++)
     {
-      UINT64 size;
+      UInt64 size;
       if (type == NID::kSize)
       {
         RINOK(ReadNumber(size));
@@ -498,7 +623,7 @@ HRESULT CInArchive::ReadSubStreamsInfo(
   int numDigestsTotal = 0;
   for(i = 0; i < folders.Size(); i++)
   {
-    UINT32 numSubstreams = (UINT32)numUnPackStreamsInFolders[i];
+    UInt32 numSubstreams = (UInt32)numUnPackStreamsInFolders[i];
     if (numSubstreams != 1 || !folders[i].UnPackCRCDefined)
       numDigests += numSubstreams;
     numDigestsTotal += numSubstreams;
@@ -509,12 +634,12 @@ HRESULT CInArchive::ReadSubStreamsInfo(
     if (type == NID::kCRC)
     {
       CRecordVector<bool> digestsDefined2; 
-      CRecordVector<UINT32> digests2;
+      CRecordVector<UInt32> digests2;
       RINOK(ReadHashDigests(numDigests, digestsDefined2, digests2));
       int digestIndex = 0;
       for (i = 0; i < folders.Size(); i++)
       {
-        int numSubstreams = (UINT32)numUnPackStreamsInFolders[i];
+        int numSubstreams = (UInt32)numUnPackStreamsInFolders[i];
         const CFolder &folder = folders[i];
         if (numSubstreams == 1 && folder.UnPackCRCDefined)
         {
@@ -551,22 +676,21 @@ HRESULT CInArchive::ReadSubStreamsInfo(
   }
 }
 
-
 HRESULT CInArchive::ReadStreamsInfo(
     const CObjectVector<CByteBuffer> *dataVector,
-    UINT64 &dataOffset,
-    CRecordVector<UINT64> &packSizes,
+    UInt64 &dataOffset,
+    CRecordVector<UInt64> &packSizes,
     CRecordVector<bool> &packCRCsDefined,
-    CRecordVector<UINT32> &packCRCs,
+    CRecordVector<UInt32> &packCRCs,
     CObjectVector<CFolder> &folders,
-    CRecordVector<UINT64> &numUnPackStreamsInFolders,
-    CRecordVector<UINT64> &unPackSizes,
+    CRecordVector<UInt64> &numUnPackStreamsInFolders,
+    CRecordVector<UInt64> &unPackSizes,
     CRecordVector<bool> &digestsDefined, 
-    CRecordVector<UINT32> &digests)
+    CRecordVector<UInt32> &digests)
 {
   while(true)
   {
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     switch(type)
     {
@@ -593,48 +717,35 @@ HRESULT CInArchive::ReadStreamsInfo(
   }
 }
 
-
 HRESULT CInArchive::ReadFileNames(CObjectVector<CFileItem> &files)
 {
-  // UINT32 pos = 0;
   for(int i = 0; i < files.Size(); i++)
   {
     UString &name = files[i].Name;
     name.Empty();
     while (true)
     {
-      // if (pos >= size)
-      //   return S_FALSE;
       wchar_t c;
-      RINOK(SafeReadWideCharLE(c));
-      // pos++;
-      if (c == '\0')
+      RINOK(ReadWideCharLE(c));
+      if (c == L'\0')
         break;
       name += c;
     }
   }
-  // if (pos != size)
-  //   return S_FALSE;
   return S_OK;
 }
 
-HRESULT CInArchive::CheckIntegrity()
-{
-  return S_OK;
-}
-
-
-HRESULT CInArchive::ReadBoolVector(UINT32 numItems, CBoolVector &vector)
+HRESULT CInArchive::ReadBoolVector(UInt32 numItems, CBoolVector &vector)
 {
   vector.Clear();
   vector.Reserve(numItems);
-  BYTE b;
-  BYTE mask = 0;
-  for(UINT32 i = 0; i < numItems; i++)
+  Byte b;
+  Byte mask = 0;
+  for(UInt32 i = 0; i < numItems; i++)
   {
     if (mask == 0)
     {
-      RINOK(SafeReadBytes2(&b, 1));
+      RINOK(ReadByte(b));
       mask = 0x80;
     }
     vector.Add((b & mask) != 0);
@@ -643,21 +754,21 @@ HRESULT CInArchive::ReadBoolVector(UINT32 numItems, CBoolVector &vector)
   return S_OK;
 }
 
-HRESULT CInArchive::ReadBoolVector2(UINT32 numItems, CBoolVector &vector)
+HRESULT CInArchive::ReadBoolVector2(UInt32 numItems, CBoolVector &vector)
 {
-  BYTE allAreDefinedFlag;
-  RINOK(SafeReadByte2(allAreDefinedFlag));
-  if (allAreDefinedFlag == 0)
+  Byte allAreDefined;
+  RINOK(ReadByte(allAreDefined));
+  if (allAreDefined == 0)
     return ReadBoolVector(numItems, vector);
   vector.Clear();
   vector.Reserve(numItems);
-  for (UINT32 j = 0; j < numItems; j++)
+  for (UInt32 j = 0; j < numItems; j++)
     vector.Add(true);
   return S_OK;
 }
 
 HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-    CObjectVector<CFileItem> &files, UINT64 type)
+    CObjectVector<CFileItem> &files, UInt64 type)
 {
   CBoolVector boolVector;
   RINOK(ReadBoolVector2(files.Size(), boolVector))
@@ -672,12 +783,16 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
     bool defined = boolVector[i];
     if (defined)
     {
-      RINOK(SafeReadBytes2(&fileTime, sizeof(fileTime)));
+      UInt32 low, high;
+      RINOK(ReadUInt32(low));
+      RINOK(ReadUInt32(high));
+      fileTime.dwLowDateTime = low;
+      fileTime.dwHighDateTime = high;
     }
     switch(type)
     {
       case NID::kCreationTime:
-        file.IsCreationTimeDefined= defined;
+        file.IsCreationTimeDefined = defined;
         if (defined)
           file.CreationTime = fileTime;
         break;
@@ -696,22 +811,22 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
   return S_OK;
 }
 
-HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset, 
-    UINT64 &dataOffset, CObjectVector<CByteBuffer> &dataVector
+HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset, 
+    UInt64 &dataOffset, CObjectVector<CByteBuffer> &dataVector
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword
     #endif
     )
 {
-  CRecordVector<UINT64> packSizes;
+  CRecordVector<UInt64> packSizes;
   CRecordVector<bool> packCRCsDefined;
-  CRecordVector<UINT32> packCRCs;
+  CRecordVector<UInt32> packCRCs;
   CObjectVector<CFolder> folders;
   
-  CRecordVector<UINT64> numUnPackStreamsInFolders;
-  CRecordVector<UINT64> unPackSizes;
+  CRecordVector<UInt64> numUnPackStreamsInFolders;
+  CRecordVector<UInt64> unPackSizes;
   CRecordVector<bool> digestsDefined;
-  CRecordVector<UINT32> digests;
+  CRecordVector<UInt32> digests;
   
   RINOK(ReadStreamsInfo(NULL, 
     dataOffset,
@@ -726,20 +841,20 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset,
   
   // database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
   
-  UINT32 packIndex = 0;
-  CDecoder decoder;
-  UINT64 dataStartPos = baseOffset + dataOffset;
+  UInt32 packIndex = 0;
+  CDecoder decoder(false);
+  UInt64 dataStartPos = baseOffset + dataOffset;
   for(int i = 0; i < folders.Size(); i++)
   {
     const CFolder &folder = folders[i];
     dataVector.Add(CByteBuffer());
     CByteBuffer &data = dataVector.Back();
-    UINT64 unPackSize = folder.GetUnPackSize();
-    data.SetCapacity((UINT32)unPackSize);
+    UInt64 unPackSize = folder.GetUnPackSize();
+    data.SetCapacity((UInt32)unPackSize);
     
     CSequentialOutStreamImp2 *outStreamSpec = new CSequentialOutStreamImp2;
     CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-    outStreamSpec->Init(data, (UINT32)unPackSize);
+    outStreamSpec->Init(data, (UInt32)unPackSize);
     
     HRESULT result = decoder.Decode(_stream, dataStartPos, 
       &packSizes[packIndex], folder, outStream, NULL
@@ -750,7 +865,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset,
     RINOK(result);
     
     if (folder.UnPackCRCDefined)
-      if (!CCRC::VerifyDigest(folder.UnPackCRC, data, (UINT32)unPackSize))
+      if (!CCRC::VerifyDigest(folder.UnPackCRC, data, (UInt32)unPackSize))
         throw CInArchiveException(CInArchiveException::kIncorrectHeader);
       for (int j = 0; j < folder.PackStreams.Size(); j++)
         dataStartPos += packSizes[packIndex++];
@@ -764,9 +879,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     #endif
     )
 {
-  // database.Clear();
-
-  UINT64 type;
+  UInt64 type;
   RINOK(ReadID(type));
 
   if (type == NID::kArchiveProperties)
@@ -779,56 +892,6 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   
   if (type == NID::kAdditionalStreamsInfo)
   {
-    /*
-    CRecordVector<UINT64> packSizes;
-    CRecordVector<bool> packCRCsDefined;
-    CRecordVector<UINT32> packCRCs;
-    CObjectVector<CFolder> folders;
-
-    CRecordVector<UINT64> numUnPackStreamsInFolders;
-    CRecordVector<UINT64> unPackSizes;
-    CRecordVector<bool> digestsDefined;
-    CRecordVector<UINT32> digests;
-
-    RINOK(ReadStreamsInfo(NULL, 
-        database.ArchiveInfo.DataStartPosition2,
-        packSizes, 
-        packCRCsDefined, 
-        packCRCs, 
-        folders,
-        numUnPackStreamsInFolders,
-        unPackSizes,
-        digestsDefined, 
-        digests));
-
-    database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
-
-    UINT32 packIndex = 0;
-    CDecoder decoder;
-    UINT64 dataStartPos = database.ArchiveInfo.DataStartPosition2;
-    for(int i = 0; i < folders.Size(); i++)
-    {
-      const CFolder &folder = folders[i];
-      dataVector.Add(CByteBuffer());
-      CByteBuffer &data = dataVector.Back();
-      UINT64 unPackSize = folder.GetUnPackSize();
-      data.SetCapacity(unPackSize);
-      
-      CComObjectNoLock<CSequentialOutStreamImp2> *outStreamSpec = 
-        new  CComObjectNoLock<CSequentialOutStreamImp2>;
-      CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-      outStreamSpec->Init(data, unPackSize);
-      
-      RINOK(decoder.Decode(_stream, dataStartPos, 
-          &packSizes[packIndex], folder, outStream, NULL, getTextPassword));
-      
-      if (folder.UnPackCRCDefined)
-        if (!CCRC::VerifyDigest(folder.UnPackCRC, data, unPackSize))
-          throw CInArchiveException(CInArchiveException::kIncorrectHeader);
-      for (int j = 0; j < folder.PackStreams.Size(); j++)
-        dataStartPos += packSizes[packIndex++];
-    }
-    */
     HRESULT result = ReadAndDecodePackedStreams(
         database.ArchiveInfo.StartPositionAfterHeader, 
         database.ArchiveInfo.DataStartPosition2,
@@ -838,14 +901,13 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
         #endif
         );
     RINOK(result);
-
     database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
     RINOK(ReadID(type));
   }
 
-  CRecordVector<UINT64> unPackSizes;
+  CRecordVector<UInt64> unPackSizes;
   CRecordVector<bool> digestsDefined;
-  CRecordVector<UINT32> digests;
+  CRecordVector<UInt32> digests;
   
   if (type == NID::kMainStreamsInfo)
   {
@@ -874,7 +936,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     }
   }
 
-  UINT64 numUnPackStreamsTotal = 0;
+  UInt64 numUnPackStreamsTotal = 0;
 
   database.Files.Clear();
 
@@ -883,26 +945,18 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   if (type != NID::kFilesInfo)
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
   
-  UINT64 numFiles;
+  UInt64 numFiles;
   RINOK(ReadNumber(numFiles));
   database.Files.Reserve((size_t)numFiles);
-  UINT64 i;
+  UInt64 i;
   for(i = 0; i < numFiles; i++)
     database.Files.Add(CFileItem());
-
-  // int sizePrev = -1;
-  // int posPrev = 0;
 
   database.ArchiveInfo.FileInfoPopIDs.Add(NID::kSize);
   if (!database.PackSizes.IsEmpty())
     database.ArchiveInfo.FileInfoPopIDs.Add(NID::kPackInfo);
-  if (numFiles > 0)
-  {
-    if (!digests.IsEmpty())
-    { 
-      database.ArchiveInfo.FileInfoPopIDs.Add(NID::kCRC);
-    }
-  }
+  if (numFiles > 0  && !digests.IsEmpty())
+    database.ArchiveInfo.FileInfoPopIDs.Add(NID::kCRC);
 
   CBoolVector emptyStreamVector;
   emptyStreamVector.Reserve((size_t)numFiles);
@@ -910,7 +964,10 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     emptyStreamVector.Add(false);
   CBoolVector emptyFileVector;
   CBoolVector antiFileVector;
-  UINT32 numEmptyStreams = 0;
+  UInt32 numEmptyStreams = 0;
+
+  // int sizePrev = -1;
+  // int posPrev = 0;
 
   while(true)
   {
@@ -919,11 +976,11 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
       if (sizePrev != _inByteBack->GetProcessedSize() - posPrev)
         throw 2;
     */
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     if (type == NID::kEnd)
       break;
-    UINT64 size;
+    UInt64 size;
     RINOK(ReadNumber(size));
     
     // sizePrev = size;
@@ -947,20 +1004,35 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
         RINOK(streamSwitch.Set(this, &dataVector));
         for(i = 0; i < numFiles; i++)
         {
-          CFileItem &file = database.Files[(UINT32)i];
-          if (file.AreAttributesDefined = boolVector[(UINT32)i])
+          CFileItem &file = database.Files[(UInt32)i];
+          if (file.AreAttributesDefined = boolVector[(UInt32)i])
           {
-            RINOK(SafeReadBytes2(&file.Attributes, 
-                sizeof(file.Attributes)));
+            RINOK(ReadUInt32(file.Attributes));
+          }
+        }
+        break;
+      }
+      case NID::kStartPos:
+      {
+        CBoolVector boolVector;
+        RINOK(ReadBoolVector2(database.Files.Size(), boolVector))
+        CStreamSwitch streamSwitch;
+        RINOK(streamSwitch.Set(this, &dataVector));
+        for(i = 0; i < numFiles; i++)
+        {
+          CFileItem &file = database.Files[(UInt32)i];
+          if (file.IsStartPosDefined = boolVector[(UInt32)i])
+          {
+            RINOK(ReadUInt64(file.StartPos));
           }
         }
         break;
       }
       case NID::kEmptyStream:
       {
-        RINOK(ReadBoolVector((UINT32)numFiles, emptyStreamVector))
-        UINT32 i;
-        for (i = 0; i < (UINT32)emptyStreamVector.Size(); i++)
+        RINOK(ReadBoolVector((UInt32)numFiles, emptyStreamVector))
+        UInt32 i;
+        for (i = 0; i < (UInt32)emptyStreamVector.Size(); i++)
           if (emptyStreamVector[i])
             numEmptyStreams++;
         emptyFileVector.Reserve(numEmptyStreams);
@@ -997,19 +1069,19 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     }
   }
 
-  UINT32 emptyFileIndex = 0;
-  UINT32 sizeIndex = 0;
+  UInt32 emptyFileIndex = 0;
+  UInt32 sizeIndex = 0;
   for(i = 0; i < numFiles; i++)
   {
-    CFileItem &file = database.Files[(UINT32)i];
-    file.HasStream = !emptyStreamVector[(UINT32)i];
+    CFileItem &file = database.Files[(UInt32)i];
+    file.HasStream = !emptyStreamVector[(UInt32)i];
     if(file.HasStream)
     {
       file.IsDirectory = false;
       file.IsAnti = false;
       file.UnPackSize = unPackSizes[sizeIndex];
       file.FileCRC = digests[sizeIndex];
-      file.FileCRCIsDefined = digestsDefined[sizeIndex];
+      file.IsFileCRCDefined = digestsDefined[sizeIndex];
       sizeIndex++;
     }
     else
@@ -1018,7 +1090,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
       file.IsAnti = antiFileVector[emptyFileIndex];
       emptyFileIndex++;
       file.UnPackSize = 0;
-      file.FileCRCIsDefined = false;
+      file.IsFileCRCDefined = false;
     }
   }
   return S_OK;
@@ -1029,11 +1101,11 @@ void CArchiveDatabaseEx::FillFolderStartPackStream()
 {
   FolderStartPackStreamIndex.Clear();
   FolderStartPackStreamIndex.Reserve(Folders.Size());
-  UINT64 startPos = 0;
-  for(UINT64 i = 0; i < Folders.Size(); i++)
+  UInt64 startPos = 0;
+  for(UInt64 i = 0; i < Folders.Size(); i++)
   {
-    FolderStartPackStreamIndex.Add((UINT32)startPos);
-    startPos += Folders[(UINT32)i].PackStreams.Size();
+    FolderStartPackStreamIndex.Add((UInt32)startPos);
+    startPos += Folders[(UInt32)i].PackStreams.Size();
   }
 }
 
@@ -1041,11 +1113,11 @@ void CArchiveDatabaseEx::FillStartPos()
 {
   PackStreamStartPositions.Clear();
   PackStreamStartPositions.Reserve(PackSizes.Size());
-  UINT64 startPos = 0;
-  for(UINT64 i = 0; i < PackSizes.Size(); i++)
+  UInt64 startPos = 0;
+  for(UInt64 i = 0; i < PackSizes.Size(); i++)
   {
     PackStreamStartPositions.Add(startPos);
-    startPos += PackSizes[(UINT32)i];
+    startPos += PackSizes[(UInt32)i];
   }
 }
 
@@ -1069,9 +1141,17 @@ void CArchiveDatabaseEx::FillFolderStartFileIndex()
     }
     if (indexInFolder == 0)
     {
-      if (folderIndex >= Folders.Size())
-        throw CInArchiveException(CInArchiveException::kIncorrectHeader);
-      FolderStartFileIndex.Add(i);
+      // v3.13 incorrectly worked with empty folders
+      // v4.07: Loop for skipping empty folders
+      while(true)
+      {
+        if (folderIndex >= Folders.Size())
+          throw CInArchiveException(CInArchiveException::kIncorrectHeader);
+        FolderStartFileIndex.Add(i); // check it
+        if (NumUnPackStreamsVector[folderIndex] != 0)
+          break;
+        folderIndex++;
+      }
     }
     FileIndexToFolderIndexMap.Add(folderIndex);
     if (emptyStream)
@@ -1093,29 +1173,63 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
 {
   database.Clear();
   database.ArchiveInfo.StartPosition = _arhiveBeginStreamPosition;
-  RINOK(SafeReadBytes(&database.ArchiveInfo.Version, 
-      sizeof(database.ArchiveInfo.Version)));
+
+
+  RINOK(SafeReadDirect(&database.ArchiveInfo.Version.Major, 1));
+  RINOK(SafeReadDirect(&database.ArchiveInfo.Version.Minor, 1));
   if (database.ArchiveInfo.Version.Major != kMajorVersion)
     throw  CInArchiveException(CInArchiveException::kUnsupportedVersion);
 
-  UINT32 crcFromArchive;
-  RINOK(SafeReadBytes(&crcFromArchive, sizeof(crcFromArchive)));
-  CStartHeader startHeader;
-  RINOK(SafeReadBytes(&startHeader, sizeof(startHeader)));
-  if (!CCRC::VerifyDigest(crcFromArchive, &startHeader, sizeof(startHeader)))
+  #ifdef _7Z_VOL
+  if (_finishSignature)
+  {
+    RINOK(_stream->Seek(_position - (4 + kFinishHeaderSize) - 
+        (kSignatureSize + 2), STREAM_SEEK_SET, &_position));
+  }
+  #endif
+
+  UInt32 crcFromArchive;
+  RINOK(SafeReadDirectUInt32(crcFromArchive));
+
+  UInt64 nextHeaderOffset;
+  UInt64 nextHeaderSize;
+  UInt32 nextHeaderCRC;
+  CCRC crc;
+  RINOK(SafeReadDirectUInt64(nextHeaderOffset));
+  crc.UpdateUInt64(nextHeaderOffset);
+  RINOK(SafeReadDirectUInt64(nextHeaderSize));
+  crc.UpdateUInt64(nextHeaderSize);
+  RINOK(SafeReadDirectUInt32(nextHeaderCRC));
+  crc.UpdateUInt32(nextHeaderCRC);
+
+  #ifdef _7Z_VOL
+  UInt64 archiveStartOffset;  // data offset from end if that struct
+  UInt64 additionalStartBlockSize; // start  signature & start header size
+  if (_finishSignature)
+  {
+    RINOK(SafeReadDirectUInt64(archiveStartOffset));
+    crc.UpdateUInt64(archiveStartOffset);
+    RINOK(SafeReadDirectUInt64(additionalStartBlockSize));
+    crc.UpdateUInt64(additionalStartBlockSize);
+    database.ArchiveInfo.StartPositionAfterHeader = _position + archiveStartOffset;
+  }
+  else
+  #endif
+  {
+    database.ArchiveInfo.StartPositionAfterHeader = _position;
+  }
+  if (crc.GetDigest() != crcFromArchive)
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
 
-  database.ArchiveInfo.StartPositionAfterHeader = _position;
-
-  if (startHeader.NextHeaderSize == 0)
+  if (nextHeaderSize == 0)
     return S_OK;
 
-  RINOK(_stream->Seek(startHeader.NextHeaderOffset, STREAM_SEEK_CUR, &_position));
+  RINOK(_stream->Seek(nextHeaderOffset, STREAM_SEEK_CUR, &_position));
 
   CByteBuffer buffer2;
-  buffer2.SetCapacity((size_t)startHeader.NextHeaderSize);
-  RINOK(SafeReadBytes(buffer2, (UINT32)startHeader.NextHeaderSize));
-  if (!CCRC::VerifyDigest(startHeader.NextHeaderCRC, buffer2, (UINT32)startHeader.NextHeaderSize))
+  buffer2.SetCapacity((size_t)nextHeaderSize);
+  RINOK(SafeReadDirect(buffer2, (UInt32)nextHeaderSize));
+  if (!CCRC::VerifyDigest(nextHeaderCRC, buffer2, (UInt32)nextHeaderSize))
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
   
   CStreamSwitch streamSwitch;
@@ -1125,7 +1239,7 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
   
   while (true)
   {
-    UINT64 type;
+    UInt64 type;
     RINOK(ReadID(type));
     if (type == NID::kHeader)
       break;

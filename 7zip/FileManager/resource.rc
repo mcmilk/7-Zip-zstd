@@ -47,6 +47,7 @@ BEGIN
     "#include ""Resource\\MessagesDialog\\resource.rc""\r\n"
     "#include ""Resource\\OverwriteDialog\\resource.rc""\r\n"
     "#include ""Resource\\PasswordDialog\\resource.rc""\r\n"
+    "#include ""Resource\\SplitDialog\\resource.rc""\r\n"
     "#include ""Resource\\ProgressDialog2\\resource.rc""\r\n"
     "#include ""Resource\\BenchmarkDialog\\resource.rc""\r\n"
     "#include ""Resource\\AboutDialog\\resource.rc""\r\n"
@@ -81,8 +82,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,13,0,0
- PRODUCTVERSION 3,13,0,0
+ FILEVERSION 4,7,0,0
+ PRODUCTVERSION 4,7,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -100,14 +101,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip File Manager\0"
-            VALUE "FileVersion", "3, 13, 0, 0\0"
+            VALUE "FileVersion", "4, 7, 0, 0\0"
             VALUE "InternalName", "7zFM\0"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999-2004 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zFM.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "3, 13, 0, 0\0"
+            VALUE "ProductVersion", "4, 7, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -146,13 +147,15 @@ BEGIN
         MENUITEM "&Open\tEnter",                IDM_FILE_OPEN
         MENUITEM "Open &Inside\tCtrl+PgDn",     IDM_FILE_OPEN_INSIDE
         MENUITEM "Open O&utside\tShift+Enter",  IDM_FILE_OPEN_OUTSIDE
-        MENUITEM "&View\tF3",                   IDM_FILE_VIEW, GRAYED
         MENUITEM "&Edit\tF4",                   IDM_FILE_EDIT
         MENUITEM SEPARATOR
         MENUITEM "Rena&me\tF2",                 IDM_RENAME
         MENUITEM "&Copy To...\tF5",             IDM_COPY_TO
         MENUITEM "&Move To...\tF6",             IDM_MOVE_TO
         MENUITEM "&Delete\tDel",                IDM_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "&Split file...",              IDM_FILE_SPLIT
+        MENUITEM "Com&bine files...",           IDM_FILE_COMBINE
         MENUITEM SEPARATOR
         MENUITEM "P&roperties\tAlt+Enter",      IDM_FILE_PROPERTIES
         MENUITEM "Comme&nt\tCtrl+Z",            IDM_FILE_COMMENT
@@ -285,6 +288,18 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDS_SPLITTING           "Splitting..."
+    IDS_COMBINE             "Combine Files"
+    IDS_COMBINE_TO          "&Combine to:"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_COMBINING           "Combining..."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_OPERATION_IS_NOT_SUPPORTED "Operation is not supported."
     IDS_CONFIRM_FILE_DELETE "Confirm File Delete"
     IDS_CONFIRM_FOLDER_DELETE "Confirm Folder Delete"
@@ -399,6 +414,7 @@ END
 #include "Resource\MessagesDialog\resource.rc"
 #include "Resource\OverwriteDialog\resource.rc"
 #include "Resource\PasswordDialog\resource.rc"
+#include "Resource\SplitDialog\resource.rc"
 #include "Resource\ProgressDialog2\resource.rc"
 #include "Resource\BenchmarkDialog\resource.rc"
 #include "Resource\AboutDialog\resource.rc"

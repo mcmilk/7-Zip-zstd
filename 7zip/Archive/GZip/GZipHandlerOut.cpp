@@ -1,4 +1,4 @@
-// Zip/OutHandler.cpp
+// Archive/GZip/OutHandler.cpp
 
 #include "StdAfx.h"
 
@@ -20,30 +20,30 @@ using namespace NTime;
 namespace NArchive {
 namespace NGZip {
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *timeType)
+STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kUnix;
   return S_OK;
 }
 
-static HRESULT CopyStreams(IInStream *inStream, IOutStream *outStream, 
-    IArchiveUpdateCallback *updateCallback)
+static HRESULT CopyStreams(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream, IArchiveUpdateCallback *updateCallback)
 {
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
   return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
   if (numItems != 1)
     return E_INVALIDARG;
 
-  UINT64 size;
-  INT32 newData;
-  INT32 newProperties;
-  UINT32 indexInArchive;
-  UINT32 itemIndex = 0;
+  UInt64 size;
+  Int32 newData;
+  Int32 newProperties;
+  UInt32 indexInArchive;
+  UInt32 itemIndex = 0;
   if (!updateCallback)
     return E_FAIL;
   RINOK(updateCallback->GetUpdateItemInfo(0, 
@@ -54,7 +54,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   newItem.Flags = 0;
   if (IntToBool(newProperties))
   {
-    UINT32 attributes;
+    UInt32 attributes;
     FILETIME utcTime;
     UString name;
     bool isDirectory;
@@ -117,9 +117,9 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
       RINOK(updateCallback->GetProperty(itemIndex, kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      size = *(UINT64 *)(&propVariant.uhVal);
+      size = *(UInt64 *)(&propVariant.uhVal);
     }
-    newItem.UnPackSize32 = (UINT32)size;
+    newItem.UnPackSize32 = (UInt32)size;
     return UpdateArchive(m_Stream, size, outStream, newItem, 
         m_Method, itemIndex, updateCallback);
   }
@@ -141,13 +141,13 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   return CopyStreams(m_Stream, outStream, updateCallback);
 }
 
-static const UINT32 kMatchFastLenNormal  = 32;
-static const UINT32 kMatchFastLenMX  = 64;
+static const UInt32 kMatchFastLenNormal  = 32;
+static const UInt32 kMatchFastLenMX  = 64;
 
-static const UINT32 kNumPassesNormal = 1;
-static const UINT32 kNumPassesMX  = 3;
+static const UInt32 kNumPassesNormal = 1;
+static const UInt32 kNumPassesMX  = 3;
 
-STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *values, INT32 numProperties)
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   InitMethodProperties();
   for (int i = 0; i < numProperties; i++)
@@ -158,7 +158,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     if (name[0] == 'X')
     {
       name.Delete(0);
-      UINT32 level = 9;
+      UInt32 level = 9;
       if (value.vt == VT_UI4)
       {
         if (!name.IsEmpty())
@@ -171,10 +171,10 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
         {
           const wchar_t *start = name;
           const wchar_t *end;
-          UINT64 v = ConvertStringToUINT64(start, &end);
+          UInt64 v = ConvertStringToUInt64(start, &end);
           if (end - start != name.Length())
             return E_INVALIDARG;
-          level = (UINT32)v;
+          level = (UInt32)v;
         }
       }
       else

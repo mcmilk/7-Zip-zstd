@@ -1,8 +1,6 @@
 // Stream/MSBFEncoder.h
 // the Most Significant Bit of byte is First
 
-#pragma once
-
 #ifndef __STREAM_MSBFENCODER_H
 #define __STREAM_MSBFENCODER_H
 
@@ -16,8 +14,8 @@ template<class TOutByte>
 class CEncoder
 {
   TOutByte m_Stream;
-  UINT32 m_BitPos;
-  BYTE m_CurByte;
+  UInt32 m_BitPos;
+  Byte m_CurByte;
 public:
   void Init(ISequentialOutStream *aStream)
   {
@@ -37,17 +35,17 @@ public:
     m_Stream.ReleaseStream();
   }
 
-  void WriteBits(UINT32 aValue, UINT32 aNumBits)
+  void WriteBits(UInt32 aValue, UInt32 aNumBits)
   {
     while(aNumBits > 0)
     {
-      UINT32 aNumNewBits = MyMin(aNumBits, m_BitPos);
+      UInt32 aNumNewBits = MyMin(aNumBits, m_BitPos);
       aNumBits -= aNumNewBits;
       
       
       m_CurByte <<= aNumNewBits;
-      UINT32 aNewBits = aValue >> aNumBits;
-      m_CurByte |= BYTE(aNewBits);
+      UInt32 aNewBits = aValue >> aNumBits;
+      m_CurByte |= Byte(aNewBits);
       aValue -= (aNewBits << aNumBits);
       
       
@@ -60,11 +58,10 @@ public:
       }
     }
   }
-  UINT64 GetProcessedSize() const { 
+  UInt64 GetProcessedSize() const { 
       return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) /8; }
 };
 
 }}
 
 #endif
-

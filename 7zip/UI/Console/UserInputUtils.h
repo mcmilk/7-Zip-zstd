@@ -1,7 +1,5 @@
 // UserInputUtils.h
 
-#pragma once
-
 #ifndef __USERINPUTUTILS_H
 #define __USERINPUTUTILS_H
 

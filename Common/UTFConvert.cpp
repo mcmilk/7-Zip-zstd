@@ -10,7 +10,7 @@ bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString)
   resultString.Empty();
   for(int i = 0; i < utfString.Length(); i++)
   {
-    BYTE c = utfString[i];
+    Byte c = utfString[i];
     if (c < 0x80)
     {
       resultString += c;
@@ -21,7 +21,7 @@ bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString)
     i++;
     if (i >= utfString.Length())
       return false;
-    BYTE c2 = utfString[i];
+    Byte c2 = utfString[i];
     if (c2 < 0x80)
       return false;
     c2 -= 0x80;
@@ -35,7 +35,7 @@ bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString)
     i++;
     if (i >= utfString.Length())
       return false;
-    BYTE c3 = utfString[i];
+    Byte c3 = utfString[i];
     c3 -= 0x80;
     if (c3 >= 0x40)
       return false;

@@ -123,24 +123,6 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Alpha.cpp
-
-!IF  "$(CFG)" == "Branch - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Alpha.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\ARM.cpp
 
 !IF  "$(CFG)" == "Branch - Win32 Release"
@@ -177,7 +159,15 @@ SOURCE=.\ARMThumb.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Coder.h
+SOURCE=.\BranchCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BranchCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\BranchX86.h
 # End Source File
 # Begin Source File
 
@@ -196,24 +186,6 @@ SOURCE=.\IA64.cpp
 # Begin Source File
 
 SOURCE=.\IA64.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\M68.cpp
-
-!IF  "$(CFG)" == "Branch - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\M68.h
 # End Source File
 # Begin Source File
 
@@ -305,6 +277,14 @@ SOURCE=..\RangeCoder\RangeCoderBit.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
 # End Group
 # End Target
 # End Project

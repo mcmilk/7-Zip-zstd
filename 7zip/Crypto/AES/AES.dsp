@@ -101,32 +101,16 @@ SOURCE=.\DllExports.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\resource.rc
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"StdAfx.h"
 # End Source File
 # Begin Source File
 
 SOURCE=.\StdAfx.h
-# End Source File
-# End Group
-# Begin Group "7zip common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Common\InBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\InBuffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\OutBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\OutBuffer.h
 # End Source File
 # End Group
 # Begin Group "AES"
@@ -214,10 +198,6 @@ SOURCE=.\MyAES.cpp
 # Begin Source File
 
 SOURCE=.\MyAES.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\resource.rc
 # End Source File
 # End Target
 # End Project

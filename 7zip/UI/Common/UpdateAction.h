@@ -1,7 +1,5 @@
 // UpdateAction.h
 
-#pragma once
-
 #ifndef __UPDATE_ACTION_H
 #define __UPDATE_ACTION_H
 
@@ -34,6 +32,17 @@ namespace NUpdateArchive {
   struct CActionSet
   {
     NPairAction::EEnum StateActions[NPairState::kNumValues];
+    bool NeedScanning() const
+    {
+      int i;
+      for (i = 0; i < NPairState::kNumValues; i++)
+        if (StateActions[i] == NPairAction::kCompress)
+          return true;
+      for (i = 1; i < NPairState::kNumValues; i++)
+        if (StateActions[i] != NPairAction::kIgnore)
+          return true;
+      return false;
+    }
   };
   extern const CActionSet kAddActionSet;
   extern const CActionSet kUpdateActionSet;

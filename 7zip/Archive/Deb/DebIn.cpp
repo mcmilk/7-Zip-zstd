@@ -12,7 +12,7 @@ namespace NDeb {
 
 using namespace NHeader;
 
-HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 &processedSize)
+HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
   RINOK(m_Stream->Read(data, size, &processedSize));
   m_Position += processedSize;
@@ -23,7 +23,7 @@ HRESULT CInArchive::Open(IInStream *inStream)
 {
   RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
   char signature[kSignatureLen];
-  UINT32 processedSize;
+  UInt32 processedSize;
   RINOK(inStream->Read(signature, kSignatureLen, &processedSize));
   m_Position += processedSize;
   if (processedSize != kSignatureLen)
@@ -56,7 +56,7 @@ static bool CheckDecimalString(const char *srcString, int numChars)
 #define ReturnIfBadOctal(x, y) { if (!CheckOctalString((x), (y))) return S_FALSE; }
 #define ReturnIfBadDecimal(x, y) { if (!CheckDecimalString((x), (y))) return S_FALSE; }
 
-static UINT32 StringToNumber(const char *srcString, int numChars, int radix)
+static UInt32 StringToNumber(const char *srcString, int numChars, int radix)
 {
   AString modString;
   for (int i = 0; i < numChars; i++)
@@ -64,39 +64,48 @@ static UINT32 StringToNumber(const char *srcString, int numChars, int radix)
   char *endPtr;
   return strtoul(modString, &endPtr, radix);
 }
-static UINT32 OctalToNumber(const char *srcString, int numChars)
+static UInt32 OctalToNumber(const char *srcString, int numChars)
   { return StringToNumber(srcString, numChars, 8); }
-static UINT32 DecimalToNumber(const char *srcString, int numChars)
+static UInt32 DecimalToNumber(const char *srcString, int numChars)
   { return StringToNumber(srcString, numChars, 10); }
 
 HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
 {
   filled = false;
 
-  CHeader header;
-  UINT32 processedSize;
+  char header[NHeader::kHeaderSize];
+  const char *cur = header;
+
+  UInt32 processedSize;
   item.HeaderPosition = m_Position;
-  RINOK(ReadBytes(&header, sizeof(header), processedSize));
+  RINOK(ReadBytes(header, sizeof(header), processedSize));
   if (processedSize < sizeof(header))
     return S_OK;
   
   char tempString[kNameSize + 1];
-  strncpy(tempString, header.Name, kNameSize);
+  strncpy(tempString, cur, kNameSize);
+  cur += kNameSize;
   tempString[kNameSize] = '\0';
   item.Name = tempString;
   item.Name.Trim();
 
   for (int i = 0; i < item.Name.Length(); i++)
-    if (((BYTE)item.Name[i]) < 0x20)
+    if (((Byte)item.Name[i]) < 0x20)
       return S_FALSE;
 
-  ReturnIfBadDecimal(header.ModificationTime, kTimeSize);
-  ReturnIfBadOctal(header.Mode, kModeSize);
-  ReturnIfBadDecimal(header.Size, kSizeSize);
+  ReturnIfBadDecimal(cur, kTimeSize);
+  item.ModificationTime = DecimalToNumber(cur, kTimeSize);
+  cur += kTimeSize;
 
-  item.ModificationTime = DecimalToNumber(header.ModificationTime, kTimeSize);
-  item.Mode = OctalToNumber(header.Mode, kModeSize);
-  item.Size = DecimalToNumber(header.Size, kSizeSize);
+  cur += 6 + 6;
+  
+  ReturnIfBadOctal(cur, kModeSize);
+  item.Mode = OctalToNumber(cur, kModeSize);
+  cur += kModeSize;
+
+  ReturnIfBadDecimal(cur, kSizeSize);
+  item.Size = DecimalToNumber(cur, kSizeSize);
+  cur += kSizeSize;
 
   filled = true;
   return S_OK;
@@ -118,9 +127,9 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   return S_OK;
 }
 
-HRESULT CInArchive::Skeep(UINT64 numBytes)
+HRESULT CInArchive::Skeep(UInt64 numBytes)
 {
-  UINT64 newPostion;
+  UInt64 newPostion;
   RINOK(m_Stream->Seek(numBytes, STREAM_SEEK_CUR, &newPostion));
   m_Position += numBytes;
   if (m_Position != newPostion)
@@ -128,7 +137,7 @@ HRESULT CInArchive::Skeep(UINT64 numBytes)
   return S_OK;
 }
 
-HRESULT CInArchive::SkeepData(UINT64 dataSize)
+HRESULT CInArchive::SkeepData(UInt64 dataSize)
 {
   return Skeep((dataSize + 1) & 0xFFFFFFFFFFFFFFFE);
 }

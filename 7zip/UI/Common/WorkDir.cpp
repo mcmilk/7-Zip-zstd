@@ -5,6 +5,7 @@
 #include "WorkDir.h"
 
 #include "Common/StringConvert.h"
+#include "Common/Wildcard.h"
 
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
@@ -16,23 +17,13 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 
-static UString GetContainingDir(const UString &path)
-{
-  UString resultPath;
-  int pos;
-  if(!NFile::NDirectory::MyGetFullPathName(path, resultPath, pos))
-    throw 141716;
-  return resultPath.Left(pos);
-}
-
-UString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
-    const UString &archiveName)
+UString GetWorkDir(const NWorkDir::CInfo &workDirInfo, const UString &path)
 {
   NWorkDir::NMode::EEnum mode = workDirInfo.Mode;
   if (workDirInfo.ForRemovableOnly)
   {
     mode = NWorkDir::NMode::kCurrent;
-    UString prefix = archiveName.Left(3);
+    UString prefix = path.Left(3);
     if (prefix[1] == L':' && prefix[2] == L'\\')
     {
       UINT driveType = GetDriveType(GetSystemString(prefix, GetCurrentCodePage()));
@@ -51,7 +42,7 @@ UString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
   {
     case NWorkDir::NMode::kCurrent:
     {
-      return GetContainingDir(archiveName);
+      return ExtractDirPrefixFromPath(path);
     }
     case NWorkDir::NMode::kSpecified:
     {
@@ -59,7 +50,7 @@ UString GetWorkDir(const NWorkDir::CInfo &workDirInfo,
       NormalizeDirPathPrefix(tempDir);
       return tempDir;
     }
-    default: // NZipSettings::NWorkDir::NMode::kSystem:
+    default:
     {
       UString tempDir;
       if(!NFile::NDirectory::MyGetTempPath(tempDir))

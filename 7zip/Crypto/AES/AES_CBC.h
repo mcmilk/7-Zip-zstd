@@ -5,16 +5,17 @@
 
 #include "aescpp.h"
 
-class CAES_CBCEncoder: public AESclass
+class CAES_CBC: public AESclass
 {
-  BYTE _prevBlock[16];
+protected:
+  Byte _prevBlock[16];
 public:
-  void Init(const BYTE *iv)
+  void Init(const Byte *iv)
   {
     for (int i = 0; i < 16; i++)
       _prevBlock[i] = iv[i];
   }
-  void ProcessData(BYTE *outBlock, const BYTE *inBlock)
+  void Encode(const Byte *inBlock, Byte *outBlock)
   {
     int i;
     for (i = 0; i < 16; i++)
@@ -23,18 +24,8 @@ public:
     for (i = 0; i < 16; i++)
       _prevBlock[i] = outBlock[i];
   }
-};
 
-class CAES_CBCCBCDecoder: public AESclass
-{
-  BYTE _prevBlock[16];
-public:
-  void Init(const BYTE *iv)
-  {
-    for (int i = 0; i < 16; i++)
-      _prevBlock[i] = iv[i];
-  }
-  void ProcessData(BYTE *outBlock, const BYTE *inBlock)
+  void Decode(const Byte *inBlock, Byte *outBlock)
   {
     dec_blk(inBlock, outBlock);
     int i;

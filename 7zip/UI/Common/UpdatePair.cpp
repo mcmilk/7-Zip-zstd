@@ -11,7 +11,6 @@
 #include "SortUtils.h"
 
 using namespace NWindows;
-// using namespace NCOM;
 using namespace NTime;
 
 static int MyCompareTime(NFileTimeType::EEnum fileTimeType, 
@@ -32,7 +31,7 @@ static int MyCompareTime(NFileTimeType::EEnum fileTimeType,
       }
     case NFileTimeType::kDOS:
       {
-        UINT32 dosTime1, dosTime2;
+        UInt32 dosTime1, dosTime2;
         if (!FileTimeToDosTime(time1, dosTime1))
           throw 4191616;
         if (!FileTimeToDosTime(time2, dosTime2))

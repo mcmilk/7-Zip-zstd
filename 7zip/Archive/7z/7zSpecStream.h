@@ -1,7 +1,5 @@
 // 7zSpecStream.h
 
-#pragma once
-
 #ifndef __7Z_SPEC_STREAM_H
 #define __7Z_SPEC_STREAM_H
 
@@ -16,7 +14,7 @@ class CSequentialInStreamSizeCount2:
 {
   CMyComPtr<ISequentialInStream> _stream;
   CMyComPtr<ICompressGetSubStreamSize> _getSubStreamSize;
-  UINT64 _size;
+  UInt64 _size;
 public:
   void Init(ISequentialInStream *stream)
   {
@@ -25,14 +23,14 @@ public:
     _stream.QueryInterface(IID_ICompressGetSubStreamSize, &_getSubStreamSize);
     _size = 0;
   }
-  UINT64 GetSize() const { return _size; }
+  UInt64 GetSize() const { return _size; }
 
   MY_UNKNOWN_IMP1(ICompressGetSubStreamSize)
 
-  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
-  STDMETHOD(GetSubStreamSize)(UINT64 subStream, UINT64 *value);
+  STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value);
 };
 
 #endif

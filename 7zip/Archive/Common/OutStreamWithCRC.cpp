@@ -5,10 +5,10 @@
 #include "OutStreamWithCRC.h"
 
 STDMETHODIMP COutStreamWithCRC::Write(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
   HRESULT result;
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   if(!_stream)
   {
     realProcessedSize = size;
@@ -23,9 +23,9 @@ STDMETHODIMP COutStreamWithCRC::Write(const void *data,
 }
 
 STDMETHODIMP COutStreamWithCRC::WritePart(const void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result;
   if(!_stream)
   {

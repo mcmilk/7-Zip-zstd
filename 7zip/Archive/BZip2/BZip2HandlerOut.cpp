@@ -5,41 +5,38 @@
 #include "BZip2Handler.h"
 #include "BZip2Update.h"
 
-#include "Windows/FileFind.h"
-#include "Windows/Defs.h"
+#include "../../../Common/Defs.h"
 #include "Windows/PropVariant.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
 
 using namespace NWindows;
 
-static const int kNumItemInArchive = 1;
-
 namespace NArchive {
 namespace NBZip2 {
 
-STDMETHODIMP CHandler::GetFileTimeType(UINT32 *type)
+STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
   *type = NFileTimeType::kUnix;
   return S_OK;
 }
 
-static HRESULT CopyStreams(IInStream *inStream, IOutStream *outStream, 
-    IArchiveUpdateCallback *updateCallback)
+static HRESULT CopyStreams(ISequentialInStream *inStream, 
+    ISequentialOutStream *outStream, IArchiveUpdateCallback *updateCallback)
 {
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
   return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
 }
 
-STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
+STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
   if (numItems != 1)
     return E_INVALIDARG;
 
-  INT32 newData;
-  INT32 newProperties;
-  UINT32 indexInArchive;
+  Int32 newData;
+  Int32 newProperties;
+  UInt32 indexInArchive;
   if (!updateCallback)
     return E_FAIL;
   RINOK(updateCallback->GetUpdateItemInfo(0,
@@ -47,17 +44,6 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
  
   if (IntToBool(newProperties))
   {
-    {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(0, kpidAttributes, &propVariant));
-      if (propVariant.vt == VT_UI4)
-      {
-        if (NFile::NFind::NAttributes::IsDirectory(propVariant.ulVal))
-          return E_INVALIDARG;
-      }
-      else if (propVariant.vt != VT_EMPTY)
-        return E_INVALIDARG;
-    }
     {
       NCOM::CPropVariant propVariant;
       RINOK(updateCallback->GetProperty(0, kpidIsFolder, &propVariant));
@@ -73,13 +59,13 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   
   if (IntToBool(newData))
   {
-    UINT64 size;
+    UInt64 size;
     {
       NCOM::CPropVariant propVariant;
       RINOK(updateCallback->GetProperty(0, kpidSize, &propVariant));
       if (propVariant.vt != VT_UI8)
         return E_INVALIDARG;
-      size = *(UINT64 *)(&propVariant.uhVal);
+      size = *(UInt64 *)(&propVariant.uhVal);
     }
     return UpdateArchive(size, outStream, 0, updateCallback);
   }

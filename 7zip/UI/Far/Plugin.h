@@ -1,18 +1,18 @@
-// Far/Plugin.h
+// 7zip/Far/Plugin.h
 
-#pragma once
+#ifndef __7ZIP_FAR_PLUGIN_H
+#define __7ZIP_FAR_PLUGIN_H
 
-#ifndef __FAR_PLUGIN_H
-#define __FAR_PLUGIN_H
+#include "Common/MyCom.h"
 
 #include "Windows/COM.h"
 #include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"
-#include "Common/MyCom.h"
-#include "Far/FarUtils.h"
 
 #include "../Common/ArchiverInfo.h"
 #include "../Agent/IFolderArchive.h"
+
+#include "FarUtils.h"
 
 class CPlugin
 {
@@ -80,14 +80,14 @@ public:
   */
 
   HRESULT ExtractFiles(
-      bool aDecompressAllItems,
-      const UINT32 *anIndexes, 
+      bool decompressAllItems,
+      const UINT32 *indices, 
       UINT32 numIndices, 
-      bool aSilent, 
-      NExtractionMode::NPath::EEnum aPathMode, 
-      NExtractionMode::NOverwrite::EEnum overwriteMode,
+      bool silent, 
+      NExtract::NPathMode::EEnum pathMode, 
+      NExtract::NOverwriteMode::EEnum overwriteMode,
       const UString &destPath,
-      bool aPasswordIsDefined, const UString &password);
+      bool passwordIsDefined, const UString &password);
 
   NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *aPanelItem, int itemsNumber,
     int move, char *destPath, int opMode);

@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\Util\7zSfxCon.exe" /opt:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\Util\7zCon.sfx" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "SFXCon - Win32 Debug"
@@ -75,7 +75,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\Util\7zSfxCon.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\Util\7zCon.sfx" /pdbtype:sept
 
 !ENDIF 
 
@@ -117,11 +117,35 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2ST.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2ST.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -140,7 +164,7 @@ SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
 # End Source File
 # End Group
-# Begin Group "Console Archiver"
+# Begin Group "Console"
 
 # PROP Default_Filter ""
 # Begin Source File
@@ -153,19 +177,11 @@ SOURCE=..\..\UI\Console\ConsoleClose.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\Console\Extract.cpp
+SOURCE=..\..\UI\Console\ExtractCallbackConsole.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\Console\Extract.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Console\ExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Console\ExtractCallback.h
+SOURCE=..\..\UI\Console\ExtractCallbackConsole.h
 # End Source File
 # Begin Source File
 
@@ -178,6 +194,14 @@ SOURCE=..\..\UI\Console\List.h
 # Begin Source File
 
 SOURCE=..\..\UI\Console\MainAr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\OpenCallbackConsole.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\OpenCallbackConsole.h
 # End Source File
 # Begin Source File
 
@@ -239,6 +263,14 @@ SOURCE=..\..\Archive\7z\7zIn.h
 
 SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zMethodID.h
+# End Source File
 # End Group
 # Begin Group "Compress"
 
@@ -254,6 +286,14 @@ SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
 # Begin Group "Branch"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchCoder.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Branch\x86.cpp
@@ -452,6 +492,14 @@ SOURCE=..\..\..\Windows\System.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CommandLineParser.cpp
 # End Source File
 # Begin Source File
@@ -568,11 +616,11 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.cpp
+SOURCE=..\..\Common\LockedStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.h
+SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 
@@ -623,6 +671,22 @@ SOURCE=..\..\Common\StreamObjects.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\UI\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
@@ -639,11 +703,27 @@ SOURCE=..\..\UI\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\ExitCode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Extract.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\ExtractingFilePath.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\UI\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractMode.h
 # End Source File
 # Begin Source File
 

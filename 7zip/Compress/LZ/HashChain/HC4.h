@@ -1,7 +1,5 @@
 // HC4.h
 
-#pragma once
-
 #ifndef __HC4__H
 #define __HC4__H
 

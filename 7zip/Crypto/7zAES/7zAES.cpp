@@ -1,4 +1,4 @@
-// 7z_AES.h
+// 7z_AES.cpp
 
 #include "StdAfx.h"
 
@@ -28,7 +28,7 @@ bool CKeyInfo::IsEqualTo(const CKeyInfo &a) const
 {
   if (SaltSize != a.SaltSize || NumCyclesPower != a.NumCyclesPower)
     return false;
-  for (UINT32 i = 0; i < SaltSize; i++)
+  for (UInt32 i = 0; i < SaltSize; i++)
     if (Salt[i] != a.Salt[i])
       return false;
   return (Password == a.Password);
@@ -38,40 +38,28 @@ void CKeyInfo::CalculateDigest()
 {
   if (NumCyclesPower == 0x3F)
   {
-    UINT32 pos;
+    UInt32 pos;
     for (pos = 0; pos < SaltSize; pos++)
       Key[pos] = Salt[pos];
-    for (UINT32 i = 0; i < Password.GetCapacity() && pos < kKeySize; i++)
+    for (UInt32 i = 0; i < Password.GetCapacity() && pos < kKeySize; i++)
       Key[pos++] = Password[i];
     for (; pos < kKeySize; pos++)
       Key[pos] = 0;
   }
   else
   {
-    /*
-    CMyComPtr<ICryptoHash> sha;
-    RINOK(sha.CoCreateInstance(CLSID_CCrypto_Hash_SHA256));
-    RINOK(sha->Init());
-    */
-    
     NCrypto::NSHA256::SHA256 sha;
-    const UINT64 numRounds = UINT64(1) << (NumCyclesPower);
-    for (UINT64 round = 0; round < numRounds; round++)
+    const UInt64 numRounds = UInt64(1) << (NumCyclesPower);
+    Byte temp[8] = { 0,0,0,0,0,0,0,0 };
+    for (UInt64 round = 0; round < numRounds; round++)
     {
-      /*
-      RINOK(sha->Update(Salt, SaltSize));
-      RINOK(sha->Update(Password, Password.GetCapacity()));
-      // change it if big endian;
-      RINOK(sha->Update(&round, sizeof(round)));
-      */
-      
-      // sha.Update(Salt, sizeof(Salt));
       sha.Update(Salt, SaltSize);
       sha.Update(Password, Password.GetCapacity());
-      // change it if big endian;
-      sha.Update((const BYTE *)&round, sizeof(round));
+      sha.Update(temp, 8);
+      for (int i = 0; i < 8; i++)
+        if (++(temp[i]) != 0)
+          break;
     }
-    // return sha->GetDigest(Key);
     sha.Final(Key);
   }
 }
@@ -133,30 +121,30 @@ void CBase::CalculateDigest()
 
 
 /*
-static void GetRandomData(BYTE *data)
+static void GetRandomData(Byte *data)
 {
   // probably we don't need truly random.
   // it's enough to prevent dictionary attack;
   // but it gives some info about time when compressing 
   // was made. 
-  UINT64 tempValue;
+  UInt64 tempValue;
   SYSTEMTIME systemTime;
   FILETIME fileTime;
   ::GetSystemTime(&systemTime);
   ::SystemTimeToFileTime(&systemTime, &fileTime);
-  tempValue = *(const UINT64 *)&fileTime;
+  tempValue = *(const UInt64 *)&fileTime;
   LARGE_INTEGER counter;
   ::QueryPerformanceCounter(&counter);
-  tempValue += *(const UINT64 *)&counter;
-  tempValue += (UINT64)(GetTickCount()) << 32;
-  *(UINT64 *)data = tempValue;
+  tempValue += *(const UInt64 *)&counter;
+  tempValue += (UInt64)(GetTickCount()) << 32;
+  *(UInt64 *)data = tempValue;
 }
 */
 
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
   _key.Init();
-  for (UINT32 i = 0; i < sizeof(_iv); i++)
+  for (UInt32 i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
 
   _key.SaltSize = 0;
@@ -169,16 +157,16 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   // _key.NumCyclesPower = 0x3F;
   _key.NumCyclesPower = 18;
 
-  BYTE firstByte = _key.NumCyclesPower | 
+  Byte firstByte = _key.NumCyclesPower | 
     (((_key.SaltSize == 0) ? 0 : 1) << 7) |
     (((ivSize == 0) ? 0 : 1) << 6);
-  RINOK(outStream->Write(&firstByte, sizeof(firstByte), NULL));
+  RINOK(outStream->Write(&firstByte, 1, NULL));
   if (_key.SaltSize == 0 && ivSize == 0)
     return S_OK;
-  BYTE saltSizeSpec = (_key.SaltSize == 0) ? 0 : (_key.SaltSize - 1);
-  BYTE ivSizeSpec = (ivSize == 0) ? 0 : (ivSize - 1);
-  BYTE secondByte = ((saltSizeSpec) << 4) | ivSizeSpec;
-  RINOK(outStream->Write(&secondByte, sizeof(secondByte), NULL));
+  Byte saltSizeSpec = (_key.SaltSize == 0) ? 0 : (_key.SaltSize - 1);
+  Byte ivSizeSpec = (ivSize == 0) ? 0 : (ivSize - 1);
+  Byte secondByte = ((saltSizeSpec) << 4) | ivSizeSpec;
+  RINOK(outStream->Write(&secondByte, 1, NULL));
   if (_key.SaltSize > 0)
   {
     RINOK(outStream->Write(_key.Salt, _key.SaltSize, NULL));
@@ -190,19 +178,14 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::SetDecoderProperties(ISequentialInStream *inStream)
-{
-  return S_OK;
-}
-
 STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
   _key.Init();
   for (int i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
-  UINT32 processedSize;
-  BYTE firstByte;
-  RINOK(inStream->Read(&firstByte, sizeof(firstByte), &processedSize));
+  UInt32 processedSize;
+  Byte firstByte;
+  RINOK(inStream->Read(&firstByte, 1, &processedSize));
   if (processedSize == 0)
     return S_OK;
 
@@ -210,18 +193,17 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
   if ((firstByte & 0xC0) == 0)
     return S_OK;
   _key.SaltSize = (firstByte >> 7) & 1;
-  UINT32 ivSize = (firstByte >> 6) & 1;
+  UInt32 ivSize = (firstByte >> 6) & 1;
 
-  BYTE secondByte;
-  RINOK(inStream->Read(&secondByte, sizeof(secondByte), &processedSize));
+  Byte secondByte;
+  RINOK(inStream->Read(&secondByte, 1, &processedSize));
   if (processedSize == 0)
     return E_INVALIDARG;
   
   _key.SaltSize += (secondByte >> 4);
   ivSize += (secondByte & 0x0F);
   
-  RINOK(inStream->Read(_key.Salt, 
-      _key.SaltSize, &processedSize));
+  RINOK(inStream->Read(_key.Salt, _key.SaltSize, &processedSize));
   if (processedSize != _key.SaltSize)
     return E_INVALIDARG;
 
@@ -232,14 +214,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties(ISequentialInStream *inStream)
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::CryptoSetPassword(const BYTE *data, UINT32 size)
-{
-  _key.Password.SetCapacity(size);
-  memcpy(_key.Password, data, size);
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
+STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
   _key.Password.SetCapacity(size);
   memcpy(_key.Password, data, size);
@@ -247,12 +222,12 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const BYTE *data, UINT32 size)
 }
 
 /*
-static BYTE *WideToRaw(const wchar_t *src, BYTE *dest, int destSize=0x10000000)
+static Byte *WideToRaw(const wchar_t *src, Byte *dest, int destSize=0x10000000)
 {
   for (int i = 0; i < destSize; i++, src++)
   {
-    dest[i * 2] = (BYTE)*src;
-    dest[i * 2 + 1]= (BYTE)(*src >> 8);
+    dest[i * 2] = (Byte)*src;
+    dest[i * 2 + 1]= (Byte)(*src >> 8);
     if (*src == 0)
       break;
   }
@@ -276,80 +251,57 @@ bool GetAESLibPath(TCHAR *path)
 }
 #endif
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress)
+STDMETHODIMP CBaseCoder::Init()
 {
   CalculateDigest();
-
-  if (_aesEncoder == 0)
+  if (_aesFilter == 0)
   {
-    #ifdef CRYPTO_AES
-    _aesEncoder = new CAES256_CBC_Encoder;
-    #else
-    if ((HMODULE)_aesEncoderLibrary == 0)
-    {
-      TCHAR filePath[MAX_PATH + 2];
-      if (!GetAESLibPath(filePath))
-        return ::GetLastError();
-      RINOK(_aesEncoderLibrary.LoadAndCreateCoder2(filePath, 
-        CLSID_CCrypto_AES256_Encoder, &_aesEncoder));
-    }
-    #endif
+    RINOK(CreateFilter());
   }
-
-  CSequentialInStreamImp *ivStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> ivStream(ivStreamSpec);
-  ivStreamSpec->Init(_iv, sizeof(_iv));
-
-  CSequentialInStreamImp *keyStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> keyStream(keyStreamSpec);
-  keyStreamSpec->Init(_key.Key, sizeof(_key.Key));
-
-  ISequentialInStream *inStreams[3] = { inStream, ivStream, keyStream };
-  UINT64 ivSize = sizeof(_iv);
-  UINT64 keySize = sizeof(_key.Key);
-  const UINT64 *inSizes[3] = { inSize, &ivSize, &ivSize, };
-  return _aesEncoder->Code(inStreams, inSizes, 3, 
-      &outStream, &outSize, 1, progress);
+  CMyComPtr<ICryptoProperties> cp;
+  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
+  RINOK(cp->SetKey(_key.Key, sizeof(_key.Key)));
+  RINOK(cp->SetInitVector(_iv, sizeof(_iv)));
+  return S_OK;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress)
+STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
 {
-  CalculateDigest();
+  return _aesFilter->Filter(data, size);
+}
 
-  if (_aesDecoder == 0)
+#ifndef CRYPTO_AES
+HRESULT CBaseCoder::CreateFilterFromDLL(REFCLSID clsID)
+{
+  if (!_aesLibrary)
   {
-    #ifdef CRYPTO_AES
-    _aesDecoder = new CAES256_CBC_Decoder;
-    #else
-    if ((HMODULE)_aesDecoderLibrary == 0)
-    {
-      TCHAR filePath[MAX_PATH + 2];
-      if (!GetAESLibPath(filePath))
-        return ::GetLastError();
-      RINOK(_aesDecoderLibrary.LoadAndCreateCoder2(filePath, 
-        CLSID_CCrypto_AES256_Decoder, &_aesDecoder));
-    }
-    #endif
+    TCHAR filePath[MAX_PATH + 2];
+    if (!GetAESLibPath(filePath))
+      return ::GetLastError();
+    return _aesLibrary.LoadAndCreateFilter(filePath, clsID, &_aesFilter);
   }
+  return S_OK;
+}
+#endif
 
-  CSequentialInStreamImp *ivStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> ivStream(ivStreamSpec);
-  ivStreamSpec->Init(_iv, sizeof(_iv));
+HRESULT CEncoder::CreateFilter()
+{
+  #ifdef CRYPTO_AES
+  _aesFilter = new CAES256_CBC_Encoder;
+  return S_OK;
+  #else
+  return CreateFilterFromDLL(CLSID_CCrypto_AES256_Encoder);
+  #endif
+}
 
-  CSequentialInStreamImp *keyStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> keyStream(keyStreamSpec);
-  keyStreamSpec->Init(_key.Key, sizeof(_key.Key));
-
-  ISequentialInStream *inStreams[3] = { inStream, ivStream, keyStream };
-  UINT64 ivSize = sizeof(_iv);
-  UINT64 keySize = sizeof(_key.Key);
-  const UINT64 *inSizes[3] = { inSize, &ivSize, &ivSize, };
-  return _aesDecoder->Code(inStreams, inSizes, 3, 
-      &outStream, &outSize, 1, progress);
+HRESULT CDecoder::CreateFilter()
+{
+  #ifdef CRYPTO_AES
+  _aesFilter = new CAES256_CBC_Decoder;
+  return S_OK;
+  #else
+  return CreateFilterFromDLL(CLSID_CCrypto_AES256_Decoder);
+  #endif
 }
 
 }}

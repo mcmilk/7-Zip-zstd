@@ -1,7 +1,5 @@
 // App.h
 
-#pragma once
-
 #ifndef __APP_H
 #define __APP_H
 
@@ -74,7 +72,7 @@ public:
   void OnSetSubFolder(int srcPanelIndex);
 
   void CreateOnePanel(int panelIndex, const UString &mainPath);
-  void Create(HWND hwnd, const UString &mainPath);
+  void Create(HWND hwnd, const UString &mainPath, int xSizes[2]);
   void Read();
   void Save();
   void Release();
@@ -87,7 +85,8 @@ public:
   void SetFocusToLastItem()
     { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }
 
-  int GetFocusedPanelIndex();
+  int GetFocusedPanelIndex() const { return LastFocusedPanel; }
+
   /*
   void SetCurrentIndex()
     { CurrentPanel = GetFocusedPanelIndex(); }
@@ -114,6 +113,8 @@ public:
     { OnCopy(UStringVector(), true, false, GetFocusedPanelIndex()); }
   void Delete()
     { GetFocusedPanel().DeleteItems(); }
+  void Split();
+  void Combine();
   void Properties()
     { GetFocusedPanel().Properties(); }
   void Comment()
@@ -228,10 +229,10 @@ public:
 
   void AddToArchive()
     { GetFocusedPanel().AddToArchive(); }
-  void ExtractArchive()
-    { GetFocusedPanel().ExtractArchive(); }
-  void TestArchive()
-    { GetFocusedPanel().TestArchive(); }
+  void ExtractArchives()
+    { GetFocusedPanel().ExtractArchives(); }
+  void TestArchives()
+    { GetFocusedPanel().TestArchives(); }
 
   void OnNotify(int ctrlID, LPNMHDR pnmh);
 };

@@ -215,7 +215,7 @@ bool CBenchmarkDialog::OnInit()
     {
       UINT32 dictionary = (1 << i) + (j << (i - 1));
       TCHAR s[40];
-      ConvertUINT64ToString((dictionary >> 20), s);
+      ConvertUInt64ToString((dictionary >> 20), s);
       lstrcat(s, kMB);
       int index = m_Dictionary.AddString(s);
       m_Dictionary.SetItemData(index, dictionary);
@@ -248,7 +248,7 @@ UINT32 CBenchmarkDialog::OnChangeDictionary()
   UINT64 memUsage = GetMemoryUsage(dictionary);
   memUsage = (memUsage + (1 << 20) - 1) >> 20;
   TCHAR s[40];
-  ConvertUINT64ToString(memUsage, s);
+  ConvertUInt64ToString(memUsage, s);
   lstrcat(s, kMB);
   SetItemText(IDC_BENCHMARK_MEMORY_VALUE, s);
   return dictionary;
@@ -359,7 +359,7 @@ static UINT64 GetTotalRating(
 void CBenchmarkDialog::PrintRating(UINT64 rating, UINT controlID)
 {
   TCHAR s[40];
-  ConvertUINT64ToString(rating / 1000000, s);
+  ConvertUInt64ToString(rating / 1000000, s);
   lstrcat(s, kMIPS);
   SetItemText(controlID, s);
 }
@@ -372,7 +372,7 @@ void CBenchmarkDialog::PrintResults(
 {
   TCHAR s[40];
   UINT64 speed = size * GetFreq() / elapsedTime;
-  ConvertUINT64ToString(speed / 1024, s);
+  ConvertUInt64ToString(speed / 1024, s);
   lstrcat(s, kKBs);
   SetItemText(speedID, s);
   UINT64 rating;
@@ -389,14 +389,14 @@ bool CBenchmarkDialog::OnTimer(WPARAM timerID, LPARAM callback)
   NWindows::NSynchronization::CCriticalSectionLock lock(_syncInfo.CS);
 
   TCHAR s[40];
-  ConvertUINT64ToString((_syncInfo.ProcessedSize >> 20), s);
+  ConvertUInt64ToString((_syncInfo.ProcessedSize >> 20), s);
   lstrcat(s, kMB);
   SetItemText(IDC_BENCHMARK_SIZE_VALUE, s);
 
-  ConvertUINT64ToString(_syncInfo.NumPasses, s);
+  ConvertUInt64ToString(_syncInfo.NumPasses, s);
   SetItemText(IDC_BENCHMARK_PASSES_VALUE, s);
 
-  ConvertUINT64ToString(_syncInfo.NumErrors, s);
+  ConvertUInt64ToString(_syncInfo.NumErrors, s);
   SetItemText(IDC_BENCHMARK_ERRORS_VALUE, s);
 
   UINT64 elapsedTime = _syncInfo.CompressingInfoTemp.Time;

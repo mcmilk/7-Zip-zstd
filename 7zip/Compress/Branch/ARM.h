@@ -1,12 +1,10 @@
 // ARM.h
 
-#pragma once
-
 #ifndef __ARM_H
 #define __ARM_H
 
-#include "Coder.h"
+#include "BranchCoder.h"
 
-MyClass(BC_ARM, 0x05, 1)
+MyClassA(BC_ARM, 0x05, 1)
 
 #endif

@@ -1,12 +1,22 @@
 // FileStreams.cpp
 
 #include "StdAfx.h"
+
+#ifndef WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include "FileStreams.h"
 
 static inline HRESULT ConvertBoolToHRESULT(bool result)
 {
   // return result ? S_OK: E_FAIL;
+  #ifdef WIN32
   return result ? S_OK: (::GetLastError());
+  #else
+  return result ? S_OK: E_FAIL;
+  #endif
 }
 
 bool CInFileStream::Open(LPCTSTR fileName)
@@ -14,41 +24,104 @@ bool CInFileStream::Open(LPCTSTR fileName)
   return File.Open(fileName);
 }
 
+#ifdef WIN32
 #ifndef _UNICODE
 bool CInFileStream::Open(LPCWSTR fileName)
 {
   return File.Open(fileName);
 }
 #endif
+#endif
 
-STDMETHODIMP CInFileStream::Read(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  #ifdef WIN32
+  
+  UInt32 realProcessedSize;
   bool result = File.Read(data, size, realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
+  
+  #else
+  
+  if(processedSize != NULL)
+    *processedSize = 0;
+  ssize_t res = File.Read(data, (size_t)size);
+  if (res == -1)
+    return E_FAIL;
+  if(processedSize != NULL)
+    *processedSize = (UInt32)res;
+  return S_OK;
+  
+  #endif
 }
   
-STDMETHODIMP CInFileStream::ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CInFileStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
 {
   return Read(data, size, processedSize);
 }
 
+#ifndef _WIN32_WCE
+STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+  #ifdef WIN32
+  UInt32 realProcessedSize;
+  BOOL res = ::ReadFile(GetStdHandle(STD_INPUT_HANDLE), 
+      data, size, (DWORD *)&realProcessedSize, NULL);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  if (res == FALSE && GetLastError() == ERROR_BROKEN_PIPE)
+    return S_OK;
+  return ConvertBoolToHRESULT(res != FALSE);
+  
+  #else
 
-STDMETHODIMP CInFileStream::Seek(INT64 offset, UINT32 seekOrigin, 
-    UINT64 *newPosition)
+  if(processedSize != NULL)
+    *processedSize = 0;
+  ssize_t res = read(0, data, (size_t)size);
+  if (res == -1)
+    return E_FAIL;
+  if(processedSize != NULL)
+    *processedSize = (UInt32)res;
+  return S_OK;
+  
+  #endif
+}
+  
+STDMETHODIMP CStdInFileStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
+{
+  return Read(data, size, processedSize);
+}
+#endif
+
+STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin, 
+    UInt64 *newPosition)
 {
   if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
-  UINT64 realNewPosition;
+
+  #ifdef WIN32
+
+  UInt64 realNewPosition;
   bool result = File.Seek(offset, seekOrigin, realNewPosition);
   if(newPosition != NULL)
     *newPosition = realNewPosition;
   return ConvertBoolToHRESULT(result);
+  
+  #else
+  
+  off_t res = File.Seek(offset, seekOrigin);
+  if (res == -1)
+    return E_FAIL;
+  if(newPosition != NULL)
+    *newPosition = (UInt64)res;
+  return S_OK;
+  
+  #endif
 }
 
-STDMETHODIMP CInFileStream::GetSize(UINT64 *size)
+STDMETHODIMP CInFileStream::GetSize(UInt64 *size)
 {
   return ConvertBoolToHRESULT(File.GetLength(*size));
 }
@@ -57,54 +130,132 @@ STDMETHODIMP CInFileStream::GetSize(UINT64 *size)
 //////////////////////////
 // COutFileStream
 
-bool COutFileStream::Open(LPCTSTR fileName)
+bool COutFileStream::Create(LPCTSTR fileName, bool createAlways)
 {
-  File.SetOpenCreationDispositionCreateAlways();
-  return File.Open(fileName);
+  return File.Create(fileName, createAlways);
 }
 
+#ifdef WIN32
 #ifndef _UNICODE
-bool COutFileStream::Open(LPCWSTR fileName)
+bool COutFileStream::Create(LPCWSTR fileName, bool createAlways)
 {
-  File.SetOpenCreationDispositionCreateAlways();
-  return File.Open(fileName);
+  return File.Create(fileName, createAlways);
 }
 #endif
+#endif
 
-STDMETHODIMP COutFileStream::Write(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  #ifdef WIN32
+
+  UInt32 realProcessedSize;
   bool result = File.Write(data, size, realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
+  
+  #else
+  
+  if(processedSize != NULL)
+    *processedSize = 0;
+  ssize_t res = File.Write(data, (size_t)size);
+  if (res == -1)
+    return E_FAIL;
+  if(processedSize != NULL)
+    *processedSize = (UInt32)res;
+  return S_OK;
+  
+  #endif
 }
   
-STDMETHODIMP COutFileStream::WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+STDMETHODIMP COutFileStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
 {
   return Write(data, size, processedSize);
 }
 
 
-STDMETHODIMP COutFileStream::Seek(INT64 offset, UINT32 seekOrigin, 
-    UINT64 *newPosition)
+STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, 
+    UInt64 *newPosition)
 {
   if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
-  UINT64 realNewPosition;
+  #ifdef WIN32
+
+  UInt64 realNewPosition;
   bool result = File.Seek(offset, seekOrigin, realNewPosition);
   if(newPosition != NULL)
     *newPosition = realNewPosition;
   return ConvertBoolToHRESULT(result);
+  
+  #else
+  
+  off_t res = File.Seek(offset, seekOrigin);
+  if (res == -1)
+    return E_FAIL;
+  if(newPosition != NULL)
+    *newPosition = (UInt64)res;
+  return S_OK;
+  
+  #endif
 }
 
-STDMETHODIMP COutFileStream::SetSize(INT64 newSize)
+STDMETHODIMP COutFileStream::SetSize(Int64 newSize)
 {
-  UINT64 currentPos;
+  #ifdef WIN32
+  UInt64 currentPos;
   if(!File.Seek(0, FILE_CURRENT, currentPos))
     return E_FAIL;
   bool result = File.SetLength(newSize);
-  UINT64 currentPos2;
+  UInt64 currentPos2;
   result = result && File.Seek(currentPos, currentPos2);
   return result ? S_OK : E_FAIL;
+  #else
+  return E_FAIL;
+  #endif
 }
+
+#ifndef _WIN32_WCE
+STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  if(processedSize != NULL)
+    *processedSize = 0;
+
+  #ifdef WIN32
+  UInt32 realProcessedSize;
+  BOOL res = TRUE;
+  while (size > 0)
+  {
+    // Seems that Windows doesn't like big amounts writing to stdout.
+    // So we limit portions by 32KB.
+    UInt32 sizeTemp = (1 << 15); 
+    if (sizeTemp > size)
+      sizeTemp = size;
+    res = ::WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), 
+        data, sizeTemp, (DWORD *)&realProcessedSize, NULL);
+    if (realProcessedSize == 0)
+      break;
+    size -= realProcessedSize;
+    data = (const void *)((const Byte *)data + realProcessedSize);
+    if(processedSize != NULL)
+      *processedSize += realProcessedSize;
+  }
+  return ConvertBoolToHRESULT(res != FALSE);
+
+  #else
+  
+  ssize_t res = write(1, data, (size_t)size);
+  if (res == -1)
+    return E_FAIL;
+  if(processedSize != NULL)
+    *processedSize = (UInt32)res;
+  return S_OK;
+  
+  return S_OK;
+  #endif
+}
+  
+STDMETHODIMP CStdOutFileStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  return Write(data, size, processedSize);
+}
+#endif

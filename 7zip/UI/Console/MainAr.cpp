@@ -9,10 +9,11 @@
 
 #include "Common/StdOutStream.h"
 #include "Common/NewHandler.h"
+#include "Common/Exception.h"
 #include "Common/StringConvert.h"
 
+#include "../Common/ExitCode.h"
 #include "ConsoleClose.h"
-#include "ArError.h"
 
 using namespace NWindows;
 
@@ -22,7 +23,7 @@ extern int Main2();
 static const char *kExceptionErrorMessage = "\n\nError:\n";
 static const char *kUserBreak  = "\nBreak signaled\n";
 
-static const char *kMemoryExceptionMessage = "\n\nMemory Error! Can't allocate!\n";
+static const char *kMemoryExceptionMessage = "\n\nERROR: Can't allocate required memory!\n";
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
@@ -35,80 +36,84 @@ static inline bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-int __cdecl main()
-// int __cdecl main(int numArguments, const char *arguments[])
+int 
+#ifdef _MSC_VER
+__cdecl 
+  #endif
+main()
 {
   #ifdef UNICODE
   if (!IsItWindowsNT())
   {
-    g_StdOut << "This program requires Windows NT/2000/XP";
+    g_StdErr << "This program requires Windows NT/2000/XP/2003";
     return NExitCode::kFatalError;
   }
   #endif
   // setlocale(LC_COLLATE, ".OCP");
-  int result=1;
   NCOM::CComInitializer comInitializer;
+  NConsoleClose::CCtrlHandlerSetter ctrlHandlerSetter;
   try
   {
-    NConsoleClose::CCtrlHandlerSetter aCtrlHandlerSetter;
-    try
-    {
-      // result = Main2(numArguments, arguments);
-      result = Main2();
-    }
-    catch(const NConsoleClose::CCtrlBreakException &)
-    {
-      g_StdOut << endl << kUserBreak;
-      return (NExitCode::kUserBreak);
-    }
+    return Main2();
   }
-  catch(const CNewException)
+  catch(const CNewException &)
   {
-    g_StdOut << kMemoryExceptionMessage;
+    g_StdErr << kMemoryExceptionMessage;
     return (NExitCode::kMemoryError);
   }
-  catch(const CSystemException &e)
+  catch(const NConsoleClose::CCtrlBreakException &)
   {
-    g_StdOut << "System Error: " << (UINT64)(e.ErrorCode);
-    return (NExitCode::kFatalError);
+    g_StdErr << endl << kUserBreak;
+    return (NExitCode::kUserBreak);
   }
-  catch(NExitCode::EEnum &aExitCode)
+  catch(const CSystemException &systemError)
   {
-    g_StdOut << kInternalExceptionMessage << aExitCode << endl;
-    return (aExitCode);
-  }
-  catch(const NExitCode::CSystemError &systemError)
-  {
+    if (systemError.ErrorCode == E_OUTOFMEMORY)
+    {
+      g_StdErr << kMemoryExceptionMessage;
+      return (NExitCode::kMemoryError);
+    }
+    if (systemError.ErrorCode == E_ABORT)
+    {
+      g_StdErr << endl << kUserBreak;
+      return (NExitCode::kUserBreak);
+    }
     UString message;
-    NError::MyFormatMessage(systemError.ErrorValue, message);
-    g_StdOut << endl << endl << "System error:" << endl << 
+    NError::MyFormatMessage(systemError.ErrorCode, message);
+    g_StdErr << endl << endl << "System error:" << endl << 
         message << endl;
     return (NExitCode::kFatalError);
   }
+  catch(NExitCode::EEnum &exitCode)
+  {
+    g_StdErr << kInternalExceptionMessage << exitCode << endl;
+    return (exitCode);
+  }
+  /*
   catch(const NExitCode::CMultipleErrors &multipleErrors)
   {
-    g_StdOut << endl << multipleErrors.NumErrors << " errors" << endl;
+    g_StdErr << endl << multipleErrors.NumErrors << " errors" << endl;
     return (NExitCode::kFatalError);
   }
+  */
   catch(const UString &s)
   {
-    g_StdOut << kExceptionErrorMessage << s << endl;
+    g_StdErr << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(const char *s)
   {
-    g_StdOut << kExceptionErrorMessage << s << endl;
+    g_StdErr << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(int t)
   {
-    g_StdOut << kInternalExceptionMessage << t << endl;
+    g_StdErr << kInternalExceptionMessage << t << endl;
     return (NExitCode::kFatalError);
   }
   catch(...)
   {
-    g_StdOut << kUnknownExceptionMessage;
+    g_StdErr << kUnknownExceptionMessage;
     return (NExitCode::kFatalError);
   }
-  return result;
 }

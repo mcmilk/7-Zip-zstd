@@ -1,7 +1,5 @@
 // OffsetStream.h
 
-#pragma once
-
 #ifndef __OFFSETSTREAM_H
 #define __OFFSETSTREAM_H
 
@@ -12,17 +10,17 @@ class COffsetOutStream:
   public IOutStream,
   public CMyUnknownImp
 {
-  UINT64 _offset;
+  UInt64 _offset;
   CMyComPtr<IOutStream> _stream;
 public:
-  HRESULT Init(IOutStream *stream, UINT64 offset);
+  HRESULT Init(IOutStream *stream, UInt64 offset);
   
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition);
-  STDMETHOD(SetSize)(INT64 newSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+  STDMETHOD(SetSize)(Int64 newSize);
 };
 
 #endif

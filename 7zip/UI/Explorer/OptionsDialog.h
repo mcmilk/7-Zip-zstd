@@ -1,7 +1,5 @@
 // OptionsDialog.h
 
-#pragma once
-
 #ifndef __SEVENZIP_OPTIONSDIALOG_H
 #define __SEVENZIP_OPTIONSDIALOG_H
 

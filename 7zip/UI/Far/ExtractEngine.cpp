@@ -3,16 +3,15 @@
 #include "StdAfx.h"
 
 #include "ExtractEngine.h"
-#include "Far/FarUtils.h"
-
-#include "Messages.h"
-
-#include "OverwriteDialog.h"
 
 #include "Common/WildCard.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/Defs.h"
+
+#include "FarUtils.h"
+#include "Messages.h"
+#include "OverwriteDialog.h"
 
 using namespace NWindows;
 using namespace NFar;
@@ -102,7 +101,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 askExtractMode)
+STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 askExtractMode, const UINT64 *position)
 {
   m_CurrentFilePath = name;
   return S_OK;

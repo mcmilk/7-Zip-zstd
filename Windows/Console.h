@@ -3,8 +3,6 @@
 #ifndef __WINDOWS_CONSOLE_H
 #define __WINDOWS_CONSOLE_H
 
-#pragma once
-
 #include "Windows/Defs.h"
 
 namespace NWindows{

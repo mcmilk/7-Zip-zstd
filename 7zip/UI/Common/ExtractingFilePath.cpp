@@ -3,20 +3,32 @@
 #include "StdAfx.h"
 #include "ExtractingFilePath.h"
 
+static void ReplaceDisk(UString &s)
+{
+  int i;
+  for (i = 0; i < s.Length(); i++)
+    if (s[i] != ' ')
+      break;
+  if (s.Length() > i + 1)
+  {
+    if (s[i + 1] == L':')
+    {
+      s.Delete(i + 1);
+      // s.Insert(i + 1, L'_');
+    }
+  }
+}
+
 UString GetCorrectFileName(const UString &path)
 {
   UString result = path;
-  result.Trim();
-  result.Replace(L"..\\", L"");
-  result.Replace(L"../", L"");
-  if (result.Length() > 1)
   {
-    if (result[1] == L':')
-    {
-      result.Delete(1);
-      // result.Insert(first + 1, L'_');
-    }
+    UString test = path;
+    test.Trim();
+    if (test == L"..")
+      result.Replace(L"..", L"");
   }
+  ReplaceDisk(result);
   return result;
 }
 
@@ -29,7 +41,6 @@ UString GetCorrectPath(const UString &path)
       break;
   while(result.Length() > first)
   {
-
     if (result[first] == L'\\' || result[first] == L'/')
     {
       result.Delete(first);
@@ -40,15 +51,6 @@ UString GetCorrectPath(const UString &path)
   result.Replace(L"..\\", L"");
   result.Replace(L"../", L"");
 
-  if (result.Length() > 1)
-  {
-    if (result[first + 1] == L':')
-    {
-      result.Delete(first + 1);
-      // result.Insert(first + 1, L'_');
-    }
-  }
+  ReplaceDisk(result);
   return result;
-
 }
-

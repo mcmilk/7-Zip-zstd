@@ -1,7 +1,5 @@
 // Windows/Shell.h
 
-#pragma once
-
 #ifndef __WINDOWS_SHELL_H
 #define __WINDOWS_SHELL_H
 

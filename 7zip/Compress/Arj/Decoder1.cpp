@@ -10,20 +10,17 @@ namespace NCompress{
 namespace NArj {
 namespace NDecoder1 {
 
-static const UINT32 kHistorySize = 26624;
-static const UINT32 kMatchMaxLen = 256;
-static const UINT32 kMatchMinLen = 3;
+static const UInt32 kHistorySize = 26624;
+static const UInt32 kMatchMaxLen = 256;
+static const UInt32 kMatchMinLen = 3;
 
-static const UINT32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
+static const UInt32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
 
-CCoder::CCoder()
-{}
-
-void CCoder::make_table(int nchar, BYTE *bitlen, int tablebits, 
-    UINT32 *table, int tablesize)
+void CCoder::MakeTable(int nchar, Byte *bitlen, int tablebits, 
+    UInt32 *table, int tablesize)
 {
-  UINT32 count[17], weight[17], start[18], *p;
-  UINT32 i, k, len, ch, jutbits, avail, nextcode, mask;
+  UInt32 count[17], weight[17], start[18], *p;
+  UInt32 i, k, len, ch, jutbits, avail, nextcode, mask;
   
   for (i = 1; i <= 16; i++)
     count[i] = 0;
@@ -33,7 +30,7 @@ void CCoder::make_table(int nchar, BYTE *bitlen, int tablebits,
   start[1] = 0;
   for (i = 1; i <= 16; i++)
     start[i + 1] = start[i] + (count[i] << (16 - i));
-  if (start[17] != (UINT32) (1 << 16))
+  if (start[17] != (UInt32) (1 << 16))
     throw "Data error";
   
   jutbits = 16 - tablebits;
@@ -49,7 +46,7 @@ void CCoder::make_table(int nchar, BYTE *bitlen, int tablebits,
   }
   
   i = start[tablebits + 1] >> jutbits;
-  if (i != (UINT32) (1 << 16))
+  if (i != (UInt32) (1 << 16))
   {
     k = 1 << tablebits;
     while (i != k)
@@ -66,7 +63,7 @@ void CCoder::make_table(int nchar, BYTE *bitlen, int tablebits,
     nextcode = k + weight[len];
     if ((int)len <= tablebits)
     {
-      if (nextcode > (UINT32)tablesize)
+      if (nextcode > (UInt32)tablesize)
         throw "Data error";
       for (i = start[len]; i < nextcode; i++)
         table[i] = ch;
@@ -97,10 +94,10 @@ void CCoder::make_table(int nchar, BYTE *bitlen, int tablebits,
 
 void CCoder::read_pt_len(int nn, int nbit, int i_special)
 {
-  UINT32 n = m_InBitStream.ReadBits(nbit);
+  UInt32 n = m_InBitStream.ReadBits(nbit);
   if (n == 0)
   {
-    UINT32 c = m_InBitStream.ReadBits(nbit);
+    UInt32 c = m_InBitStream.ReadBits(nbit);
     int i;
     for (i = 0; i < nn; i++)
       pt_len[i] = 0;
@@ -109,14 +106,14 @@ void CCoder::read_pt_len(int nn, int nbit, int i_special)
   }
   else
   {
-    UINT32 i = 0;
+    UInt32 i = 0;
     while (i < n)
     {
-      UINT32 bitBuf = m_InBitStream.GetValue(16);
+      UInt32 bitBuf = m_InBitStream.GetValue(16);
       int c = bitBuf >> 13;
       if (c == 7)
       {
-        UINT32 mask = 1 << (12);
+        UInt32 mask = 1 << (12);
         while (mask & bitBuf)
         {
           mask >>= 1;
@@ -124,24 +121,24 @@ void CCoder::read_pt_len(int nn, int nbit, int i_special)
         }
       }
       m_InBitStream.MovePos((c < 7) ? 3 : (int)(c - 3));
-      pt_len[i++] = (BYTE)c;
-      if (i == (UINT32)i_special)
+      pt_len[i++] = (Byte)c;
+      if (i == (UInt32)i_special)
       {
         c = m_InBitStream.ReadBits(2);
         while (--c >= 0)
           pt_len[i++] = 0;
       }
     }
-    while (i < (UINT32)nn)
+    while (i < (UInt32)nn)
       pt_len[i++] = 0;
-    make_table(nn, pt_len, 8, pt_table, PTABLESIZE);
+    MakeTable(nn, pt_len, 8, pt_table, PTABLESIZE);
   }
 }
 
 void CCoder::read_c_len()
 {
   int i, c, n;
-  UINT32 mask;
+  UInt32 mask;
   
   n = m_InBitStream.ReadBits(CBIT);
   if (n == 0)
@@ -157,7 +154,7 @@ void CCoder::read_c_len()
     i = 0;
     while (i < n)
     {
-      UINT32 bitBuf = m_InBitStream.GetValue(16);
+      UInt32 bitBuf = m_InBitStream.GetValue(16);
       c = pt_table[bitBuf >> (8)];
       if (c >= NT)
       {
@@ -184,18 +181,18 @@ void CCoder::read_c_len()
           c_len[i++] = 0;
       }
       else
-        c_len[i++] = (BYTE)(c - 2);
+        c_len[i++] = (Byte)(c - 2);
     }
     while (i < NC)
       c_len[i++] = 0;
-    make_table(NC, c_len, 12, c_table, CTABLESIZE);
+    MakeTable(NC, c_len, 12, c_table, CTABLESIZE);
   }
 }
 
-UINT32 CCoder::decode_c()
+UInt32 CCoder::decode_c()
 {
-  UINT32 j, mask;
-  UINT32 bitbuf = m_InBitStream.GetValue(16);
+  UInt32 j, mask;
+  UInt32 bitbuf = m_InBitStream.GetValue(16);
   j = c_table[bitbuf >> 4];
   if (j >= NC)
   {
@@ -213,10 +210,10 @@ UINT32 CCoder::decode_c()
   return j;
 }
 
-UINT32 CCoder::decode_p()
+UInt32 CCoder::decode_p()
 {
-  UINT32 j, mask;
-  UINT32 bitbuf = m_InBitStream.GetValue(16);
+  UInt32 j, mask;
+  UInt32 bitbuf = m_InBitStream.GetValue(16);
   j = pt_table[bitbuf >> (8)];
   if (j >= NP)
   {
@@ -241,9 +238,17 @@ UINT32 CCoder::decode_p()
 
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
+  if (outSize == NULL)
+    return E_INVALIDARG;
+
+  if (!m_OutWindowStream.Create(kHistorySize))
+    return E_OUTOFMEMORY;
+  if (!m_InBitStream.Create(1 << 20))
+    return E_OUTOFMEMORY;
+
   int size1 = sizeof(c_table) / sizeof(c_table[0]);
   for (int i = 0; i < size1; i++)
   {
@@ -253,20 +258,16 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     c_table[i] = 0;
   }
 
-  if (outSize == NULL)
-    return E_INVALIDARG;
 
-  if (!m_OutWindowStream.IsCreated())
-  {
-    try { m_OutWindowStream.Create(kHistorySize); }
-    catch(...) { return E_OUTOFMEMORY; }
-  }
-  UINT64 pos = 0;
-  m_OutWindowStream.Init(outStream, false);
-  m_InBitStream.Init(inStream);
+  UInt64 pos = 0;
+  m_OutWindowStream.SetStream(outStream);
+  m_OutWindowStream.Init(false);
+  m_InBitStream.SetStream(inStream);
+  m_InBitStream.Init();
+  
   CCoderReleaser coderReleaser(this);
 
-  UINT32 blockSize = 0;
+  UInt32 blockSize = 0;
 
   while(pos < *outSize)
   {
@@ -274,7 +275,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     {
       if (progress != NULL)
       {
-        UINT64 packSize = m_InBitStream.GetProcessedSize();
+        UInt64 packSize = m_InBitStream.GetProcessedSize();
         RINOK(progress->SetRatioInfo(&packSize, &pos));
       }
       blockSize = m_InBitStream.ReadBits(16);
@@ -284,28 +285,29 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     }
     blockSize--;
 
-    UINT32 number = decode_c();
+    UInt32 number = decode_c();
     if (number < 256)
     {
-      m_OutWindowStream.PutOneByte(number);
+      m_OutWindowStream.PutByte(number);
       pos++;
       continue;
     }
     else
     {
-      UINT32 len = number - 256 + kMatchMinLen;
-      UINT32 distance = decode_p();
+      UInt32 len = number - 256 + kMatchMinLen;
+      UInt32 distance = decode_p();
       if (distance >= pos)
         throw "data error";
-      m_OutWindowStream.CopyBackBlock(distance, len);
+      m_OutWindowStream.CopyBlock(distance, len);
         pos += len;
     }
   }
+  coderReleaser.NeedFlush = false;
   return m_OutWindowStream.Flush();
 }
 
 STDMETHODIMP CCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress);}

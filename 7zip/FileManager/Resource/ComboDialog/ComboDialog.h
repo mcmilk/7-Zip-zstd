@@ -1,7 +1,5 @@
 // ComboDialog.h
 
-#pragma once
-
 #ifndef __COMBODIALOG_H
 #define __COMBODIALOG_H
 

@@ -1,7 +1,5 @@
 // Zip/Handler.h
 
-#pragma once
-
 #ifndef __ZIP_HANDLER_H
 #define __ZIP_HANDLER_H
 
@@ -29,31 +27,31 @@ public:
       )
 
   STDMETHOD(Open)(IInStream *aStream, 
-      const UINT64 *aMaxCheckStartPosition,
+      const UInt64 *aMaxCheckStartPosition,
       IArchiveOpenCallback *anOpenArchiveCallback);  
   STDMETHOD(Close)();  
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID,  PROPVARIANT *value);
-  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
-      INT32 testMode, IArchiveExtractCallback *anExtractCallback);
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID,  PROPVARIANT *value);
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
+      Int32 testMode, IArchiveExtractCallback *anExtractCallback);
 
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
   // IOutArchive
-  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback);
-  STDMETHOD(GetFileTimeType)(UINT32 *timeType);  
+  STDMETHOD(GetFileTimeType)(UInt32 *timeType);  
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
 
   CHandler();
 private:

@@ -1,7 +1,5 @@
 // Windows/Memory.h
 
-#pragma once
-
 #ifndef __WINDOWS_MEMORY_H
 #define __WINDOWS_MEMORY_H
 

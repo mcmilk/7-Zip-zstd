@@ -1,7 +1,5 @@
 // 7zDecode.h
 
-#pragma once
-
 #ifndef __7Z_DECODE_H
 #define __7Z_DECODE_H
 
@@ -9,6 +7,10 @@
 #include "../../IPassword.h"
 
 #include "../Common/CoderMixer2.h"
+#include "../Common/CoderMixer2MT.h"
+#ifdef _ST_MODE
+#include "../Common/CoderMixer2ST.h"
+#endif
 #ifndef EXCLUDE_COM
 #include "../Common/CoderLoader.h"
 #endif
@@ -21,6 +23,11 @@ namespace N7z {
 struct CBindInfoEx: public NCoderMixer2::CBindInfo
 {
   CRecordVector<CMethodID> CoderMethodIDs;
+  void Clear()
+  {
+    CBindInfo::Clear();
+    CoderMethodIDs.Clear();
+  }
 };
 
 class CDecoder
@@ -31,15 +38,22 @@ class CDecoder
 
   bool _bindInfoExPrevIsDefinded;
   CBindInfoEx _bindInfoExPrev;
-  NCoderMixer2::CCoderMixer2 *_mixerCoderSpec;
+  
+  bool _multiThread;
+  #ifdef _ST_MODE
+  NCoderMixer2::CCoderMixer2ST *_mixerCoderSTSpec;
+  #endif
+  NCoderMixer2::CCoderMixer2MT *_mixerCoderMTSpec;
+  NCoderMixer2::CCoderMixer2 *_mixerCoderCommon;
+  
   CMyComPtr<ICompressCoder2> _mixerCoder;
   CObjectVector<CMyComPtr<IUnknown> > _decoders;
   // CObjectVector<CMyComPtr<ICompressCoder2> > _decoders2;
 public:
-  CDecoder();
+  CDecoder(bool multiThread);
   HRESULT Decode(IInStream *inStream,
-      UINT64 startPos,
-      const UINT64 *packSizes,
+      UInt64 startPos,
+      const UInt64 *packSizes,
       const CFolder &folder, 
       ISequentialOutStream *outStream,
       ICompressProgressInfo *compressProgress

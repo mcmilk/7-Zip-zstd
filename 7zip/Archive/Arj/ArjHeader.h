@@ -1,7 +1,5 @@
 // Archive/Arj/Header.h
 
-#pragma once
-
 #ifndef __ARCHIVE_ARJ_HEADER_H
 #define __ARCHIVE_ARJ_HEADER_H
 
@@ -14,33 +12,32 @@ const int kMaxBlockSize = 2600;
 
 namespace NSignature
 {
-  const BYTE kSig0 = 0x60;
-  const BYTE kSig1 = 0xEA;
+  const Byte kSig0 = 0x60;
+  const Byte kSig1 = 0xEA;
 }
 
-#pragma pack( push, Pragma_Arj_Headers)
-#pragma pack( push, 1)
-
+/*
 struct CArchiveHeader
 {
-  // UINT16 BasicHeaderSize;
-  BYTE FirstHeaderSize;
-  BYTE Version;
-  BYTE ExtractVersion;
-  BYTE HostOS;
-  BYTE Flags;
-  BYTE SecuryVersion;
-  BYTE FileType;
-  BYTE Reserved;
-  UINT32 CreatedTime;
-  UINT32 ModifiedTime;
-  UINT32 ArchiveSize;
-  UINT32 SecurityEnvelopeFilePosition;
-  UINT16 FilespecPositionInFilename;
-  UINT16 LengthOfSecurityEnvelopeSata;
-  BYTE EncryptionVersion;
-  BYTE LastChapter;
+  // UInt16 BasicHeaderSize;
+  Byte FirstHeaderSize;
+  Byte Version;
+  Byte ExtractVersion;
+  Byte HostOS;
+  Byte Flags;
+  Byte SecuryVersion;
+  Byte FileType;
+  Byte Reserved;
+  UInt32 CreatedTime;
+  UInt32 ModifiedTime;
+  UInt32 ArchiveSize;
+  UInt32 SecurityEnvelopeFilePosition;
+  UInt16 FilespecPositionInFilename;
+  UInt16 LengthOfSecurityEnvelopeSata;
+  Byte EncryptionVersion;
+  Byte LastChapter;
 };
+*/
 
 namespace NFileHeader
 {
@@ -70,32 +67,35 @@ namespace NFileHeader
   }
   namespace NFlags
   {
-    const BYTE kGarbled = 1;
-    const BYTE kVolume = 4;
-    const BYTE kExtFile = 8;
-    const BYTE kPathSym = 0x10;
-    const BYTE kBackup= 0x20;
+    const Byte kGarbled = 1;
+    const Byte kVolume = 4;
+    const Byte kExtFile = 8;
+    const Byte kPathSym = 0x10;
+    const Byte kBackup= 0x20;
   }
 
+  /*
   struct CHeader
   {
-    BYTE FirstHeaderSize;
-    BYTE Version;
-    BYTE ExtractVersion;
-    BYTE HostOS;
-    BYTE Flags;
-    BYTE Method;
-    BYTE FileType;
-    BYTE Reserved;
-    UINT32 ModifiedTime;
-    UINT32 PackSize;
-    UINT32 Size;
-    UINT32 FileCRC;
-    UINT16 FilespecPositionInFilename;
-    UINT16 FileAccessMode;
-    BYTE FirstChapter;
-    BYTE LastChapter;
+    Byte FirstHeaderSize;
+    Byte Version;
+    Byte ExtractVersion;
+    Byte HostOS;
+    Byte Flags;
+    Byte Method;
+    Byte FileType;
+    Byte Reserved;
+    UInt32 ModifiedTime;
+    UInt32 PackSize;
+    UInt32 Size;
+    UInt32 FileCRC;
+    UInt16 FilespecPositionInFilename;
+    UInt16 FileAccessMode;
+    Byte FirstChapter;
+    Byte LastChapter;
   };
+  */
+
   namespace NHostOS
   {
     enum EEnum
@@ -115,9 +115,6 @@ namespace NFileHeader
     };
   }
 }
-
-#pragma pack(pop)
-#pragma pack(pop, Pragma_Arj_Headers)
 
 }}
 

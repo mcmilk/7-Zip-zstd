@@ -22,7 +22,7 @@ Ci86TranslationOutStream::~Ci86TranslationOutStream()
 }
 
 void Ci86TranslationOutStream::Init(ISequentialOutStream *aStream, 
-    bool aTranslationMode, UINT32 aTranslationSize)
+    bool aTranslationMode, UInt32 aTranslationSize)
 {
   m_Stream = aStream;
   m_TranslationMode = aTranslationMode;
@@ -36,7 +36,7 @@ void Ci86TranslationOutStream::ReleaseStream()
   m_Stream.Release();
 }
 
-inline INT32 Ci86TranslationOutStream::ConvertAbsoluteToOffset(INT32 aPos, INT32 anAbsoluteValue)
+inline Int32 Ci86TranslationOutStream::ConvertAbsoluteToOffset(Int32 aPos, Int32 anAbsoluteValue)
 {
 }
 
@@ -46,19 +46,19 @@ void Ci86TranslationOutStream::MakeTranslation()
 {
   if (m_Pos <= kResidue)
     return;
-  UINT32 aNumBytes = m_Pos - kResidue;
-  for (UINT32 i = 0; i < aNumBytes;)
+  UInt32 aNumBytes = m_Pos - kResidue;
+  for (UInt32 i = 0; i < aNumBytes;)
   {
     if (m_Buffer[i] == 0xE8)
     {
       i++;
-      INT32 anAbsoluteValue = 0;
+      Int32 anAbsoluteValue = 0;
       for(int j = 0; j < 4; j++)
-        anAbsoluteValue += UINT32(m_Buffer[i + j]) << (j * 8);
+        anAbsoluteValue += UInt32(m_Buffer[i + j]) << (j * 8);
 
-      INT32 aPos = m_ProcessedSize + i - 1;
-      UINT32 anOffset;
-      if (anAbsoluteValue < -aPos || anAbsoluteValue >= INT32(m_TranslationSize))
+      Int32 aPos = m_ProcessedSize + i - 1;
+      UInt32 anOffset;
+      if (anAbsoluteValue < -aPos || anAbsoluteValue >= Int32(m_TranslationSize))
       {
       }
       else
@@ -68,7 +68,7 @@ void Ci86TranslationOutStream::MakeTranslation()
             anAbsoluteValue + m_TranslationSize;
         for(j = 0; j < 4; j++)
         {
-          m_Buffer[i + j] = BYTE(anOffset & 0xFF);
+          m_Buffer[i + j] = Byte(anOffset & 0xFF);
           anOffset >>= 8;
         }
       }
@@ -79,17 +79,17 @@ void Ci86TranslationOutStream::MakeTranslation()
   }
 }
 
-STDMETHODIMP Ci86TranslationOutStream::Write(const void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP Ci86TranslationOutStream::Write(const void *aData, UInt32 aSize, UInt32 *aProcessedSize)
 {
   if (!m_TranslationMode)
     return m_Stream->Write(aData, aSize, aProcessedSize);
 
-  UINT32 aProcessedSizeReal = 0;
+  UInt32 aProcessedSizeReal = 0;
 
   while (aProcessedSizeReal < aSize)
   {
-    UINT32 aWriteSize = MyMin(aSize - aProcessedSizeReal, kUncompressedBlockSize - m_Pos);
-    memmove(m_Buffer + m_Pos, (const BYTE *)aData + aProcessedSizeReal, aWriteSize);
+    UInt32 aWriteSize = MyMin(aSize - aProcessedSizeReal, kUncompressedBlockSize - m_Pos);
+    memmove(m_Buffer + m_Pos, (const Byte *)aData + aProcessedSizeReal, aWriteSize);
     m_Pos += aWriteSize;
     aProcessedSizeReal += aWriteSize;
     if (m_Pos == kUncompressedBlockSize)
@@ -102,7 +102,7 @@ STDMETHODIMP Ci86TranslationOutStream::Write(const void *aData, UINT32 aSize, UI
   return S_OK;
 }
 
-STDMETHODIMP Ci86TranslationOutStream::WritePart(const void *aData, UINT32 aSize, UINT32 *aProcessedSize)
+STDMETHODIMP Ci86TranslationOutStream::WritePart(const void *aData, UInt32 aSize, UInt32 *aProcessedSize)
 {
   return Write(aData, aSize, aProcessedSize);
 }

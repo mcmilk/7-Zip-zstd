@@ -1,7 +1,5 @@
 // PasswordDialog.h
 
-#pragma once
-
 #ifndef __PASSWORDDIALOG_H
 #define __PASSWORDDIALOG_H
 
@@ -16,7 +14,7 @@ class CPasswordDialog: public NWindows::NControl::CModalDialog
   virtual bool OnInit();
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
-  CSysString _password;
+  UString Password;
   INT_PTR Create(HWND parentWindow = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PASSWORD), parentWindow); }
 };

@@ -5,11 +5,12 @@
 #include "UpdateCallback100.h"
 
 #include "Common/Defs.h"
-#include "Far/FarUtils.h"
+#include "Common/StringConvert.h"
+#include "FarUtils.h"
 
 using namespace NFar;
 
-STDMETHODIMP CUpdateCallBack100Imp::SetTotal(UINT64 aSize)
+STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 aSize)
 {
   if (m_ProgressBox != 0)
   {
@@ -19,7 +20,7 @@ STDMETHODIMP CUpdateCallBack100Imp::SetTotal(UINT64 aSize)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::SetCompleted(const UINT64 *aCompleteValue)
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *aCompleteValue)
 {
   if(WasEscPressed())
     return E_ABORT;
@@ -28,17 +29,26 @@ STDMETHODIMP CUpdateCallBack100Imp::SetCompleted(const UINT64 *aCompleteValue)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::CompressOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *aName)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::DeleteOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *aName)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallBack100Imp::OperationResult(INT32 aOperationResult)
+STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 aOperationResult)
 {
   return S_OK;
 }
+
+STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
+{
+  CSysString s = UnicodeStringToMultiByte(message, CP_OEMCP);
+  if (g_StartupInfo.ShowMessage(s) == -1)
+    return E_ABORT;
+  return S_OK;
+}
+

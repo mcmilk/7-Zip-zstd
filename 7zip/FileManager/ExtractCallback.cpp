@@ -8,7 +8,9 @@
 #include "Windows/FileDir.h"
 
 #include "Resource/OverwriteDialog/OverwriteDialog.h"
+#ifndef _NO_CRYPTO
 #include "Resource/PasswordDialog/PasswordDialog.h"
+#endif
 #include "Resource/MessagesDialog/MessagesDialog.h"
 #include "../UI/Resource/Extract/resource.h"
 
@@ -25,37 +27,32 @@ using namespace NFind;
 
 CExtractCallbackImp::~CExtractCallbackImp()
 {
-  if (!_messages.IsEmpty())
+  if (!Messages.IsEmpty())
   {
     CMessagesDialog messagesDialog;
-    messagesDialog._messages = &_messages;
-    messagesDialog.Create(_parentWindow);
+    messagesDialog.Messages = &Messages;
+    messagesDialog.Create(ParentWindow);
   }
 }
 
-void CExtractCallbackImp::Init(
-    NExtractionMode::NOverwrite::EEnum overwriteMode,
-    bool passwordIsDefined, 
-    const UString &password)
+void CExtractCallbackImp::Init()
 {
-  _overwriteMode = overwriteMode;
-  _passwordIsDefined = passwordIsDefined;
-  _password = password;
-  _messages.Clear();
+  Messages.Clear();
+  NumArchiveErrors = 0;
 }
 
-void CExtractCallbackImp::AddErrorMessage(LPCTSTR message)
+void CExtractCallbackImp::AddErrorMessage(LPCWSTR message)
 {
-  _messages.Add(message);
+  Messages.Add(GetSystemString(message));
 }
 
-STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 total)
+STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 total)
 {
   ProgressDialog.ProgressSynch.SetProgress(total, 0);
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
+STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
   while(true)
   {
@@ -71,9 +68,9 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
 }
 
 STDMETHODIMP CExtractCallbackImp::AskOverwrite(
-    const wchar_t *existName, const FILETIME *existTime, const UINT64 *existSize,
-    const wchar_t *newName, const FILETIME *newTime, const UINT64 *newSize,
-    INT32 *answer)
+    const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
+    const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
+    Int32 *answer)
 {
   COverwriteDialog dialog;
 
@@ -98,7 +95,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   NOverwriteDialog::NResult::EEnum writeAnswer = 
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   */
-  int writeAnswer = dialog.Create(NULL); // _parentWindow doesn't work with 7z
+  int writeAnswer = dialog.Create(NULL); // ParentWindow doesn't work with 7z
   
   switch(writeAnswer)
   {
@@ -128,7 +125,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 }
 
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, INT32 askExtractMode)
+STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 askExtractMode, const UInt64 *position)
 {
   _currentFilePath = name;
   return S_OK;
@@ -136,17 +133,17 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, INT32 as
 
 STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
 {
-  AddErrorMessage(GetSystemString(message));
+  AddErrorMessage(message);
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallbackImp::ShowMessage(const wchar_t *message)
 {
-  AddErrorMessage(GetSystemString(message));
+  AddErrorMessage(message);
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 operationResult)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult)
 {
   switch(operationResult)
   {
@@ -155,7 +152,7 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 operationResult)
     default:
     {
       UINT messageID;
-      UINT32 langID;
+      UInt32 langID;
       switch(operationResult)
       {
         case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
@@ -173,30 +170,78 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 operationResult)
         default:
           return E_FAIL;
       }
+      if (_needWriteArchivePath)
+      {
+        AddErrorMessage(_currentArchivePath);
+        _needWriteArchivePath = false;
+      }
       AddErrorMessage(
-        GetSystemString(MyFormatNew(messageID, 
+        MyFormatNew(messageID, 
           #ifdef LANG 
           langID, 
           #endif 
-          _currentFilePath)));
+          _currentFilePath));
     }
   }
   return S_OK;
 }
 
+////////////////////////////////////////
+// IExtractCallbackUI
+
+HRESULT CExtractCallbackImp::BeforeOpen(const wchar_t *name)
+{
+  _currentArchivePath = name;
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::OpenResult(const wchar_t *name, HRESULT result)
+{
+  if (result != S_OK)
+  {
+    MessageError(name + (UString)L" is not supported archive");
+    NumArchiveErrors++;
+  }
+  _currentArchivePath = name;
+  _needWriteArchivePath = true;
+  return S_OK;
+}
+  
+HRESULT CExtractCallbackImp::ThereAreNoFiles()
+{
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
+{
+  if (result == S_OK)
+    return result;
+  NumArchiveErrors++;
+  if (result == E_ABORT)
+    return result;
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::SetPassword(const UString &password)
+{
+  PasswordIsDefined = true;
+  Password = password;
+  return S_OK;
+}
+
 STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
-  if (!_passwordIsDefined)
+  if (!PasswordIsDefined)
   {
     CPasswordDialog dialog;
    
-    if (dialog.Create(_parentWindow) == IDCANCEL)
+    if (dialog.Create(ParentWindow) == IDCANCEL)
       return E_ABORT;
 
-    _password = GetUnicodeString((LPCTSTR)dialog._password);
-    _passwordIsDefined = true;
+    Password = dialog.Password;
+    PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = _password;
+  CMyComBSTR tempName = Password;
   *password = tempName.Detach();
 
   return S_OK;
@@ -205,11 +250,11 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
 
 // IExtractCallBack3
 STDMETHODIMP CExtractCallbackImp::AskWrite(
-    const wchar_t *srcPath, INT32 srcIsFolder, 
-    const FILETIME *srcTime, const UINT64 *srcSize,
+    const wchar_t *srcPath, Int32 srcIsFolder, 
+    const FILETIME *srcTime, const UInt64 *srcSize,
     const wchar_t *destPath, 
     BSTR *destPathResult, 
-    INT32 *writeAnswer)
+    Int32 *writeAnswer)
 {
   UString destPathResultTemp = destPath;
   /*
@@ -249,13 +294,13 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
       return E_FAIL;
     }
 
-    switch(_overwriteMode)
+    switch(OverwriteMode)
     {
-      case NExtractionMode::NOverwrite::kSkipExisting:
+      case NExtract::NOverwriteMode::kSkipExisting:
         return S_OK;
-      case NExtractionMode::NOverwrite::kAskBefore:
+      case NExtract::NOverwriteMode::kAskBefore:
       {
-        INT32 overwiteResult;
+        Int32 overwiteResult;
         RINOK(AskOverwrite(
             destPathSpec, 
             &destFileInfo.LastWriteTime, &destFileInfo.Size,
@@ -269,22 +314,22 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
           case NOverwriteAnswer::kNo:
             return S_OK;
           case NOverwriteAnswer::kNoToAll:
-            _overwriteMode = NExtractionMode::NOverwrite::kSkipExisting;
+            OverwriteMode = NExtract::NOverwriteMode::kSkipExisting;
             return S_OK;
           case NOverwriteAnswer::kYesToAll:
-            _overwriteMode = NExtractionMode::NOverwrite::kWithoutPrompt;
+            OverwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
             break;
           case NOverwriteAnswer::kYes:
             break;
           case NOverwriteAnswer::kAutoRename:
-            _overwriteMode = NExtractionMode::NOverwrite::kAutoRename;
+            OverwriteMode = NExtract::NOverwriteMode::kAutoRename;
             break;
           default:
             throw 20413;
         }
       }
     }
-    if (_overwriteMode == NExtractionMode::NOverwrite::kAutoRename)
+    if (OverwriteMode == NExtract::NOverwriteMode::kAutoRename)
     {
       if (!AutoRenamePath(destPathSys))
       {

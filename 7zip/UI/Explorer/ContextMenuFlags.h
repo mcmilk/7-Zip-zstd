@@ -1,7 +1,5 @@
 // ContextMenuFlags.h
 
-#pragma once
-
 #ifndef __SEVENZIP_CONTEXTMENUFLAGS_H
 #define __SEVENZIP_CONTEXTMENUFLAGS_H
 

@@ -8,7 +8,6 @@ namespace NArchive {
 namespace NDeb {
 namespace NHeader {
 
-  const char *kSignature  = "!<arch>\n";
+const char *kSignature  = "!<arch>\n";
 
 }}}
-

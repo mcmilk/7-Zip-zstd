@@ -1,7 +1,5 @@
 // FilePlugins.h
 
-#pragma once 
-
 #ifndef __FILEPLUGINS_H
 #define __FILEPLUGINS_H
 

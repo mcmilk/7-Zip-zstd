@@ -122,6 +122,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -317,6 +325,10 @@ SOURCE=..\..\Compress\LZ\LZOutWindow.h
 # End Source File
 # End Group
 # End Group
+# Begin Source File
+
+SOURCE=.\bitmap1.bmp
+# End Source File
 # Begin Source File
 
 SOURCE=.\cab.ico

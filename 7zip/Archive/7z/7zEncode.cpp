@@ -11,6 +11,7 @@
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/InOutTempBuffer.h"
 #include "../../Common/StreamObjects.h"
+#include "../Common/FilterCoder.h"
 
 #ifdef COMPRESS_COPY
 static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
@@ -98,16 +99,12 @@ static void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &bindI
     folder.Coders.Add(coderInfo);
   }
   for (i = 0; i < bindInfo.InStreams.Size(); i++)
-  {
-    CPackStreamInfo packStreamInfo;
-    packStreamInfo.Index = bindInfo.InStreams[i];
-    folder.PackStreams.Add(packStreamInfo);
-  }
+    folder.PackStreams.Add(bindInfo.InStreams[i]);
 }
 
 HRESULT CEncoder::CreateMixerCoder()
 {
-  _mixerCoderSpec = new NCoderMixer2::CCoderMixer2;
+  _mixerCoderSpec = new NCoderMixer2::CCoderMixer2MT;
   _mixerCoder = _mixerCoderSpec;
   _mixerCoderSpec->SetBindInfo(_bindInfo);
   for (int i = 0; i < _options.Methods.Size(); i++)
@@ -116,6 +113,7 @@ HRESULT CEncoder::CreateMixerCoder()
     _codersInfo.Add(CCoderInfo());
     CCoderInfo &encodingInfo = _codersInfo.Back();
     CMyComPtr<ICompressCoder> encoder;
+    CMyComPtr<ICompressFilter> filter;
     CMyComPtr<ICompressCoder2> encoder2;
     
     if (methodFull.IsSimpleCoder())
@@ -132,7 +130,7 @@ HRESULT CEncoder::CreateMixerCoder()
       
       #ifdef COMPRESS_BCJ_X86
       if (methodFull.MethodID == k_BCJ_X86)
-        encoder = new CBCJ_x86_Encoder;
+        filter = new CBCJ_x86_Encoder;
       #endif
       
       #ifdef COMPRESS_COPY
@@ -152,13 +150,20 @@ HRESULT CEncoder::CreateMixerCoder()
       
       #ifdef CRYPTO_7ZAES
       if (methodFull.MethodID == k_AES)
-        encoder = new NCrypto::NSevenZ::CEncoder;
+        filter = new NCrypto::NSevenZ::CEncoder;
       #endif
+
+      if (filter)
+      {
+        CFilterCoder *coderSpec = new CFilterCoder;
+        encoder = coderSpec;
+        coderSpec->Filter = filter;
+      }
 
       #ifndef EXCLUDE_COM
       if (encoder == 0)
       {
-        RINOK(_libraries.CreateCoder(methodFull.FilePath, 
+        RINOK(_libraries.CreateCoderSpec(methodFull.FilePath, 
               methodFull.EncoderClassID, &encoder));
       }
       #endif
@@ -191,7 +196,7 @@ HRESULT CEncoder::CreateMixerCoder()
     {
       std::vector<NWindows::NCOM::CPropVariant> properties;
       std::vector<PROPID> propIDs;
-      INT32 numProperties = methodFull.CoderProperties.Size();
+      Int32 numProperties = methodFull.CoderProperties.Size();
       for (int i = 0; i < numProperties; i++)
       {
         const CProperty &property = methodFull.CoderProperties[i];
@@ -234,7 +239,7 @@ HRESULT CEncoder::CreateMixerCoder()
       outStreamSpec->Init();
       writeCoderProperties->WriteCoderProperties(outStream);
       
-      UINT32 size = outStreamSpec->GetSize();
+      UInt32 size = outStreamSpec->GetSize();
       
       // encodingInfo.Properties.SetCapacity(size);
       if (encodingInfo.AltCoders.Size() == 0)
@@ -257,9 +262,17 @@ HRESULT CEncoder::CreateMixerCoder()
 
     if (cryptoSetPassword)
     {
+      CByteBuffer buffer;
+      const UInt32 sizeInBytes = _options.Password.Length() * 2;
+      buffer.SetCapacity(sizeInBytes);
+      for (int i = 0; i < _options.Password.Length(); i++)
+      {
+        wchar_t c = _options.Password[i];
+        ((Byte *)buffer)[i * 2] = (Byte)c;
+        ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+      }
       RINOK(cryptoSetPassword->CryptoSetPassword(
-        (const BYTE *)(const wchar_t *)_options.Password, 
-        _options.Password.Length() * sizeof(wchar_t)));
+        (const Byte *)buffer, sizeInBytes));
     }
 
     // public ICompressWriteCoderProperties,
@@ -276,10 +289,10 @@ HRESULT CEncoder::CreateMixerCoder()
 }
 
 HRESULT CEncoder::Encode(ISequentialInStream *inStream,
-    const UINT64 *inStreamSize,
+    const UInt64 *inStreamSize,
     CFolder &folderItem,
     ISequentialOutStream *outStream,
-    CRecordVector<UINT64> &packSizes,
+    CRecordVector<UInt64> &packSizes,
     ICompressProgressInfo *compressProgress)
 {
   if (_mixerCoderSpec == NULL)
@@ -315,12 +328,12 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
 
   if (_bindInfo.InStreams.IsEmpty())
     return E_FAIL;
-  UINT32 mainCoderIndex, mainStreamIndex;
+  UInt32 mainCoderIndex, mainStreamIndex;
   _bindInfo.FindInStream(_bindInfo.InStreams[0], mainCoderIndex, mainStreamIndex);
   _mixerCoderSpec->SetProgressCoderIndex(mainCoderIndex);
   if (inStreamSize != NULL)
   {
-    CRecordVector<const UINT64 *> sizePointers;
+    CRecordVector<const UInt64 *> sizePointers;
     for (int i = 0; i < _bindInfo.Coders[mainCoderIndex].NumInStreams; i++)
       if (i == mainStreamIndex)
         sizePointers.Add(inStreamSize);
@@ -330,7 +343,7 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
   }
 
   
-  // UINT64 outStreamStartPos;
+  // UInt64 outStreamStartPos;
   // RINOK(stream->Seek(0, STREAM_SEEK_CUR, &outStreamStartPos));
   
   CSequentialInStreamSizeCount2 *inStreamSizeCountSpec = 
@@ -371,7 +384,7 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
   {
     int binder = _bindInfo.FindBinderForInStream(
         _bindReverseConverter->DestOutToSrcInMap[i]);
-    UINT64 streamSize;
+    UInt64 streamSize;
     if (binder < 0)
       streamSize = inStreamSizeCountSpec->GetSize();
     else
@@ -433,7 +446,7 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
   else
   {
 
-  UINT32 numInStreams = 0, numOutStreams = 0;
+  UInt32 numInStreams = 0, numOutStreams = 0;
   int i;
   for (i = 0; i < options.Methods.Size(); i++)
   {
@@ -452,7 +465,7 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
       }
       else
         _bindInfo.OutStreams.Insert(0, numOutStreams);
-      for (UINT32 j = 1; j < coderStreamsInfo.NumOutStreams; j++)
+      for (UInt32 j = 1; j < coderStreamsInfo.NumOutStreams; j++)
         _bindInfo.OutStreams.Add(numOutStreams + j);
     }
     
@@ -488,9 +501,9 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
   int inIndex = _bindInfo.InStreams[0];
   while (true)
   {
-    UINT32 coderIndex, coderStreamIndex;
+    UInt32 coderIndex, coderStreamIndex;
     _bindInfo.FindInStream(inIndex, coderIndex, coderStreamIndex);
-    UINT32 outIndex = _bindInfo.GetCoderStartOutStream(coderIndex);
+    UInt32 outIndex = _bindInfo.GetCoderOutStreamIndex(coderIndex);
     int binder = _bindInfo.FindBinderForOutStream(outIndex);
     if (binder >= 0)
     {

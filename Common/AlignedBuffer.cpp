@@ -3,14 +3,14 @@
 #include "StdAfx.h"
 
 #include "AlignedBuffer.h"
-#include "Types.h"
 
-void *CAlignedBuffer::Allocate(size_t numItems, size_t itemSize, size_t alignValue)
+void *CAlignedBuffer::Allocate(size_t size, size_t mask)
 {
   Free();
-  m_Buffer = new unsigned char[numItems * itemSize + alignValue - 1];
-  UINT_PTR p = UINT_PTR(m_Buffer) + (alignValue - 1);
-  p -= (p % alignValue);
+  m_Buffer = new unsigned char[size + mask];
+  unsigned char *p = m_Buffer;
+  while(((size_t)p & mask) != 0)
+    p++;
   return (void *)p;
 }
 

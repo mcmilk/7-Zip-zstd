@@ -1,14 +1,10 @@
 // WorkDir.h
 
-#pragma once
-
 #ifndef __WORKDIR_H
 #define __WORKDIR_H
 
-#include "../Common/ZipRegistry.h"
+#include "ZipRegistry.h"
 
-UString GetWorkDir(const NWorkDir::CInfo &workDirInfo, 
-    const UString &archiveName);
+UString GetWorkDir(const NWorkDir::CInfo &workDirInfo, const UString &path);
 
 #endif
-

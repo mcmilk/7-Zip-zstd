@@ -1,9 +1,7 @@
-// UpdateCallback.h
+// UpdateCallback100.h
 
-#pragma once
-
-#ifndef __UPDATECALLBACK100_H
-#define __UPDATECALLBACK100_H
+#ifndef __UPDATE_CALLBACK100_H
+#define __UPDATE_CALLBACK100_H
 
 #include "Common/MyCom.h"
 #include "Common/String.h"
@@ -35,13 +33,17 @@ public:
   STDMETHOD(CompressOperation)(const wchar_t *name);
   STDMETHOD(DeleteOperation)(const wchar_t *name);
   STDMETHOD(OperationResult)(INT32 operationResult);
+  STDMETHOD(UpdateErrorMessage)(const wchar_t *message);
 
   STDMETHOD(CryptoGetTextPassword2)(INT32 *passwordIsDefined, BSTR *password);
 private:
   bool _passwordIsDefined;
   UString _password;
 
+  void AddErrorMessage(LPCWSTR message);
+  CSysStringVector Messages;
 public:
+  ~CUpdateCallback100Imp();
   CProgressDialog ProgressDialog;
   HWND _parentWindow;
   void Init(HWND parentWindow, 
@@ -58,7 +60,5 @@ public:
   }
 
 };
-
-
 
 #endif

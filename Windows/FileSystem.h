@@ -1,7 +1,5 @@
 // Windows/FileSystem.h
 
-#pragma once
-
 #ifndef __WINDOWS_FILESYSTEM_H
 #define __WINDOWS_FILESYSTEM_H
 

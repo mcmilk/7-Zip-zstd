@@ -6,6 +6,7 @@
 #include "Common/MyCom.h"
 #include "../../ICoder.h"
 #include "../../IPassword.h"
+#include "../../Archive/Common/CoderLoader.h"
 
 #include "Common/Types.h"
 #include "Common/Buffer.h"
@@ -14,28 +15,34 @@ namespace NCrypto {
 namespace NRar29 {
 
 class CDecoder: 
-  public ICompressCoder,
+  public ICompressFilter,
   public ICompressSetDecoderProperties,
   public ICryptoSetPassword,
   public CMyUnknownImp
 {
-  BYTE _salt[8];
+  Byte _salt[8];
   bool _thereIsSalt;
   CByteBuffer buffer;
-  BYTE aesKey[16];
-  BYTE aesInit[16];
+  Byte aesKey[16];
+  Byte aesInit[16];
   bool _needCalculate;
+
+  CCoderLibrary _aesLib;
+  CMyComPtr<ICompressFilter> _aesFilter;
+
+  void Calculate();
+  HRESULT CreateFilter();
+
 public:
 
   MY_UNKNOWN_IMP2(
     ICryptoSetPassword,
     ICompressSetDecoderProperties)
 
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,ICompressProgressInfo *progress);
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
 
-  STDMETHOD(CryptoSetPassword)(const BYTE *aData, UINT32 aSize);
+  STDMETHOD(CryptoSetPassword)(const Byte *aData, UInt32 aSize);
 
   // ICompressSetDecoderProperties
   STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);

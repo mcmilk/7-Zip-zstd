@@ -1,7 +1,5 @@
 // Windows/Control/Dialog.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_DIALOG_H
 #define __WINDOWS_CONTROL_DIALOG_H
 

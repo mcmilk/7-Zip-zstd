@@ -4,7 +4,7 @@
 
 #include "IntToString.h"
 
-void ConvertUINT64ToString(UINT64 value, char *s)
+void ConvertUInt64ToString(UInt64 value, char *s)
 {
   char temp[32];
   int pos = 0;
@@ -19,7 +19,7 @@ void ConvertUINT64ToString(UINT64 value, char *s)
   *s = L'\0';
 }
 
-void ConvertUINT64ToString(UINT64 value, wchar_t *s)
+void ConvertUInt64ToString(UInt64 value, wchar_t *s)
 {
   wchar_t temp[32];
   int pos = 0;
@@ -34,24 +34,24 @@ void ConvertUINT64ToString(UINT64 value, wchar_t *s)
   *s = L'\0';
 }
 
-void ConvertINT64ToString(INT64 value, char *s)
+void ConvertInt64ToString(Int64 value, char *s)
 {
   if (value >= 0)
-    ConvertUINT64ToString(value, s);
+    ConvertUInt64ToString(value, s);
   else
   {
     *s++ = '-';
-    ConvertUINT64ToString(-value, s);
+    ConvertUInt64ToString(-value, s);
   }
 }
 
-void ConvertINT64ToString(INT64 value, wchar_t *s)
+void ConvertInt64ToString(Int64 value, wchar_t *s)
 {
   if (value >= 0)
-    ConvertUINT64ToString(value, s);
+    ConvertUInt64ToString(value, s);
   else
   {
     *s++ = L'-';
-    ConvertUINT64ToString(-value, s);
+    ConvertUInt64ToString(-value, s);
   }
 }

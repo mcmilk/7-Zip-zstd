@@ -1,7 +1,5 @@
 // Common/Vector.h
 
-#pragma once
-
 #ifndef __COMMON_VECTOR_H
 #define __COMMON_VECTOR_H
 
@@ -22,7 +20,7 @@ protected:
     { if (index + num > _size) num = _size - index; } 
 public:
   CBaseRecordVector(size_t itemSize):
-      _size(0), _capacity(0), _items(0), _itemSize(itemSize) {}
+      _capacity(0), _size(0), _items(0), _itemSize(itemSize) {}
 	virtual ~CBaseRecordVector();
   int Size() const { return _size; }
 	bool IsEmpty() const { return (_size == 0); }
@@ -72,7 +70,11 @@ public:
   T& Front()   { return operator[](0); }
 	const T& Back() const { return operator[](_size - 1); }
   T& Back()   { return operator[](_size - 1); }
-  static int __cdecl CompareRecordItems(const void *a1, const void *a2)
+  static int 
+  #ifdef _MSC_VER
+  __cdecl
+  #endif
+  CompareRecordItems(const void *a1, const void *a2)
     { return MyCompare(*((const T *)a1), *((const T *)a2)); }
   void Sort()
     { qsort(&Front(), Size(), _itemSize, CompareRecordItems); }
@@ -125,7 +127,7 @@ public:
   int Find(const T& item) const
   {
     for(int i = 0; i < Size(); i++)
-      if (item == (*this)[mid])
+      if (item == (*this)[i])
         return i;
       return -1;
   }
@@ -165,7 +167,11 @@ public:
     Insert(right, item);
     return right;
   }
-  static int __cdecl CompareObjectItems(const void *a1, const void *a2)
+  static int
+  #ifdef _MSC_VER
+  __cdecl
+  #endif
+  CompareObjectItems(const void *a1, const void *a2)
     { return MyCompare(*(*((const T **)a1)), *(*((const T **)a2))); }
   void Sort()
   {

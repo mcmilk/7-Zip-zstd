@@ -38,15 +38,15 @@ bool CCopyDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-bool CCopyDialog::OnButtonClicked(int aButtonID, HWND buttonHWND)
+bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(aButtonID)
+  switch(buttonID)
   {
     case IDC_COPY_SET_PATH:
       OnButtonSetPath();
       return true;
   }
-  return CModalDialog::OnButtonClicked(aButtonID, buttonHWND);
+  return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
 void CCopyDialog::OnButtonSetPath() 

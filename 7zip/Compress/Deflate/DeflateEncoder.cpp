@@ -25,22 +25,22 @@ static const int kValueBlockSize = 0x2000;
 static const int kMaxCodeBitLength = 15;
 static const int kMaxLevelBitLength = 7;
 
-static const BYTE kFlagImm     = 0;
-static const BYTE kFlagLenPos  = 4;
+static const Byte kFlagImm     = 0;
+static const Byte kFlagLenPos  = 4;
 
-static const UINT32 kMaxUncompressedBlockSize = 0xFFFF; // test it !!!
+static const UInt32 kMaxUncompressedBlockSize = 0xFFFF; // test it !!!
 
-static const UINT32 kBlockUncompressedSizeThreshold = 
+static const UInt32 kBlockUncompressedSizeThreshold = 
     kMaxUncompressedBlockSize - kMatchMaxLen32 - kNumOpts;
 
 static const int kNumGoodBacks = 0x10000; 
 
-static BYTE kNoLiteralDummy = 13;
-static BYTE kNoLenDummy = 13;
-static BYTE kNoPosDummy = 6;
+static Byte kNoLiteralDummy = 13;
+static Byte kNoLenDummy = 13;
+static Byte kNoPosDummy = 6;
 
-static BYTE g_LenSlots[kNumLenCombinations32];
-static BYTE g_FastPos[1 << 9];
+static Byte g_LenSlots[kNumLenCombinations32];
+static Byte g_FastPos[1 << 9];
 
 class CFastPosInit
 {
@@ -58,10 +58,10 @@ public:
     
     const int kFastSlots = 18;
     int c = 0;
-    for (BYTE slotFast = 0; slotFast < kFastSlots; slotFast++)
+    for (Byte slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
-      UINT32 k = (1 << kDistDirectBits[slotFast]);
-      for (UINT32 j = 0; j < k; j++, c++)
+      UInt32 k = (1 << kDistDirectBits[slotFast]);
+      for (UInt32 j = 0; j < k; j++, c++)
         g_FastPos[c] = slotFast;
     }
   }
@@ -70,9 +70,9 @@ public:
 static CFastPosInit g_FastPosInit;
 
 
-inline UINT32 GetPosSlot(UINT32 pos)
+inline UInt32 GetPosSlot(UInt32 pos)
 {
-  //  for (UINT32 i = 1; pos >= kDistStart[i]; i++);
+  //  for (UInt32 i = 1; pos >= kDistStart[i]; i++);
   //    return i - 1;
   if (pos < 0x200)
     return g_FastPos[pos];
@@ -106,15 +106,16 @@ CCoder::CCoder(bool deflate64Mode):
 HRESULT CCoder::Create()
 {
   COM_TRY_BEGIN
-  m_MatchFinder.Create(
-    _deflate64Mode ? kHistorySize64 : kHistorySize32, 
-    kNumOpts + kNumGoodBacks, m_NumFastBytes, 
-    m_MatchMaxLen - m_NumFastBytes);
+  RINOK(m_MatchFinder.Create(_deflate64Mode ? kHistorySize64 : kHistorySize32, 
+      kNumOpts + kNumGoodBacks, m_NumFastBytes, 
+      m_MatchMaxLen - m_NumFastBytes));
+  if (!m_OutStream.Create(1 << 20))
+    return E_OUTOFMEMORY;
   m_MatchLengthEdge = m_NumFastBytes + 1;
 
   if (m_NumPasses > 1)
   {
-    m_OnePosMatchesMemory = new UINT16[kNumGoodBacks * (m_NumFastBytes + 1)];
+    m_OnePosMatchesMemory = new UInt16[kNumGoodBacks * (m_NumFastBytes + 1)];
     try
     {
       m_OnePosMatchesArray = new COnePosMatches[kNumGoodBacks];
@@ -125,21 +126,21 @@ HRESULT CCoder::Create()
       m_OnePosMatchesMemory = 0;
       throw;
     }
-    UINT16 *goodBacksWordsCurrent = m_OnePosMatchesMemory;
+    UInt16 *goodBacksWordsCurrent = m_OnePosMatchesMemory;
     for(int i = 0; i < kNumGoodBacks; i++, goodBacksWordsCurrent += (m_NumFastBytes + 1))
       m_OnePosMatchesArray[i].Init(goodBacksWordsCurrent);
   }
   else
-    m_MatchDistances = new UINT16[m_NumFastBytes + 1];
+    m_MatchDistances = new UInt16[m_NumFastBytes + 1];
   return S_OK;
   COM_TRY_END
 }
 
 // ICompressSetEncoderProperties2
 HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs, 
-    const PROPVARIANT *properties, UINT32 numProperties)
+    const PROPVARIANT *properties, UInt32 numProperties)
 {
-  for(UINT32 i = 0; i < numProperties; i++)
+  for(UInt32 i = 0; i < numProperties; i++)
   {
     const PROPVARIANT &property = properties[i]; 
     switch(propIDs[i])
@@ -187,15 +188,15 @@ CCoder::~CCoder()
 
 void CCoder::ReadGoodBacks()
 {
-  UINT32 goodIndex;
+  UInt32 goodIndex;
   if (m_NumPasses > 1)
   {
     goodIndex = m_FinderPos % kNumGoodBacks;
     m_MatchDistances = m_OnePosMatchesArray[goodIndex].MatchDistances;
   }
-  UINT32 distanceTmp[kMatchMaxLen32 + 1];
-  UINT32 len = m_MatchFinder.GetLongestMatch(distanceTmp);
-  for(UINT32 i = kMatchMinLen; i <= len; i++)
+  UInt32 distanceTmp[kMatchMaxLen32 + 1];
+  UInt32 len = m_MatchFinder.GetLongestMatch(distanceTmp);
+  for(UInt32 i = kMatchMinLen; i <= len; i++)
     m_MatchDistances[i] = distanceTmp[i];
 
   m_LongestMatchDistance = m_MatchDistances[len];
@@ -206,8 +207,8 @@ void CCoder::ReadGoodBacks()
     m_LongestMatchLength = len;
   if (m_NumPasses > 1)
   {
-    m_OnePosMatchesArray[goodIndex].LongestMatchDistance = UINT16(m_LongestMatchDistance);
-    m_OnePosMatchesArray[goodIndex].LongestMatchLength = UINT16(m_LongestMatchLength);
+    m_OnePosMatchesArray[goodIndex].LongestMatchDistance = UInt16(m_LongestMatchDistance);
+    m_OnePosMatchesArray[goodIndex].LongestMatchLength = UInt16(m_LongestMatchLength);
   }
   HRESULT result = m_MatchFinder.MovePos();
   if (result != S_OK)
@@ -216,7 +217,7 @@ void CCoder::ReadGoodBacks()
   m_AdditionalOffset++;
 }
 
-void CCoder::GetBacks(UINT32 pos)
+void CCoder::GetBacks(UInt32 pos)
 {
   if(pos == m_FinderPos)
     ReadGoodBacks();
@@ -230,7 +231,7 @@ void CCoder::GetBacks(UINT32 pos)
     }
     else
     {
-      UINT32 goodIndex = pos % kNumGoodBacks;
+      UInt32 goodIndex = pos % kNumGoodBacks;
       m_MatchDistances = m_OnePosMatchesArray[goodIndex].MatchDistances;
       m_LongestMatchDistance = m_OnePosMatchesArray[goodIndex].LongestMatchDistance;
       m_LongestMatchLength = m_OnePosMatchesArray[goodIndex].LongestMatchLength;
@@ -239,12 +240,12 @@ void CCoder::GetBacks(UINT32 pos)
 }
 
 
-void CCoder::MovePos(UINT32 num)
+void CCoder::MovePos(UInt32 num)
 {
   if (m_NumPasses > 1)
   {
-    for(UINT32 i = 0; i < num; i++)
-      GetBacks(UINT32(m_BlockStartPostion + m_CurrentBlockUncompressedSize + i + 1));
+    for(UInt32 i = 0; i < num; i++)
+      GetBacks(UInt32(m_BlockStartPostion + m_CurrentBlockUncompressedSize + i + 1));
   }
   else
   {
@@ -260,17 +261,17 @@ void CCoder::MovePos(UINT32 num)
   }
 }
 
-static const UINT32 kIfinityPrice = 0xFFFFFFF;
+static const UInt32 kIfinityPrice = 0xFFFFFFF;
 
-UINT32 CCoder::Backward(UINT32 &backRes, UINT32 cur)
+UInt32 CCoder::Backward(UInt32 &backRes, UInt32 cur)
 {
   m_OptimumEndIndex = cur;
-  UINT32 posMem = m_Optimum[cur].PosPrev;
-  UINT16 backMem = m_Optimum[cur].BackPrev;
+  UInt32 posMem = m_Optimum[cur].PosPrev;
+  UInt16 backMem = m_Optimum[cur].BackPrev;
   do
   {
-    UINT32 posPrev = posMem;
-    UINT16 backCur = backMem;
+    UInt32 posPrev = posMem;
+    UInt16 backCur = backMem;
     backMem = m_Optimum[posPrev].BackPrev;
     posMem = m_Optimum[posPrev].PosPrev;
     m_Optimum[posPrev].BackPrev = backCur;
@@ -283,11 +284,11 @@ UINT32 CCoder::Backward(UINT32 &backRes, UINT32 cur)
   return m_OptimumCurrentIndex; 
 }
 
-UINT32 CCoder::GetOptimal(UINT32 &backRes)
+UInt32 CCoder::GetOptimal(UInt32 &backRes)
 {
   if(m_OptimumEndIndex != m_OptimumCurrentIndex)
   {
-    UINT32 len = m_Optimum[m_OptimumCurrentIndex].PosPrev - m_OptimumCurrentIndex;
+    UInt32 len = m_Optimum[m_OptimumCurrentIndex].PosPrev - m_OptimumCurrentIndex;
     backRes = m_Optimum[m_OptimumCurrentIndex].BackPrev;
     m_OptimumCurrentIndex = m_Optimum[m_OptimumCurrentIndex].PosPrev;
     return len;
@@ -295,10 +296,10 @@ UINT32 CCoder::GetOptimal(UINT32 &backRes)
   m_OptimumCurrentIndex = 0;
   m_OptimumEndIndex = 0;
   
-  GetBacks(UINT32(m_BlockStartPostion + m_CurrentBlockUncompressedSize));
+  GetBacks(UInt32(m_BlockStartPostion + m_CurrentBlockUncompressedSize));
 
-  UINT32 lenMain = m_LongestMatchLength;
-  UINT32 backMain = m_LongestMatchDistance;
+  UInt32 lenMain = m_LongestMatchLength;
+  UInt32 backMain = m_LongestMatchDistance;
 
   if(lenMain < kMatchMinLen)
     return 1;
@@ -314,7 +315,7 @@ UINT32 CCoder::GetOptimal(UINT32 &backRes)
   m_Optimum[2].Price = kIfinityPrice;
   m_Optimum[2].PosPrev = 1;
 
-  for(UINT32 i = kMatchMinLen; i <= lenMain; i++)
+  for(UInt32 i = kMatchMinLen; i <= lenMain; i++)
   {
     m_Optimum[i].PosPrev = 0;
     m_Optimum[i].BackPrev = m_MatchDistances[i];
@@ -322,20 +323,20 @@ UINT32 CCoder::GetOptimal(UINT32 &backRes)
   }
 
 
-  UINT32 cur = 0;
-  UINT32 lenEnd = lenMain;
+  UInt32 cur = 0;
+  UInt32 lenEnd = lenMain;
   while(true)
   {
     cur++;
     if(cur == lenEnd)  
       return Backward(backRes, cur);
-    GetBacks(UINT32(m_BlockStartPostion + m_CurrentBlockUncompressedSize + cur));
-    UINT32 newLen = m_LongestMatchLength;
+    GetBacks(UInt32(m_BlockStartPostion + m_CurrentBlockUncompressedSize + cur));
+    UInt32 newLen = m_LongestMatchLength;
     if(newLen >= m_MatchLengthEdge)
       return Backward(backRes, cur);
     
-    UINT32 curPrice = m_Optimum[cur].Price; 
-    UINT32 curAnd1Price = curPrice +
+    UInt32 curPrice = m_Optimum[cur].Price; 
+    UInt32 curAnd1Price = curPrice +
         m_LiteralPrices[m_MatchFinder.GetIndexByte(cur - m_AdditionalOffset)];
     COptimal &optimum = m_Optimum[cur + 1];
     if (curAnd1Price < optimum.Price) 
@@ -349,18 +350,18 @@ UINT32 CCoder::GetOptimal(UINT32 &backRes)
     {
       if (cur + newLen > kNumOpts - 1)
         newLen = kNumOpts - 1 - cur;
-      UINT32 lenEndNew = cur + newLen;
+      UInt32 lenEndNew = cur + newLen;
       if (lenEnd < lenEndNew)
       {
-        for(UINT32 i = lenEnd + 1; i <= lenEndNew; i++)
+        for(UInt32 i = lenEnd + 1; i <= lenEndNew; i++)
           m_Optimum[i].Price = kIfinityPrice;
         lenEnd = lenEndNew;
       }
     }       
-    for(UINT32 lenTest = kMatchMinLen; lenTest <= newLen; lenTest++)
+    for(UInt32 lenTest = kMatchMinLen; lenTest <= newLen; lenTest++)
     {
-      UINT16 curBack = m_MatchDistances[lenTest];
-      UINT32 curAndLenPrice = curPrice + 
+      UInt16 curBack = m_MatchDistances[lenTest];
+      UInt32 curAndLenPrice = curPrice + 
           m_LenPrices[lenTest - kMatchMinLen] + m_PosPrices[GetPosSlot(curBack)];
       COptimal &optimum = m_Optimum[cur + lenTest];
       if (curAndLenPrice < optimum.Price) 
@@ -389,7 +390,7 @@ void CCoder::InitStructures()
   m_MainCoder.StartNewBlock();
   m_DistCoder.StartNewBlock();
  
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < 256; i++)
     m_LiteralPrices[i] = 8;
   for(i = 0; i < m_NumLenCombinations; i++)
@@ -407,27 +408,27 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
   {
     if(method == NBlockType::kStored)
     {
-      for(UINT32 i = 0; i < m_CurrentBlockUncompressedSize; i++)
+      for(UInt32 i = 0; i < m_CurrentBlockUncompressedSize; i++)
       {
-        BYTE b = m_MatchFinder.GetIndexByte(i - m_AdditionalOffset - 
+        Byte b = m_MatchFinder.GetIndexByte(i - m_AdditionalOffset - 
               m_CurrentBlockUncompressedSize);
         m_OutStream.WriteBits(b, 8);
       }
     }
     else
     {
-      for (UINT32 i = 0; i < m_ValueIndex; i++)
+      for (UInt32 i = 0; i < m_ValueIndex; i++)
       {
         if (m_Values[i].Flag == kFlagImm)
           m_MainCoder.CodeOneValue(&m_ReverseOutStream, m_Values[i].Imm);
         else if (m_Values[i].Flag == kFlagLenPos)
         {
-          UINT32 len = m_Values[i].Len;
-          UINT32 lenSlot = g_LenSlots[len];
+          UInt32 len = m_Values[i].Len;
+          UInt32 lenSlot = g_LenSlots[len];
           m_MainCoder.CodeOneValue(&m_ReverseOutStream, kMatchNumber + lenSlot);
           m_OutStream.WriteBits(len - m_LenStart[lenSlot], m_LenDirectBits[lenSlot]);
-          UINT32 dist = m_Values[i].Pos;
-          UINT32 posSlot = GetPosSlot(dist);
+          UInt32 dist = m_Values[i].Pos;
+          UInt32 posSlot = GetPosSlot(dist);
           m_DistCoder.CodeOneValue(&m_ReverseOutStream, posSlot);
           m_OutStream.WriteBits(dist - kDistStart[posSlot], kDistDirectBits[posSlot]);
         }
@@ -438,7 +439,7 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
   m_MainCoder.StartNewBlock();
   m_DistCoder.StartNewBlock();
   m_ValueIndex = 0;
-  UINT32 i;
+  UInt32 i;
   for(i = 0; i < 256; i++)
     if(m_LastLevels[i] != 0)
       m_LiteralPrices[i] = m_LastLevels[i];
@@ -449,8 +450,8 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
   
   for(i = 0; i < m_NumLenCombinations; i++)
   {
-    UINT32 slot = g_LenSlots[i];
-    BYTE dummy = m_LastLevels[kMatchNumber + slot];
+    UInt32 slot = g_LenSlots[i];
+    Byte dummy = m_LastLevels[kMatchNumber + slot];
     if (dummy != 0)
       m_LenPrices[i] = dummy;
     else
@@ -459,7 +460,7 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
   }
   for(i = 0; i < kDistTableSize64; i++)
   {
-    BYTE dummy = m_LastLevels[kDistTableStart + i];
+    Byte dummy = m_LastLevels[kDistTableStart + i];
     if (dummy != 0)
       m_PosPrices[i] = dummy;
     else
@@ -468,7 +469,7 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
   }
 }
 
-void CCoder::CodeLevelTable(BYTE *newLevels, int numLevels, bool codeMode)
+void CCoder::CodeLevelTable(Byte *newLevels, int numLevels, bool codeMode)
 {
   int prevLen = 0xFF;        // last emitted length
   int nextLen = newLevels[0]; // length of next code
@@ -480,7 +481,7 @@ void CCoder::CodeLevelTable(BYTE *newLevels, int numLevels, bool codeMode)
     maxCount = 138;
     minCount = 3;
   }
-  BYTE oldValueInGuardElement = newLevels[numLevels]; // push guard value
+  Byte oldValueInGuardElement = newLevels[numLevels]; // push guard value
   try
   {
     newLevels[numLevels] = 0xFF; // guard already set
@@ -568,7 +569,7 @@ void CCoder::CodeLevelTable(BYTE *newLevels, int numLevels, bool codeMode)
 
 int CCoder::WriteTables(bool writeMode, bool finalBlock)
 {
-  BYTE newLevels[kMaxTableSize64 + 1]; // (+ 1) for guard 
+  Byte newLevels[kMaxTableSize64 + 1]; // (+ 1) for guard 
 
   m_MainCoder.BuildTree(&newLevels[0]);
   m_DistCoder.BuildTree(&newLevels[kDistTableStart]);
@@ -604,10 +605,10 @@ int CCoder::WriteTables(bool writeMode, bool finalBlock)
     memcpy(m_LastLevels, newLevels, kMaxTableSize64);
     
 
-    BYTE levelLevels[kLevelTableSize];
+    Byte levelLevels[kLevelTableSize];
     m_LevelCoder.BuildTree(levelLevels);
     
-    BYTE levelLevelsStream[kLevelTableSize];
+    Byte levelLevelsStream[kLevelTableSize];
     int numLevelCodes = kDeflateNumberOfLevelCodesMin;
     int i;
     for (i = 0; i < kLevelTableSize; i++)
@@ -619,7 +620,7 @@ int CCoder::WriteTables(bool writeMode, bool finalBlock)
       levelLevelsStream[i] = level;
     }
     
-    UINT32 numLZHuffmanBits = m_MainCoder.GetBlockBitLength();
+    UInt32 numLZHuffmanBits = m_MainCoder.GetBlockBitLength();
     numLZHuffmanBits += m_DistCoder.GetBlockBitLength();
     numLZHuffmanBits += m_LevelCoder.GetBlockBitLength();
     numLZHuffmanBits += kDeflateNumberOfLengthCodesFieldSize +
@@ -627,18 +628,18 @@ int CCoder::WriteTables(bool writeMode, bool finalBlock)
       kDeflateNumberOfLevelCodesFieldSize;
     numLZHuffmanBits += numLevelCodes * kDeflateLevelCodeFieldSize;
 
-    UINT32 nextBitPosition = 
+    UInt32 nextBitPosition = 
         (m_OutStream.GetBitPosition() + kBlockTypeFieldSize) % 8;
-    UINT32 numBitsForAlign = nextBitPosition > 0 ? (8 - nextBitPosition): 0;
+    UInt32 numBitsForAlign = nextBitPosition > 0 ? (8 - nextBitPosition): 0;
 
-    UINT32 numStoreBits = numBitsForAlign + (2 * sizeof(UINT16)) * 8;
+    UInt32 numStoreBits = numBitsForAlign + (2 * 2) * 8;
     numStoreBits += m_CurrentBlockUncompressedSize * 8;
     if(numStoreBits < numLZHuffmanBits)
     {
       m_OutStream.WriteBits(NBlockType::kStored, kBlockTypeFieldSize); // test it
       m_OutStream.WriteBits(0, numBitsForAlign); // test it
-      UINT16 currentBlockUncompressedSize = UINT16(m_CurrentBlockUncompressedSize);
-      UINT16 currentBlockUncompressedSizeNot = ~currentBlockUncompressedSize;
+      UInt16 currentBlockUncompressedSize = UInt16(m_CurrentBlockUncompressedSize);
+      UInt16 currentBlockUncompressedSizeNot = ~currentBlockUncompressedSize;
       m_OutStream.WriteBits(currentBlockUncompressedSize, kDeflateStoredBlockLengthFieldSizeSize);
       m_OutStream.WriteBits(currentBlockUncompressedSizeNot, kDeflateStoredBlockLengthFieldSizeSize);
       return NBlockType::kStored;
@@ -669,7 +670,7 @@ int CCoder::WriteTables(bool writeMode, bool finalBlock)
 }
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   if (!m_Created)
@@ -678,14 +679,15 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     m_Created = true;
   }
 
-  UINT64 nowPos = 0;
+  UInt64 nowPos = 0;
   m_FinderPos = 0;
 
   RINOK(m_MatchFinder.Init(inStream));
-  m_OutStream.Init(outStream);
+  m_OutStream.SetStream(outStream);
+  m_OutStream.Init();
   m_ReverseOutStream.Init(&m_OutStream);
 
-  // CCoderReleaser coderReleaser(this);
+  CCoderReleaser coderReleaser(this);
   InitStructures();
 
   while(true)
@@ -703,22 +705,22 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
               (m_OptimumEndIndex == m_OptimumCurrentIndex)) 
             || noMoreBytes)
           break;
-        UINT32 pos;
-        UINT32 len = GetOptimal(pos);
+        UInt32 pos;
+        UInt32 len = GetOptimal(pos);
         if (len >= kMatchMinLen)
         {
-          UINT32 newLen = len - kMatchMinLen;
+          UInt32 newLen = len - kMatchMinLen;
           m_Values[m_ValueIndex].Flag = kFlagLenPos;
-          m_Values[m_ValueIndex].Len = BYTE(newLen);
-          UINT32 lenSlot = g_LenSlots[newLen];
+          m_Values[m_ValueIndex].Len = Byte(newLen);
+          UInt32 lenSlot = g_LenSlots[newLen];
           m_MainCoder.AddSymbol(kMatchNumber + lenSlot);
-          m_Values[m_ValueIndex].Pos = UINT16(pos);
-          UINT32 posSlot = GetPosSlot(pos);
+          m_Values[m_ValueIndex].Pos = UInt16(pos);
+          UInt32 posSlot = GetPosSlot(pos);
           m_DistCoder.AddSymbol(posSlot);
         }
         else if (len == 1)  
         {
-          BYTE b = m_MatchFinder.GetIndexByte(0 - m_AdditionalOffset);
+          Byte b = m_MatchFinder.GetIndexByte(0 - m_AdditionalOffset);
           len = 1;
           m_MainCoder.AddSymbol(b);
           m_Values[m_ValueIndex].Flag = kFlagImm;
@@ -738,14 +740,14 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
       if (writeMode)
         break;
       nowPos = m_BlockStartPostion;
-      m_AdditionalOffset = UINT32(m_FinderPos - m_BlockStartPostion);
+      m_AdditionalOffset = UInt32(m_FinderPos - m_BlockStartPostion);
       m_CurrentBlockUncompressedSize = 0;
     }
     m_BlockStartPostion += m_CurrentBlockUncompressedSize;
     m_CurrentBlockUncompressedSize = 0;
     if (progress != NULL)
     {
-      UINT64 packSize = m_OutStream.GetProcessedSize();
+      UInt64 packSize = m_OutStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&nowPos, &packSize));
     }
     if (noMoreBytes)
@@ -755,7 +757,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
 }
 
 HRESULT CCoder::BaseCode(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
@@ -765,21 +767,21 @@ HRESULT CCoder::BaseCode(ISequentialInStream *inStream,
 }
 
 STDMETHODIMP CCOMCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
   { return BaseCode(inStream, outStream, inSize, outSize, progress); }
 
 STDMETHODIMP CCOMCoder::SetCoderProperties(const PROPID *propIDs, 
-    const PROPVARIANT *properties, UINT32 numProperties)
+    const PROPVARIANT *properties, UInt32 numProperties)
   { return BaseSetEncoderProperties2(propIDs, properties, numProperties); }
 
 STDMETHODIMP CCOMCoder64::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
   { return BaseCode(inStream, outStream, inSize, outSize, progress); }
 
 STDMETHODIMP CCOMCoder64::SetCoderProperties(const PROPID *propIDs, 
-    const PROPVARIANT *properties, UINT32 numProperties)
+    const PROPVARIANT *properties, UInt32 numProperties)
   { return BaseSetEncoderProperties2(propIDs, properties, numProperties); }
 
 }}}

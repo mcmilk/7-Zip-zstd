@@ -31,21 +31,40 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 
-static const int kPathnamesButtons[] =
+static const int kPathModeButtons[] =
 {
   IDC_EXTRACT_RADIO_FULL_PATHNAMES,
   IDC_EXTRACT_RADIO_CURRENT_PATHNAMES,
   IDC_EXTRACT_RADIO_NO_PATHNAMES
 };
-static const int kNumPathnamesButtons = sizeof(kPathnamesButtons) / sizeof(kPathnamesButtons[0]);
+
+static const NExtract::NPathMode::EEnum kPathModeButtonsVals[] =
+{
+  NExtract::NPathMode::kFullPathnames,
+  NExtract::NPathMode::kCurrentPathnames,
+  NExtract::NPathMode::kNoPathnames
+};
+
+static const int kNumPathnamesButtons = sizeof(kPathModeButtons) / sizeof(kPathModeButtons[0]);
 
 static const int kOverwriteButtons[] =
 {
   IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,
   IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,
   IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,
-  IDC_EXTRACT_RADIO_AUTO_RENAME
+  IDC_EXTRACT_RADIO_AUTO_RENAME,
+  IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING,
 };
+
+static const NExtract::NOverwriteMode::EEnum kOverwriteButtonsVals[] =
+{
+  NExtract::NOverwriteMode::kAskBefore,
+  NExtract::NOverwriteMode::kWithoutPrompt,
+  NExtract::NOverwriteMode::kSkipExisting,
+  NExtract::NOverwriteMode::kAutoRename,
+  NExtract::NOverwriteMode::kAutoRenameExisting
+};
+
 static const int kNumOverwriteButtons = sizeof(kOverwriteButtons) / sizeof(kOverwriteButtons[0]);
 
 /*
@@ -58,20 +77,58 @@ static const int kNumFilesButtons = sizeof(kFilesButtons) / sizeof(kFilesButtons
 */
 
 #ifndef _SFX
-int CExtractDialog::GetPathNameMode() const
+void CExtractDialog::GetPathMode()
 {
   for (int i = 0; i < kNumPathnamesButtons; i++)
-    if(IsButtonCheckedBool(kPathnamesButtons[i]))
-      return i;
-  throw 0;
+    if(IsButtonCheckedBool(kPathModeButtons[i]))
+    {
+      PathMode = kPathModeButtonsVals[i];
+      return;
+    }
+  throw 1;
 }
 
-int CExtractDialog::GetOverwriteMode() const
+void CExtractDialog::SetPathMode()
+{
+  for (int j = 0; j < 2; j++)
+  {
+    for (int i = 0; i < kNumPathnamesButtons; i++)
+      if(PathMode == kPathModeButtonsVals[i])
+      {
+        CheckRadioButton(kPathModeButtons[0], kPathModeButtons[kNumPathnamesButtons - 1], 
+          kPathModeButtons[i]);
+        return;
+      }
+    PathMode = kPathModeButtonsVals[0];
+  }
+  throw 1;
+}
+
+void CExtractDialog::GetOverwriteMode()
 {
   for (int i = 0; i < kNumOverwriteButtons; i++)
     if(IsButtonCheckedBool(kOverwriteButtons[i]))
-      return i;
+    {
+      OverwriteMode = kOverwriteButtonsVals[i];
+      return;
+    }
   throw 0;
+}
+
+void CExtractDialog::SetOverwriteMode()
+{
+  for (int j = 0; j < 2; j++)
+  {
+    for (int i = 0; i < kNumOverwriteButtons; i++)
+      if(OverwriteMode == kOverwriteButtonsVals[i])
+      {
+        CheckRadioButton(kOverwriteButtons[0], kOverwriteButtons[kNumOverwriteButtons - 1], 
+            kOverwriteButtons[i]);
+        return;
+      }
+    OverwriteMode = kOverwriteButtonsVals[0];
+  }
+  throw 1;
 }
 
 /*
@@ -99,6 +156,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT, 0x02000822 },
   { IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES,      0x02000823 },
   { IDC_EXTRACT_RADIO_AUTO_RENAME,              0x02000824 },
+  { IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING,     0x02000825 },
   { IDC_EXTRACT_FILES,                0x02000830 },
   { IDC_EXTRACT_RADIO_SELECTED_FILES, 0x02000831 },
   { IDC_EXTRACT_RADIO_ALL_FILES,      0x02000832 },
@@ -127,18 +185,19 @@ bool CExtractDialog::OnInit()
   _passwordControl.SetPasswordChar(TEXT('*'));
   #endif
 
-  NExtraction::CInfo extractionInfo;
+  NExtract::CInfo extractionInfo;
 
   #ifdef NO_REGISTRY
-  extractionInfo.PathMode = NExtraction::NPathMode::kFullPathnames;
-  extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::kAskBefore;
-  // extractionInfo.Paths = NExtraction::NPathMode::kFullPathnames;
+  PathMode = NExtract::NPathMode::kFullPathnames;
+  OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
+  // extractionInfo.Paths = NExtract::NPathMode::kFullPathnames;
   #else
   ReadExtractionInfo(extractionInfo);
   CheckButton(IDC_EXTRACT_CHECK_SHOW_PASSWORD, extractionInfo.ShowPassword);
   UpdatePasswordControl();
+  PathMode = extractionInfo.PathMode;
+  OverwriteMode = extractionInfo.OverwriteMode;
   #endif
-
 
   _path.Attach(GetItem(IDC_EXTRACT_COMBO_PATH));
   _path.SetText(DirectoryPath);
@@ -155,15 +214,10 @@ bool CExtractDialog::OnInit()
   */
 
   
-  _pathMode = extractionInfo.PathMode;
-  _overwriteMode = extractionInfo.OverwriteMode;
   
   #ifndef _SFX
-  CheckRadioButton(kPathnamesButtons[0], kPathnamesButtons[kNumPathnamesButtons - 1], 
-      kPathnamesButtons[_pathMode]);
-
-  CheckRadioButton(kOverwriteButtons[0], kOverwriteButtons[kNumOverwriteButtons - 1], 
-      kOverwriteButtons[_overwriteMode]);
+  SetPathMode();
+  SetOverwriteMode();
 
   /*
   CheckRadioButton(kFilesButtons[0], kFilesButtons[kNumFilesButtons - 1], 
@@ -177,8 +231,8 @@ bool CExtractDialog::OnInit()
   #endif
 
  
-  // CWindow aFilesWindow = GetItem(IDC_EXTRACT_RADIO_FILES);
-  // aFilesWindow.Enable(_enableFilesButton);
+  // CWindow filesWindow = GetItem(IDC_EXTRACT_RADIO_FILES);
+  // filesWindow.Enable(_enableFilesButton);
 
   // UpdateWildCardState();
   return CModalDialog::OnInit();
@@ -254,16 +308,16 @@ void AddUniqueString(CSysStringVector &list, const CSysString &s)
 void CExtractDialog::OnOK() 
 {
   #ifndef _SFX
-  _pathMode = GetPathNameMode();
-  _overwriteMode = GetOverwriteMode();
+  GetPathMode();
+  GetOverwriteMode();
   // _filesMode = (NExtractionDialog::NFilesMode::EEnum)GetFilesMode();
 
   _passwordControl.GetText(Password);
   #endif
 
-  NExtraction::CInfo extractionInfo;
-  extractionInfo.PathMode = NExtraction::NPathMode::EEnum(_pathMode);
-  extractionInfo.OverwriteMode = NExtraction::NOverwriteMode::EEnum(_overwriteMode);
+  NExtract::CInfo extractionInfo;
+  extractionInfo.PathMode = PathMode;
+  extractionInfo.OverwriteMode = OverwriteMode;
   extractionInfo.ShowPassword = (IsButtonChecked(
           IDC_EXTRACT_CHECK_SHOW_PASSWORD) == BST_CHECKED);
   
@@ -318,54 +372,12 @@ void CExtractDialog::UpdateWildCardState()
 }
 */
 
-/*
-static DWORD aHelpArray[] = 
-{
-  IDC_EXTRACT_COMBO_PATH, IDH_EXTRACT_COMBO_PATH,
-  IDC_EXTRACT_BUTTON_SET_PATH, IDH_EXTRACT_BUTTON_SET_PATH,
-
-  IDC_EXTRACT_PATH_MODE, IDH_EXTRACT_PATH_MODE,
-  IDC_EXTRACT_RADIO_FULL_PATHNAMES, IDH_EXTRACT_RADIO_FULL_PATHNAMES,
-  IDC_EXTRACT_RADIO_CURRENT_PATHNAMES,IDH_EXTRACT_RADIO_CURRENT_PATHNAMES,
-  IDC_EXTRACT_RADIO_NO_PATHNAMES,IDH_EXTRACT_RADIO_NO_PATHNAMES,
-
-  IDC_EXTRACT_OVERWRITE_MODE, IDH_EXTRACT_OVERWRITE_MODE,
-  IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE, IDH_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE,
-  IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT, IDH_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT,
-  IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES, IDH_EXTRACT_RADIO_SKIP_EXISTING_FILES,
-
-  IDC_EXTRACT_FILES, IDH_EXTRACT_FILES,
-  IDC_EXTRACT_RADIO_SELECTED_FILES, IDH_EXTRACT_RADIO_SELECTED_FILES,
-  IDC_EXTRACT_RADIO_ALL_FILES, IDH_EXTRACT_RADIO_ALL_FILES,
-  IDC_EXTRACT_RADIO_FILES, IDH_EXTRACT_RADIO_FILES,
-  IDC_EXTRACT_EDIT_WILDCARDS, IDH_EXTRACT_EDIT_WILDCARDS,
-  0,0
-};
-*/
-
-
-void CExtractDialog::GetModeInfo(NExtractionDialog::CModeInfo &modeInfo)
-{
-  modeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::EEnum(_overwriteMode);
-  modeInfo.PathMode = NExtractionDialog::NPathMode::EEnum(_pathMode);
-  // modeInfo.FilesMode = NExtractionDialog::NFilesMode::EEnum(FilesMode);
-  modeInfo.FileList.Clear();
-}
-  
 #ifndef  NO_REGISTRY
 static LPCWSTR kHelpTopic = L"fm/plugins/7-zip/extract.htm";
 void CExtractDialog::OnHelp() 
 {
   ShowHelpWindow(NULL, kHelpTopic);
   CModalDialog::OnHelp();
-  /*
-  if (pHelpInfo->iContextType == HELPINFO_WINDOW)
-  {
-    return ::HtmlHelp((HWND)pHelpInfo->hItemHandle, 
-        TEXT("C:\\SRC\\VC\\ZipView\\Help\\7zip.chm::/Context/Extract.txt"), 
-          HH_TP_HELP_WM_HELP, (DWORD)(LPVOID)aHelpArray) != NULL;
-  }
-  */
 }
 #endif
 

@@ -1,11 +1,10 @@
 // IStream.h
 
-// #pragma once
-
 #ifndef __ISTREAMS_H
 #define __ISTREAMS_H
 
-#include "IMyUnknown.h"
+#include "../Common/MyUnknown.h"
+#include "../Common/Types.h"
 
 // {23170F69-40C1-278A-0000-000000010000}
 DEFINE_GUID(IID_ISequentialInStream, 
@@ -14,9 +13,15 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000010000")
 ISequentialInStream : public IUnknown
 {
 public:
-  // out: if (processedSize == 0) then there are no more bytes
-  STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize) = 0;
-  STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize) = 0;
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize) = 0;
+  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize) = 0;
+  
+  // For both functions Out: if (*processedSize == 0) then 
+  //   there are no more bytes in stream.
+  // Read function always tries to read "size" bytes from stream. It
+  // can read less only if it reaches end of stream.
+  // ReadPart function can read X bytes: (0<=X<="size") and X can 
+  // be less than number of remaining bytes in stream.
 };
 
 // {23170F69-40C1-278A-0000-000000020000}
@@ -26,8 +31,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000020000")
 ISequentialOutStream : public IUnknown
 {
 public:
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize) = 0;
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize) = 0;
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize) = 0;
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000030000}
@@ -37,7 +42,7 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000030000")
 IInStream : public ISequentialInStream
 {
 public:
-  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition) = 0;
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000040000}
@@ -47,8 +52,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000040000")
 IOutStream : public ISequentialOutStream
 {
 public:
-  STDMETHOD(Seek)(INT64 offset, UINT32 seekOrigin, UINT64 *newPosition) = 0;
-  STDMETHOD(SetSize)(INT64 aNewSize) = 0;
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) = 0;
+  STDMETHOD(SetSize)(Int64 newSize) = 0;
 };
 
 // {23170F69-40C1-278A-0000-000000060000}
@@ -58,7 +63,17 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000000060000")
 IStreamGetSize : public IUnknown
 {
 public:
-  STDMETHOD(GetSize)(UINT64 *size) = 0;
+  STDMETHOD(GetSize)(UInt64 *size) = 0;
+};
+
+// {23170F69-40C1-278A-0000-000000070000}
+DEFINE_GUID(IID_IOutStreamFlush, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000000070000")
+IOutStreamFlush : public IUnknown
+{
+public:
+  STDMETHOD(Flush)() = 0;
 };
 
 #endif

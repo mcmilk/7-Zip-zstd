@@ -1,16 +1,14 @@
 // CoderLoader.h
 
-#pragma once
-
 #ifndef __CODERLOADER_H
 #define __CODERLOADER_H
 
 #include "../../../Common/String.h"
+#include "../../../Common/MyCom.h"
 #include "../../../Windows/DLL.h"
-// #include "../../../Windows/Defs.h"
 #include "../../ICoder.h"
 
-typedef UINT32 (WINAPI * CreateObjectPointer)(
+typedef UInt32 (WINAPI * CreateObjectPointer)(
     const GUID *clsID, 
     const GUID *interfaceID, 
     void **outObject);
@@ -18,14 +16,38 @@ typedef UINT32 (WINAPI * CreateObjectPointer)(
 class CCoderLibrary: public NWindows::NDLL::CLibrary 
 {
 public:
-  HRESULT CreateCoder(REFGUID clsID, ICompressCoder **coder)
+  HRESULT CreateObject(REFGUID clsID, REFGUID iid, void **obj)
   {
     CreateObjectPointer createObject = (CreateObjectPointer)
-        GetProcAddress("CreateObject");
+      GetProcAddress("CreateObject");
     if (createObject == NULL)
       return GetLastError();
-    return createObject(&clsID, &IID_ICompressCoder, (void **)coder);
+    return createObject(&clsID, &iid, obj);
   }
+
+  HRESULT CreateFilter(REFGUID clsID, ICompressFilter **filter)
+  {
+    return CreateObject(clsID, IID_ICompressFilter, (void **)filter);
+  }
+
+  HRESULT CreateCoder(REFGUID clsID, ICompressCoder **coder)
+  {
+    return CreateObject(clsID, IID_ICompressCoder, (void **)coder);
+  }
+
+  HRESULT CreateCoderSpec(REFGUID clsID, ICompressCoder **coder);
+  
+  HRESULT LoadAndCreateFilter(LPCTSTR filePath, REFGUID clsID, ICompressFilter **filter)
+  {
+    CCoderLibrary libTemp;
+    if (!libTemp.Load(filePath))
+      return GetLastError();
+    RINOK(libTemp.CreateFilter(clsID, filter));
+    Attach(libTemp.Detach());
+    return S_OK;
+  }
+  
+
   HRESULT LoadAndCreateCoder(LPCTSTR filePath, REFGUID clsID, ICompressCoder **coder)
   {
     CCoderLibrary libTemp;
@@ -35,6 +57,8 @@ public:
     Attach(libTemp.Detach());
     return S_OK;
   }
+
+  HRESULT LoadAndCreateCoderSpec(LPCTSTR filePath, REFGUID clsID, ICompressCoder **coder);
   HRESULT CreateCoder2(REFGUID clsID, ICompressCoder2 **coder)
   {
     CreateObjectPointer createObject = (CreateObjectPointer)
@@ -85,6 +109,21 @@ public:
       return S_OK;
     }
     return Pairs[index].Libary.CreateCoder(clsID, coder);
+  }
+
+  HRESULT CreateCoderSpec(LPCTSTR filePath, REFGUID clsID, ICompressCoder **coder)
+  {
+    int index = FindPath(filePath);
+    if (index < 0)
+    {
+      CPathToLibraryPair pair;
+      RINOK(pair.Libary.LoadAndCreateCoderSpec(filePath, clsID, coder));
+      pair.Path = filePath;
+      Pairs.Add(pair);
+      pair.Libary.Detach();
+      return S_OK;
+    }
+    return Pairs[index].Libary.CreateCoderSpec(clsID, coder);
   }
 
   HRESULT CreateCoder2(LPCTSTR filePath, REFGUID clsID, ICompressCoder2 **coder)

@@ -15,7 +15,7 @@ static bool MakeAutoName(const UString &name,
     const UString &extension, int value, UString &path)
 {
   wchar_t number[32];
-  ConvertUINT64ToString(value, number);
+  ConvertUInt64ToString(value, number);
   path = name;
   path += number;
   path += extension;

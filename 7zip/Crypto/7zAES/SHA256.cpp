@@ -1,4 +1,4 @@
-// Crypto/HASH/SHA256/SHA256.cpp
+// Crypto/SHA256.cpp
 // This code is based on code from Wei Dai's Crypto++ library.
 
 #include "StdAfx.h"
@@ -58,10 +58,10 @@ void SHA256::Init()
 #define s0(x) (rotrFixed(x,7)^rotrFixed(x,18)^(x>>3))
 #define s1(x) (rotrFixed(x,17)^rotrFixed(x,19)^(x>>10))
 
-void SHA256::Transform(UINT32 *state, const UINT32 *data)
+void SHA256::Transform(UInt32 *state, const UInt32 *data)
 {
-  UINT32 W[16];
-  UINT32 T[8];
+  UInt32 W[16];
+  UInt32 T[8];
   /* Copy context->state[] to working vars */
   // memcpy(T, state, sizeof(T));
   for (int s = 0; s < 8; s++)
@@ -101,7 +101,7 @@ void SHA256::Transform(UINT32 *state, const UINT32 *data)
   // memset(T, 0, sizeof(T));
 }
 
-const UINT32 SHA256::K[64] = {
+const UInt32 SHA256::K[64] = {
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
   0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -127,20 +127,20 @@ const UINT32 SHA256::K[64] = {
 
 void SHA256::WriteByteBlock()
 {
-  UINT32 data32[16];
+  UInt32 data32[16];
   for (int i = 0; i < 16; i++)
   {
-    data32[i] = (UINT32(_buffer[i * 4]) << 24) +
-      (UINT32(_buffer[i * 4 + 1]) << 16) +
-      (UINT32(_buffer[i * 4 + 2]) << 8) +
-      UINT32(_buffer[i * 4 + 3]);
+    data32[i] = (UInt32(_buffer[i * 4]) << 24) +
+      (UInt32(_buffer[i * 4 + 1]) << 16) +
+      (UInt32(_buffer[i * 4 + 2]) << 8) +
+      UInt32(_buffer[i * 4 + 3]);
   }
   Transform(m_digest, data32);
 }
 
-void SHA256::Update(const BYTE *data, UINT32 size)
+void SHA256::Update(const Byte *data, UInt32 size)
 {
-  UINT32 curBufferPos = UINT32(m_count) & 0x3F;
+  UInt32 curBufferPos = UInt32(m_count) & 0x3F;
   while (size > 0)
   {
     while(curBufferPos < 64 && size > 0)
@@ -157,10 +157,10 @@ void SHA256::Update(const BYTE *data, UINT32 size)
   }
 }
 
-void SHA256::Final(BYTE *digest)
+void SHA256::Final(Byte *digest)
 {
-  UINT64 lenInBits = (m_count << 3);
-  UINT32 curBufferPos = UINT32(m_count) & 0x3F;
+  UInt64 lenInBits = (m_count << 3);
+  UInt32 curBufferPos = UInt32(m_count) & 0x3F;
   _buffer[curBufferPos++] = 0x80;
   while (curBufferPos != (64 - 8))
   {
@@ -171,7 +171,7 @@ void SHA256::Final(BYTE *digest)
   }
   for (int i = 0; i < 8; i++)
   {
-    _buffer[curBufferPos++] = BYTE(lenInBits >> 56);
+    _buffer[curBufferPos++] = Byte(lenInBits >> 56);
     lenInBits <<= 8;
   }
   WriteByteBlock();

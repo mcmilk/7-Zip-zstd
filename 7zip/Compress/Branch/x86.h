@@ -1,13 +1,23 @@
 // x86.h
 
-#pragma once
-
 #ifndef __X86_H
 #define __X86_H
 
-#include "Coder.h"
+#include "BranchCoder.h"
+#include "BranchX86.h"
 
-MyClass(BCJ_x86, 0x01, 3)
-// MyClass(x86_J, 0x01, 2)
+struct CBranch86
+{
+  UInt32 _prevMask;
+  UInt32 _prevPos;
+public:
+  void x86Init()
+  {
+    x86_Convert_Init(&_prevMask, &_prevPos);
+  }
+};
+
+MyClassB(BCJ_x86, 0x01, 3, CBranch86 , 
+    virtual void SubInit() { x86Init(); })
 
 #endif

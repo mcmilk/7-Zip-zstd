@@ -13,8 +13,8 @@ struct CMethodInfo
   UString Name;
   bool EncoderIsAssigned;
   bool DecoderIsAssigned;
-  UINT32 NumInStreams;
-  UINT32 NumOutStreams;
+  UInt32 NumInStreams;
+  UInt32 NumOutStreams;
   CLSID Encoder;
   CLSID Decoder;
   // UString Description;

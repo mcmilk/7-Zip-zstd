@@ -1,7 +1,5 @@
 // Archive/Cab/ItemInfo.h
 
-#pragma once
-
 #ifndef __ARCHIVE_RAR_ITEMINFO_H
 #define __ARCHIVE_RAR_ITEMINFO_H
 
@@ -15,14 +13,15 @@ namespace NCab {
 class CItem
 {
 public:
-  UINT16 Flags;
-  UINT64 UnPackSize;
-  UINT32 UnPackOffset;
-  UINT16 FolderIndex;
-  UINT32 Time;
-  UINT16  Attributes;
-  UINT32 GetWinAttributes() const { return Attributes & (Attributes & ~NHeader::kFileNameIsUTFAttributeMask); }
+  UInt16 Flags;
+  UInt64 UnPackSize;
+  UInt32 UnPackOffset;
+  UInt16 FolderIndex;
+  UInt32 Time;
+  UInt16  Attributes;
+  UInt32 GetWinAttributes() const { return Attributes & (Attributes & ~NHeader::kFileNameIsUTFAttributeMask); }
   bool IsNameUTF() const { return (Attributes & NHeader::kFileNameIsUTFAttributeMask) != 0; }
+  bool IsDirectory() const { return (Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0; }
   AString Name;
 };
 

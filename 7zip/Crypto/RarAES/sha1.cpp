@@ -52,12 +52,12 @@ By Steve Reid <steve@edmweb.com>
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void SHA1Transform(UINT32 state[5], unsigned char buffer[64])
+void SHA1Transform(UInt32 state[5], unsigned char buffer[64])
 {
-  UINT32 a, b, c, d, e;
+  UInt32 a, b, c, d, e;
   typedef union {
     unsigned char c[64];
-    UINT32 l[16];
+    UInt32 l[16];
   } CHAR64LONG16;
   CHAR64LONG16* block;
 #ifdef SHA1HANDSOFF
@@ -82,7 +82,7 @@ void SHA1Transform(UINT32 state[5], unsigned char buffer[64])
     }
     pinit=true;
   }
-  UINT32 s[5];
+  UInt32 s[5];
   for (int I=0;I<sizeof(s)/sizeof(s[0]);I++)
     s[I]=state[I];
   
@@ -159,7 +159,7 @@ void hash_initial(hash_context* context)
 void hash_process( hash_context * context, unsigned char * data, unsigned len )
 {
   unsigned int i, j;
-  UINT32 blen = ((UINT32)len)<<3;
+  UInt32 blen = ((UInt32)len)<<3;
   
   j = (context->count[0] >> 3) & 63;
   if ((context->count[0] += blen) < blen ) context->count[1]++;
@@ -180,9 +180,9 @@ void hash_process( hash_context * context, unsigned char * data, unsigned len )
 
 /* Add padding and return the message digest. */
 
-void hash_final( hash_context* context, UINT32 digest[5] )
+void hash_final( hash_context* context, UInt32 digest[5] )
 {
-  UINT32 i, j;
+  UInt32 i, j;
   unsigned char finalcount[8];
   
   for (i = 0; i < 8; i++) {

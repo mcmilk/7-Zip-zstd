@@ -1,12 +1,10 @@
 // Pat.h
 
-// #pragma once
-
 // #ifndef __PATRICIA__H
 // #define __PATRICIA__H
 
-#include "../../../../Common/AlignedBuffer.h"
 #include "../../../../Common/MyCom.h"
+#include "../../../../Common/Types.h"
 #include "../LZInWindow.h"
 
 namespace PAT_NAMESPACE {
@@ -15,12 +13,7 @@ struct CNode;
 
 typedef CNode *CNodePointer;
 
-#pragma pack(push, PragmaPatrTree)
-#pragma pack(push, 1)
-
 // #define __AUTO_REMOVE
-
-// #define __USE_3_BYTES
 
 // #define __NODE_4_BITS
 // #define __NODE_3_BITS
@@ -30,55 +23,32 @@ typedef CNode *CNodePointer;
 // #define __HASH_3
 
 
-#ifdef __USE_3_BYTES
-struct CIndex
-{
-  BYTE Data[3];
-  operator =(UINT32 aValue)
-  { 
-    Data[0] = aValue & 0xFF;
-    Data[1] = (aValue >> 8) & 0xFF;
-    Data[2] = (aValue >> 16) & 0xFF;
-  }
-  operator UINT32() const { return (*((const UINT32 *)Data)) & 0xFFFFFF; }
-};
-#else
-  typedef UINT32 CIndex;
-#endif
-
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaPatrTree)
+typedef UInt32 CIndex;
 
 #ifdef __NODE_4_BITS
-  typedef UINT32 CIndex2;
-  typedef UINT32 CSameBitsType;
+  typedef UInt32 CIndex2;
+  typedef UInt32 CSameBitsType;
 #else
 #ifdef __NODE_3_BITS
-  typedef UINT32 CIndex2;
-  typedef UINT32 CSameBitsType;
+  typedef UInt32 CIndex2;
+  typedef UInt32 CSameBitsType;
 #else
 
-  #ifdef __USE_3_BYTES
-    typedef BYTE CSameBitsType;
-  #else
-    typedef UINT32 CIndex;
-    typedef UINT32 CSameBitsType;
-  #endif
+  typedef UInt32 CIndex;
+  typedef UInt32 CSameBitsType;
 
   typedef CIndex CIndex2;
 #endif
 #endif
 
-const UINT32 kNumBitsInIndex = sizeof(CIndex) * 8;
-const UINT32 kMatchStartValue = UINT32(1) << (kNumBitsInIndex - 1);
+const UInt32 kNumBitsInIndex = sizeof(CIndex) * 8;
+const UInt32 kMatchStartValue = UInt32(1) << (kNumBitsInIndex - 1);
+// don't change kMatchStartValue definition, since it is used in 
+// PatMain.h: 
 
 typedef CIndex CMatchPointer;
 
-const UINT32 kDescendantEmptyValue = kMatchStartValue - 1;
-
-#pragma pack(push, PragmaPatrTree2)
-#pragma pack(push, 1)
+const UInt32 kDescendantEmptyValue = kMatchStartValue - 1;
 
 union CDescendant 
 {
@@ -90,33 +60,27 @@ union CDescendant
   void MakeEmpty() { NodePointer = kDescendantEmptyValue; }
 };
 
-#pragma pack(pop)
-#pragma pack(pop, PragmaPatrTree2)
-
-#pragma pack( push, PragmaBackNode)
-#pragma pack( push, 1)
-
 #undef MY_BYTE_SIZE
 
 #ifdef __NODE_4_BITS
   #define MY_BYTE_SIZE 8
-  const UINT32 kNumSubBits = 4;
+  const UInt32 kNumSubBits = 4;
 #else
 #ifdef __NODE_3_BITS
   #define MY_BYTE_SIZE 9
-  const UINT32 kNumSubBits = 3;
+  const UInt32 kNumSubBits = 3;
 #else
   #define MY_BYTE_SIZE 8
   #ifdef __NODE_2_BITS
-    const UINT32 kNumSubBits = 2;
+    const UInt32 kNumSubBits = 2;
   #else
-    const UINT32 kNumSubBits = 1;
+    const UInt32 kNumSubBits = 1;
   #endif
 #endif
 #endif
 
-const UINT32 kNumSubNodes = 1 << kNumSubBits;
-const UINT32 kSubNodesMask = kNumSubNodes - 1;
+const UInt32 kNumSubNodes = 1 << kNumSubBits;
+const UInt32 kSubNodesMask = kNumSubNodes - 1;
 
 struct CNode
 {
@@ -125,17 +89,14 @@ struct CNode
   union
   {
     CDescendant  Descendants[kNumSubNodes];
-    UINT32 NextFreeNode;
+    UInt32 NextFreeNode;
   };
   #ifdef __NODE_2_BITS
   #ifdef __NODE_2_BITS_PADDING
-  UINT32 Padding[2];
+  UInt32 Padding[2];
   #endif
   #endif
 };
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaBackNode)
 
 #undef kIDNumBitsByte
 #undef kIDNumBitsString
@@ -183,13 +144,8 @@ struct CNode
 #undef kIDUse3BytesByte
 #undef kIDUse3BytesString
 
-#ifdef __USE_3_BYTES
-  #define kIDUse3BytesByte 0x02
-  #define kIDUse3BytesString TEXT("T")
-#else
-  #define kIDUse3BytesByte 0x00
-  #define kIDUse3BytesString TEXT("")
-#endif
+#define kIDUse3BytesByte 0x00
+#define kIDUse3BytesString TEXT("")
 
 #undef kIDPaddingByte
 #undef kIDPaddingString
@@ -227,23 +183,23 @@ class CPatricia:
   STDMETHOD(Init)(ISequentialInStream *aStream);
   STDMETHOD_(void, ReleaseStream)();
   STDMETHOD(MovePos)();
-  STDMETHOD_(BYTE, GetIndexByte)(UINT32 anIndex);
-  STDMETHOD_(UINT32, GetMatchLen)(UINT32 aIndex, UINT32 aBack, UINT32 aLimit);
-  STDMETHOD_(UINT32, GetNumAvailableBytes)();
-  STDMETHOD(Create)(UINT32 aSizeHistory, 
-      UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter);
-  STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *aDistances);
+  STDMETHOD_(Byte, GetIndexByte)(Int32 index);
+  STDMETHOD_(UInt32, GetMatchLen)(Int32 index, UInt32 back, UInt32 limit);
+  STDMETHOD_(UInt32, GetNumAvailableBytes)();
+  STDMETHOD(Create)(UInt32 historySize, 
+      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter);
+  STDMETHOD_(UInt32, GetLongestMatch)(UInt32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
-  STDMETHOD_(const BYTE *, GetPointerToCurrentPos)();
+  STDMETHOD_(const Byte *, GetPointerToCurrentPos)();
 
   void FreeMemory();
 public:
   CPatricia();
   ~CPatricia();
 
-  UINT32 _sizeHistory;
-  UINT32 _matchMaxLen;
+  UInt32 _sizeHistory;
+  UInt32 _matchMaxLen;
 
   CDescendant *m_HashDescendants;
   #ifdef __HASH_3
@@ -252,21 +208,19 @@ public:
 
   CNode *m_Nodes;
 
-  UINT32 m_FreeNode;
-  UINT32 m_FreeNodeMax;
+  UInt32 m_FreeNode;
+  UInt32 m_FreeNodeMax;
 
   #ifdef __AUTO_REMOVE
-  UINT32 m_NumUsedNodes;
-  UINT32 m_NumNodes;
+  UInt32 m_NumUsedNodes;
+  UInt32 m_NumNodes;
   #else
   bool  m_SpecialRemoveMode;
   #endif
 
   bool  m_SpecialMode;
-  UINT32 m_NumNotChangedCycles;
-  UINT32 *m_TmpBacks;
-
-  CAlignedBuffer m_AlignBuffer;
+  UInt32 m_NumNotChangedCycles;
+  UInt32 *m_TmpBacks;
 
   CMyComPtr<IMatchFinderCallback> m_Callback;
 
@@ -274,25 +228,25 @@ public:
   virtual void AfterMoveBlock();
 
   // IMatchFinderSetCallback
-  STDMETHOD(SetCallback)(IMatchFinderCallback *aCallback);
+  STDMETHOD(SetCallback)(IMatchFinderCallback *callback);
 
-  void ChangeLastMatch(UINT32 aHashValue);
+  void ChangeLastMatch(UInt32 hashValue);
   
   #ifdef __AUTO_REMOVE
-  void TestRemoveDescendant(CDescendant &aDescendant, UINT32 aLimitPos);
+  void TestRemoveDescendant(CDescendant &descendant, UInt32 limitPos);
   void TestRemoveNodes();
-  void RemoveNode(UINT32 anIndex);
-  void TestRemoveAndNormalizeDescendant(CDescendant &aDescendant, 
-      UINT32 aLimitPos, UINT32 aSubValue);
+  void RemoveNode(UInt32 index);
+  void TestRemoveAndNormalizeDescendant(CDescendant &descendant, 
+      UInt32 limitPos, UInt32 subValue);
   void TestRemoveNodesAndNormalize();
   #else
-  void NormalizeDescendant(CDescendant &aDescendant, UINT32 aSubValue);
+  void NormalizeDescendant(CDescendant &descendant, UInt32 subValue);
   void Normalize();
   void RemoveMatch();
   #endif
 private:
   void AddInternalNode(CNodePointer aNode, CIndex *aNodePointerPointer, 
-      BYTE aByte, BYTE aByteXOR, UINT32 aNumSameBits, UINT32 aPos)
+      Byte aByte, Byte aByteXOR, UInt32 aNumSameBits, UInt32 aPos)
   {
     while((aByteXOR & kSubNodesMask) == 0)
     {
@@ -302,7 +256,7 @@ private:
     }
     // Insert New Node
     CNodePointer aNewNode = &m_Nodes[m_FreeNode];
-    UINT32 aNodeIndex = *aNodePointerPointer;
+    UInt32 aNodeIndex = *aNodePointerPointer;
     *aNodePointerPointer = m_FreeNode;
     m_FreeNode = aNewNode->NextFreeNode;
     #ifdef __AUTO_REMOVE
@@ -314,9 +268,9 @@ private:
       m_Nodes[m_FreeNode].NextFreeNode = m_FreeNode + 1;
     }
 
-    UINT32 aBitsNew = aByte & kSubNodesMask;
-    UINT32 aBitsOld = (aByte ^ aByteXOR) & kSubNodesMask;
-    for (UINT32 i = 0; i < kNumSubNodes; i++)
+    UInt32 aBitsNew = aByte & kSubNodesMask;
+    UInt32 aBitsOld = (aByte ^ aByteXOR) & kSubNodesMask;
+    for (UInt32 i = 0; i < kNumSubNodes; i++)
       aNewNode->Descendants[i].NodePointer = kDescendantEmptyValue;
     aNewNode->Descendants[aBitsNew].MatchPointer = aPos + kMatchStartValue;
     aNewNode->Descendants[aBitsOld].NodePointer = aNodeIndex;
@@ -326,15 +280,15 @@ private:
     aNode->NumSameBits = CSameBitsType(aNumSameBits - kNumSubBits);
   }
 
-  void AddLeafNode(CNodePointer aNode, BYTE aByte, BYTE aByteXOR, 
-      UINT32 aNumSameBits, UINT32 aPos, UINT32 aDescendantIndex)
+  void AddLeafNode(CNodePointer aNode, Byte aByte, Byte aByteXOR, 
+      UInt32 aNumSameBits, UInt32 aPos, UInt32 aDescendantIndex)
   {
     for(;(aByteXOR & kSubNodesMask) == 0; aNumSameBits += kNumSubBits)
     {
       aByte >>= kNumSubBits;
       aByteXOR >>= kNumSubBits;
     }
-    UINT32 aNewNodeIndex = m_FreeNode;
+    UInt32 aNewNodeIndex = m_FreeNode;
     CNodePointer aNewNode = &m_Nodes[m_FreeNode];
     m_FreeNode = aNewNode->NextFreeNode;
     #ifdef __AUTO_REMOVE
@@ -346,9 +300,9 @@ private:
       m_Nodes[m_FreeNode].NextFreeNode = m_FreeNode + 1;
     }
 
-    UINT32 aBitsNew = (aByte & kSubNodesMask);
-    UINT32 aBitsOld = (aByte ^ aByteXOR) & kSubNodesMask;
-    for (UINT32 i = 0; i < kNumSubNodes; i++)
+    UInt32 aBitsNew = (aByte & kSubNodesMask);
+    UInt32 aBitsOld = (aByte ^ aByteXOR) & kSubNodesMask;
+    for (UInt32 i = 0; i < kNumSubNodes; i++)
       aNewNode->Descendants[i].NodePointer = kDescendantEmptyValue;
     aNewNode->Descendants[aBitsNew].MatchPointer = aPos + kMatchStartValue;
     aNewNode->Descendants[aBitsOld].MatchPointer = 

@@ -12,9 +12,9 @@
 #include "../../Common/FileStreams.h"
 
 #include "../Common/UpdatePair.h"
+#include "../Common/ArchiveExtractCallback.h"
 
 #include "Agent.h"
-#include "ArchiveExtractCallback.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -41,11 +41,12 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
         IID_IFolderArchiveExtractCallback, &extractCallback2));
   }
 
-  extractCallbackSpec->Init(_agentSpec->_archive, 
+  extractCallbackSpec->Init(_agentSpec->GetArchive(), 
       extractCallback2, 
+      false,
       path,
-      NExtractionMode::NPath::kCurrentPathnames, 
-      NExtractionMode::NOverwrite::kAskBefore, 
+      NExtract::NPathMode::kCurrentPathnames, 
+      NExtract::NOverwriteMode::kAskBefore, 
       pathParts, 
       _agentSpec->DefaultName,
       _agentSpec->DefaultTime, 
@@ -54,7 +55,7 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       );
   CUIntVector realIndices;
   _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
-  return _agentSpec->_archive->Extract(&realIndices.Front(), 
+  return _agentSpec->GetArchive()->Extract(&realIndices.Front(), 
       realIndices.Size(), BoolToInt(false), extractCallback);
   COM_TRY_END
 }

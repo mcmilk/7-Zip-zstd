@@ -1,10 +1,8 @@
 // PPMDEncode.h
 // This code is based on Dmitry Shkarin's PPMdH code
 
-#pragma once
-
-#ifndef __COMPRESS_PPM_PPMD_ENCODE_H
-#define __COMPRESS_PPM_PPMD_ENCODE_H
+#ifndef __COMPRESS_PPMD_ENCODE_H
+#define __COMPRESS_PPMD_ENCODE_H
 
 #include "PPMDContext.h"
 
@@ -23,14 +21,14 @@ struct CEncodeInfo: public CInfo
       FoundState = &rs;
       rs.Freq += (rs.Freq < 128);
       rangeEncoder->EncodeBit(bs, TOT_BITS, 0);
-      bs += UINT16(INTERVAL-GET_MEAN(bs,PERIOD_BITS, 2));
+      bs += UInt16(INTERVAL-GET_MEAN(bs,PERIOD_BITS, 2));
       PrevSuccess = 1;
       RunLength++;
     } 
     else 
     {
       rangeEncoder->EncodeBit(bs, TOT_BITS, 1);
-      bs -= UINT16(GET_MEAN(bs,PERIOD_BITS, 2));
+      bs -= UInt16(GET_MEAN(bs,PERIOD_BITS, 2));
       InitEsc = ExpEscape[bs >> 10];
       NumMasked = 1;                        
       CharMask[rs.Symbol] = EscCount;
@@ -76,7 +74,7 @@ struct CEncodeInfo: public CInfo
   void EncodeSymbol2(int symbol, NRangeCoder::CEncoder *rangeEncoder)
   {
     int hiCnt, i = MinContext->NumStats - NumMasked;
-    UINT32 scale;
+    UInt32 scale;
     SEE2_CONTEXT* psee2c = makeEscFreq2(i, scale);
     PPM_CONTEXT::STATE* p = MinContext->Stats - 1;                       
     hiCnt = 0;
@@ -98,8 +96,8 @@ struct CEncodeInfo: public CInfo
     return;
 SYMBOL_FOUND:
     
-    UINT32 highCount = hiCnt;
-    UINT32 lowCount = highCount - p->Freq;
+    UInt32 highCount = hiCnt;
+    UInt32 lowCount = highCount - p->Freq;
     if ( --i ) 
     {
       PPM_CONTEXT::STATE* p1 = p;

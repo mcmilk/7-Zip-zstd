@@ -1,7 +1,5 @@
 // AgentProxy.h
 
-#pragma once
-
 #ifndef __AGENT_PROXY_H
 #define __AGENT_PROXY_H
 

@@ -6,20 +6,14 @@
 #include "Common/Buffer.h"
 #include "Common/CRC.h"
 
-#include "Windows/Defs.h"
-
 #include "ArjIn.h"
 
 namespace NArchive {
 namespace NArj {
  
-CInArchiveException::CInArchiveException(CCauseType cause):
-  Cause(cause)
-{}
-
-HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 *processedSize)
+HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
@@ -27,39 +21,39 @@ HRESULT CInArchive::ReadBytes(void *data, UINT32 size, UINT32 *processedSize)
   return result;
 }
 
-inline bool TestMarkerCandidate(const void *testBytes, UINT32 maxSize)
+inline bool TestMarkerCandidate(const void *testBytes, UInt32 maxSize)
 {
   if (maxSize < 2 + 2 + 4)
     return false;
-  const BYTE *block = ((const BYTE *)(testBytes));
+  const Byte *block = ((const Byte *)(testBytes));
   if (block[0] != NSignature::kSig0 || block[1] != NSignature::kSig1)
     return false;
-  UINT32 blockSize = *((const UINT16 *)(block + 2));
+  UInt32 blockSize = *((const UInt16 *)(block + 2));
   if (maxSize < 2 + 2 + blockSize + 4)
     return false;
   block += 4;
   if (blockSize == 0 || blockSize > 2600)
     return false;
-  UINT32 crcFromFile = *(const UINT32 *)(block + blockSize);
+  UInt32 crcFromFile = *(const UInt32 *)(block + blockSize);
   return (CCRC::VerifyDigest(crcFromFile, block, blockSize));
 }
 
-bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
+bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
 {
   // _archiveInfo.StartPosition = 0;
   _position = _streamStartPosition;
   if(_stream->Seek(_streamStartPosition, STREAM_SEEK_SET, NULL) != S_OK)
     return false;
 
-  const int kMarkerSizeMax = 2 + 2 + kMaxBlockSize + sizeof(UINT32);
+  const int kMarkerSizeMax = 2 + 2 + kMaxBlockSize + 4;
 
   CByteBuffer byteBuffer;
-  static const UINT32 kSearchMarkerBufferSize = 0x10000;
+  static const UInt32 kSearchMarkerBufferSize = 0x10000;
   byteBuffer.SetCapacity(kSearchMarkerBufferSize);
-  BYTE *buffer = byteBuffer;
+  Byte *buffer = byteBuffer;
 
-  UINT32 processedSize; 
-  ReadBytes(buffer, 2 + 2 + kMaxBlockSize + sizeof(UINT32), &processedSize);
+  UInt32 processedSize; 
+  ReadBytes(buffer, kMarkerSizeMax, &processedSize);
   if (processedSize == 0)
     return false;
   if (TestMarkerCandidate(buffer, processedSize))
@@ -70,21 +64,21 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
     return true;
   }
 
-  UINT32 numBytesPrev = processedSize - 1;
+  UInt32 numBytesPrev = processedSize - 1;
   memmove(buffer, buffer + 1, numBytesPrev);
-  UINT64 curTestPos = _streamStartPosition + 1;
+  UInt64 curTestPos = _streamStartPosition + 1;
   while(true)
   {
     if (searchHeaderSizeLimit != NULL)
       if (curTestPos - _streamStartPosition > *searchHeaderSizeLimit)
         return false;
-    UINT32 numReadBytes = kSearchMarkerBufferSize - numBytesPrev;
+    UInt32 numReadBytes = kSearchMarkerBufferSize - numBytesPrev;
     ReadBytes(buffer + numBytesPrev, numReadBytes, &processedSize);
-    UINT32 numBytesInBuffer = numBytesPrev + processedSize;
+    UInt32 numBytesInBuffer = numBytesPrev + processedSize;
     if (numBytesInBuffer < 1)
       return false;
-    UINT32 numTests = numBytesInBuffer;
-    for(UINT32 pos = 0; pos < numTests; pos++, curTestPos++)
+    UInt32 numTests = numBytesInBuffer;
+    for(UInt32 pos = 0; pos < numTests; pos++, curTestPos++)
     { 
       if (TestMarkerCandidate(buffer + pos, numBytesInBuffer - pos))
       {
@@ -100,39 +94,68 @@ bool CInArchive::FindAndReadMarker(const UINT64 *searchHeaderSizeLimit)
   }
 }
 
-void CInArchive::IncreasePositionValue(UINT64 addValue)
+void CInArchive::IncreasePositionValue(UInt64 addValue)
 {
   _position += addValue;
 }
 
-void CInArchive::IncreaseRealPosition(UINT64 addValue)
+void CInArchive::IncreaseRealPosition(UInt64 addValue)
 {
   if(_stream->Seek(addValue, STREAM_SEEK_CUR, &_position) != S_OK)
     throw CInArchiveException(CInArchiveException::kSeekStreamError);
 }
 
-bool CInArchive::ReadBytesAndTestSize(void *data, UINT32 size)
+bool CInArchive::ReadBytesAndTestSize(void *data, UInt32 size)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   if(ReadBytes(data, size, &realProcessedSize) != S_OK)
     throw CInArchiveException(CInArchiveException::kReadStreamError);
   return (realProcessedSize == size);
 }
 
-void CInArchive::SafeReadBytes(void *data, UINT32 size)
+void CInArchive::SafeReadBytes(void *data, UInt32 size)
 {
   if(!ReadBytesAndTestSize(data, size))
     throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
 }
 
+Byte CInArchive::SafeReadByte()
+{
+  Byte b;
+  SafeReadBytes(&b, 1);
+  return b;
+}
+
+UInt16 CInArchive::SafeReadUInt16()
+{
+  UInt16 value = 0;
+  for (int i = 0; i < 2; i++)
+  {
+    Byte b = SafeReadByte();
+    value |= (UInt16(b) << (8 * i));
+  }
+  return value;
+}
+
+UInt32 CInArchive::SafeReadUInt32()
+{
+  UInt32 value = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    Byte b = SafeReadByte();
+    value |= (UInt32(b) << (8 * i));
+  }
+  return value;
+}
+
 bool CInArchive::ReadBlock()
 {
-  SafeReadBytes(&_blockSize, sizeof(_blockSize));
+  _blockPos = 0;
+  _blockSize = SafeReadUInt16();
   if (_blockSize == 0)
     return false;
   SafeReadBytes(_block, _blockSize);
-  UINT32 crcFromFile;
-  ReadBytesAndTestSize(&crcFromFile, sizeof(crcFromFile));
+  UInt32 crcFromFile = SafeReadUInt32();
   if (!CCRC::VerifyDigest(crcFromFile, _block, _blockSize))
     throw CInArchiveException(CInArchiveException::kCRCError);
   return true;
@@ -140,14 +163,14 @@ bool CInArchive::ReadBlock()
 
 bool CInArchive::ReadBlock2()
 {
-  BYTE id[2];
+  Byte id[2];
   ReadBytesAndTestSize(id, 2);
   if (id[0] != NSignature::kSig0 || id[1] != NSignature::kSig1)
     throw CInArchiveException(CInArchiveException::kIncorrectArchive);
   return ReadBlock();
 }
 
-bool CInArchive::Open(IInStream *inStream, const UINT64 *searchHeaderSizeLimit)
+bool CInArchive::Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit)
 {
   _stream = inStream;
   if(_stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition) != S_OK)
@@ -173,40 +196,67 @@ void CInArchive::ThrowIncorrectArchiveException()
   throw CInArchiveException(CInArchiveException::kIncorrectArchive);
 }
 
+Byte CInArchive::ReadByte()
+{
+  if (_blockPos >= _blockSize)
+    ThrowIncorrectArchiveException();
+  return _block[_blockPos++];
+}
+
+UInt16 CInArchive::ReadUInt16()
+{
+  UInt16 value = 0;
+  for (int i = 0; i < 2; i++)
+  {
+    Byte b = ReadByte();
+    value |= (UInt16(b) << (8 * i));
+  }
+  return value;
+}
+
+UInt32 CInArchive::ReadUInt32()
+{
+  UInt32 value = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    Byte b = ReadByte();
+    value |= (UInt32(b) << (8 * i));
+  }
+  return value;
+}
+
 HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
 {
   filled  = false;
   if (!ReadBlock2())
     return S_OK;
 
-  const NFileHeader::CHeader &header = *(const NFileHeader::CHeader *)_block;
-
-  item.Version = header.Version;
-  item.ExtractVersion = header.ExtractVersion;
-  item.HostOS = header.HostOS;
-  item.Flags = header.Flags;
-  item.Method = header.Method;
-  item.FileType = header.FileType;
-  item.ModifiedTime = header.ModifiedTime;
-  item.PackSize = header.PackSize;
-  item.Size = header.Size;
-  item.FileCRC = header.FileCRC;
-  item.FileAccessMode = header.FileAccessMode;
+  Byte firstHeaderSize = ReadByte();
+  item.Version = ReadByte();
+  item.ExtractVersion = ReadByte();
+  item.HostOS = ReadByte();
+  item.Flags = ReadByte();
+  item.Method = ReadByte();
+  item.FileType = ReadByte();
+  ReadByte(); // Reserved
+  item.ModifiedTime = ReadUInt32();
+  item.PackSize = ReadUInt32();
+  item.Size = ReadUInt32();
+  item.FileCRC = ReadUInt32();
+  ReadUInt16(); // FilespecPositionInFilename
+  item.FileAccessMode = ReadUInt16();
+  ReadByte(); // FirstChapter
+  ReadByte(); // LastChapter
 
   /*
-  UINT32 extraData;
+  UInt32 extraData;
   if ((header.Flags & NFileHeader::NFlags::kExtFile) != 0)
-    extraData = *(const UINT32 *)(_block + pos);
+    extraData = *(const UInt32 *)(_block + pos);
   */
-  int pos = header.FirstHeaderSize;
+  _blockPos = firstHeaderSize;
 
-  for (; pos < _blockSize; pos++)
-  {
-    char aByte = _block[pos];
-    if (aByte == 0)
-      break;
-    item.Name += aByte;
-  }
+  for (; _blockPos < _blockSize;)
+    item.Name += (char)ReadByte();
 
   while(true)
     if (!ReadBlock())

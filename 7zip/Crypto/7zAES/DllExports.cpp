@@ -35,23 +35,23 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   COM_TRY_BEGIN
   *outObject = 0;
-  int correctInterface = (*iid == IID_ICompressCoder);
-  CMyComPtr<ICompressCoder> coder;
+  int correctInterface = (*iid == IID_ICompressFilter);
+  CMyComPtr<ICompressFilter> filter;
   if (*clsid == CLSID_CCrypto7zAESDecoder)
   {
     if (!correctInterface)
       return E_NOINTERFACE;
-    coder = (ICompressCoder *)new NCrypto::NSevenZ::CDecoder();
+    filter = (ICompressFilter *)new NCrypto::NSevenZ::CDecoder();
   }
   else if (*clsid == CLSID_CCrypto7zAESEncoder)
   {
     if (!correctInterface)
       return E_NOINTERFACE;
-    coder = (ICompressCoder *)new NCrypto::NSevenZ::CEncoder();
+    filter = (ICompressFilter *)new NCrypto::NSevenZ::CEncoder();
   }
   else
     return CLASS_E_CLASSNOTAVAILABLE;
-  *outObject = coder.Detach();
+  *outObject = filter.Detach();
   COM_TRY_END
   return S_OK;
 }

@@ -1,7 +1,5 @@
 // 7zUpdate.h
 
-#pragma once
-
 #ifndef __7Z_UPDATE_H
 #define __7Z_UPDATE_H
 
@@ -13,14 +11,6 @@
 namespace NArchive {
 namespace N7z {
 
-struct CUpdateRange
-{
-  UINT64 Position; 
-  UINT64 Size;
-  CUpdateRange() {};
-  CUpdateRange(UINT64 position, UINT64 size): Position(position), Size(size) {};
-};
-
 struct CUpdateItem
 {
   bool NewData;
@@ -28,11 +18,11 @@ struct CUpdateItem
   int IndexInArchive;
   int IndexInClient;
   
-  UINT32 Attributes;
+  UInt32 Attributes;
   FILETIME CreationTime;
   FILETIME LastWriteTime;
 
-  UINT64 Size;
+  UInt64 Size;
   UString Name;
   
   bool IsAnti;
@@ -52,21 +42,28 @@ struct CUpdateItem
   UString GetExtension() const;
 };
 
-HRESULT Update(const NArchive::N7z::CArchiveDatabaseEx &database,
-    CObjectVector<CUpdateItem> &updateItems,
-    IOutStream *outStream,
-    IInStream *inStream,
-    CInArchiveInfo *inArchiveInfo,
-    const CCompressionMethodMode &method,
-    const CCompressionMethodMode *headerMethod,
-    bool useFilters,
-    bool maxFilter,
-    bool useAdditionalHeaderStreams, 
-    bool compressMainHeader,
-    IArchiveUpdateCallback *updateCallback,
-    UINT64 numSolidFiles, UINT64 numSolidBytes, bool solidExtension,
-    bool removeSfxBlock);
+struct CUpdateOptions
+{
+  const CCompressionMethodMode *Method;
+  const CCompressionMethodMode *HeaderMethod;
+  bool UseFilters;
+  bool MaxFilter;
+  bool UseAdditionalHeaderStreams;
+  bool CompressMainHeader;
+  UInt64 NumSolidFiles;
+  UInt64 NumSolidBytes;
+  bool SolidExtension;
+  bool RemoveSfxBlock;
+  bool VolumeMode;
+};
 
+HRESULT Update(
+    IInStream *inStream,
+    const CArchiveDatabaseEx *database,
+    CObjectVector<CUpdateItem> &updateItems,
+    ISequentialOutStream *seqOutStream,
+    IArchiveUpdateCallback *updateCallback,
+    const CUpdateOptions &options);
 }}
 
 #endif

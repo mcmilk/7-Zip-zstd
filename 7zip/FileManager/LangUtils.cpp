@@ -42,14 +42,14 @@ void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numIte
   }
 }
 
-void LangSetWindowText(HWND window, UINT32 langID)
+void LangSetWindowText(HWND window, UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
     SetWindowText(window, GetSystemString(message));
 }
 
-UString LangLoadString(UINT32 langID)
+UString LangLoadString(UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
@@ -57,7 +57,7 @@ UString LangLoadString(UINT32 langID)
   return UString();
 }
 
-CSysString LangLoadString(UINT resourceID, UINT32 langID)
+CSysString LangLoadString(UINT resourceID, UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
@@ -65,7 +65,7 @@ CSysString LangLoadString(UINT resourceID, UINT32 langID)
   return NWindows::MyLoadString(resourceID);
 }
 
-UString LangLoadStringW(UINT resourceID, UINT32 langID)
+UString LangLoadStringW(UINT resourceID, UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))

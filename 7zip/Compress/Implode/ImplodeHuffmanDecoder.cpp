@@ -8,10 +8,10 @@ namespace NCompress {
 namespace NImplode {
 namespace NHuffman {
 
-CDecoder::CDecoder(UINT32 numSymbols):
+CDecoder::CDecoder(UInt32 numSymbols):
   m_NumSymbols(numSymbols)
 {
-  m_Symbols = new UINT32[m_NumSymbols];
+  m_Symbols = new UInt32[m_NumSymbols];
 }
 
 CDecoder::~CDecoder()
@@ -19,14 +19,14 @@ CDecoder::~CDecoder()
   delete []m_Symbols;
 }
 
-void CDecoder::SetCodeLengths(const BYTE *codeLengths)
+void CDecoder::SetCodeLengths(const Byte *codeLengths)
 {
   // int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
   int lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
   int i;
   for(i = 0; i <= kNumBitsInLongestCode; i++)
     lenCounts[i] = 0;
-  UINT32 symbolIndex;
+  UInt32 symbolIndex;
   for (symbolIndex = 0; symbolIndex < m_NumSymbols; symbolIndex++)
     lenCounts[codeLengths[symbolIndex]]++;
   // lenCounts[0] = 0;
@@ -37,8 +37,8 @@ void CDecoder::SetCodeLengths(const BYTE *codeLengths)
   lenCounts[kNumBitsInLongestCode + 1] =  0;
 
 
-  UINT32 startPos = 0;
-  static const UINT32 kMaxValue = (1 << kNumBitsInLongestCode);
+  UInt32 startPos = 0;
+  static const UInt32 kMaxValue = (1 << kNumBitsInLongestCode);
 
   for (i = kNumBitsInLongestCode; i > 0; i--)
   {
@@ -62,10 +62,10 @@ void CDecoder::SetCodeLengths(const BYTE *codeLengths)
       m_Symbols[--tmpPositions[codeLengths[symbolIndex]]] = symbolIndex;
 }
 
-UINT32 CDecoder::DecodeSymbol(CInBit *inStream)
+UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
 {
-  UINT32 numBits;
-  UINT32 value = inStream->GetValue(kNumBitsInLongestCode);
+  UInt32 numBits;
+  UInt32 value = inStream->GetValue(kNumBitsInLongestCode);
   int i;
   for(i = kNumBitsInLongestCode; i > 0; i--)
   {
@@ -78,7 +78,7 @@ UINT32 CDecoder::DecodeSymbol(CInBit *inStream)
   if (i == 0)
     throw CDecoderException();
   inStream->MovePos(numBits);
-  UINT32 index = m_Positions[numBits] + 
+  UInt32 index = m_Positions[numBits] + 
       ((value - m_Limitits[numBits + 1]) >> (kNumBitsInLongestCode - numBits));
   if (index >= m_NumSymbols)
     throw CDecoderException(); // test it

@@ -1,7 +1,5 @@
 // Windows/Registry.h
 
-#pragma once
-
 #ifndef __WINDOWS_REGISTRY_H
 #define __WINDOWS_REGISTRY_H
 

@@ -1,9 +1,9 @@
-7-Zip 3.11 Sources
+7-Zip 4.07 Sources
 ------------------
 
-7-Zip is a file archiver for Windows 95/98/ME/NT/2000/XP. 
+7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
 
-7-Zip Copyright (C) 1999-2003 Igor Pavlov.
+7-Zip Copyright (C) 1999-2004 Igor Pavlov.
 
 
 License Info
@@ -28,13 +28,18 @@ License notes
 -------------
 
 You can support development of 7-Zip by registering and 
-paying $20. As registered user, you will be able 
-to get technical support via e-mail support@7-zip.org.
+paying $20.
 
 7-Zip is free software distributed under the GNU LGPL.
-If you need license with other conditions, write to support@7-zip.org.
-You also can request for help in creating code based on 
-7-Zip's code for your custom application. 
+If you need license with other conditions, write to
+http://www.7-zip.org/support.html
+
+---
+Also this package contains files from LZMA SDK
+you can download LZMA SDK from this page:
+http://www.7-zip.org/sdk.html
+read about license for LZMA SDk in file
+DOC/lzma.txt
 
 
 How to compile
@@ -45,6 +50,19 @@ new Platform SDK from Microsoft' Site:
 http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm
 or
 http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
+
+
+Also for compiling BZip2 code you must download BZip source to folder
+7zip/Compress/BZip2/Original
+You can find BZip2 sources from that page:
+http://sources.redhat.com/bzip2/index.html
+
+
+
+Compiling under Unix/Linux
+--------------------------
+If sizeof(wchar_t) == 4 in your compiler,
+you must use only 2 low bytes of wchar_t.
 
 
 Notes:
@@ -72,16 +90,11 @@ DOC                Documentation
   history.txt    - Sources history
   Methods.txt    - Compression method IDs
   readme.txt     - Readme file
-
-  Alien             Must contains third party sources
-    Compress
-      BZip2         BZip2 compression sources from
-                    http://sources.redhat.com/bzip2/index.html
+  lzma.txt       - LZMA SDK description
 
 
 Common            Common modules
 Windows           Win32 wrappers
-Far               FAR interface wrappers
 
 7zip
 -------
@@ -153,7 +166,6 @@ Far               FAR interface wrappers
 ---
 Igor Pavlov
 http://www.7-zip.org
-support@7-zip.org
 
 
 ---

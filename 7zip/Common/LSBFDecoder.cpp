@@ -7,7 +7,7 @@
 namespace NStream {
 namespace NLSBF {
 
-BYTE kInvertTable[256];
+Byte kInvertTable[256];
 
 class CInverterTableInitializer
 {
@@ -16,8 +16,8 @@ public:
   {
     for(int i = 0; i < 256; i++)
     {
-      BYTE b = BYTE(i);
-      BYTE bInvert = 0;
+      Byte b = Byte(i);
+      Byte bInvert = 0;
       for(int j = 0; j < 8; j++)
       {
         bInvert <<= 1;

@@ -7,10 +7,26 @@
 #include "UpdateCallback100.h"
 // #include "Windows/ProcessMessages.h"
 // #include "Resource/PasswordDialog/PasswordDialog.h"
+#include "Resource/MessagesDialog/MessagesDialog.h"
 
 #include "Common/Defs.h"
 
 using namespace NWindows;
+
+CUpdateCallback100Imp::~CUpdateCallback100Imp()
+{
+  if (!Messages.IsEmpty())
+  {
+    CMessagesDialog messagesDialog;
+    messagesDialog.Messages = &Messages;
+    messagesDialog.Create(_parentWindow);
+  }
+}
+
+void CUpdateCallback100Imp::AddErrorMessage(LPCWSTR message)
+{
+  Messages.Add(GetSystemString(message));
+}
 
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 size)
 {
@@ -45,6 +61,12 @@ STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *name)
 
 STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 operationResult)
 {
+  return S_OK;
+}
+
+STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
+{
+  AddErrorMessage(message);
   return S_OK;
 }
 

@@ -4,6 +4,10 @@
 
 #include "StringConvert.h"
 
+#ifndef WIN32
+#include <stdlib.h>
+#endif
+
 #ifdef WIN32
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 {
@@ -57,6 +61,14 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
   UString resultString;
   for (int i = 0; i < srcString.Length(); i++)
     resultString += wchar_t(srcString[i]);
+  /*
+  if(!srcString.IsEmpty())
+  {
+    int numChars = mbstowcs(resultString.GetBuffer(srcString.Length()), srcString, srcString.Length() + 1);
+    if (numChars < 0) throw "Your environment does not support UNICODE";
+    resultString.ReleaseBuffer(numChars);
+  }
+  */
   return resultString;
 }
 
@@ -65,7 +77,17 @@ AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
   AString resultString;
   for (int i = 0; i < srcString.Length(); i++)
     resultString += char(srcString[i]);
+  /*
+  if(!srcString.IsEmpty())
+  {
+    int numRequiredBytes = srcString.Length() * 6 + 1;
+    int numChars = wcstombs(resultString.GetBuffer(numRequiredBytes), srcString, numRequiredBytes);
+    if (numChars < 0) throw "Your environment does not support UNICODE";
+    resultString.ReleaseBuffer(numChars);
+  }
+  */
   return resultString;
 }
 
 #endif
+

@@ -1,7 +1,5 @@
 // Windows/Control/ProgressBar.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_PROGRESSBAR_H
 #define __WINDOWS_CONTROL_PROGRESSBAR_H
 

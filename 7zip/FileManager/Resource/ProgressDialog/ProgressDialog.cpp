@@ -99,7 +99,7 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
   if (percentValue != _prevPercentValue) 
   {
     wchar_t s[64];
-    ConvertUINT64ToString(percentValue, s);
+    ConvertUInt64ToString(percentValue, s);
     UString title = s;
     title += L"% ";
     SetText(title + _title);

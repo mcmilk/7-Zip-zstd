@@ -3,8 +3,6 @@
 #ifndef __ARCHIVE_CAB_COPY_DECODER_H
 #define __ARCHIVE_CAB_COPY_DECODER_H
 
-#pragma once
-
 #include "Common/MyCom.h"
 #include "../../ICoder.h"
 #include "../../Common/OutBuffer.h"
@@ -19,18 +17,18 @@ class CCopyDecoder:
 {
   CInBuffer m_InStream;
   COutBuffer m_OutStream;
-  BYTE m_ReservedSize;
-  UINT32 m_NumInDataBlocks;
+  Byte m_ReservedSize;
+  UInt32 m_NumInDataBlocks;
 public:
   MY_UNKNOWN_IMP
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
-      const UINT64 *inSize, const UINT64 *outSize,
+      const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  // void ReleaseStreams();
+  void ReleaseStreams();
   HRESULT Flush() { return m_OutStream.Flush(); }
-  void SetParams(BYTE reservedSize, UINT32 numInDataBlocks) 
+  void SetParams(Byte reservedSize, UInt32 numInDataBlocks) 
   { 
     m_ReservedSize = reservedSize;
     m_NumInDataBlocks = numInDataBlocks;

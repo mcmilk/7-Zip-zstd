@@ -13,14 +13,14 @@
 #include "TarOut.h"
 #include "TarUpdate.h"
 
-static const UINT64 kOneItemComplexity = 512;
+static const UInt64 kOneItemComplexity = 512;
 
 namespace NArchive {
 namespace NTar {
 
 static HRESULT CopyBlock(ISequentialInStream *inStream, 
     ISequentialOutStream *outStream, ICompressProgressInfo *progress,
-    UINT64 *totalSize = NULL)
+    UInt64 *totalSize = NULL)
 {
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
@@ -38,7 +38,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   COutArchive outArchive;
   outArchive.Create(outStream);
 
-  UINT64 complexity = 0;
+  UInt64 complexity = 0;
 
   int i;
   for(i = 0; i < updateItems.Size(); i++)
@@ -99,28 +99,31 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     if (updateItem.NewData)
     {
       item.Size = updateItem.Size;
+      if (item.Size == UInt64(Int64(-1)))
+        return E_INVALIDARG;
     }
     else
     {
       const CItemEx &existItemInfo = inputItems[updateItem.IndexInArchive];
       item.Size = existItemInfo.Size;
     }
-    if (updateItem.NewData || updateItem.NewProperties)
-    {
-      RINOK(outArchive.WriteHeader(item));
-    }
-
+  
     if (updateItem.NewData)
     {
-      CMyComPtr<IInStream> fileInStream;
-      RINOK(updateCallback->GetStream(updateItem.IndexInClient, &fileInStream));
-      if (!updateItem.IsDirectory)
+      CMyComPtr<ISequentialInStream> fileInStream;
+      HRESULT res = updateCallback->GetStream(updateItem.IndexInClient, &fileInStream);
+      if (res != S_FALSE)
       {
-        UINT64 totalSize;
-        RINOK(CopyBlock(fileInStream, outStream, compressProgress, &totalSize));
-        if (totalSize != item.Size)
-          return E_FAIL;
-        RINOK(outArchive.FillDataResidual(item.Size));
+        RINOK(res);
+        RINOK(outArchive.WriteHeader(item));
+        if (!updateItem.IsDirectory)
+        {
+          UInt64 totalSize;
+          RINOK(CopyBlock(fileInStream, outStream, compressProgress, &totalSize));
+          if (totalSize != item.Size)
+            return E_FAIL;
+          RINOK(outArchive.FillDataResidual(item.Size));
+        }
       }
       complexity += updateItem.Size;
       RINOK(updateCallback->SetOperationResult(
@@ -133,6 +136,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       const CItemEx &existItemInfo = inputItems[updateItem.IndexInArchive];
       if (updateItem.NewProperties)
       {
+        RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItemInfo.GetDataPosition(), 
             STREAM_SEEK_SET, NULL));
         streamSpec->Init(inStream, existItemInfo.Size);

@@ -1,7 +1,5 @@
 // ZipOut.h
 
-#pragma once
-
 #ifndef __ZIP_OUT_H
 #define __ZIP_OUT_H
 
@@ -18,26 +16,29 @@ namespace NZip {
 class COutArchiveInfo
 {
 public:
-  UINT16 NumEntriesInCentaralDirectory;
-  UINT32 CentralDirectorySize;
-  UINT32 CentralDirectoryStartOffset;
-  UINT16 CommentSize;
+  UInt16 NumEntriesInCentaralDirectory;
+  UInt32 CentralDirectorySize;
+  UInt32 CentralDirectoryStartOffset;
+  UInt16 CommentSize;
 };
 
 class COutArchive
 {
   CMyComPtr<IOutStream> m_Stream;
 
-  UINT32 m_BasePosition;
-  UINT32 m_LocalFileHeaderSize;
+  UInt32 m_BasePosition;
+  UInt32 m_LocalFileHeaderSize;
 
-  void WriteBytes(const void *buffer, UINT32 size);
+  void WriteBytes(const void *buffer, UInt32 size);
+  void WriteByte(Byte b);
+  void WriteUInt16(UInt16 value);
+  void WriteUInt32(UInt32 value);
 
 public:
   void Create(IOutStream *outStream);
-  void MoveBasePosition(UINT32 distanceToMove);
-  UINT32 GetCurrentPosition() const { return m_BasePosition; };
-  void PrepareWriteCompressedData(UINT16 fileNameLength);
+  void MoveBasePosition(UInt32 distanceToMove);
+  UInt32 GetCurrentPosition() const { return m_BasePosition; };
+  void PrepareWriteCompressedData(UInt16 fileNameLength);
   void WriteLocalHeader(const CItem &item);
 
   void WriteCentralHeader(const CItem &item);

@@ -70,10 +70,21 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Show "".."" item",IDC_SETTINGS_SHOW_DOTS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,7,196,10
-    CONTROL         "Show real file icons",IDC_SETTINGS_SHOW_REAL_FILE_ICONS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,21,196,10
-    CONTROL         "Show system menu",IDC_SETTINGS_SHOW_SYSTEM_MENU,"Button",
+    CONTROL         "Show real file &icons",
+                    IDC_SETTINGS_SHOW_REAL_FILE_ICONS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,21,196,10
+    CONTROL         "Show system &menu",IDC_SETTINGS_SHOW_SYSTEM_MENU,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,35,196,10
+    CONTROL         "&Full row select",IDC_SETTINGS_FULL_ROW,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,196,10
+    CONTROL         "Show &grid lines",IDC_SETTINGS_SHOW_GRID,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,77,196,10
+    CONTROL         "&Single-click to open an item",
+                    IDC_SETTINGS_SINGLE_CLICK,"Button",BS_AUTOCHECKBOX | NOT 
+                    WS_VISIBLE | WS_TABSTOP,7,91,196,10
+    CONTROL         "&Underline current name",IDC_SETTINGS_UNDERLINE,"Button",
+                    BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,19,105,184,
+                    10
 END
 
 

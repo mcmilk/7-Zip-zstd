@@ -1,7 +1,5 @@
 // Archive/TarOut.h
 
-#pragma once
-
 #ifndef __ARCHIVE_TAR_OUT_H
 #define __ARCHIVE_TAR_OUT_H
 
@@ -16,12 +14,12 @@ namespace NTar {
 class COutArchive
 {
   CMyComPtr<ISequentialOutStream> m_Stream;
-  HRESULT WriteBytes(const void *buffer, UINT32 size);
+  HRESULT WriteBytes(const void *buffer, UInt32 size);
 public:
   void Create(ISequentialOutStream *outStream);
   HRESULT WriteHeaderReal(const CItem &item);
   HRESULT WriteHeader(const CItem &item);
-  HRESULT FillDataResidual(UINT64 dataSize);
+  HRESULT FillDataResidual(UInt64 dataSize);
   HRESULT WriteFinishHeader();
 };
 

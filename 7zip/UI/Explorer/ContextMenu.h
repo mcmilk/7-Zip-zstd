@@ -1,7 +1,5 @@
 // ContextMenu.h
 
-#pragma once
-
 #ifndef __CONTEXTMENU_H
 #define __CONTEXTMENU_H
 

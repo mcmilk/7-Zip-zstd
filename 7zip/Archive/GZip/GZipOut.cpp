@@ -9,40 +9,60 @@
 namespace NArchive {
 namespace NGZip {
 
-HRESULT COutArchive::WriteBytes(const void *buffer, UINT32 size)
+HRESULT COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
-  UINT32 processedSize;
+  UInt32 processedSize;
   RINOK(m_Stream->Write(buffer, size, &processedSize));
   if(processedSize != size)
     return E_FAIL;
   return S_OK;
 }
 
-HRESULT COutArchive::WriteHeader(const CItem &item)
+HRESULT COutArchive::WriteByte(Byte value)
 {
-  NFileHeader::CBlock header;
-  header.Id = kSignature;
-  header.CompressionMethod = item.CompressionMethod;
-  header.Flags = item.Flags;
-  header.Flags &= NFileHeader::NFlags::kNameIsPresent;
-  header.Time = item.Time;
-  header.ExtraFlags = item.ExtraFlags;
-  header.HostOS = item.HostOS;
-  RINOK(WriteBytes(&header, sizeof(header)));
-  if (item.NameIsPresent())
+  return WriteBytes(&value, 1);
+}
+
+HRESULT COutArchive::WriteUInt16(UInt16 value)
+{
+  for (int i = 0; i < 2; i++)
   {
-    RINOK(WriteBytes((LPCSTR)item.Name, item.Name.Length()));
-    BYTE zero = 0;
-    RINOK(WriteBytes(&zero, sizeof(zero)));
+    RINOK(WriteByte((Byte)value));
+    value >>= 8;
   }
-  // check it
   return S_OK;
 }
 
-HRESULT COutArchive::WritePostInfo(UINT32 crc, UINT32 unpackSize)
+HRESULT COutArchive::WriteUInt32(UInt32 value)
 {
-  RINOK(WriteBytes(&crc, sizeof(crc)));
-  return WriteBytes(&unpackSize, sizeof(unpackSize));
+  for (int i = 0; i < 4; i++)
+  {
+    RINOK(WriteByte((Byte)value));
+    value >>= 8;
+  }
+  return S_OK;
+}
+
+HRESULT COutArchive::WriteHeader(const CItem &item)
+{
+  RINOK(WriteUInt16(kSignature));
+  RINOK(WriteByte(item.CompressionMethod));
+  RINOK(WriteByte(item.Flags & NFileHeader::NFlags::kNameIsPresent));
+  RINOK(WriteUInt32(item.Time));
+  RINOK(WriteByte(item.ExtraFlags));
+  RINOK(WriteByte(item.HostOS));
+  if (item.NameIsPresent())
+  {
+    RINOK(WriteBytes((const char *)item.Name, item.Name.Length()));
+    RINOK(WriteByte(0));
+  }
+  return S_OK;
+}
+
+HRESULT COutArchive::WritePostHeader(const CItem &item)
+{
+  RINOK(WriteUInt32(item.FileCRC));
+  return WriteUInt32(item.UnPackSize32);
 }
 
 }}

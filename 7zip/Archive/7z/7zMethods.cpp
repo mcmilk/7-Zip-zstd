@@ -20,10 +20,10 @@ namespace N7z {
 static CObjectVector<CMethodInfo2> g_Methods;
 static bool g_Loaded = false;
 
-typedef UINT32 (WINAPI *GetNumberOfMethodsFunc)(UINT32 *numMethods);
+typedef UInt32 (WINAPI *GetNumberOfMethodsFunc)(UInt32 *numMethods);
 
-typedef UINT32 (WINAPI *GetMethodPropertyFunc)(
-    UINT32 index, PROPID propID, PROPVARIANT *value);
+typedef UInt32 (WINAPI *GetMethodPropertyFunc)(
+    UInt32 index, PROPID propID, PROPVARIANT *value);
 
 static void Load(const CSysString &folderPrefix)
 {
@@ -47,14 +47,14 @@ static void Load(const CSysString &folderPrefix)
     if (getMethodProperty == NULL)
       continue;
 
-    UINT32 numMethods = 1;
+    UInt32 numMethods = 1;
     GetNumberOfMethodsFunc getNumberOfMethodsFunc = (GetNumberOfMethodsFunc)
         library.GetProcAddress("GetNumberOfMethods");
     if (getNumberOfMethodsFunc != NULL)
       if (getNumberOfMethodsFunc(&numMethods) != S_OK)
         continue;
 
-    for(UINT32 i = 0; i < numMethods; i++)
+    for(UInt32 i = 0; i < numMethods; i++)
     {
       CMethodInfo2 info;
       info.FilePath = filePath;

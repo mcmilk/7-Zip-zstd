@@ -1,49 +1,14 @@
 // HC.h
 
-// #pragma once
-
 // #ifndef __HC_H
 // #define __HC_H
 
 #include "../LZInWindow.h"
-#include "Common/Types.h"
-#include "Windows/Defs.h"
  
 namespace HC_NAMESPACE {
 
-
-// #define __USE_3_BYTES
-
-#ifdef __USE_3_BYTES
-
-#pragma pack(push, PragmaBinTree)
-#pragma pack(push, 1)
-
-struct CIndex
-{
-  BYTE Data[3];
-  CIndex(){}
-  CIndex(UINT32 aValue)
-  { 
-    Data[0] = aValue & 0xFF;
-    Data[1] = (aValue >> 8) & 0xFF;
-    Data[2] = (aValue >> 16) & 0xFF;
-  }
-  operator UINT32() const { return (*((const UINT32 *)Data)) & 0xFFFFFF; }
-};
-const UINT32 kMaxValForNormalize = CIndex(-1);
-
-#pragma pack(pop)
-#pragma pack(pop, PragmaBinTree)
-
-#else
-
-typedef UINT32 CIndex;
-const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
-
-#endif
-
-
+typedef UInt32 CIndex;
+const UInt32 kMaxValForNormalize = (UInt32(1) << 31) - 1;
 
 // #define HASH_ARRAY_2
 
@@ -59,11 +24,11 @@ const UINT32 kMaxValForNormalize = (UINT32(1) << 31) - 1;
 
 class CInTree: public CLZInWindow
 {
-  UINT32 _cyclicBufferPos;
-  UINT32 _cyclicBufferSize;
+  UInt32 _cyclicBufferPos;
+  UInt32 _cyclicBufferSize;
 
-  UINT32 _historySize;
-  UINT32 _matchMaxLen;
+  UInt32 _historySize;
+  UInt32 _matchMaxLen;
 
   CIndex *_hash;
   
@@ -76,20 +41,20 @@ class CInTree: public CLZInWindow
   
   CIndex *_chain;
 
-  UINT32 _cutValue;
+  UInt32 _cutValue;
 
-  void NormalizeLinks(CIndex *anArray, UINT32 aNumItems, UINT32 aSubValue);
+  void NormalizeLinks(CIndex *anArray, UInt32 aNumItems, UInt32 aSubValue);
   void Normalize();
   void FreeMemory();
 
 public:
   CInTree();
   ~CInTree();
-  HRESULT Create(UINT32 aSizeHistory, UINT32 aKeepAddBufferBefore, UINT32 aMatchMaxLen, 
-      UINT32 aKeepAddBufferAfter, UINT32 _dwSizeReserv = (1<<17));
-	HRESULT Init(ISequentialInStream *aStream);
-  void SetCutValue(UINT32 aCutValue) { _cutValue = aCutValue; }
-  UINT32 GetLongestMatch(UINT32 *aDistances);
+  HRESULT Create(UInt32 historySize, UInt32 keepAddBufferBefore, UInt32 matchMaxLen, 
+      UInt32 keepAddBufferAfter, UInt32 _sizeReserv = (1<<17));
+	HRESULT Init(ISequentialInStream *inStream);
+  void SetCutValue(UInt32 cutValue) { _cutValue = cutValue; }
+  UInt32 GetLongestMatch(UInt32 *distances);
   void DummyLongestMatch();
   HRESULT MovePos()
   {

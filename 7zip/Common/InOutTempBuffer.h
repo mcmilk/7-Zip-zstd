@@ -1,9 +1,7 @@
 // Util/InOutTempBuffer.h
 
-#pragma once
-
-#ifndef __INOUTTEMPBUFFER_H
-#define __INOUTTEMPBUFFER_H
+#ifndef __IN_OUT_TEMP_BUFFER_H
+#define __IN_OUT_TEMP_BUFFER_H
 
 #include "../../Windows/FileIO.h"
 #include "../../Windows/FileDir.h"
@@ -16,26 +14,26 @@ class CInOutTempBuffer
   NWindows::NFile::NDirectory::CTempFile _tempFile;
   NWindows::NFile::NIO::COutFile _outFile;
   NWindows::NFile::NIO::CInFile _inFile;
-  BYTE *_buffer;
-  UINT32 _bufferPosition;
-  UINT32 _currentPositionInBuffer;
+  Byte *_buffer;
+  UInt32 _bufferPosition;
+  UInt32 _currentPositionInBuffer;
   CSysString _tmpFileName;
   bool _tmpFileCreated;
 
-  UINT64 _fileSize;
+  UInt64 _fileSize;
 
-  bool WriteToFile(const void *data, UINT32 size);
+  bool WriteToFile(const void *data, UInt32 size);
 public:
   CInOutTempBuffer();
   ~CInOutTempBuffer();
   void Create();
 
   void InitWriting();
-  bool Write(const void *data, UINT32 size);
-  UINT64 GetDataSize() const { return _fileSize; }
+  bool Write(const void *data, UInt32 size);
+  UInt64 GetDataSize() const { return _fileSize; }
   bool FlushWrite();
   bool InitReading();
-  // bool Read(void *data, UINT32 maxSize, UINT32 &processedSize);
+  // bool Read(void *data, UInt32 maxSize, UInt32 &processedSize);
   HRESULT WriteToStream(ISequentialOutStream *stream);
 };
 
@@ -46,14 +44,14 @@ class CSequentialOutTempBufferImp:
   CInOutTempBuffer *_buffer;
 public:
   // CSequentialOutStreamImp(): _size(0) {}
-  // UINT32 _size;
+  // UInt32 _size;
   void Init(CInOutTempBuffer *buffer)  { _buffer = buffer; }
-  // UINT32 GetSize() const { return _size; }
+  // UInt32 GetSize() const { return _size; }
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize);
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 #endif

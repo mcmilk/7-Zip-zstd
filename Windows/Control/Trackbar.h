@@ -1,7 +1,5 @@
 // Windows/Control/Trackbar.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_TRACKBAR_H
 #define __WINDOWS_CONTROL_TRACKBAR_H
 

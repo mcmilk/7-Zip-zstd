@@ -118,6 +118,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -226,23 +234,23 @@ SOURCE=.\UpdateCallback100.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Far\FarPlugin.h
+SOURCE=.\FarPlugin.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Far\FarUtils.cpp
+SOURCE=.\FarUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Far\FarUtils.h
+SOURCE=.\FarUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Far\ProgressBox.cpp
+SOURCE=.\ProgressBox.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Far\ProgressBox.h
+SOURCE=.\ProgressBox.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -346,6 +354,22 @@ SOURCE=..\..\..\Windows\System.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ArchiverInfo.cpp
 # End Source File
 # Begin Source File
@@ -382,6 +406,10 @@ SOURCE=..\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractMode.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\HandlerLoader.h
 # End Source File
 # Begin Source File
@@ -415,6 +443,14 @@ SOURCE=..\Common\UpdateAction.cpp
 # Begin Source File
 
 SOURCE=..\Common\UpdateAction.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.h
 # End Source File
 # Begin Source File
 
@@ -474,23 +510,15 @@ SOURCE=..\Agent\AgentProxy.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveUpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveUpdateCallback.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Agent\IFolderArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Agent\UpdateCallbackAgent.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Agent\UpdateCallbackAgent.h
 # End Source File
 # End Group
 # Begin Group "Compress"

@@ -4,21 +4,17 @@
 
 #include "Plugin.h"
 
-// #include "Windows/Time.h"
+#include "Common/StringConvert.h"
+#include "Common/WildCard.h"
+
+#include "Windows/PropVariantConversions.h"
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
 
-#include "Common/StringConvert.h"
-
-#include "Windows/PropVariantConversions.h"
-
-#include "Far/FarUtils.h"
-
 #include "../Common/PropIDUtils.h"
 
-#include "Common/WildCard.h"
-
 #include "Messages.h"
+#include "FarUtils.h"
 
 using namespace NWindows;
 using namespace NFar;
@@ -302,7 +298,9 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidUser, NMessageID::kUser },
   { kpidGroup, NMessageID::kGroup },
   { kpidBlock, NMessageID::kBlock },
-  { kpidComment, NMessageID::kComment }
+  { kpidComment, NMessageID::kComment },
+  { kpidPosition, NMessageID::kPosition }
+  
 };
 
 static const int kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);

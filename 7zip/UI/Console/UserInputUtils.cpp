@@ -7,12 +7,12 @@
 
 #include "UserInputUtils.h"
 
-static const char kYes  = 'Y';
-static const char kNo   = 'N';
-static const char kYesAll  = 'A';
-static const char kNoAll   = 'S';
-static const char kAutoRename  = 'U';
-static const char kQuit    = 'Q';
+static const char kYes = 'Y';
+static const char kNo = 'N';
+static const char kYesAll = 'A';
+static const char kNoAll = 'S';
+static const char kAutoRename = 'U';
+static const char kQuit = 'Q';
 
 static const char *kFirstQuestionMessage = "?\n";
 static const char *kHelpQuestionMessage = 
@@ -24,10 +24,10 @@ static const char *kHelpQuestionMessage =
 
 NUserAnswerMode::EEnum ScanUserYesNoAllQuit()
 {
-  g_StdOut << kFirstQuestionMessage;
+  g_StdErr << kFirstQuestionMessage;
   do
   {
-    g_StdOut << kHelpQuestionMessage;
+    g_StdErr << kHelpQuestionMessage;
     AString scannedString = g_StdIn.ScanStringUntilNewLine();
     scannedString.Trim();
     if(!scannedString.IsEmpty())

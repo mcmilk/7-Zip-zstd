@@ -1,7 +1,5 @@
 // OpenCallback.h
 
-#pragma once
-
 #ifndef __OPENCALLBACK_H
 #define __OPENCALLBACK_H
 
@@ -16,6 +14,7 @@
 class COpenArchiveCallback: 
   public IArchiveOpenCallback,
   public IArchiveOpenVolumeCallback,
+  public IArchiveOpenSetSubArchiveName,
   public IProgress,
   public ICryptoGetTextPassword,
   public CMyUnknownImp
@@ -23,14 +22,18 @@ class COpenArchiveCallback:
   UString _folderPrefix;
   NWindows::NFile::NFind::CFileInfoW _fileInfo;
 public:
-  bool _passwordIsDefined;
-  UString _password;
-  HWND _parentWindow;
+  bool PasswordIsDefined;
+  UString Password;
+  HWND ParentWindow;
+
+  bool _subArchiveMode;
+  UString _subArchiveName;
 
 public:
-  MY_UNKNOWN_IMP4(
+  MY_UNKNOWN_IMP5(
     IArchiveOpenCallback,
     IArchiveOpenVolumeCallback,
+    IArchiveOpenSetSubArchiveName,
     IProgress,
     ICryptoGetTextPassword)
 
@@ -49,10 +52,24 @@ public:
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
+  STDMETHOD(SetSubArchiveName(const wchar_t *name))
+  {
+    _subArchiveMode = true;
+    _subArchiveName = name;
+    return  S_OK;
+  }
+
+  COpenArchiveCallback()
+  {
+    _subArchiveMode = false;
+  }
+  /*
   void Init()
   {
-    _passwordIsDefined = false;
+    PasswordIsDefined = false;
+    _subArchiveMode = false;
   }
+  */
   void LoadFileInfo(const UString &folderPrefix,  const UString &fileName)
   {
     _folderPrefix = folderPrefix;

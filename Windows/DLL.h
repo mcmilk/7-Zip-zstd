@@ -3,8 +3,6 @@
 #ifndef __WINDOWS_DLL_H
 #define __WINDOWS_DLL_H
 
-#pragma once
-
 #include "../Common/String.h"
 
 namespace NWindows {

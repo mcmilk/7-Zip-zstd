@@ -1,7 +1,5 @@
 // Crypto/ZipCrypto.h
 
-#pragma once
-
 #ifndef __CRYPTO_ZIP_CRYPTO_H
 #define __CRYPTO_ZIP_CRYPTO_H
 
@@ -11,15 +9,15 @@ namespace NZip {
 const int kHeaderSize = 12;
 class CCipher
 {
-  UINT32 Keys[3];
-  void UpdateKeys(BYTE b);
-  BYTE DecryptByteSpec();
+  UInt32 Keys[3];
+  void UpdateKeys(Byte b);
+  Byte DecryptByteSpec();
 public:
-  void SetPassword(const BYTE *password, UINT32 passwordLength);
-  BYTE DecryptByte(BYTE encryptedByte);
-  BYTE EncryptByte(BYTE b);
-  void DecryptHeader(BYTE *buffer);
-  void EncryptHeader(BYTE *buffer);
+  void SetPassword(const Byte *password, UInt32 passwordLength);
+  Byte DecryptByte(Byte encryptedByte);
+  Byte EncryptByte(Byte b);
+  void DecryptHeader(Byte *buffer);
+  void EncryptHeader(Byte *buffer);
 
 };
 

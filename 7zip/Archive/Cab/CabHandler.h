@@ -1,7 +1,5 @@
 // CabHandler.h
 
-#pragma once
-
 #ifndef __CAB_HANDLER_H
 #define __CAB_HANDLER_H
 
@@ -20,22 +18,22 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Open)(IInStream *stream, 
-      const UINT64 *maxCheckStartPosition,
+      const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
-  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
-      INT32 testMode, IArchiveExtractCallback *extractCallback);
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
+      Int32 testMode, IArchiveExtractCallback *extractCallback);
   
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
 private:

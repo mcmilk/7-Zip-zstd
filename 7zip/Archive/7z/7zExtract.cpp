@@ -6,9 +6,9 @@
 #include "7zFolderOutStream.h"
 #include "7zMethods.h"
 #include "7zDecode.h"
+// #include "7z1Decode.h"
 
 #include "../../../Common/ComTry.h"
-#include "../../Common/MultiStream.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
@@ -18,11 +18,21 @@ namespace N7z {
 
 struct CExtractFolderInfo
 {
+  #ifdef _7Z_VOL
+  int VolumeIndex;
+  #endif
   int FileIndex;
   int FolderIndex;
   CBoolVector ExtractStatuses;
-  UINT64 UnPackSize;
-  CExtractFolderInfo(int fileIndex, int folderIndex): 
+  UInt64 UnPackSize;
+  CExtractFolderInfo(
+    #ifdef _7Z_VOL
+    int volumeIndex, 
+    #endif
+    int fileIndex, int folderIndex): 
+    #ifdef _7Z_VOL
+    VolumeIndex(volumeIndex),
+    #endif
     FileIndex(fileIndex),
     FolderIndex(folderIndex), 
     UnPackSize(0) 
@@ -35,116 +45,150 @@ struct CExtractFolderInfo
   };
 };
 
-STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
-    INT32 testModeSpec, IArchiveExtractCallback *extractCallbackSpec)
+STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
+    Int32 testModeSpec, IArchiveExtractCallback *extractCallbackSpec)
 {
   COM_TRY_BEGIN
   bool testMode = (testModeSpec != 0);
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
-  UINT64 importantTotalUnPacked = 0;
-  UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
+  UInt64 importantTotalUnPacked = 0;
+  UInt64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
 
-  bool allFilesMode = (numItems == UINT32(-1));
+  bool allFilesMode = (numItems == UInt32(-1));
   if (allFilesMode)
-    numItems = _database.Files.Size();
+    numItems = 
+    #ifdef _7Z_VOL
+    _refs.Size();
+    #else
+    _database.Files.Size();
+    #endif
 
   if(numItems == 0)
     return S_OK;
 
+  /*
+  if(_volumes.Size() != 1)
+    return E_FAIL;
+  const CVolume &volume = _volumes.Front();
+  const CArchiveDatabaseEx &_database = volume.Database;
+  IInStream *_inStream = volume.Stream;
+  */
+  
   CObjectVector<CExtractFolderInfo> extractFolderInfoVector;
-  for(UINT32 indexIndex = 0; indexIndex < numItems; indexIndex++)
+  for(UInt32 ii = 0; ii < numItems; ii++)
   {
-    int fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
-    int folderIndex = _database.FileIndexToFolderIndexMap[fileIndex];
-    if (folderIndex < 0)
-    {
-      extractFolderInfoVector.Add(CExtractFolderInfo(fileIndex, -1));
-      continue;
-    }
-    if (extractFolderInfoVector.IsEmpty() || 
-        folderIndex != extractFolderInfoVector.Back().FolderIndex)
-    {
-      extractFolderInfoVector.Add(CExtractFolderInfo(-1, folderIndex));
-      const CFolder &folderInfo = _database.Folders[folderIndex];
-      // Count full_folder_size
-      UINT64 unPackSize = folderInfo.GetUnPackSize();
-      importantTotalUnPacked += unPackSize;
-      extractFolderInfoVector.Back().UnPackSize = unPackSize;
-    }
+    // int fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
+    int ref2Index = allFilesMode ? ii : indices[ii];
+    // const CRef2 &ref2 = _refs[ref2Index];
 
-    CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector.Back();
-
-    // const CFolderInfo &folderInfo = m_dam_Folders[folderIndex];
-    UINT32 startIndex = (UINT32)_database.FolderStartFileIndex[folderIndex];
-    for (UINT32 index = extractFolderInfo.ExtractStatuses.Size();
-        index <= fileIndex - startIndex; index++)
+    // for(UInt32 ri = 0; ri < ref2.Refs.Size(); ri++)
     {
-      UINT64 unPackSize = _database.Files[startIndex + index].UnPackSize;
-      // Count partial_folder_size
-      // extractFolderInfo.UnPackSize += unPackSize;
-      // importantTotalUnPacked += unPackSize;
-      extractFolderInfo.ExtractStatuses.Add(index == fileIndex - startIndex);
+      #ifdef _7Z_VOL
+      // const CRef &ref = ref2.Refs[ri];
+      const CRef &ref = _refs[ref2Index];
+
+      int volumeIndex = ref.VolumeIndex;
+      const CVolume &volume = _volumes[volumeIndex];
+      const CArchiveDatabaseEx &database = volume.Database;
+      int fileIndex = ref.ItemIndex;
+      #else
+      const CArchiveDatabaseEx &database = _database;
+      int fileIndex = ref2Index;
+      #endif
+
+      int folderIndex = database.FileIndexToFolderIndexMap[fileIndex];
+      if (folderIndex < 0)
+      {
+        extractFolderInfoVector.Add(CExtractFolderInfo(
+            #ifdef _7Z_VOL
+            volumeIndex, 
+            #endif
+            fileIndex, -1));
+        continue;
+      }
+      if (extractFolderInfoVector.IsEmpty() || 
+        folderIndex != extractFolderInfoVector.Back().FolderIndex 
+        #ifdef _7Z_VOL
+        || volumeIndex != extractFolderInfoVector.Back().VolumeIndex
+        #endif
+        )
+      {
+        extractFolderInfoVector.Add(CExtractFolderInfo(
+            #ifdef _7Z_VOL
+            volumeIndex, 
+            #endif
+            -1, folderIndex));
+        const CFolder &folderInfo = database.Folders[folderIndex];
+        UInt64 unPackSize = folderInfo.GetUnPackSize();
+        importantTotalUnPacked += unPackSize;
+        extractFolderInfoVector.Back().UnPackSize = unPackSize;
+      }
+      
+      CExtractFolderInfo &efi = extractFolderInfoVector.Back();
+      
+      // const CFolderInfo &folderInfo = m_dam_Folders[folderIndex];
+      UInt32 startIndex = (UInt32)database.FolderStartFileIndex[folderIndex];
+      for (UInt32 index = efi.ExtractStatuses.Size();
+          index <= fileIndex - startIndex; index++)
+      {
+        // UInt64 unPackSize = _database.Files[startIndex + index].UnPackSize;
+        // Count partial_folder_size
+        // efi.UnPackSize += unPackSize;
+        // importantTotalUnPacked += unPackSize;
+        efi.ExtractStatuses.Add(index == fileIndex - startIndex);
+      }
     }
   }
 
   extractCallback->SetTotal(importantTotalUnPacked);
 
-  CDecoder decoder;
+  CDecoder decoder(true);
+  // CDecoder1 decoder;
 
-  UINT64 currentImportantTotalUnPacked = 0;
-  UINT64 totalFolderUnPacked;
+  UInt64 currentImportantTotalUnPacked = 0;
+  UInt64 totalFolderUnPacked;
 
   for(int i = 0; i < extractFolderInfoVector.Size(); i++, 
       currentImportantTotalUnPacked += totalFolderUnPacked)
   {
-    CExtractFolderInfo &extractFolderInfo = extractFolderInfoVector[i];
-    totalFolderUnPacked = extractFolderInfo.UnPackSize;
+    const CExtractFolderInfo &efi = extractFolderInfoVector[i];
+    totalFolderUnPacked = efi.UnPackSize;
 
     RINOK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
 
     CFolderOutStream *folderOutStream = new CFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(folderOutStream);
 
-    UINT32 startIndex;
-    if (extractFolderInfo.FileIndex >= 0)
-      startIndex = extractFolderInfo.FileIndex;
+    #ifdef _7Z_VOL
+    const CVolume &volume = _volumes[efi.VolumeIndex];
+    const CArchiveDatabaseEx &database = volume.Database;
+    #else
+    const CArchiveDatabaseEx &database = _database;
+    #endif
+
+    UInt32 startIndex;
+    if (efi.FileIndex >= 0)
+      startIndex = efi.FileIndex;
     else
-      startIndex = (UINT32)_database.FolderStartFileIndex[extractFolderInfo.FolderIndex];
+      startIndex = (UInt32)database.FolderStartFileIndex[efi.FolderIndex];
 
 
-    RINOK(folderOutStream->Init(&_database, startIndex, 
-        &extractFolderInfo.ExtractStatuses, extractCallback, testMode));
+    HRESULT result = folderOutStream->Init(&database, 
+        #ifdef _7Z_VOL
+        volume.StartRef2Index, 
+        #else
+        0,
+        #endif
+        startIndex, 
+        &efi.ExtractStatuses, extractCallback, testMode);
 
-    if (extractFolderInfo.FileIndex >= 0)
+    RINOK(result);
+
+    if (efi.FileIndex >= 0)
       continue;
 
-    UINT32 folderIndex = extractFolderInfo.FolderIndex;
-    const CFolder &folderInfo = _database.Folders[folderIndex];
-
-    CObjectVector< CMyComPtr<ISequentialInStream> > inStreams;
-
-    CLockedInStream lockedInStream;
-    lockedInStream.Init(_inStream);
-
-
-    UINT64 folderStartPackStreamIndex = _database.FolderStartPackStreamIndex[folderIndex];
-
-    for (int j = 0; j < folderInfo.PackStreams.Size(); j++)
-    {
-      const CPackStreamInfo &packStreamInfo = folderInfo.PackStreams[j];
-      CLockedSequentialInStreamImp *lockedStreamImpSpec = new 
-          CLockedSequentialInStreamImp;
-      CMyComPtr<ISequentialInStream> lockedStreamImp = lockedStreamImpSpec;
-      UINT64 streamStartPos = _database.GetFolderStreamPos(folderIndex, j);
-      lockedStreamImpSpec->Init(&lockedInStream, streamStartPos);
-
-      CLimitedSequentialInStream *streamSpec = new 
-          CLimitedSequentialInStream;
-      CMyComPtr<ISequentialInStream> inStream = streamSpec;
-      streamSpec->Init(lockedStreamImp, 
-          _database.PackSizes[(UINT32)folderStartPackStreamIndex + j]);
-      inStreams.Add(inStream);
-    }
+    UInt32 folderIndex = efi.FolderIndex;
+    const CFolder &folderInfo = database.Folders[folderIndex];
 
     CLocalProgress *localProgressSpec = new CLocalProgress;
     CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
@@ -155,8 +199,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
     CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
     localCompressProgressSpec->Init(progress, NULL, &currentImportantTotalUnPacked);
 
-    UINT32 packStreamIndex = _database.FolderStartPackStreamIndex[folderIndex];
-    UINT64 folderStartPackPos = _database.GetFolderStreamPos(folderIndex, 0);
+    UInt32 packStreamIndex = database.FolderStartPackStreamIndex[folderIndex];
+    UInt64 folderStartPackPos = database.GetFolderStreamPos(folderIndex, 0);
 
     #ifndef _NO_CRYPTO
     CMyComPtr<ICryptoGetTextPassword> getTextPassword;
@@ -166,9 +210,14 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
 
     try
     {
-      HRESULT result = decoder.Decode(_inStream,
+      HRESULT result = decoder.Decode(
+          #ifdef _7Z_VOL
+          volume.Stream,
+          #else
+          _inStream,
+          #endif
           folderStartPackPos, 
-          &_database.PackSizes[packStreamIndex],
+          &database.PackSizes[packStreamIndex],
           folderInfo,
           outStream,
           compressProgress

@@ -1,6 +1,16 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.07 beta           2004-10-03
+  --------------------------------------
+   -  some interfaces were changed slightly to support 
+      -stdin -stdout mode.
+   -  FilterCoder for simple filters
+   -  Wildcard censor class was changed.
+   -  Bug was fixed: when encrypted stream was multiple 16,
+      it used additional 16 empty bytes.
+   
+
   Version 3.11                2003-10-06
   --------------------------------------
       File functions support unicode strings even

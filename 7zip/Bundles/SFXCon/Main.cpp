@@ -9,6 +9,7 @@
 #include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 #include "Common/MyCom.h"
+#include "Common/Exception.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
@@ -20,17 +21,21 @@
 #include "../../UI/Common/OpenArchive.h"
 #include "../../UI/Common/ZipRegistry.h"
 #include "../../UI/Common/DefaultName.h"
+#include "../../UI/Common/ExitCode.h"
+#include "../../UI/Common/Extract.h"
 
-#include "../../UI/Console/Extract.h"
-#include "../../UI/Console/ArError.h"
+// #include "../../UI/Console/Extract.h"
+// #include "../../UI/Console/ArError.h"
 #include "../../UI/Console/List.h"
+#include "../../UI/Console/OpenCallbackConsole.h"
+#include "../../UI/Console/ExtractCallbackConsole.h"
 
 using namespace NWindows;
 using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 3.12  Copyright (c) 1999-2003 Igor Pavlov  2003-12-10\n";
+"\n7-Zip SFX 4.07 beta  Copyright (c) 1999-2004 Igor Pavlov  2004-10-03\n";
 
 static const int kNumSwitches = 6;
 
@@ -156,35 +161,12 @@ static const CSysString kDefaultWorkingDirectory = "";  // test it maybemust be 
 struct CArchiveCommand
 {
   NCommandType::EEnum CommandType;
-  // NListMode::EEnum ListMode;
-  // bool ListFullPathes;
   NRecursedType::EEnum DefaultRecursedType() const;
-  bool IsFromExtractGroup(NExtractMode::EEnum &extractMode) const;
 };
 
 NRecursedType::EEnum CArchiveCommand::DefaultRecursedType() const
 {
   return kCommandRecursedDefault[CommandType];
-}
-
-bool CArchiveCommand::IsFromExtractGroup(NExtractMode::EEnum &extractMode) const
-{
-  switch(CommandType)
-  {
-    case NCommandType::kTest:
-      extractMode = NExtractMode::kTest;
-      return true;
-    /*
-    case NCommandType::kExtract:
-      extractMode = NExtractMode::kExtractToOne;
-      return true;
-    */
-    case NCommandType::kFullExtract:
-      extractMode = NExtractMode::kFullPath;
-      return true;
-    default:
-      return false;
-  }
 }
 
 static NRecursedType::EEnum GetRecursedTypeFromIndex(int index)
@@ -261,7 +243,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
       recursed = false;
       break;
   }
-  wildcardCensor.AddItem(name, include, recursed, isWildCard);
+  wildcardCensor.AddItem(name, include, recursed);
   return true;
 }
 
@@ -284,6 +266,7 @@ void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor,
   AddCommandLineWildCardToCensr(wildcardCensor, kUniversalWildcard, true, type);
 }
 
+/*
 void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor, 
     const UStringVector &strings, bool include, NRecursedType::EEnum commonRecursedType)
 {
@@ -314,32 +297,17 @@ void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
       PrintHelpAndExit();
   }
 }
+*/
 
 // ------------------------------------------------------------------
+/*
 static void ThrowPrintFileIsNotArchiveException(const CSysString &fileName)
 {
   CSysString message;
   message = kFileIsNotArchiveMessageBefore + fileName + kFileIsNotArchiveMessageAfter;
   ShowMessageAndThrowException(message, NExitCode::kFileIsNotArchive);
 }
-
-void MyOpenArhive(const UString &archiveName, 
-  const NFind::CFileInfoW &archiveFileInfo,
-  IInArchive **archiveHandler,
-  UString &defaultItemName)
-{
-  CArchiverInfo archiverInfo;
-  int subExtIndex;
-  HRESULT result = OpenArchive(archiveName, archiveHandler, 
-      archiverInfo, subExtIndex, 0);
-  if (result == S_FALSE)
-    throw "file is not supported archive";
-  if (result != S_OK)
-    throw "error";
-  defaultItemName = GetDefaultName(archiveName, 
-      archiverInfo.Extensions[subExtIndex].Extension, 
-      archiverInfo.Extensions[subExtIndex].AddExtension);
-}
+*/
 
 // int Main2(int numArguments, const char *arguments[])
 int Main2()
@@ -401,9 +369,8 @@ int Main2()
   if (archiveName.Right(4).CompareNoCase(defaultExt) != 0)
     archiveName += defaultExt;
 
-
-  NExtractMode::EEnum extractMode;
-  bool isExtractGroupCommand = command.IsFromExtractGroup(extractMode);
+  // NExtractMode::EEnum extractMode;
+  // bool isExtractGroupCommand = command.IsFromExtractGroup(extractMode);
 
   bool passwordEnabled = parser[NKey::kPassword].ThereIs;
 
@@ -411,49 +378,75 @@ int Main2()
   if(passwordEnabled)
     password = parser[NKey::kPassword].PostStrings[0];
 
-  if(isExtractGroupCommand || command.CommandType == NCommandType::kList)
+  NFind::CFileInfoW archiveFileInfo;
+  if (!NFind::FindFile(archiveName, archiveFileInfo) || archiveFileInfo.IsDirectory())
+    throw "there is no such archive";
+
+  if (archiveFileInfo.IsDirectory())
+    throw "there is no such archive";
+  
+  UString outputDir;
+  if(parser[NKey::kOutputDir].ThereIs)
   {
-    NFind::CFileInfoW archiveFileInfo;
-    if (!NFind::FindFile(archiveName, archiveFileInfo) || archiveFileInfo.IsDirectory())
-      throw "there is no such archive";
+    outputDir = parser[NKey::kOutputDir].PostStrings[0];
+    NName::NormalizeDirPathPrefix(outputDir);
+  }
 
-    if (archiveFileInfo.IsDirectory())
-      throw "there is no such archive";
-
-    UString defaultItemName;
-    CMyComPtr<IInArchive> archiveHandler;
-    CArchiverInfo archiverInfo;
-    MyOpenArhive(archiveName, archiveFileInfo, &archiveHandler, defaultItemName);
-    if(isExtractGroupCommand)
+  {
+    UStringVector v1, v2;
+    v1.Add(archiveName);
+    v2.Add(archiveName);
+    const NWildcard::CCensorNode &wildcardCensorHead = 
+      wildcardCensor.Pairs.Front().Head;
+    if(command.CommandType != NCommandType::kList)
     {
-      PrintProcessTitle(kExtractGroupProcessMessage, archiveName);
-      UString outputDir;
-      if(parser[NKey::kOutputDir].ThereIs)
+      CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
+      CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
+      ecs->PasswordIsDefined = passwordEnabled;
+      ecs->Password = password;
+      ecs->Init();
+
+      COpenCallbackConsole openCallback;
+      openCallback.PasswordIsDefined = passwordEnabled;
+      openCallback.Password = password;
+
+      CExtractOptions eo;
+      eo.StdOutMode = false;
+      eo.PathMode = NExtract::NPathMode::kFullPathnames;
+      eo.TestMode = command.CommandType == NCommandType::kList;
+      eo.OverwriteMode = yesToAll ? 
+          NExtract::NOverwriteMode::kWithoutPrompt : 
+          NExtract::NOverwriteMode::kAskBefore;
+      eo.OutputDir = outputDir;
+      eo.YesToAll = yesToAll;
+
+      HRESULT result = DecompressArchives(
+          v1, v2,
+          wildcardCensorHead, 
+          eo, &openCallback, ecs);
+
+      if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {
-        outputDir = parser[NKey::kOutputDir].PostStrings[0];
-        NName::NormalizeDirPathPrefix(outputDir);
+        if (ecs->NumArchiveErrors != 0)
+          g_StdErr << endl << "Archive Errors: " << ecs->NumArchiveErrors << endl;
+        if (ecs->NumFileErrors != 0)
+          g_StdErr << endl << "Sub items Errors: " << ecs->NumFileErrors << endl;
+        return NExitCode::kFatalError;
       }
-      NExtraction::NOverwriteMode::EEnum overwriteMode = 
-          NExtraction::NOverwriteMode::kAskBefore;
-      CExtractOptions options(extractMode, outputDir, yesToAll, 
-          passwordEnabled, password, overwriteMode);
-      options.DefaultItemName = defaultItemName;
-      options.ArchiveFileInfo = archiveFileInfo;
-      // options.ArchiveFileInfo = archiveFileInfo;
-      HRESULT result = DeCompressArchiveSTD(archiveHandler, wildcardCensor, options);
       if (result != S_OK)
-      {
-        return NExitCode::kErrorsDuringDecompression;
-      }
+        throw CSystemException(result);
     }
     else
     {
-      PrintProcessTitle(kListingProcessMessage, archiveName);
-      ListArchive(archiveHandler, defaultItemName, archiveFileInfo, 
-          wildcardCensor/*, command.ListFullPathes, command.ListMode*/);
+      HRESULT result = ListArchives(
+          v1, v2,
+          wildcardCensorHead, 
+          true, 
+          passwordEnabled, 
+          password);
+      if (result != S_OK)
+        throw CSystemException(result);
     }
   }
-  else
-    PrintHelpAndExit();
   return 0;
 }

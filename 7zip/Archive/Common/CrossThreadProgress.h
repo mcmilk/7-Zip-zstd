@@ -1,7 +1,5 @@
 // CrossThreadProgress.h
 
-#pragma once
-
 #ifndef __CROSSTHREADPROGRESS_H
 #define __CROSSTHREADPROGRESS_H
 
@@ -14,8 +12,8 @@ class CCrossThreadProgress:
   public CMyUnknownImp
 {
 public:
-  const UINT64 *InSize;
-  const UINT64 *OutSize;
+  const UInt64 *InSize;
+  const UInt64 *OutSize;
   HRESULT Result;
   NWindows::NSynchronization::CAutoResetEvent ProgressEvent;
   NWindows::NSynchronization::CAutoResetEvent WaitEvent;
@@ -27,7 +25,7 @@ public:
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(SetRatioInfo)(const UINT64 *inSize, const UINT64 *outSize);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
 #endif

@@ -1,7 +1,5 @@
 // Windows/Control/ReBar.h
   
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_REBAR_H
 #define __WINDOWS_CONTROL_REBAR_H
 

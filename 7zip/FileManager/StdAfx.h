@@ -3,8 +3,6 @@
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#pragma once
-
 #define _WIN32_WINNT 0x0400
 
 #include <windows.h>
@@ -36,6 +34,5 @@ extern CComModule _Module;
 
 */
 #include <memory>
-
 
 #endif

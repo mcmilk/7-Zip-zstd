@@ -1,7 +1,5 @@
 // UpdateCallback.h
 
-#pragma once
-
 #ifndef __UPDATECALLBACK100_H
 #define __UPDATECALLBACK100_H
 
@@ -10,9 +8,9 @@
 
 #include "../Agent/IFolderArchive.h"
 
-#include "Far/ProgressBox.h"
+#include "ProgressBox.h"
 
-class CUpdateCallBack100Imp: 
+class CUpdateCallback100Imp: 
   public IFolderArchiveUpdateCallback,
   public CMyUnknownImp
 {
@@ -28,6 +26,7 @@ public:
   STDMETHOD(CompressOperation)(const wchar_t *aName);
   STDMETHOD(DeleteOperation)(const wchar_t *aName);
   STDMETHOD(OperationResult)(INT32 aOperationResult);
+  STDMETHOD(UpdateErrorMessage)(const wchar_t *message);
 
 private:
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;

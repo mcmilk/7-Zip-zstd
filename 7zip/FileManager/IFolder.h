@@ -1,7 +1,5 @@
 // FolderInterface.h
 
-#pragma once
-
 #ifndef __FOLDERINTERFACE_H
 #define __FOLDERINTERFACE_H
 

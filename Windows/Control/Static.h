@@ -1,7 +1,5 @@
 // Windows/Control/Static.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_STATIC_H
 #define __WINDOWS_CONTROL_STATIC_H
 

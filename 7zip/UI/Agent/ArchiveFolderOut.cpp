@@ -85,7 +85,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   }
   else
   {
-    BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
+    Byte actionSetByte[NUpdateArchive::NPairState::kNumValues];
     for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
       actionSetByte[i] = actionSet->StateActions[i];
     result = _agentSpec->DoOperation(NULL, NULL,

@@ -5,11 +5,19 @@
 #include "ImplodeDecoder.h"
 #include "Common/Defs.h"
 
-#include "Windows/Defs.h"
-
 namespace NCompress {
 namespace NImplode {
 namespace NDecoder {
+
+class CException
+{
+public:
+  enum ECauseType
+  {
+    kData
+  } m_Cause;
+  CException(ECauseType cause): m_Cause(cause) {}
+};
 
 static const int kNumDistanceLowDirectBitsForBigDict = 7;  
 static const int kNumDistanceLowDirectBitsForSmallDict = 6;  
@@ -30,20 +38,20 @@ static const int kLiteralTableSize = (1 << kNumBitsInByte);
 static const int kDistanceTableSize = 64;
 static const int kLengthTableSize = 64;
 
-static const UINT32 kHistorySize = 
+static const UInt32 kHistorySize = 
     (1 << MyMax(kNumDistanceLowDirectBitsForBigDict, 
                 kNumDistanceLowDirectBitsForSmallDict)) * 
     kDistanceTableSize; // = 8 KB;
 
 static const int kNumAdditionalLengthBits = 8;
 
-static const UINT32 kMatchMinLenWhenLiteralsOn = 3;  
-static const UINT32 kMatchMinLenWhenLiteralsOff = 2;
+static const UInt32 kMatchMinLenWhenLiteralsOn = 3;  
+static const UInt32 kMatchMinLenWhenLiteralsOff = 2;
 
-static const UINT32 kMatchMinLenMax = MyMax(kMatchMinLenWhenLiteralsOn,
+static const UInt32 kMatchMinLenMax = MyMax(kMatchMinLenWhenLiteralsOn,
     kMatchMinLenWhenLiteralsOff);  // 3
 
-static const UINT32 kMatchMaxLenMax = kMatchMinLenMax + 
+static const UInt32 kMatchMaxLenMax = kMatchMinLenMax + 
     (kLengthTableSize - 1) + (1 << kNumAdditionalLengthBits) - 1;  // or 2
 
 enum
@@ -58,20 +66,16 @@ CCoder::CCoder():
   m_LengthDecoder(kLengthTableSize),
   m_DistanceDecoder(kDistanceTableSize)
 {
-  m_OutWindowStream.Create(kHistorySize/*, kMatchMaxLenMax*/);
 }
 
-/*
-STDMETHODIMP CCoder::ReleaseStreams()
+void CCoder::ReleaseStreams()
 {
   m_OutWindowStream.ReleaseStream();
   m_InBitStream.ReleaseStream();
-  return S_OK;
 }
-*/
 
 void CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder, 
-    BYTE *levels, int numLevelItems)
+    Byte *levels, int numLevelItems)
 {
   int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) + 
       kLevelStructuresNumberAdditionalValue;
@@ -104,19 +108,18 @@ void CCoder::ReadTables(void)
 {
   if (m_LiteralsOn)
   {
-    BYTE literalLevels[kLiteralTableSize];
+    Byte literalLevels[kLiteralTableSize];
     ReadLevelItems(m_LiteralDecoder, literalLevels, kLiteralTableSize);
   }
 
-  BYTE lengthLevels[kLengthTableSize];
+  Byte lengthLevels[kLengthTableSize];
   ReadLevelItems(m_LengthDecoder, lengthLevels, kLengthTableSize);
 
-  BYTE distanceLevels[kDistanceTableSize];
+  Byte distanceLevels[kDistanceTableSize];
   ReadLevelItems(m_DistanceDecoder, distanceLevels, kDistanceTableSize);
 
 }
 
-/*
 class CCoderReleaser
 {
   CCoder *m_Coder;
@@ -124,19 +127,24 @@ public:
   CCoderReleaser(CCoder *coder): m_Coder(coder) {}
   ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
 };
-*/
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
+  if (!m_InBitStream.Create(1 << 20))
+    return E_OUTOFMEMORY;
+  if (!m_OutWindowStream.Create(kHistorySize))
+    return E_OUTOFMEMORY;
   if (outSize == NULL)
     return E_INVALIDARG;
-  UINT64 pos = 0, unPackSize = *outSize;
+  UInt64 pos = 0, unPackSize = *outSize;
 
-  m_OutWindowStream.Init(outStream, false);
-  m_InBitStream.Init(inStream);
-  // CCoderReleaser coderReleaser(this);
+  m_OutWindowStream.SetStream(outStream);
+  m_OutWindowStream.Init(false);
+  m_InBitStream.SetStream(inStream);
+  m_InBitStream.Init();
+  CCoderReleaser coderReleaser(this);
 
   ReadTables();
   
@@ -144,34 +152,34 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
   {
     if (progress != NULL && pos % (1 << 16) == 0)
     {
-      UINT64 packSize = m_InBitStream.GetProcessedSize();
+      UInt64 packSize = m_InBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
     }
     if(m_InBitStream.ReadBits(1) == kMatchId) // match
     {
-      UINT32 lowDistBits = m_InBitStream.ReadBits(m_NumDistanceLowDirectBits);
-      UINT32 distance = (m_DistanceDecoder.DecodeSymbol(&m_InBitStream) << 
+      UInt32 lowDistBits = m_InBitStream.ReadBits(m_NumDistanceLowDirectBits);
+      UInt32 distance = (m_DistanceDecoder.DecodeSymbol(&m_InBitStream) << 
           m_NumDistanceLowDirectBits) + lowDistBits;
 
-      UINT32 lengthSymbol = m_LengthDecoder.DecodeSymbol(&m_InBitStream);
-      UINT32 length = lengthSymbol + m_MinMatchLength;
+      UInt32 lengthSymbol = m_LengthDecoder.DecodeSymbol(&m_InBitStream);
+      UInt32 length = lengthSymbol + m_MinMatchLength;
       if (lengthSymbol == kLengthTableSize - 1) // special symbol  = 63
         length += m_InBitStream.ReadBits(kNumAdditionalLengthBits);
       while(distance >= pos && length > 0)
       {
-        m_OutWindowStream.PutOneByte(0);
+        m_OutWindowStream.PutByte(0);
         pos++;
         length--;
       }
       if (length > 0)
-        m_OutWindowStream.CopyBackBlock(distance, length);
+        m_OutWindowStream.CopyBlock(distance, length);
       pos += length;
     }
     else
     {
-      BYTE b = BYTE(m_LiteralsOn ? m_LiteralDecoder.DecodeSymbol(&m_InBitStream) : 
+      Byte b = Byte(m_LiteralsOn ? m_LiteralDecoder.DecodeSymbol(&m_InBitStream) : 
           m_InBitStream.ReadBits(kNumBitsInByte));
-      m_OutWindowStream.PutOneByte(b);
+      m_OutWindowStream.PutByte(b);
       pos++;
     }
   }
@@ -181,7 +189,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
 }
 
 STDMETHODIMP CCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress);  }
@@ -191,10 +199,10 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *inStream,
 
 STDMETHODIMP CCoder::SetDecoderProperties(ISequentialInStream *inStream)
 {
-  BYTE flag;
-  UINT32 processedSize;
-  RINOK(inStream->Read(&flag, sizeof(flag), &processedSize));
-  if (processedSize != sizeof(flag))
+  Byte flag;
+  UInt32 processedSize;
+  RINOK(inStream->Read(&flag, 1, &processedSize));
+  if (processedSize != 1)
     return E_INVALIDARG;
   m_BigDictionaryOn = ((flag & 2) != 0);
   m_NumDistanceLowDirectBits = m_BigDictionaryOn ? 

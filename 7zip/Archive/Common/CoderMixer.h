@@ -1,7 +1,5 @@
 // CoderMixer.h
 
-#pragma once
-
 #ifndef __CODERMIXER_H
 #define __CODERMIXER_H
 
@@ -20,8 +18,8 @@ struct CThreadCoderInfo
   CMyComPtr<ICompressCoder> Coder;
   CMyComPtr<ISequentialInStream> InStream;
   CMyComPtr<ISequentialOutStream> OutStream;
-  UINT64 InSizeValue;
-  UINT64 OutSizeValue;
+  UInt64 InSizeValue;
+  UInt64 OutSizeValue;
   bool InSizeAssigned;
   bool OutSizeAssigned;
   ICompressProgressInfo *Progress;
@@ -47,12 +45,12 @@ public:
   STDMETHOD(Init)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream);
   // STDMETHOD(ReleaseStreams)();
-  // STDMETHOD(Code)(UINT32 size, UINT32 &processedSize);
+  // STDMETHOD(Code)(UInt32 size, UInt32 &processedSize);
   // STDMETHOD(Flush)();
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
-      const UINT64 *inSize, const UINT64 *outSize,
+      const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
 
@@ -62,11 +60,11 @@ public:
   void FinishAddingCoders();
 
   void ReInit();
-  void SetCoderInfo(UINT32 coderIndex, 
-      const UINT64 *inSize, const UINT64 *outSize);
-  void SetProgressCoderIndex(UINT32 coderIndex)
+  void SetCoderInfo(UInt32 coderIndex, 
+      const UInt64 *inSize, const UInt64 *outSize);
+  void SetProgressCoderIndex(UInt32 coderIndex)
     {  m_ProgressCoderIndex = coderIndex; }
-  UINT64 GetWriteProcessedSize(UINT32 coderIndex);
+  UInt64 GetWriteProcessedSize(UInt32 coderIndex);
 
   bool MyCode();
 private:
@@ -80,7 +78,7 @@ private:
   NWindows::NSynchronization::CAutoResetEvent m_CompressingFinishedEvent;
 
   NWindows::NSynchronization::CManualResetEvent ExitEvent;
-  UINT32 m_ProgressCoderIndex;
+  UInt32 m_ProgressCoderIndex;
 };
 
 #endif

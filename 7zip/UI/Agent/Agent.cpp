@@ -8,11 +8,10 @@
 #include "Windows/PropVariant.h"
 #include "Windows/FileFind.h"
 
-#include "../Common/OpenArchive.h"
 #include "../Common/DefaultName.h"
+#include "../Common/ArchiveExtractCallback.h"
 
 #include "Agent.h"
-#include "ArchiveExtractCallback.h"
 
 #ifdef FORMAT_7Z
 #include "../../Archive/7z/7zHandler.h"
@@ -62,8 +61,7 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
         break;
       default:
         if (item.IsLeaf)
-          return _agentSpec->_archive->GetProperty(item.Index,
-              propID, value);
+          return _agentSpec->GetArchive()->GetProperty(item.Index, propID, value);
     }
   }
   else
@@ -79,7 +77,7 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
         propVariant = item.Name;
         break;
       default:
-        return _agentSpec->_archive->GetProperty(item.Index,
+        return _agentSpec->GetArchive()->GetProperty(item.Index,
           propID, value);
     }
   }
@@ -140,7 +138,7 @@ struct CArchiveItemPropertyTemp
 STDMETHODIMP CAgentFolder::GetNumberOfProperties(UINT32 *numProperties)
 {
   COM_TRY_BEGIN
-  return _agentSpec->_archive->GetNumberOfProperties(numProperties);
+  return _agentSpec->GetArchive()->GetNumberOfProperties(numProperties);
   COM_TRY_END
 }
 
@@ -148,7 +146,7 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UINT32 index,
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   COM_TRY_BEGIN
-  RINOK(_agentSpec->_archive->GetPropertyInfo(index, name, propID, varType));
+  RINOK(_agentSpec->GetArchive()->GetPropertyInfo(index, name, propID, varType));
   if (*propID == kpidPath)
     *propID = kpidName;
   return S_OK;
@@ -200,8 +198,8 @@ STDMETHODIMP CAgentFolder::GetPath(BSTR *path)
 
 STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices, 
     UINT32 numItems, 
-    NExtractionMode::NPath::EEnum pathMode, 
-    NExtractionMode::NOverwrite::EEnum overwriteMode, 
+    NExtract::NPathMode::EEnum pathMode, 
+    NExtract::NOverwriteMode::EEnum overwriteMode, 
     const wchar_t *path,
     INT32 testMode,
     IFolderArchiveExtractCallback *extractCallback2)
@@ -216,8 +214,9 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
     pathParts.Insert(0, currentProxyFolder->Name);
     currentProxyFolder = currentProxyFolder->Parent;
   }
-  extractCallbackSpec->Init(_agentSpec->_archive, 
+  extractCallbackSpec->Init(_agentSpec->GetArchive(), 
       extractCallback2, 
+      false,
       path,
       pathMode, 
       overwriteMode, 
@@ -229,7 +228,7 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
       );
   CUIntVector realIndices;
   _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
-  return _agentSpec->_archive->Extract(&realIndices.Front(), 
+  return _agentSpec->GetArchive()->Extract(&realIndices.Front(), 
       realIndices.Size(), testMode, extractCallback);
   COM_TRY_END
 }
@@ -262,23 +261,19 @@ STDMETHODIMP CAgent::Open(
     return ::GetLastError();
   if (fileInfo.IsDirectory())
     return E_FAIL;
-  CArchiverInfo archiverInfo;
-  int subExtIndex;
-  HRESULT res = OpenArchive(_archiveFilePath, 
-      #ifndef EXCLUDE_COM
-      &_library, 
-      #endif
-      &_archive, archiverInfo, subExtIndex, openArchiveCallback);
+  CArchiverInfo archiverInfo0, archiverInfo1;
+  HRESULT res = OpenArchive(_archiveFilePath, _archiveLink, openArchiveCallback);
+  // _archive = _archiveLink.GetArchive();
+  DefaultName = _archiveLink.GetDefaultItemName();
+  const CArchiverInfo &ai = _archiveLink.GetArchiverInfo();
+
   RINOK(res);
-  DefaultName = GetDefaultName(_archiveFilePath, 
-      archiverInfo.Extensions[subExtIndex].Extension, 
-      archiverInfo.Extensions[subExtIndex].AddExtension);
   DefaultTime = fileInfo.LastWriteTime;
   DefaultAttributes = fileInfo.Attributes;
-  ArchiveType = archiverInfo.Name;
+  ArchiveType = ai.Name;
   if (archiveType != 0)
   {
-    CMyComBSTR name = archiverInfo.Name;
+    CMyComBSTR name = ArchiveType;
     *archiveType = name.Detach();
   }
   return S_OK;
@@ -295,7 +290,7 @@ STDMETHODIMP CAgent::ReOpen(
     delete _proxyArchive;
     _proxyArchive = NULL;
   }
-  RINOK(ReOpenArchive(_archive, _archiveFilePath));
+  RINOK(ReOpenArchive(_archiveLink, _archiveFilePath));
   return ReadItems();
   COM_TRY_END
 }
@@ -303,7 +298,13 @@ STDMETHODIMP CAgent::ReOpen(
 STDMETHODIMP CAgent::Close()
 {
   COM_TRY_BEGIN
-  return _archive->Close();
+  RINOK(_archiveLink.Close());
+  if (_archiveLink.GetNumLevels() > 1)
+  {
+    // return S_OK;
+  }
+  // _archive->Close();
+  return S_OK;
   COM_TRY_END
 }
 
@@ -319,7 +320,7 @@ HRESULT CAgent::ReadItems()
   if (_proxyArchive != NULL)
     return S_OK;
   _proxyArchive = new CProxyArchive();
-  return _proxyArchive->Load(_archive, 
+  return _proxyArchive->Load(GetArchive(), 
       DefaultName, 
       // _defaultTime, 
       // _defaultAttributes, 
@@ -340,8 +341,8 @@ STDMETHODIMP CAgent::BindToRootFolder(IFolderFolder **resultFolder)
 
 
 STDMETHODIMP CAgent::Extract(
-    NExtractionMode::NPath::EEnum pathMode, 
-    NExtractionMode::NOverwrite::EEnum overwriteMode, 
+    NExtract::NPathMode::EEnum pathMode, 
+    NExtract::NOverwriteMode::EEnum overwriteMode, 
     const wchar_t *path,
     INT32 testMode,
     IFolderArchiveExtractCallback *extractCallback2)
@@ -349,8 +350,9 @@ STDMETHODIMP CAgent::Extract(
   COM_TRY_BEGIN
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
-  extractCallbackSpec->Init(_archive, 
+  extractCallbackSpec->Init(GetArchive(), 
       extractCallback2, 
+      false,
       path,
       pathMode, 
       overwriteMode, 
@@ -360,14 +362,14 @@ STDMETHODIMP CAgent::Extract(
       DefaultAttributes
       // ,_srcDirectoryPrefix
       );
-  return _archive->Extract(0, -1, testMode, extractCallback);
+  return GetArchive()->Extract(0, -1, testMode, extractCallback);
   COM_TRY_END
 }
 
 STDMETHODIMP CAgent::GetNumberOfProperties(UINT32 *numProperties)
 {
   COM_TRY_BEGIN
-  return _archive->GetNumberOfProperties(numProperties);
+  return GetArchive()->GetNumberOfProperties(numProperties);
   COM_TRY_END
 }
 
@@ -375,7 +377,7 @@ STDMETHODIMP CAgent::GetPropertyInfo(UINT32 index,
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   COM_TRY_BEGIN
-  RINOK(_archive->GetPropertyInfo(index, name, propID, varType));
+  RINOK(GetArchive()->GetPropertyInfo(index, name, propID, varType));
   if (*propID == kpidPath)
     *propID = kpidName;
   return S_OK;
@@ -385,14 +387,14 @@ STDMETHODIMP CAgent::GetPropertyInfo(UINT32 index,
 STDMETHODIMP CAgent::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  return _archive->GetArchiveProperty(propID, value);
+  return GetArchive()->GetArchiveProperty(propID, value);
   COM_TRY_END
 }
 
 STDMETHODIMP CAgent::GetNumberOfArchiveProperties(UINT32 *numProperties)
 {
   COM_TRY_BEGIN
-  return _archive->GetNumberOfArchiveProperties(numProperties);
+  return GetArchive()->GetNumberOfArchiveProperties(numProperties);
   COM_TRY_END
 }
 
@@ -400,7 +402,7 @@ STDMETHODIMP CAgent::GetArchivePropertyInfo(UINT32 index,
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   COM_TRY_BEGIN
-  return _archive->GetArchivePropertyInfo(index,     
+  return GetArchive()->GetArchivePropertyInfo(index,     
       name, propID, varType);
   COM_TRY_END
 }

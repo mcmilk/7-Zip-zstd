@@ -27,6 +27,8 @@ namespace NArchive
     kAddExtension,
     kUpdate,
     kKeepName,
+    kStartSignature,
+    kFinishSignature,
   };
 
   namespace NExtract
@@ -71,8 +73,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100010000")
 IArchiveOpenCallback: public IUnknown
 {
 public:
-  STDMETHOD(SetTotal)(const UINT64 *files, const UINT64 *bytes) PURE;
-  STDMETHOD(SetCompleted)(const UINT64 *files, const UINT64 *bytes) PURE;
+  STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes) PURE;
+  STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100090000}
@@ -82,10 +84,11 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100090000")
 IArchiveExtractCallback: public IProgress
 {
 public:
-  STDMETHOD(GetStream)(UINT32 index, ISequentialOutStream **outStream, 
-      INT32 askExtractMode) PURE;
-  STDMETHOD(PrepareOperation)(INT32 askExtractMode) PURE;
-  STDMETHOD(SetOperationResult)(INT32 resultEOperationResult) PURE;
+  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, 
+      Int32 askExtractMode) PURE;
+  // GetStream OUT: S_OK - OK, S_FALSE - skeep this file
+  STDMETHOD(PrepareOperation)(Int32 askExtractMode) PURE;
+  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult) PURE;
 };
 
 
@@ -101,6 +104,17 @@ public:
 };
 
 
+// {23170F69-40C1-278A-0000-0001000D0100}
+DEFINE_GUID(IID_IArchiveOpenSetSubArchiveName, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0D, 0x01, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000D0100")
+IArchiveOpenSetSubArchiveName: public IUnknown
+{
+public:
+  STDMETHOD(SetSubArchiveName)(const wchar_t *name) PURE;
+};
+
+
 // {23170F69-40C1-278A-0000-000100080000}
 DEFINE_GUID(IID_IInArchive, 
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x00);
@@ -108,23 +122,33 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100080000")
 IInArchive: public IUnknown
 {
 public:
-  STDMETHOD(Open)(IInStream *stream, const UINT64 *maxCheckStartPosition,
+  STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openArchiveCallback) PURE;  
   STDMETHOD(Close)() PURE;  
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) PURE;  
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(Extract)(const UINT32* indices, UINT32 numItems, 
-      INT32 testMode, IArchiveExtractCallback *extractCallback) PURE;
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) PURE;  
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
+      Int32 testMode, IArchiveExtractCallback *extractCallback) PURE;
 
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) PURE;
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties) PURE;  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) PURE;  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
 
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties) PURE;  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties) PURE;  
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
+};
+
+// {23170F69-40C1-278A-0000-000100080100}
+DEFINE_GUID(IID_IInArchiveGetStream, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08, 0x01, 0x00);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000100080100")
+IInArchiveGetStream: public IUnknown
+{
+public:
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream) PURE;  
 };
 
 
@@ -136,16 +160,25 @@ IArchiveUpdateCallback: public IProgress
 {
 public:
   // STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) PURE;  
-  STDMETHOD(GetUpdateItemInfo)(UINT32 index, 
-      INT32 *newData, // 1 - new data, 0 - old data
-      INT32 *newProperties, // 1 - new properties, 0 - old properties
-      UINT32 *indexInArchive // -1 if there is no in archive, or if doesn't matter
+  STDMETHOD(GetUpdateItemInfo)(UInt32 index, 
+      Int32 *newData, // 1 - new data, 0 - old data
+      Int32 *newProperties, // 1 - new properties, 0 - old properties
+      UInt32 *indexInArchive // -1 if there is no in archive, or if doesn't matter
       ) PURE;
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(GetStream)(UINT32 index, IInStream **inStream) PURE;
-  STDMETHOD(SetOperationResult)(INT32 operationResult) PURE;
-  // STDMETHOD(GetVolumeSize)(UINT32 index, UINT64 *size) PURE;
-  // STDMETHOD(GetVolumeStream)(UINT32 index, IOutStream **volumeStream) PURE;
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **inStream) PURE;
+  STDMETHOD(SetOperationResult)(Int32 operationResult) PURE;
+};
+
+// {23170F69-40C1-278A-0000-000100040002}
+DEFINE_GUID(IID_IArchiveUpdateCallback2, 
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x02);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040002")
+IArchiveUpdateCallback2: public IArchiveUpdateCallback
+{
+public:
+  STDMETHOD(GetVolumeSize)(UInt32 index, UInt64 *size) PURE;
+  STDMETHOD(GetVolumeStream)(UInt32 index, ISequentialOutStream **volumeStream) PURE;
 };
 
 // {23170F69-40C1-278A-0000-000100020000}
@@ -154,9 +187,9 @@ DEFINE_GUID(IID_IOutArchive,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100020000")
 IOutArchive: public IUnknown
 {
-  STDMETHOD(UpdateItems)(IOutStream *outStream, UINT32 numItems,
+  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback) PURE;
-  STDMETHOD(GetFileTimeType)(UINT32 *type) PURE;  
+  STDMETHOD(GetFileTimeType)(UInt32 *type) PURE;  
 };
 
 // {23170F69-40C1-278A-0000-000100030000}
@@ -165,7 +198,7 @@ DEFINE_GUID(IID_ISetProperties,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000100030000")
 ISetProperties: public IUnknown
 {
-  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties) PURE;
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties) PURE;
 };
 
 

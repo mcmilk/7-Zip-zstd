@@ -1,7 +1,5 @@
 // Agent/Agent.h
 
-#pragma once
-
 #ifndef __AGENT_AGENT_H
 #define __AGENT_AGENT_H
 
@@ -10,6 +8,7 @@
 
 #include "../Common/UpdateAction.h"
 #include "../Common/ArchiverInfo.h"
+#include "../Common/OpenArchive.h"
 
 #include "IFolderArchive.h"
 #include "AgentProxy.h"
@@ -74,8 +73,8 @@ public:
 
   // IArchiveFolder
   STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
-      NExtractionMode::NPath::EEnum pathMode, 
-      NExtractionMode::NOverwrite::EEnum overwriteMode, 
+      NExtract::NPathMode::EEnum pathMode, 
+      NExtract::NOverwriteMode::EEnum overwriteMode, 
       const wchar_t *path,
       INT32 testMode,
       IFolderArchiveExtractCallback *extractCallback);
@@ -137,6 +136,7 @@ public:
   CMyComPtr<IFolderFolder> _parentFolder;
   CMyComPtr<IInFolderArchive> _agent;
   CAgent *_agentSpec;
+private:
 };
 
 // {23170F69-40C1-278A-1000-000100030000}
@@ -189,8 +189,8 @@ public:
       BSTR *name, PROPID *propID, VARTYPE *varType);
   STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder);  
   STDMETHOD(Extract)(
-      NExtractionMode::NPath::EEnum pathMode, 
-      NExtractionMode::NOverwrite::EEnum overwriteMode, 
+      NExtract::NPathMode::EEnum pathMode, 
+      NExtract::NOverwriteMode::EEnum overwriteMode, 
       const wchar_t *path, 
       INT32 testMode,
       IFolderArchiveExtractCallback *extractCallback2);
@@ -204,11 +204,12 @@ public:
       const wchar_t *filePath, 
       const CLSID *clsID, 
       const wchar_t *newArchiveName, 
-      const BYTE *stateActions, 
+      const Byte *stateActions, 
       const wchar_t *sfxModule,
       IFolderArchiveUpdateCallback *updateCallback);
 
-  HRESULT CommonUpdate(const wchar_t *newArchiveName, 
+  HRESULT CommonUpdate(
+      const wchar_t *newArchiveName, 
       int numUpdateItems,
       IArchiveUpdateCallback *updateCallback);
   
@@ -224,7 +225,7 @@ public:
     IFolderArchiveUpdateCallback *updateCallback100);
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const BSTR *names, const PROPVARIANT *values, INT32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, INT32 numProperties);
   #endif
 
   CAgent();
@@ -234,16 +235,14 @@ private:
 public:
   CProxyArchive *_proxyArchive;
 
-  #ifndef EXCLUDE_COM
-  NWindows::NDLL::CLibrary _library;
-  #endif
-
-  CMyComPtr<IInArchive> _archive;
+  CArchiveLink _archiveLink;
+  // IInArchive *_archive2;
   
   // CLSID _CLSID;
   // CMyComPtr<IArchiveFolder> m_RootFolder;
   
   UString DefaultName;
+
   FILETIME DefaultTime;
   UINT32 DefaultAttributes;
 
@@ -258,9 +257,12 @@ public:
   UString _archiveFilePath;
 
   #ifndef EXTRACT_ONLY
-  CObjectVector<CMyComBSTR> m_PropNames;
+  CObjectVector<UString> m_PropNames;
   std::vector<NWindows::NCOM::CPropVariant> m_PropValues;
   #endif
+
+  IInArchive *GetArchive() { return _archiveLink.GetArchive(); }
+  bool CanUpdate() const { return _archiveLink.GetNumLevels() == 1; }
 };
 
 #ifdef NEW_FOLDER_INTERFACE

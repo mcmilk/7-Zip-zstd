@@ -282,6 +282,14 @@ SOURCE=..\..\PropID.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
@@ -346,6 +354,10 @@ SOURCE=..\Common\CodecsPath.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\CoderLoader.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\CoderLoader.h
 # End Source File
 # Begin Source File
@@ -358,11 +370,27 @@ SOURCE=..\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\CoderMixer2MT.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\CoderMixer2MT.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -379,6 +407,14 @@ SOURCE=..\Common\ItemNameUtils.cpp
 # Begin Source File
 
 SOURCE=..\Common\ItemNameUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\MultiStream.h
 # End Source File
 # Begin Source File
 
@@ -410,11 +446,11 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.cpp
+SOURCE=..\..\Common\LockedStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\MultiStream.h
+SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 

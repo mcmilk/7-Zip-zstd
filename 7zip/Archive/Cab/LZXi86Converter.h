@@ -1,7 +1,5 @@
 // Archive/Cab/LZXi86Converter.h
 
-#pragma once
-
 #ifndef __ARCHIVE_CAB_LZXI86CONVERTER_H
 #define __ARCHIVE_CAB_LZXI86CONVERTER_H
 
@@ -20,12 +18,12 @@ class Ci86TranslationOutStream:
 {
   bool m_TranslationMode;
   CMyComPtr<ISequentialOutStream> m_Stream;
-  UINT32 m_ProcessedSize;
-  BYTE m_Buffer[kUncompressedBlockSize];
-  UINT32 m_Pos;
-  UINT32 m_TranslationSize;
+  UInt32 m_ProcessedSize;
+  Byte m_Buffer[kUncompressedBlockSize];
+  UInt32 m_Pos;
+  UInt32 m_TranslationSize;
 
-  INT32 ConvertAbsoluteToOffset(INT32 aPos, INT32 anAbsoluteValue);
+  Int32 ConvertAbsoluteToOffset(Int32 aPos, Int32 anAbsoluteValue);
   void MakeTranslation();
 public:
   Ci86TranslationOutStream();
@@ -33,10 +31,10 @@ public:
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Write)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
-  STDMETHOD(WritePart)(const void *aData, UINT32 aSize, UINT32 *aProcessedSize);
+  STDMETHOD(Write)(const void *aData, UInt32 aSize, UInt32 *aProcessedSize);
+  STDMETHOD(WritePart)(const void *aData, UInt32 aSize, UInt32 *aProcessedSize);
 public:
-  void Init(ISequentialOutStream *aStream, bool aTranslationMode, UINT32 aTranslationSize);
+  void Init(ISequentialOutStream *aStream, bool aTranslationMode, UInt32 aTranslationSize);
   HRESULT Flush();
   void ReleaseStream();
 };

@@ -1,7 +1,5 @@
 // Common/UTFConvert.h
 
-#pragma once
-
 #ifndef __COMMON_UTFCONVERT_H
 #define __COMMON_UTFCONVERT_H
 

@@ -15,56 +15,56 @@
 namespace NCrypto {
 namespace NZip {
 
+/*
 class CBuffer2
 {
 protected:
-  BYTE *_buffer;
+  Byte *_buffer;
 public:
   CBuffer2();
   ~CBuffer2();
 };
-
+*/
 class CEncoder : 
-  public ICompressCoder,
+  public ICompressFilter,
   public ICryptoSetPassword,
   public ICryptoSetCRC,
-  public CMyUnknownImp,
-  public CBuffer2
+  public CMyUnknownImp
+  // public CBuffer2
 {
   CCipher _cipher;
-  UINT32 _crc;
+  UInt32 _crc;
 public:
   MY_UNKNOWN_IMP2(
       ICryptoSetPassword,
       ICryptoSetCRC
   )
 
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UINT64 *inSize, const UINT64 *outSize,
-      ICompressProgressInfo *progress);
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
 
-  STDMETHOD(CryptoSetPassword)(const BYTE *data, UINT32 size);
-  STDMETHOD(CryptoSetCRC)(UINT32 crc);
+  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
+  STDMETHOD(CryptoSetCRC)(UInt32 crc);
+  HRESULT WriteHeader(ISequentialOutStream *outStream);
 };
 
 
 class CDecoder: 
-  public ICompressCoder,
+  public ICompressFilter,
   public ICryptoSetPassword,
-  public CMyUnknownImp,
-  public CBuffer2
+  public CMyUnknownImp
+  // public CBuffer2
 {
   CCipher _cipher;
 public:
 
   MY_UNKNOWN_IMP1(ICryptoSetPassword)
 
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UINT64 const *inSize, 
-      const UINT64 *outSize,
-      ICompressProgressInfo *progress);
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
 
-  STDMETHOD(CryptoSetPassword)(const BYTE *data, UINT32 size);
+  HRESULT ReadHeader(ISequentialInStream *inStream);
+  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
 };
 
 }}

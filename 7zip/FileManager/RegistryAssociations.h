@@ -1,7 +1,5 @@
 // RegistryAssociations.h
 
-#pragma once
-
 #ifndef __REGISTRYASSOCIATIONS_H
 #define __REGISTRYASSOCIATIONS_H
 
@@ -43,6 +41,5 @@ namespace NRegistryAssociations {
 }
 
 // bool GetProgramDirPrefix(CSysString &aFolder);
-
 
 #endif

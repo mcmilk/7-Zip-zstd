@@ -1,7 +1,5 @@
 // ViewSettings.h
 
-#pragma once
-
 #ifndef __VIEWSETTINGS_H
 #define __VIEWSETTINGS_H
 
@@ -12,7 +10,7 @@ struct CColumnInfo
 {
   PROPID PropID;
   bool IsVisible;
-  UINT32 Width;
+  UInt32 Width;
 };
 
 inline bool operator==(const CColumnInfo &a1, const CColumnInfo &a2)
@@ -26,17 +24,14 @@ inline bool operator!=(const CColumnInfo &a1, const CColumnInfo &a2)
   return !(a1 == a2);
 }
 
-
 struct CListViewInfo
 {
   CObjectVector<CColumnInfo> Columns;
-  // int SortIndex;
   PROPID SortID;
   bool Ascending;
 
   void Clear()
   {
-    // SortIndex = -1;
     SortID = 0;
     Ascending = true;
     Columns.Clear();
@@ -62,7 +57,6 @@ struct CListViewInfo
         return false;
     return true;
   }
-  // void OrderItems();
 };
 
 void SaveListViewInfo(const CSysString &anID, const CListViewInfo &viewInfo);
@@ -71,14 +65,24 @@ void ReadListViewInfo(const CSysString &anID, CListViewInfo &viewInfo);
 void SaveWindowSize(const RECT &rect, bool maximized);
 bool ReadWindowSize(RECT &rect, bool &maximized);
 
-void SavePanelsInfo(UINT32 numPanels, UINT32 currentPanel, UINT32 splitterPos);
-bool ReadPanelsInfo(UINT32 &numPanels, UINT32 &currentPanel, UINT32 &splitterPos);
+void SavePanelsInfo(UInt32 numPanels, UInt32 currentPanel, UInt32 splitterPos);
+bool ReadPanelsInfo(UInt32 &numPanels, UInt32 &currentPanel, UInt32 &splitterPos);
 
-void SaveToolbarsMask(UINT32 toolbarMask);
-UINT32 ReadToolbarsMask();
+void SaveToolbarsMask(UInt32 toolbarMask);
+UInt32 ReadToolbarsMask();
 
-void SavePanelPath(UINT32 panel, const CSysString &path);
-bool ReadPanelPath(UINT32 panel, CSysString &path);
+void SavePanelPath(UInt32 panel, const CSysString &path);
+bool ReadPanelPath(UInt32 panel, CSysString &path);
+
+struct CListMode
+{
+  UInt32 Panels[2];
+  void Init() { Panels[0] = Panels[1] = 3; }
+  CListMode() { Init(); }
+};
+
+void SaveListMode(const CListMode &listMode);
+void ReadListMode(CListMode &listMode);
 
 void SaveFolderHistory(const UStringVector &folders);
 void ReadFolderHistory(UStringVector &folders);

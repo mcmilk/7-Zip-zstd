@@ -7,7 +7,7 @@
 namespace NArchive {
 namespace NGZip {
 
-extern UINT16 kSignature = 0x8B1F + 1;
+extern UInt16 kSignature = 0x8B1F + 1;
 
 static class CMarkersInitializer
 {

@@ -1,7 +1,5 @@
 // Windows/Menu.h
 
-#pragma once
-
 #ifndef __WINDOWS_MENU_H
 #define __WINDOWS_MENU_H
 

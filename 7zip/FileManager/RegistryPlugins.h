@@ -1,7 +1,5 @@
 // RegistryPlugins.h
 
-#pragma once
-
 #ifndef __REGISTRYPLUGINS_H
 #define __REGISTRYPLUGINS_H
 
@@ -32,4 +30,3 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins);
 void ReadFileFolderPluginInfoList(CObjectVector<CPluginInfo> &plugins);
 
 #endif
-

@@ -1,7 +1,5 @@
 // ExtractDialog.h
 
-#pragma once
-
 #ifndef __EXTRACTDIALOG_H
 #define __EXTRACTDIALOG_H
 
@@ -14,9 +12,11 @@
 #ifndef  NO_REGISTRY
 #include "../Common/ZipRegistry.h"
 #endif
+#include "../Common/ExtractMode.h"
 
 namespace NExtractionDialog
 {
+  /*
   namespace NFilesMode
   {
     enum EEnum
@@ -26,32 +26,7 @@ namespace NExtractionDialog
       kSpecified
     };
   }
-  namespace NPathMode
-  {
-    enum EEnum
-    {
-      kFullPathnames,
-      kCurrentPathnames,
-      kNoPathnames,
-    };
-  }
-  namespace NOverwriteMode
-  {
-    enum EEnum
-    {
-      kAskBefore,
-      kWithoutPrompt,
-      kSkipExisting,
-      kAutoRename
-    };
-  }
-  struct CModeInfo
-  {
-    NOverwriteMode::EEnum OverwriteMode;
-    NPathMode::EEnum PathMode;
-    // NFilesMode::EEnum FilesMode;
-    UStringVector FileList;
-  };
+  */
 }
 
 class CExtractDialog: public NWindows::NControl::CModalDialog
@@ -66,12 +41,11 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CEdit _passwordControl;
   #endif
 
-	int		_pathMode;
-	int		_overwriteMode;
-
   #ifndef _SFX
-  int GetPathNameMode() const;
-  int GetOverwriteMode() const;
+  void GetPathMode();
+  void SetPathMode();
+  void GetOverwriteMode();
+  void SetOverwriteMode();
   // int GetFilesMode() const;
   void UpdatePasswordControl();
   #endif
@@ -87,13 +61,15 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
 public:
   // bool _enableSelectedFilesButton;
   // bool _enableFilesButton;
-  UString DirectoryPath;
 	// NExtractionDialog::NFilesMode::EEnum FilesMode;
+
+  UString DirectoryPath;
   UString Password;
+  NExtract::NPathMode::EEnum PathMode;
+  NExtract::NOverwriteMode::EEnum OverwriteMode;
 
   INT_PTR Create(HWND aWndParent = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_EXTRACT), aWndParent); }
-  void GetModeInfo(NExtractionDialog::CModeInfo &modeInfo); 
 };
 
 #endif

@@ -1,9 +1,7 @@
 // UpdateProduce.h
 
-#pragma once
-
-#ifndef __UPDATEPRODUCE_H
-#define __UPDATEPRODUCE_H
+#ifndef __UPDATE_PRODUCE_H
+#define __UPDATE_PRODUCE_H
 
 #include "UpdatePair.h"
 

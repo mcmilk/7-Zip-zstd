@@ -1,7 +1,5 @@
 // Compression/HuffmanEncoder.h
 
-#pragma once
-
 #ifndef __COMPRESSION_HUFFMANENCODER_H
 #define __COMPRESSION_HUFFMANENCODER_H
 
@@ -14,50 +12,50 @@ const int kNumBitsInLongestCode = 15;
 
 struct CItem
 {
-  UINT32 Freq;
-  UINT32 Code;
-  UINT32 Dad;
-  UINT32 Len;
+  UInt32 Freq;
+  UInt32 Code;
+  UInt32 Dad;
+  UInt32 Len;
 };
 
 class CEncoder
 {
-  UINT32 m_NumSymbols; // number of symbols in adwSymbol
+  UInt32 m_NumSymbols; // number of symbols in adwSymbol
 
   CItem *m_Items;
-  UINT32 *m_Heap;
-  UINT32 m_HeapSize;
-  BYTE *m_Depth;
-  const BYTE *m_ExtraBits;
-  UINT32 m_ExtraBase;
-  UINT32 m_MaxLength;
+  UInt32 *m_Heap;
+  UInt32 m_HeapSize;
+  Byte *m_Depth;
+  const Byte *m_ExtraBits;
+  UInt32 m_ExtraBase;
+  UInt32 m_MaxLength;
 
-  UINT32 m_HeapLength;
-  UINT32 m_BitLenCounters[kNumBitsInLongestCode + 1];
+  UInt32 m_HeapLength;
+  UInt32 m_BitLenCounters[kNumBitsInLongestCode + 1];
 
-  UINT32 RemoveSmallest();
+  UInt32 RemoveSmallest();
   bool Smaller(int n, int m); 
-  void DownHeap(UINT32 k);
-  void GenerateBitLen(UINT32 maxCode, UINT32 heapMax);
-  void GenerateCodes(UINT32 maxCode);
+  void DownHeap(UInt32 k);
+  void GenerateBitLen(UInt32 maxCode, UInt32 heapMax);
+  void GenerateCodes(UInt32 maxCode);
   
-  UINT32 m_BlockBitLength;
+  UInt32 m_BlockBitLength;
 public:
 
-  CEncoder(UINT32 numSymbols, const BYTE *extraBits, 
-      UINT32 extraBase, UINT32 maxLength);
+  CEncoder(UInt32 numSymbols, const Byte *extraBits, 
+      UInt32 extraBase, UInt32 maxLength);
   ~CEncoder();
   void StartNewBlock();
 
-  void AddSymbol(UINT32 symbol)
+  void AddSymbol(UInt32 symbol)
     {  m_Items[symbol].Freq++; }
 
-  void SetFreqs(const UINT32 *freqs);
-  void BuildTree(BYTE *levels);
-  UINT32 GetBlockBitLength() const { return m_BlockBitLength; }
+  void SetFreqs(const UInt32 *freqs);
+  void BuildTree(Byte *levels);
+  UInt32 GetBlockBitLength() const { return m_BlockBitLength; }
 
   template <class TBitEncoder>
-  void CodeOneValue(TBitEncoder *bitEncoder, UINT32 symbol)
+  void CodeOneValue(TBitEncoder *bitEncoder, UInt32 symbol)
     { bitEncoder->WriteBits(m_Items[symbol].Code, m_Items[symbol].Len); }
 };
 

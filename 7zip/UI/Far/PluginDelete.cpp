@@ -109,7 +109,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
   }
   outArchive->SetFolder(_folder);
 
-  CUpdateCallBack100Imp *updateCallbackSpec = new CUpdateCallBack100Imp;
+  CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
   updateCallbackSpec->Init(m_ArchiveHandler, &progressBox);

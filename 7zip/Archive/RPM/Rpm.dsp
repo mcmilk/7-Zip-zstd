@@ -105,6 +105,10 @@ SOURCE=.\Rpm.def
 # End Source File
 # Begin Source File
 
+SOURCE=.\Rpm.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"StdAfx.h"
 # End Source File
@@ -154,6 +158,14 @@ SOURCE=..\..\Compress\Copy\CopyCoder.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -161,10 +173,6 @@ SOURCE=..\..\..\Common\NewHandler.cpp
 SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\Rpm.ico
-# End Source File
 # Begin Source File
 
 SOURCE=.\RpmHandler.cpp

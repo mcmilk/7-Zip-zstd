@@ -1,7 +1,5 @@
 // Windows/Control/ComboBox.h
 
-#pragma once
-
 #ifndef __WINDOWS_CONTROL_COMBOBOX_H
 #define __WINDOWS_CONTROL_COMBOBOX_H
 

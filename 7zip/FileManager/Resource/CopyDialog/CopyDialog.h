@@ -1,7 +1,5 @@
 // CopyDialog.h
 
-#pragma once
-
 #ifndef __COPYDIALOG_H
 #define __COPYDIALOG_H
 

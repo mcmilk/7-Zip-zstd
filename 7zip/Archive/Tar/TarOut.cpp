@@ -10,9 +10,9 @@
 namespace NArchive {
 namespace NTar {
 
-HRESULT COutArchive::WriteBytes(const void *buffer, UINT32 size)
+HRESULT COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
-  UINT32 processedSize;
+  UInt32 processedSize;
   RINOK(m_Stream->Write(buffer, size, &processedSize));
   if(processedSize != size)
     return E_FAIL;
@@ -24,14 +24,14 @@ void COutArchive::Create(ISequentialOutStream *outStream)
   m_Stream = outStream;
 }
 
-static AString MakeOctalString(UINT64 value)
+static AString MakeOctalString(UInt64 value)
 {
   char s[32];
   _ui64toa(value, s, 8);
   return AString(s) + ' ';
 }
 
-static bool MakeOctalString8(char *s, UINT32 value)
+static bool MakeOctalString8(char *s, UInt32 value)
 {
   AString tempString = MakeOctalString(value);
 
@@ -45,7 +45,7 @@ static bool MakeOctalString8(char *s, UINT32 value)
   return true;
 }
 
-static bool MakeOctalString12(char *s, UINT64 value)
+static bool MakeOctalString12(char *s, UInt64 value)
 {
   AString tempString  = MakeOctalString(value);
   const int kMaxSize = 12;
@@ -70,45 +70,63 @@ static bool CopyString(char *dest, const AString &src, int maxSize)
 
 HRESULT COutArchive::WriteHeaderReal(const CItem &item)
 {
-  NFileHeader::CRecord record;
+  char record[NFileHeader::kRecordSize];
+  char *cur = record;
   int i;
   for (i = 0; i < NFileHeader::kRecordSize; i++)
-    record.Padding[i] = 0;
-
-  NFileHeader::CHeader &header = record.Header;
+    record[i] = 0;
 
   // RETURN_IF_NOT_TRUE(CopyString(header.Name, item.Name, NFileHeader::kNameSize));
   if (item.Name.Length() > NFileHeader::kNameSize)
     return E_FAIL;
-  strncpy(header.Name, item.Name, NFileHeader::kNameSize);
+  strncpy(cur, item.Name, NFileHeader::kNameSize);
+  cur += NFileHeader::kNameSize;
 
-  RETURN_IF_NOT_TRUE(CopyString(header.LinkName, item.LinkName, NFileHeader::kNameSize));
-  RETURN_IF_NOT_TRUE(CopyString(header.UserName, item.UserName, NFileHeader::kUserNameSize));
-  RETURN_IF_NOT_TRUE(CopyString(header.GroupName, item.GroupName, NFileHeader::kGroupNameSize));
+  RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.Mode));
+  cur += 8;
+  RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.UID));
+  cur += 8;
+  RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.GID));
+  cur += 8;
 
-  RETURN_IF_NOT_TRUE(MakeOctalString8(header.Mode, item.Mode));
-  RETURN_IF_NOT_TRUE(MakeOctalString8(header.UID, item.UID));
-  RETURN_IF_NOT_TRUE(MakeOctalString8(header.GID, item.GID));
+  RETURN_IF_NOT_TRUE(MakeOctalString12(cur, item.Size));
+  cur += 12;
+  RETURN_IF_NOT_TRUE(MakeOctalString12(cur, item.ModificationTime));
+  cur += 12;
+  
+  memmove(cur, NFileHeader::kCheckSumBlanks, 8);
+  cur += 8;
 
-  RETURN_IF_NOT_TRUE(MakeOctalString12(header.Size, item.Size));
-  RETURN_IF_NOT_TRUE(MakeOctalString12(header.ModificationTime, item.ModificationTime));
-  header.LinkFlag = item.LinkFlag;
-  memmove(header.Magic, item.Magic, 8);
+  *cur++ = item.LinkFlag;
+
+  RETURN_IF_NOT_TRUE(CopyString(cur, item.LinkName, NFileHeader::kNameSize));
+  cur += NFileHeader::kNameSize;
+
+  memmove(cur, item.Magic, 8);
+  cur += 8;
+
+  RETURN_IF_NOT_TRUE(CopyString(cur, item.UserName, NFileHeader::kUserNameSize));
+  cur += NFileHeader::kUserNameSize;
+  RETURN_IF_NOT_TRUE(CopyString(cur, item.GroupName, NFileHeader::kGroupNameSize));
+  cur += NFileHeader::kUserNameSize;
+
 
   if (item.DeviceMajorDefined)
-    RETURN_IF_NOT_TRUE(MakeOctalString8(header.DeviceMajor, item.DeviceMajor));
+    RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.DeviceMajor));
+  cur += 8;
+
   if (item.DeviceMinorDefined)
-    RETURN_IF_NOT_TRUE(MakeOctalString8(header.DeviceMinor, item.DeviceMinor));
+    RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.DeviceMinor));
+  cur += 8;
 
-  memmove(header.CheckSum, NFileHeader::kCheckSumBlanks, 8);
 
-  UINT32 checkSumReal = 0;
+  UInt32 checkSumReal = 0;
   for(i = 0; i < NFileHeader::kRecordSize; i++)
-    checkSumReal += BYTE(record.Padding[i]);
+    checkSumReal += Byte(record[i]);
 
-  RETURN_IF_NOT_TRUE(MakeOctalString8(header.CheckSum, checkSumReal));
+  RETURN_IF_NOT_TRUE(MakeOctalString8(record + 148, checkSumReal));
 
-  return WriteBytes(&record, sizeof(record));
+  return WriteBytes(record, NFileHeader::kRecordSize);
 }
 
 HRESULT COutArchive::WriteHeader(const CItem &item)
@@ -132,24 +150,24 @@ HRESULT COutArchive::WriteHeader(const CItem &item)
   return WriteHeaderReal(modifiedItem);
 }
 
-HRESULT COutArchive::FillDataResidual(UINT64 dataSize)
+HRESULT COutArchive::FillDataResidual(UInt64 dataSize)
 {
-  UINT32 lastRecordSize = UINT32(dataSize & (NFileHeader::kRecordSize - 1));
+  UInt32 lastRecordSize = UInt32(dataSize & (NFileHeader::kRecordSize - 1));
   if (lastRecordSize == 0)
     return S_OK;
-  UINT32 residualSize = NFileHeader::kRecordSize - lastRecordSize;
-  BYTE residualBytes[NFileHeader::kRecordSize];
-  for (UINT32 i = 0; i < residualSize; i++)
+  UInt32 residualSize = NFileHeader::kRecordSize - lastRecordSize;
+  Byte residualBytes[NFileHeader::kRecordSize];
+  for (UInt32 i = 0; i < residualSize; i++)
     residualBytes[i] = 0;
   return WriteBytes(residualBytes, residualSize);
 }
 
 HRESULT COutArchive::WriteFinishHeader()
 {
-  NFileHeader::CRecord record;
+  char record[NFileHeader::kRecordSize];
   for (int i = 0; i < NFileHeader::kRecordSize; i++)
-    record.Padding[i] = 0;
-  return WriteBytes(&record, sizeof(record));
+    record[i] = 0;
+  return WriteBytes(record, NFileHeader::kRecordSize);
 }
 
 }}

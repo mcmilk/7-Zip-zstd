@@ -1,7 +1,5 @@
 // Windows/System.h
 
-#pragma once
-
 #ifndef __WINDOWS_SYSTEM_H
 #define __WINDOWS_SYSTEM_H
 

@@ -67,6 +67,14 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
     case NArchive::kKeepName:
       propVariant = false;
       break;
+    case NArchive::kStartSignature:
+    {
+      if ((value->bstrVal = ::SysAllocStringByteLen(
+        (const char *)NArchive::NDeb::NHeader::kSignature, 
+          NArchive::NDeb::NHeader::kSignatureLen)) != 0)
+        value->vt = VT_BSTR;
+      return S_OK;
+    }
   }
   propVariant.Detach(value);
   return S_OK;

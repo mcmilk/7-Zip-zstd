@@ -48,24 +48,24 @@ DEFINE_GUID(CLSID_CCryptoZipEncoder,
 namespace NArchive {
 namespace NZip {
 
-static const BYTE kMethodIDForEmptyStream = NFileHeader::NCompressionMethod::kStored;
-static const BYTE kExtractVersionForEmptyStream = NFileHeader::NCompressionMethod::kStoreExtractVersion;
+static const Byte kMethodIDForEmptyStream = NFileHeader::NCompressionMethod::kStored;
+static const Byte kExtractVersionForEmptyStream = NFileHeader::NCompressionMethod::kStoreExtractVersion;
 
 CAddCommon::CAddCommon(const CCompressionMethodMode &options):
   _options(options),
   _copyCoderSpec(NULL),
-  _mixerCoderSpec(0)
+  _cryptoStreamSpec(0)
  {}
 
-static HRESULT GetStreamCRC(IInStream *inStream, UINT32 &resultCRC)
+static HRESULT GetStreamCRC(IInStream *inStream, UInt32 &resultCRC)
 {
   CCRC crc;
   crc.Init();
-  const UINT32 kBufferSize = (1 << 14);
-  BYTE buffer[kBufferSize];
+  const UInt32 kBufferSize = (1 << 14);
+  Byte buffer[kBufferSize];
   while(true)
   {
-    UINT32 realProcessedSize;
+    UInt32 realProcessedSize;
     RINOK(inStream->Read(buffer, kBufferSize, &realProcessedSize));
     if(realProcessedSize == 0)
     {
@@ -77,7 +77,7 @@ static HRESULT GetStreamCRC(IInStream *inStream, UINT32 &resultCRC)
 }
 
 HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream, 
-      UINT64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult)
+      UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
   /*
   if(inSize == 0)
@@ -89,40 +89,33 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
   }
   */
   int numTestMethods = _options.MethodSequence.Size();
-  BYTE method;
-  UINT64 resultSize = 0;
+  Byte method;
+  UInt64 resultSize = 0;
+  COutStreamReleaser outStreamReleaser;
   for(int i = 0; i < numTestMethods; i++)
   {
+    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
     if (_options.PasswordIsDefined)
     {
-      if (!_cryptoEncoder)
+      if (!_cryptoStream)
       {
-        #ifdef CRYPTO_ZIP
-        _cryptoEncoder = new NCrypto::NZip::CEncoder;
-        #else
-        // change it;
-        /*
-        RINOK(_cryptoLib.LoadAndCreateCoder(
-            GetBaseFolderPrefix() + TEXT("\\Crypto\\Zip.dll"),
-            CLSID_CCryptoZipEncoder, &_cryptoEncoder));
-        */
-        #endif
+        _cryptoStreamSpec = new CFilterCoder;
+        _cryptoStream = _cryptoStreamSpec;
+        _filterSpec = new NCrypto::NZip::CEncoder;
+        _cryptoStreamSpec->Filter = _filterSpec;
       }
-      CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
-      RINOK(_cryptoEncoder.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword));
-      RINOK(cryptoSetPassword->CryptoSetPassword(
-          (const BYTE *)(const char *)_options.Password, _options.Password.Length()));
-      UINT32 crc;
-      RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+      RINOK(_filterSpec->CryptoSetPassword(
+          (const Byte *)(const char *)_options.Password, _options.Password.Length()));
+      UInt32 crc;
       RINOK(GetStreamCRC(inStream, crc));
-      CMyComPtr<ICryptoSetCRC> cryptoSetCRC;
-      RINOK(_cryptoEncoder.QueryInterface(IID_ICryptoSetCRC, &cryptoSetCRC));
-      RINOK(cryptoSetCRC->CryptoSetCRC(crc));
+      RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+      RINOK(_cryptoStreamSpec->SetOutStream(outStream));
+      outStreamReleaser.FilterCoder = _cryptoStreamSpec;
+      RINOK(_filterSpec->CryptoSetCRC(crc));
+      RINOK(_filterSpec->WriteHeader(outStream));
     }
 
-    RINOK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
-    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    
     method = _options.MethodSequence[i];
     switch(method)
     {
@@ -133,30 +126,13 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
           _copyCoderSpec = new NCompress::CCopyCoder;
           _copyCoder = _copyCoderSpec;
         }
+        CMyComPtr<ISequentialOutStream> outStreamNew;
         if (_options.PasswordIsDefined)
-        {
-          if (!_mixerCoder || _mixerCoderMethod != method)
-          {
-            _mixerCoder.Release();
-            _mixerCoderSpec = new CCoderMixer;
-            _mixerCoder = _mixerCoderSpec;
-            _mixerCoderSpec->AddCoder(_copyCoder);
-            _mixerCoderSpec->AddCoder(_cryptoEncoder);
-            _mixerCoderSpec->FinishAddingCoders();
-            _mixerCoderMethod = method;
-          }
-          _mixerCoderSpec->ReInit();
-          _mixerCoderSpec->SetCoderInfo(0, NULL, NULL);
-          _mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
-          _mixerCoderSpec->SetProgressCoderIndex(0);
-          RINOK(_mixerCoder->Code(inStream, outStream,
-              NULL, NULL, progress));
-        }
+          outStreamNew = _cryptoStream;
         else
-        {
-          RINOK(_copyCoder->Code(inStream, outStream, 
+          outStreamNew = outStream;
+        RINOK(_copyCoder->Code(inStream, outStreamNew, 
               NULL, NULL, progress));
-        }
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kStoreExtractVersion;
         break;
       }
@@ -225,29 +201,12 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
             setCoderProperties->SetCoderProperties(propIDs, properties, 2);
           }
         }
+        CMyComPtr<ISequentialOutStream> outStreamNew;
         if (_options.PasswordIsDefined)
-        {
-          if (!_mixerCoder || _mixerCoderMethod != method)
-          {
-            _mixerCoder.Release();
-            _mixerCoderSpec = new CCoderMixer;
-            _mixerCoder = _mixerCoderSpec;
-            _mixerCoderSpec->AddCoder(_compressEncoder);
-            _mixerCoderSpec->AddCoder(_cryptoEncoder);
-            _mixerCoderSpec->FinishAddingCoders();
-            _mixerCoderMethod = method;
-          }
-          _mixerCoderSpec->ReInit();
-          _mixerCoderSpec->SetCoderInfo(0, NULL, NULL);
-          _mixerCoderSpec->SetCoderInfo(1, NULL, NULL);
-          _mixerCoderSpec->SetProgressCoderIndex(0);
-          RINOK(_mixerCoder->Code(inStream, outStream,
-              NULL, NULL, progress));
-        }
+          outStreamNew = _cryptoStream;
         else
-        {
-          RINOK(_compressEncoder->Code(inStream, outStream, NULL, NULL, progress));
-        }
+          outStreamNew = outStream;
+        RINOK(_compressEncoder->Code(inStream, outStreamNew, NULL, NULL, progress));
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kDeflateExtractVersion;
         break;
       }

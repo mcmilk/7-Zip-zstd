@@ -1,36 +1,14 @@
 // ZipRegistry.h
 
-#pragma once
-
 #ifndef __ZIPREGISTRY_H
 #define __ZIPREGISTRY_H
 
 #include "Common/String.h"
+#include "Common/Types.h"
+#include "ExtractMode.h"
 
-namespace NExtraction {
-  
-  namespace NPathMode
-  {
-    enum EEnum
-    {
-      kFullPathnames,
-      kCurrentPathnames,
-      kNoPathnames
-    };
-  }
-  
-  namespace NOverwriteMode
-  {
-    enum EEnum
-    {
-      kAskBefore,
-      kWithoutPrompt,
-      kSkipExisting,
-      kAutoRename,
-      kAutoRenameExisting
-    };
-  }
-  
+namespace NExtract
+{
   struct CInfo
   {
     NPathMode::EEnum PathMode;
@@ -46,13 +24,13 @@ namespace NCompression {
   {
     CSysString FormatID;
     CSysString Options;
-    UINT32 Level;
+    UInt32 Level;
     CSysString Method;
-    UINT32 Dictionary;
-    UINT32 Order;
+    UInt32 Dictionary;
+    UInt32 Order;
     void Init() 
     { 
-      Level = Dictionary = Order = UINT32(-1); 
+      Level = Dictionary = Order = UInt32(-1); 
       Method.Empty();
       // Options.Empty();
     }
@@ -63,7 +41,7 @@ namespace NCompression {
   {
     CSysStringVector HistoryArchives;
     // bool LevelIsDefined;
-    UINT32 Level;
+    UInt32 Level;
     UString ArchiveType;
 
     bool Solid;
@@ -101,8 +79,8 @@ namespace NWorkDir{
   };
 }
 
-void SaveExtractionInfo(const NExtraction::CInfo &info);
-void ReadExtractionInfo(NExtraction::CInfo &info);
+void SaveExtractionInfo(const NExtract::CInfo &info);
+void ReadExtractionInfo(NExtract::CInfo &info);
 
 void SaveCompressionInfo(const NCompression::CInfo &info);
 void ReadCompressionInfo(NCompression::CInfo &info);
@@ -113,7 +91,7 @@ void ReadWorkDirInfo(NWorkDir::CInfo &info);
 void SaveCascadedMenu(bool enabled);
 bool ReadCascadedMenu();
 
-void SaveContextMenuStatus(UINT32 value);
-bool ReadContextMenuStatus(UINT32 &value);
+void SaveContextMenuStatus(UInt32 value);
+bool ReadContextMenuStatus(UInt32 &value);
 
 #endif

@@ -8,18 +8,18 @@
 namespace NStream {
 namespace NLSBF {
 
-void CEncoder::WriteBits(UINT32 aValue, UINT32 aNumBits)
+void CEncoder::WriteBits(UInt32 value, UInt32 numBits)
 {
-  while(aNumBits > 0)
+  while(numBits > 0)
   {
-    UINT32 aNumNewBits = MyMin(aNumBits, m_BitPos);
-    aNumBits -= aNumNewBits;
+    UInt32 numNewBits = MyMin(numBits, m_BitPos);
+    numBits -= numNewBits;
 
-    UINT32 aMask = (1 << aNumNewBits) - 1;
-    m_CurByte |= (aValue & aMask) << (8 - m_BitPos);
-    aValue >>= aNumNewBits;
+    UInt32 mask = (1 << numNewBits) - 1;
+    m_CurByte |= (value & mask) << (8 - m_BitPos);
+    value >>= numNewBits;
 
-    m_BitPos -= aNumNewBits;
+    m_BitPos -= numNewBits;
 
     if (m_BitPos == 0)
     {
@@ -31,16 +31,16 @@ void CEncoder::WriteBits(UINT32 aValue, UINT32 aNumBits)
 }
 
 
-void CReverseEncoder::WriteBits(UINT32 aValue, UINT32 aNumBits)
+void CReverseEncoder::WriteBits(UInt32 value, UInt32 numBits)
 {
-  UINT32 aReverseValue = 0;
-  for(UINT32 i = 0; i < aNumBits; i++) 
+  UInt32 reverseValue = 0;
+  for(UInt32 i = 0; i < numBits; i++) 
   {
-    aReverseValue <<= 1;
-    aReverseValue |= aValue & 1;
-    aValue >>= 1;
+    reverseValue <<= 1;
+    reverseValue |= value & 1;
+    value >>= 1;
   } 
-  m_Encoder->WriteBits(aReverseValue, aNumBits);
+  m_Encoder->WriteBits(reverseValue, numBits);
 }
 
 }}

@@ -14,10 +14,10 @@
 
 using namespace NWindows;
 
-static UString ConvertUINT32ToString(UINT32 value)
+static UString ConvertUINT32ToString(UInt32 value)
 {
   wchar_t buffer[32];
-  ConvertUINT64ToString(value, buffer);
+  ConvertUInt64ToString(value, buffer);
   return buffer;
 }
 
@@ -53,7 +53,7 @@ UString ConvertPropertyToString(const PROPVARIANT &propVariant,
       if(propVariant.vt != VT_UI4)
         break;
       UString result;
-      UINT32 attributes = propVariant.ulVal;
+      UInt32 attributes = propVariant.ulVal;
       if (NFile::NFind::NAttributes::IsReadOnly(attributes)) result += L'R';
       if (NFile::NFind::NAttributes::IsHidden(attributes)) result += L'H';
       if (NFile::NFind::NAttributes::IsSystem(attributes)) result += L'S';
@@ -67,7 +67,7 @@ UString ConvertPropertyToString(const PROPVARIANT &propVariant,
     {
       if(propVariant.vt != VT_UI4)
         break;
-      UINT32 size = propVariant.ulVal;
+      UInt32 size = propVariant.ulVal;
       if (size % (1 << 20) == 0)
         return ConvertUINT32ToString(size >> 20) + L"MB";
       if (size % (1 << 10) == 0)

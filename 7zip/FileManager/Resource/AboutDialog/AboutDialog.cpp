@@ -16,11 +16,8 @@ static CIDLangPair kIDLangPairs[] =
 };
 
 static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
-// static LPCTSTR kRegisterRegNowURL = TEXT("https://secure.shareit.com/shareit/checkout.html?PRODUCT[104808]=1&languageid=1");
-static LPCTSTR kRegisterRegNowURL = TEXT("https://www.regnow.com/softsell/nph-softsell.cgi?item=2521-1&vreferrer=program");
-
-static LPCTSTR kEmailAction = 
-  TEXT("mailto:support@7-zip.org?subject=7-Zip");
+static LPCTSTR kRegisterPageURL = TEXT("http://www.7-zip.org/register.html");
+static LPCTSTR kSupportPageURL = TEXT("http://www.7-zip.org/support.html");
 
 static LPCWSTR kHelpTopic = L"start.htm";
 
@@ -36,27 +33,26 @@ void CAboutDialog::OnHelp()
   ShowHelpWindow(NULL, kHelpTopic);
 }
 
+static void MyShellExecute(LPCTSTR url)
+{
+  ::ShellExecute(NULL, NULL, url, NULL, NULL, SW_SHOWNORMAL);
+}
+
 bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   switch(buttonID)
   {
     case IDC_ABOUT_BUTTON_HOMEPAGE:
-      ::ShellExecute(NULL, NULL, kHomePageURL, NULL, NULL, SW_SHOWNORMAL);
+      ::MyShellExecute(kHomePageURL);
       break;
     case IDC_ABOUT_BUTTON_REGISTER:
     {
-      LPCTSTR registerURL = kRegisterRegNowURL;
-      /*
-      LCID aLCID = ::GetUserDefaultLCID();
-      if (aLCID == 0x0419 || aLCID == 0x422 || aLCID == 0x0423)
-        registerURL = TEXT("http://www.7-zip.org/ru/donate.html");
-      */
-      ::ShellExecute(NULL, NULL, registerURL, NULL, NULL, SW_SHOWNORMAL);
+      ::MyShellExecute(kRegisterPageURL);
       break;
     }
     case IDC_ABOUT_BUTTON_EMAIL:
     {
-      ::ShellExecute(NULL, NULL, kEmailAction, NULL, NULL, SW_SHOWNORMAL);
+      ::MyShellExecute(kSupportPageURL);
       break;
     }
     default:

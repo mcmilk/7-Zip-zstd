@@ -1,7 +1,5 @@
 // BenchmarkDialog.h
 
-#pragma once
-
 #ifndef __BENCHMARKDIALOG_H
 #define __BENCHMARKDIALOG_H
 

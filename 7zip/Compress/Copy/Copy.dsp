@@ -113,6 +113,18 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
+# Begin Group "Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\CopyCoder.cpp

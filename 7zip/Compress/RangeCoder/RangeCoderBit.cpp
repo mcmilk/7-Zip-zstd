@@ -7,12 +7,27 @@
 namespace NCompress {
 namespace NRangeCoder {
 
-CPriceTables::CPriceTables()
+UInt32 CPriceTables::ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
+static CPriceTables g_PriceTables;
+
+CPriceTables::CPriceTables() { Init(); }
+
+void CPriceTables::Init()
 {
+  const int kNumBits = (kNumBitModelTotalBits - kNumMoveReducingBits);
+  for(int i = kNumBits - 1; i >= 0; i--)
+  {
+    UInt32 start = 1 << (kNumBits - i - 1);
+    UInt32 end = 1 << (kNumBits - i);
+    for (UInt32 j = start; j < end; j++)
+      ProbPrices[j] = (i << kNumBitPriceShiftBits) + 
+          (((end - j) << kNumBitPriceShiftBits) >> (kNumBits - i - 1));
+  }
+
   /*
   // simplest: bad solution
-  for(UINT32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
-    StatePrices[i] = kBitPrice;
+  for(UInt32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
+    ProbPrices[i] = kBitPrice;
   */
   
   /*
@@ -21,20 +36,20 @@ CPriceTables::CPriceTables()
   // float solution
   double ln2 = log(double(2));
   double lnAll = log(double(kBitModelTotal >> kNumMoveReducingBits));
-  for(UINT32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
-    StatePrices[i] = UINT32((fabs(lnAll - log(double(i))) / ln2 + kDummyMultMid) * kBitPrice);
+  for(UInt32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
+    ProbPrices[i] = UInt32((fabs(lnAll - log(double(i))) / ln2 + kDummyMultMid) * kBitPrice);
   */
   
   /*
   // experimental, slow, solution:
-  for(UINT32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
+  for(UInt32 i = 1; i < (kBitModelTotal >> kNumMoveReducingBits) - 1; i++)
   {
     const int kCyclesBits = 5;
-    const UINT32 kCycles = (1 << kCyclesBits);
+    const UInt32 kCycles = (1 << kCyclesBits);
 
-    UINT32 range = UINT32(-1);
-    UINT32 bitCount = 0;
-    for (UINT32 j = 0; j < kCycles; j++)
+    UInt32 range = UInt32(-1);
+    UInt32 bitCount = 0;
+    for (UInt32 j = 0; j < kCycles; j++)
     {
       range >>= (kNumBitModelTotalBits - kNumMoveReducingBits);
       range *= i;
@@ -55,23 +70,11 @@ CPriceTables::CPriceTables()
         range -= (1 << 31);
       }
     }
-    StatePrices[i] = (bitCount 
+    ProbPrices[i] = (bitCount 
       // + (1 << (kCyclesBits - 1))
       ) >> kCyclesBits;
   }
   */
-
-  const int kNumBits = (kNumBitModelTotalBits - kNumMoveReducingBits);
-  for(int i = kNumBits - 1; i >= 0; i--)
-  {
-    UINT32 start = 1 << (kNumBits - i - 1);
-    UINT32 end = 1 << (kNumBits - i);
-    for (UINT32 j = start; j < end; j++)
-      StatePrices[j] = (i << kNumBitPriceShiftBits) + 
-          (((end - j) << kNumBitPriceShiftBits) >> (kNumBits - i - 1));
-  }
 }
-
-CPriceTables g_PriceTables;
 
 }}

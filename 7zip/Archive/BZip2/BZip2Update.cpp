@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "Common/Defs.h"
-#include "Windows/Defs.h"
 #include "../../Common/ProgressUtils.h"
 
 #include "BZip2Update.h"
@@ -21,17 +19,16 @@ extern CSysString GetBZip2CodecPath();
 namespace NArchive {
 namespace NBZip2 {
 
-HRESULT UpdateArchive(UINT64 unpackSize,
-    IOutStream *outStream,
+HRESULT UpdateArchive(UInt64 unpackSize,
+    ISequentialOutStream *outStream,
     int indexInClient,
     IArchiveUpdateCallback *updateCallback)
 {
   RINOK(updateCallback->SetTotal(unpackSize));
-  
-  UINT64 complexity = 0;
+  UInt64 complexity = 0;
   RINOK(updateCallback->SetCompleted(&complexity));
 
-  CMyComPtr<IInStream> fileInStream;
+  CMyComPtr<ISequentialInStream> fileInStream;
 
   RINOK(updateCallback->GetStream(indexInClient, &fileInStream));
 

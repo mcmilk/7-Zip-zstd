@@ -1,7 +1,5 @@
 // GZip/Update.h
 
-#pragma once
-
 #ifndef __GZIP_UPDATE_H
 #define __GZIP_UPDATE_H
 
@@ -15,13 +13,13 @@ namespace NGZip {
 
 struct CCompressionMethodMode
 {
-  UINT32 NumPasses;
-  UINT32 NumFastBytes;
+  UInt32 NumPasses;
+  UInt32 NumFastBytes;
 };
 
 HRESULT UpdateArchive(IInStream *inStream, 
-    UINT64 unpackSize,
-    IOutStream *outStream,
+    UInt64 unpackSize,
+    ISequentialOutStream *outStream,
     const CItem &newItem,
     const CCompressionMethodMode &compressionMethod,
     int indexInClient,

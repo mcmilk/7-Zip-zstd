@@ -31,7 +31,7 @@ void CExtractCallbackImp::Init(IInArchive *archiveHandler,
     const UString &directoryPath,   
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
-    UINT32 attributesDefault)
+    UInt32 attributesDefault)
 {
   _numErrors = 0;
   _itemDefaultName = itemDefaultName;
@@ -42,7 +42,7 @@ void CExtractCallbackImp::Init(IInArchive *archiveHandler,
   NName::NormalizeDirPathPrefix(_directoryPath);
 }
 
-STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 size)
+STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 {
   #ifndef _NO_PROGRESS
   ProgressDialog.ProgressSynch.SetProgress(size, 0);
@@ -50,7 +50,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 size)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64 *completeValue)
+STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
   #ifndef _NO_PROGRESS
   while(true)
@@ -78,8 +78,8 @@ void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathPar
   }
 }
 
-STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
-    ISequentialOutStream **outStream, INT32 askExtractMode)
+STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
+    ISequentialOutStream **outStream, Int32 askExtractMode)
 {
   #ifndef _NO_PROGRESS
   if(ProgressDialog.ProgressSynch.GetStopped())
@@ -185,7 +185,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     {
       _outFileStreamSpec = new COutFileStream;
       CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
-      if (!_outFileStreamSpec->Open(fullProcessedPath))
+      if (!_outFileStreamSpec->Create(fullProcessedPath, true))
       {
         #ifdef _SILENT
         _message = kCantOpenFile;
@@ -206,7 +206,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(INT32 askExtractMode)
+STDMETHODIMP CExtractCallbackImp::PrepareOperation(Int32 askExtractMode)
 {
   _extractMode = false;
   switch (askExtractMode)
@@ -218,7 +218,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(INT32 askExtractMode)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResult)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResult)
 {
   switch(resultEOperationResult)
   {

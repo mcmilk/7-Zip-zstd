@@ -21,11 +21,11 @@ using namespace std;
 namespace NArchive {
 namespace NZip {
 
-static const BYTE kMadeByHostOS = NFileHeader::NHostOS::kFAT;
-static const BYTE kExtractHostOS = NFileHeader::NHostOS::kFAT;
+static const Byte kMadeByHostOS = NFileHeader::NHostOS::kFAT;
+static const Byte kExtractHostOS = NFileHeader::NHostOS::kFAT;
 
-static const BYTE kMethodForDirectory = NFileHeader::NCompressionMethod::kStored;
-static const BYTE kExtractVersionForDirectory = NFileHeader::NCompressionMethod::kStoreExtractVersion;
+static const Byte kMethodForDirectory = NFileHeader::NCompressionMethod::kStored;
+static const Byte kExtractVersionForDirectory = NFileHeader::NCompressionMethod::kStoreExtractVersion;
 
 static HRESULT CopyBlock(ISequentialInStream *inStream, 
     ISequentialOutStream *outStream, ICompressProgressInfo *progress)
@@ -46,9 +46,9 @@ static HRESULT WriteRange(IInStream *inStream,
     COutArchive &outArchive, 
     const CUpdateRange &range, 
     IProgress *progress,
-    UINT64 &currentComplexity)
+    UInt64 &currentComplexity)
 {
-  UINT64 position;
+  UInt64 position;
   inStream->Seek(range.Position, STREAM_SEEK_SET, &position);
 
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
@@ -75,15 +75,20 @@ static HRESULT UpdateOneFile(IInStream *inStream,
     const CCompressionMethodMode &options,
     CAddCommon &compressor, 
     const CUpdateItem &updateItem, 
-    UINT64 &currentComplexity,
+    UInt64 &currentComplexity,
     IArchiveUpdateCallback *updateCallback,
-    CItemEx &fileHeader)
+    CItemEx &fileHeader,
+    CMyComPtr<ISequentialInStream> &fileInStream2)
 {
   CMyComPtr<IInStream> fileInStream;
-  RINOK(updateCallback->GetStream(updateItem.IndexInClient, &fileInStream));
+  if (fileInStream2)
+  {
+    RINOK(fileInStream2.QueryInterface(IID_IInStream, &fileInStream));
+  }
+
 
   bool isDirectory;
-  UINT32 fileSize = updateItem.Size;
+  UInt32 fileSize = updateItem.Size;
   fileHeader.UnPackSize = fileSize;
 
   if (updateItem.NewProperties)
@@ -137,11 +142,11 @@ static HRESULT UpdateOneFile(IInStream *inStream,
       RINOK(compressor.Compress(inStream, outStream, 
           fileSize, compressProgress, compressingResult));
 
-      fileHeader.PackSize = (UINT32)compressingResult.PackSize;
+      fileHeader.PackSize = (UInt32)compressingResult.PackSize;
       fileHeader.CompressionMethod = compressingResult.Method;
       fileHeader.ExtractVersion.Version = compressingResult.ExtractVersion;
       fileHeader.FileCRC = inStreamSpec->GetCRC();
-      fileHeader.UnPackSize = (UINT32)inStreamSpec->GetSize();
+      fileHeader.UnPackSize = (UInt32)inStreamSpec->GetSize();
     }
   }
   fileHeader.SetEncrypted(options.PasswordIsDefined);
@@ -166,8 +171,8 @@ static HRESULT Update2(COutArchive &archive,
     const CUpdateRange &commentRange,
     IArchiveUpdateCallback *updateCallback)
 {
-  UINT64 complexity = 0;
-  UINT64 estimatedArchiveSize = (1<<20); // sfx part
+  UInt64 complexity = 0;
+  UInt64 estimatedArchiveSize = (1<<20); // sfx part
  
   int i;
   for(i = 0; i < updateItems.Size(); i++)
@@ -206,6 +211,7 @@ static HRESULT Update2(COutArchive &archive,
   complexity = 0;
   
   CObjectVector<CItemEx> items;
+  CRecordVector<UInt32> updateIndices;
 
   for(i = 0; i < updateItems.Size(); i++)
   {
@@ -222,8 +228,20 @@ static HRESULT Update2(COutArchive &archive,
       {
         compressor = auto_ptr<CAddCommon>(new CAddCommon(*options));
       }
+      CMyComPtr<ISequentialInStream> fileInStream2;
+      HRESULT res = updateCallback->GetStream(updateItem.IndexInClient, &fileInStream2);
+      if (res == S_FALSE)
+      {
+        complexity += updateItem.Size;
+        complexity++;
+        RINOK(updateCallback->SetOperationResult(
+            NArchive::NUpdate::NOperationResult::kOK));
+        continue;
+      }
+      RINOK(res);
       RINOK(UpdateOneFile(inStream, archive, *options, 
-          *compressor, updateItem, complexity, updateCallback, item));
+          *compressor, updateItem, complexity, updateCallback, item,
+          fileInStream2));
     }
     else
     {
@@ -264,13 +282,14 @@ static HRESULT Update2(COutArchive &archive,
       }
     }
     items.Add(item);
+    updateIndices.Add(i);
     complexity++;
   }
-  DWORD centralDirStartPosition = archive.GetCurrentPosition();
+  UInt32 centralDirStartPosition = archive.GetCurrentPosition();
   for(i = 0; i < items.Size(); i++)
   {
     archive.WriteCentralHeader(items[i]);
-    const CUpdateItem &updateItem = updateItems[i];
+    const CUpdateItem &updateItem = updateItems[updateIndices[i]];
     if (updateItem.NewProperties)
     {
       if (updateItem.Commented)
@@ -309,12 +328,17 @@ static HRESULT Update2(COutArchive &archive,
 HRESULT Update(    
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
-    IOutStream *outStream,
+    ISequentialOutStream *seqOutStream,
     CInArchive *inArchive,
     CCompressionMethodMode *compressionMethodMode,
     IArchiveUpdateCallback *updateCallback)
 {
-  DWORD startBlockSize;
+  CMyComPtr<IOutStream> outStream;
+  RINOK(seqOutStream->QueryInterface(IID_IOutStream, (void **)&outStream));
+  if (!outStream)
+    return E_NOTIMPL;
+
+  UInt32 startBlockSize;
   bool commentRangeAssigned;
   CUpdateRange commentRange;
   if(inArchive != 0)

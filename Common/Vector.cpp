@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <string.h>
+
 #include "Vector.h"
 
 CBaseRecordVector::~CBaseRecordVector()
@@ -42,7 +44,7 @@ void CBaseRecordVector::Reserve(int newCapacity)
   unsigned char *p = new unsigned char[newCapacity * _itemSize];
   int numRecordsToMove = _capacity;
   memmove(p, _items, _itemSize * numRecordsToMove);
-  delete []_items;
+  delete [](unsigned char *)_items;
   _items = p;
   _capacity = newCapacity;
 }

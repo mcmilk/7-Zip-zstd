@@ -1,7 +1,5 @@
 // ProgressDialog.h
 
-#pragma once
-
 #ifndef __PROGRESSDIALOG_H
 #define __PROGRESSDIALOG_H
 

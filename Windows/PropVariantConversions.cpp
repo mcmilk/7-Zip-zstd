@@ -12,17 +12,17 @@
 
 using namespace NWindows;
 
-static UString ConvertUINT64ToString(UINT64 value)
+static UString ConvertUInt64ToString(UINT64 value)
 {
   wchar_t buffer[32];
-  ConvertUINT64ToString(value, buffer);
+  ConvertUInt64ToString(value, buffer);
   return buffer;
 }
 
-static UString ConvertINT64ToString(INT64 value)
+static UString ConvertInt64ToString(Int64 value)
 {
   wchar_t buffer[32];
-  ConvertINT64ToString(value, buffer);
+  ConvertInt64ToString(value, buffer);
   return buffer;
 }
 
@@ -88,27 +88,27 @@ UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
     case VT_BSTR:
       return propVariant.bstrVal;
     case VT_UI1:
-      return ConvertUINT64ToString(propVariant.bVal);
+      return ConvertUInt64ToString(propVariant.bVal);
     case VT_UI2:
-      return ConvertUINT64ToString(propVariant.uiVal);
+      return ConvertUInt64ToString(propVariant.uiVal);
     case VT_UI4:
-      return ConvertUINT64ToString(propVariant.ulVal);
+      return ConvertUInt64ToString(propVariant.ulVal);
     case VT_UI8:
-      return ConvertUINT64ToString(*(UINT64 *)(&propVariant.uhVal));
+      return ConvertUInt64ToString(*(UINT64 *)(&propVariant.uhVal));
     case VT_FILETIME:
       return ConvertFileTimeToString2(propVariant.filetime, true, true);
 
 
     /*
     case VT_I1:
-      return ConvertINT64ToString(propVariant.cVal);
+      return ConvertInt64ToString(propVariant.cVal);
     */
     case VT_I2:
-      return ConvertINT64ToString(propVariant.iVal);
+      return ConvertInt64ToString(propVariant.iVal);
     case VT_I4:
-      return ConvertINT64ToString(propVariant.lVal);
+      return ConvertInt64ToString(propVariant.lVal);
     case VT_I8:
-      return ConvertINT64ToString(*(INT64 *)(&propVariant.hVal));
+      return ConvertInt64ToString(*(Int64 *)(&propVariant.hVal));
 
     case VT_BOOL:
       return VARIANT_BOOLToBool(propVariant.boolVal) ? L"1" : L"0";

@@ -15,6 +15,7 @@
 #include "Resource/ComboDialog/ComboDialog.h"
 
 #include "FSFolder.h"
+#include "LangUtils.h"
 #include "FormatUtils.h"
 
 #include "UpdateCallback100.h"
@@ -25,7 +26,7 @@ using namespace NFile;
 struct CThreadDelete
 {
   CMyComPtr<IFolderOperations> FolderOperations;
-  CRecordVector<UINT32> Indices;
+  CRecordVector<UInt32> Indices;
   CMyComPtr<IFolderArchiveUpdateCallback> UpdateCallback;
   CUpdateCallback100Imp *UpdateCallbackSpec;
   HRESULT Result;
@@ -46,7 +47,6 @@ struct CThreadDelete
   }
 };
 
-
 void CPanel::DeleteItems()
 {
   CMyComPtr<IFolderOperations> folderOperations;
@@ -56,7 +56,7 @@ void CPanel::DeleteItems()
     return;
   }
 
-  CRecordVector<UINT32> indices;
+  CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
   if (indices.IsEmpty())
     return;
@@ -168,7 +168,7 @@ void CPanel::CreateFolder()
   CComboDialog comboDialog;
   comboDialog.Title = LangLoadStringW(IDS_CREATE_FOLDER, 0x03020230);
   comboDialog.Static = LangLoadStringW(IDS_CREATE_FOLDER_NAME, 0x03020231);
-  comboDialog.Value = LangLoadStringW(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ (UINT32)-1);
+  comboDialog.Value = LangLoadStringW(IDS_CREATE_FOLDER_DEFAULT_NAME, /*0x03020232*/ (UInt32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
@@ -199,7 +199,7 @@ void CPanel::CreateFile()
   CComboDialog comboDialog;
   comboDialog.Title = LangLoadStringW(IDS_CREATE_FILE, 0x03020240);
   comboDialog.Static = LangLoadStringW(IDS_CREATE_FILE_NAME, 0x03020241);
-  comboDialog.Value = LangLoadStringW(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ (UINT32)-1);
+  comboDialog.Value = LangLoadStringW(IDS_CREATE_FILE_DEFAULT_NAME, /*0x03020242*/ (UInt32)-1);
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString newName = GetUnicodeString(comboDialog.Value);

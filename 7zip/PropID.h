@@ -1,7 +1,5 @@
 // Interface/PropID.h
 
-// #pragma once
-
 #ifndef __INTERFACE_PROPID_H
 #define __INTERFACE_PROPID_H
 
@@ -36,6 +34,7 @@ enum
   kpidGroup,
   kpidBlock,
   kpidComment,
+  kpidPosition,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace, 

@@ -1,7 +1,5 @@
 // FSFolder.h
 
-#pragma once
-
 #ifndef __FSFOLDER_H
 #define __FSFOLDER_H
 

@@ -1,11 +1,11 @@
 // ProgressDialog.h
 
-#pragma once
-
 #ifndef __PROGRESSDIALOG_H
 #define __PROGRESSDIALOG_H
 
 #include "resource.h"
+
+#include "Common/Types.h"
 
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/ProgressBar.h"
@@ -16,8 +16,8 @@ class CProgressSynch
   NWindows::NSynchronization::CCriticalSection _criticalSection;
   bool _stopped;
   bool _paused;
-  UINT64 _total;
-  UINT64 _completed;
+  UInt64 _total;
+  UInt64 _completed;
 public:
   CProgressSynch(): _stopped(false), _paused(false), _total(1), _completed(0) {}
 
@@ -41,18 +41,19 @@ public:
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _paused = value;
   }
-  void SetProgress(UINT64 total, UINT64 completed)
+  void SetProgress(UInt64 total, UInt64 completed)
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _total = total;
     _completed = completed;
   }
-  void SetPos(UINT64 completed)
+  void SetPos(UInt64 completed)
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _completed = completed;
   }
-  void GetProgress(UINT64 &total, UINT64 &completed)
+  HRESULT SetPosAndCheckPaused(UInt64 completed);
+  void GetProgress(UInt64 &total, UInt64 &completed)
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     total = _total;
@@ -62,10 +63,10 @@ public:
 
 class CU64ToI32Converter
 {
-  UINT64 _numShiftBits;
+  UInt64 _numShiftBits;
 public:
-  void Init(UINT64 _range);
-  int Count(UINT64 aValue);
+  void Init(UInt64 _range);
+  int Count(UInt64 aValue);
 };
 
 // class CProgressDialog: public NWindows::NControl::CModelessDialog
@@ -93,23 +94,23 @@ private:
 
   UString _title;
   CU64ToI32Converter _converter;
-  UINT64 _previousPos;
-  UINT64 _range;
+  UInt64 _previousPos;
+  UInt64 _range;
 	NWindows::NControl::CProgressBar m_ProgressBar;
 
-  UINT32 _prevPercentValue;
-  UINT32 _pevTime;
-  UINT32 _elapsedTime;
-  UINT32 _prevElapsedSec;
-  UINT64 _prevRemainingSec;
+  UInt32 _prevPercentValue;
+  UInt32 _pevTime;
+  UInt32 _elapsedTime;
+  UInt32 _prevElapsedSec;
+  UInt64 _prevRemainingSec;
   ESpeedMode _prevMode;
-  UINT64 _prevSpeed;
+  UInt64 _prevSpeed;
 
   bool _foreground;
 
   bool OnTimer(WPARAM timerID, LPARAM callback);
-  void SetRange(UINT64 range);
-  void SetPos(UINT64 pos);
+  void SetRange(UInt64 range);
+  void SetPos(UInt64 pos);
 	virtual bool OnInit();
 	virtual void OnCancel();
   NWindows::NSynchronization::CManualResetEvent _dialogCreatedEvent;
@@ -134,7 +135,7 @@ public:
 
   CProgressDialog(): _timer(0)
     #ifndef _SFX
-    ,MainWindow(0) 
+    ,MainWindow(0)
     #endif
   {}
 
@@ -151,10 +152,7 @@ public:
 
   virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
-  void MyClose()
-  {
-    PostMessage(kCloseMessage);
-  };
+  void MyClose() { PostMessage(kCloseMessage);  };
 };
 
 #endif

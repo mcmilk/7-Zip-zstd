@@ -1,7 +1,5 @@
 // PluginInterface.h
 
-#pragma once
-
 #ifndef __PLUGININTERFACE_H
 #define __PLUGININTERFACE_H
 

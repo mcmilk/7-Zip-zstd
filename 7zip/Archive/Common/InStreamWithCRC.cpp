@@ -4,10 +4,34 @@
 
 #include "InStreamWithCRC.h"
 
-STDMETHODIMP CInStreamWithCRC::Read(void *data, 
-    UINT32 size, UINT32 *processedSize)
+STDMETHODIMP CSequentialInStreamWithCRC::Read(void *data, 
+    UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
+  HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  _size += realProcessedSize;
+  _crc.Update(data, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
+}
+
+STDMETHODIMP CSequentialInStreamWithCRC::ReadPart(void *data, 
+    UInt32 size, UInt32 *processedSize)
+{
+  UInt32 realProcessedSize;
+  HRESULT result = _stream->ReadPart(data, size, &realProcessedSize);
+  _size += realProcessedSize;
+  _crc.Update(data, realProcessedSize);
+  if(processedSize != NULL)
+    *processedSize = realProcessedSize;
+  return result;
+}
+
+STDMETHODIMP CInStreamWithCRC::Read(void *data, 
+    UInt32 size, UInt32 *processedSize)
+{
+  UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   _size += realProcessedSize;
   _crc.Update(data, realProcessedSize);
@@ -17,9 +41,9 @@ STDMETHODIMP CInStreamWithCRC::Read(void *data,
 }
 
 STDMETHODIMP CInStreamWithCRC::ReadPart(void *data, 
-    UINT32 size, UINT32 *processedSize)
+    UInt32 size, UInt32 *processedSize)
 {
-  UINT32 realProcessedSize;
+  UInt32 realProcessedSize;
   HRESULT result = _stream->ReadPart(data, size, &realProcessedSize);
   _size += realProcessedSize;
   _crc.Update(data, realProcessedSize);
@@ -28,8 +52,8 @@ STDMETHODIMP CInStreamWithCRC::ReadPart(void *data,
   return result;
 }
 
-STDMETHODIMP CInStreamWithCRC::Seek(INT64 offset, 
-    UINT32 seekOrigin, UINT64 *newPosition)
+STDMETHODIMP CInStreamWithCRC::Seek(Int64 offset, 
+    UInt32 seekOrigin, UInt64 *newPosition)
 {
   if (seekOrigin != STREAM_SEEK_SET || offset != 0)
     return E_FAIL;

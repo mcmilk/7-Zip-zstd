@@ -126,6 +126,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
@@ -264,10 +272,6 @@ SOURCE=..\..\Common\ProgressUtils.h
 # Begin Group "Archive Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Common\ArchiveInterface.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\Common\CodecsPath.cpp

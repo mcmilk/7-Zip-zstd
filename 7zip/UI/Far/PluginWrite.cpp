@@ -4,7 +4,6 @@
 
 #include "Plugin.h"
 
-#include "Messages.h"
 
 #include "Common/StringConvert.h"
 
@@ -15,16 +14,15 @@
 #include "Windows/PropVariant.h"
 
 #include "../Common/ZipRegistry.h"
-// #include "../Common/UpdatePairBasic.h"
-// #include "../Common/CompressEngineCommon.h"
 #include "../Common/WorkDir.h"
 #include "../Common/OpenArchive.h"
 
-#include "Far/ProgressBox.h"
+#include "../Agent/Agent.h"
 
+#include "ProgressBox.h"
+#include "Messages.h"
 #include "UpdateCallback100.h"
 
-#include "../Agent/Agent.h"
 
 /*
 #include "../../Archiver/Common/DefaultName.h"
@@ -50,20 +48,19 @@ static UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
 
 static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
 {
-  CMyComPtr<ISetProperties> aSetProperties;
-  if (outArchive->QueryInterface(&aSetProperties) == S_OK)
+  CMyComPtr<ISetProperties> setProperties;
+  if (outArchive->QueryInterface(&setProperties) == S_OK)
   {
-    CMyComBSTR comBSTR = L"x";
-    CObjectVector<CMyComBSTR> realNames;
+    UStringVector realNames;
+    realNames.Add(UString(L"x"));
     std::vector<NCOM::CPropVariant> values;
-    realNames.Add(comBSTR);
     values.push_back(NCOM::CPropVariant((UINT32)method));
 
-    std::vector<BSTR> names;
+    CRecordVector<const wchar_t *> names;
     for(int i = 0; i < realNames.Size(); i++)
-      names.push_back(realNames[i]);
-    RINOK(aSetProperties->SetProperties(&names.front(), 
-      &values.front(), names.size()));
+      names.Add(realNames[i]);
+    RINOK(setProperties->SetProperties(&names.Front(), 
+      &values.front(), names.Size()));
   }
   return S_OK;
 }
@@ -243,7 +240,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = actionSet->StateActions[i];
 
-  CUpdateCallBack100Imp *updateCallbackSpec = new CUpdateCallBack100Imp;
+  CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
   updateCallbackSpec->Init(m_ArchiveHandler, &progressBox);
@@ -669,7 +666,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = actionSet->StateActions[i];
 
-  CUpdateCallBack100Imp *updateCallbackSpec = new CUpdateCallBack100Imp;
+  CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
   updateCallbackSpec->Init(archiveHandler, &progressBox);

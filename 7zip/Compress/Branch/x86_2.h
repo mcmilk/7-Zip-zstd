@@ -1,14 +1,11 @@
 // x86_2.h
 
-#pragma once
+#ifndef __BRANCH_X86_2_H
+#define __BRANCH_X86_2_H
 
-#ifndef __X86_2_H
-#define __X86_2_H
-
-#include "Common/MyCom.h"
-#include "Coder.h"
+#include "../../../Common/MyCom.h"
 #include "../RangeCoder/RangeCoderBit.h"
-// #include "../../Common/InBuffer.h"
+#include "../../ICoder.h"
 
 // {23170F69-40C1-278B-0303-010100000100}
 #define MyClass2_a(Name, id, subId, encodingId)  \
@@ -27,11 +24,13 @@ const int kNumMoveBits = 5;
 
 class CBCJ2_x86_Encoder:
   public ICompressCoder2,
-  public CDataBuffer,
   public CMyUnknownImp
 {
+  Byte *_buffer;
 public:
-  CBCJ2_x86_Encoder(): _mainStream(1 << 16) {}
+  CBCJ2_x86_Encoder(): _buffer(0) {};
+  ~CBCJ2_x86_Encoder();
+  bool Create();
 
   COutBuffer _mainStream;
   COutBuffer _callStream;
@@ -42,7 +41,6 @@ public:
   NCompress::NRangeCoder::CBitEncoder<kNumMoveBits> _statusJccEncoder;
 
   HRESULT Flush();
-  /*
   void ReleaseStreams()
   {
     _mainStream.ReleaseStream();
@@ -55,32 +53,27 @@ public:
   {
     CBCJ2_x86_Encoder *_coder;
   public:
-    CCoderReleaser(CBCJ2_x86_Encoder *aCoder): _coder(aCoder) {}
-    ~CCoderReleaser()
-    {
-      _coder->ReleaseStreams();
-    }
+    CCoderReleaser(CBCJ2_x86_Encoder *coder): _coder(coder) {}
+    ~CCoderReleaser() {  _coder->ReleaseStreams(); }
   };
-  friend class CCoderReleaser;
-  */
 
 public: 
 
   MY_UNKNOWN_IMP
 
   HRESULT CodeReal(ISequentialInStream **inStreams,
-      const UINT64 **inSizes,
-      UINT32 numInStreams,
+      const UInt64 **inSizes,
+      UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UINT64 **outSizes,
-      UINT32 numOutStreams,
+      const UInt64 **outSizes,
+      UInt32 numOutStreams,
       ICompressProgressInfo *progress);
   STDMETHOD(Code)(ISequentialInStream **inStreams,
-      const UINT64 **inSizes,
-      UINT32 numInStreams,
+      const UInt64 **inSizes,
+      UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UINT64 **outSizes,
-      UINT32 numOutStreams,
+      const UInt64 **outSizes,
+      UInt32 numOutStreams,
       ICompressProgressInfo *progress);
 }; 
 
@@ -91,8 +84,6 @@ class CBCJ2_x86_Decoder:
   public CMyUnknownImp
 { 
 public:
-  CBCJ2_x86_Decoder(): _outStream(1 << 16), _mainInStream(1 << 16) {}
-
   CInBuffer _mainInStream;
   CInBuffer _callStream;
   CInBuffer _jumpStream;
@@ -103,7 +94,6 @@ public:
 
   COutBuffer _outStream;
 
-  /*
   void ReleaseStreams()
   {
     _mainInStream.ReleaseStream();
@@ -112,35 +102,31 @@ public:
     _rangeDecoder.ReleaseStream();
     _outStream.ReleaseStream();
   }
-  */
 
   HRESULT Flush() { return _outStream.Flush(); }
-  /*
   class CCoderReleaser
   {
     CBCJ2_x86_Decoder *_coder;
   public:
-    CCoderReleaser(CBCJ2_x86_Decoder *aCoder): _coder(aCoder) {}
+    CCoderReleaser(CBCJ2_x86_Decoder *coder): _coder(coder) {}
     ~CCoderReleaser()  { _coder->ReleaseStreams(); }
   };
-  friend class CCoderReleaser;
-  */
 
 public: 
   MY_UNKNOWN_IMP
   HRESULT CodeReal(ISequentialInStream **inStreams,
-      const UINT64 **inSizes,
-      UINT32 numInStreams,
+      const UInt64 **inSizes,
+      UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UINT64 **outSizes,
-      UINT32 numOutStreams,
+      const UInt64 **outSizes,
+      UInt32 numOutStreams,
       ICompressProgressInfo *progress);
   STDMETHOD(Code)(ISequentialInStream **inStreams,
-      const UINT64 **inSizes,
-      UINT32 numInStreams,
+      const UInt64 **inSizes,
+      UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UINT64 **outSizes,
-      UINT32 numOutStreams,
+      const UInt64 **outSizes,
+      UInt32 numOutStreams,
       ICompressProgressInfo *progress);
 }; 
 

@@ -1,12 +1,11 @@
 // ArchiverInfo.h
 
-#pragma once
-
 #ifndef __ARCHIVERINFO_H
 #define __ARCHIVERINFO_H
 
 #include "Common/String.h"
 #include "Common/Types.h"
+#include "Common/Buffer.h"
 
 struct CArchiverExtInfo
 {
@@ -27,6 +26,10 @@ struct CArchiverInfo
   #endif
   UString Name;
   CObjectVector<CArchiverExtInfo> Extensions;
+  #ifndef _SFX
+  CByteBuffer StartSignature;
+  CByteBuffer FinishSignature;
+  #endif
   int FindExtension(const UString &ext) const
   {
     for (int i = 0; i < Extensions.Size(); i++)
