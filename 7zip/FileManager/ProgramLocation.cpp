@@ -4,40 +4,22 @@
 
 #include "ProgramLocation.h"
 
-#include "Windows/Registry.h"
 #include "Windows/FileName.h"
 
 using namespace NWindows;
-using namespace NRegistry;
 
-static LPCTSTR kLMBasePath = TEXT("Software\\7-Zip");
-static LPCTSTR kAppPathPathKeyValueName2 = TEXT("Path");
+extern HINSTANCE g_hInstance;
 
 bool GetProgramFolderPath(CSysString &folder)
 {
   folder.Empty();
-  CKey key;
-  if (key.Open(HKEY_LOCAL_MACHINE, kLMBasePath, KEY_READ) != ERROR_SUCCESS)
+  TCHAR fullPath[MAX_PATH + 1];
+  ::GetModuleFileName(g_hInstance, fullPath, MAX_PATH);
+  CSysString path = fullPath;
+  int pos = path.ReverseFind(TEXT('\\'));
+  if (pos < 0)
     return false;
-  if (key.QueryValue(kAppPathPathKeyValueName2, folder) != ERROR_SUCCESS)
-    return false;
-  NFile::NName::NormalizeDirPathPrefix(folder);
+  folder = path.Left(pos + 1);
   return true;
 }
 
-/*
-bool GetProgramDirPrefix(CSysString &folder)
-{
-  folder.Empty();
-  CKey aKey;
-  CSysString aKeyPath = REGSTR_PATH_APPPATHS;
-  aKeyPath += kKeyNameDelimiter;
-  aKeyPath += kAppPathProgramName;
-  if (aKey.Open(HKEY_LOCAL_MACHINE, aKeyPath, KEY_READ) != ERROR_SUCCESS)
-    return false;
-  if (aKey.QueryValue(kAppPathPathKeyValueName, folder) != ERROR_SUCCESS)
-    return false;
-  NFile::NName::NormalizeDirPathPrefix(folder);
-  return true;
-}
-*/

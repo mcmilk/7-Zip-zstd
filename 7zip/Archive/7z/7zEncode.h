@@ -30,7 +30,7 @@ class CEncoder
   NCoderMixer2::CCoderMixer2 *_mixerCoderSpec;
   CMyComPtr<ICompressCoder2> _mixerCoder;
 
-  CObjectVector<NArchive::N7z::CCoderInfo> _codersInfo;
+  CObjectVector<CCoderInfo> _codersInfo;
 
   CCompressionMethodMode _options;
   NCoderMixer2::CBindInfo _bindInfo;
@@ -41,11 +41,11 @@ class CEncoder
   HRESULT CreateMixerCoder();
 
 public:
-  CEncoder(const CCompressionMethodMode *options);
+  CEncoder(const CCompressionMethodMode &options);
   ~CEncoder();
   HRESULT Encode(ISequentialInStream *inStream,
       const UINT64 *inStreamSize,
-      NArchive::N7z::CFolderItemInfo &folderItem,
+      CFolder &folderItem,
       ISequentialOutStream *outStream,
       CRecordVector<UINT64> &packSizes,
       ICompressProgressInfo *compressProgress);

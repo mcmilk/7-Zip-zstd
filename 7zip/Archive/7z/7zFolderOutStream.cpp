@@ -51,7 +51,7 @@ HRESULT CFolderOutStream::OpenFile()
       (!realOutStream)) 
   {
     UINT32 index = _startIndex + _currentIndex;
-    const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+    const CFileItem &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory)
       askMode = NArchive::NExtract::NAskMode::kSkip;
   }
@@ -63,7 +63,7 @@ HRESULT CFolderOutStream::WriteEmptyFiles()
   for(;_currentIndex < _extractStatuses->Size(); _currentIndex++)
   {
     UINT32 index = _startIndex + _currentIndex;
-    const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+    const CFileItem &fileInfo = _archiveDatabase->Files[index];
     if (!fileInfo.IsAnti && !fileInfo.IsDirectory && fileInfo.UnPackSize != 0)
       return S_OK;
     RINOK(OpenFile());
@@ -83,7 +83,7 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
     if (_fileIsOpen)
     {
       UINT32 index = _startIndex + _currentIndex;
-      const CFileItemInfo &fileInfo = _archiveDatabase->Files[index];
+      const CFileItem &fileInfo = _archiveDatabase->Files[index];
       UINT64 fileSize = fileInfo.UnPackSize;
       
       UINT32 numBytesToWrite = (UINT32)MyMin(fileSize - _filePos, 

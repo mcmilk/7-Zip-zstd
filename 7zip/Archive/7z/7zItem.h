@@ -14,18 +14,15 @@ namespace N7z {
 
 struct CAltCoderInfo
 {
-  CMethodID DecompressionMethod;
+  CMethodID MethodID;
   CByteBuffer Properties;
 };
 
 struct CCoderInfo
 {
-  // CMethodID DecompressionMethod;
   UINT64 NumInStreams;
   UINT64 NumOutStreams;
   CObjectVector<CAltCoderInfo> AltCoders;
-
-  // CByteBuffer Properties;
   bool IsSimpleCoder() const 
     { return (NumInStreams == 1) && (NumOutStreams == 1); }
 };
@@ -41,16 +38,16 @@ struct CBindPair
   UINT64 OutIndex;
 };
 
-struct CFolderItemInfo
+struct CFolder
 {
-  CObjectVector<CCoderInfo> CodersInfo;
+  CObjectVector<CCoderInfo> Coders;
   CRecordVector<CBindPair> BindPairs;
   CRecordVector<CPackStreamInfo> PackStreams;
   CRecordVector<UINT64> UnPackSizes;
   bool UnPackCRCDefined;
   UINT32 UnPackCRC;
 
-  CFolderItemInfo(): UnPackCRCDefined(false) {}
+  CFolder(): UnPackCRCDefined(false) {}
 
   UINT64 GetUnPackSize() const // test it
   { 
@@ -64,8 +61,8 @@ struct CFolderItemInfo
   UINT64 GetNumOutStreams() const
   {
     UINT64 result = 0;
-    for (int i = 0; i < CodersInfo.Size(); i++)
-      result += CodersInfo[i].NumOutStreams;
+    for (int i = 0; i < Coders.Size(); i++)
+      result += Coders[i].NumOutStreams;
     return result;
   }
 
@@ -95,33 +92,40 @@ struct CFolderItemInfo
 
 typedef FILETIME CArchiveFileTime;
 
-class CFileItemInfo
+class CFileItem
 {
 public:
-  bool IsDirectory;
-  bool IsAnti;
   CArchiveFileTime CreationTime;
   CArchiveFileTime LastWriteTime;
   CArchiveFileTime LastAccessTime;
-  UINT32 Attributes;
   UINT64 UnPackSize;
-  
-  bool FileCRCIsDefined;
+  UINT32 Attributes;
   UINT32 FileCRC;
-
   UString Name;
+
+  bool HasStream; // Test it !!! it means that there is 
+                  // stream in some folder. It can be empty stream
+  bool IsDirectory;
+  bool IsAnti;
+  bool FileCRCIsDefined;
   bool AreAttributesDefined;
   bool IsCreationTimeDefined;
   bool IsLastWriteTimeDefined;
   bool IsLastAccessTimeDefined;
-  CFileItemInfo(): 
+
+  /*
+  const bool HasStream() const { 
+      return !IsDirectory && !IsAnti && UnPackSize != 0; }
+  */
+  CFileItem(): 
     AreAttributesDefined(false), 
     IsCreationTimeDefined(false), 
     IsLastWriteTimeDefined(false), 
     IsLastAccessTimeDefined(false),
     IsDirectory(false),
     FileCRCIsDefined(false),
-    IsAnti(false)
+    IsAnti(false),
+    HasStream(true)
       {}
   void SetAttributes(UINT32 attributes) 
   { 
@@ -150,9 +154,9 @@ struct CArchiveDatabase
   CRecordVector<UINT64> PackSizes;
   CRecordVector<bool> PackCRCsDefined;
   CRecordVector<UINT32> PackCRCs;
-  CObjectVector<CFolderItemInfo> Folders;
+  CObjectVector<CFolder> Folders;
   CRecordVector<UINT64> NumUnPackStreamsVector;
-  CObjectVector<CFileItemInfo> Files;
+  CObjectVector<CFileItem> Files;
   void Clear()
   {
     PackSizes.Clear();
@@ -176,7 +180,7 @@ struct CArchiveDatabase
 struct CArchiveHeaderDatabase
 {
   CRecordVector<UINT64> PackSizes;
-  CObjectVector<CFolderItemInfo> Folders;
+  CObjectVector<CFolder> Folders;
   CRecordVector<UINT32> CRCs;
   void Clear()
   {

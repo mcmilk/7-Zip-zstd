@@ -18,6 +18,8 @@
 #define IDS_METHOD_NORMAL               82
 #define IDS_METHOD_MAXIMUM              83
 #define IDS_METHOD_FAST                 84
+#define IDS_METHOD_FASTEST              85
+#define IDS_METHOD_ULTRA                86
 
 #define IDS_COMPRESS_UPDATE_MODE_ADD    90
 #define IDS_COMPRESS_UPDATE_MODE_UPDATE 91

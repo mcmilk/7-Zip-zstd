@@ -95,6 +95,7 @@ static void InsertToHead(CRecordVector<UINT64> &dest, UINT32 item)
 
 void CHandler::FillPopIDs()
 { 
+  _fileInfoPopIDs.Clear();
   CRecordVector<UINT64> fileInfoPopIDs = _database.ArchiveInfo.FileInfoPopIDs;
 
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyStream);

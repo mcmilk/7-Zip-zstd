@@ -29,7 +29,7 @@ struct CCoderStreamsInfo
 
 struct CBindInfo
 {
-  CRecordVector<CCoderStreamsInfo> CodersInfo;
+  CRecordVector<CCoderStreamsInfo> Coders;
   CRecordVector<CBindPair> BindPairs;
   CRecordVector<UINT32> InStreams;
   CRecordVector<UINT32> OutStreams;
@@ -38,7 +38,7 @@ struct CBindInfo
   {
     UINT32 numOutStreams = 0;
     for (UINT32 i = 0; i < coderIndex; i++)
-      numOutStreams += CodersInfo[i].NumOutStreams;
+      numOutStreams += Coders[i].NumOutStreams;
     return numOutStreams;
   }
 
@@ -47,9 +47,9 @@ struct CBindInfo
   {
     numInStreams = 0;
     numOutStreams = 0;
-    for (int i = 0; i < CodersInfo.Size(); i++)
+    for (int i = 0; i < Coders.Size(); i++)
     {
-      const CCoderStreamsInfo &coderStreamsInfo = CodersInfo[i];
+      const CCoderStreamsInfo &coderStreamsInfo = Coders[i];
       numInStreams += coderStreamsInfo.NumInStreams;
       numOutStreams += coderStreamsInfo.NumOutStreams;
     }
@@ -74,7 +74,7 @@ struct CBindInfo
   {
     UINT32 streamIndex = 0;
     for (UINT32 i = 0; i < coderIndex; i++)
-      streamIndex += CodersInfo[i].NumInStreams;
+      streamIndex += Coders[i].NumInStreams;
     return streamIndex;
   }
 
@@ -82,7 +82,7 @@ struct CBindInfo
   {
     UINT32 streamIndex = 0;
     for (UINT32 i = 0; i < coderIndex; i++)
-      streamIndex += CodersInfo[i].NumOutStreams;
+      streamIndex += Coders[i].NumOutStreams;
     return streamIndex;
   }
 
@@ -90,9 +90,9 @@ struct CBindInfo
   void FindInStream(UINT32 streamIndex, UINT32 &coderIndex, 
       UINT32 &coderStreamIndex) const
   {
-    for (coderIndex = 0; coderIndex < (UINT32)CodersInfo.Size(); coderIndex++)
+    for (coderIndex = 0; coderIndex < (UINT32)Coders.Size(); coderIndex++)
     {
-      UINT32 curSize = CodersInfo[coderIndex].NumInStreams;
+      UINT32 curSize = Coders[coderIndex].NumInStreams;
       if (streamIndex < curSize)
       {
         coderStreamIndex = streamIndex;
@@ -105,9 +105,9 @@ struct CBindInfo
   void FindOutStream(UINT32 streamIndex, UINT32 &coderIndex, 
       UINT32 &coderStreamIndex) const
   {
-    for (coderIndex = 0; coderIndex < (UINT32)CodersInfo.Size(); coderIndex++)
+    for (coderIndex = 0; coderIndex < (UINT32)Coders.Size(); coderIndex++)
     {
-      UINT32 curSize = CodersInfo[coderIndex].NumOutStreams;
+      UINT32 curSize = Coders[coderIndex].NumOutStreams;
       if (streamIndex < curSize)
       {
         coderStreamIndex = streamIndex;

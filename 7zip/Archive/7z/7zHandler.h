@@ -103,7 +103,10 @@ private:
   UINT32 _defaultDicSize;
   UINT32 _defaultAlgorithm;
   UINT32 _defaultFastBytes;
+  UString _defaultMatchFinder;
+  bool _autoFilter;
   bool _multiThread;
+  UINT32 _level;
 
   HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
@@ -136,13 +139,15 @@ private:
     _solid = true;
     _solidIsSpecified = false;
     _compressHeaders = true;
-    _compressHeadersFull = false;
+    _compressHeadersFull = true;
     _encryptHeaders = false;
     _multiThread = false;
     _copyMode = false;
-    _defaultDicSize = (1 << 20);
+    _defaultDicSize = (1 << 21);
     _defaultAlgorithm = 1;
     _defaultFastBytes = 32;
+    _defaultMatchFinder = L"BT4";
+    _autoFilter = true;
     #endif
   }
 };

@@ -46,14 +46,10 @@ static LPCTSTR kTempArcivePrefix = "7zi";
 
 static const char *kArchiveHistoryKeyName = "7-ZipArcName"; 
 
+static UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 }; 
 
-static HRESULT SetOutProperties(IOutFolderArchive *outArchive, 
-    UINT32 indexInMethodMap)
+static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
 {
-  UINT32 methodMap[] = { 0, 1, 5, 9 }; 
-  UINT32 method = indexInMethodMap >= sizeof(methodMap) / sizeof(methodMap[0]) ? 
-      9 : methodMap[indexInMethodMap];
-
   CMyComPtr<ISetProperties> aSetProperties;
   if (outArchive->QueryInterface(&aSetProperties) == S_OK)
   {
@@ -92,35 +88,40 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
   */
 
-  static const kYSize = 12;
+  static const kYSize = 14;
   static const kXMid = 38;
 
   NCompression::CInfo compressionInfo;
-
-  // CZipRegistryManager aZipRegistryManager;
   ReadCompressionInfo(compressionInfo);
-  
+
   if (!compressionInfo.MethodDefined)
-    compressionInfo.Method = 2;
+    compressionInfo.Method = 5;
+  int methodIndex = 0;
+  for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+    if (compressionInfo.Method >= g_MethodMap[i])
+    {
+      methodIndex = i;
+      break;
+    }
 
   const kMethodRadioIndex = 2;
-  const kModeRadioIndex = kMethodRadioIndex + 5;
+  const kModeRadioIndex = kMethodRadioIndex + 7;
 
   struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kUpdateTitle, NULL, NULL },
-    { DI_SINGLEBOX, 4, 2, kXMid - 2, 2 + 5, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 3, 0, 0, compressionInfo.Method == 0, 
-        compressionInfo.Method == 0, 
+    { DI_SINGLEBOX, 4, 2, kXMid - 2, 2 + 7, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 3, 0, 0, methodIndex == 0, methodIndex == 0, 
         DIF_GROUP, false, NMessageID::kUpdateMethodStore, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 4, 0, 0, compressionInfo.Method == 1, 
-        compressionInfo.Method == 1, 
+    { DI_RADIOBUTTON, 6, 4, 0, 0, methodIndex == 1, methodIndex == 1, 
+        0, false, NMessageID::kUpdateMethodFastest, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 5, 0, 0, methodIndex == 2, methodIndex == 2, 
         0, false, NMessageID::kUpdateMethodFast, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 5, 0, 0, compressionInfo.Method == 2, 
-        compressionInfo.Method == 2, 
+    { DI_RADIOBUTTON, 6, 6, 0, 0, methodIndex == 3, methodIndex == 3, 
         0, false, NMessageID::kUpdateMethodNormal, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 6, 0, 0, compressionInfo.Method == 3,
-        compressionInfo.Method == 3, 
-        false, 0, NMessageID::kUpdateMethodMaximum, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 7, 0, 0, methodIndex == 4, methodIndex == 4, 
+        0, false, NMessageID::kUpdateMethodMaximum, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 8, 0, 0, methodIndex == 5, methodIndex == 5, 
+        0, false, NMessageID::kUpdateMethodUltra, NULL, NULL },
     
     { DI_SINGLEBOX, kXMid, 2, 70, 2 + 5, false, false, 0, false, NMessageID::kUpdateMode, NULL, NULL },
     { DI_RADIOBUTTON, kXMid + 2, 3, 0, 0, false, true,
@@ -147,16 +148,10 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   if (askCode != kOkButtonIndex)
     return NFileOperationReturnCode::kInterruptedByUser;
 
-  if (dialogItems[kMethodRadioIndex].Selected)
-    compressionInfo.SetMethod(0);
-  else if (dialogItems[kMethodRadioIndex + 1].Selected)
-    compressionInfo.SetMethod(1);
-  else if (dialogItems[kMethodRadioIndex + 2].Selected)
-    compressionInfo.SetMethod(2);
-  else if (dialogItems[kMethodRadioIndex + 3].Selected)
-    compressionInfo.SetMethod(3);
-  else
-    throw 51751;
+  compressionInfo.SetMethod(g_MethodMap[0]);
+  for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
+    if (dialogItems[kMethodRadioIndex + i].Selected)
+      compressionInfo.SetMethod(g_MethodMap[i]);
 
   const CActionSet *actionSet;
 
@@ -225,7 +220,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
 
   UStringVector fileNames;
   fileNames.Reserve(numItems);
-  for(int i = 0; i < numItems; i++)
+  for(i = 0; i < numItems; i++)
     fileNames.Add(MultiByteToUnicodeString(panelItems[i].FindData.cFileName, CP_OEMCP));
   CRecordVector<const wchar_t *> fileNamePointers;
   fileNamePointers.Reserve(numItems);
@@ -373,8 +368,9 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   NCompression::CInfo compressionInfo;
   // CZipRegistryManager aZipRegistryManager;
   ReadCompressionInfo(compressionInfo);
+  
   if (!compressionInfo.MethodDefined)
-    compressionInfo.Method = 1;
+    compressionInfo.Method = 5;
  
   int archiverIndex = 0;
 
@@ -435,18 +431,26 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   while(true)
   {
-    static const kYSize = 14;
+    static const kYSize = 16;
     static const kXMid = 38;
   
     const kArchiveNameIndex = 2;
     const kMethodRadioIndex = kArchiveNameIndex + 2;
-    const kModeRadioIndex = kMethodRadioIndex + 5;
+    const kModeRadioIndex = kMethodRadioIndex + 7;
 
     const CArchiverInfo &archiverInfo = archiverInfoList[archiverIndex];
 
     char updateAddToArchiveString[512];
     sprintf(updateAddToArchiveString, 
         g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), GetSystemString(archiverInfo.Name), CP_OEMCP);
+
+    int methodIndex = 0;
+    for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+      if (compressionInfo.Method >= g_MethodMap[i])
+      {
+        methodIndex = i;
+        break;
+      }
 
     struct CInitDialogItem initItems[]=
     {
@@ -457,19 +461,19 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       { DI_EDIT, 5, 3, 70, 3, true, false, DIF_HISTORY, false, -1, archiveName, kArchiveHistoryKeyName},
       // { DI_EDIT, 5, 3, 70, 3, true, false, 0, false, -1, archiveName, NULL},
       
-      { DI_SINGLEBOX, 4, 4, kXMid - 2, 4 + 5, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 5, 0, 0, false, 
-          compressionInfo.Method == 0, 
+      { DI_SINGLEBOX, 4, 4, kXMid - 2, 4 + 7, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 5, 0, 0, false, methodIndex == 0, 
           DIF_GROUP, false, NMessageID::kUpdateMethodStore, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 6, 0, 0, false, 
-          compressionInfo.Method == 1, 
+      { DI_RADIOBUTTON, 6, 6, 0, 0, false, methodIndex == 1, 
+          0, false, NMessageID::kUpdateMethodFastest, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 7, 0, 0, false, methodIndex == 2, 
           0, false, NMessageID::kUpdateMethodFast, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 7, 0, 0, false, 
-          compressionInfo.Method == 2, 
+      { DI_RADIOBUTTON, 6, 8, 0, 0, false, methodIndex == 3, 
           0, false, NMessageID::kUpdateMethodNormal, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 8, 0, 0, false,
-          compressionInfo.Method == 3, 
+      { DI_RADIOBUTTON, 6, 9, 0, 0, false, methodIndex == 4, 
           false, 0, NMessageID::kUpdateMethodMaximum, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 10, 0, 0, false, methodIndex == 5, 
+          false, 0, NMessageID::kUpdateMethodUltra, NULL, NULL },
       
       { DI_SINGLEBOX, kXMid, 4, 70, 4 + 5, false, false, 0, false, NMessageID::kUpdateMode, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 5, 0, 0, false, 
@@ -505,16 +509,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     archiveName = dialogItems[kArchiveNameIndex].Data;
     archiveName.Trim();
 
-    if (dialogItems[kMethodRadioIndex].Selected)
-      compressionInfo.SetMethod(0);
-    else if (dialogItems[kMethodRadioIndex + 1].Selected)
-      compressionInfo.SetMethod(1);
-    else if (dialogItems[kMethodRadioIndex + 2].Selected)
-      compressionInfo.SetMethod(2);
-    else if (dialogItems[kMethodRadioIndex + 3].Selected)
-      compressionInfo.SetMethod(3);
-    else
-      throw 51751;
+    compressionInfo.SetMethod(g_MethodMap[0]);
+    for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
+      if (dialogItems[kMethodRadioIndex + i].Selected)
+        compressionInfo.SetMethod(g_MethodMap[i]);
 
     if (dialogItems[kModeRadioIndex].Selected)
       actionSet = &kAddActionSet;

@@ -65,7 +65,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
         folderIndex != extractFolderInfoVector.Back().FolderIndex)
     {
       extractFolderInfoVector.Add(CExtractFolderInfo(-1, folderIndex));
-      const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+      const CFolder &folderInfo = _database.Folders[folderIndex];
       // Count full_folder_size
       UINT64 unPackSize = folderInfo.GetUnPackSize();
       importantTotalUnPacked += unPackSize;
@@ -119,7 +119,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
       continue;
 
     UINT32 folderIndex = extractFolderInfo.FolderIndex;
-    const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+    const CFolder &folderInfo = _database.Folders[folderIndex];
 
     CObjectVector< CMyComPtr<ISequentialInStream> > inStreams;
 

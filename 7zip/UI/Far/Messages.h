@@ -109,9 +109,11 @@ enum EEnum
 
   kUpdateMethod,
   kUpdateMethodStore,
+  kUpdateMethodFastest,
   kUpdateMethodFast,
   kUpdateMethodNormal,
   kUpdateMethodMaximum,
+  kUpdateMethodUltra,
 
   kUpdateMode,
   kUpdateModeAdd,

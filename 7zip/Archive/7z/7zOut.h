@@ -77,8 +77,8 @@ class COutArchive
     return WriteNumber(value);
   }
 
-  HRESULT WriteFolderHeader(const CFolderItemInfo &itemInfo);
-  HRESULT WriteFileHeader(const CFileItemInfo &itemInfo);
+  HRESULT WriteFolderHeader(const CFolder &itemInfo);
+  HRESULT WriteFileHeader(const CFileItem &itemInfo);
   HRESULT WriteBoolVector(const CBoolVector &boolVector);
   HRESULT WriteHashDigests(
       const CRecordVector<bool> &digestsDefined,
@@ -93,10 +93,10 @@ class COutArchive
   HRESULT WriteUnPackInfo(
       bool externalFolders,
       UINT64 externalFoldersStreamIndex,
-      const CObjectVector<CFolderItemInfo> &folders);
+      const CObjectVector<CFolder> &folders);
 
   HRESULT WriteSubStreamsInfo(
-      const CObjectVector<CFolderItemInfo> &folders,
+      const CObjectVector<CFolder> &folders,
       const CRecordVector<UINT64> &numUnPackStreamsInFolders,
       const CRecordVector<UINT64> &unPackSizes,
       const CRecordVector<bool> &digestsDefined,
@@ -109,20 +109,20 @@ class COutArchive
       const CRecordVector<UINT32> &packCRCs,
       bool externalFolders,
       UINT64 externalFoldersStreamIndex,
-      const CObjectVector<CFolderItemInfo> &folders,
+      const CObjectVector<CFolder> &folders,
       const CRecordVector<UINT64> &numUnPackStreamsInFolders,
       const CRecordVector<UINT64> &unPackSizes,
       const CRecordVector<bool> &digestsDefined,
       const CRecordVector<UINT32> &hashDigests);
 
 
-  HRESULT WriteTime(const CObjectVector<CFileItemInfo> &files, BYTE type,
+  HRESULT WriteTime(const CObjectVector<CFileItem> &files, BYTE type,
       bool isExternal, int externalDataIndex);
 
   HRESULT EncodeStream(CEncoder &encoder, const BYTE *data, UINT32 dataSize,
-      CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders);
+      CRecordVector<UINT64> &packSizes, CObjectVector<CFolder> &folders);
   HRESULT EncodeStream(CEncoder &encoder, const CByteBuffer &data, 
-      CRecordVector<UINT64> &packSizes, CObjectVector<CFolderItemInfo> &folders);
+      CRecordVector<UINT64> &packSizes, CObjectVector<CFolder> &folders);
   HRESULT WriteHeader(const CArchiveDatabase &database,
       const CCompressionMethodMode *options, 
       UINT64 &headerOffset);

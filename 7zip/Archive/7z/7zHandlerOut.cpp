@@ -15,48 +15,54 @@
 
 #include "../Common/ItemNameUtils.h"
 
-using namespace NArchive;
-using namespace N7z;
-
 using namespace NWindows;
 
+namespace NArchive {
+namespace N7z {
+
 #ifdef COMPRESS_LZMA
-static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+static CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
 #endif
 
 #ifdef COMPRESS_PPMD
-static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
+static CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
 #endif
 
 #ifdef COMPRESS_BCJ_X86
-static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
+static CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 #endif
 
 #ifdef COMPRESS_BCJ2
-static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+static CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
 #endif
 
 #ifdef COMPRESS_COPY
-static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
+static CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
 #ifdef COMPRESS_DEFLATE
-static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
+static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 #endif
 
 #ifdef COMPRESS_BZIP2
-static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
+static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
 
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
 
-const UINT32 kAlgorithmForX = (2);
-const UINT32 kDicSizeForX = (1 << 23);
-const UINT32 kFastBytesForX = (64);
+const UINT32 kAlgorithmForX7 = 2;
+const UINT32 kDicSizeForX7 = 1 << 23;
+const UINT32 kFastBytesForX7 = 64;
 
-const UINT32 kAlgorithmForFast = (0);
-const UINT32 kDicSizeForFast = (1 << 15);
+const UINT32 kAlgorithmForX9 = 2;
+const UINT32 kDicSizeForX9 = 1 << 25;
+const UINT32 kFastBytesForX9 = 64;
+static const wchar_t *kMatchFinderForX9 = L"BT4b";
+
+const UINT32 kAlgorithmForFast = 0;
+const UINT32 kDicSizeForFast = 1 << 15;
+static const wchar_t *kMatchFinderForFast = L"HC3";
 
 const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
@@ -223,7 +229,7 @@ HRESULT CHandler::SetCompressionMethod(
     {
       CProperty property;
       property.PropID = NCoderPropID::kAlgorithm;
-      property.Value = kAlgorithmForX;
+      property.Value = kAlgorithmForX9;
       oneMethodInfo.CoderProperties.Add(property);
     }
     {
@@ -244,7 +250,8 @@ HRESULT CHandler::SetCompressionMethod(
   return S_OK;
 }
 
-static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID, UINT32 value)
+static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID, 
+    const NWindows::NCOM::CPropVariant &value)
 {
   int j;
   for (j = 0; j < oneMethodInfo.CoderProperties.Size(); j++)
@@ -258,20 +265,6 @@ static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID, UINT3
   oneMethodInfo.CoderProperties.Add(property);
 }
 
-static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID, bool value)
-{
-  int j;
-  for (j = 0; j < oneMethodInfo.CoderProperties.Size(); j++)
-    if (oneMethodInfo.CoderProperties[j].PropID == propID)
-      break;
-  if (j != oneMethodInfo.CoderProperties.Size())
-    return;
-  CProperty property;
-  property.PropID = propID;
-  property.Value = value;
-  oneMethodInfo.CoderProperties.Add(property);
-}
-    
 HRESULT CHandler::SetCompressionMethod(
     CCompressionMethodMode &methodMode,
     CObjectVector<COneMethodInfo> &methodsInfo,
@@ -309,14 +302,16 @@ HRESULT CHandler::SetCompressionMethod(
             NCoderPropID::kAlgorithm, _defaultAlgorithm);
         SetOneMethodProp(oneMethodInfo, 
             NCoderPropID::kNumFastBytes, _defaultFastBytes);
+        SetOneMethodProp(oneMethodInfo, 
+            NCoderPropID::kMatchFinder, (const wchar_t *)_defaultMatchFinder);
         if (multiThread)
           SetOneMethodProp(oneMethodInfo, 
               NCoderPropID::kMultiThread, true);
       }
     }
     CMethodFull methodFull;
-    methodFull.MethodInfoEx.NumInStreams = 1;
-    methodFull.MethodInfoEx.NumOutStreams = 1;
+    methodFull.NumInStreams = 1;
+    methodFull.NumOutStreams = 1;
 
     bool defined = false;
 
@@ -324,7 +319,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"LZMA") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_LZMA;
+      methodFull.MethodID = k_LZMA;
     }
     #endif
 
@@ -332,7 +327,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"PPMD") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_PPMD;
+      methodFull.MethodID = k_PPMD;
     }
     #endif
 
@@ -340,7 +335,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"BCJ") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_BCJ_X86;
+      methodFull.MethodID = k_BCJ_X86;
     }
     #endif
 
@@ -348,9 +343,9 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"BCJ2") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_BCJ2;
-      methodFull.MethodInfoEx.NumInStreams = 4;
-      methodFull.MethodInfoEx.NumOutStreams = 1;
+      methodFull.MethodID = k_BCJ2;
+      methodFull.NumInStreams = 4;
+      methodFull.NumOutStreams = 1;
     }
     #endif
 
@@ -358,7 +353,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"Deflate") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_Deflate;
+      methodFull.MethodID = k_Deflate;
     }
     #endif
 
@@ -366,7 +361,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"BZip2") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_BZip2;
+      methodFull.MethodID = k_BZip2;
     }
     #endif
 
@@ -374,7 +369,7 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.CompareNoCase(L"Copy") == 0)
     {
       defined = true;
-      methodFull.MethodInfoEx.MethodID = k_Copy;
+      methodFull.MethodID = k_Copy;
     }
 
     #endif
@@ -397,9 +392,9 @@ HRESULT CHandler::SetCompressionMethod(
     if (!methodInfo.EncoderIsAssigned)
       return E_FAIL;
 
-    methodFull.MethodInfoEx.MethodID = methodInfo.MethodID;
-    methodFull.MethodInfoEx.NumInStreams = methodInfo.NumInStreams;
-    methodFull.MethodInfoEx.NumOutStreams = methodInfo.NumOutStreams;
+    methodFull.MethodID = methodInfo.MethodID;
+    methodFull.NumInStreams = methodInfo.NumInStreams;
+    methodFull.NumOutStreams = methodInfo.NumOutStreams;
 
     methodFull.EncoderClassID = methodInfo.Encoder;
     methodFull.FilePath = methodInfo.FilePath;
@@ -427,7 +422,6 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   // CMyComPtr<IUpdateCallback2> updateCallback2;
   // updateCallback->QueryInterface(&updateCallback2);
 
-  bool thereIsCopyData = false;
   int index = 0;
   for(int i = 0; i < numItems; i++)
   {
@@ -438,22 +432,26 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
       return E_FAIL;
     RINOK(updateCallback->GetUpdateItemInfo(i,
         &newData, &newProperties, &indexInArchive));
-    CUpdateItem updateItemInfo;
-    updateItemInfo.NewProperties = IntToBool(newProperties);
-    updateItemInfo.NewData = IntToBool(newData);
-    updateItemInfo.IndexInArchive = indexInArchive;
-    updateItemInfo.IndexInClient = i;
-    updateItemInfo.IsAnti = false;
-    updateItemInfo.Size = 0;
+    CUpdateItem updateItem;
+    updateItem.NewProperties = IntToBool(newProperties);
+    updateItem.NewData = IntToBool(newData);
+    updateItem.IndexInArchive = indexInArchive;
+    updateItem.IndexInClient = i;
+    updateItem.IsAnti = false;
+    updateItem.Size = 0;
 
-    if (updateItemInfo.IndexInArchive != -1)
+    if (updateItem.IndexInArchive != -1)
     {
-      const CFileItemInfo &fileItem = _database.Files[updateItemInfo.IndexInArchive];
-      updateItemInfo.Name = fileItem.Name;
-      updateItemInfo.IsDirectory = fileItem.IsDirectory;
+      const CFileItem &fileItem = _database.Files[updateItem.IndexInArchive];
+      updateItem.Name = fileItem.Name;
+      updateItem.IsDirectory = fileItem.IsDirectory;
+      updateItem.Size = fileItem.UnPackSize;
+      updateItem.IsAnti = fileItem.IsAnti;
+      updateItem.LastWriteTime = fileItem.LastWriteTime;
+      updateItem.LastWriteTimeIsDefined = fileItem.IsLastWriteTimeDefined;
     }
 
-    if (updateItemInfo.NewProperties)
+    if (updateItem.NewProperties)
     {
       bool nameIsDefined;
       bool folderStatusIsDefined;
@@ -461,39 +459,39 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
         if (propVariant.vt == VT_EMPTY)
-          updateItemInfo.AttributesAreDefined = false;
+          updateItem.AttributesAreDefined = false;
         else if (propVariant.vt != VT_UI4)
           return E_INVALIDARG;
         else
         {
-          updateItemInfo.Attributes = propVariant.ulVal;
-          updateItemInfo.AttributesAreDefined = true;
+          updateItem.Attributes = propVariant.ulVal;
+          updateItem.AttributesAreDefined = true;
         }
       }
       {
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidCreationTime, &propVariant));
         if (propVariant.vt == VT_EMPTY)
-          updateItemInfo.CreationTimeIsDefined = false;
+          updateItem.CreationTimeIsDefined = false;
         else if (propVariant.vt != VT_FILETIME)
           return E_INVALIDARG;
         else
         {
-          updateItemInfo.CreationTime = propVariant.filetime;
-          updateItemInfo.CreationTimeIsDefined = true;
+          updateItem.CreationTime = propVariant.filetime;
+          updateItem.CreationTimeIsDefined = true;
         }
       }
       {
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
         if (propVariant.vt == VT_EMPTY)
-          updateItemInfo.LastWriteTimeIsDefined = false;
+          updateItem.LastWriteTimeIsDefined = false;
         else if (propVariant.vt != VT_FILETIME)
           return E_INVALIDARG;
         else
         {
-          updateItemInfo.LastWriteTime = propVariant.filetime;
-          updateItemInfo.LastWriteTimeIsDefined = true;
+          updateItem.LastWriteTime = propVariant.filetime;
+          updateItem.LastWriteTimeIsDefined = true;
         }
       }
       {
@@ -505,7 +503,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
           return E_INVALIDARG;
         else
         {
-          updateItemInfo.Name = NItemName::MakeLegalName(propVariant.bstrVal);
+          updateItem.Name = NItemName::MakeLegalName(propVariant.bstrVal);
           nameIsDefined = true;
         }
       }
@@ -518,7 +516,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
           return E_INVALIDARG;
         else
         {
-          updateItemInfo.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
           folderStatusIsDefined = true;
         }
       }
@@ -527,40 +525,44 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidIsAnti, &propVariant));
         if (propVariant.vt == VT_EMPTY)
-          updateItemInfo.IsAnti = false;
+          updateItem.IsAnti = false;
         else if (propVariant.vt != VT_BOOL)
           return E_INVALIDARG;
         else
-          updateItemInfo.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
+          updateItem.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
       }
 
-      if (updateItemInfo.IsAnti)
+      if (updateItem.IsAnti)
       {
-        updateItemInfo.AttributesAreDefined = false;
-        updateItemInfo.CreationTimeIsDefined = false;
-        updateItemInfo.LastWriteTimeIsDefined = false;
-        updateItemInfo.Size = 0;
+        updateItem.AttributesAreDefined = false;
+        updateItem.CreationTimeIsDefined = false;
+        updateItem.LastWriteTimeIsDefined = false;
+        updateItem.Size = 0;
       }
 
-      if (!folderStatusIsDefined && updateItemInfo.AttributesAreDefined)
-        updateItemInfo.SetDirectoryStatusFromAttributes();
+      if (!folderStatusIsDefined && updateItem.AttributesAreDefined)
+        updateItem.SetDirectoryStatusFromAttributes();
     }
 
-    if (!updateItemInfo.IsAnti)
-      if (updateItemInfo.NewData)
-      {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
-        if (propVariant.vt != VT_UI8)
-          return E_INVALIDARG;
-        updateItemInfo.Size = *(const UINT64 *)(&propVariant.uhVal);
-      }
-      else
-        thereIsCopyData = true;
+    if (updateItem.NewData)
+    {
+      NCOM::CPropVariant propVariant;
+      RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
+      if (propVariant.vt != VT_UI8)
+        return E_INVALIDARG;
+      updateItem.Size = *(const UINT64 *)(&propVariant.uhVal);
+      if (updateItem.Size != 0 && updateItem.IsAnti)
+        return E_INVALIDARG;
+    }
+    /*
+    else
+      thereIsCopyData = true;
+    */
 
-    updateItems.Add(updateItemInfo);
+    updateItems.Add(updateItem);
   }
 
+  /*
   if (thereIsCopyData)
   {
     for(int i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
@@ -571,6 +573,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
     if (_solid)
       return E_NOTIMPL;
   }
+  */
 
 
   CCompressionMethodMode methodMode, headerMethod;
@@ -602,21 +605,23 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
   if (numItems < 2)
     compressMainHeader = false;
 
-  NArchive::N7z::CInArchiveInfo *inArchiveInfo;
+  CInArchiveInfo *inArchiveInfo;
   if (!_inStream)
     inArchiveInfo = 0;
   else
     inArchiveInfo = &_database.ArchiveInfo;
 
-  return UpdateMain(_database, 
+  return Update(_database, 
       // compressStatuses,
       updateItems, 
       // copyIndices, 
       outStream, _inStream, inArchiveInfo, 
-      &methodMode, 
+      methodMode, 
         (_compressHeaders || 
         (methodMode.PasswordIsDefined && _encryptHeaders)) ? 
         &headerMethod : 0, 
+      _level != 0 && _autoFilter, // useFilters
+      _level >= 8, // maxFilter
       useAdditionalHeaderStreams, compressMainHeader,
       updateCallback, _solid, _removeSfxBlock);
   COM_TRY_END
@@ -894,6 +899,7 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
   _binds.Clear();
   Init();
   int minNumber = 0;
+  _level = 5;
 
   for (int i = 0; i < numProperties; i++)
   {
@@ -907,42 +913,50 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
     if (name[0] == 'X')
     {
       name.Delete(0);
-      UINT32 level = 9;
+      _level = 9;
       if (value.vt == VT_UI4)
       {
         if (!name.IsEmpty())
           return E_INVALIDARG;
-        level = value.ulVal;
+        _level = value.ulVal;
       }
       else if (value.vt == VT_EMPTY)
       {
         if(!name.IsEmpty())
         {
-          int index = ParseStringToUINT32(name, level);
+          int index = ParseStringToUINT32(name, _level);
           if (index != name.Length())
             return E_INVALIDARG;
         }
       }
       else
         return E_INVALIDARG;
-      if (level == 0)
+      if (_level == 0)
       {
         _copyMode = true;
       }
-      else if (level < 2)
+      else if (_level < 5)
       {
         _defaultAlgorithm = kAlgorithmForFast;
         _defaultDicSize = kDicSizeForFast;
+        _defaultMatchFinder = kMatchFinderForFast;
       }
-      else if (level < 8)
+      else if (_level < 7)
       {
         // normal;
       }
+      else if(_level < 9)
+      {
+        _defaultAlgorithm = kAlgorithmForX7;
+        _defaultDicSize = kDicSizeForX7;
+        _defaultFastBytes = kFastBytesForX7;
+      }
       else
       {
-        _defaultAlgorithm = kAlgorithmForX;
-        _defaultDicSize = kDicSizeForX;
-        _defaultFastBytes = kFastBytesForX;
+        _defaultAlgorithm = kAlgorithmForX9;
+        _defaultDicSize = kDicSizeForX9;
+        _defaultFastBytes = kFastBytesForX9;
+        _defaultMatchFinder = kMatchFinderForX9;
       }
       continue;
     }
@@ -971,6 +985,11 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
       {
         RINOK(SetBoolProperty(_solid, value));
         _solidIsSpecified = true;
+        continue;
+      }
+      else if (name.CompareNoCase(L"F") == 0)
+      {
+        RINOK(SetBoolProperty(_autoFilter, value));
         continue;
       }
       else if (name.CompareNoCase(L"HC") == 0)
@@ -1066,3 +1085,4 @@ STDMETHODIMP CHandler::SetProperties(const BSTR *names, const PROPVARIANT *value
   COM_TRY_END
 }  
 
+}}

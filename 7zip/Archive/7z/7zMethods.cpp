@@ -139,7 +139,6 @@ void LoadMethodMap()
     return;
   g_Loaded = true;
   Load(GetCodecsFolderPrefix());
-  // Load(basePrefix + TEXT("Crypto\\"));
 }
 
 bool GetMethodInfo(const CMethodID &methodID, CMethodInfo &methodInfo)

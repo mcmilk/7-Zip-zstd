@@ -210,20 +210,20 @@ HRESULT CInArchive::ReadArchiveProperties(CInArchiveInfo &archiveInfo)
   return S_OK;
 }
 
-HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
+HRESULT CInArchive::GetNextFolderItem(CFolder &folder)
 {
   UINT64 numCoders;
   RINOK(ReadNumber(numCoders));
 
-  itemInfo.CodersInfo.Clear();
-  itemInfo.CodersInfo.Reserve((int)numCoders);
+  folder.Coders.Clear();
+  folder.Coders.Reserve((int)numCoders);
   UINT32 numInStreams = 0;
   UINT32 numOutStreams = 0;
   UINT32 i;
   for (i = 0; i < numCoders; i++)
   {
-    itemInfo.CodersInfo.Add(CCoderInfo());
-    CCoderInfo &coderInfo = itemInfo.CodersInfo.Back();
+    folder.Coders.Add(CCoderInfo());
+    CCoderInfo &coderInfo = folder.Coders.Back();
 
     while (true)
     {
@@ -231,11 +231,11 @@ HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
       CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Back();
       BYTE mainByte;
       RINOK(SafeReadByte2(mainByte));
-      altCoderInfo.DecompressionMethod.IDSize = mainByte & 0xF;
+      altCoderInfo.MethodID.IDSize = mainByte & 0xF;
       bool isComplex = (mainByte & 0x10) != 0;
       bool tereAreProperties = (mainByte & 0x20) != 0;
-      RINOK(SafeReadBytes2(&altCoderInfo.DecompressionMethod.ID[0], 
-        altCoderInfo.DecompressionMethod.IDSize));
+      RINOK(SafeReadBytes2(&altCoderInfo.MethodID.ID[0], 
+        altCoderInfo.MethodID.IDSize));
       if (isComplex)
       {
         RINOK(ReadNumber(coderInfo.NumInStreams));
@@ -266,26 +266,26 @@ HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
   UINT64 numBindPairs;
   // RINOK(ReadNumber(numBindPairs));
   numBindPairs = numOutStreams - 1;
-  itemInfo.BindPairs.Clear();
-  itemInfo.BindPairs.Reserve((UINT32)numBindPairs);
+  folder.BindPairs.Clear();
+  folder.BindPairs.Reserve((UINT32)numBindPairs);
   for (i = 0; i < numBindPairs; i++)
   {
     CBindPair bindPair;
     RINOK(ReadNumber(bindPair.InIndex));
     RINOK(ReadNumber(bindPair.OutIndex)); 
-    itemInfo.BindPairs.Add(bindPair);
+    folder.BindPairs.Add(bindPair);
   }
 
   UINT32 numPackedStreams = numInStreams - (UINT32)numBindPairs;
-  itemInfo.PackStreams.Reserve(numPackedStreams);
+  folder.PackStreams.Reserve(numPackedStreams);
   if (numPackedStreams == 1)
   {
     for (UINT32 j = 0; j < numInStreams; j++)
-      if (itemInfo.FindBindPairForInStream(j) < 0)
+      if (folder.FindBindPairForInStream(j) < 0)
       {
         CPackStreamInfo packStreamInfo;
         packStreamInfo.Index = j;
-        itemInfo.PackStreams.Add(packStreamInfo);
+        folder.PackStreams.Add(packStreamInfo);
         break;
       }
   }
@@ -294,7 +294,7 @@ HRESULT CInArchive::GetNextFolderItem(CFolderItemInfo &itemInfo)
     {
       CPackStreamInfo packStreamInfo;
       RINOK(ReadNumber(packStreamInfo.Index));
-      itemInfo.PackStreams.Add(packStreamInfo);
+      folder.PackStreams.Add(packStreamInfo);
     }
 
   return S_OK;
@@ -382,7 +382,7 @@ HRESULT CInArchive::ReadPackInfo(
 
 HRESULT CInArchive::ReadUnPackInfo(
     const CObjectVector<CByteBuffer> *dataVector,
-    CObjectVector<CFolderItemInfo> &folders)
+    CObjectVector<CFolder> &folders)
 {
   RINOK(WaitAttribute(NID::kFolder));
   UINT64 numFolders;
@@ -395,7 +395,7 @@ HRESULT CInArchive::ReadUnPackInfo(
     folders.Reserve((UINT32)numFolders);
     for(UINT64 i = 0; i < numFolders; i++)
     {
-      folders.Add(CFolderItemInfo());
+      folders.Add(CFolder());
       RINOK(GetNextFolderItem(folders.Back()));
     }
   }
@@ -404,7 +404,7 @@ HRESULT CInArchive::ReadUnPackInfo(
 
   for(UINT32 i = 0; i < numFolders; i++)
   {
-    CFolderItemInfo &folder = folders[i];
+    CFolder &folder = folders[i];
     UINT32 numOutStreams = (UINT32)folder.GetNumOutStreams();
     folder.UnPackSizes.Reserve(numOutStreams);
     for(UINT32 j = 0; j < numOutStreams; j++)
@@ -428,7 +428,7 @@ HRESULT CInArchive::ReadUnPackInfo(
       RINOK(ReadHashDigests((UINT32)numFolders, crcsDefined, crcs)); 
       for(i = 0; i < numFolders; i++)
       {
-        CFolderItemInfo &folder = folders[i];
+        CFolder &folder = folders[i];
         folder.UnPackCRCDefined = crcsDefined[i];
         folder.UnPackCRC = crcs[i];
       }
@@ -439,7 +439,7 @@ HRESULT CInArchive::ReadUnPackInfo(
 }
 
 HRESULT CInArchive::ReadSubStreamsInfo(
-    const CObjectVector<CFolderItemInfo> &folders,
+    const CObjectVector<CFolder> &folders,
     CRecordVector<UINT64> &numUnPackStreamsInFolders,
     CRecordVector<UINT64> &unPackSizes,
     CRecordVector<bool> &digestsDefined, 
@@ -513,7 +513,7 @@ HRESULT CInArchive::ReadSubStreamsInfo(
       for (i = 0; i < folders.Size(); i++)
       {
         int numSubstreams = (UINT32)numUnPackStreamsInFolders[i];
-        const CFolderItemInfo &folder = folders[i];
+        const CFolder &folder = folders[i];
         if (numSubstreams == 1 && folder.UnPackCRCDefined)
         {
           digestsDefined.Add(true);
@@ -556,7 +556,7 @@ HRESULT CInArchive::ReadStreamsInfo(
     CRecordVector<UINT64> &packSizes,
     CRecordVector<bool> &packCRCsDefined,
     CRecordVector<UINT32> &packCRCs,
-    CObjectVector<CFolderItemInfo> &folders,
+    CObjectVector<CFolder> &folders,
     CRecordVector<UINT64> &numUnPackStreamsInFolders,
     CRecordVector<UINT64> &unPackSizes,
     CRecordVector<bool> &digestsDefined, 
@@ -592,7 +592,7 @@ HRESULT CInArchive::ReadStreamsInfo(
 }
 
 
-HRESULT CInArchive::ReadFileNames(CObjectVector<CFileItemInfo> &files)
+HRESULT CInArchive::ReadFileNames(CObjectVector<CFileItem> &files)
 {
   // UINT32 pos = 0;
   for(int i = 0; i < files.Size(); i++)
@@ -655,7 +655,7 @@ HRESULT CInArchive::ReadBoolVector2(UINT32 numItems, CBoolVector &vector)
 }
 
 HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-    CObjectVector<CFileItemInfo> &files, UINT64 type)
+    CObjectVector<CFileItem> &files, UINT64 type)
 {
   CBoolVector boolVector;
   RINOK(ReadBoolVector2(files.Size(), boolVector))
@@ -665,7 +665,7 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
 
   for(int i = 0; i < files.Size(); i++)
   {
-    CFileItemInfo &itemInfo = files[i];
+    CFileItem &file = files[i];
     CArchiveFileTime fileTime;
     bool defined = boolVector[i];
     if (defined)
@@ -675,19 +675,19 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
     switch(type)
     {
       case NID::kCreationTime:
-        itemInfo.IsCreationTimeDefined= defined;
+        file.IsCreationTimeDefined= defined;
         if (defined)
-          itemInfo.CreationTime = fileTime;
+          file.CreationTime = fileTime;
         break;
       case NID::kLastWriteTime:
-        itemInfo.IsLastWriteTimeDefined = defined;
+        file.IsLastWriteTimeDefined = defined;
         if (defined)
-          itemInfo.LastWriteTime = fileTime;
+          file.LastWriteTime = fileTime;
         break;
       case NID::kLastAccessTime:
-        itemInfo.IsLastAccessTimeDefined = defined;
+        file.IsLastAccessTimeDefined = defined;
         if (defined)
-          itemInfo.LastAccessTime = fileTime;
+          file.LastAccessTime = fileTime;
         break;
     }
   }
@@ -704,7 +704,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset,
   CRecordVector<UINT64> packSizes;
   CRecordVector<bool> packCRCsDefined;
   CRecordVector<UINT32> packCRCs;
-  CObjectVector<CFolderItemInfo> folders;
+  CObjectVector<CFolder> folders;
   
   CRecordVector<UINT64> numUnPackStreamsInFolders;
   CRecordVector<UINT64> unPackSizes;
@@ -729,7 +729,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UINT64 baseOffset,
   UINT64 dataStartPos = baseOffset + dataOffset;
   for(int i = 0; i < folders.Size(); i++)
   {
-    const CFolderItemInfo &folder = folders[i];
+    const CFolder &folder = folders[i];
     dataVector.Add(CByteBuffer());
     CByteBuffer &data = dataVector.Back();
     UINT64 unPackSize = folder.GetUnPackSize();
@@ -781,7 +781,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     CRecordVector<UINT64> packSizes;
     CRecordVector<bool> packCRCsDefined;
     CRecordVector<UINT32> packCRCs;
-    CObjectVector<CFolderItemInfo> folders;
+    CObjectVector<CFolder> folders;
 
     CRecordVector<UINT64> numUnPackStreamsInFolders;
     CRecordVector<UINT64> unPackSizes;
@@ -806,7 +806,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     UINT64 dataStartPos = database.ArchiveInfo.DataStartPosition2;
     for(int i = 0; i < folders.Size(); i++)
     {
-      const CFolderItemInfo &folder = folders[i];
+      const CFolder &folder = folders[i];
       dataVector.Add(CByteBuffer());
       CByteBuffer &data = dataVector.Back();
       UINT64 unPackSize = folder.GetUnPackSize();
@@ -865,7 +865,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     for(int i = 0; i < database.Folders.Size(); i++)
     {
       database.NumUnPackStreamsVector.Add(1);
-      CFolderItemInfo &folder = database.Folders[i];
+      CFolder &folder = database.Folders[i];
       unPackSizes.Add(folder.GetUnPackSize());
       digestsDefined.Add(folder.UnPackCRCDefined);
       digests.Add(folder.UnPackCRC);
@@ -885,7 +885,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   RINOK(ReadNumber(numFiles));
   database.Files.Reserve((size_t)numFiles);
   for(UINT64 i = 0; i < numFiles; i++)
-    database.Files.Add(CFileItemInfo());
+    database.Files.Add(CFileItem());
 
   // int sizePrev = -1;
   // int posPrev = 0;
@@ -944,11 +944,11 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
         RINOK(streamSwitch.Set(this, &dataVector));
         for(i = 0; i < numFiles; i++)
         {
-          CFileItemInfo &itemInfo = database.Files[(UINT32)i];
-          if (itemInfo.AreAttributesDefined = boolVector[(UINT32)i])
+          CFileItem &file = database.Files[(UINT32)i];
+          if (file.AreAttributesDefined = boolVector[(UINT32)i])
           {
-            RINOK(SafeReadBytes2(&itemInfo.Attributes, 
-                sizeof(itemInfo.Attributes)));
+            RINOK(SafeReadBytes2(&file.Attributes, 
+                sizeof(file.Attributes)));
           }
         }
         break;
@@ -998,25 +998,26 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   UINT32 sizeIndex = 0;
   for(i = 0; i < numFiles; i++)
   {
-    CFileItemInfo &itemInfo = database.Files[(UINT32)i];
-    if(emptyStreamVector[(UINT32)i])
+    CFileItem &file = database.Files[(UINT32)i];
+    file.HasStream = !emptyStreamVector[(UINT32)i];
+    if(file.HasStream)
     {
-      itemInfo.IsDirectory = !emptyFileVector[emptyFileIndex];
-      itemInfo.IsAnti = antiFileVector[emptyFileIndex];
-      emptyFileIndex++;
-      itemInfo.UnPackSize = 0;
-      itemInfo.FileCRCIsDefined = false;
+      file.IsDirectory = false;
+      file.IsAnti = false;
+      file.UnPackSize = unPackSizes[sizeIndex];
+      file.FileCRC = digests[sizeIndex];
+      file.FileCRCIsDefined = digestsDefined[sizeIndex];
+      sizeIndex++;
     }
     else
     {
-      itemInfo.IsDirectory = false;
-      itemInfo.UnPackSize = unPackSizes[sizeIndex];
-      itemInfo.FileCRC = digests[sizeIndex];
-      itemInfo.FileCRCIsDefined = digestsDefined[sizeIndex];
-      sizeIndex++;
+      file.IsDirectory = !emptyFileVector[emptyFileIndex];
+      file.IsAnti = antiFileVector[emptyFileIndex];
+      emptyFileIndex++;
+      file.UnPackSize = 0;
+      file.FileCRCIsDefined = false;
     }
   }
-
   return S_OK;
 }
 
@@ -1056,8 +1057,8 @@ void CArchiveDatabaseEx::FillFolderStartFileIndex()
   int indexInFolder = 0;
   for (int i = 0; i < Files.Size(); i++)
   {
-    const CFileItemInfo &file = Files[i];
-    bool emptyStream = (file.IsDirectory || file.UnPackSize == 0);
+    const CFileItem &file = Files[i];
+    bool emptyStream = !file.HasStream;
     if (emptyStream && indexInFolder == 0)
     {
       FileIndexToFolderIndexMap.Add(-1);

@@ -18,18 +18,13 @@ struct CProperty
   NWindows::NCOM::CPropVariant Value;
 };
 
-struct CMethodInfoEx
+struct CMethodFull
 {
   CMethodID MethodID;
   UINT32 NumInStreams;
   UINT32 NumOutStreams;
   bool IsSimpleCoder() const 
     { return (NumInStreams == 1) && (NumOutStreams == 1); }
-};
-
-struct CMethodFull
-{
-  CMethodInfoEx MethodInfoEx;
 
   #ifdef EXCLUDE_COM
   #else
@@ -53,13 +48,10 @@ struct CCompressionMethodMode
   CObjectVector<CMethodFull> Methods;
   CRecordVector<CBind> Binds;
   bool MultiThread;
-  // UINT32 MultiThreadMult;
-  
   bool PasswordIsDefined;
   UString Password;
 
   bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
-
   CCompressionMethodMode(): PasswordIsDefined(false), MultiThread(false) {}
 };
 

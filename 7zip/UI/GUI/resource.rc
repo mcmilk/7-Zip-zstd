@@ -74,8 +74,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,3,0
- PRODUCTVERSION 3,8,3,0
+ FILEVERSION 3,9,1,0
+ PRODUCTVERSION 3,9,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -93,14 +93,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Igor Pavlov\0"
             VALUE "FileDescription", "7-Zip GUI Module\0"
-            VALUE "FileVersion", "3, 8, 3, 0\0"
+            VALUE "FileVersion", "3, 9, 1, 0\0"
             VALUE "InternalName", "7zg\0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2003 Igor Pavlov\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "7zg.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "3, 8, 3, 0\0"
+            VALUE "ProductVersion", "3, 9, 1, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -121,6 +121,13 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON1               ICON    DISCARDABLE     "FM.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// 24
+//
+
+1                       24      MOVEABLE PURE   "7zG.exe.manifest"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -152,6 +159,8 @@ BEGIN
     IDS_METHOD_NORMAL       "Normal"
     IDS_METHOD_MAXIMUM      "Maximum"
     IDS_METHOD_FAST         "Fast"
+    IDS_METHOD_FASTEST      "Fastest"
+    IDS_METHOD_ULTRA        "Ultra"
     IDS_COMPRESS_UPDATE_MODE_ADD "Add and replace files"
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"

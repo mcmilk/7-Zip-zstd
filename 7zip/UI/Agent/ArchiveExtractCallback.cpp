@@ -17,6 +17,8 @@
 
 #include "../../Common/FilePathAutoRename.h"
 
+#include "../Common/ExtractingFilePath.h"
+
 using namespace NWindows;
 
 void CArchiveExtractCallback::Init(
@@ -108,7 +110,9 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
       return E_FAIL;
     fullPath = propVariant.bstrVal;
   }
-  _filePath = fullPath;
+
+  UString fullPathCorrect = GetCorrectPath(fullPath);
+  _filePath = fullPathCorrect;
 
   if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
@@ -158,7 +162,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     }
 
     UStringVector pathParts; 
-    SplitPathToParts(fullPath, pathParts);
+    SplitPathToParts(fullPathCorrect, pathParts);
     if(pathParts.IsEmpty())
       return E_FAIL;
     UString processedPath;
@@ -166,7 +170,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
     {
       case NExtractionMode::NPath::kFullPathnames:
       {
-        processedPath = fullPath;
+        processedPath = fullPathCorrect;
         break;
       }
       case NExtractionMode::NPath::kCurrentPathnames:
@@ -221,7 +225,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UINT32 index,
           INT32 overwiteResult;
           RINOK(_extractCallback2->AskOverwrite(
               fullProcessedPathUnicode, &fileInfo.LastWriteTime, &fileInfo.Size,
-              fullPath, &_processedFileInfo.UTCLastWriteTime, newFileSizeDefined?
+              fullPathCorrect, &_processedFileInfo.UTCLastWriteTime, newFileSizeDefined?
               &newFileSize : NULL, &overwiteResult))
 
           switch(overwiteResult)

@@ -184,7 +184,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
-  const CFileItemInfo &item = _database.Files[index];
+  const CFileItem &item = _database.Files[index];
 
   switch(propID)
   {
@@ -205,7 +205,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
         int folderIndex = _database.FileIndexToFolderIndexMap[index];
         if (folderIndex >= 0)
         {
-          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          const CFolder &folderInfo = _database.Folders[folderIndex];
           if (_database.FolderStartFileIndex[folderIndex] == index)
             propVariant = _database.GetFolderFullPackSize(folderIndex);
           else
@@ -239,11 +239,11 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
         int folderIndex = _database.FileIndexToFolderIndexMap[index];
         if (folderIndex >= 0)
         {
-          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          const CFolder &folderInfo = _database.Folders[folderIndex];
           UString methodsString;
-          for (int i = folderInfo.CodersInfo.Size() - 1; i >= 0; i--)
+          for (int i = folderInfo.Coders.Size() - 1; i >= 0; i--)
           {
-            const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+            const CCoderInfo &coderInfo = folderInfo.Coders[i];
             if (!methodsString.IsEmpty())
               methodsString += L' ';
             CMethodInfo methodInfo;
@@ -260,19 +260,19 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
               #ifdef NO_REGISTRY
 
               methodIsKnown = true;
-              if (altCoderInfo.DecompressionMethod == k_Copy)
+              if (altCoderInfo.MethodID == k_Copy)
                 methodName = L"Copy";            
-              else if (altCoderInfo.DecompressionMethod == k_LZMA)
+              else if (altCoderInfo.MethodID == k_LZMA)
                 methodName = L"LZMA";
-              else if (altCoderInfo.DecompressionMethod == k_BCJ)
+              else if (altCoderInfo.MethodID == k_BCJ)
                 methodName = L"BCJ";
-              else if (altCoderInfo.DecompressionMethod == k_BCJ2)
+              else if (altCoderInfo.MethodID == k_BCJ2)
                 methodName = L"BCJ2";
-              else if (altCoderInfo.DecompressionMethod == k_PPMD)
+              else if (altCoderInfo.MethodID == k_PPMD)
                 methodName = L"PPMD";
-              else if (altCoderInfo.DecompressionMethod == k_Deflate)
+              else if (altCoderInfo.MethodID == k_Deflate)
                 methodName = L"Deflate";
-              else if (altCoderInfo.DecompressionMethod == k_BZip2)
+              else if (altCoderInfo.MethodID == k_BZip2)
                 methodName = L"BZip2";
               else
                 methodIsKnown = false;
@@ -280,7 +280,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
               #else
             
               methodIsKnown = GetMethodInfo(
-                altCoderInfo.DecompressionMethod, methodInfo);
+                altCoderInfo.MethodID, methodInfo);
               methodName = methodInfo.Name;
               
               #endif
@@ -288,7 +288,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
               if (methodIsKnown)
               {
                 methodsString += methodName;
-                if (altCoderInfo.DecompressionMethod == k_LZMA)
+                if (altCoderInfo.MethodID == k_LZMA)
                 {
                   if (altCoderInfo.Properties.GetCapacity() == 5)
                   {
@@ -298,7 +298,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
-                else if (altCoderInfo.DecompressionMethod == k_PPMD)
+                else if (altCoderInfo.MethodID == k_PPMD)
                 {
                   if (altCoderInfo.Properties.GetCapacity() == 5)
                   {
@@ -332,7 +332,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
               }
               else
               {
-                methodsString += altCoderInfo.DecompressionMethod.ConvertToString();
+                methodsString += altCoderInfo.MethodID.ConvertToString();
               }
             }
           }
@@ -356,7 +356,7 @@ STDMETHODIMP CHandler::GetProperty(UINT32 index, PROPID propID,  PROPVARIANT *va
         int folderIndex = _database.FileIndexToFolderIndexMap[index];
         if (folderIndex >= 0)
         {
-          const CFolderItemInfo &folderInfo = _database.Folders[folderIndex];
+          const CFolder &folderInfo = _database.Folders[folderIndex];
           if (_database.FolderStartFileIndex[folderIndex] == index &&
               folderInfo.PackStreams.Size() > propID - kpidPackedSize0)
           {
@@ -386,6 +386,9 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   COM_TRY_BEGIN
   _inStream.Release();
   _database.Clear();
+  #ifndef _SFX
+  _fileInfoPopIDs.Clear();
+  #endif
   try
   {
     CInArchive archive;

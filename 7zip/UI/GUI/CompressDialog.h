@@ -25,20 +25,25 @@ namespace NCompressDialog
       kSynchronize,
     };
   }
+  /*
   namespace NMethod
   {
     enum EEnum
     {
       kStore,
+      kFastest,
       kFast,
       kNormal,
       kMaximum,
+      kUltra
     };
   }
+  */
   struct CInfo
   {
     NUpdateMode::EEnum UpdateMode;
-    NMethod::EEnum Method;
+    // NMethod::EEnum Method;
+    UINT32 Method; // 0 ... 9
     bool SolidIsAllowed;
     bool Solid;
 

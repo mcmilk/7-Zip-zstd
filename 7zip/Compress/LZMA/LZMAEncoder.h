@@ -141,6 +141,8 @@ private:
   #ifdef COMPRESS_MF_MT
   bool _multiThread;
   #endif
+
+  bool _writeEndMark;
   
   UINT32 ReadMatchDistances()
   {
@@ -246,7 +248,8 @@ private:
 
 public:
   CEncoder();
-  // ~CEncoder();
+  void SetWriteEndMarkerMode(bool writeEndMarker)
+    { _writeEndMark= writeEndMarker; }
 
   HRESULT Create();
 

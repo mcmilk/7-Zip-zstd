@@ -237,10 +237,6 @@ SOURCE=..\..\Archive\7z\7zIn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7zItem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
 # End Group
@@ -640,6 +636,14 @@ SOURCE=..\..\UI\Common\DefaultName.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 

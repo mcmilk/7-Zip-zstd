@@ -712,6 +712,14 @@ SOURCE=..\..\UI\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\OpenArchive.cpp
 # End Source File
 # Begin Source File

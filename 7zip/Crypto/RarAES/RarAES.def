@@ -1,9 +1,0 @@
-; RarAES.def
-
-LIBRARY RarAES.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE
-

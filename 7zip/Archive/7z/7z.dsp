@@ -190,10 +190,6 @@ SOURCE=.\7zIn.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\7zItem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\7zItem.h
 # End Source File
 # Begin Source File
@@ -243,26 +239,6 @@ SOURCE=.\7zUpdate.cpp
 # Begin Source File
 
 SOURCE=.\7zUpdate.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zUpdateItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zUpdateSingle.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zUpdateSingle.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zUpdateSolid.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zUpdateSolid.h
 # End Source File
 # End Group
 # Begin Group "Interface"

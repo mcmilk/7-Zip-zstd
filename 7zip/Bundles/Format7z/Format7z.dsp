@@ -782,10 +782,6 @@ SOURCE=..\..\Archive\7z\7zIn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7zItem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
 # Begin Source File
@@ -835,22 +831,6 @@ SOURCE=..\..\Archive\7z\7zUpdate.h
 # Begin Source File
 
 SOURCE=..\..\Archive\7z\7zUpdateItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSingle.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSingle.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSolid.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSolid.h
 # End Source File
 # End Group
 # Begin Group "7zip Common"

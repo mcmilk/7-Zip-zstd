@@ -50,6 +50,7 @@ using namespace NDirectory;
 
 static const kHistorySize = 8;
 
+static UINT32 g_MethodMap[] = { 0, /*1, */ 3, 5, 7, 9 }; 
 
 class CDoubleZeroStringList
 {
@@ -103,7 +104,8 @@ bool CCompressDialog::OnInit()
   UpdatePasswordControl();
 
   m_Info.ArchiverInfoIndex = 0;
-  for(int i = 0; i < m_ArchiverInfoList.Size(); i++)
+  int i;
+  for(i = 0; i < m_ArchiverInfoList.Size(); i++)
   {
     const CArchiverInfo &archiverInfo = m_ArchiverInfoList[i];
     m_Format.AddString(GetSystemString(archiverInfo.Name));
@@ -149,14 +151,25 @@ bool CCompressDialog::OnInit()
   //  m_ArchivePath.SetCurSel(-1);
 
   m_Method.AddString(LangLoadString(IDS_METHOD_STORE, 0x02000D81));
+  // m_Method.AddString(LangLoadString(IDS_METHOD_FASTEST, 0x02000D85));
   m_Method.AddString(LangLoadString(IDS_METHOD_FAST, 0x02000D84));
   m_Method.AddString(LangLoadString(IDS_METHOD_NORMAL, 0x02000D82));
   m_Method.AddString(LangLoadString(IDS_METHOD_MAXIMUM, 0x02000D83));
+  m_Method.AddString(LangLoadString(IDS_METHOD_ULTRA, 0x02000D86));
   
-  int methodIndex = NCompressDialog::NMethod::kNormal;
-  if (m_RegistryInfo.MethodDefined && m_RegistryInfo.Method <= NCompressDialog::NMethod::kMaximum)
-    methodIndex = m_RegistryInfo.Method;
-  m_Method.SetCurSel(methodIndex);
+  UINT32 method = 5;
+  if (m_RegistryInfo.MethodDefined && m_RegistryInfo.Method <= 9)
+    method = m_RegistryInfo.Method;
+  {
+    int methodIndex = 0;
+    for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+      if (method >= g_MethodMap[i])
+      {
+        methodIndex = i;
+        break;
+      }
+      m_Method.SetCurSel(methodIndex);
+  }
 
   m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_ADD, 0x02000DA1));
   m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_UPDATE, 0x02000DA2));
@@ -222,19 +235,28 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
+static bool IsMultiProcessor()
+{
+  SYSTEM_INFO systemInfo;
+  GetSystemInfo(&systemInfo);
+  return systemInfo.dwNumberOfProcessors > 1;
+}
+
 void CCompressDialog::CheckControlsEnable()
 {
   int formatIndex = m_Format.GetCurSel();
   const CArchiverInfo &archiverInfo = m_ArchiverInfoList[formatIndex];
   bool enable = (archiverInfo.Name == L"7z");
   m_Info.SolidIsAllowed = enable;
-  m_Info.MultiThreadIsAllowed = enable;
+
+  bool multiThreadEnable = enable & IsMultiProcessor();
+  m_Info.MultiThreadIsAllowed = multiThreadEnable;
   EncryptHeadersIsAllowed = enable;
   CWindow control;
   control = GetItem(IDC_COMPRESS_SOLID);
   control.Enable(enable);
   control = GetItem(IDC_COMPRESS_MULTI_THREAD);
-  control.Enable(enable);
+  control.Enable(multiThreadEnable);
   control = GetItem(IDC_COMPRESS_SFX);
   control.Enable(enable);
   control = GetItem(IDC_STATIC_COMPRESS_VOLUME);
@@ -260,19 +282,35 @@ void CCompressDialog::OnButtonSFX()
 {
   CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
   bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
+  CSysString fileName;
+  m_ArchivePath.GetText(fileName);
+  int dotPos = fileName.ReverseFind('.');
+  int slashPos = fileName.ReverseFind('\\');
+  if (dotPos >= 0 && dotPos > slashPos)
+  {
+  }
+  else
+    dotPos = -1;
   if (sfxMode)
   {
-    CSysString fileName;
-    m_ArchivePath.GetText(fileName);
-    int dotPos = fileName.ReverseFind('.');
-    int slashPos = fileName.ReverseFind('\\');
-    if (dotPos >= 0 && dotPos > slashPos)
+    if (dotPos >= 0)
       fileName = fileName.Left(dotPos);
     fileName += TEXT(".exe");
     m_ArchivePath.SetText(fileName);
   }
   else
+  {
+    if (dotPos >= 0)
+    {
+      CSysString ext = fileName.Mid(dotPos +1);
+      if (ext.CompareNoCase(TEXT("exe")) == 0)
+      {
+        fileName = fileName.Left(dotPos);
+        m_ArchivePath.SetText(fileName);
+      }
+    }
     OnSelChangeComboFormat();
+  }
 }
 
 void CCompressDialog::OnButtonSetArchive() 
@@ -401,7 +439,7 @@ void CCompressDialog::OnOK()
   m_Info.ArchiveName = s;
   m_Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());
 
-  m_Info.Method = NCompressDialog::NMethod::EEnum(m_Method.GetCurSel());
+  m_Info.Method = g_MethodMap[m_Method.GetCurSel()];
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
   m_Info.SFXMode = IsButtonCheckedBool(IDC_COMPRESS_SFX);
@@ -431,7 +469,7 @@ void CCompressDialog::OnOK()
   ////////////////////
   // Method
 
-  m_RegistryInfo.SetMethod(m_Method.GetCurSel());
+  m_RegistryInfo.SetMethod(m_Info.Method);
   m_RegistryInfo.SetLastArchiveType(m_ArchiverInfoList[
       m_Info.ArchiverInfoIndex].Name);
 

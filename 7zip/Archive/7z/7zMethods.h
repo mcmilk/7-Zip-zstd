@@ -19,18 +19,12 @@ struct CMethodInfo
   CLSID Decoder;
   // UString Description;
   CSysString FilePath;
-  // bool Crypto;
 };
 
 struct CMethodInfo2: public CMethodInfo
 {
   CMethodID MethodID;
 };
-
-/*
-bool GetMethodInfo(const CMethodID &methodID, CMethodInfo &methodInfo);
-bool EnumerateAllMethods(CObjectVector<CMethodInfo2> &methodInfoVector);
-*/
 
 void LoadMethodMap();
 bool GetMethodInfo(const CMethodID &methodID, CMethodInfo &methodInfo);

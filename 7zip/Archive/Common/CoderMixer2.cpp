@@ -35,9 +35,9 @@ CBindReverseConverter::CBindReverseConverter(const CBindInfo &srcBindInfo):
   UINT32 srcInOffset = NumSrcInStreams;
   UINT32 srcOutOffset = _numSrcOutStreams;
 
-  for (int i = srcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
+  for (int i = srcBindInfo.Coders.Size() - 1; i >= 0; i--)
   {
-    const CCoderStreamsInfo &srcCoderInfo = srcBindInfo.CodersInfo[i];
+    const CCoderStreamsInfo &srcCoderInfo = srcBindInfo.Coders[i];
 
     srcInOffset -= srcCoderInfo.NumInStreams;
     srcOutOffset -= srcCoderInfo.NumOutStreams;
@@ -60,19 +60,19 @@ CBindReverseConverter::CBindReverseConverter(const CBindInfo &srcBindInfo):
 
 void CBindReverseConverter::CreateReverseBindInfo(CBindInfo &destBindInfo)
 {
-  destBindInfo.CodersInfo.Clear();
+  destBindInfo.Coders.Clear();
   destBindInfo.BindPairs.Clear();
   destBindInfo.InStreams.Clear();
   destBindInfo.OutStreams.Clear();
 
   int i;
-  for (i = _srcBindInfo.CodersInfo.Size() - 1; i >= 0; i--)
+  for (i = _srcBindInfo.Coders.Size() - 1; i >= 0; i--)
   {
-    const CCoderStreamsInfo &srcCoderInfo = _srcBindInfo.CodersInfo[i];
+    const CCoderStreamsInfo &srcCoderInfo = _srcBindInfo.Coders[i];
     CCoderStreamsInfo destCoderInfo;
     destCoderInfo.NumInStreams = srcCoderInfo.NumOutStreams;
     destCoderInfo.NumOutStreams = srcCoderInfo.NumInStreams;
-    destBindInfo.CodersInfo.Add(destCoderInfo);
+    destBindInfo.Coders.Add(destCoderInfo);
   }
   for (i = _srcBindInfo.BindPairs.Size() - 1; i >= 0; i--)
   {
@@ -259,7 +259,7 @@ void CCoderMixer2::SetBindInfo(const CBindInfo &bindInfo)
 void CCoderMixer2::AddCoderCommon()
 {
   int index = _coderInfoVector.Size();
-  const CCoderStreamsInfo &CoderStreamsInfo = _bindInfo.CodersInfo[index];
+  const CCoderStreamsInfo &CoderStreamsInfo = _bindInfo.Coders[index];
 
   CThreadCoderInfo2 threadCoderInfo(CoderStreamsInfo.NumInStreams, 
       CoderStreamsInfo.NumOutStreams);
@@ -315,14 +315,14 @@ void CCoderMixer2::ReInit()
 STDMETHODIMP CCoderMixer2::Init(ISequentialInStream **inStreams,
     ISequentialOutStream **outStreams) 
 {
-  if (_coderInfoVector.Size() != _bindInfo.CodersInfo.Size())
+  if (_coderInfoVector.Size() != _bindInfo.Coders.Size())
     throw 0;
   UINT32 numInStreams = 0, numOutStreams = 0;
   int i;
   for(i = 0; i < _coderInfoVector.Size(); i++)
   {
     CThreadCoderInfo2 &coderInfo = _coderInfoVector[i];
-    const CCoderStreamsInfo &coderStreamsInfo = _bindInfo.CodersInfo[i];
+    const CCoderStreamsInfo &coderStreamsInfo = _bindInfo.Coders[i];
     coderInfo.InStreams.Clear();
     UINT32 j;
     for(j = 0; j < coderStreamsInfo.NumInStreams; j++)

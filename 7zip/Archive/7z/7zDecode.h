@@ -40,7 +40,7 @@ public:
   HRESULT Decode(IInStream *inStream,
       UINT64 startPos,
       const UINT64 *packSizes,
-      const CFolderItemInfo &folderInfo, 
+      const CFolder &folder, 
       ISequentialOutStream *outStream,
       ICompressProgressInfo *compressProgress
       #ifndef _NO_CRYPTO

@@ -100,7 +100,8 @@ CEncoder::CEncoder():
    #ifdef COMPRESS_MF_MT
   _multiThread(false),
    #endif
-  _matchFinderIndex(kBT4)
+  _matchFinderIndex(kBT4),
+  _writeEndMark(false)
 {
   _maxMode = false;
   _fastMode = false;
@@ -972,8 +973,8 @@ void CEncoder::WriteEndMarker(UINT32 posState)
 {
   // This function for writing End Mark for stream version of LZMA. 
   // In current version this feature is not used.
-
-  return;
+  if (!_writeEndMark)
+    return;
 
   _mainChoiceEncoders[_state.Index][posState].Encode(&_rangeEncoder, kMainChoiceMatchIndex);
   _matchChoiceEncoders[_state.Index].Encode(&_rangeEncoder, kMatchChoiceDistanceIndex);

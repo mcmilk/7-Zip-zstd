@@ -225,5 +225,9 @@ SOURCE=..\..\Common\ProgressUtils.cpp
 SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\bz2.ico
+# End Source File
 # End Target
 # End Project

@@ -1454,10 +1454,6 @@ SOURCE=..\..\Archive\7z\7zIn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7zItem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
 # Begin Source File
@@ -1499,26 +1495,6 @@ SOURCE=..\..\Archive\7z\7zUpdate.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\7z\7zUpdate.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSingle.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSingle.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSolid.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdateSolid.h
 # End Source File
 # End Group
 # Begin Group "bz2"
@@ -1804,6 +1780,14 @@ SOURCE=..\..\UI\Common\EnumDirItems.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\Common\EnumDirItems.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 

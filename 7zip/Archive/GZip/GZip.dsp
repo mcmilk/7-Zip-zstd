@@ -301,5 +301,9 @@ SOURCE=..\Common\OutStreamWithCRC.h
 
 SOURCE=.\gz.ico
 # End Source File
+# Begin Source File
+
+SOURCE=.\gz1.ico
+# End Source File
 # End Target
 # End Project

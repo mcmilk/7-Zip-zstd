@@ -1,2 +1,0 @@
-; dlltool --base-file G:\DOCUME~1\ADMINI~1\LOCALS~1\Temp/cca01352.base --output-exp Copy.exp --dllname Copy.dll --output-def libCopy.def --no-export-all-symbols --add-stdcall-alias --exclude-symbol=DllMainCRTStartup@12 --def G:\DOCUME~1\ADMINI~1\LOCALS~1\Temp/cca01352.def --output-lib libCopy.a
-EXPORTS

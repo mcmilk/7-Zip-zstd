@@ -214,6 +214,14 @@ SOURCE=..\Common\EnumDirItems.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\HandlerLoader.h
 # End Source File
 # Begin Source File
@@ -759,6 +767,10 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=".\7-zip.dll.manifest"
+# End Source File
 # Begin Source File
 
 SOURCE=.\ContextMenuFlags.h

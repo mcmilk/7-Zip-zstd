@@ -478,6 +478,14 @@ SOURCE=..\Common\EnumDirItems.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\HandlerLoader.h
 # End Source File
 # Begin Source File

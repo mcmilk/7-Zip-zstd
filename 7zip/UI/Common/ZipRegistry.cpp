@@ -121,7 +121,7 @@ void ReadExtractionInfo(NExtraction::CInfo &info)
 static const TCHAR *kCompressionKeyName = TEXT("Compression");
 
 static const TCHAR *kCompressionHistoryArchivesKeyName = TEXT("ArcHistory");
-static const TCHAR *kCompressionMethodValueName = TEXT("Method");
+static const TCHAR *kCompressionMethodValueName = TEXT("Level");
 static const TCHAR *kCompressionLastClassIDValueName = TEXT("Archiver");
 static const TCHAR *kCompressionShowPasswordValueName = TEXT("ShowPassword");
 static const TCHAR *kCompressionEncryptHeadersValueName = TEXT("EncryptHeaders");
@@ -150,12 +150,12 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     }
   }
 
+  compressionKey.SetValue(kSolid, info.Solid);
+  compressionKey.SetValue(kMultiThread, info.MultiThread);
   compressionKey.RecurseDeleteKey(kCompressionOptionsKeyName);
   {
     CKey optionsKey;
     optionsKey.Create(compressionKey, kCompressionOptionsKeyName);
-    optionsKey.SetValue(kSolid, info.Solid);
-    optionsKey.SetValue(kMultiThread, info.MultiThread);
     for(int i = 0; i < info.FormatOptionsVector.Size(); i++)
     {
       const NCompression::CFormatOptions &formatOptions = info.FormatOptionsVector[i];
@@ -178,12 +178,19 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
   // compressionKey.SetValue(kCompressionMaximizeValueName, info.Maximize);
 }
 
+static bool IsMultiProcessor()
+{
+  SYSTEM_INFO systemInfo;
+  GetSystemInfo(&systemInfo);
+  return systemInfo.dwNumberOfProcessors > 1;
+}
+
 void ReadCompressionInfo(NCompression::CInfo &info)
 {
   info.HistoryArchives.Clear();
 
   info.Solid = true;
-  info.MultiThread = false;
+  info.MultiThread = IsMultiProcessor();
   info.FormatOptionsVector.Clear();
 
   info.MethodDefined = false;
@@ -218,17 +225,18 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   }
 
   
+  bool solid = false;
+  if (compressionKey.QueryValue(kSolid, solid) == ERROR_SUCCESS)
+    info.Solid = solid;
+  bool multiThread = false;
+  if (compressionKey.QueryValue(kMultiThread, multiThread) == ERROR_SUCCESS)
+    info.MultiThread = multiThread;
+
   {
     CKey optionsKey;
     if(optionsKey.Open(compressionKey, kCompressionOptionsKeyName, KEY_READ) == 
         ERROR_SUCCESS)
     { 
-      bool solid = false;
-      if (optionsKey.QueryValue(kSolid, solid) == ERROR_SUCCESS)
-        info.Solid = solid;
-      bool multiThread = false;
-      if (optionsKey.QueryValue(kMultiThread, multiThread) == ERROR_SUCCESS)
-        info.MultiThread = multiThread;
       CSysStringVector formatIDs;
       optionsKey.EnumKeys(formatIDs);
       for(int i = 0; i < formatIDs.Size(); i++)

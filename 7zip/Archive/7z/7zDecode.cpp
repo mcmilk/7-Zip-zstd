@@ -13,81 +13,81 @@
 
 #include "../../IPassword.h"
 
-using namespace NArchive;
-using namespace N7z;
 
 #ifdef COMPRESS_LZMA
 #include "../../Compress/LZMA/LZMADecoder.h"
-static CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
 #endif
 
 #ifdef COMPRESS_PPMD
 #include "../../Compress/PPMD/PPMDDecoder.h"
-static CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
+static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
 #endif
 
 #ifdef COMPRESS_BCJ_X86
 #include "../../Compress/Branch/x86.h"
-static CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
+static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 #endif
 
 #ifdef COMPRESS_BCJ2
 #include "../../Compress/Branch/x86_2.h"
-static CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
+static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
 #endif
 
 #ifdef COMPRESS_DEFLATE
 #include "../../Compress/Deflate/DeflateDecoder.h"
-static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
+static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 #endif
 
 #ifdef COMPRESS_BZIP2
 #include "../../Compress/BZip2/BZip2Decoder.h"
-static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
+static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
 
 #ifdef COMPRESS_COPY
 #include "../../Compress/Copy/CopyCoder.h"
-static CMethodID k_Copy = { { 0x0 }, 1 };
+static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
 #ifdef CRYPTO_7ZAES
 #include "../../Crypto/7zAES/7zAES.h"
-static CMethodID k_7zAES = { { 0x6, 0xF1, 0x07, 0x01 }, 4 };
+static NArchive::N7z::CMethodID k_7zAES = { { 0x6, 0xF1, 0x07, 0x01 }, 4 };
 #endif
 
+namespace NArchive {
+namespace N7z {
 
-static void ConvertFolderItemInfoToBindInfo(const CFolderItemInfo &folderItemInfo,
+static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
     CBindInfoEx &bindInfo)
 {
-  bindInfo.CodersInfo.Clear();
+  bindInfo.Coders.Clear();
   bindInfo.CoderMethodIDs.Clear();
   bindInfo.OutStreams.Clear();
   bindInfo.InStreams.Clear();
   bindInfo.BindPairs.Clear();
-  for (int i = 0; i < folderItemInfo.BindPairs.Size(); i++)
+  for (int i = 0; i < folder.BindPairs.Size(); i++)
   {
     NCoderMixer2::CBindPair bindPair;
-    bindPair.InIndex = (UINT32)folderItemInfo.BindPairs[i].InIndex;
-    bindPair.OutIndex = (UINT32)folderItemInfo.BindPairs[i].OutIndex;
+    bindPair.InIndex = (UINT32)folder.BindPairs[i].InIndex;
+    bindPair.OutIndex = (UINT32)folder.BindPairs[i].OutIndex;
     bindInfo.BindPairs.Add(bindPair);
   }
   UINT32 outStreamIndex = 0;
-  for (i = 0; i < folderItemInfo.CodersInfo.Size(); i++)
+  for (i = 0; i < folder.Coders.Size(); i++)
   {
     NCoderMixer2::CCoderStreamsInfo coderStreamsInfo;
-    const CCoderInfo &coderInfo = folderItemInfo.CodersInfo[i];
+    const CCoderInfo &coderInfo = folder.Coders[i];
     coderStreamsInfo.NumInStreams = (UINT32)coderInfo.NumInStreams;
     coderStreamsInfo.NumOutStreams = (UINT32)coderInfo.NumOutStreams;
-    bindInfo.CodersInfo.Add(coderStreamsInfo);
+    bindInfo.Coders.Add(coderStreamsInfo);
     const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-    bindInfo.CoderMethodIDs.Add(altCoderInfo.DecompressionMethod);
+    bindInfo.CoderMethodIDs.Add(altCoderInfo.MethodID);
     for (UINT32 j = 0; j < coderStreamsInfo.NumOutStreams; j++, outStreamIndex++)
-      if (folderItemInfo.FindBindPairForOutStream(outStreamIndex) < 0)
+      if (folder.FindBindPairForOutStream(outStreamIndex) < 0)
         bindInfo.OutStreams.Add(outStreamIndex);
   }
-  for (i = 0; i < folderItemInfo.PackStreams.Size(); i++)
-    bindInfo.InStreams.Add((UINT32)folderItemInfo.PackStreams[i].Index);
+  for (i = 0; i < folder.PackStreams.Size(); i++)
+    bindInfo.InStreams.Add((UINT32)folder.PackStreams[i].Index);
 }
 
 static bool AreCodersEqual(const NCoderMixer2::CCoderStreamsInfo &a1, 
@@ -105,10 +105,10 @@ static bool AreBindPairsEqual(const NCoderMixer2::CBindPair &a1, const NCoderMix
 
 static bool AreBindInfoExEqual(const CBindInfoEx &a1, const CBindInfoEx &a2)
 {
-  if (a1.CodersInfo.Size() != a2.CodersInfo.Size())
+  if (a1.Coders.Size() != a2.Coders.Size())
     return false;
-  for (int i = 0; i < a1.CodersInfo.Size(); i++)
-    if (!AreCodersEqual(a1.CodersInfo[i], a2.CodersInfo[i]))
+  for (int i = 0; i < a1.Coders.Size(); i++)
+    if (!AreCodersEqual(a1.Coders[i], a2.Coders[i]))
       return false;
   if (a1.BindPairs.Size() != a2.BindPairs.Size())
     return false;
@@ -136,7 +136,7 @@ CDecoder::CDecoder()
 HRESULT CDecoder::Decode(IInStream *inStream,
     UINT64 startPos,
     const UINT64 *packSizes,
-    const CFolderItemInfo &folderInfo, 
+    const CFolder &folderInfo, 
     ISequentialOutStream *outStream,
     ICompressProgressInfo *compressProgress
     #ifndef _NO_CRYPTO
@@ -164,7 +164,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     inStreams.Add(inStream);
   }
   
-  int numCoders = folderInfo.CodersInfo.Size();
+  int numCoders = folderInfo.Coders.Size();
   
   CBindInfoEx bindInfo;
   ConvertFolderItemInfoToBindInfo(folderInfo, bindInfo);
@@ -187,11 +187,11 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     _mixerCoderSpec->SetBindInfo(bindInfo);
     for (i = 0; i < numCoders; i++)
     {
-      const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+      const CCoderInfo &coderInfo = folderInfo.Coders[i];
       const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
       #ifndef EXCLUDE_COM
       CMethodInfo methodInfo;
-      if (!GetMethodInfo(altCoderInfo.DecompressionMethod, methodInfo)) 
+      if (!GetMethodInfo(altCoderInfo.MethodID, methodInfo)) 
         return E_NOTIMPL;
       #endif
 
@@ -200,37 +200,37 @@ HRESULT CDecoder::Decode(IInStream *inStream,
         CMyComPtr<ICompressCoder> decoder;
 
         #ifdef COMPRESS_LZMA
-        if (altCoderInfo.DecompressionMethod == k_LZMA)
+        if (altCoderInfo.MethodID == k_LZMA)
           decoder = new NCompress::NLZMA::CDecoder;
         #endif
 
         #ifdef COMPRESS_PPMD
-        if (altCoderInfo.DecompressionMethod == k_PPMD)
+        if (altCoderInfo.MethodID == k_PPMD)
           decoder = new NCompress::NPPMD::CDecoder;
         #endif
 
         #ifdef COMPRESS_BCJ_X86
-        if (altCoderInfo.DecompressionMethod == k_BCJ_X86)
+        if (altCoderInfo.MethodID == k_BCJ_X86)
           decoder = new CBCJ_x86_Decoder;
         #endif
 
         #ifdef COMPRESS_DEFLATE
-        if (altCoderInfo.DecompressionMethod == k_Deflate)
+        if (altCoderInfo.MethodID == k_Deflate)
           decoder = new NCompress::NDeflate::NDecoder::CCOMCoder;
         #endif
 
         #ifdef COMPRESS_BZIP2
-        if (altCoderInfo.DecompressionMethod == k_BZip2)
+        if (altCoderInfo.MethodID == k_BZip2)
           decoder = new NCompress::NBZip2::CDecoder;
         #endif
 
         #ifdef COMPRESS_COPY
-        if (altCoderInfo.DecompressionMethod == k_Copy)
+        if (altCoderInfo.MethodID == k_Copy)
           decoder = new NCompress::CCopyCoder;
         #endif
 
         #ifdef CRYPTO_7ZAES
-        if (altCoderInfo.DecompressionMethod == k_7zAES)
+        if (altCoderInfo.MethodID == k_7zAES)
           decoder = new NCrypto::NSevenZ::CDecoder;
         #endif
 
@@ -254,7 +254,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
         CMyComPtr<ICompressCoder2> decoder;
 
         #ifdef COMPRESS_BCJ2
-        if (altCoderInfo.DecompressionMethod == k_BCJ2)
+        if (altCoderInfo.MethodID == k_BCJ2)
           decoder = new CBCJ2_x86_Decoder;
         #endif
 
@@ -285,7 +285,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   
   for (i = 0; i < numCoders; i++)
   {
-    const CCoderInfo &coderInfo = folderInfo.CodersInfo[i];
+    const CCoderInfo &coderInfo = folderInfo.Coders[i];
     const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
     CMyComPtr<ICompressSetDecoderProperties> compressSetDecoderProperties;
     HRESULT result = _decoders[coderIndex].QueryInterface(
@@ -370,3 +370,5 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   return _mixerCoderSpec->Code(&inStreamPointers.Front(), NULL, 
     inStreams.Size(), &outStreamPointer, NULL, 1, compressProgress);
 }
+
+}}

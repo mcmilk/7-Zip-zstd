@@ -6,7 +6,6 @@
 #include "UserInputUtils.h"
 
 #include "ConsoleClose.h"
-
 #include "Common/StdOutStream.h"
 #include "Common/StdInStream.h"
 #include "Common/Wildcard.h"
@@ -22,6 +21,8 @@
 #include "Windows/PropVariantConversions.h"
 
 #include "../../Common/FilePathAutoRename.h"
+
+#include "../Common/ExtractingFilePath.h"
 
 using namespace NWindows;
 
@@ -119,10 +120,11 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
       return E_FAIL;
     fullPath = propVariantName.bstrVal;
   }
+
   m_FilePath = GetSystemString(fullPath, m_CodePage);
 
-  // m_CurrentFilePath = GetSystemString(fullPath, m_CodePage);
-  
+  UString fullPathCorrect = GetCorrectPath(fullPath);
+
   if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
     NCOM::CPropVariant propVariant;
@@ -169,7 +171,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     // UINT64 newFileSize = ConvertPropVariantToUINT64(propVariant);
 
     UStringVector pathParts; 
-    SplitPathToParts(fullPath, pathParts);
+    SplitPathToParts(fullPathCorrect, pathParts);
     if(pathParts.IsEmpty())
       return E_FAIL;
     UString processedPath;
@@ -177,7 +179,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     {
       case NExtraction::NPathMode::kFullPathnames:
       {
-        processedPath = fullPath;
+        processedPath = fullPathCorrect;
         break;
       }
       case NExtraction::NPathMode::kCurrentPathnames:
@@ -208,7 +210,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
     }
 
     CSysString fullProcessedPath = m_DirectoryPath + 
-        GetSystemString(processedPath, m_CodePage);
+        GetSystemString(GetCorrectPath(processedPath), m_CodePage);
 
     if(m_ProcessedFileInfo.IsDirectory)
     {
@@ -244,7 +246,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index,
 
           g_StdOut << "file " << GetOemString(fullProcessedPath) << 
               "\nalready exists. Overwrite with " << endl;
-          g_StdOut << UnicodeStringToMultiByte(fullPath, CP_OEMCP);
+          g_StdOut << UnicodeStringToMultiByte(fullPathCorrect, CP_OEMCP);
 
           NUserAnswerMode::EEnum overwriteAnswer = ScanUserYesNoAllQuit();
 

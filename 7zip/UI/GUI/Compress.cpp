@@ -187,8 +187,16 @@ struct CThreadUpdateCompress
 };
 
 static CSysString MakeFullArchiveName(const CSysString &name, 
-    const UString &extension)
+    const UString &extension, bool sfx)
 {
+  if (sfx)
+  {
+    CSysString sfxExt = TEXT(".exe");
+    if (sfxExt.CollateNoCase(name.Right(sfxExt.Length())) == 0)
+      return name;
+    return name + sfxExt;
+  }
+
   if (extension.IsEmpty())
     return name;
   if (name.IsEmpty())
@@ -308,7 +316,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
     encryptHeaders = dialog.EncryptHeaders;
     compressInfo = dialog.m_Info;
     compressInfo.ArchiveName = MakeFullArchiveName(compressInfo.ArchiveName, 
-        archiverInfo.GetMainExtension());
+        archiverInfo.GetMainExtension(), compressInfo.SFXMode);
   }
   else
   {
@@ -336,7 +344,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
     // MessageBox(0, archiveName, TEXT(""), 0);
     compressInfo.ArchiveName = archiveName;
     compressInfo.CurrentDirPrefix = currentDirPrefix;
-    compressInfo.Method = NCompressDialog::NMethod::kNormal;
+    compressInfo.Method = 5;
   }
   CSysString arcPath;
   if (!compressInfo.GetFullPathName(arcPath))
@@ -457,9 +465,7 @@ HRESULT CompressArchive(const CSysStringVector &fileNames,
   CSysString title = LangLoadString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
   updater.UpdateCallbackSpec->Init(0, !password.IsEmpty(), password);
 
-  UINT32 methodMap[] = { 0, 1, 5, 9 }; 
-  UINT32 method = compressInfo.Method >= sizeof(methodMap) / sizeof(methodMap[0]) ? 
-      9 : methodMap[compressInfo.Method];
+  UINT32 method = MyMin(compressInfo.Method, UINT32(9));
   HRESULT result = SetOutProperties(outArchive, 
       method, 
       compressInfo.SolidIsAllowed, compressInfo.Solid, 

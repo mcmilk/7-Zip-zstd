@@ -132,7 +132,7 @@ STDMETHODIMP CHandler::UpdateItems(IOutStream *outStream, UINT32 numItems,
         size = *(UINT64 *)(&propVariant.uhVal);
       }
       if(size > _UI32_MAX)
-        return E_INVALIDARG;
+        return E_NOTIMPL;
       updateItem.Size = size;
     }
     updateItems.Add(updateItem);

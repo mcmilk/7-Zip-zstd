@@ -21,8 +21,6 @@ using namespace std;
 namespace NArchive {
 namespace NZip {
 
-static const kOneItemComplexity = 30;
-
 static const BYTE kMadeByHostOS = NFileHeader::NHostOS::kFAT;
 static const BYTE kExtractHostOS = NFileHeader::NHostOS::kFAT;
 
@@ -169,7 +167,7 @@ static HRESULT Update2(COutArchive &archive,
     IArchiveUpdateCallback *updateCallback)
 {
   UINT64 complexity = 0;
-  
+ 
   int i;
   for(i = 0; i < updateItems.Size(); i++)
   {
@@ -186,8 +184,14 @@ static HRESULT Update2(COutArchive &archive,
       complexity += inputItem.GetLocalFullSize();
       complexity += inputItem.GetCentralExtraPlusCommentSize();
     }
-    complexity += kOneItemComplexity * 2;
   }
+
+  complexity += updateItems.Size();
+  complexity += updateItems.Size();
+
+  if (complexity > _UI32_MAX)
+    return E_NOTIMPL;
+
   if (commentRangeAssigned)
     complexity += commentRange.Size;
 
@@ -257,7 +261,7 @@ static HRESULT Update2(COutArchive &archive,
       }
     }
     items.Add(item);
-    complexity += kOneItemComplexity;
+    complexity++;
   }
   DWORD centralDirStartPosition = archive.GetCurrentPosition();
   for(i = 0; i < items.Size(); i++)
@@ -283,7 +287,7 @@ static HRESULT Update2(COutArchive &archive,
           updateCallback, complexity));
       archive.MoveBasePosition(range.Size);
     }
-    complexity += kOneItemComplexity;
+    complexity++;
   }
   COutArchiveInfo archiveInfo;
   archiveInfo.NumEntriesInCentaralDirectory = items.Size();

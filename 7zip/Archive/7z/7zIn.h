@@ -75,7 +75,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   UINT64 GetFolderFullPackSize(int folderIndex) const 
   {
     UINT32 packStreamIndex = FolderStartPackStreamIndex[folderIndex];
-    const CFolderItemInfo &folder = Folders[folderIndex];
+    const CFolder &folder = Folders[folderIndex];
     UINT64 size = 0;
     for (int i = 0; i < folder.PackStreams.Size(); i++)
       size += PackSizes[packStreamIndex + i];
@@ -153,7 +153,7 @@ class CInArchive
 private:
   HRESULT FindAndReadSignature(IInStream *stream, const UINT64 *searchHeaderSizeLimit); // S_FALSE means is not archive
   
-  HRESULT ReadFileNames(CObjectVector<CFileItemInfo> &files);
+  HRESULT ReadFileNames(CObjectVector<CFileItem> &files);
   
   HRESULT ReadBytes(IInStream *stream, void *data, UINT32 size, 
       UINT32 *processedSize);
@@ -198,7 +198,7 @@ private:
   HRESULT WaitAttribute(UINT64 attribute);
 
   HRESULT ReadArchiveProperties(CInArchiveInfo &archiveInfo);
-  HRESULT GetNextFolderItem(CFolderItemInfo &itemInfo);
+  HRESULT GetNextFolderItem(CFolder &itemInfo);
   HRESULT ReadHashDigests(int numItems,
       CRecordVector<bool> &digestsDefined, CRecordVector<UINT32> &digests);
   
@@ -210,10 +210,10 @@ private:
   
   HRESULT ReadUnPackInfo(
       const CObjectVector<CByteBuffer> *dataVector,
-      CObjectVector<CFolderItemInfo> &folders);
+      CObjectVector<CFolder> &folders);
   
   HRESULT ReadSubStreamsInfo(
-      const CObjectVector<CFolderItemInfo> &folders,
+      const CObjectVector<CFolder> &folders,
       CRecordVector<UINT64> &numUnPackStreamsInFolders,
       CRecordVector<UINT64> &unPackSizes,
       CRecordVector<bool> &digestsDefined, 
@@ -225,7 +225,7 @@ private:
       CRecordVector<UINT64> &packSizes,
       CRecordVector<bool> &packCRCsDefined,
       CRecordVector<UINT32> &packCRCs,
-      CObjectVector<CFolderItemInfo> &folders,
+      CObjectVector<CFolder> &folders,
       CRecordVector<UINT64> &numUnPackStreamsInFolders,
       CRecordVector<UINT64> &unPackSizes,
       CRecordVector<bool> &digestsDefined, 
@@ -233,11 +233,11 @@ private:
 
 
 
-  HRESULT GetNextFileItem(CFileItemInfo &itemInfo);
+  HRESULT GetNextFileItem(CFileItem &itemInfo);
   HRESULT ReadBoolVector(UINT32 numItems, CBoolVector &vector);
   HRESULT ReadBoolVector2(UINT32 numItems, CBoolVector &vector);
   HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-      CObjectVector<CFileItemInfo> &files, UINT64 type);
+      CObjectVector<CFileItem> &files, UINT64 type);
   HRESULT ReadAndDecodePackedStreams(UINT64 baseOffset, UINT64 &dataOffset,
       CObjectVector<CByteBuffer> &dataVector
       #ifndef _NO_CRYPTO
