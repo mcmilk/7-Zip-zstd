@@ -30,7 +30,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 3.08 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-19\n";
+"\n7-Zip SFX 3.08.02 beta  Copyright (c) 1999-2003 Igor Pavlov  2003-08-20\n";
 
 static const int kNumSwitches = 6;
 

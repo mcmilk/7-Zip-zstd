@@ -75,7 +75,7 @@ int APIENTRY WinMain(
     MessageBox(NULL, TEXT("Error 1329484"), TEXT("7-Zip"), 0);
     return 1;
   }
-  HRESULT result = ExtractArchive(NULL, path, !assumeYes, fullPath.Left(fileNamePartStartIndex));
+  HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, fullPath.Left(fileNamePartStartIndex));
   if (result == S_FALSE)
     MyMessageBox(L"Archive is not supported");
   else if (result != S_OK && result != E_ABORT)

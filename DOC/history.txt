@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 3.08.02 beta        2003-08-20
+  --------------------------------------
+      Extracting bug in 7zExtract.cpp was fixed.
+     
+
   Version 3.08 beta           2003-08-19
   --------------------------------------
       Big source code reconstruction.

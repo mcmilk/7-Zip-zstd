@@ -49,7 +49,7 @@ struct CThreadExtracting
   DWORD Process()
   {
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    Result = Archive->Extract(0, 0, BoolToInt(false), 
+    Result = Archive->Extract(0, -1, BoolToInt(false), 
         ArchiveExtractCallback);
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
@@ -64,7 +64,7 @@ static inline UINT GetCurrentFileCodePage()
   {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
 HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName, 
-    bool showDialog, const CSysString &outputFolder)
+    bool assumeYes, bool showDialog, const CSysString &outputFolder)
 {
   CThreadExtracting extracter;
 
@@ -143,7 +143,9 @@ HRESULT ExtractArchive(HWND parentWindow, const CSysString &fileName,
     NFile::NName::NormalizeDirPathPrefix(directoryPath);
 
     extractModeInfo.PathMode = NExtractionDialog::NPathMode::kFullPathnames;
-    extractModeInfo.OverwriteMode = NExtractionDialog::NOverwriteMode::kWithoutPrompt;
+    extractModeInfo.OverwriteMode = assumeYes ?
+      NExtractionDialog::NOverwriteMode::kWithoutPrompt:
+      NExtractionDialog::NOverwriteMode::kAskBefore;
     extractModeInfo.FilesMode = NExtractionDialog::NFilesMode::kAll;
   }
   if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))

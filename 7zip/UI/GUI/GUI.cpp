@@ -200,7 +200,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         NFile::NName::NormalizeDirPathPrefix(outputDir);
       }
       HRESULT result = ExtractArchive(0, archiveName, 
-          parser[NKey::kShowDialog].ThereIs, outputDir);
+          false, parser[NKey::kShowDialog].ThereIs, outputDir);
       if (result == S_FALSE)
         MyMessageBox(IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE, 0x02000604);
       else if (result != S_OK)

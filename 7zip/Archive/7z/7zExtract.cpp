@@ -44,7 +44,8 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   UINT64 importantTotalUnPacked = 0;
   UINT64 censoredTotalUnPacked = 0, censoredTotalPacked = 0;
 
-  if (indices == 0)
+  bool allFilesMode = (numItems == UINT32(-1));
+  if (allFilesMode)
     numItems = _database.Files.Size();
 
   if(numItems == 0)
@@ -53,7 +54,7 @@ STDMETHODIMP CHandler::Extract(const UINT32* indices, UINT32 numItems,
   CObjectVector<CExtractFolderInfo> extractFolderInfoVector;
   for(UINT32 indexIndex = 0; indexIndex < numItems; indexIndex++)
   {
-    int fileIndex = (indices != 0) ? indices[indexIndex] : indexIndex;
+    int fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
     int folderIndex = _database.FileIndexToFolderIndexMap[fileIndex];
     if (folderIndex < 0)
     {

@@ -557,5 +557,9 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\7z.ico
+# End Source File
 # End Target
 # End Project

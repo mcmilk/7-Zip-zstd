@@ -31,7 +31,7 @@ struct CThreadExtracting
   DWORD Process()
   {
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    Result = ArchiveHandler->Extract(0, 0 , BoolToInt(false), 
+    Result = ArchiveHandler->Extract(0, (UINT32)-1 , BoolToInt(false), 
         ExtractCallback);
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
