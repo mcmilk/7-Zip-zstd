@@ -51,32 +51,34 @@ static const UInt32 kHash3Offset = kHashSize + kHash2Size;
 #endif
 #endif
 
-CInTree::CInTree():
+CMatchFinderBinTree::CMatchFinderBinTree():
   _hash(0),
   _cutValue(0xFF)
 {
 }
 
-void CInTree::FreeThisClassMemory()
+void CMatchFinderBinTree::FreeThisClassMemory()
 {
   BigFree(_hash);
   _hash = 0;
 }
 
-void CInTree::FreeMemory()
+void CMatchFinderBinTree::FreeMemory()
 {
   FreeThisClassMemory();
   CLZInWindow::Free();
 }
 
-CInTree::~CInTree()
+CMatchFinderBinTree::~CMatchFinderBinTree()
 { 
   FreeMemory();
 }
 
-HRESULT CInTree::Create(UInt32 historySize, UInt32 keepAddBufferBefore, 
-    UInt32 matchMaxLen, UInt32 keepAddBufferAfter, UInt32 sizeReserv)
+STDMETHODIMP CMatchFinderBinTree::Create(UInt32 historySize, UInt32 keepAddBufferBefore, 
+    UInt32 matchMaxLen, UInt32 keepAddBufferAfter)
 {
+  UInt32 sizeReserv = (historySize + keepAddBufferBefore + 
+      matchMaxLen + keepAddBufferAfter) / 2 + 256;
   if (CLZInWindow::Create(historySize + keepAddBufferBefore, 
       matchMaxLen + keepAddBufferAfter, sizeReserv))
   {
@@ -101,7 +103,7 @@ HRESULT CInTree::Create(UInt32 historySize, UInt32 keepAddBufferBefore,
 
 static const UInt32 kEmptyHashValue = 0;
 
-HRESULT CInTree::Init(ISequentialInStream *stream)
+STDMETHODIMP CMatchFinderBinTree::Init(ISequentialInStream *stream)
 {
   RINOK(CLZInWindow::Init(stream));
   for(UInt32 i = 0; i < kHashSizeSum; i++)
@@ -111,6 +113,10 @@ HRESULT CInTree::Init(ISequentialInStream *stream)
   return S_OK;
 }
 
+STDMETHODIMP_(void) CMatchFinderBinTree::ReleaseStream()
+{ 
+  // ReleaseStream(); 
+}
 
 #ifdef HASH_ARRAY_2
 #ifdef HASH_ARRAY_3
@@ -144,7 +150,7 @@ inline UInt32 Hash(const Byte *pointer)
 #endif // HASH_ZIP
 #endif // HASH_ARRAY_2
 
-UInt32 CInTree::GetLongestMatch(UInt32 *distances)
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetLongestMatch(UInt32 *distances)
 {
   UInt32 lenLimit;
   if (_pos + _matchMaxLen <= _streamPos)
@@ -284,7 +290,7 @@ UInt32 CInTree::GetLongestMatch(UInt32 *distances)
   return maxLen;
 }
 
-void CInTree::DummyLongestMatch()
+STDMETHODIMP_(void) CMatchFinderBinTree::DummyLongestMatch()
 {
   UInt32 lenLimit;
   if (_pos + _matchMaxLen <= _streamPos)
@@ -374,7 +380,7 @@ void CInTree::DummyLongestMatch()
   *ptr1 = kEmptyHashValue;
 }
 
-void CInTree::Normalize()
+void CMatchFinderBinTree::Normalize()
 {
   UInt32 subValue = _pos - _cyclicBufferSize;
   CIndex *items = _hash;
@@ -389,6 +395,50 @@ void CInTree::Normalize()
     items[i] = value;
   }
   ReduceOffsets(subValue);
+}
+
+STDMETHODIMP CMatchFinderBinTree::MovePos()
+{
+  if (++_cyclicBufferPos == _cyclicBufferSize)
+    _cyclicBufferPos = 0;
+  RINOK(CLZInWindow::MovePos());
+  if (_pos == kMaxValForNormalize)
+    Normalize();
+  return S_OK;
+}
+
+STDMETHODIMP_(Byte) CMatchFinderBinTree::GetIndexByte(Int32 index)
+  { return CLZInWindow::GetIndexByte(index); }
+
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetMatchLen(Int32 index, 
+    UInt32 back, UInt32 limit)
+  { return CLZInWindow::GetMatchLen(index, back, limit); }
+
+STDMETHODIMP_(UInt32) CMatchFinderBinTree::GetNumAvailableBytes()
+  { return CLZInWindow::GetNumAvailableBytes(); }
+
+STDMETHODIMP_(const Byte *) CMatchFinderBinTree::GetPointerToCurrentPos()
+  { return CLZInWindow::GetPointerToCurrentPos(); }
+
+// IMatchFinderSetCallback
+STDMETHODIMP CMatchFinderBinTree::SetCallback(IMatchFinderCallback *callback)
+{
+  m_Callback = callback;
+  return S_OK;
+}
+
+void CMatchFinderBinTree::BeforeMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->BeforeChangingBufferPos();
+  CLZInWindow::BeforeMoveBlock();
+}
+
+void CMatchFinderBinTree::AfterMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->AfterChangingBufferPos();
+  CLZInWindow::AfterMoveBlock();
 }
  
 }

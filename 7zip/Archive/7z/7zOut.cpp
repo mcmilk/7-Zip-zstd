@@ -7,12 +7,18 @@
 
 #include "7zOut.h"
 
-static HRESULT WriteBytes(ISequentialOutStream *stream, const void *data, UInt32 size)
+static HRESULT WriteBytes(ISequentialOutStream *stream, const void *data, size_t size)
 {
-  UInt32 processedSize;
-  RINOK(stream->Write(data, size, &processedSize));
-  if(processedSize != size)
-    return E_FAIL;
+  while (size > 0)
+  {
+    UInt32 curSize = (UInt32)(MyMin(size, (size_t)0xFFFFFFFF));
+    UInt32 processedSize;
+    RINOK(stream->WritePart(data, curSize, &processedSize));
+    if(processedSize == 0 || processedSize > curSize)
+      return E_FAIL;
+    data = (const void *)((const Byte *)data + processedSize);
+    size -= processedSize;
+  }
   return S_OK;
 }
 
@@ -34,11 +40,12 @@ HRESULT COutArchive::WriteDirectUInt32(UInt32 value)
   return S_OK;
 }
 
-HRESULT COutArchive::WriteDirectUInt64(const UInt64 &value)
+HRESULT COutArchive::WriteDirectUInt64(UInt64 value)
 {
   for (int i = 0; i < 8; i++)
   {
-    RINOK(WriteDirectByte((Byte)(value >> (8 * i))));
+    RINOK(WriteDirectByte((Byte)value));
+    value >>= 8;
   }
   return S_OK;
 }
@@ -46,11 +53,8 @@ HRESULT COutArchive::WriteDirectUInt64(const UInt64 &value)
 HRESULT COutArchive::WriteSignature()
 {
   RINOK(WriteDirect(kSignature, kSignatureSize));
-  CArchiveVersion av;
-  av.Major = kMajorVersion;
-  av.Minor = 2;
-  RINOK(WriteDirectByte(av.Major));
-  return WriteDirectByte(av.Minor);
+  RINOK(WriteDirectByte(kMajorVersion));
+  return WriteDirectByte(2);
 }
 
 #ifdef _7Z_VOL
@@ -71,8 +75,7 @@ HRESULT COutArchive::WriteStartHeader(const CStartHeader &h)
   crc.UpdateUInt64(h.NextHeaderOffset);
   crc.UpdateUInt64(h.NextHeaderSize);
   crc.UpdateUInt32(h.NextHeaderCRC);
-  UInt32 crcVal = crc.GetDigest();
-  RINOK(WriteDirectUInt32(crcVal));
+  RINOK(WriteDirectUInt32(crc.GetDigest()));
   RINOK(WriteDirectUInt64(h.NextHeaderOffset));
   RINOK(WriteDirectUInt64(h.NextHeaderSize));
   return WriteDirectUInt32(h.NextHeaderCRC);
@@ -87,8 +90,7 @@ HRESULT COutArchive::WriteFinishHeader(const CFinishHeader &h)
   crc.UpdateUInt32(h.NextHeaderCRC);
   crc.UpdateUInt64(h.ArchiveStartOffset);
   crc.UpdateUInt64(h.AdditionalStartBlockSize);
-  UInt32 crcVal = crc.GetDigest();
-  RINOK(WriteDirectUInt32(crcVal));
+  RINOK(WriteDirectUInt32(crc.GetDigest()));
   RINOK(WriteDirectUInt64(h.NextHeaderOffset));
   RINOK(WriteDirectUInt64(h.NextHeaderSize));
   RINOK(WriteDirectUInt32(h.NextHeaderCRC));
@@ -99,10 +101,10 @@ HRESULT COutArchive::WriteFinishHeader(const CFinishHeader &h)
 
 HRESULT COutArchive::Create(ISequentialOutStream *stream, bool endMarker)
 {
+  Close();
   #ifdef _7Z_VOL
   // endMarker = false;
   _endMarker = endMarker;
-  Close();
   #endif
   SeqStream = stream;
   if (!endMarker)
@@ -125,6 +127,8 @@ HRESULT COutArchive::Create(ISequentialOutStream *stream, bool endMarker)
   else
   #endif
   {
+    if (!Stream)
+      return E_FAIL;
     WriteSignature();
     RINOK(Stream->Seek(0, STREAM_SEEK_CUR, &_prefixHeaderPos));
   }
@@ -146,7 +150,7 @@ HRESULT COutArchive::SkeepPrefixArchiveHeader()
   return Stream->Seek(24, STREAM_SEEK_CUR, NULL);
 }
 
-HRESULT COutArchive::WriteBytes(const void *data, UInt32 size)
+HRESULT COutArchive::WriteBytes(const void *data, size_t size)
 {
   if (_mainMode)
   {
@@ -264,7 +268,7 @@ HRESULT COutArchive::WriteFolder(const CFolder &folder)
     for (int j = 0; j < coder.AltCoders.Size(); j++)
     {
       const CAltCoderInfo &altCoder = coder.AltCoders[j];
-      UInt32 propertiesSize = altCoder.Properties.GetCapacity();
+      size_t propertiesSize = altCoder.Properties.GetCapacity();
       
       Byte b;
       b = altCoder.MethodID.IDSize & 0xF;
@@ -375,7 +379,7 @@ HRESULT COutArchive::WritePackInfo(
 
 HRESULT COutArchive::WriteUnPackInfo(
     bool externalFolders,
-    UInt64 externalFoldersStreamIndex,
+    CNum externalFoldersStreamIndex,
     const CObjectVector<CFolder> &folders)
 {
   if (folders.IsEmpty())
@@ -421,7 +425,7 @@ HRESULT COutArchive::WriteUnPackInfo(
 
 HRESULT COutArchive::WriteSubStreamsInfo(
     const CObjectVector<CFolder> &folders,
-    const CRecordVector<UInt64> &numUnPackStreamsInFolders,
+    const CRecordVector<CNum> &numUnPackStreamsInFolders,
     const CRecordVector<UInt64> &unPackSizes,
     const CRecordVector<bool> &digestsDefined,
     const CRecordVector<UInt32> &digests)
@@ -441,10 +445,10 @@ HRESULT COutArchive::WriteSubStreamsInfo(
   }
  
 
-  UInt32 needFlag = true;
-  UInt32 index = 0;
+  bool needFlag = true;
+  CNum index = 0;
   for(i = 0; i < numUnPackStreamsInFolders.Size(); i++)
-    for (UInt32 j = 0; j < numUnPackStreamsInFolders[i]; j++)
+    for (CNum j = 0; j < numUnPackStreamsInFolders[i]; j++)
     {
       if (j + 1 != numUnPackStreamsInFolders[i])
       {
@@ -478,7 +482,7 @@ HRESULT COutArchive::WriteSubStreamsInfo(
 
 HRESULT COutArchive::WriteTime(
     const CObjectVector<CFileItem> &files, Byte type,
-    bool isExternal, UInt64 externalDataIndex)
+    bool isExternal, CNum externalDataIndex)
 {
   /////////////////////////////////////////////////
   // CreationTime
@@ -512,7 +516,7 @@ HRESULT COutArchive::WriteTime(
   if (!thereAreDefined)
     return S_OK;
   RINOK(WriteByte(type));
-  UInt32 dataSize = 1 + 1;
+  size_t dataSize = 1 + 1;
   if (isExternal)
     dataSize += GetBigNumberSize(externalDataIndex);
   else
@@ -560,7 +564,7 @@ HRESULT COutArchive::WriteTime(
   return S_OK;
 }
 
-HRESULT COutArchive::EncodeStream(CEncoder &encoder, const Byte *data, UInt32 dataSize,
+HRESULT COutArchive::EncodeStream(CEncoder &encoder, const Byte *data, size_t dataSize,
     CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders)
 {
   CSequentialInStreamImp *streamSpec = new CSequentialInStreamImp;
@@ -584,13 +588,19 @@ HRESULT COutArchive::EncodeStream(CEncoder &encoder, const CByteBuffer &data,
 static void WriteUInt32ToBuffer(Byte *data, UInt32 value)
 {
   for (int i = 0; i < 4; i++)
-    *data++ = (Byte)(value >> (8 * i));
+  {
+    *data++ = (Byte)value;
+    value >>= 8;
+  }
 }
 
-static void WriteUInt64ToBuffer(Byte *data, const UInt64 &value)
+static void WriteUInt64ToBuffer(Byte *data, UInt64 value)
 {
   for (int i = 0; i < 8; i++)
-    *data++ = (Byte)(value >> (8 * i));
+  {
+    *data++ = (Byte)value;
+    value >>= 8;
+  }
 }
 
 
@@ -610,12 +620,12 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
 
   CRecordVector<UInt64> packSizes;
 
-  UInt64 dataIndex = 0;
+  CNum dataIndex = 0;
 
   //////////////////////////
   // Folders
 
-  UInt64 externalFoldersStreamIndex;
+  CNum externalFoldersStreamIndex;
   bool externalFolders = (compressHeaders && database.Folders.Size() > 8);
   if (externalFolders)
   {
@@ -651,8 +661,8 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   /////////////////////////////////
   // Names
 
-  UInt32 numDefinedNames = 0;
-  UInt64 namesDataSize = 0;
+  CNum numDefinedNames = 0;
+  size_t namesDataSize = 0;
   for(i = 0; i < database.Files.Size(); i++)
   {
     const UString &name = database.Files[i].Name;
@@ -662,12 +672,12 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer namesData;
-  UInt64 externalNamesStreamIndex;
+  CNum externalNamesStreamIndex;
   bool externalNames = (compressHeaders && database.Files.Size() > 8);
   if (numDefinedNames > 0)
   {
     namesData.SetCapacity((size_t)namesDataSize);
-    UInt32 pos = 0;
+    size_t pos = 0;
     for(int i = 0; i < database.Files.Size(); i++)
     {
       const UString &name = database.Files[i].Name;
@@ -702,12 +712,12 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer attributesData;
-  UInt64 externalAttributesStreamIndex;
+  CNum externalAttributesStreamIndex;
   bool externalAttributes = (compressHeaders && numDefinedAttributes > 8);
   if (numDefinedAttributes > 0)
   {
     attributesData.SetCapacity(numDefinedAttributes * 4);
-    UInt32 pos = 0;
+    size_t pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
       const CFileItem &file = database.Files[i];
@@ -738,12 +748,12 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer startsData;
-  UInt64 externalStartStreamIndex;
+  CNum externalStartStreamIndex;
   bool externalStarts = (compressHeaders && numDefinedStarts > 8);
   if (numDefinedStarts > 0)
   {
     startsData.SetCapacity(numDefinedStarts * 8);
-    UInt32 pos = 0;
+    size_t pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
       const CFileItem &file = database.Files[i];
@@ -762,10 +772,10 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   
   /////////////////////////////////
   // Write Last Write Time
-  UInt64 externalLastWriteTimeStreamIndex;
+  CNum externalLastWriteTimeStreamIndex;
   bool externalLastWriteTime = false;
   // /*
-  UInt32 numDefinedLastWriteTimes = 0;
+  CNum numDefinedLastWriteTimes = 0;
   for(i = 0; i < database.Files.Size(); i++)
     if (database.Files[i].IsLastWriteTimeDefined)
       numDefinedLastWriteTimes++;
@@ -775,7 +785,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   {
     CByteBuffer lastWriteTimeData;
     lastWriteTimeData.SetCapacity(numDefinedLastWriteTimes * 8);
-    UInt32 pos = 0;
+    size_t pos = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
       const CFileItem &file = database.Files[i];
@@ -887,7 +897,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
     CBoolVector emptyFileVector, antiVector;
     emptyFileVector.Reserve(numEmptyStreams);
     antiVector.Reserve(numEmptyStreams);
-    UInt64 numEmptyFiles = 0, numAntiItems = 0;
+    CNum numEmptyFiles = 0, numAntiItems = 0;
     for(i = 0; i < database.Files.Size(); i++)
     {
       const CFileItem &file = database.Files[i];
@@ -945,7 +955,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   if (numDefinedAttributes > 0)
   {
     RINOK(WriteByte(NID::kWinAttributes));
-    UInt32 size = 2;
+    size_t size = 2;
     if (numDefinedAttributes != database.Files.Size())
       size += (attributesBoolVector.Size() + 7) / 8 + 1;
     if (externalAttributes)
@@ -979,7 +989,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   if (numDefinedStarts > 0)
   {
     RINOK(WriteByte(NID::kStartPos));
-    UInt32 size = 2;
+    size_t size = 2;
     if (numDefinedStarts != database.Files.Size())
       size += (startsBoolVector.Size() + 7) / 8 + 1;
     if (externalStarts)

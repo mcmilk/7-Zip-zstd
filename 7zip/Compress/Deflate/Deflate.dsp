@@ -218,6 +218,26 @@ SOURCE=..\..\..\Common\NewHandler.h
 # Begin Group "LZ"
 
 # PROP Default_Filter ""
+# Begin Group "BinTree"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTree3Z.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZ\BinTree\BinTreeMain.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\LZ\IMatchFinder.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\LZ\LZInWindow.cpp

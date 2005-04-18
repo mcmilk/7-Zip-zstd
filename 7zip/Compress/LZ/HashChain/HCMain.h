@@ -18,10 +18,8 @@ namespace HC_NAMESPACE {
     static const UInt32 kHashSize = 1 << 20;
     #endif
   #else
-    static const UInt32 kNumHashBytes = 3;
-    // static const UInt32 kNumHashDirectBytes = 3;
-    // static const UInt32 kHashSize = 1 << (8 * kNumHashBytes);
     static const UInt32 kNumHashDirectBytes = 0;
+    static const UInt32 kNumHashBytes = 3;
     static const UInt32 kHashSize = 1 << (16);
   #endif
 #else
@@ -36,7 +34,6 @@ namespace HC_NAMESPACE {
     static const UInt32 kHashSize = 1 << (8 * kNumHashBytes);
   #endif
 #endif
-
 
 static const UInt32 kHashSizeSum = kHashSize
     #ifdef HASH_ARRAY_2
@@ -54,32 +51,34 @@ static const UInt32 kHash3Offset = kHashSize + kHash2Size;
 #endif
 #endif
 
-CInTree::CInTree():
+CMatchFinderHC::CMatchFinderHC():
   _hash(0),
   _cutValue(16)
 {
 }
 
-void CInTree::FreeThisClassMemory()
+void CMatchFinderHC::FreeThisClassMemory()
 {
   BigFree(_hash);
   _hash = 0;
 }
 
-void CInTree::FreeMemory()
+void CMatchFinderHC::FreeMemory()
 {
   FreeThisClassMemory();
   CLZInWindow::Free();
 }
 
-CInTree::~CInTree()
+CMatchFinderHC::~CMatchFinderHC()
 { 
   FreeMemory();
 }
 
-HRESULT CInTree::Create(UInt32 historySize, UInt32 keepAddBufferBefore, 
-    UInt32 matchMaxLen, UInt32 keepAddBufferAfter, UInt32 sizeReserv)
+STDMETHODIMP CMatchFinderHC::Create(UInt32 historySize, UInt32 keepAddBufferBefore, 
+    UInt32 matchMaxLen, UInt32 keepAddBufferAfter)
 {
+  UInt32 sizeReserv = (historySize + keepAddBufferBefore + 
+      matchMaxLen + keepAddBufferAfter) / 2 + 256;
   if (CLZInWindow::Create(historySize + keepAddBufferBefore, 
       matchMaxLen + keepAddBufferAfter, sizeReserv))
   {
@@ -104,7 +103,7 @@ HRESULT CInTree::Create(UInt32 historySize, UInt32 keepAddBufferBefore,
 
 static const UInt32 kEmptyHashValue = 0;
 
-HRESULT CInTree::Init(ISequentialInStream *stream)
+STDMETHODIMP CMatchFinderHC::Init(ISequentialInStream *stream)
 {
   RINOK(CLZInWindow::Init(stream));
   for(UInt32 i = 0; i < kHashSizeSum; i++)
@@ -114,6 +113,10 @@ HRESULT CInTree::Init(ISequentialInStream *stream)
   return S_OK;
 }
 
+STDMETHODIMP_(void) CMatchFinderHC::ReleaseStream()
+{ 
+  // ReleaseStream(); 
+}
 
 #ifdef HASH_ARRAY_2
 #ifdef HASH_ARRAY_3
@@ -149,7 +152,7 @@ inline UInt32 Hash(const Byte *pointer)
 #endif // HASH_ARRAY_2
 
 
-UInt32 CInTree::GetLongestMatch(UInt32 *distances)
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetLongestMatch(UInt32 *distances)
 {
   UInt32 lenLimit;
   if (_pos + _matchMaxLen <= _streamPos)
@@ -258,7 +261,7 @@ UInt32 CInTree::GetLongestMatch(UInt32 *distances)
   return maxLen;
 }
 
-void CInTree::DummyLongestMatch()
+STDMETHODIMP_(void) CMatchFinderHC::DummyLongestMatch()
 {
   if (_streamPos - _pos < kNumHashBytes)
     return; 
@@ -283,10 +286,9 @@ void CInTree::DummyLongestMatch()
   _hash[hashValue] = _pos;
 }
 
-void CInTree::Normalize()
+void CMatchFinderHC::Normalize()
 {
   UInt32 subValue = _pos - _cyclicBufferSize;
-  
   CIndex *items = _hash;
   UInt32 numItems = kHashSizeSum + _cyclicBufferSize;
   for (UInt32 i = 0; i < numItems; i++)
@@ -298,8 +300,51 @@ void CInTree::Normalize()
       value -= subValue;
     items[i] = value;
   }
-
   ReduceOffsets(subValue);
+}
+
+STDMETHODIMP CMatchFinderHC::MovePos()
+{
+  if (++_cyclicBufferPos == _cyclicBufferSize)
+    _cyclicBufferPos = 0;
+  RINOK(CLZInWindow::MovePos());
+  if (_pos == kMaxValForNormalize)
+    Normalize();
+  return S_OK;
+}
+
+STDMETHODIMP_(Byte) CMatchFinderHC::GetIndexByte(Int32 index)
+  { return CLZInWindow::GetIndexByte(index); }
+
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetMatchLen(Int32 index, 
+    UInt32 back, UInt32 limit)
+  { return CLZInWindow::GetMatchLen(index, back, limit); }
+
+STDMETHODIMP_(UInt32) CMatchFinderHC::GetNumAvailableBytes()
+  { return CLZInWindow::GetNumAvailableBytes(); }
+
+STDMETHODIMP_(const Byte *) CMatchFinderHC::GetPointerToCurrentPos()
+  { return CLZInWindow::GetPointerToCurrentPos(); }
+
+// IMatchFinderSetCallback
+STDMETHODIMP CMatchFinderHC::SetCallback(IMatchFinderCallback *callback)
+{
+  m_Callback = callback;
+  return S_OK;
+}
+
+void CMatchFinderHC::BeforeMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->BeforeChangingBufferPos();
+  CLZInWindow::BeforeMoveBlock();
+}
+
+void CMatchFinderHC::AfterMoveBlock()
+{
+  if (m_Callback)
+    m_Callback->AfterChangingBufferPos();
+  CLZInWindow::AfterMoveBlock();
 }
  
 }

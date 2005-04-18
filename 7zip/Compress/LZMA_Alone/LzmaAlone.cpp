@@ -5,7 +5,6 @@
 #include "../../../Common/MyWindows.h"
 #include "../../../Common/MyInitGuid.h"
 
-// #include <limits.h>
 #include <stdio.h>
 
 #if defined(_WIN32) || defined(OS2) || defined(MSDOS)
@@ -28,6 +27,12 @@
 #include "../LZMA/LZMAEncoder.h"
 
 #include "LzmaBench.h"
+#include "LzmaRam.h"
+
+extern "C"
+{
+#include "LzmaRamDecode.h"
+}
 
 using namespace NCommandLineParser;
 
@@ -45,7 +50,8 @@ enum Enum
   kMatchFinder,
   kEOS,
   kStdIn,
-  kStdOut
+  kStdOut,
+  kFilter86
 };
 }
 
@@ -62,7 +68,8 @@ static const CSwitchForm kSwitchForms[] =
   { L"MF", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"EOS", NSwitchType::kSimple, false },
   { L"SI",  NSwitchType::kSimple, false },
-  { L"SO",  NSwitchType::kSimple, false }
+  { L"SO",  NSwitchType::kSimple, false },
+  { L"F86",  NSwitchType::kSimple, false }
 };
 
 static const int kNumSwitches = sizeof(kSwitchForms) / sizeof(kSwitchForms[0]);
@@ -124,7 +131,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.16 Copyright (c) 1999-2004 Igor Pavlov  2005-03-29\n");
+  fprintf(stderr, "\nLZMA 4.17 Copyright (c) 1999-2004 Igor Pavlov  2005-04-18\n");
 
   if (n == 1)
   {
@@ -242,6 +249,66 @@ int main2(int n, const char *args[])
       return 1;
     }
   }
+
+  if (parser[NKey::kFilter86].ThereIs)
+  {
+    // -f86 switch is for x86 filtered mode: BCJ + LZMA.
+    if (parser[NKey::kEOS].ThereIs || stdInMode)
+      throw "Can not use stdin in this mode";
+    UInt64 fileSize;
+    inStreamSpec->File.GetLength(fileSize);
+    if (fileSize > 0xF0000000)
+      throw "File is too big";
+    UInt32 inSize = (UInt32)fileSize;
+    Byte *inBuffer = (Byte *)MyAlloc((size_t)inSize); 
+    if (inBuffer == 0)
+      throw "Can not allocate memory";
+    
+    UInt32 processedSize;
+    if (inStream->Read(inBuffer, (UInt32)inSize, &processedSize) != S_OK)
+      throw "Can not read";
+    if ((UInt32)inSize != processedSize)
+      throw "Read size error";
+
+    Byte *outBuffer;
+    size_t outSizeProcessed;
+    if (encodeMode)
+    {
+      // we allocate 105% of original size for output buffer
+      size_t outSize = (size_t)fileSize / 20 * 21 + (1 << 16);
+      outBuffer = (Byte *)MyAlloc((size_t)outSize); 
+      if (outBuffer == 0)
+        throw "Can not allocate memory";
+      if (!dictionaryIsDefined)
+        dictionary = 1 << 23;
+      int res = LzmaRamEncode(inBuffer, inSize, outBuffer, outSize, &outSizeProcessed, 
+          dictionary, SZ_FILTER_AUTO);
+      if (res != 0)
+      {
+        fprintf(stderr, "\nEncoder error = %d\n", (int)res);
+        return 1;
+      }
+    }
+    else
+    {
+      size_t outSize;
+      if (LzmaRamGetUncompressedSize(inBuffer, inSize, &outSize) != 0)
+        throw "data error";
+      outBuffer = (Byte *)MyAlloc(outSize); 
+      if (outBuffer == 0)
+        throw "Can not allocate memory";
+      
+      int res = LzmaRamDecompress(inBuffer, inSize, outBuffer, outSize, &outSizeProcessed, malloc, free);
+      if (res != 0)
+        throw "LzmaDecoder error";
+    }
+    if (outStream->Write(outBuffer, (UInt32)outSizeProcessed, &processedSize) != S_OK)
+      throw "Can not write";
+    MyFree(outBuffer);
+    MyFree(inBuffer);
+    return 0;
+  }
+
 
   UInt64 fileSize;
   if (encodeMode)

@@ -170,14 +170,14 @@ void CPanel::CreateFolder()
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
+  UStringVector selectedNames;
+  GetSelectedNames(selectedNames);
   HRESULT result = folderOperations->CreateFolder(newName, 0);
   if (result != S_OK)
   {
     MessageBoxError(result, LangLoadStringW(IDS_CREATE_FOLDER_ERROR, 0x03020233));
     return;
   }
-  UStringVector selectedNames;
-  GetSelectedNames(selectedNames);
   int pos = newName.Find(TEXT('\\'));
   if (pos >= 0)
     newName = newName.Left(pos);
@@ -201,19 +201,18 @@ void CPanel::CreateFile()
     return;
   UString newName = GetUnicodeString(comboDialog.Value);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
+  UStringVector selectedNames;
+  GetSelectedNames(selectedNames);
   HRESULT result = folderOperations->CreateFile(newName, 0);
   if (result != S_OK)
   {
     MessageBoxError(result, LangLoadStringW(IDS_CREATE_FILE_ERROR, 0x03020243));
     return;
   }
-  UStringVector selectedNames;
-  GetSelectedNames(selectedNames);
   int pos = newName.Find(TEXT('\\'));
   if (pos >= 0)
     newName = newName.Left(pos);
-  RefreshListCtrl(newName, _listView.GetFocusedItem(),
-      selectedNames);
+  RefreshListCtrl(newName, _listView.GetFocusedItem(),selectedNames);
 }
 
 void CPanel::RenameFile()

@@ -2,7 +2,7 @@
   LzmaDecode.c
   LZMA Decoder (optimized for Speed version)
   
-  LZMA SDK 4.16 Copyright (c) 1999-2005 Igor Pavlov (2005-03-18)
+  LZMA SDK 4.17 Copyright (c) 1999-2005 Igor Pavlov (2005-04-05)
   http://www.7-zip.org/
 
   LZMA SDK is licensed under two licenses:
@@ -332,7 +332,6 @@ int LzmaDecode(
         #else
         matchByte = outStream[nowPos - rep0];
         #endif
-        // prob += 0x100;
         do
         {
           int bit;
@@ -343,7 +342,6 @@ int LzmaDecode(
           RC_GET_BIT2(probLit, symbol, if (bit != 0) break, if (bit == 0) break)
         }
         while (symbol < 0x100);
-        // prob -= 0x100;
       }
       while (symbol < 0x100)
       {
@@ -364,7 +362,6 @@ int LzmaDecode(
     }
     else             
     {
-      // int isItRep;
       UpdateBit1(prob);
       prob = p + IsRep + state;
       IfBit0(prob)

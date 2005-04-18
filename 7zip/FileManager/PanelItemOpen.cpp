@@ -34,6 +34,13 @@ static inline UINT GetCurrentFileCodePage()
 
 static LPCTSTR kTempDirPrefix = TEXT("7zO"); 
 
+static const wchar_t *virusMessage = L"File looks like virus (file name has long spaces in name). 7-Zip will not open it";
+
+static bool IsNameVirus(const UString &name)
+{
+  return (name.Find(L"     ") >= 0);
+}
+
 struct CTmpProcessInfo: public CTempFileInfo
 {
   HANDLE ProcessHandle;
@@ -240,8 +247,14 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
     OpenItemInArchive(index, tryInternal, tryExternal, false);
     return;
   }
-  CSysString fullPath = GetSystemString((_currentFolderPrefix + 
-      GetItemName(index)), GetCurrentFileCodePage());
+  UString name = GetItemName(index);
+  if (IsNameVirus(name))
+  {
+    MessageBoxMyError(virusMessage);
+    return;
+  }
+  CSysString fullPath = GetSystemString((_currentFolderPrefix + name), 
+      GetCurrentFileCodePage());
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(GetItemName(index)))
       if (OpenItemAsArchive(index) == S_OK)
@@ -376,6 +389,14 @@ struct CThreadExtractInArchive
 void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     bool editMode)
 {
+  UString name = GetItemName(index);
+  if (IsNameVirus(name))
+  {
+    MessageBoxMyError(virusMessage);
+    return;
+  }
+
+
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
   {
@@ -420,7 +441,6 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     return;
   }
 
-  UString name = GetItemName(index);
   CSysString tempFileName = tempDir + NFile::NName::kDirDelimiter + 
       GetSystemString(name);
 

@@ -1140,14 +1140,6 @@ SOURCE=..\..\Compress\LZ\HashChain\HC4b.h
 
 SOURCE=..\..\Compress\LZ\HashChain\HCMain.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\HashChain\HCMF.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\HashChain\HCMFMain.h
-# End Source File
 # End Group
 # Begin Source File
 

@@ -273,14 +273,6 @@ SOURCE=..\LZ\BinTree\BinTree4b.h
 
 SOURCE=..\LZ\BinTree\BinTreeMain.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeMF.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeMFMain.h
-# End Source File
 # End Group
 # Begin Group "HC"
 
@@ -309,14 +301,6 @@ SOURCE=..\LZ\HashChain\HC4b.h
 
 SOURCE=..\LZ\HashChain\HCMain.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HCMF.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HCMFMain.h
-# End Source File
 # End Group
 # Begin Source File
 
@@ -337,6 +321,32 @@ SOURCE=..\LZ\LZOutWindow.cpp
 # Begin Source File
 
 SOURCE=..\LZ\LZOutWindow.h
+# End Source File
+# End Group
+# Begin Group "Branch"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Branch\BranchX86.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\Branch\BranchX86.h
+# End Source File
+# End Group
+# Begin Group "LZMA_C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\LZMA_C\LzmaDecode.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZMA_C\LzmaDecode.h
 # End Source File
 # End Group
 # End Group
@@ -483,6 +493,23 @@ SOURCE=.\LzmaBench.cpp
 # Begin Source File
 
 SOURCE=.\LzmaBench.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\LzmaRam.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\LzmaRam.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\LzmaRamDecode.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=.\LzmaRamDecode.h
 # End Source File
 # End Target
 # End Project

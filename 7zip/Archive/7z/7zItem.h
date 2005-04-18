@@ -16,29 +16,32 @@ struct CAltCoderInfo
   CByteBuffer Properties;
 };
 
+typedef UInt32 CNum;
+const CNum kNumMax     = 0x7FFFFFFF;
+const CNum kNumNoIndex = 0xFFFFFFFF;
+
 struct CCoderInfo
 {
-  UInt64 NumInStreams;
-  UInt64 NumOutStreams;
+  CNum NumInStreams;
+  CNum NumOutStreams;
   CObjectVector<CAltCoderInfo> AltCoders;
-  bool IsSimpleCoder() const 
-    { return (NumInStreams == 1) && (NumOutStreams == 1); }
+  bool IsSimpleCoder() const { return (NumInStreams == 1) && (NumOutStreams == 1); }
 };
 
 struct CBindPair
 {
-  UInt64 InIndex;
-  UInt64 OutIndex;
+  CNum InIndex;
+  CNum OutIndex;
 };
 
 struct CFolder
 {
   CObjectVector<CCoderInfo> Coders;
   CRecordVector<CBindPair> BindPairs;
-  CRecordVector<UInt64> PackStreams;
+  CRecordVector<CNum> PackStreams;
   CRecordVector<UInt64> UnPackSizes;
-  bool UnPackCRCDefined;
   UInt32 UnPackCRC;
+  bool UnPackCRCDefined;
 
   CFolder(): UnPackCRCDefined(false) {}
 
@@ -51,30 +54,30 @@ struct CFolder
         return UnPackSizes[i];
     throw 1;
   }
-  UInt64 GetNumOutStreams() const
+
+  CNum GetNumOutStreams() const
   {
-    UInt64 result = 0;
+    CNum result = 0;
     for (int i = 0; i < Coders.Size(); i++)
       result += Coders[i].NumOutStreams;
     return result;
   }
 
-
-  int FindBindPairForInStream(int inStreamIndex) const
+  int FindBindPairForInStream(CNum inStreamIndex) const
   {
     for(int i = 0; i < BindPairs.Size(); i++)
       if (BindPairs[i].InIndex == inStreamIndex)
         return i;
     return -1;
   }
-  int FindBindPairForOutStream(int outStreamIndex) const
+  int FindBindPairForOutStream(CNum outStreamIndex) const
   {
     for(int i = 0; i < BindPairs.Size(); i++)
       if (BindPairs[i].OutIndex == outStreamIndex)
         return i;
     return -1;
   }
-  int FindPackStreamArrayIndex(int inStreamIndex) const
+  int FindPackStreamArrayIndex(CNum inStreamIndex) const
   {
     for(int i = 0; i < PackStreams.Size(); i++)
       if (PackStreams[i] == inStreamIndex)
@@ -113,14 +116,14 @@ public:
       return !IsDirectory && !IsAnti && UnPackSize != 0; }
   */
   CFileItem(): 
+    HasStream(true),
+    IsDirectory(false),
+    IsAnti(false),
+    IsFileCRCDefined(false),
     AreAttributesDefined(false), 
     IsCreationTimeDefined(false), 
     IsLastWriteTimeDefined(false), 
     IsLastAccessTimeDefined(false),
-    IsDirectory(false),
-    IsFileCRCDefined(false),
-    IsAnti(false),
-    HasStream(true),
     IsStartPosDefined(false)
       {}
   void SetAttributes(UInt32 attributes) 
@@ -151,7 +154,7 @@ struct CArchiveDatabase
   CRecordVector<bool> PackCRCsDefined;
   CRecordVector<UInt32> PackCRCs;
   CObjectVector<CFolder> Folders;
-  CRecordVector<UInt64> NumUnPackStreamsVector;
+  CRecordVector<CNum> NumUnPackStreamsVector;
   CObjectVector<CFileItem> Files;
   void Clear()
   {
@@ -170,19 +173,6 @@ struct CArchiveDatabase
       Folders.IsEmpty() && 
       NumUnPackStreamsVector.IsEmpty() && 
       Files.IsEmpty());
-  }
-};
-
-struct CArchiveHeaderDatabase
-{
-  CRecordVector<UInt64> PackSizes;
-  CObjectVector<CFolder> Folders;
-  CRecordVector<UInt32> CRCs;
-  void Clear()
-  {
-    PackSizes.Clear();
-    Folders.Clear();
-    CRCs.Clear();
   }
 };
 

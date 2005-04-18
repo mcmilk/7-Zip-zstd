@@ -18,17 +18,17 @@ namespace N7z {
 class CWriteBufferLoc
 {
   Byte *_data;
-  UInt32 _size;
-  UInt32 _pos;
+  size_t _size;
+  size_t _pos;
 public:
   CWriteBufferLoc(): _size(0), _pos(0) {}
-  void Init(Byte *data, UInt32 size)  
+  void Init(Byte *data, size_t size)  
   { 
     _pos = 0;
     _data = data;
     _size = size; 
   }
-  HRESULT Write(const void *data, UInt32 size)
+  HRESULT Write(const void *data, size_t size)
   {
     if (_pos + size > _size)
       return E_FAIL;
@@ -41,14 +41,14 @@ public:
 class CWriteDynamicBuffer
 {
   CByteDynamicBuffer _buffer;
-  UInt32 _pos;
+  size_t _pos;
 public:
   CWriteDynamicBuffer(): _pos(0) {}
   void Init()  
   { 
     _pos = 0;
   }
-  void Write(const void *data, UInt32 size)
+  void Write(const void *data, size_t size)
   {
     if (_pos + size > _buffer.GetCapacity())
       _buffer.EnsureCapacity(_pos + size);
@@ -57,7 +57,7 @@ public:
   }
   operator Byte *() { return (Byte *)_buffer; };
   operator const Byte *() const { return (const Byte *)_buffer; };
-  UInt32 GetSize() const { return _pos; }
+  size_t GetSize() const { return _pos; }
 };
 
 
@@ -68,9 +68,9 @@ class COutArchive
   HRESULT WriteDirect(const void *data, UInt32 size);
   HRESULT WriteDirectByte(Byte b) { return WriteDirect(&b, 1); }
   HRESULT WriteDirectUInt32(UInt32 value);
-  HRESULT WriteDirectUInt64(const UInt64 &value);
+  HRESULT WriteDirectUInt64(UInt64 value);
   
-  HRESULT WriteBytes(const void *data, UInt32 size);
+  HRESULT WriteBytes(const void *data, size_t size);
   HRESULT WriteBytes(const CByteBuffer &data);
   HRESULT WriteByte(Byte b);
   HRESULT WriteUInt32(UInt32 value);
@@ -92,16 +92,17 @@ class COutArchive
 
   HRESULT WriteUnPackInfo(
       bool externalFolders,
-      UInt64 externalFoldersStreamIndex,
+      CNum externalFoldersStreamIndex,
       const CObjectVector<CFolder> &folders);
 
   HRESULT WriteSubStreamsInfo(
       const CObjectVector<CFolder> &folders,
-      const CRecordVector<UInt64> &numUnPackStreamsInFolders,
+      const CRecordVector<CNum> &numUnPackStreamsInFolders,
       const CRecordVector<UInt64> &unPackSizes,
       const CRecordVector<bool> &digestsDefined,
       const CRecordVector<UInt32> &hashDigests);
 
+  /*
   HRESULT WriteStreamsInfo(
       UInt64 dataOffset,
       const CRecordVector<UInt64> &packSizes,
@@ -110,16 +111,17 @@ class COutArchive
       bool externalFolders,
       UInt64 externalFoldersStreamIndex,
       const CObjectVector<CFolder> &folders,
-      const CRecordVector<UInt64> &numUnPackStreamsInFolders,
+      const CRecordVector<CNum> &numUnPackStreamsInFolders,
       const CRecordVector<UInt64> &unPackSizes,
       const CRecordVector<bool> &digestsDefined,
       const CRecordVector<UInt32> &hashDigests);
+  */
 
 
   HRESULT WriteTime(const CObjectVector<CFileItem> &files, Byte type,
-      bool isExternal, UInt64 externalDataIndex);
+      bool isExternal, CNum externalDataIndex);
 
-  HRESULT EncodeStream(CEncoder &encoder, const Byte *data, UInt32 dataSize,
+  HRESULT EncodeStream(CEncoder &encoder, const Byte *data, size_t dataSize,
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
   HRESULT EncodeStream(CEncoder &encoder, const CByteBuffer &data, 
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
@@ -132,7 +134,7 @@ class COutArchive
   bool _dynamicMode;
 
   bool _countMode;
-  UInt32 _countSize;
+  size_t _countSize;
   COutBuffer _outByte;
   CWriteBufferLoc _outByte2;
   CWriteDynamicBuffer _dynamicBuffer;

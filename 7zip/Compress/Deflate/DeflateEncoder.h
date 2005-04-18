@@ -7,7 +7,7 @@
 
 #include "../../ICoder.h"
 #include "../../Common/LSBFEncoder.h"
-#include "../LZ/BinTree/BinTree3Z.h"
+#include "../LZ/IMatchFinder.h"
 #include "../Huffman/HuffmanEncoder.h"
 
 #include "DeflateConst.h"
@@ -54,8 +54,7 @@ class CCoder
   
   COptimal m_Optimum[kNumOpts];
   
-  // CComPtr<IInWindowStreamMatch> m_MatchFinder;
-  NBT3Z::CInTree m_MatchFinder;
+  CMyComPtr<IMatchFinder> m_MatchFinder;
 
   NStream::NLSBF::CEncoder m_OutStream;
   NStream::NLSBF::CReverseEncoder m_ReverseOutStream;

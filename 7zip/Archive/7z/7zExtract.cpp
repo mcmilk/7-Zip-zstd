@@ -21,15 +21,15 @@ struct CExtractFolderInfo
   #ifdef _7Z_VOL
   int VolumeIndex;
   #endif
-  int FileIndex;
-  int FolderIndex;
+  CNum FileIndex;
+  CNum FolderIndex;
   CBoolVector ExtractStatuses;
   UInt64 UnPackSize;
   CExtractFolderInfo(
     #ifdef _7Z_VOL
     int volumeIndex, 
     #endif
-    int fileIndex, int folderIndex): 
+    CNum fileIndex, CNum folderIndex): 
     #ifdef _7Z_VOL
     VolumeIndex(volumeIndex),
     #endif
@@ -37,7 +37,7 @@ struct CExtractFolderInfo
     FolderIndex(folderIndex), 
     UnPackSize(0) 
   {
-    if (fileIndex >= 0)
+    if (fileIndex != kNumNoIndex)
     {
       ExtractStatuses.Reserve(1);
       ExtractStatuses.Add(true);
@@ -77,8 +77,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CObjectVector<CExtractFolderInfo> extractFolderInfoVector;
   for(UInt32 ii = 0; ii < numItems; ii++)
   {
-    // int fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
-    int ref2Index = allFilesMode ? ii : indices[ii];
+    // UInt32 fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
+    UInt32 ref2Index = allFilesMode ? ii : indices[ii];
     // const CRef2 &ref2 = _refs[ref2Index];
 
     // for(UInt32 ri = 0; ri < ref2.Refs.Size(); ri++)
@@ -90,20 +90,20 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       int volumeIndex = ref.VolumeIndex;
       const CVolume &volume = _volumes[volumeIndex];
       const CArchiveDatabaseEx &database = volume.Database;
-      int fileIndex = ref.ItemIndex;
+      UInt32 fileIndex = ref.ItemIndex;
       #else
       const CArchiveDatabaseEx &database = _database;
-      int fileIndex = ref2Index;
+      UInt32 fileIndex = ref2Index;
       #endif
 
-      int folderIndex = database.FileIndexToFolderIndexMap[fileIndex];
-      if (folderIndex < 0)
+      CNum folderIndex = database.FileIndexToFolderIndexMap[fileIndex];
+      if (folderIndex == kNumNoIndex)
       {
         extractFolderInfoVector.Add(CExtractFolderInfo(
             #ifdef _7Z_VOL
             volumeIndex, 
             #endif
-            fileIndex, -1));
+            fileIndex, kNumNoIndex));
         continue;
       }
       if (extractFolderInfoVector.IsEmpty() || 
@@ -117,7 +117,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             #ifdef _7Z_VOL
             volumeIndex, 
             #endif
-            -1, folderIndex));
+            kNumNoIndex, folderIndex));
         const CFolder &folderInfo = database.Folders[folderIndex];
         UInt64 unPackSize = folderInfo.GetUnPackSize();
         importantTotalUnPacked += unPackSize;
@@ -127,8 +127,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       CExtractFolderInfo &efi = extractFolderInfoVector.Back();
       
       // const CFolderInfo &folderInfo = m_dam_Folders[folderIndex];
-      UInt32 startIndex = (UInt32)database.FolderStartFileIndex[folderIndex];
-      for (UInt32 index = efi.ExtractStatuses.Size();
+      CNum startIndex = database.FolderStartFileIndex[folderIndex];
+      for (CNum index = efi.ExtractStatuses.Size();
           index <= fileIndex - startIndex; index++)
       {
         // UInt64 unPackSize = _database.Files[startIndex + index].UnPackSize;
@@ -166,11 +166,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CArchiveDatabaseEx &database = _database;
     #endif
 
-    UInt32 startIndex;
-    if (efi.FileIndex >= 0)
+    CNum startIndex;
+    if (efi.FileIndex != kNumNoIndex)
       startIndex = efi.FileIndex;
     else
-      startIndex = (UInt32)database.FolderStartFileIndex[efi.FolderIndex];
+      startIndex = database.FolderStartFileIndex[efi.FolderIndex];
 
 
     HRESULT result = folderOutStream->Init(&database, 
@@ -184,10 +184,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     RINOK(result);
 
-    if (efi.FileIndex >= 0)
+    if (efi.FileIndex != kNumNoIndex)
       continue;
 
-    UInt32 folderIndex = efi.FolderIndex;
+    CNum folderIndex = efi.FolderIndex;
     const CFolder &folderInfo = database.Folders[folderIndex];
 
     CLocalProgress *localProgressSpec = new CLocalProgress;
@@ -199,7 +199,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
     localCompressProgressSpec->Init(progress, NULL, &currentImportantTotalUnPacked);
 
-    UInt32 packStreamIndex = database.FolderStartPackStreamIndex[folderIndex];
+    CNum packStreamIndex = database.FolderStartPackStreamIndex[folderIndex];
     UInt64 folderStartPackPos = database.GetFolderStreamPos(folderIndex, 0);
 
     #ifndef _NO_CRYPTO

@@ -87,7 +87,7 @@ STDMETHODIMP CFolderInStream::ReadPart(void *data, UInt32 size, UInt32 *processe
     if (_fileIsOpen)
     {
       UInt32 localProcessedSize;
-      RINOK(_inStreamWithHash->Read(
+      RINOK(_inStreamWithHash->ReadPart(
           ((Byte *)data) + realProcessedSize, size, &localProcessedSize));
       if (localProcessedSize == 0)
       {

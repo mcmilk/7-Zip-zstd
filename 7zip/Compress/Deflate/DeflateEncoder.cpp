@@ -7,7 +7,8 @@
 
 #include "Windows/Defs.h"
 #include "Common/ComTry.h"
-#include "../LZ/BinTree/BinTree3ZMain.h"
+#include "../../../Common/Alloc.h"
+#include "../LZ/BinTree/BinTree3Z.h"
 
 namespace NCompress {
 namespace NDeflate {
@@ -99,39 +100,48 @@ CCoder::CCoder(bool deflate64Mode):
     kNumLenCombinations32;
   m_LenStart = deflate64Mode ? kLenStart64 : kLenStart32;
   m_LenDirectBits = deflate64Mode ? kLenDirectBits64 : kLenDirectBits32;
-
-  m_Values = new CCodeValue[kValueBlockSize + kNumOpts];
 }
 
 HRESULT CCoder::Create()
 {
   COM_TRY_BEGIN
-  RINOK(m_MatchFinder.Create(_deflate64Mode ? kHistorySize64 : kHistorySize32, 
-      kNumOpts + kNumGoodBacks, m_NumFastBytes, 
-      m_MatchMaxLen - m_NumFastBytes));
+  if (!m_MatchFinder)
+  {
+    m_MatchFinder = new NBT3Z::CMatchFinderBinTree;
+    if (m_MatchFinder == 0)
+      return E_OUTOFMEMORY;
+  }
+  if (m_Values == 0)
+  {
+    m_Values = (CCodeValue *)MyAlloc((kValueBlockSize + kNumOpts) * sizeof(CCodeValue));
+    if (m_Values == 0)
+      return E_OUTOFMEMORY;
+  }
+  RINOK(m_MatchFinder->Create(_deflate64Mode ? kHistorySize64 : kHistorySize32, 
+      kNumOpts + kNumGoodBacks, m_NumFastBytes, m_MatchMaxLen - m_NumFastBytes));
   if (!m_OutStream.Create(1 << 20))
     return E_OUTOFMEMORY;
   m_MatchLengthEdge = m_NumFastBytes + 1;
 
+  Free();
   if (m_NumPasses > 1)
   {
-    m_OnePosMatchesMemory = new UInt16[kNumGoodBacks * (m_NumFastBytes + 1)];
-    try
-    {
-      m_OnePosMatchesArray = new COnePosMatches[kNumGoodBacks];
-    }
-    catch(...)
-    {
-      delete []m_OnePosMatchesMemory;
-      m_OnePosMatchesMemory = 0;
-      throw;
-    }
+    m_OnePosMatchesMemory = (UInt16 *)BigAlloc(kNumGoodBacks * (m_NumFastBytes + 1) * sizeof(UInt16));
+    if (m_OnePosMatchesMemory == 0)
+      return E_OUTOFMEMORY;
+    m_OnePosMatchesArray = (COnePosMatches *)MyAlloc(kNumGoodBacks * sizeof(COnePosMatches));
+    if (m_OnePosMatchesArray == 0)
+      return E_OUTOFMEMORY;
     UInt16 *goodBacksWordsCurrent = m_OnePosMatchesMemory;
     for(int i = 0; i < kNumGoodBacks; i++, goodBacksWordsCurrent += (m_NumFastBytes + 1))
       m_OnePosMatchesArray[i].Init(goodBacksWordsCurrent);
   }
   else
-    m_MatchDistances = new UInt16[m_NumFastBytes + 1];
+  {
+    m_MatchDistances = (UInt16 *)MyAlloc((m_NumFastBytes + 1) * sizeof(UInt16));
+    if (m_MatchDistances == 0)
+      return E_OUTOFMEMORY;
+  }
   return S_OK;
   COM_TRY_END
 }
@@ -172,18 +182,18 @@ void CCoder::Free()
   {
     if (m_NumPasses > 1)
     {
-      delete []m_OnePosMatchesMemory;
-      delete []m_OnePosMatchesArray;
+      BigFree(m_OnePosMatchesMemory);
+      MyFree(m_OnePosMatchesArray);
     }
     else
-      delete []m_MatchDistances;
+      MyFree(m_MatchDistances);
   }
 }
 
 CCoder::~CCoder()
 {
   Free();
-  delete []m_Values;
+  MyFree(m_Values);
 }
 
 void CCoder::ReadGoodBacks()
@@ -195,13 +205,13 @@ void CCoder::ReadGoodBacks()
     m_MatchDistances = m_OnePosMatchesArray[goodIndex].MatchDistances;
   }
   UInt32 distanceTmp[kMatchMaxLen32 + 1];
-  UInt32 len = m_MatchFinder.GetLongestMatch(distanceTmp);
+  UInt32 len = m_MatchFinder->GetLongestMatch(distanceTmp);
   for(UInt32 i = kMatchMinLen; i <= len; i++)
     m_MatchDistances[i] = (UInt16)distanceTmp[i];
 
   m_LongestMatchDistance = m_MatchDistances[len];
   if (len == m_NumFastBytes && m_NumFastBytes != m_MatchMaxLen)
-    m_LongestMatchLength = len + m_MatchFinder.GetMatchLen(len, 
+    m_LongestMatchLength = len + m_MatchFinder->GetMatchLen(len, 
         m_LongestMatchDistance, m_MatchMaxLen - len);
   else
     m_LongestMatchLength = len;
@@ -210,7 +220,7 @@ void CCoder::ReadGoodBacks()
     m_OnePosMatchesArray[goodIndex].LongestMatchDistance = UInt16(m_LongestMatchDistance);
     m_OnePosMatchesArray[goodIndex].LongestMatchLength = UInt16(m_LongestMatchLength);
   }
-  HRESULT result = m_MatchFinder.MovePos();
+  HRESULT result = m_MatchFinder->MovePos();
   if (result != S_OK)
     throw CMatchFinderException(result);
   m_FinderPos++;
@@ -251,8 +261,8 @@ void CCoder::MovePos(UInt32 num)
   {
     for (;num > 0; num--)
     {
-      m_MatchFinder.DummyLongestMatch();
-      HRESULT result = m_MatchFinder.MovePos();
+      m_MatchFinder->DummyLongestMatch();
+      HRESULT result = m_MatchFinder->MovePos();
       if (result != S_OK)
         throw CMatchFinderException(result);
       m_FinderPos++;
@@ -309,7 +319,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
     MovePos(lenMain - 1);
     return lenMain;
   }
-  m_Optimum[1].Price = m_LiteralPrices[m_MatchFinder.GetIndexByte(0 - m_AdditionalOffset)];
+  m_Optimum[1].Price = m_LiteralPrices[m_MatchFinder->GetIndexByte(0 - m_AdditionalOffset)];
   m_Optimum[1].PosPrev = 0;
 
   m_Optimum[2].Price = kIfinityPrice;
@@ -337,7 +347,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
     
     UInt32 curPrice = m_Optimum[cur].Price; 
     UInt32 curAnd1Price = curPrice +
-        m_LiteralPrices[m_MatchFinder.GetIndexByte(cur - m_AdditionalOffset)];
+        m_LiteralPrices[m_MatchFinder->GetIndexByte(cur - m_AdditionalOffset)];
     COptimal &optimum = m_Optimum[cur + 1];
     if (curAnd1Price < optimum.Price) 
     {
@@ -410,7 +420,7 @@ void CCoder::WriteBlockData(bool writeMode, bool finalBlock)
     {
       for(UInt32 i = 0; i < m_CurrentBlockUncompressedSize; i++)
       {
-        Byte b = m_MatchFinder.GetIndexByte(i - m_AdditionalOffset - 
+        Byte b = m_MatchFinder->GetIndexByte(i - m_AdditionalOffset - 
               m_CurrentBlockUncompressedSize);
         m_OutStream.WriteBits(b, 8);
       }
@@ -682,7 +692,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
   UInt64 nowPos = 0;
   m_FinderPos = 0;
 
-  RINOK(m_MatchFinder.Init(inStream));
+  RINOK(m_MatchFinder->Init(inStream));
   m_OutStream.SetStream(outStream);
   m_OutStream.Init();
   m_ReverseOutStream.Init(&m_OutStream);
@@ -698,7 +708,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     {
       while(true)
       {
-        noMoreBytes = (m_AdditionalOffset == 0 && m_MatchFinder.GetNumAvailableBytes() == 0);
+        noMoreBytes = (m_AdditionalOffset == 0 && m_MatchFinder->GetNumAvailableBytes() == 0);
   
         if (((m_CurrentBlockUncompressedSize >= kBlockUncompressedSizeThreshold || 
                  m_ValueIndex >= kValueBlockSize) && 
@@ -720,7 +730,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
         }
         else if (len == 1)  
         {
-          Byte b = m_MatchFinder.GetIndexByte(0 - m_AdditionalOffset);
+          Byte b = m_MatchFinder->GetIndexByte(0 - m_AdditionalOffset);
           len = 1;
           m_MainCoder.AddSymbol(b);
           m_Values[m_ValueIndex].Flag = kFlagImm;

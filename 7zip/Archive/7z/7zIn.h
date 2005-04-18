@@ -45,9 +45,9 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
 {
   CInArchiveInfo ArchiveInfo;
   CRecordVector<UInt64> PackStreamStartPositions;
-  CRecordVector<UInt32> FolderStartPackStreamIndex;
-  CRecordVector<UInt64> FolderStartFileIndex;
-  CRecordVector<int> FileIndexToFolderIndexMap;
+  CRecordVector<CNum> FolderStartPackStreamIndex;
+  CRecordVector<CNum> FolderStartFileIndex;
+  CRecordVector<CNum> FileIndexToFolderIndexMap;
 
   void Clear()
   {
@@ -56,7 +56,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
     PackStreamStartPositions.Clear();
     FolderStartPackStreamIndex.Clear();
     FolderStartFileIndex.Clear();
-    FolderStartFileIndex.Clear();
+    FileIndexToFolderIndexMap.Clear();
   }
 
   void FillFolderStartPackStream();
@@ -79,7 +79,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   
   UInt64 GetFolderFullPackSize(int folderIndex) const 
   {
-    UInt32 packStreamIndex = FolderStartPackStreamIndex[folderIndex];
+    CNum packStreamIndex = FolderStartPackStreamIndex[folderIndex];
     const CFolder &folder = Folders[folderIndex];
     UInt64 size = 0;
     for (int i = 0; i < folder.PackStreams.Size(); i++)
@@ -92,9 +92,9 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
     return PackSizes[FolderStartPackStreamIndex[folderIndex] + streamIndex];
   }
 
-  UInt64 GetFilePackSize(int fileIndex) const
+  UInt64 GetFilePackSize(CNum fileIndex) const
   {
-    int folderIndex = FileIndexToFolderIndexMap[fileIndex];
+    CNum folderIndex = FileIndexToFolderIndexMap[fileIndex];
     if (folderIndex >= 0)
     {
       const CFolder &folderInfo = Folders[folderIndex];
@@ -108,10 +108,10 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
 class CInByte2
 {
   const Byte *_buffer;
-  UInt32 _size;
-  UInt32 _pos;
+  size_t _size;
+  size_t _pos;
 public:
-  void Init(const Byte *buffer, UInt32 size)
+  void Init(const Byte *buffer, size_t size)
   {
     _buffer = buffer;
     _size = size;
@@ -124,20 +124,20 @@ public:
     b = _buffer[_pos++];
     return true;
   }
-  void ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
+  void ReadBytes(void *data, size_t size, size_t &processedSize)
   {
     for(processedSize = 0; processedSize < size && _pos < _size; processedSize++)
       ((Byte *)data)[processedSize] = _buffer[_pos++];
   }
   
-  bool ReadBytes(void *data, UInt32 size)
+  bool ReadBytes(void *data, size_t size)
   {
-    UInt32 processedSize;
+    size_t processedSize;
     ReadBytes(data, size, processedSize);
     return (processedSize == size);
   }
   
-  UInt32 GetProcessedSize() const { return _pos; }
+  size_t GetProcessedSize() const { return _pos; }
 };
 
 class CStreamSwitch;
@@ -156,7 +156,7 @@ class CInArchive
   UInt64 _arhiveBeginStreamPosition;
   UInt64 _position;
 
-  void AddByteStream(const Byte *buffer, UInt32 size)
+  void AddByteStream(const Byte *buffer, size_t size)
   {
     _inByteVector.Add(CInByte2());
     _inByteBack = &_inByteVector.Back();
@@ -186,7 +186,7 @@ private:
   HRESULT SafeReadDirectUInt32(UInt32 &value);
   HRESULT SafeReadDirectUInt64(UInt64 &value);
 
-  HRESULT ReadBytes(void *data, UInt32 size)
+  HRESULT ReadBytes(void *data, size_t size)
   {
     if (!_inByteBack->ReadBytes(data, size))
       return E_FAIL;
@@ -213,6 +213,7 @@ private:
   }
 
   HRESULT ReadNumber(UInt64 &value);
+  HRESULT ReadNum(CNum &value);
   HRESULT ReadID(UInt64 &value) { return ReadNumber(value); }
   HRESULT ReadUInt32(UInt32 &value);
   HRESULT ReadUInt64(UInt64 &value);
@@ -238,7 +239,7 @@ private:
   
   HRESULT ReadSubStreamsInfo(
       const CObjectVector<CFolder> &folders,
-      CRecordVector<UInt64> &numUnPackStreamsInFolders,
+      CRecordVector<CNum> &numUnPackStreamsInFolders,
       CRecordVector<UInt64> &unPackSizes,
       CRecordVector<bool> &digestsDefined, 
       CRecordVector<UInt32> &digests);
@@ -250,15 +251,15 @@ private:
       CRecordVector<bool> &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs,
       CObjectVector<CFolder> &folders,
-      CRecordVector<UInt64> &numUnPackStreamsInFolders,
+      CRecordVector<CNum> &numUnPackStreamsInFolders,
       CRecordVector<UInt64> &unPackSizes,
       CRecordVector<bool> &digestsDefined, 
       CRecordVector<UInt32> &digests);
 
 
   HRESULT GetNextFileItem(CFileItem &itemInfo);
-  HRESULT ReadBoolVector(UInt32 numItems, CBoolVector &v);
-  HRESULT ReadBoolVector2(UInt32 numItems, CBoolVector &v);
+  HRESULT ReadBoolVector(int numItems, CBoolVector &v);
+  HRESULT ReadBoolVector2(int numItems, CBoolVector &v);
   HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
       CObjectVector<CFileItem> &files, UInt64 type);
   HRESULT ReadAndDecodePackedStreams(UInt64 baseOffset, UInt64 &dataOffset,

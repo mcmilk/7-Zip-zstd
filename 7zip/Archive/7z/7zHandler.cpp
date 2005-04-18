@@ -1,4 +1,4 @@
-// 7z/Handler.cpp
+// 7zHandler.cpp
 
 #include "StdAfx.h"
 
@@ -28,27 +28,6 @@ CHandler::CHandler()
   LoadMethodMap();
   #endif
 }
-
-/*
-STDMETHODIMP CHandler::EnumProperties(IEnumSTATPROPSTG **enumerator)
-{
-  #ifndef _SFX
-  COM_TRY_BEGIN
-  CComObjectNoLock<CEnumArchiveItemProperty> *enumeratorSpec = 
-      new CComObjectNoLock<CEnumArchiveItemProperty>;
-  if (enumeratorSpec == NULL)
-    return E_OUTOFMEMORY;
-  CMyComPtr<IEnumSTATPROPSTG> tempEnumerator(enumeratorSpec);
-  enumeratorSpec->Init(_database.ArchiveInfo.FileInfoPopIDs);
-  *enumerator = tempEnumerator.Detach();
-  return S_OK;
-  // return tempEnumerator->QueryInterface(IID_IEnumSTATPROPSTG, (LPVOID*)enumerator);
-  COM_TRY_END
-  #else
-    return E_NOTIMPL;
-  #endif
-}
-*/
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -240,11 +219,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
     {
       // propVariant = ref2.PackSize;
       {
-        int folderIndex = _database.FileIndexToFolderIndexMap[index2];
-        if (folderIndex >= 0)
+        CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
+        if (folderIndex != kNumNoIndex)
         {
-          const CFolder &folderInfo = _database.Folders[folderIndex];
-          if (_database.FolderStartFileIndex[folderIndex] == index2)
+          if (_database.FolderStartFileIndex[folderIndex] == (CNum)index2)
             propVariant = _database.GetFolderFullPackSize(folderIndex);
           /*
           else
@@ -276,8 +254,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
     #ifndef _SFX
     case kpidMethod:
       {
-        int folderIndex = _database.FileIndexToFolderIndexMap[index2];
-        if (folderIndex >= 0)
+        CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
+        if (folderIndex != kNumNoIndex)
         {
           const CFolder &folderInfo = _database.Folders[folderIndex];
           UString methodsString;
@@ -382,8 +360,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       break;
     case kpidBlock:
       {
-        int folderIndex = _database.FileIndexToFolderIndexMap[index2];
-        if (folderIndex >= 0)
+        CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
+        if (folderIndex != kNumNoIndex)
           propVariant = (UInt32)folderIndex;
       }
       break;
@@ -393,11 +371,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
     case kpidPackedSize3:
     case kpidPackedSize4:
       {
-        int folderIndex = _database.FileIndexToFolderIndexMap[index2];
-        if (folderIndex >= 0)
+        CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
+        if (folderIndex != kNumNoIndex)
         {
           const CFolder &folderInfo = _database.Folders[folderIndex];
-          if (_database.FolderStartFileIndex[folderIndex] == index2 &&
+          if (_database.FolderStartFileIndex[folderIndex] == (CNum)index2 &&
               folderInfo.PackStreams.Size() > (int)(propID - kpidPackedSize0))
           {
             propVariant = _database.GetFolderPackStreamSize(folderIndex, propID - kpidPackedSize0);
@@ -421,6 +399,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
 
 static const wchar_t *kExt = L"7z";
 static const wchar_t *kAfterPart = L".7z";
+
+#ifdef _7Z_VOL
 
 class CVolumeName
 {
@@ -495,6 +475,8 @@ public:
   }
 };
 
+#endif
+
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 *maxCheckStartPosition, 
     IArchiveOpenCallback *openArchiveCallback)
@@ -506,10 +488,12 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   #endif
   try
   {
+    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackTemp = openArchiveCallback;
+    #ifdef _7Z_VOL
     CVolumeName seqName;
 
-    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackTemp = openArchiveCallback;
     CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
+    #endif
 
     #ifndef _NO_CRYPTO
     CMyComPtr<ICryptoGetTextPassword> getTextPassword;
@@ -692,8 +676,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       return S_FALSE;
     if (file.StartPos != pos)
       return S_FALSE;
-    int folderIndex = database.FileIndexToFolderIndexMap[ref.ItemIndex];
-    if (folderIndex < 0)
+    CNum folderIndex = database.FileIndexToFolderIndexMap[ref.ItemIndex];
+    if (folderIndex == kNumNoIndex)
     {
       if (file.UnPackSize != 0)
         return E_FAIL;

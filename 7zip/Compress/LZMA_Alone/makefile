@@ -1,5 +1,6 @@
 PROG = lzma
 CXX = g++ -O2 -Wall
+CXX_C = gcc -O2 -Wall
 LIB = -lm
 RM = rm -f
 CFLAGS = -c -I ../../../
@@ -7,6 +8,10 @@ CFLAGS = -c -I ../../../
 OBJS = \
   LzmaAlone.o \
   LzmaBench.o \
+  LzmaRam.o \
+  LzmaRamDecode.o \
+  LzmaDecode.o \
+  BranchX86.o \
   LZMADecoder.o \
   LZMAEncoder.o \
   LZInWindow.o \
@@ -35,6 +40,18 @@ LzmaAlone.o: LzmaAlone.cpp
 
 LzmaBench.o: LzmaBench.cpp
 	$(CXX) $(CFLAGS) LzmaBench.cpp
+
+LzmaRam.o: LzmaRam.cpp
+	$(CXX) $(CFLAGS) LzmaRam.cpp
+
+LzmaRamDecode.o: LzmaRamDecode.c
+	$(CXX_C) $(CFLAGS) LzmaRamDecode.c
+
+LzmaDecode.o: ../LZMA_C/LzmaDecode.c
+	$(CXX_C) $(CFLAGS) ../LZMA_C/LzmaDecode.c
+
+BranchX86.o: ../Branch/BranchX86.c
+	$(CXX_C) $(CFLAGS) ../Branch/BranchX86.c
 
 LZMADecoder.o: ../LZMA/LZMADecoder.cpp
 	$(CXX) $(CFLAGS) ../LZMA/LZMADecoder.cpp

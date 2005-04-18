@@ -5,6 +5,7 @@
 #include "StreamObjects.h"
 #include "../../Common/Defs.h"
 
+/*
 STDMETHODIMP COutStreamImp::Read(void *data, ULONG size, ULONG *processedSize)
   {  return E_NOTIMPL; }
 
@@ -19,7 +20,7 @@ STDMETHODIMP COutStreamImp::Write(void const *data, ULONG size, ULONG *processed
   return S_OK; 
 }
 
-void CInStreamImp::Init(Byte *dataPointer, UInt32 size)
+void CInStreamImp::Init(Byte *dataPointer, size_t size)
 {
   _dataPointer = dataPointer;
   _size = size;
@@ -41,12 +42,12 @@ STDMETHODIMP CInStreamImp::Read(void *data, ULONG size, ULONG *processedSize)
 
 STDMETHODIMP CInStreamImp::Write(void const *data, ULONG size, ULONG *processedSize)
   {  return E_NOTIMPL; }
-
+*/
 
 
 STDMETHODIMP CSequentialInStreamImp::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 numBytesToRead = MyMin(_pos + size, _size) - _pos;
+  UInt32 numBytesToRead = (UInt32)(MyMin(_pos + size, _size) - _pos);
   memmove(data, _dataPointer + _pos, numBytesToRead);
   _pos += numBytesToRead;
   if(processedSize != NULL)
@@ -62,7 +63,7 @@ STDMETHODIMP CSequentialInStreamImp::ReadPart(void *data, UInt32 size, UInt32 *p
 ////////////////////
 
 
-void CWriteBuffer::Write(const void *data, UInt32 size)
+void CWriteBuffer::Write(const void *data, size_t size)
 {
   size_t newCapacity = _size + size;
   _buffer.EnsureCapacity(newCapacity);
@@ -169,7 +170,7 @@ STDMETHODIMP CSequentialInStreamRollback::ReadPart(void *data, UInt32 size, UInt
   return result; 
 }
 
-HRESULT CSequentialInStreamRollback::Rollback(UInt32 rollbackSize)
+HRESULT CSequentialInStreamRollback::Rollback(size_t rollbackSize)
 {
   if (rollbackSize > _currentPos)
     return E_INVALIDARG;

@@ -318,10 +318,15 @@ HRESULT CEncoder::Create()
         break;
       #endif
     }
+    if (_matchFinder == 0)
+      return E_OUTOFMEMORY;
+
     #ifdef COMPRESS_MF_MT
     if (_multiThread && !(_fastMode && (_matchFinderIndex == kHC3 || _matchFinderIndex == kHC4)))
     {
       CMatchFinderMT *mfSpec = new CMatchFinderMT;
+      if (mfSpec == 0)
+        return E_OUTOFMEMORY;
       CMyComPtr<IMatchFinder> mf = mfSpec;
       RINOK(mfSpec->SetMatchFinder(_matchFinder));
       _matchFinder.Release();

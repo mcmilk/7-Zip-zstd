@@ -1,6 +1,8 @@
-// MT_MF.cpp
+// MT.cpp
 
 #include "StdAfx.h"
+
+#include "../../../../Common/Alloc.h"
 
 #include "MT.h"
 
@@ -56,13 +58,15 @@ HRESULT CMatchFinderMT::SetMatchFinder(IMatchFinder *matchFinder,
 
 STDMETHODIMP CMatchFinderMT::Init(ISequentialInStream *s)
 { 
-  // OutputDebugString("Init\n");
   m_AskChangeBufferPos.Reset();
   m_CanChangeBufferPos.Reset();
   m_BufferPosWasChanged.Reset();
   m_StopWriting.Reset();
   m_WritingWasStopped.Reset();
   m_NeedStart = true;
+  m_CurrentPos = 0;
+  m_CurrentLimitPos = 0;
+
   HRESULT result = m_MatchFinder->Init(s);
   if (result == S_OK)
     m_DataCurrentPos = m_MatchFinder->GetPointerToCurrentPos();
@@ -71,15 +75,15 @@ STDMETHODIMP CMatchFinderMT::Init(ISequentialInStream *s)
 
 STDMETHODIMP_(void) CMatchFinderMT::ReleaseStream()
 { 
-  // OutputDebugString("ReleaseStream\n");
   m_StopWriting.Set();
   m_WritingWasStopped.Lock();
-  // OutputDebugString("m_WritingWasStopped\n");
   m_MatchFinder->ReleaseStream(); 
 }
 
 STDMETHODIMP CMatchFinderMT::MovePos()
 { 
+  if (m_Result != S_OK)
+    return m_Result;
   m_NumAvailableBytesCurrent--;
   m_DataCurrentPos++;
   return S_OK; 
@@ -99,15 +103,7 @@ STDMETHODIMP_(UInt32) CMatchFinderMT::GetMatchLen(Int32 index,
   const Byte *pby = m_DataCurrentPos + index;
   UInt32 i;
   for(i = 0; i < limit && pby[i] == pby[i - distance]; i++);
-  /*
-
-  char sz[100];
-  sprintf(sz, "GetMatchLen = %d", i);
-  OutputDebugString(sz);
-  OutputDebugString("\n");
-  */
   return i;
-  // return m_MatchFinder->GetMatchLen(index, distance, limit); }
 }
 
 STDMETHODIMP_(const Byte *) CMatchFinderMT::GetPointerToCurrentPos()
@@ -126,7 +122,8 @@ STDMETHODIMP_(UInt32) CMatchFinderMT::GetNumAvailableBytes()
   
 void CMatchFinderMT::FreeMem()
 {
-  delete []m_Buffer;
+  MyFree(m_Buffer);
+  MyFree(m_DummyBuffer);
 }
 
 STDMETHODIMP CMatchFinderMT::Create(UInt32 sizeHistory, 
@@ -138,81 +135,97 @@ STDMETHODIMP CMatchFinderMT::Create(UInt32 sizeHistory,
 
   m_BlockSize = (matchMaxLen + 1) * _multiThreadMult;
   UInt32 bufferSize = m_BlockSize * kNumMTBlocks;
-  m_Buffer = new UInt32[bufferSize];
+  m_DummyBuffer = (UInt32 *)MyAlloc((matchMaxLen + 1) * sizeof(UInt32));
+  if (m_DummyBuffer == 0)
+    return E_OUTOFMEMORY;
+  m_Buffer = (UInt32 *)MyAlloc(bufferSize * sizeof(UInt32));
+  if (m_Buffer == 0)
+    return E_OUTOFMEMORY;
   for (int i = 0; i < kNumMTBlocks; i++)
     m_Buffers[i] = &m_Buffer[i * m_BlockSize];
 
   m_NeedStart = true;
+  m_CurrentPos = 0;
+  m_CurrentLimitPos = 0;
 
   keepAddBufferBefore += bufferSize;
 
-  return m_MatchFinder->Create(sizeHistory, 
-      keepAddBufferBefore, matchMaxLen, 
+  return m_MatchFinder->Create(sizeHistory, keepAddBufferBefore, matchMaxLen, 
       keepAddBufferAfter); 
 }
 
 static DWORD WINAPI MFThread(void *threadCoderInfo)
 {
   CMatchFinderMT &mt = *(CMatchFinderMT *)threadCoderInfo;
+  return mt.ThreadFunc();
+}
+
+DWORD CMatchFinderMT::ThreadFunc()
+{
+  bool errorMode = false;
   while (true)
   {
-    HANDLE events[3] = { mt.m_ExitEvent, mt.m_StopWriting, mt.m_CanWriteEvents[mt.m_WriteBufferIndex] } ;
-    DWORD waitResult = ::WaitForMultipleObjects(3, events, FALSE, INFINITE);
+    HANDLE events[3] = { m_ExitEvent, m_StopWriting, m_CanWriteEvents[m_WriteBufferIndex] } ;
+    DWORD waitResult = ::WaitForMultipleObjects((errorMode ? 2: 3), events, FALSE, INFINITE);
     if (waitResult == WAIT_OBJECT_0 + 0)
       return 0;
     if (waitResult == WAIT_OBJECT_0 + 1)
     {
-      // OutputDebugString("m_StopWriting\n");
-      mt.m_WriteBufferIndex = 0;
+      m_WriteBufferIndex = 0;
       for (int i = 0; i < kNumMTBlocks; i++)
-        mt.m_CanWriteEvents[i].Reset();
-      mt.m_WritingWasStopped.Set();
+        m_CanWriteEvents[i].Reset();
+      m_WritingWasStopped.Set();
+      errorMode = false;
       continue;
     }
-    // OutputDebugString("m_CanWriteEvents\n");
-    UInt32 *buffer = mt.m_Buffers[mt.m_WriteBufferIndex];
+    if (errorMode)
+    {
+      // this case means bug_in_program. So just exit;
+      return 1;
+    }
+
+    m_Results[m_WriteBufferIndex] = S_OK;
+    UInt32 *buffer = m_Buffers[m_WriteBufferIndex];
     UInt32 curPos = 0;
     UInt32 numBytes = 0;
-    while (curPos + mt.m_MatchMaxLen + 1 <= mt.m_BlockSize)
+    UInt32 limit = m_BlockSize - m_MatchMaxLen;
+    IMatchFinder *mf = m_MatchFinder;
+    do 
     {
-      if (mt.m_MatchFinder->GetNumAvailableBytes() == 0)
+      if (mf->GetNumAvailableBytes() == 0)
         break;
-      UInt32 len = mt.m_MatchFinder->GetLongestMatch(buffer + curPos);
+      UInt32 len = mf->GetLongestMatch(buffer + curPos);
       /*
       if (len == 1)
         len = 0;
       */
       buffer[curPos] = len;
       curPos += len + 1;
-      HRESULT result = mt.m_MatchFinder->MovePos();
-      if (result != S_OK)
-        throw 124459;
       numBytes++;
+      HRESULT result = mf->MovePos();
+      if (result != S_OK)
+      {
+        m_Results[m_WriteBufferIndex] = result;
+        errorMode = true;
+        break;
+      }
     }
-    mt.m_LimitPos[mt.m_WriteBufferIndex] = curPos;
-    mt.m_NumAvailableBytes[mt.m_WriteBufferIndex] = 
-        numBytes + mt.m_MatchFinder->GetNumAvailableBytes();
-    // char sz[100];
-    // sprintf(sz, "x = %d", mt.m_WriteBufferIndex);
-    // OutputDebugString(sz);
-    // OutputDebugString("mt.m_CanReadEvents\n");
-    mt.m_CanReadEvents[mt.m_WriteBufferIndex].Set();
-    mt.m_WriteBufferIndex++;
-    if (mt.m_WriteBufferIndex == kNumMTBlocks)
-      mt.m_WriteBufferIndex = 0;
+    while (curPos < limit);
+    m_LimitPos[m_WriteBufferIndex] = curPos;
+    if (errorMode)
+      m_NumAvailableBytes[m_WriteBufferIndex] = numBytes;
+    else
+      m_NumAvailableBytes[m_WriteBufferIndex] = numBytes + 
+          mf->GetNumAvailableBytes();
+    m_CanReadEvents[m_WriteBufferIndex].Set();
+    if (++m_WriteBufferIndex == kNumMTBlocks)
+      m_WriteBufferIndex = 0;
   }
-
-  /*
-  while(true)
-  {
-    if (!((CCoderMixer2 *)threadCoderInfo)->MyCode())
-      return 0;
-  }
-  */
 }
 
 CMatchFinderMT::CMatchFinderMT():
   m_Buffer(0),
+  m_DummyBuffer(0),
   _multiThreadMult(100)
 {
   for (int i = 0; i < kNumMTBlocks; i++)
@@ -227,6 +240,7 @@ CMatchFinderMT::CMatchFinderMT():
   if (!m_Thread.Create(MFThread, this))
     throw 271826;
 }
+
 CMatchFinderMT::~CMatchFinderMT() 
 {
   m_ExitEvent.Set();
@@ -236,7 +250,6 @@ CMatchFinderMT::~CMatchFinderMT()
 
 void CMatchFinderMT::Start()
 {
-  // OutputDebugString("Start\n");
   m_AskChangeBufferPos.Reset();
   m_CanChangeBufferPos.Reset();
   m_BufferPosWasChanged.Reset();
@@ -246,6 +259,7 @@ void CMatchFinderMT::Start()
   m_NeedStart = false;
   m_CurrentPos = 0;
   m_CurrentLimitPos = 0;
+  m_Result = S_OK;
   int i;
   for (i = 0; i < kNumMTBlocks; i++)
     m_CanReadEvents[i].Reset();
@@ -255,24 +269,12 @@ void CMatchFinderMT::Start()
 
 STDMETHODIMP_(UInt32) CMatchFinderMT::GetLongestMatch(UInt32 *distances)
 { 
-  // OutputDebugString("GetLongestMatch\n");
-  if (m_NeedStart)
-    Start();
-  /*
-  if (m_CurrentPos > m_CurrentLimitPos)
-    throw 1123324;
-  */
   if (m_CurrentPos == m_CurrentLimitPos)
   {
-    // OutputDebugString("m_CurrentPos == m_CurrentLimitPos\n");
+    if (m_NeedStart)
+      Start();
     while (true)
     {
-      /*
-      char sz[100];
-      sprintf(sz, "m_CanReadEvents[m_ReadBufferIndex] = %d\n", m_ReadBufferIndex);
-      OutputDebugString(sz);
-      OutputDebugString("\n");
-      */
       HANDLE events[2] = { m_AskChangeBufferPos, m_CanReadEvents[m_ReadBufferIndex] } ;
       DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
       if (waitResult == WAIT_OBJECT_0 + 1)
@@ -285,9 +287,12 @@ STDMETHODIMP_(UInt32) CMatchFinderMT::GetLongestMatch(UInt32 *distances)
     m_CurrentLimitPos = m_LimitPos[m_ReadBufferIndex];
     m_NumAvailableBytesCurrent = m_NumAvailableBytes[m_ReadBufferIndex];
     m_CurrentPos = 0;
+    m_Result = m_Results[m_ReadBufferIndex];
   }
+  /*
   if (m_CurrentPos >= m_CurrentLimitPos)
     throw 1123324;
+  */
   const UInt32 *buffer = m_Buffers[m_ReadBufferIndex];
   UInt32 len = buffer[m_CurrentPos++];
   for (UInt32 i = 1; i <= len; i++)
@@ -295,22 +300,13 @@ STDMETHODIMP_(UInt32) CMatchFinderMT::GetLongestMatch(UInt32 *distances)
   if (m_CurrentPos == m_CurrentLimitPos)
   {
     m_CanWriteEvents[m_ReadBufferIndex].Set();
-    m_ReadBufferIndex++;
-    if (m_ReadBufferIndex == kNumMTBlocks)
+    if (++m_ReadBufferIndex == kNumMTBlocks)
       m_ReadBufferIndex = 0;
   }
-  // char sz[100];
-  // sprintf(sz, "m_NumAvailableBytesCurrent = %d", m_NumAvailableBytesCurrent);
-  // OutputDebugString(sz);
-  // OutputDebugString("\n");
   return len;
 }
 
 STDMETHODIMP_(void) CMatchFinderMT::DummyLongestMatch()
 { 
-  UInt32 buffer[512];
-  GetLongestMatch(buffer);
-  // m_MatchFinder->DummyLongestMatch();
+  GetLongestMatch(m_DummyBuffer);
 }
-
-

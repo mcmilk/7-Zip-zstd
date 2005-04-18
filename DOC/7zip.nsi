@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 16
+!define VERSION_MINOR 17
 !define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
 !define VERSION_POSTFIX "b"
@@ -79,6 +79,7 @@ Section
   # delete old unwanted files
   Delete $INSTDIR\7zn.exe
   Delete $INSTDIR\7zan.exe
+  Delete $INSTDIR\7zipDoc.txt
   Delete $INSTDIR\Codecs\Implode.dll
 
   # install files
@@ -90,7 +91,6 @@ Section
   File License.txt
   File copying.txt
   File readme.txt
-  File 7zipDoc.txt
   File 7zip_pad.xml
 
   # File 7-zip.dll
@@ -104,8 +104,6 @@ Section
 
   File 7z.sfx
   File 7zCon.sfx
-  File 7zS.sfx
-  File 7zSD.sfx
   File 7zC.sfx
 
   File 7-zip.chm
@@ -139,21 +137,12 @@ Section
   File AES.dll
   File 7zAES.dll
 
-  SetOutPath $INSTDIR\Far
-
-  File 7zToFar.ini
-  File far7z.reg
-  File 7-ZipFar.dll
-  File 7-ZipEng.hlf
-  File 7-ZipRus.hlf
-  File 7-ZipEng.lng
-  File 7-ZipRus.lng
-
   SetOutPath $INSTDIR\Lang
 
   File en.ttt
   File af.txt
   File ar.txt
+  File ast.txt
   File be.txt
   File bg.txt
   File br.txt
@@ -174,6 +163,7 @@ Section
   File he.txt
   File hr.txt
   File hu.txt
+  File id.txt
   File it.txt
   File ja.txt
   File ko.txt
@@ -295,7 +285,6 @@ Section "Uninstall"
   Delete $INSTDIR\License.txt
   Delete $INSTDIR\copying.txt
   Delete $INSTDIR\readme.txt
-  Delete $INSTDIR\7zipDoc.txt
   Delete $INSTDIR\7zip_pad.xml
 
   Delete /REBOOTOK $INSTDIR\7-zip.dll
@@ -309,8 +298,6 @@ Section "Uninstall"
 
   Delete $INSTDIR\7z.sfx
   Delete $INSTDIR\7zCon.sfx
-  Delete $INSTDIR\7zS.sfx
-  Delete $INSTDIR\7zSD.sfx
   Delete $INSTDIR\7zC.sfx
 
   Delete $INSTDIR\7-zip.chm
@@ -344,19 +331,10 @@ Section "Uninstall"
 
   RMDir $INSTDIR\Codecs
 
-  Delete $INSTDIR\Far\7zToFar.ini
-  Delete $INSTDIR\Far\far7z.reg
-  Delete $INSTDIR\Far\7-ZipFar.dll
-  Delete $INSTDIR\Far\7-ZipEng.hlf
-  Delete $INSTDIR\Far\7-ZipRus.hlf
-  Delete $INSTDIR\Far\7-ZipEng.lng
-  Delete $INSTDIR\Far\7-ZipRus.lng
-
-  RMDir $INSTDIR\Far
-
   Delete $INSTDIR\Lang\en.ttt
   Delete $INSTDIR\Lang\af.txt
   Delete $INSTDIR\Lang\ar.txt
+  Delete $INSTDIR\Lang\ast.txt
   Delete $INSTDIR\Lang\be.txt
   Delete $INSTDIR\Lang\bg.txt
   Delete $INSTDIR\Lang\br.txt
@@ -377,6 +355,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\he.txt
   Delete $INSTDIR\Lang\hr.txt
   Delete $INSTDIR\Lang\hu.txt
+  Delete $INSTDIR\Lang\id.txt
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ko.txt

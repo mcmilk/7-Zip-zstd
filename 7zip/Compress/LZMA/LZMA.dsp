@@ -257,14 +257,6 @@ SOURCE=..\LZ\BinTree\BinTree4b.h
 
 SOURCE=..\LZ\BinTree\BinTreeMain.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeMF.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeMFMain.h
-# End Source File
 # End Group
 # Begin Group "HC"
 
@@ -292,14 +284,6 @@ SOURCE=..\LZ\HashChain\HC4b.h
 # Begin Source File
 
 SOURCE=..\LZ\HashChain\HCMain.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HCMF.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HCMFMain.h
 # End Source File
 # End Group
 # Begin Source File

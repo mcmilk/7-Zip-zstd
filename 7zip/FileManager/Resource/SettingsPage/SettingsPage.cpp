@@ -73,38 +73,22 @@ void CSettingsPage::OnNotifyHelp()
   ShowHelpWindow(NULL, kEditTopic); // change it
 }
 
-bool CSettingsPage::OnCommand(int code, int itemID, LPARAM param)
-{
-  if (code == EN_CHANGE && 
-      (
-        itemID == IDC_SETTINGS_SHOW_DOTS || 
-        itemID == IDC_SETTINGS_SHOW_SYSTEM_MENU || 
-        itemID == IDC_SETTINGS_SHOW_REAL_FILE_ICONS ||
-        itemID == IDC_SETTINGS_FULL_ROW ||
-        itemID == IDC_SETTINGS_SHOW_GRID
-        /*
-        ||
-        itemID == IDC_SETTINGS_SINGLE_CLICK || 
-        itemID == IDC_SETTINGS_UNDERLINE
-        */
-      )
-    )
-  {
-    Changed();
-    return true;
-  }
-  return CPropertyPage::OnCommand(code, itemID, param);
-}
-
-/*
 bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 { 
   switch(buttonID)
   {
+    /*
     case IDC_SETTINGS_SINGLE_CLICK:
       EnableSubItems();
       break;
+    */
+    case IDC_SETTINGS_SHOW_DOTS:
+    case IDC_SETTINGS_SHOW_SYSTEM_MENU:
+    case IDC_SETTINGS_SHOW_REAL_FILE_ICONS:
+    case IDC_SETTINGS_FULL_ROW:
+    case IDC_SETTINGS_SHOW_GRID:
+      Changed();
+      return true;
   }
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
-*/

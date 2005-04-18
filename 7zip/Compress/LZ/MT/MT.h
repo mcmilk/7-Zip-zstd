@@ -32,15 +32,14 @@ class CMatchFinderMT:
   STDMETHOD_(UInt32, GetLongestMatch)(UInt32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
 
-private:
-public:
-  CMyComPtr<IMatchFinder> m_MatchFinder;
+  UInt32 m_CurrentPos;
+  UInt32 m_CurrentLimitPos;
   UInt32 m_MatchMaxLen;
   
   UInt32 m_BlockSize;
-  // UInt32 m_BufferSize;
   UInt32 *m_Buffer;
   UInt32 *m_Buffers[kNumMTBlocks];
+  UInt32 *m_DummyBuffer;
 
   bool m_NeedStart;
   UInt32 m_WriteBufferIndex;
@@ -49,35 +48,36 @@ public:
   NWindows::NSynchronization::CAutoResetEvent m_StopWriting;
   NWindows::NSynchronization::CAutoResetEvent m_WritingWasStopped;
 
-  NWindows::NSynchronization::CAutoResetEvent m_AskChangeBufferPos;
-  NWindows::NSynchronization::CAutoResetEvent m_CanChangeBufferPos;
-  NWindows::NSynchronization::CAutoResetEvent m_BufferPosWasChanged;
-
   NWindows::NSynchronization::CManualResetEvent m_ExitEvent;
-  // NWindows::NSynchronization::CManualResetEvent m_NewStart;
   NWindows::NSynchronization::CAutoResetEvent m_CanReadEvents[kNumMTBlocks];
   NWindows::NSynchronization::CAutoResetEvent m_CanWriteEvents[kNumMTBlocks];
+  HRESULT m_Results[kNumMTBlocks];
+
   UInt32 m_LimitPos[kNumMTBlocks];
   UInt32 m_NumAvailableBytes[kNumMTBlocks];
 
   UInt32 m_NumAvailableBytesCurrent;
-  const Byte *m_DataCurrentPos;
   
-  UInt32 m_CurrentLimitPos;
-  UInt32 m_CurrentPos;
-
   NWindows::CThread m_Thread;
-  // bool m_WriteWasClosed;
   UInt32 _multiThreadMult;
-public:
-  CMatchFinderMT();
-  ~CMatchFinderMT();
+
+  HRESULT m_Result;
+
   void Start();
   void FreeMem();
-  HRESULT SetMatchFinder(IMatchFinder *matchFinder, 
-      UInt32 multiThreadMult = 200);
+
+public:
+  NWindows::NSynchronization::CAutoResetEvent m_AskChangeBufferPos;
+  NWindows::NSynchronization::CAutoResetEvent m_CanChangeBufferPos;
+  NWindows::NSynchronization::CAutoResetEvent m_BufferPosWasChanged;
+  CMyComPtr<IMatchFinder> m_MatchFinder;
+  const Byte *m_DataCurrentPos;
+
+  DWORD ThreadFunc();
+  
+  CMatchFinderMT();
+  ~CMatchFinderMT();
+  HRESULT SetMatchFinder(IMatchFinder *matchFinder, UInt32 multiThreadMult = 200);
 };
  
-
 #endif
-

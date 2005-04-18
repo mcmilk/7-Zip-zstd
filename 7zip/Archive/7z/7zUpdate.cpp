@@ -23,8 +23,8 @@ namespace N7z {
 
 static const wchar_t *kMatchFinderForBCJ2_LZMA = L"BT2";
 static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
-const UInt32 kAlgorithmForBCJ2_LZMA = 2;
-const UInt32 kNumFastBytesForBCJ2_LZMA = 64;
+static const UInt32 kAlgorithmForBCJ2_LZMA = 2;
+static const UInt32 kNumFastBytesForBCJ2_LZMA = 64;
 
 static HRESULT CopyBlock(ISequentialInStream *inStream, 
     ISequentialOutStream *outStream, ICompressProgressInfo *progress)
@@ -501,10 +501,10 @@ static HRESULT Update2(
   {
   for(i = 0; i < database->Folders.Size(); i++)
   {
-    UInt64 indexInFolder = 0;
-    UInt64 numCopyItems = 0;
-    UInt64 numUnPackStreams = database->NumUnPackStreamsVector[i];
-    for (int fileIndex = (int)database->FolderStartFileIndex[i];
+    CNum indexInFolder = 0;
+    CNum numCopyItems = 0;
+    CNum numUnPackStreams = database->NumUnPackStreamsVector[i];
+    for (CNum fileIndex = database->FolderStartFileIndex[i];
         indexInFolder < numUnPackStreams; fileIndex++)
     {
       if (database->Files[fileIndex].HasStream)
@@ -594,9 +594,8 @@ static HRESULT Update2(
         updateCallback, complexity));
     
     const CFolder &folder = database->Folders[folderIndex];
-    UInt32 startIndex = database->FolderStartPackStreamIndex[folderIndex];
-    int j;
-    for (j = 0; j < folder.PackStreams.Size(); j++)
+    CNum startIndex = database->FolderStartPackStreamIndex[folderIndex];
+    for (int j = 0; j < folder.PackStreams.Size(); j++)
     {
       newDatabase.PackSizes.Add(database->PackSizes[startIndex + j]);
       // newDatabase.PackCRCsDefined.Add(database.PackCRCsDefined[startIndex + j]);
@@ -604,18 +603,18 @@ static HRESULT Update2(
     }
     newDatabase.Folders.Add(folder);
 
-    UInt64 numUnPackStreams = database->NumUnPackStreamsVector[folderIndex];
+    CNum numUnPackStreams = database->NumUnPackStreamsVector[folderIndex];
     newDatabase.NumUnPackStreamsVector.Add(numUnPackStreams);
 
-    UInt64 indexInFolder = 0;
-    for (j = (int)database->FolderStartFileIndex[folderIndex];
-        indexInFolder < numUnPackStreams; j++)
+    CNum indexInFolder = 0;
+    for (CNum fi = database->FolderStartFileIndex[folderIndex];
+        indexInFolder < numUnPackStreams; fi++)
     {
-      CFileItem file = database->Files[j];
+      CFileItem file = database->Files[fi];
       if (file.HasStream)
       {
         indexInFolder++;
-        int updateIndex = fileIndexToUpdateIndexMap[j];
+        int updateIndex = fileIndexToUpdateIndexMap[fi];
         if (updateIndex >= 0)
         {
           const CUpdateItem &updateItem = updateItems[updateIndex];
@@ -722,7 +721,7 @@ static HRESULT Update2(
       
       newDatabase.Folders.Add(folderItem);
       
-      UInt32 numUnPackStreams = 0;
+      CNum numUnPackStreams = 0;
       for (int subIndex = 0; subIndex < numSubFiles; subIndex++)
       {
         const CUpdateItem &updateItem = updateItems[indices[i + subIndex]];
@@ -788,7 +787,7 @@ static HRESULT WriteVolumeHeader(COutArchive &archive, CFileItem &file, const CU
   folder.Coders.Add(coder);
   folder.PackStreams.Add(0);
   
-  int numUnPackStreams = 0;
+  CNum numUnPackStreams = 0;
   if (file.UnPackSize != 0)
   {
     file.IsFileCRCDefined = true;

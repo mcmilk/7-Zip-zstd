@@ -211,13 +211,14 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData);
 void CPanel::GetSelectedNames(UStringVector &selectedNames)
 {
   selectedNames.Clear();
-  /*
+
   CRecordVector<UINT32> indices;
-  GetSelectedItemsIndexes(indices);
+  GetSelectedItemsIndices(indices);
   selectedNames.Reserve(indices.Size());
   for (int  i = 0; i < indices.Size(); i++)
     selectedNames.Add(GetItemName(indices[i]));
-  */
+
+  /*
   for (int i = 0; i < _listView.GetItemCount(); i++)
   {
     const int kSize = 1024;
@@ -236,6 +237,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
     if (_selectedStatusVector[realIndex])
       selectedNames.Add(GetUnicodeString(item.pszText));
   }
+  */
   selectedNames.Sort();
 }
 
@@ -245,12 +247,10 @@ void CPanel::RefreshListCtrlSaveFocused()
   UString focusedName;
   if (focusedItem >= 0)
   {
+    int realIndex = GetRealItemIndex(focusedItem);
+    if (realIndex != -1)
+      focusedName = GetItemName(realIndex);
     /*
-    LPARAM param;
-    if (_listView.GetItemParam(focusedItem, param))
-      // focusedName = m_Files[param].Name;
-      focusedName = GetItemName(param);
-    */
     const int kSize = 1024;
     TCHAR name[kSize + 1];
     LVITEM item;
@@ -261,6 +261,7 @@ void CPanel::RefreshListCtrlSaveFocused()
     item.mask = LVIF_TEXT;
     if (_listView.GetItem(&item))
       focusedName = GetUnicodeString(item.pszText);
+    */
   }
   UStringVector selectedNames;
   GetSelectedNames(selectedNames);
@@ -378,8 +379,28 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     item.lParam = i;
     
     const int kMaxNameSize = MAX_PATH * 2;
-    TCHAR string[kMaxNameSize];
-    lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
+    TCHAR string[kMaxNameSize + 1];
+    if (itemName.Find(L"     ") >= 0)
+    {
+      UString correctedName;
+      int pos = 0;
+      while (true)
+      {
+        int posNew = itemName.Find(L"     ", pos);
+        if (posNew < 0)
+        {
+          correctedName += itemName.Mid(pos);
+          break;
+        }
+        correctedName += itemName.Mid(pos, posNew - pos);
+        correctedName += L" ... ";
+        pos = posNew;
+        while (itemName[++pos] == ' ');
+      }
+      lstrcpyn(string, GetSystemString(correctedName), kMaxNameSize);
+    }
+    else
+      lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
     item.pszText = string;
 
     NCOM::CPropVariant propVariant;
