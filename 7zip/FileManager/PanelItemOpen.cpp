@@ -297,10 +297,14 @@ LRESULT CPanel::OnOpenItemChanged(LPARAM lParam)
   // LoadCurrentPath()
   if (tmpProcessInfo.FullPathFolderPrefix != _currentFolderPrefix)
     return 0;
+
+  CSelectedState state;
+  SaveSelectedState(state);
+
   HRESULT result = OnOpenItemChanged(tmpProcessInfo.FolderPath, tmpProcessInfo.ItemName);
   if (result != S_OK)
     return 0;
-  RefreshListCtrlSaveFocused();
+  RefreshListCtrl(state);
   return 1;
 }
 

@@ -131,6 +131,14 @@ public:
   LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 };
 
+struct CSelectedState
+{
+  int FocusedItem;
+  UString FocusedName;
+  UStringVector SelectedNames;
+  CSelectedState(): FocusedItem(-1) {}
+};
+
 class CPanel:public NWindows::NControl::CWindow2
 {
   HWND _mainWindow;
@@ -251,6 +259,8 @@ public:
   UStringVector _fastFolders;
 
   void GetSelectedNames(UStringVector &selectedNames);
+  void SaveSelectedState(CSelectedState &s);
+  void RefreshListCtrl(const CSelectedState &s);
   void RefreshListCtrlSaveFocused();
 
   UString GetItemName(int itemIndex) const;

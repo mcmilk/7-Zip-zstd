@@ -199,7 +199,6 @@ void CPanel::InsertColumn(int index)
   _listView.InsertColumn(index, &column);
 }
 
-
 void CPanel::RefreshListCtrl()
 {
   RefreshListCtrl(UString(), 0, UStringVector());
@@ -241,15 +240,16 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
   selectedNames.Sort();
 }
 
-void CPanel::RefreshListCtrlSaveFocused()
+void CPanel::SaveSelectedState(CSelectedState &s)
 {
-  int focusedItem = _listView.GetFocusedItem();
-  UString focusedName;
-  if (focusedItem >= 0)
+  s.FocusedName.Empty();
+  s.SelectedNames.Clear();
+  s.FocusedItem = _listView.GetFocusedItem();
+  if (s.FocusedItem >= 0)
   {
-    int realIndex = GetRealItemIndex(focusedItem);
+    int realIndex = GetRealItemIndex(s.FocusedItem);
     if (realIndex != -1)
-      focusedName = GetItemName(realIndex);
+      s.FocusedName = GetItemName(realIndex);
     /*
     const int kSize = 1024;
     TCHAR name[kSize + 1];
@@ -263,9 +263,19 @@ void CPanel::RefreshListCtrlSaveFocused()
       focusedName = GetUnicodeString(item.pszText);
     */
   }
-  UStringVector selectedNames;
-  GetSelectedNames(selectedNames);
-  RefreshListCtrl(focusedName, focusedItem, selectedNames);
+  GetSelectedNames(s.SelectedNames);
+}
+
+void CPanel::RefreshListCtrl(const CSelectedState &s)
+{
+  RefreshListCtrl(s.FocusedName, s.FocusedItem, s.SelectedNames);
+}
+
+void CPanel::RefreshListCtrlSaveFocused()
+{
+  CSelectedState state;
+  SaveSelectedState(state);
+  RefreshListCtrl(state);
 }
 
 void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,

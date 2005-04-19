@@ -506,6 +506,10 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &srcPanel = Panels[srcPanelIndex];
   CPanel &destPanel = Panels[destPanelIndex];
+
+  CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
+  CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
+
   bool useSrcPanel = true;
   if (!external)
     if (NumPanels != 1)
@@ -637,8 +641,12 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
       LangLoadStringW(IDS_COPYING, 0x03020205);
   UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
 
-  CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
-  CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
+  CSelectedState srcSelState;
+  CSelectedState destSelState;
+  if (copyToSame || move)
+    srcPanel.SaveSelectedState(srcSelState);
+  if (!copyToSame)
+    destPanel.SaveSelectedState(destSelState);
 
   HRESULT result;
   if (useSrcPanel && !external)
@@ -718,11 +726,11 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
   }
   if (copyToSame || move)
   {
-    srcPanel.RefreshListCtrlSaveFocused();
+    srcPanel.RefreshListCtrl(srcSelState);
   }
   if (!copyToSame)
   {
-    destPanel.RefreshListCtrlSaveFocused();
+    destPanel.RefreshListCtrl(destSelState);
     srcPanel.KillSelection();
   }
   disableTimerProcessing1.Restore();
