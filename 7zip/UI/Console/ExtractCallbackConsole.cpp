@@ -4,12 +4,9 @@
 
 #include "ExtractCallbackConsole.h"
 #include "UserInputUtils.h"
-
 #include "ConsoleClose.h"
-#include "Common/StdOutStream.h"
-#include "Common/StdInStream.h"
+
 #include "Common/Wildcard.h"
-#include "Common/StringConvert.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
@@ -17,7 +14,6 @@
 #include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Error.h"
-
 #include "Windows/PropVariantConversions.h"
 
 #include "../../Common/FilePathAutoRename.h"
@@ -37,14 +33,10 @@ static const char *kCantRenameFile = "can not rename existing file\n";
 static const char *kCantDeleteOutputFile = "can not delete output file ";
 static const char *kError = "ERROR: ";
 static const char *kMemoryExceptionMessage = "Can't allocate required memory!";
-;
-
 
 static const char *kProcessing = "Processing archive: ";
 static const char *kEverythingIsOk = "Everything is Ok";
 static const char *kNoFiles = "No files to process";
-
-static const char *kEnterPassword = "Enter password:";
 
 static const char *kUnsupportedMethod = "Unsupported Method";
 static const char *kCRCFailed = "CRC Failed";
@@ -70,11 +62,11 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
     const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
     Int32 *answer)
 {
-  g_StdErr << "file " << existName << 
+  (*OutStream) << "file " << existName << 
     "\nalready exists. Overwrite with " << endl;
-  g_StdErr << newName;
+  (*OutStream) << newName;
   
-  NUserAnswerMode::EEnum overwriteAnswer = ScanUserYesNoAllQuit();
+  NUserAnswerMode::EEnum overwriteAnswer = ScanUserYesNoAllQuit(OutStream);
   
   switch(overwriteAnswer)
   {
@@ -106,24 +98,24 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int3
   switch (askExtractMode)
   {
     case NArchive::NExtract::NAskMode::kExtract:
-      g_StdErr << kExtractingString;
+      (*OutStream) << kExtractingString;
       break;
     case NArchive::NExtract::NAskMode::kTest:
-      g_StdErr << kTestingString;
+      (*OutStream) << kTestingString;
       break;
     case NArchive::NExtract::NAskMode::kSkip:
-      g_StdErr << kSkippingString;
+      (*OutStream) << kSkippingString;
       break;
   };
-  g_StdErr << name;
+  (*OutStream) << name;
   if (position != 0)
-    g_StdErr << " <" << *position << ">";
+    (*OutStream) << " <" << *position << ">";
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallbackConsole::MessageError(const wchar_t *message)
 {
-  g_StdErr << message << endl;
+  (*OutStream) << message << endl;
   return S_OK;
 }
 
@@ -137,24 +129,24 @@ STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult)
     {
       NumFileErrorsInCurrentArchive++;
       NumFileErrors++;
-      g_StdErr << "     ";
+      (*OutStream) << "     ";
       switch(operationResult)
       {
         case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
-          g_StdErr << kUnsupportedMethod;
+          (*OutStream) << kUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          g_StdErr << kCRCFailed;
+          (*OutStream) << kCRCFailed;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          g_StdErr << kDataError;
+          (*OutStream) << kDataError;
           break;
         default:
-          g_StdErr << kUnknownError;
+          (*OutStream) << kUnknownError;
       }
     }
   }
-  g_StdErr << endl;
+  (*OutStream) << endl;
   return S_OK;
 }
 
@@ -162,9 +154,7 @@ STDMETHODIMP CExtractCallbackConsole::CryptoGetTextPassword(BSTR *password)
 {
   if (!PasswordIsDefined)
   {
-    g_StdErr << endl << kEnterPassword;
-    AString oemPassword = g_StdIn.ScanStringUntilNewLine();
-    Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+    Password = GetPassword(OutStream); 
     PasswordIsDefined = true;
   }
   CMyComBSTR tempName(Password);
@@ -176,16 +166,16 @@ HRESULT CExtractCallbackConsole::BeforeOpen(const wchar_t *name)
 {
   NumArchives++;
   NumFileErrorsInCurrentArchive = 0;
-  g_StdErr << endl << kProcessing << name << endl;
+  (*OutStream) << endl << kProcessing << name << endl;
   return S_OK;
 }
 
 HRESULT CExtractCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)
 {
-  g_StdErr << endl;
+  (*OutStream) << endl;
   if (result != S_OK)
   {
-    g_StdErr << "Error: " << name << " is not supported archive" << endl;
+    (*OutStream) << "Error: " << name << " is not supported archive" << endl;
     NumArchiveErrors++;
   }
   return S_OK;
@@ -193,7 +183,7 @@ HRESULT CExtractCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)
   
 HRESULT CExtractCallbackConsole::ThereAreNoFiles()
 {
-  g_StdErr << endl << kNoFiles << endl;
+  (*OutStream) << endl << kNoFiles << endl;
   return S_OK;
 }
 
@@ -201,29 +191,29 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
 {
   if (result == S_OK)
   {
-    g_StdErr << endl;
+    (*OutStream) << endl;
     if (NumFileErrorsInCurrentArchive == 0)
-      g_StdErr << kEverythingIsOk << endl;
+      (*OutStream) << kEverythingIsOk << endl;
     else 
     {
       NumArchiveErrors++;
-      g_StdErr << "Sub items Errors: " << NumFileErrorsInCurrentArchive << endl;
+      (*OutStream) << "Sub items Errors: " << NumFileErrorsInCurrentArchive << endl;
     }
   }
   if (result == S_OK)
     return result;
   if (result == E_ABORT)
     return result;
-  g_StdErr << endl << kError;
+  (*OutStream) << endl << kError;
   if (result == E_OUTOFMEMORY)
-    g_StdErr << kMemoryExceptionMessage;
+    (*OutStream) << kMemoryExceptionMessage;
   else
   {
     UString message;
     NError::MyFormatMessage(result, message);
-    g_StdErr << message;
+    (*OutStream) << message;
   }
-  g_StdErr << endl;
+  (*OutStream) << endl;
 
   NumArchiveErrors++;
   return S_OK;

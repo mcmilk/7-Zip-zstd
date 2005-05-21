@@ -4,30 +4,52 @@
 
 #include "HuffmanEncoder.h"
 #include "Common/Defs.h"
+#include "Common/Alloc.h"
 
 namespace NCompression {
 namespace NHuffman {
 
 static const char *kIncorrectBitLenCountsMessage = "Incorrect bit len counts";
 
-CEncoder::CEncoder(UInt32 numSymbols,
-    const Byte *extraBits, UInt32 extraBase, UInt32 maxLength):
-  m_NumSymbols(numSymbols),
-  m_ExtraBits(extraBits),
-  m_ExtraBase(extraBase),
-  m_MaxLength(maxLength),
-  m_HeapSize(numSymbols * 2+ 1)
+CEncoder::CEncoder():
+  m_Items(0),
+  m_Heap(0),
+  m_Depth(0)
+{}
+
+void CEncoder::Free()
 {
-  m_Items = new CItem[m_HeapSize];
-  m_Heap = new UInt32[m_HeapSize];
-  m_Depth = new Byte[m_HeapSize];
+  MyFree(m_Items);
+  MyFree(m_Heap);
+  MyFree(m_Depth);
+  m_Items = 0;
+  m_Heap = 0;
+  m_Depth = 0;
+}
+
+bool CEncoder::Create(UInt32 numSymbols,
+    const Byte *extraBits, UInt32 extraBase, UInt32 maxLength)
+{
+  m_NumSymbols = numSymbols;
+  m_ExtraBits = extraBits;
+  m_ExtraBase = extraBase;
+  m_MaxLength = maxLength;
+  m_HeapSize = numSymbols * 2 + 1;
+  Free();
+  m_Items = (CItem *)MyAlloc(m_HeapSize * sizeof(CItem));
+  m_Heap = (UInt32 *)MyAlloc(m_HeapSize * sizeof(UInt32));
+  m_Depth = (Byte *)MyAlloc(m_HeapSize * sizeof(Byte));
+  if (m_Items == 0 || m_Heap == 0 || m_Depth == 0)
+  {
+    Free();
+    return false;
+  }
+  return true;
 }
 
 CEncoder::~CEncoder()
 {
-  delete []m_Depth;
-  delete []m_Heap;
-  delete []m_Items;
+  Free();
 }
 
 void CEncoder::StartNewBlock()

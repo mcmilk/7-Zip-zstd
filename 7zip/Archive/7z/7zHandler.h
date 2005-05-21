@@ -144,6 +144,7 @@ private:
   UInt32 _defaultAlgorithm;
   UInt32 _defaultFastBytes;
   UString _defaultMatchFinder;
+  UInt32 _defaultBZip2Passes;
   bool _autoFilter;
   bool _multiThread;
   UInt32 _level;
@@ -219,6 +220,7 @@ private:
     _multiThread = false;
     _copyMode = false;
     _defaultDicSize = (1 << 21);
+    _defaultBZip2Passes = 1;
     _defaultAlgorithm = 1;
     _defaultFastBytes = 32;
     _defaultMatchFinder = L"BT4";

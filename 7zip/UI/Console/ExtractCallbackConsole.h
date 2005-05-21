@@ -4,6 +4,7 @@
 #define __EXTRACTCALLBACKCONSOLE_H
 
 #include "Common/String.h"
+#include "Common/StdOutStream.h"
 #include "../../Common/FileStreams.h"
 #include "../../IPassword.h"
 #include "../../Archive/IArchive.h"
@@ -49,6 +50,8 @@ public:
   UInt64 NumFileErrors;
   UInt64 NumFileErrorsInCurrentArchive;
 
+  CStdOutStream *OutStream;
+
   void CExtractCallbackConsole::Init()
   {
     NumArchives = 0;
@@ -56,6 +59,7 @@ public:
     NumFileErrors = 0;
     NumFileErrorsInCurrentArchive = 0;
   }
+
 };
 
 #endif

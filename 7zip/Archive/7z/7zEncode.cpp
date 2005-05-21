@@ -39,11 +39,23 @@ static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
 #endif
 
 #ifdef COMPRESS_DEFLATE
+#ifndef COMPRESS_DEFLATE_ENCODER
+#define COMPRESS_DEFLATE_ENCODER
+#endif
+#endif
+
+#ifdef COMPRESS_DEFLATE_ENCODER
 #include "../../Compress/Deflate/DeflateEncoder.h"
 static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 #endif
 
 #ifdef COMPRESS_BZIP2
+#ifndef COMPRESS_BZIP2_ENCODER
+#define COMPRESS_BZIP2_ENCODER
+#endif
+#endif
+
+#ifdef COMPRESS_BZIP2_ENCODER
 #include "../../Compress/BZip2/BZip2Encoder.h"
 static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
@@ -138,12 +150,12 @@ HRESULT CEncoder::CreateMixerCoder()
         encoder = new NCompress::CCopyCoder;
       #endif
       
-      #ifdef COMPRESS_BZIP2
+      #ifdef COMPRESS_BZIP2_ENCODER
       if (methodFull.MethodID == k_BZip2)
         encoder = new NCompress::NBZip2::CEncoder;
       #endif
       
-      #ifdef COMPRESS_DEFLATE
+      #ifdef COMPRESS_DEFLATE_ENCODER
       if (methodFull.MethodID == k_Deflate)
         encoder = new NCompress::NDeflate::NEncoder::CCOMCoder;
       #endif

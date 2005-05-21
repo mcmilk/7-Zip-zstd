@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../Common/ProgressUtils.h"
+#include "Windows/PropVariant.h"
 
 #include "BZip2Update.h"
 
@@ -22,6 +23,7 @@ namespace NBZip2 {
 HRESULT UpdateArchive(UInt64 unpackSize,
     ISequentialOutStream *outStream,
     int indexInClient,
+    UInt32 numPasses,
     IArchiveUpdateCallback *updateCallback)
 {
   RINOK(updateCallback->SetTotal(unpackSize));
@@ -46,6 +48,27 @@ HRESULT UpdateArchive(UInt64 unpackSize,
   RINOK(lib.LoadAndCreateCoder(GetBZip2CodecPath(),
       CLSID_CCompressBZip2Encoder, &encoder));
   #endif
+
+  CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
+  encoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
+  if (setCoderProperties)
+  {
+    /*
+    NWindows::NCOM::CPropVariant properties[2] = 
+    {
+      dictionary, numPasses
+    };
+    PROPID propIDs[2] = 
+    {
+      NCoderPropID::kDictionarySize,
+      NCoderPropID::kNumPasses,
+    };
+    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 2));
+    */
+    NWindows::NCOM::CPropVariant property = numPasses;
+    PROPID propID = NCoderPropID::kNumPasses;
+    RINOK(setCoderProperties->SetCoderProperties(&propID, &property, 1));
+  }
   
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
   

@@ -4,6 +4,7 @@
 #define __ARCHIVECOMMANDLINE_H
 
 #include "Common/Wildcard.h"
+#include "Common/CommandLineParser.h"
 
 #include "Extract.h"
 #include "Update.h"
@@ -40,10 +41,12 @@ struct CArchiveCommandLineOptions
   bool HelpMode;
 
   bool IsInTerminal;
-  bool IsOutTerminal;
+  bool IsStdOutTerminal;
+  bool IsStdErrTerminal;
   bool StdInMode;
   bool StdOutMode;
   bool EnableHeaders;
+
   bool YesToAll;
   bool ShowDialog;
   // NWildcard::CCensor ArchiveWildcardCensor;
@@ -65,14 +68,17 @@ struct CArchiveCommandLineOptions
   CUpdateOptions UpdateOptions;
   bool EnablePercents;
 
-  // UString ArchiveType;
-  // bool SfxMode;
+  CArchiveCommandLineOptions(): StdInMode(false), StdOutMode(false) {};
+
 };
 
-int ParseCommandLine(UStringVector commandStrings,
-    CArchiveCommandLineOptions &options);
+class CArchiveCommandLineParser
+{
+  NCommandLineParser::CParser parser;
+public:
+  CArchiveCommandLineParser();
+  void Parse1(const UStringVector commandStrings, CArchiveCommandLineOptions &options);
+  void Parse2(CArchiveCommandLineOptions &options);
+};
 
 #endif
-
-
-

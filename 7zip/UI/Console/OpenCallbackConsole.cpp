@@ -4,11 +4,8 @@
 
 #include "OpenCallbackConsole.h"
 
-#include "Common/StdOutStream.h"
-#include "Common/StdInStream.h"
-#include "Common/StringConvert.h"
-
 #include "ConsoleClose.h"
+#include "UserInputUtils.h"
 
 HRESULT COpenCallbackConsole::CheckBreak()
 {
@@ -32,9 +29,7 @@ HRESULT COpenCallbackConsole::CryptoGetTextPassword(BSTR *password)
   RINOK(CheckBreak());
   if (!PasswordIsDefined)
   {
-    g_StdErr << "\nEnter password:";
-    AString oemPassword = g_StdIn.ScanStringUntilNewLine();
-    Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+    Password = GetPassword(OutStream); 
     PasswordIsDefined = true;
   }
   CMyComBSTR temp(Password);

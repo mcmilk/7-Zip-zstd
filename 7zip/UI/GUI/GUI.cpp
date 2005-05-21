@@ -67,9 +67,10 @@ int Main2()
   commandStrings.Delete(0);
 
   CArchiveCommandLineOptions options;
-  int result = ParseCommandLine(commandStrings, options);
-  if (result != 0)
-    return result;
+  CArchiveCommandLineParser parser;
+
+  parser.Parse1(commandStrings, options);
+  parser.Parse2(options);
   
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
  

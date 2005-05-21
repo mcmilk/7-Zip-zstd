@@ -13,12 +13,21 @@ namespace NBZip2 {
 class CHandler: 
   public IInArchive,
   public IOutArchive,
+  public ISetProperties,
   public CMyUnknownImp
 {
+  CMyComPtr<IInStream> _stream;
+  NArchive::NBZip2::CItem _item;
+  UInt64 _streamStartPosition;
+
+  UInt32 _numPasses;
+  void InitMethodProperties() { _numPasses = 1; }
+
 public:
-  MY_UNKNOWN_IMP2(
+  MY_UNKNOWN_IMP3(
       IInArchive,
-      IOutArchive
+      IOutArchive,
+      ISetProperties
   )
 
   STDMETHOD(Open)(IInStream *stream, 
@@ -44,13 +53,12 @@ public:
 
   STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback);
-
   STDMETHOD(GetFileTimeType)(UInt32 *type);  
 
-private:
-  CMyComPtr<IInStream> _stream;
-  NArchive::NBZip2::CItem _item;
-  UInt64 _streamStartPosition;
+  // ISetProperties
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
+
+  CHandler() { InitMethodProperties(); }
 };
 
 }}

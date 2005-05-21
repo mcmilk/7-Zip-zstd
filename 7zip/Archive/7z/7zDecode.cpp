@@ -34,11 +34,23 @@ static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
 #endif
 
 #ifdef COMPRESS_DEFLATE
+#ifndef COMPRESS_DEFLATE_DECODER
+#define COMPRESS_DEFLATE_DECODER
+#endif
+#endif
+
+#ifdef COMPRESS_DEFLATE_DECODER
 #include "../../Compress/Deflate/DeflateDecoder.h"
 static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 #endif
 
 #ifdef COMPRESS_BZIP2
+#ifndef COMPRESS_BZIP2_DECODER
+#define COMPRESS_BZIP2_DECODER
+#endif
+#endif
+
+#ifdef COMPRESS_BZIP2_DECODER
 #include "../../Compress/BZip2/BZip2Decoder.h"
 static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
@@ -228,12 +240,12 @@ HRESULT CDecoder::Decode(IInStream *inStream,
           filter = new CBCJ_x86_Decoder;
         #endif
 
-        #ifdef COMPRESS_DEFLATE
+        #ifdef COMPRESS_DEFLATE_DECODER
         if (altCoderInfo.MethodID == k_Deflate)
           decoder = new NCompress::NDeflate::NDecoder::CCOMCoder;
         #endif
 
-        #ifdef COMPRESS_BZIP2
+        #ifdef COMPRESS_BZIP2_DECODER
         if (altCoderInfo.MethodID == k_BZip2)
           decoder = new NCompress::NBZip2::CDecoder;
         #endif

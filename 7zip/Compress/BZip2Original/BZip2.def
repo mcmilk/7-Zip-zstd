@@ -1,0 +1,9 @@
+; BZip2.def
+
+LIBRARY BZip2.dll
+
+EXPORTS
+  CreateObject PRIVATE
+  GetNumberOfMethods PRIVATE
+  GetMethodProperty PRIVATE
+

@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 18
+!define VERSION_MINOR 19
 !define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
 !define VERSION_POSTFIX "b"
@@ -143,6 +143,7 @@ Section
   File af.txt
   File ar.txt
   File ast.txt
+  File az.txt
   File be.txt
   File bg.txt
   File br.txt
@@ -166,6 +167,7 @@ Section
   File id.txt
   File it.txt
   File ja.txt
+  File ka.txt
   File ko.txt
   File lt.txt
   File lv.txt
@@ -335,6 +337,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\af.txt
   Delete $INSTDIR\Lang\ar.txt
   Delete $INSTDIR\Lang\ast.txt
+  Delete $INSTDIR\Lang\az.txt
   Delete $INSTDIR\Lang\be.txt
   Delete $INSTDIR\Lang\bg.txt
   Delete $INSTDIR\Lang\br.txt
@@ -358,6 +361,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\id.txt
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
+  Delete $INSTDIR\Lang\ka.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\lt.txt
   Delete $INSTDIR\Lang\lv.txt

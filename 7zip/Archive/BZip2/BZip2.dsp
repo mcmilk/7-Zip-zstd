@@ -142,11 +142,27 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\String.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\String.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringConvert.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringToInt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringToInt.h
 # End Source File
 # End Group
 # Begin Group "Windows"

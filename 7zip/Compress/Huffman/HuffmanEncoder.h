@@ -8,7 +8,7 @@
 namespace NCompression {
 namespace NHuffman {
 
-const int kNumBitsInLongestCode = 15;
+const int kNumBitsInLongestCode = 20;
 
 struct CItem
 {
@@ -20,6 +20,7 @@ struct CItem
 
 class CEncoder
 {
+public:
   UInt32 m_NumSymbols; // number of symbols in adwSymbol
 
   CItem *m_Items;
@@ -40,15 +41,18 @@ class CEncoder
   void GenerateCodes(UInt32 maxCode);
   
   UInt32 m_BlockBitLength;
+
+  void Free();
+
 public:
 
-  CEncoder(UInt32 numSymbols, const Byte *extraBits, 
-      UInt32 extraBase, UInt32 maxLength);
+  CEncoder();
   ~CEncoder();
+  bool Create(UInt32 numSymbols, const Byte *extraBits, 
+      UInt32 extraBase, UInt32 maxLength);
   void StartNewBlock();
 
-  void AddSymbol(UInt32 symbol)
-    {  m_Items[symbol].Freq++; }
+  void AddSymbol(UInt32 symbol) {  m_Items[symbol].Freq++; }
 
   void SetFreqs(const UInt32 *freqs);
   void BuildTree(Byte *levels);

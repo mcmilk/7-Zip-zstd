@@ -36,6 +36,10 @@ code to the terms of the CPL or GNU LGPL.
 Any modifications or additions to files from LZMA SDK, however, 
 are subject to the GNU LGPL or CPL terms.
 
+Also you can use this version of LZMA SDK under the same terms 
+and conditions contained in the License Agreement you have 
+for any previous version of LZMA SDK developed by Igor Pavlov.
+
 
 GNU LGPL and CPL licenses are pretty similar and both these
 licenses are classified as 
@@ -44,9 +48,15 @@ licenses are classified as
 2) "OSI-approved" at http://www.opensource.org/
 
 
-LZMA SDK also can be available under a proprietary license for 
-those who cannot use the GNU LGPL or CPL in their code. To request
-such proprietary license or any additional consultations,
+
+LZMA SDK also can be available under a proprietary license which 
+can include:
+
+1) Right to modify code without subjecting modified code to the 
+terms of the CPL or GNU LGPL
+2) Technical support for code
+
+To request such proprietary license or any additional consultations,
 send email message from that page:
 http://www.7-zip.org/support.html
 

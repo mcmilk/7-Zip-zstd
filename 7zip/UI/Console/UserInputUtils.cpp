@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "Common/StdInStream.h"
-#include "Common/StdOutStream.h"
+#include "Common/StringConvert.h"
 
 #include "UserInputUtils.h"
 
@@ -22,12 +22,12 @@ static const char *kHelpQuestionMessage =
 // in: anAll
 // out: anAll, anYes;
 
-NUserAnswerMode::EEnum ScanUserYesNoAllQuit()
+NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
 {
-  g_StdErr << kFirstQuestionMessage;
+  (*outStream) << kFirstQuestionMessage;
   do
   {
-    g_StdErr << kHelpQuestionMessage;
+    (*outStream) << kHelpQuestionMessage;
     AString scannedString = g_StdIn.ScanStringUntilNewLine();
     scannedString.Trim();
     if(!scannedString.IsEmpty())
@@ -48,4 +48,11 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit()
       }
   }
   while(true);
+}
+
+UString GetPassword(CStdOutStream *outStream)
+{
+  (*outStream) << "\nEnter password:";
+  AString oemPassword = g_StdIn.ScanStringUntilNewLine();
+  return MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
 }

@@ -116,8 +116,7 @@ static const EMethodID g_7zMethods[] =
 {
   kLZMA,
   kPPMd,
-  kBZip2,
-  kDeflate
+  kBZip2
 };
 
 static const EMethodID g_7zSfxMethods[] = 
@@ -185,7 +184,7 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     L"BZip2", 
-    (1 << 5), 
+    (1 << 5) | (1 << 7) | (1 << 9),
     g_BZip2Methods, 
     MY_SIZE_OF_ARRAY(g_BZip2Methods),
     false, false, false, false, false
@@ -1096,10 +1095,6 @@ bool CCompressDialog::GetOrderMode()
 {
   switch (GetMethodID())
   {
-    case kLZMA:
-    case kDeflate:
-    case kDeflate64:
-      return false;
     case kPPMd:
       return true;
   }

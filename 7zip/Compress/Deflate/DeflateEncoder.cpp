@@ -82,11 +82,6 @@ inline UInt32 GetPosSlot(UInt32 pos)
 
 CCoder::CCoder(bool deflate64Mode):
   _deflate64Mode(deflate64Mode),
-  m_MainCoder(kMainTableSize, 
-      deflate64Mode ? kLenDirectBits64 : kLenDirectBits32, 
-      kMatchNumber, kMaxCodeBitLength),
-  m_DistCoder(deflate64Mode ? kDistTableSize64 : kDistTableSize32, kDistDirectBits, 0, kMaxCodeBitLength),
-  m_LevelCoder(kLevelTableSize, kLevelDirectBits, 0, kMaxLevelBitLength),
   m_NumPasses(1),
   m_NumFastBytes(32),
   m_OnePosMatchesMemory(0),
@@ -686,6 +681,15 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
   if (!m_Created)
   {
     RINOK(Create());
+
+    if (!m_MainCoder.Create(kMainTableSize, _deflate64Mode ? kLenDirectBits64 : kLenDirectBits32, 
+        kMatchNumber, kMaxCodeBitLength))
+      return E_OUTOFMEMORY;
+    if (!m_DistCoder.Create(_deflate64Mode ? kDistTableSize64 : kDistTableSize32, 
+        kDistDirectBits, 0, kMaxCodeBitLength))
+      return E_OUTOFMEMORY;
+    if (!m_LevelCoder.Create(kLevelTableSize, kLevelDirectBits, 0, kMaxLevelBitLength))
+      return E_OUTOFMEMORY;
     m_Created = true;
   }
 

@@ -37,22 +37,18 @@ STDAPI CreateObject(
   *outObject = 0;
   if (*classID != NArchive::N7z::CLSID_CFormat7z)
     return CLASS_E_CLASSNOTAVAILABLE;
-  int needIn = *interfaceID == IID_IInArchive;
-  int needOut = *interfaceID == IID_IOutArchive;
-  if (needIn || needOut)
+  if (*interfaceID == IID_IInArchive)
   {
-    NArchive::N7z::CHandler *temp = new NArchive::N7z::CHandler;
-    if (needIn)
-    {
-      CMyComPtr<IInArchive> inArchive = (IInArchive *)temp;
-      *outObject = inArchive.Detach();
-    }
-    else
-    {
-      CMyComPtr<IOutArchive> outArchive = (IOutArchive *)temp;
-      *outObject = outArchive.Detach();
-    }
+    CMyComPtr<IInArchive> inArchive = new NArchive::N7z::CHandler;
+    *outObject = inArchive.Detach();
   }
+  #ifndef EXTRACT_ONLY
+  else if (*interfaceID == IID_IOutArchive)
+  {
+    CMyComPtr<IOutArchive> outArchive = new NArchive::N7z::CHandler;
+    *outObject = outArchive.Detach();
+  }
+  #endif
   else
     return E_NOINTERFACE;
   COM_TRY_END

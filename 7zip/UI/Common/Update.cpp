@@ -760,7 +760,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
   if (archive != NULL)
   {
     RINOK(EnumerateInArchiveItems(censor, 
-        archive, *defaultItemName, archiveFileInfo, archiveItems));
+        archive, defaultItemName, archiveFileInfo, archiveItems));
   }
 
   RINOK(UpdateWithItemLists(options, archive, archiveItems, dirItems, 

@@ -117,130 +117,6 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
-# Begin Group "Origianl"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\Original\blocksort.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\bzlib.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\bzlib.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\bzlib_private.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\compress.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\crctable.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\decompress.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\huffman.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Original\randtable.c
-
-!IF  "$(CFG)" == "BZip2 - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# End Group
 # Begin Group "Common"
 
 # PROP Default_Filter ""
@@ -261,6 +137,94 @@ SOURCE=..\..\..\Common\NewHandler.cpp
 SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # End Group
+# Begin Group "Huffman"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Huffman\HuffmanDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Huffman\HuffmanEncoder.cpp
+
+!IF  "$(CFG)" == "BZip2 - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Huffman\HuffmanEncoder.h
+# End Source File
+# End Group
+# Begin Group "7-Zip Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Common\InBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\InBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MSBFDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MSBFEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.h
+# End Source File
+# End Group
+# Begin Group "BWT"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\BWT\BlockSort.cpp
+
+!IF  "$(CFG)" == "BZip2 - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "BZip2 - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\BWT\BlockSort.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\BWT\Mtf8.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=.\BZip2CRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BZip2CRC.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\BZip2Decoder.cpp
@@ -296,10 +260,6 @@ SOURCE=.\BZip2Encoder.cpp
 # Begin Source File
 
 SOURCE=.\BZip2Encoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\BZip2Error.cpp
 # End Source File
 # End Target
 # End Project

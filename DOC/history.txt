@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.19 beta           2005-05-21
+  --------------------------------------
+   -  BZip2 code was rewritten. Now 7-Zip doesn't use original BZip2 code.
+      Old (original) version was moved to folder 7zip/Compress/BZip2Original/
+
+  
   Version 4.14 beta           2005-01-11
   --------------------------------------
    -  STL using was reduced

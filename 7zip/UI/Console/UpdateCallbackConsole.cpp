@@ -4,19 +4,12 @@
 
 #include "UpdateCallbackConsole.h"
 
-#include "Common/StdInStream.h"
-#include "Common/StdOutStream.h"
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
-#include "Common/Defs.h"
-
-#include "Windows/PropVariant.h"
 #include "Windows/Error.h"
 
 #include "ConsoleClose.h"
+#include "UserInputUtils.h"
 
 using namespace NWindows;
-
 
 static const char *kCreatingArchiveMessage = "Creating archive ";
 static const char *kUpdatingArchiveMessage = "Updating archive ";
@@ -26,43 +19,41 @@ static const char *kTotalFilesAddedMessage = "Total files added to archive: ";
 
 HRESULT CUpdateCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)
 {
-  g_StdErr << endl;
+  (*OutStream) << endl;
   if (result != S_OK)
-  {
-    g_StdErr << "Error: " << name << " is not supported archive" << endl;
-  }
+    (*OutStream) << "Error: " << name << " is not supported archive" << endl;
   return S_OK;
 }
 
 HRESULT CUpdateCallbackConsole::StartScanning()
 {
-  g_StdErr << kScanningMessage;
+  (*OutStream) << kScanningMessage;
   return S_OK;
 }
 
 HRESULT CUpdateCallbackConsole::FinishScanning()
 {
-  g_StdErr << endl << endl;
+  (*OutStream) << endl << endl;
   return S_OK;
 }
 
 HRESULT CUpdateCallbackConsole::StartArchive(const wchar_t *name, bool updating)
 {
   if(updating)
-    g_StdErr << kUpdatingArchiveMessage;
+    (*OutStream) << kUpdatingArchiveMessage;
   else
-    g_StdErr << kCreatingArchiveMessage; 
+    (*OutStream) << kCreatingArchiveMessage; 
   if (name != 0)
-    g_StdErr << name;
+    (*OutStream) << name;
   else
-    g_StdErr << "StdOut";
-  g_StdErr << endl << endl;
+    (*OutStream) << "StdOut";
+  (*OutStream) << endl << endl;
   return S_OK;
 }
 
 HRESULT CUpdateCallbackConsole::FinishArchive()
 {
-  g_StdErr << endl;
+  (*OutStream) << endl;
   return S_OK;
 }
 
@@ -157,9 +148,7 @@ HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined,
   {
     if (AskPassword)
     {
-      g_StdErr << "\nEnter password:";
-      AString oemPassword = g_StdIn.ScanStringUntilNewLine();
-      Password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+      Password = GetPassword(OutStream); 
       PasswordIsDefined = true;
     }
   }

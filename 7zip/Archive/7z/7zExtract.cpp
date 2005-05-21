@@ -238,7 +238,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       if (result != S_OK)
         return result;
-      RINOK(folderOutStream->WasWritingFinished());
+      if (folderOutStream->WasWritingFinished() != S_OK)
+      {
+        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+        continue;
+      }
     }
     catch(...)
     {

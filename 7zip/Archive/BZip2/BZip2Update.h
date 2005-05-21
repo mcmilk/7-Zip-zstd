@@ -12,6 +12,7 @@ HRESULT UpdateArchive(
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     int indexInClient,
+    UInt32 numPasses,
     IArchiveUpdateCallback *updateCallback);
 
 }}

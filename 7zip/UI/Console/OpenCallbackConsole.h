@@ -3,6 +3,7 @@
 #ifndef __OPENCALLBACKCONSOLE_H
 #define __OPENCALLBACKCONSOLE_H
 
+#include "Common/StdOutStream.h"
 #include "../Common/ArchiveOpenCallback.h"
 
 class COpenCallbackConsole: public IOpenCallbackUI
@@ -14,6 +15,7 @@ public:
   HRESULT CryptoGetTextPassword(BSTR *password);
   HRESULT GetPasswordIfAny(UString &password);
 
+  CStdOutStream *OutStream;
   bool PasswordIsDefined;
   UString Password;
   COpenCallbackConsole(): PasswordIsDefined(false) {}

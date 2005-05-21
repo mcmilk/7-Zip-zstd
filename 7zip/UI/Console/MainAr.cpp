@@ -16,6 +16,8 @@
 
 using namespace NWindows;
 
+CStdOutStream *g_StdStream = 0;
+
 extern int Main2(
   #ifndef _WIN32  
   int numArguments, const char *arguments[]
@@ -51,10 +53,11 @@ int numArguments, const char *arguments[]
 #endif
 )
 {
+  g_StdStream = &g_StdOut;
   #ifdef UNICODE
   if (!IsItWindowsNT())
   {
-    g_StdErr << "This program requires Windows NT/2000/XP/2003";
+    (*g_StdStream) << "This program requires Windows NT/2000/XP/2003";
     return NExitCode::kFatalError;
   }
   #endif
@@ -70,67 +73,67 @@ int numArguments, const char *arguments[]
   }
   catch(const CNewException &)
   {
-    g_StdErr << kMemoryExceptionMessage;
+    (*g_StdStream) << kMemoryExceptionMessage;
     return (NExitCode::kMemoryError);
   }
   catch(const NConsoleClose::CCtrlBreakException &)
   {
-    g_StdErr << endl << kUserBreak;
+    (*g_StdStream) << endl << kUserBreak;
     return (NExitCode::kUserBreak);
   }
   catch(const CSystemException &systemError)
   {
     if (systemError.ErrorCode == E_OUTOFMEMORY)
     {
-      g_StdErr << kMemoryExceptionMessage;
+      (*g_StdStream) << kMemoryExceptionMessage;
       return (NExitCode::kMemoryError);
     }
     if (systemError.ErrorCode == E_ABORT)
     {
-      g_StdErr << endl << kUserBreak;
+      (*g_StdStream) << endl << kUserBreak;
       return (NExitCode::kUserBreak);
     }
     UString message;
     NError::MyFormatMessage(systemError.ErrorCode, message);
-    g_StdErr << endl << endl << "System error:" << endl << 
+    (*g_StdStream) << endl << endl << "System error:" << endl << 
         message << endl;
     return (NExitCode::kFatalError);
   }
   catch(NExitCode::EEnum &exitCode)
   {
-    g_StdErr << kInternalExceptionMessage << exitCode << endl;
+    (*g_StdStream) << kInternalExceptionMessage << exitCode << endl;
     return (exitCode);
   }
   /*
   catch(const NExitCode::CMultipleErrors &multipleErrors)
   {
-    g_StdErr << endl << multipleErrors.NumErrors << " errors" << endl;
+    (*g_StdStream) << endl << multipleErrors.NumErrors << " errors" << endl;
     return (NExitCode::kFatalError);
   }
   */
   catch(const UString &s)
   {
-    g_StdErr << kExceptionErrorMessage << s << endl;
+    (*g_StdStream) << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(const AString &s)
   {
-    g_StdErr << kExceptionErrorMessage << s << endl;
+    (*g_StdStream) << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(const char *s)
   {
-    g_StdErr << kExceptionErrorMessage << s << endl;
+    (*g_StdStream) << kExceptionErrorMessage << s << endl;
     return (NExitCode::kFatalError);
   }
   catch(int t)
   {
-    g_StdErr << kInternalExceptionMessage << t << endl;
+    (*g_StdStream) << kInternalExceptionMessage << t << endl;
     return (NExitCode::kFatalError);
   }
   catch(...)
   {
-    g_StdErr << kUnknownExceptionMessage;
+    (*g_StdStream) << kUnknownExceptionMessage;
     return (NExitCode::kFatalError);
   }
 }

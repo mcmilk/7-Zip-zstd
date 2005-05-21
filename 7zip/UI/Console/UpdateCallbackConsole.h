@@ -4,6 +4,7 @@
 #define __UPDATECALLBACKCONSOLE_H
 
 #include "Common/String.h"
+#include "Common/StdOutStream.h"
 #include "PercentPrinter.h"
 #include "../Common/Update.h"
 
@@ -13,6 +14,7 @@ class CUpdateCallbackConsole: public IUpdateCallbackUI2
   bool m_PercentCanBePrint;
   bool m_NeedBeClosed;
 
+  CStdOutStream *OutStream;
 public:
   bool EnablePercents;
   bool StdOutMode;
@@ -20,6 +22,7 @@ public:
   bool PasswordIsDefined;
   UString Password;
   bool AskPassword;
+
 
   CUpdateCallbackConsole(): 
       m_PercentPrinter(1 << 16),
@@ -30,12 +33,14 @@ public:
       {}
   
   ~CUpdateCallbackConsole() { Finilize(); }
-  void Init()
+  void Init(CStdOutStream *outStream)
   {
     m_PercentCanBePrint = false;
     m_NeedBeClosed = false;
     FailedFiles.Clear();
     FailedCodes.Clear();
+    OutStream = outStream;
+    m_PercentPrinter.OutStream = outStream;
   }
 
   HRESULT OpenResult(const wchar_t *name, HRESULT result);

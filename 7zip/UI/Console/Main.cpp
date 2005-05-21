@@ -43,6 +43,7 @@ using namespace NFile;
 using namespace NCommandLineParser;
 
 HINSTANCE g_hInstance = 0;
+extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = "\n7-Zip"
 #ifdef EXCLUDE_COM
@@ -53,7 +54,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.17 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-04-18\n";
+" 4.19 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-05-21\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z"
@@ -103,27 +104,26 @@ static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::
 
 static const wchar_t *kDefaultSfxModule = L"7zCon.sfx";
 
-void PrintHelp(void)
+static void PrintHelp(CStdOutStream &s)
 {
-  g_StdErr << kHelpString;
+  s << kHelpString;
 }
 
-static void ShowMessageAndThrowException(LPCSTR message, NExitCode::EEnum code)
+static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExitCode::EEnum code)
 {
-  g_StdErr << message << endl;
+  s << message << endl;
   throw code;
 }
 
-static void PrintHelpAndExit() // yyy
+static void PrintHelpAndExit(CStdOutStream &s) // yyy
 {
-  PrintHelp();
-  ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
+  PrintHelp(s);
+  ShowMessageAndThrowException(s, kUserErrorMessage, NExitCode::kUserError);
 }
 
-static void PrintProcessTitle(const AString &processTitle, const UString &archiveName)
+static void PrintProcessTitle(CStdOutStream &s, const AString &processTitle, const UString &archiveName)
 {
-  g_StdErr << endl << processTitle << 
-      kProcessArchiveMessage << archiveName << endl << endl;
+  s << endl << processTitle << kProcessArchiveMessage << archiveName << endl << endl;
 }
 
 #ifndef _WIN32
@@ -159,27 +159,30 @@ int Main2(
   {
     g_StdOut << kCopyrightString;
     g_StdOut << kHelpString;
-    // PrintHelp();
     return 0;
   }
   commandStrings.Delete(0);
 
   CArchiveCommandLineOptions options;
-  int result = ParseCommandLine(commandStrings, options);
-  if (result != 0)
-    return result;
+
+  CArchiveCommandLineParser parser;
+
+  parser.Parse1(commandStrings, options);
 
   if(options.HelpMode)
   {
     g_StdOut << kCopyrightString;
-    g_StdOut << kHelpString;
-    // PrintHelp();
+    PrintHelp(g_StdOut);
     return 0;
   }
 
-  if (options.EnableHeaders)
-    g_StdErr << kCopyrightString;
+  CStdOutStream &stdStream = options.StdOutMode ? g_StdErr : g_StdOut;
+  g_StdStream = &stdStream;
 
+  if (options.EnableHeaders)
+    stdStream << kCopyrightString;
+
+  parser.Parse2(options);
 
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
   if(isExtractGroupCommand || 
@@ -189,11 +192,14 @@ int Main2(
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
       CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
+
+      ecs->OutStream = &stdStream;
       ecs->PasswordIsDefined = options.PasswordEnabled;
       ecs->Password = options.Password;
       ecs->Init();
 
       COpenCallbackConsole openCallback;
+      openCallback.OutStream = &stdStream;
       openCallback.PasswordIsDefined = options.PasswordEnabled;
       openCallback.Password = options.Password;
 
@@ -212,17 +218,17 @@ int Main2(
 
       if (ecs->NumArchives > 1)
       {
-        g_StdErr << endl << endl << "Total:" << endl;
-        g_StdErr << "Archives: " << ecs->NumArchives << endl;
+        stdStream << endl << endl << "Total:" << endl;
+        stdStream << "Archives: " << ecs->NumArchives << endl;
       }
       if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {
         if (ecs->NumArchives > 1)
         {
           if (ecs->NumArchiveErrors != 0)
-            g_StdErr << "Archive Errors: " << ecs->NumArchiveErrors << endl;
+            stdStream << "Archive Errors: " << ecs->NumArchiveErrors << endl;
           if (ecs->NumFileErrors != 0)
-            g_StdErr << "Sub items Errors: " << ecs->NumFileErrors << endl;
+            stdStream << "Sub items Errors: " << ecs->NumFileErrors << endl;
         }
         return NExitCode::kFatalError;
       }
@@ -254,6 +260,7 @@ int Main2(
         options.PasswordEnabled && !options.Password.IsEmpty();
 
     COpenCallbackConsole openCallback;
+    openCallback.OutStream = &stdStream;
     openCallback.PasswordIsDefined = passwordIsDefined;
     openCallback.Password = options.Password;
 
@@ -263,7 +270,7 @@ int Main2(
     callback.AskPassword = options.PasswordEnabled && options.Password.IsEmpty();
     callback.Password = options.Password;
     callback.StdOutMode = uo.StdOutMode;
-    callback.Init();
+    callback.Init(&stdStream);
 
     CUpdateErrorInfo errorInfo;
 
@@ -273,40 +280,40 @@ int Main2(
 
     if (result != S_OK)
     {
-      g_StdErr << "\nError:\n";
+      stdStream << "\nError:\n";
       if (!errorInfo.Message.IsEmpty())
-        g_StdErr << errorInfo.Message << endl;
+        stdStream << errorInfo.Message << endl;
       if (!errorInfo.FileName.IsEmpty())
-        g_StdErr << errorInfo.FileName << endl;
+        stdStream << errorInfo.FileName << endl;
       if (!errorInfo.FileName2.IsEmpty())
-        g_StdErr << errorInfo.FileName2 << endl;
+        stdStream << errorInfo.FileName2 << endl;
       if (errorInfo.SystemError != 0)
-        g_StdErr << NError::MyFormatMessageW(errorInfo.SystemError) << endl;
+        stdStream << NError::MyFormatMessageW(errorInfo.SystemError) << endl;
       throw CSystemException(result);
     }
     int exitCode = NExitCode::kSuccess;
     int numErrors = callback.FailedFiles.Size();
     if (numErrors == 0)
-      g_StdErr << kEverythingIsOk << endl;
+      stdStream << kEverythingIsOk << endl;
     else
     {
-      g_StdErr << endl;
-      g_StdErr << "WARNINGS for files:" << endl << endl;
+      stdStream << endl;
+      stdStream << "WARNINGS for files:" << endl << endl;
       for (int i = 0; i < numErrors; i++)
       {
-        g_StdErr << callback.FailedFiles[i] << " : ";
-        g_StdErr << NError::MyFormatMessageW(callback.FailedCodes[i]) << endl;
+        stdStream << callback.FailedFiles[i] << " : ";
+        stdStream << NError::MyFormatMessageW(callback.FailedCodes[i]) << endl;
       }
-      g_StdErr << "----------------" << endl;
-      g_StdErr << "WARNING: Cannot open " << numErrors << " file";
+      stdStream << "----------------" << endl;
+      stdStream << "WARNING: Cannot open " << numErrors << " file";
       if (numErrors > 1)
-        g_StdErr << "s";
-      g_StdErr << endl;
+        stdStream << "s";
+      stdStream << endl;
       exitCode = NExitCode::kWarning;
     }
     return exitCode;
   }
   else 
-    PrintHelpAndExit();
+    PrintHelpAndExit(stdStream);
   return 0;
 }

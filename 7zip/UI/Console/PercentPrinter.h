@@ -5,6 +5,7 @@
 
 #include "Common/Defs.h"
 #include "Common/Types.h"
+#include "Common/StdOutStream.h"
 
 const int kNumPercentSpaces = 70;
 class CPercentPrinter
@@ -17,6 +18,8 @@ class CPercentPrinter
   char m_Spaces[kNumPercentSpaces + 1];
   bool m_StringIsPrinted;
 public:
+  CStdOutStream *OutStream;
+
   CPercentPrinter(UInt64 minStepSize = 1);
   void SetTotal(UInt64 total)
   {

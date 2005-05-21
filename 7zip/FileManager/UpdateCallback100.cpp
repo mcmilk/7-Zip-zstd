@@ -51,6 +51,7 @@ STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *completeValue)
 
 STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *name)
 {
+  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
   return S_OK;
 }
 

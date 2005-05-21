@@ -327,6 +327,7 @@ HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFul
     CArchiveLink archiveLink;
 
     COpenCallbackConsole openCallback;
+    openCallback.OutStream = &g_StdOut;
     openCallback.PasswordIsDefined = passwordEnabled;
     openCallback.Password = password;
 

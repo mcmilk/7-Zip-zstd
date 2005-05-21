@@ -41,15 +41,28 @@ static CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
 #ifdef COMPRESS_DEFLATE
+#ifndef COMPRESS_DEFLATE_ENCODER
+#define COMPRESS_DEFLATE_ENCODER
+#endif
+#endif
+
+#ifdef COMPRESS_DEFLATE_ENCODER
 static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
 #endif
 
 #ifdef COMPRESS_BZIP2
+#ifndef COMPRESS_BZIP2_ENCODER
+#define COMPRESS_BZIP2_ENCODER
+#endif
+#endif
+
+#ifdef COMPRESS_BZIP2_ENCODER
 static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 #endif
 
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
+const wchar_t *kBZip2MethodName = L"BZip2";
 
 const UInt32 kAlgorithmForX7 = 2;
 const UInt32 kDicSizeForX7 = 1 << 23;
@@ -74,6 +87,9 @@ static bool IsLZMAMethod(const UString &methodName)
   { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }
 static bool IsLZMethod(const UString &methodName)
   { return IsLZMAMethod(methodName); }
+
+static bool IsBZip2Method(const UString &methodName)
+  { return (methodName.CompareNoCase(kBZip2MethodName) == 0); }
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
@@ -263,6 +279,13 @@ HRESULT CHandler::SetCompressionMethod(
               NCoderPropID::kMultiThread, true);
       }
     }
+    else if (IsBZip2Method(oneMethodInfo.MethodName))
+    {
+      SetOneMethodProp(oneMethodInfo, 
+        NCoderPropID::kNumPasses, _defaultBZip2Passes);
+    }
+
+
     CMethodFull methodFull;
     methodFull.NumInStreams = 1;
     methodFull.NumOutStreams = 1;
@@ -303,7 +326,7 @@ HRESULT CHandler::SetCompressionMethod(
     }
     #endif
 
-    #ifdef COMPRESS_DEFLATE
+    #ifdef COMPRESS_DEFLATE_ENCODER
     if (oneMethodInfo.MethodName.CompareNoCase(L"Deflate") == 0)
     {
       defined = true;
@@ -311,7 +334,7 @@ HRESULT CHandler::SetCompressionMethod(
     }
     #endif
 
-    #ifdef COMPRESS_BZIP2
+    #ifdef COMPRESS_BZIP2_ENCODER
     if (oneMethodInfo.MethodName.CompareNoCase(L"BZip2") == 0)
     {
       defined = true;
@@ -968,15 +991,18 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       if (_level == 0)
       {
         _copyMode = true;
+        _defaultBZip2Passes = 1;
       }
       else if (_level < 5)
       {
         _defaultAlgorithm = kAlgorithmForFast;
         _defaultDicSize = kDicSizeForFast;
         _defaultMatchFinder = kMatchFinderForFast;
+        _defaultBZip2Passes = 1;
       }
       else if (_level < 7)
       {
+        _defaultBZip2Passes = 1;
         // normal;
       }
       else if(_level < 9)
@@ -984,6 +1010,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _defaultAlgorithm = kAlgorithmForX7;
         _defaultDicSize = kDicSizeForX7;
         _defaultFastBytes = kFastBytesForX7;
+        _defaultBZip2Passes = 2;
       }
       else
       {
@@ -991,6 +1018,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _defaultDicSize = kDicSizeForX9;
         _defaultFastBytes = kFastBytesForX9;
         _defaultMatchFinder = kMatchFinderForX9;
+        _defaultBZip2Passes = 7;
       }
       continue;
     }
