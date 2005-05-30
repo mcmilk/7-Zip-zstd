@@ -1,5 +1,5 @@
-7-Zip 4.19 beta Sources
------------------------
+7-Zip 4.20 Sources
+------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
 
@@ -58,7 +58,8 @@ Tools / Options / Directories
   - Library files
 
 
-Also for compiling Original BZip2 code you must download BZip source to folder
+Also if you want to compile Original BZip2 code you must 
+download BZip source to folder
 7zip/Compress/BZip2Original/Original
 You can find BZip2 sources from that page:
 http://sources.redhat.com/bzip2/index.html

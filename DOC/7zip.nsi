@@ -2,10 +2,10 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 19
-!define VERSION_POSTFIX_FULL " beta"
+!define VERSION_MINOR 20
+!define VERSION_POSTFIX_FULL ""
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
-!define VERSION_POSTFIX "b"
+!define VERSION_POSTFIX ""
 
 !define FM_LINK "7-Zip File Manager.lnk"
 !define HELP_LINK "7-Zip Help.lnk"

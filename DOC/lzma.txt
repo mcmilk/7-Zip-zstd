@@ -36,9 +36,21 @@ code to the terms of the CPL or GNU LGPL.
 Any modifications or additions to files from LZMA SDK, however, 
 are subject to the GNU LGPL or CPL terms.
 
-Also you can use this version of LZMA SDK under the same terms 
-and conditions contained in the License Agreement you have 
-for any previous version of LZMA SDK developed by Igor Pavlov.
+
+SPECIAL EXCEPTION allows you to use LZMA SDK in applications with closed code, 
+while you keep LZMA SDK code unmodified.
+
+
+SPECIAL EXCEPTION #2: Igor Pavlov, as the author of this code, expressly permits 
+you to use this code under the same terms and conditions contained in the License 
+Agreement you have for any previous version of LZMA SDK developed by Igor Pavlov.
+
+SPECIAL EXCEPTION #2 allows owners of proprietary licenses to use latest version 
+of LZMA SDK as update for previous versions.
+
+
+SPECIAL EXCEPTION #3: Igor Pavlov, as the author of this code, expressly permits 
+you to use code of examples (LzmaTest.c) as public domain code. 
 
 
 GNU LGPL and CPL licenses are pretty similar and both these
