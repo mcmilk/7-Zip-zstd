@@ -161,7 +161,8 @@ STDMETHODIMP CAgent::DoOperation(
 
   UString folderPrefix = _folderPrefix;
   NFile::NName::NormalizeDirPathPrefix(folderPrefix);
-  RINOK(::EnumerateDirItems(folderPrefix, _names, _archiveNamePrefix, dirItems));
+  UString errorPath;
+  RINOK(::EnumerateDirItems(folderPrefix, _names, _archiveNamePrefix, dirItems, errorPath));
 
   NWindows::NDLL::CLibrary library;
 

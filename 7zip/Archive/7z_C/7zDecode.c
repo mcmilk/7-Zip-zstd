@@ -19,14 +19,14 @@ typedef struct _CLzmaInCallbackImp
   size_t Size;
 } CLzmaInCallbackImp;
 
-int LzmaReadImp(void *object, unsigned char **buffer, UInt32 *size)
+int LzmaReadImp(void *object, const unsigned char **buffer, SizeT *size)
 {
   CLzmaInCallbackImp *cb = (CLzmaInCallbackImp *)object;
   size_t processedSize;
   SZ_RESULT res;
   *size = 0;
   res = cb->InStream->Read((void *)cb->InStream, (void **)buffer, cb->Size, &processedSize);
-  *size = (UInt32)processedSize;
+  *size = (SizeT)processedSize;
   if (processedSize > cb->Size)
     return (int)SZE_FAIL;
   cb->Size -= processedSize;
@@ -37,11 +37,11 @@ int LzmaReadImp(void *object, unsigned char **buffer, UInt32 *size)
 
 #endif
 
-SZ_RESULT SzDecode(CFileSize *packSizes, CFolder *folder,
+SZ_RESULT SzDecode(const CFileSize *packSizes, const CFolder *folder,
     #ifdef _LZMA_IN_CB
     ISzInStream *inStream,
     #else
-    Byte *inBuffer,
+    const Byte *inBuffer,
     #endif
     Byte *outBuffer, size_t outSize, 
     size_t *outSizeProcessed, ISzAlloc *allocMain)
@@ -91,13 +91,13 @@ SZ_RESULT SzDecode(CFileSize *packSizes, CFolder *folder,
   {
     #ifdef _LZMA_IN_CB
     CLzmaInCallbackImp lzmaCallback;
+    #else
+    SizeT inProcessed;
     #endif
 
-    int lc, lp, pb;
-    size_t lzmaInternalSize;
-    void *lzmaInternalData;
+    CLzmaDecoderState state;  /* it's about 24-80 bytes structure, if int is 32-bit */
     int result;
-    UInt32 outSizeProcessedLoc;
+    SizeT outSizeProcessedLoc;
 
     #ifdef _LZMA_IN_CB
     lzmaCallback.Size = inSize;
@@ -105,35 +105,36 @@ SZ_RESULT SzDecode(CFileSize *packSizes, CFolder *folder,
     lzmaCallback.InCallback.Read = LzmaReadImp;
     #endif
 
-    if (coder->Properties.Capacity < 5)
+    if (LzmaDecodeProperties(&state.Properties, coder->Properties.Items, 
+        coder->Properties.Capacity) != LZMA_RESULT_OK)
       return SZE_FAIL;
-    lc = (unsigned char)coder->Properties.Items[0];
-    if (lc >= (9 * 5 * 5))
-      return SZE_FAIL;
-    for (pb = 0; lc >= (9 * 5); pb++, lc -= (9 * 5));
-    for (lp = 0; lc >= 9; lp++, lc -= 9);
 
-    lzmaInternalSize = (LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp))) * sizeof(CProb);
-    lzmaInternalData = allocMain->Alloc(lzmaInternalSize);
-    if (lzmaInternalData == 0)
+    state.Probs = (CProb *)allocMain->Alloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
+    if (state.Probs == 0)
       return SZE_OUTOFMEMORY;
 
-    result = LzmaDecode((Byte *)lzmaInternalData, (UInt32)lzmaInternalSize,
-        lc, lp, pb,
+    #ifdef _LZMA_OUT_READ
+    state.Dictionary = (unsigned char *)allocMain->Alloc(state.Properties.DictionarySize);
+    if (state.Dictionary == 0)
+    {
+      allocMain->Free(state.Probs);
+      return SZE_OUTOFMEMORY;
+    }
+    LzmaDecoderInit(&state);
+    #endif
+
+    result = LzmaDecode(&state,
         #ifdef _LZMA_IN_CB
         &lzmaCallback.InCallback,
         #else
-        inBuffer, (UInt32)inSize,
+        inBuffer, (SizeT)inSize, &inProcessed,
         #endif
-        outBuffer, (UInt32)outSize, 
-        &outSizeProcessedLoc);
+        outBuffer, (SizeT)outSize, &outSizeProcessedLoc);
     *outSizeProcessed = (size_t)outSizeProcessedLoc;
-    allocMain->Free(lzmaInternalData);
-    /*
-    NOT_ENOUGH_MEM error is impossible for this code
-    if (result = LZMA_RESULT_NOT_ENOUGH_MEM)
-      return SZE_OUTOFMEMORY;
-    */
+    allocMain->Free(state.Probs);
+    #ifdef _LZMA_OUT_READ
+    allocMain->Free(state.Dictionary);
+    #endif
     if (result == LZMA_RESULT_DATA_ERROR)
       return SZE_DATA_ERROR;
     if (result != LZMA_RESULT_OK)

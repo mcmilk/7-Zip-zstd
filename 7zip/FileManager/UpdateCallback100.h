@@ -41,18 +41,21 @@ private:
   UString _password;
 
   void AddErrorMessage(LPCWSTR message);
-  CSysStringVector Messages;
+  bool ShowMessages;
+
 public:
+  CUpdateCallback100Imp(): ShowMessages(true) {}
   ~CUpdateCallback100Imp();
   CProgressDialog ProgressDialog;
   HWND _parentWindow;
+  UStringVector Messages;
+
   void Init(HWND parentWindow, 
       bool passwordIsDefined, const UString &password)
   {
     _passwordIsDefined = passwordIsDefined;
     _password = password;
     _parentWindow = parentWindow;
-
   }
   void StartProgressDialog(const UString &title)
   {

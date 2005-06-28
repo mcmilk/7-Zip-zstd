@@ -319,6 +319,14 @@ SOURCE=.\AppState.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\EnumFormatEtc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\EnumFormatEtc.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\FileFolderPluginOpen.cpp
 # End Source File
 # Begin Source File
@@ -332,6 +340,14 @@ SOURCE=.\Panel.cpp
 # Begin Source File
 
 SOURCE=.\Panel.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\PanelCopy.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\PanelDrag.cpp
 # End Source File
 # Begin Source File
 
@@ -788,6 +804,14 @@ SOURCE=..\..\Windows\Handle.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Windows\Memory.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\Memory.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Windows\Menu.h
 # End Source File
 # Begin Source File
@@ -1123,6 +1147,10 @@ SOURCE=.\Info2.bmp
 # Begin Source File
 
 SOURCE=.\Move2.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyCom2.h
 # End Source File
 # Begin Source File
 

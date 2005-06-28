@@ -811,7 +811,9 @@ SZ_RESULT SzReadStreamsInfo(
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
-    switch(type)
+    if ((UInt64)(int)type != type)
+      return SZE_FAIL;
+    switch((int)type)
     {
       case k7zIdEnd:
         return SZ_OK;
@@ -989,8 +991,13 @@ SZ_RESULT SzReadHeader2(
     if (type == k7zIdEnd)
       break;
     RINOK(SzReadNumber(sd, &size));
-    
-    switch(type)
+
+    if ((UInt64)(int)type != type)
+    {
+      RINOK(SzSkeepDataSize(sd, size));
+    }
+    else
+    switch((int)type)
     {
       case k7zIdName:
       {

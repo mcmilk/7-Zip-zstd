@@ -27,7 +27,7 @@ using namespace NFind;
 
 CExtractCallbackImp::~CExtractCallbackImp()
 {
-  if (!Messages.IsEmpty())
+  if (ShowMessages && !Messages.IsEmpty())
   {
     CMessagesDialog messagesDialog;
     messagesDialog.Messages = &Messages;
@@ -43,7 +43,7 @@ void CExtractCallbackImp::Init()
 
 void CExtractCallbackImp::AddErrorMessage(LPCWSTR message)
 {
-  Messages.Add(GetSystemString(message));
+  Messages.Add(message);
 }
 
 STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 total)

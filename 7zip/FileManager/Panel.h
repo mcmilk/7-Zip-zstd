@@ -3,6 +3,14 @@
 #ifndef __PANEL_H
 #define __PANEL_H
 
+#include "Common/MyCom.h"
+
+#include "Windows/DLL.h"
+#include "Windows/FileFind.h"
+#include "Windows/FileDir.h"
+#include "Windows/Synchronization.h"
+#include "Windows/Handle.h"
+
 #include "Windows/Control/ToolBar.h"
 #include "Windows/Control/ReBar.h"
 #include "Windows/Control/ListView.h"
@@ -12,21 +20,11 @@
 #include "Windows/Control/Window2.h"
 #include "Windows/Control/StatusBar.h"
 
-#include "Windows/DLL.h"
-#include "Windows/FileFind.h"
-#include "Windows/FileDir.h"
-#include "Windows/Synchronization.h"
-#include "Windows/Handle.h"
-
-#include "Common/MyCom.h"
-
 #include "SysIconUtils.h"
-
 #include "IFolder.h"
-
 #include "ViewSettings.h"
-
 #include "AppState.h"
+#include "MyCom2.h"
 
 const int kParentFolderID = 100;
 const int kPluginMenuStartID = 1000;
@@ -37,10 +35,12 @@ class CPanelCallback
 public:
   virtual void OnTab() = 0;
   virtual void SetFocusToPath(int index) = 0;
-  virtual void OnCopy(UStringVector &externalNames, bool move, bool copyToSame) = 0;
+  virtual void OnCopy(bool move, bool copyToSame) = 0;
   virtual void OnSetSameFolder() = 0;
   virtual void OnSetSubFolder() = 0;
   virtual void PanelWasFocused() = 0;
+  virtual void DragBegin() = 0;
+  virtual void DragEnd() = 0;
 };
 
 void PanelCopyItems();
@@ -76,13 +76,13 @@ public:
 struct CTempFileInfo
 {
   UString ItemName;
-  CSysString FolderPath;
-  CSysString FilePath;
-  NWindows::NFile::NFind::CFileInfo FileInfo;
+  UString FolderPath;
+  UString FilePath;
+  NWindows::NFile::NFind::CFileInfoW FileInfo;
   void DeleteDirAndFile()
   {
     NWindows::NFile::NDirectory::DeleteFileAlways(FilePath);
-    ::RemoveDirectory(FolderPath);
+    NWindows::NFile::NDirectory::MyRemoveDirectory(FolderPath);
   }
 };
 
@@ -90,7 +90,6 @@ struct CFolderLink: public CTempFileInfo
 {
   NWindows::NDLL::CLibrary Library;
   CMyComPtr<IFolderFolder> ParentFolder;
-  // CSysString RealPath;
 };
 
 enum MyMessages
@@ -144,7 +143,6 @@ class CPanel:public NWindows::NControl::CWindow2
   HWND _mainWindow;
 
   CExtToIconMap _extToIconMap;
-  // int _index;
   UINT _baseID;
   int _comboBoxID;
   UINT _statusBarID;
@@ -162,7 +160,7 @@ class CPanel:public NWindows::NControl::CWindow2
   bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
-  // void OnDrag(LPNMLISTVIEW nmListView);
+  void OnDrag(LPNMLISTVIEW nmListView);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
   BOOL OnBeginLabelEdit(LV_DISPINFO * lpnmh);
   BOOL OnEndLabelEdit(LV_DISPINFO * lpnmh);
@@ -175,8 +173,6 @@ public:
   void DeleteItems();
   void CreateFolder();
   void CreateFile();
-
-  // void Split();
 
 private:
 
@@ -222,8 +218,8 @@ public:
   bool _showDots;
   bool _showRealFileIcons;
   // bool _virtualMode;
+  // CUIntVector _realIndices;
   CBoolVector _selectedStatusVector;
-  CUIntVector _realIndices;
 
   UInt32 GetRealIndex(const LVITEM &item) const
   {
@@ -375,11 +371,15 @@ public:
 
   void GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const;
   void GetOperatedItemIndices(CRecordVector<UInt32> &indices) const;
+  // void GetOperatedListViewIndices(CRecordVector<UInt32> &indices) const;
   void KillSelection();
 
   UString GetFolderTypeID() const;
   bool IsRootFolder() const;
   bool IsFSFolder() const;
+  bool IsFSDrivesFolder() const;
+
+  bool DoesItSupportOperations() const;
 
   bool _processTimer;
   bool _processNotify;
@@ -430,14 +430,13 @@ public:
   void OpenFolder(int index);
   HRESULT OpenParentArchiveFolder();
   HRESULT OpenItemAsArchive(const UString &name, 
-      const CSysString &folderPath,
-      const CSysString &filePath);
+      const UString &folderPath,
+      const UString &filePath);
   HRESULT OpenItemAsArchive(const UString &aName);
   HRESULT OpenItemAsArchive(int index);
-  // void OpenItem(int index, CSysString realPath);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode);
-  LRESULT OnOpenItemChanged(const CSysString &folderPath, const UString &itemName);
+  LRESULT OnOpenItemChanged(const UString &folderPath, const UString &itemName);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 
   void OpenItem(int index, bool tryInternal, bool tryExternal);
@@ -453,11 +452,23 @@ public:
   void RefreshStatusBar();
   void OnRefreshStatusBar();
 
-  void CompressDropFiles(HDROP dr);
-
   void AddToArchive();
   void ExtractArchives();
   void TestArchives();
+
+  HRESULT CopyTo(const CRecordVector<UInt32> &indices, const UString &folder, 
+      bool moveMode, bool showErrorMessages, UStringVector *messages);
+
+  HRESULT CopyFrom(const UString &folderPrefix, const UStringVector &filePaths, 
+      bool showErrorMessages, UStringVector *messages);
+
+  void CopyFrom(const UStringVector &filePaths);
+
+  // empty folderPath means create new Archive to path of first fileName.
+  void DropObject(IDataObject * dataObject, const UString &folderPath);
+
+  // empty folderPath means create new Archive to path of first fileName.
+  void CompressDropFiles(const UStringVector &fileNames, const UString &folderPath);
 };
 
 #endif

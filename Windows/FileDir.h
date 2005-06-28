@@ -158,6 +158,7 @@ public:
     _mustBeDeleted = !RemoveDirectoryWithSubItems(_tempDir);
     return (!_mustBeDeleted);
   }
+  void DisableDeleting() { _mustBeDeleted = false; }
 };
 
 #ifdef _UNICODE
@@ -179,6 +180,7 @@ public:
     _mustBeDeleted = !RemoveDirectoryWithSubItems(_tempDir);
     return (!_mustBeDeleted);
   }
+  void DisableDeleting() { _mustBeDeleted = false; }
 };
 #endif
 

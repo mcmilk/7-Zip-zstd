@@ -19,8 +19,6 @@
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
 
-// #include "Windows/PropVariant.h"
-
 #include "../../Common/FileStreams.h"
 
 #include "../LZMA/LZMADecoder.h"
@@ -131,7 +129,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.17 Copyright (c) 1999-2004 Igor Pavlov  2005-04-18\n");
+  fprintf(stderr, "\nLZMA 4.23 Copyright (c) 1999-2005 Igor Pavlov  2005-06-29\n");
 
   if (n == 1)
   {

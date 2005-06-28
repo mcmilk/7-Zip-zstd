@@ -35,7 +35,8 @@ static HRESULT EnumerateDirectory(
     const UString &baseFolderPrefix,
     const UString &directory, 
     const UString &prefix,
-    CObjectVector<CDirItem> &dirItems)
+    CObjectVector<CDirItem> &dirItems,
+    UString &errorPath)
 {
   NFind::CEnumeratorW enumerator(baseFolderPrefix + directory + wchar_t(kAnyStringWildcard));
   while (true)
@@ -43,7 +44,11 @@ static HRESULT EnumerateDirectory(
     NFind::CFileInfoW fileInfo;
     bool found;
     if (!enumerator.Next(fileInfo, found))
-      return ::GetLastError();
+    {
+      HRESULT error = ::GetLastError();
+      errorPath = baseFolderPrefix + directory;
+      return error;
+    }
     if (!found)
       break;
     AddDirFileInfo(prefix, directory + fileInfo.Name, fileInfo, 
@@ -51,7 +56,7 @@ static HRESULT EnumerateDirectory(
     if (fileInfo.IsDirectory())
     {
       RINOK(EnumerateDirectory(baseFolderPrefix, directory + fileInfo.Name + wchar_t(kDirDelimiter), 
-          prefix + fileInfo.Name + wchar_t(kDirDelimiter), dirItems));
+          prefix + fileInfo.Name + wchar_t(kDirDelimiter), dirItems, errorPath));
     }
   }
   return S_OK;
@@ -61,7 +66,8 @@ HRESULT EnumerateDirItems(
     const UString &baseFolderPrefix,
     const UStringVector &fileNames,
     const UString &archiveNamePrefix, 
-    CObjectVector<CDirItem> &dirItems)
+    CObjectVector<CDirItem> &dirItems,
+    UString &errorPath)
 {
   for(int i = 0; i < fileNames.Size(); i++)
   {
@@ -74,7 +80,7 @@ HRESULT EnumerateDirItems(
     {
       RINOK(EnumerateDirectory(baseFolderPrefix, fileName + wchar_t(kDirDelimiter), 
           archiveNamePrefix + fileInfo.Name +  wchar_t(kDirDelimiter), 
-          dirItems));
+          dirItems, errorPath));
     }
   }
   return S_OK;
@@ -87,7 +93,8 @@ static HRESULT EnumerateDirItems(
     const UString &addArchivePrefix, 
     CObjectVector<CDirItem> &dirItems, 
     bool enterToSubFolders,
-    IEnumDirItemCallback *callback)
+    IEnumDirItemCallback *callback,
+    UString &errorPath)
 {
   if (!enterToSubFolders)
     if (curNode.NeedCheckSubDirs())
@@ -100,7 +107,11 @@ static HRESULT EnumerateDirItems(
     NFind::CFileInfoW fileInfo;
     bool found;
     if (!enumerator.Next(fileInfo, found))
-      return ::GetLastError();
+    {
+      HRESULT error = ::GetLastError();
+      errorPath = diskPrefix;
+      return error;
+    }
     if (!found)
       break;
 
@@ -140,20 +151,23 @@ static HRESULT EnumerateDirItems(
     RINOK(EnumerateDirItems(*nextNode,   
         diskPrefix + fileInfo.Name + wchar_t(kDirDelimiter), 
         archivePrefixNew, addArchivePrefixNew, 
-        dirItems, enterToSubFolders2, callback));
+        dirItems, enterToSubFolders2, callback, errorPath));
   }
   return S_OK;
 }
 
-HRESULT EnumerateItems(const NWildcard::CCensor &censor, 
-    CObjectVector<CDirItem> &dirItems, IEnumDirItemCallback *callback)
+HRESULT EnumerateItems(
+    const NWildcard::CCensor &censor, 
+    CObjectVector<CDirItem> &dirItems, 
+    IEnumDirItemCallback *callback,
+    UString &errorPath)
 {
   for (int i = 0; i < censor.Pairs.Size(); i++)
   {
     if (callback)
       RINOK(callback->CheckBreak());
     const NWildcard::CPair &pair = censor.Pairs[i];
-    RINOK(EnumerateDirItems(pair.Head, pair.Prefix, L"", L"", dirItems, false, callback));
+    RINOK(EnumerateDirItems(pair.Head, pair.Prefix, L"", L"", dirItems, false, callback, errorPath));
   }
   return S_OK;
 }

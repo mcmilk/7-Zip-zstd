@@ -12,13 +12,12 @@ CGlobal::~CGlobal()
   Free();
 }
 
-// aFlags = GMEM_MOVEABLE
-bool CGlobal::Alloc(UINT aFlags, DWORD aSize)
+bool CGlobal::Alloc(UINT flags, SIZE_T size)
 {
-  HGLOBAL aNewBlock = ::GlobalAlloc(aFlags, aSize);
-  if (aNewBlock == NULL)
+  HGLOBAL newBlock = ::GlobalAlloc(flags, size);
+  if (newBlock == NULL)
     return false;
-  m_MemoryHandle = aNewBlock;
+  m_MemoryHandle = newBlock;
   return true;
 }
 
@@ -30,11 +29,17 @@ bool CGlobal::Free()
   return (m_MemoryHandle == NULL);
 }
 
+void CGlobal::Attach(HGLOBAL hGlobal)
+{
+  Free();
+  m_MemoryHandle = hGlobal;
+}
+
 HGLOBAL CGlobal::Detach()
 {
-  HGLOBAL aHandle = m_MemoryHandle;
+  HGLOBAL h = m_MemoryHandle;
   m_MemoryHandle = NULL;
-  return aHandle;
+  return h;
 }
 
 LPVOID CGlobal::Lock() const
@@ -47,12 +52,12 @@ void CGlobal::Unlock() const
   ::GlobalUnlock(m_MemoryHandle);
 }
 
-bool CGlobal::ReAlloc(DWORD aSize)
+bool CGlobal::ReAlloc(SIZE_T size)
 {
-  HGLOBAL aNewBlock = ::GlobalReAlloc(m_MemoryHandle, aSize, GMEM_MOVEABLE);
-  if (aNewBlock == NULL)
+  HGLOBAL newBlock = ::GlobalReAlloc(m_MemoryHandle, size, GMEM_MOVEABLE);
+  if (newBlock == NULL)
     return false;
-  m_MemoryHandle = aNewBlock;
+  m_MemoryHandle = newBlock;
   return true;
 }
 

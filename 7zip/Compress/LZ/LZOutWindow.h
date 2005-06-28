@@ -29,7 +29,7 @@ public:
 
   void Free();
   CLZOutWindow(): _buffer(0), _stream(0) {}
-  ~CLZOutWindow() { Free();  /* ReleaseStream(); */ }
+  ~CLZOutWindow() { Free();  ReleaseStream(); }
   bool Create(UInt32 windowSize);
   
   void SetStream(ISequentialOutStream *stream);

@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.23                2005-06-29
+  --------------------------------------
+   -  Bug was fixed: memory leak in Cab decoder.
+
+
   Version 4.19 beta           2005-05-21
   --------------------------------------
    -  BZip2 code was rewritten. Now 7-Zip doesn't use original BZip2 code.

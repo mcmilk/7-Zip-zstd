@@ -16,7 +16,6 @@
 #include "Resource/CopyDialog/CopyDialog.h"
 
 #include "ExtractCallback.h"
-#include "UpdateCallback100.h"
 #include "ViewSettings.h"
 #include "RegistryUtils.h"
 
@@ -26,6 +25,8 @@ using namespace NFind;
 
 extern DWORD g_ComCtl32Version;
 extern HINSTANCE g_hInstance;
+
+static LPCWSTR kTempDirPrefix = L"7zE"; 
 
 void CPanelCallbackImp::OnTab()
 {
@@ -42,8 +43,8 @@ void CPanelCallbackImp::SetFocusToPath(int index)
 }
 
 
-void CPanelCallbackImp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame)
-  { _app->OnCopy(externalNames, move, copyToSame, _index); }
+void CPanelCallbackImp::OnCopy(bool move, bool copyToSame)
+  { _app->OnCopy(move, copyToSame, _index); }
 
 void CPanelCallbackImp::OnSetSameFolder()
   { _app->OnSetSameFolder(_index); }
@@ -52,9 +53,13 @@ void CPanelCallbackImp::OnSetSubFolder()
   { _app->OnSetSubFolder(_index); }
 
 void CPanelCallbackImp::PanelWasFocused()
-{ 
-  _app->LastFocusedPanel = _index; 
-}
+  { _app->SetFocusedPanel(_index); }
+
+void CPanelCallbackImp::DragBegin()
+  { _app->DragBegin(_index); }
+   
+void CPanelCallbackImp::DragEnd()
+  { _app->DragEnd(); }
 
 void CApp::SetListSettings()
 {
@@ -350,6 +355,7 @@ void CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2])
         Panels[i]._xSize = xSizes[0] + xSizes[1];
       CreateOnePanel(i, (i == LastFocusedPanel) ? mainPath : L"");
     }
+  SetFocusedPanel(LastFocusedPanel);
   Panels[LastFocusedPanel].SetFocusToList();
 }
 
@@ -398,111 +404,55 @@ void CApp::Release()
     Panels[i].Release();
 }
 
-class CWindowDisable
+static bool IsThereFolderOfPath(const UString &path)
 {
-  bool _wasEnabled;
-  CWindow _window;
-public:
-  CWindowDisable(HWND window): _window(window) 
-  { 
-    _wasEnabled = _window.IsEnabled();
-    if (_wasEnabled)
-      _window.Enable(false); 
-  }
-  ~CWindowDisable() 
-  { 
-    if (_wasEnabled)
-      _window.Enable(true); 
-  }
-};
+  CFileInfoW fileInfo;
+  if (!FindFile(path, fileInfo))
+    return false;
+  return fileInfo.IsDirectory();
+}
 
-struct CThreadExtract
+// reduces path to part that exists on disk
+static void ReducePathToRealFileSystemPath(UString &path)
 {
-  bool Move;
-  CMyComPtr<IFolderOperations> FolderOperations;
-  CRecordVector<UINT32> Indices;
-  UString DestPath;
-  CExtractCallbackImp *ExtractCallbackSpec;
-  CMyComPtr<IFolderOperationsExtractCallback> ExtractCallback;
-  HRESULT Result;
-  
-  DWORD Extract()
+  while(!path.IsEmpty())
   {
-    NCOM::CComInitializer comInitializer;
-    ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    if (Move)
+    if (IsThereFolderOfPath(path))
     {
-      Result = FolderOperations->MoveTo(
-          &Indices.Front(), Indices.Size(), 
-          DestPath, ExtractCallback);
-      // ExtractCallbackSpec->DestroyWindows();
+      NName::NormalizeDirPathPrefix(path);
+      break;
     }
+    int pos = path.ReverseFind('\\');
+    if (pos < 0)
+      path.Empty();
     else
     {
-      Result = FolderOperations->CopyTo(
-          &Indices.Front(), Indices.Size(), 
-          DestPath, ExtractCallback);
-      // ExtractCallbackSpec->DestroyWindows();
+      path = path.Left(pos + 1);
+      if (path.Length() == 3 && path[1] == L':')
+        break;
+      path = path.Left(pos);
     }
-    ExtractCallbackSpec->ProgressDialog.MyClose();
-    return 0;
   }
+}
 
-  static DWORD WINAPI MyThreadFunction(void *param)
-  {
-    return ((CThreadExtract *)param)->Extract();
-  }
-};
-
-struct CThreadUpdate
+// return true for dir\, if dir exist
+static bool CheckFolderPath(const UString &path)
 {
-  bool Move;
-  CMyComPtr<IFolderOperations> FolderOperations;
-  UString SrcFolderPrefix;
-  UStringVector FileNames;
-  CRecordVector<const wchar_t *> FileNamePointers;
-  CMyComPtr<IFolderArchiveUpdateCallback> UpdateCallback;
-  CUpdateCallback100Imp *UpdateCallbackSpec;
-  HRESULT Result;
-  
-  DWORD Process()
-  {
-    NCOM::CComInitializer comInitializer;
-    UpdateCallbackSpec->ProgressDialog.WaitCreating();
-    if (Move)
-    {
-      {
-        throw 1;
-        // srcPanel.MessageBoxMyError(L"Move is not supported");
-        return 0;
-      }
-    }
-    else
-    {
-      Result = FolderOperations->CopyFrom(
-          SrcFolderPrefix,
-          &FileNamePointers.Front(),
-          FileNamePointers.Size(),
-          UpdateCallback);
-    }
-    UpdateCallbackSpec->ProgressDialog.MyClose();
-    return 0;
-  }
+  UString pathReduced = path;
+  ReducePathToRealFileSystemPath(pathReduced);
+  return (pathReduced == path);
+}
 
-  static DWORD WINAPI MyThreadFunction(void *param)
-  {
-    return ((CThreadUpdate *)param)->Process();
-  }
-};
-
-
-
-void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int srcPanelIndex)
+static bool IsPathAbsolute(const UString &path)
 {
-  bool external = (externalNames.Size() > 0);
-  if (external)
-    copyToSame = true;
+  if ((path.Length() >= 1 && path[0] == L'\\') ||
+      (path.Length() >= 3 && path[1] == L':' && path[2] == L'\\'))
+    return true;
+  return false;
+}
 
+void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
+{
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &srcPanel = Panels[srcPanelIndex];
   CPanel &destPanel = Panels[destPanelIndex];
@@ -510,220 +460,162 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
   CPanel::CDisableTimerProcessing disableTimerProcessing1(destPanel);
   CPanel::CDisableTimerProcessing disableTimerProcessing2(srcPanel);
 
-  bool useSrcPanel = true;
-  if (!external)
-    if (NumPanels != 1)
-    {
-      if (!srcPanel.IsFSFolder() && !destPanel.IsFSFolder())
-      {
-        srcPanel.MessageBox(LangLoadStringW(IDS_CANNOT_COPY, 0x03020207));
-        return;
-      }
-      useSrcPanel = copyToSame || destPanel.IsFSFolder();
-      if (move && !useSrcPanel)
-      {
-        srcPanel.MessageBoxMyError(L"Move is not supported");
-        return;
-      }
-    }
+  if (!srcPanel.DoesItSupportOperations())
+  {
+    srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    return;
+  }
 
-  CPanel &panel = useSrcPanel ? srcPanel : destPanel;
-
-  CMyComPtr<IFolderOperations> folderOperations;
-
-  // if (move)
-    if (panel._folder.QueryInterface(IID_IFolderOperations, 
-        &folderOperations) != S_OK)
-    {
-      panel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
-      return;
-    }
-
-  CRecordVector<UINT32> indices;
+  CRecordVector<UInt32> indices;
   UString destPath;
+  bool useDestPanel = false;
 
-  if (external)
   {
-    UString message = L"Are you sure you want to copy files to archive \'";
-    message += srcPanel._currentFolderPrefix;
-    message += L"\'?";
-    int res = MessageBoxW(_window, message, L"Confirm File Copy", 
-        MB_YESNOCANCEL | MB_ICONQUESTION | MB_TASKMODAL);
-    if (res != IDYES)
-      return;
-  }
-  else
-  {
-  CCopyDialog copyDialog;
-
-  UStringVector copyFolders;
-  ReadCopyHistory(copyFolders);
-
-  int i;
-  for (i = 0; i < copyFolders.Size(); i++)
-    copyDialog.Strings.Add(GetSystemString(copyFolders[i]));
-
-  if (copyToSame)
-  {
-    int focusedItem = srcPanel._listView.GetFocusedItem();
-    if (focusedItem < 0)
-      return;
-    int realIndex = srcPanel.GetRealItemIndex(focusedItem);
-    if (realIndex == -1)
-      return;
-    indices.Add(realIndex);
-    copyDialog.Value = srcPanel.GetItemName(realIndex);
-  }
-  else
-  {
-    srcPanel.GetOperatedItemIndices(indices);
-    if (indices.Size() == 0)
-      return;
-    UString destPath = destPanel._currentFolderPrefix;
-    if (NumPanels == 1)
+    if (copyToSame)
     {
-      while(!destPath.IsEmpty())
-      {
-        CFileInfoW fileInfo;
-        if (FindFile(destPath, fileInfo))
-        {
-          if (fileInfo.IsDirectory())
-          {
-            destPath += L'\\';
-            break;
-          }
-        }
-        int pos = destPath.ReverseFind('\\');
-        if (pos < 0)
-          destPath.Empty();
-        else
-        {
-          destPath = destPath.Left(pos + 1);
-            if (destPath.Length() == 3 && destPath[1] == L':')
-              break;
-          destPath = destPath.Left(pos);
-        }
-      }
-    }
-    copyDialog.Value = destPath;
-  }
-  copyDialog.Title = move ? 
-    LangLoadStringW(IDS_MOVE, 0x03020202):
-    LangLoadStringW(IDS_COPY, 0x03020201);
-  copyDialog.Static = move ? 
-    LangLoadStringW(IDS_MOVE_TO, 0x03020204):
-    LangLoadStringW(IDS_COPY_TO, 0x03020203);
-  if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
-    return;
-
-  AddUniqueStringToHeadOfList(copyFolders, GetUnicodeString(
-      copyDialog.Value));
-  while (copyFolders.Size() > 20)
-    copyFolders.DeleteBack();
-
-  SaveCopyHistory(copyFolders);
-  
-  /// ?????
-  SetCurrentDirectory(GetSystemString(srcPanel._currentFolderPrefix));
-
-  if (!NDirectory::MyGetFullPathName(copyDialog.Value, destPath))
-  {
-    srcPanel.MessageBoxLastError();
-    return;
-  }
-
-  if (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1)
-    NDirectory::CreateComplexDirectory(destPath);
-  }
-
-  UString title = move ? 
-      LangLoadStringW(IDS_MOVING, 0x03020206):
-      LangLoadStringW(IDS_COPYING, 0x03020205);
-  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
-
-  CSelectedState srcSelState;
-  CSelectedState destSelState;
-  if (copyToSame || move)
-    srcPanel.SaveSelectedState(srcSelState);
-  if (!copyToSame)
-    destPanel.SaveSelectedState(destSelState);
-
-  HRESULT result;
-  if (useSrcPanel && !external)
-  {
-    CThreadExtract extracter;
-    extracter.ExtractCallbackSpec = new CExtractCallbackImp;
-    extracter.ExtractCallback = extracter.ExtractCallbackSpec;
-    extracter.ExtractCallbackSpec->ParentWindow = _window;
-
-    extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = _window;
-    extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
-    extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + L" ";
-    extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
-
-    extracter.ExtractCallbackSpec->Init();
-    extracter.Move = move;
-    extracter.FolderOperations = folderOperations;
-    extracter.Indices = indices;;
-    extracter.DestPath = GetUnicodeString(destPath);
-    CThread thread;
-    if (!thread.Create(CThreadExtract::MyThreadFunction, &extracter))
-      throw 271824;
-    extracter.ExtractCallbackSpec->StartProgressDialog(title);
-    result = extracter.Result;
-  }
-  else
-  {
-    CThreadUpdate updater;
-    updater.UpdateCallbackSpec = new CUpdateCallback100Imp;
-    updater.UpdateCallback = updater.UpdateCallbackSpec;
-    
-    updater.UpdateCallbackSpec->ProgressDialog.MainWindow = _window;
-    updater.UpdateCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
-    updater.UpdateCallbackSpec->ProgressDialog.MainAddTitle = title + UString(L" ");
-
-    updater.UpdateCallbackSpec->Init(_window, false, L"");
-    updater.Move = move;
-    updater.FolderOperations = folderOperations;
-    if (external)
-    {
-      updater.FileNames.Reserve(externalNames.Size());
-      for(int i = 0; i < externalNames.Size(); i++)
-        updater.FileNames.Add(externalNames[i]);
+      int focusedItem = srcPanel._listView.GetFocusedItem();
+      if (focusedItem < 0)
+        return;
+      int realIndex = srcPanel.GetRealItemIndex(focusedItem);
+      if (realIndex == -1)
+        return;
+      indices.Add(realIndex);
+      destPath = srcPanel.GetItemName(realIndex);
     }
     else
     {
-      updater.SrcFolderPrefix = srcPanel._currentFolderPrefix;
-      updater.FileNames.Reserve(indices.Size());
-      for(int i = 0; i < indices.Size(); i++)
-        updater.FileNames.Add(srcPanel.GetItemName(indices[i]));
+      srcPanel.GetOperatedItemIndices(indices);
+      if (indices.Size() == 0)
+        return;
+      destPath = destPanel._currentFolderPrefix;
+      if (NumPanels == 1)
+        ReducePathToRealFileSystemPath(destPath);
     }
-    updater.FileNamePointers.Reserve(updater.FileNames.Size());
-    int i;
-    for(i = 0; i < updater.FileNames.Size(); i++)
-      updater.FileNamePointers.Add(updater.FileNames[i]);
-    CThread thread;
-    if (!thread.Create(CThreadUpdate::MyThreadFunction, &updater))
-      throw 271824;
-    updater.UpdateCallbackSpec->StartProgressDialog(title);
-    result = updater.Result;
+
+    CCopyDialog copyDialog;
+    UStringVector copyFolders;
+    ReadCopyHistory(copyFolders);
+
+    copyDialog.Strings = copyFolders;
+    copyDialog.Value = destPath;
+    
+    copyDialog.Title = move ? 
+        LangLoadStringW(IDS_MOVE, 0x03020202):
+        LangLoadStringW(IDS_COPY, 0x03020201);
+    copyDialog.Static = move ? 
+        LangLoadStringW(IDS_MOVE_TO, 0x03020204):
+        LangLoadStringW(IDS_COPY_TO, 0x03020203);
+
+    if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
+      return;
+
+    destPath = copyDialog.Value;
+
+    if (!IsPathAbsolute(destPath))
+    {
+      if (!srcPanel.IsFSFolder())
+      {
+        srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+        return;
+      }
+      destPath = srcPanel._currentFolderPrefix + destPath;
+    }
+
+    if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1) || 
+        IsThereFolderOfPath(destPath))
+    {
+      NDirectory::CreateComplexDirectory(destPath);
+      NName::NormalizeDirPathPrefix(destPath);
+      if (!CheckFolderPath(destPath))
+      {
+        if (NumPanels < 2 || destPath != destPanel._currentFolderPrefix || !destPanel.DoesItSupportOperations())
+        {
+          srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+          return;
+        }
+        useDestPanel = true;
+      }
+    }
+    else
+    {
+      int pos = destPath.ReverseFind('\\');
+      if (pos >= 0)
+      {
+        UString prefix = destPath.Left(pos + 1);
+        NDirectory::CreateComplexDirectory(prefix);
+        if (!CheckFolderPath(prefix))
+        {
+          srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+          return;
+        }
+      }
+    }
+
+    AddUniqueStringToHeadOfList(copyFolders, destPath);
+    while (copyFolders.Size() > 20)
+      copyFolders.DeleteBack();
+    SaveCopyHistory(copyFolders);
   }
 
-  /*
-  if (useSrcPanel)
-    extractCallbackSpec->DestroyWindows();
-  */
-  
-  if (result != S_OK)
+  bool useSrcPanel = (!useDestPanel || !srcPanel.IsFSFolder() || destPanel.IsFSFolder());
+  bool useTemp = useSrcPanel && useDestPanel;
+  NFile::NDirectory::CTempDirectoryW tempDirectory;
+  UString tempDirPrefix;
+  if (useTemp)
   {
-    disableTimerProcessing1.Restore();
-    disableTimerProcessing2.Restore();
-    // For Password:
-    srcPanel.SetFocusToList();
-    if (result != E_ABORT)
-      srcPanel.MessageBoxError(result, L"Error");
-    return;
+    tempDirectory.Create(kTempDirPrefix);
+    tempDirPrefix = tempDirectory.GetPath();
+    NFile::NName::NormalizeDirPathPrefix(tempDirPrefix);
   }
+
+  CSelectedState srcSelState;
+  CSelectedState destSelState;
+  srcPanel.SaveSelectedState(srcSelState);
+  destPanel.SaveSelectedState(destSelState);
+
+  HRESULT result;
+  if (useSrcPanel)
+  {
+    UString folder = useTemp ? tempDirPrefix : destPath;
+    result = srcPanel.CopyTo(indices, folder, move, true, 0);
+    if (result != S_OK)
+    {
+      disableTimerProcessing1.Restore();
+      disableTimerProcessing2.Restore();
+      // For Password:
+      srcPanel.SetFocusToList();
+      if (result != E_ABORT)
+        srcPanel.MessageBoxError(result, L"Error");
+      return;
+    }
+  }
+  
+  if (useDestPanel)
+  {
+    UStringVector filePaths;
+    UString folderPrefix;
+    if (useTemp)
+      folderPrefix = tempDirPrefix;
+    else
+      folderPrefix = srcPanel._currentFolderPrefix;
+    filePaths.Reserve(indices.Size());
+    for(int i = 0; i < indices.Size(); i++)
+      filePaths.Add(srcPanel.GetItemName(indices[i]));
+
+    result = destPanel.CopyFrom(folderPrefix, filePaths, true, 0);
+
+    if (result != S_OK)
+    {
+      disableTimerProcessing1.Restore();
+      disableTimerProcessing2.Restore();
+      // For Password:
+      srcPanel.SetFocusToList();
+      if (result != E_ABORT)
+        srcPanel.MessageBoxError(result, L"Error");
+      return;
+    }
+  }
+
   if (copyToSame || move)
   {
     srcPanel.RefreshListCtrl(srcSelState);
@@ -737,7 +629,6 @@ void CApp::OnCopy(UStringVector &externalNames, bool move, bool copyToSame, int 
   disableTimerProcessing2.Restore();
   srcPanel.SetFocusToList();
 }
-
 
 void CApp::OnSetSameFolder(int srcPanelIndex)
 {

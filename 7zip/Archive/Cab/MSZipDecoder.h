@@ -66,7 +66,7 @@ public:
   MY_UNKNOWN_IMP
 
   HRESULT Flush();
-  // void ReleaseStreams();
+  void ReleaseStreams();
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,

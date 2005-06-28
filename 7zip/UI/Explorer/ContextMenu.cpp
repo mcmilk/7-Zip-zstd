@@ -267,6 +267,15 @@ static UString GetSubFolderNameForExtract(const UString &archiveName)
   return archiveName + UString(L"~");
 }
 
+static UString GetReducedString(const UString &s)
+{
+  const int kMaxSize = 64;
+  if (s.Length() < kMaxSize)
+    return s;
+  const int kFirstPartSize = kMaxSize / 2;
+  return s.Left(kFirstPartSize) + UString(L" ... ") + s.Right(kMaxSize - kFirstPartSize);
+}
+
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
 {
@@ -388,7 +397,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           folder = L'*'; 
         folder += L'\\';
         commandMapItem.Folder = folderPrefix + folder;
-        s = MyFormatNew(s, folder);
+        s = MyFormatNew(s, GetReducedString(folder));
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
         _commandMap.push_back(commandMapItem);
       }
@@ -426,7 +435,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       FillCommand2(kCompressTo, s, commandMapItem);
       commandMapItem.Folder = archivePathPrefix;
       commandMapItem.Archive = archiveName7z;
-      UString t = UString(L"\"") + archiveName7z + UString(L"\"");
+      UString t = UString(L"\"") + GetReducedString(archiveName7z) + UString(L"\"");
       s = MyFormatNew(s, t);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
       _commandMap.push_back(commandMapItem);
@@ -449,7 +458,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UString s;
       FillCommand2(kCompressToEmail, s, commandMapItem);
       commandMapItem.Archive = archiveName7z;
-      UString t = UString(L"\"") + archiveName7z + UString(L"\"");
+      UString t = UString(L"\"") + GetReducedString(archiveName7z) + UString(L"\"");
       s = MyFormatNew(s, t);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
       _commandMap.push_back(commandMapItem);
@@ -633,7 +642,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
         params += L" \"";
         params += _fileNames[0];
         params += L"\"";
-        MyCreateProcess(params, 0);
+        MyCreateProcess(params, 0, false, 0);
         break;
       }
       case kExtract:
@@ -659,7 +668,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
         bool showDialog = (commandInternalID == kCompress) || 
           (commandInternalID == kCompressEmail);
         CompressFiles(commandMapItem.Folder, commandMapItem.Archive, 
-            _fileNames, email, showDialog);
+            _fileNames, email, showDialog, false);
         break;
       }
     }

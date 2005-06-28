@@ -8,7 +8,6 @@
 #include "Common/StringConvert.h"
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
-#include "Windows/Shell.h"
 
 #include "../PropID.h"
 
@@ -60,6 +59,7 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
   _processTimer = true;
   _processNotify = true;
 
+
   _panelCallback = panelCallback;
   _appState = appState;
   // _index = index;
@@ -107,9 +107,11 @@ LRESULT CPanel::OnMessage(UINT message, UINT wParam, LPARAM lParam)
       if (OnContextMenu(HANDLE(wParam), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)))
         return 0;
       break;
+    /*
     case WM_DROPFILES:
       CompressDropFiles(HDROP(wParam));
       return 0;
+    */
   }
   return CWindow2::OnMessage(message, wParam, lParam);
 }
@@ -488,13 +490,12 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   // InitListCtrl();
   RefreshListCtrl();
   RefreshStatusBar();
-  ::DragAcceptFiles(HWND(*this), TRUE);  
+  
   return true;
 }
 
 void CPanel::OnDestroy()
 {
-  ::DragAcceptFiles(HWND(*this), FALSE);  
   SaveListViewInfo();
   CWindow2::OnDestroy();
 }
@@ -651,6 +652,17 @@ bool CPanel::IsFSFolder() const
   return (GetFolderTypeID() == L"FSFolder");
 }
 
+bool CPanel::IsFSDrivesFolder() const
+{
+  return (GetFolderTypeID() == L"FSDrives");
+}
+
+bool CPanel::DoesItSupportOperations() const
+{
+  CMyComPtr<IFolderOperations> folderOperations;
+  return _folder.QueryInterface(IID_IFolderOperations, &folderOperations) == S_OK;
+}
+
 void CPanel::SetListViewMode(UINT32 index)
 {
   if (index >= 4)
@@ -666,37 +678,6 @@ void CPanel::SetListViewMode(UINT32 index)
 void CPanel::RefreshStatusBar()
 {
   PostMessage(kRefreshStatusBar);
-}
-
-void CPanel::CompressDropFiles(HDROP dr)
-{
-  NShell::CDrop drop(true);
-  drop.Attach(dr);
-  CSysStringVector fileNames;
-  drop.QueryFileNames(fileNames);
-  if (fileNames.Size() == 0)
-    return;
-  UStringVector fileNamesUnicode;
-  for (int i = 0; i < fileNames.Size(); i++)
-    fileNamesUnicode.Add(GetUnicodeString(fileNames[i]));
-  const UString archiveName = CreateArchiveName(
-    fileNamesUnicode.Front(), (fileNamesUnicode.Size() > 1), false);
-  UString currentDirectory;
-  if (IsFSFolder())
-  {
-    CompressFiles(_currentFolderPrefix, archiveName, fileNamesUnicode, 
-      false, // email
-      true // showDialog
-      );
-  }
-  else
-  {
-    _panelCallback->OnCopy(fileNamesUnicode, false, true);
-    /*
-    if (!NFile::NDirectory::GetOnlyDirPrefix(fileNames.Front(), currentDirectory))
-      return;
-    */
-  }
 }
 
 void CPanel::AddToArchive()
@@ -722,7 +703,7 @@ void CPanel::AddToArchive()
   const UString archiveName = CreateArchiveName(
       names.Front(), (names.Size() > 1), false);
   CompressFiles(_currentFolderPrefix, archiveName, 
-    names, false, true);
+      names, false, true, false);
   KillSelection();
 }
 
@@ -730,7 +711,7 @@ void CPanel::ExtractArchives()
 {
   if (_parentFolders.Size() > 0)
   {
-    _panelCallback->OnCopy(UStringVector(), false, false);
+    _panelCallback->OnCopy(false, false);
     return;
   }
   CRecordVector<UINT32> indices;

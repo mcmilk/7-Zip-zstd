@@ -53,7 +53,7 @@ public:
     ProgressDialog.Create(title, ParentWindow);
   }
 
-  CSysStringVector Messages;
+  UStringVector Messages;
   int NumArchiveErrors;
   void AddErrorMessage(LPCWSTR message);
 };

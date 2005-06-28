@@ -13,8 +13,8 @@
 #define LZMA_SIZE_OFFSET 6
 
 int LzmaRamGetUncompressedSize(
-    unsigned char *inBuffer, 
-    size_t inSize,
+    const unsigned char *inBuffer, 
+    size_t inSize, 
     size_t *outSize)
 {
   unsigned int i;
@@ -33,7 +33,7 @@ int LzmaRamGetUncompressedSize(
 #define SZE_OUTOFMEMORY (2)
 
 int LzmaRamDecompress(
-    unsigned char *inBuffer, 
+    const unsigned char *inBuffer, 
     size_t inSize,
     unsigned char *outBuffer,
     size_t outSize,
@@ -41,37 +41,30 @@ int LzmaRamDecompress(
     void * (*allocFunc)(size_t size), 
     void (*freeFunc)(void *))
 {
-  int lc, lp, pb;
-  size_t lzmaInternalSize;
-  void *lzmaInternalData;
+  CLzmaDecoderState state;  /* it's about 24 bytes structure, if int is 32-bit */
   int result;
-  UInt32 outSizeProcessedLoc;
+  SizeT outSizeProcessedLoc;
+  SizeT inProcessed;
+  int useFilter;
   
-  int useFilter = inBuffer[0];
+  if (inSize < LZMA_PROPS_SIZE)
+    return 1;
+  useFilter = inBuffer[0];
 
   *outSizeProcessed = 0;
   if (useFilter > 1)
     return 1;
 
-  if (inSize < LZMA_PROPS_SIZE)
+  if (LzmaDecodeProperties(&state.Properties, inBuffer + 1, LZMA_PROPERTIES_SIZE) != LZMA_RESULT_OK)
     return 1;
-  lc = inBuffer[1];
-  if (lc >= (9 * 5 * 5))
-    return 1;
-  for (pb = 0; lc >= (9 * 5); pb++, lc -= (9 * 5));
-  for (lp = 0; lc >= 9; lp++, lc -= 9);
-  
-  lzmaInternalSize = (LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp))) * sizeof(CProb);
-  lzmaInternalData = allocFunc(lzmaInternalSize);
-  if (lzmaInternalData == 0)
+  state.Probs = (CProb *)allocFunc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
+  if (state.Probs == 0)
     return SZE_OUTOFMEMORY;
   
-  result = LzmaDecode((unsigned char *)lzmaInternalData, (UInt32)lzmaInternalSize,
-    lc, lp, pb,
-    inBuffer + LZMA_PROPS_SIZE, (UInt32)inSize - LZMA_PROPS_SIZE,
-    outBuffer, (UInt32)outSize, 
-    &outSizeProcessedLoc);
-  freeFunc(lzmaInternalData);
+  result = LzmaDecode(&state,
+    inBuffer + LZMA_PROPS_SIZE, (SizeT)inSize - LZMA_PROPS_SIZE, &inProcessed,
+    outBuffer, (SizeT)outSize, &outSizeProcessedLoc);
+  freeFunc(state.Probs);
   if (result != LZMA_RESULT_OK)
     return 1;
   *outSizeProcessed = (size_t)outSizeProcessedLoc;
@@ -84,5 +77,3 @@ int LzmaRamDecompress(
   }
   return 0;
 }
-
-

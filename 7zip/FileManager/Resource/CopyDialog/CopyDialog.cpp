@@ -3,6 +3,8 @@
 #include "StdAfx.h"
 #include "CopyDialog.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/Control/Static.h"
 #include "Windows/Shell.h"
 #include "Windows/FileName.h"
@@ -33,7 +35,7 @@ bool CCopyDialog::OnInit()
   staticContol.Attach(GetItem(IDC_COPY_STATIC));
   staticContol.SetText(Static);
   for(int i = 0; i < Strings.Size(); i++)
-    _path.AddString(Strings[i]);
+    _path.AddString(GetSystemString(Strings[i]));
   _path.SetText(Value);
   return CModalDialog::OnInit();
 }

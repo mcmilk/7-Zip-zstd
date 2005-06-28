@@ -719,7 +719,9 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
       AddCommandLineWildCardToCensr(archiveWildcardCensor, options.ArchiveName, true, NRecursedType::kNonRecursed);
 
     CObjectVector<CDirItem> dirItems;
-    EnumerateItems(archiveWildcardCensor, dirItems, NULL);
+    UString errorPath;
+    if (EnumerateItems(archiveWildcardCensor, dirItems, NULL, errorPath) != S_OK)
+      throw "cannot find archive";
     UStringVector archivePaths;
     int i;
     for (i = 0; i < dirItems.Size(); i++)

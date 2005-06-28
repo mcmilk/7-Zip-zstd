@@ -304,7 +304,10 @@ int WINAPI WinMain(	HINSTANCE hInstance,
 
   g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
 
-  NCOM::CComInitializer comInitializer;
+  // OleInitialize is required for drag and drop.
+  OleInitialize(NULL); 
+  // Maybe needs CoInitializeEx also ?
+  // NCOM::CComInitializer comInitializer;
 
   UString programString, commandsString;
   // MessageBoxW(0, GetCommandLineW(), L"", 0);
@@ -343,6 +346,7 @@ int WINAPI WinMain(	HINSTANCE hInstance,
 	}
 
   g_HWND = 0;
+  OleUninitialize();
 	return msg.wParam;
 }
 
@@ -459,15 +463,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       xSizes[1] = xSize - kSplitterWidth - xSizes[0];
       if (xSizes[1] < 0)
         xSizes[1] = 0;
+
+      g_App.CreateDragTarget();
       g_App.Create(hWnd, g_MainPath, xSizes);
       // g_SplitterPos = 0;
 
-      DragAcceptFiles(hWnd, TRUE);
+      // ::DragAcceptFiles(hWnd, TRUE);
+      RegisterDragDrop(hWnd, g_App._dropTarget);
+
       break;
     }
 		case WM_DESTROY:
     {
-      ::DragAcceptFiles(hWnd, FALSE);  
+      // ::DragAcceptFiles(hWnd, FALSE);  
+      RevokeDragDrop(hWnd);
+      g_App._dropTarget.Release();
+
       g_App.Save();
       g_App.Release();
       SaveWindowInfo(hWnd);
@@ -559,11 +570,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       g_App.OnNotify(wParam, (LPNMHDR)lParam);
       break;
     }
+    /*
     case WM_DROPFILES:
     {
       g_App.GetFocusedPanel().CompressDropFiles((HDROP)wParam);
       return 0 ;
     }
+    */
    }
 	 return DefWindowProc(hWnd, message, wParam, lParam);
 }

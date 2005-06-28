@@ -184,13 +184,17 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
   CArchiverInfo archiverInfo;
   ReadArchiverInfoList(archivers);
   UString currentDirPrefix;
+  {
+    if (!NDirectory::MyGetCurrentDirectory(currentDirPrefix))
+      return E_FAIL;
+    NName::NormalizeDirPathPrefix(currentDirPrefix);
+  }
 
   bool oneFile = false;
   NFind::CFileInfoW fileInfo;
   if (censor.Pairs.Size() > 0)
   {
     const NWildcard::CPair &pair = censor.Pairs[0];
-    currentDirPrefix = pair.Prefix;
     if (pair.Head.Items.Size() > 0)
     {
       const NWildcard::CItem &item = pair.Head.Items[0];

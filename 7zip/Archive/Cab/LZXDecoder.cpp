@@ -21,8 +21,8 @@ CDecoder::CDecoder()
 
 void CDecoder::ReleaseStreams()
 {
-  // m_OutWindowStream.ReleaseStream();
-  // m_InBitStream.ReleaseStream();
+  m_OutWindowStream.ReleaseStream();
+  m_InBitStream.ReleaseStream();
   m_i86TranslationOutStreamSpec->ReleaseStream();
 }
 

@@ -1,7 +1,7 @@
-LZMA SDK 4.17 
+LZMA SDK 4.22
 -------------
 
-LZMA SDK 4.17  Copyright (C) 1999-2005 Igor Pavlov
+LZMA SDK 4.22  Copyright (C) 1999-2005 Igor Pavlov
 
 LZMA SDK provides developers with documentation, source code,
 and sample code necessary to write software that uses LZMA compression. 
@@ -50,7 +50,8 @@ of LZMA SDK as update for previous versions.
 
 
 SPECIAL EXCEPTION #3: Igor Pavlov, as the author of this code, expressly permits 
-you to use code of examples (LzmaTest.c) as public domain code. 
+you to use code of examples (LzmaTest.c, LzmaStateTest.c, LzmaAlone.cpp) as 
+public domain code. 
 
 
 GNU LGPL and CPL licenses are pretty similar and both these
@@ -142,7 +143,10 @@ SRC
         LzmaDecode.h  - interface for LZMA decoding on ANSI-C
         LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
         LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
-        LzmaTest.c    - test application that decodes LZMA encoded file
+        LzmaTest.c        - test application that decodes LZMA encoded file
+        LzmaStateDecode.h - interface for LZMA decoding (State version)
+        LzmaStateDecode.c - LZMA decoding on ANSI-C (State version)
+        LzmaStateTest.c   - test application (State version)
       Branch       - Filters for x86, IA-64, ARM, ARM-Thumb, PowerPC and SPARC code
     Archive - files related to archiving
       7z_C     - 7z ANSI-C Decoder
@@ -180,7 +184,7 @@ Some critical operations that affect to speed of LZMA decompression:
   2) Misspredicted branches (penalty mostly depends from pipeline length)
   3) 32-bit shift and arithmetic operations
 
-Speed of LZMA decompression mostly depends from CPU speed.
+Speed of LZMA decompressing mostly depends from CPU speed.
 Memory speed has no big meaning. But if your CPU has small data cache, 
 overall weight of memory speed will slightly increase.
 
@@ -351,133 +355,211 @@ Offset Size Description
 ANSI-C LZMA Decoder
 ~~~~~~~~~~~~~~~~~~~
 
-To use ANSI-C LZMA Decoder you need to files:
-LzmaDecode.h and one of the following two files:
-1) LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
-2) LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
-use LzmaDecode.c, if you need fastest code.
+To compile ANSI-C LZMA Decoder you can use one of the following files sets:
+1) LzmaDecode.h + LzmaDecode.c + LzmaTest.c  (fastest version)
+2) LzmaDecode.h + LzmaDecodeSize.c + LzmaTest.c  (old size-optimized version)
+3) LzmaStateDecode.h + LzmaStateDecode.c + LzmaStateTest.c  (zlib-like interface)
 
 
 Memory requirements for LZMA decoding
 -------------------------------------
 
 LZMA decoder doesn't allocate memory itself, so you must 
-calculate required memory, allocate it and send it to LZMA.
+allocate memory and send it to LZMA.
 
-Stack usage of LZMA function for local variables is not 
+Stack usage of LZMA decoding function for local variables is not 
 larger than 200 bytes.
-
-Memory requirements for decompression depend 
-from interface that you want to use:
-
-  a) Memory to memory decompression:
-    
-    M1 = (inputSize + outputSize + lzmaInternalSize).
-
-  b) Decompression with buffering:
-
-    M2 = (inputBufferSize + outputBufferSize + dictionarySize + lzmaInternalSize)
-
 
 How To decompress data
 ----------------------
 
-1) Read first byte of properties for LZMA compressed stream, 
-   check that it has correct value and calculate three 
-   LZMA property variables:
+LZMA Decoder (ANSI-C version) now supports 5 interfaces:
+1) Single-call Decompressing
+2) Single-call Decompressing with input stream callback
+3) Multi-call Decompressing with output buffer
+4) Multi-call Decompressing with input callback and output buffer
+5) Multi-call State Decompressing (zlib-like interface)
 
-  int lc, lp, pb;
-  unsigned char prop0 = properties[0];
-  if (prop0 >= (9*5*5))
-  {
-    sprintf(rs + strlen(rs), "\n properties error");
-    return 1;
-  }
-  for (pb = 0; prop0 >= (9 * 5); 
-    pb++, prop0 -= (9 * 5));
-  for (lp = 0; prop0 >= 9; 
-    lp++, prop0 -= 9);
-  lc = prop0;
+Variant-5 is similar to Variant-4, but Variant-5 doesn't use callback functions.
 
-2) Calculate required amount for LZMA lzmaInternalSize:
+Decompressing steps
+-------------------
 
-  lzmaInternalSize = (LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp))) * 
-     sizeof(CProb)
+1) read LZMA properties (5 bytes):
+   unsigned char properties[LZMA_PROPERTIES_SIZE];
 
-  LZMA_BASE_SIZE = 1846
-  LZMA_LIT_SIZE = 768
+2) read uncompressed size (8 bytes, little-endian)
+
+3) Decode properties:
+
+  CLzmaDecoderState state;  /* it's 24-140 bytes structure, if int is 32-bit */
+
+  if (LzmaDecodeProperties(&state.Properties, properties, LZMA_PROPERTIES_SIZE) != LZMA_RESULT_OK)
+    return PrintError(rs, "Incorrect stream properties");
+
+4) Allocate memory block for internal Structures:
+
+  state.Probs = (CProb *)malloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
+  if (state.Probs == 0)
+    return PrintError(rs, kCantAllocateMessage);
 
   LZMA decoder uses array of CProb variables as internal structure.
-  By default, CProb is (unsigned short)
-  But you can define _LZMA_PROB32 to make it (unsigned int)
-  It can increase speed on some 32-bit CPUs, but memory usage will 
-  be doubled in that case.
+  By default, CProb is unsigned_short. But you can define _LZMA_PROB32 to make 
+  it unsigned_int. It can increase speed on some 32-bit CPUs, but memory 
+  usage will be doubled in that case.
 
 
-  2b) If you use Decompression with buffering, add 100 bytes to 
-      lzmaInternalSize:
-     
-      #ifdef _LZMA_OUT_READ
-      lzmaInternalSize += 100;
-      #endif
+5) Main Decompressing
 
-3) Allocate that memory with malloc or some other function:
+You must use one of the following interfaces:
 
-  lzmaInternalData = malloc(lzmaInternalSize);
+5.1 Single-call Decompressing
+-----------------------------
+When to use: RAM->RAM decompressing
+Compile files: LzmaDecode.h, LzmaDecode.c
+Compile defines: no defines
+Memory Requirements:
+  - Input buffer: compressed size
+  - Output buffer: uncompressed size
+  - LZMA Internal Structures (~16 KB for default settings) 
+
+Interface:
+  int res = LzmaDecode(&state, 
+      inStream, compressedSize, &inProcessed,
+      outStream, outSize, &outProcessed);
 
 
-4) Decompress data:
+5.2 Single-call Decompressing with input stream callback
+--------------------------------------------------------
+When to use: File->RAM or Flash->RAM decompressing.
+Compile files: LzmaDecode.h, LzmaDecode.c
+Compile defines: _LZMA_IN_CB
+Memory Requirements:
+  - Buffer for input stream: any size (for example, 16 KB)
+  - Output buffer: uncompressed size
+  - LZMA Internal Structures (~16 KB for default settings) 
 
-  4a) If you use simple memory to memory decompression:
+Interface:
+  typedef struct _CBuffer
+  {
+    ILzmaInCallback InCallback;
+    FILE *File;
+    unsigned char Buffer[kInBufferSize];
+  } CBuffer;
 
-    int result = LzmaDecode(lzmaInternalData, lzmaInternalSize,
-        lc, lp, pb,
-        unsigned char *inStream, unsigned int inSize,
-        unsigned char *outStream, unsigned int outSize, 
-        &outSizeProcessed);
+  int LzmaReadCompressed(void *object, const unsigned char **buffer, SizeT *size)
+  {
+    CBuffer *bo = (CBuffer *)object;
+    *buffer = bo->Buffer;
+    *size = MyReadFile(bo->File, bo->Buffer, kInBufferSize);
+    return LZMA_RESULT_OK;
+  }
 
-  4b) If you use Decompression with buffering
+  CBuffer g_InBuffer;
 
-    4.1) Read dictionary size from properties
+  g_InBuffer.File = inFile;
+  g_InBuffer.InCallback.Read = LzmaReadCompressed;
+  int res = LzmaDecode(&state, 
+      &g_InBuffer.InCallback,
+      outStream, outSize, &outProcessed);
 
-      unsigned int dictionarySize = 0;
-      int i;
-      for (i = 0; i < 4; i++)
-        dictionarySize += (unsigned int)(b) << (i * 8);
 
-    4.2) Allocate memory for dictionary
+5.3 Multi-call decompressing with output buffer
+-----------------------------------------------
+When to use: RAM->File decompressing 
+Compile files: LzmaDecode.h, LzmaDecode.c
+Compile defines: _LZMA_OUT_READ
+Memory Requirements:
+ - Input buffer: compressed size
+ - Buffer for output stream: any size (for example, 16 KB)
+ - LZMA Internal Structures (~16 KB for default settings) 
+ - LZMA dictionary (dictionary size is encoded in stream properties)
+ 
+Interface:
 
-      unsigned char *dictionary = malloc(dictionarySize);
+  state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
 
-    4.3) Initialize LZMA decoder:
+  LzmaDecoderInit(&state);
+  do
+  {
+    LzmaDecode(&state,
+      inBuffer, inAvail, &inProcessed,
+      g_OutBuffer, outAvail, &outProcessed);
+    inAvail -= inProcessed;
+    inBuffer += inProcessed;
+  }
+  while you need more bytes
 
-    LzmaDecoderInit((unsigned char *)lzmaInternalData, lzmaInternalSize,
-        lc, lp, pb,
-        dictionary, dictionarySize,
-        &bo.ReadCallback);
+  see LzmaTest.c for more details.
 
-    4.4) In loop call LzmaDecoderCode function:
 
-    for (nowPos = 0; nowPos < outSize;)
-    {
-      unsigned int blockSize = outSize - nowPos;
-      unsigned int kBlockSize = 0x10000;
-      if (blockSize > kBlockSize)
-        blockSize = kBlockSize;
-      res = LzmaDecode((unsigned char *)lzmaInternalData, 
-      ((unsigned char *)outStream) + nowPos, blockSize, &outSizeProcessed);
-      if (res != 0)
-      {
-        printf("\nerror = %d\n", res);
-        break;
-      }
-      nowPos += outSizeProcessed;
-      if (outSizeProcessed == 0)
-      {
-        outSize = nowPos;
-        break;
-      }
-    }
+5.4 Multi-call decompressing with input callback and output buffer
+------------------------------------------------------------------
+When to use: File->File decompressing 
+Compile files: LzmaDecode.h, LzmaDecode.c
+Compile defines: _LZMA_IN_CB, _LZMA_OUT_READ
+Memory Requirements:
+ - Buffer for input stream: any size (for example, 16 KB)
+ - Buffer for output stream: any size (for example, 16 KB)
+ - LZMA Internal Structures (~16 KB for default settings) 
+ - LZMA dictionary (dictionary size is encoded in stream properties)
+ 
+Interface:
+
+  state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
+ 
+  LzmaDecoderInit(&state);
+  do
+  {
+    LzmaDecode(&state,
+      &bo.InCallback,
+      g_OutBuffer, outAvail, &outProcessed);
+  }
+  while you need more bytes
+
+  see LzmaTest.c for more details:
+
+
+5.5 Multi-call State Decompressing (zlib-like interface)
+------------------------------------------------------------------
+When to use: file->file decompressing 
+Compile files: LzmaStateDecode.h, LzmaStateDecode.c
+Compile defines:
+Memory Requirements:
+ - Buffer for input stream: any size (for example, 16 KB)
+ - Buffer for output stream: any size (for example, 16 KB)
+ - LZMA Internal Structures (~16 KB for default settings) 
+ - LZMA dictionary (dictionary size is encoded in stream properties)
+ 
+Interface:
+
+  state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
+
+  
+  LzmaDecoderInit(&state);
+  do
+  {
+    res = LzmaDecode(&state,
+      inBuffer, inAvail, &inProcessed,
+      g_OutBuffer, outAvail, &outProcessed,
+      finishDecoding);
+    inAvail -= inProcessed;
+    inBuffer += inProcessed;
+  }
+  while you need more bytes
+
+  see LzmaStateTest.c for more details:
+
+
+6) Free all allocated blocks
+
+
+Note
+----
+LzmaDecodeSize.c is size-optimized version of LzmaDecode.c.
+But compiled code of LzmaDecodeSize.c can be larger than 
+compiled code of LzmaDecode.c. So it's better to use 
+LzmaDecode.c in most cases.
 
 
 EXIT codes
@@ -487,7 +569,6 @@ LZMA decoder can return one of the following codes:
 
 #define LZMA_RESULT_OK 0
 #define LZMA_RESULT_DATA_ERROR 1
-#define LZMA_RESULT_NOT_ENOUGH_MEM 2
 
 If you use callback function for input data and you return some 
 error code, LZMA Decoder also returns that code.
@@ -504,6 +585,7 @@ _LZMA_OUT_READ - Use read function for output data
 _LZMA_LOC_OPT  - Enable local speed optimizations inside code.
                  _LZMA_LOC_OPT is only for LzmaDecodeSize.c (size-optimized version).
                  _LZMA_LOC_OPT doesn't affect LzmaDecode.c (speed-optimized version)
+                 and LzmaStateDecode.c
 
 _LZMA_PROB32   - It can increase speed on some 32-bit CPUs, 
                  but memory usage will be doubled in that case
@@ -511,15 +593,8 @@ _LZMA_PROB32   - It can increase speed on some 32-bit CPUs,
 _LZMA_UINT32_IS_ULONG  - Define it if int is 16-bit on your compiler
                          and long is 32-bit.
 
-
-NOTES
------
-1) please note that LzmaTest.c doesn't free allocated memory in some cases. 
-But in your real applicaions you must free memory after decompression.
-
-2) All numbers above were calculated for case when int is not more than 
-  32-bit in your compiler. If in your compiler int is 64-bit or larger 
-  probably LZMA can require more memory for some structures.
+_LZMA_SYSTEM_SIZE_T  - Define it if you want to use system's size_t.
+                       You can use it to enable 64-bit sizes supporting
 
 
 
@@ -540,5 +615,3 @@ and it will use only bt4 match finder.
 
 http://www.7-zip.org
 http://www.7-zip.org/support.html
-
-

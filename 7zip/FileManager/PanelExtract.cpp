@@ -180,7 +180,7 @@ void CPanel::CopyFrom(const UStringVector &filePaths)
   message += _currentFolderPrefix;
   message += L"\' ?";
   int res = ::MessageBoxW(*(this), message, L"Confirm File Copy", 
-    MB_YESNOCANCEL | MB_ICONQUESTION | MB_SYSTEMMODAL);
+    MB_YESNOCANCEL | MB_ICONQUESTION | MB_TASKMODAL);
   if (res != IDYES)
     return;
 
@@ -206,4 +206,3 @@ void CPanel::CopyFrom(const UStringVector &filePaths)
   disableTimerProcessing.Restore();
   SetFocusToList();
 }
-

@@ -17,13 +17,11 @@ HRESULT CDecoder::Flush()
   return m_OutWindowStream.Flush();
 }
 
-/*
 void CDecoder::ReleaseStreams()
 {
   m_OutWindowStream.ReleaseStream();
   m_InBitStream.ReleaseStream();
 }
-*/
 
 void CDecoder::DeCodeLevelTable(Byte *newLevels, int numLevels)
 {
@@ -169,7 +167,7 @@ public:
   ~CCoderReleaser()
   {
     m_Coder->Flush();
-    // m_Coder->ReleaseStreams();
+    m_Coder->ReleaseStreams();
   }
 };
 

@@ -1,4 +1,4 @@
-// UpdateCallbackConsole.cpp
+// UpdateCallbackGUI.cpp
 
 #include "StdAfx.h"
 
@@ -34,7 +34,7 @@ void CUpdateCallbackGUI::Init()
 
 void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
 {
-  Messages.Add(GetSystemString(message));
+  Messages.Add(message);
 }
 
 HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result)

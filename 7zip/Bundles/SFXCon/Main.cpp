@@ -34,7 +34,7 @@ using namespace NCommandLineParser;
 extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.20  Copyright (c) 1999-2005 Igor Pavlov  2005-05-30\n";
+"\n7-Zip SFX 4.23  Copyright (c) 1999-2005 Igor Pavlov  2005-06-29\n";
 
 static const int kNumSwitches = 6;
 

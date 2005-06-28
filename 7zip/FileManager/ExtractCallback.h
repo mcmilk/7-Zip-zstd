@@ -95,7 +95,8 @@ private:
   void AddErrorMessage(LPCWSTR message);
 public:
   CProgressDialog ProgressDialog;
-  CSysStringVector Messages;
+  UStringVector Messages;
+  bool ShowMessages;
   HWND ParentWindow;
   INT_PTR StartProgressDialog(const UString &title)
   {
@@ -114,7 +115,8 @@ public:
     PasswordIsDefined(false),
     #endif
     OverwriteMode(NExtract::NOverwriteMode::kAskBefore),
-    ParentWindow(0)
+    ParentWindow(0),
+    ShowMessages(true)
     {}
    
   ~CExtractCallbackImp();

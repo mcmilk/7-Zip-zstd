@@ -19,7 +19,8 @@ HRESULT EnumerateDirItems(
     const UString &baseFolderPrefix,
     const UStringVector &fileNames,
     const UString &archiveNamePrefix, 
-    CObjectVector<CDirItem> &dirItems);
+    CObjectVector<CDirItem> &dirItems, 
+    UString &errorPath);
 
 struct IEnumDirItemCallback
 {
@@ -27,7 +28,10 @@ struct IEnumDirItemCallback
 };
 
 
-HRESULT EnumerateItems(const NWildcard::CCensor &censor, 
-    CObjectVector<CDirItem> &dirItems, IEnumDirItemCallback *callback);
+HRESULT EnumerateItems(
+    const NWildcard::CCensor &censor, 
+    CObjectVector<CDirItem> &dirItems, 
+    IEnumDirItemCallback *callback, 
+    UString &errorPath);
 
 #endif

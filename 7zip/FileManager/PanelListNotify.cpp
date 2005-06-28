@@ -230,12 +230,6 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       
         // TODO : Handler default action...
         return 0;
-        case LVN_BEGINDRAG:
-        case LVN_BEGINRDRAG:
-        {
-        SendRefreshStatusBarMessage();
-        return 0;
-        }
         case LVN_ITEMCHANGED:
         {
         NMLISTVIEW *pNMLV = (NMLISTVIEW *) lpnmh;
@@ -268,7 +262,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_BEGINDRAG:
     case LVN_BEGINRDRAG:
     {
-      // OnDrag((LPNMLISTVIEW)header);
+      OnDrag((LPNMLISTVIEW)header);
       RefreshStatusBar();
       break;
     }

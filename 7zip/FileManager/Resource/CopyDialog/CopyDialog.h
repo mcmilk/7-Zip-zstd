@@ -18,7 +18,7 @@ public:
   UString Title;
   UString Static;
   UString Value;
-  CSysStringVector Strings;
+  UStringVector Strings;
 
   INT_PTR Create(HWND parentWindow = 0)
     { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_COPY), parentWindow); }

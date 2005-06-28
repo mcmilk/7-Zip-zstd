@@ -7,14 +7,14 @@
 #include "Windows/Synchronization.h"
 
 HRESULT MyCreateProcess(const UString &params,
-   LPCTSTR lpCurrentDirectory,
-   NWindows::NSynchronization::CEvent *event = NULL);
+   LPCTSTR lpCurrentDirectory, bool waitFinish,
+   NWindows::NSynchronization::CEvent *event);
 HRESULT CompressFiles(
     const UString &curDir,
     const UString &archiveName,
     const UStringVector &names, 
     // const UString &outFolder, 
-    bool email, bool showDialog);
+    bool email, bool showDialog, bool waitFinish);
 
 HRESULT ExtractArchives(
     const UStringVector &archivePaths,

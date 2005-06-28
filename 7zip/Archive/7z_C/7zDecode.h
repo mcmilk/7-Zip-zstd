@@ -9,11 +9,11 @@
 #include "7zIn.h"
 #endif
 
-SZ_RESULT SzDecode(CFileSize *packSizes, CFolder *folder,
+SZ_RESULT SzDecode(const CFileSize *packSizes, const CFolder *folder,
     #ifdef _LZMA_IN_CB
     ISzInStream *stream,
     #else
-    Byte *inBuffer,
+    const Byte *inBuffer,
     #endif
     Byte *outBuffer, size_t outSize, 
     size_t *outSizeProcessed, ISzAlloc *allocMain);

@@ -1,7 +1,7 @@
-7z ANSI-C Decoder 4.16
+7z ANSI-C Decoder 4.22
 ----------------------
 
-7z ANSI-C Decoder 4.16 Copyright (C) 1999-2005 Igor Pavlov
+7z ANSI-C Decoder 4.22 Copyright (C) 1999-2005 Igor Pavlov
 
 7z ANSI-C provides 7z/LZMA decoding.
 7z ANSI-C version is simplified version ported from C++ code.
@@ -14,7 +14,7 @@ compression ratio and very fast decompression.
 LICENSE
 -------
 
-Read lzma.txt for informaton about license.
+Read lzma.txt for information about license.
 
 
 Files
@@ -105,7 +105,7 @@ Memory allocation
 7z Decoder uses two memory pools:
 1) Temporary pool
 2) Main pool
-Such scheme can allow you to avoid fragmentation of alocated blocks.
+Such scheme can allow you to avoid fragmentation of allocated blocks.
 
 Steps for using 7z decoder
 --------------------------
@@ -156,7 +156,7 @@ SzArchiveOpen function allocates and frees temporary structures by "allocTemp" f
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp);
 
-  If you need to decompress more than one file, you can send these values from preevious call:
+  If you need to decompress more than one file, you can send these values from previous call:
     blockIndex, 
     outBuffer, 
     outBufferSize,
@@ -174,7 +174,7 @@ SzArchiveOpen function allocates and frees temporary structures by "allocTemp" f
 Memory requirements for .7z decoding 
 ------------------------------------
 
-Memory usage for Archive openning:
+Memory usage for Archive opening:
   - Temporary pool:
      - Memory for compressed .7z headers (if _LZMA_IN_CB is not defined)
      - Memory for uncompressed .7z headers
@@ -228,7 +228,7 @@ _SZ_NO_INT_64     - define it if your compiler doesn't support long long int
 
 _LZMA_PROB32      - it can increase LZMA decompressing speed on some 32-bit CPUs.
 
-_SZ_ONE_DIRECTORY - define it if you want to locate all source files to one direcory
+_SZ_ONE_DIRECTORY - define it if you want to locate all source files to one directory
 _SZ_ALLOC_DEBUG   - define it if you want to debug alloc/free operations to stderr.
 
 

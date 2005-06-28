@@ -1,7 +1,7 @@
 7z Format description (2.30 Beta 25)
 -----------------------------------
 
-This file contain descrition of 7z archive format. 
+This file contains description of 7z archive format. 
 7z archive can contain files compressed with any method.
 See "Methods.txt" for description for defined compressing methods.
 

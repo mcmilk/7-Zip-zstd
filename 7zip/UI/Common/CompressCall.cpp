@@ -35,7 +35,7 @@ static bool IsItWindowsNT()
 }
 
 HRESULT MyCreateProcess(const UString &params, 
-    LPCTSTR curDir, 
+    LPCTSTR curDir, bool waitFinish,
     NWindows::NSynchronization::CEvent *event)
 {
   STARTUPINFO startupInfo;
@@ -57,13 +57,15 @@ HRESULT MyCreateProcess(const UString &params,
     return ::GetLastError();
   else
   {
-    if (event != NULL)
+    ::CloseHandle(processInformation.hThread);
+    if (waitFinish)
+      WaitForSingleObject(processInformation.hProcess, INFINITE);
+    else if (event != NULL)
     {
       HANDLE handles[] = {processInformation.hProcess, *event };
       ::WaitForMultipleObjects(sizeof(handles) / sizeof(handles[0]),
-          handles, FALSE, INFINITE);
+        handles, FALSE, INFINITE);
     }
-    ::CloseHandle(processInformation.hThread);
     ::CloseHandle(processInformation.hProcess);
   }
   return S_OK;
@@ -175,7 +177,8 @@ HRESULT CompressFiles(
     const UStringVector &names, 
     // const UString &outFolder, 
     bool email,
-    bool showDialog)
+    bool showDialog, 
+    bool waitFinish)
 {
   /*
   UString curDir;
@@ -281,7 +284,7 @@ HRESULT CompressFiles(
     CSysString sysCurDir = GetSystemString(curDir);
     RINOK(MyCreateProcess(params, 
       (sysCurDir.IsEmpty()? 0: (LPCTSTR)sysCurDir), 
-      &event));
+      waitFinish, &event));
   }
   catch(...)
   {
@@ -310,7 +313,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &archivePaths,
   CFileMapping fileMapping;
   NSynchronization::CEvent event;
   RINOK(CreateMap(archivePaths, L"7zExtract", fileMapping, event, params2));
-  return MyCreateProcess(params2, 0, &event);
+  return MyCreateProcess(params2, 0, false, &event);
 }
 
 HRESULT ExtractArchives(const UStringVector &archivePaths,

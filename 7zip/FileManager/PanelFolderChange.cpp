@@ -31,20 +31,20 @@ HRESULT CPanel::BindToPath(const UString &fullPath)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   CloseOpenFolders();
-  CSysString sysPath = GetSystemString(fullPath);
-  CFileInfo fileInfo;
+  UString sysPath = fullPath;
+  CFileInfoW fileInfo;
   UStringVector reducedParts;
   while(!sysPath.IsEmpty())
   {
     if (FindFile(sysPath, fileInfo))
       break;
-    int pos = sysPath.ReverseFind('\\');
+    int pos = sysPath.ReverseFind(L'\\');
     if (pos < 0)
       sysPath.Empty();
     else
     {
       if (reducedParts.Size() > 0 || pos < sysPath.Length() - 1)
-        reducedParts.Add(GetUnicodeString(sysPath.Mid(pos + 1)));
+        reducedParts.Add(sysPath.Mid(pos + 1));
       sysPath = sysPath.Left(pos);
     }
   }
@@ -58,24 +58,23 @@ HRESULT CPanel::BindToPath(const UString &fullPath)
   else if (fileInfo.IsDirectory())
   {
     NName::NormalizeDirPathPrefix(sysPath);
-    if (_folder->BindToFolder(GetUnicodeString(sysPath), &newFolder) == S_OK)
+    if (_folder->BindToFolder(sysPath, &newFolder) == S_OK)
       _folder = newFolder;
   }
   else
   {
-    CSysString dirPrefix;
+    UString dirPrefix;
     if (!NDirectory::GetOnlyDirPrefix(sysPath, dirPrefix))
       dirPrefix.Empty();
-    if (_folder->BindToFolder(GetUnicodeString(dirPrefix), &newFolder) == S_OK)
+    if (_folder->BindToFolder(dirPrefix, &newFolder) == S_OK)
     {
       _folder = newFolder;
       LoadFullPath();
-      CSysString fileName;
+      UString fileName;
       if (NDirectory::GetOnlyName(sysPath, fileName))
       {
-        if (OpenItemAsArchive(GetUnicodeString(fileName),
-            GetSystemString(_currentFolderPrefix), 
-            GetSystemString(_currentFolderPrefix) + fileName) == S_OK)
+        if (OpenItemAsArchive(fileName, _currentFolderPrefix, 
+            _currentFolderPrefix + fileName) == S_OK)
         {
           for (int i = reducedParts.Size() - 1; i >= 0; i--)
           {

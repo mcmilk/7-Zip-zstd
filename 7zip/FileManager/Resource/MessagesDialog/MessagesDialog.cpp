@@ -2,6 +2,7 @@
  
 #include "StdAfx.h"
 #include "MessagesDialog.h"
+#include "Common/StringConvert.h"
 #include "Windows/ResourceString.h"
 
 #ifdef LANG        
@@ -39,18 +40,18 @@ void CMessagesDialog::AddMessageDirect(LPCTSTR message)
   _messageList.SetItem(&item);
 }
 
-void CMessagesDialog::AddMessage(LPCTSTR message)
+void CMessagesDialog::AddMessage(LPCWSTR message)
 {
-  CSysString s = message;
+  UString s = message;
   while (!s.IsEmpty())
   {
-    int pos = s.Find(TEXT('\n'));
+    int pos = s.Find(L'\n');
     if (pos < 0)
       break;
-    AddMessageDirect(s.Left(pos));
+    AddMessageDirect(GetSystemString(s.Left(pos)));
     s.Delete(0, pos + 1);
   }
-  AddMessageDirect(s);
+  AddMessageDirect(GetSystemString(s));
 }
 
 bool CMessagesDialog::OnInit() 

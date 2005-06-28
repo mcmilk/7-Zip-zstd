@@ -297,7 +297,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   
   _listView.DeleteAllItems();
   _selectedStatusVector.Clear();
-  _realIndices.Clear();
+  // _realIndices.Clear();
   _startGroupSelect = 0;
 
   _selectionIsDefined = false;
@@ -510,6 +510,27 @@ void CPanel::GetOperatedItemIndices(CRecordVector<UINT32> &indices) const
       indices.Add(realIndex);
   }
 }
+
+/*
+void CPanel::GetOperatedListViewIndices(CRecordVector<UInt32> &indices) const
+{
+  indices.Clear();
+  int numItems = _listView.GetItemCount();
+  for (int i = 0; i < numItems; i++)
+  {
+    int realIndex = GetRealItemIndex(i);
+    if (realIndex >= 0)
+      if (_selectedStatusVector[realIndex])
+        indices.Add(i);
+  }
+  if (indices.IsEmpty())
+  {
+    int focusedItem = _listView.GetFocusedItem();
+      if (focusedItem >= 0)
+        indices.Add(focusedItem);
+  }
+}
+*/
 
 void CPanel::EditItem()
 {

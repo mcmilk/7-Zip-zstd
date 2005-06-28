@@ -15,7 +15,7 @@ using namespace NWindows;
 
 CUpdateCallback100Imp::~CUpdateCallback100Imp()
 {
-  if (!Messages.IsEmpty())
+  if (ShowMessages && !Messages.IsEmpty())
   {
     CMessagesDialog messagesDialog;
     messagesDialog.Messages = &Messages;
@@ -25,7 +25,7 @@ CUpdateCallback100Imp::~CUpdateCallback100Imp()
 
 void CUpdateCallback100Imp::AddErrorMessage(LPCWSTR message)
 {
-  Messages.Add(GetSystemString(message));
+  Messages.Add(message);
 }
 
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 size)

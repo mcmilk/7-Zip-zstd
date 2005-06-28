@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 20
+!define VERSION_MINOR 23
 !define VERSION_POSTFIX_FULL ""
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
 !define VERSION_POSTFIX ""
@@ -155,6 +155,7 @@ Section
   File eo.txt
   File es.txt
   File et.txt
+  File ext.txt
   File fa.txt
   File fi.txt
   File fr.txt
@@ -173,6 +174,7 @@ Section
   File lv.txt
   File mk.txt
   File mn.txt
+  File ms.txt
   File nl.txt
   File no.txt
   File pl.txt
@@ -349,6 +351,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\eo.txt
   Delete $INSTDIR\Lang\es.txt
   Delete $INSTDIR\Lang\et.txt
+  Delete $INSTDIR\Lang\ext.txt
   Delete $INSTDIR\Lang\fa.txt
   Delete $INSTDIR\Lang\fi.txt
   Delete $INSTDIR\Lang\fr.txt
@@ -367,6 +370,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt
   Delete $INSTDIR\Lang\mn.txt
+  Delete $INSTDIR\Lang\ms.txt
   Delete $INSTDIR\Lang\nl.txt
   Delete $INSTDIR\Lang\no.txt
   Delete $INSTDIR\Lang\pl.txt

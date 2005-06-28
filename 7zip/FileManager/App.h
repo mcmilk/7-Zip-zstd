@@ -35,16 +35,69 @@ public:
   }
   virtual void OnTab();
   virtual void SetFocusToPath(int index);
-  virtual void OnCopy(UStringVector &externalNames, bool move, bool copyToSame);
+  virtual void OnCopy(bool move, bool copyToSame);
   virtual void OnSetSameFolder();
   virtual void OnSetSubFolder();
   virtual void PanelWasFocused();
+  virtual void DragBegin();
+  virtual void DragEnd();
 }; 
+
+class CApp;
+
+class CDropTarget: 
+  public IDropTarget,
+  public CMyUnknownImp
+{
+  CMyComPtr<IDataObject> m_DataObject;
+  int m_SelectionIndex;
+  bool m_DropIsAllowed;      // = true, if data contain fillist
+  bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel. 
+                             // check it only if m_DropIsAllowed == true
+  int m_SubFolderIndex;
+  UString m_SubFolderName;
+
+  CPanel *m_Panel;
+  bool m_IsAppTarget;        // true, if we want to drop to app window (not to panel).
+
+  void QueryGetData(IDataObject *dataObject);
+  bool IsFsFolderPath() const;
+  DWORD GetEffect(DWORD keyState, POINTL pt, DWORD allowedEffect);
+  void RemoveSelection();
+  void PositionCursor(POINTL ptl);
+  UString GetTargetPath() const;
+  bool SetPath(bool enablePath) const;
+  bool SetPath();
+
+public:
+  MY_UNKNOWN_IMP1_MT(IDropTarget)
+  STDMETHOD(DragEnter)(IDataObject * dataObject, DWORD keyState, 
+      POINTL pt, DWORD *effect);
+  STDMETHOD(DragOver)(DWORD keyState, POINTL pt, DWORD * effect);
+  STDMETHOD(DragLeave)();
+  STDMETHOD(Drop)(IDataObject * dataObject, DWORD keyState, 
+      POINTL pt, DWORD *effect);
+
+  CDropTarget(): 
+      TargetPanelIndex(-1), 
+      SrcPanelIndex(-1), 
+      m_IsAppTarget(false), 
+      m_Panel(0), 
+      App(0), 
+      m_PanelDropIsAllowed(false), 
+      m_DropIsAllowed(false), 
+      m_SelectionIndex(-1), 
+      m_SubFolderIndex(-1) {}
+
+  CApp *App;
+  int SrcPanelIndex;              // index of D&D source_panel
+  int TargetPanelIndex;           // what panel to use as target_panel of Application
+};
 
 class CApp
 {
-  NWindows::CWindow _window;
 public:
+  NWindows::CWindow _window;
   bool ShowSystemMenu;
   int NumPanels;
   int LastFocusedPanel;
@@ -65,9 +118,37 @@ public:
   NWindows::NControl::CReBar _rebar;
   NWindows::NControl::CToolBar _archiveToolBar;
   NWindows::NControl::CToolBar _standardToolBar;
+
+  CDropTarget *_dropTargetSpec;
+  CMyComPtr<IDropTarget> _dropTarget;
+
+  void CreateDragTarget()
+  {
+    _dropTargetSpec = new CDropTarget();
+    _dropTarget = _dropTargetSpec;
+    _dropTargetSpec->App = (this);
+  }
+
+  void SetFocusedPanel(int index)
+  {
+    LastFocusedPanel = index; 
+    _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
+  }
+
+  void DragBegin(int panelIndex)
+  { 
+    _dropTargetSpec->TargetPanelIndex = (NumPanels > 1) ? 1 - panelIndex : panelIndex;
+    _dropTargetSpec->SrcPanelIndex = panelIndex;
+  }
+
+  void DragEnd()
+  { 
+    _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
+    _dropTargetSpec->SrcPanelIndex = -1;
+  }
+
   
-  void OnCopy(UStringVector &externalNames, 
-      bool move, bool copyToSame, int srcPanelIndex);
+  void OnCopy(bool move, bool copyToSame, int srcPanelIndex);
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
@@ -86,6 +167,8 @@ public:
     { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }
 
   int GetFocusedPanelIndex() const { return LastFocusedPanel; }
+
+  bool IsPanelVisible(int index) const { return (NumPanels > 1 || index == LastFocusedPanel); }
 
   /*
   void SetCurrentIndex()
@@ -108,9 +191,9 @@ public:
   void Rename()
     { GetFocusedPanel().RenameFile(); }
   void CopyTo()
-    { OnCopy(UStringVector(), false, false, GetFocusedPanelIndex()); }
+    { OnCopy(false, false, GetFocusedPanelIndex()); }
   void MoveTo()
-    { OnCopy(UStringVector(), true, false, GetFocusedPanelIndex()); }
+    { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete()
     { GetFocusedPanel().DeleteItems(); }
   void Split();
