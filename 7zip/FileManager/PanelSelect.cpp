@@ -144,7 +144,7 @@ void CPanel::SelectByType(bool selectMode)
 
   UINT32 numItems;
   _folder->GetNumberOfItems(&numItems);
-  if (_selectedStatusVector.Size() != numItems)
+  if ((UInt32)_selectedStatusVector.Size() != numItems)
     throw 11111;
 
   if (isItemFolder)

@@ -260,12 +260,12 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case NM_CUSTOMDRAW:
       return OnCustomDraw((LPNMLVCUSTOMDRAW)header, result);
     case LVN_BEGINDRAG:
-    case LVN_BEGINRDRAG:
     {
       OnDrag((LPNMLISTVIEW)header);
       RefreshStatusBar();
       break;
     }
+    // case LVN_BEGINRDRAG:
   }
   return false;
 }

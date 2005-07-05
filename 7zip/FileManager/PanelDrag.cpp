@@ -235,14 +235,10 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const CSysStringVector 
   {
     const CSysString &s = names[i];
     int fullLength = s.Length() + 1;
-    if (fullLength > totalLength)
-      return false; // error: name was changed!
     lstrcpy(p, s);
     p += fullLength;
     totalLength -= fullLength;
   }
-  if (totalLength == 0)
-    return false;
   *p = 0;
   return true;
 }

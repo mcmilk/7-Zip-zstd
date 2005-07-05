@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.24 beta           2005-07-06
+  --------------------------------------
+   -  Common\NewHandler.h: using throw() for code size optimization.
+
+
   Version 4.23                2005-06-29
   --------------------------------------
    -  Bug was fixed: memory leak in Cab decoder.

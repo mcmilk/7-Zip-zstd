@@ -18,16 +18,9 @@
 #include <mbstring.h>
 #include <wchar.h>
 
-#define _ATL_APARTMENT_THREADED
-
-#define _ATL_NO_UUIDOF
-
-#include <atlbase.h>
-
-extern CComModule _Module;
-
-#include <atlcom.h>
 #include <shlguid.h>
 #include <regstr.h>
+
+#include "Common/NewHandler.h"
 
 #endif 

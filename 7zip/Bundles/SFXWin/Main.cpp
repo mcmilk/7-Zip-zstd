@@ -76,7 +76,7 @@ int APIENTRY WinMain(
   v1.Add(fullPath);
   v2.Add(fullPath);
   NWildcard::CCensorNode wildcardCensor;
-  wildcardCensor.AddItem(L"*", true, true, true, true);
+  wildcardCensor.AddItem(true, L"*", true, true, true);
 
   HRESULT result = ExtractGUI(v1, v2,
     wildcardCensor, eo, (assumeYes ? false: true), &openCallback, ecs);

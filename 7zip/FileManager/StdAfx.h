@@ -16,26 +16,8 @@
 #include <tchar.h>
 #include <shlwapi.h>
 
-/*
-
 // #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
-#include <atlbase.h>
-
-extern CComModule _Module;
-
-#include <atlcom.h>
-
-#include <ComDef.h>
-#include <stdio.h>
-#include <windows.h>
-#include <Commctrl.h>
-#include <shellapi.h>
-#include <mbstring.h>
-#include <new.h>
-#include <regstr.h>
-
-*/
-#include <memory>
+#include "Common/NewHandler.h"
 
 #endif

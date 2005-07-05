@@ -206,6 +206,11 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     item.LongLinkSize = item.HeaderPosition - headerPosition;
     item.HeaderPosition = headerPosition;
   }
+  else if (item.LinkFlag == 'g' || item.LinkFlag == 'x')
+  {
+    // pax Extended Header
+    return S_OK;
+  }
   else if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))
     return S_FALSE;
   return S_OK;

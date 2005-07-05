@@ -321,7 +321,7 @@ public:
   CItemProperties _properties;
   CItemProperties _visibleProperties;
   
-  int _sortID;
+  PROPID _sortID;
   // int _sortIndex;
   bool _ascending;
 

@@ -34,7 +34,7 @@ using namespace NCommandLineParser;
 extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = 
-"\n7-Zip SFX 4.23  Copyright (c) 1999-2005 Igor Pavlov  2005-06-29\n";
+"\n7-Zip SFX 4.24 beta Copyright (c) 1999-2005 Igor Pavlov  2005-07-06\n";
 
 static const int kNumSwitches = 6;
 
@@ -244,7 +244,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
       recursed = false;
       break;
   }
-  wildcardCensor.AddItem(name, include, recursed);
+  wildcardCensor.AddItem(include, name, recursed);
   return true;
 }
 

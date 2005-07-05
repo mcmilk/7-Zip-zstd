@@ -17,7 +17,6 @@ namespace NWildcard {
 struct CItem
 {
   UStringVector PathParts;
-  bool Include;
   bool Recursive;
   bool ForFile;
   bool ForDir;
@@ -26,32 +25,32 @@ struct CItem
 
 class CCensorNode
 {
-  UString Name;
   CCensorNode *Parent;
-  bool CheckPathCurrent(const UStringVector &pathParts, bool isFile, bool &include) const;
+  bool CheckPathCurrent(bool include, const UStringVector &pathParts, bool isFile) const;
+  void AddItemSimple(bool include, CItem &item);
+  bool CheckPath(UStringVector &pathParts, bool isFile, bool &include) const;
 public:
   CCensorNode(): Parent(0) { };
-  CCensorNode(const UString &name, CCensorNode *parent): 
-      Name(name), Parent(parent) { };
+  CCensorNode(const UString &name, CCensorNode *parent): Name(name), Parent(parent) { };
+  UString Name;
   CObjectVector<CCensorNode> SubNodes;
-  CObjectVector<CItem> Items;
+  CObjectVector<CItem> IncludeItems;
+  CObjectVector<CItem> ExcludeItems;
 
   int FindSubNode(const UString &path) const;
 
-  void AddItem(CItem &item);
-  void AddItem(const UString &path, bool include, bool recursive, bool forFile, bool forDir);
-  void AddItem2(const UString &path, bool include, bool recursive);
+  void AddItem(bool include, CItem &item);
+  void AddItem(bool include, const UString &path, bool recursive, bool forFile, bool forDir);
+  void AddItem2(bool include, const UString &path, bool recursive);
 
   bool NeedCheckSubDirs() const;
+  bool AreThereIncludeItems() const;
 
-  bool CheckPath(UStringVector &pathParts, bool isFile, bool &include) const;
   bool CheckPath(const UString &path, bool isFile, bool &include) const;
   bool CheckPath(const UString &path, bool isFile) const;
 
-  bool CheckPathToRoot(UStringVector &pathParts, bool isFile, bool &include) const;
-  bool CheckPathToRoot(UStringVector &pathParts, bool isFile) const;
-  bool CheckPathToRoot(const UString &path, bool isFile) const;
-
+  bool CheckPathToRoot(bool include, UStringVector &pathParts, bool isFile) const;
+  // bool CheckPathToRoot(const UString &path, bool isFile, bool include) const;
 };
 
 struct CPair
@@ -68,7 +67,7 @@ public:
   CObjectVector<CPair> Pairs;
   bool AllAreRelative() const
     { return (Pairs.Size() == 1 && Pairs.Front().Prefix.IsEmpty()); }
-  void AddItem(const UString &path, bool include, bool recursive);
+  void AddItem(bool include, const UString &path, bool recursive);
   bool CheckPath(const UString &path, bool isFile) const;
 };
 

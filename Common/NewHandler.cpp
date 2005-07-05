@@ -2,15 +2,19 @@
  
 #include "StdAfx.h"
 
+#include <stdlib.h>
+
 #include "NewHandler.h"
 
 // #define DEBUG_MEMORY_LEAK
 
 #ifndef DEBUG_MEMORY_LEAK
 
-#include <stdlib.h>
-
-void * __cdecl operator new(size_t size)
+void * 
+#ifdef _MSC_VER
+__cdecl 
+#endif
+operator new(size_t size)
 {
   // void *p = ::HeapAlloc(::GetProcessHeap(), 0, size);
   void *p = ::malloc(size);
@@ -19,7 +23,11 @@ void * __cdecl operator new(size_t size)
   return p;
 }
 
-void __cdecl operator delete(void *p)
+void 
+#ifdef _MSC_VER
+__cdecl 
+#endif
+operator delete(void *p) throw()
 {
   /*
   if (p == 0)

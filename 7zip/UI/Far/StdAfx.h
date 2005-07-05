@@ -4,5 +4,9 @@
 #define __STDAFX_H
 
 #include <windows.h>
+#include <stdio.h>
 
-#endif 
+#include "Common/NewHandler.h"
+
+#endif
+

@@ -2,10 +2,10 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 23
-!define VERSION_POSTFIX_FULL ""
+!define VERSION_MINOR 24
+!define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
-!define VERSION_POSTFIX ""
+!define VERSION_POSTFIX "b"
 
 !define FM_LINK "7-Zip File Manager.lnk"
 !define HELP_LINK "7-Zip Help.lnk"
@@ -33,12 +33,18 @@
 
   ;Compressor
 !ifndef NO_COMPRESSION
-  SetCompressor lzma
+  SetCompressor /SOLID lzma
   SetCompressorDictSize 4
 !else
   SetCompressor zlib
   SetCompress off
 !endif
+
+
+;--------------------------------
+;Variables
+
+  Var "MyDllPath"
 
 ;--------------------------------
 ;Interface Settings
@@ -212,12 +218,14 @@ Section
   StrCpy $0 0
   System::Call "kernel32::GetVersion() i .r0"
   IntCmpU $0 0x80000000 0 regNT 0
-    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED 7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
     File 7-Zipn.dll 
+    StrCpy "$MyDllPath" "7-zip.dll"
     Goto doneReg
   regNT:
-    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED 7-zipn.dll $INSTDIR\7-zipn.dll $INSTDIR
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zipn.dll $INSTDIR\7-zipn.dll $INSTDIR
     File 7-Zip.dll 
+    StrCpy "$MyDllPath" "7-zipn.dll"
   doneReg:
 
   ClearErrors
@@ -246,9 +254,19 @@ Section
   WriteRegStr HKCU "Software\7-Zip" "Path" $INSTDIR
 
   # write reg entries
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}" "" "7-Zip Shell Extension"
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "" "$INSTDIR\$MyDllPath"
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "ThreadingModel" "Apartment"
+
+
   WriteRegStr HKCR "*\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
   WriteRegStr HKCR "Directory\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
-  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+;  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+
+  WriteRegStr HKCR "Directory\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+;  WriteRegStr HKCR "Folder\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" "${CLSID_CONTEXT_MENU}" "7-Zip Shell Extension"
   
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "" "$INSTDIR\7zFM.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "Path" "$INSTDIR"
@@ -434,6 +452,11 @@ Section "Uninstall"
   DeleteRegKey HKCR "*\shellex\ContextMenuHandlers\7-Zip"
   DeleteRegKey HKCR "Directory\shellex\ContextMenuHandlers\7-Zip"
   DeleteRegKey HKCR "Folder\shellex\ContextMenuHandlers\7-Zip"
+
+  DeleteRegKey HKCR "Directory\shellex\DragDropHandlers\7-Zip"
+  DeleteRegKey HKCR "Folder\shellex\DragDropHandlers\7-Zip"
+
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" "${CLSID_CONTEXT_MENU}"
 
   DeleteRegKey HKCR "7-Zip.001"
   DeleteRegKey HKCR "7-Zip.7z"

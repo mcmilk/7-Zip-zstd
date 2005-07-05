@@ -98,8 +98,8 @@ void CPanel::InitColumns()
 
   UINT32 numProperties;
   enumProperties->GetNumberOfProperties(&numProperties);  
-  UINT32 i;
-  for (i = 0; i < numProperties; i++)
+  int i;
+  for (i = 0; i < (int)numProperties; i++)
   {
     CMyComBSTR name;
     PROPID propID;
@@ -360,7 +360,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   
   // OutputDebugStringA("S1\n");
 
-  for(int i = 0; i < numItems; i++)
+  for(UInt32 i = 0; i < numItems; i++)
   {
     UString itemName = GetItemName(i);
     if (itemName.CompareNoCase(focusedName) == 0)

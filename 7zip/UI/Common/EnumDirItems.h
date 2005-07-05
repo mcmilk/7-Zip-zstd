@@ -11,7 +11,7 @@
 void AddDirFileInfo(
     const UString &prefix, 
     const UString &fullPathName,
-    NWindows::NFile::NFind::CFileInfoW &fileInfo, 
+    const NWindows::NFile::NFind::CFileInfoW &fileInfo, 
     CObjectVector<CDirItem> &dirItems);
 
 

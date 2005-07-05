@@ -133,12 +133,12 @@ bool CFSFolder::LoadComments()
   UInt64 length;
   if (!file.GetLength(length))
     return false;
-  if (length >= 0xFFFFFFF)
+  if (length >= (1 << 28))
     return false;
   AString s;
   char *p = s.GetBuffer((size_t)length + 1);
   UINT32 processedSize;
-  file.Read(p, length, processedSize);
+  file.Read(p, (UInt32)length, processedSize);
   p[length] = 0;
   s.ReleaseBuffer();
   s.Replace("\r\n", "\n");

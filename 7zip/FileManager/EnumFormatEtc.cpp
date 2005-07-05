@@ -46,7 +46,7 @@ CEnumFormatEtc::CEnumFormatEtc(const FORMATETC *pFormatEtc, ULONG numFormats)
 	if(m_Formats)
   {
   	m_NumFormats = numFormats;
-  	for(int i = 0; i < numFormats; i++)
+  	for(ULONG i = 0; i < numFormats; i++)
 	  	DeepCopyFormatEtc(&m_Formats[i], &pFormatEtc[i]);
   }
 }

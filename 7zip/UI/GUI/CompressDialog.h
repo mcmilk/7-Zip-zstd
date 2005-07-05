@@ -141,6 +141,7 @@ public:
 protected:
 
   void CheckSFXControlsEnable();
+  void CheckVolumeEnable();
   void CheckControlsEnable();
 
 	void OnButtonSetArchive();

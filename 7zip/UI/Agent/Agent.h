@@ -3,8 +3,6 @@
 #ifndef __AGENT_AGENT_H
 #define __AGENT_AGENT_H
 
-#include <vector>
-
 #include "Common/MyCom.h"
 #include "Windows/PropVariant.h"
 
@@ -260,7 +258,7 @@ public:
 
   #ifndef EXTRACT_ONLY
   CObjectVector<UString> m_PropNames;
-  std::vector<NWindows::NCOM::CPropVariant> m_PropValues;
+  CObjectVector<NWindows::NCOM::CPropVariant> m_PropValues;
   #endif
 
   IInArchive *GetArchive() { return _archiveLink.GetArchive(); }

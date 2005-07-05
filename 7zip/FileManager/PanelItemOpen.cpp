@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h" 
 #include "Common/Random.h"
 #include "Common/StringConvert.h"
+#include "Common/AutoPtr.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
@@ -315,8 +316,9 @@ public:
 
 static DWORD WINAPI MyThreadFunction(void *param)
 {
-  // CTmpProcessInfo *tmpProcessInfo = (CTmpProcessInfo *)param;
-  std::auto_ptr<CTmpProcessInfo> tmpProcessInfo((CTmpProcessInfo *)param);
+  CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr((CTmpProcessInfo *)param);
+  CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
+
   HANDLE hProcess = tmpProcessInfo->ProcessHandle;
   HANDLE events[2] = { g_ExitEventLauncher._exitEvent, hProcess};
   DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
@@ -337,7 +339,7 @@ static DWORD WINAPI MyThreadFunction(void *param)
           0x03020280, tmpProcessInfo->ItemName);
       if (::MessageBoxW(g_HWND, message, L"7-Zip", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
       {
-        if (SendMessage(tmpProcessInfo->Window, kOpenItemChanged, 0, (LONG_PTR)tmpProcessInfo.get()) != 1)
+        if (SendMessage(tmpProcessInfo->Window, kOpenItemChanged, 0, (LONG_PTR)tmpProcessInfo) != 1)
         {
           ::MessageBoxW(g_HWND, MyFormatNew(IDS_CANNOT_UPDATE_FILE, 
               0x03020281, GetUnicodeString(tmpProcessInfo->FilePath)), L"7-Zip", MB_OK | MB_ICONSTOP);
@@ -386,7 +388,8 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
 
   UString tempFilePath = tempDirNorm + name;
 
-  std::auto_ptr<CTmpProcessInfo> tmpProcessInfo(new CTmpProcessInfo());
+  CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr(new CTmpProcessInfo());
+  CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
   tmpProcessInfo->FolderPath = tempDir;
   tmpProcessInfo->FilePath = tempFilePath;
   if (!NFind::FindFile(tempFilePath, tmpProcessInfo->FileInfo))
@@ -422,10 +425,10 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   tmpProcessInfo->ProcessHandle = hProcess;
 
   CThread thread;
-  if (!thread.Create(MyThreadFunction, tmpProcessInfo.get()))
+  if (!thread.Create(MyThreadFunction, tmpProcessInfo))
     throw 271824;
   tempDirectory.DisableDeleting();
-  tmpProcessInfo.release();
+  tmpProcessInfoPtr.release();
   tmpProcessInfoRelease._needDelete = false;
 }
 

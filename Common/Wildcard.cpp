@@ -207,72 +207,83 @@ int CCensorNode::FindSubNode(const UString &name) const
   return -1;
 }
 
-void CCensorNode::AddItem(CItem &item)
+void CCensorNode::AddItemSimple(bool include, CItem &item)
+{
+  if (include)
+    IncludeItems.Add(item);
+  else
+    ExcludeItems.Add(item);
+}
+
+void CCensorNode::AddItem(bool include, CItem &item)
 {
   if (item.PathParts.Size() <= 1)
   {
-    Items.Add(item);
+    AddItemSimple(include, item);
     return;
   }
   const UString &front = item.PathParts.Front();
   if (DoesNameContainWildCard(front))
   {
-    Items.Add(item);
+    AddItemSimple(include, item);
     return;
   }
   int index = FindSubNode(front);
   if (index < 0)
     index = SubNodes.Add(CCensorNode(front, this));
   item.PathParts.Delete(0);
-  SubNodes[index].AddItem(item);
+  SubNodes[index].AddItem(include, item);
 }
 
-void CCensorNode::AddItem(const UString &path, bool include, bool recursive, bool forFile, bool forDir)
+void CCensorNode::AddItem(bool include, const UString &path, bool recursive, bool forFile, bool forDir)
 {
   CItem item;
   SplitPathToParts(path, item.PathParts);
-  item.Include = include;
   item.Recursive = recursive;
   item.ForFile = forFile;
   item.ForDir = forDir;
-  AddItem(item);
+  AddItem(include, item);
 }
 
 bool CCensorNode::NeedCheckSubDirs() const
 {
-  for (int i = 0; i < Items.Size(); i++)
+  for (int i = 0; i < IncludeItems.Size(); i++)
   {
-    const CItem &item = Items[i];
-    if (!item.Include)
-      continue;
+    const CItem &item = IncludeItems[i];
     if (item.Recursive || item.PathParts.Size() > 1)
       return true;
   }
   return false;
 }
 
-bool CCensorNode::CheckPathCurrent(const UStringVector &pathParts, bool isFile, bool &include) const
+bool CCensorNode::AreThereIncludeItems() const
 {
-  bool finded = false;
-  for (int i = 0; i < Items.Size(); i++)
-  {
-    const CItem &item = Items[i];
-    if (item.CheckPath(pathParts, isFile))
-    {
-      finded = true;
-      include = item.Include;
-      if (!include)
-        return true;
-    }
-  }
-  return finded;
+  if (IncludeItems.Size() > 0)
+    return true;
+  for (int i = 0; i < SubNodes.Size(); i++)
+    if (SubNodes[i].AreThereIncludeItems())
+      return true;
+  return false;
+}
+
+bool CCensorNode::CheckPathCurrent(bool include, const UStringVector &pathParts, bool isFile) const
+{
+  const CObjectVector<CItem> &items = include ? IncludeItems : ExcludeItems;
+  for (int i = 0; i < items.Size(); i++)
+    if (items[i].CheckPath(pathParts, isFile))
+      return true;
+  return false;
 }
 
 bool CCensorNode::CheckPath(UStringVector &pathParts, bool isFile, bool &include) const
 {
-  bool finded = CheckPathCurrent(pathParts, isFile, include);
-  if (finded && !include)
+  if (CheckPathCurrent(false, pathParts, isFile))
+  {
+    include = false;
     return true;
+  }
+  include = true;
+  bool finded = CheckPathCurrent(true, pathParts, isFile);
   if (pathParts.Size() == 1)
     return finded;
   int index = FindSubNode(pathParts.Front());
@@ -281,7 +292,7 @@ bool CCensorNode::CheckPath(UStringVector &pathParts, bool isFile, bool &include
     UStringVector pathParts2 = pathParts;
     pathParts2.Delete(0);
     if (SubNodes[index].CheckPath(pathParts2, isFile, include))
-      finded = true;
+      return true;
   }
   return finded;
 }
@@ -301,36 +312,26 @@ bool CCensorNode::CheckPath(const UString &path, bool isFile) const
   return false;
 }
 
-bool CCensorNode::CheckPathToRoot(UStringVector &pathParts, bool isFile, bool &include) const
+bool CCensorNode::CheckPathToRoot(bool include, UStringVector &pathParts, bool isFile) const
 {
-  bool finded = CheckPathCurrent(pathParts, isFile, include);
-  if (finded && !include)
+  if (CheckPathCurrent(include, pathParts, isFile))
     return true;
   if (Parent == 0)
-    return finded;
+    return false;
   pathParts.Insert(0, Name);
-  if (Parent->CheckPathToRoot(pathParts, isFile, include))
-    finded = true;
-  return finded;
+  return Parent->CheckPathToRoot(include, pathParts, isFile);
 }
 
-bool CCensorNode::CheckPathToRoot(UStringVector &pathParts, bool isFile) const
-{
-  bool include;
-  if(CheckPathToRoot(pathParts, isFile, include))
-    return include;
-  return false;
-}
-
-bool CCensorNode::CheckPathToRoot(const UString &path, bool isFile) const
+/*
+bool CCensorNode::CheckPathToRoot(bool include, const UString &path, bool isFile) const
 {
   UStringVector pathParts; 
   SplitPathToParts(path, pathParts);
-  return CheckPathToRoot(pathParts, isFile);
+  return CheckPathToRoot(include, pathParts, isFile);
 }
+*/
 
-
-void CCensorNode::AddItem2(const UString &path, bool include, bool recursive)
+void CCensorNode::AddItem2(bool include, const UString &path, bool recursive)
 {
   if (path.IsEmpty())
     return;
@@ -342,7 +343,7 @@ void CCensorNode::AddItem2(const UString &path, bool include, bool recursive)
     path2.Delete(path.Length() - 1);
     forFile = false;
   }
-  AddItem(path2, include, recursive, forFile, forFolder);
+  AddItem(include, path2, recursive, forFile, forFolder);
 }
 
 int CCensor::FindPrefix(const UString &prefix) const
@@ -353,7 +354,7 @@ int CCensor::FindPrefix(const UString &prefix) const
   return -1;
 }
 
-void CCensor::AddItem(const UString &path, bool include, bool recursive)
+void CCensor::AddItem(bool include, const UString &path, bool recursive)
 {
   UStringVector pathParts;
   SplitPathToParts(path, pathParts);
@@ -405,9 +406,8 @@ void CCensor::AddItem(const UString &path, bool include, bool recursive)
   item.PathParts = pathParts;
   item.ForDir = true;
   item.ForFile = forFile;
-  item.Include = include;
   item.Recursive = recursive;
-  Pairs[index].Head.AddItem(item);
+  Pairs[index].Head.AddItem(include, item);
 }
 
 bool CCensor::CheckPath(const UString &path, bool isFile) const

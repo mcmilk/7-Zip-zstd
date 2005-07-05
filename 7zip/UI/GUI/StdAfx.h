@@ -8,4 +8,6 @@
 #include <shlobj.h>
 #include <stdio.h>
 
+#include "Common/NewHandler.h"
+
 #endif

@@ -38,7 +38,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(const wchar_t *filePath,
     progressWrapper.QueryInterface(IID_IArchiveOpenCallback, &openArchiveCallback);
   }
   CAgent *agent = new CAgent();
-  CComPtr<IInFolderArchive> archive = agent;
+  CMyComPtr<IInFolderArchive> archive = agent;
   RINOK(agent->Open(filePath, NULL, openArchiveCallback));
   return agent->BindToRootFolder(resultFolder);
 }

@@ -7,20 +7,17 @@
 DEFINE_GUID(CLSID_CZipContextMenu, 
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
 
-#include <vector>
-
 #include "Common/String.h"
 
 #include "../../FileManager/PluginInterface.h"
-
+#include "../../FileManager/MyCom2.h"
 
 
 class CZipContextMenu: 
   public IContextMenu,
   public IShellExtInit,
   public IInitContextMenu,
-  public CComObjectRoot,
-  public CComCoClass<CZipContextMenu, &CLSID_CZipContextMenu>
+  public CMyUnknownImp
 {
 
 public:
@@ -48,18 +45,7 @@ public:
     UString Archive;
   };
 
-BEGIN_COM_MAP(CZipContextMenu)
-  COM_INTERFACE_ENTRY(IContextMenu)
-  COM_INTERFACE_ENTRY(IShellExtInit)
-  COM_INTERFACE_ENTRY(IInitContextMenu)
-END_COM_MAP()
-
-DECLARE_NOT_AGGREGATABLE(CZipContextMenu)
-
-DECLARE_REGISTRY(CZipContextMenu, 
-    // _T("SevenZip.ContextMenu.1"), _T("SevenZip.ContextMenu"), 
-    TEXT("SevenZip.1"), TEXT("SevenZip"),
-    UINT(0), THREADFLAGS_APARTMENT)
+  MY_UNKNOWN_IMP3_MT(IContextMenu, IShellExtInit, IInitContextMenu)
 
   ///////////////////////////////
   // IShellExtInit
@@ -81,7 +67,9 @@ DECLARE_REGISTRY(CZipContextMenu,
   STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);  
 private:
   UStringVector _fileNames;
-  std::vector<CCommandMapItem> _commandMap;
+  bool _dropMode;
+  UString _dropPath;
+  CObjectVector<CCommandMapItem> _commandMap;
   HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
   UINT FindVerb(const UString &verb);
 
@@ -89,6 +77,9 @@ private:
       CCommandMapItem &commandMapItem);
   void FillCommand2(ECommandInternalID id, UString &mainString, 
       CCommandMapItem &commandMapItem);
+public:
+  CZipContextMenu();
+  ~CZipContextMenu();
 };
 
 #endif

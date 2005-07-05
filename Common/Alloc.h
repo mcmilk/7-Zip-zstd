@@ -5,10 +5,10 @@
 
 #include <stddef.h>
 
-void *MyAlloc(size_t size);
-void MyFree(void *address);
-void *BigAlloc(size_t size);
-void BigFree(void *address);
+void *MyAlloc(size_t size) throw();
+void MyFree(void *address) throw();
+void *BigAlloc(size_t size) throw();
+void BigFree(void *address) throw();
 // void *BigAllocE(size_t size);
 
 #endif

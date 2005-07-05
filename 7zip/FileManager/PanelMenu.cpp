@@ -63,7 +63,7 @@ void CPanel::CreateShellContextMenu(
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
   systemContextMenu.Release();
-  UString folderPath = GetUnicodeString(_currentFolderPrefix);
+  UString folderPath = _currentFolderPrefix;
 
   CMyComPtr<IShellFolder> desktopFolder;
   ::SHGetDesktopFolder(&desktopFolder);
@@ -255,18 +255,14 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
   // menu.CreatePopup();
 
   bool sevenZipMenuCreated = false;
-  UString currentFolderUnicode;
-  UString folder = GetUnicodeString(_currentFolderPrefix);
-  CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
 
   CMyComPtr<IContextMenu> contextMenu;
   if (contextMenu.CoCreateInstance(CLSID_CZipContextMenu, IID_IContextMenu) == S_OK)
   {
     CMyComPtr<IInitContextMenu> initContextMenu;
-    if (contextMenu.QueryInterface(IID_IInitContextMenu, 
-        &initContextMenu) != S_OK)
+    if (contextMenu.QueryInterface(IID_IInitContextMenu, &initContextMenu) != S_OK)
       return;
-    currentFolderUnicode = GetUnicodeString(_currentFolderPrefix);;
+    UString currentFolderUnicode = _currentFolderPrefix;
     UStringVector names;
     for(int i = 0; i < operatedIndices.Size(); i++)
       names.Add(currentFolderUnicode + GetItemName(operatedIndices[i]));
@@ -274,13 +270,12 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     for(i = 0; i < operatedIndices.Size(); i++)
       namePointers.Add(names[i]);
     
-    ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
-    if (initContextMenu->InitContextMenu(folder, &namePointers.Front(),
+    // NFile::NDirectory::MySetCurrentDirectory(currentFolderUnicode);
+    if (initContextMenu->InitContextMenu(currentFolderUnicode, &namePointers.Front(),
         operatedIndices.Size()) == S_OK)
     {
-      HRESULT res = contextMenu->QueryContextMenu(menu, 0, 
-        kSevenZipStartMenuID, 
-        kSystemStartMenuID - 1, 0);
+      HRESULT res = contextMenu->QueryContextMenu(menu, 0, kSevenZipStartMenuID, 
+          kSystemStartMenuID - 1, 0);
       sevenZipMenuCreated = (HRESULT_SEVERITY(res) == SEVERITY_SUCCESS);
       if (sevenZipMenuCreated)
         sevenZipContextMenu = contextMenu;
@@ -341,7 +336,7 @@ bool CPanel::InvokePluginCommand(int id,
   commandInfo.lpTitle = "";
   commandInfo.lpVerbW = LPCWSTR(offset);
   commandInfo.lpParameters = NULL;
-  UString currentFolderUnicode = GetUnicodeString(_currentFolderPrefix);;
+  UString currentFolderUnicode = _currentFolderPrefix;
   commandInfo.lpDirectoryW = currentFolderUnicode;
   commandInfo.lpTitleW = L"";
   // commandInfo.ptInvoke.x = xPos;

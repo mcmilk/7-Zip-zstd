@@ -360,6 +360,14 @@ void CCompressDialog::CheckSFXControlsEnable()
   EnableItem(IDC_COMPRESS_SFX, enable);
 }
 
+void CCompressDialog::CheckVolumeEnable()
+{
+  bool isSFX = IsSFX();
+  m_Volume.Enable(!isSFX);
+  if (isSFX)
+    m_Volume.SetText(TEXT(""));
+}
+
 void CCompressDialog::CheckControlsEnable()
 {
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
@@ -371,7 +379,8 @@ void CCompressDialog::CheckControlsEnable()
   EnableItem(IDC_COMPRESS_SOLID, fi.Solid);
   EnableItem(IDC_COMPRESS_MULTI_THREAD, multiThreadEnable);
   CheckSFXControlsEnable();
-  
+  CheckVolumeEnable();
+
   // EnableItem(IDC_STATIC_COMPRESS_VOLUME, enable);
   // EnableItem(IDC_COMPRESS_COMBO_VOLUME, enable);
   
@@ -379,6 +388,7 @@ void CCompressDialog::CheckControlsEnable()
   EnableItem(IDC_COMPRESS_PASSWORD, fi.Encrypt);
   EnableItem(IDC_COMPRESS_EDIT_PASSWORD, fi.Encrypt);
   EnableItem(IDC_COMPRESS_CHECK_SHOW_PASSWORD, fi.Encrypt);
+
 }
 
 bool CCompressDialog::IsSFX()
@@ -419,9 +429,7 @@ void CCompressDialog::OnButtonSFX()
     SetArchiveName2(false); // it's for OnInit
   }
 
-  m_Volume.Enable(!isSFX);
-  if (isSFX)
-    m_Volume.SetText(TEXT(""));
+  CheckVolumeEnable();
 }
 
 void CCompressDialog::OnButtonSetArchive() 

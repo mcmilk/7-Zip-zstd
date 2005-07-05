@@ -42,7 +42,6 @@ public:
   // UString m_DefaultName;
   NWindows::NFile::NFind::CFileInfoW m_FileInfo;
 
-  // std::auto_ptr<CProxyHandler> m_ProxyHandler; 
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;
   CMyComPtr<IFolderFolder> _folder;
   
@@ -70,15 +69,6 @@ public:
 
   int DeleteFiles(PluginPanelItem *aPanelItems, int itemsNumber, int opMode);
 
-
-  /*
-  void AddRealIndexOfFile(const CArchiveFolderItem &aFolder, int anIndexInVector, 
-      std::vector<int> &aRealIndexes);
-  void AddRealIndexes(const CArchiveFolderItem &anItem, 
-      std::vector<int> &aRealIndexes);
-  void GetRealIndexes(PluginPanelItem *aPanelItems, int itemsNumber,
-      std::vector<int> &aRealIndexes);
-  */
 
   HRESULT ExtractFiles(
       bool decompressAllItems,

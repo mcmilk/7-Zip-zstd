@@ -228,7 +228,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
       recursed = false;
       break;
   }
-  wildcardCensor.AddItem(name, include, recursed);
+  wildcardCensor.AddItem(include, name, recursed);
   return true;
 }
 
@@ -373,6 +373,72 @@ static void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor,
       throw kUserErrorMessage;
   }
 }
+
+#ifdef _WIN32
+
+// This code converts all short file names to long file names.
+
+static void ConvertToLongName(const UString &prefix, UString &name)
+{
+  if (name.IsEmpty() || DoesNameContainWildCard(name))
+    return;
+  NFind::CFileInfoW fileInfo;
+  if (NFind::FindFile(prefix + name, fileInfo))
+    name = fileInfo.Name;
+}
+
+static void ConvertToLongNames(const UString &prefix, CObjectVector<NWildcard::CItem> &items)
+{
+  for (int i = 0; i < items.Size(); i++)
+  {
+    NWildcard::CItem &item = items[i];
+    if (item.Recursive || item.PathParts.Size() != 1)
+      continue;
+    ConvertToLongName(prefix, item.PathParts.Front());
+  }
+}
+
+static void ConvertToLongNames(const UString &prefix, NWildcard::CCensorNode &node)
+{
+  ConvertToLongNames(prefix, node.IncludeItems);
+  ConvertToLongNames(prefix, node.ExcludeItems);
+  int i;
+  for (i = 0; i < node.SubNodes.Size(); i++)
+    ConvertToLongName(prefix, node.SubNodes[i].Name);
+  // mix folders with same name
+  for (i = 0; i < node.SubNodes.Size(); i++)
+  {
+    NWildcard::CCensorNode &nextNode1 = node.SubNodes[i];
+    for (int j = i + 1; j < node.SubNodes.Size();)
+    {
+      const NWildcard::CCensorNode &nextNode2 = node.SubNodes[j];
+      if (nextNode1.Name.CollateNoCase(nextNode2.Name) == 0)
+      {
+        nextNode1.IncludeItems += nextNode2.IncludeItems;
+        nextNode1.ExcludeItems += nextNode2.ExcludeItems;
+        node.SubNodes.Delete(j);
+      }
+      else
+        j++;
+    }
+  }
+  for (i = 0; i < node.SubNodes.Size(); i++)
+  {
+    NWildcard::CCensorNode &nextNode = node.SubNodes[i];
+    ConvertToLongNames(prefix + nextNode.Name + wchar_t(NFile::NName::kDirDelimiter), nextNode); 
+  }
+}
+
+static void ConvertToLongNames(NWildcard::CCensor &censor)
+{
+  for (int i = 0; i < censor.Pairs.Size(); i++)
+  {
+    NWildcard::CPair &pair = censor.Pairs[i];
+    ConvertToLongNames(pair.Prefix, pair.Head);
+  }
+}
+
+#endif
 
 static NUpdateArchive::NPairAction::EEnum GetUpdatePairActionType(int i)
 {
@@ -718,6 +784,10 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     if (thereIsArchiveName)
       AddCommandLineWildCardToCensr(archiveWildcardCensor, options.ArchiveName, true, NRecursedType::kNonRecursed);
 
+    #ifdef _WIN32
+    ConvertToLongNames(archiveWildcardCensor);
+    #endif
+
     CObjectVector<CDirItem> dirItems;
     UString errorPath;
     if (EnumerateItems(archiveWildcardCensor, dirItems, NULL, errorPath) != S_OK)
@@ -826,6 +896,10 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
       throw kTerminalOutError;
     if(updateOptions.StdInMode)
       updateOptions.StdInFileName = parser[NKey::kStdIn].PostStrings.Front();
+
+    #ifdef _WIN32
+    ConvertToLongNames(options.WildcardCensor);
+    #endif
   }
   else 
     throw kUserErrorMessage;

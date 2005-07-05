@@ -44,14 +44,11 @@ static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
   {
     UStringVector realNames;
     realNames.Add(UString(L"x"));
-    std::vector<NCOM::CPropVariant> values;
-    values.push_back(NCOM::CPropVariant((UINT32)method));
-
+    NCOM::CPropVariant value = (UInt32)method;
     CRecordVector<const wchar_t *> names;
     for(int i = 0; i < realNames.Size(); i++)
       names.Add(realNames[i]);
-    RINOK(setProperties->SetProperties(&names.Front(), 
-      &values.front(), names.Size()));
+    RINOK(setProperties->SetProperties(&names.Front(), &value, names.Size()));
   }
   return S_OK;
 }
@@ -595,7 +592,6 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
      g_StartupInfo.GetMsgString(NMessageID::kUpdating), 1 << 16);
 
 
-  // std::auto_ptr<CProxyHandler> proxyHandler;
   NFind::CFileInfoW fileInfo;
 
   CMyComPtr<IOutFolderArchive> outArchive;

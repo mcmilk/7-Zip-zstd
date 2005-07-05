@@ -244,7 +244,7 @@ static UInt64 GetMemoryUsage(UInt32 dictionary)
 
 UInt32 CBenchmarkDialog::OnChangeDictionary()
 {
-  UInt64 dictionary = m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
+  UInt32 dictionary = (UInt32)m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
   UInt64 memUsage = GetMemoryUsage(dictionary);
   memUsage = (memUsage + (1 << 20) - 1) >> 20;
   TCHAR s[40];

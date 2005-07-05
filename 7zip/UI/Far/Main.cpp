@@ -406,18 +406,6 @@ static HANDLE MyOpenFilePlugin(const char *name)
 
   // ::OutputDebugString("after OpenArchive\n");
 
-  /*
-  std::auto_ptr<CProxyHandler> aProxyHandler(new CProxyHandler());
-
-  if(aProxyHandler->Init(archiveHandler, 
-      fileInfo,
-      GetDefaultName(fullName, archiverInfoResult.Extension), 
-      openArchiveCallbackSpec) != S_OK)
-    return INVALID_HANDLE_VALUE;
-
-  // ::OutputDebugString("after Init\n");
-  */
-
   CPlugin *plugin = new CPlugin(
       fullName, 
       // defaultName, 
