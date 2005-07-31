@@ -23,9 +23,10 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   void RefreshPluginsList(int selectIndex);
   void MovePlugin(bool upDirection);
   void UpdateDatabase();
+  void SelectAll();
 
 public:
-  virtual bool OnMessage(UINT message, UINT wParam, LPARAM lParam);
+  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
   virtual bool OnInit();
   virtual void OnNotifyHelp();
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam);

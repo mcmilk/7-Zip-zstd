@@ -1,113 +1,15 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
-    IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC 
-                            "CRC failed in '{0}'. File is broken."
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR 
-                            "Data error in '{0}'. File is broken."
+  IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
+  IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC "CRC failed in '{0}'. File is broken."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR  "Data error in '{0}'. File is broken."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD  "Unsupported compression method for '{0}'."
+  IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE  "Can not open output file '{0}'."
+  IDS_PROGRESS_EXTRACTING "Extracting"
 END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD 
-                            "Unsupported compression method for '{0}'."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE 
-                            "Can not open output file '{0}'."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_PROGRESS_EXTRACTING "Extracting"
-END
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-

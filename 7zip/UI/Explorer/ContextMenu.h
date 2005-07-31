@@ -59,7 +59,7 @@ public:
   STDMETHOD(QueryContextMenu)(HMENU hmenu, UINT indexMenu,
       UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
   STDMETHOD(InvokeCommand)(LPCMINVOKECOMMANDINFO lpici);
-  STDMETHOD(GetCommandString)(UINT idCmd, UINT uType, UINT *pwReserved,
+  STDMETHOD(GetCommandString)(UINT_PTR idCmd, UINT uType, UINT *pwReserved,
       LPSTR pszName, UINT cchMax);
 
 

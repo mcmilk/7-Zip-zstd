@@ -156,7 +156,9 @@ HRESULT ExtractGUI(
   if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
     throw 271824;
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
-  if (extracter.Result == S_OK && options.TestMode && extracter.ExtractCallbackSpec->Messages.IsEmpty())
+  if (extracter.Result == S_OK && options.TestMode && 
+      extracter.ExtractCallbackSpec->Messages.IsEmpty() &&
+      extracter.ExtractCallbackSpec->NumArchiveErrors == 0)
   {
     #ifndef _SFX
     MessageBoxW(0, LangLoadStringW(IDS_MESSAGE_NO_ERRORS, 0x02000608),
@@ -164,10 +166,8 @@ HRESULT ExtractGUI(
     #endif
   }
   if (extracter.Result != S_OK)
-  {
     if (!extracter.ErrorMessage.IsEmpty())
       throw extracter.ErrorMessage;
-  }
   return extracter.Result;
 }
 

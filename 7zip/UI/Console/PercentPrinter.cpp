@@ -66,7 +66,7 @@ void CPercentPrinter::RePrintRatio()
   UInt64 ratio = m_CurValue * 100 / m_Total;
   char temp[32 + kNumDigits] = "    "; // for 4 digits;
   ConvertUInt64ToString(ratio, temp + kNumDigits);
-  int len = strlen(temp + kNumDigits);
+  int len = (int)strlen(temp + kNumDigits);
   strcat(temp, "%");
   int pos = (len > kNumDigits)? kNumDigits : len;
   (*OutStream) << kPercentFormatString1;

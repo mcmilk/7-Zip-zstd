@@ -93,11 +93,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=.\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -111,10 +111,6 @@ SOURCE=.\StdAfx.cpp
 # Begin Source File
 
 SOURCE=.\StdAfx.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Tar.def
 # End Source File
 # Begin Source File
 

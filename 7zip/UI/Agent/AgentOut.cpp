@@ -1,4 +1,4 @@
-// AgentOutcpp
+// AgentOut.cpp
 
 #include "StdAfx.h"
 
@@ -161,8 +161,13 @@ STDMETHODIMP CAgent::DoOperation(
 
   UString folderPrefix = _folderPrefix;
   NFile::NName::NormalizeDirPathPrefix(folderPrefix);
-  UString errorPath;
-  RINOK(::EnumerateDirItems(folderPrefix, _names, _archiveNamePrefix, dirItems, errorPath));
+  UStringVector errorPaths;
+  CRecordVector<DWORD> errorCodes;
+  ::EnumerateDirItems(folderPrefix, _names, _archiveNamePrefix, dirItems, errorPaths, errorCodes);
+  if (errorCodes.Size() > 0)
+  {
+    return errorCodes.Front();
+  }
 
   NWindows::NDLL::CLibrary library;
 

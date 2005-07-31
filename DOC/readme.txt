@@ -1,4 +1,4 @@
-7-Zip 4.24 Sources
+7-Zip 4.25 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 

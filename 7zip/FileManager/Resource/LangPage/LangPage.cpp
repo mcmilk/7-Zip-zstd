@@ -6,22 +6,18 @@
 
 #include "Common/StringConvert.h"
 
-#include "Windows/Defs.h"
-#include "Windows/FileFind.h"
+#include "Windows/ResourceString.h"
 
 #include "../../RegistryUtils.h"
 #include "../../HelpUtils.h"
 #include "../../LangUtils.h"
-#include "../../ProgramLocation.h"
-
-#include "../../MyLoadMenu.h"
 
 static CIDLangPair kIDLangPairs[] = 
 {
   { IDC_LANG_STATIC_LANG, 0x01000401}
 };
 
-static LPCWSTR kLangTopic = L"FM/options.htm#language";
+static LPCWSTR kLangTopic = L"fm/options.htm#language";
 
 bool CLangPage::OnInit()
 {
@@ -30,53 +26,40 @@ bool CLangPage::OnInit()
 
   _langCombo.Attach(GetItem(IDC_LANG_COMBO_LANG));
 
-  int index = _langCombo.AddString(TEXT("English (English)"));
+  CSysString s = NWindows::MyLoadString(IDS_LANG_ENGLISH);
+  s += TEXT(" (");
+  s += NWindows::MyLoadString(IDS_LANG_NATIVE);
+  s += TEXT(")");
+  int index = _langCombo.AddString(s);
   _langCombo.SetItemData(index, _paths.Size());
-  _paths.Add(TEXT(""));
+  _paths.Add(TEXT("-"));
   _langCombo.SetCurSel(0);
 
-  UString folderPath;
-  if (::GetProgramFolderPath(folderPath))
+  CObjectVector<CLangEx> langs;
+  LoadLangs(langs);
+  for (int i = 0; i < langs.Size(); i++)
   {
-    folderPath += L"Lang\\";
-    NWindows::NFile::NFind::CEnumeratorW enumerator(folderPath + L"*.txt");
-    NWindows::NFile::NFind::CFileInfoW fileInfo;
-    while (enumerator.Next(fileInfo))
+    const CLangEx &lang = langs[i];
+    UString name; 
+    UString englishName, nationalName;
+    if (lang.Lang.GetMessage(0x00000000, englishName))
+      name = englishName;
+    else
+      name = lang.ShortName;
+    if (lang.Lang.GetMessage(0x00000001, nationalName))
     {
-      if (fileInfo.IsDirectory())
-        continue;
-      CLang lang;
-      UString filePath = folderPath + fileInfo.Name;
-      UString shortName;
-      const kExtSize = 4;
-      if (fileInfo.Name.Right(kExtSize) != L".txt")
-        continue;
-      shortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
-      if (lang.Open(GetSystemString(filePath)))
+      if (!nationalName.IsEmpty())
       {
-        UString name; 
-        UString englishName, nationalName;
-        if (lang.GetMessage(0x00000000, englishName))
-          name = englishName;
-        else
-          name = shortName;
-        if (lang.GetMessage(0x00000001, nationalName))
-        {
-          if (!nationalName.IsEmpty())
-          {
-            name += L" (";
-            name += nationalName;
-            name += L")";
-          }
-        }
-        index = _langCombo.AddString(GetSystemString(name));
-        _langCombo.SetItemData(index, _paths.Size());
-        _paths.Add(GetSystemString(shortName));
-        if (g_LangID.CollateNoCase(GetSystemString(shortName)) == 0 || 
-            g_LangID.CollateNoCase(GetSystemString(filePath)) == 0)
-          _langCombo.SetCurSel(index);
+        name += L" (";
+        name += nationalName;
+        name += L")";
       }
     }
+    index = _langCombo.AddString(GetSystemString(name));
+    _langCombo.SetItemData(index, _paths.Size());
+    _paths.Add(GetSystemString(lang.ShortName));
+    if (g_LangID.CollateNoCase(GetSystemString(lang.ShortName)) == 0)
+      _langCombo.SetCurSel(index);
   }
   return CPropertyPage::OnInit();
 }
@@ -105,4 +88,3 @@ bool CLangPage::OnCommand(int code, int itemID, LPARAM param)
   }
   return CPropertyPage::OnCommand(code, itemID, param);
 }
-

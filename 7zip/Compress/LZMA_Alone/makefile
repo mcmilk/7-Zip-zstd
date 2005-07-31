@@ -1,109 +1,105 @@
-PROG = lzma
-CXX = g++ -O2 -Wall
-CXX_C = gcc -O2 -Wall
-LIB = -lm
-RM = rm -f
-CFLAGS = -c -I ../../../
+PROG = lzma.exe
+CFLAGS = $(CFLAGS) -I ../../../
+LIBS = $(LIBS) oleaut32.lib user32.lib
+
+!IFNDEF O
+!IFDEF CPU
+O=$(CPU)
+!ELSE
+O=O
+!ENDIF
+!ENDIF
+
+CFLAGS = $(CFLAGS) -nologo -EHsc -c -Fo$O/ -GS- 
+CFLAGS_O1 = $(CFLAGS) -O1
+CFLAGS_O2 = $(CFLAGS) -O2
+
+LFLAGS = $(LFLAGS) -nologo -OPT:NOWIN98
+
+PROGPATH = $O\$(PROG)
+
+COMPL_O1   = $(CPP) $(CFLAGS_O1) $**
+COMPL_O2   = $(CPP) $(CFLAGS_O2) $**
+COMPL      = $(CPP) $(CFLAGS_O1) $**
+
+
+LZMA_OBJS = \
+  $O\LzmaAlone.obj \
+  $O\LzmaBench.obj \
+  $O\LzmaRam.obj \
+
+LZMA_OPT_OBJS = \
+  $O\LZMADecoder.obj \
+  $O\LZMAEncoder.obj \
+
+COMMON_OBJS = \
+  $O\Alloc.obj \
+  $O\CRC.obj \
+  $O\CommandLineParser.obj \
+  $O\String.obj \
+  $O\StringConvert.obj \
+  $O\StringToInt.obj \
+  $O\Vector.obj
+
+WIN_OBJS = \
+  $O\Synchronization.obj
+
+7ZIP_COMMON_OBJS = \
+  $O\InBuffer.obj \
+  $O\OutBuffer.obj \
+
+LZ_OBJS = \
+  $O\LZInWindow.obj \
+  $O\LZOutWindow.obj \
+
 
 OBJS = \
-  LzmaAlone.o \
-  LzmaBench.o \
-  LzmaRam.o \
-  LzmaRamDecode.o \
-  LzmaDecode.o \
-  BranchX86.o \
-  LZMADecoder.o \
-  LZMAEncoder.o \
-  LZInWindow.o \
-  LZOutWindow.o \
-  RangeCoderBit.o \
-  InBuffer.o \
-  OutBuffer.o \
-  FileStreams.o \
-  Alloc.o \
-  C_FileIO.o \
-  CommandLineParser.o \
-  CRC.o \
-  String.o \
-  StringConvert.o \
-  StringToInt.o \
-  Vector.o \
+  $(LZMA_OBJS) \
+  $(LZMA_OPT_OBJS) \
+  $(COMMON_OBJS) \
+  $(WIN_OBJS) \
+  $(7ZIP_COMMON_OBJS) \
+  $(LZ_OBJS) \
+  $O\LzmaRamDecode.obj \
+  $O\LzmaDecode.obj \
+  $O\FileStreams.obj \
+  $O\FileIO.obj \
+  $O\RangeCoderBit.obj \
+  $O\BranchX86.obj \
 
-
-all: $(PROG)
-
-$(PROG): $(OBJS)
-	$(CXX) -o $(PROG) $(LDFLAGS) $(OBJS) $(LIB)
-
-LzmaAlone.o: LzmaAlone.cpp
-	$(CXX) $(CFLAGS) LzmaAlone.cpp
-
-LzmaBench.o: LzmaBench.cpp
-	$(CXX) $(CFLAGS) LzmaBench.cpp
-
-LzmaRam.o: LzmaRam.cpp
-	$(CXX) $(CFLAGS) LzmaRam.cpp
-
-LzmaRamDecode.o: LzmaRamDecode.c
-	$(CXX_C) $(CFLAGS) LzmaRamDecode.c
-
-LzmaDecode.o: ../LZMA_C/LzmaDecode.c
-	$(CXX_C) $(CFLAGS) ../LZMA_C/LzmaDecode.c
-
-BranchX86.o: ../Branch/BranchX86.c
-	$(CXX_C) $(CFLAGS) ../Branch/BranchX86.c
-
-LZMADecoder.o: ../LZMA/LZMADecoder.cpp
-	$(CXX) $(CFLAGS) ../LZMA/LZMADecoder.cpp
-
-LZMAEncoder.o: ../LZMA/LZMAEncoder.cpp
-	$(CXX) $(CFLAGS) ../LZMA/LZMAEncoder.cpp
-
-LZInWindow.o: ../LZ/LZInWindow.cpp
-	$(CXX) $(CFLAGS) ../LZ/LZInWindow.cpp
-
-LZOutWindow.o: ../LZ/LZOutWindow.cpp
-	$(CXX) $(CFLAGS) ../LZ/LZOutWindow.cpp
-
-RangeCoderBit.o: ../RangeCoder/RangeCoderBit.cpp
-	$(CXX) $(CFLAGS) ../RangeCoder/RangeCoderBit.cpp
-
-InBuffer.o: ../../Common/InBuffer.cpp
-	$(CXX) $(CFLAGS) ../../Common/InBuffer.cpp
-
-OutBuffer.o: ../../Common/OutBuffer.cpp
-	$(CXX) $(CFLAGS) ../../Common/OutBuffer.cpp
-
-FileStreams.o: ../../Common/FileStreams.cpp
-	$(CXX) $(CFLAGS) ../../Common/FileStreams.cpp
-
-Alloc.o: ../../../Common/Alloc.cpp
-	$(CXX) $(CFLAGS) ../../../Common/Alloc.cpp
-
-C_FileIO.o: ../../../Common/C_FileIO.cpp
-	$(CXX) $(CFLAGS) ../../../Common/C_FileIO.cpp
-
-CommandLineParser.o: ../../../Common/CommandLineParser.cpp
-	$(CXX) $(CFLAGS) ../../../Common/CommandLineParser.cpp
-
-CRC.o: ../../../Common/CRC.cpp
-	$(CXX) $(CFLAGS) ../../../Common/CRC.cpp
-
-MyWindows.o: ../../../Common/MyWindows.cpp
-	$(CXX) $(CFLAGS) ../../../Common/MyWindows.cpp
-
-String.o: ../../../Common/String.cpp
-	$(CXX) $(CFLAGS) ../../../Common/String.cpp
-
-StringConvert.o: ../../../Common/StringConvert.cpp
-	$(CXX) $(CFLAGS) ../../../Common/StringConvert.cpp
-
-StringToInt.o: ../../../Common/StringToInt.cpp
-	$(CXX) $(CFLAGS) ../../../Common/StringToInt.cpp
-
-Vector.o: ../../../Common/Vector.cpp
-	$(CXX) $(CFLAGS) ../../../Common/Vector.cpp
+all: $(PROGPATH) 
 
 clean:
-	-$(RM) $(PROG) $(OBJS)
+	-del /Q $(PROGPATH) $O\*.exe $O\*.dll $O\*.obj $O\*.lib $O\*.exp $O\*.res $O\*.pch 
 
+$O:
+	if not exist "$O" mkdir "$O"
+
+$(PROGPATH): $O $(OBJS)
+	link $(LFLAGS) -out:$(PROGPATH) $(OBJS) $(LIBS)
+
+
+$(LZMA_OBJS): $(*B).cpp
+	$(COMPL)
+$(LZMA_OPT_OBJS): ../LZMA/$(*B).cpp
+	$(COMPL_O2)
+$(COMMON_OBJS): ../../../Common/$(*B).cpp
+	$(COMPL)
+$(WIN_OBJS): ../../../Windows/$(*B).cpp
+	$(COMPL)
+$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
+	$(COMPL)
+$(LZ_OBJS): ../LZ/$(*B).cpp
+	$(COMPL)
+$O\RangeCoderBit.obj: ../RangeCoder/$(*B).cpp
+	$(COMPL)
+$O\LzmaRamDecode.obj: LzmaRamDecode.c
+	$(COMPL_O1)
+$O\LzmaDecode.obj: ../LZMA_C/LzmaDecode.c
+	$(COMPL_O2)
+$O\BranchX86.obj: ../Branch/BranchX86.c
+	$(COMPL_O2)
+$O\FileStreams.obj: ../../Common/FileStreams.cpp
+	$(COMPL)
+$O\FileIO.obj: ../../../Windows/FileIO.cpp
+	$(COMPL)

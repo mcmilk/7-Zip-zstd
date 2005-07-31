@@ -19,6 +19,7 @@ static const TCHAR *kShowSystemMenu = TEXT("ShowSystemMenu");
 
 static const TCHAR *kFullRow = TEXT("FullRow");
 static const TCHAR *kShowGrid = TEXT("ShowGrid");
+static const TCHAR *kAlternativeSelection = TEXT("AlternativeSelection");
 // static const TCHAR *kSingleClick = TEXT("SingleClick");
 // static const TCHAR *kUnderline = TEXT("Underline");
 
@@ -87,6 +88,9 @@ bool ReadFullRow() { return ReadOption(kFullRow, false); }
 
 void SaveShowGrid(bool enable) { SaveOption(kShowGrid, enable); }
 bool ReadShowGrid(){ return ReadOption(kShowGrid, false); }
+
+void SaveAlternativeSelection(bool enable) { SaveOption(kAlternativeSelection, enable); }
+bool ReadAlternativeSelection(){ return ReadOption(kAlternativeSelection, false); }
 
 /*
 void SaveSingleClick(bool enable) { SaveOption(kSingleClick, enable); }

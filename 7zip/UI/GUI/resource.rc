@@ -1,140 +1,14 @@
-//Microsoft Developer Studio generated resource script.
-//
+#include "../../MyVersionInfo.rc"
+#include <winnt.h>
 #include "resource.h"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
+MY_VERSION_INFO_APP("7-Zip GUI", "7zg")
 
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
+IDI_ICON1 ICON "FM.ico"
 
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
+1 24 MOVEABLE PURE "7zG.exe.manifest"
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""..\\..\\FileManager\\Resource\\PropertyName\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\OverwriteDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\PasswordDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\MessagesDialog\\resource.rc""\r\n"
-    "#include ""..\\..\\FileManager\\Resource\\ProgressDialog2\\resource.rc""\r\n"
-    "#include ""..\\Resource\\Extract\\resource.rc""\r\n"
-    "#include ""..\\Resource\\ExtractDialog\\resource.rc""\r\n"
-    "#include ""..\\Resource\\CompressDialog\\resource.rc""\r\n"
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-#ifndef _MAC
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,24,0,0
- PRODUCTVERSION 4,24,0,0
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x2L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "Igor Pavlov\0"
-            VALUE "FileDescription", "7-Zip GUI Module\0"
-            VALUE "FileVersion", "4, 24, 0, 0\0"
-            VALUE "InternalName", "7zg\0"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2005 Igor Pavlov\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "7zg.exe\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "7-Zip\0"
-            VALUE "ProductVersion", "4, 24, 0, 0\0"
-            VALUE "SpecialBuild", "\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
-END
-
-#endif    // !_MAC
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "FM.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// 24
-//
-
-1                       24      MOVEABLE PURE   "7zG.exe.manifest"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
+STRINGTABLE
 BEGIN
     IDS_CONTEXT_EXTRACT     "Extract files..."
     IDS_CONTEXT_EXTRACT_HELP "Extracts files from the selected archive."
@@ -142,18 +16,10 @@ BEGIN
     IDS_CONTEXT_COMPRESS_HELP "Adds the selected items to archive."
     IDS_CONTEXT_OPEN        "Open"
     IDS_CONTEXT_OPEN_HELP   "Opens the selected archive."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_CONTEXT_TEST        "Test archive"
     IDS_CONTEXT_TEST_HELP   "Tests integrity of the selected archive."
     IDS_CONTEXT_CAPTION_HELP "7-Zip commands"
     IDS_CONTEXT_POPUP_CAPTION "7-Zip"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_OPEN_TYPE_ALL_FILES "All Files"
     IDS_METHOD_STORE        "Store"
     IDS_METHOD_NORMAL       "Normal"
@@ -165,10 +31,6 @@ BEGIN
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
     IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE "Browse"
     IDS_CANT_UPDATE_ARCHIVE "Can not update archive '{0}'"
     IDS_PROGRESS_COMPRESSING "Compressing"
@@ -178,26 +40,11 @@ BEGIN
     IDS_CONFIG_DIALOG_CAPTION "7-Zip Options"
 END
 
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-#include "..\..\FileManager\Resource\PropertyName\resource.rc"
-#include "..\..\FileManager\Resource\OverwriteDialog\resource.rc"
-#include "..\..\FileManager\Resource\PasswordDialog\resource.rc"
-#include "..\..\FileManager\Resource\MessagesDialog\resource.rc"
-#include "..\..\FileManager\Resource\ProgressDialog2\resource.rc"
-#include "..\Resource\Extract\resource.rc"
-#include "..\Resource\ExtractDialog\resource.rc"
-#include "..\Resource\CompressDialog\resource.rc"
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-
+#include "../../FileManager/Resource/PropertyName/resource.rc"
+#include "../../FileManager/Resource/OverwriteDialog/resource.rc"
+#include "../../FileManager/Resource/PasswordDialog/resource.rc"
+#include "../../FileManager/Resource/MessagesDialog/resource.rc"
+#include "../../FileManager/Resource/ProgressDialog2/resource.rc"
+#include "../Resource/Extract/resource.rc"
+#include "../Resource/ExtractDialog/resource.rc"
+#include "../Resource/CompressDialog/resource.rc"

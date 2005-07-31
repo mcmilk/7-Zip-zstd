@@ -1,7 +1,3 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by resource.rc
-//
 #define IDD_DIALOG_COMPRESS             152
 #define IDC_STATIC_COMPRESS_MEMORY      1022
 #define IDC_STATIC_COMPRESS_MEMORY_DE   1023
@@ -34,14 +30,3 @@
 #define IDC_COMPRESS_EDIT_PASSWORD      1108
 #define IDC_COMPRESS_CHECK_SHOW_PASSWORD 1109
 #define IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES 1110
-
-// Next default values for new objects
-// 
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        157
-#define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1110
-#define _APS_NEXT_SYMED_VALUE           101
-#endif
-#endif

@@ -230,7 +230,7 @@ void CPanel::EditItem(int index)
 
 void CPanel::OpenFolderExternal(int index)
 {
-  HANDLE hProcess = StartApplication(_currentFolderPrefix + GetItemName(index), (HWND)*this);
+  HANDLE hProcess = StartApplication(GetFsPath() + GetItemName(index), (HWND)*this);
   if (hProcess != 0)
     ::CloseHandle(hProcess);
 }
@@ -263,7 +263,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   }
 }
        
-HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName)
+LRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName)
 {
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
@@ -382,7 +382,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
 
   if ((result != S_OK && result != E_ABORT))
   {
-    MessageBoxError(result, L"7-Zip");
+    MessageBoxError(result);
     return;
   }
 

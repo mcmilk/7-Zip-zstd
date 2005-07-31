@@ -26,7 +26,8 @@ const int kUpdateDatabase = kRefreshpluginsListMessage  + 1;
 
 static CIDLangPair kIDLangPairs[] = 
 {
-  { IDC_SYSTEM_STATIC_ASSOCIATE,          0x03010302}
+  { IDC_SYSTEM_STATIC_ASSOCIATE,  0x03010302},
+  { IDC_SYSTEM_SELECT_ALL,        0x03000330}
 };
 
 static LPCWSTR kSystemTopic = L"FM/options.htm#system";
@@ -115,6 +116,7 @@ void CSystemPage::SetMainPluginText(int itemIndex, int indexInDatabase)
   _listViewExt.SetItem(&item);
 }
 
+#ifndef _WIN64
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -123,6 +125,7 @@ static bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 static UString GetProgramCommand()
 {
@@ -130,11 +133,12 @@ static UString GetProgramCommand()
   UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
+  path += L"7zFM";
+  #ifndef _WIN64
   if (IsItWindowsNT())
-    path += L"7zFMn.exe";
-  else
-    path += L"7zFM.exe";
-  path += L"\" \"%1\"";
+    path += L"n";
+  #endif
+  path += L".exe\" \"%1\"";
   return path;
 }
 
@@ -174,6 +178,7 @@ static CSysString GetIconPath(const CSysString &filePath,
 
 LONG CSystemPage::OnApply()
 {
+  UpdateDatabase();
   _extDatabase.Save();
   UString command = GetProgramCommand();
   
@@ -214,13 +219,24 @@ void CSystemPage::OnNotifyHelp()
   ShowHelpWindow(NULL, kSystemTopic);
 }
 
+void CSystemPage::SelectAll()
+{ 
+  int count = _listViewExt.GetItemCount();
+  for (int i = 0; i < count; i++)
+    _listViewExt.SetCheckState(i, true);
+  UpdateDatabase();
+}
+
 bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 { 
   switch(buttonID)
   {
-    case IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU:
+    case IDC_SYSTEM_SELECT_ALL:
+    {
+      SelectAll();
       Changed();
       return true;
+    }
   }
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
@@ -332,7 +348,7 @@ bool CSystemPage::OnItemChanged(const NMLISTVIEW *info)
   return true;
 }
 
-bool CSystemPage::OnMessage(UINT message, UINT wParam, LPARAM lParam)
+bool CSystemPage::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch(message)
   {

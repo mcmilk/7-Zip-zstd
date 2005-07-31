@@ -155,10 +155,12 @@ class CDropSource:
   public IDropSource,
   public CMyUnknownImp
 {
+  DWORD m_Effect;
 public:
   MY_UNKNOWN_IMP1_MT(IDropSource)
   STDMETHOD(QueryContinueDrag)(BOOL escapePressed, DWORD keyState);
   STDMETHOD(GiveFeedback)(DWORD effect);
+
 
   bool NeedExtract;
   CPanel *Panel;
@@ -171,7 +173,7 @@ public:
   HRESULT Result;
   UStringVector Messages;
 
-  CDropSource(): NeedPostCopy(false), Panel(0), Result(S_OK) {}
+  CDropSource(): NeedPostCopy(false), Panel(0), Result(S_OK), m_Effect(DROPEFFECT_NONE) {}
 };
 
 STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
@@ -180,6 +182,8 @@ STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
     return DRAGDROP_S_CANCEL;	
   if((keyState & MK_LBUTTON) == 0)
   {
+    if (m_Effect == DROPEFFECT_NONE)
+      return DRAGDROP_S_CANCEL;	
     Result = S_OK;
     bool needExtract = NeedExtract;
     // MoveMode = (((keyState & MK_SHIFT) != 0) && MoveIsAllowed);
@@ -204,6 +208,7 @@ STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
 
 STDMETHODIMP CDropSource::GiveFeedback(DWORD effect)
 {
+  m_Effect = effect;
   return DRAGDROP_S_USEDEFAULTCURSORS;
 }
 
@@ -319,7 +324,7 @@ void CPanel::OnDrag(LPNMLISTVIEW nmListView)
   else
   {
     if (res != DRAGDROP_S_CANCEL && res != S_OK)
-      MessageBoxError(res, L"7-Zip");
+      MessageBoxError(res);
     res = dropSourceSpec->Result;
   }
 
@@ -330,7 +335,7 @@ void CPanel::OnDrag(LPNMLISTVIEW nmListView)
     messagesDialog.Create((*this));
   }
   if (res != S_OK && res != E_ABORT)
-    MessageBoxError(res, L"7-Zip");
+    MessageBoxError(res);
   if (res == S_OK && dropSourceSpec->Messages.IsEmpty() && !canceled)
     KillSelection();
 }
@@ -339,6 +344,7 @@ void CDropTarget::QueryGetData(IDataObject *dataObject)
 {
   FORMATETC etc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
   m_DropIsAllowed = (dataObject->QueryGetData(&etc) == S_OK);
+
 }
 
 static void MySetDropHighlighted(HWND hWnd, int index, bool enable)
@@ -419,7 +425,7 @@ void CDropTarget::PositionCursor(POINTL ptl)
   if (index < 0)
     return;
   int realIndex = m_Panel->GetRealItemIndex(index);
-  if (realIndex == -1)
+  if (realIndex == kParentIndex)
     return;
   if (!m_Panel->IsItemFolder(realIndex))
     return; 
@@ -436,12 +442,112 @@ bool CDropTarget::IsFsFolderPath() const
   return false;
 }
 
+static void ReadUnicodeStrings(const wchar_t *p, size_t size, UStringVector &names)
+{
+  names.Clear();
+  UString name;
+  for (;size > 0; size--)
+  {
+    wchar_t c = *p++;
+    if (c == 0)
+    {
+      if (name.IsEmpty())
+        break;
+      names.Add(name);
+      name.Empty();
+    }
+    else
+      name += c;
+  }
+}
+
+static void ReadAnsiStrings(const char *p, size_t size, UStringVector &names)
+{
+  names.Clear();
+  AString name;
+  for (;size > 0; size--)
+  {
+    char c = *p++;
+    if (c == 0)
+    {
+      if (name.IsEmpty())
+        break;
+      names.Add(GetUnicodeString(name));
+      name.Empty();
+    }
+    else
+      name += c;
+  }
+}
+
+static void GetNamesFromDataObject(IDataObject *dataObject, UStringVector &names)
+{
+  names.Clear();
+  FORMATETC etc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+  STGMEDIUM medium;
+  HRESULT res = dataObject->GetData(&etc, &medium);
+  if (res != S_OK)
+    return;
+  if (medium.tymed != TYMED_HGLOBAL)
+    return;
+  {
+    NMemory::CGlobal global;
+    global.Attach(medium.hGlobal);
+    size_t blockSize = GlobalSize(medium.hGlobal);
+    NMemory::CGlobalLock dropLock(medium.hGlobal);
+    const DROPFILES* dropFiles = (DROPFILES*)dropLock.GetPointer();
+    if (dropFiles == 0)
+      return;
+    if (blockSize < dropFiles->pFiles)
+      return;
+    size_t size = blockSize - dropFiles->pFiles;
+    const void *namesData = (const Byte *)dropFiles + dropFiles->pFiles;
+    if (dropFiles->fWide)
+      ReadUnicodeStrings((const wchar_t *)namesData, size / sizeof(wchar_t), names);
+    else
+      ReadAnsiStrings((const char *)namesData, size, names);
+  }
+}
+
+bool CDropTarget::IsItSameDrive() const
+{
+  if (m_Panel == 0)
+    return false;
+  if (!IsFsFolderPath())
+    return false;
+  UString drive;
+  if (m_Panel->IsFSFolder())
+  {
+    drive = m_Panel->GetDriveOrNetworkPrefix();
+    if (drive.IsEmpty())
+      return false;
+  }
+  else if (m_Panel->IsFSDrivesFolder() && m_SelectionIndex >= 0)
+    drive = m_SubFolderName + L'\\';
+  else
+    return false;
+
+  if (m_SourcePaths.Size() == 0)
+    return false;
+  for (int i = 0; i < m_SourcePaths.Size(); i++)
+  {
+    const UString &path = m_SourcePaths[i];
+    if (drive.CollateNoCase(path.Left(drive.Length())) != 0)
+      return false;
+  }
+  return true;
+
+}
+
 DWORD CDropTarget::GetEffect(DWORD keyState, POINTL pt, DWORD allowedEffect)
 {
   if (!m_DropIsAllowed || !m_PanelDropIsAllowed)
     return DROPEFFECT_NONE;
 
   if (!IsFsFolderPath())
+    allowedEffect &= ~DROPEFFECT_MOVE;
+
+  if (!m_SetPathIsOK)
     allowedEffect &= ~DROPEFFECT_MOVE;
 
 	DWORD effect = 0;
@@ -451,8 +557,13 @@ DWORD CDropTarget::GetEffect(DWORD keyState, POINTL pt, DWORD allowedEffect)
 		effect = allowedEffect & DROPEFFECT_MOVE;
 	if(effect == 0)
 	{
-		if(allowedEffect & DROPEFFECT_COPY) effect = DROPEFFECT_COPY;
-		if(allowedEffect & DROPEFFECT_MOVE) effect = DROPEFFECT_MOVE;
+		if(allowedEffect & DROPEFFECT_COPY) 
+      effect = DROPEFFECT_COPY;
+		if(allowedEffect & DROPEFFECT_MOVE) 
+    {
+      if (IsItSameDrive())
+        effect = DROPEFFECT_MOVE;
+    }
 	}
 	if(effect == 0)
     return DROPEFFECT_NONE;
@@ -504,12 +615,14 @@ bool CDropTarget::SetPath(bool enablePath) const
 
 bool CDropTarget::SetPath()
 {
-  return SetPath(m_DropIsAllowed && m_PanelDropIsAllowed && IsFsFolderPath());
+  m_SetPathIsOK = SetPath(m_DropIsAllowed && m_PanelDropIsAllowed && IsFsFolderPath());
+  return m_SetPathIsOK;
 }
 
 STDMETHODIMP CDropTarget::DragEnter(IDataObject * dataObject, DWORD keyState, 
       POINTL pt, DWORD *effect)
 {
+  GetNamesFromDataObject(dataObject, m_SourcePaths);
   QueryGetData(dataObject);
   m_DataObject = dataObject;
   return DragOver(keyState, pt, effect);
@@ -519,8 +632,8 @@ STDMETHODIMP CDropTarget::DragEnter(IDataObject * dataObject, DWORD keyState,
 STDMETHODIMP CDropTarget::DragOver(DWORD keyState, POINTL pt, DWORD *effect)
 {
   PositionCursor(pt);
-  *effect = GetEffect(keyState, pt, *effect);
   SetPath();
+  *effect = GetEffect(keyState, pt, *effect);
   return S_OK;
 }
 
@@ -541,13 +654,14 @@ STDMETHODIMP CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
 {
   QueryGetData(dataObject);
   PositionCursor(pt);
-  *effect = GetEffect(keyState, pt, *effect);
   m_DataObject = dataObject;
+  bool needDrop = true;
   if(m_DropIsAllowed && m_PanelDropIsAllowed)
-  {
-    bool needDrop = true;
     if (IsFsFolderPath())
       needDrop = !SetPath();
+  *effect = GetEffect(keyState, pt, *effect);
+  if(m_DropIsAllowed && m_PanelDropIsAllowed)
+  {
     if (needDrop)
     {
       UString path = GetTargetPath();
@@ -562,74 +676,12 @@ STDMETHODIMP CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
   return S_OK;
 }
 
-static void ReadUnicodeStrings(const wchar_t *p, size_t size, UStringVector &names)
-{
-  names.Clear();
-  UString name;
-  for (;size > 0; size--)
-  {
-    wchar_t c = *p++;
-    if (c == 0)
-    {
-      if (name.IsEmpty())
-        break;
-      names.Add(name);
-      name.Empty();
-    }
-    else
-      name += c;
-  }
-}
-
-static void ReadAnsiStrings(const char *p, size_t size, UStringVector &names)
-{
-  names.Clear();
-  AString name;
-  for (;size > 0; size--)
-  {
-    char c = *p++;
-    if (c == 0)
-    {
-      if (name.IsEmpty())
-        break;
-      names.Add(GetUnicodeString(name));
-      name.Empty();
-    }
-    else
-      name += c;
-  }
-}
-
 void CPanel::DropObject(IDataObject *dataObject, const UString &folderPath)
 {
-  FORMATETC etc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-  STGMEDIUM medium;
-  HRESULT res = dataObject->GetData(&etc, &medium);
-  if (res != S_OK)
-    return;
-  if (medium.tymed != TYMED_HGLOBAL)
-    return;
   UStringVector names;
-  {
-    NMemory::CGlobal global;
-    global.Attach(medium.hGlobal);
-    size_t blockSize = GlobalSize(medium.hGlobal);
-    NMemory::CGlobalLock dropLock(medium.hGlobal);
-    const DROPFILES* dropFiles = (DROPFILES*)dropLock.GetPointer();
-    if (dropFiles == 0)
-      return;
-    if (blockSize < dropFiles->pFiles)
-      return;
-    size_t size = blockSize - dropFiles->pFiles;
-    const void *namesData = (const Byte *)dropFiles + dropFiles->pFiles;
-    if (dropFiles->fWide)
-      ReadUnicodeStrings((const wchar_t *)namesData, size / sizeof(wchar_t), names);
-    else
-      ReadAnsiStrings((const char *)namesData, size, names);
-  }
+  GetNamesFromDataObject(dataObject, names);
   CompressDropFiles(names, folderPath);
 }
-
 
 /*
 void CPanel::CompressDropFiles(HDROP dr)

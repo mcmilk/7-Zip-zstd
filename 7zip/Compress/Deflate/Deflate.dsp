@@ -93,15 +93,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Deflate.def
+SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
 SOURCE=.\DllExports.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 

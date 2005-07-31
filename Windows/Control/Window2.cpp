@@ -18,7 +18,7 @@ static LRESULT CALLBACK WindowProcedure(HWND aHWND, UINT message,
         LONG_PTR(((LPCREATESTRUCT)lParam)->lpCreateParams));
   CWindow2 *window = (CWindow2*)(tempWindow.GetUserDataLongPtr());
   if (window == NULL)
-    return FALSE;
+    return DefWindowProc(aHWND, message, wParam, lParam);
   if (message == WM_NCCREATE)
     window->Attach(aHWND);
   if (window == 0)
@@ -55,7 +55,7 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCTSTR className,
       idOrHMenu, instance, this);
 }
 
-LRESULT CWindow2::OnMessage(UINT message, UINT wParam, LPARAM lParam)
+LRESULT CWindow2::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   LRESULT result;
   switch (message)

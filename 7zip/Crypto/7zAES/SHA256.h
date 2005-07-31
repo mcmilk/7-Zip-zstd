@@ -21,7 +21,7 @@ public:
   enum {DIGESTSIZE = 32};
   SHA256() { Init(); } ;
   void Init();
-  void Update(const Byte *data, UInt32 size);
+  void Update(const Byte *data, size_t size);
   void Final(Byte *digest);
 };
 

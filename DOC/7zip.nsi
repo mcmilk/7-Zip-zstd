@@ -5,7 +5,7 @@
 !define VERSION_MINOR 24
 !define VERSION_POSTFIX_FULL " beta"
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
-!define VERSION_POSTFIX "b"
+!define VERSION_POSTFIX ""
 
 !define FM_LINK "7-Zip File Manager.lnk"
 !define HELP_LINK "7-Zip Help.lnk"
@@ -264,7 +264,7 @@ Section
 ;  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
 
   WriteRegStr HKCR "Directory\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
-;  WriteRegStr HKCR "Folder\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+  WriteRegStr HKCR "Drive\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" "${CLSID_CONTEXT_MENU}" "7-Zip Shell Extension"
   

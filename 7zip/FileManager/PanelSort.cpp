@@ -71,9 +71,9 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
   if(lpData == NULL)
     return 0;
-  if (lParam1 == -1)
+  if (lParam1 == kParentIndex)
     return -1;
-  if (lParam2 == -1)
+  if (lParam2 == kParentIndex)
     return 1;
 
   CPanel *panel = (CPanel*)lpData;

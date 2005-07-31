@@ -1,9 +1,0 @@
-; Implode.def
-
-LIBRARY Implode.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE
-

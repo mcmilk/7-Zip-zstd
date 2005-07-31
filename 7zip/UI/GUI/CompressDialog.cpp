@@ -149,6 +149,7 @@ struct CFormatInfo
   UInt32 LevelsMask;
   const EMethodID *MathodIDs;
   int NumMethods;
+  bool Filter;
   bool Solid;
   bool MultiThread;
   bool SFX;
@@ -162,25 +163,25 @@ static const CFormatInfo g_Formats[] =
     L"", 
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
     0, 0,
-    false, false, false, false, false
+    false, false, false, false, false, false
   },
   { 
     k7zFormat, 
     (1 << 0) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
     g_7zMethods, MY_SIZE_OF_ARRAY(g_7zMethods),
-    true, true, true, true, true
+    true, true, true, true, true, true
   },
   { 
     L"Zip", 
-    (1 << 0) | (1 << 5) | (1 << 9), 
+    (1 << 0) | (1 << 5) | (1 << 7) | (1 << 9), 
     g_ZipMethods, MY_SIZE_OF_ARRAY(g_ZipMethods) ,
-    false, false, false, true, false
+    false, false, false, false, true, false
   },
   { 
     L"GZip", 
     (1 << 5) | (1 << 9), 
     g_GZipMethods, MY_SIZE_OF_ARRAY(g_GZipMethods),
-    false, false, false, false, false
+    false, false, false, false, false, false
   },
   { 
     L"BZip2", 
@@ -193,7 +194,7 @@ static const CFormatInfo g_Formats[] =
     L"Tar", 
     (1 << 0), 
     0, 0,
-    false, false, false, false, false
+    false, false, false, false, false, false
   }
 };
 
@@ -916,12 +917,19 @@ void CCompressDialog::SetDictionary()
       }
       int i;
       AddDictionarySize(32 << 10);
-      for (i = 20; i < 28; i++)
+      for (i = 20; i <= 28; i++)
         for (int j = 0; j < 2; j++)
         {
           if (i == 20 && j > 0)
             continue;
           UInt32 dictionary = (1 << i) + (j << (i - 1));
+          #ifdef _WIN64
+          if (dictionary > (1 << 28))
+            continue;
+          #else
+          if (dictionary >= (1 << 28))
+            continue;
+          #endif
           AddDictionarySize(dictionary);
         }
       SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
@@ -1133,28 +1141,32 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
     decompressMemory = (1 << 20);
     return decompressMemory;
   }
+  UInt64 size = 0;
+
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  if (fi.Filter && level >= 9)
+    size += (12 << 20) * 2 + (5 << 20);
   switch (GetMethodID())
   {
     case kLZMA:
     {
-      UInt64 size;
       if (level >= 5)
       {
-        size = ((UInt64)dictionary * 19 / 2) + (2 << 20);
+        size += ((UInt64)dictionary * 19 / 2) + (2 << 20);
         if (level >= 9)
-          size += (34 << 20) + (12 << 20) * 2 + (5 << 20);
+          size += (34 << 20);
         else
           size += (6 << 20);
       }
       else 
-        size = ((UInt64)dictionary * 11 / 2) + (2 << 20);
+        size += ((UInt64)dictionary * 11 / 2) + (2 << 20);
       decompressMemory = dictionary + (2 << 20);
       return size;
     }
     case kPPMd:
     {
       decompressMemory = dictionary + (2 << 20);
-      return decompressMemory;
+      return size + decompressMemory;
     }
     case kDeflate:
     case kDeflate64:
@@ -1162,9 +1174,8 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
       UInt32 order = GetOrder();
       if (order == UInt32(-1))
         order = 32;
-      UInt64 size = 0;
       if (level >= 7)
-        size = (order * 2 + 4) * (64 << 10);
+        size += (order * 2 + 4) * (64 << 10);
       size += 3 << 20;
       decompressMemory = (2 << 20);
       return size;
@@ -1172,7 +1183,7 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
     case kBZip2:
     {
       decompressMemory = (7 << 20);
-      return 10 << 20;
+      return size + (10 << 20);
     }
   }
   return UInt64(Int64(-1));

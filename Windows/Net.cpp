@@ -38,13 +38,13 @@ static void ConvertNETRESOURCEToCResource(const NETRESOURCE &netResource,
   SetComplexString(resource.ProviderIsDefined, resource.Provider, netResource.lpProvider);
 }
 
-static void SetComplexString2(LPCTSTR &destString, bool defined, 
-    const CSysString &srsString)
+static void SetComplexString2(LPTSTR *destString, bool defined, 
+    const CSysString &srcString)
 {
   if (defined)
-    destString = srsString;
+    *destString = (TCHAR *)(const TCHAR *)srcString;
   else
-    destString = 0;
+    *destString = 0;
 }
 
 static void ConvertCResourceToNETRESOURCE(const CResource &resource, 
@@ -54,10 +54,10 @@ static void ConvertCResourceToNETRESOURCE(const CResource &resource,
   netResource.dwType = resource.Type;
   netResource.dwDisplayType = resource.DisplayType;
   netResource.dwUsage = resource.Usage;
-  SetComplexString2(netResource.lpLocalName, resource.LocalNameIsDefined, resource.LocalName);
-  SetComplexString2(netResource.lpRemoteName, resource.RemoteNameIsDefined, resource.RemoteName);
-  SetComplexString2(netResource.lpComment, resource.CommentIsDefined, resource.Comment);
-  SetComplexString2(netResource.lpProvider, resource.ProviderIsDefined, resource.Provider);
+  SetComplexString2(&netResource.lpLocalName, resource.LocalNameIsDefined, resource.LocalName);
+  SetComplexString2(&netResource.lpRemoteName, resource.RemoteNameIsDefined, resource.RemoteName);
+  SetComplexString2(&netResource.lpComment, resource.CommentIsDefined, resource.Comment);
+  SetComplexString2(&netResource.lpProvider, resource.ProviderIsDefined, resource.Provider);
 }
 
 DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, 

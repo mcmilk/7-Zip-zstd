@@ -59,7 +59,6 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
   _processTimer = true;
   _processNotify = true;
 
-
   _panelCallback = panelCallback;
   _appState = appState;
   // _index = index;
@@ -82,7 +81,7 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
   return S_OK;
 }
 
-LRESULT CPanel::OnMessage(UINT message, UINT wParam, LPARAM lParam)
+LRESULT CPanel::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch(message)
   {
@@ -303,8 +302,9 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
 
   style |= kStyles[_ListViewMode] 
     | WS_TABSTOP 
-    | LVS_EDITLABELS 
-    | LVS_SINGLESEL;
+    | LVS_EDITLABELS;
+  if (_mySelectMode)
+    style |= LVS_SINGLESEL;
 
   /*
   if (_virtualMode)
@@ -608,6 +608,8 @@ void CPanel::MessageBoxMyError(LPCWSTR message)
   { MessageBox(message, L"Error"); }
 void CPanel::MessageBoxError(HRESULT errorCode, LPCWSTR caption)
   { MessageBox(GetUnicodeString(NError::MyFormatMessage(errorCode)), caption); }
+void CPanel::MessageBoxError(HRESULT errorCode)
+  { MessageBoxError(errorCode, L"7-Zip"); }
 void CPanel::MessageBoxLastError(LPCWSTR caption)
   { MessageBoxError(::GetLastError(), caption); }
 void CPanel::MessageBoxLastError()
@@ -639,7 +641,7 @@ UString CPanel::GetFolderTypeID() const
     return L"";
   CMyComBSTR typeID;
   folderGetTypeID->GetTypeID(&typeID);
-  return typeID;
+  return (wchar_t *)typeID;
 }
 
 bool CPanel::IsRootFolder() const
@@ -655,6 +657,36 @@ bool CPanel::IsFSFolder() const
 bool CPanel::IsFSDrivesFolder() const
 {
   return (GetFolderTypeID() == L"FSDrives");
+}
+
+UString CPanel::GetFsPath() const
+{
+  if (IsFSDrivesFolder())
+    return UString();
+  return _currentFolderPrefix;
+}
+
+UString CPanel::GetDriveOrNetworkPrefix() const
+{
+  if (!IsFSFolder())
+    return UString();
+  UString drive = GetFsPath();
+  if (drive.Length() < 3)
+    return UString();
+  if (drive[0] == L'\\' && drive[1] == L'\\')
+  {
+    // if network
+    int pos = drive.Find(L'\\', 2);
+    if (pos < 0)
+      return UString();
+    pos = drive.Find(L'\\', pos + 1);
+    if (pos < 0)
+      return UString();
+    return drive.Left(pos + 1);
+  }
+  if (drive[1] != L':' || drive[2] != L'\\')
+    return UString();
+  return drive.Left(3);
 }
 
 bool CPanel::DoesItSupportOperations() const

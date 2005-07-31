@@ -26,6 +26,9 @@ bool ReadFullRow();
 void SaveShowGrid(bool enable);
 bool ReadShowGrid();
 
+void SaveAlternativeSelection(bool enable);
+bool ReadAlternativeSelection();
+
 /*
 void SaveSingleClick(bool enable);
 bool ReadSingleClick();

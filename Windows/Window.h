@@ -102,9 +102,9 @@ public:
   LONG_PTR GetLong(int index) const
     { return ::GetWindowLong(_window, index ); }
   LONG_PTR SetUserDataLong(LONG_PTR newLongPtr )
-    { return SetLong(GWL_USERDATA, newLongPtr); }
+    { return SetLong(GWLP_USERDATA, newLongPtr); } 
   LONG_PTR GetUserDataLong() const
-    { return GetLong(GWL_USERDATA); }
+    { return GetLong(GWLP_USERDATA); }
 
   #ifndef _WIN32_WCE
   LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr )

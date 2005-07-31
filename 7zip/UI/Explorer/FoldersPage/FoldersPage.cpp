@@ -1,4 +1,4 @@
-// FoldersDialog.cpp
+// FoldersPage.cpp
 
 #include "StdAfx.h"
 

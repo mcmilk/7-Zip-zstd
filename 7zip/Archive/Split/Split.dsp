@@ -93,19 +93,15 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Archive.def
+# End Source File
+# Begin Source File
+
 SOURCE=.\DllExports.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\resource.rc
-# End Source File
-# Begin Source File
-
-SOURCE=.\Split.def
 # End Source File
 # Begin Source File
 

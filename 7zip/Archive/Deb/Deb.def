@@ -1,8 +1,0 @@
-; Deb.def
-
-LIBRARY deb.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE
-

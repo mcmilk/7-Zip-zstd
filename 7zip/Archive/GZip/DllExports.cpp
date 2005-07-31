@@ -22,7 +22,7 @@ DEFINE_GUID(CLSID_CCompressDeflateDecoder,
 
 HINSTANCE g_hInstance;
 
-#ifndef COMPRESS_BZIP2
+#ifndef COMPRESS_DEFLATE
 #include "../Common/CodecsPath.h"
 CSysString GetDeflateCodecPath()
 {

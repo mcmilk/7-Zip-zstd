@@ -638,15 +638,6 @@ SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.cpp
 
 SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Messages"
 
@@ -658,15 +649,6 @@ SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
 # Begin Source File
 
 SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\resource.rc
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Overwtite"
@@ -692,15 +674,6 @@ SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
 
 SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Compress Dialog"
 
@@ -713,15 +686,6 @@ SOURCE=.\CompressDialog.cpp
 
 SOURCE=.\CompressDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\Resource\CompressDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Resource\CompressDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Extract Dialog"
 
@@ -733,15 +697,6 @@ SOURCE=.\ExtractDialog.cpp
 # Begin Source File
 
 SOURCE=.\ExtractDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Resource\ExtractDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Resource\ExtractDialog\resource.rc
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # End Group

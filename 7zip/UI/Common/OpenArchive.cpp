@@ -127,9 +127,9 @@ HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName)
 }
 
 #ifndef _SFX
-static inline bool TestSignature(const Byte *p1, const Byte *p2, UInt32 size)
+static inline bool TestSignature(const Byte *p1, const Byte *p2, size_t size)
 {
-  for (UInt32 i = 0; i < size; i++)
+  for (size_t i = 0; i < size; i++)
     if (p1[i] != p2[i])
       return false;
   return true;

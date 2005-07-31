@@ -191,8 +191,6 @@ void CApp::Split()
   srcPanel.GetOperatedItemIndices(indices);
   if (indices.IsEmpty())
     return;
-  UString title;
-  UString message;
   if (indices.Size() != 1)
   {
     srcPanel.MessageBox(L"Select one file");
@@ -225,6 +223,12 @@ void CApp::Split()
   CProgressDialog progressDialog;
   spliter.ProgressDialog = &progressDialog;
 
+  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+  UString title = LangLoadStringW(IDS_SPLITTING, 0x03020510);
+
+  progressDialog.MainWindow = _window;
+  progressDialog.MainTitle = progressWindowTitle;
+  progressDialog.MainAddTitle = title + UString(L" ");
   progressDialog.ProgressSynch.SetTitleFileName(itemName);
 
   path = splitDialog.Path;
@@ -264,8 +268,7 @@ void CApp::Split()
   CThread thread;
   if (!thread.Create(CThreadSplit::MyThreadFunction, &spliter))
     throw 271824;
-  progressDialog.Create(
-    LangLoadStringW(IDS_SPLITTING, 0x03020510));
+  progressDialog.Create(title, _window);
 
   if (!spliter.Error.IsEmpty())
     srcPanel.MessageBoxMyError(spliter.Error);
@@ -396,8 +399,6 @@ void CApp::Combine()
   srcPanel.GetOperatedItemIndices(indices);
   if (indices.IsEmpty())
     return;
-  UString title;
-  UString message;
   if (indices.Size() != 1)
   {
     srcPanel.MessageBox(L"Select only first file");
@@ -433,7 +434,14 @@ void CApp::Combine()
 
   CProgressDialog progressDialog;
   combiner.ProgressDialog = &progressDialog;
-  
+
+  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+  UString title = LangLoadStringW(IDS_COMBINING, 0x03020610);
+
+  progressDialog.MainWindow = _window;
+  progressDialog.MainTitle = progressWindowTitle;
+  progressDialog.MainAddTitle = title + UString(L" ");
+
   path = copyDialog.Value;
   NFile::NName::NormalizeDirPathPrefix(path);
   if (!NFile::NDirectory::CreateComplexDirectory(path))
@@ -452,7 +460,7 @@ void CApp::Combine()
   CThread thread;
   if (!thread.Create(CThreadCombine::MyThreadFunction, &combiner))
     throw 271824;
-  progressDialog.Create(LangLoadStringW(IDS_COMBINING, 0x03020610));
+  progressDialog.Create(title, _window);
 
   if (!combiner.Error.IsEmpty())
     srcPanel.MessageBoxMyError(combiner.Error);

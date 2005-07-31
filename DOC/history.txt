@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.25 beta           2005-07-31
+  --------------------------------------
+   -  More 64-bit compatibilty
+
+
   Version 4.24 beta           2005-07-06
   --------------------------------------
    -  Common\NewHandler.h: using throw() for code size optimization.

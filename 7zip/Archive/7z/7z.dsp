@@ -93,7 +93,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\7z.def
+SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 

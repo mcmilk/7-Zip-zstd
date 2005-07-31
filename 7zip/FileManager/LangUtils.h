@@ -15,6 +15,15 @@ struct CIDLangPair
 
 void ReloadLang();
 void LoadLangOneTime();
+void ReloadLangSmart();
+
+struct CLangEx
+{
+  CLang Lang;
+  UString ShortName;
+};
+
+void LoadLangs(CObjectVector<CLangEx> &langs);
 
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems);
 void LangSetWindowText(HWND window, UInt32 langID);

@@ -258,7 +258,7 @@ HRESULT CEncoder::CreateMixerCoder()
       outStreamSpec->Init();
       writeCoderProperties->WriteCoderProperties(outStream);
       
-      UInt32 size = outStreamSpec->GetSize();
+      size_t size = outStreamSpec->GetSize();
       
       // encodingInfo.Properties.SetCapacity(size);
       if (encodingInfo.AltCoders.Size() == 0)

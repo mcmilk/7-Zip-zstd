@@ -132,9 +132,13 @@ int main(int numargs, char *args[])
     else if (testCommand || extractCommand)
     {
       UInt32 i;
-      UInt32 blockIndex;
-      Byte *outBuffer = 0;
-      size_t outBufferSize;
+
+      // if you need cache, use these 3 variables.
+      // if you use external function, you can make these variable as static.
+      UInt32 blockIndex = 0xFFFFFFFF; // it can have any value before first call (if outBuffer = 0) 
+      Byte *outBuffer = 0; // it must be 0 before first call for each new archive. 
+      size_t outBufferSize = 0;  // it can have any value before first call (if outBuffer = 0) 
+
       printf("\n");
       for (i = 0; i < db.Database.NumFiles; i++)
       {

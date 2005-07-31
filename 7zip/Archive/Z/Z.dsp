@@ -93,11 +93,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=.\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -111,10 +111,6 @@ SOURCE=.\StdAfx.cpp
 # Begin Source File
 
 SOURCE=.\StdAfx.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Z.def
 # End Source File
 # Begin Source File
 
@@ -154,14 +150,6 @@ SOURCE=..\..\..\Common\StringConvert.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Windows\DLL.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\DLL.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File
@@ -184,18 +172,6 @@ SOURCE=..\..\Compress\Z\ZDecoder.h
 # Begin Group "Archive Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Common\CodecsPath.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CodecsPath.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderLoader.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\Common\DummyOutStream.cpp

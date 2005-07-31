@@ -106,10 +106,10 @@ static int CompareMethodIDs(const CMethodID &a1, const CMethodID &a2)
 
 static int CompareBuffers(const CByteBuffer &a1, const CByteBuffer &a2)
 {
-  int c1 = a1.GetCapacity();
-  int c2 = a2.GetCapacity();
+  size_t c1 = a1.GetCapacity();
+  size_t c2 = a2.GetCapacity();
   RINOZ(MyCompare(c1, c2));
-  for (int i = 0; i < c1; i++)
+  for (size_t i = 0; i < c1; i++)
     RINOZ(MyCompare(a1[i], a2[i]));
   return 0;
 }
@@ -174,8 +174,8 @@ static int __cdecl CompareFolderRefs(const void *p1, const void *p2)
   if (d1.NumUnPackStreamsVector[a1.FolderIndex] == 0)
     return 0;
   return CompareFiles(
-      d1.Files[(size_t)d1.FolderStartFileIndex[a1.FolderIndex]],
-      d2.Files[(size_t)d2.FolderStartFileIndex[a2.FolderIndex]]);
+      d1.Files[d1.FolderStartFileIndex[a1.FolderIndex]],
+      d2.Files[d2.FolderStartFileIndex[a2.FolderIndex]]);
 }
 
 ////////////////////////////////////////////////////////////

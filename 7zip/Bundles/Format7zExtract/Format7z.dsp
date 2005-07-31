@@ -105,33 +105,21 @@ SOURCE=..\..\Archive\7z\DllExports.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\resource.h
+SOURCE=.\resource.rc
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\resource.rc
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\StdAfx.cpp
+SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"StdAfx.h"
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\StdAfx.h
+SOURCE=.\StdAfx.h
 # End Source File
 # End Group
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\AlignedBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\AlignedBuffer.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\Alloc.cpp
@@ -155,6 +143,14 @@ SOURCE=..\..\..\Common\IntToString.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
@@ -275,14 +271,6 @@ SOURCE=..\..\Archive\Common\FilterCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\FilterCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\InStreamWithCRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\InStreamWithCRC.h
 # End Source File
 # Begin Source File
 

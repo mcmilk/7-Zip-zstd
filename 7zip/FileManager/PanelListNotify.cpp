@@ -82,7 +82,7 @@ LRESULT CPanel::SetItemText(LVITEM &item)
   if ((item.mask & LVIF_TEXT) == 0)
     return 0;
 
-  if (realIndex == (UINT32)-1)
+  if (realIndex == kParentIndex)
     return 0;
   UString string;
   UINT32 subItemIndex = item.iSubItem;
@@ -148,6 +148,18 @@ LRESULT CPanel::SetItemText(LVITEM &item)
 
 extern DWORD g_ComCtl32Version;
 
+void CPanel::OnItemChanged(NMLISTVIEW *item)
+{
+  int index = item->lParam;
+  if (index == kParentIndex)
+    return;
+  bool oldSelected = (item->uOldState & LVIS_SELECTED) != 0;
+  bool newSelected = (item->uNewState & LVIS_SELECTED) != 0;
+  // Don't change this code. It works only with such check
+  if(oldSelected != newSelected)
+    _selectedStatusVector[index] = newSelected;
+}
+
 bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 {
   bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
@@ -157,6 +169,8 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
   {
     case LVN_ITEMCHANGED:
     {
+      if (!_mySelectMode)
+        OnItemChanged((LPNMLISTVIEW)header);
       RefreshStatusBar();
       return false;
     }
@@ -244,10 +258,9 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case NM_CLICK:
     {
       RefreshStatusBar();
-      if(g_ComCtl32Version >= MAKELONG(71, 4))
-      {
-        OnLeftClick((LPNMITEMACTIVATE)header);
-      }
+      if(_mySelectMode)
+        if(g_ComCtl32Version >= MAKELONG(71, 4))
+          OnLeftClick((LPNMITEMACTIVATE)header);
       return false;
     }
     case LVN_BEGINLABELEDIT:
@@ -258,7 +271,11 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       return true;
 
     case NM_CUSTOMDRAW:
-      return OnCustomDraw((LPNMLVCUSTOMDRAW)header, result);
+    {
+      if (_mySelectMode)
+        return OnCustomDraw((LPNMLVCUSTOMDRAW)header, result);
+      break;
+    }
     case LVN_BEGINDRAG:
     {
       OnDrag((LPNMLISTVIEW)header);
@@ -290,7 +307,7 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
     */
     int realIndex = lplvcd->nmcd.lItemlParam;
     bool selected = false;
-    if (realIndex != -1)
+    if (realIndex != kParentIndex)
       selected = _selectedStatusVector[realIndex];
     if (selected)
       lplvcd->clrTextBk = RGB(255, 192, 192);
@@ -331,10 +348,10 @@ void CPanel::OnRefreshStatusBar()
 {
   CRecordVector<UINT32> indices;
   GetOperatedItemIndices(indices);
-  
+
   _statusBar.SetText(0, GetSystemString(MyFormatNew(IDS_N_SELECTED_ITEMS, 
       0x02000301, NumberToStringW(indices.Size()))));
-  
+
   UString selectSizeString;
 
   if (indices.Size() > 0)
@@ -353,7 +370,7 @@ void CPanel::OnRefreshStatusBar()
   if (focusedItem >= 0 && _listView.GetSelectedCount() > 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
-    if (realIndex != -1)
+    if (realIndex != kParentIndex)
     {
       sizeString = ConvertSizeToString(GetItemSize(realIndex));
       NCOM::CPropVariant propVariant;

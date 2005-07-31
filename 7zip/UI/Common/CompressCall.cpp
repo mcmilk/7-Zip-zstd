@@ -25,6 +25,7 @@ static LPCWSTR kArchiveMapSwitch = L" -ai#";
 static LPCWSTR kStopSwitchParsing = L" --";
 
 
+#ifndef _WIN64
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -33,6 +34,7 @@ static bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 HRESULT MyCreateProcess(const UString &params, 
     LPCTSTR curDir, bool waitFinish,
@@ -82,10 +84,12 @@ static UString Get7zGuiPath()
   UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
+  path += L"7zG";
+  #ifndef _WIN64
   if (IsItWindowsNT())
-    path += L"7zgn.exe";
-  else
-    path += L"7zg.exe";
+    path += L"n";
+  #endif
+  path += L".exe";
   // path += L"7z.exe";
   return GetQuotedString(path);
 }

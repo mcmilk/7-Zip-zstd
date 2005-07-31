@@ -128,6 +128,7 @@ STDMETHODIMP CPluginOptionsCallback::GetProgramFolderPath(BSTR *value)
   return S_OK;
 }
 
+#ifndef _WIN64
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO aVersionInfo;
@@ -136,13 +137,17 @@ static bool IsItWindowsNT()
     return false;
   return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 static UString GetDefaultProgramName()
 {
-  if (IsItWindowsNT()) 
-    return L"7zFMn.exe";
-  else
-    return L"7zFM.exe";
+  UString name;
+  name += L"7zFM";
+  #ifndef _WIN64
+  if (IsItWindowsNT())
+    name += L"n";
+  #endif
+  return name + L".exe";
 }
 
 STDMETHODIMP CPluginOptionsCallback::GetProgramPath(BSTR *value)

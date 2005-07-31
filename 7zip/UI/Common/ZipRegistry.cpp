@@ -377,7 +377,7 @@ static bool ReadOption(const TCHAR *value, bool defaultValue)
 void SaveCascadedMenu(bool show)
   { SaveOption(kCascadedMenuValueName, show); }
 bool ReadCascadedMenu()
-  { return ReadOption(kCascadedMenuValueName, false); }
+  { return ReadOption(kCascadedMenuValueName, true); }
 
 
 static void SaveValue(const TCHAR *value, UInt32 valueToWrite)

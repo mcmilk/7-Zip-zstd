@@ -693,8 +693,14 @@ DWORD CThreadBenchmark::Process()
       NWindows::NCOM::CPropVariant properties[kNumProps];
       properties[0] = UInt32(dictionarySize);
       properties[1] = bool(multiThread);
-      RINOK(setCoderProperties->SetCoderProperties(propIDs,
-          properties, kNumProps));
+      HRESULT res = setCoderProperties->SetCoderProperties(propIDs,
+          properties, kNumProps);
+      if (res != S_OK)
+      {
+        // SyncInfo->Pause();
+        MessageBox(0, NError::MyFormatMessage(res), TEXT("7-Zip"), MB_ICONERROR);
+        return res;
+      }
     }
       
     if (propStream)

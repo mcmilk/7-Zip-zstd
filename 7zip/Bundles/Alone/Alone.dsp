@@ -220,10 +220,6 @@ SOURCE=..\..\UI\Console\UserInputUtils.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\resource.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\resource.rc
 # End Source File
 # Begin Source File

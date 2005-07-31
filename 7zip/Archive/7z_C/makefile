@@ -1,50 +1,55 @@
-PROG = 7zDec
-CXX = g++ -O2 -Wall
-LIB = 
-RM = rm -f
-CFLAGS = -c
+PROG = 7zDec.exe
 
-OBJS = 7zAlloc.o 7zBuffer.o 7zCrc.o 7zDecode.o 7zExtract.o 7zHeader.o 7zIn.o 7zItem.o 7zMain.o 7zMethodID.o LzmaDecode.o 
+!IFNDEF O
+!IFDEF CPU
+O=$(CPU)
+!ELSE
+O=O
+!ENDIF
+!ENDIF
 
-all: $(PROG)
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -GS- 
+CFLAGS_O1 = $(CFLAGS) -O1
+CFLAGS_O2 = $(CFLAGS) -O2
 
-$(PROG): $(OBJS)
-	$(CXX) -o $(PROG) $(LDFLAGS) $(OBJS) $(LIB)
+LFLAGS = $(LFLAGS) -nologo -OPT:NOWIN98
 
-7zAlloc.o: 7zAlloc.c
-	$(CXX) $(CFLAGS) 7zAlloc.c
+PROGPATH = $O\$(PROG)
 
-7zBuffer.o: 7zBuffer.c
-	$(CXX) $(CFLAGS) 7zBuffer.c
+COMPL_O1   = $(CPP) $(CFLAGS_O1) $**
+COMPL_O2   = $(CPP) $(CFLAGS_O2) $**
+COMPL      = $(CPP) $(CFLAGS_O1) $**
 
-7zCrc.o: 7zCrc.c
-	$(CXX) $(CFLAGS) 7zCrc.c
 
-7zDecode.o: 7zDecode.c
-	$(CXX) $(CFLAGS) 7zDecode.c
+7Z_OBJS = \
+  $O\7zAlloc.obj \
+  $O\7zBuffer.obj \
+  $O\7zCrc.obj \
+  $O\7zDecode.obj \
+  $O\7zExtract.obj \
+  $O\7zHeader.obj \
+  $O\7zIn.obj \
+  $O\7zItem.obj \
+  $O\7zMain.obj \
+  $O\7zMethodID.obj \
 
-7zExtract.o: 7zExtract.c
-	$(CXX) $(CFLAGS) 7zExtract.c
+OBJS = \
+  $(7Z_OBJS) \
+  $O\LzmaDecode.obj \
 
-7zHeader.o: 7zHeader.c
-	$(CXX) $(CFLAGS) 7zHeader.c
-
-7zIn.o: 7zIn.c
-	$(CXX) $(CFLAGS) 7zIn.c
-
-7zItem.o: 7zItem.c
-	$(CXX) $(CFLAGS) 7zItem.c
-
-7zMain.o: 7zMain.c
-	$(CXX) $(CFLAGS) 7zMain.c
-
-7zMethodID.o: 7zMethodID.c
-	$(CXX) $(CFLAGS) 7zMethodID.c
-
-LzmaDecode.o: ../../Compress/LZMA_C/LzmaDecode.c
-	$(CXX) $(CFLAGS) ../../Compress/LZMA_C/LzmaDecode.c
-
+all: $(PROGPATH) 
 
 clean:
-	-$(RM) $(PROG) $(OBJS)
+	-del /Q $(PROGPATH) $O\*.exe $O\*.dll $O\*.obj $O\*.lib $O\*.exp $O\*.res $O\*.pch 
 
+$O:
+	if not exist "$O" mkdir "$O"
+
+$(PROGPATH): $O $(OBJS)
+	link $(LFLAGS) -out:$(PROGPATH) $(OBJS) $(LIBS)
+
+
+$(7Z_OBJS): $(*B).c
+	$(COMPL)
+$O\LzmaDecode.obj: ../../Compress/LZMA_C/$(*B).c
+	$(COMPL_O2)

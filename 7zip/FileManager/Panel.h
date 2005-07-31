@@ -30,6 +30,8 @@ const int kParentFolderID = 100;
 const int kPluginMenuStartID = 1000;
 const int kToolbarStartID = 2000;
 
+const int kParentIndex = -1;
+
 class CPanelCallback
 {
 public:
@@ -150,7 +152,7 @@ class CPanel:public NWindows::NControl::CWindow2
   CAppState *_appState;
 
   bool OnCommand(int code, int itemID, LPARAM lParam, LRESULT &result);
-  LRESULT OnMessage(UINT message, UINT wParam, LPARAM lParam);
+  LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
   virtual bool OnCreate(CREATESTRUCT *createStruct);
   virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
   virtual void OnDestroy();
@@ -159,6 +161,7 @@ class CPanel:public NWindows::NControl::CWindow2
   bool OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result);
   bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
+  void OnItemChanged(NMLISTVIEW *item);
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
   void OnDrag(LPNMLISTVIEW nmListView);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
@@ -192,6 +195,7 @@ private:
   // void OnUpWithShift();
   // void OnDownWithShift();
 public:
+  void UpdateSelection();
   void SelectSpec(bool selectMode);
   void SelectByType(bool selectMode);
   void SelectAll(bool selectMode);
@@ -219,7 +223,10 @@ public:
   bool _showRealFileIcons;
   // bool _virtualMode;
   // CUIntVector _realIndices;
+  bool _mySelectMode;
   CBoolVector _selectedStatusVector;
+
+  UString _focusedName;
 
   UInt32 GetRealIndex(const LVITEM &item) const
   {
@@ -303,15 +310,14 @@ public:
       _startGroupSelect(0), 
       _selectionIsDefined(false),
       _ListViewMode(3),
-      _xSize(300)
+      _xSize(300),
+      _mySelectMode(false)
       {} 
 
   void SetExtendedStyle()
   {
-    // DWORD extendedStyle = _listView.GetExtendedListViewStyle();
     if (_listView != 0)
       _listView.SetExtendedListViewStyle(_exStyle);
-    // extendedStyle |= _exStyle;
   }
 
 
@@ -336,7 +342,7 @@ public:
 
   CMyComPtr<IContextMenu> _sevenZipContextMenu;
   CMyComPtr<IContextMenu> _systemContextMenu;
-  void CreateShellContextMenu(
+  HRESULT CreateShellContextMenu(
       const CRecordVector<UInt32> &operatedIndices,
       CMyComPtr<IContextMenu> &systemContextMenu);
   void CreateSystemMenu(HMENU menu, 
@@ -379,6 +385,9 @@ public:
   bool IsFSFolder() const;
   bool IsFSDrivesFolder() const;
 
+  UString GetFsPath() const;
+  UString GetDriveOrNetworkPrefix() const;
+
   bool DoesItSupportOperations() const;
 
   bool _processTimer;
@@ -418,6 +427,7 @@ public:
   void MessageBox(LPCWSTR message, LPCWSTR caption);
   void MessageBoxMyError(LPCWSTR message);
   void MessageBoxError(HRESULT errorCode, LPCWSTR caption);
+  void MessageBoxError(HRESULT errorCode);
   void MessageBoxLastError(LPCWSTR caption);
   void MessageBoxLastError();
 

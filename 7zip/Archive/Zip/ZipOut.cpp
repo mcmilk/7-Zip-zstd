@@ -150,7 +150,7 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   UInt16 centralExtraSize = isZip64 ? (4 + zip64ExtraSize) : 0;
   centralExtraSize += (UInt16)item.CentralExtra.GetSize();
   WriteUInt16(centralExtraSize); // test it;
-  WriteUInt16(item.Comment.GetCapacity());
+  WriteUInt16((UInt16)item.Comment.GetCapacity());
   WriteUInt16(0); // DiskNumberStart;
   WriteUInt16(item.InternalAttributes);
   WriteUInt32(item.ExternalAttributes);
@@ -174,11 +174,11 @@ void COutArchive::WriteCentralHeader(const CItem &item)
       CExtraSubBlock subBlock = item.CentralExtra.SubBlocks[i];
       WriteUInt16(subBlock.ID);
       WriteUInt16((UInt16)subBlock.Data.GetCapacity());
-      WriteBytes(subBlock.Data, subBlock.Data.GetCapacity());
+      WriteBytes(subBlock.Data, (UInt32)subBlock.Data.GetCapacity());
     }
   }
   if (item.Comment.GetCapacity() > 0)
-    WriteBytes(item.Comment, item.Comment.GetCapacity());
+    WriteBytes(item.Comment, (UInt32)item.Comment.GetCapacity());
 }
 
 void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer &comment)
@@ -220,7 +220,7 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByte
   WriteUInt16(items64 ? 0xFFFF: (UInt16)items.Size());
   WriteUInt32(cdSize64 ? 0xFFFFFFFF: (UInt32)cdSize);
   WriteUInt32(cdOffset64 ? 0xFFFFFFFF: (UInt32)cdOffset);
-  UInt16 commentSize = comment.GetCapacity();
+  UInt16 commentSize = (UInt16)comment.GetCapacity();
   WriteUInt16(commentSize);
   if (commentSize > 0)
     WriteBytes((const Byte *)comment, commentSize);

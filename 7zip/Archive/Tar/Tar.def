@@ -1,7 +1,0 @@
-; Tar.def
-
-LIBRARY Tar.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE

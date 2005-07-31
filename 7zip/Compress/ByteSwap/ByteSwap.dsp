@@ -93,7 +93,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\ByteSwap.def
+SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 

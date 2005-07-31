@@ -1,7 +1,0 @@
-; Zip.def
-
-LIBRARY Zip.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE

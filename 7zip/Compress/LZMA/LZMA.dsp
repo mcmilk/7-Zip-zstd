@@ -93,11 +93,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\LZMA.def
+SOURCE=.\DllExports.cpp
 # End Source File
 # Begin Source File
 

@@ -11,7 +11,7 @@ void CRandom::Init(unsigned int seed)
   { srand(seed); }
 
 void CRandom::Init()
-  { Init(time(NULL)); }
+  { Init((unsigned int)time(NULL)); }
 
 int CRandom::Generate() const
   { return rand(); }

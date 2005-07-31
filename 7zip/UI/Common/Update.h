@@ -130,6 +130,8 @@ struct CErrorInfo
   UString FileName;
   UString FileName2;
   UString Message;
+  // UStringVector ErrorPaths;
+  // CRecordVector<DWORD> ErrorCodes;
   CErrorInfo(): SystemError(0) {};
 };
 
@@ -142,6 +144,7 @@ struct IUpdateCallbackUI2: public IUpdateCallbackUI
   virtual HRESULT OpenResult(const wchar_t *name, HRESULT result) = 0;
 
   virtual HRESULT StartScanning() = 0;
+  virtual HRESULT CanNotFindError(const wchar_t *name, DWORD systemError) = 0;
   virtual HRESULT FinishScanning() = 0;
 
   virtual HRESULT StartArchive(const wchar_t *name, bool updating) = 0;

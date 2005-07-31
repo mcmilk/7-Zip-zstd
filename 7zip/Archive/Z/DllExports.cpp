@@ -18,14 +18,6 @@ DEFINE_GUID(CLSID_CZHandler,
 
 HINSTANCE g_hInstance;
 
-#ifndef COMPRESS_BZIP2
-#include "../Common/CodecsPath.h"
-CSysString GetBZip2CodecPath()
-{
-  return GetCodecsFolderPrefix() + TEXT("BZip2.dll");
-}
-#endif
-
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {

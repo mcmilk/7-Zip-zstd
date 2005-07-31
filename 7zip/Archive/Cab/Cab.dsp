@@ -93,15 +93,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Cab.def
+SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 
 SOURCE=.\DllExports.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 
@@ -333,10 +329,6 @@ SOURCE=..\..\Compress\LZ\LZOutWindow.h
 # End Source File
 # End Group
 # End Group
-# Begin Source File
-
-SOURCE=.\bitmap1.bmp
-# End Source File
 # Begin Source File
 
 SOURCE=.\cab.ico

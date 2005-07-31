@@ -4,5 +4,6 @@
 #define __STDAFX_H
 
 // #include "MyWindows.h"
+#include "NewHandler.h"
 
 #endif 

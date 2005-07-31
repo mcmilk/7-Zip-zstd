@@ -1,109 +1,36 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
+#include "../../../GuiCommon.rc"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
 
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
+#define marg2 marg
+#define marg3 10
+#define gPos (marg + marg2)
+#define gSize (xSize2 - marg2 - marg2)
+#define gPos2 (gPos + marg3)
 
 
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_FOLDERS DIALOG DISCARDABLE  0, 0, 210, 154
-STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_FOLDERS  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
 CAPTION "Folders"
-FONT 8, "MS Shell Dlg"
+MY_FONT
 BEGIN
-    GROUPBOX        "&Working folder",IDC_FOLDERS_STATIC_WORKING_FOLDER,7,7,
-                    196,98
-    CONTROL         "&System temp folder",IDC_FOLDERS_WORK_RADIO_SYSTEM,
-                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,19,20,150,10
-    CONTROL         "&Current",IDC_FOLDERS_WORK_RADIO_CURRENT,"Button",
-                    BS_AUTORADIOBUTTON,19,34,150,10
-    CONTROL         "Specified:",IDC_FOLDERS_WORK_RADIO_SPECIFIED,"Button",
-                    BS_AUTORADIOBUTTON,19,48,151,10
-    EDITTEXT        IDC_FOLDERS_WORK_EDIT_PATH,39,63,130,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_FOLDERS_WORK_BUTTON_PATH,178,63,18,14
-    CONTROL         "Use for removable drives only",
-                    IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,19,87,180,10
+  GROUPBOX   "&Working folder", IDC_FOLDERS_STATIC_WORKING_FOLDER, marg, marg, xSize2, 98
+  CONTROL    "&System temp folder", IDC_FOLDERS_WORK_RADIO_SYSTEM,    "Button", BS_AUTORADIOBUTTON | WS_GROUP, 
+              gPos, 20, gSize, 10
+  CONTROL    "&Current",            IDC_FOLDERS_WORK_RADIO_CURRENT,   "Button", BS_AUTORADIOBUTTON, 
+              gPos, 34, gSize, 10
+  CONTROL    "Specified:",          IDC_FOLDERS_WORK_RADIO_SPECIFIED, "Button", BS_AUTORADIOBUTTON, 
+              gPos, 48, gSize, 10
+  EDITTEXT    IDC_FOLDERS_WORK_EDIT_PATH, gPos2, 63, gSize - marg3 - bDotsSize - 10, 14, ES_AUTOHSCROLL
+  PUSHBUTTON  "...", IDC_FOLDERS_WORK_BUTTON_PATH, xSize - marg - marg2 - bDotsSize, 63, bDotsSize, bYSize
+  CONTROL     "Use for removable drives only", IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+              gPos, 87, gSize, 10
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+STRINGTABLE  
 BEGIN
-    IDD_FOLDERS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 203
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 147
-    END
+  IDS_FOLDERS_SET_WORK_PATH_TITLE  "Specify a location for temporary archive files."
 END
-#endif    // APSTUDIO_INVOKED
-
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-

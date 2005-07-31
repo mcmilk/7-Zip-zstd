@@ -15,7 +15,7 @@
 static const char *kTrimDefaultCharSet  = " \n\t";
 
 template <class T>
-inline size_t MyStringLen(const T *s)
+inline int MyStringLen(const T *s)
 { 
   int i;
   for (i = 0; s[i] != '\0'; i++);
@@ -112,7 +112,7 @@ class CStringBase
     const T *p = _chars;
     while (charSet.Find(*p) >= 0 && (*p != 0))
       p = GetNextCharPointer(p);
-    Delete(0, p - _chars);
+    Delete(0, (int)(p - _chars));
   }
   void TrimRightWithCharSet(const CStringBase &charSet)
   {
@@ -131,7 +131,7 @@ class CStringBase
     }
     if(pLast != NULL)
     {
-      int i = pLast - _chars;
+      int i = (int)(pLast - _chars);
       Delete(i, _length - i);
     }
 
@@ -370,7 +370,7 @@ public:
     while (true)
     {
       if (*p == c)
-        return p - _chars;
+        return (int)(p - _chars);
       if (*p == 0)
         return -1;
       p = GetNextCharPointer(p);
@@ -400,7 +400,7 @@ public:
     while (true)
     {
       if (*p == c)
-        return p - _chars;
+        return (int)(p - _chars);
       if (p == _chars)
         return -1;
       p = GetPrevCharPointer(_chars, p);

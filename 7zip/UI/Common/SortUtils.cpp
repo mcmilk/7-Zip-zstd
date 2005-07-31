@@ -26,7 +26,7 @@ void SortStringsToIndices(const UStringVector &strings, CIntVector &indices)
   void **stringsBase  = (void **)pointers[0];
   qsort(&pointers[0], numItems, sizeof(void *), CompareStrings);
   for(i = 0; i < numItems; i++)
-    indices.Add((void **)pointers[i] - stringsBase);
+    indices.Add((int)((void **)pointers[i] - stringsBase));
 }
 
 void SortStrings(const UStringVector &src, UStringVector &dest)

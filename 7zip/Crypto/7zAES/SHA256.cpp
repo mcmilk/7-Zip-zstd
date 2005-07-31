@@ -138,7 +138,7 @@ void SHA256::WriteByteBlock()
   Transform(m_digest, data32);
 }
 
-void SHA256::Update(const Byte *data, UInt32 size)
+void SHA256::Update(const Byte *data, size_t size)
 {
   UInt32 curBufferPos = UInt32(m_count) & 0x3F;
   while (size > 0)

@@ -1,160 +1,108 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
+#include "../../../GuiCommon.rc"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
+#define xSize2 344
+#define ySize2 260
 
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
 
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
+#undef gSize
+#undef gSpace
+#undef g0XSize
+#undef g1XPos
+#undef g1XSize
+#undef g2XSize
+#undef g3XPos
+#undef g3XSize
+#undef g4XPos
+#undef g4XPos2
+#undef g4XSize
+#undef g4XSize2
+#undef bXPos1
+#undef bXPos2
+#undef bXPos3
+#undef bYPos
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
+#define gSize 160
+#define gSpace 24
 
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
+#define g0XSize 82
+#define g1XPos  (marg + g0XSize)
+#define g1XSize (gSize - g0XSize)
 
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
+#define g2XSize 122
+#define g3XPos  (marg + g2XSize)
+#define g3XSize (gSize - g2XSize)
 
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
+#define g4XPos (marg + gSize + gSpace)
+#define g4XPos2 (g4XPos + 7)
+#define g4XSize (xSize2 - gSize - gSpace)
+#define g4XSize2 (g4XSize - 14)
 
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\0"
-END
+#define bXPos1 (xSize - marg - bXSize)
+#define bXPos2 (bXPos1 - 10 - bXSize)
+#define bXPos3 (bXPos2 - 10 - bXSize)
 
-#endif    // APSTUDIO_INVOKED
+#define bYPos (ySize - marg - bYSize)
 
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_DIALOG_COMPRESS DIALOG DISCARDABLE  0, 0, 335, 277
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+IDD_DIALOG_COMPRESS DIALOG 0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
 CAPTION "Add to Archive"
-FONT 8, "MS Shell Dlg"
+MY_FONT
 BEGIN
-    LTEXT           "&Archive:",IDC_STATIC_COMPRESS_ARCHIVE,7,7,283,8
-    COMBOBOX        IDC_COMPRESS_COMBO_ARCHIVE,7,18,290,126,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "...",IDC_COMPRESS_BUTTON_SET_ARCHIVE,308,17,20,14,
-                    WS_GROUP
-    LTEXT           "Archive &format:",IDC_STATIC_COMPRESS_FORMAT,7,41,79,8
-    COMBOBOX        IDC_COMPRESS_COMBO_FORMAT,88,39,76,80,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Compression &level:",IDC_STATIC_COMPRESS_LEVEL,7,62,79,
-                    8
-    COMBOBOX        IDC_COMPRESS_COMBO_LEVEL,88,60,76,80,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Compression &method:",IDC_STATIC_COMPRESS_METHOD,7,83,
-                    79,8
-    COMBOBOX        IDC_COMPRESS_COMBO_METHOD,88,81,76,80,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "&Dictionary size:",IDC_STATIC_COMPRESS_DICTIONARY,7,104,
-                    79,8
-    COMBOBOX        IDC_COMPRESS_COMBO_DICTIONARY,88,102,76,167,
-                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "&Word size:",IDC_STATIC_COMPRESS_ORDER,7,127,79,8
-    COMBOBOX        IDC_COMPRESS_COMBO_ORDER,88,125,76,141,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Memory usage for Compressing:",
-                    IDC_STATIC_COMPRESS_MEMORY,7,149,121,8
-    RTEXT           "0",IDC_STATIC_COMPRESS_MEMORY_VALUE,128,149,36,8
-    LTEXT           "Memory usage for Decompressing:",
-                    IDC_STATIC_COMPRESS_MEMORY_DE,7,163,121,8
-    RTEXT           "0",IDC_STATIC_COMPRESS_MEMORY_DE_VALUE,128,163,36,8
-    CONTROL         "Create &Solid archive",IDC_COMPRESS_SOLID,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,181,157,10
-    CONTROL         "Multi-threading",IDC_COMPRESS_MULTI_THREAD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,195,157,10
-    LTEXT           "Split to &volumes, bytes:",IDC_STATIC_COMPRESS_VOLUME,
-                    186,183,142,8
-    COMBOBOX        IDC_COMPRESS_COMBO_VOLUME,186,196,142,73,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS,7,214,157,
-                    8
-    EDITTEXT        IDC_COMPRESS_EDIT_PARAMETERS,7,225,321,14,ES_AUTOHSCROLL
-    LTEXT           "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE,186,39,
-                    104,8
-    COMBOBOX        IDC_COMPRESS_COMBO_UPDATE_MODE,186,50,142,80,
-                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Options",IDC_STATIC_COMPRESS_OPTIONS,186,73,142,32
-    CONTROL         "Create SF&X archive",IDC_COMPRESS_SFX,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,194,87,127,10
-    GROUPBOX        "Password",IDC_COMPRESS_PASSWORD,186,113,142,63
-    EDITTEXT        IDC_COMPRESS_EDIT_PASSWORD,194,127,127,14,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
-    CONTROL         "Show Password",IDC_COMPRESS_CHECK_SHOW_PASSWORD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,194,145,127,10
-    CONTROL         "Encrypt file &names",
-                    IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,194,159,127,10
-    DEFPUSHBUTTON   "OK",IDOK,109,256,64,14
-    PUSHBUTTON      "Cancel",IDCANCEL,181,256,64,14
-    PUSHBUTTON      "Help",IDHELP,264,256,64,14
+  LTEXT    "&Archive:", IDC_STATIC_COMPRESS_ARCHIVE, marg, marg, xSize2, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ARCHIVE, marg, 18, xSize2 - bDotsSize - 12, 126, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+  PUSHBUTTON  "...", IDC_COMPRESS_BUTTON_SET_ARCHIVE, xSize - marg - bDotsSize, 17, bDotsSize, bYSize, WS_GROUP
+
+  LTEXT     "Archive &format:", IDC_STATIC_COMPRESS_FORMAT,     marg,  41, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_FORMAT,     g1XPos, 39,  g1XSize , 80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+  
+  LTEXT     "Compression &level:",IDC_STATIC_COMPRESS_LEVEL,    marg,  62, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_LEVEL,      g1XPos, 60,  g1XSize,  80,CBS_DROPDOWNLIST |  WS_VSCROLL | WS_TABSTOP
+  
+  LTEXT     "Compression &method:",IDC_STATIC_COMPRESS_METHOD,  marg,  83, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_METHOD,     g1XPos, 81,  g1XSize,  80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Dictionary size:",IDC_STATIC_COMPRESS_DICTIONARY, marg, 104, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_DICTIONARY, g1XPos, 102, g1XSize,  167, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Word size:",IDC_STATIC_COMPRESS_ORDER,            marg, 125, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ORDER,      g1XPos, 123, g1XSize,  141, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  
+  LTEXT     "Memory usage for Compressing:", IDC_STATIC_COMPRESS_MEMORY,      marg, 149, g2XSize, 8
+  RTEXT     "0", IDC_STATIC_COMPRESS_MEMORY_VALUE,   g3XPos, 149, g3XSize, 8
+  
+  LTEXT     "Memory usage for Decompressing:", IDC_STATIC_COMPRESS_MEMORY_DE, marg, 163, g2XSize, 8
+  RTEXT     "0",IDC_STATIC_COMPRESS_MEMORY_DE_VALUE, g3XPos, 163, g3XSize, 8
+
+
+  CONTROL   "Create &Solid archive", IDC_COMPRESS_SOLID,"Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            marg, 181, gSize, 10
+  CONTROL   "Multi-threading", IDC_COMPRESS_MULTI_THREAD, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            marg, 195, gSize, 10
+
+  LTEXT     "Split to &volumes, bytes:", IDC_STATIC_COMPRESS_VOLUME, g4XPos, 184, g4XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_VOLUME, g4XPos, 196, g4XSize, 73, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS, marg, 214, xSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PARAMETERS, marg, 225, xSize2, 14, ES_AUTOHSCROLL
+
+  LTEXT     "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE, g4XPos, 39, g4XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_UPDATE_MODE, g4XPos, 51, g4XSize, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4XPos, 73, g4XSize, 32
+  CONTROL   "Create SF&X archive",IDC_COMPRESS_SFX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            g4XPos2, 87, g4XSize2, 10
+  
+  GROUPBOX  "Password",IDC_COMPRESS_PASSWORD, g4XPos, 113, g4XSize, 63
+  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD, g4XPos2, 127, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL   "Show Password",IDC_COMPRESS_CHECK_SHOW_PASSWORD,"Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+            g4XPos2, 145, g4XSize2, 10
+  CONTROL   "Encrypt file &names", IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+            g4XPos2, 159, g4XSize2, 10
+  
+  DEFPUSHBUTTON  "OK",         IDOK, bXPos3, bYPos, bXSize, bYSize, WS_GROUP
+  PUSHBUTTON     "Cancel", IDCANCEL, bXPos2, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Help",     IDHELP, bXPos1, bYPos, bXSize, bYSize
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_DIALOG_COMPRESS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 328
-        VERTGUIDE, 86
-        VERTGUIDE, 88
-        VERTGUIDE, 128
-        VERTGUIDE, 164
-        VERTGUIDE, 186
-        VERTGUIDE, 194
-        VERTGUIDE, 321
-        BOTTOMMARGIN, 270
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-

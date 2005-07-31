@@ -34,6 +34,8 @@
 #include "ExtractCallbackConsole.h"
 #include "UpdateCallbackConsole.h"
 
+#include "../../MyVersion.h"
+
 #ifndef EXCLUDE_COM
 #include "Windows/DLL.h"
 #endif
@@ -54,7 +56,7 @@ static const char *kCopyrightString = "\n7-Zip"
 " [NT]"
 #endif
 
-" 4.24 beta  Copyright (c) 1999-2005 Igor Pavlov  2005-07-06\n";
+" " MY_VERSION_COPYRIGHT_DATE "\n";
 
 static const char *kHelpString = 
     "\nUsage: 7z"
@@ -274,9 +276,27 @@ int Main2(
 
     CUpdateErrorInfo errorInfo;
 
-    HRESULT result = UpdateArchive(
-        options.WildcardCensor, uo, 
+    HRESULT result = UpdateArchive(options.WildcardCensor, uo, 
         errorInfo, &openCallback, &callback);
+
+    int exitCode = NExitCode::kSuccess;
+    if (callback.CantFindFiles.Size() > 0)
+    {
+      stdStream << endl;
+      stdStream << "WARNINGS for files:" << endl << endl;
+      int numErrors = callback.CantFindFiles.Size();
+      for (int i = 0; i < numErrors; i++)
+      {
+        stdStream << callback.CantFindFiles[i] << " : ";
+        stdStream << NError::MyFormatMessageW(callback.CantFindCodes[i]) << endl;
+      }
+      stdStream << "----------------" << endl;
+      stdStream << "WARNING: Cannot find " << numErrors << " file";
+      if (numErrors > 1)
+        stdStream << "s";
+      stdStream << endl;
+      exitCode = NExitCode::kWarning;
+    }
 
     if (result != S_OK)
     {
@@ -291,10 +311,12 @@ int Main2(
         stdStream << NError::MyFormatMessageW(errorInfo.SystemError) << endl;
       throw CSystemException(result);
     }
-    int exitCode = NExitCode::kSuccess;
     int numErrors = callback.FailedFiles.Size();
     if (numErrors == 0)
-      stdStream << kEverythingIsOk << endl;
+    {
+      if (callback.CantFindFiles.Size() == 0)
+        stdStream << kEverythingIsOk << endl;
+    }
     else
     {
       stdStream << endl;

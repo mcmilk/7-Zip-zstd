@@ -62,4 +62,5 @@ void AddVolumeItems(NWindows::NControl::CComboBox &volumeCombo)
   volumeCombo.AddString(TEXT("1457664 - 3.5\" floppy"));
   volumeCombo.AddString(TEXT("650M - CD"));
   volumeCombo.AddString(TEXT("700M - CD"));
+  volumeCombo.AddString(TEXT("4480M - DVD"));
 }

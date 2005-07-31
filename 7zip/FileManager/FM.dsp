@@ -401,15 +401,6 @@ SOURCE=.\PanelSplitFile.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Resource\SettingsPage\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\SettingsPage\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\Resource\SettingsPage\SettingsPage.cpp
 # End Source File
 # Begin Source File
@@ -461,15 +452,6 @@ SOURCE=Resource\PasswordDialog\PasswordDialog.cpp
 
 SOURCE=Resource\PasswordDialog\PasswordDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\Resource\PasswordDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\PasswordDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Progress"
 
@@ -481,15 +463,6 @@ SOURCE=.\Resource\ProgressDialog2\ProgressDialog.cpp
 # Begin Source File
 
 SOURCE=.\Resource\ProgressDialog2\ProgressDialog.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\ProgressDialog2\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\ProgressDialog2\resource.rc
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "About"
@@ -503,15 +476,6 @@ SOURCE=.\Resource\AboutDialog\AboutDialog.cpp
 
 SOURCE=.\Resource\AboutDialog\AboutDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\Resource\AboutDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\AboutDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Benchmark"
 
@@ -524,28 +488,10 @@ SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.cpp
 
 SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\Resource\BenchmarkDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\BenchmarkDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Split"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\Resource\SplitDialog\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\SplitDialog\resource.rc
-# PROP Exclude_From_Build 1
-# End Source File
 # Begin Source File
 
 SOURCE=.\Resource\SplitDialog\SplitDialog.cpp
@@ -1107,6 +1053,10 @@ SOURCE=..\Common\StreamObjects.h
 # Begin Source File
 
 SOURCE=.\7zFM.exe.manifest
+# End Source File
+# Begin Source File
+
+SOURCE=.\7zipLogo.ico
 # End Source File
 # Begin Source File
 

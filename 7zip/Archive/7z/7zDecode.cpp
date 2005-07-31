@@ -336,10 +336,12 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     if (result == S_OK)
     {
       const CByteBuffer &properties = altCoderInfo.Properties;
-      UInt32 size = properties.GetCapacity();
+      size_t size = properties.GetCapacity();
+      if (size > 0xFFFFFFFF)
+        return E_NOTIMPL;
       if (size > 0)
       {
-        RINOK(compressSetDecoderProperties->SetDecoderProperties2((const Byte *)properties, size));
+        RINOK(compressSetDecoderProperties->SetDecoderProperties2((const Byte *)properties, (UInt32)size));
       }
     }
     else if (result != E_NOINTERFACE)

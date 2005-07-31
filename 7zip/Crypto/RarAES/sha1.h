@@ -1,21 +1,27 @@
 // sha1.h
-// This file from UnRar sources
+// This file is based on public domain 
+// Steve Reid and Wei Dai's code from Crypto++
 
-#ifndef _RAR_SHA1_
-#define _RAR_SHA1_
+#ifndef __RAR_SHA1
+#define __RAR_SHA1
 
+#include <stddef.h>
 #include "../../../Common/Types.h"
 
 #define HW 5
 
-typedef struct {
-    UInt32 state[5];
-    UInt32 count[2];
-    unsigned char buffer[64];
-} hash_context;
+struct CSHA1
+{
+  UInt32 m_State[5];
+  UInt64 m_Count;
+  unsigned char _buffer[64];
 
-void hash_initial( hash_context * c );
-void hash_process( hash_context * c, unsigned char * data, unsigned len );
-void hash_final( hash_context * c, UInt32[HW] );
+  void Transform(const UInt32 data[16]);
+  void WriteByteBlock();
+  
+  void Init();
+  void Update(const Byte *data, size_t size);
+  void Final(Byte *digest);
+};
 
 #endif

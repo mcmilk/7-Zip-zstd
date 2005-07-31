@@ -1,7 +1,0 @@
-; Rar.def
-
-LIBRARY Rar.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE

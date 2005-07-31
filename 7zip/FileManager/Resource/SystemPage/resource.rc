@@ -1,115 +1,31 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
+#include "../../../GuiCommon.rc"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
+#define xSize2 238
+#define ySize2 204
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+#define gSpace 30
+#define g0Size 105
+#define gYSize (ySize2 - 20 - bYSize)
 
 
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_SYSTEM DIALOG DISCARDABLE  0, 0, 252, 218
-STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_SYSTEM  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
 CAPTION "System"
-FONT 8, "MS Shell Dlg"
+MY_FONT
 BEGIN
-    LTEXT           "Associate 7-Zip with:",IDC_SYSTEM_STATIC_ASSOCIATE,7,7,
-                    238,8
-    CONTROL         "List1",IDC_SYSTEM_LIST_ASSOCIATE,"SysListView32",
-                    LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | 
-                    WS_BORDER | WS_TABSTOP,7,20,105,186
-    CONTROL         "List1",IDC_SYSTEM_LIST_PLUGINS,"SysListView32",
-                    LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | NOT 
-                    WS_VISIBLE | WS_BORDER | WS_TABSTOP,143,20,102,186
+  LTEXT     "Associate 7-Zip with:", IDC_SYSTEM_STATIC_ASSOCIATE, marg, marg, xSize2, 8
+  CONTROL   "List1", IDC_SYSTEM_LIST_ASSOCIATE, "SysListView32", 
+             LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,
+             marg, 20, g0Size, gYSize
+  CONTROL   "List1", IDC_SYSTEM_LIST_PLUGINS, "SysListView32",
+            LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | NOT WS_VISIBLE | WS_BORDER | WS_TABSTOP,
+            marg + g0Size + gSpace, 20, xSize2 - gSpace - g0Size, gYSize
+  PUSHBUTTON  "Select all", IDC_SYSTEM_SELECT_ALL, marg, (ySize - marg - bYSize), 90, bYSize
+
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+STRINGTABLE
 BEGIN
-    IDD_SYSTEM, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 245
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 211
-        HORZGUIDE, 25
-    END
+  IDS_PLUGIN  "Plugin"
 END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_PLUGIN              "Plugin"
-END
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-

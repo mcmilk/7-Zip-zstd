@@ -27,6 +27,7 @@ public:
   HRESULT OpenResult(const wchar_t *name, HRESULT result);
 
   HRESULT StartScanning();
+  HRESULT CanNotFindError(const wchar_t *name, DWORD systemError);
   HRESULT FinishScanning();
 
   HRESULT StartArchive(const wchar_t *name, bool updating);
@@ -56,6 +57,7 @@ public:
   UStringVector Messages;
   int NumArchiveErrors;
   void AddErrorMessage(LPCWSTR message);
+  void AddErrorMessage(const wchar_t *name, DWORD systemError);
 };
 
 #endif

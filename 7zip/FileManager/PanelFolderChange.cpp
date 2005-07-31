@@ -359,7 +359,7 @@ void CPanel::OpenDrivesFolder()
 
 void CPanel::OpenFolder(int index)
 {
-  if (index == -1)
+  if (index == kParentIndex)
   {
     OpenParentFolder();
     return;

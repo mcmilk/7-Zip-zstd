@@ -1,117 +1,41 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
+#include "../../../GuiCommon.rc"
+#include "../../../MyVersion.h"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
+#define xSize2 224
+#define ySize2 158
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
 
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
+#define bXPos (xSize - marg - bXSize)
+#define bYPos (ySize - marg - bYSize)
 
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
+#undef b2XSize
+#undef b2XPos
+#undef infoYPos
+#undef infoYSize
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
+#define b2XSize 94
+#define b2XPos (xSize - marg - b2XSize)
+#define gSpace 2
+#define gSize (xSize2 - gSpace - b2XSize)
 
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
+#define infoYPos 91
+#define infoYSize (ySize2 - infoYPos - bYSize - 2)
 
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
+IDI_LOGO ICON "7zipLogo.ico"
 
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_LOGO                ICON    DISCARDABLE     "7zipLogo.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_ABOUT DIALOG DISCARDABLE  0, 0, 237, 172
-STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+IDD_ABOUT DIALOG  0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
 CAPTION "About 7-Zip"
-FONT 8, "MS Shell Dlg"
+MY_FONT
 BEGIN
-    PUSHBUTTON      "OK",IDOK,180,151,50,14
-    PUSHBUTTON      "www.7-zip.org",IDC_ABOUT_BUTTON_HOMEPAGE,136,7,94,14
-    PUSHBUTTON      "Support",IDC_ABOUT_BUTTON_EMAIL,136,30,94,14
-    PUSHBUTTON      "Register",IDC_ABOUT_BUTTON_REGISTER,136,53,94,14
-    ICON            IDI_LOGO,IDC_STATIC,7,7,20,20,SS_REALSIZEIMAGE
-    LTEXT           "7-Zip 4.24 beta",IDC_STATIC,7,54,119,9
-    LTEXT           "Copyright (c) 1999-2005 Igor Pavlov",IDC_STATIC,7,67,
-                    119,17
-    LTEXT           "7-Zip is free software. However, you can support development of 7-Zip by registering.",
-                    IDC_ABOUT_STATIC_REGISTER_INFO,7,91,223,54
+  PUSHBUTTON  "OK", IDOK, bXPos, bYPos, bXSize, bYSize
+  PUSHBUTTON  "www.7-zip.org", IDC_ABOUT_BUTTON_HOMEPAGE, b2XPos,  7, b2XSize, bYSize
+  PUSHBUTTON  "Support",       IDC_ABOUT_BUTTON_SUPPORT,  b2XPos, 30, b2XSize, bYSize
+  PUSHBUTTON  "Register",      IDC_ABOUT_BUTTON_REGISTER, b2XPos, 53, b2XSize, bYSize
+  ICON   IDI_LOGO, -1, marg, marg, 20, 20, SS_REALSIZEIMAGE
+  LTEXT  MY_7ZIP_VERSION, -1, marg, 54, gSize, 9
+  LTEXT  MY_COPYRIGHT, -1, marg, 67, gSize, 17
+  LTEXT  "7-Zip is free software. However, you can support development of 7-Zip by registering.",
+         IDC_ABOUT_STATIC_REGISTER_INFO, marg, infoYPos, xSize2, infoYSize
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_ABOUT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 230
-        VERTGUIDE, 126
-        VERTGUIDE, 136
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 165
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-

@@ -126,7 +126,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	g_hInstance = hInstance;
 
-  ReloadLang();
+  ReloadLangSmart();
 
   // LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
 

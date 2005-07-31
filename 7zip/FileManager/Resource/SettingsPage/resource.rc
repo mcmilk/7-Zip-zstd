@@ -1,112 +1,32 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
+#include "../../../GuiCommon.rc"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// Russian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
 
 
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_SETTINGS DIALOG DISCARDABLE  0, 0, 210, 154
-STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_SETTINGS  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
 CAPTION "Settings"
-FONT 8, "MS Shell Dlg"
+MY_FONT
 BEGIN
-    CONTROL         "Show "".."" item",IDC_SETTINGS_SHOW_DOTS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,7,196,10
-    CONTROL         "Show real file &icons",
-                    IDC_SETTINGS_SHOW_REAL_FILE_ICONS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,21,196,10
-    CONTROL         "Show system &menu",IDC_SETTINGS_SHOW_SYSTEM_MENU,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,35,196,10
-    CONTROL         "&Full row select",IDC_SETTINGS_FULL_ROW,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,196,10
-    CONTROL         "Show &grid lines",IDC_SETTINGS_SHOW_GRID,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,77,196,10
-    CONTROL         "&Single-click to open an item",
-                    IDC_SETTINGS_SINGLE_CLICK,"Button",BS_AUTOCHECKBOX | NOT 
-                    WS_VISIBLE | WS_TABSTOP,7,91,196,10
-    CONTROL         "&Underline current name",IDC_SETTINGS_UNDERLINE,"Button",
-                    BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,19,105,184,
-                    10
+  CONTROL  "Show "".."" item", IDC_SETTINGS_SHOW_DOTS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+           marg, marg, xSize2, 10
+  CONTROL  "Show real file &icons", IDC_SETTINGS_SHOW_REAL_FILE_ICONS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 21, xSize2, 10
+  CONTROL  "Show system &menu", IDC_SETTINGS_SHOW_SYSTEM_MENU, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 35, xSize2, 10
+  CONTROL  "&Full row select", IDC_SETTINGS_FULL_ROW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 63, xSize2, 10
+  CONTROL  "Show &grid lines", IDC_SETTINGS_SHOW_GRID, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 77, xSize2, 10
+  CONTROL  "&Single-click to open an item", IDC_SETTINGS_SINGLE_CLICK, "Button", BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP, 
+           marg, 91, xSize2, 10
+  CONTROL  "&Underline current name", IDC_SETTINGS_UNDERLINE, "Button", BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP, 
+           marg + 12, 105, xSize2 - 12, 10
+
+  CONTROL  "&Alternative selection mode", IDC_SETTINGS_ALTERNATIVE_SELECTION, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 122, xSize2, 10
+
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_SETTINGS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 203
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 147
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-

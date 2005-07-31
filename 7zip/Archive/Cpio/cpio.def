@@ -1,8 +1,0 @@
-; cpio.def
-
-LIBRARY cpio.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE
-

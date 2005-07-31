@@ -418,11 +418,12 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         UString s;
         FillCommand2(kExtractTo, s, commandMapItem);
         UString folder;
+        folder += UString(L"\"");
         if (_fileNames.Size() == 1)
-          folder = GetSubFolderNameForExtract(fileInfo.Name);
+          folder += GetSubFolderNameForExtract(fileInfo.Name);
         else
-          folder = L'*'; 
-        folder += L'\\';
+          folder += L'*'; 
+        folder += L"\\\"";
 
         if (_dropMode)
           commandMapItem.Folder = _dropPath;
@@ -728,7 +729,7 @@ static void MyCopyString(void *dest, const wchar_t *src, bool writeInUnicode)
     lstrcpyA((char *)dest, GetAnsiString(src));
 }
 
-STDMETHODIMP CZipContextMenu::GetCommandString(UINT commandOffset, UINT uType, 
+STDMETHODIMP CZipContextMenu::GetCommandString(UINT_PTR commandOffset, UINT uType, 
     UINT *pwReserved, LPSTR pszName, UINT cchMax)
 {
   switch(uType)

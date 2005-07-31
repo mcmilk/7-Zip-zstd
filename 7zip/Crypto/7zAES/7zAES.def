@@ -1,8 +1,0 @@
-; 7zAES.def
-
-LIBRARY 7zAES.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE

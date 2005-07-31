@@ -1,8 +1,0 @@
-; AES.def
-
-LIBRARY AES.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE

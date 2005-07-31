@@ -546,7 +546,7 @@ static bool ParseComplexSize(const UString &src, UInt64 &result)
   const wchar_t *start = s;
   const wchar_t *end;
   UInt64 number = ConvertStringToUInt64(start, &end);
-  int numDigits = end - start;
+  int numDigits = (int)(end - start);
   if (numDigits == 0 || s.Length() > numDigits + 1)
     return false;
   if (s.Length() == numDigits)
@@ -789,9 +789,13 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     #endif
 
     CObjectVector<CDirItem> dirItems;
-    UString errorPath;
-    if (EnumerateItems(archiveWildcardCensor, dirItems, NULL, errorPath) != S_OK)
-      throw "cannot find archive";
+    {
+      UStringVector errorPaths;
+      CRecordVector<DWORD> errorCodes;
+      HRESULT res = EnumerateItems(archiveWildcardCensor, dirItems, NULL, errorPaths, errorCodes);
+      if (res != S_OK || errorPaths.Size() > 0)
+        throw "cannot find archive";
+    }
     UStringVector archivePaths;
     int i;
     for (i = 0; i < dirItems.Size(); i++)

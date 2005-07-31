@@ -102,8 +102,6 @@ static const TCHAR *kShellKeyName = TEXT("shell");
 static const TCHAR *kOpenKeyName = TEXT("open");
 static const TCHAR *kCommandKeyName = TEXT("command");
 
-static const TCHAR *kOpenCommandValue = TEXT("7zFMn.exe \"%1\"");
-
 static CSysString GetExtensionKeyName(const CSysString &extension)
 {
   return CSysString(TEXT(".")) + extension;
@@ -114,7 +112,7 @@ static CSysString GetExtProgramKeyName(const CSysString &extension)
   return CSysString(TEXT("7-Zip.")) + extension;
 }
 
-bool CheckShellExtensionInfo(const CSysString &extension)
+static bool CheckShellExtensionInfo2(const CSysString &extension)
 {
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey extKey;
@@ -124,10 +122,16 @@ bool CheckShellExtensionInfo(const CSysString &extension)
   if (extKey.QueryValue(NULL, programNameValue) != ERROR_SUCCESS)
     return false;
   CSysString extProgramKeyName = GetExtProgramKeyName(extension);
-  if (programNameValue.CollateNoCase(extProgramKeyName) != 0)
+  return (programNameValue.CollateNoCase(extProgramKeyName) == 0);
+}
+
+bool CheckShellExtensionInfo(const CSysString &extension)
+{
+  NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
+  if (!CheckShellExtensionInfo2(extension))
     return false;
   CKey extProgKey;
-  return (extProgKey.Open(HKEY_CLASSES_ROOT, extProgramKeyName, KEY_READ) == ERROR_SUCCESS);
+  return (extProgKey.Open(HKEY_CLASSES_ROOT, GetExtProgramKeyName(extension), KEY_READ) == ERROR_SUCCESS);
 }
 
 static void DeleteShellExtensionKey(const CSysString &extension)
@@ -150,7 +154,7 @@ static void DeleteShellExtensionProgramKey(const CSysString &extension)
 
 void DeleteShellExtensionInfo(const CSysString &extension)
 {
-  if (CheckShellExtensionInfo(extension))
+  if (CheckShellExtensionInfo2(extension))
     DeleteShellExtensionKey(extension);
   DeleteShellExtensionProgramKey(extension);
 }

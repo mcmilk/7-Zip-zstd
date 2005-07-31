@@ -101,7 +101,7 @@ SOURCE=.\Far.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\Far.rc
+SOURCE=.\resource.rc
 # End Source File
 # Begin Source File
 

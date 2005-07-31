@@ -1,4 +1,4 @@
-// SystemDialog.cpp
+// SystemPage.cpp
 
 #include "StdAfx.h"
 #include "resource.h"

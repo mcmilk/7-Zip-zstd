@@ -84,7 +84,7 @@ public:
   
   UInt32 GetUsedMemory()
   {
-    UInt32 i, k, RetVal = SubAllocatorSize - (HiUnit - LoUnit) - (UnitsStart-pText);
+    UInt32 i, k, RetVal = SubAllocatorSize - (UInt32)(HiUnit - LoUnit) - (UInt32)(UnitsStart - pText);
     for (k = i = 0; i < N_INDEXES; i++, k = 0) 
     {
       for (NODE* pn = FreeList + i;(pn = pn->Next) != NULL; k++)

@@ -240,7 +240,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
       break;
     case kpidComment:
     {
-      int size = item.Comment.GetCapacity();
+      int size = (int)item.Comment.GetCapacity();
       if (size > 0)
       {
         AString s;

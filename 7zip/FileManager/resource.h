@@ -1,7 +1,3 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by resource.rc
-//
 #define IDI_FAM                         101
 #define IDI_FM                          101
 #define IDR_MENUBAR1                    103
@@ -79,6 +75,7 @@
 #define IDS_MOVING                      2206
 #define IDS_CANNOT_COPY                 2207
 #define IDS_OPERATION_IS_NOT_SUPPORTED  2208
+
 #define IDS_CONFIRM_FILE_DELETE         2210
 #define IDS_CONFIRM_FOLDER_DELETE       2211
 #define IDS_CONFIRM_ITEMS_DELETE        2212
@@ -87,8 +84,13 @@
 #define IDS_WANT_TO_DELETE_ITEMS        2215
 #define IDS_DELETING                    2216
 #define IDS_ERROR_DELETING              2217
+
 #define IDS_RENAMING                    2220
 #define IDS_ERROR_RENAMING              2221
+#define IDS_CONFIRM_FILE_COPY           2222
+#define IDS_WANT_TO_COPY_FILES          2223
+
+
 #define IDS_CREATE_FOLDER               2230
 #define IDS_CREATE_FOLDER_NAME          2231
 #define IDS_CREATE_FOLDER_DEFAULT_NAME  2232
@@ -132,14 +134,3 @@
 #define IDS_COMBINE                     4030
 #define IDS_COMBINE_TO                  4031
 #define IDS_COMBINING                   4032
-
-// Next default values for new objects
-// 
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        4030
-#define _APS_NEXT_COMMAND_VALUE         40080
-#define _APS_NEXT_CONTROL_VALUE         3000
-#define _APS_NEXT_SYMED_VALUE           4010
-#endif
-#endif

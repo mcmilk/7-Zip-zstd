@@ -1,8 +1,0 @@
-; Deflate.def
-
-LIBRARY Deflate.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE

@@ -237,6 +237,8 @@ HRESULT CInArchive::Open(IInStream *inStream,
     item.UnPackSize = ReadUInt32();
     item.UnPackOffset = ReadUInt32();
     item.FolderIndex = ReadUInt16();
+    if (item.FolderIndex > inArchiveInfo.NumFolders)
+      return S_FALSE;
     UInt16 pureDate = ReadUInt16();
     UInt16 pureTime = ReadUInt16();
     item.Time = ((UInt32(pureDate) << 16)) | pureTime;

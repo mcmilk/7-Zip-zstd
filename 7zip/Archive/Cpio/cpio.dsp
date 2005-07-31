@@ -93,7 +93,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\cpio.def
+SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 
@@ -102,10 +102,6 @@ SOURCE=.\cpio.ico
 # Begin Source File
 
 SOURCE=.\DllExports.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 

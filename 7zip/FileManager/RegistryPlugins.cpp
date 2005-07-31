@@ -94,6 +94,7 @@ static bool ReadPluginInfo(CPluginInfo &pluginInfo)
 
 CSysString GetProgramFolderPrefix();
 
+#ifndef _WIN64
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -102,6 +103,7 @@ static bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 {
@@ -110,12 +112,14 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
   CSysString baseFolderPrefix = GetProgramFolderPrefix();
   {
     CSysString path = baseFolderPrefix + TEXT("7-zip");
+    #ifndef _WIN64
     if (IsItWindowsNT())
       path += TEXT("n");
+    #endif
     path += TEXT(".dll");
     CPluginInfo pluginInfo;
     pluginInfo.FilePath = path;
-    
+   
     if (::ReadPluginInfo(pluginInfo))
       plugins.Add(pluginInfo);
   }

@@ -14,6 +14,8 @@ class CUpdateCallbackConsole: public IUpdateCallbackUI2
   bool m_PercentCanBePrint;
   bool m_NeedBeClosed;
 
+  bool m_WarningsMode;
+
   CStdOutStream *OutStream;
 public:
   bool EnablePercents;
@@ -29,7 +31,8 @@ public:
       PasswordIsDefined(false),
       AskPassword(false),
       StdOutMode(false),
-      EnablePercents(true)
+      EnablePercents(true),
+      m_WarningsMode(false)
       {}
   
   ~CUpdateCallbackConsole() { Finilize(); }
@@ -46,6 +49,7 @@ public:
   HRESULT OpenResult(const wchar_t *name, HRESULT result);
 
   HRESULT StartScanning();
+  HRESULT CanNotFindError(const wchar_t *name, DWORD systemError);
   HRESULT FinishScanning();
 
   HRESULT StartArchive(const wchar_t *name, bool updating);
@@ -63,6 +67,9 @@ public:
 
   UStringVector FailedFiles;
   CRecordVector<HRESULT> FailedCodes;
+
+  UStringVector CantFindFiles;
+  CRecordVector<HRESULT> CantFindCodes;
 };
 
 #endif

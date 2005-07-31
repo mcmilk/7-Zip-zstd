@@ -9,22 +9,22 @@ extern HINSTANCE g_hInstance;
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY DialogProcedure(HWND dialogHWND, UINT message, 
+static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message, 
     WPARAM wParam, LPARAM lParam)
 {
-  CWindow aDialogTmp(dialogHWND);
+  CWindow dialogTmp(dialogHWND);
   if (message == WM_INITDIALOG)
-    aDialogTmp.SetUserDataLongPtr(lParam);
-  CDialog *aDialog = (CDialog *)(aDialogTmp.GetUserDataLongPtr());
-  if (aDialog == NULL)
+    dialogTmp.SetUserDataLongPtr(lParam);
+  CDialog *dialog = (CDialog *)(dialogTmp.GetUserDataLongPtr());
+  if (dialog == NULL)
     return FALSE;
   if (message == WM_INITDIALOG)
-    aDialog->Attach(dialogHWND);
+    dialog->Attach(dialogHWND);
 
-  return BoolToBOOL(aDialog->OnMessage(message, wParam, lParam));
+  return BoolToBOOL(dialog->OnMessage(message, wParam, lParam));
 }
 
-bool CDialog::OnMessage(UINT message, UINT wParam, LPARAM lParam)
+bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch (message)
   {

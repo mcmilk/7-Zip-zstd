@@ -31,6 +31,24 @@ HRESULT CUpdateCallbackConsole::StartScanning()
   return S_OK;
 }
 
+HRESULT CUpdateCallbackConsole::CanNotFindError(const wchar_t *name, DWORD systemError)
+{
+  CantFindFiles.Add(name);
+  CantFindCodes.Add(systemError);
+  // m_PercentPrinter.ClosePrint();
+  if (!m_WarningsMode)
+  {
+    (*OutStream) << endl << endl;
+    m_PercentPrinter.PrintNewLine();
+    m_WarningsMode = true;
+  }
+  m_PercentPrinter.PrintString(name);
+  m_PercentPrinter.PrintString(":  WARNING: ");
+  m_PercentPrinter.PrintString(NError::MyFormatMessageW(systemError));
+  m_PercentPrinter.PrintNewLine();
+  return S_OK;
+}
+
 HRESULT CUpdateCallbackConsole::FinishScanning()
 {
   (*OutStream) << endl << endl;

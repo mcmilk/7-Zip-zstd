@@ -1,111 +1,45 @@
 // sha1.cpp
-// This file from UnRar sources
+// This file is based on public domain 
+// Steve Reid and Wei Dai's code from Crypto++
 
 #include "StdAfx.h"
 
 #include "sha1.h"
 
-/*
-SHA-1 in C
-By Steve Reid <steve@edmweb.com>
-100% Public Domain
+static inline rotlFixed(UInt32 x, int n)
+{
+	return (x << n) | (x >> (32 - n));
+}
 
- Test Vectors (from FIPS PUB 180-1)
- "abc"
- A9993E36 4706816A BA3E2571 7850C26C 9CD0D89D
- "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
- 84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1
- A million repetitions of "a"
- 34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
-*/
+#define blk0(i) (W[i] = data[i])
+#define blk1(i) (W[i&15] = rotlFixed(W[(i+13)&15]^W[(i+8)&15]^W[(i+2)&15]^W[i&15],1))
 
-#if !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
-#if defined(_M_IX86) || defined(_M_I86) || defined(__alpha)
-#define LITTLE_ENDIAN
-#else
-#error "LITTLE_ENDIAN or BIG_ENDIAN must be defined"
-#endif
-#endif
-
-/* #define SHA1HANDSOFF * Copies data before messing with it. */
-
-#define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
-
-/* blk0() and blk() perform the initial expand. */
-/* I got the idea of expanding during the round function from SSLeay */
-#ifdef LITTLE_ENDIAN
-#define blk0(i) (block->l[i] = (rol(block->l[i],24)&0xFF00FF00) \
-|(rol(block->l[i],8)&0x00FF00FF))
-#else
-#define blk0(i) block->l[i]
-#endif
-#define blk(i) (block->l[i&15] = rol(block->l[(i+13)&15]^block->l[(i+8)&15] \
-^block->l[(i+2)&15]^block->l[i&15],1))
+#define f1(x,y,z) (z^(x&(y^z)))
+#define f2(x,y,z) (x^y^z)
+#define f3(x,y,z) ((x&y)|(z&(x|y)))
+#define f4(x,y,z) (x^y^z)
 
 /* (R0+R1), R2, R3, R4 are the different operations used in SHA1 */
-#define R0(v,w,x,y,z,i) {z+=((w&(x^y))^y)+blk0(i)+0x5A827999+rol(v,5);w=rol(w,30);}
-#define R1(v,w,x,y,z,i) {z+=((w&(x^y))^y)+blk(i)+0x5A827999+rol(v,5);w=rol(w,30);}
-#define R2(v,w,x,y,z,i) {z+=(w^x^y)+blk(i)+0x6ED9EBA1+rol(v,5);w=rol(w,30);}
-#define R3(v,w,x,y,z,i) {z+=(((w|x)&y)|(w&x))+blk(i)+0x8F1BBCDC+rol(v,5);w=rol(w,30);}
-#define R4(v,w,x,y,z,i) {z+=(w^x^y)+blk(i)+0xCA62C1D6+rol(v,5);w=rol(w,30);}
+#define R0(v,w,x,y,z,i) z+=f1(w,x,y)+blk0(i)+0x5A827999+rotlFixed(v,5);w=rotlFixed(w,30);
+#define R1(v,w,x,y,z,i) z+=f1(w,x,y)+blk1(i)+0x5A827999+rotlFixed(v,5);w=rotlFixed(w,30);
+#define R2(v,w,x,y,z,i) z+=f2(w,x,y)+blk1(i)+0x6ED9EBA1+rotlFixed(v,5);w=rotlFixed(w,30);
+#define R3(v,w,x,y,z,i) z+=f3(w,x,y)+blk1(i)+0x8F1BBCDC+rotlFixed(v,5);w=rotlFixed(w,30);
+#define R4(v,w,x,y,z,i) z+=f4(w,x,y)+blk1(i)+0xCA62C1D6+rotlFixed(v,5);w=rotlFixed(w,30);
 
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void SHA1Transform(UInt32 state[5], unsigned char buffer[64])
+void CSHA1::Transform(const UInt32 data[16])
 {
   UInt32 a, b, c, d, e;
-  typedef union {
-    unsigned char c[64];
-    UInt32 l[16];
-  } CHAR64LONG16;
-  CHAR64LONG16* block;
-#ifdef SHA1HANDSOFF
-  static unsigned char workspace[64];
-  block = (CHAR64LONG16*)workspace;
-  memcpy(block, buffer, 64);
-#else
-  block = (CHAR64LONG16*)buffer;
-#endif
-#ifdef SFX_MODULE
-  static int pos[80][5];
-  static bool pinit=false;
-  if (!pinit)
-  {
-    for (int I=0,P=0;I<80;I++,P=(P ? P-1:4))
-    {
-      pos[I][0]=P;
-      pos[I][1]=(P+1)%5;
-      pos[I][2]=(P+2)%5;
-      pos[I][3]=(P+3)%5;
-      pos[I][4]=(P+4)%5;
-    }
-    pinit=true;
-  }
-  UInt32 s[5];
-  for (int I=0;I<sizeof(s)/sizeof(s[0]);I++)
-    s[I]=state[I];
-  
-  for (int I=0;I<16;I++)
-    R0(s[pos[I][0]],s[pos[I][1]],s[pos[I][2]],s[pos[I][3]],s[pos[I][4]],I);
-  for (int I=16;I<20;I++)
-    R1(s[pos[I][0]],s[pos[I][1]],s[pos[I][2]],s[pos[I][3]],s[pos[I][4]],I);
-  for (int I=20;I<40;I++)
-    R2(s[pos[I][0]],s[pos[I][1]],s[pos[I][2]],s[pos[I][3]],s[pos[I][4]],I);
-  for (int I=40;I<60;I++)
-    R3(s[pos[I][0]],s[pos[I][1]],s[pos[I][2]],s[pos[I][3]],s[pos[I][4]],I);
-  for (int I=60;I<80;I++)
-    R4(s[pos[I][0]],s[pos[I][1]],s[pos[I][2]],s[pos[I][3]],s[pos[I][4]],I);
-  
-  for (int I=0;I<sizeof(s)/sizeof(s[0]);I++)
-    state[I]+=s[I];
-#else
-  /* Copy context->state[] to working vars */
-  a = state[0];
-  b = state[1];
-  c = state[2];
-  d = state[3];
-  e = state[4];
+	UInt32 W[16];
+
+  /* Copy context->m_State[] to working vars */
+  a = m_State[0];
+  b = m_State[1];
+  c = m_State[2];
+  d = m_State[3];
+  e = m_State[4];
   /* 4 rounds of 20 operations each. Loop unrolled. */
   R0(a,b,c,d,e, 0); R0(e,a,b,c,d, 1); R0(d,e,a,b,c, 2); R0(c,d,e,a,b, 3);
   R0(b,c,d,e,a, 4); R0(a,b,c,d,e, 5); R0(e,a,b,c,d, 6); R0(d,e,a,b,c, 7);
@@ -127,88 +61,90 @@ void SHA1Transform(UInt32 state[5], unsigned char buffer[64])
   R4(c,d,e,a,b,68); R4(b,c,d,e,a,69); R4(a,b,c,d,e,70); R4(e,a,b,c,d,71);
   R4(d,e,a,b,c,72); R4(c,d,e,a,b,73); R4(b,c,d,e,a,74); R4(a,b,c,d,e,75);
   R4(e,a,b,c,d,76); R4(d,e,a,b,c,77); R4(c,d,e,a,b,78); R4(b,c,d,e,a,79);
-  /* Add the working vars back into context.state[] */
-  state[0] += a;
-  state[1] += b;
-  state[2] += c;
-  state[3] += d;
-  state[4] += e;
+  /* Add the working vars back into context.m_State[] */
+  m_State[0] += a;
+  m_State[1] += b;
+  m_State[2] += c;
+  m_State[3] += d;
+  m_State[4] += e;
   
   /* Wipe variables */
   a = b = c = d = e = 0;
-  memset(&a,0,sizeof(a));
-#endif
+}  
+
+
+void CSHA1::Init()
+{
+  m_State[0] = 0x67452301;
+  m_State[1] = 0xEFCDAB89;
+  m_State[2] = 0x98BADCFE;
+  m_State[3] = 0x10325476;
+  m_State[4] = 0xC3D2E1F0;
+  m_Count = 0;
 }
 
 
-/* Initialize new context */
-
-void hash_initial(hash_context* context)
+void CSHA1::WriteByteBlock()
 {
-  /* SHA1 initialization constants */
-  context->state[0] = 0x67452301;
-  context->state[1] = 0xEFCDAB89;
-  context->state[2] = 0x98BADCFE;
-  context->state[3] = 0x10325476;
-  context->state[4] = 0xC3D2E1F0;
-  context->count[0] = context->count[1] = 0;
+  UInt32 data32[16];
+  for (int i = 0; i < 16; i++)
+  {
+    data32[i] = 
+      (UInt32(_buffer[i * 4 + 0]) << 24) +
+      (UInt32(_buffer[i * 4 + 1]) << 16) +
+      (UInt32(_buffer[i * 4 + 2]) <<  8) +
+       UInt32(_buffer[i * 4 + 3]);
+  }
+  Transform(data32);
 }
 
-
-/* Run your data through this. */
-void hash_process( hash_context * context, unsigned char * data, unsigned len )
+void CSHA1::Update(const Byte *data, size_t size)
 {
-  unsigned int i, j;
-  UInt32 blen = ((UInt32)len)<<3;
-  
-  j = (context->count[0] >> 3) & 63;
-  if ((context->count[0] += blen) < blen ) context->count[1]++;
-  context->count[1] += (len >> 29);
-  if ((j + len) > 63) {
-    memcpy(&context->buffer[j], data, (i = 64-j));
-    SHA1Transform(context->state, context->buffer);
-    for ( ; i + 63 < len; i += 64) {
-      SHA1Transform(context->state, &data[i]);
+  UInt32 curBufferPos = UInt32(m_Count) & 0x3F;
+  while (size > 0)
+  {
+    while(curBufferPos < 64 && size > 0)
+    {
+      _buffer[curBufferPos++] = *data++;
+      m_Count++;
+      size--;
     }
-    j = 0;
+    if (curBufferPos == 64)
+    {
+      curBufferPos = 0;
+      WriteByteBlock();
+    }
   }
-  else i = 0;
-  if (len > i)
-    memcpy(&context->buffer[j], &data[i], len - i);
 }
 
-
-/* Add padding and return the message digest. */
-
-void hash_final( hash_context* context, UInt32 digest[5] )
+void CSHA1::Final(Byte *digest)
 {
-  UInt32 i, j;
-  unsigned char finalcount[8];
-  
-  for (i = 0; i < 8; i++) {
-    finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
-      >> ((3-(i & 3)) * 8) ) & 255);  /* Endian independent */
+  UInt64 lenInBits = (m_Count << 3);
+  UInt32 curBufferPos = UInt32(m_Count) & 0x3F;
+  _buffer[curBufferPos++] = 0x80;
+  while (curBufferPos != (64 - 8))
+  {
+    curBufferPos &= 0x3F;
+    if (curBufferPos == 0)
+      WriteByteBlock();
+    _buffer[curBufferPos++] = 0;
   }
-  unsigned char ch='\200';
-  hash_process(context, &ch, 1);
-  while ((context->count[0] & 504) != 448) {
-    ch=0;
-    hash_process(context, &ch, 1);
+  for (int i = 0; i < 8; i++)
+  {
+    _buffer[curBufferPos++] = Byte(lenInBits >> 56);
+    lenInBits <<= 8;
   }
-  hash_process(context, finalcount, 8);  /* Should cause a SHA1Transform() */
-  for (i = 0; i < 5; i++) {
-    digest[i] = context->state[i] & 0xffffffff;
+  WriteByteBlock();
+
+  for (i = 0; i < 5; i++) 
+  {
+    UInt32 state = m_State[i] & 0xffffffff;
+    *digest++ = state >> 24;
+    *digest++ = state >> 16;
+    *digest++ = state >> 8;
+    *digest++ = state;
   }
-  /* Wipe variables */
-  memset(&i,0,sizeof(i));
-  memset(&j,0,sizeof(j));
-  memset(context->buffer, 0, 64);
-  memset(context->state, 0, 20);
-  memset(context->count, 0, 8);
-  memset(&finalcount, 0, 8);
-#ifdef SHA1HANDSOFF  /* make SHA1Transform overwrite it's own static vars */
-  SHA1Transform(context->state, context->buffer);
-#endif
+  Init();
 }
 
 

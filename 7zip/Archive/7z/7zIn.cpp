@@ -969,7 +969,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
     database.ArchiveInfo.FileInfoPopIDs.Add(NID::kCRC);
 
   CBoolVector emptyStreamVector;
-  emptyStreamVector.Reserve((size_t)numFiles);
+  emptyStreamVector.Reserve((int)numFiles);
   for(i = 0; i < numFiles; i++)
     emptyStreamVector.Add(false);
   CBoolVector emptyFileVector;

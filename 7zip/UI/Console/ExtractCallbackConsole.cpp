@@ -202,7 +202,8 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
   }
   if (result == S_OK)
     return result;
-  if (result == E_ABORT)
+  NumArchiveErrors++;
+  if (result == E_ABORT || result == ERROR_DISK_FULL)
     return result;
   (*OutStream) << endl << kError;
   if (result == E_OUTOFMEMORY)
@@ -214,8 +215,6 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
     (*OutStream) << message;
   }
   (*OutStream) << endl;
-
-  NumArchiveErrors++;
   return S_OK;
 }
 

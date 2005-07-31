@@ -31,9 +31,9 @@ struct CExtraBlock
 {
   CObjectVector<CExtraSubBlock> SubBlocks;
   void Clear() { SubBlocks.Clear(); }
-  UInt32 GetSize() const 
+  size_t GetSize() const 
   {
-    UInt32 res = 0;
+    size_t res = 0;
     for (int i = 0; i < SubBlocks.Size(); i++)
       res += SubBlocks[i].Data.GetCapacity() + 2 + 2;
     return res;

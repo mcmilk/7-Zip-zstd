@@ -119,7 +119,7 @@ void CPanel::DeleteItems()
 BOOL CPanel::OnBeginLabelEdit(LV_DISPINFO * lpnmh)
 {
   int realIndex = GetRealIndex(lpnmh->item);
-  if (realIndex == -1)
+  if (realIndex == kParentIndex)
     return TRUE;
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
@@ -141,7 +141,7 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
 
   int realIndex = GetRealIndex(lpnmh->item);
-  if (realIndex == -1)
+  if (realIndex == kParentIndex)
     return FALSE;
   HRESULT result = folderOperations->Rename(realIndex, newName, 0);
   if (result != S_OK)
@@ -151,6 +151,7 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   }
   // Can't use RefreshListCtrl here.
   // RefreshListCtrlSaveFocused();
+  _focusedName = newName;
   PostMessage(kReLoadMessage);
   return TRUE;
 }
@@ -182,6 +183,8 @@ void CPanel::CreateFolder()
   int pos = newName.Find(TEXT('\\'));
   if (pos >= 0)
     newName = newName.Left(pos);
+  if (!_mySelectMode)
+    state.SelectedNames.Clear();
   state.FocusedName = newName;
   RefreshListCtrl(state);
 }
@@ -213,6 +216,8 @@ void CPanel::CreateFile()
   int pos = newName.Find(TEXT('\\'));
   if (pos >= 0)
     newName = newName.Left(pos);
+  if (!_mySelectMode)
+    state.SelectedNames.Clear();
   state.FocusedName = newName;
   RefreshListCtrl(state);
 }
@@ -231,7 +236,7 @@ void CPanel::ChangeComment()
   if (index < 0)
     return;
   int realIndex = GetRealItemIndex(index);
-  if (realIndex == -1)
+  if (realIndex == kParentIndex)
     return;
   CSelectedState state;
   SaveSelectedState(state);

@@ -6,6 +6,8 @@
 #include "Windows/Window.h"
 #include "Windows/Defs.h"
 
+#include <commctrl.h>
+
 namespace NWindows {
 namespace NControl {
 

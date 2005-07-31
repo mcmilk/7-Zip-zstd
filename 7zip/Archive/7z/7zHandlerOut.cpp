@@ -634,7 +634,7 @@ static int ParseStringToUInt32(const UString &srcString, UInt32 &number)
     return 0;
   }
   number = (UInt32)number64;
-  return end - start;
+  return (int)(end - start);
 }
 
 static const int kLogarithmicSizeLimit = 32;
@@ -650,7 +650,7 @@ HRESULT ParseDictionaryValues(const UString &srcStringSpec, UInt32 &dicSize)
   const wchar_t *start = srcString;
   const wchar_t *end;
   UInt64 number = ConvertStringToUInt64(start, &end);
-  int numDigits = end - start;
+  int numDigits = (int)(end - start);
   if (numDigits == 0 || srcString.Length() > numDigits + 1)
     return E_INVALIDARG;
   if (srcString.Length() == numDigits)
@@ -901,7 +901,7 @@ HRESULT CHandler::SetSolidSettings(const UString &s)
       _solidExtension = true;
       continue;
     }
-    i += end - start;
+    i += (int)(end - start);
     if (i == s2.Length())
       return E_INVALIDARG;
     wchar_t c = s2[i++];

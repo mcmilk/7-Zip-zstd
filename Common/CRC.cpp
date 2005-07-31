@@ -51,7 +51,7 @@ void CCRC::UpdateUInt64(UInt64 v)
     UpdateByte((Byte)(v >> (8 * i)));
 }
 
-void CCRC::Update(const void *data, UInt32 size)
+void CCRC::Update(const void *data, size_t size)
 {
   UInt32 v = _value;
   const Byte *p = (const Byte *)data;

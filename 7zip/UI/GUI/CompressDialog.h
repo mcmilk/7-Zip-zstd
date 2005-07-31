@@ -109,8 +109,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int GetMethodID();
   CSysString GetMethodSpec();
 
-  AddDictionarySize(UInt32 size, bool kilo, bool maga);
-  AddDictionarySize(UInt32 size);
+  int AddDictionarySize(UInt32 size, bool kilo, bool maga);
+  int AddDictionarySize(UInt32 size);
   
   void SetDictionary();
   UInt32 GetDictionary();

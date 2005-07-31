@@ -15,6 +15,8 @@
 
 void CPanel::OnShiftSelectMessage()
 {
+  if (!_mySelectMode)
+    return;
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
@@ -25,7 +27,7 @@ void CPanel::OnShiftSelectMessage()
   for (int i = 0; i < _listView.GetItemCount(); i++)
   {
     int realIndex = GetRealItemIndex(i);
-    if (realIndex == -1)
+    if (realIndex == kParentIndex)
       continue;
     if (i >= startItem && i <= finishItem)
       if (_selectedStatusVector[realIndex] != _selectMark)
@@ -39,18 +41,20 @@ void CPanel::OnShiftSelectMessage()
 
 void CPanel::OnArrowWithShift()
 {
+  if (!_mySelectMode)
+    return;
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
   int realIndex = GetRealItemIndex(focusedItem);
   if (_selectionIsDefined)
   {
-    if (realIndex != -1)
+    if (realIndex != kParentIndex)
       _selectedStatusVector[realIndex] = _selectMark;
   }
   else
   {
-    if (realIndex == -1)
+    if (realIndex == kParentIndex)
     {
       _selectionIsDefined = true;
       _selectMark = true;
@@ -81,8 +85,13 @@ void CPanel::OnInsert()
   if (focusedItem < 0)
     return;
   int realIndex = GetRealItemIndex(focusedItem);
-  if (realIndex != -1)
-    _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];
+  bool isSelected = !_selectedStatusVector[realIndex];
+  if (realIndex != kParentIndex)
+    _selectedStatusVector[realIndex] = isSelected;
+  
+  if (!_mySelectMode)
+    _listView.SetItemState(focusedItem, isSelected ? LVIS_SELECTED: 0, LVIS_SELECTED);
+
   _listView.RedrawItem(focusedItem);
 
   int nextIndex = focusedItem + 1;
@@ -116,6 +125,26 @@ void CPanel::OnDownWithShift()
 }
 */
 
+void CPanel::UpdateSelection()
+{
+  if (!_mySelectMode)
+  {
+    int numItems = _listView.GetItemCount();
+    for (int i = 0; i < numItems; i++)
+    {
+      int realIndex = GetRealItemIndex(i);
+      if (realIndex != kParentIndex)
+      {
+        UINT value = 0;
+        value = _selectedStatusVector[realIndex] ? LVIS_SELECTED: 0;
+        _listView.SetItemState(i, value, LVIS_SELECTED);
+      }
+    }
+  }
+  _listView.RedrawAllItems();
+}
+
+
 void CPanel::SelectSpec(bool selectMode)
 {
   CComboDialog comboDialog;
@@ -126,11 +155,11 @@ void CPanel::SelectSpec(bool selectMode)
   comboDialog.Value = L"*";
   if (comboDialog.Create(GetParent()) == IDCANCEL)
     return;
-  UString mask = GetUnicodeString(comboDialog.Value);
+  const UString &mask = comboDialog.Value;
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     if (CompareWildCardWithName(mask, GetItemName(i)))
        _selectedStatusVector[i] = selectMode;
-  _listView.RedrawAllItems();
+  UpdateSelection();
 }
 
 void CPanel::SelectByType(bool selectMode)
@@ -142,10 +171,12 @@ void CPanel::SelectByType(bool selectMode)
   UString name = GetItemName(realIndex);
   bool isItemFolder = IsItemFolder(realIndex);
 
+  /*
   UINT32 numItems;
   _folder->GetNumberOfItems(&numItems);
   if ((UInt32)_selectedStatusVector.Size() != numItems)
     throw 11111;
+  */
 
   if (isItemFolder)
   {
@@ -170,26 +201,32 @@ void CPanel::SelectByType(bool selectMode)
           _selectedStatusVector[i] = selectMode;
     }
   }
-  _listView.RedrawAllItems();
+  UpdateSelection();
 }
 
 void CPanel::SelectAll(bool selectMode)
 {
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     _selectedStatusVector[i] = selectMode;
-  _listView.RedrawAllItems();
+  UpdateSelection();
 }
 
 void CPanel::InvertSelection()
 {
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     _selectedStatusVector[i] = !_selectedStatusVector[i];
-  _listView.RedrawAllItems();
+  UpdateSelection();
 }
 
 void CPanel::KillSelection()
 {
   SelectAll(false);
+  if (!_mySelectMode)
+  {
+    int focused = _listView.GetFocusedItem();
+    if (focused >= 0)
+      _listView.SetItemState(focused, LVIS_SELECTED, LVIS_SELECTED);
+  }
 }
 
 void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
@@ -211,7 +248,7 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
     for (int i = 0; i < _selectedStatusVector.Size(); i++)
     {
       int realIndex = GetRealItemIndex(i);
-      if (realIndex == -1)
+      if (realIndex == kParentIndex)
         continue;
       bool selected = (i >= startItem && i <= finishItem);
       if (_selectedStatusVector[realIndex] != selected)
@@ -227,7 +264,7 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
     if ((itemActivate->uKeyFlags & LVKF_CONTROL) != 0)
     {
       int realIndex = GetRealItemIndex(indexInList);
-      if (realIndex != -1)
+      if (realIndex != kParentIndex)
       {
         _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];
         _listView.RedrawItem(indexInList);

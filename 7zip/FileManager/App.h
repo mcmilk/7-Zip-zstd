@@ -50,6 +50,7 @@ class CDropTarget:
   public CMyUnknownImp
 {
   CMyComPtr<IDataObject> m_DataObject;
+  UStringVector m_SourcePaths;
   int m_SelectionIndex;
   bool m_DropIsAllowed;      // = true, if data contain fillist
   bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel. 
@@ -59,6 +60,10 @@ class CDropTarget:
 
   CPanel *m_Panel;
   bool m_IsAppTarget;        // true, if we want to drop to app window (not to panel).
+
+  bool m_SetPathIsOK;
+
+  bool IsItSameDrive() const;
 
   void QueryGetData(IDataObject *dataObject);
   bool IsFsFolderPath() const;
@@ -87,7 +92,8 @@ public:
       m_PanelDropIsAllowed(false), 
       m_DropIsAllowed(false), 
       m_SelectionIndex(-1), 
-      m_SubFolderIndex(-1) {}
+      m_SubFolderIndex(-1),
+      m_SetPathIsOK(false) {}
 
   CApp *App;
   int SrcPanelIndex;              // index of D&D source_panel

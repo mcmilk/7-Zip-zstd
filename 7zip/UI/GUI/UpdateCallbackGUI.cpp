@@ -37,6 +37,15 @@ void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
   Messages.Add(message);
 }
 
+void CUpdateCallbackGUI::AddErrorMessage(const wchar_t *name, DWORD systemError)
+{
+  AddErrorMessage(
+      UString(L"WARNING: ") + 
+      NError::MyFormatMessageW(systemError) + 
+      UString(L": ") + 
+      UString(name));
+}
+
 HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result)
 {
   if (result != S_OK)
@@ -49,6 +58,13 @@ HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result)
 
 HRESULT CUpdateCallbackGUI::StartScanning()
 {
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackGUI::CanNotFindError(const wchar_t *name, DWORD systemError)
+{
+  FailedFiles.Add(name);
+  AddErrorMessage(name, systemError);
   return S_OK;
 }
 
@@ -111,11 +127,7 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
   FailedFiles.Add(name);
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
-    AddErrorMessage(
-      UString(L"WARNING: ") + 
-      NError::MyFormatMessageW(systemError) + 
-      UString(L": ") + 
-      UString(name));
+    AddErrorMessage(name, systemError);
     return S_FALSE;
   }
   return systemError;

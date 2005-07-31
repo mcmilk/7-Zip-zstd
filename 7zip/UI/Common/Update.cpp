@@ -99,7 +99,7 @@ class COutMultiVolStream:
   public IOutStream,
   public CMyUnknownImp
 {
-  size_t _streamIndex; // required stream
+  int _streamIndex; // required stream
   UInt64 _offsetPos; // offset from start of _streamIndex index
   UInt64 _absPos;
   UInt64 _length;
@@ -142,7 +142,7 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
     *processedSize = 0;
   while(size > 0)
   {
-    if (_streamIndex >= (size_t)Streams.Size())
+    if (_streamIndex >= Streams.Size())
     {
       CSubStreamInfo subStream;
 
@@ -694,12 +694,17 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
       CEnumDirItemUpdateCallback enumCallback;
       enumCallback.Callback = callback;
       RINOK(callback->StartScanning());
-      UString errorPath;
-      HRESULT res = EnumerateItems(censor, dirItems, &enumCallback, errorPath);
+      UStringVector errorPaths;
+      CRecordVector<DWORD> errorCodes;
+      HRESULT res = EnumerateItems(censor, dirItems, &enumCallback, errorPaths, errorCodes);
+      for (int i = 0; i < errorPaths.Size(); i++)
+      {
+        RINOK(callback->CanNotFindError(errorPaths[i], errorCodes[i]));
+      }
       if(res != S_OK) 
       {
         errorInfo.Message = L"Scanning error";
-        errorInfo.FileName = errorPath;
+        // errorInfo.FileName = errorPath;
         return res;
       }
       RINOK(callback->FinishScanning());

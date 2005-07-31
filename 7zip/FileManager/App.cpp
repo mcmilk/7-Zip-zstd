@@ -71,6 +71,7 @@ void CApp::SetListSettings()
     extendedStyle |= LVS_EX_FULLROWSELECT;
   if (ReadShowGrid())
     extendedStyle |= LVS_EX_GRIDLINES;
+  bool mySelectionMode = ReadAlternativeSelection();
   
   /*
   if (ReadSingleClick())
@@ -84,10 +85,19 @@ void CApp::SetListSettings()
 
   for (int i = 0; i < kNumPanelsMax; i++)
   {
-    Panels[i]._showDots = showDots;
-    Panels[i]._showRealFileIcons = showRealFileIcons;
-    Panels[i]._exStyle = extendedStyle;
-    Panels[i].SetExtendedStyle();
+    CPanel &panel = Panels[i];
+    panel._mySelectMode = mySelectionMode;
+    panel._showDots = showDots;
+    panel._showRealFileIcons = showRealFileIcons;
+    panel._exStyle = extendedStyle;
+
+    DWORD style = panel._listView.GetStyle();
+    if (mySelectionMode)
+      style |= LVS_SINGLESEL;
+    else
+      style &= ~LVS_SINGLESEL;
+    panel._listView.SetStyle(style);
+    panel.SetExtendedStyle();
   }
 }
 
@@ -477,7 +487,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       if (focusedItem < 0)
         return;
       int realIndex = srcPanel.GetRealItemIndex(focusedItem);
-      if (realIndex == -1)
+      if (realIndex == kParentIndex)
         return;
       indices.Add(realIndex);
       destPath = srcPanel.GetItemName(realIndex);
@@ -660,7 +670,7 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
   destPanel.BindToFolder(string);
   */
   CMyComPtr<IFolderFolder> newFolder;
-  if (realIndex == -1)
+  if (realIndex == kParentIndex)
   {
     if (srcPanel._folder->BindToParentFolder(&newFolder) != S_OK)
       return;

@@ -1,9 +1,0 @@
-; Swap.def
-
-LIBRARY   Swap.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetNumberOfMethods PRIVATE
-  GetMethodProperty PRIVATE
-

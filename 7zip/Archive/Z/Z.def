@@ -1,8 +1,0 @@
-; Z.def
-
-LIBRARY z.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE
-

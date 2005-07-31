@@ -1,7 +1,0 @@
-; Cab.def
-
-LIBRARY cab.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE

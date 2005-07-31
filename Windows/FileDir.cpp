@@ -331,7 +331,7 @@ bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath,
   if (fileNamePointer == 0)
     fileNamePartStartIndex = lstrlen(fileName);
   else
-    fileNamePartStartIndex = fileNamePointer - buffer;
+    fileNamePartStartIndex = (int)(fileNamePointer - buffer);
   return true;
 }
 
@@ -470,7 +470,7 @@ bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
   LPTSTR filePartPointer;
   DWORD value = ::SearchPath(path, fileName, extension, 
     MAX_PATH, resultPath.GetBuffer(MAX_PATH), &filePartPointer);
-  filePart = filePartPointer - (LPCTSTR)resultPath;
+  filePart = (UINT32)(filePartPointer - (LPCTSTR)resultPath);
   resultPath.ReleaseBuffer();
   if (value == 0 || value > MAX_PATH)
     return false;

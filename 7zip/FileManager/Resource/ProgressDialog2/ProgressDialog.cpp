@@ -332,10 +332,13 @@ void CProgressDialog::SetTitleText()
     title = pausedString;
     title += L" ";
   }
-  wchar_t s[64];
-  ConvertUInt64ToString(_prevPercentValue, s);
-  title += s;
-  title += L"%";
+  if (_prevPercentValue != UInt32(-1))
+  {
+    wchar_t s[64];
+    ConvertUInt64ToString(_prevPercentValue, s);
+    title += s;
+    title += L"%";
+  }
   if (!_foreground)
   {
     title += L" ";

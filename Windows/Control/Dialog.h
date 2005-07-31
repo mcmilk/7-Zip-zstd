@@ -9,8 +9,6 @@
 namespace NWindows {
 namespace NControl {
 
-BOOL APIENTRY DialogProcedure(HWND dialogHWND, UINT message, UINT wParam, LPARAM lParam);
-
 class CDialog: public CWindow
 {
 public:

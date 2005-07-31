@@ -6,6 +6,7 @@
 
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
+#include "Windows/Error.h"
 
 #include "Resource/OverwriteDialog/OverwriteDialog.h"
 #ifndef _NO_CRYPTO
@@ -228,8 +229,10 @@ HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
   if (result == S_OK)
     return result;
   NumArchiveErrors++;
-  if (result == E_ABORT)
+  if (result == E_ABORT || result == ERROR_DISK_FULL)
     return result;
+  MessageError(_currentFilePath);
+  MessageError(NError::MyFormatMessageW(result));
   return S_OK;
 }
 

@@ -59,9 +59,9 @@ public:
     if(_pos >= _bufferSize)
       WriteBlock();
   }
-  void WriteBytes(const void *data, UInt32 size)
+  void WriteBytes(const void *data, size_t size)
   {
-    for (UInt32 i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
       WriteByte(((const Byte *)data)[i]);
   }
 

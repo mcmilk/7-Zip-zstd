@@ -88,7 +88,7 @@ STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UInt32 size, UInt
 {
   UInt32 newSize = size;
   if (_pos + size > _size)
-    newSize = _size - _pos;
+    newSize = (UInt32)(_size - _pos);
   memmove(_buffer + _pos, data, newSize);
   if(processedSize != NULL)
     *processedSize = newSize;
@@ -148,9 +148,9 @@ STDMETHODIMP CSequentialInStreamRollback::ReadPart(void *data, UInt32 size, UInt
 {
   if (_currentPos != _currentSize)
   {
-    UInt32 curSize = _currentSize - _currentPos;
+    size_t curSize = _currentSize - _currentPos;
     if (size > curSize)
-      size = curSize;
+      size = (UInt32)curSize;
     memmove(data, _buffer + _currentPos, size);
     _currentPos += size;
     if (processedSize != 0)
@@ -159,7 +159,7 @@ STDMETHODIMP CSequentialInStreamRollback::ReadPart(void *data, UInt32 size, UInt
   }
   UInt32 realProcessedSize;
   if (size > _bufferSize)
-    size = _bufferSize;
+    size = (UInt32)_bufferSize;
   HRESULT result = _stream->ReadPart(_buffer, size, &realProcessedSize);
   memmove(data, _buffer, realProcessedSize);
   _size += realProcessedSize;

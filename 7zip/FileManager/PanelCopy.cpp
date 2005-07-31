@@ -176,11 +176,12 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
 
 void CPanel::CopyFrom(const UStringVector &filePaths)
 {
-  UString message = L"Are you sure you want to copy files to archive\n\'";
+  UString title = LangLoadStringW(IDS_CONFIRM_FILE_COPY, 0x03020222);
+  UString message = LangLoadStringW(IDS_WANT_TO_COPY_FILES, 0x03020223);
+  message += L"\n\'";
   message += _currentFolderPrefix;
   message += L"\' ?";
-  int res = ::MessageBoxW(*(this), message, L"Confirm File Copy", 
-    MB_YESNOCANCEL | MB_ICONQUESTION | MB_SYSTEMMODAL);
+  int res = ::MessageBoxW(*(this), message, title, MB_YESNOCANCEL | MB_ICONQUESTION | MB_SYSTEMMODAL);
   if (res != IDYES)
     return;
 
@@ -197,7 +198,7 @@ void CPanel::CopyFrom(const UStringVector &filePaths)
     // For Password:
     SetFocusToList();
     if (result != E_ABORT)
-      MessageBoxError(result, L"Error");
+      MessageBoxError(result);
     return;
   }
 
