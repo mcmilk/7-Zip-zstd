@@ -109,8 +109,11 @@ public:
     if (SubAllocatorSize == size)              
       return true;
     StopSubAllocator();
-    if ((HeapStart = (Byte *)::BigAlloc(size)) == 0)
-      return false;
+    if (size == 0)
+      HeapStart = 0;
+    else
+      if ((HeapStart = (Byte *)::BigAlloc(size)) == 0)
+        return false;
     SubAllocatorSize = size;                     
     return true;
   }

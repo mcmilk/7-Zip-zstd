@@ -22,6 +22,16 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
+static const UInt32 kNumDeflatePassesX1  = 1;
+static const UInt32 kNumDeflatePassesX7  = 3;
+
+static const UInt32 kNumBZip2PassesX1 = 1;
+static const UInt32 kNumBZip2PassesX7 = 2;
+static const UInt32 kNumBZip2PassesX9 = 7;
+
+static const UInt32 kNumFastBytesX1 = 32;
+static const UInt32 kNumFastBytesX7 = 64;
+
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kDOS;
@@ -158,34 +168,62 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     CMyComPtr<IArchiveUpdateCallback> udateCallBack2(updateCallback);
     udateCallBack2.QueryInterface(IID_ICryptoGetTextPassword2, &getTextPassword);
   }
+  CCompressionMethodMode options;
+
   if (getTextPassword)
   {
     CMyComBSTR password;
     Int32 passwordIsDefined;
     RINOK(getTextPassword->CryptoGetTextPassword2(
         &passwordIsDefined, &password));
-    if (m_Method.PasswordIsDefined = IntToBool(passwordIsDefined))
-      m_Method.Password = UnicodeStringToMultiByte(
-          (const wchar_t *)password, CP_OEMCP);
+    if (options.PasswordIsDefined = IntToBool(passwordIsDefined))
+      options.Password = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
   }
   else
-    m_Method.PasswordIsDefined = false;
+    options.PasswordIsDefined = false;
+
+  int level = m_Level;
+  if (level < 0)
+    level = 5;
+  
+  Byte mainMethod;
+  if (m_MainMethod < 0)
+    mainMethod = ((level == 0) ?
+        NFileHeader::NCompressionMethod::kStored :
+        NFileHeader::NCompressionMethod::kDeflated);
+  else
+    mainMethod = (Byte)m_MainMethod;
+  options.MethodSequence.Add(mainMethod);
+  if (mainMethod != NFileHeader::NCompressionMethod::kStored)
+    options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
+  bool isDeflate = (mainMethod == NFileHeader::NCompressionMethod::kDeflated) || 
+      (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
+  bool isBZip2 = (mainMethod == NFileHeader::NCompressionMethod::kBZip2);
+  options.NumPasses = m_NumPasses;
+  if (options.NumPasses == 0xFFFFFFFF)
+  {
+    if (isDeflate)
+      options.NumPasses = (level >= 7 ? kNumDeflatePassesX7 : kNumDeflatePassesX1);
+    else if (isBZip2)
+      options.NumPasses = (level >= 9 ? kNumBZip2PassesX9 : 
+        (level >= 7 ? kNumBZip2PassesX7 :  kNumBZip2PassesX1));
+  }
+
+  options.NumFastBytes = m_NumFastBytes;
+  if (options.NumFastBytes == 0xFFFFFFFF)
+  {
+    if (isDeflate)
+      options.NumFastBytes = (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1);
+  }
 
   return Update(m_Items, updateItems, outStream, 
-      m_ArchiveIsOpen ? &m_Archive : NULL, &m_Method, updateCallback);
+      m_ArchiveIsOpen ? &m_Archive : NULL, &options, updateCallback);
   COM_TRY_END
 }
-
-static const UInt32 kNumPassesNormal = 1;
-static const UInt32 kNumPassesMX  = 3;
-
-static const UInt32 kMatchFastLenNormal  = 32;
-static const UInt32 kMatchFastLenMX  = 64;
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   InitMethodProperties();
-  Byte mainMethod = NFileHeader::NCompressionMethod::kDeflated;
   for (int i = 0; i < numProperties; i++)
   {
     UString name = UString(names[i]);
@@ -216,23 +254,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
       else
         return E_INVALIDARG;
-      if (level == 0)
-      {
-        mainMethod = NFileHeader::NCompressionMethod::kStored;
-      }
-      else if (level < 7)
-      {
-        InitMethodProperties();
-        if (mainMethod == NFileHeader::NCompressionMethod::kStored)
-          mainMethod = NFileHeader::NCompressionMethod::kDeflated;
-      }
-      else
-      {
-        m_Method.NumPasses = kNumPassesMX;
-        m_Method.NumFastBytes = kMatchFastLenMX;
-        if (mainMethod == NFileHeader::NCompressionMethod::kStored)
-          mainMethod = NFileHeader::NCompressionMethod::kDeflated;
-      }
+      m_Level = (level <= 9) ? (int)level: 9;
       continue;
     }
     else if (name == L"M")
@@ -242,13 +264,13 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         UString valueString = value.bstrVal;
         valueString.MakeUpper();
         if (valueString == L"COPY")
-          mainMethod = NFileHeader::NCompressionMethod::kStored;
+          m_MainMethod = NFileHeader::NCompressionMethod::kStored;
         else if (valueString == L"DEFLATE")
-          mainMethod = NFileHeader::NCompressionMethod::kDeflated;
+          m_MainMethod = NFileHeader::NCompressionMethod::kDeflated;
         else if (valueString == L"DEFLATE64")
-          mainMethod = NFileHeader::NCompressionMethod::kDeflated64;
+          m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
         else if (valueString == L"BZIP2")
-          mainMethod = NFileHeader::NCompressionMethod::kBZip2;
+          m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
         else 
           return E_INVALIDARG;
       }
@@ -260,7 +282,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           case NFileHeader::NCompressionMethod::kDeflated:
           case NFileHeader::NCompressionMethod::kDeflated64:
           case NFileHeader::NCompressionMethod::kBZip2:
-            mainMethod = (Byte)value.ulVal;
+            m_MainMethod = (Byte)value.ulVal;
             break;
           default:
             return E_INVALIDARG;
@@ -273,25 +295,21 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
-      m_Method.NumPasses = value.ulVal;
-      if (m_Method.NumPasses < 1 || m_Method.NumPasses > 4)
+      if (value.ulVal < 1 || value.ulVal > 10)
         return E_INVALIDARG;
+      m_NumPasses = value.ulVal;
     }
     else if (name == L"FB")
     {
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
-      m_Method.NumFastBytes = value.ulVal;
-      if (m_Method.NumFastBytes < 3 || m_Method.NumFastBytes > 255)
+      if (value.ulVal < 3 || value.ulVal > 255)
         return E_INVALIDARG;
+      m_NumFastBytes = value.ulVal;
     }
     else
       return E_INVALIDARG;
   }
-  m_Method.MethodSequence.Clear();
-  if (mainMethod != NFileHeader::NCompressionMethod::kStored)
-    m_Method.MethodSequence.Add(mainMethod);
-  m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
   return S_OK;
 }  
 

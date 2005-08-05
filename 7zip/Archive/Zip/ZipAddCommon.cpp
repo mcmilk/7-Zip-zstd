@@ -188,7 +188,8 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
           {
             NWindows::NCOM::CPropVariant properties[2] = 
             {
-              _options.NumPasses, _options.NumFastBytes
+              _options.NumPasses, 
+              _options.NumFastBytes
             };
             PROPID propIDs[2] = 
             {
@@ -196,10 +197,23 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
               NCoderPropID::kNumFastBytes
             };
             CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-            RINOK(_compressEncoder.QueryInterface(
-              IID_ICompressSetCoderProperties, &setCoderProperties));
-            setCoderProperties->SetCoderProperties(propIDs, properties, 2);
+            RINOK(_compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
+            RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 2));
+          } else if (method == NFileHeader::NCompressionMethod::kBZip2)
+          {
+            NWindows::NCOM::CPropVariant properties[1] = 
+            {
+              _options.NumPasses
+            };
+            PROPID propIDs[1] = 
+            {
+              NCoderPropID::kNumPasses,
+            };
+            CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
+            RINOK(_compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
+            RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 1));
           }
+
         }
         CMyComPtr<ISequentialOutStream> outStreamNew;
         if (_options.PasswordIsDefined)

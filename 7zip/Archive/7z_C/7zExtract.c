@@ -45,18 +45,26 @@ SZ_RESULT SzExtract(
     RINOK(inStream->Seek(inStream, SzArDbGetFolderStreamPos(db, folderIndex, 0)));
     
     #ifndef _LZMA_IN_CB
-    inBuffer = (Byte *)allocTemp->Alloc((size_t)packSize);
-    if (inBuffer == 0)
-      return SZE_OUTOFMEMORY;
+    if (packSize != 0)
+    {
+      inBuffer = (Byte *)allocTemp->Alloc((size_t)packSize);
+      if (inBuffer == 0)
+        return SZE_OUTOFMEMORY;
+    }
     res = inStream->Read(inStream, inBuffer, (size_t)packSize, &processedSize);
     if (res == SZ_OK && processedSize != (size_t)packSize)
       res = SZE_FAIL;
     #endif
     if (res == SZ_OK)
     {
-      *outBuffer = (Byte *)allocMain->Alloc((size_t)unPackSize);
       *outBufferSize = (size_t)unPackSize;
-      if (*outBuffer != 0)
+      if (unPackSize != 0)
+      {
+        *outBuffer = (Byte *)allocMain->Alloc((size_t)unPackSize);
+        if (*outBuffer == 0)
+          res = SZE_OUTOFMEMORY;
+      }
+      if (res == SZ_OK)
       {
         size_t outRealSize;
         res = SzDecode(db->Database.PackSizes + 
@@ -81,8 +89,6 @@ SZ_RESULT SzExtract(
             res = SZE_FAIL;
         }
       }
-      else
-        res = SZE_OUTOFMEMORY;
     }
     #ifndef _LZMA_IN_CB
     allocTemp->Free(inBuffer);

@@ -1,7 +1,7 @@
 /* 
 7zMain.c
 Test application for 7z Decoder
-LZMA SDK 4.16 Copyright (c) 1999-2005 Igor Pavlov (2005-09-24)
+LZMA SDK 4.26 Copyright (c) 1999-2005 Igor Pavlov (2005-08-02)
 */
 
 #include <stdio.h>
@@ -71,7 +71,7 @@ int main(int numargs, char *args[])
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.16 Copyright (c) 1999-2005 Igor Pavlov  2005-03-29\n");
+  printf("\n7z ANSI-C Decoder 4.26  Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
   if (numargs == 1)
   {
     printf(
@@ -146,7 +146,7 @@ int main(int numargs, char *args[])
         size_t outSizeProcessed;
         CFileItem *f = db.Database.Files + i;
         printf(testCommand ? 
-            "Tesing    ":
+            "Testing    ":
             "Extracting");
         printf(" %s", f->Name);
         res = SzExtract(&archiveStream.InStream, &db, i, 

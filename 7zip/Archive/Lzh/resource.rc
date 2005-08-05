@@ -1,0 +1,5 @@
+#include "../../MyVersionInfo.rc"
+
+MY_VERSION_INFO_DLL("Lzh Plugin", "lzh")
+
+101  ICON  "lzh.ico"

@@ -6,6 +6,7 @@ DIRS =  \
   Cpio\~ \
   Deb\~ \
   GZip\~ \
+  Lzh\~ \
   Rar\~ \
   RPM\~ \
   Split\~ \

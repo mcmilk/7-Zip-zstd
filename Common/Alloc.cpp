@@ -20,10 +20,11 @@ int g_allocCountBig = 0;
 
 void *MyAlloc(size_t size) throw()
 {
+  if (size == 0)
+    return 0;
   #ifdef _SZ_ALLOC_DEBUG
   fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount++);
   #endif
-
   return ::malloc(size);
 }
 
@@ -39,6 +40,8 @@ void MyFree(void *address) throw()
 
 void *BigAlloc(size_t size) throw()
 {
+  if (size == 0)
+    return 0;
   #ifdef _SZ_ALLOC_DEBUG
   fprintf(stderr, "\nAlloc_Big %10d bytes;  count = %10d", size, g_allocCountBig++);
   #endif

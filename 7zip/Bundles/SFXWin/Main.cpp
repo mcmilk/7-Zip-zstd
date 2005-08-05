@@ -27,6 +27,7 @@ int APIENTRY WinMain(
   int nCmdShow)
 {
   g_hInstance = (HINSTANCE)hInstance;
+  UString password;
   bool assumeYes = false;
   bool outputFolderDefined = false;
   UString outputFolder;
@@ -43,6 +44,10 @@ int APIENTRY WinMain(
       NWindows::NFile::NName::NormalizeDirPathPrefix(outputFolder);
       outputFolderDefined = !outputFolder.IsEmpty();
     }
+    else if (s.Left(2).CompareNoCase(L"-p") == 0)
+    {
+      password = s.Mid(2);
+    }
   }
 
   UString path;
@@ -58,9 +63,14 @@ int APIENTRY WinMain(
 
   COpenCallbackGUI openCallback;
 
+  openCallback.PasswordIsDefined = !password.IsEmpty();
+  openCallback.Password = password;
+
   CExtractCallbackImp *ecs = new CExtractCallbackImp;
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
   ecs->Init();
+  ecs->PasswordIsDefined = !password.IsEmpty();
+  ecs->Password = password;
   
   CExtractOptions eo;
   eo.OutputDir = outputFolderDefined ? outputFolder : 

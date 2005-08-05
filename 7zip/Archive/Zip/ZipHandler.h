@@ -58,11 +58,17 @@ private:
   CObjectVector<CItemEx> m_Items;
   CInArchive m_Archive;
   bool m_ArchiveIsOpen;
-  CCompressionMethodMode m_Method;
+
+  int m_Level;
+  int m_MainMethod;
+  UInt32 m_NumPasses;
+  UInt32 m_NumFastBytes;
   void InitMethodProperties()
   {
-    m_Method.NumPasses = 1;
-    m_Method.NumFastBytes = 32;
+    m_Level = -1;
+    m_MainMethod = -1;
+    m_NumPasses = 0xFFFFFFFF;
+    m_NumFastBytes = 0xFFFFFFFF;
   }
 };
 

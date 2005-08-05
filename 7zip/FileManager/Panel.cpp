@@ -472,8 +472,8 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
     // _headerReBar.MaximizeBand(1, false);
   }
 
-  _statusBar.Create(WS_CHILD | WS_VISIBLE, TEXT("Statuys"), (*this), _statusBarID);
-  // _statusBar2.Create(WS_CHILD | WS_VISIBLE, TEXT("Statuys"), (*this), _statusBarID + 1);
+  _statusBar.Create(WS_CHILD | WS_VISIBLE, TEXT("Status"), (*this), _statusBarID);
+  // _statusBar2.Create(WS_CHILD | WS_VISIBLE, TEXT("Status"), (*this), _statusBarID + 1);
 
   int sizes[] = {150, 200, 250, -1};
   _statusBar.SetParts(4, sizes);

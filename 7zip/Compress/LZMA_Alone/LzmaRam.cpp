@@ -177,10 +177,13 @@ int LzmaRamEncode(
   bool useFilter = (filterMode != SZ_FILTER_NO);
   if (useFilter)
   {
-    filteredStream = (Byte *)MyAlloc(inSize);
-    if (filteredStream == 0)
-      return SZE_OUTOFMEMORY;
-    memmove(filteredStream, inBuffer, inSize);
+    if (inSize != 0)
+    {
+      filteredStream = (Byte *)MyAlloc(inSize);
+      if (filteredStream == 0)
+        return SZE_OUTOFMEMORY;
+      memmove(filteredStream, inBuffer, inSize);
+    }
     UInt32 _prevMask;
     UInt32 _prevPos;
     x86_Convert_Init(_prevMask, _prevPos);

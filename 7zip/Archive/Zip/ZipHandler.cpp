@@ -153,8 +153,6 @@ CHandler::CHandler():
   m_ArchiveIsOpen(false)
 {
   InitMethodProperties();
-  m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kDeflated);
-  m_Method.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
 }
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)

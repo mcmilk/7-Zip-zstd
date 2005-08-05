@@ -3,7 +3,7 @@ LzmaTest.c
 Test application for LZMA Decoder
 
 This file written and distributed to public domain by Igor Pavlov.
-This file is part of LZMA SDK 4.22 (2005-06-10)
+This file is part of LZMA SDK 4.26 (2005-08-02)
 */
 
 #include <stdio.h>
@@ -17,13 +17,21 @@ const char *kCantWriteMessage = "Can not write output file";
 const char *kCantAllocateMessage = "Can not allocate memory";
 
 size_t MyReadFile(FILE *file, void *data, size_t size)
-  { return fread(data, 1, size, file); }
+{ 
+  if (size == 0)
+    return 0;
+  return fread(data, 1, size, file); 
+}
 
 int MyReadFileAndCheck(FILE *file, void *data, size_t size)
   { return (MyReadFile(file, data, size) == size);} 
 
 size_t MyWriteFile(FILE *file, const void *data, size_t size)
-  { return fwrite(data, 1, size, file); }
+{ 
+  if (size == 0)
+    return 0;
+  return fwrite(data, 1, size, file); 
+}
 
 int MyWriteFileAndCheck(FILE *file, const void *data, size_t size)
   { return (MyWriteFile(file, data, size) == size); }
@@ -145,23 +153,32 @@ int main3(FILE *inFile, FILE *outFile, char *rs)
   state.Probs = (CProb *)malloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
 
   #ifdef _LZMA_OUT_READ
-  state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
+  if (state.Properties.DictionarySize == 0)
+    state.Dictionary = 0;
+  else
+    state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
   #else
-  outStream = (unsigned char *)malloc(outSizeFull);
+  if (outSizeFull == 0)
+    outStream = 0;
+  else
+    outStream = (unsigned char *)malloc(outSizeFull);
   #endif
 
   #ifndef _LZMA_IN_CB
-  inStream = (unsigned char *)malloc(compressedSize);
+  if (compressedSize == 0)
+    inStream = 0;
+  else
+    inStream = (unsigned char *)malloc(compressedSize);
   #endif
 
   if (state.Probs == 0 
     #ifdef _LZMA_OUT_READ
-    || state.Dictionary == 0
+    || state.Dictionary == 0 && state.Properties.DictionarySize != 0
     #else
-    || outStream == 0
+    || outStream == 0 && outSizeFull != 0
     #endif
     #ifndef _LZMA_IN_CB
-    || inStream == 0
+    || inStream == 0 && compressedSize != 0
     #endif
     )
   {
@@ -290,7 +307,7 @@ int main2(int numArgs, const char *args[], char *rs)
   FILE *outFile = 0;
   int res;
 
-  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.21 Copyright (c) 1999-2005 Igor Pavlov  2005-06-08\n");
+  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
   if (numArgs < 2 || numArgs > 3)
   {
     sprintf(rs + strlen(rs), "\nUsage:  lzmadec file.lzma [outFile]\n");

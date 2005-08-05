@@ -14,6 +14,8 @@ int g_allocCountTemp = 0;
 
 void *SzAlloc(size_t size)
 {
+  if (size == 0)
+    return 0;
   #ifdef _SZ_ALLOC_DEBUG
   fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount);
   g_allocCount++;
@@ -35,6 +37,8 @@ void SzFree(void *address)
 
 void *SzAllocTemp(size_t size)
 {
+  if (size == 0)
+    return 0;
   #ifdef _SZ_ALLOC_DEBUG
   fprintf(stderr, "\nAlloc_temp %10d bytes;  count = %10d", size, g_allocCountTemp);
   g_allocCountTemp++;

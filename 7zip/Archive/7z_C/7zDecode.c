@@ -114,11 +114,16 @@ SZ_RESULT SzDecode(const CFileSize *packSizes, const CFolder *folder,
       return SZE_OUTOFMEMORY;
 
     #ifdef _LZMA_OUT_READ
-    state.Dictionary = (unsigned char *)allocMain->Alloc(state.Properties.DictionarySize);
-    if (state.Dictionary == 0)
+    if (state.Properties.DictionarySize == 0)
+      state.Dictionary = 0;
+    else
     {
-      allocMain->Free(state.Probs);
-      return SZE_OUTOFMEMORY;
+      state.Dictionary = (unsigned char *)allocMain->Alloc(state.Properties.DictionarySize);
+      if (state.Dictionary == 0)
+      {
+        allocMain->Free(state.Probs);
+        return SZE_OUTOFMEMORY;
+      }
     }
     LzmaDecoderInit(&state);
     #endif

@@ -3,7 +3,7 @@
 
 MY_VERSION_INFO_DLL("7-Zip Shell Extension", "7-zip")
 
-1 24 MOVEABLE PURE "7-zip.dll.manifest"
+1 24 "7-zip.dll.manifest"
 
 STRINGTABLE
 BEGIN

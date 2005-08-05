@@ -59,6 +59,7 @@ List of defined IDs
    04 - Arj
       01 - Arj (1,2,3)
       02 - Arj 4
+   05 - Lzh
 
    07 - Reserved
 

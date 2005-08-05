@@ -418,19 +418,16 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         UString s;
         FillCommand2(kExtractTo, s, commandMapItem);
         UString folder;
-        folder += UString(L"\"");
         if (_fileNames.Size() == 1)
-          folder += GetSubFolderNameForExtract(fileInfo.Name);
+          folder = GetSubFolderNameForExtract(fileInfo.Name);
         else
-          folder += L'*'; 
-        folder += L"\\\"";
-
+          folder = L'*'; 
         if (_dropMode)
           commandMapItem.Folder = _dropPath;
         else
           commandMapItem.Folder = folderPrefix;
         commandMapItem.Folder += folder;
-        s = MyFormatNew(s, GetReducedString(folder));
+        s = MyFormatNew(s, GetReducedString(UString(L"\"") + folder + UString(L"\\\"")));
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, GetSystemString(s)); 
         _commandMap.Add(commandMapItem);
       }

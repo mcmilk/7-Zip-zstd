@@ -34,6 +34,8 @@ extern "C"
 
 using namespace NCommandLineParser;
 
+static const char *kCantAllocate = "Can not allocate memory";
+
 namespace NKey {
 enum Enum
 {
@@ -129,7 +131,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.23 Copyright (c) 1999-2005 Igor Pavlov  2005-06-29\n");
+  fprintf(stderr, "\nLZMA 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
 
   if (n == 1)
   {
@@ -258,9 +260,13 @@ int main2(int n, const char *args[])
     if (fileSize > 0xF0000000)
       throw "File is too big";
     UInt32 inSize = (UInt32)fileSize;
-    Byte *inBuffer = (Byte *)MyAlloc((size_t)inSize); 
-    if (inBuffer == 0)
-      throw "Can not allocate memory";
+    Byte *inBuffer = 0;
+    if (inSize != 0)
+    {
+      inBuffer = (Byte *)MyAlloc((size_t)inSize); 
+      if (inBuffer == 0)
+        throw kCantAllocate;
+    }
     
     UInt32 processedSize;
     if (inStream->Read(inBuffer, (UInt32)inSize, &processedSize) != S_OK)
@@ -268,15 +274,18 @@ int main2(int n, const char *args[])
     if ((UInt32)inSize != processedSize)
       throw "Read size error";
 
-    Byte *outBuffer;
+    Byte *outBuffer = 0;
     size_t outSizeProcessed;
     if (encodeMode)
     {
       // we allocate 105% of original size for output buffer
       size_t outSize = (size_t)fileSize / 20 * 21 + (1 << 16);
-      outBuffer = (Byte *)MyAlloc((size_t)outSize); 
-      if (outBuffer == 0)
-        throw "Can not allocate memory";
+      if (outSize != 0)
+      {
+        outBuffer = (Byte *)MyAlloc((size_t)outSize); 
+        if (outBuffer == 0)
+          throw kCantAllocate;
+      }
       if (!dictionaryIsDefined)
         dictionary = 1 << 23;
       int res = LzmaRamEncode(inBuffer, inSize, outBuffer, outSize, &outSizeProcessed, 
@@ -292,10 +301,12 @@ int main2(int n, const char *args[])
       size_t outSize;
       if (LzmaRamGetUncompressedSize(inBuffer, inSize, &outSize) != 0)
         throw "data error";
-      outBuffer = (Byte *)MyAlloc(outSize); 
-      if (outBuffer == 0)
-        throw "Can not allocate memory";
-      
+      if (outSize != 0)
+      {
+        outBuffer = (Byte *)MyAlloc(outSize); 
+        if (outBuffer == 0)
+          throw kCantAllocate;
+      }
       int res = LzmaRamDecompress(inBuffer, inSize, outBuffer, outSize, &outSizeProcessed, malloc, free);
       if (res != 0)
         throw "LzmaDecoder error";

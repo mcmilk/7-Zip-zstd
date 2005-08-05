@@ -3,7 +3,7 @@ LzmaStateTest.c
 Test application for LZMA Decoder (State version)
 
 This file written and distributed to public domain by Igor Pavlov.
-This file is part of LZMA SDK 4.21 (2005-06-08)
+This file is part of LZMA SDK 4.26 (2005-08-02)
 */
 
 #include <stdio.h>
@@ -85,11 +85,16 @@ int main3(FILE *inFile, FILE *outFile, char *rs)
   if (state.Probs == 0)
     return PrintError(rs, kCantAllocateMessage);
   
-  state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
-  if (state.Dictionary == 0)
+  if (state.Properties.DictionarySize == 0)
+    state.Dictionary = 0;
+  else
   {
-    free(state.Probs);
-    return PrintError(rs, kCantAllocateMessage);
+    state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
+    if (state.Dictionary == 0)
+    {
+      free(state.Probs);
+      return PrintError(rs, kCantAllocateMessage);
+    }
   }
   
   /* Decompress */
@@ -155,7 +160,7 @@ int main2(int numArgs, const char *args[], char *rs)
   FILE *outFile = 0;
   int res;
 
-  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.21 Copyright (c) 1999-2005 Igor Pavlov  2005-06-08\n");
+  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
   if (numArgs < 2 || numArgs > 3)
   {
     sprintf(rs + strlen(rs), "\nUsage:  lzmadec file.lzma [outFile]\n");

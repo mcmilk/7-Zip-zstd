@@ -74,7 +74,6 @@ UI_COMMON_OBJS = \
 FM_OBJS = \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
-  $O\OpenCallback.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \

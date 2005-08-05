@@ -109,8 +109,10 @@ HRESULT ExtractGUI(
       outputDir = dialog.DirectoryPath;
       options.OverwriteMode = dialog.OverwriteMode;
       options.PathMode = dialog.PathMode;
+      #ifndef _SFX
       openCallback->Password = dialog.Password;
       openCallback->PasswordIsDefined = !dialog.Password.IsEmpty();
+      #endif
     }
     if (!NFile::NDirectory::MyGetFullPathName(outputDir, options.OutputDir))
     {

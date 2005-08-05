@@ -799,7 +799,11 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     UStringVector archivePaths;
     int i;
     for (i = 0; i < dirItems.Size(); i++)
-      archivePaths.Add(dirItems[i].FullPath);
+    {
+      const CDirItem &dirItem = dirItems[i];
+      if (!dirItem.IsDirectory())
+        archivePaths.Add(dirItem.FullPath);
+    }
 
     if (archivePaths.Size() == 0)
       throw "there is no such archive";

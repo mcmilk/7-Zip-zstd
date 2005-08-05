@@ -64,7 +64,9 @@ public:
 	// NExtractionDialog::NFilesMode::EEnum FilesMode;
 
   UString DirectoryPath;
+  #ifndef _SFX
   UString Password;
+  #endif
   NExtract::NPathMode::EEnum PathMode;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 

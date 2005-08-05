@@ -12,6 +12,11 @@ void SzByteBufferInit(CSzByteBuffer *buffer)
 int SzByteBufferCreate(CSzByteBuffer *buffer, size_t newCapacity, void * (*allocFunc)(size_t size))
 {
   buffer->Capacity = newCapacity;
+  if (newCapacity == 0)
+  {
+    buffer->Items = 0;
+    return 1;
+  }
   buffer->Items = (Byte *)allocFunc(newCapacity);
   return (buffer->Items != 0);
 }

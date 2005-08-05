@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.26 beta           2005-08-05
+  --------------------------------------
+   -  MyAlloc(0)/BigAlloc(0) now return 0
+
+
   Version 4.25 beta           2005-07-31
   --------------------------------------
    -  More 64-bit compatibilty

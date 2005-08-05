@@ -22,9 +22,12 @@ bool CLZInWindow::Create(UInt32 keepSizeBefore, UInt32 keepSizeAfter, UInt32 kee
   {
     Free();
     _blockSize = blockSize;
-    _bufferBase = (Byte *)::BigAlloc(_blockSize);
+    if (_blockSize != 0)
+      _bufferBase = (Byte *)::BigAlloc(_blockSize);
   }
   _pointerToLastSafePosition = _bufferBase + _blockSize - keepSizeAfter;
+  if (_blockSize == 0)
+    return true;
   return (_bufferBase != 0);
 }
 

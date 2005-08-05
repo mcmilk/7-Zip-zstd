@@ -152,12 +152,12 @@ HRESULT CInBuffer::ReadBlock(UInt32 &uncompressedSize, bool &dataAreCorrect)
   if (m_NumReadBytesInBuffer != packSize)
     throw "bad block";
 
-  // Now I don't remember why (checkSum == 0) check is disbaled
   // Cab specification: 
   //   checkSum: May be set to zero if the checksum is not supplied.
   // but seems it's stupid rule.
   if (checkSum == 0)
     dataAreCorrect = true;
+  else
   {
     CCheckSum checkSumCalc;
     checkSumCalc.Update(m_Buffer, packSize);

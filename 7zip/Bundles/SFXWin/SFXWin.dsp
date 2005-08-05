@@ -526,14 +526,6 @@ SOURCE=..\..\FileManager\FormatUtils.cpp
 
 SOURCE=..\..\FileManager\FormatUtils.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\OpenCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\OpenCallback.h
-# End Source File
 # End Group
 # Begin Group "Windows"
 

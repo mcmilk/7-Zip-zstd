@@ -185,6 +185,7 @@ private:
   // void InitColumns2(PROPID sortID);
   void InsertColumn(int index);
 
+  void SetFocusedSelectedItem(int index);
   void RefreshListCtrl(const UString &focusedName, int focusedPos,
       const UStringVector &selectedNames);
 
@@ -402,6 +403,10 @@ public:
     public:
       CDisableTimerProcessing(CPanel &panel): _panel(panel) 
       { 
+        Disable();
+      }
+      void Disable()
+      {
         _processTimerMem = _panel._processTimer;
         _processNotifyMem = _panel._processNotify;
         _panel._processTimer = false; 

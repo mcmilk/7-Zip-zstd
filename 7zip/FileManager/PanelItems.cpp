@@ -283,6 +283,18 @@ void CPanel::RefreshListCtrlSaveFocused()
   RefreshListCtrl(state);
 }
 
+void CPanel::SetFocusedSelectedItem(int index)
+{
+  UINT state = LVIS_FOCUSED | LVIS_SELECTED;
+  _listView.SetItemState(index, state, state);
+  if (!_mySelectMode)
+  {
+    int realIndex = GetRealItemIndex(index);
+    if (realIndex != kParentIndex)
+      _selectedStatusVector[realIndex] = true;
+  }
+}
+
 void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
     const UStringVector &selectedNames)
 {
@@ -456,17 +468,13 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos,
   // OutputDebugStringA("End2\n");
 
   if(_listView.GetItemCount() > 0 && cursorIndex >= 0)
-  {
-    UINT state = LVIS_FOCUSED | LVIS_SELECTED;
-    _listView.SetItemState(cursorIndex, state, state);
-  }
+    SetFocusedSelectedItem(cursorIndex);
   _listView.SortItems(CompareItems, (LPARAM)this);
   if (cursorIndex < 0 && _listView.GetItemCount() > 0)
   {
     if (focusedPos >= _listView.GetItemCount())
       focusedPos = _listView.GetItemCount() - 1;
-    UINT state = LVIS_FOCUSED | LVIS_SELECTED;
-    _listView.SetItemState(focusedPos, state, state);
+    SetFocusedSelectedItem(focusedPos);
   }
   // m_RedrawEnabled = true;
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
