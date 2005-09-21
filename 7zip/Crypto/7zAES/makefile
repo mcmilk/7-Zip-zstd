@@ -22,6 +22,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 OBJS = \
   $O\StdAfx.obj \

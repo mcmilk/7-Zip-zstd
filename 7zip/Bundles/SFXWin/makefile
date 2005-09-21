@@ -61,6 +61,7 @@ WIN_CTRL_OBJS = \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \

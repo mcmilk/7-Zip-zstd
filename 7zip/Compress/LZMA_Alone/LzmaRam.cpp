@@ -27,7 +27,6 @@ public:
     Pos = 0;
   }
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CInStreamRam::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -36,20 +35,13 @@ STDMETHODIMP CInStreamRam::Read(void *data, UInt32 size, UInt32 *processedSize)
   if (size > remain)
     size = remain;
   for (UInt32 i = 0; i < size; i++)
-  {
     ((Byte *)data)[i] = Data[Pos + i];
-  }
   Pos += size;
   if(processedSize != NULL)
     *processedSize = size;
   return S_OK;
 }
   
-STDMETHODIMP CInStreamRam::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
-
 class COutStreamRam: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -83,7 +75,6 @@ public:
     return S_OK;
   }
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP COutStreamRam::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -101,11 +92,6 @@ STDMETHODIMP COutStreamRam::Write(const void *data, UInt32 size, UInt32 *process
   return S_OK;
 }
   
-STDMETHODIMP COutStreamRam::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 #define SZE_FAIL (1)
 #define SZE_OUTOFMEMORY (2)
 #define SZE_OUT_OVERFLOW (3)

@@ -79,6 +79,7 @@ WIN_OBJS = \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \

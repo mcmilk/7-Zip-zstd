@@ -509,20 +509,8 @@ void CCompressDialog::OnOK()
   _passwordControl.GetText(Info.Password);
 
   SaveOptionsInMem();
-  int currentItem = m_ArchivePath.GetCurSel();
   UString s;
-  if(currentItem == CB_ERR)
-  {
-    m_ArchivePath.GetText(s);
-    if(m_ArchivePath.GetCount() >= kHistorySize)
-      currentItem = m_ArchivePath.GetCount() - 1;
-  }
-  else
-  {
-    CSysString sTemp;
-    m_ArchivePath.GetLBText(currentItem, sTemp);
-    s = GetUnicodeString(sTemp);
-  }
+  m_ArchivePath.GetText(s);
   s.Trim();
   m_RegistryInfo.HistoryArchives.Clear();
   AddUniqueString(m_RegistryInfo.HistoryArchives, GetSystemString(s));
@@ -555,13 +543,14 @@ void CCompressDialog::OnOK()
     }
 
   for(int i = 0; i < m_ArchivePath.GetCount(); i++)
-    if(i != currentItem)
-    {
-      CSysString sTemp;
-      m_ArchivePath.GetLBText(i, sTemp);
-      sTemp.Trim();
-      AddUniqueString(m_RegistryInfo.HistoryArchives, sTemp);
-    }
+  {
+    CSysString sTemp;
+    m_ArchivePath.GetLBText(i, sTemp);
+    sTemp.Trim();
+    AddUniqueString(m_RegistryInfo.HistoryArchives, sTemp);
+  }
+  if (m_RegistryInfo.HistoryArchives.Size() > kHistorySize)
+    m_RegistryInfo.HistoryArchives.DeleteBack();
   
   ////////////////////
   // Method

@@ -9,13 +9,11 @@
 
 struct CArchiverExtInfo
 {
-  UString Extension;
-  UString AddExtension;
+  UString Ext;
+  UString AddExt;
   CArchiverExtInfo() {}
-  CArchiverExtInfo(const UString &extension):
-    Extension(extension) {}
-  CArchiverExtInfo(const UString &extension, const UString &addExtension):
-    Extension(extension), AddExtension(addExtension) {}
+  CArchiverExtInfo(const UString &ext): Ext(ext) {}
+  CArchiverExtInfo(const UString &ext, const UString &addExt): Ext(ext), AddExt(addExt) {}
 };
 
 struct CArchiverInfo
@@ -29,11 +27,12 @@ struct CArchiverInfo
   #ifndef _SFX
   CByteBuffer StartSignature;
   CByteBuffer FinishSignature;
+  bool Associate;
   #endif
   int FindExtension(const UString &ext) const
   {
     for (int i = 0; i < Extensions.Size(); i++)
-      if (ext.CollateNoCase(Extensions[i].Extension) == 0)
+      if (ext.CollateNoCase(Extensions[i].Ext) == 0)
         return i;
     return -1;
   }
@@ -44,16 +43,22 @@ struct CArchiverInfo
     {
       if (i > 0)
         s += ' ';
-      s += Extensions[i].Extension;
+      s += Extensions[i].Ext;
     }
     return s;
   }
   const UString &GetMainExtension() const 
   { 
-    return Extensions[0].Extension;
+    return Extensions[0].Ext;
   }
   bool UpdateEnabled;
   bool KeepName;
+
+  CArchiverInfo(): UpdateEnabled(false), KeepName(false)
+  #ifndef _SFX
+  ,Associate(true)
+  #endif
+  {}
 };
 
 void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers);

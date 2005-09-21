@@ -18,6 +18,7 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\String.obj \
   $O\StringConvert.obj \
+  $O\UTFConvert.obj \
   $O\Vector.obj \
 
 WIN_OBJS = \
@@ -29,6 +30,7 @@ WIN_OBJS = \
   $O\LimitedStreams.obj \
   $O\ProgressUtils.obj \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\CodecsPath.obj \

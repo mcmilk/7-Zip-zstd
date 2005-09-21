@@ -29,14 +29,12 @@ public:
   UInt32 _usedMemorySize;
   Byte _order;
 
-public:
+  HRESULT Flush()
+  {
+    _rangeEncoder.FlushData();
+    return _rangeEncoder.FlushStream();
+  }
 
-  MY_UNKNOWN_IMP2(
-      ICompressSetCoderProperties,
-      ICompressWriteCoderProperties)
-
-  // ICoder interface
-  HRESULT Flush();
   void ReleaseStreams()
   {
     _inStream.ReleaseStream();
@@ -46,6 +44,25 @@ public:
   HRESULT CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
+
+  class CEncoderFlusher
+  {
+    CEncoder *_encoder;
+  public:
+    CEncoderFlusher(CEncoder *encoder): _encoder(encoder) {}
+    ~CEncoderFlusher()
+    {
+      _encoder->Flush();
+      _encoder->ReleaseStreams();
+    }
+  };
+
+public:
+
+  MY_UNKNOWN_IMP2(
+      ICompressSetCoderProperties,
+      ICompressWriteCoderProperties)
+
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);

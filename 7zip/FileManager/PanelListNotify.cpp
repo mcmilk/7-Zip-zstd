@@ -169,9 +169,12 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
   {
     case LVN_ITEMCHANGED:
     {
-      if (!_mySelectMode)
-        OnItemChanged((LPNMLISTVIEW)header);
-      RefreshStatusBar();
+      if (_enableItemChangeNotify)
+      {
+        if (!_mySelectMode)
+          OnItemChanged((LPNMLISTVIEW)header);
+        RefreshStatusBar();
+      }
       return false;
     }
     /*
@@ -257,6 +260,8 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       */
     case NM_CLICK:
     {
+      // we need SetFocusToList, if we drag-select items from other panel.
+      SetFocusToList();
       RefreshStatusBar();
       if(_mySelectMode)
         if(g_ComCtl32Version >= MAKELONG(71, 4))

@@ -30,7 +30,15 @@ public:
 
 typedef NStream::NLSBF::CDecoder<CInBuffer> CInBit;
 
-class CCoder
+class CCoder:
+  public ICompressCoder,
+  public ICompressGetInStreamProcessedSize,
+  #ifdef _ST_MODE
+  public ICompressSetInStream,
+  public ICompressSetOutStreamSize,
+  public ISequentialInStream,
+  #endif
+  public CMyUnknownImp
 {
   CLZOutWindow m_OutWindowStream;
   CInBit m_InBitStream;
@@ -38,20 +46,27 @@ class CCoder
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticDistTableSize> m_DistDecoder;
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
 
-  bool m_FinalBlock;
-  bool m_StoredMode;
   UInt32 m_StoredBlockSize;
 
+  bool m_FinalBlock;
+  bool m_StoredMode;
   bool _deflate64Mode;
+  bool _keepHistory;
+  int _remainLen;
+  UInt32 _rep0;
+  bool _needReadTable;
+
 
   void DeCodeLevelTable(Byte *newLevels, int numLevels);
-  void ReadTables();
+  bool ReadTables();
   
   void CCoder::ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
-    m_InBitStream.ReleaseStream();
+    ReleaseInStream();
   }
+
+  HRESULT Flush() { return m_OutWindowStream.Flush(); }
   class CCoderReleaser
   {
     CCoder *m_Coder;
@@ -61,63 +76,60 @@ class CCoder
     ~CCoderReleaser()
     {
       if (NeedFlush)
-        m_Coder->m_OutWindowStream.Flush();
+        m_Coder->Flush();
       m_Coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;
 
+  HRESULT CodeSpec(UInt32 curSize);
 public:
-  CCoder(bool deflate64Mode = false);
+  CCoder(bool deflate64Mode);
+  void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
 
   HRESULT CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  HRESULT BaseCode(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
-
-  // IGetInStreamProcessedSize
-  HRESULT BaseGetInStreamProcessedSize(UInt64 *aValue);
-};
-
-class CCOMCoder :
-  public ICompressCoder,
-  public ICompressGetInStreamProcessedSize,
-  public CMyUnknownImp,
-  public CCoder
-{
-public:
-
-  MY_UNKNOWN_IMP1(ICompressGetInStreamProcessedSize)
+  #ifdef _ST_MODE
+  MY_UNKNOWN_IMP4(
+      ICompressGetInStreamProcessedSize,
+      ICompressSetInStream, 
+      ICompressSetOutStreamSize,
+      ISequentialInStream
+      )
+  #else
+  MY_UNKNOWN_IMP1(
+      ICompressGetInStreamProcessedSize)
+  #endif
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  // IGetInStreamProcessedSize
-  STDMETHOD(GetInStreamProcessedSize)(UInt64 *aValue);
+  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
+  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
+  
+  #ifdef _ST_MODE
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  #endif
 
+  // IGetInStreamProcessedSize
+  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+};
+
+class CCOMCoder :
+  public CCoder
+{
+public:
   CCOMCoder(): CCoder(false) {}
 };
 
 class CCOMCoder64 :
-  public ICompressCoder,
-  public ICompressGetInStreamProcessedSize,
-  public CMyUnknownImp,
   public CCoder
 {
 public:
-  MY_UNKNOWN_IMP1(ICompressGetInStreamProcessedSize)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
-
-  // IGetInStreamProcessedSize
-  STDMETHOD(GetInStreamProcessedSize)(UInt64 *aValue);
-
   CCOMCoder64(): CCoder(true) {}
 };
 

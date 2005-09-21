@@ -8,9 +8,9 @@
 #include "SplitHandler.h"
 #include "../../ICoder.h"
 
-// {23170F69-40C1-278A-1000-0001100B0000}
+// {23170F69-40C1-278A-1000-000110EA0000}
 DEFINE_GUID(CLSID_CSplitHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x0B, 0x00, 0x00);
+  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0xEA, 0x00, 0x00);
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)

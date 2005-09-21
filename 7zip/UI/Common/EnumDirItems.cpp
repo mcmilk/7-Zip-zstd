@@ -226,8 +226,11 @@ static HRESULT EnumerateDirItems(
     bool enterToSubFolders2 = enterToSubFolders;
     UStringVector addArchivePrefixNew = addArchivePrefix;
     addArchivePrefixNew.Add(name);
-    if (curNode.CheckPathToRoot(false, UStringVector(addArchivePrefixNew), !fileInfo.IsDirectory()))
-      continue;
+    {
+      UStringVector addArchivePrefixNewTemp(addArchivePrefixNew);
+      if (curNode.CheckPathToRoot(false, addArchivePrefixNewTemp, !fileInfo.IsDirectory()))
+        continue;
+    }
     if (curNode.CheckPathToRoot(true, addArchivePrefixNew, !fileInfo.IsDirectory()))
     {
       AddDirFileInfo(archivePrefix, diskPrefix + name, fileInfo, dirItems);

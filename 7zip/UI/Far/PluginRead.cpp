@@ -112,19 +112,22 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
 
     const int kPathModeRadioIndex = 4;
     const int kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
-    const int kFilesModeIndex = kOverwriteModeRadioIndex + 5;
-    const int kYSize = 18;
+    const int kNumOverwriteOptions = 6;
+    const int kFilesModeIndex = kOverwriteModeRadioIndex + kNumOverwriteOptions;
+    const int kXSize = 76;
+    const int kYSize = 19;
+    const int kPasswordYPos = 12;
     
-    const int kXMid = 38;
+    const int kXMid = kXSize / 2;
 
     AString oemPassword = UnicodeStringToMultiByte(password, CP_OEMCP);
     
     struct CInitDialogItem initItems[]={
-      { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kExtractTitle, NULL, NULL },
+      { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false, NMessageID::kExtractTitle, NULL, NULL },
       { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, NMessageID::kExtractTo, NULL, NULL },
       
-      { DI_EDIT, 5, 3, 70, 3, true, false, DIF_HISTORY, false, -1, destPath, kExractPathHistoryName},
-      // { DI_EDIT, 5, 3, 70, 3, true, false, 0, false, -1, destPath, NULL},
+      { DI_EDIT, 5, 3, kXSize - 6, 3, true, false, DIF_HISTORY, false, -1, destPath, kExractPathHistoryName},
+      // { DI_EDIT, 5, 3, kXSize - 6, 3, true, false, 0, false, -1, destPath, NULL},
       
       { DI_SINGLEBOX, 4, 5, kXMid - 2, 5 + 4, false, false, 0, false, NMessageID::kExtractPathMode, NULL, NULL },
       { DI_RADIOBUTTON, 6, 6, 0, 0, false, 
@@ -137,7 +140,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
           extractionInfo.PathMode == NExtract::NPathMode::kNoPathnames, 
           false, 0, NMessageID::kExtractPathNo, NULL, NULL },
       
-      { DI_SINGLEBOX, kXMid, 5, 70, 5 + 5, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
+      { DI_SINGLEBOX, kXMid, 5, kXSize - 6, 5 + kNumOverwriteOptions, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
       { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, 
           extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAskBefore, 
           DIF_GROUP, false, NMessageID::kExtractOwerwriteAsk, NULL, NULL },
@@ -150,13 +153,16 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       { DI_RADIOBUTTON, kXMid + 2, 9, 0, 0, false, 
           extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRename, 
           0, false, NMessageID::kExtractOwerwriteAutoRename, NULL, NULL },
+      { DI_RADIOBUTTON, kXMid + 2, 10, 0, 0, false, 
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRenameExisting, 
+          0, false, NMessageID::kExtractOwerwriteAutoRenameExisting, NULL, NULL },
       
       { DI_SINGLEBOX, 4, 10, kXMid- 2, 10 + 3, false, false, 0, false, NMessageID::kExtractFilesMode, NULL, NULL },
       { DI_RADIOBUTTON, 6, 11, 0, 0, false, true, DIF_GROUP, false, NMessageID::kExtractFilesSelected, NULL, NULL },
       { DI_RADIOBUTTON, 6, 12, 0, 0, false, false, 0, false, NMessageID::kExtractFilesAll, NULL, NULL },
       
-      { DI_SINGLEBOX, kXMid, 11, 70, 11 + 2, false, false, 0, false, NMessageID::kExtractPassword, NULL, NULL },
-      { DI_PSWEDIT, kXMid + 2, 12, 70 - 2, 12, false, false, 0, false, -1, oemPassword, NULL},
+      { DI_SINGLEBOX, kXMid, kPasswordYPos, kXSize - 6, kPasswordYPos + 2, false, false, 0, false, NMessageID::kExtractPassword, NULL, NULL },
+      { DI_PSWEDIT, kXMid + 2, kPasswordYPos + 1, kXSize - 8, 12, false, false, 0, false, -1, oemPassword, NULL},
       
       { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },  
       
@@ -173,7 +179,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
     while(true)
     {
-      int askCode = g_StartupInfo.ShowDialog(76, kYSize, 
+      int askCode = g_StartupInfo.ShowDialog(kXSize, kYSize, 
         kHelpTopicExtrFromSevenZip, dialogItems, kNumDialogItems);
       if (askCode != kOkButtonIndex)
         return NFileOperationReturnCode::kInterruptedByUser;
@@ -211,6 +217,8 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kSkipExisting;
     else if (dialogItems[kOverwriteModeRadioIndex + 3].Selected)
       extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kAutoRename;
+    else if (dialogItems[kOverwriteModeRadioIndex + 4].Selected)
+      extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kAutoRenameExisting;
     else
       throw 31806;
     
@@ -247,41 +255,8 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   for (int i = 0; i < itemsNumber; i++)
     indices.Add(panelItems[i].UserData);
 
-  NExtract::NPathMode::EEnum pathMode;
-  NExtract::NOverwriteMode::EEnum overwriteMode;
-  switch (extractionInfo.OverwriteMode)
-  {
-    case NExtract::NOverwriteMode::kAskBefore:
-      overwriteMode = NExtract::NOverwriteMode::kAskBefore;
-      break;
-    case NExtract::NOverwriteMode::kWithoutPrompt:
-      overwriteMode = NExtract::NOverwriteMode::kWithoutPrompt;
-      break;
-    case NExtract::NOverwriteMode::kSkipExisting:
-      overwriteMode = NExtract::NOverwriteMode::kSkipExisting;
-      break;
-    case NExtract::NOverwriteMode::kAutoRename:
-      overwriteMode = NExtract::NOverwriteMode::kAutoRename;
-      break;
-    default:
-      throw 12334454;
-  }
-  switch (extractionInfo.PathMode)
-  {
-    case NExtract::NPathMode::kFullPathnames:
-      pathMode = NExtract::NPathMode::kFullPathnames;
-      break;
-    case NExtract::NPathMode::kCurrentPathnames:
-      pathMode = NExtract::NPathMode::kCurrentPathnames;
-      break;
-    case NExtract::NPathMode::kNoPathnames:
-      pathMode = NExtract::NPathMode::kNoPathnames;
-      break;
-    default:
-      throw 12334455;
-  }
   HRESULT result = ExtractFiles(decompressAllItems, &indices.Front(), itemsNumber, 
-      !showBox, pathMode, overwriteMode, 
+      !showBox, extractionInfo.PathMode, extractionInfo.OverwriteMode, 
       MultiByteToUnicodeString(destPath, CP_OEMCP), 
       passwordIsDefined, password);
   // HRESULT result = ExtractFiles(decompressAllItems, realIndices, !showBox, 

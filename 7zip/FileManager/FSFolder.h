@@ -28,6 +28,7 @@ class CFSFolder:
   public IFolderGetPath,
   public IFolderWasChanged,
   public IFolderOperations,
+  // public IFolderOperationsDeleteToRecycleBin,
   public IFolderGetItemFullSize,
   public IFolderClone,
   public IFolderGetSystemIconIndex,
@@ -40,6 +41,7 @@ public:
     MY_QUERYINTERFACE_ENTRY(IFolderGetTypeID)
     MY_QUERYINTERFACE_ENTRY(IFolderGetPath)
     MY_QUERYINTERFACE_ENTRY(IFolderWasChanged)
+    // MY_QUERYINTERFACE_ENTRY(IFolderOperationsDeleteToRecycleBin)
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
     MY_QUERYINTERFACE_ENTRY(IFolderGetItemFullSize)
     MY_QUERYINTERFACE_ENTRY(IFolderClone)
@@ -79,6 +81,8 @@ public:
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
   STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
   STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
+
+  // STDMETHOD(DeleteToRecycleBin)(const UINT32 *indices, UINT32 numItems, IProgress *progress);
 
 private:
   UINT _fileCodePage;

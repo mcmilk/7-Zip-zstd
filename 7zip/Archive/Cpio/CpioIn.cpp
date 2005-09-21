@@ -4,7 +4,10 @@
 
 #include "CpioIn.h"
 
+#include "Common/StringToInt.h"
 #include "Windows/Defs.h"
+
+#include "../../Common/StreamUtils.h"
 
 #include "CpioHeader.h"
 
@@ -13,7 +16,7 @@ namespace NCpio {
  
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
-  RINOK(m_Stream->Read(data, size, &processedSize));
+  RINOK(ReadStream(m_Stream, data, size, &processedSize));
   m_Position += processedSize;
   return S_OK;
 }
@@ -75,24 +78,37 @@ bool CInArchive::ReadNumber(UInt32 &resultValue)
   return true;
 }
 
-bool CInArchive::ReadOctNumber(int size, UInt32 &resultValue)
+static bool OctalToNumber(const char *s, UInt64 &res)
 {
-  char s[32];
-  int i;
-  for (i = 0; i < size && i < 32; i++)
-    s[i] = char(ReadByte());
-  s[i] = 0;
-  char *endPtr;
-  resultValue = strtoul(s, &endPtr, 8);
-  return true;
+  const char *end;
+  res = ConvertOctStringToUInt64(s, &end);
+  return (*end == ' ' || *end == 0);
 }
 
-#define GetFromHex(y) { if (!ReadNumber(y)) return E_FAIL; }
-#define GetFromOct6(y) { if (!ReadOctNumber(6, y)) return E_FAIL; }
-#define GetFromOct11(y) { if (!ReadOctNumber(11, y)) return E_FAIL; }
+static bool OctalToNumber32(const char *s, UInt32 &res)
+{
+  UInt64 res64;
+  if (!OctalToNumber(s, res64))
+    return false;
+  res = (UInt32)res64;
+  return (res64 <= 0xFFFFFFFF);
+}
 
-static unsigned short ConvertValue(
-    unsigned short value, bool convert)
+bool CInArchive::ReadOctNumber(int size, UInt32 &resultValue)
+{
+  char sz[32 + 4];
+  int i;
+  for (i = 0; i < size && i < 32; i++)
+    sz[i] = (char)ReadByte();
+  sz[i] = 0;
+  return OctalToNumber32(sz, resultValue);
+}
+
+#define GetFromHex(y) { if (!ReadNumber(y)) return S_FALSE; }
+#define GetFromOct6(y) { if (!ReadOctNumber(6, y)) return S_FALSE; }
+#define GetFromOct11(y) { if (!ReadOctNumber(11, y)) return S_FALSE; }
+
+static unsigned short ConvertValue(unsigned short value, bool convert)
 {
   if (!convert)
     return value;
@@ -109,13 +125,6 @@ static UInt32 GetAlignedSize(UInt32 size, UInt32 align)
 
 HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
 {
-  /*
-  union
-  {
-    NFileHeader::CRecord record;
-    NFileHeader::CRecord2 record2;
-  };
-  */
   filled = false;
 
   UInt32 processedSize;

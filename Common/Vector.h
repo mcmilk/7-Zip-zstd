@@ -70,14 +70,46 @@ public:
   T& Front()   { return operator[](0); }
 	const T& Back() const { return operator[](_size - 1); }
   T& Back()   { return operator[](_size - 1); }
-  static int 
-  #ifdef _MSC_VER
-  __cdecl
-  #endif
-  CompareRecordItems(const void *a1, const void *a2)
-    { return MyCompare(*((const T *)a1), *((const T *)a2)); }
-  void Sort()
-    { qsort(&Front(), Size(), _itemSize, CompareRecordItems); }
+
+  void Swap(int i, int j)
+  {
+    T temp = operator[](i);
+    operator[](i) = operator[](j);
+    operator[](j) = temp;
+  }
+
+  void Sort(int left, int right)
+  { 
+    if (right - left < 2)
+      return;
+    Swap(left, (left + right) / 2);
+    int last = left;
+    for (int i = left; i < right; i++)
+      if (operator[](i) < operator[](left))
+        Swap(++last, i);
+    Swap(left, last);
+    Sort(left, last);
+    Sort(last + 1, right);
+  }
+  void Sort() { Sort(0, Size());  }
+  void Sort(int left, int right, int (*compare)(const T*, const T*, void *), void *param)
+  { 
+    if (right - left < 2)
+      return;
+    Swap(left, (left + right) / 2);
+    int last = left;
+    for (int i = left; i < right; i++)
+      if (compare(&operator[](i), &operator[](left), param) < 0)
+        Swap(++last, i);
+    Swap(left, last);
+    Sort(left, last, compare, param);
+    Sort(last + 1, right, compare, param);
+  }
+
+  void Sort(int (*compare)(const T*, const T*, void *), void *param) 
+  {  
+    Sort(0, Size(), compare, param);  
+  }
 };
 
 typedef CRecordVector<int> CIntVector;
@@ -167,17 +199,13 @@ public:
     Insert(right, item);
     return right;
   }
-  static int
-  #ifdef _MSC_VER
-  __cdecl
-  #endif
-  CompareObjectItems(const void *a1, const void *a2)
+
+  void Sort(int (*compare)(void *const *, void *const *, void *), void *param) 
+    { CPointerVector::Sort(compare, param); }
+
+  static int CompareObjectItems(void *const *a1, void *const *a2, void *param)
     { return MyCompare(*(*((const T **)a1)), *(*((const T **)a2))); }
-  void Sort()
-  {
-    CPointerVector &pointerVector = *this;
-    qsort(&pointerVector[0], Size(), sizeof(void *), CompareObjectItems);
-  }
+  void Sort() { CPointerVector::Sort(CompareObjectItems, 0); }
 };
 
 #endif 

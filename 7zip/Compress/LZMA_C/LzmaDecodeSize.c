@@ -2,7 +2,7 @@
   LzmaDecodeSize.c
   LZMA Decoder (optimized for Size version)
   
-  LZMA SDK 4.22 Copyright (c) 1999-2005 Igor Pavlov (2005-06-10)
+  LZMA SDK 4.27 Copyright (c) 1999-2005 Igor Pavlov (2005-08-07)
   http://www.7-zip.org/
 
   LZMA SDK is licensed under two licenses:
@@ -66,17 +66,14 @@ Byte RangeDecoderReadByte(CRangeDecoder *rd)
 /* #define ReadByte (*rd->Buffer++) */
 #define ReadByte (RangeDecoderReadByte(rd))
 
-void RangeDecoderInit(CRangeDecoder *rd,
-  #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback
-  #else
-    const Byte *stream, SizeT bufferSize
+void RangeDecoderInit(CRangeDecoder *rd
+  #ifndef _LZMA_IN_CB
+    , const Byte *stream, SizeT bufferSize
   #endif
     )
 {
   int i;
   #ifdef _LZMA_IN_CB
-  rd->InCallback = inCallback;
   rd->Buffer = rd->BufferLim = 0;
   #else
   rd->Buffer = stream;
@@ -398,6 +395,7 @@ int LzmaDecode(CLzmaDecoderState *vs,
   rd.Range = vs->Range;
   rd.Code = vs->Code;
   #ifdef _LZMA_IN_CB
+  rd.InCallback = InCallback;
   rd.Buffer = vs->Buffer;
   rd.BufferLim = vs->BufferLim;
   #else
@@ -432,11 +430,9 @@ int LzmaDecode(CLzmaDecoderState *vs,
       distanceLimit = 0;
       dictionaryPos = 0;
       dictionary[dictionarySize - 1] = 0;
-      RangeDecoderInit(&rd,
-          #ifdef _LZMA_IN_CB
-          InCallback
-          #else
-          inStream, inSize
+      RangeDecoderInit(&rd
+          #ifndef _LZMA_IN_CB
+          , inStream, inSize
           #endif
           );
       #ifdef _LZMA_IN_CB
@@ -486,11 +482,12 @@ int LzmaDecode(CLzmaDecoderState *vs,
       p[i] = kBitModelTotal >> 1;
   }
   
-  RangeDecoderInit(&rd,
-      #ifdef _LZMA_IN_CB
-      InCallback
-      #else
-      inStream, inSize
+  #ifdef _LZMA_IN_CB
+  rd.InCallback = InCallback;
+  #endif
+  RangeDecoderInit(&rd
+      #ifndef _LZMA_IN_CB
+      , inStream, inSize
       #endif
       );
 

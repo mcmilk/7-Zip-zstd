@@ -548,6 +548,14 @@ SOURCE=..\..\Common\FileStreams.cpp
 
 SOURCE=..\..\Common\FileStreams.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
 # End Group
 # End Target
 # End Project

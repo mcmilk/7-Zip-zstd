@@ -6,6 +6,8 @@
 #include "Common/Buffer.h"
 #include "Common/CRC.h"
 
+#include "../../Common/StreamUtils.h"
+
 #include "ArjIn.h"
 
 namespace NArchive {
@@ -14,7 +16,7 @@ namespace NArj {
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
-  HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  HRESULT result = ReadStream(_stream, data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   IncreasePositionValue(realProcessedSize);
@@ -162,7 +164,7 @@ bool CInArchive::ReadBlock()
 {
   _blockPos = 0;
   _blockSize = SafeReadUInt16();
-  if (_blockSize == 0)
+  if (_blockSize == 0 || _blockSize > kMaxBlockSize)
     return false;
   SafeReadBytes(_block, _blockSize);
   UInt32 crcFromFile = SafeReadUInt32();

@@ -14,7 +14,7 @@ struct CDecodeInfo: public CInfo
   void DecodeBinSymbol(NRangeCoder::CDecoder *rangeDecoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
-    UInt16& bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
+    UInt16& bs = GetBinSumm(rs, GetContextNoCheck(MinContext->Suffix)->NumStats);
     if (rangeDecoder->DecodeBit(bs, TOT_BITS) == 0) 
     {
       FoundState = &rs;
@@ -36,13 +36,13 @@ struct CDecodeInfo: public CInfo
 
   void DecodeSymbol1(NRangeCoder::CDecoder *rangeDecoder)
   {
-    PPM_CONTEXT::STATE* p = MinContext->Stats;
+    PPM_CONTEXT::STATE* p = GetStateNoCheck(MinContext->Stats);
     int i, count, hiCnt;
     if ((count = rangeDecoder->GetThreshold(MinContext->SummFreq)) < (hiCnt = p->Freq)) 
     {
       PrevSuccess = (2 * hiCnt > MinContext->SummFreq);
       RunLength += PrevSuccess;
-      rangeDecoder->Decode(0, MinContext->Stats->Freq); // MinContext->SummFreq);
+      rangeDecoder->Decode(0, p->Freq); // MinContext->SummFreq);
       (FoundState = p)->Freq=(hiCnt += 4);  
       MinContext->SummFreq += 4;
       if (hiCnt > MAX_FREQ)
@@ -72,7 +72,7 @@ struct CDecodeInfo: public CInfo
     int count, hiCnt, i = MinContext->NumStats - NumMasked;
     UInt32 freqSum;
     SEE2_CONTEXT* psee2c = makeEscFreq2(i, freqSum);
-    PPM_CONTEXT::STATE* ps[256], ** pps = ps, * p = MinContext->Stats-1;
+    PPM_CONTEXT::STATE* ps[256], ** pps = ps, * p = GetStateNoCheck(MinContext->Stats)-1;
     hiCnt = 0;
     do 
     {
@@ -119,8 +119,8 @@ struct CDecodeInfo: public CInfo
       do 
       {
         OrderFall++;                
-        MinContext = MinContext->Suffix;
-        if ( !MinContext )          
+        MinContext = GetContext(MinContext->Suffix);
+        if (MinContext == 0)          
           return -1;
       } 
       while (MinContext->NumStats == NumMasked);

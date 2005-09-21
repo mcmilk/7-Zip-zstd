@@ -15,7 +15,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 private:
   CMyComPtr<ISequentialInStream> _stream;
   UInt64 _size;
@@ -40,7 +39,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
 private:
   CMyComPtr<IInStream> _stream;

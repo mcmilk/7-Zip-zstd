@@ -129,7 +129,6 @@ public:
   MY_UNKNOWN_IMP1(IOutStream)
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
   STDMETHOD(SetSize)(Int64 newSize);
 };
@@ -207,15 +206,11 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
       _streamIndex++;
       _offsetPos = 0;
     }
-    if (realProcessed != curSize)
+    if (realProcessed == 0 && curSize != 0)
       return E_FAIL;
+    break;
   }
   return S_OK;
-}
-
-STDMETHODIMP COutMultiVolStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
 }
 
 STDMETHODIMP COutMultiVolStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)

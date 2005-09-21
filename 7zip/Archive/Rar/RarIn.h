@@ -41,6 +41,7 @@ public:
   bool IsCommented() const {  return (Flags & NHeader::NArchive::kComment) != 0; }
   bool IsVolume() const {  return (Flags & NHeader::NArchive::kVolume) != 0; }
   bool HaveNewVolumeName() const {  return (Flags & NHeader::NArchive::kNewVolName) != 0; }
+  bool IsEncrypted() const { return (Flags & NHeader::NArchive::kBlockEncryption) != 0; }
 };
 
 class CInArchive
@@ -51,7 +52,7 @@ class CInArchive
   UInt64 m_Position;
   UInt64 m_ArchiveStartPosition;
   
-  NHeader::NArchive::CBlock m_ArchiveHeader;
+  NHeader::NArchive::CHeader360 m_ArchiveHeader;
   CDynamicBuffer<char> m_NameBuffer;
   CDynamicBuffer<wchar_t> _unicodeNameBuffer;
   bool m_SeekOnArchiveComment;

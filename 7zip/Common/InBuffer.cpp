@@ -59,7 +59,7 @@ bool CInBuffer::ReadBlock()
     return false;
   _processedSize += (_buffer - _bufferBase);
   UInt32 numProcessedBytes;
-  HRESULT result = _stream->ReadPart(_bufferBase, _bufferSize, &numProcessedBytes);
+  HRESULT result = _stream->Read(_bufferBase, _bufferSize, &numProcessedBytes);
   #ifdef _NO_EXCEPTIONS
   ErrorCode = result;
   #else
@@ -70,4 +70,11 @@ bool CInBuffer::ReadBlock()
   _bufferLimit = _buffer + numProcessedBytes;
   _wasFinished = (numProcessedBytes == 0);
   return (!_wasFinished);
+}
+
+Byte CInBuffer::ReadBlock2()
+{
+  if(!ReadBlock())
+    return 0xFF;
+  return *_buffer++;
 }

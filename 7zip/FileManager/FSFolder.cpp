@@ -508,6 +508,40 @@ STDMETHODIMP CFSFolder::Delete(const UINT32 *indices, UINT32 numItems,
   return S_OK;
 }
 
+/*
+STDMETHODIMP CFSFolder::DeleteToRecycleBin(const UINT32 *indices, UINT32 numItems,
+    IProgress *progress)
+{
+  RINOK(progress->SetTotal(numItems));
+  for (UINT32 i = 0; i < numItems; i++)
+  {
+    int index = indices[i];
+    const CFileInfoW &fileInfo = _files[indices[i]];
+    const UString fullPath = _path + fileInfo.Name;
+    CBuffer<TCHAR> buffer;
+    const CSysString fullPathSys = GetSystemString(fullPath);
+    buffer.SetCapacity(fullPathSys.Length() + 2);
+    memmove((TCHAR *)buffer, (const TCHAR *)fullPathSys, (fullPathSys.Length() + 1) * sizeof(TCHAR));
+    ((TCHAR *)buffer)[fullPathSys.Length() + 1] = 0;
+    SHFILEOPSTRUCT fo;
+    fo.hwnd = 0;
+    fo.wFunc = FO_DELETE;
+    fo.pFrom = (const TCHAR *)buffer;
+    fo.pTo = 0;
+    fo.fFlags = FOF_ALLOWUNDO;
+    fo.fAnyOperationsAborted = FALSE;
+    fo.hNameMappings = 0;
+    fo.lpszProgressTitle = 0;
+    int res = SHFileOperation(&fo);
+    if (fo.fAnyOperationsAborted)
+      return E_ABORT;
+    UINT64 completed = i;
+    RINOK(progress->SetCompleted(&completed));
+  }
+  return S_OK;
+}
+*/
+
 STDMETHODIMP CFSFolder::SetProperty(UINT32 index, PROPID propID, 
     const PROPVARIANT *value, IProgress *progress)
 {

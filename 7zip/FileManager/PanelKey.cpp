@@ -152,8 +152,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     */
     case VK_DELETE:
     {
-      // if (shift)
-      DeleteItems();
+      DeleteItems(!shift);
       return true;
     }
     case VK_INSERT:

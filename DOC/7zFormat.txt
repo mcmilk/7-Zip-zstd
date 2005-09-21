@@ -171,8 +171,8 @@ SignatureHeader
 
   ArchiveVersion
   {
-    BYTE Major;   // now it = 0
-    BYTE Minor;   // now it = 1
+    BYTE Major;   // now = 0
+    BYTE Minor;   // now = 2
   };
 
   UINT32 StartHeaderCRC;

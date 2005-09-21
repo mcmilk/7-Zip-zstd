@@ -1,10 +1,12 @@
-/ Archive/arj/InEngine.cpp
+// Archive/arj/InEngine.cpp
 
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
 #include "Common/Buffer.h"
 #include "Common/CRC.h"
+
+#include "../../Common/StreamUtils.h"
 
 #include "LzhIn.h"
 
@@ -13,7 +15,7 @@ namespace NLzh {
  
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
-  RINOK(m_Stream->Read(data, size, &processedSize));
+  RINOK(ReadStream(m_Stream, data, size, &processedSize));
   m_Position += processedSize;
   return S_OK;
 }

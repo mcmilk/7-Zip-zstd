@@ -15,7 +15,7 @@ struct CEncodeInfo: public CInfo
   void EncodeBinSymbol(int symbol, NRangeCoder::CEncoder *rangeEncoder)
   {
     PPM_CONTEXT::STATE& rs = MinContext->oneState();                   
-    UInt16 &bs = GetBinSumm(rs, MinContext->Suffix->NumStats);
+    UInt16 &bs = GetBinSumm(rs, GetContextNoCheck(MinContext->Suffix)->NumStats);
     if (rs.Symbol == symbol) 
     {
       FoundState = &rs;
@@ -39,12 +39,12 @@ struct CEncodeInfo: public CInfo
 
   void EncodeSymbol1(int symbol, NRangeCoder::CEncoder *rangeEncoder)
   {
-    PPM_CONTEXT::STATE* p = MinContext->Stats;
+    PPM_CONTEXT::STATE* p = GetStateNoCheck(MinContext->Stats);
     if (p->Symbol == symbol) 
     {
       PrevSuccess = (2 * (p->Freq) > MinContext->SummFreq);
       RunLength += PrevSuccess;
-      rangeEncoder->Encode(0, MinContext->Stats->Freq, MinContext->SummFreq);
+      rangeEncoder->Encode(0, p->Freq, MinContext->SummFreq);
       (FoundState = p)->Freq += 4;          
       MinContext->SummFreq += 4;
       if (p->Freq > MAX_FREQ)             
@@ -76,7 +76,7 @@ struct CEncodeInfo: public CInfo
     int hiCnt, i = MinContext->NumStats - NumMasked;
     UInt32 scale;
     SEE2_CONTEXT* psee2c = makeEscFreq2(i, scale);
-    PPM_CONTEXT::STATE* p = MinContext->Stats - 1;                       
+    PPM_CONTEXT::STATE* p = GetStateNoCheck(MinContext->Stats) - 1;                       
     hiCnt = 0;
     do 
     {
@@ -126,8 +126,8 @@ SYMBOL_FOUND:
       do 
       {
         OrderFall++;                
-        MinContext = MinContext->Suffix;
-        if ( !MinContext ) 
+        MinContext = GetContext(MinContext->Suffix);
+        if (MinContext == 0) 
           return; //  S_OK;
       } 
       while (MinContext->NumStats == NumMasked);

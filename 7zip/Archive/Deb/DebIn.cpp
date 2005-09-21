@@ -5,7 +5,10 @@
 #include "DebIn.h"
 #include "DebHeader.h"
 
+#include "Common/StringToInt.h"
 #include "Windows/Defs.h"
+
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NDeb {
@@ -14,7 +17,7 @@ using namespace NHeader;
 
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
-  RINOK(m_Stream->Read(data, size, &processedSize));
+  RINOK(ReadStream(m_Stream, data, size, &processedSize));
   m_Position += processedSize;
   return S_OK;
 }
@@ -24,7 +27,7 @@ HRESULT CInArchive::Open(IInStream *inStream)
   RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
   char signature[kSignatureLen];
   UInt32 processedSize;
-  RINOK(inStream->Read(signature, kSignatureLen, &processedSize));
+  RINOK(ReadStream(inStream, signature, kSignatureLen, &processedSize));
   m_Position += processedSize;
   if (processedSize != kSignatureLen)
     return S_FALSE;
@@ -34,40 +37,50 @@ HRESULT CInArchive::Open(IInStream *inStream)
   return S_OK;
 }
 
-static bool CheckString(const char *srcString, int numChars, int radix)
+static bool OctalToNumber(const char *s, int size, UInt64 &res)
 {
-  for(int i = 0; i < numChars; i++)
-  {
-    char c = srcString[i];
-    if (c == 0)
-      return true;
-    if (c >= '0' && c <= '0' + radix - 1)
-      continue;
-    if (c != ' ')
-      return false;
-  }
-  return true;
+  char sz[32];
+  strncpy(sz, s, size);
+  sz[size] = 0;
+  const char *end;
+  int i;
+  for (i = 0; sz[i] == ' '; i++);
+  res = ConvertOctStringToUInt64(sz + i, &end);
+  return (*end == ' ' || *end == 0);
 }
-static bool CheckOctalString(const char *srcString, int numChars)
-  { return CheckString(srcString, numChars, 8); }
-static bool CheckDecimalString(const char *srcString, int numChars)
-  { return CheckString(srcString, numChars, 10); }
 
-#define ReturnIfBadOctal(x, y) { if (!CheckOctalString((x), (y))) return S_FALSE; }
-#define ReturnIfBadDecimal(x, y) { if (!CheckDecimalString((x), (y))) return S_FALSE; }
-
-static UInt32 StringToNumber(const char *srcString, int numChars, int radix)
+static bool OctalToNumber32(const char *s, int size, UInt32 &res)
 {
-  AString modString;
-  for (int i = 0; i < numChars; i++)
-    modString += srcString[i];
-  char *endPtr;
-  return strtoul(modString, &endPtr, radix);
+  UInt64 res64;
+  if (!OctalToNumber(s, size, res64))
+    return false;
+  res = (UInt32)res64;
+  return (res64 <= 0xFFFFFFFF);
 }
-static UInt32 OctalToNumber(const char *srcString, int numChars)
-  { return StringToNumber(srcString, numChars, 8); }
-static UInt32 DecimalToNumber(const char *srcString, int numChars)
-  { return StringToNumber(srcString, numChars, 10); }
+
+static bool DecimalToNumber(const char *s, int size, UInt64 &res)
+{
+  char sz[32];
+  strncpy(sz, s, size);
+  sz[size] = 0;
+  const char *end;
+  int i;
+  for (i = 0; sz[i] == ' '; i++);
+  res = ConvertStringToUInt64(sz + i, &end);
+  return (*end == ' ' || *end == 0);
+}
+
+static bool DecimalToNumber32(const char *s, int size, UInt32 &res)
+{
+  UInt64 res64;
+  if (!DecimalToNumber(s, size, res64))
+    return false;
+  res = (UInt32)res64;
+  return (res64 <= 0xFFFFFFFF);
+}
+
+#define RIF(x) { if (!(x)) return S_FALSE; }
+
 
 HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
 {
@@ -93,18 +106,15 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
     if (((Byte)item.Name[i]) < 0x20)
       return S_FALSE;
 
-  ReturnIfBadDecimal(cur, kTimeSize);
-  item.ModificationTime = DecimalToNumber(cur, kTimeSize);
+  RIF(DecimalToNumber32(cur, kTimeSize, item.ModificationTime));
   cur += kTimeSize;
 
   cur += 6 + 6;
   
-  ReturnIfBadOctal(cur, kModeSize);
-  item.Mode = OctalToNumber(cur, kModeSize);
+  RIF(OctalToNumber32(cur, kModeSize, item.Mode));
   cur += kModeSize;
 
-  ReturnIfBadDecimal(cur, kSizeSize);
-  item.Size = DecimalToNumber(cur, kSizeSize);
+  RIF(DecimalToNumber(cur, kSizeSize, item.Size));
   cur += kSizeSize;
 
   filled = true;

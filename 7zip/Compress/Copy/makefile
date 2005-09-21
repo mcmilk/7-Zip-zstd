@@ -10,10 +10,14 @@ COPY_OBJS = \
 COMMON_OBJS = \
   $O\Alloc.obj \
 
+7ZIP_COMMON_OBJS = \
+  $O\StreamUtils.obj \
+
 OBJS = \
   $O\StdAfx.obj \
   $(COPY_OBJS) \
   $(COMMON_OBJS) \
+  $(7ZIP_COMMON_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -21,4 +25,6 @@ OBJS = \
 $(COPY_OBJS): $(*B).cpp
 	$(COMPL)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
+	$(COMPL)
+$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)

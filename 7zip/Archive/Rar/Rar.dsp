@@ -178,6 +178,14 @@ SOURCE=..\..\..\Common\Types.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\UTFConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\UTFConvert.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Vector.cpp
 # End Source File
 # Begin Source File
@@ -399,6 +407,14 @@ SOURCE=..\..\Common\StreamObjects.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamObjects.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
 # End Source File
 # End Group
 # Begin Group "7z"

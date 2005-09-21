@@ -7,6 +7,7 @@
 #include "Panel.h"
 
 #include "Common/StringConvert.h"
+#include "Common/DynamicBuffer.h"
 #include "Windows/FileDir.h"
 #include "Windows/ResourceString.h"
 #include "Windows/Thread.h"
@@ -35,8 +36,7 @@ struct CThreadDelete
   {
     NCOM::CComInitializer comInitializer;
     UpdateCallbackSpec->ProgressDialog.WaitCreating();
-    Result = FolderOperations->Delete(&Indices.Front(), 
-        Indices.Size(), UpdateCallback);
+    Result = FolderOperations->Delete(&Indices.Front(), Indices.Size(), UpdateCallback);
     UpdateCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
@@ -47,15 +47,8 @@ struct CThreadDelete
   }
 };
 
-void CPanel::DeleteItems()
+void CPanel::DeleteItems(bool toRecycleBin)
 {
-  CMyComPtr<IFolderOperations> folderOperations;
-  if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
-  {
-    MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
-    return;
-  }
-
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
   CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
@@ -63,6 +56,55 @@ void CPanel::DeleteItems()
     return;
   CSelectedState state;
   SaveSelectedState(state);
+  if (IsFSFolder())
+  {
+    CDynamicBuffer<TCHAR> buffer;
+    size_t size = 0;
+    for (int i = 0; i < indices.Size(); i++)
+    {
+      const CSysString path = GetSystemString(GetFsPath() + GetItemName(indices[i]));
+      buffer.EnsureCapacity(size + path.Length() + 1);
+      memmove(((TCHAR *)buffer) + size, (const TCHAR *)path, (path.Length() + 1) * sizeof(TCHAR));
+      size += path.Length() + 1;
+    }
+    buffer.EnsureCapacity(size + 1);
+    ((TCHAR *)buffer)[size]  = 0;
+    SHFILEOPSTRUCT fo;
+    fo.hwnd = GetParent();
+    fo.wFunc = FO_DELETE;
+    fo.pFrom = (const TCHAR *)buffer;
+    fo.pTo = 0;
+    fo.fFlags = 0;
+    if (toRecycleBin)
+      fo.fFlags |= FOF_ALLOWUNDO;
+    // fo.fFlags |= FOF_NOCONFIRMATION;
+    // fo.fFlags |= FOF_NOERRORUI;
+    // fo.fFlags |= FOF_SILENT;
+    // fo.fFlags |= FOF_WANTNUKEWARNING;
+    fo.fAnyOperationsAborted = FALSE;
+    fo.hNameMappings = 0;
+    fo.lpszProgressTitle = 0;
+    int res = SHFileOperation(&fo);
+    /*
+    if (fo.fAnyOperationsAborted)
+    {
+      MessageBoxError(result, LangLoadStringW(IDS_ERROR_DELETING, 0x03020217));
+    }
+    */
+    /* 
+      (!result)
+      return GetLastError();
+    */
+  }
+  else
+  {
+
+  CMyComPtr<IFolderOperations> folderOperations;
+  if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
+  {
+    MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    return;
+  }
 
   UString title;
   UString message;
@@ -112,6 +154,7 @@ void CPanel::DeleteItems()
   HRESULT result = deleter.Result;
   if (result != S_OK)
     MessageBoxError(result, LangLoadStringW(IDS_ERROR_DELETING, 0x03020217));
+  }
 
   RefreshListCtrl(state);
 }
@@ -152,6 +195,11 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFO * lpnmh)
   // Can't use RefreshListCtrl here.
   // RefreshListCtrlSaveFocused();
   _focusedName = newName;
+
+  // We need clear all items to disable GetText before Reload:
+  // number of items can change.
+  _listView.DeleteAllItems();
+
   PostMessage(kReLoadMessage);
   return TRUE;
 }
@@ -186,6 +234,7 @@ void CPanel::CreateFolder()
   if (!_mySelectMode)
     state.SelectedNames.Clear();
   state.FocusedName = newName;
+  state.SelectFocused = true;
   RefreshListCtrl(state);
 }
 
@@ -219,6 +268,7 @@ void CPanel::CreateFile()
   if (!_mySelectMode)
     state.SelectedNames.Clear();
   state.FocusedName = newName;
+  state.SelectFocused = true;
   RefreshListCtrl(state);
 }
 

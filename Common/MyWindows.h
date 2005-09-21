@@ -12,7 +12,6 @@
 #include <stddef.h> // for wchar_t
 #include <string.h>
 
-#include "Types.h"
 #include "MyGuidDef.h"
 
 typedef char CHAR;

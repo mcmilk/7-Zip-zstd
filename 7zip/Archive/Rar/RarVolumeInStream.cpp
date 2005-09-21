@@ -64,6 +64,7 @@ STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
       }
       realProcessedSize += localProcessedSize;
       size -= localProcessedSize;
+      break;
     }
     else
     {
@@ -73,11 +74,6 @@ STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
   if (processedSize != 0)
     *processedSize = realProcessedSize;
   return S_OK;
-}
-
-STDMETHODIMP CFolderInStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
 }
 
 }}

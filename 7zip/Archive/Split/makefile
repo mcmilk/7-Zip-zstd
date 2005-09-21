@@ -20,6 +20,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\MultiStream.obj \

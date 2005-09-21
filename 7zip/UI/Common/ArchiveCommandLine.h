@@ -77,7 +77,7 @@ class CArchiveCommandLineParser
   NCommandLineParser::CParser parser;
 public:
   CArchiveCommandLineParser();
-  void Parse1(const UStringVector commandStrings, CArchiveCommandLineOptions &options);
+  void Parse1(const UStringVector &commandStrings, CArchiveCommandLineOptions &options);
   void Parse2(CArchiveCommandLineOptions &options);
 };
 

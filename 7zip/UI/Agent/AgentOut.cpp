@@ -154,7 +154,8 @@ STDMETHODIMP CAgent::DoOperation(
   if (!CanUpdate())
     return E_NOTIMPL;
   NUpdateArchive::CActionSet actionSet;
-  for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
+  int i;
+  for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSet.StateActions[i] = (NUpdateArchive::NPairAction::EEnum)stateActions[i];
 
   CObjectVector<CDirItem> dirItems;
@@ -242,7 +243,7 @@ STDMETHODIMP CAgent::DoOperation(
   }
   
   CMyComPtr<ISetProperties> setProperties;
-  if (outArchive->QueryInterface(&setProperties) == S_OK)
+  if (outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties) == S_OK)
   {
     if (m_PropNames.Size() == 0)
     {

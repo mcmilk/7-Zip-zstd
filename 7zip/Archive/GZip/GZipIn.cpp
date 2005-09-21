@@ -8,13 +8,15 @@
 #include "Common/MyCom.h"
 #include "Windows/Defs.h"
 
+#include "../../Common/StreamUtils.h"
+
 namespace NArchive {
 namespace NGZip {
  
 HRESULT CInArchive::ReadBytes(ISequentialInStream *inStream, void *data, UInt32 size)
 {
   UInt32 realProcessedSize;
-  RINOK(inStream->Read(data, size, &realProcessedSize));
+  RINOK(ReadStream(inStream, data, size, &realProcessedSize));
   m_Position += realProcessedSize;
   if(realProcessedSize != size)
     return S_FALSE;

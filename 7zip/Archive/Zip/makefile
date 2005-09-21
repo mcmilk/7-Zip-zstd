@@ -38,6 +38,7 @@ WIN_OBJS = \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\CodecsPath.obj \

@@ -18,6 +18,7 @@ WIN_OBJS = \
   $O\InBuffer.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\DummyOutStream.obj \

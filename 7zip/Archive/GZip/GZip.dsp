@@ -264,6 +264,14 @@ SOURCE=..\..\Common\ProgressUtils.cpp
 
 SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
 # End Group
 # Begin Group "Archive Common"
 

@@ -22,15 +22,17 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\LimitedStreams.obj \
+  $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
 
 COMPRESS_ARJ_OBJS = \
-  $O\Decoder1.obj \
-  $O\Decoder2.obj \
+  $O\ArjDecoder1.obj \
+  $O\ArjDecoder2.obj \
 
 OBJS = \
   $O\StdAfx.obj \

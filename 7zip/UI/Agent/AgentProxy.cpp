@@ -98,7 +98,8 @@ void CProxyFolder::AddRealIndices(CUIntVector &realIndices) const
 {
   if (IsLeaf)
     realIndices.Add(Index);
-  for(int i = 0; i < Folders.Size(); i++)
+  int i;
+  for(i = 0; i < Folders.Size(); i++)
     Folders[i].AddRealIndices(realIndices);
   for(i = 0; i < Files.Size(); i++)
     realIndices.Add(Files[i].Index);

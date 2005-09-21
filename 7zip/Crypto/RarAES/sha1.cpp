@@ -6,7 +6,7 @@
 
 #include "sha1.h"
 
-static inline rotlFixed(UInt32 x, int n)
+static inline UInt32 rotlFixed(UInt32 x, int n)
 {
 	return (x << n) | (x >> (32 - n));
 }
@@ -29,7 +29,7 @@ static inline rotlFixed(UInt32 x, int n)
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void CSHA1::Transform(const UInt32 data[16])
+void CSHA1::Transform(UInt32 data[16], bool returnRes)
 {
   UInt32 a, b, c, d, e;
 	UInt32 W[16];
@@ -67,6 +67,9 @@ void CSHA1::Transform(const UInt32 data[16])
   m_State[2] += c;
   m_State[3] += d;
   m_State[4] += e;
+  if (returnRes)
+    for (int i = 0 ; i < 16; i++)
+      data[i] = W[i];
   
   /* Wipe variables */
   a = b = c = d = e = 0;
@@ -84,10 +87,11 @@ void CSHA1::Init()
 }
 
 
-void CSHA1::WriteByteBlock()
+void CSHA1::WriteByteBlock(bool returnRes)
 {
   UInt32 data32[16];
-  for (int i = 0; i < 16; i++)
+  int i;
+  for (i = 0; i < 16; i++)
   {
     data32[i] = 
       (UInt32(_buffer[i * 4 + 0]) << 24) +
@@ -95,11 +99,21 @@ void CSHA1::WriteByteBlock()
       (UInt32(_buffer[i * 4 + 2]) <<  8) +
        UInt32(_buffer[i * 4 + 3]);
   }
-  Transform(data32);
+  Transform(data32, returnRes);
+  if (returnRes)
+    for (i = 0; i < 16; i++)
+    {
+      UInt32 d = data32[i];
+      _buffer[i * 4 + 0] = (Byte)(d >>  0);
+      _buffer[i * 4 + 1] = (Byte)(d >>  8);
+      _buffer[i * 4 + 2] = (Byte)(d >> 16);
+      _buffer[i * 4 + 3] = (Byte)(d >> 24);
+    }
 }
 
-void CSHA1::Update(const Byte *data, size_t size)
+void CSHA1::Update(Byte *data, size_t size, bool rar350Mode)
 {
+  bool returnRes = false;
   UInt32 curBufferPos = UInt32(m_Count) & 0x3F;
   while (size > 0)
   {
@@ -112,7 +126,11 @@ void CSHA1::Update(const Byte *data, size_t size)
     if (curBufferPos == 64)
     {
       curBufferPos = 0;
-      WriteByteBlock();
+      WriteByteBlock(returnRes);
+      if (returnRes)
+        for (int i = 0; i < 64; i++)
+          data[i - 64] = _buffer[i];
+      returnRes = rar350Mode;
     }
   }
 }
@@ -129,7 +147,8 @@ void CSHA1::Final(Byte *digest)
       WriteByteBlock();
     _buffer[curBufferPos++] = 0;
   }
-  for (int i = 0; i < 8; i++)
+  int i;
+  for (i = 0; i < 8; i++)
   {
     _buffer[curBufferPos++] = Byte(lenInBits >> 56);
     lenInBits <<= 8;

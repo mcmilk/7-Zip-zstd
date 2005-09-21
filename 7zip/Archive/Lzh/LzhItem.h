@@ -115,7 +115,14 @@ public:
   {
     int index = FindExt(kExtIdUnixTime);
     if (index < 0)
+    {
+      if (Level == 2)
+      {
+        value = ModifiedTime;
+        return true;
+      }
       return false;
+    }
     const Byte *data = (const Byte *)(Extensions[index].Data);
     value = data[0] | 
         ((UInt32)data[1] << 8) | 

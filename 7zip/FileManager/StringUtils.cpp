@@ -9,7 +9,8 @@ void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2)
   dest1.Empty();
   dest2.Empty();
   bool quoteMode = false;
-  for (int i = 0; i < src.Length(); i++)
+  int i;
+  for (i = 0; i < src.Length(); i++)
   {
     wchar_t c = src[i];
     if (c == L'\"')

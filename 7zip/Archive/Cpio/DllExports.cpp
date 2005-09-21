@@ -8,9 +8,9 @@
 #include "CpioHandler.h"
 #include "../../ICoder.h"
 
-// {23170F69-40C1-278A-1000-000110080000}
+// {23170F69-40C1-278A-1000-000110ED0000}
 DEFINE_GUID(CLSID_CCpioHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x08, 0x00, 0x00);
+  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0xED, 0x00, 0x00);
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)

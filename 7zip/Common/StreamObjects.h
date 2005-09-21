@@ -7,44 +7,6 @@
 #include "../../Common/MyCom.h"
 #include "../IStream.h"
 
-/*
-class COutStreamImp: 
-  public ISequentialStream,
-  public CMyUnknownImp
-{
-  CByteDynamicBuffer _buffer;
-  size_t _size;
-public:
-  COutStreamImp(): _size(0) {}
-  void Init(){ _size = 0; }
-  size_t GetSize() const { return _size; }
-  const CByteDynamicBuffer& GetBuffer() const { return _buffer; }
-
-  MY_UNKNOWN_IMP
-
-  STDMETHODIMP Read(void *data, ULONG size, ULONG *processedSize);
-  STDMETHODIMP Write(void const *data, ULONG size, ULONG *processedSize);
-};
-
-class CInStreamImp: 
-  public ISequentialStream,
-  public CMyUnknownImp
-{
-  Byte *_dataPointer;
-  size_t _size;
-  size_t _pos;
-
-public:
-  CInStreamImp(): _size(0xFFFFFFFF), _pos(0), _dataPointer(NULL) {}
-  void Init(Byte *dataPointer, size_t size);
-
-  MY_UNKNOWN_IMP
-
-  STDMETHODIMP Read(void *data, ULONG size, ULONG *processedSize);
-  STDMETHODIMP Write(void const *data, ULONG size, ULONG *processedSize);
-};
-*/
-
 class CSequentialInStreamImp: 
   public ISequentialInStream,
   public CMyUnknownImp
@@ -64,7 +26,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 
@@ -74,15 +35,7 @@ class CWriteBuffer
   size_t _size;
 public:
   CWriteBuffer(): _size(0) {}
-  // void Init(size_t size = 0)  
-  void Init()  
-  { 
-    /*
-    if (size > 0)
-      _buffer.EnsureCapacity(size);
-    */
-    _size = 0; 
-  }
+  void Init() { _size = 0;  }
   void Write(const void *data, size_t size);
   size_t GetSize() const { return _size; }
   const CByteDynamicBuffer& GetBuffer() const { return _buffer; }
@@ -94,24 +47,13 @@ class CSequentialOutStreamImp:
 {
   CWriteBuffer _writeBuffer;
 public:
-  void Init()
-  {
-    _writeBuffer.Init();
-  }
-
-  /*
-  void Init(size_t size = 0)  
-  { 
-    _writeBuffer.Init(size);
-  }
-  */
+  void Init() { _writeBuffer.Init(); }
   size_t GetSize() const { return _writeBuffer.GetSize(); }
   const CByteDynamicBuffer& GetBuffer() const { return _writeBuffer.GetBuffer(); }
 
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 class CSequentialOutStreamImp2: 
@@ -133,7 +75,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 class CSequentialInStreamSizeCount: 
@@ -153,7 +94,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 class CSequentialInStreamRollback: 
@@ -191,7 +131,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
   HRESULT Rollback(size_t rollbackSize);
 };
 
@@ -212,7 +151,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 #endif

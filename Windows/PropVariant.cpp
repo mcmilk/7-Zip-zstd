@@ -142,7 +142,8 @@ CPropVariant& CPropVariant::operator=(Int16 value)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(long value)
+/*
+CPropVariant& CPropVariant::operator=(LONG value)
 {
   if (vt != VT_I4)
   {
@@ -152,6 +153,7 @@ CPropVariant& CPropVariant::operator=(long value)
   lVal = value;
   return *this;
 }
+*/
 
 static HRESULT MyPropVariantClear(PROPVARIANT *propVariant) 
 { 

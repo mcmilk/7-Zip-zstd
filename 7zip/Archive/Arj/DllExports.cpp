@@ -8,9 +8,9 @@
 #include "../../ICoder.h"
 #include "ArjHandler.h"
 
-// {23170F69-40C1-278A-1000-0001100A0000}
+// {23170F69-40C1-278A-1000-000110040000}
 DEFINE_GUID(CLSID_CArjHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x0A, 0x00, 0x00);
+  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x04, 0x00, 0x00);
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)

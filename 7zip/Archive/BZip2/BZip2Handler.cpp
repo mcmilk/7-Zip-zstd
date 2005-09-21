@@ -7,7 +7,7 @@
 #include "Common/Defs.h"
 
 #include "../../Common/ProgressUtils.h"
-// #include "Interface/EnumStatProp.h"
+#include "../../Common/StreamUtils.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
@@ -111,7 +111,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     const int kSignatureSize = 3;
     Byte buffer[kSignatureSize];
     UInt32 processedSize;
-    RINOK(stream->Read(buffer, kSignatureSize, &processedSize));
+    RINOK(ReadStream(stream, buffer, kSignatureSize, &processedSize));
     if (processedSize != kSignatureSize)
       return S_FALSE;
     if (buffer[0] != 'B' || buffer[1] != 'Z' || buffer[2] != 'h')
@@ -221,7 +221,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const int kSignatureSize = 3;
     Byte buffer[kSignatureSize];
     UInt32 processedSize;
-    RINOK(_stream->Read(buffer, kSignatureSize, &processedSize));
+    RINOK(ReadStream(_stream, buffer, kSignatureSize, &processedSize));
     if (processedSize < kSignatureSize)
     {
       if (firstItem)

@@ -5,6 +5,8 @@
 #include "ZipCipher.h"
 #include "Windows/Defs.h"
 
+#include "../../Common/StreamUtils.h"
+
 namespace NCrypto {
 namespace NZip {
 
@@ -56,7 +58,7 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 
   UInt32 processedSize;
   _cipher.EncryptHeader(header);
-  RINOK(outStream->Write(header, kHeaderSize, &processedSize));
+  RINOK(WriteStream(outStream, header, kHeaderSize, &processedSize));
   if (processedSize != kHeaderSize)
     return E_FAIL;
   return S_OK;
@@ -81,7 +83,7 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
   UInt64 nowPos = 0;
   Byte header[kHeaderSize];
   UInt32 processedSize;
-  RINOK(inStream->Read(header, kHeaderSize, &processedSize));
+  RINOK(ReadStream(inStream, header, kHeaderSize, &processedSize));
   if (processedSize != kHeaderSize)
     return E_FAIL;
   _cipher.DecryptHeader(header);

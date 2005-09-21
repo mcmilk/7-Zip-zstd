@@ -142,7 +142,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   extractCallback->SetTotal(importantTotalUnPacked);
 
-  CDecoder decoder(true);
+  CDecoder decoder(
+    #ifdef _ST_MODE
+    false
+    #else
+    true
+    #endif
+    );
   // CDecoder1 decoder;
 
   UInt64 currentImportantTotalUnPacked = 0;

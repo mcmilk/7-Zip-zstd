@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h"
 #include "Common/DynamicBuffer.h"
 #include "../../Common/LimitedStreams.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NZip {
@@ -87,13 +88,10 @@ bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
   }
 }
 
-//////////////////////////////////////
-// Read Operations
-
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
-  HRESULT result = m_Stream->Read(data, size, &realProcessedSize);
+  HRESULT result = ReadStream(m_Stream, data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   m_Position += realProcessedSize;
@@ -157,9 +155,6 @@ UInt64 CInArchive::ReadUInt64()
     value |= (((UInt64)ReadByte()) << (8 * i));
   return value;
 }
-
-//////////////////////////////////
-// Read headers
 
 bool CInArchive::ReadUInt32(UInt32 &value)
 {

@@ -30,6 +30,8 @@ class CDecoder:
   CCoderLibrary _aesLib;
   CMyComPtr<ICompressFilter> _aesFilter;
 
+  bool _rar350Mode;
+
   void Calculate();
   HRESULT CreateFilter();
 
@@ -48,6 +50,7 @@ public:
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 
   CDecoder();
+  void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }
 };
 
 }}

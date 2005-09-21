@@ -11,10 +11,10 @@ static HRESULT WriteBytes(ISequentialOutStream *stream, const void *data, size_t
 {
   while (size > 0)
   {
-    UInt32 curSize = (UInt32)(MyMin(size, (size_t)0xFFFFFFFF));
+    UInt32 curSize = (UInt32)MyMin(size, (size_t)0xFFFFFFFF);
     UInt32 processedSize;
-    RINOK(stream->WritePart(data, curSize, &processedSize));
-    if(processedSize == 0 || processedSize > curSize)
+    RINOK(stream->Write(data, curSize, &processedSize));
+    if(processedSize == 0)
       return E_FAIL;
     data = (const void *)((const Byte *)data + processedSize);
     size -= processedSize;
@@ -111,7 +111,10 @@ HRESULT COutArchive::Create(ISequentialOutStream *stream, bool endMarker)
   {
     SeqStream.QueryInterface(IID_IOutStream, &Stream);
     if (!Stream)
-      endMarker = true;
+    {
+      return E_NOTIMPL;
+      // endMarker = true;
+    }
   }
   #ifdef _7Z_VOL
   if (endMarker)

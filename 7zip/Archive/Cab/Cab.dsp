@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /FAs /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CAB_EXPORTS" /FAcs /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -190,11 +190,11 @@ SOURCE=..\..\..\Windows\PropVariant.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\CabCopyDecoder.cpp
+SOURCE=.\CabBlockInStream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\CabCopyDecoder.h
+SOURCE=.\CabBlockInStream.h
 # End Source File
 # Begin Source File
 
@@ -222,59 +222,7 @@ SOURCE=.\CabIn.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\CabInBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\CabInBuffer.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\CabItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXBitDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXConst.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXExtConst.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXi86Converter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZXi86Converter.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\MSZipConst.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\MSZipDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\MSZipDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\MSZipExtConst.h
 # End Source File
 # End Group
 # Begin Group "7zip Common"
@@ -298,6 +246,10 @@ SOURCE=..\..\Common\LSBFDecoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MSBFDecoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OutBuffer.cpp
 # End Source File
 # Begin Source File
@@ -306,11 +258,11 @@ SOURCE=..\..\Common\OutBuffer.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\ProgressUtils.cpp
+SOURCE=..\..\Common\StreamUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\ProgressUtils.h
+SOURCE=..\..\Common\StreamUtils.h
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -326,6 +278,112 @@ SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\LZ\LZOutWindow.h
+# End Source File
+# End Group
+# Begin Group "Lzx"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzx\Lzx.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzx\Lzx86Converter.cpp
+
+!IF  "$(CFG)" == "Cab - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Cab - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzx\Lzx86Converter.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzx\LzxDecoder.cpp
+
+!IF  "$(CFG)" == "Cab - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Cab - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzx\LzxDecoder.h
+# End Source File
+# End Group
+# Begin Group "Deflate"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\DeflateConst.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\DeflateDecoder.cpp
+
+!IF  "$(CFG)" == "Cab - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Cab - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\DeflateDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\DeflateExtConst.h
+# End Source File
+# End Group
+# Begin Group "Copy"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "Quantum"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Quantum\QuantumDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Quantum\QuantumDecoder.h
+# End Source File
+# End Group
+# Begin Group "Huffman"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Huffman\HuffmanDecoder.h
 # End Source File
 # End Group
 # End Group

@@ -38,7 +38,7 @@ public:
   int GetItemCount() const
     { return ListView_GetItemCount(_window); }
 
-  INT GetSelectionMark()
+  INT GetSelectionMark() const
     { return ListView_GetSelectionMark(_window); }
 
   void SetItemCount(int numItems)
@@ -63,7 +63,7 @@ public:
 
   void SetItemState(int index, UINT state, UINT mask)
     { ListView_SetItemState(_window, index, state, mask); }
-  UINT GetItemState(int index, UINT mask)
+  UINT GetItemState(int index, UINT mask) const
     { return ListView_GetItemState(_window, index, mask); }
 
   bool GetColumn(int columnIndex, LVCOLUMN* columnInfo) const

@@ -1,5 +1,6 @@
 !IFDEF CPU
 LIBS = $(LIBS) bufferoverflowU.lib 
+CFLAGS = $(CFLAGS) -GS- -Zc:forScope
 !ENDIF
 
 !IFNDEF O
@@ -10,7 +11,7 @@ O=O
 !ENDIF
 !ENDIF
 
-CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -EHsc -Gz -GS-
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -EHsc -Gz -WX
 !IFDEF MY_STATIC_LINK
 !IFNDEF MY_SINGLE_THREAD
 CFLAGS = $(CFLAGS) -MT

@@ -119,19 +119,15 @@ static int ComparePairIDs(const UString &s1, const UString &s2)
   { return s1.CollateNoCase(s2); }
 static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
   { return ComparePairIDs(p1.ID, p2.ID); }
-static int __cdecl ComparePairItems(const void *a1, const void *a2)
-{   
-  return ComparePairItems(
-      *(*((const CTextPair **)a1)),
-      *(*((const CTextPair **)a2)));
-}
+
+// typedef void* MY_PVOID;
+
+// static int ComparePairItems(const MY_PVOID *a1, const MY_PVOID *a2, void *param)
+static int ComparePairItems(void *const *a1, void *const *a2, void *param)
+  { return ComparePairItems(**(const CTextPair **)a1, **(const CTextPair **)a2); }
 
 void CPairsStorage::Sort()
-{
-  CPointerVector &pointerVector = Pairs;
-  qsort(&pointerVector[0], Pairs.Size(), sizeof(void *), 
-      ComparePairItems);
-}
+  { Pairs.Sort(ComparePairItems, 0); }
 
 int CPairsStorage::FindID(const UString &id, int &insertPos)
 {

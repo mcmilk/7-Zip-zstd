@@ -34,9 +34,9 @@ inline wchar_t* MyStringGetNextCharPointer(wchar_t *p)
   { return (p + 1); }
 inline const wchar_t* MyStringGetNextCharPointer(const wchar_t *p)
   { return (p + 1); }
-inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, wchar_t *p)
+inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *, wchar_t *p)
   { return (p - 1); }
-inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *base, const wchar_t *p)
+inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *, const wchar_t *p)
   { return (p - 1); }
 
 #ifdef _WIN32

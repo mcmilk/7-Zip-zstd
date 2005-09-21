@@ -58,12 +58,14 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
+/*
 enum // PropID
 {
-  // kpidExtraIsPresent = kpidUserDefined,
-  // kpidExtraFlags,
-  // kpidIsText
+  kpidExtraIsPresent = kpidUserDefined,
+  kpidExtraFlags,
+  kpidIsText
 };
+*/
 
 STATPROPSTG kProperties[] = 
 {

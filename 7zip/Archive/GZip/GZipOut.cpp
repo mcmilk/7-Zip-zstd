@@ -5,6 +5,7 @@
 #include "GZipOut.h"
 #include "Common/CRC.h"
 #include "Windows/Defs.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NGZip {
@@ -12,7 +13,7 @@ namespace NGZip {
 HRESULT COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
   UInt32 processedSize;
-  RINOK(m_Stream->Write(buffer, size, &processedSize));
+  RINOK(WriteStream(m_Stream, buffer, size, &processedSize));
   if(processedSize != size)
     return E_FAIL;
   return S_OK;

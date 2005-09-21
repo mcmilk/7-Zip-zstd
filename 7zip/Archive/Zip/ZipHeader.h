@@ -67,7 +67,8 @@ namespace NFileHeader
       kDeflated64 = 9,
       kPKImploding = 10,
       
-      kBZip2 = 12
+      kBZip2 = 12,
+      kWinZipPPMd = 0x62
     };
     const int kNumCompressionMethods = 11;
     const Byte kMadeByProgramVersion = 20;

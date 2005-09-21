@@ -1,4 +1,4 @@
-7-Zip 4.25 Sources
+7-Zip 4.27 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
@@ -8,6 +8,27 @@
 
 License Info
 ------------
+
+Most of 7-Zip source code is under GNU LGPL.
+
+Files in folders
+  7zip/Compress/Rar20
+  7zip/Compress/Rar29
+  7zip/Compress/Rar29/Original
+are licensed under "unRAR license + GNU LGPL" license.
+Source code files in all other folders of this package are under GNU LGPL.
+
+"unRAR license + GNU LGPL" means that you must follow 
+GNU LGPL in all aspects while it is in agreement 
+with unRAR license. But you can not break unRAR license rules.
+It means that unRAR license is main license in that pair.
+
+You can find unRAR license in file unrarLicense.txt
+You can find GNU LGPL license in file copying.txt
+
+
+GNU LGPL information:
+---------------------
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -24,6 +45,31 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
+unRAR license + GNU LGPL Notes
+------------------------------
+
+Please check main restriction from unRar license:
+
+   2. The unRAR sources may be used in any software to handle RAR
+      archives without limitations free of charge, but cannot be used
+      to re-create the RAR compression algorithm, which is proprietary.
+      Distribution of modified unRAR sources in separate form or as a
+      part of other software is permitted, provided that it is clearly
+      stated in the documentation and source comments that the code may
+      not be used to develop a RAR (WinRAR) compatible archiver.
+
+In brief it means:
+1) You can compile and use compiled files under GNU LGPL rules, since 
+   unRAR license almost has no restrictions for compiled files.
+   You can link these compiled files to LGPL programs.
+2) You can fix bugs in source code and use compiled fixed version.
+3) You can not use unRAR sources to re-create the RAR compression algorithm.
+
+
+7zip\Compress\Rar29\Original folder contains files that are modified
+versions of original unRAR source code files.
+
+
 License notes
 -------------
 
@@ -37,7 +83,7 @@ http://www.7-zip.org/support.html
 Also this package contains files from LZMA SDK
 you can download LZMA SDK from this page:
 http://www.7-zip.org/sdk.html
-read about license for LZMA SDk in file
+read about addtional licenses for LZMA SDK in file
 DOC/lzma.txt
 
 
@@ -58,18 +104,15 @@ Tools / Options / Directories
   - Library files
 
 
-Also if you want to compile Original BZip2 code you must 
-download BZip source to folder
-7zip/Compress/BZip2Original/Original
-You can find BZip2 sources from that page:
-http://sources.redhat.com/bzip2/index.html
+To compile 7-Zip for AMD64 and IA64 you need:
+  Windows Server 2003 SP1 Platform SDK from microsoft.com
 
 
 
 Compiling under Unix/Linux
 --------------------------
-If sizeof(wchar_t) == 4 in your compiler,
-you must use only 2 low bytes of wchar_t.
+Check this site for Posix/Linux version:
+http://sourceforge.net/projects/p7zip/
 
 
 Notes:
@@ -94,6 +137,7 @@ DOC                Documentation
 ---
   7zFormat.txt   - 7z format description
   copying.txt    - GNU LGPL license
+  unRarLicense.txt - License for unRAR part of source code
   history.txt    - Sources history
   Methods.txt    - Compression method IDs
   readme.txt     - Readme file

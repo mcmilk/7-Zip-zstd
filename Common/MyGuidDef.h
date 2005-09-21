@@ -3,10 +3,12 @@
 #ifndef GUID_DEFINED
 #define GUID_DEFINED
 
+#include "Types.h"
+
 typedef struct {
-  unsigned long  Data1;
-  unsigned short Data2;
-  unsigned short Data3;
+  UInt32 Data1;
+  UInt16 Data2;
+  UInt16 Data3;
   unsigned char Data4[8];
 } GUID;
 

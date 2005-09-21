@@ -4,6 +4,7 @@
 #define __ARCHIVE_CAB_IN_H
 
 #include "../../IStream.h"
+#include "../../Common/InBuffer.h"
 #include "CabHeader.h"
 #include "CabItem.h"
 
@@ -22,10 +23,14 @@ public:
   CInArchiveException(CCauseType cause) : Cause(cause) {}
 };
 
-class CInArchiveInfo
+struct COtherArchive
 {
-public:
-  UInt32  Size;	/* size of this cabinet file in bytes */
+  AString FileName;
+  AString DiskName;
+};
+
+struct CArchiveInfo
+{
   Byte  VersionMinor;	/* cabinet file format version, minor */
   Byte  VersionMajor;	/* cabinet file format version, major */
   UInt16  NumFolders;	/* number of CFFOLDER entries in this cabinet */
@@ -35,39 +40,125 @@ public:
   UInt16  CabinetNumber;	/* number of this cabinet file in a set */
 
   bool ReserveBlockPresent() const { return (Flags & NHeader::NArchive::NFlags::kReservePresent) != 0; }
-  NHeader::NArchive::CPerDataSizes PerDataSizes;
 
-  AString PreviousCabinetName;
-  AString PreviousDiskName;
-  AString NextCabinetName;
-  AString NextDiskName;
+  bool IsTherePrev() const { return (Flags & NHeader::NArchive::NFlags::kPrevCabinet) != 0; }
+  bool IsThereNext() const { return (Flags & NHeader::NArchive::NFlags::kNextCabinet) != 0; }
+
+  UInt16 PerCabinetAreaSize; 	// (optional) size of per-cabinet reserved area
+  Byte PerFolderAreaSize; 	// (optional) size of per-folder reserved area
+  Byte PerDataBlockAreaSize; 	// (optional) size of per-datablock reserved area
+
+  Byte GetDataBlockReserveSize() const { return (Byte)(ReserveBlockPresent() ? PerDataBlockAreaSize : 0); }
+
+  COtherArchive PreviousArchive;
+  COtherArchive NextArchive;
+
+  CArchiveInfo()
+  {
+    Clear();
+  }
+
+  void Clear()
+  {
+    PerCabinetAreaSize = 0;
+    PerFolderAreaSize = 0;
+    PerDataBlockAreaSize = 0;
+   }
 };
 
-class CProgressVirt
+struct CInArchiveInfo: public CArchiveInfo
+{
+  UInt32 Size;	/* size of this cabinet file in bytes */
+  UInt32 FileHeadersOffset;  //offset of the first CFFILE entry
+};
+
+
+class CDatabase
 {
 public:
-  STDMETHOD(SetTotal)(const UInt64 *numFiles) PURE;
-  STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
+  UInt64 StartPosition;
+  CInArchiveInfo ArchiveInfo;
+  CObjectVector<CFolder> Folders;
+  CObjectVector<CItem> Items;
+  void Clear()
+  {
+    ArchiveInfo.Clear();
+    Folders.Clear();
+    Items.Clear();
+  }
+  bool IsTherePrevFolder() const
+  {
+    for (int i = 0; i < Items.Size(); i++)
+      if (Items[i].ContinuedFromPrev())
+        return true;
+    return false;
+  }
+  int GetNumberOfNewFolders() const 
+  {
+    int res = Folders.Size();
+    if (IsTherePrevFolder())
+      res--;
+    return res;
+  }
+  UInt32 GetFileOffset(int index) const { return Items[index].Offset; }
+  UInt32 GetFileSize(int index) const { return Items[index].Size; }
 };
 
-const UInt32 kMaxBlockSize = NHeader::NArchive::kArchiveHeaderSize;
+class CDatabaseEx: public CDatabase
+{
+public:
+  CMyComPtr<IInStream> Stream;
+};
+
+struct CMvItem
+{
+  int VolumeIndex;
+  int ItemIndex;
+};
+
+class CMvDatabaseEx
+{
+  bool AreItemsEqual(int i1, int i2);
+public:
+  CObjectVector<CDatabaseEx> Volumes;
+  CRecordVector<CMvItem> Items;
+  CRecordVector<int> StartFolderOfVol;
+  CRecordVector<int> FolderStartFileIndex;
+  int GetFolderIndex(const CMvItem *mvi) const 
+  {
+    const CDatabaseEx &db = Volumes[mvi->VolumeIndex];
+    return StartFolderOfVol[mvi->VolumeIndex] + 
+        db.Items[mvi->ItemIndex].GetFolderIndex(db.Folders.Size());
+  }
+  void Clear()
+  {
+    Volumes.Clear();
+    Items.Clear();
+    StartFolderOfVol.Clear();
+    FolderStartFileIndex.Clear();
+  }
+  void FillSortAndShrink();
+  bool Check();
+};
 
 class CInArchive
 {
-  UInt16 _blockSize;
-  Byte _block[kMaxBlockSize];
-  UInt32 _blockPos;
+  CInBuffer inBuffer;
 
   Byte ReadByte();
   UInt16 ReadUInt16();
   UInt32 ReadUInt32();
-public:
-  HRESULT Open(IInStream *inStream, 
+  AString SafeReadName();
+  void Skeep(size_t size);
+  void ReadOtherArchive(COtherArchive &oa);
+
+  HRESULT Open2(IInStream *inStream, 
       const UInt64 *searchHeaderSizeLimit,
-      CInArchiveInfo &inArchiveInfo,
-      CObjectVector<NHeader::CFolder> &folders,
-      CObjectVector<CItem> &files,
-      CProgressVirt *progressVirt);
+      CDatabase &database);
+public:
+  HRESULT Open(
+      const UInt64 *searchHeaderSizeLimit,
+      CDatabaseEx &database);
 };
   
 }}

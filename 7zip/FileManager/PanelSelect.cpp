@@ -129,6 +129,8 @@ void CPanel::UpdateSelection()
 {
   if (!_mySelectMode)
   {
+    bool enableTemp = _enableItemChangeNotify;
+    _enableItemChangeNotify = false;
     int numItems = _listView.GetItemCount();
     for (int i = 0; i < numItems; i++)
     {
@@ -140,6 +142,7 @@ void CPanel::UpdateSelection()
         _listView.SetItemState(i, value, LVIS_SELECTED);
       }
     }
+    _enableItemChangeNotify = enableTemp;
   }
   _listView.RedrawAllItems();
 }
@@ -213,6 +216,24 @@ void CPanel::SelectAll(bool selectMode)
 
 void CPanel::InvertSelection()
 {
+  if (!_mySelectMode)
+  {
+    int numSelected = 0;
+    for (int i = 0; i < _selectedStatusVector.Size(); i++)
+      if (_selectedStatusVector[i])
+        numSelected++;
+    if (numSelected == 1)
+    {
+      int focused = _listView.GetFocusedItem();
+      if (focused >= 0)
+      {
+        int realIndex = GetRealItemIndex(focused);
+        if (realIndex >= 0)
+          if (_selectedStatusVector[realIndex])
+            _selectedStatusVector[realIndex] = false;
+      }
+    }
+  }
   for (int i = 0; i < _selectedStatusVector.Size(); i++)
     _selectedStatusVector[i] = !_selectedStatusVector[i];
   UpdateSelection();

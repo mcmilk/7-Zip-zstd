@@ -14,6 +14,7 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\String.obj \
   $O\StringConvert.obj \
+  $O\StringToInt.obj \
   $O\Vector.obj \
 
 WIN_OBJS = \
@@ -22,6 +23,7 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\LimitedStreams.obj \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \

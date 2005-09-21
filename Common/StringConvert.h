@@ -18,9 +18,9 @@ inline UString GetUnicodeString(const AString &ansiString)
   { return MultiByteToUnicodeString(ansiString); }
 inline UString GetUnicodeString(const AString &multiByteString, UINT codePage)
   { return MultiByteToUnicodeString(multiByteString, codePage); }
-inline const wchar_t* GetUnicodeString(const wchar_t* unicodeString, UINT codePage)
+inline const wchar_t* GetUnicodeString(const wchar_t* unicodeString, UINT)
   { return unicodeString; }
-inline const UString& GetUnicodeString(const UString &unicodeString, UINT codePage)
+inline const UString& GetUnicodeString(const UString &unicodeString, UINT)
   { return unicodeString; }
 
 inline const char* GetAnsiString(const char* ansiString)
@@ -54,9 +54,9 @@ inline AString GetOemString(const UString &unicodeString)
 #else
   inline const char* GetSystemString(const char *ansiString)
     { return ansiString; }
-  inline const AString& GetSystemString(const AString &multiByteString, UINT codePage)
+  inline const AString& GetSystemString(const AString &multiByteString, UINT)
     { return multiByteString; }
-  inline const char * GetSystemString(const char *multiByteString, UINT codePage)
+  inline const char * GetSystemString(const char *multiByteString, UINT)
     { return multiByteString; }
   inline AString GetSystemString(const UString &unicodeString)
     { return UnicodeStringToMultiByte(unicodeString); }

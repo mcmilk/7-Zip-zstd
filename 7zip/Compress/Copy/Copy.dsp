@@ -125,6 +125,18 @@ SOURCE=..\..\..\Common\Alloc.cpp
 SOURCE=..\..\..\Common\Alloc.h
 # End Source File
 # End Group
+# Begin Group "7-Zip Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\CopyCoder.cpp

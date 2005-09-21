@@ -9,6 +9,8 @@
 #include "Windows/Defs.h"
 #include "Common/MyCom.h"
 
+#include "../../Common/StreamUtils.h"
+
 namespace NArchive {
 namespace NRpm {
 
@@ -31,7 +33,7 @@ static HRESULT RedSigHeaderSig(IInStream *inStream, CSigHeaderSig &h)
   char dat[kCSigHeaderSigSize];
   char *cur = dat;
   UInt32 processedSize;
-  RINOK(inStream->Read(dat, kCSigHeaderSigSize, &processedSize));
+  RINOK(ReadStream(inStream, dat, kCSigHeaderSigSize, &processedSize));
   if (kCSigHeaderSigSize != processedSize)
     return S_FALSE;
   memmove(h.Magic, cur, 4);
@@ -50,7 +52,7 @@ HRESULT OpenArchive(IInStream *inStream)
   char *cur = leadData;
   CLead lead;
   UInt32 processedSize;
-  RINOK(inStream->Read(leadData, kLeadSize, &processedSize));
+  RINOK(ReadStream(inStream, leadData, kLeadSize, &processedSize));
   if (kLeadSize != processedSize)
     return S_FALSE;
   memmove(lead.Magic, cur, 4);

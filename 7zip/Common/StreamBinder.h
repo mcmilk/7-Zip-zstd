@@ -26,12 +26,10 @@ public:
 
   void CreateStreams(ISequentialInStream **inStream, 
       ISequentialOutStream **outStream);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
+  HRESULT Read(void *data, UInt32 size, UInt32 *processedSize);
   void CloseRead();
 
-  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
+  HRESULT Write(const void *data, UInt32 size, UInt32 *processedSize);
   void CloseWrite();
   void ReInit();
 };

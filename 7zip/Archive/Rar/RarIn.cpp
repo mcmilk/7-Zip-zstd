@@ -4,9 +4,11 @@
 
 #include "Common/StringConvert.h"
 #include "Common/CRC.h"
+#include "Common/UTFConvert.h"
 
 #include "RarIn.h"
 #include "../../Common/LimitedStreams.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NRar {
@@ -115,7 +117,7 @@ bool CInArchive::ReadBytesAndTestSize(void *data, UInt32 size)
     return (i == size);
   }
   UInt32 processedSize;
-  m_Stream->Read(data, size, &processedSize);
+  ReadStream(m_Stream, data, size, &processedSize);
   return (processedSize == size);
 }
 
@@ -128,7 +130,7 @@ void CInArchive::ReadBytesAndTestResult(void *data, UInt32 size)
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
-  HRESULT result = m_Stream->Read(data, size, &realProcessedSize);
+  HRESULT result = ReadStream(m_Stream, data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   AddToSeekValue(realProcessedSize);
@@ -155,6 +157,7 @@ bool CInArchive::ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit)
   m_ArchiveHeader.Size = ReadUInt16();
   m_ArchiveHeader.Reserved1 = ReadUInt16();
   m_ArchiveHeader.Reserved2 = ReadUInt32();
+  m_ArchiveHeader.EncryptVersion = 0;
 
   CCRC crc;
   crc.UpdateByte(m_ArchiveHeader.Type);
@@ -162,6 +165,14 @@ bool CInArchive::ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit)
   crc.UpdateUInt16(m_ArchiveHeader.Size);
   crc.UpdateUInt16(m_ArchiveHeader.Reserved1);
   crc.UpdateUInt32(m_ArchiveHeader.Reserved2);
+
+  if (m_ArchiveHeader.IsThereEncryptVer() && m_ArchiveHeader.Size > NHeader::NArchive::kArchiveHeaderSize)
+  {
+    ReadBytes(&m_ArchiveHeader.EncryptVersion, 1, &processedSize);
+    if (processedSize != 1)
+      return false;
+    crc.UpdateByte(m_ArchiveHeader.EncryptVersion);
+  }
 
   UInt32 u = crc.GetDigest();
   if(m_ArchiveHeader.CRC != (crc.GetDigest() & 0xFFFF))
@@ -177,7 +188,7 @@ void CInArchive::SkipArchiveComment()
 {
   if (!m_SeekOnArchiveComment)
     return;
-  AddToSeekValue(m_ArchiveHeader.Size - NHeader::NArchive::kArchiveHeaderSize);
+  AddToSeekValue(m_ArchiveHeader.Size - m_ArchiveHeader.GetBaseSize());
   m_SeekOnArchiveComment = false;
 }
 
@@ -256,15 +267,18 @@ void CInArchive::ReadName(CItemEx &item, int nameSize)
     buffer[mainLen] = '\0';
     item.Name = buffer;
 
-    int unicodeNameSizeMax = MyMin(nameSize, (0x400));
-    _unicodeNameBuffer.EnsureCapacity(unicodeNameSizeMax + 1);
-
-    if((m_BlockHeader.Flags & NHeader::NFile::kUnicodeName) != 0  && 
-        mainLen < nameSize)
+    if(item.HasUnicodeName())
     {
-      DecodeUnicodeFileName(buffer, (const Byte *)buffer + mainLen + 1, 
-          nameSize - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
-      item.UnicodeName = _unicodeNameBuffer;
+      if(mainLen < nameSize)
+      {
+        int unicodeNameSizeMax = MyMin(nameSize, (0x400));
+        _unicodeNameBuffer.EnsureCapacity(unicodeNameSizeMax + 1);
+        DecodeUnicodeFileName(buffer, (const Byte *)buffer + mainLen + 1, 
+            nameSize - (mainLen + 1), _unicodeNameBuffer, unicodeNameSizeMax);
+        item.UnicodeName = _unicodeNameBuffer;
+      }
+      else if (!ConvertUTF8ToUnicode(item.Name, item.UnicodeName))
+        item.UnicodeName.Empty();
     }
   }
   else
@@ -398,6 +412,8 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
         m_RarAESSpec = new NCrypto::NRar29::CDecoder;
         m_RarAES = m_RarAESSpec;
       }
+      m_RarAESSpec->SetRar350Mode(m_ArchiveHeader.IsEncryptOld());
+
       // Salt
       const UInt32 kSaltSize = 8;
       Byte salt[kSaltSize];
@@ -410,9 +426,17 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
       RINOK(getTextPassword->CryptoGetTextPassword(&password))
       UString unicodePassword(password);
 
-      RINOK(m_RarAESSpec->CryptoSetPassword(
-          (const Byte *)(const wchar_t *)unicodePassword, 
-          unicodePassword.Length() * 2));
+      CByteBuffer buffer;
+      const UInt32 sizeInBytes = unicodePassword.Length() * 2;
+      buffer.SetCapacity(sizeInBytes);
+      for (int i = 0; i < unicodePassword.Length(); i++)
+      {
+        wchar_t c = unicodePassword[i];
+        ((Byte *)buffer)[i * 2] = (Byte)c;
+        ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+      }
+
+      RINOK(m_RarAESSpec->CryptoSetPassword((const Byte *)buffer, sizeInBytes));
 
       const UInt32 kDecryptedBufferSize = (1 << 12);
       if (m_DecryptedData.GetCapacity() == 0)
@@ -420,7 +444,7 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
         m_DecryptedData.SetCapacity(kDecryptedBufferSize);
       }
       RINOK(m_RarAES->Init());
-      RINOK(m_Stream->Read((Byte *)m_DecryptedData, kDecryptedBufferSize, &m_DecryptedDataSize));
+      RINOK(ReadStream(m_Stream, (Byte *)m_DecryptedData, kDecryptedBufferSize, &m_DecryptedDataSize));
       m_DecryptedDataSize = m_RarAES->Filter((Byte *)m_DecryptedData, m_DecryptedDataSize);
 
       m_CryptoMode = true;
@@ -486,7 +510,7 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
 
 void CInArchive::DirectGetBytes(void *data, UInt32 size)
 {  
-  m_Stream->Read(data, size, NULL);
+  ReadStream(m_Stream, data, size, NULL);
 }
 
 bool CInArchive::SeekInArchive(UInt64 position)

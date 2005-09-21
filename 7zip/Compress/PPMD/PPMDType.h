@@ -13,12 +13,6 @@
 const int kMaxOrderCompress = 32;
 const int MAX_O = 255; /* maximum allowed model order */
 
-#if defined(__GNUC__)
-#define _PACK_ATTR __attribute__ ((packed))
-#else
-#define _PACK_ATTR
-#endif /* defined(__GNUC__) */
-
 template <class T>
 inline void _PPMD_SWAP(T& t1,T& t2) { T tmp = t1; t1 = t2; t2 = tmp; }
 

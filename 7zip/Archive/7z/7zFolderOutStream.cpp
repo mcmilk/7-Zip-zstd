@@ -91,7 +91,8 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
           UInt64(size - realProcessedSize));
       
       UInt32 processedSizeLocal;
-      RINOK(_outStreamWithHash->Write((const Byte *)data + realProcessedSize, numBytesToWrite, &processedSizeLocal));
+      RINOK(_outStreamWithHash->Write((const Byte *)data + realProcessedSize, 
+            numBytesToWrite, &processedSizeLocal));
 
       _filePos += processedSizeLocal;
       realProcessedSize += processedSizeLocal;
@@ -128,12 +129,6 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
   if (processedSize != NULL)
     *processedSize = size;
   return S_OK;
-}
-
-STDMETHODIMP CFolderOutStream::WritePart(const void *data, 
-    UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
 }
 
 HRESULT CFolderOutStream::FlushCorrupted(Int32 resultEOperationResult)

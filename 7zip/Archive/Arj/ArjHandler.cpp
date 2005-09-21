@@ -19,8 +19,8 @@
 #include "../../Common/LimitedStreams.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
-#include "../../Compress/Arj/Decoder1.h"
-#include "../../Compress/Arj/Decoder2.h"
+#include "../../Compress/Arj/ArjDecoder1.h"
+#include "../../Compress/Arj/ArjDecoder2.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"

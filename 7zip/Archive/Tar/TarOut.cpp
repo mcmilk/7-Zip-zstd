@@ -7,6 +7,7 @@
 
 #include "Common/IntToString.h"
 #include "Windows/Defs.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NTar {
@@ -14,7 +15,7 @@ namespace NTar {
 HRESULT COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
   UInt32 processedSize;
-  RINOK(m_Stream->Write(buffer, size, &processedSize));
+  RINOK(WriteStream(m_Stream, buffer, size, &processedSize));
   if(processedSize != size)
     return E_FAIL;
   return S_OK;
@@ -165,10 +166,15 @@ HRESULT COutArchive::FillDataResidual(UInt64 dataSize)
 
 HRESULT COutArchive::WriteFinishHeader()
 {
-  char record[NFileHeader::kRecordSize];
-  for (int i = 0; i < NFileHeader::kRecordSize; i++)
+  Byte record[NFileHeader::kRecordSize];
+  int i;
+  for (i = 0; i < NFileHeader::kRecordSize; i++)
     record[i] = 0;
-  return WriteBytes(record, NFileHeader::kRecordSize);
+  for (i = 0; i < 2; i++)
+  {
+    RINOK(WriteBytes(record, NFileHeader::kRecordSize));
+  }
+  return S_OK;
 }
 
 }}

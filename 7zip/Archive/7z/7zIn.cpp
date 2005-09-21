@@ -6,6 +6,7 @@
 #include "7zMethods.h"
 #include "7zDecode.h"
 #include "../../Common/StreamObjects.h"
+#include "../../Common/StreamUtils.h"
 #include "../../../Common/CRC.h"
 
 namespace NArchive {
@@ -69,7 +70,7 @@ HRESULT CInArchive::ReadDirect(IInStream *stream, void *data, UInt32 size,
     UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
-  HRESULT result = stream->Read(data, size, &realProcessedSize);
+  HRESULT result = ReadStream(stream, data, size, &realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   _position += realProcessedSize;
@@ -850,7 +851,13 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset,
   // database.ArchiveInfo.DataStartPosition2 += database.ArchiveInfo.StartPositionAfterHeader;
   
   CNum packIndex = 0;
-  CDecoder decoder(false);
+  CDecoder decoder(
+    #ifdef _ST_MODE
+    false
+    #else
+    true
+    #endif
+    );
   UInt64 dataStartPos = baseOffset + dataOffset;
   for(int i = 0; i < folders.Size(); i++)
   {

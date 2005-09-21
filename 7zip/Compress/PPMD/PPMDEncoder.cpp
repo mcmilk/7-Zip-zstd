@@ -9,6 +9,8 @@
 
 #include "Common/Defs.h"
 
+#include "../../Common/StreamUtils.h"
+
 #include "PPMDEncoder.h"
 
 namespace NCompress {
@@ -40,19 +42,7 @@ public:
     
   }
 };
-
 CCounter g_Counter;
-
-
-/*
-// ISetRangeEncoder
-STDMETHODIMP CEncoder::SetRangeEncoder(CRangeEncoder *aRangeEncoder)
-{
-  _rangeEncoder = aRangeEncoder;
-  RINOK(_rangeEncoder.QueryInterface(&m_InitOutCoder));
-
-  return S_OK;
-}
 */
 
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, 
@@ -60,22 +50,22 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
 {
   for (UInt32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &aProperty = properties[i];
+    const PROPVARIANT &prop = properties[i];
     switch(propIDs[i])
     {
       case NCoderPropID::kUsedMemorySize:
-        if (aProperty.vt != VT_UI4)
+        if (prop.vt != VT_UI4)
           return E_INVALIDARG;
-        if (aProperty.ulVal < kMinMemSize)
+        if (prop.ulVal < kMinMemSize || prop.ulVal > kMaxMemBlockSize)
           return E_INVALIDARG;
-        _usedMemorySize = aProperty.ulVal;
+        _usedMemorySize = (UInt32)prop.ulVal;
         break;
       case NCoderPropID::kOrder:
-        if (aProperty.vt != VT_UI4)
+        if (prop.vt != VT_UI4)
           return E_INVALIDARG;
-        if (aProperty.ulVal < kMinOrder || aProperty.ulVal > kMaxOrderCompress)
+        if (prop.ulVal < kMinOrder || prop.ulVal > kMaxOrderCompress)
           return E_INVALIDARG;
-        _order = Byte(aProperty.ulVal);
+        _order = (Byte)prop.ulVal;
         break;
       default:
         return E_INVALIDARG;
@@ -91,7 +81,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   properties[0] = _order;
   for (int i = 0; i < 4; i++)
     properties[1 + i] = Byte(_usedMemorySize >> (8 * i));
-  return outStream->Write(properties, kPropSize, NULL);
+  return WriteStream(outStream, properties, kPropSize, NULL);
 }
 
 const UInt32 kUsedMemorySizeDefault = (1 << 24);
@@ -101,28 +91,7 @@ CEncoder::CEncoder():
   _usedMemorySize(kUsedMemorySizeDefault),
   _order(kOrderDefault)
 {
-  // SubAllocator.StartSubAllocator(kSubAllocator);
 }
-
-
-HRESULT CEncoder::Flush()
-{
-  _rangeEncoder.FlushData();
-  return _rangeEncoder.FlushStream();
-}
-
-class CEncoderFlusher
-{
-  CEncoder *_encoder;
-public:
-  CEncoderFlusher(CEncoder *encoder): _encoder(encoder) {}
-  ~CEncoderFlusher()
-  {
-    _encoder->Flush();
-    _encoder->ReleaseStreams();
-  }
-};
-
 
 
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
@@ -134,50 +103,41 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
     return E_OUTOFMEMORY;
   if (!_rangeEncoder.Create(1 << 20))
     return E_OUTOFMEMORY;
+  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
+    return E_OUTOFMEMORY;
 
   _inStream.SetStream(inStream);
   _inStream.Init();
+
   _rangeEncoder.SetStream(outStream);
   _rangeEncoder.Init();
 
   CEncoderFlusher flusher(this);
 
-  UInt64 pos = 0;
-  UInt64 prevProgressPos = 0;
-
-  try
-  {
-    if ( !_info.SubAllocator.StartSubAllocator(_usedMemorySize) ) 
-      return E_OUTOFMEMORY;
-  }
-  catch(...)
-  {
-    return E_OUTOFMEMORY;
-  }
-
-
   _info.MaxOrder = 0;
   _info.StartModelRare(_order);
 
-
-  while (true)
+  while(true)
   {
-    Byte symbol;
-    if (!_inStream.ReadByte(symbol))
+    UInt32 size = (1 << 18);
+    do
     {
-      // here we can write End Mark for stream version. 
-      // In current version this feature is not used.
-      // _info.EncodeSymbol(-1, &_rangeEncoder);   
-
-      return S_OK;
+      Byte symbol;
+      if (!_inStream.ReadByte(symbol))
+      {
+        // here we can write End Mark for stream version. 
+        // In current version this feature is not used.
+        // _info.EncodeSymbol(-1, &_rangeEncoder);   
+        return S_OK;
+      }
+      _info.EncodeSymbol(symbol, &_rangeEncoder);   
     }
-    _info.EncodeSymbol(symbol, &_rangeEncoder);   
-    pos++;
-    if (pos - prevProgressPos >= (1 << 18) && progress != NULL)
+    while (--size != 0);
+    if (progress != NULL)
     {
+      UInt64 inSize = _inStream.GetProcessedSize();
       UInt64 outSize = _rangeEncoder.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&pos, &outSize));
-      prevProgressPos = pos;
+      RINOK(progress->SetRatioInfo(&inSize, &outSize));
     }
   }
 }
@@ -193,4 +153,3 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 }
 
 }}
-

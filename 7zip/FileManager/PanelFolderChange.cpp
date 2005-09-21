@@ -95,7 +95,7 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   RINOK(BindToPath(path));
-  RefreshListCtrl(UString(), -1, UStringVector());
+  RefreshListCtrl(UString(), -1, true, UStringVector());
   return S_OK;
 }
 
@@ -112,7 +112,7 @@ void CPanel::OpenBookmark(int index)
 UString GetFolderPath(IFolderFolder * folder)
 {
   CMyComPtr<IFolderGetPath> folderGetPath;
-  if (folder->QueryInterface(&folderGetPath) == S_OK)
+  if (folder->QueryInterface(IID_IFolderGetPath, (void **)&folderGetPath) == S_OK)
   {
     CMyComBSTR path;
     if (folderGetPath->GetPath(&path) == S_OK)
@@ -310,7 +310,7 @@ void CPanel::OpenParentFolder()
   */
   LoadFullPath();
   ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
-  RefreshListCtrl(focucedName, -1, selectedItems);
+  RefreshListCtrl(focucedName, -1, true, selectedItems);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
   RefreshStatusBar();
 }
@@ -336,7 +336,7 @@ void CPanel::OpenRootFolder()
   CDisableTimerProcessing disableTimerProcessing1(*this);
   _parentFolders.Clear();
   SetToRootFolder();
-  RefreshListCtrl(UString(), 0, UStringVector());
+  RefreshListCtrl(UString(), -1, true, UStringVector());
   // ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
   /*
   BeforeChangeFolder();

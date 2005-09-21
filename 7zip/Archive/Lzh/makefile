@@ -23,7 +23,9 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\LimitedStreams.obj \
+  $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \

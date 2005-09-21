@@ -6,6 +6,8 @@
 #include "../../Common/Defs.h"
 // #include "Windows/Defs.h"
 
+#include "StreamUtils.h"
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
@@ -86,34 +88,12 @@ bool CInOutTempBuffer::InitReading()
   return true;
 }
 
-/*
-bool CInOutTempBuffer::Read(void *data, UInt32 maxSize, UInt32 &processedSize)
-{
-  processedSize = 0;
-  if (_currentPositionInBuffer < _bufferPosition)
-  {
-    UInt32 sizeToRead = MyMin(_bufferPosition - _currentPositionInBuffer, maxSize);
-    memmove(data, _buffer + _currentPositionInBuffer, sizeToRead);
-    data = ((Byte *)data) + sizeToRead;
-    _currentPositionInBuffer += sizeToRead;
-    processedSize += sizeToRead;
-    maxSize -= sizeToRead;
-  }
-  if (maxSize == 0 || !_tmpFileCreated)
-    return true;
-  UInt32 localProcessedSize;
-  bool result = _inFile.Read(data, maxSize, localProcessedSize);
-  processedSize += localProcessedSize;
-  return result;
-}
-*/
-
 HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
 {
   if (_currentPositionInBuffer < _bufferPosition)
   {
     UInt32 sizeToWrite = _bufferPosition - _currentPositionInBuffer;
-    RINOK(stream->Write(_buffer + _currentPositionInBuffer, sizeToWrite, NULL));
+    RINOK(WriteStream(stream, _buffer + _currentPositionInBuffer, sizeToWrite, NULL));
     _currentPositionInBuffer += sizeToWrite;
   }
   if (!_tmpFileCreated)
@@ -121,11 +101,11 @@ HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
   while(true)
   {
     UInt32 localProcessedSize;
-    if (!_inFile.Read(_buffer, kTmpBufferMemorySize, localProcessedSize))
+    if (!_inFile.ReadPart(_buffer, kTmpBufferMemorySize, localProcessedSize))
       return E_FAIL;
     if (localProcessedSize == 0)
       return S_OK;
-    RINOK(stream->Write(_buffer, localProcessedSize, NULL));
+    RINOK(WriteStream(stream, _buffer, localProcessedSize, NULL));
   }
 }
 
@@ -140,9 +120,4 @@ STDMETHODIMP CSequentialOutTempBufferImp::Write(const void *data, UInt32 size, U
   if (processedSize != NULL)
     *processedSize = size;
   return S_OK;
-}
-
-STDMETHODIMP CSequentialOutTempBufferImp::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
 }

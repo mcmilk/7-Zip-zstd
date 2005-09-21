@@ -44,6 +44,7 @@ WIN_OBJS = \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
+  $O\StreamUtils.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \

@@ -5,33 +5,27 @@
 
 #include "IStream.h"
 
-// {23170F69-40C1-278A-0000-000200040000}
-DEFINE_GUID(IID_ICompressProgressInfo, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x04, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200040000")
-ICompressProgressInfo: public IUnknown
+// "23170F69-40C1-278A-0000-000400xx0000"
+#define CODER_INTERFACE(i, x) \
+DEFINE_GUID(IID_ ## i, \
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x04, 0x00, x, 0x00, 0x00); \
+struct i: public IUnknown
+
+CODER_INTERFACE(ICompressProgressInfo, 0x04)
 {
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize) = 0;
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200050000}
-DEFINE_GUID(IID_ICompressCoder, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x05, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200050000")
-ICompressCoder: public IUnknown
+CODER_INTERFACE(ICompressCoder, 0x05)
 {
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
       const UInt64 *inSize, 
       const UInt64 *outSize,
-      ICompressProgressInfo *progress) = 0;
+      ICompressProgressInfo *progress) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200180000}
-DEFINE_GUID(IID_ICompressCoder2, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x18, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200180000")
-ICompressCoder2: public IUnknown
+CODER_INTERFACE(ICompressCoder2, 0x18)
 {
   STDMETHOD(Code)(ISequentialInStream **inStreams,
       const UInt64 **inSizes, 
@@ -61,106 +55,62 @@ namespace NCoderPropID
   };
 }
 
-// {23170F69-40C1-278A-0000-000200200000}
-DEFINE_GUID(IID_ICompressSetCoderProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x20, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200200000")
-ICompressSetCoderProperties: public IUnknown
+CODER_INTERFACE(ICompressSetCoderProperties, 0x20)
 {
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
       const PROPVARIANT *properties, UInt32 numProperties) PURE;
 };
 
 /*
-// {23170F69-40C1-278A-0000-000200210000}
-DEFINE_GUID(IID_ICompressSetDecoderProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x21, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200210000")
-ICompressSetDecoderProperties: public IUnknown
+CODER_INTERFACE(ICompressSetCoderProperties, 0x21)
 {
   STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream) PURE;
 };
 */
 
-// {23170F69-40C1-278A-0000-000200210200}
-DEFINE_GUID(IID_ICompressSetDecoderProperties2, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x21, 0x02, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200210200")
-ICompressSetDecoderProperties2: public IUnknown
+CODER_INTERFACE(ICompressSetDecoderProperties2, 0x22)
 {
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200230000}
-DEFINE_GUID(IID_ICompressWriteCoderProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x23, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200230000")
-ICompressWriteCoderProperties: public IUnknown
+CODER_INTERFACE(ICompressWriteCoderProperties, 0x23)
 {
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStreams) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200240000}
-DEFINE_GUID(IID_ICompressGetInStreamProcessedSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x24, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200240000")
-ICompressGetInStreamProcessedSize: public IUnknown
+CODER_INTERFACE(ICompressGetInStreamProcessedSize, 0x24)
 {
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200250000}
-DEFINE_GUID(IID_ICompressGetSubStreamSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x25, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200250000")
-ICompressGetSubStreamSize: public IUnknown
+CODER_INTERFACE(ICompressGetSubStreamSize, 0x30)
 {
   STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200260000}
-DEFINE_GUID(IID_ICompressSetInStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x26, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200260000")
-ICompressSetInStream: public IUnknown
+CODER_INTERFACE(ICompressSetInStream, 0x31)
 {
   STDMETHOD(SetInStream)(ISequentialInStream *inStream) PURE;
   STDMETHOD(ReleaseInStream)() PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200270000}
-DEFINE_GUID(IID_ICompressSetOutStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x27, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200270000")
-ICompressSetOutStream: public IUnknown
+CODER_INTERFACE(ICompressSetOutStream, 0x32)
 {
   STDMETHOD(SetOutStream)(ISequentialOutStream *outStream) PURE;
   STDMETHOD(ReleaseOutStream)() PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200280000}
-DEFINE_GUID(IID_ICompressSetInStreamSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x28, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200280000")
-ICompressSetInStreamSize: public IUnknown
+CODER_INTERFACE(ICompressSetInStreamSize, 0x33)
 {
   STDMETHOD(SetInStreamSize)(const UInt64 *inSize) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200290000}
-DEFINE_GUID(IID_ICompressSetOutStreamSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x29, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200290000")
-ICompressSetOutStreamSize: public IUnknown
+CODER_INTERFACE(ICompressSetOutStreamSize, 0x34)
 {
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000200400000}
-DEFINE_GUID(IID_ICompressFilter, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x40, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200400000")
-ICompressFilter: public IUnknown
+CODER_INTERFACE(ICompressFilter, 0x40)
 {
   STDMETHOD(Init)() PURE;
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size) PURE;
@@ -171,14 +121,20 @@ ICompressFilter: public IUnknown
   //      (it's for crypto block algorithms).
 };
 
-// {23170F69-40C1-278A-0000-000200800000}
-DEFINE_GUID(IID_ICryptoProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x02, 0x00, 0x80, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000200800000")
-ICryptoProperties: public IUnknown
+CODER_INTERFACE(ICryptoProperties, 0x80)
 {
   STDMETHOD(SetKey)(const Byte *data, UInt32 size) PURE;
   STDMETHOD(SetInitVector)(const Byte *data, UInt32 size) PURE;
+};
+
+CODER_INTERFACE(ICryptoSetPassword, 0x90)
+{
+  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size) PURE;
+};
+
+CODER_INTERFACE(ICryptoSetCRC, 0xA0)
+{
+  STDMETHOD(CryptoSetCRC)(UInt32 crc) PURE;
 };
 
 //////////////////////

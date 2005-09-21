@@ -136,8 +136,9 @@ struct CSelectedState
 {
   int FocusedItem;
   UString FocusedName;
+  bool SelectFocused;
   UStringVector SelectedNames;
-  CSelectedState(): FocusedItem(-1) {}
+  CSelectedState(): FocusedItem(-1), SelectFocused(false) {}
 };
 
 class CPanel:public NWindows::NControl::CWindow2
@@ -173,7 +174,7 @@ class CPanel:public NWindows::NControl::CWindow2
 public:
   CPanelCallback *_panelCallback;
 
-  void DeleteItems();
+  void DeleteItems(bool toRecycleBin);
   void CreateFolder();
   void CreateFile();
 
@@ -185,8 +186,8 @@ private:
   // void InitColumns2(PROPID sortID);
   void InsertColumn(int index);
 
-  void SetFocusedSelectedItem(int index);
-  void RefreshListCtrl(const UString &focusedName, int focusedPos,
+  void SetFocusedSelectedItem(int index, bool select);
+  void RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
       const UStringVector &selectedNames);
 
   void OnShiftSelectMessage();
@@ -224,6 +225,7 @@ public:
   bool _showRealFileIcons;
   // bool _virtualMode;
   // CUIntVector _realIndices;
+  bool _enableItemChangeNotify;
   bool _mySelectMode;
   CBoolVector _selectedStatusVector;
 
@@ -312,7 +314,8 @@ public:
       _selectionIsDefined(false),
       _ListViewMode(3),
       _xSize(300),
-      _mySelectMode(false)
+      _mySelectMode(false),
+      _enableItemChangeNotify(true)
       {} 
 
   void SetExtendedStyle()

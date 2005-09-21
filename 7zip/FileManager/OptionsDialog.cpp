@@ -94,7 +94,10 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
   if (::PropertySheet(&sheet) != -1)
   {
     if (langPage._langWasChanged)
+    {
+      g_App._window.SetText(LangLoadStringW(IDS_APP_TITLE, 0x03000000));
       MyLoadMenu();
+    }
     g_App.SetListSettings();
     g_App.SetShowSystemMenu();
     g_App.RefreshAllPanels();

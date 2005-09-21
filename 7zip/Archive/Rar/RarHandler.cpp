@@ -186,7 +186,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   switch(propID)
   {
     case kpidPath:
-      if (item.HasUnicodeName())
+      if (item.HasUnicodeName() && !item.UnicodeName.IsEmpty())
         propVariant = item.UnicodeName;
       else
         propVariant = (const wchar_t *)MultiByteToUnicodeString(item.Name, CP_OEMCP);
@@ -615,6 +615,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   NCrypto::NRar20::CDecoder *rar20CryptoDecoderSpec;
   CMyComPtr<ICompressFilter> rar20CryptoDecoder;
+  NCrypto::NRar29::CDecoder *rar29CryptoDecoderSpec;
   CMyComPtr<ICompressFilter> rar29CryptoDecoder;
 
   CFolderInStream *folderInStreamSpec = NULL;
@@ -727,9 +728,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         if (!rar29CryptoDecoder)
         {
-          rar29CryptoDecoder = new NCrypto::NRar29::CDecoder;
+          rar29CryptoDecoderSpec = new NCrypto::NRar29::CDecoder;
+          rar29CryptoDecoder = rar29CryptoDecoderSpec;
           // RINOK(rar29CryptoDecoder.CoCreateInstance(CLSID_CCryptoRar29Decoder));
         }
+        rar29CryptoDecoderSpec->SetRar350Mode(item.UnPackVersion < 36);
         CMyComPtr<ICompressSetDecoderProperties2> cryptoProperties;
         RINOK(rar29CryptoDecoder.QueryInterface(IID_ICompressSetDecoderProperties2, 
             &cryptoProperties));

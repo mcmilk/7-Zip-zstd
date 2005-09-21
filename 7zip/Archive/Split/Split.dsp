@@ -204,6 +204,14 @@ SOURCE=..\..\Common\ProgressUtils.cpp
 
 SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
 # End Group
 # Begin Group "Interface"
 
@@ -223,7 +231,7 @@ SOURCE=.\SplitHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\SplitHanlerOut.cpp
+SOURCE=.\SplitHandlerOut.cpp
 # End Source File
 # End Target
 # End Project

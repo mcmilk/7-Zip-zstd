@@ -16,7 +16,7 @@ namespace NFileHeader {
   // The magic field is filled with this if uname and gname are valid.
   namespace NMagic 
   {
-    const char *kUsTar  = "ustar  "; // 7 chars and a null
+    const char *kUsTar  = "ustar"; // 5 chars
     const char *kGNUTar = "GNUtar "; // 7 chars and a null
     const char *kEmpty = "\0\0\0\0\0\0\0\0"; // 7 chars and a null
   }

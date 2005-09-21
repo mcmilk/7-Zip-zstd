@@ -91,7 +91,7 @@ static const char *kHelpString =
     "  -si: read data from stdin\n"
     "  -so: write data to stdout\n"
     "  -t{Type}: Set type of archive\n"
-    "  -v{Size}}[b|k|m|g]: Create volumes\n"
+    "  -v{Size}[b|k|m|g]: Create volumes\n"
     "  -u[-][p#][q#][r#][x#][y#][z#][!newArchiveName]: Update options\n"
     "  -w[{path}]: assign Work directory. Empty path means a temporary directory\n"
     "  -x[r[-|0]]]{@listfile|!wildcard}: eXclude filenames\n"
@@ -232,6 +232,8 @@ int Main2(
           if (ecs->NumFileErrors != 0)
             stdStream << "Sub items Errors: " << ecs->NumFileErrors << endl;
         }
+        if (result != S_OK)
+          throw CSystemException(result);
         return NExitCode::kFatalError;
       }
       if (result != S_OK)

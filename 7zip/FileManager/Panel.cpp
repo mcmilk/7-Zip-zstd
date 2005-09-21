@@ -736,7 +736,7 @@ void CPanel::AddToArchive()
       names.Front(), (names.Size() > 1), false);
   CompressFiles(_currentFolderPrefix, archiveName, 
       names, false, true, false);
-  KillSelection();
+  // KillSelection();
 }
 
 void CPanel::ExtractArchives()

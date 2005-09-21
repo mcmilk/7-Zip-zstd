@@ -28,7 +28,6 @@ public:
   MY_UNKNOWN_IMP1(ICompressGetSubStreamSize)
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
   STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value);
 };

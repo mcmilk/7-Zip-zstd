@@ -174,7 +174,8 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
     }
     for (; i < kMaxAlphaSize; i++) 
       lens[i] = 0;
-    m_HuffmanDecoders[t].SetCodeLengths(lens);
+    if(!m_HuffmanDecoders[t].SetCodeLengths(lens))
+      return S_FALSE;
   }
   while(++t < numTables);
 
@@ -202,7 +203,7 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
       }
       groupSize--;                                    \
         
-      int nextSym = (int)huffmanDecoder->DecodeSymbol(&m_InStream);
+      UInt32 nextSym = huffmanDecoder->DecodeSymbol(&m_InStream);
       
       if (nextSym < 2) 
       {
@@ -220,13 +221,18 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
         while(--runCounter != 0);
         runPower = 0;
       } 
-      if (nextSym > numInUse) 
+      if (nextSym <= (UInt32)numInUse) 
+      {
+        Byte b = mtf.GetAndMove((int)nextSym - 1);
+        if (blockSize >= blockSizeMax) 
+          return S_FALSE;
+        state.CharCounters[b]++;
+        state.tt[blockSize++] = (UInt32)b;
+      }
+      else if (nextSym == (UInt32)numInUse + 1) 
         break;
-      Byte b = mtf.GetAndMove(nextSym - 1);
-      if (blockSize >= blockSizeMax) 
+      else 
         return S_FALSE;
-      state.CharCounters[b]++;
-      state.tt[blockSize++] = (UInt32)b;
     }
   }
   if (state.OrigPtr >= blockSize)

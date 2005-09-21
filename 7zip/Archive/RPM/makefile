@@ -17,6 +17,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
 
 OBJS = \
   $O\StdAfx.obj \

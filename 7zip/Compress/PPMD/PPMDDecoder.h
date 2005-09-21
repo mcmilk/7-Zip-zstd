@@ -17,6 +17,11 @@ namespace NPPMD {
 class CDecoder : 
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  #ifdef _ST_MODE
+  public ICompressSetInStream,
+  public ICompressSetOutStreamSize,
+  public ISequentialInStream,
+  #endif
   public CMyUnknownImp
 {
   NRangeCoder::CDecoder _rangeDecoder;
@@ -28,13 +33,28 @@ class CDecoder :
   Byte _order;
   UInt32 _usedMemorySize;
 
+  int _remainLen;
+  UInt64 _outSize;
+  bool _outSizeDefined;
+  UInt64 _processedSize;
+
+  HRESULT CodeSpec(UInt32 num, Byte *memStream);
 public:
 
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
+  #ifdef _ST_MODE
+  MY_UNKNOWN_IMP4(
+      ICompressSetDecoderProperties2, 
+      ICompressSetInStream, 
+      ICompressSetOutStreamSize, 
+      ISequentialInStream)
+  #else
+  MY_UNKNOWN_IMP1(
+      ICompressSetDecoderProperties2)
+  #endif
 
   void ReleaseStreams()
   {
-    _rangeDecoder.ReleaseStream();
+    ReleaseInStream();
     _outStream.ReleaseStream();
   }
 
@@ -51,6 +71,17 @@ public:
 
 
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
+
+  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
+  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
+
+  #ifdef _ST_MODE
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  #endif
+
+  CDecoder(): _outSizeDefined(false) {}
+
 };
 
 }}

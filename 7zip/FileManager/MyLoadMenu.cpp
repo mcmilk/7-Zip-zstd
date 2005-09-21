@@ -600,8 +600,11 @@ bool ExecuteFileCommand(int id)
       g_App.MoveTo();
       break;
     case IDM_DELETE:
-      g_App.Delete();
+    {
+      bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      g_App.Delete(!shift);
       break;
+    }
     case IDM_FILE_SPLIT:
       g_App.Split();
       break;

@@ -20,6 +20,7 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\OutBuffer.obj \
+  $O\StreamUtils.obj \
 
 LZ_OBJS = \
   $O\LZInWindow.obj \

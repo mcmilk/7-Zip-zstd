@@ -145,9 +145,11 @@ public:
 class CDecoder: 
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  #ifdef _ST_MODE
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
+  #endif
   public CMyUnknownImp
 {
   CLZOutWindow _outWindowStream;
@@ -170,26 +172,30 @@ class CDecoder:
 
   CLiteralDecoder _literalDecoder;
 
-  UInt32 _dictionarySizeCheck;
-  
   UInt32 _posStateMask;
 
   ///////////////////
   // State
-  UInt64 _outSize;
-  UInt64 _nowPos64;
   UInt32 _reps[4];
   CState _state;
   Int32 _remainLen; // -1 means end of stream. // -2 means need Init
+  UInt64 _outSize;
+  bool _outSizeDefined;
 
   void Init();
-  HRESULT CodeSpec(Byte *buffer, UInt32 size);
+  HRESULT CodeSpec(UInt32 size);
 public:
+
+  #ifdef _ST_MODE
   MY_UNKNOWN_IMP4(
       ICompressSetDecoderProperties2, 
       ICompressSetInStream, 
       ICompressSetOutStreamSize, 
       ISequentialInStream)
+  #else
+  MY_UNKNOWN_IMP1(
+      ICompressSetDecoderProperties2)
+  #endif
 
   void ReleaseStreams()
   {
@@ -228,9 +234,12 @@ public:
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
+  #ifdef _ST_MODE
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  #endif
+
+  CDecoder(): _outSizeDefined(false) {}
   virtual ~CDecoder() {}
 };
 

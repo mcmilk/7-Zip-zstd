@@ -60,7 +60,7 @@ struct CUpdateOptions
 HRESULT Update(
     IInStream *inStream,
     const CArchiveDatabaseEx *database,
-    CObjectVector<CUpdateItem> &updateItems,
+    const CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
     IArchiveUpdateCallback *updateCallback,
     const CUpdateOptions &options);

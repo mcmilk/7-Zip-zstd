@@ -5,14 +5,10 @@ LIBS = $(LIBS) oleaut32.lib user32.lib
 
 CAB_OBJS = \
   $O\DllExports.obj \
-  $O\CabCopyDecoder.obj \
+  $O\CabBlockInStream.obj \
   $O\CabHandler.obj \
   $O\CabHeader.obj \
   $O\CabIn.obj \
-  $O\CabInBuffer.obj \
-  $O\LZXDecoder.obj \
-  $O\LZXi86Converter.obj \
-  $O\MSZipDecoder.obj \
 
 COMMON_OBJS = \
   $O\Alloc.obj \
@@ -32,6 +28,11 @@ WIN_OBJS = \
   $O\LSBFDecoder.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\StreamUtils.obj \
+
+COMPRESS_LZX_OBJS = \
+  $O\LzxDecoder.obj \
+  $O\Lzx86Converter.obj \
 
 OBJS = \
   $O\StdAfx.obj \
@@ -39,7 +40,11 @@ OBJS = \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
+  $(COMPRESS_LZX_OBJS) \
+  $O\DeflateDecoder.obj \
+  $O\QuantumDecoder.obj \
   $O\LZOutWindow.obj \
+  $O\CopyCoder.obj \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -52,5 +57,14 @@ $(WIN_OBJS): ../../../Windows/$(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
+$(COMPRESS_LZX_OBJS): ../../Compress/Lzx/$(*B).cpp
+	$(COMPL_O2)
+$O\DeflateDecoder.obj: ../../Compress/Deflate/$(*B).cpp
+	$(COMPL_O2)
+$O\QuantumDecoder.obj: ../../Compress/Quantum/$(*B).cpp
+	$(COMPL)
 $O\LZOutWindow.obj: ../../Compress/LZ/$(*B).cpp
 	$(COMPL)
+$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
+	$(COMPL)
+

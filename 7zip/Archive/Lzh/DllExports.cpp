@@ -8,9 +8,9 @@
 #include "../../ICoder.h"
 #include "LzhHandler.h"
 
-// {23170F69-40C1-278A-1000-0001100E0000}
+// {23170F69-40C1-278A-1000-000110060000}
 DEFINE_GUID(CLSID_CLzhHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x0E, 0x00, 0x00);
+  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x06, 0x00, 0x00);
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)

@@ -200,8 +200,8 @@ public:
     { OnCopy(false, false, GetFocusedPanelIndex()); }
   void MoveTo()
     { OnCopy(true, false, GetFocusedPanelIndex()); }
-  void Delete()
-    { GetFocusedPanel().DeleteItems(); }
+  void Delete(bool toRecycleBin)
+    { GetFocusedPanel().DeleteItems(toRecycleBin); }
   void Split();
   void Combine();
   void Properties()

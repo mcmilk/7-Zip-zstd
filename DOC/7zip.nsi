@@ -2,10 +2,30 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 24
+!define VERSION_MINOR 27
 !define VERSION_POSTFIX_FULL " beta"
-!define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}"
+!ifdef WIN64
+!ifdef IA64
+!define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
+!else
+!define VERSION_SYS_POSTFIX_FULL " for Windows x64"
+!endif
+!else
+!define VERSION_SYS_POSTFIX_FULL ""
+!endif
+!define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}${VERSION_SYS_POSTFIX_FULL}"
 !define VERSION_POSTFIX ""
+!ifdef WIN64
+!ifdef IA64
+!define VERSION_SYS_POSTFIX "-ia64"
+!else
+!define VERSION_SYS_POSTFIX "-x64"
+!endif
+!else
+!define VERSION_SYS_POSTFIX ""
+!endif
+
+
 
 !define FM_LINK "7-Zip File Manager.lnk"
 !define HELP_LINK "7-Zip Help.lnk"
@@ -23,7 +43,7 @@
   ;General
   Name "${NAME_FULL}"
   BrandingText "www.7-zip.org"
-  OutFile "..\7z${VERSION_MAJOR}${VERSION_MINOR}${VERSION_POSTFIX}.exe"
+  OutFile "..\7z${VERSION_MAJOR}${VERSION_MINOR}${VERSION_POSTFIX}${VERSION_SYS_POSTFIX}.exe"
 
   ;Folder selection page
   InstallDir "$PROGRAMFILES\7-Zip"
@@ -34,7 +54,11 @@
   ;Compressor
 !ifndef NO_COMPRESSION
   SetCompressor /SOLID lzma
+!ifdef IA64
+  SetCompressorDictSize 8
+!else
   SetCompressorDictSize 4
+!endif
 !else
   SetCompressor zlib
   SetCompress off
@@ -97,16 +121,22 @@ Section
   File License.txt
   File copying.txt
   File readme.txt
+  !ifndef WIN64
   File 7zip_pad.xml
+  !endif
 
   # File 7-zip.dll
   # File 7-zipn.dll
   File 7zFM.exe
+  !ifndef WIN64
   File 7zFMn.exe
+  !endif
   File 7z.exe
   File 7za.exe
   File 7zg.exe
+  !ifndef WIN64
   File 7zgn.exe
+  !endif
 
   File 7z.sfx
   File 7zCon.sfx
@@ -120,9 +150,11 @@ Section
   File arj.dll
   File bz2.dll
   File cab.dll
+  File chm.dll
   File cpio.dll
   File deb.dll
   File gz.dll
+  File lzh.dll
   File rar.dll
   File rpm.dll
   File split.dll
@@ -172,6 +204,7 @@ Section
   File hr.txt
   File hu.txt
   File id.txt
+  File io.txt
   File it.txt
   File ja.txt
   File ka.txt
@@ -195,6 +228,7 @@ Section
   File ta.txt
   File th.txt
   File tr.txt
+  File tt.txt
   File uk.txt
   File uz.txt
   File va.txt
@@ -215,6 +249,13 @@ Section
 
   SetShellVarContext all
 
+  !ifdef WIN64
+
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
+  StrCpy "$MyDllPath" "7-zip.dll"
+
+  !else
+
   StrCpy $0 0
   System::Call "kernel32::GetVersion() i .r0"
   IntCmpU $0 0x80000000 0 regNT 0
@@ -228,14 +269,22 @@ Section
     StrCpy "$MyDllPath" "7-zipn.dll"
   doneReg:
 
+  !endif
+
   ClearErrors
 
   # create start menu icons
   SetOutPath $INSTDIR # working directory
   CreateDirectory $SMPROGRAMS\7-Zip
+
+  !ifdef WIN64
+  StrCpy $1 ""
+  !else
   StrCpy $1 "n"
   IntCmpU $0 0x80000000 0 +2 0
     StrCpy $1 ""
+  !endif
+
   CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM$1.exe
   CreateShortcut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
 
@@ -270,8 +319,10 @@ Section
   
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "" "$INSTDIR\7zFM.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "Path" "$INSTDIR"
+  !ifndef WIN64
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe" "" "$INSTDIR\7zFMn.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe" "Path" "$INSTDIR"
+  !endif
 
   # create uninstaller
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "DisplayName" "${NAME_FULL}"
@@ -279,6 +330,10 @@ Section
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoRepair" 1
   WriteUninstaller $INSTDIR\Uninstall.exe
+
+  !ifdef WIN64
+  ExecWait 'regsvr32 /s "$INSTDIR\7-zip.dll"'
+  !endif
 
 SectionEnd
  
@@ -310,13 +365,19 @@ Section "Uninstall"
   Delete $INSTDIR\7zip_pad.xml
 
   Delete /REBOOTOK $INSTDIR\7-zip.dll
+  !ifndef WIN64
   Delete /REBOOTOK $INSTDIR\7-zipn.dll
+  !endif
   Delete $INSTDIR\7zFM.exe
+  !ifndef WIN64
   Delete $INSTDIR\7zFMn.exe
+  !endif
   Delete $INSTDIR\7z.exe
   Delete $INSTDIR\7za.exe
   Delete $INSTDIR\7zg.exe
+  !ifndef WIN64
   Delete $INSTDIR\7zgn.exe
+  !endif
 
   Delete $INSTDIR\7z.sfx
   Delete $INSTDIR\7zCon.sfx
@@ -328,9 +389,11 @@ Section "Uninstall"
   Delete $INSTDIR\Formats\arj.dll
   Delete $INSTDIR\Formats\bz2.dll
   Delete $INSTDIR\Formats\cab.dll
+  Delete $INSTDIR\Formats\chm.dll
   Delete $INSTDIR\Formats\cpio.dll
   Delete $INSTDIR\Formats\deb.dll
   Delete $INSTDIR\Formats\gz.dll
+  Delete $INSTDIR\Formats\lzh.dll
   Delete $INSTDIR\Formats\rar.dll
   Delete $INSTDIR\Formats\rpm.dll
   Delete $INSTDIR\Formats\split.dll
@@ -380,6 +443,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\hr.txt
   Delete $INSTDIR\Lang\hu.txt
   Delete $INSTDIR\Lang\id.txt
+  Delete $INSTDIR\Lang\io.txt
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
@@ -403,6 +467,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ta.txt
   Delete $INSTDIR\Lang\th.txt
   Delete $INSTDIR\Lang\tr.txt
+  Delete $INSTDIR\Lang\tt.txt
   Delete $INSTDIR\Lang\uk.txt
   Delete $INSTDIR\Lang\uz.txt
   Delete $INSTDIR\Lang\va.txt
@@ -442,7 +507,9 @@ Section "Uninstall"
 
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe"
+  !ifndef WIN64
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe"
+  !endif
 
   DeleteRegKey HKLM "Software\7-Zip"
   DeleteRegKey HKCU "Software\7-Zip"

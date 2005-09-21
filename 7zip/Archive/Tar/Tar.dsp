@@ -162,6 +162,14 @@ SOURCE=..\..\..\Common\StringConvert.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\StringToInt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\StringToInt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Vector.cpp
 # End Source File
 # Begin Source File
@@ -275,6 +283,14 @@ SOURCE=..\..\Common\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
 # End Source File
 # End Group
 # End Target

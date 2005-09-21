@@ -20,6 +20,7 @@
 #include "../../../Common/StringToInt.h"
 
 #include "../../Common/FileStreams.h"
+#include "../../Common/StreamUtils.h"
 
 #include "../LZMA/LZMADecoder.h"
 #include "../LZMA/LZMAEncoder.h"
@@ -35,6 +36,8 @@ extern "C"
 using namespace NCommandLineParser;
 
 static const char *kCantAllocate = "Can not allocate memory";
+static const char *kReadError = "Read error";
+static const char *kWriteError = "Write error";
 
 namespace NKey {
 enum Enum
@@ -131,7 +134,7 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
+  fprintf(stderr, "\nLZMA 4.27 Copyright (c) 1999-2005 Igor Pavlov  2005-08-07\n");
 
   if (n == 1)
   {
@@ -269,7 +272,7 @@ int main2(int n, const char *args[])
     }
     
     UInt32 processedSize;
-    if (inStream->Read(inBuffer, (UInt32)inSize, &processedSize) != S_OK)
+    if (ReadStream(inStream, inBuffer, (UInt32)inSize, &processedSize) != S_OK)
       throw "Can not read";
     if ((UInt32)inSize != processedSize)
       throw "Read size error";
@@ -311,8 +314,8 @@ int main2(int n, const char *args[])
       if (res != 0)
         throw "LzmaDecoder error";
     }
-    if (outStream->Write(outBuffer, (UInt32)outSizeProcessed, &processedSize) != S_OK)
-      throw "Can not write";
+    if (WriteStream(outStream, outBuffer, (UInt32)outSizeProcessed, &processedSize) != S_OK)
+      throw kWriteError;
     MyFree(outBuffer);
     MyFree(inBuffer);
     return 0;
@@ -408,9 +411,9 @@ int main2(int n, const char *args[])
     for (int i = 0; i < 8; i++)
     {
       Byte b = Byte(fileSize >> (8 * i));
-      if (outStream->Write(&b, sizeof(b), 0) != S_OK)
+      if (outStream->Write(&b, 1, 0) != S_OK)
       {
-        fprintf(stderr, "Write error");
+        fprintf(stderr, kWriteError);
         return 1;
       }
     }
@@ -434,14 +437,14 @@ int main2(int n, const char *args[])
     const UInt32 kPropertiesSize = 5;
     Byte properties[kPropertiesSize];
     UInt32 processedSize;
-    if (inStream->Read(properties, kPropertiesSize, &processedSize) != S_OK)
+    if (ReadStream(inStream, properties, kPropertiesSize, &processedSize) != S_OK)
     {
-      fprintf(stderr, "Read error");
+      fprintf(stderr, kReadError);
       return 1;
     }
     if (processedSize != kPropertiesSize)
     {
-      fprintf(stderr, "Read error");
+      fprintf(stderr, kReadError);
       return 1;
     }
     if (decoderSpec->SetDecoderProperties2(properties, kPropertiesSize) != S_OK)
@@ -453,14 +456,14 @@ int main2(int n, const char *args[])
     for (int i = 0; i < 8; i++)
     {
       Byte b;
-      if (inStream->Read(&b, sizeof(b), &processedSize) != S_OK)
+      if (inStream->Read(&b, 1, &processedSize) != S_OK)
       {
-        fprintf(stderr, "Read error");
+        fprintf(stderr, kReadError);
         return 1;
       }
       if (processedSize != 1)
       {
-        fprintf(stderr, "Read error");
+        fprintf(stderr, kReadError);
         return 1;
       }
       fileSize |= ((UInt64)b) << (8 * i);

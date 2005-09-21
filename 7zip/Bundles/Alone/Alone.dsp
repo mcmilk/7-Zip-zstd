@@ -635,6 +635,14 @@ SOURCE=..\..\Common\StreamObjects.cpp
 
 SOURCE=..\..\Common\StreamObjects.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
 # End Group
 # Begin Group "Compress"
 

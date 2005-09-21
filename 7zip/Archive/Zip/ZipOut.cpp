@@ -6,6 +6,7 @@
 #include "Common/StringConvert.h"
 #include "Common/CRC.h"
 #include "../../Common/OffsetStream.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NZip {
@@ -46,7 +47,7 @@ void COutArchive::PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPa
 void COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
   UInt32 processedSize;
-  if(m_Stream->Write(buffer, size, &processedSize) != S_OK)
+  if(WriteStream(m_Stream, buffer, size, &processedSize) != S_OK)
     throw 0;
   if(processedSize != size)
     throw 0;

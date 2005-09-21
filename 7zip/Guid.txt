@@ -1,0 +1,152 @@
+{23170F69-40C1-278A-0000-}
+
+000000xx0000  IProgress.h 
+
+05  IProgress
+
+
+000300xx0000  IStream.h   
+
+01  ISequentialInStream
+02  ISequentialOutStream
+03  IInStream
+04  IOutStream
+06  IStreamGetSize
+07  IOutStreamFlush
+
+
+000400xx0000  ICoder.h
+
+04  ICompressProgressInfo
+05  ICompressCoder
+18  ICompressCoder2
+20  ICompressSetCoderProperties
+21  ICompressSetDecoderProperties // 
+22  ICompressSetDecoderProperties2
+23  ICompressWriteCoderProperties
+24  ICompressGetInStreamProcessedSize
+30  ICompressGetSubStreamSize
+31  ICompressSetInStream
+32  ICompressSetOutStream
+33  ICompressSetInStreamSize
+34  ICompressSetOutStreamSize
+40  ICompressFilter
+80  ICryptoProperties
+90  ICryptoSetPassword
+A0  ICryptoSetCRC
+
+
+000500xx0000  IPassword.h
+
+10 ICryptoGetTextPassword
+11 ICryptoGetTextPassword2
+
+
+000600xx0000 IArchive.h 
+
+03  ISetProperties
+
+10  IArchiveOpenCallback
+20  IArchiveExtractCallback
+30  IArchiveOpenVolumeCallback
+40  IInArchiveGetStream
+50  IArchiveOpenSetSubArchiveName
+60  IInArchive
+
+80  IArchiveUpdateCallback
+82  IArchiveUpdateCallback2
+A0  IOutArchive
+
+
+000100050001  Agent.h::IArchiveFolderInternal
+
+
+000100xx0000  IFolderArchive.h
+
+05  IArchiveFolder
+06  IInFolderArchive
+07  IFileExtractCallback.h::IFolderArchiveExtractCallback
+0A  IOutFolderArchive
+0B  IFolderArchiveUpdateCallback
+
+
+
+
+000800xxyy00 FolderInterface.h::
+
+00 IFolderFolder
+01 IEnumProperties
+02 IFolderGetTypeID
+03 IFolderGetPath
+04 IFolderWasChanged
+05 IFolderReload // 
+0504 IFolderChangeNotify
+0505 IFolderSetChangeNotify
+050A IFolderExtract // 
+06 IFolderOperations
+0601 IFolderOperationsExtractCallback
+0602 IFolderOperationsUpdateCallback // 
+0603 IFolderOperationsDeleteToRecycleBin // 
+07 IFolderGetSystemIconIndex
+08 IFolderGetItemFullSize
+09 IFolderClone
+0A IFolderOpen // 
+
+000900000000} FolderInterface.h::IFolderManager
+000900010000} FolderInterface.h::IFolderManagerGetIconPath
+
+
+{23170F69-40C1-278D-0000-000100010000} PluginInterface::IInitContextMenu
+{23170F69-40C1-278D-0000-000100020100} PluginInterface::IPluginOptionsCallback
+{23170F69-40C1-278D-0000-000100020000} PluginInterface::IPluginOptions
+
+
+Handler GUIDs:
+
+{23170F69-40C1-278A-1000-000110xx0000}
+
+01 Zip
+02 BZip2
+03 Rar
+04 Arj
+05 Z
+06 Lzh
+07 7z
+08 Cab
+
+E9 Chm
+EA Split
+EB Rpm
+EC Deb
+ED Cpio
+EE Tar
+EF GZip
+
+{23170F69-40C1-278A-1000-000100030000} CAgentArchiveHandle
+{23170F69-40C1-278A-1000-000100020000} ContextMenu.h::CZipContextMenu 
+
+{23170F69-40C1-278B-
+
+0000-000000000000} Copy
+0203-020000000000} Swap2
+0203-040000000000} Swap4
+0301-01000000ee00} LZMA
+0303-xxdd0000ee00} Branch
+0304-01000000ee00} PPMD
+0401-01000000ee00} Shrink
+0401-06000000ee00} Implode
+0401-08000000ee00} Deflate
+0401-09000000ee00} Deflate64
+0402-02000000ee00} Bzip2
+0402-050000000000} Z
+0403-010000000000} Rar15
+0403-020000000000} Rar20
+0403-030000000000} Rar29
+0601-01000000ee00} AES128_CBC
+0601-81000000ee00} AES256_CBC
+06F1-070100000000} 7zAES
+
+
+
+{23170F69-40C1-278D-1000-000100020000} OptionsDialog.h::CLSID_CSevenZipOptions
+

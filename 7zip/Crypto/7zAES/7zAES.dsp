@@ -154,6 +154,14 @@ SOURCE=..\..\Common\StreamObjects.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File

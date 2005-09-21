@@ -14,6 +14,7 @@ namespace NFileHeader
   const int kNameSize = 100;
   const int kUserNameSize = 32;
   const int kGroupNameSize = 32;
+  const int kPrefixSize = 155;
 
   /*
   struct CHeader
@@ -32,6 +33,7 @@ namespace NFileHeader
     char GroupName[kGroupNameSize];
     char DeviceMajor[8];
     char DeviceMinor[8];
+    char Prefix[155];
   };
   union CRecord
   {
@@ -84,7 +86,7 @@ namespace NFileHeader
   // The magic field is filled with this if uname and gname are valid.
   namespace NMagic 
   {
-    extern const char *kUsTar; //   = "ustar  "; // 7 chars and a null
+    extern const char *kUsTar; //   = "ustar"; // 5 chars
     extern const char *kGNUTar; //  = "GNUtar "; // 7 chars and a null
     extern const char *kEmpty; //  = "GNUtar "; // 7 chars and a null
   }

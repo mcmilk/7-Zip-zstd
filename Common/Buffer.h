@@ -26,6 +26,8 @@ public:
   size_t GetCapacity() const { return  _capacity; }
   void SetCapacity(size_t newCapacity)
   {
+    if (newCapacity == _capacity)
+      return;
     T *newBuffer;
     if (newCapacity > 0)
     {

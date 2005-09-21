@@ -5,14 +5,17 @@
 #include "TarIn.h"
 #include "TarHeader.h"
 
+#include "Common/StringToInt.h"
 #include "Windows/Defs.h"
+
+#include "../../Common/StreamUtils.h"
 
 namespace NArchive {
 namespace NTar {
  
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
-  RINOK(m_Stream->Read(data, size, &processedSize));
+  RINOK(ReadStream(m_Stream, data, size, &processedSize));
   m_Position += processedSize;
   return S_OK;
 }
@@ -24,28 +27,28 @@ HRESULT CInArchive::Open(IInStream *inStream)
   return S_OK;
 }
 
-static UInt32 OctalToNumber(const char *srcString)
+static bool OctalToNumber(const char *srcString, int size, UInt64 &res)
 {
-  char *endPtr;
-  return(strtoul(srcString, &endPtr, 8));
+  char sz[32];
+  strncpy(sz, srcString, size);
+  sz[size] = 0;
+  const char *end;
+  int i;
+  for (i = 0; sz[i] == ' '; i++);
+  res = ConvertOctStringToUInt64(sz + i, &end);
+  return (*end == ' ' || *end == 0);
 }
 
-static bool CheckOctalString(const char *srcString, int numChars)
+static bool OctalToNumber32(const char *srcString, int size, UInt32 &res)
 {
-  for(int i = 0; i < numChars; i++)
-  {
-    char c = srcString[i];
-    if (c == 0)
-      return true;
-    if (c >= '0' && c <= '7')
-      continue;
-    if (c != ' ')
-      return false;
-  }
-  return true;
+  UInt64 res64;
+  if (!OctalToNumber(srcString, size, res64))
+    return false;
+  res = (UInt32)res64;
+  return (res64 <= 0xFFFFFFFF);
 }
 
-#define ReturnIfBadOctal(x, y) { if (!CheckOctalString((x), (y))) return S_FALSE; }
+#define RIF(x) { if (!(x)) return S_FALSE; }
 
 static bool IsRecordLast(const char *record)
 {
@@ -57,9 +60,9 @@ static bool IsRecordLast(const char *record)
 
 static void ReadString(const char *s, int size, AString &result)
 {
-  if (size > NFileHeader::kNameSize)
+  if (size > NFileHeader::kRecordSize)
     size = NFileHeader::kNameSize;
-  char tempString[NFileHeader::kNameSize + 1];
+  char tempString[NFileHeader::kRecordSize + 1];
   strncpy(tempString, s, size);
   tempString[size] = '\0';
   result = tempString;
@@ -114,28 +117,23 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
       item.Name += c;
   }
 
-  ReturnIfBadOctal(cur, 8);
-  item.Mode = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 8, item.Mode));
   cur += 8;
 
-  ReturnIfBadOctal(cur, 8);
-  item.UID = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 8, item.UID));
   cur += 8;
 
-  ReturnIfBadOctal(cur, 8);
-  item.GID = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 8, item.GID));
   cur += 8;
 
-  ReturnIfBadOctal(cur, 12);
-  item.Size = OctalToNumber(cur);
+  RIF(OctalToNumber(cur, 12, item.Size));
   cur += 12;
 
-  ReturnIfBadOctal(cur, 12);
-  item.ModificationTime = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 12, item.ModificationTime));
   cur += 12;
   
-  ReturnIfBadOctal(cur, 8);
-  UInt32 checkSum = OctalToNumber(cur);
+  UInt32 checkSum;
+  RIF(OctalToNumber32(cur, 8, checkSum));
   memmove(cur, NFileHeader::kCheckSumBlanks, 8);
   cur += 8;
 
@@ -153,17 +151,19 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   ReadString(cur, NFileHeader::kUserNameSize, item.GroupName);
   cur += NFileHeader::kUserNameSize;
 
-  ReturnIfBadOctal(cur, 8);
   item.DeviceMajorDefined = (cur[0] != 0);
-  if (item.DeviceMajorDefined)
-    item.DeviceMajor = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 8, item.DeviceMajor));
+  cur += 8;
  
-  ReturnIfBadOctal(cur, 8);
   item.DeviceMinorDefined = (cur[0] != 0);
-  if (item.DeviceMinorDefined)
-    item.DeviceMinor = OctalToNumber(cur);
+  RIF(OctalToNumber32(cur, 8, item.DeviceMinor));
   cur += 8;
 
+  AString prefix;
+  ReadString(cur, NFileHeader::kPrefixSize, prefix);
+  cur += NFileHeader::kPrefixSize;
+  if (!prefix.IsEmpty() && item.IsMagic())
+    item.Name = prefix + AString('/') + item.Name;
 
   if (item.LinkFlag == NFileHeader::NLinkFlag::kLink)
     item.Size = 0;

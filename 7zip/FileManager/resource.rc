@@ -176,6 +176,7 @@ BEGIN
   IDS_COMMENT             "Comment"
   IDS_COMMENT2            "&Comment:"
   IDS_SYSTEM              "System"
+  IDS_TOO_MANY_ITEMS      "Too many items"
   IDS_WANT_UPDATE_MODIFIED_FILE "File '{0}' was modified.\nDo you want to update it in the archive?"
   IDS_CANNOT_UPDATE_FILE  "Can not update file\n'{0}'"
   IDS_CANNOT_START_EDITOR "Cannot start editor."

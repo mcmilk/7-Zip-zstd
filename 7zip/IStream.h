@@ -1,79 +1,62 @@
 // IStream.h
 
-#ifndef __ISTREAMS_H
-#define __ISTREAMS_H
+#ifndef __ISTREAM_H
+#define __ISTREAM_H
 
 #include "../Common/MyUnknown.h"
 #include "../Common/Types.h"
 
-// {23170F69-40C1-278A-0000-000000010000}
-DEFINE_GUID(IID_ISequentialInStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000010000")
-ISequentialInStream : public IUnknown
+// "23170F69-40C1-278A-0000-000300xx0000"
+
+#define STREAM_INTERFACE_SUB(i, b, x) \
+DEFINE_GUID(IID_ ## i, \
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x03, 0x00, x, 0x00, 0x00); \
+struct i: public b
+
+#define STREAM_INTERFACE(i, x) STREAM_INTERFACE_SUB(i, IUnknown, x)
+
+STREAM_INTERFACE(ISequentialInStream, 0x01)
 {
-public:
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize) = 0;
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize) = 0;
-  
-  // For both functions Out: if (*processedSize == 0) then 
-  //   there are no more bytes in stream.
-  // Read function always tries to read "size" bytes from stream. It
-  // can read less only if it reaches end of stream.
-  // ReadPart function can read X bytes: (0<=X<="size") and X can 
-  // be less than number of remaining bytes in stream.
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize) PURE;
+  /*
+  Out: if size != 0, return_value = S_OK and (*processedSize == 0),
+    then there are no more bytes in stream.
+  if (size > 0) && there are bytes in stream, 
+  this function must read at least 1 byte.
+  This function is allowed to read less than number of remaining bytes in stream.
+  You must call Read function in loop, if you need exact amount of data
+  */
 };
 
-// {23170F69-40C1-278A-0000-000000020000}
-DEFINE_GUID(IID_ISequentialOutStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000020000")
-ISequentialOutStream : public IUnknown
+STREAM_INTERFACE(ISequentialOutStream, 0x02)
 {
-public:
-  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize) = 0;
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize) = 0;
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize) PURE;
+  /*
+  if (size > 0) this function must write at least 1 byte.
+  This function is allowed to write less than "size".
+  You must call Write function in loop, if you need to write exact amount of data
+  */
 };
 
-// {23170F69-40C1-278A-0000-000000030000}
-DEFINE_GUID(IID_IInStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000030000")
-IInStream : public ISequentialInStream
+STREAM_INTERFACE_SUB(IInStream, ISequentialInStream, 0x03)
 {
-public:
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) = 0;
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000000040000}
-DEFINE_GUID(IID_IOutStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000040000")
-IOutStream : public ISequentialOutStream
+STREAM_INTERFACE_SUB(IOutStream, ISequentialOutStream, 0x04)
 {
-public:
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) = 0;
-  STDMETHOD(SetSize)(Int64 newSize) = 0;
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) PURE;
+  STDMETHOD(SetSize)(Int64 newSize) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000000060000}
-DEFINE_GUID(IID_IStreamGetSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000060000")
-IStreamGetSize : public IUnknown
+STREAM_INTERFACE(IStreamGetSize, 0x06)
 {
-public:
-  STDMETHOD(GetSize)(UInt64 *size) = 0;
+  STDMETHOD(GetSize)(UInt64 *size) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000000070000}
-DEFINE_GUID(IID_IOutStreamFlush, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000000070000")
-IOutStreamFlush : public IUnknown
+STREAM_INTERFACE(IOutStreamFlush, 0x07)
 {
-public:
-  STDMETHOD(Flush)() = 0;
+  STDMETHOD(Flush)() PURE;
 };
 
 #endif

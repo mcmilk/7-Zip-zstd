@@ -17,15 +17,16 @@ public:
 
 class CInBuffer
 {
-  UInt64 _processedSize;
-  Byte *_bufferBase;
-  UInt32 _bufferSize;
   Byte *_buffer;
   Byte *_bufferLimit;
+  Byte *_bufferBase;
   CMyComPtr<ISequentialInStream> _stream;
+  UInt64 _processedSize;
+  UInt32 _bufferSize;
   bool _wasFinished;
 
   bool ReadBlock();
+  Byte ReadBlock2();
 
 public:
   #ifdef _NO_EXCEPTIONS
@@ -53,8 +54,7 @@ public:
   Byte ReadByte()
   {
     if(_buffer >= _bufferLimit)
-      if(!ReadBlock())
-        return 0xFF;
+      return ReadBlock2();
     return *_buffer++;
   }
   void ReadBytes(void *data, UInt32 size, UInt32 &processedSize)

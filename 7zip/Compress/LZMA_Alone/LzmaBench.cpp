@@ -148,7 +148,6 @@ public:
     Pos = 0;
   }
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CBenchmarkInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -157,20 +156,13 @@ STDMETHODIMP CBenchmarkInStream::Read(void *data, UInt32 size, UInt32 *processed
   if (size > remain)
     size = remain;
   for (UInt32 i = 0; i < size; i++)
-  {
     ((Byte *)data)[i] = Data[Pos + i];
-  }
   Pos += size;
   if(processedSize != NULL)
     *processedSize = size;
   return S_OK;
 }
   
-STDMETHODIMP CBenchmarkInStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
-
 class CBenchmarkOutStream: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -193,7 +185,6 @@ public:
   }
   MY_UNKNOWN_IMP
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CBenchmarkOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -211,11 +202,6 @@ STDMETHODIMP CBenchmarkOutStream::Write(const void *data, UInt32 size, UInt32 *p
   return S_OK;
 }
   
-STDMETHODIMP CBenchmarkOutStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 class CCrcOutStream: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -225,7 +211,6 @@ public:
   MY_UNKNOWN_IMP
   void Init() { CRC.Init(); }
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CCrcOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -236,11 +221,6 @@ STDMETHODIMP CCrcOutStream::Write(const void *data, UInt32 size, UInt32 *process
   return S_OK;
 }
   
-STDMETHODIMP CCrcOutStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 static UInt64 GetTimeCount()
 {
   #ifdef _WIN32

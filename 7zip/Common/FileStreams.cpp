@@ -39,7 +39,7 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   #ifdef _WIN32
   
   UInt32 realProcessedSize;
-  bool result = File.Read(data, size, realProcessedSize);
+  bool result = File.ReadPart(data, size, realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
@@ -54,13 +54,8 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   if(processedSize != NULL)
     *processedSize = (UInt32)res;
   return S_OK;
-  
+
   #endif
-}
-  
-STDMETHODIMP CInFileStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
 }
 
 #ifndef _WIN32_WCE
@@ -95,10 +90,6 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   #endif
 }
   
-STDMETHODIMP CStdInFileStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
 #endif
 
 STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin, 
@@ -155,7 +146,7 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   #ifdef _WIN32
 
   UInt32 realProcessedSize;
-  bool result = File.Write(data, size, realProcessedSize);
+  bool result = File.WritePart(data, size, realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
@@ -174,12 +165,6 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   #endif
 }
   
-STDMETHODIMP COutFileStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
-
 STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, 
     UInt64 *newPosition)
 {
@@ -229,7 +214,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   #ifdef _WIN32
   UInt32 realProcessedSize;
   BOOL res = TRUE;
-  while (size > 0)
+  if (size > 0)
   {
     // Seems that Windows doesn't like big amounts writing to stdout.
     // So we limit portions by 32KB.
@@ -238,8 +223,6 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
       sizeTemp = size;
     res = ::WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), 
         data, sizeTemp, (DWORD *)&realProcessedSize, NULL);
-    if (realProcessedSize == 0)
-      break;
     size -= realProcessedSize;
     data = (const void *)((const Byte *)data + realProcessedSize);
     if(processedSize != NULL)
@@ -265,8 +248,4 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   #endif
 }
   
-STDMETHODIMP CStdOutFileStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
 #endif

@@ -148,6 +148,7 @@ const wchar_t *kMethods[] =
 
 const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 const wchar_t *kUnknownMethod = L"Unknown";
+const wchar_t *kPPMdMethod = L"PPMd";
 
 CHandler::CHandler():
   m_ArchiveIsOpen(false)
@@ -258,6 +259,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
       UString method;
       if (item.CompressionMethod < kNumMethods)
         method = kMethods[item.CompressionMethod];
+      else if (item.CompressionMethod == NFileHeader::NCompressionMethod::kWinZipPPMd)
+        method = kPPMdMethod;
       else
         method = kUnknownMethod;
       propVariant = method;

@@ -105,6 +105,7 @@
 #define IDS_SELECT_MASK                 2252
 #define IDS_FOLDERS_HISTORY             2260
 #define IDS_N_SELECTED_ITEMS            2270
+#define IDS_TOO_MANY_ITEMS              2279
 #define IDS_WANT_UPDATE_MODIFIED_FILE   2280
 #define IDS_CANNOT_UPDATE_FILE          2281
 #define IDS_CANNOT_START_EDITOR         2282

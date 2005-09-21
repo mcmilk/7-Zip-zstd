@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../Common/Defs.h"
+#include "../../Common/StreamUtils.h"
 
 #include "LZMAEncoder.h"
 
@@ -498,7 +499,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   properties[0] = (_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits;
   for (int i = 0; i < 4; i++)
     properties[1 + i] = Byte(_dictionarySize >> (8 * i));
-  return outStream->Write(properties, kPropSize, NULL);
+  return WriteStream(outStream, properties, kPropSize, NULL);
 }
 
 STDMETHODIMP CEncoder::SetOutStream(ISequentialOutStream *outStream)

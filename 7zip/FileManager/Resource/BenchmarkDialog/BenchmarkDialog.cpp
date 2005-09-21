@@ -499,7 +499,6 @@ public:
     Pos = 0;
   }
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CBenchmarkInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -517,11 +516,6 @@ STDMETHODIMP CBenchmarkInStream::Read(void *data, UInt32 size, UInt32 *processed
   return S_OK;
 }
   
-STDMETHODIMP CBenchmarkInStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
-
 class CBenchmarkOutStream: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -542,7 +536,6 @@ public:
   }
   MY_UNKNOWN_IMP
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CBenchmarkOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -560,11 +553,6 @@ STDMETHODIMP CBenchmarkOutStream::Write(const void *data, UInt32 size, UInt32 *p
   return S_OK;
 }
   
-STDMETHODIMP CBenchmarkOutStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 class CCompareOutStream: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -574,7 +562,6 @@ public:
   MY_UNKNOWN_IMP
   void Init() { CRC.Init(); }
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 STDMETHODIMP CCompareOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -585,11 +572,6 @@ STDMETHODIMP CCompareOutStream::Write(const void *data, UInt32 size, UInt32 *pro
   return S_OK;
 }
   
-STDMETHODIMP CCompareOutStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 typedef UInt32 (WINAPI * CreateObjectPointer)(const GUID *clsID, 
     const GUID *interfaceID, void **outObject);
 

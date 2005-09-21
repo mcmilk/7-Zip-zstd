@@ -261,7 +261,8 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
       return;
     UString currentFolderUnicode = _currentFolderPrefix;
     UStringVector names;
-    for(int i = 0; i < operatedIndices.Size(); i++)
+    int i;
+    for(i = 0; i < operatedIndices.Size(); i++)
       names.Add(currentFolderUnicode + GetItemName(operatedIndices[i]));
     CRecordVector<const wchar_t *> namePointers;
     for(i = 0; i < operatedIndices.Size(); i++)

@@ -3,6 +3,7 @@ DIRS =  \
   Arj\~ \
   BZip2\~ \
   Cab\~ \
+  Chm\~ \
   Cpio\~ \
   Deb\~ \
   GZip\~ \

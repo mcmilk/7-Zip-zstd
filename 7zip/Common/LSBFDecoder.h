@@ -22,7 +22,7 @@ template<class TInByte>
 class CBaseDecoder
 {
 protected:
-  UInt32 m_BitPos;
+  int m_BitPos;
   UInt32 m_Value;
   TInByte m_Stream;
 public:
@@ -41,7 +41,7 @@ public:
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   UInt64 GetProcessedBitsSize() const 
     { return (m_Stream.GetProcessedSize() << 3) - (kNumBigValueBits - m_BitPos); }
-  UInt32 GetBitPosition() const { return (m_BitPos & 7); }
+  int GetBitPosition() const { return (m_BitPos & 7); }
 
   void Normalize()
   {
@@ -57,7 +57,7 @@ public:
     }
   }
   
-  UInt32 ReadBits(UInt32 numBits)
+  UInt32 ReadBits(int numBits)
   {
     Normalize();
     UInt32 res = m_Value & ((1 << numBits) - 1);
@@ -65,12 +65,12 @@ public:
     m_Value >>= numBits;
     return res;
   }
-  
+
   bool ExtraBitsWereRead() const
   {
     if (NumExtraBytes == 0)
       return false;
-    return ((kNumBigValueBits - m_BitPos) < (NumExtraBytes << 3));
+    return ((UInt32)(kNumBigValueBits - m_BitPos) < (NumExtraBytes << 3));
   }
 };
 
@@ -101,19 +101,19 @@ public:
     }
   }
   
-  UInt32 GetValue(UInt32 numBits)
+  UInt32 GetValue(int numBits)
   {
     Normalize();
     return ((this->m_Value >> (8 - this->m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
-  void MovePos(UInt32 numBits)
+  void MovePos(int numBits)
   {
     this->m_BitPos += numBits;
     m_NormalValue >>= numBits;
   }
   
-  UInt32 ReadBits(UInt32 numBits)
+  UInt32 ReadBits(int numBits)
   {
     Normalize();
     UInt32 res = m_NormalValue & ( (1 << numBits) - 1);

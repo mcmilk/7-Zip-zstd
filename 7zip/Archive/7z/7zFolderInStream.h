@@ -26,7 +26,6 @@ public:
   CFolderInStream();
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
   STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value);
 private:

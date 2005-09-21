@@ -32,9 +32,8 @@ class CCoder :
   int m_NumDistanceLowDirectBits; 
   UInt32 m_MinMatchLength;
 
-  void ReadLevelItems(NImplode::NHuffman::CDecoder &table, 
-      Byte *levels, int numLevelItems);
-  void ReadTables();
+  bool ReadLevelItems(NImplode::NHuffman::CDecoder &table, Byte *levels, int numLevelItems);
+  bool ReadTables();
   void DeCodeLevelTable(Byte *newLevels, int numLevels);
 public:
   CCoder();

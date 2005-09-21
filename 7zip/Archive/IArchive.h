@@ -7,6 +7,14 @@
 #include "../IProgress.h"
 #include "../PropID.h"
 
+// MIDL_INTERFACE("23170F69-40C1-278A-0000-000600xx0000")
+#define ARCHIVE_INTERFACE_SUB(i, base,  x) \
+DEFINE_GUID(IID_ ## i, \
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x06, 0x00, x, 0x00, 0x00); \
+struct i: public base
+
+#define ARCHIVE_INTERFACE(i, x) ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
+
 namespace NFileTimeType
 {
   enum EEnum
@@ -29,6 +37,7 @@ namespace NArchive
     kKeepName,
     kStartSignature,
     kFinishSignature,
+    kAssociate
   };
 
   namespace NExtract
@@ -66,24 +75,15 @@ namespace NArchive
   }
 }
 
-// {23170F69-40C1-278A-0000-000100010000}
-DEFINE_GUID(IID_IArchiveOpenCallback, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100010000")
-IArchiveOpenCallback: public IUnknown
+ARCHIVE_INTERFACE(IArchiveOpenCallback, 0x10)
 {
-public:
   STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes) PURE;
   STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000100090000}
-DEFINE_GUID(IID_IArchiveExtractCallback, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x09, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100090000")
-IArchiveExtractCallback: public IProgress
+
+ARCHIVE_INTERFACE_SUB(IArchiveExtractCallback, IProgress, 0x20)
 {
-public:
   STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, 
       Int32 askExtractMode) PURE;
   // GetStream OUT: S_OK - OK, S_FALSE - skeep this file
@@ -92,36 +92,27 @@ public:
 };
 
 
-// {23170F69-40C1-278A-0000-0001000D0000}
-DEFINE_GUID(IID_IArchiveOpenVolumeCallback, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0D, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000D0000")
-IArchiveOpenVolumeCallback: public IUnknown
+ARCHIVE_INTERFACE(IArchiveOpenVolumeCallback, 0x30)
 {
-public:
   STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value) PURE;
   STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream) PURE;
 };
 
 
-// {23170F69-40C1-278A-0000-0001000D0100}
-DEFINE_GUID(IID_IArchiveOpenSetSubArchiveName, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0D, 0x01, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000D0100")
-IArchiveOpenSetSubArchiveName: public IUnknown
+ARCHIVE_INTERFACE(IInArchiveGetStream, 0x40)
 {
-public:
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream) PURE;  
+};
+
+
+ARCHIVE_INTERFACE(IArchiveOpenSetSubArchiveName, 0x50)
+{
   STDMETHOD(SetSubArchiveName)(const wchar_t *name) PURE;
 };
 
 
-// {23170F69-40C1-278A-0000-000100080000}
-DEFINE_GUID(IID_IInArchive, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100080000")
-IInArchive: public IUnknown
+ARCHIVE_INTERFACE(IInArchive, 0x60)
 {
-public:
   STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openArchiveCallback) PURE;  
   STDMETHOD(Close)() PURE;  
@@ -129,6 +120,9 @@ public:
   STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
   STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
       Int32 testMode, IArchiveExtractCallback *extractCallback) PURE;
+  // indices must be sorted 
+  // numItems = 0xFFFFFFFF means all files
+  // testMode != 0 means "test files operation"
 
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) PURE;
 
@@ -141,25 +135,9 @@ public:
       BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000100080100}
-DEFINE_GUID(IID_IInArchiveGetStream, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08, 0x01, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100080100")
-IInArchiveGetStream: public IUnknown
-{
-public:
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream) PURE;  
-};
 
-
-// {23170F69-40C1-278A-0000-000100040000}
-DEFINE_GUID(IID_IArchiveUpdateCallback, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040000")
-IArchiveUpdateCallback: public IProgress
+ARCHIVE_INTERFACE_SUB(IArchiveUpdateCallback, IProgress, 0x80)
 {
-public:
-  // STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) PURE;  
   STDMETHOD(GetUpdateItemInfo)(UInt32 index, 
       Int32 *newData, // 1 - new data, 0 - old data
       Int32 *newProperties, // 1 - new properties, 0 - old properties
@@ -170,33 +148,23 @@ public:
   STDMETHOD(SetOperationResult)(Int32 operationResult) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000100040002}
-DEFINE_GUID(IID_IArchiveUpdateCallback2, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x02);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100040002")
-IArchiveUpdateCallback2: public IArchiveUpdateCallback
+
+ARCHIVE_INTERFACE_SUB(IArchiveUpdateCallback2, IArchiveUpdateCallback, 0x82)
 {
-public:
   STDMETHOD(GetVolumeSize)(UInt32 index, UInt64 *size) PURE;
   STDMETHOD(GetVolumeStream)(UInt32 index, ISequentialOutStream **volumeStream) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000100020000}
-DEFINE_GUID(IID_IOutArchive, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100020000")
-IOutArchive: public IUnknown
+
+ARCHIVE_INTERFACE(IOutArchive, 0xA0)
 {
   STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
       IArchiveUpdateCallback *updateCallback) PURE;
   STDMETHOD(GetFileTimeType)(UInt32 *type) PURE;  
 };
 
-// {23170F69-40C1-278A-0000-000100030000}
-DEFINE_GUID(IID_ISetProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100030000")
-ISetProperties: public IUnknown
+
+ARCHIVE_INTERFACE(ISetProperties, 0x03)
 {
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties) PURE;
 };

@@ -4,6 +4,7 @@
 
 #include "CopyCoder.h"
 #include "../../../Common/Alloc.h"
+#include "../../Common/StreamUtils.h"
 
 namespace NCompress {
 
@@ -34,10 +35,10 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     if (outSize != 0)
       if (size > *outSize - TotalSize)
         size = (UInt32)(*outSize - TotalSize);
-    RINOK(inStream->ReadPart(_buffer, size, &realProcessedSize));
+    RINOK(inStream->Read(_buffer, size, &realProcessedSize));
     if(realProcessedSize == 0)
       break;
-    RINOK(outStream->Write(_buffer, realProcessedSize, NULL));
+    RINOK(WriteStream(outStream, _buffer, realProcessedSize, NULL));
     TotalSize += realProcessedSize;
     if (progress != NULL)
     {

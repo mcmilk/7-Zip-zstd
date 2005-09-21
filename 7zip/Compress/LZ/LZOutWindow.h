@@ -4,6 +4,7 @@
 #define __LZ_OUT_WINDOW_H
 
 #include "../../IStream.h"
+#include "../../Common/OutBuffer.h"
 
 #ifndef _NO_EXCEPTIONS
 class CLZOutWindowException
@@ -14,57 +15,47 @@ public:
 };
 #endif
 
-class CLZOutWindow
+class CLZOutWindow: public COutBuffer
 {
-  Byte  *_buffer;
-  UInt32 _pos;
-  UInt32 _windowSize;
-  UInt32 _streamPos;
-  ISequentialOutStream *_stream;
+  bool _overDict;
   void FlushWithCheck();
 public:
-  #ifdef _NO_EXCEPTIONS
-  HRESULT ErrorCode;
-  #endif
-
-  void Free();
-  CLZOutWindow(): _buffer(0), _stream(0) {}
-  ~CLZOutWindow() { Free();  ReleaseStream(); }
-  bool Create(UInt32 windowSize);
-  
-  void SetStream(ISequentialOutStream *stream);
   void Init(bool solid = false);
-  HRESULT Flush();
-  void ReleaseStream();
   
-  void CopyBlock(UInt32 distance, UInt32 len)
+  // distance >= 0, len > 0, 
+  bool CopyBlock(UInt32 distance, UInt32 len)
   {
     UInt32 pos = _pos - distance - 1;
-    if (pos >= _windowSize)
-      pos += _windowSize;
-    for(; len > 0; len--)
+    if (pos >= _bufferSize)
     {
-      if (pos >= _windowSize)
+      if (!_overDict)
+        return false;
+      pos += _bufferSize;
+    }
+    do
+    {
+      if (pos == _bufferSize)
         pos = 0;
       _buffer[_pos++] = _buffer[pos++];
-      if (_pos >= _windowSize)
+      if (_pos == _limitPos)
         FlushWithCheck();  
-      // PutOneByte(GetOneByte(distance));
     }
+    while(--len != 0);
+    return true;
   }
   
   void PutByte(Byte b)
   {
     _buffer[_pos++] = b;
-    if (_pos >= _windowSize)
+    if (_pos == _limitPos)
       FlushWithCheck();  
   }
   
   Byte GetByte(UInt32 distance) const
   {
     UInt32 pos = _pos - distance - 1;
-    if (pos >= _windowSize)
-      pos += _windowSize;
+    if (pos >= _bufferSize)
+      pos += _bufferSize;
     return _buffer[pos]; 
   }
 };

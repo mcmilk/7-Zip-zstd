@@ -12,7 +12,6 @@ DEFINE_GUID(IID_IProgress,
 MIDL_INTERFACE("23170F69-40C1-278A-0000-000000050000")
 IProgress: public IUnknown
 {
-public:
   STDMETHOD(SetTotal)(UInt64 total) PURE;
   STDMETHOD(SetCompleted)(const UInt64 *completeValue) PURE;
 };

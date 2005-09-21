@@ -19,7 +19,7 @@ CDecoder::~CDecoder()
   delete []m_Symbols;
 }
 
-void CDecoder::SetCodeLengths(const Byte *codeLengths)
+bool CDecoder::SetCodeLengths(const Byte *codeLengths)
 {
   // int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
   int lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
@@ -44,7 +44,7 @@ void CDecoder::SetCodeLengths(const Byte *codeLengths)
   {
     startPos += lenCounts[i] << (kNumBitsInLongestCode - i);
     if (startPos > kMaxValue)
-      throw CDecoderException();
+      return false;
     m_Limitits[i] = startPos;
     m_Positions[i] = m_Positions[i + 1] + lenCounts[i + 1];
     tmpPositions[i] = m_Positions[i] + lenCounts[i];
@@ -54,12 +54,13 @@ void CDecoder::SetCodeLengths(const Byte *codeLengths)
   // if _ZIP_MODE do not throw exception for trees containing only one node 
   // #ifndef _ZIP_MODE 
   if (startPos != kMaxValue)
-    throw CDecoderException();
+    return false;
   // #endif
 
   for (symbolIndex = 0; symbolIndex < m_NumSymbols; symbolIndex++)
     if (codeLengths[symbolIndex] != 0)
       m_Symbols[--tmpPositions[codeLengths[symbolIndex]]] = symbolIndex;
+  return true;
 }
 
 UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
@@ -76,12 +77,12 @@ UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
     }
   }
   if (i == 0)
-    throw CDecoderException();
+    return 0xFFFFFFFF;
   inStream->MovePos(numBits);
   UInt32 index = m_Positions[numBits] + 
       ((value - m_Limitits[numBits + 1]) >> (kNumBitsInLongestCode - numBits));
   if (index >= m_NumSymbols)
-    throw CDecoderException(); // test it
+    return 0xFFFFFFFF;
   return m_Symbols[index];
 }
 

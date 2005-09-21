@@ -41,12 +41,10 @@ COMMON_OBJS = \
   $O\StringToInt.obj \
   $O\Vector.obj
 
-WIN_OBJS = \
-  $O\Synchronization.obj
-
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\OutBuffer.obj \
+  $O\StreamUtils.obj \
 
 LZ_OBJS = \
   $O\LZInWindow.obj \
@@ -57,7 +55,6 @@ OBJS = \
   $(LZMA_OBJS) \
   $(LZMA_OPT_OBJS) \
   $(COMMON_OBJS) \
-  $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(LZ_OBJS) \
   $O\LzmaRamDecode.obj \
@@ -84,8 +81,6 @@ $(LZMA_OBJS): $(*B).cpp
 $(LZMA_OPT_OBJS): ../LZMA/$(*B).cpp
 	$(COMPL_O2)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)

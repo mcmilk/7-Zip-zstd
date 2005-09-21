@@ -25,7 +25,7 @@ public:
   CPropVariant(Int32 value) { vt = VT_I4; lVal = value; }
   CPropVariant(Byte value) { vt = VT_UI1; bVal = value; }
   CPropVariant(Int16 value) { vt = VT_I2; iVal = value; }
-  CPropVariant(long value, VARTYPE vtSrc = VT_I4) { vt = vtSrc; lVal = value; }
+  // CPropVariant(LONG value, VARTYPE vtSrc = VT_I4) { vt = vtSrc; lVal = value; }
 
   CPropVariant& operator=(const CPropVariant& varSrc);
   CPropVariant& operator=(const PROPVARIANT& varSrc);
@@ -39,7 +39,7 @@ public:
   CPropVariant& operator=(Int32 value);
   CPropVariant& operator=(Byte value);
   CPropVariant& operator=(Int16 value);
-  CPropVariant& operator=(long value);
+  // CPropVariant& operator=(LONG  value);
 
   HRESULT Clear();
   HRESULT Copy(const PROPVARIANT* pSrc);

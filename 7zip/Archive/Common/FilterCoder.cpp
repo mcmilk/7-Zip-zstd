@@ -5,6 +5,7 @@
 #include "FilterCoder.h"
 #include "../../../Common/Alloc.h"
 #include "../../../Common/Defs.h"
+#include "../../Common/StreamUtils.h"
 
 static const int kBufferSize = 1 << 17;
 
@@ -27,7 +28,7 @@ HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 siz
       size = (UInt32)remSize;
   }
   UInt32 processedSize = 0;
-  RINOK(outStream->Write(_buffer, size, &processedSize));
+  RINOK(WriteStream(outStream, _buffer, size, &processedSize));
   if (size != processedSize)
     return E_FAIL;
   _nowPos64 += processedSize;
@@ -47,8 +48,10 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
   while(NeedMore())
   {
     UInt32 processedSize;
-    UInt32 size = kBufferSize - bufferPos;
-    RINOK(inStream->Read(_buffer + bufferPos, size, &processedSize));
+    
+    // Change it: It can be optimized using ReadPart
+    RINOK(ReadStream(inStream, _buffer + bufferPos, kBufferSize - bufferPos, &processedSize));
+    
     UInt32 endPos = bufferPos + processedSize;
 
     bufferPos = Filter->Filter(_buffer, endPos);
@@ -131,11 +134,6 @@ STDMETHODIMP CFilterCoder::Write(const void *data, UInt32 size, UInt32 *processe
   return S_OK;
 }
 
-STDMETHODIMP CFilterCoder::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
-}
-
 STDMETHODIMP CFilterCoder::Flush()
 {
   if (_bufferPos != 0)
@@ -149,7 +147,7 @@ STDMETHODIMP CFilterCoder::Flush()
         return E_FAIL;
     }
     UInt32 processedSize;
-    RINOK(_outStream->Write(_buffer, _bufferPos, &processedSize));
+    RINOK(WriteStream(_outStream, _buffer, _bufferPos, &processedSize));
     if (_bufferPos != processedSize)
       return E_FAIL;
     _bufferPos = 0;
@@ -189,7 +187,7 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
       data = (void *)((Byte *)data + sizeTemp);
       size -= sizeTemp;
       processedSizeTotal += sizeTemp;
-      continue;
+      break;
     }
     int i;
     for (i = 0; _convertedPosEnd + i < _bufferPos; i++)
@@ -198,7 +196,8 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
     _convertedPosBegin = _convertedPosEnd = 0;
     UInt32 processedSizeTemp;
     UInt32 size0 = kBufferSize - _bufferPos;
-    RINOK(_inStream->Read(_buffer + _bufferPos, size0, &processedSizeTemp));
+    // Optimize it:
+    RINOK(ReadStream(_inStream, _buffer + _bufferPos, size0, &processedSizeTemp));
     _bufferPos = _bufferPos + processedSizeTemp;
     _convertedPosEnd = Filter->Filter(_buffer, _bufferPos);
     if (_convertedPosEnd == 0)
@@ -215,11 +214,6 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
   if (processedSize != NULL)
     *processedSize = processedSizeTotal;
   return S_OK;
-}
-
-STDMETHODIMP CFilterCoder::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
 }
 
 // #endif // _ST_MODE

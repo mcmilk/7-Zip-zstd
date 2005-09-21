@@ -340,7 +340,8 @@ void CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2])
   ReadToolbar();
   ReloadRebar(hwnd);
 
-  for (int i = 0; i < kNumPanelsMax; i++)
+  int i;
+  for (i = 0; i < kNumPanelsMax; i++)
     PanelsCreated[i] = false;
 
   _window.Attach(hwnd);

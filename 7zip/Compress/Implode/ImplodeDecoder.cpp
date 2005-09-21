@@ -74,7 +74,7 @@ void CCoder::ReleaseStreams()
   m_InBitStream.ReleaseStream();
 }
 
-void CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder, 
+bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder, 
     Byte *levels, int numLevelItems)
 {
   int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) + 
@@ -92,32 +92,26 @@ void CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
       levels[currentIndex++] = level;
   }
   if (currentIndex != numLevelItems)
-    throw CException(CException::kData);
-  try
-  {
-    decoder.SetCodeLengths(levels);
-  }
-  catch(const NImplode::NHuffman::CDecoderException &)
-  {
-    throw CException(CException::kData);
-  }
+    return false;
+  return decoder.SetCodeLengths(levels);
 }
 
 
-void CCoder::ReadTables(void)
+bool CCoder::ReadTables(void)
 {
   if (m_LiteralsOn)
   {
     Byte literalLevels[kLiteralTableSize];
-    ReadLevelItems(m_LiteralDecoder, literalLevels, kLiteralTableSize);
+    if (!ReadLevelItems(m_LiteralDecoder, literalLevels, kLiteralTableSize))
+      return false;
   }
 
   Byte lengthLevels[kLengthTableSize];
-  ReadLevelItems(m_LengthDecoder, lengthLevels, kLengthTableSize);
+  if (!ReadLevelItems(m_LengthDecoder, lengthLevels, kLengthTableSize))
+    return false;
 
   Byte distanceLevels[kDistanceTableSize];
-  ReadLevelItems(m_DistanceDecoder, distanceLevels, kDistanceTableSize);
-
+  return ReadLevelItems(m_DistanceDecoder, distanceLevels, kDistanceTableSize);
 }
 
 class CCoderReleaser
@@ -146,7 +140,8 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
   m_InBitStream.Init();
   CCoderReleaser coderReleaser(this);
 
-  ReadTables();
+  if (!ReadTables())
+    return S_FALSE;
   
   while(pos < unPackSize)
   {
@@ -158,10 +153,13 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     if(m_InBitStream.ReadBits(1) == kMatchId) // match
     {
       UInt32 lowDistBits = m_InBitStream.ReadBits(m_NumDistanceLowDirectBits);
-      UInt32 distance = (m_DistanceDecoder.DecodeSymbol(&m_InBitStream) << 
-          m_NumDistanceLowDirectBits) + lowDistBits;
-
+      UInt32 distance = m_DistanceDecoder.DecodeSymbol(&m_InBitStream);
+      if (distance >= kDistanceTableSize)
+        return S_FALSE;
+      distance = (distance << m_NumDistanceLowDirectBits) + lowDistBits;
       UInt32 lengthSymbol = m_LengthDecoder.DecodeSymbol(&m_InBitStream);
+      if (lengthSymbol >= kLengthTableSize)
+        return S_FALSE;
       UInt32 length = lengthSymbol + m_MinMatchLength;
       if (lengthSymbol == kLengthTableSize - 1) // special symbol  = 63
         length += m_InBitStream.ReadBits(kNumAdditionalLengthBits);
@@ -177,8 +175,16 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     }
     else
     {
-      Byte b = Byte(m_LiteralsOn ? m_LiteralDecoder.DecodeSymbol(&m_InBitStream) : 
-          m_InBitStream.ReadBits(kNumBitsInByte));
+      Byte b;
+      if (m_LiteralsOn)
+      {
+        UInt32 temp = m_LiteralDecoder.DecodeSymbol(&m_InBitStream);
+        if (temp >= kLiteralTableSize)
+          return S_FALSE;
+        b = (Byte)temp;
+      }
+      else
+        b = (Byte)m_InBitStream.ReadBits(kNumBitsInByte);
       m_OutWindowStream.PutByte(b);
       pos++;
     }

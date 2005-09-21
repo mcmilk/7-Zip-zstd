@@ -583,6 +583,7 @@ struct CThreadCompressMain
 };
 */
 
+#ifndef _WIN64
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -591,6 +592,7 @@ static bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
 static UString GetProgramCommand()
 {
@@ -598,11 +600,12 @@ static UString GetProgramCommand()
   UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
+  path += L"7zFM";
+  #ifndef _WIN64
   if (IsItWindowsNT())
-    path += L"7zFMn.exe";
-  else
-    path += L"7zFM.exe";
-  path += L"\"";
+    path += L"n";
+  #endif
+  path += L".exe\"";
   return path;
 }
 

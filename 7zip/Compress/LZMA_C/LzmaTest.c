@@ -3,7 +3,7 @@ LzmaTest.c
 Test application for LZMA Decoder
 
 This file written and distributed to public domain by Igor Pavlov.
-This file is part of LZMA SDK 4.26 (2005-08-02)
+This file is part of LZMA SDK 4.26 (2005-08-05)
 */
 
 #include <stdio.h>
@@ -173,12 +173,12 @@ int main3(FILE *inFile, FILE *outFile, char *rs)
 
   if (state.Probs == 0 
     #ifdef _LZMA_OUT_READ
-    || state.Dictionary == 0 && state.Properties.DictionarySize != 0
+    || (state.Dictionary == 0 && state.Properties.DictionarySize != 0)
     #else
-    || outStream == 0 && outSizeFull != 0
+    || (outStream == 0 && outSizeFull != 0)
     #endif
     #ifndef _LZMA_IN_CB
-    || inStream == 0 && compressedSize != 0
+    || (inStream == 0 && compressedSize != 0)
     #endif
     )
   {
@@ -307,7 +307,7 @@ int main2(int numArgs, const char *args[], char *rs)
   FILE *outFile = 0;
   int res;
 
-  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
+  sprintf(rs + strlen(rs), "\nLZMA Decoder 4.26 Copyright (c) 1999-2005 Igor Pavlov  2005-08-05\n");
   if (numArgs < 2 || numArgs > 3)
   {
     sprintf(rs + strlen(rs), "\nUsage:  lzmadec file.lzma [outFile]\n");

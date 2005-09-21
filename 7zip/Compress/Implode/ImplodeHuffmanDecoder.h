@@ -11,7 +11,6 @@ namespace NImplode {
 namespace NHuffman {
 
 const int kNumBitsInLongestCode = 16;
-class CDecoderException{};
 
 typedef NStream::NLSBF::CDecoder<CInBuffer> CInBit;
 
@@ -25,7 +24,7 @@ public:
   CDecoder(UInt32 numSymbols);
   ~CDecoder();
   
-  void SetCodeLengths(const Byte *codeLengths);
+  bool SetCodeLengths(const Byte *codeLengths);
   UInt32 DecodeSymbol(CInBit *inStream);
 };
 

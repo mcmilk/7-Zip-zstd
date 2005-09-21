@@ -4,6 +4,9 @@
 #ifndef __STREAM_MSBFDECODER_H
 #define __STREAM_MSBFDECODER_H
 
+#include "../../Common/Types.h"
+#include "../IStream.h"
+
 namespace NStream {
 namespace NMSBF {
 
@@ -16,10 +19,10 @@ const UInt32 kMask = (1 << kNumValueBits) - 1;
 template<class TInByte>
 class CDecoder
 {
-  TInByte m_Stream;
   UInt32 m_BitPos;
   UInt32 m_Value;
 public:
+  TInByte m_Stream;
   bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
   void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream);}
   void ReleaseStream() { m_Stream.ReleaseStream();}

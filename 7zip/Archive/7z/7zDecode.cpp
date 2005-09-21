@@ -1,4 +1,4 @@
-// Decode.cpp
+// 7zDecode.cpp
 
 #include "StdAfx.h"
 
@@ -136,10 +136,10 @@ static bool AreBindInfoExEqual(const CBindInfoEx &a1, const CBindInfoEx &a2)
 
 CDecoder::CDecoder(bool multiThread)
 {
-  _multiThread = true;
-  #ifdef _ST_MODE
-  _multiThread = multiThread;
+  #ifndef _ST_MODE
+  multiThread = true;
   #endif
+  _multiThread = multiThread;
   _bindInfoExPrevIsDefinded = false;
   #ifndef EXCLUDE_COM
   LoadMethodMap();

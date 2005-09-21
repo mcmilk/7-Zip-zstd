@@ -63,6 +63,7 @@ enum EEnum
   kExtractOwerwritePrompt,
   kExtractOwerwriteSkip,
   kExtractOwerwriteAutoRename,
+  kExtractOwerwriteAutoRenameExisting,
 
   kExtractFilesMode,
   kExtractFilesSelected,

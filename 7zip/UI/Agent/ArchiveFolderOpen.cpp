@@ -57,9 +57,12 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
   UString typesStrings;
   for(int i = 0; i < _formats.Size(); i++)
   {
+    const CArchiverInfo &ai = _formats[i];
+    if (!ai.Associate)
+      continue;
     if (i != 0)
       typesStrings += L' ';
-    typesStrings += _formats[i].Name;
+    typesStrings += ai.Name;
   }
   CMyComBSTR valueTemp = typesStrings;
   *types = valueTemp.Detach();
@@ -72,8 +75,7 @@ STDMETHODIMP CArchiveFolderManager::GetExtension(const wchar_t *type, BSTR *exte
   int formatIndex = FindFormat(type);
   if (formatIndex <  0)
     return E_INVALIDARG;
-  // CMyComBSTR valueTemp = _formats[formatIndex].GetAllExtensions();
-  CMyComBSTR valueTemp = _formats[formatIndex].Extensions[0].Extension;
+  CMyComBSTR valueTemp = _formats[formatIndex].Extensions[0].Ext;
   *extension = valueTemp.Detach();
   return S_OK;
 }
@@ -93,6 +95,3 @@ STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t *type, const 
 {
   return E_NOTIMPL;
 }
-
-
-

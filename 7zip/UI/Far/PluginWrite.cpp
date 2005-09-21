@@ -40,7 +40,7 @@ static UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
 static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
 {
   CMyComPtr<ISetProperties> setProperties;
-  if (outArchive->QueryInterface(&setProperties) == S_OK)
+  if (outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties) == S_OK)
   {
     UStringVector realNames;
     realNames.Add(UString(L"x"));

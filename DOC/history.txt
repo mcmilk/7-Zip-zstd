@@ -1,6 +1,14 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.27                2005-09-21
+  --------------------------------------
+   - Some GUIDs/interfaces were changed.
+     IStream.h:
+       ISequentialInStream::Read now works as old ReadPart
+       ISequentialOutStream::Write now works as old WritePart
+
+
   Version 4.26 beta           2005-08-05
   --------------------------------------
    -  MyAlloc(0)/BigAlloc(0) now return 0

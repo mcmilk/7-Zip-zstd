@@ -28,17 +28,11 @@ STDMETHODIMP CMultiStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     _pos += realProcessed;
     _seekPos += realProcessed;
     RINOK(result);
-    if (realProcessed == 0)
-      break;
+    break;
   }
   return S_OK;
 }
   
-STDMETHODIMP CMultiStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
-
 STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin, 
     UInt64 *newPosition)
 {
@@ -113,7 +107,6 @@ public:
   
   HRESULT Flush();
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 HRESULT COutVolumeStream::Flush()
@@ -179,15 +172,10 @@ STDMETHODIMP COutMultiStream::Write(const void *data, UInt32 size, UInt32 *proce
       _streamIndex++;
       _offsetPos = 0;
     }
-    if (realProcessed != curSize)
+    if (realProcessed != curSize && realProcessed == 0)
       return E_FAIL;
   }
   return S_OK;
-}
-
-STDMETHODIMP COutMultiStream::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
 }
 
 STDMETHODIMP COutMultiStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)

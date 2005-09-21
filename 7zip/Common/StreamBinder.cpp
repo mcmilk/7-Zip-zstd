@@ -17,7 +17,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 private:
   CStreamBinder *m_StreamBinder;
 public:
@@ -27,9 +26,6 @@ public:
 
 STDMETHODIMP CSequentialInStreamForBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
   { return m_StreamBinder->Read(data, size, processedSize); }
-  
-STDMETHODIMP CSequentialInStreamForBinder::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-  { return m_StreamBinder->ReadPart(data, size, processedSize); }
 
 class CSequentialOutStreamForBinder: 
   public ISequentialOutStream,
@@ -39,7 +35,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 
 private:
   CStreamBinder *m_StreamBinder;
@@ -50,9 +45,6 @@ public:
 
 STDMETHODIMP CSequentialOutStreamForBinder::Write(const void *data, UInt32 size, UInt32 *processedSize)
   { return m_StreamBinder->Write(data, size, processedSize); }
-
-STDMETHODIMP CSequentialOutStreamForBinder::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-  { return m_StreamBinder->WritePart(data, size, processedSize); }
 
 
 //////////////////////////
@@ -106,7 +98,7 @@ void CStreamBinder::CreateStreams(ISequentialInStream **inStream,
   ProcessedSize = 0;
 }
 
-STDMETHODIMP CStreamBinder::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
+HRESULT CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 sizeToRead = size;
   if (size > 0)
@@ -132,33 +124,12 @@ STDMETHODIMP CStreamBinder::ReadPart(void *data, UInt32 size, UInt32 *processedS
   return S_OK;
 }
 
-STDMETHODIMP CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
-{
-  UInt32 fullProcessedSize = 0;
-  UInt32 realProcessedSize;
-  HRESULT result = S_OK;
-  while(size > 0)
-  {
-    result = ReadPart(data, size, &realProcessedSize);
-    size -= realProcessedSize;
-    data = (void *)((Byte *)data + realProcessedSize);
-    fullProcessedSize += realProcessedSize;
-    if (result != S_OK)
-      break;
-    if (realProcessedSize == 0)
-      break;
-  }
-  if (processedSize != NULL)
-    *processedSize = fullProcessedSize;
-  return result;
-}
-
 void CStreamBinder::CloseRead()
 {
   _readStreamIsClosedEvent->Set();
 }
 
-STDMETHODIMP CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSize)
+HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   if (size > 0)
   {
@@ -182,11 +153,6 @@ STDMETHODIMP CStreamBinder::Write(const void *data, UInt32 size, UInt32 *process
   if (processedSize != NULL)
     *processedSize = size;
   return S_OK;
-}
-
-STDMETHODIMP CStreamBinder::WritePart(const void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Write(data, size, processedSize);
 }
 
 void CStreamBinder::CloseWrite()

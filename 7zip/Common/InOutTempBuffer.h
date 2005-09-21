@@ -33,7 +33,6 @@ public:
   UInt64 GetDataSize() const { return _fileSize; }
   bool FlushWrite();
   bool InitReading();
-  // bool Read(void *data, UInt32 maxSize, UInt32 &processedSize);
   HRESULT WriteToStream(ISequentialOutStream *stream);
 };
 
@@ -51,7 +50,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
 #endif

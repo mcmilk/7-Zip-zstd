@@ -1,5 +1,5 @@
-Compression method IDs (4.16 beta)
-----------------------------------
+Compression method IDs (4.27)
+-----------------------------
 
 Each compression method in 7z has unique binary value (ID).
 The length of ID in bytes is arbitrary but it can not exceed 15 bytes.
@@ -59,9 +59,10 @@ List of defined IDs
    04 - Arj
       01 - Arj (1,2,3)
       02 - Arj 4
-   05 - Lzh
-
-   07 - Reserved
+   05 - Z
+   06 - Lzh
+   07 - Reserved for 7z
+   08 - Cab
 
 
 06 - Crypto 

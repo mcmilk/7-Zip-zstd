@@ -37,10 +37,7 @@ public:
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
 private:
-  CObjectVector<NHeader::CFolder> m_Folders;
-  CObjectVector<CItem> m_Files;
-  CInArchiveInfo m_ArchiveInfo;
-  CMyComPtr<IInStream> m_Stream;
+  CMvDatabaseEx m_Database;
 };
 
 }}

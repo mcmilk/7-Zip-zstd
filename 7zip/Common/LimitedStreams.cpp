@@ -11,23 +11,11 @@ void CLimitedSequentialInStream::Init(ISequentialInStream *stream, UInt64 stream
   _size = streamSize;
 }
 
-STDMETHODIMP CLimitedSequentialInStream::Read(void *data, 
-    UInt32 size, UInt32 *processedSize)
+STDMETHODIMP CLimitedSequentialInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 processedSizeReal;
   UInt32 sizeToRead = UInt32(MyMin(_size, UInt64(size)));
   HRESULT result = _stream->Read(data, sizeToRead, &processedSizeReal);
-  _size -= processedSizeReal;
-  if(processedSize != NULL)
-    *processedSize = processedSizeReal;
-  return result;
-}
-  
-STDMETHODIMP CLimitedSequentialInStream::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  UInt32 processedSizeReal;
-  UInt32 sizeToRead = UInt32(MyMin(_size, UInt64(size)));
-  HRESULT result = _stream->ReadPart(data, sizeToRead, &processedSizeReal);
   _size -= processedSizeReal;
   if(processedSize != NULL)
     *processedSize = processedSizeReal;

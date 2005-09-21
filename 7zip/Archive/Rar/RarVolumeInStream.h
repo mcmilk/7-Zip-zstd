@@ -25,7 +25,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);
 
 private:
   CObjectVector<CInArchive> *_archives;

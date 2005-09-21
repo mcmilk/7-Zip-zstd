@@ -8,6 +8,9 @@
 namespace NCompress {
 namespace NLZMA {
 
+const int kLenIdFinished = -1;
+const int kLenIdNeedInit = -2;
+
 void CDecoder::Init()
 {
   { 
@@ -41,11 +44,18 @@ void CDecoder::Init()
   _reps[0] = _reps[1] = _reps[2] = _reps[3] = 0;
 }
 
-HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
+HRESULT CDecoder::CodeSpec(UInt32 curSize)
 {
-  if (_remainLen == -1)
+  if (_outSizeDefined)
+  {
+    const UInt64 rem = _outSize - _outWindowStream.GetProcessedSize();
+    if (curSize > rem)
+      curSize = (UInt32)rem;
+  }
+
+  if (_remainLen == kLenIdFinished)
     return S_OK;
-  if (_remainLen == -2)
+  if (_remainLen == kLenIdNeedInit)
   {
     _rangeDecoder.Init();
     Init();
@@ -53,8 +63,6 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
   }
   if (curSize == 0)
     return S_OK;
-
-  UInt64 nowPos64 = _nowPos64;
 
   UInt32 rep0 = _reps[0];
   UInt32 rep1 = _reps[1];
@@ -67,12 +75,10 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
   {
     previousByte = _outWindowStream.GetByte(rep0);
     _outWindowStream.PutByte(previousByte);
-    if (buffer)
-      *buffer++ = previousByte;
-    nowPos64++;
     _remainLen--;
     curSize--;
   }
+  UInt64 nowPos64 = _outWindowStream.GetProcessedSize();
   if (nowPos64 == 0)
     previousByte = 0;
   else
@@ -97,8 +103,6 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
           previousByte = _literalDecoder.DecodeNormal(&_rangeDecoder, 
               (UInt32)nowPos64, previousByte);
         _outWindowStream.PutByte(previousByte);
-        if (buffer)
-          *buffer++ = previousByte;
         state.UpdateChar();
         curSize--;
         nowPos64++;
@@ -108,20 +112,14 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
         UInt32 len;
         if(_isRep[state.Index].Decode(&_rangeDecoder) == 1)
         {
+          bool readLen = true;
           if(_isRepG0[state.Index].Decode(&_rangeDecoder) == 0)
           {
             if(_isRep0Long[state.Index][posState].Decode(&_rangeDecoder) == 0)
             {
-              if (nowPos64 == 0)
-                return S_FALSE;
               state.UpdateShortRep();
-              previousByte = _outWindowStream.GetByte(rep0);
-              _outWindowStream.PutByte(previousByte);
-              if (buffer)
-                *buffer++ = previousByte;
-              curSize--;
-              nowPos64++;
-              continue;
+              readLen = false;
+              len = 1;
             }
           }
           else
@@ -143,8 +141,11 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
             rep1 = rep0;
             rep0 = distance;
           }
-          len = _repMatchLenDecoder.Decode(&_rangeDecoder, posState) + kMatchMinLen;
-          state.UpdateRep();
+          if (readLen)
+          {
+            len = _repMatchLenDecoder.Decode(&_rangeDecoder, posState) + kMatchMinLen;
+            state.UpdateRep();
+          }
         }
         else
         {
@@ -167,36 +168,22 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
               rep0 += (_rangeDecoder.DecodeDirectBits(
                   numDirectBits - kNumAlignBits) << kNumAlignBits);
               rep0 += _posAlignDecoder.ReverseDecode(&_rangeDecoder);
+              if (rep0 == 0xFFFFFFFF)
+              {
+                _remainLen = kLenIdFinished;
+                return S_OK;
+              }
             }
           }
           else
             rep0 = posSlot;
-          if (rep0 >= nowPos64 || rep0 >= _dictionarySizeCheck)
-          {
-            if (rep0 != (UInt32)(Int32)(-1))
-              return S_FALSE;
-            _nowPos64 = nowPos64;
-            _remainLen = -1;
-            return S_OK;
-          }
         }
         UInt32 locLen = len;
         if (len > curSize)
           locLen = (UInt32)curSize;
-        if (buffer)
-        {
-          for (UInt32 i = locLen; i != 0; i--)
-          {
-            previousByte = _outWindowStream.GetByte(rep0);
-            *buffer++ = previousByte;
-            _outWindowStream.PutByte(previousByte);
-          }
-        }
-        else
-        {
-          _outWindowStream.CopyBlock(rep0, locLen);
-          previousByte = _outWindowStream.GetByte(0);
-        }
+        if (!_outWindowStream.CopyBlock(rep0, locLen))
+          return S_FALSE;
+        previousByte = _outWindowStream.GetByte(0);
         curSize -= locLen;
         nowPos64 += locLen;
         len -= locLen;
@@ -215,7 +202,6 @@ HRESULT CDecoder::CodeSpec(Byte *buffer, UInt32 curSize)
   }
   if (_rangeDecoder.Stream.WasFinished())
     return S_FALSE;
-  _nowPos64 = nowPos64;
   _reps[0] = rep0;
   _reps[1] = rep1;
   _reps[2] = rep2;
@@ -238,40 +224,47 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   while (true)
   {
     UInt32 curSize = 1 << 18;
-    if (_outSize != (UInt64)(Int64)(-1))
-      if (curSize > _outSize - _nowPos64)
-        curSize = (UInt32)(_outSize - _nowPos64);
-    RINOK(CodeSpec(0, curSize));
-    if (_remainLen == -1)
+    RINOK(CodeSpec(curSize));
+    if (_remainLen == kLenIdFinished)
       break;
     if (progress != NULL)
     {
       UInt64 inSize = _rangeDecoder.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&inSize, &_nowPos64));
+      UInt64 nowPos64 = _outWindowStream.GetProcessedSize();
+      RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
-    if (_outSize != (UInt64)(Int64)(-1))
-      if (_nowPos64 >= _outSize)
+    if (_outSizeDefined)
+      if (_outWindowStream.GetProcessedSize() >= _outSize)
         break;
   } 
   flusher.NeedFlush = false;
   return Flush();
 }
 
+
+#ifdef _NO_EXCEPTIONS
+
+#define LZMA_TRY_BEGIN
+#define LZMA_TRY_END
+
+#else
+
+#define LZMA_TRY_BEGIN try { 
+#define LZMA_TRY_END } \
+  catch(const CInBufferException &e)  { return e.ErrorCode; } \
+  catch(const CLZOutWindowException &e)  { return e.ErrorCode; } \
+  catch(...) { return S_FALSE; }
+
+#endif
+
+
 STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
-  #ifndef _NO_EXCEPTIONS
-  try 
-  { 
-  #endif
-    return CodeReal(inStream, outStream, inSize, outSize, progress); 
-  #ifndef _NO_EXCEPTIONS
-  }
-  catch(const CInBufferException &e)  { return e.ErrorCode; }
-  catch(const CLZOutWindowException &e)  { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
-  #endif
+  LZMA_TRY_BEGIN
+  return CodeReal(inStream, outStream, inSize, outSize, progress); 
+  LZMA_TRY_END
 }
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *properties, UInt32 size)
@@ -288,9 +281,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *properties, UInt32 size
   UInt32 dictionarySize = 0;
   for (int i = 0; i < 4; i++)
     dictionarySize += ((UInt32)(properties[1 + i])) << (i * 8);
-  _dictionarySizeCheck = MyMax(dictionarySize, UInt32(1));
-  UInt32 blockSize = MyMax(_dictionarySizeCheck, UInt32(1 << 12));
-  if (!_outWindowStream.Create(blockSize))
+  if (!_outWindowStream.Create(dictionarySize))
     return E_OUTOFMEMORY;
   if (!_literalDecoder.Create(lp, lc))
     return E_OUTOFMEMORY;
@@ -319,38 +310,29 @@ STDMETHODIMP CDecoder::ReleaseInStream()
 
 STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
-  _outSize = (outSize == NULL) ? (UInt64)(Int64)(-1) : *outSize;
-  _nowPos64 = 0;
-  _remainLen = -2; // -2 means need_init
+  if (_outSizeDefined = (outSize != NULL))
+    _outSize = *outSize;
+  _remainLen = kLenIdNeedInit;
   _outWindowStream.Init();
   return S_OK;
 }
 
+#ifdef _ST_MODE
+
 STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  #ifndef _NO_EXCEPTIONS
-  try 
-  { 
-  #endif
-  UInt64 startPos = _nowPos64;
-  if (_outSize != (UInt64)(Int64)(-1))
-    if (size > _outSize - _nowPos64)
-      size = (UInt32)(_outSize - _nowPos64);
-  HRESULT res = CodeSpec((Byte *)data, size);
+  LZMA_TRY_BEGIN
   if (processedSize)
-    *processedSize = (UInt32)(_nowPos64 - startPos);
-  return res;
-  #ifndef _NO_EXCEPTIONS
-  }
-  catch(const CInBufferException &e)  { return e.ErrorCode; }
-  catch(const CLZOutWindowException &e)  { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
-  #endif
+    *processedSize = 0;
+  const UInt64 startPos = _outWindowStream.GetProcessedSize();
+  _outWindowStream.SetMemStream((Byte *)data);
+  RINOK(CodeSpec(size));
+  if (processedSize)
+    *processedSize = (UInt32)(_outWindowStream.GetProcessedSize() - startPos);
+  return Flush();
+  LZMA_TRY_END
 }
 
-STDMETHODIMP CDecoder::ReadPart(void *data, UInt32 size, UInt32 *processedSize)
-{
-  return Read(data, size, processedSize);
-}
+#endif
 
 }}

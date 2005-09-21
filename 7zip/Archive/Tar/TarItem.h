@@ -45,6 +45,14 @@ public:
       }
       return false;
     }
+
+  bool IsMagic() const 
+  {  
+    for (int i = 0; i < 5; i++)
+      if (Magic[i] != NFileHeader::NMagic::kUsTar[i])
+        return false;
+    return true;
+  }
 };
 
 class CItemEx: public CItem

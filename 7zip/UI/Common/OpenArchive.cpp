@@ -12,6 +12,7 @@
 #include "Windows/PropVariant.h"
 
 #include "../../Common/FileStreams.h"
+#include "../../Common/StreamUtils.h"
 
 #include "Common/StringConvert.h"
 
@@ -179,7 +180,7 @@ HRESULT OpenArchive(
     Byte *buffer = byteBuffer;
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
     UInt32 processedSize;
-    RINOK(inStream->Read(buffer, kBufferSize, &processedSize));
+    RINOK(ReadStream(inStream, buffer, kBufferSize, &processedSize));
     int numFinded = 0;
     for (int pos = (int)processedSize; pos >= 0 ; pos--)
     {
@@ -281,8 +282,8 @@ HRESULT OpenArchive(
     if (subExtIndex < 0)
       subExtIndex = 0;
     defaultItemName = GetDefaultName2(fileName, 
-        archiverInfo.Extensions[subExtIndex].Extension, 
-        archiverInfo.Extensions[subExtIndex].AddExtension);
+        archiverInfo.Extensions[subExtIndex].Ext, 
+        archiverInfo.Extensions[subExtIndex].AddExt);
 
     return S_OK;
   }

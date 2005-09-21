@@ -16,6 +16,7 @@ COMMON_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\OutBuffer.obj \
+  $O\StreamUtils.obj \
 
 
 OBJS = \

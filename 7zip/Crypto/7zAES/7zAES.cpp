@@ -5,6 +5,7 @@
 #include "Windows/Defs.h"
 #include "Windows/Synchronization.h"
 #include "../../Common/StreamObjects.h"
+#include "../../Common/StreamUtils.h"
 
 #include "7zAES.h"
 // #include "../../Hash/Common/CryptoHashInterface.h"
@@ -169,11 +170,11 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   RINOK(outStream->Write(&secondByte, 1, NULL));
   if (_key.SaltSize > 0)
   {
-    RINOK(outStream->Write(_key.Salt, _key.SaltSize, NULL));
+    RINOK(WriteStream(outStream, _key.Salt, _key.SaltSize, NULL));
   }
   if (ivSize > 0)
   {
-    RINOK(outStream->Write(_iv, ivSize, NULL));
+    RINOK(WriteStream(outStream, _iv, ivSize, NULL));
   }
   return S_OK;
 }

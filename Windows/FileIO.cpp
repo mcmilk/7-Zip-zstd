@@ -146,10 +146,40 @@ bool CInFile::Open(LPCWSTR fileName)
 }
 #endif
 
+// ReadFile and WriteFile functions in Windows have BUG:
+// If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1) 
+// from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
+// (Insufficient system resources exist to complete the requested service).
+
+static UINT32 kChunkSizeMax = (1 << 24);
+
+bool CInFile::ReadPart(void *data, UINT32 size, UINT32 &processedSize)
+{
+  if (size > kChunkSizeMax)
+    size = kChunkSizeMax;
+  DWORD processedLoc = 0;
+  bool res = BOOLToBool(::ReadFile(_handle, data, size, &processedLoc, NULL));
+  processedSize = (UINT32)processedLoc;
+  return res;
+}
+
 bool CInFile::Read(void *data, UINT32 size, UINT32 &processedSize)
 {
-  return BOOLToBool(::ReadFile(_handle, data, size, 
-      (DWORD *)&processedSize, NULL));
+  processedSize = 0;
+  do
+  {
+    UINT32 processedLoc = 0;
+    bool res = ReadPart(data, size, processedLoc);
+    processedSize += processedLoc;
+    if (!res)
+      return false;
+    if (processedLoc == 0)
+      return true;
+    data = (void *)((unsigned char *)data + processedLoc);
+    size -= processedLoc;
+  }
+  while (size > 0);
+  return true;
 }
 
 /////////////////////////
@@ -210,10 +240,33 @@ bool COutFile::SetLastWriteTime(const FILETIME *lastWriteTime)
   return SetTime(NULL, NULL, lastWriteTime);
 }
 
+bool COutFile::WritePart(const void *data, UINT32 size, UINT32 &processedSize)
+{
+  if (size > kChunkSizeMax)
+    size = kChunkSizeMax;
+  DWORD processedLoc = 0;
+  bool res = BOOLToBool(::WriteFile(_handle, data, size, &processedLoc, NULL));
+  processedSize = (UINT32)processedLoc;
+  return res;
+}
+
 bool COutFile::Write(const void *data, UINT32 size, UINT32 &processedSize)
 {
-  return BOOLToBool(::WriteFile(_handle, data, size, 
-      (DWORD *)&processedSize, NULL));
+  processedSize = 0;
+  do
+  {
+    UINT32 processedLoc = 0;
+    bool res = WritePart(data, size, processedLoc);
+    processedSize += processedLoc;
+    if (!res)
+      return false;
+    if (processedLoc == 0)
+      return true;
+    data = (const void *)((const unsigned char *)data + processedLoc);
+    size -= processedLoc;
+  }
+  while (size > 0);
+  return true;
 }
 
 bool COutFile::SetEndOfFile()

@@ -94,11 +94,9 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize); \
-  STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize); \
   STDMETHOD(SetOutStream)(ISequentialOutStream *outStream);
   STDMETHOD(ReleaseOutStream)();
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Flush)();
   // #endif
 

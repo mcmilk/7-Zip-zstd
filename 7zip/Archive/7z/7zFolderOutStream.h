@@ -22,7 +22,6 @@ public:
   CFolderOutStream();
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
 
   COutStreamWithCRC *_outStreamWithHashSpec;

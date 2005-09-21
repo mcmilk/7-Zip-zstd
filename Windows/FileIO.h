@@ -60,6 +60,7 @@ public:
       DWORD creationDisposition,  DWORD flagsAndAttributes);
   bool Open(LPCWSTR fileName);
   #endif
+  bool ReadPart(void *data, UINT32 size, UINT32 &processedSize);
   bool Read(void *data, UINT32 size, UINT32 &processedSize);
 };
 
@@ -90,6 +91,7 @@ public:
   bool SetTime(const FILETIME *creationTime,
       const FILETIME *lastAccessTime, const FILETIME *lastWriteTime);
   bool SetLastWriteTime(const FILETIME *lastWriteTime);
+  bool WritePart(const void *data, UINT32 size, UINT32 &processedSize);
   bool Write(const void *data, UINT32 size, UINT32 &processedSize);
   bool SetEndOfFile();
   bool SetLength(UINT64 length);

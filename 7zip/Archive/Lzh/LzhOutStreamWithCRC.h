@@ -18,7 +18,6 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
   CCRC _crc;
   CMyComPtr<ISequentialOutStream> _stream;

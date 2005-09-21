@@ -72,7 +72,7 @@ HRESULT CLZInWindow::ReadBlock()
     if(size == 0)
       return S_OK;
     UInt32 numReadBytes;
-    RINOK(_stream->ReadPart(_buffer + _streamPos, size, &numReadBytes));
+    RINOK(_stream->Read(_buffer + _streamPos, size, &numReadBytes));
     if(numReadBytes == 0)
     {
       _posLimit = _streamPos;

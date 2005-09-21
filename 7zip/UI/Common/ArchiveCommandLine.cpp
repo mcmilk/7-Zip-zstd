@@ -691,7 +691,7 @@ static void SetArchiveType(const UString &archiveType,
 
 CArchiveCommandLineParser::CArchiveCommandLineParser(): parser(kNumSwitches) {}
 
-void CArchiveCommandLineParser::Parse1(UStringVector commandStrings,
+void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
     CArchiveCommandLineOptions &options)
 {
   try

@@ -5,6 +5,15 @@
 
 #include "../IProgress.h"
 
+#define FOLDER_INTERFACE_SUB(i, b, x, y) \
+DEFINE_GUID(IID_ ## i, \
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, x, y, 0x00); \
+struct i: public b
+
+#define FOLDER_INTERFACE2(i, x, y) FOLDER_INTERFACE_SUB(i, IUnknown, x, y)
+
+#define FOLDER_INTERFACE(i, x) FOLDER_INTERFACE2(i, x, 0x00)
+
 namespace NPlugin
 {
   enum 
@@ -16,85 +25,50 @@ namespace NPlugin
   };
 }
 
-// {23170F69-40C1-278A-0000-000800000000}
-DEFINE_GUID(IID_IFolderFolder, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800000000")
-IFolderFolder: public IUnknown
+FOLDER_INTERFACE(IFolderFolder, 0x00)
 {
-public:
-  STDMETHOD(LoadItems)() = 0;
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) = 0;  
-  // STDMETHOD(GetNumberOfSubFolders)(UINT32 *numSubFolders) = 0;  
-  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value) = 0;
-  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder) = 0;
-  STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder) = 0;
-  STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder) = 0;
-  STDMETHOD(GetName)(BSTR *name) = 0;
+  STDMETHOD(LoadItems)() PURE;
+  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) PURE;  
+  // STDMETHOD(GetNumberOfSubFolders)(UINT32 *numSubFolders) PURE;  
+  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder) PURE;
+  STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder) PURE;
+  STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder) PURE;
+  STDMETHOD(GetName)(BSTR *name) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000800010000}
-DEFINE_GUID(IID_IEnumProperties, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800010000")
-IEnumProperties: public IUnknown
+FOLDER_INTERFACE(IEnumProperties, 0x01)
 {
-public:
-  // STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) = 0;  
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties) = 0;  
+  // STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) PURE;  
+  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties) PURE;  
   STDMETHOD(GetPropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType) = 0;
+      BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000800020000}
-DEFINE_GUID(IID_IFolderGetTypeID, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x02, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800020000")
-IFolderGetTypeID: public IUnknown
+FOLDER_INTERFACE(IFolderGetTypeID, 0x02)
 {
-public:
-  STDMETHOD(GetTypeID)(BSTR *name) = 0;
+  STDMETHOD(GetTypeID)(BSTR *name) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000800030000}
-DEFINE_GUID(IID_IFolderGetPath, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x03, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800030000")
-IFolderGetPath: public IUnknown
+FOLDER_INTERFACE(IFolderGetPath, 0x03)
 {
-public:
-  STDMETHOD(GetPath)(BSTR *path) = 0;
+  STDMETHOD(GetPath)(BSTR *path) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000800040000}
-DEFINE_GUID(IID_IFolderWasChanged, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x04, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800040000")
-IFolderWasChanged: public IUnknown
+FOLDER_INTERFACE(IFolderWasChanged, 0x04)
 {
-public:
-  STDMETHOD(WasChanged)(INT32 *wasChanged) = 0;
+  STDMETHOD(WasChanged)(INT32 *wasChanged) PURE;
 };
 
 /*
-// {23170F69-40C1-278A-0000-000800050000}
-DEFINE_GUID(IID_IFolderReload, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800050000")
-IFolderReload: public IUnknown
+FOLDER_INTERFACE(IFolderReload, 0x05)
 {
-public:
-  STDMETHOD(Reload)() = 0;
+  STDMETHOD(Reload)() PURE;
 };
 */
 
-// {23170F69-40C1-278A-0000-000800060100}
-DEFINE_GUID(IID_IFolderOperationsExtractCallback,
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x06, 0x01, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800060100")
-IFolderOperationsExtractCallback: public IProgress
+FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x06, 0x01)
 {
-public:
   STDMETHOD(AskWrite)(
       const wchar_t *srcPath, 
       INT32 srcIsFolder, 
@@ -102,19 +76,14 @@ public:
       const UINT64 *srcSize,
       const wchar_t *destPathRequest, 
       BSTR *destPathResult, 
-      INT32 *writeAnswer) = 0;
-  STDMETHOD(ShowMessage)(const wchar_t *message) = 0;
-  STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath) = 0;
+      INT32 *writeAnswer) PURE;
+  STDMETHOD(ShowMessage)(const wchar_t *message) PURE;
+  STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath) PURE;
 };
 
 /*
-// {23170F69-40C1-278A-0000-000800060200}
-DEFINE_GUID(IID_IFolderOperationsUpdateCallback,
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x06, 0x02, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800060200")
-IFolderOperationsUpdateCallback: public IProgress
+FOLDER_INTERFACE_SUB(IFolderOperationsUpdateCallback, IProgress, 0x06, 0x02)
 {
-public:
   STDMETHOD(AskOverwrite)(
       const wchar_t *srcPath, 
       INT32 destIsFolder, 
@@ -127,124 +96,88 @@ public:
 };
 */
 
-// {23170F69-40C1-278A-0000-000800060000}
-DEFINE_GUID(IID_IFolderOperations, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x06, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800060000")
-IFolderOperations: public IUnknown
+FOLDER_INTERFACE(IFolderOperations, 0x06)
 {
-public:
-  STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress) = 0;
-  STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress) = 0;
-  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress) = 0;
-  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress) = 0;
+  STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress) PURE;
+  STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress) PURE;
+  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress) PURE;
+  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress) PURE;
   STDMETHOD(CopyTo)(const UINT32 *indices, UINT32 numItems, 
-      const wchar_t *path, IFolderOperationsExtractCallback *callback) = 0;
+      const wchar_t *path, IFolderOperationsExtractCallback *callback) PURE;
   STDMETHOD(MoveTo)(const UINT32 *indices, UINT32 numItems, 
-      const wchar_t *path, IFolderOperationsExtractCallback *callback) = 0;
+      const wchar_t *path, IFolderOperationsExtractCallback *callback) PURE;
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
-      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress) = 0;
-  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) = 0;
-};
-
-// {23170F69-40C1-278A-0000-000800070000}
-DEFINE_GUID(IID_IFolderGetSystemIconIndex, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x07, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800070000")
-IFolderGetSystemIconIndex: public IUnknown
-{
-public:
-  STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex) = 0;
-};
-
-// {23170F69-40C1-278A-0000-000800080000}
-DEFINE_GUID(IID_IFolderGetItemFullSize, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x08, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800080000")
-IFolderGetItemFullSize: public IUnknown
-{
-public:
-  STDMETHOD(GetItemFullSize)(UINT32 index, PROPVARIANT *value, IProgress *progress) = 0;
-};
-
-// {23170F69-40C1-278A-0000-000800090000}
-DEFINE_GUID(IID_IFolderClone, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x09, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800090000")
-IFolderClone: public IUnknown
-{
-public:
-  STDMETHOD(Clone)(IFolderFolder **resultFolder) = 0;
+      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress) PURE;
+  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) PURE;
 };
 
 /*
-// {23170F69-40C1-278A-0000-0008000A0000}
-DEFINE_GUID(IID_IFolderOpen, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x0A, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0008000A0000")
-IFolderOpen: public IUnknown
+FOLDER_INTERFACE2(IFolderOperationsDeleteToRecycleBin, 0x06, 0x03)
+{
+  STDMETHOD(DeleteToRecycleBin)(const UINT32 *indices, UINT32 numItems, IProgress *progress) PURE;
+};
+*/
+
+FOLDER_INTERFACE(IFolderGetSystemIconIndex, 0x07)
+{
+  STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex) PURE;
+};
+
+FOLDER_INTERFACE(IFolderGetItemFullSize, 0x08)
+{
+  STDMETHOD(GetItemFullSize)(UINT32 index, PROPVARIANT *value, IProgress *progress) PURE;
+};
+
+FOLDER_INTERFACE(IFolderClone, 0x09)
+{
+  STDMETHOD(Clone)(IFolderFolder **resultFolder) PURE;
+};
+
+/*
+FOLDER_INTERFACE(IFolderOpen, 0x0A)
 {
   STDMETHOD(FolderOpen)(
     const wchar_t *aFileName, 
     // IArchiveHandler100 **anArchiveHandler, 
     // NZipRootRegistry::CArchiverInfo &anArchiverInfoResult,
     // UString &aDefaultName,
-    IOpenArchive2CallBack *anOpenArchive2CallBack) = 0;
+    IOpenArchive2CallBack *anOpenArchive2CallBack) PURE;
 };
 */
 
-// {23170F69-40C1-278A-0000-000900000000}
-DEFINE_GUID(IID_IFolderManager, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000900000000")
-IFolderManager: public IUnknown
+#define FOLDER_MANAGER_INTERFACE(i, x) \
+DEFINE_GUID(IID_ ## i, \
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x09, 0x00, x, 0x00, 0x00); \
+struct i: public IUnknown
+            
+FOLDER_MANAGER_INTERFACE(IFolderManager, 0x00)
 {
-  STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) = 0;
-  STDMETHOD(GetTypes)(BSTR *types);
-  STDMETHOD(GetExtension)(const wchar_t *type, BSTR *extension);
-  STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) = 0;
+  STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) PURE;
+  STDMETHOD(GetTypes)(BSTR *types) PURE;
+  STDMETHOD(GetExtension)(const wchar_t *type, BSTR *extension) PURE;
+  STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) PURE;
 };
 
-// {23170F69-40C1-278A-0000-000900010000}
-DEFINE_GUID(IID_IFolderManagerGetIconPath, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x09, 0x00, 0x01, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000900010000")
-IFolderManagerGetIconPath: public IUnknown
+FOLDER_MANAGER_INTERFACE(IFolderManagerGetIconPath, 0x01)
 {
-  STDMETHOD(GetIconPath)(const wchar_t *type, BSTR *iconPath) = 0;
+  STDMETHOD(GetIconPath)(const wchar_t *type, BSTR *iconPath) PURE;
 };
 
 /*
-// {23170F69-40C1-278A-0000-000800050A00}
-DEFINE_GUID(IID_IFolderExtract, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x0A, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800050A00")
-IFolderExtract: public IUnknown
+FOLDER_INTERFACE(IFolderExtract, 0x05, 0x0A);
 {
-public:
-  STDMETHOD(Clone)(IFolderFolder **aFolder) = 0;
+  STDMETHOD(Clone)(IFolderFolder **aFolder) PURE;
 };
-*/
 
-/*
-// {23170F69-40C1-278A-0000-000800050400}
-DEFINE_GUID(IID_IFolderChangeNotify, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x04, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800050400")
+FOLDER_INTERFACE(IFolderChangeNotify,0x05, 0x04, 0x00);
 IFolderChangeNotify: public IUnknown
 {
-public:
-  STDMETHOD(OnChanged)() = 0;
+  STDMETHOD(OnChanged)() PURE;
 };
 
-// {23170F69-40C1-278A-0000-000800050500}
-DEFINE_GUID(IID_IFolderSetChangeNotify, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x05, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000800050500")
-IFolderSetChangeNotify: public IUnknown
+FOLDER_INTERFACE(IFolderSetChangeNotify, 0x05, 0x05);
 {
-public:
-  STDMETHOD(SetChangeNotify)(IFolderChangeNotify *aChangeNotify) = 0;
+  STDMETHOD(SetChangeNotify)(IFolderChangeNotify *aChangeNotify) PURE;
 };
 */
 
