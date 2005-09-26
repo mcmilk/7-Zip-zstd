@@ -15,7 +15,7 @@ UString GetDefaultName2(const UString &fileName,
   {
     int dotPos = fileNameLength - (extLength + 1);
     if (fileName[dotPos] == '.')
-      if (extension.CollateNoCase(fileName.Mid(dotPos + 1)) == 0)
+      if (extension.CompareNoCase(fileName.Mid(dotPos + 1)) == 0)
         return fileName.Left(dotPos) + addSubExtension;
   }
   return kEmptyFileAlias;

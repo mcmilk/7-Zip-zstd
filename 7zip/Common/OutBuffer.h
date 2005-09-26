@@ -25,6 +25,7 @@ protected:
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _processedSize;
   Byte  *_buffer2;
+  bool _overDict;
 
   HRESULT FlushPart();
   void FlushWithCheck();

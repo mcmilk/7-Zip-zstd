@@ -412,7 +412,7 @@ static void ConvertToLongNames(const UString &prefix, NWildcard::CCensorNode &no
     for (int j = i + 1; j < node.SubNodes.Size();)
     {
       const NWildcard::CCensorNode &nextNode2 = node.SubNodes[j];
-      if (nextNode1.Name.CollateNoCase(nextNode2.Name) == 0)
+      if (nextNode1.Name.CompareNoCase(nextNode2.Name) == 0)
       {
         nextNode1.IncludeItems += nextNode2.IncludeItems;
         nextNode1.ExcludeItems += nextNode2.ExcludeItems;

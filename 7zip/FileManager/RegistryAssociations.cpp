@@ -122,7 +122,7 @@ static bool CheckShellExtensionInfo2(const CSysString &extension)
   if (extKey.QueryValue(NULL, programNameValue) != ERROR_SUCCESS)
     return false;
   CSysString extProgramKeyName = GetExtProgramKeyName(extension);
-  return (programNameValue.CollateNoCase(extProgramKeyName) == 0);
+  return (programNameValue.CompareNoCase(extProgramKeyName) == 0);
 }
 
 bool CheckShellExtensionInfo(const CSysString &extension)
@@ -237,7 +237,7 @@ static bool CheckContextMenuHandlerCommon(const CSysString &aKeyName)
   CSysString aValue;
   if (aKey.QueryValue(NULL, aValue) != ERROR_SUCCESS)
     return false;
-  return (aValue.CollateNoCase(kContextMenuHandlerCLASSIDValue) == 0);
+  return (aValue.CompareNoCase(kContextMenuHandlerCLASSIDValue) == 0);
 }
 
 bool CheckContextMenuHandler()

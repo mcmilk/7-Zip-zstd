@@ -191,7 +191,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
         if(pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
         for(int i = 0; i < numRemovePathParts; i++)
-          if(_removePathParts[i].CollateNoCase(pathParts[i]) != 0)
+          if(_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
             return E_FAIL;
         pathParts.Delete(0, numRemovePathParts);
         processedPath = MakePathNameFromParts(pathParts);

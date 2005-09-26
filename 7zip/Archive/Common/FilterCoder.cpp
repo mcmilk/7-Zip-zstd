@@ -40,7 +40,7 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
-  Init();
+  RINOK(Init());
   UInt32 bufferPos = 0;
   if (_outSizeIsDefined = (outSize != 0))
     _outSize = *outSize;
@@ -86,8 +86,7 @@ STDMETHODIMP CFilterCoder::SetOutStream(ISequentialOutStream *outStream)
 {
   _bufferPos = 0;
   _outStream = outStream;
-  Init();
-  return S_OK;
+  return Init();
 }
 
 STDMETHODIMP CFilterCoder::ReleaseOutStream()
@@ -164,8 +163,7 @@ STDMETHODIMP CFilterCoder::SetInStream(ISequentialInStream *inStream)
 {
   _convertedPosBegin = _convertedPosEnd = _bufferPos = 0;
   _inStream = inStream;
-  Init();
-  return S_OK;
+  return Init();
 }
 
 STDMETHODIMP CFilterCoder::ReleaseInStream()

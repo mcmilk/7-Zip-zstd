@@ -202,7 +202,7 @@ bool CItem::CheckPath(const UStringVector &pathParts, bool isFile) const
 int CCensorNode::FindSubNode(const UString &name) const
 {
   for (int i = 0; i < SubNodes.Size(); i++)
-    if (SubNodes[i].Name.CollateNoCase(name) == 0)
+    if (SubNodes[i].Name.CompareNoCase(name) == 0)
       return i;
   return -1;
 }
@@ -349,7 +349,7 @@ void CCensorNode::AddItem2(bool include, const UString &path, bool recursive)
 int CCensor::FindPrefix(const UString &prefix) const
 {
   for (int i = 0; i < Pairs.Size(); i++)
-    if (Pairs[i].Prefix.CollateNoCase(prefix) == 0)
+    if (Pairs[i].Prefix.CompareNoCase(prefix) == 0)
       return i;
   return -1;
 }

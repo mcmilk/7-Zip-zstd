@@ -419,7 +419,7 @@ void AddUniqueStringToHeadOfList(UStringVector &list,
     const UString &string)
 {
   for(int i = 0; i < list.Size();)
-    if (string.CollateNoCase(list[i]) == 0)
+    if (string.CompareNoCase(list[i]) == 0)
       list.Delete(i);
     else
       i++;

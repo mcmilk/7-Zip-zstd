@@ -6,6 +6,7 @@
 #include "../../IStream.h"
 #include "../../Common/OutBuffer.h"
 
+/*
 #ifndef _NO_EXCEPTIONS
 class CLZOutWindowException
 {
@@ -14,11 +15,11 @@ public:
   CLZOutWindowException(HRESULT errorCode): ErrorCode(errorCode) {}
 };
 #endif
+*/
+typedef COutBufferException CLZOutWindowException;
 
 class CLZOutWindow: public COutBuffer
 {
-  bool _overDict;
-  void FlushWithCheck();
 public:
   void Init(bool solid = false);
   

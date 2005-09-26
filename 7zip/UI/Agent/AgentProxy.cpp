@@ -22,7 +22,7 @@ int CProxyFolder::FindDirSubItemIndex(const UString &name, int &insertPos) const
       return -1;
     }
     int mid = (left + right) / 2;
-    int compare = name.CollateNoCase(Folders[mid].Name);
+    int compare = name.CompareNoCase(Folders[mid].Name);
     if (compare == 0)
       return mid;
     if (compare < 0)

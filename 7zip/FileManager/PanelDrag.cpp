@@ -532,7 +532,7 @@ bool CDropTarget::IsItSameDrive() const
   for (int i = 0; i < m_SourcePaths.Size(); i++)
   {
     const UString &path = m_SourcePaths[i];
-    if (drive.CollateNoCase(path.Left(drive.Length())) != 0)
+    if (drive.CompareNoCase(path.Left(drive.Length())) != 0)
       return false;
   }
   return true;

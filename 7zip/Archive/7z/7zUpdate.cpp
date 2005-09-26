@@ -158,7 +158,7 @@ static int CompareFolders(const CFolder &f1, const CFolder &f2)
 
 static int CompareFiles(const CFileItem &f1, const CFileItem &f2)
 {
-  return MyStringCollateNoCase(f1.Name, f2.Name);
+  return MyStringCompareNoCase(f1.Name, f2.Name);
 }
 
 static int CompareFolderRefs(const int *p1, const int *p2, void *param)
@@ -196,12 +196,12 @@ static int CompareEmptyItems(const int *p1, const int *p2, void *param)
   {
     if (u1.IsAnti != u2.IsAnti)
       return (u1.IsAnti ? 1 : -1);
-    int n = MyStringCollateNoCase(u1.Name, u2.Name);
+    int n = MyStringCompareNoCase(u1.Name, u2.Name);
     return (u1.IsAnti ? (-n) : n);
   }
   if (u1.IsAnti != u2.IsAnti)
     return (u1.IsAnti ? 1 : -1);
-  return MyStringCollateNoCase(u1.Name, u2.Name);
+  return MyStringCompareNoCase(u1.Name, u2.Name);
 }
 
 struct CRefItem
@@ -253,18 +253,18 @@ static int CompareUpdateItems(const CRefItem *p1, const CRefItem *p2, void *para
   {
     if (u1.IsAnti != u2.IsAnti)
       return (u1.IsAnti ? 1 : -1);
-    n = MyStringCollateNoCase(u1.Name, u2.Name);
+    n = MyStringCompareNoCase(u1.Name, u2.Name);
     return (u1.IsAnti ? (-n) : n);
   }
   if (a1.SortByType)
   {
-    RINOZ(MyStringCollateNoCase(u1.Name + a1.ExtensionPos, u2.Name + a2.ExtensionPos));
-    RINOZ(MyStringCollateNoCase(u1.Name + a1.NamePos, u2.Name + a2.NamePos));
+    RINOZ(MyStringCompareNoCase(u1.Name + a1.ExtensionPos, u2.Name + a2.ExtensionPos));
+    RINOZ(MyStringCompareNoCase(u1.Name + a1.NamePos, u2.Name + a2.NamePos));
     if (u1.LastWriteTimeIsDefined && u2.LastWriteTimeIsDefined)
       RINOZ(CompareFileTime(&u1.LastWriteTime, &u2.LastWriteTime));
     RINOZ(MyCompare(u1.Size, u2.Size))
   }
-  return MyStringCollateNoCase(u1.Name, u2.Name);
+  return MyStringCompareNoCase(u1.Name, u2.Name);
 }
 
 struct CSolidGroup
@@ -689,7 +689,7 @@ static HRESULT Update2(
           if (numSubFiles == 0)
             prevExtension = ext;
           else
-            if (ext.CollateNoCase(prevExtension) != 0)
+            if (ext.CompareNoCase(prevExtension) != 0)
               break;
         }
       }

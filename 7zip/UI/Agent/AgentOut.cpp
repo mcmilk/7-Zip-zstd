@@ -485,7 +485,7 @@ HRESULT CAgent::RenameItem(
         UString oldFullPath;
         RINOK(GetArchiveItemPath(GetArchive(), i, DefaultName, oldFullPath));
 
-        if (oldItemPath.CollateNoCase(oldFullPath.Left(oldItemPath.Length())) != 0)
+        if (oldItemPath.CompareNoCase(oldFullPath.Left(oldItemPath.Length())) != 0)
           return E_INVALIDARG;
 
         updatePair.NewName = newItemPath + oldFullPath.Mid(oldItemPath.Length());

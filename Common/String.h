@@ -90,19 +90,23 @@ wchar_t MyCharUpper(wchar_t c);
 //////////////////////////////////////
 // Compare
 
+/*
 #ifndef _WIN32_WCE
 int MyStringCollate(const char *s1, const char *s2);
 int MyStringCollateNoCase(const char *s1, const char *s2);
 #endif
 int MyStringCollate(const wchar_t *s1, const wchar_t *s2);
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
+*/
 
 int MyStringCompare(const char *s1, const char  *s2);
 int MyStringCompare(const wchar_t *s1, const wchar_t *s2);
 
-template <class T>
-inline int MyStringCompareNoCase(const T *s1, const T *s2)
-  { return MyStringCollateNoCase(s1, s2); }
+#ifdef _WIN32
+int MyStringCompareNoCase(const char *s1, const char  *s2);
+#endif
+
+int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2);
 
 template <class T>
 class CStringBase
@@ -358,10 +362,12 @@ public:
 
   int CompareNoCase(const CStringBase& s) const
     { return MyStringCompareNoCase(_chars, s._chars); }
+  /*
   int Collate(const CStringBase& s) const
     { return MyStringCollate(_chars, s._chars); }
   int CollateNoCase(const CStringBase& s) const
     { return MyStringCollateNoCase(_chars, s._chars); }
+  */
 
   int Find(T c) const { return Find(c, 0); }
   int Find(T c, int startIndex) const

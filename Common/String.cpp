@@ -71,6 +71,7 @@ wchar_t * MyStringLower(wchar_t *s)
 
 #endif
 
+/*
 inline int ConvertCompareResult(int r) { return r - 2; }
 
 int MyStringCollate(const wchar_t *s1, const wchar_t *s2)
@@ -114,25 +115,16 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
       UnicodeStringToMultiByte(s2));
   #endif
 }
+*/
 
 #else
 
-inline int NormalizeCompareResult(int res)
-{
-  if (res < 0) return -1;
-  if (res > 0) return 1;
-  return 0;
-}
-
-/*
-inline wchar_t MyCharUpper(wchar_t c)
-  { return towupper(c); }
-*/
 wchar_t MyCharUpper(wchar_t c)
 {
   return toupper(c);
 }
 
+/*
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
 { 
   while (true)
@@ -147,6 +139,7 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
     if (u1 == 0) return 0;
   }
 }
+*/
 
 #endif
 
@@ -173,3 +166,27 @@ int MyStringCompare(const wchar_t *s1, const wchar_t *s2)
     if (c1 == 0) return 0;
   }
 }
+
+int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
+{ 
+  while (true)
+  {
+    wchar_t c1 = *s1++;
+    wchar_t c2 = *s2++;
+    if (c1 != c2)
+    {
+      wchar_t u1 = MyCharUpper(c1);
+      wchar_t u2 = MyCharUpper(c2);
+      if (u1 < u2) return -1;
+      if (u1 > u2) return 1;
+    }
+    if (c1 == 0) return 0;
+  }
+}
+
+#ifdef _WIN32
+int MyStringCompareNoCase(const char *s1, const char *s2)
+{ 
+  return MyStringCompareNoCase(MultiByteToUnicodeString(s1), MultiByteToUnicodeString(s2));
+}
+#endif

@@ -32,7 +32,7 @@ struct CArchiverInfo
   int FindExtension(const UString &ext) const
   {
     for (int i = 0; i < Extensions.Size(); i++)
-      if (ext.CollateNoCase(Extensions[i].Ext) == 0)
+      if (ext.CompareNoCase(Extensions[i].Ext) == 0)
         return i;
     return -1;
   }

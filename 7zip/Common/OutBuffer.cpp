@@ -36,6 +36,7 @@ void COutBuffer::Init()
   _limitPos = _bufferSize;
   _pos = 0;
   _processedSize = 0;
+  _overDict = false;
   #ifdef _NO_EXCEPTIONS
   ErrorCode = S_OK;
   #endif
@@ -49,16 +50,16 @@ UInt64 COutBuffer::GetProcessedSize() const
   return res;
 }
 
+
 HRESULT COutBuffer::FlushPart()
 {
+  // _streamPos < _bufferSize
   UInt32 size = (_streamPos >= _pos) ? (_bufferSize - _streamPos) : (_pos - _streamPos);
   HRESULT result = S_OK;
   #ifdef _NO_EXCEPTIONS
   if (ErrorCode != S_OK)
     result = ErrorCode;
   #endif
-  if (size == 0)
-    return result;
   if (_buffer2 != 0)
   {
     memmove(_buffer2, _buffer + _streamPos, size);
@@ -76,9 +77,14 @@ HRESULT COutBuffer::FlushPart()
     size = processedSize;
   }
   _streamPos += size;
-  _limitPos =   (_streamPos > _pos) ? _streamPos : _bufferSize;
   if (_streamPos == _bufferSize)
     _streamPos = 0;
+  if (_pos == _bufferSize)
+  {
+    _overDict = true;
+    _pos = 0;
+  }
+  _limitPos = (_streamPos > _pos) ? _streamPos : _bufferSize;
   _processedSize += size;
   return result;
 }
@@ -102,8 +108,6 @@ HRESULT COutBuffer::Flush()
 void COutBuffer::FlushWithCheck()
 {
   HRESULT result = FlushPart();
-  if (_pos == _bufferSize)
-    _pos = 0;
   #ifdef _NO_EXCEPTIONS
   ErrorCode = result;
   #else

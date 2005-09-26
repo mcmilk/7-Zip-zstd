@@ -54,7 +54,7 @@ static inline int MyFileNameCompare(const UString &s1, const UString &s2)
 {
   return 
   #ifdef _WIN32
-  s1.CollateNoCase(s2);
+  s1.CompareNoCase(s2);
   #else
   s1.Compare(s2);
   #endif

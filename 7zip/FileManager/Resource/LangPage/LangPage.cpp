@@ -58,7 +58,7 @@ bool CLangPage::OnInit()
     index = _langCombo.AddString(GetSystemString(name));
     _langCombo.SetItemData(index, _paths.Size());
     _paths.Add(GetSystemString(lang.ShortName));
-    if (g_LangID.CollateNoCase(GetSystemString(lang.ShortName)) == 0)
+    if (g_LangID.CompareNoCase(GetSystemString(lang.ShortName)) == 0)
       _langCombo.SetCurSel(index);
   }
   return CPropertyPage::OnInit();

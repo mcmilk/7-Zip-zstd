@@ -45,7 +45,7 @@ static bool CheckContextMenuHandlerCommon(const CSysString &keyName)
   CSysString value;
   if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  return (value.CollateNoCase(kExtensionCLSID) == 0);
+  return (value.CompareNoCase(kExtensionCLSID) == 0);
 }
 
 static bool CheckDragDropMenuHandlerCommon(const CSysString &keyName)
@@ -57,7 +57,7 @@ static bool CheckDragDropMenuHandlerCommon(const CSysString &keyName)
   CSysString value;
   if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  return (value.CollateNoCase(kExtensionCLSID) == 0);
+  return (value.CompareNoCase(kExtensionCLSID) == 0);
 }
 
 bool CheckContextMenuHandler()

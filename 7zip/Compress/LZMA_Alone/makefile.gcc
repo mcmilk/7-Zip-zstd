@@ -20,6 +20,7 @@ OBJS = \
   InBuffer.o \
   OutBuffer.o \
   FileStreams.o \
+  StreamUtils.o \
   Alloc.o \
   C_FileIO.o \
   CommandLineParser.o \
@@ -76,6 +77,9 @@ OutBuffer.o: ../../Common/OutBuffer.cpp
 
 FileStreams.o: ../../Common/FileStreams.cpp
 	$(CXX) $(CFLAGS) ../../Common/FileStreams.cpp
+
+StreamUtils.o: ../../Common/StreamUtils.cpp
+	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
 
 Alloc.o: ../../../Common/Alloc.cpp
 	$(CXX) $(CFLAGS) ../../../Common/Alloc.cpp

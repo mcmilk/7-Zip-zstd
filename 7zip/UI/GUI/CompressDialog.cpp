@@ -265,8 +265,7 @@ bool CCompressDialog::OnInit()
   {
     const CArchiverInfo &ai = m_ArchiverInfoList[i];
     m_Format.AddString(GetSystemString(ai.Name));
-    if (ai.Name.CollateNoCase(
-        m_RegistryInfo.ArchiveType) == 0)
+    if (ai.Name.CompareNoCase(m_RegistryInfo.ArchiveType) == 0)
       Info.ArchiverInfoIndex = i;
   }
   m_Format.SetCurSel(Info.ArchiverInfoIndex);
@@ -879,7 +878,7 @@ void CCompressDialog::SetDictionary()
   if (index >= 0)
   {
     const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
-    if (fo.Method.CollateNoCase(GetMethodSpec()) == 0)
+    if (fo.Method.CompareNoCase(GetMethodSpec()) == 0)
       defaultDictionary = fo.Dictionary;
   }
   int methodID = GetMethodID();
@@ -1006,7 +1005,7 @@ void CCompressDialog::SetOrder()
   if (index >= 0)
   {
     const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
-    if (fo.Method.CollateNoCase(GetMethodSpec()) == 0)
+    if (fo.Method.CompareNoCase(GetMethodSpec()) == 0)
       defaultOrder = fo.Order;
   }
   int methodID = GetMethodID();

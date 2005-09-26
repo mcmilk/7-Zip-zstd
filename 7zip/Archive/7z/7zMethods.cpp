@@ -160,7 +160,7 @@ bool GetMethodInfo(const UString &name, CMethodInfo2 &methodInfo)
   for(int i = 0; i < g_Methods.Size(); i++)
   {
     const CMethodInfo2 &method = g_Methods[i];
-    if (method.Name.CollateNoCase(name) == 0)
+    if (method.Name.CompareNoCase(name) == 0)
     {
       methodInfo = method;
       return true;

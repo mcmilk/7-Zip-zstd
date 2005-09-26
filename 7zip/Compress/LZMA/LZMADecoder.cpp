@@ -112,13 +112,12 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
         UInt32 len;
         if(_isRep[state.Index].Decode(&_rangeDecoder) == 1)
         {
-          bool readLen = true;
+          len = 0;
           if(_isRepG0[state.Index].Decode(&_rangeDecoder) == 0)
           {
             if(_isRep0Long[state.Index][posState].Decode(&_rangeDecoder) == 0)
             {
               state.UpdateShortRep();
-              readLen = false;
               len = 1;
             }
           }
@@ -141,7 +140,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
             rep1 = rep0;
             rep0 = distance;
           }
-          if (readLen)
+          if (len == 0)
           {
             len = _repMatchLenDecoder.Decode(&_rangeDecoder, posState) + kMatchMinLen;
             state.UpdateRep();

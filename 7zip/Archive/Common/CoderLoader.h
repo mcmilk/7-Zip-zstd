@@ -91,7 +91,7 @@ public:
   int FindPath(LPCTSTR filePath)
   {
     for (int i = 0; i < Pairs.Size(); i++)
-      if (Pairs[i].Path.CollateNoCase(filePath) == 0)
+      if (Pairs[i].Path.CompareNoCase(filePath) == 0)
         return i;
     return -1;
   }

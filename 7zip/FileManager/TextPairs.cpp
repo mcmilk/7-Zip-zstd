@@ -116,7 +116,7 @@ UString GetTextConfigValue(const CObjectVector<CTextPair> &pairs, const UString 
 }
 
 static int ComparePairIDs(const UString &s1, const UString &s2)
-  { return s1.CollateNoCase(s2); }
+  { return s1.CompareNoCase(s2); }
 static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
   { return ComparePairIDs(p1.ID, p2.ID); }
 

@@ -300,7 +300,7 @@ void CExtractDialog::OnButtonSetPath()
 void AddUniqueString(CSysStringVector &list, const CSysString &s)
 {
   for(int i = 0; i < list.Size(); i++)
-    if (s.CollateNoCase(list[i]) == 0)
+    if (s.CompareNoCase(list[i]) == 0)
       return;
   list.Add(s);
 }

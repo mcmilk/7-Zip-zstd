@@ -362,7 +362,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       const CArchiverInfo &archiverInfo = fullArchiverInfoList[i];
       if (archiverInfo.UpdateEnabled)
       {
-        if (archiverInfo.Name.CollateNoCase(compressionInfo.ArchiveType) == 0)
+        if (archiverInfo.Name.CompareNoCase(compressionInfo.ArchiveType) == 0)
           archiverIndex = archiverInfoList.Size();
         archiverInfoList.Add(archiverInfo);
       }
@@ -612,7 +612,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         &archiveType,
         NULL));
 
-    if (archiverInfoFinal.Name.CollateNoCase((const wchar_t *)archiveType) != 0)
+    if (archiverInfoFinal.Name.CompareNoCase((const wchar_t *)archiveType) != 0)
       throw "Type of existing archive differs from specified type";
     HRESULT result = archiveHandler.QueryInterface(
         IID_IOutFolderArchive, &outArchive);

@@ -43,11 +43,11 @@ protected:
   UInt64 _outSize;
   UInt64 _nowPos64;
 
-  void Init() 
+  HRESULT Init() 
   { 
-    Filter->Init(); 
     _nowPos64 = 0;
     _outSizeIsDefined = false;
+    return Filter->Init(); 
   }
 
   CMyComPtr<ICryptoSetPassword> _setPassword;

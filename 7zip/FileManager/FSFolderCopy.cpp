@@ -171,7 +171,7 @@ static HRESULT MyCopyFile(
     UINT64 &completedSize)
 {
   UString destPath = destPathSpec;
-  if (destPath.CollateNoCase(srcPath) == 0)
+  if (destPath.CompareNoCase(srcPath) == 0)
   {
     UString message = UString(L"can not move file \'") + 
         GetUnicodeString(destPath, fileCodePage) + UString(L"\' onto itself");
@@ -217,7 +217,7 @@ static HRESULT CopyFolder(
 
   UString destPath = destPathSpec;
   int len = srcPath.Length();
-  if (destPath.Length() >= len && srcPath.CollateNoCase(destPath.Left(len)) == 0)
+  if (destPath.Length() >= len && srcPath.CompareNoCase(destPath.Left(len)) == 0)
   {
     if (destPath.Length() == len || destPath[len] == L'\\')
     {
@@ -330,7 +330,7 @@ HRESULT MyMoveFile(
     UINT64 &completedSize)
 {
   UString destPath = destPathSpec;
-  if (destPath.CollateNoCase(srcPath) == 0)
+  if (destPath.CompareNoCase(srcPath) == 0)
   {
     UString message = UString(L"can not move file \'")
          + GetUnicodeString(destPath, fileCodePage) +
@@ -373,7 +373,7 @@ HRESULT MyMoveFolder(
 {
   UString destPath = destPathSpec;
   int len = srcPath.Length();
-  if (destPath.Length() >= len && srcPath.CollateNoCase(destPath.Left(len)) == 0)
+  if (destPath.Length() >= len && srcPath.CompareNoCase(destPath.Left(len)) == 0)
   {
     if (destPath.Length() == len || destPath[len] == L'\\')
     {
