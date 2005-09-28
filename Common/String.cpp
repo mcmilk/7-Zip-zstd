@@ -23,8 +23,11 @@ wchar_t MyCharUpper(wchar_t c)
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return (wchar_t)(unsigned int)res;
   const int kBufferSize = 4;
-  char s[kBufferSize];
+  char s[kBufferSize + 1];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
+  if (numChars == 0 || numChars > kBufferSize)
+    return c;
+  s[numChars] = 0;
   ::CharUpperA(s);
   ::MultiByteToWideChar(CP_ACP, 0, s, numChars, &c, 1);
   return c;
@@ -38,8 +41,11 @@ wchar_t MyCharLower(wchar_t c)
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return (wchar_t)(unsigned int)res;
   const int kBufferSize = 4;
-  char s[kBufferSize];
+  char s[kBufferSize + 1];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
+  if (numChars == 0 || numChars > kBufferSize)
+    return c;
+  s[numChars] = 0;
   ::CharLowerA(s);
   ::MultiByteToWideChar(CP_ACP, 0, s, numChars, &c, 1);
   return c;
