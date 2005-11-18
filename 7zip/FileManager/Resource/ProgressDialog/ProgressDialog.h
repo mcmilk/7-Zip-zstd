@@ -88,7 +88,7 @@ private:
 	virtual void OnCancel();
   NWindows::NSynchronization::CManualResetEvent _dialogCreatedEvent;
   #ifndef _SFX
-  void AddToTitle(LPCTSTR string);
+  void AddToTitle(LPCWSTR string);
   #endif
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
@@ -110,10 +110,10 @@ public:
   void WaitCreating() { _dialogCreatedEvent.Lock(); }
 
 
-  INT_PTR Create(const UString &title, HWND aWndParent = 0)
+  INT_PTR Create(const UString &title, HWND wndParent = 0)
   { 
     _title = title;
-    return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PROGRESS), aWndParent); 
+    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent); 
   }
 
   static const UINT kCloseMessage;

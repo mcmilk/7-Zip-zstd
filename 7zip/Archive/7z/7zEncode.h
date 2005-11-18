@@ -38,13 +38,13 @@ class CEncoder
   NCoderMixer2::CBindReverseConverter *_bindReverseConverter;
   CRecordVector<CMethodID> _decompressionMethods;
 
-  HRESULT CreateMixerCoder();
+  HRESULT CreateMixerCoder(const UInt64 *inSizeForReduce);
 
 public:
   CEncoder(const CCompressionMethodMode &options);
   ~CEncoder();
   HRESULT Encode(ISequentialInStream *inStream,
-      const UInt64 *inStreamSize,
+      const UInt64 *inStreamSize, const UInt64 *inSizeForReduce,
       CFolder &folderItem,
       ISequentialOutStream *outStream,
       CRecordVector<UInt64> &packSizes,

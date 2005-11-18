@@ -21,6 +21,17 @@ DEFINE_GUID(CLSID_CCompressDeflateDecoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
 
 #ifndef COMPRESS_DEFLATE
 #include "../Common/CodecsPath.h"
@@ -34,7 +45,12 @@ extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
+  {
     g_hInstance = hInstance;
+    #ifndef _UNICODE
+    g_IsNT = IsItWindowsNT();
+    #endif
+  }
   return TRUE;
 }
 
@@ -85,10 +101,10 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
       return S_OK;
     }
     case NArchive::kExtension:
-      propVariant = L"gz tgz";
+      propVariant = L"gz gzip tgz tpz";
       break;
     case NArchive::kAddExtension:
-      propVariant = L"* .tar";
+      propVariant = L"* * .tar .tar";
       break;
     case NArchive::kUpdate:
       propVariant = true;

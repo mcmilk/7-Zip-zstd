@@ -5,6 +5,7 @@
 #include "Common/IntToString.h"
 #include "Common/StringToInt.h"
 #include "Common/Exception.h"
+#include "Common/Alloc.h"
 #include "Windows/Thread.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Error.h"
@@ -140,15 +141,22 @@ public:
   UInt32 BufferSize;
   Byte *Buffer;
   CBenchRandomGenerator(): Buffer(0) {} 
-  ~CBenchRandomGenerator() { delete []Buffer; }
-  void Init() { RG.Init(); }
-  void Set(UInt32 bufferSize) 
-  {
-    delete []Buffer;
+  ~CBenchRandomGenerator() { Free(); }
+  void Free() 
+  { 
+    ::MidFree(Buffer);
     Buffer = 0;
-    Buffer = new Byte[bufferSize];
+  }
+  void Init() { RG.Init(); }
+  bool Alloc(UInt32 bufferSize) 
+  {
+    if (Buffer != 0 && BufferSize == bufferSize)
+      return true;
+    Free();
+    Buffer = (Byte *)::MidAlloc(bufferSize);
     Pos = 0;
     BufferSize = bufferSize;
+    return (Buffer != 0);
   }
   UInt32 GetRndBit() { return RG.GetRnd(1); }
   /*
@@ -525,15 +533,29 @@ public:
   UInt32 Pos;
   Byte *Buffer;
   CBenchmarkOutStream(): Buffer(0) {} 
-  ~CBenchmarkOutStream() { delete []Buffer; }
-  void Init(UInt32 bufferSize) 
-  {
-    delete []Buffer;
+  ~CBenchmarkOutStream() { Free(); }
+  void Free() 
+  { 
+    ::MidFree(Buffer);
     Buffer = 0;
-    Buffer = new Byte[bufferSize];
-    Pos = 0;
-    BufferSize = bufferSize;
   }
+
+  bool Alloc(UInt32 bufferSize) 
+  {
+    if (Buffer != 0 && BufferSize == bufferSize)
+      return true;
+    Free();
+    Buffer = (Byte *)::MidAlloc(bufferSize);
+    Init();
+    BufferSize = bufferSize;
+    return (Buffer != 0);
+  }
+
+  void Init() 
+  {
+    Pos = 0;
+  }
+
   MY_UNKNOWN_IMP
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 };
@@ -691,7 +713,9 @@ DWORD CThreadBenchmark::Process()
       writeCoderProperties->WriteCoderProperties(propStream);
     }
 
-    randomGenerator.Set(kBufferSize);
+    if (!randomGenerator.Alloc(kBufferSize))
+      return E_OUTOFMEMORY;
+
     randomGenerator.Generate();
     CCRC crc;
 
@@ -705,11 +729,22 @@ DWORD CThreadBenchmark::Process()
     }
     
     CBenchmarkInStream *inStreamSpec = new CBenchmarkInStream;
-    inStreamSpec->Init(randomGenerator.Buffer, randomGenerator.BufferSize);
     CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
     CBenchmarkOutStream *outStreamSpec = new CBenchmarkOutStream;
-    outStreamSpec->Init(kCompressedBufferSize);
     CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
+    if (!outStreamSpec->Alloc(kCompressedBufferSize))
+      return E_OUTOFMEMORY;
+
+    {
+      // this code is for reducing time of memory allocationg
+      inStreamSpec->Init(randomGenerator.Buffer, MyMin((UInt32)1, randomGenerator.BufferSize));
+      outStreamSpec->Init();
+      HRESULT result = Encoder->Code(inStream, outStream, 0, 0, NULL);
+    }
+
+    inStreamSpec->Init(randomGenerator.Buffer, randomGenerator.BufferSize);
+    outStreamSpec->Init();
+
     _approvedStart = dictionarySize;
     _startTime = ::GetTimeCount();
     HRESULT result = Encoder->Code(inStream, outStream, 0, 0, this);

@@ -7,8 +7,9 @@
 #include "Windows/Synchronization.h"
 
 HRESULT MyCreateProcess(const UString &params,
-   LPCTSTR lpCurrentDirectory, bool waitFinish,
+   LPCWSTR lpCurrentDirectory, bool waitFinish,
    NWindows::NSynchronization::CEvent *event);
+
 HRESULT CompressFiles(
     const UString &curDir,
     const UString &archiveName,

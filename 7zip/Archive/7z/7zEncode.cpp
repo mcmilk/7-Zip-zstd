@@ -18,9 +18,10 @@ static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
 #include "../../Compress/Copy/CopyCoder.h"
 #endif
 
+static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+
 #ifdef COMPRESS_LZMA
 #include "../../Compress/LZMA/LZMAEncoder.h"
-static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
 #endif
 
 #ifdef COMPRESS_PPMD
@@ -114,7 +115,7 @@ static void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &bindI
     folder.PackStreams.Add(bindInfo.InStreams[i]);
 }
 
-HRESULT CEncoder::CreateMixerCoder()
+HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
 {
   _mixerCoderSpec = new NCoderMixer2::CCoderMixer2MT;
   _mixerCoder = _mixerCoderSpec;
@@ -203,6 +204,30 @@ HRESULT CEncoder::CreateMixerCoder()
         return E_FAIL;
       #endif
     }
+
+    bool tryReduce = false;
+    UInt32 reducedDictionarySize = 1 << 10;
+    if (inSizeForReduce != 0 && methodFull.MethodID == k_LZMA)
+    {
+      while (true)
+      {
+        const UInt32 step = (reducedDictionarySize >> 1);
+        if (reducedDictionarySize >= *inSizeForReduce)
+        {
+          tryReduce = true;
+          break;
+        }
+        reducedDictionarySize += step;
+        if (reducedDictionarySize >= *inSizeForReduce)
+        {
+          tryReduce = true;
+          break;
+        }
+        if (reducedDictionarySize >= ((UInt32)11 << 30))
+          break;
+        reducedDictionarySize += step;
+      }
+    }
     
     if (methodFull.CoderProperties.Size() > 0)
     {
@@ -215,7 +240,10 @@ HRESULT CEncoder::CreateMixerCoder()
         {
           const CProperty &property = methodFull.CoderProperties[i];
           propIDs.Add(property.PropID);
-          values[i] = property.Value;
+          NWindows::NCOM::CPropVariant value = property.Value;
+          if (tryReduce && property.PropID == NCoderPropID::kDictionarySize && value.vt == VT_UI4 && reducedDictionarySize < value.ulVal)
+            value.ulVal = reducedDictionarySize;
+          values[i] = value;
         }
         CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
         if (methodFull.IsSimpleCoder())
@@ -308,7 +336,7 @@ HRESULT CEncoder::CreateMixerCoder()
 }
 
 HRESULT CEncoder::Encode(ISequentialInStream *inStream,
-    const UInt64 *inStreamSize,
+    const UInt64 *inStreamSize, const UInt64 *inSizeForReduce,
     CFolder &folderItem,
     ISequentialOutStream *outStream,
     CRecordVector<UInt64> &packSizes,
@@ -316,7 +344,7 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
 {
   if (_mixerCoderSpec == NULL)
   {
-    RINOK(CreateMixerCoder());
+    RINOK(CreateMixerCoder(inSizeForReduce));
   }
   _mixerCoderSpec->ReInit();
   // _mixerCoderSpec->SetCoderInfo(0, NULL, NULL, progress);

@@ -31,7 +31,7 @@ bool CBCJ2_x86_Encoder::Create()
     return false;
   if (_buffer == 0)
   {
-    _buffer = (Byte *)BigAlloc(kBufferSize);
+    _buffer = (Byte *)MidAlloc(kBufferSize);
     if (_buffer == 0)
       return false;
   }
@@ -40,7 +40,7 @@ bool CBCJ2_x86_Encoder::Create()
 
 CBCJ2_x86_Encoder::~CBCJ2_x86_Encoder()
 {
-  BigFree(_buffer);
+  ::MidFree(_buffer);
 }
 
 HRESULT CBCJ2_x86_Encoder::Flush()

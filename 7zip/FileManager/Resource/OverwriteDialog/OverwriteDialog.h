@@ -25,8 +25,7 @@ class COverwriteDialog: public NWindows::NControl::CModalDialog
   virtual bool OnInit();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
-  INT_PTR Create(HWND parent = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_OVERWRITE), parent); }
+  INT_PTR Create(HWND parent = 0) { return CModalDialog::Create(IDD_DIALOG_OVERWRITE, parent); }
 
   NOverwriteDialog::CFileInfo OldFileInfo;
   NOverwriteDialog::CFileInfo NewFileInfo;

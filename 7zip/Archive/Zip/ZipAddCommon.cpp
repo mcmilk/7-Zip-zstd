@@ -57,7 +57,7 @@ CAddCommon::CAddCommon(const CCompressionMethodMode &options):
   _cryptoStreamSpec(0)
  {}
 
-static HRESULT GetStreamCRC(IInStream *inStream, UInt32 &resultCRC)
+static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
 {
   CCRC crc;
   crc.Init();
@@ -76,7 +76,7 @@ static HRESULT GetStreamCRC(IInStream *inStream, UInt32 &resultCRC)
   }
 }
 
-HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream, 
+HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStream, 
       UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
   /*
@@ -88,13 +88,25 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
     return S_OK;
   }
   */
+  CMyComPtr<IInStream> inStream2;
   int numTestMethods = _options.MethodSequence.Size();
+  if (numTestMethods > 1 || _options.PasswordIsDefined)
+  {
+    inStream->QueryInterface(IID_IInStream, (void **)&inStream2);
+    if (!inStream2)
+    {
+      if (_options.PasswordIsDefined)
+        return E_NOTIMPL;
+      numTestMethods = 1;
+    }
+  }
   Byte method;
   UInt64 resultSize = 0;
   COutStreamReleaser outStreamReleaser;
   for(int i = 0; i < numTestMethods; i++)
   {
-    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    if (inStream2)
+      RINOK(inStream2->Seek(0, STREAM_SEEK_SET, NULL));
     RINOK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
     if (_options.PasswordIsDefined)
     {
@@ -109,7 +121,7 @@ HRESULT CAddCommon::Compress(IInStream *inStream, IOutStream *outStream,
           (const Byte *)(const char *)_options.Password, _options.Password.Length()));
       UInt32 crc;
       RINOK(GetStreamCRC(inStream, crc));
-      RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+      RINOK(inStream2->Seek(0, STREAM_SEEK_SET, NULL));
       RINOK(_cryptoStreamSpec->SetOutStream(outStream));
       outStreamReleaser.FilterCoder = _cryptoStreamSpec;
       RINOK(_filterSpec->CryptoSetCRC(crc));

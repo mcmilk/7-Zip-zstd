@@ -41,7 +41,7 @@ class CAddCommon
 
 public:
   CAddCommon(const CCompressionMethodMode &options);
-  HRESULT Compress(IInStream *inStream, IOutStream *outStream, 
+  HRESULT Compress(ISequentialInStream *inStream, IOutStream *outStream, 
       UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 

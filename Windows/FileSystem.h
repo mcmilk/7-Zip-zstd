@@ -4,6 +4,11 @@
 #define __WINDOWS_FILESYSTEM_H
 
 #include "../Common/String.h"
+#include "../Common/Types.h"
+
+#ifndef _UNICODE
+#include "../Common/StringConvert.h"
+#endif
 
 namespace NWindows {
 namespace NFile {
@@ -17,8 +22,28 @@ bool MyGetVolumeInformation(
     LPDWORD fileSystemFlags,
     CSysString &fileSystemName);
 
+#ifndef _UNICODE
+bool MyGetVolumeInformation(
+    LPCWSTR rootPathName,
+    UString &volumeName,
+    LPDWORD volumeSerialNumber,
+    LPDWORD maximumComponentLength,
+    LPDWORD fileSystemFlags,
+    UString &fileSystemName);
+#endif
+
+inline UINT MyGetDriveType(LPCTSTR pathName) { return GetDriveType(pathName); }
+#ifndef _UNICODE
+inline UINT MyGetDriveType(LPCWSTR pathName) { return GetDriveType(GetSystemString(pathName)); }
+#endif
+
 bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
-    UINT64 &clusterSize, UINT64 &totalSize, UINT64 &freeSize);
+    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize);
+
+#ifndef _UNICODE
+bool MyGetDiskFreeSpace(LPCWSTR rootPathName,
+    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize);
+#endif
 
 }}}
 

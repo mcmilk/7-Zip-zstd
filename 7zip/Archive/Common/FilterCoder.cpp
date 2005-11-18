@@ -11,12 +11,12 @@ static const int kBufferSize = 1 << 17;
 
 CFilterCoder::CFilterCoder()
 { 
-  _buffer = (Byte *)::BigAlloc(kBufferSize); 
+  _buffer = (Byte *)::MidAlloc(kBufferSize); 
 }
 
 CFilterCoder::~CFilterCoder() 
 { 
-  BigFree(_buffer); 
+  ::MidFree(_buffer); 
 }
 
 HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 size)

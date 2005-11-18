@@ -43,9 +43,9 @@ void CNetFolder::Init(const UString &path)
   }
   Init(0, 0 , L"");
   */
-  CResource resource;
+  CResourceW resource;
   resource.RemoteNameIsDefined = true;
-  resource.RemoteName = GetSystemString(path.Left(path.Length() - 1));
+  resource.RemoteName = path.Left(path.Length() - 1);
   resource.ProviderIsDefined = false;
   resource.LocalNameIsDefined = false;
   resource.CommentIsDefined = false;
@@ -53,18 +53,17 @@ void CNetFolder::Init(const UString &path)
   resource.Scope = RESOURCE_GLOBALNET;
   resource.Usage = 0;
   resource.DisplayType = 0;
-  CResource aDestResource;
-  CSysString aSystemPathPart;
-  DWORD result = GetResourceInformation(resource, aDestResource, 
-      aSystemPathPart);
+  CResourceW destResource;
+  UString systemPathPart;
+  DWORD result = GetResourceInformation(resource, destResource, systemPathPart);
   if (result == NO_ERROR)
-    Init(&aDestResource, 0, path);
+    Init(&destResource, 0, path);
   else
     Init(0, 0 , L"");
   return;
 }
 
-void CNetFolder::Init(const NWindows::NNet::CResource *netResource, 
+void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource, 
       IFolderFolder *parentFolder, const UString &path)
 {
   _path = path;
@@ -76,7 +75,7 @@ void CNetFolder::Init(const NWindows::NNet::CResource *netResource,
     _netResourcePointer = &_netResource;
 
     // if (_netResource.DisplayType == RESOURCEDISPLAYTYPE_SERVER)
-      _path = GetUnicodeString(_netResource.RemoteName) + L'\\';
+    _path = _netResource.RemoteName + L'\\';
   }
   _parentFolder = parentFolder;
 }
@@ -113,7 +112,7 @@ STDMETHODIMP CNetFolder::LoadItems()
     {
       if (!resource.RemoteNameIsDefined) // For Win 98, I don't know what's wrong
         resource.RemoteName = resource.Comment;
-      resource.Name = GetUnicodeString(resource.RemoteName);
+      resource.Name = resource.RemoteName;
       int aPos = resource.Name.ReverseFind(L'\\');
       if (aPos >= 0)
       {
@@ -128,6 +127,8 @@ STDMETHODIMP CNetFolder::LoadItems()
       return result;
   }
 
+  /*
+  It's too slow for some systems.
   if (_netResourcePointer && _netResource.DisplayType == RESOURCEDISPLAYTYPE_SERVER)
   {
     for (char c = 'a'; c <= 'z'; c++)
@@ -135,11 +136,11 @@ STDMETHODIMP CNetFolder::LoadItems()
       CResourceEx resource;
       resource.Name = UString(wchar_t(c)) + L'$';
       resource.RemoteNameIsDefined = true;
-      resource.RemoteName = GetSystemString(_path + resource.Name);
+      resource.RemoteName = _path + resource.Name;
 
-      NFile::NFind::CFindFile aFindFile;
-      NFile::NFind::CFileInfo aFileInfo;
-      if (!aFindFile.FindFirst(resource.RemoteName + CSysString(TEXT("\\*")), aFileInfo))
+      NFile::NFind::CFindFile findFile;
+      NFile::NFind::CFileInfoW fileInfo;
+      if (!findFile.FindFirst(resource.RemoteName + UString(L"\\*"), fileInfo))
         continue;
       resource.Usage = RESOURCEUSAGE_CONNECTABLE;
       resource.LocalNameIsDefined = false;
@@ -148,17 +149,18 @@ STDMETHODIMP CNetFolder::LoadItems()
       _items.Add(resource);
     }
   }
+  */
   return S_OK;
 }
 
 
-STDMETHODIMP CNetFolder::GetNumberOfItems(UINT32 *numItems)
+STDMETHODIMP CNetFolder::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant propVariant;
   const CResourceEx &item = _items[itemIndex];
@@ -173,25 +175,22 @@ STDMETHODIMP CNetFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIAN
       break;
     case kpidLocalName:
       if (item.LocalNameIsDefined)
-        propVariant = GetUnicodeString(item.LocalName);
+        propVariant = item.LocalName;
       break;
     case kpidComment:
       if (item.CommentIsDefined)
-        propVariant = GetUnicodeString(item.Comment);
+        propVariant = item.Comment;
       break;
     case kpidProvider:
       if (item.ProviderIsDefined)
-        propVariant = GetUnicodeString(item.Provider);
+        propVariant = item.Provider;
       break;
   }
   propVariant.Detach(value);
   return S_OK;
 }
 
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
-
-STDMETHODIMP CNetFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
+STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
   const CResourceEx &resource = _items[index];
@@ -200,16 +199,14 @@ STDMETHODIMP CNetFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder
   {
     CFSFolder *fsFolderSpec = new CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(
-        GetUnicodeString(resource.RemoteName, GetCurrentCodePage()) 
-        + L'\\', this));
+    RINOK(fsFolderSpec->Init(resource.RemoteName + L'\\', this));
     *resultFolder = subFolder.Detach();
   }
   else
   {
     CNetFolder *netFolder = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolder;
-    netFolder->Init(&resource, this, GetUnicodeString(resource.Name) + L'\\');
+    netFolder->Init(&resource, this, resource.Name + L'\\');
     *resultFolder = subFolder.Detach();
   }
   return S_OK;
@@ -231,7 +228,7 @@ STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
   }
   if (_netResourcePointer != 0)
   {
-    CResource resourceParent;
+    CResourceW resourceParent;
     DWORD result = GetResourceParent(_netResource, resourceParent);
     if (result != NO_ERROR)
       return result;
@@ -257,13 +254,13 @@ STDMETHODIMP CNetFolder::GetName(BSTR *name)
   */
 }
 
-STDMETHODIMP CNetFolder::GetNumberOfProperties(UINT32 *numProperties)
+STDMETHODIMP CNetFolder::GetNumberOfProperties(UInt32 *numProperties)
 {
   *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetPropertyInfo(UINT32 index,     
+STDMETHODIMP CNetFolder::GetPropertyInfo(UInt32 index,     
     BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -289,12 +286,12 @@ STDMETHODIMP CNetFolder::GetPath(BSTR *path)
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetSystemIconIndex(UINT32 index, INT32 *iconIndex)
+STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
 {
-  if (index >= (UINT32)_items.Size())
+  if (index >= (UInt32)_items.Size())
     return E_INVALIDARG;
   *iconIndex = 0;
-  const CResource &resource = _items[index];
+  const CResourceW &resource = _items[index];
   int iconIndexTemp;
   if (resource.DisplayType == RESOURCEDISPLAYTYPE_SERVER || 
       resource.Usage == RESOURCEUSAGE_CONNECTABLE)

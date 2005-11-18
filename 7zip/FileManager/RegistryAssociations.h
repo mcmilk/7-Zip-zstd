@@ -24,9 +24,9 @@ namespace NRegistryAssociations {
   void DeleteShellExtensionInfo(const CSysString &extension);
 
   void AddShellExtensionInfo(const CSysString &extension,
-      const CSysString &programTitle, 
-      const CSysString &programOpenCommand, 
-      const CSysString &iconPath,
+      const UString &programTitle, 
+      const UString &programOpenCommand, 
+      const UString &iconPath,
       const void *shellNewData, int shellNewDataSize);
 
 

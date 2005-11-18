@@ -66,13 +66,3 @@ UString JoinStrings(const UStringVector &srcStrings)
   return destString;
 }
 
-/*
-void SplitString(const CSysString &srcString, CSysStringVector &destStrings)
-{
-  destStrings.Clear();
-  UStringVector destStringsTemp;
-  SplitString(GetUnicodeString(srcString), destStringsTemp);
-  for (int i = 0; i < destStringsTemp.Size(); i++);
-    destStrings.Add(GetSysUnicodeString
-}
-*/

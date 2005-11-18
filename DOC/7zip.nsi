@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 29
+!define VERSION_MINOR 30
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -105,10 +105,17 @@
 ;Installer Sections
 
 Section
+  !ifndef WIN64
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe"
+  !endif
 
   # delete old unwanted files
+  Delete $INSTDIR\7zFMn.exe
+  Delete $INSTDIR\7zgn.exe
   Delete $INSTDIR\7zn.exe
   Delete $INSTDIR\7zan.exe
+  Delete $INSTDIR\7zC.sfx
+  Delete $INSTDIR\7-zipn.dll
   Delete $INSTDIR\7zipDoc.txt
   Delete $INSTDIR\Codecs\Implode.dll
 
@@ -128,19 +135,14 @@ Section
   # File 7-zip.dll
   # File 7-zipn.dll
   File 7zFM.exe
-  !ifndef WIN64
-  File 7zFMn.exe
-  !endif
   File 7z.exe
+  !ifdef WIN64
   File 7za.exe
-  File 7zg.exe
-  !ifndef WIN64
-  File 7zgn.exe
   !endif
+  File 7zg.exe
 
   File 7z.sfx
   File 7zCon.sfx
-  File 7zC.sfx
 
   File 7-zip.chm
 
@@ -249,27 +251,7 @@ Section
 
   SetShellVarContext all
 
-  !ifdef WIN64
-
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
-  StrCpy "$MyDllPath" "7-zip.dll"
-
-  !else
-
-  StrCpy $0 0
-  System::Call "kernel32::GetVersion() i .r0"
-  IntCmpU $0 0x80000000 0 regNT 0
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
-    File 7-Zipn.dll 
-    StrCpy "$MyDllPath" "7-zip.dll"
-    Goto doneReg
-  regNT:
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED 7-zipn.dll $INSTDIR\7-zipn.dll $INSTDIR
-    File 7-Zip.dll 
-    StrCpy "$MyDllPath" "7-zipn.dll"
-  doneReg:
-
-  !endif
 
   ClearErrors
 
@@ -277,15 +259,7 @@ Section
   SetOutPath $INSTDIR # working directory
   CreateDirectory $SMPROGRAMS\7-Zip
 
-  !ifdef WIN64
-  StrCpy $1 ""
-  !else
-  StrCpy $1 "n"
-  IntCmpU $0 0x80000000 0 +2 0
-    StrCpy $1 ""
-  !endif
-
-  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM$1.exe
+  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
   CreateShortcut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
 
   IfErrors 0 noScErrors
@@ -293,7 +267,7 @@ Section
   SetShellVarContext current
 
   CreateDirectory $SMPROGRAMS\7-Zip
-  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM$1.exe
+  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
   CreateShortcut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
 
   noScErrors:
@@ -304,7 +278,7 @@ Section
 
   # write reg entries
   WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}" "" "7-Zip Shell Extension"
-  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "" "$INSTDIR\$MyDllPath"
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "" "$INSTDIR\7-zip.dll"
   WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "ThreadingModel" "Apartment"
 
 
@@ -319,10 +293,6 @@ Section
   
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "" "$INSTDIR\7zFM.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "Path" "$INSTDIR"
-  !ifndef WIN64
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe" "" "$INSTDIR\7zFMn.exe"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe" "Path" "$INSTDIR"
-  !endif
 
   # create uninstaller
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "DisplayName" "${NAME_FULL}"
@@ -354,6 +324,8 @@ FunctionEnd
 
 Section "Uninstall"
 
+  ExecWait 'regsvr32 /u /s "$INSTDIR\7-zip.dll"'
+
   # delete files
 
   Delete $INSTDIR\file_id.diz
@@ -365,19 +337,12 @@ Section "Uninstall"
   Delete $INSTDIR\7zip_pad.xml
 
   Delete /REBOOTOK $INSTDIR\7-zip.dll
-  !ifndef WIN64
-  Delete /REBOOTOK $INSTDIR\7-zipn.dll
-  !endif
   Delete $INSTDIR\7zFM.exe
-  !ifndef WIN64
-  Delete $INSTDIR\7zFMn.exe
-  !endif
   Delete $INSTDIR\7z.exe
+  !ifdef WIN64
   Delete $INSTDIR\7za.exe
-  Delete $INSTDIR\7zg.exe
-  !ifndef WIN64
-  Delete $INSTDIR\7zgn.exe
   !endif
+  Delete $INSTDIR\7zg.exe
 
   Delete $INSTDIR\7z.sfx
   Delete $INSTDIR\7zCon.sfx
@@ -507,9 +472,6 @@ Section "Uninstall"
 
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe"
-  !ifndef WIN64
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFMn.exe"
-  !endif
 
   DeleteRegKey HKLM "Software\7-Zip"
   DeleteRegKey HKCU "Software\7-Zip"

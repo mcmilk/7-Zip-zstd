@@ -70,7 +70,10 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
       return S_OK;
     }
     case NArchive::kExtension:
-      propVariant = L"z";
+      propVariant = L"z taz";
+      break;
+    case NArchive::kAddExtension:
+      propVariant = L"* .tar";
       break;
     case NArchive::kUpdate:
       propVariant = false;

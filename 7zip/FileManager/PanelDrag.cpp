@@ -2,20 +2,25 @@
 
 #include "StdAfx.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/Memory.h"
 #include "Windows/FileDir.h"
 #include "Windows/Shell.h"
-#include "Common/StringConvert.h"
 
 #include "../UI/Common/ArchiveName.h"
 #include "../UI/Common/CompressCall.h"
 
 #include "Resource/MessagesDialog/MessagesDialog.h"
 
-using namespace NWindows;
-
 #include "App.h"
 #include "EnumFormatEtc.h"
+
+using namespace NWindows;
+
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 static wchar_t *kTempDirPrefix = L"7zE"; 
 static LPCTSTR kSvenZipSetFolderFormat = TEXT("7-Zip::SetTargetFolder"); 
@@ -212,39 +217,73 @@ STDMETHODIMP CDropSource::GiveFeedback(DWORD effect)
   return DRAGDROP_S_USEDEFAULTCURSORS;
 }
 
-static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const CSysStringVector &names)
+static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &names)
 {
   size_t totalLength = 1;
-  int i;
-  for (i = 0; i < names.Size(); i++)
-    totalLength += names[i].Length() + 1;
 
-  if (!hgDrop.Alloc(GHND | GMEM_SHARE, totalLength * sizeof(TCHAR) + sizeof(DROPFILES)))
-    return false;
-
-  NMemory::CGlobalLock dropLock(hgDrop);
-  DROPFILES* dropFiles = (DROPFILES*)dropLock.GetPointer();
-  if (dropFiles == 0)
-    return false;
-  dropFiles->fNC = FALSE;
-  dropFiles->pt.x = 0;
-  dropFiles->pt.y = 0;
-  dropFiles->pFiles = sizeof(DROPFILES);
-  #ifdef _UNICODE
-  dropFiles->fWide = TRUE;
-  #else
-  dropFiles->fWide = FALSE;
-  #endif
-  TCHAR *p = (TCHAR *)((BYTE *)dropFiles + sizeof(DROPFILES));
-  for (i = 0; i < names.Size(); i++)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    const CSysString &s = names[i];
-    int fullLength = s.Length() + 1;
-    lstrcpy(p, s);
-    p += fullLength;
-    totalLength -= fullLength;
+    AStringVector namesA;
+    int i;
+    for (i = 0; i < names.Size(); i++)
+      namesA.Add(GetSystemString(names[i]));
+    for (i = 0; i < names.Size(); i++)
+      totalLength += namesA[i].Length() + 1;
+    
+    if (!hgDrop.Alloc(GHND | GMEM_SHARE, totalLength * sizeof(CHAR) + sizeof(DROPFILES)))
+      return false;
+    
+    NMemory::CGlobalLock dropLock(hgDrop);
+    DROPFILES* dropFiles = (DROPFILES*)dropLock.GetPointer();
+    if (dropFiles == 0)
+      return false;
+    dropFiles->fNC = FALSE;
+    dropFiles->pt.x = 0;
+    dropFiles->pt.y = 0;
+    dropFiles->pFiles = sizeof(DROPFILES);
+    dropFiles->fWide = FALSE;
+    CHAR *p = (CHAR *)((BYTE *)dropFiles + sizeof(DROPFILES));
+    for (i = 0; i < names.Size(); i++)
+    {
+      const AString &s = namesA[i];
+      int fullLength = s.Length() + 1;
+      strcpy(p, s);
+      p += fullLength;
+      totalLength -= fullLength;
+    }
+    *p = 0;
   }
-  *p = 0;
+  else
+  #endif
+  {
+    int i;
+    for (i = 0; i < names.Size(); i++)
+      totalLength += names[i].Length() + 1;
+    
+    if (!hgDrop.Alloc(GHND | GMEM_SHARE, totalLength * sizeof(WCHAR) + sizeof(DROPFILES)))
+      return false;
+    
+    NMemory::CGlobalLock dropLock(hgDrop);
+    DROPFILES* dropFiles = (DROPFILES*)dropLock.GetPointer();
+    if (dropFiles == 0)
+      return false;
+    dropFiles->fNC = FALSE;
+    dropFiles->pt.x = 0;
+    dropFiles->pt.y = 0;
+    dropFiles->pFiles = sizeof(DROPFILES);
+    dropFiles->fWide = TRUE;
+    WCHAR *p = (WCHAR *)((BYTE *)dropFiles + sizeof(DROPFILES));
+    for (i = 0; i < names.Size(); i++)
+    {
+      const UString &s = names[i];
+      int fullLength = s.Length() + 1;
+      wcscpy(p, s);
+      p += fullLength;
+      totalLength -= fullLength;
+    }
+    *p = 0;
+  }
   return true;
 }
 
@@ -278,9 +317,9 @@ void CPanel::OnDrag(LPNMLISTVIEW nmListView)
   CMyComPtr<IDataObject> dataObject = dataObjectSpec;
 
   {
-    CSysStringVector names;
+    UStringVector names;
     for (int i = 0; i < indices.Size(); i++)
-      names.Add(GetSystemString(dirPrefix + GetItemName(indices[i])));
+      names.Add(dirPrefix + GetItemName(indices[i]));
     if (!CopyNamesToHGlobal(dataObjectSpec->hGlobal, names))
       return;
   }
@@ -686,15 +725,12 @@ void CPanel::DropObject(IDataObject *dataObject, const UString &folderPath)
 /*
 void CPanel::CompressDropFiles(HDROP dr)
 {
-  CSysStringVector fileNames;
+  UStringVector fileNames;
   {
     NShell::CDrop drop(true);
     drop.Attach(dr);
     drop.QueryFileNames(fileNames);
   }
-  UStringVector fileNamesUnicode;
-  for (int i = 0; i < fileNames.Size(); i++)
-    fileNamesUnicode.Add(GetUnicodeString(fileNames[i]));
   CompressDropFiles(fileNamesUnicode);
 }
 */

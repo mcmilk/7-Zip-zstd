@@ -141,12 +141,12 @@ void CPanel::LoadFullPathAndShow()
   _appState->FolderHistory.AddString(_currentFolderPrefix);
 
   // _headerComboBox.SendMessage(CB_RESETCONTENT, 0, 0);
-  _headerComboBox.SetText(GetSystemString(_currentFolderPrefix)); 
+  _headerComboBox.SetText(_currentFolderPrefix); 
 
   /*
   for (int i = 0; i < g_Folders.m_Strings.Size(); i++)
   {
-    CSysString string = GetSystemString(g_Folders.m_Strings[i]);
+    UString string = g_Folders.m_Strings[i];
     COMBOBOXEXITEM item;
     item.mask = CBEIF_TEXT;
     item.iItem = i;
@@ -156,11 +156,41 @@ void CPanel::LoadFullPathAndShow()
   */
 }
 
+bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDITW info, LRESULT &result)
+{
+  if (info->iWhy == CBENF_ESCAPE)
+  {
+    _headerComboBox.SetText(_currentFolderPrefix); 
+    PostMessage(kSetFocusToListView);
+    result = FALSE;
+    return true;
+  }
+  if (info->iWhy == CBENF_DROPDOWN)
+  {
+    result = FALSE;
+    return true;
+  }
+
+  if (info->iWhy == CBENF_RETURN)
+  {
+    if (BindToPathAndRefresh(info->szText) != S_OK)
+    {
+      result = TRUE;
+      return true;
+    }
+    result = FALSE;
+    PostMessage(kSetFocusToListView);
+    return true;
+  }
+  return false;
+}
+
+#ifndef _UNICODE
 bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
 {
   if (info->iWhy == CBENF_ESCAPE)
   {
-    _headerComboBox.SetText(GetSystemString(_currentFolderPrefix)); 
+    _headerComboBox.SetText(_currentFolderPrefix); 
     PostMessage(kSetFocusToListView);
     result = FALSE;
     return true;
@@ -175,7 +205,6 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
   {
     if (BindToPathAndRefresh(GetUnicodeString(info->szText)) != S_OK)
     {
-      // MessageBeep((UINT)-1);
       result = TRUE;
       return true;
     }
@@ -185,24 +214,22 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
   }
   return false;
 }
+#endif
 
 void CPanel::OnComboBoxCommand(UINT code, LPARAM &param)
 {
   /*
   if (code == CBN_SELENDOK)
   {
-    CSysString path;
+    UString path;
     if (!_headerComboBox.GetText(path))
       return;
     CRootFolder *rootFolderSpec = new CRootFolder;
     CMyComPtr<IFolderFolder> rootFolder = rootFolderSpec;
     rootFolderSpec->Init();
     CMyComPtr<IFolderFolder> newFolder;
-    if (rootFolder->BindToFolder(GetUnicodeString(path), 
-      &newFolder) != S_OK)
-    {
+    if (rootFolder->BindToFolder(path, &newFolder) != S_OK)
       return;
-    }
     _folder = newFolder;
     SetCurrentPathText();
     RefreshListCtrl(UString(), -1, UStringVector());
@@ -220,9 +247,15 @@ bool CPanel::OnNotifyComboBox(LPNMHDR header, LRESULT &result)
       _lastFocusedIsList = false;
       _panelCallback->PanelWasFocused();
     }
+    #ifndef _UNICODE
     case CBEN_ENDEDIT:
     {
       return OnNotifyComboBoxEndEdit((PNMCBEENDEDIT)header, result);
+    }
+    #endif
+    case CBEN_ENDEDITW:
+    {
+      return OnNotifyComboBoxEndEdit((PNMCBEENDEDITW)header, result);
     }
   }
   return false;
@@ -233,28 +266,23 @@ void CPanel::FoldersHistory()
 {
   CListViewDialog listViewDialog;
   listViewDialog.DeleteIsAllowed = true;
-  // listViewDialog.m_Value = TEXT("*");
-  listViewDialog.Title = LangLoadStringW(IDS_FOLDERS_HISTORY, 0x03020260);
-  UStringVector strings;
-  _appState->FolderHistory.GetList(strings);
-  int i;
-  for(i = 0; i < strings.Size(); i++)
-    listViewDialog.Strings.Add(GetSystemString(strings[i]));
+  listViewDialog.Title = LangString(IDS_FOLDERS_HISTORY, 0x03020260);
+  _appState->FolderHistory.GetList(listViewDialog.Strings);
   if (listViewDialog.Create(GetParent()) == IDCANCEL)
     return;
   UString selectString;
   if (listViewDialog.StringsWereChanged)
   {
     _appState->FolderHistory.RemoveAll();
-    for (i = listViewDialog.Strings.Size() - 1; i >= 0; i--)
-      _appState->FolderHistory.AddString(GetUnicodeString(listViewDialog.Strings[i]));
+    for (int i = listViewDialog.Strings.Size() - 1; i >= 0; i--)
+      _appState->FolderHistory.AddString(listViewDialog.Strings[i]);
     if (listViewDialog.FocusedItemIndex >= 0)
-      selectString = GetUnicodeString(listViewDialog.Strings[listViewDialog.FocusedItemIndex]);
+      selectString = listViewDialog.Strings[listViewDialog.FocusedItemIndex];
   }
   else
   {
     if (listViewDialog.FocusedItemIndex >= 0)
-      selectString = strings[listViewDialog.FocusedItemIndex];
+      selectString = listViewDialog.Strings[listViewDialog.FocusedItemIndex];
   }
   if (listViewDialog.FocusedItemIndex >= 0)
     BindToPathAndRefresh(selectString);
@@ -273,7 +301,7 @@ void CPanel::OpenParentFolder()
       pos = 0;
     else
       pos++;
-    focucedName = GetUnicodeString(string.Mid(pos));
+    focucedName = string.Mid(pos);
   }
 
   CDisableTimerProcessing disableTimerProcessing1(*this);
@@ -309,7 +337,7 @@ void CPanel::OpenParentFolder()
     selectedItems.Add(focucedName);
   */
   LoadFullPath();
-  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
+  // ::SetCurrentDirectory(::_currentFolderPrefix);
   RefreshListCtrl(focucedName, -1, true, selectedItems);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
   RefreshStatusBar();
@@ -337,13 +365,13 @@ void CPanel::OpenRootFolder()
   _parentFolders.Clear();
   SetToRootFolder();
   RefreshListCtrl(UString(), -1, true, UStringVector());
-  // ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
+  // ::SetCurrentDirectory(::_currentFolderPrefix);
   /*
   BeforeChangeFolder();
   _currentFolderPrefix.Empty();
   AfterChangeFolder();
   SetCurrentPathText();
-  RefreshListCtrl(CSysString(), 0, CSysStringVector());
+  RefreshListCtrl(UString(), 0, UStringVector());
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
   */
 }
@@ -370,7 +398,7 @@ void CPanel::OpenFolder(int index)
     return;
   _folder = newFolder;
   LoadFullPath();
-  ::SetCurrentDirectory(::GetSystemString(_currentFolderPrefix));
+  // ::SetCurrentDirectory(::_currentFolderPrefix);
   RefreshListCtrl();
   UINT state = LVIS_SELECTED;
   _listView.SetItemState(_listView.GetFocusedItem(), state, state);

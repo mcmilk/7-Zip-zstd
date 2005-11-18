@@ -7,6 +7,10 @@
 #include "../Common/StringConvert.h"
 #endif
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NFile {
 namespace NFind {
@@ -41,8 +45,7 @@ static void ConvertWIN32_FIND_DATA_To_FileInfo(
   fileInfo.CreationTime = findData.ftCreationTime;  
   fileInfo.LastAccessTime = findData.ftLastAccessTime; 
   fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UINT64)findData.nFileSizeHigh) << 32) + 
-      findData.nFileSizeLow; 
+  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
   fileInfo.Name = findData.cFileName;
   #ifndef _WIN32_WCE
   fileInfo.ReparseTag = findData.dwReserved0;
@@ -53,8 +56,7 @@ static void ConvertWIN32_FIND_DATA_To_FileInfo(
 
 #ifndef _UNICODE
 
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 
 static void ConvertWIN32_FIND_DATA_To_FileInfo(
     const WIN32_FIND_DATAW &findData,
@@ -64,8 +66,7 @@ static void ConvertWIN32_FIND_DATA_To_FileInfo(
   fileInfo.CreationTime = findData.ftCreationTime;  
   fileInfo.LastAccessTime = findData.ftLastAccessTime; 
   fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UINT64)findData.nFileSizeHigh) << 32) + 
-      findData.nFileSizeLow; 
+  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
   fileInfo.Name = findData.cFileName;
   #ifndef _WIN32_WCE
   fileInfo.ReparseTag = findData.dwReserved0;
@@ -82,8 +83,7 @@ static void ConvertWIN32_FIND_DATA_To_FileInfo(
   fileInfo.CreationTime = findData.ftCreationTime;  
   fileInfo.LastAccessTime = findData.ftLastAccessTime; 
   fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UINT64)findData.nFileSizeHigh) << 32) + 
-      findData.nFileSizeLow; 
+  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
   fileInfo.Name = GetUnicodeString(findData.cFileName, GetCurrentCodePage());
   #ifndef _WIN32_WCE
   fileInfo.ReparseTag = findData.dwReserved0;
@@ -110,8 +110,7 @@ bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
   Close();
   WIN32_FIND_DATA findData;
   _handle = ::FindFirstFile(wildcard, &findData);
-  _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
-  if (_handleAllocated)
+  if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
     ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   return _handleAllocated;
 }
@@ -120,24 +119,20 @@ bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
 bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
 {
   Close();
-  WIN32_FIND_DATAW findDataW;
-  ::SetLastError(0);
-  _handle = ::FindFirstFileW(wildcard, &findDataW);
-  if ((_handle == INVALID_HANDLE_VALUE ||  _handle == 0) &&
-      ::GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+  if (g_IsNT)
   {
-    WIN32_FIND_DATA findData;
-    _handle = ::FindFirstFile(UnicodeStringToMultiByte(wildcard, 
-        GetCurrentCodePage()), &findData);
-    _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
-    if (_handleAllocated)
+    WIN32_FIND_DATAW findData;
+    _handle = ::FindFirstFileW(wildcard, &findData);
+    if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
       ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   }
   else
   {
-    _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
-    if (_handleAllocated)
-      ConvertWIN32_FIND_DATA_To_FileInfo(findDataW, fileInfo);
+    WIN32_FIND_DATAA findData;
+    _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard, 
+        GetCurrentCodePage()), &findData);
+    if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
+      ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   }
   return _handleAllocated;
 }
@@ -155,18 +150,20 @@ bool CFindFile::FindNext(CFileInfo &fileInfo)
 #ifndef _UNICODE
 bool CFindFile::FindNext(CFileInfoW &fileInfo)
 {
-  WIN32_FIND_DATAW findDataW;
-  if (::FindNextFileW(_handle, &findDataW))
+  if (g_IsNT)
   {
-    ConvertWIN32_FIND_DATA_To_FileInfo(findDataW, fileInfo);
-    return true;
+    WIN32_FIND_DATAW findData;
+    if (!::FindNextFileW(_handle, &findData))
+      return false;
+    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   }
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  WIN32_FIND_DATA findData;
-  if (!::FindNextFile(_handle, &findData))
-    return false;
-  ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+  else
+  {
+    WIN32_FIND_DATAA findData;
+    if (!::FindNextFileA(_handle, &findData))
+      return false;
+    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+  }
   return true;
 }
 #endif
@@ -290,14 +287,9 @@ HANDLE CFindChangeNotification::FindFirst(LPCTSTR pathName, bool watchSubtree,
 HANDLE CFindChangeNotification::FindFirst(LPCWSTR pathName, bool watchSubtree, 
     DWORD notifyFilter)
 {
-  ::SetLastError(0);
-  _handle = ::FindFirstChangeNotificationW(pathName, 
-      BoolToBOOL(watchSubtree), notifyFilter);
-  if ((_handle == 0 || _handle == INVALID_HANDLE_VALUE) &&
-      ::GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-    return FindFirst(UnicodeStringToMultiByte(pathName, 
-        GetCurrentCodePage()), watchSubtree, notifyFilter);
-  return _handle;
+  if (g_IsNT)
+    return (_handle = ::FindFirstChangeNotificationW(pathName, BoolToBOOL(watchSubtree), notifyFilter));
+  return FindFirst(UnicodeStringToMultiByte(pathName, GetCurrentCodePage()), watchSubtree, notifyFilter);
 }
 #endif
 
@@ -330,6 +322,44 @@ bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
     return false;
   return true;
 }
+
+#ifndef _UNICODE
+bool MyGetLogicalDriveStrings(UStringVector &driveStrings)
+{
+  driveStrings.Clear();
+  if (g_IsNT)
+  {
+    UINT32 size = GetLogicalDriveStringsW(0, NULL); 
+    if (size == 0)
+      return false;
+    UString buffer;
+    UINT32 newSize = GetLogicalDriveStringsW(size, buffer.GetBuffer(size)); 
+    if(newSize == 0)
+      return false;
+    if(newSize > size)
+      return false;
+    UString string;
+    for(UINT32 i = 0; i < newSize; i++)
+    {
+      WCHAR c = buffer[i];
+      if(c == L'\0')
+      {
+        driveStrings.Add(string);
+        string.Empty();
+      }
+      else
+        string += c;
+    }
+    return string.IsEmpty();
+  }
+  CSysStringVector driveStringsA;
+  bool res = MyGetLogicalDriveStrings(driveStringsA);
+  for (int i = 0; i < driveStringsA.Size(); i++)
+    driveStrings.Add(GetUnicodeString(driveStringsA[i]));
+  return res;
+}
+#endif
+
 #endif
 
 }}}

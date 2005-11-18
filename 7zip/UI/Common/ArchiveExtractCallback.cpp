@@ -340,11 +340,6 @@ STDMETHODIMP CArchiveExtractCallback::PrepareOperation(Int32 askExtractMode)
   return _extractCallback2->PrepareOperation(_filePath, askExtractMode, _isSplit ? &_position: 0);
 }
 
-void CArchiveExtractCallback::AddErrorMessage(LPCTSTR message)
-{
-  _messages.Add(message);
-}
-
 STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
 {
   switch(operationResult)

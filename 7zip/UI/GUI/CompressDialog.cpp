@@ -6,6 +6,7 @@
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Windows/CommonDialog.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/ResourceString.h"
@@ -16,6 +17,10 @@
 #include "../Common/ZipRegistry.h"
 
 #include "CompressDialog.h"
+
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 #ifdef LANG        
 #include "../../FileManager/LangUtils.h"
@@ -206,31 +211,6 @@ static bool IsMethodSupportedBySfx(int methodID)
   return false;
 };
 
-class CDoubleZeroStringList
-{
-  CRecordVector<int> m_Indexes;
-  CSysString m_String;
-public:
-  void Add(LPCTSTR s);
-  void SetForBuffer(LPTSTR buffer);
-};
-
-const TCHAR kDelimiterSymbol = TEXT(' ');
-void CDoubleZeroStringList::Add(LPCTSTR s)
-{
-  m_String += s;
-  m_Indexes.Add(m_String.Length());
-  m_String += kDelimiterSymbol;
-}
-
-void CDoubleZeroStringList::SetForBuffer(LPTSTR buffer)
-{
-  lstrcpy(buffer, m_String);
-  for (int i = 0; i < m_Indexes.Size(); i++)
-    buffer[m_Indexes[i]] = TEXT('\0');
-}
-
-
 bool CCompressDialog::OnInit() 
 {
   #ifdef LANG        
@@ -264,7 +244,7 @@ bool CCompressDialog::OnInit()
   for(i = 0; i < m_ArchiverInfoList.Size(); i++)
   {
     const CArchiverInfo &ai = m_ArchiverInfoList[i];
-    m_Format.AddString(GetSystemString(ai.Name));
+    m_Format.AddString(ai.Name);
     if (ai.Name.CompareNoCase(m_RegistryInfo.ArchiveType) == 0)
       Info.ArchiverInfoIndex = i;
   }
@@ -277,10 +257,10 @@ bool CCompressDialog::OnInit()
   for(i = 0; i < m_RegistryInfo.HistoryArchives.Size() && i < kHistorySize; i++)
     m_ArchivePath.AddString(m_RegistryInfo.HistoryArchives[i]);
 
-  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_ADD, 0x02000DA1));
-  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_UPDATE, 0x02000DA2));
-  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_FRESH, 0x02000DA3));
-  m_UpdateMode.AddString(LangLoadString(IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE, 0x02000DA4));
+  m_UpdateMode.AddString(LangString(IDS_COMPRESS_UPDATE_MODE_ADD, 0x02000DA1));
+  m_UpdateMode.AddString(LangString(IDS_COMPRESS_UPDATE_MODE_UPDATE, 0x02000DA2));
+  m_UpdateMode.AddString(LangString(IDS_COMPRESS_UPDATE_MODE_FRESH, 0x02000DA3));
+  m_UpdateMode.AddString(LangString(IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE, 0x02000DA4));
 
   m_UpdateMode.SetCurSel(0);
 
@@ -311,7 +291,7 @@ void CCompressDialog::UpdatePasswordControl()
 {
   _passwordControl.SetPasswordChar((IsButtonChecked(
       IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED) ? 0: TEXT('*'));
-  CSysString password;
+  UString password;
   _passwordControl.GetText(password);
   _passwordControl.SetText(password);
 }
@@ -434,73 +414,27 @@ void CCompressDialog::OnButtonSFX()
 
 void CCompressDialog::OnButtonSetArchive() 
 {
-  const int kBufferSize = MAX_PATH * 2;
-  TCHAR buffer[kBufferSize];
   UString fileName;
   m_ArchivePath.GetText(fileName);
-  fileName.TrimLeft();
-  fileName.TrimRight();
+  fileName.Trim();
   Info.ArchiveName = fileName;
   UString fullFileName;
   if (!Info.GetFullPathName(fullFileName))
   {
     fullFileName = Info.ArchiveName;
-    // throw "Incorrect archive path";
     return;
   }
-  lstrcpy(buffer, GetSystemString(fullFileName));
-
-  OPENFILENAME info;
-  info.lStructSize = sizeof(info); 
-  info.hwndOwner = HWND(*this); 
-  info.hInstance = 0; 
-  
-
-  const int kFilterBufferSize = MAX_PATH;
-  TCHAR filterBuffer[kFilterBufferSize];
-  CDoubleZeroStringList doubleZeroStringList;
-  // doubleZeroStringList.Add(TEXT("Zip Files (*.zip)"));
-  // doubleZeroStringList.Add(TEXT("*.zip"));
-  UString s = LangLoadStringW(IDS_OPEN_TYPE_ALL_FILES, 0x02000DB1);
+  UString title = LangString(IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE, 0x02000D90);
+  UString s = LangString(IDS_OPEN_TYPE_ALL_FILES, 0x02000DB1);
   s += L" (*.*)";
-  doubleZeroStringList.Add(GetSystemString(s));
-  doubleZeroStringList.Add(TEXT("*.*"));
-  doubleZeroStringList.SetForBuffer(filterBuffer);
-  info.lpstrFilter = filterBuffer; 
-  
-  
-  info.lpstrCustomFilter = NULL; 
-  info.nMaxCustFilter = 0; 
-  info.nFilterIndex = 0; 
-  
-  info.lpstrFile = buffer; 
-  info.nMaxFile = kBufferSize;
-  
-  info.lpstrFileTitle = NULL; 
-    info.nMaxFileTitle = 0; 
-  
-  info.lpstrInitialDir= NULL; 
-
-  CSysString title = LangLoadString(IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE, 0x02000D90);
-  
-  info.lpstrTitle = title;
-
-  info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY; 
-  info.nFileOffset = 0; 
-  info.nFileExtension = 0; 
-  info.lpstrDefExt = NULL; 
-  
-  info.lCustData = 0; 
-  info.lpfnHook = NULL; 
-  info.lpTemplateName = NULL; 
-
-  if(!GetOpenFileName(&info))
+  UString resPath;
+  if (!MyGetOpenFileName(HWND(*this), title, fullFileName, s, resPath))
     return;
-  m_ArchivePath.SetText(buffer);
+  m_ArchivePath.SetText(resPath);
 }
 
 // in ExtractDialog.cpp
-extern void AddUniqueString(CSysStringVector &strings, const CSysString &srcString);
+extern void AddUniqueString(UStringVector &strings, const UString &srcString);
 
 
 void CCompressDialog::OnOK() 
@@ -512,7 +446,7 @@ void CCompressDialog::OnOK()
   m_ArchivePath.GetText(s);
   s.Trim();
   m_RegistryInfo.HistoryArchives.Clear();
-  AddUniqueString(m_RegistryInfo.HistoryArchives, GetSystemString(s));
+  AddUniqueString(m_RegistryInfo.HistoryArchives, s);
   Info.ArchiveName = s;
   Info.UpdateMode = NCompressDialog::NUpdateMode::EEnum(m_UpdateMode.GetCurSel());
 
@@ -520,7 +454,7 @@ void CCompressDialog::OnOK()
   Info.Dictionary = GetDictionarySpec();
   Info.Order = GetOrderSpec();
   Info.OrderMode = GetOrderMode();
-  Info.Method = GetUnicodeString(GetMethodSpec());
+  Info.Method = GetMethodSpec();
 
   Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
@@ -543,7 +477,7 @@ void CCompressDialog::OnOK()
 
   for(int i = 0; i < m_ArchivePath.GetCount(); i++)
   {
-    CSysString sTemp;
+    UString sTemp;
     m_ArchivePath.GetLBText(i, sTemp);
     sTemp.Trim();
     AddUniqueString(m_RegistryInfo.HistoryArchives, sTemp);
@@ -751,7 +685,7 @@ void CCompressDialog::SetLevel()
     if ((fi.LevelsMask & (1 << i)) != 0)
     {
       const CLevelInfo &levelInfo = g_Levels[i];
-      int index = m_Level.AddString(LangLoadString(levelInfo.ResourceID, levelInfo.LangID));
+      int index = m_Level.AddString(LangString(levelInfo.ResourceID, levelInfo.LangID));
       m_Level.SetItemData(index, i);
     }
   }
@@ -817,20 +751,19 @@ void CCompressDialog::SetMethod()
 
 int CCompressDialog::GetMethodID()
 {
-  CSysString methodSpec;
-  m_Method.GetText(methodSpec);
-  UString methodName = GetUnicodeString(methodSpec);
+  UString methodName;
+  m_Method.GetText(methodName);
   for (int i = 0; i < MY_SIZE_OF_ARRAY(kMethodsNames); i++)
     if (methodName.CompareNoCase(kMethodsNames[i]) == 0)
       return i;
   return -1;
 }
 
-CSysString CCompressDialog::GetMethodSpec()
+UString CCompressDialog::GetMethodSpec()
 {
   if (m_Method.GetCount() <= 1)
-    return CSysString();
-  CSysString result;
+    return UString();
+  UString result;
   m_Method.GetText(result);
   return result;
 }
@@ -932,7 +865,7 @@ void CCompressDialog::SetDictionary()
         else if (level >= 7)
           defaultDictionary = (64 << 20);
         else if (level >= 5)
-          defaultDictionary = (24 << 20);
+          defaultDictionary = (16 << 20);
         else
           defaultDictionary = (4 << 20);
       }
@@ -1020,21 +953,15 @@ void CCompressDialog::SetOrder()
     case kLZMA:
     {
       if (defaultOrder == UInt32(-1))
-      {
-        if (level >= 7)
-          defaultOrder = 64;
-        else
-          defaultOrder = 32;
-      }
-      int i;
-      for (i = 3; i < 8; i++)
+        defaultOrder = (level >= 7) ? 64 : 32;
+      for (int i = 3; i <= 8; i++)
         for (int j = 0; j < 2; j++)
         {
           UInt32 order = (1 << i) + (j << (i - 1));
-          if (order < 255)
+          if (order <= 256)
             AddOrder(order);
         }
-      AddOrder(255);
+      AddOrder(273);
       SetNearestSelectComboBox(m_Order, defaultOrder);
       break;
     }
@@ -1076,14 +1003,14 @@ void CCompressDialog::SetOrder()
           defaultOrder = 32;
       }
       int i;
-      for (i = 3; i < 8; i++)
+      for (i = 3; i <= 8; i++)
         for (int j = 0; j < 2; j++)
         {
           UInt32 order = (1 << i) + (j << (i - 1));
-          if (order < 255)
+          if (order <= 256)
             AddOrder(order);
         }
-      AddOrder(255);
+      AddOrder(methodID == kDeflate64 ? 257 : 258);
       SetNearestSelectComboBox(m_Order, defaultOrder);
       break;
     }
@@ -1218,7 +1145,7 @@ void CCompressDialog::SaveOptionsInMem()
   m_Params.GetText(Info.Options);
   Info.Options.Trim();
   NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
-  fo.Options = GetSystemString(Info.Options);
+  fo.Options = Info.Options;
   fo.Level = GetLevelSpec();
   fo.Dictionary = GetDictionarySpec();
   fo.Order = GetOrderSpec();

@@ -5,6 +5,10 @@
 #include "FileSystem.h"
 #include "Defs.h"
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NFile {
 namespace NSystem {
@@ -29,6 +33,41 @@ bool MyGetVolumeInformation(
   return result;
 }
 
+
+#ifndef _UNICODE
+bool MyGetVolumeInformation(
+    LPCWSTR rootPathName,
+    UString &volumeName,
+    LPDWORD volumeSerialNumber,
+    LPDWORD maximumComponentLength,
+    LPDWORD fileSystemFlags,
+    UString &fileSystemName)
+{
+  if (g_IsNT)
+  {
+    bool result = BOOLToBool(GetVolumeInformationW(
+      rootPathName,
+      volumeName.GetBuffer(MAX_PATH), MAX_PATH,
+      volumeSerialNumber,
+      maximumComponentLength,
+      fileSystemFlags,
+      fileSystemName.GetBuffer(MAX_PATH), MAX_PATH));
+    volumeName.ReleaseBuffer();
+    fileSystemName.ReleaseBuffer();
+    return result;
+  }
+  AString volumeNameA, fileSystemNameA;
+  bool result = MyGetVolumeInformation(GetSystemString(rootPathName), volumeNameA, 
+      volumeSerialNumber, maximumComponentLength, fileSystemFlags,fileSystemNameA);
+  if (result)
+  {
+    volumeName = GetUnicodeString(volumeNameA);
+    fileSystemName = GetUnicodeString(fileSystemNameA);
+  }
+  return result;
+}
+#endif
+
 typedef BOOL (WINAPI * GetDiskFreeSpaceExPointer)(
   LPCTSTR lpDirectoryName,                 // directory name
   PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
@@ -37,7 +76,7 @@ typedef BOOL (WINAPI * GetDiskFreeSpaceExPointer)(
 );
 
 bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
-    UINT64 &clusterSize, UINT64 &totalSize, UINT64 &freeSize)
+    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
 {
   GetDiskFreeSpaceExPointer pGetDiskFreeSpaceEx = 
       (GetDiskFreeSpaceExPointer)GetProcAddress(
@@ -46,11 +85,13 @@ bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
   bool sizeIsDetected = false;
   if (pGetDiskFreeSpaceEx)
   {
-    UINT64 i64FreeBytesToCaller;
+    ULARGE_INTEGER i64FreeBytesToCaller, totalSize2, freeSize2;
     sizeIsDetected = BOOLToBool(pGetDiskFreeSpaceEx(rootPathName,
-                (PULARGE_INTEGER)&i64FreeBytesToCaller,
-                (PULARGE_INTEGER)&totalSize,
-                (PULARGE_INTEGER)&freeSize));
+                &i64FreeBytesToCaller,
+                &totalSize2,
+                &freeSize2));
+    totalSize = totalSize2.QuadPart;
+    freeSize = freeSize2.QuadPart;
   }
 
   DWORD numSectorsPerCluster;
@@ -65,13 +106,21 @@ bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
       &totalNumberOfClusters))
     return false;
 
-  clusterSize = UINT64(bytesPerSector) * UINT64(numSectorsPerCluster);
+  clusterSize = (UInt64)bytesPerSector * (UInt64)numSectorsPerCluster;
   if (!sizeIsDetected)
   {
-    totalSize =  clusterSize * UINT64(totalNumberOfClusters);
-    freeSize =  clusterSize * UINT64(numberOfFreeClusters);
+    totalSize =  clusterSize * (UInt64)totalNumberOfClusters;
+    freeSize =  clusterSize * (UInt64)numberOfFreeClusters;
   }
   return true;
 }
+
+#ifndef _UNICODE
+bool MyGetDiskFreeSpace(LPCWSTR rootPathName,
+    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
+{
+  return MyGetDiskFreeSpace(GetSystemString(rootPathName), clusterSize, totalSize, freeSize);
+}
+#endif
 
 }}}

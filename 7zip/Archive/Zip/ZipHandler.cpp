@@ -323,6 +323,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
 STDMETHODIMP CHandler::Close()
 {
+  m_Items.Clear();
   m_Archive.Close();
   m_ArchiveIsOpen = false;
   return S_OK;

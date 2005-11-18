@@ -18,12 +18,24 @@ public:
     { return BOOLToBool(SendMessage(SB_SETPARTS, numParts, (LPARAM)edgePostions)); }
   bool SetText(LPCTSTR text)
     { return CWindow::SetText(text); }
+
   bool SetText(int index, LPCTSTR text, UINT type)
     { return BOOLToBool(SendMessage(SB_SETTEXT, index | type, (LPARAM)text)); }
   bool SetText(int index, LPCTSTR text)
     { return SetText(index, text, 0); }
   void Simple(bool simple)
     { SendMessage(SB_SIMPLE, BoolToBOOL(simple), 0); }
+
+  #ifndef _UNICODE
+  bool Create(LONG style, LPCWSTR text, HWND hwndParent, UINT id)
+    { return (_window = ::CreateStatusWindowW(style, text, hwndParent, id)) != 0; }
+  bool SetText(LPCWSTR text)
+    { return CWindow::SetText(text); }
+  bool SetText(int index, LPCWSTR text, UINT type)
+    { return BOOLToBool(SendMessage(SB_SETTEXTW, index | type, (LPARAM)text)); }
+  bool SetText(int index, LPCWSTR text)
+    { return SetText(index, text, 0); }
+  #endif
 };
 
 }}

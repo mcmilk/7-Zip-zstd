@@ -10,6 +10,9 @@
 #include "Common/NewHandler.h"
 #include "Common/Exception.h"
 #include "Common/StringConvert.h"
+#ifdef _WIN32
+#include "Common/Alloc.h"
+#endif
 
 #include "../Common/ExitCode.h"
 #include "ConsoleClose.h"
@@ -17,6 +20,10 @@
 using namespace NWindows;
 
 CStdOutStream *g_StdStream = 0;
+
+#ifndef _UNICODE
+bool g_IsNT = false;
+#endif
 
 extern int Main2(
   #ifndef _WIN32  
@@ -31,7 +38,6 @@ static const char *kMemoryExceptionMessage = "\n\nERROR: Can't allocate required
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
-#ifdef UNICODE
 static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -40,7 +46,6 @@ static inline bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
-#endif
 
 int 
 #ifdef _MSC_VER
@@ -54,13 +59,20 @@ int numArguments, const char *arguments[]
 )
 {
   g_StdStream = &g_StdOut;
-  #ifdef UNICODE
+  #ifdef _UNICODE
   if (!IsItWindowsNT())
   {
     (*g_StdStream) << "This program requires Windows NT/2000/XP/2003";
     return NExitCode::kFatalError;
   }
+  #else
+  g_IsNT = IsItWindowsNT();
   #endif
+
+  #ifdef _WIN32
+  SetLargePageSize();
+  #endif
+
   // setlocale(LC_COLLATE, ".OCP");
   NConsoleClose::CCtrlHandlerSetter ctrlHandlerSetter;
   try

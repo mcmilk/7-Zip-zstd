@@ -81,7 +81,7 @@ const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
 static const wchar_t *kMatchFinderForHeaders = L"BT2";
 static const UInt32 kDictionaryForHeaders = 1 << 20;
-static const UInt32 kNumFastBytesForHeaders = 254;
+static const UInt32 kNumFastBytesForHeaders = 273;
 
 static bool IsLZMAMethod(const UString &methodName)
   { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }

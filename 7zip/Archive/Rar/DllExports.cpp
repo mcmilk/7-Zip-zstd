@@ -16,6 +16,17 @@ DEFINE_GUID(CLSID_CCrypto_AES128_Decoder,
 #include "RarHandler.h"
 
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
 
 void GetCryptoFolderPrefix(TCHAR *path)
 {
@@ -54,7 +65,12 @@ extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
+  {
     g_hInstance = hInstance;
+    #ifndef _UNICODE
+    g_IsNT = IsItWindowsNT();
+    #endif
+  }
   return TRUE;
 }
 

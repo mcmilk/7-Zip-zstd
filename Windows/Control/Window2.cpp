@@ -2,11 +2,22 @@
 
 #include "StdAfx.h"
 
+#ifndef _UNICODE
+#include "Common/StringConvert.h"
+#endif
 #include "Windows/Control/Window2.h"
 
 // extern HINSTANCE g_hInstance;
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 namespace NWindows {
+
+#ifndef _UNICODE
+ATOM MyRegisterClass(CONST WNDCLASSW *wndClass);
+#endif
+
 namespace NControl {
 
 static LRESULT CALLBACK WindowProcedure(HWND aHWND, UINT message, 
@@ -17,12 +28,17 @@ static LRESULT CALLBACK WindowProcedure(HWND aHWND, UINT message,
     tempWindow.SetUserDataLongPtr(
         LONG_PTR(((LPCREATESTRUCT)lParam)->lpCreateParams));
   CWindow2 *window = (CWindow2*)(tempWindow.GetUserDataLongPtr());
-  if (window == NULL)
-    return DefWindowProc(aHWND, message, wParam, lParam);
-  if (message == WM_NCCREATE)
+  if (window != NULL && message == WM_NCCREATE)
     window->Attach(aHWND);
   if (window == 0)
-    return DefWindowProc(aHWND, message, wParam, lParam);
+  {
+    #ifndef _UNICODE
+    if (g_IsNT)
+	    return DefWindowProcW(aHWND, message, wParam, lParam);
+    else
+    #endif
+      return DefWindowProc(aHWND, message, wParam, lParam);
+  }
   return window->OnMessage(message, wParam, lParam);
 }
 
@@ -53,6 +69,68 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCTSTR className,
   return CWindow::CreateEx(exStyle, className, windowName,
       style, x, y, width, height, parentWindow, 
       idOrHMenu, instance, this);
+}
+
+#ifndef _UNICODE
+
+bool CWindow2::CreateEx(DWORD exStyle, LPCWSTR className, 
+      LPCWSTR windowName, DWORD style,
+      int x, int y, int width, int height,
+      HWND parentWindow, HMENU idOrHMenu, 
+      HINSTANCE instance)
+{
+  bool needRegister;
+  if(g_IsNT)
+  {
+    WNDCLASSW windowClass;
+    needRegister = ::GetClassInfoW(instance, className, &windowClass) == 0;
+  }
+  else
+  {
+    WNDCLASSA windowClassA;
+    AString classNameA;
+    LPCSTR classNameP;
+    if (IS_INTRESOURCE(className))
+      classNameP = (LPCSTR)className;
+    else
+    {
+      classNameA = GetSystemString(className);
+      classNameP = classNameA;
+    }
+    needRegister = ::GetClassInfoA(instance, classNameP, &windowClassA) == 0;
+  }
+  if (needRegister)
+  {
+    WNDCLASSW windowClass;
+    // windowClass.style          = CS_HREDRAW | CS_VREDRAW;
+    windowClass.style          = 0;
+    windowClass.lpfnWndProc    = WindowProcedure;
+    windowClass.cbClsExtra     = NULL;
+    windowClass.cbWndExtra     = NULL;
+    windowClass.hInstance      = instance;
+    windowClass.hIcon          = NULL;
+    windowClass.hCursor        = LoadCursor(NULL, IDC_ARROW);
+    windowClass.hbrBackground  = (HBRUSH)(COLOR_WINDOW + 1);
+    windowClass.lpszMenuName   = NULL;
+    windowClass.lpszClassName  = className;
+    if (MyRegisterClass(&windowClass) == 0)
+      return false;
+  }
+  return CWindow::CreateEx(exStyle, className, windowName,
+      style, x, y, width, height, parentWindow, 
+      idOrHMenu, instance, this);
+
+}
+#endif
+
+LRESULT CWindow2::DefProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  #ifndef _UNICODE
+  if (g_IsNT)
+	  return DefWindowProcW(_window, message, wParam, lParam);
+  else
+  #endif
+    return DefWindowProc(_window, message, wParam, lParam);
 }
 
 LRESULT CWindow2::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)

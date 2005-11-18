@@ -4,6 +4,7 @@
 #define __WINDOWS_FILEFIND_H
 
 #include "../Common/String.h"
+#include "../Common/Types.h"
 #include "FileName.h"
 #include "Defs.h"
 
@@ -30,14 +31,13 @@ public:
   FILETIME CreationTime;  
   FILETIME LastAccessTime; 
   FILETIME LastWriteTime;
-  UINT64 Size;
+  UInt64 Size;
   
   #ifndef _WIN32_WCE
   UINT32 ReparseTag;
   #else
   DWORD ObjectID; 
   #endif
-
 
   bool IsArchived() const { return MatchesMask(FILE_ATTRIBUTE_ARCHIVE); }
   bool IsCompressed() const { return MatchesMask(FILE_ATTRIBUTE_COMPRESSED); }
@@ -51,7 +51,6 @@ public:
   bool IsSparse() const { return MatchesMask(FILE_ATTRIBUTE_SPARSE_FILE); }
   bool IsSystem() const { return MatchesMask(FILE_ATTRIBUTE_SYSTEM); }
   bool IsTemporary() const { return MatchesMask(FILE_ATTRIBUTE_TEMPORARY); }
-
 };
 
 class CFileInfo: public CFileInfoBase
@@ -144,27 +143,30 @@ public:
 
 #ifndef _WIN32_WCE
 bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings);
+#ifndef _UNICODE
+bool MyGetLogicalDriveStrings(UStringVector &driveStrings);
+#endif
 #endif
 
-inline bool MyGetCompressedFileSize(LPCTSTR fileName, UINT64 &size)
+inline bool MyGetCompressedFileSize(LPCTSTR fileName, UInt64 &size)
 {
   DWORD highPart;
   DWORD lowPart = ::GetCompressedFileSize(fileName, &highPart);
   if (lowPart == INVALID_FILE_SIZE)
     if (::GetLastError() != NO_ERROR)
       return false;
-  size = (UINT64(highPart) << 32) | lowPart;
+  size = (UInt64(highPart) << 32) | lowPart;
   return true;
 }
 
-inline bool MyGetCompressedFileSizeW(LPCWSTR fileName, UINT64 &size)
+inline bool MyGetCompressedFileSizeW(LPCWSTR fileName, UInt64 &size)
 {
   DWORD highPart;
   DWORD lowPart = ::GetCompressedFileSizeW(fileName, &highPart);
   if (lowPart == INVALID_FILE_SIZE)
     if (::GetLastError() != NO_ERROR)
       return false;
-  size = (UINT64(highPart) << 32) | lowPart;
+  size = (UInt64(highPart) << 32) | lowPart;
   return true;
 }
 

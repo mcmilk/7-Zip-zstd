@@ -35,7 +35,7 @@ bool CCopyDialog::OnInit()
   staticContol.Attach(GetItem(IDC_COPY_STATIC));
   staticContol.SetText(Static);
   for(int i = 0; i < Strings.Size(); i++)
-    _path.AddString(GetSystemString(Strings[i]));
+    _path.AddString(Strings[i]);
   _path.SetText(Value);
   return CModalDialog::OnInit();
 }
@@ -53,19 +53,19 @@ bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 void CCopyDialog::OnButtonSetPath() 
 {
-  CSysString currentPath;
+  UString currentPath;
   _path.GetText(currentPath);
 
   /*
   #ifdef LANG        
-  CSysString title = LangLoadString(IDS_EXTRACT_SET_FOLDER, 0x02000881);
+  UString title = LangLoadString(IDS_EXTRACT_SET_FOLDER, 0x02000881);
   #else
-  CSysString title = MyLoadString(IDS_EXTRACT_SET_FOLDER);
+  UString title = MyLoadString(IDS_EXTRACT_SET_FOLDER);
   #endif
   */
-  CSysString title = TEXT("Specify a location for output folder");
+  UString title = L"Specify a location for output folder";
 
-  CSysString resultPath;
+  UString resultPath;
   if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, resultPath))
     return;
   NFile::NName::NormalizeDirPathPrefix(resultPath);

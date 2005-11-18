@@ -7,6 +7,10 @@
 #include "Common/StringConvert.h"
 #endif
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NError {
 
@@ -14,16 +18,9 @@ bool MyFormatMessage(DWORD messageID, CSysString &message)
 {
   LPVOID msgBuf;
   if(::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-      FORMAT_MESSAGE_FROM_SYSTEM | 
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      messageID,
-      0, // Default language
-      (LPTSTR) &msgBuf,
-      0,
-      NULL) == 0)
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,messageID, 0, (LPTSTR) &msgBuf,0, NULL) == 0)
     return false;
-
   message = (LPCTSTR)msgBuf;
   ::LocalFree(msgBuf);
   return true;
@@ -32,27 +29,21 @@ bool MyFormatMessage(DWORD messageID, CSysString &message)
 #ifndef _UNICODE
 bool MyFormatMessage(DWORD messageID, UString &message)
 {
-  LPVOID msgBuf;
-  if(::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-      FORMAT_MESSAGE_FROM_SYSTEM | 
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      messageID,
-      0, // Default language
-      (LPWSTR) &msgBuf,
-      0,
-      NULL) == 0)
+  if (g_IsNT)
   {
-    if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+    LPVOID msgBuf;
+    if(::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, messageID, 0, (LPWSTR) &msgBuf, 0, NULL) == 0)
       return false;
-    CSysString messageSys;
-    bool result = MyFormatMessage(messageID, messageSys);
-    message = GetUnicodeString(messageSys);
-    return result;
+    message = (LPCWSTR)msgBuf;
+    ::LocalFree(msgBuf);
+    return true;
   }
-  message = (LPCWSTR)msgBuf;
-  ::LocalFree(msgBuf);
-  return true;
+  CSysString messageSys;
+  bool result = MyFormatMessage(messageID, messageSys);
+  message = GetUnicodeString(messageSys);
+  return result;
 }
 #endif
 

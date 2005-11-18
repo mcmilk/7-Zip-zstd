@@ -82,8 +82,6 @@ public:
   #endif
 
 private:
-  // CSysString _directoryPath;
-  // CSysString m_DiskFilePath;
   // bool _extractMode;
   UString _currentArchivePath;
   bool _needWriteArchivePath;

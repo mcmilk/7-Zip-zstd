@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h"
 
 #include "Windows/Defs.h"
+#include "Windows/CommonDialog.h"
 // #include "Windows/FileFind.h"
 // #include "Windows/FileDir.h"
 
@@ -29,7 +30,7 @@ bool CEditPage::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
 
   _editorEdit.Attach(GetItem(IDC_EDIT_EDIT_EDITOR));
-  CSysString editorPath;
+  UString editorPath;
   ReadRegEditor(editorPath);
   _editorEdit.SetText(editorPath);
   return CPropertyPage::OnInit();
@@ -40,7 +41,7 @@ LONG CEditPage::OnApply()
   // int selectedIndex = _langCombo.GetCurSel();
   // int pathIndex = _langCombo.GetItemData(selectedIndex);
   // ReloadLang();
-  CSysString editorPath;
+  UString editorPath;
   _editorEdit.GetText(editorPath);
   SaveRegEditor(editorPath);
   return PSNRET_NOERROR;
@@ -66,85 +67,14 @@ bool CEditPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
   return CPropertyPage::OnButtonClicked(aButtonID, aButtonHWND);
 }
 
-class CDoubleZeroStringList
-{
-  CRecordVector<int> _indexes;
-  CSysString _string;
-public:
-  void Add(LPCTSTR string);
-  void SetForBuffer(LPTSTR buffer);
-};
-
-const TCHAR kDelimiterSymbol = TEXT(' ');
-void CDoubleZeroStringList::Add(LPCTSTR string)
-{
-  _string += string;
-  _indexes.Add(_string.Length());
-  _string += kDelimiterSymbol;
-}
-
-void CDoubleZeroStringList::SetForBuffer(LPTSTR buffer)
-{
-  lstrcpy(buffer, _string);
-  for (int i = 0; i < _indexes.Size(); i++)
-    buffer[_indexes[i]] = TEXT('\0');
-}
-
 void CEditPage::OnSetEditorButton()
 {
-  OPENFILENAME info;
-  info.lStructSize = sizeof(info); 
-  info.hwndOwner = HWND(*this); 
-  info.hInstance = 0; 
-  
-  const int kBufferSize = MAX_PATH * 2;
-  TCHAR buffer[kBufferSize + 1];
-  CSysString editorPath;
+  UString editorPath;
   _editorEdit.GetText(editorPath);
-
-  lstrcpy(buffer, editorPath);
-
-  const int kFilterBufferSize = MAX_PATH;
-  TCHAR filterBuffer[kFilterBufferSize];
-  CDoubleZeroStringList doubleZeroStringList;
-  CSysString string = TEXT("*.exe");
-  doubleZeroStringList.Add(string);
-  doubleZeroStringList.Add(string);
-  doubleZeroStringList.SetForBuffer(filterBuffer);
-  info.lpstrFilter = filterBuffer; 
-  
-  info.lpstrCustomFilter = NULL; 
-  info.nMaxCustFilter = 0; 
-  info.nFilterIndex = 0; 
-  
-  info.lpstrFile = buffer; 
-  info.nMaxFile = kBufferSize;
-  
-  info.lpstrFileTitle = NULL; 
-  info.nMaxFileTitle = 0; 
-  
-  info.lpstrInitialDir= NULL; 
-
-  /*
-  CSysString title = "Open";
-    LangLoadString(IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE, 0x02000D90);
-  info.lpstrTitle = title;
-  */
-  info.lpstrTitle = 0;
- 
-
-  info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY; 
-  info.nFileOffset = 0; 
-  info.nFileExtension = 0; 
-  info.lpstrDefExt = NULL; 
-  
-  info.lCustData = 0; 
-  info.lpfnHook = NULL; 
-  info.lpTemplateName = NULL; 
-
-  if(!GetOpenFileName(&info))
+  UString resPath;
+  if(!MyGetOpenFileName(HWND(*this), 0, editorPath, L"*.exe", resPath))
     return;
-  _editorEdit.SetText(buffer);
+  _editorEdit.SetText(resPath);
   // Changed();
 }
 

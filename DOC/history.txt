@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.30 beta           2005-11-18
+  --------------------------------------
+   - Security.h::AddLockMemoryPrivilege       - installs "Large pages" fature
+   - MemoryLock.h::EnableLockMemoryPrivilege  - enables "Large pages" fature
+   - Alloc.h::SetLargePageSize                - sets optimal LargePageSize size;
+
+
   Version 4.27                2005-09-21
   --------------------------------------
    - Some GUIDs/interfaces were changed.

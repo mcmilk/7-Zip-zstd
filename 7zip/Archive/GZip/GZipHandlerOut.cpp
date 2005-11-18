@@ -192,7 +192,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
       m_Method.NumPasses = value.ulVal;
-      if (m_Method.NumPasses < 1 || m_Method.NumPasses > 4)
+      if (m_Method.NumPasses < 1 || m_Method.NumPasses > 10)
         return E_INVALIDARG;
     }
     else if (name == L"FB")
@@ -200,8 +200,10 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
       m_Method.NumFastBytes = value.ulVal;
+      /*
       if (m_Method.NumFastBytes < 3 || m_Method.NumFastBytes > 255)
         return E_INVALIDARG;
+      */
     }
     else
       return E_INVALIDARG;

@@ -47,7 +47,7 @@ void SaveExtractionInfo(const NExtract::CInfo &info)
     pathHistoryKey.Create(extractionKey, kExtractionPathHistoryKeyName);
     for(int i = 0; i < info.Paths.Size(); i++)
     {
-      TCHAR numberString[16];
+      wchar_t numberString[16];
       ConvertUInt64ToString(i, numberString);
       pathHistoryKey.SetValue(numberString, info.Paths[i]);
     }
@@ -76,9 +76,9 @@ void ReadExtractionInfo(NExtract::CInfo &info)
     {        
       while(true)
       {
-        TCHAR numberString[16];
+        wchar_t numberString[16];
         ConvertUInt64ToString(info.Paths.Size(), numberString);
-        CSysString path;
+        UString path;
         if (pathHistoryKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;
         info.Paths.Add(path);
@@ -132,9 +132,9 @@ static const TCHAR *kCompressionOptionsKeyName = TEXT("Options");
 static const TCHAR *kSolid = TEXT("Solid");
 static const TCHAR *kMultiThread = TEXT("Multithread");
 
-static const TCHAR *kCompressionOptions = TEXT("Options");
+static const WCHAR *kCompressionOptions = L"Options";
 static const TCHAR *kCompressionLevel = TEXT("Level");
-static const TCHAR *kCompressionMethod = TEXT("Method");
+static const WCHAR *kCompressionMethod = L"Method";
 static const TCHAR *kCompressionDictionary = TEXT("Dictionary");
 static const TCHAR *kCompressionOrder = TEXT("Order");
 
@@ -150,7 +150,7 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     historyArchivesKey.Create(compressionKey, kCompressionHistoryArchivesKeyName);
     for(int i = 0; i < info.HistoryArchives.Size(); i++)
     {
-      TCHAR numberString[16];
+      wchar_t numberString[16];
       ConvertUInt64ToString(i, numberString);
       historyArchivesKey.SetValue(numberString, info.HistoryArchives[i]);
     }
@@ -234,9 +234,9 @@ void ReadCompressionInfo(NCompression::CInfo &info)
     {        
       while(true)
       {
-        TCHAR numberString[16];
+        wchar_t numberString[16];
         ConvertUInt64ToString(info.HistoryArchives.Size(), numberString);
-        CSysString path;
+        UString path;
         if (historyArchivesKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;
         info.HistoryArchives.Add(path);
@@ -308,7 +308,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
 static const TCHAR *kOptionsInfoKeyName = TEXT("Options");
 
 static const TCHAR *kWorkDirTypeValueName = TEXT("WorkDirType");
-static const TCHAR *kWorkDirPathValueName = TEXT("WorkDirPath");
+static const WCHAR *kWorkDirPathValueName = L"WorkDirPath";
 static const TCHAR *kTempRemovableOnlyValueName = TEXT("TempRemovableOnly");
 static const TCHAR *kCascadedMenuValueName = TEXT("CascadedMenu");
 static const TCHAR *kContextMenuValueName = TEXT("ContextMenu");
@@ -319,7 +319,7 @@ void SaveWorkDirInfo(const NWorkDir::CInfo &info)
   CKey optionsKey;
   optionsKey.Create(HKEY_CURRENT_USER, GetKeyPath(kOptionsInfoKeyName));
   optionsKey.SetValue(kWorkDirTypeValueName, UInt32(info.Mode));
-  optionsKey.SetValue(kWorkDirPathValueName, GetSystemString(info.Path));
+  optionsKey.SetValue(kWorkDirPathValueName, info.Path);
   optionsKey.SetValue(kTempRemovableOnlyValueName, info.ForRemovableOnly);
 }
 
@@ -342,7 +342,7 @@ void ReadWorkDirInfo(NWorkDir::CInfo &info)
     case NWorkDir::NMode::kSpecified:
       info.Mode = NWorkDir::NMode::EEnum(dirType);
   }
-  CSysString sysWorkDir;
+  UString sysWorkDir;
   if (optionsKey.QueryValue(kWorkDirPathValueName, sysWorkDir) != ERROR_SUCCESS)
   {
     info.Path.Empty();

@@ -11,6 +11,9 @@
 #include "Windows/Control/Toolbar.h"
 #include "Windows/Error.h"
 #include "Windows/COM.h"
+#include "Windows/DLL.h"
+#include "Windows/Security.h"
+#include "Windows/MemoryLock.h"
 
 #include "ViewSettings.h"
 
@@ -19,6 +22,7 @@
 
 #include "MyLoadMenu.h"
 #include "LangUtils.h"
+#include "RegistryUtils.h"
 
 using namespace NWindows;
 
@@ -28,6 +32,9 @@ using namespace NWindows;
 
 #define MENU_HEIGHT 26
 
+#ifndef _UNICODE
+bool g_IsNT = false;
+#endif
 HINSTANCE	 g_hInstance;	
 HWND g_HWND;
 static UString g_MainPath;
@@ -39,17 +46,17 @@ int kSplitterRateMax = 1 << 16;
 
 // bool OnMenuCommand(HWND hWnd, int id);
 
-static CSysString GetProgramPath()
+static UString GetProgramPath()
 {
-  TCHAR fullPath[MAX_PATH + 1];
-  ::GetModuleFileName(g_hInstance, fullPath, MAX_PATH);
-  return fullPath;
+  UString s;
+  NDLL::MyGetModuleFileName(g_hInstance, s);
+  return s;
 }
 
-CSysString GetProgramFolderPrefix()
+UString GetProgramFolderPrefix()
 {
-  CSysString path = GetProgramPath();
-  int pos = path.ReverseFind(TEXT('\\'));
+  UString path = GetProgramPath();
+  int pos = path.ReverseFind(L'\\');
   return path.Left(pos + 1);
 }
 
@@ -117,12 +124,21 @@ void OnSize(HWND hWnd);
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-//  FUNCTION: InitInstance(HANDLE, int)
+const wchar_t *kWindowClass = L"FM";
+
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+
+  //  FUNCTION: InitInstance(HANDLE, int)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-	HWND	hWnd = NULL;
-	TCHAR	windowClass[MAX_LOADSTRING];		// The window class name
-  lstrcpy(windowClass, TEXT("FM"));
+	CWindow wnd;
 
 	g_hInstance = hInstance;
 
@@ -131,7 +147,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   // LoadString(hInstance, IDS_CLASS, windowClass, MAX_LOADSTRING);
 
   // LoadString(hInstance, IDS_APP_TITLE, title, MAX_LOADSTRING);
-  UString title = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+  UString title = LangString(IDS_APP_TITLE, 0x03000000);
 
 	/*
   //If it is already running, then focus on the window
@@ -143,7 +159,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	} 
   */
 
-	WNDCLASS	wc;
+	WNDCLASSW wc;
 
   // wc.style			= CS_HREDRAW | CS_VREDRAW;
   wc.style = 0;
@@ -158,10 +174,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   // wc.hbrBackground	= (HBRUSH) GetStockObject(WHITE_BRUSH);
   wc.hbrBackground	= (HBRUSH) (COLOR_BTNFACE + 1);
 
-  wc.lpszMenuName		= MAKEINTRESOURCE(IDM_MENU);
-  wc.lpszClassName	= windowClass;
+  wc.lpszMenuName		= MAKEINTRESOURCEW(IDM_MENU);
+  wc.lpszClassName	= kWindowClass;
 
-	RegisterClass(&wc);
+	MyRegisterClass(&wc);
 	
   // RECT	rect;
 	// GetClientRect(hWnd, &rect);
@@ -200,17 +216,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   g_App.NumPanels = numPanels;
   g_App.LastFocusedPanel = currentPanel;
 
-	hWnd = CreateWindow(windowClass, GetSystemString(title), style,
-		  x, y, xSize, ySize, NULL, NULL, hInstance, NULL);
-	if (!hWnd)
-		return FALSE;
-  g_HWND = hWnd;
-
-  CWindow window(hWnd);
+	if (!wnd.Create(kWindowClass, title, style,
+		  x, y, xSize, ySize, NULL, NULL, hInstance, NULL))
+    return FALSE;
+  g_HWND = (HWND)wnd;
 
   WINDOWPLACEMENT placement;
   placement.length = sizeof(placement);
-  if (window.GetPlacement(&placement))
+  if (wnd.GetPlacement(&placement))
   {
     if (nCmdShow == SW_SHOWNORMAL || nCmdShow == SW_SHOW || 
         nCmdShow == SW_SHOWDEFAULT)
@@ -224,11 +237,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       placement.showCmd = nCmdShow;
     if (windowPosIsRead)
       placement.rcNormalPosition = rect;
-    window.SetPlacement(&placement);
+    wnd.SetPlacement(&placement);
     // window.Show(nCmdShow);
   }
   else
-    window.Show(nCmdShow);
+    wnd.Show(nCmdShow);
 	return TRUE;
 }
 
@@ -295,11 +308,65 @@ DWORD GetDllVersion(LPCTSTR lpszDllName)
 
 DWORD g_ComCtl32Version;
 
+/*
+#ifndef _WIN64
+typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
+static bool IsWow64()
+{
+  LPFN_ISWOW64PROCESS  fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(
+      GetModuleHandle("kernel32"), "IsWow64Process");
+  if (fnIsWow64Process == NULL)
+    return false;
+  BOOL isWow;
+  if (!fnIsWow64Process(GetCurrentProcess(),&isWow))
+    return false;
+  return isWow != FALSE;
+}
+#endif
+*/
+
+bool IsLargePageSupported()
+{
+  #ifdef _WIN64
+  return true;
+  #else
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  if (versionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT || versionInfo.dwMajorVersion < 5)
+    return false;
+  if (versionInfo.dwMajorVersion > 5)
+    return true;
+  if (versionInfo.dwMinorVersion < 1)
+    return false;
+  if (versionInfo.dwMinorVersion > 1)
+    return true;
+  // return IsWow64();
+  return false;
+  #endif
+}
+
+static void SetMemoryLock()
+{
+  if (!IsLargePageSupported())
+    return;
+  // if (ReadLockMemoryAdd())
+    NSecurity::AddLockMemoryPrivilege();
+
+  if (ReadLockMemoryEnable())
+    NSecurity::EnableLockMemoryPrivilege();
+}
+
 int WINAPI WinMain(	HINSTANCE hInstance,
 					HINSTANCE hPrevInstance,
 					LPSTR    lpCmdLine,
 					int       nCmdShow)
 {
+  #ifndef _UNICODE
+  g_IsNT = IsItWindowsNT();
+  #endif
   InitCommonControls();
 
   g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
@@ -324,6 +391,7 @@ int WINAPI WinMain(	HINSTANCE hInstance,
     // MessageBoxW(0, paramString, L"", 0);
   }
 
+  SetMemoryLock();
 
 	MSG msg;
 	if (!InitInstance (hInstance, nCmdShow)) 
@@ -331,18 +399,33 @@ int WINAPI WinMain(	HINSTANCE hInstance,
 
   MyLoadMenu(g_HWND);
 
-  HACCEL  hAccels = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
-	while (GetMessage(&msg, NULL, 0, 0)) 
-	{
-		if (!TranslateAccelerator(g_HWND, hAccels, &msg)) 
-		{
-      // if (g_Hwnd != NULL || !IsDialogMessage(g_Hwnd, &msg))
-      // if (!IsDialogMessage(g_Hwnd, &msg))
-      {
+  #ifndef _UNICODE
+  if (g_IsNT)
+  {
+    HACCEL hAccels = LoadAcceleratorsW(hInstance, MAKEINTRESOURCEW(IDR_ACCELERATOR1));
+  	while (GetMessageW(&msg, NULL, 0, 0)) 
+	  {
+  		if (TranslateAcceleratorW(g_HWND, hAccels, &msg) == 0) 
+	  	{
         TranslateMessage(&msg);
-			  DispatchMessage(&msg);
+  	    DispatchMessageW(&msg);
       }
 		}
+	}
+  else
+  #endif
+  {
+    HACCEL hAccels = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
+  	while (GetMessage(&msg, NULL, 0, 0)) 
+	  {
+  		if (TranslateAccelerator(g_HWND, hAccels, &msg) == 0) 
+	  	{
+        // if (g_Hwnd != NULL || !IsDialogMessage(g_Hwnd, &msg))
+        // if (!IsDialogMessage(g_Hwnd, &msg))
+        TranslateMessage(&msg);
+  	    DispatchMessage(&msg);
+      }
+    }
 	}
 
   g_HWND = 0;
@@ -578,7 +661,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     */
    }
-	 return DefWindowProc(hWnd, message, wParam, lParam);
+   #ifndef _UNICODE
+   if (g_IsNT)
+	   return DefWindowProcW(hWnd, message, wParam, lParam);
+   else
+   #endif
+     return DefWindowProc(hWnd, message, wParam, lParam);
+
 }
 
 void OnSize(HWND hWnd)

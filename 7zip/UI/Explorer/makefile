@@ -35,6 +35,7 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\Menu.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \

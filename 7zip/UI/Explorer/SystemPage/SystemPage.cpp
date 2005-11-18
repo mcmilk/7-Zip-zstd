@@ -77,41 +77,39 @@ bool CSystemPage::OnInit()
   UINT32 newFlags = LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT;
   m_ListView.SetExtendedListViewStyle(newFlags, newFlags);
 
-  CSysString s; //  = TEXT("Items"); // LangLoadString(IDS_PROPERTY_EXTENSION, 0x02000205);
-  LVCOLUMN column;
+  UString s; //  = TEXT("Items"); // LangLoadString(IDS_PROPERTY_EXTENSION, 0x02000205);
+  LVCOLUMNW column;
   column.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
   column.cx = 270;
   column.fmt = LVCFMT_LEFT;
-  column.pszText = (LPTSTR)(LPCTSTR)s;
+  column.pszText = (LPWSTR)(LPCWSTR)s;
   column.iSubItem = 0;
   m_ListView.InsertColumn(0, &column);
 
   for (int i = 0; i < kNumMenuItems; i++)
   {
     CContextMenuItem &menuItem = kMenuItems[i];
-    LVITEM item;
+    LVITEMW item;
     item.iItem = i;
     item.mask = LVIF_TEXT | LVIF_PARAM;
     item.lParam = i;
 
-    UString s = LangLoadStringW(menuItem.ControlID, menuItem.LangID);
+    UString s = LangString(menuItem.ControlID, menuItem.LangID);
 
     switch(menuItem.ControlID)
     {
       case IDS_CONTEXT_EXTRACT_TO:
-        s = MyFormatNew(s, LangLoadStringW(IDS_CONTEXT_FOLDER, 0x02000140));
+        s = MyFormatNew(s, LangString(IDS_CONTEXT_FOLDER, 0x02000140));
         break;
       case IDS_CONTEXT_COMPRESS_TO:
       case IDS_CONTEXT_COMPRESS_TO_EMAIL:
-        s = MyFormatNew(s, LangLoadStringW(IDS_CONTEXT_ARCHIVE, 0x02000141));
+        s = MyFormatNew(s, LangString(IDS_CONTEXT_ARCHIVE, 0x02000141));
         break;
     }
 
-    CSysString ext = GetSystemString(s);
-
     // UString MyFormatNew(const UString &format, const UString &argument);
 
-    item.pszText = (LPTSTR)(LPCTSTR)ext;
+    item.pszText = (LPWSTR)(LPCWSTR)s;
     item.iSubItem = 0;
     int itemIndex = m_ListView.InsertItem(&item);
     m_ListView.SetCheckState(itemIndex, ((contextMenuFlags & menuItem.Flag) != 0));

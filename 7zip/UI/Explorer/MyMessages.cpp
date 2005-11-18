@@ -27,7 +27,7 @@ void MyMessageBox(UINT32 id
     )
 {
   #ifdef LANG        
-  MyMessageBox(LangLoadStringW(id, langID));
+  MyMessageBox(LangString(id, langID));
   #else
   MyMessageBox(MyLoadStringW(id));
   #endif

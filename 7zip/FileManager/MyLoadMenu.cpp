@@ -135,61 +135,6 @@ static int FindLangItem(int ControlID)
   return -1;
 }
 
-/*
-void MyChangeMenu(HMENU menuLoc, int baseIndex = -1)
-{
-  CMenu menu;
-  menu.Attach(menuLoc);
-  for (int i = 0; i < menu.GetItemCount(); i++)
-  {
-    HMENU subMenu = menu.GetSubMenu(i);
-    CSysString menuString;
-    menu.GetMenuString(i, MF_BYPOSITION, menuString);
-
-    // if (menu.GetItemInfo(i, true, &menuInfo))
-    {
-      CSysString newString;
-      if (subMenu)
-      {
-        MyChangeMenu(subMenu);
-        if (baseIndex >= 0 && baseIndex < sizeof(kStringLangPairs) / 
-              sizeof(kStringLangPairs[0]))
-          newString = LangLoadString(kStringLangPairs[baseIndex++].LangID);
-        else
-          continue;
-        if (newString.IsEmpty())
-          continue;
-
-        // int langPos = FindStringLangItem(GetUnicodeString(menuInfo.dwTypeData));
-        // if (langPos >= 0)
-        //   newString = LangLoadString(kStringLangPairs[langPos].LangID);
-        // else
-        //   newString = menuInfo.dwTypeData;
-      }
-      else
-      {
-        UINT id = menu.GetItemID(i);
-        int langPos = FindLangItem(id);
-        if (langPos < 0)
-          continue;
-        newString = LangLoadString(kIDLangPairs[langPos].LangID);
-        if (newString.IsEmpty())
-          continue;
-        int tabPos = menuString.ReverseFind(wchar_t('\t'));
-        if (tabPos >= 0)
-          newString += menuString.Mid(tabPos);
-      }
-      MENUITEMINFO menuInfo;
-      menuInfo.cbSize = sizeof(menuInfo);
-      menuInfo.fType = MFT_STRING;
-      menuInfo.fMask = MIIM_TYPE;
-      menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)newString;
-      menu.SetItemInfo(i, true, &menuInfo);
-      // HMENU subMenu = menu.GetSubMenu(i);
-    }
-  }
-}
-*/
 
 /*
 static bool g_IsNew_fMask = true;
@@ -241,70 +186,62 @@ static UINT Get_fMaskForFTypeAndString()
   return MIIM_TYPE;
 }
 
+
+
 static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 {
   CMenu menu;
   menu.Attach(menuLoc);
   for (int i = 0; i < menu.GetItemCount(); i++)
   {
-    MENUITEMINFO menuInfo;
-    ZeroMemory(&menuInfo, sizeof(menuInfo));
-    menuInfo.cbSize = sizeof(menuInfo);
-    menuInfo.fMask = Get_fMaskForString() | MIIM_SUBMENU | MIIM_ID;
-    menuInfo.fType = MFT_STRING;
-    const int kBufferSize = 1024;
-    TCHAR buffer[kBufferSize + 1];
-    menuInfo.dwTypeData = buffer;
-    menuInfo.cch = kBufferSize;
-    if (menu.GetItemInfo(i, true, &menuInfo))
+    CMenuItem item;
+    item.fMask = Get_fMaskForString() | MIIM_SUBMENU | MIIM_ID;
+    item.fType = MFT_STRING;
+    if (menu.GetItem(i, true, item))
     {
-      CSysString newString;
-      if (menuInfo.hSubMenu)
+      UString newString;
+      if (item.hSubMenu)
       {
         if (level == 1 && menuIndex == kBookmarksMenuIndex)
-          newString = GetSystemString(LangLoadString(kAddToFavoritesLangID));
+          newString = LangString(kAddToFavoritesLangID);
         else
         {
-          MyChangeMenu(menuInfo.hSubMenu, level + 1, i);
+          MyChangeMenu(item.hSubMenu, level + 1, i);
           if (level == 1 && menuIndex == kViewMenuIndex)
           {
-            newString = GetSystemString(LangLoadString(kToolbarsLangID));
+            newString = LangString(kToolbarsLangID);
           }
           else
           {
             if (level == 0 && i < sizeof(kStringLangPairs) / 
               sizeof(kStringLangPairs[0]))
-              newString = GetSystemString(LangLoadString(kStringLangPairs[i].LangID));
+              newString = LangString(kStringLangPairs[i].LangID);
             else
               continue;
           }
         }
         if (newString.IsEmpty())
           continue;
-
-        // int langPos = FindStringLangItem(GetUnicodeString(menuInfo.dwTypeData));
-        // if (langPos >= 0)
-        //   newString = LangLoadString(kStringLangPairs[langPos].LangID);
-        // else
-        //   newString = menuInfo.dwTypeData;
       }
       else
       {
-        int langPos = FindLangItem(menuInfo.wID);
+        int langPos = FindLangItem(item.wID);
         if (langPos < 0)
           continue;
-        newString = GetSystemString(LangLoadString(kIDLangPairs[langPos].LangID));
+        newString = LangString(kIDLangPairs[langPos].LangID);
         if (newString.IsEmpty())
           continue;
-        CSysString shorcutString = menuInfo.dwTypeData;
+        UString shorcutString = item.StringValue;
         int tabPos = shorcutString.ReverseFind(wchar_t('\t'));
         if (tabPos >= 0)
           newString += shorcutString.Mid(tabPos);
       }
-      menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)newString;
-      menuInfo.fMask = Get_fMaskForString();
-      menuInfo.fType = MFT_STRING;
-      menu.SetItemInfo(i, true, &menuInfo);
+      {
+        item.StringValue = newString;
+        item.fMask = Get_fMaskForString();
+        item.fType = MFT_STRING;
+        menu.SetItem(i, true, item);
+      }
     }
   }
 }
@@ -353,20 +290,12 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
   int startPos = 0;
   for (int i = 0; i < srcMenu.GetItemCount(); i++)
   {
-    MENUITEMINFO menuInfo;
-    ZeroMemory(&menuInfo, sizeof(menuInfo));
-    menuInfo.cbSize = sizeof(menuInfo);
-    menuInfo.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
-    menuInfo.fType = MFT_STRING;
-    const int kBufferSize = 1024;
-    TCHAR buffer[kBufferSize + 1];
-    menuInfo.dwTypeData = buffer;
-    menuInfo.cch = kBufferSize;
-    if (srcMenu.GetItemInfo(i, true, &menuInfo))
-    {
-      if (destMenu.InsertItem(startPos, true, &menuInfo))
+    CMenuItem item;
+    item.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fType = MFT_STRING;
+    if (srcMenu.GetItem(i, true, item))
+      if (destMenu.InsertItem(startPos, true, item))
         startPos++;
-    }
   }
 }
 
@@ -422,14 +351,13 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
     int i;
     for (i = 0; i < 10; i++)
     {
-      UString s = LangLoadStringW(IDS_BOOKMARK, 0x03000720);
+      UString s = LangString(IDS_BOOKMARK, 0x03000720);
       s += L" ";
       wchar_t c = L'0' + i;
       s += c;
       s += L"\tAlt+Shift+";
       s += c;
-      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, 
-        GetSystemString(s));
+      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
     }
 
     while (menu.GetItemCount() > 2)
@@ -445,15 +373,13 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
         path = path.Left(kFirstPartSize) + UString(L" ... ") +
           path.Right(kMaxSize - kFirstPartSize);
       }
-      CSysString s = GetSystemString(path);
+      UString s = path;
       if (s.IsEmpty())
-        s = TEXT("-");
-      s += TEXT("\tAlt+");
-      s += ('0' + i);
+        s = L"-";
+      s += L"\tAlt+";
+      s += (L'0' + i);
       menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
     }
-
-    // menu.AppendItem(MF_STRING, 100, TEXT("Test2\tAlt+2"));
   }
 }
 
@@ -490,47 +416,17 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode,
   
   for (int i = 0; i < g_FileMenu.GetItemCount(); i++)
   {
-    MENUITEMINFO menuInfo;
-    ZeroMemory(&menuInfo, sizeof(menuInfo));
-    menuInfo.cbSize = sizeof(menuInfo);
+    CMenuItem item;
 
-    /*
-    menuInfo.fMask = MIIM_STATE | MIIM_ID | MIIM_TYPE;
-    menuInfo.fType = MFT_STRING;
-
-    if (!srcMenu.GetItemInfo(i, true, &menuInfo))
-    {
-      // MessageBox(0, NError::MyFormatMessage(GetLastError()), "Error", 0);
-      continue;
-    }
-    // menuInfo.wID = srcMenu.GetItemID(i);
-    // menuInfo.fState = srcMenu.GetItemState(i, MF_BYPOSITION);
-
-    // menuInfo.hSubMenu = srcMenu.GetSubMenu(i);
-    CSysString menuString;
-    if (menuInfo.fType == MFT_STRING)
-    {
-      srcMenu.GetMenuString(i, MF_BYPOSITION, menuString);
-      menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)menuString;
-    }
-    menuInfo.dwTypeData = (LPTSTR)(LPCTSTR)menuString;
-    */
-    
-    menuInfo.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
-    menuInfo.fType = MFT_STRING;
-    const int kBufferSize = 1024;
-    TCHAR buffer[kBufferSize + 1];
-    menuInfo.dwTypeData = buffer;
-    menuInfo.cch = kBufferSize;
-
-    if (g_FileMenu.GetItemInfo(i, true, &menuInfo))
+    item.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fType = MFT_STRING;
+    if (g_FileMenu.GetItem(i, true, item))
     {
       if (!programMenu)
-        if (menuInfo.wID == IDCLOSE)
+        if (item.wID == IDCLOSE)
           continue;
       /*
-      bool createItem = (menuInfo.wID == IDM_CREATE_FOLDER || 
-          menuInfo.wID == IDM_CREATE_FILE);
+      bool createItem = (item.wID == IDM_CREATE_FOLDER || item.wID == IDM_CREATE_FILE);
       if (forFileMode)
       {
         if (createItem)
@@ -542,21 +438,20 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode,
          continue;
       }
       */
-      if (destMenu.InsertItem(startPos, true, &menuInfo))
+      if (destMenu.InsertItem(startPos, true, item))
         startPos++;
     }
   }
   while (destMenu.GetItemCount() > 0)
   {
-    MENUITEMINFO menuInfo;
-    ZeroMemory(&menuInfo, sizeof(menuInfo));
-    menuInfo.cbSize = sizeof(menuInfo);
-    menuInfo.fMask = MIIM_TYPE;
-    menuInfo.dwTypeData = 0;
+    CMenuItem item;
+    item.fMask = MIIM_TYPE;
+    item.fType = 0;
+    // item.dwTypeData = 0;
     int lastIndex = destMenu.GetItemCount() - 1;
-    if (!destMenu.GetItemInfo(lastIndex, true, &menuInfo))
+    if (!destMenu.GetItem(lastIndex, true, item))
       break;
-    if(menuInfo.fType != MFT_SEPARATOR)
+    if(item.fType != MFT_SEPARATOR)
       break;
     if (!destMenu.RemoveItem(lastIndex, MF_BYPOSITION))
       break;

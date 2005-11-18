@@ -481,6 +481,14 @@ SOURCE=..\..\..\Windows\Handle.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\MemoryLock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File

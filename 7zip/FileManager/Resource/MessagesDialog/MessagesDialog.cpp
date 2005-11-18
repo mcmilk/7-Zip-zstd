@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 #include "MessagesDialog.h"
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
 #include "Windows/ResourceString.h"
 
 #ifdef LANG        
@@ -18,24 +19,21 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
-void CMessagesDialog::AddMessageDirect(LPCTSTR message)
+void CMessagesDialog::AddMessageDirect(LPCWSTR message)
 {
   int itemIndex = _messageList.GetItemCount();
-  LVITEM item;
+  LVITEMW item;
   item.mask = LVIF_TEXT;
   item.iItem = itemIndex;
 
-  CSysString stringNumber;
-  TCHAR sz[32];
-  wsprintf(sz, TEXT("%d"), itemIndex);
-  stringNumber = sz;
+  wchar_t sz[32];
+  ConvertInt64ToString(itemIndex, sz);
 
-  item.pszText = (LPTSTR)(LPCTSTR)stringNumber;
+  item.pszText = sz;
   item.iSubItem = 0;
   _messageList.InsertItem(&item);
 
-  item.mask = LVIF_TEXT;
-  item.pszText = (LPTSTR)message;
+  item.pszText = (LPWSTR)message;
   item.iSubItem = 1;
   _messageList.SetItem(&item);
 }
@@ -48,10 +46,10 @@ void CMessagesDialog::AddMessage(LPCWSTR message)
     int pos = s.Find(L'\n');
     if (pos < 0)
       break;
-    AddMessageDirect(GetSystemString(s.Left(pos)));
+    AddMessageDirect(s.Left(pos));
     s.Delete(0, pos + 1);
   }
-  AddMessageDirect(GetSystemString(s));
+  AddMessageDirect(s);
 }
 
 bool CMessagesDialog::OnInit() 
@@ -61,11 +59,12 @@ bool CMessagesDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _messageList.Attach(GetItem(IDC_MESSAGE_LIST));
+  _messageList.SetUnicodeFormat(true);
 
-  LVCOLUMN columnInfo;
+  LVCOLUMNW columnInfo;
   columnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
   columnInfo.fmt = LVCFMT_LEFT;
-  columnInfo.pszText = TEXT("#");
+  columnInfo.pszText = L"#";
   columnInfo.iSubItem = 0;
   columnInfo.cx = 30;
 
@@ -74,13 +73,14 @@ bool CMessagesDialog::OnInit()
 
   columnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
   columnInfo.fmt = LVCFMT_LEFT;
-  #ifdef LANG
-  CSysString s = LangLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
+  UString s = 
+  #ifdef LANG        
+  LangString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
   #else
-  CSysString s = MyLoadString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
+  MyLoadStringW(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
   #endif
 
-  columnInfo.pszText = (LPTSTR)(LPCTSTR)s;
+  columnInfo.pszText = (LPWSTR)(LPCWSTR)s;
   columnInfo.iSubItem = 1;
   columnInfo.cx = 450;
 

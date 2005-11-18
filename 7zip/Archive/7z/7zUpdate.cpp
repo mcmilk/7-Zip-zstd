@@ -566,11 +566,21 @@ static HRESULT Update2(
   UInt64 complexity = 0;
   for(i = 0; i < folderRefs.Size(); i++)
     complexity += database->GetFolderFullPackSize(folderRefs[i]);
+  UInt64 inSizeForReduce = 0;
   for(i = 0; i < updateItems.Size(); i++)
   {
     const CUpdateItem &updateItem = updateItems[i];
     if (updateItem.NewData)
+    {
       complexity += updateItem.Size;
+      if (numSolidFiles == 1)
+      {
+        if (updateItem.Size > inSizeForReduce)
+          inSizeForReduce = updateItem.Size;
+      }
+      else
+        inSizeForReduce += updateItem.Size;
+    }
   }
   RINOK(updateCallback->SetTotal(complexity));
   complexity = 0;
@@ -635,6 +645,10 @@ static HRESULT Update2(
   CObjectVector<CSolidGroup> groups;
   SplitFilesToGroups(*options.Method, options.UseFilters, options.MaxFilter, 
       updateItems, groups);
+
+  const UInt32 kMinReduceSize = (1 << 16);
+  if (inSizeForReduce < kMinReduceSize)
+    inSizeForReduce = kMinReduceSize;
 
   for (int groupIndex = 0; groupIndex < groups.Size(); groupIndex++)
   {
@@ -708,7 +722,7 @@ static HRESULT Update2(
       CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
       localCompressProgressSpec->Init(localProgress, &complexity, NULL);
       
-      RINOK(encoder.Encode(solidInStream, NULL, folderItem, 
+      RINOK(encoder.Encode(solidInStream, NULL, &inSizeForReduce, folderItem, 
         archive.SeqStream, newDatabase.PackSizes, compressProgress));
       // for()
       // newDatabase.PackCRCsDefined.Add(false);

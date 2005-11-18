@@ -15,63 +15,27 @@
 #include "SystemPage/SystemPage.h"
 #include "SystemPage/resource.h"
 
-extern HINSTANCE g_hInstance;
+using namespace NWindows;
 
-static void FillInPropertyPage(PROPSHEETPAGE* page, 
-    HINSTANCE instance, 
-    int dialogID, 
-    NWindows::NControl::CPropertyPage *propertyPage,
-    CSysString &title)
+int OptionsDialog(HWND hwndOwner)
 {
-  page->dwSize = sizeof(PROPSHEETPAGE);
-  page->dwFlags = PSP_HASHELP;
-  page->hInstance = instance;
-  page->pszTemplate = MAKEINTRESOURCE(dialogID);
-  page->pszIcon = NULL;
-  page->pfnDlgProc = NWindows::NControl::ProperyPageProcedure;
-
-  if (title.IsEmpty())
-    page->pszTitle = NULL;
-  else
-  {
-    page->dwFlags |= PSP_USETITLE;
-    page->pszTitle = title;
-  }
-  page->lParam = LPARAM(propertyPage);
-}
-
-int OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
-{
-  const int kNumPages = 2;
-
-  PROPSHEETPAGE pages[kNumPages];
-  
   CSystemPage systemPage;
   CFoldersPage foldersPage;
-  
-  CSysStringVector titles;
   UINT32 langIDs[] = { 0x01000300, 0x01000200};
-  for (int i = 0; i < sizeof(langIDs) / sizeof(langIDs[0]); i++)
-    titles.Add(GetSystemString(LangLoadString(langIDs[i])));
-
-  FillInPropertyPage(&pages[0], hInstance, IDD_SYSTEM, &systemPage, titles[0]);
-  FillInPropertyPage(&pages[1], hInstance, IDD_FOLDERS, &foldersPage, titles[1]);
-
-  PROPSHEETHEADER sheet;
-
-  sheet.dwSize = sizeof(PROPSHEETHEADER);
-  sheet.dwFlags = PSH_PROPSHEETPAGE;
-  sheet.hwndParent = hwndOwner;
-  sheet.hInstance = hInstance;
-
-  CSysString title = LangLoadString(IDS_CONFIG_DIALOG_CAPTION, 0x01000000);
-
-  sheet.pszCaption = title;
-  sheet.nPages = sizeof(pages) / sizeof(PROPSHEETPAGE);
-  sheet.nStartPage = 0;
-  sheet.ppsp = pages;
-  
-  return (PropertySheet(&sheet));
+  UINT pageIDs[] = { IDD_SYSTEM, IDD_FOLDERS};
+  NControl::CPropertyPage *pagePinters[] = { &systemPage, &foldersPage };
+  CObjectVector<NControl::CPageInfo> pages;
+  const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
+  for (int i = 0; i < kNumPages; i++)
+  {
+    NControl::CPageInfo page;
+    page.Title = LangString(langIDs[i]);
+    page.ID = pageIDs[i];
+    page.Page = pagePinters[i];
+    pages.Add(page);
+  }
+  return NControl::MyPropertySheet(pages, hwndOwner, 
+    LangString(IDS_CONFIG_DIALOG_CAPTION, 0x01000000));
 }
 
 STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd, 
@@ -81,7 +45,7 @@ STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd,
   CComBSTR programPath;
   RETUEN_IF_NOT_S_OK(callback->GetProgramPath(programName)));
   */
-  OptionsDialog(hWnd, g_hInstance);
+  OptionsDialog(hWnd);
   return S_OK;
 }
 

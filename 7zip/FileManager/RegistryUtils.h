@@ -5,11 +5,11 @@
 #ifndef __REGISTRYUTILS_H
 #define __REGISTRYUTILS_H
 
-void SaveRegLang(const CSysString &langFile);
-void ReadRegLang(CSysString &langFile);
+void SaveRegLang(const UString &langFile);
+void ReadRegLang(UString &langFile);
 
-void SaveRegEditor(const CSysString &langFile);
-void ReadRegEditor(CSysString &langFile);
+void SaveRegEditor(const UString &editorPath);
+void ReadRegEditor(UString &editorPath);
 
 void SaveShowDots(bool showDots);
 bool ReadShowDots();
@@ -28,6 +28,12 @@ bool ReadShowGrid();
 
 void SaveAlternativeSelection(bool enable);
 bool ReadAlternativeSelection();
+
+// void SaveLockMemoryAdd(bool enable);
+// bool ReadLockMemoryAdd();
+
+bool ReadLockMemoryEnable();
+void SaveLockMemoryEnable(bool enable);
 
 /*
 void SaveSingleClick(bool enable);

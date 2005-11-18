@@ -33,6 +33,7 @@ FM_OBJS = \
   $O\PanelSelect.obj \
   $O\PanelSort.obj \
   $O\PanelSplitFile.obj \
+  $O\PhysDriveFolder.obj \
   $O\ProgramLocation.obj \
   $O\PropertyName.obj \
   $O\RegistryAssociations.obj \
@@ -65,19 +66,24 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\Error.obj \
+  $O\FileDevice.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
   $O\FileSystem.obj \
   $O\Memory.obj \
+  $O\MemoryLock.obj \
+  $O\Menu.obj \
   $O\Net.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
+  $O\Security.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\Window.obj \

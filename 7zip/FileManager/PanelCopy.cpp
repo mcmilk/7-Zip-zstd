@@ -55,7 +55,7 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
   {
-    UString errorMessage = LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
+    UString errorMessage = LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     if (showErrorMessages)
       MessageBox(errorMessage);
     else if (messages != 0)
@@ -71,9 +71,9 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   extracter.ExtractCallbackSpec->ShowMessages = showErrorMessages;
 
   UString title = moveMode ? 
-      LangLoadStringW(IDS_MOVING, 0x03020206):
-      LangLoadStringW(IDS_COPYING, 0x03020205);
-  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+      LangString(IDS_MOVING, 0x03020206):
+      LangString(IDS_COPYING, 0x03020205);
+  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
 
   extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = GetParent();
   extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
@@ -133,7 +133,7 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
   {
-    UString errorMessage = LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
+    UString errorMessage = LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     if (showErrorMessages)
       MessageBox(errorMessage);
     else if (messages != 0)
@@ -145,8 +145,8 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
   updater.UpdateCallbackSpec = new CUpdateCallback100Imp;
   updater.UpdateCallback = updater.UpdateCallbackSpec;
 
-  UString title = LangLoadStringW(IDS_COPYING, 0x03020205);
-  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
+  UString title = LangString(IDS_COPYING, 0x03020205);
+  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
 
   updater.UpdateCallbackSpec->ProgressDialog.MainWindow = GetParent();
   updater.UpdateCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
@@ -176,8 +176,8 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
 
 void CPanel::CopyFrom(const UStringVector &filePaths)
 {
-  UString title = LangLoadStringW(IDS_CONFIRM_FILE_COPY, 0x03020222);
-  UString message = LangLoadStringW(IDS_WANT_TO_COPY_FILES, 0x03020223);
+  UString title = LangString(IDS_CONFIRM_FILE_COPY, 0x03020222);
+  UString message = LangString(IDS_WANT_TO_COPY_FILES, 0x03020223);
   message += L"\n\'";
   message += _currentFolderPrefix;
   message += L"\' ?";

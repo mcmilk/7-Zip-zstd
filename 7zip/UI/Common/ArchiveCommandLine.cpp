@@ -27,7 +27,7 @@ using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
 
-static const int kNumSwitches = 24;
+static const int kNumSwitches = 25;
 
 namespace NKey {
 enum Enum
@@ -55,7 +55,8 @@ enum Enum
   kStdOut,
   kOverwrite,
   kEmail,
-  kShowDialog
+  kShowDialog,
+  kLargePages
 };
 
 }
@@ -117,7 +118,8 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"SO",  NSwitchType::kSimple, false, 0 },
     { L"AO",  NSwitchType::kPostChar, false, 1, 1, kOverwritePostCharSet},
     { L"SEML", NSwitchType::kUnLimitedPostString, false, 0},
-    { L"AD",  NSwitchType::kSimple, false }
+    { L"AD",  NSwitchType::kSimple, false },
+    { L"SLP", NSwitchType::kUnLimitedPostString, false, 0}
   };
 
 static const int kNumCommandForms = 7;
@@ -709,6 +711,16 @@ void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
   options.StdOutMode = parser[NKey::kStdOut].ThereIs;
   options.EnableHeaders = !parser[NKey::kDisableHeaders].ThereIs;
   options.HelpMode = parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs;
+
+  #ifdef _WIN32
+  options.LargePages = false;
+  if (parser[NKey::kLargePages].ThereIs)
+  {
+    const UString &postString = parser[NKey::kLargePages].PostStrings.Front();
+    if (postString.IsEmpty())
+      options.LargePages = true;
+  }
+  #endif
 }
 
 void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)

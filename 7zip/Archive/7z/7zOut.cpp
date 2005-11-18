@@ -576,8 +576,8 @@ HRESULT COutArchive::EncodeStream(CEncoder &encoder, const Byte *data, size_t da
   CFolder folderItem;
   folderItem.UnPackCRCDefined = true;
   folderItem.UnPackCRC = CCRC::CalculateDigest(data, dataSize);
-  RINOK(encoder.Encode(stream, NULL, folderItem, SeqStream,
-      packSizes, NULL));
+  UInt64 dataSize64 = dataSize;
+  RINOK(encoder.Encode(stream, NULL, &dataSize64, folderItem, SeqStream, packSizes, NULL));
   folders.Add(folderItem);
   return S_OK;
 }

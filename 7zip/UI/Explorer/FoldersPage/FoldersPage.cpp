@@ -38,7 +38,6 @@ static const int kNumWorkModeButtons = sizeof(kWorkModeButtons) / sizeof(kWorkMo
 bool CFoldersPage::OnInit() 
 {
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
-  // CZipRegistryManager aRegistryManager;
   ReadWorkDirInfo(m_WorkDirInfo);
 
   CheckButton(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, m_WorkDirInfo.ForRemovableOnly);
@@ -66,26 +65,26 @@ int CFoldersPage::GetWorkMode() const
 
 void CFoldersPage::MyEnableControls()
 {
-  bool anEnablePath = (GetWorkMode() == NWorkDir::NMode::kSpecified);
-  m_WorkPath.Enable(anEnablePath);
-  m_ButtonSetWorkPath.Enable(anEnablePath);
+  bool enablePath = (GetWorkMode() == NWorkDir::NMode::kSpecified);
+  m_WorkPath.Enable(enablePath);
+  m_ButtonSetWorkPath.Enable(enablePath);
 }
 
-void CFoldersPage::GetWorkDir(NWorkDir::CInfo &aWorkDirInfo)
+void CFoldersPage::GetWorkDir(NWorkDir::CInfo &workDirInfo)
 {
-  m_WorkPath.GetText(aWorkDirInfo.Path);
-  aWorkDirInfo.ForRemovableOnly = IsButtonCheckedBool(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE);
-  aWorkDirInfo.Mode = NWorkDir::NMode::EEnum(GetWorkMode());
+  m_WorkPath.GetText(workDirInfo.Path);
+  workDirInfo.ForRemovableOnly = IsButtonCheckedBool(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE);
+  workDirInfo.Mode = NWorkDir::NMode::EEnum(GetWorkMode());
 }
 
 /*
 bool CFoldersPage::WasChanged()
 {
-  NWorkDir::CInfo aWorkDirInfo;
-  GetWorkDir(aWorkDirInfo);
-  return (aWorkDirInfo.Mode != m_WorkDirInfo.Mode ||
-      aWorkDirInfo.ForRemovableOnly != m_WorkDirInfo.ForRemovableOnly ||
-      aWorkDirInfo.Path.Compare(m_WorkDirInfo.Path) != 0);
+  NWorkDir::CInfo workDirInfo;
+  GetWorkDir(workDirInfo);
+  return (workDirInfo.Mode != m_WorkDirInfo.Mode ||
+      workDirInfo.ForRemovableOnly != m_WorkDirInfo.ForRemovableOnly ||
+      workDirInfo.Path.Compare(m_WorkDirInfo.Path) != 0);
 }
 */
 
@@ -100,16 +99,16 @@ void CFoldersPage::ModifiedEvent()
   */
 }
 
-bool CFoldersPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
+bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 { 
   for (int i = 0; i < kNumWorkModeButtons; i++)
-    if (aButtonID == kWorkModeButtons[i])
+    if (buttonID == kWorkModeButtons[i])
     {
       MyEnableControls();
       ModifiedEvent();
       return true;
     }
-  switch(aButtonID)
+  switch(buttonID)
   {
     case IDC_FOLDERS_WORK_BUTTON_PATH:
       OnFoldersWorkButtonPath();
@@ -117,32 +116,29 @@ bool CFoldersPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
     case IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE:
       break;
     default:
-      return CPropertyPage::OnButtonClicked(aButtonID, aButtonHWND);
+      return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
   }
   ModifiedEvent();
   return true;
 }
 
-bool CFoldersPage::OnCommand(int aCode, int anItemID, LPARAM lParam)
+bool CFoldersPage::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (aCode == EN_CHANGE && anItemID == IDC_FOLDERS_WORK_EDIT_PATH)
+  if (code == EN_CHANGE && itemID == IDC_FOLDERS_WORK_EDIT_PATH)
   {
     ModifiedEvent();
     return true;
   }
-  return CPropertyPage::OnCommand(aCode, anItemID, lParam);
+  return CPropertyPage::OnCommand(code, itemID, lParam);
 }
 
 void CFoldersPage::OnFoldersWorkButtonPath() 
 {
-  CSysString currentPath;
+  UString currentPath;
   m_WorkPath.GetText(currentPath);
-  
-  UString title = LangLoadStringW(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
-
-  CSysString resultPath;
-  if (NShell::BrowseForFolder(HWND(*this), GetSystemString(title), 
-      currentPath, resultPath))
+  UString title = LangString(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
+  UString resultPath;
+  if (NShell::BrowseForFolder(HWND(*this), title, currentPath, resultPath))
     m_WorkPath.SetText(resultPath);
 }
 

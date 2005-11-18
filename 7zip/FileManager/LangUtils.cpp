@@ -5,7 +5,6 @@
 #include "LangUtils.h"
 #include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
-#include "Windows/ResourceString.h"
 #include "Windows/Synchronization.h"
 #include "Windows/Window.h"
 #include "Windows/FileFind.h"
@@ -15,24 +14,28 @@
 using namespace NWindows;
 
 static CLang g_Lang;
-CSysString g_LangID;
+UString g_LangID;
+
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 void ReloadLang()
 {
   ReadRegLang(g_LangID);
   g_Lang.Clear();
-  if (!g_LangID.IsEmpty() && g_LangID != TEXT("-"))
+  if (!g_LangID.IsEmpty() && g_LangID != L"-")
   {
-    CSysString langPath = g_LangID;
+    UString langPath = g_LangID;
     if (langPath.Find('\\') < 0)
     {
       if (langPath.Find('.') < 0)
-        langPath += TEXT(".txt");
+        langPath += L".txt";
       UString folderPath;
       if (GetProgramFolderPath(folderPath))
-        langPath = GetSystemString(folderPath) + CSysString(TEXT("Lang\\")) + langPath;
+        langPath = folderPath + UString(L"Lang\\") + langPath;
     }
-    g_Lang.Open(langPath);
+    g_Lang.Open(GetSystemString(langPath));
   }
 }
 
@@ -47,14 +50,6 @@ void LoadLangOneTime()
   g_Loaded = true;
   ReloadLang();
 }
-
-/*
-class CLangLoader
-{
-public:
-  CLangLoader() { ReloadLang(); }
-} g_LangLoader;
-*/
 
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems)
 {
@@ -74,10 +69,10 @@ void LangSetWindowText(HWND window, UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
-    SetWindowText(window, GetSystemString(message));
+    MySetWindowText(window, message);
 }
 
-UString LangLoadString(UInt32 langID)
+UString LangString(UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
@@ -85,15 +80,7 @@ UString LangLoadString(UInt32 langID)
   return UString();
 }
 
-CSysString LangLoadString(UINT resourceID, UInt32 langID)
-{
-  UString message;
-  if (g_Lang.GetMessage(langID, message))
-    return GetSystemString(message);
-  return NWindows::MyLoadString(resourceID);
-}
-
-UString LangLoadStringW(UINT resourceID, UInt32 langID)
+UString LangString(UINT resourceID, UInt32 langID)
 {
   UString message;
   if (g_Lang.GetMessage(langID, message))
@@ -180,16 +167,19 @@ void FindMatchLang(UString &shortName)
 
 void ReloadLangSmart()
 {
-  #ifdef _UNICODE
-  ReadRegLang(g_LangID);
-  if (g_LangID.IsEmpty())
-  {
-    UString shortName;
-    FindMatchLang(shortName);
-    if (shortName.IsEmpty())
-      shortName = L"-";
-    SaveRegLang(GetSystemString(shortName));
-  }
+  #ifndef _UNICODE
+  if (g_IsNT)
   #endif
+  {
+    ReadRegLang(g_LangID);
+    if (g_LangID.IsEmpty())
+    {
+      UString shortName;
+      FindMatchLang(shortName);
+      if (shortName.IsEmpty())
+        shortName = L"-";
+      SaveRegLang(shortName);
+    }
+  }
   ReloadLang();
 }

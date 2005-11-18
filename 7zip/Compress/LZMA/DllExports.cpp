@@ -4,6 +4,9 @@
 
 #include "../../../Common/MyInitGuid.h"
 #include "../../../Common/ComTry.h"
+#ifdef _WIN32
+#include "../../../Common/Alloc.h"
+#endif
 
 #include "LZMAEncoder.h"
 #include "LZMADecoder.h"
@@ -20,8 +23,14 @@ DEFINE_GUID(CLSID_CLZMAEncoder,
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
-  // NCompress::NRangeCoder::g_PriceTables.Init();
-  // CCRC::InitTable();
+  if (dwReason == DLL_PROCESS_ATTACH)
+  {
+    // NCompress::NRangeCoder::g_PriceTables.Init();
+    // CCRC::InitTable();
+    #ifdef _WIN32
+    SetLargePageSize();
+    #endif
+  }
 	return TRUE;
 }
 

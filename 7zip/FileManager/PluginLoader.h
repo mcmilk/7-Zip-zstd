@@ -21,7 +21,7 @@ public:
       return GetLastError();
     return createObject(&clsID, &IID_IFolderManager, (void **)manager);
   }
-  HRESULT LoadAndCreateManager(LPCTSTR filePath, REFGUID clsID, IFolderManager **manager)
+  HRESULT LoadAndCreateManager(LPCWSTR filePath, REFGUID clsID, IFolderManager **manager)
   {
     if (!Load(filePath))
       return GetLastError();

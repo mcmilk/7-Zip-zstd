@@ -17,7 +17,6 @@ class CPluginsPage: public NWindows::NControl::CPropertyPage
 public:
   virtual bool OnInit();
   virtual void OnNotifyHelp();
-  // virtual bool OnCommand(int aCode, int anItemID, LPARAM lParam);
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnButtonOptions();
   virtual LONG OnApply();

@@ -18,9 +18,7 @@
 
 #include "../Common/ZipRegistry.h"
 
-#ifdef LANG        
 #include "../../FileManager/LangUtils.h"
-#endif
 
 #include "../Resource/Extract/resource.h"
 #include "../Resource/ExtractDialog/resource.h"
@@ -200,12 +198,14 @@ bool CExtractDialog::OnInit()
   #endif
 
   _path.Attach(GetItem(IDC_EXTRACT_COMBO_PATH));
+
   _path.SetText(DirectoryPath);
   
   #ifndef NO_REGISTRY
   for(int i = 0; i < extractionInfo.Paths.Size() && i < kHistorySize; i++)
     _path.AddString(extractionInfo.Paths[i]);
   #endif
+
   /*
   if(extractionInfo.Paths.Size() > 0) 
     _path.SetCurSel(0);
@@ -243,7 +243,7 @@ void CExtractDialog::UpdatePasswordControl()
 {
   _passwordControl.SetPasswordChar((IsButtonChecked(
     IDC_EXTRACT_CHECK_SHOW_PASSWORD) == BST_CHECKED) ? 0: TEXT('*'));
-  CSysString password;
+  UString password;
   _passwordControl.GetText(password);
   _passwordControl.SetText(password);
 }
@@ -277,19 +277,11 @@ bool CExtractDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 void CExtractDialog::OnButtonSetPath() 
 {
-  CSysString currentPath;
+  UString currentPath;
   _path.GetText(currentPath);
-
-  #ifdef LANG        
-  UString title = LangLoadStringW(IDS_EXTRACT_SET_FOLDER, 0x02000881);
-  #else
-  UString title = MyLoadStringW(IDS_EXTRACT_SET_FOLDER);
-  #endif
-
-
-  CSysString resultPath;
-  if (!NShell::BrowseForFolder(HWND(*this), GetSystemString(title), 
-      currentPath, resultPath))
+  UString title = LangStringSpec(IDS_EXTRACT_SET_FOLDER, 0x02000881);
+  UString resultPath;
+  if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, resultPath))
     return;
   #ifndef NO_REGISTRY
   _path.SetCurSel(-1);
@@ -297,7 +289,7 @@ void CExtractDialog::OnButtonSetPath()
   _path.SetText(resultPath);
 }
 
-void AddUniqueString(CSysStringVector &list, const CSysString &s)
+void AddUniqueString(UStringVector &list, const UString &s)
 {
   for(int i = 0; i < list.Size(); i++)
     if (s.CompareNoCase(list[i]) == 0)
@@ -337,24 +329,20 @@ void CExtractDialog::OnOK()
       currentItem = _path.GetCount() - 1;
   }
   else
-  {
-    CSysString sTemp;
-    _path.GetLBText(currentItem, sTemp);
-    s = GetUnicodeString(sTemp);
-  }
+    _path.GetLBText(currentItem, s);
   
   #endif
 
   s.Trim();
   #ifndef _SFX
-  AddUniqueString(extractionInfo.Paths, GetSystemString(s));
+  AddUniqueString(extractionInfo.Paths, s);
   #endif
   DirectoryPath = s;
   #ifndef  NO_REGISTRY
   for(int i = 0; i < _path.GetCount(); i++)
     if(i != currentItem)
     {
-      CSysString sTemp;
+      UString sTemp;
       _path.GetLBText(i, sTemp);
       sTemp.Trim();
       AddUniqueString(extractionInfo.Paths, sTemp);

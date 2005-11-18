@@ -15,8 +15,7 @@ class CPasswordDialog: public NWindows::NControl::CModalDialog
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:
   UString Password;
-  INT_PTR Create(HWND parentWindow = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PASSWORD), parentWindow); }
+  INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_DIALOG_PASSWORD, parentWindow); }
 };
 
 #endif

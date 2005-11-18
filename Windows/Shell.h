@@ -63,21 +63,29 @@ public:
   bool QueryPoint(LPPOINT point) 
     { return BOOLToBool(::DragQueryPoint(m_Object, point)); }
   void Finish() {  ::DragFinish(m_Object); }
-  UINT QueryFile(UINT fileIndex, LPTSTR fileName, UINT fileNameSize);
+  UINT QueryFile(UINT fileIndex, LPTSTR fileName, UINT fileNameSize)
+    { return ::DragQueryFile(m_Object, fileIndex, fileName, fileNameSize); }
+  #ifndef _UNICODE
+  UINT QueryFile(UINT fileIndex, LPWSTR fileName, UINT fileNameSize)
+    { return ::DragQueryFileW(m_Object, fileIndex, fileName, fileNameSize); }
+  #endif
   UINT QueryCountOfFiles();
-  CSysString QueryFileName(UINT fileIndex);
-  void QueryFileNames(CSysStringVector &fileNames);
+  UString QueryFileName(UINT fileIndex);
+  void QueryFileNames(UStringVector &fileNames);
 };
 
 /////////////////////////////
 // Functions
 
 bool GetPathFromIDList(LPCITEMIDLIST itemIDList, CSysString &path);
-
 bool BrowseForFolder(LPBROWSEINFO lpbi, CSysString &resultPath);
-bool BrowseForFolder(HWND owner, LPCTSTR title,
-    LPCTSTR initialFolder, CSysString &resultPath);
+bool BrowseForFolder(HWND owner, LPCTSTR title, LPCTSTR initialFolder, CSysString &resultPath);
 
+#ifndef _UNICODE
+bool GetPathFromIDList(LPCITEMIDLIST itemIDList, UString &path);
+bool BrowseForFolder(LPBROWSEINFO lpbi, UString &resultPath);
+bool BrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &resultPath);
+#endif
 }}
 
 

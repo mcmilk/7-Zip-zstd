@@ -33,18 +33,17 @@ bool CPluginsPage::OnInit()
 
   _listView.Attach(GetItem(IDC_PLUGINS_LIST));
 
-  UINT32 aNewFlags = /*LVS_EX_CHECKBOXES | */ LVS_EX_FULLROWSELECT;
-  _listView.SetExtendedListViewStyle(aNewFlags, aNewFlags);
+  UINT32 newFlags = /*LVS_EX_CHECKBOXES | */ LVS_EX_FULLROWSELECT;
+  _listView.SetExtendedListViewStyle(newFlags, newFlags);
 
-  // CSysString aString = LangLoadString(IDS_COLUMN_TITLE, 0x02000E81);
-  CSysString aString = TEXT("Plugins");
-  LVCOLUMN aColumn;
-  aColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
-  aColumn.cx = 160;
-  aColumn.fmt = LVCFMT_LEFT;
-  aColumn.pszText = (LPTSTR)(LPCTSTR)aString;
-  aColumn.iSubItem = 0;
-  _listView.InsertColumn(0, &aColumn);
+  UString title = L"Plugins";
+  LVCOLUMNW column;
+  column.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
+  column.cx = 160;
+  column.fmt = LVCFMT_LEFT;
+  column.pszText = (LPWSTR)(LPCWSTR)title;
+  column.iSubItem = 0;
+  _listView.InsertColumn(0, &column);
   
   ReadFileFolderPluginInfoList(_plugins);
 
@@ -52,22 +51,22 @@ bool CPluginsPage::OnInit()
   // _listView.DeleteAllItems();
   for(int i = 0; i < _plugins.Size(); i++)
   {
-    LVITEM anItem;
-    anItem.iItem = i;
-    anItem.mask = LVIF_TEXT | LVIF_STATE;
-    CSysString pluginName = GetSystemString(_plugins[i].Name);
-    anItem.pszText = (TCHAR *)(const TCHAR *)pluginName;
-    anItem.state = 0;
-    anItem.stateMask = UINT(-1);
-    anItem.iSubItem = 0;
-    _listView.InsertItem(&anItem);
+    LVITEMW item;
+    item.iItem = i;
+    item.mask = LVIF_TEXT | LVIF_STATE;
+    UString pluginName = _plugins[i].Name;
+    item.pszText = (WCHAR *)(const WCHAR *)pluginName;
+    item.state = 0;
+    item.stateMask = UINT(-1);
+    item.iSubItem = 0;
+    _listView.InsertItem(&item);
     _listView.SetCheckState(i, true);
   }
   _listView.SetRedraw(true);
   if(_listView.GetItemCount() > 0)
   {
-    UINT aState = LVIS_SELECTED | LVIS_FOCUSED;
-    _listView.SetItemState(0, aState, aState);
+    UINT state = LVIS_SELECTED | LVIS_FOCUSED;
+    _listView.SetItemState(0, state, state);
   }
 
   return CPropertyPage::OnInit();
@@ -76,8 +75,8 @@ bool CPluginsPage::OnInit()
 LONG CPluginsPage::OnApply()
 {
   /*
-  int aSelectedIndex = m_Lang.GetCurSel();
-  int aPathIndex = m_Lang.GetItemData(aSelectedIndex);
+  int selectedIndex = m_Lang.GetCurSel();
+  int aPathIndex = m_Lang.GetItemData(selectedIndex);
   SaveRegLang(m_Paths[aPathIndex]);
   ReloadLang();
   */
@@ -123,31 +122,14 @@ STDMETHODIMP CPluginOptionsCallback::GetProgramFolderPath(BSTR *value)
   UString folder;
   if (!::GetProgramFolderPath(folder))
     return E_FAIL;
-  CMyComBSTR valueTemp = GetUnicodeString(folder);
+  CMyComBSTR valueTemp = folder;
   *value = valueTemp.Detach();
   return S_OK;
 }
 
-#ifndef _WIN64
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO aVersionInfo;
-  aVersionInfo.dwOSVersionInfoSize = sizeof(aVersionInfo);
-  if (!::GetVersionEx(&aVersionInfo)) 
-    return false;
-  return (aVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
-
 static UString GetDefaultProgramName()
 {
-  UString name;
-  name += L"7zFM";
-  #ifndef _WIN64
-  if (IsItWindowsNT())
-    name += L"n";
-  #endif
-  return name + L".exe";
+  return L"7zFM.exe";
 }
 
 STDMETHODIMP CPluginOptionsCallback::GetProgramPath(BSTR *value)
@@ -214,9 +196,9 @@ bool CPluginsPage::OnNotify(UINT controlID, LPNMHDR lParam)
     const NMLISTVIEW *aNMListView = (const NMLISTVIEW *)lParam;
     if ((aNMListView->uChanged & LVIF_STATE) != 0)
     {
-      UINT anOldState = aNMListView->uOldState & LVIS_STATEIMAGEMASK;
-      UINT aNewState = aNMListView->uNewState & LVIS_STATEIMAGEMASK;
-      if (anOldState != aNewState)
+      UINT oldState = aNMListView->uOldState & LVIS_STATEIMAGEMASK;
+      UINT newState = aNMListView->uNewState & LVIS_STATEIMAGEMASK;
+      if (oldState != newState)
         Changed();
     }
     return true;
@@ -225,14 +207,14 @@ bool CPluginsPage::OnNotify(UINT controlID, LPNMHDR lParam)
 }
 
 /*
-bool CPluginsPage::OnCommand(int aCode, int anItemID, LPARAM lParam)
+bool CPluginsPage::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (aCode == CBN_SELCHANGE && anItemID == IDC_LANG_COMBO_LANG)
+  if (code == CBN_SELCHANGE && itemID == IDC_LANG_COMBO_LANG)
   {
     Changed();
     return true;
   }
-  return CPropertyPage::OnCommand(aCode, anItemID, lParam);
+  return CPropertyPage::OnCommand(code, itemID, lParam);
 }
 
 */

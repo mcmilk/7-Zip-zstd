@@ -45,7 +45,7 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
         #ifdef LANG        
         0x02000982, 
         #endif
-        NumberToStringW(fileInfo.Size));
+        NumberToString(fileInfo.Size));
 
   UString reducedName;
   const int kLineSize = 88;
@@ -70,11 +70,12 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
     timeString = ConvertFileTimeToString(localFileTime);
 
     fullString += 
-    #ifdef LANG
-        LangLoadStringW(IDS_FILE_MODIFIED, 0x02000983);
+    #ifdef LANG        
+    LangString(IDS_FILE_MODIFIED, 0x02000983);
     #else
     MyLoadStringW(IDS_FILE_MODIFIED);
     #endif
+
     fullString += L" ";
     fullString += timeString;
   }

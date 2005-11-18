@@ -17,7 +17,7 @@ class CFSFolder;
 struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfoW
 {
   bool CompressedSizeIsDefined;
-  UINT64 CompressedSize;
+  UInt64 CompressedSize;
 };
 
 
@@ -34,7 +34,7 @@ class CFSFolder:
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp
 {
-  UINT64 GetSizeOfItem(int anIndex) const;
+  UInt64 GetSizeOfItem(int anIndex) const;
 public:
   MY_QUERYINTERFACE_BEGIN
     MY_QUERYINTERFACE_ENTRY(IEnumProperties)
@@ -51,41 +51,38 @@ public:
 
 
   STDMETHOD(LoadItems)();
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value);
-  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder);
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
+  STDMETHOD(GetProperty)(UInt32 itemIndex, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(BindToFolder)(UInt32 index, IFolderFolder **resultFolder);
   STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder);
   STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder);
   STDMETHOD(GetName)(BSTR *name);
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
   STDMETHOD(GetTypeID)(BSTR *name);
   STDMETHOD(GetPath)(BSTR *path);
   STDMETHOD(WasChanged)(INT32 *wasChanged);
   STDMETHOD(Clone)(IFolderFolder **resultFolder);
-  STDMETHOD(GetItemFullSize)(UINT32 index, PROPVARIANT *value, IProgress *progress);
+  STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress);
 
   // IFolderOperations
 
   STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress);
   STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress);
-  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress);
-  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress);
-  STDMETHOD(CopyTo)(const UINT32 *indices, UINT32 numItems, 
+  STDMETHOD(Rename)(UInt32 index, const wchar_t *newName, IProgress *progress);
+  STDMETHOD(Delete)(const UInt32 *indices, UInt32 numItems, IProgress *progress);
+  STDMETHOD(CopyTo)(const UInt32 *indices, UInt32 numItems, 
       const wchar_t *path, IFolderOperationsExtractCallback *callback);
-  STDMETHOD(MoveTo)(const UINT32 *indices, UINT32 numItems, 
+  STDMETHOD(MoveTo)(const UInt32 *indices, UInt32 numItems, 
       const wchar_t *path, IFolderOperationsExtractCallback *callback);
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
-      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
-  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
-  STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
-
-  // STDMETHOD(DeleteToRecycleBin)(const UINT32 *indices, UINT32 numItems, IProgress *progress);
+      const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress);
+  STDMETHOD(SetProperty)(UInt32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
+  STDMETHOD(GetSystemIconIndex)(UInt32 index, INT32 *iconIndex);
 
 private:
-  UINT _fileCodePage;
   UString _path;
   CObjectVector<CFileInfoEx> _files;
   CMyComPtr<IFolderFolder> _parentFolder;
@@ -97,7 +94,7 @@ private:
 
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
-  HRESULT GetItemFullSize(int index, UINT64 &size, IProgress *progress);
+  HRESULT GetItemFullSize(int index, UInt64 &size, IProgress *progress);
   HRESULT GetComplexName(const wchar_t *name, UString &resultPath);
   HRESULT BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder);
 

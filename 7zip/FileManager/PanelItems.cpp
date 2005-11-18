@@ -186,10 +186,8 @@ void CPanel::InitColumns()
 void CPanel::InsertColumn(int index)
 {
   const CItemProperty &property = _visibleProperties[index];
-  LV_COLUMN column;
+  LV_COLUMNW column;
   column.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM | LVCF_ORDER;
-  TCHAR string[1024];
-  column.pszText = string;
   column.cx = property.Width;
   column.fmt = GetColumnAlign(property.ID, property.Type);
   column.iOrder = property.Order;
@@ -197,7 +195,7 @@ void CPanel::InsertColumn(int index)
   UString propertyName = GetNameOfProperty(property.ID);
   if (propertyName.IsEmpty())
     propertyName = property.Name;
-  lstrcpy(string, GetSystemString(propertyName));
+  column.pszText = (wchar_t *)(const wchar_t *)propertyName;
   _listView.InsertColumn(index, &column);
 }
 
@@ -223,8 +221,8 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
   for (int i = 0; i < _listView.GetItemCount(); i++)
   {
     const int kSize = 1024;
-    TCHAR name[kSize + 1];
-    LVITEM item;
+    WCHAR name[kSize + 1];
+    LVITEMW item;
     item.iItem = i;
     item.pszText = name;
     item.cchTextMax  = kSize;
@@ -236,7 +234,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
     if (realIndex == kParentIndex)
       continue;
     if (_selectedStatusVector[realIndex])
-      selectedNames.Add(GetUnicodeString(item.pszText));
+      selectedNames.Add(item.pszText);
   }
   */
   selectedNames.Sort();
@@ -262,15 +260,15 @@ void CPanel::SaveSelectedState(CSelectedState &s)
         s.FocusedName = GetItemName(realIndex);
         /*
         const int kSize = 1024;
-        TCHAR name[kSize + 1];
-        LVITEM item;
+        WCHAR name[kSize + 1];
+        LVITEMW item;
         item.iItem = focusedItem;
         item.pszText = name;
         item.cchTextMax  = kSize;
         item.iSubItem = 0;
         item.mask = LVIF_TEXT;
         if (_listView.GetItem(&item))
-        focusedName = GetUnicodeString(item.pszText);
+        focusedName = item.pszText;
       */
     }
   }
@@ -320,7 +318,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   _listView.SetRedraw(false);
   // m_RedrawEnabled = false;
 
-  LVITEM item;
+  LVITEMW item;
   ZeroMemory(&item, sizeof(item));
   
   _listView.DeleteAllItems();
@@ -373,13 +371,9 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = kParentIndex;
-    const int kMaxNameSize = MAX_PATH * 2;
-    TCHAR string[kMaxNameSize];
-    lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
-    item.pszText = string;
+    item.pszText = (wchar_t *)(const wchar_t *)itemName;
     UINT32 attributes = FILE_ATTRIBUTE_DIRECTORY;
-    item.iImage = _extToIconMap.GetIconIndex(attributes, 
-        GetSystemString(itemName));
+    item.iImage = _extToIconMap.GetIconIndex(attributes, itemName);
     if (item.iImage < 0)
       item.iImage = 0;
     if(_listView.InsertItem(&item) == -1)
@@ -413,11 +407,9 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     item.iSubItem = subItem++;
     item.lParam = i;
     
-    const int kMaxNameSize = MAX_PATH * 2;
-    TCHAR string[kMaxNameSize + 1];
+    UString correctedName;
     if (itemName.Find(L"     ") >= 0)
     {
-      UString correctedName;
       int pos = 0;
       while (true)
       {
@@ -432,11 +424,10 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
         pos = posNew;
         while (itemName[++pos] == ' ');
       }
-      lstrcpyn(string, GetSystemString(correctedName), kMaxNameSize);
+      item.pszText = (wchar_t *)(const wchar_t *)correctedName;
     }
     else
-      lstrcpyn(string, GetSystemString(itemName), kMaxNameSize);
-    item.pszText = string;
+      item.pszText = (wchar_t *)(const wchar_t *)itemName;
 
     NCOM::CPropVariant propVariant;
     _folder->GetProperty(i, kpidAttributes, &propVariant);
@@ -461,13 +452,12 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
       if (_currentFolderPrefix.IsEmpty())
       {
         int iconIndexTemp;
-        GetRealIconIndex(GetSystemString(itemName + L"\\"), attributes, iconIndexTemp);
+        GetRealIconIndex(itemName + L"\\", attributes, iconIndexTemp);
         item.iImage = iconIndexTemp;
       }
       else
       {
-        item.iImage = _extToIconMap.GetIconIndex(attributes, 
-            GetSystemString(itemName));
+        item.iImage = _extToIconMap.GetIconIndex(attributes, itemName);
       }
     }
     if (item.iImage < 0)
@@ -585,7 +575,7 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   GetOperatedItemIndices(indices);
   if (indices.Size() > 20)
   {
-    MessageBox(LangLoadStringW(IDS_TOO_MANY_ITEMS, 0x02000606));
+    MessageBox(LangString(IDS_TOO_MANY_ITEMS, 0x02000606));
     return;
   }
   
@@ -667,7 +657,7 @@ void CPanel::ReadListViewInfo()
     return;
   CMyComBSTR typeID;
   folderGetTypeID->GetTypeID(&typeID);
-  _typeIDString = GetSystemString((const wchar_t *)typeID);
+  _typeIDString = typeID;
   ::ReadListViewInfo(_typeIDString, _listViewInfo);
 }
 

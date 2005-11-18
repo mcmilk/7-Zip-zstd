@@ -18,6 +18,9 @@
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/Error.h"
+#ifdef _WIN32
+#include "Windows/MemoryLock.h"
+#endif
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
@@ -69,7 +72,7 @@ static const char *kHelpString =
     "<Commands>\n"
     "  a: Add files to archive\n"
     "  d: Delete files from archive\n"
-    "  e: Extract files from archive\n"
+    "  e: Extract files from archive (without using directory names)\n"
     "  l: List contents of archive\n"
 //    "  l[a|t][f]: List contents of archive\n"
 //    "    a - with Additional fields\n"
@@ -77,7 +80,7 @@ static const char *kHelpString =
 //    "    f - with Full pathnames\n"
     "  t: Test integrity of archive\n"
     "  u: Update files to archive\n"
-    "  x: eXtract files with full pathname\n"
+    "  x: eXtract files with full paths\n"
     "<Switches>\n"
     "  -ai[r[-|0]]{@listfile|!wildcard}: Include archives\n"
     "  -ax[r[-|0]]{@listfile|!wildcard}: eXclude archives\n"
@@ -88,7 +91,7 @@ static const char *kHelpString =
     "  -p{Password}: set Password\n"
     "  -r[-|0]: Recurse subdirectories\n"
     "  -sfx[{name}]: Create SFX archive\n"
-    "  -si: read data from stdin\n"
+    "  -si[{name}]: read data from stdin\n"
     "  -so: write data to stdout\n"
     "  -t{Type}: Set type of archive\n"
     "  -v{Size}[b|k|m|g]: Create volumes\n"
@@ -177,6 +180,11 @@ int Main2(
     PrintHelp(g_StdOut);
     return 0;
   }
+
+  #ifdef _WIN32
+  if (options.LargePages)
+    NSecurity::EnableLockMemoryPrivilege();
+  #endif
 
   CStdOutStream &stdStream = options.StdOutMode ? g_StdErr : g_StdOut;
   g_StdStream = &stdStream;

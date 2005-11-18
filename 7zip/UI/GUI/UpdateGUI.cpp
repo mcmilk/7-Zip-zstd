@@ -30,7 +30,7 @@ using namespace NWindows;
 using namespace NFile;
 
 static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
-static const wchar_t *kDefaultSfxModule = L"7zC.sfx";
+static const wchar_t *kDefaultSfxModule = L"7z.sfx";
 static const wchar_t *kSFXExtension = L"exe";
 
 struct CThreadUpdating
@@ -350,8 +350,7 @@ HRESULT UpdateGUI(
   CThread thread;
   if (!thread.Create(CThreadUpdating::MyThreadFunction, &tu))
     throw 271824;
-  const UString title = LangLoadStringW(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
-  tu.UpdateCallbackGUI->StartProgressDialog(title);
+  tu.UpdateCallbackGUI->StartProgressDialog(LangString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
   return tu.Result;
 }
 

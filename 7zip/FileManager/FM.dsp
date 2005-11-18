@@ -259,6 +259,14 @@ SOURCE=.\NetFolder.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\PhysDriveFolder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\PhysDriveFolder.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\RootFolder.cpp
 # End Source File
 # Begin Source File
@@ -682,6 +690,14 @@ SOURCE=..\..\Windows\Control\Window2.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\Windows\CommonDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\CommonDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Windows\Defs.h
 # End Source File
 # Begin Source File
@@ -703,6 +719,14 @@ SOURCE=..\..\Windows\Error.cpp
 # Begin Source File
 
 SOURCE=..\..\Windows\Error.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\FileDevice.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\FileDevice.h
 # End Source File
 # Begin Source File
 
@@ -758,6 +782,18 @@ SOURCE=..\..\Windows\Memory.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Windows\MemoryLock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\MemoryLock.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\Menu.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Windows\Menu.h
 # End Source File
 # Begin Source File
@@ -803,6 +839,14 @@ SOURCE=..\..\Windows\ResourceString.cpp
 # Begin Source File
 
 SOURCE=..\..\Windows\ResourceString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\Security.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Windows\Security.h
 # End Source File
 # Begin Source File
 

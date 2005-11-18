@@ -13,7 +13,7 @@ namespace NExtract
   {
     NPathMode::EEnum PathMode;
     NOverwriteMode::EEnum OverwriteMode;
-    CSysStringVector Paths;
+    UStringVector Paths;
     bool ShowPassword;
   };
 }
@@ -23,9 +23,9 @@ namespace NCompression {
   struct CFormatOptions
   {
     CSysString FormatID;
-    CSysString Options;
+    UString Options;
     UInt32 Level;
-    CSysString Method;
+    UString Method;
     UInt32 Dictionary;
     UInt32 Order;
     void Init() 
@@ -39,7 +39,7 @@ namespace NCompression {
 
   struct CInfo
   {
-    CSysStringVector HistoryArchives;
+    UStringVector HistoryArchives;
     // bool LevelIsDefined;
     UInt32 Level;
     UString ArchiveType;

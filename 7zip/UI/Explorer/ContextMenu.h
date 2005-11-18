@@ -70,7 +70,7 @@ private:
   bool _dropMode;
   UString _dropPath;
   CObjectVector<CCommandMapItem> _commandMap;
-  HRESULT GetFileNames(LPDATAOBJECT dataObject, CSysStringVector &fileNames);
+  HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   UINT FindVerb(const UString &verb);
 
   void FillCommand(ECommandInternalID id, UString &mainString, 

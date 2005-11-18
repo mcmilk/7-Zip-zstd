@@ -13,6 +13,7 @@
 
 #include "../../FileManager/FormatUtils.h"
 #include "../../FileManager/ExtractCallback.h"
+#include "../../FileManager/LangUtils.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../Explorer/MyMessages.h"
@@ -136,13 +137,8 @@ HRESULT ExtractGUI(
     */
   }
   
-  UString title = 
-  #ifdef LANG        
-  LangLoadStringW(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING, 
+  UString title = LangStringSpec(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING, 
       options.TestMode ? 0x02000F90: 0x02000890);
-  #else
-  NWindows::MyLoadStringW(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING);
-  #endif
 
   extracter.ExtractCallbackSpec = extractCallback;
   extracter.ExtractCallback = extractCallback;
@@ -163,8 +159,8 @@ HRESULT ExtractGUI(
       extracter.ExtractCallbackSpec->NumArchiveErrors == 0)
   {
     #ifndef _SFX
-    MessageBoxW(0, LangLoadStringW(IDS_MESSAGE_NO_ERRORS, 0x02000608),
-      LangLoadStringW(IDS_PROGRESS_TESTING, 0x02000F90), 0);
+    MessageBoxW(0, LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608),
+      LangString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
     #endif
   }
   if (extracter.Result != S_OK)

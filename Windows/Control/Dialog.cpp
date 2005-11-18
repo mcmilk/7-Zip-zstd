@@ -2,9 +2,15 @@
 
 #include "StdAfx.h"
 
+#ifndef _UNICODE
+#include "Common/StringConvert.h"
+#endif
 #include "Windows/Control/Dialog.h"
 
 extern HINSTANCE g_hInstance;
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 namespace NWindows {
 namespace NControl {
@@ -81,8 +87,7 @@ bool CDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)
 { 
-  HWND aHWND = CreateDialogParam(g_hInstance, 
-      templateName, parentWindow, DialogProcedure, LPARAM(this));
+  HWND aHWND = CreateDialogParam(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
   if (aHWND == 0)
     return false;
   Attach(aHWND);
@@ -91,16 +96,50 @@ bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)
 
 INT_PTR CModalDialog::Create(LPCTSTR templateName, HWND parentWindow)
 { 
-  return DialogBoxParam(g_hInstance, 
-      templateName, parentWindow, DialogProcedure, LPARAM(this));
+  return DialogBoxParam(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
 }
 
-/*
+#ifndef _UNICODE
+
+bool CModelessDialog::Create(LPCWSTR templateName, HWND parentWindow)
+{ 
+  HWND aHWND;
+  if (g_IsNT)
+    aHWND = CreateDialogParamW(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
+  else
+  {
+    AString name;
+    LPCSTR templateNameA;
+    if (IS_INTRESOURCE(templateName))
+      templateNameA = (LPCSTR)templateName;
+    else
+    {
+      name = GetSystemString(templateName);
+      templateNameA = name;
+    }
+    aHWND = CreateDialogParamA(g_hInstance, templateNameA, parentWindow, DialogProcedure, (LPARAM)this);
+  }
+  if (aHWND == 0)
+    return false;
+  Attach(aHWND);
+  return true;
+}
+
 INT_PTR CModalDialog::Create(LPCWSTR templateName, HWND parentWindow)
 { 
-  return DialogBoxParamW(g_hInstance, 
-      templateName, parentWindow, DialogProcedure, LPARAM(this));
+  if (g_IsNT)
+    return DialogBoxParamW(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
+  AString name;
+  LPCSTR templateNameA;
+  if (IS_INTRESOURCE(templateName))
+    templateNameA = (LPCSTR)templateName;
+  else
+  {
+    name = GetSystemString(templateName);
+    templateNameA = name;
+  }
+  return DialogBoxParamA(g_hInstance, templateNameA, parentWindow, DialogProcedure, (LPARAM)this);
 }
-*/
+#endif 
 
 }}

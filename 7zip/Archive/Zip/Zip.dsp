@@ -142,6 +142,14 @@ SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Random.cpp
 # End Source File
 # Begin Source File

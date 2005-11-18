@@ -19,6 +19,17 @@
 #include "../../UI/GUI/ExtractGUI.h"
 
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+static inline bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
 
 int APIENTRY WinMain(
   HINSTANCE hInstance,
@@ -27,6 +38,10 @@ int APIENTRY WinMain(
   int nCmdShow)
 {
   g_hInstance = (HINSTANCE)hInstance;
+  #ifndef _UNICODE
+  g_IsNT = IsItWindowsNT();
+  #endif
+
   UString password;
   bool assumeYes = false;
   bool outputFolderDefined = false;

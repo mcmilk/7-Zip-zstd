@@ -35,7 +35,7 @@ bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
   {
     _passwordControl.SetPasswordChar((IsButtonChecked(
         IDC_CHECK_PASSWORD_SHOW) == BST_CHECKED) ? 0: TEXT('*'));
-    CSysString password;
+    UString password;
     _passwordControl.GetText(password);
     _passwordControl.SetText(password);
     return true;

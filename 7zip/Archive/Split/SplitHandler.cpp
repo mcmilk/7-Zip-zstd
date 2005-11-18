@@ -276,6 +276,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
 STDMETHODIMP CHandler::Close()
 {
+  _sizes.Clear();
   _streams.Clear();
   return S_OK;
 }

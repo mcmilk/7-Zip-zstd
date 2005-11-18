@@ -23,6 +23,10 @@ public:
     { return HIMAGELIST(SendMessage(TB_SETIMAGELIST, listIndex, (LPARAM)imageList)); }
   bool AddButton(UINT numButtons, LPTBBUTTON buttons)
     { return BOOLToBool(SendMessage(TB_ADDBUTTONS, numButtons, (LPARAM)buttons)); }
+  #ifndef _UNICODE
+  bool AddButtonW(UINT numButtons, LPTBBUTTON buttons)
+    { return BOOLToBool(SendMessage(TB_ADDBUTTONSW, numButtons, (LPARAM)buttons)); }
+  #endif
 };
 
 }}

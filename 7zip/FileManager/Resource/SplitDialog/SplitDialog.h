@@ -21,7 +21,7 @@ public:
   UString Path;
   CRecordVector<UInt64> VolumeSizes;
   INT_PTR Create(HWND parentWindow = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_SPLIT), parentWindow); }
+    { return CModalDialog::Create(IDD_DIALOG_SPLIT, parentWindow); }
 };
 
 #endif

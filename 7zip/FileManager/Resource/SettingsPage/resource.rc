@@ -29,4 +29,7 @@ BEGIN
   CONTROL  "&Alternative selection mode", IDC_SETTINGS_ALTERNATIVE_SELECTION, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
            marg, 122, xSize2, 10
 
+  CONTROL  "Use &large memory pages", IDC_SETTINGS_LARGE_PAGES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 142, xSize2, 10
+
 END

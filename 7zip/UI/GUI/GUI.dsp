@@ -332,6 +332,14 @@ SOURCE=..\..\..\Windows\Control\ListView.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\Windows\CommonDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\CommonDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\DLL.cpp
 # End Source File
 # Begin Source File
@@ -377,6 +385,14 @@ SOURCE=..\..\..\Windows\FileName.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.h
 # End Source File
 # Begin Source File
 

@@ -11,6 +11,8 @@
 
 using namespace NWindows;
 
+static const wchar_t *kEmptyFileAlias = L"[Content]";
+
 static const char *kCreatingArchiveMessage = "Creating archive ";
 static const char *kUpdatingArchiveMessage = "Updating archive ";
 static const char *kScanningMessage = "Scanning";
@@ -129,6 +131,8 @@ HRESULT CUpdateCallbackConsole::GetStream(const wchar_t *name, bool isAnti)
     m_PercentPrinter.PrintString("Anti item    ");
   else
     m_PercentPrinter.PrintString("Compressing  ");
+  if (wcslen(name) == 0)
+    name = kEmptyFileAlias;
   m_PercentPrinter.PrintString(name);
   if (EnablePercents)
   {

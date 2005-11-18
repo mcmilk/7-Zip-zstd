@@ -198,17 +198,17 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     systemContextMenu->QueryContextMenu(hMenu, 0, kSystemStartMenuID, 0x7FFF, Flags);
     
 
-    MENUITEMINFO menuItem;
-    menuItem.cbSize = sizeof(menuItem);
-    menuItem.fMask = MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
-    menuItem.fType = MFT_STRING;
-    menuItem.hSubMenu = popupMenu.Detach();
-    // menuDestroyer.Disable();
-    CSysString popupMenuCaption = LangLoadString(IDS_SYSTEM, 0x030202A0);
-    menuItem.dwTypeData = (LPTSTR)(LPCTSTR)popupMenuCaption;
-    
-    InsertMenuItem(menuSpec, 0, TRUE, &menuItem);
-
+    {
+      CMenu menu;
+      menu.Attach(menuSpec);
+      CMenuItem menuItem;
+      menuItem.fMask = MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
+      menuItem.fType = MFT_STRING;
+      menuItem.hSubMenu = popupMenu.Detach();
+      // menuDestroyer.Disable();
+      menuItem.StringValue = LangString(IDS_SYSTEM, 0x030202A0);
+      menu.InsertItem(0, true, menuItem);
+    }
     /*
     if (Cmd < 100 && Cmd != 0) 
     {
@@ -302,7 +302,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
     CreateSystemMenu(menu, operatedIndices, systemContextMenu);
 
   if (menu.GetItemCount() > 0)
-    menu.AppendItem(MF_SEPARATOR, 0, 0);
+    menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
 
   LoadFileMenu(menu, menu.GetItemCount(), !operatedIndices.IsEmpty(), programMenu);
 }

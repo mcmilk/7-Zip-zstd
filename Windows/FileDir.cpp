@@ -10,25 +10,32 @@
 #include "../Common/StringConvert.h"
 #endif
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NFile {
 namespace NDirectory {
 
 #ifndef _UNICODE
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static UString GetUnicodePath(const CSysString &sysPath)
+  { return MultiByteToUnicodeString(sysPath, GetCurrentCodePage()); }
+static CSysString GetSysPath(LPCWSTR sysPath)
+  { return UnicodeStringToMultiByte(sysPath, GetCurrentCodePage()); }
 #endif
 
 bool MyGetWindowsDirectory(CSysString &path)
 {
-  DWORD needLength = ::GetWindowsDirectory(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+  UINT needLength = ::GetWindowsDirectory(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
   path.ReleaseBuffer();
   return (needLength > 0 && needLength <= MAX_PATH);
 }
 
 bool MyGetSystemDirectory(CSysString &path)
 {
-  DWORD needLength = ::GetSystemDirectory(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+  UINT needLength = ::GetSystemDirectory(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
   path.ReleaseBuffer();
   return (needLength > 0 && needLength <= MAX_PATH);
 }
@@ -36,31 +43,31 @@ bool MyGetSystemDirectory(CSysString &path)
 #ifndef _UNICODE
 bool MyGetWindowsDirectory(UString &path)
 {
-  DWORD needLength = ::GetWindowsDirectoryW(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
-  path.ReleaseBuffer();
-  if (needLength != 0)
-    return (needLength <= MAX_PATH);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
+  if (g_IsNT)
+  {
+    UINT needLength = ::GetWindowsDirectoryW(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+    path.ReleaseBuffer();
+    return (needLength > 0 && needLength <= MAX_PATH);
+  }
   CSysString sysPath;
   if (!MyGetWindowsDirectory(sysPath))
     return false;
-  path = MultiByteToUnicodeString(sysPath, GetCurrentCodePage());
+  path = GetUnicodePath(sysPath);
   return true;
 }
 
 bool MyGetSystemDirectory(UString &path)
 {
-  DWORD needLength = ::GetSystemDirectoryW(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
-  path.ReleaseBuffer();
-  if (needLength != 0)
-    return (needLength <= MAX_PATH);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
+  if (g_IsNT)
+  {
+    UINT needLength = ::GetSystemDirectoryW(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+    path.ReleaseBuffer();
+    return (needLength > 0 && needLength <= MAX_PATH);
+  }
   CSysString sysPath;
   if (!MyGetSystemDirectory(sysPath))
     return false;
-  path = MultiByteToUnicodeString(sysPath, GetCurrentCodePage());
+  path = GetUnicodePath(sysPath);
   return true;
 }
 #endif
@@ -68,50 +75,34 @@ bool MyGetSystemDirectory(UString &path)
 #ifndef _UNICODE
 bool MySetFileAttributes(LPCWSTR fileName, DWORD fileAttributes)
 {  
-  if (::SetFileAttributesW(fileName, fileAttributes))
-    return true; 
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return MySetFileAttributes(UnicodeStringToMultiByte(fileName, 
-      GetCurrentCodePage()), fileAttributes);
+  if (g_IsNT)
+    return BOOLToBool(::SetFileAttributesW(fileName, fileAttributes));
+  return MySetFileAttributes(GetSysPath(fileName), fileAttributes);
 }
 
 bool MyRemoveDirectory(LPCWSTR pathName)
 {  
-  if (::RemoveDirectoryW(pathName))
-    return true; 
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return MyRemoveDirectory(UnicodeStringToMultiByte(pathName, 
-      GetCurrentCodePage()));
+  if (g_IsNT)
+    return BOOLToBool(::RemoveDirectoryW(pathName));
+  return MyRemoveDirectory(GetSysPath(pathName));
 }
 
 bool MyMoveFile(LPCWSTR existFileName, LPCWSTR newFileName)
 {  
-  if (::MoveFileW(existFileName, newFileName))
-    return true; 
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  UINT codePage = GetCurrentCodePage();
-  return MyMoveFile(UnicodeStringToMultiByte(existFileName, codePage),
-      UnicodeStringToMultiByte(newFileName, codePage));
+  if (g_IsNT)
+    return BOOLToBool(::MoveFileW(existFileName, newFileName));
+  return MyMoveFile(GetSysPath(existFileName), GetSysPath(newFileName));
 }
 #endif
 
-bool MyCreateDirectory(LPCTSTR pathName)
-{  
-  return BOOLToBool(::CreateDirectory(pathName, NULL)); 
-}
+bool MyCreateDirectory(LPCTSTR pathName) { return BOOLToBool(::CreateDirectory(pathName, NULL)); }
 
 #ifndef _UNICODE
 bool MyCreateDirectory(LPCWSTR pathName)
 {  
-  if (::CreateDirectoryW(pathName, NULL))
-    return true; 
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return MyCreateDirectory(UnicodeStringToMultiByte(pathName, 
-      GetCurrentCodePage()));
+  if (g_IsNT)
+    return BOOLToBool(::CreateDirectoryW(pathName, NULL));
+  return MyCreateDirectory(GetSysPath(pathName));
 }
 #endif
 
@@ -246,19 +237,17 @@ bool DeleteFileAlways(LPCTSTR name)
 #ifndef _UNICODE
 bool DeleteFileAlways(LPCWSTR name)
 {  
-  if(!MySetFileAttributes(name, 0))
-    return false;
-  if (::DeleteFileW(name))
-    return true;
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return DeleteFileAlways(UnicodeStringToMultiByte(name, 
-      GetCurrentCodePage()));
+  if (g_IsNT)
+  {
+    if(!MySetFileAttributes(name, 0))
+      return false;
+    return BOOLToBool(::DeleteFileW(name));
+  }
+  return DeleteFileAlways(GetSysPath(name));
 }
 #endif
 
-static bool RemoveDirectorySubItems2(const CSysString pathPrefix,
-    const NFind::CFileInfo &fileInfo)
+static bool RemoveDirectorySubItems2(const CSysString pathPrefix, const NFind::CFileInfo &fileInfo)
 {
   if(fileInfo.IsDirectory())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
@@ -282,8 +271,7 @@ bool RemoveDirectoryWithSubItems(const CSysString &path)
 }
 
 #ifndef _UNICODE
-static bool RemoveDirectorySubItems2(const UString pathPrefix,
-    const NFind::CFileInfoW &fileInfo)
+static bool RemoveDirectorySubItems2(const UString pathPrefix, const NFind::CFileInfoW &fileInfo)
 {
   if(fileInfo.IsDirectory())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
@@ -310,21 +298,17 @@ bool RemoveDirectoryWithSubItems(const UString &path)
 
 bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath)
 {
-  DWORD needLength = ::GetShortPathName(longPath, 
-      shortPath.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
+  DWORD needLength = ::GetShortPathName(longPath, shortPath.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
   shortPath.ReleaseBuffer();
-  if (needLength == 0 || needLength >= MAX_PATH)
-    return false;
-  return true;
+  return (needLength > 0 && needLength < MAX_PATH);
 }
 
-bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, 
-    int &fileNamePartStartIndex)
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, int &fileNamePartStartIndex)
 {
+  resultPath.Empty();
   LPTSTR fileNamePointer = 0;
   LPTSTR buffer = resultPath.GetBuffer(MAX_PATH);
-  DWORD needLength = ::GetFullPathName(fileName, MAX_PATH + 1, 
-      buffer, &fileNamePointer);
+  DWORD needLength = ::GetFullPathName(fileName, MAX_PATH + 1, buffer, &fileNamePointer);
   resultPath.ReleaseBuffer();
   if (needLength == 0 || needLength >= MAX_PATH)
     return false;
@@ -336,39 +320,32 @@ bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath,
 }
 
 #ifndef _UNICODE
-bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, 
-    int &fileNamePartStartIndex)
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, int &fileNamePartStartIndex)
 {
   resultPath.Empty();
-  LPWSTR fileNamePointer = 0;
-  LPWSTR buffer = resultPath.GetBuffer(MAX_PATH);
-  DWORD needLength = ::GetFullPathNameW(fileName, MAX_PATH + 1, 
-      buffer, &fileNamePointer);
-  resultPath.ReleaseBuffer();
-  if (needLength == 0)
+  if (g_IsNT)
   {
-    if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+    LPWSTR fileNamePointer = 0;
+    LPWSTR buffer = resultPath.GetBuffer(MAX_PATH);
+    DWORD needLength = ::GetFullPathNameW(fileName, MAX_PATH + 1, buffer, &fileNamePointer);
+    resultPath.ReleaseBuffer();
+    if (needLength == 0 || needLength >= MAX_PATH)
       return false;
-
-    const UINT currentPage = GetCurrentCodePage();
+    if (fileNamePointer == 0)
+      fileNamePartStartIndex = MyStringLen(fileName);
+    else
+      fileNamePartStartIndex = (int)(fileNamePointer - buffer);
+  }
+  else
+  {
     CSysString sysPath;
-    if (!MyGetFullPathName(UnicodeStringToMultiByte(fileName, 
-        currentPage), sysPath, fileNamePartStartIndex))
+    if (!MyGetFullPathName(GetSysPath(fileName), sysPath, fileNamePartStartIndex))
       return false;
-    UString resultPath1 = MultiByteToUnicodeString(
-        sysPath.Left(fileNamePartStartIndex), currentPage);
-    UString resultPath2 = MultiByteToUnicodeString(
-        sysPath.Mid(fileNamePartStartIndex), currentPage);
+    UString resultPath1 = GetUnicodePath(sysPath.Left(fileNamePartStartIndex));
+    UString resultPath2 = GetUnicodePath(sysPath.Mid(fileNamePartStartIndex));
     fileNamePartStartIndex = resultPath1.Length();
     resultPath = resultPath1 + resultPath2;
-    return true;
   }
-  else if (needLength >= MAX_PATH)
-    return false;
-  if (fileNamePointer == 0)
-    fileNamePartStartIndex = MyStringLen(fileName);
-  else
-    fileNamePartStartIndex = fileNamePointer - buffer;
   return true;
 }
 #endif
@@ -430,8 +407,7 @@ bool GetOnlyDirPrefix(LPCWSTR fileName, UString &resultName)
 
 bool MyGetCurrentDirectory(CSysString &path)
 {
-  DWORD needLength = ::GetCurrentDirectory(MAX_PATH + 1, 
-      path.GetBuffer(MAX_PATH + 1));
+  DWORD needLength = ::GetCurrentDirectory(MAX_PATH + 1, path.GetBuffer(MAX_PATH + 1));
   path.ReleaseBuffer();
   return (needLength > 0 && needLength <= MAX_PATH);
 }
@@ -439,26 +415,22 @@ bool MyGetCurrentDirectory(CSysString &path)
 #ifndef _UNICODE
 bool MySetCurrentDirectory(LPCWSTR path)
 {
-  if (::SetCurrentDirectoryW(path))
-    return true;
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return MySetCurrentDirectory(UnicodeStringToMultiByte(path, 
-      GetCurrentCodePage()));
+  if (g_IsNT)
+    return BOOLToBool(::SetCurrentDirectoryW(path));
+  return MySetCurrentDirectory(GetSysPath(path));
 }
 bool MyGetCurrentDirectory(UString &path)
 {
-  DWORD needLength = ::GetCurrentDirectoryW(MAX_PATH + 1, 
-      path.GetBuffer(MAX_PATH + 1));
-  path.ReleaseBuffer();
-  if (needLength != 0)
-    return (needLength <= MAX_PATH);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
+  if (g_IsNT)
+  {
+    DWORD needLength = ::GetCurrentDirectoryW(MAX_PATH + 1, path.GetBuffer(MAX_PATH + 1));
+    path.ReleaseBuffer();
+    return (needLength > 0 && needLength <= MAX_PATH);
+  }
   CSysString sysPath;
   if (!MyGetCurrentDirectory(sysPath))
     return false;
-  path = MultiByteToUnicodeString(sysPath, GetCurrentCodePage());
+  path = GetUnicodePath(sysPath);
   return true;
 }
 #endif
@@ -469,39 +441,35 @@ bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
 {
   LPTSTR filePartPointer;
   DWORD value = ::SearchPath(path, fileName, extension, 
-    MAX_PATH, resultPath.GetBuffer(MAX_PATH), &filePartPointer);
+    MAX_PATH, resultPath.GetBuffer(MAX_PATH + 1), &filePartPointer);
   filePart = (UINT32)(filePartPointer - (LPCTSTR)resultPath);
   resultPath.ReleaseBuffer();
-  if (value == 0 || value > MAX_PATH)
-    return false;
-  return true;
+  return (value > 0 && value <= MAX_PATH);
 }
 
 #ifndef _UNICODE
 bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension, 
   UString &resultPath, UINT32 &filePart)
 {
-  LPWSTR filePartPointer = 0;
-  DWORD value = ::SearchPathW(path, fileName, extension, 
-    MAX_PATH, resultPath.GetBuffer(MAX_PATH), &filePartPointer);
-  resultPath.ReleaseBuffer();
-  if (value != 0)
-    return (value <= MAX_PATH);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
+  if (g_IsNT)
+  {
+    LPWSTR filePartPointer = 0;
+    DWORD value = ::SearchPathW(path, fileName, extension, 
+        MAX_PATH, resultPath.GetBuffer(MAX_PATH + 1), &filePartPointer);
+    filePart = (UINT32)(filePartPointer - (LPCWSTR)resultPath);
+    resultPath.ReleaseBuffer();
+    return (value > 0 && value <= MAX_PATH);
+  }
   
-  const UINT currentPage = GetCurrentCodePage();
   CSysString sysPath;
   if (!MySearchPath(
-      path != 0 ? (LPCTSTR)UnicodeStringToMultiByte(path, currentPage): 0,
-      fileName != 0 ? (LPCTSTR)UnicodeStringToMultiByte(fileName, currentPage): 0,
-      extension != 0 ? (LPCTSTR)UnicodeStringToMultiByte(extension, currentPage): 0,
+      path != 0 ? (LPCTSTR)GetSysPath(path): 0,
+      fileName != 0 ? (LPCTSTR)GetSysPath(fileName): 0,
+      extension != 0 ? (LPCTSTR)GetSysPath(extension): 0,
       sysPath, filePart))
     return false;
-  UString resultPath1 = MultiByteToUnicodeString(
-    sysPath.Left(filePart), currentPage);
-  UString resultPath2 = MultiByteToUnicodeString(
-    sysPath.Mid(filePart), currentPage);
+  UString resultPath1 = GetUnicodePath(sysPath.Left(filePart));
+  UString resultPath2 = GetUnicodePath(sysPath.Mid(filePart));
   filePart = resultPath1.Length();
   resultPath = resultPath1 + resultPath2;
   return true;
@@ -510,8 +478,7 @@ bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
 
 bool MyGetTempPath(CSysString &path)
 {
-  DWORD needLength = ::GetTempPath(MAX_PATH + 1, 
-      path.GetBuffer(MAX_PATH));
+  DWORD needLength = ::GetTempPath(MAX_PATH + 1, path.GetBuffer(MAX_PATH + 1));
   path.ReleaseBuffer();
   return (needLength > 0 && needLength <= MAX_PATH);
 }
@@ -520,27 +487,23 @@ bool MyGetTempPath(CSysString &path)
 bool MyGetTempPath(UString &path)
 {
   path.Empty();
-  DWORD needLength = ::GetTempPathW(MAX_PATH + 1, 
-      path.GetBuffer(MAX_PATH));
-  path.ReleaseBuffer();
-  if (needLength == 0)
+  if (g_IsNT)
   {
-    if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-      return false;
-    CSysString sysPath;
-    if (!MyGetTempPath(sysPath))
-      return false;
-    path = MultiByteToUnicodeString(sysPath, GetCurrentCodePage());
-    return true;
+    DWORD needLength = ::GetTempPathW(MAX_PATH + 1, path.GetBuffer(MAX_PATH + 1));
+    path.ReleaseBuffer();
+    return (needLength > 0 && needLength <= MAX_PATH);
   }
-  return (needLength > 0 && needLength <= MAX_PATH);
+  CSysString sysPath;
+  if (!MyGetTempPath(sysPath))
+    return false;
+  path = GetUnicodePath(sysPath);
+  return true;
 }
 #endif
 
 UINT MyGetTempFileName(LPCTSTR dirPath, LPCTSTR prefix, CSysString &path)
 {
-  UINT number = ::GetTempFileName(dirPath, prefix, 0,
-      path.GetBuffer(MAX_PATH));
+  UINT number = ::GetTempFileName(dirPath, prefix, 0, path.GetBuffer(MAX_PATH + 1));
   path.ReleaseBuffer();
   return number;
 }
@@ -548,22 +511,18 @@ UINT MyGetTempFileName(LPCTSTR dirPath, LPCTSTR prefix, CSysString &path)
 #ifndef _UNICODE
 UINT MyGetTempFileName(LPCWSTR dirPath, LPCWSTR prefix, UString &path)
 {
-  UINT number = ::GetTempFileNameW(dirPath, prefix, 0,
-      path.GetBuffer(MAX_PATH));
-  path.ReleaseBuffer();
-  if (number == 0)
+  if (g_IsNT)
   {
-    if (::GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-    {
-      const UINT currentPage = GetCurrentCodePage();
-      CSysString sysPath;
-      number = MyGetTempFileName(
-          dirPath ? (LPCTSTR)UnicodeStringToMultiByte(dirPath, currentPage): 0, 
-          prefix ?  (LPCTSTR)UnicodeStringToMultiByte(prefix, currentPage): 0, 
-          sysPath);
-      path = MultiByteToUnicodeString(sysPath, currentPage);
-    }
+    UINT number = ::GetTempFileNameW(dirPath, prefix, 0, path.GetBuffer(MAX_PATH));
+    path.ReleaseBuffer();
+    return number;
   }
+  CSysString sysPath;
+  UINT number = MyGetTempFileName(
+      dirPath ? (LPCTSTR)GetSysPath(dirPath): 0, 
+      prefix ? (LPCTSTR)GetSysPath(prefix): 0, 
+      sysPath);
+  path = GetUnicodePath(sysPath);
   return number;
 }
 #endif

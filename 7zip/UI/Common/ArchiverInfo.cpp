@@ -63,7 +63,21 @@ static UString GetModuleFolderPrefix()
 
 static wchar_t *kFormatFolderName = L"Formats";
 static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
-static LPCTSTR kProgramPathValue = TEXT("Path");
+static LPCWSTR kProgramPathValue = L"Path";
+
+#ifdef _WIN32
+static bool ReadPathFromRegistry(HKEY baseKey, UString &path)
+{
+  NRegistry::CKey key;
+  if(key.Open(baseKey, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
+    if (key.QueryValue(kProgramPathValue, path) == ERROR_SUCCESS)
+    {
+      NName::NormalizeDirPathPrefix(path);
+      return true;
+    }
+  return false;
+}
+#endif
 
 static UString GetBaseFolderPrefixFromRegistry()
 {
@@ -72,28 +86,12 @@ static UString GetBaseFolderPrefixFromRegistry()
   if (NFind::FindFile(moduleFolderPrefix + kFormatFolderName, fileInfo))
     if (fileInfo.IsDirectory())
       return moduleFolderPrefix;
-  CSysString pathSys;
+  UString path;
   #ifdef _WIN32
-  {
-    NRegistry::CKey key;
-    if(key.Open(HKEY_CURRENT_USER, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
-      if (key.QueryValue(kProgramPathValue, pathSys) == ERROR_SUCCESS)
-      {
-        UString path = GetUnicodeString(pathSys);
-        NName::NormalizeDirPathPrefix(path);
-        return path;
-      }
-  }
-  {
-    NRegistry::CKey key;
-    if(key.Open(HKEY_LOCAL_MACHINE, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
-      if (key.QueryValue(kProgramPathValue, pathSys) == ERROR_SUCCESS)
-      {
-        UString path = GetUnicodeString(pathSys);
-        NName::NormalizeDirPathPrefix(path);
-        return path;
-      }
-  }
+  if(ReadPathFromRegistry(HKEY_CURRENT_USER, path))
+    return path;
+  if(ReadPathFromRegistry(HKEY_LOCAL_MACHINE, path))
+    return path;
   #endif
   return moduleFolderPrefix;
 }

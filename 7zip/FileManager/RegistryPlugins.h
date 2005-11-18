@@ -13,7 +13,7 @@ enum EPluginType
 
 struct CPluginInfo
 {
-  CSysString FilePath;
+  UString FilePath;
   EPluginType Type;
   UString Name;
   CLSID ClassID;

@@ -1,5 +1,5 @@
 PROG = 7za.exe
-LIBS = $(LIBS) user32.lib oleaut32.lib 
+LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
 
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXCLUDE_COM \
@@ -61,6 +61,7 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Synchronization.obj

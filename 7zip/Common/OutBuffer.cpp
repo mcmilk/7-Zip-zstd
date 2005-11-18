@@ -15,13 +15,13 @@ bool COutBuffer::Create(UInt32 bufferSize)
     return true;
   Free();
   _bufferSize = bufferSize;
-  _buffer = (Byte *)::BigAlloc(bufferSize);
+  _buffer = (Byte *)::MidAlloc(bufferSize);
   return (_buffer != 0);
 }
 
 void COutBuffer::Free()
 {
-  BigFree(_buffer);
+  ::MidFree(_buffer);
   _buffer = 0;
 }
 

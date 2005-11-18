@@ -7,6 +7,10 @@
 #include "Common/StringConvert.h"
 #endif
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 int GetIconIndexForCSIDL(int aCSIDL)
 {
   LPITEMIDLIST  pidlMyComputer = 0;
@@ -39,39 +43,57 @@ DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex)
 }
 
 #ifndef _UNICODE
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+// static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
 {
-  SHFILEINFOW shellInfo;
-  DWORD_PTR res = ::SHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+  if(g_IsNT)
+  {
+    SHFILEINFOW shellInfo;
+    DWORD_PTR res = ::SHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
-  if (res == 0 && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-    return GetRealIconIndex(UnicodeStringToMultiByte(path, GetCurrentCodePage()), attributes, iconIndex);
-  iconIndex = shellInfo.iIcon;
-  return res;
+    iconIndex = shellInfo.iIcon;
+    return res;
+  }
+  else
+    return GetRealIconIndex(UnicodeStringToMultiByte(path), attributes, iconIndex);
 }
 #endif
 
-DWORD_PTR GetRealIconIndex(const CSysString &fileName, UINT32 attributes, 
-    int &iconIndex, CSysString &typeName)
+DWORD_PTR GetRealIconIndex(const UString &fileName, UINT32 attributes, 
+    int &iconIndex, UString &typeName)
 {
-  SHFILEINFO shellInfo;
-  DWORD_PTR res = ::SHGetFileInfo(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+  #ifndef _UNICODE
+  if(!g_IsNT)
+  {
+    SHFILEINFO shellInfo;
+    shellInfo.szTypeName[0] = 0;
+    DWORD_PTR res = ::SHGetFileInfoA(GetSystemString(fileName), FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
       | SHGFI_TYPENAME);
-  typeName = shellInfo.szTypeName;
-  iconIndex = shellInfo.iIcon;
-  return res;
+    typeName = GetUnicodeString(shellInfo.szTypeName);
+    iconIndex = shellInfo.iIcon;
+    return res;
+  }
+  else
+  #endif
+  {
+    SHFILEINFOW shellInfo;
+    shellInfo.szTypeName[0] = 0;
+    DWORD_PTR res = ::SHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
+      | SHGFI_TYPENAME);
+    typeName = shellInfo.szTypeName;
+    iconIndex = shellInfo.iIcon;
+    return res;
+  }
 }
 
-int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpec,
-    CSysString &typeName)
+int CExtToIconMap::GetIconIndex(UINT32 attributes, const UString &fileNameSpec, UString &typeName)
 {
-  CSysString fileName = fileNameSpec;
+  UString fileName = fileNameSpec;
   if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
   {
-    fileName = TEXT("__Fldr__");
+    fileName = L"__Fldr__";
     if (_dirIconIndex < 0)
       GetRealIconIndex(fileName, attributes, _dirIconIndex, _dirTypeName);
     typeName = _dirTypeName;
@@ -80,7 +102,7 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpe
   int dotPos = fileName.ReverseFind('.');
   if (dotPos < 0)
   {
-    fileName = TEXT("__File__");
+    fileName = L"__File__";
     if (_noExtIconIndex < 0)
     {
       int iconIndexTemp;
@@ -101,8 +123,8 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileNameSpe
   return extIconPair.IconIndex;
 }
 
-int CExtToIconMap::GetIconIndex(UINT32 attributes, const CSysString &fileName)
+int CExtToIconMap::GetIconIndex(UINT32 attributes, const UString &fileName)
 {
-  CSysString typeName;
+  UString typeName;
   return GetIconIndex(attributes, fileName, typeName);
 }

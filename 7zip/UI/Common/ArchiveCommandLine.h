@@ -40,6 +40,10 @@ struct CArchiveCommandLineOptions
 {
   bool HelpMode;
 
+  #ifdef _WIN32
+  bool LargePages;
+  #endif
+
   bool IsInTerminal;
   bool IsStdOutTerminal;
   bool IsStdErrTerminal;

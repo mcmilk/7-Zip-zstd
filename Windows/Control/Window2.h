@@ -11,18 +11,25 @@ namespace NControl {
 
 class CWindow2: public CWindow
 {
+  LRESULT DefProc(UINT message, WPARAM wParam, LPARAM lParam);
 public:
   CWindow2(HWND newWindow = NULL): CWindow(newWindow){};
   virtual ~CWindow2() {};
 
-  LRESULT DefProc(UINT message, WPARAM wParam, LPARAM lParam)
-    { return ::DefWindowProc(_window, message, wParam, lParam); }
 
   bool CreateEx(DWORD exStyle, LPCTSTR className, 
       LPCTSTR windowName, DWORD style,
       int x, int y, int width, int height,
       HWND parentWindow, HMENU idOrHMenu, 
       HINSTANCE instance);
+
+  #ifndef _UNICODE
+  bool CreateEx(DWORD exStyle, LPCWSTR className,
+      LPCWSTR windowName, DWORD style,
+      int x, int y, int width, int height,
+      HWND parentWindow, HMENU idOrHMenu, 
+      HINSTANCE instance);
+  #endif
 
   virtual LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
   virtual bool OnCreate(CREATESTRUCT *createStruct) { return true; }

@@ -14,6 +14,7 @@
 #include "Windows/DLL.h"
 #endif
 
+HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, UString &result);
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &defaultName, UString &result);
 HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index, 
     const FILETIME &defaultFileTime, FILETIME &fileTime);

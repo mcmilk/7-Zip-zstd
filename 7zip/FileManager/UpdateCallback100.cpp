@@ -81,7 +81,7 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(INT32 *passwordIsDefi
     CPasswordDialog dialog;
     if (dialog.Create(_parentWindow) == IDCANCEL)
       return E_ABORT;
-    _password = GetUnicodeString((LPCTSTR)dialog._password);
+    _password = dialog._password;
     _passwordIsDefined = true;
     */
   }

@@ -32,10 +32,10 @@ bool CListViewDialog::OnInit()
 
   for(int i = 0; i < Strings.Size(); i++)
   {
-    LVITEM item;
+    LVITEMW item;
     item.mask = LVIF_TEXT;
     item.iItem = i;
-    item.pszText = (LPTSTR)(LPCTSTR)Strings[i];
+    item.pszText = (LPWSTR)(LPCWSTR)Strings[i];
     item.iSubItem = 0;
     _listView.InsertItem(&item);
   }

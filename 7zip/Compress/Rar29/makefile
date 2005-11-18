@@ -1,6 +1,6 @@
 PROG = Rar29.dll
 DEF_FILE = ../Codec.def
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -DSILENT -DNOCRYPT -DNOVOLUME
 LIBS = $(LIBS) oleaut32.lib
 
 RAR29_OBJS = \
@@ -46,7 +46,7 @@ OBJS = \
 
 !include "../../../Build.mak"
 
-COMPL_SPEC = $(CPP) $(CFLAGS_O2) -DSILENT -DNOCRYPT -DNOVOLUME $** 
+COMPL_SPEC = $(CPP) $(CFLAGS_O2) $** 
 
 $(RAR29_OBJS): $(*B).cpp
 	$(COMPL)

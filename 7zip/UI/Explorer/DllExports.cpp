@@ -3,7 +3,7 @@
 // Notes:
 // Win2000:
 // If I register at HKCR\Folder\ShellEx then DLL is locked.
-// otherwise it unloads after exlorer closing.
+// otherwise it unloads after explorer closing.
 // but if I call menu for desktop items it's locked all the time
 
 #include "StdAfx.h"
@@ -16,6 +16,9 @@
 #include <OleCtl.h>
 
 #include "Common/ComTry.h"
+#include "Common/StringConvert.h"
+#include "Windows/DLL.h"
+#include "Windows/Registry.h"
 
 #include "../../IPassword.h"
 #include "../../FileManager/LangUtils.h"
@@ -24,10 +27,16 @@
 #include "ContextMenu.h"
 #include "OptionsDialog.h"
 
+using namespace NWindows;
+
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+#endif
+
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
-static LPCTSTR kShellExtName = TEXT("7-Zip Shell Extension");
+static LPCWSTR kShellExtName = L"7-Zip Shell Extension";
 static LPCTSTR kClsidMask = TEXT("CLSID\\%s");
 static LPCTSTR kClsidInprocMask = TEXT("CLSID\\%s\\InprocServer32");
 static LPCTSTR kApprovedKeyPath = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
@@ -95,9 +104,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
   {
     g_hInstance = hInstance;
     // ODS("In DLLMain, DLL_PROCESS_ATTACH\r\n");
-    #ifdef UNICODE
+    #ifdef _UNICODE
     if (!IsItWindowsNT())
       return FALSE;
+    #else
+    g_IsNT = IsItWindowsNT();
     #endif    
   }
   else if (dwReason == DLL_PROCESS_DETACH)
@@ -160,53 +171,46 @@ typedef struct
 {
   HKEY hRootKey;
   LPCTSTR SubKey;
-  LPCTSTR ValueName;
-  LPCTSTR Data;
+  LPCWSTR ValueName;
+  LPCWSTR Data;
 } CRegItem;
 
-static BOOL RegisterServer(CLSID clsid, LPCTSTR title)
+static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
 {
   TCHAR clsidString[MAX_PATH];
   if (!GetStringFromIID(clsid, clsidString, MAX_PATH))
     return FALSE;
   
-  TCHAR modulePath[MAX_PATH + 1];
-  if (GetModuleFileName(g_hInstance, modulePath, MAX_PATH) == 0)
+  UString modulePath;
+  if (!NDLL::MyGetModuleFileName(g_hInstance, modulePath))
     return FALSE;
   
   CRegItem clsidEntries[] = 
   {
-    HKEY_CLASSES_ROOT, kClsidMask,        NULL,                   title,
-    HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,                   modulePath,
-    HKEY_CLASSES_ROOT, kClsidInprocMask,  TEXT("ThreadingModel"), TEXT("Apartment"),
-    NULL,              NULL,              NULL,                   NULL
+    HKEY_CLASSES_ROOT, kClsidMask,        NULL,              title,
+    HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,              modulePath,
+    HKEY_CLASSES_ROOT, kClsidInprocMask,  L"ThreadingModel", L"Apartment",
+    NULL,              NULL,              NULL,              NULL
   };
   
-  HKEY hKey;
-  DWORD dwDisp;
   //register the CLSID entries
   for(int i = 0; clsidEntries[i].hRootKey; i++)
   {
     TCHAR subKey[MAX_PATH];
     wsprintf(subKey, clsidEntries[i].SubKey, clsidString);
-    if (RegCreateKeyEx(clsidEntries[i].hRootKey, subKey, 0, NULL, 
-        REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, &dwDisp) != NOERROR)
+    NRegistry::CKey key;
+    if (key.Create(clsidEntries[i].hRootKey, subKey, NULL, 
+        REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
       return FALSE;
-    const TCHAR *data = clsidEntries[i].Data;
-    RegSetValueEx(hKey, clsidEntries[i].ValueName, 0, REG_SZ,
-        (LPBYTE)data, (lstrlen(data) + 1) * sizeof(TCHAR));
-    RegCloseKey(hKey);
+    key.SetValue(clsidEntries[i].ValueName, clsidEntries[i].Data);
   }
  
   if(IsItWindowsNT())
   {
-    if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, kApprovedKeyPath, 0, NULL, 
-        REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, &dwDisp) == NOERROR)
-    {
-      RegSetValueEx(hKey, clsidString, 0, REG_SZ, 
-          (LPBYTE)title,(lstrlen(title) + 1) * sizeof(TCHAR));
-      RegCloseKey(hKey);
-    }
+    NRegistry::CKey key;
+    if (key.Create(HKEY_LOCAL_MACHINE, kApprovedKeyPath, NULL, 
+        REG_OPTION_NON_VOLATILE, KEY_WRITE) == NOERROR)
+      key.SetValue(GetUnicodeString(clsidString), title);
   }
   return TRUE;
 }

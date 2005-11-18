@@ -67,11 +67,26 @@ extern "C"
 };
 
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
+
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
   {
     g_hInstance = hInstance;
+    #ifndef _UNICODE
+    g_IsNT = IsItWindowsNT();
+    #endif    
   }
   return TRUE;
 }
@@ -387,8 +402,6 @@ static HANDLE MyOpenFilePlugin(const char *name)
   
   // ::OutputDebugString("before OpenArchive\n");
   
-  // UString defaultName;
-
   archiveHandler = new CAgent;
   CMyComBSTR archiveType;
   HRESULT result = archiveHandler->Open(

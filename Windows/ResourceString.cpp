@@ -8,6 +8,9 @@
 #endif
 
 extern HINSTANCE g_hInstance;
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 namespace NWindows {
 
@@ -20,7 +23,8 @@ CSysString MyLoadString(UINT resourceID)
   {
     size += 256;
     len = ::LoadString(g_hInstance, resourceID, s.GetBuffer(size - 1), size);
-  } while (size - len <= 1);
+  } 
+  while (size - len <= 1);
   s.ReleaseBuffer();
   return s;
 }
@@ -28,22 +32,21 @@ CSysString MyLoadString(UINT resourceID)
 #ifndef _UNICODE
 UString MyLoadStringW(UINT resourceID)
 {
-  UString s;
-  int size = 256;
-  int len;
-  do
+  if (g_IsNT)
   {
-    size += 256;
-    len = ::LoadStringW(g_hInstance, resourceID, s.GetBuffer(size - 1), size);
-    if (len == 0)
+    UString s;
+    int size = 256;
+    int len;
+    do
     {
-      if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-        break;
-      return GetUnicodeString(MyLoadString(resourceID));
-    }
-  } while (size - len <= 1);
-  s.ReleaseBuffer();
-  return s;
+      size += 256;
+      len = ::LoadStringW(g_hInstance, resourceID, s.GetBuffer(size - 1), size);
+    } 
+    while (size - len <= 1);
+    s.ReleaseBuffer();
+    return s;
+  }
+  return GetUnicodeString(MyLoadString(resourceID));
 }
 #endif
 

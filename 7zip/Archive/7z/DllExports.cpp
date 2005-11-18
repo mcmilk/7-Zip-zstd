@@ -4,6 +4,9 @@
 
 #include "../../../Common/MyInitGuid.h"
 #include "../../../Common/ComTry.h"
+#ifdef _WIN32
+#include "../../../Common/Alloc.h"
+#endif
 
 #include "../../ICoder.h"
 
@@ -18,12 +21,32 @@ DEFINE_GUID(CLSID_CCrypto7zAESEncoder,
 #endif
 
 HINSTANCE g_hInstance;
+#ifndef _UNICODE
+bool g_IsNT = false;
+static bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
+
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
+  {
     g_hInstance = hInstance;
+    #ifndef _UNICODE
+    g_IsNT = IsItWindowsNT();
+    #endif
+    #ifdef _WIN32
+    SetLargePageSize();
+    #endif
+  }
   return TRUE;
 }
 

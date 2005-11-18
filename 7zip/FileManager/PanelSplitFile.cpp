@@ -31,10 +31,10 @@ public:
   {
     if (_data != 0)
       return false;
-    _data = BigAlloc(size);
+    _data = ::MidAlloc(size);
     return _data != 0;
   }
-  ~CMyBuffer() { BigFree(_data); }
+  ~CMyBuffer() { ::MidFree(_data); }
 };
 
 struct CVolSeqName
@@ -184,7 +184,7 @@ void CApp::Split()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
     return;
   }
   CRecordVector<UInt32> indices;
@@ -223,8 +223,8 @@ void CApp::Split()
   CProgressDialog progressDialog;
   spliter.ProgressDialog = &progressDialog;
 
-  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
-  UString title = LangLoadStringW(IDS_SPLITTING, 0x03020510);
+  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
+  UString title = LangString(IDS_SPLITTING, 0x03020510);
 
   progressDialog.MainWindow = _window;
   progressDialog.MainTitle = progressWindowTitle;
@@ -392,7 +392,7 @@ void CApp::Combine()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
     return;
   }
   CRecordVector<UInt32> indices;
@@ -421,11 +421,11 @@ void CApp::Combine()
       path = destPanel._currentFolderPrefix;
   CCopyDialog copyDialog;
   copyDialog.Value = path;
-  copyDialog.Title = LangLoadStringW(IDS_COMBINE, 0x03020600);
+  copyDialog.Title = LangString(IDS_COMBINE, 0x03020600);
   copyDialog.Title += ' ';
   copyDialog.Title += itemName;
 
-  copyDialog.Static = LangLoadStringW(IDS_COMBINE_TO, 0x03020601);;
+  copyDialog.Static = LangString(IDS_COMBINE_TO, 0x03020601);;
   if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
 
@@ -435,8 +435,8 @@ void CApp::Combine()
   CProgressDialog progressDialog;
   combiner.ProgressDialog = &progressDialog;
 
-  UString progressWindowTitle = LangLoadStringW(IDS_APP_TITLE, 0x03000000);
-  UString title = LangLoadStringW(IDS_COMBINING, 0x03020610);
+  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
+  UString title = LangString(IDS_COMBINING, 0x03020610);
 
   progressDialog.MainWindow = _window;
   progressDialog.MainTitle = progressWindowTitle;

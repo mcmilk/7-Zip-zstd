@@ -8,6 +8,26 @@
 
 namespace NWindows {
 
+struct CMenuItem
+{
+  UString StringValue;
+  UINT fMask; 
+  UINT fType; 
+  UINT fState; 
+  UINT wID; 
+  HMENU hSubMenu; 
+  HBITMAP hbmpChecked; 
+  HBITMAP hbmpUnchecked; 
+  ULONG_PTR dwItemData; 
+  // LPTSTR dwTypeData; 
+  // UINT cch; 
+  // HBITMAP hbmpItem;
+  bool IsString() const // change it MIIM_STRING
+    { return ((fMask & MIIM_TYPE) != 0 && (fType == MFT_STRING)); }
+  CMenuItem(): fMask(0), fType(0), fState(0), wID(0), hSubMenu(0), hbmpChecked(0), 
+    hbmpUnchecked(0), dwItemData(0) {}
+};
+
 class CMenu
 {
   HMENU _menu;
@@ -61,6 +81,11 @@ public:
   UINT GetItemState(UINT id, UINT flags)
     { return ::GetMenuState(_menu, id, flags);   }
   
+  bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
+    { return BOOLToBool(::GetMenuItemInfo(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+  bool SetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
+    { return BOOLToBool(::SetMenuItemInfo(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+
   bool AppendItem(UINT flags, UINT_PTR newItemID, LPCTSTR newItem)
     { return BOOLToBool(::AppendMenu(_menu, flags, newItemID, newItem)); }
 
@@ -68,18 +93,24 @@ public:
     { return BOOLToBool(::InsertMenu(_menu, position, flags, idNewItem, newItem)); }
 
   bool InsertItem(UINT itemIndex, bool byPosition, LPCMENUITEMINFO itemInfo)
-    { return BOOLToBool(::InsertMenuItem(_menu, itemIndex, 
-        BoolToBOOL(byPosition), itemInfo)); }
+    { return BOOLToBool(::InsertMenuItem(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
 
   bool RemoveItem(UINT item, UINT flags)
     { return BOOLToBool(::RemoveMenu(_menu, item, flags)); }
 
-  bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
-    { return BOOLToBool(::GetMenuItemInfo(_menu, itemIndex, 
-        BoolToBOOL(byPosition), itemInfo)); }
-  bool SetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
-    { return BOOLToBool(::SetMenuItemInfo(_menu, itemIndex, 
-        BoolToBOOL(byPosition), itemInfo)); }
+  #ifndef _UNICODE
+  bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFOW itemInfo)
+    { return BOOLToBool(::GetMenuItemInfoW(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+  bool InsertItem(UINT itemIndex, bool byPosition, LPMENUITEMINFOW itemInfo)
+    { return BOOLToBool(::InsertMenuItemW(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+  bool SetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFOW itemInfo)
+    { return BOOLToBool(::SetMenuItemInfoW(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+  bool AppendItem(UINT flags, UINT_PTR newItemID, LPCWSTR newItem);
+  #endif
+
+  bool GetItem(UINT itemIndex, bool byPosition, CMenuItem &item);
+  bool SetItem(UINT itemIndex, bool byPosition, const CMenuItem &item);
+  bool InsertItem(UINT itemIndex, bool byPosition, const CMenuItem &item);
 
   int Track(UINT flags, int x, int y, HWND hWnd)
     { return ::TrackPopupMenuEx(_menu, flags, x, y, hWnd, NULL); }

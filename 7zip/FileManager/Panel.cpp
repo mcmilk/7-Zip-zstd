@@ -22,6 +22,10 @@
 
 using namespace NWindows;
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 static const UINT_PTR kTimerID = 1;
 static const UINT kTimerElapse = 1000;
 
@@ -49,7 +53,7 @@ CPanel::~CPanel()
   CloseOpenFolders();
 }
 
-static LPCTSTR kClassName = TEXT("7-Zip::Panel");
+static LPCWSTR kClassName = L"7-Zip::Panel";
 
 
 LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
@@ -196,7 +200,12 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     _panel->_lastFocusedIsList = true;
     _panel->_panelCallback->PanelWasFocused();
   }
-  return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
+  #ifndef _UNICODE 
+  if (g_IsNT)
+    return CallWindowProcW(_origWindowProc, *this, message, wParam, lParam); 
+  else
+  #endif
+    return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
 }
 
 /*
@@ -278,7 +287,12 @@ LRESULT CMyComboBoxEdit::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
           return 0; 
       } 
   }
-  return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
+  #ifndef _UNICODE 
+  if (g_IsNT)
+    return CallWindowProcW(_origWindowProc, *this, message, wParam, lParam); 
+  else
+  #endif
+    return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
 }
 
 bool CPanel::OnCreate(CREATESTRUCT *createStruct)
@@ -318,11 +332,19 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
       HWND(*this), (HMENU)_baseID + 1, g_hInstance, NULL))
     return false;
 
+  _listView.SetUnicodeFormat(true);
 
   _listView.SetUserDataLongPtr(LONG_PTR(&_listView));
   _listView._panel = this;
-  _listView._origWindowProc = (WNDPROC)_listView.SetLongPtr(GWLP_WNDPROC,
-      LONG_PTR(ListViewSubclassProc));
+
+   #ifndef _UNICODE
+   if(g_IsNT)
+     _listView._origWindowProc = 
+      (WNDPROC)_listView.SetLongPtrW(GWLP_WNDPROC, LONG_PTR(ListViewSubclassProc));
+   else
+   #endif
+     _listView._origWindowProc = 
+      (WNDPROC)_listView.SetLongPtr(GWLP_WNDPROC, LONG_PTR(ListViewSubclassProc));
 
   SHFILEINFO shellInfo;
   HIMAGELIST imageList = (HIMAGELIST)SHGetFileInfo(TEXT(""), 
@@ -401,8 +423,6 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
       ;
   }
 
-
-
   _headerToolBar.Attach(::CreateToolbarEx ((*this), toolbarStyle, 
       _baseID + 2, 11, 
       (HINSTANCE)HINST_COMMCTRL, 
@@ -414,12 +434,15 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   icex.dwICC = ICC_USEREX_CLASSES;
   InitCommonControlsEx(&icex);
   
-  _headerComboBox.CreateEx(0, WC_COMBOBOXEX, NULL,
+  _headerComboBox.CreateEx(0, WC_COMBOBOXEXW, NULL,
     WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
       0, 0, 100, 20,
       ((_headerReBar == 0) ? HWND(*this) : _headerToolBar),
       (HMENU)(_comboBoxID),
       g_hInstance, NULL);
+  // _headerComboBox.SendMessage(CBEM_SETUNICODEFORMAT, (WPARAM)(BOOL)TRUE, 0);
+
+
   _headerComboBox.SetExtendedStyle(CBES_EX_PATHWORDBREAKPROC, CBES_EX_PATHWORDBREAKPROC);
 
   /*
@@ -430,11 +453,20 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
       LONG_PTR(ComboBoxSubclassProc));
   */
   _comboBoxEdit.Attach(_headerComboBox.GetEditControl());
+
+  // _comboBoxEdit.SendMessage(CCM_SETUNICODEFORMAT, (WPARAM)(BOOL)TRUE, 0);
+
   _comboBoxEdit.SetUserDataLongPtr(LONG_PTR(&_comboBoxEdit));
   _comboBoxEdit._panel = this;
-  _comboBoxEdit._origWindowProc = 
-      (WNDPROC)_comboBoxEdit.SetLongPtr(GWLP_WNDPROC,
-      LONG_PTR(ComboBoxEditSubclassProc));
+   #ifndef _UNICODE
+   if(g_IsNT)
+     _comboBoxEdit._origWindowProc = 
+      (WNDPROC)_comboBoxEdit.SetLongPtrW(GWLP_WNDPROC, LONG_PTR(ComboBoxEditSubclassProc));
+   else
+   #endif
+     _comboBoxEdit._origWindowProc = 
+      (WNDPROC)_comboBoxEdit.SetLongPtr(GWLP_WNDPROC, LONG_PTR(ComboBoxEditSubclassProc));
+
 
 
   if (_headerReBar)
@@ -472,8 +504,8 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
     // _headerReBar.MaximizeBand(1, false);
   }
 
-  _statusBar.Create(WS_CHILD | WS_VISIBLE, TEXT("Status"), (*this), _statusBarID);
-  // _statusBar2.Create(WS_CHILD | WS_VISIBLE, TEXT("Status"), (*this), _statusBarID + 1);
+  _statusBar.Create(WS_CHILD | WS_VISIBLE, L"Status", (*this), _statusBarID);
+  // _statusBar2.Create(WS_CHILD | WS_VISIBLE, L"Status", (*this), _statusBarID + 1);
 
   int sizes[] = {150, 200, 250, -1};
   _statusBar.SetParts(4, sizes);
@@ -607,7 +639,7 @@ void CPanel::MessageBox(LPCWSTR message)
 void CPanel::MessageBoxMyError(LPCWSTR message)
   { MessageBox(message, L"Error"); }
 void CPanel::MessageBoxError(HRESULT errorCode, LPCWSTR caption)
-  { MessageBox(GetUnicodeString(NError::MyFormatMessage(errorCode)), caption); }
+  { MessageBox(NError::MyFormatMessageW(errorCode), caption); }
 void CPanel::MessageBoxError(HRESULT errorCode)
   { MessageBoxError(errorCode, L"7-Zip"); }
 void CPanel::MessageBoxLastError(LPCWSTR caption)
@@ -627,11 +659,6 @@ void CPanel::SetFocusToLastRememberedItem()
     SetFocusToList();
   else
     _headerComboBox.SetFocus();
-}
-
-CSysString CPanel::GetFileType(UINT32 index)
-{
-  return TEXT("Test type");
 }
 
 UString CPanel::GetFolderTypeID() const

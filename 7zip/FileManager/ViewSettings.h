@@ -59,8 +59,8 @@ struct CListViewInfo
   }
 };
 
-void SaveListViewInfo(const CSysString &anID, const CListViewInfo &viewInfo);
-void ReadListViewInfo(const CSysString &anID, CListViewInfo &viewInfo);
+void SaveListViewInfo(const UString &id, const CListViewInfo &viewInfo);
+void ReadListViewInfo(const UString &id, CListViewInfo &viewInfo);
 
 void SaveWindowSize(const RECT &rect, bool maximized);
 bool ReadWindowSize(RECT &rect, bool &maximized);
@@ -71,8 +71,8 @@ bool ReadPanelsInfo(UInt32 &numPanels, UInt32 &currentPanel, UInt32 &splitterPos
 void SaveToolbarsMask(UInt32 toolbarMask);
 UInt32 ReadToolbarsMask();
 
-void SavePanelPath(UInt32 panel, const CSysString &path);
-bool ReadPanelPath(UInt32 panel, CSysString &path);
+void SavePanelPath(UInt32 panel, const UString &path);
+bool ReadPanelPath(UInt32 panel, UString &path);
 
 struct CListMode
 {

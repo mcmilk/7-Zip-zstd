@@ -28,12 +28,14 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\Error.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \

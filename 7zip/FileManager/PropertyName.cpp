@@ -69,5 +69,5 @@ UString GetNameOfProperty(PROPID propID)
   if (index < 0)
     return UString();
   const CPropertyIDNamePair &pair = kPropertyIDNamePairs[index];
-  return LangLoadStringW(pair.ResourceID, pair.LangID);
+  return LangString(pair.ResourceID, pair.LangID);
 }

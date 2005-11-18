@@ -14,22 +14,21 @@ namespace NControl {
 class CComboBox: public CWindow
 {
 public:
-  void ResetContent()
-    { SendMessage(CB_RESETCONTENT, 0, 0); }
-  int AddString(LPCTSTR string)
-    { return SendMessage(CB_ADDSTRING, 0, (LPARAM)string); }
-  int SetCurSel(int index)
-    { return SendMessage(CB_SETCURSEL, index, 0); }
-  int GetCurSel()
-    { return SendMessage(CB_GETCURSEL, 0, 0); }
-  int GetCount()
-    { return SendMessage(CB_GETCOUNT, 0, 0); }
+  void ResetContent() { SendMessage(CB_RESETCONTENT, 0, 0); }
+  LRESULT AddString(LPCTSTR string) { return SendMessage(CB_ADDSTRING, 0, (LPARAM)string); }
+  #ifndef _UNICODE
+  LRESULT AddString(LPCWSTR string);
+  #endif
+  int SetCurSel(int index) { return SendMessage(CB_SETCURSEL, index, 0); }
+  int GetCurSel() { return SendMessage(CB_GETCURSEL, 0, 0); }
+  int GetCount() { return SendMessage(CB_GETCOUNT, 0, 0); }
   
-  int GetLBTextLen(int index)
-    { return SendMessage(CB_GETLBTEXTLEN, index, 0); }
-  int GetLBText(int index, LPTSTR string)
-    { return SendMessage(CB_GETLBTEXT, index, (LPARAM)string); }
-  int GetLBText(int index, CSysString &string);
+  LRESULT GetLBTextLen(int index) { return SendMessage(CB_GETLBTEXTLEN, index, 0); }
+  LRESULT GetLBText(int index, LPTSTR string) { return SendMessage(CB_GETLBTEXT, index, (LPARAM)string); }
+  LRESULT GetLBText(int index, CSysString &s);
+  #ifndef _UNICODE
+  LRESULT GetLBText(int index, UString &s);
+  #endif
 
   int SetItemData(int index, LPARAM lParam)
     { return SendMessage(CB_SETITEMDATA, index, lParam); }

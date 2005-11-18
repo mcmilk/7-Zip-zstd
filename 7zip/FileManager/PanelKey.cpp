@@ -8,7 +8,7 @@
 #include "../PropID.h"
 #include "App.h"
 
-// static LPCTSTR kHelpTopic = _T("FM/index.htm");
+// static LPCWSTR kHelpTopic = L"FM/index.htm";
 
 struct CVKeyPropIDPair
 {

@@ -18,18 +18,35 @@ public:
       int x, int y, int width, int height,
       HWND parentWindow, HMENU idOrHMenu, 
       HINSTANCE instance, LPVOID createParam);
-  
+
+  bool SetUnicodeFormat(bool fUnicode)
+    { return BOOLToBool(ListView_SetUnicodeFormat(_window, BOOLToBool(fUnicode))); }
+ 
   bool DeleteAllItems()
     { return BOOLToBool(ListView_DeleteAllItems(_window)); }
   int InsertColumn(int columnIndex, const LVCOLUMN *columnInfo)
     { return ListView_InsertColumn(_window, columnIndex, columnInfo); }
+  #ifndef _UNICODE
+  int InsertColumn(int columnIndex, const LVCOLUMNW *columnInfo)
+    { return (int)SendMessage(LVM_INSERTCOLUMNW, (WPARAM)columnIndex, (LPARAM)columnInfo); }
+  #endif
   bool DeleteColumn(int columnIndex)
     { return BOOLToBool(ListView_DeleteColumn(_window, columnIndex)); }
 
   int InsertItem(const LVITEM* item)
     { return ListView_InsertItem(_window, item); }
+  #ifndef _UNICODE
+  int InsertItem(const LV_ITEMW* item)
+    { return (int)SendMessage(LVM_INSERTITEMW, 0, (LPARAM)item); }
+  #endif
+
   bool SetItem(const LVITEM* item)
     { return BOOLToBool(ListView_SetItem(_window, item)); }
+  #ifndef _UNICODE
+  bool SetItem(const LV_ITEMW* item)
+    { return BOOLToBool((BOOL)SendMessage(LVM_SETITEMW, 0, (LPARAM)item)); }
+  #endif
+
   bool DeleteItem(int itemIndex)
     { return BOOLToBool(ListView_DeleteItem(_window, itemIndex)); }
 

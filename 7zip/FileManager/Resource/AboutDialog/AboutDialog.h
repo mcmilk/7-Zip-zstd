@@ -12,8 +12,7 @@ public:
   virtual bool OnInit();
   virtual void OnHelp();
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  INT_PTR Create(HWND aWndParent = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_ABOUT), aWndParent); }
+  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_ABOUT, wndParent); }
 };
 
 #endif

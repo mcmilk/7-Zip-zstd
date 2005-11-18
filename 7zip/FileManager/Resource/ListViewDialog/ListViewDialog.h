@@ -17,12 +17,11 @@ class CListViewDialog: public NWindows::NControl::CModalDialog
 public:
   UString Title;
   bool DeleteIsAllowed;
-  CSysStringVector Strings;
+  UStringVector Strings;
   bool StringsWereChanged;
   int FocusedItemIndex;
 
-  INT_PTR Create(HWND wndParent = 0)
-    { return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_LISTVIEW), wndParent); }
+  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_DIALOG_LISTVIEW, wndParent); }
 
   CListViewDialog(): DeleteIsAllowed(false) {}
 

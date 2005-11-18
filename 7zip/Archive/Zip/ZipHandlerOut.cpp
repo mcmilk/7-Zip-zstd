@@ -303,8 +303,10 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
+      /*
       if (value.ulVal < 3 || value.ulVal > 255)
         return E_INVALIDARG;
+      */
       m_NumFastBytes = value.ulVal;
     }
     else

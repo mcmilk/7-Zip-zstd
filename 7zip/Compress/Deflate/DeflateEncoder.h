@@ -77,7 +77,6 @@ class CCoder
   UInt16 *m_MatchDistances;
 
   UInt32 m_NumFastBytes;
-  UInt32 m_MatchLengthEdge;
 
   Byte  m_LiteralPrices[256];
   

@@ -33,6 +33,14 @@ public:
   virtual void OnReset(const PSHNOTIFY *aPSHNOTIFY) { OnReset(); }
 };
 
+struct CPageInfo
+{
+  CPropertyPage *Page;
+  UString Title;
+  UINT ID;
+};
+
+int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, const UString &title);
 
 }}
 

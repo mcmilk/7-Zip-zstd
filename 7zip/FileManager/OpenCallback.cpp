@@ -46,7 +46,7 @@ STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value
   switch(propID)
   {
   case kpidName:
-    propVariant = GetUnicodeString(_fileInfo.Name);
+    propVariant = _fileInfo.Name;
     break;
   case kpidIsFolder:
     propVariant = _fileInfo.IsDirectory();

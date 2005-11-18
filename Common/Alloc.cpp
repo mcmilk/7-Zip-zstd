@@ -15,6 +15,7 @@
 #ifdef _SZ_ALLOC_DEBUG
 #include <stdio.h>
 int g_allocCount = 0;
+int g_allocCountMid = 0;
 int g_allocCountBig = 0;
 #endif
 
@@ -38,6 +39,52 @@ void MyFree(void *address) throw()
   ::free(address);
 }
 
+#ifdef _WIN32
+
+void *MidAlloc(size_t size) throw()
+{
+  if (size == 0)
+    return 0;
+  #ifdef _SZ_ALLOC_DEBUG
+  fprintf(stderr, "\nAlloc_Mid %10d bytes;  count = %10d", size, g_allocCountMid++);
+  #endif
+  return ::VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
+}
+
+void MidFree(void *address) throw()
+{
+  #ifdef _SZ_ALLOC_DEBUG
+  if (address != 0)
+    fprintf(stderr, "\nFree_Mid; count = %10d", --g_allocCountMid);
+  #endif
+  if (address == 0)
+    return;
+  ::VirtualFree(address, 0, MEM_RELEASE);
+}
+
+static SIZE_T g_LargePageSize = 
+    #ifdef _WIN64
+    (1 << 21);
+    #else
+    (1 << 22);
+    #endif
+
+typedef SIZE_T (WINAPI *GetLargePageMinimumP)();
+
+bool SetLargePageSize()
+{
+  GetLargePageMinimumP largePageMinimum = (GetLargePageMinimumP)
+        ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")), "GetLargePageMinimum");
+  if (largePageMinimum == 0)
+    return false;
+  SIZE_T size = largePageMinimum();
+  if (size == 0 || (size & (size - 1)) != 0)
+    return false;
+  g_LargePageSize = size;
+  return true;
+}
+
+
 void *BigAlloc(size_t size) throw()
 {
   if (size == 0)
@@ -46,11 +93,14 @@ void *BigAlloc(size_t size) throw()
   fprintf(stderr, "\nAlloc_Big %10d bytes;  count = %10d", size, g_allocCountBig++);
   #endif
   
-  #ifdef _WIN32
+  if (size >= (1 << 18))
+  {
+    void *res = ::VirtualAlloc(0, (size + g_LargePageSize - 1) & (~(g_LargePageSize - 1)), 
+        MEM_COMMIT | MEM_LARGE_PAGES, PAGE_READWRITE);
+    if (res != 0)
+      return res;
+  }
   return ::VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
-  #else
-  return ::malloc(size);
-  #endif
 }
 
 void BigFree(void *address) throw()
@@ -62,21 +112,7 @@ void BigFree(void *address) throw()
   
   if (address == 0)
     return;
-  #ifdef _WIN32
   ::VirtualFree(address, 0, MEM_RELEASE);
-  #else
-  ::free(address);
-  #endif
 }
 
-/*
-void *BigAllocE(size_t size)
-{
-  void *res = BigAlloc(size);
-  #ifndef _NO_EXCEPTIONS
-  if (res == 0)
-    throw CNewException();
-  #endif
-  return res;
-}
-*/
+#endif

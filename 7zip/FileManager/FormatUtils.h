@@ -3,18 +3,15 @@
 #ifndef __FORMATUTILS_H
 #define __FORMATUTILS_H
 
+#include "Common/Types.h"
 #include "Common/String.h"
 
-// CSysString MyFormat(const CSysString &format, const CSysString &argument);
-
-// CSysString NumberToString(UINT64 number);
-
-UString NumberToStringW(UINT64 number);
+UString NumberToString(UInt64 number);
 
 UString MyFormatNew(const UString &format, const UString &argument);
-UString MyFormatNew(UINT32 resourceID, 
+UString MyFormatNew(UINT resourceID, 
     #ifdef LANG
-    UINT32 aLangID, 
+    UInt32 langID, 
     #endif
     const UString &argument);
 

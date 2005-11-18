@@ -12,7 +12,7 @@ static const UInt32 kBufferSize = 1 << 17;
 
 CCopyCoder::~CCopyCoder()
 {
-  BigFree(_buffer);
+  ::MidFree(_buffer);
 }
 
 STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
@@ -22,7 +22,7 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
 {
   if (_buffer == 0)
   {
-    _buffer = (Byte *)BigAlloc(kBufferSize);
+    _buffer = (Byte *)::MidAlloc(kBufferSize);
     if (_buffer == 0)
       return E_OUTOFMEMORY;
   }

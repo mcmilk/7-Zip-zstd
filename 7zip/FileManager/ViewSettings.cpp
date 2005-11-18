@@ -3,6 +3,7 @@
 #include "StdAfx.h"
  
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
 #include "ViewSettings.h"
 #include "Windows/Registry.h"
@@ -19,7 +20,7 @@ static const TCHAR *kPositionValueName = TEXT("Position");
 static const TCHAR *kPanelsInfoValueName = TEXT("Panels");
 static const TCHAR *kToolbars = TEXT("Toolbars");
 
-static const TCHAR *kPanelPathValueName = TEXT("PanelPath");
+static const WCHAR *kPanelPathValueName = L"PanelPath";
 static const TCHAR *kListMode = TEXT("ListMode");
 static const TCHAR *kFolderHistoryValueName = TEXT("FolderHistory");
 static const TCHAR *kFastFoldersValueName = TEXT("FolderShortcuts");
@@ -106,7 +107,7 @@ public:
   }
 };
 
-void SaveListViewInfo(const CSysString &id, const CListViewInfo &viewInfo)
+void SaveListViewInfo(const UString &id, const CListViewInfo &viewInfo)
 {
   const CObjectVector<CColumnInfo> &columns = viewInfo.Columns;
   CTempOutBufferSpec buffer;
@@ -130,11 +131,11 @@ void SaveListViewInfo(const CSysString &id, const CListViewInfo &viewInfo)
     keyName += kCulumnsKeyName;
     CKey key;
     key.Create(HKEY_CURRENT_USER, keyName);
-    key.SetValue(id, (const Byte *)buffer, dataSize);
+    key.SetValue(GetSystemString(id), (const Byte *)buffer, dataSize);
   }
 }
 
-void ReadListViewInfo(const CSysString &id, CListViewInfo &viewInfo)
+void ReadListViewInfo(const UString &id, CListViewInfo &viewInfo)
 {
   viewInfo.Clear();
   CObjectVector<CColumnInfo> &columns = viewInfo.Columns;
@@ -148,7 +149,7 @@ void ReadListViewInfo(const CSysString &id, CListViewInfo &viewInfo)
     CKey key;
     if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
       return;
-    if (key.QueryValue(id, buffer, size) != ERROR_SUCCESS)
+    if (key.QueryValue(GetSystemString(id), buffer, size) != ERROR_SUCCESS)
       return;
   }
   if (size < kColumnHeaderSize)
@@ -299,15 +300,15 @@ UInt32 ReadToolbarsMask()
 }
 
 
-static CSysString GetPanelPathName(UInt32 panelIndex)
+static UString GetPanelPathName(UInt32 panelIndex)
 {
-  TCHAR panelString[32];
+  WCHAR panelString[32];
   ConvertUInt64ToString(panelIndex, panelString);
-  return CSysString(kPanelPathValueName) + panelString;
+  return UString(kPanelPathValueName) + panelString;
 }
 
 
-void SavePanelPath(UInt32 panel, const CSysString &path)
+void SavePanelPath(UInt32 panel, const UString &path)
 {
   CKey key;
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
@@ -315,7 +316,7 @@ void SavePanelPath(UInt32 panel, const CSysString &path)
   key.SetValue(GetPanelPathName(panel), path);
 }
 
-bool ReadPanelPath(UInt32 panel, CSysString &path)
+bool ReadPanelPath(UInt32 panel, UString &path)
 {
   CKey key;
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);

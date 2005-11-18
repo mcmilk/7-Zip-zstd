@@ -114,6 +114,7 @@ Handler GUIDs:
 07 7z
 08 Cab
 
+E8 Bkf
 E9 Chm
 EA Split
 EB Rpm

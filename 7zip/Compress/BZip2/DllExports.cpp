@@ -4,6 +4,9 @@
 
 #include "Common/MyInitGuid.h"
 #include "Common/ComTry.h"
+#ifdef _WIN32
+#include "Common/Alloc.h"
+#endif
 
 #include "BZip2Encoder.h"
 #include "BZip2Decoder.h"
@@ -19,6 +22,10 @@ DEFINE_GUID(CLSID_CCompressBZip2Encoder,
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
+  #ifdef _WIN32
+  if (dwReason == DLL_PROCESS_ATTACH)
+    SetLargePageSize();
+  #endif
 	return TRUE;
 }
 

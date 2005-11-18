@@ -9,7 +9,7 @@
 namespace NWindows {
 namespace NNet {
 
-struct CResource
+struct CResourceBase
 {
   DWORD Scope; 
   DWORD Type; 
@@ -19,33 +19,68 @@ struct CResource
   bool RemoteNameIsDefined;
   bool CommentIsDefined;
   bool ProviderIsDefined;
+};
+
+struct CResource: public CResourceBase
+{
   CSysString LocalName;
   CSysString RemoteName;
   CSysString Comment;
   CSysString Provider;
 };
 
+#ifdef _UNICODE
+typedef CResource CResourceW;
+#else
+struct CResourceW: public CResourceBase
+{
+  UString LocalName;
+  UString RemoteName;
+  UString Comment;
+  UString Provider;
+};
+#endif
+
 class CEnum
 {
   HANDLE _handle;
   bool _handleAllocated;
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResource);
+  DWORD Next(LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBufferSize);
+  #ifndef _UNICODE
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCEW netResource);
+  DWORD NextW(LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBufferSize);
+  #endif
 protected:
   bool IsHandleAllocated() const { return _handleAllocated; }
 public:
   CEnum(): _handleAllocated(false) {}
   ~CEnum() {  Close(); }
-  DWORD Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResource);
-  DWORD Open(DWORD scope, DWORD type, DWORD usage, const CResource *resource);
   DWORD Close();
-  DWORD Next(LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBufferSize);
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, const CResource *resource);
   DWORD Next(CResource &resource);
+  #ifndef _UNICODE
+  DWORD Open(DWORD scope, DWORD type, DWORD usage, const CResourceW *resource);
+  DWORD Next(CResourceW &resource);
+  #endif
 };
 
 DWORD GetResourceParent(const CResource &resource, CResource &parentResource);
+#ifndef _UNICODE
+DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource);
+#endif
+
 DWORD GetResourceInformation(const CResource &resource, 
     CResource &destResource, CSysString &systemPathPart);
-DWORD AddConnection2(const CResource &resource, 
-    LPCTSTR password, LPCTSTR userName, DWORD flags);
+#ifndef _UNICODE
+DWORD GetResourceInformation(const CResourceW &resource, 
+    CResourceW &destResource, UString &systemPathPart);
+#endif
+
+DWORD AddConnection2(const CResource &resource, LPCTSTR password, LPCTSTR userName, DWORD flags);
+#ifndef _UNICODE
+DWORD AddConnection2(const CResourceW &resource, LPCWSTR password, LPCWSTR userName, DWORD flags);
+#endif
 
 }}
 

@@ -128,11 +128,7 @@ public:
   CProgressSyncInfo _syncInfo;
 
   CBenchmarkDialog(): _timer(0) {}
-
-  INT_PTR Create(HWND wndParent = 0)
-  { 
-    return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_BENCHMARK), wndParent); 
-  }
+  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_DIALOG_BENCHMARK, wndParent); }
 };
 
 void Benchmark(HWND hwnd);

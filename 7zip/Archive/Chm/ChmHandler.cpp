@@ -224,6 +224,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
 STDMETHODIMP CHandler::Close()
 {
+  m_Database.Clear();
   m_Stream.Release();
   return S_OK;
 }

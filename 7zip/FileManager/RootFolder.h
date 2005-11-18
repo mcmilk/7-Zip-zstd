@@ -26,19 +26,19 @@ public:
   )
 
   STDMETHOD(LoadItems)();
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value);
-  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder);
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
+  STDMETHOD(GetProperty)(UInt32 itemIndex, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(BindToFolder)(UInt32 index, IFolderFolder **resultFolder);
   STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder);
   STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder);
   STDMETHOD(GetName)(BSTR *name);
 
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
   STDMETHOD(GetTypeID)(BSTR *name);
   STDMETHOD(GetPath)(BSTR *path);
-  STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex);
+  STDMETHOD(GetSystemIconIndex)(UInt32 index, INT32 *iconIndex);
 
   void Init();
 private:

@@ -36,7 +36,7 @@ bool CSplitDialog::OnInit()
   {
     UString title;
     GetText(title);
-    title += ' ';
+    title += L' ';
     title += FilePath;
     SetText(title);
   }
@@ -59,10 +59,10 @@ bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 void CSplitDialog::OnButtonSetPath() 
 {
-  CSysString currentPath;
+  UString currentPath;
   _pathCombo.GetText(currentPath);
-  CSysString title = TEXT("Specify a location for output folder");
-  CSysString resultPath;
+  UString title = L"Specify a location for output folder";
+  UString resultPath;
   if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, resultPath))
     return;
   NFile::NName::NormalizeDirPathPrefix(resultPath);
@@ -78,7 +78,7 @@ void CSplitDialog::OnOK()
   volumeString.Trim();
   if (!ParseVolumeSizes(volumeString, VolumeSizes))
   {
-    MessageBox((HWND)*this, TEXT("Incorrect volume size"), TEXT("7-Zip"), MB_ICONERROR);
+    MessageBoxW((HWND)*this, L"Incorrect volume size", L"7-Zip", MB_ICONERROR);
     return;
   }
   CModalDialog::OnOK();

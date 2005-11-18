@@ -118,14 +118,29 @@ public:
     { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
 };
 
+#ifndef _UNICODE
+bool g_IsNT = false;
+static inline bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
+
 int APIENTRY WinMain(
   HINSTANCE hInstance,
   HINSTANCE hPrevInstance,
   LPSTR lpCmdLine,
   int nCmdShow)
 {
-  InitCommonControls();
   g_hInstance = (HINSTANCE)hInstance;
+  #ifndef _UNICODE
+  g_IsNT = IsItWindowsNT();
+  #endif
+  InitCommonControls();
 
   UString archiveName, switches;
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), archiveName, switches);

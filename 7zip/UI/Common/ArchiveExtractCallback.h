@@ -54,8 +54,6 @@ private:
 
   UString _diskFilePath;
 
-  CSysStringVector _messages;
-
   bool _extractMode;
   struct CProcessedFileInfo
   {
@@ -75,7 +73,6 @@ private:
   bool _stdOutMode;
 
   void CreateComplexDirectory(const UStringVector &dirPathParts);
-  void AddErrorMessage(LPCTSTR message);
 public:
   void Init(
       IInArchive *archiveHandler, 

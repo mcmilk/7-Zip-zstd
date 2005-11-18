@@ -14,10 +14,7 @@ void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile)
 {
   UString path;
   if (!::GetProgramFolderPath(path))
-  {
-    // AfxMessageBox(TEXT("App Path Registry Item not found"));
     return;
-  }
   path += kHelpFileName;
   path += topicFile;
   HtmlHelp(hwnd, GetSystemString(path), HH_DISPLAY_TOPIC, NULL);

@@ -23,13 +23,13 @@ bool CInBuffer::Create(UInt32 bufferSize)
     return true;
   Free();
   _bufferSize = bufferSize;
-  _bufferBase = (Byte *)::BigAlloc(bufferSize);
+  _bufferBase = (Byte *)::MidAlloc(bufferSize);
   return (_bufferBase != 0);
 }
 
 void CInBuffer::Free()
 {
-  BigFree(_bufferBase);
+  ::MidFree(_bufferBase);
   _bufferBase = 0;
 }
 

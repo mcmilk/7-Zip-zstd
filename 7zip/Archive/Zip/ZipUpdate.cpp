@@ -121,9 +121,22 @@ static HRESULT UpdateOneFile(IInStream *inStream,
   else
   {
     {
-      CInStreamWithCRC *inStreamSpec = new CInStreamWithCRC;
-      CMyComPtr<IInStream> inStream(inStreamSpec);
-      inStreamSpec->Init(fileInStream);
+      CSequentialInStreamWithCRC *inSecStreamSpec = 0;
+      CInStreamWithCRC *inStreamSpec = 0;
+      CMyComPtr<ISequentialInStream> fileSecInStream;
+      if (fileInStream)
+      {
+        inStreamSpec = new CInStreamWithCRC;
+        fileSecInStream = inStreamSpec;
+        inStreamSpec->Init(fileInStream);
+      }
+      else
+      {
+        inSecStreamSpec = new CSequentialInStreamWithCRC;
+        fileSecInStream = inSecStreamSpec;
+        inSecStreamSpec->Init(fileInStream2);
+      }
+
       CCompressingResult compressingResult;
       CMyComPtr<IOutStream> outStream;
       archive.CreateStreamForCompressing(&outStream);
@@ -132,20 +145,26 @@ static HRESULT UpdateOneFile(IInStream *inStream,
       CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
       localProgressSpec->Init(updateCallback, true);
   
-      CLocalCompressProgressInfo *localCompressProgressSpec = 
-          new CLocalCompressProgressInfo;
+      CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
       CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
 
       localCompressProgressSpec->Init(localProgress, &currentComplexity, NULL);
 
-      RINOK(compressor.Compress(inStream, outStream, 
-          fileSize, compressProgress, compressingResult));
+      RINOK(compressor.Compress(fileSecInStream, outStream, fileSize, compressProgress, compressingResult));
 
       fileHeader.PackSize = compressingResult.PackSize;
       fileHeader.CompressionMethod = compressingResult.Method;
       fileHeader.ExtractVersion.Version = compressingResult.ExtractVersion;
-      fileHeader.FileCRC = inStreamSpec->GetCRC();
-      fileHeader.UnPackSize = inStreamSpec->GetSize();
+      if (inStreamSpec != 0)
+      {
+        fileHeader.FileCRC = inStreamSpec->GetCRC();
+        fileHeader.UnPackSize = inStreamSpec->GetSize();
+      }
+      else
+      {
+        fileHeader.FileCRC = inSecStreamSpec->GetCRC();
+        fileHeader.UnPackSize = inSecStreamSpec->GetSize();
+      }
     }
   }
   fileHeader.SetEncrypted(options.PasswordIsDefined);

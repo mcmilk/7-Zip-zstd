@@ -102,6 +102,9 @@ class CModelessDialog: public CDialog
 {
 public:
   bool Create(LPCTSTR templateName, HWND parentWindow);
+  #ifndef _UNICODE
+  bool Create(LPCWSTR templateName, HWND parentWindow);
+  #endif
   virtual void OnOK() { Destroy(); }
   virtual void OnCancel() { Destroy(); }
 };
@@ -110,7 +113,12 @@ class CModalDialog: public CDialog
 {
 public:
   INT_PTR Create(LPCTSTR templateName, HWND parentWindow);
-  // INT_PTR Create(LPCWSTR templateName, HWND parentWindow);
+  INT_PTR Create(UINT resID, HWND parentWindow)
+    {  return Create(MAKEINTRESOURCEW(resID), parentWindow); }
+  #ifndef _UNICODE
+  INT_PTR Create(LPCWSTR templateName, HWND parentWindow);
+  #endif
+
   bool End(INT_PTR result)
     { return BOOLToBool(::EndDialog(_window, result)); }
   virtual void OnOK() { End(IDOK); }

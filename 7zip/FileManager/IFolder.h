@@ -28,10 +28,10 @@ namespace NPlugin
 FOLDER_INTERFACE(IFolderFolder, 0x00)
 {
   STDMETHOD(LoadItems)() PURE;
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems) PURE;  
-  // STDMETHOD(GetNumberOfSubFolders)(UINT32 *numSubFolders) PURE;  
-  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder) PURE;
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) PURE;  
+  // STDMETHOD(GetNumberOfSubFolders)(UInt32 *numSubFolders) PURE;  
+  STDMETHOD(GetProperty)(UInt32 itemIndex, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(BindToFolder)(UInt32 index, IFolderFolder **resultFolder) PURE;
   STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder) PURE;
   STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder) PURE;
   STDMETHOD(GetName)(BSTR *name) PURE;
@@ -40,8 +40,8 @@ FOLDER_INTERFACE(IFolderFolder, 0x00)
 FOLDER_INTERFACE(IEnumProperties, 0x01)
 {
   // STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator) PURE;  
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties) PURE;  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) PURE;  
+  STDMETHOD(GetPropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
 };
 
@@ -57,7 +57,7 @@ FOLDER_INTERFACE(IFolderGetPath, 0x03)
 
 FOLDER_INTERFACE(IFolderWasChanged, 0x04)
 {
-  STDMETHOD(WasChanged)(INT32 *wasChanged) PURE;
+  STDMETHOD(WasChanged)(Int32 *wasChanged) PURE;
 };
 
 /*
@@ -71,12 +71,12 @@ FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x06, 0x01)
 {
   STDMETHOD(AskWrite)(
       const wchar_t *srcPath, 
-      INT32 srcIsFolder, 
+      Int32 srcIsFolder, 
       const FILETIME *srcTime, 
-      const UINT64 *srcSize,
+      const UInt64 *srcSize,
       const wchar_t *destPathRequest, 
       BSTR *destPathResult, 
-      INT32 *writeAnswer) PURE;
+      Int32 *writeAnswer) PURE;
   STDMETHOD(ShowMessage)(const wchar_t *message) PURE;
   STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath) PURE;
 };
@@ -86,13 +86,13 @@ FOLDER_INTERFACE_SUB(IFolderOperationsUpdateCallback, IProgress, 0x06, 0x02)
 {
   STDMETHOD(AskOverwrite)(
       const wchar_t *srcPath, 
-      INT32 destIsFolder, 
+      Int32 destIsFolder, 
       const FILETIME *destTime, 
-      const UINT64 *destSize,
+      const UInt64 *destSize,
       const wchar_t *aDestPathRequest, 
       const wchar_t *aDestName, 
       BSTR *aDestPathResult, 
-      INT32 *aResult);
+      Int32 *aResult);
 };
 */
 
@@ -100,32 +100,32 @@ FOLDER_INTERFACE(IFolderOperations, 0x06)
 {
   STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress) PURE;
   STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress) PURE;
-  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress) PURE;
-  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress) PURE;
-  STDMETHOD(CopyTo)(const UINT32 *indices, UINT32 numItems, 
+  STDMETHOD(Rename)(UInt32 index, const wchar_t *newName, IProgress *progress) PURE;
+  STDMETHOD(Delete)(const UInt32 *indices, UInt32 numItems, IProgress *progress) PURE;
+  STDMETHOD(CopyTo)(const UInt32 *indices, UInt32 numItems, 
       const wchar_t *path, IFolderOperationsExtractCallback *callback) PURE;
-  STDMETHOD(MoveTo)(const UINT32 *indices, UINT32 numItems, 
+  STDMETHOD(MoveTo)(const UInt32 *indices, UInt32 numItems, 
       const wchar_t *path, IFolderOperationsExtractCallback *callback) PURE;
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
-      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress) PURE;
-  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) PURE;
+      const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress) PURE;
+  STDMETHOD(SetProperty)(UInt32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) PURE;
 };
 
 /*
 FOLDER_INTERFACE2(IFolderOperationsDeleteToRecycleBin, 0x06, 0x03)
 {
-  STDMETHOD(DeleteToRecycleBin)(const UINT32 *indices, UINT32 numItems, IProgress *progress) PURE;
+  STDMETHOD(DeleteToRecycleBin)(const UInt32 *indices, UInt32 numItems, IProgress *progress) PURE;
 };
 */
 
 FOLDER_INTERFACE(IFolderGetSystemIconIndex, 0x07)
 {
-  STDMETHOD(GetSystemIconIndex)(UINT32 index, INT32 *iconIndex) PURE;
+  STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex) PURE;
 };
 
 FOLDER_INTERFACE(IFolderGetItemFullSize, 0x08)
 {
-  STDMETHOD(GetItemFullSize)(UINT32 index, PROPVARIANT *value, IProgress *progress) PURE;
+  STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress) PURE;
 };
 
 FOLDER_INTERFACE(IFolderClone, 0x09)

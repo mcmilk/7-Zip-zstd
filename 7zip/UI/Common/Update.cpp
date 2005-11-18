@@ -523,9 +523,9 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
   {
     CArchiveItem ai;
 
-    RINOK(GetArchiveItemPath(archive, i, defaultItemName, ai.Name));
+    RINOK(GetArchiveItemPath(archive, i, ai.Name));
     RINOK(IsArchiveItemFolder(archive, i, ai.IsDirectory));
-    ai.Censored = censor.CheckPath(ai.Name, !ai.IsDirectory);
+    ai.Censored = censor.CheckPath(ai.Name.IsEmpty() ? defaultItemName : ai.Name, !ai.IsDirectory);
     RINOK(GetArchiveItemFileTime(archive, i, 
         archiveFileInfo.LastWriteTime, ai.LastWriteTime));
 
@@ -583,14 +583,14 @@ static HRESULT UpdateWithItemLists(
 #ifdef _WIN32
 class CCurrentDirRestorer
 {
-  CSysString m_CurrentDirectory;
+  UString m_CurrentDirectory;
 public:
   CCurrentDirRestorer()
     { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
   ~CCurrentDirRestorer()
     { RestoreDirectory();}
   bool RestoreDirectory()
-    { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
+    { return BOOLToBool(NFile::NDirectory::MySetCurrentDirectory(m_CurrentDirectory)); }
 };
 #endif
 

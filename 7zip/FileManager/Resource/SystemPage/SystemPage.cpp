@@ -50,24 +50,24 @@ bool CSystemPage::OnInit()
   _listViewExt.SetExtendedListViewStyle(newFlags, newFlags);
   _listViewPlugins.SetExtendedListViewStyle(newFlags, newFlags);
 
-  CSysString s = LangLoadString(IDS_PROPERTY_EXTENSION, 0x02000205);
-  LVCOLUMN column;
+  UString s = LangString(IDS_PROPERTY_EXTENSION, 0x02000205);
+  LVCOLUMNW column;
   column.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
   column.cx = 70;
   column.fmt = LVCFMT_LEFT;
-  column.pszText = (LPTSTR)(LPCTSTR)s;
+  column.pszText = (LPWSTR)(LPCWSTR)s;
   column.iSubItem = 0;
   _listViewExt.InsertColumn(0, &column);
 
-  s = LangLoadString(IDS_PLUGIN, 0x03010310);
+  s = LangString(IDS_PLUGIN, 0x03010310);
   column.cx = 70;
-  column.pszText = (LPTSTR)(LPCTSTR)s;
+  column.pszText = (LPWSTR)(LPCWSTR)s;
   column.iSubItem = 1;
   _listViewExt.InsertColumn(1, &column);
 
-  s = LangLoadString(IDS_PLUGIN, 0x03010310);
+  s = LangString(IDS_PLUGIN, 0x03010310);
   column.cx = 70;
-  column.pszText = (LPTSTR)(LPCTSTR)s;
+  column.pszText = (LPWSTR)(LPCWSTR)s;
   column.iSubItem = 0;
   _listViewPlugins.InsertColumn(0, &column);
 
@@ -77,12 +77,11 @@ bool CSystemPage::OnInit()
   {
     CExtInfoBig &extInfo = _extDatabase.ExtBigItems[i];
 
-    LVITEM item;
+    LVITEMW item;
     item.iItem = i;
     item.mask = LVIF_TEXT | LVIF_PARAM;
     item.lParam = i;
-    CSysString ext = GetSystemString(extInfo.Ext);
-    item.pszText = (LPTSTR)(LPCTSTR)ext;
+    item.pszText = (LPWSTR)(LPCWSTR)extInfo.Ext;
     item.iSubItem = 0;
     int itemIndex = _listViewExt.InsertItem(&item);
 
@@ -106,26 +105,14 @@ bool CSystemPage::OnInit()
 
 void CSystemPage::SetMainPluginText(int itemIndex, int indexInDatabase)
 {
-  LVITEM item;
+  LVITEMW item;
   item.iItem = itemIndex;
   item.mask = LVIF_TEXT;
-  CSysString mainPlugin = GetSystemString(
-      _extDatabase.GetMainPluginNameForExtItem(indexInDatabase));
-  item.pszText = (TCHAR *)(const TCHAR *)mainPlugin;
+  UString mainPlugin = _extDatabase.GetMainPluginNameForExtItem(indexInDatabase);
+  item.pszText = (WCHAR *)(const WCHAR *)mainPlugin;
   item.iSubItem = 1;
   _listViewExt.SetItem(&item);
 }
-
-#ifndef _WIN64
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
 
 static UString GetProgramCommand()
 {
@@ -133,26 +120,21 @@ static UString GetProgramCommand()
   UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
-  path += L"7zFM";
-  #ifndef _WIN64
-  if (IsItWindowsNT())
-    path += L"n";
-  #endif
-  path += L".exe\" \"%1\"";
+  path += L"7zFM.exe\" \"%1\"";
   return path;
 }
 
-static CSysString GetIconPath(const CSysString &filePath,
+static UString GetIconPath(const UString &filePath,
     const CLSID &clsID, const UString &extension)
 {
   CPluginLibrary library;
   CMyComPtr<IFolderManager> folderManager;
   CMyComPtr<IFolderFolder> folder;
   if (library.LoadAndCreateManager(filePath, clsID, &folderManager) != S_OK)
-    return CSysString();
+    return UString();
   CMyComBSTR typesString;
   if (folderManager->GetTypes(&typesString) != S_OK)
-    return CSysString();
+    return UString();
   UStringVector types;
   SplitString((const wchar_t *)typesString, types);
   for (int typeIndex = 0; typeIndex < types.Size(); typeIndex++)
@@ -164,16 +146,15 @@ static CSysString GetIconPath(const CSysString &filePath,
     if (extension.CompareNoCase((const wchar_t *)extTemp) == 0)
     {
       CMyComPtr<IFolderManagerGetIconPath> getIconPath;
-      if (folderManager.QueryInterface(
-          IID_IFolderManagerGetIconPath, &getIconPath) != S_OK)
-        return CSysString();
+      if (folderManager.QueryInterface(IID_IFolderManagerGetIconPath, &getIconPath) != S_OK)
+        break;
       CMyComBSTR iconPathTemp;
       if (getIconPath->GetIconPath(type, &iconPathTemp) != S_OK)
-        return CSysString();
-      return GetSystemString((const wchar_t *)iconPathTemp);
+        break;
+      return (const wchar_t *)iconPathTemp;
     }
   }
-  return CSysString();
+  return UString();
 }
 
 LONG CSystemPage::OnApply()
@@ -189,7 +170,7 @@ LONG CSystemPage::OnApply()
     {
       UString title = extInfo.Ext + UString(L" Archive");
       UString command = GetProgramCommand();
-      CSysString iconPath;
+      UString iconPath;
       if (!extInfo.PluginsPairs.IsEmpty())
       {
         const CPluginInfo &plugin = _extDatabase.Plugins[extInfo.PluginsPairs[0].Index];
@@ -197,8 +178,8 @@ LONG CSystemPage::OnApply()
       }
       NRegistryAssociations::AddShellExtensionInfo(
             GetSystemString(extInfo.Ext), 
-            GetSystemString(title), 
-            GetSystemString(command), 
+            title, 
+            command, 
             iconPath, NULL, 0);
     }
     else
@@ -210,7 +191,7 @@ LONG CSystemPage::OnApply()
   else
     NRegistryAssociations::DeleteContextMenuHandler();
   */
-
+  SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
   return PSNRET_NOERROR;
 }
 
@@ -411,12 +392,12 @@ void CSystemPage::RefreshPluginsList(int selectIndex)
   for (int i = 0; i < extInfo.PluginsPairs.Size(); i++)
   {
     CPluginEnabledPair pluginPair = extInfo.PluginsPairs[i];
-    CSysString pluginName = GetSystemString(_extDatabase.Plugins[pluginPair.Index].Name);
-    LVITEM item;
+    UString pluginName = _extDatabase.Plugins[pluginPair.Index].Name;
+    LVITEMW item;
     item.iItem = i;
     item.mask = LVIF_TEXT | LVIF_PARAM;
     item.lParam = i;
-    item.pszText = (LPTSTR)(LPCTSTR)pluginName;
+    item.pszText = (LPWSTR)(LPCWSTR)pluginName;
     item.iSubItem = 0;
     int itemIndex = _listViewPlugins.InsertItem(&item);
     _listViewPlugins.SetCheckState(itemIndex, pluginPair.Enabled);
@@ -434,9 +415,6 @@ void CSystemPage::RefreshPluginsList(int selectIndex)
 
 
 /*
-static LPCTSTR kZIPExtension = TEXT("zip");
-static LPCTSTR kRARExtension = TEXT("rar");
-
 static BYTE kZipShellNewData[] =
   { 0x50-1, 0x4B, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0 };
 

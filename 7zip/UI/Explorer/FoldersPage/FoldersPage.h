@@ -15,17 +15,16 @@ class CFoldersPage : public NWindows::NControl::CPropertyPage
   void ModifiedEvent();
   NWindows::NControl::CDialogChildControl m_WorkPath;
   NWindows::NControl::CDialogChildControl m_ButtonSetWorkPath;
-  // int m_RadioWorkMode;
   void OnFoldersWorkButtonPath();
   int GetWorkMode() const;
-  void GetWorkDir(NWorkDir::CInfo &aWorkDirInfo);
+  void GetWorkDir(NWorkDir::CInfo &workDirInfo);
   // bool WasChanged();
 public:
   virtual bool OnInit();
-  virtual bool OnCommand(int aCode, int anItemID, LPARAM lParam);
+  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
   virtual void OnNotifyHelp();
   virtual LONG OnApply();
-  virtual bool OnButtonClicked(int aButtonID, HWND aButtonHWND);
+  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
 };
 
 #endif

@@ -120,10 +120,12 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   RIF(OctalToNumber32(cur, 8, item.Mode));
   cur += 8;
 
-  RIF(OctalToNumber32(cur, 8, item.UID));
+  if (!OctalToNumber32(cur, 8, item.UID))
+    item.UID = 0;
   cur += 8;
 
-  RIF(OctalToNumber32(cur, 8, item.GID));
+  if (!OctalToNumber32(cur, 8, item.GID))
+    item.GID = 0;
   cur += 8;
 
   RIF(OctalToNumber(cur, 12, item.Size));

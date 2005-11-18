@@ -159,15 +159,18 @@ class CPanel:public NWindows::NControl::CWindow2
   virtual void OnDestroy();
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam, LRESULT &result);
   void OnComboBoxCommand(UINT code, LPARAM &aParam);
+  bool OnNotifyComboBoxEndEdit(PNMCBEENDEDITW info, LRESULT &result);
+  #ifndef _UNICODE
   bool OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result);
+  #endif
   bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
   void OnItemChanged(NMLISTVIEW *item);
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
   void OnDrag(LPNMLISTVIEW nmListView);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
-  BOOL OnBeginLabelEdit(LV_DISPINFO * lpnmh);
-  BOOL OnEndLabelEdit(LV_DISPINFO * lpnmh);
+  BOOL OnBeginLabelEdit(LV_DISPINFOW * lpnmh);
+  BOOL OnEndLabelEdit(LV_DISPINFOW * lpnmh);
   void OnColumnClick(LPNMLISTVIEW info);
   bool OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result);
 
@@ -204,8 +207,8 @@ public:
   void InvertSelection();
 private:
 
-  CSysString GetFileType(UInt32 index);
-  LRESULT SetItemText(LVITEM &item);
+  // UString GetFileType(UInt32 index);
+  LRESULT SetItemText(LVITEMW &item);
 
   // CRecordVector<PROPID> m_ColumnsPropIDs;
 
@@ -231,7 +234,7 @@ public:
 
   UString _focusedName;
 
-  UInt32 GetRealIndex(const LVITEM &item) const
+  UInt32 GetRealIndex(const LVITEMW &item) const
   {
     /*
     if (_virtualMode)
@@ -326,7 +329,7 @@ public:
 
 
   bool _needSaveInfo;
-  CSysString _typeIDString;
+  UString _typeIDString;
   CListViewInfo _listViewInfo;
   CItemProperties _properties;
   CItemProperties _visibleProperties;

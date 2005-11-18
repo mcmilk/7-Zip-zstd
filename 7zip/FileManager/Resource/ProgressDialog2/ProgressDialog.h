@@ -21,7 +21,7 @@ class CProgressSynch
   UString TitleFileName;
   UString CurrentFileName;
 public:
-  CProgressSynch(): _stopped(false), _paused(false), _total(1), _completed(0) {}
+  CProgressSynch(): _stopped(false), _paused(false), _total((UInt64)(Int64)-1), _completed(0) {}
 
   bool GetStopped()
   {
@@ -168,10 +168,10 @@ public:
   void WaitCreating() { _dialogCreatedEvent.Lock(); }
 
 
-  INT_PTR Create(const UString &title, HWND aWndParent = 0)
+  INT_PTR Create(const UString &title, HWND wndParent = 0)
   { 
     _title = title;
-    return CModalDialog::Create(MAKEINTRESOURCE(IDD_DIALOG_PROGRESS), aWndParent); 
+    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent); 
   }
 
   static const UINT kCloseMessage;

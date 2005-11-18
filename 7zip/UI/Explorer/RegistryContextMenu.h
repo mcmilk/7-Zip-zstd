@@ -10,6 +10,4 @@ namespace NZipRootRegistry {
   void DeleteContextMenuHandler();
 }
 
-// bool GetProgramDirPrefix(CSysString &folder);
-
 #endif

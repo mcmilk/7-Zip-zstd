@@ -8,6 +8,10 @@
 #include "../Common/StringConvert.h"
 #endif
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NDLL {
 
@@ -54,25 +58,21 @@ bool CLibrary::Load(LPCTSTR fileName)
 }
 
 #ifndef _UNICODE
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+CSysString GetSysPath(LPCWSTR sysPath)
+  { return UnicodeStringToMultiByte(sysPath, GetCurrentCodePage()); }
+
 bool CLibrary::LoadEx(LPCWSTR fileName, DWORD flags)
 {
-  HMODULE module = ::LoadLibraryExW(fileName, NULL, flags);
-  if (module != 0)
-    return LoadOperations(module);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return LoadEx(UnicodeStringToMultiByte(fileName, GetCurrentCodePage()), flags);
+  if (g_IsNT)
+    return LoadOperations(::LoadLibraryExW(fileName, NULL, flags));
+  return LoadEx(GetSysPath(fileName), flags);
 }
 bool CLibrary::Load(LPCWSTR fileName)
 {
-  HMODULE module = ::LoadLibraryW(fileName);
-  if (module != 0)
-    return LoadOperations(module);
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return false;
-  return Load(UnicodeStringToMultiByte(fileName, GetCurrentCodePage()));
+  if (g_IsNT)
+    return LoadOperations(::LoadLibraryW(fileName));
+  return Load(GetSysPath(fileName));
 }
 #endif
 
@@ -93,15 +93,17 @@ bool MyGetModuleFileName(HMODULE hModule, CSysString &result)
 bool MyGetModuleFileName(HMODULE hModule, UString &result)
 {
   result.Empty();
-  wchar_t fullPath[MAX_PATH + 2];
-  DWORD size = ::GetModuleFileNameW(hModule, fullPath, MAX_PATH + 1);
-  if (size <= MAX_PATH && size != 0)
+  if (g_IsNT)
   {
-    result = fullPath;
-    return true;
-  }
-  if (::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
+    wchar_t fullPath[MAX_PATH + 2];
+    DWORD size = ::GetModuleFileNameW(hModule, fullPath, MAX_PATH + 1);
+    if (size <= MAX_PATH && size != 0)
+    {
+      result = fullPath;
+      return true;
+    }
     return false;
+  }
   CSysString resultSys;
   if (!MyGetModuleFileName(hModule, resultSys))
     return false;

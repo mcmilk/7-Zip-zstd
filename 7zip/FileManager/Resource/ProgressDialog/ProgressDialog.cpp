@@ -27,10 +27,10 @@ CProgressDialog::~CProgressDialog()
 {
   AddToTitle(TEXT(""));
 }
-void CProgressDialog::AddToTitle(LPCTSTR s)
+void CProgressDialog::AddToTitle(LPCWSTR s)
 {
   if (MainWindow != 0)
-    ::SetWindowText(MainWindow, s + UString(MainTitle));
+    ::MySetWindowText(MainWindow, UString(s) + MainTitle);
 }
 #endif
 

@@ -14,6 +14,11 @@
 #include "Windows/FileDir.h"
 
 #include "../../FileManager/ProgramLocation.h"
+#include "../../FileManager/RegistryUtils.h"
+
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif _UNICODE
 
 using namespace NWindows;
 
@@ -23,38 +28,58 @@ static LPCWSTR kMapSwitch = L" -i#";
 static LPCWSTR kArchiveNoNameSwitch = L" -an";
 static LPCWSTR kArchiveMapSwitch = L" -ai#";
 static LPCWSTR kStopSwitchParsing = L" --";
+static LPCWSTR kLargePagesDisable = L" -slp-";
 
-
-#ifndef _WIN64
-static bool IsItWindowsNT()
+static void AddLagePagesSwitch(UString &params)
 {
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+  if (!ReadLockMemoryEnable())
+    params += kLargePagesDisable;
 }
-#endif
 
 HRESULT MyCreateProcess(const UString &params, 
-    LPCTSTR curDir, bool waitFinish,
+    LPCWSTR curDir, bool waitFinish,
     NWindows::NSynchronization::CEvent *event)
 {
-  STARTUPINFO startupInfo;
-  startupInfo.cb = sizeof(startupInfo);
-  startupInfo.lpReserved = 0;
-  startupInfo.lpDesktop = 0;
-  startupInfo.lpTitle = 0;
-  startupInfo.dwFlags = 0;
-  startupInfo.cbReserved2 = 0;
-  startupInfo.lpReserved2 = 0;
-  
+  const UString params2 = params;
   PROCESS_INFORMATION processInformation;
-  BOOL result = ::CreateProcess(NULL, (TCHAR *)(const TCHAR *)
-    GetSystemString(params), 
-    NULL, NULL, FALSE, 0, NULL, 
-    curDir, 
-    &startupInfo, &processInformation);
+  BOOL result;
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    STARTUPINFOA startupInfo;
+    startupInfo.cb = sizeof(startupInfo);
+    startupInfo.lpReserved = 0;
+    startupInfo.lpDesktop = 0;
+    startupInfo.lpTitle = 0;
+    startupInfo.dwFlags = 0;
+    startupInfo.cbReserved2 = 0;
+    startupInfo.lpReserved2 = 0;
+    
+    CSysString curDirA;
+    if (curDir != 0)
+      curDirA = GetSystemString(curDir);
+    result = ::CreateProcessA(NULL, (LPSTR)(LPCSTR)GetSystemString(params), 
+      NULL, NULL, FALSE, 0, NULL, 
+      ((curDir != 0) ? (LPCSTR)curDirA: 0), 
+      &startupInfo, &processInformation);
+  }
+  else
+  #endif
+  {
+    STARTUPINFOW startupInfo;
+    startupInfo.cb = sizeof(startupInfo);
+    startupInfo.lpReserved = 0;
+    startupInfo.lpDesktop = 0;
+    startupInfo.lpTitle = 0;
+    startupInfo.dwFlags = 0;
+    startupInfo.cbReserved2 = 0;
+    startupInfo.lpReserved2 = 0;
+    
+    result = ::CreateProcessW(NULL, (LPWSTR)(LPCWSTR)params,  
+      NULL, NULL, FALSE, 0, NULL, 
+      curDir, 
+      &startupInfo, &processInformation);
+  }
   if (result == 0)
     return ::GetLastError();
   else
@@ -84,13 +109,7 @@ static UString Get7zGuiPath()
   UString folder;
   if (GetProgramFolderPath(folder))
     path += folder;
-  path += L"7zG";
-  #ifndef _WIN64
-  if (IsItWindowsNT())
-    path += L"n";
-  #endif
-  path += L".exe";
-  // path += L"7z.exe";
+  path += L"7zG.exe";
   return GetQuotedString(path);
 }
 
@@ -260,6 +279,8 @@ HRESULT CompressFiles(
   if (showDialog)
     params += kShowDialogSwitch;
 
+  AddLagePagesSwitch(params);
+
   params += kStopSwitchParsing;
   params += L" ";
   
@@ -285,9 +306,8 @@ HRESULT CompressFiles(
       *curData++ = L'\0';
     }
     // MessageBox(0, params, 0, 0);
-    CSysString sysCurDir = GetSystemString(curDir);
     RINOK(MyCreateProcess(params, 
-      (sysCurDir.IsEmpty()? 0: (LPCTSTR)sysCurDir), 
+      (curDir.IsEmpty()? 0: (LPCWSTR)curDir), 
       waitFinish, &event));
   }
   catch(...)
@@ -312,6 +332,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &archivePaths,
     const UString &params)
 {
   UString params2 = params;
+  AddLagePagesSwitch(params2);
   params2 += kArchiveNoNameSwitch;
   params2 += kArchiveMapSwitch;
   CFileMapping fileMapping;

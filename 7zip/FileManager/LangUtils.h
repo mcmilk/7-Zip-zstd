@@ -4,8 +4,9 @@
 #define __LANGUTILS_H
 
 #include "Common/Lang.h"
+#include "Windows/ResourceString.h"
 
-extern CSysString g_LangID;
+extern UString g_LangID;
 
 struct CIDLangPair
 {
@@ -28,9 +29,13 @@ void LoadLangs(CObjectVector<CLangEx> &langs);
 void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems);
 void LangSetWindowText(HWND window, UInt32 langID);
 
-UString LangLoadString(UInt32 langID);
-CSysString LangLoadString(UINT resourceID, UInt32 langID);
-UString LangLoadStringW(UINT resourceID, UInt32 langID);
+UString LangString(UInt32 langID);
+UString LangString(UINT resourceID, UInt32 langID);
 
+#ifdef LANG
+#define LangStringSpec(resourceID, langID) LangString(resourceID, langID)
+#else
+#define LangStringSpec(resourceID, langID) NWindows::MyLoadStringW(resourceID)
+#endif
 
 #endif

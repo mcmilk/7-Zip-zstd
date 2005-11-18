@@ -69,7 +69,7 @@ static void ReduceString(UString &s, int size)
 
 bool CProgressDialog::OnInit() 
 {
-  _range = UInt64(-1);
+  _range = (UInt64)(Int64)(-1);
   _prevPercentValue = UInt32(-1);
   _prevElapsedSec = UInt32(-1);
   _prevRemainingSec = UInt32(-1);
@@ -93,9 +93,9 @@ bool CProgressDialog::OnInit()
   window = GetItem(IDC_BUTTON_PAUSE);
   window.GetText(pauseString);
 
-  foregroundString = LangLoadStringW(IDS_PROGRESS_FOREGROUND, 0x02000C11);
-  continueString = LangLoadStringW(IDS_PROGRESS_CONTINUE, 0x02000C13);
-  pausedString = LangLoadStringW(IDS_PROGRESS_PAUSED, 0x02000C20);
+  foregroundString = LangString(IDS_PROGRESS_FOREGROUND, 0x02000C11);
+  continueString = LangString(IDS_PROGRESS_CONTINUE, 0x02000C13);
+  pausedString = LangString(IDS_PROGRESS_PAUSED, 0x02000C20);
 
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));
   _timer = SetTimer(kTimerID, kTimerElapse);
@@ -113,27 +113,19 @@ void CProgressDialog::OnCancel()
 
 static void ConvertSizeToString(UInt64 value, wchar_t *s)
 {
-  if (value < (UInt64(10000) <<  0))
-  {
-    ConvertUInt64ToString(value, s);
-    lstrcatW(s, L" B");
-    return;
-  }
-  if (value < (UInt64(10000) <<  10))
-  {
-    ConvertUInt64ToString((value >> 10), s);
-    lstrcatW(s, L" KB");
-    return;
-  }
-  if (value < (UInt64(10000) <<  20))
-  {
-    ConvertUInt64ToString((value >> 20), s);
-    lstrcatW(s, L" MB");
-    return;
-  }
-  ConvertUInt64ToString((value >> 30), s);
-  lstrcatW(s, L" GB");
-  return;
+  const wchar_t *kModif = L" KMGTP";
+  for (int i = 0; true; i++)
+    if (i == 5 || value < (UInt64(10000) << (i * 10)))
+    {
+      ConvertUInt64ToString(value >> (i * 10), s);
+      s += wcslen(s);
+      *s++ = ' ';
+      if (i != 0)
+        *s++ = kModif[i];
+      *s++ = L'B';
+      *s++ = L'\0';
+      return;
+    }
 }
 
 void CProgressDialog::SetRange(UInt64 range)
@@ -182,7 +174,13 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 
   if (total != _range)
     SetRange(total);
-  SetPos(completed);
+  if (total == (UInt64)(Int64)-1)
+  {
+    SetPos(0);
+    SetRange(completed);
+  }
+  else
+    SetPos(completed);
 
   _elapsedTime += (curTime - _prevTime);
   _prevTime = curTime;
@@ -201,16 +199,23 @@ bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
 
   if (completed != 0 && elapsedChanged)
   {
-    UInt64 remainingTime = 0;
-    if (completed < total)
-      remainingTime = _elapsedTime * (total - completed)  / completed;
-    UInt64 remainingSec = remainingTime / 1000;
-    if (remainingSec != _prevRemainingSec)
+    if (total == (UInt64)(Int64)-1)
     {
-      TCHAR s[40];
-      GetTimeString(remainingSec, s);
-      SetItemText(IDC_PROGRESS_REMAINING_VALUE, s);
-      _prevRemainingSec = remainingSec;
+      SetItemText(IDC_PROGRESS_REMAINING_VALUE, L"");
+    }
+    else
+    {
+      UInt64 remainingTime = 0;
+      if (completed < total)
+        remainingTime = _elapsedTime * (total - completed)  / completed;
+      UInt64 remainingSec = remainingTime / 1000;
+      if (remainingSec != _prevRemainingSec)
+      {
+        TCHAR s[40];
+        GetTimeString(remainingSec, s);
+        SetItemText(IDC_PROGRESS_REMAINING_VALUE, s);
+        _prevRemainingSec = remainingSec;
+      }
     }
     // if (elapsedChanged)
     {
@@ -405,7 +410,7 @@ bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       if (!paused)
         OnPauseButton();
       int res = ::MessageBoxW(HWND(*this), 
-          LangLoadStringW(IDS_PROGRESS_ASK_CANCEL, 0x02000C30), 
+          LangString(IDS_PROGRESS_ASK_CANCEL, 0x02000C30), 
           _title, MB_YESNOCANCEL);
       // ProgressSynch.SetPaused(paused);
       if (!paused)

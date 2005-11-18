@@ -7,8 +7,23 @@
 
 void *MyAlloc(size_t size) throw();
 void MyFree(void *address) throw();
+
+#ifdef _WIN32
+
+bool SetLargePageSize();
+
+void *MidAlloc(size_t size) throw();
+void MidFree(void *address) throw();
 void *BigAlloc(size_t size) throw();
 void BigFree(void *address) throw();
-// void *BigAllocE(size_t size);
+
+#else
+
+#define MidAlloc(size) MyAlloc(size)
+#define MidFree(address) MyFree(address)
+#define BigAlloc(size) MyAlloc(size)
+#define BigFree(address) MyFree(address)
+
+#endif
 
 #endif

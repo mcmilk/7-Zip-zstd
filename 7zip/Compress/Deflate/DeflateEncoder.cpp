@@ -116,12 +116,11 @@ HRESULT CCoder::Create()
       kNumOpts + kNumGoodBacks, m_NumFastBytes, m_MatchMaxLen - m_NumFastBytes));
   if (!m_OutStream.Create(1 << 20))
     return E_OUTOFMEMORY;
-  m_MatchLengthEdge = m_NumFastBytes + 1;
 
   Free();
   if (m_NumPasses > 1)
   {
-    m_OnePosMatchesMemory = (UInt16 *)BigAlloc(kNumGoodBacks * (m_NumFastBytes + 1) * sizeof(UInt16));
+    m_OnePosMatchesMemory = (UInt16 *)::MidAlloc(kNumGoodBacks * (m_NumFastBytes + 1) * sizeof(UInt16));
     if (m_OnePosMatchesMemory == 0)
       return E_OUTOFMEMORY;
     m_OnePosMatchesArray = (COnePosMatches *)MyAlloc(kNumGoodBacks * sizeof(COnePosMatches));
@@ -177,7 +176,7 @@ void CCoder::Free()
   {
     if (m_NumPasses > 1)
     {
-      BigFree(m_OnePosMatchesMemory);
+      ::MidFree(m_OnePosMatchesMemory);
       MyFree(m_OnePosMatchesArray);
     }
     else
@@ -308,7 +307,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
 
   if(lenMain < kMatchMinLen)
     return 1;
-  if(lenMain >= m_MatchLengthEdge)
+  if(lenMain > m_NumFastBytes)
   {
     backRes = backMain; 
     MovePos(lenMain - 1);
@@ -337,7 +336,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
       return Backward(backRes, cur);
     GetBacks(UInt32(m_BlockStartPostion + m_CurrentBlockUncompressedSize + cur));
     UInt32 newLen = m_LongestMatchLength;
-    if(newLen >= m_MatchLengthEdge)
+    if(newLen > m_NumFastBytes)
       return Backward(backRes, cur);
     
     UInt32 curPrice = m_Optimum[cur].Price; 

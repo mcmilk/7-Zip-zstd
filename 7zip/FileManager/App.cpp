@@ -114,10 +114,8 @@ void CApp::CreateOnePanel(int panelIndex, const UString &mainPath)
   UString path;
   if (mainPath.IsEmpty())
   {
-    CSysString sysPath; 
-    if (!::ReadPanelPath(panelIndex, sysPath))
-      sysPath.Empty();
-    path = GetUnicodeString(sysPath);
+    if (!::ReadPanelPath(panelIndex, path))
+      path.Empty();
   }
   else
     path = mainPath;
@@ -165,8 +163,7 @@ struct CButtonInfo
   UINT Bitmap2ResID;
   UINT StringResID; 
   UINT32 LangID;
-  CSysString GetText()const
-    { return LangLoadString(StringResID, LangID); };
+  UString GetText()const { return LangString(StringResID, LangID); };
 };
 
 static CButtonInfo g_StandardButtons[] = 
@@ -184,7 +181,7 @@ static CButtonInfo g_ArchiveButtons[] =
   { kTestCommand , IDB_TEST, IDB_TEST2, IDS_TEST, 0x03020402}
 };
 
-bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, CSysString &s)
+bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, UString &s)
 {
   for (int i = 0; i < numButtons; i++)
   {
@@ -192,19 +189,19 @@ bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, CSysS
     if (b.commandID == commandID)
     {
       s = b.GetText();
-      return  true;
+      return true;
     }
   }
   return false;
 }
 
-void SetButtonText(UINT32 commandID, CSysString &s)
+void SetButtonText(UINT32 commandID, UString &s)
 {
-  if (SetButtonText(commandID, g_StandardButtons, sizeof(g_StandardButtons) / 
-      sizeof(g_StandardButtons[0]), s))
+  if (SetButtonText(commandID, g_StandardButtons, 
+      sizeof(g_StandardButtons) / sizeof(g_StandardButtons[0]), s))
     return;
-  SetButtonText(commandID, g_ArchiveButtons, sizeof(g_StandardButtons) / 
-      sizeof(g_ArchiveButtons[0]), s);
+  SetButtonText(commandID, g_ArchiveButtons, 
+      sizeof(g_ArchiveButtons) / sizeof(g_ArchiveButtons[0]), s);
 }
 
 static void AddButton(
@@ -223,10 +220,10 @@ static void AddButton(
     ;
   but.dwData = 0;
 
-  CSysString s = butInfo.GetText();
+  UString s = butInfo.GetText();
   but.iString = 0;
   if (showText)
-    but.iString = (INT_PTR )(LPCTSTR)s; 
+    but.iString = (INT_PTR)(LPCWSTR)s; 
 
   but.iBitmap = imageList.GetImageCount();
   HBITMAP b = ::LoadBitmap(g_hInstance, 
@@ -238,7 +235,11 @@ static void AddButton(
     imageList.AddMasked(b, RGB(255, 0, 255));
     ::DeleteObject(b);
   }
+  #ifdef _UNICODE
   toolBar.AddButton(1, &but);
+  #else
+  toolBar.AddButtonW(1, &but);
+  #endif
 }
 
 static void AddBand(NControl::CReBar &reBar, NControl::CToolBar &toolBar)
@@ -402,7 +403,7 @@ void CApp::Save()
       path = panel._currentFolderPrefix;
     else
       path = GetFolderPath(panel._parentFolders[0].ParentFolder);
-    SavePanelPath(i, GetSystemString(path));
+    SavePanelPath(i, path);
     listMode.Panels[i] = panel.GetListViewMode();
   }
   SaveListMode(listMode);
@@ -473,7 +474,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
   if (!srcPanel.DoesItSupportOperations())
   {
-    srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
     return;
   }
 
@@ -511,11 +512,11 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     copyDialog.Value = destPath;
     
     copyDialog.Title = move ? 
-        LangLoadStringW(IDS_MOVE, 0x03020202):
-        LangLoadStringW(IDS_COPY, 0x03020201);
+        LangString(IDS_MOVE, 0x03020202):
+        LangString(IDS_COPY, 0x03020201);
     copyDialog.Static = move ? 
-        LangLoadStringW(IDS_MOVE_TO, 0x03020204):
-        LangLoadStringW(IDS_COPY_TO, 0x03020203);
+        LangString(IDS_MOVE_TO, 0x03020204):
+        LangString(IDS_COPY_TO, 0x03020203);
 
     if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
       return;
@@ -526,7 +527,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     {
       if (!srcPanel.IsFSFolder())
       {
-        srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+        srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
         return;
       }
       destPath = srcPanel._currentFolderPrefix + destPath;
@@ -541,7 +542,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       {
         if (NumPanels < 2 || destPath != destPanel._currentFolderPrefix || !destPanel.DoesItSupportOperations())
         {
-          srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+          srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
           return;
         }
         useDestPanel = true;
@@ -556,7 +557,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
         NDirectory::CreateComplexDirectory(prefix);
         if (!CheckFolderPath(prefix))
         {
-          srcPanel.MessageBox(LangLoadStringW(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+          srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
           return;
         }
       }
@@ -705,7 +706,8 @@ int CApp::GetFocusedPanelIndex() const
 }
   */
 
-static CSysString g_ToolTipBuffer;
+static UString g_ToolTipBuffer;
+static CSysString g_ToolTipBufferSys;
 
 void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
 {
@@ -729,8 +731,20 @@ void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
       SetButtonText(info->hdr.idFrom, g_ToolTipBuffer);
-      info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBuffer;
+      g_ToolTipBufferSys = GetSystemString(g_ToolTipBuffer);
+      info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBufferSys;
       return;
     }
+    #ifndef _UNICODE
+    if (pnmh->code == TTN_GETDISPINFOW)
+    {
+      LPNMTTDISPINFOW info = (LPNMTTDISPINFOW)pnmh;
+      info->hinst = 0;
+      g_ToolTipBuffer.Empty();
+      SetButtonText(info->hdr.idFrom, g_ToolTipBuffer);
+      info->lpszText = (LPWSTR)(LPCWSTR)g_ToolTipBuffer;
+      return;
+    }
+    #endif
   }
 }
