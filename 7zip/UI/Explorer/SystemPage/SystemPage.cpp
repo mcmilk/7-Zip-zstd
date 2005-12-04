@@ -119,12 +119,21 @@ bool CSystemPage::OnInit()
   return CPropertyPage::OnInit();
 }
 
+STDAPI DllRegisterServer(void);
+STDAPI DllUnregisterServer(void);
+
 LONG CSystemPage::OnApply()
 {
   if (IsButtonCheckedBool(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU))
+  {
+    DllRegisterServer();
     NZipRootRegistry::AddContextMenuHandler();
+  }
   else
+  {
+    DllUnregisterServer();
     NZipRootRegistry::DeleteContextMenuHandler();
+  }
   SaveCascadedMenu(IsButtonCheckedBool(IDC_SYSTEM_CASCADED_MENU));
 
   UINT32 flags = 0;

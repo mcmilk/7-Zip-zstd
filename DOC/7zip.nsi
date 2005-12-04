@@ -2,8 +2,8 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 30
-!define VERSION_POSTFIX_FULL " beta"
+!define VERSION_MINOR 31
+!define VERSION_POSTFIX_FULL ""
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -60,7 +60,6 @@
   SetCompressorDictSize 4
 !endif
 !else
-  SetCompressor zlib
   SetCompress off
 !endif
 
@@ -195,6 +194,7 @@ Section
   File eo.txt
   File es.txt
   File et.txt
+  File eu.txt
   File ext.txt
   File fa.txt
   File fi.txt
@@ -397,6 +397,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\eo.txt
   Delete $INSTDIR\Lang\es.txt
   Delete $INSTDIR\Lang\et.txt
+  Delete $INSTDIR\Lang\eu.txt
   Delete $INSTDIR\Lang\ext.txt
   Delete $INSTDIR\Lang\fa.txt
   Delete $INSTDIR\Lang\fi.txt

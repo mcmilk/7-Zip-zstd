@@ -1,7 +1,7 @@
-LZMA SDK 4.27
+LZMA SDK 4.30
 -------------
 
-LZMA SDK 4.27  Copyright (C) 1999-2005 Igor Pavlov
+LZMA SDK 4.30  Copyright (C) 1999-2005 Igor Pavlov
 
 LZMA SDK provides developers with documentation, source code,
 and sample code necessary to write software that uses LZMA compression. 
@@ -91,6 +91,7 @@ LZMA SDK includes:
   - C++ source code for file->file LZMA compressing and decompressing
   - ANSI-C compatible source code for LZMA decompressing
   - Compiled file->file LZMA compressing/decompressing program for Windows system
+  - C# source code for file->file LZMA compressing and decompressing
 
 ANSI-C LZMA decompression code was ported from original C++ sources to C.
 Also it was simplified and optimized for code size. 
@@ -100,7 +101,7 @@ But it is fully compatible with LZMA from 7-Zip.
 UNIX/Linux version 
 ------------------
 To compile C++ version of file->file LZMA, go to directory
-SRC/7zip/Compress/LZMA_Alone 
+C/7zip/Compress/LZMA_Alone 
 and type "make" or "make clean all" to recompile all.
 
 In some UNIX/Linux versions you must compile LZMA with static libraries.
@@ -112,7 +113,8 @@ LIB = -lm -static
 
 Files
 ---------------------
-SRC      - directory with source code
+C        - C / CPP source code
+CS       - C# source code
 lzma.txt - LZMA SDK description (this file)
 7zFormat.txt - 7z Format description
 7zC.txt  - 7z ANSI-C Decoder description (this file)
@@ -126,7 +128,7 @@ history.txt - history of the LZMA SDK
 Source code structure
 ---------------------
 
-SRC
+C  - C / CPP files
   Common  - common files for C++ projects
   Windows - common files for Windows related code
   7zip    - files related to 7-Zip Project
@@ -151,11 +153,20 @@ SRC
     Archive - files related to archiving
       7z_C     - 7z ANSI-C Decoder
 
+CS - C# files
+  7zip
+    Common   - some common files for 7-Zip
+    Compress - files related to compression/decompression
+      LZ     - files related to LZ (Lempel-Ziv) compression algorithm
+      LZMA         - LZMA compression/decompression
+      LzmaAlone    - file->file LZMA compression/decompression
+      RangeCoder   - Range Coder (special code of compression/decompression)
+
 Source code of LZMA SDK is only part of big 7-Zip project. That is 
 why LZMA SDK uses such complex source code structure. 
 
 You can find ANSI-C LZMA decompressing code at folder 
-  SRC/7zip/Compress/LZMA_C
+  C/7zip/Compress/LZMA_C
 7-Zip doesn't use that ANSI-C LZMA code and that code was developed 
 specially for this SDK. And files from LZMA_C do not need files from 
 other directories of SDK for compiling.
@@ -224,7 +235,7 @@ Usage:  LZMA <e|d> inputFile outputFile [<switches>...]
           For decompressing file compressed by LZMA method with dictionary 
           size D = 2^N you need about D bytes of memory (RAM).
 
-  -fb{N}: set number of fast bytes - [5, 255], default: 128
+  -fb{N}: set number of fast bytes - [5, 273], default: 128
           Usually big number gives a little bit better compression ratio 
           and slower compression process.
 

@@ -111,12 +111,15 @@ HRESULT DecompressArchives(
         archivePathsFull.Delete(index);
       }
     }
+
+    #ifndef _NO_CRYPTO
     UString password;
     RINOK(openCallback->GetPasswordIfAny(password));
     if (!password.IsEmpty())
     {
       RINOK(extractCallback->SetPassword(password));
     }
+    #endif
 
     options.DefaultItemName = archiveLink.GetDefaultItemName();
     RINOK(DecompressArchive(

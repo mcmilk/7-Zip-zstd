@@ -35,6 +35,18 @@ extern "C"
 
 using namespace NCommandLineParser;
 
+#ifdef _WIN32
+bool g_IsNT = false;
+static inline bool IsItWindowsNT()
+{
+  OSVERSIONINFO versionInfo;
+  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+  if (!::GetVersionEx(&versionInfo)) 
+    return false;
+  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
+}
+#endif
+
 static const char *kCantAllocate = "Can not allocate memory";
 static const char *kReadError = "Read error";
 static const char *kWriteError = "Write error";
@@ -86,7 +98,7 @@ static void PrintHelp()
     "<Switches>\n"
     "  -a{N}:  set compression mode - [0, 2], default: 2 (max)\n"
     "  -d{N}:  set dictionary - [0,28], default: 23 (8MB)\n"
-    "  -fb{N}: set number of fast bytes - [5, 255], default: 128\n"
+    "  -fb{N}: set number of fast bytes - [5, 273], default: 128\n"
     "  -lc{N}: set number of literal context bits - [0, 8], default: 3\n"
     "  -lp{N}: set number of literal pos bits - [0, 4], default: 0\n"
     "  -pb{N}: set number of pos bits - [0, 4], default: 2\n"
@@ -134,7 +146,11 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
 
 int main2(int n, const char *args[])
 {
-  fprintf(stderr, "\nLZMA 4.27 Copyright (c) 1999-2005 Igor Pavlov  2005-08-07\n");
+  #ifdef _WIN32
+  g_IsNT = IsItWindowsNT();
+  #endif
+
+  fprintf(stderr, "\nLZMA 4.30 Copyright (c) 1999-2005 Igor Pavlov  2005-11-20\n");
 
   if (n == 1)
   {

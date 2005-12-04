@@ -144,8 +144,12 @@ static bool DoItemAlwaysStart(const UString &name)
   int extPos = name.ReverseFind('.');
   if (extPos < 0)
     return false;
-  const UString ext = name.Mid(extPos + 1);
-  return  (ext == UString(L"exe") || ext == UString(L"bat") || ext == UString(L"com"));
+  UString ext = name.Mid(extPos + 1);
+  ext.MakeLower();
+  return (ext == UString(L"exe") || 
+    ext == UString(L"bat") || 
+    ext == UString(L"com") ||
+    ext == UString(L"chm"));
 }
 
 static HANDLE StartEditApplication(const UString &path, HWND window)

@@ -4,6 +4,7 @@ LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXCLUDE_COM \
   -DNO_REGISTRY \
+  -D_NO_CRYPTO \
   -DFORMAT_7Z \
   -DCOMPRESS_BCJ_X86 \
   -DCOMPRESS_BCJ2 \

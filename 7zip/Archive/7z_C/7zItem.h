@@ -75,7 +75,7 @@ typedef struct _CArchiveDatabase
 {
   UInt32 NumPackStreams;
   CFileSize *PackSizes;
-  int *PackCRCsDefined;
+  Byte *PackCRCsDefined;
   UInt32 *PackCRCs;
   UInt32 NumFolders;
   CFolder *Folders;

@@ -54,9 +54,6 @@ In that example 7-Zip will use 512KB solid blocks. So it needs to decompress onl
 Limitations of current version of 7z ANSI-C Decoder
 ---------------------------------------------------
 
- - It doesn't support separated "folder" items inside archive.
-   But you still can use files that are in subfolders
- - It doesn't support empty files (size = 0) inside archive.
  - It reads only "FileName", "Size", and "CRC" information for each file in archive.
  - It supports only LZMA and Copy (no compression) methods.
  - It converts original UTF-16 Unicode file names to UTF-8 Unicode file names.

@@ -63,6 +63,9 @@ static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
 const wchar_t *kBZip2MethodName = L"BZip2";
+const wchar_t *kPpmdMethodName = L"PPMd";
+const wchar_t *kDeflateMethodName = L"Deflate";
+const wchar_t *kDeflate64MethodName = L"Deflate64";
 
 const UInt32 kAlgorithmForX7 = 2;
 const UInt32 kDicSizeForX7 = 1 << 23;
@@ -77,6 +80,18 @@ const UInt32 kAlgorithmForFast = 0;
 const UInt32 kDicSizeForFast = 1 << 15;
 static const wchar_t *kMatchFinderForFast = L"HC3";
 
+const UInt32 kPpmdMemSizeX1 = (1 << 22);
+const UInt32 kPpmdOrderX1 = 4;
+
+const UInt32 kPpmdMemSizeX7 = (1 << 26);
+const UInt32 kPpmdOrderX7 = 16;
+
+const UInt32 kPpmdMemSizeX9 = (192 << 20);
+const UInt32 kPpmdOrderX9 = 32;
+
+const UInt32 kDeflateFastBytesForX7 = 64;
+const UInt32 kDeflatePassesForX7 = 3;
+
 const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
 static const wchar_t *kMatchFinderForHeaders = L"BT2";
@@ -90,6 +105,13 @@ static bool IsLZMethod(const UString &methodName)
 
 static bool IsBZip2Method(const UString &methodName)
   { return (methodName.CompareNoCase(kBZip2MethodName) == 0); }
+
+static bool IsPpmdMethod(const UString &methodName)
+  { return (methodName.CompareNoCase(kPpmdMethodName) == 0); }
+
+static bool IsDeflateMethod(const UString &methodName)
+  { return (methodName.CompareNoCase(kDeflateMethodName) == 0) || 
+  (methodName.CompareNoCase(kDeflate64MethodName) == 0); }
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
@@ -262,27 +284,28 @@ HRESULT CHandler::SetCompressionMethod(
     if (oneMethodInfo.MethodName.IsEmpty())
       oneMethodInfo.MethodName = kDefaultMethodName;
 
-    if (IsLZMethod(oneMethodInfo.MethodName))
+    if (IsLZMAMethod(oneMethodInfo.MethodName))
     {
-      if (IsLZMAMethod(oneMethodInfo.MethodName))
-      {
-        SetOneMethodProp(oneMethodInfo, 
-            NCoderPropID::kDictionarySize, _defaultDicSize);
-        SetOneMethodProp(oneMethodInfo, 
-            NCoderPropID::kAlgorithm, _defaultAlgorithm);
-        SetOneMethodProp(oneMethodInfo, 
-            NCoderPropID::kNumFastBytes, _defaultFastBytes);
-        SetOneMethodProp(oneMethodInfo, 
-            NCoderPropID::kMatchFinder, (const wchar_t *)_defaultMatchFinder);
-        if (multiThread)
-          SetOneMethodProp(oneMethodInfo, 
-              NCoderPropID::kMultiThread, true);
-      }
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, _defaultDicSize);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, _defaultAlgorithm);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, _defaultFastBytes);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kMatchFinder, (const wchar_t *)_defaultMatchFinder);
+      if (multiThread)
+        SetOneMethodProp(oneMethodInfo, NCoderPropID::kMultiThread, true);
+    }
+    else if (IsDeflateMethod(oneMethodInfo.MethodName))
+    {
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, _defaultDeflateFastBytes);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, _defaultDeflatePasses);
     }
     else if (IsBZip2Method(oneMethodInfo.MethodName))
     {
-      SetOneMethodProp(oneMethodInfo, 
-        NCoderPropID::kNumPasses, _defaultBZip2Passes);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, _defaultBZip2Passes);
+    }
+    else if (IsPpmdMethod(oneMethodInfo.MethodName))
+    {
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kUsedMemorySize, _defaultPpmdMemSize);
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kOrder, _defaultPpmdOrder);
     }
 
 
@@ -999,6 +1022,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _defaultDicSize = kDicSizeForFast;
         _defaultMatchFinder = kMatchFinderForFast;
         _defaultBZip2Passes = 1;
+
+        _defaultPpmdMemSize = kPpmdMemSizeX1;
+        _defaultPpmdOrder = kPpmdOrderX1;
       }
       else if (_level < 7)
       {
@@ -1011,6 +1037,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _defaultDicSize = kDicSizeForX7;
         _defaultFastBytes = kFastBytesForX7;
         _defaultBZip2Passes = 2;
+
+        _defaultPpmdMemSize = kPpmdMemSizeX7;
+        _defaultPpmdOrder = kPpmdOrderX7;
+
+        _defaultDeflateFastBytes = kDeflateFastBytesForX7;
+        _defaultDeflatePasses = kDeflatePassesForX7;
       }
       else
       {
@@ -1019,6 +1051,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _defaultFastBytes = kFastBytesForX9;
         _defaultMatchFinder = kMatchFinderForX9;
         _defaultBZip2Passes = 7;
+
+        _defaultPpmdMemSize = kPpmdMemSizeX9;
+        _defaultPpmdOrder = kPpmdOrderX9;
+
+        _defaultDeflateFastBytes = kDeflateFastBytesForX7;
+        _defaultDeflatePasses = kDeflatePassesForX7;
       }
       continue;
     }

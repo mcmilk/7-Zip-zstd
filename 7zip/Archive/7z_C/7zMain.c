@@ -71,7 +71,7 @@ int main(int numargs, char *args[])
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.26  Copyright (c) 1999-2005 Igor Pavlov  2005-08-02\n");
+  printf("\n7z ANSI-C Decoder 4.30  Copyright (c) 1999-2005 Igor Pavlov  2005-11-20\n");
   if (numargs == 1)
   {
     printf(
@@ -145,10 +145,18 @@ int main(int numargs, char *args[])
         size_t offset;
         size_t outSizeProcessed;
         CFileItem *f = db.Database.Files + i;
-        printf(testCommand ? 
-            "Testing    ":
+        if (f->IsDirectory)
+          printf("Directory ");
+        else
+          printf(testCommand ? 
+            "Testing   ":
             "Extracting");
         printf(" %s", f->Name);
+        if (f->IsDirectory)
+        {
+          printf("\n");
+          continue;
+        }
         res = SzExtract(&archiveStream.InStream, &db, i, 
             &blockIndex, &outBuffer, &outBufferSize, 
             &offset, &outSizeProcessed, 
