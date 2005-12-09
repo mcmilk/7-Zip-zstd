@@ -211,6 +211,10 @@ static HANDLE StartEditApplication(const UString &path, HWND window)
   return 0;
 }
 
+#ifndef _UNICODE
+typedef BOOL (WINAPI * ShellExecuteExWP)(LPSHELLEXECUTEINFOW lpExecInfo);
+#endif
+
 static HANDLE StartApplication(const UString &path, HWND window)
 {
   UINT32 result;
@@ -228,7 +232,11 @@ static HANDLE StartApplication(const UString &path, HWND window)
     execInfo.lpDirectory = NULL;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
-    ::ShellExecuteExW(&execInfo);
+    ShellExecuteExWP shellExecuteExW = (ShellExecuteExWP)
+    ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "ShellExecuteExW");
+    if (shellExecuteExW == 0)
+      return 0;
+    shellExecuteExW(&execInfo);
     result = (UINT32)execInfo.hInstApp;
     hProcess = execInfo.hProcess;
   }

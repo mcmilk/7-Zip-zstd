@@ -51,6 +51,10 @@ struct CThreadDelete
   }
 };
 
+#ifndef _UNICODE
+typedef int (WINAPI * SHFileOperationWP)(LPSHFILEOPSTRUCTW lpFileOp);
+#endif
+
 void CPanel::DeleteItems(bool toRecycleBin)
 {
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
@@ -118,7 +122,16 @@ void CPanel::DeleteItems(bool toRecycleBin)
       fo.fAnyOperationsAborted = FALSE;
       fo.hNameMappings = 0;
       fo.lpszProgressTitle = 0;
-      int res = ::SHFileOperationW(&fo);
+      int res;
+      #ifdef _UNICODE
+      res = ::SHFileOperationW(&fo);
+      #else
+      SHFileOperationWP shFileOperationW = (SHFileOperationWP)
+          ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "SHFileOperationW");
+      if (shFileOperationW == 0)
+        return;
+      res = shFileOperationW(&fo);
+      #endif
     }
     /*
     if (fo.fAnyOperationsAborted)

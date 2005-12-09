@@ -1,10 +1,10 @@
-LZMA SDK 4.30
+LZMA SDK 4.32
 -------------
 
-LZMA SDK 4.30  Copyright (C) 1999-2005 Igor Pavlov
+LZMA SDK 4.32  Copyright (C) 1999-2005 Igor Pavlov
 
-LZMA SDK provides developers with documentation, source code,
-and sample code necessary to write software that uses LZMA compression. 
+LZMA SDK provides the documentation, samples, header files, libraries, 
+and tools you need to develop applications that use LZMA compression.
 
 LZMA is default and general compression method of 7z format
 in 7-Zip compression program (www.7-zip.org). LZMA provides high 
@@ -20,22 +20,30 @@ decompressing.
 LICENSE
 -------
 
-LZMA SDK is licensed under two licenses:
+LZMA SDK is available under any of the following licenses:
 
 1) GNU Lesser General Public License (GNU LGPL)
 2) Common Public License (CPL)
+3) Simplified license for unmodified code (read SPECIAL EXCEPTION) 
+4) Proprietary license 
 
-It means that you can select one of these two licenses and 
-follow rules of that license.
+It means that you can select one of these four options and follow rules of that license.
 
-SPECIAL EXCEPTION
+
+1,2) GNU LGPL and CPL licenses are pretty similar and both these
+licenses are classified as 
+ - "Free software licenses" at http://www.gnu.org/ 
+ - "OSI-approved" at http://www.opensource.org/
+
+
+3) SPECIAL EXCEPTION
+
 Igor Pavlov, as the author of this code, expressly permits you 
 to statically or dynamically link your code (or bind by name) 
 to the files from LZMA SDK without subjecting your linked 
 code to the terms of the CPL or GNU LGPL. 
 Any modifications or additions to files from LZMA SDK, however, 
 are subject to the GNU LGPL or CPL terms.
-
 
 SPECIAL EXCEPTION allows you to use LZMA SDK in applications with closed code, 
 while you keep LZMA SDK code unmodified.
@@ -50,17 +58,11 @@ of LZMA SDK as update for previous versions.
 
 
 SPECIAL EXCEPTION #3: Igor Pavlov, as the author of this code, expressly permits 
-you to use code of examples (LzmaTest.c, LzmaStateTest.c, LzmaAlone.cpp) as 
-public domain code. 
+you to use code of examples (LzmaTest.c, LzmaStateTest.c, LzmaAlone.cpp, 
+LzmaAlone.cs, LzmaAlone.java) as public domain code. 
 
 
-GNU LGPL and CPL licenses are pretty similar and both these
-licenses are classified as 
-
-1) "Free software licenses" at http://www.gnu.org/ 
-2) "OSI-approved" at http://www.opensource.org/
-
-
+4) Proprietary license
 
 LZMA SDK also can be available under a proprietary license which 
 can include:
@@ -87,11 +89,11 @@ LZMA SDK Contents
 
 LZMA SDK includes:
 
-  - C++ source code of LZMA Encoder and Decoder
-  - C++ source code for file->file LZMA compressing and decompressing
+  - C++ source code of LZMA compressing and decompressing
   - ANSI-C compatible source code for LZMA decompressing
+  - C# source code for LZMA compressing and decompressing
+  - Java source code for LZMA compressing and decompressing
   - Compiled file->file LZMA compressing/decompressing program for Windows system
-  - C# source code for file->file LZMA compressing and decompressing
 
 ANSI-C LZMA decompression code was ported from original C++ sources to C.
 Also it was simplified and optimized for code size. 
@@ -115,6 +117,7 @@ Files
 ---------------------
 C        - C / CPP source code
 CS       - C# source code
+Java     - Java source code
 lzma.txt - LZMA SDK description (this file)
 7zFormat.txt - 7z Format description
 7zC.txt  - 7z ANSI-C Decoder description (this file)
@@ -162,8 +165,14 @@ CS - C# files
       LzmaAlone    - file->file LZMA compression/decompression
       RangeCoder   - Range Coder (special code of compression/decompression)
 
-Source code of LZMA SDK is only part of big 7-Zip project. That is 
-why LZMA SDK uses such complex source code structure. 
+Java  - Java files
+  SevenZip
+    Compression    - files related to compression/decompression
+      LZ           - files related to LZ (Lempel-Ziv) compression algorithm
+      LZMA         - LZMA compression/decompression
+      RangeCoder   - Range Coder (special code of compression/decompression)
+
+C/C++ source code of LZMA SDK is part of 7-Zip project.
 
 You can find ANSI-C LZMA decompressing code at folder 
   C/7zip/Compress/LZMA_C

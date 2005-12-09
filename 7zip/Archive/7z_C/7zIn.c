@@ -192,7 +192,7 @@ SZ_RESULT SafeReadDirect(ISzInStream *inStream, Byte *data, size_t size)
   {
     Byte *inBuffer;
     size_t processedSize;
-    RINOK(inStream->Read(inStream, &inBuffer, size, &processedSize));
+    RINOK(inStream->Read(inStream, (void **)&inBuffer, size, &processedSize));
     if (processedSize == 0 || processedSize > size)
       return SZE_FAIL;
     size -= processedSize;

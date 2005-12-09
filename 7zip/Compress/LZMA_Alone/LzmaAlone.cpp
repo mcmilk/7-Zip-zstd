@@ -105,8 +105,8 @@ static void PrintHelp()
     "  -mf{MF_ID}: set Match Finder: [bt2, bt3, bt4, bt4b, pat2r, pat2,\n"
     "              pat2h, pat3h, pat4h, hc3, hc4], default: bt4\n"
     "  -eos:   write End Of Stream marker\n"
-    "  -si:    Read data from stdin\n"
-    "  -so:    Write data to stdout\n"
+    "  -si:    read data from stdin\n"
+    "  -so:    write data to stdout\n"
     );
 }
 
@@ -150,7 +150,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.30 Copyright (c) 1999-2005 Igor Pavlov  2005-11-20\n");
+  fprintf(stderr, "\nLZMA 4.32 Copyright (c) 1999-2005 Igor Pavlov  2005-12-09\n");
 
   if (n == 1)
   {

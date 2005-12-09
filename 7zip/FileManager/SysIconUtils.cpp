@@ -42,6 +42,33 @@ DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex)
   return res;
 }
 
+
+#ifndef _UNICODE
+typedef int (WINAPI * SHGetFileInfoWP)(LPCWSTR pszPath, DWORD dwFileAttributes, SHFILEINFOW *psfi, UINT cbFileInfo, UINT uFlags);
+
+struct CSHGetFileInfoInit
+{
+  SHGetFileInfoWP shGetFileInfoW;
+  CSHGetFileInfoInit()
+  {
+    shGetFileInfoW = (SHGetFileInfoWP)
+    ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "SHGetFileInfoW");
+  }
+} g_SHGetFileInfoInit;
+#endif
+
+DWORD_PTR MySHGetFileInfoW(LPCWSTR pszPath, DWORD dwFileAttributes, SHFILEINFOW *psfi, UINT cbFileInfo, UINT uFlags)
+{
+  #ifdef _UNICODE
+  return SHGetFileInfoW(
+  #else
+  if (g_SHGetFileInfoInit.shGetFileInfoW == 0)
+    return 0;
+  return g_SHGetFileInfoInit.shGetFileInfoW(
+  #endif
+  pszPath, dwFileAttributes, psfi, cbFileInfo, uFlags);
+}
+
 #ifndef _UNICODE
 // static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
@@ -49,7 +76,7 @@ DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
   if(g_IsNT)
   {
     SHFILEINFOW shellInfo;
-    DWORD_PTR res = ::SHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+    DWORD_PTR res = ::MySHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
     iconIndex = shellInfo.iIcon;
     return res;
@@ -79,7 +106,7 @@ DWORD_PTR GetRealIconIndex(const UString &fileName, UINT32 attributes,
   {
     SHFILEINFOW shellInfo;
     shellInfo.szTypeName[0] = 0;
-    DWORD_PTR res = ::SHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+    DWORD_PTR res = ::MySHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
       | SHGFI_TYPENAME);
     typeName = shellInfo.szTypeName;

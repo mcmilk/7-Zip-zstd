@@ -14,7 +14,7 @@ const UInt32 kTopValue = (1 << kNumTopBits);
 
 class CEncoder
 {
-  UInt32 _ffNum;
+  UInt32 _cacheSize;
   Byte _cache;
 public:
   UInt64 Low;
@@ -28,7 +28,7 @@ public:
     Stream.Init();
     Low = 0;
     Range = 0xFFFFFFFF;
-    _ffNum = 0;
+    _cacheSize = 1;
     _cache = 0;
   }
 
@@ -54,36 +54,21 @@ public:
     }
   }
 
-  /*
-  void EncodeDirectBitsDiv(UInt32 value, UInt32 numTotalBits)
-  {
-    Low += value * (Range >>= numTotalBits);
-    Normalize();
-  }
-  
-  void EncodeDirectBitsDiv2(UInt32 value, UInt32 numTotalBits)
-  {
-    if (numTotalBits <= kNumBottomBits)
-      EncodeDirectBitsDiv(value, numTotalBits);
-    else
-    {
-      EncodeDirectBitsDiv(value >> kNumBottomBits, (numTotalBits - kNumBottomBits));
-      EncodeDirectBitsDiv(value & ((1 << kBottomValueBits) - 1), kNumBottomBits);
-    }
-  }
-  */
   void ShiftLow()
   {
-    if (Low < (UInt32)0xFF000000 || UInt32(Low >> 32) == 1) 
+    if ((UInt32)Low < (UInt32)0xFF000000 || (int)(Low >> 32) != 0) 
     {
-      Stream.WriteByte(Byte(_cache + Byte(Low >> 32)));            
-      for (;_ffNum != 0; _ffNum--) 
-        Stream.WriteByte(Byte(0xFF + Byte(Low >> 32)));
-      _cache = Byte(UInt32(Low) >> 24);                      
+      Byte temp = _cache;
+      do
+      {
+        Stream.WriteByte((Byte)(temp + (Byte)(Low >> 32)));
+        temp = 0xFF;
+      }
+      while(--_cacheSize != 0);
+      _cache = (Byte)((UInt32)Low >> 24);                      
     } 
-    else 
-      _ffNum++;                               
-    Low = UInt32(Low) << 8;                           
+    _cacheSize++;                               
+    Low = (UInt32)Low << 8;                           
   }
   
   void EncodeDirectBits(UInt32 value, int numTotalBits)
@@ -118,7 +103,7 @@ public:
     }
   }
 
-  UInt64 GetProcessedSize() {  return Stream.GetProcessedSize() + _ffNum; }
+  UInt64 GetProcessedSize() {  return Stream.GetProcessedSize() + _cacheSize + 4; }
 };
 
 class CDecoder
@@ -161,26 +146,6 @@ public:
     Range *= size;
     Normalize();
   }
-
-  /*
-  UInt32 DecodeDirectBitsDiv(UInt32 numTotalBits)
-  {
-    Range >>= numTotalBits;
-    UInt32 threshold = Code / Range;
-    Code -= threshold * Range;
-    
-    Normalize();
-    return threshold;
-  }
-
-  UInt32 DecodeDirectBitsDiv2(UInt32 numTotalBits)
-  {
-    if (numTotalBits <= kNumBottomBits)
-      return DecodeDirectBitsDiv(numTotalBits);
-    UInt32 result = DecodeDirectBitsDiv(numTotalBits - kNumBottomBits) << kNumBottomBits;
-    return (result | DecodeDirectBitsDiv(kNumBottomBits));
-  }
-  */
 
   UInt32 DecodeDirectBits(int numTotalBits)
   {

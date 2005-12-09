@@ -152,6 +152,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data)
       SendMessage(hwnd, BFFM_SETSELECTION, TRUE, data);
       break;
     }
+    /*
     case BFFM_SELCHANGED: 
     {
       TCHAR dir[MAX_PATH];
@@ -161,6 +162,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data)
         SendMessage(hwnd, BFFM_SETSTATUSTEXT, 0, (LPARAM)TEXT(""));
       break;
     }
+    */
     default:
       break;
   }
@@ -193,17 +195,30 @@ bool BrowseForFolder(HWND owner, LPCTSTR title,
 
 #ifndef _UNICODE
 
+typedef BOOL (WINAPI * SHGetPathFromIDListWP)(LPCITEMIDLIST pidl, LPWSTR pszPath);
+
 bool GetPathFromIDList(LPCITEMIDLIST itemIDList, UString &path)
 {
-  bool result = BOOLToBool(::SHGetPathFromIDListW(itemIDList, path.GetBuffer(MAX_PATH * 2)));
+  path.Empty();
+  SHGetPathFromIDListWP shGetPathFromIDListW = (SHGetPathFromIDListWP)
+    ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "SHGetPathFromIDListW");
+  if (shGetPathFromIDListW == 0)
+    return false;
+  bool result = BOOLToBool(shGetPathFromIDListW(itemIDList, path.GetBuffer(MAX_PATH * 2)));
   path.ReleaseBuffer();
   return result;
 }
 
+typedef LPITEMIDLIST (WINAPI * SHBrowseForFolderWP)(LPBROWSEINFOW lpbi);
+
 bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
 {
   NWindows::NCOM::CComInitializer comInitializer;
-  LPITEMIDLIST itemIDList = ::SHBrowseForFolderW(browseInfo);
+  SHBrowseForFolderWP shBrowseForFolderW = (SHBrowseForFolderWP)
+    ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "SHBrowseForFolderW");
+  if (shBrowseForFolderW == 0)
+    return false;
+  LPITEMIDLIST itemIDList = shBrowseForFolderW(browseInfo);
   if (itemIDList == NULL)
     return false;
   CItemIDList itemIDListHolder;
@@ -221,15 +236,18 @@ int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data)
       SendMessageW(hwnd, BFFM_SETSELECTIONW, TRUE, data);
       break;
     }
+    /*
     case BFFM_SELCHANGED: 
     {
       wchar_t dir[MAX_PATH * 2];
-      if (::SHGetPathFromIDListW((LPITEMIDLIST) lp , dir)) 
+
+      if (shGetPathFromIDListW((LPITEMIDLIST)lp , dir)) 
         SendMessageW(hwnd, BFFM_SETSTATUSTEXTW, 0, (LPARAM)dir);
       else
         SendMessageW(hwnd, BFFM_SETSTATUSTEXTW, 0, (LPARAM)L"");
       break;
     }
+    */
     default:
       break;
   }
@@ -256,11 +274,15 @@ bool BrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &
 {
   if (g_IsNT)
     return BrowseForFolder(owner, title, 
-      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT, initialFolder, resultPath);
+      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS 
+      //  | BIF_STATUSTEXT // This flag is not supported when BIF_NEWDIALOGSTYLE is specified.
+      , initialFolder, resultPath);
   // BIF_STATUSTEXT; BIF_USENEWUI   (Version 5.0)
   CSysString s;
   bool res = BrowseForFolder(owner, GetSystemString(title), 
-      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT, GetSystemString(initialFolder), s); 
+      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS 
+      // | BIF_STATUSTEXT  // This flag is not supported when BIF_NEWDIALOGSTYLE is specified.
+      , GetSystemString(initialFolder), s); 
   resultPath = GetUnicodeString(s);
   return res;
 }

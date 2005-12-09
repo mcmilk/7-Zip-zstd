@@ -27,10 +27,10 @@ BEGIN
   LTEXT "Destination folder already contains processed file.", IDC_STATIC_OVERWRITE_HEADER, marg, 7, xSize2, 8
   LTEXT "Would you like to replace the existing file", IDC_STATIC_OVERWRITE_QUESTION_BEGIN, marg, 28, xSize2, 8
   ICON  "", IDC_STATIC_OVERWRITE_OLD_FILE_ICON,             marg,  44, iconSize, iconSize
-  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,      fiXPos,  44,  fiXSize,  fiYSize
+  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,      fiXPos,  44,  fiXSize,  fiYSize, SS_NOPREFIX
   LTEXT "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END, marg,  98,   xSize2,        8
   ICON  "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,              marg, 114, iconSize, iconSize
-  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,       fiXPos, 114,  fiXSize,  fiYSize
+  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,       fiXPos, 114,  fiXSize,  fiYSize, SS_NOPREFIX
   PUSHBUTTON "&Yes",         IDYES,                             78, b2YPos, bXSize, bYSize
   PUSHBUTTON "Yes to &All",  IDC_BUTTON_OVERWRITE_YES_TO_ALL,  152, b2YPos, bXSize, bYSize
   PUSHBUTTON "&No",          IDNO,                             226, b2YPos, bXSize, bYSize
