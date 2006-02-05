@@ -12,7 +12,7 @@ namespace NLSBF {
 class CEncoder
 {
   COutBuffer m_Stream;
-  UInt32 m_BitPos;
+  int m_BitPos;
   Byte m_CurByte;
 public:
   bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
@@ -26,23 +26,25 @@ public:
   }
   HRESULT Flush()
   {
-    if(m_BitPos < 8)
-      WriteBits(0, m_BitPos);
+    FlushByte();
     return m_Stream.Flush();
   }
-  void WriteBits(UInt32 value, UInt32 numBits);
+  
+  void FlushByte()
+  {
+    if(m_BitPos < 8)
+      m_Stream.WriteByte(m_CurByte);
+    m_BitPos = 8; 
+    m_CurByte = 0;
+  }
+
+  void WriteBits(UInt32 value, int numBits);
   UInt32 GetBitPosition() const {  return (8 - m_BitPos); }
   UInt64 GetProcessedSize() const { 
       return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) /8; }
+  void WriteByte(Byte b) { m_Stream.WriteByte(b);}
 };
 
-class CReverseEncoder
-{
-  CEncoder *m_Encoder;
-public:
-  void Init(CEncoder *encoder) { m_Encoder = encoder; }
-  void WriteBits(UInt32 value, UInt32 numBits);
-};
 
 }}
 

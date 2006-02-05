@@ -104,6 +104,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int GetLevel();
   int GetLevelSpec();
   int GetLevel2();
+  bool IsMultiThread();
   
   void SetMethod();
   int GetMethodID();

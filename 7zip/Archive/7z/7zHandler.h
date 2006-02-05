@@ -229,7 +229,7 @@ private:
     _multiThread = false;
     _copyMode = false;
 
-    _defaultDicSize = (1 << 21);
+    _defaultDicSize = (1 << 22);
     _defaultAlgorithm = 1;
     _defaultFastBytes = 32;
     _defaultMatchFinder = L"BT4";

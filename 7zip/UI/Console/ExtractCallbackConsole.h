@@ -52,7 +52,7 @@ public:
 
   CStdOutStream *OutStream;
 
-  void CExtractCallbackConsole::Init()
+  void Init()
   {
     NumArchives = 0;
     NumArchiveErrors = 0;

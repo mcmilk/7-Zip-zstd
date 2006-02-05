@@ -209,7 +209,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
       if (m_UnCompressedBlockSize == 0)
       {
         m_InBitStream.Align(m_AlignPos);
-        m_AlignPos = 0;
+        // m_AlignPos = 0;
       }
     }
     else while(next > 0)

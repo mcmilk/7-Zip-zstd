@@ -167,7 +167,7 @@ static HRESULT UpdateOneFile(IInStream *inStream,
       }
     }
   }
-  fileHeader.SetEncrypted(options.PasswordIsDefined);
+  fileHeader.SetEncrypted(!isDirectory && options.PasswordIsDefined);
   /*
   fileHeader.CommentSize = (updateItem.Commented) ? 
       WORD(updateItem.CommentRange.Size) : 0;

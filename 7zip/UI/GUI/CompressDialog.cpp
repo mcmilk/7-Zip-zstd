@@ -172,7 +172,7 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     k7zFormat, 
-    (1 << 0) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
     g_7zMethods, MY_SIZE_OF_ARRAY(g_7zMethods),
     true, true, true, true, true, true
   },
@@ -184,7 +184,7 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     L"GZip", 
-    (1 << 5) | (1 << 9), 
+    (1 << 5) | (1 << 7) | (1 << 9), 
     g_GZipMethods, MY_SIZE_OF_ARRAY(g_GZipMethods),
     false, false, false, false, false, false
   },
@@ -313,6 +313,11 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDC_COMPRESS_CHECK_SHOW_PASSWORD:
     {
       UpdatePasswordControl();
+      return true;
+    }
+    case IDC_COMPRESS_MULTI_THREAD:
+    {
+      SetMemoryUsage();
       return true;
     }
   }
@@ -460,7 +465,7 @@ void CCompressDialog::OnOK()
 
   Info.SFXMode = IsSFX();
   m_RegistryInfo.Solid = Info.Solid = IsButtonCheckedBool(IDC_COMPRESS_SOLID);
-  m_RegistryInfo.MultiThread = Info.MultiThread = IsButtonCheckedBool(IDC_COMPRESS_MULTI_THREAD);
+  m_RegistryInfo.MultiThread = Info.MultiThread = IsMultiThread();
   m_RegistryInfo.EncryptHeaders = Info.EncryptHeaders = IsButtonCheckedBool(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
 
   m_Params.GetText(Info.Options);
@@ -715,6 +720,17 @@ int CCompressDialog::GetLevel2()
   return level;
 }
 
+bool CCompressDialog::IsMultiThread() 
+{
+  /*
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  bool multiThreadEnable = fi.MultiThread & IsMultiProcessor();
+  if (!multiThreadEnable)
+    return false;
+  */
+  return IsButtonCheckedBool(IDC_COMPRESS_MULTI_THREAD);
+}
+
 void CCompressDialog::SetMethod() 
 {
   m_Method.ResetContent();
@@ -825,33 +841,36 @@ void CCompressDialog::SetDictionary()
   {
     case kLZMA:
     {
+      static const kMinDicSize = (1 << 16);
       if (defaultDictionary == UInt32(-1))
       {
         if (level >= 9)
-          defaultDictionary = (32 << 20);
+          defaultDictionary = (1 << 26);
         else if (level >= 7)
-          defaultDictionary = (8 << 20);
+          defaultDictionary = (1 << 24);
         else if (level >= 5)
-          defaultDictionary = (2 << 20);
+          defaultDictionary = (1 << 22);
+        else if (level >= 3)
+          defaultDictionary = (1 << 20);
         else
-          defaultDictionary = (32 << 10);
+          defaultDictionary = (kMinDicSize);
       }
       int i;
-      AddDictionarySize(32 << 10);
-      for (i = 20; i <= 28; i++)
+      AddDictionarySize(kMinDicSize);
+      for (i = 20; i <= 30; i++)
         for (int j = 0; j < 2; j++)
         {
           if (i == 20 && j > 0)
             continue;
           UInt32 dictionary = (1 << i) + (j << (i - 1));
+          if (dictionary <=
           #ifdef _WIN64
-          if (dictionary > (1 << 28))
-            continue;
+            (1 << 30)
           #else
-          if (dictionary >= (1 << 28))
-            continue;
+            (1 << 27)
           #endif
-          AddDictionarySize(dictionary);
+            )
+            AddDictionarySize(dictionary);
         }
       SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
       break;
@@ -997,7 +1016,9 @@ void CCompressDialog::SetOrder()
     {
       if (defaultOrder == UInt32(-1))
       {
-        if (level >= 7)
+        if (level >= 9)
+          defaultOrder = 128;
+        else if (level >= 7)
           defaultOrder = 64;
         else
           defaultOrder = 32;
@@ -1061,20 +1082,29 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   if (fi.Filter && level >= 9)
     size += (12 << 20) * 2 + (5 << 20);
+  bool isMultiThread = IsMultiThread();
   switch (GetMethodID())
   {
     case kLZMA:
     {
+      UInt32 hs = dictionary - 1;
+      hs |= (hs >> 1);
+      hs |= (hs >> 2);
+      hs |= (hs >> 4);
+      hs |= (hs >> 8);
+      hs >>= 1;
+      hs |= 0xFFFF;
+      if (hs > (1 << 24))
+        hs >>= 1;
+      hs++;
+      size += hs * 4;
+      size += (UInt64)dictionary * 11 / 2;
       if (level >= 5)
-      {
-        size += ((UInt64)dictionary * 19 / 2) + (2 << 20);
-        if (level >= 9)
-          size += (34 << 20);
-        else
-          size += (6 << 20);
-      }
-      else 
-        size += ((UInt64)dictionary * 11 / 2) + (2 << 20);
+        size += dictionary * 4;
+      size += (2 << 20);
+      if (isMultiThread && level >= 5)
+        size += (2 << 20) + (4 << 20);
+
       decompressMemory = dictionary + (2 << 20);
       return size;
     }
@@ -1090,7 +1120,7 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
       if (order == UInt32(-1))
         order = 32;
       if (level >= 7)
-        size += (order * 2 + 4) * (64 << 10);
+        size += (1 << 20);
       size += 3 << 20;
       decompressMemory = (2 << 20);
       return size;

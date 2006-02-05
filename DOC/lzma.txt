@@ -1,7 +1,7 @@
-LZMA SDK 4.32
+LZMA SDK 4.33
 -------------
 
-LZMA SDK 4.32  Copyright (C) 1999-2005 Igor Pavlov
+LZMA SDK 4.33  Copyright (C) 1999-2006 Igor Pavlov
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
 and tools you need to develop applications that use LZMA compression.
@@ -185,10 +185,10 @@ other directories of SDK for compiling.
   http://sourceforge.net/projects/sevenzip/
 
 
-LZMA Decompression features
----------------------------
-  - Variable dictionary size (up to 256 MB)
-  - Estimated compressing speed: about 500 KB/s on 1 GHz CPU
+LZMA features
+-------------
+  - Variable dictionary size (up to 1 GB)
+  - Estimated compressing speed: about 1 MB/s on 1 GHz CPU
   - Estimated decompressing speed: 
       - 8-12 MB/s on 1 GHz Intel Pentium 3 or AMD Athlon
       - 500-1000 KB/s on 100 MHz ARM, MIPS, PowerPC or other simple RISC
@@ -224,7 +224,7 @@ Usage:  LZMA <e|d> inputFile outputFile [<switches>...]
   b: Benchmark. There are two tests: compressing and decompressing 
      with LZMA method. Benchmark shows rating in MIPS (million 
      instructions per second). Rating value is calculated from 
-     measured speed and it is normalized with AMD Athlon XP CPU
+     measured speed and it is normalized with AMD Athlon 64 X2 CPU
      results. Also Benchmark checks possible hardware errors (RAM 
      errors in most cases). Benchmark uses these settings:
      (-a1, -d21, -fb32, -mfbt4). You can change only -d. Also you 
@@ -235,11 +235,11 @@ Usage:  LZMA <e|d> inputFile outputFile [<switches>...]
 <Switches>
   
 
-  -a{N}:  set compression mode 0 = fast, 1 = normal, 2 = max
-          default: 2 (max)
+  -a{N}:  set compression mode 0 = fast, 1 = normal
+          default: 1 (normal)
 
-  d{N}:   Sets Dictionary size - [0, 28], default: 23 (8MB)
-          The maximum value for dictionary size is 256 MB = 2^28 bytes.
+  d{N}:   Sets Dictionary size - [0, 30], default: 23 (8MB)
+          The maximum value for dictionary size is 1 GB = 2^30 bytes.
           Dictionary size is calculated as DictionarySize = 2^N bytes. 
           For decompressing file compressed by LZMA method with dictionary 
           size D = 2^N you need about D bytes of memory (RAM).
@@ -262,29 +262,19 @@ Usage:  LZMA <e|d> inputFile outputFile [<switches>...]
           when period is equal 2^N.
 
   -mf{MF_ID}: set Match Finder. Default: bt4. 
-              Compression ratio for all bt* and pat* almost the same.
               Algorithms from hc* group doesn't provide good compression 
               ratio, but they often works pretty fast in combination with 
-              fast mode (-a0). Methods from bt* group require less memory 
-              than methods from pat* group. Usually bt4 works faster than 
-              any pat*, but for some types of files pat* can work faster. 
+              fast mode (-a0).
 
               Memory requirements depend from dictionary size 
               (parameter "d" in table below). 
 
                MF_ID     Memory                   Description
 
-                bt2    d*9.5 +  1MB  Binary Tree with 2 bytes hashing.
-                bt3    d*9.5 + 65MB  Binary Tree with 2-3(full) bytes hashing.
-                bt4    d*9.5 +  6MB  Binary Tree with 2-3-4 bytes hashing.
-                bt4b   d*9.5 + 34MB  Binary Tree with 2-3-4(big) bytes hashing.
-                pat2r  d*26  +  1MB  Patricia Tree with 2-bits nodes, removing.
-                pat2   d*38  +  1MB  Patricia Tree with 2-bits nodes.
-                pat2h  d*38  + 77MB  Patricia Tree with 2-bits nodes, 2-3 bytes hashing.
-                pat3h  d*62  + 85MB  Patricia Tree with 3-bits nodes, 2-3 bytes hashing.
-                pat4h  d*110 +101MB  Patricia Tree with 4-bits nodes, 2-3 bytes hashing.
-                hc3    d*5.5 +  1MB  Hash Chain with 2-3 bytes hashing.
-                hc4    d*5.5 +  6MB  Hash Chain with 2-3-4 bytes hashing.
+                bt2    d *  9.5 + 4MB  Binary Tree with 2 bytes hashing.
+                bt3    d * 11.5 + 4MB  Binary Tree with 3 bytes hashing.
+                bt4    d * 11.5 + 4MB  Binary Tree with 4 bytes hashing.
+                hc4    d *  7.5 + 4MB  Hash Chain with 4 bytes hashing.
 
   -eos:   write End Of Stream marker. By default LZMA doesn't write 
           eos marker, since LZMA decoder knows uncompressed size 

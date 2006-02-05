@@ -11,24 +11,11 @@
 #include "../LZ/LZOutWindow.h"
 #include "../Huffman/HuffmanDecoder.h"
 
-#include "DeflateExtConst.h"
 #include "DeflateConst.h"
 
 namespace NCompress {
 namespace NDeflate {
 namespace NDecoder {
-
-class CException
-{
-public:
-  enum ECauseType
-  {
-    kData
-  } m_Cause;
-  CException(ECauseType aCause): m_Cause(aCause) {}
-};
-
-typedef NStream::NLSBF::CDecoder<CInBuffer> CInBit;
 
 class CCoder:
   public ICompressCoder,
@@ -41,26 +28,30 @@ class CCoder:
   public CMyUnknownImp
 {
   CLZOutWindow m_OutWindowStream;
-  CInBit m_InBitStream;
-  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticMainTableSize> m_MainDecoder;
-  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kStaticDistTableSize> m_DistDecoder;
+  NStream::NLSBF::CDecoder<CInBuffer> m_InBitStream;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kFixedMainTableSize> m_MainDecoder;
+  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kFixedDistTableSize> m_DistDecoder;
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
 
   UInt32 m_StoredBlockSize;
 
   bool m_FinalBlock;
   bool m_StoredMode;
+  UInt32 _numDistLevels;
+
+
   bool _deflate64Mode;
   bool _keepHistory;
-  int _remainLen;
+  Int32 _remainLen;
   UInt32 _rep0;
   bool _needReadTable;
 
+  UInt32 ReadBits(int numBits);
 
-  void DeCodeLevelTable(Byte *newLevels, int numLevels);
+  bool DeCodeLevelTable(Byte *values, int numSymbols);
   bool ReadTables();
   
-  void CCoder::ReleaseStreams()
+  void ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
     ReleaseInStream();

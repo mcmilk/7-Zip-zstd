@@ -258,7 +258,7 @@ HRESULT OpenArchive(
       if (result != S_OK)
         continue;
     }
-    #endif EXCLUDE_COM
+    #endif
     
     if (!archive)
       return E_FAIL;

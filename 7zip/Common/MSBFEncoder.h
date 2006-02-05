@@ -37,21 +37,17 @@ public:
   {
     while(numBits > 0)
     {
-      int numNewBits = MyMin(numBits, m_BitPos);
-      numBits -= numNewBits;
-      
-      m_CurByte <<= numNewBits;
-      UInt32 newBits = value >> numBits;
-      m_CurByte |= Byte(newBits);
-      value -= (newBits << numBits);
-      
-      m_BitPos -= numNewBits;
-      
-      if (m_BitPos == 0)
+      if (numBits < m_BitPos)
       {
-        m_Stream.WriteByte(m_CurByte);
-        m_BitPos = 8;
+        m_CurByte |= ((Byte)value << (m_BitPos -= numBits));
+        return;
       }
+      numBits -= m_BitPos;
+      UInt32 newBits = (value >> numBits);
+      value -= (newBits << numBits);
+      m_Stream.WriteByte(m_CurByte | (Byte)newBits);
+      m_BitPos = 8;
+      m_CurByte = 0;
     }
   }
   UInt64 GetProcessedSize() const { 

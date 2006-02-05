@@ -206,38 +206,6 @@ SOURCE=..\RangeCoder\RangeCoderOpt.h
 # Begin Group "LZ"
 
 # PROP Default_Filter ""
-# Begin Group "Pat"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat2H.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat2R.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat3H.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\Pat4H.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\Patricia\PatMain.h
-# End Source File
-# End Group
 # Begin Group "BT"
 
 # PROP Default_Filter ""
@@ -259,15 +227,7 @@ SOURCE=..\LZ\BinTree\BinTree3Z.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\LZ\BinTree\BinTree3ZMain.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\LZ\BinTree\BinTree4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTree4b.h
 # End Source File
 # Begin Source File
 
@@ -279,23 +239,7 @@ SOURCE=..\LZ\BinTree\BinTreeMain.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\LZ\HashChain\HC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HC2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HC3.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\LZ\HashChain\HC4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HC4b.h
 # End Source File
 # Begin Source File
 

@@ -71,19 +71,31 @@ class CBenchRandomGenerator
 {
   CBitRandomGenerator RG;
   UInt32 Pos;
+  UInt32 Rep0;
 public:
   UInt32 BufferSize;
   Byte *Buffer;
   CBenchRandomGenerator(): Buffer(0) {} 
-  ~CBenchRandomGenerator() { delete []Buffer; }
-  void Init() { RG.Init(); }
-  void Set(UInt32 bufferSize) 
-  {
-    delete []Buffer;
+  ~CBenchRandomGenerator() { Free(); }
+  void Free() 
+  { 
+    ::MidFree(Buffer);
     Buffer = 0;
-    Buffer = new Byte[bufferSize];
+  }
+  void Init() 
+  { 
+    RG.Init(); 
+    Rep0 = 1;
+  }
+  bool Alloc(UInt32 bufferSize) 
+  {
+    if (Buffer != 0 && BufferSize == bufferSize)
+      return true;
+    Free();
+    Buffer = (Byte *)::MidAlloc(bufferSize);
     Pos = 0;
     BufferSize = bufferSize;
+    return (Buffer != 0);
   }
   UInt32 GetRndBit() { return RG.GetRnd(1); }
   /*
@@ -104,29 +116,29 @@ public:
       return GetLogRandBits(4);
     return (GetLogRandBits(4) << 10) | RG.GetRnd(10);
   }
-  UInt32 GetLen()
-  {
-    if (GetRndBit() == 0)
-      return RG.GetRnd(2);
-    if (GetRndBit() == 0)
-      return 4 + RG.GetRnd(3);
-    return 12 + RG.GetRnd(4);
-  }
+  UInt32 GetLen1() { return RG.GetRnd(1 + (int)RG.GetRnd(2)); }
+  UInt32 GetLen2() { return RG.GetRnd(2 + (int)RG.GetRnd(2)); }
   void Generate()
   {
     while(Pos < BufferSize)
     {
       if (GetRndBit() == 0 || Pos < 1)
-        Buffer[Pos++] = Byte(RG.GetRnd(8));
+        Buffer[Pos++] = (Byte)RG.GetRnd(8);
       else
       {
-        UInt32 offset = GetOffset();
-        while (offset >= Pos)
-          offset >>= 1;
-        offset += 1;
-        UInt32 len = 2 + GetLen();
+        UInt32 len;
+        if (RG.GetRnd(3) == 0)
+          len = 1 + GetLen1();
+        else
+        {
+          do
+            Rep0 = GetOffset();
+          while (Rep0 >= Pos);
+          Rep0++;
+          len = 2 + GetLen2();
+        }
         for (UInt32 i = 0; i < len && Pos < BufferSize; i++, Pos++)
-          Buffer[Pos] = Buffer[Pos - offset];
+          Buffer[Pos] = Buffer[Pos - Rep0];
       }
     }
   }
@@ -296,20 +308,10 @@ static UInt64 MyMultDiv64(UInt64 value, UInt64 elapsedTime)
   return value * freq / elTime;
 }
 
-static UInt64 GetCompressRating(UInt32 dictionarySize, bool isBT4,
-    UInt64 elapsedTime, UInt64 size)
+static UInt64 GetCompressRating(UInt32 dictionarySize, UInt64 elapsedTime, UInt64 size)
 {
-  UInt64 numCommandsForOne;
-  if (isBT4)
-  {
-    UInt64 t = GetLogSize(dictionarySize) - (19 << kSubBits);
-    numCommandsForOne = 2000 + ((t * t * 68) >> (2 * kSubBits));
-  }
-  else
-  {
-    UInt64 t = GetLogSize(dictionarySize) - (15 << kSubBits);
-    numCommandsForOne = 1500 + ((t * t * 41) >> (2 * kSubBits));
-  }
+  UInt64 t = GetLogSize(dictionarySize) - (18 << kSubBits);
+  UInt64 numCommandsForOne = 1060 + ((t * t * 10) >> (2 * kSubBits));
   UInt64 numCommands = (UInt64)(size) * numCommandsForOne;
   return MyMultDiv64(numCommands, elapsedTime);
 }
@@ -317,7 +319,7 @@ static UInt64 GetCompressRating(UInt32 dictionarySize, bool isBT4,
 static UInt64 GetDecompressRating(UInt64 elapsedTime, 
     UInt64 outSize, UInt64 inSize)
 {
-  UInt64 numCommands = inSize * 250 + outSize * 21;
+  UInt64 numCommands = inSize * 220 + outSize * 20;
   return MyMultDiv64(numCommands, elapsedTime);
 }
 
@@ -342,7 +344,6 @@ static void PrintRating(FILE *f, UInt64 rating)
 static void PrintResults(
     FILE *f, 
     UInt32 dictionarySize,
-    bool isBT4,
     UInt64 elapsedTime, 
     UInt64 size, 
     bool decompressMode, UInt64 secondSize)
@@ -353,7 +354,7 @@ static void PrintResults(
   if (decompressMode)
     rating = GetDecompressRating(elapsedTime, size, secondSize);
   else
-    rating = GetCompressRating(dictionarySize, isBT4, elapsedTime, size);
+    rating = GetCompressRating(dictionarySize, elapsedTime, size);
   PrintRating(f, rating);
 }
 
@@ -372,11 +373,11 @@ static void ThrowError(FILE *f, HRESULT result, const char *s)
 const wchar_t *bt2 = L"BT2";
 const wchar_t *bt4 = L"BT4";
 
-int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isBT4)
+int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize)
 {
   if (numIterations == 0)
     return 0;
-  if (dictionarySize < (1 << 19) && isBT4 || dictionarySize < (1 << 15))
+  if (dictionarySize < (1 << 18))
   {
     fprintf(f, "\nError: dictionary size for benchmark must be >= 19 (512 KB)\n");
     return 1;
@@ -394,16 +395,12 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
   
   PROPID propIDs[] = 
   { 
-    NCoderPropID::kDictionarySize,  
-    NCoderPropID::kMatchFinder  
+    NCoderPropID::kDictionarySize
   };
   const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
   PROPVARIANT properties[kNumProps];
   properties[0].vt = VT_UI4;
   properties[0].ulVal = UInt32(dictionarySize);
-
-  properties[1].vt = VT_BSTR;
-  properties[1].bstrVal = isBT4 ? (BSTR)bt4: (BSTR)bt2;
 
   const UInt32 kBufferSize = dictionarySize + kAdditionalSize;
   const UInt32 kCompressedBufferSize = (kBufferSize / 2) + kCompressedAdditionalSize;
@@ -417,7 +414,12 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
 
   CBenchRandomGenerator rg;
   rg.Init();
-  rg.Set(kBufferSize);
+  if (!rg.Alloc(kBufferSize))
+  {
+    fprintf(f, "\nError: Can't allocate memory\n");
+    return 1;
+  }
+
   rg.Generate();
   CCRC crc;
   crc.Update(rg.Buffer, rg.BufferSize);
@@ -488,9 +490,9 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
       }
     }
     UInt64 benchSize = kBufferSize - progressInfoSpec->InSize;
-    PrintResults(f, dictionarySize, isBT4, encodeTime, benchSize, false, 0);
+    PrintResults(f, dictionarySize, encodeTime, benchSize, false, 0);
     fprintf(f, "     ");
-    PrintResults(f, dictionarySize, isBT4, decodeTime, kBufferSize, true, compressedSize);
+    PrintResults(f, dictionarySize, decodeTime, kBufferSize, true, compressedSize);
     fprintf(f, "\n");
 
     totalBenchSize += benchSize;
@@ -499,9 +501,9 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isB
     totalCompressedSize += compressedSize;
   }
   fprintf(f, "---------------------------------------------------\n");
-  PrintResults(f, dictionarySize, isBT4, totalEncodeTime, totalBenchSize, false, 0);
+  PrintResults(f, dictionarySize, totalEncodeTime, totalBenchSize, false, 0);
   fprintf(f, "     ");
-  PrintResults(f, dictionarySize, isBT4, totalDecodeTime, 
+  PrintResults(f, dictionarySize, totalDecodeTime, 
       kBufferSize * numIterations, true, totalCompressedSize);
   fprintf(f, "    Average\n");
   return 0;

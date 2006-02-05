@@ -682,6 +682,7 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
     if (srcPanel._folder->BindToFolder(realIndex, &newFolder) != S_OK)
       return;
   }
+  destPanel.CloseOpenFolders();
   destPanel._folder = newFolder;
   destPanel.RefreshListCtrl();
 }

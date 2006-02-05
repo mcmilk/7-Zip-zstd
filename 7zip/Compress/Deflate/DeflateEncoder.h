@@ -18,25 +18,10 @@ namespace NEncoder {
 
 struct CCodeValue
 {
-  Byte Flag;
-  union
-  {
-    Byte Imm;
-    Byte Len;
-  };
+  UInt16 Len;
   UInt16 Pos;
-};
-
-class COnePosMatches
-{
-public:
-  UInt16 *MatchDistances;
-  UInt16 LongestMatchLength;    
-  UInt16 LongestMatchDistance;
-  void Init(UInt16 *matchDistances)
-  {
-    MatchDistances = matchDistances;
-  };
+  void SetAsLiteral() { Len = (1 << 15); }
+  bool IsLiteral() const { return ((Len & (1 << 15)) != 0); }
 };
 
 struct COptimal
@@ -46,76 +31,107 @@ struct COptimal
   UInt16 BackPrev;
 };
 
-const int kNumOpts = 0x1000;
+const UInt32 kNumOptsBase = 1 << 12;
+const UInt32 kNumOpts = kNumOptsBase + kMatchMaxLen;
+
+class CCoder;
+
+struct CTables: public CLevels
+{
+  bool UseSubBlocks;
+  bool StoreMode;
+  bool StaticMode;
+  UInt32 BlockSizeRes;
+  UInt32 m_Pos;
+  void InitStructures();
+};
 
 class CCoder
 {
-  UInt32 m_FinderPos;
-  
-  COptimal m_Optimum[kNumOpts];
-  
   CMyComPtr<IMatchFinder> m_MatchFinder;
-
   NStream::NLSBF::CEncoder m_OutStream;
-  NStream::NLSBF::CReverseEncoder m_ReverseOutStream;
-  
-  NCompression::NHuffman::CEncoder m_MainCoder;
-  NCompression::NHuffman::CEncoder m_DistCoder;
-  NCompression::NHuffman::CEncoder m_LevelCoder;
 
-  Byte m_LastLevels[kMaxTableSize64];
-
-  UInt32 m_ValueIndex;
+public:
   CCodeValue *m_Values;
 
-  UInt32 m_OptimumEndIndex;
-  UInt32 m_OptimumCurrentIndex;
-  UInt32 m_AdditionalOffset;
-
-  UInt32 m_LongestMatchLength;    
-  UInt32 m_LongestMatchDistance;
   UInt16 *m_MatchDistances;
-
   UInt32 m_NumFastBytes;
 
-  Byte  m_LiteralPrices[256];
-  
-  Byte  m_LenPrices[kNumLenCombinations32];
-  Byte  m_PosPrices[kDistTableSize64];
-
-  UInt32 m_CurrentBlockUncompressedSize;
-
-  COnePosMatches *m_OnePosMatchesArray;
   UInt16 *m_OnePosMatchesMemory;
+  UInt16 *m_DistanceMemory;
 
-  UInt64 m_BlockStartPostion;
+  UInt32 m_Pos;
+
   int m_NumPasses;
+  int m_NumDivPasses;
+  bool m_CheckStatic;
+  bool m_IsMultiPass;
+  UInt32 m_ValueBlockSize;
 
-  bool m_Created;
-
-  bool _deflate64Mode;
   UInt32 m_NumLenCombinations;
   UInt32 m_MatchMaxLen;
   const Byte *m_LenStart;
   const Byte *m_LenDirectBits;
 
-  HRESULT Create();
-  void Free();
+  bool m_Created;
+  bool m_Deflate64Mode;
 
-  void GetBacks(UInt32 aPos);
+  NCompression::NHuffman::CEncoder MainCoder;
+  NCompression::NHuffman::CEncoder DistCoder;
+  NCompression::NHuffman::CEncoder LevelCoder;
 
-  void ReadGoodBacks();
+  Byte m_LevelLevels[kLevelTableSize];
+  int m_NumLitLenLevels;
+  int m_NumDistLevels;
+  UInt32 m_NumLevelCodes;
+  UInt32 m_ValueIndex;
+
+  bool m_SecondPass;
+  UInt32 m_AdditionalOffset;
+
+  UInt32 m_OptimumEndIndex;
+  UInt32 m_OptimumCurrentIndex;
+  
+  Byte  m_LiteralPrices[256];
+  Byte  m_LenPrices[kNumLenSymbolsMax];
+  Byte  m_PosPrices[kDistTableSize64];
+
+  CLevels m_NewLevels;
+  UInt32 BlockSizeRes;
+
+  CTables *m_Tables;
+  COptimal m_Optimum[kNumOpts];
+
+  void GetMatches();
   void MovePos(UInt32 num);
   UInt32 Backward(UInt32 &backRes, UInt32 cur);
   UInt32 GetOptimal(UInt32 &backRes);
 
-  void InitStructures();
-  void CodeLevelTable(Byte *newLevels, int numLevels, bool codeMode);
-  int WriteTables(bool writeMode, bool finalBlock);
-  void CopyBackBlockOp(UInt32 distance, UInt32 length);
+  void CodeLevelTable(NStream::NLSBF::CEncoder *outStream, const Byte *levels, int numLevels);
+
+  void MakeTables();
+  UInt32 GetLzBlockPrice();
+  void TryBlock(bool staticMode);
+  UInt32 TryDynBlock(int tableIndex, UInt32 numPasses);
+
+  UInt32 TryFixedBlock(int tableIndex);
+
+  void SetPrices(const CLevels &levels);
+  void WriteBlock();
+  void WriteDynBlock(bool finalBlock);
+  void WriteFixedBlock(bool finalBlock);
+
+
+
+  HRESULT Create();
+  void Free();
+
+  void WriteStoreBlock(UInt32 blockSize, UInt32 additionalOffset, bool finalBlock);
+  void WriteTables(bool writeMode, bool finalBlock);
+  
   void WriteBlockData(bool writeMode, bool finalBlock);
 
-  void CCoder::ReleaseStreams()
+  void ReleaseStreams()
   {
     // m_MatchFinder.ReleaseStream();
     m_OutStream.ReleaseStream();
@@ -128,6 +144,9 @@ class CCoder
     ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
   };
   friend class CCoderReleaser;
+
+  UInt32 GetBlockPrice(int tableIndex, int numDivPasses);
+  void CodeBlock(int tableIndex, bool finalBlock);
 
 public:
   CCoder(bool deflate64Mode = false);

@@ -3,11 +3,11 @@
 #ifndef __HC2_H
 #define __HC2_H
 
-#undef HC_NAMESPACE
-#define HC_NAMESPACE NHC2
+#define BT_NAMESPACE NHC2
 
-#include "HCMF.h"
-#include "HCMFMain.h"
+#include "HCMain.h"
+
+#undef BT_NAMESPACE
 
 #endif
 

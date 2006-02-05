@@ -137,6 +137,7 @@ class CBenchRandomGenerator
 {
   CBitRandomGenerator RG;
   UInt32 Pos;
+  UInt32 Rep0;
 public:
   UInt32 BufferSize;
   Byte *Buffer;
@@ -147,7 +148,11 @@ public:
     ::MidFree(Buffer);
     Buffer = 0;
   }
-  void Init() { RG.Init(); }
+  void Init() 
+  { 
+    RG.Init(); 
+    Rep0 = 1;
+  }
   bool Alloc(UInt32 bufferSize) 
   {
     if (Buffer != 0 && BufferSize == bufferSize)
@@ -177,14 +182,8 @@ public:
       return GetLogRandBits(4);
     return (GetLogRandBits(4) << 10) | RG.GetRnd(10);
   }
-  UInt32 GetLen()
-  {
-    if (GetRndBit() == 0)
-      return RG.GetRnd(2);
-    if (GetRndBit() == 0)
-      return 4 + RG.GetRnd(3);
-    return 12 + RG.GetRnd(4);
-  }
+  UInt32 GetLen1() { return RG.GetRnd(1 + RG.GetRnd(2)); }
+  UInt32 GetLen2() { return RG.GetRnd(2 + RG.GetRnd(2)); }
   void Generate()
   {
     while(Pos < BufferSize)
@@ -193,13 +192,19 @@ public:
         Buffer[Pos++] = Byte(RG.GetRnd(8));
       else
       {
-        UInt32 offset = GetOffset();
-        while (offset >= Pos)
-          offset >>= 1;
-        offset += 1;
-        UInt32 len = 2 + GetLen();
+        UInt32 len;
+        if (RG.GetRnd(3) == 0)
+          len = 1 + GetLen1();
+        else
+        {
+          do
+            Rep0 = GetOffset();
+          while (Rep0 >= Pos);
+          Rep0++;
+          len = 2 + GetLen2();
+        }
         for (UInt32 i = 0; i < len && Pos < BufferSize; i++, Pos++)
-          Buffer[Pos] = Buffer[Pos - offset];
+          Buffer[Pos] = Buffer[Pos - Rep0];
       }
     }
   }
@@ -218,10 +223,18 @@ bool CBenchmarkDialog::OnInit()
   #endif
 
   m_Dictionary.Attach(GetItem(IDC_BENCHMARK_COMBO_DICTIONARY));
-  for (int i = kNumBenchDictionaryBitsStart; i < 28; i++)
+  for (int i = kNumBenchDictionaryBitsStart; i <= 30; i++)
     for (int j = 0; j < 2; j++)
     {
       UInt32 dictionary = (1 << i) + (j << (i - 1));
+      if(dictionary >
+      #ifdef _WIN64
+      (1 << 30)
+      #else
+      (1 << 27)
+      #endif
+      )
+        continue;
       TCHAR s[40];
       ConvertUInt64ToString((dictionary >> 20), s);
       lstrcat(s, kMB);
@@ -240,20 +253,32 @@ bool CBenchmarkDialog::OnInit()
 }
 
 static UInt64 GetLZMAUsage(UInt32 dictionary)
-  { return ((UInt64)dictionary * 19 / 2) + (8 << 20); }
+{ 
+  UInt32 hs = dictionary - 1;
+  hs |= (hs >> 1);
+  hs |= (hs >> 2);
+  hs |= (hs >> 4);
+  hs |= (hs >> 8);
+  hs >>= 1;
+  hs |= 0xFFFF;
+  if (hs > (1 << 24))
+    hs >>= 1;
+  hs++;
+  return ((hs + (1 << 16)) + (UInt64)dictionary * 2) * 4 + (UInt64)dictionary * 3 / 2 + (1 << 20);
+}
 
-static UInt64 GetMemoryUsage(UInt32 dictionary)
+static UInt64 GetMemoryUsage(UInt32 dictionary, bool mtMode)
 {
   const UInt32 kBufferSize = dictionary + kAdditionalSize;
   const UInt32 kCompressedBufferSize = (kBufferSize / 2) + kCompressedAdditionalSize;
-  return kBufferSize + kCompressedBufferSize +
-    GetLZMAUsage(dictionary) + dictionary + (1 << 20);
+  return (mtMode ? (6 << 20) : 0 )+ kBufferSize + kCompressedBufferSize +
+    GetLZMAUsage(dictionary) + dictionary + (2 << 20);
 }
 
 UInt32 CBenchmarkDialog::OnChangeDictionary()
 {
   UInt32 dictionary = (UInt32)m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
-  UInt64 memUsage = GetMemoryUsage(dictionary);
+  UInt64 memUsage = GetMemoryUsage(dictionary, IsButtonCheckedBool(IDC_BENCHMARK_MULTITHREADING));
   memUsage = (memUsage + (1 << 20) - 1) >> 20;
   TCHAR s[40];
   ConvertUInt64ToString(memUsage, s);
@@ -339,8 +364,8 @@ static UInt64 GetCompressRating(UInt32 dictionarySize,
 {
   if (elapsedTime == 0)
     elapsedTime = 1;
-  UInt64 t = GetLogSize(dictionarySize) - (19 << kSubBits);
-  UInt64 numCommandsForOne = 2000 + ((t * t * 68) >> (2 * kSubBits));
+  UInt64 t = GetLogSize(dictionarySize) - (18 << kSubBits);
+  UInt64 numCommandsForOne = 1060 + ((t * t * 10) >> (2 * kSubBits));
   UInt64 numCommands = (UInt64)(size) * numCommandsForOne;
   return numCommands * GetFreq() / elapsedTime;
 }
@@ -350,7 +375,7 @@ static UInt64 GetDecompressRating(UInt64 elapsedTime,
 {
   if (elapsedTime == 0)
     elapsedTime = 1;
-  UInt64 numCommands = inSize * 250 + outSize * 21;
+  UInt64 numCommands = inSize * 220 + outSize * 20;
   return numCommands * GetFreq() / elapsedTime;
 }
 

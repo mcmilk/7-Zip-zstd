@@ -6,6 +6,6 @@
 #include <stdio.h>
 #include "../../../Common/Types.h"
 
-int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize, bool isBT4);
+int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize);
 
 #endif

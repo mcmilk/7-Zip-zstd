@@ -26,7 +26,7 @@ class CCoder :
   CLZOutWindow m_OutWindowStream;
   NStream::NMSBF::CDecoder<CInBuffer> m_InBitStream;
   
-  void CCoder::ReleaseStreams()
+  void ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
     m_InBitStream.ReleaseStream();

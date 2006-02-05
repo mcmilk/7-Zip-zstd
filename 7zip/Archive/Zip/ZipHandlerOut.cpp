@@ -24,13 +24,15 @@ namespace NZip {
 
 static const UInt32 kNumDeflatePassesX1  = 1;
 static const UInt32 kNumDeflatePassesX7  = 3;
+static const UInt32 kNumDeflatePassesX9  = 10;
+
+static const UInt32 kNumFastBytesX1 = 32;
+static const UInt32 kNumFastBytesX7 = 64;
+static const UInt32 kNumFastBytesX9 = 128;
 
 static const UInt32 kNumBZip2PassesX1 = 1;
 static const UInt32 kNumBZip2PassesX7 = 2;
 static const UInt32 kNumBZip2PassesX9 = 7;
-
-static const UInt32 kNumFastBytesX1 = 32;
-static const UInt32 kNumFastBytesX7 = 64;
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
@@ -203,7 +205,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (options.NumPasses == 0xFFFFFFFF)
   {
     if (isDeflate)
-      options.NumPasses = (level >= 7 ? kNumDeflatePassesX7 : kNumDeflatePassesX1);
+      options.NumPasses = (level >= 9 ? kNumDeflatePassesX9 : 
+        (level >= 7 ? kNumDeflatePassesX7 : kNumDeflatePassesX1));
     else if (isBZip2)
       options.NumPasses = (level >= 9 ? kNumBZip2PassesX9 : 
         (level >= 7 ? kNumBZip2PassesX7 :  kNumBZip2PassesX1));
@@ -213,7 +216,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (options.NumFastBytes == 0xFFFFFFFF)
   {
     if (isDeflate)
-      options.NumFastBytes = (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1);
+      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1));
   }
 
   return Update(m_Items, updateItems, outStream, 
@@ -295,7 +298,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
-      if (value.ulVal < 1 || value.ulVal > 10)
+      if (value.ulVal < 1)
         return E_INVALIDARG;
       m_NumPasses = value.ulVal;
     }

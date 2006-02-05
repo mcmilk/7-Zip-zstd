@@ -67,30 +67,39 @@ const wchar_t *kPpmdMethodName = L"PPMd";
 const wchar_t *kDeflateMethodName = L"Deflate";
 const wchar_t *kDeflate64MethodName = L"Deflate64";
 
-const UInt32 kAlgorithmForX7 = 2;
-const UInt32 kDicSizeForX7 = 1 << 23;
-const UInt32 kFastBytesForX7 = 64;
+static const wchar_t *kMatchFinderX1 = L"HC4";
+static const wchar_t *kMatchFinderX3 = L"HC4";
 
-const UInt32 kAlgorithmForX9 = 2;
-const UInt32 kDicSizeForX9 = 1 << 25;
-const UInt32 kFastBytesForX9 = 64;
-static const wchar_t *kMatchFinderForX9 = L"BT4b";
+static const UInt32 kAlgorithmX1 = 0;
+static const UInt32 kAlgorithmX3 = 0;
+static const UInt32 kAlgorithmX7 = 1;
+static const UInt32 kAlgorithmX9 = 1;
 
-const UInt32 kAlgorithmForFast = 0;
-const UInt32 kDicSizeForFast = 1 << 15;
-static const wchar_t *kMatchFinderForFast = L"HC3";
+static const UInt32 kDicSizeX1 = 1 << 16;
+static const UInt32 kDicSizeX3 = 1 << 20;
+static const UInt32 kDicSizeX7 = 1 << 24;
+static const UInt32 kDicSizeX9 = 1 << 26;
 
-const UInt32 kPpmdMemSizeX1 = (1 << 22);
-const UInt32 kPpmdOrderX1 = 4;
+static const UInt32 kFastBytesX7 = 64;
+static const UInt32 kFastBytesX9 = 64;
 
-const UInt32 kPpmdMemSizeX7 = (1 << 26);
-const UInt32 kPpmdOrderX7 = 16;
+static const UInt32 kPpmdMemSizeX1 = (1 << 22);
+static const UInt32 kPpmdMemSizeX7 = (1 << 26);
+static const UInt32 kPpmdMemSizeX9 = (192 << 20);
 
-const UInt32 kPpmdMemSizeX9 = (192 << 20);
-const UInt32 kPpmdOrderX9 = 32;
+static const UInt32 kPpmdOrderX1 = 4;
+static const UInt32 kPpmdOrderX7 = 16;
+static const UInt32 kPpmdOrderX9 = 32;
 
-const UInt32 kDeflateFastBytesForX7 = 64;
-const UInt32 kDeflatePassesForX7 = 3;
+static const UInt32 kDeflateFastBytesX7 = 64;
+static const UInt32 kDeflatePassesX7 = 3;
+
+static const UInt32 kDeflateFastBytesX9 = 64;
+static const UInt32 kDeflatePassesX9 = 10;
+
+static const UInt32 kNumBZip2PassesX1 = 1;
+static const UInt32 kNumBZip2PassesX7 = 2;
+static const UInt32 kNumBZip2PassesX9 = 7;
 
 const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
@@ -221,7 +230,7 @@ HRESULT CHandler::SetCompressionMethod(
     {
       CProperty property;
       property.PropID = NCoderPropID::kAlgorithm;
-      property.Value = kAlgorithmForX9;
+      property.Value = kAlgorithmX9;
       oneMethodInfo.CoderProperties.Add(property);
     }
     {
@@ -1016,11 +1025,23 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         _copyMode = true;
         _defaultBZip2Passes = 1;
       }
+      else if (_level < 3)
+      {
+        _defaultAlgorithm = kAlgorithmX1;
+        _defaultDicSize = kDicSizeX1;
+        _defaultMatchFinder = kMatchFinderX1;
+
+        _defaultBZip2Passes = 1;
+
+        _defaultPpmdMemSize = kPpmdMemSizeX1;
+        _defaultPpmdOrder = kPpmdOrderX1;
+      }
       else if (_level < 5)
       {
-        _defaultAlgorithm = kAlgorithmForFast;
-        _defaultDicSize = kDicSizeForFast;
-        _defaultMatchFinder = kMatchFinderForFast;
+        _defaultAlgorithm = kAlgorithmX3;
+        _defaultDicSize = kDicSizeX3;
+        _defaultMatchFinder = kMatchFinderX3;
+
         _defaultBZip2Passes = 1;
 
         _defaultPpmdMemSize = kPpmdMemSizeX1;
@@ -1033,30 +1054,29 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
       else if(_level < 9)
       {
-        _defaultAlgorithm = kAlgorithmForX7;
-        _defaultDicSize = kDicSizeForX7;
-        _defaultFastBytes = kFastBytesForX7;
-        _defaultBZip2Passes = 2;
+        _defaultAlgorithm = kAlgorithmX7;
+        _defaultDicSize = kDicSizeX7;
+        _defaultFastBytes = kFastBytesX7;
+        _defaultBZip2Passes = kNumBZip2PassesX7;
 
         _defaultPpmdMemSize = kPpmdMemSizeX7;
         _defaultPpmdOrder = kPpmdOrderX7;
 
-        _defaultDeflateFastBytes = kDeflateFastBytesForX7;
-        _defaultDeflatePasses = kDeflatePassesForX7;
+        _defaultDeflateFastBytes = kDeflateFastBytesX7;
+        _defaultDeflatePasses = kDeflatePassesX7;
       }
       else
       {
-        _defaultAlgorithm = kAlgorithmForX9;
-        _defaultDicSize = kDicSizeForX9;
-        _defaultFastBytes = kFastBytesForX9;
-        _defaultMatchFinder = kMatchFinderForX9;
-        _defaultBZip2Passes = 7;
+        _defaultAlgorithm = kAlgorithmX9;
+        _defaultDicSize = kDicSizeX9;
+        _defaultFastBytes = kFastBytesX9;
+        _defaultBZip2Passes = kNumBZip2PassesX9;
 
         _defaultPpmdMemSize = kPpmdMemSizeX9;
         _defaultPpmdOrder = kPpmdOrderX9;
 
-        _defaultDeflateFastBytes = kDeflateFastBytesForX7;
-        _defaultDeflatePasses = kDeflatePassesForX7;
+        _defaultDeflateFastBytes = kDeflateFastBytesX9;
+        _defaultDeflatePasses = kDeflatePassesX9;
       }
       continue;
     }

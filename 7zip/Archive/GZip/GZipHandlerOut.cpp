@@ -20,6 +20,15 @@ using namespace NTime;
 namespace NArchive {
 namespace NGZip {
 
+static const UInt32 kNumPassesX1  = 1;
+static const UInt32 kNumPassesX7  = 3;
+static const UInt32 kNumPassesX9  = 10;
+
+static const UInt32 kNumFastBytesX1 = 32;
+static const UInt32 kNumFastBytesX7 = 64;
+static const UInt32 kNumFastBytesX9 = 128;
+
+
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kUnix;
@@ -117,6 +126,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       size = propVariant.uhVal.QuadPart;
     }
     newItem.UnPackSize32 = (UInt32)size;
+
+    UInt32 level = m_Level;
+    if (level == 0xFFFFFFFF)
+      level = 5;
+
+    if (m_Method.NumPasses == 0xFFFFFFFF)
+      m_Method.NumPasses = (level >= 9 ? kNumPassesX9 : (level >= 7 ? kNumPassesX7 : kNumPassesX1));
+    if (m_Method.NumFastBytes == 0xFFFFFFFF)
+      m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1));
+
     return UpdateArchive(m_Stream, size, outStream, newItem, 
         m_Method, itemIndex, updateCallback);
   }
@@ -137,12 +156,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   }
   return CopyStreams(m_Stream, outStream, updateCallback);
 }
-
-static const UInt32 kMatchFastLenNormal  = 32;
-static const UInt32 kMatchFastLenMX  = 64;
-
-static const UInt32 kNumPassesNormal = 1;
-static const UInt32 kNumPassesMX  = 3;
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
@@ -176,15 +189,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
       else
         return E_INVALIDARG;
-      if (level < 7)
-      {
-        InitMethodProperties();
-      }
-      else
-      {
-        m_Method.NumPasses = kNumPassesMX;
-        m_Method.NumFastBytes = kMatchFastLenMX;
-      }
+      m_Level = level;
       continue;
     }
     else if (name == L"PASS")
@@ -192,7 +197,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
       m_Method.NumPasses = value.ulVal;
-      if (m_Method.NumPasses < 1 || m_Method.NumPasses > 10)
+      if (m_Method.NumPasses < 1)
         return E_INVALIDARG;
     }
     else if (name == L"FB")
@@ -200,10 +205,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       if (value.vt != VT_UI4)
         return E_INVALIDARG;
       m_Method.NumFastBytes = value.ulVal;
-      /*
-      if (m_Method.NumFastBytes < 3 || m_Method.NumFastBytes > 255)
-        return E_INVALIDARG;
-      */
     }
     else
       return E_INVALIDARG;

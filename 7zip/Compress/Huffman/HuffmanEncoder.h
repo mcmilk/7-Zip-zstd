@@ -55,12 +55,28 @@ public:
   void AddSymbol(UInt32 symbol) {  m_Items[symbol].Freq++; }
 
   void SetFreqs(const UInt32 *freqs);
+  
+  UInt32 GetPrice(const Byte *length) const 
+  {  
+    UInt32 price = 0;
+    for (UInt32 i = 0; i < m_NumSymbols; i++)
+    {
+      price += length[i] * m_Items[i].Freq; 
+      if (m_ExtraBits && i >= m_ExtraBase)
+        price += m_ExtraBits[i - m_ExtraBase] * m_Items[i].Freq;
+    }
+    return price;
+  };
+  void SetFreq(UInt32 symbol, UInt32 value) {  m_Items[symbol].Freq = value; };
+
   void BuildTree(Byte *levels);
   UInt32 GetBlockBitLength() const { return m_BlockBitLength; }
 
   template <class TBitEncoder>
   void CodeOneValue(TBitEncoder *bitEncoder, UInt32 symbol)
     { bitEncoder->WriteBits(m_Items[symbol].Code, m_Items[symbol].Len); }
+
+  void ReverseBits();
 };
 
 }}

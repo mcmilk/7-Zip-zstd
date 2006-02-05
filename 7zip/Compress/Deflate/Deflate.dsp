@@ -291,9 +291,5 @@ SOURCE=.\DeflateEncoder.cpp
 
 SOURCE=.\DeflateEncoder.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\DeflateExtConst.h
-# End Source File
 # End Target
 # End Project

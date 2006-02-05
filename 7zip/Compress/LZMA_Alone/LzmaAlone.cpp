@@ -96,14 +96,13 @@ static void PrintHelp()
              "  d: decode file\n"
              "  b: Benchmark\n"
     "<Switches>\n"
-    "  -a{N}:  set compression mode - [0, 2], default: 2 (max)\n"
-    "  -d{N}:  set dictionary - [0,28], default: 23 (8MB)\n"
+    "  -a{N}:  set compression mode - [0, 1], default: 1 (max)\n"
+    "  -d{N}:  set dictionary - [0,30], default: 23 (8MB)\n"
     "  -fb{N}: set number of fast bytes - [5, 273], default: 128\n"
     "  -lc{N}: set number of literal context bits - [0, 8], default: 3\n"
     "  -lp{N}: set number of literal pos bits - [0, 4], default: 0\n"
     "  -pb{N}: set number of pos bits - [0, 4], default: 2\n"
-    "  -mf{MF_ID}: set Match Finder: [bt2, bt3, bt4, bt4b, pat2r, pat2,\n"
-    "              pat2h, pat3h, pat4h, hc3, hc4], default: bt4\n"
+    "  -mf{MF_ID}: set Match Finder: [bt2, bt3, bt4, hc4], default: bt4\n"
     "  -eos:   write End Of Stream marker\n"
     "  -si:    read data from stdin\n"
     "  -so:    write data to stdout\n"
@@ -150,7 +149,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.32 Copyright (c) 1999-2005 Igor Pavlov  2005-12-09\n");
+  fprintf(stderr, "\nLZMA 4.33 Copyright (c) 1999-2006 Igor Pavlov  2006-02-05\n");
 
   if (n == 1)
   {
@@ -211,8 +210,7 @@ int main2(int n, const char *args[])
         if (!GetNumber(nonSwitchStrings[paramIndex++], numIterations))
           numIterations = kNumDefaultItereations;
     }
-    return LzmaBenchmark(stderr, numIterations, dictionary, 
-        mf.CompareNoCase(L"BT4") == 0);
+    return LzmaBenchmark(stderr, numIterations, dictionary);
   }
 
   bool encodeMode = false;

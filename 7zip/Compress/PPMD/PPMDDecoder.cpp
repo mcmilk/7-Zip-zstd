@@ -49,7 +49,7 @@ public:
 
 HRESULT CDecoder::CodeSpec(UInt32 size, Byte *memStream)
 {
-  const startSize = size;
+  const UInt32 startSize = size;
   if (_outSizeDefined)
   {
     const UInt64 rem = _outSize - _processedSize;
