@@ -104,6 +104,9 @@ int Main2()
     eo.OverwriteMode = options.OverwriteMode;
     eo.PathMode = options.Command.GetPathMode();
     eo.TestMode = options.Command.IsTestMode();
+    #ifdef COMPRESS_MT
+    eo.Properties = options.ExtractProperties;
+    #endif
 
     HRESULT result = ExtractGUI(
           options.ArchivePathsSorted, 

@@ -24,4 +24,9 @@ struct IMatchFinder: public IInWindowStream
   STDMETHOD(Skip)(UInt32 num) PURE;
 };
 
+struct IMatchFinderSetNumPasses
+{
+  virtual void SetNumPasses(UInt32 numPasses) PURE;
+};
+
 #endif

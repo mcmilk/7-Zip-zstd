@@ -13,6 +13,7 @@
 #include "Windows/PropVariant.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
+#include "../Common/ParseProperties.h"
 
 using namespace NWindows;
 using namespace NTime;
@@ -130,14 +131,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     UInt32 level = m_Level;
     if (level == 0xFFFFFFFF)
       level = 5;
-
     if (m_Method.NumPasses == 0xFFFFFFFF)
-      m_Method.NumPasses = (level >= 9 ? kNumPassesX9 : (level >= 7 ? kNumPassesX7 : kNumPassesX1));
+      m_Method.NumPasses = (level >= 9 ? kNumPassesX9 : 
+                           (level >= 7 ? kNumPassesX7 : 
+                                         kNumPassesX1));
     if (m_Method.NumFastBytes == 0xFFFFFFFF)
-      m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1));
+      m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
+                              (level >= 7 ? kNumFastBytesX7 : 
+                                            kNumFastBytesX1));
 
-    return UpdateArchive(m_Stream, size, outStream, newItem, 
-        m_Method, itemIndex, updateCallback);
+    return UpdateArchive(m_Stream, size, outStream, newItem, m_Method, itemIndex, updateCallback);
   }
     
   if (indexInArchive != 0)
@@ -162,49 +165,33 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
   InitMethodProperties();
   for (int i = 0; i < numProperties; i++)
   {
-    UString name = UString(names[i]);
+    UString name = names[i];
     name.MakeUpper();
-    const PROPVARIANT &value = values[i];
-    if (name[0] == 'X')
+    const PROPVARIANT &prop = values[i];
+    if (name[0] == L'X')
     {
-      name.Delete(0);
       UInt32 level = 9;
-      if (value.vt == VT_UI4)
-      {
-        if (!name.IsEmpty())
-          return E_INVALIDARG;
-        level = value.ulVal;
-      }
-      else if (value.vt == VT_EMPTY)
-      {
-        if(!name.IsEmpty())
-        {
-          const wchar_t *start = name;
-          const wchar_t *end;
-          UInt64 v = ConvertStringToUInt64(start, &end);
-          if (end - start != name.Length())
-            return E_INVALIDARG;
-          level = (UInt32)v;
-        }
-      }
-      else
-        return E_INVALIDARG;
+      RINOK(ParsePropValue(name.Mid(1), prop, level));
       m_Level = level;
-      continue;
     }
-    else if (name == L"PASS")
+    else if (name.Left(4) == L"PASS")
     {
-      if (value.vt != VT_UI4)
-        return E_INVALIDARG;
-      m_Method.NumPasses = value.ulVal;
-      if (m_Method.NumPasses < 1)
-        return E_INVALIDARG;
+      UInt32 num = kNumPassesX9;
+      RINOK(ParsePropValue(name.Mid(4), prop, num));
+      m_Method.NumPasses = num;
     }
-    else if (name == L"FB")
+    else if (name.Left(2) == L"FB")
     {
-      if (value.vt != VT_UI4)
-        return E_INVALIDARG;
-      m_Method.NumFastBytes = value.ulVal;
+      UInt32 num = kNumFastBytesX9;
+      RINOK(ParsePropValue(name.Mid(2), prop, num));
+      m_Method.NumFastBytes = num;
+    }
+    else if (name.Left(2) == L"MC")
+    {
+      UInt32 num = 0xFFFFFFFF;
+      RINOK(ParsePropValue(name.Mid(2), prop, num));
+      m_Method.NumMatchFinderCycles = num;
+      m_Method.NumMatchFinderCyclesDefined = true;
     }
     else
       return E_INVALIDARG;

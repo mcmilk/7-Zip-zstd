@@ -1,6 +1,6 @@
 PROG = bz2.dll
 DEF_FILE = ../Archive.def
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT
 LIBS = $(LIBS) oleaut32.lib user32.lib
 
 BZ2_OBJS = \
@@ -27,6 +27,7 @@ WIN_OBJS = \
 AR_COMMON_OBJS = \
   $O\CodecsPath.obj \
   $O\DummyOutStream.obj \
+  $O\ParseProperties.obj \
 
 OBJS = \
   $O\StdAfx.obj \

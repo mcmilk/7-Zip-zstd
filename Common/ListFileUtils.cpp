@@ -15,8 +15,7 @@ static void RemoveQuote(UString &s)
       s = s.Mid(1, s.Length() - 2);
 }
 
-bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, 
-    UINT codePage)
+bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, UINT codePage)
 {
   CStdInStream file;
   if (!file.Open(fileName))
@@ -32,6 +31,12 @@ bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings,
   }
   else
     u = MultiByteToUnicodeString(s, codePage);
+  if (!u.IsEmpty())
+  {
+    if (u[0] == 0xFEFF)
+      u.Delete(0);
+  }
+
   UString t;
   for(int i = 0; i < u.Length(); i++)
   {

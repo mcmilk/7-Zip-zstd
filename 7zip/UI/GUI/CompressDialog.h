@@ -123,6 +123,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   UInt32 GetOrder();
   UInt32 GetOrderSpec();
 
+  UInt64 GetMemoryUsage(UInt32 dictionary, bool isMultiThread, UInt64 &decompressMemory);
   UInt64 GetMemoryUsage(UInt64 &decompressMemory);
   void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();

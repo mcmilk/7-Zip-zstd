@@ -11,7 +11,8 @@ const UInt32 kMaxValForNormalize = (UInt32(1) << 31) - 1;
 class CMatchFinder: 
   public IMatchFinder,
   public CLZInWindow,
-  public CMyUnknownImp
+  public CMyUnknownImp,
+  public IMatchFinderSetNumPasses
 {
   UInt32 _cyclicBufferPos;
   UInt32 _cyclicBufferSize; // it must be historySize + 1
@@ -47,7 +48,7 @@ class CMatchFinder:
 public:
   CMatchFinder();
   virtual ~CMatchFinder();
-  void SetCutValue(UInt32 cutValue) { _cutValue = cutValue; }
+  virtual void SetNumPasses(UInt32 numPasses) { _cutValue = numPasses; }
 };
 
 }

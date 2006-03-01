@@ -7,6 +7,10 @@
 #include "../IArchive.h"
 #include "BZip2Item.h"
 
+#ifdef COMPRESS_MT
+#include "../../../Windows/System.h"
+#endif
+
 namespace NArchive {
 namespace NBZip2 {
 
@@ -20,8 +24,21 @@ class CHandler:
   NArchive::NBZip2::CItem _item;
   UInt64 _streamStartPosition;
 
+  UInt32 _level;
+  UInt32 _dicSize;
   UInt32 _numPasses;
-  void InitMethodProperties() { _numPasses = 1; }
+  #ifdef COMPRESS_MT
+  UInt32 _numThreads;
+  #endif
+  void InitMethodProperties() 
+  { 
+    _level = 5;
+    _dicSize = 
+    _numPasses = 0xFFFFFFFF; 
+    #ifdef COMPRESS_MT
+    _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
+    #endif
+  }
 
 public:
   MY_UNKNOWN_IMP3(

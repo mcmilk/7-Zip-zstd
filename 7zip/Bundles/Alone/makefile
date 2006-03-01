@@ -11,9 +11,11 @@ CFLAGS = $(CFLAGS) -I ../../../ \
   -DFORMAT_TAR \
   -DFORMAT_Z \
   -DFORMAT_ZIP \
+  -DCOMPRESS_MT \
   -DCOMPRESS_BCJ_X86 \
   -DCOMPRESS_BCJ2 \
   -DCOMPRESS_BZIP2 \
+  -DCOMPRESS_BZIP2_MT \
   -DCOMPRESS_COPY \
   -DCOMPRESS_DEFLATE \
   -DCOMPRESS_DEFLATE64 \
@@ -93,6 +95,7 @@ UI_COMMON_OBJS = \
   $O\ExtractingFilePath.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
+  $O\SetProperties.obj \
   $O\SortUtils.obj \
   $O\TempFiles.obj \
   $O\Update.obj \
@@ -112,6 +115,7 @@ AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
+  $O\ParseProperties.obj \
 
 
 7Z_OBJS = \

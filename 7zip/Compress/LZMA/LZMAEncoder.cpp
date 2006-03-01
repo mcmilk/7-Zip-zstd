@@ -220,6 +220,7 @@ void CEncoder::SetPrices(UInt32 posState, UInt32 numSymbols, UInt32 *prices) con
 }
 CEncoder::CEncoder():
   _numFastBytes(kNumFastBytesDefault),
+  _matchFinderCycles(0),
   _distTableSize(kDefaultDictionaryLogSize * 2),
   _posStateBits(2),
   _posStateMask(4 - 1),
@@ -229,6 +230,7 @@ CEncoder::CEncoder():
   _dictionarySizePrev(UInt32(-1)),
   _numFastBytesPrev(UInt32(-1)),
   _matchFinderIndex(kBT4),
+  setMfPasses(0),
    #ifdef COMPRESS_MF_MT
   _multiThread(false),
    #endif
@@ -249,25 +251,41 @@ HRESULT CEncoder::Create()
       #ifdef COMPRESS_MF_BT
       #ifdef COMPRESS_MF_BT2
       case kBT2:
-        _matchFinder = new NBT2::CMatchFinder;
+      {
+        NBT2::CMatchFinder *mfSpec = new NBT2::CMatchFinder;
+        setMfPasses = mfSpec;
+        _matchFinder = mfSpec;
         break;
+      }
       #endif
       #ifdef COMPRESS_MF_BT3
       case kBT3:
-        _matchFinder = new NBT3::CMatchFinder;
+      {
+        NBT3::CMatchFinder *mfSpec = new NBT3::CMatchFinder;
+        setMfPasses = mfSpec;
+        _matchFinder = mfSpec;
         break;
+      }
       #endif
       #ifdef COMPRESS_MF_BT4
       case kBT4:
-        _matchFinder = new NBT4::CMatchFinder;
+      {
+        NBT4::CMatchFinder *mfSpec = new NBT4::CMatchFinder;
+        setMfPasses = mfSpec;
+        _matchFinder = mfSpec;
         break;
+      }
       #endif
       #endif
       
       #ifdef COMPRESS_MF_HC
       case kHC4:
-        _matchFinder = new NHC4::CMatchFinder;
+      {
+        NHC4::CMatchFinder *mfSpec = new NHC4::CMatchFinder;
+        setMfPasses = mfSpec;
+        _matchFinder = mfSpec;
         break;
+      }
       #endif
     }
     if (_matchFinder == 0)
@@ -293,6 +311,8 @@ HRESULT CEncoder::Create()
   if (_dictionarySize == _dictionarySizePrev && _numFastBytesPrev == _numFastBytes)
     return S_OK;
   RINOK(_matchFinder->Create(_dictionarySize, kNumOpts, _numFastBytes, kMatchMaxLen + 1)); // actually it's + _numFastBytes - _numFastBytes
+  if (_matchFinderCycles != 0 && setMfPasses != 0)
+    setMfPasses->SetNumPasses(_matchFinderCycles);
   _dictionarySizePrev = _dictionarySize;
   _numFastBytesPrev = _numFastBytes;
   return S_OK;
@@ -340,6 +360,13 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
         _numFastBytes = numFastBytes;
         break;
       }
+      case NCoderPropID::kMatchFinderCycles:
+      {
+        if (prop.vt != VT_UI4)
+          return E_INVALIDARG;
+        _matchFinderCycles = prop.ulVal;
+        break;
+      }
       case NCoderPropID::kAlgorithm:
       {
         if (prop.vt != VT_UI4)
@@ -360,8 +387,8 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
         _matchFinderIndex = m;
         if (_matchFinder && matchFinderIndexPrev != _matchFinderIndex)
         {
-          _dictionarySizePrev = UInt32(-1);
-          _matchFinder.Release();
+          _dictionarySizePrev = (UInt32)-1;
+          ReleaseMatchFinder();
         }
         break;
       }
@@ -373,10 +400,23 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
         bool newMultiThread = (prop.boolVal == VARIANT_TRUE);
         if (newMultiThread != _multiThread)
         {
-          _dictionarySizePrev = UInt32(-1);
-          _matchFinder.Release();
+          _dictionarySizePrev = (UInt32)-1;
+          ReleaseMatchFinder();
+          _multiThread = newMultiThread;
         }
-        _multiThread = newMultiThread;
+        break;
+      }
+      case NCoderPropID::kNumThreads:
+      {
+        if (prop.vt != VT_UI4)
+          return E_INVALIDARG;
+        bool newMultiThread = (prop.ulVal > 1);
+        if (newMultiThread != _multiThread)
+        {
+          _dictionarySizePrev = (UInt32)-1;
+          ReleaseMatchFinder();
+          _multiThread = newMultiThread;
+        }
         break;
       }
       #endif
@@ -1216,12 +1256,6 @@ HRESULT CEncoder::GetOptimumFast(UInt32 position, UInt32 &backRes, UInt32 &lenRe
   }
   backRes = UInt32(-1);
   lenRes = 1;
-  return S_OK;
-}
-
-STDMETHODIMP CEncoder::InitMatchFinder(IMatchFinder *matchFinder)
-{
-  _matchFinder = matchFinder;
   return S_OK;
 }
 

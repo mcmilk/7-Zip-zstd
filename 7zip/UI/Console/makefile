@@ -1,6 +1,6 @@
 PROG = 7z.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT
 
 CONSOLE_OBJS = \
   $O\ConsoleClose.obj \
@@ -56,6 +56,7 @@ UI_COMMON_OBJS = \
   $O\ExtractingFilePath.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
+  $O\SetProperties.obj \
   $O\SortUtils.obj \
   $O\TempFiles.obj \
   $O\Update.obj \

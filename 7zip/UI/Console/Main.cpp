@@ -220,6 +220,9 @@ int Main2(
       eo.OverwriteMode = options.OverwriteMode;
       eo.OutputDir = options.OutputDir;
       eo.YesToAll = options.YesToAll;
+      #ifdef COMPRESS_MT
+      eo.Properties = options.ExtractProperties;
+      #endif
       HRESULT result = DecompressArchives(
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,

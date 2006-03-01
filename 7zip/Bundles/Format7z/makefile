@@ -5,9 +5,11 @@ CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXCLUDE_COM \
   -DNO_REGISTRY \
   -DFORMAT_7Z \
+  -DCOMPRESS_MT \
   -DCOMPRESS_BCJ_X86 \
   -DCOMPRESS_BCJ2 \
   -DCOMPRESS_BZIP2_DECODER \
+  -DCOMPRESS_BZIP2_MT \
   -DCOMPRESS_COPY \
   -DCOMPRESS_DEFLATE_DECODER \
   -DCOMPRESS_LZMA \
@@ -54,6 +56,7 @@ AR_COMMON_OBJS = \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
+  $O\ParseProperties.obj \
 
 
 7Z_OBJS = \

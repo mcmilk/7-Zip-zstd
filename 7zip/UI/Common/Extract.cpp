@@ -5,10 +5,10 @@
 #include "Extract.h"
 
 #include "Windows/Defs.h"
-#include "Windows/PropVariant.h"
 #include "Windows/FileDir.h"
 
 #include "OpenArchive.h"
+#include "SetProperties.h"
 
 #ifndef EXCLUDE_COM
 #include "Windows/DLL.h"
@@ -67,6 +67,10 @@ HRESULT DecompressArchive(
       options.DefaultItemName, 
       options.ArchiveFileInfo.LastWriteTime,
       options.ArchiveFileInfo.Attributes);
+
+  #ifdef COMPRESS_MT
+  RINOK(SetProperties(archive, options.Properties));
+  #endif
 
   HRESULT result = archive->Extract(&realIndices.Front(), 
     realIndices.Size(), options.TestMode? 1: 0, 

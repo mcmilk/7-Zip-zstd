@@ -10,6 +10,10 @@
 #include "ZipIn.h"
 #include "ZipCompressionMode.h"
 
+#ifdef COMPRESS_MT
+#include "../../../Windows/System.h"
+#endif
+
 namespace NArchive {
 namespace NZip {
 
@@ -61,14 +65,28 @@ private:
 
   int m_Level;
   int m_MainMethod;
+  UInt32 m_DicSize;
   UInt32 m_NumPasses;
   UInt32 m_NumFastBytes;
+  UInt32 m_NumMatchFinderCycles;
+  bool m_NumMatchFinderCyclesDefined;
+
+  #ifdef COMPRESS_MT
+  UInt32 _numThreads;
+  #endif
+
   void InitMethodProperties()
   {
     m_Level = -1;
     m_MainMethod = -1;
-    m_NumPasses = 0xFFFFFFFF;
-    m_NumFastBytes = 0xFFFFFFFF;
+    m_DicSize = 
+    m_NumPasses = 
+    m_NumFastBytes = 
+    m_NumMatchFinderCycles = 0xFFFFFFFF;
+    m_NumMatchFinderCyclesDefined = false;
+    #ifdef COMPRESS_MT
+    _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
+    #endif
   }
 };
 

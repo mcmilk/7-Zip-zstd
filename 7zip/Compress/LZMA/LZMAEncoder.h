@@ -240,6 +240,7 @@ class CEncoder :
   bool _finished;
   ISequentialInStream *_inStream;
 
+  UInt32 _matchFinderCycles;
   int _matchFinderIndex;
   #ifdef COMPRESS_MF_MT
   bool _multiThread;
@@ -248,6 +249,14 @@ class CEncoder :
   bool _writeEndMark;
 
   bool _needReleaseMFStream;
+
+  IMatchFinderSetNumPasses *setMfPasses;
+
+  void ReleaseMatchFinder()
+  {
+    setMfPasses = 0;
+    _matchFinder.Release();
+  }
   
   HRESULT ReadMatchDistances(UInt32 &len, UInt32 &numDistancePairs);
 
@@ -383,9 +392,6 @@ public:
       ISequentialOutStream *outStream, 
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
-
-  // IInitMatchFinder interface
-  STDMETHOD(InitMatchFinder)(IMatchFinder *matchFinder);
 
   // ICompressSetCoderProperties2
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 

@@ -12,7 +12,12 @@
 #include "../BWT/BlockSort.h"
 #include "BZip2Const.h"
 #include "BZip2CRC.h"
- 
+
+#ifdef COMPRESS_BZIP2_MT
+#include "../../../Windows/Thread.h"
+#include "../../../Windows/Synchronization.h"
+#endif
+
 namespace NCompress {
 namespace NBZip2 {
 
@@ -76,49 +81,123 @@ public:
   }
 };
 
-class CEncoder :
-  public ICompressCoder,
-  public ICompressSetCoderProperties, 
-  public CMyUnknownImp
+class CEncoder;
+
+const int kNumPassesMax = 10;
+
+class CThreadInfo
 {
+public:
   Byte *m_Block;
-  CInBuffer m_InStream;
-  NStream::NMSBF::CEncoder<COutBuffer> m_OutStream;
-  CMsbfEncoderTemp *m_OutStreamCurrent;
-  CBlockSorter m_BlockSorter;
-
-  bool m_NeedHuffmanCreate;
-  NCompression::NHuffman::CEncoder m_HuffEncoders[kNumTablesMax];
-
+private:
   Byte *m_MtfArray;
   Byte *m_TempArray;
+  CBlockSorter m_BlockSorter;
 
+  CMsbfEncoderTemp *m_OutStreamCurrent;
+
+  NCompression::NHuffman::CEncoder m_HuffEncoders[kNumTablesMax];
   Byte m_Selectors[kNumSelectorsMax];
 
-  UInt32 m_BlockSizeMult;
-  UInt32 m_NumPasses;
-  bool m_OptimizeNumTables;
+  bool m_NeedHuffmanCreate;
 
-  UInt32 ReadRleBlock(Byte *buffer);
+  UInt32 m_CRCs[1 << kNumPassesMax];
+  UInt32 m_NumCrcs;
+
+  int m_BlockIndex;
+
+  void FinishStream();
 
   void WriteBits2(UInt32 value, UInt32 numBits);
   void WriteByte2(Byte b);
   void WriteBit2(bool v);
   void WriteCRC2(UInt32 v);
-  
+
+  void EncodeBlock(Byte *block, UInt32 blockSize);
+  UInt32 EncodeBlockWithHeaders(Byte *block, UInt32 blockSize);
+  void EncodeBlock2(Byte *block, UInt32 blockSize, UInt32 numPasses);
+public:
+  bool m_OptimizeNumTables;
+  CEncoder *Encoder;
+  #ifdef COMPRESS_BZIP2_MT
+  NWindows::CThread Thread;
+
+  NWindows::NSynchronization::CAutoResetEvent StreamWasFinishedEvent;
+  NWindows::NSynchronization::CAutoResetEvent WaitingWasStartedEvent;
+
+  // it's not member of this thread. We just need one event per thread
+  NWindows::NSynchronization::CAutoResetEvent CanWriteEvent;
+
+  UInt64 m_PackSize;
+
+  Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
+  #endif
+
+  CThreadInfo(): m_Block(0), m_NeedHuffmanCreate(true) {}
+  ~CThreadInfo() { Free(); }
+  bool Create();
+  void Free();
+
+  HRESULT EncodeBlock3(UInt32 blockSize);
+  DWORD ThreadFunc();
+};
+
+class CEncoder :
+  public ICompressCoder,
+  public ICompressSetCoderProperties, 
+  #ifdef COMPRESS_BZIP2_MT
+  public ICompressSetCoderMt,
+  #endif
+  public CMyUnknownImp
+{
+  UInt32 m_BlockSizeMult;
+  bool m_OptimizeNumTables;
+
+  UInt32 m_NumPassesPrev;
+
+  UInt32 m_NumThreadsPrev;
+public:
+  CInBuffer m_InStream;
+  Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
+  NStream::NMSBF::CEncoder<COutBuffer> m_OutStream;
+  UInt32 NumPasses;
+  CBZip2CombinedCRC CombinedCRC;
+
+  #ifdef COMPRESS_BZIP2_MT
+  CThreadInfo *ThreadsInfo;
+  NWindows::NSynchronization::CCriticalSection CS;
+  UInt32 NumThreads;
+  bool MtMode;
+  UInt32 NextBlockIndex;
+
+  bool CloseThreads;
+  bool StreamWasFinished;
+  NWindows::NSynchronization::CManualResetEvent CanStartWaitingEvent;
+
+  HRESULT Result;
+  ICompressProgressInfo *Progress;
+  #else
+  CThreadInfo ThreadsInfo;
+  #endif
+
+  UInt32 ReadRleBlock(Byte *buffer);
+  void WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte);
+
   void WriteBits(UInt32 value, UInt32 numBits);
   void WriteByte(Byte b);
   void WriteBit(bool v);
   void WriteCRC(UInt32 v);
 
-  void EncodeBlock(Byte *block, UInt32 blockSize);
-  UInt32 EncodeBlockWithHeaders(Byte *block, UInt32 blockSize);
-  void EncodeBlock2(CBZip2CombinedCRC &combinedCRC, Byte *block, UInt32 blockSize, UInt32 numPasses);
-  void EncodeBlock3(CBZip2CombinedCRC &combinedCRC, UInt32 blockSize);
+  #ifdef COMPRESS_BZIP2_MT
+  bool Create();
+  void Free();
+  #endif
 
 public:
   CEncoder();
+  #ifdef COMPRESS_BZIP2_MT
   ~CEncoder();
+  #endif
 
   HRESULT Flush() { return m_OutStream.Flush(); }
   
@@ -142,7 +221,11 @@ public:
     }
   };
 
-  MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
+  #ifdef COMPRESS_BZIP2_MT
+  MY_UNKNOWN_IMP2(ICompressSetCoderMt, ICompressSetCoderProperties)
+  #else
+  MY_UNKNOWN_IMP1(ICompressGetInStreamProcessedSize)
+  #endif
 
   HRESULT CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
@@ -153,6 +236,10 @@ public:
       ICompressProgressInfo *progress);
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
       const PROPVARIANT *properties, UInt32 numProperties);
+
+  #ifdef COMPRESS_BZIP2_MT
+  STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
+  #endif
 };
 
 }}

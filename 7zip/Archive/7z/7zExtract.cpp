@@ -230,6 +230,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           #ifndef _NO_CRYPTO
           , getTextPassword
           #endif
+          #ifdef COMPRESS_MT
+          , true, _numThreads
+          #endif
           );
 
       if (result == S_FALSE)

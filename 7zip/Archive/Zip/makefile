@@ -1,6 +1,6 @@
 PROG = zip.dll
 DEF_FILE = ../Archive.def
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT
 LIBS = $(LIBS) oleaut32.lib user32.lib
 
 ZIP_OBJS = \
@@ -47,6 +47,7 @@ AR_COMMON_OBJS = \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
+  $O\ParseProperties.obj \
 
 7Z_OBJS = \
   $O\7zMethodID.obj \

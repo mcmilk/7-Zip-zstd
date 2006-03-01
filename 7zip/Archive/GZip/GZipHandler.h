@@ -66,9 +66,11 @@ private:
   CMyComPtr<IInStream> m_Stream;
   CCompressionMethodMode m_Method;
   UInt32 m_Level;
+
   void InitMethodProperties()
   {
-    m_Level = m_Method.NumPasses = m_Method.NumFastBytes = 0xFFFFFFFF;
+    m_Method.NumMatchFinderCyclesDefined = false;
+    m_Level = m_Method.NumPasses = m_Method.NumFastBytes = m_Method.NumMatchFinderCycles = 0xFFFFFFFF;
   }
 };
 

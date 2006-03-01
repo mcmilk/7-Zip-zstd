@@ -14,6 +14,7 @@
 
 #include "../../IPassword.h"
 #include "../Common/ItemNameUtils.h"
+#include "../Common/ParseProperties.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -22,17 +23,21 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-static const UInt32 kNumDeflatePassesX1  = 1;
-static const UInt32 kNumDeflatePassesX7  = 3;
-static const UInt32 kNumDeflatePassesX9  = 10;
+static const UInt32 kDeflateNumPassesX1  = 1;
+static const UInt32 kDeflateNumPassesX7  = 3;
+static const UInt32 kDeflateNumPassesX9  = 10;
 
 static const UInt32 kNumFastBytesX1 = 32;
 static const UInt32 kNumFastBytesX7 = 64;
 static const UInt32 kNumFastBytesX9 = 128;
 
-static const UInt32 kNumBZip2PassesX1 = 1;
-static const UInt32 kNumBZip2PassesX7 = 2;
-static const UInt32 kNumBZip2PassesX9 = 7;
+static const UInt32 kBZip2NumPassesX1 = 1;
+static const UInt32 kBZip2NumPassesX7 = 2;
+static const UInt32 kBZip2NumPassesX9 = 7;
+
+static const UInt32 kBZip2DicSizeX1 = 100000;
+static const UInt32 kBZip2DicSizeX3 = 500000;
+static const UInt32 kBZip2DicSizeX5 = 900000;
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
@@ -202,21 +207,34 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
   bool isBZip2 = (mainMethod == NFileHeader::NCompressionMethod::kBZip2);
   options.NumPasses = m_NumPasses;
-  if (options.NumPasses == 0xFFFFFFFF)
-  {
-    if (isDeflate)
-      options.NumPasses = (level >= 9 ? kNumDeflatePassesX9 : 
-        (level >= 7 ? kNumDeflatePassesX7 : kNumDeflatePassesX1));
-    else if (isBZip2)
-      options.NumPasses = (level >= 9 ? kNumBZip2PassesX9 : 
-        (level >= 7 ? kNumBZip2PassesX7 :  kNumBZip2PassesX1));
-  }
-
+  options.DicSize = m_DicSize;
   options.NumFastBytes = m_NumFastBytes;
-  if (options.NumFastBytes == 0xFFFFFFFF)
+  options.NumMatchFinderCycles = m_NumMatchFinderCycles;
+  options.NumMatchFinderCyclesDefined = m_NumMatchFinderCyclesDefined;
+  #ifdef COMPRESS_MT
+  options.NumThreads = _numThreads;
+  #endif
+  if (isDeflate)
   {
-    if (isDeflate)
-      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : (level >= 7 ? kNumFastBytesX7 : kNumFastBytesX1));
+    if (options.NumPasses == 0xFFFFFFFF)
+      options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :  
+                          (level >= 7 ? kDeflateNumPassesX7 : 
+                                        kDeflateNumPassesX1));
+    if (options.NumFastBytes == 0xFFFFFFFF)
+      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
+                             (level >= 7 ? kNumFastBytesX7 : 
+                                           kNumFastBytesX1));
+  }
+  if (isBZip2)
+  {
+    if (options.NumPasses == 0xFFFFFFFF)
+      options.NumPasses = (level >= 9 ? kBZip2NumPassesX9 : 
+                          (level >= 7 ? kBZip2NumPassesX7 :  
+                                        kBZip2NumPassesX1));
+    if (options.DicSize == 0xFFFFFFFF)
+      options.DicSize = (level >= 5 ? kBZip2DicSizeX5 : 
+                        (level >= 3 ? kBZip2DicSizeX3 : 
+                                      kBZip2DicSizeX1));
   }
 
   return Update(m_Items, updateItems, outStream, 
@@ -226,45 +244,32 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
+  #ifdef COMPRESS_MT
+  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
+  _numThreads = numProcessors;
+  #endif
   InitMethodProperties();
   for (int i = 0; i < numProperties; i++)
   {
     UString name = UString(names[i]);
     name.MakeUpper();
-    const PROPVARIANT &value = values[i];
+    if (name.IsEmpty())
+      return E_INVALIDARG;
 
-    if (name[0] == 'X')
+    const PROPVARIANT &prop = values[i];
+
+    if (name[0] == L'X')
     {
-      name.Delete(0);
       UInt32 level = 9;
-      if (value.vt == VT_UI4)
-      {
-        if (!name.IsEmpty())
-          return E_INVALIDARG;
-        level = value.ulVal;
-      }
-      else if (value.vt == VT_EMPTY)
-      {
-        if(!name.IsEmpty())
-        {
-          const wchar_t *start = name;
-          const wchar_t *end;
-          UInt64 v = ConvertStringToUInt64(start, &end);
-          if (end - start != name.Length())
-            return E_INVALIDARG;
-          level = (UInt32)v;
-        }
-      }
-      else
-        return E_INVALIDARG;
-      m_Level = (level <= 9) ? (int)level: 9;
+      RINOK(ParsePropValue(name.Mid(1), prop, level));
+      m_Level = level;
       continue;
     }
     else if (name == L"M")
     {
-      if (value.vt == VT_BSTR)
+      if (prop.vt == VT_BSTR)
       {
-        UString valueString = value.bstrVal;
+        UString valueString = prop.bstrVal;
         valueString.MakeUpper();
         if (valueString == L"COPY")
           m_MainMethod = NFileHeader::NCompressionMethod::kStored;
@@ -277,15 +282,15 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         else 
           return E_INVALIDARG;
       }
-      else if (value.vt == VT_UI4)
+      else if (prop.vt == VT_UI4)
       {
-        switch(value.ulVal)
+        switch(prop.ulVal)
         {
           case NFileHeader::NCompressionMethod::kStored:
           case NFileHeader::NCompressionMethod::kDeflated:
           case NFileHeader::NCompressionMethod::kDeflated64:
           case NFileHeader::NCompressionMethod::kBZip2:
-            m_MainMethod = (Byte)value.ulVal;
+            m_MainMethod = (Byte)prop.ulVal;
             break;
           default:
             return E_INVALIDARG;
@@ -294,25 +299,38 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       else
         return E_INVALIDARG;
     }
-    else if (name == L"PASS")
+    else if (name[0] == L'D')
     {
-      if (value.vt != VT_UI4)
-        return E_INVALIDARG;
-      if (value.ulVal < 1)
-        return E_INVALIDARG;
-      m_NumPasses = value.ulVal;
+      UInt32 dicSize = kBZip2DicSizeX5;
+      RINOK(ParsePropDictionaryValue(name.Mid(1), prop, dicSize));
+      m_DicSize = dicSize;
     }
-    else if (name == L"FB")
+    else if (name.Left(4) == L"PASS")
     {
-      if (value.vt != VT_UI4)
-        return E_INVALIDARG;
-      /*
-      if (value.ulVal < 3 || value.ulVal > 255)
-        return E_INVALIDARG;
-      */
-      m_NumFastBytes = value.ulVal;
+      UInt32 num = kDeflateNumPassesX9;
+      RINOK(ParsePropValue(name.Mid(4), prop, num));
+      m_NumPasses = num;
     }
-    else
+    else if (name.Left(2) == L"FB")
+    {
+      UInt32 num = kNumFastBytesX9;
+      RINOK(ParsePropValue(name.Mid(2), prop, num));
+      m_NumFastBytes = num;
+    }
+    else if (name.Left(2) == L"MC")
+    {
+      UInt32 num = 0xFFFFFFFF;
+      RINOK(ParsePropValue(name.Mid(2), prop, num));
+      m_NumMatchFinderCycles = num;
+      m_NumMatchFinderCyclesDefined = true;
+    }
+    else if (name.Left(2) == L"MT")
+    {
+      #ifdef COMPRESS_MT
+      RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
+      #endif
+    }
+    else 
       return E_INVALIDARG;
   }
   return S_OK;

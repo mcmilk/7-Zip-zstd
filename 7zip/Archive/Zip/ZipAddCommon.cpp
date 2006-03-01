@@ -198,34 +198,53 @@ HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStrea
           if (method == NFileHeader::NCompressionMethod::kDeflated ||
               method == NFileHeader::NCompressionMethod::kDeflated64)
           {
-            NWindows::NCOM::CPropVariant properties[2] = 
+            NWindows::NCOM::CPropVariant properties[] = 
             {
               _options.NumPasses, 
-              _options.NumFastBytes
+              _options.NumFastBytes,
+              _options.NumMatchFinderCycles
             };
-            PROPID propIDs[2] = 
+            PROPID propIDs[] = 
             {
               NCoderPropID::kNumPasses,
-              NCoderPropID::kNumFastBytes
+              NCoderPropID::kNumFastBytes,
+              NCoderPropID::kMatchFinderCycles
             };
+            int numProps = sizeof(propIDs) / sizeof(propIDs[0]);
+            if (!_options.NumMatchFinderCyclesDefined)
+              numProps--;
             CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-            RINOK(_compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
-            RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 2));
-          } else if (method == NFileHeader::NCompressionMethod::kBZip2)
+            _compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
+            if (setCoderProperties)
+            {
+              RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, numProps));
+            }
+          } 
+          else if (method == NFileHeader::NCompressionMethod::kBZip2)
           {
-            NWindows::NCOM::CPropVariant properties[1] = 
+            NWindows::NCOM::CPropVariant properties[] = 
             {
+              _options.DicSize, 
               _options.NumPasses
+              #ifdef COMPRESS_MT
+              , _options.NumThreads
+              #endif
             };
-            PROPID propIDs[1] = 
+            PROPID propIDs[] = 
             {
-              NCoderPropID::kNumPasses,
+              NCoderPropID::kDictionarySize,
+              NCoderPropID::kNumPasses
+              #ifdef COMPRESS_MT
+              , NCoderPropID::kNumThreads
+              #endif
             };
             CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-            RINOK(_compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
-            RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 1));
+            _compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
+            if (setCoderProperties)
+            {
+              RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, sizeof(propIDs) / sizeof(propIDs[0])));
+            }
           }
-
         }
         CMyComPtr<ISequentialOutStream> outStreamNew;
         if (_options.PasswordIsDefined)

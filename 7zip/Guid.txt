@@ -25,6 +25,7 @@
 22  ICompressSetDecoderProperties2
 23  ICompressWriteCoderProperties
 24  ICompressGetInStreamProcessedSize
+25  ICompressSetCoderMt
 30  ICompressGetSubStreamSize
 31  ICompressSetInStream
 32  ICompressSetOutStream

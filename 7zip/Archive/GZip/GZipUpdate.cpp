@@ -89,14 +89,24 @@ HRESULT UpdateArchive(IInStream *inStream,
         CLSID_CCompressDeflateEncoder, &deflateEncoder));
     #endif
 
-    NWindows::NCOM::CPropVariant properties[2] = 
-      { compressionMethod.NumPasses, compressionMethod.NumFastBytes };
-    PROPID propIDs[2] = 
-      { NCoderPropID::kNumPasses, NCoderPropID::kNumFastBytes };
+    NWindows::NCOM::CPropVariant properties[] = 
+    { 
+      compressionMethod.NumPasses, 
+      compressionMethod.NumFastBytes,
+      compressionMethod.NumMatchFinderCycles
+    };
+    PROPID propIDs[] = 
+    { 
+      NCoderPropID::kNumPasses, 
+      NCoderPropID::kNumFastBytes,
+      NCoderPropID::kMatchFinderCycles
+    };
+    int numProps = sizeof(propIDs) / sizeof(propIDs[0]);
+    if (!compressionMethod.NumMatchFinderCyclesDefined)
+      numProps--;
     CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-    RINOK(deflateEncoder.QueryInterface(
-        IID_ICompressSetCoderProperties, &setCoderProperties));
-    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 2));
+    RINOK(deflateEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
+    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, numProps));
   }
   RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, compressProgress));
 

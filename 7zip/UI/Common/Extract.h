@@ -11,6 +11,7 @@
 #include "ArchiveExtractCallback.h"
 #include "ArchiveOpenCallback.h"
 #include "ExtractMode.h"
+#include "Property.h"
 
 class CExtractOptions
 {
@@ -27,6 +28,9 @@ public:
   // bool ShowDialog;
   // bool PasswordEnabled;
   // UString Password;
+  #ifdef COMPRESS_MT
+  CObjectVector<CProperty> Properties;
+  #endif
 
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 

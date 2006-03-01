@@ -1,6 +1,6 @@
 PROG = 7zG.exe
 LIBS = $(LIBS) user32.lib advapi32.lib oleaut32.lib shell32.lib comctl32.lib htmlhelp.lib ole32.lib comdlg32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -DLANG
+CFLAGS = $(CFLAGS) -I ../../../ -DLANG -DCOMPRESS_MT
 
 GUI_OBJS = \
   $O\CompressDialog.obj \
@@ -65,6 +65,7 @@ UI_COMMON_OBJS = \
   $O\ExtractingFilePath.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
+  $O\SetProperties.obj \
   $O\SortUtils.obj \
   $O\TempFiles.obj \
   $O\Update.obj \

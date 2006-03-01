@@ -15,6 +15,8 @@ struct CCompressionMethodMode
 {
   UInt32 NumPasses;
   UInt32 NumFastBytes;
+  bool NumMatchFinderCyclesDefined;
+  UInt32 NumMatchFinderCycles;
 };
 
 HRESULT UpdateArchive(IInStream *inStream, 

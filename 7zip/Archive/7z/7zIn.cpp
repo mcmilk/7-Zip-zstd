@@ -880,6 +880,9 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset,
       #ifndef _NO_CRYPTO
       , getTextPassword
       #endif
+      #ifdef COMPRESS_MT
+      , false, 1
+      #endif
       );
     RINOK(result);
     

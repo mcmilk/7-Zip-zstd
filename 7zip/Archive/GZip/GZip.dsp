@@ -304,6 +304,14 @@ SOURCE=..\Common\OutStreamWithCRC.cpp
 
 SOURCE=..\Common\OutStreamWithCRC.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\Common\ParseProperties.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ParseProperties.h
+# End Source File
 # End Group
 # Begin Source File
 

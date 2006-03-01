@@ -60,6 +60,9 @@ public:
       #ifndef _NO_CRYPTO
       , ICryptoGetTextPassword *getTextPasswordSpec
       #endif
+      #ifdef COMPRESS_MT
+      , bool mtMode, UInt32 numThreads
+      #endif
       );
 };
 

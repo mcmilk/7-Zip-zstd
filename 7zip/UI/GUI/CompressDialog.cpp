@@ -10,6 +10,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/ResourceString.h"
+#include "Windows/System.h"
 
 #include "../../FileManager/HelpUtils.h"
 #include "../../FileManager/SplitUtils.h"
@@ -178,9 +179,9 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     L"Zip", 
-    (1 << 0) | (1 << 5) | (1 << 7) | (1 << 9), 
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9), 
     g_ZipMethods, MY_SIZE_OF_ARRAY(g_ZipMethods) ,
-    false, false, false, false, true, false
+    false, false, true, false, true, false
   },
   { 
     L"GZip", 
@@ -190,10 +191,10 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     L"BZip2", 
-    (1 << 5) | (1 << 7) | (1 << 9),
+    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     g_BZip2Methods, 
     MY_SIZE_OF_ARRAY(g_BZip2Methods),
-    false, false, false, false, false
+    false, false, true, false, false
   },
   { 
     L"Tar", 
@@ -210,6 +211,49 @@ static bool IsMethodSupportedBySfx(int methodID)
       return true;
   return false;
 };
+
+#ifndef _WIN64
+typedef BOOL (WINAPI *GlobalMemoryStatusExP)(LPMEMORYSTATUSEX lpBuffer);
+#endif
+
+static UInt64 GetPhysicalRamSize()
+{
+  MEMORYSTATUSEX stat;
+  stat.dwLength = sizeof(stat);
+  // return (128 << 20);
+  #ifdef _WIN64
+  if (!::GlobalMemoryStatusEx(&stat))
+    return 0;
+  return stat.ullTotalPhys;
+  #else
+  GlobalMemoryStatusExP globalMemoryStatusEx = (GlobalMemoryStatusExP)
+        ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
+        "GlobalMemoryStatusEx");
+  if (globalMemoryStatusEx != 0)
+    if (globalMemoryStatusEx(&stat))
+      return stat.ullTotalPhys;
+  {
+    MEMORYSTATUS stat;
+    stat.dwLength = sizeof(stat);
+    GlobalMemoryStatus(&stat);
+    return stat.dwTotalPhys;
+  }
+  #endif
+}
+
+static UInt64 GetMaxRamSizeForProgram()
+{
+  UInt64 physSize = GetPhysicalRamSize();
+  const UInt64 kMinSysSize = (1 << 24);
+  if (physSize <= kMinSysSize)
+    physSize = 0;
+  else
+    physSize -= kMinSysSize;
+  const UInt64 kMinUseSize = (1 << 25);
+  if (physSize < kMinUseSize)
+    physSize = kMinUseSize;
+  return physSize;
+}
 
 bool CCompressDialog::OnInit() 
 {
@@ -326,9 +370,7 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 static bool IsMultiProcessor()
 {
-  SYSTEM_INFO systemInfo;
-  GetSystemInfo(&systemInfo);
-  return systemInfo.dwNumberOfProcessors > 1;
+  return NSystem::GetNumberOfProcessors() > 1;
 }
 
 void CCompressDialog::CheckSFXControlsEnable()
@@ -837,6 +879,7 @@ void CCompressDialog::SetDictionary()
     SetMemoryUsage();
     return;
   }
+  const UInt64 maxRamSize = GetMaxRamSizeForProgram();
   switch (methodID)
   {
     case kLZMA:
@@ -857,22 +900,29 @@ void CCompressDialog::SetDictionary()
       }
       int i;
       AddDictionarySize(kMinDicSize);
+      m_Dictionary.SetCurSel(0);
       for (i = 20; i <= 30; i++)
         for (int j = 0; j < 2; j++)
         {
           if (i == 20 && j > 0)
             continue;
           UInt32 dictionary = (1 << i) + (j << (i - 1));
-          if (dictionary <=
+          if (dictionary >
           #ifdef _WIN64
             (1 << 30)
           #else
             (1 << 27)
           #endif
             )
-            AddDictionarySize(dictionary);
+            continue;
+          AddDictionarySize(dictionary);
+          UInt64 decomprSize;
+          UInt64 requiredComprSize = GetMemoryUsage(dictionary, false, decomprSize);
+          if (dictionary <= defaultDictionary && requiredComprSize <= maxRamSize)
+             m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
         }
-      SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
+
+      // SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
       break;
     }
     case kPPMd:
@@ -898,6 +948,10 @@ void CCompressDialog::SetDictionary()
           if (dictionary >= (1 << 31))
             continue;
           AddDictionarySize(dictionary);
+          UInt64 decomprSize;
+          UInt64 requiredComprSize = GetMemoryUsage(dictionary, false, decomprSize);
+          if (dictionary <= defaultDictionary && requiredComprSize <= maxRamSize || m_Dictionary.GetCount() == 0)
+             m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
         }
       SetNearestSelectComboBox(m_Dictionary, defaultDictionary);
       break;
@@ -916,8 +970,20 @@ void CCompressDialog::SetDictionary()
     }
     case kBZip2:
     {
-      AddDictionarySize(900 << 10);
-      m_Dictionary.SetCurSel(0);
+      UInt32 defaultDictionary;
+      if (level >= 5)
+        defaultDictionary = (900 << 10);
+      else if (level >= 3)
+        defaultDictionary = (500 << 10);
+      else
+        defaultDictionary = (100 << 10);
+      for (int i = 1; i <= 9; i++)
+      {
+        UInt32 dictionary = (i * 100) << 10;
+        AddDictionarySize(dictionary);
+        if (dictionary <= defaultDictionary || m_Dictionary.GetCount() == 0)
+           m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
+      }
       break;
     }
   }
@@ -1067,10 +1133,9 @@ UInt32 CCompressDialog::GetOrderSpec()
   return GetOrder();
 }
 
-UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
+UInt64 CCompressDialog::GetMemoryUsage(UInt32 dictionary, bool isMultiThread, UInt64 &decompressMemory)
 {
   decompressMemory = UInt64(Int64(-1));
-  UInt32 dictionary = GetDictionary();
   int level = GetLevel2();
   if (level == 0)
   {
@@ -1082,7 +1147,6 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   if (fi.Filter && level >= 9)
     size += (12 << 20) * 2 + (5 << 20);
-  bool isMultiThread = IsMultiThread();
   switch (GetMethodID())
   {
     case kLZMA:
@@ -1128,10 +1192,18 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
     case kBZip2:
     {
       decompressMemory = (7 << 20);
+      UInt64 memForOneThread = (10 << 20);
+      if (isMultiThread)
+        memForOneThread *= NSystem::GetNumberOfProcessors();
       return size + (10 << 20);
     }
   }
   return UInt64(Int64(-1));
+}
+
+UInt64 CCompressDialog::GetMemoryUsage(UInt64 &decompressMemory)
+{
+  return GetMemoryUsage(GetDictionary(), IsMultiThread(), decompressMemory);
 }
 
 void CCompressDialog::PrintMemUsage(UINT res, UInt64 value)

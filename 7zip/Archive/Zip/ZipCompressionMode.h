@@ -15,8 +15,15 @@ struct CCompressionMethodMode
   // bool MaximizeRatio;
   UInt32 NumPasses;
   UInt32 NumFastBytes;
+  bool NumMatchFinderCyclesDefined;
+  UInt32 NumMatchFinderCycles;
+  UInt32 DicSize;
+  #ifdef COMPRESS_MT
+  UInt32 NumThreads;
+  #endif
   bool PasswordIsDefined;
   AString Password;
+  CCompressionMethodMode(): NumMatchFinderCyclesDefined(false) {} 
 };
 
 }}

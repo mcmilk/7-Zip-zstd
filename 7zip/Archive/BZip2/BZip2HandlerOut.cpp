@@ -1,4 +1,4 @@
-// BZip2/OutHandler.cpp
+// BZip2HandlerOut.cpp
 
 #include "StdAfx.h"
 
@@ -7,12 +7,22 @@
 
 #include "Common/Defs.h"
 #include "Common/String.h"
-#include "Common/StringToInt.h"
+
 #include "Windows/PropVariant.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
 
+#include "../Common/ParseProperties.h"
+
 using namespace NWindows;
+
+static const UInt32 kNumPassesX1 = 1;
+static const UInt32 kNumPassesX7 = 2;
+static const UInt32 kNumPassesX9 = 7;
+
+static const UInt32 kDicSizeX1 = 100000;
+static const UInt32 kDicSizeX3 = 500000;
+static const UInt32 kDicSizeX5 = 900000;
 
 namespace NArchive {
 namespace NBZip2 {
@@ -69,7 +79,24 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       size = propVariant.uhVal.QuadPart;
     }
-    return UpdateArchive(size, outStream, 0, _numPasses, updateCallback);
+  
+    UInt32 dicSize = _dicSize;
+    if (dicSize == 0xFFFFFFFF)
+      dicSize = (_level >= 5 ? kDicSizeX5 : 
+                (_level >= 3 ? kDicSizeX3 : 
+                               kDicSizeX1));
+
+    UInt32 numPasses = _numPasses;
+    if (numPasses == 0xFFFFFFFF)
+      numPasses = (_level >= 9 ? kNumPassesX9 : 
+                  (_level >= 7 ? kNumPassesX7 : 
+                                 kNumPassesX1));
+
+    return UpdateArchive(size, outStream, 0, dicSize, numPasses, 
+      #ifdef COMPRESS_MT
+      _numThreads, 
+      #endif
+      updateCallback);
   }
   if (indexInArchive != 0)
     return E_INVALIDARG;
@@ -80,6 +107,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   InitMethodProperties();
+  #ifdef COMPRESS_MT
+  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
+  _numThreads = numProcessors;
+  #endif
+
   for (int i = 0; i < numProperties; i++)
   {
     UString name = UString(names[i]);
@@ -87,68 +119,34 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     if (name.IsEmpty())
       return E_INVALIDARG;
 
-    const PROPVARIANT &value = values[i];
+    const PROPVARIANT &prop = values[i];
 
     if (name[0] == 'X')
     {
-      name.Delete(0);
       UInt32 level = 9;
-      if (value.vt == VT_UI4)
-      {
-        if (!name.IsEmpty())
-          return E_INVALIDARG;
-        level = value.ulVal;
-      }
-      else if (value.vt == VT_EMPTY)
-      {
-        if(!name.IsEmpty())
-        {
-          const wchar_t *start = name;
-          const wchar_t *end;
-          UInt64 v = ConvertStringToUInt64(start, &end);
-          if (end - start != name.Length())
-            return E_INVALIDARG;
-          level = (UInt32)v;
-        }
-      }
-      else
-        return E_INVALIDARG;
-      if (level < 7)
-        _numPasses = 1;
-      else if (level < 9)
-        _numPasses = 2;
-      else 
-        _numPasses = 7;
+      RINOK(ParsePropValue(name.Mid(1), prop, level));
+      _level = level;
       continue;
     }
-    else if (name.Left(4) == L"PASS")
+    if (name[0] == 'D')
     {
-      name.Delete(0, 4);
-      UInt32 numPasses = 1;
-      if (value.vt == VT_UI4)
-      {
-        if (!name.IsEmpty())
-          return E_INVALIDARG;
-        numPasses = value.ulVal;
-      }
-      else if (value.vt == VT_EMPTY)
-      {
-        if(!name.IsEmpty())
-        {
-          const wchar_t *start = name;
-          const wchar_t *end;
-          UInt64 v = ConvertStringToUInt64(start, &end);
-          if (end - start != name.Length())
-            return E_INVALIDARG;
-          numPasses = (UInt32)v;
-        }
-      }
-      else
-        return E_INVALIDARG;
-
-      if (numPasses < 1 || numPasses > 10)
-        return E_INVALIDARG;
-      _numPasses = numPasses;
+      UInt32 dicSize = kDicSizeX5;
+      RINOK(ParsePropDictionaryValue(name.Mid(1), prop, dicSize));
+      _dicSize = dicSize;
+      continue;
+    }
+    if (name.Left(4) == L"PASS")
+    {
+      UInt32 num = kNumPassesX9;
+      RINOK(ParsePropValue(name.Mid(4), prop, num));
+      _numPasses = num;
+      continue;
+    }
+    if (name.Left(2) == L"MT")
+    {
+      #ifdef COMPRESS_MT
+      RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
+      #endif
       continue;
     }
     return E_INVALIDARG;

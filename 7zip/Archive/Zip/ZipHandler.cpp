@@ -539,12 +539,26 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       ICompressCoder *coder = methodItems[m].Coder;
 
-      CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
-      if (coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&compressSetDecoderProperties) == S_OK)
       {
-        Byte properties = (Byte)item.Flags;
-        RINOK(compressSetDecoderProperties->SetDecoderProperties2(&properties, 1));
+        CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
+        coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&setDecoderProperties);
+        if (setDecoderProperties)
+        {
+          Byte properties = (Byte)item.Flags;
+          RINOK(setDecoderProperties->SetDecoderProperties2(&properties, 1));
+        }
       }
+
+      #ifdef COMPRESS_MT
+      {
+        CMyComPtr<ICompressSetCoderMt> setCoderMt;
+        coder->QueryInterface(IID_ICompressSetCoderMt, (void **)&setCoderMt);
+        if (setCoderMt)
+        {
+          RINOK(setCoderMt->SetNumberOfThreads(_numThreads));
+        }
+      }
+      #endif
 
       // case NFileHeader::NCompressionMethod::kImploded:
       // switch(item.CompressionMethod)

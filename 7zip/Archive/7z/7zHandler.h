@@ -12,6 +12,10 @@
 #include "7zMethods.h"
 #endif
 
+#ifdef COMPRESS_MT
+#include "../../../Windows/System.h"
+#endif
+
 namespace NArchive {
 namespace N7z {
 
@@ -54,14 +58,29 @@ struct COneMethodInfo
 DEFINE_GUID(CLSID_CFormat7z, 
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
 
+#ifndef __7Z_SET_PROPERTIES
+
+#ifdef EXTRACT_ONLY
+#ifdef COMPRESS_MT
+#define __7Z_SET_PROPERTIES
+#endif
+#else 
+#define __7Z_SET_PROPERTIES
+#endif
+
+#endif
+
+
 class CHandler: 
   public IInArchive,
   #ifdef _7Z_VOL
   public IInArchiveGetStream,
   #endif
+  #ifdef __7Z_SET_PROPERTIES
+  public ISetProperties, 
+  #endif
   #ifndef EXTRACT_ONLY
   public IOutArchive, 
-  public ISetProperties, 
   #endif
   public CMyUnknownImp
 {
@@ -70,9 +89,11 @@ public:
   #ifdef _7Z_VOL
   MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
   #endif
+  #ifdef __7Z_SET_PROPERTIES
+  MY_QUERYINTERFACE_ENTRY(ISetProperties)
+  #endif
   #ifndef EXTRACT_ONLY
   MY_QUERYINTERFACE_ENTRY(IOutArchive)
-  MY_QUERYINTERFACE_ENTRY(ISetProperties)
   #endif
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
@@ -101,6 +122,10 @@ public:
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
   #endif
 
+  #ifdef __7Z_SET_PROPERTIES
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
+  #endif
+
   #ifndef EXTRACT_ONLY
   // IOutArchiveHandler
   STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
@@ -109,7 +134,6 @@ public:
   STDMETHOD(GetFileTimeType)(UInt32 *type);  
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
   
   HRESULT SetSolidSettings(const UString &s);
   HRESULT SetSolidSettings(const PROPVARIANT &value);
@@ -124,6 +148,10 @@ private:
   #else
   CMyComPtr<IInStream> _inStream;
   NArchive::N7z::CArchiveDatabaseEx _database;
+  #endif
+
+  #ifdef COMPRESS_MT
+  UInt32 _numThreads;
   #endif
 
   #ifndef EXTRACT_ONLY
@@ -144,18 +172,13 @@ private:
   UInt32 _defaultDicSize;
   UInt32 _defaultAlgorithm;
   UInt32 _defaultFastBytes;
+  UInt32 _defaultPasses;
   UString _defaultMatchFinder;
-  
-  UInt32 _defaultBZip2Passes;
 
   UInt32 _defaultPpmdMemSize;
   UInt32 _defaultPpmdOrder;
 
-  UInt32 _defaultDeflateFastBytes;
-  UInt32 _defaultDeflatePasses;
-
   bool _autoFilter;
-  bool _multiThread;
   UInt32 _level;
 
   bool _volumeMode;
@@ -168,8 +191,11 @@ private:
       IArchiveUpdateCallback *updateCallback);
 
   HRESULT SetCompressionMethod(CCompressionMethodMode &method,
-      CObjectVector<COneMethodInfo> &methodsInfo,
-      bool multiThread);
+      CObjectVector<COneMethodInfo> &methodsInfo
+      #ifdef COMPRESS_MT
+      , UInt32 numThreads
+      #endif
+      );
 
   HRESULT SetCompressionMethod(
       CCompressionMethodMode &method,
@@ -226,21 +252,19 @@ private:
     _compressHeaders = true;
     _compressHeadersFull = true;
     _encryptHeaders = false;
-    _multiThread = false;
+    #ifdef COMPRESS_MT
+    _numThreads = NWindows::NSystem::GetNumberOfProcessors();
+    #endif
     _copyMode = false;
 
-    _defaultDicSize = (1 << 22);
-    _defaultAlgorithm = 1;
-    _defaultFastBytes = 32;
-    _defaultMatchFinder = L"BT4";
+    _defaultDicSize =
+    _defaultAlgorithm =
+    _defaultFastBytes =
+    _defaultPasses = 
+    _defaultPpmdMemSize = 
+    _defaultPpmdOrder = 0xFFFFFFFF;
+    _defaultMatchFinder.Empty();
 
-    _defaultBZip2Passes = 1;
-
-    _defaultPpmdMemSize = (1 << 24);
-    _defaultPpmdOrder = 6;
-
-    _defaultDeflateFastBytes = 32;
-    _defaultDeflatePasses = 1;
 
     _level = 5;
     _autoFilter = true;

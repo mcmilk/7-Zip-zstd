@@ -1,6 +1,6 @@
 PROG = 7z.dll
 DEF_FILE = ../Archive.def
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT
 LIBS = $(LIBS) oleaut32.lib user32.lib
 
 7Z_OBJS = \
@@ -61,6 +61,7 @@ AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
+  $O\ParseProperties.obj \
 
 OBJS = \
   $O\StdAfx.obj \

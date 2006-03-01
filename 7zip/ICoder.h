@@ -48,9 +48,11 @@ namespace NCoderPropID
     kLitPosBits,
     kNumFastBytes = 0x450,
     kMatchFinder,
+    kMatchFinderCycles,
     kNumPasses = 0x460, 
     kAlgorithm = 0x470,
     kMultiThread = 0x480,
+    kNumThreads,
     kEndMarker = 0x490
   };
 }
@@ -81,6 +83,11 @@ CODER_INTERFACE(ICompressWriteCoderProperties, 0x23)
 CODER_INTERFACE(ICompressGetInStreamProcessedSize, 0x24)
 {
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value) PURE;
+};
+
+CODER_INTERFACE(ICompressSetCoderMt, 0x25)
+{
+  STDMETHOD(SetNumberOfThreads)(UInt32 numThreads) PURE;
 };
 
 CODER_INTERFACE(ICompressGetSubStreamSize, 0x30)

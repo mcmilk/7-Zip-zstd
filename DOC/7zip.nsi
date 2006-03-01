@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 33
+!define VERSION_MINOR 34
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -14,7 +14,7 @@
 !define VERSION_SYS_POSTFIX_FULL ""
 !endif
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}${VERSION_SYS_POSTFIX_FULL}"
-!define VERSION_POSTFIX ""
+!define VERSION_POSTFIX "b"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX "-ia64"
@@ -225,6 +225,7 @@ Section
   File ru.txt
   File sk.txt
   File sl.txt
+  File sq.txt
   File sr.txt
   File sv.txt
   File ta.txt
@@ -428,6 +429,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ru.txt
   Delete $INSTDIR\Lang\sk.txt
   Delete $INSTDIR\Lang\sl.txt
+  Delete $INSTDIR\Lang\sq.txt
   Delete $INSTDIR\Lang\sr.txt
   Delete $INSTDIR\Lang\sv.txt
   Delete $INSTDIR\Lang\ta.txt

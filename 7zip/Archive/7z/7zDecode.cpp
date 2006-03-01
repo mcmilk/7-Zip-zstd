@@ -155,6 +155,9 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword
     #endif
+    #ifdef COMPRESS_MT
+    , bool mtMode, UInt32 numThreads
+    #endif
     )
 {
   CObjectVector< CMyComPtr<ISequentialInStream> > inStreams;
@@ -329,50 +332,60 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   {
     const CCoderInfo &coderInfo = folderInfo.Coders[i];
     const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-    CMyComPtr<ICompressSetDecoderProperties2> compressSetDecoderProperties;
-    HRESULT result = _decoders[coderIndex].QueryInterface(
-        IID_ICompressSetDecoderProperties2, &compressSetDecoderProperties);
+    CMyComPtr<IUnknown> &decoder = _decoders[coderIndex];
     
-    if (result == S_OK)
     {
-      const CByteBuffer &properties = altCoderInfo.Properties;
-      size_t size = properties.GetCapacity();
-      if (size > 0xFFFFFFFF)
-        return E_NOTIMPL;
-      if (size > 0)
+      CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
+      HRESULT result = decoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
+      if (setDecoderProperties)
       {
-        RINOK(compressSetDecoderProperties->SetDecoderProperties2((const Byte *)properties, (UInt32)size));
+        const CByteBuffer &properties = altCoderInfo.Properties;
+        size_t size = properties.GetCapacity();
+        if (size > 0xFFFFFFFF)
+          return E_NOTIMPL;
+        if (size > 0)
+        {
+          RINOK(setDecoderProperties->SetDecoderProperties2((const Byte *)properties, (UInt32)size));
+        }
       }
     }
-    else if (result != E_NOINTERFACE)
-      return result;
+
+    #ifdef COMPRESS_MT
+    if (mtMode)
+    {
+      CMyComPtr<ICompressSetCoderMt> setCoderMt;
+      decoder.QueryInterface(IID_ICompressSetCoderMt, &setCoderMt);
+      if (setCoderMt)
+      {
+        RINOK(setCoderMt->SetNumberOfThreads(numThreads));
+      }
+    }
+    #endif
 
     #ifndef _NO_CRYPTO
-    CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
-    result = _decoders[coderIndex].QueryInterface(
-        IID_ICryptoSetPassword, &cryptoSetPassword);
-
-    if (result == S_OK)
     {
-      if (getTextPassword == 0)
-        return E_FAIL;
-      CMyComBSTR password;
-      RINOK(getTextPassword->CryptoGetTextPassword(&password));
-      CByteBuffer buffer;
-      UString unicodePassword(password);
-      const UInt32 sizeInBytes = unicodePassword.Length() * 2;
-      buffer.SetCapacity(sizeInBytes);
-      for (int i = 0; i < unicodePassword.Length(); i++)
+      CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
+      HRESULT result = decoder.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
+      if (cryptoSetPassword)
       {
-        wchar_t c = unicodePassword[i];
-        ((Byte *)buffer)[i * 2] = (Byte)c;
-        ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+        if (getTextPassword == 0)
+          return E_FAIL;
+        CMyComBSTR password;
+        RINOK(getTextPassword->CryptoGetTextPassword(&password));
+        CByteBuffer buffer;
+        UString unicodePassword(password);
+        const UInt32 sizeInBytes = unicodePassword.Length() * 2;
+        buffer.SetCapacity(sizeInBytes);
+        for (int i = 0; i < unicodePassword.Length(); i++)
+        {
+          wchar_t c = unicodePassword[i];
+          ((Byte *)buffer)[i * 2] = (Byte)c;
+          ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+        }
+        RINOK(cryptoSetPassword->CryptoSetPassword(
+          (const Byte *)buffer, sizeInBytes));
       }
-      RINOK(cryptoSetPassword->CryptoSetPassword(
-        (const Byte *)buffer, sizeInBytes));
     }
-    else if (result != E_NOINTERFACE)
-      return result;
     #endif
 
     coderIndex++;

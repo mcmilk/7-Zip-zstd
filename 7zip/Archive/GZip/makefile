@@ -32,6 +32,7 @@ AR_COMMON_OBJS = \
   $O\CodecsPath.obj \
   $O\InStreamWithCRC.obj \
   $O\OutStreamWithCRC.obj \
+  $O\ParseProperties.obj \
 
 OBJS = \
   $O\StdAfx.obj \

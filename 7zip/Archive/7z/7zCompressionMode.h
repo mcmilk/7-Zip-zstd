@@ -45,12 +45,18 @@ struct CCompressionMethodMode
 {
   CObjectVector<CMethodFull> Methods;
   CRecordVector<CBind> Binds;
-  bool MultiThread;
+  #ifdef COMPRESS_MT
+  UInt32 NumThreads;
+  #endif
   bool PasswordIsDefined;
   UString Password;
 
   bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
-  CCompressionMethodMode(): PasswordIsDefined(false), MultiThread(false) {}
+  CCompressionMethodMode(): PasswordIsDefined(false)
+      #ifdef COMPRESS_MT
+      , NumThreads(1) 
+      #endif
+  {}
 };
 
 }}

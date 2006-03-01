@@ -12,6 +12,8 @@
 namespace NCompress {
 namespace NBZip2 {
 
+const UInt32 kNumThreadsMax = 4;
+
 static const UInt32 kBufferSize = (1 << 17);
 
 static Int16 kRandNums[512] = { 
@@ -69,17 +71,115 @@ static Int16 kRandNums[512] = {
    936, 638
 };
 
-CState::~CState()
-{
-  ::BigFree(tt);
-}
-
 bool CState::Alloc()
 {
   if (tt == 0)
     tt = (UInt32 *)BigAlloc(kBlockSizeMax * sizeof(UInt32));
   return (tt != 0);
 }
+
+void CState::Free()
+{
+  ::BigFree(tt);
+  tt = 0;
+}
+
+#ifdef COMPRESS_BZIP2_MT
+void CState::FinishStream()
+{
+  Decoder->StreamWasFinished = true;
+  StreamWasFinishedEvent.Set();
+  Decoder->CS.Leave();
+  Decoder->CanStartWaitingEvent.Lock();
+  WaitingWasStartedEvent.Set();
+}
+
+DWORD CState::ThreadFunc()
+{
+  while (true)
+  {
+    Decoder->CS.Enter();
+    if (Decoder->CloseThreads)
+    {
+      Decoder->CS.Leave();
+      return 0;
+    }
+    if (Decoder->StreamWasFinished)
+    {
+      FinishStream();
+      continue;
+    }
+    HRESULT res = S_OK;
+    try 
+    {
+      UInt32 blockIndex = Decoder->NextBlockIndex;
+      UInt32 nextBlockIndex = blockIndex + 1;
+      if (nextBlockIndex == Decoder->NumThreads)
+        nextBlockIndex = 0;
+      Decoder->NextBlockIndex = nextBlockIndex;
+
+      bool wasFinished;
+      UInt32 crc;
+      res = Decoder->ReadSignatures(wasFinished, crc);
+      if (res != S_OK)
+      {
+        Decoder->Result = res;
+        FinishStream();
+        continue;
+      }
+      if (wasFinished)
+      {
+        Decoder->Result = res;
+        FinishStream();
+        continue;
+      }
+
+      res = Decoder->ReadBlock(Decoder->BlockSizeMax, *this);
+      UInt64 packSize = Decoder->m_InStream.GetProcessedSize();
+      if (res != S_OK)
+      {
+        Decoder->Result = res;
+        FinishStream();
+        continue;
+      }
+      Decoder->CS.Leave();
+
+      DecodeBlock1();
+
+      Decoder->m_States[blockIndex].CanWriteEvent.Lock();
+
+      if (DecodeBlock2(Decoder->m_OutStream) != crc)
+      {
+        Decoder->Result = S_FALSE;
+        FinishStream();
+        continue;
+      }
+
+      if (Decoder->Progress)
+      {
+        UInt64 unpackSize = Decoder->m_OutStream.GetProcessedSize();
+        res = Decoder->Progress->SetRatioInfo(&packSize, &unpackSize);
+      }
+
+      Decoder->m_States[nextBlockIndex].CanWriteEvent.Set();
+    }
+    catch(const CInBufferException &e)  { res = e.ErrorCode; }
+    catch(const COutBufferException &e) { res = e.ErrorCode; }
+    catch(...) { res = E_FAIL; }
+    if (res != S_OK)
+    {
+      Decoder->Result = res;
+      FinishStream();
+      continue;
+    }
+  }
+}
+
+static DWORD WINAPI MFThread(void *threadCoderInfo)
+{
+  return ((CState *)threadCoderInfo)->ThreadFunc();
+}
+#endif
 
 UInt32 CDecoder::ReadBits(int numBits) {  return m_InStream.ReadBits(numBits); }
 Byte CDecoder::ReadByte() {return (Byte)ReadBits(8); }
@@ -201,7 +301,7 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
         groupSize = kGroupSize;
         huffmanDecoder = &m_HuffmanDecoders[state.m_Selectors[groupIndex++]];
       }
-      groupSize--;                                    \
+      groupSize--;
         
       UInt32 nextSym = huffmanDecoder->DecodeSymbol(&m_InStream);
       
@@ -241,7 +341,7 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
   return S_OK;
 }
 
-HRESULT CState::DecodeBlock(COutBuffer &m_OutStream)
+void CState::DecodeBlock1()
 {
   UInt32 *charCounters = this->CharCounters;
   {
@@ -259,8 +359,11 @@ HRESULT CState::DecodeBlock(COutBuffer &m_OutStream)
   do
     tt[charCounters[tt[i] & 0xFF]++] |= (i << 8);
   while(++i < blockSize);
+}
 
-  // Decode
+UInt32 CState::DecodeBlock2(COutBuffer &m_OutStream)
+{
+  UInt32 blockSize = this->BlockSize;
 
   CBZip2CRC crc;
   
@@ -310,11 +413,122 @@ HRESULT CState::DecodeBlock(COutBuffer &m_OutStream)
     m_OutStream.WriteByte(b);
   }
   while(--blockSize != 0);
-  return (StoredCRC == crc.GetDigest()) ? S_OK : S_FALSE;
+  return crc.GetDigest();
+}
+
+#ifdef COMPRESS_BZIP2_MT
+CDecoder::CDecoder():
+  m_States(0)
+{
+  m_NumThreadsPrev = 0;
+  NumThreads = 1;
+  CS.Enter();
+}
+
+CDecoder::~CDecoder()
+{
+  Free();
+}
+
+bool CDecoder::Create()
+{
+  try 
+  { 
+    if (m_States != 0 && m_NumThreadsPrev == NumThreads)
+      return true;
+    Free();
+    MtMode = (NumThreads > 1);
+    m_NumThreadsPrev = NumThreads;
+    m_States = new CState[NumThreads];
+    if (m_States == 0)
+      return false;
+    #ifdef COMPRESS_BZIP2_MT
+    for (UInt32 t = 0; t < NumThreads; t++)
+    {
+      CState &ti = m_States[t];
+      ti.Decoder = this;
+      if (MtMode)
+        if (!ti.Thread.Create(MFThread, &ti))
+        {
+          NumThreads = t;
+          Free();
+          return false; 
+        }
+    }
+    #endif
+  }
+  catch(...) { return false; }
+  return true;
+}
+
+void CDecoder::Free()
+{
+  if (!m_States)
+    return;
+  CloseThreads = true;
+  CS.Leave();
+  for (UInt32 t = 0; t < NumThreads; t++)
+  {
+    CState &s = m_States[t];
+    if (MtMode)
+      s.Thread.Wait();
+    s.Free();
+  }
+  delete []m_States;
+  m_States = 0;
+}
+#endif
+
+HRESULT CDecoder::ReadSignatures(bool &wasFinished, UInt32 &crc)
+{
+  wasFinished = false;
+  Byte s[6];
+  for (int i = 0; i < 6; i++)
+    s[i] = ReadByte();
+  crc = ReadCRC();
+  if (s[0] == kFinSig0)
+  {
+    if (s[1] != kFinSig1 || 
+        s[2] != kFinSig2 || 
+        s[3] != kFinSig3 || 
+        s[4] != kFinSig4 || 
+        s[5] != kFinSig5)
+      return S_FALSE;
+    
+    wasFinished = true;
+    return (crc == CombinedCRC.GetDigest()) ? S_OK : S_FALSE;
+  }
+  if (s[0] != kBlockSig0 || 
+      s[1] != kBlockSig1 || 
+      s[2] != kBlockSig2 || 
+      s[3] != kBlockSig3 || 
+      s[4] != kBlockSig4 || 
+      s[5] != kBlockSig5)
+    return S_FALSE;
+  CombinedCRC.Update(crc);
+  return S_OK;
 }
 
 HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
 {
+  #ifdef COMPRESS_BZIP2_MT
+  Progress = progress;
+  if (!Create())
+    return E_FAIL;
+  for (UInt32 t = 0; t < NumThreads; t++)
+  {
+    CState &s = m_States[t];
+    if (!s.Alloc())
+      return E_OUTOFMEMORY;
+    s.StreamWasFinishedEvent.Reset();
+    s.WaitingWasStartedEvent.Reset();
+    s.CanWriteEvent.Reset();
+  }
+  #else
+  if (!m_States[0].Alloc())
+    return E_OUTOFMEMORY;
+  #endif
+
   isBZ = false;
   Byte s[6];
   int i;
@@ -329,45 +543,53 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
   isBZ = true;
   UInt32 dicSize = (UInt32)(s[3] - kArSig3) * kBlockSizeStep;
 
-  if (!m_State.Alloc())
-    return E_OUTOFMEMORY;
-
-  CBZip2CombinedCRC computedCombinedCRC;
-  while (true)
+  CombinedCRC.Init();
+  #ifdef COMPRESS_BZIP2_MT
+  if (MtMode)
   {
-    if (progress)
-    {
-      UInt64 packSize = m_InStream.GetProcessedSize();
-      UInt64 unpackSize = m_OutStream.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&packSize, &unpackSize));
-    }
-
-    for (i = 0; i < 6; i++)
-      s[i] = ReadByte();
-    UInt32 crc = ReadCRC();
-    if (s[0] == kFinSig0)
-    {
-      if (s[1] != kFinSig1 || 
-          s[2] != kFinSig2 || 
-          s[3] != kFinSig3 || 
-          s[4] != kFinSig4 || 
-          s[5] != kFinSig5)
-        return S_FALSE;
-
-      return (crc == computedCombinedCRC.GetDigest()) ? S_OK : S_FALSE;
-    }
-    if (s[0] != kBlockSig0 || 
-        s[1] != kBlockSig1 || 
-        s[2] != kBlockSig2 || 
-        s[3] != kBlockSig3 || 
-        s[4] != kBlockSig4 || 
-        s[5] != kBlockSig5)
-      return S_FALSE;
-    m_State.StoredCRC = crc;
-    computedCombinedCRC.Update(crc);
-    RINOK(ReadBlock(dicSize, m_State));
-    RINOK(m_State.DecodeBlock(m_OutStream));
+    NextBlockIndex = 0;
+    StreamWasFinished = false;
+    CloseThreads = false;
+    CanStartWaitingEvent.Reset();
+    m_States[0].CanWriteEvent.Set();
+    BlockSizeMax = dicSize;
+    Result = S_OK;
+    CS.Leave();
+    UInt32 t;
+    for (t = 0; t < NumThreads; t++)
+      m_States[t].StreamWasFinishedEvent.Lock();
+    CS.Enter();
+    CanStartWaitingEvent.Set();
+    for (t = 0; t < NumThreads; t++)
+      m_States[t].WaitingWasStartedEvent.Lock();
+    CanStartWaitingEvent.Reset();
+    RINOK(Result);
   }
+  else
+  #endif
+  {
+    CState &state = m_States[0];
+    while (true)
+    {
+      if (progress)
+      {
+        UInt64 packSize = m_InStream.GetProcessedSize();
+        UInt64 unpackSize = m_OutStream.GetProcessedSize();
+        RINOK(progress->SetRatioInfo(&packSize, &unpackSize));
+      }
+      bool wasFinished;
+      UInt32 crc;
+      RINOK(ReadSignatures(wasFinished, crc));
+      if (wasFinished)
+        return S_OK;
+
+      RINOK(ReadBlock(dicSize, state));
+      state.DecodeBlock1();
+      if (state.DecodeBlock2(m_OutStream) != crc)
+        return S_FALSE;
+    }
+  }
+  return S_OK;
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
@@ -407,5 +629,17 @@ STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
   *value = m_InStream.GetProcessedSize();
   return S_OK;
 }
+
+#ifdef COMPRESS_BZIP2_MT
+STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
+{
+  NumThreads = numThreads;
+  if (NumThreads < 1)
+    NumThreads = 1;
+  if (NumThreads > kNumThreadsMax)
+    NumThreads = kNumThreadsMax;
+  return S_OK;
+}
+#endif
 
 }}

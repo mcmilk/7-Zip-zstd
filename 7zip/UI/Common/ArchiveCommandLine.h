@@ -68,6 +68,7 @@ struct CArchiveCommandLineOptions
   NExtract::NOverwriteMode::EEnum OverwriteMode;
   UStringVector ArchivePathsSorted;
   UStringVector ArchivePathsFullSorted;
+  CObjectVector<CProperty> ExtractProperties;
 
   CUpdateOptions UpdateOptions;
   bool EnablePercents;

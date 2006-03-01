@@ -102,6 +102,9 @@ public:
   CTables *m_Tables;
   COptimal m_Optimum[kNumOpts];
 
+  UInt32 m_MatchFinderCycles;
+  IMatchFinderSetNumPasses *m_SetMfPasses;
+
   void GetMatches();
   void MovePos(UInt32 num);
   UInt32 Backward(UInt32 &backRes, UInt32 cur);

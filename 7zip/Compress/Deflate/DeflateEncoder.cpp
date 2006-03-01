@@ -86,7 +86,9 @@ CCoder::CCoder(bool deflate64Mode):
   m_DistanceMemory(0),
   m_Created(false),
   m_Values(0),
-  m_Tables(0)
+  m_Tables(0),
+  m_MatchFinderCycles(0),
+  m_SetMfPasses(0)
 {
   m_MatchMaxLen = deflate64Mode ? kMatchMaxLen64 : kMatchMaxLen32;
   m_NumLenCombinations = deflate64Mode ? kNumLenSymbols64 : kNumLenSymbols32;
@@ -99,7 +101,9 @@ HRESULT CCoder::Create()
   COM_TRY_BEGIN
   if (!m_MatchFinder)
   {
-    m_MatchFinder = new NBT3Z::CMatchFinder;
+    NBT3Z::CMatchFinder *matchFinderSpec = new NBT3Z::CMatchFinder;
+    m_SetMfPasses = matchFinderSpec;
+    m_MatchFinder = matchFinderSpec;
     if (m_MatchFinder == 0)
       return E_OUTOFMEMORY;
   }
@@ -149,6 +153,8 @@ HRESULT CCoder::Create()
     if (!LevelCoder.Create(kLevelTableSize, kLevelDirectBits, kTableDirectLevels, kMaxLevelBitLength))
       return E_OUTOFMEMORY;
   }
+  if (m_MatchFinderCycles != 0 && m_SetMfPasses != 0)
+    m_SetMfPasses->SetNumPasses(m_MatchFinderCycles);
   m_Created = true;
   return S_OK;
   COM_TRY_END
@@ -160,13 +166,13 @@ HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs,
 {
   for(UInt32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &property = properties[i]; 
+    const PROPVARIANT &prop = properties[i]; 
     switch(propIDs[i])
     {
       case NCoderPropID::kNumPasses:
-        if (property.vt != VT_UI4)
+        if (prop.vt != VT_UI4)
           return E_INVALIDARG;
-        m_NumDivPasses = property.ulVal;
+        m_NumDivPasses = prop.ulVal;
         if (m_NumDivPasses == 0)
           m_NumDivPasses = 1;
         if (m_NumDivPasses == 1)
@@ -180,12 +186,19 @@ HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs,
         }
         break;
       case NCoderPropID::kNumFastBytes:
-        if (property.vt != VT_UI4)
+        if (prop.vt != VT_UI4)
           return E_INVALIDARG;
-        m_NumFastBytes = property.ulVal;
+        m_NumFastBytes = prop.ulVal;
         if(m_NumFastBytes < kMatchMinLen || m_NumFastBytes > m_MatchMaxLen)
           return E_INVALIDARG;
         break;
+      case NCoderPropID::kMatchFinderCycles:
+      {
+        if (prop.vt != VT_UI4)
+          return E_INVALIDARG;
+        m_MatchFinderCycles = prop.ulVal;
+        break;
+      }
       default:
         return E_INVALIDARG;
     }

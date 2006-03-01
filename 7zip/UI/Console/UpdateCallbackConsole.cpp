@@ -131,7 +131,7 @@ HRESULT CUpdateCallbackConsole::GetStream(const wchar_t *name, bool isAnti)
     m_PercentPrinter.PrintString("Anti item    ");
   else
     m_PercentPrinter.PrintString("Compressing  ");
-  if (wcslen(name) == 0)
+  if (name[0] == 0)
     name = kEmptyFileAlias;
   m_PercentPrinter.PrintString(name);
   if (EnablePercents)

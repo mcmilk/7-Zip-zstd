@@ -14,6 +14,12 @@
 #include "../Common/MultiStream.h"
 #endif
 
+#ifdef __7Z_SET_PROPERTIES
+#ifdef EXTRACT_ONLY
+#include "../Common/ParseProperties.h"
+#endif
+#endif
+
 using namespace NWindows;
 
 namespace NArchive {
@@ -21,6 +27,9 @@ namespace N7z {
 
 CHandler::CHandler()
 {
+  #ifdef COMPRESS_MT
+  _numThreads = NWindows::NSystem::GetNumberOfProcessors();
+  #endif
   #ifndef EXTRACT_ONLY
   Init();
   #endif
@@ -706,6 +715,43 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   *stream = streamTemp.Detach();
   return S_OK;
 }
+#endif
+
+
+#ifdef __7Z_SET_PROPERTIES
+#ifdef EXTRACT_ONLY
+
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
+{
+  COM_TRY_BEGIN
+  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
+  _numThreads = numProcessors;
+
+  for (int i = 0; i < numProperties; i++)
+  {
+    UString name = names[i];
+    name.MakeUpper();
+    if (name.IsEmpty())
+      return E_INVALIDARG;
+    const PROPVARIANT &value = values[i];
+    UInt32 number;
+    int index = ParseStringToUInt32(name, number);
+    if (index == 0)
+    {
+      if(name.Left(2).CompareNoCase(L"MT") == 0)
+      {
+        RINOK(ParseMtProp(name.Mid(2), value, numProcessors, _numThreads));
+        continue;
+      }
+      else
+        return E_INVALIDARG;
+    }
+  }
+  return S_OK;
+  COM_TRY_END
+}  
+
+#endif
 #endif
 
 }}

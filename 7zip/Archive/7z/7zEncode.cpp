@@ -228,7 +228,20 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
         reducedDictionarySize += step;
       }
     }
-    
+
+    CMyComPtr<IUnknown> encoderCommon = methodFull.IsSimpleCoder() ? (IUnknown *)encoder : (IUnknown *)encoder2;
+   
+    #ifdef COMPRESS_MT
+    {
+      CMyComPtr<ICompressSetCoderMt> setCoderMt;
+      encoderCommon.QueryInterface(IID_ICompressSetCoderMt, &setCoderMt);
+      if (setCoderMt)
+      {
+        RINOK(setCoderMt->SetNumberOfThreads(_options.NumThreads));
+      }
+    }
+    #endif
+        
     if (methodFull.CoderProperties.Size() > 0)
     {
       CRecordVector<PROPID> propIDs;
@@ -246,16 +259,7 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
           values[i] = value;
         }
         CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-        if (methodFull.IsSimpleCoder())
-        {
-          RINOK(encoder.QueryInterface(IID_ICompressSetCoderProperties, 
-            &setCoderProperties));
-        }
-        else
-        {
-          RINOK(encoder2.QueryInterface(IID_ICompressSetCoderProperties, 
-            &setCoderProperties));
-        }
+        RINOK(encoderCommon.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
         RINOK(setCoderProperties->SetCoderProperties(&propIDs.Front(), values, numProperties));
       }
       catch(...)
@@ -268,16 +272,7 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
     
     CMyComPtr<ICompressWriteCoderProperties> writeCoderProperties;
     
-    if (methodFull.IsSimpleCoder())
-    {
-      encoder.QueryInterface(IID_ICompressWriteCoderProperties, 
-          &writeCoderProperties);
-    }
-    else
-    {
-      encoder2.QueryInterface(IID_ICompressWriteCoderProperties, 
-          &writeCoderProperties);
-    }
+    encoderCommon.QueryInterface(IID_ICompressWriteCoderProperties, &writeCoderProperties);
     
     if (writeCoderProperties != NULL)
     {
@@ -298,14 +293,7 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
     }
     
     CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
-    if (methodFull.IsSimpleCoder())
-    {
-      encoder.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
-    }
-    else
-    {
-      encoder2.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
-    }
+    encoderCommon.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
 
     if (cryptoSetPassword)
     {
@@ -318,19 +306,13 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
         ((Byte *)buffer)[i * 2] = (Byte)c;
         ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
       }
-      RINOK(cryptoSetPassword->CryptoSetPassword(
-        (const Byte *)buffer, sizeInBytes));
+      RINOK(cryptoSetPassword->CryptoSetPassword((const Byte *)buffer, sizeInBytes));
     }
 
-    // public ICompressWriteCoderProperties,
     if (methodFull.IsSimpleCoder())
-    {
       _mixerCoderSpec->AddCoder(encoder);
-    }
     else
-    {
       _mixerCoderSpec->AddCoder2(encoder2);
-    }
   }
   return S_OK;
 }

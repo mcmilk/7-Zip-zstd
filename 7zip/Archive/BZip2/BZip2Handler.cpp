@@ -191,6 +191,16 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   }
   #endif
 
+  #ifdef COMPRESS_MT
+  {
+    CMyComPtr<ICompressSetCoderMt> setCoderMt;
+    decoder.QueryInterface(IID_ICompressSetCoderMt, &setCoderMt);
+    if (setCoderMt)
+    {
+      RINOK(setCoderMt->SetNumberOfThreads(_numThreads));
+    }
+  }
+  #endif
 
   CDummyOutStream *outStreamSpec = new CDummyOutStream;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);

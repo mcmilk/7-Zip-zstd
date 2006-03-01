@@ -1,7 +1,7 @@
-LZMA SDK 4.33
+LZMA SDK 4.34
 -------------
 
-LZMA SDK 4.33  Copyright (C) 1999-2006 Igor Pavlov
+LZMA SDK 4.34  Copyright (C) 1999-2006 Igor Pavlov
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
 and tools you need to develop applications that use LZMA compression.

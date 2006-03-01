@@ -23,7 +23,11 @@ namespace NBZip2 {
 HRESULT UpdateArchive(UInt64 unpackSize,
     ISequentialOutStream *outStream,
     int indexInClient,
+    UInt32 dictionary,
     UInt32 numPasses,
+    #ifdef COMPRESS_MT
+    UInt32 numThreads,
+    #endif
     IArchiveUpdateCallback *updateCallback)
 {
   RINOK(updateCallback->SetTotal(unpackSize));
@@ -53,21 +57,23 @@ HRESULT UpdateArchive(UInt64 unpackSize,
   encoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
   if (setCoderProperties)
   {
-    /*
-    NWindows::NCOM::CPropVariant properties[2] = 
+    NWindows::NCOM::CPropVariant properties[] = 
     {
-      dictionary, numPasses
+      dictionary, 
+      numPasses
+      #ifdef COMPRESS_MT
+      , numThreads
+      #endif
     };
-    PROPID propIDs[2] = 
+    PROPID propIDs[] = 
     {
       NCoderPropID::kDictionarySize,
-      NCoderPropID::kNumPasses,
+      NCoderPropID::kNumPasses
+      #ifdef COMPRESS_MT
+      , NCoderPropID::kNumThreads
+      #endif
     };
-    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, 2));
-    */
-    NWindows::NCOM::CPropVariant property = numPasses;
-    PROPID propID = NCoderPropID::kNumPasses;
-    RINOK(setCoderProperties->SetCoderProperties(&propID, &property, 1));
+    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, sizeof(propIDs) / sizeof(propIDs[0])));
   }
   
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));

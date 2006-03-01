@@ -9,7 +9,6 @@
 #include "Update.h"
 
 #include "Common/IntToString.h"
-#include "Common/StringToInt.h"
 #include "Common/StringConvert.h"
 #include "Common/CommandLineParser.h"
 
@@ -36,6 +35,7 @@
 #include "TempFiles.h"
 #include "UpdateCallback.h"
 #include "EnumDirItems.h"
+#include "SetProperties.h"
 
 #ifdef FORMAT_7Z
 #include "../../Archive/7z/7zHandler.h"
@@ -76,18 +76,6 @@ static const wchar_t *kTempFolderPrefix = L"7zE";
 static const char *kIllegalFileNameMessage = "Illegal file name for temp archive";
 
 using namespace NUpdateArchive;
-
-static void ParseNumberString(const UString &s, NCOM::CPropVariant &prop)
-{
-  const wchar_t *endPtr;
-  UInt64 result = ConvertStringToUInt64(s, &endPtr);
-  if (endPtr - (const wchar_t *)s != s.Length())
-    prop = s;
-  else if (result <= 0xFFFFFFFF)
-    prop = (UInt32)result;
-  else 
-    prop = result;
-}
 
 static HRESULT CopyBlock(ISequentialInStream *inStream, ISequentialOutStream *outStream)
 {
@@ -439,36 +427,7 @@ static HRESULT Compress(
     */
   }
 
-  CMyComPtr<ISetProperties> setProperties;
-  if (outArchive.QueryInterface(IID_ISetProperties, &setProperties) == S_OK)
-  {
-    UStringVector realNames;
-    CPropVariant *values = new CPropVariant[compressionMethod.Properties.Size()];
-    try
-    {
-      int i;
-      for(i = 0; i < compressionMethod.Properties.Size(); i++)
-      {
-        const CProperty &property = compressionMethod.Properties[i];
-        NCOM::CPropVariant propVariant;
-        if (!property.Value.IsEmpty())
-          ParseNumberString(property.Value, propVariant);
-        realNames.Add(property.Name);
-        values[i] = propVariant;
-      }
-      CRecordVector<const wchar_t *> names;
-      for(i = 0; i < realNames.Size(); i++)
-        names.Add((const wchar_t *)realNames[i]);
-      
-      RINOK(setProperties->SetProperties(&names.Front(), values, names.Size()));
-    }
-    catch(...)
-    {
-      delete []values;
-      throw;
-    }
-    delete []values;
-  }
+  RINOK(SetProperties(outArchive, compressionMethod.Properties));
 
   if (sfxMode)
   {
