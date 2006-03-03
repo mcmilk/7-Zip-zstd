@@ -27,7 +27,7 @@ using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
 
-static const int kNumSwitches = 26;
+static const int kNumSwitches = 27;
 
 namespace NKey {
 enum Enum
@@ -57,7 +57,8 @@ enum Enum
   kEmail,
   kShowDialog,
   kLargePages,
-  kCharSet
+  kCharSet,
+  kTechMode
 };
 
 }
@@ -121,7 +122,8 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"SEML", NSwitchType::kUnLimitedPostString, false, 0},
     { L"AD",  NSwitchType::kSimple, false },
     { L"SLP", NSwitchType::kUnLimitedPostString, false, 0},
-    { L"SCS", NSwitchType::kUnLimitedPostString, false, 0}
+    { L"SCS", NSwitchType::kUnLimitedPostString, false, 0},
+    { L"SLT", NSwitchType::kSimple, false }
   };
 
 static const int kNumCommandForms = 7;
@@ -236,7 +238,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   return true;
 }
 
-static inline GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 
 static void AddToCensorFromListFile(NWildcard::CCensor &wildcardCensor, 
     LPCWSTR fileName, bool include, NRecursedType::EEnum type, UINT codePage)
@@ -746,6 +748,8 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
 
   if (!ParseArchiveCommand(nonSwitchStrings[kCommandIndex], options.Command))
     throw kUserErrorMessage;
+
+  options.TechMode = parser[NKey::kTechMode].ThereIs;
 
   NRecursedType::EEnum recursedType;
   if (parser[NKey::kRecursed].ThereIs)

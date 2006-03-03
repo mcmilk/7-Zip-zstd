@@ -56,16 +56,6 @@ class CDecoder :
   void InitStructures();
   bool ReadTables();
   bool ReadLastTables();
-  void CopyBackBlockOp(UInt32 aDistance, UInt32 aLength)
-  {
-    /*
-    if(m_Position <= aDistance)
-      throw CDecoderException(CDecoderException::kData);
-    */
-    m_RepDists[m_RepDistPtr++ & 3] = aDistance;
-    m_LastLength = aLength;
-    m_OutWindowStream.CopyBlock(aDistance, aLength);
-  }
 
 public:
   CDecoder();

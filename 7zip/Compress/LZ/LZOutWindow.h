@@ -27,9 +27,9 @@ public:
   bool CopyBlock(UInt32 distance, UInt32 len)
   {
     UInt32 pos = _pos - distance - 1;
-    if (pos >= _bufferSize)
+    if (distance >= _pos)
     {
-      if (!_overDict)
+      if (!_overDict || distance >= _bufferSize)
         return false;
       pos += _bufferSize;
     }

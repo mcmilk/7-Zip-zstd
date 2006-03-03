@@ -287,7 +287,10 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
         }
         else
           return S_FALSE;
-        CopyBackBlockOp(distance, length); 
+        m_RepDists[m_RepDistPtr++ & 3] = distance;
+        m_LastLength = length;
+        if (!m_OutWindowStream.CopyBlock(distance, length))
+          return S_FALSE;
         pos += length;
       }
   }

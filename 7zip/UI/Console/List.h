@@ -7,7 +7,7 @@
 
 HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
-    bool enableHeaders, bool &passwordEnabled, UString &password);
+    bool enableHeaders, bool techMode, bool &passwordEnabled, UString &password);
 
 #endif
 

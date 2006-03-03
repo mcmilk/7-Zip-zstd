@@ -459,7 +459,7 @@ int Main2(
       HRESULT result = ListArchives(
           v1, v2,
           wildcardCensorHead, 
-          true, 
+          true, false, 
           passwordEnabled, 
           password);
       if (result != S_OK)

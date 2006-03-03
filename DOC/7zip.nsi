@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 34
+!define VERSION_MINOR 35
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -14,7 +14,7 @@
 !define VERSION_SYS_POSTFIX_FULL ""
 !endif
 !define NAME_FULL "7-Zip ${VERSION_MAJOR}.${VERSION_MINOR}${VERSION_POSTFIX_FULL}${VERSION_SYS_POSTFIX_FULL}"
-!define VERSION_POSTFIX "b"
+!define VERSION_POSTFIX ""
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX "-ia64"

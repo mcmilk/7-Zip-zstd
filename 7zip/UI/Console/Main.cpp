@@ -257,6 +257,7 @@ int Main2(
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
           options.EnableHeaders, 
+          options.TechMode,
           options.PasswordEnabled, 
           options.Password);
       if (result != S_OK)

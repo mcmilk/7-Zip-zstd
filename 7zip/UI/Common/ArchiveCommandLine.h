@@ -62,6 +62,7 @@ struct CArchiveCommandLineOptions
   bool PasswordEnabled;
   UString Password;
 
+  bool TechMode;
   // Extract
   bool AppendName;
   UString OutputDir;
