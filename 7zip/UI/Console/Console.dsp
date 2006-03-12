@@ -306,6 +306,10 @@ SOURCE=..\..\..\Windows\Registry.cpp
 
 SOURCE=..\..\..\Windows\Registry.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Time.h
+# End Source File
 # End Group
 # Begin Group "Common"
 

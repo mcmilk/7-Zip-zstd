@@ -6,17 +6,9 @@
 #include "../../IStream.h"
 #include "../../Common/OutBuffer.h"
 
-/*
 #ifndef _NO_EXCEPTIONS
-class CLZOutWindowException
-{
-public:
-  HRESULT ErrorCode;
-  CLZOutWindowException(HRESULT errorCode): ErrorCode(errorCode) {}
-};
-#endif
-*/
 typedef COutBufferException CLZOutWindowException;
+#endif
 
 class CLZOutWindow: public COutBuffer
 {

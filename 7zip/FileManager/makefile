@@ -22,6 +22,7 @@ FM_OBJS = \
   $O\OptionsDialog.obj \
   $O\Panel.obj \
   $O\PanelCopy.obj \
+  $O\PanelCrc.obj \
   $O\PanelDrag.obj \
   $O\PanelFolderChange.obj \
   $O\PanelItemOpen.obj \

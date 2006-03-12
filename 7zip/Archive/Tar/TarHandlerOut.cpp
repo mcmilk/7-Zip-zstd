@@ -100,7 +100,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         updateItem.Name += '/';
 
       if(!FileTimeToUnixTime(utcTime, updateItem.Time))
-        return E_INVALIDARG;
+      {
+        updateItem.Time = 0;
+        // return E_INVALIDARG;
+      }
     }
     if (IntToBool(newData))
     {

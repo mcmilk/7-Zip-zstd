@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 35
+!define VERSION_MINOR 36
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -155,6 +155,7 @@ Section
   File cpio.dll
   File deb.dll
   File gz.dll
+  File iso.dll
   File lzh.dll
   File rar.dll
   File rpm.dll
@@ -359,6 +360,7 @@ Section "Uninstall"
   Delete $INSTDIR\Formats\cpio.dll
   Delete $INSTDIR\Formats\deb.dll
   Delete $INSTDIR\Formats\gz.dll
+  Delete $INSTDIR\Formats\iso.dll
   Delete $INSTDIR\Formats\lzh.dll
   Delete $INSTDIR\Formats\rar.dll
   Delete $INSTDIR\Formats\rpm.dll
@@ -498,6 +500,7 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.cpio"
   DeleteRegKey HKCR "7-Zip.deb"
   DeleteRegKey HKCR "7-Zip.gz"
+  DeleteRegKey HKCR "7-Zip.iso"
   DeleteRegKey HKCR "7-Zip.rar"
   DeleteRegKey HKCR "7-Zip.rpm"
   DeleteRegKey HKCR "7-Zip.split"

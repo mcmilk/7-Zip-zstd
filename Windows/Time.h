@@ -15,11 +15,20 @@ inline bool DosTimeToFileTime(UInt32 dosTime, FILETIME &fileTime)
       UInt16(dosTime & 0xFFFF), &fileTime));
 }
 
+const UInt32 kHighDosTime = 0xFF9FBF7D;
+const UInt32 kLowDosTime = 0x210000;
+
 inline bool FileTimeToDosTime(const FILETIME &fileTime, UInt32 &dosTime)
 {
   WORD datePart, timePart;
   if (!::FileTimeToDosDateTime(&fileTime, &datePart, &timePart))
+  {
+    if (fileTime.dwHighDateTime >= 0x01C00000) // 2000
+      dosTime = kHighDosTime;
+    else
+      dosTime = kLowDosTime;
     return false;
+  }
   dosTime = (((UInt32)datePart) << 16) + timePart;
   return true;
 }
@@ -38,10 +47,16 @@ inline bool FileTimeToUnixTime(const FILETIME &fileTime, UInt32 &unixTime)
 {
   UInt64 winTime = (((UInt64)fileTime.dwHighDateTime) << 32) + fileTime.dwLowDateTime;
   if (winTime < kUnixTimeStartValue)
+  {
+    unixTime = 0;
     return false;
+  }
   winTime = (winTime - kUnixTimeStartValue) / kNumTimeQuantumsInSecond;
   if (winTime > 0xFFFFFFFF)
+  {
+    unixTime = 0xFFFFFFFF;
     return false;
+  }
   unixTime = (UInt32)winTime;
   return true;
 }

@@ -202,6 +202,7 @@ public:
     { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete(bool toRecycleBin)
     { GetFocusedPanel().DeleteItems(toRecycleBin); }
+  void CalculateCrc();
   void Split();
   void Combine();
   void Properties()

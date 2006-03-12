@@ -434,6 +434,7 @@ public:
 
   void RefreshListCtrl();
 
+  void MessageBoxInfo(LPCWSTR message, LPCWSTR caption);
   void MessageBox(LPCWSTR message);
   void MessageBox(LPCWSTR message, LPCWSTR caption);
   void MessageBoxMyError(LPCWSTR message);

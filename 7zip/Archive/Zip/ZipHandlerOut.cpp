@@ -116,7 +116,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if(!FileTimeToLocalFileTime(&utcFileTime, &localFileTime))
         return E_INVALIDARG;
       if(!FileTimeToDosTime(localFileTime, updateItem.Time))
-        return E_INVALIDARG;
+      {
+        // return E_INVALIDARG;
+      }
 
       if (!isDirectoryStatusDefined)
         updateItem.IsDirectory = ((updateItem.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);

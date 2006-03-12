@@ -2,11 +2,11 @@
 #include "../../../GuiCommon.rc"
 
 #define xSize2 238
-#define ySize2 204
+#define ySize2 214
 #define xSize (xSize2 + marg + marg)
 #define ySize (ySize2 + marg + marg)
 #define gSpace 30
-#define g0Size 105
+#define g0Size 110
 #define gYSize (ySize2 - 20 - bYSize)
 
 

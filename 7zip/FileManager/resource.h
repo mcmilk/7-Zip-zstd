@@ -16,6 +16,7 @@
 #define IDM_FILE_COMBINE                239
 #define IDM_FILE_PROPERTIES             240
 #define IDM_FILE_COMMENT                241
+#define IDM_FILE_CRC                    242
 #define IDM_CREATE_FOLDER               250
 #define IDM_CREATE_FILE                 251
 #define IDM_EDIT_CUT                    320
@@ -105,6 +106,10 @@
 #define IDS_SELECT_MASK                 2252
 #define IDS_FOLDERS_HISTORY             2260
 #define IDS_N_SELECTED_ITEMS            2270
+#define IDS_FILES_COLON                 2274
+#define IDS_FOLDERS_COLON               2275
+#define IDS_SIZE_COLON                  2276
+
 #define IDS_TOO_MANY_ITEMS              2279
 #define IDS_WANT_UPDATE_MODIFIED_FILE   2280
 #define IDS_CANNOT_UPDATE_FILE          2281
@@ -135,3 +140,10 @@
 #define IDS_COMBINE                     4030
 #define IDS_COMBINE_TO                  4031
 #define IDS_COMBINING                   4032
+
+#define IDS_CHECKSUM_CALCULATING        4040
+#define IDS_CHECKSUM_INFORMATION        4041
+#define IDS_CHECKSUM_CRC_DATA           4042
+#define IDS_CHECKSUM_CRC_DATA_NAMES     4043
+
+#define IDS_SCANNING                    4050

@@ -33,6 +33,7 @@ BEGIN
     MENUITEM SEPARATOR
     MENUITEM "P&roperties\tAlt+Enter",      IDM_FILE_PROPERTIES
     MENUITEM "Comme&nt\tCtrl+Z",            IDM_FILE_COMMENT
+    MENUITEM "Calculate checksum",          IDM_FILE_CRC
     MENUITEM SEPARATOR
     MENUITEM "Create Folder\tF7",           IDM_CREATE_FOLDER
     MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
@@ -138,6 +139,13 @@ BEGIN
   IDS_COMBINE             "Combine Files"
   IDS_COMBINE_TO          "&Combine to:"
   IDS_COMBINING           "Combining..."
+  IDS_CHECKSUM_CALCULATING "Checksum calculating..."
+  IDS_CHECKSUM_INFORMATION "Checksum information"
+  IDS_CHECKSUM_CRC_DATA     "CRC checksum for data:"
+  IDS_CHECKSUM_CRC_DATA_NAMES "CRC checksum for data and names:"
+
+  IDS_SCANNING "Scanning..."
+
   IDS_OPERATION_IS_NOT_SUPPORTED "Operation is not supported."
   
   IDS_CONFIRM_FILE_DELETE "Confirm File Delete"
@@ -166,6 +174,10 @@ BEGIN
   IDS_SELECT_MASK         "Mask:"
   IDS_FOLDERS_HISTORY     "Folders History"
   IDS_N_SELECTED_ITEMS    "{0} object(s) selected"
+  IDS_FILES_COLON         "Files:"
+  IDS_FOLDERS_COLON       "Folders:"
+  IDS_SIZE_COLON          "Size:"
+
   IDS_PROPERTY_TOTAL_SIZE "Total Size"
   IDS_PROPERTY_FREE_SPACE "Free Space"
   IDS_PROPERTY_CLUSTER_SIZE "Cluster Size"

@@ -632,6 +632,8 @@ bool CPanel::OnCommand(int code, int itemID, LPARAM lParam, LRESULT &result)
   return CWindow2::OnCommand(code, itemID, lParam, result);
 }
 
+void CPanel::MessageBoxInfo(LPCWSTR message, LPCWSTR caption)
+  { ::MessageBoxW(HWND(*this), message, caption, MB_OK); }
 void CPanel::MessageBox(LPCWSTR message, LPCWSTR caption)
   { ::MessageBoxW(HWND(*this), message, caption, MB_OK | MB_ICONSTOP); }
 void CPanel::MessageBox(LPCWSTR message)

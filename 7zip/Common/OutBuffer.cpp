@@ -57,8 +57,7 @@ HRESULT COutBuffer::FlushPart()
   UInt32 size = (_streamPos >= _pos) ? (_bufferSize - _streamPos) : (_pos - _streamPos);
   HRESULT result = S_OK;
   #ifdef _NO_EXCEPTIONS
-  if (ErrorCode != S_OK)
-    result = ErrorCode;
+  result = ErrorCode;
   #endif
   if (_buffer2 != 0)
   {
@@ -68,7 +67,7 @@ HRESULT COutBuffer::FlushPart()
 
   if (_stream != 0
       #ifdef _NO_EXCEPTIONS
-      && (ErrorCode != S_OK)
+      && (ErrorCode == S_OK)
       #endif
      )
   {
