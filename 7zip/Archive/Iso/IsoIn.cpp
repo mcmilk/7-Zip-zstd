@@ -253,6 +253,7 @@ void CInArchive::ReadDir(CDir &d, int level)
   SeekToBlock(d.ExtentLocation);
   UInt64 startPos = _position;
 
+  bool firstItem = true;
   while(true)
   {
     UInt64 offset = _position - startPos;
@@ -263,8 +264,13 @@ void CInArchive::ReadDir(CDir &d, int level)
       continue;
     CDir subItem;
     ReadDirRecord2(subItem, len);
+    if (firstItem && level == 0)
+      IsSusp = subItem.CheckSusp(SuspSkipSize);
+      
     if (!subItem.IsSystemItem())
       d._subItems.Add(subItem);
+
+    firstItem = false;
   }
   for (int i = 0; i < d._subItems.Size(); i++)
     ReadDir(d._subItems[i], level + 1);
@@ -404,6 +410,10 @@ HRESULT CInArchive::Open2()
 HRESULT CInArchive::Open(IInStream *inStream)
 {
   _stream = inStream;
+  UInt64 pos;
+  RINOK(_stream->Seek(0, STREAM_SEEK_CUR, &pos));
+  RINOK(_stream->Seek(0, STREAM_SEEK_END, &_archiveSize));
+  RINOK(_stream->Seek(pos, STREAM_SEEK_SET, &_position));
   HRESULT res = S_FALSE;
   try { res = Open2(); }
   catch(...) { Clear(); res = S_FALSE; }
@@ -418,6 +428,8 @@ void CInArchive::Clear()
   VolDescs.Clear();
   _bootIsDefined = false;
   BootEntries.Clear();
+  SuspSkipSize = 0;
+  IsSusp = false;
 }
 
 }}

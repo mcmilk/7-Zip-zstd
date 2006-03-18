@@ -73,7 +73,7 @@ void CPanel::DeleteItems(bool toRecycleBin)
       size_t size = 0;
       for (int i = 0; i < indices.Size(); i++)
       {
-        const AString path = GetSystemString(GetFsPath() + GetItemName(indices[i]));
+        const AString path = GetSystemString(GetFsPath() + GetItemRelPath(indices[i]));
         buffer.EnsureCapacity(size + path.Length() + 1);
         memmove(((CHAR *)buffer) + size, (const CHAR *)path, (path.Length() + 1) * sizeof(CHAR));
         size += path.Length() + 1;
@@ -104,7 +104,7 @@ void CPanel::DeleteItems(bool toRecycleBin)
       size_t size = 0;
       for (int i = 0; i < indices.Size(); i++)
       {
-        const UString path = GetFsPath() + GetItemName(indices[i]);
+        const UString path = GetFsPath() + GetItemRelPath(indices[i]);
         buffer.EnsureCapacity(size + path.Length() + 1);
         memmove(((WCHAR *)buffer) + size, (const WCHAR *)path, (path.Length() + 1) * sizeof(WCHAR));
         size += path.Length() + 1;
@@ -159,7 +159,7 @@ void CPanel::DeleteItems(bool toRecycleBin)
   if (indices.Size() == 1)
   {
     int index = indices[0];
-    const UString itemName = GetItemName(index);
+    const UString itemName = GetItemRelPath(index);
     if (IsItemFolder(index))
     {
       title = LangString(IDS_CONFIRM_FOLDER_DELETE, 0x03020211);
@@ -228,12 +228,15 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
     MessageBoxMyError(L"Renaming is not supported");
     return FALSE;
   }
-  UString newName = lpnmh->item.pszText;
+  const UString newName = lpnmh->item.pszText;
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
+
+  SaveSelectedState(_selectedState);
 
   int realIndex = GetRealIndex(lpnmh->item);
   if (realIndex == kParentIndex)
     return FALSE;
+  const UString prefix = GetItemPrefix(realIndex);
   HRESULT result = folderOperations->Rename(realIndex, newName, 0);
   if (result != S_OK)
   {
@@ -242,11 +245,16 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
   }
   // Can't use RefreshListCtrl here.
   // RefreshListCtrlSaveFocused();
-  _focusedName = newName;
+  _selectedState.FocusedName = prefix + newName;
+  _selectedState.SelectFocused = true;
 
   // We need clear all items to disable GetText before Reload:
   // number of items can change.
-  _listView.DeleteAllItems();
+  // _listView.DeleteAllItems();
+  // But seems it can still call GetText (maybe for current item) 
+  // so we can't delete items.
+
+  _dontShowMode = true;
 
   PostMessage(kReLoadMessage);
   return TRUE;
@@ -355,7 +363,7 @@ void CPanel::ChangeComment()
     else if (propVariant.vt != VT_EMPTY)
       return;
   }
-  UString name = GetItemName(realIndex);
+  UString name = GetItemRelPath(realIndex);
   CComboDialog comboDialog;
   comboDialog.Title = name + L" " + LangString(IDS_COMMENT, 0x03020290);
   comboDialog.Value = comment;

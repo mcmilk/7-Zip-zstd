@@ -1,4 +1,4 @@
-LZMA SDK 4.35
+LZMA SDK 4.37
 -------------
 
 LZMA SDK   Copyright (C) 1999-2006 Igor Pavlov

@@ -215,7 +215,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
   GetSelectedItemsIndices(indices);
   selectedNames.Reserve(indices.Size());
   for (int  i = 0; i < indices.Size(); i++)
-    selectedNames.Add(GetItemName(indices[i]));
+    selectedNames.Add(GetItemRelPath(indices[i]));
 
   /*
   for (int i = 0; i < _listView.GetItemCount(); i++)
@@ -245,19 +245,12 @@ void CPanel::SaveSelectedState(CSelectedState &s)
   s.FocusedName.Empty();
   s.SelectedNames.Clear();
   s.FocusedItem = _listView.GetFocusedItem();
-  if (!_focusedName.IsEmpty())
-  {
-    s.FocusedName = _focusedName;
-    s.SelectFocused = true;
-    _focusedName.Empty();
-  }
-  else
   {
     if (s.FocusedItem >= 0)
     {
       int realIndex = GetRealItemIndex(s.FocusedItem);
       if (realIndex != kParentIndex)
-        s.FocusedName = GetItemName(realIndex);
+        s.FocusedName = GetItemRelPath(realIndex);
         /*
         const int kSize = 1024;
         WCHAR name[kSize + 1];
@@ -307,6 +300,7 @@ void CPanel::SetFocusedSelectedItem(int index, bool select)
 void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
     const UStringVector &selectedNames)
 {
+  _dontShowMode = false;
   LoadFullPathAndShow();
   // OutputDebugStringA("=======\n");
   // OutputDebugStringA("s1 \n");
@@ -339,6 +333,11 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   
   bool isRoot = IsRootFolder();
   _headerToolBar.EnableButton(kParentFolderID, !IsRootFolder());
+
+  CMyComPtr<IFolderSetFlatMode> folderSetFlatMode;
+  _folder.QueryInterface(IID_IFolderSetFlatMode, &folderSetFlatMode);
+  if (folderSetFlatMode)
+    folderSetFlatMode->SetFlatMode(BoolToInt(_flatMode));
 
   if (_folder->LoadItems() != S_OK)
     return;
@@ -385,10 +384,11 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   for(UInt32 i = 0; i < numItems; i++)
   {
     UString itemName = GetItemName(i);
-    if (itemName.CompareNoCase(focusedName) == 0)
+    const UString relPath = GetItemRelPath(i);
+    if (relPath.CompareNoCase(focusedName) == 0)
       cursorIndex = _listView.GetItemCount();
     bool selected = false;
-    if (selectedNames.FindInSorted(itemName) >= 0)
+    if (selectedNames.FindInSorted(relPath) >= 0)
       selected = true;
     _selectedStatusVector.Add(selected);
 
@@ -621,6 +621,24 @@ UString CPanel::GetItemName(int itemIndex) const
   if (propVariant.vt != VT_BSTR)
     throw 2723401;
   return (propVariant.bstrVal);
+}
+
+UString CPanel::GetItemPrefix(int itemIndex) const
+{
+  if (itemIndex == kParentIndex)
+    return UString();
+  NCOM::CPropVariant propVariant;
+  if (_folder->GetProperty(itemIndex, kpidPrefix, &propVariant) != S_OK)
+    throw 2723400;
+  UString prefix;
+  if (propVariant.vt == VT_BSTR)
+    prefix = propVariant.bstrVal;
+  return prefix;
+}
+
+UString CPanel::GetItemRelPath(int itemIndex) const
+{
+  return GetItemPrefix(itemIndex) + GetItemName(itemIndex);
 }
 
 

@@ -102,7 +102,7 @@ HRESULT CPanel::CreateShellContextMenu(
   for (int i = 0; i < operatedIndices.Size(); i++)
   {
     LPITEMIDLIST pidl;
-    UString fileName = GetItemName(operatedIndices[i]);
+    UString fileName = GetItemRelPath(operatedIndices[i]);
     if (IsFSDrivesFolder())
       fileName += L'\\';
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0, 
@@ -263,7 +263,7 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     UStringVector names;
     int i;
     for(i = 0; i < operatedIndices.Size(); i++)
-      names.Add(currentFolderUnicode + GetItemName(operatedIndices[i]));
+      names.Add(currentFolderUnicode + GetItemRelPath(operatedIndices[i]));
     CRecordVector<const wchar_t *> namePointers;
     for(i = 0; i < operatedIndices.Size(); i++)
       namePointers.Add(names[i]);

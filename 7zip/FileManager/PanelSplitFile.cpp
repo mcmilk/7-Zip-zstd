@@ -204,7 +204,7 @@ void CApp::Split()
   }
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel._currentFolderPrefix;
+  UString srcPath = srcPanel._currentFolderPrefix + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &destPanel = Panels[destPanelIndex];
@@ -212,7 +212,7 @@ void CApp::Split()
     if (destPanel.IsFSFolder())
       path = destPanel._currentFolderPrefix;
   CSplitDialog splitDialog;
-  splitDialog.FilePath = itemName;
+  splitDialog.FilePath = srcPanel.GetItemRelPath(index);
   splitDialog.Path = path;
   if (splitDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
@@ -412,7 +412,7 @@ void CApp::Combine()
   }
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel._currentFolderPrefix;
+  UString srcPath = srcPanel._currentFolderPrefix + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &destPanel = Panels[destPanelIndex];
@@ -423,7 +423,7 @@ void CApp::Combine()
   copyDialog.Value = path;
   copyDialog.Title = LangString(IDS_COMBINE, 0x03020600);
   copyDialog.Title += ' ';
-  copyDialog.Title += itemName;
+  copyDialog.Title += srcPanel.GetItemRelPath(index);
 
   copyDialog.Static = LangString(IDS_COMBINE_TO, 0x03020601);;
   if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)

@@ -20,6 +20,20 @@ struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfoW
   UInt64 CompressedSize;
 };
 
+struct CDirItem;
+
+struct CDirItem: public CFileInfoEx
+{
+  CDirItem *Parent;
+  CObjectVector<CDirItem> Files;
+
+  CDirItem(): Parent(0) {}
+  void Clear()
+  {
+    Files.Clear();
+    Parent = 0;
+  }
+};
 
 class CFSFolder: 
   public IFolderFolder,
@@ -32,6 +46,7 @@ class CFSFolder:
   public IFolderGetItemFullSize,
   public IFolderClone,
   public IFolderGetSystemIconIndex,
+  public IFolderSetFlatMode,
   public CMyUnknownImp
 {
   UInt64 GetSizeOfItem(int anIndex) const;
@@ -46,6 +61,7 @@ public:
     MY_QUERYINTERFACE_ENTRY(IFolderGetItemFullSize)
     MY_QUERYINTERFACE_ENTRY(IFolderClone)
     MY_QUERYINTERFACE_ENTRY(IFolderGetSystemIconIndex)
+    MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
@@ -67,6 +83,8 @@ public:
   STDMETHOD(Clone)(IFolderFolder **resultFolder);
   STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress);
 
+  STDMETHOD(SetFlatMode)(Int32 flatMode);
+
   // IFolderOperations
 
   STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress);
@@ -84,13 +102,17 @@ public:
 
 private:
   UString _path;
-  CObjectVector<CFileInfoEx> _files;
+  CDirItem _root;
+  CRecordVector<CDirItem *> _refs;
+
   CMyComPtr<IFolderFolder> _parentFolder;
 
   bool _findChangeNotificationDefined;
 
   bool _commentsAreLoaded;
   CPairsStorage _comments;
+
+  bool _flatMode;
 
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
@@ -100,8 +122,22 @@ private:
 
   bool LoadComments();
   bool SaveComments();
+  HRESULT LoadSubItems(CDirItem &dirItem, const UString &path);
+  void AddRefs(CDirItem &dirItem);
 public:
   HRESULT Init(const UString &path, IFolderFolder *parentFolder);
+
+  CFSFolder() : _flatMode(false) {}
+
+  UString GetPrefix(const CDirItem &item) const;
+  UString GetRelPath(const CDirItem &item) const;
+  UString GetRelPath(UInt32 index) const { return GetRelPath(*_refs[index]); }
+
+  void Clear()
+  {
+    _root.Clear();
+    _refs.Clear();
+  }
 };
 
 #endif

@@ -114,6 +114,7 @@ static CIDLangPair kIDLangPairs[] =
 
   { IDM_VIEW_REFRESH, 0x03000440 },
   
+  { IDM_VIEW_FLAT_VIEW, 0x03000449 },
   { IDM_VIEW_TWO_PANELS, 0x03000450 },
   { IDM_VIEW_ARCHIVE_TOOLBAR, 0x03000460 },
   { IDM_VIEW_STANDARD_TOOLBAR, 0x03000461 },
@@ -331,6 +332,8 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
       IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
     menu.CheckItem(IDM_VIEW_TWO_PANELS, MF_BYCOMMAND |
         ((g_App.NumPanels == 2) ? MF_CHECKED : MF_UNCHECKED));
+    menu.CheckItem(IDM_VIEW_FLAT_VIEW, MF_BYCOMMAND |
+        ((g_App.GetFlatMode()) ? MF_CHECKED : MF_UNCHECKED));
     menu.CheckItem(IDM_VIEW_ARCHIVE_TOOLBAR, MF_BYCOMMAND |
         (g_App.ShowArchiveToolbar ? MF_CHECKED : MF_UNCHECKED));
     menu.CheckItem(IDM_VIEW_STANDARD_TOOLBAR, MF_BYCOMMAND |
@@ -635,10 +638,12 @@ bool OnMenuCommand(HWND hWnd, int id)
     case IDM_VIEW_REFRESH:
       g_App.RefreshView();
       break;
+    case IDM_VIEW_FLAT_VIEW:
+      g_App.ChangeFlatMode();
+      break;
     case IDM_VIEW_TWO_PANELS:
       g_App.SwitchOnOffOnePanel();
       break;
-
     case IDM_VIEW_STANDARD_TOOLBAR:
       g_App.SwitchStandardToolbar();
       break;

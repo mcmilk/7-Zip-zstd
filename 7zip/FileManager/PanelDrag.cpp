@@ -319,7 +319,15 @@ void CPanel::OnDrag(LPNMLISTVIEW nmListView)
   {
     UStringVector names;
     for (int i = 0; i < indices.Size(); i++)
-      names.Add(dirPrefix + GetItemName(indices[i]));
+    {
+      UInt32 index = indices[i];
+      UString s;
+      if (isFSFolder)
+        s = GetItemRelPath(index);
+      else
+        s = GetItemName(index);
+      names.Add(dirPrefix + s);
+    }
     if (!CopyNamesToHGlobal(dataObjectSpec->hGlobal, names))
       return;
   }

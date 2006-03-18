@@ -36,25 +36,21 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
   _archiveNamePrefix.Empty();
   if (folder == NULL)
   {
-    _archiveFolderItem = NULL;
+    _agentFolder = NULL;
     return S_OK;
-    // folder = m_RootFolder;
   }
   else
   {
     CMyComPtr<IFolderFolder> archiveFolder = folder;
     CMyComPtr<IArchiveFolderInternal> archiveFolderInternal;
-    RINOK(archiveFolder.QueryInterface(
-        IID_IArchiveFolderInternal, &archiveFolderInternal));
-    CAgentFolder *agentFolder;
-    RINOK(archiveFolderInternal->GetAgentFolder(&agentFolder));
-    _archiveFolderItem = agentFolder->_proxyFolderItem;
+    RINOK(archiveFolder.QueryInterface(IID_IArchiveFolderInternal, &archiveFolderInternal));
+    RINOK(archiveFolderInternal->GetAgentFolder(&_agentFolder));
   }
 
   UStringVector pathParts;
   pathParts.Clear();
   CMyComPtr<IFolderFolder> folderItem = folder;
-  if (_archiveFolderItem != NULL)
+  if (folderItem != NULL)
     while (true)
     {
       CMyComPtr<IFolderFolder> newFolder;
@@ -353,7 +349,7 @@ STDMETHODIMP CAgent::DeleteItems(
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   CUIntVector realIndices;
-  _archiveFolderItem->GetRealIndices(indices, numItems, realIndices);
+  _agentFolder->GetRealIndices(indices, numItems, realIndices);
   CObjectVector<CUpdatePair2> updatePairs;
   int curIndex = 0;
   UInt32 numItemsInArchive;
@@ -420,7 +416,7 @@ HRESULT CAgent::CreateFolder(
 
   dirItem.Attributes = FILE_ATTRIBUTE_DIRECTORY;
   dirItem.Size = 0;
-  dirItem.Name = _archiveFolderItem->GetFullPathPrefix() + folderName;
+  dirItem.Name = _agentFolder->_proxyFolderItem->GetFullPathPrefix() + folderName;
 
   SYSTEMTIME systemTime;
   FILETIME fileTime;
@@ -455,11 +451,10 @@ HRESULT CAgent::RenameItem(
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   CUIntVector realIndices;
-  _archiveFolderItem->GetRealIndices(indices, numItems, realIndices);
+  _agentFolder->GetRealIndices(indices, numItems, realIndices);
 
-  UString fullPrefix = _archiveFolderItem->GetFullPathPrefix();
-  UString oldItemPath = fullPrefix + 
-      _archiveFolderItem->GetItemName(indices[0]);
+  UString fullPrefix = _agentFolder->GetFullPathPrefixPlusPrefix(indices[0]);
+  UString oldItemPath = fullPrefix + _agentFolder->GetName(indices[0]);
   UString newItemPath = fullPrefix + newItemName;
 
   CObjectVector<CUpdatePair2> updatePairs;

@@ -128,7 +128,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidSize:
       case kpidPackedSize:
       {
-        propVariant = (UInt64)be.GetSize();
+        propVariant = (UInt64)_archive.GetBootItemSize(index);
         break;
       }
     }
@@ -146,7 +146,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           if (_archive.IsJoliet())
             s = item.GetPathU();
           else
-            s = MultiByteToUnicodeString(item.GetPath(), CP_OEMCP);
+            s = MultiByteToUnicodeString(item.GetPath(_archive.IsSusp, _archive.SuspSkipSize), CP_OEMCP);
 
           int pos = s.ReverseFind(L';');
           if (pos >= 0 && pos == s.Length() - 2)
@@ -210,8 +210,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     }
     else
     {
-      const CBootInitialEntry &be = _archive.BootEntries[index - _archive.Refs.Size()];
-      totalSize += be.GetSize();
+      totalSize += _archive.GetBootItemSize(index - _archive.Refs.Size());
     }
   }
   extractCallback->SetTotal(totalSize);
@@ -248,8 +247,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     }
     else
     {
-      const CBootInitialEntry &be = _archive.BootEntries[index - _archive.Refs.Size()];
-      currentItemSize = be.GetSize();
+      int bootIndex = index - _archive.Refs.Size();
+      const CBootInitialEntry &be = _archive.BootEntries[bootIndex];
+      currentItemSize = _archive.GetBootItemSize(bootIndex);
       blockIndex = be.LoadRBA;
     }
    

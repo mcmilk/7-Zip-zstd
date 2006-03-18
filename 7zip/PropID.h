@@ -35,6 +35,7 @@ enum
   kpidBlock,
   kpidComment,
   kpidPosition,
+  kpidPrefix,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace, 

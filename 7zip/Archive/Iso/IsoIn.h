@@ -25,12 +25,12 @@ struct CDir: public CDirRecord
     _subItems.Clear();
   }
   
-  int GetLength() const
+  int GetLength(bool checkSusp, int skipSize) const
   {
-    int len = FileId.GetCapacity();
+    int len = GetLengthCur(checkSusp, skipSize);
     if (Parent != 0)
       if (Parent->Parent != 0)
-        len += 1 + Parent->GetLength();
+        len += 1 + Parent->GetLength(checkSusp, skipSize);
     return len;
   }
 
@@ -43,19 +43,19 @@ struct CDir: public CDirRecord
     return len;
   }
   
-  AString GetPath() const
+  AString GetPath(bool checkSusp, int skipSize) const
   {
     AString s;
-    int len = GetLength();
+    int len = GetLength(checkSusp, skipSize);
     char *p = s.GetBuffer(len +  1);
     p += len;
     *p = 0;
     const CDir *cur = this;
     while(true)
     {
-      int curLen = cur->FileId.GetCapacity();
+      int curLen = cur->GetLengthCur(checkSusp, skipSize);
       p -= curLen;
-      memmove(p, (const char *)(const Byte *)cur->FileId, curLen);
+      memmove(p, (const char *)(const Byte *)cur->GetNameCur(checkSusp, skipSize), curLen);
       cur = cur->Parent;
       if (cur == 0)
         break;
@@ -262,13 +262,38 @@ public:
   HRESULT Open(IInStream *inStream);
   void Clear();
 
-  CObjectVector<CRef> Refs;
+  UInt64 _archiveSize;
+
+  CRecordVector<CRef> Refs;
   CObjectVector<CVolumeDescriptor> VolDescs;
   int MainVolDescIndex;
   UInt32 BlockSize;
   CObjectVector<CBootInitialEntry> BootEntries;
 
+
   bool IsJoliet() const { return VolDescs[MainVolDescIndex].IsJoliet(); }
+
+  UInt64 GetBootItemSize(int index) const 
+  { 
+    const CBootInitialEntry &be = BootEntries[index];
+    UInt64 size = be.GetSize();
+    if (be.BootMediaType == NBootMediaType::k1d2Floppy)
+      size = (1200 << 10);
+    else if (be.BootMediaType == NBootMediaType::k1d44Floppy)
+      size = (1440 << 10);
+    else if (be.BootMediaType == NBootMediaType::k2d88Floppy)
+      size = (2880 << 10);
+    UInt64 startPos = be.LoadRBA * BlockSize;
+    if (startPos < _archiveSize)
+    {
+      if (_archiveSize - startPos < size)
+        size = _archiveSize - startPos;
+    }
+    return size; 
+  }
+
+  bool IsSusp;
+  int SuspSkipSize;
 };
   
 }}

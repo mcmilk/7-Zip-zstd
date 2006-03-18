@@ -262,6 +262,8 @@ public:
   void SetListSettings();
   void SetShowSystemMenu();
   void SwitchOnOffOnePanel();
+  bool GetFlatMode() { return Panels[LastFocusedPanel].GetFlatMode(); }
+  void ChangeFlatMode() { Panels[LastFocusedPanel].ChangeFlatMode(); }
 
   void OpenBookmark(int index)
     { GetFocusedPanel().OpenBookmark(index); }

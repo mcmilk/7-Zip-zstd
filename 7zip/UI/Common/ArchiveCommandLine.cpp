@@ -837,6 +837,8 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     ConvertToLongNames(archiveWildcardCensor);
     #endif
 
+    archiveWildcardCensor.ExtendExclude();
+
     CObjectVector<CDirItem> dirItems;
     {
       UStringVector errorPaths;
@@ -960,4 +962,5 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
   }
   else 
     throw kUserErrorMessage;
+  options.WildcardCensor.ExtendExclude();
 }

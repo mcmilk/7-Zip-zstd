@@ -252,7 +252,7 @@ STDMETHODIMP CFSFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     int index = indices[i];
-    if (index >= _files.Size())
+    if (index >= _refs.Size())
       return E_INVALIDARG;
     UINT64 size;
     RINOK(GetItemFullSize(indices[i], size, callback));
@@ -286,11 +286,11 @@ STDMETHODIMP CFSFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
   RINOK(callback->SetCompleted(&completedSize));
   for (i = 0; i < numItems; i++)
   {
-    const CFileInfoW &fileInfo = _files[indices[i]];
+    const CDirItem &fileInfo = *_refs[indices[i]];
     UString destPath2 = destPath;
     if (!directName)
       destPath2 += fileInfo.Name;
-    UString srcPath = _path + fileInfo.Name;
+    UString srcPath = _path + GetPrefix(fileInfo) + fileInfo.Name;
     if (fileInfo.IsDirectory())
     {
       RINOK(CopyFolder(srcPath, destPath2, callback, completedSize));
@@ -415,7 +415,7 @@ STDMETHODIMP CFSFolder::MoveTo(
   for (i = 0; i < numItems; i++)
   {
     int index = indices[i];
-    if (index >= _files.Size())
+    if (index >= _refs.Size())
       return E_INVALIDARG;
     UINT64 size;
     RINOK(GetItemFullSize(indices[i], size, callback));
@@ -445,11 +445,11 @@ STDMETHODIMP CFSFolder::MoveTo(
   RINOK(callback->SetCompleted(&completedSize));
   for (i = 0; i < numItems; i++)
   {
-    const CFileInfoW &fileInfo = _files[indices[i]];
+    const CDirItem &fileInfo = *_refs[indices[i]];
     UString destPath2 = destPath;
     if (!directName)
       destPath2 += fileInfo.Name;
-    UString srcPath = _path + fileInfo.Name;
+    UString srcPath = _path + GetPrefix(fileInfo) + fileInfo.Name;
     if (fileInfo.IsDirectory())
     {
       RINOK(MyMoveFolder(srcPath, destPath2, callback, completedSize));

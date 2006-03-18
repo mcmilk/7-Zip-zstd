@@ -43,6 +43,9 @@ static UString ConvertSizeToString(UINT64 value)
 
 LRESULT CPanel::SetItemText(LVITEMW &item)
 {
+  if (_dontShowMode)
+    return 0;
+
   UINT32 realIndex = GetRealIndex(item);
   /*
   if ((item.mask & LVIF_IMAGE) != 0)

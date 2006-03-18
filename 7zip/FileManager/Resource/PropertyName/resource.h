@@ -25,3 +25,4 @@
 #define IDS_PROPERTY_BLOCK              27
 #define IDS_PROPERTY_COMMENT            28
 #define IDS_PROPERTY_POSITION           29
+#define IDS_PROPERTY_PREFIX             30

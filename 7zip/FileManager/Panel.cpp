@@ -93,7 +93,7 @@ LRESULT CPanel::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
       OnShiftSelectMessage();
       return 0;
     case kReLoadMessage:
-      OnReload();
+      RefreshListCtrl(_selectedState);
       return 0;
     case kSetFocusToListView:
       _listView.SetFocus();
@@ -736,6 +736,13 @@ void CPanel::SetListViewMode(UINT32 index)
   // RefreshListCtrlSaveFocused();
 }
 
+void CPanel::ChangeFlatMode()
+{
+  _flatMode = !_flatMode;
+  RefreshListCtrlSaveFocused();
+}
+
+
 void CPanel::RefreshStatusBar()
 {
   PostMessage(kRefreshStatusBar);
@@ -759,7 +766,7 @@ void CPanel::AddToArchive()
   for (int i = 0; i < indices.Size(); i++)
   {
     int index = indices[i];
-    names.Add(_currentFolderPrefix + GetItemName(index));
+    names.Add(_currentFolderPrefix + GetItemRelPath(index));
   }
   const UString archiveName = CreateArchiveName(
       names.Front(), (names.Size() > 1), false);
@@ -791,7 +798,7 @@ void CPanel::ExtractArchives()
       MessageBox(kSelectOneFile);
       return;
     }
-    paths.Add(_currentFolderPrefix + GetItemName(index));
+    paths.Add(_currentFolderPrefix + GetItemRelPath(index));
   }
   ::ExtractArchives(paths, _currentFolderPrefix, true);
 }
@@ -819,7 +826,7 @@ void CPanel::TestArchives()
       MessageBox(kSelectOneFile);
       return;
     }
-    paths.Add(_currentFolderPrefix + GetItemName(index));
+    paths.Add(_currentFolderPrefix + GetItemRelPath(index));
   }
   ::TestArchives(paths);
 }

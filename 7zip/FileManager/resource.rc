@@ -67,6 +67,7 @@ BEGIN
     MENUITEM "Size\tCtrl+F6",               IDM_VIEW_ARANGE_BY_SIZE
     MENUITEM "Unsorted\tCtrl+F7",           IDM_VIEW_ARANGE_NO_SORT
     MENUITEM SEPARATOR
+    MENUITEM "Flat View",                   IDM_VIEW_FLAT_VIEW
     MENUITEM "&2 Panels\tF9",               IDM_VIEW_TWO_PANELS
     POPUP "Toolbars"
     BEGIN

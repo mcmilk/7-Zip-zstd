@@ -110,7 +110,7 @@ STDMETHODIMP_(UInt32) CMatchFinderMT::GetMatchLen(Int32 index, UInt32 distance, 
   distance++;
   const Byte *pby = m_DataCurrentPos + index;
   UInt32 i;
-  for(i = 0; i < limit && pby[i] == pby[i - distance]; i++);
+  for(i = 0; i < limit && pby[i] == pby[(size_t)i - distance]; i++);
   return i;
 }
 

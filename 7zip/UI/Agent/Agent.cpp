@@ -25,15 +25,40 @@ STDMETHODIMP CAgentFolder::GetAgentFolder(CAgentFolder **agentFolder)
   return S_OK; 
 }
 
+void CAgentFolder::LoadFolder(CProxyFolder *folder)
+{
+  int i;
+  CProxyItem item;
+  item.Folder = folder;
+  for (i = 0; i < folder->Folders.Size(); i++)
+  {
+    item.Index = i;
+    _items.Add(item);
+    LoadFolder(&folder->Folders[i]);
+  }
+  int start = folder->Folders.Size();
+  for (i = 0; i < folder->Files.Size(); i++)
+  {
+    item.Index = start + i;
+    _items.Add(item);
+  }
+}
+
+
 STDMETHODIMP CAgentFolder::LoadItems()
 {
+  _items.Clear();
+  if (_flatMode)
+    LoadFolder(_proxyFolderItem);
   return S_OK;
 }
 
 STDMETHODIMP CAgentFolder::GetNumberOfItems(UINT32 *numItems)
 {
-  *numItems = _proxyFolderItem->Folders.Size() +
-      _proxyFolderItem->Files.Size();
+  if (_flatMode)
+    *numItems = _items.Size();
+  else
+    *numItems = _proxyFolderItem->Folders.Size() +_proxyFolderItem->Files.Size();
   return S_OK;
 }
 
@@ -45,12 +70,75 @@ STDMETHODIMP CAgentFolder::GetNumberOfSubFolders(UINT32 *aNumSubFolders)
 }
 */
 
+UString CAgentFolder::GetName(UInt32 index) const
+{
+  UInt32 realIndex;
+  const CProxyFolder *folder;
+  if (_flatMode)
+  {
+    const CProxyItem &item = _items[index];
+    folder = item.Folder;
+    realIndex = item.Index;
+  }
+  else
+  {
+    folder = _proxyFolderItem;
+    realIndex = index;
+  }
+
+  if (realIndex < (UINT32)folder->Folders.Size())
+    return folder->Folders[realIndex].Name;
+  return folder->Files[realIndex - folder->Folders.Size()].Name;
+}
+
+UString CAgentFolder::GetPrefix(UInt32 index) const
+{
+  if (!_flatMode)
+    return UString();
+  const CProxyItem &item = _items[index];
+  const CProxyFolder *folder = item.Folder;
+  UString path;
+  while(folder != _proxyFolderItem)
+  {
+    path = folder->Name + UString(L"\\") + path;
+    folder = folder->Parent;
+  }
+  return path;
+}
+
+UString CAgentFolder::GetFullPathPrefixPlusPrefix(UInt32 index) const
+{
+  return _proxyFolderItem->GetFullPathPrefix() + GetPrefix(index);
+}
+
+void CAgentFolder::GetPrefixIfAny(UInt32 index, NCOM::CPropVariant &propVariant) const
+{
+  if (!_flatMode)
+    return;
+  propVariant = GetPrefix(index);
+}
+
+
 STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant propVariant;
-  if (itemIndex < (UINT32)_proxyFolderItem->Folders.Size())
+  const CProxyFolder *folder;
+  UInt32 realIndex;
+  if (_flatMode)
   {
-    const CProxyFolder &item = _proxyFolderItem->Folders[itemIndex];
+    const CProxyItem &item = _items[itemIndex];
+    folder = item.Folder;
+    realIndex = item.Index;
+  }
+  else
+  {
+    folder = _proxyFolderItem;
+    realIndex = itemIndex;
+  }
+
+  if (realIndex < (UINT32)folder->Folders.Size())
+  {
+    const CProxyFolder &item = folder->Folders[realIndex];
     switch(propID)
     {
       case kpidIsFolder:
@@ -59,6 +147,9 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
       case kpidName:
         propVariant = item.Name;
         break;
+      case kpidPrefix:
+        GetPrefixIfAny(itemIndex, propVariant);
+        break;
       default:
         if (item.IsLeaf)
           return _agentSpec->GetArchive()->GetProperty(item.Index, propID, value);
@@ -66,8 +157,8 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
   }
   else
   {
-    itemIndex -= _proxyFolderItem->Folders.Size();
-    const CProxyFile &item = _proxyFolderItem->Files[itemIndex];
+    realIndex -= folder->Folders.Size();
+    const CProxyFile &item = folder->Files[realIndex];
     switch(propID)
     {
       case kpidIsFolder:
@@ -76,26 +167,53 @@ STDMETHODIMP CAgentFolder::GetProperty(UINT32 itemIndex, PROPID propID, PROPVARI
       case kpidName:
         propVariant = item.Name;
         break;
+      case kpidPrefix:
+        GetPrefixIfAny(itemIndex, propVariant);
+        break;
       default:
-        return _agentSpec->GetArchive()->GetProperty(item.Index,
-          propID, value);
+        return _agentSpec->GetArchive()->GetProperty(item.Index, propID, value);
     }
   }
   propVariant.Detach(value);
   return S_OK;
 }
 
+HRESULT CAgentFolder::BindToFolder(CProxyFolder *folder, IFolderFolder **resultFolder)
+{
+  CMyComPtr<IFolderFolder> parentFolder;
+  if (folder->Parent != _proxyFolderItem)
+  {
+    RINOK(BindToFolder(folder->Parent, &parentFolder));
+  }
+  else
+    parentFolder = this;
+  CAgentFolder *folderSpec = new CAgentFolder;
+  CMyComPtr<IFolderFolder> agentFolder = folderSpec;
+  folderSpec->Init(_proxyArchive, folder, parentFolder, _agentSpec);
+  *resultFolder = agentFolder.Detach();
+  return S_OK;
+}
+
 STDMETHODIMP CAgentFolder::BindToFolder(UINT32 index, IFolderFolder **resultFolder)
 {
   COM_TRY_BEGIN
-  if (index >= (UINT32)_proxyFolderItem->Folders.Size())
+
+  CProxyFolder *folder;
+  UInt32 realIndex;
+  if (_flatMode)
+  {
+    const CProxyItem &item = _items[index];
+    folder = item.Folder;
+    realIndex = item.Index;
+  }
+  else
+  {
+    folder = _proxyFolderItem;
+    realIndex = index;
+  }
+  if (realIndex >= (UINT32)folder->Folders.Size())
     return E_INVALIDARG;
-  CAgentFolder *folderSpec = new CAgentFolder;
-  CMyComPtr<IFolderFolder> agentFolder = folderSpec;
-  folderSpec->Init(_proxyArchive, &_proxyFolderItem->Folders[index], 
-      this, _agentSpec);
-  *resultFolder = agentFolder.Detach();
-  return S_OK;
+  return BindToFolder(&folder->Folders[realIndex], resultFolder);
   COM_TRY_END
 }
 
@@ -138,7 +256,10 @@ struct CArchiveItemPropertyTemp
 STDMETHODIMP CAgentFolder::GetNumberOfProperties(UINT32 *numProperties)
 {
   COM_TRY_BEGIN
-  return _agentSpec->GetArchive()->GetNumberOfProperties(numProperties);
+  RINOK(_agentSpec->GetArchive()->GetNumberOfProperties(numProperties));
+  if (_flatMode)
+    (*numProperties)++;
+  return S_OK;
   COM_TRY_END
 }
 
@@ -146,9 +267,20 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UINT32 index,
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   COM_TRY_BEGIN
-  RINOK(_agentSpec->GetArchive()->GetPropertyInfo(index, name, propID, varType));
-  if (*propID == kpidPath)
-    *propID = kpidName;
+  UINT32 numProperties;
+  _agentSpec->GetArchive()->GetNumberOfProperties(&numProperties);
+  if (index < numProperties)
+  {
+    RINOK(_agentSpec->GetArchive()->GetPropertyInfo(index, name, propID, varType));
+    if (*propID == kpidPath)
+      *propID = kpidName;
+  }
+  else
+  {
+    *name = NULL;
+    *propID = kpidPrefix;
+    *varType = VT_BSTR;
+  }
   return S_OK;
   COM_TRY_END
 }
@@ -195,6 +327,25 @@ STDMETHODIMP CAgentFolder::GetPath(BSTR *path)
 }
 #endif
 
+void CAgentFolder::GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const
+{
+  if (!_flatMode)
+  {
+    _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
+    return;
+  }
+  realIndices.Clear();
+  for(UINT32 i = 0; i < numItems; i++)
+  {
+    const CProxyItem &item = _items[indices[i]];
+    const CProxyFolder *folder = item.Folder;
+    UInt32 realIndex = item.Index;
+    if (realIndex < (UINT32)folder->Folders.Size())
+      continue;
+    realIndices.Add(folder->Files[realIndex - folder->Folders.Size()].Index);
+  }
+  realIndices.Sort();
+}
 
 STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices, 
     UINT32 numItems, 
@@ -214,6 +365,12 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
     pathParts.Insert(0, currentProxyFolder->Name);
     currentProxyFolder = currentProxyFolder->Parent;
   }
+  
+  /*
+  if (_flatMode)
+    pathMode = NExtract::NPathMode::kNoPathnames;
+  */
+
   extractCallbackSpec->Init(_agentSpec->GetArchive(), 
       extractCallback2, 
       false,
@@ -227,10 +384,16 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
       // ,_agentSpec->_srcDirectoryPrefix
       );
   CUIntVector realIndices;
-  _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
+  GetRealIndices(indices, numItems, realIndices);
   return _agentSpec->GetArchive()->Extract(&realIndices.Front(), 
       realIndices.Size(), testMode, extractCallback);
   COM_TRY_END
+}
+
+STDMETHODIMP CAgentFolder::SetFlatMode(Int32 flatMode)
+{
+  _flatMode = IntToBool(flatMode);
+  return S_OK;
 }
 
 

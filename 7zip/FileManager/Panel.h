@@ -232,7 +232,7 @@ public:
   bool _mySelectMode;
   CBoolVector _selectedStatusVector;
 
-  UString _focusedName;
+  CSelectedState _selectedState;
 
   UInt32 GetRealIndex(const LVITEMW &item) const
   {
@@ -257,6 +257,10 @@ public:
   UInt32 _ListViewMode;
   int _xSize; 
 
+  bool _flatMode;
+
+  bool _dontShowMode;
+
 
   UString _currentFolderPrefix;
   
@@ -273,6 +277,8 @@ public:
   void RefreshListCtrlSaveFocused();
 
   UString GetItemName(int itemIndex) const;
+  UString GetItemPrefix(int itemIndex) const;
+  UString GetItemRelPath(int itemIndex) const;
   bool IsItemFolder(int itemIndex) const;
   UInt64 GetItemSize(int itemIndex) const;
 
@@ -316,10 +322,12 @@ public:
       _startGroupSelect(0), 
       _selectionIsDefined(false),
       _ListViewMode(3),
+      _flatMode(false),
       _xSize(300),
       _mySelectMode(false),
-      _enableItemChangeNotify(true)
-      {} 
+      _enableItemChangeNotify(true),
+      _dontShowMode(false)
+  {} 
 
   void SetExtendedStyle()
   {
@@ -470,6 +478,9 @@ public:
 
   void SetListViewMode(UInt32 index);
   UInt32 GetListViewMode() const { return _ListViewMode; };
+
+  void ChangeFlatMode();
+  bool GetFlatMode() const { return _flatMode; };
 
   void RefreshStatusBar();
   void OnRefreshStatusBar();

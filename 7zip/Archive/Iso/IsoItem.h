@@ -64,6 +64,80 @@ struct CDirRecord
     Byte b = *(const Byte *)FileId;
     return (b == 0 || b == 1);
   }
+
+  const Byte* FindSuspName(int skipSize, int &lenRes) const
+  {
+    lenRes = 0;
+    const Byte *p = (const Byte *)SystemUse + skipSize;
+    int length = SystemUse.GetCapacity() - skipSize;
+    while (length >= 5)
+    {
+      int len = p[2];
+      if (p[0] == 'N' && p[1] == 'M' && p[3] == 1)
+      {
+        lenRes = len - 5;
+        return p + 5;
+      }
+      p += len;
+      length -= len;
+    }
+    return 0;
+  }
+
+  int GetLengthCur(bool checkSusp, int skipSize) const
+  {
+    if (checkSusp)
+    {
+      int len;
+      const Byte *res = FindSuspName(skipSize, len);
+      if (res != 0)
+        return len;
+    }
+    return FileId.GetCapacity();
+  }
+
+  const Byte* GetNameCur(bool checkSusp, int skipSize) const
+  {
+    if (checkSusp)
+    {
+      int len;
+      const Byte *res = FindSuspName(skipSize, len);
+      if (res != 0)
+        return res;
+    }
+    return (const Byte *)FileId;
+  }
+
+
+  bool CheckSusp(const Byte *p, int &startPos) const
+  {
+    if (p[0] == 'S' && 
+        p[1] == 'P' && 
+        p[2] == 0x7 && 
+        p[3] == 0x1 && 
+        p[4] == 0xBE && 
+        p[5] == 0xEF)
+    {
+      startPos = p[6];
+      return true;
+    }
+    return false;
+  }
+
+  bool CheckSusp(int &startPos) const
+  {
+    const Byte *p = (const Byte *)SystemUse;
+    int length = SystemUse.GetCapacity();
+    const int kMinLen = 7;
+    if (length < kMinLen)
+      return false;
+    if (CheckSusp(p, startPos))
+      return true;
+    const int kOffset2 = 14;
+    if (length < kOffset2 + kMinLen)
+      return false;
+    return CheckSusp(p + kOffset2, startPos);
+  }
 };
 
 }}

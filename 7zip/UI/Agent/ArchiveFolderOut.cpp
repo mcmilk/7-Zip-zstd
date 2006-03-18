@@ -180,18 +180,15 @@ STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress
   if (progress != 0)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(
-        IID_IFolderArchiveUpdateCallback, &updateCallback100));
+    RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(false, true, false, name, NULL, NULL, 
-      0, updateCallback100);
+  return CommonUpdateOperation(false, true, false, name, NULL, NULL, 0, updateCallback100);
   COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgress *progress)
 {
   COM_TRY_BEGIN
-  CUIntVector realIndices;
   CUIntVector indices;
   indices.Add(index);
   RINOK(_agentSpec->SetFolder(this));
@@ -199,8 +196,7 @@ STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgres
   if (progress != 0)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(
-        IID_IFolderArchiveUpdateCallback, &updateCallback100));
+    RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
   return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(), 
       indices.Size(), updateCallback100);

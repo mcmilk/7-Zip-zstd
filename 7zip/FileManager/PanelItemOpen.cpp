@@ -104,7 +104,7 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name)
 HRESULT CPanel::OpenItemAsArchive(int index)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
-  RINOK(OpenItemAsArchive(GetItemName(index)));
+  RINOK(OpenItemAsArchive(GetItemRelPath(index)));
   RefreshListCtrl();
   return S_OK;
 }
@@ -279,14 +279,14 @@ void CPanel::EditItem(int index)
     OpenItemInArchive(index, false, true, true);
     return;
   }
-  HANDLE hProcess = StartEditApplication(_currentFolderPrefix + GetItemName(index), (HWND)*this);
+  HANDLE hProcess = StartEditApplication(_currentFolderPrefix + GetItemRelPath(index), (HWND)*this);
   if (hProcess != 0)
     ::CloseHandle(hProcess);
 }
 
 void CPanel::OpenFolderExternal(int index)
 {
-  HANDLE hProcess = StartApplication(GetFsPath() + GetItemName(index), (HWND)*this);
+  HANDLE hProcess = StartApplication(GetFsPath() + GetItemRelPath(index), (HWND)*this);
   if (hProcess != 0)
     ::CloseHandle(hProcess);
 }
@@ -299,7 +299,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
     OpenItemInArchive(index, tryInternal, tryExternal, false);
     return;
   }
-  UString name = GetItemName(index);
+  UString name = GetItemRelPath(index);
   if (IsNameVirus(name))
   {
     MessageBoxMyError(virusMessage);
@@ -411,7 +411,7 @@ static DWORD WINAPI MyThreadFunction(void *param)
 void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     bool editMode)
 {
-  UString name = GetItemName(index);
+  const UString name = GetItemName(index);
   if (IsNameVirus(name))
   {
     MessageBoxMyError(virusMessage);

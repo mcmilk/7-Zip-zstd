@@ -29,9 +29,17 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     // if (panel->_sortIndex == 0)
     case kpidName:
     {
-      UString &name1 = panel->GetItemName(lParam1);
-      UString &name2 = panel->GetItemName(lParam2);
-      return name1.CompareNoCase(name2);
+      const UString &name1 = panel->GetItemName(lParam1);
+      const UString &name2 = panel->GetItemName(lParam2);
+      int res = name1.CompareNoCase(name2);
+      /*
+      if (res != 0 || !panel->_flatMode)
+        return res;
+      const UString &prefix1 = panel->GetItemPrefix(lParam1);
+      const UString &prefix2 = panel->GetItemPrefix(lParam2);
+      return res = prefix1.CompareNoCase(prefix2);
+      */
+      return res;
     }
     case kpidNoProperty:
     {
@@ -39,8 +47,8 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     }
     case kpidExtension:
     {
-      UString &ext1 = GetExtension(panel->GetItemName(lParam1));
-      UString &ext2 = GetExtension(panel->GetItemName(lParam2));
+      const UString &ext1 = GetExtension(panel->GetItemName(lParam1));
+      const UString &ext2 = GetExtension(panel->GetItemName(lParam2));
       return ext1.CompareNoCase(ext2);
     }
   }

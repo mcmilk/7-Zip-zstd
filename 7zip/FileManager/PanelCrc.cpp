@@ -30,6 +30,7 @@ static const UInt32 kBufSize = (1 << 15);
 
 struct CDirEnumerator
 {
+  bool FlatMode;
   UString BasePrefix;
   UStringVector FileNames;
 
@@ -38,6 +39,8 @@ struct CDirEnumerator
   int Index;
   bool GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UString &fullPath, DWORD &errorCode);
   void Init();
+  
+  CDirEnumerator(): FlatMode(false) {};
 };
 
 void CDirEnumerator::Init()
@@ -57,6 +60,10 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
       if (Index >= FileNames.Size())
         return true;
       const UString &path = FileNames[Index];
+      int pos = path.ReverseFind('\\');
+      resPath.Empty();
+      if (pos >= 0)
+        resPath = path.Left(pos + 1);
       if (!NFind::FindFile(BasePrefix + path, fileInfo))
       {
         errorCode = ::GetLastError();
@@ -64,7 +71,6 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
         return false;
       }
       Index++;
-      resPath.Empty();
       break;
     }
     bool found;
@@ -83,7 +89,7 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
     Prefixes.DeleteBack();
   }
   resPath += fileInfo.Name;
-  if (fileInfo.IsDirectory())
+  if (!FlatMode && fileInfo.IsDirectory())
   {
     UString prefix = resPath + (UString)(wchar_t)kDirDelimiter;
     Enumerators.Add(NFind::CEnumeratorW(BasePrefix + prefix + (UString)(wchar_t)kAnyStringWildcard));
@@ -276,8 +282,9 @@ void CApp::CalculateCrc()
 
   CThreadCrc combiner;
   for (int i = 0; i < indices.Size(); i++)
-    combiner.DirEnumerator.FileNames.Add(srcPanel.GetItemName(indices[i]));
+    combiner.DirEnumerator.FileNames.Add(srcPanel.GetItemRelPath(indices[i]));
   combiner.DirEnumerator.BasePrefix = srcPanel._currentFolderPrefix;
+  combiner.DirEnumerator.FlatMode = GetFlatMode();
 
   CProgressDialog progressDialog;
   combiner.ProgressDialog = &progressDialog;

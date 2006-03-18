@@ -133,8 +133,13 @@ FOLDER_INTERFACE(IFolderClone, 0x09)
   STDMETHOD(Clone)(IFolderFolder **resultFolder) PURE;
 };
 
+FOLDER_INTERFACE(IFolderSetFlatMode, 0x0A)
+{
+  STDMETHOD(SetFlatMode)(Int32 flatMode) PURE;
+};
+
 /*
-FOLDER_INTERFACE(IFolderOpen, 0x0A)
+FOLDER_INTERFACE(IFolderOpen, 0x10)
 {
   STDMETHOD(FolderOpen)(
     const wchar_t *aFileName, 

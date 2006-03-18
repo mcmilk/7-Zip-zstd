@@ -70,7 +70,7 @@ STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
       propVariant = L"iso";
       break;
     case NArchive::kUpdate:
-      propVariant = true;
+      propVariant = false;
       break;
     case NArchive::kKeepName:
       propVariant = false;

@@ -32,6 +32,12 @@ public:
   STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder) PURE;  
 };
 
+struct CProxyItem
+{
+  CProxyFolder *Folder;
+  UInt32 Index;
+};
+
 class CAgent;
 
 class CAgentFolder: 
@@ -43,6 +49,7 @@ class CAgentFolder:
   public IFolderGetTypeID,
   public IFolderGetPath,
   public IFolderOperations,
+  public IFolderSetFlatMode,
 #endif
   public CMyUnknownImp
 {
@@ -57,12 +64,17 @@ public:
     MY_QUERYINTERFACE_ENTRY(IFolderGetTypeID)
     MY_QUERYINTERFACE_ENTRY(IFolderGetPath)
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
+    MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
   #endif
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
   // IFolderFolder
-  
+
+  void LoadFolder(CProxyFolder *folder);
+  HRESULT BindToFolder(CProxyFolder *folder, IFolderFolder **resultFolder);
+  void GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const;
+
   STDMETHOD(LoadItems)();
   STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
   STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value);
@@ -102,10 +114,10 @@ public:
       const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
   STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
 
+  STDMETHOD(SetFlatMode)(Int32 flatMode);
+  #endif
 
-#endif
-
-  CAgentFolder(): _proxyFolderItem(NULL) {}
+  CAgentFolder(): _proxyFolderItem(NULL), _flatMode(0) {}
 
   void Init(CProxyArchive *proxyHandler,
       CProxyFolder *proxyFolderItem,
@@ -130,12 +142,20 @@ public:
       IFolderArchiveUpdateCallback *updateCallback100);
 
 
+  UString GetPrefix(UInt32 index) const;
+  UString GetName(UInt32 index) const;
+  UString GetFullPathPrefixPlusPrefix(UInt32 index) const;
+  void GetPrefixIfAny(UInt32 index, NWindows::NCOM::CPropVariant &propVariant) const;
+
 public:
   CProxyArchive *_proxyArchive;
   CProxyFolder *_proxyFolderItem;
   CMyComPtr<IFolderFolder> _parentFolder;
   CMyComPtr<IInFolderArchive> _agent;
   CAgent *_agentSpec;
+
+  CRecordVector<CProxyItem> _items;
+  bool _flatMode;
 private:
 };
 
@@ -252,7 +272,7 @@ public:
   UString _folderPrefix;
 
   UString _archiveNamePrefix;
-  CProxyFolder *_archiveFolderItem;
+  CAgentFolder *_agentFolder;
 
   UString _archiveFilePath;
 

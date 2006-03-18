@@ -91,7 +91,7 @@ A0  IOutArchive
 07 IFolderGetSystemIconIndex
 08 IFolderGetItemFullSize
 09 IFolderClone
-0A IFolderOpen // 
+0A IFolderSetFlatMode
 
 000900000000} FolderInterface.h::IFolderManager
 000900010000} FolderInterface.h::IFolderManagerGetIconPath

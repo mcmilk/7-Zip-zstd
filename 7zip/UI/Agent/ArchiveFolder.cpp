@@ -41,11 +41,15 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
         IID_IFolderArchiveExtractCallback, &extractCallback2));
   }
 
+  NExtract::NPathMode::EEnum pathMode = _flatMode ? 
+      NExtract::NPathMode::kNoPathnames :
+      NExtract::NPathMode::kCurrentPathnames;
+
   extractCallbackSpec->Init(_agentSpec->GetArchive(), 
       extractCallback2, 
       false,
       path,
-      NExtract::NPathMode::kCurrentPathnames, 
+      pathMode, 
       NExtract::NOverwriteMode::kAskBefore, 
       pathParts, 
       _agentSpec->DefaultName,
@@ -54,7 +58,7 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       // ,_agentSpec->_srcDirectoryPrefix
       );
   CUIntVector realIndices;
-  _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
+  GetRealIndices(indices, numItems, realIndices);
   return _agentSpec->GetArchive()->Extract(&realIndices.Front(), 
       realIndices.Size(), BoolToInt(false), extractCallback);
   COM_TRY_END
