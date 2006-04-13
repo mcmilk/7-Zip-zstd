@@ -9,11 +9,9 @@
 HRESULT ExtractArchive(
     const UString &fileName, 
     const UString &folderName,
-    COpenCallbackGUI *openCallback
-    #ifdef _SILENT
-    , UString &resultMessage
-    #endif
-    );
+    COpenCallbackGUI *openCallback,
+    bool showProgress,
+    bool &isCorrupt, 
+    UString &errorMessage);
 
 #endif
-

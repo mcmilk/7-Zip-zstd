@@ -18,6 +18,7 @@
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/Error.h"
+// #include "Windows/System.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
@@ -63,7 +64,9 @@ static const char *kCopyrightString = "\n7-Zip"
 
 static const char *kHelpString = 
     "\nUsage: 7z"
-#ifdef EXCLUDE_COM
+#ifdef _NO_CRYPTO
+    "r"
+#elif EXCLUDE_COM
     "a"
 #endif
     " <command> [<switches>...] <archive_name> [<file_names>...]\n"
@@ -109,11 +112,6 @@ static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::
 
 static const wchar_t *kDefaultSfxModule = L"7zCon.sfx";
 
-static void PrintHelp(CStdOutStream &s)
-{
-  s << kHelpString;
-}
-
 static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExitCode::EEnum code)
 {
   s << message << endl;
@@ -122,7 +120,7 @@ static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExit
 
 static void PrintHelpAndExit(CStdOutStream &s) // yyy
 {
-  PrintHelp(s);
+  s << kHelpString;
   ShowMessageAndThrowException(s, kUserErrorMessage, NExitCode::kUserError);
 }
 
@@ -143,6 +141,20 @@ static void GetArguments(int numArguments, const char *arguments[], UStringVecto
 }
 #endif
 
+static void ShowCopyrightAndHelp(CStdOutStream &s, bool needHelp)
+{
+  s << kCopyrightString;
+  /*
+  UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
+  s << "System configuration: " << (UInt64)numCPUs << " CPU";
+  if (numCPUs > 1) 
+    s << "s";
+  s << "\n";
+  */
+  if (needHelp) 
+    s << kHelpString;
+}
+
 int Main2(
   #ifndef _WIN32  
   int numArguments, const char *arguments[]
@@ -162,8 +174,7 @@ int Main2(
 
   if(commandStrings.Size() == 1)
   {
-    g_StdOut << kCopyrightString;
-    g_StdOut << kHelpString;
+    ShowCopyrightAndHelp(g_StdOut, true);
     return 0;
   }
   commandStrings.Delete(0);
@@ -176,8 +187,7 @@ int Main2(
 
   if(options.HelpMode)
   {
-    g_StdOut << kCopyrightString;
-    PrintHelp(g_StdOut);
+    ShowCopyrightAndHelp(g_StdOut, true);
     return 0;
   }
 
@@ -190,7 +200,7 @@ int Main2(
   g_StdStream = &stdStream;
 
   if (options.EnableHeaders)
-    stdStream << kCopyrightString;
+    ShowCopyrightAndHelp(stdStream, false);
 
   parser.Parse2(options);
 

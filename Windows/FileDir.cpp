@@ -138,7 +138,7 @@ bool CreateComplexDirectory(LPCTSTR pathName)
 bool CreateComplexDirectory(LPCTSTR _aPathName)
 {
   CSysString pathName = _aPathName;
-  int pos = pathName.ReverseFind(TEXT('\\'));
+  int pos = pathName.ReverseFind(TEXT(CHAR_PATH_SEPARATOR));
   if (pos > 0 && pos == pathName.Length() - 1)
   {
     if (pathName.Length() == 3 && pathName[1] == ':')
@@ -160,7 +160,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
         return false;
       break;
     }
-    pos = pathName.ReverseFind(TEXT('\\'));
+    pos = pathName.ReverseFind(TEXT(CHAR_PATH_SEPARATOR));
     if (pos < 0 || pos == 0)
       return false;
     if (pathName[pos - 1] == ':')
@@ -170,7 +170,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
   pathName = pathName2;
   while(pos < pathName.Length())
   {
-    pos = pathName.Find(TEXT('\\'), pos + 1);
+    pos = pathName.Find(TEXT(CHAR_PATH_SEPARATOR), pos + 1);
     if (pos < 0)
       pos = pathName.Length();
     if(!MyCreateDirectory(pathName.Left(pos)))
@@ -184,7 +184,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
 bool CreateComplexDirectory(LPCWSTR _aPathName)
 {
   UString pathName = _aPathName;
-  int pos = pathName.ReverseFind(L'\\');
+  int pos = pathName.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (pos > 0 && pos == pathName.Length() - 1)
   {
     if (pathName.Length() == 3 && pathName[1] == L':')
@@ -206,7 +206,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
         return false;
       break;
     }
-    pos = pathName.ReverseFind(L'\\');
+    pos = pathName.ReverseFind(WCHAR_PATH_SEPARATOR);
     if (pos < 0 || pos == 0)
       return false;
     if (pathName[pos - 1] == L':')
@@ -216,7 +216,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
   pathName = pathName2;
   while(pos < pathName.Length())
   {
-    pos = pathName.Find(L'\\', pos + 1);
+    pos = pathName.Find(WCHAR_PATH_SEPARATOR, pos + 1);
     if (pos < 0)
       pos = pathName.Length();
     if(!MyCreateDirectory(pathName.Left(pos)))

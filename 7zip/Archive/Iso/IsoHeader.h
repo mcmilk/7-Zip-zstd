@@ -33,7 +33,7 @@ namespace NBootEntryId
   const Byte kValidationEntry = 1;
   const Byte kInitialEntryNotBootable = 0;
   const Byte kInitialEntryBootable = 0x88;
-};
+}
 
 namespace NBootPlatformId
 {

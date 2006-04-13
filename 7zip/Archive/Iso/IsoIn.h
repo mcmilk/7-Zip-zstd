@@ -62,7 +62,7 @@ struct CDir: public CDirRecord
       if (cur->Parent == 0)
         break;
       p--;
-      *p = '\\';
+      *p = CHAR_PATH_SEPARATOR;
     }
     s.ReleaseBuffer();
     return s;
@@ -92,7 +92,7 @@ struct CDir: public CDirRecord
       if (cur->Parent == 0)
         break;
       p--;
-      *p = L'\\';
+      *p = WCHAR_PATH_SEPARATOR;
     }
     s.ReleaseBuffer();
     return s;

@@ -78,6 +78,23 @@ public:
     operator[](j) = temp;
   }
 
+  int FindInSorted(const T& item) const
+  {
+    int left = 0, right = Size(); 
+    while (left != right)
+    {
+      int mid = (left + right) / 2;
+      const T& midValue = (*this)[mid];
+      if (item == midValue)
+        return mid;
+      if (item < midValue)
+        right = mid;
+      else
+        left = mid + 1;
+    }
+    return -1;
+  }
+
   void Sort(int left, int right)
   { 
     if (right - left < 2)

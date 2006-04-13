@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 37
+!define VERSION_MINOR 38
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -53,7 +53,8 @@
 
   ;Compressor
 !ifndef NO_COMPRESSION
-  SetCompressor /SOLID lzma
+  SetCompressor /solid lzma
+  SetCompressorFilter 1
 !ifdef IA64
   SetCompressorDictSize 8
 !else
@@ -66,8 +67,6 @@
 
 ;--------------------------------
 ;Variables
-
-  Var "MyDllPath"
 
 ;--------------------------------
 ;Interface Settings
@@ -228,6 +227,8 @@ Section
   File sl.txt
   File sq.txt
   File sr.txt
+  File sr-spc.txt
+  File sr-spl.txt
   File sv.txt
   File ta.txt
   File th.txt
@@ -433,6 +434,8 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\sl.txt
   Delete $INSTDIR\Lang\sq.txt
   Delete $INSTDIR\Lang\sr.txt
+  Delete $INSTDIR\Lang\sr-spc.txt
+  Delete $INSTDIR\Lang\sr-spl.txt
   Delete $INSTDIR\Lang\sv.txt
   Delete $INSTDIR\Lang\ta.txt
   Delete $INSTDIR\Lang\th.txt

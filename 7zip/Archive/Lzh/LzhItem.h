@@ -154,7 +154,7 @@ public:
     if (!dirName.IsEmpty())
     {
       char c = dirName[dirName.Length() - 1];
-      if (c != '\\' && c != '/')
+      if (c != '\\')
         dirName += '\\';
     }
     return dirName + GetFileName();

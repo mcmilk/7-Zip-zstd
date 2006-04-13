@@ -17,6 +17,7 @@ public:
   ~CStdOutStream ();
   bool Open(const char *fileName);
   bool Close();
+  bool Flush();
  
   CStdOutStream & operator<<(CStdOutStream & (* aFunction)(CStdOutStream  &));
   CStdOutStream & operator<<(const char *string);

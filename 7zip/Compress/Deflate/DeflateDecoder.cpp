@@ -11,7 +11,10 @@ namespace NDecoder {
 static const int kLenIdFinished = -1;
 static const int kLenIdNeedInit = -2;
 
-CCoder::CCoder(bool deflate64Mode):  _deflate64Mode(deflate64Mode), _keepHistory(false) {}
+CCoder::CCoder(bool deflate64Mode, bool deflateNSIS):  
+    _deflate64Mode(deflate64Mode), 
+    _deflateNSIS(deflateNSIS), 
+    _keepHistory(false) {}
 
 UInt32 CCoder::ReadBits(int numBits)
 {
@@ -70,6 +73,8 @@ bool CCoder::ReadTables(void)
     int numBitsForAlign = (int)(currentBitPosition > 0 ? (8 - currentBitPosition): 0);
     ReadBits(numBitsForAlign);
     m_StoredBlockSize = ReadBits(kStoredBlockLengthFieldSize);
+    if (_deflateNSIS)
+      return true;
     return (m_StoredBlockSize == (UInt16)~ReadBits(kStoredBlockLengthFieldSize));
   }
 

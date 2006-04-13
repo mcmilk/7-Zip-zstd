@@ -75,8 +75,6 @@ private:
 
   void FillCommand(ECommandInternalID id, UString &mainString, 
       CCommandMapItem &commandMapItem);
-  void FillCommand2(ECommandInternalID id, UString &mainString, 
-      CCommandMapItem &commandMapItem);
 public:
   CZipContextMenu();
   ~CZipContextMenu();

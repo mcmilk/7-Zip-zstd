@@ -1,4 +1,4 @@
-// ExtractEngine.h
+// ExtractEngine.cpp
 
 #include "StdAfx.h"
 
@@ -21,7 +21,6 @@ using namespace NWindows;
 
 struct CThreadExtracting
 {
-  // CMyComPtr<IInArchive> ArchiveHandler;
   CArchiveLink ArchiveLink;
 
   CExtractCallbackImp *ExtractCallbackSpec;
@@ -29,12 +28,15 @@ struct CThreadExtracting
 
   #ifndef _NO_PROGRESS
   HRESULT Result;
-  
+
+  HRESULT Extract()
+  {
+    return ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), ExtractCallback);
+  }
   DWORD Process()
   {
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    Result = ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), 
-        ExtractCallback);
+    Result = Extract();
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
@@ -45,26 +47,22 @@ struct CThreadExtracting
   #endif
 };
 
-static const LPCTSTR kCantFindArchive = TEXT("Can not find archive file");
-static const LPCTSTR kCantOpenArchive = TEXT("File is not correct archive");
+static const LPCWSTR kCantFindArchive = L"Can not find archive file";
+static const LPCWSTR kCantOpenArchive = L"File is not correct archive";
 
 HRESULT ExtractArchive(
     const UString &fileName, 
     const UString &folderName,
-    COpenCallbackGUI *openCallback
-    #ifdef _SILENT
-    , UString &resultMessage
-    #endif
-    )
+    COpenCallbackGUI *openCallback,
+    bool showProgress,
+    bool &isCorrupt,
+    UString &errorMessage)
 {
+  isCorrupt = false;
   NFile::NFind::CFileInfoW archiveFileInfo;
   if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
   {
-    #ifndef _SILENT
-    MessageBox(0, kCantFindArchive, TEXT("7-Zip"), 0);
-    #else
-    resultMessage = kCantFindArchive;
-    #endif
+    errorMessage = kCantFindArchive;
     return E_FAIL;
   }
 
@@ -72,18 +70,10 @@ HRESULT ExtractArchive(
 
   HRESULT result = MyOpenArchive(fileName, extracter.ArchiveLink, openCallback);
 
-  /*
-  CArchiverInfo archiverInfoResult;
-  int subExtIndex;
-  HRESULT result = OpenArchive(fileName, &extracter.ArchiveHandler, 
-      archiverInfoResult, subExtIndex, NULL);
-  */
   if (result != S_OK)
   {
-    #ifdef _SILENT
-    resultMessage = kCantOpenArchive;
-    #endif
-    return E_FAIL;
+    errorMessage = kCantOpenArchive;
+    return result;
   }
 
   UString directoryPath = folderName;
@@ -105,54 +95,45 @@ HRESULT ExtractArchive(
 
   if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))
   {
-    #ifndef _SILENT
-    MyMessageBox(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
+    errorMessage = MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
         #ifdef LANG        
         0x02000603, 
         #endif 
-        directoryPath));
-    #else
-    resultMessage = TEXT("Can not create output folder");
-    #endif
+        directoryPath);
     return E_FAIL;
   }
   
   extracter.ExtractCallbackSpec = new CExtractCallbackImp;
   extracter.ExtractCallback = extracter.ExtractCallbackSpec;
   
-  // anExtractCallBackSpec->StartProgressDialog();
-
-  // anExtractCallBackSpec->m_ProgressDialog.ShowWindow(SW_SHOWNORMAL);
-
   extracter.ExtractCallbackSpec->Init(
       extracter.ArchiveLink.GetArchive(), 
       directoryPath, L"Default", archiveFileInfo.LastWriteTime, 0);
 
   #ifndef _NO_PROGRESS
 
-  CThread thread;
-  if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
-    throw 271824;
+  if (showProgress)
+  {
+    CThread thread;
+    if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
+      throw 271824;
+    
+    UString title;
+    #ifdef LANG        
+    title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
+    #else
+    title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
+    #endif
+    extracter.ExtractCallbackSpec->StartProgressDialog(title);
+    result = extracter.Result;
+  }
+  else
 
-  UString title;
-  #ifdef LANG        
-  title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
-  #else
-  title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
   #endif
-  extracter.ExtractCallbackSpec->StartProgressDialog(title);
-  return extracter.Result;
-
-  #else
-
-  result = extracter.ArchiveHandler->Extract(0, (UInt32)-1,
-        BoolToInt(false), extracter.ExtractCallback);
-  #ifdef _SILENT
-  resultMessage = extracter.ExtractCallbackSpec->_message;
-  #endif
+  {
+    result = extracter.Extract();
+  }
+  errorMessage = extracter.ExtractCallbackSpec->_message;
+  isCorrupt = extracter.ExtractCallbackSpec->_isCorrupt;
   return result;
-  #endif
 }
-
-
-

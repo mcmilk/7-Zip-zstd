@@ -650,7 +650,7 @@ void CCompressDialog::SetArchiveName(const UString &name)
     {
       int dotPos = fileName.ReverseFind('.');
       int slashPos = MyMax(fileName.ReverseFind('\\'), fileName.ReverseFind('/'));
-      if (dotPos > slashPos)
+      if (dotPos >= 0 && dotPos > slashPos + 1)
         fileName = fileName.Left(dotPos);
     }
   }

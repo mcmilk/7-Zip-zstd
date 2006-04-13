@@ -229,24 +229,10 @@ void CZipContextMenu::FillCommand(ECommandInternalID id,
     return;
   const CContextMenuCommand &command = g_Commands[i];
   commandMapItem.CommandInternalID = command.CommandInternalID;
-  commandMapItem.Verb = command.Verb;
+  commandMapItem.Verb = (UString)kMainVerb + (UString)command.Verb;
   commandMapItem.HelpString = LangString(command.ResourceHelpID, command.LangID + 1);
   mainString = LangString(command.ResourceID, command.LangID); 
 }
-
-void CZipContextMenu::FillCommand2(ECommandInternalID id, 
-    UString &mainString, CCommandMapItem &commandMapItem)
-{
-  int i = FindCommand(id);
-  if (i < 0)
-    return;
-  const CContextMenuCommand &command = g_Commands[i];
-  commandMapItem.CommandInternalID = command.CommandInternalID;
-  commandMapItem.Verb = command.Verb;
-  commandMapItem.HelpString = LangString(command.ResourceHelpID, command.LangID + 1);
-  mainString = LangString(command.ResourceID, command.LangID); 
-}
-
 
 static bool MyInsertMenu(CMenu &menu, int pos, UINT id, const UString &s)
 {
@@ -397,7 +383,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       {
         CCommandMapItem commandMapItem;
         UString s;
-        FillCommand2(kExtractTo, s, commandMapItem);
+        FillCommand(kExtractTo, s, commandMapItem);
         UString folder;
         if (_fileNames.Size() == 1)
           folder = GetSubFolderNameForExtract(fileInfo.Name);
@@ -446,7 +432,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     {
       CCommandMapItem commandMapItem;
       UString s;
-      FillCommand2(kCompressTo, s, commandMapItem);
+      FillCommand(kCompressTo, s, commandMapItem);
       if (_dropMode)
         commandMapItem.Folder = _dropPath;
       else
@@ -473,7 +459,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     {
       CCommandMapItem commandMapItem;
       UString s;
-      FillCommand2(kCompressToEmail, s, commandMapItem);
+      FillCommand(kCompressToEmail, s, commandMapItem);
       commandMapItem.Archive = archiveName7z;
       UString t = UString(L"\"") + GetReducedString(archiveName7z) + UString(L"\"");
       s = MyFormatNew(s, t);
@@ -528,55 +514,25 @@ static UString GetProgramCommand()
 
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
 {
+  // ::OutputDebugStringA("1");
   int commandOffset;
-  
-  if(HIWORD(commandInfo->lpVerb) == 0)
-    commandOffset = LOWORD(commandInfo->lpVerb);
-  else
-    commandOffset = FindVerb(GetUnicodeString(commandInfo->lpVerb));
-  /*
-  #ifdef _UNICODE
-  if(commandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX))
+
+  // It's fix for bug: crashing in XP. See example in MSDN: "Creating Context Menu Handlers".
+
+  if (commandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX) &&
+      (commandInfo->fMask & CMIC_MASK_UNICODE) != 0)
   {
-    if ((commandInfo->fMask & CMIC_MASK_UNICODE) != 0)
-    {
-      LPCMINVOKECOMMANDINFOEX aCommandInfoEx = (LPCMINVOKECOMMANDINFOEX)commandInfo;
-      if(HIWORD(aCommandInfoEx->lpVerb) == 0)
-        commandOffset = LOWORD(aCommandInfoEx->lpVerb);
-      else
-      {
-        MessageBox(0, TEXT("1"), TEXT("1"), 0);
-        return E_FAIL;
-      }
-    }
+    LPCMINVOKECOMMANDINFOEX commandInfoEx = (LPCMINVOKECOMMANDINFOEX)commandInfo;
+    if(HIWORD(commandInfoEx->lpVerbW) == 0)
+      commandOffset = LOWORD(commandInfo->lpVerb);
     else
-    {
-      if(HIWORD(commandInfo->lpVerb) == 0)
-        commandOffset = LOWORD(commandInfo->lpVerb);
-      else
-        commandOffset = FindVerb(commandInfo->lpVerb);
-    }
-    //  return E_FAIL;
+      commandOffset = FindVerb(commandInfoEx->lpVerbW);
   }
   else
-  {
     if(HIWORD(commandInfo->lpVerb) == 0)
       commandOffset = LOWORD(commandInfo->lpVerb);
     else
-      commandOffset = FindVerb(commandInfo->lpVerb);
-  }
-
-  #else
-  
-  {
-    if(HIWORD(commandInfo->lpVerb) == 0)
-      commandOffset = LOWORD(commandInfo->lpVerb);
-    else
-      commandOffset = FindVerb(commandInfo->lpVerb);
-  }
-
-  #endif
-  */
+      commandOffset = FindVerb(GetUnicodeString(commandInfo->lpVerb));
 
   if(commandOffset < 0 || commandOffset >= _commandMap.Size())
     return E_FAIL;
@@ -666,8 +622,7 @@ STDMETHODIMP CZipContextMenu::GetCommandString(UINT_PTR commandOffset, UINT uTyp
   }
   if(uType == GCS_VERBA || uType == GCS_VERBW)
   {
-    MyCopyString(pszName, _commandMap[commandOffset].Verb,
-        uType == GCS_VERBW);
+    MyCopyString(pszName, _commandMap[commandOffset].Verb, uType == GCS_VERBW);
     return NO_ERROR;
   }
   return E_FAIL;

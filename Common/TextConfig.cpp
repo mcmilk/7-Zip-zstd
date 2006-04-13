@@ -120,7 +120,7 @@ bool GetTextConfig(const AString &string, CObjectVector<CTextConfigPair> &pairs)
   return true;
 }
 
-int FindItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
+int FindTextConfigItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
 {
   for (int  i = 0; i < pairs.Size(); i++)
     if (pairs[i].ID.Compare(id) == 0)
@@ -130,7 +130,7 @@ int FindItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
 
 UString GetTextConfigValue(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
 {
-  int index = FindItem(pairs, id);
+  int index = FindTextConfigItem(pairs, id);
   if (index < 0)
     return UString();
   return pairs[index].String;

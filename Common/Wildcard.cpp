@@ -8,7 +8,9 @@ static const wchar_t kPeriodChar = L'.';
 static const wchar_t kAnyCharsChar = L'*';
 static const wchar_t kAnyCharChar = L'?';
 
+#ifdef _WIN32
 static const wchar_t kDirDelimiter1 = L'\\';
+#endif
 static const wchar_t kDirDelimiter2 = L'/';
 
 static const UString kWildCardCharSet = L"?*";
@@ -23,7 +25,11 @@ static const UString kIllegalFileNameChars = kIllegalWildCardFileNameChars +
 
 static inline bool IsCharDirLimiter(wchar_t c)
 {
-  return (c == kDirDelimiter1 || c == kDirDelimiter2);
+  return (
+    #ifdef _WIN32
+    c == kDirDelimiter1 || 
+    #endif
+    c == kDirDelimiter2);
 }
 
 // -----------------------------------------
@@ -408,7 +414,7 @@ void CCensor::AddItem(bool include, const UString &path, bool recursive)
     if (DoesNameContainWildCard(front))
       break;
     prefix += front;
-    prefix += L'\\';
+    prefix += WCHAR_PATH_SEPARATOR;
     pathParts.Delete(0);
   }
   int index = FindPrefix(prefix);

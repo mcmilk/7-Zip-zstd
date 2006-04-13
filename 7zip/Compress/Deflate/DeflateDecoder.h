@@ -40,6 +40,7 @@ class CCoder:
   UInt32 _numDistLevels;
 
 
+  bool _deflateNSIS;
   bool _deflate64Mode;
   bool _keepHistory;
   Int32 _remainLen;
@@ -75,7 +76,7 @@ class CCoder:
 
   HRESULT CodeSpec(UInt32 curSize);
 public:
-  CCoder(bool deflate64Mode);
+  CCoder(bool deflate64Mode, bool deflateNSIS = false);
   void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
 
   HRESULT CodeReal(ISequentialInStream *inStream,
@@ -110,15 +111,19 @@ public:
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
 };
 
-class CCOMCoder :
-  public CCoder
+class CCOMCoder : public CCoder
 {
 public:
   CCOMCoder(): CCoder(false) {}
 };
 
-class CCOMCoder64 :
-  public CCoder
+class CNsisCOMCoder : public CCoder
+{
+public:
+  CNsisCOMCoder(): CCoder(false, true) {}
+};
+
+class CCOMCoder64 : public CCoder
 {
 public:
   CCOMCoder64(): CCoder(true) {}

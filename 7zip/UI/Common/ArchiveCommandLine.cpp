@@ -27,13 +27,14 @@ using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
 
-static const int kNumSwitches = 27;
+static const int kNumSwitches = 28;
 
 namespace NKey {
 enum Enum
 {
   kHelp1 = 0,
   kHelp2,
+  kHelp3,
   kDisableHeaders,
   kDisablePercents,
   kArchiveType,
@@ -68,7 +69,12 @@ static const wchar_t kRecursedIDChar = 'R';
 static const wchar_t *kRecursedPostCharSet = L"0-";
 
 static const wchar_t *kDefaultArchiveType = L"7z";
-static const wchar_t *kSFXExtension = L"exe";
+static const wchar_t *kSFXExtension =
+  #ifdef _WIN32
+    L"exe";
+  #else
+    L"";
+  #endif
 
 namespace NRecursedPostCharIndex {
   enum EEnum 
@@ -99,6 +105,7 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
   {
     { L"?",  NSwitchType::kSimple, false },
     { L"H",  NSwitchType::kSimple, false },
+    { L"-HELP",  NSwitchType::kSimple, false },
     { L"BA", NSwitchType::kSimple, false },
     { L"BD", NSwitchType::kSimple, false },
     { L"T",  NSwitchType::kUnLimitedPostString, false, 1 },
@@ -711,7 +718,7 @@ void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
   options.IsStdErrTerminal = (isatty(fileno(stderr)) != 0);
   options.StdOutMode = parser[NKey::kStdOut].ThereIs;
   options.EnableHeaders = !parser[NKey::kDisableHeaders].ThereIs;
-  options.HelpMode = parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs;
+  options.HelpMode = parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs  || parser[NKey::kHelp3].ThereIs;
 
   #ifdef _WIN32
   options.LargePages = false;

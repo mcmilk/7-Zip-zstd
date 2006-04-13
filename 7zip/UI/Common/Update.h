@@ -31,7 +31,7 @@ struct CArchivePath
     if (Name.IsEmpty())
       return;
     int dotPos = Name.ReverseFind(L'.');
-    if (dotPos < 0)
+    if (dotPos <= 0)
       return;
     if (dotPos == Name.Length() - 1)
     {

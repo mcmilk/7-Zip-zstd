@@ -9,7 +9,7 @@ namespace NWindows {
 namespace NFile {
 namespace NName {
 
-const TCHAR kDirDelimiter = '\\';
+const TCHAR kDirDelimiter = CHAR_PATH_SEPARATOR;
 const TCHAR kAnyStringWildcard = '*';
 
 void NormalizeDirPathPrefix(CSysString &dirPath); // ensures that it ended with '\\'

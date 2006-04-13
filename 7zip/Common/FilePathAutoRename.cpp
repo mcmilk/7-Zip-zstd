@@ -26,11 +26,15 @@ bool AutoRenamePath(UString &fullProcessedPath)
 {
   UString path;
   int dotPos = fullProcessedPath.ReverseFind(L'.');
-  int slashDot1 = fullProcessedPath.ReverseFind(L'\\');
-  int slashDot2 = fullProcessedPath.ReverseFind(L'/');
-  int slashDot = MyMin(slashDot1, slashDot2);
+
+  int slashPos = fullProcessedPath.ReverseFind(L'/');
+  #ifdef _WIN32
+  int slash1Pos = fullProcessedPath.ReverseFind(L'\\');
+  slashPos = MyMax(slashPos, slash1Pos);
+  #endif
+
   UString name, extension;
-  if (dotPos > slashDot &&  dotPos > 0)
+  if (dotPos > slashPos &&  dotPos > 0)
   {
     name = fullProcessedPath.Left(dotPos);
     extension = fullProcessedPath.Mid(dotPos);

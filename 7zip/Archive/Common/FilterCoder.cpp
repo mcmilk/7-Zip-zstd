@@ -200,7 +200,13 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
     _convertedPosEnd = Filter->Filter(_buffer, _bufferPos);
     if (_convertedPosEnd == 0)
     {
-      break;
+      if (_bufferPos == 0)
+        break;
+      else
+      {
+        _convertedPosEnd = _bufferPos; // check it
+        continue;
+      }
     }
     if (_convertedPosEnd > _bufferPos)
     {

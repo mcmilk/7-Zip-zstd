@@ -11,14 +11,11 @@
 #include "../../Archive/IArchive.h"
 
 #include "../../Common/FileStreams.h"
-// #include "../../Common/ZipSettings.h"
 #include "../../ICoder.h"
 
 #ifndef _NO_PROGRESS
 #include "../../FileManager/Resource/ProgressDialog/ProgressDialog.h"
 #endif
-
-// #include "../../Explorer/MyMessages.h"
 
 class CExtractCallbackImp: 
   public IArchiveExtractCallback,
@@ -67,17 +64,14 @@ public:
   CProgressDialog ProgressDialog;
   #endif
 
-  #ifdef _SILENT
+  bool _isCorrupt;
   UString _message;
-  #endif
 
   void Init(IInArchive *archiveHandler,     
     const UString &directoryPath, 
     const UString &itemDefaultName,
     const FILETIME &utcLastWriteTimeDefault,
     UInt32 attributesDefault);
-
-  UInt64 _numErrors;
 
   #ifndef _NO_PROGRESS
   HRESULT StartProgressDialog(const UString &title)
@@ -92,7 +86,6 @@ public:
     }
 
     ProgressDialog.Show(SW_SHOWNORMAL);    
-    // _progressDialog.Start(m_ParentWindow, PROGDLG_MODAL | PROGDLG_AUTOTIME);
     return S_OK;
   }
   virtual ~CExtractCallbackImp() { ProgressDialog.Destroy(); }

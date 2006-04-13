@@ -73,11 +73,19 @@ static HRESULT WriteRange(IInStream *inStream,
     size, progress, currentComplexity);
 }
 
+static int GetReverseSlashPos(const UString &name)
+{
+  int slashPos = name.ReverseFind(L'/');
+  #ifdef _WIN32
+  int slash1Pos = name.ReverseFind(L'\\');
+  slashPos = MyMax(slashPos, slash1Pos);
+  #endif
+  return slashPos;
+}
+
 int CUpdateItem::GetExtensionPos() const
 {
-  int slash1Pos = Name.ReverseFind(L'\\');
-  int slash2Pos = Name.ReverseFind(L'/');
-  int slashPos = MyMax(slash1Pos, slash2Pos);
+  int slashPos = GetReverseSlashPos(Name);
   int dotPos = Name.ReverseFind(L'.');
   if (dotPos < 0 || (dotPos < slashPos && slashPos >= 0))
     return Name.Length();
@@ -220,9 +228,7 @@ struct CRefItem
   {
     if (sortByType)
     {
-      int slash1Pos = updateItem.Name.ReverseFind(L'\\');
-      int slash2Pos = updateItem.Name.ReverseFind(L'/');
-      int slashPos = MyMax(slash1Pos, slash2Pos);
+      int slashPos = GetReverseSlashPos(updateItem.Name);
       if (slashPos >= 0)
         NamePos = slashPos + 1;
       else

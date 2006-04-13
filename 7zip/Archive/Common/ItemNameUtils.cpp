@@ -7,8 +7,8 @@
 namespace NArchive {
 namespace NItemName {
 
-static const wchar_t kOSDirDelimiter = '\\';
-static const wchar_t kDirDelimiter = '/';
+static const wchar_t kOSDirDelimiter = WCHAR_PATH_SEPARATOR;
+static const wchar_t kDirDelimiter = L'/';
 
 UString MakeLegalName(const UString &name)
 {
@@ -46,5 +46,14 @@ bool HasTailSlash(const AString &name, UINT codePage)
   #endif
   return (*prev == '/');
 }
+
+#ifndef _WIN32
+UString WinNameToOSName(const UString &name)
+{
+  UString newName = name;
+  newName.Replace(L'\\', kOSDirDelimiter);
+  return newName;
+}
+#endif
 
 }}

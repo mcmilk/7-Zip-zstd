@@ -14,6 +14,7 @@
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
 #include "Windows/DLL.h"
+#include "Windows/ResourceString.h"
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
@@ -24,12 +25,15 @@
 
 #include "ExtractEngine.h"
 
-
-HINSTANCE g_hInstance;
+#include "resource.h"
 
 using namespace NWindows;
 
+HINSTANCE g_hInstance;
+
 static LPCTSTR kTempDirPrefix = TEXT("7zS"); 
+
+#define _SHELL_EXECUTE
 
 static bool ReadDataString(LPCWSTR fileName, LPCSTR startID, 
     LPCSTR endID, AString &stringResult)
@@ -143,17 +147,14 @@ int APIENTRY WinMain(
   InitCommonControls();
 
   UString archiveName, switches;
+  #ifdef _SHELL_EXECUTE
+  UString executeFile, executeParameters;
+  #endif
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), archiveName, switches);
 
   UString fullPath;
   NDLL::MyGetModuleFileName(g_hInstance, fullPath);
 
-  AString config;
-  if (!ReadDataString(fullPath, kStartID, kEndID, config))
-  {
-    MyMessageBox(L"Can't load config info");
-    return 1;
-  }
   switches.Trim();
   bool assumeYes = false;
   if (switches.Left(2).CompareNoCase(UString(L"-y")) == 0)
@@ -163,21 +164,34 @@ int APIENTRY WinMain(
     switches.Trim();
   }
 
-#ifdef _SHELL_EXECUTE
-  bool executeMode = false;
-#endif
+  AString config;
+  if (!ReadDataString(fullPath, kStartID, kEndID, config))
+  {
+    if (!assumeYes)
+      MyMessageBox(L"Can't load config info");
+    return 1;
+  }
+
+  UString dirPrefix = L".\\";
   UString appLaunched;
+  bool showProgress = true;
   if (!config.IsEmpty())
   {
     CObjectVector<CTextConfigPair> pairs;
     if (!GetTextConfig(config, pairs))
     {
-      MyMessageBox(L"Config failed");
+      if (!assumeYes)
+        MyMessageBox(L"Config failed");
       return 1;
     }
     UString friendlyName = GetTextConfigValue(pairs, L"Title");
     UString installPrompt = GetTextConfigValue(pairs, L"BeginPrompt");
-
+    UString progress = GetTextConfigValue(pairs, L"Progress");
+    if (progress.CompareNoCase(L"no") == 0)
+      showProgress = false;
+    int index = FindTextConfigItem(pairs, L"Directory");
+    if (index >= 0)
+      dirPrefix = pairs[index].String;
     if (!installPrompt.IsEmpty() && !assumeYes)
     {
       if (MessageBoxW(0, installPrompt, friendlyName, MB_YESNO | 
@@ -185,33 +199,41 @@ int APIENTRY WinMain(
         return 0;
     }
     appLaunched = GetTextConfigValue(pairs, L"RunProgram");
-#ifdef _SHELL_EXECUTE
-    if (appLaunched.IsEmpty())
-    {
-      executeMode = true;
-      appLaunched = GetTextConfigValue(pairs, L"Execute");
-    }
-#endif
+    
+    #ifdef _SHELL_EXECUTE
+    executeFile = GetTextConfigValue(pairs, L"ExecuteFile");
+    executeParameters = GetTextConfigValue(pairs, L"ExecuteParameters") + switches;
+    #endif
   }
 
   NFile::NDirectory::CTempDirectory tempDir;
   if (!tempDir.Create(kTempDirPrefix))
   {
-    MyMessageBox(L"Can not create temp folder archive");
+    if (!assumeYes)
+      MyMessageBox(L"Can not create temp folder archive");
     return 1;
   }
 
   COpenCallbackGUI openCallback;
 
   UString tempDirPath = GetUnicodeString(tempDir.GetPath());
-  HRESULT result = ExtractArchive(fullPath, tempDirPath, &openCallback);
+  bool isCorrupt = false;
+  UString errorMessage;
+  HRESULT result = ExtractArchive(fullPath, tempDirPath, &openCallback, showProgress, 
+      isCorrupt, errorMessage);
 
   if (result != S_OK)
   {
-    if (result == S_FALSE)
-      MyMessageBox(L"Can not open archive");
-    else if (result != E_ABORT)
-      ShowErrorMessage(result);
+    if (!assumeYes)
+    {
+      if (result == S_FALSE || isCorrupt)
+      {
+        errorMessage = NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_MESSAGE);
+        result = E_FAIL;
+      }
+      if (result != E_ABORT && !errorMessage.IsEmpty())
+        ::MessageBoxW(0, errorMessage, NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_TITLE), MB_ICONERROR);
+    }
     return 1;
   }
 
@@ -220,30 +242,11 @@ int APIENTRY WinMain(
   if (!SetCurrentDirectory(tempDir.GetPath()))
     return 1;
   
-  if (appLaunched.IsEmpty())
-  {
-    appLaunched = L"setup.exe";
-    if (!NFile::NFind::DoesFileExist(GetSystemString(appLaunched)))
-    {
-      MyMessageBox(L"Can not find setup.exe");
-      return 1;
-    }
-  }
-
-  {
-    UString s2 = tempDirPath;
-    NFile::NName::NormalizeDirPathPrefix(s2);
-    appLaunched.Replace(L"%%T\\", s2);
-  }
-
-  appLaunched.Replace(L"%%T", tempDirPath);
-
-
   HANDLE hProcess = 0;
 #ifdef _SHELL_EXECUTE
-  if (executeMode)
+  if (!executeFile.IsEmpty())
   {
-    CSysString filePath = GetSystemString(appLaunched);
+    CSysString filePath = GetSystemString(executeFile);
     SHELLEXECUTEINFO execInfo;
     execInfo.cbSize = sizeof(execInfo);
     execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
@@ -251,11 +254,14 @@ int APIENTRY WinMain(
     execInfo.lpVerb = NULL;
     execInfo.lpFile = filePath;
 
-    CSysString switchesSys = GetSystemString(switches);
-    if (switchesSys.IsEmpty())
+    if (!switches.IsEmpty())
+      executeParameters += switches;
+
+    CSysString parametersSys = GetSystemString(executeParameters);
+    if (parametersSys.IsEmpty())
       execInfo.lpParameters = NULL;
     else
-      execInfo.lpParameters = switchesSys;
+      execInfo.lpParameters = parametersSys;
 
     execInfo.lpDirectory = NULL;
     execInfo.nShow = SW_SHOWNORMAL;
@@ -264,7 +270,8 @@ int APIENTRY WinMain(
     result = (UINT32)execInfo.hInstApp;
     if(result <= 32)
     {
-      MyMessageBox(L"Can not open file");
+      if (!assumeYes)
+        MyMessageBox(L"Can not open file");
       return 1;
     }
     hProcess = execInfo.hProcess;
@@ -272,6 +279,25 @@ int APIENTRY WinMain(
   else
 #endif
   {
+    if (appLaunched.IsEmpty())
+    {
+      appLaunched = L"setup.exe";
+      if (!NFile::NFind::DoesFileExist(GetSystemString(appLaunched)))
+      {
+        if (!assumeYes)
+          MyMessageBox(L"Can not find setup.exe");
+        return 1;
+      }
+    }
+    
+    {
+      UString s2 = tempDirPath;
+      NFile::NName::NormalizeDirPathPrefix(s2);
+      appLaunched.Replace(L"%%T\\", s2);
+    }
+    
+    appLaunched.Replace(L"%%T", tempDirPath);
+
     if (!switches.IsEmpty())
     {
       appLaunched += L' ';
@@ -288,14 +314,15 @@ int APIENTRY WinMain(
     
     PROCESS_INFORMATION processInformation;
     
-    CSysString appLaunchedSys = CSysString(TEXT(".\\")) + GetSystemString(appLaunched);
+    CSysString appLaunchedSys = GetSystemString(dirPrefix + appLaunched);
     
     BOOL createResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)appLaunchedSys, 
       NULL, NULL, FALSE, 0, NULL, NULL /*tempDir.GetPath() */, 
       &startupInfo, &processInformation);
     if (createResult == 0)
     {
-      ShowLastErrorMessage();
+      if (!assumeYes)
+        ShowLastErrorMessage();
       return 1;
     }
     ::CloseHandle(processInformation.hThread);

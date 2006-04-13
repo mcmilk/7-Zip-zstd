@@ -13,6 +13,12 @@ namespace NItemName {
   UString GetOSName2(const UString &name);
   bool HasTailSlash(const AString &name, UINT codePage);
 
+  #ifdef _WIN32
+  inline UString WinNameToOSName(const UString &name)  { return name; }
+  #else
+  UString WinNameToOSName(const UString &name);
+  #endif
+
 }}
 
 #endif

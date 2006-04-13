@@ -57,15 +57,15 @@ static UString GetModuleFolderPrefix()
 {
   UString path;
   NDLL::MyGetModuleFileName(g_hInstance, path);
-  int pos = path.ReverseFind(L'\\');
+  int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
   return path.Left(pos + 1);
 }
 
 static wchar_t *kFormatFolderName = L"Formats";
-static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
-static LPCWSTR kProgramPathValue = L"Path";
 
 #ifdef _WIN32
+static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
+static LPCWSTR kProgramPathValue = L"Path";
 static bool ReadPathFromRegistry(HKEY baseKey, UString &path)
 {
   NRegistry::CKey key;
@@ -244,7 +244,7 @@ void ReadArchiverInfoList(CObjectVector<CArchiverInfo> &archivers)
   #else
 
   UString folderPath = GetBaseFolderPrefixFromRegistry() + 
-      kFormatFolderName + L"\\";
+      (UString)kFormatFolderName + (UString)WSTRING_PATH_SEPARATOR;
   NFind::CEnumeratorW enumerator(folderPath + L"*");
   NFind::CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))

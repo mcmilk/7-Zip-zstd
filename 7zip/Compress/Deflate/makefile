@@ -1,6 +1,6 @@
 PROG = Deflate.dll
 DEF_FILE = ../Codec.def
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../ -D_ST_MODE
 LIBS = $(LIBS) oleaut32.lib
 
 DEFLATE_OBJS = \

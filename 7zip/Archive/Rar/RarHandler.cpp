@@ -23,6 +23,7 @@
 #include "../Common/CoderLoader.h"
 #include "../Common/CodecsPath.h"
 #include "../Common/FilterCoder.h"
+#include "../Common/ItemNameUtils.h"
 
 #include "../7z/7zMethods.h"
 
@@ -186,11 +187,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   switch(propID)
   {
     case kpidPath:
+    {
+      UString u;
       if (item.HasUnicodeName() && !item.UnicodeName.IsEmpty())
-        propVariant = item.UnicodeName;
+        u = item.UnicodeName;
       else
-        propVariant = (const wchar_t *)MultiByteToUnicodeString(item.Name, CP_OEMCP);
+        u = MultiByteToUnicodeString(item.Name, CP_OEMCP);
+      propVariant = (const wchar_t *)NItemName::WinNameToOSName(u);
       break;
+    }
     case kpidIsFolder:
       propVariant = item.IsDirectory();
       break;

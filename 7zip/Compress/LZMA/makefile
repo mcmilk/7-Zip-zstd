@@ -1,6 +1,6 @@
 PROG = LZMA.dll
 DEF_FILE = ../Codec.def
-CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MF_MT
+CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MF_MT -D_ST_MODE
 LIBS = $(LIBS) oleaut32.lib
 
 LZMA_OBJS = \

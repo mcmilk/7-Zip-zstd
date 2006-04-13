@@ -34,7 +34,7 @@ UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName)
     if (!fileInfo.IsDirectory() && !keepName)
     {
       int dotPos = resultName.ReverseFind('.');
-      if (dotPos >= 0)
+      if (dotPos > 0)
       {
         UString archiveName2 = resultName.Left(dotPos);
         if (archiveName2.ReverseFind('.') < 0)

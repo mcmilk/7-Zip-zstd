@@ -7,6 +7,8 @@ IDI_ICON3  ICON "setup.ico"
 
 STRINGTABLE
 BEGIN
+  IDS_EXTRACTION_ERROR_TITLE "Extraction Failed"
+  IDS_EXTRACTION_ERROR_MESSAGE "File is corrupt"
   IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
   IDS_PROGRESS_EXTRACTING "Extracting"
 END

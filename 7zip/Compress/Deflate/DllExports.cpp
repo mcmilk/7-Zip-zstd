@@ -25,6 +25,11 @@ DEFINE_GUID(CLSID_CCompressDeflateEncoder,
 DEFINE_GUID(CLSID_CCompressDeflate64Encoder, 
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00);
 
+
+// {23170F69-40C1-278B-0409-010000000000}
+DEFINE_GUID(CLSID_CCompressDeflateNsisDecoder, 
+0x23170F69, 0x40C1, 0x278B, 0x04, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00);
+
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
@@ -42,6 +47,12 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
     if (!correctInterface)
       return E_NOINTERFACE;
     coder = (ICompressCoder *)new NCompress::NDeflate::NDecoder::CCOMCoder();
+  }
+  else if (*clsid == CLSID_CCompressDeflateNsisDecoder)
+  {
+    if (!correctInterface)
+      return E_NOINTERFACE;
+    coder = (ICompressCoder *)new NCompress::NDeflate::NDecoder::CNsisCOMCoder();
   }
   else if (*clsid == CLSID_CCompressDeflateEncoder)
   {
@@ -81,11 +92,16 @@ struct CDeflateMethodItem
   &CLSID_CCompress ## Name ## Decoder, \
   &CLSID_CCompress ## Name ## Encoder }
 
+#define METHOD_ITEM_DE(Name, id1, id2, UserName) \
+  { { 0x04, id1, id2 }, UserName, \
+  &CLSID_CCompress ## Name ## Decoder, NULL }
+
 
 static CDeflateMethodItem g_Methods[] =
 {
-  METHOD_ITEM(Deflate,  0x08, L"Deflate"),
-  METHOD_ITEM(Deflate64, 0x09, L"Deflate64")
+  METHOD_ITEM(Deflate, 0x08, L"Deflate"),
+  METHOD_ITEM(Deflate64, 0x09, L"Deflate64"),
+  METHOD_ITEM_DE(DeflateNsis,  0x09, 0x01, L"DeflateNSIS")
 };
 
 STDAPI GetNumberOfMethods(UINT32 *numMethods)
@@ -117,9 +133,12 @@ STDAPI GetMethodProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
         value->vt = VT_BSTR;
       return S_OK;
     case NMethodPropID::kEncoder:
-      if ((value->bstrVal = ::SysAllocStringByteLen(
+      if (method.Encoder)
+      {
+        if ((value->bstrVal = ::SysAllocStringByteLen(
           (const char *)method.Encoder, sizeof(GUID))) != 0)
         value->vt = VT_BSTR;
+      }
       return S_OK;
   }
   return S_OK;

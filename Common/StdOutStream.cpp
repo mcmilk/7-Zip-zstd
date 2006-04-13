@@ -31,6 +31,13 @@ bool CStdOutStream::Close()
   return !_streamIsOpen;
 }
 
+bool CStdOutStream::Flush()
+{
+  if(!_streamIsOpen)
+    return false;
+  return (fflush(_stream) == 0);
+}
+
 CStdOutStream::~CStdOutStream ()
 {
   Close();

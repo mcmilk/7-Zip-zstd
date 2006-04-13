@@ -140,7 +140,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   {
     case kpidPath:
     {
-      const UString s = NItemName::GetOSName2(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
+      const UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
       if (!s.IsEmpty())
         propVariant = s;
       break;

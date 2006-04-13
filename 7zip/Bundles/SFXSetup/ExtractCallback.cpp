@@ -23,9 +23,9 @@ static LPCWSTR kErrorTitle = L"7-Zip";
 static LPCWSTR kCantDeleteFile = L"Can not delete output file";
 static LPCWSTR kCantOpenFile = L"Can not open output file";
 static LPCWSTR kUnsupportedMethod = L"Unsupported Method";
-static LPCWSTR kCRCFailed = L"CRC Failed";
-static LPCWSTR kDataError = L"Data Error";
-// static LPCTSTR kUnknownError = TEXT("Unknown Error");
+// static LPCWSTR kCRCFailed = L"CRC Failed";
+// static LPCWSTR kDataError = L"Data Error";
+// static LPCWSTR kUnknownError = L""Unknown Error";
 
 void CExtractCallbackImp::Init(IInArchive *archiveHandler,
     const UString &directoryPath,   
@@ -33,7 +33,8 @@ void CExtractCallbackImp::Init(IInArchive *archiveHandler,
     const FILETIME &utcLastWriteTimeDefault,
     UInt32 attributesDefault)
 {
-  _numErrors = 0;
+  _message.Empty();
+  _isCorrupt = false;
   _itemDefaultName = itemDefaultName;
   _utcLastWriteTimeDefault = utcLastWriteTimeDefault;
   _attributesDefault = attributesDefault;
@@ -170,14 +171,8 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     {
       if (!NDirectory::DeleteFileAlways(fullProcessedPath))
       {
-        #ifdef _SILENT
         _message = kCantDeleteFile;
-        #else
-        MessageBoxW(0, kCantDeleteFile, kErrorTitle, 0);
-        #endif
-        // g_StdOut << GetOemString(fullProcessedPath);
-        // return E_ABORT;
-        return E_ABORT;
+        return E_FAIL;
       }
     }
 
@@ -187,12 +182,8 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
       CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
       if (!_outFileStreamSpec->Create(fullProcessedPath, true))
       {
-        #ifdef _SILENT
         _message = kCantOpenFile;
-        #else
-        MessageBoxW(0, kCantOpenFile, kErrorTitle, 0);
-        #endif
-        return E_ABORT;
+        return E_FAIL;
       }
       _outFileStream = outStreamLoc;
       *outStream = outStreamLoc.Detach();
@@ -228,30 +219,23 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
     }
     default:
     {
-      _numErrors++;
-      UString errorMessage;
       _outFileStream.Release();
       switch(resultEOperationResult)
       {
         case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
-          errorMessage = kUnsupportedMethod;
+          _message = kUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          errorMessage = kCRCFailed;
+          _isCorrupt = true;
+          // _message = kCRCFailed;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          errorMessage = kDataError;
+          _isCorrupt = true;
+          // _message = kDataError;
           break;
-        /*
         default:
-          errorMessage = kUnknownError;
-        */
+          _isCorrupt = true;
       }
-      #ifdef _SILENT
-      _message = errorMessage;
-      #else
-      MessageBoxW(0, errorMessage, kErrorTitle, 0);
-      #endif
       return E_FAIL;
     }
   }
@@ -263,4 +247,3 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
   return S_OK;
 }
 
- 
