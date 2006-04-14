@@ -479,7 +479,11 @@ void CMatchFinder::Normalize()
 {
   UInt32 subValue = _pos - _cyclicBufferSize;
   CIndex *items = _hash;
-  UInt32 numItems = (_hashSizeSum + _cyclicBufferSize * 2);
+  UInt32 numItems = (_hashSizeSum + _cyclicBufferSize 
+    #ifndef _HASH_CHAIN
+     * 2
+    #endif
+    );
   for (UInt32 i = 0; i < numItems; i++)
   {
     UInt32 value = items[i];
