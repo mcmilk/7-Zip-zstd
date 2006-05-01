@@ -2,7 +2,7 @@
   LzmaStateDecode.c
   LZMA Decoder (State version)
   
-  LZMA SDK 4.21 Copyright (c) 1999-2005 Igor Pavlov (2005-06-08)
+  LZMA SDK 4.40 Copyright (c) 1999-2006 Igor Pavlov (2006-05-01)
   http://www.7-zip.org/
 
   LZMA SDK is licensed under two licenses:

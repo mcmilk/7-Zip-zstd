@@ -54,8 +54,6 @@ public:
 
   void AddSymbol(UInt32 symbol) {  m_Items[symbol].Freq++; }
 
-  void SetFreqs(const UInt32 *freqs);
-  
   UInt32 GetPrice(const Byte *length) const 
   {  
     UInt32 price = 0;

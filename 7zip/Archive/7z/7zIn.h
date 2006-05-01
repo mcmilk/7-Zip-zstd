@@ -97,7 +97,6 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
     CNum folderIndex = FileIndexToFolderIndexMap[fileIndex];
     if (folderIndex >= 0)
     {
-      const CFolder &folderInfo = Folders[folderIndex];
       if (FolderStartFileIndex[folderIndex] == fileIndex)
         return GetFolderFullPackSize(folderIndex);
     }

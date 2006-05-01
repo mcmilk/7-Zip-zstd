@@ -82,11 +82,6 @@ public:
     ::MidFree(Buffer);
     Buffer = 0;
   }
-  void Init() 
-  { 
-    RG.Init(); 
-    Rep0 = 1;
-  }
   bool Alloc(UInt32 bufferSize) 
   {
     if (Buffer != 0 && BufferSize == bufferSize)
@@ -120,6 +115,8 @@ public:
   UInt32 GetLen2() { return RG.GetRnd(2 + (int)RG.GetRnd(2)); }
   void Generate()
   {
+    RG.Init(); 
+    Rep0 = 1;
     while(Pos < BufferSize)
     {
       if (GetRndBit() == 0 || Pos < 1)
@@ -413,7 +410,6 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize)
   encoderSpec->WriteCoderProperties(propStream);
 
   CBenchRandomGenerator rg;
-  rg.Init();
   if (!rg.Alloc(kBufferSize))
   {
     fprintf(f, "\nError: Can't allocate memory\n");

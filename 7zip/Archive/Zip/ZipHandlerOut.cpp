@@ -66,7 +66,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     updateItem.NewData = IntToBool(newData);
     updateItem.IndexInArchive = indexInArchive;
     updateItem.IndexInClient = i;
-    bool existInArchive = (indexInArchive != UInt32(-1));
+    // bool existInArchive = (indexInArchive != UInt32(-1));
     if (IntToBool(newProperties))
     {
       FILETIME utcFileTime;

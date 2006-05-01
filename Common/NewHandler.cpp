@@ -10,6 +10,7 @@
 
 #ifndef DEBUG_MEMORY_LEAK
 
+#ifdef _WIN32
 void * 
 #ifdef _MSC_VER
 __cdecl 
@@ -36,6 +37,7 @@ operator delete(void *p) throw()
   */
   ::free(p);
 }
+#endif
 
 #else
 

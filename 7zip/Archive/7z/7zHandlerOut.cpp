@@ -540,7 +540,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   // CMyComPtr<IUpdateCallback2> updateCallback2;
   // updateCallback->QueryInterface(&updateCallback2);
 
-  int index = 0;
   for(UInt32 i = 0; i < numItems; i++)
   {
     Int32 newData;

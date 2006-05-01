@@ -9,6 +9,7 @@ DIRS =  \
   GZip\~ \
   Iso\~ \
   Lzh\~ \
+  Nsis\~ \
   Rar\~ \
   RPM\~ \
   Split\~ \

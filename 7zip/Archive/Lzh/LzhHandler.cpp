@@ -140,9 +140,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   {
     case kpidPath:
     {
-      const UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
+      UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
       if (!s.IsEmpty())
+      {
+        if (s[s.Length() - 1] == WCHAR_PATH_SEPARATOR)
+           s.Delete(s.Length() - 1);
         propVariant = s;
+      }
       break;
     }
     case kpidIsFolder:

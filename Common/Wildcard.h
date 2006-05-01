@@ -75,7 +75,4 @@ public:
 
 }
 
-// return true if names differs only with '\' or '/' characters
-bool AreTheFileNamesDirDelimiterEqual(const UString &name1, const UString &name2);
-
 #endif

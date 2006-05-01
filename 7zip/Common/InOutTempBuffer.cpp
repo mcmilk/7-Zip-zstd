@@ -67,7 +67,6 @@ bool CInOutTempBuffer::FlushWrite()
 
 bool CInOutTempBuffer::Write(const void *data, UInt32 size)
 {
-  UInt32 numBytes = 0;
   if(_bufferPosition < kTmpBufferMemorySize)
   {
     UInt32 curSize = MyMin(kTmpBufferMemorySize - _bufferPosition, size);

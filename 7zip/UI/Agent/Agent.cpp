@@ -325,6 +325,13 @@ STDMETHODIMP CAgentFolder::GetPath(BSTR *path)
   return S_OK;
   COM_TRY_END
 }
+
+STDMETHODIMP CAgentFolder::SetFlatMode(Int32 flatMode)
+{
+  _flatMode = IntToBool(flatMode);
+  return S_OK;
+}
+
 #endif
 
 void CAgentFolder::GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const
@@ -389,13 +396,6 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
       realIndices.Size(), testMode, extractCallback);
   COM_TRY_END
 }
-
-STDMETHODIMP CAgentFolder::SetFlatMode(Int32 flatMode)
-{
-  _flatMode = IntToBool(flatMode);
-  return S_OK;
-}
-
 
 /////////////////////////////////////////
 // CAgent

@@ -3,13 +3,7 @@
 #ifndef __BRANCHX86_H
 #define __BRANCHX86_H
 
-#ifndef UInt32
-#define UInt32 unsigned int
-#endif
-
-#ifndef Byte
-#define Byte unsigned char
-#endif
+#include "BranchTypes.h"
 
 #define x86_Convert_Init(prevMask, prevPos) { prevMask = 0; prevPos = (UInt32)(-5); }
 

@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 39
+!define VERSION_MINOR 40
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -156,6 +156,7 @@ Section
   File gz.dll
   File iso.dll
   File lzh.dll
+  File nsis.dll
   File rar.dll
   File rpm.dll
   File split.dll
@@ -211,6 +212,7 @@ Section
   File ja.txt
   File ka.txt
   File ko.txt
+  File ku.txt
   File lt.txt
   File lv.txt
   File mk.txt
@@ -363,6 +365,7 @@ Section "Uninstall"
   Delete $INSTDIR\Formats\gz.dll
   Delete $INSTDIR\Formats\iso.dll
   Delete $INSTDIR\Formats\lzh.dll
+  Delete $INSTDIR\Formats\nsis.dll
   Delete $INSTDIR\Formats\rar.dll
   Delete $INSTDIR\Formats\rpm.dll
   Delete $INSTDIR\Formats\split.dll
@@ -418,6 +421,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
   Delete $INSTDIR\Lang\ko.txt
+  Delete $INSTDIR\Lang\ku.txt
   Delete $INSTDIR\Lang\lt.txt
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt

@@ -77,7 +77,6 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
-  bool mustBeClosed = true;
   // try
   {
     CInArchive archive;

@@ -272,6 +272,10 @@ SOURCE=..\LZ\LZOutWindow.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\Branch\BranchTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Branch\BranchX86.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -291,6 +295,10 @@ SOURCE=..\LZMA_C\LzmaDecode.c
 # Begin Source File
 
 SOURCE=..\LZMA_C\LzmaDecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\LZMA_C\LzmaTypes.h
 # End Source File
 # End Group
 # End Group

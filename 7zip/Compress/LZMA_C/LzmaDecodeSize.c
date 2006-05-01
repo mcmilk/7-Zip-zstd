@@ -2,7 +2,7 @@
   LzmaDecodeSize.c
   LZMA Decoder (optimized for Size version)
   
-  LZMA SDK 4.27 Copyright (c) 1999-2005 Igor Pavlov (2005-08-07)
+  LZMA SDK 4.40 Copyright (c) 1999-2006 Igor Pavlov (2006-05-01)
   http://www.7-zip.org/
 
   LZMA SDK is licensed under two licenses:
@@ -20,10 +20,6 @@
 */
 
 #include "LzmaDecode.h"
-
-#ifndef Byte
-#define Byte unsigned char
-#endif
 
 #define kNumTopBits 24
 #define kTopValue ((UInt32)1 << kNumTopBits)

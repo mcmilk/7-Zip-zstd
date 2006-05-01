@@ -1,4 +1,4 @@
-LZMA SDK 4.37
+LZMA SDK 4.40
 -------------
 
 LZMA SDK   Copyright (C) 1999-2006 Igor Pavlov
@@ -58,8 +58,10 @@ of LZMA SDK as update for previous versions.
 
 
 SPECIAL EXCEPTION #3: Igor Pavlov, as the author of this code, expressly permits 
-you to use code of examples (LzmaTest.c, LzmaStateTest.c, LzmaAlone.cpp, 
-LzmaAlone.cs, LzmaAlone.java) as public domain code. 
+you to use code of the following files: 
+BranchTypes.h, LzmaTypes.h, LzmaTest.c, LzmaStateTest.c, LzmaAlone.cpp, 
+LzmaAlone.cs, LzmaAlone.java
+as public domain code. 
 
 
 4) Proprietary license
@@ -149,6 +151,7 @@ C  - C / CPP files
         LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
         LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
         LzmaTest.c        - test application that decodes LZMA encoded file
+        LzmaTypes.h       - basic types for LZMA Decoder
         LzmaStateDecode.h - interface for LZMA decoding (State version)
         LzmaStateDecode.c - LZMA decoding on ANSI-C (State version)
         LzmaStateTest.c   - test application (State version)

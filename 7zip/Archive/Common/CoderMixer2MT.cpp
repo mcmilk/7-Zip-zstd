@@ -229,7 +229,6 @@ STDMETHODIMP CCoderMixer2MT::Init(ISequentialInStream **inStreams,
 {
   if (_coderInfoVector.Size() != _bindInfo.Coders.Size())
     throw 0;
-  UInt32 numInStreams = 0, numOutStreams = 0;
   int i;
   for(i = 0; i < _coderInfoVector.Size(); i++)
   {

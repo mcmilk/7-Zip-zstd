@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "39" ?>
+<?define VerMinor = "40" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -239,6 +239,7 @@
               <File Id="gz.dll" Name="gz.dll" />
               <File Id="iso.dll" Name="iso.dll" />
               <File Id="lzh.dll" Name="lzh.dll" />
+              <File Id="nsis.dll" Name="nsis.dll" />
               <File Id="rar.dll" Name="rar.dll" />
               <File Id="rpm.dll" Name="rpm.dll" />
               <File Id="split.dll" Name="split.dll" />
@@ -298,6 +299,7 @@
               <File Id="ja.txt" Name="ja.txt" />
               <File Id="ka.txt" Name="ka.txt" />
               <File Id="ko.txt" Name="ko.txt" />
+              <File Id="ku.txt" Name="ku.txt" />
               <File Id="lt.txt" Name="lt.txt" />
               <File Id="lv.txt" Name="lv.txt" />
               <File Id="mk.txt" Name="mk.txt" />

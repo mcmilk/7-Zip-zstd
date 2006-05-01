@@ -163,6 +163,10 @@ SOURCE=.\BranchCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\BranchTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\BranchX86.h
 # End Source File
 # Begin Source File

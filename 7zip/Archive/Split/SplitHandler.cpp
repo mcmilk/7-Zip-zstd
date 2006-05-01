@@ -149,7 +149,6 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   Close();
   if (openArchiveCallback == 0)
     return S_FALSE;
-  bool mustBeClosed = true;
   // try
   {
     CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;

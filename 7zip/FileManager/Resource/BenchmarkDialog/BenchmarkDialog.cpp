@@ -148,11 +148,6 @@ public:
     ::MidFree(Buffer);
     Buffer = 0;
   }
-  void Init() 
-  { 
-    RG.Init(); 
-    Rep0 = 1;
-  }
   bool Alloc(UInt32 bufferSize) 
   {
     if (Buffer != 0 && BufferSize == bufferSize)
@@ -186,6 +181,8 @@ public:
   UInt32 GetLen2() { return RG.GetRnd(2 + RG.GetRnd(2)); }
   void Generate()
   {
+    RG.Init(); 
+    Rep0 = 1;
     while(Pos < BufferSize)
     {
       if (GetRndBit() == 0 || Pos < 1)
@@ -665,7 +662,6 @@ DWORD CThreadBenchmark::Process()
   {
   SyncInfo->WaitCreating();
   CBenchRandomGenerator randomGenerator;
-  randomGenerator.Init();
   CMyComPtr<ICompressWriteCoderProperties> writeCoderProperties;
   Encoder.QueryInterface(IID_ICompressWriteCoderProperties, 
       &writeCoderProperties);

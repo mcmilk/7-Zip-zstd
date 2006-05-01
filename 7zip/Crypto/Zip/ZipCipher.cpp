@@ -47,7 +47,6 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
   CRandom random;
   random.Init(::GetTickCount());
 
-  UInt64 nowPos = 0;
   Byte header[kHeaderSize];
   for (int i = 0; i < kHeaderSize - 2; i++)
   {
@@ -80,7 +79,6 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
 {
-  UInt64 nowPos = 0;
   Byte header[kHeaderSize];
   UInt32 processedSize;
   RINOK(ReadStream(inStream, header, kHeaderSize, &processedSize));

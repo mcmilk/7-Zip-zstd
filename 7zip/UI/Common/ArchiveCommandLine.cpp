@@ -632,7 +632,6 @@ static void SetAddCommandOptions(
     const UStringVector &sv = parser[NKey::kVolume].PostStrings;
     for (int i = 0; i < sv.Size(); i++)
     {
-      const UString &s = sv[i];
       UInt64 size;
       if (!ParseComplexSize(sv[i], size))
         throw "incorrect volume size";

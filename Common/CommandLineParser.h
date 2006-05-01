@@ -67,16 +67,6 @@ struct CCommandForm
 int ParseCommand(int numCommandForms, const CCommandForm *commandForms, 
     const UString &commandString, UString &postString);
 
-struct CCommandSubCharsSet
-{
-  wchar_t *Chars;
-  bool EmptyAllowed;
-};
-
-// Returns: indices of finded chars; -1 if there is no match
-bool ParseSubCharsCommand(int numForms, const CCommandSubCharsSet *forms, 
-    const UString &commandString, CIntVector &indices);
-
 }
 
 #endif

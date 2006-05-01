@@ -58,12 +58,6 @@ void CEncoder::StartNewBlock()
     m_Items[i].Freq = 0;
 }
 
-void CEncoder::SetFreqs(const UInt32 *freqs)
-{
-  for (UInt32 i = 0; i < m_NumSymbols; i++)
-    m_Items[i].Freq = freqs[i];
-}
-
 static const int kSmallest = 1;
 
 // ===========================================================================

@@ -3,7 +3,7 @@
 #ifndef __BRANCH_IA64_H
 #define __BRANCH_IA64_H
 
-#include "Common/Types.h"
+#include "BranchTypes.h"
 
 UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding);
 
