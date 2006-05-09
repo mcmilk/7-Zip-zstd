@@ -85,11 +85,12 @@ void CState::Free()
 }
 
 #ifdef COMPRESS_BZIP2_MT
-void CState::FinishStream()
+void CState::FinishStream(bool needLeave)
 {
   Decoder->StreamWasFinished = true;
   StreamWasFinishedEvent.Set();
-  Decoder->CS.Leave();
+  if (needLeave)
+    Decoder->CS.Leave();
   Decoder->CanStartWaitingEvent.Lock();
   WaitingWasStartedEvent.Set();
 }
@@ -106,10 +107,11 @@ DWORD CState::ThreadFunc()
     }
     if (Decoder->StreamWasFinished)
     {
-      FinishStream();
+      FinishStream(true);
       continue;
     }
     HRESULT res = S_OK;
+    bool neadLeave = true;
     try 
     {
       UInt32 blockIndex = Decoder->NextBlockIndex;
@@ -124,13 +126,13 @@ DWORD CState::ThreadFunc()
       if (res != S_OK)
       {
         Decoder->Result = res;
-        FinishStream();
+        FinishStream(true);
         continue;
       }
       if (wasFinished)
       {
         Decoder->Result = res;
-        FinishStream();
+        FinishStream(true);
         continue;
       }
 
@@ -139,9 +141,10 @@ DWORD CState::ThreadFunc()
       if (res != S_OK)
       {
         Decoder->Result = res;
-        FinishStream();
+        FinishStream(true);
         continue;
       }
+      neadLeave = false;
       Decoder->CS.Leave();
 
       DecodeBlock1();
@@ -151,7 +154,7 @@ DWORD CState::ThreadFunc()
       if (DecodeBlock2(Decoder->m_OutStream) != crc)
       {
         Decoder->Result = S_FALSE;
-        FinishStream();
+        FinishStream(neadLeave);
         continue;
       }
 
@@ -169,7 +172,7 @@ DWORD CState::ThreadFunc()
     if (res != S_OK)
     {
       Decoder->Result = res;
-      FinishStream();
+      FinishStream(neadLeave);
       continue;
     }
   }

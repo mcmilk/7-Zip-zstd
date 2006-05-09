@@ -167,17 +167,6 @@ private:
   bool _compressHeadersFull;
   bool _encryptHeaders;
 
-  bool _copyMode;
-  
-  UInt32 _defaultDicSize;
-  UInt32 _defaultAlgorithm;
-  UInt32 _defaultFastBytes;
-  UInt32 _defaultPasses;
-  UString _defaultMatchFinder;
-
-  UInt32 _defaultPpmdMemSize;
-  UInt32 _defaultPpmdOrder;
-
   bool _autoFilter;
   UInt32 _level;
 
@@ -221,30 +210,6 @@ private:
     _solidExtension = false;
     _numSolidBytesDefined = false;
   }
-  /*
-  void InitSolidPart()
-  {
-    if (_numSolidFiles <= 1)
-      InitSolidFiles();
-  }
-  */
-  void SetSolidBytesLimit()
-  {
-    _numSolidBytes = ((UInt64)_defaultDicSize) << 7;
-    const UInt64 kMinSize = (1<<24);
-    if (_numSolidBytes < kMinSize)
-      _numSolidBytes = kMinSize;
-  }
-  void CheckAndSetSolidBytesLimit()
-  {
-    if (!_numSolidBytesDefined)
-    {
-      if (_copyMode)
-        _numSolidBytes = 0;
-      else
-        SetSolidBytesLimit();
-    }
-  }
 
   void Init()
   {
@@ -255,22 +220,11 @@ private:
     #ifdef COMPRESS_MT
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();
     #endif
-    _copyMode = false;
-
-    _defaultDicSize =
-    _defaultAlgorithm =
-    _defaultFastBytes =
-    _defaultPasses = 
-    _defaultPpmdMemSize = 
-    _defaultPpmdOrder = 0xFFFFFFFF;
-    _defaultMatchFinder.Empty();
-
 
     _level = 5;
     _autoFilter = true;
     _volumeMode = false;
     InitSolid();
-    SetSolidBytesLimit();
   }
   #endif
 };

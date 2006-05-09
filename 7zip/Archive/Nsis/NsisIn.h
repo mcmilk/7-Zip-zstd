@@ -11,6 +11,8 @@
 
 #include "NsisDecode.h"
 
+// #define NSIS_SCRIPT
+
 namespace NArchive {
 namespace NNsis {
 
@@ -128,7 +130,9 @@ public:
   UInt32 DictionarySize;
   bool FilterFlag;
 
+  #ifdef NSIS_SCRIPT
   AString Script;
+  #endif
   UInt32 GetOffset() const { return IsSolid ? 4 : 0; }
   UInt64 GetDataPos(int index)
   {

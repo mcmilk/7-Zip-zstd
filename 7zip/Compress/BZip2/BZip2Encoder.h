@@ -106,7 +106,7 @@ private:
 
   int m_BlockIndex;
 
-  void FinishStream();
+  void FinishStream(bool needLeave);
 
   void WriteBits2(UInt32 value, UInt32 numBits);
   void WriteByte2(Byte b);

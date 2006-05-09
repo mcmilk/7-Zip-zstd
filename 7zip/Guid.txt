@@ -115,6 +115,7 @@ Handler GUIDs:
 07 7z
 08 Cab
 09 Nsis
+0A Lzma
 
 E7 Iso
 E8 Bkf

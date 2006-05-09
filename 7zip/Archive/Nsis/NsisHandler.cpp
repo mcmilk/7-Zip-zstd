@@ -100,7 +100,11 @@ STDMETHODIMP CHandler::Close()
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  *numItems = _archive.Items.Size() + 1;
+  *numItems = _archive.Items.Size()
+  #ifdef NSIS_SCRIPT
+    + 1
+  #endif
+  ;
   return S_OK;
 }
 
@@ -179,6 +183,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
+  #ifdef NSIS_SCRIPT
   if (index >= (UInt32)_archive.Items.Size())
   {
     switch(propID)
@@ -199,6 +204,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     }
   }
   else
+  #endif
   {
     const CItem &item = _archive.Items[index];
     switch(propID)
@@ -277,9 +283,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   for(i = 0; i < numItems; i++)
   {
     UInt32 index = (allFilesMode ? i : indices[i]);
+    #ifdef NSIS_SCRIPT
     if (index >= (UInt32)_archive.Items.Size())
       totalSize += _archive.Script.Length();
     else
+    #endif
     {
       UInt32 size;
       if (_archive.IsSolid)
@@ -321,6 +329,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
+    #ifdef NSIS_SCRIPT
     if (index >= (UInt32)_archive.Items.Size())
     {
       currentItemSize = _archive.Script.Length();
@@ -331,6 +340,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         RINOK(realOutStream->Write((const char *)_archive.Script, (UInt32)_archive.Script.Length(), NULL));
     }
     else
+    #endif
     {
       const CItem &item = _archive.Items[index];
       

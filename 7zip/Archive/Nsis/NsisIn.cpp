@@ -559,14 +559,54 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
     e.Which = ReadUInt32();
     for (UInt32 j = 0; j < kNumEntryParams; j++)
       e.Params[j] = ReadUInt32();
+    #ifdef NSIS_SCRIPT
     if (e.Which != EW_PUSHPOP && e.Which < sizeof(kCommandPairs) / sizeof(kCommandPairs[0]))
     {
       const CCommandPair &pair = kCommandPairs[e.Which];
       Script += pair.Name;
     }
+    #endif
 
     switch (e.Which)
     {
+      case EW_CREATEDIR:
+      {
+        prefix.Empty();
+        prefix = ReadString2(e.Params[0]);
+        #ifdef NSIS_SCRIPT
+        Script += " ";
+        Script += prefix;
+        #endif
+        break;
+      }
+
+      case EW_EXTRACTFILE:
+      {
+        CItem item;
+        item.Prefix = prefix;
+        UInt32 overwriteFlag = e.Params[0];
+        item.Name = ReadString2(e.Params[1]);
+        item.Pos = e.Params[2];
+        item.DateTime.dwLowDateTime = e.Params[3];
+        item.DateTime.dwHighDateTime = e.Params[4];
+        UInt32 allowIgnore = e.Params[5];
+        if (Items.Size() > 0)
+        {
+          /*
+          if (item.Pos == Items.Back().Pos)
+            continue;
+          */
+        }
+        Items.Add(item);
+        #ifdef NSIS_SCRIPT
+        Script += " ";
+        Script += item.Name;
+        #endif
+        break;
+      }
+
+
+      #ifdef NSIS_SCRIPT
       case EW_UPDATETEXT:
       {
         Script += " ";
@@ -581,14 +621,6 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         Script += ReadString2(e.Params[0]);
         Script += " ";
         Script += UIntToString(e.Params[1]);
-        break;
-      }
-      case EW_CREATEDIR:
-      {
-        prefix.Empty();
-        Script += " ";
-        prefix = ReadString2(e.Params[0]);
-        Script += prefix;
         break;
       }
       case EW_IFFILEEXISTS:
@@ -639,28 +671,6 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         break;
       }
 
-      case EW_EXTRACTFILE:
-      {
-        CItem item;
-        item.Prefix = prefix;
-        UInt32 overwriteFlag = e.Params[0];
-        item.Name = ReadString2(e.Params[1]);
-        item.Pos = e.Params[2];
-        item.DateTime.dwLowDateTime = e.Params[3];
-        item.DateTime.dwHighDateTime = e.Params[4];
-        UInt32 allowIgnore = e.Params[5];
-        if (Items.Size() > 0)
-        {
-          /*
-          if (item.Pos == Items.Back().Pos)
-            continue;
-          */
-        }
-        Items.Add(item);
-        Script += " ";
-        Script += item.Name;
-        break;
-      }
       case EW_DELETEFILE:
       {
         UInt64 flag = e.Params[1];
@@ -871,8 +881,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         }
         Script += e.GetParamsString(numParams);
       }
+      #endif
     }
+    #ifdef NSIS_SCRIPT
     Script += kCrLf;
+    #endif
   }
 
   {
@@ -1138,7 +1151,9 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
 
 void CInArchive::Clear()
 {
+  #ifdef NSIS_SCRIPT
   Script.Empty();
+  #endif
   Items.Clear();
 }
 

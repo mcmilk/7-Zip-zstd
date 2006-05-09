@@ -300,7 +300,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     outStreamSpec->InitCRC();
 
-    switch(m_Item.CompressionMethod)
+    switch(item.CompressionMethod)
     {
       case NFileHeader::NCompressionMethod::kDeflate:
       {

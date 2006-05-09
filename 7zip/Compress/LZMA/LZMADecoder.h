@@ -145,6 +145,7 @@ public:
 class CDecoder: 
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  public ICompressGetInStreamProcessedSize,
   #ifdef _ST_MODE
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
@@ -187,14 +188,16 @@ class CDecoder:
 public:
 
   #ifdef _ST_MODE
-  MY_UNKNOWN_IMP4(
+  MY_UNKNOWN_IMP5(
       ICompressSetDecoderProperties2, 
+      ICompressGetInStreamProcessedSize,
       ICompressSetInStream, 
       ICompressSetOutStreamSize, 
       ISequentialInStream)
   #else
-  MY_UNKNOWN_IMP1(
-      ICompressSetDecoderProperties2)
+  MY_UNKNOWN_IMP2(
+      ICompressSetDecoderProperties2,
+      ICompressGetInStreamProcessedSize)
   #endif
 
   void ReleaseStreams()

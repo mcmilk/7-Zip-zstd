@@ -775,6 +775,17 @@ void CPanel::AddToArchive()
   // KillSelection();
 }
 
+static UString GetSubFolderNameForExtract(const UString &archiveName)
+{
+  int slashPos = archiveName.ReverseFind(L'\\');
+  int dotPos = archiveName.ReverseFind(L'.');
+  if (dotPos < 0 || slashPos > dotPos)
+    return archiveName + UString(L"~");
+  UString res = archiveName.Left(dotPos);
+  res.TrimRight();
+  return res;
+}
+
 void CPanel::ExtractArchives()
 {
   if (_parentFolders.Size() > 0)
@@ -800,7 +811,12 @@ void CPanel::ExtractArchives()
     }
     paths.Add(_currentFolderPrefix + GetItemRelPath(index));
   }
-  ::ExtractArchives(paths, _currentFolderPrefix, true);
+  UString folderName;
+  if (indices.Size() == 1)
+    folderName = GetSubFolderNameForExtract(GetItemRelPath(indices[0]));
+  else
+    folderName = L"*";
+  ::ExtractArchives(paths, _currentFolderPrefix + folderName + UString(L"\\"), true);
 }
 
 void CPanel::TestArchives()

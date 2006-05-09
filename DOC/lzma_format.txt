@@ -1,0 +1,28 @@
+6 Signature 0xFF 'L' 'Z' 'M' 'A' 0x00 
+1 Flags 
+  0 Has CRC16 of the header 
+  1 Has CRC32 of the data 
+  2 Has filter 
+  3 Need initial dictionary 
+  4-7 Reserved, *must* be zero for now. 
+1 CompressionMethod
+  0 No compression
+  1 Lzma
+1 Filter ID 
+  0 none
+  1 BCJ
+2 LZMA properties
+  1 (uint8_t)((pb * 5 + lp) * 9 + lc) (like in LZMA_Alone) 
+  1 Dictionary size. 
+    eppnnnnn
+      e: 1 - there is end marker
+    Dictionary size = (1 << nnnnn) + (pp) << (nnnnn - 2);
+2 CRC16 of the header 
+
+Compressed data
+... ... 
+(-16) 4 CRC32 of the uncompressed data as big endian uint32_t 
+-12 8 Uncompressed size as big endian uint64_t 
+-4 4 Footer magic bytes: 0x0A 'I' 'P' 0x0A 
+0 (End of file; the last byte of the file is at offset -1.) 
+ 

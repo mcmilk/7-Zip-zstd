@@ -246,14 +246,12 @@ static bool MyInsertMenu(CMenu &menu, int pos, UINT id, const UString &s)
 
 static UString GetSubFolderNameForExtract(const UString &archiveName)
 {
-  int dotPos = archiveName.ReverseFind('.');
-  if (dotPos >= 0)
-  {
-    UString res = archiveName.Left(dotPos);
-    res.TrimRight();
-    return res;
-  }
-  return archiveName + UString(L"~");
+  int dotPos = archiveName.ReverseFind(L'.');
+  if (dotPos < 0)
+    return archiveName + UString(L"~");
+  UString res = archiveName.Left(dotPos);
+  res.TrimRight();
+  return res;
 }
 
 static UString GetReducedString(const UString &s)

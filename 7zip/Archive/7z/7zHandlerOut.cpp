@@ -117,6 +117,9 @@ static const UInt32 kDictionaryForHeaders = 1 << 20;
 static const UInt32 kNumFastBytesForHeaders = 273;
 static const UInt32 kAlgorithmForHeaders = kLzmaAlgorithmX5;
 
+static bool IsCopyMethod(const UString &methodName)
+  { return (methodName.CompareNoCase(kCopyMethod) == 0); }
+
 static bool IsLZMAMethod(const UString &methodName)
   { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }
 static bool IsLZMethod(const UString &methodName)
@@ -304,47 +307,45 @@ HRESULT CHandler::SetCompressionMethod(
   #endif
  
 
+  UInt32 level = _level;
+  
   if (methodsInfo.IsEmpty())
   {
     COneMethodInfo oneMethodInfo;
-    oneMethodInfo.MethodName = _copyMode ? kCopyMethod : kDefaultMethodName;
+    oneMethodInfo.MethodName = ((level == 0) ? kCopyMethod : kDefaultMethodName);
     methodsInfo.Add(oneMethodInfo);
   }
 
-  UInt32 level = _level;
-  
+  bool needSolid = false;
   for(int i = 0; i < methodsInfo.Size(); i++)
   {
     COneMethodInfo &oneMethodInfo = methodsInfo[i];
     if (oneMethodInfo.MethodName.IsEmpty())
       oneMethodInfo.MethodName = kDefaultMethodName;
 
+    if (!IsCopyMethod(oneMethodInfo.MethodName))
+      needSolid = true;
+    
     if (IsLZMAMethod(oneMethodInfo.MethodName))
     {
-      UInt32 dicSize = _defaultDicSize;
-      if (dicSize == 0xFFFFFFFF)
-        dicSize = (level >= 9 ? kLzmaDicSizeX9 : 
+      UInt32 dicSize = 
+                  (level >= 9 ? kLzmaDicSizeX9 : 
                   (level >= 7 ? kLzmaDicSizeX7 : 
                   (level >= 5 ? kLzmaDicSizeX5 : 
                   (level >= 3 ? kLzmaDicSizeX3 : 
                                 kLzmaDicSizeX1)))); 
 
-      UInt32 algorithm = _defaultAlgorithm;
-      if (algorithm == 0xFFFFFFFF)
-        algorithm = (level >= 5 ? kLzmaAlgorithmX5 : 
+      UInt32 algorithm = 
+                    (level >= 5 ? kLzmaAlgorithmX5 : 
                                   kLzmaAlgorithmX1); 
 
-      UInt32 fastBytes = _defaultFastBytes;
-      if (fastBytes == 0xFFFFFFFF)
-        fastBytes = (level >= 7 ? kLzmaFastBytesX7 : 
+      UInt32 fastBytes = 
+                    (level >= 7 ? kLzmaFastBytesX7 : 
                                   kLzmaFastBytesX1); 
 
-      const wchar_t *matchFinder = 0;
-      if (_defaultMatchFinder.IsEmpty())
-        matchFinder = (level >= 5 ? kLzmaMatchFinderX5 : 
+      const wchar_t *matchFinder = 
+                      (level >= 5 ? kLzmaMatchFinderX5 : 
                                     kLzmaMatchFinderX1); 
-      else
-        matchFinder = (const wchar_t *)_defaultMatchFinder;
 
       SetOneMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
       SetOneMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algorithm);
@@ -356,15 +357,13 @@ HRESULT CHandler::SetCompressionMethod(
     }
     else if (IsDeflateMethod(oneMethodInfo.MethodName))
     {
-      UInt32 fastBytes = _defaultFastBytes;
-      if (fastBytes == 0xFFFFFFFF)
-        fastBytes = (level >= 9 ? kDeflateFastBytesX9 : 
+      UInt32 fastBytes = 
+                    (level >= 9 ? kDeflateFastBytesX9 : 
                     (level >= 7 ? kDeflateFastBytesX7 : 
                                   kDeflateFastBytesX1));
 
-      UInt32 numPasses = _defaultPasses;
-      if (numPasses == 0xFFFFFFFF)
-        numPasses = (level >= 9 ? kDeflatePassesX9 :  
+      UInt32 numPasses = 
+                    (level >= 9 ? kDeflatePassesX9 :  
                     (level >= 7 ? kDeflatePassesX7 : 
                                   kDeflatePassesX1));
 
@@ -373,15 +372,13 @@ HRESULT CHandler::SetCompressionMethod(
     }
     else if (IsBZip2Method(oneMethodInfo.MethodName))
     {
-      UInt32 numPasses = _defaultPasses;
-      if (numPasses == 0xFFFFFFFF)
-        numPasses = (level >= 9 ? kBZip2NumPassesX9 : 
+      UInt32 numPasses = 
+                    (level >= 9 ? kBZip2NumPassesX9 : 
                     (level >= 7 ? kBZip2NumPassesX7 :  
                                   kBZip2NumPassesX1));
 
-      UInt32 dicSize = _defaultDicSize;
-      if (dicSize == 0xFFFFFFFF)
-        dicSize = (level >= 5 ? kBZip2DicSizeX5 : 
+      UInt32 dicSize = 
+                  (level >= 5 ? kBZip2DicSizeX5 : 
                   (level >= 3 ? kBZip2DicSizeX3 : 
                                 kBZip2DicSizeX1));
 
@@ -393,16 +390,14 @@ HRESULT CHandler::SetCompressionMethod(
     }
     else if (IsPpmdMethod(oneMethodInfo.MethodName))
     {
-      UInt32 useMemSize = _defaultPpmdMemSize;
-      if (useMemSize == 0xFFFFFFFF)
-        useMemSize = (level >= 9 ? kPpmdMemSizeX9 : 
+      UInt32 useMemSize = 
+                     (level >= 9 ? kPpmdMemSizeX9 : 
                      (level >= 7 ? kPpmdMemSizeX7 : 
                      (level >= 5 ? kPpmdMemSizeX5 : 
                                    kPpmdMemSizeX1)));
 
-      UInt32 order = _defaultPpmdOrder;
-      if (order == 0xFFFFFFFF)
-        order = (level >= 9 ? kPpmdOrderX9 : 
+      UInt32 order = 
+                (level >= 9 ? kPpmdOrderX9 : 
                 (level >= 7 ? kPpmdOrderX7 : 
                 (level >= 5 ? kPpmdOrderX5 : 
                               kPpmdOrderX1)));
@@ -509,6 +504,30 @@ HRESULT CHandler::SetCompressionMethod(
       return E_FAIL;
     
     methodMode.Methods.Add(methodFull);
+
+    if (!_numSolidBytesDefined)
+    {
+      for (int j = 0; j < methodFull.CoderProperties.Size(); j++)
+      {
+        const CProperty &prop = methodFull.CoderProperties[j];
+        if ((prop.PropID == NCoderPropID::kDictionarySize || 
+             prop.PropID == NCoderPropID::kUsedMemorySize) && prop.Value.vt == VT_UI4)
+        {
+          _numSolidBytes = ((UInt64)prop.Value.ulVal) << 7;
+          const UInt64 kMinSize = (1 << 24);
+          if (_numSolidBytes < kMinSize)
+            _numSolidBytes = kMinSize;
+          _numSolidBytesDefined = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!needSolid && !_numSolidBytesDefined)
+  {
+    _numSolidBytesDefined = true;
+    _numSolidBytes  = 0;
   }
   return S_OK;
 }
@@ -671,27 +690,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (updateItem.Size != 0 && updateItem.IsAnti)
         return E_INVALIDARG;
     }
-    /*
-    else
-      thereIsCopyData = true;
-    */
-
     updateItems.Add(updateItem);
   }
-
-  /*
-  if (thereIsCopyData)
-  {
-    for(int i = 0; i < _database.NumUnPackStreamsVector.Size(); i++)
-      if (_database.NumUnPackStreamsVector[i] != 1)
-        return E_NOTIMPL;
-    if (!_solidIsSpecified)
-      _solid = false;
-    if (_solid)
-      return E_NOTIMPL;
-  }
-  */
-
 
   CCompressionMethodMode methodMode, headerMethod;
   RINOK(SetCompressionMethod(methodMode, headerMethod));
@@ -746,29 +746,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       updateItems, outStream, updateCallback, options);
   COM_TRY_END
 }
-
-/*
-static HRESULT SetComplexProperty(bool &boolStatus, UInt32 &number, 
-    const PROPVARIANT &value)
-{
-  switch(value.vt)
-  {
-    case VT_EMPTY:
-    case VT_BSTR:
-    {
-      RINOK(SetBoolProperty(boolStatus, value));
-      return S_OK;
-    }
-    case VT_UI4:
-      boolStatus = true;
-      number = (value.ulVal);
-      break;
-    default:
-      return E_INVALIDARG;
-  }
-  return S_OK;
-}
-*/
 
 static HRESULT GetBindInfoPart(UString &srcString, UInt32 &coder, UInt32 &stream)
 {
@@ -988,6 +965,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
   const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
   #endif
 
+  UInt32 mainDicSize = 0xFFFFFFFF;
+  UInt32 mainDicMethodIndex = 0xFFFFFFFF;
+
   UInt32 minNumber = 0;
 
   for (int i = 0; i < numProperties; i++)
@@ -1002,11 +982,8 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     if (name[0] == 'X')
     {
       name.Delete(0);
-
       _level = 9;
       RINOK(ParsePropValue(name, value, _level));
-      if (_level == 0)
-        _copyMode = true;
       continue;
     }
 
@@ -1109,6 +1086,8 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         property.PropID = NCoderPropID::kDictionarySize;
         property.Value = dicSize;
         oneMethodInfo.CoderProperties.Add(property);
+        if (number <= mainDicMethodIndex)
+          mainDicSize = dicSize;
       }
       else if (realName.Left(3).CompareNoCase(L"MEM") == 0)
       {
@@ -1117,6 +1096,8 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         property.PropID = NCoderPropID::kUsedMemorySize;
         property.Value = dicSize;
         oneMethodInfo.CoderProperties.Add(property);
+        if (number <= mainDicMethodIndex)
+          mainDicSize = dicSize;
       }
       else
       {
@@ -1134,7 +1115,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
     }
   }
-  CheckAndSetSolidBytesLimit();
 
   return S_OK;
   COM_TRY_END

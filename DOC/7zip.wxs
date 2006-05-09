@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "40" ?>
+<?define VerMinor = "41" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -370,7 +370,7 @@
         <ComponentRef Id="InstallRegAppPath" />
 
       </Feature>
-      <Feature Id="LanguageFiles" Title="Localization files" Description="Localization files for 62 languages." 
+      <Feature Id="LanguageFiles" Title="Localization files" Description="Localization files for 63 languages." 
           Level="1" AllowAdvertise="no">
         <ComponentRef Id="Lang" />
       </Feature>

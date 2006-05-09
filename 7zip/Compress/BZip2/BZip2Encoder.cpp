@@ -46,11 +46,12 @@ void CThreadInfo::Free()
 }
 
 #ifdef COMPRESS_BZIP2_MT
-void CThreadInfo::FinishStream()
+void CThreadInfo::FinishStream(bool needLeave)
 {
   Encoder->StreamWasFinished = true;
   StreamWasFinishedEvent.Set();
-  Encoder->CS.Leave();
+  if (needLeave)
+    Encoder->CS.Leave();
   Encoder->CanStartWaitingEvent.Lock();
   WaitingWasStartedEvent.Set();
 }
@@ -67,10 +68,11 @@ DWORD CThreadInfo::ThreadFunc()
     }
     if (Encoder->StreamWasFinished)
     {
-      FinishStream();
+      FinishStream(true);
       continue;
     }
     HRESULT res = S_OK;
+    bool needLeave = true;
     try 
     {
       UInt32 blockSize = Encoder->ReadRleBlock(m_Block);
@@ -80,10 +82,11 @@ DWORD CThreadInfo::ThreadFunc()
         Encoder->NextBlockIndex = 0;
       if (blockSize == 0)
       {
-        FinishStream();
+        FinishStream(true);
         continue;
       }
       Encoder->CS.Leave();
+      needLeave = false;
       res = EncodeBlock3(blockSize);
     }
     catch(const CInBufferException &e)  { res = e.ErrorCode; }
@@ -92,7 +95,7 @@ DWORD CThreadInfo::ThreadFunc()
     if (res != S_OK)
     {
       Encoder->Result = res;
-      FinishStream();
+      FinishStream(needLeave);
       continue;
     }
   }
