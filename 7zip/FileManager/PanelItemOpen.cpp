@@ -434,11 +434,15 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   CRecordVector<UInt32> indices;
   indices.Add(index);
 
-  HRESULT result = CopyTo(indices, tempDirNorm, false, true, 0);
+  UStringVector messages;
+  HRESULT result = CopyTo(indices, tempDirNorm, false, true, &messages);
 
-  if ((result != S_OK && result != E_ABORT))
+  if (!messages.IsEmpty())
+    return;
+  if (result != S_OK)
   {
-    MessageBoxError(result);
+    if (result != E_ABORT)
+      MessageBoxError(result);
     return;
   }
 
