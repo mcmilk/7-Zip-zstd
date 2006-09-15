@@ -407,7 +407,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   
   const CActionSet *actionSet = &kAddActionSet;
 
-  while(true)
+  for (;;)
   {
     AString archiveNameA = UnicodeStringToMultiByte(archiveName, CP_OEMCP);
     const int kYSize = 16;

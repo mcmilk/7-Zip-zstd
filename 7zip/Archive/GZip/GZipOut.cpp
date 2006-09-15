@@ -48,7 +48,7 @@ HRESULT COutArchive::WriteHeader(const CItem &item)
 {
   RINOK(WriteUInt16(kSignature));
   RINOK(WriteByte(item.CompressionMethod));
-  RINOK(WriteByte(item.Flags & NFileHeader::NFlags::kNameIsPresent));
+  RINOK(WriteByte((Byte)(item.Flags & NFileHeader::NFlags::kNameIsPresent)));
   RINOK(WriteUInt32(item.Time));
   RINOK(WriteByte(item.ExtraFlags));
   RINOK(WriteByte(item.HostOS));

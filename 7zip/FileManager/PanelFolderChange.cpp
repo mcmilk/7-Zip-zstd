@@ -216,7 +216,7 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
 }
 #endif
 
-void CPanel::OnComboBoxCommand(UINT code, LPARAM &param)
+void CPanel::OnComboBoxCommand(UINT /* code */, LPARAM & /* param */)
 {
   /*
   if (code == CBN_SELENDOK)

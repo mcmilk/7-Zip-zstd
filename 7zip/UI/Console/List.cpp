@@ -130,7 +130,7 @@ void PrintSpaces(int numSpaces)
 void PrintString(EAdjustment adjustment, int width, const UString &textString)
 {
   const int numSpaces = width - textString.Length();
-  int numLeftSpaces;
+  int numLeftSpaces = 0;
   switch (adjustment)
   {
     case kLeft:

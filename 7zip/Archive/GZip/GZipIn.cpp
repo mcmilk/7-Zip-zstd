@@ -55,7 +55,7 @@ HRESULT CInArchive::ReadUInt32(ISequentialInStream *inStream, UInt32 &value)
 HRESULT CInArchive::ReadZeroTerminatedString(ISequentialInStream *inStream, AString &resString, CCRC &crc)
 {
   resString.Empty();
-  while(true)
+  for (;;)
   {
     Byte c;
     RINOK(ReadByte(inStream, c));

@@ -85,7 +85,7 @@ STDMETHODIMP CNetFolder::LoadItems()
   _items.Clear();
   CEnum enumerator;
 
-  while(true)
+  for (;;)
   {
     DWORD result = enumerator.Open(
       RESOURCE_GLOBALNET,
@@ -104,7 +104,7 @@ STDMETHODIMP CNetFolder::LoadItems()
       return result;
   }
 
-  while(true)
+  for (;;)
   {  
     CResourceEx resource;
     DWORD result = enumerator.Next(resource);
@@ -212,7 +212,7 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
+STDMETHODIMP CNetFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder ** /* resultFolder */)
 {
   return E_NOTIMPL;
 }

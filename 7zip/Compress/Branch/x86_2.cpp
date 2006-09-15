@@ -58,7 +58,7 @@ HRESULT CBCJ2_x86_Encoder::CodeReal(ISequentialInStream **inStreams,
       const UInt64 **inSizes,
       UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UInt64 **outSizes,
+      const UInt64 ** /* outSizes */,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress)
 {
@@ -69,7 +69,7 @@ HRESULT CBCJ2_x86_Encoder::CodeReal(ISequentialInStream **inStreams,
     return E_OUTOFMEMORY;
 
   bool sizeIsDefined = false;
-  UInt64 inSize;
+  UInt64 inSize = 0;
   if (inSizes != NULL)
     if (inSizes[0] != NULL)
     {
@@ -109,10 +109,10 @@ HRESULT CBCJ2_x86_Encoder::CodeReal(ISequentialInStream **inStreams,
   UInt64 subStreamStartPos  = 0;
   UInt64 subStreamEndPos = 0;
 
-  while(true)
+  for (;;)
   {
     UInt32 processedSize = 0;
-    while(true)
+    for (;;)
     {
       UInt32 size = kBufferSize - (bufferPos + processedSize);
       UInt32 processedSizeLoc;
@@ -279,10 +279,10 @@ STDMETHODIMP CBCJ2_x86_Encoder::Code(ISequentialInStream **inStreams,
 #endif
 
 HRESULT CBCJ2_x86_Decoder::CodeReal(ISequentialInStream **inStreams,
-      const UInt64 **inSizes,
+      const UInt64 ** /* inSizes */,
       UInt32 numInStreams,
       ISequentialOutStream **outStreams,
-      const UInt64 **outSizes,
+      const UInt64 ** /* outSizes */,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress)
 {
@@ -321,7 +321,7 @@ HRESULT CBCJ2_x86_Decoder::CodeReal(ISequentialInStream **inStreams,
 
   Byte prevByte = 0;
   UInt32 processedBytes = 0;
-  while(true)
+  for (;;)
   {
     if (processedBytes > (1 << 20) && progress != NULL)
     {
@@ -386,7 +386,7 @@ HRESULT CBCJ2_x86_Decoder::CodeReal(ISequentialInStream **inStreams,
       _outStream.WriteByte((Byte)(dest >> 8));
       _outStream.WriteByte((Byte)(dest >> 16));
       _outStream.WriteByte((Byte)(dest >> 24));
-      prevByte = (dest >> 24);
+      prevByte = (Byte)(dest >> 24);
       processedBytes += 4;
     }
     else

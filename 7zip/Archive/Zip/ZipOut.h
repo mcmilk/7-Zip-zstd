@@ -29,14 +29,15 @@ class COutArchive
 
   void WriteExtraHeader(const CItem &item);
   void WriteCentralHeader(const CItem &item);
+  void WriteExtra(const CExtraBlock &extra);
 public:
   void Create(IOutStream *outStream);
   void MoveBasePosition(UInt64 distanceToMove);
   UInt64 GetCurrentPosition() const { return m_BasePosition; };
-  void PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64);
-  void PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize);
-  void PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize);
-  HRESULT WriteLocalHeader(const CItem &item);
+  void PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64, bool aesEncryption);
+  void PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize, bool aesEncryption);
+  void PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize, bool aesEncryption);
+  HRESULT WriteLocalHeader(const CLocalItem &item);
 
   void WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer &comment);
 

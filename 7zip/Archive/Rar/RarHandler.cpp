@@ -360,7 +360,6 @@ public:
     }
 
     int numLetters = 1;
-    bool splitStyle = false;
     if (basePart.Right(numLetters) == L"1")
     {
       while (numLetters < basePart.Length())
@@ -432,7 +431,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       openArchiveCallbackWrap.QueryInterface(IID_ICryptoGetTextPassword, &getTextPassword);
     }
 
-    while(true)
+    for (;;)
     {
       CMyComPtr<IInStream> inStream;
       if (!_archives.IsEmpty())
@@ -475,7 +474,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         archive.GetArchiveInfo(_archiveInfo);
      
       CItemEx item;
-      while(true)
+      for (;;)
       {
         HRESULT result = archive.GetNextItem(item, getTextPassword);
         if (result == S_FALSE)
@@ -618,9 +617,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CFilterCoder *filterStreamSpec = new CFilterCoder;
   CMyComPtr<ISequentialInStream> filterStream = filterStreamSpec;
 
-  NCrypto::NRar20::CDecoder *rar20CryptoDecoderSpec;
+  NCrypto::NRar20::CDecoder *rar20CryptoDecoderSpec = NULL;
   CMyComPtr<ICompressFilter> rar20CryptoDecoder;
-  NCrypto::NRar29::CDecoder *rar29CryptoDecoderSpec;
+  NCrypto::NRar29::CDecoder *rar29CryptoDecoderSpec = NULL;
   CMyComPtr<ICompressFilter> rar29CryptoDecoder;
 
   CFolderInStream *folderInStreamSpec = NULL;
@@ -681,7 +680,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
     CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-    outStreamSpec->Init(realOutStream);
+    outStreamSpec->SetStream(realOutStream);
+    outStreamSpec->Init();
     realOutStream.Release();
     
     UInt64 packedPos = currentImportantTotalPacked;
@@ -866,8 +866,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         RINOK(decoder.QueryInterface(IID_ICompressSetDecoderProperties2, 
             &compressSetDecoderProperties));
         
-        Byte isSolid = 
-          (IsSolid(index) || item.IsSplitBefore()) ? 1: 0;
+        Byte isSolid = (Byte)((IsSolid(index) || item.IsSplitBefore()) ? 1: 0);
 
         RINOK(compressSetDecoderProperties->SetDecoderProperties2(&isSolid, 1));
           

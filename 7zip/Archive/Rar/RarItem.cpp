@@ -44,7 +44,17 @@ UInt32  CItem::GetDictSize() const
 
 bool CItem::IsDirectory() const
 { 
-  return (GetDictSize() == NHeader::NFile::kDictDirectoryValue);
+  if (GetDictSize() == NHeader::NFile::kDictDirectoryValue)
+    return true;
+  switch(HostOS)
+  {
+    case NHeader::NFile::kHostMSDOS:
+    case NHeader::NFile::kHostOS2:
+    case NHeader::NFile::kHostWin32:
+      if ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+        return true;
+  }
+  return false;
 }
 
 UInt32 CItem::GetWinAttributes() const
@@ -68,41 +78,41 @@ UInt32 CItem::GetWinAttributes() const
 void CItem::ClearFlags()
 { Flags = 0; }
 
-void CItem::SetFlagBits(int aStartBitNumber, int aNumBits, int aValue)
+void CItem::SetFlagBits(int startBitNumber, int numBits, int value)
 {  
-  UInt16 mask = ((1 << aNumBits) - 1) << aStartBitNumber;
+  UInt16 mask = (UInt16)(((1 << numBits) - 1) << startBitNumber);
   Flags &= ~mask;
-  Flags |= aValue << aStartBitNumber;
+  Flags |= value << startBitNumber;
 }
 
-void CItem::SetBitMask(int aBitMask, bool anEnable)
+void CItem::SetBitMask(int bitMask, bool enable)
 {  
-  if(anEnable) 
-    Flags |= aBitMask;
+  if(enable) 
+    Flags |= bitMask;
   else
-    Flags &= ~aBitMask;
+    Flags &= ~bitMask;
 }
 
-void CItem::SetDictSize(UInt32 aSize)
+void CItem::SetDictSize(UInt32 size)
 { 
-  SetFlagBits(NHeader::NFile::kDictBitStart, NHeader::NFile::kNumDictBits, (aSize & NHeader::NFile::kDictMask));
+  SetFlagBits(NHeader::NFile::kDictBitStart, NHeader::NFile::kNumDictBits, (size & NHeader::NFile::kDictMask));
 }
 
-void CItem::SetAsDirectory(bool aDirectory)
+void CItem::SetAsDirectory(bool directory)
 {
-  if (aDirectory)
+  if (directory)
     SetDictSize(NHeader::NFile::kDictDirectoryValue);
 }
 
-void CItem::SetEncrypted(bool anEncrypted)
-  { SetBitMask(NHeader::NFile::kEncrypted, anEncrypted); }
-void CItem::SetSolid(bool aSolid)
-  { SetBitMask(NHeader::NFile::kSolid, aSolid); }
-void CItem::SetCommented(bool aCommented)
-  { SetBitMask(NHeader::NFile::kComment, aCommented); }
-void CItem::SetSplitBefore(bool aSplitBefore)
-  { SetBitMask(NHeader::NFile::kSplitBefore, aSplitBefore); }
-void CItem::SetSplitAfter(bool aSplitAfter)
-  { SetBitMask(NHeader::NFile::kSplitAfter, aSplitAfter); }
+void CItem::SetEncrypted(bool encrypted)
+  { SetBitMask(NHeader::NFile::kEncrypted, encrypted); }
+void CItem::SetSolid(bool solid)
+  { SetBitMask(NHeader::NFile::kSolid, solid); }
+void CItem::SetCommented(bool commented)
+  { SetBitMask(NHeader::NFile::kComment, commented); }
+void CItem::SetSplitBefore(bool splitBefore)
+  { SetBitMask(NHeader::NFile::kSplitBefore, splitBefore); }
+void CItem::SetSplitAfter(bool splitAfter)
+  { SetBitMask(NHeader::NFile::kSplitAfter, splitAfter); }
 
 }}

@@ -127,7 +127,7 @@ struct CBindInfo
 class CBindReverseConverter
 {
   UInt32 _numSrcOutStreams;
-  const NCoderMixer2::CBindInfo _srcBindInfo;
+  NCoderMixer2::CBindInfo _srcBindInfo;
   CRecordVector<UInt32> _srcInToDestOutMap;
   CRecordVector<UInt32> _srcOutToDestInMap;
   CRecordVector<UInt32> _destInToSrcOutMap;

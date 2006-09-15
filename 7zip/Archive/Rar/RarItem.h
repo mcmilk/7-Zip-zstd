@@ -58,17 +58,17 @@ public:
   
   CItem(): IsCreationTimeDefined(false),  IsLastAccessTimeDefined(false) {}
 private:
-  void SetFlagBits(int aStartBitNumber, int aNumBits, int aValue);
-  void SetBitMask(int aBitMask, bool anEnable);
+  void SetFlagBits(int startBitNumber, int numBits, int value);
+  void SetBitMask(int bitMask, bool enable);
 public:
   void ClearFlags();
-  void SetDictSize(UInt32 aSize);
-  void SetAsDirectory(bool aDirectory);
-  void SetEncrypted(bool anEncrypted);
-  void SetSolid(bool aSolid);
-  void SetCommented(bool aCommented);
-  void SetSplitBefore(bool aSplitBefore);
-  void SetSplitAfter(bool aSplitAfter);
+  void SetDictSize(UInt32 size);
+  void SetAsDirectory(bool directory);
+  void SetEncrypted(bool encrypted);
+  void SetSolid(bool solid);
+  void SetCommented(bool commented);
+  void SetSplitBefore(bool splitBefore);
+  void SetSplitAfter(bool splitAfter);
 };
 
 class CItemEx: public CItem

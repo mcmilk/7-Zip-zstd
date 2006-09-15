@@ -13,8 +13,8 @@ static const UInt32 kMatchMaxLen = 256;
 static const UInt32 kMatchMinLen = 3;
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-    ICompressProgressInfo *progress)
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
+    ICompressProgressInfo * /* progress */)
 {
   if (outSize == NULL)
     return E_INVALIDARG;
@@ -49,7 +49,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
       len += m_InBitStream.ReadBits(width);
     if (len == 0)
     {
-      m_OutWindowStream.PutByte(m_InBitStream.ReadBits(8));
+      m_OutWindowStream.PutByte((Byte)m_InBitStream.ReadBits(8));
       pos++;
       continue;
     }

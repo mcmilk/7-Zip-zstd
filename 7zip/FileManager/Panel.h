@@ -240,7 +240,7 @@ public:
     if (_virtualMode)
       return _realIndices[item.iItem];
     */
-    return item.lParam;
+    return (UInt32)item.lParam;
   }
   int GetRealItemIndex(int indexInListView) const
   {
@@ -251,7 +251,7 @@ public:
     LPARAM param;
     if (!_listView.GetItemParam(indexInListView, param))
       throw 1;
-    return param;
+    return (int)param;
   }
 
   UInt32 _ListViewMode;
@@ -415,26 +415,28 @@ public:
 
     CPanel &_panel;
     public:
-      CDisableTimerProcessing(CPanel &panel): _panel(panel) 
-      { 
-        Disable();
-      }
-      void Disable()
-      {
-        _processTimerMem = _panel._processTimer;
-        _processNotifyMem = _panel._processNotify;
-        _panel._processTimer = false; 
-        _panel._processNotify = false; 
-      }
-      void Restore()
-      {
-        _panel._processTimer = _processTimerMem; 
-        _panel._processNotify = _processNotifyMem; 
-      }
-      ~CDisableTimerProcessing() 
-      { 
-        Restore();
-      }
+
+    CDisableTimerProcessing(CPanel &panel): _panel(panel) 
+    { 
+      Disable();
+    }
+    void Disable()
+    {
+      _processTimerMem = _panel._processTimer;
+      _processNotifyMem = _panel._processNotify;
+      _panel._processTimer = false; 
+      _panel._processNotify = false; 
+    }
+    void Restore()
+    {
+      _panel._processTimer = _processTimerMem; 
+      _panel._processNotify = _processNotifyMem; 
+    }
+    ~CDisableTimerProcessing() 
+    { 
+      Restore();
+    }
+    CDisableTimerProcessing& operator=(const CDisableTimerProcessing &) {; }
   };
 
   // bool _passwordIsDefined;
@@ -466,7 +468,7 @@ public:
   HRESULT OpenItemAsArchive(int index);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode);
-  LRESULT OnOpenItemChanged(const UString &folderPath, const UString &itemName);
+  HRESULT OnOpenItemChanged(const UString &folderPath, const UString &itemName);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 
   void OpenItem(int index, bool tryInternal, bool tryExternal);

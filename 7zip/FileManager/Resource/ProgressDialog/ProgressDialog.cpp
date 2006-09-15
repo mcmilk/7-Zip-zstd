@@ -82,7 +82,7 @@ void CProgressDialog::SetPos(UINT64 pos)
   }
 }
 
-bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
+bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 {
   if (ProgressSynch.GetPaused())
     return true;

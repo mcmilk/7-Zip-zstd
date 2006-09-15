@@ -86,7 +86,7 @@ STDAPI GetMethodProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
   {
     case NMethodPropID::kID:
     {
-      const char id[] = { 0x06, (char)0xF1, 0x07, 0x01 };
+      const char id[] = { 0x06, (char)(unsigned char)0xF1, 0x07, 0x01 };
       if ((value->bstrVal = ::SysAllocStringByteLen(id, sizeof(id))) != 0)
         value->vt = VT_BSTR;
       return S_OK;

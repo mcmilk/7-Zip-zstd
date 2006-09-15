@@ -2,6 +2,11 @@ PROG = lzma.exe
 CFLAGS = $(CFLAGS) -I ../../../
 LIBS = $(LIBS) oleaut32.lib user32.lib
 
+!IFDEF CPU
+LIBS = $(LIBS) bufferoverflowU.lib 
+CFLAGS = $(CFLAGS) -GS- -Zc:forScope -W4 -Wp64 -DUNICODE -D_UNICODE
+!ENDIF
+
 !IFNDEF O
 !IFDEF CPU
 O=$(CPU)
@@ -10,7 +15,16 @@ O=O
 !ENDIF
 !ENDIF
 
-CFLAGS = $(CFLAGS) -nologo -EHsc -c -Fo$O/ -GS- 
+!IFDEF MY_STATIC_LINK
+!IFNDEF MY_SINGLE_THREAD
+CFLAGS = $(CFLAGS) -MT
+!ENDIF
+!ELSE
+CFLAGS = $(CFLAGS) -MD
+!ENDIF
+
+
+CFLAGS = $(CFLAGS) -nologo -EHsc -c -Fo$O/ -WX
 CFLAGS_O1 = $(CFLAGS) -O1
 CFLAGS_O2 = $(CFLAGS) -O2
 

@@ -75,7 +75,7 @@ HRESULT CDecoder::CodeSpec(UInt32 size, Byte *memStream)
       break;
     }
     if (memStream != 0)
-      *memStream++ = symbol;
+      *memStream++ = (Byte)symbol;
     else
       _outStream.WriteByte((Byte)symbol);
     size--;
@@ -85,7 +85,7 @@ HRESULT CDecoder::CodeSpec(UInt32 size, Byte *memStream)
 }
 
 STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
   if (!_outStream.Create(1 << 20))
@@ -96,7 +96,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   SetOutStreamSize(outSize);
   CDecoderFlusher flusher(this);
 
-  while(true)
+  for (;;)
   {
     _processedSize = _outStream.GetProcessedSize();
     UInt32 curSize = (1 << 18);
@@ -155,7 +155,8 @@ STDMETHODIMP CDecoder::ReleaseInStream()
 
 STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
-  if (_outSizeDefined = (outSize != NULL))
+  _outSizeDefined = (outSize != NULL);
+  if (_outSizeDefined)
     _outSize = *outSize;
   _remainLen = kLenIdNeedInit;
   _outStream.Init();

@@ -139,7 +139,15 @@ struct FarDialogItem
   int Type;
   int X1,Y1,X2,Y2;
   int Focus;
-  int Selected;
+  union
+  {
+    int Selected;
+    const char *History;
+    const char *Mask;
+    struct FarList *ListItems;
+    int  ListPos;
+    CHAR_INFO *VBuf;
+  };
   unsigned int Flags;
   int DefaultButton;
   char Data[512];

@@ -169,7 +169,7 @@ LONG CKey::SetValue(LPCWSTR name, LPCWSTR value)
   MYASSERT(_object != NULL);
   if (g_IsNT)
     return RegSetValueExW(_object, name, NULL, REG_SZ,
-      (const BYTE * )value, (wcslen(value) + 1) * sizeof(wchar_t));
+      (const BYTE * )value, (DWORD)((wcslen(value) + 1) * sizeof(wchar_t)));
   return SetValue(name == 0 ? 0 : (LPCSTR)GetSystemString(name), 
     value == 0 ? 0 : (LPCSTR)GetSystemString(value));
 }
@@ -304,7 +304,7 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
 {
   keyNames.Clear();
   CSysString keyName;
-  for(UInt32 index = 0; true; index++)
+  for(UInt32 index = 0; ; index++)
   {
     const UInt32 kBufferSize = MAX_PATH + 1; // 256 in ATL
     FILETIME lastWriteTime;

@@ -37,12 +37,13 @@ HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 siz
 
 
 STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+      ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
       ICompressProgressInfo *progress)
 {
   RINOK(Init());
   UInt32 bufferPos = 0;
-  if (_outSizeIsDefined = (outSize != 0))
+  _outSizeIsDefined = (outSize != 0);
+  if (_outSizeIsDefined)
     _outSize = *outSize;
 
   while(NeedMore())

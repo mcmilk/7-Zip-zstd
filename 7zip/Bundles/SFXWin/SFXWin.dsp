@@ -385,13 +385,21 @@ SOURCE=..\..\Crypto\7zAES\7zAES.h
 
 SOURCE=..\..\Crypto\7zAES\MySHA256.h
 # End Source File
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\SHA256.cpp
+SOURCE=..\..\Crypto\Hash\RotateDefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\SHA256.h
+SOURCE=..\..\Crypto\Hash\Sha256.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha256.h
 # End Source File
 # End Group
 # End Group

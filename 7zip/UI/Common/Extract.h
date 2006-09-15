@@ -53,6 +53,7 @@ HRESULT DecompressArchives(
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,
     IOpenCallbackUI *openCallback,
-    IExtractCallbackUI *extractCallback);
+    IExtractCallbackUI *extractCallback,
+    UString &errorMessage);
 
 #endif

@@ -22,15 +22,15 @@ public:
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam);
 
   virtual bool OnKillActive() { return false; } // false = OK
-  virtual bool OnKillActive(const PSHNOTIFY *aPSHNOTIFY) { return OnKillActive(); }
+  virtual bool OnKillActive(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnKillActive(); }
   virtual LONG OnSetActive() { return false; } // false = OK
-  virtual LONG OnSetActive(const PSHNOTIFY *aPSHNOTIFY) { return OnKillActive(); }
+  virtual LONG OnSetActive(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnKillActive(); }
   virtual LONG OnApply() { return PSNRET_NOERROR; }
-  virtual LONG OnApply(const PSHNOTIFY *aPSHNOTIFY) { return OnApply(); }
+  virtual LONG OnApply(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnApply(); }
   virtual void OnNotifyHelp() { }
-  virtual void OnNotifyHelp(const PSHNOTIFY *aPSHNOTIFY) { OnNotifyHelp(); }
+  virtual void OnNotifyHelp(const PSHNOTIFY * /* aPSHNOTIFY */) { OnNotifyHelp(); }
   virtual void OnReset() { }
-  virtual void OnReset(const PSHNOTIFY *aPSHNOTIFY) { OnReset(); }
+  virtual void OnReset(const PSHNOTIFY * /* aPSHNOTIFY */) { OnReset(); }
 };
 
 struct CPageInfo
@@ -40,7 +40,7 @@ struct CPageInfo
   UINT ID;
 };
 
-int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, const UString &title);
+INT_PTR MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, const UString &title);
 
 }}
 

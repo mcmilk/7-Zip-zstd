@@ -7,6 +7,7 @@
 #include "Windows/Defs.h"
 #include "../../ICoder.h"
 #include "../../IPassword.h"
+#include "../Common/InStreamWithCRC.h"
 #include "../7z/7zMethods.h"
 
 #include "ZipAddCommon.h"
@@ -48,9 +49,6 @@ DEFINE_GUID(CLSID_CCryptoZipEncoder,
 namespace NArchive {
 namespace NZip {
 
-static const Byte kMethodIDForEmptyStream = NFileHeader::NCompressionMethod::kStored;
-static const Byte kExtractVersionForEmptyStream = NFileHeader::NCompressionMethod::kStoreExtractVersion;
-
 CAddCommon::CAddCommon(const CCompressionMethodMode &options):
   _options(options),
   _copyCoderSpec(NULL),
@@ -63,7 +61,7 @@ static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
   crc.Init();
   const UInt32 kBufferSize = (1 << 14);
   Byte buffer[kBufferSize];
-  while(true)
+  for (;;)
   {
     UInt32 realProcessedSize;
     RINOK(inStream->Read(buffer, kBufferSize, &realProcessedSize));
@@ -77,36 +75,47 @@ static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
 }
 
 HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStream, 
-      UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult)
+      ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
-  /*
-  if(inSize == 0)
+  CSequentialInStreamWithCRC *inSecCrcStreamSpec = 0;
+  CInStreamWithCRC *inCrcStreamSpec = 0;
+  CMyComPtr<ISequentialInStream> inCrcStream;
   {
-    operationResult.PackSize = 0;
-    operationResult.Method = kMethodIDForEmptyStream;
-    operationResult.ExtractVersion = kExtractVersionForEmptyStream;
-    return S_OK;
+    CMyComPtr<IInStream> inStream2;
+    // we don't support stdin, since stream from stdin can require 64-bit size header 
+    RINOK(inStream->QueryInterface(IID_IInStream, (void **)&inStream2));
+    if (inStream2)
+    {
+      inCrcStreamSpec = new CInStreamWithCRC;
+      inCrcStream = inCrcStreamSpec;
+      inCrcStreamSpec->SetStream(inStream2);
+      inCrcStreamSpec->Init();
+    }
+    else
+    {
+      inSecCrcStreamSpec = new CSequentialInStreamWithCRC;
+      inCrcStream = inSecCrcStreamSpec;
+      inSecCrcStreamSpec->SetStream(inStream);
+      inSecCrcStreamSpec->Init();
+    }
   }
-  */
-  CMyComPtr<IInStream> inStream2;
+
   int numTestMethods = _options.MethodSequence.Size();
   if (numTestMethods > 1 || _options.PasswordIsDefined)
   {
-    inStream->QueryInterface(IID_IInStream, (void **)&inStream2);
-    if (!inStream2)
+    if (inCrcStreamSpec == 0)
     {
       if (_options.PasswordIsDefined)
         return E_NOTIMPL;
       numTestMethods = 1;
     }
   }
-  Byte method;
-  UInt64 resultSize = 0;
+  Byte method = 0;
   COutStreamReleaser outStreamReleaser;
   for(int i = 0; i < numTestMethods; i++)
   {
-    if (inStream2)
-      RINOK(inStream2->Seek(0, STREAM_SEEK_SET, NULL));
+    if (inCrcStreamSpec != 0)
+      RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
     RINOK(outStream->Seek(0, STREAM_SEEK_SET, NULL));
     if (_options.PasswordIsDefined)
     {
@@ -114,18 +123,28 @@ HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStrea
       {
         _cryptoStreamSpec = new CFilterCoder;
         _cryptoStream = _cryptoStreamSpec;
-        _filterSpec = new NCrypto::NZip::CEncoder;
-        _cryptoStreamSpec->Filter = _filterSpec;
       }
-      RINOK(_filterSpec->CryptoSetPassword(
-          (const Byte *)(const char *)_options.Password, _options.Password.Length()));
-      UInt32 crc;
-      RINOK(GetStreamCRC(inStream, crc));
-      RINOK(inStream2->Seek(0, STREAM_SEEK_SET, NULL));
+      if (_options.IsAesMode)
+      {
+        _cryptoStreamSpec->Filter = _aesFilter = _filterAesSpec = new NCrypto::NWzAES::CEncoder;
+        _filterAesSpec->SetKeyMode(_options.AesKeyMode);
+        RINOK(_filterAesSpec->CryptoSetPassword(
+            (const Byte *)(const char *)_options.Password, _options.Password.Length()));
+        RINOK(_filterAesSpec->WriteHeader(outStream));
+      }
+      else
+      {
+        _cryptoStreamSpec->Filter = _zipCryptoFilter = _filterSpec = new NCrypto::NZip::CEncoder;
+        RINOK(_filterSpec->CryptoSetPassword(
+            (const Byte *)(const char *)_options.Password, _options.Password.Length()));
+        UInt32 crc = 0;
+        RINOK(GetStreamCRC(inStream, crc));
+        RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
+        RINOK(_filterSpec->CryptoSetCRC(crc));
+        RINOK(_filterSpec->WriteHeader(outStream));
+      }
       RINOK(_cryptoStreamSpec->SetOutStream(outStream));
       outStreamReleaser.FilterCoder = _cryptoStreamSpec;
-      RINOK(_filterSpec->CryptoSetCRC(crc));
-      RINOK(_filterSpec->WriteHeader(outStream));
     }
 
     method = _options.MethodSequence[i];
@@ -143,8 +162,7 @@ HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStrea
           outStreamNew = _cryptoStream;
         else
           outStreamNew = outStream;
-        RINOK(_copyCoder->Code(inStream, outStreamNew, 
-              NULL, NULL, progress));
+        RINOK(_copyCoder->Code(inCrcStream, outStreamNew, NULL, NULL, progress));
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kStoreExtractVersion;
         break;
       }
@@ -251,24 +269,41 @@ HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStrea
           outStreamNew = _cryptoStream;
         else
           outStreamNew = outStream;
-        RINOK(_compressEncoder->Code(inStream, outStreamNew, NULL, NULL, progress));
+        RINOK(_compressEncoder->Code(inCrcStream, outStreamNew, NULL, NULL, progress));
         operationResult.ExtractVersion = NFileHeader::NCompressionMethod::kDeflateExtractVersion;
         break;
       }
     }
-    outStream->Seek(0, STREAM_SEEK_CUR, &resultSize);
+
+    RINOK(outStream->Seek(0, STREAM_SEEK_CUR, &operationResult.PackSize));
+
+    if (inCrcStreamSpec != 0)
+    {
+      operationResult.CRC = inCrcStreamSpec->GetCRC();
+      operationResult.UnpackSize = inCrcStreamSpec->GetSize();
+    }
+    else
+    {
+      operationResult.CRC = inSecCrcStreamSpec->GetCRC();
+      operationResult.UnpackSize = inSecCrcStreamSpec->GetSize();
+    }
+
     if (_options.PasswordIsDefined)
     {
-      if(resultSize < inSize  + 12) 
+      if (operationResult.PackSize < operationResult.UnpackSize + 
+          (_options.IsAesMode ? _filterAesSpec->GetHeaderSize() : NCrypto::NZip::kHeaderSize))
         break;
     }
-    else if(resultSize < inSize) 
+    else if (operationResult.PackSize < operationResult.UnpackSize) 
       break;
   }
-  RINOK(outStream->SetSize(resultSize));
-  operationResult.PackSize = resultSize;
+  if (_options.IsAesMode)
+  {
+    RINOK(_filterAesSpec->WriteFooter(outStream));
+    RINOK(outStream->Seek(0, STREAM_SEEK_CUR, &operationResult.PackSize));
+  }
   operationResult.Method = method;
-  return S_OK;
+  return outStream->SetSize(operationResult.PackSize);
 }
 
 }}

@@ -67,7 +67,7 @@ UInt32 x86_Convert(Byte *buffer, UInt32 endPos, UInt32 nowPos,
         (buffer[bufferPos + 1]);
       
       UInt32 dest;
-      while(1)
+      for (;;)
       {
         UInt32 index;
         if (encoding)

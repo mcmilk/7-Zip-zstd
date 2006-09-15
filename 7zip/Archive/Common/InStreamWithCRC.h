@@ -19,16 +19,19 @@ private:
   CMyComPtr<ISequentialInStream> _stream;
   UInt64 _size;
   CCRC _crc;
+  bool _wasFinished;
 public:
-  void Init(ISequentialInStream *stream)
+  void SetStream(ISequentialInStream *stream) { _stream = stream;  }
+  void Init()
   {
-    _stream = stream;
     _size = 0;
+    _wasFinished = false;
     _crc.Init();
   }
   void ReleaseStream() { _stream.Release(); }
   UInt32 GetCRC() const { return _crc.GetDigest(); }
   UInt64 GetSize() const { return _size; }
+  bool WasFinished() const { return _wasFinished; }
 };
 
 class CInStreamWithCRC: 
@@ -44,16 +47,19 @@ private:
   CMyComPtr<IInStream> _stream;
   UInt64 _size;
   CCRC _crc;
+  bool _wasFinished;
 public:
-  void Init(IInStream *stream)
+  void SetStream(IInStream *stream) { _stream = stream;  }
+  void Init()
   {
-    _stream = stream;
     _size = 0;
+    _wasFinished = false;
     _crc.Init();
   }
   void ReleaseStream() { _stream.Release(); }
   UInt32 GetCRC() const { return _crc.GetDigest(); }
   UInt64 GetSize() const { return _size; }
+  bool WasFinished() const { return _wasFinished; }
 };
 
 #endif

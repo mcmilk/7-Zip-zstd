@@ -33,7 +33,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidPackedSize, VT_UI8}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -63,15 +63,15 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_INVALIDARG;
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *openArchiveCallback)
+    const UInt64 * /* maxCheckStartPosition */,
+    IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   try
@@ -104,7 +104,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;

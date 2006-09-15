@@ -201,13 +201,13 @@ private:
 
   HRESULT ReadWideCharLE(wchar_t &c)
   {
-    Byte b1;
+    Byte b1 = 0;
     if (!_inByteBack->ReadByte(b1))
       return E_FAIL;
-    Byte b2;
+    Byte b2 = 0;
     if (!_inByteBack->ReadByte(b2))
       return E_FAIL;
-    c = (wchar_t(b2) << 8) + b1;
+    c = (wchar_t)(((wchar_t)(b2) << 8) + b1);
     return S_OK;
   }
 

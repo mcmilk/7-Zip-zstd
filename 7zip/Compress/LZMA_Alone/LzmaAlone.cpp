@@ -10,7 +10,7 @@
 #if defined(_WIN32) || defined(OS2) || defined(MSDOS)
 #include <fcntl.h>
 #include <io.h>
-#define MY_SET_BINARY_MODE(file) setmode(fileno(file),O_BINARY)
+#define MY_SET_BINARY_MODE(file) _setmode(_fileno(file), O_BINARY)
 #else
 #define MY_SET_BINARY_MODE(file)
 #endif
@@ -152,7 +152,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.40 Copyright (c) 1999-2006 Igor Pavlov  2006-05-01\n");
+  fprintf(stderr, "\nLZMA 4.43 Copyright (c) 1999-2006 Igor Pavlov  2006-08-08\n");
 
   if (n == 1)
   {
@@ -160,7 +160,8 @@ int main2(int n, const char *args[])
     return 0;
   }
 
-  if (sizeof(Byte) != 1 || sizeof(UInt32) < 4 || sizeof(UInt64) < 4)
+  bool unsupportedTypes = (sizeof(Byte) != 1 || sizeof(UInt32) < 4 || sizeof(UInt64) < 4);
+  if (unsupportedTypes)
   {
     fprintf(stderr, "Unsupported base types. Edit Common/Types.h and recompile");
     return 1;
@@ -368,7 +369,8 @@ int main2(int n, const char *args[])
     if(parser[NKey::kFastBytes].ThereIs)
       if (!GetNumber(parser[NKey::kFastBytes].PostStrings[0], numFastBytes))
         IncorrectCommand();
-    if (matchFinderCyclesDefined = parser[NKey::kMatchFinderCycles].ThereIs)
+    matchFinderCyclesDefined = parser[NKey::kMatchFinderCycles].ThereIs;
+    if (matchFinderCyclesDefined)
       if (!GetNumber(parser[NKey::kMatchFinderCycles].PostStrings[0], matchFinderCycles))
         IncorrectCommand();
     if(parser[NKey::kLitContext].ThereIs)

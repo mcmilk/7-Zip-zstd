@@ -1,4 +1,4 @@
-// BranchIA64.c
+/* BranchIA64.c */
 
 #include "BranchIA64.h"
 
@@ -24,7 +24,6 @@ UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         continue;
       UInt32 bytePos = (bitPos >> 3);
       UInt32 bitRes = bitPos & 0x7;
-      // UInt64 instruction = *(UInt64 *)(data + i + bytePos);
       UInt64 instruction = 0;
       int j;
       for (j = 0; j < 6; j++)
@@ -33,7 +32,7 @@ UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
       UInt64 instNorm = instruction >> bitRes;
       if (((instNorm >> 37) & 0xF) == 0x5 
         &&  ((instNorm >> 9) & 0x7) == 0 
-        // &&  (instNorm & 0x3F)== 0 
+        /* &&  (instNorm & 0x3F)== 0 */
         )
       {
         UInt32 src = UInt32((instNorm >> 13) & 0xFFFFF);
@@ -55,7 +54,6 @@ UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         
         instruction &= (1 << bitRes) - 1;
         instruction |= (instNorm << bitRes);
-        // *(UInt64 *)(data + i + bytePos) = instruction;
         for (j = 0; j < 6; j++)
           data[i + j + bytePos] = Byte(instruction >> (8 * j));
       }

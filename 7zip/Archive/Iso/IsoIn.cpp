@@ -76,7 +76,7 @@ UInt16 CInArchive::ReadUInt16()
       throw 1;
     value |= ((UInt16)(b[i]) << (8 * i));
   }
-  return value;
+  return (UInt16)value;
 }
 
 UInt32 CInArchive::ReadUInt32Le()
@@ -134,13 +134,13 @@ UInt32 CInArchive::ReadDigits(int numDigits)
 
 void CInArchive::ReadDateTime(CDateTime &d)
 {
-  d.Year = ReadDigits(4);
-  d.Month = ReadDigits(2);
-  d.Day = ReadDigits(2);
-  d.Hour = ReadDigits(2);
-  d.Minute = ReadDigits(2);
-  d.Second = ReadDigits(2);
-  d.Hundredths = ReadDigits(2);
+  d.Year = (UInt16)ReadDigits(4);
+  d.Month = (Byte)ReadDigits(2);
+  d.Day = (Byte)ReadDigits(2);
+  d.Hour = (Byte)ReadDigits(2);
+  d.Minute = (Byte)ReadDigits(2);
+  d.Second = (Byte)ReadDigits(2);
+  d.Hundredths = (Byte)ReadDigits(2);
   d.GmtOffset = (signed char)ReadByte();
 }
 
@@ -254,7 +254,7 @@ void CInArchive::ReadDir(CDir &d, int level)
   UInt64 startPos = _position;
 
   bool firstItem = true;
-  while(true)
+  for (;;)
   {
     UInt64 offset = _position - startPos;
     if (offset >= d.DataLength)
@@ -311,7 +311,7 @@ void CInArchive::ReadBootInfo()
     if (ReadUInt16Spec() != 0)
       throw 1;
     ReadBytes(e.Id, sizeof(e.Id));
-    UInt16 checkSum = ReadUInt16Spec();
+    /* UInt16 checkSum = */ ReadUInt16Spec();
     if (ReadByte() != 0x55)
       throw 1;
     if (ReadByte() != 0xAA)
@@ -346,14 +346,17 @@ HRESULT CInArchive::Open2()
   m_BufferPos = 0;
   BlockSize = kBlockSize;
   VolDescs.Add(CVolumeDescriptor());
-  while(true)
+  for (;;)
   {
     Byte sig[6];
     ReadBytes(sig, 6);
     if (!CheckDescriptorSignature(sig + 1))
       return S_FALSE;
-    if (ReadByte() != kVersion)
-      throw 1;
+    // version = 2 for ISO 9660:1999?
+    Byte ver = ReadByte();
+    if (ver > 2)
+      throw S_FALSE;
+
     if (sig[0] == NVolDescType::kTerminator)
       break;
     switch(sig[0])

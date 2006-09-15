@@ -125,7 +125,7 @@ void CThreadCoderInfo::SetCoderInfo(const UInt64 **inSizes,
 
 static DWORD WINAPI CoderThread(void *threadCoderInfo)
 {
-  while(true)
+  for (;;)
   {
     if (!((CThreadCoderInfo *)threadCoderInfo)->WaitAndCode())
       return 0;
@@ -137,7 +137,7 @@ static DWORD WINAPI CoderThread(void *threadCoderInfo)
 
 static DWORD WINAPI MainCoderThread(void *threadCoderInfo)
 {
-  while(true)
+  for (;;)
   {
     if (!((CCoderMixer2MT *)threadCoderInfo)->MyCode())
       return 0;
@@ -282,7 +282,7 @@ bool CCoderMixer2MT::MyCode()
 
   for(int i = 0; i < _coderInfoVector.Size(); i++)
     _coderInfoVector[i].CompressEvent->Set();
-  DWORD result = ::WaitForMultipleObjects(_compressingCompletedEvents.Size(), 
+  /* DWORD result = */ ::WaitForMultipleObjects(_compressingCompletedEvents.Size(), 
       &_compressingCompletedEvents.Front(), TRUE, INFINITE);
   
   _compressingFinishedEvent.Set();
@@ -292,10 +292,10 @@ bool CCoderMixer2MT::MyCode()
 
 
 STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
-      const UInt64 **inSizes, 
+      const UInt64 ** /* inSizes */, 
       UInt32 numInStreams,
       ISequentialOutStream **outStreams, 
-      const UInt64 **outSizes,
+      const UInt64 ** /* outSizes */,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress)
 {
@@ -315,7 +315,7 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
   _startCompressingEvent.Set();
 
 
-  while (true)
+  for (;;)
   {
     HANDLE events[2] = {_compressingFinishedEvent, progressSpec->ProgressEvent };
     DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);

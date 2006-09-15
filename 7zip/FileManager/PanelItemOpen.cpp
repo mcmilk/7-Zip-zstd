@@ -51,15 +51,15 @@ struct CTmpProcessInfo: public CTempFileInfo
 
 class CTmpProcessInfoRelease
 {
-  CTmpProcessInfo &_tmpProcessInfo;
+  CTmpProcessInfo *_tmpProcessInfo;
 public:
   bool _needDelete;
   CTmpProcessInfoRelease(CTmpProcessInfo &tmpProcessInfo):
-      _tmpProcessInfo(tmpProcessInfo), _needDelete(true) {}
+      _tmpProcessInfo(&tmpProcessInfo), _needDelete(true) {}
   ~CTmpProcessInfoRelease()
   {
     if (_needDelete)
-      _tmpProcessInfo.DeleteDirAndFile();
+      _tmpProcessInfo->DeleteDirAndFile();
   }
 };
 
@@ -139,6 +139,17 @@ HRESULT CPanel::OpenParentArchiveFolder()
   return S_OK;
 }
 
+static const wchar_t *kStartExtensions[] = 
+{
+  L"exe",
+  L"bat",
+  L"com",
+  L"chm",
+  L"doc",
+  L"pdf",
+  L"xls"
+};
+
 static bool DoItemAlwaysStart(const UString &name)
 {
   int extPos = name.ReverseFind('.');
@@ -146,10 +157,10 @@ static bool DoItemAlwaysStart(const UString &name)
     return false;
   UString ext = name.Mid(extPos + 1);
   ext.MakeLower();
-  return (ext == UString(L"exe") || 
-    ext == UString(L"bat") || 
-    ext == UString(L"com") ||
-    ext == UString(L"chm"));
+  for (int i = 0; i < sizeof(kStartExtensions) / sizeof(kStartExtensions[0]); i++)
+    if (ext.Compare(kStartExtensions[i]) == 0)
+      return true;
+  return false;
 }
 
 static HANDLE StartEditApplication(const UString &path, HWND window)
@@ -237,7 +248,7 @@ static HANDLE StartApplication(const UString &path, HWND window)
     if (shellExecuteExW == 0)
       return 0;
     shellExecuteExW(&execInfo);
-    result = (UINT32)execInfo.hInstApp;
+    result = (UINT32)(UINT_PTR)execInfo.hInstApp;
     hProcess = execInfo.hProcess;
   }
   else
@@ -255,7 +266,7 @@ static HANDLE StartApplication(const UString &path, HWND window)
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ::ShellExecuteEx(&execInfo);
-    result = (UINT32)execInfo.hInstApp;
+    result = (UINT32)(UINT_PTR)execInfo.hInstApp;
     hProcess = execInfo.hProcess;
   }
   if(result <= 32)
@@ -319,7 +330,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   }
 }
        
-LRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName)
+HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName)
 {
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)

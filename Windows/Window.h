@@ -111,9 +111,9 @@ public:
   void SetRedraw(bool redraw = true) { SendMessage(WM_SETREDRAW, BoolToBOOL(redraw), 0); }
 
   #ifndef _WIN32_WCE
-  LONG SetStyle(LONG_PTR style)
+  LONG_PTR SetStyle(LONG_PTR style)
     { return SetLongPtr(GWL_STYLE, style); }
-  DWORD GetStyle( ) const
+  LONG_PTR GetStyle( ) const
     { return GetLongPtr(GWL_STYLE); }
   #else
   LONG SetStyle(LONG_PTR style)
@@ -122,21 +122,29 @@ public:
     { return GetLong(GWL_STYLE); }
   #endif
 
-  LONG_PTR SetLong(int index, LONG_PTR newLongPtr )
+  LONG_PTR SetLong(int index, LONG newLongPtr )
     { return ::SetWindowLong(_window, index, newLongPtr); }
   LONG_PTR GetLong(int index) const
     { return ::GetWindowLong(_window, index ); }
-  LONG_PTR SetUserDataLong(LONG_PTR newLongPtr )
+  LONG_PTR SetUserDataLong(LONG newLongPtr )
     { return SetLong(GWLP_USERDATA, newLongPtr); } 
   LONG_PTR GetUserDataLong() const
     { return GetLong(GWLP_USERDATA); }
 
   #ifndef _WIN32_WCE
   LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr )
-    { return ::SetWindowLongPtr(_window, index, newLongPtr); }
+    { return ::SetWindowLongPtr(_window, index, 
+          #ifndef _WIN64
+          (LONG)
+          #endif
+          newLongPtr); }
   #ifndef _UNICODE
   LONG_PTR SetLongPtrW(int index, LONG_PTR newLongPtr )
-    { return ::SetWindowLongPtrW(_window, index, newLongPtr); }
+    { return ::SetWindowLongPtrW(_window, index, 
+          #ifndef _WIN64
+          (LONG)
+          #endif
+          newLongPtr); }
   #endif
 
   LONG_PTR GetLongPtr(int index) const

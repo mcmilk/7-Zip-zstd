@@ -122,7 +122,7 @@ struct CThreadSplit
 
     int volIndex = 0;
 
-    while(true)
+    for (;;)
     {
       UInt64 volSize;
       if (volIndex < VolumeSizes.Size())
@@ -298,7 +298,7 @@ struct CThreadCombine
 
     UString nextName = InputDirPrefix + FirstVolumeName;
     UInt64 totalSize = 0;
-    while (true)
+    for (;;)
     {
       NFile::NFind::CFileInfoW fileInfo;
       if (!NFile::NFind::FindFile(nextName, fileInfo))
@@ -337,7 +337,7 @@ struct CThreadCombine
     UInt64 pos = 0;
     nextName = InputDirPrefix + FirstVolumeName;
     bool needOpen = true;
-    while(true)
+    for (;;)
     {
       if (needOpen)
       {

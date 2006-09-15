@@ -7,7 +7,16 @@
 #include "Vector.h"
 
 CBaseRecordVector::~CBaseRecordVector()
-  { delete []((unsigned char *)_items); }
+  { Free(); }
+
+void CBaseRecordVector::Free()
+{ 
+  delete []((unsigned char *)_items); 
+  _capacity = 0;
+  _size = 0;
+  _items = 0;
+}
+
 void CBaseRecordVector::Clear() 
   { DeleteFrom(0); }
 void CBaseRecordVector::DeleteBack() 

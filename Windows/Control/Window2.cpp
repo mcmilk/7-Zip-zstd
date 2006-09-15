@@ -147,7 +147,7 @@ LRESULT CWindow2::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
         return result;
       break;
     case WM_NOTIFY:
-      if (OnNotify(wParam, (LPNMHDR) lParam, result))
+      if (OnNotify((UINT)wParam, (LPNMHDR) lParam, result))
         return result;
       break;
 		case WM_DESTROY:
@@ -168,7 +168,7 @@ bool CWindow2::OnCommand(WPARAM wParam, LPARAM lParam, LRESULT &result)
   return OnCommand(HIWORD(wParam), LOWORD(wParam), lParam, result);
 }
 
-bool CWindow2::OnCommand(int code, int itemID, LPARAM lParam, LRESULT &result)
+bool CWindow2::OnCommand(int /* code */, int /* itemID */, LPARAM /* lParam */, LRESULT & /* result */)
 {
   return false;
   // return DefProc(message, wParam, lParam);

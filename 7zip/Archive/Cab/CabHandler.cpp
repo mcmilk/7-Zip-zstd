@@ -68,7 +68,7 @@ static const wchar_t *kMethods[] =
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 static const wchar_t *kUnknownMethod = L"Unknown";
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -101,8 +101,8 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_INVALIDARG;
 }
@@ -153,7 +153,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
 
     case kpidMethod:
     {
-      UInt16 realFolderIndex = item.GetFolderIndex(db.Folders.Size());
+      UInt32 realFolderIndex = item.GetFolderIndex(db.Folders.Size());
       const CFolder &folder = db.Folders[realFolderIndex];
       int methodIndex = folder.GetCompressionMethod();
       UString method = (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
@@ -223,7 +223,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 {
   COM_TRY_BEGIN
   Close();
-  HRESULT res;
+  HRESULT res = S_FALSE;
   CInArchive archive;
   CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
   {
@@ -269,7 +269,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       RINOK(openArchiveCallback->SetCompleted(&numItems, NULL));
         
       nextStream = 0;
-      while(true)
+      for (;;)
       {
         const COtherArchive *otherArchive = 0;
         if (!prevChecked)
@@ -511,7 +511,7 @@ HRESULT CCabFolderOutStream::FlushCorrupted()
   Byte buffer[kBufferSize];
   for (int i = 0; i < kBufferSize; i++)
     buffer[i] = 0;
-  while(true)
+  for (;;)
   {
     UInt64 remain = GetRemain();
     if (remain == 0)
@@ -548,7 +548,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     return S_OK;
   bool testMode = (_aTestMode != 0);
   UInt64 totalUnPacked = 0;
-  int lastIndex = 0;
 
   UInt32 i;
   int lastFolder = -2;
@@ -806,10 +805,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  COM_TRY_BEGIN
   *numItems = m_Database.Items.Size();
   return S_OK;
-  COM_TRY_END
 }
 
 }}

@@ -39,18 +39,20 @@ static const char *kEverythingIsOk = "Everything is Ok";
 static const char *kNoFiles = "No files to process";
 
 static const char *kUnsupportedMethod = "Unsupported Method";
-static const char *kCRCFailed = "CRC Failed";
+static const char *kCrcFailed = "CRC Failed";
+static const char *kCrcFailedEncrypted = "CRC Failed in encrypted file. Wrong password?";
 static const char *kDataError = "Data Error";
+static const char *kDataErrorEncrypted = "Data Error in encrypted file. Wrong password?";
 static const char *kUnknownError = "Unknown Error";
 
-STDMETHODIMP CExtractCallbackConsole::SetTotal(UInt64 size)
+STDMETHODIMP CExtractCallbackConsole::SetTotal(UInt64)
 {
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackConsole::SetCompleted(const UInt64 *completeValue)
+STDMETHODIMP CExtractCallbackConsole::SetCompleted(const UInt64 *)
 {
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
@@ -58,8 +60,8 @@ STDMETHODIMP CExtractCallbackConsole::SetCompleted(const UInt64 *completeValue)
 }
 
 STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
-    const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
-    const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
+    const wchar_t *existName, const FILETIME *, const UInt64 *,
+    const wchar_t *newName, const FILETIME *, const UInt64 *,
     Int32 *answer)
 {
   (*OutStream) << "file " << existName << 
@@ -119,7 +121,7 @@ STDMETHODIMP CExtractCallbackConsole::MessageError(const wchar_t *message)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult)
+STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult, bool encrypted)
 {
   switch(operationResult)
   {
@@ -136,10 +138,10 @@ STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult)
           (*OutStream) << kUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          (*OutStream) << kCRCFailed;
+          (*OutStream) << (encrypted ? kCrcFailedEncrypted: kCrcFailed);
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          (*OutStream) << kDataError;
+          (*OutStream) << (encrypted ? kDataErrorEncrypted : kDataError);
           break;
         default:
           (*OutStream) << kUnknownError;

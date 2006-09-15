@@ -270,7 +270,7 @@ struct CProgressInfo:
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
-STDMETHODIMP CProgressInfo::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+STDMETHODIMP CProgressInfo::SetRatioInfo(const UInt64 *inSize, const UInt64 * /* outSize */)
 {
   if (*inSize >= ApprovedStart && InSize == 0)
   {
@@ -459,7 +459,7 @@ int LzmaBenchmark(FILE *f, UInt32 numIterations, UInt32 dictionarySize)
     CCrcOutStream *crcOutStreamSpec = new CCrcOutStream;
     CMyComPtr<ISequentialOutStream> crcOutStream = crcOutStreamSpec;
     
-    UInt64 decodeTime;
+    UInt64 decodeTime = 0;
     for (int j = 0; j < 2; j++)
     {
       inStreamSpec->Init(outStreamSpec->Buffer, compressedSize);

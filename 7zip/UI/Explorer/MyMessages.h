@@ -10,6 +10,12 @@ void MyMessageBox(HWND window, LPCWSTR message);
 inline void MyMessageBox(LPCWSTR message)
   {  MyMessageBox(0, message); }
 
+void MyMessageBoxResource(HWND window, UINT32 id
+    #ifdef LANG        
+    ,UINT32 langID
+    #endif
+    );
+
 void MyMessageBox(UINT32 id
     #ifdef LANG        
     ,UINT32 langID

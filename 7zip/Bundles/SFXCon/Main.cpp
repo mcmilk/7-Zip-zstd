@@ -168,19 +168,6 @@ NRecursedType::EEnum CArchiveCommand::DefaultRecursedType() const
   return kCommandRecursedDefault[CommandType];
 }
 
-static NRecursedType::EEnum GetRecursedTypeFromIndex(int index)
-{
-  switch (index)
-  {
-    case NRecursedPostCharIndex::kWildCardRecursionOnly: 
-      return NRecursedType::kWildCardOnlyRecursed;
-    case NRecursedPostCharIndex::kNoRecursion: 
-      return NRecursedType::kNonRecursed;
-    default:
-      return NRecursedType::kRecursed;
-  }
-}
-
 void PrintHelp(void)
 {
   g_StdOut << kHelpString;
@@ -196,12 +183,6 @@ static void PrintHelpAndExit() // yyy
 {
   PrintHelp();
   ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
-}
-
-static void PrintProcessTitle(const CSysString &processTitle, const UString &archiveName)
-{
-  g_StdOut << endl << processTitle << kProcessArchiveMessage << 
-      archiveName << endl << endl;
 }
 
 bool ParseArchiveCommand(const UString &commandString, CArchiveCommand &command)
@@ -228,7 +209,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
     return false;
   */
   bool isWildCard = DoesNameContainWildCard(name);
-  bool recursed;
+  bool recursed = false;
 
   switch (type)
   {
@@ -246,67 +227,20 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   return true;
 }
 
-void AddCommandLineWildCardToCensr(NWildcard::CCensor &wildcardCensor, 
+void AddCommandLineWildCardToCensor(NWildcard::CCensor &wildcardCensor, 
     const UString &name, bool include, NRecursedType::EEnum type)
 {
   if (!AddNameToCensor(wildcardCensor, name, include, type))
     ShowMessageAndThrowException(kIncorrectWildCardInCommandLine, NExitCode::kUserError);
 }
 
-static bool AreEqualNoCase(wchar_t c1, wchar_t c2)
-{
-  return ::MyCharUpper(c1) == ::MyCharUpper(c2);
-}
-
 void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor, 
-    const UStringVector &nonSwitchStrings, NRecursedType::EEnum type, 
-    bool thereAreSwitchIncludeWildCards)
+    const UStringVector & /* nonSwitchStrings */, NRecursedType::EEnum type, 
+    bool /* thereAreSwitchIncludeWildCards */)
 {
-  AddCommandLineWildCardToCensr(wildcardCensor, kUniversalWildcard, true, type);
+  AddCommandLineWildCardToCensor(wildcardCensor, kUniversalWildcard, true, type);
 }
 
-/*
-void AddSwitchWildCardsToCensor(NWildcard::CCensor &wildcardCensor, 
-    const UStringVector &strings, bool include, NRecursedType::EEnum commonRecursedType)
-{
-  for(int i = 0; i < strings.Size(); i++)
-  {
-    const UString &string = strings[i];
-    NRecursedType::EEnum recursedType;
-    int pos = 0;
-    if (string.Length() < kSomeCludePostStringMinSize)
-      PrintHelpAndExit();
-    if (AreEqualNoCase(string[pos], kRecursedIDChar))
-    {
-      pos++;
-      int index = UString(kRecursedPostCharSet).Find(string[pos]);
-      recursedType = GetRecursedTypeFromIndex(index);
-      if (index >= 0)
-        pos++;
-    }
-    else
-      recursedType = commonRecursedType;
-    if (string.Length() < pos + kSomeCludeAfterRecursedPostStringMinSize)
-      PrintHelpAndExit();
-    UString tail = string.Mid(pos + 1);
-    if (AreEqualNoCase(string[pos], kImmediateNameID))
-      AddCommandLineWildCardToCensr(wildcardCensor, 
-          tail, include, recursedType);
-    else 
-      PrintHelpAndExit();
-  }
-}
-*/
-
-// ------------------------------------------------------------------
-/*
-static void ThrowPrintFileIsNotArchiveException(const CSysString &fileName)
-{
-  CSysString message;
-  message = kFileIsNotArchiveMessageBefore + fileName + kFileIsNotArchiveMessageAfter;
-  ShowMessageAndThrowException(message, NExitCode::kFileIsNotArchive);
-}
-*/
 
 #ifndef _WIN32
 static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
@@ -443,10 +377,17 @@ int Main2(
       eo.OutputDir = outputDir;
       eo.YesToAll = yesToAll;
 
+      UString errorMessage;
       HRESULT result = DecompressArchives(
           v1, v2,
           wildcardCensorHead, 
-          eo, &openCallback, ecs);
+          eo, &openCallback, ecs, errorMessage);
+      if (!errorMessage.IsEmpty())
+      {
+        (*g_StdStream) << endl << "Error: " << errorMessage;;
+        if (result == S_OK)
+          result = E_FAIL;
+      }
 
       if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {

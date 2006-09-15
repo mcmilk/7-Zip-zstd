@@ -40,7 +40,6 @@ CHandler::CHandler()
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  COM_TRY_BEGIN
   *numItems = 
   #ifdef _7Z_VOL
   _refs.Size();
@@ -48,10 +47,9 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   *numItems = _database.Files.Size();
   #endif
   return S_OK;
-  COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -59,13 +57,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
 #ifdef _SFX
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 * /* numProperties */)
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetPropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_NOTIMPL;
 }
@@ -79,8 +77,8 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_NOTIMPL;
 }
@@ -92,26 +90,6 @@ static void MySetFileTime(bool timeDefined, FILETIME unixTime,
   if (timeDefined)
     propVariant = unixTime;
 }
-
-/*
-inline static wchar_t GetHex(Byte value)
-{
-  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
-}
-
-static UString ConvertBytesToHexString(const Byte *data, UInt32 size)
-{
-  UString result;
-  for (UInt32 i = 0; i < size; i++)
-  {
-    Byte b = data[i];
-    result += GetHex(b >> 4);
-    result += GetHex(b & 0xF);
-  }
-  return result;
-}
-*/
-
 
 #ifndef _SFX
 
@@ -151,26 +129,46 @@ static CMethodID k_LZMA  = { { 0x3, 0x1, 0x1 }, 3 };
 static CMethodID k_BCJ   = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
 static CMethodID k_BCJ2  = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
 static CMethodID k_PPMD  = { { 0x3, 0x4, 0x1 }, 3 };
-static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
+static CMethodID k_Deflate   = { { 0x4, 0x1, 0x8 }, 3 };
+static CMethodID k_Deflate64 = { { 0x4, 0x1, 0x9 }, 3 };
 static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 
-static inline char GetHex(Byte value)
+static wchar_t GetHex(Byte value)
 {
-  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
+  return (wchar_t)((value < 10) ? (L'0' + value) : (L'A' + (value - 10)));
 }
 static inline UString GetHex2(Byte value)
 {
   UString result;
-  result += GetHex(value >> 4);
-  result += GetHex(value & 0xF);
+  result += GetHex((Byte)(value >> 4));
+  result += GetHex((Byte)(value & 0xF));
   return result;
 }
 
 #endif
 
+static CMethodID k_AES   = { { 0x6, 0xF1, 0x7, 0x1}, 4 };
+
 static inline UInt32 GetUInt32FromMemLE(const Byte *p)
 {
   return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
+}
+
+bool CHandler::IsEncrypted(UInt32 index2) const
+{
+  CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
+  if (folderIndex != kNumNoIndex)
+  {
+    const CFolder &folderInfo = _database.Folders[folderIndex];
+    for (int i = folderInfo.Coders.Size() - 1; i >= 0; i--)
+    {
+      const CCoderInfo &coderInfo = folderInfo.Coders[i];
+      for (int j = 0; j < coderInfo.AltCoders.Size(); j++)
+        if (coderInfo.AltCoders[j].MethodID == k_AES)
+          return true;
+    }
+  }
+  return false;
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
@@ -260,6 +258,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       if (item.IsFileCRCDefined)
         propVariant = item.FileCRC;
       break;
+    case kpidEncrypted:
+    {
+      propVariant = IsEncrypted(index2);
+      break;
+    }
     #ifndef _SFX
     case kpidMethod:
       {
@@ -299,8 +302,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                 methodName = L"PPMD";
               else if (altCoderInfo.MethodID == k_Deflate)
                 methodName = L"Deflate";
+              else if (altCoderInfo.MethodID == k_Deflate64)
+                methodName = L"Deflate64";
               else if (altCoderInfo.MethodID == k_BZip2)
                 methodName = L"BZip2";
+              else if (altCoderInfo.MethodID == k_AES)
+                methodName = L"7zAES";
               else
                 methodIsKnown = false;
               
@@ -338,6 +345,32 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
+                else if (altCoderInfo.MethodID == k_AES)
+                {
+                  if (altCoderInfo.Properties.GetCapacity() >= 1)
+                  {
+                    methodsString += L":";
+                    const Byte *data = (const Byte *)altCoderInfo.Properties;
+                    Byte firstByte = *data++;
+                    UInt32 numCyclesPower = firstByte & 0x3F;
+                    methodsString += ConvertUInt32ToString(numCyclesPower);
+                    /*
+                    if ((firstByte & 0xC0) != 0)
+                    {
+                      methodsString += L":";
+                      return S_OK;
+                      UInt32 saltSize = (firstByte >> 7) & 1;
+                      UInt32 ivSize = (firstByte >> 6) & 1;
+                      if (altCoderInfo.Properties.GetCapacity() >= 2)
+                      {
+                        Byte secondByte = *data++;
+                        saltSize += (secondByte >> 4);
+                        ivSize += (secondByte & 0x0F);
+                      }
+                    }
+                    */
+                  }
+                }
                 else
                 {
                   if (altCoderInfo.Properties.GetCapacity() > 0)
@@ -345,7 +378,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                     methodsString += L":[";
                     for (size_t bi = 0; bi < altCoderInfo.Properties.GetCapacity(); bi++)
                     {
-                      if (bi > 2 && bi + 1 < altCoderInfo.Properties.GetCapacity())
+                      if (bi > 5 && bi + 1 < altCoderInfo.Properties.GetCapacity())
                       {
                         methodsString += L"..";
                         break;
@@ -517,7 +550,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     {
       openArchiveCallbackTemp.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
     }
-    while(true)
+    for (;;)
     {
       CMyComPtr<IInStream> inStream;
       if (!_volumes.IsEmpty())
@@ -724,8 +757,10 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   COM_TRY_BEGIN
+  #ifdef COMPRESS_MT
   const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
   _numThreads = numProcessors;
+  #endif
 
   for (int i = 0; i < numProperties; i++)
   {
@@ -740,7 +775,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if(name.Left(2).CompareNoCase(L"MT") == 0)
       {
+        #ifdef COMPRESS_MT
         RINOK(ParseMtProp(name.Mid(2), value, numProcessors, _numThreads));
+        #endif
         continue;
       }
       else

@@ -139,13 +139,15 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
         RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItemInfo.GetDataPosition(), 
             STREAM_SEEK_SET, NULL));
-        streamSpec->Init(inStream, existItemInfo.Size);
+        streamSpec->SetStream(inStream);
+        streamSpec->Init(existItemInfo.Size);
       }
       else
       {
         RINOK(inStream->Seek(existItemInfo.HeaderPosition, 
             STREAM_SEEK_SET, NULL));
-        streamSpec->Init(inStream, existItemInfo.GetFullSize());
+        streamSpec->SetStream(inStream);
+        streamSpec->Init(existItemInfo.GetFullSize());
       }
       RINOK(CopyBlock(inStreamLimited, outStream, compressProgress));
       RINOK(outArchive.FillDataResidual(existItemInfo.Size));

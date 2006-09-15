@@ -68,7 +68,7 @@ HRESULT CLZInWindow::ReadBlock()
 {
   if(_streamEndWasReached)
     return S_OK;
-  while(true)
+  for (;;)
   {
     UInt32 size = (UInt32)(_bufferBase - _buffer) + _blockSize - _streamPos;
     if(size == 0)

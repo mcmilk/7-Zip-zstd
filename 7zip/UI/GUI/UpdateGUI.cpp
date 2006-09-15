@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Common/StringToInt.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/Error.h"
@@ -103,6 +104,30 @@ static void AddProp(CObjectVector<CProperty> &properties,
   AddProp(properties, name, value ? UString(L"on"): UString(L"off"));
 }
 
+static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
+{
+  UStringVector strings;
+  SplitString(propertiesString, strings);
+  for (int i = 0; i < strings.Size(); i++)
+  {
+    const UString &s = strings[i];
+    if (is7z)
+    {
+      const wchar_t *end;
+      UInt64 n = ConvertStringToUInt64(s, &end);
+      if (n == 0 && *end == L'=')
+        return true;
+    }
+    else
+    {
+      if (s.Length() > 0)
+        if (s[0] == L'm' && s[1] == L'=')
+          return true;
+    }
+  }
+  return false;
+}
+
 static void ParseAndAddPropertires(CObjectVector<CProperty> &properties, 
     const UString &propertiesString)
 {
@@ -128,45 +153,55 @@ static void SetOutProperties(
     CObjectVector<CProperty> &properties,
     bool is7z,
     UInt32 level, 
+    bool setMethod,
     const UString &method,
     UInt32 dictionary,
     bool orderMode,
     UInt32 order,
     bool solidModeIsAllowed, bool solidMode, 
     bool multiThreadIsAllowed, bool multiThread, 
+    const UString &encryptionMethod,
     bool encryptHeadersIsAllowed, bool encryptHeaders,
-    bool sfxMode)
+    bool /* sfxMode */)
 {
   if (level != (UInt32)(Int32)-1)
     AddProp(properties, L"x", (UInt32)level);
-  if (!method.IsEmpty())
-    AddProp(properties, is7z ? L"0": L"m", method);
-  if (dictionary != (UInt32)(Int32)-1)
+  if (setMethod)
   {
-    UString name;
-    if (is7z)
-      name = L"0";
-    if (orderMode)
-      name += L"mem";
-    else
-      name += L"d";
-    wchar_t s[32];
-    ConvertUInt64ToString(dictionary, s);
-    wcscat(s, L"B");
-    AddProp(properties, name, UString(s));
+    if (!method.IsEmpty())
+      AddProp(properties, is7z ? L"0": L"m", method);
+    if (dictionary != (UInt32)(Int32)-1)
+    {
+      UString name;
+      if (is7z)
+        name = L"0";
+      if (orderMode)
+        name += L"mem";
+      else
+        name += L"d";
+      wchar_t s[32];
+      ConvertUInt64ToString(dictionary, s);
+      size_t len = wcslen(s);
+      s[len++] = L'B';
+      s[len] = L'\0';
+      AddProp(properties, name, UString(s));
+    }
+    if (order != (UInt32)(Int32)-1)
+    {
+      UString name;
+      if (is7z)
+        name = L"0";
+      if (orderMode)
+        name += L"o";
+      else
+        name += L"fb";
+      AddProp(properties, name, (UInt32)order);
+    }
   }
-  if (order != (UInt32)(Int32)-1)
-  {
-    UString name;
-    if (is7z)
-      name = L"0";
-    if (orderMode)
-      name += L"o";
-    else
-      name += L"fb";
-    AddProp(properties, name, (UInt32)order);
-  }
-  
+    
+  if (!encryptionMethod.IsEmpty())
+    AddProp(properties, L"em", encryptionMethod);
+
   if (encryptHeadersIsAllowed)
     AddProp(properties, L"he", encryptHeaders);
   if (solidModeIsAllowed)
@@ -277,25 +312,30 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
       throw 1091756;
   }
   archiverInfo = dialog.m_ArchiverInfoList[di.ArchiverInfoIndex];
-  if (callback->PasswordIsDefined = (!di.Password.IsEmpty()))
+  callback->PasswordIsDefined = (!di.Password.IsEmpty());
+  if (callback->PasswordIsDefined)
     callback->Password = di.Password;
 
   options.MethodMode.Properties.Clear();
 
+  bool is7z = archiverInfo.Name.CompareNoCase(L"7z") == 0;
+  bool methodOverride = IsThereMethodOverride(is7z, di.Options);
+
   SetOutProperties(
       options.MethodMode.Properties,
-      archiverInfo.Name.CompareNoCase(L"7z") == 0,
+      is7z,
       di.Level, 
+      !methodOverride,
       di.Method, 
       di.Dictionary, 
       di.OrderMode, di.Order,
       di.SolidIsAllowed, di.Solid, 
       di.MultiThreadIsAllowed, di.MultiThread, 
+      di.EncryptionMethod,
       di.EncryptHeadersIsAllowed, di.EncryptHeaders,
       di.SFXMode);
   
-  ParseAndAddPropertires(options.MethodMode.Properties, 
-      di.Options);
+  ParseAndAddPropertires(options.MethodMode.Properties, di.Options);
 
   if (di.SFXMode)
     options.SfxMode = true;

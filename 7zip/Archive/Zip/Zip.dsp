@@ -142,6 +142,14 @@ SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -215,6 +223,18 @@ SOURCE=..\..\..\Windows\PropVariant.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\PropVariant.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Synchronization.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group
 # Begin Group "Archive Common"
@@ -306,6 +326,14 @@ SOURCE=..\..\Common\LSBFDecoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MemBlocks.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MemBlocks.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OffsetStream.cpp
 # End Source File
 # Begin Source File
@@ -319,6 +347,22 @@ SOURCE=..\..\Common\OutBuffer.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\OutBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutMemStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutMemStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressMt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressMt.h
 # End Source File
 # Begin Source File
 
@@ -420,6 +464,88 @@ SOURCE=.\ZipUpdate.h
 # Begin Group "Crypto"
 
 # PROP Default_Filter ""
+# Begin Group "WzAes"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\WzAES\WzAES.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\WzAES\WzAES.h
+# End Source File
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\HmacSha1.cpp
+
+!IF  "$(CFG)" == "Zip - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Zip - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\HmacSha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.cpp
+
+!IF  "$(CFG)" == "Zip - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Zip - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\RandGen.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\RandGen.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\RotateDefs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.cpp
+
+!IF  "$(CFG)" == "Zip - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Zip - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Crypto\Zip\ZipCipher.cpp

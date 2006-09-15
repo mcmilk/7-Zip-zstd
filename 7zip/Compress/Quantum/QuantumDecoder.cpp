@@ -112,7 +112,6 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
   if (outSize == NULL)
     return E_INVALIDARG;
   UInt64 size = *outSize;
-  const UInt64 startSize = size;
 
   SetInStream(inStream);
   _outWindowStream.SetStream(outStream);
@@ -120,7 +119,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
   CDecoderFlusher flusher(this);
 
   const UInt64 start = _outWindowStream.GetProcessedSize();
-  while(true)
+  for (;;)
   {
     UInt32 curSize = 1 << 18;
     UInt64 rem = size - (_outWindowStream.GetProcessedSize() - start);

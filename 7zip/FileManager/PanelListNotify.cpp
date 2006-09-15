@@ -141,7 +141,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   {
     if(s.Length() + 1 > size)
       s = s.Left(size - 1);
-    wcscpy(item.pszText, s);
+    MyStringCopy(item.pszText, (const wchar_t *)s);
   }
   return 0;
 }
@@ -150,7 +150,7 @@ extern DWORD g_ComCtl32Version;
 
 void CPanel::OnItemChanged(NMLISTVIEW *item)
 {
-  int index = item->lParam;
+  int index = (int)item->lParam;
   if (index == kParentIndex)
     return;
   bool oldSelected = (item->uOldState & LVIS_SELECTED) != 0;
@@ -162,9 +162,9 @@ void CPanel::OnItemChanged(NMLISTVIEW *item)
 
 bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 {
-  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+  // bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+  // bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+  // bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   switch(header->code)
   {
     case LVN_ITEMCHANGED:
@@ -222,8 +222,8 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     {
       bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
       bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-      bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-      bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+      // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
+      // bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
       bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
       if (!shift && alt && !ctrl)
       {
@@ -310,7 +310,7 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
     lplvcd->clrTextBk = GetBkColorForItem(lplvcd->nmcd.dwItemSpec,
     lplvcd->nmcd.lItemlParam);
     */
-    int realIndex = lplvcd->nmcd.lItemlParam;
+    int realIndex = (int)lplvcd->nmcd.lItemlParam;
     bool selected = false;
     if (realIndex != kParentIndex)
       selected = _selectedStatusVector[realIndex];

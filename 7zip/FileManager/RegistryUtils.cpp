@@ -94,6 +94,7 @@ static bool ReadOption(const TCHAR *value, bool defaultValue)
   return defaultValue;
 }
 
+/*
 static void SaveLmOption(const TCHAR *value, bool enabled)
 {
   CKey key;
@@ -112,6 +113,7 @@ static bool ReadLmOption(const TCHAR *value, bool defaultValue)
   }
   return defaultValue;
 }
+*/
 
 void SaveShowDots(bool showDots) { SaveOption(kShowDots, showDots); }
 bool ReadShowDots() { return ReadOption(kShowDots, false); }

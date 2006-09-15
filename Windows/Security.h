@@ -158,7 +158,7 @@ public:
     { return AddAccountRights(accountSid, userRights, 1); }
 
   NTSTATUS RemoveAccountRights(PSID accountSid, bool allRights, PLSA_UNICODE_STRING userRights, ULONG countOfRights)
-    { return LsaRemoveAccountRights(_handle, accountSid, BoolToBOOL(allRights), userRights, countOfRights); }
+    { return LsaRemoveAccountRights(_handle, accountSid, (BOOLEAN)(allRights ? TRUE : FALSE), userRights, countOfRights); }
 };
 
 bool AddLockMemoryPrivilege();

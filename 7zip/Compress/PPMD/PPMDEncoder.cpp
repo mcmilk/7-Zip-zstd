@@ -96,7 +96,7 @@ CEncoder::CEncoder():
 
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
-      const UInt64 *inSize, const UInt64 *outSize,
+      const UInt64 * /* inSize */, const UInt64 * /* outSize */,
       ICompressProgressInfo *progress)
 {
   if (!_inStream.Create(1 << 20))
@@ -117,7 +117,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   _info.MaxOrder = 0;
   _info.StartModelRare(_order);
 
-  while(true)
+  for (;;)
   {
     UInt32 size = (1 << 18);
     do

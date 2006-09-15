@@ -9,6 +9,11 @@
 #include "Extract.h"
 #include "Update.h"
 
+struct CArchiveCommandLineException: public AString
+{
+  CArchiveCommandLineException(const char *errorMessage): AString(errorMessage) {}
+};
+
 namespace NCommandType { enum EEnum
 {
   kAdd = 0,

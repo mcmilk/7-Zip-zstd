@@ -6,6 +6,9 @@
 inline bool BOOLToBool(BOOL value)
   { return (value != FALSE); }
 
+inline bool LRESULTToBool(LRESULT value)
+  { return (value != FALSE); }
+
 inline BOOL BoolToBOOL(bool value)
   { return (value ? TRUE: FALSE); }
 

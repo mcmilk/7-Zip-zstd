@@ -107,7 +107,6 @@ PPMD_OPT_OBJS = \
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
-  $O\SHA256.obj \
 
 AES_OPT_OBJS = \
   $O\MyAES.obj \
@@ -116,6 +115,9 @@ AES_ORIG_OBJS = \
   $O\aescrypt.obj \
   $O\aeskey.obj \
   $O\aestab.obj \
+
+CRYPTO_HASH_OBJS = \
+  $O\Sha256.obj \
 
 OBJS = \
   $O\StdAfx.obj \
@@ -138,6 +140,7 @@ OBJS = \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $(AES_ORIG_OBJS) \
+  $(CRYPTO_HASH_OBJS) \
   $O\resource.res
 
 
@@ -180,6 +183,8 @@ $O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL_O2)
 $(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O2_W3)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
+	$(COMPL_O2)
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
 	$(COMPL_O2)

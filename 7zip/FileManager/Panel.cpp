@@ -80,7 +80,7 @@ LRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE, 
       0, 0, _xSize, 260, 
-      parentWindow, (HMENU)id, g_hInstance))
+      parentWindow, (HMENU)(UINT_PTR)id, g_hInstance))
     return E_FAIL;
   return S_OK;
 }
@@ -132,7 +132,7 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   if (message == WM_CHAR)
   {
-    UINT scanCode = (lParam >> 16) & 0xFF;
+    UINT scanCode = (UINT)((lParam >> 16) & 0xFF);
     bool extended = ((lParam & 0x1000000) != 0);
     UINT virtualKey = MapVirtualKey(scanCode, 1);
     if (virtualKey == VK_MULTIPLY || virtualKey == VK_ADD ||
@@ -148,7 +148,7 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   else if (message == WM_SYSCHAR)
   {
     // For Alt+Enter Beep disabling
-    UINT scanCode = (lParam >> 16) & 0xFF;
+    UINT scanCode = (UINT)(lParam >> 16) & 0xFF;
     UINT virtualKey = MapVirtualKey(scanCode, 1);
     if (virtualKey == VK_RETURN || virtualKey == VK_MULTIPLY || 
         virtualKey == VK_ADD || virtualKey == VK_SUBTRACT)
@@ -164,8 +164,8 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   {
     bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
     bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-    bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-    bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+    // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
+    // bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
     bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
     switch(wParam)
     {
@@ -295,7 +295,7 @@ LRESULT CMyComboBoxEdit::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     return CallWindowProc(_origWindowProc, *this, message, wParam, lParam); 
 }
 
-bool CPanel::OnCreate(CREATESTRUCT *createStruct)
+bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
 {
   // _virtualMode = false;
   // _sortIndex = 0;
@@ -329,7 +329,7 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
   exStyle = WS_EX_CLIENTEDGE;
 
   if (!_listView.CreateEx(exStyle, style, 0, 0, 116, 260, 
-      HWND(*this), (HMENU)_baseID + 1, g_hInstance, NULL))
+      HWND(*this), (HMENU)(UINT_PTR)(_baseID + 1), g_hInstance, NULL))
     return false;
 
   _listView.SetUnicodeFormat(true);
@@ -438,7 +438,7 @@ bool CPanel::OnCreate(CREATESTRUCT *createStruct)
     WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
       0, 0, 100, 20,
       ((_headerReBar == 0) ? HWND(*this) : _headerToolBar),
-      (HMENU)(_comboBoxID),
+      (HMENU)(UINT_PTR)(_comboBoxID),
       g_hInstance, NULL);
   // _headerComboBox.SendMessage(CBEM_SETUNICODEFORMAT, (WPARAM)(BOOL)TRUE, 0);
 
@@ -569,7 +569,7 @@ void CPanel::ChangeWindowSize(int xSize, int ySize)
   // _statusBar2.MoveWindow(0, 200, xSize, kStatusBar2Size);
 }
 
-bool CPanel::OnSize(WPARAM wParam, int xSize, int ySize) 
+bool CPanel::OnSize(WPARAM /* wParam */, int xSize, int ySize) 
 {
   if (_headerReBar)
     _headerReBar.Move(0, 0, xSize, 0);
@@ -577,7 +577,7 @@ bool CPanel::OnSize(WPARAM wParam, int xSize, int ySize)
   return true;
 }
 
-bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT &result)
+bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT & /* result */)
 {
   switch(header->code)
   {
@@ -592,7 +592,7 @@ bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT &result)
   return false;
 }
 
-bool CPanel::OnNotify(UINT controlID, LPNMHDR header, LRESULT &result)
+bool CPanel::OnNotify(UINT /* controlID */, LPNMHDR header, LRESULT &result)
 {
   if (!_processNotify)
     return false;
@@ -729,7 +729,7 @@ void CPanel::SetListViewMode(UINT32 index)
   if (index >= 4)
     return;
   _ListViewMode = index;
-  DWORD oldStyle = _listView.GetStyle();
+  DWORD oldStyle = (DWORD)_listView.GetStyle();
   DWORD newStyle = kStyles[index];
   if ((oldStyle & LVS_TYPEMASK) != newStyle)
     _listView.SetStyle((oldStyle & ~LVS_TYPEMASK) | newStyle);
@@ -770,8 +770,7 @@ void CPanel::AddToArchive()
   }
   const UString archiveName = CreateArchiveName(
       names.Front(), (names.Size() > 1), false);
-  CompressFiles(_currentFolderPrefix, archiveName, 
-      names, false, true, false);
+  CompressFiles(_currentFolderPrefix, archiveName, L"", names, false, true, false);
   // KillSelection();
 }
 

@@ -22,11 +22,12 @@ public:
   CBaseRecordVector(size_t itemSize):
       _capacity(0), _size(0), _items(0), _itemSize(itemSize) {}
 	virtual ~CBaseRecordVector();
+  void Free();
   int Size() const { return _size; }
-	bool IsEmpty() const { return (_size == 0); }
-	void Reserve(int newCapacity);
-	virtual void Delete(int index, int num = 1);
-	void Clear();
+  bool IsEmpty() const { return (_size == 0); }
+  void Reserve(int newCapacity);
+  virtual void Delete(int index, int num = 1);
+  void Clear();
   void DeleteFrom(int index);
   void DeleteBack();
 };
@@ -38,7 +39,7 @@ public:
   CRecordVector():CBaseRecordVector(sizeof(T)){};
   CRecordVector(const CRecordVector &v):
     CBaseRecordVector(sizeof(T)) { *this = v;}
-	CRecordVector& operator=(const CRecordVector &v)
+  CRecordVector& operator=(const CRecordVector &v)
   {
     Clear();
     return (*this += v);
@@ -220,7 +221,7 @@ public:
   void Sort(int (*compare)(void *const *, void *const *, void *), void *param) 
     { CPointerVector::Sort(compare, param); }
 
-  static int CompareObjectItems(void *const *a1, void *const *a2, void *param)
+  static int CompareObjectItems(void *const *a1, void *const *a2, void * /* param */)
     { return MyCompare(*(*((const T **)a1)), *(*((const T **)a2))); }
   void Sort() { CPointerVector::Sort(CompareObjectItems, 0); }
 };

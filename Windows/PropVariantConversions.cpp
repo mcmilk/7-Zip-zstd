@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
+// #include <stdio.h>
 
 #include "PropVariantConversions.h"
 
@@ -25,20 +25,25 @@ static UString ConvertInt64ToString(Int64 value)
   return buffer;
 }
 
-/*
-static void UIntToStringSpec(UInt32 value, char *s, int numPos)
+static char *UIntToStringSpec(UInt32 value, char *s, int numPos)
 {
-  char s2[32];
-  ConvertUInt64ToString(value, s2);
-  int len = strlen(s2);
+  char temp[16];
+  int pos = 0;
+  do 
+  {
+    temp[pos++] = (char)('0' + value % 10);
+    value /= 10;
+  }
+  while (value != 0);
   int i;
-  for (i = 0; i < numPos - len; i++)
-    s[i] = '0';
-  for (int j = 0; j < len; j++, i++)
-    s[i] = s2[j];
-  s[i] = '\0';
+  for (i = 0; i < numPos - pos; i++)
+    *s++ = '0';
+  do
+    *s++ = temp[--pos];
+  while (pos > 0);
+  *s = '\0';
+  return s;
 }
-*/
 
 bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool includeSeconds)
 {
@@ -46,25 +51,24 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
   SYSTEMTIME st;
   if(!BOOLToBool(FileTimeToSystemTime(&ft, &st)))
     return false;
-  /*
-  UIntToStringSpec(st.wYear, s, 4);
-  strcat(s, "-");
-  UIntToStringSpec(st.wMonth, s + strlen(s), 2);
-  strcat(s, "-");
-  UIntToStringSpec(st.wDay, s + strlen(s), 2);
+  s = UIntToStringSpec(st.wYear, s, 4);
+  *s++ = '-';
+  s = UIntToStringSpec(st.wMonth, s, 2);
+  *s++ = '-';
+  s = UIntToStringSpec(st.wDay, s, 2);
   if (includeTime)
   {
-    strcat(s, " ");
-    UIntToStringSpec(st.wHour, s + strlen(s), 2);
-    strcat(s, ":");
-    UIntToStringSpec(st.wMinute, s + strlen(s), 2);
+    *s++ = ' ';
+    s = UIntToStringSpec(st.wHour, s, 2);
+    *s++ = ':';
+    s = UIntToStringSpec(st.wMinute, s, 2);
     if (includeSeconds)
     {
-      strcat(s, ":");
-      UIntToStringSpec(st.wSecond, s + strlen(s), 2);
+      *s++ = ':';
+      UIntToStringSpec(st.wSecond, s, 2);
     }
   }
-  */
+  /*
   sprintf(s, "%04d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
   if (includeTime)
   {
@@ -72,6 +76,7 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
     if (includeSeconds)
       sprintf(s + strlen(s), ":%02d", st.wSecond);
   }
+  */
   return true;
 }
 

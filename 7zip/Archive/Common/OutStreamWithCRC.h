@@ -16,18 +16,22 @@ public:
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
-  CCRC _crc;
   CMyComPtr<ISequentialOutStream> _stream;
+  UInt64 _size;
+  CCRC _crc;
+  bool _calculateCrc;
 public:
-  void Init(ISequentialOutStream *stream)
+  void SetStream(ISequentialOutStream *stream) { _stream = stream; }
+  void Init(bool calculateCrc = true)
   {
-    _stream = stream;
+    _size = 0;
+    _calculateCrc = calculateCrc;
     _crc.Init();
   }
   void ReleaseStream() { _stream.Release(); }
+  UInt64 GetSize() const { return _size; }
   UInt32 GetCRC() const { return _crc.GetDigest(); }
   void InitCRC() { _crc.Init(); }
-
 };
 
 #endif

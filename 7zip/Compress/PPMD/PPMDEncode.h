@@ -19,16 +19,16 @@ struct CEncodeInfo: public CInfo
     if (rs.Symbol == symbol) 
     {
       FoundState = &rs;
-      rs.Freq += (rs.Freq < 128);
+      rs.Freq = (Byte)(rs.Freq + (rs.Freq < 128 ? 1: 0));
       rangeEncoder->EncodeBit(bs, TOT_BITS, 0);
-      bs += UInt16(INTERVAL-GET_MEAN(bs,PERIOD_BITS, 2));
+      bs = (UInt16)(bs + INTERVAL - GET_MEAN(bs, PERIOD_BITS, 2));
       PrevSuccess = 1;
       RunLength++;
     } 
     else 
     {
       rangeEncoder->EncodeBit(bs, TOT_BITS, 1);
-      bs -= UInt16(GET_MEAN(bs,PERIOD_BITS, 2));
+      bs = (UInt16)(bs - GET_MEAN(bs, PERIOD_BITS, 2));
       InitEsc = ExpEscape[bs >> 10];
       NumMasked = 1;                        
       CharMask[rs.Symbol] = EscCount;
@@ -91,7 +91,7 @@ struct CEncodeInfo: public CInfo
     rangeEncoder->Encode(hiCnt, scale, hiCnt + scale);
     scale += hiCnt;
     
-    psee2c->Summ += scale;         
+    psee2c->Summ = (UInt16)(psee2c->Summ + scale);
     NumMasked = MinContext->NumStats;
     return;
 SYMBOL_FOUND:

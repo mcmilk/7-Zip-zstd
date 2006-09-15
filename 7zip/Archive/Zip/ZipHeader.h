@@ -20,8 +20,9 @@ namespace NSignature
   static const UInt32 kMarkerSize = 4;
 }
 
-const UInt32 kZip64EndOfCentralDirRecordSize = 44;
-
+const UInt32 kEcdSize = 22;
+const UInt32 kZip64EcdSize = 44;
+const UInt32 kZip64EcdLocatorSize = 20;
 /*
 struct CEndOfCentralDirectoryRecord
 {
@@ -68,7 +69,8 @@ namespace NFileHeader
       kPKImploding = 10,
       
       kBZip2 = 12,
-      kWinZipPPMd = 0x62
+      kWzPPMd = 0x62,
+      kWzAES = 0x63
     };
     const int kNumCompressionMethods = 11;
     const Byte kMadeByProgramVersion = 20;
@@ -77,6 +79,15 @@ namespace NFileHeader
     const Byte kStoreExtractVersion = 10;
     
     const Byte kSupportedVersion   = 20;
+  }
+
+  namespace NExtraID
+  {
+    enum 
+    { 
+      kZip64 = 0x01,
+      kWzAES = 0x9901
+    };
   }
 
   const UInt32 kLocalBlockSize = 26;

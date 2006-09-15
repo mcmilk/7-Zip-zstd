@@ -4,13 +4,9 @@
 #include "StdAfx.h"
 
 #include "RarAES.h"
-#include "sha1.h"
+#include "../Hash/Sha1.h"
 
 extern void GetCryptoFolderPrefix(TCHAR *path);
-
-// {23170F69-40C1-278B-0601-010000000000}
-DEFINE_GUID(CLSID_CCrypto_AES128_Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 namespace NCrypto {
 namespace NRar29 {
@@ -81,7 +77,7 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  CreateFilter();
+  RINOK(CreateFilter());
   CMyComPtr<ICryptoProperties> cp;
   RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
   RINOK(cp->SetKey(aesKey, 16));
@@ -97,7 +93,7 @@ HRESULT CDecoder::CreateFilter()
   TCHAR aesLibPath[MAX_PATH + 64];
   GetCryptoFolderPrefix(aesLibPath);
   lstrcat(aesLibPath, TEXT("AES.dll"));
-  return _aesLib.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES128_Decoder, &_aesFilter);
+  return _aesLib.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES_CBC_Decoder, &_aesFilter);
 }
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
@@ -115,7 +111,7 @@ void CDecoder::Calculate()
     
     memcpy(rawPassword, buffer, buffer.GetCapacity());
     
-    int rawLength = buffer.GetCapacity();
+    size_t rawLength = buffer.GetCapacity();
     
     if (_thereIsSalt)
     {
@@ -123,7 +119,7 @@ void CDecoder::Calculate()
       rawLength += kSaltSize;
     }
     
-    CSHA1 sha;
+    NSha1::CContext sha;
     sha.Init();
 
     // seems rar reverts hash for sha.
@@ -132,15 +128,12 @@ void CDecoder::Calculate()
     for (i = 0; i < hashRounds; i++)
     {
       sha.Update(rawPassword, rawLength, _rar350Mode);
-      Byte pswNum[3];
-      pswNum[0] = (Byte)i;
-      pswNum[1] = (Byte)(i >> 8);
-      pswNum[2] = (Byte)(i >> 16);
+      Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
       sha.Update(pswNum, 3, _rar350Mode);
       if (i % (hashRounds / 16) == 0)
       {
-        CSHA1 shaTemp = sha;
-        Byte digest[20];
+        NSha1::CContext shaTemp = sha;
+        Byte digest[NSha1::kDigestSize];
         shaTemp.Final(digest);
         aesInit[i / (hashRounds / 16)] = (Byte)digest[4 * 4 + 3];
       }

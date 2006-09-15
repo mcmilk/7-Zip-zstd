@@ -1,4 +1,4 @@
-// BranchARMThumb.c
+/* BranchARMThumb.c */
 
 #include "BranchARMThumb.h"
 
@@ -24,10 +24,10 @@ UInt32 ARMThumb_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         dest = src - (nowPos + i + 4);
       dest >>= 1;
       
-      data[i + 1] = 0xF0 | ((dest >> 19) & 0x7);
-      data[i + 0] = (dest >> 11);
-      data[i + 3] = 0xF8 | ((dest >> 8) & 0x7);
-      data[i + 2] = (dest);
+      data[i + 1] = (Byte)(0xF0 | ((dest >> 19) & 0x7));
+      data[i + 0] = (Byte)(dest >> 11);
+      data[i + 3] = (Byte)(0xF8 | ((dest >> 8) & 0x7));
+      data[i + 2] = (Byte)dest;
       i += 2;
     }
   }

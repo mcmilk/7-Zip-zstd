@@ -15,6 +15,9 @@ static const int kNumDigits = 3;
 
 CPercentPrinter::CPercentPrinter(UInt64 minStepSize):
   m_MinStepSize(minStepSize),
+  m_PrevValue(0),
+  m_CurValue(0),
+  m_Total(1),
   m_ScreenPos(0),
   m_StringIsPrinted(false)
 {
@@ -67,10 +70,12 @@ void CPercentPrinter::RePrintRatio()
   char temp[32 + kNumDigits] = "    "; // for 4 digits;
   ConvertUInt64ToString(ratio, temp + kNumDigits);
   int len = (int)strlen(temp + kNumDigits);
-  strcat(temp, "%");
+  temp[kNumDigits + len] = '%';
+  temp[kNumDigits + len + 1] = '\0';
   int pos = (len > kNumDigits)? kNumDigits : len;
   (*OutStream) << kPercentFormatString1;
   (*OutStream) << (temp + pos);
+  OutStream->Flush(); 
   m_PrevValue = m_CurValue;
   m_StringIsPrinted = true;
 }

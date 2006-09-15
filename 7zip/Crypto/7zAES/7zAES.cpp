@@ -14,7 +14,7 @@
 #include "../AES/MyAES.h"
 #endif
 
-#include "SHA256.h"
+#include "../Hash/Sha256.h"
 
 using namespace NWindows;
 
@@ -49,7 +49,7 @@ void CKeyInfo::CalculateDigest()
   }
   else
   {
-    NCrypto::NSHA256::SHA256 sha;
+    NCrypto::NSha256::CContext sha;
     const UInt64 numRounds = UInt64(1) << (NumCyclesPower);
     Byte temp[8] = { 0,0,0,0,0,0,0,0 };
     for (UInt64 round = 0; round < numRounds; round++)
@@ -158,15 +158,15 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   // _key.NumCyclesPower = 0x3F;
   _key.NumCyclesPower = 18;
 
-  Byte firstByte = _key.NumCyclesPower | 
+  Byte firstByte = (Byte)(_key.NumCyclesPower | 
     (((_key.SaltSize == 0) ? 0 : 1) << 7) |
-    (((ivSize == 0) ? 0 : 1) << 6);
+    (((ivSize == 0) ? 0 : 1) << 6));
   RINOK(outStream->Write(&firstByte, 1, NULL));
   if (_key.SaltSize == 0 && ivSize == 0)
     return S_OK;
-  Byte saltSizeSpec = (_key.SaltSize == 0) ? 0 : (_key.SaltSize - 1);
-  Byte ivSizeSpec = (ivSize == 0) ? 0 : (ivSize - 1);
-  Byte secondByte = ((saltSizeSpec) << 4) | ivSizeSpec;
+  Byte saltSizeSpec = (Byte)((_key.SaltSize == 0) ? 0 : (_key.SaltSize - 1));
+  Byte ivSizeSpec = (Byte)((ivSize == 0) ? 0 : (ivSize - 1));
+  Byte secondByte = (Byte)(((saltSizeSpec) << 4) | ivSizeSpec);
   RINOK(outStream->Write(&secondByte, 1, NULL));
   if (_key.SaltSize > 0)
   {
@@ -285,20 +285,20 @@ HRESULT CBaseCoder::CreateFilterFromDLL(REFCLSID clsID)
 HRESULT CEncoder::CreateFilter()
 {
   #ifdef CRYPTO_AES
-  _aesFilter = new CAES256_CBC_Encoder;
+  _aesFilter = new CAES_CBC_Encoder;
   return S_OK;
   #else
-  return CreateFilterFromDLL(CLSID_CCrypto_AES256_Encoder);
+  return CreateFilterFromDLL(CLSID_CCrypto_AES_CBC_Encoder);
   #endif
 }
 
 HRESULT CDecoder::CreateFilter()
 {
   #ifdef CRYPTO_AES
-  _aesFilter = new CAES256_CBC_Decoder;
+  _aesFilter = new CAES_CBC_Decoder;
   return S_OK;
   #else
-  return CreateFilterFromDLL(CLSID_CCrypto_AES256_Decoder);
+  return CreateFilterFromDLL(CLSID_CCrypto_AES_CBC_Decoder);
   #endif
 }
 

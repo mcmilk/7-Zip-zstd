@@ -15,12 +15,20 @@ namespace NContextMenuFlags
   const UINT32 kOpen = 1 << 5;
 
   const UINT32 kCompress = 1 << 8;
-  const UINT32 kCompressTo = 1 << 9;
+  const UINT32 kCompressTo7z = 1 << 9;
   const UINT32 kCompressEmail = 1 << 10;
-  const UINT32 kCompressToEmail = 1 << 11;
+  const UINT32 kCompressTo7zEmail = 1 << 11;
+
+  const UINT32 kCompressToZip = 1 << 12;
+  const UINT32 kCompressToZipEmail = 1 << 13;
 
   inline UINT32 GetDefaultFlags() { 
-      return kOpen | kExtract | kExtractHere | kCompress | kTest; }     
+    return 
+      kOpen | kTest | 
+      kExtract | kExtractHere | kExtractTo |
+      kCompress | kCompressEmail | 
+      kCompressTo7z | kCompressTo7zEmail | 
+      kCompressToZip | kCompressToZipEmail; }     
 }
 
 #endif

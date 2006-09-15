@@ -220,7 +220,6 @@ void CEncoder::SetPrices(UInt32 posState, UInt32 numSymbols, UInt32 *prices) con
 }
 CEncoder::CEncoder():
   _numFastBytes(kNumFastBytesDefault),
-  _matchFinderCycles(0),
   _distTableSize(kDefaultDictionaryLogSize * 2),
   _posStateBits(2),
   _posStateMask(4 - 1),
@@ -229,12 +228,13 @@ CEncoder::CEncoder():
   _dictionarySize(1 << kDefaultDictionaryLogSize),
   _dictionarySizePrev(UInt32(-1)),
   _numFastBytesPrev(UInt32(-1)),
+  _matchFinderCycles(0),
   _matchFinderIndex(kBT4),
-  setMfPasses(0),
    #ifdef COMPRESS_MF_MT
   _multiThread(false),
    #endif
-  _writeEndMark(false)
+  _writeEndMark(false),
+  setMfPasses(0)
 {
   // _maxMode = false;
   _fastMode = false;
@@ -320,7 +320,7 @@ HRESULT CEncoder::Create()
 
 static bool AreStringsEqual(const wchar_t *base, const wchar_t *testString)
 {
-  while (true)
+  for (;;)
   {
     wchar_t c = *testString;
     if (c >= 'a' && c <= 'z')
@@ -486,7 +486,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
   const UInt32 kPropSize = 5;
   Byte properties[kPropSize];
-  properties[0] = (_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits;
+  properties[0] = (Byte)((_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits);
   for (int i = 0; i < 4; i++)
     properties[1 + i] = Byte(_dictionarySize >> (8 * i));
   return WriteStream(outStream, properties, kPropSize, NULL);
@@ -764,7 +764,7 @@ HRESULT CEncoder::GetOptimum(UInt32 position, UInt32 &backRes, UInt32 &lenRes)
 
   UInt32 cur = 0;
 
-  while(true)
+  for (;;)
   {
     cur++;
     if(cur == lenEnd)
@@ -1129,7 +1129,7 @@ HRESULT CEncoder::ReadMatchDistances(UInt32 &lenRes, UInt32 &numDistancePairs)
   return S_OK;
 }
 
-HRESULT CEncoder::GetOptimumFast(UInt32 position, UInt32 &backRes, UInt32 &lenRes)
+HRESULT CEncoder::GetOptimumFast(UInt32 &backRes, UInt32 &lenRes)
 {
   UInt32 lenMain, numDistancePairs;
   if (!_longestMatchWasFound)
@@ -1185,7 +1185,7 @@ HRESULT CEncoder::GetOptimumFast(UInt32 position, UInt32 &backRes, UInt32 &lenRe
     return MovePos(lenMain - 1);
   }
 
-  UInt32 backMain;
+  UInt32 backMain = 0; // for GCC
   if (lenMain >= 2)
   {
     backMain = matchDistances[numDistancePairs - 1];
@@ -1296,24 +1296,25 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   _needReleaseMFStream = false;
   CCoderReleaser coderReleaser(this);
   RINOK(SetStreams(inStream, outStream, inSize, outSize));
-  while(true)
+  for (;;)
   {
     UInt64 processedInSize;
     UInt64 processedOutSize;
     Int32 finished;
     RINOK(CodeOneBlock(&processedInSize, &processedOutSize, &finished));
     if (finished != 0)
-      return S_OK;
+      break;
     if (progress != 0)
     {
       RINOK(progress->SetRatioInfo(&processedInSize, &processedOutSize));
     }
   }
+  return S_OK;
 }
 
 HRESULT CEncoder::SetStreams(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, 
-      const UInt64 *inSize, const UInt64 *outSize)
+      const UInt64 * /* inSize */, const UInt64 * /* outSize */)
 {
   _inStream = inStream;
   _finished = false;
@@ -1381,7 +1382,7 @@ HRESULT CEncoder::CodeOneBlock(UInt64 *inSize, UInt64 *outSize, Int32 *finished)
   if (_matchFinder->GetNumAvailableBytes() == 0)
     return Flush(nowPos32);
 
-  while(true)
+  for (;;)
   {
     #ifdef _NO_EXCEPTIONS
     if (_rangeEncoder.Stream.ErrorCode != S_OK)
@@ -1390,7 +1391,7 @@ HRESULT CEncoder::CodeOneBlock(UInt64 *inSize, UInt64 *outSize, Int32 *finished)
     UInt32 pos, len;
     HRESULT result;
     if (_fastMode)
-      result = GetOptimumFast(nowPos32, pos, len);
+      result = GetOptimumFast(pos, len);
     else
       result = GetOptimum(nowPos32, pos, len);
     RINOK(result);

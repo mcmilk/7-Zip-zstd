@@ -7,6 +7,7 @@
 
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
+#include "Common/Alloc.h"
 
 #include "Windows/Control/Toolbar.h"
 #include "Windows/Error.h"
@@ -126,6 +127,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 const wchar_t *kWindowClass = L"FM";
 
+#ifndef _UNICODE
 static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
@@ -134,6 +136,7 @@ static bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 
   //  FUNCTION: InitInstance(HANDLE, int)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
@@ -359,14 +362,16 @@ static void SetMemoryLock()
     NSecurity::EnableLockMemoryPrivilege();
 }
 
-int WINAPI WinMain(	HINSTANCE hInstance,
-					HINSTANCE hPrevInstance,
-					LPSTR    lpCmdLine,
-					int       nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int nCmdShow)
 {
   #ifndef _UNICODE
   g_IsNT = IsItWindowsNT();
   #endif
+
+  #ifdef _WIN32
+  SetLargePageSize();
+  #endif
+
   InitCommonControls();
 
   g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
@@ -430,7 +435,7 @@ int WINAPI WinMain(	HINSTANCE hInstance,
 
   g_HWND = 0;
   OleUninitialize();
-	return msg.wParam;
+  return (int)msg.wParam;
 }
 
 static void SaveWindowInfo(HWND aWnd)
@@ -650,7 +655,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     */
     case WM_NOTIFY:
     {
-      g_App.OnNotify(wParam, (LPNMHDR)lParam);
+      g_App.OnNotify((int)wParam, (LPNMHDR)lParam);
       break;
     }
     /*
@@ -672,6 +677,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void OnSize(HWND hWnd)
 {
+  /*
   if (g_App._rebar)
   {
     RECT rect;
@@ -682,6 +688,7 @@ void OnSize(HWND hWnd)
     // g_App._rebar.SizeToRect(&rect);
     // g_App._rebar.Move(0, 0, xSize, ySize);
   }
+  */
   MoveSubWindows(hWnd);
 }
 

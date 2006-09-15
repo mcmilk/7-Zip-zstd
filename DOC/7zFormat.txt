@@ -191,7 +191,7 @@ SignatureHeader
 ArchiveProperties
 ~~~~~~~~~~~~~~~~~
 BYTE NID::kArchiveProperties (0x02)
-while(true)
+for (;;)
 {
   BYTE PropertyType;
   if (aType == 0)
@@ -365,7 +365,7 @@ FilesInfo
   BYTE NID::kFilesInfo;  (0x05)
   UINT64 NumFiles
 
-  while(true)
+  for (;;)
   {
     BYTE PropertyType;
     if (aType == 0)

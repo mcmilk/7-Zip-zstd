@@ -110,14 +110,8 @@ HRESULT IsArchiveItemAnti(IInArchive *archive, UInt32 index, bool &result)
   return IsArchiveItemProp(archive, index, kpidIsAnti, result);
 }
 
-// Static-SFX (for Linux) can be big
-const UInt64 kMaxCheckStartPosition = 
-#ifdef _WIN32
-1 << 20;
-#else
-1 << 22;
-#endif
-
+// Static-SFX (for Linux) can be big.
+const UInt64 kMaxCheckStartPosition = 1 << 22;
 
 HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName)
 {

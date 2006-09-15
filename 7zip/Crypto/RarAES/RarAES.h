@@ -11,6 +11,9 @@
 #include "Common/Types.h"
 #include "Common/Buffer.h"
 
+DEFINE_GUID(CLSID_CCrypto_AES_CBC_Decoder, 
+0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00);
+
 namespace NCrypto {
 namespace NRar29 {
 

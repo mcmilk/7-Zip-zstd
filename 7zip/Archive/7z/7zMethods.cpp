@@ -64,7 +64,7 @@ static void Load(const CSysString &folderPrefix)
         continue;
       if (propVariant.vt != VT_BSTR)
         continue;
-      info.MethodID.IDSize = SysStringByteLen(propVariant.bstrVal);
+      info.MethodID.IDSize = (Byte)SysStringByteLen(propVariant.bstrVal);
       memmove(info.MethodID.ID, propVariant.bstrVal, info.MethodID.IDSize);
       propVariant.Clear();
       

@@ -66,7 +66,8 @@ public:
   {  
     {  _coders[coderIndex].SetCoderInfo(inSizes, outSizes); }
   }
-  void SetProgressCoderIndex(UInt32 coderIndex)
+
+  void SetProgressCoderIndex(UInt32 /*coderIndex*/)
   {  
     // _progressCoderIndex = coderIndex; 
   }

@@ -41,6 +41,8 @@ namespace NCompressDialog
     UInt32 Order;
     UString Options;
 
+    UString EncryptionMethod;
+
     bool SFXMode;
     
     UString ArchiveName; // in: Relative for ; out: abs
@@ -61,6 +63,7 @@ namespace NCompressDialog
       OrderMode = false;
       Method.Empty();
       Options.Empty();
+      EncryptionMethod.Empty();
     }
     CInfo()
     {
@@ -81,8 +84,9 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 	NWindows::NControl::CComboBox	m_Volume;
   NWindows::NControl::CDialogChildControl m_Params;
 
-  NWindows::NControl::CEdit _passwordControl;
-
+  NWindows::NControl::CEdit _password1Control;
+  NWindows::NControl::CEdit _password2Control;
+  NWindows::NControl::CComboBox	_encryptionMethod;
 
   NCompression::CInfo m_RegistryInfo;
 
@@ -109,6 +113,11 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetMethod();
   int GetMethodID();
   UString GetMethodSpec();
+  UString GetEncryptionMethodSpec();
+
+  bool IsZipFormat();
+
+  void SetEncryptionMethod();
 
   int AddDictionarySize(UInt32 size, bool kilo, bool maga);
   int AddDictionarySize(UInt32 size);
@@ -131,6 +140,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SaveOptionsInMem();
 
   void UpdatePasswordControl();
+  bool IsShowPasswordChecked() const
+    { return IsButtonChecked(IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED; }
 public:
   CObjectVector<CArchiverInfo> m_ArchiverInfoList;
 

@@ -104,7 +104,7 @@ typedef UInt32 (WINAPI *CreateObjectPointer)(
 #endif
 
 #ifndef _SFX
-static void SetBuffer(CByteBuffer &bb, const Byte *data, int size)
+static inline void SetBuffer(CByteBuffer &bb, const Byte *data, int size)
 {
   bb.SetCapacity(size);
   memmove((Byte *)bb, data, size);

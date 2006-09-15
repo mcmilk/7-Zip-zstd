@@ -31,9 +31,8 @@ public:
 
 STDMETHODIMP CInStreamRam::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 remain = Size - Pos;
-  if (size > remain)
-    size = remain;
+  if (size > (Size - Pos))
+    size = (UInt32)(Size - Pos);
   for (UInt32 i = 0; i < size; i++)
     ((Byte *)data)[i] = Data[Pos + i];
   Pos += size;
@@ -176,7 +175,7 @@ int LzmaRamEncode(
     x86_Convert(filteredStream, (UInt32)inSize, 0, &_prevMask, &_prevPos, 1);
   }
   
-  UInt32 minSize = 0;
+  size_t minSize = 0;
   int numPasses = (filterMode == SZ_FILTER_AUTO) ? 3 : 1;
   bool bestIsFiltered = false;
   int mainResult = 0;

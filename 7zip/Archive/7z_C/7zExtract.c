@@ -38,6 +38,8 @@ SZ_RESULT SzExtract(
     Byte *inBuffer = 0;
     size_t processedSize;
     #endif
+    if (unPackSize != (size_t)unPackSize)
+      return SZE_OUTOFMEMORY;
     *blockIndex = folderIndex;
     allocMain->Free(*outBuffer);
     *outBuffer = 0;

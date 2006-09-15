@@ -16,7 +16,7 @@ namespace NRpm {
 
 static UInt16 GetUInt16(const char *data)
 {
-  return (Byte)data[1] | (((UInt16)(Byte)data[0]) << 8);
+  return (UInt16)((Byte)data[1] | (((UInt16)(Byte)data[0]) << 8));
 }
 
 static UInt32 GetUInt32(const char *data)

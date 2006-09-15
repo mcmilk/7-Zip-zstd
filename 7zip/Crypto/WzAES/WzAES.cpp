@@ -1,0 +1,246 @@
+// WzAES.cpp
+/*
+This code implements Brian Gladman's scheme 
+specified in password Based File Encryption Utility.
+*/
+
+#include "StdAfx.h"
+
+#include "Windows/Defs.h"
+#include "../../Common/StreamObjects.h"
+#include "../../Common/StreamUtils.h"
+#include "../Hash/Pbkdf2HmacSha1.h"
+#include "../Hash/RandGen.h"
+
+#include "WzAES.h"
+
+#ifdef CRYPTO_AES
+#include "../AES/MyAES.h"
+#else
+extern void GetCryptoFolderPrefix(TCHAR *path);
+#endif
+
+// define it if you don't want to use speed-optimized version of Pbkdf2HmacSha1
+// #define _NO_WZAES_OPTIMIZATIONS
+
+namespace NCrypto {
+namespace NWzAES {
+
+const unsigned int kAesKeySizeMax = 32;
+
+static const UInt32 kNumKeyGenIterations = 1000;
+
+STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
+{
+  if(size > kPasswordSizeMax)
+    return E_INVALIDARG;
+  _key.Password.SetCapacity(size);
+  memcpy(_key.Password, data, size);
+  return S_OK;
+}
+
+void CBaseCoder::EncryptData(Byte *data, UInt32 size)
+{   
+  unsigned int pos = _blockPos;
+  for (; size > 0; size--)
+  {
+    if (pos == kAesBlockSize)
+    {   
+      int j;
+      for (j = 0; j < 8 && ++_counter[j] == 0; j++);
+      for (j = 0; j < 8; j++)
+        _buffer[j] = _counter[j];
+      for (; j < kAesBlockSize; j++)
+        _buffer[j] = 0;
+      _aesFilter->Filter(_buffer, kAesBlockSize);
+      pos = 0;
+    }
+    *data++ ^= _buffer[pos++];
+  }
+  _blockPos = pos;
+}
+
+#ifndef _NO_WZAES_OPTIMIZATIONS
+
+static void BytesToBeUInt32s(const Byte *src, UInt32 *dest, int destSize)
+{
+  for (int i = 0 ; i < destSize; i++)
+      dest[i] = 
+          ((UInt32)(src[i * 4 + 0]) << 24) |
+          ((UInt32)(src[i * 4 + 1]) << 16) |
+          ((UInt32)(src[i * 4 + 2]) <<  8) |
+          ((UInt32)(src[i * 4 + 3]));
+}
+
+#endif
+
+STDMETHODIMP CBaseCoder::Init()
+{
+  UInt32 keySize = _key.GetKeySize();
+  UInt32 keysTotalSize = 2 * keySize + kPwdVerifCodeSize;
+  Byte buf[2 * kAesKeySizeMax + kPwdVerifCodeSize];
+  
+  // for (int ii = 0; ii < 1000; ii++)
+  {
+    #ifdef _NO_WZAES_OPTIMIZATIONS
+
+    NSha1::Pbkdf2Hmac(
+      _key.Password, _key.Password.GetCapacity(), 
+      _key.Salt, _key.GetSaltSize(),
+      kNumKeyGenIterations, 
+      buf, keysTotalSize);
+
+    #else
+
+    UInt32 buf32[(2 * kAesKeySizeMax + kPwdVerifCodeSize + 3) / 4];
+    UInt32 key32SizeTotal = (keysTotalSize + 3) / 4;
+    UInt32 salt[kSaltSizeMax * 4];
+    UInt32 saltSizeInWords = _key.GetSaltSize() / 4;
+    BytesToBeUInt32s(_key.Salt, salt, saltSizeInWords);
+    NSha1::Pbkdf2Hmac32(
+      _key.Password, _key.Password.GetCapacity(), 
+      salt, saltSizeInWords,
+      kNumKeyGenIterations, 
+      buf32, key32SizeTotal);
+    for (UInt32 j = 0; j < keysTotalSize; j++) 
+      buf[j] = (Byte)(buf32[j / 4] >> (24 - 8 * (j & 3)));
+    
+    #endif
+  }
+
+  _hmac.SetKey(buf + keySize, keySize);
+  memcpy(_key.PwdVerifComputed, buf + 2 * keySize, kPwdVerifCodeSize);
+  
+  _blockPos = kAesBlockSize;
+  for (int i = 0; i < 8; i++)
+    _counter[i] = 0;
+
+  RINOK(CreateFilters());
+  CMyComPtr<ICryptoProperties> cp;
+  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
+  return cp->SetKey(buf, keySize);
+}
+
+static HRESULT SafeWrite(ISequentialOutStream *outStream, const Byte *data, UInt32 size)
+{
+  UInt32 processedSize;
+  RINOK(WriteStream(outStream, data, size, &processedSize));
+  return ((processedSize == size) ? S_OK : E_FAIL);
+}
+
+/*
+STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
+{ 
+  Byte keySizeMode = 3;
+  return outStream->Write(&keySizeMode, 1, NULL);
+}
+*/
+
+HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
+{
+  UInt32 saltSize = _key.GetSaltSize();
+  g_RandomGenerator.Generate(_key.Salt, saltSize);
+  Init();
+  RINOK(SafeWrite(outStream, _key.Salt, saltSize));
+  return SafeWrite(outStream, _key.PwdVerifComputed, kPwdVerifCodeSize);
+}
+
+HRESULT CEncoder::WriteFooter(ISequentialOutStream *outStream)
+{
+  Byte mac[kMacSize];
+  _hmac.Final(mac, kMacSize);
+  return SafeWrite(outStream, mac, kMacSize);
+}
+
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+{
+  if (size != 1)
+    return E_INVALIDARG;
+  _key.Init();
+  Byte keySizeMode = data[0];
+  if (keySizeMode < 1 || keySizeMode > 3)
+    return E_INVALIDARG;
+  _key.KeySizeMode = keySizeMode;
+  return S_OK;
+}
+
+HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
+{
+  UInt32 saltSize = _key.GetSaltSize();
+  UInt32 extraSize = saltSize + kPwdVerifCodeSize;
+  Byte temp[kSaltSizeMax + kPwdVerifCodeSize];
+  UInt32 processedSize;
+  RINOK(ReadStream(inStream, temp, extraSize, &processedSize));
+  if (processedSize != extraSize)
+    return E_FAIL;
+  UInt32 i;
+  for (i = 0; i < saltSize; i++)
+    _key.Salt[i] = temp[i];
+  for (i = 0; i < kPwdVerifCodeSize; i++)
+    _pwdVerifFromArchive[i] = temp[saltSize + i];
+  return S_OK;
+}
+
+static bool CompareArrays(const Byte *p1, const Byte *p2, UInt32 size)
+{
+  for (UInt32 i = 0; i < size; i++)
+    if (p1[i] != p2[i])
+      return false;
+  return true;
+}
+
+bool CDecoder::CheckPasswordVerifyCode()
+{
+  return CompareArrays(_key.PwdVerifComputed, _pwdVerifFromArchive, kPwdVerifCodeSize);
+}
+
+HRESULT CDecoder::CheckMac(ISequentialInStream *inStream, bool &isOK)
+{
+  isOK = false;
+  UInt32 processedSize;
+  Byte mac1[kMacSize];
+  RINOK(ReadStream(inStream, mac1, kMacSize, &processedSize));
+  if (processedSize != kMacSize)
+    return E_FAIL;
+  Byte mac2[kMacSize];
+  _hmac.Final(mac2, kMacSize);
+  isOK = CompareArrays(mac1, mac2, kMacSize);
+  return S_OK;
+}
+
+STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
+{
+  EncryptData(data, size);
+  _hmac.Update(data, size);
+  return size;
+}
+
+STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+{
+  _hmac.Update(data, size);
+  EncryptData(data, size);
+  return size;
+}
+
+
+HRESULT CBaseCoder::CreateFilters()
+{
+  if (!_aesFilter)
+  {
+    #ifdef CRYPTO_AES
+
+    _aesFilter = new CAES_ECB_Encoder;
+    
+    #else
+    
+    TCHAR aesLibPath[MAX_PATH + 64];
+    GetCryptoFolderPrefix(aesLibPath);
+    lstrcat(aesLibPath, TEXT("AES.dll"));
+    RINOK(_aesLibrary.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES_ECB_Encoder, &_aesFilter));
+    
+    #endif
+  }
+  return S_OK;
+}
+
+}}

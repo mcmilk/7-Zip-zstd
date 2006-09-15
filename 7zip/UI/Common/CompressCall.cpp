@@ -26,6 +26,7 @@ static LPCWSTR kShowDialogSwitch = L" -ad";
 static LPCWSTR kEmailSwitch = L" -seml.";
 static LPCWSTR kMapSwitch = L" -i#";
 static LPCWSTR kArchiveNoNameSwitch = L" -an";
+static LPCWSTR kArchiveTypeSwitch = L" -t";
 static LPCWSTR kArchiveMapSwitch = L" -ai#";
 static LPCWSTR kStopSwitchParsing = L" --";
 static LPCWSTR kLargePagesDisable = L" -slp-";
@@ -129,7 +130,7 @@ static HRESULT CreateMap(const UStringVector &names,
   
   CRandom random;
   random.Init(GetTickCount());
-  while(true)
+  for (;;)
   {
     int number = random.Generate();
     wchar_t temp[32];
@@ -145,7 +146,7 @@ static HRESULT CreateMap(const UStringVector &names,
     fileMapping.Close();
   }
   
-  while(true)
+  for (;;)
   {
     int number = random.Generate();
     wchar_t temp[32];
@@ -172,7 +173,6 @@ static HRESULT CreateMap(const UStringVector &names,
   LPVOID data = fileMapping.MapViewOfFile(FILE_MAP_WRITE, 0, totalSize);
   if (data == NULL)
     return E_FAIL;
-  try
   {
     wchar_t *curData = (wchar_t *)data;
     *curData = 0;
@@ -185,18 +185,13 @@ static HRESULT CreateMap(const UStringVector &names,
       *curData++ = L'\0';
     }
   }
-  catch(...)
-  {
-    UnmapViewOfFile(data);
-    throw;
-  }
-  // UnmapViewOfFile(data);
   return S_OK;
 }
 
 HRESULT CompressFiles(
     const UString &curDir,
     const UString &archiveName,
+    const UString &archiveType,
     const UStringVector &names, 
     // const UString &outFolder, 
     bool email,
@@ -228,7 +223,7 @@ HRESULT CompressFiles(
   CFileMapping fileMapping;
   CRandom random;
   random.Init(GetTickCount());
-  while(true)
+  for (;;)
   {
     int number = random.Generate();
     wchar_t temp[32];
@@ -247,7 +242,7 @@ HRESULT CompressFiles(
   }
   
   NSynchronization::CEvent event;
-  while(true)
+  for (;;)
   {
     int number = random.Generate();
     wchar_t temp[32];
@@ -272,6 +267,12 @@ HRESULT CompressFiles(
   
   params += L":";
   params += eventName;
+
+  if (!archiveType.IsEmpty())
+  {
+    params += kArchiveTypeSwitch;
+    params += archiveType;
+  }
 
   if (email)
     params += kEmailSwitch;

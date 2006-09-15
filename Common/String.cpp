@@ -8,7 +8,7 @@
 #include <ctype.h>
 #endif
 
-#include "Common/String.h"
+#include "String.h"
 
 
 #ifdef _WIN32
@@ -19,9 +19,9 @@ wchar_t MyCharUpper(wchar_t c)
 {
   if (c == 0)
     return 0;
-  wchar_t *res = CharUpperW((LPWSTR)(unsigned int)c);
+  wchar_t *res = CharUpperW((LPWSTR)(UINT_PTR)(unsigned int)c);
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return (wchar_t)(unsigned int)res;
+    return (wchar_t)(unsigned int)(UINT_PTR)res;
   const int kBufferSize = 4;
   char s[kBufferSize + 1];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
@@ -37,9 +37,9 @@ wchar_t MyCharLower(wchar_t c)
 {
   if (c == 0)
     return 0;
-  wchar_t *res = CharLowerW((LPWSTR)(unsigned int)c);
+  wchar_t *res = CharLowerW((LPWSTR)(UINT_PTR)(unsigned int)c);
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return (wchar_t)(unsigned int)res;
+    return (wchar_t)(unsigned int)(UINT_PTR)res;
   const int kBufferSize = 4;
   char s[kBufferSize + 1];
   int numChars = ::WideCharToMultiByte(CP_ACP, 0, &c, 1, s, kBufferSize, 0, 0);
@@ -133,7 +133,7 @@ wchar_t MyCharUpper(wchar_t c)
 /*
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
 { 
-  while (true)
+  for (;;)
   {
     wchar_t c1 = *s1++;
     wchar_t c2 = *s2++;
@@ -151,7 +151,7 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
 
 int MyStringCompare(const char *s1, const char *s2)
 { 
-  while (true)
+  for (;;)
   {
     unsigned char c1 = (unsigned char)*s1++;
     unsigned char c2 = (unsigned char)*s2++;
@@ -163,7 +163,7 @@ int MyStringCompare(const char *s1, const char *s2)
 
 int MyStringCompare(const wchar_t *s1, const wchar_t *s2)
 { 
-  while (true)
+  for (;;)
   {
     wchar_t c1 = *s1++;
     wchar_t c2 = *s2++;
@@ -175,7 +175,7 @@ int MyStringCompare(const wchar_t *s1, const wchar_t *s2)
 
 int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
 { 
-  while (true)
+  for (;;)
   {
     wchar_t c1 = *s1++;
     wchar_t c2 = *s2++;

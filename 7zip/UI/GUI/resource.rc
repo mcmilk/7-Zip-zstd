@@ -32,6 +32,12 @@ BEGIN
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
     IDS_COMPRESS_UPDATE_MODE_SYNCHRONIZE "Synchronize files"
     IDS_COMPRESS_SET_ARCHIVE_DIALOG_TITLE "Browse"
+    IDS_COMPRESS_INCORRECT_VOLUME_SIZE "Incorrect volume size"
+
+    IDS_PASSWORD_USE_ASCII  "Use only English letters, numbers and special characters (!, #, $, ...) for password."
+    IDS_PASSWORD_PASSWORDS_DO_NOT_MATCH  "Passwords do not match"
+    IDS_PASSWORD_IS_TOO_LONG "Password is too long"
+
     IDS_CANT_UPDATE_ARCHIVE "Can not update archive '{0}'"
     IDS_PROGRESS_COMPRESSING "Compressing"
     IDS_PROGRESS_TESTING    "Testing"

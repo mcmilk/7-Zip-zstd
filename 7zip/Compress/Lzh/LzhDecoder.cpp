@@ -126,7 +126,7 @@ HRESULT CCoder::ReadCTable()
         }
       }
       else
-        lens[i++] = c - 2;
+        lens[i++] = (Byte)(c - 2);
     }
     while (i < kNumCSymbols)
       lens[i++] = 0;
@@ -136,7 +136,7 @@ HRESULT CCoder::ReadCTable()
 }
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   if (outSize == NULL)

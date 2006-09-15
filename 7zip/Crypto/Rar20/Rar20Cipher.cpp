@@ -42,7 +42,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
   UInt64 nowPos = 0;
   UInt32 bufferPos = 0;
   UInt32 processedSize;
-  while(true)
+  for (;;)
   {
     UInt32 size = kBufferSize - bufferPos;
     RINOK(inStream->Read(_buffer + bufferPos, size, &processedSize));

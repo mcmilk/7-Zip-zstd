@@ -14,6 +14,7 @@
 
 #include "../../FileManager/HelpUtils.h"
 #include "../../FileManager/SplitUtils.h"
+#include "../Explorer/MyMessages.h"
 
 #include "../Common/ZipRegistry.h"
 
@@ -46,12 +47,18 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_COMPRESS_MULTI_THREAD, 0x02000D09 },
   { IDC_STATIC_COMPRESS_VOLUME, 0x02000D40 },
   { IDC_STATIC_COMPRESS_PARAMETERS, 0x02000D06 },
+  
   { IDC_STATIC_COMPRESS_UPDATE_MODE, 0x02000D02 },
   { IDC_STATIC_COMPRESS_OPTIONS, 0x02000D07 },
   { IDC_COMPRESS_SFX, 0x02000D08 },
-  { IDC_COMPRESS_PASSWORD, 0x02000802 },
+  
+  { IDC_COMPRESS_ENCRYPTION, 0x02000D10 },
+  { IDC_STATIC_COMPRESS_PASSWORD1, 0x02000B01 },
+  { IDC_STATIC_COMPRESS_PASSWORD2, 0x02000B03 },
   { IDC_COMPRESS_CHECK_SHOW_PASSWORD, 0x02000B02 },
+  { IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, 0x02000D11 },
   { IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, 0x02000D0A },
+
   { IDOK, 0x02000702 },
   { IDCANCEL, 0x02000710 },
   { IDHELP, 0x02000720 }
@@ -261,8 +268,11 @@ bool CCompressDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000D00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, MY_SIZE_OF_ARRAY(kIDLangPairs) );
   #endif
-  _passwordControl.Attach(GetItem(IDC_COMPRESS_EDIT_PASSWORD));
-  _passwordControl.SetText(Info.Password);
+  _password1Control.Attach(GetItem(IDC_COMPRESS_EDIT_PASSWORD1));
+  _password2Control.Attach(GetItem(IDC_COMPRESS_EDIT_PASSWORD2));
+  _password1Control.SetText(Info.Password);
+  _password2Control.SetText(Info.Password);
+  _encryptionMethod.Attach(GetItem(IDC_COMPRESS_COMBO_ENCRYPTION_METHOD));
 
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_COMBO_ARCHIVE));
 	m_Format.Attach(GetItem(IDC_COMPRESS_COMBO_FORMAT));
@@ -319,6 +329,7 @@ bool CCompressDialog::OnInit()
 
   OnButtonSFX();
 
+  SetEncryptionMethod();
   return CModalDialog::OnInit();
 }
 
@@ -333,11 +344,19 @@ namespace NCompressDialog
 
 void CCompressDialog::UpdatePasswordControl()
 {
-  _passwordControl.SetPasswordChar((IsButtonChecked(
-      IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED) ? 0: TEXT('*'));
+  bool showPassword = IsShowPasswordChecked();
+  TCHAR c = showPassword ? 0: TEXT('*');
+  _password1Control.SetPasswordChar(c);
+  _password2Control.SetPasswordChar(c);
   UString password;
-  _passwordControl.GetText(password);
-  _passwordControl.SetText(password);
+  _password1Control.GetText(password);
+  _password1Control.SetText(password);
+  _password2Control.GetText(password);
+  _password2Control.SetText(password);
+
+  int cmdShow = showPassword ? SW_HIDE : SW_SHOW;
+  ShowItem(IDC_STATIC_COMPRESS_PASSWORD2, cmdShow);
+  _password2Control.Show(cmdShow);
 }
 
 bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
@@ -408,14 +427,17 @@ void CCompressDialog::CheckControlsEnable()
   CheckSFXControlsEnable();
   CheckVolumeEnable();
 
-  // EnableItem(IDC_STATIC_COMPRESS_VOLUME, enable);
-  // EnableItem(IDC_COMPRESS_COMBO_VOLUME, enable);
-  
-  EnableItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
-  EnableItem(IDC_COMPRESS_PASSWORD, fi.Encrypt);
-  EnableItem(IDC_COMPRESS_EDIT_PASSWORD, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_ENCRYPTION, fi.Encrypt);
+
+  EnableItem(IDC_STATIC_COMPRESS_PASSWORD1, fi.Encrypt);
+  EnableItem(IDC_STATIC_COMPRESS_PASSWORD2, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_EDIT_PASSWORD1, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_EDIT_PASSWORD2, fi.Encrypt);
   EnableItem(IDC_COMPRESS_CHECK_SHOW_PASSWORD, fi.Encrypt);
 
+  EnableItem(IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_COMBO_ENCRYPTION_METHOD, fi.Encrypt);
+  EnableItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
 }
 
 bool CCompressDialog::IsSFX()
@@ -483,10 +505,48 @@ void CCompressDialog::OnButtonSetArchive()
 // in ExtractDialog.cpp
 extern void AddUniqueString(UStringVector &strings, const UString &srcString);
 
+static bool IsAsciiString(const UString &s)
+{
+  for (int i = 0; i < s.Length(); i++)
+  {
+    wchar_t c = s[i];
+    if (c < 0x20 || c > 0x7F)
+      return false;
+  }
+  return true;
+}
 
 void CCompressDialog::OnOK() 
 {
-  _passwordControl.GetText(Info.Password);
+  _password1Control.GetText(Info.Password);
+  if (IsZipFormat())
+  {
+    if (!IsAsciiString(Info.Password))
+    {
+      MyMessageBoxResource(*this, IDS_PASSWORD_USE_ASCII, 0x02000B11);
+      return;
+    }
+    UString method = GetEncryptionMethodSpec();
+    method.MakeUpper();
+    if (method.Find(L"AES") == 0)
+    {
+      if (Info.Password.Length() > 99)
+      {
+        MyMessageBoxResource(*this, IDS_PASSWORD_IS_TOO_LONG, 0x02000B12);
+        return;
+      }
+    }
+  }
+  if (!IsShowPasswordChecked())
+  {
+    UString password2;
+    _password2Control.GetText(password2);
+    if (password2 != Info.Password)
+    {
+      MyMessageBoxResource(*this, IDS_PASSWORD_PASSWORDS_DO_NOT_MATCH, 0x02000B10);
+      return;
+    }
+  }
 
   SaveOptionsInMem();
   UString s;
@@ -502,6 +562,7 @@ void CCompressDialog::OnOK()
   Info.Order = GetOrderSpec();
   Info.OrderMode = GetOrderMode();
   Info.Method = GetMethodSpec();
+  Info.EncryptionMethod = GetEncryptionMethodSpec();
 
   Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
@@ -518,7 +579,7 @@ void CCompressDialog::OnOK()
   if (!volumeString.IsEmpty())
     if (!ParseVolumeSizes(volumeString, Info.VolumeSizes))
     {
-      MessageBox(*this, TEXT("Incorrect volume size"), TEXT("7-Zip"), 0);
+      MyMessageBoxResource(*this, IDS_COMPRESS_INCORRECT_VOLUME_SIZE, 0x02000D41);
       return;
     }
 
@@ -538,8 +599,7 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.Level = Info.Level;
   m_RegistryInfo.ArchiveType = m_ArchiverInfoList[Info.ArchiverInfoIndex].Name;
 
-  m_RegistryInfo.ShowPassword = (IsButtonChecked(
-      IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED);
+  m_RegistryInfo.ShowPassword = IsShowPasswordChecked();
 
   SaveCompressionInfo(m_RegistryInfo);
   
@@ -569,7 +629,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
         int index = FindRegistryFormatAlways(ai.Name);
         NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
-        fo.Init();
+        fo.ResetForLevelChange();
         SetMethod();
         CheckSFXNameChange();
         return true;
@@ -628,6 +688,7 @@ void CCompressDialog::OnChangeFormat()
   SetParams();
   CheckControlsEnable();
   SetArchiveName2(isSFX);
+  SetEncryptionMethod();
 }
 
 // if type.KeepName then use OriginalFileName
@@ -732,7 +793,7 @@ void CCompressDialog::SetLevel()
     if ((fi.LevelsMask & (1 << i)) != 0)
     {
       const CLevelInfo &levelInfo = g_Levels[i];
-      int index = m_Level.AddString(LangString(levelInfo.ResourceID, levelInfo.LangID));
+      int index = (int)m_Level.AddString(LangString(levelInfo.ResourceID, levelInfo.LangID));
       m_Level.SetItemData(index, i);
     }
   }
@@ -744,7 +805,7 @@ int CCompressDialog::GetLevel()
 {
   if (m_Level.GetCount() <= 0)
     return -1;
-  return m_Level.GetItemData(m_Level.GetCurSel());
+  return (int)m_Level.GetItemData(m_Level.GetCurSel());
 }
 
 int CCompressDialog::GetLevelSpec()
@@ -789,7 +850,7 @@ void CCompressDialog::SetMethod()
   if (index >= 0)
   {
     const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
-    defaultMethod = GetUnicodeString(fo.Method); 
+    defaultMethod = fo.Method; 
   }
   bool isSfx = IsSFX();
   for(int m = 0; m < fi.NumMethods; m++)
@@ -799,12 +860,42 @@ void CCompressDialog::SetMethod()
       if (!IsMethodSupportedBySfx(methodID))
         continue;
     const LPCWSTR method = kMethodsNames[methodID];
-    int itemIndex = m_Method.AddString(GetSystemString(method));
+    int itemIndex = (int)m_Method.AddString(GetSystemString(method));
     if (defaultMethod.CompareNoCase(method) == 0 || m == 0)
       m_Method.SetCurSel(itemIndex);
   }
   SetDictionary();
   SetOrder();
+}
+
+bool CCompressDialog::IsZipFormat()
+{
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  return (ai.Name.CompareNoCase(L"zip") == 0);
+}
+
+void CCompressDialog::SetEncryptionMethod() 
+{
+  _encryptionMethod.ResetContent();
+  const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
+  if (ai.Name.CompareNoCase(L"7z") == 0)
+  {
+    _encryptionMethod.AddString(TEXT("AES-256"));
+    _encryptionMethod.SetCurSel(0);
+  }
+  else if (ai.Name.CompareNoCase(L"zip") == 0)
+  {
+    int index = FindRegistryFormat(ai.Name);
+    UString encryptionMethod;
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
+      encryptionMethod = fo.EncryptionMethod; 
+    }
+    _encryptionMethod.AddString(TEXT("ZipCrypto"));
+    _encryptionMethod.AddString(TEXT("AES-256"));
+    _encryptionMethod.SetCurSel(encryptionMethod.Find(L"AES") == 0 ? 1 : 0);
+  }
 }
 
 int CCompressDialog::GetMethodID()
@@ -826,6 +917,18 @@ UString CCompressDialog::GetMethodSpec()
   return result;
 }
 
+UString CCompressDialog::GetEncryptionMethodSpec()
+{
+  if (m_Method.GetCount() <= 1)
+    return UString();
+  if (_encryptionMethod.GetCurSel() <= 0)
+    return UString();
+  UString result;
+  _encryptionMethod.GetText(result);
+  result.Replace(L"-", L"");
+  return result;
+}
+
 int CCompressDialog::AddDictionarySize(UInt32 size, bool kilo, bool maga)
 {
   UInt32 sizePrint = size;
@@ -842,7 +945,7 @@ int CCompressDialog::AddDictionarySize(UInt32 size, bool kilo, bool maga)
   else
     lstrcat(s, TEXT(" "));
   lstrcat(s, TEXT("B"));
-  int index = m_Dictionary.AddString(s);
+  int index = (int)m_Dictionary.AddString(s);
   m_Dictionary.SetItemData(index, size);
   return index;
 }
@@ -862,7 +965,6 @@ int CCompressDialog::AddDictionarySize(UInt32 size)
 void CCompressDialog::SetDictionary()
 {
   m_Dictionary.ResetContent();
-  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
   int index = FindRegistryFormat(ai.Name);
   UInt32 defaultDictionary = UInt32(-1);
@@ -884,7 +986,7 @@ void CCompressDialog::SetDictionary()
   {
     case kLZMA:
     {
-      static const kMinDicSize = (1 << 16);
+      static const UInt32 kMinDicSize = (1 << 16);
       if (defaultDictionary == UInt32(-1))
       {
         if (level >= 9)
@@ -993,14 +1095,14 @@ void CCompressDialog::SetDictionary()
 UInt32 CCompressDialog::GetDictionary()
 {
   if (m_Dictionary.GetCount() <= 0)
-    return -1;
-  return m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
+    return (UInt32)-1;
+  return (UInt32)m_Dictionary.GetItemData(m_Dictionary.GetCurSel());
 }
 
 UInt32 CCompressDialog::GetDictionarySpec()
 {
   if (m_Dictionary.GetCount() <= 1)
-    return -1;
+    return (UInt32)-1;
   return GetDictionary();
 }
 
@@ -1008,7 +1110,7 @@ int CCompressDialog::AddOrder(UInt32 size)
 {
   TCHAR s[40];
   ConvertUInt64ToString(size, s);
-  int index = m_Order.AddString(s);
+  int index = (int)m_Order.AddString(s);
   m_Order.SetItemData(index, size);
   return index;
 }
@@ -1016,7 +1118,6 @@ int CCompressDialog::AddOrder(UInt32 size)
 void CCompressDialog::SetOrder()
 {
   m_Order.ResetContent();
-  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
   int index = FindRegistryFormat(ai.Name);
   UInt32 defaultOrder = UInt32(-1);
@@ -1122,14 +1223,14 @@ bool CCompressDialog::GetOrderMode()
 UInt32 CCompressDialog::GetOrder()
 {
   if (m_Order.GetCount() <= 0)
-    return -1;
-  return m_Order.GetItemData(m_Order.GetCurSel());
+    return (UInt32)-1;
+  return (UInt32)m_Order.GetItemData(m_Order.GetCurSel());
 }
 
 UInt32 CCompressDialog::GetOrderSpec()
 {
   if (m_Order.GetCount() <= 1)
-    return -1;
+    return (UInt32)-1;
   return GetOrder();
 }
 
@@ -1252,4 +1353,5 @@ void CCompressDialog::SaveOptionsInMem()
   fo.Dictionary = GetDictionarySpec();
   fo.Order = GetOrderSpec();
   fo.Method = GetMethodSpec();
+  fo.EncryptionMethod = GetEncryptionMethodSpec();
 }

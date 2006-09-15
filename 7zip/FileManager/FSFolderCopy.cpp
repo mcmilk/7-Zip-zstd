@@ -20,6 +20,7 @@ using namespace NFind;
 extern bool g_IsNT;
 #endif
 
+/*
 static bool IsItWindows2000orHigher()
 {
   OSVERSIONINFO versionInfo;
@@ -29,6 +30,7 @@ static bool IsItWindows2000orHigher()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) &&
       (versionInfo.dwMajorVersion >= 5);
 }
+*/
 
 struct CProgressInfo
 {
@@ -37,14 +39,14 @@ struct CProgressInfo
 };
 
 static DWORD CALLBACK CopyProgressRoutine(
-  LARGE_INTEGER TotalFileSize,          // file size
+  LARGE_INTEGER /* TotalFileSize */,          // file size
   LARGE_INTEGER TotalBytesTransferred,  // bytes transferred
-  LARGE_INTEGER StreamSize,             // bytes in stream
-  LARGE_INTEGER StreamBytesTransferred, // bytes transferred for stream
-  DWORD dwStreamNumber,                 // current stream
-  DWORD dwCallbackReason,               // callback reason
-  HANDLE hSourceFile,                   // handle to source file
-  HANDLE hDestinationFile,              // handle to destination file
+  LARGE_INTEGER /* StreamSize */,             // bytes in stream
+  LARGE_INTEGER /* StreamBytesTransferred */, // bytes transferred for stream
+  DWORD /* dwStreamNumber */,                 // current stream
+  DWORD /* dwCallbackReason */,               // callback reason
+  HANDLE /* hSourceFile */,                   // handle to source file
+  HANDLE /* hDestinationFile */,              // handle to destination file
   LPVOID lpData                         // from CopyFileEx
 )
 {
@@ -133,7 +135,6 @@ static bool MyMoveFile(LPCWSTR existingFile, LPCWSTR newFile,
     CProgressInfo progressInfo;
     progressInfo.Progress = progress;
     progressInfo.StartPos = completedSize;
-    BOOL CancelFlag = FALSE;
 
     MoveFileWithProgressPointer moveFunction = (MoveFileWithProgressPointer)
         ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
@@ -462,9 +463,8 @@ STDMETHODIMP CFSFolder::MoveTo(
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::CopyFrom(
-    const wchar_t *fromFolderPath,
-    const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress)
+STDMETHODIMP CFSFolder::CopyFrom(const wchar_t * /* fromFolderPath */,
+    const wchar_t ** /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */)
 {
   return E_NOTIMPL;
 }

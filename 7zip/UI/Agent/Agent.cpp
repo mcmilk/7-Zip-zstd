@@ -301,7 +301,7 @@ STDMETHODIMP CAgentFolder::GetPath(BSTR *path)
   UStringVector pathParts;
   pathParts.Clear();
   CMyComPtr<IFolderFolder> currentFolder = this;
-  while (true)
+  for (;;)
   {
     CMyComPtr<IFolderFolder> newFolder;
     currentFolder->BindToParentFolder(&newFolder);  
@@ -445,7 +445,7 @@ STDMETHODIMP CAgent::Open(
 
 STDMETHODIMP CAgent::ReOpen(
     // const wchar_t *filePath, 
-    IArchiveOpenCallback *openArchiveCallback)
+    IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   if (_proxyArchive != NULL)
@@ -525,7 +525,7 @@ STDMETHODIMP CAgent::Extract(
       DefaultAttributes
       // ,_srcDirectoryPrefix
       );
-  return GetArchive()->Extract(0, -1, testMode, extractCallback);
+  return GetArchive()->Extract(0, (UInt32)(Int32)-1, testMode, extractCallback);
   COM_TRY_END
 }
 

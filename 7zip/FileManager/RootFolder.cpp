@@ -151,7 +151,7 @@ STDMETHODIMP CRootFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CRootFolder::GetName(BSTR *name)
+STDMETHODIMP CRootFolder::GetName(BSTR * /* name */)
 {
   return E_NOTIMPL;
 }

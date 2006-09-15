@@ -32,12 +32,12 @@ public:
   #endif
 
   virtual LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
-  virtual bool OnCreate(CREATESTRUCT *createStruct) { return true; }
+  virtual bool OnCreate(CREATESTRUCT * /* createStruct */) { return true; }
   // virtual LRESULT OnCommand(WPARAM wParam, LPARAM lParam);
   virtual bool OnCommand(WPARAM wParam, LPARAM lParam, LRESULT &result);
   virtual bool OnCommand(int code, int itemID, LPARAM lParam, LRESULT &result);
-  virtual bool OnSize(WPARAM wParam, int xSize, int ySize) { return false; }
-  virtual bool OnNotify(UINT controlID, LPNMHDR lParam, LRESULT &result) { return false; }
+  virtual bool OnSize(WPARAM /* wParam */, int /* xSize */, int /* ySize */) { return false; }
+  virtual bool OnNotify(UINT /* controlID */, LPNMHDR /* lParam */, LRESULT & /* result */) { return false; }
   virtual void OnDestroy() { PostQuitMessage(0); }
   virtual void OnClose() { Destroy(); }
   /*

@@ -647,29 +647,17 @@ SOURCE=..\..\Crypto\7zAES\7zAES.cpp
 
 SOURCE=..\..\Crypto\7zAES\7zAES.h
 # End Source File
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\MySHA256.h
+SOURCE=..\..\Crypto\Hash\Sha256.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\SHA256.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\7zAES\SHA256.h
+SOURCE=..\..\Crypto\Hash\Sha256.h
 # End Source File
 # End Group
 # End Group

@@ -82,7 +82,7 @@ STDMETHODIMP CShellExtClassFactory::CreateInstance(LPUNKNOWN pUnkOuter,
 }
 
 
-STDMETHODIMP CShellExtClassFactory::LockServer(BOOL fLock)
+STDMETHODIMP CShellExtClassFactory::LockServer(BOOL /* fLock */)
 {
   return S_OK; // Check it
 }

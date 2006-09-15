@@ -72,6 +72,29 @@ bool MyGetSystemDirectory(UString &path)
 }
 #endif
 
+bool SetDirTime(LPCWSTR fileName, const FILETIME *creationTime, const FILETIME *lastAccessTime, const FILETIME *lastWriteTime)
+{
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    ::SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return false;
+  }
+  #endif 
+  HANDLE hDir = CreateFileW(fileName, GENERIC_WRITE,
+      FILE_SHARE_READ | FILE_SHARE_WRITE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  
+  bool res = false;
+  if (hDir != INVALID_HANDLE_VALUE)
+  {
+    res = BOOLToBool(::SetFileTime(hDir, creationTime, lastAccessTime, lastWriteTime));
+    ::CloseHandle(hDir);
+  }
+  return res;
+}
+
+
 #ifndef _UNICODE
 bool MySetFileAttributes(LPCWSTR fileName, DWORD fileAttributes)
 {  
@@ -147,7 +170,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
   }
   CSysString pathName2 = pathName;
   pos = pathName.Length();
-  while(true)
+  for (;;)
   {
     if(MyCreateDirectory(pathName))
       break;
@@ -193,7 +216,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
   }
   UString pathName2 = pathName;
   pos = pathName.Length();
-  while(true)
+  for (;;)
   {
     if(MyCreateDirectory(pathName))
       break;
@@ -251,8 +274,7 @@ static bool RemoveDirectorySubItems2(const CSysString pathPrefix, const NFind::C
 {
   if(fileInfo.IsDirectory())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
-  else
-    return DeleteFileAlways(pathPrefix + fileInfo.Name);
+  return DeleteFileAlways(pathPrefix + fileInfo.Name);
 }
 
 bool RemoveDirectoryWithSubItems(const CSysString &path)
@@ -275,8 +297,7 @@ static bool RemoveDirectorySubItems2(const UString pathPrefix, const NFind::CFil
 {
   if(fileInfo.IsDirectory())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
-  else
-    return DeleteFileAlways(pathPrefix + fileInfo.Name);
+  return DeleteFileAlways(pathPrefix + fileInfo.Name);
 }
 bool RemoveDirectoryWithSubItems(const UString &path)
 {
@@ -602,7 +623,7 @@ bool CreateTempDirectory(LPCTSTR prefix, CSysString &dirName)
   CRandom random;
   random.Init();
   */
-  while(true)
+  for (;;)
   {
     CTempFile tempFile;
     if (!tempFile.Create(prefix, dirName))
@@ -639,7 +660,7 @@ bool CreateTempDirectory(LPCWSTR prefix, UString &dirName)
   CRandom random;
   random.Init();
   */
-  while(true)
+  for (;;)
   {
     CTempFileW tempFile;
     if (!tempFile.Create(prefix, dirName))

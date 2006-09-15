@@ -25,12 +25,11 @@ public:
   // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
 
   // IProgress
-  STDMETHOD(SetTotal)(UInt64 aize);
+  STDMETHOD(SetTotal)(UInt64 size);
   STDMETHOD(SetCompleted)(const UInt64 *completeValue);
 
   // IExtractCallBack
-  STDMETHOD(GetStream)(UInt32 anIndex, ISequentialOutStream **outStream, 
-      Int32 askExtractMode);
+  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode);
   STDMETHOD(PrepareOperation)(Int32 askExtractMode);
   STDMETHOD(SetOperationResult)(Int32 resultEOperationResult);
 
@@ -55,12 +54,26 @@ private:
   UString _diskFilePath;
 
   bool _extractMode;
+
+  bool WriteModified;
+  bool WriteCreated;
+  bool WriteAccessed;
+
+  bool _encrypted;
+
   struct CProcessedFileInfo
   {
-    FILETIME UTCLastWriteTime;
+    FILETIME CreationTime;
+    FILETIME LastWriteTime;
+    FILETIME LastAccessTime;
+    UInt32 Attributes;
+  
+    bool IsCreationTimeDefined;
+    bool IsLastWriteTimeDefined;
+    bool IsLastAccessTimeDefined;
+
     bool IsDirectory;
     bool AttributesAreDefined;
-    UInt32 Attributes;
   } _processedFileInfo;
 
   COutFileStream *_outFileStreamSpec;
@@ -72,8 +85,14 @@ private:
   UInt32 _attributesDefault;
   bool _stdOutMode;
 
-  void CreateComplexDirectory(const UStringVector &dirPathParts);
+  void CreateComplexDirectory(const UStringVector &dirPathParts, UString &fullPath);
+  HRESULT GetTime(int index, PROPID propID, FILETIME &filetime, bool &filetimeIsDefined);
 public:
+  CArchiveExtractCallback():
+      WriteModified(true),
+      WriteCreated(false),
+      WriteAccessed(false) 
+      {}
   void Init(
       IInArchive *archiveHandler, 
       IFolderArchiveExtractCallback *extractCallback2,

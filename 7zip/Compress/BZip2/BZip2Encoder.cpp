@@ -58,7 +58,7 @@ void CThreadInfo::FinishStream(bool needLeave)
 
 DWORD CThreadInfo::ThreadFunc()
 {
-  while (true)
+  for (;;)
   {
     Encoder->CS.Enter();
     if (Encoder->CloseThreads)
@@ -190,7 +190,7 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
       if (b != prevByte)
       {
         if (numReps >= kRleModeRepSize)
-          buffer[i++] = numReps - kRleModeRepSize;
+          buffer[i++] = (Byte)(numReps - kRleModeRepSize);
         buffer[i++] = b;
         numReps = 1;
         prevByte = b;
@@ -201,13 +201,13 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
         buffer[i++] = b;
       else if (numReps == kRleModeRepSize + 255)
       {
-        buffer[i++] = numReps - kRleModeRepSize;
+        buffer[i++] = (Byte)(numReps - kRleModeRepSize);
         numReps = 0;
       }
     }
     // it's to support original BZip2 decoder
     if (numReps >= kRleModeRepSize)
-      buffer[i++] = numReps - kRleModeRepSize;
+      buffer[i++] = (Byte)(numReps - kRleModeRepSize);
   }
   return i;
 }
@@ -295,17 +295,17 @@ void CThreadInfo::EncodeBlock(Byte *block, UInt32 blockSize)
         while (rleSize != 0)
         {
           rleSize--;
-          mtfs[mtfArraySize++] = (rleSize & 1);
+          mtfs[mtfArraySize++] = (Byte)(rleSize & 1);
           symbolCounts[rleSize & 1]++;
           rleSize >>= 1;
         }
         if (pos >= 0xFE)
         {
           mtfs[mtfArraySize++] = 0xFF;
-          mtfs[mtfArraySize++] = pos - 0xFE;
+          mtfs[mtfArraySize++] = (Byte)(pos - 0xFE);
         }
         else
-          mtfs[mtfArraySize++] = pos + 1;
+          mtfs[mtfArraySize++] = (Byte)(pos + 1);
         symbolCounts[pos + 1]++;
       }
     }
@@ -314,7 +314,7 @@ void CThreadInfo::EncodeBlock(Byte *block, UInt32 blockSize)
     while (rleSize != 0)
     {
       rleSize--;
-      mtfs[mtfArraySize++] = (rleSize & 1);
+      mtfs[mtfArraySize++] = (Byte)(rleSize & 1);
       symbolCounts[rleSize & 1]++;
       rleSize >>= 1;
     }
@@ -338,7 +338,7 @@ void CThreadInfo::EncodeBlock(Byte *block, UInt32 blockSize)
   int bestNumTables = kNumTablesMin;
   UInt32 bestPrice = 0xFFFFFFFF;
   UInt32 startPos = m_OutStreamCurrent->GetPos();
-  UInt32 startCurByte = m_OutStreamCurrent->GetCurByte();
+  Byte startCurByte = m_OutStreamCurrent->GetCurByte();
   for (int nt = kNumTablesMin; nt <= kNumTablesMax + 1; nt++)
   {
     int numTables;
@@ -596,9 +596,9 @@ void CThreadInfo::EncodeBlock2(Byte *block, UInt32 blockSize, UInt32 numPasses)
 
   UInt32 startBytePos = m_OutStreamCurrent->GetBytePos();
   UInt32 startPos = m_OutStreamCurrent->GetPos();
-  UInt32 startCurByte = m_OutStreamCurrent->GetCurByte();
-  UInt32 endCurByte;
-  UInt32 endPos;
+  Byte startCurByte = m_OutStreamCurrent->GetCurByte();
+  Byte endCurByte = 0;
+  UInt32 endPos = 0;
   if (numPasses > 1 && blockSize >= (1 << 10))
   {
     UInt32 blockSize0 = blockSize / 2;
@@ -697,7 +697,7 @@ void CEncoder::WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte)
 
 
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {
   #ifdef COMPRESS_BZIP2_MT
@@ -771,7 +771,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   else
   #endif
   {
-    while (true)
+    for (;;)
     {
       CThreadInfo &ti = 
       #ifdef COMPRESS_BZIP2_MT

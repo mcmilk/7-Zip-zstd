@@ -172,7 +172,7 @@ bool CFSFolder::LoadComments()
   if (length >= (1 << 28))
     return false;
   AString s;
-  char *p = s.GetBuffer((size_t)length + 1);
+  char *p = s.GetBuffer((int)((size_t)length + 1));
   UInt32 processedSize;
   file.Read(p, (UInt32)length, processedSize);
   p[length] = 0;
@@ -380,7 +380,7 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetName(BSTR *name)
+STDMETHODIMP CFSFolder::GetName(BSTR * /* name */)
 {
   return E_NOTIMPL;
   /*
@@ -429,7 +429,7 @@ STDMETHODIMP CFSFolder::GetPath(BSTR *path)
 STDMETHODIMP CFSFolder::WasChanged(INT32 *wasChanged)
 {
   bool wasChangedMain = false;
-  while (true)
+  for (;;)
   {
     if (!_findChangeNotificationDefined)
     {
@@ -518,7 +518,7 @@ HRESULT CFSFolder::GetComplexName(const wchar_t *name, UString &resultPath)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress *progress)
+STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress * /* progress */)
 {
   UString processedName;
   RINOK(GetComplexName(name, processedName));
@@ -531,7 +531,7 @@ STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress *progress)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress *progress)
+STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress */)
 {
   UString processedName;
   RINOK(GetComplexName(name, processedName));
@@ -541,7 +541,7 @@ STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress *progress)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress)
+STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress * /* progress */)
 {
   const CDirItem &fileInfo = *_refs[index];
   const UString fullPrefix = _path + GetPrefix(fileInfo);
@@ -550,13 +550,11 @@ STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,
-    IProgress *progress)
+STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress)
 {
   RINOK(progress->SetTotal(numItems));
   for (UInt32 i = 0; i < numItems; i++)
   {
-    int index = indices[i];
     const CDirItem &fileInfo = *_refs[indices[i]];
     const UString fullPath = _path + GetRelPath(fileInfo);
     bool result;
@@ -573,7 +571,7 @@ STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,
 }
 
 STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID, 
-    const PROPVARIANT *value, IProgress *progress)
+    const PROPVARIANT *value, IProgress * /* progress */)
 {
   if (index >= (UInt32)_refs.Size())
     return E_INVALIDARG;

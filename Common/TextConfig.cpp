@@ -16,13 +16,14 @@ static bool IsDelimitChar(char c)
 static AString GetIDString(const char *string, int &finishPos)
 {
   AString result;
-  for (finishPos = 0; true; finishPos++)
+  for (finishPos = 0; ; finishPos++)
   {
     char c = string[finishPos];
     if (IsDelimitChar(c) || c == '=')
-      return result;
+      break;
     result += c;
   }
+  return result;
 }
 
 static bool WaitNextLine(const AString &string, int &pos)
@@ -57,7 +58,7 @@ bool GetTextConfig(const AString &string, CObjectVector<CTextConfigPair> &pairs)
   /////////////////////
   // read strings
 
-  while (true)
+  for (;;)
   {
     if (!SkipSpaces(string, pos))
       break;
@@ -80,7 +81,7 @@ bool GetTextConfig(const AString &string, CObjectVector<CTextConfigPair> &pairs)
       return false;
     pos++;
     AString message;
-    while(true)
+    for (;;)
     {
       if (pos >= string.Length())
         return false;

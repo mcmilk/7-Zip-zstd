@@ -22,26 +22,28 @@ void COutArchive::MoveBasePosition(UInt64 distanceToMove)
   m_BasePosition += distanceToMove; // test overflow
 }
 
-void COutArchive::PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64)
+void COutArchive::PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64, bool aesEncryption)
 {
   m_IsZip64 = isZip64;
   m_ExtraSize = isZip64 ? (4 + 8 + 8) : 0;
+  if (aesEncryption)
+    m_ExtraSize += 4 + 7;
   m_LocalFileHeaderSize = 4 + NFileHeader::kLocalBlockSize + fileNameLength + m_ExtraSize;
 }
 
-void COutArchive::PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize)
+void COutArchive::PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize, bool aesEncryption)
 {
   // We test it to 0xF8000000 to support case when compressed size 
   // can be larger than uncompressed size.
-  PrepareWriteCompressedDataZip64(fileNameLength, unPackSize >= 0xF8000000);
+  PrepareWriteCompressedDataZip64(fileNameLength, unPackSize >= 0xF8000000, aesEncryption);
 }
 
-void COutArchive::PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize)
+void COutArchive::PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize, bool aesEncryption)
 {
   bool isUnPack64 = unPackSize >= 0xFFFFFFFF;
   bool isPack64 = packSize >= 0xFFFFFFFF;
   bool isZip64 = isPack64 || isUnPack64;
-  PrepareWriteCompressedDataZip64(fileNameLength, isZip64);
+  PrepareWriteCompressedDataZip64(fileNameLength, isZip64, aesEncryption);
 }
 
 void COutArchive::WriteBytes(const void *buffer, UInt32 size)
@@ -86,7 +88,21 @@ void COutArchive::WriteUInt64(UInt64 value)
   }
 }
 
-HRESULT COutArchive::WriteLocalHeader(const CItem &item)
+void COutArchive::WriteExtra(const CExtraBlock &extra)
+{
+  if (extra.SubBlocks.Size() != 0)
+  {
+    for (int i = 0; i < extra.SubBlocks.Size(); i++)
+    {
+      const CExtraSubBlock &subBlock = extra.SubBlocks[i];
+      WriteUInt16(subBlock.ID);
+      WriteUInt16((UInt16)subBlock.Data.GetCapacity());
+      WriteBytes(subBlock.Data, (UInt32)subBlock.Data.GetCapacity());
+    }
+  }
+}
+
+HRESULT COutArchive::WriteLocalHeader(const CLocalItem &item)
 {
   m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
   
@@ -101,29 +117,32 @@ HRESULT COutArchive::WriteLocalHeader(const CItem &item)
   WriteUInt32(item.FileCRC);
   WriteUInt32(isZip64 ? 0xFFFFFFFF: (UInt32)item.PackSize);
   WriteUInt32(isZip64 ? 0xFFFFFFFF: (UInt32)item.UnPackSize);
-  WriteUInt16(item.Name.Length());
-  UInt16 localExtraSize = isZip64 ? (4 + 16): 0;
-  if (localExtraSize > m_ExtraSize)
-    return E_FAIL;
-  WriteUInt16(m_ExtraSize); // test it;
-  WriteBytes((const char *)item.Name, item.Name.Length());
-  if (m_ExtraSize > 0)
+  WriteUInt16((UInt16)item.Name.Length());
   {
-    UInt16 remain = m_ExtraSize - 4; 
-    WriteUInt16(0x1); // Zip64 Tag;
-    WriteUInt16(remain);
-    if (isZip64)
-    {
-      WriteUInt64(item.UnPackSize);
-      WriteUInt64(item.PackSize);
-      remain -= 16;
-    }
-    for (int i = 0; i < remain; i++)
-      WriteByte(0);
+    UInt16 localExtraSize = (UInt16)((isZip64 ? (4 + 16): 0) + item.LocalExtra.GetSize());
+    if (localExtraSize > m_ExtraSize)
+      return E_FAIL;
   }
+  WriteUInt16((UInt16)m_ExtraSize); // test it;
+  WriteBytes((const char *)item.Name, item.Name.Length());
+
+  UInt32 extraPos = 0;
+  if (isZip64)
+  {
+    extraPos += 4 + 16;
+    WriteUInt16(NFileHeader::NExtraID::kZip64);
+    WriteUInt16(16);
+    WriteUInt64(item.UnPackSize);
+    WriteUInt64(item.PackSize);
+  }
+
+  WriteExtra(item.LocalExtra);
+  extraPos += (UInt32)item.LocalExtra.GetSize();
+  for (; extraPos < m_ExtraSize; extraPos++)
+    WriteByte(0);
+
   MoveBasePosition(item.PackSize);
-  m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
-  return S_OK;
+  return m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
 }
 
 void COutArchive::WriteCentralHeader(const CItem &item)
@@ -146,10 +165,10 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   WriteUInt32(item.FileCRC);
   WriteUInt32(isPack64 ? 0xFFFFFFFF: (UInt32)item.PackSize);
   WriteUInt32(isUnPack64 ? 0xFFFFFFFF: (UInt32)item.UnPackSize);
-  WriteUInt16(item.Name.Length());
-  UInt16 zip64ExtraSize = (isUnPack64 ? 8: 0) +  (isPack64 ? 8: 0) + (isPosition64 ? 8: 0);
-  UInt16 centralExtraSize = isZip64 ? (4 + zip64ExtraSize) : 0;
-  centralExtraSize += (UInt16)item.CentralExtra.GetSize();
+  WriteUInt16((UInt16)item.Name.Length());
+  UInt16 zip64ExtraSize = (UInt16)((isUnPack64 ? 8: 0) +  (isPack64 ? 8: 0) + (isPosition64 ? 8: 0));
+  UInt16 centralExtraSize = (UInt16)(isZip64 ? (4 + zip64ExtraSize) : 0);
+  centralExtraSize = (UInt16)(centralExtraSize + item.CentralExtra.GetSize());
   WriteUInt16(centralExtraSize); // test it;
   WriteUInt16((UInt16)item.Comment.GetCapacity());
   WriteUInt16(0); // DiskNumberStart;
@@ -159,7 +178,7 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   WriteBytes((const char *)item.Name, item.Name.Length());
   if (isZip64)
   {
-    WriteUInt16(0x1); // Zip64 Tag;
+    WriteUInt16(NFileHeader::NExtraID::kZip64);
     WriteUInt16(zip64ExtraSize);
     if(isUnPack64)
       WriteUInt64(item.UnPackSize);
@@ -168,16 +187,7 @@ void COutArchive::WriteCentralHeader(const CItem &item)
     if(isPosition64)
       WriteUInt64(item.LocalHeaderPosition);
   }
-  if (item.CentralExtra.SubBlocks.Size() != 0)
-  {
-    for (int i = 0; i < item.CentralExtra.SubBlocks.Size(); i++)
-    {
-      CExtraSubBlock subBlock = item.CentralExtra.SubBlocks[i];
-      WriteUInt16(subBlock.ID);
-      WriteUInt16((UInt16)subBlock.Data.GetCapacity());
-      WriteBytes(subBlock.Data, (UInt32)subBlock.Data.GetCapacity());
-    }
-  }
+  WriteExtra(item.CentralExtra);
   if (item.Comment.GetCapacity() > 0)
     WriteBytes(item.Comment, (UInt32)item.Comment.GetCapacity());
 }
@@ -199,7 +209,7 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByte
   if (isZip64)
   {
     WriteUInt32(NSignature::kZip64EndOfCentralDir);
-    WriteUInt64(kZip64EndOfCentralDirRecordSize); // ThisDiskNumber = 0;
+    WriteUInt64(kZip64EcdSize); // ThisDiskNumber = 0;
     WriteUInt16(45); // version
     WriteUInt16(45); // version
     WriteUInt32(0); // ThisDiskNumber = 0;
@@ -217,8 +227,8 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByte
   WriteUInt32(NSignature::kEndOfCentralDir);
   WriteUInt16(0); // ThisDiskNumber = 0;
   WriteUInt16(0); // StartCentralDirectoryDiskNumber;
-  WriteUInt16(items64 ? 0xFFFF: (UInt16)items.Size());
-  WriteUInt16(items64 ? 0xFFFF: (UInt16)items.Size());
+  WriteUInt16((UInt16)(items64 ? 0xFFFF: items.Size()));
+  WriteUInt16((UInt16)(items64 ? 0xFFFF: items.Size()));
   WriteUInt32(cdSize64 ? 0xFFFFFFFF: (UInt32)cdSize);
   WriteUInt32(cdOffset64 ? 0xFFFFFFFF: (UInt32)cdOffset);
   UInt16 commentSize = (UInt16)comment.GetCapacity();

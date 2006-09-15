@@ -3,32 +3,38 @@
 #ifndef __COMMON_TYPES_H
 #define __COMMON_TYPES_H
 
-#ifndef UInt32
+#ifndef _7ZIP_BYTE_DEFINED
+#define _7ZIP_BYTE_DEFINED
+typedef unsigned char Byte;
+#endif 
+
+#ifndef _7ZIP_UINT16_DEFINED
+#define _7ZIP_UINT16_DEFINED
+typedef unsigned short UInt16;
+#endif 
+
+#ifndef _7ZIP_UINT32_DEFINED
+#define _7ZIP_UINT32_DEFINED
 #ifdef _LZMA_UINT32_IS_ULONG
-#define UInt32 unsigned long
+typedef unsigned long UInt32;
 #else
-#define UInt32 unsigned int
+typedef unsigned int UInt32;
 #endif
-#endif
-
-#ifndef Byte
-#define Byte unsigned char
-#endif
-
-#ifndef UInt16
-#define UInt16 unsigned short
-#endif
+#endif 
 
 /* #define _SZ_NO_INT_64 */
 /* define it your compiler doesn't support long long int */
 
+#ifndef _7ZIP_UINT64_DEFINED
+#define _7ZIP_UINT64_DEFINED
 #ifdef _SZ_NO_INT_64
-#define UInt64 unsigned long
+typedef unsigned long UInt64;
 #else
 #ifdef _MSC_VER
-#define UInt64 unsigned __int64
+typedef unsigned __int64 UInt64;
 #else
-#define UInt64 unsigned long long int
+typedef unsigned long long int UInt64;
+#endif
 #endif
 #endif
 
@@ -38,9 +44,9 @@
 
 #ifndef CFileSize
 #ifdef _SZ_FILE_SIZE_64
-#define CFileSize UInt64
+typedef UInt64 CFileSize; 
 #else
-#define CFileSize UInt32
+typedef UInt32 CFileSize; 
 #endif
 #endif
 

@@ -326,13 +326,13 @@ bool CPanel::InvokePluginCommand(int id,
   commandInfo.cbSize = sizeof(commandInfo);
   commandInfo.fMask = CMIC_MASK_UNICODE;
   commandInfo.hwnd = GetParent();
-  commandInfo.lpVerb = LPCSTR(offset);
+  commandInfo.lpVerb = (LPCSTR)(MAKEINTRESOURCE(offset));
   commandInfo.lpParameters = NULL;
   CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
   commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
   commandInfo.nShow = SW_SHOW;
   commandInfo.lpTitle = "";
-  commandInfo.lpVerbW = LPCWSTR(offset);
+  commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));
   commandInfo.lpParameters = NULL;
   UString currentFolderUnicode = _currentFolderPrefix;
   commandInfo.lpDirectoryW = currentFolderUnicode;

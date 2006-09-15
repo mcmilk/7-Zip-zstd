@@ -42,13 +42,15 @@ AR_COMMON_OBJS = \
   $O\7zMethodID.obj \
   $O\7zMethods.obj \
 
+CRYPTO_HASH_OBJS = \
+  $O\Sha1.obj \
+
 CRYPTO_RAR20_OBJS = \
   $O\Rar20Cipher.obj \
   $O\Rar20Crypto.obj \
 
 CRYPTO_RARAES_OBJS = \
   $O\RarAES.obj \
-  $O\sha1.obj \
 
 OBJS = \
   $O\StdAfx.obj \
@@ -58,6 +60,7 @@ OBJS = \
   $(7ZIP_COMMON_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
+  $(CRYPTO_HASH_OBJS) \
   $(CRYPTO_RAR20_OBJS) \
   $(CRYPTO_RARAES_OBJS) \
   $O\CopyCoder.obj \
@@ -77,6 +80,8 @@ $(AR_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
 $(7Z_OBJS): ../7z/$(*B).cpp
 	$(COMPL)
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
+	$(COMPL_O2)
 $(CRYPTO_RAR20_OBJS): ../../Crypto/Rar20/$(*B).cpp
 	$(COMPL)
 $(CRYPTO_RARAES_OBJS): ../../Crypto/RarAES/$(*B).cpp

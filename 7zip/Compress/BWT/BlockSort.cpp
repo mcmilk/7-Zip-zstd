@@ -140,7 +140,7 @@ UInt32 CBlockSorter::SortGroup(UInt32 groupOffset, UInt32 groupSize, UInt32 mask
     for (j = 0; j < groupSize; j++)
     {
       UInt32 group = groupOffset + j;
-      while (true)
+      for (;;)
       {
         Groups[ind2[j]] = group;
         if ((Flags[(groupOffset + j) >> kNumFlagsBits] & (1 << ((groupOffset + j) & kFlagsMask))) == 0)
@@ -154,7 +154,7 @@ UInt32 CBlockSorter::SortGroup(UInt32 groupOffset, UInt32 groupSize, UInt32 mask
 
   // Radix-Range Sort
   UInt32 i;
-  do
+  for (;;)
   {
     if (maskSize == 0)
       return 1;
@@ -193,7 +193,6 @@ UInt32 CBlockSorter::SortGroup(UInt32 groupOffset, UInt32 groupSize, UInt32 mask
     else 
       break;
   }
-  while(true);
   UInt32 t = (groupOffset + i - 1);
   Flags[t >> kNumFlagsBits] &= ~(1 << (t & kFlagsMask));
 
@@ -251,7 +250,7 @@ UInt32 CBlockSorter::Sort(const Byte *data, UInt32 blockSize)
   UInt32 mask;
   for (mask = 2; mask < blockSize; mask <<= 1);
   mask >>= 1;
-  for (NumSortedBytes = kNumHashBytes; true; NumSortedBytes <<= 1)
+  for (NumSortedBytes = kNumHashBytes; ; NumSortedBytes <<= 1)
   {
     UInt32 newLimit = 0;
     for (i = 0; i < blockSize;)

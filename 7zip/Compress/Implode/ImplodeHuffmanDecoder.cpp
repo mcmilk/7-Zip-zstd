@@ -65,7 +65,7 @@ bool CDecoder::SetCodeLengths(const Byte *codeLengths)
 
 UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
 {
-  UInt32 numBits;
+  UInt32 numBits = 0;
   UInt32 value = inStream->GetValue(kNumBitsInLongestCode);
   int i;
   for(i = kNumBitsInLongestCode; i > 0; i--)

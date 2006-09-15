@@ -31,11 +31,7 @@ static inline bool IsItWindowsNT()
 }
 #endif
 
-int APIENTRY WinMain(
-  HINSTANCE hInstance,
-  HINSTANCE hPrevInstance,
-  LPSTR lpCmdLine,
-  int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int /* nCmdShow */)
 {
   g_hInstance = (HINSTANCE)hInstance;
   #ifndef _UNICODE

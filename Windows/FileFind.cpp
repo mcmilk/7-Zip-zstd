@@ -110,7 +110,8 @@ bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
   Close();
   WIN32_FIND_DATA findData;
   _handle = ::FindFirstFile(wildcard, &findData);
-  if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
+  _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
+  if (_handleAllocated)
     ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   return _handleAllocated;
 }
@@ -123,7 +124,8 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
   {
     WIN32_FIND_DATAW findData;
     _handle = ::FindFirstFileW(wildcard, &findData);
-    if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
+    _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
+    if (_handleAllocated)
       ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   }
   else
@@ -131,7 +133,8 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
     WIN32_FIND_DATAA findData;
     _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard, 
         GetCurrentCodePage()), &findData);
-    if (_handleAllocated = (_handle != INVALID_HANDLE_VALUE))
+    _handleAllocated = (_handle != INVALID_HANDLE_VALUE);
+    if (_handleAllocated)
       ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
   }
   return _handleAllocated;
@@ -209,7 +212,7 @@ bool CEnumerator::NextAny(CFileInfo &fileInfo)
 
 bool CEnumerator::Next(CFileInfo &fileInfo)
 {
-  while(true)
+  for (;;)
   {
     if(!NextAny(fileInfo))
       return false;
@@ -240,7 +243,7 @@ bool CEnumeratorW::NextAny(CFileInfoW &fileInfo)
 
 bool CEnumeratorW::Next(CFileInfoW &fileInfo)
 {
-  while(true)
+  for (;;)
   {
     if(!NextAny(fileInfo))
       return false;

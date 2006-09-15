@@ -71,6 +71,9 @@ private:
   UInt32 m_NumMatchFinderCycles;
   bool m_NumMatchFinderCyclesDefined;
 
+  bool m_IsAesMode;
+  Byte m_AesKeyMode;
+
   #ifdef COMPRESS_MT
   UInt32 _numThreads;
   #endif
@@ -84,6 +87,8 @@ private:
     m_NumFastBytes = 
     m_NumMatchFinderCycles = 0xFFFFFFFF;
     m_NumMatchFinderCyclesDefined = false;
+    m_IsAesMode = false;
+    m_AesKeyMode = 3; // aes-256
     #ifdef COMPRESS_MT
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
     #endif

@@ -19,6 +19,7 @@ static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
 #endif
 
 static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+static NArchive::N7z::CMethodID k_LZMA2 = { { 0x3, 0x1, 0x2 }, 3 };
 
 #ifdef COMPRESS_LZMA
 #include "../../Compress/LZMA/LZMAEncoder.h"
@@ -207,9 +208,9 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
 
     bool tryReduce = false;
     UInt32 reducedDictionarySize = 1 << 10;
-    if (inSizeForReduce != 0 && methodFull.MethodID == k_LZMA)
+    if (inSizeForReduce != 0 && (methodFull.MethodID == k_LZMA || methodFull.MethodID == k_LZMA2))
     {
-      while (true)
+      for (;;)
       {
         const UInt32 step = (reducedDictionarySize >> 1);
         if (reducedDictionarySize >= *inSizeForReduce)
@@ -383,7 +384,8 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
   CMyComPtr<ISequentialOutStream> outStreamSizeCount = outStreamSizeCountSpec;
 
   inStreamSizeCountSpec->Init(inStream);
-  outStreamSizeCountSpec->Init(outStream);
+  outStreamSizeCountSpec->SetStream(outStream);
+  outStreamSizeCountSpec->Init();
 
   CRecordVector<ISequentialInStream *> inStreamPointers;
   CRecordVector<ISequentialOutStream *> outStreamPointers;
@@ -528,7 +530,7 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
 
   // Make main stream first in list
   int inIndex = _bindInfo.InStreams[0];
-  while (true)
+  for (;;)
   {
     UInt32 coderIndex, coderStreamIndex;
     _bindInfo.FindInStream(inIndex, coderIndex, coderStreamIndex);

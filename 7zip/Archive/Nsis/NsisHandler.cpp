@@ -42,7 +42,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidSolid, VT_BOOL}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -71,15 +71,15 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_INVALIDARG;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
+STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
-  bool mustBeClosed = true;
   Close();
   {
     if(_archive.Open(stream, maxCheckStartPosition) != S_OK)

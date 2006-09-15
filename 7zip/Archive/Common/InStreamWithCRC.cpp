@@ -4,23 +4,25 @@
 
 #include "InStreamWithCRC.h"
 
-STDMETHODIMP CSequentialInStreamWithCRC::Read(void *data, 
-    UInt32 size, UInt32 *processedSize)
+STDMETHODIMP CSequentialInStreamWithCRC::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   _size += realProcessedSize;
+  if (size > 0 && realProcessedSize == 0)
+    _wasFinished = true;
   _crc.Update(data, realProcessedSize);
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return result;
 }
 
-STDMETHODIMP CInStreamWithCRC::Read(void *data, 
-    UInt32 size, UInt32 *processedSize)
+STDMETHODIMP CInStreamWithCRC::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  if (size > 0 && realProcessedSize == 0)
+    _wasFinished = true;
   _size += realProcessedSize;
   _crc.Update(data, realProcessedSize);
   if(processedSize != NULL)

@@ -40,7 +40,10 @@ struct CArchivePath
       return;
     }
     if (BaseExtension.CompareNoCase(Name.Mid(dotPos + 1)) == 0)
+    {
+      BaseExtension = Name.Mid(dotPos + 1);
       Name = Name.Left(dotPos);
+    }
     else
       BaseExtension.Empty();
   }

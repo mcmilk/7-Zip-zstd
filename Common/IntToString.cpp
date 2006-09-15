@@ -16,7 +16,7 @@ void ConvertUInt64ToString(UInt64 value, char *s, UInt32 base)
   do 
   {
     int delta = (int)(value % base);
-    temp[pos++] = (delta < 10) ? ('0' + delta) : ('a' + (delta - 10));
+    temp[pos++] = (char)((delta < 10) ? ('0' + delta) : ('a' + (delta - 10)));
     value /= base;
   }
   while (value != 0);
@@ -32,7 +32,7 @@ void ConvertUInt64ToString(UInt64 value, wchar_t *s)
   int pos = 0;
   do 
   {
-    temp[pos++] = L'0' + (int)(value % 10);
+    temp[pos++] = (wchar_t)(L'0' + (int)(value % 10));
     value /= 10;
   }
   while (value != 0);

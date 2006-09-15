@@ -329,6 +329,10 @@ SOURCE=..\..\..\Windows\Control\ListView.cpp
 
 SOURCE=..\..\..\Windows\Control\ListView.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Control\ProgressBar.h
+# End Source File
 # End Group
 # Begin Source File
 

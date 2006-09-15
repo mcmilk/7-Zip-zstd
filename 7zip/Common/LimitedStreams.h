@@ -10,14 +10,24 @@ class CLimitedSequentialInStream:
   public ISequentialInStream,
   public CMyUnknownImp
 {
-  UInt64 _size;
   CMyComPtr<ISequentialInStream> _stream;
+  UInt64 _size;
+  UInt64 _pos;
+  bool _wasFinished;
 public:
-  void Init(ISequentialInStream *stream, UInt64 streamSize);
+  void SetStream(ISequentialInStream *stream) { _stream = stream; }
+  void Init(UInt64 streamSize)  
+  { 
+    _size = streamSize; 
+    _pos = 0; 
+    _wasFinished = false; 
+  }
  
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  UInt64 GetSize() const { return _pos; }
+  bool WasFinished() const { return _wasFinished; }
 };
 
 #endif

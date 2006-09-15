@@ -220,7 +220,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   SetOutStreamSize(outSize);
   CDecoderFlusher flusher(this);
 
-  while (true)
+  for (;;)
   {
     UInt32 curSize = 1 << 18;
     RINOK(CodeSpec(curSize));
@@ -309,7 +309,8 @@ STDMETHODIMP CDecoder::ReleaseInStream()
 
 STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
-  if (_outSizeDefined = (outSize != NULL))
+  _outSizeDefined = (outSize != NULL);
+  if (_outSizeDefined)
     _outSize = *outSize;
   _remainLen = kLenIdNeedInit;
   _outWindowStream.Init();

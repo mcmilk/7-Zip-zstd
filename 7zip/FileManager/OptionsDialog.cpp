@@ -26,7 +26,7 @@
 
 using namespace NWindows;
 
-void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
+void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
 {
   CSystemPage systemPage;
   CPluginsPage pluginsPage;
@@ -48,7 +48,7 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance)
     pages.Add(page);
   }
 
-  int res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS, 0x03010000));
+  INT_PTR res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS, 0x03010000));
   if (res != -1 && res != 0)
   {
     if (langPage._langWasChanged)

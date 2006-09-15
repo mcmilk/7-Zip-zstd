@@ -50,7 +50,7 @@ bool ParseVolumeSizes(const UString &s, CRecordVector<UInt64> &values)
       return false;
     values.Add(value);
     prevIsNumber = true;
-    UString rem = subString.Mid(end - start);
+    UString rem = subString.Mid((int)(end - start));
     if (!rem.IsEmpty())
       destStrings.Insert(i + 1, rem);
   }

@@ -2,8 +2,8 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 42
-!define VERSION_POSTFIX_FULL ""
+!define VERSION_MINOR 43
+!define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -206,6 +206,7 @@ Section
   File he.txt
   File hr.txt
   File hu.txt
+  File hy.txt
   File id.txt
   File io.txt
   File it.txt
@@ -217,6 +218,7 @@ Section
   File lv.txt
   File mk.txt
   File mn.txt
+  File mr.txt
   File ms.txt
   File nl.txt
   File no.txt
@@ -415,6 +417,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\he.txt
   Delete $INSTDIR\Lang\hr.txt
   Delete $INSTDIR\Lang\hu.txt
+  Delete $INSTDIR\Lang\hy.txt
   Delete $INSTDIR\Lang\id.txt
   Delete $INSTDIR\Lang\io.txt
   Delete $INSTDIR\Lang\it.txt
@@ -426,6 +429,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt
   Delete $INSTDIR\Lang\mn.txt
+  Delete $INSTDIR\Lang\mr.txt
   Delete $INSTDIR\Lang\ms.txt
   Delete $INSTDIR\Lang\nl.txt
   Delete $INSTDIR\Lang\no.txt

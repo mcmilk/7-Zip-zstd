@@ -126,11 +126,6 @@ static void PrintHelpAndExit(CStdOutStream &s) // yyy
   ShowMessageAndThrowException(s, kUserErrorMessage, NExitCode::kUserError);
 }
 
-static void PrintProcessTitle(CStdOutStream &s, const AString &processTitle, const UString &archiveName)
-{
-  s << endl << processTitle << kProcessArchiveMessage << archiveName << endl << endl;
-}
-
 #ifndef _WIN32
 static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
 {
@@ -235,11 +230,18 @@ int Main2(
       #ifdef COMPRESS_MT
       eo.Properties = options.ExtractProperties;
       #endif
+      UString errorMessage;
       HRESULT result = DecompressArchives(
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
-          eo, &openCallback, ecs);
+          eo, &openCallback, ecs, errorMessage);
+      if (!errorMessage.IsEmpty())
+      {
+        stdStream << endl << "Error: " << errorMessage;
+        if (result == S_OK)
+          result = E_FAIL;
+      }
 
       if (ecs->NumArchives > 1)
       {

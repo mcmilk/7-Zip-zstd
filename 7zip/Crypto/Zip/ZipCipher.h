@@ -4,7 +4,6 @@
 #define __CRYPTO_ZIPCIPHER_H
 
 #include "Common/MyCom.h"
-#include "Common/Random.h"
 #include "Common/Types.h"
 
 #include "../../ICoder.h"
@@ -15,22 +14,11 @@
 namespace NCrypto {
 namespace NZip {
 
-/*
-class CBuffer2
-{
-protected:
-  Byte *_buffer;
-public:
-  CBuffer2();
-  ~CBuffer2();
-};
-*/
 class CEncoder : 
   public ICompressFilter,
   public ICryptoSetPassword,
   public ICryptoSetCRC,
   public CMyUnknownImp
-  // public CBuffer2
 {
   CCipher _cipher;
   UInt32 _crc;
@@ -39,7 +27,6 @@ public:
       ICryptoSetPassword,
       ICryptoSetCRC
   )
-
   STDMETHOD(Init)();
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
 

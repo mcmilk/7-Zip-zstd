@@ -33,8 +33,7 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
   return S_OK;
 }
 
-static HRESULT CopyStreams(ISequentialInStream *inStream, 
-    ISequentialOutStream *outStream, IArchiveUpdateCallback *updateCallback)
+static HRESULT CopyStreams(ISequentialInStream *inStream, ISequentialOutStream *outStream)
 {
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
   return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
@@ -101,7 +100,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (indexInArchive != 0)
     return E_INVALIDARG;
   RINOK(_stream->Seek(_streamStartPosition, STREAM_SEEK_SET, NULL));
-  return CopyStreams(_stream, outStream, updateCallback);
+  return CopyStreams(_stream, outStream);
 }
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)

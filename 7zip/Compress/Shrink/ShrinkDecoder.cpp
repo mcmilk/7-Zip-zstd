@@ -17,7 +17,7 @@ static const UInt32 kBufferSize = (1 << 20);
 static const int kNumMinBits = 9;   
 
 STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {
   NStream::NLSBF::CBaseDecoder<CInBuffer> inBuffer;
@@ -49,7 +49,7 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
     _isFree[i] = true;
 
   UInt32 lastSymbol = 0;
-  while (true)
+  for (;;)
   {
     outBuffer.Flush();
     UInt32 symbol = inBuffer.ReadBits(numBits);

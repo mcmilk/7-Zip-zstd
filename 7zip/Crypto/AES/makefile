@@ -28,4 +28,4 @@ $(AES_OBJS): $(*B).cpp
 $(AES_OPT_OBJS): $(*B).cpp
 	$(COMPL_O2)
 $(AES_ORIG_OBJS): $(*B).c
-	$(COMPL_O2)
+	$(COMPL_O2_W3)

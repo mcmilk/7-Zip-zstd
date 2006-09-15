@@ -17,12 +17,12 @@ HRESULT COpenCallbackGUI::CheckBreak()
   return S_OK;
 }
 
-HRESULT COpenCallbackGUI::SetTotal(const UInt64 *files, const UInt64 *bytes)
+HRESULT COpenCallbackGUI::SetTotal(const UInt64 * /* files */, const UInt64 * /* bytes */)
 {
   return S_OK;
 }
 
-HRESULT COpenCallbackGUI::SetCompleted(const UInt64 *files, const UInt64 *bytes)
+HRESULT COpenCallbackGUI::SetCompleted(const UInt64 * /* files */, const UInt64 * /* bytes */)
 {
   return S_OK;
 }

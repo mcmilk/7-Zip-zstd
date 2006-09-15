@@ -673,6 +673,10 @@ SOURCE=..\..\..\Windows\Memory.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Memory.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Menu.cpp
 # End Source File
 # Begin Source File

@@ -18,7 +18,7 @@ void CCipher::UpdateKeys(Byte b)
   Keys[0] = ZipCRC32(Keys[0], b);
   Keys[1] += Keys[0] & 0xff;
   Keys[1] = Keys[1] * 134775813L + 1;
-  Keys[2] = ZipCRC32(Keys[2], Keys[1] >> 24);
+  Keys[2] = ZipCRC32(Keys[2], (Byte)(Keys[1] >> 24));
 }
 
 void CCipher::SetPassword(const Byte *password, UInt32 passwordLength)
@@ -33,19 +33,19 @@ void CCipher::SetPassword(const Byte *password, UInt32 passwordLength)
 Byte CCipher::DecryptByteSpec()
 {
   UInt32 temp = Keys[2] | 2;
-  return (temp * (temp ^ 1)) >> 8;
+  return (Byte)((temp * (temp ^ 1)) >> 8);
 }
 
 Byte CCipher::DecryptByte(Byte encryptedByte)
 {
-  Byte c = encryptedByte ^ DecryptByteSpec();
+  Byte c = (Byte)(encryptedByte ^ DecryptByteSpec());
   UpdateKeys(c);
   return c;
 }
 
 Byte CCipher::EncryptByte(Byte b)
 {
-  Byte c = b ^ DecryptByteSpec();
+  Byte c = (Byte)(b ^ DecryptByteSpec());
   UpdateKeys(b);
   return c;
 }

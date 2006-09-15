@@ -38,7 +38,7 @@ static bool AreGuidsEqual(REFGUID g1, REFGUID g2)
 
 static char GetHex(Byte value)
 {
-  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
+  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
 }
 
 static void PrintByte(Byte b, AString &s)
@@ -248,7 +248,8 @@ HRESULT CInArchive::ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size)
   RINOK(inStream->Seek(pos, STREAM_SEEK_SET, NULL));
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> limitedStream(streamSpec);
-  streamSpec->Init(inStream, size);
+  streamSpec->SetStream(inStream);
+  streamSpec->Init(size);
   _inBuffer.SetStream(limitedStream);
   _inBuffer.Init();
   return S_OK;
@@ -276,12 +277,12 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   UInt32 unknown1 = ReadUInt32();
   if (unknown1 != 0 && unknown1 != 1) // it's 0 in one .sll file
     return S_FALSE;
-  UInt32 timeStamp = ReadUInt32();
+  /* UInt32 timeStamp = */ ReadUInt32();
       // Considered as a big-endian DWORD, it appears to contain seconds (MSB) and 
       // fractional seconds (second byte). 
       // The third and fourth bytes may contain even more fractional bits.  
       // The 4 least significant bits in the last byte are constant.
-  UInt32 lang = ReadUInt32();
+  /* UInt32 lang = */ ReadUInt32();
   GUID g;
   ReadGUID(g); // {7C01FD10-7BAA-11D0-9E0C-00A0-C922-E6EC}
   ReadGUID(g); // {7C01FD11-7BAA-11D0-9E0C-00A0-C922-E6EC}
@@ -319,23 +320,23 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
     return S_FALSE;
   if (ReadUInt32() != 1) // version
     return S_FALSE;
-  UInt32 dirHeaderSize = ReadUInt32();
+  /* UInt32 dirHeaderSize = */ ReadUInt32();
   ReadUInt32(); // 0x0A (unknown)
   UInt32 dirChunkSize = ReadUInt32(); // $1000
   if (dirChunkSize < 32)
     return S_FALSE;
-  UInt32 density = ReadUInt32(); //  "Density" of quickref section, usually 2.
-  UInt32 depth = ReadUInt32(); //  Depth of the index tree: 1 there is no index, 
+  /* UInt32 density = */ ReadUInt32(); //  "Density" of quickref section, usually 2.
+  /* UInt32 depth = */ ReadUInt32(); //  Depth of the index tree: 1 there is no index, 
                                // 2 if there is one level of PMGI chunks.
 
-  UInt32 chunkNumber = ReadUInt32(); //  Chunk number of root index chunk, -1 if there is none
+  /* UInt32 chunkNumber = */ ReadUInt32(); //  Chunk number of root index chunk, -1 if there is none
                                      // (though at least one file has 0 despite there being no 
                                      // index chunk, probably a bug.) 
-  UInt32 firstPmglChunkNumber = ReadUInt32(); // Chunk number of first PMGL (listing) chunk
-  UInt32 lastPmglChunkNumber = ReadUInt32();  // Chunk number of last PMGL (listing) chunk
+  /* UInt32 firstPmglChunkNumber = */ ReadUInt32(); // Chunk number of first PMGL (listing) chunk
+  /* UInt32 lastPmglChunkNumber = */ ReadUInt32();  // Chunk number of last PMGL (listing) chunk
   ReadUInt32(); // -1 (unknown)
   UInt32 numDirChunks = ReadUInt32(); // Number of directory chunks (total)
-  UInt32 windowsLangId = ReadUInt32();
+  /* UInt32 windowsLangId = */ ReadUInt32();
   ReadGUID(g);  // {5D02926A-212E-11D0-9DF9-00A0C922E6EC}
   ReadUInt32(); // 0x54 (This is the length again)
   ReadUInt32(); // -1 (unknown)
@@ -360,7 +361,7 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
       ReadUInt32(); // Chunk number of next  listing chunk when reading
                     // directory in sequence (-1 if this is the last listing chunk)
       int numItems = 0;
-      while (true)
+      for (;;)
       {
         UInt64 offset = _inBuffer.GetProcessedSize() - chunkPos;
         UInt32 offsetLimit = dirChunkSize - quickrefLength;
@@ -448,7 +449,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   UInt32 caolLength = ReadUInt32(); // $50 (Length of the CAOL section, which includes the ITSF section)
   if (caolLength >= 0x2C)
   {
-    UInt32 c7 = ReadUInt16(); // Unknown.  Remains the same when identical files are built.
+    /* UInt32 c7 = */ ReadUInt16(); // Unknown.  Remains the same when identical files are built.
               // Does not appear to be a checksum.  Many files have
               // 'HH' (HTML Help?) here, indicating this may be a compiler ID
               //  field.  But at least one ITOL/ITLS compiler does not set this
@@ -479,13 +480,13 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       if (unknown != 0 && unknown != 1) // = 0 for some HxW files, 1 in other cases;
         return S_FALSE;
       database.ContentOffset = _startPosition + ReadUInt64();
-      UInt32 timeStamp = ReadUInt32(); 
+      /* UInt32 timeStamp = */ ReadUInt32(); 
           // A timestamp of some sort.  
           // Considered as a big-endian DWORD, it appears to contain
           // seconds (MSB) and fractional seconds (second byte).
           // The third and fourth bytes may contain even more fractional
           // bits.  The 4 least significant bits in the last byte are constant.
-      UInt32 lang = ReadUInt32(); // BE?
+      /* UInt32 lang = */ ReadUInt32(); // BE?
     }
     else
       return S_FALSE;
@@ -539,7 +540,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       ReadUInt32(); // 0 (unknown)
       
       int numItems = 0;
-      while (true)
+      for (;;)
       {
         UInt64 offset = _inBuffer.GetProcessedSize() - chunkPos;
         UInt32 offsetLimit = dirChunkSize - quickrefLength;
@@ -684,7 +685,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
   {
     // The NameList file
     RINOK(DecompressStream(inStream, database, kNameList));
-    UInt16 length = ReadUInt16();
+    /* UInt16 length = */ ReadUInt16();
     UInt16 numSections = ReadUInt16();
     for (int i = 0; i < numSections; i++)
     {
@@ -849,7 +850,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     const int kSignatureSize = 8;
     UInt64 hxsSignature = NHeader::GetHxsSignature();
     UInt64 chmSignature = ((UInt64)chmVersion << 32)| NHeader::kItsfSignature;
-    while(true)
+    for (;;)
     {
       Byte b;
       if (!_inBuffer.ReadByte(b))

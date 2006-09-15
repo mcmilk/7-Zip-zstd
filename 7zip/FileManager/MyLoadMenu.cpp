@@ -301,7 +301,7 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
   }
 }
 
-void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
+void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
 {
   if (::GetSubMenu(::GetMenu(g_HWND), position) != hMenu)
     return;
@@ -357,7 +357,7 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
     {
       UString s = LangString(IDS_BOOKMARK, 0x03000720);
       s += L" ";
-      wchar_t c = L'0' + i;
+      wchar_t c = (wchar_t)(L'0' + i);
       s += c;
       s += L"\tAlt+Shift+";
       s += c;
@@ -381,7 +381,7 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position)
       if (s.IsEmpty())
         s = L"-";
       s += L"\tAlt+";
-      s += (L'0' + i);
+      s += (wchar_t)(L'0' + i);
       menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
     }
   }
@@ -402,8 +402,7 @@ void OnMenuUnActivating(HWND hWnd)
 */
 
 
-void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode, 
-    bool programMenu)
+void LoadFileMenu(HMENU hMenu, int startPos, bool /* forFileMode */, bool programMenu)
 {
   {
     CMenu srcMenu;

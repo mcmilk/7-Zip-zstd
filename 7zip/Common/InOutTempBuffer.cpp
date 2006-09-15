@@ -97,7 +97,7 @@ HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
   }
   if (!_tmpFileCreated)
     return true;
-  while(true)
+  for (;;)
   {
     UInt32 localProcessedSize;
     if (!_inFile.ReadPart(_buffer, kTmpBufferMemorySize, localProcessedSize))

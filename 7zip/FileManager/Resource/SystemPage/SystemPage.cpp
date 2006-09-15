@@ -351,7 +351,7 @@ void CSystemPage::UpdateDatabase()
     LPARAM param;
     if (!_listViewExt.GetItemParam(i, param))
       return;
-    CExtInfoBig &extInfo = _extDatabase.ExtBigItems[param];
+    CExtInfoBig &extInfo = _extDatabase.ExtBigItems[(int)param];
     extInfo.Associated = _listViewExt.GetCheckState(i);
   }
 
@@ -376,7 +376,7 @@ int CSystemPage::GetSelectedExtIndex()
   LPARAM param;
   if (!_listViewExt.GetItemParam(selectedIndex, param))
     return -1;
-  return param;
+  return (int)param;
 }
 
 

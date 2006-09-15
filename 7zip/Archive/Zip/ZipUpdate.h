@@ -36,6 +36,7 @@ struct CUpdateItem
   AString Name;
   // bool Commented;
   // CUpdateRange CommentRange;
+  CUpdateItem(): Size(0) {}
 };
 
 HRESULT Update(

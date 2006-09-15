@@ -66,9 +66,9 @@ static const Byte *ReadString(const Byte *p, size_t size, AString &s)
 static Byte CalcSum(const Byte *data, size_t size)
 {
   Byte sum = 0;
-	for (size_t i = 0; i < size; i++)
-		sum += data[i];
-	return sum;
+  for (size_t i = 0; i < size; i++)
+    sum = (Byte)(sum + data[i]);
+  return sum;
 }
 
 HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)

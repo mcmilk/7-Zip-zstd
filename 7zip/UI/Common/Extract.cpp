@@ -21,7 +21,8 @@ HRESULT DecompressArchive(
     const UString &defaultName,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,
-    IExtractCallbackUI *callback)
+    IExtractCallbackUI *callback,
+    UString &errorMessage)
 {
   CRecordVector<UInt32> realIndices;
   UInt32 numItems;
@@ -53,7 +54,11 @@ HRESULT DecompressArchive(
   if(!outDir.IsEmpty())
     if(!NFile::NDirectory::CreateComplexDirectory(outDir))
     {
-      throw UString(L"Can not create output directory ") + outDir;
+      HRESULT res = ::GetLastError();
+      if (res == S_OK)
+        res = E_FAIL;
+      errorMessage = ((UString)L"Can not create output directory ") + outDir;
+      return res;
     }
 
   extractCallbackSpec->Init(
@@ -84,7 +89,8 @@ HRESULT DecompressArchives(
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &optionsSpec,
     IOpenCallbackUI *openCallback,
-    IExtractCallbackUI *extractCallback)
+    IExtractCallbackUI *extractCallback, 
+    UString &errorMessage)
 {
   CExtractOptions options = optionsSpec;
   for (int i = 0; i < archivePaths.Size(); i++)
@@ -128,7 +134,9 @@ HRESULT DecompressArchives(
     options.DefaultItemName = archiveLink.GetDefaultItemName();
     RINOK(DecompressArchive(
         archiveLink.GetArchive(), archiveLink.GetDefaultItemName(),
-        wildcardCensor, options, extractCallback));
+        wildcardCensor, options, extractCallback, errorMessage));
+    if (!errorMessage.IsEmpty())
+      return E_FAIL;
   }
   return S_OK;
 }

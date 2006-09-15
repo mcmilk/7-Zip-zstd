@@ -87,7 +87,7 @@ STATPROPSTG kProperties[] =
 CHandler::CHandler()
 {}
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -117,8 +117,8 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_NOTIMPL;
 }
@@ -225,7 +225,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       UInt64 numFiles = _items.Size();
       RINOK(callback->SetCompleted(&numFiles, NULL));
     }
-    while(true)
+    for (;;)
     {
       CItemEx itemInfo;
       bool filled;
@@ -328,7 +328,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
       CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-      outStreamSpec->Init(realOutStream);
+      outStreamSpec->SetStream(realOutStream);
+      outStreamSpec->Init();
       realOutStream.Release();
       
       CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
@@ -337,7 +338,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       UInt64 pos;
       _stream->Seek(itemInfo.DataPosition, STREAM_SEEK_SET, &pos);
 
-      streamSpec->Init(_stream, itemInfo.PackSize);
+      streamSpec->SetStream(_stream);
+      streamSpec->Init(itemInfo.PackSize);
 
 
       CLocalProgress *localProgressSpec = new CLocalProgress;

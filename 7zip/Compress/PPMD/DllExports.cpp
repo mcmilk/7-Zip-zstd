@@ -20,7 +20,7 @@ DEFINE_GUID(CLSID_CCompressPPMDEncoder,
 0x23170F69, 0x40C1, 0x278B, 0x03, 0x04, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00);
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
+BOOL WINAPI DllMain(HINSTANCE /* hInstance */, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   #ifdef _WIN32
   if (dwReason == DLL_PROCESS_ATTACH)

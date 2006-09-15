@@ -32,7 +32,7 @@ public:
   }
 
   // operator HMODULE() const { return _module; };
-  // bool IsLoaded() const { return (_module != NULL); };
+  bool IsLoaded() const { return (_module != NULL); };
   bool Free();
   bool LoadEx(LPCTSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
   bool Load(LPCTSTR fileName);

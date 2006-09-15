@@ -38,7 +38,8 @@ HRESULT CFolderInStream::OpenStream()
     if (result != S_OK && result != S_FALSE)
       return result;
     _fileIndex++;
-    _inStreamWithHashSpec->Init(stream);
+    _inStreamWithHashSpec->SetStream(stream);
+    _inStreamWithHashSpec->Init();
     if (!stream)
     {
       RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));

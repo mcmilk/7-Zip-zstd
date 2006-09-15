@@ -5,6 +5,7 @@
 #include "ArchiveOpenCallback.h"
 
 #include "Common/StringConvert.h"
+#include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
 
 #include "../../Common/FileStreams.h"
@@ -13,16 +14,21 @@ using namespace NWindows;
 
 STDMETHODIMP COpenCallbackImp::SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
+  COM_TRY_BEGIN
   return Callback->SetTotal(files, bytes);
+  COM_TRY_END
 }
 
 STDMETHODIMP COpenCallbackImp::SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
+  COM_TRY_BEGIN
   return Callback->SetTotal(files, bytes);
+  COM_TRY_END
 }
   
 STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
 {
+  COM_TRY_BEGIN
   NCOM::CPropVariant propVariant;
   if (_subArchiveMode)
   {
@@ -61,6 +67,7 @@ STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
     }
   propVariant.Detach(value);
   return S_OK;
+  COM_TRY_END
 }
 
 int COpenCallbackImp::FindName(const UString &name)
@@ -84,9 +91,9 @@ struct CInFileStreamVol: public CInFileStream
   }
 };
 
-STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, 
-    IInStream **inStream)
+STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStream)
 {
+  COM_TRY_BEGIN
   if (_subArchiveMode)
     return S_FALSE;
   RINOK(Callback->CheckBreak());
@@ -106,12 +113,15 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name,
   inFile->OpenCallbackRef = this;
   FileNames.Add(name);
   return S_OK;
+  COM_TRY_END
 }
 
 #ifndef _NO_CRYPTO
 STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
+  COM_TRY_BEGIN
   return Callback->CryptoGetTextPassword(password);
+  COM_TRY_END
 }
 #endif
   

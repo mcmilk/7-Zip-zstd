@@ -47,7 +47,7 @@ public:
   {
     for (;m_BitPos >= 8; m_BitPos -= 8)
     {
-      Byte b;
+      Byte b = 0;
       if (!m_Stream.ReadByte(b))
       {
         b = 0xFF; // check it
@@ -88,9 +88,9 @@ public:
 
   void Normalize()
   {
-    for (;this->m_BitPos >= 8; this->m_BitPos -= 8)
+    for (; this->m_BitPos >= 8; this->m_BitPos -= 8)
     {
-      Byte b;
+      Byte b = 0;
       if (!this->m_Stream.ReadByte(b))
       {
         b = 0xFF; // check it

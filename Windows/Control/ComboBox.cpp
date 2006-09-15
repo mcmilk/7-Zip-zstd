@@ -51,7 +51,7 @@ LRESULT CComboBox::GetLBText(int index, UString &s)
     return len;
   }
   AString sa;
-  int len = GetLBText(index, sa);
+  LRESULT len = GetLBText(index, sa);
   if (len == CB_ERR)
     return len;
   s = GetUnicodeString(sa);

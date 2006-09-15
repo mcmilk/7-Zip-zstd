@@ -218,7 +218,7 @@ STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 *numFiles, const UINT64
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *numFiles, const UINT64 *numBytes)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *numFiles, const UINT64 * /* numBytes */)
 {
   if (WasEscPressed())
     return E_ABORT;
@@ -232,7 +232,7 @@ STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *numFiles, const UI
 }
 
 
-STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 total)
+STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 /* total */)
 {
   if (WasEscPressed())
     return E_ABORT;
@@ -434,7 +434,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
 }
 
 HANDLE WINAPI OpenFilePlugin(char *name, 
-    const unsigned char *data, unsigned int dataSize)
+    const unsigned char * /* data */, unsigned int /* dataSize */)
 {
   MY_TRY_BEGIN;
   if (name == NULL || (!g_Options.Enabled))

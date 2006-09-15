@@ -33,7 +33,7 @@ void CDoubleZeroStringListA::Add(LPCSTR s)
 
 void CDoubleZeroStringListA::SetForBuffer(LPSTR buffer)
 {
-  strcpy(buffer, m_String);
+  MyStringCopy(buffer, (const char *)m_String);
   for (int i = 0; i < m_Indexes.Size(); i++)
     buffer[m_Indexes[i]] = '\0';
 }
@@ -57,7 +57,7 @@ void CDoubleZeroStringListW::Add(LPCWSTR s)
 
 void CDoubleZeroStringListW::SetForBuffer(LPWSTR buffer)
 {
-  wcscpy(buffer, m_String);
+  MyStringCopy(buffer, (const wchar_t *)m_String);
   for (int i = 0; i < m_Indexes.Size(); i++)
     buffer[m_Indexes[i]] = L'\0';
 }
@@ -69,7 +69,7 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
   if (!g_IsNT)
   {
     CHAR buffer[kBufferSize];
-    strcpy(buffer, GetSystemString(fullFileName));
+    MyStringCopy(buffer, (const char *)GetSystemString(fullFileName));
     OPENFILENAME info;
     info.lStructSize = sizeof(info); 
     info.hwndOwner = hwnd; 
@@ -119,7 +119,7 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
   #endif
   {
     WCHAR buffer[kBufferSize];
-    wcscpy(buffer, fullFileName);
+    MyStringCopy(buffer, fullFileName);
     OPENFILENAMEW info;
     info.lStructSize = sizeof(info); 
     info.hwndOwner = hwnd; 

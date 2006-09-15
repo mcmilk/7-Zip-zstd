@@ -7,9 +7,9 @@
 #include "MyAES.h"
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
+BOOL WINAPI DllMain(HINSTANCE /* hInstance */, DWORD /* dwReason */, LPVOID /* lpReserved */)
 {
-	return TRUE;
+  return TRUE;
 }
 
 #define MY_CreateClass(n) \
@@ -31,9 +31,9 @@ STDAPI CreateObject(
   int correctInterface = (*interfaceID == IID_ICompressFilter);
   CMyComPtr<ICompressFilter> filter;
 
-  MY_CreateClass(AES128_CBC)
+  MY_CreateClass(AES_CBC)
   else
-  MY_CreateClass(AES256_CBC)
+  MY_CreateClass(AES_ECB)
   else
     return CLASS_E_CLASSNOTAVAILABLE;
   *outObject = filter.Detach();
@@ -57,8 +57,8 @@ struct CAESMethodItem
 
 static CAESMethodItem g_Methods[] =
 {
-  METHOD_ITEM(AES128_CBC, 0x01, L"AES128"),
-  METHOD_ITEM(AES256_CBC, char(0x81), L"AES256")
+  METHOD_ITEM(AES_ECB, (char)(unsigned char)0xC0, L"AES-ECB"),
+  METHOD_ITEM(AES_CBC, (char)(unsigned char)0xC1, L"AES")
 };
 
 STDAPI GetNumberOfMethods(UINT32 *numMethods)

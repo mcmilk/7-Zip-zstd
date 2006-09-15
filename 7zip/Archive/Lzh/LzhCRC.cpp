@@ -36,7 +36,7 @@ void CCRC::Update(const void *data, size_t size)
   UInt16 v = _value;
   const Byte *p = (const Byte *)data;
   for (; size > 0; size--, p++)
-    v = Table[((Byte)(v)) ^ *p] ^ (v >> 8);
+    v = (UInt16)(Table[((Byte)(v)) ^ *p] ^ (v >> 8));
   _value = v;
 }
 

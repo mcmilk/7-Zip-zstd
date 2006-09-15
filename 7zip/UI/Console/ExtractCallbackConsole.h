@@ -29,7 +29,7 @@ public:
   STDMETHOD (PrepareOperation)(const wchar_t *name, Int32 askExtractMode, const UInt64 *position);
 
   STDMETHOD(MessageError)(const wchar_t *message);
-  STDMETHOD(SetOperationResult)(Int32 operationResult);
+  STDMETHOD(SetOperationResult)(Int32 operationResult, bool encrypted);
 
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);

@@ -597,6 +597,10 @@ SOURCE=..\..\Common\LSBFEncoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MemBlocks.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\MSBFDecoder.h
 # End Source File
 # Begin Source File
@@ -618,6 +622,22 @@ SOURCE=..\..\Common\OutBuffer.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\OutBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutMemStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutMemStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressMt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressMt.h
 # End Source File
 # Begin Source File
 
@@ -2043,13 +2063,25 @@ SOURCE=..\..\Crypto\7zAES\7zAES.cpp
 
 SOURCE=..\..\Crypto\7zAES\7zAES.h
 # End Source File
+# End Group
+# Begin Group "WzAES"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\MySHA256.h
+SOURCE=..\..\Crypto\WzAES\WzAES.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\SHA256.cpp
+SOURCE=..\..\Crypto\WzAES\WzAES.h
+# End Source File
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\HmacSha1.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
@@ -2060,8 +2092,27 @@ SOURCE=..\..\Crypto\7zAES\SHA256.cpp
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\HmacSha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
 # ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
 
 !ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
 
@@ -2070,7 +2121,51 @@ SOURCE=..\..\Crypto\7zAES\SHA256.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\SHA256.h
+SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha256.cpp
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha256.h
 # End Source File
 # End Group
 # End Group

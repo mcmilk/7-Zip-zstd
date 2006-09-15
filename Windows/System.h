@@ -8,7 +8,7 @@
 namespace NWindows {
 namespace NSystem {
 
-static UInt32 GetNumberOfProcessors()
+inline UInt32 GetNumberOfProcessors()
 {
   SYSTEM_INFO systemInfo;
   GetSystemInfo(&systemInfo);

@@ -73,7 +73,7 @@ HRESULT CUpdateCallbackGUI::FinishScanning()
   return S_OK;
 }
 
-HRESULT CUpdateCallbackGUI::StartArchive(const wchar_t *name, bool updating)
+HRESULT CUpdateCallbackGUI::StartArchive(const wchar_t *name, bool /* updating */)
 {
   ProgressDialog.ProgressSynch.SetTitleFileName(name);
   return S_OK;
@@ -86,7 +86,7 @@ HRESULT CUpdateCallbackGUI::FinishArchive()
 
 HRESULT CUpdateCallbackGUI::CheckBreak()
 {
-  while(true)
+  for (;;)
   {
     if(ProgressDialog.ProgressSynch.GetStopped())
       return E_ABORT;
@@ -116,7 +116,7 @@ HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completeValue)
   return S_OK;
 }
 
-HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool isAnti)
+HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool /* isAnti */)
 {
   ProgressDialog.ProgressSynch.SetCurrentFileName(name);
   return S_OK;
@@ -130,10 +130,10 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
     AddErrorMessage(name, systemError);
     return S_FALSE;
   }
-  return systemError;
+  // return systemError;
 }
 
-HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 operationResult)
+HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 {
   return S_OK;  
 }

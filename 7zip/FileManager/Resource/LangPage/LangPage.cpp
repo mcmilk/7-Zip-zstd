@@ -30,7 +30,7 @@ bool CLangPage::OnInit()
   s += L" (";
   s += NWindows::MyLoadStringW(IDS_LANG_NATIVE);
   s += L")";
-  int index = _langCombo.AddString(s);
+  int index = (int)_langCombo.AddString(s);
   _langCombo.SetItemData(index, _paths.Size());
   _paths.Add(L"-");
   _langCombo.SetCurSel(0);
@@ -55,7 +55,7 @@ bool CLangPage::OnInit()
         name += L")";
       }
     }
-    index = _langCombo.AddString(name);
+    index = (int)_langCombo.AddString(name);
     _langCombo.SetItemData(index, _paths.Size());
     _paths.Add(lang.ShortName);
     if (g_LangID.CompareNoCase(lang.ShortName) == 0)
@@ -67,7 +67,7 @@ bool CLangPage::OnInit()
 LONG CLangPage::OnApply()
 {
   int selectedIndex = _langCombo.GetCurSel();
-  int pathIndex = _langCombo.GetItemData(selectedIndex);
+  int pathIndex = (int)_langCombo.GetItemData(selectedIndex);
   SaveRegLang(_paths[pathIndex]);
   ReloadLang();
   _langWasChanged = true;

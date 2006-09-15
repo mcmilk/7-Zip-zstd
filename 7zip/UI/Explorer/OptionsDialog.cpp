@@ -17,7 +17,7 @@
 
 using namespace NWindows;
 
-int OptionsDialog(HWND hwndOwner)
+static INT_PTR OptionsDialog(HWND hwndOwner)
 {
   CSystemPage systemPage;
   CFoldersPage foldersPage;
@@ -39,7 +39,7 @@ int OptionsDialog(HWND hwndOwner)
 }
 
 STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd, 
-    IPluginOptionsCallback *callback)
+    IPluginOptionsCallback * /* callback */)
 {
   /*
   CComBSTR programPath;
@@ -49,7 +49,7 @@ STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd,
   return S_OK;
 }
 
-STDMETHODIMP CSevenZipOptions::GetFileExtensions(BSTR *extensions)
+STDMETHODIMP CSevenZipOptions::GetFileExtensions(BSTR * /* extensions */)
 {
   /*
   UString extStrings;

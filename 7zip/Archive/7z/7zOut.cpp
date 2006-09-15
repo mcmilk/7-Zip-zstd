@@ -274,7 +274,7 @@ HRESULT COutArchive::WriteFolder(const CFolder &folder)
       size_t propertiesSize = altCoder.Properties.GetCapacity();
       
       Byte b;
-      b = altCoder.MethodID.IDSize & 0xF;
+      b = (Byte)(altCoder.MethodID.IDSize & 0xF);
       bool isComplex = !coder.IsSimpleCoder();
       b |= (isComplex ? 0x10 : 0);
       b |= ((propertiesSize != 0) ? 0x20 : 0 );
@@ -548,6 +548,8 @@ HRESULT COutArchive::WriteTime(
     {
       const CFileItem &item = files[i];
       CArchiveFileTime timeValue;
+      timeValue.dwLowDateTime = 0;
+      timeValue.dwHighDateTime = 0;
       switch(type)
       {
         case NID::kCreationTime:
@@ -608,7 +610,9 @@ static void WriteUInt64ToBuffer(Byte *data, UInt64 value)
 
 
 HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
-    const CCompressionMethodMode *options, UInt64 &headerOffset)
+    const CCompressionMethodMode *options, 
+    const CHeaderOptions &headerOptions,
+    UInt64 &headerOffset)
 {
   CObjectVector<CFolder> folders;
 
@@ -628,7 +632,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   //////////////////////////
   // Folders
 
-  CNum externalFoldersStreamIndex;
+  CNum externalFoldersStreamIndex = 0;
   bool externalFolders = (compressHeaders && database.Folders.Size() > 8);
   if (externalFolders)
   {
@@ -675,7 +679,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer namesData;
-  CNum externalNamesStreamIndex;
+  CNum externalNamesStreamIndex = 0;
   bool externalNames = (compressHeaders && database.Files.Size() > 8);
   if (numDefinedNames > 0)
   {
@@ -715,7 +719,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer attributesData;
-  CNum externalAttributesStreamIndex;
+  CNum externalAttributesStreamIndex = 0;
   bool externalAttributes = (compressHeaders && numDefinedAttributes > 8);
   if (numDefinedAttributes > 0)
   {
@@ -751,7 +755,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   }
 
   CByteBuffer startsData;
-  CNum externalStartStreamIndex;
+  CNum externalStartStreamIndex = 0;
   bool externalStarts = (compressHeaders && numDefinedStarts > 8);
   if (numDefinedStarts > 0)
   {
@@ -775,7 +779,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
   
   /////////////////////////////////
   // Write Last Write Time
-  CNum externalLastWriteTimeStreamIndex;
+  CNum externalLastWriteTimeStreamIndex = 0;
   bool externalLastWriteTime = false;
   // /*
   CNum numDefinedLastWriteTimes = 0;
@@ -949,11 +953,20 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
 
   }
 
-  RINOK(WriteTime(database.Files, NID::kCreationTime, false, 0));
-  RINOK(WriteTime(database.Files, NID::kLastAccessTime, false, 0));
-  RINOK(WriteTime(database.Files, NID::kLastWriteTime, 
+  if (headerOptions.WriteCreated)
+  {
+    RINOK(WriteTime(database.Files, NID::kCreationTime, false, 0));
+  }
+  if (headerOptions.WriteModified)
+  {
+    RINOK(WriteTime(database.Files, NID::kLastWriteTime, 
       // false, 0));
       externalLastWriteTime, externalLastWriteTimeStreamIndex));
+  }
+  if (headerOptions.WriteAccessed)
+  {
+    RINOK(WriteTime(database.Files, NID::kLastAccessTime, false, 0));
+  }
 
   if (numDefinedAttributes > 0)
   {
@@ -1031,7 +1044,7 @@ HRESULT COutArchive::WriteHeader(const CArchiveDatabase &database,
 
 HRESULT COutArchive::WriteDatabase(const CArchiveDatabase &database,
     const CCompressionMethodMode *options, 
-    bool useAdditionalStreams, bool compressMainHeader)
+    const CHeaderOptions &headerOptions)
 {
   UInt64 headerOffset;
   UInt32 headerCRC;
@@ -1051,23 +1064,23 @@ HRESULT COutArchive::WriteDatabase(const CArchiveDatabase &database,
       if (options->IsEmpty())
         options = 0;
     const CCompressionMethodMode *additionalStreamsOptions = options;
-    if (!useAdditionalStreams)
+    if (!headerOptions.UseAdditionalHeaderStreams)
       additionalStreamsOptions = 0;
     /*
     if (database.Files.Size() < 2)
       compressMainHeader = false;
     */
     if (options != 0)
-      if (options->PasswordIsDefined || compressMainHeader)
+      if (options->PasswordIsDefined || headerOptions.CompressMainHeader)
         _dynamicMode = true;
-    RINOK(WriteHeader(database, additionalStreamsOptions, headerOffset));
+    RINOK(WriteHeader(database, additionalStreamsOptions, headerOptions, headerOffset));
 
     if (_dynamicMode)
     {
       CCompressionMethodMode encryptOptions;
       encryptOptions.PasswordIsDefined = options->PasswordIsDefined;
       encryptOptions.Password = options->Password;
-      CEncoder encoder(compressMainHeader ? *options : encryptOptions);
+      CEncoder encoder(headerOptions.CompressMainHeader ? *options : encryptOptions);
       CRecordVector<UInt64> packSizes;
       CObjectVector<CFolder> folders;
       RINOK(EncodeStream(encoder, _dynamicBuffer, 

@@ -24,17 +24,19 @@ namespace NCompression {
   {
     CSysString FormatID;
     UString Options;
-    UInt32 Level;
     UString Method;
+    UString EncryptionMethod;
+    UInt32 Level;
     UInt32 Dictionary;
     UInt32 Order;
-    void Init() 
+    void ResetForLevelChange() 
     { 
       Level = Dictionary = Order = UInt32(-1); 
       Method.Empty();
+      // EncryptionMethod.Empty();
       // Options.Empty();
     }
-    CFormatOptions() { Init(); }
+    CFormatOptions() { ResetForLevelChange(); }
   };
 
   struct CInfo

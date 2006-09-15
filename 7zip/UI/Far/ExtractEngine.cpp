@@ -62,16 +62,18 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
 {
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
   oldFileInfo.Time = *existTime;
-  if (oldFileInfo.SizeIsDefined = (existSize != NULL))
+  oldFileInfo.SizeIsDefined = (existSize != NULL);
+  if (oldFileInfo.SizeIsDefined)
     oldFileInfo.Size = *existSize;
-  oldFileInfo.Name = UnicodeStringToMultiByte(existName, m_CodePage);
+  oldFileInfo.Name = GetSystemString(existName, m_CodePage);
 
  
   newFileInfo.Time = *aNewTime;
   
-  if (newFileInfo.SizeIsDefined = (newSize != NULL))
+  newFileInfo.SizeIsDefined = (newSize != NULL);
+  if (newFileInfo.SizeIsDefined)
     newFileInfo.Size = *newSize;
-  newFileInfo.Name = UnicodeStringToMultiByte(newName, m_CodePage);
+  newFileInfo.Name = GetSystemString(newName, m_CodePage);
   
   NOverwriteDialog::NResult::EEnum result = 
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
@@ -103,7 +105,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 askExtractMode, const UINT64 *position)
+STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 /* askExtractMode */, const UINT64 * /* position */)
 {
   m_CurrentFilePath = name;
   return S_OK;
@@ -111,13 +113,13 @@ STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 as
 
 STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *message)
 {
-  CSysString s = UnicodeStringToMultiByte(message, CP_OEMCP);
-  if (g_StartupInfo.ShowMessage(s) == -1)
+  AString s = UnicodeStringToMultiByte(message, CP_OEMCP);
+  if (g_StartupInfo.ShowMessage((const char *)s) == -1)
     return E_ABORT;
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult)
+STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool encrypted)
 {
   switch(operationResult)
   {

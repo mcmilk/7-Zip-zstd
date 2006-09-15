@@ -66,7 +66,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   }
   CBZip2CompressorReleaser releaser(&bzStream);
   bzStream.avail_in = 0;
-  while (true)
+  for (;;)
   {
     if (bzStream.avail_in == 0)
     {

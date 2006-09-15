@@ -5,6 +5,7 @@
 #include "UpdateCallbackConsole.h"
 
 #include "Windows/Error.h"
+// #include "Windows/Synchronization.h"
 
 #include "ConsoleClose.h"
 #include "UserInputUtils.h"
@@ -18,6 +19,8 @@ static const char *kUpdatingArchiveMessage = "Updating archive ";
 static const char *kScanningMessage = "Scanning";
 static const char *kNoFilesScannedMessage = "No files scanned";
 static const char *kTotalFilesAddedMessage = "Total files added to archive: ";
+
+// static NSynchronization::CCriticalSection g_CriticalSection;
 
 HRESULT CUpdateCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)
 {
@@ -86,6 +89,7 @@ HRESULT CUpdateCallbackConsole::CheckBreak()
 
 HRESULT CUpdateCallbackConsole::Finilize()
 {
+  // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   if (m_NeedBeClosed)
   {
     if (EnablePercents)
@@ -102,6 +106,7 @@ HRESULT CUpdateCallbackConsole::Finilize()
 
 HRESULT CUpdateCallbackConsole::SetTotal(UInt64 size)
 {
+  // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   if (EnablePercents)
     m_PercentPrinter.SetTotal(size);
   return S_OK;
@@ -109,6 +114,7 @@ HRESULT CUpdateCallbackConsole::SetTotal(UInt64 size)
 
 HRESULT CUpdateCallbackConsole::SetCompleted(const UInt64 *completeValue)
 {
+  // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   if (completeValue != NULL)
   {
     if (EnablePercents)
@@ -125,6 +131,7 @@ HRESULT CUpdateCallbackConsole::SetCompleted(const UInt64 *completeValue)
 
 HRESULT CUpdateCallbackConsole::GetStream(const wchar_t *name, bool isAnti)
 {
+  // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   if (StdOutMode)
     return S_OK;
   if(isAnti)
@@ -145,6 +152,7 @@ HRESULT CUpdateCallbackConsole::GetStream(const wchar_t *name, bool isAnti)
 
 HRESULT CUpdateCallbackConsole::OpenFileError(const wchar_t *name, DWORD systemError)
 {
+  // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   FailedCodes.Add(systemError);
   FailedFiles.Add(name);
   // if (systemError == ERROR_SHARING_VIOLATION)
@@ -155,10 +163,10 @@ HRESULT CUpdateCallbackConsole::OpenFileError(const wchar_t *name, DWORD systemE
     m_PercentPrinter.PrintString(NError::MyFormatMessageW(systemError));
     return S_FALSE;
   }
-  return systemError;
+  // return systemError;
 }
 
-HRESULT CUpdateCallbackConsole::SetOperationResult(Int32 operationResult)
+HRESULT CUpdateCallbackConsole::SetOperationResult(Int32 )
 {
   m_NeedBeClosed = true;
   return S_OK;  

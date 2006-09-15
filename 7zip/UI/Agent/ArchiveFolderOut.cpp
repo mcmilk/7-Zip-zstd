@@ -22,7 +22,7 @@ void CAgentFolder::GetPathParts(UStringVector &pathParts)
 {
   pathParts.Clear();
   CMyComPtr<IFolderFolder> folder = this;
-  while (true)
+  for (;;)
   {
     CMyComPtr<IFolderFolder> newFolder;
     folder->BindToParentFolder(&newFolder);  
@@ -87,7 +87,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   {
     Byte actionSetByte[NUpdateArchive::NPairState::kNumValues];
     for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-      actionSetByte[i] = actionSet->StateActions[i];
+      actionSetByte[i] = (Byte)actionSet->StateActions[i];
     result = _agentSpec->DoOperation(NULL, NULL,
         tempFileName, actionSetByte, NULL, updateCallback100);
   }
@@ -203,13 +203,13 @@ STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgres
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *name, IProgress *progress)
+STDMETHODIMP CAgentFolder::CreateFile(const wchar_t * /* name */, IProgress * /* progress */)
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAgentFolder::SetProperty(UINT32 index, PROPID propID, 
-    const PROPVARIANT *value, IProgress *progress)
+STDMETHODIMP CAgentFolder::SetProperty(UINT32 /* index */, PROPID /* propID */, 
+    const PROPVARIANT * /* value */, IProgress * /* progress */)
 {
   return E_NOTIMPL;
 }

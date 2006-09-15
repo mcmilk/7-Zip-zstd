@@ -326,7 +326,7 @@ class CEncoder :
 
   UInt32 Backward(UInt32 &backRes, UInt32 cur);
   HRESULT GetOptimum(UInt32 position, UInt32 &backRes, UInt32 &lenRes);
-  HRESULT GetOptimumFast(UInt32 position, UInt32 &backRes, UInt32 &lenRes);
+  HRESULT GetOptimumFast(UInt32 &backRes, UInt32 &lenRes);
 
   void FillDistancesPrices();
   void FillAlignPrices();

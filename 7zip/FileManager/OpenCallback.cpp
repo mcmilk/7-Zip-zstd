@@ -9,22 +9,22 @@
 #include "Windows/PropVariant.h"
 #include "../Common/FileStreams.h"
 
-STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 *numFiles, const UINT64 *numBytes)
+STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 * /* numFiles */, const UINT64 * /* numBytes */)
 {
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *numFiles, const UINT64 *numBytes)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 * /* numFiles */, const UINT64 * /* numBytes */)
 {
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 total)
+STDMETHODIMP COpenArchiveCallback::SetTotal(const UINT64 /* total */)
 {
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 *completed)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UINT64 * /* completed */)
 {
   return S_OK;
 }

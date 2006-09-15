@@ -40,7 +40,7 @@ bool HasTailSlash(const AString &name, UINT codePage)
     return false;
   LPCSTR prev = 
   #ifdef _WIN32
-    CharPrevExA(codePage, name, &name[name.Length()], 0);
+    CharPrevExA((WORD)codePage, name, &name[name.Length()], 0);
   #else
     (LPCSTR)(name) + (name.Length() - 1);
   #endif

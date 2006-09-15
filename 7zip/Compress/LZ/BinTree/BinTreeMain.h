@@ -285,7 +285,7 @@ STDMETHODIMP CMatchFinder::GetMatches(UInt32 *distances)
   }
   #endif
   UInt32 count = _cutValue;
-  while(true)
+  for (;;)
   {
     if(curMatch <= matchMinPos || count-- == 0)
     {
@@ -418,7 +418,7 @@ STDMETHODIMP CMatchFinder::Skip(UInt32 num)
   UInt32 len0, len1;
   len0 = len1 = kNumHashDirectBytes;
   UInt32 count = _cutValue;
-  while(true)
+  for (;;)
   {
     if(curMatch <= matchMinPos || count-- == 0)
     {

@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h"
 #include "Common/IntToString.h"
 #include "Common/Defs.h"
+#include "Common/ComTry.h"
 
 #include "Windows/PropVariant.h"
 
@@ -25,12 +26,16 @@ CArchiveUpdateCallback::CArchiveUpdateCallback():
 
 STDMETHODIMP CArchiveUpdateCallback::SetTotal(UInt64 size)
 {
+  COM_TRY_BEGIN
   return Callback->SetTotal(size);
+  COM_TRY_END
 }
 
 STDMETHODIMP CArchiveUpdateCallback::SetCompleted(const UInt64 *completeValue)
 {
+  COM_TRY_BEGIN
   return Callback->SetCompleted(completeValue);
+  COM_TRY_END
 }
 
 /*
@@ -47,7 +52,7 @@ STATPROPSTG kProperties[] =
 };
 */
 
-STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG **enumerator)
+STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG **)
 {
   return E_NOTIMPL;
   /*
@@ -59,6 +64,7 @@ STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG **enumerato
 STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index, 
       Int32 *newData, Int32 *newProperties, UInt32 *indexInArchive)
 {
+  COM_TRY_BEGIN
   RINOK(Callback->CheckBreak());
   const CUpdatePair2 &updatePair = (*UpdatePairs)[index];
   if(newData != NULL)
@@ -78,10 +84,12 @@ STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index,
       *indexInArchive = UInt32(-1);
   }
   return S_OK;
+  COM_TRY_END
 }
 
 STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
+  COM_TRY_BEGIN
   const CUpdatePair2 &updatePair = (*UpdatePairs)[index];
   NWindows::NCOM::CPropVariant propVariant;
   
@@ -160,11 +168,12 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
   }
   propVariant.Detach(value);
   return S_OK;
+  COM_TRY_END
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index,
-    ISequentialInStream **inStream)
+STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream **inStream)
 {
+  COM_TRY_BEGIN
   const CUpdatePair2 &updatePair = (*UpdatePairs)[index];
   if(!updatePair.NewData)
     return E_FAIL;
@@ -200,11 +209,14 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index,
     *inStream = inStreamLoc.Detach();
   }
   return S_OK;
+  COM_TRY_END
 }
 
 STDMETHODIMP CArchiveUpdateCallback::SetOperationResult(Int32 operationResult)
 {
+  COM_TRY_BEGIN
   return Callback->SetOperationResult(operationResult);
+  COM_TRY_END
 }
 
 STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
@@ -219,6 +231,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
 
 STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream **volumeStream)
 {
+  COM_TRY_BEGIN
   wchar_t temp[32];
   ConvertUInt64ToString(index + 1, temp);
   UString res = temp;
@@ -234,9 +247,12 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
     return ::GetLastError();
   *volumeStream = streamLoc.Detach();
   return S_OK;
+  COM_TRY_END
 }
 
 STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
+  COM_TRY_BEGIN
   return Callback->CryptoGetTextPassword2(passwordIsDefined, password);
+  COM_TRY_END
 }

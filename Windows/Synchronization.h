@@ -81,10 +81,30 @@ public:
 
 class CMutexLock
 {
-  CMutex &_object;
+  CMutex *_object;
 public:
-  CMutexLock(CMutex &object): _object(object) { _object.Lock(); } 
-  ~CMutexLock() { _object.Release(); }
+  CMutexLock(CMutex &object): _object(&object) { _object->Lock(); } 
+  ~CMutexLock() { _object->Release(); }
+};
+
+class CSemaphore: public CObject
+{
+public:
+  bool Create(LONG initiallyCount, LONG maxCount, LPCTSTR name = NULL,
+      LPSECURITY_ATTRIBUTES securityAttributes = NULL)
+  {
+    _handle = ::CreateSemaphore(securityAttributes, initiallyCount, maxCount, name);
+    return (_handle != 0);
+  }
+  bool Open(DWORD desiredAccess, bool inheritHandle, LPCTSTR name)
+  {
+    _handle = ::OpenSemaphore(desiredAccess, BoolToBOOL(inheritHandle), name);
+    return (_handle != 0);
+  }
+  bool Release(LONG releaseCount = 1, LPLONG previousCount = NULL) 
+  { 
+    return BOOLToBool(::ReleaseSemaphore(_handle, releaseCount, previousCount)); 
+  }
 };
 
 class CCriticalSection
@@ -101,11 +121,10 @@ public:
 
 class CCriticalSectionLock
 {
-  CCriticalSection &_object;
-  void Unlock()  { _object.Leave(); }
+  CCriticalSection *_object;
+  void Unlock()  { _object->Leave(); }
 public:
-  CCriticalSectionLock(CCriticalSection &object): _object(object) 
-    {_object.Enter(); } 
+  CCriticalSectionLock(CCriticalSection &object): _object(&object) {_object->Enter(); } 
   ~CCriticalSectionLock() { Unlock(); }
 };
 

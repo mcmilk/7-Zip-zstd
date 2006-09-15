@@ -235,7 +235,7 @@ bool CBenchmarkDialog::OnInit()
       TCHAR s[40];
       ConvertUInt64ToString((dictionary >> 20), s);
       lstrcat(s, kMB);
-      int index = m_Dictionary.AddString(s);
+      int index = (int)m_Dictionary.AddString(s);
       m_Dictionary.SetItemData(index, dictionary);
     }
   m_Dictionary.SetCurSel(0);
@@ -413,7 +413,7 @@ void CBenchmarkDialog::PrintResults(
   PrintRating(rating, ratingID);
 }
 
-bool CBenchmarkDialog::OnTimer(WPARAM timerID, LPARAM callback)
+bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 {
   PrintTime();
   NWindows::NSynchronization::CCriticalSectionLock lock(_syncInfo.CS);
@@ -629,7 +629,7 @@ struct CDecoderProgressInfo:
 };
 
 STDMETHODIMP CDecoderProgressInfo::SetRatioInfo(
-    const UInt64 *inSize, const UInt64 *outSize)
+    const UInt64 * /* inSize */, const UInt64 * /* outSize */)
 {
   NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
   if (SyncInfo->Changed)
@@ -647,16 +647,18 @@ struct CThreadBenchmark:
   NDLL::CLibrary Library;
   CMyComPtr<ICompressCoder> Encoder;
   CMyComPtr<ICompressCoder> Decoder;
-  DWORD Process();
+  HRESULT Process();
+  HRESULT Result;
   static DWORD WINAPI MyThreadFunction(void *param)
   {
-    return ((CThreadBenchmark *)param)->Process();
+    ((CThreadBenchmark *)param)->Result = ((CThreadBenchmark *)param)->Process();
+    return 0;
   }
   MY_UNKNOWN_IMP
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
-DWORD CThreadBenchmark::Process()
+HRESULT CThreadBenchmark::Process()
 {
   try
   {
@@ -685,7 +687,7 @@ DWORD CThreadBenchmark::Process()
   CMyComPtr<ICompressProgressInfo> decoderProgress = decoderProgressInfoSpec;
   decoderProgressInfoSpec->SyncInfo = SyncInfo;
     
-  while(true)
+  for (;;)
   {
     if (SyncInfo->WasStopped())
       return 0;
@@ -760,7 +762,7 @@ DWORD CThreadBenchmark::Process()
       // this code is for reducing time of memory allocationg
       inStreamSpec->Init(randomGenerator.Buffer, MyMin((UInt32)1, randomGenerator.BufferSize));
       outStreamSpec->Init();
-      HRESULT result = Encoder->Code(inStream, outStream, 0, 0, NULL);
+      /* HRESULT result = */ Encoder->Code(inStream, outStream, 0, 0, NULL);
     }
 
     inStreamSpec->Init(randomGenerator.Buffer, randomGenerator.BufferSize);
@@ -815,7 +817,7 @@ DWORD CThreadBenchmark::Process()
       if (compressSetDecoderProperties)
       {
         RINOK(compressSetDecoderProperties->SetDecoderProperties2(
-          propStreamSpec->GetBuffer(), propStreamSpec->GetSize()));
+          propStreamSpec->GetBuffer(), (UInt32)propStreamSpec->GetSize()));
       }
       
       UInt64 outSize = kBufferSize;

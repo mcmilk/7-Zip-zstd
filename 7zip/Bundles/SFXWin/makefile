@@ -109,7 +109,6 @@ PPMD_OPT_OBJS = \
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
-  $O\SHA256.obj \
 
 AES_OPT_OBJS = \
   $O\MyAES.obj \
@@ -118,6 +117,9 @@ AES_ORIG_OBJS = \
   $O\aescrypt.obj \
   $O\aeskey.obj \
   $O\aestab.obj \
+
+CRYPTO_HASH_OBJS = \
+  $O\Sha256.obj \
 
 OBJS = \
   $O\StdAfx.obj \
@@ -136,6 +138,7 @@ OBJS = \
   $(LZMA_OPT_OBJS) \
   $(PPMD_OPT_OBJS) \
   $O\CopyCoder.obj \
+  $(CRYPTO_HASH_OBJS) \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $(AES_ORIG_OBJS) \
@@ -183,12 +186,14 @@ $(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
 $O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
 	$(COMPL)
 
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
+	$(COMPL)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
 	$(COMPL)
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL)
 $(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O1)
+	$(COMPL_O1_W3)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
 	$(COMPL)

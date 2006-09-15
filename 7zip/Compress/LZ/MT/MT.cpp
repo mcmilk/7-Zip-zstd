@@ -141,7 +141,7 @@ void CMatchFinderMT::GetNextBlock()
     m_MtWasStarted.Lock();
     m_Result = S_OK;
   }
-  while (true)
+  for (;;)
   {
     UInt32 nextIndex = (m_BlockIndex == kNumMTBlocks - 1) ? 0 : m_BlockIndex + 1;
     m_CS[nextIndex].Enter();
@@ -206,7 +206,7 @@ STDMETHODIMP CMatchFinderMT::Skip(UInt32 num)
   return S_OK; 
 }
 
-STDMETHODIMP_(Int32) CMatchFinderMT::NeedChangeBufferPos(UInt32 numCheckBytes)
+STDMETHODIMP_(Int32) CMatchFinderMT::NeedChangeBufferPos(UInt32 /* numCheckBytes */)
 {
   throw 1;
 }
@@ -219,13 +219,13 @@ STDMETHODIMP_(void) CMatchFinderMT::ChangeBufferPos()
 
 DWORD CMatchFinderMT::ThreadFunc()
 {
-  while(true)
+  for (;;)
   {
     bool needStartEvent = true;
     m_MtCanStart.Lock();
     HRESULT result = S_OK;
     UInt32 blockIndex = 0;
-    while (true)
+    for (;;)
     {
       m_CS[blockIndex].Enter();
       if (needStartEvent)

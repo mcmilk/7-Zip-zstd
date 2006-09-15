@@ -46,7 +46,7 @@ struct CThreadExtracting
     try
     {
       Result = DecompressArchives(*ArchivePaths, *ArchivePathsFull,
-          *WildcardCensor, *Options, OpenCallback, ExtractCallback);
+          *WildcardCensor, *Options, OpenCallback, ExtractCallback, ErrorMessage);
     }
     catch(const UString &s)
     {

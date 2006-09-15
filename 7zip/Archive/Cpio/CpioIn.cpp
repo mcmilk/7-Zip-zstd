@@ -112,7 +112,7 @@ static unsigned short ConvertValue(unsigned short value, bool convert)
 {
   if (!convert)
     return value;
-  return (((unsigned short)(value & 0xFF)) << 8) | (value >> 8);
+  return (unsigned short)((((unsigned short)(value & 0xFF)) << 8) | (value >> 8));
 }
 
 static UInt32 GetAlignedSize(UInt32 size, UInt32 align)

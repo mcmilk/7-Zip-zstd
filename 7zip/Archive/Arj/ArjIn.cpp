@@ -25,7 +25,7 @@ HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 
 static inline UInt16 GetUInt16FromMemLE(const Byte *p)
 {
-  return p[0] | (((UInt32)p[1]) << 8);
+  return (UInt16)(p[0] | (((UInt16)p[1]) << 8));
 }
 
 static inline UInt32 GetUInt32FromMemLE(const Byte *p)
@@ -79,7 +79,7 @@ bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
   UInt32 numBytesPrev = processedSize - 1;
   memmove(buffer, buffer + 1, numBytesPrev);
   UInt64 curTestPos = _streamStartPosition + 1;
-  while(true)
+  for (;;)
   {
     if (searchHeaderSizeLimit != NULL)
       if (curTestPos - _streamStartPosition > *searchHeaderSizeLimit)
@@ -192,7 +192,7 @@ bool CInArchive::Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit)
     return false;
   if (!ReadBlock2())
     return false;
-  while(true)
+  for (;;)
     if (!ReadBlock())
       break;
   return true;
@@ -270,7 +270,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   for (; _blockPos < _blockSize;)
     item.Name += (char)ReadByte();
 
-  while(true)
+  for (;;)
     if (!ReadBlock())
       break;
 

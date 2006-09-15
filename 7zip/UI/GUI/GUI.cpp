@@ -17,6 +17,7 @@
 #include "Windows/FileName.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
+#include "Common/Alloc.h"
 #endif
 
 #include "../../IStream.h"
@@ -168,7 +169,7 @@ static bool inline IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int /* nCmdShow */)
 {
   g_hInstance = hInstance;
   #ifdef _UNICODE
@@ -179,6 +180,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
   }
   #else
   g_IsNT = IsItWindowsNT();
+  #endif
+
+  #ifdef _WIN32
+  SetLargePageSize();
   #endif
 
   InitCommonControls();
@@ -194,6 +199,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
   {
     MyMessageBox(kMemoryExceptionMessage);
     return (NExitCode::kMemoryError);
+  }
+  catch(const CArchiveCommandLineException &e)
+  {
+    MyMessageBox(GetUnicodeString(e));
+    return (NExitCode::kUserError);
   }
   catch(const CSystemException &systemError)
   {
@@ -222,6 +232,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
   catch(const UString &s)
   {
     MyMessageBox(s);
+    return (NExitCode::kFatalError);
+  }
+  catch(const AString &s)
+  {
+    MyMessageBox(GetUnicodeString(s));
     return (NExitCode::kFatalError);
   }
   catch(const char *s)

@@ -123,7 +123,7 @@ static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
 // typedef void* MY_PVOID;
 
 // static int ComparePairItems(const MY_PVOID *a1, const MY_PVOID *a2, void *param)
-static int ComparePairItems(void *const *a1, void *const *a2, void *param)
+static int ComparePairItems(void *const *a1, void *const *a2, void * /* param */)
   { return ComparePairItems(**(const CTextPair **)a1, **(const CTextPair **)a2); }
 
 void CPairsStorage::Sort()

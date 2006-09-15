@@ -208,7 +208,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
         if (symbol >= kMMTableSize)
           return S_FALSE;
         Byte byPredict = m_Predictor.Predict();
-        Byte byReal = byPredict - Byte(symbol);
+        Byte byReal = (Byte)(byPredict - (Byte)symbol);
         m_Predictor.Update(byReal, byPredict);
         m_OutWindowStream.PutByte(byReal);
         if (++m_Predictor.CurrentChannel == m_NumChannels)

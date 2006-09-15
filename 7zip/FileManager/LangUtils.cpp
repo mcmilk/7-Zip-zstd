@@ -103,7 +103,7 @@ void LoadLangs(CObjectVector<CLangEx> &langs)
       continue;
     CLangEx lang;
     UString filePath = folderPath + fileInfo.Name;
-    const kExtSize = 4;
+    const int kExtSize = 4;
     if (fileInfo.Name.Right(kExtSize) != L".txt")
       continue;
     lang.ShortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
@@ -138,8 +138,8 @@ void FindMatchLang(UString &shortName)
 {
   shortName.Empty();
   LANGID langID = GetUserDefaultLangID();
-  WORD primLang = PRIMARYLANGID(langID);
-  WORD subLang = SUBLANGID(langID);
+  WORD primLang = (WORD)(PRIMARYLANGID(langID));
+  WORD subLang = (WORD)(SUBLANGID(langID));
   CObjectVector<CLangEx> langs;
   LoadLangs(langs);
   for (int i = 0; i < langs.Size(); i++)

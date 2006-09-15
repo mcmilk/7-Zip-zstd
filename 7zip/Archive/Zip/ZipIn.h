@@ -33,15 +33,29 @@ public:
 class CInArchiveInfo
 {
 public:
+  UInt64 Base;
   UInt64 StartPosition;
   CByteBuffer Comment;
-  void Clear() { Comment.SetCapacity(0); }
+  CInArchiveInfo(): Base(0), StartPosition(0) {}
+  void Clear() 
+  { 
+    Base = 0;
+    StartPosition = 0;
+    Comment.SetCapacity(0); 
+  }
 };
 
 class CProgressVirt
 {
 public:
   STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
+};
+
+struct CCdInfo
+{
+  // UInt64 NumEntries;
+  UInt64 Size;
+  UInt64 Offset;
 };
 
 class CInArchive
@@ -53,6 +67,8 @@ class CInArchive
   CInArchiveInfo m_ArchiveInfo;
   AString m_NameBuffer;
   
+  HRESULT Seek(UInt64 offset);
+
   bool FindAndReadMarker(const UInt64 *searchHeaderSizeLimit);
   bool ReadUInt32(UInt32 &signature);
   AString ReadFileName(UInt32 nameSize);
@@ -67,16 +83,24 @@ class CInArchive
   UInt64 ReadUInt64();
   
   void IncreaseRealPosition(UInt64 addValue);
-  void ThrowIncorrectArchiveException();
  
   void ReadExtra(UInt32 extraSize, CExtraBlock &extraBlock, 
       UInt64 &unpackSize, UInt64 &packSize, UInt64 &localHeaderOffset, UInt32 &diskStartNumber);
+  HRESULT ReadLocalItem(CItemEx &item);
+  HRESULT ReadLocalItemDescriptor(CItemEx &item);
+  HRESULT ReadCdItem(CItemEx &item);
+  HRESULT TryEcd64(UInt64 offset, CCdInfo &cdInfo);
+  HRESULT FindCd(CCdInfo &cdInfo);
+  HRESULT TryReadCd(CObjectVector<CItemEx> &items, UInt64 cdOffset, UInt64 cdSize);
+  HRESULT ReadCd(CObjectVector<CItemEx> &items, UInt64 &cdOffset, UInt64 &cdSize);
+  HRESULT ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset);
 public:
   HRESULT ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress);
+  HRESULT ReadLocalItemAfterCdItem(CItemEx &item);
+  HRESULT ReadLocalItemAfterCdItemFull(CItemEx &item);
   bool Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
   void GetArchiveInfo(CInArchiveInfo &archiveInfo) const;
-  void DirectGetBytes(void *data, UInt32 num);
   bool SeekInArchive(UInt64 position);
   ISequentialInStream *CreateLimitedStream(UInt64 position, UInt64 size);
   IInStream* CreateStream();

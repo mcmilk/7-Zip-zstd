@@ -12,7 +12,7 @@ class CStdOutStream
   bool _streamIsOpen;
   FILE *_stream;
 public:
-  CStdOutStream (): _streamIsOpen(false) {};
+  CStdOutStream (): _streamIsOpen(false), _stream(0) {};
   CStdOutStream (FILE *stream): _streamIsOpen(false), _stream(stream) {};
   ~CStdOutStream ();
   bool Open(const char *fileName);

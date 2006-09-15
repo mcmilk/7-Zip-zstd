@@ -57,7 +57,7 @@ STATPROPSTG kProperties[] =
 
 static const int kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -90,8 +90,8 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_INVALIDARG;
 }
@@ -146,7 +146,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         if (item.Section == 0)
           propVariant = L"Copy";
         else if (item.Section < m_Database.Sections.Size())
-          propVariant = m_Database.Sections[(size_t)item.Section].GetMethodName();
+          propVariant = m_Database.Sections[(int)item.Section].GetMethodName();
       break;
     }
     case kpidBlock:
@@ -486,7 +486,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       
       RINOK(m_Stream->Seek(m_Database.ContentOffset + item.Offset, STREAM_SEEK_SET, NULL));
-      streamSpec->Init(m_Stream, item.Size);
+      streamSpec->SetStream(m_Stream);
+      streamSpec->Init(item.Size);
       
       CLocalProgress *localProgressSpec = new CLocalProgress;
       CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
@@ -519,7 +520,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       currentTotalSize += item.Size;
       continue;
     }
-    const CSectionInfo &section = m_Database.Sections[(size_t)item.Section];
+    const CSectionInfo &section = m_Database.Sections[(int)item.Section];
     if (section.IsLzx())
     {
       const CLzxInfo &lzxInfo = section.Methods[0].LzxInfo;
@@ -581,7 +582,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       if (!testMode && item.Size != 0)
       {
         RINOK(m_Stream->Seek(m_Database.ContentOffset + item.Offset, STREAM_SEEK_SET, NULL));
-        streamSpec->Init(m_Stream, item.Size);
+        streamSpec->SetStream(m_Stream);
+        streamSpec->Init(item.Size);
         if(!copyCoder)
           copyCoder = new NCompress::CCopyCoder;
         RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, compressProgress));
@@ -592,7 +594,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       continue;
     }
   
-    const CSectionInfo &section = m_Database.Sections[(size_t)sectionIndex];
+    const CSectionInfo &section = m_Database.Sections[(int)sectionIndex];
 
     if (!section.IsLzx())
     {
@@ -631,7 +633,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     extractStatuses.Clear();
     extractStatuses.Add(true);
 
-    for (;true; folderIndex++)
+    for (;; folderIndex++)
     {
       RINOK(extractCallback->SetCompleted(&currentTotalSize));
 
@@ -695,9 +697,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           UInt64 rem = finishPos - chmFolderOutStream->m_PosInSection;
           if (rem > rt.BlockSize)
             rem = rt.BlockSize;
-          const UInt64 *offsets = (const UInt64 *)&rt.ResetOffsets.Front();
+          // const UInt64 *offsets = (const UInt64 *)&rt.ResetOffsets.Front();
           RINOK(m_Stream->Seek(compressedPos + offset, STREAM_SEEK_SET, NULL));
-          streamSpec->Init(m_Stream, compressedSize);
+          streamSpec->SetStream(m_Stream);
+          streamSpec->Init(compressedSize);
           lzxDecoderSpec->SetKeepHistory(b > 0, (int)((offset - startOffset) & 1));
           RINOK(lzxDecoder->Code(inStream, outStream, NULL, &rem, NULL));
         }
@@ -718,13 +721,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  COM_TRY_BEGIN
     *numItems = m_Database.NewFormat ? 1:
       (m_Database.LowLevel ?
       m_Database.Items.Size():
       m_Database.Indices.Size());
   return S_OK;
-  COM_TRY_END
 }
 
 }}

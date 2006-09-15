@@ -17,6 +17,8 @@ bool MyGetWindowsDirectory(UString &path);
 bool MyGetSystemDirectory(UString &path);
 #endif
 
+bool SetDirTime(LPCWSTR fileName, const FILETIME *creationTime, const FILETIME *lastAccessTime, const FILETIME *lastWriteTime);
+
 inline bool MySetFileAttributes(LPCTSTR fileName, DWORD fileAttributes)
   { return BOOLToBool(::SetFileAttributes(fileName, fileAttributes)); }
 #ifndef _UNICODE

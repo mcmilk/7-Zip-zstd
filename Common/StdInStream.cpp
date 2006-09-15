@@ -5,6 +5,11 @@
 #include <tchar.h>
 #include "StdInStream.h"
 
+#ifdef _MSC_VER
+// "was declared deprecated" disabling
+#pragma warning(disable : 4996 )
+#endif
+
 static const char kIllegalChar = '\0';
 static const char kNewLineChar = '\n';
 
@@ -40,7 +45,7 @@ CStdInStream::~CStdInStream()
 AString CStdInStream::ScanStringUntilNewLine()
 {
   AString s;
-  while(true)
+  for (;;)
   {
     int intChar = GetChar();
     if(intChar == EOF)
@@ -49,9 +54,10 @@ AString CStdInStream::ScanStringUntilNewLine()
     if (c == kIllegalChar)
       throw kIllegalCharMessage;
     if(c == kNewLineChar)
-      return s;
+      break;
     s += c;
   }
+  return s;
 }
 
 void CStdInStream::ReadToString(AString &resultString)

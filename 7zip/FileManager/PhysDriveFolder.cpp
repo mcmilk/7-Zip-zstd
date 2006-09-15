@@ -79,10 +79,10 @@ STDMETHODIMP CPhysDriveFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROP
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
+STDMETHODIMP CPhysDriveFolder::BindToFolder(UInt32 /* index */, IFolderFolder ** /* resultFolder */)
   { return E_NOTIMPL; }
 
-STDMETHODIMP CPhysDriveFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
+STDMETHODIMP CPhysDriveFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder ** /* resultFolder */)
   { return E_NOTIMPL; }
 
 STDMETHODIMP CPhysDriveFolder::BindToParentFolder(IFolderFolder **resultFolder)
@@ -91,7 +91,7 @@ STDMETHODIMP CPhysDriveFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::GetName(BSTR *name)
+STDMETHODIMP CPhysDriveFolder::GetName(BSTR * /* name */)
   { return E_NOTIMPL; }
 
 STDMETHODIMP CPhysDriveFolder::GetNumberOfProperties(UInt32 *numProperties)
@@ -144,7 +144,7 @@ STDMETHODIMP CPhysDriveFolder::Clone(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgress * /* progress */)
 {
   NCOM::CPropVariant propVariant;
   if (index >= 1)
@@ -156,20 +156,20 @@ STDMETHODIMP CPhysDriveFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value,
   return result;
 }
 
-STDMETHODIMP CPhysDriveFolder::CreateFolder(const wchar_t *name, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::CreateFolder(const wchar_t * /* name */, IProgress * /* progress */)
   { return E_NOTIMPL; }
 
-STDMETHODIMP CPhysDriveFolder::CreateFile(const wchar_t *name, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::CreateFile(const wchar_t * /* name */, IProgress * /* progress */)
   { return E_NOTIMPL; }
 
-STDMETHODIMP CPhysDriveFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::Rename(UInt32 /* index */, const wchar_t * /* newName */, IProgress * /* progress */)
   { return E_NOTIMPL; }
 
-STDMETHODIMP CPhysDriveFolder::Delete(const UInt32 *indices, UInt32 numItems, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::Delete(const UInt32 * /* indices */, UInt32  /* numItems */, IProgress * /* progress */)
   { return E_NOTIMPL; }
 
-STDMETHODIMP CPhysDriveFolder::SetProperty(UInt32 index, PROPID propID, 
-    const PROPVARIANT *value, IProgress *progress)
+STDMETHODIMP CPhysDriveFolder::SetProperty(UInt32 index, PROPID /* propID */,
+    const PROPVARIANT * /* value */, IProgress * /* progress */)
 {
   if (index >= 1)
     return E_INVALIDARG;
@@ -186,7 +186,7 @@ HRESULT CPhysDriveFolder::GetLength(UInt64 &length) const
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 *indices, UInt32 numItems, 
+STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numItems, 
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
   if (numItems == 0)
@@ -258,17 +258,17 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
 // Move Operations
 
 STDMETHODIMP CPhysDriveFolder::MoveTo(
-    const UInt32 *indices, 
-    UInt32 numItems, 
-    const wchar_t *path,
-    IFolderOperationsExtractCallback *callback)
+    const UInt32 * /* indices */, 
+    UInt32 /* numItems */, 
+    const wchar_t * /* path */,
+    IFolderOperationsExtractCallback * /* callback */)
 {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP CPhysDriveFolder::CopyFrom(
-    const wchar_t *fromFolderPath,
-    const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress)
+    const wchar_t * /* fromFolderPath */,
+    const wchar_t ** /* itemsPaths */, UInt32  /* numItems */, IProgress * /* progress */)
 {
   return E_NOTIMPL;
 }

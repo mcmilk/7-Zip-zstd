@@ -25,7 +25,7 @@ struct CRecordingDateTime
   bool GetFileTime(FILETIME &ft) const
   {
     SYSTEMTIME st;
-    st.wYear = Year + 1900;
+    st.wYear = (WORD)(Year + 1900);
     st.wMonth = Month;
     st.wDayOfWeek = 0; // check it
     st.wDay = Day;
@@ -69,7 +69,7 @@ struct CDirRecord
   {
     lenRes = 0;
     const Byte *p = (const Byte *)SystemUse + skipSize;
-    int length = SystemUse.GetCapacity() - skipSize;
+    int length = (int)(SystemUse.GetCapacity() - skipSize);
     while (length >= 5)
     {
       int len = p[2];
@@ -93,7 +93,7 @@ struct CDirRecord
       if (res != 0)
         return len;
     }
-    return FileId.GetCapacity();
+    return (int)FileId.GetCapacity();
   }
 
   const Byte* GetNameCur(bool checkSusp, int skipSize) const
@@ -127,7 +127,7 @@ struct CDirRecord
   bool CheckSusp(int &startPos) const
   {
     const Byte *p = (const Byte *)SystemUse;
-    int length = SystemUse.GetCapacity();
+    int length = (int)SystemUse.GetCapacity();
     const int kMinLen = 7;
     if (length < kMinLen)
       return false;

@@ -48,7 +48,8 @@ HRESULT CFolderOutStream::OpenFile()
   UInt32 index = _startIndex + _currentIndex;
   RINOK(_extractCallback->GetStream(_ref2Offset + index, &realOutStream, askMode));
 
-  _outStreamWithHashSpec->Init(realOutStream);
+  _outStreamWithHashSpec->SetStream(realOutStream);
+  _outStreamWithHashSpec->Init();
   if (askMode == NArchive::NExtract::NAskMode::kExtract &&
       (!realOutStream)) 
   {

@@ -243,7 +243,7 @@ void CPlugin::GetPathParts(UStringVector &pathParts)
 {
   pathParts.Clear();
   CMyComPtr<IFolderFolder> folderItem = _folder;
-  while (true)
+  for (;;)
   {
     CMyComPtr<IFolderFolder> newFolder;
     folderItem->BindToParentFolder(&newFolder);  

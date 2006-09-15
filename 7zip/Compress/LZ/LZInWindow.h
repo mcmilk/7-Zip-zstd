@@ -79,7 +79,7 @@ public:
 
   bool NeedMove(UInt32 numCheckBytes)
   {
-    UInt32 reserv = _pointerToLastSafePosition - (_buffer + _pos);
+    size_t reserv = (size_t)(_pointerToLastSafePosition - (_buffer + _pos));
     return (reserv <= numCheckBytes);
   }
 };

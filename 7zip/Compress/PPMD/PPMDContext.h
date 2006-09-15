@@ -20,19 +20,19 @@ struct SEE2_CONTEXT
   // SEE-contexts for PPM-contexts with masked symbols
   UInt16 Summ;
   Byte Shift, Count;
-  void init(int InitVal) { Summ=InitVal << (Shift=PERIOD_BITS-4); Count=4; }
+  void init(int InitVal) { Summ = (UInt16)(InitVal << (Shift=PERIOD_BITS-4)); Count=4; }
   unsigned int getMean() 
   {
     unsigned int RetVal=(Summ >> Shift);        
-    Summ -= RetVal;
+    Summ = (UInt16)(Summ - RetVal);
     return RetVal+(RetVal == 0);
   }
   void update() 
   {
     if (Shift < PERIOD_BITS && --Count == 0) 
     {
-      Summ += Summ;                   
-      Count = 3 << Shift++;
+      Summ <<= 1;                   
+      Count = (Byte)(3 << Shift++);
     }
   }
 };
@@ -115,20 +115,21 @@ struct CInfo
     MinContext = MaxContext = (PPM_CONTEXT*) SubAllocator.AllocContext();
     MinContext->Suffix = 0;                
     OrderFall = MaxOrder;
-    MinContext->SummFreq = (MinContext->NumStats = 256) + 1;
+    MinContext->SummFreq = (UInt16)((MinContext->NumStats = 256) + 1);
     FoundState = (PPM_CONTEXT::STATE*)SubAllocator.AllocUnits(256 / 2);
     MinContext->Stats = SubAllocator.GetOffsetNoCheck(FoundState);
-    for (RunLength = InitRL, PrevSuccess = i = 0; i < 256; i++) 
+    PrevSuccess = 0;
+    for (RunLength = InitRL, i = 0; i < 256; i++) 
     {
       PPM_CONTEXT::STATE &state = FoundState[i];
-      state.Symbol = i;      
+      state.Symbol = (Byte)i;      
       state.Freq = 1;
       state.SetSuccessor(0);
     }
     for (i = 0; i < 128; i++)
         for (k = 0; k < 8; k++)
             for ( m=0; m < 64; m += 8)
-                BinSumm[i][k + m] = BIN_SCALE - InitBinEsc[k] / (i + 2);
+                BinSumm[i][k + m] = (UInt16)(BIN_SCALE - InitBinEsc[k] / (i + 2));
     for (i = 0; i < 25; i++)
         for (k = 0; k < 16; k++)            
             SEE2Cont[i][k].init(5*i+10);
@@ -160,10 +161,10 @@ struct CInfo
         memset(NS2BSIndx + 2, 2 * 2, 9);          
         memset(NS2BSIndx + 11, 2 * 3, 256 - 11);
         for (i = 0; i < 3; i++)                 
-          NS2Indx[i] = i;
+          NS2Indx[i] = (Byte)i;
         for (m = i, k = Step = 1; i < 256; i++) 
         {
-            NS2Indx[i] =m;
+            NS2Indx[i] = (Byte)m;
             if ( !--k ) 
             { 
               k = ++Step;       
@@ -227,8 +228,8 @@ NO_LOOP:
                 do { p++; } while (p->Symbol != UpState.Symbol);
         unsigned int cf = p->Freq-1;
         unsigned int s0 = pc->SummFreq - pc->NumStats - cf;
-        UpState.Freq = 1 + ((2 * cf <= s0) ? (5 * cf > s0) : 
-            ((2 * cf + 3 * s0 - 1) / (2 * s0)));
+        UpState.Freq = (Byte)(1 + ((2 * cf <= s0) ? (5 * cf > s0) : 
+            ((2 * cf + 3 * s0 - 1) / (2 * s0))));
     } 
     else                                  
       UpState.Freq = pc->oneState().Freq;
@@ -271,7 +272,7 @@ NO_LOOP:
         else 
         {
             p = &(pc->oneState());            
-            p->Freq += (p->Freq < 32);
+            p->Freq = (Byte)(p->Freq + ((p->Freq < 32) ? 1 : 0));
         }
     }
     if ( !OrderFall ) 
@@ -318,8 +319,8 @@ NO_LOOP:
                 if (!ppp)           
                   goto RESTART_MODEL;
             }
-            pc->SummFreq += (2 * ns1 < ns) + 2 * ((4 * ns1 <= ns) &
-                    (pc->SummFreq <= 8 * ns1));
+            pc->SummFreq = (UInt16)(pc->SummFreq + (2 * ns1 < ns) + 2 * ((4 * ns1 <= ns) &
+                    (pc->SummFreq <= 8 * ns1)));
         } 
         else 
         {
@@ -329,10 +330,10 @@ NO_LOOP:
             *p = pc->oneState();              
             pc->Stats = SubAllocator.GetOffsetNoCheck(p);
             if (p->Freq < MAX_FREQ / 4 - 1)     
-              p->Freq += p->Freq;
+              p->Freq <<= 1;
             else                            
               p->Freq  = MAX_FREQ - 4;
-            pc->SummFreq = p->Freq + InitEsc + (ns > 3);
+            pc->SummFreq = (UInt16)(p->Freq + InitEsc + (ns > 3));
         }
         cf = 2 * fs.Freq * (pc->SummFreq+6);      
         sf = s0 + pc->SummFreq;
@@ -344,13 +345,13 @@ NO_LOOP:
         else 
         {
             cf = 4 + (cf >= 9 * sf) + (cf >= 12 * sf) + (cf >= 15 * sf);
-            pc->SummFreq += cf;
+            pc->SummFreq = (UInt16)(pc->SummFreq + cf);
         }
         p = GetState(pc->Stats) + ns1;                    
         p->SetSuccessor(SubAllocator.GetOffset(Successor));
         p->Symbol = fs.Symbol;              
-        p->Freq = cf;
-        pc->NumStats = ++ns1;
+        p->Freq = (Byte)cf;
+        pc->NumStats = (UInt16)++ns1;
     }
     MaxContext = MinContext = GetContext(fs.GetSuccessor());
     return;
@@ -425,11 +426,13 @@ RESTART_MODEL:
     MinContext->SummFreq += 4;
     EscFreq = MinContext->SummFreq - p->Freq;               
     Adder = (OrderFall != 0);
-    MinContext->SummFreq = (p->Freq = (p->Freq + Adder) >> 1);
+    p->Freq = (Byte)((p->Freq + Adder) >> 1);
+    MinContext->SummFreq = p->Freq;
     do 
     {
         EscFreq -= (++p)->Freq;
-        MinContext->SummFreq += (p->Freq = (p->Freq + Adder) >> 1);
+        p->Freq = (Byte)((p->Freq + Adder) >> 1);
+        MinContext->SummFreq = (UInt16)(MinContext->SummFreq + p->Freq);
         if (p[0].Freq > p[-1].Freq) 
         {
             PPM_CONTEXT::STATE tmp = *(p1 = p);
@@ -446,15 +449,17 @@ RESTART_MODEL:
     {
         do { i++; } while ((--p)->Freq == 0);
         EscFreq += i;
-        if ((MinContext->NumStats -= i) == 1) 
+        MinContext->NumStats = (UInt16)(MinContext->NumStats - i);
+        if (MinContext->NumStats == 1) 
         {
             PPM_CONTEXT::STATE tmp = *stats;
-            do { tmp.Freq -= (tmp.Freq >> 1); EscFreq >>= 1; } while (EscFreq > 1);
+            do { tmp.Freq = (Byte)(tmp.Freq - (tmp.Freq >> 1)); EscFreq >>= 1; } while (EscFreq > 1);
             SubAllocator.FreeUnits(stats, (OldNS+1) >> 1);
             *(FoundState = &MinContext->oneState()) = tmp;  return;
         }
     }
-    MinContext->SummFreq += (EscFreq -= (EscFreq >> 1));
+    EscFreq -= (EscFreq >> 1);
+    MinContext->SummFreq = (UInt16)(MinContext->SummFreq + EscFreq);
     int n0 = (OldNS+1) >> 1, n1 = (MinContext->NumStats + 1) >> 1;
     if (n0 != n1)
       MinContext->Stats = SubAllocator.GetOffset(SubAllocator.ShrinkUnits(stats, n0, n1));

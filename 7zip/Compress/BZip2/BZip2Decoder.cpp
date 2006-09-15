@@ -97,7 +97,7 @@ void CState::FinishStream(bool needLeave)
 
 DWORD CState::ThreadFunc()
 {
-  while (true)
+  for (;;)
   {
     Decoder->CS.Enter();
     if (Decoder->CloseThreads)
@@ -262,7 +262,7 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
     int i;
     for (i = 0; i < alphaSize; i++) 
     {
-      while (true) 
+      for (;;)
       {
         if (len < 1 || len > kMaxHuffmanLen) 
           return S_FALSE;
@@ -295,7 +295,7 @@ HRESULT CDecoder::ReadBlock(UInt32 blockSizeMax, CState &state)
     int runPower = 0;
     UInt32 runCounter = 0;
     
-    while (true) 
+    for (;;)
     {
       if (groupSize == 0) 
       {
@@ -572,7 +572,7 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
   #endif
   {
     CState &state = m_States[0];
-    while (true)
+    for (;;)
     {
       if (progress)
       {
@@ -596,7 +596,7 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {
   if (!m_InStream.Create(kBufferSize))

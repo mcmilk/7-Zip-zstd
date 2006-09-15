@@ -38,7 +38,7 @@ class CMtf8Decoder
 {
 public:
   Byte Buffer[256];
-  void Init(int size) {};
+  void Init(int /* size */) {};
   Byte GetHead() const { return Buffer[0]; }
   Byte GetAndMove(int pos)
   {

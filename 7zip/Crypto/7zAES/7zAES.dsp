@@ -197,6 +197,32 @@ SOURCE=..\..\..\Windows\Synchronization.h
 SOURCE=..\..\Archive\Common\CoderLoader.h
 # End Source File
 # End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Hash\RotateDefs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Hash\Sha256.cpp
+
+!IF  "$(CFG)" == "7zAES - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Hash\Sha256.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\7zAES.cpp
@@ -214,24 +240,6 @@ SOURCE=.\7zAES.cpp
 # Begin Source File
 
 SOURCE=.\7zAES.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\SHA256.cpp
-
-!IF  "$(CFG)" == "7zAES - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\SHA256.h
 # End Source File
 # End Target
 # End Project

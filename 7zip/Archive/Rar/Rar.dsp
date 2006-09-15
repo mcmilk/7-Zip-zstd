@@ -351,14 +351,6 @@ SOURCE=..\..\Crypto\RarAES\RarAES.cpp
 
 SOURCE=..\..\Crypto\RarAES\RarAES.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\RarAES\sha1.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\RarAES\sha1.h
-# End Source File
 # End Group
 # Begin Group "Rar20"
 
@@ -378,6 +370,28 @@ SOURCE=..\..\Crypto\Rar20\Rar20Crypto.cpp
 # Begin Source File
 
 SOURCE=..\..\Crypto\Rar20\Rar20Crypto.h
+# End Source File
+# End Group
+# Begin Group "Hash"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.cpp
+
+!IF  "$(CFG)" == "Rar - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Rar - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Hash\Sha1.h
 # End Source File
 # End Group
 # End Group

@@ -8,6 +8,11 @@
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
+#ifdef _MSC_VER
+// "was declared deprecated" disabling
+#pragma warning(disable : 4996 )
+#endif
+
 static const char kNewLineChar =  '\n';
 
 static const char *kFileOpenMode = "wt";
@@ -27,14 +32,15 @@ bool CStdOutStream::Close()
 {
   if(!_streamIsOpen)
     return true;
-  _streamIsOpen = (fclose(_stream) != 0);
-  return !_streamIsOpen;
+  if (fclose(_stream) != 0)
+    return false;
+  _stream = 0;
+  _streamIsOpen = false;
+  return true;
 }
 
 bool CStdOutStream::Flush()
 {
-  if(!_streamIsOpen)
-    return false;
   return (fflush(_stream) == 0);
 }
 

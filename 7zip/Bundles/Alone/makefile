@@ -46,7 +46,6 @@ COMMON_OBJS = \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
   $O\NewHandler.obj \
-  $O\Random.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
   $O\String.obj \
@@ -77,8 +76,11 @@ WIN_OBJS = \
   $O\LockedStream.obj \
   $O\LSBFDecoder.obj \
   $O\LSBFEncoder.obj \
+  $O\MemBlocks.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
+  $O\OutMemStream.obj \
+  $O\ProgressMt.obj \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
@@ -215,7 +217,6 @@ COMPRESS_Z_OBJS = \
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
-  $O\SHA256.obj \
 
 AES_OPT_OBJS = \
   $O\MyAES.obj \
@@ -225,9 +226,20 @@ AES_ORIG_OBJS = \
   $O\aeskey.obj \
   $O\aestab.obj \
 
+CRYPTO_HASH_OBJS = \
+  $O\HmacSha1.obj \
+  $O\Pbkdf2HmacSha1.obj \
+  $O\RandGen.obj \
+  $O\Sha1.obj \
+  $O\Sha256.obj \
+
+CRYPTO_WZAES_OBJS = \
+  $O\WzAES.obj \
+
 CRYPTO_ZIP_OBJS = \
   $O\ZipCipher.obj \
   $O\ZipCrypto.obj \
+
 
 OBJS = \
   $O\StdAfx.obj \
@@ -262,7 +274,9 @@ OBJS = \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $(AES_ORIG_OBJS) \
+  $(CRYPTO_HASH_OBJS) \
   $(CRYPTO_ZIP_OBJS) \
+  $(CRYPTO_WZAES_OBJS) \
   $O\resource.res
 
 
@@ -332,8 +346,12 @@ $O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL_O2)
 $(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O2_W3)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
+	$(COMPL_O2)
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
 	$(COMPL_O2)
 $(CRYPTO_ZIP_OBJS): ../../Crypto/Zip/$(*B).cpp
 	$(COMPL)
+$(CRYPTO_WZAES_OBJS): ../../Crypto/WzAES/$(*B).cpp
+	$(COMPL_O2)

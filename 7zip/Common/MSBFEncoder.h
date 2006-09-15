@@ -45,7 +45,7 @@ public:
       numBits -= m_BitPos;
       UInt32 newBits = (value >> numBits);
       value -= (newBits << numBits);
-      m_Stream.WriteByte(m_CurByte | (Byte)newBits);
+      m_Stream.WriteByte((Byte)(m_CurByte | newBits));
       m_BitPos = 8;
       m_CurByte = 0;
     }

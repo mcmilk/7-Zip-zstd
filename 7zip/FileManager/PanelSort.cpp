@@ -29,14 +29,14 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     // if (panel->_sortIndex == 0)
     case kpidName:
     {
-      const UString &name1 = panel->GetItemName(lParam1);
-      const UString &name2 = panel->GetItemName(lParam2);
+      const UString name1 = panel->GetItemName((int)lParam1);
+      const UString name2 = panel->GetItemName((int)lParam2);
       int res = name1.CompareNoCase(name2);
       /*
       if (res != 0 || !panel->_flatMode)
         return res;
-      const UString &prefix1 = panel->GetItemPrefix(lParam1);
-      const UString &prefix2 = panel->GetItemPrefix(lParam2);
+      const UString prefix1 = panel->GetItemPrefix(lParam1);
+      const UString prefix2 = panel->GetItemPrefix(lParam2);
       return res = prefix1.CompareNoCase(prefix2);
       */
       return res;
@@ -47,8 +47,8 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     }
     case kpidExtension:
     {
-      const UString &ext1 = GetExtension(panel->GetItemName(lParam1));
-      const UString &ext2 = GetExtension(panel->GetItemName(lParam2));
+      const UString ext1 = GetExtension(panel->GetItemName((int)lParam1));
+      const UString ext2 = GetExtension(panel->GetItemName((int)lParam2));
       return ext1.CompareNoCase(ext2);
     }
   }
@@ -63,13 +63,13 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
   NCOM::CPropVariant propVariant1, propVariant2;
   // Name must be first property
-  panel->_folder->GetProperty(lParam1, propID, &propVariant1);
-  panel->_folder->GetProperty(lParam2, propID, &propVariant2);
+  panel->_folder->GetProperty((UINT32)lParam1, propID, &propVariant1);
+  panel->_folder->GetProperty((UINT32)lParam2, propID, &propVariant2);
   if(propVariant1.vt != propVariant2.vt)
     return 0; // It means some BUG
   if (propVariant1.vt == VT_BSTR)
   {
-    return wcsicmp(propVariant1.bstrVal, propVariant2.bstrVal);
+    return _wcsicmp(propVariant1.bstrVal, propVariant2.bstrVal);
   }
   return propVariant1.Compare(propVariant2);
   // return 0;
@@ -86,8 +86,8 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
   CPanel *panel = (CPanel*)lpData;
 
-  bool isDirectory1 = panel->IsItemFolder(lParam1);
-  bool isDirectory2 = panel->IsItemFolder(lParam2);
+  bool isDirectory1 = panel->IsItemFolder((int)lParam1);
+  bool isDirectory2 = panel->IsItemFolder((int)lParam2);
   
   if(isDirectory1 && (!isDirectory2))
     return -1;
@@ -95,8 +95,6 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     return 1;
 
   int result = CompareItems2(lParam1, lParam2, lpData);
-  if(lpData == NULL)
-    return 0;
   return panel->_ascending ? result: (-result);
 }
 

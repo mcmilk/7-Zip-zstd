@@ -15,6 +15,7 @@
 #include "../../IPassword.h"
 #include "../Common/ItemNameUtils.h"
 #include "../Common/ParseProperties.h"
+#include "../../Crypto/WzAES/WzAES.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -43,6 +44,17 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kDOS;
   return S_OK;
+}
+
+static bool IsAsciiString(const UString &s)
+{
+  for (int i = 0; i < s.Length(); i++)
+  {
+    wchar_t c = s[i];
+    if (c < 0x20 || c > 0x7F)
+      return false;
+  }
+  return true;
 }
 
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
@@ -138,6 +150,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (needSlash)
         name += kSlash;
       updateItem.Name = UnicodeStringToMultiByte(name, CP_OEMCP);
+      if (updateItem.Name.Length() > 0xFFFF)
+        return E_INVALIDARG;
 
       updateItem.IndexInClient = i;
       /*
@@ -183,10 +197,21 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   {
     CMyComBSTR password;
     Int32 passwordIsDefined;
-    RINOK(getTextPassword->CryptoGetTextPassword2(
-        &passwordIsDefined, &password));
-    if (options.PasswordIsDefined = IntToBool(passwordIsDefined))
+    RINOK(getTextPassword->CryptoGetTextPassword2(&passwordIsDefined, &password));
+    options.PasswordIsDefined = IntToBool(passwordIsDefined);
+    if (options.PasswordIsDefined)
+    {
+      if (!IsAsciiString((const wchar_t *)password))
+        return E_INVALIDARG;
+      if (m_IsAesMode)
+      {
+        if (options.Password.Length() > NCrypto::NWzAES::kPasswordSizeMax)
+          return E_INVALIDARG;
+      }
       options.Password = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
+      options.IsAesMode = m_IsAesMode;
+      options.AesKeyMode = m_AesKeyMode;
+    }
   }
   else
     options.PasswordIsDefined = false;
@@ -197,9 +222,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   
   Byte mainMethod;
   if (m_MainMethod < 0)
-    mainMethod = ((level == 0) ?
+    mainMethod = (Byte)(((level == 0) ?
         NFileHeader::NCompressionMethod::kStored :
-        NFileHeader::NCompressionMethod::kDeflated);
+        NFileHeader::NCompressionMethod::kDeflated));
   else
     mainMethod = (Byte)m_MainMethod;
   options.MethodSequence.Add(mainMethod);
@@ -297,6 +322,33 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           default:
             return E_INVALIDARG;
         }
+      }
+      else
+        return E_INVALIDARG;
+    }
+    else if (name.Left(2) == L"EM")
+    {
+      if (prop.vt == VT_BSTR)
+      {
+        UString valueString = prop.bstrVal;
+        valueString.MakeUpper();
+        if (valueString.Left(3) == L"AES")
+        {
+          valueString = valueString.Mid(3);
+          if (valueString == L"128")
+            m_AesKeyMode = 1;
+          else if (valueString == L"192")
+            m_AesKeyMode = 2;
+          else if (valueString == L"256" || valueString.IsEmpty())
+            m_AesKeyMode = 3;
+          else
+            return E_INVALIDARG;
+          m_IsAesMode = true;
+        }
+        else if (valueString == L"ZIPCRYPTO")
+          m_IsAesMode = false;
+        else
+          return E_INVALIDARG;
       }
       else
         return E_INVALIDARG;

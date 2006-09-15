@@ -1,4 +1,4 @@
-// BranchSPARC.c
+/* BranchSPARC.c */
 
 #include "BranchSPARC.h"
 

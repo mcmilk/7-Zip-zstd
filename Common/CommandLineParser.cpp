@@ -33,7 +33,7 @@ void SplitCommandLine(const UString &s, UStringVector &parts)
   UString sTemp = s;
   sTemp.Trim();
   parts.Clear();
-  while (true)
+  for (;;)
   {
     UString s1, s2;
     SplitCommandLine(sTemp, s1, s2);
@@ -42,7 +42,7 @@ void SplitCommandLine(const UString &s, UStringVector &parts)
     if (!s1.IsEmpty())
       parts.Add(s1);
     if (s2.IsEmpty())
-      return;
+      break;
     sTemp = s2;
   }
 }

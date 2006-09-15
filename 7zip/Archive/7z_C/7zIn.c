@@ -44,18 +44,8 @@ CFileSize GetFilePackSize(int fileIndex) const
 }
 */
 
-
-SZ_RESULT MySzInAlloc(void **p, size_t size, void * (*allocFunc)(size_t size))
-{
-  if (size == 0)
-    *p = 0;
-  else
-  {
-    *p = allocFunc(size);
-    RINOM(*p);
-  }
-  return SZ_OK;
-}
+#define MY_ALLOC(T, p, size, allocFunc) { if ((size) == 0) p = 0; else \
+  if ((p = (T *)allocFunc((size) * sizeof(T))) == 0) return SZE_OUTOFMEMORY; }
 
 SZ_RESULT SzArDbExFill(CArchiveDatabaseEx *db, void * (*allocFunc)(size_t size))
 {
@@ -64,14 +54,14 @@ SZ_RESULT SzArDbExFill(CArchiveDatabaseEx *db, void * (*allocFunc)(size_t size))
   UInt32 i;
   UInt32 folderIndex = 0;
   UInt32 indexInFolder = 0;
-  RINOK(MySzInAlloc((void **)&db->FolderStartPackStreamIndex, db->Database.NumFolders * sizeof(UInt32), allocFunc));
+  MY_ALLOC(UInt32, db->FolderStartPackStreamIndex, db->Database.NumFolders, allocFunc);
   for(i = 0; i < db->Database.NumFolders; i++)
   {
     db->FolderStartPackStreamIndex[i] = startPos;
     startPos += db->Database.Folders[i].NumPackStreams;
   }
 
-  RINOK(MySzInAlloc((void **)&db->PackStreamStartPositions, db->Database.NumPackStreams * sizeof(CFileSize), allocFunc));
+  MY_ALLOC(CFileSize, db->PackStreamStartPositions, db->Database.NumPackStreams, allocFunc);
 
   for(i = 0; i < db->Database.NumPackStreams; i++)
   {
@@ -79,8 +69,8 @@ SZ_RESULT SzArDbExFill(CArchiveDatabaseEx *db, void * (*allocFunc)(size_t size))
     startPosSize += db->Database.PackSizes[i];
   }
 
-  RINOK(MySzInAlloc((void **)&db->FolderStartFileIndex, db->Database.NumFolders * sizeof(UInt32), allocFunc));
-  RINOK(MySzInAlloc((void **)&db->FileIndexToFolderIndexMap, db->Database.NumFiles * sizeof(UInt32), allocFunc));
+  MY_ALLOC(UInt32, db->FolderStartFileIndex, db->Database.NumFolders, allocFunc);
+  MY_ALLOC(UInt32, db->FileIndexToFolderIndexMap, db->Database.NumFiles, allocFunc);
 
   for (i = 0; i < db->Database.NumFiles; i++)
   {
@@ -97,7 +87,7 @@ SZ_RESULT SzArDbExFill(CArchiveDatabaseEx *db, void * (*allocFunc)(size_t size))
       v3.13 incorrectly worked with empty folders
       v4.07: Loop for skipping empty folders
       */
-      while(1)
+      for (;;)
       {
         if (folderIndex >= db->Database.NumFolders)
           return SZE_ARCHIVE_ERROR;
@@ -237,7 +227,7 @@ SZ_RESULT SafeReadDirectUInt64(ISzInStream *inStream, UInt64 *value)
   {
     Byte b;
     RINOK(SafeReadDirectByte(inStream, &b));
-    *value |= ((UInt32)b << (8 * i));
+    *value |= ((UInt64)b << (8 * i));
   }
   return SZ_OK;
 }
@@ -355,7 +345,7 @@ SZ_RESULT SzSkeepData(CSzData *sd)
 
 SZ_RESULT SzReadArchiveProperties(CSzData *sd)
 {
-  while(1)
+  for (;;)
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
@@ -368,7 +358,7 @@ SZ_RESULT SzReadArchiveProperties(CSzData *sd)
 
 SZ_RESULT SzWaitAttribute(CSzData *sd, UInt64 attribute)
 {
-  while(1)
+  for (;;)
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
@@ -385,8 +375,8 @@ SZ_RESULT SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, void * (*allo
   Byte b = 0;
   Byte mask = 0;
   size_t i;
-  RINOK(MySzInAlloc((void **)v, numItems * sizeof(Byte), allocFunc));
-  for(i = 0; i < numItems; i++)
+  MY_ALLOC(Byte, *v, numItems, allocFunc);
+  for (i = 0; i < numItems; i++)
   {
     if (mask == 0)
     {
@@ -406,7 +396,7 @@ SZ_RESULT SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, void * (*all
   RINOK(SzReadByte(sd, &allAreDefined));
   if (allAreDefined == 0)
     return SzReadBoolVector(sd, numItems, v, allocFunc);
-  RINOK(MySzInAlloc((void **)v, numItems * sizeof(Byte), allocFunc));
+  MY_ALLOC(Byte, *v, numItems, allocFunc);
   for(i = 0; i < numItems; i++)
     (*v)[i] = 1;
   return SZ_OK;
@@ -421,7 +411,7 @@ SZ_RESULT SzReadHashDigests(
 {
   size_t i;
   RINOK(SzReadBoolVector2(sd, numItems, digestsDefined, allocFunc));
-  RINOK(MySzInAlloc((void **)digests, numItems * sizeof(UInt32), allocFunc));
+  MY_ALLOC(UInt32, *digests, numItems, allocFunc);
   for(i = 0; i < numItems; i++)
     if ((*digestsDefined)[i])
     {
@@ -445,14 +435,14 @@ SZ_RESULT SzReadPackInfo(
 
   RINOK(SzWaitAttribute(sd, k7zIdSize));
 
-  RINOK(MySzInAlloc((void **)packSizes, (size_t)*numPackStreams * sizeof(CFileSize), allocFunc));
+  MY_ALLOC(CFileSize, *packSizes, (size_t)*numPackStreams, allocFunc);
 
   for(i = 0; i < *numPackStreams; i++)
   {
     RINOK(SzReadSize(sd, (*packSizes) + i));
   }
 
-  while(1)
+  for (;;)
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
@@ -467,8 +457,8 @@ SZ_RESULT SzReadPackInfo(
   }
   if (*packCRCsDefined == 0)
   {
-    RINOK(MySzInAlloc((void **)packCRCsDefined, (size_t)*numPackStreams * sizeof(Byte), allocFunc));
-    RINOK(MySzInAlloc((void **)packCRCs, (size_t)*numPackStreams * sizeof(UInt32), allocFunc));
+    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, allocFunc);
+    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, allocFunc);
     for(i = 0; i < *numPackStreams; i++)
     {
       (*packCRCsDefined)[i] = 0;
@@ -496,7 +486,7 @@ SZ_RESULT SzGetNextFolderItem(CSzData *sd, CFolder *folder, void * (*allocFunc)(
   RINOK(SzReadNumber32(sd, &numCoders));
   folder->NumCoders = numCoders;
 
-  RINOK(MySzInAlloc((void **)&folder->Coders, (size_t)numCoders * sizeof(CCoderInfo), allocFunc));
+  MY_ALLOC(CCoderInfo, folder->Coders, (size_t)numCoders, allocFunc);
 
   for (i = 0; i < numCoders; i++)
     SzCoderInfoInit(folder->Coders + i);
@@ -553,7 +543,7 @@ SZ_RESULT SzGetNextFolderItem(CSzData *sd, CFolder *folder, void * (*allocFunc)(
   folder->NumBindPairs = numBindPairs;
 
 
-  RINOK(MySzInAlloc((void **)&folder->BindPairs, (size_t)numBindPairs * sizeof(CBindPair), allocFunc));
+  MY_ALLOC(CBindPair, folder->BindPairs, (size_t)numBindPairs, allocFunc);
 
   for (i = 0; i < numBindPairs; i++)
   {
@@ -565,7 +555,7 @@ SZ_RESULT SzGetNextFolderItem(CSzData *sd, CFolder *folder, void * (*allocFunc)(
   numPackedStreams = numInStreams - (UInt32)numBindPairs;
 
   folder->NumPackStreams = numPackedStreams;
-  RINOK(MySzInAlloc((void **)&folder->PackStreams, (size_t)numPackedStreams * sizeof(UInt32), allocFunc));
+  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackedStreams, allocFunc);
 
   if (numPackedStreams == 1)
   {
@@ -599,8 +589,7 @@ SZ_RESULT SzReadUnPackInfo(
   {
     RINOK(SzReadSwitch(sd));
 
-
-    RINOK(MySzInAlloc((void **)folders, (size_t)*numFolders * sizeof(CFolder), allocFunc));
+    MY_ALLOC(CFolder, *folders, (size_t)*numFolders, allocFunc);
 
     for(i = 0; i < *numFolders; i++)
       SzFolderInit((*folders) + i);
@@ -619,7 +608,7 @@ SZ_RESULT SzReadUnPackInfo(
     CFolder *folder = (*folders) + i;
     UInt32 numOutStreams = SzFolderGetNumOutStreams(folder);
 
-    RINOK(MySzInAlloc((void **)&folder->UnPackSizes, (size_t)numOutStreams * sizeof(CFileSize), allocFunc));
+    MY_ALLOC(CFileSize, folder->UnPackSizes, (size_t)numOutStreams, allocFunc);
 
     for(j = 0; j < numOutStreams; j++)
     {
@@ -627,7 +616,7 @@ SZ_RESULT SzReadUnPackInfo(
     }
   }
 
-  while(1)
+  for (;;)
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
@@ -676,7 +665,7 @@ SZ_RESULT SzReadSubStreamsInfo(
     folders[i].NumUnPackStreams = 1;
   *numUnPackStreams = numFolders;
 
-  while(1)
+  for (;;)
   {
     RINOK(SzReadID(sd, &type));
     if (type == k7zIdNumUnPackStream)
@@ -756,7 +745,7 @@ SZ_RESULT SzReadSubStreamsInfo(
 
  
   si = 0;
-  while(1)
+  for (;;)
   {
     if (type == k7zIdCRC)
     {
@@ -814,7 +803,7 @@ SZ_RESULT SzReadStreamsInfo(
     void * (*allocFunc)(size_t size),
     ISzAlloc *allocTemp)
 {
-  while(1)
+  for (;;)
   {
     UInt64 type;
     RINOK(SzReadID(sd, &type));
@@ -887,7 +876,7 @@ SZ_RESULT SzReadFileNames(CSzData *sd, UInt32 numFiles, CFileItem *files,
       len += numAdds;
     }
 
-    RINOK(MySzInAlloc((void **)&file->Name, (size_t)len * sizeof(char), allocFunc));
+    MY_ALLOC(char, file->Name, (size_t)len, allocFunc);
 
     len = 0;
     while(2 <= sd->Size)
@@ -973,13 +962,13 @@ SZ_RESULT SzReadHeader2(
   RINOK(SzReadNumber32(sd, &numFiles));
   db->Database.NumFiles = numFiles;
 
-  RINOK(MySzInAlloc((void **)&files, (size_t)numFiles * sizeof(CFileItem), allocMain->Alloc));
+  MY_ALLOC(CFileItem, files, (size_t)numFiles, allocMain->Alloc);
 
   db->Database.Files = files;
   for(i = 0; i < numFiles; i++)
     SzFileInit(files + i);
 
-  while(1)
+  for (;;)
   {
     UInt64 type;
     UInt64 size;
@@ -1122,7 +1111,7 @@ SZ_RESULT SzReadAndDecodePackedStreams2(
   for (i = 0; i < db->NumPackStreams; i++)
     packSize += db->PackSizes[i];
 
-  RINOK(MySzInAlloc((void **)inBuffer, (size_t)packSize, allocTemp->Alloc));
+  MY_ALLOC(Byte, *inBuffer, (size_t)packSize, allocTemp->Alloc);
 
   RINOK(SafeReadDirect(inStream, *inBuffer, (size_t)packSize));
   #endif
@@ -1238,9 +1227,10 @@ SZ_RESULT SzArchiveOpen2(
   res = SafeReadDirect(inStream, buffer.Items, (size_t)nextHeaderSize);
   if (res == SZ_OK)
   {
+    res = SZE_ARCHIVE_ERROR;
     if (CrcVerifyDigest(nextHeaderCRC, buffer.Items, (UInt32)nextHeaderSize))
     {
-      while (1)
+      for (;;)
       {
         UInt64 type;
         sd.Data = buffer.Items;

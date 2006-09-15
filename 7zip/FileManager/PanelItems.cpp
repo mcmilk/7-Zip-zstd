@@ -131,7 +131,7 @@ void CPanel::InitColumns()
   }
   // InitColumns2(sortID);
 
-  while(true)
+  for (;;)
     if (!_listView.DeleteColumn(0))
       break;
 
@@ -331,7 +331,6 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     SetToRootFolder();
   }
   
-  bool isRoot = IsRootFolder();
   _headerToolBar.EnableButton(kParentFolderID, !IsRootFolder());
 
   CMyComPtr<IFolderSetFlatMode> folderSetFlatMode;
@@ -411,7 +410,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     if (itemName.Find(L"     ") >= 0)
     {
       int pos = 0;
-      while (true)
+      for (;;)
       {
         int posNew = itemName.Find(L"     ", pos);
         if (posNew < 0)
@@ -653,7 +652,7 @@ bool CPanel::IsItemFolder(int itemIndex) const
     return VARIANT_BOOLToBool(propVariant.boolVal);
   if (propVariant.vt == VT_EMPTY)
     return false;
-  throw 21632;
+  return false;
 }
 
 UINT64 CPanel::GetItemSize(int itemIndex) const

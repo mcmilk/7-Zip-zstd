@@ -1,7 +1,7 @@
-7z ANSI-C Decoder 4.23
+7z ANSI-C Decoder 4.43
 ----------------------
 
-7z ANSI-C Decoder 4.23 Copyright (C) 1999-2005 Igor Pavlov
+7z ANSI-C Decoder 4.43 Copyright (C) 1999-2006 Igor Pavlov
 
 7z ANSI-C provides 7z/LZMA decoding.
 7z ANSI-C version is simplified version ported from C++ code.

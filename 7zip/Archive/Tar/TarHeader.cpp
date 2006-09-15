@@ -12,6 +12,7 @@ namespace NFileHeader {
   const char *kCheckSumBlanks = "        ";   // 8 blanks, no null
 
   const char *kLongLink = "././@LongLink";
+  const char *kLongLink2 = "@LongLink";
 
   // The magic field is filled with this if uname and gname are valid.
   namespace NMagic 

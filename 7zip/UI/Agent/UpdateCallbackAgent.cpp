@@ -50,7 +50,7 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemErr
   return systemError;
 }
 
-HRESULT CUpdateCallbackAgent::GetStream(const wchar_t *name, bool isAnti)
+HRESULT CUpdateCallbackAgent::GetStream(const wchar_t *name, bool /* isAnti */)
 {
   if (Callback)
     return Callback->CompressOperation(name);

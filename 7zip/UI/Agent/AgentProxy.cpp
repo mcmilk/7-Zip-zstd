@@ -14,7 +14,7 @@ using namespace NWindows;
 int CProxyFolder::FindDirSubItemIndex(const UString &name, int &insertPos) const
 {
   int left = 0, right = Folders.Size();
-  while(true)
+  for (;;)
   {
     if (left == right)
     {
@@ -177,7 +177,7 @@ HRESULT CProxyArchive::ReadObjects(IInArchive *archiveHandler, IProgress *progre
         wchar_t c = filePath[i];
         if (c == '\\' || c == '/')
         {
-          currentItem = currentItem->AddDirSubItem(-1, false, fileName);
+          currentItem = currentItem->AddDirSubItem((UInt32)(Int32)-1, false, fileName);
           fileName.Empty();
         }
         else

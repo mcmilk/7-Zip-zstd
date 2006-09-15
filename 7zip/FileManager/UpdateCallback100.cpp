@@ -36,7 +36,7 @@ STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 size)
 
 STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *completeValue)
 {
-  while(true)
+  for (;;)
   {
     if(ProgressDialog.ProgressSynch.GetStopped())
       return E_ABORT;
@@ -55,12 +55,12 @@ STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *name)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *name)
+STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t * /* name */)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 operationResult)
+STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 /* operationResult */)
 {
   return S_OK;
 }

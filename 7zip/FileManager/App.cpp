@@ -91,7 +91,7 @@ void CApp::SetListSettings()
     panel._showRealFileIcons = showRealFileIcons;
     panel._exStyle = extendedStyle;
 
-    DWORD style = panel._listView.GetStyle();
+    DWORD style = (DWORD)panel._listView.GetStyle();
     if (mySelectionMode)
       style |= LVS_SINGLESEL;
     else
@@ -227,9 +227,9 @@ static void AddButton(
 
   but.iBitmap = imageList.GetImageCount();
   HBITMAP b = ::LoadBitmap(g_hInstance, 
-    large ? 
-    (LPCTSTR)butInfo.BitmapResID:
-    (LPCTSTR)butInfo.Bitmap2ResID);
+      large ? 
+      MAKEINTRESOURCE(butInfo.BitmapResID):
+      MAKEINTRESOURCE(butInfo.Bitmap2ResID));
   if (b != 0)
   {
     imageList.AddMasked(b, RGB(255, 0, 255));
@@ -692,7 +692,7 @@ int CApp::GetFocusedPanelIndex() const
 {
   return LastFocusedPanel;
   HWND hwnd = ::GetFocus();
-  while(true)
+  for (;;)
   {
     if (hwnd == 0)
       return 0;
@@ -710,7 +710,7 @@ int CApp::GetFocusedPanelIndex() const
 static UString g_ToolTipBuffer;
 static CSysString g_ToolTipBufferSys;
 
-void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
+void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
 {
   if (pnmh->hwndFrom == _rebar)
   {
@@ -731,7 +731,7 @@ void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
       LPNMTTDISPINFO info = (LPNMTTDISPINFO)pnmh;
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
-      SetButtonText(info->hdr.idFrom, g_ToolTipBuffer);
+      SetButtonText((UINT32)info->hdr.idFrom, g_ToolTipBuffer);
       g_ToolTipBufferSys = GetSystemString(g_ToolTipBuffer);
       info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBufferSys;
       return;
@@ -742,7 +742,7 @@ void CApp::OnNotify(int ctrlID, LPNMHDR pnmh)
       LPNMTTDISPINFOW info = (LPNMTTDISPINFOW)pnmh;
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
-      SetButtonText(info->hdr.idFrom, g_ToolTipBuffer);
+      SetButtonText((UINT32)info->hdr.idFrom, g_ToolTipBuffer);
       info->lpszText = (LPWSTR)(LPCWSTR)g_ToolTipBuffer;
       return;
     }

@@ -6,24 +6,10 @@
 #include "Windows/Defs.h"
 
 #include "../../Common/StreamUtils.h"
+#include "../Hash/RandGen.h"
 
 namespace NCrypto {
 namespace NZip {
-
-/*
-const int kBufferSize = 1 << 17;
-
-CBuffer2::CBuffer2():
-  _buffer(0)
-{
-  _buffer = new Byte[kBufferSize];
-}
-
-CBuffer2::~CBuffer2()
-{
-  delete []_buffer;
-}
-*/
 
 STDMETHODIMP CEncoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
@@ -44,14 +30,9 @@ STDMETHODIMP CEncoder::Init()
 
 HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 {
-  CRandom random;
-  random.Init(::GetTickCount());
-
   Byte header[kHeaderSize];
-  for (int i = 0; i < kHeaderSize - 2; i++)
-  {
-    header[i] = Byte(random.Generate());
-  }
+  g_RandomGenerator.Generate(header, kHeaderSize - 2);
+
   header[kHeaderSize - 1] = Byte(_crc >> 24);
   header[kHeaderSize - 2] = Byte(_crc >> 16);
 

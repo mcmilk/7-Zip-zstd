@@ -19,9 +19,9 @@ public:
   #ifndef _UNICODE
   LRESULT AddString(LPCWSTR string);
   #endif
-  int SetCurSel(int index) { return SendMessage(CB_SETCURSEL, index, 0); }
-  int GetCurSel() { return SendMessage(CB_GETCURSEL, 0, 0); }
-  int GetCount() { return SendMessage(CB_GETCOUNT, 0, 0); }
+  LRESULT SetCurSel(int index) { return SendMessage(CB_SETCURSEL, index, 0); }
+  int GetCurSel() { return (int)SendMessage(CB_GETCURSEL, 0, 0); }
+  int GetCount() { return (int)SendMessage(CB_GETCOUNT, 0, 0); }
   
   LRESULT GetLBTextLen(int index) { return SendMessage(CB_GETLBTEXTLEN, index, 0); }
   LRESULT GetLBText(int index, LPTSTR string) { return SendMessage(CB_GETLBTEXT, index, (LPARAM)string); }
@@ -30,21 +30,21 @@ public:
   LRESULT GetLBText(int index, UString &s);
   #endif
 
-  int SetItemData(int index, LPARAM lParam)
+  LRESULT SetItemData(int index, LPARAM lParam)
     { return SendMessage(CB_SETITEMDATA, index, lParam); }
-  int GetItemData(int index)
+  LRESULT GetItemData(int index)
     { return SendMessage(CB_GETITEMDATA, index, 0); }
 };
 
 class CComboBoxEx: public CWindow
 {
 public:
-  int DeleteItem(int index)
+  LRESULT DeleteItem(int index)
     { return SendMessage(CBEM_DELETEITEM, index, 0); }
-  int InsertItem(COMBOBOXEXITEM *item)
+  LRESULT InsertItem(COMBOBOXEXITEM *item)
     { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)item); }
   DWORD SetExtendedStyle(DWORD exMask, DWORD exStyle)
-    { return SendMessage(CBEM_SETEXTENDEDSTYLE, exMask, exStyle); }
+    { return (DWORD)SendMessage(CBEM_SETEXTENDEDSTYLE, exMask, exStyle); }
   HWND GetEditControl()
     { return (HWND)SendMessage(CBEM_GETEDITCONTROL, 0, 0); }
 };

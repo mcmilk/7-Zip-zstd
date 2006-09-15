@@ -109,7 +109,7 @@ public:
     UInt32 offset = start * Range / total;
     Code -= offset;
     Low += offset;
-    while (true) 
+    for (;;)
     {
       if ((Low & 0x8000) != (high & 0x8000)) 
       {
@@ -167,7 +167,7 @@ public:
       {
         ReorderCount = kReorderCount;
         for(i = 0; i < NumItems; i++)
-          Freqs[i] = ((Freqs[i] - Freqs[i + 1]) + 1) >> 1;
+          Freqs[i] = (UInt16)(((Freqs[i] - Freqs[i + 1]) + 1) >> 1);
         for(i = 0; i < NumItems - 1; i++)
           for(unsigned int j = i + 1; j < NumItems; j++)
             if (Freqs[i] < Freqs[j])
@@ -180,7 +180,7 @@ public:
               Values[j] = tmpVal;
             }
         do
-          Freqs[i] += Freqs[i + 1];
+          Freqs[i] = (UInt16)(Freqs[i] + Freqs[i + 1]);
         while(i-- != 0);
       }
       else
@@ -190,7 +190,7 @@ public:
         {
           Freqs[i] >>= 1;
           if (Freqs[i] <= Freqs[i + 1])
-            Freqs[i] = Freqs[i + 1] + 1;
+            Freqs[i] = (UInt16)(Freqs[i + 1] + 1);
         }
         while(i-- != 0);
       }

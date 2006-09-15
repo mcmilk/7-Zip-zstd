@@ -25,7 +25,7 @@ struct MEM_BLK
     Prev = p;
     MEM_BLK *pp = (MEM_BLK *)(Base + p);
     Next = pp->Next;
-    pp->Next = ((MEM_BLK *)(Base + Next))->Prev = (Byte *)this - Base;
+    pp->Next = ((MEM_BLK *)(Base + Next))->Prev = (UInt32)((Byte *)this - Base);
   }
   void Remove(Byte *Base) 
   { 
@@ -140,14 +140,15 @@ public:
     HiUnit = (pText = HeapStart) + SubAllocatorSize;
     UINT Diff = UNIT_SIZE * (SubAllocatorSize / 8 / UNIT_SIZE * 7);
     LoUnit = UnitsStart = HiUnit - Diff;
-    for (i = 0, k=1; i < N1 ; i++, k += 1)        Indx2Units[i]=k;
-    for (k++; i < N1 + N2      ;i++, k += 2)      Indx2Units[i]=k;
-    for (k++; i < N1 + N2 + N3   ;i++,k += 3)     Indx2Units[i]=k;
-    for (k++; i < N1 + N2 + N3 + N4; i++, k += 4) Indx2Units[i]=k;
-    for (GlueCount = k = i = 0; k < 128; k++) 
+    for (i = 0, k=1; i < N1 ; i++, k += 1)        Indx2Units[i] = (Byte)k;
+    for (k++; i < N1 + N2      ;i++, k += 2)      Indx2Units[i] = (Byte)k;
+    for (k++; i < N1 + N2 + N3   ;i++,k += 3)     Indx2Units[i] = (Byte)k;
+    for (k++; i < N1 + N2 + N3 + N4; i++, k += 4) Indx2Units[i] = (Byte)k;
+    GlueCount = 0;
+    for (k = i = 0; k < 128; k++) 
     {
       i += (Indx2Units[i] < k+1);
-        Units2Indx[k]=i;
+        Units2Indx[k] = (Byte)i;
     }
   }
   
@@ -176,14 +177,14 @@ public:
       }
     for (p = ps0->Next; p != s0; p = GetBlk(p)->Next)
     {
-      while (true) 
+      for (;;)
       {
         MEM_BLK *pp = GetBlk(p);
         MEM_BLK *pp1 = GetBlk(p + pp->NU * UNIT_SIZE);
         if (pp1->Stamp != 0xFFFF || int(pp->NU) + pp1->NU >= 0x10000)
           break;
         pp1->Remove(Base);
-        pp->NU += pp1->NU;
+        pp->NU = (UInt16)(pp->NU + pp1->NU);
       }
     }
     while ((p = ps0->Next) != s0) 

@@ -31,7 +31,7 @@ namespace NGZip {
 
 static const Byte kHostOS = NFileHeader::NHostOS::kFAT;
 
-HRESULT UpdateArchive(IInStream *inStream, 
+HRESULT UpdateArchive(IInStream * /* inStream */, 
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     const CItem &newItem,
@@ -59,7 +59,8 @@ HRESULT UpdateArchive(IInStream *inStream,
 
   CSequentialInStreamWithCRC *inStreamSpec = new CSequentialInStreamWithCRC;
   CMyComPtr<ISequentialInStream> crcStream(inStreamSpec);
-  inStreamSpec->Init(fileInStream);
+  inStreamSpec->SetStream(fileInStream);
+  inStreamSpec->Init();
 
   CLocalProgress *localProgressSpec = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;

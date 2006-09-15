@@ -95,7 +95,8 @@ bool CDecoder::ReadTables(void)
       return false;
     m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
     
-    if (m_IsUncompressedBlock = (blockType == kBlockTypeUncompressed))
+    m_IsUncompressedBlock = (blockType == kBlockTypeUncompressed);
+    if (m_IsUncompressedBlock)
     {
       m_InBitStream.ReadBits(16 - m_InBitStream.GetBitPosition());
       if (!m_InBitStream.ReadUInt32(m_RepDistances[0]))
@@ -110,10 +111,11 @@ bool CDecoder::ReadTables(void)
       }
       return true;
     }
-    if (m_AlignIsUsed = (blockType == kBlockTypeAligned))
+    m_AlignIsUsed = (blockType == kBlockTypeAligned);
+    if (m_AlignIsUsed)
     {
       for(int i = 0; i < kAlignTableSize; i++)
-        newLevels[i] = ReadBits(kNumBitsForAlignLevel);
+        newLevels[i] = (Byte)ReadBits(kNumBitsForAlignLevel);
       RIF(m_AlignDecoder.SetCodeLengths(newLevels));
     }
   }
@@ -195,7 +197,6 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
     if (m_UnCompressedBlockSize == 0)
      if (!ReadTables())
        return S_FALSE;
-    UInt32 nowPos = 0;
     UInt32 next = (Int32)MyMin(m_UnCompressedBlockSize, curSize);
     curSize -= next;
     m_UnCompressedBlockSize -= next;
@@ -300,7 +301,6 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
   if (outSize == NULL)
     return E_INVALIDARG;
   UInt64 size = *outSize;
-  const UInt64 startSize = size;
 
   RINOK(SetInStream(inStream));
   m_x86ConvertOutStreamSpec->SetStream(outStream);
@@ -310,7 +310,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
   CDecoderFlusher flusher(this);
 
   const UInt64 start = m_OutWindowStream.GetProcessedSize();
-  while(true)
+  for (;;)
   {
     UInt32 curSize = 1 << 18;
     UInt64 rem = size - (m_OutWindowStream.GetProcessedSize() - start);

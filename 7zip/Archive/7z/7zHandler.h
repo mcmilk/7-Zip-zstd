@@ -85,6 +85,9 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
+  #if !defined(_7Z_VOL) && !defined(__7Z_SET_PROPERTIES) && defined(EXTRACT_ONLY)
+  MY_UNKNOWN_IMP
+  #else
   MY_QUERYINTERFACE_BEGIN
   #ifdef _7Z_VOL
   MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
@@ -97,6 +100,8 @@ public:
   #endif
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
+  #endif
+
 
   STDMETHOD(Open)(IInStream *stream, 
       const UInt64 *maxCheckStartPosition,
@@ -167,6 +172,11 @@ private:
   bool _compressHeadersFull;
   bool _encryptHeaders;
 
+  bool WriteModified;
+  bool WriteCreated;
+  bool WriteAccessed;
+
+
   bool _autoFilter;
   UInt32 _level;
 
@@ -176,8 +186,7 @@ private:
   HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
 
-  HRESULT SetPassword(CCompressionMethodMode &methodMode,
-      IArchiveUpdateCallback *updateCallback);
+  HRESULT SetPassword(CCompressionMethodMode &methodMode, IArchiveUpdateCallback *updateCallback);
 
   HRESULT SetCompressionMethod(CCompressionMethodMode &method,
       CObjectVector<COneMethodInfo> &methodsInfo
@@ -191,7 +200,8 @@ private:
       CCompressionMethodMode &headerMethod);
 
   #endif
-  
+
+  bool IsEncrypted(UInt32 index2) const;
   #ifndef _SFX
 
   CRecordVector<UInt64> _fileInfoPopIDs;
@@ -217,6 +227,11 @@ private:
     _compressHeaders = true;
     _compressHeadersFull = true;
     _encryptHeaders = false;
+
+    WriteModified = true;
+    WriteCreated = false;
+    WriteAccessed = false;
+
     #ifdef COMPRESS_MT
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();
     #endif

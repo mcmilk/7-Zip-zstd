@@ -24,8 +24,6 @@ struct CUpdatePair2
 };
 
 void UpdateProduce(
-    const CObjectVector<CDirItem> &dirItems, 
-    const CObjectVector<CArchiveItem> &archiveItems, 
     const CObjectVector<CUpdatePair> &updatePairs,
     const NUpdateArchive::CActionSet &actionSet,
     CObjectVector<CUpdatePair2> &operationChain);

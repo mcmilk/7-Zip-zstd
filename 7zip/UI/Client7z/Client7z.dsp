@@ -107,11 +107,35 @@ SOURCE=..\..\..\Windows\DLL.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\FileDir.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileDir.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileFind.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileFind.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\FileIO.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileIO.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.h
 # End Source File
 # Begin Source File
 
@@ -143,6 +167,14 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\NewHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\NewHandler.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\String.cpp
 # End Source File
 # Begin Source File
@@ -156,6 +188,22 @@ SOURCE=..\..\..\Common\StringConvert.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringConvert.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Vector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Vector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Wildcard.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Wildcard.h
 # End Source File
 # End Group
 # Begin Group "7zip Common"

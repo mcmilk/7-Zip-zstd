@@ -51,7 +51,7 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
   pathParts.Clear();
   CMyComPtr<IFolderFolder> folderItem = folder;
   if (folderItem != NULL)
-    while (true)
+    for (;;)
     {
       CMyComPtr<IFolderFolder> newFolder;
       folderItem->BindToParentFolder(&newFolder);  
@@ -111,7 +111,8 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
 
     CPropVariant property;
     agent->GetArchive()->GetProperty(fileItem.Index, kpidSize, &property);
-    if (archiveItem.SizeIsDefined = (property.vt != VT_EMPTY))
+    archiveItem.SizeIsDefined = (property.vt != VT_EMPTY);
+    if (archiveItem.SizeIsDefined)
       archiveItem.Size = ConvertPropVariantToUInt64(property);
     archiveItem.IsDirectory = false;
     archiveItem.Name = prefix + fileItem.Name;
@@ -207,8 +208,7 @@ STDMETHODIMP CAgent::DoOperation(
   GetUpdatePairInfoList(dirItems, archiveItems, fileTimeType, updatePairs);
   
   CObjectVector<CUpdatePair2> updatePairs2;
-  UpdateProduce(dirItems, archiveItems, updatePairs, actionSet,
-      updatePairs2);
+  UpdateProduce(updatePairs, actionSet, updatePairs2);
   
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.Callback = updateCallback100;

@@ -18,14 +18,14 @@ struct CDecodeInfo: public CInfo
     if (rangeDecoder->DecodeBit(bs, TOT_BITS) == 0) 
     {
       FoundState = &rs;
-      rs.Freq += (rs.Freq < 128);
-      bs += UInt16(INTERVAL-GET_MEAN(bs,PERIOD_BITS,2));
+      rs.Freq = (Byte)(rs.Freq + (rs.Freq < 128 ? 1: 0));
+      bs = (UInt16)(bs + INTERVAL - GET_MEAN(bs, PERIOD_BITS, 2));
       PrevSuccess = 1;
       RunLength++;
     } 
     else 
     {
-      bs -= UInt16(GET_MEAN(bs,PERIOD_BITS,2));
+      bs = (UInt16)(bs - GET_MEAN(bs, PERIOD_BITS, 2));
       InitEsc = ExpEscape[bs >> 10];
       NumMasked = 1;                        
       CharMask[rs.Symbol] = EscCount;
@@ -43,7 +43,7 @@ struct CDecodeInfo: public CInfo
       PrevSuccess = (2 * hiCnt > MinContext->SummFreq);
       RunLength += PrevSuccess;
       rangeDecoder->Decode(0, p->Freq); // MinContext->SummFreq);
-      (FoundState = p)->Freq=(hiCnt += 4);  
+      (FoundState = p)->Freq = (Byte)(hiCnt += 4);  
       MinContext->SummFreq += 4;
       if (hiCnt > MAX_FREQ)
         rescale();
@@ -103,7 +103,7 @@ struct CDecodeInfo: public CInfo
       i = MinContext->NumStats - NumMasked;               
       pps--;
       do { CharMask[(*++pps)->Symbol] = EscCount; } while ( --i );
-      psee2c->Summ += freqSum;     
+      psee2c->Summ = (UInt16)(psee2c->Summ + freqSum);     
       NumMasked = MinContext->NumStats;
     }
   }

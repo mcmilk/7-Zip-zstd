@@ -85,7 +85,7 @@ STATPROPSTG kProperties[] =
   // { L"Is Text", kpidIsText, VT_BOOL},
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -113,21 +113,19 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  COM_TRY_BEGIN
   *numItems = 1;
   return S_OK;
-  COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
@@ -192,8 +190,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *openArchiveCallback)
+    const UInt64 * /* maxCheckStartPosition */,
+    IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   try
@@ -259,7 +257,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-  outStreamSpec->Init(realOutStream);
+  outStreamSpec->SetStream(realOutStream);
+  outStreamSpec->Init();
   realOutStream.Release();
 
   CLocalProgress *localProgressSpec = new  CLocalProgress;
@@ -276,7 +275,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ICompressCoder> deflateDecoder;
   bool firstItem = true;
   RINOK(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL));
-  while(true)
+  for (;;)
   {
     localCompressProgressSpec->Init(progress, 
       &currentTotalPacked,
@@ -352,10 +351,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if((outStreamSpec->GetCRC() != postItem.FileCRC))
     {
       RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError))
-      return S_OK;
+      break;
     }
   }
   COM_TRY_END
+  return S_OK;
 }
 
 }}

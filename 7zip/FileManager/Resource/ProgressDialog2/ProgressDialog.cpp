@@ -31,7 +31,7 @@ static CIDLangPair kIDLangPairs[] =
 
 HRESULT CProgressSynch::SetPosAndCheckPaused(UInt64 completed)
 {
-  while(true)
+  for (;;)
   {
     if(GetStopped())
       return E_ABORT;
@@ -114,7 +114,7 @@ void CProgressDialog::OnCancel()
 static void ConvertSizeToString(UInt64 value, wchar_t *s)
 {
   const wchar_t *kModif = L" KMGTP";
-  for (int i = 0; true; i++)
+  for (int i = 0; ; i++)
     if (i == 5 || value < (UInt64(10000) << (i * 10)))
     {
       ConvertUInt64ToString(value >> (i * 10), s);
@@ -163,7 +163,7 @@ static void GetTimeString(UInt64 timeValue, TCHAR *s)
       UInt32(timeValue % 60));
 }
 
-bool CProgressDialog::OnTimer(WPARAM timerID, LPARAM callback)
+bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 {
   if (ProgressSynch.GetPaused())
     return true;

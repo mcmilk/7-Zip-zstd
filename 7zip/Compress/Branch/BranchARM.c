@@ -1,4 +1,4 @@
-// BranchARM.c
+/* BranchARM.c */
 
 #include "BranchARM.h"
 
@@ -17,9 +17,9 @@ UInt32 ARM_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
       else
         dest = src - (nowPos + i + 8);
       dest >>= 2;
-      data[i + 2] = (dest >> 16);
-      data[i + 1] = (dest >> 8);
-      data[i + 0] = dest;
+      data[i + 2] = (Byte)(dest >> 16);
+      data[i + 1] = (Byte)(dest >> 8);
+      data[i + 0] = (Byte)dest;
     }
   }
   return i;

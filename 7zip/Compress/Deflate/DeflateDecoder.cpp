@@ -241,7 +241,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
   CCoderReleaser flusher(this);
 
   const UInt64 start = m_OutWindowStream.GetProcessedSize();
-  while(true)
+  for (;;)
   {
     UInt32 curSize = 1 << 18;
     if (outSize != 0)
@@ -311,7 +311,7 @@ STDMETHODIMP CCoder::ReleaseInStream()
   return S_OK;
 }
 
-STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 *outSize)
+STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 * /* outSize */)
 {
   _remainLen = kLenIdNeedInit;
   m_OutWindowStream.Init(_keepHistory);

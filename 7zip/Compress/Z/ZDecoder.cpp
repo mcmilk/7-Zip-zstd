@@ -47,7 +47,7 @@ CDecoder::~CDecoder()
 }
 
 STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {
   NStream::NLSBF::CBaseDecoder<CInBuffer> inBuffer;
@@ -89,7 +89,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   _parents[256] = 0; // virus protection
   _suffixes[256] = 0;
 
-  while (true)
+  for (;;)
   {
     if (keepBits < numBits)
       keepBits = numBits * 8;

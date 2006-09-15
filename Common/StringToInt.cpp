@@ -7,7 +7,7 @@
 UInt64 ConvertStringToUInt64(const char *s, const char **end)
 {
   UInt64 result = 0;
-  while(true)
+  for (;;)
   {
     char c = *s;
     if (c < '0' || c > '9')
@@ -25,7 +25,7 @@ UInt64 ConvertStringToUInt64(const char *s, const char **end)
 UInt64 ConvertOctStringToUInt64(const char *s, const char **end)
 {
   UInt64 result = 0;
-  while(true)
+  for (;;)
   {
     char c = *s;
     if (c < '0' || c > '7')
@@ -44,7 +44,7 @@ UInt64 ConvertOctStringToUInt64(const char *s, const char **end)
 UInt64 ConvertStringToUInt64(const wchar_t *s, const wchar_t **end)
 {
   UInt64 result = 0;
-  while(true)
+  for (;;)
   {
     wchar_t c = *s;
     if (c < '0' || c > '9')

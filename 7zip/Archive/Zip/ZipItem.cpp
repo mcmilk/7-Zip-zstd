@@ -19,31 +19,38 @@ bool operator!=(const CVersion &v1, const CVersion &v2)
   return !(v1 == v2);
 } 
 
-bool CItem::IsEncrypted() const
+bool CLocalItem::IsEncrypted() const
 { return (Flags & NFileHeader::NFlags::kEncryptedMask) != 0; }
-bool CItem::HasDescriptor() const
+bool CLocalItem::HasDescriptor() const
   { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
-bool CItem::IsImplodeBigDictionary() const
+bool CLocalItem::IsImplodeBigDictionary() const
 { 
 if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
     throw 12312212;
   return (Flags & NFileHeader::NFlags::kImplodeDictionarySizeMask) != 0; 
 }
 
-bool CItem::IsImplodeLiteralsOn() const
+bool CLocalItem::IsImplodeLiteralsOn() const
 {
-if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
+  if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
     throw 12312213;
   return (Flags & NFileHeader::NFlags::kImplodeLiteralsOnMask) != 0; 
 }
 
 static const char *kUnknownAttributes = "Unknown file attributes";
 
+bool CLocalItem::IsDirectory() const
+{ 
+  return NItemName::HasTailSlash(Name, GetCodePage());
+}
+
 bool CItem::IsDirectory() const
 { 
   if (NItemName::HasTailSlash(Name, GetCodePage()))
     return true;
+  if (!FromCentral)
+    return false;
   WORD highAttributes = WORD((ExternalAttributes >> 16 ) & 0xFFFF);
   switch(MadeByVersion.HostOS)
   {
@@ -83,34 +90,40 @@ bool CItem::IsDirectory() const
   }
 }
 
+UInt32 CLocalItem::GetWinAttributes() const
+{
+  DWORD winAttributes = 0;
+  if (IsDirectory())
+    winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
+  return winAttributes;
+}
+
 UInt32 CItem::GetWinAttributes() const
 {
-  DWORD winAttributes;
+  DWORD winAttributes = 0;
   switch(MadeByVersion.HostOS)
   {
     case NFileHeader::NHostOS::kFAT:
     case NFileHeader::NHostOS::kNTFS:
-      winAttributes = ExternalAttributes; 
+      if (FromCentral)
+        winAttributes = ExternalAttributes; 
       break;
     default:
-      winAttributes = 0; // must be converted from unix value;; 
+      winAttributes = 0; // must be converted from unix value;
   }
   if (IsDirectory())       // test it;
     winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
   return winAttributes;
 }
 
-void CItem::ClearFlags()
-  { Flags = 0; }
-
-void CItem::SetFlagBits(int startBitNumber, int numBits, int value)
+void CLocalItem::SetFlagBits(int startBitNumber, int numBits, int value)
 {  
-  WORD mask = ((1 << numBits) - 1) << startBitNumber;
+  UInt16 mask = (UInt16)(((1 << numBits) - 1) << startBitNumber);
   Flags &= ~mask;
   Flags |= value << startBitNumber;
 }
 
-void CItem::SetBitMask(int bitMask, bool enable)
+void CLocalItem::SetBitMask(int bitMask, bool enable)
 {  
   if(enable) 
     Flags |= bitMask;
@@ -118,7 +131,7 @@ void CItem::SetBitMask(int bitMask, bool enable)
     Flags &= ~bitMask;
 }
 
-void CItem::SetEncrypted(bool encrypted)
+void CLocalItem::SetEncrypted(bool encrypted)
   { SetBitMask(NFileHeader::NFlags::kEncryptedMask, encrypted); }
 
 }}

@@ -32,14 +32,14 @@ INT_PTR APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message,
     case WM_COMMAND:
       return dialog->OnCommand(wParam, lParam);
     case WM_NOTIFY:
-      return dialog->OnNotify(wParam, (LPNMHDR) lParam);
+      return dialog->OnNotify((UINT)wParam, (LPNMHDR) lParam);
   }
   if (dialog == NULL)
     return false;
   return dialog->OnMessage(message, wParam, lParam);
 }
 
-bool CPropertyPage::OnNotify(UINT controlID, LPNMHDR lParam) 
+bool CPropertyPage::OnNotify(UINT /* controlID */, LPNMHDR lParam) 
 {
   switch(lParam->code)
   {
@@ -64,7 +64,7 @@ bool CPropertyPage::OnNotify(UINT controlID, LPNMHDR lParam)
   return true;
 }
 
-int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, const UString &title)
+INT_PTR MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, const UString &title)
 {
   #ifndef _UNICODE
   AStringVector titles;
@@ -127,7 +127,6 @@ int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, 
     }
   }
 
-  int res;
   #ifndef _UNICODE
   if (!g_IsNT)
   {
@@ -142,7 +141,7 @@ int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, 
     sheet.nStartPage = 0;
     sheet.ppsp = &pagesA.Front();
     sheet.pfnCallback = NULL;
-    res = ::PropertySheetA(&sheet);
+    return ::PropertySheetA(&sheet);
   }
   else
   #endif
@@ -157,9 +156,8 @@ int MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndParent, 
     sheet.nStartPage = 0;
     sheet.ppsp = &pagesW.Front();
     sheet.pfnCallback = NULL;
-    res = ::PropertySheetW(&sheet);
+    return ::PropertySheetW(&sheet);
   }
-  return res;
 }
 
 }}

@@ -36,7 +36,7 @@ struct CDir: public CDirRecord
 
   int GetLengthU() const
   {
-    int len = FileId.GetCapacity() / 2;
+    int len = (int)(FileId.GetCapacity() / 2);
     if (Parent != 0)
       if (Parent->Parent != 0)
         len += 1 + Parent->GetLengthU();
@@ -51,7 +51,7 @@ struct CDir: public CDirRecord
     p += len;
     *p = 0;
     const CDir *cur = this;
-    while(true)
+    for (;;)
     {
       int curLen = cur->GetLengthCur(checkSusp, skipSize);
       p -= curLen;
@@ -76,15 +76,15 @@ struct CDir: public CDirRecord
     p += len;
     *p = 0;
     const CDir *cur = this;
-    while(true)
+    for (;;)
     {
-      int curLen = cur->FileId.GetCapacity() / 2;
+      int curLen = (int)(cur->FileId.GetCapacity() / 2);
       p -= curLen;
       for (int i = 0; i < curLen; i++)
       {
         Byte b0 = ((const Byte *)cur->FileId)[i * 2];
         Byte b1 = ((const Byte *)cur->FileId)[i * 2 + 1];
-        p[i] = ((wchar_t)b0 << 8) | (wchar_t)b1;
+        p[i] = (wchar_t)(((wchar_t)b0 << 8) | b1);
       }
       cur = cur->Parent;
       if (cur == 0)

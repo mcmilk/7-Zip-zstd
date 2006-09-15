@@ -62,6 +62,16 @@ void MidFree(void *address) throw()
   ::VirtualFree(address, 0, MEM_RELEASE);
 }
 
+
+#ifndef MEM_LARGE_PAGES
+#define _7ZIP_NO_LARGE_PAGES
+#endif
+
+// define _7ZIP_NO_LARGE_PAGES if you don't need LARGE_PAGES support
+// #define _7ZIP_NO_LARGE_PAGES
+
+
+#ifndef _7ZIP_NO_LARGE_PAGES
 static SIZE_T g_LargePageSize = 
     #ifdef _WIN64
     (1 << 21);
@@ -70,9 +80,11 @@ static SIZE_T g_LargePageSize =
     #endif
 
 typedef SIZE_T (WINAPI *GetLargePageMinimumP)();
+#endif
 
 bool SetLargePageSize()
 {
+  #ifndef _7ZIP_NO_LARGE_PAGES
   GetLargePageMinimumP largePageMinimum = (GetLargePageMinimumP)
         ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")), "GetLargePageMinimum");
   if (largePageMinimum == 0)
@@ -81,6 +93,7 @@ bool SetLargePageSize()
   if (size == 0 || (size & (size - 1)) != 0)
     return false;
   g_LargePageSize = size;
+  #endif
   return true;
 }
 
@@ -93,6 +106,7 @@ void *BigAlloc(size_t size) throw()
   fprintf(stderr, "\nAlloc_Big %10d bytes;  count = %10d", size, g_allocCountBig++);
   #endif
   
+  #ifndef _7ZIP_NO_LARGE_PAGES
   if (size >= (1 << 18))
   {
     void *res = ::VirtualAlloc(0, (size + g_LargePageSize - 1) & (~(g_LargePageSize - 1)), 
@@ -100,6 +114,7 @@ void *BigAlloc(size_t size) throw()
     if (res != 0)
       return res;
   }
+  #endif
   return ::VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
 

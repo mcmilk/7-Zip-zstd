@@ -1,4 +1,5 @@
 DIRS = \
+  Client7z\~ \
   Console\~ \
   Explorer\~ \
   GUI\~ \

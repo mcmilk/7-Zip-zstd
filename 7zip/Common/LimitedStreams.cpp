@@ -5,20 +5,20 @@
 #include "LimitedStreams.h"
 #include "../../Common/Defs.h"
 
-void CLimitedSequentialInStream::Init(ISequentialInStream *stream, UInt64 streamSize)
-{
-  _stream = stream;
-  _size = streamSize;
-}
-
 STDMETHODIMP CLimitedSequentialInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 processedSizeReal;
-  UInt32 sizeToRead = UInt32(MyMin(_size, UInt64(size)));
-  HRESULT result = _stream->Read(data, sizeToRead, &processedSizeReal);
-  _size -= processedSizeReal;
+  UInt32 realProcessedSize = 0;
+  UInt32 sizeToRead = (UInt32)MyMin((_size - _pos), (UInt64)size);
+  HRESULT result = S_OK;
+  if (sizeToRead > 0)
+  {
+    result = _stream->Read(data, sizeToRead, &realProcessedSize);
+    _pos += realProcessedSize;
+    if (realProcessedSize == 0)
+      _wasFinished = true;
+  }
   if(processedSize != NULL)
-    *processedSize = processedSizeReal;
+    *processedSize = realProcessedSize;
   return result;
 }
 

@@ -25,7 +25,7 @@ static const char *kHelpQuestionMessage =
 NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
 {
   (*outStream) << kFirstQuestionMessage;
-  do
+  for(;;)
   {
     (*outStream) << kHelpQuestionMessage;
     AString scannedString = g_StdIn.ScanStringUntilNewLine();
@@ -47,7 +47,6 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
           return NUserAnswerMode::kQuit;
       }
   }
-  while(true);
 }
 
 UString GetPassword(CStdOutStream *outStream)

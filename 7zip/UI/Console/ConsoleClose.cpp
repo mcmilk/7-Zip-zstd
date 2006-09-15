@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "ConsoleClose.h"
 
 static int g_BreakCounter = 0;
@@ -9,14 +11,20 @@ static const int kBreakAbortThreshold = 2;
 
 namespace NConsoleClose {
 
-static BOOL WINAPI HandlerRoutine(DWORD aCtrlType)
+static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
 {
+  if (ctrlType == CTRL_LOGOFF_EVENT)
+  {
+    // printf("\nCTRL_LOGOFF_EVENT\n");
+    return TRUE;
+  }
+
   g_BreakCounter++;
   if (g_BreakCounter < kBreakAbortThreshold)
     return TRUE;
   return FALSE;
   /*
-  switch(aCtrlType)
+  switch(ctrlType)
   {
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:

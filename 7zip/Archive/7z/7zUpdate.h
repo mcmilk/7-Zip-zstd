@@ -4,6 +4,7 @@
 #define __7Z_UPDATE_H
 
 #include "7zIn.h"
+#include "7zOut.h"
 #include "7zCompressionMode.h"
 
 #include "../IArchive.h"
@@ -21,6 +22,7 @@ struct CUpdateItem
   UInt32 Attributes;
   FILETIME CreationTime;
   FILETIME LastWriteTime;
+  FILETIME LastAccessTime;
 
   UInt64 Size;
   UString Name;
@@ -28,13 +30,20 @@ struct CUpdateItem
   bool IsAnti;
   bool IsDirectory;
 
-  bool CreationTimeIsDefined;
-  bool LastWriteTimeIsDefined;
+  bool IsCreationTimeDefined;
+  bool IsLastWriteTimeDefined;
+  bool IsLastAccessTimeDefined;
   bool AttributesAreDefined;
 
   const bool HasStream() const 
     { return !IsDirectory && !IsAnti && Size != 0; }
-  CUpdateItem():  IsAnti(false) {}
+  CUpdateItem():  
+      IsAnti(false), 
+      AttributesAreDefined(false), 
+      IsCreationTimeDefined(false), 
+      IsLastWriteTimeDefined(false), 
+      IsLastAccessTimeDefined(false)
+      {}
   void SetDirectoryStatusFromAttributes()
     { IsDirectory = ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
 
@@ -48,8 +57,9 @@ struct CUpdateOptions
   const CCompressionMethodMode *HeaderMethod;
   bool UseFilters;
   bool MaxFilter;
-  bool UseAdditionalHeaderStreams;
-  bool CompressMainHeader;
+
+  CHeaderOptions HeaderOptions;
+
   UInt64 NumSolidFiles;
   UInt64 NumSolidBytes;
   bool SolidExtension;

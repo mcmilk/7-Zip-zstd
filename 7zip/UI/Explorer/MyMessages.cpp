@@ -20,17 +20,30 @@ void MyMessageBox(HWND window, LPCWSTR message)
   ::MessageBoxW(window, message, L"7-Zip", 0); 
 }
 
-void MyMessageBox(UINT32 id
+void MyMessageBoxResource(HWND window, UINT32 id
     #ifdef LANG        
     ,UINT32 langID
     #endif
     )
 {
   #ifdef LANG        
-  MyMessageBox(LangString(id, langID));
+  MyMessageBox(window, LangString(id, langID));
   #else
-  MyMessageBox(MyLoadStringW(id));
+  MyMessageBox(window, MyLoadStringW(id));
   #endif
+}
+
+void MyMessageBox(UINT32 id
+    #ifdef LANG        
+    ,UINT32 langID
+    #endif
+    )
+{
+  MyMessageBoxResource(0, id
+  #ifdef LANG        
+  , langID
+  #endif
+  );
 }
 
 void ShowErrorMessage(HWND window, DWORD message)

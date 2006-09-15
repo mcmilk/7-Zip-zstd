@@ -31,7 +31,7 @@ public:
       Int32 *answer) PURE;
   STDMETHOD(PrepareOperation)(const wchar_t *name, Int32 askExtractMode, const UInt64 *position) PURE;
   STDMETHOD(MessageError)(const wchar_t *message) PURE;
-  STDMETHOD(SetOperationResult)(Int32 operationResult) PURE;
+  STDMETHOD(SetOperationResult)(Int32 operationResult, bool encrypted) PURE;
 };
 
 struct IExtractCallbackUI: IFolderArchiveExtractCallback

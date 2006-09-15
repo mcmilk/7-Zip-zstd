@@ -46,9 +46,11 @@ static CContextMenuItem kMenuItems[] =
   { IDS_CONTEXT_TEST, 0x02000109, kTest},
 
   { IDS_CONTEXT_COMPRESS, 0x02000107, kCompress },
-  { IDS_CONTEXT_COMPRESS_TO, 0x0200010F, kCompressTo },
   { IDS_CONTEXT_COMPRESS_EMAIL, 0x02000111, kCompressEmail },
-  { IDS_CONTEXT_COMPRESS_TO_EMAIL, 0x02000113, kCompressToEmail},
+  { IDS_CONTEXT_COMPRESS_TO, 0x0200010F,  kCompressTo7z },
+  { IDS_CONTEXT_COMPRESS_TO_EMAIL, 0x02000113, kCompressTo7zEmail},
+  { IDS_CONTEXT_COMPRESS_TO, 0x0200010F,  kCompressToZip },
+  { IDS_CONTEXT_COMPRESS_TO_EMAIL, 0x02000113, kCompressToZipEmail},
 };
 
 const int kNumMenuItems = sizeof(kMenuItems) / sizeof(kMenuItems[0]);
@@ -99,12 +101,28 @@ bool CSystemPage::OnInit()
     switch(menuItem.ControlID)
     {
       case IDS_CONTEXT_EXTRACT_TO:
+      {
         s = MyFormatNew(s, LangString(IDS_CONTEXT_FOLDER, 0x02000140));
         break;
+      }
       case IDS_CONTEXT_COMPRESS_TO:
       case IDS_CONTEXT_COMPRESS_TO_EMAIL:
-        s = MyFormatNew(s, LangString(IDS_CONTEXT_ARCHIVE, 0x02000141));
+      {
+        UString s2 = LangString(IDS_CONTEXT_ARCHIVE, 0x02000141);
+        switch(menuItem.Flag)
+        {
+          case kCompressTo7z:
+          case kCompressTo7zEmail:
+            s2 += L".7z";
+            break;
+          case kCompressToZip:
+          case kCompressToZipEmail:
+            s2 += L".zip";
+            break;
+        }
+        s = MyFormatNew(s, s2);
         break;
+      }
     }
 
     // UString MyFormatNew(const UString &format, const UString &argument);

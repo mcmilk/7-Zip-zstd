@@ -46,10 +46,10 @@ OBJS = \
 
 !include "../../../Build.mak"
 
-COMPL_SPEC = $(CPP) $(CFLAGS_O2) $** 
+COMPL_SPEC = $(CPP) $(CFLAGS_O2_W3) -w $** 
 
 $(RAR29_OBJS): $(*B).cpp
-	$(COMPL)
+	$(COMPL_SPEC)
 $(RAR29_OPT_OBJS): Original/$(*B).cpp
 	$(COMPL_SPEC)
 $(RAR20_OPT_OBJS): ../Rar20/$(*B).cpp

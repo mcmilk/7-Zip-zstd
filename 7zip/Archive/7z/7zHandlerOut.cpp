@@ -24,6 +24,7 @@ namespace N7z {
 
 #ifdef COMPRESS_LZMA
 static CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+static CMethodID k_LZMA2 = { { 0x3, 0x1, 0x2 }, 3 };
 #endif
 
 #ifdef COMPRESS_PPMD
@@ -64,6 +65,7 @@ static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
 
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
+const wchar_t *kLZMA2MethodName = L"LZMA2";
 const wchar_t *kBZip2MethodName = L"BZip2";
 const wchar_t *kPpmdMethodName = L"PPMd";
 const wchar_t *kDeflateMethodName = L"Deflate";
@@ -121,9 +123,16 @@ static bool IsCopyMethod(const UString &methodName)
   { return (methodName.CompareNoCase(kCopyMethod) == 0); }
 
 static bool IsLZMAMethod(const UString &methodName)
-  { return (methodName.CompareNoCase(kLZMAMethodName) == 0); }
+{ 
+  return 
+  (methodName.CompareNoCase(kLZMAMethodName) == 0) || 
+  (methodName.CompareNoCase(kLZMA2MethodName) == 0); 
+}
+
+/*
 static bool IsLZMethod(const UString &methodName)
   { return IsLZMAMethod(methodName); }
+*/
 
 static bool IsBZip2Method(const UString &methodName)
   { return (methodName.CompareNoCase(kBZip2MethodName) == 0); }
@@ -157,7 +166,8 @@ HRESULT CHandler::SetPassword(CCompressionMethodMode &methodMode,
     Int32 passwordIsDefined;
     RINOK(getTextPassword->CryptoGetTextPassword2(
         &passwordIsDefined, &password));
-    if (methodMode.PasswordIsDefined = IntToBool(passwordIsDefined))
+    methodMode.PasswordIsDefined = IntToBool(passwordIsDefined);
+    if (methodMode.PasswordIsDefined)
       methodMode.Password = password;
   }
   else
@@ -532,6 +542,21 @@ HRESULT CHandler::SetCompressionMethod(
   return S_OK;
 }
 
+static HRESULT GetTime(IArchiveUpdateCallback *updateCallback, int index, PROPID propID, CArchiveFileTime &filetime, bool &filetimeIsDefined)
+{
+  filetimeIsDefined = false;
+  NCOM::CPropVariant propVariant;
+  RINOK(updateCallback->GetProperty(index, propID, &propVariant));
+  if (propVariant.vt == VT_FILETIME)
+  {
+    filetime = propVariant.filetime;
+    filetimeIsDefined = true;
+  }
+  else if (propVariant.vt != VT_EMPTY)
+    return E_INVALIDARG;
+  return S_OK;
+}
+
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
@@ -583,8 +608,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       updateItem.IsDirectory = fileItem.IsDirectory;
       updateItem.Size = fileItem.UnPackSize;
       updateItem.IsAnti = fileItem.IsAnti;
+      
+      updateItem.CreationTime = fileItem.CreationTime;
+      updateItem.IsCreationTimeDefined = fileItem.IsCreationTimeDefined;
       updateItem.LastWriteTime = fileItem.LastWriteTime;
-      updateItem.LastWriteTimeIsDefined = fileItem.IsLastWriteTimeDefined;
+      updateItem.IsLastWriteTimeDefined = fileItem.IsLastWriteTimeDefined;
+      updateItem.LastAccessTime = fileItem.LastAccessTime;
+      updateItem.IsLastAccessTimeDefined = fileItem.IsLastAccessTimeDefined;
     }
 
     if (updateItem.NewProperties)
@@ -604,32 +634,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
           updateItem.AttributesAreDefined = true;
         }
       }
-      {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidCreationTime, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
-          updateItem.CreationTimeIsDefined = false;
-        else if (propVariant.vt != VT_FILETIME)
-          return E_INVALIDARG;
-        else
-        {
-          updateItem.CreationTime = propVariant.filetime;
-          updateItem.CreationTimeIsDefined = true;
-        }
-      }
-      {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
-          updateItem.LastWriteTimeIsDefined = false;
-        else if (propVariant.vt != VT_FILETIME)
-          return E_INVALIDARG;
-        else
-        {
-          updateItem.LastWriteTime = propVariant.filetime;
-          updateItem.LastWriteTimeIsDefined = true;
-        }
-      }
+      
+      RINOK(GetTime(updateCallback, i, kpidCreationTime, updateItem.CreationTime, updateItem.IsCreationTimeDefined));
+      RINOK(GetTime(updateCallback, i, kpidLastWriteTime, updateItem.LastWriteTime , updateItem.IsLastWriteTimeDefined));
+      RINOK(GetTime(updateCallback, i, kpidLastAccessTime, updateItem.LastAccessTime, updateItem.IsLastAccessTimeDefined));
+
       {
         NCOM::CPropVariant propVariant;
         RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
@@ -671,8 +680,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (updateItem.IsAnti)
       {
         updateItem.AttributesAreDefined = false;
-        updateItem.CreationTimeIsDefined = false;
-        updateItem.LastWriteTimeIsDefined = false;
+
+        updateItem.IsCreationTimeDefined = false;
+        updateItem.IsLastWriteTimeDefined = false;
+        updateItem.IsLastAccessTimeDefined = false;
+        
         updateItem.Size = 0;
       }
 
@@ -728,8 +740,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       &headerMethod : 0;
   options.UseFilters = _level != 0 && _autoFilter;
   options.MaxFilter = _level >= 8;
-  options.UseAdditionalHeaderStreams = useAdditionalHeaderStreams;
-  options.CompressMainHeader = compressMainHeader;
+
+  options.HeaderOptions.UseAdditionalHeaderStreams = useAdditionalHeaderStreams;
+  options.HeaderOptions.CompressMainHeader = compressMainHeader;
+  options.HeaderOptions.WriteModified = WriteModified;
+  options.HeaderOptions.WriteCreated = WriteCreated;
+  options.HeaderOptions.WriteAccessed = WriteAccessed;
+  
   options.NumSolidFiles = _numSolidFiles;
   options.NumSolidBytes = _numSolidBytes;
   options.SolidExtension = _solidExtension;
@@ -1046,6 +1063,21 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       else if (name.CompareNoCase(L"HE") == 0)
       {
         RINOK(SetBoolProperty(_encryptHeaders, value));
+        continue;
+      }
+      else if (name.CompareNoCase(L"TM") == 0)
+      {
+        RINOK(SetBoolProperty(WriteModified, value));
+        continue;
+      }
+      else if (name.CompareNoCase(L"TC") == 0)
+      {
+        RINOK(SetBoolProperty(WriteCreated, value));
+        continue;
+      }
+      else if (name.CompareNoCase(L"TA") == 0)
+      {
+        RINOK(SetBoolProperty(WriteAccessed, value));
         continue;
       }
       else if (name.CompareNoCase(L"V") == 0)

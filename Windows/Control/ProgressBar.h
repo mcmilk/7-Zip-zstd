@@ -17,23 +17,23 @@ public:
   LRESULT DeltaPos(int increment)
     { return SendMessage(PBM_DELTAPOS, increment, 0); }
   UINT GetPos()
-    { return SendMessage(PBM_GETPOS, 0, 0); }
+    { return (UINT)SendMessage(PBM_GETPOS, 0, 0); }
   LRESULT SetRange(unsigned short minValue, unsigned short maxValue)
     { return SendMessage(PBM_SETRANGE, 0, MAKELPARAM(minValue, maxValue)); }
   DWORD SetRange32(int minValue, int maxValue)
-    { return SendMessage(PBM_SETRANGE32, minValue, maxValue); }
-  int SetStep(int aStep)
-    { return SendMessage(PBM_SETSTEP, aStep, 0); }
-  int StepIt()
+    { return (DWORD)SendMessage(PBM_SETRANGE32, minValue, maxValue); }
+  int SetStep(int step)
+    { return (int)SendMessage(PBM_SETSTEP, step, 0); }
+  LRESULT StepIt()
     { return SendMessage(PBM_STEPIT, 0, 0); }
 
-  int GetRange(bool minValue, PPBRANGE range)
-    { return SendMessage(PBM_GETRANGE, BoolToBOOL(minValue), (LPARAM)range); }
+  INT GetRange(bool minValue, PPBRANGE range)
+    { return (INT)SendMessage(PBM_GETRANGE, BoolToBOOL(minValue), (LPARAM)range); }
   
   COLORREF SetBarColor(COLORREF color)
-    { return SendMessage(PBM_SETBARCOLOR, 0, color); }
+    { return (COLORREF)SendMessage(PBM_SETBARCOLOR, 0, color); }
   COLORREF SetBackgroundColor(COLORREF color)
-    { return SendMessage(PBM_SETBKCOLOR, 0, color); }
+    { return (COLORREF)SendMessage(PBM_SETBKCOLOR, 0, color); }
 };
 
 }}

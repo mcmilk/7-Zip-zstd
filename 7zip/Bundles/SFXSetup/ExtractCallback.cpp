@@ -54,7 +54,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
   #ifndef _NO_PROGRESS
-  while(true)
+  for (;;)
   {
     if(ProgressDialog.ProgressSynch.GetStopped())
       return E_ABORT;

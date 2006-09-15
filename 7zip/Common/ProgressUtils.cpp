@@ -40,9 +40,7 @@ STDMETHODIMP CLocalCompressProgressInfo::SetRatioInfo(
   return _progress->SetRatioInfo(inSizeNewPointer, outSizeNewPointer);
 }
 
-
 ///////////////////////////////////
-// 
 
 void CLocalProgress::Init(IProgress *progress, bool inSizeIsMain)
 {
@@ -55,4 +53,3 @@ STDMETHODIMP CLocalProgress::SetRatioInfo(
 {
   return _progress->SetCompleted(_inSizeIsMain ? inSize : outSize);
 }
-

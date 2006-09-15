@@ -91,7 +91,8 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *type, BSTR *iconP
   return S_OK;
 }
 
-STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t *type, const wchar_t *filePath, IProgress *progress)
+STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t * /* type */, 
+    const wchar_t * /* filePath */, IProgress * /* progress */)
 {
   return E_NOTIMPL;
 }

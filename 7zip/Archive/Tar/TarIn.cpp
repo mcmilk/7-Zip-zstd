@@ -27,10 +27,21 @@ HRESULT CInArchive::Open(IInStream *inStream)
   return S_OK;
 }
 
+static void MyStrNCpy(char *dest, const char *src, int size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    char c = src[i];
+    dest[i] = c;
+    if (c == 0)
+      break;
+  }
+}
+
 static bool OctalToNumber(const char *srcString, int size, UInt64 &res)
 {
   char sz[32];
-  strncpy(sz, srcString, size);
+  MyStrNCpy(sz, srcString, size);
   sz[size] = 0;
   const char *end;
   int i;
@@ -63,14 +74,14 @@ static void ReadString(const char *s, int size, AString &result)
   if (size > NFileHeader::kRecordSize)
     size = NFileHeader::kNameSize;
   char tempString[NFileHeader::kRecordSize + 1];
-  strncpy(tempString, s, size);
+  MyStrNCpy(tempString, s, size);
   tempString[size] = '\0';
   result = tempString;
 }
 
 static char GetHex(Byte value)
 {
-  return (value < 10) ? ('0' + value) : ('A' + (value - 10));
+  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
 }
 
 HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
@@ -109,8 +120,8 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
     if (((Byte)c) < 0x20)
     {
       item.Name += '[';
-      item.Name += GetHex(((Byte)c) >> 4);
-      item.Name += GetHex(((Byte)c) & 0xF);
+      item.Name += GetHex((Byte)(((Byte)c) >> 4));
+      item.Name += GetHex((Byte)(((Byte)c) & 0xF));
       item.Name += ']';
     }
     else
@@ -190,7 +201,8 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   if (item.LinkFlag == 'L')
   {
     if (item.Name.Compare(NFileHeader::kLongLink) != 0)
-      return S_FALSE;
+      if (item.Name.Compare(NFileHeader::kLongLink2) != 0)
+        return S_FALSE;
     UInt64 headerPosition = item.HeaderPosition;
 
     UInt32 processedSize;

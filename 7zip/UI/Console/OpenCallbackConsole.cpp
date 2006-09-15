@@ -14,12 +14,12 @@ HRESULT COpenCallbackConsole::CheckBreak()
   return S_OK;
 }
 
-HRESULT COpenCallbackConsole::SetTotal(const UInt64 *files, const UInt64 *bytes)
+HRESULT COpenCallbackConsole::SetTotal(const UInt64 *, const UInt64 *)
 {
   return CheckBreak();
 }
 
-HRESULT COpenCallbackConsole::SetCompleted(const UInt64 *files, const UInt64 *bytes)
+HRESULT COpenCallbackConsole::SetCompleted(const UInt64 *, const UInt64 *)
 {
   return CheckBreak();
 }

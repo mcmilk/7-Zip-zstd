@@ -61,9 +61,9 @@ class CSequentialOutStreamImp2:
   public CMyUnknownImp
 {
   Byte *_buffer;
-public:
   size_t _size;
   size_t _pos;
+public:
 
   void Init(Byte *buffer, size_t size)  
   { 
@@ -71,6 +71,8 @@ public:
     _pos = 0;
     _size = size; 
   }
+
+  size_t GetPos() const { return _pos; }
 
   MY_UNKNOWN_IMP
 
@@ -96,44 +98,6 @@ public:
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
-class CSequentialInStreamRollback: 
-  public ISequentialInStream,
-  public CMyUnknownImp
-{
-  CMyComPtr<ISequentialInStream> _stream;
-  Byte *_buffer;
-  size_t _bufferSize;
-  UInt64 _size;
-
-  size_t _currentSize;
-  size_t _currentPos;
-public:
-  CSequentialInStreamRollback(size_t bufferSize):
-    _bufferSize(bufferSize),
-    _buffer(0)
-  {
-    _buffer = new Byte[bufferSize];
-  }
-  ~CSequentialInStreamRollback()
-  {
-    delete _buffer;
-  }
-
-  void Init(ISequentialInStream *stream)
-  {
-    _stream = stream;
-    _size = 0;
-    _currentSize = 0;
-    _currentPos = 0;
-  }
-  UInt64 GetSize() const { return _size; }
-
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  HRESULT Rollback(size_t rollbackSize);
-};
-
 class CSequentialOutStreamSizeCount: 
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -141,11 +105,8 @@ class CSequentialOutStreamSizeCount:
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _size;
 public:
-  void Init(ISequentialOutStream *stream)
-  {
-    _stream = stream;
-    _size = 0;
-  }
+  void SetStream(ISequentialOutStream *stream) { _stream = stream; }
+  void Init() { _size = 0; }
   UInt64 GetSize() const { return _size; }
 
   MY_UNKNOWN_IMP

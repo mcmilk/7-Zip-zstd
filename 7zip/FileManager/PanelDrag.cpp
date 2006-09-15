@@ -42,16 +42,16 @@ public:
 	STDMETHODIMP GetDataHere(LPFORMATETC pformatetc, LPSTGMEDIUM medium);
 	STDMETHODIMP QueryGetData(LPFORMATETC pformatetc );
 
-  STDMETHODIMP GetCanonicalFormatEtc ( LPFORMATETC pformatetc, LPFORMATETC pformatetcOut)
+  STDMETHODIMP GetCanonicalFormatEtc ( LPFORMATETC /* pformatetc */, LPFORMATETC pformatetcOut)
 		  { pformatetcOut->ptd = NULL; return ResultFromScode(E_NOTIMPL); }
 	
 	STDMETHODIMP SetData(LPFORMATETC etc, STGMEDIUM *medium, BOOL release);
   STDMETHODIMP EnumFormatEtc(DWORD drection, LPENUMFORMATETC *enumFormatEtc);
   
-  STDMETHODIMP DAdvise(FORMATETC *etc, DWORD advf, LPADVISESINK pAdvSink, DWORD *pdwConnection)
+  STDMETHODIMP DAdvise(FORMATETC * /* etc */, DWORD /* advf */, LPADVISESINK /* pAdvSink */, DWORD * /* pdwConnection */)
 		{ return OLE_E_ADVISENOTSUPPORTED; }
-	STDMETHODIMP DUnadvise(DWORD dwConnection) { return OLE_E_ADVISENOTSUPPORTED; }
-	STDMETHODIMP EnumDAdvise( LPENUMSTATDATA *ppenumAdvise) { return OLE_E_ADVISENOTSUPPORTED; }
+	STDMETHODIMP DUnadvise(DWORD /* dwConnection */) { return OLE_E_ADVISENOTSUPPORTED; }
+	STDMETHODIMP EnumDAdvise( LPENUMSTATDATA * /* ppenumAdvise */) { return OLE_E_ADVISENOTSUPPORTED; }
 
   CDataObject();
 
@@ -69,7 +69,7 @@ CDataObject::CDataObject()
   m_Etc.tymed = TYMED_HGLOBAL;
 }
 
-STDMETHODIMP CDataObject::SetData(LPFORMATETC etc, STGMEDIUM *medium, BOOL release)
+STDMETHODIMP CDataObject::SetData(LPFORMATETC etc, STGMEDIUM *medium, BOOL /* release */)
 { 
   if (etc->cfFormat == m_SetFolderFormat && etc->tymed == TYMED_HGLOBAL && 
       etc->dwAspect == DVASPECT_CONTENT && medium->tymed == TYMED_HGLOBAL)
@@ -131,7 +131,7 @@ STDMETHODIMP CDataObject::GetData(LPFORMATETC etc, LPSTGMEDIUM medium)
   return S_OK;
 }
 
-STDMETHODIMP CDataObject::GetDataHere(LPFORMATETC etc, LPSTGMEDIUM medium)
+STDMETHODIMP CDataObject::GetDataHere(LPFORMATETC /* etc */, LPSTGMEDIUM /* medium */)
 {
   // Seems Windows doesn't call it, so we will not implement it.
   return E_UNEXPECTED;
@@ -248,7 +248,7 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &na
     {
       const AString &s = namesA[i];
       int fullLength = s.Length() + 1;
-      strcpy(p, s);
+      MyStringCopy(p, (const char *)s);
       p += fullLength;
       totalLength -= fullLength;
     }
@@ -278,7 +278,7 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &na
     {
       const UString &s = names[i];
       int fullLength = s.Length() + 1;
-      wcscpy(p, s);
+      MyStringCopy(p, (const WCHAR *)s);
       p += fullLength;
       totalLength -= fullLength;
     }
@@ -287,7 +287,7 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &na
   return true;
 }
 
-void CPanel::OnDrag(LPNMLISTVIEW nmListView)
+void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
 {
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
   if (!DoesItSupportOperations())
@@ -586,7 +586,7 @@ bool CDropTarget::IsItSameDrive() const
 
 }
 
-DWORD CDropTarget::GetEffect(DWORD keyState, POINTL pt, DWORD allowedEffect)
+DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffect)
 {
   if (!m_DropIsAllowed || !m_PanelDropIsAllowed)
     return DROPEFFECT_NONE;
@@ -636,7 +636,7 @@ bool CDropTarget::SetPath(bool enablePath) const
 {
   UINT setFolderFormat = RegisterClipboardFormat(kSvenZipSetFolderFormat); 
   
-  FORMATETC etc = { setFolderFormat, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+  FORMATETC etc = { (CLIPFORMAT)setFolderFormat, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
   STGMEDIUM medium;
   medium.tymed = etc.tymed;
   medium.pUnkForRelease = 0;
@@ -653,7 +653,7 @@ bool CDropTarget::SetPath(bool enablePath) const
     GlobalUnlock(medium.hGlobal);
     return false;
   }
-  wcscpy(dest, path);
+  MyStringCopy(dest, (const wchar_t *)path);
   GlobalUnlock(medium.hGlobal);
   bool res = m_DataObject->SetData(&etc, &medium, FALSE) == S_OK;
   GlobalFree(medium.hGlobal);
@@ -785,7 +785,7 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
       if (IsFolderInTemp(folderPath2))
         folderPath2 = L"C:\\"; // fix it
     }
-    CompressFiles(folderPath2, archiveName, fileNames, 
+    CompressFiles(folderPath2, archiveName, L"", fileNames, 
       false, // email
       true, // showDialog
       AreThereNamesFromTemp(fileNames) // waitFinish

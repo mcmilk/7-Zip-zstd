@@ -51,7 +51,7 @@ static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
   UInt32 numBytesPrev = 0;
   bool writeMode = false;
   UInt64 posTotal = 0;
-  while(true)
+  for (;;)
   {
     if (posTotal > (1 << 20))
       return (stringResult.IsEmpty());
@@ -63,7 +63,7 @@ static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
       return true;
     UInt32 numBytesInBuffer = numBytesPrev + processedSize;
     UInt32 pos = 0;
-    while (true)
+    for (;;)
     { 
       if (writeMode)
       {
@@ -134,11 +134,7 @@ static inline bool IsItWindowsNT()
 }
 #endif
 
-int APIENTRY WinMain(
-  HINSTANCE hInstance,
-  HINSTANCE hPrevInstance,
-  LPSTR lpCmdLine,
-  int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */,int /* nCmdShow */)
 {
   g_hInstance = (HINSTANCE)hInstance;
   #ifndef _UNICODE
@@ -217,24 +213,26 @@ int APIENTRY WinMain(
   COpenCallbackGUI openCallback;
 
   UString tempDirPath = GetUnicodeString(tempDir.GetPath());
-  bool isCorrupt = false;
-  UString errorMessage;
-  HRESULT result = ExtractArchive(fullPath, tempDirPath, &openCallback, showProgress, 
-      isCorrupt, errorMessage);
-
-  if (result != S_OK)
   {
-    if (!assumeYes)
+    bool isCorrupt = false;
+    UString errorMessage;
+    HRESULT result = ExtractArchive(fullPath, tempDirPath, &openCallback, showProgress, 
+      isCorrupt, errorMessage);
+    
+    if (result != S_OK)
     {
-      if (result == S_FALSE || isCorrupt)
+      if (!assumeYes)
       {
-        errorMessage = NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_MESSAGE);
-        result = E_FAIL;
+        if (result == S_FALSE || isCorrupt)
+        {
+          errorMessage = NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_MESSAGE);
+          result = E_FAIL;
+        }
+        if (result != E_ABORT && !errorMessage.IsEmpty())
+          ::MessageBoxW(0, errorMessage, NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_TITLE), MB_ICONERROR);
       }
-      if (result != E_ABORT && !errorMessage.IsEmpty())
-        ::MessageBoxW(0, errorMessage, NWindows::MyLoadStringW(IDS_EXTRACTION_ERROR_TITLE), MB_ICONERROR);
+      return 1;
     }
-    return 1;
   }
 
   CCurrentDirRestorer currentDirRestorer;
@@ -266,8 +264,8 @@ int APIENTRY WinMain(
     execInfo.lpDirectory = NULL;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
-    bool success = BOOLToBool(::ShellExecuteEx(&execInfo));
-    result = (UINT32)execInfo.hInstApp;
+    /* BOOL success = */ ::ShellExecuteEx(&execInfo);
+    UINT32 result = (UINT32)(UINT_PTR)execInfo.hInstApp;
     if(result <= 32)
     {
       if (!assumeYes)

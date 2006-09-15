@@ -12,14 +12,17 @@
 #include "../Common/FilterCoder.h"
 #include "ZipCompressionMode.h"
 #include "../../Crypto/Zip/ZipCipher.h"
+#include "../../Crypto/WzAES/WzAES.h"
 
 namespace NArchive {
 namespace NZip {
 
 struct CCompressingResult
 {
-  Byte Method;
+  UInt64 UnpackSize;
   UInt64 PackSize;
+  UInt32 CRC;
+  UInt16 Method;
   Byte ExtractVersion;
 };
 
@@ -38,11 +41,16 @@ class CAddCommon
   CMyComPtr<ISequentialOutStream> _cryptoStream;
 
   NCrypto::NZip::CEncoder *_filterSpec;
+  NCrypto::NWzAES::CEncoder *_filterAesSpec;
+
+  CMyComPtr<ICompressFilter> _zipCryptoFilter;
+  CMyComPtr<ICompressFilter> _aesFilter;
+
 
 public:
   CAddCommon(const CCompressionMethodMode &options);
   HRESULT Compress(ISequentialInStream *inStream, IOutStream *outStream, 
-      UInt64 inSize, ICompressProgressInfo *progress, CCompressingResult &operationResult);
+      ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 
 }}

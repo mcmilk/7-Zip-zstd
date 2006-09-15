@@ -238,7 +238,7 @@ UInt32 CCoder::decode_p()
 
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   if (outSize == NULL)
@@ -288,7 +288,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     UInt32 number = decode_c();
     if (number < 256)
     {
-      m_OutWindowStream.PutByte(number);
+      m_OutWindowStream.PutByte((Byte)number);
       pos++;
       continue;
     }

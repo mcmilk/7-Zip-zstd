@@ -65,7 +65,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
   }
   CBZip2DecompressorReleaser releaser(&bzStream);
   bzStream.avail_in = 0;
-  while (true)
+  for (;;)
   {
     if (bzStream.avail_in == 0)
     {

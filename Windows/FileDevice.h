@@ -66,7 +66,7 @@ public:
   bool CdRomLock(bool lock) const
   {
     PREVENT_MEDIA_REMOVAL rem;
-    rem.PreventMediaRemoval = BoolToBOOL(lock);
+    rem.PreventMediaRemoval = (BOOLEAN)(lock ? TRUE : FALSE);
     return DeviceIoControlIn(IOCTL_CDROM_MEDIA_REMOVAL, &rem, sizeof(rem));
   }
 
@@ -81,16 +81,20 @@ public:
   bool GetLengthSmart(UInt64 &length);
 
 
+  /*
   bool FormatTracks(const FORMAT_PARAMETERS *formatParams, 
     BAD_TRACK_NUMBER *badTrackNumbers, DWORD numBadTrackNumbers, 
     DWORD &numBadTrackNumbersReturned)
   {
     DWORD ret;
+    // Check params, Probabably error
     bool res = DeviceIoControl(IOCTL_DISK_FORMAT_TRACKS, badTrackNumbers, sizeof(*formatParams),
       badTrackNumbers, numBadTrackNumbers * sizeof(*badTrackNumbers), &ret, NULL);
     numBadTrackNumbersReturned = ret / sizeof(*badTrackNumbers);
     return res;
   }
+  */
+
   
   bool Performance(DISK_PERFORMANCE *res)
     { return DeviceIoControlOut(IOCTL_DISK_PERFORMANCE, LPVOID(res), sizeof(*res)); }

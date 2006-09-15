@@ -21,6 +21,9 @@ public:
   bool EnableItem(int itemID, bool enable) const
     { return BOOLToBool(::EnableWindow(GetItem(itemID), BoolToBOOL(enable))); }
 
+  bool ShowItem(int itemID, int cmdShow) const
+    { return BOOLToBool(::ShowWindow(GetItem(itemID), cmdShow)); }
+
   bool SetItemText(int itemID, LPCTSTR s)
     { return BOOLToBool(SetDlgItemText(_window, itemID, s)); }
 
@@ -84,13 +87,13 @@ public:
   virtual bool OnInit() { return true; }
   virtual bool OnCommand(WPARAM wParam, LPARAM lParam);
   virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual void OnHelp(LPHELPINFO helpInfo) { OnHelp(); };
+  virtual void OnHelp(LPHELPINFO /* helpInfo */) { OnHelp(); };
   virtual void OnHelp() {};
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK() {};
   virtual void OnCancel() {};
-  virtual bool OnNotify(UINT controlID, LPNMHDR lParam) { return false; }
-  virtual bool OnTimer(WPARAM timerID, LPARAM callback) { return false; }
+  virtual bool OnNotify(UINT /* controlID */, LPNMHDR /* lParam */) { return false; }
+  virtual bool OnTimer(WPARAM /* timerID */, LPARAM /* callback */) { return false; }
 
   LONG_PTR SetMsgResult(LONG_PTR newLongPtr )
     { return SetLongPtr(DWLP_MSGRESULT, newLongPtr); }

@@ -11,7 +11,7 @@ namespace NLzh {
 
 class CCRC
 {
-  UInt32 _value;
+  UInt16 _value;
 public:
 	static UInt16 Table[256];
 	static void InitTable();

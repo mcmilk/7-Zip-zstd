@@ -140,7 +140,7 @@ CDecoder::CDecoder(bool multiThread)
   multiThread = true;
   #endif
   _multiThread = multiThread;
-  _bindInfoExPrevIsDefinded = false;
+  _bindInfoExPrevIsDefined = false;
   #ifndef EXCLUDE_COM
   LoadMethodMap();
   #endif
@@ -176,7 +176,8 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     CLimitedSequentialInStream *streamSpec = new 
         CLimitedSequentialInStream;
     CMyComPtr<ISequentialInStream> inStream = streamSpec;
-    streamSpec->Init(lockedStreamImp, packSizes[j]);
+    streamSpec->SetStream(lockedStreamImp);
+    streamSpec->Init(packSizes[j]);
     inStreams.Add(inStream);
   }
   
@@ -185,7 +186,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   CBindInfoEx bindInfo;
   ConvertFolderItemInfoToBindInfo(folderInfo, bindInfo);
   bool createNewCoders;
-  if (!_bindInfoExPrevIsDefinded)
+  if (!_bindInfoExPrevIsDefined)
     createNewCoders = true;
   else
     createNewCoders = !AreBindInfoExEqual(bindInfo, _bindInfoExPrev);
@@ -319,7 +320,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
       }
     }
     _bindInfoExPrev = bindInfo;
-    _bindInfoExPrevIsDefinded = true;
+    _bindInfoExPrevIsDefined = true;
   }
   int i;
   _mixerCoderCommon->ReInit();
@@ -336,7 +337,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     
     {
       CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
-      HRESULT result = decoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
+      decoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
       if (setDecoderProperties)
       {
         const CByteBuffer &properties = altCoderInfo.Properties;
@@ -365,7 +366,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     #ifndef _NO_CRYPTO
     {
       CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
-      HRESULT result = decoder.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
+      decoder.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
       if (cryptoSetPassword)
       {
         if (getTextPassword == 0)

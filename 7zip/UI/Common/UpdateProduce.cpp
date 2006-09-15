@@ -10,8 +10,6 @@ static const char *kUpdateActionSetCollision =
     "Internal collision in update action set";
 
 void UpdateProduce(
-    const CObjectVector<CDirItem> &dirItems, 
-    const CObjectVector<CArchiveItem> &archiveItems, 
     const CObjectVector<CUpdatePair> &updatePairs,
     const NUpdateArchive::CActionSet &actionSet,
     CObjectVector<CUpdatePair2> &operationChain)

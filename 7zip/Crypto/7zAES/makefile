@@ -8,7 +8,9 @@ LIBS = $(LIBS) oleaut32.lib user32.lib
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
-  $O\SHA256.obj \
+
+CRYPTO_HASH_OBJS = \
+  $O\Sha256.obj \
 
 COMMON_OBJS = \
   $O\Alloc.obj \
@@ -28,6 +30,7 @@ OBJS = \
   $O\StdAfx.obj \
   $(7ZAES_OBJS) \
   $(7ZAES_OPT_OBJS) \
+  $(CRYPTO_HASH_OBJS) \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
@@ -39,6 +42,8 @@ $(7ZAES_OBJS): $(*B).cpp
 	$(COMPL)
 $(7ZAES_OPT_OBJS): $(*B).cpp
 	$(COMPL)
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
+	$(COMPL_O2)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
 	$(COMPL)
 $(WIN_OBJS): ../../../Windows/$(*B).cpp

@@ -53,7 +53,7 @@ void CInArchive::ReadBlockHeader(CBlockHeader &bh)
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
-static int CompareItems(void *const *p1, void *const *p2, void *param)
+static int CompareItems(void *const *p1, void *const *p2, void * /* param */)
 {
   RINOZ(MyCompare(
     (**(const CItem **)p1).Pos, 
@@ -65,17 +65,19 @@ AString CInArchive::ReadString(UInt32 pos)
 {
   AString s;
   UInt32 offset = GetOffset() + _stringsPos + pos;
-  while(true)
+  for (;;)
   {
     if (offset >= _size)
       throw 1;
     char c = _data[offset++];
     if (c == 0)
-      return s;
+      break;
     s += c;
   }
+  return s;
 }
 
+/*
 static AString ParsePrefix(const AString &prefix)
 {
   AString res = prefix;
@@ -88,7 +90,7 @@ static AString ParsePrefix(const AString &prefix)
   }
   return res;
 }
-
+*/
 
 #define SYSREGKEY "Software\\Microsoft\\Windows\\CurrentVersion"
 
@@ -525,13 +527,19 @@ AString CInArchive::ReadString2(UInt32 pos)
 #define DEL_REBOOT 4
 // #define DEL_SIMPLE 8
 
-const int kNumEntryParams = 6;
+static const int kNumEntryParams = 6;
 
 struct CEntry
 {
   UInt32 Which;
   UInt32 Params[kNumEntryParams];
   AString GetParamsString(int numParams);
+  CEntry()
+  {
+    Which = 0;
+    for (UInt32 j = 0; j < kNumEntryParams; j++)
+      Params[j] = 0;
+  }
 };
 
 AString CEntry::GetParamsString(int numParams)
@@ -584,12 +592,12 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       {
         CItem item;
         item.Prefix = prefix;
-        UInt32 overwriteFlag = e.Params[0];
+        /* UInt32 overwriteFlag = e.Params[0]; */
         item.Name = ReadString2(e.Params[1]);
         item.Pos = e.Params[2];
         item.DateTime.dwLowDateTime = e.Params[3];
         item.DateTime.dwHighDateTime = e.Params[4];
-        UInt32 allowIgnore = e.Params[5];
+        /* UInt32 allowIgnore = e.Params[5]; */
         if (Items.Size() > 0)
         {
           /*
@@ -949,7 +957,7 @@ HRESULT CInArchive::Parse()
 {
   // UInt32 offset = ReadUInt32();
   // ???? offset == FirstHeader.HeaderLength
-  UInt32 ehFlags = ReadUInt32();
+  /* UInt32 ehFlags = */ ReadUInt32();
   CBlockHeader bhPages, bhSections, bhEntries, bhStrings, bhLangTables, bhCtlColors, bhData;
   // CBlockHeader bgFont;
   ReadBlockHeader(bhPages);
@@ -1034,7 +1042,8 @@ HRESULT CInArchive::Open2()
   _posInData = 0;
   if (!IsSolid)
   {
-    if (_headerIsCompressed = ((compressedHeaderSize & 0x80000000) != 0))
+    _headerIsCompressed = ((compressedHeaderSize & 0x80000000) != 0);
+    if (_headerIsCompressed)
       compressedHeaderSize &= ~0x80000000;
     _nonSolidStartOffset = compressedHeaderSize;
     RINOK(_stream->Seek(StreamOffset + 4, STREAM_SEEK_SET, NULL));
@@ -1113,7 +1122,7 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
   Byte buffer[kStep];
   bool found = false;
   
-  UInt64 headerPosition;
+  UInt64 headerPosition = 0;
   while (position <= maxSize)
   {
     UInt32 processedSize;

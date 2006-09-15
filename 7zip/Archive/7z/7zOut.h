@@ -60,6 +60,21 @@ public:
   size_t GetSize() const { return _pos; }
 };
 
+struct CHeaderOptions
+{
+  bool UseAdditionalHeaderStreams;
+  bool CompressMainHeader;
+  bool WriteModified;
+  bool WriteCreated;
+  bool WriteAccessed;
+
+  CHeaderOptions(): 
+      UseAdditionalHeaderStreams(false), 
+      CompressMainHeader(true),
+      WriteModified(true),
+      WriteCreated(false),
+      WriteAccessed(false) {} 
+};
 
 class COutArchive
 {
@@ -127,6 +142,7 @@ class COutArchive
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
   HRESULT WriteHeader(const CArchiveDatabase &database,
       const CCompressionMethodMode *options, 
+      const CHeaderOptions &headerOptions,
       UInt64 &headerOffset);
   
   bool _mainMode;
@@ -162,8 +178,7 @@ public:
   HRESULT SkeepPrefixArchiveHeader();
   HRESULT WriteDatabase(const CArchiveDatabase &database,
       const CCompressionMethodMode *options, 
-      bool useAdditionalHeaderStreams, 
-      bool compressMainHeader);
+      const CHeaderOptions &headerOptions);
 
   #ifdef _7Z_VOL
   static UInt32 GetVolHeadersSize(UInt64 dataSize, int nameLength = 0, bool props = false);

@@ -4,7 +4,7 @@
 #define __COMMON_STRINGCONVERT_H
 
 #include "MyWindows.h"
-#include "Common/String.h"
+#include "String.h"
 #include "Types.h"
 
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage = CP_ACP);
@@ -43,9 +43,9 @@ inline AString GetOemString(const UString &unicodeString)
     { return unicodeString;}
   inline const UString& GetSystemString(const UString &unicodeString)
     { return unicodeString;}
-  inline const wchar_t* GetSystemString(const wchar_t* unicodeString, UINT codePage)
+  inline const wchar_t* GetSystemString(const wchar_t* unicodeString, UINT /* codePage */)
     { return unicodeString;}
-  inline const UString& GetSystemString(const UString &unicodeString, UINT codePage)
+  inline const UString& GetSystemString(const UString &unicodeString, UINT /* codePage */)
     { return unicodeString;}
   inline UString GetSystemString(const AString &multiByteString, UINT codePage)
     { return MultiByteToUnicodeString(multiByteString, codePage);}

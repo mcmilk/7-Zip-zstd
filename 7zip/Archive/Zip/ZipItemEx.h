@@ -13,6 +13,7 @@ class CItemEx: public CItem
 {
 public:
   UInt32 FileHeaderWithNameSize;
+  UInt16 LocalExtraSize;
   
   UInt64 GetLocalFullSize() const 
     { return FileHeaderWithNameSize + LocalExtraSize + PackSize + 

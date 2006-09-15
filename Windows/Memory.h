@@ -25,7 +25,7 @@ public:
 
 class CGlobalLock
 {
-  const HGLOBAL m_Global;
+  HGLOBAL m_Global;
   LPVOID m_Pointer;
 public:
   LPVOID GetPointer() const { return m_Pointer; }

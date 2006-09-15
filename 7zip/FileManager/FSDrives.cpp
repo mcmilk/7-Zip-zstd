@@ -187,7 +187,7 @@ STDMETHODIMP CFSDrives::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::GetName(BSTR *name)
+STDMETHODIMP CFSDrives::GetName(BSTR * /* name */)
 {
   return E_NOTIMPL;
 }

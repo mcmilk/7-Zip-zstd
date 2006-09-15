@@ -37,8 +37,6 @@ STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin,
     UInt64 *newPosition)
 {
   UInt64 newPos;
-  if(seekOrigin >= 3)
-    return STG_E_INVALIDFUNCTION;
   switch(seekOrigin)
   {
     case STREAM_SEEK_SET:
@@ -50,6 +48,8 @@ STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin,
     case STREAM_SEEK_END:
       newPos = _totalLength + offset;
       break;
+    default:
+      return STG_E_INVALIDFUNCTION;
   }
   _seekPos = 0;
   for (_streamIndex = 0; _streamIndex < Streams.Size(); _streamIndex++)

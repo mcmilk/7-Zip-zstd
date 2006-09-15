@@ -74,7 +74,7 @@ void ReadExtractionInfo(NExtract::CInfo &info)
     if(pathHistoryKey.Open(extractionKey, kExtractionPathHistoryKeyName, KEY_READ) == 
         ERROR_SUCCESS)
     {        
-      while(true)
+      for (;;)
       {
         wchar_t numberString[16];
         ConvertUInt64ToString(info.Paths.Size(), numberString);
@@ -135,8 +135,38 @@ static const TCHAR *kMultiThread = TEXT("Multithread");
 static const WCHAR *kCompressionOptions = L"Options";
 static const TCHAR *kCompressionLevel = TEXT("Level");
 static const WCHAR *kCompressionMethod = L"Method";
+static const WCHAR *kEncryptionMethod = L"EncryptionMethod";
 static const TCHAR *kCompressionDictionary = TEXT("Dictionary");
 static const TCHAR *kCompressionOrder = TEXT("Order");
+
+
+static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
+{
+  if (value.IsEmpty())
+    key.DeleteValue(name);
+  else
+    key.SetValue(name, value);
+}
+
+static void SetRegUInt32(CKey &key, const TCHAR *name, UInt32 value)
+{
+  if (value == (UInt32)-1)
+    key.DeleteValue(name);
+  else
+    key.SetValue(name, value);
+}
+
+static void GetRegString(CKey &key, const WCHAR *name, UString &value)
+{
+  if (key.QueryValue(name, value) != ERROR_SUCCESS)
+    value.Empty();
+}
+
+static void GetRegUInt32(CKey &key, const TCHAR *name, UInt32 &value)
+{
+  if (key.QueryValue(name, value) != ERROR_SUCCESS)
+    value = UInt32(-1);
+}
 
 void SaveCompressionInfo(const NCompression::CInfo &info)
 {
@@ -167,26 +197,14 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
       const NCompression::CFormatOptions &fo = info.FormatOptionsVector[i];
       CKey formatKey;
       formatKey.Create(optionsKey, fo.FormatID);
-      if (fo.Options.IsEmpty())
-        formatKey.DeleteValue(kCompressionOptions);
-      else
-        formatKey.SetValue(kCompressionOptions, fo.Options);
-      if (fo.Level == UInt32(-1))
-        formatKey.DeleteValue(kCompressionLevel);
-      else
-        formatKey.SetValue(kCompressionLevel, fo.Level);
-      if (fo.Method.IsEmpty())
-        formatKey.DeleteValue(kCompressionMethod);
-      else
-        formatKey.SetValue(kCompressionMethod, fo.Method);
-      if (fo.Dictionary == UInt32(-1))
-        formatKey.DeleteValue(kCompressionDictionary);
-      else
-        formatKey.SetValue(kCompressionDictionary, fo.Dictionary);
-      if (fo.Order == UInt32(-1))
-        formatKey.DeleteValue(kCompressionOrder);
-      else
-        formatKey.SetValue(kCompressionOrder, fo.Order);
+      
+      SetRegString(formatKey, kCompressionOptions, fo.Options);
+      SetRegString(formatKey, kCompressionMethod, fo.Method);
+      SetRegString(formatKey, kEncryptionMethod, fo.EncryptionMethod);
+
+      SetRegUInt32(formatKey, kCompressionLevel, fo.Level);
+      SetRegUInt32(formatKey, kCompressionDictionary, fo.Dictionary);
+      SetRegUInt32(formatKey, kCompressionOrder, fo.Order);
     }
   }
 
@@ -232,7 +250,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
     if(historyArchivesKey.Open(compressionKey, kCompressionHistoryArchivesKeyName, KEY_READ) == 
         ERROR_SUCCESS)
     {        
-      while(true)
+      for (;;)
       {
         wchar_t numberString[16];
         ConvertUInt64ToString(info.HistoryArchives.Size(), numberString);
@@ -266,16 +284,14 @@ void ReadCompressionInfo(NCompression::CInfo &info)
         fo.FormatID = formatIDs[i];
         if(formatKey.Open(optionsKey, fo.FormatID, KEY_READ) == ERROR_SUCCESS)
         {
-          if (formatKey.QueryValue(kCompressionOptions, fo.Options) != ERROR_SUCCESS)
-            fo.Options.Empty();
-          if (formatKey.QueryValue(kCompressionLevel, fo.Level) != ERROR_SUCCESS)
-            fo.Level = UInt32(-1);
-          if (formatKey.QueryValue(kCompressionMethod, fo.Method) != ERROR_SUCCESS)
-            fo.Method.Empty();;
-          if (formatKey.QueryValue(kCompressionDictionary, fo.Dictionary) != ERROR_SUCCESS)
-            fo.Dictionary = UInt32(-1);
-          if (formatKey.QueryValue(kCompressionOrder, fo.Order) != ERROR_SUCCESS)
-            fo.Order = UInt32(-1);
+          GetRegString(formatKey, kCompressionOptions, fo.Options);
+          GetRegString(formatKey, kCompressionMethod, fo.Method);
+          GetRegString(formatKey, kEncryptionMethod, fo.EncryptionMethod);
+
+          GetRegUInt32(formatKey, kCompressionLevel, fo.Level);
+          GetRegUInt32(formatKey, kCompressionDictionary, fo.Dictionary);
+          GetRegUInt32(formatKey, kCompressionOrder, fo.Order);
+
           info.FormatOptionsVector.Add(fo);
         }
 

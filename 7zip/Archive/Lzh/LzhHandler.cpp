@@ -89,7 +89,7 @@ STATPROPSTG kProperties[] =
 CHandler::CHandler()
 {}
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;
   return S_OK;
@@ -119,8 +119,8 @@ STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
+      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
 {
   return E_NOTIMPL;
 }
@@ -226,7 +226,7 @@ STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
 */
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
+    const UInt64 * /* maxCheckStartPosition */, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   try
@@ -240,7 +240,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       UInt64 numFiles = _items.Size();
       RINOK(callback->SetCompleted(&numFiles, NULL));
     }
-    while(true)
+    for (;;)
     {
       CItemEx itemInfo;
       bool filled;
@@ -307,7 +307,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   UInt64 currentItemUnPacked, currentItemPacked;
   
-  NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec;
+  NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = 0;
   CMyComPtr<ICompressCoder> lzhDecoder;
   CMyComPtr<ICompressCoder> lzh1Decoder;
   CMyComPtr<ICompressCoder> arj2Decoder;
@@ -357,7 +357,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       UInt64 pos;
       _stream->Seek(itemInfo.DataPosition, STREAM_SEEK_SET, &pos);
 
-      streamSpec->Init(_stream, itemInfo.PackSize);
+      streamSpec->SetStream(_stream);
+      streamSpec->Init(itemInfo.PackSize);
 
 
       CLocalProgress *localProgressSpec = new CLocalProgress;

@@ -143,7 +143,7 @@ bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 }
 
 
-int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data) 
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data) 
 {
   switch(uMsg) 
   {
@@ -227,7 +227,7 @@ bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
 }
 
 
-int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data) 
+int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data) 
 {
   switch(uMsg) 
   {

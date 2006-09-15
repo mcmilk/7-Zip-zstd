@@ -76,11 +76,11 @@ struct CResetTable
   {
     if (blockIndex >= ResetOffsets.Size())
       return false;
-    UInt64 startPos = ResetOffsets[(size_t)blockIndex];
+    UInt64 startPos = ResetOffsets[(int)blockIndex];
     if (blockIndex + numBlocks >= ResetOffsets.Size())
       size = CompressedSize - startPos;
     else
-      size = ResetOffsets[(size_t)blockIndex + numBlocks] - startPos;
+      size = ResetOffsets[(int)(blockIndex + numBlocks)] - startPos;
     return true;
   }
   bool GetCompressedSizeOfBlock(UInt64 blockIndex, UInt64 &size) const 
@@ -121,7 +121,7 @@ struct CLzxInfo
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
     if (blockIndex >= ResetTable.ResetOffsets.Size())
       return false;
-    offset = ResetTable.ResetOffsets[(size_t)blockIndex];
+    offset = ResetTable.ResetOffsets[(int)blockIndex];
     return true;
   }
   bool GetCompressedSizeOfFolder(UInt64 folderIndex, UInt64 &size) const 
@@ -168,7 +168,7 @@ public:
   UInt64 GetFolder(int fileIndex) const 
   { 
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(size_t)item.Section];
+    const CSectionInfo &section = Sections[(int)item.Section];
     if (section.IsLzx())
       return section.Methods[0].LzxInfo.GetFolder(item.Offset);
     return 0;
@@ -177,7 +177,7 @@ public:
   UInt64 GetLastFolder(int fileIndex) const 
   { 
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(size_t)item.Section];
+    const CSectionInfo &section = Sections[(int)item.Section];
     if (section.IsLzx())
       return section.Methods[0].LzxInfo.GetFolder(item.Offset + item.Size - 1);
     return 0;

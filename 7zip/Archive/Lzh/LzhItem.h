@@ -150,7 +150,7 @@ public:
   AString GetName() const
   {
     AString dirName = GetDirName();
-    dirName.Replace((char)0xFF, '\\');
+    dirName.Replace((char)(unsigned char)0xFF, '\\');
     if (!dirName.IsEmpty())
     {
       char c = dirName[dirName.Length() - 1];

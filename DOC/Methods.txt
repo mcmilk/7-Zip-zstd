@@ -1,4 +1,4 @@
-Compression method IDs (4.38)
+Compression method IDs (4.43)
 -----------------------------
 
 Each compression method in 7z has unique binary value (ID).
@@ -95,6 +95,7 @@ List of defined IDs
       0x - AES-128
       4x - AES-192
       8x - AES-256
+      Cx - AES
 
       x0 - ECB
       x1 - CBC

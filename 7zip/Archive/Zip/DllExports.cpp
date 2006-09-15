@@ -8,6 +8,8 @@
 #include "Windows/PropVariant.h"
 #include "../../ICoder.h"
 #include "../../IPassword.h"
+#include "../../Crypto/WzAES/WzAES.h"
+#include "../Common/CodecsPath.h"
 
 // {23170F69-40C1-278B-0401-080000000100}
 DEFINE_GUID(CLSID_CCompressDeflateEncoder, 
@@ -61,6 +63,12 @@ static bool IsItWindowsNT()
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 #endif
+
+void GetCryptoFolderPrefix(TCHAR *path)
+{
+  CSysString s = GetCodecsFolderPrefix();
+  lstrcpy(path, s);
+}
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)

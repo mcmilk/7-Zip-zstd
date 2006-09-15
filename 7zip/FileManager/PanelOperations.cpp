@@ -95,7 +95,7 @@ void CPanel::DeleteItems(bool toRecycleBin)
       fo.fAnyOperationsAborted = FALSE;
       fo.hNameMappings = 0;
       fo.lpszProgressTitle = 0;
-      int res = ::SHFileOperationA(&fo);
+      /* int res = */ ::SHFileOperationA(&fo);
     }
     else
     #endif

@@ -335,7 +335,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
   {
     UInt32 distance = matchDistances[offs + 1];
     m_Optimum[i].PosPrev = 0;
-    m_Optimum[i].BackPrev = distance;
+    m_Optimum[i].BackPrev = (UInt16)distance;
     m_Optimum[i].Price = m_LenPrices[i - kMatchMinLen] + m_PosPrices[GetPosSlot(distance)];
     if (i == matchDistances[offs])
       offs += 2;
@@ -343,7 +343,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
 
   UInt32 cur = 0;
   UInt32 lenEnd = lenMain;
-  while(true)
+  for (;;)
   {
     ++cur;
     if(cur == lenEnd || cur == kNumOptsBase || m_Pos >= kMatchArrayLimit)  
@@ -360,7 +360,8 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
       {
         UInt32 len = Backward(backRes, cur);
         m_Optimum[cur].BackPrev = matchDistances[numDistancePairs - 1];
-        m_Optimum[cur].PosPrev = m_OptimumEndIndex = cur + newLen;
+        m_OptimumEndIndex = cur + newLen;
+        m_Optimum[cur].PosPrev = (UInt16)m_OptimumEndIndex;
         MovePos(newLen - 1);
         return len;
       }
@@ -388,7 +389,7 @@ UInt32 CCoder::GetOptimal(UInt32 &backRes)
       {
         optimum.Price = curAndLenPrice;
         optimum.PosPrev = (UInt16)cur;
-        optimum.BackPrev = distance;
+        optimum.BackPrev = (UInt16)distance;
       }
       if (lenTest == matchDistances[offs])
       {
@@ -545,7 +546,7 @@ void CCoder::TryBlock(bool staticMode)
   m_ValueIndex = 0;
   UInt32 blockSize = BlockSizeRes;
   BlockSizeRes = 0;
-  while(true)
+  for (;;)
   {
     if (m_OptimumCurrentIndex == m_OptimumEndIndex)
     {
@@ -597,13 +598,13 @@ void CCoder::SetPrices(const CLevels &levels)
   {
     UInt32 slot = g_LenSlots[i];
     Byte price = levels.litLenLevels[kSymbolMatch + slot];
-    m_LenPrices[i] = ((price != 0) ? price : kNoLenStatPrice) + m_LenDirectBits[slot];
+    m_LenPrices[i] = (Byte)(((price != 0) ? price : kNoLenStatPrice) + m_LenDirectBits[slot]);
   }
   
   for(i = 0; i < kDistTableSize64; i++)
   {
     Byte price = levels.distLevels[i];
-    m_PosPrices[i] = ((price != 0) ? price: kNoPosStatPrice) + kDistDirectBits[i];
+    m_PosPrices[i] = (Byte)(((price != 0) ? price: kNoPosStatPrice) + kDistDirectBits[i]);
   }
 }
 
@@ -741,12 +742,14 @@ UInt32 CCoder::GetBlockPrice(int tableIndex, int numDivPasses)
   if (m_CheckStatic && m_ValueIndex <= kFixedHuffmanCodeBlockSizeMax)
   {
     const UInt32 fixedPrice = TryFixedBlock(tableIndex);
-    if (t.StaticMode = (fixedPrice < price))
+    t.StaticMode = (fixedPrice < price);
+    if (t.StaticMode)
       price = fixedPrice;
   }
 
   const UInt32 storePrice = GetStorePrice(BlockSizeRes, 0); // bitPosition
-  if (t.StoreMode = (storePrice <= price))
+  t.StoreMode = (storePrice <= price);
+  if (t.StoreMode)
     price = storePrice;
 
   t.UseSubBlocks = false;
@@ -768,7 +771,8 @@ UInt32 CCoder::GetBlockPrice(int tableIndex, int numDivPasses)
       t1.m_Pos = m_Pos;
       m_AdditionalOffset -= t0.BlockSizeRes;
       subPrice += GetBlockPrice((tableIndex << 1) + 1, numDivPasses - 1);
-      if (t.UseSubBlocks = (subPrice < price))
+      t.UseSubBlocks = (subPrice < price);
+      if (t.UseSubBlocks)
         price = subPrice;
     }
   }
@@ -806,7 +810,7 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
 }
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */ , const UInt64 * /* outSize */ ,
     ICompressProgressInfo *progress)
 {
   m_CheckStatic = (m_NumPasses != 1 || m_NumDivPasses != 1);

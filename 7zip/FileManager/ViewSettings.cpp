@@ -286,7 +286,7 @@ void SaveToolbarsMask(UInt32 toolbarMask)
   key.SetValue(kToolbars, toolbarMask);
 }
 
-static const kDefaultToolbarMask = 8 | 4 | 1;
+static const UInt32 kDefaultToolbarMask = 8 | 4 | 1;
 
 UInt32 ReadToolbarsMask()
 {
@@ -360,11 +360,11 @@ void SaveStringList(LPCTSTR valueName, const UStringVector &folders)
     sizeInChars += folders[i].Length() + 1;
   CBuffer<wchar_t> buffer;
   buffer.SetCapacity(sizeInChars);
-  int aPos = 0;
+  int pos = 0;
   for (i = 0; i < folders.Size(); i++)
   {
-    wcscpy(buffer + aPos, folders[i]);
-    aPos += folders[i].Length() + 1;
+    MyStringCopy((wchar_t *)buffer + pos, (const wchar_t *)folders[i]);
+    pos += folders[i].Length() + 1;
   }
   CKey key;
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);

@@ -17,7 +17,7 @@ CCopyCoder::~CCopyCoder()
 
 STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, 
-    const UInt64 *inSize, const UInt64 *outSize,
+    const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
   if (_buffer == 0)
@@ -28,7 +28,7 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
   }
 
   TotalSize = 0;
-  while(true)
+  for (;;)
   {
     UInt32 realProcessedSize;
     UInt32 size = kBufferSize;

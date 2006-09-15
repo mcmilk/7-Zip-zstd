@@ -43,7 +43,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
   }
   bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
   bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
+  // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
   bool rightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
   bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   result = 0;

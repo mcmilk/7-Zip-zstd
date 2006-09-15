@@ -36,7 +36,7 @@ class CDecoder
   CCoderLibraries _libraries;
   #endif
 
-  bool _bindInfoExPrevIsDefinded;
+  bool _bindInfoExPrevIsDefined;
   CBindInfoEx _bindInfoExPrev;
   
   bool _multiThread;

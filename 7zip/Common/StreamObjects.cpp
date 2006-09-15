@@ -57,40 +57,6 @@ STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UInt32 size, UInt32 
   return result; 
 }
 
-STDMETHODIMP CSequentialInStreamRollback::Read(void *data, UInt32 size, UInt32 *processedSize)
-{
-  if (_currentPos != _currentSize)
-  {
-    size_t curSize = _currentSize - _currentPos;
-    if (size > curSize)
-      size = (UInt32)curSize;
-    memmove(data, _buffer + _currentPos, size);
-    _currentPos += size;
-    if (processedSize != 0)
-      *processedSize = size;
-    return S_OK;
-  }
-  UInt32 realProcessedSize;
-  if (size > _bufferSize)
-    size = (UInt32)_bufferSize;
-  HRESULT result = _stream->Read(_buffer, size, &realProcessedSize);
-  memmove(data, _buffer, realProcessedSize);
-  _size += realProcessedSize;
-  _currentSize = realProcessedSize;
-  _currentPos = realProcessedSize;
-  if (processedSize != 0)
-    *processedSize = realProcessedSize;
-  return result; 
-}
-
-HRESULT CSequentialInStreamRollback::Rollback(size_t rollbackSize)
-{
-  if (rollbackSize > _currentPos)
-    return E_INVALIDARG;
-  _currentPos -= rollbackSize;
-  return S_OK;
-}
-
 STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;

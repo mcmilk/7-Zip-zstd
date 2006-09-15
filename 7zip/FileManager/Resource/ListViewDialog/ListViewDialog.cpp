@@ -45,7 +45,7 @@ bool CListViewDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-bool CListViewDialog::OnNotify(UINT controlID, LPNMHDR header)
+bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
 {
   if (header->hwndFrom != _listView)
     return false;
@@ -63,7 +63,7 @@ bool CListViewDialog::OnNotify(UINT controlID, LPNMHDR header)
           int focusedIndex = _listView.GetFocusedItem();
           if (focusedIndex < 0)
             focusedIndex = 0;
-          while(true)
+          for (;;)
           {
             int index = _listView.GetNextSelectedItem(-1);
             if (index < 0)

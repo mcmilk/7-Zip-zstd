@@ -37,10 +37,21 @@ HRESULT CInArchive::Open(IInStream *inStream)
   return S_OK;
 }
 
+static void MyStrNCpy(char *dest, const char *src, int size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    char c = src[i];
+    dest[i] = c;
+    if (c == 0)
+      break;
+  }
+}
+
 static bool OctalToNumber(const char *s, int size, UInt64 &res)
 {
   char sz[32];
-  strncpy(sz, s, size);
+  MyStrNCpy(sz, s, size);
   sz[size] = 0;
   const char *end;
   int i;
@@ -61,7 +72,7 @@ static bool OctalToNumber32(const char *s, int size, UInt32 &res)
 static bool DecimalToNumber(const char *s, int size, UInt64 &res)
 {
   char sz[32];
-  strncpy(sz, s, size);
+  MyStrNCpy(sz, s, size);
   sz[size] = 0;
   const char *end;
   int i;
@@ -96,7 +107,7 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
     return S_OK;
   
   char tempString[kNameSize + 1];
-  strncpy(tempString, cur, kNameSize);
+  MyStrNCpy(tempString, cur, kNameSize);
   cur += kNameSize;
   tempString[kNameSize] = '\0';
   item.Name = tempString;
@@ -123,7 +134,7 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
 
 HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
 {
-  while(true)
+  for (;;)
   {
     RINOK(GetNextItemReal(filled, item));
     if (!filled)
@@ -134,7 +145,6 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
       return S_OK;
     SkeepData(item.Size);
   }
-  return S_OK;
 }
 
 HRESULT CInArchive::Skeep(UInt64 numBytes)

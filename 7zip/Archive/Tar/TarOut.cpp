@@ -33,6 +33,17 @@ static AString MakeOctalString(UInt64 value)
   return AString(s) + ' ';
 }
 
+static void MyStrNCpy(char *dest, const char *src, int size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    char c = src[i];
+    dest[i] = c;
+    if (c == 0)
+      break;
+  }
+}
+
 static bool MakeOctalString8(char *s, UInt32 value)
 {
   AString tempString = MakeOctalString(value);
@@ -43,7 +54,7 @@ static bool MakeOctalString8(char *s, UInt32 value)
   int numSpaces = kMaxSize - (tempString.Length() + 1);
   for(int i = 0; i < numSpaces; i++)
     s[i] = ' ';
-  strcpy(s + numSpaces, tempString);
+  MyStringCopy(s + numSpaces, (const char *)tempString);
   return true;
 }
 
@@ -64,7 +75,7 @@ static bool CopyString(char *dest, const AString &src, int maxSize)
 {
   if (src.Length() >= maxSize)
     return false;
-  strcpy(dest, src);
+  MyStringCopy(dest, (const char *)src);
   return true;
 }
 
@@ -81,7 +92,7 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item)
   // RETURN_IF_NOT_TRUE(CopyString(header.Name, item.Name, NFileHeader::kNameSize));
   if (item.Name.Length() > NFileHeader::kNameSize)
     return E_FAIL;
-  strncpy(cur, item.Name, NFileHeader::kNameSize);
+  MyStrNCpy(cur, item.Name, NFileHeader::kNameSize);
   cur += NFileHeader::kNameSize;
 
   RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.Mode));

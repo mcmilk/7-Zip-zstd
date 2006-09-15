@@ -55,7 +55,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 total)
 
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
-  while(true)
+  for (;;)
   {
     if(ProgressDialog.ProgressSynch.GetStopped())
       return E_ABORT;
@@ -76,7 +76,8 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   COverwriteDialog dialog;
 
   dialog.OldFileInfo.Time = *existTime;
-  if (dialog.OldFileInfo.SizeIsDefined = (existSize != NULL))
+  dialog.OldFileInfo.SizeIsDefined = (existSize != NULL);
+  if (dialog.OldFileInfo.SizeIsDefined)
     dialog.OldFileInfo.Size = *existSize;
   dialog.OldFileInfo.Name = existName;
 
@@ -88,7 +89,8 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
     dialog.NewFileInfo.Time = *newTime;
   }
   
-  if (dialog.NewFileInfo.SizeIsDefined = (newSize != NULL))
+  dialog.NewFileInfo.SizeIsDefined = (newSize != NULL);
+  if (dialog.NewFileInfo.SizeIsDefined)
     dialog.NewFileInfo.Size = *newSize;
   dialog.NewFileInfo.Name = newName;
   
@@ -96,7 +98,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   NOverwriteDialog::NResult::EEnum writeAnswer = 
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   */
-  int writeAnswer = dialog.Create(NULL); // ParentWindow doesn't work with 7z
+  INT_PTR writeAnswer = dialog.Create(NULL); // ParentWindow doesn't work with 7z
   
   switch(writeAnswer)
   {
@@ -126,7 +128,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 }
 
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 askExtractMode, const UInt64 *position)
+STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* askExtractMode */, const UInt64 * /* position */)
 {
   return SetCurrentFilePath(name);
 }
@@ -143,7 +145,7 @@ STDMETHODIMP CExtractCallbackImp::ShowMessage(const wchar_t *message)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult, bool encrypted)
 {
   switch(operationResult)
   {
@@ -160,12 +162,16 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult)
           langID = 0x02000A91;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          messageID = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR;
-          langID = 0x02000A92;
+          messageID = encrypted ? 
+              IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED:
+              IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR;
+          langID = encrypted ? 0x02000A94 : 0x02000A92;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          messageID = IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
-          langID = 0x02000A93;
+          messageID = encrypted ? 
+              IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC_ENCRYPTED:
+              IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
+          langID = encrypted ? 0x02000A95 : 0x02000A93;
           break;
         default:
           return E_FAIL;

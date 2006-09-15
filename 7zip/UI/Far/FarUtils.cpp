@@ -90,22 +90,22 @@ void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems,
     destItem.Y2 = srcItem.Y2;
     destItem.Focus = GetBOOLValue(srcItem.Focus);
     if(srcItem.HistoryName != NULL)
-      destItem.Selected = int(srcItem.HistoryName);
+      destItem.History = srcItem.HistoryName;
     else
       destItem.Selected = GetBOOLValue(srcItem.Selected);
     destItem.Flags = srcItem.Flags;
     destItem.DefaultButton = GetBOOLValue(srcItem.DefaultButton);
 
     if(srcItem.DataMessageId < 0)
-      strcpy(destItem.Data, srcItem.DataString);
+      MyStringCopy(destItem.Data, srcItem.DataString);
     else
-      strcpy(destItem.Data, GetMsgString(srcItem.DataMessageId));
+      MyStringCopy(destItem.Data, GetMsgString(srcItem.DataMessageId));
 
     /*
     if ((unsigned int)Init[i].Data < 0xFFF)
-      strcpy(destItem.Data, GetMsg((unsigned int)srcItem.Data));
+      MyStringCopy(destItem.Data, GetMsg((unsigned int)srcItem.Data));
     else
-      strcpy(destItem.Data,srcItem.Data);
+      MyStringCopy(destItem.Data,srcItem.Data);
     */
   }
 }
@@ -318,9 +318,8 @@ int CStartupInfo::Menu(
     item.Checked = 0;
     item.Separator = 0;
     item.Selected = (i == selectedItem);
-    CSysString reducedString = 
-        items[i].Left(sizeof(item.Text) / sizeof(item.Text[0]) - 1);
-    strcpy(item.Text, reducedString);
+    AString reducedString = items[i].Left(sizeof(item.Text) / sizeof(item.Text[0]) - 1);
+    MyStringCopy(item.Text, (const char *)reducedString);
     farMenuItems.Add(item);
   }
   return Menu(flags, title, helpTopic, &farMenuItems.Front(), farMenuItems.Size());
@@ -351,7 +350,7 @@ void CScreenRestorer::Restore()
   }
 };
 
-static CSysString DWORDToString(DWORD number)
+static AString DWORDToString(DWORD number)
 {
   char buffer[32];
   ultoa(number, buffer, 10);
@@ -381,7 +380,7 @@ bool WasEscPressed()
   if(handle == INVALID_HANDLE_VALUE)
     return true;
   inConsole.Attach(handle);
-  while (true)
+  for (;;)
   {
     DWORD numEvents;
     if(!inConsole.GetNumberOfEvents(numEvents))
@@ -401,8 +400,10 @@ bool WasEscPressed()
 
 void ShowErrorMessage(DWORD errorCode)
 {
-  CSysString message;
+  AString message;
   NError::MyFormatMessage(errorCode, message);
+  message.Replace("\x0D", "");
+  message.Replace("\x0A", " ");
   g_StartupInfo.ShowMessage(SystemStringToOemString(message));
 
 }

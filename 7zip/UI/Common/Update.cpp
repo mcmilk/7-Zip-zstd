@@ -263,7 +263,7 @@ static HRESULT Compress(
     CArchivePath &archivePath, 
     const CObjectVector<CArchiveItem> &archiveItems,
     bool stdInMode,
-    const UString &stdInFileName,
+    /* const UString & stdInFileName, */
     bool stdOutMode,
     const CObjectVector<CDirItem> &dirItems,
     bool sfxMode,
@@ -342,7 +342,7 @@ static HRESULT Compress(
   GetUpdatePairInfoList(dirItems, archiveItems, fileTimeType, updatePairs); // must be done only once!!!
   
   CObjectVector<CUpdatePair2> updatePairs2;
-  UpdateProduce(dirItems, archiveItems, updatePairs, actionSet, updatePairs2);
+  UpdateProduce(updatePairs, actionSet, updatePairs2);
   
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
@@ -490,7 +490,8 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
 
     CPropVariant propertySize;
     RINOK(archive->GetProperty(i, kpidSize, &propertySize));
-    if (ai.SizeIsDefined = (propertySize.vt != VT_EMPTY))
+    ai.SizeIsDefined = (propertySize.vt != VT_EMPTY);
+    if (ai.SizeIsDefined)
       ai.Size = ConvertPropVariantToUInt64(propertySize);
 
     ai.IndexInServer = i;
@@ -526,7 +527,8 @@ static HRESULT UpdateWithItemLists(
         options.MethodMode, 
         command.ArchivePath, 
         archiveItems, 
-        options.StdInMode, options.StdInFileName, 
+        options.StdInMode, 
+        /* options.StdInFileName, */
         options.StdOutMode,
         dirItems, 
         options.SfxMode, options.SfxModule, 
@@ -608,7 +610,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
     RINOK(result);
     if (archiveLink.VolumePaths.Size() > 1)
     {
-      errorInfo.SystemError = E_NOTIMPL;
+      errorInfo.SystemError = (DWORD)E_NOTIMPL;
       errorInfo.Message = L"Updating for multivolume archives is not implemented";
       return E_NOTIMPL;
     }

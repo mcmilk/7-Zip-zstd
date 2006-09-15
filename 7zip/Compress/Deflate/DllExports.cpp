@@ -31,9 +31,9 @@ DEFINE_GUID(CLSID_CCompressDeflateNsisDecoder,
 0x23170F69, 0x40C1, 0x278B, 0x04, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
+BOOL WINAPI DllMain(HINSTANCE /* hInstance */, DWORD /* dwReason */, LPVOID /*lpReserved*/)
 {
-	return TRUE;
+  return TRUE;
 }
 
 STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)

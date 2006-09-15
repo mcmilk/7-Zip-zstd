@@ -31,9 +31,11 @@ public:
     kExtractTo,
     kTest,
     kCompress,
-    kCompressTo,
     kCompressEmail,
-    kCompressToEmail
+    kCompressTo7z,
+    kCompressTo7zEmail,
+    kCompressToZip,
+    kCompressToZipEmail
   };
   
   struct CCommandMapItem
@@ -43,6 +45,7 @@ public:
     UString HelpString;
     UString Folder;
     UString Archive;
+    UString ArchiveType;
   };
 
   MY_UNKNOWN_IMP3_MT(IContextMenu, IShellExtInit, IInitContextMenu)
@@ -71,7 +74,7 @@ private:
   UString _dropPath;
   CObjectVector<CCommandMapItem> _commandMap;
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
-  UINT FindVerb(const UString &verb);
+  int FindVerb(const UString &verb);
 
   void FillCommand(ECommandInternalID id, UString &mainString, 
       CCommandMapItem &commandMapItem);

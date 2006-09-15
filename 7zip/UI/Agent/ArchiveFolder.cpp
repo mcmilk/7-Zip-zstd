@@ -64,8 +64,8 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::MoveTo(const UINT32 *indices, UINT32 numItems, 
-    const wchar_t *path, IFolderOperationsExtractCallback *callback)
+STDMETHODIMP CAgentFolder::MoveTo(const UINT32 * /* indices */, UINT32 /* numItems */, 
+    const wchar_t * /* path */, IFolderOperationsExtractCallback * /* callback */)
 {
   return E_NOTIMPL;
 }

@@ -53,7 +53,7 @@ void CDirEnumerator::Init()
 bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UString &resPath, DWORD &errorCode)
 {
   filled = false;
-  while(true)
+  for (;;)
   {
     if (Enumerators.IsEmpty())
     {
@@ -154,7 +154,7 @@ struct CThreadCrc
     UString scanningStr = LangString(IDS_SCANNING, 0x03020800);
     scanningStr += L" ";
 
-    while (true)
+    for (;;)
     {
       NFile::NFind::CFileInfoW fileInfo;
       bool filled;
@@ -180,7 +180,7 @@ struct CThreadCrc
 
     DirEnumerator.Init();
 
-    while(true)
+    for (;;)
     {
       NFile::NFind::CFileInfoW fileInfo;
       bool filled;
@@ -209,7 +209,7 @@ struct CThreadCrc
         }
         NumFiles++;
         ProgressDialog->ProgressSynch.SetCurrentFileName(resPath);
-        while(true)
+        for (;;)
         {
           UInt32 processedSize;
           if (!inFile.Read(buffer, kBufSize, processedSize))
@@ -232,8 +232,8 @@ struct CThreadCrc
       for (int i = 0; i < resPath.Length(); i++)
       {
         wchar_t c = resPath[i];
-        crc.UpdateByte(c & 0xFF);
-        crc.UpdateByte((c >> 8) & 0xFF);
+        crc.UpdateByte((Byte)(c & 0xFF));
+        crc.UpdateByte((Byte)((c >> 8) & 0xFF));
       }
       DataNameCrcSum += crc.GetDigest();
       Result = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(DataSize);

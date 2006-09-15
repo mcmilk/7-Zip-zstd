@@ -17,7 +17,6 @@ ZIP_OBJS = \
 COMMON_OBJS = \
   $O\Alloc.obj \
   $O\CRC.obj \
-  $O\Random.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
   $O\String.obj \
@@ -29,13 +28,17 @@ WIN_OBJS = \
   $O\DLL.obj \
   $O\FileFind.obj \
   $O\PropVariant.obj \
+  $O\Synchronization.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
   $O\LimitedStreams.obj \
   $O\LSBFDecoder.obj \
+  $O\MemBlocks.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
+  $O\OutMemStream.obj \
+  $O\ProgressMt.obj \
   $O\ProgressUtils.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
@@ -60,6 +63,15 @@ IMPLODE_OBJS = \
 SHRINK_OBJS = \
   $O\ShrinkDecoder.obj \
 
+CRYPTO_HASH_OBJS = \
+  $O\HmacSha1.obj \
+  $O\Pbkdf2HmacSha1.obj \
+  $O\RandGen.obj \
+  $O\Sha1.obj \
+
+CRYPTO_WZAES_OBJS = \
+  $O\WzAES.obj \
+
 CRYPTO_ZIP_OBJS = \
   $O\ZipCipher.obj \
   $O\ZipCrypto.obj \
@@ -73,6 +85,8 @@ OBJS = \
   $(7ZIP_COMMON_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
+  $(CRYPTO_HASH_OBJS) \
+  $(CRYPTO_WZAES_OBJS) \
   $(CRYPTO_ZIP_OBJS) \
   $(IMPLODE_OBJS) \
   $(SHRINK_OBJS) \
@@ -94,8 +108,12 @@ $(AR_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
 $(7Z_OBJS): ../7z/$(*B).cpp
 	$(COMPL)
+$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
+	$(COMPL_O2)
 $(CRYPTO_ZIP_OBJS): ../../Crypto/Zip/$(*B).cpp
 	$(COMPL)
+$(CRYPTO_WZAES_OBJS): ../../Crypto/WzAES/$(*B).cpp
+	$(COMPL_O2)
 $(IMPLODE_OBJS): ../../Compress/Implode/$(*B).cpp
 	$(COMPL)
 $(SHRINK_OBJS): ../../Compress/Shrink/$(*B).cpp

@@ -177,7 +177,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
 
     FarDialogItem dialogItems[kNumDialogItems];
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
-    while(true)
+    for (;;)
     {
       int askCode = g_StartupInfo.ShowDialog(kXSize, kYSize, 
         kHelpTopicExtrFromSevenZip, dialogItems, kNumDialogItems);

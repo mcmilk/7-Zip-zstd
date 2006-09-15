@@ -39,7 +39,7 @@ bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
       return OnCommand(wParam, lParam);
     case WM_NOTIFY:
-      return OnNotify(wParam, (LPNMHDR) lParam);
+      return OnNotify((UINT)wParam, (LPNMHDR) lParam);
     case WM_HELP:
       {
         OnHelp((LPHELPINFO)lParam);
@@ -66,7 +66,7 @@ bool CDialog::OnCommand(int code, int itemID, LPARAM lParam)
   return false; 
 }
 
-bool CDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
+bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */) 
 { 
   switch(buttonID)
   {

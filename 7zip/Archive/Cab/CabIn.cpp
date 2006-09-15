@@ -12,6 +12,7 @@
 namespace NArchive{
 namespace NCab{
 
+/*
 static HRESULT ReadBytes(IInStream *inStream, void *data, UInt32 size)
 {
   UInt32 realProcessedSize;
@@ -37,6 +38,7 @@ static void SafeInByteRead(::CInBuffer &inBuffer, void *data, UInt32 size)
   if(realProcessedSize != size)
     throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
 }
+*/
 
 Byte CInArchive::ReadByte()
 {
@@ -71,7 +73,7 @@ UInt32 CInArchive::ReadUInt32()
 AString CInArchive::SafeReadName()
 {
   AString name;
-  while(true)
+  for (;;)
   {
     Byte b = ReadByte();
     if (b == 0)
@@ -107,7 +109,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     UInt64 value = 0;
     const int kSignatureSize = 8;
     UInt64 kSignature64 = NHeader::NArchive::kSignature;
-    while(true)
+    for (;;)
     {
       Byte b;
       if (!inBuffer.ReadByte(b))

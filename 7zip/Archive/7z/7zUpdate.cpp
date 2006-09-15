@@ -43,7 +43,8 @@ static HRESULT WriteRange(
   CLimitedSequentialInStream *streamSpec = new 
       CLimitedSequentialInStream;
   CMyComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
-  streamSpec->Init(inStream, size);
+  streamSpec->SetStream(inStream);
+  streamSpec->Init(size);
 
   CLocalProgress *localProgressSpec = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
@@ -195,21 +196,80 @@ static int CompareEmptyItems(const int *p1, const int *p2, void *param)
   const CUpdateItem &u1 = updateItems[*p1];
   const CUpdateItem &u2 = updateItems[*p2];
   if (u1.IsDirectory != u2.IsDirectory)
-  {
-    if (u1.IsDirectory)
-      return u1.IsAnti ? 1: -1;
-    return u2.IsAnti ? -1: 1;
-  }
+    return (u1.IsDirectory) ? 1 : -1;
   if (u1.IsDirectory)
   {
     if (u1.IsAnti != u2.IsAnti)
       return (u1.IsAnti ? 1 : -1);
     int n = MyStringCompareNoCase(u1.Name, u2.Name);
-    return (u1.IsAnti ? (-n) : n);
+    return -n;
   }
   if (u1.IsAnti != u2.IsAnti)
     return (u1.IsAnti ? 1 : -1);
   return MyStringCompareNoCase(u1.Name, u2.Name);
+}
+
+static const char *g_Exts = 
+  " lzma 7z ace arc arj bz bz2 deb lzo lzx gz pak rpm sit tgz tbz tbz2 tgz cab ha lha lzh rar zoo" 
+  " zip jar ear war msi"
+  " 3gp avi mov mpeg mpg mpe wmv"
+  " aac ape fla flac la mp3 m4a mp4 ofr ogg pac ra rm rka shn swa tta wv wma wav"
+  " swf "
+  " chm hxi hxs"
+  " gif jpeg jpg jp2 png tiff  bmp ico psd psp"
+  " awg ps eps cgm dxf svg vrml wmf emf ai md"
+  " cad dwg pps key sxi"
+  " max 3ds"
+  " iso bin nrg mdf img pdi tar cpio xpi"
+  " vfd vhd vud vmc vsv"
+  " vmdk dsk nvram vmem vmsd vmsn vmss vmtm"
+  " inl inc idl acf asa h hpp hxx c cpp cxx rc java cs pas bas vb cls ctl frm dlg def" 
+  " f77 f f90 f95"
+  " asm sql manifest dep "
+  " mak clw csproj vcproj sln dsp dsw "
+  " class "
+  " bat cmd"
+  " xml xsd xsl xslt hxk hxc htm html xhtml xht mht mhtml htw asp aspx css cgi jsp shtml"
+  " awk sed hta js php php3 php4 php5 phptml pl pm py pyo rb sh tcl vbs"
+  " text txt tex ans asc srt reg ini doc docx mcw dot rtf hlp xls xlr xlt xlw ppt pdf"
+  " sxc sxd sxi sxg sxw stc sti stw stm odt ott odg otg odp otp ods ots odf"
+  " abw afp cwk lwp wpd wps wpt wrf wri"
+  " abf afm bdf fon mgf otf pcf pfa snf ttf"
+  " dbf mdb nsf ntf wdb db fdb gdb"
+  " exe dll ocx vbx sfx sys tlb awx com obj lib out o so "
+  " pdb pch idb ncb opt";
+
+int GetExtIndex(const char *ext)
+{
+  int extIndex = 1;
+  const char *p = g_Exts;
+  for (;;)
+  {
+    char c = *p++;
+    if (c == 0)
+      return extIndex;
+    if (c == ' ')
+      continue;
+    int pos = 0;
+    for (;;)
+    {
+      char c2 = ext[pos++];
+      if (c2 == 0 && (c == 0 || c == ' '))
+        return extIndex;
+      if (c != c2)
+        break;
+      c = *p++;
+    }
+    extIndex++;
+    for (;;)
+    {
+      if (c == 0)
+        return extIndex;
+      if (c == ' ')
+        break;
+      c = *p++;
+    }
+  }
 }
 
 struct CRefItem
@@ -218,26 +278,43 @@ struct CRefItem
   const CUpdateItem *UpdateItem;
   UInt32 ExtensionPos;
   UInt32 NamePos;
-  bool SortByType;
+  int ExtensionIndex;
   CRefItem(UInt32 index, const CUpdateItem &updateItem, bool sortByType):
-    SortByType(sortByType),
     Index(index),
     UpdateItem(&updateItem),
     ExtensionPos(0),
-    NamePos(0)
+    NamePos(0),
+    ExtensionIndex(0)
   {
     if (sortByType)
     {
       int slashPos = GetReverseSlashPos(updateItem.Name);
-      if (slashPos >= 0)
-        NamePos = slashPos + 1;
-      else
-        NamePos = 0;
+      NamePos = ((slashPos >= 0) ? (slashPos + 1) : 0);
       int dotPos = updateItem.Name.ReverseFind(L'.');
       if (dotPos < 0 || (dotPos < slashPos && slashPos >= 0))
         ExtensionPos = updateItem.Name.Length();
       else 
+      {
         ExtensionPos = dotPos + 1;
+        UString us = updateItem.Name.Mid(ExtensionPos);
+        if (!us.IsEmpty())
+        {
+          us.MakeLower();
+          int i;
+          AString s;
+          for (i = 0; i < us.Length(); i++)
+          {
+            wchar_t c = us[i];
+            if (c >= 0x80)
+              break;
+            s += (char)c;
+          }
+          if (i == us.Length())
+            ExtensionIndex = GetExtIndex(s);
+          else
+            ExtensionIndex = 0;
+        }
+      }
     }
   }
 };
@@ -250,23 +327,21 @@ static int CompareUpdateItems(const CRefItem *p1, const CRefItem *p2, void *para
   const CUpdateItem &u2 = *a2.UpdateItem;
   int n;
   if (u1.IsDirectory != u2.IsDirectory)
-  {
-    if (u1.IsDirectory)
-      return u1.IsAnti ? 1: -1;
-    return u2.IsAnti ? -1: 1;
-  }
+    return (u1.IsDirectory) ? 1 : -1;
   if (u1.IsDirectory)
   {
     if (u1.IsAnti != u2.IsAnti)
       return (u1.IsAnti ? 1 : -1);
     n = MyStringCompareNoCase(u1.Name, u2.Name);
-    return (u1.IsAnti ? (-n) : n);
+    return -n;
   }
-  if (a1.SortByType)
+  bool sortByType = *(bool *)param;
+  if (sortByType)
   {
+    RINOZ(MyCompare(a1.ExtensionIndex, a2.ExtensionIndex))
     RINOZ(MyStringCompareNoCase(u1.Name + a1.ExtensionPos, u2.Name + a2.ExtensionPos));
     RINOZ(MyStringCompareNoCase(u1.Name + a1.NamePos, u2.Name + a2.NamePos));
-    if (u1.LastWriteTimeIsDefined && u2.LastWriteTimeIsDefined)
+    if (u1.IsLastWriteTimeDefined && u2.IsLastWriteTimeDefined)
       RINOZ(CompareFileTime(&u1.LastWriteTime, &u2.LastWriteTime));
     RINOZ(MyCompare(u1.Size, u2.Size))
   }
@@ -448,11 +523,12 @@ static void FromUpdateItemToFileItem(const CUpdateItem &updateItem,
   if (updateItem.AttributesAreDefined)
     file.SetAttributes(updateItem.Attributes);
   
-  // if (updateItem.CreationTimeIsDefined)
-  //   file.SetCreationTime(updateItem.ItemInfo.CreationTime);
-  
-  if (updateItem.LastWriteTimeIsDefined)
+  if (updateItem.IsCreationTimeDefined)
+    file.SetCreationTime(updateItem.CreationTime);
+  if (updateItem.IsLastWriteTimeDefined)
     file.SetLastWriteTime(updateItem.LastWriteTime);
+  if (updateItem.IsLastAccessTimeDefined)
+    file.SetLastAccessTime(updateItem.LastAccessTime);
   
   file.UnPackSize = updateItem.Size;
   file.IsDirectory = updateItem.IsDirectory;
@@ -485,7 +561,8 @@ static HRESULT Update2(
     CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
     CMyComPtr<ISequentialInStream> limitedStream(streamSpec);
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    streamSpec->Init(inStream, startBlockSize);
+    streamSpec->SetStream(inStream);
+    streamSpec->Init(startBlockSize);
     RINOK(CopyBlock(limitedStream, seqOutStream, NULL));
   }
 
@@ -533,36 +610,6 @@ static HRESULT Update2(
   }
 
   CArchiveDatabase newDatabase;
-
-  /////////////////////////////////////////
-  // Write Empty Files & Folders
-
-  CRecordVector<int> emptyRefs;
-  for(i = 0; i < updateItems.Size(); i++)
-  {
-    const CUpdateItem &updateItem = updateItems[i];
-    if (updateItem.NewData)
-    {
-      if (updateItem.HasStream())
-        continue;
-    }
-    else
-      if (updateItem.IndexInArchive != -1)
-        if (database->Files[updateItem.IndexInArchive].HasStream)
-          continue;
-    emptyRefs.Add(i);
-  }
-  emptyRefs.Sort(CompareEmptyItems, (void *)&updateItems);
-  for(i = 0; i < emptyRefs.Size(); i++)
-  {
-    const CUpdateItem &updateItem = updateItems[emptyRefs[i]];
-    CFileItem file;
-    if (updateItem.NewProperties)
-      FromUpdateItemToFileItem(updateItem, file);
-    else
-      file = database->Files[updateItem.IndexInArchive];
-    newDatabase.Files.Add(file);
-  }
 
   ////////////////////////////
 
@@ -664,10 +711,10 @@ static HRESULT Update2(
       continue;
     CRecordVector<CRefItem> refItems;
     refItems.Reserve(numFiles);
+    bool sortByType = (numSolidFiles > 1);
     for (i = 0; i < numFiles; i++)
-      refItems.Add(CRefItem(group.Indices[i], 
-          updateItems[group.Indices[i]], numSolidFiles > 1));
-    refItems.Sort(CompareUpdateItems, 0);
+      refItems.Add(CRefItem(group.Indices[i], updateItems[group.Indices[i]], sortByType));
+    refItems.Sort(CompareUpdateItems, (void *)&sortByType);
     
     CRecordVector<UInt32> indices;
     indices.Reserve(numFiles);
@@ -780,14 +827,48 @@ static HRESULT Update2(
       i += numSubFiles;
     }
   }
+
+  {
+    /////////////////////////////////////////
+    // Write Empty Files & Folders
+    
+    CRecordVector<int> emptyRefs;
+    for(i = 0; i < updateItems.Size(); i++)
+    {
+      const CUpdateItem &updateItem = updateItems[i];
+      if (updateItem.NewData)
+      {
+        if (updateItem.HasStream())
+          continue;
+      }
+      else
+        if (updateItem.IndexInArchive != -1)
+          if (database->Files[updateItem.IndexInArchive].HasStream)
+            continue;
+      emptyRefs.Add(i);
+    }
+    emptyRefs.Sort(CompareEmptyItems, (void *)&updateItems);
+    for(i = 0; i < emptyRefs.Size(); i++)
+    {
+      const CUpdateItem &updateItem = updateItems[emptyRefs[i]];
+      CFileItem file;
+      if (updateItem.NewProperties)
+        FromUpdateItemToFileItem(updateItem, file);
+      else
+        file = database->Files[updateItem.IndexInArchive];
+      newDatabase.Files.Add(file);
+    }
+  }
+    
   /*
   if (newDatabase.Files.Size() != updateItems.Size())
     return E_FAIL;
   */
 
-  return archive.WriteDatabase(newDatabase, options.HeaderMethod, 
-      options.UseAdditionalHeaderStreams, options.CompressMainHeader);
+  return archive.WriteDatabase(newDatabase, options.HeaderMethod, options.HeaderOptions);
 }
+
+#ifdef _7Z_VOL
 
 static HRESULT WriteVolumeHeader(COutArchive &archive, CFileItem &file, const CUpdateOptions &options)
 {
@@ -831,7 +912,6 @@ static HRESULT WriteVolumeHeader(COutArchive &archive, CFileItem &file, const CU
       false);
 }
 
-#ifdef _7Z_VOL
 HRESULT UpdateVolume(
     IInStream *inStream,
     const CArchiveDatabaseEx *database,
