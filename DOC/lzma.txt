@@ -1,7 +1,7 @@
-LZMA SDK 4.43
+LZMA SDK 4.44
 -------------
 
-LZMA SDK   Copyright (C) 1999-2006 Igor Pavlov
+LZMA SDK   Copyright (C) 1999-2007 Igor Pavlov
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
 and tools you need to develop applications that use LZMA compression.
@@ -117,7 +117,8 @@ LIB = -lm -static
 
 Files
 ---------------------
-C        - C / CPP source code
+C        - C source code
+CPP      - CPP source code
 CS       - C# source code
 Java     - Java source code
 lzma.txt - LZMA SDK description (this file)
@@ -133,20 +134,11 @@ history.txt - history of the LZMA SDK
 Source code structure
 ---------------------
 
-C  - C / CPP files
-  Common  - common files for C++ projects
-  Windows - common files for Windows related code
-  7zip    - files related to 7-Zip Project
-    Common   - common files for 7-Zip
+C  - C files
     Compress - files related to compression/decompression
-      LZ     - files related to LZ (Lempel-Ziv) compression algorithm
-        BinTree    - Binary Tree Match Finder for LZ algorithm
-        HashChain  - Hash Chain Match Finder for LZ algorithm
-        Patricia   - Patricia Match Finder for LZ algorithm
-      RangeCoder   - Range Coder (special code of compression/decompression)
-      LZMA         - LZMA compression/decompression on C++
-      LZMA_Alone   - file->file LZMA compression/decompression
-      LZMA_C       - ANSI-C compatible LZMA decompressor
+      Lz     - files related to LZ (Lempel-Ziv) compression algorithm
+      Lzma   - ANSI-C compatible LZMA decompressor
+
         LzmaDecode.h  - interface for LZMA decoding on ANSI-C
         LzmaDecode.c      - LZMA decoding on ANSI-C (new fastest version)
         LzmaDecodeSize.c  - LZMA decoding on ANSI-C (old size-optimized version)
@@ -155,9 +147,51 @@ C  - C / CPP files
         LzmaStateDecode.h - interface for LZMA decoding (State version)
         LzmaStateDecode.c - LZMA decoding on ANSI-C (State version)
         LzmaStateTest.c   - test application (State version)
+
       Branch       - Filters for x86, IA-64, ARM, ARM-Thumb, PowerPC and SPARC code
+
     Archive - files related to archiving
       7z_C     - 7z ANSI-C Decoder
+
+
+CPP -- CPP files
+
+  Common  - common files for C++ projects
+  Windows - common files for Windows related code
+  7zip    - files related to 7-Zip Project
+
+    Common   - common files for 7-Zip
+
+    Compress - files related to compression/decompression
+
+      LZ     - files related to LZ (Lempel-Ziv) compression algorithm
+
+      Copy         - Copy coder
+      RangeCoder   - Range Coder (special code of compression/decompression)
+      LZMA         - LZMA compression/decompression on C++
+      LZMA_Alone   - file->file LZMA compression/decompression
+
+      Branch       - Filters for x86, IA-64, ARM, ARM-Thumb, PowerPC and SPARC code
+
+    Archive - files related to archiving
+
+      Common   - common files for archive handling
+      7z       - 7z C++ Encoder/Decoder
+
+    Bundle     - Modules that are bundles of other modules
+  
+    Alone7z             - 7zr.exe: Standalone version of 7z.exe that supports only 7z/LZMA/BCJ/BCJ2
+      
+      Format7zR         - 7zr.dll: Reduced version of 7za.dll: extracting/compressing to 7z/LZMA/BCJ/BCJ2
+      Format7zExtractR  - 7zxr.dll: Reduced version of 7zxa.dll: extracting from 7z/LZMA/BCJ/BCJ2.
+
+    UI        - User Interface files
+         
+      Client7z - Test application for 7za.dll,  7zr.dll, 7zxr.dll
+      Common   - Common UI files
+      Console  - Code for console archiver
+
+
 
 CS - C# files
   7zip
@@ -178,10 +212,10 @@ Java  - Java files
 C/C++ source code of LZMA SDK is part of 7-Zip project.
 
 You can find ANSI-C LZMA decompressing code at folder 
-  C/7zip/Compress/LZMA_C
+  C/7zip/Compress/Lzma
 7-Zip doesn't use that ANSI-C LZMA code and that code was developed 
-specially for this SDK. And files from LZMA_C do not need files from 
-other directories of SDK for compiling.
+specially for this SDK. And files from C/7zip/Compress/Lzma do not need 
+files from other directories of SDK for compiling.
 
 7-Zip source code can be downloaded from 7-Zip's SourceForge page:
 
@@ -232,7 +266,7 @@ Usage:  LZMA <e|d> inputFile outputFile [<switches>...]
      errors in most cases). Benchmark uses these settings:
      (-a1, -d21, -fb32, -mfbt4). You can change only -d. Also you 
      can change number of iterations. Example for 30 iterations:
-	LZMA b 30
+       LZMA b 30
      Default number of iterations is 10.
 
 <Switches>

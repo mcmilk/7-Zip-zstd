@@ -1,52 +1,19 @@
-7-Zip 4.43 Sources
+7-Zip 4.44 Sources
 ------------------
 
-7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP. 
+7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP/Vista. 
 
-7-Zip Copyright (C) 1999-2006 Igor Pavlov.
+7-Zip Copyright (C) 1999-2007 Igor Pavlov.
 
 
 License Info
 ------------
 
-Most of 7-Zip source code is under GNU LGPL.
+7-Zip is free software distributed under the GNU LGPL 
+(except for files Rar29.dll and AES code).
+read License.txt for more infomation about license.
 
-Files in folders
-  7zip/Compress/Rar20
-  7zip/Compress/Rar29
-  7zip/Compress/Rar29/Original
-are licensed under "unRAR license + GNU LGPL" license.
-Source code files in all other folders of this package are under GNU LGPL.
-
-"unRAR license + GNU LGPL" means that you must follow 
-GNU LGPL in all aspects while it is in agreement 
-with unRAR license. But you can not break unRAR license rules.
-It means that unRAR license is main license in that pair.
-
-You can find unRAR license in file unrarLicense.txt
-You can find GNU LGPL license in file copying.txt
-
-
-GNU LGPL information:
----------------------
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-
-unRAR license + GNU LGPL Notes
-------------------------------
+Notes about unRAR license:
 
 Please check main restriction from unRar license:
 
@@ -66,20 +33,9 @@ In brief it means:
 3) You can not use unRAR sources to re-create the RAR compression algorithm.
 
 
-7zip\Compress\Rar29\Original folder contains files that are modified
-versions of original unRAR source code files.
+LZMA SDK
+--------
 
-
-License notes
--------------
-
-You can support development of 7-Zip by registering.
-
-7-Zip is free software distributed under the GNU LGPL.
-If you need license with other conditions, write to
-http://www.7-zip.org/support.html
-
----
 Also this package contains files from LZMA SDK
 you can download LZMA SDK from this page:
 http://www.7-zip.org/sdk.html
@@ -145,6 +101,9 @@ DOC                Documentation
   7zip.nsi       - installer script for NSIS
 
 
+C   - Source code in C
+CPP - Source code in CPP
+
 Common            Common modules
 Windows           Win32 wrappers
 
@@ -188,9 +147,6 @@ Windows           Win32 wrappers
   Compress
   --------
     BZip2        BZip2 compressor
-      Original   Download BZip2 compression sources from
-                    http://sources.redhat.com/bzip2/index.html   
-                 to that folder.
     Branch       Branch converter
     ByteSwap     Byte Swap converter
     Copy         Copy coder
@@ -200,10 +156,6 @@ Windows           Win32 wrappers
     LZMA
     PPMd          Dmitry Shkarin's PPMdH with small changes.
     LZ            Lempel - Ziv
-      MT          Multi Thread Match finder
-      BinTree     Match Finder based on Binary Tree
-      Patricia    Match Finder based on Patricia algoritm
-      HashChain   Match Finder based on Hash Chains
 
   Crypto          Crypto modules
   ------
@@ -219,8 +171,4 @@ Windows           Win32 wrappers
 ---
 Igor Pavlov
 http://www.7-zip.org
-
-
----
-End of document
 

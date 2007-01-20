@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 43
+!define VERSION_MINOR 44
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -184,8 +184,10 @@ Section
   File ar.txt
   File ast.txt
   File az.txt
+  File ba.txt
   File be.txt
   File bg.txt
+  File bn.txt
   File br.txt
   File ca.txt
   File cs.txt
@@ -220,6 +222,7 @@ Section
   File mn.txt
   File mr.txt
   File ms.txt
+  File ne.txt
   File nl.txt
   File no.txt
   File pl.txt
@@ -395,8 +398,10 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ar.txt
   Delete $INSTDIR\Lang\ast.txt
   Delete $INSTDIR\Lang\az.txt
+  Delete $INSTDIR\Lang\ba.txt
   Delete $INSTDIR\Lang\be.txt
   Delete $INSTDIR\Lang\bg.txt
+  Delete $INSTDIR\Lang\bn.txt
   Delete $INSTDIR\Lang\br.txt
   Delete $INSTDIR\Lang\ca.txt
   Delete $INSTDIR\Lang\cs.txt
@@ -431,6 +436,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\mn.txt
   Delete $INSTDIR\Lang\mr.txt
   Delete $INSTDIR\Lang\ms.txt
+  Delete $INSTDIR\Lang\ne.txt
   Delete $INSTDIR\Lang\nl.txt
   Delete $INSTDIR\Lang\no.txt
   Delete $INSTDIR\Lang\pl.txt
