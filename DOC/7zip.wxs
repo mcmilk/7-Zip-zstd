@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "44" ?>
+<?define VerMinor = "45" ?>
 <?define VerBuild = "03" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -227,42 +227,9 @@
             </File>
           </Component>
 
-          <Directory Id="Formats" Name="Formats">
-            <Component Id="Formats" Guid="$(var.CompFormats)" DiskId="1" Win64="$(var.Is64)">
+          <Component Id="Formats" Guid="$(var.CompFormats)" DiskId="1" Win64="$(var.Is64)">
               <File Id="_7z.dll" Name="7z.dll" />
-              <File Id="arj.dll" Name="arj.dll" />
-              <File Id="bz2.dll" Name="bz2.dll" />
-              <File Id="cab.dll" Name="cab.dll" />
-              <File Id="chm.dll" Name="chm.dll" />
-              <File Id="cpio.dll" Name="cpio.dll" />
-              <File Id="deb.dll" Name="deb.dll" />
-              <File Id="gz.dll" Name="gz.dll" />
-              <File Id="iso.dll" Name="iso.dll" />
-              <File Id="lzh.dll" Name="lzh.dll" />
-              <File Id="nsis.dll" Name="nsis.dll" />
-              <File Id="rar.dll" Name="rar.dll" />
-              <File Id="rpm.dll" Name="rpm.dll" />
-              <File Id="split.dll" Name="split.dll" />
-              <File Id="tar.dll" Name="tar.dll" />
-              <File Id="z.dll" Name="z.dll" />
-              <File Id="zip.dll" Name="zip.dll" />
-            </Component>
-          </Directory>
-
-          <Directory Id="Codecs" Name="Codecs">
-            <Component Id="Codecs" Guid="$(var.CompCodecs)" DiskId="1" Win64="$(var.Is64)">
-              <File Id="_7zAES.dll" Name="7zAES.dll" />
-              <File Id="AES.dll" Name="AES.dll" />
-              <File Id="Branch.dll" Name="Branch.dll" />
-              <File Id="BZip2.dll" Name="BZip2.dll" />
-              <File Id="Copy.dll" Name="Copy.dll" />
-              <File Id="Deflate.dll" Name="Deflate.dll" />
-              <File Id="LZMA.dll" Name="LZMA.dll" />
-              <File Id="PPMd.dll" Name="PPMd.dll" />
-              <File Id="Rar29.dll" Name="Rar29.dll" />
-              <File Id="Swap.dll" Name="Swap.dll" />
-            </Component>
-          </Directory>
+          </Component>
 
           <Directory Id="MyLang" Name="Lang">
             <Component Id="Lang" Guid="$(var.CompLang)" DiskId="1" Win64="$(var.Is64)">
@@ -278,6 +245,7 @@
               <File Id="br.txt" Name="br.txt" />
               <File Id="ca.txt" Name="ca.txt" />
               <File Id="cs.txt" Name="cs.txt" />
+              <File Id="cy.txt" Name="cy.txt" />
               <File Id="da.txt" Name="da.txt" />
               <File Id="de.txt" Name="de.txt" />
               <File Id="el.txt" Name="el.txt" />
@@ -361,7 +329,6 @@
         <ComponentRef Id="Gui" />
         <ComponentRef Id="GuiSfx" />
         <ComponentRef Id="ConSfx" />
-        <ComponentRef Id="Codecs" />
         <ComponentRef Id="Formats" />
         <ComponentRef Id="Docs" />
         <ComponentRef Id="Help" />

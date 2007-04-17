@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -116,14 +120,6 @@ SOURCE=.\StdAfx.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\NewHandler.cpp
@@ -251,6 +247,19 @@ SOURCE=..\..\..\Windows\Synchronization.h
 SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group
+# Begin Group "Ñ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\BZip2Const.h
@@ -298,6 +307,10 @@ SOURCE=.\BZip2Encoder.cpp
 # Begin Source File
 
 SOURCE=.\BZip2Encoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\BZip2Register.cpp
 # End Source File
 # End Target
 # End Project

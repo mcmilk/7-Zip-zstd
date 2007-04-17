@@ -1,10 +1,9 @@
-// Archive/arj/InEngine.cpp
+// Archive/LzhIn.cpp
 
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
 #include "Common/Buffer.h"
-#include "Common/CRC.h"
 
 #include "../../Common/StreamUtils.h"
 

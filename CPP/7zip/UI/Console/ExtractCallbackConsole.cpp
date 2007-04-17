@@ -28,9 +28,9 @@ static const char *kTestingString    =  "Testing     ";
 static const char *kExtractingString =  "Extracting  ";
 static const char *kSkippingString   =  "Skipping    ";
 
-static const char *kCantAutoRename = "can not create file with auto name\n";
-static const char *kCantRenameFile = "can not rename existing file\n";
-static const char *kCantDeleteOutputFile = "can not delete output file ";
+// static const char *kCantAutoRename = "can not create file with auto name\n";
+// static const char *kCantRenameFile = "can not rename existing file\n";
+// static const char *kCantDeleteOutputFile = "can not delete output file ";
 static const char *kError = "ERROR: ";
 static const char *kMemoryExceptionMessage = "Can't allocate required memory!";
 

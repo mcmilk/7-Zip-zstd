@@ -9,9 +9,9 @@ UInt32 ARM_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
   {
     if (data[i + 3] == 0xEB)
     {
+      UInt32 dest;
       UInt32 src = (data[i + 2] << 16) | (data[i + 1] << 8) | (data[i + 0]);
       src <<= 2;
-      UInt32 dest;
       if (encoding)
         dest = nowPos + i + 8 + src;
       else

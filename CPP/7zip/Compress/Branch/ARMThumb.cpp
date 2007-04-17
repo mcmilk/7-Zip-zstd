@@ -1,9 +1,13 @@
 // ARMThumb.cpp
 
 #include "StdAfx.h"
+
 #include "ARMThumb.h"
 
-#include "../../../../C/Compress/Branch/BranchARMThumb.c"
+extern "C" 
+{ 
+#include "../../../../C/Compress/Branch/BranchARMThumb.h"
+}
 
 UInt32 CBC_ARMThumb_Encoder::SubFilter(Byte *data, UInt32 size)
 {

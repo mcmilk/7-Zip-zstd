@@ -79,7 +79,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
     throw 272340;
 
   CSysString oemString = UnicodeStringToMultiByte(propVariant.bstrVal, CP_OEMCP);
-  strcpy(panelItem.FindData.cFileName, oemString);
+  MyStringCopy(panelItem.FindData.cFileName, (const char *)oemString);
   panelItem.FindData.cAlternateFileName[0] = 0;
 
   if (_folder->GetProperty(itemIndex, kpidAttributes, &propVariant) != S_OK)
@@ -204,7 +204,7 @@ void CPlugin::EnterToDirectory(const UString &aDirName)
   _folder = newFolder;
 }
 
-int CPlugin::SetDirectory(const char *aszDir, int opMode)
+int CPlugin::SetDirectory(const char *aszDir, int /* opMode */)
 {
   UString path = MultiByteToUnicodeString(aszDir, CP_OEMCP);
   if (path == L"\\")
@@ -361,12 +361,14 @@ static int FindPropertyInfo(PROPID propID)
 */
 
 // char *g_Titles[] = { "a", "f", "v" };
-static void SmartAddToString(AString &aDestString, const char *aSrcString)
+/*
+static void SmartAddToString(AString &destString, const char *srcString)
 {
-  if (!aDestString.IsEmpty())
-    aDestString += ',';
-  aDestString += aSrcString;
+  if (!destString.IsEmpty())
+    destString += ',';
+  destString += srcString;
 }
+*/
 
 /*
 void CPlugin::AddColumn(PROPID propID)
@@ -401,10 +403,10 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
 
   UINT codePage = ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
 
-  strcpy(m_FileNameBuffer, UnicodeStringToMultiByte(m_FileName, codePage));
+  MyStringCopy(m_FileNameBuffer, (const char *)UnicodeStringToMultiByte(m_FileName, codePage));
   info->HostFile = m_FileNameBuffer; // test it it is not static
   
-  strcpy(m_CurrentDirBuffer, UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
+  MyStringCopy(m_CurrentDirBuffer, (const char *)UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
   info->CurDir = m_CurrentDirBuffer;
 
   info->Format = kPluginFormatName;
@@ -429,15 +431,15 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
     m_PannelTitle += m_CurrentDir;
   }
  
-  strcpy(m_PannelTitleBuffer, UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
+  MyStringCopy(m_PannelTitleBuffer, (const char *)UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
   info->PanelTitle = m_PannelTitleBuffer;
 
   memset(m_InfoLines,0,sizeof(m_InfoLines));
-  strcpy(m_InfoLines[0].Text,"");
+  MyStringCopy(m_InfoLines[0].Text,"");
   m_InfoLines[0].Separator = TRUE;
 
-  strcpy(m_InfoLines[1].Text, g_StartupInfo.GetMsgString(NMessageID::kArchiveType));
-  strcpy(m_InfoLines[1].Data, UnicodeStringToMultiByte(_archiveTypeName, CP_OEMCP));
+  MyStringCopy(m_InfoLines[1].Text, g_StartupInfo.GetMsgString(NMessageID::kArchiveType));
+  MyStringCopy(m_InfoLines[1].Data, (const char *)UnicodeStringToMultiByte(_archiveTypeName, CP_OEMCP));
 
   int numItems = 2;
   UINT32 numProps;
@@ -456,19 +458,19 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
       if (index < 0)
       {
         if (name != 0)
-          strcpy(item.Text, UnicodeStringToMultiByte(
+          MyStringCopy(item.Text, (const char *)UnicodeStringToMultiByte(
               (const wchar_t *)name, CP_OEMCP));
         else
-          strcpy(item.Text, "");
+          MyStringCopy(item.Text, "");
       }
       else
-        strcpy(item.Text, g_StartupInfo.GetMsgString(kPROPIDToName[index].PluginID));
+        MyStringCopy(item.Text, g_StartupInfo.GetMsgString(kPROPIDToName[index].PluginID));
 
       NCOM::CPropVariant propVariant;
       if (m_ArchiveHandler->GetArchiveProperty(propID, &propVariant) != S_OK)
         continue;
       CSysString s = ConvertPropertyToString2(propVariant, propID);
-      strcpy(item.Data, s);
+      MyStringCopy(item.Data, (const char *)s);
       numItems++;
     }
   }
@@ -577,8 +579,6 @@ HRESULT CPlugin::ShowAttributesWindow()
   }
   */
 
-  const int kPathIndex = 2;
-  const int kOkButtonIndex = 4;
   int size = 2;
   CRecordVector<CInitDialogItem> initDialogItems;
   
@@ -637,7 +637,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   for (i = 0; i < numLines; i++)
   {
     FarDialogItem &dialogItem = dialogItems[1 + i * 2];
-    int len = strlen(dialogItem.Data);
+    int len = (int)strlen(dialogItem.Data);
     if (len > maxLen)
       maxLen = len;
   }
@@ -646,7 +646,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   for (i = 0; i < numLines; i++)
   {
     FarDialogItem &dialogItem = dialogItems[1 + i * 2 + 1];
-    int len = strlen(dialogItem.Data);
+    int len = (int)strlen(dialogItem.Data);
     if (len > maxLen2)
       maxLen2 = len;
     dialogItem.X1 = maxLen + kSpace;
@@ -657,7 +657,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   aFirstDialogItem.Y2 = size - 2;
   aFirstDialogItem.X2 = xSize - 4;
   
-  int askCode = g_StartupInfo.ShowDialog(xSize, size, NULL, &dialogItems.Front(), numDialogItems);
+  /* int askCode = */ g_StartupInfo.ShowDialog(xSize, size, NULL, &dialogItems.Front(), numDialogItems);
   return S_OK;
 }
 

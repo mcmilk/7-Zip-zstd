@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.45 beta           2007-04-16
+  --------------------------------------
+   - 7-Zip now uses C version of CRC, so you must call CrcGenerateTable at 
+     stratup code, or you must add CPP/Common/CRC.cpp to your project.
+   - Method ID in .7z now is 63-bit integer (UInt64).
+   
+  
   Version 4.30 beta           2005-11-18
   --------------------------------------
    - Security.h::AddLockMemoryPrivilege       - installs "Large pages" feature

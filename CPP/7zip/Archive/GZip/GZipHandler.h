@@ -7,6 +7,8 @@
 
 #include "../IArchive.h"
 
+#include "../../Common/CreateCoder.h"
+
 #include "GZipIn.h"
 #include "GZipUpdate.h"
 
@@ -17,13 +19,17 @@ class CHandler:
   public IInArchive,
   public IOutArchive,
   public ISetProperties,
+  PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP3(
-      IInArchive,
-      IOutArchive,
-      ISetProperties)
+  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_ENTRY(IOutArchive)
+  MY_QUERYINTERFACE_ENTRY(ISetProperties)
+  QUERY_ENTRY_ISetCompressCodecsInfo
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(Open)(IInStream *inStream, 
       const UInt64 *maxCheckStartPosition,
@@ -55,7 +61,8 @@ public:
   // ISetProperties
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
 
-public:
+  DECL_ISetCompressCodecsInfo
+
   CHandler() { InitMethodProperties(); }
 
 private:
@@ -66,6 +73,8 @@ private:
   CMyComPtr<IInStream> m_Stream;
   CCompressionMethodMode m_Method;
   UInt32 m_Level;
+
+  DECL_EXTERNAL_CODECS_VARS
 
   void InitMethodProperties()
   {

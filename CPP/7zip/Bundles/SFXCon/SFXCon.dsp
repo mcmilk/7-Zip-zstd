@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "COMPRESS_BCJ2" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "COMPRESS_BCJ2" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "_SFX" /D "NO_READ_FROM_CODER" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "..\..\..\..\\" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_COPY" /D "COMPRESS_PPMD" /D "_SFX" /D "CRYPTO_7ZAES" /D "CRYPTO_AES" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "..\..\..\..\\" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "_SFX" /D "NO_READ_FROM_CODER" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -138,14 +138,6 @@ SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\FilterCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -265,11 +257,7 @@ SOURCE=..\..\Archive\7z\7zItem.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7zMethodID.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zMethodID.h
+SOURCE=..\..\Archive\7z\7zRegister.cpp
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -282,10 +270,22 @@ SOURCE=..\..\Archive\7z\7zMethodID.h
 
 SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA\LZMARegister.cpp
+# End Source File
 # End Group
 # Begin Group "Branch"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BCJ2Register.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BCJRegister.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Branch\BranchCoder.cpp
@@ -309,6 +309,10 @@ SOURCE=..\..\Compress\Branch\x86_2.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\PPMD\PPMDDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\PPMD\PPMDRegister.cpp
 # End Source File
 # End Group
 # Begin Group "LZ"
@@ -334,6 +338,10 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 
 SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyRegister.cpp
+# End Source File
 # End Group
 # End Group
 # Begin Group "Crypto"
@@ -349,6 +357,10 @@ SOURCE=..\..\Crypto\7zAES\7zAES.cpp
 # Begin Source File
 
 SOURCE=..\..\Crypto\7zAES\7zAES.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zAES\7zAESRegister.cpp
 # End Source File
 # End Group
 # Begin Group "AES"
@@ -410,10 +422,6 @@ SOURCE=..\..\Crypto\Hash\Sha256.cpp
 SOURCE=..\..\Crypto\Hash\Sha256.h
 # End Source File
 # End Group
-# End Group
-# Begin Group "SDK"
-
-# PROP Default_Filter ""
 # End Group
 # Begin Group "Windows"
 
@@ -486,14 +494,6 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.cpp
@@ -580,6 +580,14 @@ SOURCE=..\..\..\Common\Wildcard.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\CreateCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CreateCoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\FilePathAutoRename.cpp
 # End Source File
 # Begin Source File
@@ -593,6 +601,14 @@ SOURCE=..\..\Common\FileStreams.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -691,14 +707,6 @@ SOURCE=..\..\UI\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\Common\ArchiverInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Common\ArchiverInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\UI\Common\DefaultName.cpp
 # End Source File
 # Begin Source File
@@ -731,6 +739,14 @@ SOURCE=..\..\UI\Common\ExtractMode.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\LoadCodecs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\LoadCodecs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\OpenArchive.cpp
 # End Source File
 # Begin Source File
@@ -746,6 +762,45 @@ SOURCE=..\..\UI\Common\PropIDUtils.cpp
 SOURCE=..\..\UI\Common\PropIDUtils.h
 # End Source File
 # End Group
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Group "C Branch"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchTypes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
 # End Group
 # Begin Source File
 

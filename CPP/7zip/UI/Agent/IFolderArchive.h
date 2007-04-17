@@ -8,6 +8,7 @@
 #include "../../FileManager/IFolder.h"
 #include "../Common/IFileExtractCallback.h"
 #include "../Common/ExtractMode.h"
+#include "../../UI/Common/LoadCodecs.h"
 
 // {23170F69-40C1-278A-0000-000100050000}
 DEFINE_GUID(IID_IArchiveFolder, 
@@ -31,7 +32,8 @@ MIDL_INTERFACE("23170F69-40C1-278A-0000-000100060000")
 IInFolderArchive: public IUnknown
 {
 public:
-  STDMETHOD(Open)(const wchar_t *filePath, 
+  STDMETHOD(Open)(
+      const wchar_t *filePath, 
       // CLSID *clsIDResult,
       BSTR *archiveType,
       IArchiveOpenCallback *openArchiveCallback) PURE;  
@@ -68,10 +70,9 @@ public:
   STDMETHOD(UpdateErrorMessage)(const wchar_t *message) PURE;
 };
 
-// {23170F69-40C1-278A-0000-0001000A0000}
 DEFINE_GUID(IID_IOutFolderArchive, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000A0000")
+0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x02);
+MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000A0002")
 IOutFolderArchive: public IUnknown
 {
   STDMETHOD(SetFolder)(IFolderFolder *folder) PURE;
@@ -79,8 +80,13 @@ IOutFolderArchive: public IUnknown
   STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, 
       const UINT32 *indices, UINT32 numItems, IFolderArchiveUpdateCallback *updateCallback) PURE;
   STDMETHOD(DoOperation)(
-      const wchar_t *filePath, 
-      const CLSID *clsID, 
+      CCodecs *codecs, 
+      int index,
+      const wchar_t *newArchiveName, 
+      const Byte *stateActions,
+      const wchar_t *sfxModule,
+      IFolderArchiveUpdateCallback *updateCallback) PURE;
+  STDMETHOD(DoOperation2)(
       const wchar_t *newArchiveName, 
       const Byte *stateActions,
       const wchar_t *sfxModule,

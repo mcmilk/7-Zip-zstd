@@ -3,7 +3,10 @@
 #include "StdAfx.h"
 #include "x86_2.h"
 
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 
 static const int kBufferSize = 1 << 17;
 

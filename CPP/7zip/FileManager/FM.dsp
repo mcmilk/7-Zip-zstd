@@ -489,18 +489,6 @@ SOURCE=.\Resource\AboutDialog\AboutDialog.cpp
 SOURCE=.\Resource\AboutDialog\AboutDialog.h
 # End Source File
 # End Group
-# Begin Group "Benchmark"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
-# End Source File
-# End Group
 # Begin Group "Split"
 
 # PROP Default_Filter ""
@@ -606,9 +594,93 @@ SOURCE=.\UpdateCallback100.cpp
 SOURCE=.\UpdateCallback100.h
 # End Source File
 # End Group
-# Begin Group "SDK"
+# Begin Group "UI Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\UI\Common\ArchiveName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\UI\Common\ArchiveName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\UI\Common\CompressCall.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\UI\Common\CompressCall.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\UI\Common\PropIDUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\UI\Common\PropIDUtils.h
+# End Source File
+# End Group
+# Begin Group "7-Zip Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FilePathAutoRename.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FileStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\StreamObjects.h
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\C\Sort.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\C\Sort.h
+# End Source File
+# End Group
 # Begin Group "Windows"
 
 # PROP Default_Filter ""
@@ -894,14 +966,6 @@ SOURCE=..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
@@ -919,10 +983,6 @@ SOURCE=..\..\Common\ComTry.h
 # Begin Source File
 
 SOURCE=..\..\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
@@ -1047,76 +1107,6 @@ SOURCE=..\..\Common\Wildcard.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\Wildcard.h
-# End Source File
-# End Group
-# End Group
-# Begin Group "UI Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\UI\Common\ArchiveName.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\UI\Common\ArchiveName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\UI\Common\CompressCall.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\UI\Common\CompressCall.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\UI\Common\PropIDUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\UI\Common\PropIDUtils.h
-# End Source File
-# End Group
-# Begin Group "7-Zip Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Common\FilePathAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FilePathAutoRename.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FileStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\StreamObjects.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\StreamObjects.h
-# End Source File
-# End Group
-# Begin Group "C"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\C\Sort.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\C\Sort.h
 # End Source File
 # End Group
 # Begin Source File

@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "COMPRESS_MT" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "COMPRESS_MT" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -97,7 +97,11 @@ SOURCE=..\Archive.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\ArchiveExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -194,22 +198,6 @@ SOURCE=.\7zItem.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\7zMethodID.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zMethodID.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zMethods.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\7zMethods.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\7zOut.cpp
 # End Source File
 # Begin Source File
@@ -223,6 +211,10 @@ SOURCE=.\7zProperties.cpp
 # Begin Source File
 
 SOURCE=.\7zProperties.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\7zRegister.cpp
 # End Source File
 # Begin Source File
 
@@ -278,23 +270,11 @@ SOURCE=..\..\PropID.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
@@ -354,22 +334,6 @@ SOURCE=..\..\..\Common\Vector.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Common\CodecsPath.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CodecsPath.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderLoader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderLoader.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\CoderMixer2.cpp
 # End Source File
 # Begin Source File
@@ -391,14 +355,6 @@ SOURCE=..\Common\CrossThreadProgress.cpp
 # Begin Source File
 
 SOURCE=..\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FilterCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -446,6 +402,22 @@ SOURCE=..\Common\ParseProperties.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\CreateCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CreateCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilterCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilterCoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\InOutTempBuffer.cpp
 # End Source File
 # Begin Source File
@@ -470,6 +442,14 @@ SOURCE=..\..\Common\LockedStream.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodId.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodId.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OutBuffer.cpp
 # End Source File
 # Begin Source File
@@ -483,6 +463,14 @@ SOURCE=..\..\Common\ProgressUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\ProgressUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\RegisterArc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\RegisterCodec.h
 # End Source File
 # Begin Source File
 
@@ -583,6 +571,28 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # End Group
 # Begin Source File

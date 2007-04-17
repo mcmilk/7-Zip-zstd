@@ -43,6 +43,22 @@ static inline bool TestMarkerCandidate(const Byte *p, UInt32 &value)
     (value == NSignature::kEndOfCentralDir);
 }
 
+static const UInt32 kNumMarkerAddtionalBytes = 2;
+static inline bool TestMarkerCandidate2(const Byte *p, UInt32 &value)
+{
+  value = p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
+  if (value == NSignature::kEndOfCentralDir)
+  {
+    UInt16 nextWord = p[0] | (((UInt16)p[1]) << 8);
+    return (nextWord == 0);
+  }
+  if (value != NSignature::kLocalFileHeader)
+    return false;
+  if (p[0] > 128)
+    return false;
+  return true;
+}
+
 bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
 {
   m_ArchiveInfo.Clear();
@@ -73,12 +89,13 @@ bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
     UInt32 numReadBytes = kSearchMarkerBufferSize - numBytesPrev;
     ReadBytes(buffer + numBytesPrev, numReadBytes, &processedSize);
     UInt32 numBytesInBuffer = numBytesPrev + processedSize;
-    if (numBytesInBuffer < NSignature::kMarkerSize)
+    const UInt32 kMarker2Size = NSignature::kMarkerSize + kNumMarkerAddtionalBytes;
+    if (numBytesInBuffer < kMarker2Size)
       break;
-    UInt32 numTests = numBytesInBuffer - NSignature::kMarkerSize + 1;
+    UInt32 numTests = numBytesInBuffer - kMarker2Size + 1;
     for(UInt32 pos = 0; pos < numTests; pos++, curTestPos++)
     { 
-      if (TestMarkerCandidate(buffer + pos, m_Signature))
+      if (TestMarkerCandidate2(buffer + pos, m_Signature))
       {
         m_ArchiveInfo.StartPosition = curTestPos;
         // m_ArchiveInfo.Base = m_ArchiveInfo.StartPosition;
@@ -324,8 +341,11 @@ HRESULT CInArchive::ReadLocalItemAfterCdItem(CItemEx &item)
     RINOK(ReadLocalItem(localItem));
     if (item.Flags != localItem.Flags)
     {
-      if (item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflated ||
-        (item.Flags & 0xFFFC) != (localItem.Flags & 0xFFFC))
+      if ((item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflated ||
+        (item.Flags & 0x7FFC) != (localItem.Flags & 0x7FFC)) &&
+        ((item.CompressionMethod != NFileHeader::NCompressionMethod::kStored ||
+        (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF))
+        ))
         return S_FALSE;
     }
 

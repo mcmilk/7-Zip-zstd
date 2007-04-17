@@ -48,14 +48,14 @@ typedef unsigned long long int UInt64;
 #endif
 
 
-/* #define _SZ_FILE_SIZE_64 */
-/* Use _SZ_FILE_SIZE_64 if you need support for files larger than 4 GB*/
+/* #define _SZ_FILE_SIZE_32 */
+/* You can define _SZ_FILE_SIZE_32, if you don't need support for files larger than 4 GB*/
 
 #ifndef CFileSize
-#ifdef _SZ_FILE_SIZE_64
-typedef UInt64 CFileSize; 
-#else
+#ifdef _SZ_FILE_SIZE_32
 typedef UInt32 CFileSize; 
+#else
+typedef UInt64 CFileSize; 
 #endif
 #endif
 
@@ -76,7 +76,7 @@ typedef int HRes;
 
 
 #ifndef RINOK
-#define RINOK(x) { int __result_ = (x); if(__result_ != 0) return __result_; }
+#define RINOK(x) { HRes __result_ = (x); if(__result_ != 0) return __result_; }
 #endif
 
 typedef int Bool;
@@ -87,6 +87,14 @@ typedef int Bool;
 #define StdCall __stdcall 
 #else
 #define StdCall
+#endif
+
+#if _MSC_VER >= 1300
+#define MY_FAST_CALL __declspec(noinline) __fastcall 
+#elif defined( _MSC_VER)
+#define MY_FAST_CALL __fastcall 
+#else
+#define MY_FAST_CALL
 #endif
 
 #endif

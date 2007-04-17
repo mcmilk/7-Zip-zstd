@@ -59,17 +59,15 @@ void CExtDatabase::Read()
     if (pluginLibrary.LoadAndCreateManager(pluginInfo.FilePath, 
         pluginInfo.ClassID, &folderManager) != S_OK)
       continue;
-    CMyComBSTR typesString;
-    if (folderManager->GetTypes(&typesString) != S_OK)
-      continue;
-    UStringVector types;
-    SplitString((const wchar_t *)typesString, types);
-    for (int typeIndex = 0; typeIndex < types.Size(); typeIndex++)
+    CMyComBSTR extBSTR;
+    if (folderManager->GetExtensions(&extBSTR) != S_OK)
+      return;
+    const UString ext2 = (const wchar_t *)extBSTR;
+    UStringVector exts;
+    SplitString(ext2, exts);
+    for (int i = 0; i < exts.Size(); i++)
     {
-      CMyComBSTR extTemp;
-      if (folderManager->GetExtension(types[typeIndex], &extTemp) != S_OK)
-        continue;
-      const UString ext = (const wchar_t *)extTemp;
+      const UString &ext = exts[i];
       int index = FindExtInfoBig(ext);
       if (index < 0)
       {

@@ -3,12 +3,16 @@
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
-#include "Common/CRC.h"
 #include "Common/UTFConvert.h"
 
 #include "RarIn.h"
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/StreamUtils.h"
+
+extern "C" 
+{ 
+  #include "../../../../C/7zCrc.h" 
+}
 
 namespace NArchive {
 namespace NRar {
@@ -137,6 +141,23 @@ HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
   return result;
 }
 
+static UInt32 CrcUpdateUInt16(UInt32 crc, UInt16 v)
+{
+  crc = CRC_UPDATE_BYTE(crc, (Byte)(v & 0xFF));
+  crc = CRC_UPDATE_BYTE(crc, (Byte)((v >> 8) & 0xFF));
+  return crc;
+}
+
+static UInt32 CrcUpdateUInt32(UInt32 crc, UInt32 v)
+{
+  crc = CRC_UPDATE_BYTE(crc, (Byte)(v & 0xFF));
+  crc = CRC_UPDATE_BYTE(crc, (Byte)((v >> 8) & 0xFF));
+  crc = CRC_UPDATE_BYTE(crc, (Byte)((v >> 16) & 0xFF));
+  crc = CRC_UPDATE_BYTE(crc, (Byte)((v >> 24) & 0xFF));
+  return crc;
+}
+
+
 bool CInArchive::ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit)
 {
   if (!FindAndReadMarker(searchHeaderSizeLimit))
@@ -159,22 +180,22 @@ bool CInArchive::ReadMarkerAndArchiveHeader(const UInt64 *searchHeaderSizeLimit)
   m_ArchiveHeader.Reserved2 = ReadUInt32();
   m_ArchiveHeader.EncryptVersion = 0;
 
-  CCRC crc;
-  crc.UpdateByte(m_ArchiveHeader.Type);
-  crc.UpdateUInt16(m_ArchiveHeader.Flags);
-  crc.UpdateUInt16(m_ArchiveHeader.Size);
-  crc.UpdateUInt16(m_ArchiveHeader.Reserved1);
-  crc.UpdateUInt32(m_ArchiveHeader.Reserved2);
+  UInt32 crc = CRC_INIT_VAL;
+  crc = CRC_UPDATE_BYTE(crc, m_ArchiveHeader.Type);
+  crc = CrcUpdateUInt16(crc, m_ArchiveHeader.Flags);
+  crc = CrcUpdateUInt16(crc, m_ArchiveHeader.Size);
+  crc = CrcUpdateUInt16(crc, m_ArchiveHeader.Reserved1);
+  crc = CrcUpdateUInt32(crc, m_ArchiveHeader.Reserved2);
 
   if (m_ArchiveHeader.IsThereEncryptVer() && m_ArchiveHeader.Size > NHeader::NArchive::kArchiveHeaderSize)
   {
     ReadBytes(&m_ArchiveHeader.EncryptVersion, 1, &processedSize);
     if (processedSize != 1)
       return false;
-    crc.UpdateByte(m_ArchiveHeader.EncryptVersion);
+    crc = CRC_UPDATE_BYTE(crc, m_ArchiveHeader.EncryptVersion);
   }
 
-  if(m_ArchiveHeader.CRC != (crc.GetDigest() & 0xFFFF))
+  if(m_ArchiveHeader.CRC != (CRC_GET_DIGEST(crc) & 0xFFFF))
     ThrowExceptionWithCode(CInArchiveException::kArchiveHeaderCRCError);
   if (m_ArchiveHeader.Type != NHeader::NBlockType::kArchiveHeader)
     return false;
@@ -478,7 +499,7 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
       m_PosLimit = m_BlockHeader.HeadSize;
       ReadBytesAndTestResult(m_CurData + m_CurPos, m_BlockHeader.HeadSize - 7);
       ReadHeaderReal(item); 
-      if ((CCRC::CalculateDigest(m_CurData + 2, 
+      if ((CrcCalc(m_CurData + 2, 
           m_BlockHeader.HeadSize - item.CommentSize - 2) & 0xFFFF) != m_BlockHeader.CRC)
         ThrowExceptionWithCode(CInArchiveException::kFileHeaderCRCError);
 

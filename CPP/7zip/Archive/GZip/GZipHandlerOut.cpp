@@ -138,7 +138,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
                               (level >= 7 ? kNumFastBytesX7 : 
                                             kNumFastBytesX1));
 
-    return UpdateArchive(m_Stream, size, outStream, newItem, m_Method, itemIndex, updateCallback);
+    return UpdateArchive(
+        EXTERNAL_CODECS_VARS
+        m_Stream, size, outStream, newItem, m_Method, itemIndex, updateCallback);
   }
     
   if (indexInArchive != 0)

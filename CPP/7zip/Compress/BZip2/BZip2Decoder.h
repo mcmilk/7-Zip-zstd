@@ -109,6 +109,7 @@ public:
   ICompressProgressInfo *Progress;
   CState *m_States;
 
+  NWindows::NSynchronization::CManualResetEvent CanProcessEvent;
   NWindows::NSynchronization::CCriticalSection CS;
   UInt32 NumThreads;
   bool MtMode;

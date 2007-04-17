@@ -20,7 +20,7 @@ namespace NDecoder {
 class CCoder:
   public ICompressCoder,
   public ICompressGetInStreamProcessedSize,
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
@@ -83,7 +83,7 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP4(
       ICompressGetInStreamProcessedSize,
       ICompressSetInStream, 
@@ -103,7 +103,7 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
   
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
 

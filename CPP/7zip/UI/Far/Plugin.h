@@ -9,7 +9,6 @@
 #include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"
 
-#include "../Common/ArchiverInfo.h"
 #include "../Agent/IFolderArchive.h"
 
 #include "FarUtils.h"

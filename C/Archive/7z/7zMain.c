@@ -159,7 +159,11 @@ SZ_RESULT SzFileSeekImp(void *object, CFileSize pos)
   {
     LARGE_INTEGER value;
     value.LowPart = (DWORD)pos;
-    value.HighPart = (LONG)(pos >> 32);
+    value.HighPart = (LONG)((UInt64)pos >> 32);
+    #ifdef _SZ_FILE_SIZE_32
+    // VC 6.0 has bug with >> 32 shifts.
+    value.HighPart = 0;
+    #endif
     value.LowPart = SetFilePointer(s->File, value.LowPart, &value.HighPart, FILE_BEGIN);
     if (value.LowPart == 0xFFFFFFFF)
       if(GetLastError() != NO_ERROR) 
@@ -187,7 +191,7 @@ int main(int numargs, char *args[])
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.44  Copyright (c) 1999-2006 Igor Pavlov  2006-08-27\n");
+  printf("\n7z ANSI-C Decoder 4.45  Copyright (c) 1999-2007 Igor Pavlov  2007-03-15\n");
   if (numargs == 1)
   {
     printf(

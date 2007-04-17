@@ -4,7 +4,11 @@
 
 #include "resource.h"
 
-#include "Common/Alloc.h"
+extern "C" 
+{ 
+  #include "../../../C/Alloc.h"
+}
+
 #include "Common/Types.h"
 #include "Common/IntToString.h"
 

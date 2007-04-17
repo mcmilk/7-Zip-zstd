@@ -12,8 +12,6 @@
 #include "MyWindows.h"
 #endif
 
-static const char *kTrimDefaultCharSet  = " \n\t";
-
 template <class T>
 inline int MyStringLen(const T *s)
 { 
@@ -55,7 +53,7 @@ inline char MyCharUpper(char c)
   { return (char)(unsigned int)(UINT_PTR)CharUpperA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
 #ifdef _UNICODE
 inline wchar_t MyCharUpper(wchar_t c)
-  { return (wchar_t)CharUpperW((LPWSTR)c); }
+  { return (wchar_t)(unsigned int)(UINT_PTR)CharUpperW((LPWSTR)(UINT_PTR)(unsigned int)c); }
 #else
 wchar_t MyCharUpper(wchar_t c);
 #endif
@@ -64,7 +62,7 @@ inline char MyCharLower(char c)
   { return (char)(unsigned int)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
 #ifdef _UNICODE
 inline wchar_t MyCharLower(wchar_t c)
-  { return (wchar_t)CharLowerW((LPWSTR)c); }
+  { return (wchar_t)(unsigned int)(UINT_PTR)CharLowerW((LPWSTR)(UINT_PTR)(unsigned int)c); }
 #else
 wchar_t MyCharLower(wchar_t c);
 #endif
@@ -431,9 +429,9 @@ public:
   CStringBase GetTrimDefaultCharSet()
   {
     CStringBase<T> charSet;
-    for(int i = 0; i < (int)(sizeof(kTrimDefaultCharSet) /
-      sizeof(kTrimDefaultCharSet[0])); i++)
-      charSet += (T)kTrimDefaultCharSet[i];
+    charSet += (T)' ';
+    charSet += (T)'\n';
+    charSet += (T)'\t';
     return charSet;
   }
   public:

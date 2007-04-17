@@ -6,23 +6,21 @@
 
 #include "../../Common/StreamUtils.h"
 
-#include "../7z/7zMethods.h"
+#include "../../Common/MethodId.h"
+#include "../../Common/CreateCoder.h"
 
 namespace NArchive {
 namespace NNsis {
 
-static const N7z::CMethodID k_Copy    = { { 0x0 }, 1 };
-static const N7z::CMethodID k_Deflate = { { 0x4, 0x9, 0x1 }, 3 };
-static const N7z::CMethodID k_BZip2   = { { 0x4, 0x9, 0x2 }, 3 };
-static const N7z::CMethodID k_LZMA    = { { 0x3, 0x1, 0x1 }, 3 };
-static const N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
+static const CMethodId k_Copy    = 0x0;
+static const CMethodId k_Deflate = 0x040901;
+static const CMethodId k_BZip2   = 0x040902;
+static const CMethodId k_LZMA    = 0x030101;
+static const CMethodId k_BCJ_X86 = 0x03030103;
 
-CDecoder::CDecoder()
-{
-  N7z::LoadMethodMap();
-}
-
-HRESULT CDecoder::Init(IInStream *inStream, NMethodType::EEnum method, bool thereIsFilterFlag, bool &useFilter)
+HRESULT CDecoder::Init(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    IInStream *inStream, NMethodType::EEnum method, bool thereIsFilterFlag, bool &useFilter)
 {
   useFilter = false;
   CObjectVector< CMyComPtr<ISequentialInStream> > inStreams;
@@ -33,29 +31,21 @@ HRESULT CDecoder::Init(IInStream *inStream, NMethodType::EEnum method, bool ther
   _method = method;
   if (!_codecInStream)
   {
-    const NArchive::N7z::CMethodID *methodID = 0;
+    CMethodId methodID;
     switch (method)
     {
-      case NMethodType::kCopy:
-        methodID = &k_Copy;
-        break;
-      case NMethodType::kDeflate:
-        methodID = &k_Deflate;
-        break;
-      case NMethodType::kBZip2:
-        methodID = &k_BZip2;
-        break;
-      case NMethodType::kLZMA:
-        methodID = &k_LZMA;
-        break;
-      default:
-        return E_NOTIMPL;
+      case NMethodType::kCopy: methodID = k_Copy; break;
+      case NMethodType::kDeflate: methodID = k_Deflate; break;
+      case NMethodType::kBZip2: methodID = k_BZip2; break;
+      case NMethodType::kLZMA: methodID = k_LZMA; break;
+      default: return E_NOTIMPL;
     }
-    N7z::CMethodInfo methodInfo;
-    if (!N7z::GetMethodInfo(*methodID, methodInfo)) 
-      return E_NOTIMPL;
     CMyComPtr<ICompressCoder> coder;
-    RINOK(_libraries.CreateCoder(methodInfo.FilePath, methodInfo.Decoder, &coder));
+    RINOK(CreateCoder(
+        EXTERNAL_CODECS_LOC_VARS
+        methodID, coder, false));
+    if (!coder)
+      return E_NOTIMPL;
     coder.QueryInterface(IID_ISequentialInStream, &_codecInStream);
     if (!_codecInStream)
       return E_NOTIMPL;
@@ -77,11 +67,12 @@ HRESULT CDecoder::Init(IInStream *inStream, NMethodType::EEnum method, bool ther
   {
     if (!_filterInStream)
     {
-      N7z::CMethodInfo methodInfo;
-      if (!N7z::GetMethodInfo(k_BCJ_X86, methodInfo)) 
-        return E_NOTIMPL;
       CMyComPtr<ICompressCoder> coder;
-      RINOK(_libraries.CreateCoderSpec(methodInfo.FilePath, methodInfo.Decoder, &coder));
+      RINOK(CreateCoder(
+          EXTERNAL_CODECS_LOC_VARS
+          k_BCJ_X86, coder, false));
+      if (!coder)
+        return E_NOTIMPL;
       coder.QueryInterface(IID_ISequentialInStream, &_filterInStream);
       if (!_filterInStream)
         return E_NOTIMPL;

@@ -995,7 +995,9 @@ static bool IsLZMA(const Byte *p, UInt32 &dictionary, bool &thereIsFlag)
   return false;
 }
 
-HRESULT CInArchive::Open2()
+HRESULT CInArchive::Open2(
+      DECL_EXTERNAL_CODECS_LOC_VARS2
+      )
 {
   RINOK(_stream->Seek(0, STREAM_SEEK_CUR, &StreamOffset));
 
@@ -1053,7 +1055,9 @@ HRESULT CInArchive::Open2()
   {
     // unpackSize = (1 << 23);
     _data.SetCapacity(unpackSize);
-    RINOK(Decoder.Init(_stream, Method, FilterFlag, UseFilter));
+    RINOK(Decoder.Init(
+        EXTERNAL_CODECS_LOC_VARS
+        _stream, Method, FilterFlag, UseFilter));
     UInt32 processedSize;
     RINOK(Decoder.Read(_data, unpackSize, &processedSize));
     if (processedSize != unpackSize)
@@ -1108,7 +1112,9 @@ FirstHeader
 }
 */
 
-HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPosition)
+HRESULT CInArchive::Open(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    IInStream *inStream, const UInt64 *maxCheckStartPosition)
 {
   Clear();
   UInt64 pos;
@@ -1152,7 +1158,12 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
 
   _stream = inStream;
   HRESULT res = S_FALSE;
-  try { res = Open2(); }
+  try 
+  { 
+    res = Open2(
+      EXTERNAL_CODECS_LOC_VARS2
+      ); 
+  }
   catch(...) { Clear(); res = S_FALSE; }
   _stream.Release();
   return res;

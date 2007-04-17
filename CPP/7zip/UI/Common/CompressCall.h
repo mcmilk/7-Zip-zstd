@@ -24,5 +24,7 @@ HRESULT ExtractArchives(
 
 HRESULT TestArchives(const UStringVector &archivePaths);
 
+HRESULT Benchmark();
+
 #endif
 

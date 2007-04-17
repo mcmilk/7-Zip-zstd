@@ -7,6 +7,11 @@
 #include "Windows/Defs.h"
 #include "Common/Defs.h"
 
+extern "C" 
+{ 
+  #include "../../../../C/7zCrc.h" 
+}
+
 namespace NArchive {
 namespace NRar {
 
@@ -32,7 +37,7 @@ HRESULT CFolderInStream::OpenStream()
         CreateLimitedStream(item.GetDataPosition(), item.PackSize));
     _curIndex++;
     _fileIsOpen = true;
-    _crc.Init();
+    _crc = CRC_INIT_VAL;
     return S_OK;
   }
   return S_OK;
@@ -40,7 +45,7 @@ HRESULT CFolderInStream::OpenStream()
 
 HRESULT CFolderInStream::CloseStream()
 {
-  CRCs.Add(_crc.GetDigest());
+  CRCs.Add(CRC_GET_DIGEST(_crc));
   _stream.Release();
   _fileIsOpen = false;
   return S_OK;
@@ -56,7 +61,7 @@ STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
       UInt32 localProcessedSize;
       RINOK(_stream->Read(
           ((Byte *)data) + realProcessedSize, size, &localProcessedSize));
-      _crc.Update(((Byte *)data) + realProcessedSize, localProcessedSize);
+      _crc = CrcUpdate(_crc, ((Byte *)data) + realProcessedSize, localProcessedSize);
       if (localProcessedSize == 0)
       {
         RINOK(CloseStream());

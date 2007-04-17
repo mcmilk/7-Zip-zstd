@@ -3,9 +3,11 @@
 #ifndef __7Z_COMPRESSION_MODE_H
 #define __7Z_COMPRESSION_MODE_H
 
+#include "../../../Common/String.h"
+
 #include "../../../Windows/PropVariant.h"
 
-#include "7zMethodID.h"
+#include "../../Common/MethodID.h"
 
 namespace NArchive {
 namespace N7z {
@@ -18,18 +20,10 @@ struct CProperty
 
 struct CMethodFull
 {
-  CMethodID MethodID;
+  CMethodId MethodID;
   UInt32 NumInStreams;
   UInt32 NumOutStreams;
-  bool IsSimpleCoder() const 
-    { return (NumInStreams == 1) && (NumOutStreams == 1); }
-
-  #ifdef EXCLUDE_COM
-  #else
-  CLSID EncoderClassID;
-  CSysString FilePath;
-  #endif
-
+  bool IsSimpleCoder() const { return (NumInStreams == 1) && (NumOutStreams == 1); }
   CObjectVector<CProperty> CoderProperties;
 };
 

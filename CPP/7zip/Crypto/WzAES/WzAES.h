@@ -21,13 +21,6 @@ specified in password Based File Encryption Utility:
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 
-#ifndef CRYPTO_AES
-#include "../../Archive/Common/CoderLoader.h"
-#endif
-
-DEFINE_GUID(CLSID_CCrypto_AES_ECB_Encoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0xC0, 0x00, 0x00, 0x00, 0x01, 0x00);
-
 namespace NCrypto {
 namespace NWzAES {
 
@@ -71,9 +64,6 @@ protected:
 
   void EncryptData(Byte *data, UInt32 size);
 
-  #ifndef CRYPTO_AES
-  CCoderLibrary _aesLibrary;
-  #endif
   CMyComPtr<ICompressFilter> _aesFilter;
 
   HRESULT CreateFilters();

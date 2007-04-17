@@ -6,8 +6,6 @@
 #include "../../Threads.h"
 #include "MatchFinder.h"
 
-#define _LZ_MT
-
 #define kMtHashBlockSize (1 << 13)
 #define kMtHashNumBlocks (1 << 3)
 #define kMtHashNumBlocksMask (kMtHashNumBlocks - 1)

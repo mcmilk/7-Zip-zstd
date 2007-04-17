@@ -4,7 +4,10 @@
 
 #include "ShrinkDecoder.h"
 
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 #include "../../Common/InBuffer.h"
 #include "../../Common/OutBuffer.h"
 #include "../../Common/LSBFDecoder.h"
@@ -36,22 +39,21 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
   UInt64 prevPos = 0;
   int numBits = kNumMinBits;
   UInt32 head = 257;
-
   bool needPrev = false;
-
-  _parents[256] = 0; // virus protection
-  _suffixes[256] = 0;
+  UInt32 lastSymbol = 0;
 
   int i;
+  for (i = 0; i < kNumItems; i++)
+    _parents[i] = 0;
+  for (i = 0; i < kNumItems; i++)
+    _suffixes[i] = 0;
   for (i = 0; i < 257; i++)
     _isFree[i] = false;
   for (; i < kNumItems; i++)
     _isFree[i] = true;
 
-  UInt32 lastSymbol = 0;
   for (;;)
   {
-    outBuffer.Flush();
     UInt32 symbol = inBuffer.ReadBits(numBits);
     if (inBuffer.ExtraBitsWereRead())
       break;
@@ -59,7 +61,6 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
       return S_FALSE;
     if (symbol == 256)
     {
-      // fix it;
       UInt32 symbol = inBuffer.ReadBits(numBits);
       if (symbol == 1)
       {
@@ -68,11 +69,8 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
       }
       else if (symbol == 2)
       {
-        /* 
-        maybe need delete prev also ?
         if (needPrev)
           _isFree[head - 1] = true;
-        */
         for (i = 257; i < kNumItems; i++)
           _isParent[i] = false;
         for (i = 257; i < kNumItems; i++)
@@ -82,9 +80,9 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
           if (!_isParent[i])
             _isFree[i] = true;
         head = 257;
-        while(head < ((UInt32)1 << numBits) && !_isFree[head])
+        while (head < kNumItems && !_isFree[head])
           head++;
-        if (head < ((UInt32)1 << numBits))
+        if (head < kNumItems)
         {
           needPrev = true;
           _isFree[head] = false;
@@ -98,8 +96,11 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
     }
     UInt32 cur = symbol;
     i = 0;
+    int corectionIndex = -1;
     while (cur >= 256)
     {
+      if (cur == head - 1)
+        corectionIndex = i;
       _stack[i++] = _suffixes[cur];
       cur = _parents[cur];
     }
@@ -107,14 +108,14 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
     if (needPrev)
     {
       _suffixes[head - 1] = (Byte)cur;
-      if (symbol == head - 1)
-        _stack[0] = (Byte)cur;
+      if (corectionIndex >= 0)
+        _stack[corectionIndex] = (Byte)cur;
     }
     while (i > 0)
       outBuffer.WriteByte((_stack[--i]));
-    while(head < ((UInt32)1 << numBits) && !_isFree[head])
+    while (head < kNumItems && !_isFree[head])
       head++;
-    if (head < ((UInt32)1 << numBits))
+    if (head < kNumItems)
     {
       needPrev = true;
       _isFree[head] = false;

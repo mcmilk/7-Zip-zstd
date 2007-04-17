@@ -91,11 +91,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
                   (_level >= 7 ? kNumPassesX7 : 
                                  kNumPassesX1));
 
-    return UpdateArchive(size, outStream, 0, dicSize, numPasses, 
-      #ifdef COMPRESS_MT
-      _numThreads, 
-      #endif
-      updateCallback);
+    return UpdateArchive(
+        EXTERNAL_CODECS_VARS
+        size, outStream, 0, dicSize, numPasses, 
+        #ifdef COMPRESS_MT
+        _numThreads, 
+        #endif
+        updateCallback);
   }
   if (indexInArchive != 0)
     return E_INVALIDARG;

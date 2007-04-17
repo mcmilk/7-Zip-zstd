@@ -4,7 +4,11 @@
 
 #include "BZip2Decoder.h"
 
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
+
 #include "../../../Common/Defs.h"
 #include "../BWT/Mtf8.h"
 #include "BZip2CRC.h"
@@ -423,7 +427,6 @@ CDecoder::CDecoder():
 {
   m_NumThreadsPrev = 0;
   NumThreads = 1;
-  CS.Enter();
 }
 
 CDecoder::~CDecoder()
@@ -467,7 +470,7 @@ void CDecoder::Free()
   if (!m_States)
     return;
   CloseThreads = true;
-  CS.Leave();
+  CanProcessEvent.Set();
   for (UInt32 t = 0; t < NumThreads; t++)
   {
     CState &s = m_States[t];
@@ -555,11 +558,11 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     m_States[0].CanWriteEvent.Set();
     BlockSizeMax = dicSize;
     Result1 = Result2 = S_OK;
-    CS.Leave();
+    CanProcessEvent.Set();
     UInt32 t;
     for (t = 0; t < NumThreads; t++)
       m_States[t].StreamWasFinishedEvent.Lock();
-    CS.Enter();
+    CanProcessEvent.Reset();
     CanStartWaitingEvent.Set();
     for (t = 0; t < NumThreads; t++)
       m_States[t].WaitingWasStartedEvent.Lock();
@@ -654,6 +657,7 @@ void CState::ThreadFunc()
 {
   for (;;)
   {
+    Decoder->CanProcessEvent.Lock();
     Decoder->CS.Enter();
     if (Decoder->CloseThreads)
     {

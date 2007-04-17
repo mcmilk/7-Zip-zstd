@@ -4,7 +4,10 @@
 
 #include "OutBuffer.h"
 
-#include "../../Common/Alloc.h"
+extern "C"
+{
+  #include "../../../C/Alloc.h"
+}
 
 bool COutBuffer::Create(UInt32 bufferSize)
 {

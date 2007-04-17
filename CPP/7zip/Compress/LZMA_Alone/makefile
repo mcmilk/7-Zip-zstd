@@ -1,5 +1,8 @@
 PROG = lzma.exe
-CFLAGS = $(CFLAGS) -I ../../../
+CFLAGS = $(CFLAGS) -I ../../../  \
+  -DCOMPRESS_MF_MT \
+  -DBENCH_MT \
+
 LIBS = $(LIBS) oleaut32.lib user32.lib
 
 !IFDEF CPU
@@ -23,8 +26,7 @@ CFLAGS = $(CFLAGS) -MT
 CFLAGS = $(CFLAGS) -MD
 !ENDIF
 
-
-CFLAGS = $(CFLAGS) -nologo -EHsc -c -Fo$O/ -WX
+CFLAGS = $(CFLAGS) -nologo -EHsc -c -Fo$O/
 CFLAGS_O1 = $(CFLAGS) -O1
 CFLAGS_O2 = $(CFLAGS) -O2
 
@@ -40,6 +42,7 @@ COMPL      = $(CPP) $(CFLAGS_O1) $**
 LZMA_OBJS = \
   $O\LzmaAlone.obj \
   $O\LzmaBench.obj \
+  $O\LzmaBenchCon.obj \
   $O\LzmaRam.obj \
 
 LZMA_OPT_OBJS = \
@@ -47,9 +50,8 @@ LZMA_OPT_OBJS = \
   $O\LZMAEncoder.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
-  $O\CRC.obj \
   $O\CommandLineParser.obj \
+  $O\CRC.obj \
   $O\String.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
@@ -64,10 +66,13 @@ LZ_OBJS = \
   $O\LZOutWindow.obj \
 
 C_OBJS = \
+  $O\Alloc.obj \
   $O\7zCrc.obj \
+  $O\Threads.obj \
 
 C_LZ_OBJS = \
   $O\MatchFinder.obj \
+  $O\MatchFinderMt.obj \
 
 OBJS = \
   $(LZMA_OBJS) \

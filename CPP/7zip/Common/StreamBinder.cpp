@@ -145,7 +145,7 @@ HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSiz
     if (waitResult != WAIT_OBJECT_0 + 0)
     {
       // ReadingWasClosed = true;
-      return E_FAIL;
+      return S_FALSE;
     }
     // if(!_allBytesAreWritenEvent.Lock())
     //   return E_FAIL;

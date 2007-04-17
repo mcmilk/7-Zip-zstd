@@ -9,6 +9,7 @@
 
 #include "Windows/Defs.h"
 #include "Windows/Control/ListView.h"
+#include "Windows/FileFind.h"
 
 #include "../../IFolder.h"
 #include "../../HelpUtils.h"
@@ -85,7 +86,11 @@ bool CSystemPage::OnInit()
     item.iSubItem = 0;
     int itemIndex = _listViewExt.InsertItem(&item);
 
-    extInfo.Associated = NRegistryAssociations::CheckShellExtensionInfo(GetSystemString(extInfo.Ext));
+    UString iconPath;
+    int iconIndex;
+    extInfo.Associated = NRegistryAssociations::CheckShellExtensionInfo(GetSystemString(extInfo.Ext), iconPath, iconIndex);
+    if (extInfo.Associated && !NWindows::NFile::NFind::DoesFileExist(iconPath))
+      extInfo.Associated = false;
     _listViewExt.SetCheckState(itemIndex, extInfo.Associated);
 
     SetMainPluginText(itemIndex, i);
@@ -125,33 +130,29 @@ static UString GetProgramCommand()
 }
 
 static UString GetIconPath(const UString &filePath,
-    const CLSID &clsID, const UString &extension)
+    const CLSID &clsID, const UString &extension, Int32 &iconIndex)
 {
   CPluginLibrary library;
   CMyComPtr<IFolderManager> folderManager;
   CMyComPtr<IFolderFolder> folder;
   if (library.LoadAndCreateManager(filePath, clsID, &folderManager) != S_OK)
     return UString();
-  CMyComBSTR typesString;
-  if (folderManager->GetTypes(&typesString) != S_OK)
+  CMyComBSTR extBSTR;
+  if (folderManager->GetExtensions(&extBSTR) != S_OK)
     return UString();
-  UStringVector types;
-  SplitString((const wchar_t *)typesString, types);
-  for (int typeIndex = 0; typeIndex < types.Size(); typeIndex++)
+  const UString ext2 = (const wchar_t *)extBSTR;
+  UStringVector exts;
+  SplitString(ext2, exts);
+  for (int i = 0; i < exts.Size(); i++)
   {
-    const UString &type = types[typeIndex];
-    CMyComBSTR extTemp;
-    if (folderManager->GetExtension(type, &extTemp) != S_OK)
-      continue;
-    if (extension.CompareNoCase((const wchar_t *)extTemp) == 0)
+    const UString &plugExt = exts[i];
+    if (extension.CompareNoCase((const wchar_t *)plugExt) == 0)
     {
-      CMyComPtr<IFolderManagerGetIconPath> getIconPath;
-      if (folderManager.QueryInterface(IID_IFolderManagerGetIconPath, &getIconPath) != S_OK)
-        break;
       CMyComBSTR iconPathTemp;
-      if (getIconPath->GetIconPath(type, &iconPathTemp) != S_OK)
+      if (folderManager->GetIconPath(plugExt, &iconPathTemp, &iconIndex) != S_OK)
         break;
-      return (const wchar_t *)iconPathTemp;
+      if (iconPathTemp != 0)
+        return (const wchar_t *)iconPathTemp;
     }
   }
   return UString();
@@ -171,16 +172,14 @@ LONG CSystemPage::OnApply()
       UString title = extInfo.Ext + UString(L" Archive");
       UString command = GetProgramCommand();
       UString iconPath;
+      Int32 iconIndex = -1;
       if (!extInfo.PluginsPairs.IsEmpty())
       {
         const CPluginInfo &plugin = _extDatabase.Plugins[extInfo.PluginsPairs[0].Index];
-        iconPath = GetIconPath(plugin.FilePath, plugin.ClassID, extInfo.Ext);
+        iconPath = GetIconPath(plugin.FilePath, plugin.ClassID, extInfo.Ext, iconIndex);
       }
-      NRegistryAssociations::AddShellExtensionInfo(
-            GetSystemString(extInfo.Ext), 
-            title, 
-            command, 
-            iconPath, NULL, 0);
+      NRegistryAssociations::AddShellExtensionInfo(GetSystemString(extInfo.Ext), 
+            title, command, iconPath, iconIndex, NULL, 0);
     }
     else
       NRegistryAssociations::DeleteShellExtensionInfo(GetSystemString(extInfo.Ext));

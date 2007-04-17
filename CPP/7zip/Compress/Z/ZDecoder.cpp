@@ -4,7 +4,11 @@
 
 #include "ZDecoder.h"
 
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
+
 #include "../../Common/InBuffer.h"
 #include "../../Common/OutBuffer.h"
 #include "../../Common/LSBFDecoder.h"

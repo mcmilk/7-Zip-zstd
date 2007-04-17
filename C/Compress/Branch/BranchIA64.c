@@ -18,29 +18,32 @@ UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
     UInt32 instrTemplate = data[i] & 0x1F;
     UInt32 mask = kBranchTable[instrTemplate];
     UInt32 bitPos = 5;
-    for (int slot = 0; slot < 3; slot++, bitPos += 41)
+    int slot;
+    for (slot = 0; slot < 3; slot++, bitPos += 41)
     {
+      UInt32 bytePos, bitRes;
+      UInt64 instruction, instNorm;
+      int j;
       if (((mask >> slot) & 1) == 0)
         continue;
-      UInt32 bytePos = (bitPos >> 3);
-      UInt32 bitRes = bitPos & 0x7;
-      UInt64 instruction = 0;
-      int j;
+      bytePos = (bitPos >> 3);
+      bitRes = bitPos & 0x7;
+      instruction = 0;
       for (j = 0; j < 6; j++)
         instruction += (UInt64)(data[i + j + bytePos]) << (8 * j);
 
-      UInt64 instNorm = instruction >> bitRes;
+      instNorm = instruction >> bitRes;
       if (((instNorm >> 37) & 0xF) == 0x5 
         &&  ((instNorm >> 9) & 0x7) == 0 
         /* &&  (instNorm & 0x3F)== 0 */
         )
       {
-        UInt32 src = UInt32((instNorm >> 13) & 0xFFFFF);
-        src |= ((instNorm >> 36) & 1) << 20;
+        UInt32 src = (UInt32)((instNorm >> 13) & 0xFFFFF);
+        UInt32 dest;
+        src |= ((UInt32)(instNorm >> 36) & 1) << 20;
         
         src <<= 4;
         
-        UInt32 dest;
         if (encoding)
           dest = nowPos + i + src;
         else
@@ -48,14 +51,14 @@ UInt32 IA64_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         
         dest >>= 4;
         
-        instNorm &= ~(UInt64(0x8FFFFF) << 13);
-        instNorm |= (UInt64(dest & 0xFFFFF) << 13);
-        instNorm |= (UInt64(dest & 0x100000) << (36 - 20));
+        instNorm &= ~((UInt64)(0x8FFFFF) << 13);
+        instNorm |= ((UInt64)(dest & 0xFFFFF) << 13);
+        instNorm |= ((UInt64)(dest & 0x100000) << (36 - 20));
         
         instruction &= (1 << bitRes) - 1;
         instruction |= (instNorm << bitRes);
         for (j = 0; j < 6; j++)
-          data[i + j + bytePos] = Byte(instruction >> (8 * j));
+          data[i + j + bytePos] = (Byte)(instruction >> (8 * j));
       }
     }
   }

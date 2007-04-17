@@ -15,10 +15,10 @@ public:
   CStdOutStream (): _streamIsOpen(false), _stream(0) {};
   CStdOutStream (FILE *stream): _streamIsOpen(false), _stream(stream) {};
   ~CStdOutStream ();
+  operator FILE *() { return _stream; }
   bool Open(const char *fileName);
   bool Close();
   bool Flush();
- 
   CStdOutStream & operator<<(CStdOutStream & (* aFunction)(CStdOutStream  &));
   CStdOutStream & operator<<(const char *string);
   CStdOutStream & operator<<(const wchar_t *string);

@@ -5,6 +5,8 @@
 #include "RegistryAssociations.h"
 
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
+#include "Common/StringToInt.h"
 
 #include "Windows/COM.h"
 #include "Windows/Synchronization.h"
@@ -114,8 +116,10 @@ static CSysString GetExtProgramKeyName(const CSysString &extension)
   return CSysString(TEXT("7-Zip.")) + extension;
 }
 
-static bool CheckShellExtensionInfo2(const CSysString &extension)
+static bool CheckShellExtensionInfo2(const CSysString &extension, UString &iconPath, int &iconIndex)
 {
+  iconIndex = -1;
+  iconPath.Empty();
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CKey extKey;
   if (extKey.Open(HKEY_CLASSES_ROOT, GetExtensionKeyName(extension), KEY_READ) != ERROR_SUCCESS)
@@ -124,13 +128,34 @@ static bool CheckShellExtensionInfo2(const CSysString &extension)
   if (extKey.QueryValue(NULL, programNameValue) != ERROR_SUCCESS)
     return false;
   CSysString extProgramKeyName = GetExtProgramKeyName(extension);
-  return (programNameValue.CompareNoCase(extProgramKeyName) == 0);
+  if (programNameValue.CompareNoCase(extProgramKeyName) != 0)
+    return false;
+  CKey iconKey;
+  if (extKey.Open(HKEY_CLASSES_ROOT, extProgramKeyName + CSysString(TEXT('\\')) + kDefaultIconKeyName, KEY_READ) != ERROR_SUCCESS)
+    return false;
+  UString value;
+  if (extKey.QueryValue(NULL, value) == ERROR_SUCCESS)
+  {
+    int pos = value.ReverseFind(L',');
+    iconPath = value;
+    if (pos >= 0)
+    {
+      const wchar_t *end;
+      UInt64 index = ConvertStringToUInt64((const wchar_t *)value + pos + 1, &end);
+      if (*end == 0)
+      {
+        iconIndex = (int)index;
+        iconPath = value.Left(pos);
+      }
+    }
+  }
+  return true;
 }
 
-bool CheckShellExtensionInfo(const CSysString &extension)
+bool CheckShellExtensionInfo(const CSysString &extension, UString &iconPath, int &iconIndex)
 {
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
-  if (!CheckShellExtensionInfo2(extension))
+  if (!CheckShellExtensionInfo2(extension, iconPath, iconIndex))
     return false;
   CKey extProgKey;
   return (extProgKey.Open(HKEY_CLASSES_ROOT, GetExtProgramKeyName(extension), KEY_READ) == ERROR_SUCCESS);
@@ -156,7 +181,9 @@ static void DeleteShellExtensionProgramKey(const CSysString &extension)
 
 void DeleteShellExtensionInfo(const CSysString &extension)
 {
-  if (CheckShellExtensionInfo2(extension))
+  UString iconPath;
+  int iconIndex;
+  if (CheckShellExtensionInfo2(extension, iconPath, iconIndex))
     DeleteShellExtensionKey(extension);
   DeleteShellExtensionProgramKey(extension);
 }
@@ -164,7 +191,7 @@ void DeleteShellExtensionInfo(const CSysString &extension)
 void AddShellExtensionInfo(const CSysString &extension,
     const UString &programTitle, 
     const UString &programOpenCommand, 
-    const UString &iconPath,
+    const UString &iconPath, int iconIndex,
     const void *shellNewData, int shellNewDataSize)
 {
   DeleteShellExtensionKey(extension);
@@ -188,7 +215,15 @@ void AddShellExtensionInfo(const CSysString &extension,
   {
     CKey iconKey;
     iconKey.Create(programKey, kDefaultIconKeyName);
-    iconKey.SetValue(NULL, iconPath);
+    UString iconPathFull = iconPath;
+    if (iconIndex >= 0)
+    {
+      iconPathFull += L",";
+      wchar_t s[32];
+      ConvertUInt64ToString((UInt64)iconIndex, s);
+      iconPathFull += s;
+    }
+    iconKey.SetValue(NULL, iconPathFull);
   }
 
   CKey shellKey;

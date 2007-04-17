@@ -77,12 +77,15 @@ STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,
   return E_INVALIDARG;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
+STDMETHODIMP CHandler::Open(
+    IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   Close();
   {
-    if(_archive.Open(stream, maxCheckStartPosition) != S_OK)
+    if(_archive.Open(
+        EXTERNAL_CODECS_VARS
+        stream, maxCheckStartPosition) != S_OK)
       return S_FALSE;
     _inStream = stream;
   }
@@ -314,7 +317,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   {
     RINOK(_inStream->Seek(_archive.StreamOffset, STREAM_SEEK_SET, NULL));
     bool useFilter;
-    RINOK(_archive.Decoder.Init(_inStream, _archive.Method, _archive.FilterFlag, useFilter));
+    RINOK(_archive.Decoder.Init(
+        EXTERNAL_CODECS_VARS
+        _inStream, _archive.Method, _archive.FilterFlag, useFilter));
   }
 
   bool dataError = false;
@@ -404,7 +409,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           {
             needDecompress = true;
             bool useFilter;
-            RINOK(_archive.Decoder.Init(_inStream, _archive.Method, _archive.FilterFlag, useFilter));
+            RINOK(_archive.Decoder.Init(
+                EXTERNAL_CODECS_VARS
+                _inStream, _archive.Method, _archive.FilterFlag, useFilter));
             fullSize = GetUInt32FromMemLE(buffer);
           }
           else
@@ -480,5 +487,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
+
+IMPL_ISetCompressCodecsInfo
 
 }}

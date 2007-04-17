@@ -1,3 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Nsis Plugin", "nsis")

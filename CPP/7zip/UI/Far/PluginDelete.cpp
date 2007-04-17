@@ -89,7 +89,8 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
 
   CRecordVector<UINT32> indices;
   indices.Reserve(numItems);
-  for(int i = 0; i < numItems; i++)
+  int i;
+  for(i = 0; i < numItems; i++)
     indices.Add(panelItems[i].UserData);
 
   ////////////////////////////

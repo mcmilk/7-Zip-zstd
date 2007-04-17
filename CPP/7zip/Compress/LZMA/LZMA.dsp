@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /D "COMPRESS_MF_MT" /D "_ST_MODE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /D "COMPRESS_MF_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /D "COMPRESS_MF_MT" /D "_ST_MODE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LZMA_EXPORTS" /D "COMPRESS_MF_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -174,88 +178,12 @@ SOURCE=..\..\ICoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\MatchFinders\IMatchFinder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\IStream.h
 # End Source File
 # End Group
 # Begin Group "LZ"
 
 # PROP Default_Filter ""
-# Begin Group "BT"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTree2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTree3.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTree4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeBase.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeD.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeD4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeDMain.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeMain.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeR.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeR4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\BinTree\BinTreeRMain.h
-# End Source File
-# End Group
-# Begin Group "HC"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HC4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\HashChain\HCMain.h
-# End Source File
-# End Group
-# Begin Source File
-
-SOURCE=..\LZ\IMatchFinder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\LZInWindow.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\LZ\LZOutWindow.cpp
@@ -270,31 +198,7 @@ SOURCE=..\LZ\LZOutWindow.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\AlignedBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\AlignedBuffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\ComTry.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
@@ -315,34 +219,6 @@ SOURCE=..\..\..\Common\MyUnknown.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyWindows.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\NewHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\NewHandler.h
-# End Source File
-# End Group
-# Begin Group "Windows"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Windows\Handle.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\Synchronization.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\Synchronization.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group
 # Begin Group "C"
@@ -418,6 +294,15 @@ SOURCE=..\..\..\..\C\7zCrc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\IStream.h
 # End Source File
 # Begin Source File
@@ -473,6 +358,10 @@ SOURCE=.\LZMAEncoder.cpp
 # Begin Source File
 
 SOURCE=.\LZMAEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\LZMARegister.cpp
 # End Source File
 # End Target
 # End Project

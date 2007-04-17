@@ -27,7 +27,6 @@ static const int kNumHashBytes = 2;
 static const UInt32 kNumHashValues = 1 << (kNumHashBytes * 8);
 
 static const int kNumRefBitsMax = 12; // must be < (kNumHashBytes * 8) = 16
-static const UInt32 kNumRefsMax = (1 << kNumRefBitsMax);
 
 #define BS_TEMP_SIZE kNumHashValues
 

@@ -4,7 +4,7 @@
 #define __COMPRESSDIALOG_H
 
 #include "../Common/ZipRegistry.h"
-#include "../Common/ArchiverInfo.h"
+#include "../Common/LoadCodecs.h"
 #include "../Resource/CompressDialog/resource.h"
 
 #include "Windows/Control/Dialog.h"
@@ -26,11 +26,10 @@ namespace NCompressDialog
   struct CInfo
   {
     NUpdateMode::EEnum UpdateMode;
-    bool SolidIsAllowed;
-    bool Solid;
-
+    bool SolidIsSpecified;
     bool MultiThreadIsAllowed;
-    bool MultiThread;
+    UInt64 SolidBlockSize;
+    UInt32 NumThreads;
 
     CRecordVector<UInt64> VolumeSizes;
 
@@ -80,6 +79,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox m_Method;
   NWindows::NControl::CComboBox m_Dictionary;
   NWindows::NControl::CComboBox m_Order;
+  NWindows::NControl::CComboBox m_Solid;
+  NWindows::NControl::CComboBox m_NumThreads;
   NWindows::NControl::CComboBox m_UpdateMode;
   NWindows::NControl::CComboBox m_Volume;
   NWindows::NControl::CDialogChildControl m_Params;
@@ -104,10 +105,6 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetNearestSelectComboBox(NWindows::NControl::CComboBox &comboBox, UInt32 value);
 
   void SetLevel();
-  int GetLevel();
-  int GetLevelSpec();
-  int GetLevel2();
-  bool IsMultiThread();
   
   void SetMethod();
   int GetMethodID();
@@ -122,16 +119,28 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int AddDictionarySize(UInt32 size);
   
   void SetDictionary();
-  UInt32 GetDictionary();
-  UInt32 GetDictionarySpec();
+
+  UInt32 GetComboValue(NWindows::NControl::CComboBox &c, int defMax = 0);
+
+  UInt32 GetLevel()  { return GetComboValue(m_Level); }
+  UInt32 GetLevelSpec()  { return GetComboValue(m_Level, 1); }
+  UInt32 GetLevel2();
+  UInt32 GetDictionary() { return GetComboValue(m_Dictionary); }
+  UInt32 GetDictionarySpec() { return GetComboValue(m_Dictionary, 1); }
+  UInt32 GetOrder() { return GetComboValue(m_Order); }
+  UInt32 GetOrderSpec() { return GetComboValue(m_Order, 1); }
+  UInt32 GetNumThreadsSpec() { return GetComboValue(m_NumThreads, 1); }
+  UInt32 GetNumThreads2() { UInt32 num = GetNumThreadsSpec(); if (num == UInt32(-1)) num = 1; return num; }
+  UInt32 GetBlockSizeSpec() { return GetComboValue(m_Solid, 1); }
 
   int AddOrder(UInt32 size);
   void SetOrder();
   bool GetOrderMode();
-  UInt32 GetOrder();
-  UInt32 GetOrderSpec();
 
-  UInt64 GetMemoryUsage(UInt32 dictionary, bool isMultiThread, UInt64 &decompressMemory);
+  void SetSolidBlockSize();
+  void SetNumThreads();
+
+  UInt64 GetMemoryUsage(UInt32 dictionary, UInt64 &decompressMemory);
   UInt64 GetMemoryUsage(UInt64 &decompressMemory);
   void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();
@@ -142,7 +151,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   bool IsShowPasswordChecked() const
     { return IsButtonChecked(IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED; }
 public:
-  CObjectVector<CArchiverInfo> m_ArchiverInfoList;
+  CObjectVector<CArcInfoEx> m_ArchiverInfoList;
 
   NCompressDialog::CInfo Info;
   UString OriginalFileName; // for bzip2, gzip2

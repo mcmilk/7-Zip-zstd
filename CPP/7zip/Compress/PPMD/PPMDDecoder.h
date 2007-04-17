@@ -17,7 +17,7 @@ namespace NPPMD {
 class CDecoder : 
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
@@ -41,7 +41,7 @@ class CDecoder :
   HRESULT CodeSpec(UInt32 num, Byte *memStream);
 public:
 
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP4(
       ICompressSetDecoderProperties2, 
       ICompressSetInStream, 
@@ -76,7 +76,7 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
 

@@ -12,23 +12,15 @@
 #ifdef _ST_MODE
 #include "../Common/CoderMixer2ST.h"
 #endif
-#ifndef EXCLUDE_COM
-#include "../Common/CoderLoader.h"
-#endif
-#include "7zMethods.h"
 #include "7zItem.h"
+
+#include "../../Common/CreateCoder.h"
 
 namespace NArchive {
 namespace N7z {
 
 class CEncoder
 {
-  #ifndef EXCLUDE_COM
-  // CMethodMap _methodMap;
-  // it must be in top of objects
-  CCoderLibraries _libraries;
-  #endif
-
   NCoderMixer2::CCoderMixer2MT *_mixerCoderSpec;
   CMyComPtr<ICompressCoder2> _mixerCoder;
 
@@ -38,14 +30,19 @@ class CEncoder
   NCoderMixer2::CBindInfo _bindInfo;
   NCoderMixer2::CBindInfo _decompressBindInfo;
   NCoderMixer2::CBindReverseConverter *_bindReverseConverter;
-  CRecordVector<CMethodID> _decompressionMethods;
+  CRecordVector<CMethodId> _decompressionMethods;
 
-  HRESULT CreateMixerCoder(const UInt64 *inSizeForReduce);
+  HRESULT CreateMixerCoder(DECL_EXTERNAL_CODECS_LOC_VARS
+      const UInt64 *inSizeForReduce);
 
+  bool _constructed;
 public:
   CEncoder(const CCompressionMethodMode &options);
   ~CEncoder();
-  HRESULT Encode(ISequentialInStream *inStream,
+  HRESULT EncoderConstr();
+  HRESULT Encode(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      ISequentialInStream *inStream,
       const UInt64 *inStreamSize, const UInt64 *inSizeForReduce,
       CFolder &folderItem,
       ISequentialOutStream *outStream,

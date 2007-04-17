@@ -5,7 +5,7 @@
 
 #include "../../IStream.h"
 
-#include "../Common/CoderLoader.h"
+#include "../../Common/CreateCoder.h"
 
 namespace NArchive {
 namespace NNsis {
@@ -24,21 +24,21 @@ namespace NMethodType
 class CDecoder
 {
   NMethodType::EEnum _method;
-  CCoderLibraries _libraries;
 
   CMyComPtr<ISequentialInStream> _filterInStream;
   CMyComPtr<ISequentialInStream> _codecInStream;
   CMyComPtr<ISequentialInStream> _decoderInStream;
 
 public:
-  CDecoder();
   void Release()
   {
     _filterInStream.Release();
     _codecInStream.Release();
     _decoderInStream.Release();
   }
-  HRESULT Init(IInStream *inStream, NMethodType::EEnum method, bool thereIsFilterFlag, bool &useFilter);
+  HRESULT Init(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      IInStream *inStream, NMethodType::EEnum method, bool thereIsFilterFlag, bool &useFilter);
   HRESULT Read(void *data, UInt32 size, UInt32 *processedSize);
 };
 

@@ -4,7 +4,10 @@
 #define __X86_H
 
 #include "BranchCoder.h"
+extern "C" 
+{ 
 #include "../../../../C/Compress/Branch/BranchX86.h"
+}
 
 struct CBranch86
 {

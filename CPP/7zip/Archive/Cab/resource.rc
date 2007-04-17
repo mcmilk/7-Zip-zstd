@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Cab Plugin", "cab")
-
-101  ICON  "cab.ico"

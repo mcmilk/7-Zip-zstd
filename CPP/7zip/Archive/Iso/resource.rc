@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Iso Plugin", "iso")
-
-101  ICON  "iso.ico"

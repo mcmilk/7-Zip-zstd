@@ -1,6 +1,13 @@
 PROG = 7z.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT -DWIN_LONG_PATH
+CFLAGS = $(CFLAGS) -I ../../../  \
+  -DCOMPRESS_MT \
+  -DWIN_LONG_PATH \
+  -DEXTERNAL_LZMA \
+  -DEXTERNAL_CODECS \
+  -DBREAK_HANDLER \
+  -DBENCH_MT \
+  -D_7ZIP_LARGE_PAGES \
 
 CONSOLE_OBJS = \
   $O\ConsoleClose.obj \
@@ -14,8 +21,8 @@ CONSOLE_OBJS = \
   $O\UserInputUtils.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CommandLineParser.obj \
+  $O\CRC.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
   $O\NewHandler.obj \
@@ -49,11 +56,11 @@ UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
   $O\ExtractingFilePath.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
   $O\SetProperties.obj \
@@ -66,6 +73,14 @@ UI_COMMON_OBJS = \
   $O\UpdateProduce.obj \
   $O\WorkDir.obj \
 
+LZMA_BENCH_OBJS = \
+  $O\LzmaBench.obj \
+  $O\LzmaBenchCon.obj \
+
+C_OBJS = \
+  $O\Alloc.obj \
+
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -75,6 +90,9 @@ OBJS = \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
   $O\CopyCoder.obj \
+  $(LZMA_BENCH_OBJS) \
+  $(C_OBJS) \
+  $(CRC_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -91,3 +109,8 @@ $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
 $O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
 	$(COMPL)
+$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
+	$(COMPL)
+$(C_OBJS): ../../../../C/$(*B).c
+	$(COMPL_O2)
+!include "../../Crc.mak"

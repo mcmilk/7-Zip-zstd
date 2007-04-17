@@ -365,3 +365,11 @@ HRESULT TestArchives(const UStringVector &archivePaths)
   params += L" t";
   return ExtractGroupCommand(archivePaths, params);
 }
+
+HRESULT Benchmark()
+{
+  UString params;
+  params = Get7zGuiPath();
+  params += L" b";
+  return MyCreateProcess(params, 0, false, NULL);
+}

@@ -37,30 +37,6 @@
 #include "EnumDirItems.h"
 #include "SetProperties.h"
 
-#ifdef FORMAT_7Z
-#include "../../Archive/7z/7zHandler.h"
-#endif
-
-#ifdef FORMAT_BZIP2
-#include "../../Archive/BZip2/BZip2Handler.h"
-#endif
-
-#ifdef FORMAT_GZIP
-#include "../../Archive/GZip/GZipHandler.h"
-#endif
-
-#ifdef FORMAT_TAR
-#include "../../Archive/Tar/TarHandler.h"
-#endif
-
-#ifdef FORMAT_ZIP
-#include "../../Archive/Zip/ZipHandler.h"
-#endif
-
-#ifndef EXCLUDE_COM
-#include "../Common/HandlerLoader.h"
-#endif
-
 static const char *kUpdateIsNotSupoorted = 
   "update operations are not supported for this archive";
 
@@ -255,8 +231,47 @@ STDMETHODIMP COutMultiVolStream::SetSize(Int64 newSize)
   return S_OK;
 }
 
+static const wchar_t *kDefaultArchiveType = L"7z";
+static const wchar_t *kSFXExtension =
+  #ifdef _WIN32
+    L"exe";
+  #else
+    L"";
+  #endif
+
+bool CUpdateOptions::Init(const CCodecs *codecs, const UString &arcPath, const UString &arcType)
+{
+  if (!arcType.IsEmpty())
+    MethodMode.FormatIndex = codecs->FindFormatForArchiveType(arcType);
+  else
+  {
+    MethodMode.FormatIndex = codecs->FindFormatForArchiveName(arcPath);
+    if (MethodMode.FormatIndex < 0)
+      MethodMode.FormatIndex = codecs->FindFormatForArchiveType(kDefaultArchiveType);
+  }
+  if (MethodMode.FormatIndex < 0)
+    return false;
+  const CArcInfoEx &arcInfo = codecs->Formats[MethodMode.FormatIndex];
+  UString typeExt = arcInfo.GetMainExt();
+  UString ext = typeExt;
+  if (SfxMode)
+    ext = kSFXExtension;
+  ArchivePath.BaseExtension = ext;
+  ArchivePath.VolExtension = typeExt;
+  ArchivePath.ParseFromPath(arcPath);
+  for (int i = 0; i < Commands.Size(); i++)
+  {
+    CUpdateArchiveCommand &uc = Commands[i];
+    uc.ArchivePath.BaseExtension = ext;
+    uc.ArchivePath.VolExtension = typeExt;
+    uc.ArchivePath.ParseFromPath(uc.UserArchivePath);
+  }
+  return true;
+}
+
 
 static HRESULT Compress(
+    CCodecs *codecs,
     const CActionSet &actionSet, 
     IInArchive *archive,
     const CCompressionMethodMode &compressionMethod,
@@ -273,10 +288,6 @@ static HRESULT Compress(
     CUpdateErrorInfo &errorInfo,
     IUpdateCallbackUI *callback)
 {
-  #ifndef EXCLUDE_COM
-  CHandlerLoader loader;
-  #endif
-
   CMyComPtr<IOutArchive> outArchive;
   if(archive != NULL)
   {
@@ -287,38 +298,18 @@ static HRESULT Compress(
   }
   else
   {
-    #ifndef EXCLUDE_COM
+    RINOK(codecs->CreateOutArchive(compressionMethod.FormatIndex, outArchive));
 
-    if (loader.CreateHandler(compressionMethod.FilePath, 
-        compressionMethod.ClassID, (void **)&outArchive, true) != S_OK)
-      throw kUpdateIsNotSupoorted;
+    #ifdef EXTERNAL_CODECS
+    {
+      CMyComPtr<ISetCompressCodecsInfo> setCompressCodecsInfo;
+      outArchive.QueryInterface(IID_ISetCompressCodecsInfo, (void **)&setCompressCodecsInfo);
+      if (setCompressCodecsInfo)
+      {
+        RINOK(setCompressCodecsInfo->SetCompressCodecsInfo(codecs));
+      }
+    }
     #endif
-
-    #ifdef FORMAT_7Z
-    if (compressionMethod.Name.CompareNoCase(L"7z") == 0)
-      outArchive = new NArchive::N7z::CHandler;
-    #endif
-
-    #ifdef FORMAT_BZIP2
-    if (compressionMethod.Name.CompareNoCase(L"BZip2") == 0)
-      outArchive = new NArchive::NBZip2::CHandler;
-    #endif
-
-    #ifdef FORMAT_GZIP
-    if (compressionMethod.Name.CompareNoCase(L"GZip") == 0)
-      outArchive = new NArchive::NGZip::CHandler;
-    #endif
-
-    #ifdef FORMAT_TAR
-    if (compressionMethod.Name.CompareNoCase(L"Tar") == 0)
-      outArchive = new NArchive::NTar::CHandler;
-    #endif
-    
-    #ifdef FORMAT_ZIP
-    if (compressionMethod.Name.CompareNoCase(L"Zip") == 0)
-      outArchive = new NArchive::NZip::CHandler;
-    #endif
-
   }
   if (outArchive == 0)
     throw kUpdateIsNotSupoorted;
@@ -460,13 +451,10 @@ static HRESULT Compress(
     RINOK(CopyBlock(sfxStream, sfxOutStream));
   }
 
-  HRESULT result = outArchive->UpdateItems(outStream, updatePairs2.Size(),
-     updateCallback);
+  HRESULT result = outArchive->UpdateItems(outStream, updatePairs2.Size(), updateCallback);
   callback->Finilize();
   return result;
 }
-
-
 
 HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
     IInArchive *archive,
@@ -502,6 +490,7 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
 
 
 static HRESULT UpdateWithItemLists(
+    CCodecs *codecs,
     CUpdateOptions &options,
     IInArchive *archive, 
     const CObjectVector<CArchiveItem> &archiveItems,
@@ -523,7 +512,9 @@ static HRESULT UpdateWithItemLists(
           i == 0 && options.UpdateArchiveItself && archive != 0));
     }
 
-    RINOK(Compress(command.ActionSet, archive,
+    RINOK(Compress(
+        codecs,
+        command.ActionSet, archive,
         options.MethodMode, 
         command.ArchivePath, 
         archiveItems, 
@@ -561,7 +552,9 @@ struct CEnumDirItemUpdateCallback: public IEnumDirItemCallback
   HRESULT CheckBreak() { return Callback->CheckBreak(); }
 };
 
-HRESULT UpdateArchive(const NWildcard::CCensor &censor, 
+HRESULT UpdateArchive(
+    CCodecs *codecs,
+    const NWildcard::CCensor &censor, 
     CUpdateOptions &options,
     CUpdateErrorInfo &errorInfo,
     IOpenCallbackUI *openCallback,
@@ -605,7 +598,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
       throw "there is no such archive";
     if (options.VolumesSizes.Size() > 0)
       return E_NOTIMPL;
-    HRESULT result = MyOpenArchive(archiveName, archiveLink, openCallback);
+    HRESULT result = MyOpenArchive(codecs, archiveName, archiveLink, openCallback);
     RINOK(callback->OpenResult(archiveName, result));
     RINOK(result);
     if (archiveLink.VolumePaths.Size() > 1)
@@ -731,7 +724,7 @@ HRESULT UpdateArchive(const NWildcard::CCensor &censor,
         archive, defaultItemName, archiveFileInfo, archiveItems));
   }
 
-  RINOK(UpdateWithItemLists(options, archive, archiveItems, dirItems, 
+  RINOK(UpdateWithItemLists(codecs, options, archive, archiveItems, dirItems, 
       tempFiles, errorInfo, callback));
 
   if (archive != NULL)

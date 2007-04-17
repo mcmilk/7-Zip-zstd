@@ -11,6 +11,7 @@
 #include "ArchiveOpenCallback.h"
 #include "UpdateCallback.h"
 #include "Property.h"
+#include "LoadCodecs.h"
 
 struct CArchivePath
 {
@@ -75,19 +76,16 @@ struct CArchivePath
 
 struct CUpdateArchiveCommand
 {
+  UString UserArchivePath;
   CArchivePath ArchivePath;
   NUpdateArchive::CActionSet ActionSet;
 };
 
 struct CCompressionMethodMode
 {
-  #ifndef EXCLUDE_COM
-  UString FilePath;
-  CLSID ClassID;
-  #else
-  UString Name;
-  #endif
+  int FormatIndex;
   CObjectVector<CProperty> Properties;
+  CCompressionMethodMode(): FormatIndex(-1) {}
 };
 
 struct CUpdateOptions
@@ -110,6 +108,8 @@ struct CUpdateOptions
   UString EMailAddress;
 
   UString WorkingDir;
+
+  bool Init(const CCodecs *codecs, const UString &arcPath, const UString &arcType);
 
   CUpdateOptions():
     UpdateArchiveItself(true),
@@ -149,7 +149,9 @@ struct IUpdateCallbackUI2: public IUpdateCallbackUI
   virtual HRESULT FinishArchive() = 0;
 };
 
-HRESULT UpdateArchive(const NWildcard::CCensor &censor, 
+HRESULT UpdateArchive(
+    CCodecs *codecs,
+    const NWildcard::CCensor &censor, 
     CUpdateOptions &options,
     CUpdateErrorInfo &errorInfo,
     IOpenCallbackUI *openCallback,

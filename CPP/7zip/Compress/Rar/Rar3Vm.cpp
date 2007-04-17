@@ -14,8 +14,12 @@ Note:
 #include "StdAfx.h"
 
 #include "Rar3Vm.h"
-#include "Common/CRC.h"
-#include "Common/Alloc.h"
+
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+#include "../../../../C/7zCrc.h" 
+}
 
 namespace NCompress {
 namespace NRar3 {
@@ -42,19 +46,21 @@ UInt32 CMemBitDecoder::ReadBit() { return ReadBits(1); }
 
 namespace NVm {
 
-const UInt32 kStackRegIndex = kNumRegs - 1;
+static const UInt32 kStackRegIndex = kNumRegs - 1;
 
-enum EFlags {FLAG_C = 1, FLAG_Z = 2, FLAG_S = 0x80000000};
+static const UInt32 FLAG_C = 1;
+static const UInt32 FLAG_Z = 2;
+static const UInt32 FLAG_S = 0x80000000;
 
-const Byte CF_OP0 = 0;
-const Byte CF_OP1 = 1;
-const Byte CF_OP2 = 2;
-const Byte CF_OPMASK = 3;
-const Byte CF_BYTEMODE = 4;
-const Byte CF_JUMP = 8;
-const Byte CF_PROC = 16;
-const Byte CF_USEFLAGS = 32;
-const Byte CF_CHFLAGS = 64;
+static const Byte CF_OP0 = 0;
+static const Byte CF_OP1 = 1;
+static const Byte CF_OP2 = 2;
+static const Byte CF_OPMASK = 3;
+static const Byte CF_BYTEMODE = 4;
+static const Byte CF_JUMP = 8;
+static const Byte CF_PROC = 16;
+static const Byte CF_USEFLAGS = 32;
+static const Byte CF_CHFLAGS = 64;
 
 static Byte kCmdFlags[]=
 {
@@ -787,7 +793,7 @@ kStdFilters[]=
 
 static int FindStandardFilter(const Byte *code, UInt32 codeSize)
 {
-  UInt32 crc = CCRC::CalculateDigest(code, codeSize);
+  UInt32 crc = CrcCalc(code, codeSize);
   for (int i = 0; i < sizeof(kStdFilters) / sizeof(kStdFilters[0]); i++)
   {
     StandardFilterSignature &sfs = kStdFilters[i];

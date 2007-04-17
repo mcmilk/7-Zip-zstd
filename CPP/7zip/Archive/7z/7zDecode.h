@@ -11,9 +11,8 @@
 #ifdef _ST_MODE
 #include "../Common/CoderMixer2ST.h"
 #endif
-#ifndef EXCLUDE_COM
-#include "../Common/CoderLoader.h"
-#endif
+
+#include "../../Common/CreateCoder.h"
 
 #include "7zItem.h"
 
@@ -22,7 +21,7 @@ namespace N7z {
 
 struct CBindInfoEx: public NCoderMixer2::CBindInfo
 {
-  CRecordVector<CMethodID> CoderMethodIDs;
+  CRecordVector<CMethodId> CoderMethodIDs;
   void Clear()
   {
     CBindInfo::Clear();
@@ -32,10 +31,6 @@ struct CBindInfoEx: public NCoderMixer2::CBindInfo
 
 class CDecoder
 {
-  #ifndef EXCLUDE_COM
-  CCoderLibraries _libraries;
-  #endif
-
   bool _bindInfoExPrevIsDefined;
   CBindInfoEx _bindInfoExPrev;
   
@@ -51,7 +46,9 @@ class CDecoder
   // CObjectVector<CMyComPtr<ICompressCoder2> > _decoders2;
 public:
   CDecoder(bool multiThread);
-  HRESULT Decode(IInStream *inStream,
+  HRESULT Decode(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      IInStream *inStream,
       UInt64 startPos,
       const UInt64 *packSizes,
       const CFolder &folder, 

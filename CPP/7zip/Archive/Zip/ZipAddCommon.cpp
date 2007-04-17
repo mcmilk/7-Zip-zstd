@@ -2,52 +2,26 @@
 
 #include "StdAfx.h"
 
-#include "Common/CRC.h"
+extern "C" 
+{ 
+#include "../../../../C/7zCrc.h"
+}
+
 #include "Windows/PropVariant.h"
 #include "Windows/Defs.h"
 #include "../../ICoder.h"
 #include "../../IPassword.h"
+#include "../../Common/CreateCoder.h"
 #include "../Common/InStreamWithCRC.h"
-#include "../7z/7zMethods.h"
 
 #include "ZipAddCommon.h"
 #include "ZipHeader.h"
 
-#ifdef COMPRESS_DEFLATE
-#include "../../Compress/Deflate/DeflateEncoder.h"
-#else
-// {23170F69-40C1-278B-0401-080000000100}
-DEFINE_GUID(CLSID_CCompressDeflateEncoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00);
-#endif
-
-#ifdef COMPRESS_DEFLATE64
-#include "../../Compress/Deflate/DeflateEncoder.h"
-#else
-// {23170F69-40C1-278B-0401-090000000100}
-DEFINE_GUID(CLSID_CCompressDeflate64Encoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00);
-#endif
-
-#ifdef COMPRESS_BZIP2
-#include "../../Compress/BZip2/BZip2Encoder.h"
-#else
-// {23170F69-40C1-278B-0402-020000000100}
-DEFINE_GUID(CLSID_CCompressBZip2Encoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00);
-#endif
-
-
-#ifdef CRYPTO_ZIP
-#include "../../Crypto/Zip/ZipCipher.h"
-#else
-// {23170F69-40C1-278B-06F1-0101000000100}
-DEFINE_GUID(CLSID_CCryptoZipEncoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00);
-#endif
-
 namespace NArchive {
 namespace NZip {
+
+static const CMethodId kMethodId_ZipBase   = 0x040100;
+static const CMethodId kMethodId_BZip2     = 0x040202;
 
 CAddCommon::CAddCommon(const CCompressionMethodMode &options):
   _options(options),
@@ -57,8 +31,7 @@ CAddCommon::CAddCommon(const CCompressionMethodMode &options):
 
 static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
 {
-  CCRC crc;
-  crc.Init();
+  UInt32 crc = CRC_INIT_VAL;
   const UInt32 kBufferSize = (1 << 14);
   Byte buffer[kBufferSize];
   for (;;)
@@ -67,15 +40,17 @@ static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
     RINOK(inStream->Read(buffer, kBufferSize, &realProcessedSize));
     if(realProcessedSize == 0)
     {
-      resultCRC = crc.GetDigest();
+      resultCRC = CRC_GET_DIGEST(crc);
       return S_OK;
     }
-    crc.Update(buffer, realProcessedSize);
+    crc = CrcUpdate(crc, buffer, realProcessedSize);
   }
 }
 
-HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStream, 
-      ICompressProgressInfo *progress, CCompressingResult &operationResult)
+HRESULT CAddCommon::Compress(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    ISequentialInStream *inStream, IOutStream *outStream, 
+    ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
   CSequentialInStreamWithCRC *inSecCrcStreamSpec = 0;
   CInStreamWithCRC *inCrcStreamSpec = 0;
@@ -170,48 +145,21 @@ HRESULT CAddCommon::Compress(ISequentialInStream *inStream, IOutStream *outStrea
       {
         if(!_compressEncoder)
         {
-          // RINOK(m_MatchFinder.CoCreateInstance(CLSID_CMatchFinderBT3));
-          #ifndef COMPRESS_DEFLATE
-          UString methodName;
-          N7z::LoadMethodMap();
-          #endif
+          CMethodId methodId;
           switch(method)
           {
-            case NFileHeader::NCompressionMethod::kDeflated:
-            {
-              #ifdef COMPRESS_DEFLATE
-              _compressEncoder = new NCompress::NDeflate::NEncoder::CCOMCoder;
-              #else
-              methodName = L"Deflate";
-              #endif
-              break;
-            }
-            case NFileHeader::NCompressionMethod::kDeflated64:
-            {
-              #ifdef COMPRESS_DEFLATE64
-              _compressEncoder = new NCompress::NDeflate::NEncoder::CCOMCoder64;
-              #else
-              methodName = L"Deflate64";
-              #endif
-              break;
-            }
             case NFileHeader::NCompressionMethod::kBZip2:
-            {
-              #ifdef COMPRESS_BZIP2
-              _compressEncoder = new NCompress::NBZip2::CEncoder;
-              #else
-              methodName = L"BZip2";
-              #endif
+              methodId = kMethodId_BZip2; 
               break;
-            }
+            default:
+              methodId = kMethodId_ZipBase + method; 
+              break;
           }
-          #ifndef COMPRESS_DEFLATE
-          N7z::CMethodInfo2 methodInfo;
-          if (!N7z::GetMethodInfo(methodName, methodInfo))
+          RINOK(CreateCoder(
+              EXTERNAL_CODECS_LOC_VARS
+              methodId, _compressEncoder, true));
+          if (!_compressEncoder)
             return E_NOTIMPL;
-          RINOK(_compressLib.LoadAndCreateCoder(
-            methodInfo.FilePath, methodInfo.Encoder, &_compressEncoder));
-          #endif
 
           if (method == NFileHeader::NCompressionMethod::kDeflated ||
               method == NFileHeader::NCompressionMethod::kDeflated64)

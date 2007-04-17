@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Rar Plugin", "rar")
-
-101  ICON  "rar.ico"

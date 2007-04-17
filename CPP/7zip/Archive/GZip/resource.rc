@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("GZip Plugin", "gz")
-
-101  ICON  "gz.ico"

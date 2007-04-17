@@ -29,9 +29,11 @@ namespace NCompression {
     UInt32 Level;
     UInt32 Dictionary;
     UInt32 Order;
+    UInt32 BlockLogSize;
+    UInt32 NumThreads;
     void ResetForLevelChange() 
     { 
-      Level = Dictionary = Order = UInt32(-1); 
+      BlockLogSize = NumThreads = Level = Dictionary = Order = UInt32(-1); 
       Method.Empty();
       // EncryptionMethod.Empty();
       // Options.Empty();
@@ -42,12 +44,9 @@ namespace NCompression {
   struct CInfo
   {
     UStringVector HistoryArchives;
-    // bool LevelIsDefined;
     UInt32 Level;
     UString ArchiveType;
 
-    bool Solid;
-    bool MultiThread;
     CObjectVector<CFormatOptions> FormatOptionsVector;
 
     bool ShowPassword;

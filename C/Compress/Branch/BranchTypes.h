@@ -22,4 +22,17 @@ typedef unsigned int UInt32;
 #endif
 #endif
 
+#ifndef _7ZIP_UINT64_DEFINED
+#define _7ZIP_UINT64_DEFINED
+#ifdef _SZ_NO_INT_64
+typedef unsigned long UInt64;
+#else
+#ifdef _MSC_VER
+typedef unsigned __int64 UInt64;
+#else
+typedef unsigned long long int UInt64;
+#endif
+#endif
+#endif
+
 #endif

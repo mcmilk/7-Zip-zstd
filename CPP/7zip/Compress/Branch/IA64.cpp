@@ -3,7 +3,10 @@
 #include "StdAfx.h"
 #include "IA64.h"
 
-#include "../../../../C/Compress/Branch/BranchIA64.c"
+extern "C" 
+{ 
+#include "../../../../C/Compress/Branch/BranchIA64.h"
+}
 
 UInt32 CBC_IA64_Encoder::SubFilter(Byte *data, UInt32 size)
 {

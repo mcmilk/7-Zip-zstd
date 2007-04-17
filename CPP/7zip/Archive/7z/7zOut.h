@@ -10,7 +10,6 @@
 
 #include "../../Common/OutBuffer.h"
 #include "../../../Common/DynamicBuffer.h"
-#include "../../../Common/CRC.h"
 
 namespace NArchive {
 namespace N7z {
@@ -62,14 +61,14 @@ public:
 
 struct CHeaderOptions
 {
-  bool UseAdditionalHeaderStreams;
+  // bool UseAdditionalHeaderStreams;
   bool CompressMainHeader;
   bool WriteModified;
   bool WriteCreated;
   bool WriteAccessed;
 
   CHeaderOptions(): 
-      UseAdditionalHeaderStreams(false), 
+      // UseAdditionalHeaderStreams(false), 
       CompressMainHeader(true),
       WriteModified(true),
       WriteCreated(false),
@@ -105,10 +104,7 @@ class COutArchive
       const CRecordVector<bool> &packCRCsDefined,
       const CRecordVector<UInt32> &packCRCs);
 
-  HRESULT WriteUnPackInfo(
-      bool externalFolders,
-      CNum externalFoldersStreamIndex,
-      const CObjectVector<CFolder> &folders);
+  HRESULT WriteUnPackInfo(const CObjectVector<CFolder> &folders);
 
   HRESULT WriteSubStreamsInfo(
       const CObjectVector<CFolder> &folders,
@@ -133,15 +129,18 @@ class COutArchive
   */
 
 
-  HRESULT WriteTime(const CObjectVector<CFileItem> &files, Byte type,
-      bool isExternal, CNum externalDataIndex);
+  HRESULT WriteTime(const CObjectVector<CFileItem> &files, Byte type);
 
-  HRESULT EncodeStream(CEncoder &encoder, const Byte *data, size_t dataSize,
+  HRESULT EncodeStream(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      CEncoder &encoder, const Byte *data, size_t dataSize,
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
-  HRESULT EncodeStream(CEncoder &encoder, const CByteBuffer &data, 
+  HRESULT EncodeStream(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      CEncoder &encoder, const CByteBuffer &data, 
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
-  HRESULT WriteHeader(const CArchiveDatabase &database,
-      const CCompressionMethodMode *options, 
+  HRESULT WriteHeader(
+      const CArchiveDatabase &database,
       const CHeaderOptions &headerOptions,
       UInt64 &headerOffset);
   
@@ -154,7 +153,7 @@ class COutArchive
   COutBuffer _outByte;
   CWriteBufferLoc _outByte2;
   CWriteDynamicBuffer _dynamicBuffer;
-  CCRC _crc;
+  UInt32 _crc;
 
   #ifdef _7Z_VOL
   bool _endMarker;
@@ -176,7 +175,9 @@ public:
   HRESULT Create(ISequentialOutStream *stream, bool endMarker);
   void Close();
   HRESULT SkeepPrefixArchiveHeader();
-  HRESULT WriteDatabase(const CArchiveDatabase &database,
+  HRESULT WriteDatabase(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      const CArchiveDatabase &database,
       const CCompressionMethodMode *options, 
       const CHeaderOptions &headerOptions);
 

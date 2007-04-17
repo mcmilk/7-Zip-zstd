@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Zip Plugin", "zip")
-
-101  ICON  "zip.ico"

@@ -75,7 +75,7 @@ void CPercentPrinter::RePrintRatio()
   m_NumExtraChars = extraSize;
   for (; size < m_NumExtraChars; size++)
     *p++ = ' ';
-  strcpy(p, s);
+  MyStringCopy(p, s);
   (*OutStream) << fullString;
   OutStream->Flush(); 
   m_PrevValue = m_CurValue;

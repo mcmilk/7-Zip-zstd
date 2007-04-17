@@ -4,11 +4,11 @@
 #define __LZMA_ENCODER_H
 
 #include "../../../Common/MyCom.h"
-#include "../../../Common/Alloc.h"
 #include "../../ICoder.h"
 
 extern "C"
 {
+  #include "../../../../C/Alloc.h"
   #include "../../../../C/Compress/Lz/MatchFinder.h"
   #ifdef COMPRESS_MF_MT
   #include "../../../../C/Compress/Lz/MatchFinderMt.h"
@@ -59,23 +59,53 @@ struct COptimal
 };
 
 
-extern Byte g_FastPos[1 << 11];
+// #define LZMA_LOG_BRANCH
+
+#if _MSC_VER >= 1400
+// Must give gain in core 2. but slower ~2% on k8.
+// #define LZMA_LOG_BSR
+#endif
+
+#ifndef LZMA_LOG_BSR
+static const int kNumLogBits = 13; // don't change it !
+extern Byte g_FastPos[];
+#endif
 inline UInt32 GetPosSlot(UInt32 pos)
 {
-  if (pos < (1 << 11))
+  #ifdef LZMA_LOG_BSR
+  if (pos < 2)
+    return pos;
+  unsigned long index;
+  _BitScanReverse(&index, pos);
+  return (index + index) + ((pos >> (index - 1)) & 1);
+  #else
+  if (pos < (1 << kNumLogBits))
     return g_FastPos[pos];
-  if (pos < (1 << 21))
-    return g_FastPos[pos >> 10] + 20;
-  return g_FastPos[pos >> 20] + 40;
+  if (pos < (1 << (kNumLogBits * 2 - 1)))
+    return g_FastPos[pos >> (kNumLogBits - 1)] + (kNumLogBits - 1) * 2;
+  return g_FastPos[pos >> (kNumLogBits - 1) * 2] + (kNumLogBits - 1) * 4;
+  #endif
 }
 
 inline UInt32 GetPosSlot2(UInt32 pos)
 {
-  if (pos < (1 << 17))
+  #ifdef LZMA_LOG_BSR
+  unsigned long index;
+  _BitScanReverse(&index, pos);
+  return (index + index) + ((pos >> (index - 1)) & 1);
+  #else
+  #ifdef LZMA_LOG_BRANCH
+  if (pos < (1 << (kNumLogBits + 6)))
     return g_FastPos[pos >> 6] + 12;
-  if (pos < (1 << 27))
-    return g_FastPos[pos >> 16] + 32;
-  return g_FastPos[pos >> 26] + 52;
+  if (pos < (1 << (kNumLogBits * 2 + 5)))
+    return g_FastPos[pos >> (kNumLogBits + 5)] + (kNumLogBits + 5) * 2;
+  return g_FastPos[pos >> (kNumLogBits * 2 + 4)] + (kNumLogBits * 2 + 4) * 2;
+  #else
+  // it's faster with VC6-32bit.
+  UInt32 s = 6 + ((kNumLogBits - 1) & (UInt32)((Int32)(((1 << (kNumLogBits + 6)) - 1) -  pos) >> 31));
+  return g_FastPos[pos >> s] + (s * 2);
+  #endif
+  #endif
 }
 
 const UInt32 kIfinityPrice = 0xFFFFFFF;

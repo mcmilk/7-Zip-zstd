@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Cpio Plugin", "cpio")
-
-101  ICON  "cpio.ico"

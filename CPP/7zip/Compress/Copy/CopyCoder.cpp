@@ -2,8 +2,12 @@
 
 #include "StdAfx.h"
 
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
+
 #include "CopyCoder.h"
-#include "../../../Common/Alloc.h"
 #include "../../Common/StreamUtils.h"
 
 namespace NCompress {

@@ -10,10 +10,6 @@
 #include "OpenArchive.h"
 #include "SetProperties.h"
 
-#ifndef EXCLUDE_COM
-#include "Windows/DLL.h"
-#endif
-
 using namespace NWindows;
 
 HRESULT DecompressArchive(
@@ -85,6 +81,7 @@ HRESULT DecompressArchive(
 }
 
 HRESULT DecompressArchives(
+    CCodecs *codecs,
     UStringVector &archivePaths, UStringVector &archivePathsFull,    
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &optionsSpec,
@@ -111,7 +108,7 @@ HRESULT DecompressArchives(
 
     RINOK(extractCallback->BeforeOpen(archivePath));
     CArchiveLink archiveLink;
-    HRESULT result = MyOpenArchive(archivePath, archiveLink, openCallback);
+    HRESULT result = MyOpenArchive(codecs, archivePath, archiveLink, openCallback);
 
     bool crypted = false;
     #ifndef _NO_CRYPTO

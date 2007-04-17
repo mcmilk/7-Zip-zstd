@@ -8,21 +8,30 @@
 
 #include "NsisIn.h"
 
+#include "../../Common/CreateCoder.h"
+
 namespace NArchive {
 namespace NNsis {
 
 class CHandler: 
   public IInArchive,
+  PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
   CMyComPtr<IInStream> _inStream;
   CInArchive _archive;
 
+  DECL_EXTERNAL_CODECS_VARS
+
   bool GetUncompressedSize(int index, UInt32 &size);
   bool GetCompressedSize(int index, UInt32 &size);
 
 public:
-  MY_UNKNOWN_IMP1(IInArchive)
+  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  QUERY_ENTRY_ISetCompressCodecsInfo
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
@@ -34,6 +43,8 @@ public:
   STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType);
   STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
   STDMETHOD(GetArchivePropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType);
+
+  DECL_ISetCompressCodecsInfo
 };
 
 }}

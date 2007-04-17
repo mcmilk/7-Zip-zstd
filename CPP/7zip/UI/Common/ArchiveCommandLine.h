@@ -22,7 +22,9 @@ namespace NCommandType { enum EEnum
   kTest,
   kExtract,
   kFullExtract,
-  kList
+  kList,
+  kBenchmark,
+  kInfo
 };}
 
 namespace NRecursedType { enum EEnum
@@ -77,10 +79,17 @@ struct CArchiveCommandLineOptions
   CObjectVector<CProperty> ExtractProperties;
 
   CUpdateOptions UpdateOptions;
+  UString ArcType;
   bool EnablePercents;
 
-  CArchiveCommandLineOptions(): StdInMode(false), StdOutMode(false) {};
+  // Benchmark 
+  UInt32 NumIterations;
+  UInt32 NumThreads;
+  UInt32 DictionarySize;
+  UString Method;
 
+
+  CArchiveCommandLineOptions(): StdInMode(false), StdOutMode(false) {};
 };
 
 class CArchiveCommandLineParser

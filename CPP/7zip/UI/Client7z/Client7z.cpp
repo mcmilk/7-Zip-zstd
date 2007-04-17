@@ -23,7 +23,7 @@ DEFINE_GUID(CLSID_CFormat7z,
 
 using namespace NWindows;
 
-static const char *kCopyrightString = "7-Zip 4.43 (7za.DLL client example)  (c) 1999-2006 Igor Pavlov  2006-08-10\n";
+static const char *kCopyrightString = "7-Zip (7za.DLL client example)  (c) 1999-2007 Igor Pavlov  2007-03-30\n";
 static const char *kHelpString = 
 "Usage: Client7z.exe [a | l | x ] archive.7z [fileName ...]\n"
 "Examples:\n"
@@ -56,7 +56,7 @@ void PrintString(const UString &s)
 
 void PrintString(const AString &s)
 {
-  printf("%s", s);
+  printf("%s", (LPCSTR)s);
 }
 
 void PrintNewLine()

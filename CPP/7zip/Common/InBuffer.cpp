@@ -4,7 +4,10 @@
 
 #include "InBuffer.h"
 
-#include "../../Common/Alloc.h"
+extern "C"
+{
+  #include "../../../C/Alloc.h"
+}
 
 CInBuffer::CInBuffer(): 
   _buffer(0), 

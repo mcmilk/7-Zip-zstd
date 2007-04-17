@@ -1,34 +1,14 @@
 PROG = 7za.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
 
-CFLAGS = $(CFLAGS) -I ../../../ \
-  -DEXCLUDE_COM \
-  -DNO_REGISTRY \
+CFLAGS = $(CFLAGS) -I ../../../  \
   -DWIN_LONG_PATH \
-  -DFORMAT_7Z \
-  -DFORMAT_BZIP2 \
-  -DFORMAT_CAB \
-  -DFORMAT_GZIP \
-  -DFORMAT_SPLIT \
-  -DFORMAT_TAR \
-  -DFORMAT_Z \
-  -DFORMAT_ZIP \
   -DCOMPRESS_MT \
-  -DCOMPRESS_BCJ_X86 \
-  -DCOMPRESS_BCJ2 \
-  -DCOMPRESS_BZIP2 \
   -DCOMPRESS_BZIP2_MT \
-  -DCOMPRESS_COPY \
-  -DCOMPRESS_DEFLATE \
-  -DCOMPRESS_DEFLATE64 \
-  -DCOMPRESS_IMPLODE \
-  -DCOMPRESS_LZMA \
   -DCOMPRESS_MF_MT \
-  -DCOMPRESS_PPMD \
-  -DCRYPTO_7ZAES \
-  -DCRYPTO_AES \
-  -DCRYPTO_ZIP \
-
+  -D_7ZIP_LARGE_PAGES \
+  -DBREAK_HANDLER \
+  -DBENCH_MT \
 
 CONSOLE_OBJS = \
   $O\ConsoleClose.obj \
@@ -42,7 +22,6 @@ CONSOLE_OBJS = \
   $O\UserInputUtils.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
   $O\IntToString.obj \
@@ -70,8 +49,10 @@ WIN_OBJS = \
   $O\Synchronization.obj
 
 7ZIP_COMMON_OBJS = \
+  $O\CreateCoder.obj \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
+  $O\FilterCoder.obj \
   $O\InBuffer.obj \
   $O\InOutTempBuffer.obj \
   $O\LimitedStreams.obj \
@@ -79,6 +60,7 @@ WIN_OBJS = \
   $O\LSBFDecoder.obj \
   $O\LSBFEncoder.obj \
   $O\MemBlocks.obj \
+  $O\MethodId.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
   $O\OutMemStream.obj \
@@ -92,11 +74,11 @@ UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
   $O\ExtractingFilePath.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
   $O\SetProperties.obj \
@@ -114,7 +96,6 @@ AR_COMMON_OBJS = \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
-  $O\FilterCoder.obj \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
@@ -133,22 +114,24 @@ AR_COMMON_OBJS = \
   $O\7zHandlerOut.obj \
   $O\7zHeader.obj \
   $O\7zIn.obj \
-  $O\7zMethodID.obj \
   $O\7zOut.obj \
   $O\7zProperties.obj \
   $O\7zSpecStream.obj \
   $O\7zUpdate.obj \
+  $O\7zRegister.obj \
 
 BZ2_OBJS = \
   $O\BZip2Handler.obj \
   $O\BZip2HandlerOut.obj \
   $O\BZip2Update.obj \
+  $O\bz2Register.obj \
 
 CAB_OBJS = \
   $O\CabBlockInStream.obj \
   $O\CabHandler.obj \
   $O\CabHeader.obj \
   $O\CabIn.obj \
+  $O\CabRegister.obj \
 
 GZ_OBJS = \
   $O\GZipHandler.obj \
@@ -157,10 +140,12 @@ GZ_OBJS = \
   $O\GZipIn.obj \
   $O\GZipOut.obj \
   $O\GZipUpdate.obj \
+  $O\GZipRegister.obj \
 
 SPLIT_OBJS = \
   $O\SplitHandler.obj \
   $O\SplitHandlerOut.obj \
+  $O\SplitRegister.obj \
 
 TAR_OBJS = \
   $O\TarHandler.obj \
@@ -169,9 +154,11 @@ TAR_OBJS = \
   $O\TarIn.obj \
   $O\TarOut.obj \
   $O\TarUpdate.obj \
+  $O\TarRegister.obj \
 
 Z_OBJS = \
   $O\ZHandler.obj \
+  $O\ZRegister.obj \
 
 ZIP_OBJS = \
   $O\ZipAddCommon.obj \
@@ -182,23 +169,43 @@ ZIP_OBJS = \
   $O\ZipItem.obj \
   $O\ZipOut.obj \
   $O\ZipUpdate.obj \
+  $O\ZipRegister.obj \
 
 
 BRANCH_OPT_OBJS = \
   $O\BranchCoder.obj \
   $O\x86.obj \
   $O\x86_2.obj \
+  $O\ARM.obj \
+  $O\ARMThumb.obj \
+  $O\IA64.obj \
+  $O\PPC.obj \
+  $O\SPARC.obj \
+  $O\BranchRegister.obj \
+  $O\BCJRegister.obj \
+  $O\BCJ2Register.obj \
+
+SWAP_OPT_OBJS = \
+  $O\ByteSwap.obj \
+  $O\ByteSwapRegister.obj \
 
 BZIP2_OBJS = \
   $O\BZip2CRC.obj \
+  $O\BZip2Register.obj \
 
 BZIP2_OPT_OBJS = \
   $O\BZip2Decoder.obj \
   $O\BZip2Encoder.obj \
 
+COPY_OBJS = \
+  $O\CopyCoder.obj \
+  $O\CopyRegister.obj \
+
 DEFLATE_OPT_OBJS = \
   $O\DeflateDecoder.obj \
   $O\DeflateEncoder.obj \
+  $O\DeflateRegister.obj \
+  $O\Deflate64Register.obj \
 
 LZ_OBJS = \
   $O\LzOutWindow.obj \
@@ -206,6 +213,11 @@ LZ_OBJS = \
 LZMA_OPT_OBJS = \
   $O\LZMADecoder.obj \
   $O\LZMAEncoder.obj \
+  $O\LZMARegister.obj \
+
+LZMA_BENCH_OBJS = \
+  $O\LzmaBench.obj \
+  $O\LzmaBenchCon.obj \
 
 LZX_OBJS = \
   $O\LzxDecoder.obj \
@@ -218,6 +230,7 @@ IMPLODE_OBJS = \
 PPMD_OPT_OBJS = \
   $O\PPMDDecoder.obj \
   $O\PPMDEncoder.obj \
+  $O\PPMDRegister.obj \
 
 SHRINK_OBJS = \
   $O\ShrinkDecoder.obj \
@@ -228,6 +241,7 @@ COMPRESS_Z_OBJS = \
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
+  $O\7zAESRegister.obj \
 
 AES_OPT_OBJS = \
   $O\MyAES.obj \
@@ -252,7 +266,7 @@ CRYPTO_ZIP_OBJS = \
   $O\ZipCrypto.obj \
 
 C_OBJS = \
-  $O\7zCrc.obj \
+  $O\Alloc.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 
@@ -260,11 +274,21 @@ C_LZ_OBJS = \
   $O\MatchFinder.obj \
   $O\MatchFinderMt.obj \
 
+C_BRANCH_OBJS = \
+  $O\BranchARM.obj \
+  $O\BranchARMThumb.obj \
+  $O\BranchIA64.obj \
+  $O\BranchPPC.obj \
+  $O\BranchSPARC.obj \
+  $O\BranchX86.obj \
+
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
   $(CONSOLE_OBJS) \
   $(COMMON_OBJS) \
+  $(COMMON_OBJS_O2) \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
@@ -280,18 +304,21 @@ OBJS = \
   $(BZIP2_OBJS) \
   $(BZIP2_OPT_OBJS) \
   $(BRANCH_OPT_OBJS) \
+  $(SWAP_OPT_OBJS) \
+  $(COPY_OBJS) \
   $(DEFLATE_OPT_OBJS) \
   $(IMPLODE_OBJS) \
   $(LZ_OBJS) \
   $(LZMA_OPT_OBJS) \
+  $(LZMA_BENCH_OBJS) \
   $(LZX_OBJS) \
   $(PPMD_OPT_OBJS) \
   $(SHRINK_OBJS) \
   $(COMPRESS_Z_OBJS) \
   $(C_OBJS) \
   $(C_LZ_OBJS) \
+  $(C_BRANCH_OBJS) \
   $O\BlockSort.obj \
-  $O\CopyCoder.obj \
   $O\HuffmanEncode.obj \
   $O\RangeCoderBit.obj \
   $(7ZAES_OPT_OBJS) \
@@ -301,6 +328,7 @@ OBJS = \
   $(CRYPTO_ZIP_OBJS) \
   $(CRYPTO_WZAES_OBJS) \
   $O\QuantumDecoder.obj \
+  $(CRC_OBJS) \
   $O\resource.res
 
 
@@ -339,10 +367,14 @@ $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
 
 $(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
 	$(COMPL_O2)
+$(SWAP_OPT_OBJS): ../../Compress/ByteSwap/$(*B).cpp
+	$(COMPL_O2)
 $(BZIP2_OBJS): ../../Compress/BZip2/$(*B).cpp
 	$(COMPL)
 $(BZIP2_OPT_OBJS): ../../Compress/BZip2/$(*B).cpp
 	$(COMPL_O2)
+$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
+	$(COMPL)
 $(DEFLATE_OPT_OBJS): ../../Compress/Deflate/$(*B).cpp
 	$(COMPL_O2)
 $(IMPLODE_OBJS): ../../Compress/Implode/$(*B).cpp
@@ -351,6 +383,9 @@ $(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
 	$(COMPL_O2)
 $(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 	$(COMPL_O2)
+$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
+	$(COMPL)
+
 $(LZX_OBJS): ../../Compress/Lzx/$(*B).cpp
 	$(COMPL_O2)
 $(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
@@ -362,8 +397,6 @@ $(COMPRESS_Z_OBJS): ../../Compress/Z/$(*B).cpp
 
 $O\BlockSort.obj: ../../Compress/BWT/$(*B).cpp
 	$(COMPL_O2)
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
 $O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
 	$(COMPL)
 $O\QuantumDecoder.obj: ../../Compress/Quantum/$(*B).cpp
@@ -386,5 +419,8 @@ $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 $(C_LZ_OBJS): ../../../../C/Compress/Lz/$(*B).c
 	$(COMPL_O2)
+$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
+	$(COMPL_O2)
 $O\HuffmanEncode.obj: ../../../../C/Compress/Huffman/$(*B).c
 	$(COMPL_O2)
+!include "../../Crc.mak"

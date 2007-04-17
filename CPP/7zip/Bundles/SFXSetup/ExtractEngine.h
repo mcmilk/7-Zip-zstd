@@ -5,8 +5,10 @@
 
 #include "Common/String.h"
 #include "../../UI/GUI/OpenCallbackGUI.h"
+#include "../../UI/Common/LoadCodecs.h"
 
 HRESULT ExtractArchive(
+    CCodecs *codecs,
     const UString &fileName, 
     const UString &folderName,
     COpenCallbackGUI *openCallback,

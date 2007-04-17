@@ -5,7 +5,6 @@
 #include "7zHandler.h"
 #include "7zOut.h"
 #include "7zUpdate.h"
-#include "7zMethods.h"
 
 #include "../../../Windows/PropVariant.h"
 
@@ -21,47 +20,6 @@ using namespace NWindows;
 
 namespace NArchive {
 namespace N7z {
-
-#ifdef COMPRESS_LZMA
-static CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
-static CMethodID k_LZMA2 = { { 0x3, 0x1, 0x2 }, 3 };
-#endif
-
-#ifdef COMPRESS_PPMD
-static CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
-#endif
-
-#ifdef COMPRESS_BCJ_X86
-static CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
-#endif
-
-#ifdef COMPRESS_BCJ2
-static CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
-#endif
-
-#ifdef COMPRESS_COPY
-static CMethodID k_Copy = { { 0x0 }, 1 };
-#endif
-
-#ifdef COMPRESS_DEFLATE
-#ifndef COMPRESS_DEFLATE_ENCODER
-#define COMPRESS_DEFLATE_ENCODER
-#endif
-#endif
-
-#ifdef COMPRESS_DEFLATE_ENCODER
-static CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
-#endif
-
-#ifdef COMPRESS_BZIP2
-#ifndef COMPRESS_BZIP2_ENCODER
-#define COMPRESS_BZIP2_ENCODER
-#endif
-#endif
-
-#ifdef COMPRESS_BZIP2_ENCODER
-static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
-#endif
 
 const wchar_t *kCopyMethod = L"Copy";
 const wchar_t *kLZMAMethodName = L"LZMA";
@@ -79,8 +37,8 @@ static const UInt32 kLzmaAlgorithmX5 = 1;
 
 static const UInt32 kLzmaDicSizeX1 = 1 << 16;
 static const UInt32 kLzmaDicSizeX3 = 1 << 20;
-static const UInt32 kLzmaDicSizeX5 = 1 << 22;
-static const UInt32 kLzmaDicSizeX7 = 1 << 24;
+static const UInt32 kLzmaDicSizeX5 = 1 << 24;
+static const UInt32 kLzmaDicSizeX7 = 1 << 25;
 static const UInt32 kLzmaDicSizeX9 = 1 << 26;
 
 static const UInt32 kLzmaFastBytesX1 = 32;
@@ -240,8 +198,6 @@ HRESULT CHandler::SetCompressionMethod(
   );
   RINOK(res);
   methodMode.Binds = _binds;
-  if (_compressHeadersFull)
-    _compressHeaders = true;
 
   if (_compressHeaders)
   {
@@ -308,15 +264,6 @@ HRESULT CHandler::SetCompressionMethod(
     #endif
     )
 {
-  #ifndef EXCLUDE_COM
-  /*
-  CObjectVector<CMethodInfo2> methodInfoVector;
-  if (!NRegistryInfo::EnumerateAllMethods(methodInfoVector))
-    return E_FAIL;
-  */
-  #endif
- 
-
   UInt32 level = _level;
   
   if (methodsInfo.IsEmpty())
@@ -418,93 +365,11 @@ HRESULT CHandler::SetCompressionMethod(
 
 
     CMethodFull methodFull;
-    methodFull.NumInStreams = 1;
-    methodFull.NumOutStreams = 1;
 
-    bool defined = false;
-
-    #ifdef COMPRESS_LZMA
-    if (oneMethodInfo.MethodName.CompareNoCase(L"LZMA") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_LZMA;
-    }
-    #endif
-
-    #ifdef COMPRESS_PPMD
-    if (oneMethodInfo.MethodName.CompareNoCase(L"PPMD") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_PPMD;
-    }
-    #endif
-
-    #ifdef COMPRESS_BCJ_X86
-    if (oneMethodInfo.MethodName.CompareNoCase(L"BCJ") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_BCJ_X86;
-    }
-    #endif
-
-    #ifdef COMPRESS_BCJ2
-    if (oneMethodInfo.MethodName.CompareNoCase(L"BCJ2") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_BCJ2;
-      methodFull.NumInStreams = 4;
-      methodFull.NumOutStreams = 1;
-    }
-    #endif
-
-    #ifdef COMPRESS_DEFLATE_ENCODER
-    if (oneMethodInfo.MethodName.CompareNoCase(L"Deflate") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_Deflate;
-    }
-    #endif
-
-    #ifdef COMPRESS_BZIP2_ENCODER
-    if (oneMethodInfo.MethodName.CompareNoCase(L"BZip2") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_BZip2;
-    }
-    #endif
-
-    #ifdef COMPRESS_COPY
-    if (oneMethodInfo.MethodName.CompareNoCase(L"Copy") == 0)
-    {
-      defined = true;
-      methodFull.MethodID = k_Copy;
-    }
-
-    #endif
-    
-    #ifndef EXCLUDE_COM
-
-    if (!defined)
-    {
-      CMethodInfo2 methodInfo;
-      if (!GetMethodInfo(oneMethodInfo.MethodName, methodInfo))
-        return E_INVALIDARG;
-      if (!methodInfo.EncoderIsAssigned)
-        return E_INVALIDARG;
-      
-      methodFull.MethodID = methodInfo.MethodID;
-      methodFull.NumInStreams = methodInfo.NumInStreams;
-      methodFull.NumOutStreams = methodInfo.NumOutStreams;
-      
-      methodFull.EncoderClassID = methodInfo.Encoder;
-      methodFull.FilePath = methodInfo.FilePath;
-      defined = true;
-    }
-    
-    #endif
-    if (!defined)
+    if (!FindMethod(
+        EXTERNAL_CODECS_VARS
+        oneMethodInfo.MethodName, methodFull.MethodID, methodFull.NumInStreams, methodFull.NumOutStreams))
       return E_INVALIDARG;
-    
     methodFull.CoderProperties = oneMethodInfo.CoderProperties;
     methodMode.Methods.Add(methodFull);
 
@@ -707,17 +572,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   RINOK(SetPassword(methodMode, updateCallback));
 
-  bool useAdditionalHeaderStreams = true;
-  bool compressMainHeader = false; 
+  bool compressMainHeader = _compressHeaders;  // check it
 
-  if (_compressHeadersFull)
-  {
-    useAdditionalHeaderStreams = false;
-    compressMainHeader = true; 
-  }
   if (methodMode.PasswordIsDefined)
   {
-    useAdditionalHeaderStreams = false;
     compressMainHeader = true; 
     if(_encryptHeaders)
       RINOK(SetPassword(headerMethod, updateCallback));
@@ -734,7 +592,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.UseFilters = _level != 0 && _autoFilter;
   options.MaxFilter = _level >= 8;
 
-  options.HeaderOptions.UseAdditionalHeaderStreams = useAdditionalHeaderStreams;
   options.HeaderOptions.CompressMainHeader = compressMainHeader;
   options.HeaderOptions.WriteModified = WriteModified;
   options.HeaderOptions.WriteCreated = WriteCreated;
@@ -746,6 +603,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.RemoveSfxBlock = _removeSfxBlock;
   options.VolumeMode = _volumeMode;
   return Update(
+      EXTERNAL_CODECS_VARS
       #ifdef _7Z_VOL
       volume ? volume->Stream: 0, 
       volume ? database: 0, 
@@ -1050,7 +908,10 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       }
       else if (name.CompareNoCase(L"HCF") == 0)
       {
-        RINOK(SetBoolProperty(_compressHeadersFull, value));
+        bool compressHeadersFull = true;
+        RINOK(SetBoolProperty(compressHeadersFull, value));
+        if (!compressHeadersFull)
+          return E_INVALIDARG;
         continue;
       }
       else if (name.CompareNoCase(L"HE") == 0)

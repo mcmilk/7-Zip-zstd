@@ -1,18 +1,14 @@
-// Crypto/CRarAES/RarAES.h
+// RarAES.h
 
 #ifndef __CRYPTO_RARAES_H
 #define __CRYPTO_RARAES_H
 
 #include "Common/MyCom.h"
-#include "../../ICoder.h"
-#include "../../IPassword.h"
-#include "../../Archive/Common/CoderLoader.h"
-
 #include "Common/Types.h"
 #include "Common/Buffer.h"
 
-DEFINE_GUID(CLSID_CCrypto_AES_CBC_Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00);
+#include "../../ICoder.h"
+#include "../../IPassword.h"
 
 namespace NCrypto {
 namespace NRar29 {
@@ -30,13 +26,11 @@ class CDecoder:
   Byte aesInit[16];
   bool _needCalculate;
 
-  CCoderLibrary _aesLib;
   CMyComPtr<ICompressFilter> _aesFilter;
 
   bool _rar350Mode;
 
   void Calculate();
-  HRESULT CreateFilter();
 
 public:
 
@@ -45,6 +39,7 @@ public:
     ICompressSetDecoderProperties2)
 
   STDMETHOD(Init)();
+
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
 
   STDMETHOD(CryptoSetPassword)(const Byte *aData, UInt32 aSize);

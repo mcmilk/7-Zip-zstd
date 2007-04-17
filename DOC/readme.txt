@@ -10,7 +10,7 @@ License Info
 ------------
 
 7-Zip is free software distributed under the GNU LGPL 
-(except for files Rar29.dll and AES code).
+(except for unRar code and AES code).
 read License.txt for more infomation about license.
 
 Notes about unRAR license:

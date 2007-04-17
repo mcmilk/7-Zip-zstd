@@ -3,7 +3,10 @@
 #include "StdAfx.h"
 
 #include "Rar20Crypto.h"
-#include "../../../Common/CRC.h"
+extern "C" 
+{ 
+  #include "../../../../C/7zCrc.h" 
+}
 
 #define  rol(x,n)  (((x) << (n)) | ((x) >> (8 * sizeof(x) - (n))))
 #define  ror(x,n)  (((x) >> (n)) | ((x) << (8 * sizeof(x) - (n))))
@@ -36,7 +39,7 @@ void CData::UpdateKeys(const Byte *data)
 {
   for (int i = 0; i < 16; i += 4)
     for (int j = 0; j < 4; j++)
-      Keys[j] ^= CCRC::Table[data[i + j]];
+      Keys[j] ^= g_CrcTable[data[i + j]];
 }
 
 static void Swap(Byte *b1, Byte *b2)
@@ -64,8 +67,8 @@ void CData::SetPassword(const Byte *password, UInt32 passwordLength)
   for (UInt32 j = 0; j < 256; j++)
     for (UInt32 i = 0; i < passwordLength; i += 2)
     {
-      UInt32 n2 = (Byte)CCRC::Table[(psw[i + 1] + j) & 0xFF];
-      UInt32 n1 = (Byte)CCRC::Table[(psw[i] - j) & 0xFF];
+      UInt32 n2 = (Byte)g_CrcTable[(psw[i + 1] + j) & 0xFF];
+      UInt32 n1 = (Byte)g_CrcTable[(psw[i] - j) & 0xFF];
       for (UInt32 k = 1; (n1 & 0xFF) != n2; n1++, k++)
         Swap(&SubstTable[n1 & 0xFF], &SubstTable[(n1 + i + k) & 0xFF]);
     }

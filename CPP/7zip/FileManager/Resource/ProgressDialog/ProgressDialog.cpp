@@ -25,12 +25,12 @@ static CIDLangPair kIDLangPairs[] =
 #ifndef _SFX
 CProgressDialog::~CProgressDialog()
 {
-  AddToTitle(TEXT(""));
+  AddToTitle(L"");
 }
 void CProgressDialog::AddToTitle(LPCWSTR s)
 {
   if (MainWindow != 0)
-    ::MySetWindowText(MainWindow, UString(s) + MainTitle);
+    MySetWindowText(MainWindow, UString(s) + MainTitle);
 }
 #endif
 

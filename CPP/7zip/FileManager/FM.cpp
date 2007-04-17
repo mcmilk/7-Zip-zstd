@@ -1,13 +1,17 @@
-// FAM.cpp
+// FM.cpp
 
 #include "StdAfx.h"
 
 #include "resource.h"
 #include "Panel.h"
 
+extern "C" 
+{ 
+  #include "../../../C/Alloc.h"
+}
+
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
-#include "Common/Alloc.h"
 // #include "Common/CommandLineParser.h"
 
 #include "Windows/Control/Toolbar.h"
@@ -32,8 +36,6 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 // using namespace NCommandLineParser;
-
-// NWindows::NCOM::CComInitializer aComInitializer;
 
 #define MAX_LOADSTRING 100
 
@@ -602,8 +604,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       g_App.CreateDragTarget();
       bool archiveIsOpened;
       bool encrypted;
+      bool needOpenFile = false;
+      if (!g_MainPath.IsEmpty() /* && g_OpenArchive */)
+      {
+        NFile::NFind::CFileInfoW fileInfo;
+        if (NFile::NFind::FindFile(g_MainPath, fileInfo))
+          if (!fileInfo.IsDirectory())
+            needOpenFile = true;
+      }
       g_App.Create(hWnd, g_MainPath, xSizes, archiveIsOpened, encrypted);
-      if (!archiveIsOpened && g_OpenArchive)
+
+      if (needOpenFile && !archiveIsOpened)
       {
         UString message;
         if (encrypted)

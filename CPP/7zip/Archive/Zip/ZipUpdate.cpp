@@ -20,6 +20,7 @@
 #endif
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/OutMemStream.h"
+#include "../../Common/CreateCoder.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
 
@@ -138,6 +139,11 @@ static DWORD WINAPI CoderThread(void *threadCoderInfo);
 
 struct CThreadInfo
 {
+  #ifdef EXTERNAL_CODECS
+  CMyComPtr<ICompressCodecsInfo> _codecsInfo;
+  const CObjectVector<CCodecInfoEx> *_externalCodecs;
+  #endif
+
   NWindows::CThread Thread;
   CAutoResetEvent *CompressEvent;
   CAutoResetEvent *CompressionCompletedEvent;
@@ -203,7 +209,11 @@ void CThreadInfo::WaitAndCode()
     CompressEvent->Lock();
     if (ExitThread)
       return;
-    Result = Coder.Compress(InStream, OutStream, Progress, CompressingResult);
+    Result = Coder.Compress(
+        #ifdef EXTERNAL_CODECS
+        _codecsInfo, _externalCodecs, 
+        #endif
+        InStream, OutStream, Progress, CompressingResult);
     if (Result == S_OK && Progress)
       Result = Progress->SetRatioInfo(&CompressingResult.UnpackSize, &CompressingResult.PackSize);
     CompressionCompletedEvent->Set();
@@ -301,7 +311,9 @@ static HRESULT WriteDirHeader(COutArchive &archive, const CCompressionMethodMode
   return archive.WriteLocalHeader(item);
 }
 
-static HRESULT Update2St(COutArchive &archive, 
+static HRESULT Update2St(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    COutArchive &archive, 
     CInArchive *inArchive,
     IInStream *inStream,
     const CObjectVector<CItemEx> &inputItems,
@@ -360,7 +372,9 @@ static HRESULT Update2St(COutArchive &archive,
         CMyComPtr<IOutStream> outStream;
         archive.CreateStreamForCompressing(&outStream);
         localCompressProgressSpec->Init(localProgress, &complexity, NULL);
-        RINOK(compressor.Compress(fileInStream, outStream, compressProgress, compressingResult));
+        RINOK(compressor.Compress(
+            EXTERNAL_CODECS_LOC_VARS
+            fileInStream, outStream, compressProgress, compressingResult));
         SetItemInfoFromCompressingResult(compressingResult, options->IsAesMode, options->AesKeyMode, item);
         RINOK(archive.WriteLocalHeader(item));
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
@@ -379,7 +393,9 @@ static HRESULT Update2St(COutArchive &archive,
   return S_OK;
 }
 
-static HRESULT Update2(COutArchive &archive, 
+static HRESULT Update2(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    COutArchive &archive, 
     CInArchive *inArchive,
     IInStream *inStream,
     const CObjectVector<CItemEx> &inputItems,
@@ -472,7 +488,9 @@ static HRESULT Update2(COutArchive &archive,
 
   if (!mtMode)
   #endif
-    return Update2St(archive, inArchive,inStream,
+    return Update2St(
+        EXTERNAL_CODECS_LOC_VARS
+        archive, inArchive,inStream,
         inputItems, updateItems, options, comment, updateCallback);
 
 
@@ -512,6 +530,10 @@ static HRESULT Update2(COutArchive &archive,
     for (i = 0; i < numThreads; i++)
     {
       CThreadInfo &threadInfo = threads.Threads[i];
+      #ifdef EXTERNAL_CODECS
+      threadInfo._codecsInfo = codecsInfo;
+      threadInfo._externalCodecs = externalCodecs;
+      #endif
       threadInfo.CreateEvents();
       threadInfo.OutStreamSpec = new COutMemStream(&memManager);
       threadInfo.OutStream = threadInfo.OutStreamSpec;
@@ -572,6 +594,11 @@ static HRESULT Update2(COutArchive &archive,
         {
           threadInfo.IsFree = false;
           threadInfo.InStream = fileInStream;
+
+          // !!!!! we must release ref before sending event 
+          // BUG was here in v4.43 and v4.44. It could change ref counter in two threads in same time
+          fileInStream.Release(); 
+
           threadInfo.OutStreamSpec->Init();
           threadInfo.ProgressSpec->Reinit();
           threadInfo.CompressEvent->Set();
@@ -690,6 +717,7 @@ static HRESULT Update2(COutArchive &archive,
 }
 
 HRESULT Update(    
+    DECL_EXTERNAL_CODECS_LOC_VARS
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
@@ -725,7 +753,9 @@ HRESULT Update(
   if(inArchive != 0)
     inStream.Attach(inArchive->CreateStream());
 
-  return Update2(outArchive, inArchive, inStream, 
+  return Update2(
+      EXTERNAL_CODECS_LOC_VARS
+      outArchive, inArchive, inStream, 
       inputItems, updateItems, 
       compressionMethodMode, 
       archiveInfo.Comment, updateCallback);

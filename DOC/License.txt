@@ -1,5 +1,5 @@
-      7-Zip
-      ~~~~~
+      7-Zip source code
+      ~~~~~~~~~~~~~~~~~
       License for use and distribution
       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -7,9 +7,9 @@
 
       Licenses for files are:
 
-        1) Rar29.dll:           GNU LGPL + unRAR restriction
-        2) AES.dll and 7za.exe: GNU LGPL + AES code license
-        3) All other files:     GNU LGPL
+        1) CPP/7zip/Compress/Rar files:  GNU LGPL + unRAR restriction
+        2) CPP/7zip/Crypto/AES files:    GNU LGPL + AES code license
+        3) All other files:              GNU LGPL
       
       GNU LGPL + unRAR restriction means that you must follow both GNU LGPL rules 
       and unRAR restriction rules.

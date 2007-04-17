@@ -4,7 +4,6 @@
 #define __RAR_VOLUME_IN_STREAM_H
 
 #include "../../IStream.h"
-#include "Common/CRC.h"
 #include "RarIn.h"
 
 namespace NArchive {
@@ -31,7 +30,7 @@ private:
   const CObjectVector<CItemEx> *_items;
   CRefItem _refItem;
   int _curIndex;
-  CCRC _crc;
+  UInt32 _crc;
   bool _fileIsOpen;
   CMyComPtr<ISequentialInStream> _stream;
 

@@ -14,11 +14,7 @@ specified in password Based File Encryption Utility.
 
 #include "WzAES.h"
 
-#ifdef CRYPTO_AES
 #include "../AES/MyAES.h"
-#else
-extern void GetCryptoFolderPrefix(TCHAR *path);
-#endif
 
 // define it if you don't want to use speed-optimized version of Pbkdf2HmacSha1
 // #define _NO_WZAES_OPTIMIZATIONS
@@ -226,20 +222,7 @@ STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 HRESULT CBaseCoder::CreateFilters()
 {
   if (!_aesFilter)
-  {
-    #ifdef CRYPTO_AES
-
     _aesFilter = new CAES_ECB_Encoder;
-    
-    #else
-    
-    TCHAR aesLibPath[MAX_PATH + 64];
-    GetCryptoFolderPrefix(aesLibPath);
-    lstrcat(aesLibPath, TEXT("AES.dll"));
-    RINOK(_aesLibrary.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES_ECB_Encoder, &_aesFilter));
-    
-    #endif
-  }
   return S_OK;
 }
 

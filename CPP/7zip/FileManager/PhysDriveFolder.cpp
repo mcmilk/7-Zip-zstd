@@ -2,10 +2,12 @@
 
 #include "StdAfx.h"
 
+extern "C" 
+{ 
+  #include "../../../C/Alloc.h"
+}
+
 #include "PhysDriveFolder.h"
-
-#include "Common/Alloc.h"
-
 #include "Windows/PropVariant.h"
 #include "Windows/FileDevice.h"
 #include "Windows/FileSystem.h"
@@ -21,12 +23,6 @@ static STATPROPSTG kProperties[] =
   { NULL, kpidName, VT_BSTR},
   { NULL, kpidSize, VT_UI8}
 };
-
-CPhysDriveFolder::~CPhysDriveFolder()
-{
-  if (_buffer != 0)
-    MyFree(_buffer);
-}
 
 HRESULT CPhysDriveFolder::Init(const UString &path)
 {
@@ -186,6 +182,65 @@ HRESULT CPhysDriveFolder::GetLength(UInt64 &length) const
   return S_OK;
 }
 
+struct CPhysTempBuffer
+{
+  void *buffer;
+  CPhysTempBuffer(): buffer(0) {}
+  ~CPhysTempBuffer() { MyFree(buffer); }
+};
+
+HRESULT CopyFileSpec(LPCWSTR fromPath, LPCWSTR toPath, bool writeToDisk, UInt64 fileSize, UInt32 bufferSize, IProgress *progress)
+{
+  NFile::NIO::CInFile inFile;
+  if (!inFile.Open(fromPath))
+    return GetLastError();
+  if (fileSize == (UInt64)(Int64)-1)
+  {
+    if (!inFile.GetLength(fileSize))
+      ::GetLastError();
+  }
+  NFile::NIO::COutFile outFile;
+  if (writeToDisk)
+  {
+    if (!outFile.Open(toPath, FILE_SHARE_WRITE, OPEN_EXISTING, 0))
+      return GetLastError();
+  }
+  else
+    if (!outFile.Create(toPath, true))
+      return GetLastError();
+  CPhysTempBuffer tempBuffer;
+  tempBuffer.buffer = MyAlloc(bufferSize);
+  if (tempBuffer.buffer == 0)
+    return E_OUTOFMEMORY;
+ 
+  for (UInt64 pos = 0; pos < fileSize;)
+  {
+    RINOK(progress->SetCompleted(&pos));
+    UInt64 rem = fileSize - pos;
+    UInt32 curSize = (UInt32)MyMin(rem, (UInt64)bufferSize);
+    UInt32 processedSize;
+    if (!inFile.Read(tempBuffer.buffer, curSize, processedSize))
+      return GetLastError();
+    if (processedSize == 0)
+      break;
+    curSize = processedSize;
+    if (writeToDisk)
+    {
+      const UInt32 kMask = 0x1FF;
+      curSize = (curSize + kMask) & ~kMask;
+      if (curSize > bufferSize)
+        return E_FAIL;
+    }
+
+    if (!outFile.Write(tempBuffer.buffer, curSize, processedSize))
+      return GetLastError();
+    if (curSize != processedSize)
+      return E_FAIL;
+    pos += curSize;
+  }
+  return S_OK;
+}
+
 STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numItems, 
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
@@ -217,41 +272,9 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numIt
     return S_OK;
 
   RINOK(callback->SetCurrentFilePath(GetFullPathWithName()));
-  
-  NFile::NDevice::CInFile inFile;
-  if (!inFile.Open(GetFullPath()))
-    return GetLastError();
-  NFile::NIO::COutFile outFile;
-  if (!outFile.Create(destPathResult, true))
-    return GetLastError();
-  if (_buffer == 0)
-  {
-    _buffer = MyAlloc(kBufferSize);
-    if (_buffer == 0)
-      return E_OUTOFMEMORY;
-  }
-  UInt64 pos = 0;
-  UInt32 bufferSize = kBufferSize;
-  if (_driveType == DRIVE_REMOVABLE)
-    bufferSize = (18 << 10) * 4;
-  pos = 0;
-  while(pos < fileSize)
-  {
-    RINOK(callback->SetCompleted(&pos));
-    UInt32 curSize = (UInt32)MyMin(fileSize - pos, (UInt64)bufferSize);
-    UInt32 processedSize;
-    if (!inFile.Read(_buffer, curSize, processedSize))
-      return GetLastError();
-    if (processedSize == 0)
-      break;
-    curSize = processedSize;
-    if (!outFile.Write(_buffer, curSize, processedSize))
-      return GetLastError();
-    if (curSize != processedSize)
-      return E_FAIL;
-    pos += curSize;
-  }
-  return S_OK;
+
+  UInt32 bufferSize = (_driveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
+  return CopyFileSpec(GetFullPath(), destPathResult, false, fileSize, bufferSize, callback);
 }
 
 /////////////////////////////////////////////////
@@ -267,8 +290,16 @@ STDMETHODIMP CPhysDriveFolder::MoveTo(
 }
 
 STDMETHODIMP CPhysDriveFolder::CopyFrom(
-    const wchar_t * /* fromFolderPath */,
-    const wchar_t ** /* itemsPaths */, UInt32  /* numItems */, IProgress * /* progress */)
+    const wchar_t * fromFolderPath,
+    const wchar_t ** itemsPaths, UInt32 numItems, IProgress *callback)
 {
-  return E_NOTIMPL;
+  if (numItems == 0)
+    return S_OK;
+  if (numItems != 1)
+    return E_INVALIDARG;
+  if (_driveType != DRIVE_REMOVABLE /* && _driveType != DRIVE_CDROM */)
+    return E_NOTIMPL;
+  UInt32 bufferSize = (_driveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
+  // MessageBoxW(0, fromFolderPath, itemsPaths[0], 0);
+  return CopyFileSpec((UString)fromFolderPath + itemsPaths[0], GetFullPath(), true, (UInt64)(Int64)-1, bufferSize, callback);
 }

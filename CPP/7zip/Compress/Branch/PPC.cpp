@@ -3,8 +3,10 @@
 #include "StdAfx.h"
 #include "PPC.h"
 
-#include "Windows/Defs.h"
-#include "../../../../C/Compress/Branch/BranchPPC.c"
+extern "C" 
+{ 
+#include "../../../../C/Compress/Branch/BranchPPC.h"
+}
 
 UInt32 CBC_PPC_B_Encoder::SubFilter(Byte *data, UInt32 size)
 {

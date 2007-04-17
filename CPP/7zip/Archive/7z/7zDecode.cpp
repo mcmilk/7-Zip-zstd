@@ -9,61 +9,8 @@
 #include "../../Common/StreamObjects.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
-#include "../Common/FilterCoder.h"
-
-#include "7zMethods.h"
-
-#ifdef COMPRESS_LZMA
-#include "../../Compress/LZMA/LZMADecoder.h"
-static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
-#endif
-
-#ifdef COMPRESS_PPMD
-#include "../../Compress/PPMD/PPMDDecoder.h"
-static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
-#endif
-
-#ifdef COMPRESS_BCJ_X86
-#include "../../Compress/Branch/x86.h"
-static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
-#endif
-
-#ifdef COMPRESS_BCJ2
-#include "../../Compress/Branch/x86_2.h"
-static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
-#endif
-
-#ifdef COMPRESS_DEFLATE
-#ifndef COMPRESS_DEFLATE_DECODER
-#define COMPRESS_DEFLATE_DECODER
-#endif
-#endif
-
-#ifdef COMPRESS_DEFLATE_DECODER
-#include "../../Compress/Deflate/DeflateDecoder.h"
-static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
-#endif
-
-#ifdef COMPRESS_BZIP2
-#ifndef COMPRESS_BZIP2_DECODER
-#define COMPRESS_BZIP2_DECODER
-#endif
-#endif
-
-#ifdef COMPRESS_BZIP2_DECODER
-#include "../../Compress/BZip2/BZip2Decoder.h"
-static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
-#endif
-
-#ifdef COMPRESS_COPY
-#include "../../Compress/Copy/CopyCoder.h"
-static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
-#endif
-
-#ifdef CRYPTO_7ZAES
-#include "../../Crypto/7zAES/7zAES.h"
-static NArchive::N7z::CMethodID k_7zAES = { { 0x6, 0xF1, 0x07, 0x01 }, 4 };
-#endif
+#include "../../Common/CreateCoder.h"
+#include "../../Common/FilterCoder.h"
 
 namespace NArchive {
 namespace N7z {
@@ -88,8 +35,7 @@ static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
     coderStreamsInfo.NumInStreams = (UInt32)coderInfo.NumInStreams;
     coderStreamsInfo.NumOutStreams = (UInt32)coderInfo.NumOutStreams;
     bindInfo.Coders.Add(coderStreamsInfo);
-    const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-    bindInfo.CoderMethodIDs.Add(altCoderInfo.MethodID);
+    bindInfo.CoderMethodIDs.Add(coderInfo.MethodID);
     for (UInt32 j = 0; j < coderStreamsInfo.NumOutStreams; j++, outStreamIndex++)
       if (folder.FindBindPairForOutStream(outStreamIndex) < 0)
         bindInfo.OutStreams.Add(outStreamIndex);
@@ -141,12 +87,11 @@ CDecoder::CDecoder(bool multiThread)
   #endif
   _multiThread = multiThread;
   _bindInfoExPrevIsDefined = false;
-  #ifndef EXCLUDE_COM
-  LoadMethodMap();
-  #endif
 }
 
-HRESULT CDecoder::Decode(IInStream *inStream,
+HRESULT CDecoder::Decode(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    IInStream *inStream,
     UInt64 startPos,
     const UInt64 *packSizes,
     const CFolder &folderInfo, 
@@ -217,72 +162,21 @@ HRESULT CDecoder::Decode(IInStream *inStream,
     for (i = 0; i < numCoders; i++)
     {
       const CCoderInfo &coderInfo = folderInfo.Coders[i];
-      const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-      #ifndef EXCLUDE_COM
-      CMethodInfo methodInfo;
-      if (!GetMethodInfo(altCoderInfo.MethodID, methodInfo)) 
-        return E_NOTIMPL;
-      #endif
 
+  
+      CMyComPtr<ICompressCoder> decoder;
+      CMyComPtr<ICompressCoder2> decoder2;
+      RINOK(CreateCoder(
+          EXTERNAL_CODECS_LOC_VARS
+          coderInfo.MethodID, decoder, decoder2, false));
+      CMyComPtr<IUnknown> decoderUnknown;
       if (coderInfo.IsSimpleCoder())
       {
-        CMyComPtr<ICompressCoder> decoder;
-        CMyComPtr<ICompressFilter> filter;
-
-        #ifdef COMPRESS_LZMA
-        if (altCoderInfo.MethodID == k_LZMA)
-          decoder = new NCompress::NLZMA::CDecoder;
-        #endif
-
-        #ifdef COMPRESS_PPMD
-        if (altCoderInfo.MethodID == k_PPMD)
-          decoder = new NCompress::NPPMD::CDecoder;
-        #endif
-
-        #ifdef COMPRESS_BCJ_X86
-        if (altCoderInfo.MethodID == k_BCJ_X86)
-          filter = new CBCJ_x86_Decoder;
-        #endif
-
-        #ifdef COMPRESS_DEFLATE_DECODER
-        if (altCoderInfo.MethodID == k_Deflate)
-          decoder = new NCompress::NDeflate::NDecoder::CCOMCoder;
-        #endif
-
-        #ifdef COMPRESS_BZIP2_DECODER
-        if (altCoderInfo.MethodID == k_BZip2)
-          decoder = new NCompress::NBZip2::CDecoder;
-        #endif
-
-        #ifdef COMPRESS_COPY
-        if (altCoderInfo.MethodID == k_Copy)
-          decoder = new NCompress::CCopyCoder;
-        #endif
-
-        #ifdef CRYPTO_7ZAES
-        if (altCoderInfo.MethodID == k_7zAES)
-          filter = new NCrypto::NSevenZ::CDecoder;
-        #endif
-
-        if (filter)
-        {
-          CFilterCoder *coderSpec = new CFilterCoder;
-          decoder = coderSpec;
-          coderSpec->Filter = filter;
-        }
-        #ifndef EXCLUDE_COM
-        if (decoder == 0)
-        {
-          RINOK(_libraries.CreateCoderSpec(methodInfo.FilePath, 
-              methodInfo.Decoder, &decoder));
-        }
-        #endif
-
         if (decoder == 0)
           return E_NOTIMPL;
 
-        _decoders.Add((IUnknown *)decoder);
-
+        decoderUnknown = (IUnknown *)decoder;
+        
         if (_multiThread)
           _mixerCoderMTSpec->AddCoder(decoder);
         #ifdef _ST_MODE
@@ -292,32 +186,25 @@ HRESULT CDecoder::Decode(IInStream *inStream,
       }
       else
       {
-        CMyComPtr<ICompressCoder2> decoder;
-
-        #ifdef COMPRESS_BCJ2
-        if (altCoderInfo.MethodID == k_BCJ2)
-          decoder = new CBCJ2_x86_Decoder;
-        #endif
-
-        #ifndef EXCLUDE_COM
-        if (decoder == 0)
-        {
-          RINOK(_libraries.CreateCoder2(methodInfo.FilePath, 
-              methodInfo.Decoder, &decoder));
-        }
-        #endif
-
-        if (decoder == 0)
+        if (decoder2 == 0)
           return E_NOTIMPL;
-
-        _decoders.Add((IUnknown *)decoder);
+        decoderUnknown = (IUnknown *)decoder2;
         if (_multiThread)
-          _mixerCoderMTSpec->AddCoder2(decoder);
+          _mixerCoderMTSpec->AddCoder2(decoder2);
         #ifdef _ST_MODE
         else
-          _mixerCoderSTSpec->AddCoder2(decoder, false);
+          _mixerCoderSTSpec->AddCoder2(decoder2, false);
         #endif
       }
+      _decoders.Add(decoderUnknown);
+      #ifdef EXTERNAL_CODECS
+      CMyComPtr<ISetCompressCodecsInfo> setCompressCodecsInfo;
+      decoderUnknown.QueryInterface(IID_ISetCompressCodecsInfo, (void **)&setCompressCodecsInfo);
+      if (setCompressCodecsInfo)
+      {
+        RINOK(setCompressCodecsInfo->SetCompressCodecsInfo(codecsInfo));
+      }
+      #endif
     }
     _bindInfoExPrev = bindInfo;
     _bindInfoExPrevIsDefined = true;
@@ -332,7 +219,6 @@ HRESULT CDecoder::Decode(IInStream *inStream,
   for (i = 0; i < numCoders; i++)
   {
     const CCoderInfo &coderInfo = folderInfo.Coders[i];
-    const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
     CMyComPtr<IUnknown> &decoder = _decoders[coderIndex];
     
     {
@@ -340,7 +226,7 @@ HRESULT CDecoder::Decode(IInStream *inStream,
       decoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
       if (setDecoderProperties)
       {
-        const CByteBuffer &properties = altCoderInfo.Properties;
+        const CByteBuffer &properties = coderInfo.Properties;
         size_t size = properties.GetCapacity();
         if (size > 0xFFFFFFFF)
           return E_NOTIMPL;

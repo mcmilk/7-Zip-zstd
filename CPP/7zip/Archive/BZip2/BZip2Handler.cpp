@@ -2,33 +2,24 @@
 
 #include "StdAfx.h"
 
-#include "BZip2Handler.h"
-
+#include "Common/ComTry.h"
 #include "Common/Defs.h"
+#include "Windows/PropVariant.h"
+#include "Windows/Defs.h"
 
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamUtils.h"
-
-#include "Windows/PropVariant.h"
-#include "Windows/Defs.h"
-#include "Common/ComTry.h"
-
+#include "../../Common/CreateCoder.h"
 #include "../Common/DummyOutStream.h"
 
-#ifdef COMPRESS_BZIP2
-#include "../../Compress/BZip2/BZip2Decoder.h"
-#else
-// {23170F69-40C1-278B-0402-020000000000}
-DEFINE_GUID(CLSID_CCompressBZip2Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
-#include "../Common/CoderLoader.h"
-extern CSysString GetBZip2CodecPath();
-#endif
+#include "BZip2Handler.h"
 
 using namespace NWindows;
 
 namespace NArchive {
 namespace NBZip2 {
+
+static const CMethodId kMethodId_BZip2 = 0x040202;
 
 STATPROPSTG kProperties[] = 
 {
@@ -174,22 +165,15 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   extractCallback->PrepareOperation(askMode);
 
-  #ifndef COMPRESS_BZIP2
-  CCoderLibrary lib;
-  #endif
   CMyComPtr<ICompressCoder> decoder;
-  #ifdef COMPRESS_BZIP2
-  decoder = new NCompress::NBZip2::CDecoder;
-  #else
-  HRESULT loadResult = lib.LoadAndCreateCoder(
-      GetBZip2CodecPath(),
-      CLSID_CCompressBZip2Decoder, &decoder);
-  if (loadResult != S_OK)
+  HRESULT loadResult = CreateCoder(
+      EXTERNAL_CODECS_VARS
+      kMethodId_BZip2, decoder, false);
+  if (loadResult != S_OK || !decoder)
   {
     RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
     return S_OK;
   }
-  #endif
 
   #ifdef COMPRESS_MT
   {
@@ -283,5 +267,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
+
+IMPL_ISetCompressCodecsInfo
 
 }}

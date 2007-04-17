@@ -12,7 +12,8 @@ using namespace NFar;
 
 static void CopySpaces(char *destString, int numSpaces)
 {
-  for(int i = 0; i < numSpaces; i++)
+  int i;
+  for(i = 0; i < numSpaces; i++)
     destString[i] = ' ';
   destString[i] = '\0';
 }
@@ -47,11 +48,11 @@ void CMessageBox::ShowProcessMessages(const char *messages[])
   for (int i = 0; i < m_NumStrings; i++)
   {
     char *formattedMessage = formattedMessages[i];
-    int len = strlen(messages[i]);
+    int len = (int)strlen(messages[i]);
     int size = MyMax(m_Width, len);
     int startPos = (size - len) / 2;
     CopySpaces(formattedMessage, startPos);
-    strcpy(formattedMessage + startPos, messages[i]);
+    MyStringCopy(formattedMessage + startPos, messages[i]);
     CopySpaces(formattedMessage + startPos + len, size - startPos - len);
     msgItems[kNumStaticStrings + i] = formattedMessage;
   }

@@ -134,10 +134,14 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool
           idMessage = NMessageID::kExtractUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          idMessage = NMessageID::kExtractCRCFailed;
+          idMessage = encrypted ? 
+            NMessageID::kExtractCRCFailedEncrypted :
+            NMessageID::kExtractCRCFailed;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          idMessage = NMessageID::kExtractDataError;
+          idMessage = encrypted ? 
+            NMessageID::kExtractDataErrorEncrypted :
+            NMessageID::kExtractDataError;
           break;
         default:
           return E_FAIL;

@@ -79,6 +79,8 @@ enum EEnum
   kExtractUnsupportedMethod,
   kExtractCRCFailed,
   kExtractDataError,
+  kExtractCRCFailedEncrypted,
+  kExtractDataErrorEncrypted,
 
   kOverwriteTitle,
   kOverwriteMessage1,

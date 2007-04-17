@@ -12,26 +12,21 @@
 
 #include "../../ICoder.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/CreateCoder.h"
 #include "../../Compress/Copy/CopyCoder.h"
 
 #include "../Common/InStreamWithCRC.h"
 
-#ifdef COMPRESS_DEFLATE
-#include "../../Compress/Deflate/DeflateEncoder.h"
-#else
-// {23170F69-40C1-278B-0401-080000000100}
-DEFINE_GUID(CLSID_CCompressDeflateEncoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00);
-#include "../Common/CoderLoader.h"
-extern CSysString GetDeflateCodecPath();
-#endif
-
 namespace NArchive {
 namespace NGZip {
 
+static const CMethodId kMethodId_Deflate = 0x040108;
+
 static const Byte kHostOS = NFileHeader::NHostOS::kFAT;
 
-HRESULT UpdateArchive(IInStream * /* inStream */, 
+HRESULT UpdateArchive(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    IInStream * /* inStream */, 
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     const CItem &newItem,
@@ -45,9 +40,6 @@ HRESULT UpdateArchive(IInStream * /* inStream */,
 
   RINOK(updateCallback->SetTotal(complexity));
 
-  #ifndef COMPRESS_DEFLATE
-  CCoderLibrary lib;
-  #endif
   CMyComPtr<ICompressCoder> deflateEncoder;
   
   complexity = 0;
@@ -83,12 +75,11 @@ HRESULT UpdateArchive(IInStream * /* inStream */,
   localCompressProgressSpec->Init(localProgress, &complexity, NULL);
 
   {
-    #ifdef COMPRESS_DEFLATE
-    deflateEncoder = new NCompress::NDeflate::NEncoder::CCOMCoder;
-    #else
-    RINOK(lib.LoadAndCreateCoder(GetDeflateCodecPath(),
-        CLSID_CCompressDeflateEncoder, &deflateEncoder));
-    #endif
+    RINOK(CreateCoder(
+        EXTERNAL_CODECS_LOC_VARS
+        kMethodId_Deflate, deflateEncoder, true));
+    if (!deflateEncoder)
+      return E_NOTIMPL;
 
     NWindows::NCOM::CPropVariant properties[] = 
     { 

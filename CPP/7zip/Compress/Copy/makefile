@@ -3,28 +3,35 @@ DEF_FILE = ../Codec.def
 CFLAGS = $(CFLAGS) -I ../../../
 LIBS = $(LIBS) oleaut32.lib
 
-COPY_OBJS = \
+COMPRESS_OBJS = \
+  $O\CodecExports.obj \
   $O\DllExports.obj \
-  $O\CopyCoder.obj \
 
-COMMON_OBJS = \
-  $O\Alloc.obj \
+COPY_OBJS = \
+  $O\CopyCoder.obj \
+  $O\CopyRegister.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\StreamUtils.obj \
 
+C_OBJS = \
+  $O\Alloc.obj \
+
 OBJS = \
   $O\StdAfx.obj \
+  $(COMPRESS_OBJS) \
   $(COPY_OBJS) \
-  $(COMMON_OBJS) \
   $(7ZIP_COMMON_OBJS) \
+  $(C_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
 
-$(COPY_OBJS): $(*B).cpp
+$(COMPRESS_OBJS): ../$(*B).cpp
 	$(COMPL)
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
+$(COPY_OBJS): $(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
+$(C_OBJS): ../../../../C/$(*B).c
+	$(COMPL_O2)

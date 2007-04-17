@@ -5,32 +5,37 @@
 #include <io.h>
 
 #include "Common/MyInitGuid.h"
+
 #include "Common/CommandLineParser.h"
-#include "Common/StdOutStream.h"
-#include "Common/Wildcard.h"
-#include "Common/ListFileUtils.h"
-#include "Common/StringConvert.h"
-#include "Common/StdInStream.h"
-#include "Common/StringToInt.h"
 #include "Common/Exception.h"
+#include "Common/IntToString.h"
+#include "Common/ListFileUtils.h"
+#include "Common/StdInStream.h"
+#include "Common/StdOutStream.h"
+#include "Common/StringConvert.h"
+#include "Common/StringToInt.h"
+#include "Common/Wildcard.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/Error.h"
-// #include "Windows/System.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
-#include "../Common/ArchiverInfo.h"
 #include "../Common/UpdateAction.h"
 #include "../Common/Update.h"
 #include "../Common/Extract.h"
 #include "../Common/ArchiveCommandLine.h"
 #include "../Common/ExitCode.h"
+#ifdef EXTERNAL_CODECS
+#include "../Common/LoadCodecs.h"
+#endif
+
+#include "../../Compress/LZMA_Alone/LzmaBenchCon.h"
 
 #include "List.h"
 #include "OpenCallbackConsole.h"
@@ -39,8 +44,11 @@
 
 #include "../../MyVersion.h"
 
-#ifndef EXCLUDE_COM
-#include "Windows/DLL.h"
+#if defined( _WIN32) && defined( _7ZIP_LARGE_PAGES)
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 #endif
 
 using namespace NWindows;
@@ -51,12 +59,12 @@ HINSTANCE g_hInstance = 0;
 extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = "\n7-Zip"
-#ifdef EXCLUDE_COM
+#ifndef EXTERNAL_CODECS
 " (A)"
 #endif
 
-#ifdef UNICODE
-" [NT]"
+#ifdef _WIN64
+" [64]"
 #endif
 
 " " MY_VERSION_COPYRIGHT_DATE "\n";
@@ -65,14 +73,17 @@ static const char *kHelpString =
     "\nUsage: 7z"
 #ifdef _NO_CRYPTO
     "r"
-#elif EXCLUDE_COM
+#else
+#ifndef EXTERNAL_CODECS
     "a"
+#endif
 #endif
     " <command> [<switches>...] <archive_name> [<file_names>...]\n"
     "       [<@listfiles...>]\n"
     "\n"
     "<Commands>\n"
     "  a: Add files to archive\n"
+    "  b: Benchmark\n"
     "  d: Delete files from archive\n"
     "  e: Extract files from archive (without using directory names)\n"
     "  l: List contents of archive\n"
@@ -151,6 +162,29 @@ static void ShowCopyrightAndHelp(CStdOutStream &s, bool needHelp)
     s << kHelpString;
 }
 
+#ifdef EXTERNAL_CODECS
+static void PrintString(CStdOutStream &stdStream, const AString &s, int size)
+{
+  int len = s.Length();
+  stdStream << s;
+  for (int i = len; i < size; i++)
+    stdStream << ' ';
+}
+#endif
+
+static void PrintString(CStdOutStream &stdStream, const UString &s, int size)
+{
+  int len = s.Length();
+  stdStream << s;
+  for (int i = len; i < size; i++)
+    stdStream << ' ';
+}
+
+static inline char GetHex(Byte value)
+{
+  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
+}
+
 int Main2(
   #ifndef _WIN32  
   int numArguments, const char *arguments[]
@@ -187,9 +221,12 @@ int Main2(
     return 0;
   }
 
-  #ifdef _WIN32
+  #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
   if (options.LargePages)
+  {
+    SetLargePageSize();
     NSecurity::EnableLockMemoryPrivilege();
+  }
   #endif
 
   CStdOutStream &stdStream = options.StdOutMode ? g_StdErr : g_StdOut;
@@ -200,9 +237,145 @@ int Main2(
 
   parser.Parse2(options);
 
+  CCodecs *codecs = new CCodecs;
+  CMyComPtr<
+    #ifdef EXTERNAL_CODECS
+    ICompressCodecsInfo
+    #else
+    IUnknown
+    #endif
+    > compressCodecsInfo = codecs;
+  HRESULT result = codecs->Load();
+  if (result != S_OK)
+    throw CSystemException(result);
+
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
-  if(isExtractGroupCommand || 
-      options.Command.CommandType == NCommandType::kList)
+  if (options.Command.CommandType == NCommandType::kInfo)
+  {
+    stdStream << endl << "Formats:" << endl;
+    int i;
+    for (i = 0; i < codecs->Formats.Size(); i++)
+    {
+      const CArcInfoEx &arc = codecs->Formats[i];
+      #ifdef EXTERNAL_CODECS
+      if (arc.LibIndex >= 0)
+      {
+        char s[32];
+        ConvertUInt64ToString(arc.LibIndex, s);
+        PrintString(stdStream, s, 2);
+      }
+      else
+      #endif
+        stdStream << "  ";
+      stdStream << ' ';
+      stdStream << (char)(arc.UpdateEnabled ? 'C' : ' ');
+      stdStream << (char)(arc.KeepName ? 'K' : ' ');
+      stdStream << "  ";
+      PrintString(stdStream, arc.Name, 6);
+      stdStream << "  ";
+      UString s;
+      for (int t = 0; t < arc.Exts.Size(); t++)
+      {
+        const CArcExtInfo &ext = arc.Exts[t];
+        s += ext.Ext;
+        if (!ext.AddExt.IsEmpty())
+        {
+          s += L" (";
+          s += ext.AddExt;
+          s += L')';
+        }
+        s += L' ';
+      }
+      PrintString(stdStream, s, 14);
+      stdStream << "  ";
+      const CByteBuffer &sig = arc.StartSignature;
+      for (size_t j = 0; j < sig.GetCapacity(); j++)
+      {
+        Byte b = sig[j];
+        if (b > 0x20 && b < 0x80)
+        {
+          stdStream << (char)b;
+        }
+        else
+        {
+          stdStream << GetHex((Byte)((b >> 4) & 0xF));
+          stdStream << GetHex((Byte)(b & 0xF));
+        }
+        stdStream << ' ';
+      }
+      stdStream << endl;
+    }
+    stdStream << endl << "Codecs:" << endl;
+
+    #ifdef EXTERNAL_CODECS
+    UINT32 numMethods;
+    if (codecs->GetNumberOfMethods(&numMethods) == S_OK)
+    for (UInt32 j = 0; j < numMethods; j++)
+    {
+      int libIndex = codecs->GetCodecLibIndex(j);
+      if (libIndex >= 0)
+      {
+        char s[32];
+        ConvertUInt64ToString(libIndex, s);
+        PrintString(stdStream, s, 2);
+      }
+      else
+        stdStream << "  ";
+      stdStream << ' ';
+      stdStream << (char)(codecs->GetCodecEncoderIsAssigned(j) ? 'C' : ' ');
+      UInt64 id;
+      stdStream << "  ";
+      HRESULT res = codecs->GetCodecId(j, id);
+      if (res != S_OK)
+        id = (UInt64)(Int64)-1;
+      char s[32];
+      ConvertUInt64ToString(id, s, 16);
+      PrintString(stdStream, s, 8);
+      stdStream << "  ";
+      PrintString(stdStream, codecs->GetCodecName(j), 11);
+      stdStream << endl;
+      /*
+      if (res != S_OK)
+        throw "incorrect Codec ID";
+      */
+    }
+    #endif
+    return S_OK;
+  }
+  else if (options.Command.CommandType == NCommandType::kBenchmark)
+  {
+    if (options.Method.CompareNoCase(L"CRC") == 0)
+    {
+      HRESULT res = CrcBenchCon((FILE *)stdStream, options.NumIterations, options.NumThreads, options.DictionarySize);
+      if (res != S_OK)
+      {
+        if (res == S_FALSE)
+        {
+          stdStream << "\nCRC Error\n";
+          return NExitCode::kFatalError;
+        }
+        throw CSystemException(res);
+      }
+    }
+    else
+    {
+      HRESULT res = LzmaBenchCon(
+        #ifdef EXTERNAL_LZMA
+        codecs,
+        #endif
+        (FILE *)stdStream, options.NumIterations, options.NumThreads, options.DictionarySize);
+      if (res != S_OK)
+      {
+        if (res == S_FALSE)
+        {
+          stdStream << "\nDecoding Error\n";
+          return NExitCode::kFatalError;
+        }
+        throw CSystemException(res);
+      }
+    }
+  }
+  else if (isExtractGroupCommand || options.Command.CommandType == NCommandType::kList)
   {
     if(isExtractGroupCommand)
     {
@@ -231,6 +404,7 @@ int Main2(
       #endif
       UString errorMessage;
       HRESULT result = DecompressArchives(
+          codecs,
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
@@ -266,6 +440,7 @@ int Main2(
     else
     {
       HRESULT result = ListArchives(
+          codecs,
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
@@ -303,7 +478,10 @@ int Main2(
 
     CUpdateErrorInfo errorInfo;
 
-    HRESULT result = UpdateArchive(options.WildcardCensor, uo, 
+    if (!uo.Init(codecs, options.ArchiveName, options.ArcType))
+      throw "Unsupported archive type";
+    HRESULT result = UpdateArchive(codecs, 
+        options.WildcardCensor, uo, 
         errorInfo, &openCallback, &callback);
 
     int exitCode = NExitCode::kSuccess;

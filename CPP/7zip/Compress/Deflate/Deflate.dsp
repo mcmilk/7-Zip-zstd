@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -166,22 +170,6 @@ SOURCE=..\..\Common\OutBuffer.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -227,6 +215,15 @@ SOURCE=..\..\..\..\C\7zCrc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # Begin Source File
 
@@ -299,6 +296,10 @@ SOURCE=..\..\..\..\C\Sort.h
 # End Group
 # Begin Source File
 
+SOURCE=.\Deflate64Register.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\DeflateConst.h
 # End Source File
 # Begin Source File
@@ -336,6 +337,14 @@ SOURCE=.\DeflateEncoder.cpp
 # Begin Source File
 
 SOURCE=.\DeflateEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\DeflateNsisRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\DeflateRegister.cpp
 # End Source File
 # End Target
 # End Project

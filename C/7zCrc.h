@@ -7,25 +7,15 @@
 
 #include "Types.h"
 
-extern UInt32 g_CrcTable[256];
+extern UInt32 g_CrcTable[];
 
-// #define CRC_GENERATE_TABLE
+void MY_FAST_CALL CrcGenerateTable();
 
-#ifdef CRC_GENERATE_TABLE
-void CrcGenerateTable();
-#else
-#define CrcGenerateTable()
-#endif
+#define CRC_INIT_VAL 0xFFFFFFFF
+#define CRC_GET_DIGEST(crc) ((crc) ^ 0xFFFFFFFF)
+#define CRC_UPDATE_BYTE(crc, b) (g_CrcTable[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 
-void CrcInit(UInt32 *crc);
-UInt32 CrcGetDigest(UInt32 *crc);
-void CrcUpdateByte(UInt32 *crc, Byte v);
-void CrcUpdateUInt16(UInt32 *crc, UInt16 v);
-void CrcUpdateUInt32(UInt32 *crc, UInt32 v);
-void CrcUpdateUInt64(UInt32 *crc, UInt64 v);
-void CrcUpdate(UInt32 *crc, const void *data, size_t size);
- 
-UInt32 CrcCalculateDigest(const void *data, size_t size);
-int CrcVerifyDigest(UInt32 digest, const void *data, size_t size);
+UInt32 MY_FAST_CALL CrcUpdate(UInt32 crc, const void *data, size_t size);
+UInt32 MY_FAST_CALL CrcCalc(const void *data, size_t size);
 
 #endif

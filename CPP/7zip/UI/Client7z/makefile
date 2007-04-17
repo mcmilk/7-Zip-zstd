@@ -1,6 +1,6 @@
 PROG = 7z.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -DCOMPRESS_MT
+CFLAGS = $(CFLAGS) -I ../../../
 
 CONSOLE_OBJS = \
   $O\Client7z.obj \

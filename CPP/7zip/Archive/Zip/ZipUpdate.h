@@ -9,6 +9,8 @@
 #include "../../ICoder.h"
 #include "../IArchive.h"
 
+#include "../../Common/CreateCoder.h"
+
 #include "ZipCompressionMode.h"
 #include "ZipIn.h"
 
@@ -40,6 +42,7 @@ struct CUpdateItem
 };
 
 HRESULT Update(
+    DECL_EXTERNAL_CODECS_LOC_VARS
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,

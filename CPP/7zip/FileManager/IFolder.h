@@ -155,18 +155,23 @@ DEFINE_GUID(IID_ ## i, \
 0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x09, 0x00, x, 0x00, 0x00); \
 struct i: public IUnknown
             
-FOLDER_MANAGER_INTERFACE(IFolderManager, 0x00)
+// old interfaces 00, 01
+
+FOLDER_MANAGER_INTERFACE(IFolderManager, 0x02)
 {
   STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) PURE;
-  STDMETHOD(GetTypes)(BSTR *types) PURE;
-  STDMETHOD(GetExtension)(const wchar_t *type, BSTR *extension) PURE;
-  STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) PURE;
+  STDMETHOD(GetExtensions)(BSTR *extensions) PURE;
+  STDMETHOD(GetIconPath)(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex) PURE;
+  // STDMETHOD(GetTypes)(BSTR *types) PURE;
+  // STDMETHOD(GetExtensions)(const wchar_t *type, BSTR *extensions) PURE;
+  // STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) PURE;
 };
 
-FOLDER_MANAGER_INTERFACE(IFolderManagerGetIconPath, 0x01)
+/*
+FOLDER_MANAGER_INTERFACE(IFolderManagerGetIconPath, 0x03)
 {
-  STDMETHOD(GetIconPath)(const wchar_t *type, BSTR *iconPath) PURE;
 };
+*;/
 
 /*
 FOLDER_INTERFACE(IFolderExtract, 0x05, 0x0A);

@@ -1,6 +1,6 @@
 /* MatchFinderMt.c */
 
-#include <stdio.h>
+#include <malloc.h>
 #include "../../7zCrc.h"
 #include "LzHash.h"
 
@@ -460,7 +460,7 @@ void MatchFinderMt_Destruct(CMatchFinderMt *p, ISzAlloc *alloc)
 #define kBtBufferSize (kMtBtBlockSize * kMtBtNumBlocks)
 
 static unsigned StdCall HashThreadFunc2(void *p) { HashThreadFunc((CMatchFinderMt *)p);  return 0; }
-static unsigned StdCall BtThreadFunc2(void *p) { BtThreadFunc((CMatchFinderMt *)p); return 0; }
+static unsigned StdCall BtThreadFunc2(void *p) { alloca(0x180); BtThreadFunc((CMatchFinderMt *)p); return 0; }
 
 HRes MatchFinderMt_Create(CMatchFinderMt *p, UInt32 historySize, UInt32 keepAddBufferBefore, 
     UInt32 matchMaxLen, UInt32 keepAddBufferAfter, ISzAlloc *alloc)

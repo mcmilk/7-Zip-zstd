@@ -4,11 +4,13 @@
 #define __BZIP2_UPDATE_H
 
 #include "../IArchive.h"
+#include "../../Common/CreateCoder.h"
 
 namespace NArchive {
 namespace NBZip2 {
 
 HRESULT UpdateArchive(
+    DECL_EXTERNAL_CODECS_LOC_VARS
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     int indexInClient,

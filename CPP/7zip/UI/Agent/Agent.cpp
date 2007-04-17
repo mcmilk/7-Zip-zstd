@@ -13,10 +13,6 @@
 
 #include "Agent.h"
 
-#ifdef FORMAT_7Z
-#include "../../Archive/7z/7zHandler.h"
-#endif
-
 extern "C"
 {
   #include "../../../../C/Sort.h"
@@ -407,7 +403,8 @@ STDMETHODIMP CAgentFolder::Extract(const UINT32 *indices,
 // CAgent
 
 CAgent::CAgent():
-  _proxyArchive(NULL)
+  _proxyArchive(NULL),
+  _codecs(0)
 {
 }
 
@@ -430,11 +427,17 @@ STDMETHODIMP CAgent::Open(
     return ::GetLastError();
   if (fileInfo.IsDirectory())
     return E_FAIL;
-  CArchiverInfo archiverInfo0, archiverInfo1;
-  HRESULT res = OpenArchive(_archiveFilePath, _archiveLink, openArchiveCallback);
+  CArcInfoEx archiverInfo0, archiverInfo1;
+
+  _compressCodecsInfo.Release();
+  _codecs = new CCodecs;
+  _compressCodecsInfo = _codecs;
+  RINOK(_codecs->Load());
+
+  HRESULT res = OpenArchive(_codecs, _archiveFilePath, _archiveLink, openArchiveCallback);
   // _archive = _archiveLink.GetArchive();
   DefaultName = _archiveLink.GetDefaultItemName();
-  const CArchiverInfo &ai = _archiveLink.GetArchiverInfo();
+  const CArcInfoEx &ai = _codecs->Formats[_archiveLink.GetArchiverIndex()];
 
   RINOK(res);
   DefaultTime = fileInfo.LastWriteTime;
@@ -449,9 +452,7 @@ STDMETHODIMP CAgent::Open(
   COM_TRY_END
 }
 
-STDMETHODIMP CAgent::ReOpen(
-    // const wchar_t *filePath, 
-    IArchiveOpenCallback * /* openArchiveCallback */)
+STDMETHODIMP CAgent::ReOpen(IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   if (_proxyArchive != NULL)
@@ -459,7 +460,7 @@ STDMETHODIMP CAgent::ReOpen(
     delete _proxyArchive;
     _proxyArchive = NULL;
   }
-  RINOK(ReOpenArchive(_archiveLink, _archiveFilePath));
+  RINOK(ReOpenArchive(_codecs, _archiveLink, _archiveFilePath));
   return ReadItems();
   COM_TRY_END
 }

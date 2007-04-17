@@ -10,6 +10,7 @@ UInt32 ARMThumb_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
     if ((data[i + 1] & 0xF8) == 0xF0 && 
         (data[i + 3] & 0xF8) == 0xF8)
     {
+      UInt32 dest;
       UInt32 src = 
         ((data[i + 1] & 0x7) << 19) |
         (data[i + 0] << 11) |
@@ -17,7 +18,6 @@ UInt32 ARMThumb_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         (data[i + 2]);
       
       src <<= 1;
-      UInt32 dest;
       if (encoding)
         dest = nowPos + i + 4 + src;
       else

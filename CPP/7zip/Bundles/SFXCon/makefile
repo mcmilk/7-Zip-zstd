@@ -1,18 +1,9 @@
 PROG = 7zCon.sfx
 LIBS = $(LIBS) user32.lib oleaut32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
-  -DEXCLUDE_COM \
-  -DNO_REGISTRY \
   -DEXTRACT_ONLY \
+  -DNO_READ_FROM_CODER \
   -D_SFX \
-  -DFORMAT_7Z \
-  -DCOMPRESS_BCJ_X86 \
-  -DCOMPRESS_BCJ2 \
-  -DCOMPRESS_COPY \
-  -DCOMPRESS_LZMA \
-  -DCOMPRESS_PPMD \
-  -DCRYPTO_7ZAES \
-  -DCRYPTO_AES \
 
 SFX_CONSOLE_OBJS = \
   $O\Main.obj \
@@ -26,7 +17,6 @@ CONSOLE_OBJS = \
   $O\UserInputUtils.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
   $O\IntToString.obj \
@@ -49,9 +39,11 @@ WIN_OBJS = \
   $O\Synchronization.obj
 
 7ZIP_COMMON_OBJS = \
+  $O\CreateCoder.obj \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\InBuffer.obj \
+  $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
   $O\OutBuffer.obj \
@@ -63,8 +55,8 @@ WIN_OBJS = \
 UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
+  $O\LoadCodecs.obj \
   $O\Extract.obj \
   $O\ExtractingFilePath.obj \
   $O\OpenArchive.obj \
@@ -74,7 +66,6 @@ AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
-  $O\FilterCoder.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
 
@@ -86,24 +77,33 @@ AR_COMMON_OBJS = \
   $O\7zHandler.obj \
   $O\7zHeader.obj \
   $O\7zIn.obj \
-  $O\7zMethodID.obj \
+  $O\7zRegister.obj \
 
 BRANCH_OPT_OBJS = \
   $O\BranchCoder.obj \
   $O\x86.obj \
   $O\x86_2.obj \
+  $O\BCJRegister.obj \
+  $O\BCJ2Register.obj \
+
+COPY_OBJS = \
+  $O\CopyCoder.obj \
+  $O\CopyRegister.obj \
 
 LZ_OBJS = \
   $O\LZOutWindow.obj \
 
 LZMA_OPT_OBJS = \
   $O\LZMADecoder.obj \
+  $O\LZMARegister.obj \
 
 PPMD_OPT_OBJS = \
   $O\PPMDDecoder.obj \
+  $O\PPMDRegister.obj \
 
 7ZAES_OPT_OBJS = \
   $O\7zAES.obj \
+  $O\7zAESRegister.obj \
 
 AES_OPT_OBJS = \
   $O\MyAES.obj \
@@ -116,6 +116,14 @@ AES_ORIG_OBJS = \
 CRYPTO_HASH_OBJS = \
   $O\Sha256.obj \
 
+C_OBJS = \
+  $O\Alloc.obj \
+
+C_BRANCH_OBJS = \
+  $O\BranchX86.obj \
+
+!include "../../Crc2.mak"
+
 OBJS = \
   $O\StdAfx.obj \
   $(SFX_CONSOLE_OBJS) \
@@ -127,14 +135,17 @@ OBJS = \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(BRANCH_OPT_OBJS) \
+  $(COPY_OBJS) \
   $(LZ_OBJS) \
   $(LZMA_OPT_OBJS) \
   $(PPMD_OPT_OBJS) \
-  $O\CopyCoder.obj \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $(AES_ORIG_OBJS) \
   $(CRYPTO_HASH_OBJS) \
+  $(C_OBJS) \
+  $(C_BRANCH_OBJS) \
+  $(CRC_OBJS) \
   $O\resource.res
 
 
@@ -160,14 +171,13 @@ $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
 $(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
 	$(COMPL)
+$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
+	$(COMPL)
 $(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
 	$(COMPL)
 $(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 	$(COMPL)
 $(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
-	$(COMPL)
-
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
 	$(COMPL)
 
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
@@ -178,3 +188,9 @@ $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
 	$(COMPL)
 $(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
 	$(COMPL)
+$(C_OBJS): ../../../../C/$(*B).c
+	$(COMPL_O2)
+$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
+	$(COMPL_O2)
+
+!include "../../Crc.mak"

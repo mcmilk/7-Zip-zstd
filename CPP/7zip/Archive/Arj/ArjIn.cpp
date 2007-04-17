@@ -4,11 +4,15 @@
 
 #include "Common/StringConvert.h"
 #include "Common/Buffer.h"
-#include "Common/CRC.h"
 
 #include "../../Common/StreamUtils.h"
 
 #include "ArjIn.h"
+
+extern "C" 
+{ 
+  #include "../../../../C/7zCrc.h" 
+}
 
 namespace NArchive {
 namespace NArj {
@@ -47,7 +51,7 @@ inline bool TestMarkerCandidate(const void *testBytes, UInt32 maxSize)
   if (blockSize == 0 || blockSize > 2600)
     return false;
   UInt32 crcFromFile = GetUInt32FromMemLE(block + blockSize);
-  return (CCRC::VerifyDigest(crcFromFile, block, blockSize));
+  return (crcFromFile == CrcCalc(block, blockSize));
 }
 
 bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
@@ -168,7 +172,7 @@ bool CInArchive::ReadBlock()
     return false;
   SafeReadBytes(_block, _blockSize);
   UInt32 crcFromFile = SafeReadUInt32();
-  if (!CCRC::VerifyDigest(crcFromFile, _block, _blockSize))
+  if (crcFromFile != CrcCalc(_block, _blockSize))
     throw CInArchiveException(CInArchiveException::kCRCError);
   return true;
 }

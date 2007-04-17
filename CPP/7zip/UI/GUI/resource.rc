@@ -27,6 +27,9 @@ BEGIN
     IDS_METHOD_FAST         "Fast"
     IDS_METHOD_FASTEST      "Fastest"
     IDS_METHOD_ULTRA        "Ultra"
+    IDS_COMPRESS_NON_SOLID "Non-solid"
+    IDS_COMPRESS_SOLID "Solid"
+
     IDS_COMPRESS_UPDATE_MODE_ADD "Add and replace files"
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
     IDS_COMPRESS_UPDATE_MODE_FRESH "Freshen existing files"
@@ -55,3 +58,4 @@ END
 #include "../Resource/Extract/resource.rc"
 #include "../Resource/ExtractDialog/resource.rc"
 #include "../Resource/CompressDialog/resource.rc"
+#include "Resource/BenchmarkDialog/resource.rc"

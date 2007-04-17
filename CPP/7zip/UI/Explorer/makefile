@@ -4,7 +4,8 @@ LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib htmlhelp.lib shell32.lib com
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DLANG \
   -DNEW_FOLDER_INTERFACE \
-  -DWIN_LONG_PATH
+  -DWIN_LONG_PATH \
+  -DEXTERNAL_CODECS \
 
 EXPLORER_OBJS = \
   $O\DllExports.obj \
@@ -14,7 +15,6 @@ EXPLORER_OBJS = \
   $O\RegistryContextMenu.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
   $O\ListFileUtils.obj \
@@ -58,11 +58,11 @@ UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveName.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\CompressCall.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\ExtractingFilePath.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
   $O\SortUtils.obj \
@@ -91,6 +91,7 @@ FM_COMMON_OBJS = \
   $O\RegistryUtils.obj \
 
 C_OBJS = \
+  $O\Alloc.obj \
   $O\Sort.obj \
 
 OBJS = \

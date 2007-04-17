@@ -222,7 +222,6 @@ END
 #include "Resource/PasswordDialog/resource.rc"
 #include "Resource/SplitDialog/resource.rc"
 #include "Resource/ProgressDialog2/resource.rc"
-#include "Resource/BenchmarkDialog/resource.rc"
 #include "Resource/AboutDialog/resource.rc"
 #include "Resource/LangPage/resource.rc"
 #include "Resource/PluginsPage/resource.rc"

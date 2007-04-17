@@ -3,10 +3,6 @@
 #include "StdAfx.h"
 #include "x86.h"
 
-#include "Windows/Defs.h"
-
-#include "../../../../C/Compress/Branch/BranchX86.c"
-
 UInt32 CBCJ_x86_Encoder::SubFilter(Byte *data, UInt32 size)
 {
   return ::x86_Convert(data, size, _bufferPos, &_prevMask, &_prevPos, 1);

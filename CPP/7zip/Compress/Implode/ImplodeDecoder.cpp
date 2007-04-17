@@ -190,7 +190,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     }
   }
   if (pos > unPackSize)
-    throw CException(CException::kData);
+    return S_FALSE;
   return m_OutWindowStream.Flush();
 }
 

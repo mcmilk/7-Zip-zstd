@@ -8,10 +8,6 @@
 #include "7zHandler.h"
 #include "7zOut.h"
 
-#ifndef EXCLUDE_COM
-#include "7zMethods.h"
-#endif
-
 #include "../../Compress/Copy/CopyCoder.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
@@ -108,13 +104,6 @@ struct CFolderRef
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
-static int CompareMethodIDs(const CMethodID &a1, const CMethodID &a2)
-{
-  for (int i = 0; i < a1.IDSize && i < a2.IDSize; i++)
-    RINOZ(MyCompare(a1.ID[i], a2.ID[i]));
-  return MyCompare(a1.IDSize, a2.IDSize);
-}
-
 static int CompareBuffers(const CByteBuffer &a1, const CByteBuffer &a2)
 {
   size_t c1 = a1.GetCapacity();
@@ -125,22 +114,12 @@ static int CompareBuffers(const CByteBuffer &a1, const CByteBuffer &a2)
   return 0;
 }
 
-static int CompareAltCoders(const CAltCoderInfo &a1, const CAltCoderInfo &a2)
-{
-  RINOZ(CompareMethodIDs(a1.MethodID, a2.MethodID));
-  return CompareBuffers(a1.Properties, a2.Properties);
-}
-
 static int CompareCoders(const CCoderInfo &c1, const CCoderInfo &c2)
 {
   RINOZ(MyCompare(c1.NumInStreams, c2.NumInStreams));
   RINOZ(MyCompare(c1.NumOutStreams, c2.NumOutStreams));
-  int s1 = c1.AltCoders.Size();
-  int s2 = c2.AltCoders.Size();
-  RINOZ(MyCompare(s1, s2));
-  for (int i = 0; i < s1; i++)
-    RINOZ(CompareAltCoders(c1.AltCoders[i], c2.AltCoders[i]));
-  return 0;
+  RINOZ(MyCompare(c1.MethodID, c2.MethodID));
+  return CompareBuffers(c1.Properties, c2.Properties);
 }
 
 static int CompareBindPairs(const CBindPair &b1, const CBindPair &b2)
@@ -371,28 +350,17 @@ static bool IsExeFile(const UString &ext)
   return false;
 }
 
-static CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
-static CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
-static CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
+static const UInt64 k_Copy = 0x0;
+static const UInt64 k_LZMA  = 0x030101;
+static const UInt64 k_BCJ   = 0x03030103;
+static const UInt64 k_BCJ2  = 0x0303011B;
 
-static bool GetMethodFull(const CMethodID &methodID, 
+static bool GetMethodFull(UInt64 methodID, 
     UInt32 numInStreams, CMethodFull &methodResult)
 {
   methodResult.MethodID = methodID;
   methodResult.NumInStreams = numInStreams;
   methodResult.NumOutStreams = 1;
-
-  #ifndef EXCLUDE_COM
-  CMethodInfo methodInfo;
-  if (!GetMethodInfo(methodID, methodInfo))
-    return false;
-  if (!methodInfo.EncoderIsAssigned)
-    return false;
-  methodResult.EncoderClassID = methodInfo.Encoder;
-  methodResult.FilePath = methodInfo.FilePath;
-  if (methodInfo.NumOutStreams != 1 || methodInfo.NumInStreams != numInStreams)
-    return false;
-  #endif
   return true;
 }
 
@@ -455,7 +423,7 @@ static bool MakeExeMethod(const CCompressionMethodMode &method,
   else
   {
     CMethodFull methodFull;
-    if (!GetMethodFull(k_BCJ_X86, 1, methodFull))
+    if (!GetMethodFull(k_BCJ, 1, methodFull))
       return false;
     exeMethod.Methods.Insert(0, methodFull);
     CBind bind;
@@ -537,6 +505,7 @@ static void FromUpdateItemToFileItem(const CUpdateItem &updateItem,
 }
 
 static HRESULT Update2(
+    DECL_EXTERNAL_CODECS_LOC_VARS
     IInStream *inStream,
     const CArchiveDatabaseEx *database,
     const CObjectVector<CUpdateItem> &updateItems,
@@ -775,8 +744,11 @@ static HRESULT Update2(
       CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
       localCompressProgressSpec->Init(localProgress, &complexity, NULL);
       
-      RINOK(encoder.Encode(solidInStream, NULL, &inSizeForReduce, folderItem, 
-        archive.SeqStream, newDatabase.PackSizes, compressProgress));
+      RINOK(encoder.Encode(
+          EXTERNAL_CODECS_LOC_VARS
+          solidInStream, NULL, &inSizeForReduce, folderItem, 
+          archive.SeqStream, newDatabase.PackSizes, compressProgress));
+
       // for()
       // newDatabase.PackCRCsDefined.Add(false);
       // newDatabase.PackCRCs.Add(0);
@@ -865,19 +837,17 @@ static HRESULT Update2(
     return E_FAIL;
   */
 
-  return archive.WriteDatabase(newDatabase, options.HeaderMethod, options.HeaderOptions);
+  return archive.WriteDatabase(EXTERNAL_CODECS_LOC_VARS
+      newDatabase, options.HeaderMethod, options.HeaderOptions);
 }
 
 #ifdef _7Z_VOL
 
 static HRESULT WriteVolumeHeader(COutArchive &archive, CFileItem &file, const CUpdateOptions &options)
 {
-  CAltCoderInfo altCoder;
-  altCoder.MethodID.IDSize = 1;
-  altCoder.MethodID.ID[0] = 0;
   CCoderInfo coder;
   coder.NumInStreams = coder.NumOutStreams = 1;
-  coder.AltCoders.Add(altCoder);
+  coder.MethodID = k_Copy;
   
   CFolder folder;
   folder.Coders.Add(coder);
@@ -1066,6 +1036,7 @@ STDMETHODIMP COutVolumeStream::Write(const void *data, UInt32 size, UInt32 *proc
 #endif
 
 HRESULT Update(
+    DECL_EXTERNAL_CODECS_LOC_VARS
     IInStream *inStream,
     const CArchiveDatabaseEx *database,
     const CObjectVector<CUpdateItem> &updateItems,
@@ -1076,7 +1047,9 @@ HRESULT Update(
   #ifdef _7Z_VOL
   if (seqOutStream)
   #endif
-    return Update2(inStream, database, updateItems,
+    return Update2(
+        EXTERNAL_CODECS_LOC_VARS
+        inStream, database, updateItems,
         seqOutStream, updateCallback, options);
   #ifdef _7Z_VOL
   if (options.VolumeMode)

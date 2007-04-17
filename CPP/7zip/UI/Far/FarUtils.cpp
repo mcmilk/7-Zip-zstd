@@ -353,7 +353,7 @@ void CScreenRestorer::Restore()
 static AString DWORDToString(DWORD number)
 {
   char buffer[32];
-  ultoa(number, buffer, 10);
+  _ultoa(number, buffer, 10);
   return buffer;
 }
 

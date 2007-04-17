@@ -8,11 +8,11 @@ O=O
 !ENDIF
 !ENDIF
 
-CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -GS- 
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -GS- -WX -Gy
 CFLAGS_O1 = $(CFLAGS) -O1
 CFLAGS_O2 = $(CFLAGS) -O2
 
-LFLAGS = $(LFLAGS) -nologo -OPT:NOWIN98
+LFLAGS = $(LFLAGS) -nologo -OPT:NOWIN98 -OPT:REF
 
 PROGPATH = $O\$(PROG)
 
@@ -20,11 +20,13 @@ COMPL_O1   = $(CPP) $(CFLAGS_O1) $**
 COMPL_O2   = $(CPP) $(CFLAGS_O2) $**
 COMPL      = $(CPP) $(CFLAGS_O1) $**
 
+C_OBJS = \
+  $O\7zCrc.obj \
+
 
 7Z_OBJS = \
   $O\7zAlloc.obj \
   $O\7zBuffer.obj \
-  $O\7zCrc.obj \
   $O\7zDecode.obj \
   $O\7zExtract.obj \
   $O\7zHeader.obj \
@@ -36,6 +38,7 @@ COMPL      = $(CPP) $(CFLAGS_O1) $**
 OBJS = \
   $(7Z_OBJS) \
   $O\LzmaDecode.obj \
+  $(C_OBJS) \
 
 all: $(PROGPATH) 
 
@@ -51,5 +54,7 @@ $(PROGPATH): $O $(OBJS)
 
 $(7Z_OBJS): $(*B).c
 	$(COMPL)
-$O\LzmaDecode.obj: ../../Compress/LZMA_C/$(*B).c
+$O\LzmaDecode.obj: ../../Compress/Lzma/$(*B).c
+	$(COMPL_O2)
+$(C_OBJS): ../../$(*B).c
 	$(COMPL_O2)

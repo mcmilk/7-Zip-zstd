@@ -88,8 +88,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     Byte actionSetByte[NUpdateArchive::NPairState::kNumValues];
     for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
       actionSetByte[i] = (Byte)actionSet->StateActions[i];
-    result = _agentSpec->DoOperation(NULL, NULL,
-        tempFileName, actionSetByte, NULL, updateCallback100);
+    result = _agentSpec->DoOperation2(tempFileName, actionSetByte, NULL, updateCallback100);
   }
   
   if (result != S_OK)

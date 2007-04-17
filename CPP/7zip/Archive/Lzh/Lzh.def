@@ -1,7 +1,0 @@
-; Arj.def
-
-LIBRARY Arj.dll
-
-EXPORTS
-  CreateObject PRIVATE
-  GetHandlerProperty PRIVATE

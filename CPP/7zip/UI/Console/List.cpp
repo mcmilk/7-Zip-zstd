@@ -392,7 +392,9 @@ bool GetUInt64Value(IInArchive *archive, UInt32 index, PROPID propID, UInt64 &va
   return true;
 }
 
-HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFull,
+HRESULT ListArchives(
+    CCodecs *codecs,
+    UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     bool enableHeaders, bool techMode, bool &passwordEnabled, UString &password)
 {
@@ -427,7 +429,7 @@ HRESULT ListArchives(UStringVector &archivePaths, UStringVector &archivePathsFul
     openCallback.PasswordIsDefined = passwordEnabled;
     openCallback.Password = password;
 
-    HRESULT result = MyOpenArchive(archiveName, archiveLink, &openCallback);
+    HRESULT result = MyOpenArchive(codecs, archiveName, archiveLink, &openCallback);
     if (result != S_OK)
     {
       g_StdOut << endl << "Error: " << archiveName << " is not supported archive" << endl;

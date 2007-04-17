@@ -6,13 +6,13 @@
 #include "../../ICoder.h"
 #include "../../IProgress.h"
 #include "../../Compress/Copy/CopyCoder.h"
-#ifndef COMPRESS_DEFLATE
-#include "../Common/CoderLoader.h"
-#endif
-#include "../Common/FilterCoder.h"
-#include "ZipCompressionMode.h"
+
+#include "../../Common/CreateCoder.h"
+#include "../../Common/FilterCoder.h"
 #include "../../Crypto/Zip/ZipCipher.h"
 #include "../../Crypto/WzAES/WzAES.h"
+
+#include "ZipCompressionMode.h"
 
 namespace NArchive {
 namespace NZip {
@@ -32,9 +32,6 @@ class CAddCommon
   NCompress::CCopyCoder *_copyCoderSpec;
   CMyComPtr<ICompressCoder> _copyCoder;
 
-  #ifndef COMPRESS_DEFLATE
-  CCoderLibrary _compressLib;
-  #endif
   CMyComPtr<ICompressCoder> _compressEncoder;
 
   CFilterCoder *_cryptoStreamSpec;
@@ -49,7 +46,9 @@ class CAddCommon
 
 public:
   CAddCommon(const CCompressionMethodMode &options);
-  HRESULT Compress(ISequentialInStream *inStream, IOutStream *outStream, 
+  HRESULT Compress(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      ISequentialInStream *inStream, IOutStream *outStream, 
       ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 

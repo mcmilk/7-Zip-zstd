@@ -4,10 +4,14 @@
 #define __LZMA_DECODER_H
 
 #include "../../../Common/MyCom.h"
-#include "../../../Common/Alloc.h"
 #include "../../ICoder.h"
 #include "../LZ/LZOutWindow.h"
 #include "../RangeCoder/RangeCoderBitTree.h"
+
+extern "C"
+{
+  #include "../../../../C/Alloc.h"
+}
 
 #include "LZMA.h"
 
@@ -146,7 +150,7 @@ class CDecoder:
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
   public ICompressGetInStreamProcessedSize,
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
@@ -187,7 +191,7 @@ class CDecoder:
   HRESULT CodeSpec(UInt32 size);
 public:
 
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP5(
       ICompressSetDecoderProperties2, 
       ICompressGetInStreamProcessedSize,
@@ -238,7 +242,7 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
-  #ifdef _ST_MODE
+  #ifndef NO_READ_FROM_CODER
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
 

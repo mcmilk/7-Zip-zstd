@@ -8,6 +8,7 @@ CFLAGS = -c -I ../../../
 OBJS = \
   LzmaAlone.o \
   LzmaBench.o \
+  LzmaBenchCon.o \
   LzmaRam.o \
   LzmaRamDecode.o \
   LzmaDecode.o \
@@ -43,6 +44,9 @@ LzmaAlone.o: LzmaAlone.cpp
 LzmaBench.o: LzmaBench.cpp
 	$(CXX) $(CFLAGS) LzmaBench.cpp
 
+LzmaBenchCon.o: LzmaBenchCon.cpp
+	$(CXX) $(CFLAGS) LzmaBenchCon.cpp
+
 LzmaRam.o: LzmaRam.cpp
 	$(CXX) $(CFLAGS) LzmaRam.cpp
 
@@ -67,6 +71,10 @@ MatchFinder.o: ../../../../C/Compress/Lz/MatchFinder.c
 7zCrc.o: ../../../../C/7zCrc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c
 
+Alloc.o: ../../../../Alloc.cpp
+	$(CXX) $(CFLAGS) ../../../../Alloc.c
+
+
 LZOutWindow.o: ../LZ/LZOutWindow.cpp
 	$(CXX) $(CFLAGS) ../LZ/LZOutWindow.cpp
 
@@ -84,9 +92,6 @@ FileStreams.o: ../../Common/FileStreams.cpp
 
 StreamUtils.o: ../../Common/StreamUtils.cpp
 	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
-
-Alloc.o: ../../../Common/Alloc.cpp
-	$(CXX) $(CFLAGS) ../../../Common/Alloc.cpp
 
 C_FileIO.o: ../../../Common/C_FileIO.cpp
 	$(CXX) $(CFLAGS) ../../../Common/C_FileIO.cpp

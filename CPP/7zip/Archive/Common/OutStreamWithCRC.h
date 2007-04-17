@@ -3,9 +3,13 @@
 #ifndef __OUTSTREAMWITHCRC_H
 #define __OUTSTREAMWITHCRC_H
 
-#include "../../../Common/CRC.h"
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
+
+extern "C" 
+{ 
+#include "../../../../C/7zCrc.h"
+}
 
 class COutStreamWithCRC: 
   public ISequentialOutStream,
@@ -18,7 +22,7 @@ public:
 private:
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _size;
-  CCRC _crc;
+  UInt32 _crc;
   bool _calculateCrc;
 public:
   void SetStream(ISequentialOutStream *stream) { _stream = stream; }
@@ -26,12 +30,12 @@ public:
   {
     _size = 0;
     _calculateCrc = calculateCrc;
-    _crc.Init();
+    _crc = CRC_INIT_VAL;
   }
   void ReleaseStream() { _stream.Release(); }
   UInt64 GetSize() const { return _size; }
-  UInt32 GetCRC() const { return _crc.GetDigest(); }
-  void InitCRC() { _crc.Init(); }
+  UInt32 GetCRC() const { return CRC_GET_DIGEST(_crc); }
+  void InitCRC() { _crc = CRC_INIT_VAL; }
 };
 
 #endif

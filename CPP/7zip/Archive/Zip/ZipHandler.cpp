@@ -5,7 +5,6 @@
 #include "ZipHandler.h"
 
 #include "Common/Defs.h"
-#include "Common/CRC.h"
 #include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 #include "Common/IntToString.h"
@@ -17,62 +16,30 @@
 
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamObjects.h"
+#include "../../Common/CreateCoder.h"
+#include "../../Common/FilterCoder.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
-#include "../Common/FilterCoder.h"
-#include "../7z/7zMethods.h"
 
 #include "../../Compress/Shrink/ShrinkDecoder.h"
 #include "../../Compress/Implode/ImplodeDecoder.h"
 
-#ifdef COMPRESS_DEFLATE
-#include "../../Compress/Deflate/DeflateDecoder.h"
-#else
-// {23170F69-40C1-278B-0401-080000000000}
-DEFINE_GUID(CLSID_CCompressDeflateDecoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00);
-#endif
-
-#ifdef COMPRESS_DEFLATE64
-#include "../../Compress/Deflate/DeflateDecoder.h"
-#else
-// {23170F69-40C1-278B-0401-090000000000}
-DEFINE_GUID(CLSID_CCompressDeflate64Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00);
-#endif
-
-/*
-#ifdef COMPRESS_IMPLODE
-#else
-// {23170F69-40C1-278B-0401-060000000000}
-DEFINE_GUID(CLSID_CCompressImplodeDecoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00);
-#endif
-*/
-
-#ifdef COMPRESS_BZIP2
-#include "../../Compress/BZip2/BZip2Decoder.h"
-#else
-// {23170F69-40C1-278B-0402-020000000000}
-DEFINE_GUID(CLSID_CCompressBZip2Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
-#endif
 
 #include "../../Crypto/Zip/ZipCipher.h"
 #include "../../Crypto/WzAES/WzAES.h"
-
-#ifndef EXCLUDE_COM
-#include "../Common/CoderLoader.h"
-#endif
 
 using namespace NWindows;
 using namespace NTime;
 
 namespace NArchive {
 namespace NZip {
+
+static const CMethodId kMethodId_Store = 0;
+static const CMethodId kMethodId_ZipBase = 0x040100;
+static const CMethodId kMethodId_BZip2 = 0x040202;
 
 const wchar_t *kHostOS[] = 
 {
@@ -389,29 +356,23 @@ class CZipDecoder
   CFilterCoder *filterStreamSpec;
   CMyComPtr<ISequentialInStream> filterStream;
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
-  #ifndef EXCLUDE_COM
-  CCoderLibraries libraries;
-  #endif
   CObjectVector<CMethodItem> methodItems;
 
 public:
   CZipDecoder(): _zipCryptoDecoderSpec(0), _aesDecoderSpec(0), filterStreamSpec(0) {}
 
-  static void Init()
-  {
-    #ifndef EXCLUDE_COM
-    N7z::LoadMethodMap();
-    #endif
-  }
-
-  HRESULT Decode(CInArchive &archive, const CItemEx &item, 
+  HRESULT Decode(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    CInArchive &archive, const CItemEx &item, 
     ISequentialOutStream *realOutStream, 
     IArchiveExtractCallback *extractCallback, 
     ICompressProgressInfo *compressProgress,
     UInt32 numThreads, Int32 &res);
 };
 
-HRESULT CZipDecoder::Decode(CInArchive &archive, const CItemEx &item, 
+HRESULT CZipDecoder::Decode(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    CInArchive &archive, const CItemEx &item, 
     ISequentialOutStream *realOutStream, 
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
@@ -544,49 +505,26 @@ HRESULT CZipDecoder::Decode(CInArchive &archive, const CItemEx &item,
       mi.Coder = new NCompress::NImplode::NDecoder::CCoder;
     else
     {
-      #ifdef EXCLUDE_COM
-      switch(methodId)
+      CMethodId szMethodID;
+      if (methodId == NFileHeader::NCompressionMethod::kBZip2)
+        szMethodID = kMethodId_BZip2;
+      else
       {
-       case NFileHeader::NCompressionMethod::kDeflated:
-          mi.Coder = new NCompress::NDeflate::NDecoder::CCOMCoder;
-          break;
-       case NFileHeader::NCompressionMethod::kDeflated64:
-         mi.Coder = new NCompress::NDeflate::NDecoder::CCOMCoder64;
-         break;
-       case NFileHeader::NCompressionMethod::kBZip2:
-         mi.Coder = new NCompress::NBZip2::CDecoder;
-         break;
-       default:
-         res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
-         return S_OK;
+        if (methodId > 0xFF)
+        {
+          res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+          return S_OK;
+        }
+        szMethodID = kMethodId_ZipBase + (Byte)methodId;
       }
-      #else
-      N7z::CMethodID methodID = { { 0x04, 0x01 } , 3 };
-      if (methodId > 0xFF)
+
+      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS szMethodID, mi.Coder, false));
+
+      if (mi.Coder == 0)
       {
         res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
         return S_OK;
       }
-      methodID.ID[2] = (Byte)methodId;
-      if (methodId == NFileHeader::NCompressionMethod::kStored)
-      {
-        methodID.ID[0] = 0;
-        methodID.IDSize = 1;
-      }
-      else if (methodId == NFileHeader::NCompressionMethod::kBZip2)
-      {
-        methodID.ID[1] = 0x02;
-        methodID.ID[2] = 0x02;
-      }
-      
-      N7z::CMethodInfo methodInfo;
-      if (!N7z::GetMethodInfo(methodID, methodInfo))
-      {
-        res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
-        return S_OK;
-      }
-      RINOK(libraries.CreateCoder(methodInfo.FilePath, methodInfo.Decoder, &mi.Coder));
-      #endif
     }
     m = methodItems.Add(mi);
   }
@@ -696,8 +634,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
   CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
 
-  CZipDecoder::Init();
-
   for (i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
   {
@@ -753,7 +689,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     localCompressProgressSpec->Init(progress,  &currentTotalPacked, &currentTotalUnPacked);
     
     Int32 res;
-    RINOK(myDecoder.Decode(m_Archive, item, realOutStream, extractCallback, 
+    RINOK(myDecoder.Decode(
+        EXTERNAL_CODECS_VARS
+        m_Archive, item, realOutStream, extractCallback, 
         compressProgress, _numThreads, res));
     realOutStream.Release();
     
@@ -762,5 +700,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
+
+IMPL_ISetCompressCodecsInfo
 
 }}

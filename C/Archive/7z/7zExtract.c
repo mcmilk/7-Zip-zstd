@@ -83,7 +83,7 @@ SZ_RESULT SzExtract(
           {
             if (folder->UnPackCRCDefined)
             {
-              if (!CrcVerifyDigest(folder->UnPackCRC, *outBuffer, (size_t)unPackSize))
+              if (CrcCalc(*outBuffer, (size_t)unPackSize) != folder->UnPackCRC)
                 res = SZE_FAIL;
             }
           }
@@ -109,7 +109,7 @@ SZ_RESULT SzExtract(
     {
       if (fileItem->IsFileCRCDefined)
       {
-        if (!CrcVerifyDigest(fileItem->FileCRC, *outBuffer + *offset, *outSizeProcessed))
+        if (CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->FileCRC)
           res = SZE_FAIL;
       }
     }

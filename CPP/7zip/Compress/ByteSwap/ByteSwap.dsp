@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -120,6 +124,10 @@ SOURCE=.\ByteSwap.cpp
 # Begin Source File
 
 SOURCE=.\ByteSwap.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ByteSwapRegister.cpp
 # End Source File
 # End Target
 # End Project

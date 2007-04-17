@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <stdio.h>
+#include <malloc.h>
 
 #include "../../../Common/Defs.h"
 #include "../../Common/StreamUtils.h"
@@ -22,7 +23,8 @@ namespace NLZMA {
 const int kDefaultDictionaryLogSize = 22;
 const UInt32 kNumFastBytesDefault = 0x20;
 
-Byte g_FastPos[1 << 11];
+#ifndef LZMA_LOG_BSR
+Byte g_FastPos[1 << kNumLogBits];
 
 class CFastPosInit
 {
@@ -30,7 +32,7 @@ public:
   CFastPosInit() { Init(); }
   void Init()
   {
-    const Byte kFastSlots = 22;
+    const Byte kFastSlots = kNumLogBits * 2;
     int c = 2;
     g_FastPos[0] = 0;
     g_FastPos[1] = 1;
@@ -43,6 +45,7 @@ public:
     }
   }
 } g_FastPosInit;
+#endif
 
 void CLiteralEncoder2::Encode(NRangeCoder::CEncoder *rangeEncoder, Byte symbol)
 {
@@ -343,35 +346,37 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
           return E_INVALIDARG;
         break;
       }
-      #ifdef COMPRESS_MF_MT
       case NCoderPropID::kMultiThread:
       {
         if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
+        #ifdef COMPRESS_MF_MT
         Bool newMultiThread = (prop.boolVal == VARIANT_TRUE);
         if (newMultiThread != _multiThread)
         {
           ReleaseMatchFinder();
           _multiThread = newMultiThread;
         }
+        #endif
         break;
       }
       case NCoderPropID::kNumThreads:
       {
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
+        #ifdef COMPRESS_MF_MT
         Bool newMultiThread = (prop.ulVal > 1) ? True : False;
         if (newMultiThread != _multiThread)
         {
           ReleaseMatchFinder();
           _multiThread = newMultiThread;
         }
+        #endif
         break;
       }
-      #endif
       case NCoderPropID::kDictionarySize:
       {
-        const int kDicLogSizeMaxCompress = 30;
+        const int kDicLogSizeMaxCompress = 30; // must be <= ((kNumLogBits - 1) * 2) + 7 = 31;
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         UInt32 dictionarySize = prop.ulVal;
@@ -1260,6 +1265,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       ICompressProgressInfo *progress)
 {
   // _needReleaseMFStream = false;
+  #ifdef COMPRESS_MF_MT
+  alloca(0x300);
+  #endif
   CCoderReleaser coderReleaser(this);
   RINOK(SetStreams(inStream, outStream, inSize, outSize));
   for (;;)

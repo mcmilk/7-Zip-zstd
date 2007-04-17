@@ -5,7 +5,10 @@
 #include "LzxDecoder.h"
 
 #include "Common/Defs.h"
-#include "Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 #include "Windows/Defs.h"
 
 namespace NCompress {

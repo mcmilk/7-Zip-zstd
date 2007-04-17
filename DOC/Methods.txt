@@ -1,24 +1,23 @@
-Compression method IDs (4.43)
------------------------------
+7-Zip method IDs (4.45)
+-----------------------
 
-Each compression method in 7z has unique binary value (ID).
-The length of ID in bytes is arbitrary but it can not exceed 15 bytes.
+Each compression or crypto method in 7z has unique binary value (ID).
+The length of ID in bytes is arbitrary but it can not exceed 63 bits (8 bytes).
 
 If you want to add some new ID, you have two ways:
 1) Write request for allocating IDs to 7-zip developers.
-2) Use such random ID:
-  03 E0  ZZ ... ZZ  MM ... MM  VV ... VV
+2) Generate 8-bytes ID:
 
-    ZZ != 0, MM != 0, VV != 0
+    7F ZZ ZZ ZZ ZZ ZZ MM MM 
 
-    03 E0      - Prefix for random IDs 
-    ZZ ... ZZ  - Developer ID. (length >= 4). Use real random bytes.
-                 You can notify 7-Zip developers about your Developer ID.
-    MM ... MM  - Method ID (length >= 1)
-    VV ... VV  - Version  (length >= 1)
+    7F              - Prefix for random IDs (1 byte)
+    ZZ ZZ ZZ ZZ ZZ  - Developer ID (5 bytes). Use real random bytes. 
+                      
+    MM MM           - Method ID (2 bytes)
 
-    Note: Use new ID (MM ... MM  VV .. VV) only if old codec can not decode 
-    data encoded with new version.
+    You can notify 7-Zip developers about your Developer ID / Method ID.
+
+    Note: Use new ID only if old codec can not decode data encoded with new version.
 
 
 List of defined IDs

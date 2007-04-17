@@ -23,7 +23,7 @@ struct CExtInfoBig
     for (int i = 0; i < PluginsPairs.Size(); i++)
       if (PluginsPairs[i].Index == pluginIndex)
         return i;
-      return -1;
+    return -1;
   }
 };
 

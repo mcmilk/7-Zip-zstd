@@ -4,7 +4,6 @@
 
 #include "7zHandler.h"
 #include "7zFolderOutStream.h"
-#include "7zMethods.h"
 #include "7zDecode.h"
 // #include "7z1Decode.h"
 
@@ -216,6 +215,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     try
     {
       HRESULT result = decoder.Decode(
+          EXTERNAL_CODECS_VARS
           #ifdef _7Z_VOL
           volume.Stream,
           #else

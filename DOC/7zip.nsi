@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 44
+!define VERSION_MINOR 45
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -115,12 +115,45 @@ Section
   Delete $INSTDIR\7zC.sfx
   Delete $INSTDIR\7-zipn.dll
   Delete $INSTDIR\7zipDoc.txt
+  Delete $INSTDIR\file_id.diz
+
+  Delete $INSTDIR\Codecs\7zAES.dll
+  Delete $INSTDIR\Codecs\AES.dll
+  Delete $INSTDIR\Codecs\Branch.dll
+  Delete $INSTDIR\Codecs\BZip2.dll
+  Delete $INSTDIR\Codecs\Copy.dll
+  Delete $INSTDIR\Codecs\Deflate.dll
   Delete $INSTDIR\Codecs\Implode.dll
+  Delete $INSTDIR\Codecs\LZMA.dll
+  Delete $INSTDIR\Codecs\PPMD.dll
+  Delete $INSTDIR\Codecs\Rar29.dll
+  Delete $INSTDIR\Codecs\Swap.dll
+
+  RMDir $INSTDIR\Codecs
+
+  Delete $INSTDIR\Formats\7z.dll
+  Delete $INSTDIR\Formats\arj.dll
+  Delete $INSTDIR\Formats\bz2.dll
+  Delete $INSTDIR\Formats\cab.dll
+  Delete $INSTDIR\Formats\chm.dll
+  Delete $INSTDIR\Formats\cpio.dll
+  Delete $INSTDIR\Formats\deb.dll
+  Delete $INSTDIR\Formats\gz.dll
+  Delete $INSTDIR\Formats\iso.dll
+  Delete $INSTDIR\Formats\lzh.dll
+  Delete $INSTDIR\Formats\nsis.dll
+  Delete $INSTDIR\Formats\rar.dll
+  Delete $INSTDIR\Formats\rpm.dll
+  Delete $INSTDIR\Formats\split.dll
+  Delete $INSTDIR\Formats\tar.dll
+  Delete $INSTDIR\Formats\z.dll
+  Delete $INSTDIR\Formats\zip.dll
+
+  RMDir $INSTDIR\Formats
 
   # install files
   SetOutPath "$INSTDIR"
 
-  File file_id.diz
   File descript.ion
   File History.txt
   File License.txt
@@ -144,38 +177,7 @@ Section
 
   File 7-zip.chm
 
-  SetOutPath $INSTDIR\Formats
-
   File 7z.dll
-  File arj.dll
-  File bz2.dll
-  File cab.dll
-  File chm.dll
-  File cpio.dll
-  File deb.dll
-  File gz.dll
-  File iso.dll
-  File lzh.dll
-  File nsis.dll
-  File rar.dll
-  File rpm.dll
-  File split.dll
-  File tar.dll
-  File z.dll
-  File zip.dll
-
-  SetOutPath $INSTDIR\Codecs
-
-  File LZMA.dll
-  File Rar29.dll
-  File Deflate.dll
-  File Branch.dll
-  File Swap.dll
-  File Copy.dll
-  File PPMD.dll
-  File BZip2.dll
-  File AES.dll
-  File 7zAES.dll
 
   SetOutPath $INSTDIR\Lang
 
@@ -191,6 +193,7 @@ Section
   File br.txt
   File ca.txt
   File cs.txt
+  File cy.txt
   File da.txt
   File de.txt
   File el.txt
@@ -338,7 +341,6 @@ Section "Uninstall"
 
   # delete files
 
-  Delete $INSTDIR\file_id.diz
   Delete $INSTDIR\descript.ion
   Delete $INSTDIR\History.txt
   Delete $INSTDIR\License.txt
@@ -360,38 +362,7 @@ Section "Uninstall"
 
   Delete $INSTDIR\7-zip.chm
 
-  Delete $INSTDIR\Formats\7z.dll
-  Delete $INSTDIR\Formats\arj.dll
-  Delete $INSTDIR\Formats\bz2.dll
-  Delete $INSTDIR\Formats\cab.dll
-  Delete $INSTDIR\Formats\chm.dll
-  Delete $INSTDIR\Formats\cpio.dll
-  Delete $INSTDIR\Formats\deb.dll
-  Delete $INSTDIR\Formats\gz.dll
-  Delete $INSTDIR\Formats\iso.dll
-  Delete $INSTDIR\Formats\lzh.dll
-  Delete $INSTDIR\Formats\nsis.dll
-  Delete $INSTDIR\Formats\rar.dll
-  Delete $INSTDIR\Formats\rpm.dll
-  Delete $INSTDIR\Formats\split.dll
-  Delete $INSTDIR\Formats\tar.dll
-  Delete $INSTDIR\Formats\z.dll
-  Delete $INSTDIR\Formats\zip.dll
-
-  RMDir $INSTDIR\Formats
-
-  Delete $INSTDIR\Codecs\LZMA.dll
-  Delete $INSTDIR\Codecs\Rar29.dll
-  Delete $INSTDIR\Codecs\Deflate.dll
-  Delete $INSTDIR\Codecs\Branch.dll
-  Delete $INSTDIR\Codecs\Swap.dll
-  Delete $INSTDIR\Codecs\Copy.dll
-  Delete $INSTDIR\Codecs\PPMD.dll
-  Delete $INSTDIR\Codecs\BZip2.dll
-  Delete $INSTDIR\Codecs\AES.dll
-  Delete $INSTDIR\Codecs\7zAES.dll
-
-  RMDir $INSTDIR\Codecs
+  Delete $INSTDIR\7z.dll
 
   Delete $INSTDIR\Lang\en.ttt
   Delete $INSTDIR\Lang\af.txt
@@ -405,6 +376,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\br.txt
   Delete $INSTDIR\Lang\ca.txt
   Delete $INSTDIR\Lang\cs.txt
+  Delete $INSTDIR\Lang\cy.txt
   Delete $INSTDIR\Lang\da.txt
   Delete $INSTDIR\Lang\de.txt
   Delete $INSTDIR\Lang\el.txt

@@ -36,8 +36,9 @@ static const wchar_t *kSFXExtension = L"exe";
 
 struct CThreadUpdating
 {
-  CUpdateCallbackGUI *UpdateCallbackGUI;
+  CCodecs *codecs;
 
+  CUpdateCallbackGUI *UpdateCallbackGUI;
   const NWildcard::CCensor *WildcardCensor;
   CUpdateOptions *Options;
   COpenCallbackGUI *OpenCallback;
@@ -50,7 +51,7 @@ struct CThreadUpdating
     UpdateCallbackGUI->ProgressDialog.WaitCreating();
     try
     {
-      Result = UpdateArchive(*WildcardCensor, *Options, 
+      Result = UpdateArchive(codecs, *WildcardCensor, *Options, 
         *ErrorInfo, OpenCallback, UpdateCallbackGUI);
     }
     catch(const UString &s)
@@ -81,8 +82,7 @@ struct CThreadUpdating
   }
 };
 
-static void AddProp(CObjectVector<CProperty> &properties, 
-    const UString &name, const UString &value)
+static void AddProp(CObjectVector<CProperty> &properties, const UString &name, const UString &value)
 {
   CProperty prop;
   prop.Name = name;
@@ -90,16 +90,14 @@ static void AddProp(CObjectVector<CProperty> &properties,
   properties.Add(prop);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, 
-    const UString &name, UInt32 value)
+static void AddProp(CObjectVector<CProperty> &properties, const UString &name, UInt32 value)
 {
   wchar_t tmp[32];
   ConvertUInt64ToString(value, tmp);
   AddProp(properties, name, tmp);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, 
-    const UString &name, bool value)
+static void AddProp(CObjectVector<CProperty> &properties, const UString &name, bool value)
 {
   AddProp(properties, name, value ? UString(L"on"): UString(L"off"));
 }
@@ -149,6 +147,16 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
   }
 }
 
+static UString GetNumInBytesString(UInt64 v)
+{
+  wchar_t s[32];
+  ConvertUInt64ToString(v, s);
+  size_t len = wcslen(s);
+  s[len++] = L'B';
+  s[len] = L'\0';
+  return s;
+}
+
 static void SetOutProperties(
     CObjectVector<CProperty> &properties,
     bool is7z,
@@ -158,8 +166,8 @@ static void SetOutProperties(
     UInt32 dictionary,
     bool orderMode,
     UInt32 order,
-    bool solidModeIsAllowed, bool solidMode, 
-    bool multiThreadIsAllowed, bool multiThread, 
+    bool solidIsSpecified, UInt64 solidBlockSize, 
+    bool multiThreadIsAllowed, UInt32 numThreads, 
     const UString &encryptionMethod,
     bool encryptHeadersIsAllowed, bool encryptHeaders,
     bool /* sfxMode */)
@@ -179,12 +187,7 @@ static void SetOutProperties(
         name += L"mem";
       else
         name += L"d";
-      wchar_t s[32];
-      ConvertUInt64ToString(dictionary, s);
-      size_t len = wcslen(s);
-      s[len++] = L'B';
-      s[len] = L'\0';
-      AddProp(properties, name, UString(s));
+      AddProp(properties, name, GetNumInBytesString(dictionary));
     }
     if (order != (UInt32)(Int32)-1)
     {
@@ -204,20 +207,19 @@ static void SetOutProperties(
 
   if (encryptHeadersIsAllowed)
     AddProp(properties, L"he", encryptHeaders);
-  if (solidModeIsAllowed)
-    AddProp(properties, L"s", solidMode);
+  if (solidIsSpecified)
+    AddProp(properties, L"s", GetNumInBytesString(solidBlockSize));
   if (multiThreadIsAllowed)
-    AddProp(properties, L"mt", multiThread);
+    AddProp(properties, L"mt", numThreads);
 }
 
-static HRESULT ShowDialog(const NWildcard::CCensor &censor,
+static HRESULT ShowDialog(
+    CCodecs *codecs,
+    const NWildcard::CCensor &censor,
     CUpdateOptions &options, CUpdateCallbackGUI *callback)
 {
   if (options.Commands.Size() != 1)
     throw "It must be one command";
-  CObjectVector<CArchiverInfo> archivers;
-  CArchiverInfo archiverInfo;
-  ReadArchiverInfoList(archivers);
   UString currentDirPrefix;
   {
     if (!NDirectory::MyGetCurrentDirectory(currentDirPrefix))
@@ -253,9 +255,9 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
     
   CCompressDialog dialog;
   NCompressDialog::CInfo &di = dialog.Info;
-  for(int i = 0; i < archivers.Size(); i++)
+  for(int i = 0; i < codecs->Formats.Size(); i++)
   {
-    const CArchiverInfo &ai = archivers[i];
+    const CArcInfoEx &ai = codecs->Formats[i];
     if (ai.UpdateEnabled && (oneFile || !ai.KeepName))
       dialog.m_ArchiverInfoList.Add(ai);
   }
@@ -272,9 +274,6 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
   di.CurrentDirPrefix = currentDirPrefix;
   di.SFXMode = options.SfxMode;
   
-  di.Solid = true;
-  di.MultiThread = false;
-
   if (callback->PasswordIsDefined)
     di.Password = callback->Password;
     
@@ -311,7 +310,7 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
     default:
       throw 1091756;
   }
-  archiverInfo = dialog.m_ArchiverInfoList[di.ArchiverInfoIndex];
+  const CArcInfoEx &archiverInfo = dialog.m_ArchiverInfoList[di.ArchiverInfoIndex];
   callback->PasswordIsDefined = (!di.Password.IsEmpty());
   if (callback->PasswordIsDefined)
     callback->Password = di.Password;
@@ -329,8 +328,8 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
       di.Method, 
       di.Dictionary, 
       di.OrderMode, di.Order,
-      di.SolidIsAllowed, di.Solid, 
-      di.MultiThreadIsAllowed, di.MultiThread, 
+      di.SolidIsSpecified, di.SolidBlockSize, 
+      di.MultiThreadIsAllowed, di.NumThreads, 
       di.EncryptionMethod,
       di.EncryptHeadersIsAllowed, di.EncryptHeaders,
       di.SFXMode);
@@ -339,10 +338,9 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
 
   if (di.SFXMode)
     options.SfxMode = true;
-  options.MethodMode.FilePath = archiverInfo.FilePath;
-  options.MethodMode.ClassID = archiverInfo.ClassID;
+  options.MethodMode.FormatIndex = archiverInfo.FormatIndex;
 
-  options.ArchivePath.VolExtension = archiverInfo.GetMainExtension();
+  options.ArchivePath.VolExtension = archiverInfo.GetMainExt();
   if(di.SFXMode)
     options.ArchivePath.BaseExtension = kSFXExtension;
   else
@@ -363,6 +361,7 @@ static HRESULT ShowDialog(const NWildcard::CCensor &censor,
 }
 
 HRESULT UpdateGUI(
+    CCodecs *codecs,
     const NWildcard::CCensor &censor, 
     CUpdateOptions &options,
     bool showDialog,
@@ -372,12 +371,14 @@ HRESULT UpdateGUI(
 {
   if (showDialog)
   {
-    RINOK(ShowDialog(censor, options, callback));
+    RINOK(ShowDialog(codecs, censor, options, callback));
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
     options.SfxModule = kDefaultSfxModule;
 
   CThreadUpdating tu;
+
+  tu.codecs = codecs;
 
   tu.UpdateCallbackGUI = callback;
   tu.UpdateCallbackGUI->Init();

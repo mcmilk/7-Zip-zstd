@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Arj Plugin", "arj")
-
-101  ICON  "arj.ico"

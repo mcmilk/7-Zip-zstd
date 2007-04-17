@@ -65,8 +65,8 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       }
       continue;
     }
-    HANDLE events[4] = { StopWritingEvent, WriteToRealStreamEvent, NoLockEvent, _memManager->Semaphore };
-    DWORD waitResult = ::WaitForMultipleObjects((Blocks.LockMode ? 4 : 2), events, FALSE, INFINITE);
+    HANDLE events[3] = { StopWritingEvent, WriteToRealStreamEvent, /* NoLockEvent, */ _memManager->Semaphore };
+    DWORD waitResult = ::WaitForMultipleObjects((Blocks.LockMode ? 3 : 2), events, FALSE, INFINITE);
     switch (waitResult)
     {
       case (WAIT_OBJECT_0 + 0):
@@ -81,18 +81,23 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
           *processedSize += processedSize2;
         return res;
       }
+      /*
       case (WAIT_OBJECT_0 + 2):
       {
+        // it has bug: no write.
         if (!Blocks.SwitchToNoLockMode(_memManager))
           return E_FAIL;
         break;
       }
-      case (WAIT_OBJECT_0 + 3):
+      */
+      case (WAIT_OBJECT_0 + 2):
         break;
       default:
         return E_FAIL;
     }
     Blocks.Blocks.Add(_memManager->AllocateBlock());
+    if (Blocks.Blocks.Back() == 0)
+      return E_FAIL;
   }
   return S_OK;
 }

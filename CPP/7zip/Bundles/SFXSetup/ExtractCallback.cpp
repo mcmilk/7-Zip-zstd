@@ -19,7 +19,7 @@
 using namespace NWindows;
 using namespace NFile;
 
-static LPCWSTR kErrorTitle = L"7-Zip";
+// static LPCWSTR kErrorTitle = L"7-Zip";
 static LPCWSTR kCantDeleteFile = L"Can not delete output file";
 static LPCWSTR kCantOpenFile = L"Can not open output file";
 static LPCWSTR kUnsupportedMethod = L"Unsupported Method";

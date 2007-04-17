@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Rpm Plugin", "rpm")
-
-101  ICON  "rpm.ico"

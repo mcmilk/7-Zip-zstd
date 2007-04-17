@@ -19,7 +19,6 @@
 #include "ArchiveCommandLine.h"
 #include "UpdateAction.h"
 #include "Update.h"
-#include "ArchiverInfo.h"
 #include "SortUtils.h"
 #include "EnumDirItems.h"
 
@@ -68,14 +67,6 @@ enum Enum
 static const wchar_t kRecursedIDChar = 'R';
 static const wchar_t *kRecursedPostCharSet = L"0-";
 
-static const wchar_t *kDefaultArchiveType = L"7z";
-static const wchar_t *kSFXExtension =
-  #ifdef _WIN32
-    L"exe";
-  #else
-    L"";
-  #endif
-
 namespace NRecursedPostCharIndex {
   enum EEnum 
   {
@@ -111,21 +102,21 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"T",  NSwitchType::kUnLimitedPostString, false, 1 },
     { L"Y",  NSwitchType::kSimple, false },
     { L"P",  NSwitchType::kUnLimitedPostString, false, 0 },
-    { L"M", NSwitchType::kUnLimitedPostString, true, 1 },
+    { L"M",  NSwitchType::kUnLimitedPostString, true, 1 },
     { L"O",  NSwitchType::kUnLimitedPostString, false, 1 },
     { L"W",  NSwitchType::kUnLimitedPostString, false, 0 },
     { L"I",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
     { L"X",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
-    { L"AI",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
-    { L"AX",  NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
+    { L"AI", NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
+    { L"AX", NSwitchType::kUnLimitedPostString, true, kSomeCludePostStringMinSize},
     { L"AN", NSwitchType::kSimple, false },
     { L"U",  NSwitchType::kUnLimitedPostString, true, 1},
     { L"V",  NSwitchType::kUnLimitedPostString, true, 1},
     { L"R",  NSwitchType::kPostChar, false, 0, 0, kRecursedPostCharSet },
     { L"SFX", NSwitchType::kUnLimitedPostString, false, 0 },
-    { L"SI",  NSwitchType::kUnLimitedPostString, false, 0 },
-    { L"SO",  NSwitchType::kSimple, false, 0 },
-    { L"AO",  NSwitchType::kPostChar, false, 1, 1, kOverwritePostCharSet},
+    { L"SI", NSwitchType::kUnLimitedPostString, false, 0 },
+    { L"SO", NSwitchType::kSimple, false, 0 },
+    { L"AO", NSwitchType::kPostChar, false, 1, 1, kOverwritePostCharSet},
     { L"SEML", NSwitchType::kUnLimitedPostString, false, 0},
     { L"AD",  NSwitchType::kSimple, false },
     { L"SLP", NSwitchType::kUnLimitedPostString, false, 0},
@@ -133,9 +124,8 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"SLT", NSwitchType::kSimple, false }
   };
 
-static const int kNumCommandForms = 7;
 
-static const CCommandForm g_CommandForms[kNumCommandForms] = 
+static const CCommandForm g_CommandForms[] = 
 {
   { L"A", false },
   { L"U", false },
@@ -143,8 +133,12 @@ static const CCommandForm g_CommandForms[kNumCommandForms] =
   { L"T", false },
   { L"E", false },
   { L"X", false },
-  { L"L", false }
+  { L"L", false },
+  { L"B", false },
+  { L"I", false }
 };
+
+static const int kNumCommandForms = sizeof(g_CommandForms) /  sizeof(g_CommandForms[0]);
 
 static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
@@ -155,7 +149,7 @@ static const int kCommandIndex = 0;
 // exception messages
 
 static const char *kUserErrorMessage  = "Incorrect command line";
-static const char *kIncorrectListFile = "Incorrect wildcard in listfile";
+static const char *kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
 static const char *kIncorrectWildCardInListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
 static const char *kTerminalOutError = "I won't write compressed data to a terminal";
@@ -545,9 +539,7 @@ static void ParseUpdateCommandString(CUpdateOptions &options,
         UString archivePath = postString.Mid(1);
         if (archivePath.IsEmpty())
           ThrowUserErrorException();
-        uc.ArchivePath.BaseExtension = options.ArchivePath.BaseExtension;
-        uc.ArchivePath.VolExtension = options.ArchivePath.VolExtension;
-        uc.ArchivePath.ParseFromPath(archivePath);
+        uc.UserArchivePath = archivePath;
         uc.ActionSet = actionSet;
         options.Commands.Add(uc);
       }
@@ -674,42 +666,6 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
   }
 }
 
-
-static void SetArchiveType(const UString &archiveType, 
-#ifndef EXCLUDE_COM
-    UString &filePath, CLSID &classID, 
-#else
-    UString &formatName, 
-#endif
-    UString &archiveExtension)
-{
-  CObjectVector<CArchiverInfo> archiverInfoVector;
-  ReadArchiverInfoList(archiverInfoVector);
-  if (archiverInfoVector.Size() == 0)
-    ThrowException("There are no installed archive handlers");
-  if (archiveType.IsEmpty())
-    ThrowException("Incorrect archive type was assigned");
-  for (int i = 0; i < archiverInfoVector.Size(); i++)
-  {
-    const CArchiverInfo &archiverInfo = archiverInfoVector[i];
-    if (archiverInfo.Name.CompareNoCase(archiveType) == 0)
-    {
-      #ifndef EXCLUDE_COM
-      classID = archiverInfo.ClassID;
-      filePath = archiverInfo.FilePath;
-      #else
-      formatName = archiverInfo.Name;
-        
-      #endif
-
-      archiveExtension = archiverInfo.GetMainExtension();
-      return;
-    }
-  }
-  ThrowException("Incorrect archive type was assigned");
-}
-
-
 CArchiveCommandLineParser::CArchiveCommandLineParser(): parser(kNumSwitches) {}
 
 void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
@@ -756,6 +712,18 @@ static CCodePagePair g_CodePagePairs[] =
 };
 
 static const int kNumCodePages = sizeof(g_CodePagePairs) / sizeof(g_CodePagePairs[0]);
+
+static bool ConvertStringToUInt32(const wchar_t *s, UInt32 &v)
+{
+  const wchar_t *end;
+  UInt64 number = ConvertStringToUInt64(s, &end);
+  if (*end != 0)
+    return false;
+  if (number > (UInt32)0xFFFFFFFF)
+    return false;
+  v = (UInt32)number;
+  return true;
+}
 
 void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
 {
@@ -806,7 +774,9 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
         parser[NKey::kExclude].PostStrings, false, recursedType, codePage);
  
   int curCommandIndex = kCommandIndex + 1;
-  bool thereIsArchiveName = !parser[NKey::kNoArName].ThereIs;
+  bool thereIsArchiveName = !parser[NKey::kNoArName].ThereIs && 
+      options.Command.CommandType != NCommandType::kBenchmark && 
+      options.Command.CommandType != NCommandType::kInfo;
   if (thereIsArchiveName)
   {
     if(curCommandIndex >= numNonSwitchStrings)  
@@ -918,28 +888,9 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
   {
     CUpdateOptions &updateOptions = options.UpdateOptions;
 
-    UString archiveType;
     if(parser[NKey::kArchiveType].ThereIs)
-      archiveType = parser[NKey::kArchiveType].PostStrings[0];
-    else
-      archiveType = kDefaultArchiveType;
+      options.ArcType = parser[NKey::kArchiveType].PostStrings[0];
 
-    UString typeExtension;
-    if (!archiveType.IsEmpty())
-    {
-      #ifndef EXCLUDE_COM
-      SetArchiveType(archiveType, updateOptions.MethodMode.FilePath, 
-          updateOptions.MethodMode.ClassID, typeExtension);
-      #else
-      SetArchiveType(archiveType, updateOptions.MethodMode.Name, typeExtension);
-      #endif
-    }
-    UString extension = typeExtension;
-    if(parser[NKey::kSfx].ThereIs)
-      extension = kSFXExtension;
-    updateOptions.ArchivePath.BaseExtension = extension;
-    updateOptions.ArchivePath.VolExtension = typeExtension;
-    updateOptions.ArchivePath.ParseFromPath(options.ArchiveName);
     SetAddCommandOptions(options.Command.CommandType, parser, updateOptions); 
     
     SetMethodOptions(parser, updateOptions.MethodMode.Properties); 
@@ -978,6 +929,56 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     #ifdef _WIN32
     ConvertToLongNames(options.WildcardCensor);
     #endif
+  }
+  else if(options.Command.CommandType == NCommandType::kBenchmark)
+  {
+    options.NumThreads = (UInt32)-1;
+    options.DictionarySize = (UInt32)-1;
+    options.NumIterations = 1;
+    if (curCommandIndex < numNonSwitchStrings)  
+    {
+      if (!ConvertStringToUInt32(nonSwitchStrings[curCommandIndex++], options.NumIterations))
+        ThrowUserErrorException();
+    }
+    for (int i = 0; i < parser[NKey::kProperty].PostStrings.Size(); i++)
+    {
+      UString postString = parser[NKey::kProperty].PostStrings[i];
+      postString.MakeUpper();
+      if (postString.Length() < 2)
+        ThrowUserErrorException();
+      if (postString[0] == 'D')
+      {
+        int pos = 1;
+        if (postString[pos] == '=')
+          pos++;
+        UInt32 logSize;
+        if (!ConvertStringToUInt32((const wchar_t *)postString + pos, logSize))
+          ThrowUserErrorException();
+        if (logSize > 31)
+          ThrowUserErrorException();
+        options.DictionarySize = 1 << logSize;
+      }
+      else if (postString[0] == 'M' && postString[1] == 'T' )
+      {
+        int pos = 2;
+        if (postString[pos] == '=')
+          pos++;
+        if (postString[pos] != 0)
+          if (!ConvertStringToUInt32((const wchar_t *)postString + pos, options.NumThreads))
+            ThrowUserErrorException();
+      }
+      else if (postString[0] == 'M' && postString[1] == '=' )
+      {
+        int pos = 2;
+        if (postString[pos] != 0)
+          options.Method = postString.Mid(2);
+      }
+      else
+        ThrowUserErrorException();
+    }
+  }
+  else if(options.Command.CommandType == NCommandType::kInfo)
+  {
   }
   else 
     ThrowUserErrorException();

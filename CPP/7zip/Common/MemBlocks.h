@@ -3,7 +3,11 @@
 #ifndef __MEMBLOCKS_H
 #define __MEMBLOCKS_H
 
-#include "Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../C/Alloc.h"
+}
+
 #include "Common/Types.h"
 #include "Common/Vector.h"
 

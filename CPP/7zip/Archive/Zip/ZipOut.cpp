@@ -4,7 +4,6 @@
 
 #include "ZipOut.h"
 #include "Common/StringConvert.h"
-#include "Common/CRC.h"
 #include "../../Common/OffsetStream.h"
 #include "../../Common/StreamUtils.h"
 

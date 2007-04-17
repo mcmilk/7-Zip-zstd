@@ -73,7 +73,6 @@ private:
   UString GetFullPath() const { return _prefix + _path; }
   UString GetFullPathWithName() const { return GetFullPath() + L'\\' + _name; }
   CMyComPtr<IFolderFolder> _parentFolder;
-  void *_buffer;
 
   UINT _driveType;
   DISK_GEOMETRY geom;
@@ -82,8 +81,6 @@ private:
 public:
   HRESULT Init(const UString &path);
   HRESULT GetLength(UInt64 &size) const;
-  CPhysDriveFolder(): _buffer(0) {}
-  ~CPhysDriveFolder();
 };
 
 #endif

@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("BZip2 Plugin", "bz2")
-
-101  ICON  "bz2.ico"

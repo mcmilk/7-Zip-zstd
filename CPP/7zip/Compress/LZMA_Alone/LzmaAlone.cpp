@@ -25,8 +25,12 @@
 #include "../LZMA/LZMADecoder.h"
 #include "../LZMA/LZMAEncoder.h"
 
-#include "LzmaBench.h"
+#include "LzmaBenchCon.h"
 #include "LzmaRam.h"
+
+#ifdef COMPRESS_MF_MT
+#include "Windows/System.h"
+#endif
 
 extern "C"
 {
@@ -64,6 +68,7 @@ enum Enum
   kLitPos,
   kPosBits,
   kMatchFinder,
+  kMultiThread,
   kEOS,
   kStdIn,
   kStdOut,
@@ -83,6 +88,7 @@ static const CSwitchForm kSwitchForms[] =
   { L"LP", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"PB", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"MF", NSwitchType::kUnLimitedPostString, false, 1 },
+  { L"MT", NSwitchType::kUnLimitedPostString, false, 0 },
   { L"EOS", NSwitchType::kSimple, false },
   { L"SI",  NSwitchType::kSimple, false },
   { L"SO",  NSwitchType::kSimple, false },
@@ -106,6 +112,7 @@ static void PrintHelp()
     "  -lp{N}: set number of literal pos bits - [0, 4], default: 0\n"
     "  -pb{N}: set number of pos bits - [0, 4], default: 2\n"
     "  -mf{MF_ID}: set Match Finder: [bt2, bt3, bt4, hc4], default: bt4\n"
+    "  -mt{N}: set number of CPU threads\n"
     "  -eos:   write End Of Stream marker\n"
     "  -si:    read data from stdin\n"
     "  -so:    write data to stdout\n"
@@ -152,7 +159,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.44 Copyright (c) 1999-2006 Igor Pavlov  2006-12-26\n");
+  fprintf(stderr, "\nLZMA 4.45 Copyright (c) 1999-2007 Igor Pavlov  2007-04-03\n");
 
   if (n == 1)
   {
@@ -192,7 +199,7 @@ int main2(int n, const char *args[])
   const UString &command = nonSwitchStrings[paramIndex++]; 
 
   bool dictionaryIsDefined = false;
-  UInt32 dictionary = 1 << 21;
+  UInt32 dictionary = (UInt32)-1;
   if(parser[NKey::kDictionary].ThereIs)
   {
     UInt32 dicLog;
@@ -205,17 +212,35 @@ int main2(int n, const char *args[])
   if (parser[NKey::kMatchFinder].ThereIs)
     mf = parser[NKey::kMatchFinder].PostStrings[0];
 
+  UInt32 numThreads = (UInt32)-1;
+
+  #ifdef COMPRESS_MF_MT
+  if (parser[NKey::kMultiThread].ThereIs)
+  {
+    UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
+    const UString &s = parser[NKey::kMultiThread].PostStrings[0];
+    if (s.IsEmpty())
+      numThreads = numCPUs;
+    else
+      if (!GetNumber(s, numThreads))
+        IncorrectCommand();
+  }
+  #endif
+
   if (command.CompareNoCase(L"b") == 0)
   {
-    const UInt32 kNumDefaultItereations = 10;
+    const UInt32 kNumDefaultItereations = 1;
     UInt32 numIterations = kNumDefaultItereations;
     {
       if (paramIndex < nonSwitchStrings.Size())
         if (!GetNumber(nonSwitchStrings[paramIndex++], numIterations))
           numIterations = kNumDefaultItereations;
     }
-    return LzmaBenchmark(stderr, numIterations, dictionary);
+    return LzmaBenchCon(stderr, numIterations, numThreads, dictionary);
   }
+
+  if (numThreads == (UInt32)-1)
+    numThreads = 1;
 
   bool encodeMode = false;
   if (command.CompareNoCase(L"e") == 0)
@@ -393,40 +418,34 @@ int main2(int n, const char *args[])
       NCoderPropID::kNumFastBytes,
       NCoderPropID::kMatchFinder,
       NCoderPropID::kEndMarker,
-      NCoderPropID::kMatchFinderCycles
+      NCoderPropID::kNumThreads,
+      NCoderPropID::kMatchFinderCycles,
     };
     const int kNumPropsMax = sizeof(propIDs) / sizeof(propIDs[0]);
-    /*
-    NWindows::NCOM::CPropVariant properties[kNumProps];
-    properties[0] = UInt32(dictionary);
-    properties[1] = UInt32(posStateBits);
-    properties[2] = UInt32(litContextBits);
-   
-    properties[3] = UInt32(litPosBits);
-    properties[4] = UInt32(algorithm);
-    properties[5] = UInt32(numFastBytes);
-    properties[6] = mf;
-    properties[7] = eos;
-    */
+
     PROPVARIANT properties[kNumPropsMax];
     for (int p = 0; p < 6; p++)
       properties[p].vt = VT_UI4;
 
-    properties[0].ulVal = UInt32(dictionary);
-    properties[1].ulVal = UInt32(posStateBits);
-    properties[2].ulVal = UInt32(litContextBits);
-    properties[3].ulVal = UInt32(litPosBits);
-    properties[4].ulVal = UInt32(algorithm);
-    properties[5].ulVal = UInt32(numFastBytes);
+    properties[0].ulVal = (UInt32)dictionary;
+    properties[1].ulVal = (UInt32)posStateBits;
+    properties[2].ulVal = (UInt32)litContextBits;
+    properties[3].ulVal = (UInt32)litPosBits;
+    properties[4].ulVal = (UInt32)algorithm;
+    properties[5].ulVal = (UInt32)numFastBytes;
 
-    properties[8].vt = VT_UI4;
-    properties[8].ulVal = UInt32(matchFinderCycles);
-    
     properties[6].vt = VT_BSTR;
     properties[6].bstrVal = (BSTR)(const wchar_t *)mf;
 
     properties[7].vt = VT_BOOL;
     properties[7].boolVal = eos ? VARIANT_TRUE : VARIANT_FALSE;
+
+    properties[8].vt = VT_UI4;
+    properties[8].ulVal = (UInt32)numThreads;
+
+    // it must be last in property list
+    properties[9].vt = VT_UI4;
+    properties[9].ulVal = (UInt32)matchFinderCycles;
 
     int numProps = kNumPropsMax;
     if (!matchFinderCyclesDefined)

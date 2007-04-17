@@ -18,7 +18,7 @@ class COutMemStream:
   bool _unlockEventWasSent;
   NWindows::NSynchronization::CAutoResetEvent StopWritingEvent;
   NWindows::NSynchronization::CAutoResetEvent WriteToRealStreamEvent;
-  NWindows::NSynchronization::CAutoResetEvent NoLockEvent;
+  // NWindows::NSynchronization::CAutoResetEvent NoLockEvent;
 
   HRESULT StopWriteResult;
   CMemLockBlocks Blocks;
@@ -66,11 +66,13 @@ public:
     WriteToRealStreamEvent.Set();
   }
 
+  /*
   void SetNoLockMode()
   {
     _unlockEventWasSent = true;
     NoLockEvent.Set();
   }
+  */
 
   void StopWriting(HRESULT res)
   {

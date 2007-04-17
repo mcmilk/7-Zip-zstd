@@ -5,6 +5,9 @@
 
 #include "../../IStream.h"
 #include "../../IPassword.h"
+
+#include "../../Common/CreateCoder.h"
+
 #include "../../../Common/MyCom.h"
 #include "../../Common/InBuffer.h"
 
@@ -95,11 +98,9 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   UInt64 GetFilePackSize(CNum fileIndex) const
   {
     CNum folderIndex = FileIndexToFolderIndexMap[fileIndex];
-    if (folderIndex >= 0)
-    {
+    if (folderIndex != kNumNoIndex)
       if (FolderStartFileIndex[folderIndex] == fileIndex)
         return GetFolderFullPackSize(folderIndex);
-    }
     return 0;
   }
 };
@@ -182,8 +183,8 @@ private:
   HRESULT ReadDirect(void *data, UInt32 size, UInt32 *processedSize);
   HRESULT SafeReadDirect(void *data, UInt32 size);
   HRESULT SafeReadDirectByte(Byte &b);
-  HRESULT SafeReadDirectUInt32(UInt32 &value);
-  HRESULT SafeReadDirectUInt64(UInt64 &value);
+  HRESULT SafeReadDirectUInt32(UInt32 &value, UInt32 &crc);
+  HRESULT SafeReadDirectUInt64(UInt64 &value, UInt32 &crc);
 
   HRESULT ReadBytes(void *data, size_t size)
   {
@@ -261,13 +262,17 @@ private:
   HRESULT ReadBoolVector2(int numItems, CBoolVector &v);
   HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
       CObjectVector<CFileItem> &files, UInt64 type);
-  HRESULT ReadAndDecodePackedStreams(UInt64 baseOffset, UInt64 &dataOffset,
+  HRESULT ReadAndDecodePackedStreams(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      UInt64 baseOffset, UInt64 &dataOffset,
       CObjectVector<CByteBuffer> &dataVector
       #ifndef _NO_CRYPTO
       , ICryptoGetTextPassword *getTextPassword
       #endif
       );
-  HRESULT ReadHeader(CArchiveDatabaseEx &database
+  HRESULT ReadHeader(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      CArchiveDatabaseEx &database
       #ifndef _NO_CRYPTO
       ,ICryptoGetTextPassword *getTextPassword
       #endif
@@ -276,7 +281,9 @@ public:
   HRESULT Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit); // S_FALSE means is not archive
   void Close();
 
-  HRESULT ReadDatabase(CArchiveDatabaseEx &database 
+  HRESULT ReadDatabase(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      CArchiveDatabaseEx &database 
       #ifndef _NO_CRYPTO
       ,ICryptoGetTextPassword *getTextPassword
       #endif

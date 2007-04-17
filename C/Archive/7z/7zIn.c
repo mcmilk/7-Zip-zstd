@@ -208,7 +208,7 @@ SZ_RESULT SafeReadDirectByte(ISzInStream *inStream, Byte *data)
   return SafeReadDirect(inStream, data, 1);
 }
 
-SZ_RESULT SafeReadDirectUInt32(ISzInStream *inStream, UInt32 *value)
+SZ_RESULT SafeReadDirectUInt32(ISzInStream *inStream, UInt32 *value, UInt32 *crc)
 {
   int i;
   *value = 0;
@@ -217,11 +217,12 @@ SZ_RESULT SafeReadDirectUInt32(ISzInStream *inStream, UInt32 *value)
     Byte b;
     RINOK(SafeReadDirectByte(inStream, &b));
     *value |= ((UInt32)b << (8 * i));
+    *crc = CRC_UPDATE_BYTE(*crc, b);
   }
   return SZ_OK;
 }
 
-SZ_RESULT SafeReadDirectUInt64(ISzInStream *inStream, UInt64 *value)
+SZ_RESULT SafeReadDirectUInt64(ISzInStream *inStream, UInt64 *value, UInt32 *crc)
 {
   int i;
   *value = 0;
@@ -230,6 +231,7 @@ SZ_RESULT SafeReadDirectUInt64(ISzInStream *inStream, UInt64 *value)
     Byte b;
     RINOK(SafeReadDirectByte(inStream, &b));
     *value |= ((UInt64)b << (8 * i));
+    *crc = CRC_UPDATE_BYTE(*crc, b);
   }
   return SZ_OK;
 }
@@ -1133,7 +1135,7 @@ SZ_RESULT SzReadAndDecodePackedStreams2(
   if (outRealSize != (UInt32)unPackSize)
     return SZE_FAIL;
   if (folder->UnPackCRCDefined)
-    if (!CrcVerifyDigest(folder->UnPackCRC, outBuffer->Items, (size_t)unPackSize))
+    if (CrcCalc(outBuffer->Items, (size_t)unPackSize) != folder->UnPackCRC)
       return SZE_FAIL;
   return SZ_OK;
 }
@@ -1182,7 +1184,7 @@ SZ_RESULT SzArchiveOpen2(
   UInt64 nextHeaderOffset;
   UInt64 nextHeaderSize;
   UInt32 nextHeaderCRC;
-  UInt32 crc;
+  UInt32 crc = 0;
   CFileSize pos = 0;
   CSzByteBuffer buffer;
   CSzData sd;
@@ -1202,20 +1204,17 @@ SZ_RESULT SzArchiveOpen2(
     return SZE_ARCHIVE_ERROR;
   RINOK(SafeReadDirectByte(inStream, &version));
 
-  RINOK(SafeReadDirectUInt32(inStream, &crcFromArchive));
+  RINOK(SafeReadDirectUInt32(inStream, &crcFromArchive, &crc));
 
-  CrcInit(&crc);
-  RINOK(SafeReadDirectUInt64(inStream, &nextHeaderOffset));
-  CrcUpdateUInt64(&crc, nextHeaderOffset);
-  RINOK(SafeReadDirectUInt64(inStream, &nextHeaderSize));
-  CrcUpdateUInt64(&crc, nextHeaderSize);
-  RINOK(SafeReadDirectUInt32(inStream, &nextHeaderCRC));
-  CrcUpdateUInt32(&crc, nextHeaderCRC);
+  crc = CRC_INIT_VAL;
+  RINOK(SafeReadDirectUInt64(inStream, &nextHeaderOffset, &crc));
+  RINOK(SafeReadDirectUInt64(inStream, &nextHeaderSize, &crc));
+  RINOK(SafeReadDirectUInt32(inStream, &nextHeaderCRC, &crc));
 
   pos = k7zStartHeaderSize;
   db->ArchiveInfo.StartPositionAfterHeader = pos;
   
-  if (CrcGetDigest(&crc) != crcFromArchive)
+  if (CRC_GET_DIGEST(crc) != crcFromArchive)
     return SZE_ARCHIVE_ERROR;
 
   if (nextHeaderSize == 0)
@@ -1230,7 +1229,7 @@ SZ_RESULT SzArchiveOpen2(
   if (res == SZ_OK)
   {
     res = SZE_ARCHIVE_ERROR;
-    if (CrcVerifyDigest(nextHeaderCRC, buffer.Items, (UInt32)nextHeaderSize))
+    if (CrcCalc(buffer.Items, (UInt32)nextHeaderSize) == nextHeaderCRC)
     {
       for (;;)
       {

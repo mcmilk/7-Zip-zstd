@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -113,18 +117,6 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
-# Begin Group "Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# End Group
 # Begin Group "7-Zip Common"
 
 # PROP Default_Filter ""
@@ -137,6 +129,19 @@ SOURCE=..\..\Common\StreamUtils.cpp
 SOURCE=..\..\Common\StreamUtils.h
 # End Source File
 # End Group
+# Begin Group "Ñ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\CopyCoder.cpp
@@ -144,6 +149,10 @@ SOURCE=.\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=.\CopyCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\CopyRegister.cpp
 # End Source File
 # End Target
 # End Project

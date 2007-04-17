@@ -51,6 +51,7 @@ static const LPCWSTR kCantFindArchive = L"Can not find archive file";
 static const LPCWSTR kCantOpenArchive = L"File is not correct archive";
 
 HRESULT ExtractArchive(
+    CCodecs *codecs,
     const UString &fileName, 
     const UString &folderName,
     COpenCallbackGUI *openCallback,
@@ -68,7 +69,7 @@ HRESULT ExtractArchive(
 
   CThreadExtracting extracter;
 
-  HRESULT result = MyOpenArchive(fileName, extracter.ArchiveLink, openCallback);
+  HRESULT result = MyOpenArchive(codecs, fileName, extracter.ArchiveLink, openCallback);
 
   if (result != S_OK)
   {

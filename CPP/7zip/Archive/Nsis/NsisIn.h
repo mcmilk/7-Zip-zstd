@@ -11,6 +11,8 @@
 
 #include "NsisDecode.h"
 
+#include "../../Common/CreateCoder.h"
+
 // #define NSIS_SCRIPT
 
 namespace NArchive {
@@ -99,7 +101,9 @@ class CInArchive
 
   Byte ReadByte();
   UInt32 ReadUInt32();
-  HRESULT Open2();
+  HRESULT Open2(
+      DECL_EXTERNAL_CODECS_LOC_VARS2
+      );
   void ReadBlockHeader(CBlockHeader &bh);
   AString ReadString(UInt32 pos);
   AString ReadString2(UInt32 pos);
@@ -117,7 +121,9 @@ class CInArchive
   bool _headerIsCompressed;
   UInt32 _nonSolidStartOffset;
 public:
-  HRESULT Open(IInStream *inStream, const UInt64 *maxCheckStartPosition);
+  HRESULT Open(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      IInStream *inStream, const UInt64 *maxCheckStartPosition);
   void Clear();
 
   UInt64 StreamOffset;

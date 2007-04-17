@@ -3,7 +3,10 @@
 #include "StdAfx.h"
 #include "ARM.h"
 
-#include "../../../../C/Compress/Branch/BranchARM.c"
+extern "C" 
+{ 
+#include "../../../../C/Compress/Branch/BranchARM.h"
+}
 
 UInt32 CBC_ARM_Encoder::SubFilter(Byte *data, UInt32 size)
 {

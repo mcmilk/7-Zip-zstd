@@ -4,8 +4,12 @@
 
 #include "resource.h"
 
-#include "Common/Alloc.h"
-#include "Common/CRC.h"
+extern "C" 
+{ 
+  #include "../../../C/Alloc.h"
+  #include "../../../C/7zCrc.h"
+}
+
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
@@ -194,7 +198,7 @@ struct CThreadCrc
       if (!filled)
         break;
 
-      CCRC crc;
+      UInt32 crc = CRC_INIT_VAL;
       if (fileInfo.IsDirectory())
         NumFolders++;
       else
@@ -221,21 +225,21 @@ struct CThreadCrc
           }
           if (processedSize == 0)
             break;
-          crc.Update(buffer, processedSize);
+          crc = CrcUpdate(crc, buffer, processedSize);
           DataSize += processedSize;
           Result = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(DataSize);
           if (Result != S_OK)
             return;
         }
-        DataCrcSum += crc.GetDigest();
+        DataCrcSum += CRC_GET_DIGEST(crc);
       }
       for (int i = 0; i < resPath.Length(); i++)
       {
         wchar_t c = resPath[i];
-        crc.UpdateByte((Byte)(c & 0xFF));
-        crc.UpdateByte((Byte)((c >> 8) & 0xFF));
+        crc = CRC_UPDATE_BYTE(crc, ((Byte)(c & 0xFF)));
+        crc = CRC_UPDATE_BYTE(crc, ((Byte)((c >> 8) & 0xFF)));
       }
-      DataNameCrcSum += crc.GetDigest();
+      DataNameCrcSum += CRC_GET_DIGEST(crc);
       Result = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(DataSize);
       if (Result != S_OK)
         return;

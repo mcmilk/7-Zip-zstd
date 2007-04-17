@@ -72,6 +72,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     return 1;
   }
 
+  CCodecs *codecs = new CCodecs;
+  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
+  HRESULT result = codecs->Load();
+  if (result != S_OK)
+  {
+    ShowErrorMessage(0, result);
+    return S_OK;
+  }
+
   COpenCallbackGUI openCallback;
 
   openCallback.PasswordIsDefined = !password.IsEmpty();
@@ -99,7 +108,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   NWildcard::CCensorNode wildcardCensor;
   wildcardCensor.AddItem(true, L"*", true, true, true);
 
-  HRESULT result = ExtractGUI(v1, v2,
+  result = ExtractGUI(codecs, v1, v2,
     wildcardCensor, eo, (assumeYes ? false: true), &openCallback, ecs);
 
   /*

@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -128,7 +128,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -206,14 +206,6 @@ SOURCE=..\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ArchiverInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiverInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\CompressCall.cpp
 # End Source File
 # Begin Source File
@@ -247,6 +239,14 @@ SOURCE=..\Common\ExtractingFilePath.h
 # Begin Source File
 
 SOURCE=..\Common\HandlerLoader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.h
 # End Source File
 # Begin Source File
 
@@ -473,20 +473,71 @@ SOURCE=..\..\FileManager\RegistryUtils.cpp
 SOURCE=..\..\FileManager\RegistryUtils.h
 # End Source File
 # End Group
-# Begin Group "SDK"
+# Begin Group "7-zip common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# End Group
+# Begin Group "Compress"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sort.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sort.h
+# End Source File
+# End Group
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\IntToString.cpp
@@ -734,60 +785,6 @@ SOURCE=..\..\..\Windows\Window.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Window.h
-# End Source File
-# End Group
-# End Group
-# Begin Group "7-zip common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.h
-# End Source File
-# End Group
-# Begin Group "Compress"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.h
-# End Source File
-# End Group
-# Begin Group "C"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Sort.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Sort.h
 # End Source File
 # End Group
 # Begin Source File

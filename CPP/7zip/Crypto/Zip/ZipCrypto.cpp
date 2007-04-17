@@ -3,22 +3,20 @@
 #include "StdAfx.h"
 
 #include "ZipCipher.h"
-#include "../../../Common/CRC.h"
+extern "C" 
+{ 
+#include "../../../../C/7zCrc.h"
+}
 
 namespace NCrypto {
 namespace NZip {
 
-static inline UInt32 ZipCRC32(UInt32 c, Byte  b)
-{
-  return CCRC::Table[(c ^ b) & 0xFF] ^ (c >> 8);
-}
-
 void CCipher::UpdateKeys(Byte b)
 {
-  Keys[0] = ZipCRC32(Keys[0], b);
+  Keys[0] = CRC_UPDATE_BYTE(Keys[0], b);
   Keys[1] += Keys[0] & 0xff;
   Keys[1] = Keys[1] * 134775813L + 1;
-  Keys[2] = ZipCRC32(Keys[2], (Byte)(Keys[1] >> 24));
+  Keys[2] = CRC_UPDATE_BYTE(Keys[2], (Byte)(Keys[1] >> 24));
 }
 
 void CCipher::SetPassword(const Byte *password, UInt32 passwordLength)

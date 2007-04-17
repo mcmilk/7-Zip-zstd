@@ -260,13 +260,45 @@ static bool MyInsertMenu(CMenu &menu, int pos, UINT id, const UString &s)
   return menu.InsertItem(pos, true, menuItem);
 }
 
+static const wchar_t *kArcExts[] = 
+{
+  L"7z",
+  L"bz2",
+  L"gz",
+  L"rar",
+  L"zip"
+};
+
+static bool IsItArcExt(const UString &ext2)
+{
+  UString ext = ext2;
+  ext.MakeLower();
+  for (int i = 0; i < sizeof(kArcExts) / sizeof(kArcExts[0]); i++)
+    if (ext.Compare(kArcExts[i]) == 0)
+      return true;
+  return false;
+}
+
 static UString GetSubFolderNameForExtract(const UString &archiveName)
 {
   int dotPos = archiveName.ReverseFind(L'.');
   if (dotPos < 0)
     return archiveName + UString(L"~");
+  const UString ext = archiveName.Mid(dotPos + 1);
   UString res = archiveName.Left(dotPos);
   res.TrimRight();
+  dotPos = res.ReverseFind(L'.');
+  if (dotPos > 0)
+  {
+    const UString ext2 = res.Mid(dotPos + 1);
+    if (ext.CompareNoCase(L"rar") == 0 && 
+        (ext2.CompareNoCase(L"part001") == 0 || 
+         ext2.CompareNoCase(L"part01") == 0 || 
+         ext2.CompareNoCase(L"part1") == 0) ||
+        IsItArcExt(ext2) && ext.CompareNoCase(L"001") == 0)
+      res = res.Left(dotPos);
+    res.TrimRight();
+  }
   return res;
 }
 
@@ -277,6 +309,25 @@ static UString GetReducedString(const UString &s)
     return s;
   const int kFirstPartSize = kMaxSize / 2;
   return s.Left(kFirstPartSize) + UString(L" ... ") + s.Right(kMaxSize - kFirstPartSize);
+}
+
+static const wchar_t *kExtractExludeExtensions[] = 
+{
+  L"txt", L"htm", L"html", L"xml", L"doc", L"xls",
+  L"bmp", L"gif", L"jpeg", L"jpg"
+};
+
+static bool DoNeedExtract(const UString &name)
+{
+  int extPos = name.ReverseFind('.');
+  if (extPos < 0)
+    return true;
+  UString ext = name.Mid(extPos + 1);
+  ext.MakeLower();
+  for (int i = 0; i < sizeof(kExtractExludeExtensions) / sizeof(kExtractExludeExtensions[0]); i++)
+    if (ext.Compare(kExtractExludeExtensions[i]) == 0)
+      return false;
+  return true;
 }
 
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
@@ -332,7 +383,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     NFile::NFind::CFileInfoW fileInfo;
     if (!NFile::NFind::FindFile(fileName, fileInfo))
       return E_FAIL;
-    if (!fileInfo.IsDirectory())
+    if (!fileInfo.IsDirectory() && DoNeedExtract(fileInfo.Name))
     {
       // Open
       if ((contextMenuFlags & NContextMenuFlags::kOpen) != 0)
@@ -347,17 +398,17 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
   if(_fileNames.Size() > 0 && currentCommandID + 10 <= commandIDLast)
   {
-    bool thereAreFolders = false;
+    bool needExtract = false;
     for(int i = 0; i < _fileNames.Size(); i++)
     {
       NFile::NFind::CFileInfoW fileInfo;
       if (!NFile::NFind::FindFile(_fileNames[i], fileInfo))
         return E_FAIL;
-      if (fileInfo.IsDirectory())
-        thereAreFolders = true;
+      if (!fileInfo.IsDirectory() && DoNeedExtract(fileInfo.Name))
+        needExtract = true;
     }
     const UString &fileName = _fileNames.Front();
-    if (!thereAreFolders)
+    if (needExtract)
     {
       UString folderPrefix;
       NFile::NDirectory::GetOnlyDirPrefix(fileName, folderPrefix);

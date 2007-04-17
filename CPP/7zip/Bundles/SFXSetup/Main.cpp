@@ -210,13 +210,22 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     return 1;
   }
 
+  CCodecs *codecs = new CCodecs;
+  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
+  HRESULT result = codecs->Load();
+  if (result != S_OK)
+  {
+    MyMessageBox(L"Can not load codecs");
+    return 1;
+  }
+
   COpenCallbackGUI openCallback;
 
   UString tempDirPath = GetUnicodeString(tempDir.GetPath());
   {
     bool isCorrupt = false;
     UString errorMessage;
-    HRESULT result = ExtractArchive(fullPath, tempDirPath, &openCallback, showProgress, 
+    HRESULT result = ExtractArchive(codecs, fullPath, tempDirPath, &openCallback, showProgress, 
       isCorrupt, errorMessage);
     
     if (result != S_OK)

@@ -12,7 +12,7 @@
 #include "resource.h"
 #include "App.h"
 #include "Resource/AboutDialog/AboutDialog.h"
-#include "Resource/BenchmarkDialog/BenchmarkDialog.h"
+#include "../UI/Common/CompressCall.h"
 
 #include "HelpUtils.h"
 #include "LangUtils.h"
@@ -662,7 +662,7 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
           
     case IDM_BENCHMARK:
-      Benchmark(hWnd);
+      Benchmark();
       break;
     // Help
     case IDM_HELP_CONTENTS:

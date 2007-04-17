@@ -12,36 +12,18 @@
 #include "Windows/Time.h"
 
 #include "../../IPassword.h"
-
-#include "../../Common//ProgressUtils.h"
+#include "../../Common/ProgressUtils.h"
+#include "../../Common/CreateCoder.h"
+#include "../../Common/MethodID.h"
+#include "../../Common/FilterCoder.h"
 #include "../../Compress/Copy/CopyCoder.h"
-
 #include "../../Crypto/Rar20/Rar20Cipher.h"
 #include "../../Crypto/RarAES/RarAES.h"
-
 #include "../Common/OutStreamWithCRC.h"
-#include "../Common/CoderLoader.h"
-#include "../Common/CodecsPath.h"
-#include "../Common/FilterCoder.h"
 #include "../Common/ItemNameUtils.h"
-
-#include "../7z/7zMethods.h"
 
 using namespace NWindows;
 using namespace NTime;
-
-// {23170F69-40C1-278B-0403-010000000000}
-DEFINE_GUID(CLSID_CCompressRar15Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-// {23170F69-40C1-278B-0403-020000000000}
-DEFINE_GUID(CLSID_CCompressRar20Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-// {23170F69-40C1-278B-0403-030000000000}
-DEFINE_GUID(CLSID_CCompressRar29Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00);
-
 
 namespace NArchive {
 namespace NRar {
@@ -588,31 +570,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   UInt64 currentImportantTotalPacked = 0;
   UInt64 currentUnPackSize, currentPackSize;
 
-  /*
-  CSysString path = GetCodecsFolderPrefix() + TEXT("Rar29.dll");
-  TCHAR compressLibPath[MAX_PATH + 64];
-  if (!GetCompressFolderPrefix(compressLibPath))
-    return ::GetLastError();
-  lstrcat(compressLibPath, TEXT("Rar29.dll"));
-  */
-  N7z::LoadMethodMap();
-  CCoderLibraries libraries;
   CObjectVector<CMethodItem> methodItems;
-
-  /*
-  CCoderLibrary compressLib;
-  CMyComPtr<ICompressCoder> decoder15;
-  CMyComPtr<ICompressCoder> decoder20;
-  CMyComPtr<ICompressCoder> decoder29;
-  */
 
   NCompress::CCopyCoder *copyCoderSpec = NULL;
   CMyComPtr<ICompressCoder> copyCoder;
-
-  // CCoderMixer *mixerCoderSpec;
-  // CMyComPtr<ICompressCoder> mixerCoder;
-  // bool mixerCoderStoreMethod;
-  // int mixerCryptoVersion;
 
   CFilterCoder *filterStreamSpec = new CFilterCoder;
   CMyComPtr<ISequentialInStream> filterStream = filterStreamSpec;
@@ -625,6 +586,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CFolderInStream *folderInStreamSpec = NULL;
   CMyComPtr<ISequentialInStream> folderInStream;
 
+  bool solidStart = true;
   for(int i = 0; i < importantIndexes.Size(); i++, 
       currentImportantTotalUnPacked += currentUnPackSize,
       currentImportantTotalPacked += currentPackSize)
@@ -654,6 +616,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
+    if (!IsSolid(index))
+      solidStart = true;
     if(item.IsDirectory())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
@@ -839,25 +803,27 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         {
           CMethodItem mi;
           mi.RarUnPackVersion = item.UnPackVersion;
-          N7z::CMethodID methodID = { { 0x04, 0x03 } , 3 };
 
-          Byte myID;
-          if (item.UnPackVersion < 20)
-            myID = 1;
-          else if (item.UnPackVersion < 29)
-            myID = 2;
-          else
-            myID = 3;
-          methodID.ID[2] = myID;
-          N7z::CMethodInfo methodInfo;
-          if (!N7z::GetMethodInfo(methodID, methodInfo))
+          mi.Coder.Release();
+          if (item.UnPackVersion <= 30)
           {
-            RINOK(extractCallback->SetOperationResult(
-              NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+            UInt32 methodID = 0x040300;
+            if (item.UnPackVersion < 20)
+              methodID += 1;
+            else if (item.UnPackVersion < 29)
+              methodID += 2;
+            else 
+              methodID += 3;
+            RINOK(CreateCoder(EXTERNAL_CODECS_VARS methodID, mi.Coder, false));
+          }
+         
+          if (mi.Coder == 0)
+          {
+            outStream.Release();
+            RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
             continue;
           }
-          RINOK(libraries.CreateCoder(methodInfo.FilePath, 
-            methodInfo.Decoder, &mi.Coder));
+
           m = methodItems.Add(mi);
         }
         CMyComPtr<ICompressCoder> decoder = methodItems[m].Coder;
@@ -867,6 +833,12 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             &compressSetDecoderProperties));
         
         Byte isSolid = (Byte)((IsSolid(index) || item.IsSplitBefore()) ? 1: 0);
+        if (solidStart)
+        {
+          isSolid = false;
+          solidStart = false;
+        }
+
 
         RINOK(compressSetDecoderProperties->SetDecoderProperties2(&isSolid, 1));
           
@@ -924,18 +896,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   COM_TRY_END
 }
 
-/*
-STDMETHODIMP CHandler::ExtractAllItems(Int32 testMode,
-      IArchiveExtractCallback *extractCallback)
-{
-  COM_TRY_BEGIN
-  CRecordVector<UInt32> indices;
-  indices.Reserve(_refItems.Size());
-  for(int i = 0; i < _refItems.Size(); i++)
-    indices.Add(i);
-  return Extract(&indices.Front(), _refItems.Size(), testMode, extractCallback);
-  COM_TRY_END
-}
-*/
+IMPL_ISetCompressCodecsInfo
 
 }}

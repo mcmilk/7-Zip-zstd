@@ -2,7 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 
 #include "BZip2Encoder.h"
 
@@ -66,6 +69,7 @@ DWORD CThreadInfo::ThreadFunc()
 {
   for (;;)
   {
+    Encoder->CanProcessEvent.Lock();
     Encoder->CS.Enter();
     if (Encoder->CloseThreads)
     {
@@ -122,7 +126,6 @@ CEncoder::CEncoder():
   ThreadsInfo = 0;
   m_NumThreadsPrev = 0;
   NumThreads = 1;
-  CS.Enter();
   #endif
 }
 
@@ -166,7 +169,7 @@ void CEncoder::Free()
   if (!ThreadsInfo)
     return;
   CloseThreads = true;
-  CS.Leave();
+  CanProcessEvent.Set();
   for (UInt32 t = 0; t < NumThreads; t++)
   {
     CThreadInfo &ti = ThreadsInfo[t];
@@ -764,11 +767,11 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   {
     ThreadsInfo[0].CanWriteEvent.Set();
     Result = S_OK;
-    CS.Leave();
+    CanProcessEvent.Set();
     UInt32 t;
     for (t = 0; t < NumThreads; t++)
       ThreadsInfo[t].StreamWasFinishedEvent.Lock();
-    CS.Enter();
+    CanProcessEvent.Reset();
     CanStartWaitingEvent.Set();
     for (t = 0; t < NumThreads; t++)
       ThreadsInfo[t].WaitingWasStartedEvent.Lock();

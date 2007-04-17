@@ -1,7 +1,4 @@
 DIRS = \
-  Compress\~ \
-  Crypto\~ \
-  Archive\~ \
   UI\~ \
   Bundles\~ \
   

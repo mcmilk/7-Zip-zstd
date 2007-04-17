@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Z Plugin", "z")
-
-101  ICON  "Z.ico"

@@ -28,8 +28,8 @@ static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
 
 struct CThreadExtracting
 {
+  CCodecs *codecs;
   CExtractCallbackImp *ExtractCallbackSpec;
-
   UStringVector *ArchivePaths;
   UStringVector *ArchivePathsFull;
   const NWildcard::CCensorNode *WildcardCensor;
@@ -45,7 +45,9 @@ struct CThreadExtracting
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
     try
     {
-      Result = DecompressArchives(*ArchivePaths, *ArchivePathsFull,
+      Result = DecompressArchives(
+          codecs,
+          *ArchivePaths, *ArchivePathsFull,
           *WildcardCensor, *Options, OpenCallback, ExtractCallback, ErrorMessage);
     }
     catch(const UString &s)
@@ -77,6 +79,7 @@ struct CThreadExtracting
 };
 
 HRESULT ExtractGUI(
+    CCodecs *codecs,
     UStringVector &archivePaths, 
     UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
@@ -86,6 +89,7 @@ HRESULT ExtractGUI(
     CExtractCallbackImp *extractCallback)
 {
   CThreadExtracting extracter;
+  extracter.codecs = codecs;
 
   if (!options.TestMode)
   {

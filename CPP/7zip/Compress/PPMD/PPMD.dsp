@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -166,6 +170,10 @@ SOURCE=.\PPMDEncoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\PPMDRegister.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\PPMDSubAlloc.h
 # End Source File
 # Begin Source File
@@ -214,15 +222,20 @@ SOURCE=..\RangeCoder\RangeCoder.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\Types.h
+# End Source File
+# End Group
+# Begin Group "Ñ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # End Group
 # End Target

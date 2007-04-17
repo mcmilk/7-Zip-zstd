@@ -409,7 +409,10 @@ HRESULT CDecoder::DecodePPM(Int32 num, bool &keepDecompressing)
     {
       RINOK(WriteBuf());
       if (_writtenFileSize > _unpackSize)
+      {
+        keepDecompressing = false;
         return S_OK;
+      }
     }
     int c = DecodePpmSymbol();
     if (c == -1)
@@ -616,7 +619,10 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
     {
       RINOK(WriteBuf());
       if (_writtenFileSize > _unpackSize)
+      {
+        keepDecompressing = false;
         return S_OK;
+      }
     }
     UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
     if (number < 256)

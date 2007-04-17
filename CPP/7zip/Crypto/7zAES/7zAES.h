@@ -1,4 +1,4 @@
-// 7z_AES.h
+// 7zAES.h
 
 #ifndef __CRYPTO_7Z_AES_H
 #define __CRYPTO_7Z_AES_H
@@ -10,16 +10,6 @@
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"
-
-#ifndef CRYPTO_AES
-#include "../../Archive/Common/CoderLoader.h"
-#endif
-
-DEFINE_GUID(CLSID_CCrypto_AES_CBC_Encoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0xC1, 0x00, 0x00, 0x00, 0x01, 0x00);
-
-DEFINE_GUID(CLSID_CCrypto_AES_CBC_Decoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0x01, 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 namespace NCrypto {
 namespace NSevenZ {
@@ -77,9 +67,6 @@ class CBaseCoder:
   public CBase
 {
 protected:
-  #ifndef CRYPTO_AES
-  CCoderLibrary _aesLibrary;
-  #endif
   CMyComPtr<ICompressFilter> _aesFilter;
 
   virtual HRESULT CreateFilter() = 0;

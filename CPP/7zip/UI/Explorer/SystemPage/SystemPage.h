@@ -6,12 +6,12 @@
 #include "Windows/Control/PropertyPage.h"
 #include "Windows/Control/ListView.h"
 
-#include "../../Common/ArchiverInfo.h"
+#include "../../Common/LoadCodecs.h"
 
 class CSystemPage: public NWindows::NControl::CPropertyPage
 {
   bool _initMode;
-  CObjectVector<CArchiverInfo> m_Archivers;
+  CObjectVector<CArcInfoEx> m_Archivers;
   NWindows::NControl::CListView m_ListView;
 public:
   virtual bool OnInit();

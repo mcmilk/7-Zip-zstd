@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "Common/Defs.h"
-#include "Common/CRC.h"
 #include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 

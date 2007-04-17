@@ -7,12 +7,8 @@
 #include "Windows/FileFind.h"
 
 #include "../../Archive/IArchive.h"
-#include "ArchiverInfo.h"
+#include "LoadCodecs.h"
 #include "ArchiveOpenCallback.h"
-
-#ifndef EXCLUDE_COM
-#include "Windows/DLL.h"
-#endif
 
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, UString &result);
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &defaultName, UString &result);
@@ -27,55 +23,46 @@ struct ISetSubArchiveName
 };
 
 HRESULT OpenArchive(
+    CCodecs *codecs,
     IInStream *inStream,
     const UString &fileName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
     IInArchive **archiveResult, 
-    CArchiverInfo &archiverInfoResult,
+    int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback);
 
-HRESULT OpenArchive(const UString &filePath, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &filePath, 
     IInArchive **archive, 
-    CArchiverInfo &archiverInfo,
+    int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback);
 
-HRESULT OpenArchive(const UString &filePath, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module0,
-    HMODULE *module1,
-    #endif
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &filePath, 
     IInArchive **archive0, 
     IInArchive **archive1, 
-    CArchiverInfo &archiverInfo0,
-    CArchiverInfo &archiverInfo1,
+    int &formatIndex0,
+    int &formatIndex1,
     UString &defaultItemName0,
     UString &defaultItemName1,
     IArchiveOpenCallback *openArchiveCallback);
 
 
-HRESULT ReOpenArchive(IInArchive *archive, 
-    const UString &fileName);
+HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName);
 
-HRESULT MyOpenArchive(const UString &archiveName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
+HRESULT MyOpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName, 
     IInArchive **archive,
     UString &defaultItemName,
     IOpenCallbackUI *openCallbackUI);
 
-HRESULT MyOpenArchive(const UString &archiveName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module0,
-    HMODULE *module1,
-    #endif
+HRESULT MyOpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName, 
     IInArchive **archive0,
     IInArchive **archive1,
     UString &defaultItemName0,
@@ -85,17 +72,13 @@ HRESULT MyOpenArchive(const UString &archiveName,
 
 struct CArchiveLink
 {
-  #ifndef EXCLUDE_COM
-  NWindows::NDLL::CLibrary Library0;
-  NWindows::NDLL::CLibrary Library1;
-  #endif
   CMyComPtr<IInArchive> Archive0;
   CMyComPtr<IInArchive> Archive1;
   UString DefaultItemName0;
   UString DefaultItemName1;
 
-  CArchiverInfo ArchiverInfo0;
-  CArchiverInfo ArchiverInfo1;
+  int FormatIndex0;
+  int FormatIndex1;
   
   UStringVector VolumePaths;
 
@@ -114,20 +97,26 @@ struct CArchiveLink
 
   IInArchive *GetArchive() { return Archive1 != 0 ? Archive1: Archive0; }
   UString GetDefaultItemName()  { return Archive1 != 0 ? DefaultItemName1: DefaultItemName0; }
-  const CArchiverInfo &GetArchiverInfo() { return Archive1 != 0 ? ArchiverInfo1: ArchiverInfo0; }
+  const int GetArchiverIndex() const { return Archive1 != 0 ? FormatIndex1: FormatIndex0; }
   HRESULT Close();
   void Release();
 };
 
-HRESULT OpenArchive(const UString &archiveName, 
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName, 
     CArchiveLink &archiveLink,
     IArchiveOpenCallback *openCallback);
 
-HRESULT MyOpenArchive(const UString &archiveName, 
+HRESULT MyOpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName, 
     CArchiveLink &archiveLink,
     IOpenCallbackUI *openCallbackUI);
 
-HRESULT ReOpenArchive(CArchiveLink &archiveLink, 
+HRESULT ReOpenArchive(
+    CCodecs *codecs,
+    CArchiveLink &archiveLink, 
     const UString &fileName);
 
 #endif

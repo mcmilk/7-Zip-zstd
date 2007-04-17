@@ -66,7 +66,7 @@ enum EEnum
   kNonRecursed,
 };
 }
-
+/* 
 static const char kRecursedIDChar = 'R';
 static const wchar_t *kRecursedPostCharSet = L"0-";
 
@@ -83,7 +83,7 @@ static const char kImmediateNameID = '!';
 
 static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
 static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
-
+*/
 static const CSwitchForm kSwitchForms[kNumSwitches] = 
   {
     { L"?",  NSwitchType::kSimple, false },
@@ -120,12 +120,12 @@ static const NRecursedType::EEnum kCommandRecursedDefault[kNumCommandForms] =
   NRecursedType::kRecursed
 };
 
-static const bool kTestExtractRecursedDefault = true;
-static const bool kAddRecursedDefault = false;
+// static const bool kTestExtractRecursedDefault = true;
+// static const bool kAddRecursedDefault = false;
 
 static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
-static const int kMinNonSwitchWords = 1;
+// static const int kMinNonSwitchWords = 1;
 static const int kCommandIndex = 0;
 
 static const char *kHelpString = 
@@ -146,13 +146,13 @@ static const char *kHelpString =
 // exception messages
 
 static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::kUserError
-static const char *kIncorrectListFile = "Incorrect wildcard in listfile";
+// static const char *kIncorrectListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
 
 // static const CSysString kFileIsNotArchiveMessageBefore = "File \"";
 // static const CSysString kFileIsNotArchiveMessageAfter = "\" is not archive";
 
-static const char *kProcessArchiveMessage = " archive: ";
+// static const char *kProcessArchiveMessage = " archive: ";
 
 static const char *kCantFindSFX = " cannot find sfx";
 
@@ -353,6 +353,19 @@ int Main2(
     v2.Add(archiveName);
     const NWildcard::CCensorNode &wildcardCensorHead = 
       wildcardCensor.Pairs.Front().Head;
+
+    CCodecs *codecs = new CCodecs;
+    CMyComPtr<
+      #ifdef EXTERNAL_CODECS
+      ICompressCodecsInfo
+      #else
+      IUnknown
+      #endif
+      > compressCodecsInfo = codecs;
+    HRESULT result = codecs->Load();
+    if (result != S_OK)
+      throw CSystemException(result);
+
     if(command.CommandType != NCommandType::kList)
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
@@ -379,6 +392,7 @@ int Main2(
 
       UString errorMessage;
       HRESULT result = DecompressArchives(
+          codecs,
           v1, v2,
           wildcardCensorHead, 
           eo, &openCallback, ecs, errorMessage);
@@ -403,6 +417,7 @@ int Main2(
     else
     {
       HRESULT result = ListArchives(
+          codecs,
           v1, v2,
           wildcardCensorHead, 
           true, false, 

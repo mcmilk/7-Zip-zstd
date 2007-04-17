@@ -3,8 +3,10 @@
 #include "StdAfx.h"
 #include "SPARC.h"
 
-#include "Windows/Defs.h"
-#include "../../../../C/Compress/Branch/BranchSPARC.c"
+extern "C" 
+{ 
+#include "../../../../C/Compress/Branch/BranchSPARC.h"
+}
 
 UInt32 CBC_SPARC_Encoder::SubFilter(Byte *data, UInt32 size)
 {

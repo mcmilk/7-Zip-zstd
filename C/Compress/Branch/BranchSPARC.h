@@ -5,6 +5,6 @@
 
 #include "BranchTypes.h"
 
-UInt32 SPARC_B_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding);
+UInt32 SPARC_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding);
 
 #endif

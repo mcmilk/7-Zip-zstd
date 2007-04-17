@@ -5,6 +5,8 @@
 
 #include "../IArchive.h"
 
+#include "../../Common/CreateCoder.h"
+
 #include "GZipOut.h"
 #include "GZipItem.h"
 
@@ -19,7 +21,9 @@ struct CCompressionMethodMode
   UInt32 NumMatchFinderCycles;
 };
 
-HRESULT UpdateArchive(IInStream *inStream, 
+HRESULT UpdateArchive(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    IInStream *inStream, 
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     const CItem &newItem,

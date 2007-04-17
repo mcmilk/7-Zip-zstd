@@ -3,11 +3,13 @@
 #include "StdAfx.h"
 
 #include "7zIn.h"
-#include "7zMethods.h"
 #include "7zDecode.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
-#include "../../../Common/CRC.h"
+extern "C" 
+{ 
+#include "../../../../C/7zCrc.h"
+}
 
 // define FORMAT_7Z_RECOVERY if you want to recover multivolume archives with empty StartHeader 
 // #define FORMAT_7Z_RECOVERY
@@ -99,7 +101,7 @@ HRESULT CInArchive::SafeReadDirectByte(Byte &b)
   return SafeReadDirect(&b, 1);
 }
 
-HRESULT CInArchive::SafeReadDirectUInt32(UInt32 &value)
+HRESULT CInArchive::SafeReadDirectUInt32(UInt32 &value, UInt32 &crc)
 {
   value = 0;
   for (int i = 0; i < 4; i++)
@@ -107,11 +109,12 @@ HRESULT CInArchive::SafeReadDirectUInt32(UInt32 &value)
     Byte b;
     RINOK(SafeReadDirectByte(b));
     value |= (UInt32(b) << (8 * i));
+    crc = CRC_UPDATE_BYTE(crc, b);
   }
   return S_OK;
 }
 
-HRESULT CInArchive::SafeReadDirectUInt64(UInt64 &value)
+HRESULT CInArchive::SafeReadDirectUInt64(UInt64 &value, UInt32 &crc)
 {
   value = 0;
   for (int i = 0; i < 8; i++)
@@ -119,6 +122,7 @@ HRESULT CInArchive::SafeReadDirectUInt64(UInt64 &value)
     Byte b;
     RINOK(SafeReadDirectByte(b));
     value |= (UInt64(b) << (8 * i));
+    crc = CRC_UPDATE_BYTE(crc, b);
   }
   return S_OK;
 }
@@ -367,14 +371,19 @@ HRESULT CInArchive::GetNextFolderItem(CFolder &folder)
     folder.Coders.Add(CCoderInfo());
     CCoderInfo &coder = folder.Coders.Back();
 
-    for (;;)
     {
-      coder.AltCoders.Add(CAltCoderInfo());
-      CAltCoderInfo &altCoder = coder.AltCoders.Back();
       Byte mainByte = 0;
       RINOK(ReadByte(mainByte));
-      altCoder.MethodID.IDSize = (Byte)(mainByte & 0xF);
-      RINOK(ReadBytes(altCoder.MethodID.ID, altCoder.MethodID.IDSize));
+      int idSize = (mainByte & 0xF);
+      BYTE longID[15];
+      RINOK(ReadBytes(longID, idSize));
+      if (idSize > 8)
+        return S_FALSE;
+      UInt64 id = 0;
+      for (int j = 0; j < idSize; j++)
+        id |= (UInt64)longID[idSize - 1 - j] << (8 * j);
+      coder.MethodID = id;
+
       if ((mainByte & 0x10) != 0)
       {
         RINOK(ReadNum(coder.NumInStreams));
@@ -389,11 +398,11 @@ HRESULT CInArchive::GetNextFolderItem(CFolder &folder)
       {
         CNum propertiesSize = 0;
         RINOK(ReadNum(propertiesSize));
-        altCoder.Properties.SetCapacity((size_t)propertiesSize);
-        RINOK(ReadBytes((Byte *)altCoder.Properties, (size_t)propertiesSize));
+        coder.Properties.SetCapacity((size_t)propertiesSize);
+        RINOK(ReadBytes((Byte *)coder.Properties, (size_t)propertiesSize));
       }
-      if ((mainByte & 0x80) == 0)
-        break;
+      if ((mainByte & 0x80) != 0)
+        return S_FALSE;
     }
     numInStreams += coder.NumInStreams;
     numOutStreams += coder.NumOutStreams;
@@ -826,7 +835,9 @@ HRESULT CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
   return S_OK;
 }
 
-HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset, 
+HRESULT CInArchive::ReadAndDecodePackedStreams(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    UInt64 baseOffset, 
     UInt64 &dataOffset, CObjectVector<CByteBuffer> &dataVector
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword
@@ -881,7 +892,9 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset,
     CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
     outStreamSpec->Init(data, (size_t)unPackSize);
     
-    HRESULT result = decoder.Decode(_stream, dataStartPos, 
+    HRESULT result = decoder.Decode(
+      EXTERNAL_CODECS_LOC_VARS
+      _stream, dataStartPos, 
       &packSizes[packIndex], folder, outStream, NULL
       #ifndef _NO_CRYPTO
       , getTextPassword
@@ -893,7 +906,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset,
     RINOK(result);
     
     if (folder.UnPackCRCDefined)
-      if (!CCRC::VerifyDigest(folder.UnPackCRC, data, (UInt32)unPackSize))
+      if (CrcCalc(data, (UInt32)unPackSize) != folder.UnPackCRC)
         throw CInArchiveException(CInArchiveException::kIncorrectHeader);
       for (int j = 0; j < folder.PackStreams.Size(); j++)
         dataStartPos += packSizes[packIndex++];
@@ -901,7 +914,9 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(UInt64 baseOffset,
   return S_OK;
 }
 
-HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
+HRESULT CInArchive::ReadHeader(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    CArchiveDatabaseEx &database
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword
     #endif
@@ -921,6 +936,7 @@ HRESULT CInArchive::ReadHeader(CArchiveDatabaseEx &database
   if (type == NID::kAdditionalStreamsInfo)
   {
     HRESULT result = ReadAndDecodePackedStreams(
+        EXTERNAL_CODECS_LOC_VARS
         database.ArchiveInfo.StartPositionAfterHeader, 
         database.ArchiveInfo.DataStartPosition2,
         dataVector
@@ -1192,7 +1208,9 @@ void CArchiveDatabaseEx::FillFolderStartFileIndex()
   }
 }
 
-HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
+HRESULT CInArchive::ReadDatabase(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    CArchiveDatabaseEx &database
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword
     #endif
@@ -1219,11 +1237,12 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
   UInt64 nextHeaderOffset;
   UInt64 nextHeaderSize;
   UInt32 nextHeaderCRC;
-  CCRC crc;
-  RINOK(SafeReadDirectUInt32(crcFromArchive));
-  RINOK(SafeReadDirectUInt64(nextHeaderOffset));
-  RINOK(SafeReadDirectUInt64(nextHeaderSize));
-  RINOK(SafeReadDirectUInt32(nextHeaderCRC));
+  UInt32 crc = CRC_INIT_VAL;
+  UInt32 temp;
+  RINOK(SafeReadDirectUInt32(crcFromArchive, temp));
+  RINOK(SafeReadDirectUInt64(nextHeaderOffset, crc));
+  RINOK(SafeReadDirectUInt64(nextHeaderSize, crc));
+  RINOK(SafeReadDirectUInt32(nextHeaderCRC, crc));
 
   #ifdef FORMAT_7Z_RECOVERY
   if (crcFromArchive == 0 && nextHeaderOffset == 0 && nextHeaderSize == 0 && nextHeaderCRC == 0)
@@ -1254,10 +1273,6 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
   }
   #endif
 
-  crc.UpdateUInt64(nextHeaderOffset);
-  crc.UpdateUInt64(nextHeaderSize);
-  crc.UpdateUInt32(nextHeaderCRC);
-
   #ifdef FORMAT_7Z_RECOVERY
   crcFromArchive = crc.GetDigest();
   #endif
@@ -1278,7 +1293,7 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
   {
     database.ArchiveInfo.StartPositionAfterHeader = _position;
   }
-  if (crc.GetDigest() != crcFromArchive)
+  if (CRC_GET_DIGEST(crc) != crcFromArchive)
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
 
   if (nextHeaderSize == 0)
@@ -1292,7 +1307,7 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
   CByteBuffer buffer2;
   buffer2.SetCapacity((size_t)nextHeaderSize);
   RINOK(SafeReadDirect(buffer2, (UInt32)nextHeaderSize));
-  if (!CCRC::VerifyDigest(nextHeaderCRC, buffer2, (UInt32)nextHeaderSize))
+  if (CrcCalc(buffer2, (UInt32)nextHeaderSize) != nextHeaderCRC)
     throw CInArchiveException(CInArchiveException::kIncorrectHeader);
   
   CStreamSwitch streamSwitch;
@@ -1309,6 +1324,7 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
     if (type != NID::kEncodedHeader)
       throw CInArchiveException(CInArchiveException::kIncorrectHeader);
     HRESULT result = ReadAndDecodePackedStreams(
+        EXTERNAL_CODECS_LOC_VARS
         database.ArchiveInfo.StartPositionAfterHeader, 
         database.ArchiveInfo.DataStartPosition2,
         dataVector
@@ -1325,7 +1341,9 @@ HRESULT CInArchive::ReadDatabase(CArchiveDatabaseEx &database
     streamSwitch.Set(this, dataVector.Front());
   }
 
-  return ReadHeader(database
+  return ReadHeader(
+    EXTERNAL_CODECS_LOC_VARS
+    database
     #ifndef _NO_CRYPTO
     , getTextPassword
     #endif

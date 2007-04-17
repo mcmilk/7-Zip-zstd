@@ -68,6 +68,7 @@ struct CUpdateOptions
 };
 
 HRESULT Update(
+    DECL_EXTERNAL_CODECS_LOC_VARS
     IInStream *inStream,
     const CArchiveDatabaseEx *database,
     const CObjectVector<CUpdateItem> &updateItems,

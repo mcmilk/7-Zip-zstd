@@ -1,7 +1,9 @@
 PROG = 7-ZipFar.dll
 DEF_FILE = Far.def
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib ole32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -DWIN_LONG_PATH
+CFLAGS = $(CFLAGS) -I ../../../ \
+  -DWIN_LONG_PATH \
+  -DEXTERNAL_CODECS
 
 FAR_OBJS = \
   $O\CLSIDConst.obj \
@@ -18,7 +20,6 @@ FAR_OBJS = \
   $O\UpdateCallback100.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
   $O\String.obj \
@@ -47,10 +48,10 @@ WIN_OBJS = \
 UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\ExtractingFilePath.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
   $O\SortUtils.obj \
@@ -68,6 +69,7 @@ AGENT_OBJS = \
   $O\UpdateCallbackAgent.obj \
 
 C_OBJS = \
+  $O\Alloc.obj \
   $O\Sort.obj \
 
 OBJS = \

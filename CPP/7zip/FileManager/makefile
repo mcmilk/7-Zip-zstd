@@ -1,6 +1,8 @@
 PROG = 7zFM.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib shell32.lib ole32.lib comctl32.lib htmlhelp.lib Mpr.lib Gdi32.lib comdlg32.lib
-CFLAGS = $(CFLAGS) -I../../ -DLANG -DWIN_LONG_PATH
+CFLAGS = $(CFLAGS) -I../../ \
+  -DLANG \
+  -DWIN_LONG_PATH \
 
 FM_OBJS = \
   $O\App.obj \
@@ -49,7 +51,6 @@ FM_OBJS = \
   $O\ViewSettings.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
@@ -108,7 +109,9 @@ UI_COMMON_OBJS = \
 
 C_OBJS = \
   $O\Sort.obj \
+  $O\Alloc.obj \
 
+!include "../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -119,7 +122,6 @@ OBJS = \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
   $O\AboutDialog.obj \
-  $O\BenchmarkDialog.obj \
   $O\ComboDialog.obj \
   $O\CopyDialog.obj \
   $O\EditPage.obj \
@@ -133,8 +135,9 @@ OBJS = \
   $O\SettingsPage.obj \
   $O\SplitDialog.obj \
   $O\SystemPage.obj \
-  $O\resource.res \
+  $(CRC_OBJS) \
   $(C_OBJS) \
+  $O\resource.res \
 
 !include "../../Build.mak"
 
@@ -152,8 +155,6 @@ $(UI_COMMON_OBJS): ../UI/Common/$(*B).cpp
 	$(COMPL)
 
 $O\AboutDialog.obj: Resource/AboutDialog/AboutDialog.cpp
-	$(COMPL)
-$O\BenchmarkDialog.obj: Resource/BenchmarkDialog/BenchmarkDialog.cpp
 	$(COMPL)
 $O\ComboDialog.obj: Resource/ComboDialog/ComboDialog.cpp
 	$(COMPL)
@@ -183,5 +184,21 @@ $O\SystemPage.obj: Resource/SystemPage/SystemPage.cpp
 	$(COMPL)
 $(C_OBJS): ../../../C/$(*B).c
 	$(COMPL_O2)
+
+
+!IF "$(CPU)" != "IA64"
+!IF "$(CPU)" != "AMD64"
+$O\7zCrcT8U.obj: ../../../Asm/x86/$(*B).asm
+	$(COMPL_ASM)
+!ELSE
+$O\7zCrcT8U.obj: ../../../Asm/x64/$(*B).asm
+	$(COMPL_ASM)
+!ENDIF
+$O\7zCrcT8.obj: ../../../C/$(*B).c
+	$(COMPL_O2)
+!ELSE
+$(CRC_OBJS): ../../../C/$(*B).c
+	$(COMPL_O2)
+!ENDIF
 
 

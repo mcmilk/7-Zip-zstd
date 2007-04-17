@@ -9,6 +9,7 @@
 #include "../../FileManager/ExtractCallback.h"
 
 HRESULT ExtractGUI(
+    CCodecs *codecs,
     UStringVector &archivePaths, 
     UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,

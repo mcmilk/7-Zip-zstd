@@ -14,7 +14,7 @@ extern bool g_IsNT;
 
 namespace NWindows {
 
-CSysString MyLoadString(UINT resourceID)
+CSysString MyLoadString(HINSTANCE hInstance, UINT resourceID)
 {
   CSysString s;
   int size = 256;
@@ -22,15 +22,20 @@ CSysString MyLoadString(UINT resourceID)
   do
   {
     size += 256;
-    len = ::LoadString(g_hInstance, resourceID, s.GetBuffer(size - 1), size);
+    len = ::LoadString(hInstance, resourceID, s.GetBuffer(size - 1), size);
   } 
   while (size - len <= 1);
   s.ReleaseBuffer();
   return s;
 }
 
+CSysString MyLoadString(UINT resourceID)
+{
+  return MyLoadString(g_hInstance, resourceID);
+}
+
 #ifndef _UNICODE
-UString MyLoadStringW(UINT resourceID)
+UString MyLoadStringW(HINSTANCE hInstance, UINT resourceID)
 {
   if (g_IsNT)
   {
@@ -40,7 +45,7 @@ UString MyLoadStringW(UINT resourceID)
     do
     {
       size += 256;
-      len = ::LoadStringW(g_hInstance, resourceID, s.GetBuffer(size - 1), size);
+      len = ::LoadStringW(hInstance, resourceID, s.GetBuffer(size - 1), size);
     } 
     while (size - len <= 1);
     s.ReleaseBuffer();
@@ -48,6 +53,12 @@ UString MyLoadStringW(UINT resourceID)
   }
   return GetUnicodeString(MyLoadString(resourceID));
 }
+
+UString MyLoadStringW(UINT resourceID)
+{
+  return MyLoadStringW(g_hInstance, resourceID);
+}
+
 #endif
 
 }

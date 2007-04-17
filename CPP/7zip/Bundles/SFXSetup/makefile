@@ -1,16 +1,11 @@
 PROG = 7zS.sfx
 LIBS = $(LIBS) user32.lib oleaut32.lib shell32.lib ole32.lib comctl32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
-  -DEXCLUDE_COM \
   -DNO_REGISTRY \
   -DEXTRACT_ONLY \
+  -DNO_READ_FROM_CODER \
   -D_SFX \
-  -DFORMAT_7Z \
-  -DCOMPRESS_BCJ_X86 \
-  -DCOMPRESS_BCJ2 \
-  -DCOMPRESS_COPY \
-  -DCOMPRESS_LZMA \
-  -D_NO_CRYPTO
+  -D_NO_CRYPTO \
 
 SFX_WIN_OBJS = \
   $O\Main.obj \
@@ -21,7 +16,6 @@ GUI_OBJS = \
   $O\OpenCallbackGUI.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
   $O\IntToString.obj \
@@ -49,8 +43,10 @@ WIN_CTRL_OBJS = \
   $O\Dialog.obj \
 
 7ZIP_COMMON_OBJS = \
+  $O\CreateCoder.obj \
   $O\FileStreams.obj \
   $O\InBuffer.obj \
+  $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
   $O\OutBuffer.obj \
@@ -61,8 +57,8 @@ WIN_CTRL_OBJS = \
 
 UI_COMMON_OBJS = \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
 
 FM_OBJS = \
@@ -72,7 +68,6 @@ AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
-  $O\FilterCoder.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
 
@@ -83,18 +78,33 @@ AR_COMMON_OBJS = \
   $O\7zHandler.obj \
   $O\7zHeader.obj \
   $O\7zIn.obj \
-  $O\7zMethodID.obj \
+  $O\7zRegister.obj \
 
 BRANCH_OPT_OBJS = \
   $O\BranchCoder.obj \
   $O\x86.obj \
   $O\x86_2.obj \
+  $O\BCJRegister.obj \
+  $O\BCJ2Register.obj \
+
+COPY_OBJS = \
+  $O\CopyCoder.obj \
+  $O\CopyRegister.obj \
 
 LZ_OBJS = \
   $O\LZOutWindow.obj \
 
 LZMA_OPT_OBJS = \
   $O\LZMADecoder.obj \
+  $O\LZMARegister.obj \
+
+C_OBJS = \
+  $O\Alloc.obj \
+
+C_BRANCH_OBJS = \
+  $O\BranchX86.obj \
+
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -109,11 +119,14 @@ OBJS = \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(BRANCH_OPT_OBJS) \
+  $(COPY_OBJS) \
   $(LZ_OBJS) \
   $(LZMA_OPT_OBJS) \
-  $O\CopyCoder.obj \
   $O\MyMessages.obj \
   $O\ProgressDialog.obj \
+  $(C_OBJS) \
+  $(C_BRANCH_OBJS) \
+  $(CRC_OBJS) \
   $O\resource.res
 
 
@@ -143,14 +156,23 @@ $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
 $(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
 	$(COMPL)
+$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
+	$(COMPL)
 $(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
 	$(COMPL)
 $(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 	$(COMPL)
 
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
 	$(COMPL)
 $O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog/$(*B).cpp
 	$(COMPL)
+
+$(C_OBJS): ../../../../C/$(*B).c
+	$(COMPL_O2)
+
+$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
+	$(COMPL_O2)
+
+!include "../../Crc.mak"
+

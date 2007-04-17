@@ -128,6 +128,18 @@ CODER_INTERFACE(ICompressFilter, 0x40)
   //      (it's for crypto block algorithms).
 };
 
+CODER_INTERFACE(ICompressCodecsInfo, 0x60)
+{
+  STDMETHOD(GetNumberOfMethods)(UInt32 *numMethods) PURE;
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(CreateDecoder)(UInt32 index, const GUID *iid, void **coder) PURE;
+  STDMETHOD(CreateEncoder)(UInt32 index, const GUID *iid, void **coder) PURE;
+};
+CODER_INTERFACE(ISetCompressCodecsInfo, 0x61)
+{
+  STDMETHOD(SetCompressCodecsInfo)(ICompressCodecsInfo *compressCodecsInfo) PURE;
+};
+
 CODER_INTERFACE(ICryptoProperties, 0x80)
 {
   STDMETHOD(SetKey)(const Byte *data, UInt32 size) PURE;
@@ -156,7 +168,9 @@ namespace NMethodPropID
     kEncoder,
     kInStreams,
     kOutStreams,
-    kDescription
+    kDescription,
+    kDecoderIsAssigned,
+    kEncoderIsAssigned
   };
 }
 

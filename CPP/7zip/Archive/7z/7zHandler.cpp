@@ -22,6 +22,8 @@
 
 using namespace NWindows;
 
+extern UString ConvertMethodIdToString(UInt64 id);
+
 namespace NArchive {
 namespace N7z {
 
@@ -32,9 +34,6 @@ CHandler::CHandler()
   #endif
   #ifndef EXTRACT_ONLY
   Init();
-  #endif
-  #ifndef EXCLUDE_COM
-  LoadMethodMap();
   #endif
 }
 
@@ -124,14 +123,9 @@ static UString GetStringForSizeValue(UInt32 value)
   return result;
 }
 
-static CMethodID k_Copy  = { { 0x0 }, 1 };
-static CMethodID k_LZMA  = { { 0x3, 0x1, 0x1 }, 3 };
-static CMethodID k_BCJ   = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
-static CMethodID k_BCJ2  = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
-static CMethodID k_PPMD  = { { 0x3, 0x4, 0x1 }, 3 };
-static CMethodID k_Deflate   = { { 0x4, 0x1, 0x8 }, 3 };
-static CMethodID k_Deflate64 = { { 0x4, 0x1, 0x9 }, 3 };
-static CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
+static const UInt64 k_Copy = 0x0;
+static const UInt64 k_LZMA  = 0x030101;
+static const UInt64 k_PPMD  = 0x030401;
 
 static wchar_t GetHex(Byte value)
 {
@@ -147,7 +141,7 @@ static inline UString GetHex2(Byte value)
 
 #endif
 
-static CMethodID k_AES   = { { 0x6, 0xF1, 0x7, 0x1}, 4 };
+static const UInt64 k_AES  = 0x06F10701;
 
 static inline UInt32 GetUInt32FromMemLE(const Byte *p)
 {
@@ -161,12 +155,8 @@ bool CHandler::IsEncrypted(UInt32 index2) const
   {
     const CFolder &folderInfo = _database.Folders[folderIndex];
     for (int i = folderInfo.Coders.Size() - 1; i >= 0; i--)
-    {
-      const CCoderInfo &coderInfo = folderInfo.Coders[i];
-      for (int j = 0; j < coderInfo.AltCoders.Size(); j++)
-        if (coderInfo.AltCoders[j].MethodID == k_AES)
-          return true;
-    }
+      if (folderInfo.Coders[i].MethodID == k_AES)
+        return true;
   }
   return false;
 }
@@ -276,81 +266,45 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
             const CCoderInfo &coderInfo = folderInfo.Coders[i];
             if (!methodsString.IsEmpty())
               methodsString += L' ';
-            CMethodInfo methodInfo;
 
-            bool methodIsKnown;
-
-            for (int j = 0; j < coderInfo.AltCoders.Size(); j++)
             {
-              if (j > 0)
-                methodsString += L"|";
-              const CAltCoderInfo &altCoderInfo = coderInfo.AltCoders[j];
-
               UString methodName;
-              #ifdef NO_REGISTRY
-
-              methodIsKnown = true;
-              if (altCoderInfo.MethodID == k_Copy)
-                methodName = L"Copy";            
-              else if (altCoderInfo.MethodID == k_LZMA)
-                methodName = L"LZMA";
-              else if (altCoderInfo.MethodID == k_BCJ)
-                methodName = L"BCJ";
-              else if (altCoderInfo.MethodID == k_BCJ2)
-                methodName = L"BCJ2";
-              else if (altCoderInfo.MethodID == k_PPMD)
-                methodName = L"PPMD";
-              else if (altCoderInfo.MethodID == k_Deflate)
-                methodName = L"Deflate";
-              else if (altCoderInfo.MethodID == k_Deflate64)
-                methodName = L"Deflate64";
-              else if (altCoderInfo.MethodID == k_BZip2)
-                methodName = L"BZip2";
-              else if (altCoderInfo.MethodID == k_AES)
-                methodName = L"7zAES";
-              else
-                methodIsKnown = false;
-              
-              #else
-            
-              methodIsKnown = GetMethodInfo(
-                altCoderInfo.MethodID, methodInfo);
-              methodName = methodInfo.Name;
-              
-              #endif
+              bool methodIsKnown = FindMethod(
+                  EXTERNAL_CODECS_VARS 
+                  coderInfo.MethodID, methodName);
 
               if (methodIsKnown)
               {
                 methodsString += methodName;
-                if (altCoderInfo.MethodID == k_LZMA)
+                if (coderInfo.MethodID == k_LZMA)
                 {
-                  if (altCoderInfo.Properties.GetCapacity() >= 5)
+                  if (coderInfo.Properties.GetCapacity() >= 5)
                   {
                     methodsString += L":";
                     UInt32 dicSize = GetUInt32FromMemLE(
-                      ((const Byte *)altCoderInfo.Properties + 1));
+                      ((const Byte *)coderInfo.Properties + 1));
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
-                else if (altCoderInfo.MethodID == k_PPMD)
+                else if (coderInfo.MethodID == k_PPMD)
                 {
-                  if (altCoderInfo.Properties.GetCapacity() >= 5)
+                  if (coderInfo.Properties.GetCapacity() >= 5)
                   {
-                    Byte order = *(const Byte *)altCoderInfo.Properties;
+                    Byte order = *(const Byte *)coderInfo.Properties;
                     methodsString += L":o";
                     methodsString += ConvertUInt32ToString(order);
                     methodsString += L":mem";
                     UInt32 dicSize = GetUInt32FromMemLE(
-                      ((const Byte *)altCoderInfo.Properties + 1));
+                      ((const Byte *)coderInfo.Properties + 1));
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
-                else if (altCoderInfo.MethodID == k_AES)
+                else if (coderInfo.MethodID == k_AES)
                 {
-                  if (altCoderInfo.Properties.GetCapacity() >= 1)
+                  if (coderInfo.Properties.GetCapacity() >= 1)
                   {
                     methodsString += L":";
-                    const Byte *data = (const Byte *)altCoderInfo.Properties;
+                    const Byte *data = (const Byte *)coderInfo.Properties;
                     Byte firstByte = *data++;
                     UInt32 numCyclesPower = firstByte & 0x3F;
                     methodsString += ConvertUInt32ToString(numCyclesPower);
@@ -361,7 +315,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                       return S_OK;
                       UInt32 saltSize = (firstByte >> 7) & 1;
                       UInt32 ivSize = (firstByte >> 6) & 1;
-                      if (altCoderInfo.Properties.GetCapacity() >= 2)
+                      if (coderInfo.Properties.GetCapacity() >= 2)
                       {
                         Byte secondByte = *data++;
                         saltSize += (secondByte >> 4);
@@ -373,18 +327,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                 }
                 else
                 {
-                  if (altCoderInfo.Properties.GetCapacity() > 0)
+                  if (coderInfo.Properties.GetCapacity() > 0)
                   {
                     methodsString += L":[";
-                    for (size_t bi = 0; bi < altCoderInfo.Properties.GetCapacity(); bi++)
+                    for (size_t bi = 0; bi < coderInfo.Properties.GetCapacity(); bi++)
                     {
-                      if (bi > 5 && bi + 1 < altCoderInfo.Properties.GetCapacity())
+                      if (bi > 5 && bi + 1 < coderInfo.Properties.GetCapacity())
                       {
                         methodsString += L"..";
                         break;
                       }
                       else
-                        methodsString += GetHex2(altCoderInfo.Properties[bi]);
+                        methodsString += GetHex2(coderInfo.Properties[bi]);
                     }
                     methodsString += L"]";
                   }
@@ -392,7 +346,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
               }
               else
               {
-                methodsString += altCoderInfo.MethodID.ConvertToString();
+                methodsString += ConvertMethodIdToString(coderInfo.MethodID);
               }
             }
           }
@@ -655,7 +609,9 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     #else
     CInArchive archive;
     RINOK(archive.Open(stream, maxCheckStartPosition));
-    HRESULT result = archive.ReadDatabase(_database
+    HRESULT result = archive.ReadDatabase(
+      EXTERNAL_CODECS_VARS
+      _database
       #ifndef _NO_CRYPTO
       , getTextPassword
       #endif
@@ -733,8 +689,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     const CCoderInfo &coder = folder.Coders.Front();
     if (coder.NumInStreams != 1 || coder.NumOutStreams != 1)
       return S_FALSE;
-    const CAltCoderInfo &altCoder = coder.AltCoders.Front();
-    if (altCoder.MethodID.IDSize != 1 || altCoder.MethodID.ID[0] != 0)
+    if (coder.MethodID != k_Copy)
       return S_FALSE;
 
     pos += file.UnPackSize;
@@ -790,5 +745,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
 
 #endif
 #endif
+
+IMPL_ISetCompressCodecsInfo
 
 }}

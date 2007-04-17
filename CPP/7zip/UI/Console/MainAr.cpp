@@ -10,20 +10,10 @@
 #include "Common/NewHandler.h"
 #include "Common/Exception.h"
 #include "Common/StringConvert.h"
-#ifdef _WIN32
-#include "Common/Alloc.h"
-#endif
 
 #include "../Common/ExitCode.h"
 #include "../Common/ArchiveCommandLine.h"
 #include "ConsoleClose.h"
-
-#ifdef CRC_GENERATE_TABLE
-extern "C" 
-{ 
-  #include "../../../../C/7zCrc.h" 
-}
-#endif
 
 using namespace NWindows;
 
@@ -66,9 +56,6 @@ int numArguments, const char *arguments[]
 #endif
 )
 {
-  #ifdef CRC_GENERATE_TABLE
-  CrcGenerateTable();
-  #endif
   g_StdStream = &g_StdOut;
   #ifdef _UNICODE
   if (!IsItWindowsNT())
@@ -78,10 +65,6 @@ int numArguments, const char *arguments[]
   }
   #else
   g_IsNT = IsItWindowsNT();
-  #endif
-
-  #ifdef _WIN32
-  SetLargePageSize();
   #endif
 
   // setlocale(LC_COLLATE, ".OCP");

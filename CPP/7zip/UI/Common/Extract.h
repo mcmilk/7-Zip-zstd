@@ -13,6 +13,8 @@
 #include "ExtractMode.h"
 #include "Property.h"
 
+#include "../Common/LoadCodecs.h"
+
 class CExtractOptions
 {
 public:
@@ -34,6 +36,10 @@ public:
 
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 
+  #ifdef EXTERNAL_CODECS
+  CCodecs *Codecs;
+  #endif
+
   CExtractOptions(): 
       StdOutMode(false), 
       YesToAll(false), 
@@ -49,6 +55,7 @@ public:
 };
 
 HRESULT DecompressArchives(
+    CCodecs *codecs,
     UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,

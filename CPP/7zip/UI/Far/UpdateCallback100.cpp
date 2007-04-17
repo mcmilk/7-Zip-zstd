@@ -29,17 +29,17 @@ STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *aCompleteValue)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t* /* name */)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *aName)
+STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t* /* name */)
 {
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 aOperationResult)
+STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 /* operationResult */)
 {
   return S_OK;
 }

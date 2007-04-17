@@ -6,7 +6,10 @@
 
 #include "Windows/Defs.h"
 #include "Common/ComTry.h"
-#include "../../../Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
 // #include "../LZ/BinTree/BinTree3Z.h"
 
 #if _MSC_VER >= 1300

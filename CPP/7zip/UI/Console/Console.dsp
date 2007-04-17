@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BREAK_HANDLER" /D "BENCH_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BREAK_HANDLER" /D "BENCH_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BREAK_HANDLER" /D "BENCH_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -120,7 +120,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BREAK_HANDLER" /D "BENCH_MT" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -316,14 +316,6 @@ SOURCE=..\..\..\Windows\Time.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\Buffer.h
 # End Source File
 # Begin Source File
@@ -337,6 +329,10 @@ SOURCE=..\..\..\Common\CommandLineParser.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\ComTry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
@@ -468,14 +464,6 @@ SOURCE=..\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ArchiverInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiverInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\CompressionMode.h
 # End Source File
 # Begin Source File
@@ -525,6 +513,14 @@ SOURCE=..\Common\HandlerLoader.h
 # Begin Source File
 
 SOURCE=..\Common\IFileExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.h
 # End Source File
 # Begin Source File
 
@@ -644,6 +640,10 @@ SOURCE=..\..\Common\FileStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\RegisterArc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\StreamUtils.cpp
 # End Source File
 # Begin Source File
@@ -654,6 +654,26 @@ SOURCE=..\..\Common\StreamUtils.h
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
+# Begin Group "LzmaBench"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBench.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBench.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBenchCon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBenchCon.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Compress\Copy\CopyCoder.cpp
@@ -661,6 +681,28 @@ SOURCE=..\..\Compress\Copy\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # End Group
 # End Target

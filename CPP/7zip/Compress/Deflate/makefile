@@ -1,18 +1,18 @@
 PROG = Deflate.dll
 DEF_FILE = ../Codec.def
-CFLAGS = $(CFLAGS) -I ../../../ -D_ST_MODE
+CFLAGS = $(CFLAGS) -I ../../../
 LIBS = $(LIBS) oleaut32.lib
 
-DEFLATE_OBJS = \
+COMPRESS_OBJS = \
+  $O\CodecExports.obj \
   $O\DllExports.obj \
 
 DEFLATE_OPT_OBJS = \
   $O\DeflateDecoder.obj \
   $O\DeflateEncoder.obj \
-
-COMMON_OBJS = \
-  $O\Alloc.obj \
-  $O\CRC.obj \
+  $O\DeflateRegister.obj \
+  $O\Deflate64Register.obj \
+  $O\DeflateNsisRegister.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
@@ -24,18 +24,19 @@ LZ_OBJS = \
   $O\LZOutWindow.obj \
 
 C_OBJS = \
+  $O\Alloc.obj \
   $O\7zCrc.obj \
   $O\Sort.obj \
 
 C_LZ_OBJS = \
   $O\MatchFinder.obj \
 
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
-  $(DEFLATE_OBJS) \
+  $(COMPRESS_OBJS) \
   $(DEFLATE_OPT_OBJS) \
-  $(COMMON_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(LZ_OBJS) \
   $(C_OBJS) \
@@ -45,12 +46,10 @@ OBJS = \
 
 !include "../../../Build.mak"
 
-$(DEFLATE_OBJS): $(*B).cpp
+$(COMPRESS_OBJS): ../$(*B).cpp
 	$(COMPL)
 $(DEFLATE_OPT_OBJS): $(*B).cpp
 	$(COMPL_O2)
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(LZ_OBJS): ../LZ/$(*B).cpp
@@ -61,3 +60,4 @@ $(C_LZ_OBJS): ../../../../C/Compress/Lz/$(*B).c
 	$(COMPL_O2)
 $O\HuffmanEncode.obj: ../../../../C/Compress/Huffman/$(*B).c
 	$(COMPL_O2)
+!include "../../Crc.mak"

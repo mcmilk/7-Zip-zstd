@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -138,6 +142,10 @@ SOURCE=..\..\Common\OutBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\RegisterCodec.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\StreamUtils.cpp
 # End Source File
 # Begin Source File
@@ -170,19 +178,7 @@ SOURCE=..\Huffman\HuffmanDecoder.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\CRC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\CRC.h
 # End Source File
 # Begin Source File
 
@@ -291,6 +287,32 @@ SOURCE=.\Rar3Vm.cpp
 # Begin Source File
 
 SOURCE=.\Rar3Vm.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\RarCodecsRegister.cpp
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # End Group
 # End Target

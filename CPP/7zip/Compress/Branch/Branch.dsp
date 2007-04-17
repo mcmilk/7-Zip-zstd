@@ -98,7 +98,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -155,11 +159,23 @@ SOURCE=.\ARMThumb.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\BCJ2Register.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BCJRegister.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\BranchCoder.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\BranchCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\BranchRegister.cpp
 # End Source File
 # Begin Source File
 
@@ -282,16 +298,135 @@ SOURCE=..\RangeCoder\RangeCoder.h
 SOURCE=..\RangeCoder\RangeCoderBit.h
 # End Source File
 # End Group
-# Begin Group "Common"
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Group "C Branch"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.cpp
+SOURCE=..\..\..\..\C\Compress\Branch\BranchARM.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\Alloc.h
+SOURCE=..\..\..\..\C\Compress\Branch\BranchARM.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchARMThumb.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchARMThumb.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchIA64.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchIA64.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchPPC.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchPPC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchSPARC.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchSPARC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchTypes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+
+!IF  "$(CFG)" == "Branch - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Branch - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # End Group
 # End Target

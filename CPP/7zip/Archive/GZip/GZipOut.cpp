@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "GZipOut.h"
-#include "Common/CRC.h"
+
 #include "Windows/Defs.h"
 #include "../../Common/StreamUtils.h"
 

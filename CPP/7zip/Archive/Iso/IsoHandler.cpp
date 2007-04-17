@@ -139,7 +139,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     switch(propID)
     {
       case kpidPath:
-        if (item.FileId.GetCapacity() >= 0)
+        // if (item.FileId.GetCapacity() >= 0)
         {
           UString s;
           if (_archive.IsJoliet())

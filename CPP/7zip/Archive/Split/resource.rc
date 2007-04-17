@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Split Plugin", "split")
-
-101  ICON  "Split.ico"

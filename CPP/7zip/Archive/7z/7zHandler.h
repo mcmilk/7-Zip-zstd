@@ -3,18 +3,17 @@
 #ifndef __7Z_HANDLER_H
 #define __7Z_HANDLER_H
 
+#include "../../ICoder.h"
 #include "../IArchive.h"
 #include "7zIn.h"
 
 #include "7zCompressionMode.h"
 
-#ifndef _SFX
-#include "7zMethods.h"
-#endif
-
 #ifdef COMPRESS_MT
 #include "../../../Windows/System.h"
 #endif
+
+#include "../../Common/CreateCoder.h"
 
 namespace NArchive {
 namespace N7z {
@@ -82,13 +81,12 @@ class CHandler:
   #ifndef EXTRACT_ONLY
   public IOutArchive, 
   #endif
+  PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
 public:
-  #if !defined(_7Z_VOL) && !defined(__7Z_SET_PROPERTIES) && defined(EXTRACT_ONLY)
-  MY_UNKNOWN_IMP
-  #else
   MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_ENTRY(IInArchive)
   #ifdef _7Z_VOL
   MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
   #endif
@@ -98,9 +96,9 @@ public:
   #ifndef EXTRACT_ONLY
   MY_QUERYINTERFACE_ENTRY(IOutArchive)
   #endif
+  QUERY_ENTRY_ISetCompressCodecsInfo
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
-  #endif
 
 
   STDMETHOD(Open)(IInStream *stream, 
@@ -144,6 +142,8 @@ public:
   HRESULT SetSolidSettings(const PROPVARIANT &value);
   #endif
 
+  DECL_ISetCompressCodecsInfo
+
   CHandler();
 
 private:
@@ -154,6 +154,7 @@ private:
   CMyComPtr<IInStream> _inStream;
   NArchive::N7z::CArchiveDatabaseEx _database;
   #endif
+
 
   #ifdef COMPRESS_MT
   UInt32 _numThreads;
@@ -169,7 +170,6 @@ private:
   bool _solidExtension;
 
   bool _compressHeaders;
-  bool _compressHeadersFull;
   bool _encryptHeaders;
 
   bool WriteModified;
@@ -182,6 +182,7 @@ private:
 
   bool _volumeMode;
 
+  DECL_EXTERNAL_CODECS_VARS
 
   HRESULT SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value);
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
@@ -225,7 +226,6 @@ private:
   {
     _removeSfxBlock = false;
     _compressHeaders = true;
-    _compressHeadersFull = true;
     _encryptHeaders = false;
 
     WriteModified = true;

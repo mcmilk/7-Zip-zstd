@@ -164,6 +164,7 @@ public:
 
   #ifdef COMPRESS_BZIP2_MT
   CThreadInfo *ThreadsInfo;
+  NWindows::NSynchronization::CManualResetEvent CanProcessEvent;
   NWindows::NSynchronization::CCriticalSection CS;
   UInt32 NumThreads;
   bool MtMode;

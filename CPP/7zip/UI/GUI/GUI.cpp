@@ -4,6 +4,11 @@
 
 #include <initguid.h>
 
+extern "C" 
+{ 
+  #include "../../../../C/Alloc.h"
+}
+
 #include "Common/NewHandler.h"
 #include "Common/StringConvert.h"
 #include "Common/CommandLineParser.h"
@@ -17,7 +22,6 @@
 #include "Windows/FileName.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
-#include "Common/Alloc.h"
 #endif
 
 #include "../../IStream.h"
@@ -33,6 +37,7 @@
 
 #include "ExtractGUI.h"
 #include "UpdateGUI.h"
+#include "Resource/BenchmarkDialog/BenchmarkDialog.h"
 
 using namespace NWindows;
 
@@ -83,10 +88,26 @@ int Main2()
   if (options.LargePages)
     NSecurity::EnableLockMemoryPrivilege();
   #endif
+
+  CCodecs *codecs = new CCodecs;
+  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
+  HRESULT result = codecs->Load();
+  if (result != S_OK)
+    throw CSystemException(result);
   
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
  
-  if (isExtractGroupCommand)
+  if (options.Command.CommandType == NCommandType::kBenchmark)
+  {
+    HRESULT res = Benchmark(
+      #ifdef EXTERNAL_LZMA
+      codecs,
+      #endif
+      options.NumThreads, options.DictionarySize);
+    if (res != S_OK)
+      throw CSystemException(res);
+  }
+  else if (isExtractGroupCommand)
   {
     CExtractCallbackImp *ecs = new CExtractCallbackImp;
     CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
@@ -109,7 +130,7 @@ int Main2()
     eo.Properties = options.ExtractProperties;
     #endif
 
-    HRESULT result = ExtractGUI(
+    HRESULT result = ExtractGUI(codecs,
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
@@ -138,7 +159,10 @@ int Main2()
 
     CUpdateErrorInfo errorInfo;
 
+    if (!options.UpdateOptions.Init(codecs, options.ArchiveName, options.ArcType))
+      throw "Unsupported archive type";
     HRESULT result = UpdateGUI(
+        codecs,
         options.WildcardCensor, options.UpdateOptions, 
         options.ShowDialog,
         errorInfo, &openCallback, &callback);

@@ -3,9 +3,13 @@
 #ifndef __INSTREAMWITHCRC_H
 #define __INSTREAMWITHCRC_H
 
-#include "../../../Common/CRC.h"
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
+
+extern "C" 
+{ 
+#include "../../../../C/7zCrc.h"
+}
 
 class CSequentialInStreamWithCRC: 
   public ISequentialInStream,
@@ -18,7 +22,7 @@ public:
 private:
   CMyComPtr<ISequentialInStream> _stream;
   UInt64 _size;
-  CCRC _crc;
+  UInt32 _crc;
   bool _wasFinished;
 public:
   void SetStream(ISequentialInStream *stream) { _stream = stream;  }
@@ -26,10 +30,10 @@ public:
   {
     _size = 0;
     _wasFinished = false;
-    _crc.Init();
+    _crc = CRC_INIT_VAL;
   }
   void ReleaseStream() { _stream.Release(); }
-  UInt32 GetCRC() const { return _crc.GetDigest(); }
+  UInt32 GetCRC() const { return CRC_GET_DIGEST(_crc); }
   UInt64 GetSize() const { return _size; }
   bool WasFinished() const { return _wasFinished; }
 };
@@ -46,7 +50,7 @@ public:
 private:
   CMyComPtr<IInStream> _stream;
   UInt64 _size;
-  CCRC _crc;
+  UInt32 _crc;
   bool _wasFinished;
 public:
   void SetStream(IInStream *stream) { _stream = stream;  }
@@ -54,10 +58,10 @@ public:
   {
     _size = 0;
     _wasFinished = false;
-    _crc.Init();
+    _crc = CRC_INIT_VAL;
   }
   void ReleaseStream() { _stream.Release(); }
-  UInt32 GetCRC() const { return _crc.GetDigest(); }
+  UInt32 GetCRC() const { return CRC_GET_DIGEST(_crc); }
   UInt64 GetSize() const { return _size; }
   bool WasFinished() const { return _wasFinished; }
 };

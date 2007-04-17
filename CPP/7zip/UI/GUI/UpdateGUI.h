@@ -10,6 +10,7 @@
 #include "../../FileManager/UpdateCallback100.h"
 
 HRESULT UpdateGUI(
+    CCodecs *codecs,
     const NWildcard::CCensor &censor, 
     CUpdateOptions &options,
     bool showDialog,

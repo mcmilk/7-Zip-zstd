@@ -1,6 +1,5 @@
 DIRS = \
   7zAES\~ \
-  AES\~ \
   
 all: $(DIRS)
 

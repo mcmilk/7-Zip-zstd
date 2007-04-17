@@ -355,9 +355,6 @@ HRESULT OpenArchive(const CSysString &fileName,
     IArchiveOpenCallback *openArchiveCallback)
 {
   HRESULT OpenArchive(const CSysString &fileName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
     IInArchive **archive, 
     CArchiverInfo &archiverInfoResult,
     IArchiveOpenCallback *openArchiveCallback);
@@ -451,7 +448,7 @@ HANDLE WINAPI OpenPlugin(int openFrom, int item)
   MY_TRY_BEGIN;
   if(openFrom == OPEN_COMMANDLINE)
   {
-    CSysString fileName = (const char *)item;
+    CSysString fileName = (const char *)(UINT_PTR)item;
     if(fileName.IsEmpty())
       return INVALID_HANDLE_VALUE;
     if (fileName.Length() >= 2 && 
@@ -478,7 +475,7 @@ HANDLE WINAPI OpenPlugin(int openFrom, int item)
           throw 142134;
         if (CompressFiles(pluginPanelItem) == S_OK)
         {
-          int t = g_StartupInfo.ControlClearPanelSelection();
+          /* int t = */ g_StartupInfo.ControlClearPanelSelection();
           g_StartupInfo.ControlRequestActivePanel(FCTL_UPDATEPANEL, NULL);
           g_StartupInfo.ControlRequestActivePanel(FCTL_REDRAWPANEL, NULL);
           g_StartupInfo.ControlRequestActivePanel(FCTL_UPDATEANOTHERPANEL, NULL);
@@ -554,7 +551,7 @@ void WINAPI GetPluginInfo(struct PluginInfo *info)
   MY_TRY_END1("GetPluginInfo");      
 }
 
-int WINAPI Configure(int itemNumber)
+int WINAPI Configure(int /* itemNumber */)
 {
   MY_TRY_BEGIN;
 

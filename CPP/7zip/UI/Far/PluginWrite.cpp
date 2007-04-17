@@ -80,7 +80,8 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   ReadCompressionInfo(compressionInfo);
 
   int methodIndex = 0;
-  for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+  int i;
+  for (i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
     if (compressionInfo.Level >= g_MethodMap[i])
     {
       methodIndex = i;
@@ -226,7 +227,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
       &fileNamePointers.Front(), fileNamePointers.Size());
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-    actionSetByte[i] = actionSet->StateActions[i];
+    actionSetByte[i] = (BYTE)actionSet->StateActions[i];
 
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
@@ -236,8 +237,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
 
-  result = outArchive->DoOperation(NULL, NULL,
-      tempFileName, actionSetByte, NULL, updateCallback);
+  result = outArchive->DoOperation2(tempFileName, actionSetByte, NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
 
@@ -332,7 +332,8 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     return E_FAIL;
 
   UStringVector fileNames;
-  for(int i = 0; i < pluginPanelItems.Size(); i++)
+  int i;
+  for(i = 0; i < pluginPanelItems.Size(); i++)
   {
     const PluginPanelItem &panelItem = pluginPanelItems[i];
     CSysString fullName;
@@ -353,23 +354,23 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   
   int archiverIndex = 0;
 
-  CObjectVector<CArchiverInfo> archiverInfoList;
+  CCodecs *codecs = new CCodecs;
+  CMyComPtr<ICompressCodecsInfo> compressCodecsInfo = codecs;
+  if (codecs->Load() != S_OK)
+    throw "Can't load 7-Zip codecs";
   {
-    CObjectVector<CArchiverInfo> fullArchiverInfoList;
-    ReadArchiverInfoList(fullArchiverInfoList);
-    for (int i = 0; i < fullArchiverInfoList.Size(); i++)
+    for (int i = 0; i < codecs->Formats.Size(); i++)
     {
-      const CArchiverInfo &archiverInfo = fullArchiverInfoList[i];
-      if (archiverInfo.UpdateEnabled)
+      const CArcInfoEx &arcInfo = codecs->Formats[i];
+      if (arcInfo.UpdateEnabled)
       {
-        if (archiverInfo.Name.CompareNoCase(compressionInfo.ArchiveType) == 0)
-          archiverIndex = archiverInfoList.Size();
-        archiverInfoList.Add(archiverInfo);
+        if (archiverIndex == -1)
+          archiverIndex = i;
+        if (arcInfo.Name.CompareNoCase(compressionInfo.ArchiveType) == 0)
+          archiverIndex = i;
       }
     }
   }
-  if (archiverInfoList.IsEmpty())
-    throw "There is no update achivers";
 
 
   UString resultPath;
@@ -392,10 +393,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   UString archiveNameSrc = resultPath;
   UString archiveName = archiveNameSrc;
 
-  const CArchiverInfo &archiverInfo = archiverInfoList[archiverIndex];
+  const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
   int prevFormat = archiverIndex;
  
-  if (!archiverInfo.KeepName)
+  if (!arcInfo.KeepName)
   {
     int dotPos = archiveName.ReverseFind('.');
     int slashPos = MyMax(archiveName.ReverseFind('\\'), archiveName.ReverseFind('/'));
@@ -403,7 +404,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       archiveName = archiveName.Left(dotPos);
   }
   archiveName += L'.';
-  archiveName += archiverInfo.GetMainExtension();
+  archiveName += arcInfo.GetMainExt();
   
   const CActionSet *actionSet = &kAddActionSet;
 
@@ -417,14 +418,15 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     const int kMethodRadioIndex = kArchiveNameIndex + 2;
     const int kModeRadioIndex = kMethodRadioIndex + 7;
 
-    const CArchiverInfo &archiverInfo = archiverInfoList[archiverIndex];
+    const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
 
     char updateAddToArchiveString[512];
     sprintf(updateAddToArchiveString, 
-        g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), GetSystemString(archiverInfo.Name), CP_OEMCP);
+        g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), GetSystemString(arcInfo.Name), CP_OEMCP);
 
     int methodIndex = 0;
-    for (int i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+    int i;
+    for (i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
       if (compressionInfo.Level >= g_MethodMap[i])
       {
         methodIndex = i;
@@ -507,20 +509,27 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
     if (askCode == kSelectarchiverButtonIndex)
     {
+      CIntVector indices;
       CSysStringVector archiverNames;
-      for(int i = 0; i < archiverInfoList.Size(); i++)
-        archiverNames.Add(GetSystemString(archiverInfoList[i].Name,
-          CP_OEMCP));
+      for(int i = 0; i < codecs->Formats.Size(); i++)
+      {
+        const CArcInfoEx &arc = codecs->Formats[i];
+        if (arc.UpdateEnabled)
+        {
+          indices.Add(i);
+          archiverNames.Add(GetSystemString(arc.Name, CP_OEMCP));
+        }
+      }
     
       int index = g_StartupInfo.Menu(FMENU_AUTOHIGHLIGHT, 
           g_StartupInfo.GetMsgString(NMessageID::kUpdateSelectArchiverMenuTitle),
           NULL, archiverNames, archiverIndex);
       if(index >= 0)
       {
-        const CArchiverInfo &prevArchiverInfo = archiverInfoList[prevFormat];
+        const CArcInfoEx &prevArchiverInfo = codecs->Formats[prevFormat];
         if (prevArchiverInfo.KeepName)
         {
-          const UString &prevExtension = prevArchiverInfo.GetMainExtension();
+          const UString &prevExtension = prevArchiverInfo.GetMainExt();
           const int prevExtensionLen = prevExtension.Length();
           if (archiveName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
           {
@@ -535,12 +544,11 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
           }
         }
 
-        archiverIndex = index;
-        const CArchiverInfo &archiverInfo = 
-            archiverInfoList[archiverIndex];
+        archiverIndex = indices[index];
+        const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
         prevFormat = archiverIndex;
         
-        if (archiverInfo.KeepName)
+        if (arcInfo.KeepName)
           archiveName = archiveNameSrc;
         else
         {
@@ -550,7 +558,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
             archiveName = archiveName.Left(dotPos);
         }
         archiveName += L'.';
-        archiveName += archiverInfo.GetMainExtension();
+        archiveName += arcInfo.GetMainExt();
       }
       continue;
     }
@@ -561,7 +569,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     break;
   }
 
-  const CArchiverInfo &archiverInfoFinal = archiverInfoList[archiverIndex];
+  const CArcInfoEx &archiverInfoFinal = codecs->Formats[archiverIndex];
   compressionInfo.ArchiveType = archiverInfoFinal.Name;
   SaveCompressionInfo(compressionInfo);
 
@@ -651,7 +659,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     &fileNamePointers.Front(), fileNamePointers.Size());
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-    actionSetByte[i] = actionSet->StateActions[i];
+    actionSetByte[i] = (BYTE)actionSet->StateActions[i];
 
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
@@ -662,8 +670,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   RINOK(SetOutProperties(outArchive, compressionInfo.Level));
 
   HRESULT result = outArchive->DoOperation(
-      GetUnicodeString(archiverInfoFinal.FilePath, CP_OEMCP),
-      &archiverInfoFinal.ClassID,
+      codecs, archiverIndex,
       tempFileName, actionSetByte, 
       NULL, updateCallback);
   updateCallback.Release();

@@ -7,6 +7,8 @@
 #include "../../ICoder.h"
 #include "../IArchive.h"
 
+#include "../../Common/CreateCoder.h"
+
 #include "ZipIn.h"
 #include "ZipCompressionMode.h"
 
@@ -21,14 +23,17 @@ class CHandler:
   public IInArchive,
   public IOutArchive,
   public ISetProperties,
+  PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP3(
-      IInArchive,
-      IOutArchive,
-      ISetProperties
-      )
+  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_ENTRY(IOutArchive)
+  MY_QUERYINTERFACE_ENTRY(ISetProperties)
+  QUERY_ENTRY_ISetCompressCodecsInfo
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(Open)(IInStream *aStream, 
       const UInt64 *aMaxCheckStartPosition,
@@ -57,6 +62,8 @@ public:
   // ISetProperties
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
 
+  DECL_ISetCompressCodecsInfo
+
   CHandler();
 private:
   CObjectVector<CItemEx> m_Items;
@@ -77,6 +84,8 @@ private:
   #ifdef COMPRESS_MT
   UInt32 _numThreads;
   #endif
+
+  DECL_EXTERNAL_CODECS_VARS
 
   void InitMethodProperties()
   {

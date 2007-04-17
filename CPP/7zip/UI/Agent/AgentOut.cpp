@@ -141,8 +141,8 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
 }
 
 STDMETHODIMP CAgent::DoOperation(
-    const wchar_t *filePath, 
-    const CLSID *clsID, 
+    CCodecs *codecs, 
+    int formatIndex,
     const wchar_t *newArchiveName, 
     const Byte *stateActions, 
     const wchar_t *sfxModule,
@@ -167,8 +167,6 @@ STDMETHODIMP CAgent::DoOperation(
     return errorCodes.Front();
   }
 
-  NWindows::NDLL::CLibrary library;
-
   CMyComPtr<IOutArchive> outArchive;
   if (GetArchive())
   {
@@ -176,9 +174,20 @@ STDMETHODIMP CAgent::DoOperation(
   }
   else
   {
-    CHandlerLoader loader;
-    RINOK(loader.CreateHandler(filePath, *clsID, (void **)&outArchive, true));
-    library.Attach(loader.Detach());
+    if (formatIndex < 0)
+      return E_FAIL;
+    RINOK(codecs->CreateOutArchive(formatIndex, outArchive));
+    #ifdef EXTERNAL_CODECS
+    {
+      CMyComPtr<ISetCompressCodecsInfo> setCompressCodecsInfo;
+      outArchive.QueryInterface(IID_ISetCompressCodecsInfo, (void **)&setCompressCodecsInfo);
+      if (setCompressCodecsInfo)
+      {
+        RINOK(setCompressCodecsInfo->SetCompressCodecsInfo(codecs));
+      }
+    }
+    #endif
+
   }
 
   NFileTimeType::EEnum fileTimeType;
@@ -281,6 +290,15 @@ STDMETHODIMP CAgent::DoOperation(
   return outArchive->UpdateItems(outStream, updatePairs2.Size(),updateCallback);
 }
 
+STDMETHODIMP CAgent::DoOperation2(
+    const wchar_t *newArchiveName, 
+    const Byte *stateActions, 
+    const wchar_t *sfxModule,
+    IFolderArchiveUpdateCallback *updateCallback100)
+{
+  return DoOperation(_codecs, -1, newArchiveName, 
+    stateActions, sfxModule, updateCallback100);
+}
 
 HRESULT CAgent::CommonUpdate(
     const wchar_t *newArchiveName,

@@ -15,9 +15,9 @@ UInt32 SPARC_Convert(Byte *data, UInt32 size, UInt32 nowPos, int encoding)
         ((UInt32)data[i + 1] << 16) |
         ((UInt32)data[i + 2] << 8) |
         ((UInt32)data[i + 3]);
+      UInt32 dest;
       
       src <<= 2;
-      UInt32 dest;
       if (encoding)
         dest = nowPos + i + src;
       else

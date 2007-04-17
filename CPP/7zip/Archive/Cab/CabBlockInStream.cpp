@@ -2,7 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Common/Alloc.h"
+extern "C" 
+{ 
+#include "../../../../C/Alloc.h"
+}
+
 #include "Common/Defs.h"
 
 #include "../../Common/StreamUtils.h"

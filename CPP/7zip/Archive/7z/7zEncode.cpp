@@ -4,84 +4,24 @@
 
 #include "7zEncode.h"
 #include "7zSpecStream.h"
-#include "7zMethods.h"
 
 #include "../../IPassword.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/InOutTempBuffer.h"
 #include "../../Common/StreamObjects.h"
-#include "../Common/FilterCoder.h"
+#include "../../Common/CreateCoder.h"
+#include "../../Common/FilterCoder.h"
 
-#ifdef COMPRESS_COPY
-static NArchive::N7z::CMethodID k_Copy = { { 0x0 }, 1 };
-#include "../../Compress/Copy/CopyCoder.h"
-#endif
-
-static NArchive::N7z::CMethodID k_LZMA = { { 0x3, 0x1, 0x1 }, 3 };
-static NArchive::N7z::CMethodID k_LZMA2 = { { 0x3, 0x1, 0x2 }, 3 };
-
-#ifdef COMPRESS_LZMA
-#include "../../Compress/LZMA/LZMAEncoder.h"
-#endif
-
-#ifdef COMPRESS_PPMD
-#include "../../Compress/PPMD/PPMDEncoder.h"
-static NArchive::N7z::CMethodID k_PPMD = { { 0x3, 0x4, 0x1 }, 3 };
-#endif
-
-#ifdef COMPRESS_BCJ_X86
-static NArchive::N7z::CMethodID k_BCJ_X86 = { { 0x3, 0x3, 0x1, 0x3 }, 4 };
-#include "../../Compress/Branch/x86.h"
-#endif
-
-#ifdef COMPRESS_BCJ2
-static NArchive::N7z::CMethodID k_BCJ2 = { { 0x3, 0x3, 0x1, 0x1B }, 4 };
-#include "../../Compress/Branch/x86_2.h"
-#endif
-
-#ifdef COMPRESS_DEFLATE
-#ifndef COMPRESS_DEFLATE_ENCODER
-#define COMPRESS_DEFLATE_ENCODER
-#endif
-#endif
-
-#ifdef COMPRESS_DEFLATE_ENCODER
-#include "../../Compress/Deflate/DeflateEncoder.h"
-static NArchive::N7z::CMethodID k_Deflate = { { 0x4, 0x1, 0x8 }, 3 };
-#endif
-
-#ifdef COMPRESS_BZIP2
-#ifndef COMPRESS_BZIP2_ENCODER
-#define COMPRESS_BZIP2_ENCODER
-#endif
-#endif
-
-#ifdef COMPRESS_BZIP2_ENCODER
-#include "../../Compress/BZip2/BZip2Encoder.h"
-static NArchive::N7z::CMethodID k_BZip2 = { { 0x4, 0x2, 0x2 }, 3 };
-#endif
-
-static NArchive::N7z::CMethodID k_AES = { { 0x6, 0xF1, 0x7, 0x1}, 4 };
-
-#ifndef EXCLUDE_COM
-static const wchar_t *kCryproMethod = L"7zAES";
-/*
-// {23170F69-40C1-278B-06F1-070100000100}
-DEFINE_GUID(CLSID_CCrypto7zAESEncoder, 
-0x23170F69, 0x40C1, 0x278B, 0x06, 0xF1, 0x07, 0x01, 0x00, 0x00, 0x01, 0x00);
-*/
-#endif
-
-#ifdef CRYPTO_7ZAES
-#include "../../Crypto/7zAES/7zAES.h"
-#endif
+static UInt64 k_LZMA = 0x030101;
+// static UInt64 k_LZMA2 = 0x030102;
+static UInt64 k_AES = 0x06F10701;
 
 namespace NArchive {
 namespace N7z {
 
 static void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &bindInfo,
-    const CRecordVector<CMethodID> decompressionMethods,
+    const CRecordVector<CMethodId> decompressionMethods,
     CFolder &folder)
 {
   folder.Coders.Clear();
@@ -103,20 +43,16 @@ static void ConvertBindInfoToFolderItemInfo(const NCoderMixer2::CBindInfo &bindI
     const NCoderMixer2::CCoderStreamsInfo &coderStreamsInfo = bindInfo.Coders[i];
     coderInfo.NumInStreams = coderStreamsInfo.NumInStreams;
     coderInfo.NumOutStreams = coderStreamsInfo.NumOutStreams;
-    
-    // coderInfo.MethodID = decompressionMethods[i];
-    // if (coderInfo.AltCoders.Size() == 0)
-    coderInfo.AltCoders.Add(CAltCoderInfo());
-    CAltCoderInfo &altCoderInfo = coderInfo.AltCoders.Front();
-    altCoderInfo.MethodID = decompressionMethods[i];
-
+    coderInfo.MethodID = decompressionMethods[i];
     folder.Coders.Add(coderInfo);
   }
   for (i = 0; i < bindInfo.InStreams.Size(); i++)
     folder.PackStreams.Add(bindInfo.InStreams[i]);
 }
 
-HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
+HRESULT CEncoder::CreateMixerCoder(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    const UInt64 *inSizeForReduce)
 {
   _mixerCoderSpec = new NCoderMixer2::CCoderMixer2MT;
   _mixerCoder = _mixerCoderSpec;
@@ -127,88 +63,19 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
     _codersInfo.Add(CCoderInfo());
     CCoderInfo &encodingInfo = _codersInfo.Back();
     CMyComPtr<ICompressCoder> encoder;
-    CMyComPtr<ICompressFilter> filter;
     CMyComPtr<ICompressCoder2> encoder2;
     
-    if (methodFull.IsSimpleCoder())
-    {
-      #ifdef COMPRESS_LZMA
-      if (methodFull.MethodID == k_LZMA)
-        encoder = new NCompress::NLZMA::CEncoder;
-      #endif
-      
-      #ifdef COMPRESS_PPMD
-      if (methodFull.MethodID == k_PPMD)
-        encoder = new NCompress::NPPMD::CEncoder;
-      #endif
-      
-      #ifdef COMPRESS_BCJ_X86
-      if (methodFull.MethodID == k_BCJ_X86)
-        filter = new CBCJ_x86_Encoder;
-      #endif
-      
-      #ifdef COMPRESS_COPY
-      if (methodFull.MethodID == k_Copy)
-        encoder = new NCompress::CCopyCoder;
-      #endif
-      
-      #ifdef COMPRESS_BZIP2_ENCODER
-      if (methodFull.MethodID == k_BZip2)
-        encoder = new NCompress::NBZip2::CEncoder;
-      #endif
-      
-      #ifdef COMPRESS_DEFLATE_ENCODER
-      if (methodFull.MethodID == k_Deflate)
-        encoder = new NCompress::NDeflate::NEncoder::CCOMCoder;
-      #endif
-      
-      #ifdef CRYPTO_7ZAES
-      if (methodFull.MethodID == k_AES)
-        filter = new NCrypto::NSevenZ::CEncoder;
-      #endif
 
-      if (filter)
-      {
-        CFilterCoder *coderSpec = new CFilterCoder;
-        encoder = coderSpec;
-        coderSpec->Filter = filter;
-      }
+    RINOK(CreateCoder(
+        EXTERNAL_CODECS_LOC_VARS
+        methodFull.MethodID, encoder, encoder2, true));
 
-      #ifndef EXCLUDE_COM
-      if (encoder == 0)
-      {
-        RINOK(_libraries.CreateCoderSpec(methodFull.FilePath, 
-              methodFull.EncoderClassID, &encoder));
-      }
-      #endif
-      
-      if (encoder == 0)
-        return E_FAIL;
-      
-    }
-    else
-    {
-      #ifdef COMPRESS_BCJ2
-      if (methodFull.MethodID == k_BCJ2)
-        encoder2 = new CBCJ2_x86_Encoder;
-      #endif
-      
-      #ifndef EXCLUDE_COM
-      if (encoder2 == 0)
-      {
-        RINOK(_libraries.CreateCoder2(methodFull.FilePath, 
-              methodFull.EncoderClassID, &encoder2));
-      }
-      #else
-      
-      if (encoder2 == 0)
-        return E_FAIL;
-      #endif
-    }
+    if (!encoder && !encoder2)
+      return E_FAIL;
 
     bool tryReduce = false;
     UInt32 reducedDictionarySize = 1 << 10;
-    if (inSizeForReduce != 0 && (methodFull.MethodID == k_LZMA || methodFull.MethodID == k_LZMA2))
+    if (inSizeForReduce != 0 && (methodFull.MethodID == k_LZMA /* || methodFull.MethodID == k_LZMA2 */))
     {
       for (;;)
       {
@@ -230,7 +97,7 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
       }
     }
 
-    CMyComPtr<IUnknown> encoderCommon = methodFull.IsSimpleCoder() ? (IUnknown *)encoder : (IUnknown *)encoder2;
+    CMyComPtr<IUnknown> encoderCommon = encoder ? (IUnknown *)encoder : (IUnknown *)encoder2;
    
     #ifdef COMPRESS_MT
     {
@@ -284,14 +151,18 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
       
       size_t size = outStreamSpec->GetSize();
       
-      // encodingInfo.Properties.SetCapacity(size);
-      if (encodingInfo.AltCoders.Size() == 0)
-        encodingInfo.AltCoders.Add(CAltCoderInfo());
-      CAltCoderInfo &altCoderInfo = encodingInfo.AltCoders.Front();
-      altCoderInfo.Properties.SetCapacity(size);
-      
-      memmove(altCoderInfo.Properties, outStreamSpec->GetBuffer(), size);
+      encodingInfo.Properties.SetCapacity(size);
+      memmove(encodingInfo.Properties, outStreamSpec->GetBuffer(), size);
     }
+
+    #ifdef EXTERNAL_CODECS
+    CMyComPtr<ISetCompressCodecsInfo> setCompressCodecsInfo;
+    encoderCommon.QueryInterface(IID_ISetCompressCodecsInfo, (void **)&setCompressCodecsInfo);
+    if (setCompressCodecsInfo)
+    {
+      RINOK(setCompressCodecsInfo->SetCompressCodecsInfo(codecsInfo));
+    }
+    #endif
     
     CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
     encoderCommon.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword);
@@ -310,7 +181,7 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
       RINOK(cryptoSetPassword->CryptoSetPassword((const Byte *)buffer, sizeInBytes));
     }
 
-    if (methodFull.IsSimpleCoder())
+    if (encoder)
       _mixerCoderSpec->AddCoder(encoder);
     else
       _mixerCoderSpec->AddCoder2(encoder2);
@@ -318,16 +189,20 @@ HRESULT CEncoder::CreateMixerCoder(const UInt64 *inSizeForReduce)
   return S_OK;
 }
 
-HRESULT CEncoder::Encode(ISequentialInStream *inStream,
+HRESULT CEncoder::Encode(
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    ISequentialInStream *inStream,
     const UInt64 *inStreamSize, const UInt64 *inSizeForReduce,
     CFolder &folderItem,
     ISequentialOutStream *outStream,
     CRecordVector<UInt64> &packSizes,
     ICompressProgressInfo *compressProgress)
 {
+  RINOK(EncoderConstr());
+
   if (_mixerCoderSpec == NULL)
   {
-    RINOK(CreateMixerCoder(inSizeForReduce));
+    RINOK(CreateMixerCoder(EXTERNAL_CODECS_LOC_VARS inSizeForReduce));
   }
   _mixerCoderSpec->ReInit();
   // _mixerCoderSpec->SetCoderInfo(0, NULL, NULL, progress);
@@ -423,50 +298,41 @@ HRESULT CEncoder::Encode(ISequentialInStream *inStream,
     folderItem.UnPackSizes.Add(streamSize);
   }
   for (i = numMethods - 1; i >= 0; i--)
-  {
-    // folderItem.Coders[numMethods - 1 - i].Properties = _codersInfo[i].Properties;
-    for (int j = 0; j < _codersInfo[i].AltCoders.Size(); j++)
-      folderItem.Coders[numMethods - 1 - i].AltCoders[j].Properties 
-          = _codersInfo[i].AltCoders[j].Properties;
-  }
+    folderItem.Coders[numMethods - 1 - i].Properties = _codersInfo[i].Properties;
   return S_OK;
 }
 
 
 CEncoder::CEncoder(const CCompressionMethodMode &options):
-  _bindReverseConverter(0)
+  _bindReverseConverter(0),
+  _constructed(false)
 {
   if (options.IsEmpty())
     throw 1;
 
   _options = options;
   _mixerCoderSpec = NULL;
+}
 
-  if (options.Methods.IsEmpty())
+HRESULT CEncoder::EncoderConstr()
+{
+  if (_constructed)
+    return S_OK;
+  if (_options.Methods.IsEmpty())
   {
     // it has only password method;
-    if (!options.PasswordIsDefined)
+    if (!_options.PasswordIsDefined)
       throw 1;
-    if (!options.Binds.IsEmpty())
+    if (!_options.Binds.IsEmpty())
       throw 1;
     NCoderMixer2::CCoderStreamsInfo coderStreamsInfo;
     CMethodFull method;
     
     method.NumInStreams = 1;
     method.NumOutStreams = 1;
-    coderStreamsInfo.NumInStreams = method.NumOutStreams;
-    coderStreamsInfo.NumOutStreams = method.NumInStreams;
+    coderStreamsInfo.NumInStreams = 1;
+    coderStreamsInfo.NumOutStreams = 1;
     method.MethodID = k_AES;
-
-    
-    #ifndef EXCLUDE_COM
-    CMethodInfo2 methodInfo;
-    if (!GetMethodInfo(kCryproMethod, methodInfo)) 
-      throw 2;
-    method.FilePath = methodInfo.FilePath;
-    method.EncoderClassID = methodInfo.Encoder;
-    // method.EncoderClassID = CLSID_CCrypto7zAESEncoder;
-    #endif
     
     _options.Methods.Add(method);
     _bindInfo.Coders.Add(coderStreamsInfo);
@@ -479,15 +345,15 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
 
   UInt32 numInStreams = 0, numOutStreams = 0;
   int i;
-  for (i = 0; i < options.Methods.Size(); i++)
+  for (i = 0; i < _options.Methods.Size(); i++)
   {
-    const CMethodFull &methodFull = options.Methods[i];
+    const CMethodFull &methodFull = _options.Methods[i];
     NCoderMixer2::CCoderStreamsInfo coderStreamsInfo;
     coderStreamsInfo.NumInStreams = methodFull.NumOutStreams;
     coderStreamsInfo.NumOutStreams = methodFull.NumInStreams;
-    if (options.Binds.IsEmpty())
+    if (_options.Binds.IsEmpty())
     {
-      if (i < options.Methods.Size() - 1)
+      if (i < _options.Methods.Size() - 1)
       {
         NCoderMixer2::CBindPair bindPair;
         bindPair.InIndex = numInStreams + coderStreamsInfo.NumInStreams;
@@ -506,12 +372,12 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
     _bindInfo.Coders.Add(coderStreamsInfo);
   }
 
-  if (!options.Binds.IsEmpty())
+  if (!_options.Binds.IsEmpty())
   {
-    for (i = 0; i < options.Binds.Size(); i++)
+    for (i = 0; i < _options.Binds.Size(); i++)
     {
       NCoderMixer2::CBindPair bindPair;
-      const CBind &bind = options.Binds[i];
+      const CBind &bind = _options.Binds[i];
       bindPair.InIndex = _bindInfo.GetCoderInStreamIndex(bind.InCoder) + bind.InStream;
       bindPair.OutIndex = _bindInfo.GetCoderOutStreamIndex(bind.OutCoder) + bind.OutStream;
       _bindInfo.BindPairs.Add(bindPair);
@@ -579,15 +445,6 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
       coderStreamsInfo.NumOutStreams = method.NumInStreams;
       method.MethodID = k_AES;
 
-      #ifndef EXCLUDE_COM
-      CMethodInfo2 methodInfo;
-      if (!GetMethodInfo(kCryproMethod, methodInfo)) 
-        throw 2;
-      method.FilePath = methodInfo.FilePath;
-      method.EncoderClassID = methodInfo.Encoder;
-      // method.EncoderClassID = CLSID_CCrypto7zAESEncoder;
-      #endif
-
       _options.Methods.Add(method);
       _bindInfo.Coders.Add(coderStreamsInfo);
       _bindInfo.OutStreams.Add(numOutStreams + i);
@@ -604,6 +461,8 @@ CEncoder::CEncoder(const CCompressionMethodMode &options):
 
   _bindReverseConverter = new NCoderMixer2::CBindReverseConverter(_bindInfo);
   _bindReverseConverter->CreateReverseBindInfo(_decompressBindInfo);
+  _constructed = true;
+  return S_OK;
 }
 
 CEncoder::~CEncoder()

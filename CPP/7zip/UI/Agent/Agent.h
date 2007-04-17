@@ -7,17 +7,14 @@
 #include "Windows/PropVariant.h"
 
 #include "../Common/UpdateAction.h"
-#include "../Common/ArchiverInfo.h"
 #include "../Common/OpenArchive.h"
 
 #include "IFolderArchive.h"
 #include "AgentProxy.h"
 
-#ifndef EXCLUDE_COM
-#include "Windows/DLL.h"
-#endif
 #ifdef NEW_FOLDER_INTERFACE
 #include "../../FileManager/IFolder.h"
+#include "../Common/LoadCodecs.h"
 #endif
 
 class CAgentFolder;
@@ -184,21 +181,10 @@ public:
 
   STDMETHOD(Open)(
       const wchar_t *filePath, 
-      // CLSID *clsIDResult,
       BSTR *archiveType,
       IArchiveOpenCallback *openArchiveCallback);  
 
-  STDMETHOD(ReOpen)(
-      // const wchar_t *filePath, 
-      IArchiveOpenCallback *openArchiveCallback);  
-  /*
-  STDMETHOD(ReOpen)(IInStream *stream, 
-      const wchar_t *defaultName,
-      const FILETIME *defaultTime,
-      UINT32 defaultAttributes,
-      const UINT64 *maxCheckStartPosition,
-      IArchiveOpenCallback *openArchiveCallback);  
-  */
+  STDMETHOD(ReOpen)(IArchiveOpenCallback *openArchiveCallback);  
   STDMETHOD(Close)();  
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
   STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
@@ -221,8 +207,13 @@ public:
   STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, const UINT32 *indices, 
       UINT32 numItems, IFolderArchiveUpdateCallback *updateCallback);
   STDMETHOD(DoOperation)(
-      const wchar_t *filePath, 
-      const CLSID *clsID, 
+      CCodecs *codecs, 
+      int formatIndex,
+      const wchar_t *newArchiveName, 
+      const Byte *stateActions, 
+      const wchar_t *sfxModule,
+      IFolderArchiveUpdateCallback *updateCallback);
+  STDMETHOD(DoOperation2)(
       const wchar_t *newArchiveName, 
       const Byte *stateActions, 
       const wchar_t *sfxModule,
@@ -247,6 +238,9 @@ public:
   // ISetProperties
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, INT32 numProperties);
   #endif
+
+  CCodecs *_codecs;
+  CMyComPtr<ICompressCodecsInfo> _compressCodecsInfo;
 
   CAgent();
   ~CAgent();
@@ -288,26 +282,22 @@ public:
 #ifdef NEW_FOLDER_INTERFACE
 class CArchiveFolderManager: 
   public IFolderManager,
-  public IFolderManagerGetIconPath,
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP2(
-    IFolderManager,
-    IFolderManagerGetIconPath
-    )
+  MY_UNKNOWN_IMP1(IFolderManager)
   // IFolderManager
   STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress);
-  STDMETHOD(GetTypes)(BSTR *types);
-  STDMETHOD(GetExtension)(const wchar_t *type, BSTR *extension);
-  STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress);
-  STDMETHOD(GetIconPath)(const wchar_t *type, BSTR *iconPath);
-  CArchiveFolderManager(): _formatsLoaded(false) {}
+  STDMETHOD(GetExtensions)(BSTR *extensions);
+  STDMETHOD(GetIconPath)(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex);
+  // STDMETHOD(GetTypes)(BSTR *types);
+  // STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress);
+  CArchiveFolderManager(): _codecs(0) {}
 private:
   void LoadFormats();
   int FindFormat(const UString &type); 
-  bool _formatsLoaded;
-  CObjectVector<CArchiverInfo> _formats;
+  CCodecs *_codecs;
+  CMyComPtr<ICompressCodecsInfo> _compressCodecsInfo;
 };
 #endif
 

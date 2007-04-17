@@ -7,15 +7,21 @@
 #include "RarIn.h"
 #include "RarVolumeInStream.h"
 
+#include "../../Common/CreateCoder.h"
+
 namespace NArchive {
 namespace NRar {
 
 class CHandler: 
   public IInArchive,
+  PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP
+  MY_QUERYINTERFACE_BEGIN
+  QUERY_ENTRY_ISetCompressCodecsInfo
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
   
   STDMETHOD(Open)(IInStream *aStream, 
       const UInt64 *aMaxCheckStartPosition,
@@ -36,11 +42,15 @@ public:
   STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType);
 
+  DECL_ISetCompressCodecsInfo
+
 private:
   CRecordVector<CRefItem> _refItems;
   CObjectVector<CItemEx> _items;
   CObjectVector<CInArchive> _archives;
   NArchive::NRar::CInArchiveInfo _archiveInfo;
+
+  DECL_EXTERNAL_CODECS_VARS
 
   UInt64 GetPackSize(int refIndex) const;
   // NArchive::NRar::CInArchive _archive;

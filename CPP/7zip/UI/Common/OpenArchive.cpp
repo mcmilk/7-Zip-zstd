@@ -16,42 +16,6 @@
 
 #include "Common/StringConvert.h"
 
-#ifdef FORMAT_7Z
-#include "../../Archive/7z/7zHandler.h"
-#endif
-
-#ifdef FORMAT_BZIP2
-#include "../../Archive/BZip2/BZip2Handler.h"
-#endif
-
-#ifdef FORMAT_CAB
-#include "../../Archive/Cab/CabHandler.h"
-#endif
-
-#ifdef FORMAT_GZIP
-#include "../../Archive/GZip/GZipHandler.h"
-#endif
-
-#ifdef FORMAT_SPLIT
-#include "../../Archive/Split/SplitHandler.h"
-#endif
-
-#ifdef FORMAT_TAR
-#include "../../Archive/Tar/TarHandler.h"
-#endif
-
-#ifdef FORMAT_ZIP
-#include "../../Archive/Zip/ZipHandler.h"
-#endif
-
-#ifdef FORMAT_Z
-#include "../../Archive/Z/ZHandler.h"
-#endif
-
-#ifndef EXCLUDE_COM
-#include "HandlerLoader.h"
-#endif
-
 #include "DefaultName.h"
 
 using namespace NWindows;
@@ -136,19 +100,15 @@ static inline bool TestSignature(const Byte *p1, const Byte *p2, size_t size)
 #endif
 
 HRESULT OpenArchive(
+    CCodecs *codecs,
     IInStream *inStream,
     const UString &fileName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
     IInArchive **archiveResult, 
-    CArchiverInfo &archiverInfoResult,
+    int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback)
 {
   *archiveResult = NULL;
-  CObjectVector<CArchiverInfo> archiverInfoList;
-  ReadArchiverInfoList(archiverInfoList);
   UString extension;
   {
     int dotPos = fileName.ReverseFind(L'.');
@@ -157,21 +117,17 @@ HRESULT OpenArchive(
   }
   CIntVector orderIndices;
   int i;
-  bool finded = false;
-  for(i = 0; i < archiverInfoList.Size(); i++)
-  {
-    if (archiverInfoList[i].FindExtension(extension) >= 0)
-    {
-      orderIndices.Insert(0, i);
-      finded = true;
-    }
+  int numFinded = 0;
+  for (i = 0; i < codecs->Formats.Size(); i++)
+    if (codecs->Formats[i].FindExtension(extension) >= 0)
+      orderIndices.Insert(numFinded++, i);
     else
       orderIndices.Add(i);
-  }
   
   #ifndef _SFX
-  if (!finded)
+  if (numFinded != 1)
   {
+    CIntVector orderIndices2;
     CByteBuffer byteBuffer;
     const UInt32 kBufferSize = (200 << 10);
     byteBuffer.SetCapacity(kBufferSize);
@@ -179,13 +135,12 @@ HRESULT OpenArchive(
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
     UInt32 processedSize;
     RINOK(ReadStream(inStream, buffer, kBufferSize, &processedSize));
-    int numFinded = 0;
-    for (int pos = (int)processedSize; pos >= 0 ; pos--)
+    for (UInt32 pos = 0; pos < processedSize; pos++)
     {
-      for(int i = numFinded; i < orderIndices.Size(); i++)
+      for (int i = 0; i < orderIndices.Size(); i++)
       {
         int index = orderIndices[i];
-        const CArchiverInfo &ai = archiverInfoList[index];
+        const CArcInfoEx &ai = codecs->Formats[index];
         const CByteBuffer &sig = ai.StartSignature;
         if (sig.GetCapacity() == 0)
           continue;
@@ -193,12 +148,13 @@ HRESULT OpenArchive(
           continue;
         if (TestSignature(buffer + pos, sig, sig.GetCapacity()))
         {
-          orderIndices.Delete(i);
-          orderIndices.Insert(0, index);
-          numFinded++;
+          orderIndices2.Add(index);
+          orderIndices.Delete(i--);
         }
       }
     }
+    orderIndices2 += orderIndices;
+    orderIndices = orderIndices2;
   }
   #endif
 
@@ -206,68 +162,27 @@ HRESULT OpenArchive(
   for(i = 0; i < orderIndices.Size(); i++)
   {
     inStream->Seek(0, STREAM_SEEK_SET, NULL);
-    const CArchiverInfo &archiverInfo = archiverInfoList[orderIndices[i]];
-    #ifndef EXCLUDE_COM
-    CHandlerLoader loader;
-    #endif
+
     CMyComPtr<IInArchive> archive;
 
-    #ifdef FORMAT_7Z
-    if (archiverInfo.Name.CompareNoCase(L"7z") == 0)
-      archive = new NArchive::N7z::CHandler;
-    #endif
-
-    #ifdef FORMAT_BZIP2
-    if (archiverInfo.Name.CompareNoCase(L"BZip2") == 0)
-      archive = new NArchive::NBZip2::CHandler;
-    #endif
-
-    #ifdef FORMAT_CAB
-    if (archiverInfo.Name.CompareNoCase(L"Cab") == 0)
-      archive = new NArchive::NCab::CHandler;
-    #endif
-
-    #ifdef FORMAT_GZIP
-    if (archiverInfo.Name.CompareNoCase(L"GZip") == 0)
-      archive = new NArchive::NGZip::CHandler;
-    #endif
-
-    #ifdef FORMAT_SPLIT
-    if (archiverInfo.Name.CompareNoCase(L"Split") == 0)
-      archive = new NArchive::NSplit::CHandler;
-    #endif
-
-    #ifdef FORMAT_TAR
-    if (archiverInfo.Name.CompareNoCase(L"Tar") == 0)
-      archive = new NArchive::NTar::CHandler;
-    #endif
-
-    #ifdef FORMAT_ZIP
-    if (archiverInfo.Name.CompareNoCase(L"Zip") == 0)
-      archive = new NArchive::NZip::CHandler;
-    #endif
-
-    #ifdef FORMAT_Z
-    if (archiverInfo.Name.CompareNoCase(L"Z") == 0)
-      archive = new NArchive::NZ::CHandler;
-    #endif
-
-
-    #ifndef EXCLUDE_COM
+    formatIndex = orderIndices[i];
+    RINOK(codecs->CreateInArchive(formatIndex, archive));
     if (!archive)
+      continue;
+
+    #ifdef EXTERNAL_CODECS
     {
-      HRESULT result = loader.CreateHandler(archiverInfo.FilePath, 
-          archiverInfo.ClassID, (void **)&archive, false);
-      if (result != S_OK)
-        continue;
+      CMyComPtr<ISetCompressCodecsInfo> setCompressCodecsInfo;
+      archive.QueryInterface(IID_ISetCompressCodecsInfo, (void **)&setCompressCodecsInfo);
+      if (setCompressCodecsInfo)
+      {
+        RINOK(setCompressCodecsInfo->SetCompressCodecsInfo(codecs));
+      }
     }
     #endif
-    
-    if (!archive)
-      return E_FAIL;
-    
+
     HRESULT result = archive->Open(inStream, &kMaxCheckStartPosition, openArchiveCallback);
-    if(result == S_FALSE)
+    if (result == S_FALSE)
       continue;
     if(result != S_OK)
     {
@@ -277,17 +192,20 @@ HRESULT OpenArchive(
       continue;
     }
     *archiveResult = archive.Detach();
-    #ifndef EXCLUDE_COM
-    *module = loader.Detach();
-    #endif
-    archiverInfoResult = archiverInfo;
-    int subExtIndex = archiverInfo.FindExtension(extension);
-    if (subExtIndex < 0)
-      subExtIndex = 0;
-    defaultItemName = GetDefaultName2(fileName, 
-        archiverInfo.Extensions[subExtIndex].Ext, 
-        archiverInfo.Extensions[subExtIndex].AddExt);
-
+    const CArcInfoEx &format = codecs->Formats[formatIndex];
+    if (format.Exts.Size() == 0)
+    {
+      defaultItemName = GetDefaultName2(fileName, L"", L"");
+    }
+    else
+    {
+      int subExtIndex = format.FindExtension(extension);
+      if (subExtIndex < 0)
+        subExtIndex = 0;
+      defaultItemName = GetDefaultName2(fileName, 
+          format.Exts[subExtIndex].Ext, 
+          format.Exts[subExtIndex].AddExt);
+    }
     return S_OK;
   }
   if (badResult != S_OK)
@@ -295,12 +213,11 @@ HRESULT OpenArchive(
   return S_FALSE;
 }
 
-HRESULT OpenArchive(const UString &filePath, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &filePath, 
     IInArchive **archiveResult, 
-    CArchiverInfo &archiverInfo,
+    int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback)
 {
@@ -308,11 +225,8 @@ HRESULT OpenArchive(const UString &filePath,
   CMyComPtr<IInStream> inStream(inStreamSpec);
   if (!inStreamSpec->Open(filePath))
     return GetLastError();
-  return OpenArchive(inStream, ExtractFileNameFromPath(filePath),
-    #ifndef EXCLUDE_COM
-    module,
-    #endif
-    archiveResult, archiverInfo,
+  return OpenArchive(codecs, inStream, ExtractFileNameFromPath(filePath),
+    archiveResult, formatIndex,
     defaultItemName, openArchiveCallback);
 }
 
@@ -330,24 +244,19 @@ static void MakeDefaultName(UString &name)
   name = name.Left(dotPos);
 }
 
-HRESULT OpenArchive(const UString &fileName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module0,
-    HMODULE *module1,
-    #endif
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &fileName, 
     IInArchive **archive0, 
     IInArchive **archive1, 
-    CArchiverInfo &archiverInfo0,
-    CArchiverInfo &archiverInfo1,
+    int &formatIndex0,
+    int &formatIndex1,
     UString &defaultItemName0,
     UString &defaultItemName1,
     IArchiveOpenCallback *openArchiveCallback)
 {
-  HRESULT result = OpenArchive(fileName, 
-    #ifndef EXCLUDE_COM
-    module0,
-    #endif
-    archive0, archiverInfo0, defaultItemName0, openArchiveCallback);
+  HRESULT result = OpenArchive(codecs, fileName, 
+      archive0, formatIndex0, defaultItemName0, openArchiveCallback);
   RINOK(result);
   CMyComPtr<IInArchiveGetStream> getStream;
   result = (*archive0)->QueryInterface(IID_IInArchiveGetStream, (void **)&getStream);
@@ -376,7 +285,8 @@ HRESULT OpenArchive(const UString &fileName,
   {
     MakeDefaultName(defaultItemName0);
     subPath = defaultItemName0;
-    if (archiverInfo0.Name.CompareNoCase(L"7z") == 0)
+    const CArcInfoEx &format = codecs->Formats[formatIndex0];
+    if (format.Name.CompareNoCase(L"7z") == 0)
     {
       if (subPath.Right(3).CompareNoCase(L".7z") != 0)
         subPath += L".7z";
@@ -390,21 +300,15 @@ HRESULT OpenArchive(const UString &fileName,
   if (setSubArchiveName)
     setSubArchiveName->SetSubArchiveName(subPath);
 
-  result = OpenArchive(subStream, subPath, 
-    #ifndef EXCLUDE_COM
-    module1,
-    #endif
-    archive1, archiverInfo1, defaultItemName1, openArchiveCallback);
+  result = OpenArchive(codecs, subStream, subPath,
+      archive1, formatIndex1, defaultItemName1, openArchiveCallback);
   return S_OK;
 }
 
-HRESULT MyOpenArchive(const UString &archiveName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module,
-    #endif
-    IInArchive **archive,
-    UString &defaultItemName,
-    IOpenCallbackUI *openCallbackUI)
+HRESULT MyOpenArchive(
+    CCodecs *codecs, 
+    const UString &archiveName,
+    IInArchive **archive, UString &defaultItemName, IOpenCallbackUI *openCallbackUI)
 {
   COpenCallbackImp *openCallbackSpec = new COpenCallbackImp;
   CMyComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
@@ -417,22 +321,13 @@ HRESULT MyOpenArchive(const UString &archiveName,
       fullName.Left(fileNamePartStartIndex), 
       fullName.Mid(fileNamePartStartIndex));
 
-  CArchiverInfo archiverInfo;
-  return OpenArchive(archiveName, 
-      #ifndef EXCLUDE_COM
-      module,
-      #endif
-      archive, 
-      archiverInfo, 
-      defaultItemName,
-      openCallback);
+  int formatInfo;
+  return OpenArchive(codecs, archiveName, archive, formatInfo, defaultItemName, openCallback);
 }
 
-HRESULT MyOpenArchive(const UString &archiveName, 
-    #ifndef EXCLUDE_COM
-    HMODULE *module0,
-    HMODULE *module1,
-    #endif
+HRESULT MyOpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName,
     IInArchive **archive0,
     IInArchive **archive1,
     UString &defaultItemName0,
@@ -451,20 +346,15 @@ HRESULT MyOpenArchive(const UString &archiveName,
   UString name = fullName.Mid(fileNamePartStartIndex);
   openCallbackSpec->Init(prefix, name);
 
-  CArchiverInfo archiverInfo0, archiverInfo1;
-  HRESULT result = OpenArchive(archiveName, 
-      #ifndef EXCLUDE_COM
-      module0,
-      module1,
-      #endif
+  int formatIndex0, formatIndex1;
+  RINOK(OpenArchive(codecs, archiveName,
       archive0, 
       archive1, 
-      archiverInfo0, 
-      archiverInfo1, 
+      formatIndex0, 
+      formatIndex1, 
       defaultItemName0,
       defaultItemName1,
-      openCallback);
-  RINOK(result);
+      openCallback));
   volumePaths.Add(prefix + name);
   for (int i = 0; i < openCallbackSpec->FileNames.Size(); i++)
     volumePaths.Add(prefix + openCallbackSpec->FileNames[i]);
@@ -482,50 +372,40 @@ HRESULT CArchiveLink::Close()
 
 void CArchiveLink::Release()
 {
-  if (Archive1 != 0)
-    Archive1.Release();
-  if (Archive0 != 0)
-    Archive0.Release();
-  #ifndef EXCLUDE_COM
-  Library1.Free();
-  Library0.Free();
-  #endif
+  Archive1.Release();
+  Archive0.Release();
 }
 
-HRESULT OpenArchive(const UString &archiveName, 
+HRESULT OpenArchive(
+    CCodecs *codecs,
+    const UString &archiveName,
     CArchiveLink &archiveLink,
     IArchiveOpenCallback *openCallback)
 {
-  return OpenArchive(archiveName, 
-    #ifndef EXCLUDE_COM
-    &archiveLink.Library0, &archiveLink.Library1,
-    #endif
+  return OpenArchive(codecs, archiveName, 
     &archiveLink.Archive0, &archiveLink.Archive1, 
-    archiveLink.ArchiverInfo0, archiveLink.ArchiverInfo1, 
+    archiveLink.FormatIndex0, archiveLink.FormatIndex1, 
     archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
     openCallback);
 }
 
-HRESULT MyOpenArchive(const UString &archiveName, 
+HRESULT MyOpenArchive(CCodecs *codecs,
+    const UString &archiveName, 
     CArchiveLink &archiveLink,
     IOpenCallbackUI *openCallbackUI)
 {
-  return MyOpenArchive(archiveName, 
-    #ifndef EXCLUDE_COM
-    &archiveLink.Library0, &archiveLink.Library1,
-    #endif
+  return MyOpenArchive(codecs, archiveName,
     &archiveLink.Archive0, &archiveLink.Archive1, 
     archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
     archiveLink.VolumePaths,
     openCallbackUI);
 }
 
-HRESULT ReOpenArchive(CArchiveLink &archiveLink, 
-    const UString &fileName)
+HRESULT ReOpenArchive(CCodecs *codecs, CArchiveLink &archiveLink, const UString &fileName)
 {
   if (archiveLink.GetNumLevels() > 1)
     return E_NOTIMPL;
   if (archiveLink.GetNumLevels() == 0)
-    return MyOpenArchive(fileName, archiveLink, 0);
+    return MyOpenArchive(codecs, fileName, archiveLink, 0);
   return ReOpenArchive(archiveLink.GetArchive(), fileName);
 }

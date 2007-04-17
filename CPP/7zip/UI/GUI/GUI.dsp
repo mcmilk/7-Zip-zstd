@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -176,20 +176,518 @@ SOURCE=.\StdAfx.cpp
 SOURCE=.\StdAfx.h
 # End Source File
 # End Group
-# Begin Group "SDK"
+# Begin Group "UI Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Common\ArchiveCommandLine.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveCommandLine.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ArchiveOpenCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\DefaultName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\DefaultName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\DirItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\EnumDirItems.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\EnumDirItems.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExitCode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Extract.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractMode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HandlerLoader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\IFileExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\LoadCodecs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\OpenArchive.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\OpenArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Property.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\PropIDUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\PropIDUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\SetProperties.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\SetProperties.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\SortUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\SortUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\TempFiles.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\TempFiles.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Update.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateAction.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateAction.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdatePair.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdatePair.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateProduce.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\UpdateProduce.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\WorkDir.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\WorkDir.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ZipRegistry.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ZipRegistry.h
+# End Source File
+# End Group
+# Begin Group "Explorer"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\Explorer\MyMessages.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Explorer\MyMessages.h
+# End Source File
+# End Group
+# Begin Group "Dialogs"
+
+# PROP Default_Filter ""
+# Begin Group "Progress"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
+# End Source File
+# End Group
+# Begin Group "Messages"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
+# End Source File
+# End Group
+# Begin Group "Overwtite"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
+# End Source File
+# End Group
+# Begin Group "Password"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
+# End Source File
+# End Group
+# Begin Group "Compress Dialog"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\CompressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\CompressDialog.h
+# End Source File
+# End Group
+# Begin Group "Extract Dialog"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\ExtractDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractDialog.h
+# End Source File
+# End Group
+# Begin Group "Benchmark Dialog"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
+# End Source File
+# End Group
+# End Group
+# Begin Group "FM Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\FileManager\ExtractCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\ExtractCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\FolderInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\FormatUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\FormatUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\HelpUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\HelpUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\LangUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\LangUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\OpenCallback.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\OpenCallback.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\ProgramLocation.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\ProgramLocation.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\RegistryUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\RegistryUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\SplitUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\SplitUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\StringUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\StringUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\UpdateCallback100.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\FileManager\UpdateCallback100.h
+# End Source File
+# End Group
+# Begin Group "Engine"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\ExtractGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\OpenCallbackGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\OpenCallbackGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateCallbackGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateCallbackGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\UpdateGUI.h
+# End Source File
+# End Group
+# Begin Group "7-zip Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FilePathAutoRename.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# End Group
+# Begin Group "Compress"
+
+# PROP Default_Filter ""
+# Begin Group "LZMA Bench"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBench.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LZMA_Alone\LzmaBench.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Copy\CopyCoder.h
+# End Source File
+# End Group
+# Begin Group "C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.c
+
+!IF  "$(CFG)" == "GUI - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# End Group
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.cpp
@@ -197,6 +695,10 @@ SOURCE=..\..\..\Common\CommandLineParser.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
@@ -448,456 +950,15 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\System.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Window.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Window.h
-# End Source File
-# End Group
-# End Group
-# Begin Group "UI Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Common\ArchiveCommandLine.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveCommandLine.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveOpenCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveOpenCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiverInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiverInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DefaultName.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DirItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\EnumDirItems.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\EnumDirItems.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExitCode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Extract.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Extract.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractingFilePath.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractingFilePath.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractMode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\HandlerLoader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\IFileExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\OpenArchive.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\OpenArchive.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Property.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\PropIDUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\PropIDUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SetProperties.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SetProperties.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SortUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SortUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\TempFiles.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\TempFiles.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Update.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Update.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateAction.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateAction.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdatePair.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdatePair.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateProduce.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateProduce.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\WorkDir.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\WorkDir.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ZipRegistry.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ZipRegistry.h
-# End Source File
-# End Group
-# Begin Group "Explorer"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Explorer\MyMessages.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Explorer\MyMessages.h
-# End Source File
-# End Group
-# Begin Group "Dialogs"
-
-# PROP Default_Filter ""
-# Begin Group "Progress"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
-# End Source File
-# End Group
-# Begin Group "Messages"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
-# End Source File
-# End Group
-# Begin Group "Overwtite"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
-# End Source File
-# End Group
-# Begin Group "Password"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
-# End Source File
-# End Group
-# Begin Group "Compress Dialog"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\CompressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\CompressDialog.h
-# End Source File
-# End Group
-# Begin Group "Extract Dialog"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\ExtractDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractDialog.h
-# End Source File
-# End Group
-# End Group
-# Begin Group "FM Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\FileManager\ExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\ExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\FolderInterface.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\FormatUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\FormatUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\HelpUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\HelpUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\LangUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\LangUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\OpenCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\OpenCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\ProgramLocation.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\ProgramLocation.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\RegistryUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\RegistryUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\SplitUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\SplitUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\StringUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\StringUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.h
-# End Source File
-# End Group
-# Begin Group "Engine"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\ExtractGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractGUI.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\GUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\OpenCallbackGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\OpenCallbackGUI.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateCallbackGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateCallbackGUI.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\UpdateGUI.h
-# End Source File
-# End Group
-# Begin Group "7-zip Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.h
-# End Source File
-# End Group
-# Begin Group "Compress"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.h
 # End Source File
 # End Group
 # End Target

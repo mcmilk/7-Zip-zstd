@@ -1,6 +1,13 @@
 PROG = 7zG.exe
 LIBS = $(LIBS) user32.lib advapi32.lib oleaut32.lib shell32.lib comctl32.lib htmlhelp.lib ole32.lib comdlg32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -DLANG -DCOMPRESS_MT -DWIN_LONG_PATH
+CFLAGS = $(CFLAGS) -I ../../../  \
+  -DLANG \
+  -DCOMPRESS_MT \
+  -DWIN_LONG_PATH \
+  -DEXTERNAL_LZMA \
+  -DEXTERNAL_CODECS \
+  -DBENCH_MT \
+  -D_7ZIP_LARGE_PAGES \
 
 GUI_OBJS = \
   $O\CompressDialog.obj \
@@ -12,8 +19,8 @@ GUI_OBJS = \
   $O\UpdateGUI.obj \
 
 COMMON_OBJS = \
-  $O\Alloc.obj \
   $O\CommandLineParser.obj \
+  $O\CRC.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
   $O\ListFileUtils.obj \
@@ -58,11 +65,11 @@ UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
-  $O\ArchiverInfo.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
   $O\ExtractingFilePath.obj \
+  $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
   $O\SetProperties.obj \
@@ -76,6 +83,9 @@ UI_COMMON_OBJS = \
   $O\WorkDir.obj \
   $O\ZipRegistry.obj \
 
+LZMA_BENCH_OBJS = \
+  $O\LzmaBench.obj \
+
 FM_OBJS = \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
@@ -87,6 +97,11 @@ FM_OBJS = \
   $O\SplitUtils.obj \
   $O\StringUtils.obj \
   $O\UpdateCallback100.obj \
+
+C_OBJS = \
+  $O\Alloc.obj \
+
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -102,7 +117,11 @@ OBJS = \
   $O\OverwriteDialog.obj \
   $O\PasswordDialog.obj \
   $O\ProgressDialog.obj \
+  $O\BenchmarkDialog.obj \
   $O\CopyCoder.obj \
+  $(LZMA_BENCH_OBJS) \
+  $(C_OBJS) \
+  $(CRC_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -131,5 +150,14 @@ $O\PasswordDialog.obj: ../../FileManager/Resource/PasswordDialog/$(*B).cpp
 	$(COMPL)
 $O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog2/$(*B).cpp
 	$(COMPL)
+$O\BenchmarkDialog.obj: Resource/BenchmarkDialog/$(*B).cpp
+	$(COMPL)
+
+
 $O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
 	$(COMPL)
+$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
+	$(COMPL)
+$(C_OBJS): ../../../../C/$(*B).c
+	$(COMPL_O2)
+!include "../../Crc.mak"

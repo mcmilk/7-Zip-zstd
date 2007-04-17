@@ -1,12 +1,12 @@
-// Crypto/RarAES/RarAES.h
+// RarAES.cpp
 // This code is based on UnRar sources
 
 #include "StdAfx.h"
 
 #include "RarAES.h"
+#include "../../Common/MethodID.h"
 #include "../Hash/Sha1.h"
-
-extern void GetCryptoFolderPrefix(TCHAR *path);
+#include "../AES/MyAES.h"
 
 namespace NCrypto {
 namespace NRar29 {
@@ -77,23 +77,14 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  RINOK(CreateFilter());
+  if (!_aesFilter)
+    _aesFilter = new CAES_CBC_Decoder;
   CMyComPtr<ICryptoProperties> cp;
   RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
   RINOK(cp->SetKey(aesKey, 16));
   RINOK(cp->SetInitVector(aesInit, 16));
   _aesFilter->Init();
   return S_OK;
-}
-
-HRESULT CDecoder::CreateFilter()
-{
-  if (_aesFilter)
-    return S_OK;
-  TCHAR aesLibPath[MAX_PATH + 64];
-  GetCryptoFolderPrefix(aesLibPath);
-  lstrcat(aesLibPath, TEXT("AES.dll"));
-  return _aesLib.LoadAndCreateFilter(aesLibPath, CLSID_CCrypto_AES_CBC_Decoder, &_aesFilter);
 }
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
@@ -151,37 +142,5 @@ void CDecoder::Calculate()
   }
   _needCalculate = false;
 }
-
-
-
-/*
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, UInt64 const *inSize, 
-      const UInt64 *outSize,ICompressProgressInfo *progress)
-{
-  Calculate();
-  TCHAR aesLibPath[MAX_PATH + 64];
-  GetCryptoFolderPrefix(aesLibPath);
-  lstrcat(aesLibPath, TEXT("AES.dll"));
-  CCoderLibrary aesLib;
-  CMyComPtr<ICompressCoder2> aesDecoder;
-  RINOK(aesLib.LoadAndCreateCoder2(aesLibPath, CLSID_CCrypto_AES128_Decoder, &aesDecoder));
-
-  CSequentialInStreamImp *ivStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> ivStream(ivStreamSpec);
-  ivStreamSpec->Init(aesInit, 16);
-
-  CSequentialInStreamImp *keyStreamSpec = new CSequentialInStreamImp;
-  CMyComPtr<ISequentialInStream> keyStream(keyStreamSpec);
-  keyStreamSpec->Init(aesKey, 16);
-
-  ISequentialInStream *inStreams[3] = { inStream, ivStream, keyStream };
-  UInt64 ivSize = 16;
-  UInt64 keySize = 16;
-  const UInt64 *inSizes[3] = { inSize, &ivSize, &ivSize, };
-  return aesDecoder->Code(inStreams, inSizes, 3, 
-      &outStream, &outSize, 1, progress);
-}
-*/
 
 }}

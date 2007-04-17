@@ -97,7 +97,11 @@ SOURCE=..\Codec.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\DllExports.cpp
+SOURCE=..\..\Compress\CodecExports.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\DllExports.cpp
 # End Source File
 # Begin Source File
 
@@ -116,14 +120,6 @@ SOURCE=.\StdAfx.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Alloc.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\NewHandler.cpp
@@ -174,27 +170,11 @@ SOURCE=..\..\..\Common\StringConvert.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Windows\DLL.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\DLL.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
-# End Source File
-# End Group
-# Begin Group "Archive Common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderLoader.h
 # End Source File
 # End Group
 # Begin Group "Hash"
@@ -223,6 +203,107 @@ SOURCE=..\Hash\Sha256.cpp
 SOURCE=..\Hash\Sha256.h
 # End Source File
 # End Group
+# Begin Group "Ñ"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# End Group
+# Begin Group "AES"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\AES\aes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\AES_CBC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\aescpp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\aescrypt.c
+
+!IF  "$(CFG)" == "7zAES - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\aeskey.c
+
+!IF  "$(CFG)" == "7zAES - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\aesopt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\aestab.c
+
+!IF  "$(CFG)" == "7zAES - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\MyAES.cpp
+
+!IF  "$(CFG)" == "7zAES - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7zAES - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\AES\MyAES.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\7zAES.cpp
@@ -240,6 +321,10 @@ SOURCE=.\7zAES.cpp
 # Begin Source File
 
 SOURCE=.\7zAES.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\7zAESRegister.cpp
 # End Source File
 # End Target
 # End Project

@@ -1,5 +1,0 @@
-#include "../../MyVersionInfo.rc"
-
-MY_VERSION_INFO_DLL("Deb Plugin", "deb")
-
-101  ICON  "deb.ico"

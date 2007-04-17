@@ -5,7 +5,6 @@
 #include "GZipHandler.h"
 
 #include "Common/Defs.h"
-#include "Common/CRC.h"
 #include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 #include "Windows/PropVariant.h"
@@ -13,22 +12,15 @@
 
 #include "../../ICoder.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/CreateCoder.h"
 #include "../Common/OutStreamWithCRC.h"
-
-#ifdef COMPRESS_DEFLATE
-#include "../../Compress/Deflate/DeflateDecoder.h"
-#else
-// {23170F69-40C1-278B-0401-080000000000}
-DEFINE_GUID(CLSID_CCompressDeflateDecoder, 
-0x23170F69, 0x40C1, 0x278B, 0x04, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00);
-#include "../Common/CoderLoader.h"
-extern CSysString GetDeflateCodecPath();
-#endif
 
 using namespace NWindows;
 
 namespace NArchive {
 namespace NGZip {
+
+static const CMethodId kMethodId_Deflate = 0x040108;
 
 const wchar_t *kHostOS[] = 
 {
@@ -269,9 +261,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       new CLocalCompressProgressInfo;
   CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
 
-  #ifndef COMPRESS_DEFLATE
-  CCoderLibrary lib;
-  #endif
   CMyComPtr<ICompressCoder> deflateDecoder;
   bool firstItem = true;
   RINOK(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL));
@@ -305,12 +294,15 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         if(!deflateDecoder)
         {
-          #ifdef COMPRESS_DEFLATE
-          deflateDecoder = new NCompress::NDeflate::NDecoder::CCOMCoder;
-          #else
-          RINOK(lib.LoadAndCreateCoder(GetDeflateCodecPath(), 
-              CLSID_CCompressDeflateDecoder, &deflateDecoder));
-          #endif
+          RINOK(CreateCoder(
+              EXTERNAL_CODECS_VARS
+              kMethodId_Deflate, deflateDecoder, false));
+          if (!deflateDecoder)
+          {
+            outStream.Release();
+            RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+            return S_OK;
+          }
         }
         try
         {
@@ -357,5 +349,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   COM_TRY_END
   return S_OK;
 }
+
+IMPL_ISetCompressCodecsInfo
 
 }}

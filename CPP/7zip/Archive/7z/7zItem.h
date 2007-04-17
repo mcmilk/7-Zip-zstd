@@ -4,17 +4,12 @@
 #define __7Z_ITEM_H
 
 #include "../../../Common/Buffer.h"
-#include "7zMethodID.h"
+#include "../../../Common/String.h"
+#include "../../Common/MethodID.h"
 #include "7zHeader.h"
 
 namespace NArchive {
 namespace N7z {
-
-struct CAltCoderInfo
-{
-  CMethodID MethodID;
-  CByteBuffer Properties;
-};
 
 typedef UInt32 CNum;
 const CNum kNumMax     = 0x7FFFFFFF;
@@ -22,9 +17,10 @@ const CNum kNumNoIndex = 0xFFFFFFFF;
 
 struct CCoderInfo
 {
+  CMethodId MethodID;
+  CByteBuffer Properties;
   CNum NumInStreams;
   CNum NumOutStreams;
-  CObjectVector<CAltCoderInfo> AltCoders;
   bool IsSimpleCoder() const { return (NumInStreams == 1) && (NumOutStreams == 1); }
 };
 

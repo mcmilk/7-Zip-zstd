@@ -264,7 +264,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
                                       kBZip2DicSizeX1));
   }
 
-  return Update(m_Items, updateItems, outStream, 
+  return Update(
+      EXTERNAL_CODECS_VARS
+      m_Items, updateItems, outStream, 
       m_ArchiveIsOpen ? &m_Archive : NULL, &options, updateCallback);
   COM_TRY_END
 }

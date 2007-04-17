@@ -164,7 +164,7 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
   return S_OK;
 }
 
-#ifdef _ST_MODE
+#ifndef NO_READ_FROM_CODER
 
 STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {

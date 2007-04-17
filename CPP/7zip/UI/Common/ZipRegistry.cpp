@@ -17,8 +17,6 @@ using namespace NRegistry;
 
 static const TCHAR *kCUBasePath = TEXT("Software\\7-ZIP");
 
-// static const TCHAR *kArchiversKeyName = TEXT("Archivers");
-
 static NSynchronization::CCriticalSection g_RegistryOperationsCriticalSection;
 
 //////////////////////
@@ -126,7 +124,6 @@ static const TCHAR *kCompressionLevelValueName = TEXT("Level");
 static const TCHAR *kCompressionLastFormatValueName = TEXT("Archiver");
 static const TCHAR *kCompressionShowPasswordValueName = TEXT("ShowPassword");
 static const TCHAR *kCompressionEncryptHeadersValueName = TEXT("EncryptHeaders");
-// static const TCHAR *kCompressionMaximizeValueName = TEXT("Maximize");
 
 static const TCHAR *kCompressionOptionsKeyName = TEXT("Options");
 static const TCHAR *kSolid = TEXT("Solid");
@@ -138,6 +135,8 @@ static const WCHAR *kCompressionMethod = L"Method";
 static const WCHAR *kEncryptionMethod = L"EncryptionMethod";
 static const TCHAR *kCompressionDictionary = TEXT("Dictionary");
 static const TCHAR *kCompressionOrder = TEXT("Order");
+static const TCHAR *kCompressionNumThreads = TEXT("NumThreads");
+static const TCHAR *kCompressionBlockSize = TEXT("BlockSize");
 
 
 static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
@@ -186,8 +185,8 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     }
   }
 
-  compressionKey.SetValue(kSolid, info.Solid);
-  compressionKey.SetValue(kMultiThread, info.MultiThread);
+  // compressionKey.SetValue(kSolid, info.Solid);
+  // compressionKey.SetValue(kMultiThread, info.MultiThread);
   compressionKey.RecurseDeleteKey(kCompressionOptionsKeyName);
   {
     CKey optionsKey;
@@ -205,31 +204,25 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
       SetRegUInt32(formatKey, kCompressionLevel, fo.Level);
       SetRegUInt32(formatKey, kCompressionDictionary, fo.Dictionary);
       SetRegUInt32(formatKey, kCompressionOrder, fo.Order);
+      SetRegUInt32(formatKey, kCompressionBlockSize, fo.BlockLogSize);
+      SetRegUInt32(formatKey, kCompressionNumThreads, fo.NumThreads);
     }
   }
 
   compressionKey.SetValue(kCompressionLevelValueName, UInt32(info.Level));
-  compressionKey.SetValue(kCompressionLastFormatValueName, 
-      GetSystemString(info.ArchiveType));
+  compressionKey.SetValue(kCompressionLastFormatValueName, GetSystemString(info.ArchiveType));
 
   compressionKey.SetValue(kCompressionShowPasswordValueName, info.ShowPassword);
   compressionKey.SetValue(kCompressionEncryptHeadersValueName, info.EncryptHeaders);
   // compressionKey.SetValue(kCompressionMaximizeValueName, info.Maximize);
 }
 
-static bool IsMultiProcessor()
-{
-  SYSTEM_INFO systemInfo;
-  GetSystemInfo(&systemInfo);
-  return systemInfo.dwNumberOfProcessors > 1;
-}
-
 void ReadCompressionInfo(NCompression::CInfo &info)
 {
   info.HistoryArchives.Clear();
 
-  info.Solid = true;
-  info.MultiThread = IsMultiProcessor();
+  // info.Solid = true;
+  // info.MultiThread = IsMultiProcessor();
   info.FormatOptionsVector.Clear();
 
   info.Level = 5;
@@ -263,12 +256,14 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   }
 
   
+  /*
   bool solid = false;
   if (compressionKey.QueryValue(kSolid, solid) == ERROR_SUCCESS)
     info.Solid = solid;
   bool multiThread = false;
   if (compressionKey.QueryValue(kMultiThread, multiThread) == ERROR_SUCCESS)
     info.MultiThread = multiThread;
+  */
 
   {
     CKey optionsKey;
@@ -291,6 +286,8 @@ void ReadCompressionInfo(NCompression::CInfo &info)
           GetRegUInt32(formatKey, kCompressionLevel, fo.Level);
           GetRegUInt32(formatKey, kCompressionDictionary, fo.Dictionary);
           GetRegUInt32(formatKey, kCompressionOrder, fo.Order);
+          GetRegUInt32(formatKey, kCompressionBlockSize, fo.BlockLogSize);
+          GetRegUInt32(formatKey, kCompressionNumThreads, fo.NumThreads);
 
           info.FormatOptionsVector.Add(fo);
         }

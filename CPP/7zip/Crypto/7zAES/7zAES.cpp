@@ -6,21 +6,12 @@
 #include "Windows/Synchronization.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
-
-#include "7zAES.h"
-// #include "../../Hash/Common/CryptoHashInterface.h"
-
-#ifdef CRYPTO_AES
 #include "../AES/MyAES.h"
-#endif
-
 #include "../Hash/Sha256.h"
 
-using namespace NWindows;
+#include "7zAES.h"
 
-#ifndef CRYPTO_AES
-extern HINSTANCE g_hInstance;
-#endif
+using namespace NWindows;
 
 namespace NCrypto {
 namespace NSevenZ {
@@ -219,36 +210,6 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-/*
-static Byte *WideToRaw(const wchar_t *src, Byte *dest, int destSize=0x10000000)
-{
-  for (int i = 0; i < destSize; i++, src++)
-  {
-    dest[i * 2] = (Byte)*src;
-    dest[i * 2 + 1]= (Byte)(*src >> 8);
-    if (*src == 0)
-      break;
-  }
-  return(dest);
-}
-*/
-
-#ifndef CRYPTO_AES
-bool GetAESLibPath(TCHAR *path)
-{
-  TCHAR fullPath[MAX_PATH + 1];
-  if (::GetModuleFileName(g_hInstance, fullPath, MAX_PATH) == 0)
-    return false;
-  LPTSTR fileNamePointer;
-  DWORD needLength = ::GetFullPathName(fullPath, MAX_PATH + 1, 
-      path, &fileNamePointer);
-  if (needLength == 0 || needLength >= MAX_PATH)
-    return false;
-  lstrcpy(fileNamePointer, TEXT("AES.dll"));
-  return true;
-}
-#endif
-
 STDMETHODIMP CBaseCoder::Init()
 {
   CalculateDigest();
@@ -268,38 +229,16 @@ STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
   return _aesFilter->Filter(data, size);
 }
 
-#ifndef CRYPTO_AES
-HRESULT CBaseCoder::CreateFilterFromDLL(REFCLSID clsID)
-{
-  if (!_aesLibrary)
-  {
-    TCHAR filePath[MAX_PATH + 2];
-    if (!GetAESLibPath(filePath))
-      return ::GetLastError();
-    return _aesLibrary.LoadAndCreateFilter(filePath, clsID, &_aesFilter);
-  }
-  return S_OK;
-}
-#endif
-
 HRESULT CEncoder::CreateFilter()
 {
-  #ifdef CRYPTO_AES
   _aesFilter = new CAES_CBC_Encoder;
   return S_OK;
-  #else
-  return CreateFilterFromDLL(CLSID_CCrypto_AES_CBC_Encoder);
-  #endif
 }
 
 HRESULT CDecoder::CreateFilter()
 {
-  #ifdef CRYPTO_AES
   _aesFilter = new CAES_CBC_Decoder;
   return S_OK;
-  #else
-  return CreateFilterFromDLL(CLSID_CCrypto_AES_CBC_Decoder);
-  #endif
 }
 
 }}

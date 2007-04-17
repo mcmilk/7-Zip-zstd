@@ -1,8 +1,8 @@
 #include "resource.h"
 #include "../../../GuiCommon.rc"
 
-#define xSize2 344
-#define ySize2 295
+#define xSize2 380
+#define ySize2 305
 
 #define xSize (xSize2 + marg + marg)
 #define ySize (ySize2 + marg + marg)
@@ -24,10 +24,10 @@
 #undef bXPos3
 #undef bYPos
 
-#define gSize 160
+#define gSize 180
 #define gSpace 24
 
-#define g0XSize 82
+#define g0XSize 100
 #define g1XPos  (marg + g0XSize)
 #define g1XSize (gSize - g0XSize)
 
@@ -69,24 +69,26 @@ BEGIN
   LTEXT     "&Word size:",IDC_STATIC_COMPRESS_ORDER,            marg, 125, g0XSize, 8
   COMBOBOX  IDC_COMPRESS_COMBO_ORDER,      g1XPos, 123, g1XSize,  141, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
+  LTEXT     "&Solid Block size:",IDC_STATIC_COMPRESS_SOLID,        marg, 146, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_SOLID,      g1XPos, 144, g1XSize,  140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Number of CPU threads:",IDC_STATIC_COMPRESS_THREADS, marg, 167, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_THREADS,   g1XPos, 165, g1XSize - 35,  140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+  RTEXT     "1", IDC_COMPRESS_HARDWARE_THREADS, g1XPos + g1XSize - 35 + 10, 167, 25, 8
+
   
-  LTEXT     "Memory usage for Compressing:", IDC_STATIC_COMPRESS_MEMORY,      marg, 149, g2XSize, 8
-  RTEXT     "0", IDC_STATIC_COMPRESS_MEMORY_VALUE,   g3XPos, 149, g3XSize, 8
+  LTEXT     "Memory usage for Compressing:", IDC_STATIC_COMPRESS_MEMORY,      marg, 190, g2XSize, 8
+  RTEXT     "0", IDC_STATIC_COMPRESS_MEMORY_VALUE,   g3XPos, 190, g3XSize, 8
   
-  LTEXT     "Memory usage for Decompressing:", IDC_STATIC_COMPRESS_MEMORY_DE, marg, 163, g2XSize, 8
-  RTEXT     "0",IDC_STATIC_COMPRESS_MEMORY_DE_VALUE, g3XPos, 163, g3XSize, 8
+  LTEXT     "Memory usage for Decompressing:", IDC_STATIC_COMPRESS_MEMORY_DE, marg, 206, g2XSize, 8
+  RTEXT     "0",IDC_STATIC_COMPRESS_MEMORY_DE_VALUE, g3XPos, 206, g3XSize, 8
 
 
-  CONTROL   "Create &Solid archive", IDC_COMPRESS_SOLID,"Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
-            marg, 181, gSize, 10
-  CONTROL   "Multi-threading", IDC_COMPRESS_MULTI_THREAD, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
-            marg, 195, gSize, 10
+  LTEXT     "Split to &volumes, bytes:", IDC_STATIC_COMPRESS_VOLUME, marg, 225, gSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_VOLUME, marg, 237, gSize, 73, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
 
-  LTEXT     "Split to &volumes, bytes:", IDC_STATIC_COMPRESS_VOLUME, marg, 215, gSize, 8
-  COMBOBOX  IDC_COMPRESS_COMBO_VOLUME, marg, 227, gSize, 73, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-
-  LTEXT     "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS, marg, 250, xSize2, 8
-  EDITTEXT  IDC_COMPRESS_EDIT_PARAMETERS, marg, 262, xSize2, 14, ES_AUTOHSCROLL
+  LTEXT     "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS, marg, 260, xSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PARAMETERS, marg, 272, xSize2, 14, ES_AUTOHSCROLL
 
   LTEXT     "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE, g4XPos, 39, g4XSize, 8
   COMBOBOX  IDC_COMPRESS_COMBO_UPDATE_MODE, g4XPos, 51, g4XSize, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
