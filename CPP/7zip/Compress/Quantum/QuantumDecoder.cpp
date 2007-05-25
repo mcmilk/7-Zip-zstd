@@ -8,7 +8,7 @@
 namespace NCompress {
 namespace NQuantum {
 
-const UInt32 kDictionarySizeMax = (1 << 21);
+// const UInt32 kDictionarySizeMax = (1 << 21);
 
 const int kLenIdNeedInit = -2;
 

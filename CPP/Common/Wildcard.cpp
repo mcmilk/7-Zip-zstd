@@ -4,7 +4,6 @@
 
 #include "Wildcard.h"
 
-static const wchar_t kPeriodChar = L'.';
 static const wchar_t kAnyCharsChar = L'*';
 static const wchar_t kAnyCharChar = L'?';
 
@@ -20,8 +19,6 @@ static const UString kIllegalWildCardFileNameChars=
   L"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
   L"\"/:<>\\|";
 
-static const UString kIllegalFileNameChars = kIllegalWildCardFileNameChars + 
-    kWildCardCharSet;
 
 static inline bool IsCharDirLimiter(wchar_t c)
 {
@@ -146,11 +143,6 @@ bool DoesNameContainWildCard(const UString &path)
 // NWildcard
 
 namespace NWildcard {
-
-static inline int BoolToIndex(bool value)
-{
-  return value ? 1: 0;
-}
 
 
 /*

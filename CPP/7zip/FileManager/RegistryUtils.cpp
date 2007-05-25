@@ -10,7 +10,7 @@ using namespace NRegistry;
 
 static const TCHAR *kCUBasePath = TEXT("Software\\7-ZIP");
 static const TCHAR *kCU_FMPath = TEXT("Software\\7-ZIP\\FM");
-static const TCHAR *kLM_Path = TEXT("Software\\7-ZIP\\FM");
+// static const TCHAR *kLM_Path = TEXT("Software\\7-ZIP\\FM");
 
 static const WCHAR *kLangValueName = L"Lang";
 static const WCHAR *kEditor = L"Editor";
@@ -21,7 +21,7 @@ static const TCHAR *kShowSystemMenu = TEXT("ShowSystemMenu");
 static const TCHAR *kFullRow = TEXT("FullRow");
 static const TCHAR *kShowGrid = TEXT("ShowGrid");
 static const TCHAR *kAlternativeSelection = TEXT("AlternativeSelection");
-static const TCHAR *kLockMemoryAdd = TEXT("LockMemoryAdd");
+// static const TCHAR *kLockMemoryAdd = TEXT("LockMemoryAdd");
 static const TCHAR *kLargePagesEnable = TEXT("LargePages");
 // static const TCHAR *kSingleClick = TEXT("SingleClick");
 // static const TCHAR *kUnderline = TEXT("Underline");

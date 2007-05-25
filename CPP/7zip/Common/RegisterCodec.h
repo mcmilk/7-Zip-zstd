@@ -3,7 +3,7 @@
 #ifndef __REGISTERCODEC_H
 #define __REGISTERCODEC_H
 
-#include "../Common/MethodID.h"
+#include "../Common/MethodId.h"
 
 typedef void * (*CreateCodecP)();
 struct CCodecInfo

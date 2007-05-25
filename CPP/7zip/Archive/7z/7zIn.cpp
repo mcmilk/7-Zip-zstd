@@ -1238,7 +1238,7 @@ HRESULT CInArchive::ReadDatabase(
   UInt64 nextHeaderSize;
   UInt32 nextHeaderCRC;
   UInt32 crc = CRC_INIT_VAL;
-  UInt32 temp;
+  UInt32 temp = 0;
   RINOK(SafeReadDirectUInt32(crcFromArchive, temp));
   RINOK(SafeReadDirectUInt64(nextHeaderOffset, crc));
   RINOK(SafeReadDirectUInt64(nextHeaderSize, crc));

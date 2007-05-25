@@ -79,7 +79,7 @@ private:
   CObjectVector<CSTCoderInfo> _coders;
   int _mainCoderIndex;
 public:
-  void SetBindInfo(const CBindInfo &bindInfo);
+  HRESULT SetBindInfo(const CBindInfo &bindInfo);
 
 };
 

@@ -1,4 +1,4 @@
-// BranchARM.h
+/* BranchARM.h */
 
 #ifndef __BRANCH_ARM_H
 #define __BRANCH_ARM_H

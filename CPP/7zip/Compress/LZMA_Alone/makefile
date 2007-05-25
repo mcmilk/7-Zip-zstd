@@ -52,6 +52,7 @@ LZMA_OPT_OBJS = \
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
+  $O\IntToString.obj \
   $O\String.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \

@@ -27,8 +27,7 @@ class CHandler:
   bool GetCompressedSize(int index, UInt32 &size);
 
 public:
-  MY_QUERYINTERFACE_BEGIN
-  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
   QUERY_ENTRY_ISetCompressCodecsInfo
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE

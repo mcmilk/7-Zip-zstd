@@ -51,7 +51,7 @@ UString MyLoadStringW(HINSTANCE hInstance, UINT resourceID)
     s.ReleaseBuffer();
     return s;
   }
-  return GetUnicodeString(MyLoadString(resourceID));
+  return GetUnicodeString(MyLoadString(hInstance, resourceID));
 }
 
 UString MyLoadStringW(UINT resourceID)

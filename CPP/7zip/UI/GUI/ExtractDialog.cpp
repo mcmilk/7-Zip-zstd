@@ -36,6 +36,8 @@ static const int kPathModeButtons[] =
   IDC_EXTRACT_RADIO_NO_PATHNAMES
 };
 
+#ifndef _SFX
+
 static const NExtract::NPathMode::EEnum kPathModeButtonsVals[] =
 {
   NExtract::NPathMode::kFullPathnames,
@@ -74,7 +76,6 @@ static const int kFilesButtons[] =
 static const int kNumFilesButtons = sizeof(kFilesButtons) / sizeof(kFilesButtons[0]);
 */
 
-#ifndef _SFX
 void CExtractDialog::GetPathMode()
 {
   for (int i = 0; i < kNumPathnamesButtons; i++)
@@ -169,7 +170,9 @@ static CIDLangPair kIDLangPairs[] =
 
 // static const int kWildcardsButtonIndex = 2;
 
+#ifndef NO_REGISTRY
 static const int kHistorySize = 8;
+#endif
 
 bool CExtractDialog::OnInit() 
 {

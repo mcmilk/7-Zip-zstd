@@ -1,4 +1,4 @@
-// Common/Alloc.c
+/* Alloc.c */
 
 #ifdef _WIN32
 #include <windows.h>
@@ -7,7 +7,7 @@
 
 #include "Alloc.h"
 
-// #define _SZ_ALLOC_DEBUG
+/* #define _SZ_ALLOC_DEBUG */
 
 /* use _SZ_ALLOC_DEBUG to debug alloc/free operations */
 #ifdef _SZ_ALLOC_DEBUG

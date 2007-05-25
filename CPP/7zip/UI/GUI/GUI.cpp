@@ -46,14 +46,13 @@ HINSTANCE g_hInstance;
 bool g_IsNT = false;
 #endif
 
-static const wchar_t *kExceptionErrorMessage = L"Error:";
-static const wchar_t *kUserBreak  = L"Break signaled";
+// static const wchar_t *kExceptionErrorMessage = L"Error:";
+// static const wchar_t *kUserBreak  = L"Break signaled";
 
 static const wchar_t *kMemoryExceptionMessage = L"ERROR: Can't allocate required memory!";
 static const wchar_t *kUnknownExceptionMessage = L"Unknown Error";
-static const wchar_t *kInternalExceptionMessage = L"Internal Error #";
-
-static const wchar_t *kIncorrectCommandMessage = L"Incorrect command";
+// static const wchar_t *kInternalExceptionMessage = L"Internal Error #";
+// static const wchar_t *kIncorrectCommandMessage = L"Incorrect command";
 
 static void ErrorMessage(const wchar_t *message)
 {

@@ -8,7 +8,7 @@
 
 HRESULT MyCreateProcess(const UString &params,
    LPCWSTR lpCurrentDirectory, bool waitFinish,
-   NWindows::NSynchronization::CEvent *event);
+   NWindows::NSynchronization::CBaseEvent *event);
 
 HRESULT CompressFiles(
     const UString &curDir,

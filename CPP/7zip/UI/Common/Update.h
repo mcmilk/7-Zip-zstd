@@ -99,6 +99,8 @@ struct CUpdateOptions
   bool SfxMode;
   UString SfxModule;
   
+  bool OpenShareForWrite;
+
   bool StdInMode;
   UString StdInFileName;
   bool StdOutMode;
@@ -117,7 +119,8 @@ struct CUpdateOptions
     StdInMode(false),
     StdOutMode(false),
     EMailMode(false),
-    EMailRemoveAfter(false)
+    EMailRemoveAfter(false),
+    OpenShareForWrite(false)
       {};
   CRecordVector<UInt64> VolumesSizes;
 };

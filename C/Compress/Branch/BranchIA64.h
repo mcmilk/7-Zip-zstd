@@ -1,4 +1,4 @@
-// BranchIA64.h
+/* BranchIA64.h */
 
 #ifndef __BRANCH_IA64_H
 #define __BRANCH_IA64_H

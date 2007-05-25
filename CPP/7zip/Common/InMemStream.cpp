@@ -108,13 +108,13 @@ HRESULT CInMemStreamMt::Read()
   }
 }
 
-static DWORD WINAPI CoderThread(void *threadCoderInfo)
+static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo)
 {
   ((CInMemStreamMt *)threadCoderInfo)->ReadResult = ((CInMemStreamMt *)threadCoderInfo)->Read();
   return 0;
 }
 
-bool CInMemStreamMt::StartReadThread()
+HRes CInMemStreamMt::StartReadThread()
 {
   // _stopReading = false;
   NWindows::CThread Thread;

@@ -4,7 +4,7 @@
 #include "StdAfx.h"
 
 #include "RarAES.h"
-#include "../../Common/MethodID.h"
+#include "../../Common/MethodId.h"
 #include "../Hash/Sha1.h"
 #include "../AES/MyAES.h"
 

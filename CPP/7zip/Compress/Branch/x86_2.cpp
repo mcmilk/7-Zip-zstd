@@ -8,14 +8,14 @@ extern "C"
 #include "../../../../C/Alloc.h"
 }
 
-static const int kBufferSize = 1 << 17;
-
 inline bool IsJcc(Byte b0, Byte b1)
 {
   return (b0 == 0x0F && (b1 & 0xF0) == 0x80);
 }
 
 #ifndef EXTRACT_ONLY
+
+static const int kBufferSize = 1 << 17;
 
 static bool inline Test86MSByte(Byte b)
 {

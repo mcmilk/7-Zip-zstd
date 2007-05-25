@@ -8,13 +8,13 @@
 namespace NArchive {
 namespace N7z {
 
-enum // PropID
+enum
 {
   kpidPackedSize0 = kpidUserDefined,
   kpidPackedSize1, 
   kpidPackedSize2,
   kpidPackedSize3,
-  kpidPackedSize4,
+  kpidPackedSize4
 };
 
 }}

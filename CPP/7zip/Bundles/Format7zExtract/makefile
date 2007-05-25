@@ -126,6 +126,7 @@ CRYPTO_HASH_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Threads.obj \
 
 C_BRANCH_OBJS = \
   $O\BranchARM.obj \

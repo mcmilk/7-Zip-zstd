@@ -1,4 +1,4 @@
-// IStream.h
+/* IStream.h */
 
 #ifndef __C_ISTREAM_H
 #define __C_ISTREAM_H

@@ -30,9 +30,9 @@ HRESULT CInArchive::ReadBytes(ISequentialInStream *inStream, void *data, UInt32 
 
 HRESULT CInArchive::ReadByte(ISequentialInStream *inStream, Byte &value, UInt32 &crc)
 {
-  HRESULT res = ReadBytes(inStream, &value, 1);
+  RINOK(ReadBytes(inStream, &value, 1));
   crc = CRC_UPDATE_BYTE(crc, value);
-  return res;
+  return S_OK;
 }
 
 HRESULT CInArchive::ReadUInt16(ISequentialInStream *inStream, UInt16 &value, UInt32 &crc)

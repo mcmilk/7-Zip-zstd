@@ -93,6 +93,7 @@ FM_COMMON_OBJS = \
 C_OBJS = \
   $O\Alloc.obj \
   $O\Sort.obj \
+  $O\Threads.obj \
 
 OBJS = \
   $O\StdAfx.obj \

@@ -72,7 +72,7 @@ struct CThreadExtracting
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadExtracting *)param)->Process();
   }
@@ -154,9 +154,8 @@ HRESULT ExtractGUI(
   extracter.Options = &options;
   extracter.OpenCallback = openCallback;
 
-  CThread thread;
-  if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
-    throw 271824;
+  NWindows::CThread thread;
+  RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &extracter));
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
   if (extracter.Result == S_OK && options.TestMode && 
       extracter.ExtractCallbackSpec->Messages.IsEmpty() &&

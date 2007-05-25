@@ -166,12 +166,14 @@ HRESULT CAddCommon::Compress(
           {
             NWindows::NCOM::CPropVariant properties[] = 
             {
+              _options.Algo, 
               _options.NumPasses, 
               _options.NumFastBytes,
               _options.NumMatchFinderCycles
             };
             PROPID propIDs[] = 
             {
+              NCoderPropID::kAlgorithm,
               NCoderPropID::kNumPasses,
               NCoderPropID::kNumFastBytes,
               NCoderPropID::kMatchFinderCycles

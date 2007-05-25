@@ -7,7 +7,7 @@
 
 #include "../../../Windows/PropVariant.h"
 
-#include "../../Common/MethodID.h"
+#include "../../Common/MethodId.h"
 
 namespace NArchive {
 namespace N7z {

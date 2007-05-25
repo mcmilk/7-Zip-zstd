@@ -97,7 +97,7 @@ struct CArchiveLink
 
   IInArchive *GetArchive() { return Archive1 != 0 ? Archive1: Archive0; }
   UString GetDefaultItemName()  { return Archive1 != 0 ? DefaultItemName1: DefaultItemName0; }
-  const int GetArchiverIndex() const { return Archive1 != 0 ? FormatIndex1: FormatIndex0; }
+  int GetArchiverIndex() const { return Archive1 != 0 ? FormatIndex1: FormatIndex0; }
   HRESULT Close();
   void Release();
 };

@@ -53,6 +53,12 @@ struct CState
   void FinishStream();
   void ThreadFunc();
 
+  HRes Create()
+  {
+    RINOK(StreamWasFinishedEvent.CreateIfNotCreated());
+    RINOK(WaitingWasStartedEvent.CreateIfNotCreated());
+    return CanWriteEvent.CreateIfNotCreated();
+  }
   #endif
 
   CState(): Counters(0) {}
@@ -125,7 +131,7 @@ public:
   UInt32 BlockSizeMax;
   CDecoder();
   ~CDecoder();
-  bool Create();
+  HRes Create();
   void Free();
 
   #else

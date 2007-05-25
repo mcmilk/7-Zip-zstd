@@ -79,7 +79,7 @@ namespace NGlobalOffset
   const UInt32 kBlockPos  = 0x20;
   const UInt32 kExecCount = 0x2C;
   const UInt32 kGlobalMemOutSize = 0x30;
-};
+}
 
 enum ECommand
 {

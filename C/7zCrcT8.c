@@ -1,4 +1,4 @@
-/* 7zCrc.c */
+/* 7zCrcT8.c */
 
 #include "7zCrc.h"
 

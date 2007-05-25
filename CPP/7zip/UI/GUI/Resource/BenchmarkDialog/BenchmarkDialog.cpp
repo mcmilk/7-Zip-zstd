@@ -76,8 +76,6 @@ static const UInt32 kMaxDicSize =
     (1 << 27);
     #endif
 
-static const int kDefaultDictionary =  22;
-    
 bool CBenchmarkDialog::OnInit() 
 {
   #ifdef LANG        
@@ -423,7 +421,7 @@ struct CThreadBenchmark
 
   HRESULT Process();
   HRESULT Result;
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     ((CThreadBenchmark *)param)->Result = ((CThreadBenchmark *)param)->Process();
     return 0;
@@ -465,8 +463,9 @@ HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
   if (info2.NumIterations == 0)
     info2.NumIterations = 1;
 
-  info2.GlobalTime /= info2.NumIterations;
-  info2.UserTime /= info2.NumIterations;
+  info2.UnpackSize *= info2.NumIterations;
+  info2.PackSize *= info2.NumIterations;
+  info2.NumIterations = 1;
 
   if (final && SyncInfo->DecompressingInfo.GlobalTime == 0)
   {
@@ -575,10 +574,8 @@ HRESULT Benchmark(
   benchmarkDialog._syncInfo.NumThreads = numThreads;
 
   benchmarker.SyncInfo = &benchmarkDialog._syncInfo;
-  CThread thread;
-  if (!thread.Create(CThreadBenchmark::MyThreadFunction, &benchmarker))
-    return E_FAIL;
+  NWindows::CThread thread;
+  RINOK(thread.Create(CThreadBenchmark::MyThreadFunction, &benchmarker));
   benchmarkDialog.Create(0);
-  thread.Wait();
-  return S_OK;
+  return thread.Wait();
 }

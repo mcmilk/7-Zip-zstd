@@ -40,7 +40,7 @@ struct CThreadExtracting
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
   }
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadExtracting *)param)->Process();
   }
@@ -115,9 +115,8 @@ HRESULT ExtractArchive(
 
   if (showProgress)
   {
-    CThread thread;
-    if (!thread.Create(CThreadExtracting::MyThreadFunction, &extracter))
-      throw 271824;
+    NWindows::CThread thread;
+    RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &extracter));
     
     UString title;
     #ifdef LANG        

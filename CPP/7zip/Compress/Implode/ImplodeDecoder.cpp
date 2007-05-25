@@ -24,7 +24,7 @@ static const int kNumDistanceLowDirectBitsForSmallDict = 6;
 
 static const int kNumBitsInByte = 8;
 
-static const int kLevelStructuresNumberFieldSize = kNumBitsInByte;
+// static const int kLevelStructuresNumberFieldSize = kNumBitsInByte;
 static const int kLevelStructuresNumberAdditionalValue = 1;
 
 static const int kNumLevelStructureLevelBits = 4;
@@ -51,8 +51,7 @@ static const UInt32 kMatchMinLenWhenLiteralsOff = 2;
 static const UInt32 kMatchMinLenMax = MyMax(kMatchMinLenWhenLiteralsOn,
     kMatchMinLenWhenLiteralsOff);  // 3
 
-static const UInt32 kMatchMaxLenMax = kMatchMinLenMax + 
-    (kLengthTableSize - 1) + (1 << kNumAdditionalLengthBits) - 1;  // or 2
+// static const UInt32 kMatchMaxLenMax = kMatchMinLenMax + (kLengthTableSize - 1) + (1 << kNumAdditionalLengthBits) - 1;  // or 2
 
 enum
 {

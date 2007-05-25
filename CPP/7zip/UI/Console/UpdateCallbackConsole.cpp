@@ -26,8 +26,6 @@ static const wchar_t *kEmptyFileAlias = L"[Content]";
 static const char *kCreatingArchiveMessage = "Creating archive ";
 static const char *kUpdatingArchiveMessage = "Updating archive ";
 static const char *kScanningMessage = "Scanning";
-static const char *kNoFilesScannedMessage = "No files scanned";
-static const char *kTotalFilesAddedMessage = "Total files added to archive: ";
 
 
 HRESULT CUpdateCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)

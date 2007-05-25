@@ -10,27 +10,28 @@ OBJS = \
   LzmaBench.o \
   LzmaBenchCon.o \
   LzmaRam.o \
-  LzmaRamDecode.o \
-  LzmaDecode.o \
-  BranchX86.o \
   LZMADecoder.o \
   LZMAEncoder.o \
-  7zCrc.o \
-  MatchFinder.o \
   LZOutWindow.o \
   RangeCoderBit.o \
   InBuffer.o \
   OutBuffer.o \
   FileStreams.o \
   StreamUtils.o \
-  Alloc.o \
   C_FileIO.o \
   CommandLineParser.o \
   CRC.o \
+  IntToString.o \
   String.o \
   StringConvert.o \
   StringToInt.o \
   Vector.o \
+  7zCrc.o \
+  Alloc.o \
+  BranchX86.o \
+  MatchFinder.o \
+  LzmaDecode.o \
+  LzmaRamDecode.o \
 
 
 all: $(PROG)
@@ -50,30 +51,11 @@ LzmaBenchCon.o: LzmaBenchCon.cpp
 LzmaRam.o: LzmaRam.cpp
 	$(CXX) $(CFLAGS) LzmaRam.cpp
 
-LzmaRamDecode.o: LzmaRamDecode.c
-	$(CXX_C) $(CFLAGS) LzmaRamDecode.c
-
-LzmaDecode.o: ../../../../C/Compress/Lzma/LzmaDecode.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lzma/LzmaDecode.c
-
-BranchX86.o: ../../../../C/Compress/Branch/BranchX86.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Branch/BranchX86.c
-
 LZMADecoder.o: ../LZMA/LZMADecoder.cpp
 	$(CXX) $(CFLAGS) ../LZMA/LZMADecoder.cpp
 
 LZMAEncoder.o: ../LZMA/LZMAEncoder.cpp
 	$(CXX) $(CFLAGS) ../LZMA/LZMAEncoder.cpp
-
-MatchFinder.o: ../../../../C/Compress/Lz/MatchFinder.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lz/MatchFinder.c
-
-7zCrc.o: ../../../../C/7zCrc.c
-	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c
-
-Alloc.o: ../../../../Alloc.cpp
-	$(CXX) $(CFLAGS) ../../../../Alloc.c
-
 
 LZOutWindow.o: ../LZ/LZOutWindow.cpp
 	$(CXX) $(CFLAGS) ../LZ/LZOutWindow.cpp
@@ -105,6 +87,9 @@ CRC.o: ../../../Common/CRC.cpp
 MyWindows.o: ../../../Common/MyWindows.cpp
 	$(CXX) $(CFLAGS) ../../../Common/MyWindows.cpp
 
+IntToString.o: ../../../Common/IntToString.cpp
+	$(CXX) $(CFLAGS) ../../../Common/IntToString.cpp
+
 String.o: ../../../Common/String.cpp
 	$(CXX) $(CFLAGS) ../../../Common/String.cpp
 
@@ -116,6 +101,24 @@ StringToInt.o: ../../../Common/StringToInt.cpp
 
 Vector.o: ../../../Common/Vector.cpp
 	$(CXX) $(CFLAGS) ../../../Common/Vector.cpp
+
+7zCrc.o: ../../../../C/7zCrc.c
+	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c
+
+Alloc.o: ../../../../C/Alloc.c
+	$(CXX_C) $(CFLAGS) ../../../../C/Alloc.c
+
+BranchX86.o: ../../../../C/Compress/Branch/BranchX86.c
+	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Branch/BranchX86.c
+
+MatchFinder.o: ../../../../C/Compress/Lz/MatchFinder.c
+	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lz/MatchFinder.c
+
+LzmaDecode.o: ../../../../C/Compress/Lzma/LzmaDecode.c
+	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lzma/LzmaDecode.c
+
+LzmaRamDecode.o: LzmaRamDecode.c
+	$(CXX_C) $(CFLAGS) LzmaRamDecode.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)

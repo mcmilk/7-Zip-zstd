@@ -14,7 +14,7 @@ enum EEnum
   kYesAll,
   kNoAll,
   kAutoRename,
-  kQuit,
+  kQuit
 };
 }
 

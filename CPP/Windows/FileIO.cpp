@@ -180,15 +180,21 @@ bool CFileBase::GetFileInformation(CByHandleFileInfo &fileInfo) const
 bool CInFile::Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
   { return Create(fileName, GENERIC_READ, shareMode, creationDisposition, flagsAndAttributes); }
 
+bool CInFile::OpenShared(LPCTSTR fileName, bool shareForWrite)
+{ return Open(fileName, FILE_SHARE_READ | (shareForWrite ? FILE_SHARE_WRITE : 0), OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
+
 bool CInFile::Open(LPCTSTR fileName)
-  { return Open(fileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
+  { return OpenShared(fileName, false); }
 
 #ifndef _UNICODE
 bool CInFile::Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
   { return Create(fileName, GENERIC_READ, shareMode, creationDisposition, flagsAndAttributes); }
 
+bool CInFile::OpenShared(LPCWSTR fileName, bool shareForWrite)
+{ return Open(fileName, FILE_SHARE_READ | (shareForWrite ? FILE_SHARE_WRITE : 0), OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
+
 bool CInFile::Open(LPCWSTR fileName)
-  { return Open(fileName, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
+  { return OpenShared(fileName, false); }
 #endif
 
 // ReadFile and WriteFile functions in Windows have BUG:
@@ -196,7 +202,11 @@ bool CInFile::Open(LPCWSTR fileName)
 // from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
 // (Insufficient system resources exist to complete the requested service).
 
-static UInt32 kChunkSizeMax = (1 << 24);
+// Probably in some version of Windows there are problems with other sizes: 
+// for 32 MB (maybe also for 16 MB). 
+// And message can be "Network connection was lost"
+
+static UInt32 kChunkSizeMax = (1 << 22);
 
 bool CInFile::ReadPart(void *data, UInt32 size, UInt32 &processedSize)
 {

@@ -3,7 +3,18 @@
 #include "StdAfx.h"
 
 #include <stdio.h>
+
+#ifdef _WIN32
+#define USE_ALLOCA
+#endif
+
+#ifdef USE_ALLOCA
+#ifdef _WIN32
 #include <malloc.h>
+#else
+#include <stdlib.h>
+#endif
+#endif
 
 #include "../../../Common/Defs.h"
 #include "../../Common/StreamUtils.h"
@@ -1266,7 +1277,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
 {
   // _needReleaseMFStream = false;
   #ifdef COMPRESS_MF_MT
+  #ifdef USE_ALLOCA
   alloca(0x300);
+  #endif
   #endif
   CCoderReleaser coderReleaser(this);
   RINOK(SetStreams(inStream, outStream, inSize, outSize));

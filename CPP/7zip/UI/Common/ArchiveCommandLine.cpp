@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
 #include <io.h>
+#endif
 #include <stdio.h>
 
 #include "Common/ListFileUtils.h"
@@ -25,8 +27,6 @@
 using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
-
-static const int kNumSwitches = 28;
 
 namespace NKey {
 enum Enum
@@ -58,7 +58,8 @@ enum Enum
   kShowDialog,
   kLargePages,
   kCharSet,
-  kTechMode
+  kTechMode,
+  kShareForWrite
 };
 
 }
@@ -92,7 +93,7 @@ NExtract::NOverwriteMode::EEnum k_OverwriteModes[] =
   NExtract::NOverwriteMode::kAutoRenameExisting
 };
 
-static const CSwitchForm kSwitchForms[kNumSwitches] = 
+static const CSwitchForm kSwitchForms[] = 
   {
     { L"?",  NSwitchType::kSimple, false },
     { L"H",  NSwitchType::kSimple, false },
@@ -121,9 +122,9 @@ static const CSwitchForm kSwitchForms[kNumSwitches] =
     { L"AD",  NSwitchType::kSimple, false },
     { L"SLP", NSwitchType::kUnLimitedPostString, false, 0},
     { L"SCS", NSwitchType::kUnLimitedPostString, false, 0},
-    { L"SLT", NSwitchType::kSimple, false }
+    { L"SLT", NSwitchType::kSimple, false },
+    { L"SSW", NSwitchType::kSimple, false }
   };
-
 
 static const CCommandForm g_CommandForms[] = 
 {
@@ -140,7 +141,6 @@ static const CCommandForm g_CommandForms[] =
 
 static const int kNumCommandForms = sizeof(g_CommandForms) /  sizeof(g_CommandForms[0]);
 
-static const int kMaxCmdLineSize = 1000;
 static const wchar_t *kUniversalWildcard = L"*";
 static const int kMinNonSwitchWords = 1;
 static const int kCommandIndex = 0;
@@ -250,7 +250,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   return true;
 }
 
-static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
 
 static void AddToCensorFromListFile(NWildcard::CCensor &wildcardCensor, 
     LPCWSTR fileName, bool include, NRecursedType::EEnum type, UINT codePage)
@@ -346,9 +346,9 @@ static void ParseMapWithPaths(NWildcard::CCensor &wildcardCensor,
   }
   
   {
-    NSynchronization::CEvent event;
-    event.Open(EVENT_MODIFY_STATE, false, GetSystemString(eventName));
-    event.Set();
+    NSynchronization::CManualResetEvent event;
+    if (event.Open(EVENT_MODIFY_STATE, false, GetSystemString(eventName)) == S_OK)
+      event.Set();
   }
 }
 #endif
@@ -666,7 +666,8 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
   }
 }
 
-CArchiveCommandLineParser::CArchiveCommandLineParser(): parser(kNumSwitches) {}
+CArchiveCommandLineParser::CArchiveCommandLineParser(): 
+  parser(sizeof(kSwitchForms) / sizeof(kSwitchForms[0])) {}
 
 void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
     CArchiveCommandLineOptions &options)
@@ -680,9 +681,9 @@ void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
     ThrowUserErrorException();
   }
 
-  options.IsInTerminal = (_isatty(_fileno(stdin)) != 0);
-  options.IsStdOutTerminal = (_isatty(_fileno(stdout)) != 0);
-  options.IsStdErrTerminal = (_isatty(_fileno(stderr)) != 0);
+  options.IsInTerminal = (isatty(fileno(stdin)) != 0);
+  options.IsStdOutTerminal = (isatty(fileno(stdout)) != 0);
+  options.IsStdErrTerminal = (isatty(fileno(stderr)) != 0);
   options.StdOutMode = parser[NKey::kStdOut].ThereIs;
   options.EnableHeaders = !parser[NKey::kDisableHeaders].ThereIs;
   options.HelpMode = parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs  || parser[NKey::kHelp3].ThereIs;
@@ -894,6 +895,9 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     SetAddCommandOptions(options.Command.CommandType, parser, updateOptions); 
     
     SetMethodOptions(parser, updateOptions.MethodMode.Properties); 
+
+    if (parser[NKey::kShareForWrite].ThereIs)
+      updateOptions.OpenShareForWrite = true;
 
     options.EnablePercents = !parser[NKey::kDisablePercents].ThereIs;
 

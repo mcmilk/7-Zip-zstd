@@ -46,10 +46,12 @@ void ConvertNumberToString(CFileSize value, char *s)
 
 
 #ifdef USE_WINDOWS_FUNCTIONS
-// ReadFile and WriteFile functions in Windows have BUG:
-// If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1) 
-// from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
-// (Insufficient system resources exist to complete the requested service).
+/*
+   ReadFile and WriteFile functions in Windows have BUG:
+   If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1) 
+   from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
+   (Insufficient system resources exist to complete the requested service).
+*/
 #define kChunkSizeMax (1 << 24)
 #endif
 
@@ -161,7 +163,7 @@ SZ_RESULT SzFileSeekImp(void *object, CFileSize pos)
     value.LowPart = (DWORD)pos;
     value.HighPart = (LONG)((UInt64)pos >> 32);
     #ifdef _SZ_FILE_SIZE_32
-    // VC 6.0 has bug with >> 32 shifts.
+    /* VC 6.0 has bug with >> 32 shifts. */
     value.HighPart = 0;
     #endif
     value.LowPart = SetFilePointer(s->File, value.LowPart, &value.HighPart, FILE_BEGIN);
@@ -354,7 +356,7 @@ int main(int numargs, char *args[])
     printf("\nEverything is Ok\n");
     return 0;
   }
-  if (res == SZE_OUTOFMEMORY)
+  if (res == (SZ_RESULT)SZE_OUTOFMEMORY)
     PrintError("can not allocate memory");
   else     
     printf("\nERROR #%d\n", res);

@@ -6,6 +6,6 @@
 #include "Common/String.h"
 
 void SortStringsToIndices(const UStringVector &strings, CIntVector &indices);
-void SortStrings(const UStringVector &src, UStringVector &dest);
+// void SortStrings(const UStringVector &src, UStringVector &dest);
 
 #endif

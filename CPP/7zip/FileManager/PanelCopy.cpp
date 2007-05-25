@@ -41,7 +41,7 @@ struct CThreadExtractInArchive2
     return 0;
   }
   
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadExtractInArchive2 *)param)->Extract();
   }
@@ -84,9 +84,8 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   extracter.FolderOperations = folderOperations;
   extracter.MoveMode = moveMode;
 
-  CThread extractThread;
-  if (!extractThread.Create(CThreadExtractInArchive2::MyThreadFunction, &extracter))
-    throw 271824;
+  NWindows::CThread extractThread;
+  RINOK(extractThread.Create(CThreadExtractInArchive2::MyThreadFunction, &extracter));
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
 
   if (messages != 0)
@@ -118,7 +117,7 @@ struct CThreadUpdate
     return 0;
   }
 
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadUpdate *)param)->Process();
   }
@@ -161,9 +160,8 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
   for(i = 0; i < updater.FileNames.Size(); i++)
     updater.FileNamePointers.Add(updater.FileNames[i]);
 
-  CThread thread;
-  if (!thread.Create(CThreadUpdate::MyThreadFunction, &updater))
-    throw 271824;
+  NWindows::CThread thread;
+  RINOK(thread.Create(CThreadUpdate::MyThreadFunction, &updater));
   updater.UpdateCallbackSpec->StartProgressDialog(title);
   
   if (messages != 0)

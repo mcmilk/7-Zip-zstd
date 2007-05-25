@@ -54,8 +54,6 @@ STATPROPSTG kProperties[] =
   #endif
 };
 
-static const int kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
 static const wchar_t *kMethods[] = 
 {
   L"None",

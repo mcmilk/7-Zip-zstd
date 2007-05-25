@@ -37,7 +37,7 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-static const CMethodId kMethodId_Store = 0;
+// static const CMethodId kMethodId_Store = 0;
 static const CMethodId kMethodId_ZipBase = 0x040100;
 static const CMethodId kMethodId_BZip2 = 0x040202;
 

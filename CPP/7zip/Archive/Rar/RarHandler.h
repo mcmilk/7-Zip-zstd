@@ -18,7 +18,7 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
-  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
   QUERY_ENTRY_ISetCompressCodecsInfo
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE

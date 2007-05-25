@@ -55,8 +55,6 @@ STATPROPSTG kProperties[] =
   #endif
 };
 
-static const int kNumProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
 {
   value->vt = VT_EMPTY;

@@ -53,6 +53,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_STATIC_COMPRESS_UPDATE_MODE, 0x02000D02 },
   { IDC_STATIC_COMPRESS_OPTIONS, 0x02000D07 },
   { IDC_COMPRESS_SFX, 0x02000D08 },
+  { IDC_COMPRESS_SHARED, 0x02000D16 },
   
   { IDC_COMPRESS_ENCRYPTION, 0x02000D10 },
   { IDC_STATIC_COMPRESS_PASSWORD1, 0x02000B01 },
@@ -194,7 +195,7 @@ static const CFormatInfo g_Formats[] =
   },
   { 
     L"GZip", 
-    (1 << 5) | (1 << 7) | (1 << 9), 
+    (1 << 1) | (1 << 5) | (1 << 7) | (1 << 9), 
     g_GZipMethods, MY_SIZE_OF_ARRAY(g_GZipMethods),
     false, false, false, false, false, false
   },
@@ -301,6 +302,7 @@ bool CCompressDialog::OnInit()
   SetItemText(IDC_COMPRESS_HARDWARE_THREADS, s);
 
   CheckButton(IDC_COMPRESS_SFX, Info.SFXMode);
+  CheckButton(IDC_COMPRESS_SHARED, Info.OpenShareForWrite);
   
   CheckControlsEnable();
 
@@ -539,6 +541,8 @@ void CCompressDialog::OnOK()
   Info.EncryptionMethod = GetEncryptionMethodSpec();
   Info.ArchiverInfoIndex = m_Format.GetCurSel();
   Info.SFXMode = IsSFX();
+  Info.OpenShareForWrite = IsButtonCheckedBool(IDC_COMPRESS_SHARED);
+
   m_RegistryInfo.EncryptHeaders = Info.EncryptHeaders = IsButtonCheckedBool(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
 
   m_Params.GetText(Info.Options);

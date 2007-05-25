@@ -396,15 +396,15 @@ HRESULT ListArchives(
     CCodecs *codecs,
     UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
-    bool enableHeaders, bool techMode, bool &passwordEnabled, UString &password)
+    bool enableHeaders, bool techMode, bool &passwordEnabled, UString &password, UInt64 &numErrors)
 {
+  numErrors = 0;
   CFieldPrinter fieldPrinter;
   if (!techMode)
     fieldPrinter.Init(kStandardFieldTable, sizeof(kStandardFieldTable) / sizeof(kStandardFieldTable[0]));
 
   UInt64 numFiles2 = 0, totalPackSize2 = 0, totalUnPackSize2 = 0;
   UInt64 *totalPackSizePointer2 = 0, *totalUnPackSizePointer2 = 0;
-  int numErrors = 0;
   for (int i = 0; i < archivePaths.Size(); i++)
   {
     const UString &archiveName = archivePaths[i];
@@ -528,7 +528,5 @@ HRESULT ListArchives(
     g_StdOut << endl;
     g_StdOut << "Archives: " << archivePaths.Size() << endl;
   }
-  if (numErrors > 0)
-    g_StdOut << endl << "Errors: " << numErrors;
   return S_OK;
 }

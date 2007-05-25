@@ -6,6 +6,7 @@
 
 #include "LzmaBench.h"
 #include "LzmaBenchCon.h"
+#include "Common/IntToString.h"
 
 #if defined(BENCH_MT) || defined(_WIN32)
 #include "Windows/System.h"
@@ -71,14 +72,24 @@ static UInt64 MyMultDiv64(UInt64 value, UInt64 elapsedTime, UInt64 freq)
   return value * freq / elTime;
 }
 
+static void PrintNumber(FILE *f, UInt64 value, int size)
+{
+  char s[32];
+  ConvertUInt64ToString(value, s);
+  fprintf(f, " ");
+  for (int len = (int)strlen(s); len < size; len++)
+    fprintf(f, " ");
+  fprintf(f, "%s", s);
+}
+
 static void PrintRating(FILE *f, UInt64 rating)
 {
-  fprintf(f, " %6d", (unsigned int)(rating / 1000000));
+  PrintNumber(f, rating / 1000000, 6);
 }
 
 static void PrintResults(FILE *f, UInt64 usage, UInt64 rpu, UInt64 rating)
 {
-  fprintf(f, " %5d", (usage + 5000) / 10000);
+  PrintNumber(f, (usage + 5000) / 10000, 5);
   PrintRating(f, rpu);
   PrintRating(f, rating);
 }
@@ -87,7 +98,7 @@ static void PrintResults(FILE *f, UInt64 usage, UInt64 rpu, UInt64 rating)
 static void PrintResults(FILE *f, const CBenchInfo &info, UInt64 rating, CTotalBenchRes &res)
 {
   UInt64 speed = MyMultDiv64(info.UnpackSize, info.GlobalTime, info.GlobalFreq);
-  fprintf(f, "%7d", (unsigned int)(speed / 1024));
+  PrintNumber(f, speed / 1024, 7);
   UInt64 usage = GetUsage(info);
   UInt64 rpu = GetRatingPerUsage(info, rating);
   PrintResults(f, usage, rpu, rating);
@@ -119,7 +130,7 @@ HRESULT CBenchCallback::SetEncodeResult(const CBenchInfo &info, bool final)
   return S_OK;
 }
 
-static const char *kSep = "  |  ";
+static const char *kSep = "  | ";
 
 
 HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
@@ -133,17 +144,19 @@ HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
     UInt64 rating = GetDecompressRating(info.GlobalTime, info.GlobalFreq, info.UnpackSize, info.PackSize, info.NumIterations);
     fprintf(f, kSep);
     CBenchInfo info2 = info;
-    info2.GlobalTime /= info.NumIterations;
-    info2.UserTime /= info.NumIterations;
+    info2.UnpackSize *= info2.NumIterations;
+    info2.PackSize *= info2.NumIterations;
+    info2.NumIterations = 1;
     PrintResults(f, info2, rating, DecodeRes);
   }
   return S_OK;
 }
 
-static void PtintRequirements(FILE *f, const char *sizeString, UInt64 size, const char *threadsString, UInt32 numThreads)
+static void PrintRequirements(FILE *f, const char *sizeString, UInt64 size, const char *threadsString, UInt32 numThreads)
 {
-  fprintf(f, "\nRAM %s %5d MB,  # %s %3d", sizeString, 
-      (unsigned int)(size >> 20), threadsString, (unsigned int)numThreads);
+  fprintf(f, "\nRAM %s ", sizeString);
+  PrintNumber(f, (size >> 20), 5);
+  fprintf(f, " MB,  # %s %3d", threadsString, (unsigned int)numThreads);
 }
 
 HRESULT LzmaBenchCon(
@@ -157,7 +170,7 @@ HRESULT LzmaBenchCon(
   #ifdef BENCH_MT
   UInt64 ramSize = NWindows::NSystem::GetRamSize();  // 
   UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
-  PtintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
+  PrintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
   if (numThreads == (UInt32)-1)
     numThreads = numCPUs;
   if (numThreads > 1)
@@ -176,24 +189,24 @@ HRESULT LzmaBenchCon(
   numThreads = 1;
   #endif
 
-  PtintRequirements(f, "usage:", GetBenchMemoryUsage(numThreads, dictionary), "Benchmark threads:   ", numThreads);
+  PrintRequirements(f, "usage:", GetBenchMemoryUsage(numThreads, dictionary), "Benchmark threads:   ", numThreads);
 
   CBenchCallback callback;
   callback.Init();
   callback.f = f;
   
-  fprintf(f, "\n\nDict        Compressing          |        Decompressing\n    ");
+  fprintf(f, "\n\nDict        Compressing          |        Decompressing\n   ");
   int j;
   for (j = 0; j < 2; j++)
   {
-    fprintf(f, "  Speed Usage    R/U Rating");
+    fprintf(f, "   Speed Usage    R/U Rating");
     if (j == 0)
       fprintf(f, kSep);
   }
-  fprintf(f, "\n    ");
+  fprintf(f, "\n   ");
   for (j = 0; j < 2; j++)
   {
-    fprintf(f, "   KB/s     %%   MIPS   MIPS");
+    fprintf(f, "    KB/s     %%   MIPS   MIPS");
     if (j == 0)
       fprintf(f, kSep);
   }
@@ -206,7 +219,7 @@ HRESULT LzmaBenchCon(
       pow--;
     for (; ((UInt32)1 << pow) <= dictionary; pow++)
     {
-      fprintf(f, "%2d: ", pow);
+      fprintf(f, "%2d:", pow);
       callback.dictionarySize = (UInt32)1 << pow;
       HRESULT res = LzmaBench(
         #ifdef EXTERNAL_LZMA
@@ -245,7 +258,7 @@ HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dic
   #ifdef BENCH_MT
   UInt64 ramSize = NWindows::NSystem::GetRamSize();
   UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
-  PtintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
+  PrintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
   if (numThreads == (UInt32)-1)
     numThreads = numCPUs;
   #else
@@ -280,7 +293,7 @@ HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dic
           return E_ABORT;
         #endif
         RINOK(CrcBench(ti + 1, bufSize, speed));
-        fprintf(f, " %5d", (unsigned int)(speed >> 20));
+        PrintNumber(f, (speed >> 20), 5);
         speedTotals.Values[ti] += speed;
       }
       fprintf(f, "\n");
@@ -291,7 +304,7 @@ HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dic
   {
     fprintf(f, "\nAvg:");
     for (UInt32 ti = 0; ti < numThreads; ti++)
-      fprintf(f, " %5d", (unsigned int)((speedTotals.Values[ti] / numSteps) >> 20));
+      PrintNumber(f, ((speedTotals.Values[ti] / numSteps) >> 20), 5);
     fprintf(f, "\n");
   }
   return S_OK;

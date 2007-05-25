@@ -38,7 +38,23 @@ public:
     m_CurByte = 0;
   }
 
-  void WriteBits(UInt32 value, int numBits);
+  void WriteBits(UInt32 value, int numBits)
+  {
+    while(numBits > 0)
+    {
+      if (numBits < m_BitPos)
+      {
+        m_CurByte |= (value & ((1 << numBits) - 1)) << (8 - m_BitPos);
+        m_BitPos -= numBits;
+        return;
+      }
+      numBits -= m_BitPos;
+      m_Stream.WriteByte((Byte)(m_CurByte | (value << (8 - m_BitPos))));
+      value >>= m_BitPos;
+      m_BitPos = 8;
+      m_CurByte = 0;
+    }
+  }
   UInt32 GetBitPosition() const {  return (8 - m_BitPos); }
   UInt64 GetProcessedSize() const { 
       return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) /8; }

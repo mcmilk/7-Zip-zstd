@@ -18,7 +18,7 @@ public:
   {
     kUnexpectedEndOfArchive = 0,
     kIncorrectArchive,
-    kUnsupported,
+    kUnsupported
   } Cause;
   CInArchiveException(CCauseType cause) : Cause(cause) {}
 };

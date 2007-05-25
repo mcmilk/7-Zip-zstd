@@ -181,7 +181,7 @@ struct CThreadSplit
     return 0;
   }
   
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadSplit *)param)->Process();
   }
@@ -280,8 +280,8 @@ void CApp::Split()
   // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
   // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
 
-  CThread thread;
-  if (!thread.Create(CThreadSplit::MyThreadFunction, &spliter))
+  NWindows::CThread thread;
+  if (thread.Create(CThreadSplit::MyThreadFunction, &spliter) != S_OK)
     throw 271824;
   progressDialog.Create(title, _window);
 
@@ -395,7 +395,7 @@ struct CThreadCombine
     return 0;
   }
   
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadCombine *)param)->Process();
   }
@@ -467,8 +467,8 @@ void CApp::Combine()
   // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
   // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
 
-  CThread thread;
-  if (!thread.Create(CThreadCombine::MyThreadFunction, &combiner))
+  NWindows::CThread thread;
+  if (thread.Create(CThreadCombine::MyThreadFunction, &combiner) != S_OK)
     throw 271824;
   progressDialog.Create(title, _window);
 

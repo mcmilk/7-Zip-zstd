@@ -253,7 +253,7 @@ struct CThreadCrc
     return 0;
   }
   
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadCrc *)param)->Process();
   }
@@ -303,9 +303,9 @@ void CApp::CalculateCrc()
   progressDialog.MainTitle = progressWindowTitle;
   progressDialog.MainAddTitle = title + UString(L" ");
 
-  CThread thread;
-  if (!thread.Create(CThreadCrc::MyThreadFunction, &combiner))
-    throw 271824;
+  NWindows::CThread thread;
+  if (thread.Create(CThreadCrc::MyThreadFunction, &combiner) != S_OK)
+    return;
   progressDialog.Create(title, _window);
 
   if (combiner.Result != S_OK)

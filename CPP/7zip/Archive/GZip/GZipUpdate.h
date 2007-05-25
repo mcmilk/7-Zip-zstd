@@ -17,6 +17,7 @@ struct CCompressionMethodMode
 {
   UInt32 NumPasses;
   UInt32 NumFastBytes;
+  UInt32 Algo;
   bool NumMatchFinderCyclesDefined;
   UInt32 NumMatchFinderCycles;
 };

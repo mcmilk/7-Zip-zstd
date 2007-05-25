@@ -51,7 +51,7 @@ namespace NFileHeader
       kCompressed1c = 3,
       kCompressed2 = 4,
       kNoDataNoCRC = 8,
-      kNoData = 9,
+      kNoData = 9
     };
   }
   namespace NFileType
@@ -62,7 +62,7 @@ namespace NFileHeader
       k7BitText = 1,
       kDirectory = 3,
       kVolumeLablel = 4,
-      kChapterLabel = 5,
+      kChapterLabel = 5
     };
   }
   namespace NFlags

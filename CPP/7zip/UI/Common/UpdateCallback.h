@@ -58,6 +58,7 @@ public:
   IUpdateCallbackUI *Callback;
 
   UString DirPrefix;
+  bool ShareForWrite;
   bool StdInMode;
   const CObjectVector<CDirItem> *DirItems;
   const CObjectVector<CArchiveItem> *ArchiveItems;

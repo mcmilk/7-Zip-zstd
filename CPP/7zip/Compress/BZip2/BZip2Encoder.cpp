@@ -26,14 +26,14 @@ const int kMaxHuffmanLenForEncoding = 16; // it must be < kMaxHuffmanLen = 20
 static const UInt32 kBufferSize = (1 << 17);
 static const int kNumHuffPasses = 4;
 
-bool CThreadInfo::Create()
+bool CThreadInfo::Alloc()
 {
-  if (m_BlockSorterIndex != 0)
-    return true;
-  m_BlockSorterIndex = (UInt32 *)::BigAlloc(BLOCK_SORT_BUF_SIZE(kBlockSizeMax) * sizeof(UInt32));
   if (m_BlockSorterIndex == 0)
-    return false;
-
+  {
+    m_BlockSorterIndex = (UInt32 *)::BigAlloc(BLOCK_SORT_BUF_SIZE(kBlockSizeMax) * sizeof(UInt32));
+    if (m_BlockSorterIndex == 0)
+      return false;
+  }
 
   if (m_Block == 0)
   {
@@ -111,7 +111,7 @@ DWORD CThreadInfo::ThreadFunc()
   }
 }
 
-static DWORD WINAPI MFThread(void *threadCoderInfo)
+static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
 {
   return ((CThreadInfo *)threadCoderInfo)->ThreadFunc();
 }
@@ -135,33 +135,38 @@ CEncoder::~CEncoder()
   Free();
 }
 
-bool CEncoder::Create()
+HRes CEncoder::Create()
 {
+  RINOK(CanProcessEvent.CreateIfNotCreated());
+  RINOK(CanStartWaitingEvent.CreateIfNotCreated());
+  if (ThreadsInfo != 0 && m_NumThreadsPrev == NumThreads)
+    return S_OK;
   try 
   { 
-    if (ThreadsInfo != 0 && m_NumThreadsPrev == NumThreads)
-      return true;
     Free();
     MtMode = (NumThreads > 1);
     m_NumThreadsPrev = NumThreads;
     ThreadsInfo = new CThreadInfo[NumThreads];
     if (ThreadsInfo == 0)
-      return false;
-    for (UInt32 t = 0; t < NumThreads; t++)
+      return E_OUTOFMEMORY;
+  }
+  catch(...) { return E_OUTOFMEMORY; }
+  for (UInt32 t = 0; t < NumThreads; t++)
+  {
+    CThreadInfo &ti = ThreadsInfo[t];
+    ti.Encoder = this;
+    if (MtMode)
     {
-      CThreadInfo &ti = ThreadsInfo[t];
-      ti.Encoder = this;
-      if (MtMode)
-        if (!ti.Thread.Create(MFThread, &ti))
-        {
-          NumThreads = t;
-          Free();
-          return false; 
-        }
+      HRes res = ti.Thread.Create(MFThread, &ti);
+      if (res != S_OK)
+      {
+        NumThreads = t;
+        Free();
+        return res; 
+      }
     }
   }
-  catch(...) { return false; }
-  return true;
+  return S_OK;
 }
 
 void CEncoder::Free()
@@ -712,8 +717,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
 {
   #ifdef COMPRESS_BZIP2_MT
   Progress = progress;
-  if (!Create())
-    return E_FAIL;
+  RINOK(Create());
   for (UInt32 t = 0; t < NumThreads; t++)
   #endif
   {
@@ -729,8 +733,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
 
     ti.m_OptimizeNumTables = m_OptimizeNumTables;
 
-    if (!ti.Create())
+    if (!ti.Alloc())
       return E_OUTOFMEMORY;
+    RINOK(ti.Create());
   }
 
 

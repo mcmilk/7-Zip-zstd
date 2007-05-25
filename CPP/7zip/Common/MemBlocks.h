@@ -41,12 +41,12 @@ public:
   CMemBlockManagerMt(size_t blockSize = (1 << 20)): CMemBlockManager(blockSize) {}
   ~CMemBlockManagerMt() { FreeSpace(); }
 
-  bool AllocateSpace(size_t numBlocks, size_t numNoLockBlocks = 0);
-  bool AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks = 0);
+  HRes AllocateSpace(size_t numBlocks, size_t numNoLockBlocks = 0);
+  HRes AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks = 0);
   void FreeSpace();
   void *AllocateBlock();
   void FreeBlock(void *p, bool lockMode = true);
-  bool ReleaseLockedBlocks(int number) { return Semaphore.Release(number); } 
+  HRes ReleaseLockedBlocks(int number) { return Semaphore.Release(number); } 
 };
 
 
@@ -70,7 +70,7 @@ struct CMemLockBlocks: public CMemBlocks
   CMemLockBlocks(): LockMode(true) {};
   void Free(CMemBlockManagerMt *memManager);
   void FreeBlock(int index, CMemBlockManagerMt *memManager);
-  bool SwitchToNoLockMode(CMemBlockManagerMt *memManager); 
+  HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager); 
   void Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManager);
 };
 

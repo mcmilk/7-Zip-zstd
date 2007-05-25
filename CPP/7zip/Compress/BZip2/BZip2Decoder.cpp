@@ -420,7 +420,7 @@ static UInt32 NO_INLINE DecodeBlock2Rand(const UInt32 *tt, UInt32 blockSize, UIn
 
 #ifdef COMPRESS_BZIP2_MT
 
-static DWORD WINAPI MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
+static THREAD_FUNC_DECL MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
 
 CDecoder::CDecoder():
   m_States(0)
@@ -434,35 +434,40 @@ CDecoder::~CDecoder()
   Free();
 }
 
-bool CDecoder::Create()
+HRes CDecoder::Create()
 {
+  RINOK(CanProcessEvent.CreateIfNotCreated());
+  RINOK(CanStartWaitingEvent.CreateIfNotCreated());
+  if (m_States != 0 && m_NumThreadsPrev == NumThreads)
+    return true;
+  Free();
+  MtMode = (NumThreads > 1);
+  m_NumThreadsPrev = NumThreads;
   try 
   { 
-    if (m_States != 0 && m_NumThreadsPrev == NumThreads)
-      return true;
-    Free();
-    MtMode = (NumThreads > 1);
-    m_NumThreadsPrev = NumThreads;
     m_States = new CState[NumThreads];
     if (m_States == 0)
-      return false;
-    #ifdef COMPRESS_BZIP2_MT
-    for (UInt32 t = 0; t < NumThreads; t++)
-    {
-      CState &ti = m_States[t];
-      ti.Decoder = this;
-      if (MtMode)
-        if (!ti.Thread.Create(MFThread, &ti))
-        {
-          NumThreads = t;
-          Free();
-          return false; 
-        }
-    }
-    #endif
+      return E_OUTOFMEMORY;
   }
-  catch(...) { return false; }
-  return true;
+  catch(...) { return E_OUTOFMEMORY; }
+  #ifdef COMPRESS_BZIP2_MT
+  for (UInt32 t = 0; t < NumThreads; t++)
+  {
+    CState &ti = m_States[t];
+    ti.Decoder = this;
+    if (MtMode)
+    {
+      HRes res = ti.Thread.Create(MFThread, &ti);
+      if (res != S_OK)
+      {
+        NumThreads = t;
+        Free();
+        return res; 
+      }
+    }
+  }
+  #endif
+  return S_OK;
 }
 
 void CDecoder::Free()
@@ -517,13 +522,13 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
 {
   #ifdef COMPRESS_BZIP2_MT
   Progress = progress;
-  if (!Create())
-    return E_FAIL;
+  RINOK(Create());
   for (UInt32 t = 0; t < NumThreads; t++)
   {
     CState &s = m_States[t];
     if (!s.Alloc())
       return E_OUTOFMEMORY;
+    RINOK(s.Create());
     s.StreamWasFinishedEvent.Reset();
     s.WaitingWasStartedEvent.Reset();
     s.CanWriteEvent.Reset();

@@ -51,6 +51,11 @@ bool CInFile::Open(const char *name)
   return CFileBase::OpenBinary(name, O_RDONLY);
 }
 
+bool CInFile::OpenShared(const char *name, bool)
+{
+  return Open(name);
+}
+
 ssize_t CInFile::Read(void *data, size_t size)
 {
   return read(_handle, data, size);

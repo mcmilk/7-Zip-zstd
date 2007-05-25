@@ -143,10 +143,12 @@ static inline UString GetHex2(Byte value)
 
 static const UInt64 k_AES  = 0x06F10701;
 
+#ifndef _SFX
 static inline UInt32 GetUInt32FromMemLE(const Byte *p)
 {
   return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
 }
+#endif
 
 bool CHandler::IsEncrypted(UInt32 index2) const
 {
@@ -393,10 +395,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   COM_TRY_END
 }
 
+#ifdef _7Z_VOL
+
 static const wchar_t *kExt = L"7z";
 static const wchar_t *kAfterPart = L".7z";
-
-#ifdef _7Z_VOL
 
 class CVolumeName
 {

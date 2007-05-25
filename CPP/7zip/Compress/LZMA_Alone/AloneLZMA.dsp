@@ -265,6 +265,14 @@ SOURCE=..\..\..\Windows\Defs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\IntToString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File

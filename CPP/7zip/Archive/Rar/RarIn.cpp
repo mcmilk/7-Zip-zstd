@@ -17,8 +17,6 @@ extern "C"
 namespace NArchive {
 namespace NRar {
  
-static const char kEndOfString = '\0';
-  
 void CInArchive::ThrowExceptionWithCode(
     CInArchiveException::CCauseType cause)
 {

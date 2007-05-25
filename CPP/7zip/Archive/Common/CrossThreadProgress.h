@@ -17,6 +17,12 @@ public:
   HRESULT Result;
   NWindows::NSynchronization::CAutoResetEvent ProgressEvent;
   NWindows::NSynchronization::CAutoResetEvent WaitEvent;
+
+  HRes Create()
+  {
+    RINOK(ProgressEvent.CreateIfNotCreated());
+    return WaitEvent.CreateIfNotCreated();
+  }
   void Init()
   {
     ProgressEvent.Reset();

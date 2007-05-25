@@ -5,7 +5,7 @@
 
 #include "../../../Common/Buffer.h"
 #include "../../../Common/String.h"
-#include "../../Common/MethodID.h"
+#include "../../Common/MethodId.h"
 #include "7zHeader.h"
 
 namespace NArchive {

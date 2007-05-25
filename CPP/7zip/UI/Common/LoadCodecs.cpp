@@ -58,6 +58,8 @@ static bool ReadPathFromRegistry(HKEY baseKey, CSysString &path)
   return false;
 }
 
+#endif
+
 CSysString GetBaseFolderPrefixFromRegistry()
 {
   CSysString moduleFolderPrefix = GetLibraryFolderPrefix();
@@ -71,8 +73,8 @@ CSysString GetBaseFolderPrefixFromRegistry()
   if (NFind::FindFile(moduleFolderPrefix + kFormatsFolderName, fileInfo))
     if (fileInfo.IsDirectory())
       return moduleFolderPrefix;
-  CSysString path;
   #ifdef _WIN32
+  CSysString path;
   if (ReadPathFromRegistry(HKEY_CURRENT_USER, path))
     return path;
   if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, path))
@@ -80,9 +82,6 @@ CSysString GetBaseFolderPrefixFromRegistry()
   #endif
   return moduleFolderPrefix;
 }
-
-#endif
-
 
 typedef UInt32 (WINAPI *GetNumberOfMethodsFunc)(UInt32 *numMethods);
 typedef UInt32 (WINAPI *GetNumberOfFormatsFunc)(UInt32 *numFormats);

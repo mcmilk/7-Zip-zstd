@@ -30,6 +30,12 @@ class COutMemStream:
 
 public:
 
+  HRes CreateEvents()
+  {
+    RINOK(StopWritingEvent.CreateIfNotCreated());
+    return WriteToRealStreamEvent.CreateIfNotCreated();
+  }
+
   void SetOutStream(IOutStream *outStream)
   {
     OutStream = outStream;

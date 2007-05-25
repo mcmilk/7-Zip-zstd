@@ -108,8 +108,9 @@ UI_COMMON_OBJS = \
   $O\PropIDUtils.obj \
 
 C_OBJS = \
-  $O\Sort.obj \
   $O\Alloc.obj \
+  $O\Sort.obj \
+  $O\Threads.obj \
 
 !include "../Crc2.mak"
 

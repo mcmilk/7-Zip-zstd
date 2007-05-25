@@ -33,8 +33,6 @@ using namespace NFar;
 
 static const char *kCommandPrefix = "7-zip";
 
-static const int kDescriptionMaxSize = 256;
-
 static const char *kRegisrtryMainKeyName = "";
 
 static const char *kRegisrtryValueNameEnabled = "UsedByDefault3";

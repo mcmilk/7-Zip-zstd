@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
 #include "ConsoleClose.h"
 
 static int g_BreakCounter = 0;

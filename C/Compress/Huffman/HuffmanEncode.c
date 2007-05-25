@@ -1,4 +1,4 @@
-// Compression/HuffmanEncode.c
+/* Compress/HuffmanEncode.c */
 
 #include "HuffmanEncode.h"
 #include "../../Sort.h"
@@ -9,13 +9,13 @@
 
 #define NUM_COUNTERS 64
 
-// use BLOCK_SORT_EXTERNAL_FLAGS if blockSize > 1M
+/* use BLOCK_SORT_EXTERNAL_FLAGS if blockSize > 1M */
 #define HUFFMAN_SPEED_OPT
 
 void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymbols, UInt32 maxLen)
 {
   UInt32 num = 0;
-  // if (maxLen > 10) maxLen = 10;
+  /* if (maxLen > 10) maxLen = 10; */
   {
     UInt32 i;
     
@@ -133,7 +133,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
           for (len = 1; len <= kMaxLen; len++) 
             nextCodes[len] = code = (code + lenCounters[len - 1]) << 1;
         }
-        // if (code + lenCounters[kMaxLen] - 1 != (1 << kMaxLen) - 1) throw 1;
+        /* if (code + lenCounters[kMaxLen] - 1 != (1 << kMaxLen) - 1) throw 1; */
 
         {
           UInt32 i;

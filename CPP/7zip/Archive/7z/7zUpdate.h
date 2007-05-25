@@ -35,7 +35,7 @@ struct CUpdateItem
   bool IsLastAccessTimeDefined;
   bool AttributesAreDefined;
 
-  const bool HasStream() const 
+  bool HasStream() const 
     { return !IsDirectory && !IsAnti && Size != 0; }
   CUpdateItem():  
       IsAnti(false), 

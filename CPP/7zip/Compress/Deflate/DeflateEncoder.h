@@ -24,7 +24,7 @@ struct CCodeValue
   UInt16 Len;
   UInt16 Pos;
   void SetAsLiteral() { Len = (1 << 15); }
-  bool IsLiteral() const { return ((Len & (1 << 15)) != 0); }
+  bool IsLiteral() const { return (Len >= (1 << 15)); }
 };
 
 struct COptimal
@@ -67,6 +67,8 @@ public:
 
   UInt16 *m_MatchDistances;
   UInt32 m_NumFastBytes;
+  bool _fastMode;
+  bool _btMode;
 
   UInt16 *m_OnePosMatchesMemory;
   UInt16 *m_DistanceMemory;
@@ -123,8 +125,11 @@ public:
   void MovePos(UInt32 num);
   UInt32 Backward(UInt32 &backRes, UInt32 cur);
   UInt32 GetOptimal(UInt32 &backRes);
+  UInt32 GetOptimalFast(UInt32 &backRes);
 
   void LevelTableDummy(const Byte *levels, int numLevels, UInt32 *freqs);
+
+  void WriteBits(UInt32 value, int numBits);
   void LevelTableCode(const Byte *levels, int numLevels, const Byte *lens, const UInt32 *codes);
 
   void MakeTables();

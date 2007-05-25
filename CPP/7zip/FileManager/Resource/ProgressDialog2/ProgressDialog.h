@@ -163,7 +163,10 @@ public:
     #ifndef _SFX
     ,MainWindow(0)
     #endif
-  {}
+  {
+    if (_dialogCreatedEvent.Create() != S_OK)
+      throw 1334987;
+  }
 
   void WaitCreating() { _dialogCreatedEvent.Lock(); }
 

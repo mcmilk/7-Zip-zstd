@@ -186,16 +186,20 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
       m_OutWindowStream.PutByte((Byte)c);
       pos++;
     }
-    else 
+    else if (c >= kNumCSymbols)
+      return S_FALSE;
+    else
     {
       // offset = (interface->method == LARC_METHOD_NUM) ? 0x100 - 2 : 0x100 - 3;
       UInt32 len  = c - 256 + kMinMatch;
       UInt32 distance = m_PHuffmanDecoder.Decode(&m_InBitStream);
       if (distance != 0)
         distance = (1 << (distance - 1)) + ReadBits(distance - 1);
-      pos += len;
       if (distance >= pos)
-        throw 1;
+        return S_FALSE;
+      if (pos + len > *outSize)
+        len = (UInt32)(*outSize - pos);
+      pos += len;
       m_OutWindowStream.CopyBlock(distance, len);
     }
   }

@@ -1,4 +1,4 @@
-// BranchARMThumb.h
+/* BranchARMThumb.h */
 
 #ifndef __BRANCH_ARM_THUMB_H
 #define __BRANCH_ARM_THUMB_H

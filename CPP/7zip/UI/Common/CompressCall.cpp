@@ -39,7 +39,7 @@ static void AddLagePagesSwitch(UString &params)
 
 HRESULT MyCreateProcess(const UString &params, 
     LPCWSTR curDir, bool waitFinish,
-    NWindows::NSynchronization::CEvent *event)
+    NWindows::NSynchronization::CBaseEvent *event)
 {
   const UString params2 = params;
   PROCESS_INFORMATION processInformation;
@@ -114,9 +114,28 @@ static UString Get7zGuiPath()
   return GetQuotedString(path);
 }
 
+static HRESULT CreateTempEvent(const wchar_t *name, 
+    NSynchronization::CManualResetEvent &event, UString &eventName)
+{
+  CRandom random;
+  random.Init(GetTickCount());
+  for (;;)
+  {
+    int number = random.Generate();
+    wchar_t temp[32];
+    ConvertUInt64ToString((UInt32)number, temp);
+    eventName = name;
+    eventName += temp;
+    RINOK(event.CreateWithName(false, GetSystemString(eventName)));
+    if (::GetLastError() != ERROR_ALREADY_EXISTS)
+      return S_OK;
+    event.Close();
+  }
+}
+
 static HRESULT CreateMap(const UStringVector &names, 
     const UString &id,   
-    CFileMapping &fileMapping, NSynchronization::CEvent &event,
+    CFileMapping &fileMapping, NSynchronization::CManualResetEvent &event,
     UString &params)
 {
   UInt32 extraSize = 2;
@@ -126,7 +145,6 @@ static HRESULT CreateMap(const UStringVector &names,
   UInt32 totalSize = extraSize + dataSize;
   
   UString mappingName;
-  UString eventName;
   
   CRandom random;
   random.Init(GetTickCount());
@@ -146,20 +164,8 @@ static HRESULT CreateMap(const UStringVector &names,
     fileMapping.Close();
   }
   
-  for (;;)
-  {
-    int number = random.Generate();
-    wchar_t temp[32];
-    ConvertUInt64ToString(UInt32(number), temp);
-    eventName = id;
-    eventName += L"MappingEndEvent";
-    eventName += temp;
-    if (!event.Create(true, false, GetSystemString(eventName)))
-      return E_FAIL;
-    if (::GetLastError() != ERROR_ALREADY_EXISTS)
-      break;
-    event.Close();
-  }
+  UString eventName;
+  RINOK(CreateTempEvent(id + L"MappingEndEvent", event, eventName));
 
   params += mappingName;
   params += L":";
@@ -218,7 +224,6 @@ HRESULT CompressFiles(
   UInt32 totalSize = extraSize + dataSize;
   
   UString mappingName;
-  UString eventName;
   
   CFileMapping fileMapping;
   CRandom random;
@@ -241,23 +246,9 @@ HRESULT CompressFiles(
     fileMapping.Close();
   }
   
-  NSynchronization::CEvent event;
-  for (;;)
-  {
-    int number = random.Generate();
-    wchar_t temp[32];
-    ConvertUInt64ToString(UInt32(number), temp);
-    eventName = L"7zCompressMappingEndEvent";
-    eventName += temp;
-    if (!event.Create(true, false, GetSystemString(eventName)))
-    {
-      // MyMessageBox(IDS_ERROR, 0x02000605);
-      return E_FAIL;
-    }
-    if (::GetLastError() != ERROR_ALREADY_EXISTS)
-      break;
-    event.Close();
-  }
+  NSynchronization::CManualResetEvent event;
+  UString eventName;
+  RINOK(CreateTempEvent(L"7zCompressMappingEndEvent", event, eventName));
 
   params += mappingName;
   params += L":";
@@ -337,7 +328,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &archivePaths,
   params2 += kArchiveNoNameSwitch;
   params2 += kArchiveMapSwitch;
   CFileMapping fileMapping;
-  NSynchronization::CEvent event;
+  NSynchronization::CManualResetEvent event;
   RINOK(CreateMap(archivePaths, L"7zExtract", fileMapping, event, params2));
   return MyCreateProcess(params2, 0, false, &event);
 }

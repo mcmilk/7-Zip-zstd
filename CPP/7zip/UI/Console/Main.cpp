@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include <io.h>
-
 #include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
@@ -108,6 +106,7 @@ static const char *kHelpString =
     "  -si[{name}]: read data from stdin\n"
     "  -slt: show technical information for l (List) command\n"
     "  -so: write data to stdout\n"
+    "  -ssw: compress shared files\n"
     "  -t{Type}: Set type of archive\n"
     "  -v{Size}[b|k|m|g]: Create volumes\n"
     "  -u[-][p#][q#][r#][x#][y#][z#][!newArchiveName]: Update options\n"
@@ -118,7 +117,6 @@ static const char *kHelpString =
 // ---------------------------
 // exception messages
 
-static const char *kProcessArchiveMessage = " archive: ";
 static const char *kEverythingIsOk = "Everything is Ok";
 static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::kUserError
 
@@ -151,13 +149,7 @@ static void GetArguments(int numArguments, const char *arguments[], UStringVecto
 static void ShowCopyrightAndHelp(CStdOutStream &s, bool needHelp)
 {
   s << kCopyrightString;
-  /*
-  UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
-  s << "System configuration: " << (UInt64)numCPUs << " CPU";
-  if (numCPUs > 1) 
-    s << "s";
-  s << "\n";
-  */
+  // s << "# CPUs: " << (UInt64)NWindows::NSystem::GetNumberOfProcessors() << "\n";
   if (needHelp) 
     s << kHelpString;
 }
@@ -439,6 +431,7 @@ int Main2(
     }
     else
     {
+      UInt64 numErrors = 0;
       HRESULT result = ListArchives(
           codecs,
           options.ArchivePathsSorted, 
@@ -447,7 +440,12 @@ int Main2(
           options.EnableHeaders, 
           options.TechMode,
           options.PasswordEnabled, 
-          options.Password);
+          options.Password, numErrors);
+      if (numErrors > 0)
+      {
+        g_StdOut << endl << "Errors: " << numErrors;
+        return NExitCode::kFatalError;
+      }
       if (result != S_OK)
         throw CSystemException(result);
     }

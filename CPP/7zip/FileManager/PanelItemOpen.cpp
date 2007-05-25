@@ -380,12 +380,16 @@ public:
 class CExitEventLauncher
 {
 public:
-  CManualResetEvent _exitEvent;
-  CExitEventLauncher(): _exitEvent(false) {};
+  NWindows::NSynchronization::CManualResetEvent _exitEvent;
+  CExitEventLauncher()
+  {
+    if (_exitEvent.Create(false) != S_OK)
+      throw 9387173;
+  };
   ~CExitEventLauncher() {  _exitEvent.Set(); }
 } g_ExitEventLauncher;
 
-static DWORD WINAPI MyThreadFunction(void *param)
+static THREAD_FUNC_DECL MyThreadFunction(void *param)
 {
   CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr((CTmpProcessInfo *)param);
   CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
@@ -502,8 +506,8 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   tmpProcessInfo->ItemName = name;
   tmpProcessInfo->ProcessHandle = hProcess;
 
-  CThread thread;
-  if (!thread.Create(MyThreadFunction, tmpProcessInfo))
+  NWindows::CThread thread;
+  if (thread.Create(MyThreadFunction, tmpProcessInfo) != S_OK)
     throw 271824;
   tempDirectory.DisableDeleting();
   tmpProcessInfoPtr.release();

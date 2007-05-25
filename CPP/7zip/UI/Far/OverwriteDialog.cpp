@@ -21,8 +21,6 @@ using namespace NFar;
 
 namespace NOverwriteDialog {
 
-static const char *kHelpTopic = "OverwriteDialog";
-
 struct CFileInfoStrings
 {
   CSysString Size;

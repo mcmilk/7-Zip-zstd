@@ -8,21 +8,16 @@
 
 class CStreamBinder
 {
-  NWindows::NSynchronization::CManualResetEvent *_allBytesAreWritenEvent;
-  NWindows::NSynchronization::CManualResetEvent *_thereAreBytesToReadEvent;
-  NWindows::NSynchronization::CManualResetEvent *_readStreamIsClosedEvent;
+  NWindows::NSynchronization::CManualResetEvent _allBytesAreWritenEvent;
+  NWindows::NSynchronization::CManualResetEvent _thereAreBytesToReadEvent;
+  NWindows::NSynchronization::CManualResetEvent _readStreamIsClosedEvent;
   UInt32 _bufferSize;
   const void *_buffer;
 public:
   // bool ReadingWasClosed;
   UInt64 ProcessedSize;
-  CStreamBinder():
-    _allBytesAreWritenEvent(NULL), 
-    _thereAreBytesToReadEvent(NULL),
-    _readStreamIsClosedEvent(NULL)
-    {}
-  ~CStreamBinder();
-  void CreateEvents();
+  CStreamBinder() {}
+  HRes CreateEvents();
 
   void CreateStreams(ISequentialInStream **inStream, 
       ISequentialOutStream **outStream);

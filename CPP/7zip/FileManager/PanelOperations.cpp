@@ -45,7 +45,7 @@ struct CThreadDelete
     return 0;
   }
   
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadDelete *)param)->Process();
   }
@@ -211,8 +211,8 @@ void CPanel::DeleteItemsInternal(CRecordVector<UInt32> &indices)
   deleter.FolderOperations = folderOperations;
   deleter.Indices = indices;
 
-  CThread thread;
-  if (!thread.Create(CThreadDelete::MyThreadFunction, &deleter))
+  NWindows::CThread thread;
+  if (thread.Create(CThreadDelete::MyThreadFunction, &deleter) != S_OK)
     throw 271824;
   deleter.UpdateCallbackSpec->StartProgressDialog(progressTitle);
 

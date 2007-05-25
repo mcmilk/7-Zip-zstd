@@ -83,12 +83,14 @@ HRESULT UpdateArchive(
 
     NWindows::NCOM::CPropVariant properties[] = 
     { 
+      compressionMethod.Algo, 
       compressionMethod.NumPasses, 
       compressionMethod.NumFastBytes,
       compressionMethod.NumMatchFinderCycles
     };
     PROPID propIDs[] = 
     { 
+      NCoderPropID::kAlgorithm,
       NCoderPropID::kNumPasses, 
       NCoderPropID::kNumFastBytes,
       NCoderPropID::kMatchFinderCycles

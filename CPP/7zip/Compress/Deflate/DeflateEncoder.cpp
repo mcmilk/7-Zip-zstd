@@ -104,6 +104,8 @@ CCoder::CCoder(bool deflate64Mode):
   m_NumPasses(1),
   m_NumDivPasses(1),
   m_NumFastBytes(32),
+  _fastMode(false),
+  _btMode(true),
   m_OnePosMatchesMemory(0),
   m_DistanceMemory(0),
   m_Created(false),
@@ -157,7 +159,7 @@ HRESULT CCoder::Create()
 
   if (!m_Created)
   {
-    _lzInWindow.btMode = 1;
+    _lzInWindow.btMode = _btMode ? 1 : 0;
     _lzInWindow.numHashBytes = 3;
     if (!MatchFinder_Create(&_lzInWindow, 
         m_Deflate64Mode ? kHistorySize64 : kHistorySize32, 
@@ -213,6 +215,15 @@ HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs,
         m_MatchFinderCycles = prop.ulVal;
         break;
       }
+      case NCoderPropID::kAlgorithm:
+      {
+        if (prop.vt != VT_UI4)
+          return E_INVALIDARG;
+        UInt32 maximize = prop.ulVal;
+        _fastMode = (maximize == 0); 
+        _btMode = !_fastMode;
+        break;
+      }
       default:
         return E_INVALIDARG;
     }
@@ -238,7 +249,7 @@ CCoder::~CCoder()
   MatchFinder_Free(&_lzInWindow, &g_Alloc);
 }
 
-void CCoder::GetMatches()
+NO_INLINE void CCoder::GetMatches()
 {
   if (m_IsMultiPass)
   {
@@ -252,7 +263,10 @@ void CCoder::GetMatches()
 
   UInt32 distanceTmp[kMatchMaxLen * 2 + 3];
   
-  UInt32 numPairs = Bt3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp);
+  UInt32 numPairs = (_btMode) ?
+      Bt3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp):
+      Hc3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp);
+
   *m_MatchDistances = (UInt16)numPairs;
    
   if (numPairs > 0)
@@ -285,7 +299,10 @@ void CCoder::MovePos(UInt32 num)
 {
   if (!m_SecondPass && num > 0)
   {
-    Bt3Zip_MatchFinder_Skip(&_lzInWindow, num);
+    if (_btMode)
+      Bt3Zip_MatchFinder_Skip(&_lzInWindow, num);
+    else
+      Hc3Zip_MatchFinder_Skip(&_lzInWindow, num);
     m_AdditionalOffset += num;
   }
 }
@@ -420,6 +437,18 @@ NO_INLINE UInt32 CCoder::GetOptimal(UInt32 &backRes)
   }
 }
 
+UInt32 CCoder::GetOptimalFast(UInt32 &backRes)
+{
+  GetMatches();
+  UInt32 numDistancePairs = m_MatchDistances[0];
+  if (numDistancePairs == 0)
+    return 1;
+  UInt32 lenMain = m_MatchDistances[numDistancePairs - 1];
+  backRes = m_MatchDistances[numDistancePairs]; 
+  MovePos(lenMain - 1);
+  return lenMain;
+}
+
 void CTables::InitStructures()
 {
   UInt32 i;
@@ -489,8 +518,13 @@ NO_INLINE void CCoder::LevelTableDummy(const Byte *levels, int numLevels, UInt32
   }
 }
 
+NO_INLINE void CCoder::WriteBits(UInt32 value, int numBits)
+{
+  m_OutStream.WriteBits(value, numBits);
+}
+
 #define WRITE_HF2(codes, lens, i) m_OutStream.WriteBits(codes[i], lens[i])
-#define WRITE_HF(i) m_OutStream.WriteBits(codes[i], lens[i])
+#define WRITE_HF(i) WriteBits(codes[i], lens[i])
 
 NO_INLINE void CCoder::LevelTableCode(const Byte *levels, int numLevels, const Byte *lens, const UInt32 *codes)
 {
@@ -523,17 +557,17 @@ NO_INLINE void CCoder::LevelTableCode(const Byte *levels, int numLevels, const B
         count--;
       }
       WRITE_HF(kTableLevelRepNumber);
-      m_OutStream.WriteBits(count - 3, 2);
+      WriteBits(count - 3, 2);
     } 
     else if (count <= 10) 
     {
       WRITE_HF(kTableLevel0Number);
-      m_OutStream.WriteBits(count - 3, 3);
+      WriteBits(count - 3, 3);
     }
     else 
     {
       WRITE_HF(kTableLevel0Number2);
-      m_OutStream.WriteBits(count - 11, 7);
+      WriteBits(count - 11, 7);
     }
 
     count = 0; 
@@ -602,7 +636,11 @@ NO_INLINE void CCoder::TryBlock()
         break;
     }
     UInt32 pos;
-    UInt32 len = GetOptimal(pos);
+    UInt32 len;
+    if (_fastMode)
+      len = GetOptimalFast(pos);
+    else
+      len = GetOptimal(pos);
     CCodeValue &codeValue = m_Values[m_ValueIndex++];
     if (len >= kMatchMinLen)
     {
@@ -629,6 +667,8 @@ NO_INLINE void CCoder::TryBlock()
 
 NO_INLINE void CCoder::SetPrices(const CLevels &levels)
 {
+  if (_fastMode)
+    return;
   UInt32 i;
   for(i = 0; i < 256; i++)
   {
@@ -709,11 +749,11 @@ void CCoder::WriteStoreBlock(UInt32 blockSize, UInt32 additionalOffset, bool fin
   {
     UInt32 curBlockSize = (blockSize < (1 << 16)) ? blockSize : (1 << 16) - 1;
     blockSize -= curBlockSize;
-    m_OutStream.WriteBits((finalBlock && (blockSize == 0) ? NFinalBlockField::kFinalBlock: NFinalBlockField::kNotFinalBlock), kFinalBlockFieldSize);
-    m_OutStream.WriteBits(NBlockType::kStored, kBlockTypeFieldSize);
+    WriteBits((finalBlock && (blockSize == 0) ? NFinalBlockField::kFinalBlock: NFinalBlockField::kNotFinalBlock), kFinalBlockFieldSize);
+    WriteBits(NBlockType::kStored, kBlockTypeFieldSize);
     m_OutStream.FlushByte();
-    m_OutStream.WriteBits((UInt16)curBlockSize, kStoredBlockLengthFieldSize);
-    m_OutStream.WriteBits((UInt16)~curBlockSize, kStoredBlockLengthFieldSize);
+    WriteBits((UInt16)curBlockSize, kStoredBlockLengthFieldSize);
+    WriteBits((UInt16)~curBlockSize, kStoredBlockLengthFieldSize);
     const Byte *data = Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow)- additionalOffset;
     for(UInt32 i = 0; i < curBlockSize; i++)
       m_OutStream.WriteByte(data[i]);
@@ -847,10 +887,10 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
       WriteStoreBlock(t.BlockSizeRes, m_AdditionalOffset, finalBlock);
     else
     {
-      m_OutStream.WriteBits((finalBlock ? NFinalBlockField::kFinalBlock: NFinalBlockField::kNotFinalBlock), kFinalBlockFieldSize);
+      WriteBits((finalBlock ? NFinalBlockField::kFinalBlock: NFinalBlockField::kNotFinalBlock), kFinalBlockFieldSize);
       if (t.StaticMode)
       {
-        m_OutStream.WriteBits(NBlockType::kFixedHuffman, kBlockTypeFieldSize);
+        WriteBits(NBlockType::kFixedHuffman, kBlockTypeFieldSize);
         TryFixedBlock(tableIndex);
         int i;
         for (i = 0; i < kFixedMainTableSize; i++)
@@ -863,13 +903,13 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
       {
         if (m_NumDivPasses > 1 || m_CheckStatic)
           TryDynBlock(tableIndex, 1);
-        m_OutStream.WriteBits(NBlockType::kDynamicHuffman, kBlockTypeFieldSize);
-        m_OutStream.WriteBits(m_NumLitLenLevels - kNumLitLenCodesMin, kNumLenCodesFieldSize);
-        m_OutStream.WriteBits(m_NumDistLevels - kNumDistCodesMin, kNumDistCodesFieldSize);
-        m_OutStream.WriteBits(m_NumLevelCodes - kNumLevelCodesMin, kNumLevelCodesFieldSize);
+        WriteBits(NBlockType::kDynamicHuffman, kBlockTypeFieldSize);
+        WriteBits(m_NumLitLenLevels - kNumLitLenCodesMin, kNumLenCodesFieldSize);
+        WriteBits(m_NumDistLevels - kNumDistCodesMin, kNumDistCodesFieldSize);
+        WriteBits(m_NumLevelCodes - kNumLevelCodesMin, kNumLevelCodesFieldSize);
         
         for (UInt32 i = 0; i < m_NumLevelCodes; i++)
-          m_OutStream.WriteBits(m_LevelLevels[i], kLevelFieldSize);
+          WriteBits(m_LevelLevels[i], kLevelFieldSize);
         
         Huffman_ReverseBits(levelCodes, levelLens, kLevelTableSize);
         LevelTableCode(m_NewLevels.litLenLevels, m_NumLitLenLevels, levelLens, levelCodes);

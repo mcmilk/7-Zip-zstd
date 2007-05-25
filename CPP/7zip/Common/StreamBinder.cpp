@@ -51,30 +51,19 @@ STDMETHODIMP CSequentialOutStreamForBinder::Write(const void *data, UInt32 size,
 // CStreamBinder
 // (_thereAreBytesToReadEvent && _bufferSize == 0) means that stream is finished.
 
-void CStreamBinder::CreateEvents()
+HRes CStreamBinder::CreateEvents()
 {
-  _allBytesAreWritenEvent = new CManualResetEvent(true);
-  _thereAreBytesToReadEvent = new CManualResetEvent(false);
-  _readStreamIsClosedEvent = new CManualResetEvent(false);
+  RINOK(_allBytesAreWritenEvent.Create(true));
+  RINOK(_thereAreBytesToReadEvent.Create());
+  return _readStreamIsClosedEvent.Create();
 }
 
 void CStreamBinder::ReInit()
 {
-  _thereAreBytesToReadEvent->Reset();
-  _readStreamIsClosedEvent->Reset();
+  _thereAreBytesToReadEvent.Reset();
+  _readStreamIsClosedEvent.Reset();
   ProcessedSize = 0;
 }
-
-CStreamBinder::~CStreamBinder()
-{
-  if (_allBytesAreWritenEvent != NULL)
-    delete _allBytesAreWritenEvent;
-  if (_thereAreBytesToReadEvent != NULL)
-    delete _thereAreBytesToReadEvent;
-  if (_readStreamIsClosedEvent != NULL)
-    delete _readStreamIsClosedEvent;
-}
-
 
 
   
@@ -103,8 +92,7 @@ HRESULT CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
   UInt32 sizeToRead = size;
   if (size > 0)
   {
-    if(!_thereAreBytesToReadEvent->Lock())
-      return E_FAIL;
+    RINOK(_thereAreBytesToReadEvent.Lock());
     sizeToRead = MyMin(_bufferSize, size);
     if (_bufferSize > 0)
     {
@@ -113,8 +101,8 @@ HRESULT CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
       _bufferSize -= sizeToRead;
       if (_bufferSize == 0)
       {
-        _thereAreBytesToReadEvent->Reset();
-        _allBytesAreWritenEvent->Set();
+        _thereAreBytesToReadEvent.Reset();
+        _allBytesAreWritenEvent.Set();
       }
     }
   }
@@ -126,7 +114,7 @@ HRESULT CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
 
 void CStreamBinder::CloseRead()
 {
-  _readStreamIsClosedEvent->Set();
+  _readStreamIsClosedEvent.Set();
 }
 
 HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -135,12 +123,12 @@ HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSiz
   {
     _buffer = data;
     _bufferSize = size;
-    _allBytesAreWritenEvent->Reset();
-    _thereAreBytesToReadEvent->Set();
+    _allBytesAreWritenEvent.Reset();
+    _thereAreBytesToReadEvent.Set();
 
     HANDLE events[2]; 
-    events[0] = *_allBytesAreWritenEvent;
-    events[1] = *_readStreamIsClosedEvent; 
+    events[0] = _allBytesAreWritenEvent;
+    events[1] = _readStreamIsClosedEvent; 
     DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
     if (waitResult != WAIT_OBJECT_0 + 0)
     {
@@ -158,5 +146,5 @@ HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSiz
 void CStreamBinder::CloseWrite()
 {
   // _bufferSize must be = 0
-  _thereAreBytesToReadEvent->Set();
+  _thereAreBytesToReadEvent.Set();
 }

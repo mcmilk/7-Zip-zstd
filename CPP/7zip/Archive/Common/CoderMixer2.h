@@ -158,7 +158,7 @@ struct CCoderInfo
 class CCoderMixer2
 {
 public:
-  virtual void SetBindInfo(const CBindInfo &bindInfo) = 0;
+  virtual HRESULT SetBindInfo(const CBindInfo &bindInfo) = 0;
   virtual void ReInit() = 0;
   virtual void SetCoderInfo(UInt32 coderIndex, const UInt64 **inSizes, const UInt64 **outSizes) = 0;
 };

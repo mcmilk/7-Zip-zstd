@@ -12,28 +12,12 @@ namespace NCoderMixer2 {
 
 CThreadCoderInfo::CThreadCoderInfo(UInt32 numInStreams, UInt32 numOutStreams): 
     ExitEvent(NULL), 
-    CompressEvent(NULL), 
-    CompressionCompletedEvent(NULL), 
     CCoderInfo(numInStreams, numOutStreams)
 {
   InStreams.Reserve(NumInStreams);
   InStreamPointers.Reserve(NumInStreams);
   OutStreams.Reserve(NumOutStreams);
   OutStreamPointers.Reserve(NumOutStreams);
-}
-
-void CThreadCoderInfo::CreateEvents()
-{
-  CompressEvent = new CAutoResetEvent(false);
-  CompressionCompletedEvent = new CAutoResetEvent(false);
-}
-
-CThreadCoderInfo::~CThreadCoderInfo()
-{
-  if (CompressEvent != NULL)
-    delete CompressEvent;
-  if (CompressionCompletedEvent != NULL)
-    delete CompressionCompletedEvent;
 }
 
 class CCoderInfoFlusher2
@@ -48,13 +32,13 @@ public:
       m_CoderInfo->InStreams[i].Release();
     for (i = 0; i < m_CoderInfo->OutStreams.Size(); i++)
       m_CoderInfo->OutStreams[i].Release();
-    m_CoderInfo->CompressionCompletedEvent->Set();
+    m_CoderInfo->CompressionCompletedEvent.Set();
   }
 };
 
 bool CThreadCoderInfo::WaitAndCode()
 {
-  HANDLE events[2] = { ExitEvent, *CompressEvent };
+  HANDLE events[2] = { ExitEvent, CompressEvent };
   DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
   if (waitResult == WAIT_OBJECT_0 + 0)
     return false;
@@ -123,7 +107,7 @@ void CThreadCoderInfo::SetCoderInfo(const UInt64 **inSizes,
   SetSizes(outSizes, OutSizes, OutSizePointers, NumOutStreams);
 }
 
-static DWORD WINAPI CoderThread(void *threadCoderInfo)
+static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo)
 {
   for (;;)
   {
@@ -135,7 +119,7 @@ static DWORD WINAPI CoderThread(void *threadCoderInfo)
 //////////////////////////////////////
 // CCoderMixer2MT
 
-static DWORD WINAPI MainCoderThread(void *threadCoderInfo)
+static THREAD_FUNC_DECL MainCoderThread(void *threadCoderInfo)
 {
   for (;;)
   {
@@ -146,7 +130,9 @@ static DWORD WINAPI MainCoderThread(void *threadCoderInfo)
 
 CCoderMixer2MT::CCoderMixer2MT()
 {
-  if (!_mainThread.Create(MainCoderThread, this))
+  if (CreateEvents() != S_OK)
+    throw 271824;
+  if (_mainThread.Create(MainCoderThread, this) != S_OK)
     throw 271825;
 }
 
@@ -161,15 +147,16 @@ CCoderMixer2MT::~CCoderMixer2MT()
   }
 }
 
-void CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
+HRESULT CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
 {  
   _bindInfo = bindInfo; 
   _streamBinders.Clear();
   for(int i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
     _streamBinders.Add(CStreamBinder());
-    _streamBinders.Back().CreateEvents();
+    RINOK(_streamBinders.Back().CreateEvents());
   }
+  return S_OK;
 }
 
 void CCoderMixer2MT::AddCoderCommon()
@@ -180,13 +167,13 @@ void CCoderMixer2MT::AddCoderCommon()
   CThreadCoderInfo threadCoderInfo(CoderStreamsInfo.NumInStreams, 
       CoderStreamsInfo.NumOutStreams);
   _coderInfoVector.Add(threadCoderInfo);
-  _coderInfoVector.Back().CreateEvents();
-  _coderInfoVector.Back().ExitEvent = _exitEvent;
-  _compressingCompletedEvents.Add(*_coderInfoVector.Back().CompressionCompletedEvent);
+  CThreadCoderInfo *tci = &_coderInfoVector.Back();
+  tci->CreateEvents();
+  tci->ExitEvent = _exitEvent;
 
   NWindows::CThread newThread;
   _threads.Add(newThread);
-  if (!_threads.Back().Create(CoderThread, &_coderInfoVector.Back()))
+  if (_threads.Back().Create(CoderThread, tci) != S_OK)
     throw 271824;
 }
 
@@ -282,13 +269,13 @@ bool CCoderMixer2MT::MyCode()
   if (waitResult == WAIT_OBJECT_0 + 0)
     return false;
 
-  for(int i = 0; i < _coderInfoVector.Size(); i++)
-    _coderInfoVector[i].CompressEvent->Set();
-  /* DWORD result = */ ::WaitForMultipleObjects(_compressingCompletedEvents.Size(), 
-      &_compressingCompletedEvents.Front(), TRUE, INFINITE);
-  
-  _compressingFinishedEvent.Set();
+  int i;
+  for(i = 0; i < _coderInfoVector.Size(); i++)
+    _coderInfoVector[i].CompressEvent.Set();
+  for (i = 0; i < _coderInfoVector.Size(); i++)
+    _coderInfoVector[i].CompressionCompletedEvent.Lock();
 
+  _compressingFinishedEvent.Set();
   return true;
 }
 
@@ -311,6 +298,7 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
   
   CCrossThreadProgress *progressSpec = new CCrossThreadProgress;
   CMyComPtr<ICompressProgressInfo> crossProgress = progressSpec;
+  RINOK(progressSpec->Create());
   progressSpec->Init();
   _coderInfoVector[_progressCoderIndex].Progress = crossProgress;
 

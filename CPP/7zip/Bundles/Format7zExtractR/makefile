@@ -95,7 +95,8 @@ LZMA_OPT_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
-  $O\7zCrc.obj
+  $O\7zCrc.obj \
+  $O\Threads.obj \
 
 C_BRANCH_OBJS = \
   $O\BranchARM.obj \

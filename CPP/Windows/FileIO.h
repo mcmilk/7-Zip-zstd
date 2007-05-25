@@ -53,9 +53,11 @@ class CInFile: public CFileBase
 {
 public:
   bool Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool OpenShared(LPCTSTR fileName, bool shareForWrite);
   bool Open(LPCTSTR fileName);
   #ifndef _UNICODE
   bool Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool OpenShared(LPCWSTR fileName, bool shareForWrite);
   bool Open(LPCWSTR fileName);
   #endif
   bool ReadPart(void *data, UInt32 size, UInt32 &processedSize);

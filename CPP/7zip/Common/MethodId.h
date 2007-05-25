@@ -1,4 +1,4 @@
-// MethodID.h
+// MethodId.h
 
 #ifndef __7Z_METHOD_ID_H
 #define __7Z_METHOD_ID_H

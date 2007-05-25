@@ -1,7 +1,7 @@
 #include "resource.h"
 #include "../../../GuiCommon.rc"
 
-#define xSize2 380
+#define xSize2 400
 #define ySize2 305
 
 #define xSize (xSize2 + marg + marg)
@@ -24,21 +24,24 @@
 #undef bXPos3
 #undef bYPos
 
-#define gSize 180
+#define gSize 190
 #define gSpace 24
 
-#define g0XSize 100
+#define g1XSize 90
+#define g0XSize (gSize - g1XSize)
 #define g1XPos  (marg + g0XSize)
-#define g1XSize (gSize - g0XSize)
 
-#define g2XSize 122
+#define g3XSize 40
+#define g2XSize (gSize - g3XSize)
 #define g3XPos  (marg + g2XSize)
-#define g3XSize (gSize - g2XSize)
 
 #define g4XPos (marg + gSize + gSpace)
 #define g4XPos2 (g4XPos + 7)
 #define g4XSize (xSize2 - gSize - gSpace)
 #define g4XSize2 (g4XSize - 14)
+
+#define OptYPos 73
+#define PswYPos 128
 
 #define bXPos1 (xSize - marg - bXSize)
 #define bXPos2 (bXPos1 - 10 - bXSize)
@@ -93,25 +96,27 @@ BEGIN
   LTEXT     "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE, g4XPos, 39, g4XSize, 8
   COMBOBOX  IDC_COMPRESS_COMBO_UPDATE_MODE, g4XPos, 51, g4XSize, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4XPos, 73, g4XSize, 32
+  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4XPos, OptYPos, g4XSize, 48
   CONTROL   "Create SF&X archive",IDC_COMPRESS_SFX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
-            g4XPos2, 87, g4XSize2, 10
+            g4XPos2, OptYPos + 14, g4XSize2, 10
+  CONTROL   "Compress shared files",IDC_COMPRESS_SHARED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            g4XPos2, OptYPos + 30, g4XSize2, 10
   
-  GROUPBOX  "Encryption",IDC_COMPRESS_ENCRYPTION, g4XPos, 113, g4XSize, 127
+  GROUPBOX  "Encryption",IDC_COMPRESS_ENCRYPTION, g4XPos, PswYPos, g4XSize, 127
 
-  LTEXT     "Enter password:",IDC_STATIC_COMPRESS_PASSWORD1, g4XPos2, 127, g4XSize2, 8
-  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD1, g4XPos2, 139, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
-  LTEXT     "Reenter password:",IDC_STATIC_COMPRESS_PASSWORD2, g4XPos2, 159, g4XSize2, 8
-  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD2, g4XPos2, 171, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  LTEXT     "Enter password:",IDC_STATIC_COMPRESS_PASSWORD1, g4XPos2, PswYPos + 14, g4XSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD1, g4XPos2, PswYPos + 26, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  LTEXT     "Reenter password:",IDC_STATIC_COMPRESS_PASSWORD2, g4XPos2, PswYPos + 46, g4XSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD2, g4XPos2, PswYPos + 58, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
 
   CONTROL   "Show Password",IDC_COMPRESS_CHECK_SHOW_PASSWORD,"Button", BS_AUTOCHECKBOX | WS_TABSTOP,
-            g4XPos2, 192, g4XSize2, 10
+            g4XPos2, PswYPos + 79, g4XSize2, 10
 
-  LTEXT     "&Encryption method:",IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, g4XPos2, 208, 80, 8
-  COMBOBOX  IDC_COMPRESS_COMBO_ENCRYPTION_METHOD, g4XPos2 + 90, 206, g4XSize2 - 90,  198, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+  LTEXT     "&Encryption method:",IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, g4XPos2, PswYPos + 95, 100, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ENCRYPTION_METHOD, g4XPos2 + 100, PswYPos + 93, g4XSize2 - 100,  198, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
   CONTROL   "Encrypt file &names", IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
-            g4XPos2, 224, g4XSize2, 10
+            g4XPos2, PswYPos + 111, g4XSize2, 10
   
   DEFPUSHBUTTON  "OK",         IDOK, bXPos3, bYPos, bXSize, bYSize, WS_GROUP
   PUSHBUTTON     "Cancel", IDCANCEL, bXPos2, bYPos, bXSize, bYSize

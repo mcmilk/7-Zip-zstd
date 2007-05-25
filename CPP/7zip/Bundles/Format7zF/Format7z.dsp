@@ -236,6 +236,10 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 
 SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Thread.h
+# End Source File
 # End Group
 # Begin Group "Compress"
 
@@ -783,14 +787,6 @@ SOURCE=..\..\Compress\Quantum\QuantumDecoder.h
 # Begin Group "Lzh Codecs"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzh\Lzh1Decoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzh\Lzh1Decoder.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Lzh\LzhDecoder.cpp
@@ -2346,5 +2342,61 @@ SOURCE=..\..\IPassword.h
 SOURCE=..\..\IProgress.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\Archive\Arj\arj.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\BZip2\bz2.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Cab\cab.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Cpio\cpio.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Deb\deb.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\GZip\gz.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Iso\Iso.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzh\lzh.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Rar\rar.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\RPM\rpm.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Split\Split.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Tar\tar.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Z\Z.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Zip\zip.ico
+# End Source File
 # End Target
 # End Project

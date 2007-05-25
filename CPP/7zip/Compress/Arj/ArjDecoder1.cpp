@@ -14,7 +14,7 @@ static const UInt32 kHistorySize = 26624;
 static const UInt32 kMatchMaxLen = 256;
 static const UInt32 kMatchMinLen = 3;
 
-static const UInt32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
+// static const UInt32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
 
 void CCoder::MakeTable(int nchar, Byte *bitlen, int tablebits, 
     UInt32 *table, int tablesize)

@@ -15,7 +15,7 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP
+  MY_UNKNOWN_IMP1(IInArchive)
 
   STDMETHOD(Open)(IInStream *inStream, 
       const UInt64 *maxCheckStartPosition,

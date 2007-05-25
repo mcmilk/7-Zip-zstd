@@ -98,6 +98,8 @@ void MatchFinder_CreateVTable(CMatchFinder *p, IMatchFinder *vTable);
 
 void MatchFinder_Init(CMatchFinder *p);
 UInt32 Bt3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances);
+UInt32 Hc3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances);
 void Bt3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
+void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
 
 #endif

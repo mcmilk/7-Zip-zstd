@@ -1,4 +1,4 @@
-// BranchSPARC.h
+/* BranchSPARC.h */
 
 #ifndef __BRANCH_SPARC_H
 #define __BRANCH_SPARC_H

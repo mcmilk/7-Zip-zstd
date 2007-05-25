@@ -51,26 +51,27 @@ void CMemBlockManager::FreeBlock(void *p)
 }
 
 
-bool CMemBlockManagerMt::AllocateSpace(size_t numBlocks, size_t numNoLockBlocks)
+HRes CMemBlockManagerMt::AllocateSpace(size_t numBlocks, size_t numNoLockBlocks)
 {
   if (numNoLockBlocks > numBlocks)
-    return false;
+    return E_INVALIDARG;
   if (!CMemBlockManager::AllocateSpace(numBlocks))
-    return false;
+    return E_OUTOFMEMORY;
   size_t numLockBlocks = numBlocks - numNoLockBlocks;
+  Semaphore.Close();
   return Semaphore.Create((LONG)numLockBlocks, (LONG)numLockBlocks);
 }
 
-bool CMemBlockManagerMt::AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks)
+HRes CMemBlockManagerMt::AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks)
 {
   if (numNoLockBlocks > desiredNumberOfBlocks)
-    return false;
+    return E_INVALIDARG;
   for (;;)
   {
-    if (AllocateSpace(desiredNumberOfBlocks, numNoLockBlocks))
-      return true;
+    if (AllocateSpace(desiredNumberOfBlocks, numNoLockBlocks) == 0)
+      return 0;
     if (desiredNumberOfBlocks == numNoLockBlocks)
-      return false;
+      return E_OUTOFMEMORY;
     desiredNumberOfBlocks = numNoLockBlocks + ((desiredNumberOfBlocks - numNoLockBlocks) >> 1);
   }
 }
@@ -152,16 +153,17 @@ void CMemLockBlocks::Free(CMemBlockManagerMt *memManager)
   TotalSize = 0;
 }
 
-bool CMemLockBlocks::SwitchToNoLockMode(CMemBlockManagerMt *memManager) 
+HRes CMemLockBlocks::SwitchToNoLockMode(CMemBlockManagerMt *memManager) 
 { 
   if (LockMode)
   {
     if (Blocks.Size() > 0)
-      if (!memManager->ReleaseLockedBlocks(Blocks.Size()))
-        return false;
+    {
+      RINOK(memManager->ReleaseLockedBlocks(Blocks.Size()));
+    }
     LockMode = false;
   }
-  return true;
+  return 0;
 }
 
 void CMemLockBlocks::Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManager)

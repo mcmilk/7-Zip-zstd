@@ -1,4 +1,4 @@
-// BranchPPC.h
+/* BranchPPC.h */
 
 #ifndef __BRANCH_PPC_H
 #define __BRANCH_PPC_H

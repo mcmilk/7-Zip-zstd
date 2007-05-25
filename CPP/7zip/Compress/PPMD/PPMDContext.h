@@ -135,14 +135,14 @@ struct CInfo
             SEE2Cont[i][k].init(5*i+10);
   }
 
-  void StartModelRare(int MaxOrder)
+  void StartModelRare(int maxOrder)
   {
     int i, k, m ,Step;
     EscCount=PrintCount=1;
-    if (MaxOrder < 2) 
+    if (maxOrder < 2) 
     {
         memset(CharMask,0,sizeof(CharMask));
-        OrderFall = this->MaxOrder;               
+        OrderFall = MaxOrder;               
         MinContext = MaxContext;
         while (MinContext->Suffix != 0) 
         {
@@ -154,7 +154,7 @@ struct CInfo
     } 
     else 
     {
-        this->MaxOrder = MaxOrder;                
+        MaxOrder = maxOrder;                
         RestartModelRare();
         NS2BSIndx[0] = 2 * 0;                   
         NS2BSIndx[1] = 2 * 1;

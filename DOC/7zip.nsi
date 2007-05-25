@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 45
+!define VERSION_MINOR 46
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -151,6 +151,8 @@ Section
 
   RMDir $INSTDIR\Formats
 
+  Delete $INSTDIR\Lang\no.txt
+
   # install files
   SetOutPath "$INSTDIR"
 
@@ -227,7 +229,8 @@ Section
   File ms.txt
   File ne.txt
   File nl.txt
-  File no.txt
+  File nb.txt
+  File nn.txt
   File pl.txt
   File pt.txt
   File pt-br.txt
@@ -410,7 +413,8 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ms.txt
   Delete $INSTDIR\Lang\ne.txt
   Delete $INSTDIR\Lang\nl.txt
-  Delete $INSTDIR\Lang\no.txt
+  Delete $INSTDIR\Lang\nb.txt
+  Delete $INSTDIR\Lang\nn.txt
   Delete $INSTDIR\Lang\pl.txt
   Delete $INSTDIR\Lang\pt.txt
   Delete $INSTDIR\Lang\pt-br.txt

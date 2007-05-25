@@ -421,8 +421,10 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
 
     char updateAddToArchiveString[512];
+    const AString s = GetSystemString(arcInfo.Name, CP_OEMCP);
+
     sprintf(updateAddToArchiveString, 
-        g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), GetSystemString(arcInfo.Name), CP_OEMCP);
+        g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), (const char *)s);
 
     int methodIndex = 0;
     int i;
@@ -534,7 +536,6 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
           if (archiveName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
           {
             int pos = archiveName.Length() - prevExtensionLen;
-            UString temp = archiveName.Left(pos);
             if (pos > 1)
             {
               int dotPos = archiveName.ReverseFind('.');

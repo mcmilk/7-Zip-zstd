@@ -46,10 +46,7 @@ using namespace NCOM;
 using namespace NFile;
 using namespace NName;
 
-static const wchar_t *kTempArchiveFilePrefixString = L"7zi";
 static const wchar_t *kTempFolderPrefix = L"7zE";
-
-static const char *kIllegalFileNameMessage = "Illegal file name for temp archive";
 
 using namespace NUpdateArchive;
 
@@ -277,6 +274,7 @@ static HRESULT Compress(
     const CCompressionMethodMode &compressionMethod,
     CArchivePath &archivePath, 
     const CObjectVector<CArchiveItem> &archiveItems,
+    bool shareForWrite,
     bool stdInMode,
     /* const UString & stdInFileName, */
     bool stdOutMode,
@@ -338,6 +336,7 @@ static HRESULT Compress(
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
+  updateCallbackSpec->ShareForWrite = shareForWrite;
   updateCallbackSpec->StdInMode = stdInMode;
   updateCallbackSpec->Callback = callback;
   updateCallbackSpec->DirItems = &dirItems;
@@ -518,6 +517,7 @@ static HRESULT UpdateWithItemLists(
         options.MethodMode, 
         command.ArchivePath, 
         archiveItems, 
+        options.OpenShareForWrite,
         options.StdInMode, 
         /* options.StdInFileName, */
         options.StdOutMode,

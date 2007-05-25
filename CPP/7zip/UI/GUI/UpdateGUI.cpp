@@ -30,7 +30,7 @@
 using namespace NWindows;
 using namespace NFile;
 
-static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
+// static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
 static const wchar_t *kDefaultSfxModule = L"7z.sfx";
 static const wchar_t *kSFXExtension = L"exe";
 
@@ -76,7 +76,7 @@ struct CThreadUpdating
     UpdateCallbackGUI->ProgressDialog.MyClose();
     return 0;
   }
-  static DWORD WINAPI MyThreadFunction(void *param)
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
     return ((CThreadUpdating *)param)->Process();
   }
@@ -273,6 +273,7 @@ static HRESULT ShowDialog(
     
   di.CurrentDirPrefix = currentDirPrefix;
   di.SFXMode = options.SfxMode;
+  di.OpenShareForWrite = options.OpenShareForWrite;
   
   if (callback->PasswordIsDefined)
     di.Password = callback->Password;
@@ -334,6 +335,7 @@ static HRESULT ShowDialog(
       di.EncryptHeadersIsAllowed, di.EncryptHeaders,
       di.SFXMode);
   
+  options.OpenShareForWrite = di.OpenShareForWrite;
   ParseAndAddPropertires(options.MethodMode.Properties, di.Options);
 
   if (di.SFXMode)
@@ -388,9 +390,8 @@ HRESULT UpdateGUI(
   tu.OpenCallback = openCallback;
   tu.ErrorInfo = &errorInfo;
 
-  CThread thread;
-  if (!thread.Create(CThreadUpdating::MyThreadFunction, &tu))
-    throw 271824;
+  NWindows::CThread thread;
+  RINOK(thread.Create(CThreadUpdating::MyThreadFunction, &tu))
   tu.UpdateCallbackGUI->StartProgressDialog(LangString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
   return tu.Result;
 }

@@ -1,4 +1,4 @@
-// Common/Alloc.h
+/* Alloc.h */
 
 #ifndef __COMMON_ALLOC_H
 #define __COMMON_ALLOC_H

@@ -43,6 +43,8 @@ namespace NCompressDialog
     UString EncryptionMethod;
 
     bool SFXMode;
+    bool OpenShareForWrite;
+
     
     UString ArchiveName; // in: Relative for ; out: abs
     UString CurrentDirPrefix;

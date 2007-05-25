@@ -39,6 +39,11 @@ public:
   CBenchInfo2 DecompressingInfoTemp;
   CBenchInfo2 DecompressingInfo;
 
+  CProgressSyncInfo()
+  {
+    if (_startEvent.Create() != S_OK)
+      throw 3986437;
+  }
   void Init()
   {
     Changed = false;

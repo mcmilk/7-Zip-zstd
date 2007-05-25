@@ -1,4 +1,4 @@
-// Compress/HuffmanEncode.h
+/* Compress/HuffmanEncode.h */
 
 #ifndef __COMPRESS_HUFFMANENCODE_H
 #define __COMPRESS_HUFFMANENCODE_H

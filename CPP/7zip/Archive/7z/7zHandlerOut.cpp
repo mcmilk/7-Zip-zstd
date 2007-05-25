@@ -54,6 +54,9 @@ static const UInt32 kPpmdOrderX5 = 6;
 static const UInt32 kPpmdOrderX7 = 16;
 static const UInt32 kPpmdOrderX9 = 32;
 
+static const UInt32 kDeflateAlgoX1 = 0;
+static const UInt32 kDeflateAlgoX5 = 1;
+
 static const UInt32 kDeflateFastBytesX1 = 32;
 static const UInt32 kDeflateFastBytesX7 = 64;
 static const UInt32 kDeflateFastBytesX9 = 128;
@@ -323,7 +326,11 @@ HRESULT CHandler::SetCompressionMethod(
                     (level >= 9 ? kDeflatePassesX9 :  
                     (level >= 7 ? kDeflatePassesX7 : 
                                   kDeflatePassesX1));
+      UInt32 algo = 
+                    (level >= 5 ? kDeflateAlgoX5 : 
+                                  kDeflateAlgoX1); 
 
+      SetOneMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
       SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
       SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
     }

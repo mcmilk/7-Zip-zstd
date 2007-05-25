@@ -8,8 +8,6 @@
 
 #include "../Common/OpenArchive.h"
 
-static const UInt64 kMaxCheckStartPosition = 1 << 20;
-
 static inline UINT GetCurrentFileCodePage()
   {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 

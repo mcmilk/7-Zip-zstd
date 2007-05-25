@@ -56,7 +56,7 @@ HRESULT CEncoder::CreateMixerCoder(
 {
   _mixerCoderSpec = new NCoderMixer2::CCoderMixer2MT;
   _mixerCoder = _mixerCoderSpec;
-  _mixerCoderSpec->SetBindInfo(_bindInfo);
+  RINOK(_mixerCoderSpec->SetBindInfo(_bindInfo));
   for (int i = 0; i < _options.Methods.Size(); i++)
   {
     const CMethodFull &methodFull = _options.Methods[i];

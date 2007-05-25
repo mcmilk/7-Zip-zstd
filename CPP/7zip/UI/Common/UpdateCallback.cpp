@@ -17,6 +17,7 @@ using namespace NWindows;
 
 CArchiveUpdateCallback::CArchiveUpdateCallback():
   Callback(0),
+  ShareForWrite(false),
   StdInMode(false),
   DirItems(0),
   ArchiveItems(0),
@@ -202,7 +203,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream
     CInFileStream *inStreamSpec = new CInFileStream;
     CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
     UString path = DirPrefix + dirItem.FullPath;
-    if(!inStreamSpec->Open(path))
+    if(!inStreamSpec->OpenShared(path, ShareForWrite))
     {
       return Callback->OpenFileError(path, ::GetLastError());
     }

@@ -79,6 +79,7 @@ LZMA_BENCH_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Threads.obj \
 
 !include "../../Crc2.mak"
 

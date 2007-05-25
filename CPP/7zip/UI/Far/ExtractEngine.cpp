@@ -147,8 +147,8 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool
           return E_FAIL;
       }
       char buffer[512];
-      sprintf(buffer, g_StartupInfo.GetMsgString(idMessage), 
-          GetSystemString(m_CurrentFilePath, m_CodePage));
+      const AString s = GetSystemString(m_CurrentFilePath, m_CodePage);
+      sprintf(buffer, g_StartupInfo.GetMsgString(idMessage), (const char *)s);
       if (g_StartupInfo.ShowMessage(buffer) == -1)
         return E_ABORT;
     }

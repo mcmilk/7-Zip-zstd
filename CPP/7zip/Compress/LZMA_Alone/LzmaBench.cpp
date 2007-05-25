@@ -5,10 +5,28 @@
 #include "LzmaBench.h"
 
 #ifndef _WIN32
-#include <time.h>
+#define USE_POSIX_TIME
+#define USE_POSIX_TIME2
 #endif
 
+#ifdef USE_POSIX_TIME
+#include <time.h>
+#ifdef USE_POSIX_TIME2
+#include <sys/time.h>
+#endif
+#endif
+
+#ifdef _WIN32
+#define USE_ALLOCA
+#endif
+
+#ifdef USE_ALLOCA
+#ifdef _WIN32
 #include <malloc.h>
+#else
+#include <stdlib.h>
+#endif
+#endif
 
 extern "C" 
 { 
@@ -35,12 +53,12 @@ static const UInt32 kAdditionalSize = (1 << 16);
 static const UInt32 kCompressedAdditionalSize = (1 << 10);
 static const UInt32 kMaxLzmaPropSize = 5;
 
-class CRandomGenerator
+class CBaseRandomGenerator
 {
   UInt32 A1;
   UInt32 A2;
 public:
-  CRandomGenerator() { Init(); }
+  CBaseRandomGenerator() { Init(); }
   void Init() { A1 = 362436069; A2 = 521288629;}
   UInt32 GetRnd() 
   {
@@ -75,9 +93,9 @@ public:
 
 class CBenchRandomGenerator: public CBenchBuffer
 {
-  CRandomGenerator *RG;
+  CBaseRandomGenerator *RG;
 public:
-  void Set(CRandomGenerator *rg) { RG = rg; }
+  void Set(CBaseRandomGenerator *rg) { RG = rg; }
   UInt32 GetVal(UInt32 &res, int numBits) 
   {
     UInt32 val = res & (((UInt32)1 << numBits) - 1);
@@ -217,49 +235,64 @@ STDMETHODIMP CCrcOutStream::Write(const void *data, UInt32 size, UInt32 *process
   
 static UInt64 GetTimeCount()
 {
-  #ifdef _WIN32
+  #ifdef USE_POSIX_TIME
+  #ifdef USE_POSIX_TIME2
+  timeval v;
+  if (gettimeofday(&v, 0) == 0)
+    return (UInt64)(v.tv_sec) * 1000000 + v.tv_usec;
+  return (UInt64)time(NULL) * 1000000;
+  #else
+  return time(NULL);
+  #endif
+  #else
   /*
   LARGE_INTEGER value;
   if (::QueryPerformanceCounter(&value))
     return value.QuadPart;
   */
   return GetTickCount();
-  #else
-  return clock();
   #endif 
 }
 
 static UInt64 GetFreq()
 {
-  #ifdef _WIN32
+  #ifdef USE_POSIX_TIME
+  #ifdef USE_POSIX_TIME2
+  return 1000000;
+  #else
+  return 1;
+  #endif 
+  #else
   /*
   LARGE_INTEGER value;
   if (::QueryPerformanceFrequency(&value))
     return value.QuadPart;
   */
   return 1000;
-  #else
-  return CLOCKS_PER_SEC;
   #endif 
 }
 
-UInt64 GetUserTime()
+#ifndef USE_POSIX_TIME
+static inline UInt64 GetTime64(const FILETIME &t) { return ((UInt64)t.dwHighDateTime << 32) | t.dwLowDateTime; }
+#endif
+static UInt64 GetUserTime()
 {
-  #ifdef _WIN32
-  FILETIME creationTime, exitTime, kernelTime, userTime;
-  ::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime);
-  return ((UInt64)userTime.dwHighDateTime << 32) | userTime.dwLowDateTime;
-  #else
+  #ifdef USE_POSIX_TIME
   return clock();
+  #else
+  FILETIME creationTime, exitTime, kernelTime, userTime;
+  if (::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime) != 0)
+    return GetTime64(userTime) + GetTime64(kernelTime);
+  return (UInt64)GetTickCount() * 10000;
   #endif 
 }
 
 static UInt64 GetUserFreq()
 {
-  #ifdef _WIN32
-  return 10000000;
-  #else
+  #ifdef USE_POSIX_TIME
   return CLOCKS_PER_SEC;
+  #else
+  return 10000000;
   #endif 
 }
 
@@ -435,13 +468,17 @@ struct CEncoderInfo
   CBenchProgressInfo *progressInfoSpec[2];
   CMyComPtr<ICompressProgressInfo> progressInfo[2];
   UInt32 NumIterations;
+  #ifdef USE_ALLOCA
   size_t AllocaSize;
+  #endif
 
   struct CDecoderInfo
   {
     CEncoderInfo *Encoder;
     UInt32 DecoderIndex;
+    #ifdef USE_ALLOCA
     size_t AllocaSize;
+    #endif
     bool CallbackMode;
   };
   CDecoderInfo decodersInfo[2];
@@ -457,17 +494,19 @@ struct CEncoderInfo
   CBenchRandomGenerator rg;
   CBenchmarkOutStream *propStreamSpec;
   CMyComPtr<ISequentialOutStream> propStream;
-  HRESULT Init(UInt32 dictionarySize, UInt32 numThreads, CRandomGenerator *rg);
+  HRESULT Init(UInt32 dictionarySize, UInt32 numThreads, CBaseRandomGenerator *rg);
   HRESULT Encode();
   HRESULT Decode(UInt32 decoderIndex);
 
   CEncoderInfo(): outStreamSpec(0), callback(0), propStreamSpec(0) {}
 
   #ifdef BENCH_MT
-  static DWORD WINAPI EncodeThreadFunction(void *param)
+  static THREAD_FUNC_DECL EncodeThreadFunction(void *param)
   {
     CEncoderInfo *encoder = (CEncoderInfo *)param;
+    #ifdef USE_ALLOCA
     alloca(encoder->AllocaSize);
+    #endif
     HRESULT res = encoder->Encode();
     encoder->Results[0] = res;
     if (res != S_OK)
@@ -475,38 +514,41 @@ struct CEncoderInfo
 
     return 0;
   }
-  static DWORD WINAPI DecodeThreadFunction(void *param)
+  static THREAD_FUNC_DECL DecodeThreadFunction(void *param)
   {
     CDecoderInfo *decoder = (CDecoderInfo *)param;
+    #ifdef USE_ALLOCA
     alloca(decoder->AllocaSize);
+    #endif
     CEncoderInfo *encoder = decoder->Encoder;
     encoder->Results[decoder->DecoderIndex] = encoder->Decode(decoder->DecoderIndex);
     return 0;
   }
 
-  HRESULT CreateEncoderThread(size_t allocaSize)
+  HRESULT CreateEncoderThread()
   {
-    AllocaSize = allocaSize;
-    if (!thread[0].Create(EncodeThreadFunction, this))
-      return ::GetLastError();
-    return 0;
+    return thread[0].Create(EncodeThreadFunction, this);
   }
 
-  HRESULT CreateDecoderThread(int index, bool callbackMode, size_t allocaSize)
+  HRESULT CreateDecoderThread(int index, bool callbackMode
+      #ifdef USE_ALLOCA
+      , size_t allocaSize
+      #endif
+      )
   {
     CDecoderInfo &decoder = decodersInfo[index];
     decoder.DecoderIndex = index;
     decoder.Encoder = this;
+    #ifdef USE_ALLOCA
     decoder.AllocaSize = allocaSize;
+    #endif
     decoder.CallbackMode = callbackMode;
-    if (!thread[index].Create(DecodeThreadFunction, &decoder))
-      return ::GetLastError();
-    return 0;
+    return thread[index].Create(DecodeThreadFunction, &decoder);
   }
   #endif
 };
 
-HRESULT CEncoderInfo::Init(UInt32 dictionarySize, UInt32 numThreads, CRandomGenerator *rgLoc)
+HRESULT CEncoderInfo::Init(UInt32 dictionarySize, UInt32 numThreads, CBaseRandomGenerator *rgLoc)
 {
   rg.Set(rgLoc);
   kBufferSize = dictionarySize + kAdditionalSize;
@@ -670,7 +712,7 @@ HRESULT LzmaBench(
     }
   }
 
-  CRandomGenerator rg;
+  CBaseRandomGenerator rg;
   rg.Init();
   for (i = 0; i < numEncoderThreads; i++)
   {
@@ -699,8 +741,10 @@ HRESULT LzmaBench(
     #ifdef BENCH_MT
     if (numEncoderThreads > 1)
     {
-      size_t allocaSize = (i * 16 * 21) & 0x7FF;
-      RINOK(encoder.CreateEncoderThread(allocaSize))
+      #ifdef USE_ALLOCA
+      encoder.AllocaSize = (i * 16 * 21) & 0x7FF;
+      #endif
+      RINOK(encoder.CreateEncoderThread())
     }
     else
     #endif
@@ -753,7 +797,12 @@ HRESULT LzmaBench(
       for (UInt32 j = 0; j < numSubDecoderThreads; j++)
       {
         size_t allocaSize = ((i * numSubDecoderThreads + j) * 16 * 21) & 0x7FF;
-        RINOK(encoder.CreateDecoderThread(j, (i == 0 && j == 0), allocaSize))
+        HRESULT res = encoder.CreateDecoderThread(j, (i == 0 && j == 0)
+            #ifdef USE_ALLOCA
+            , allocaSize
+            #endif
+            );
+        RINOK(res);
       }
     }
     else
@@ -842,7 +891,7 @@ struct CCrcInfo
   }
 };
 
-static DWORD WINAPI CrcThreadFunction(void *param)
+static THREAD_FUNC_DECL CrcThreadFunction(void *param)
 {
   CCrcInfo *p = (CCrcInfo *)param;
   p->Res = CrcBig(p->Data, p->Size, p->NumCycles, p->Crc);
@@ -876,13 +925,13 @@ static UInt32 CrcCalc1(const Byte *buf, UInt32 size)
   return CRC_GET_DIGEST(crc);
 }
 
-static void RandGen(Byte *buf, UInt32 size, CRandomGenerator &RG)
+static void RandGen(Byte *buf, UInt32 size, CBaseRandomGenerator &RG)
 {
   for (UInt32 i = 0; i < size; i++)
     buf[i] = (Byte)RG.GetRnd();
 }
 
-static UInt32 RandGenCrc(Byte *buf, UInt32 size, CRandomGenerator &RG)
+static UInt32 RandGenCrc(Byte *buf, UInt32 size, CBaseRandomGenerator &RG)
 {
   RandGen(buf, size, RG);
   return CrcCalc1(buf, size);
@@ -903,7 +952,7 @@ bool CrcInternalTest()
   UInt32 crc1 = CrcCalc1(buf, kBufferSize0);
   if (crc1 != 0x29058C73)
     return false;
-  CRandomGenerator RG;
+  CBaseRandomGenerator RG;
   RandGen(buf + kBufferSize0, kBufferSize1, RG);
   for (i = 0; i < kBufferSize0 + kBufferSize1 - kCheckSize; i++)
     for (UInt32 j = 0; j < kCheckSize; j++)
@@ -925,7 +974,7 @@ HRESULT CrcBench(UInt32 numThreads, UInt32 bufferSize, UInt64 &speed)
     return E_OUTOFMEMORY;
 
   Byte *buf = buffer.Buffer;
-  CRandomGenerator RG;
+  CBaseRandomGenerator RG;
   UInt32 numCycles = ((UInt32)1 << 30) / ((bufferSize >> 2) + 1) + 1;
 
   UInt64 timeVal;
@@ -948,8 +997,7 @@ HRESULT CrcBench(UInt32 numThreads, UInt32 bufferSize, UInt64 &speed)
     for (i = 0; i < numThreads; i++)
     {
       CCrcInfo &info = threads.Items[i];
-      if (!info.Thread.Create(CrcThreadFunction, &info))
-        return ::GetLastError();
+      RINOK(info.Thread.Create(CrcThreadFunction, &info));
       threads.NumThreads++;
     }
     threads.WaitAll();

@@ -99,6 +99,10 @@ typedef LONG SCODE;
 
 #define MIDL_INTERFACE(x) struct 
 
+#ifdef __cplusplus
+
+DEFINE_GUID(IID_IUnknown,
+0x00000000, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46);
 struct IUnknown
 {
   STDMETHOD(QueryInterface) (REFIID iid, void **outObject) PURE;
@@ -110,6 +114,8 @@ struct IUnknown
 };
 
 typedef IUnknown *LPUNKNOWN;
+
+#endif
 
 #define VARIANT_TRUE ((VARIANT_BOOL)-1)
 #define VARIANT_FALSE ((VARIANT_BOOL)0)
@@ -149,6 +155,8 @@ typedef WORD PROPVAR_PAD1;
 typedef WORD PROPVAR_PAD2;
 typedef WORD PROPVAR_PAD3;
 
+#ifdef __cplusplus
+
 typedef struct tagPROPVARIANT
 {
   VARTYPE vt;
@@ -178,6 +186,11 @@ typedef PROPVARIANT tagVARIANT;
 typedef tagVARIANT VARIANT;
 typedef VARIANT VARIANTARG;
 
+MY_EXTERN_C HRESULT VariantClear(VARIANTARG *prop);
+MY_EXTERN_C HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src);
+
+#endif
+
 MY_EXTERN_C BSTR SysAllocStringByteLen(LPCSTR psz, UINT len);
 MY_EXTERN_C BSTR SysAllocString(const OLECHAR *sz);
 MY_EXTERN_C void SysFreeString(BSTR bstr);
@@ -185,8 +198,6 @@ MY_EXTERN_C UINT SysStringByteLen(BSTR bstr);
 MY_EXTERN_C UINT SysStringLen(BSTR bstr);
 
 MY_EXTERN_C DWORD GetLastError();
-MY_EXTERN_C HRESULT VariantClear(VARIANTARG *prop);
-MY_EXTERN_C HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src);
 MY_EXTERN_C LONG CompareFileTime(const FILETIME* ft1, const FILETIME* ft2);
 
 #define CP_ACP    0

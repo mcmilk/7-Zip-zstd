@@ -15,6 +15,7 @@
 #include "../../IPassword.h"
 #include "../../Archive/IArchive.h"
 #include "../../UI/Common/Extract.h"
+#include "../../UI/Common/ExitCode.h"
 #include "../../UI/Explorer/MyMessages.h"
 #include "../../UI/GUI/ExtractGUI.h"
 
@@ -31,13 +32,11 @@ static inline bool IsItWindowsNT()
 }
 #endif
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int /* nCmdShow */)
-{
-  g_hInstance = (HINSTANCE)hInstance;
-  #ifndef _UNICODE
-  g_IsNT = IsItWindowsNT();
-  #endif
+static const wchar_t *kMemoryExceptionMessage = L"ERROR: Can't allocate required memory!";
+static const wchar_t *kUnknownExceptionMessage = L"ERROR: Unknown Error!";
 
+int APIENTRY WinMain2()
+{
   UString password;
   bool assumeYes = false;
   bool outputFolderDefined = false;
@@ -116,9 +115,38 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
       outputFolderDefined ? outputFolder : 
       fullPath.Left(fileNamePartStartIndex));
   */
+  if (result == S_OK)
+  {
+    return 0;
+  }
+  if (result == E_ABORT)
+    return NExitCode::kUserBreak;
   if (result == S_FALSE)
-    MyMessageBox(L"Archive is not supported");
-  else if (result != S_OK && result != E_ABORT)
+    MyMessageBox(L"Error in archive");
+  else
     ShowErrorMessage(0, result);
-  return 0;
+  return NExitCode::kFatalError;
 }
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int /* nCmdShow */)
+{
+  g_hInstance = (HINSTANCE)hInstance;
+  #ifndef _UNICODE
+  g_IsNT = IsItWindowsNT();
+  #endif
+  try
+  {
+    return WinMain2();
+  }
+  catch(const CNewException &)
+  {
+    MyMessageBox(kMemoryExceptionMessage);
+    return (NExitCode::kMemoryError);
+  }
+  catch(...)
+  {
+    MyMessageBox(kUnknownExceptionMessage);
+    return NExitCode::kFatalError;
+  }
+}
+

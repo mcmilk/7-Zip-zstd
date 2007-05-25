@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "..\..\..\..\\" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "_SFX" /D "NO_READ_FROM_CODER" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\\" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "EXTRACT_ONLY" /D "_SFX" /D "NO_READ_FROM_CODER" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -122,14 +122,6 @@ SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CoderMixer2MT.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2ST.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2ST.h
 # End Source File
 # Begin Source File
 
@@ -800,6 +792,15 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.h
 # End Source File
 # End Group
 # Begin Source File

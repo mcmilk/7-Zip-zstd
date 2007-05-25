@@ -157,7 +157,7 @@ HRESULT CDecoder::Decode(
       _mixerCoderCommon = _mixerCoderSTSpec;
       #endif
     }
-    _mixerCoderCommon->SetBindInfo(bindInfo);
+    RINOK(_mixerCoderCommon->SetBindInfo(bindInfo));
     
     for (i = 0; i < numCoders; i++)
     {

@@ -13,6 +13,7 @@ struct CCompressionMethodMode
 {
   CRecordVector<Byte> MethodSequence;
   // bool MaximizeRatio;
+  UInt32 Algo;
   UInt32 NumPasses;
   UInt32 NumFastBytes;
   bool NumMatchFinderCyclesDefined;

@@ -30,16 +30,6 @@ using namespace NSynchronization;
 namespace NArchive {
 namespace NZip {
 
-class CCriticalSectionLock2
-{
-  CCriticalSection *_object;
-  void Unlock()  { if (_object != 0) _object->Leave(); }
-public:
-  CCriticalSectionLock2(): _object(0) {}
-  void Set(CCriticalSection &object) { _object = &object; _object->Enter(); } 
-  ~CCriticalSectionLock2() { Unlock(); }
-};
-
 static const Byte kMadeByHostOS = NFileHeader::NHostOS::kFAT;
 static const Byte kExtractHostOS = NFileHeader::NHostOS::kFAT;
 
@@ -135,7 +125,7 @@ static void SetItemInfoFromCompressingResult(const CCompressingResult &compressi
 
 #ifdef COMPRESS_MT
 
-static DWORD WINAPI CoderThread(void *threadCoderInfo);
+static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo);
 
 struct CThreadInfo
 {
@@ -145,8 +135,8 @@ struct CThreadInfo
   #endif
 
   NWindows::CThread Thread;
-  CAutoResetEvent *CompressEvent;
-  CAutoResetEvent *CompressionCompletedEvent;
+  NWindows::NSynchronization::CAutoResetEvent CompressEvent;
+  NWindows::NSynchronization::CAutoResetEvent CompressionCompletedEvent;
   bool ExitThread;
 
   CMtCompressProgress *ProgressSpec;
@@ -164,21 +154,18 @@ struct CThreadInfo
   UInt32 UpdateIndex;
 
   CThreadInfo(const CCompressionMethodMode &options):
-      CompressEvent(NULL), 
-      CompressionCompletedEvent(NULL),
       ExitThread(false),
       ProgressSpec(0),
       OutStreamSpec(0),
       Coder(options)
   {}
   
-  void CreateEvents()
+  HRESULT CreateEvents()
   {
-    CompressEvent = new CAutoResetEvent(false);
-    CompressionCompletedEvent = new CAutoResetEvent(false);
+    RINOK(CompressEvent.CreateIfNotCreated());
+    return CompressionCompletedEvent.CreateIfNotCreated();
   }
-  bool CreateThread() { return Thread.Create(CoderThread, this); }
-  ~CThreadInfo();
+  HRes CreateThread() { return Thread.Create(CoderThread, this); }
 
   void WaitAndCode();
   void StopWaitClose()
@@ -186,27 +173,19 @@ struct CThreadInfo
     ExitThread = true;
     if (OutStreamSpec != 0)
       OutStreamSpec->StopWriting(E_ABORT);
-    if (CompressEvent != NULL)
-      CompressEvent->Set();
+    if (CompressEvent.IsCreated())
+      CompressEvent.Set();
     Thread.Wait();
     Thread.Close();
   }
 
 };
 
-CThreadInfo::~CThreadInfo()
-{
-  if (CompressEvent != NULL)
-    delete CompressEvent;
-  if (CompressionCompletedEvent != NULL)
-    delete CompressionCompletedEvent;
-}
-
 void CThreadInfo::WaitAndCode()
 {
   for (;;)
   {
-    CompressEvent->Lock();
+    CompressEvent.Lock();
     if (ExitThread)
       return;
     Result = Coder.Compress(
@@ -216,11 +195,11 @@ void CThreadInfo::WaitAndCode()
         InStream, OutStream, Progress, CompressingResult);
     if (Result == S_OK && Progress)
       Result = Progress->SetRatioInfo(&CompressingResult.UnpackSize, &CompressingResult.PackSize);
-    CompressionCompletedEvent->Set();
+    CompressionCompletedEvent.Set();
   }
 }
 
-static DWORD WINAPI CoderThread(void *threadCoderInfo)
+static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo)
 {
   ((CThreadInfo *)threadCoderInfo)->WaitAndCode();
   return 0;
@@ -518,8 +497,7 @@ static HRESULT Update2(
   CRecordVector<int> threadIndices;  // list threads in order of updateItems
 
   {
-    if (!memManager.AllocateSpaceAlways((size_t)numThreads * (kMemPerThread / kBlockSize)))
-      return E_OUTOFMEMORY;
+    RINOK(memManager.AllocateSpaceAlways((size_t)numThreads * (kMemPerThread / kBlockSize)));
     for(i = 0; i < updateItems.Size(); i++)
       refs.Refs.Add(CMemBlocks2());
 
@@ -534,15 +512,15 @@ static HRESULT Update2(
       threadInfo._codecsInfo = codecsInfo;
       threadInfo._externalCodecs = externalCodecs;
       #endif
-      threadInfo.CreateEvents();
+      RINOK(threadInfo.CreateEvents());
       threadInfo.OutStreamSpec = new COutMemStream(&memManager);
+      RINOK(threadInfo.OutStreamSpec->CreateEvents());
       threadInfo.OutStream = threadInfo.OutStreamSpec;
       threadInfo.IsFree = true;
       threadInfo.ProgressSpec = new CMtCompressProgress();
       threadInfo.Progress = threadInfo.ProgressSpec;
       threadInfo.ProgressSpec->Init(&mtCompressProgressMixer, (int)i);
-      if (!threadInfo.CreateThread())
-        return ::GetLastError();
+      RINOK(threadInfo.CreateThread());
     }
   }
   int mtItemIndex = 0;
@@ -601,10 +579,10 @@ static HRESULT Update2(
 
           threadInfo.OutStreamSpec->Init();
           threadInfo.ProgressSpec->Reinit();
-          threadInfo.CompressEvent->Set();
+          threadInfo.CompressEvent.Set();
           threadInfo.UpdateIndex = mtItemIndex - 1;
 
-          compressingCompletedEvents.Add(*threadInfo.CompressionCompletedEvent);
+          compressingCompletedEvents.Add(threadInfo.CompressionCompletedEvent);
           threadIndices.Add(i);
           break;
         }

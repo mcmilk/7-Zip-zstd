@@ -24,12 +24,14 @@ bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, UINT 
   AString s;
   file.ReadToString(s);
   UString u;
+  #ifdef CP_UTF8
   if (codePage == CP_UTF8)
   {
     if (!ConvertUTF8ToUnicode(s, u))
       return false;
   }
   else
+  #endif
     u = MultiByteToUnicodeString(s, codePage);
   if (!u.IsEmpty())
   {

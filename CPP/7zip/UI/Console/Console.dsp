@@ -704,6 +704,15 @@ SOURCE=..\..\..\..\C\Alloc.c
 
 SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.h
+# End Source File
 # End Group
 # End Target
 # End Project

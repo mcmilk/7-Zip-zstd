@@ -24,6 +24,9 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
+static const UInt32 kDeflateAlgoX1 = 0;
+static const UInt32 kDeflateAlgoX5 = 1;
+
 static const UInt32 kDeflateNumPassesX1  = 1;
 static const UInt32 kDeflateNumPassesX7  = 3;
 static const UInt32 kDeflateNumPassesX9  = 10;
@@ -238,6 +241,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.NumFastBytes = m_NumFastBytes;
   options.NumMatchFinderCycles = m_NumMatchFinderCycles;
   options.NumMatchFinderCyclesDefined = m_NumMatchFinderCyclesDefined;
+  options.Algo = m_Algo;
   #ifdef COMPRESS_MT
   options.NumThreads = _numThreads;
   #endif
@@ -251,6 +255,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
                              (level >= 7 ? kNumFastBytesX7 : 
                                            kNumFastBytesX1));
+    if (options.Algo == 0xFFFFFFFF)
+        options.Algo = 
+                    (level >= 5 ? kDeflateAlgoX5 : 
+                                  kDeflateAlgoX1); 
   }
   if (isBZip2)
   {
@@ -385,6 +393,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       #ifdef COMPRESS_MT
       RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
       #endif
+    }
+    else if (name.Left(1) == L"A")
+    {
+      UInt32 num = kDeflateAlgoX5;
+      RINOK(ParsePropValue(name.Mid(1), prop, num));
+      m_Algo = num;
     }
     else 
       return E_INVALIDARG;

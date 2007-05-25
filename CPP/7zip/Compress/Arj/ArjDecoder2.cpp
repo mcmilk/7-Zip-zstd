@@ -9,7 +9,7 @@ namespace NArj {
 namespace NDecoder2 {
 
 static const UInt32 kHistorySize = 26624;
-static const UInt32 kMatchMaxLen = 256;
+// static const UInt32 kMatchMaxLen = 256;
 static const UInt32 kMatchMinLen = 3;
 
 STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,

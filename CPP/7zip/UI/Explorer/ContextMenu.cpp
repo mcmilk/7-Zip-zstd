@@ -42,8 +42,6 @@
 
 using namespace NWindows;
 
-static LPCTSTR kFileClassIDString = TEXT("SevenZip");
-
 ///////////////////////////////
 // IShellExtInit
 

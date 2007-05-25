@@ -14,7 +14,7 @@
 #include "../../IPassword.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/CreateCoder.h"
-#include "../../Common/MethodID.h"
+#include "../../Common/MethodId.h"
 #include "../../Common/FilterCoder.h"
 #include "../../Compress/Copy/CopyCoder.h"
 #include "../../Crypto/Rar20/Rar20Cipher.h"

@@ -21,6 +21,9 @@ using namespace NTime;
 namespace NArchive {
 namespace NGZip {
 
+static const UInt32 kAlgoX1 = 0;
+static const UInt32 kAlgoX5 = 1;
+
 static const UInt32 kNumPassesX1  = 1;
 static const UInt32 kNumPassesX7  = 3;
 static const UInt32 kNumPassesX9  = 10;
@@ -137,6 +140,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
                               (level >= 7 ? kNumFastBytesX7 : 
                                             kNumFastBytesX1));
+    if (m_Method.Algo == 0xFFFFFFFF)
+      m_Method.Algo = 
+                    (level >= 5 ? kAlgoX5 : 
+                                  kAlgoX1); 
 
     return UpdateArchive(
         EXTERNAL_CODECS_VARS
@@ -192,6 +199,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       RINOK(ParsePropValue(name.Mid(2), prop, num));
       m_Method.NumMatchFinderCycles = num;
       m_Method.NumMatchFinderCyclesDefined = true;
+    }
+    else if (name.Left(1) == L"A")
+    {
+      UInt32 num = kAlgoX5;
+      RINOK(ParsePropValue(name.Mid(1), prop, num));
+      m_Method.Algo = num;
     }
     else
       return E_INVALIDARG;

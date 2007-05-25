@@ -126,8 +126,8 @@ static const TCHAR *kCompressionShowPasswordValueName = TEXT("ShowPassword");
 static const TCHAR *kCompressionEncryptHeadersValueName = TEXT("EncryptHeaders");
 
 static const TCHAR *kCompressionOptionsKeyName = TEXT("Options");
-static const TCHAR *kSolid = TEXT("Solid");
-static const TCHAR *kMultiThread = TEXT("Multithread");
+// static const TCHAR *kSolid = TEXT("Solid");
+// static const TCHAR *kMultiThread = TEXT("Multithread");
 
 static const WCHAR *kCompressionOptions = L"Options";
 static const TCHAR *kCompressionLevel = TEXT("Level");

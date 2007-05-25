@@ -85,8 +85,7 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
-  MY_QUERYINTERFACE_BEGIN
-  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
   #ifdef _7Z_VOL
   MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
   #endif

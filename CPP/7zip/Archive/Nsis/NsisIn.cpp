@@ -23,7 +23,9 @@ public:
   SignatureInitializer() { kSignature[0]--; };
 } g_SignatureInitializer;
 
+#ifdef NSIS_SCRIPT
 static const char *kCrLf = "\x0D\x0A";
+#endif
 
 UInt32 GetUInt32FromMemLE(const Byte *p)
 {
@@ -245,6 +247,7 @@ enum
   EW_LOCKWINDOW
 };
 
+#ifdef NSIS_SCRIPT
 static CCommandPair kCommandPairs[] = 
 {
   { 0, "Invalid" },
@@ -324,6 +327,7 @@ static CCommandPair kCommandPairs[] =
   { 6, "LockWindow" }
 };
 
+#endif
 
 static const char *kShellStrings[] = 
 {

@@ -23,8 +23,7 @@ class CHandler:
   public CMyUnknownImp
 {
 public:
-  MY_QUERYINTERFACE_BEGIN
-  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
   MY_QUERYINTERFACE_ENTRY(IOutArchive)
   MY_QUERYINTERFACE_ENTRY(ISetProperties)
   QUERY_ENTRY_ISetCompressCodecsInfo
@@ -79,7 +78,8 @@ private:
   void InitMethodProperties()
   {
     m_Method.NumMatchFinderCyclesDefined = false;
-    m_Level = m_Method.NumPasses = m_Method.NumFastBytes = m_Method.NumMatchFinderCycles = 0xFFFFFFFF;
+    m_Level = m_Method.NumPasses = m_Method.NumFastBytes = 
+        m_Method.NumMatchFinderCycles = m_Method.Algo = 0xFFFFFFFF;
   }
 };
 

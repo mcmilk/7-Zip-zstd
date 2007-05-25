@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "45" ?>
-<?define VerBuild = "03" ?>
+<?define VerMinor = "46" ?>
+<?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
 <?define MmmmVer = "$(var.MmVer).$(var.VerBuild).0" ?>
@@ -279,7 +279,8 @@
               <File Id="ms.txt" Name="ms.txt" />
               <File Id="ne.txt" Name="ne.txt" />
               <File Id="nl.txt" Name="nl.txt" />
-              <File Id="no.txt" Name="no.txt" />
+              <File Id="nb.txt" Name="nb.txt" />
+              <File Id="nn.txt" Name="nn.txt" />
               <File Id="pl.txt" Name="pl.txt" />
               <File Id="pt.txt" Name="pt.txt" />
               <File Id="pt_br.txt" Name="pt-br.txt" />

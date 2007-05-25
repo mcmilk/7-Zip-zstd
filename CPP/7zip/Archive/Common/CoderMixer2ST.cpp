@@ -10,9 +10,10 @@ CCoderMixer2ST::CCoderMixer2ST() {}
 
 CCoderMixer2ST::~CCoderMixer2ST(){ }
 
-void CCoderMixer2ST::SetBindInfo(const CBindInfo &bindInfo)
+HRESULT CCoderMixer2ST::SetBindInfo(const CBindInfo &bindInfo)
 {  
   _bindInfo = bindInfo; 
+  return S_OK; 
 }
 
 void CCoderMixer2ST::AddCoderCommon(bool isMain)

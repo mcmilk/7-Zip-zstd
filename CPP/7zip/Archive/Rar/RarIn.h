@@ -24,7 +24,7 @@ public:
     kUnexpectedEndOfArchive = 0,
     kArchiveHeaderCRCError,
     kFileHeaderCRCError,
-    kIncorrectArchive,
+    kIncorrectArchive
   } 
   Cause;
   CInArchiveException(CCauseType cause) :   Cause(cause) {}

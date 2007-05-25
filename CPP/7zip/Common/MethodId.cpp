@@ -1,8 +1,8 @@
-// MethodID.cpp
+// MethodId.cpp
 
 #include "StdAfx.h"
 
-#include "MethodID.h"
+#include "MethodId.h"
 #include "../../Common/String.h"
 
 static inline wchar_t GetHex(Byte value)

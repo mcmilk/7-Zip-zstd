@@ -67,6 +67,7 @@ void SortStringsToIndices(const UStringVector &strings, CIntVector &indices)
   // TSort(&indices.Front(), indices.Size(), CompareStrings, (void *)&strings);
 }
 
+/*
 void SortStrings(const UStringVector &src, UStringVector &dest)
 {
   CIntVector indices;
@@ -76,3 +77,4 @@ void SortStrings(const UStringVector &src, UStringVector &dest)
   for (int i = 0; i < indices.Size(); i++)
     dest.Add(src[indices[i]]);
 }
+*/

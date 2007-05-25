@@ -20,9 +20,9 @@ namespace NCoderMixer2 {
 
 struct CThreadCoderInfo: public CCoderInfo
 {
-  NWindows::NSynchronization::CAutoResetEvent *CompressEvent;
+  NWindows::NSynchronization::CAutoResetEvent CompressEvent;
   HANDLE ExitEvent;
-  NWindows::NSynchronization::CAutoResetEvent *CompressionCompletedEvent;
+  NWindows::NSynchronization::CAutoResetEvent CompressionCompletedEvent;
 
   CObjectVector< CMyComPtr<ISequentialInStream> > InStreams;
   CObjectVector< CMyComPtr<ISequentialOutStream> > OutStreams;
@@ -35,9 +35,12 @@ struct CThreadCoderInfo: public CCoderInfo
   CThreadCoderInfo(UInt32 numInStreams, UInt32 numOutStreams);
   void SetCoderInfo(const UInt64 **inSizes,
       const UInt64 **outSizes, ICompressProgressInfo *progress);
-  ~CThreadCoderInfo();
   bool WaitAndCode();
-  void CreateEvents();
+  HRes CreateEvents()
+  {
+    RINOK(CompressEvent.CreateIfNotCreated());
+    return CompressionCompletedEvent.CreateIfNotCreated();
+  }
 };
 
 
@@ -105,14 +108,20 @@ private:
   NWindows::CThread _mainThread;
 
   NWindows::NSynchronization::CAutoResetEvent _startCompressingEvent;
-  CRecordVector<HANDLE> _compressingCompletedEvents;
   NWindows::NSynchronization::CAutoResetEvent _compressingFinishedEvent;
 
   NWindows::NSynchronization::CManualResetEvent _exitEvent;
   UInt32 _progressCoderIndex;
 
+  HRes CreateEvents()
+  {
+    RINOK(_startCompressingEvent.CreateIfNotCreated());
+    RINOK(_compressingFinishedEvent.CreateIfNotCreated());
+    return _exitEvent.CreateIfNotCreated();
+  }
+
 public:
-  void SetBindInfo(const CBindInfo &bindInfo);
+  HRESULT SetBindInfo(const CBindInfo &bindInfo);
 
 };
 

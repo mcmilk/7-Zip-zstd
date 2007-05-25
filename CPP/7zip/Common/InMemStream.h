@@ -82,11 +82,12 @@ class CResourceListMt: public CResourceList
 public:
   NWindows::NSynchronization::CSemaphore Semaphore;
 
-  bool AllocateList(int numItems)
+  HRes AllocateList(int numItems)
   {
     if (!CResourceList::AllocateList(numItems))
       return false;
-    return Semaphore.Create((LONG)numItems, (LONG)numItems);
+    Semaphore.Close();
+    return Semaphore.Create(numItems, numItems);
   }
 
   int AllocateItem()
@@ -118,15 +119,15 @@ public:
   CIntQueueMt(): _numItems(0), _head(0),  _cur(0) {}
   NWindows::NSynchronization::CSemaphore Semaphore;
 
-  bool AllocateList(int numItems)
+  HRes AllocateList(int numItems)
   {
     FreeList();
     if (numItems == 0)
-      return true;
+      return S_OK;
     if (!CIntListCheck::AllocateList(numItems))
-      return false;
+      return E_OUTOFMEMORY;
     _numItems = numItems;
-    return Semaphore.Create((LONG)0, (LONG)numItems);
+    return Semaphore.Create(0, numItems);
   }
 
   void FreeList()
@@ -142,10 +143,8 @@ public:
     _data[_head++] = value;
     if (_head == _numItems)
       _head = 0;
-    LONG previousCount;
-    Semaphore.Release(1, &previousCount);
+    Semaphore.Release();
     // printf("\nRelease prev = %d\n", previousCount);
-
   }
   
   int GetItem()
@@ -253,7 +252,7 @@ public:
   // to stop reading you must implement 
   // returning Error in IInMemStreamMtCallback::AllocateBlock
   // and then you must free at least one substream
-  bool StartReadThread();
+  HRes StartReadThread();
 
   void Free();
 

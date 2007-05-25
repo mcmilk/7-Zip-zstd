@@ -163,7 +163,7 @@ int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
   sizeReserv = historySize >> 1;
   if (historySize > ((UInt32)2 << 30))
     sizeReserv = historySize >> 2;
-  sizeReserv += (keepAddBufferBefore + matchMaxLen + keepAddBufferAfter) / 2 + (1 << 12);
+  sizeReserv += (keepAddBufferBefore + matchMaxLen + keepAddBufferAfter) / 2 + (1 << 19);
 
   p->keepSizeBefore = historySize + keepAddBufferBefore + 1; 
   p->keepSizeAfter = matchMaxLen + keepAddBufferAfter;
@@ -622,6 +622,19 @@ UInt32 Hc4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   MOVE_POS_RET
 }
 
+UInt32 Hc3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
+{
+  UInt32 offset;
+  GET_MATCHES_HEADER(3)
+  HASH_ZIP_CALC;
+  curMatch = p->hash[hashValue];
+  p->hash[hashValue] = p->pos;
+  offset = (UInt32)(Hc_GetMatchesSpec(lenLimit, curMatch, p->pos, p->buffer, p->son,
+    p->cyclicBufferPos, p->cyclicBufferSize, p->cutValue,
+    distances, 2) - (distances));
+  MOVE_POS_RET
+}
+
 void Bt2_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
 {
   do
@@ -690,6 +703,20 @@ void Hc4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
     p->hash[                hash2Value] =
     p->hash[kFix3HashSize + hash3Value] =
     p->hash[kFix4HashSize + hashValue] = p->pos;
+    p->son[p->cyclicBufferPos] = curMatch;
+    MOVE_POS
+  }
+  while (--num != 0);
+}
+
+void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
+{
+  do
+  {
+    SKIP_HEADER(3)
+    HASH_ZIP_CALC;
+    curMatch = p->hash[hashValue];
+    p->hash[hashValue] = p->pos;
     p->son[p->cyclicBufferPos] = curMatch;
     MOVE_POS
   }

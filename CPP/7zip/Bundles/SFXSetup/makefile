@@ -100,6 +100,7 @@ LZMA_OPT_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Threads.obj \
 
 C_BRANCH_OBJS = \
   $O\BranchX86.obj \

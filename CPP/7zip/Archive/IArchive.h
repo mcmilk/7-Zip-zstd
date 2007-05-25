@@ -48,7 +48,7 @@ namespace NArchive
       {
         kExtract = 0,
         kTest,
-        kSkip,
+        kSkip
       };
     }
     namespace NOperationResult
@@ -58,7 +58,7 @@ namespace NArchive
         kOK = 0,
         kUnSupportedMethod,
         kDataError,
-        kCRCError,
+        kCRCError
       };
     }
   }
@@ -69,7 +69,7 @@ namespace NArchive
       enum 
       {
         kOK = 0,
-        kError,
+        kError
       };
     }
   }

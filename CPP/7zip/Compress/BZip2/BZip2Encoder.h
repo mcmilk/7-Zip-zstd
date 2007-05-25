@@ -130,11 +130,17 @@ public:
   UInt64 m_PackSize;
 
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
+  HRes Create()
+  {
+    RINOK(StreamWasFinishedEvent.Create());
+    RINOK(WaitingWasStartedEvent.Create());
+    return CanWriteEvent.Create();
+  }
   #endif
 
   CThreadInfo(): m_BlockSorterIndex(0), m_Block(0) {}
   ~CThreadInfo() { Free(); }
-  bool Create();
+  bool Alloc();
   void Free();
 
   HRESULT EncodeBlock3(UInt32 blockSize);
@@ -189,7 +195,7 @@ public:
   void WriteCRC(UInt32 v);
 
   #ifdef COMPRESS_BZIP2_MT
-  bool Create();
+  HRes Create();
   void Free();
   #endif
 
