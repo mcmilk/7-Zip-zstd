@@ -50,15 +50,10 @@ struct CState
 
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
 
+  HRes Create();
   void FinishStream();
   void ThreadFunc();
 
-  HRes Create()
-  {
-    RINOK(StreamWasFinishedEvent.CreateIfNotCreated());
-    RINOK(WaitingWasStartedEvent.CreateIfNotCreated());
-    return CanWriteEvent.CreateIfNotCreated();
-  }
   #endif
 
   CState(): Counters(0) {}

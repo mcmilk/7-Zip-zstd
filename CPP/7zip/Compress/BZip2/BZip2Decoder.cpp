@@ -420,8 +420,6 @@ static UInt32 NO_INLINE DecodeBlock2Rand(const UInt32 *tt, UInt32 blockSize, UIn
 
 #ifdef COMPRESS_BZIP2_MT
 
-static THREAD_FUNC_DECL MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
-
 CDecoder::CDecoder():
   m_States(0)
 {
@@ -439,7 +437,7 @@ HRes CDecoder::Create()
   RINOK(CanProcessEvent.CreateIfNotCreated());
   RINOK(CanStartWaitingEvent.CreateIfNotCreated());
   if (m_States != 0 && m_NumThreadsPrev == NumThreads)
-    return true;
+    return S_OK;
   Free();
   MtMode = (NumThreads > 1);
   m_NumThreadsPrev = NumThreads;
@@ -450,14 +448,13 @@ HRes CDecoder::Create()
       return E_OUTOFMEMORY;
   }
   catch(...) { return E_OUTOFMEMORY; }
-  #ifdef COMPRESS_BZIP2_MT
   for (UInt32 t = 0; t < NumThreads; t++)
   {
     CState &ti = m_States[t];
     ti.Decoder = this;
     if (MtMode)
     {
-      HRes res = ti.Thread.Create(MFThread, &ti);
+      HRes res = ti.Create();
       if (res != S_OK)
       {
         NumThreads = t;
@@ -466,7 +463,6 @@ HRes CDecoder::Create()
       }
     }
   }
-  #endif
   return S_OK;
 }
 
@@ -528,7 +524,6 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     CState &s = m_States[t];
     if (!s.Alloc())
       return E_OUTOFMEMORY;
-    RINOK(s.Create());
     s.StreamWasFinishedEvent.Reset();
     s.WaitingWasStartedEvent.Reset();
     s.CanWriteEvent.Reset();
@@ -649,6 +644,17 @@ STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
 }
 
 #ifdef COMPRESS_BZIP2_MT
+
+static THREAD_FUNC_DECL MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
+
+HRes CState::Create()
+{
+  RINOK(StreamWasFinishedEvent.CreateIfNotCreated());
+  RINOK(WaitingWasStartedEvent.CreateIfNotCreated());
+  RINOK(CanWriteEvent.CreateIfNotCreated());
+  return Thread.Create(MFThread, this);
+}
+
 void CState::FinishStream()
 {
   Decoder->StreamWasFinished1 = true;

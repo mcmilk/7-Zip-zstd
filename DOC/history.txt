@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.46 beta           2007-05-25
+  --------------------------------------
+   - CPP Synchronization objects now return HRes (error code) instead of bool.
+  
+  
   Version 4.45 beta           2007-04-16
   --------------------------------------
    - 7-Zip now uses C version of CRC, so you must call CrcGenerateTable at 

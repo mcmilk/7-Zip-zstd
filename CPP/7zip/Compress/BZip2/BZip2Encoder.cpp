@@ -55,6 +55,20 @@ void CThreadInfo::Free()
 }
 
 #ifdef COMPRESS_BZIP2_MT
+
+static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
+{
+  return ((CThreadInfo *)threadCoderInfo)->ThreadFunc();
+}
+
+HRes CThreadInfo::Create()
+{
+  RINOK(StreamWasFinishedEvent.Create());
+  RINOK(WaitingWasStartedEvent.Create());
+  RINOK(CanWriteEvent.Create());
+  return Thread.Create(MFThread, this);
+}
+
 void CThreadInfo::FinishStream(bool needLeave)
 {
   Encoder->StreamWasFinished = true;
@@ -111,10 +125,6 @@ DWORD CThreadInfo::ThreadFunc()
   }
 }
 
-static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
-{
-  return ((CThreadInfo *)threadCoderInfo)->ThreadFunc();
-}
 #endif
 
 CEncoder::CEncoder():
@@ -157,7 +167,7 @@ HRes CEncoder::Create()
     ti.Encoder = this;
     if (MtMode)
     {
-      HRes res = ti.Thread.Create(MFThread, &ti);
+      HRes res = ti.Create();
       if (res != S_OK)
       {
         NumThreads = t;
@@ -735,7 +745,6 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
 
     if (!ti.Alloc())
       return E_OUTOFMEMORY;
-    RINOK(ti.Create());
   }
 
 
