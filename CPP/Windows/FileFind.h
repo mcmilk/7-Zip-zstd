@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_FILEFIND_H
 #define __WINDOWS_FILEFIND_H
 
-#include "../Common/String.h"
+#include "../Common/MyString.h"
 #include "../Common/Types.h"
 #include "FileName.h"
 #include "Defs.h"

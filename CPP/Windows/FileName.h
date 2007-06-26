@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_FILENAME_H
 #define __WINDOWS_FILENAME_H
 
-#include "../Common/String.h"
+#include "../Common/MyString.h"
 
 namespace NWindows {
 namespace NFile {

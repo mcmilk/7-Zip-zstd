@@ -4,7 +4,7 @@
 #define __ARCHIVE_ISO_ITEM_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Buffer.h"
 
 #include "IsoHeader.h"

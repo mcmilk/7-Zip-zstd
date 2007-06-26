@@ -4,7 +4,7 @@
 #define __ARCHIVE_CAB_ITEM_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "CabHeader.h"
 
 namespace NArchive {

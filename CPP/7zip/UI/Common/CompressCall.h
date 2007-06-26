@@ -3,7 +3,7 @@
 #ifndef __COMPRESSCALL_H
 #define __COMPRESSCALL_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Windows/Synchronization.h"
 
 HRESULT MyCreateProcess(const UString &params,

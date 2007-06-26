@@ -4,7 +4,7 @@
 #define __WINDOWS_WINDOW_H
 
 #include "Windows/Defs.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NWindows {
 

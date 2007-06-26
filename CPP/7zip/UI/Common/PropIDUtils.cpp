@@ -32,8 +32,7 @@ static void ConvertUInt32ToHex(UInt32 value, wchar_t *s)
   s[8] = L'\0';
 }
 
-UString ConvertPropertyToString(const PROPVARIANT &propVariant, 
-    PROPID propID, bool full)
+UString ConvertPropertyToString(const PROPVARIANT &propVariant, PROPID propID, bool full)
 {
   switch(propID)
   {

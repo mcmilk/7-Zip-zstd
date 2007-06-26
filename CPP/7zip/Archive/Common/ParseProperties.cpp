@@ -97,34 +97,37 @@ HRESULT ParsePropDictionaryValue(const UString &name, const PROPVARIANT &prop, U
   return ParsePropDictionaryValue(name, resValue);
 }
 
+bool StringToBool(const UString &s, bool &res)
+{
+  if (s.IsEmpty() || s.CompareNoCase(L"ON") == 0)
+  {
+    res = true;
+    return true;
+  }
+  if (s.CompareNoCase(L"OFF") == 0)
+  {
+    res = false;
+    return true;
+  }
+  return false;
+}
+
 HRESULT SetBoolProperty(bool &dest, const PROPVARIANT &value)
 {
   switch(value.vt)
   {
     case VT_EMPTY:
       dest = true;
-      break;
+      return S_OK;
     /*
     case VT_UI4:
       dest = (value.ulVal != 0);
       break;
     */
     case VT_BSTR:
-    {
-      UString valueString = value.bstrVal;
-      valueString.MakeUpper();
-      if (valueString.Compare(L"ON") == 0)
-        dest = true;
-      else if (valueString.Compare(L"OFF") == 0)
-        dest = false;
-      else
-        return E_INVALIDARG;
-      break;
-    }
-    default:
-      return E_INVALIDARG;
+      return StringToBool(value.bstrVal, dest) ?  S_OK : E_INVALIDARG;
   }
-  return S_OK;
+  return E_INVALIDARG;
 }
 
 int ParseStringToUInt32(const UString &srcString, UInt32 &number)

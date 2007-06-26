@@ -5,13 +5,12 @@
 
 #include "../IStream.h"
 #include "../../Common/MyCom.h"
+#include "../../Common/MyException.h"
 
 #ifndef _NO_EXCEPTIONS
-class CInBufferException
+struct CInBufferException: public CSystemException 
 {
-public:
-  HRESULT ErrorCode;
-  CInBufferException(HRESULT errorCode): ErrorCode(errorCode) {}
+  CInBufferException(HRESULT errorCode): CSystemException(errorCode) {} 
 };
 #endif
 

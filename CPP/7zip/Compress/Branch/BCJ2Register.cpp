@@ -5,9 +5,9 @@
 #include "../../Common/RegisterCodec.h"
 
 #include "x86_2.h"
-static void *CreateCodec() { return (void *)(ICompressCoder2 *)(new CBCJ2_x86_Decoder()); }
+static void *CreateCodec() { return (void *)(ICompressCoder2 *)(new NCompress::NBcj2::CDecoder()); }
 #ifndef EXTRACT_ONLY
-static void *CreateCodecOut() { return (void *)(ICompressCoder2 *)(new CBCJ2_x86_Encoder());  }
+static void *CreateCodecOut() { return (void *)(ICompressCoder2 *)(new NCompress::NBcj2::CEncoder());  }
 #else
 #define CreateCodecOut 0
 #endif

@@ -4,7 +4,7 @@
 #define __ARCHIVE_DEB_ITEMINFO_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "DebHeader.h"
 
 namespace NArchive {

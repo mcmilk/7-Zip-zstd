@@ -4,7 +4,7 @@
 #define __CREATECODER_H
 
 #include "Common/MyCom.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "../ICoder.h"
 
 #include "MethodId.h"

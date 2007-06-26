@@ -3,9 +3,9 @@
 #ifndef __COMMON_LANG_H
 #define __COMMON_LANG_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
-#include "Common/Types.h"
+#include "MyVector.h"
+#include "MyString.h"
+#include "Types.h"
 
 struct CLangPair
 {

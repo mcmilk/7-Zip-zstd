@@ -3,7 +3,7 @@
 #ifndef __FSFOLDER_H
 #define __FSFOLDER_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/MyCom.h"
 #include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"

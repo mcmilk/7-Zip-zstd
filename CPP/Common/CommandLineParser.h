@@ -3,7 +3,7 @@
 #ifndef __COMMON_COMMANDLINEPARSER_H
 #define __COMMON_COMMANDLINEPARSER_H
 
-#include "Common/String.h"
+#include "MyString.h"
 
 namespace NCommandLineParser {
 

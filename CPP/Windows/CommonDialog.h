@@ -5,7 +5,7 @@
 
 #include <windows.h>
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Windows/Defs.h"
 
 namespace NWindows{

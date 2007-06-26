@@ -3,7 +3,7 @@
 #ifndef __MYMESSAGES_H
 #define __MYMESSAGES_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 void MyMessageBox(HWND window, LPCWSTR message);
 

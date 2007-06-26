@@ -151,7 +151,7 @@ HRESULT COutArchive::Create(ISequentialOutStream *stream, bool endMarker)
   {
     if (!Stream)
       return E_FAIL;
-    WriteSignature();
+    RINOK(WriteSignature());
     RINOK(Stream->Seek(0, STREAM_SEEK_CUR, &_prefixHeaderPos));
   }
   return S_OK;

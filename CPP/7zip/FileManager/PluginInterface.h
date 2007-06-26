@@ -3,7 +3,7 @@
 #ifndef __PLUGININTERFACE_H
 #define __PLUGININTERFACE_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 // {23170F69-40C1-278D-0000-000100010000}
 DEFINE_GUID(IID_IInitContextMenu, 

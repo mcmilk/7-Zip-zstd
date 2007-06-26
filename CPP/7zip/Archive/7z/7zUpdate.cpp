@@ -357,7 +357,7 @@ static const UInt64 k_BCJ2  = 0x0303011B;
 static bool GetMethodFull(UInt64 methodID, 
     UInt32 numInStreams, CMethodFull &methodResult)
 {
-  methodResult.MethodID = methodID;
+  methodResult.Id = methodID;
   methodResult.NumInStreams = numInStreams;
   methodResult.NumOutStreams = 1;
   return true;
@@ -376,28 +376,28 @@ static bool MakeExeMethod(const CCompressionMethodMode &method,
     if (!GetMethodFull(k_LZMA, 1, methodFull))
       return false;
     {
-      CProperty property;
-      property.PropID = NCoderPropID::kAlgorithm;
+      CProp property;
+      property.Id = NCoderPropID::kAlgorithm;
       property.Value = kAlgorithmForBCJ2_LZMA;
-      methodFull.CoderProperties.Add(property);
+      methodFull.Properties.Add(property);
     }
     {
-      CProperty property;
-      property.PropID = NCoderPropID::kMatchFinder;
+      CProp property;
+      property.Id = NCoderPropID::kMatchFinder;
       property.Value = kMatchFinderForBCJ2_LZMA;
-      methodFull.CoderProperties.Add(property);
+      methodFull.Properties.Add(property);
     }
     {
-      CProperty property;
-      property.PropID = NCoderPropID::kDictionarySize;
+      CProp property;
+      property.Id = NCoderPropID::kDictionarySize;
       property.Value = kDictionaryForBCJ2_LZMA;
-      methodFull.CoderProperties.Add(property);
+      methodFull.Properties.Add(property);
     }
     {
-      CProperty property;
-      property.PropID = NCoderPropID::kNumFastBytes;
+      CProp property;
+      property.Id = NCoderPropID::kNumFastBytes;
       property.Value = kNumFastBytesForBCJ2_LZMA;
-      methodFull.CoderProperties.Add(property);
+      methodFull.Properties.Add(property);
     }
 
     exeMethod.Methods.Add(methodFull);

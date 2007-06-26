@@ -3,8 +3,6 @@
 #include "StdAfx.h"
 
 #include "MyMessages.h"
-#include "Common/String.h"
-#include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #include "Windows/ResourceString.h"

@@ -4,7 +4,7 @@
 #define __MULTISTREAM_H
 
 #include "../../../Common/MyCom.h"
-#include "../../../Common/Vector.h"
+#include "../../../Common/MyVector.h"
 #include "../../Archive/IArchive.h"
 
 class CMultiStream: 

@@ -4,7 +4,7 @@
 #define __SPLIT_HANDLER_H
 
 #include "Common/MyCom.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "../IArchive.h"
 
 namespace NArchive {

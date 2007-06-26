@@ -3,9 +3,6 @@
 #ifndef __ZIP_UPDATE_H
 #define __ZIP_UPDATE_H
 
-#include "Common/Vector.h"
-#include "Common/Types.h"
-
 #include "../../ICoder.h"
 #include "../IArchive.h"
 

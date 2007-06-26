@@ -5,7 +5,6 @@
 
 #include "resource.h"
 
-#include "Common/String.h"
 #include "Windows/ResourceString.h"
 
 #include "../../Archive/IArchive.h"

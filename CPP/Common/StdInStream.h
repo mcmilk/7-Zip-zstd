@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-#include "Common/String.h"
+#include "MyString.h"
 #include "Types.h"
 
 class CStdInStream 

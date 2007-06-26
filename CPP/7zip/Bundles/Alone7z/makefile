@@ -30,11 +30,11 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -47,7 +47,8 @@ WIN_OBJS = \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
-  $O\Synchronization.obj
+  $O\Synchronization.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
@@ -59,12 +60,14 @@ WIN_OBJS = \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
   $O\MethodId.obj \
+  $O\MethodProps.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\VirtThread.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
@@ -92,6 +95,7 @@ AR_COMMON_OBJS = \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
+  $O\HandlerOut.obj \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \

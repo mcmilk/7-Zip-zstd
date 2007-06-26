@@ -167,6 +167,22 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -175,27 +191,11 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # Begin Source File
 

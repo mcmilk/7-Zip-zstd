@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_FILEDIR_H
 #define __WINDOWS_FILEDIR_H
 
-#include "../Common/String.h"
+#include "../Common/MyString.h"
 #include "Defs.h"
 
 namespace NWindows {

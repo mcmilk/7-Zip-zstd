@@ -4,7 +4,7 @@
 #define __EXTRACTENGINE_H
 
 #include "Common/MyCom.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "../../IPassword.h"
 #include "../Agent/IFolderArchive.h"

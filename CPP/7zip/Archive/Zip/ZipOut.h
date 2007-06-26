@@ -6,15 +6,19 @@
 #include "Common/MyCom.h"
 
 #include "../../IStream.h"
+#include "../../Common/OutBuffer.h"
 
 #include "ZipItem.h"
 
 namespace NArchive {
 namespace NZip {
 
+// can throw CSystemException and COutBufferException
+  
 class COutArchive
 {
   CMyComPtr<IOutStream> m_Stream;
+  COutBuffer m_OutBuffer;
 
   UInt64 m_BasePosition;
   UInt32 m_LocalFileHeaderSize;
@@ -30,6 +34,7 @@ class COutArchive
   void WriteExtraHeader(const CItem &item);
   void WriteCentralHeader(const CItem &item);
   void WriteExtra(const CExtraBlock &extra);
+  void SeekTo(UInt64 offset);
 public:
   void Create(IOutStream *outStream);
   void MoveBasePosition(UInt64 distanceToMove);
@@ -37,7 +42,7 @@ public:
   void PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool isZip64, bool aesEncryption);
   void PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize, bool aesEncryption);
   void PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize, bool aesEncryption);
-  HRESULT WriteLocalHeader(const CLocalItem &item);
+  void WriteLocalHeader(const CLocalItem &item);
 
   void WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer &comment);
 

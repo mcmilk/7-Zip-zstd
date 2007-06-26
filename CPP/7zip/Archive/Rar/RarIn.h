@@ -4,7 +4,6 @@
 #define __ARCHIVE_RAR_IN_H
 
 #include "Common/DynamicBuffer.h"
-#include "Common/Exception.h"
 #include "Common/MyCom.h"
 #include "../../IStream.h"
 #include "../../ICoder.h"

@@ -237,14 +237,6 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\AlignedBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\AlignedBuffer.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\AutoPtr.h
 # End Source File
 # Begin Source File
@@ -277,10 +269,6 @@ SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\Exception.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -301,6 +289,10 @@ SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyException.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyGuidDef.h
 # End Source File
 # Begin Source File
@@ -309,7 +301,23 @@ SOURCE=..\..\..\Common\MyInitGuid.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyUnknown.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
 # End Source File
 # Begin Source File
 
@@ -353,14 +361,6 @@ SOURCE=..\..\..\Common\StdOutStream.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
@@ -386,14 +386,6 @@ SOURCE=..\..\..\Common\UTFConvert.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\UTFConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # Begin Source File
 
@@ -498,6 +490,14 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.h
 # End Source File
 # Begin Source File
 
@@ -613,6 +613,14 @@ SOURCE=..\..\Common\MethodId.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\MSBFDecoder.h
 # End Source File
 # Begin Source File
@@ -682,6 +690,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.h
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -1705,19 +1721,19 @@ SOURCE=..\..\Archive\Common\CoderMixer2MT.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CoderMixer2ST.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2ST.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\DummyOutStream.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\DummyOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.h
 # End Source File
 # Begin Source File
 

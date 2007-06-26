@@ -22,7 +22,7 @@ static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
   int i;
   for (i = 0; i < folder.BindPairs.Size(); i++)
   {
-    NCoderMixer2::CBindPair bindPair;
+    NCoderMixer::CBindPair bindPair;
     bindPair.InIndex = (UInt32)folder.BindPairs[i].InIndex;
     bindPair.OutIndex = (UInt32)folder.BindPairs[i].OutIndex;
     bindInfo.BindPairs.Add(bindPair);
@@ -30,7 +30,7 @@ static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
   UInt32 outStreamIndex = 0;
   for (i = 0; i < folder.Coders.Size(); i++)
   {
-    NCoderMixer2::CCoderStreamsInfo coderStreamsInfo;
+    NCoderMixer::CCoderStreamsInfo coderStreamsInfo;
     const CCoderInfo &coderInfo = folder.Coders[i];
     coderStreamsInfo.NumInStreams = (UInt32)coderInfo.NumInStreams;
     coderStreamsInfo.NumOutStreams = (UInt32)coderInfo.NumOutStreams;
@@ -44,14 +44,14 @@ static void ConvertFolderItemInfoToBindInfo(const CFolder &folder,
     bindInfo.InStreams.Add((UInt32)folder.PackStreams[i]);
 }
 
-static bool AreCodersEqual(const NCoderMixer2::CCoderStreamsInfo &a1, 
-    const NCoderMixer2::CCoderStreamsInfo &a2)
+static bool AreCodersEqual(const NCoderMixer::CCoderStreamsInfo &a1, 
+    const NCoderMixer::CCoderStreamsInfo &a2)
 {
   return (a1.NumInStreams == a2.NumInStreams) &&
     (a1.NumOutStreams == a2.NumOutStreams);
 }
 
-static bool AreBindPairsEqual(const NCoderMixer2::CBindPair &a1, const NCoderMixer2::CBindPair &a2)
+static bool AreBindPairsEqual(const NCoderMixer::CBindPair &a1, const NCoderMixer::CBindPair &a2)
 {
   return (a1.InIndex == a2.InIndex) &&
     (a1.OutIndex == a2.OutIndex);
@@ -145,14 +145,14 @@ HRESULT CDecoder::Decode(
 
     if (_multiThread)
     {
-      _mixerCoderMTSpec = new NCoderMixer2::CCoderMixer2MT;
+      _mixerCoderMTSpec = new NCoderMixer::CCoderMixer2MT;
       _mixerCoder = _mixerCoderMTSpec;
       _mixerCoderCommon = _mixerCoderMTSpec;
     }
     else
     {
       #ifdef _ST_MODE
-      _mixerCoderSTSpec = new NCoderMixer2::CCoderMixer2ST;
+      _mixerCoderSTSpec = new NCoderMixer::CCoderMixer2ST;
       _mixerCoder = _mixerCoderSTSpec;
       _mixerCoderCommon = _mixerCoderSTSpec;
       #endif

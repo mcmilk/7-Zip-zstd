@@ -290,19 +290,27 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\NewHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
 # End Source File
 # Begin Source File
 
@@ -319,14 +327,6 @@ SOURCE=..\..\..\Common\StringToInt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringToInt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # End Group
 # Begin Group "Archive Common"
@@ -355,6 +355,14 @@ SOURCE=..\Common\CrossThreadProgress.cpp
 # Begin Source File
 
 SOURCE=..\Common\CrossThreadProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HandlerOut.h
 # End Source File
 # Begin Source File
 
@@ -450,6 +458,14 @@ SOURCE=..\..\Common\MethodId.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OutBuffer.cpp
 # End Source File
 # Begin Source File
@@ -495,6 +511,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -558,6 +582,14 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # End Group
@@ -593,6 +625,15 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.h
 # End Source File
 # End Group
 # Begin Source File

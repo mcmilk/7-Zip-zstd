@@ -26,7 +26,7 @@ typedef struct _CArchiveDatabaseEx
 void SzArDbExInit(CArchiveDatabaseEx *db);
 void SzArDbExFree(CArchiveDatabaseEx *db, void (*freeFunc)(void *));
 CFileSize SzArDbGetFolderStreamPos(CArchiveDatabaseEx *db, UInt32 folderIndex, UInt32 indexInFolder);
-CFileSize SzArDbGetFolderFullPackSize(CArchiveDatabaseEx *db, UInt32 folderIndex);
+int SzArDbGetFolderFullPackSize(CArchiveDatabaseEx *db, UInt32 folderIndex, CFileSize *resSize);
 
 typedef struct _ISzInStream
 {

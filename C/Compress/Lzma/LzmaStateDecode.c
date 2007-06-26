@@ -227,7 +227,7 @@ int LzmaDecode(
   else
     previousByte = dictionary[dictionaryPos - 1];
 
-  while(1)
+  for (;;)
   {
     int bufferPos = (int)(Buffer - vs->Buffer);
     if (BufferSize - bufferPos < kRequiredInBufferSize)

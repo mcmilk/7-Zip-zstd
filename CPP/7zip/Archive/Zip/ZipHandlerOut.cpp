@@ -16,6 +16,7 @@
 #include "../Common/ItemNameUtils.h"
 #include "../Common/ParseProperties.h"
 #include "../../Crypto/WzAES/WzAES.h"
+#include "../../Common/OutBuffer.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -60,10 +61,15 @@ static bool IsAsciiString(const UString &s)
   return true;
 }
 
+#define COM_TRY_BEGIN2 try {
+#define COM_TRY_END2 } \
+catch(const CSystemException &e) { return e.ErrorCode; } \
+catch(...) { return E_OUTOFMEMORY; }
+
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
-  COM_TRY_BEGIN
+  COM_TRY_BEGIN2
   CObjectVector<CUpdateItem> updateItems;
   for(UInt32 i = 0; i < numItems; i++)
   {
@@ -276,7 +282,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       EXTERNAL_CODECS_VARS
       m_Items, updateItems, outStream, 
       m_ArchiveIsOpen ? &m_Archive : NULL, &options, updateCallback);
-  COM_TRY_END
+  COM_TRY_END2
 }
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)

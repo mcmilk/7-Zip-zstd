@@ -1,4 +1,4 @@
-// 7z_AES.cpp
+// 7zAES.cpp
 
 #include "StdAfx.h"
 
@@ -8,8 +8,11 @@
 #include "../../Common/StreamUtils.h"
 #include "../AES/MyAES.h"
 #include "../Hash/Sha256.h"
-
 #include "7zAES.h"
+
+#ifndef EXTRACT_ONLY
+#include "../Hash/RandGen.h"
+#endif
 
 using namespace NWindows;
 
@@ -89,7 +92,8 @@ static CKeyInfoCache g_GlobalKeyCache(32);
 static NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
 
 CBase::CBase():
-  _cachedKeys(16)
+  _cachedKeys(16),
+  _ivSize(0)
 {
   for (int i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
@@ -111,40 +115,31 @@ void CBase::CalculateDigest()
   }
 }
 
+#ifndef EXTRACT_ONLY
 
 /*
-static void GetRandomData(Byte *data)
+STDMETHODIMP CEncoder::ResetSalt()
 {
-  // probably we don't need truly random.
-  // it's enough to prevent dictionary attack;
-  // but it gives some info about time when compressing 
-  // was made. 
-  UInt64 tempValue;
-  SYSTEMTIME systemTime;
-  FILETIME fileTime;
-  ::GetSystemTime(&systemTime);
-  ::SystemTimeToFileTime(&systemTime, &fileTime);
-  tempValue = *(const UInt64 *)&fileTime;
-  LARGE_INTEGER counter;
-  ::QueryPerformanceCounter(&counter);
-  tempValue += *(const UInt64 *)&counter;
-  tempValue += (UInt64)(GetTickCount()) << 32;
-  *(UInt64 *)data = tempValue;
+  _key.SaltSize = 4;
+  g_RandomGenerator.Generate(_key.Salt, _key.SaltSize);
+  return S_OK;
 }
 */
 
+STDMETHODIMP CEncoder::ResetInitVector()
+{
+  _ivSize = 8;
+  g_RandomGenerator.Generate(_iv, _ivSize);
+  return S_OK;
+}
+
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 { 
-  _key.Init();
-  for (UInt32 i = 0; i < sizeof(_iv); i++)
+   // _key.Init();
+   for (UInt32 i = _ivSize; i < sizeof(_iv); i++)
     _iv[i] = 0;
 
-  _key.SaltSize = 0;
-  
-  // _key.SaltSize = 8;
-  // GetRandomData(_key.Salt);
-
-  int ivSize = 0;
+  UInt32 ivSize = _ivSize;
   
   // _key.NumCyclesPower = 0x3F;
   _key.NumCyclesPower = 18;
@@ -169,6 +164,14 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   }
   return S_OK;
 }
+
+HRESULT CEncoder::CreateFilter()
+{
+  _aesFilter = new CAES_CBC_Encoder;
+  return S_OK;
+}
+
+#endif
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
@@ -227,12 +230,6 @@ STDMETHODIMP CBaseCoder::Init()
 STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
 {
   return _aesFilter->Filter(data, size);
-}
-
-HRESULT CEncoder::CreateFilter()
-{
-  _aesFilter = new CAES_CBC_Encoder;
-  return S_OK;
 }
 
 HRESULT CDecoder::CreateFilter()

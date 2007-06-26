@@ -3,7 +3,7 @@
 #ifndef __PROPERTYNAME_H
 #define __PROPERTYNAME_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 UString GetNameOfProperty(PROPID propID);
 

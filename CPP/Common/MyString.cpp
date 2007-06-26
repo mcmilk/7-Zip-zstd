@@ -1,4 +1,4 @@
-// Common/String.cpp
+// Common/MyString.cpp
 
 #include "StdAfx.h"
 
@@ -8,7 +8,7 @@
 #include <ctype.h>
 #endif
 
-#include "String.h"
+#include "MyString.h"
 
 
 #ifdef _WIN32

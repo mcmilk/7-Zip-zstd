@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "Common/String.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"

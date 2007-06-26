@@ -45,12 +45,16 @@ int SzFolderFindBindPairForInStream(CFolder *folder, UInt32 inStreamIndex);
 UInt32 SzFolderGetNumOutStreams(CFolder *folder);
 CFileSize SzFolderGetUnPackSize(CFolder *folder);
 
-/* #define CArchiveFileTime UInt64 */
+typedef struct _CArchiveFileTime
+{
+  UInt32 Low;
+  UInt32 High;
+} CArchiveFileTime;
 
 typedef struct _CFileItem
 {
-  /*
   CArchiveFileTime LastWriteTime;
+  /*
   CFileSize StartPos;
   UInt32 Attributes; 
   */
@@ -62,6 +66,7 @@ typedef struct _CFileItem
   Byte HasStream;
   Byte IsDirectory;
   Byte IsAnti;
+  Byte IsLastWriteTimeDefined;
   /*
   int AreAttributesDefined;
   int IsLastWriteTimeDefined;

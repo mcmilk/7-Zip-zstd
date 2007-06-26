@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "MethodId.h"
-#include "../../Common/String.h"
+#include "../../Common/MyString.h"
 
 static inline wchar_t GetHex(Byte value)
 {

@@ -15,6 +15,8 @@ using namespace NWindows;
 STDMETHODIMP COpenCallbackImp::SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
   COM_TRY_BEGIN
+  if (!Callback)
+    return S_OK;
   return Callback->SetTotal(files, bytes);
   COM_TRY_END
 }
@@ -22,6 +24,8 @@ STDMETHODIMP COpenCallbackImp::SetTotal(const UInt64 *files, const UInt64 *bytes
 STDMETHODIMP COpenCallbackImp::SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
   COM_TRY_BEGIN
+  if (!Callback)
+    return S_OK;
   return Callback->SetTotal(files, bytes);
   COM_TRY_END
 }
@@ -96,7 +100,10 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   COM_TRY_BEGIN
   if (_subArchiveMode)
     return S_FALSE;
-  RINOK(Callback->CheckBreak());
+  if (Callback)
+  {
+    RINOK(Callback->CheckBreak());
+  }
   *inStream = NULL;
   UString fullPath = _folderPrefix + name;
   if (!NFile::NFind::FindFile(fullPath, _fileInfo))
@@ -120,6 +127,8 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
 STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
   COM_TRY_BEGIN
+  if (!Callback)
+    return E_NOTIMPL;
   return Callback->CryptoGetTextPassword(password);
   COM_TRY_END
 }

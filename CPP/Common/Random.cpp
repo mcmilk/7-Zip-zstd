@@ -5,7 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "Common/Random.h"
+#include "Random.h"
 
 void CRandom::Init(unsigned int seed)
   { srand(seed); }

@@ -3,7 +3,7 @@
 #ifndef __DIR_ITEM_H
 #define __DIR_ITEM_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Types.h"
 
 struct CDirItem

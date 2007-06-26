@@ -3,7 +3,6 @@
 #ifndef __EXTRACTENGINE_H
 #define __EXTRACTENGINE_H
 
-#include "Common/String.h"
 #include "../../UI/GUI/OpenCallbackGUI.h"
 #include "../../UI/Common/LoadCodecs.h"
 

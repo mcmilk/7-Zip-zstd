@@ -21,15 +21,15 @@ namespace N7z {
 
 class CEncoder
 {
-  NCoderMixer2::CCoderMixer2MT *_mixerCoderSpec;
+  NCoderMixer::CCoderMixer2MT *_mixerCoderSpec;
   CMyComPtr<ICompressCoder2> _mixerCoder;
 
   CObjectVector<CCoderInfo> _codersInfo;
 
   CCompressionMethodMode _options;
-  NCoderMixer2::CBindInfo _bindInfo;
-  NCoderMixer2::CBindInfo _decompressBindInfo;
-  NCoderMixer2::CBindReverseConverter *_bindReverseConverter;
+  NCoderMixer::CBindInfo _bindInfo;
+  NCoderMixer::CBindInfo _decompressBindInfo;
+  NCoderMixer::CBindReverseConverter *_bindReverseConverter;
   CRecordVector<CMethodId> _decompressionMethods;
 
   HRESULT CreateMixerCoder(DECL_EXTERNAL_CODECS_LOC_VARS

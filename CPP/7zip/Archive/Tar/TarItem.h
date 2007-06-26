@@ -6,7 +6,7 @@
 #include <time.h>
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "TarHeader.h"

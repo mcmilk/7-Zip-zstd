@@ -3,7 +3,7 @@
 #ifndef __FILEPATHAUTORENAME_H
 #define __FILEPATHAUTORENAME_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 bool AutoRenamePath(UString &fullProcessedPath);
 

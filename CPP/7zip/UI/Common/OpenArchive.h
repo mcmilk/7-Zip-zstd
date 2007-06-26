@@ -3,7 +3,7 @@
 #ifndef __OPENARCHIVE_H
 #define __OPENARCHIVE_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Windows/FileFind.h"
 
 #include "../../Archive/IArchive.h"
@@ -51,7 +51,7 @@ HRESULT OpenArchive(
     IArchiveOpenCallback *openArchiveCallback);
 
 
-HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName);
+HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName, IArchiveOpenCallback *openArchiveCallback);
 
 HRESULT MyOpenArchive(
     CCodecs *codecs,
@@ -94,6 +94,9 @@ struct CArchiveLink
     return result;
   }
 
+  bool IsOpen;
+
+  CArchiveLink(): IsOpen(false) {};
 
   IInArchive *GetArchive() { return Archive1 != 0 ? Archive1: Archive0; }
   UString GetDefaultItemName()  { return Archive1 != 0 ? DefaultItemName1: DefaultItemName0; }

@@ -6,10 +6,10 @@
 
 #include "LzmaBench.h"
 #include "LzmaBenchCon.h"
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
 
 #if defined(BENCH_MT) || defined(_WIN32)
-#include "Windows/System.h"
+#include "../../../Windows/System.h"
 #endif
 
 #ifdef BREAK_HANDLER

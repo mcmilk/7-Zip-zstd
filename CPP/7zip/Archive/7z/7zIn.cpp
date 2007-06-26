@@ -12,7 +12,9 @@ extern "C"
 }
 
 // define FORMAT_7Z_RECOVERY if you want to recover multivolume archives with empty StartHeader 
-// #define FORMAT_7Z_RECOVERY
+#ifndef _SFX
+#define FORMAT_7Z_RECOVERY
+#endif
 
 namespace NArchive {
 namespace N7z {
@@ -1268,13 +1270,13 @@ HRESULT CInArchive::ReadDatabase(
       return S_FALSE;
     nextHeaderSize = realProcessedSize - i;
     nextHeaderOffset = cur2 - cur + i;
-    nextHeaderCRC = CCRC::CalculateDigest(buf + i, (size_t)nextHeaderSize);
+    nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
     RINOK(_stream->Seek(cur, STREAM_SEEK_SET, &_position));
   }
   #endif
 
   #ifdef FORMAT_7Z_RECOVERY
-  crcFromArchive = crc.GetDigest();
+  crcFromArchive = CRC_GET_DIGEST(crc);
   #endif
 
   #ifdef _7Z_VOL

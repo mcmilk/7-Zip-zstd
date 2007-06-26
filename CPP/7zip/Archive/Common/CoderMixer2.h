@@ -3,12 +3,12 @@
 #ifndef __CODER_MIXER2_H
 #define __CODER_MIXER2_H
 
-#include "../../../Common/Vector.h"
+#include "../../../Common/MyVector.h"
 #include "../../../Common/Types.h"
 #include "../../../Common/MyCom.h"
 #include "../../ICoder.h"
 
-namespace NCoderMixer2 {
+namespace NCoderMixer {
 
 struct CBindPair
 {
@@ -127,7 +127,7 @@ struct CBindInfo
 class CBindReverseConverter
 {
   UInt32 _numSrcOutStreams;
-  NCoderMixer2::CBindInfo _srcBindInfo;
+  NCoderMixer::CBindInfo _srcBindInfo;
   CRecordVector<UInt32> _srcInToDestOutMap;
   CRecordVector<UInt32> _srcOutToDestInMap;
   CRecordVector<UInt32> _destInToSrcOutMap;
@@ -135,11 +135,11 @@ public:
   UInt32 NumSrcInStreams;
   CRecordVector<UInt32> DestOutToSrcInMap;
 
-  CBindReverseConverter(const NCoderMixer2::CBindInfo &srcBindInfo);
-  void CreateReverseBindInfo(NCoderMixer2::CBindInfo &destBindInfo);
+  CBindReverseConverter(const NCoderMixer::CBindInfo &srcBindInfo);
+  void CreateReverseBindInfo(NCoderMixer::CBindInfo &destBindInfo);
 };
 
-struct CCoderInfo
+struct CCoderInfo2
 {
   CMyComPtr<ICompressCoder> Coder;
   CMyComPtr<ICompressCoder2> Coder2;
@@ -151,8 +151,14 @@ struct CCoderInfo
   CRecordVector<const UInt64 *> InSizePointers;
   CRecordVector<const UInt64 *> OutSizePointers;
 
-  CCoderInfo(UInt32 numInStreams, UInt32 numOutStreams);
+  CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams);
   void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
+
+  HRESULT QueryInterface(REFGUID iid, void** pp) const
+  {
+    IUnknown *p = Coder ? (IUnknown *)Coder : (IUnknown *)Coder2;
+    return p->QueryInterface(iid, pp);
+  }
 };
 
 class CCoderMixer2

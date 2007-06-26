@@ -5,8 +5,8 @@
 #include <tchar.h>
 
 #include "StdOutStream.h"
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "IntToString.h"
+#include "StringConvert.h"
 
 #ifdef _MSC_VER
 // "was declared deprecated" disabling

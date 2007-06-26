@@ -12,7 +12,7 @@ extern "C"
 #include "Common/NewHandler.h"
 #include "Common/StringConvert.h"
 #include "Common/CommandLineParser.h"
-#include "Common/Exception.h"
+#include "Common/MyException.h"
 
 #include "Windows/COM.h"
 #include "Windows/FileMapping.h"

@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_FILESYSTEM_H
 #define __WINDOWS_FILESYSTEM_H
 
-#include "../Common/String.h"
+#include "../Common/MyString.h"
 #include "../Common/Types.h"
 
 #ifndef _UNICODE

@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "Windows/Control/PropertyPage.h"
-#include "../../Common/Vector.h"
 #ifndef _UNICODE
 #include "../../Common/StringConvert.h"
 #endif

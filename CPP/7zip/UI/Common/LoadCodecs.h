@@ -5,7 +5,7 @@
 
 #include "../../../Common/Types.h"
 #include "../../../Common/MyCom.h"
-#include "../../../Common/String.h"
+#include "../../../Common/MyString.h"
 #include "../../../Common/Buffer.h"
 #include "../../ICoder.h"
 

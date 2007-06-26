@@ -550,6 +550,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 
 SOURCE=..\..\Common\StreamUtils.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.h
+# End Source File
 # End Group
 # Begin Group "File Manager"
 
@@ -712,6 +720,22 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -720,27 +744,11 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # Begin Source File
 

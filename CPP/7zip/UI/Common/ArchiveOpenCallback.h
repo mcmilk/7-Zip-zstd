@@ -3,7 +3,7 @@
 #ifndef __ARCHIVE_OPEN_CALLBACK_H
 #define __ARCHIVE_OPEN_CALLBACK_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/MyCom.h"
 #include "Windows/FileFind.h"
 
@@ -75,6 +75,8 @@ private:
 public:
   UStringVector FileNames;
   IOpenCallbackUI *Callback;
+
+  COpenCallbackImp(): Callback(NULL) {}
   void Init(const UString &folderPrefix,  const UString &fileName)
   {
     _folderPrefix = folderPrefix;

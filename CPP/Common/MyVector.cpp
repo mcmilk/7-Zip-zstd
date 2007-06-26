@@ -1,10 +1,10 @@
-// Common/Vector.cpp
+// Common/MyVector.cpp
 
 #include "StdAfx.h"
 
 #include <string.h>
 
-#include "Vector.h"
+#include "MyVector.h"
 
 CBaseRecordVector::~CBaseRecordVector()
   { Free(); }

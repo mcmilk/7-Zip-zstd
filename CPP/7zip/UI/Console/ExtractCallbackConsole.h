@@ -3,7 +3,7 @@
 #ifndef __EXTRACTCALLBACKCONSOLE_H
 #define __EXTRACTCALLBACKCONSOLE_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/StdOutStream.h"
 #include "../../Common/FileStreams.h"
 #include "../../IPassword.h"

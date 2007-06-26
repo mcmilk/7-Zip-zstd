@@ -113,8 +113,22 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       }
     }
     if (_items.Size() == 0)
-      return S_FALSE;
-
+    {
+      CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
+      if (!openArchiveCallback)
+        return S_FALSE;
+      openArchiveCallback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
+      if (!openVolumeCallback)
+        return S_FALSE;
+      NCOM::CPropVariant propVariant;
+      RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
+      if (propVariant.vt != VT_BSTR)
+        return S_FALSE;
+      UString baseName = propVariant.bstrVal;
+      baseName = baseName.Right(4);
+      if (baseName.CompareNoCase(L".tar") != 0)
+        return S_FALSE;
+    }
     _inStream = stream;
   }
   /*

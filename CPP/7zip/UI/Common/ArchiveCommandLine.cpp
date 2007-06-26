@@ -24,6 +24,14 @@
 #include "SortUtils.h"
 #include "EnumDirItems.h"
 
+#if _MSC_VER >= 1400
+#define MY_isatty_fileno(x) _isatty(_fileno(x))
+#else
+#define MY_isatty_fileno(x) isatty(fileno(x))
+#endif
+
+#define MY_IS_TERMINAL(x) (MY_isatty_fileno(x) != 0); 
+
 using namespace NCommandLineParser;
 using namespace NWindows;
 using namespace NFile;
@@ -681,9 +689,9 @@ void CArchiveCommandLineParser::Parse1(const UStringVector &commandStrings,
     ThrowUserErrorException();
   }
 
-  options.IsInTerminal = (isatty(fileno(stdin)) != 0);
-  options.IsStdOutTerminal = (isatty(fileno(stdout)) != 0);
-  options.IsStdErrTerminal = (isatty(fileno(stderr)) != 0);
+  options.IsInTerminal = MY_IS_TERMINAL(stdin);
+  options.IsStdOutTerminal = MY_IS_TERMINAL(stdout);
+  options.IsStdErrTerminal = MY_IS_TERMINAL(stderr);
   options.StdOutMode = parser[NKey::kStdOut].ThereIs;
   options.EnableHeaders = !parser[NKey::kDisableHeaders].ThereIs;
   options.HelpMode = parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs  || parser[NKey::kHelp3].ThereIs;

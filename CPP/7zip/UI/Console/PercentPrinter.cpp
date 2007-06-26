@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "Common/IntToString.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "PercentPrinter.h"
 

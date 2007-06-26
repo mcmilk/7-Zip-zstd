@@ -3,7 +3,7 @@
 #ifndef __COMMON_WILDCARD_H
 #define __COMMON_WILDCARD_H
 
-#include "Common/String.h"
+#include "MyString.h"
 
 void SplitPathToParts(const UString &path, UStringVector &pathParts);
 void SplitPathToParts(const UString &path, UString &dirPrefix, UString &name);

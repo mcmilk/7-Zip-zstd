@@ -4,7 +4,7 @@
 #define __UPDATE_CALLBACK100_H
 
 #include "Common/MyCom.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "../UI/Agent/IFolderArchive.h"
 #include "Resource/ProgressDialog2/ProgressDialog.h"

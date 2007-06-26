@@ -3,8 +3,8 @@
 #ifndef __COMMON_TEXTCONFIG_H
 #define __COMMON_TEXTCONFIG_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
+#include "MyVector.h"
+#include "MyString.h"
 
 struct CTextConfigPair
 {

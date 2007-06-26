@@ -4,7 +4,7 @@
 
 #include "CoderMixer2.h"
 
-namespace NCoderMixer2 {
+namespace NCoderMixer {
 
 CBindReverseConverter::CBindReverseConverter(const CBindInfo &srcBindInfo):
   _srcBindInfo(srcBindInfo)
@@ -81,7 +81,7 @@ void CBindReverseConverter::CreateReverseBindInfo(CBindInfo &destBindInfo)
     destBindInfo.InStreams.Add(_srcOutToDestInMap[_srcBindInfo.OutStreams[i]]);
 }
 
-CCoderInfo::CCoderInfo(UInt32 numInStreams, UInt32 numOutStreams): 
+CCoderInfo2::CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams): 
     NumInStreams(numInStreams),
     NumOutStreams(numOutStreams)
 {
@@ -111,7 +111,7 @@ static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes,
   }
 }
 
-void CCoderInfo::SetCoderInfo(const UInt64 **inSizes,
+void CCoderInfo2::SetCoderInfo(const UInt64 **inSizes,
       const UInt64 **outSizes)
 {
   SetSizes(inSizes, InSizes, InSizePointers, NumInStreams);

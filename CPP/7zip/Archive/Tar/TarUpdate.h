@@ -3,10 +3,6 @@
 #ifndef __TAR_UPDATE_H
 #define __TAR_UPDATE_H
 
-#include "Common/Vector.h"
-#include "Common/Types.h"
-#include "Common/String.h"
-
 #include "../IArchive.h"
 #include "TarItem.h"
 

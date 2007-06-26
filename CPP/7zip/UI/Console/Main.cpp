@@ -5,7 +5,7 @@
 #include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
-#include "Common/Exception.h"
+#include "Common/MyException.h"
 #include "Common/IntToString.h"
 #include "Common/ListFileUtils.h"
 #include "Common/StdInStream.h"

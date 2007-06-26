@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_MENU_H
 #define __WINDOWS_MENU_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Windows/Defs.h"
 
 namespace NWindows {

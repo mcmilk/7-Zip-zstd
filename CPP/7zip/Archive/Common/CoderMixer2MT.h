@@ -5,73 +5,55 @@
 
 #include "CoderMixer2.h"
 #include "../../../Common/MyCom.h"
-#include "../../../Windows/Thread.h"
 #include "../../Common/StreamBinder.h"
+#include "../../Common/VirtThread.h"
 
-namespace NCoderMixer2 {
+namespace NCoderMixer {
 
-//  CreateEvents();
-//  {
-//    SetCoderInfo()
-//    Init Streams   
-//    set CompressEvent()
-//    wait CompressionCompletedEvent
-//  }
-
-struct CThreadCoderInfo: public CCoderInfo
+struct CCoder2: public CCoderInfo2, public CVirtThread
 {
-  NWindows::NSynchronization::CAutoResetEvent CompressEvent;
-  HANDLE ExitEvent;
-  NWindows::NSynchronization::CAutoResetEvent CompressionCompletedEvent;
-
+  HRESULT Result;
   CObjectVector< CMyComPtr<ISequentialInStream> > InStreams;
   CObjectVector< CMyComPtr<ISequentialOutStream> > OutStreams;
-  CRecordVector<ISequentialInStream *> InStreamPointers;
-  CRecordVector<ISequentialOutStream *> OutStreamPointers;
+  CRecordVector<ISequentialInStream*> InStreamPointers;
+  CRecordVector<ISequentialOutStream*> OutStreamPointers;
 
-  CMyComPtr<ICompressProgressInfo> Progress; // CMyComPtr
-  HRESULT Result;
-
-  CThreadCoderInfo(UInt32 numInStreams, UInt32 numOutStreams);
-  void SetCoderInfo(const UInt64 **inSizes,
-      const UInt64 **outSizes, ICompressProgressInfo *progress);
-  bool WaitAndCode();
-  HRes CreateEvents()
-  {
-    RINOK(CompressEvent.CreateIfNotCreated());
-    return CompressionCompletedEvent.CreateIfNotCreated();
-  }
+  CCoder2(UInt32 numInStreams, UInt32 numOutStreams);
+  void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
+  virtual void Execute();
+  void Code(ICompressProgressInfo *progress);
 };
 
 
-//  SetBindInfo()
-//  for each coder
-//  {
-//    AddCoder[2]()
-//  }
-// 
-//  for each file
-//  {
-//    ReInit()
-//    for each coder
-//    {
-//      SetCoderInfo  
-//    }
-//    SetProgressIndex(UInt32 coderIndex);
-//    Code
-//  }
-
+/*
+  SetBindInfo()
+  for each coder
+    AddCoder[2]()
+  SetProgressIndex(UInt32 coderIndex);
+ 
+  for each file
+  {
+    ReInit()
+    for each coder
+      SetCoderInfo  
+    Code
+  }
+*/
 
 class CCoderMixer2MT:
   public ICompressCoder2,
   public CCoderMixer2,
   public CMyUnknownImp
 {
-  MY_UNKNOWN_IMP
+  CBindInfo _bindInfo;
+  CObjectVector<CStreamBinder> _streamBinders;
+  int _progressCoderIndex;
 
+  void AddCoderCommon();
+  HRESULT Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams);
 public:
-  STDMETHOD(Init)(ISequentialInStream **inStreams,
-    ISequentialOutStream **outStreams);
+  CObjectVector<CCoder2> _coders;
+  MY_UNKNOWN_IMP
 
   STDMETHOD(Code)(ISequentialInStream **inStreams,
       const UInt64 **inSizes, 
@@ -81,50 +63,17 @@ public:
       UInt32 numOutStreams,
       ICompressProgressInfo *progress);
 
-
-  CCoderMixer2MT();
-  ~CCoderMixer2MT();
-  void AddCoderCommon();
+  HRESULT SetBindInfo(const CBindInfo &bindInfo);
   void AddCoder(ICompressCoder *coder);
   void AddCoder2(ICompressCoder2 *coder);
+  void SetProgressCoderIndex(int coderIndex) {  _progressCoderIndex = coderIndex; }
 
   void ReInit();
   void SetCoderInfo(UInt32 coderIndex, const UInt64 **inSizes, const UInt64 **outSizes)
-    {  _coderInfoVector[coderIndex].SetCoderInfo(inSizes, outSizes, NULL); }
-  void SetProgressCoderIndex(UInt32 coderIndex)
-    {  _progressCoderIndex = coderIndex; }
-
-
-  UInt64 GetWriteProcessedSize(UInt32 binderIndex) const;
-
-
-  bool MyCode();
-
-private:
-  CBindInfo _bindInfo;
-  CObjectVector<CStreamBinder> _streamBinders;
-  CObjectVector<CThreadCoderInfo> _coderInfoVector;
-  CRecordVector<NWindows::CThread> _threads;
-  NWindows::CThread _mainThread;
-
-  NWindows::NSynchronization::CAutoResetEvent _startCompressingEvent;
-  NWindows::NSynchronization::CAutoResetEvent _compressingFinishedEvent;
-
-  NWindows::NSynchronization::CManualResetEvent _exitEvent;
-  UInt32 _progressCoderIndex;
-
-  HRes CreateEvents()
-  {
-    RINOK(_startCompressingEvent.CreateIfNotCreated());
-    RINOK(_compressingFinishedEvent.CreateIfNotCreated());
-    return _exitEvent.CreateIfNotCreated();
-  }
-
-public:
-  HRESULT SetBindInfo(const CBindInfo &bindInfo);
-
+    {  _coders[coderIndex].SetCoderInfo(inSizes, outSizes); }
+  UInt64 GetWriteProcessedSize(UInt32 binderIndex) const
+    {  return _streamBinders[binderIndex].ProcessedSize; }
 };
 
 }
 #endif
-

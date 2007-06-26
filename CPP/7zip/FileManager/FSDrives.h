@@ -3,7 +3,7 @@
 #ifndef __FSDRIVES_H
 #define __FSDRIVES_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Types.h"
 #include "Common/MyCom.h"
 #include "Windows/FileFind.h"

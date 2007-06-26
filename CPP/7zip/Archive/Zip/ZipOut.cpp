@@ -12,7 +12,11 @@ namespace NZip {
 
 void COutArchive::Create(IOutStream *outStream)
 {
+  if (!m_OutBuffer.Create(1 << 16))
+    throw CSystemException(E_OUTOFMEMORY);
   m_Stream = outStream;
+  m_OutBuffer.SetStream(outStream);
+  m_OutBuffer.Init();
   m_BasePosition = 0;
 }
 
@@ -47,11 +51,7 @@ void COutArchive::PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPa
 
 void COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
-  UInt32 processedSize;
-  if(WriteStream(m_Stream, buffer, size, &processedSize) != S_OK)
-    throw 0;
-  if(processedSize != size)
-    throw 0;
+  m_OutBuffer.WriteBytes(buffer, size);
   m_BasePosition += size;
 }
 
@@ -101,9 +101,16 @@ void COutArchive::WriteExtra(const CExtraBlock &extra)
   }
 }
 
-HRESULT COutArchive::WriteLocalHeader(const CLocalItem &item)
+void COutArchive::SeekTo(UInt64 offset)
 {
-  m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
+  HRESULT res = m_Stream->Seek(offset, STREAM_SEEK_SET, NULL);
+  if (res != S_OK)
+    throw CSystemException(res);
+}
+
+void COutArchive::WriteLocalHeader(const CLocalItem &item)
+{
+  SeekTo(m_BasePosition);
   
   bool isZip64 = m_IsZip64 || item.PackSize >= 0xFFFFFFFF || item.UnPackSize >= 0xFFFFFFFF;
   
@@ -120,7 +127,7 @@ HRESULT COutArchive::WriteLocalHeader(const CLocalItem &item)
   {
     UInt16 localExtraSize = (UInt16)((isZip64 ? (4 + 16): 0) + item.LocalExtra.GetSize());
     if (localExtraSize > m_ExtraSize)
-      return E_FAIL;
+      throw CSystemException(E_FAIL);
   }
   WriteUInt16((UInt16)m_ExtraSize); // test it;
   WriteBytes((const char *)item.Name, item.Name.Length());
@@ -140,14 +147,13 @@ HRESULT COutArchive::WriteLocalHeader(const CLocalItem &item)
   for (; extraPos < m_ExtraSize; extraPos++)
     WriteByte(0);
 
+  m_OutBuffer.FlushWithCheck();
   MoveBasePosition(item.PackSize);
-  return m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
+  SeekTo(m_BasePosition);
 }
 
 void COutArchive::WriteCentralHeader(const CItem &item)
 {
-  m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
-
   bool isUnPack64 = item.UnPackSize >= 0xFFFFFFFF;
   bool isPack64 = item.PackSize >= 0xFFFFFFFF;
   bool isPosition64 = item.LocalHeaderPosition >= 0xFFFFFFFF;
@@ -193,7 +199,7 @@ void COutArchive::WriteCentralHeader(const CItem &item)
 
 void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer &comment)
 {
-  m_Stream->Seek(m_BasePosition, STREAM_SEEK_SET, NULL);
+  SeekTo(m_BasePosition);
   
   UInt64 cdOffset = GetCurrentPosition();
   for(int i = 0; i < items.Size(); i++)
@@ -234,6 +240,7 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItem> &items, const CByte
   WriteUInt16(commentSize);
   if (commentSize > 0)
     WriteBytes((const Byte *)comment, commentSize);
+  m_OutBuffer.FlushWithCheck();
 }
 
 void COutArchive::CreateStreamForCompressing(IOutStream **outStream)
@@ -246,7 +253,7 @@ void COutArchive::CreateStreamForCompressing(IOutStream **outStream)
 
 void COutArchive::SeekToPackedDataPosition()
 {
-  m_Stream->Seek(m_BasePosition + m_LocalFileHeaderSize, STREAM_SEEK_SET, NULL);
+  SeekTo(m_BasePosition + m_LocalFileHeaderSize);
 }
 
 void COutArchive::CreateStreamForCopying(ISequentialOutStream **outStream)

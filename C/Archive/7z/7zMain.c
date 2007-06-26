@@ -44,6 +44,61 @@ void ConvertNumberToString(CFileSize value, char *s)
   *s = '\0';
 }
 
+#define PERIOD_4 (4 * 365 + 1)
+#define PERIOD_100 (PERIOD_4 * 25 - 1)
+#define PERIOD_400 (PERIOD_100 * 4 + 1)
+
+void ConvertFileTimeToString(CArchiveFileTime *ft, char *s)
+{
+  unsigned year, mon, day, hour, min, sec;
+  UInt64 v64 = ft->Low | ((UInt64)ft->High << 32);
+  Byte ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+  unsigned temp;
+  UInt32 v; 
+  v64 /= 10000000;
+  sec = (unsigned)(v64 % 60);
+  v64 /= 60;
+  min = (unsigned)(v64 % 60);
+  v64 /= 60;
+  hour = (unsigned)(v64 % 24);
+  v64 /= 24;
+
+  v = (UInt32)v64;
+
+  year = (unsigned)(1601 + v / PERIOD_400 * 400);
+  v %= PERIOD_400;
+
+  temp = (unsigned)(v / PERIOD_100);
+  if (temp == 4)
+    temp = 3;
+  year += temp * 100;
+  v -= temp * PERIOD_100;
+
+  temp = v / PERIOD_4;
+  if (temp == 25)
+    temp = 24;
+  year += temp * 4;
+  v -= temp * PERIOD_4;
+
+  temp = v / 365;
+  if (temp == 4)
+    temp = 3;
+  year += temp;
+  v -= temp * 365;
+
+  if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
+    ms[1] = 29;
+  for (mon = 1; mon <= 12; mon++)
+  {
+    unsigned s = ms[mon - 1];
+    if (v < s)
+      break;
+    v -= s;
+  }
+  day = (unsigned)v + 1;
+  sprintf(s, "%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);
+}
+
 
 #ifdef USE_WINDOWS_FUNCTIONS
 /*
@@ -193,7 +248,7 @@ int main(int numargs, char *args[])
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.45  Copyright (c) 1999-2007 Igor Pavlov  2007-03-15\n");
+  printf("\n7z ANSI-C Decoder 4.48  Copyright (c) 1999-2007 Igor Pavlov  2007-06-21\n");
   if (numargs == 1)
   {
     printf(
@@ -256,9 +311,14 @@ int main(int numargs, char *args[])
       for (i = 0; i < db.Database.NumFiles; i++)
       {
         CFileItem *f = db.Database.Files + i;
-        char s[32];
+        char s[32], t[32];
         ConvertNumberToString(f->Size, s);
-        printf("%10s  %s\n", s, f->Name);
+        if (f->IsLastWriteTimeDefined)
+          ConvertFileTimeToString(&f->LastWriteTime, t);
+        else
+          strcpy(t, "                   ");
+
+        printf("%10s %s  %s\n", s, t, f->Name);
       }
     }
     else if (testCommand || extractCommand)
@@ -300,7 +360,7 @@ int main(int numargs, char *args[])
         if (!testCommand)
         {
           MY_FILE_HANDLE outputHandle;
-          UInt32 processedSize;
+          size_t processedSize;
           char *fileName = f->Name;
           size_t nameLen = strlen(f->Name);
           for (; nameLen > 0; nameLen--)
@@ -356,8 +416,12 @@ int main(int numargs, char *args[])
     printf("\nEverything is Ok\n");
     return 0;
   }
-  if (res == (SZ_RESULT)SZE_OUTOFMEMORY)
+  if (res == (SZ_RESULT)SZE_NOTIMPL)
+    PrintError("decoder doesn't support this archive");
+  else if (res == (SZ_RESULT)SZE_OUTOFMEMORY)
     PrintError("can not allocate memory");
+  else if (res == (SZ_RESULT)SZE_CRC_ERROR)
+    PrintError("CRC error");
   else     
     printf("\nERROR #%d\n", res);
   return 1;

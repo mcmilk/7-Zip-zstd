@@ -22,10 +22,10 @@ FAR_OBJS = \
 COMMON_OBJS = \
   $O\IntToString.obj \
   $O\NewHandler.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \

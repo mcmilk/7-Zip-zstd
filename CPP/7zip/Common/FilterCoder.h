@@ -26,6 +26,8 @@ class CFilterCoder:
   #endif
   #ifndef EXTRACT_ONLY
   public ICompressWriteCoderProperties,
+  // public ICryptoResetSalt,
+  public ICryptoResetInitVector,
   #endif
   public ICompressSetDecoderProperties2,
   public CMyUnknownImp
@@ -53,6 +55,8 @@ protected:
   CMyComPtr<ICryptoSetPassword> _setPassword;
   #ifndef EXTRACT_ONLY
   CMyComPtr<ICompressWriteCoderProperties> _writeCoderProperties;
+  // CMyComPtr<ICryptoResetSalt> _CryptoResetSalt;
+  CMyComPtr<ICryptoResetInitVector> _CryptoResetInitVector;
   #endif
   CMyComPtr<ICompressSetDecoderProperties2> _setDecoderProperties;
 public:
@@ -82,6 +86,8 @@ public:
 
     #ifndef EXTRACT_ONLY
     MY_QUERYINTERFACE_ENTRY_AG(ICompressWriteCoderProperties, Filter, _writeCoderProperties)
+    // MY_QUERYINTERFACE_ENTRY_AG(ICryptoResetSalt, Filter, _CryptoResetSalt)
+    MY_QUERYINTERFACE_ENTRY_AG(ICryptoResetInitVector, Filter, _CryptoResetInitVector)
     #endif
 
     MY_QUERYINTERFACE_ENTRY_AG(ICompressSetDecoderProperties2, Filter, _setDecoderProperties)
@@ -105,6 +111,8 @@ public:
   #endif
   #ifndef EXTRACT_ONLY
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
+  // STDMETHOD(ResetSalt)();
+  STDMETHOD(ResetInitVector)();
   #endif
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };

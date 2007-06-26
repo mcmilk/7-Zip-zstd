@@ -8,7 +8,7 @@
 
 #include "Common/StdOutStream.h"
 #include "Common/NewHandler.h"
-#include "Common/Exception.h"
+#include "Common/MyException.h"
 #include "Common/StringConvert.h"
 
 #include "../Common/ExitCode.h"

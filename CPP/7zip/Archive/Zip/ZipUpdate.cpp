@@ -282,12 +282,12 @@ static HRESULT UpdateItemOldData(COutArchive &archive,
   return S_OK;
 }
 
-static HRESULT WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *options,
+static void WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *options,
     const CUpdateItem &updateItem, CItemEx &item)
 {
   SetFileHeader(archive, *options, updateItem, item);
   archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), updateItem.Size, options->IsAesMode);
-  return archive.WriteLocalHeader(item);
+  archive.WriteLocalHeader(item);
 }
 
 static HRESULT Update2St(
@@ -330,7 +330,7 @@ static HRESULT Update2St(
       bool isDirectory = ((updateItem.NewProperties) ? updateItem.IsDirectory : item.IsDirectory());
       if (isDirectory)
       {
-        RINOK(WriteDirHeader(archive, options, updateItem, item));
+        WriteDirHeader(archive, options, updateItem, item);
       }
       else
       {
@@ -355,7 +355,7 @@ static HRESULT Update2St(
             EXTERNAL_CODECS_LOC_VARS
             fileInStream, outStream, compressProgress, compressingResult));
         SetItemInfoFromCompressingResult(compressingResult, options->IsAesMode, options->AesKeyMode, item);
-        RINOK(archive.WriteLocalHeader(item));
+        archive.WriteLocalHeader(item);
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
         complexity += item.UnPackSize;
       }
@@ -611,7 +611,7 @@ static HRESULT Update2(
       bool isDirectory = ((updateItem.NewProperties) ? updateItem.IsDirectory : item.IsDirectory());
       if (isDirectory)
       {
-        RINOK(WriteDirHeader(archive, options, updateItem, item));
+        WriteDirHeader(archive, options, updateItem, item);
       }
       else
       {
@@ -632,7 +632,7 @@ static HRESULT Update2(
           SetItemInfoFromCompressingResult(memRef.CompressingResult,
               options->IsAesMode, options->AesKeyMode, item);
           SetFileHeader(archive, *options, updateItem, item);
-          RINOK(archive.WriteLocalHeader(item));
+          archive.WriteLocalHeader(item);
           complexity += item.UnPackSize;
           // RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
           memRef.FreeOpt(&memManager);
@@ -666,7 +666,7 @@ static HRESULT Update2(
             SetItemInfoFromCompressingResult(threadInfo.CompressingResult, 
                 options->IsAesMode, options->AesKeyMode, item);
             SetFileHeader(archive, *options, updateItem, item);
-            RINOK(archive.WriteLocalHeader(item));
+            archive.WriteLocalHeader(item);
             complexity += item.UnPackSize;
           }
           else

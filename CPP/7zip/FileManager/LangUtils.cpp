@@ -134,10 +134,32 @@ bool SplidID(const UString &id, WORD &primID, WORD &subID)
   return (*end == 0);
 }
 
+typedef LANGID (WINAPI *GetUserDefaultUILanguageP)();
+
 void FindMatchLang(UString &shortName)
 {
   shortName.Empty();
-  LANGID langID = GetUserDefaultLangID();
+
+  LANGID SystemDefaultLangID = GetSystemDefaultLangID(); // Lang for non-Unicode in XP64
+  LANGID UserDefaultLangID = GetUserDefaultLangID(); // Standarts and formats in XP64
+
+  if (SystemDefaultLangID != UserDefaultLangID)
+    return;
+  LANGID langID = UserDefaultLangID;
+  /*
+  LANGID SystemDefaultUILanguage; // english  in XP64
+  LANGID UserDefaultUILanguage; // english  in XP64
+
+  GetUserDefaultUILanguageP fn = (GetUserDefaultUILanguageP)GetProcAddress(
+      GetModuleHandle("kernel32"), "GetUserDefaultUILanguage");
+  if (fn != NULL)
+    UserDefaultUILanguage = fn();
+  fn = (GetUserDefaultUILanguageP)GetProcAddress(
+      GetModuleHandle("kernel32"), "GetSystemDefaultUILanguage");
+  if (fn != NULL)
+    SystemDefaultUILanguage = fn();
+  */
+
   WORD primLang = (WORD)(PRIMARYLANGID(langID));
   WORD subLang = (WORD)(SUBLANGID(langID));
   CObjectVector<CLangEx> langs;

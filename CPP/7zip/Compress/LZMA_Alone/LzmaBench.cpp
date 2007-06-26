@@ -37,12 +37,12 @@ extern "C"
 #include "../../ICoder.h"
 
 #ifdef BENCH_MT
-#include "Windows/Thread.h"
-#include "Windows/Synchronization.h"
+#include "../../../Windows/Thread.h"
+#include "../../../Windows/Synchronization.h"
 #endif
 
 #ifdef EXTERNAL_LZMA
-#include "Windows/PropVariant.h"
+#include "../../../Windows/PropVariant.h"
 #else
 #include "../LZMA/LZMADecoder.h"
 #include "../LZMA/LZMAEncoder.h"

@@ -20,6 +20,10 @@
 #endif
 #endif
 
+#ifdef COMPRESS_MT
+#include "../../../Windows/System.h"
+#endif
+
 using namespace NWindows;
 
 extern UString ConvertMethodIdToString(UInt64 id);
@@ -29,10 +33,11 @@ namespace N7z {
 
 CHandler::CHandler()
 {
+  #ifdef EXTRACT_ONLY
   #ifdef COMPRESS_MT
   _numThreads = NWindows::NSystem::GetNumberOfProcessors();
   #endif
-  #ifndef EXTRACT_ONLY
+  #else
   Init();
   #endif
 }

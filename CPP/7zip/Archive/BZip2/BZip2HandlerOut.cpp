@@ -6,7 +6,6 @@
 #include "BZip2Update.h"
 
 #include "Common/Defs.h"
-#include "Common/String.h"
 
 #include "Windows/PropVariant.h"
 

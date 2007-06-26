@@ -146,6 +146,18 @@ CODER_INTERFACE(ICryptoProperties, 0x80)
   STDMETHOD(SetInitVector)(const Byte *data, UInt32 size) PURE;
 };
 
+/*
+CODER_INTERFACE(ICryptoResetSalt, 0x88)
+{
+  STDMETHOD(ResetSalt)() PURE;
+};
+*/
+
+CODER_INTERFACE(ICryptoResetInitVector, 0x8C)
+{
+  STDMETHOD(ResetInitVector)() PURE;
+};
+
 CODER_INTERFACE(ICryptoSetPassword, 0x90)
 {
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size) PURE;

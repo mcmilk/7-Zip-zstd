@@ -169,10 +169,9 @@ int LzmaRamEncode(
         return SZ_RAM_E_OUTOFMEMORY;
       memmove(filteredStream, inBuffer, inSize);
     }
-    UInt32 _prevMask;
-    UInt32 _prevPos;
-    x86_Convert_Init(_prevMask, _prevPos);
-    x86_Convert(filteredStream, (UInt32)inSize, 0, &_prevMask, &_prevPos, 1);
+    UInt32 x86State;
+    x86_Convert_Init(x86State);
+    x86_Convert(filteredStream, (SizeT)inSize, 0, &x86State, 1);
   }
   
   size_t minSize = 0;

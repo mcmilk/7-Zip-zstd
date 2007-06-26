@@ -3,7 +3,20 @@ CXX = g++ -O2 -Wall
 CXX_C = gcc -O2 -Wall
 LIB = -lm
 RM = rm -f
-CFLAGS = -c -I ../../../
+CFLAGS = -c
+
+ifdef SystemDrive
+IS_MINGW = 1
+endif
+
+ifdef IS_MINGW
+FILE_IO =FileIO
+FILE_IO_2 =Windows/$(FILE_IO)
+LIB2 = -luuid 
+else
+FILE_IO =C_FileIO
+FILE_IO_2 =Common/$(FILE_IO)
+endif
 
 OBJS = \
   LzmaAlone.o \
@@ -18,14 +31,14 @@ OBJS = \
   OutBuffer.o \
   FileStreams.o \
   StreamUtils.o \
-  C_FileIO.o \
+  $(FILE_IO).o \
   CommandLineParser.o \
   CRC.o \
   IntToString.o \
-  String.o \
+  MyString.o \
   StringConvert.o \
   StringToInt.o \
-  Vector.o \
+  MyVector.o \
   7zCrc.o \
   Alloc.o \
   BranchX86.o \
@@ -37,7 +50,7 @@ OBJS = \
 all: $(PROG)
 
 $(PROG): $(OBJS)
-	$(CXX) -o $(PROG) $(LDFLAGS) $(OBJS) $(LIB)
+	$(CXX) -o $(PROG) $(LDFLAGS) $(OBJS) $(LIB) $(LIB2)
 
 LzmaAlone.o: LzmaAlone.cpp
 	$(CXX) $(CFLAGS) LzmaAlone.cpp
@@ -75,8 +88,9 @@ FileStreams.o: ../../Common/FileStreams.cpp
 StreamUtils.o: ../../Common/StreamUtils.cpp
 	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
 
-C_FileIO.o: ../../../Common/C_FileIO.cpp
-	$(CXX) $(CFLAGS) ../../../Common/C_FileIO.cpp
+$(FILE_IO).o: ../../../$(FILE_IO_2).cpp
+	$(CXX) $(CFLAGS) ../../../$(FILE_IO_2).cpp
+
 
 CommandLineParser.o: ../../../Common/CommandLineParser.cpp
 	$(CXX) $(CFLAGS) ../../../Common/CommandLineParser.cpp
@@ -90,8 +104,8 @@ MyWindows.o: ../../../Common/MyWindows.cpp
 IntToString.o: ../../../Common/IntToString.cpp
 	$(CXX) $(CFLAGS) ../../../Common/IntToString.cpp
 
-String.o: ../../../Common/String.cpp
-	$(CXX) $(CFLAGS) ../../../Common/String.cpp
+MyString.o: ../../../Common/MyString.cpp
+	$(CXX) $(CFLAGS) ../../../Common/MyString.cpp
 
 StringConvert.o: ../../../Common/StringConvert.cpp
 	$(CXX) $(CFLAGS) ../../../Common/StringConvert.cpp
@@ -99,8 +113,8 @@ StringConvert.o: ../../../Common/StringConvert.cpp
 StringToInt.o: ../../../Common/StringToInt.cpp
 	$(CXX) $(CFLAGS) ../../../Common/StringToInt.cpp
 
-Vector.o: ../../../Common/Vector.cpp
-	$(CXX) $(CFLAGS) ../../../Common/Vector.cpp
+MyVector.o: ../../../Common/MyVector.cpp
+	$(CXX) $(CFLAGS) ../../../Common/MyVector.cpp
 
 7zCrc.o: ../../../../C/7zCrc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c

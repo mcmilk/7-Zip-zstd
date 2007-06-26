@@ -4,7 +4,7 @@
 #define __ARCHIVE_RAR_ITEM_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NArchive{
 namespace NRar{

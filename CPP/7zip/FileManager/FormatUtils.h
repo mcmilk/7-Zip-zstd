@@ -4,7 +4,7 @@
 #define __FORMATUTILS_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 UString NumberToString(UInt64 number);
 

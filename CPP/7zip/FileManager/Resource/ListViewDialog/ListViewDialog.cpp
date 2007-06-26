@@ -3,8 +3,6 @@
 #include "StdAfx.h"
 #include "ListViewDialog.h"
 
-#include "Common/Vector.h"
-
 #ifdef LANG        
 #include "../../LangUtils.h"
 static CIDLangPair kIDLangPairs[] = 

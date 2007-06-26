@@ -19,7 +19,7 @@
 namespace NArchive {
 namespace N7z {
 
-struct CBindInfoEx: public NCoderMixer2::CBindInfo
+struct CBindInfoEx: public NCoderMixer::CBindInfo
 {
   CRecordVector<CMethodId> CoderMethodIDs;
   void Clear()
@@ -36,10 +36,10 @@ class CDecoder
   
   bool _multiThread;
   #ifdef _ST_MODE
-  NCoderMixer2::CCoderMixer2ST *_mixerCoderSTSpec;
+  NCoderMixer::CCoderMixer2ST *_mixerCoderSTSpec;
   #endif
-  NCoderMixer2::CCoderMixer2MT *_mixerCoderMTSpec;
-  NCoderMixer2::CCoderMixer2 *_mixerCoderCommon;
+  NCoderMixer::CCoderMixer2MT *_mixerCoderMTSpec;
+  NCoderMixer::CCoderMixer2 *_mixerCoderCommon;
   
   CMyComPtr<ICompressCoder2> _mixerCoder;
   CObjectVector<CMyComPtr<IUnknown> > _decoders;

@@ -117,15 +117,21 @@ CFileSize SzArDbGetFolderStreamPos(CArchiveDatabaseEx *db, UInt32 folderIndex, U
     db->PackStreamStartPositions[db->FolderStartPackStreamIndex[folderIndex] + indexInFolder];
 }
 
-CFileSize SzArDbGetFolderFullPackSize(CArchiveDatabaseEx *db, UInt32 folderIndex)
+int SzArDbGetFolderFullPackSize(CArchiveDatabaseEx *db, UInt32 folderIndex, CFileSize *resSize)
 {
   UInt32 packStreamIndex = db->FolderStartPackStreamIndex[folderIndex];
   CFolder *folder = db->Database.Folders + folderIndex;
   CFileSize size = 0;
   UInt32 i;
   for (i = 0; i < folder->NumPackStreams; i++)
-    size += db->Database.PackSizes[packStreamIndex + i];
-  return size;
+  {
+    CFileSize t = size + db->Database.PackSizes[packStreamIndex + i];
+    if (t < size)
+      return SZE_FAIL;
+    size = t;
+  }
+  *resSize = size;
+  return SZ_OK;
 }
 
 
@@ -500,9 +506,17 @@ SZ_RESULT SzGetNextFolderItem(CSzData *sd, CFolder *folder, void * (*allocFunc)(
     Byte mainByte;
     CCoderInfo *coder = folder->Coders + i;
     {
+      unsigned idSize, j;
+      Byte longID[15];
       RINOK(SzReadByte(sd, &mainByte));
-      coder->MethodID.IDSize = (Byte)(mainByte & 0xF);
-      RINOK(SzReadBytes(sd, coder->MethodID.ID, coder->MethodID.IDSize));
+      idSize = (unsigned)(mainByte & 0xF);
+      RINOK(SzReadBytes(sd, longID, idSize));
+      if (idSize > sizeof(coder->MethodID))
+        return SZE_NOTIMPL;
+      coder->MethodID = 0;
+      for (j = 0; j < idSize; j++)
+        coder->MethodID |= (CMethodID)longID[idSize - 1 - j] << (8 * j);
+
       if ((mainByte & 0x10) != 0)
       {
         RINOK(SzReadNumber32(sd, &coder->NumInStreams));
@@ -926,6 +940,7 @@ SZ_RESULT SzReadHeader2(
     UInt32 **digests,         /* allocTemp */
     Byte **emptyStreamVector, /* allocTemp */
     Byte **emptyFileVector,   /* allocTemp */
+    Byte **lwtVector,         /* allocTemp */
     ISzAlloc *allocMain, 
     ISzAlloc *allocTemp)
 {
@@ -1008,6 +1023,24 @@ SZ_RESULT SzReadHeader2(
         RINOK(SzReadBoolVector(sd, numEmptyStreams, emptyFileVector, allocTemp->Alloc));
         break;
       }
+      case k7zIdLastWriteTime:
+      {
+        RINOK(SzReadBoolVector2(sd, numFiles, lwtVector, allocTemp->Alloc));
+        RINOK(SzReadSwitch(sd));
+        for (i = 0; i < numFiles; i++)
+        {
+          CFileItem *f = &files[i];
+          Byte defined = (*lwtVector)[i];
+          f->IsLastWriteTimeDefined = defined;
+          f->LastWriteTime.Low = f->LastWriteTime.High = 0;
+          if (defined)
+          {
+            RINOK(SzReadUInt32(sd, &f->LastWriteTime.Low));
+            RINOK(SzReadUInt32(sd, &f->LastWriteTime.High));
+          }
+        }
+        break;
+      }
       default:
       {
         RINOK(SzSkeepDataSize(sd, size));
@@ -1060,15 +1093,17 @@ SZ_RESULT SzReadHeader(
   UInt32 *digests = 0;
   Byte *emptyStreamVector = 0;
   Byte *emptyFileVector = 0;
+  Byte *lwtVector = 0;
   SZ_RESULT res = SzReadHeader2(sd, db, 
       &unPackSizes, &digestsDefined, &digests,
-      &emptyStreamVector, &emptyFileVector,
+      &emptyStreamVector, &emptyFileVector, &lwtVector, 
       allocMain, allocTemp);
   allocTemp->Free(unPackSizes);
   allocTemp->Free(digestsDefined);
   allocTemp->Free(digests);
   allocTemp->Free(emptyStreamVector);
   allocTemp->Free(emptyFileVector);
+  allocTemp->Free(lwtVector);
   return res;
 } 
 
@@ -1095,7 +1130,6 @@ SZ_RESULT SzReadAndDecodePackedStreams2(
   UInt32 i = 0;
   #endif
   CFileSize unPackSize;
-  size_t outRealSize;
   SZ_RESULT res;
 
   RINOK(SzReadStreamsInfo(sd, &dataStartPos, db,
@@ -1125,15 +1159,12 @@ SZ_RESULT SzReadAndDecodePackedStreams2(
   
   res = SzDecode(db->PackSizes, folder, 
           #ifdef _LZMA_IN_CB
-          inStream,
+          inStream, dataStartPos, 
           #else
           *inBuffer, 
           #endif
-          outBuffer->Items, (size_t)unPackSize,
-          &outRealSize, allocTemp);
+          outBuffer->Items, (size_t)unPackSize, allocTemp);
   RINOK(res)
-  if (outRealSize != (UInt32)unPackSize)
-    return SZE_FAIL;
   if (folder->UnPackCRCDefined)
     if (CrcCalc(outBuffer->Items, (size_t)unPackSize) != folder->UnPackCRC)
       return SZE_FAIL;

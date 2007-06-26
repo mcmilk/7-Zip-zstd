@@ -96,6 +96,7 @@ void SzFileInit(CFileItem *fileItem)
   fileItem->HasStream = 1;
   fileItem->IsDirectory = 0;
   fileItem->IsAnti = 0;
+  fileItem->IsLastWriteTimeDefined = 0;
   fileItem->Name = 0;
 }
 

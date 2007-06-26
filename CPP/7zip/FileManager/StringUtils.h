@@ -3,7 +3,7 @@
 #ifndef __STRINGUTILS_H
 #define __STRINGUTILS_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2);
 

@@ -59,12 +59,12 @@ COMMON_OBJS = \
   $O\Random.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\TextConfig.obj \
   $O\UTFConvert.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \

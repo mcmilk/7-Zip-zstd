@@ -28,11 +28,11 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -46,6 +46,7 @@ WIN_OBJS = \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\FilePathAutoRename.obj \

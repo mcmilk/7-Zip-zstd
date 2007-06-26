@@ -4,8 +4,6 @@
 #define __FARUTILS_H
 
 #include "FarPlugin.h"
-#include "Common/String.h"
-#include "Common/Vector.h"
 #include "Windows/Registry.h"
 
 namespace NFar {

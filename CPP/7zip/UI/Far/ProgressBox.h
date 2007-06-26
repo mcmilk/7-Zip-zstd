@@ -3,7 +3,7 @@
 #ifndef __PROGRESSBOX_H
 #define __PROGRESSBOX_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Types.h"
 
 class CMessageBox

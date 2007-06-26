@@ -3,7 +3,7 @@
 #ifndef __PHYSDRIVEFOLDER_H 
 #define __PHYSDRIVEFOLDER_H 
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/MyCom.h"
 
 #include "IFolder.h"

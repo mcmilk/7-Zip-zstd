@@ -3,7 +3,7 @@
 #ifndef __DEFAULTNAME_H
 #define __DEFAULTNAME_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 UString GetDefaultName2(const UString &fileName, 
     const UString &extension, const UString &addSubExtension);

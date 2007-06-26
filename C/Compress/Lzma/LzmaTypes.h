@@ -29,16 +29,16 @@ typedef unsigned int UInt32;
 #endif
 #endif 
 
-/* #define _LZMA_SYSTEM_SIZE_T */
-/* Use system's size_t. You can use it to enable 64-bit sizes supporting */
+/* #define _LZMA_NO_SYSTEM_SIZE_T */
+/* You can use it, if you don't want <stddef.h> */
 
 #ifndef _7ZIP_SIZET_DEFINED
 #define _7ZIP_SIZET_DEFINED
-#ifdef _LZMA_SYSTEM_SIZE_T
+#ifdef _LZMA_NO_SYSTEM_SIZE_T
+typedef UInt32 SizeT;
+#else
 #include <stddef.h>
 typedef size_t SizeT;
-#else
-typedef UInt32 SizeT;
 #endif
 #endif
 

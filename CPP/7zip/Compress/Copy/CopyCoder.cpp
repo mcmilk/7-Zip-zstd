@@ -52,5 +52,11 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
   return S_OK;
 }
 
+STDMETHODIMP CCopyCoder::GetInStreamProcessedSize(UInt64 *value)
+{
+  *value = TotalSize;
+  return S_OK;
+}
+
 }
 

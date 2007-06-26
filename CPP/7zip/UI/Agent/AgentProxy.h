@@ -3,7 +3,7 @@
 #ifndef __AGENT_PROXY_H
 #define __AGENT_PROXY_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "../../Archive/IArchive.h"
 

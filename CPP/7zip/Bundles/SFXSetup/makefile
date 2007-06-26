@@ -20,11 +20,11 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\TextConfig.obj \
   $O\UTFConvert.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -54,6 +54,7 @@ WIN_CTRL_OBJS = \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\VirtThread.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveOpenCallback.obj \

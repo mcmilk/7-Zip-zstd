@@ -5,10 +5,10 @@
 
 UInt32 CBCJ_x86_Encoder::SubFilter(Byte *data, UInt32 size)
 {
-  return ::x86_Convert(data, size, _bufferPos, &_prevMask, &_prevPos, 1);
+  return (UInt32)::x86_Convert(data, size, _bufferPos, &_prevMask, 1);
 }
 
 UInt32 CBCJ_x86_Decoder::SubFilter(Byte *data, UInt32 size)
 {
-  return ::x86_Convert(data, size, _bufferPos, &_prevMask, &_prevPos, 0);
+  return (UInt32)::x86_Convert(data, size, _bufferPos, &_prevMask, 0);
 }

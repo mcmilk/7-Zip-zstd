@@ -3,7 +3,7 @@
 #ifndef __ARCHIVE_CHM_IN_H
 #define __ARCHIVE_CHM_IN_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Buffer.h"
 #include "../../IStream.h"
 #include "../../Common/InBuffer.h"

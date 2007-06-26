@@ -10,10 +10,10 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -21,7 +21,8 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\PropVariant.obj \
-  $O\Synchronization.obj
+  $O\Synchronization.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
@@ -37,6 +38,7 @@ WIN_OBJS = \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\VirtThread.obj \
 
 AR_OBJS = \
   $O\ArchiveExports.obj \

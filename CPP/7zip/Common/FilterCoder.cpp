@@ -238,6 +238,18 @@ STDMETHODIMP CFilterCoder::WriteCoderProperties(ISequentialOutStream *outStream)
 {
   return _writeCoderProperties->WriteCoderProperties(outStream);
 }
+
+/*
+STDMETHODIMP CFilterCoder::ResetSalt()
+{
+  return _CryptoResetSalt->ResetSalt();
+}
+*/
+
+STDMETHODIMP CFilterCoder::ResetInitVector()
+{
+  return _CryptoResetInitVector->ResetInitVector();
+}
 #endif
 
 STDMETHODIMP CFilterCoder::SetDecoderProperties2(const Byte *data, UInt32 size)

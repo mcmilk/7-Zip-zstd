@@ -81,12 +81,12 @@ HRESULT IsArchiveItemAnti(IInArchive *archive, UInt32 index, bool &result)
 // Static-SFX (for Linux) can be big.
 const UInt64 kMaxCheckStartPosition = 1 << 22;
 
-HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName)
+HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName, IArchiveOpenCallback *openArchiveCallback)
 {
   CInFileStream *inStreamSpec = new CInFileStream;
   CMyComPtr<IInStream> inStream(inStreamSpec);
   inStreamSpec->Open(fileName);
-  return archive->Open(inStream, &kMaxCheckStartPosition, NULL);
+  return archive->Open(inStream, &kMaxCheckStartPosition, openArchiveCallback);
 }
 
 #ifndef _SFX
@@ -305,13 +305,11 @@ HRESULT OpenArchive(
   return S_OK;
 }
 
-HRESULT MyOpenArchive(
-    CCodecs *codecs, 
-    const UString &archiveName,
-    IInArchive **archive, UString &defaultItemName, IOpenCallbackUI *openCallbackUI)
+static void SetCallback(const UString &archiveName,
+    IOpenCallbackUI *openCallbackUI, CMyComPtr<IArchiveOpenCallback> &openCallback)
 {
   COpenCallbackImp *openCallbackSpec = new COpenCallbackImp;
-  CMyComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
+  openCallback = openCallbackSpec;
   openCallbackSpec->Callback = openCallbackUI;
 
   UString fullName;
@@ -320,7 +318,15 @@ HRESULT MyOpenArchive(
   openCallbackSpec->Init(
       fullName.Left(fileNamePartStartIndex), 
       fullName.Mid(fileNamePartStartIndex));
+}
 
+HRESULT MyOpenArchive(
+    CCodecs *codecs, 
+    const UString &archiveName,
+    IInArchive **archive, UString &defaultItemName, IOpenCallbackUI *openCallbackUI)
+{
+  CMyComPtr<IArchiveOpenCallback> openCallback;
+  SetCallback(archiveName, openCallbackUI, openCallback);
   int formatInfo;
   return OpenArchive(codecs, archiveName, archive, formatInfo, defaultItemName, openCallback);
 }
@@ -367,11 +373,13 @@ HRESULT CArchiveLink::Close()
     RINOK(Archive1->Close());
   if (Archive0 != 0)
     RINOK(Archive0->Close());
+  IsOpen = false;
   return S_OK;
 }
 
 void CArchiveLink::Release()
 {
+  IsOpen = false;
   Archive1.Release();
   Archive0.Release();
 }
@@ -382,11 +390,13 @@ HRESULT OpenArchive(
     CArchiveLink &archiveLink,
     IArchiveOpenCallback *openCallback)
 {
-  return OpenArchive(codecs, archiveName, 
+  HRESULT res = OpenArchive(codecs, archiveName, 
     &archiveLink.Archive0, &archiveLink.Archive1, 
     archiveLink.FormatIndex0, archiveLink.FormatIndex1, 
     archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
     openCallback);
+  archiveLink.IsOpen = (res == S_OK);
+  return res;
 }
 
 HRESULT MyOpenArchive(CCodecs *codecs,
@@ -394,18 +404,27 @@ HRESULT MyOpenArchive(CCodecs *codecs,
     CArchiveLink &archiveLink,
     IOpenCallbackUI *openCallbackUI)
 {
-  return MyOpenArchive(codecs, archiveName,
+  HRESULT res = MyOpenArchive(codecs, archiveName,
     &archiveLink.Archive0, &archiveLink.Archive1, 
     archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
     archiveLink.VolumePaths,
     openCallbackUI);
+  archiveLink.IsOpen = (res == S_OK);
+  return res;
 }
 
 HRESULT ReOpenArchive(CCodecs *codecs, CArchiveLink &archiveLink, const UString &fileName)
 {
   if (archiveLink.GetNumLevels() > 1)
     return E_NOTIMPL;
+
   if (archiveLink.GetNumLevels() == 0)
     return MyOpenArchive(codecs, fileName, archiveLink, 0);
-  return ReOpenArchive(archiveLink.GetArchive(), fileName);
+
+  CMyComPtr<IArchiveOpenCallback> openCallback;
+  SetCallback(fileName, NULL, openCallback);
+
+  HRESULT res = ReOpenArchive(archiveLink.GetArchive(), fileName, openCallback);
+  archiveLink.IsOpen = (res == S_OK);
+  return res;
 }

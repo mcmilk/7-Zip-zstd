@@ -29,7 +29,7 @@
 #include "LzmaRam.h"
 
 #ifdef COMPRESS_MF_MT
-#include "Windows/System.h"
+#include "../../../Windows/System.h"
 #endif
 
 extern "C"
@@ -92,7 +92,7 @@ static const CSwitchForm kSwitchForms[] =
   { L"EOS", NSwitchType::kSimple, false },
   { L"SI",  NSwitchType::kSimple, false },
   { L"SO",  NSwitchType::kSimple, false },
-  { L"F86",  NSwitchType::kSimple, false }
+  { L"F86",  NSwitchType::kPostChar, false, 0, 0, L"+" }
 };
 
 static const int kNumSwitches = sizeof(kSwitchForms) / sizeof(kSwitchForms[0]);
@@ -159,7 +159,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.45 Copyright (c) 1999-2007 Igor Pavlov  2007-04-03\n");
+  fprintf(stderr, "\nLZMA 4.48 Copyright (c) 1999-2007 Igor Pavlov  2007-06-24\n");
 
   if (n == 1)
   {
@@ -335,7 +335,7 @@ int main2(int n, const char *args[])
       if (!dictionaryIsDefined)
         dictionary = 1 << 23;
       int res = LzmaRamEncode(inBuffer, inSize, outBuffer, outSize, &outSizeProcessed, 
-          dictionary, SZ_FILTER_AUTO);
+          dictionary, parser[NKey::kFilter86].PostCharIndex == 0 ? SZ_FILTER_YES : SZ_FILTER_AUTO);
       if (res != 0)
       {
         fprintf(stderr, "\nEncoder error = %d\n", (int)res);

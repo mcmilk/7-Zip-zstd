@@ -12,8 +12,7 @@ extern "C"
 struct CBranch86
 {
   UInt32 _prevMask;
-  UInt32 _prevPos;
-  void x86Init() { x86_Convert_Init(_prevMask, _prevPos); }
+  void x86Init() { x86_Convert_Init(_prevMask); }
 };
 
 MyClassB(BCJ_x86, 0x01, 3, CBranch86 , 

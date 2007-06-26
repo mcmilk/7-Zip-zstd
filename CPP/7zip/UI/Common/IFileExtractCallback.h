@@ -3,7 +3,7 @@
 #ifndef __IFILEEXTRACTCALLBACK_H
 #define __IFILEEXTRACTCALLBACK_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NOverwriteAnswer
 {

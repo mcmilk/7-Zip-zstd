@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_COM_H
 #define __WINDOWS_COM_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NWindows {
 namespace NCOM {

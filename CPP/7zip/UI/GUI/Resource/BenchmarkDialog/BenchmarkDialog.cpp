@@ -4,7 +4,7 @@
 
 #include "Common/IntToString.h"
 #include "Common/StringToInt.h"
-#include "Common/Exception.h"
+#include "Common/MyException.h"
 #include "Windows/Thread.h"
 #include "Windows/Error.h"
 #include "Windows/System.h"

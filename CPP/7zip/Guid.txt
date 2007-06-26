@@ -35,6 +35,8 @@
 60  ICompressCodecsInfo
 61  ISetCompressCodecsInfo
 80  ICryptoProperties
+88  ICryptoResetSalt
+8C  ICryptoResetInitVector
 90  ICryptoSetPassword
 A0  ICryptoSetCRC
 

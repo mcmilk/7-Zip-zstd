@@ -3,8 +3,7 @@
 #ifndef __REGISTRYPLUGINS_H
 #define __REGISTRYPLUGINS_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 enum EPluginType 
 {

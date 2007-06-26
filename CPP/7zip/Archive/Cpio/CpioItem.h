@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "CpioHeader.h"
 
 namespace NArchive {

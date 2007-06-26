@@ -142,15 +142,27 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyException.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
 # End Source File
 # Begin Source File
 
@@ -175,14 +187,6 @@ SOURCE=..\..\..\Common\UTFConvert.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\UTFConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # Begin Source File
 
@@ -235,6 +239,14 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\System.h
 # End Source File
 # Begin Source File
 
@@ -1160,6 +1172,14 @@ SOURCE=..\..\Common\MethodId.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\OffsetStream.cpp
 # End Source File
 # Begin Source File
@@ -1229,6 +1249,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.h
 # End Source File
 # End Group
 # Begin Group "C"
@@ -1411,7 +1439,7 @@ SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
-# ADD CPP /O2
+# ADD CPP /O2 /FAs
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "7z - Win32 Debug"
@@ -1826,19 +1854,19 @@ SOURCE=..\..\Archive\Common\CoderMixer2MT.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\DummyOutStream.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\DummyOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.h
 # End Source File
 # Begin Source File
 

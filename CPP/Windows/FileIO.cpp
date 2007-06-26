@@ -5,7 +5,7 @@
 #include "FileIO.h"
 #include "Defs.h"
 #ifdef WIN_LONG_PATH
-#include "../Common/String.h"
+#include "../Common/MyString.h"
 #endif
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"

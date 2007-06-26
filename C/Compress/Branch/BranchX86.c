@@ -2,100 +2,83 @@
 
 #include "BranchX86.h"
 
-/*
-static int inline Test86MSByte(Byte b)
-{
-  return (b == 0 || b == 0xFF);
-}
-*/
 #define Test86MSByte(b) ((b) == 0 || (b) == 0xFF)
 
-const int kMaskToAllowedStatus[8] = {1, 1, 1, 0, 1, 0, 0, 0};
+const Byte kMaskToAllowedStatus[8] = {1, 1, 1, 0, 1, 0, 0, 0};
 const Byte kMaskToBitNumber[8] = {0, 1, 2, 2, 3, 3, 3, 3};
 
-/*
-void x86_Convert_Init(UInt32 *prevMask, UInt32 *prevPos)
+SizeT x86_Convert(Byte *buffer, SizeT endPos, UInt32 nowPos, UInt32 *prevMaskMix, int encoding)
 {
-  *prevMask = 0;
-  *prevPos = (UInt32)(-5);
-}
-*/
-
-UInt32 x86_Convert(Byte *buffer, UInt32 endPos, UInt32 nowPos, 
-    UInt32 *prevMask, UInt32 *prevPos, int encoding)
-{
-  UInt32 bufferPos = 0;
-  UInt32 limit;
-
+  SizeT bufferPos = 0, prevPosT;
+  UInt32 prevMask = *prevMaskMix & 0x7;
   if (endPos < 5)
     return 0;
-  
-  if (nowPos - *prevPos > 5)
-    *prevPos = nowPos - 5;
-  
-  limit = endPos - 5;
-  while(bufferPos <= limit)
+  nowPos += 5;
+  prevPosT = (SizeT)0 - 1;
+
+  for(;;)
   {
-    Byte b = buffer[bufferPos];
-    UInt32 offset;
-    if (b != 0xE8 && b != 0xE9)
-    {
-      bufferPos++;
-      continue;
-    }
-    offset = (nowPos + bufferPos - *prevPos);
-    *prevPos = (nowPos + bufferPos);
-    if (offset > 5)
-      *prevMask = 0;
+    Byte *p = buffer + bufferPos;
+    Byte *limit = buffer + endPos - 4;
+    for (; p < limit; p++)
+      if ((*p & 0xFE) == 0xE8)
+        break;
+    bufferPos = (SizeT)(p - buffer);
+    if (p >= limit)
+      break;
+    prevPosT = bufferPos - prevPosT;
+    if (prevPosT > 3)
+      prevMask = 0;
     else
     {
-      UInt32 i;
-      for (i = 0; i < offset; i++)
+      prevMask = (prevMask << ((int)prevPosT - 1)) & 0x7;
+      if (prevMask != 0)
       {
-        *prevMask &= 0x77;
-        *prevMask <<= 1;
+        Byte b = p[4 - kMaskToBitNumber[prevMask]];
+        if (!kMaskToAllowedStatus[prevMask] || Test86MSByte(b))
+        {
+          prevPosT = bufferPos;
+          prevMask = ((prevMask << 1) & 0x7) | 1;
+          bufferPos++;
+          continue;
+        }
       }
     }
-    b = buffer[bufferPos + 4];
-    if (Test86MSByte(b) && kMaskToAllowedStatus[(*prevMask >> 1) & 0x7] && 
-      (*prevMask >> 1) < 0x10)
+    prevPosT = bufferPos;
+
+    if (Test86MSByte(p[4]))
     {
-      UInt32 src = 
-        ((UInt32)(b) << 24) |
-        ((UInt32)(buffer[bufferPos + 3]) << 16) |
-        ((UInt32)(buffer[bufferPos + 2]) << 8) |
-        (buffer[bufferPos + 1]);
-      
+      UInt32 src = ((UInt32)p[4] << 24) | ((UInt32)p[3] << 16) | ((UInt32)p[2] << 8) | ((UInt32)p[1]);
       UInt32 dest;
       for (;;)
       {
-        UInt32 index;
+        Byte b;
+        int index;
         if (encoding)
-          dest = (nowPos + bufferPos + 5) + src;
+          dest = (nowPos + (UInt32)bufferPos) + src;
         else
-          dest = src - (nowPos + bufferPos + 5);
-        if (*prevMask == 0)
+          dest = src - (nowPos + (UInt32)bufferPos);
+        if (prevMask == 0)
           break;
-        index = kMaskToBitNumber[*prevMask >> 1];
-        b = (Byte)(dest >> (24 - index * 8));
+        index = kMaskToBitNumber[prevMask] * 8;
+        b = (Byte)(dest >> (24 - index));
         if (!Test86MSByte(b))
           break;
-        src = dest ^ ((1 << (32 - index * 8)) - 1);
+        src = dest ^ ((1 << (32 - index)) - 1);
       }
-      buffer[bufferPos + 4] = (Byte)(~(((dest >> 24) & 1) - 1));
-      buffer[bufferPos + 3] = (Byte)(dest >> 16);
-      buffer[bufferPos + 2] = (Byte)(dest >> 8);
-      buffer[bufferPos + 1] = (Byte)dest;
+      p[4] = (Byte)(~(((dest >> 24) & 1) - 1));
+      p[3] = (Byte)(dest >> 16);
+      p[2] = (Byte)(dest >> 8);
+      p[1] = (Byte)dest;
       bufferPos += 5;
-      *prevMask = 0;
     }
     else
     {
+      prevMask = ((prevMask << 1) & 0x7) | 1;
       bufferPos++;
-      *prevMask |= 1;
-      if (Test86MSByte(b))
-        *prevMask |= 0x10;
     }
   }
+  prevPosT = bufferPos - prevPosT;
+  *prevMaskMix = ((prevPosT > 3) ? 0 : ((prevMask << ((int)prevPosT - 1)) & 0x7));
   return bufferPos;
 }

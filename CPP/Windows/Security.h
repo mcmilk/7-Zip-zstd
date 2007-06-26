@@ -3,7 +3,6 @@
 #ifndef __WINDOWS_SECURITY_H
 #define __WINDOWS_SECURITY_H
 
-#include "Common/String.h"
 #include "Windows/Defs.h"
 
 #include <NTSecAPI.h>

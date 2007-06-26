@@ -7,7 +7,7 @@
 #define __RAR3VM_H
 
 #include "Common/Types.h"
-#include "Common/Vector.h"
+#include "Common/MyVector.h"
 
 #define RARVM_STANDARD_FILTERS
 #if defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64) || defined(__i386__) || defined(__x86_64__)  // || defined(_M_IA64) || defined(__ia64__)

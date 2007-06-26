@@ -1,5 +1,5 @@
 PROG = lzma.exe
-CFLAGS = $(CFLAGS) -I ../../../  \
+CFLAGS = $(CFLAGS) \
   -DCOMPRESS_MF_MT \
   -DBENCH_MT \
 
@@ -53,10 +53,13 @@ COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
   $O\IntToString.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\Vector.obj
+  $O\MyVector.obj
+
+WIN_OBJS = \
+  $O\System.obj
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
@@ -79,6 +82,7 @@ OBJS = \
   $(LZMA_OBJS) \
   $(LZMA_OPT_OBJS) \
   $(COMMON_OBJS) \
+  $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(LZ_OBJS) \
   $(C_OBJS) \
@@ -107,6 +111,8 @@ $(LZMA_OBJS): $(*B).cpp
 $(LZMA_OPT_OBJS): ../LZMA/$(*B).cpp
 	$(COMPL_O2)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
+	$(COMPL)
+$(WIN_OBJS): ../../../Windows/$(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)

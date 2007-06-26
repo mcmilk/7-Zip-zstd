@@ -4,7 +4,7 @@
 #define __WINDOWS_REGISTRY_H
 
 #include "Common/Buffer.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Types.h"
 
 namespace NWindows {

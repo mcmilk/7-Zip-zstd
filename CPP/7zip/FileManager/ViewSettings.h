@@ -3,8 +3,7 @@
 #ifndef __VIEWSETTINGS_H
 #define __VIEWSETTINGS_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 struct CColumnInfo
 {

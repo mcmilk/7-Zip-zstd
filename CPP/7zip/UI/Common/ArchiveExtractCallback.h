@@ -6,7 +6,7 @@
 #include "../../Archive/IArchive.h"
 #include "IFileExtractCallback.h"
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/MyCom.h"
 
 #include "../../Common/FileStreams.h"

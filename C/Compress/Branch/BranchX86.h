@@ -5,9 +5,8 @@
 
 #include "BranchTypes.h"
 
-#define x86_Convert_Init(prevMask, prevPos) { prevMask = 0; prevPos = (UInt32)(-5); }
+#define x86_Convert_Init(state) { state = 0; }
 
-UInt32 x86_Convert(Byte *buffer, UInt32 endPos, UInt32 nowPos, 
-    UInt32 *prevMask, UInt32 *prevPos, int encoding);
+SizeT x86_Convert(Byte *buffer, SizeT endPos, UInt32 nowPos, UInt32 *state, int encoding);
 
 #endif

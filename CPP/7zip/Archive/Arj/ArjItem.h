@@ -4,7 +4,7 @@
 #define __ARCHIVE_ARJ_ITEM_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "ArjHeader.h"
 
 namespace NArchive {

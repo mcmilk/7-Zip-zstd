@@ -3,8 +3,7 @@
 #ifndef __COMMON_TEXTPAIRS_H
 #define __COMMON_TEXTPAIRS_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 struct CTextPair
 {

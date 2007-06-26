@@ -3,7 +3,7 @@
 #ifndef __OPENCALLBACK_H
 #define __OPENCALLBACK_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/MyCom.h"
 #include "Windows/FileFind.h"
 

@@ -5,14 +5,6 @@
 
 #include "../../Types.h"
 
-#define kMethodIDSize 15
-  
-typedef struct _CMethodID
-{
-  Byte ID[kMethodIDSize];
-  Byte IDSize;
-} CMethodID;
-
-int AreMethodsEqual(CMethodID *a1, CMethodID *a2);
+typedef UInt64 CMethodID;
 
 #endif

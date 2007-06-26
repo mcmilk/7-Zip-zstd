@@ -5,7 +5,7 @@
 #include "SetProperties.h"
 
 #include "Windows/PropVariant.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/StringToInt.h"
 #include "Common/MyCom.h"
 

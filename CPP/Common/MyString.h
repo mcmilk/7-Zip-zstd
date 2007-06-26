@@ -6,7 +6,7 @@
 #include <string.h>
 // #include <wchar.h>
 
-#include "Vector.h"
+#include "MyVector.h"
 
 #ifdef _WIN32
 #include "MyWindows.h"
@@ -358,8 +358,15 @@ public:
   int Compare(const CStringBase& s) const
     { return MyStringCompare(_chars, s._chars); }
 
+  int Compare(const T *s) const
+    { return MyStringCompare(_chars, s); }
+
   int CompareNoCase(const CStringBase& s) const
     { return MyStringCompareNoCase(_chars, s._chars); }
+
+  int CompareNoCase(const T *s) const
+    { return MyStringCompareNoCase(_chars, s); }
+
   /*
   int Collate(const CStringBase& s) const
     { return MyStringCollate(_chars, s._chars); }

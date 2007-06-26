@@ -3,7 +3,7 @@
 #ifndef __NETFOLDER_H
 #define __NETFOLDER_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Buffer.h"
 #include "Common/MyCom.h"
 #include "Windows/PropVariant.h"

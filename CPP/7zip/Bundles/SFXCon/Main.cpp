@@ -9,7 +9,7 @@
 #include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 #include "Common/MyCom.h"
-#include "Common/Exception.h"
+#include "Common/MyException.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"

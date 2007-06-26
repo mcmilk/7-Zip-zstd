@@ -39,7 +39,7 @@ typedef int Int32;
 #ifdef _SZ_NO_INT_64
 typedef unsigned long UInt64;
 #else
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BORLANDC__)
 typedef unsigned __int64 UInt64;
 #else
 typedef unsigned long long int UInt64;

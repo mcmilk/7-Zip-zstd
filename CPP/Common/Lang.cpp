@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Common/Lang.h"
-#include "Common/TextConfig.h"
+#include "Lang.h"
+#include "TextConfig.h"
 
 #include "StdInStream.h"
 #include "UTFConvert.h"

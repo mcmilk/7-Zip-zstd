@@ -5,12 +5,12 @@
 
 #include "../IStream.h"
 #include "../../Common/MyCom.h"
+#include "../../Common/MyException.h"
 
 #ifndef _NO_EXCEPTIONS
-struct COutBufferException
-{
-  HRESULT ErrorCode;
-  COutBufferException(HRESULT errorCode): ErrorCode(errorCode) {}
+struct COutBufferException: public CSystemException 
+{ 
+  COutBufferException(HRESULT errorCode): CSystemException(errorCode) {} 
 };
 #endif
 
@@ -28,7 +28,6 @@ protected:
   bool _overDict;
 
   HRESULT FlushPart();
-  void FlushWithCheck();
 public:
   #ifdef _NO_EXCEPTIONS
   HRESULT ErrorCode;
@@ -44,6 +43,7 @@ public:
   void SetStream(ISequentialOutStream *stream);
   void Init();
   HRESULT Flush();
+  void FlushWithCheck();
   void ReleaseStream() {  _stream.Release(); }
 
   void WriteByte(Byte b)

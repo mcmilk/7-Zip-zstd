@@ -7,38 +7,28 @@
 #include "../RangeCoder/RangeCoderBit.h"
 #include "../../ICoder.h"
 
-// {23170F69-40C1-278B-0303-010100000100}
-#define MyClass2_a(Name, id, subId, encodingId)  \
-DEFINE_GUID(CLSID_CCompressConvert ## Name,  \
-0x23170F69, 0x40C1, 0x278B, 0x03, 0x03, id, subId, 0x00, 0x00, encodingId, 0x00);
-
-#define MyClass_a(Name, id, subId)  \
-MyClass2_a(Name ## _Encoder, id, subId, 0x01) \
-MyClass2_a(Name ## _Decoder, id, subId, 0x00) 
-
-MyClass_a(BCJ2_x86, 0x01, 0x1B)
+namespace NCompress {
+namespace NBcj2 {
 
 const int kNumMoveBits = 5;
 
 #ifndef EXTRACT_ONLY
 
-class CBCJ2_x86_Encoder:
+class CEncoder:
   public ICompressCoder2,
   public CMyUnknownImp
 {
   Byte *_buffer;
 public:
-  CBCJ2_x86_Encoder(): _buffer(0) {};
-  ~CBCJ2_x86_Encoder();
+  CEncoder(): _buffer(0) {};
+  ~CEncoder();
   bool Create();
 
   COutBuffer _mainStream;
   COutBuffer _callStream;
   COutBuffer _jumpStream;
   NCompress::NRangeCoder::CEncoder _rangeEncoder;
-  NCompress::NRangeCoder::CBitEncoder<kNumMoveBits> _statusE8Encoder[256];
-  NCompress::NRangeCoder::CBitEncoder<kNumMoveBits> _statusE9Encoder;
-  NCompress::NRangeCoder::CBitEncoder<kNumMoveBits> _statusJccEncoder;
+  NCompress::NRangeCoder::CBitEncoder<kNumMoveBits> _statusEncoder[256 + 2];
 
   HRESULT Flush();
   void ReleaseStreams()
@@ -51,9 +41,9 @@ public:
 
   class CCoderReleaser
   {
-    CBCJ2_x86_Encoder *_coder;
+    CEncoder *_coder;
   public:
-    CCoderReleaser(CBCJ2_x86_Encoder *coder): _coder(coder) {}
+    CCoderReleaser(CEncoder *coder): _coder(coder) {}
     ~CCoderReleaser() {  _coder->ReleaseStreams(); }
   };
 
@@ -79,7 +69,7 @@ public:
 
 #endif
 
-class CBCJ2_x86_Decoder:
+class CDecoder:
   public ICompressCoder2,
   public CMyUnknownImp
 { 
@@ -88,9 +78,7 @@ public:
   CInBuffer _callStream;
   CInBuffer _jumpStream;
   NCompress::NRangeCoder::CDecoder _rangeDecoder;
-  NCompress::NRangeCoder::CBitDecoder<kNumMoveBits> _statusE8Decoder[256];
-  NCompress::NRangeCoder::CBitDecoder<kNumMoveBits> _statusE9Decoder;
-  NCompress::NRangeCoder::CBitDecoder<kNumMoveBits> _statusJccDecoder;
+  NCompress::NRangeCoder::CBitDecoder<kNumMoveBits> _statusDecoder[256 + 2];
 
   COutBuffer _outStream;
 
@@ -106,9 +94,9 @@ public:
   HRESULT Flush() { return _outStream.Flush(); }
   class CCoderReleaser
   {
-    CBCJ2_x86_Decoder *_coder;
+    CDecoder *_coder;
   public:
-    CCoderReleaser(CBCJ2_x86_Decoder *coder): _coder(coder) {}
+    CCoderReleaser(CDecoder *coder): _coder(coder) {}
     ~CCoderReleaser()  { _coder->ReleaseStreams(); }
   };
 
@@ -129,5 +117,7 @@ public:
       UInt32 numOutStreams,
       ICompressProgressInfo *progress);
 }; 
+
+}}
 
 #endif

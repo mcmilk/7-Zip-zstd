@@ -12,10 +12,10 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
 
@@ -24,7 +24,8 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\PropVariant.obj \
-  $O\Synchronization.obj
+  $O\Synchronization.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
@@ -36,6 +37,7 @@ WIN_OBJS = \
   $O\LSBFDecoder.obj \
   $O\LSBFEncoder.obj \
   $O\MethodId.obj \
+  $O\MethodProps.obj \
   $O\MemBlocks.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
@@ -45,6 +47,7 @@ WIN_OBJS = \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\VirtThread.obj \
 
 AR_OBJS = \
   $O\ArchiveExports.obj \
@@ -59,6 +62,7 @@ AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
+  $O\HandlerOut.obj \
   $O\ParseProperties.obj \
 
 

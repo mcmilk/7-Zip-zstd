@@ -3,9 +3,8 @@
 #ifndef __PROPIDUTILS_H
 #define __PROPIDUTILS_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
-UString ConvertPropertyToString(const PROPVARIANT &aPropVariant, 
-    PROPID aPropID, bool aFull = true);
+UString ConvertPropertyToString(const PROPVARIANT &propVariant, PROPID propID, bool full = true);
 
 #endif

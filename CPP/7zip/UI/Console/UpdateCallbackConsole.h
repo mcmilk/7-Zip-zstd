@@ -3,7 +3,7 @@
 #ifndef __UPDATECALLBACKCONSOLE_H
 #define __UPDATECALLBACKCONSOLE_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/StdOutStream.h"
 #include "PercentPrinter.h"
 #include "../Common/Update.h"

@@ -6,7 +6,7 @@
 #include "Common/MyCom.h"
 #include "Common/Types.h"
 #include "Common/Buffer.h"
-#include "Common/Vector.h"
+#include "Common/MyVector.h"
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"
@@ -55,7 +55,7 @@ class CBase
 protected:
   CKeyInfo _key;
   Byte _iv[16];
-  // int _ivSize;
+  UInt32 _ivSize;
   void CalculateDigest();
   CBase();
 };
@@ -80,17 +80,26 @@ public:
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
 };
 
+#ifndef EXTRACT_ONLY
+
 class CEncoder: 
   public CBaseCoder,
-  public ICompressWriteCoderProperties
+  public ICompressWriteCoderProperties,
+  // public ICryptoResetSalt,
+  public ICryptoResetInitVector
 {
   virtual HRESULT CreateFilter();
 public:
-  MY_UNKNOWN_IMP2(
+  MY_UNKNOWN_IMP3(
       ICryptoSetPassword,
-      ICompressWriteCoderProperties)
+      ICompressWriteCoderProperties,
+      // ICryptoResetSalt,
+      ICryptoResetInitVector)
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
+  // STDMETHOD(ResetSalt)();
+  STDMETHOD(ResetInitVector)();
 };
+#endif
 
 class CDecoder: 
   public CBaseCoder,

@@ -569,6 +569,22 @@ SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
@@ -590,14 +606,6 @@ SOURCE=..\..\..\Common\StdInStream.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\StdInStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\String.h
 # End Source File
 # Begin Source File
 
@@ -634,14 +642,6 @@ SOURCE=..\..\..\Common\UTFConvert.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\UTFConvert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # Begin Source File
 

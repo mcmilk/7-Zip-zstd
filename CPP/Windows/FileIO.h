@@ -34,9 +34,9 @@ protected:
 
 public:
   CFileBase(): _handle(INVALID_HANDLE_VALUE){};
-  virtual ~CFileBase();
+  ~CFileBase();
 
-  virtual bool Close();
+  bool Close();
 
   bool GetPosition(UInt64 &position) const;
   bool GetLength(UInt64 &length) const;

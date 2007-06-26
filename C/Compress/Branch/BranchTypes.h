@@ -27,11 +27,24 @@ typedef unsigned int UInt32;
 #ifdef _SZ_NO_INT_64
 typedef unsigned long UInt64;
 #else
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BORLANDC__)
 typedef unsigned __int64 UInt64;
 #else
 typedef unsigned long long int UInt64;
 #endif
+#endif
+#endif
+
+/* #define _LZMA_NO_SYSTEM_SIZE_T */
+/* You can use it, if you don't want <stddef.h> */
+
+#ifndef _7ZIP_SIZET_DEFINED
+#define _7ZIP_SIZET_DEFINED
+#ifdef _LZMA_NO_SYSTEM_SIZE_T
+typedef UInt32 SizeT;
+#else
+#include <stddef.h>
+typedef size_t SizeT;
 #endif
 #endif
 

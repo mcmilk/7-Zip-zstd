@@ -3,7 +3,7 @@
 #ifndef __ZIPREGISTRY_H
 #define __ZIPREGISTRY_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 #include "Common/Types.h"
 #include "ExtractMode.h"
 

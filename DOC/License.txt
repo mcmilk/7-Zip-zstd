@@ -11,16 +11,16 @@
         2) CPP/7zip/Crypto/AES files:    GNU LGPL + AES code license
         3) All other files:              GNU LGPL
       
-      GNU LGPL + unRAR restriction means that you must follow both GNU LGPL rules 
+      The GNU LGPL + unRAR restriction means that you must follow both GNU LGPL rules 
       and unRAR restriction rules.
 
-      GNU LGPL + AES code license means that you must follow both GNU LGPL rules 
+      The GNU LGPL + AES code license means that you must follow both GNU LGPL rules 
       and AES code license rules.
 
 
       Notes: 
-        You can use 7-Zip on any computers, including computers in commercial 
-        organizations. You don't need to register or pay for 7-Zip.
+        You can use 7-Zip on any computer, including a computer in a commercial 
+        organization. You don't need to register or pay for 7-Zip.
 
 
       GNU LGPL information

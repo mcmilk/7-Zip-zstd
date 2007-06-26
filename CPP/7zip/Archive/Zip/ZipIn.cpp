@@ -341,11 +341,14 @@ HRESULT CInArchive::ReadLocalItemAfterCdItem(CItemEx &item)
     RINOK(ReadLocalItem(localItem));
     if (item.Flags != localItem.Flags)
     {
-      if ((item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflated ||
-        (item.Flags & 0x7FFC) != (localItem.Flags & 0x7FFC)) &&
-        ((item.CompressionMethod != NFileHeader::NCompressionMethod::kStored ||
-        (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF))
-        ))
+      if (
+          (item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflated ||
+            (item.Flags & 0x7FF9) != (localItem.Flags & 0x7FF9)) &&
+          (item.CompressionMethod != NFileHeader::NCompressionMethod::kStored ||
+            (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF)) &&
+          (item.CompressionMethod != NFileHeader::NCompressionMethod::kImploded ||
+            (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF))
+        )
         return S_FALSE;
     }
 

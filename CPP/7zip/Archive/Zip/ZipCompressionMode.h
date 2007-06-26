@@ -3,8 +3,7 @@
 #ifndef __ZIP_COMPRESSIONMETHOD_H
 #define __ZIP_COMPRESSIONMETHOD_H
 
-#include "Common/Vector.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NArchive {
 namespace NZip {

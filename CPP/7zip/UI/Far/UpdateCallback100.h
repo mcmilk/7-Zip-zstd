@@ -3,7 +3,6 @@
 #ifndef __UPDATECALLBACK100_H
 #define __UPDATECALLBACK100_H
 
-#include "Common/String.h"
 #include "Common/MyCom.h"
 
 #include "../Agent/IFolderArchive.h"

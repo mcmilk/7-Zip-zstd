@@ -3,7 +3,7 @@
 #ifndef __PROGRAMLOCATION_H
 #define __PROGRAMLOCATION_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 bool GetProgramFolderPath(UString &folder); // normalized
 

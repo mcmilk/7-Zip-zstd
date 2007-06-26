@@ -6,7 +6,6 @@
 
 #include "OverwriteDialog.h"
 
-#include "Common/String.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/FileName.h"

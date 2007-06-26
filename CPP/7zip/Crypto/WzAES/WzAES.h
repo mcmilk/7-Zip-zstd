@@ -16,7 +16,7 @@ specified in password Based File Encryption Utility:
 
 #include "Common/MyCom.h"
 #include "Common/Buffer.h"
-#include "Common/Vector.h"
+#include "Common/MyVector.h"
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"

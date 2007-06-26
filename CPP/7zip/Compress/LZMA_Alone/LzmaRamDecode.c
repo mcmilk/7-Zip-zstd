@@ -70,10 +70,9 @@ int LzmaRamDecompress(
   *outSizeProcessed = (size_t)outSizeProcessedLoc;
   if (useFilter == 1)
   {
-    UInt32 _prevMask;
-    UInt32 _prevPos;
-    x86_Convert_Init(_prevMask, _prevPos);
-    x86_Convert(outBuffer, (UInt32)outSizeProcessedLoc, 0, &_prevMask, &_prevPos, 0);
+    UInt32 x86State;
+    x86_Convert_Init(x86State);
+    x86_Convert(outBuffer, (SizeT)outSizeProcessedLoc, 0, &x86State, 0);
   }
   return 0;
 }

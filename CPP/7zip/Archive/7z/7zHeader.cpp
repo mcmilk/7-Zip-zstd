@@ -7,12 +7,20 @@ namespace NArchive {
 namespace N7z {
 
 Byte kSignature[kSignatureSize] = {'7' + 1, 'z', 0xBC, 0xAF, 0x27, 0x1C};
+#ifdef _7Z_VOL
 Byte kFinishSignature[kSignatureSize] = {'7' + 1, 'z', 0xBC, 0xAF, 0x27, 0x1C + 1};
+#endif
 
 class SignatureInitializer
 {
 public:
-  SignatureInitializer() { kSignature[0]--; kFinishSignature[0]--;};
+  SignatureInitializer() 
+  { 
+    kSignature[0]--; 
+    #ifdef _7Z_VOL
+    kFinishSignature[0]--;
+    #endif
+  };
 } g_SignatureInitializer;
 
 }}

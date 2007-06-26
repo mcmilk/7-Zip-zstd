@@ -3,7 +3,7 @@
 #ifndef OVERWRITEDIALOG_H
 #define OVERWRITEDIALOG_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 namespace NOverwriteDialog {
 

@@ -4,7 +4,7 @@
 #define __PROPVARIANTCONVERSIONS_H
 
 #include "Common/Types.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime = true, bool includeSeconds = true);
 UString ConvertFileTimeToString(const FILETIME &ft, bool includeTime = true, bool includeSeconds = true);

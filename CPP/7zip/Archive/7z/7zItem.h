@@ -4,7 +4,7 @@
 #define __7Z_ITEM_H
 
 #include "../../../Common/Buffer.h"
-#include "../../../Common/String.h"
+#include "../../../Common/MyString.h"
 #include "../../Common/MethodId.h"
 #include "7zHeader.h"
 

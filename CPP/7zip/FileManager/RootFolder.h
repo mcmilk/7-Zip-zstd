@@ -3,7 +3,7 @@
 #ifndef __ROOTFOLDER_H
 #define __ROOTFOLDER_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #include "Windows/PropVariant.h"
 

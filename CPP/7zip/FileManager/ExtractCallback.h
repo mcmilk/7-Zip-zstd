@@ -4,7 +4,7 @@
 #define __EXTRACTCALLBACK_H
 
 #include "../UI/Agent/IFolderArchive.h"
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 #ifdef _SFX
 #include "Resource/ProgressDialog/ProgressDialog.h"

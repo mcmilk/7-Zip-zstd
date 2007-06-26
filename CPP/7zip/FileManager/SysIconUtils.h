@@ -3,7 +3,7 @@
 #ifndef __SYSICONUTILS_H
 #define __SYSICONUTILS_H
 
-#include "Common/String.h"
+#include "Common/MyString.h"
 
 struct CExtIconPair
 {

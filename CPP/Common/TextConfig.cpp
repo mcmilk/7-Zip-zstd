@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/TextConfig.h"
+#include "TextConfig.h"
 
 #include "Defs.h"
-#include "Common/UTFConvert.h"
+#include "UTFConvert.h"
 
 static bool IsDelimitChar(char c)
 {

@@ -49,6 +49,8 @@ void CAgentFolder::LoadFolder(CProxyFolder *folder)
 
 STDMETHODIMP CAgentFolder::LoadItems()
 {
+  if (!_agentSpec->_archiveLink.IsOpen)
+    return E_FAIL;
   _items.Clear();
   if (_flatMode)
     LoadFolder(_proxyFolderItem);

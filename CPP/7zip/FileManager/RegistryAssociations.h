@@ -3,8 +3,7 @@
 #ifndef __REGISTRYASSOCIATIONS_H
 #define __REGISTRYASSOCIATIONS_H
 
-#include "Common/String.h"
-#include "Common/Vector.h"
+#include "Common/MyString.h"
 
 namespace NRegistryAssociations {
 

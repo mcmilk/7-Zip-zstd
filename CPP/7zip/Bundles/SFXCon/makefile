@@ -23,9 +23,9 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
-  $O\String.obj \
+  $O\MyString.obj \
   $O\StringConvert.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -51,6 +51,7 @@ WIN_OBJS = \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\VirtThread.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
