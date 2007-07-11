@@ -10,6 +10,7 @@ namespace NOverwriteDialog {
 struct CFileInfo
 {
   bool SizeIsDefined;
+  bool TimeIsDefined;
   UINT64 Size;
   FILETIME Time;
   CSysString Name;

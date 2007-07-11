@@ -45,8 +45,9 @@ typedef struct _CMatchFinder
   HRes result;
 } CMatchFinder;
 
-#define Inline_MatchFinder_GetPointerToCurrentPos(p) ((p)->buffer + (p)->pos)
-#define Inline_MatchFinder_GetIndexByte(p, index) ((p)->buffer[(size_t)(p)->pos + (Int32)(index)])
+#define Inline_MatchFinder_GetPointerToCurrentPos(p) ((p)->buffer)
+#define Inline_MatchFinder_GetIndexByte(p, index) ((p)->buffer[(Int32)(index)])
+
 #define Inline_MatchFinder_GetNumAvailableBytes(p) ((p)->streamPos - (p)->pos)
 
 int MatchFinder_NeedMove(CMatchFinder *p);

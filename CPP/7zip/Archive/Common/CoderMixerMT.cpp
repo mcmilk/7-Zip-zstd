@@ -45,11 +45,11 @@ STDMETHODIMP CCoderMixerMT::Code(ISequentialInStream *inStream,
       RINOK(_coders[i].Create());
     }
 
-  while (_streamBinders.Size() + 1 < _coders.Size())
+  _streamBinders.Clear();
+  for (i = 0; i + 1 < _coders.Size(); i++)
   {
     _streamBinders.Add(CStreamBinder());
-    int i = _streamBinders.Size() - 1;
-    CStreamBinder &sb = _streamBinders.Back();
+    CStreamBinder &sb = _streamBinders[i];
     RINOK(sb.CreateEvents());
     sb.CreateStreams(&_coders[i + 1].InStream, &_coders[i].OutStream);
   }

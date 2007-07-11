@@ -3,7 +3,7 @@
 #ifndef __CODER_MIXER_MT_H
 #define __CODER_MIXER_MT_H
 
-#include "../../../Common/Vector.h"
+#include "../../../Common/MyVector.h"
 #include "../../../Common/MyCom.h"
 #include "../../ICoder.h"
 #include "../../Common/StreamBinder.h"

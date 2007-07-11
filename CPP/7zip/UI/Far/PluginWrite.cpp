@@ -4,6 +4,7 @@
 
 #include "Plugin.h"
 
+#include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/FileDir.h"
@@ -318,6 +319,80 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   return NFileOperationReturnCode::kSuccess;
 }
 
+namespace NPathType
+{
+  enum EEnum
+  {
+    kLocal,
+    kUNC
+  };
+  EEnum GetPathType(const UString &path);
+}
+
+struct CParsedPath
+{
+  UString Prefix; // Disk or UNC with slash
+  UStringVector PathParts;
+  void ParsePath(const UString &path);
+  UString MergePath() const;
+};
+
+static const wchar_t kDirDelimiter = WCHAR_PATH_SEPARATOR;
+static const wchar_t kDiskDelimiter = L':';
+
+namespace NPathType
+{
+  EEnum GetPathType(const UString &path)
+  {
+    if (path.Length() <= 2)
+      return kLocal;
+    if (path[0] == kDirDelimiter && path[1] == kDirDelimiter)
+      return kUNC;
+    return kLocal;
+  }
+}
+
+void CParsedPath::ParsePath(const UString &path)
+{
+  int curPos = 0;
+  switch (NPathType::GetPathType(path))
+  {
+    case NPathType::kLocal:
+    {
+      int posDiskDelimiter = path.Find(kDiskDelimiter);
+      if(posDiskDelimiter >= 0)
+      {
+        curPos = posDiskDelimiter + 1;
+        if (path.Length() > curPos)
+          if(path[curPos] == kDirDelimiter)
+            curPos++;
+      }
+      break;
+    }
+    case NPathType::kUNC:
+    {
+      int curPos = path.Find(kDirDelimiter, 2);
+      if(curPos < 0)
+        curPos = path.Length();
+      else
+        curPos++;
+    }
+  }
+  Prefix = path.Left(curPos);
+  SplitPathToParts(path.Mid(curPos), PathParts);
+}
+
+UString CParsedPath::MergePath() const
+{
+  UString result = Prefix;
+  for(int i = 0; i < PathParts.Size(); i++)
+  {
+    if (i != 0)
+      result += kDirDelimiter;
+    result += PathParts[i];
+  }
+  return result;
+}
 
 
 /*
@@ -375,7 +450,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   UString resultPath;
   {
-    NName::CParsedPath parsedPath;
+    CParsedPath parsedPath;
     parsedPath.ParsePath(fileNames.Front());
     if(parsedPath.PathParts.Size() == 0)
       return E_FAIL;

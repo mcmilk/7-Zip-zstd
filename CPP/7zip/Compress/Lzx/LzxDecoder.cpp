@@ -16,9 +16,10 @@ namespace NLzx {
 
 const int kLenIdNeedInit = -2;
 
-CDecoder::CDecoder():
+CDecoder::CDecoder(bool wimMode):
   _keepHistory(false),
-  m_AlignPos(0)
+  m_AlignPos(0),
+  _wimMode(wimMode)
 {
   m_x86ConvertOutStreamSpec = new Cx86ConvertOutStream;
   m_x86ConvertOutStream = m_x86ConvertOutStreamSpec;
@@ -96,12 +97,18 @@ bool CDecoder::ReadTables(void)
     int blockType = (int)ReadBits(kNumBlockTypeBits);
     if (blockType > kBlockTypeUncompressed)
       return false;
-    m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
-    
+    if (_wimMode)
+      if (ReadBits(1) == 1)
+        m_UnCompressedBlockSize = (1 << 15);
+      else
+        m_UnCompressedBlockSize = ReadBits(16);
+    else
+      m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
+
     m_IsUncompressedBlock = (blockType == kBlockTypeUncompressed);
     if (m_IsUncompressedBlock)
     {
-      m_InBitStream.ReadBits(16 - m_InBitStream.GetBitPosition());
+      ReadBits(16 - m_InBitStream.GetBitPosition());
       if (!m_InBitStream.ReadUInt32(m_RepDistances[0]))
         return false;
       m_RepDistances[0]--;
@@ -171,12 +178,16 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
     {
       m_UnCompressedBlockSize = 0;
       ClearPrevLevels();
-      UInt32 i86TranslationSize = 0;
-      bool translationMode = (ReadBits(1) != 0);
-      if (translationMode)
+      UInt32 i86TranslationSize = 12000000;
+      bool translationMode = true;
+      if (!_wimMode)
       {
-        i86TranslationSize = ReadBits(16) << 16;
-        i86TranslationSize |= ReadBits(16);
+        translationMode = (ReadBits(1) != 0);
+        if (translationMode)
+        {
+          i86TranslationSize = ReadBits(16) << 16;
+          i86TranslationSize |= ReadBits(16);
+        }
       }
       m_x86ConvertOutStreamSpec->Init(translationMode, i86TranslationSize);
       

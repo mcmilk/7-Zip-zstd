@@ -62,6 +62,7 @@ AR_COMMON_OBJS = \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
+  $O\OutStreamWithSha1.obj \
   $O\HandlerOut.obj \
   $O\ParseProperties.obj \
 
@@ -173,6 +174,11 @@ TAR_OBJS = \
   $O\TarOut.obj \
   $O\TarUpdate.obj \
   $O\TarRegister.obj \
+
+WIM_OBJS = \
+  $O\WimHandler.obj \
+  $O\WimIn.obj \
+  $O\WimRegister.obj \
 
 Z_OBJS = \
   $O\ZHandler.obj \
@@ -345,6 +351,7 @@ OBJS = \
   $(RPM_OBJS) \
   $(SPLIT_OBJS) \
   $(TAR_OBJS) \
+  $(WIM_OBJS) \
   $(Z_OBJS) \
   $(ZIP_OBJS) \
   $(BZIP2_OBJS) \
@@ -425,6 +432,8 @@ $(RPM_OBJS): ../../Archive/Rpm/$(*B).cpp
 $(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
 $(TAR_OBJS): ../../Archive/Tar/$(*B).cpp
+	$(COMPL)
+$(WIM_OBJS): ../../Archive/Wim/$(*B).cpp
 	$(COMPL)
 $(Z_OBJS): ../../Archive/Z/$(*B).cpp
 	$(COMPL)

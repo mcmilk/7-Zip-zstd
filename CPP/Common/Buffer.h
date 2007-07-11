@@ -10,13 +10,13 @@ template <class T> class CBuffer
 protected:
   size_t _capacity;
   T *_items;
+public:
   void Free()
   {
     delete []_items;
     _items = 0;
     _capacity = 0;
   }
-public:
   CBuffer(): _capacity(0), _items(0) {};
   CBuffer(const CBuffer &buffer): _capacity(0), _items(0) { *this = buffer; }
   CBuffer(size_t size): _items(0),  _capacity(0) {  SetCapacity(size); }

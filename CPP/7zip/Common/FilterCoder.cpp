@@ -234,6 +234,12 @@ STDMETHODIMP CFilterCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 #endif
 
 #ifndef EXTRACT_ONLY
+STDMETHODIMP CFilterCoder::SetCoderProperties(const PROPID *propIDs, 
+      const PROPVARIANT *properties, UInt32 numProperties)
+{
+  return _SetCoderProperties->SetCoderProperties(propIDs, properties, numProperties);
+}
+
 STDMETHODIMP CFilterCoder::WriteCoderProperties(ISequentialOutStream *outStream)
 {
   return _writeCoderProperties->WriteCoderProperties(outStream);

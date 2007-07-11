@@ -1,4 +1,4 @@
-LZMA SDK 4.46
+LZMA SDK 4.49
 -------------
 
 LZMA SDK   Copyright (C) 1999-2007 Igor Pavlov
@@ -178,10 +178,9 @@ CPP -- CPP files
       Common   - common files for archive handling
       7z       - 7z C++ Encoder/Decoder
 
-    Bundle     - Modules that are bundles of other modules
+    Bundles    - Modules that are bundles of other modules
   
-    Alone7z             - 7zr.exe: Standalone version of 7z.exe that supports only 7z/LZMA/BCJ/BCJ2
-      
+      Alone7z           - 7zr.exe: Standalone version of 7z.exe that supports only 7z/LZMA/BCJ/BCJ2
       Format7zR         - 7zr.dll: Reduced version of 7za.dll: extracting/compressing to 7z/LZMA/BCJ/BCJ2
       Format7zExtractR  - 7zxr.dll: Reduced version of 7zxa.dll: extracting from 7z/LZMA/BCJ/BCJ2.
 

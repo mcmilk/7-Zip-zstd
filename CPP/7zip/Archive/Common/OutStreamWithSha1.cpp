@@ -1,10 +1,10 @@
-// OutStreamWithCRC.cpp
+// OutStreamWithSha1.cpp
 
 #include "StdAfx.h"
 
-#include "OutStreamWithCRC.h"
+#include "OutStreamWithSha1.h"
 
-STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *processedSize)
+STDMETHODIMP COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   UInt32 realProcessedSize;
   HRESULT result;
@@ -16,7 +16,7 @@ STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *pro
   else
     result = _stream->Write(data, size, &realProcessedSize);
   if (_calculate)
-    _crc = CrcUpdate(_crc, data, realProcessedSize);
+    _sha.Update((const Byte *)data, realProcessedSize);
   _size += realProcessedSize;
   if(processedSize != NULL)
     *processedSize = realProcessedSize;

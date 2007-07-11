@@ -71,7 +71,7 @@ typedef struct _CMatchFinderMt
   UInt32 matchMaxLen;
   UInt32 numHashBytes;
   UInt32 pos;
-  Byte *buffer;   /* Pointer to virtual Buffer begin */
+  Byte *buffer;
   UInt32 cyclicBufferPos;
   UInt32 cyclicBufferSize; /* it must be historySize + 1 */
   UInt32 cutValue;

@@ -1,23 +1,23 @@
-// OutStreamWithCRC.h
+// OutStreamWithSha1.h
 
-#ifndef __OUTSTREAMWITHCRC_H
-#define __OUTSTREAMWITHCRC_H
+#ifndef __OUTSTREAMWITHSHA1_H
+#define __OUTSTREAMWITHSHA1_H
 
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
 
-extern "C" 
-{ 
-#include "../../../../C/7zCrc.h"
-}
 
-class COutStreamWithCRC: 
+
+#include "../../Crypto/Hash/Sha1.h"
+
+
+class COutStreamWithSha1: 
   public ISequentialOutStream,
   public CMyUnknownImp
 {
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _size;
-  UInt32 _crc;
+  NCrypto::NSha1::CContext _sha;
   bool _calculate;
 public:
   MY_UNKNOWN_IMP
@@ -28,11 +28,11 @@ public:
   {
     _size = 0;
     _calculate = calculate;
-    _crc = CRC_INIT_VAL;
+    _sha.Init();
   }
-  void InitCRC() { _crc = CRC_INIT_VAL; }
+  void InitSha1() { _sha.Init(); }
   UInt64 GetSize() const { return _size; }
-  UInt32 GetCRC() const { return CRC_GET_DIGEST(_crc); }
+  void Final(Byte *digest) { _sha.Final(digest); }
 };
 
 #endif

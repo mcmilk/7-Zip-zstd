@@ -42,14 +42,17 @@ void SetFileInfoStrings(const CFileInfo &fileInfo,
     fileInfoStrings.Size = "";
   }
 
-  FILETIME localFileTime; 
-  if (!FileTimeToLocalFileTime(&fileInfo.Time, &localFileTime))
-    throw 4190402;
-  UString timeString = ConvertFileTimeToString(localFileTime);
-
-  fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
-  fileInfoStrings.Time += " ";
-  fileInfoStrings.Time += GetSystemString(timeString, CP_OEMCP);
+  FILETIME localFileTime;
+  fileInfoStrings.Time.Empty();
+  if (fileInfo.TimeIsDefined)
+  {
+    if (!FileTimeToLocalFileTime(&fileInfo.Time, &localFileTime))
+      throw 4190402;
+    UString timeString = ConvertFileTimeToString(localFileTime);
+    fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
+    fileInfoStrings.Time += " ";
+    fileInfoStrings.Time += GetSystemString(timeString, CP_OEMCP);
+  }
 }
 
 NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInfo)

@@ -28,15 +28,21 @@ static const UINT kIconTypesResId = 100;
 using namespace NWindows;
 using namespace NFile;
 
+#ifdef _WIN32
 extern HINSTANCE g_hInstance;
+#endif
 
 static CSysString GetLibraryFolderPrefix()
 {
+  #ifdef _WIN32
   TCHAR fullPath[MAX_PATH + 1];
   ::GetModuleFileName(g_hInstance, fullPath, MAX_PATH);
   CSysString path = fullPath;
   int pos = path.ReverseFind(TEXT(CHAR_PATH_SEPARATOR));
   return path.Left(pos + 1);
+  #else
+  return CSysString(); // FIX IT
+  #endif
 }
 
 #define kCodecsFolderName TEXT("Codecs")

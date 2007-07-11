@@ -8,7 +8,7 @@ void ConvertUInt64ToString(UInt64 value, char *s, UInt32 base)
 {
   if (base < 2 || base > 36)
   {
-    *s = L'\0';
+    *s = '\0';
     return;
   }
   char temp[72];

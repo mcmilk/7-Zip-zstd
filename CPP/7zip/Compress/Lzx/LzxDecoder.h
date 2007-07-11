@@ -139,6 +139,8 @@ class CDecoder :
   int _remainLen;
   int m_AlignPos;
 
+  bool _wimMode;
+
   UInt32 ReadBits(UInt32 numBits);
   bool ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols);
   bool ReadTables();
@@ -151,7 +153,7 @@ class CDecoder :
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 public:
-  CDecoder();
+  CDecoder(bool wimMode = false);
 
   MY_UNKNOWN_IMP
 

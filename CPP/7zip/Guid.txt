@@ -121,6 +121,7 @@ Handler GUIDs:
 09 Nsis
 0A Lzma
 
+E6 Wim
 E7 Iso
 E8 Bkf
 E9 Chm

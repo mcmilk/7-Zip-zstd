@@ -85,7 +85,7 @@ public:
   HRes AllocateList(int numItems)
   {
     if (!CResourceList::AllocateList(numItems))
-      return false;
+      return E_OUTOFMEMORY;
     Semaphore.Close();
     return Semaphore.Create(numItems, numItems);
   }

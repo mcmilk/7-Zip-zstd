@@ -57,7 +57,7 @@ STDMETHODIMP CExtractCallBackImp::SetCompleted(const UINT64 *completeValue)
 
 STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     const wchar_t *existName, const FILETIME *existTime, const UINT64 *existSize,
-    const wchar_t *newName, const FILETIME *aNewTime, const UINT64 *newSize,
+    const wchar_t *newName, const FILETIME *newTime, const UINT64 *newSize,
     INT32 *answer)
 {
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
@@ -67,8 +67,9 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     oldFileInfo.Size = *existSize;
   oldFileInfo.Name = GetSystemString(existName, m_CodePage);
 
- 
-  newFileInfo.Time = *aNewTime;
+  newFileInfo.TimeIsDefined = (newTime != 0);
+  if (newFileInfo.TimeIsDefined)
+    newFileInfo.Time = *newTime;
   
   newFileInfo.SizeIsDefined = (newSize != NULL);
   if (newFileInfo.SizeIsDefined)

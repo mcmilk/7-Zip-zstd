@@ -3,6 +3,21 @@
 #include "StdAfx.h"
 #include "ExtractingFilePath.h"
 
+static UString ReplaceIncorrectChars(const UString &s)
+{
+  UString res;
+  for (int i = 0; i < s.Length(); i++)
+  {
+    wchar_t c = s[i];
+    #ifdef _WIN32
+    if (c < 0x20 || c == '*' || c == '?' || c == '<' || c == '>'  || c == '|' || c == ':' || c == '"')
+      c = '_';
+    #endif
+    res += c;
+  }
+  return res;
+}
+
 static void ReplaceDisk(UString &s)
 {
   int i;
@@ -58,7 +73,7 @@ UString GetCorrectPath(const UString &path)
   result.Replace(L"../", L"");
 
   ReplaceDisk(result);
-  return result;
+  return ReplaceIncorrectChars(result);
 }
 
 void MakeCorrectPath(UStringVector &pathParts)

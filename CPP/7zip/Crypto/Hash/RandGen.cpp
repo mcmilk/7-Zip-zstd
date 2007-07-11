@@ -8,11 +8,24 @@
 
 #include "RandGen.h"
 
+#ifndef _WIN32
+#include <unistd.h>
+#define USE_POSIX_TIME
+#define USE_POSIX_TIME2
+#endif
+
+#ifdef USE_POSIX_TIME
+#include <time.h>
+#ifdef USE_POSIX_TIME2
+#include <sys/time.h>
+#endif
+#endif
+
 // This is not very good random number generator.
 // Please use it only for salt.
-// First genrated data block depends from timer.
-// Other genrated data blocks depend from previous state
-// Maybe it's possible to restore original timer vaue from generated value.
+// First generated data block depends from timer and processID.
+// Other generated data blocks depend from previous state
+// Maybe it's possible to restore original timer value from generated value.
 
 void CRandomGenerator::Init()
 { 
@@ -24,6 +37,11 @@ void CRandomGenerator::Init()
   hash.Update((const Byte *)&w, sizeof(w));
   w = ::GetCurrentThreadId();
   hash.Update((const Byte *)&w, sizeof(w));
+  #else
+  pid_t pid = getpid();
+  hash.Update((const Byte *)&pid, sizeof(pid));
+  pid = getppid();
+  hash.Update((const Byte *)&pid, sizeof(pid));
   #endif
 
   for (int i = 0; i < 1000; i++)
@@ -32,6 +50,19 @@ void CRandomGenerator::Init()
     LARGE_INTEGER v;
     if (::QueryPerformanceCounter(&v))
       hash.Update((const Byte *)&v.QuadPart, sizeof(v.QuadPart));
+    #endif
+
+    #ifdef USE_POSIX_TIME
+    #ifdef USE_POSIX_TIME2
+    timeval v;
+    if (gettimeofday(&v, 0) == 0)
+    {
+      hash.Update((const Byte *)&v.tv_sec, sizeof(v.tv_sec));
+      hash.Update((const Byte *)&v.tv_usec, sizeof(v.tv_usec));
+    }
+    #endif
+    time_t v2 = time(NULL);
+    hash.Update((const Byte *)&v2, sizeof(v2));
     #endif
 
     DWORD tickCount = ::GetTickCount();
