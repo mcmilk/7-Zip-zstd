@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "Common/Defs.h"
+#include "Common/Wildcard.h"
 #include "Windows/Time.h"
 
 #include "UpdatePair.h"
@@ -60,20 +61,10 @@ static const char *kSameTimeChangedSizeCollisionMessaged =
     "Collision between files with same date/time and different sizes:\n";
 */
 
-static inline int MyFileNameCompare(const UString &s1, const UString &s2)
-{
-  return 
-  #ifdef _WIN32
-  s1.CompareNoCase(s2);
-  #else
-  s1.Compare(s2);
-  #endif
-}
-
 static void TestDuplicateString(const UStringVector &strings, const CIntVector &indices)
 {
   for(int i = 0; i + 1 < indices.Size(); i++)
-    if (MyFileNameCompare(strings[indices[i]], strings[indices[i + 1]]) == 0)
+    if (CompareFileNames(strings[indices[i]], strings[indices[i + 1]]) == 0)
     {
       UString message = kDuplicateFileNameMessage;
       message += L"\n";
@@ -97,13 +88,13 @@ void GetUpdatePairInfoList(
   int i;
   for(i = 0; i < numDirItems; i++)
     dirNames.Add(dirItems[i].Name);
-  SortStringsToIndices(dirNames, dirIndices);
+  SortFileNames(dirNames, dirIndices);
   TestDuplicateString(dirNames, dirIndices);
 
   int numArchiveItems = archiveItems.Size(); 
   for(i = 0; i < numArchiveItems; i++)
     archiveNames.Add(archiveItems[i].Name);
-  SortStringsToIndices(archiveNames, archiveIndices);
+  SortFileNames(archiveNames, archiveIndices);
   TestDuplicateString(archiveNames, archiveIndices);
   
   int dirItemIndex = 0, archiveItemIndex = 0; 
@@ -114,7 +105,7 @@ void GetUpdatePairInfoList(
         archiveItemIndex2 = archiveIndices[archiveItemIndex]; 
     const CDirItem &dirItem = dirItems[dirItemIndex2];
     const CArchiveItem &archiveItem = archiveItems[archiveItemIndex2];
-    int compareResult = MyFileNameCompare(dirItem.Name, archiveItem.Name);
+    int compareResult = CompareFileNames(dirItem.Name, archiveItem.Name);
     if (compareResult < 0)
     {
         pair.State = NUpdateArchive::NPairState::kOnlyOnDisk;

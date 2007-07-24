@@ -31,7 +31,7 @@ namespace NRecursedType { enum EEnum
 {
   kRecursed,
   kWildCardOnlyRecursed,
-  kNonRecursed,
+  kNonRecursed
 };}
 
 struct CArchiveCommand

@@ -1,7 +1,6 @@
 // Rar3Vm.h
-// According to unRAR license,
-// this code may not be used to develop a 
-// RAR (WinRAR) compatible archiver
+// According to unRAR license, this code may not be used to develop 
+// a program that creates RAR archives
 
 #ifndef __RAR3VM_H
 #define __RAR3VM_H
@@ -9,11 +8,10 @@
 #include "Common/Types.h"
 #include "Common/MyVector.h"
 
+#include "../../../../C/CpuArch.h"
+
 #define RARVM_STANDARD_FILTERS
-#if defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64) || defined(__i386__) || defined(__x86_64__)  // || defined(_M_IA64) || defined(__ia64__)
-// Define RARVM_LITTLE_ENDIAN_UNALIGN, if CPU is LITTLE_ENDIAN and if it supports 
-// unaligned 32-bit memory accesses.
-// It's for speed optimization, if you are not sure, just don't define it.
+#ifdef LITTLE_ENDIAN_UNALIGN
 #define RARVM_LITTLE_ENDIAN_UNALIGN
 #endif
 

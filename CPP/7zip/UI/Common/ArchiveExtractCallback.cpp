@@ -118,21 +118,9 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
   _isSplit = false;
 
   UString fullPath;
-  {
-    NCOM::CPropVariant prop;
-    RINOK(_archiveHandler->GetProperty(index, kpidPath, &prop));
-    
-    if(prop.vt == VT_EMPTY)
-      fullPath = _itemDefaultName;
-    else 
-    {
-      if(prop.vt != VT_BSTR)
-        return E_FAIL;
-      fullPath = prop.bstrVal;
-    }
-  }
 
-  // UString fullPathCorrect = GetCorrectPath(fullPath);
+  RINOK(GetArchiveItemPath(_archiveHandler, index, _itemDefaultName, fullPath));
+
   _filePath = fullPath;
 
   {
@@ -147,14 +135,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     }
   }
     
-  {
-    NCOM::CPropVariant prop;
-    RINOK(_archiveHandler->GetProperty(index, kpidEncrypted, &prop));
-    if (prop.vt == VT_BOOL)
-      _encrypted = VARIANT_BOOLToBool(prop.boolVal);
-    else if (prop.vt != VT_EMPTY)
-      return E_FAIL;
-  }
+  RINOK(IsArchiveItemProp(_archiveHandler, index, kpidEncrypted, _encrypted));
 
   if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
@@ -176,7 +157,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       else
       {
         if (prop.vt != VT_UI4)
-          throw "incorrect item";
+          return E_FAIL;
         _processedFileInfo.Attributes = prop.ulVal;
         _processedFileInfo.AttributesAreDefined = true;
       }
@@ -202,54 +183,45 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     }
 
     bool isAnti = false;
-    {
-      NCOM::CPropVariant prop;
-      RINOK(_archiveHandler->GetProperty(index, kpidIsAnti, &prop));
-      if (prop.vt == VT_BOOL)
-        isAnti = VARIANT_BOOLToBool(prop.boolVal);
-    }
+    RINOK(IsArchiveItemProp(_archiveHandler, index, kpidIsAnti, isAnti));
 
     UStringVector pathParts; 
     SplitPathToParts(fullPath, pathParts);
     
     if(pathParts.IsEmpty())
       return E_FAIL;
-    UString processedPath;
+    int numRemovePathParts = 0;
     switch(_pathMode)
     {
       case NExtract::NPathMode::kFullPathnames:
-      {
-        processedPath = fullPath;
         break;
-      }
       case NExtract::NPathMode::kCurrentPathnames:
       {
-        // for incorrect paths: "/dir1/dir2/file"
-        int numRemovePathParts = _removePathParts.Size();
-        if(pathParts.Size() <= numRemovePathParts)
+        numRemovePathParts = _removePathParts.Size();
+        if (pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
-        for(int i = 0; i < numRemovePathParts; i++)
-          if(_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
+        for (int i = 0; i < numRemovePathParts; i++)
+          if (_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
             return E_FAIL;
-        pathParts.Delete(0, numRemovePathParts);
-        processedPath = MakePathNameFromParts(pathParts);
         break;
       }
       case NExtract::NPathMode::kNoPathnames:
       {
-        processedPath = pathParts.Back(); 
-        pathParts.Delete(0, pathParts.Size() - 1); // Test it!!
+        numRemovePathParts = pathParts.Size() - 1;
         break;
       }
     }
-    processedPath = GetCorrectPath(processedPath);
-    if(!_processedFileInfo.IsDirectory)
-      pathParts.DeleteBack();
-
+    pathParts.Delete(0, numRemovePathParts);
     MakeCorrectPath(pathParts);
-    
+    UString processedPath = MakePathNameFromParts(pathParts);
     if (!isAnti)
     {
+      if (!_processedFileInfo.IsDirectory)
+      {
+        if (!pathParts.IsEmpty())
+          pathParts.DeleteBack();
+      }
+    
       if (!pathParts.IsEmpty())
       {
         UString fullPathNew;
@@ -309,7 +281,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
               _overwriteMode = NExtract::NOverwriteMode::kAutoRename;
               break;
             default:
-              throw 20413;
+              return E_FAIL;
           }
         }
       }
@@ -341,10 +313,10 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       else
         if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
         {
-          UString message = UString(kCantDeleteOutputFile) + 
-              fullProcessedPath;
+          UString message = UString(kCantDeleteOutputFile) +  fullProcessedPath;
           RINOK(_extractCallback2->MessageError(message));
-          return E_FAIL;
+          return S_OK;
+          // return E_FAIL;
         }
     }
     }

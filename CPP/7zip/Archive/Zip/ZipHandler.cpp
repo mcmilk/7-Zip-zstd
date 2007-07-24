@@ -31,6 +31,10 @@
 #include "../../Crypto/Zip/ZipCipher.h"
 #include "../../Crypto/WzAES/WzAES.h"
 
+#ifdef ZIP_STRONG_SUPORT
+#include "../../Crypto/ZipStrong/ZipStrong.h"
+#endif
+
 using namespace NWindows;
 using namespace NTime;
 
@@ -47,22 +51,22 @@ const wchar_t *kHostOS[] =
   L"AMIGA",
   L"VMS",
   L"Unix",
-  L"VM_CMS",
-  L"Atari",  // what if it's a minix filesystem? [cjh]
-  L"HPFS",  // filesystem used by OS/2 (and NT 3.x)
-  L"Mac",
-  L"Z_System",
-  L"CPM",
-  L"TOPS20", // pkzip 2.50 NTFS 
-  L"NTFS", // filesystem used by Windows NT 
-  L"QDOS ", // SMS/QDOS
-  L"Acorn", // Archimedes Acorn RISC OS
-  L"VFAT", // filesystem used by Windows 95, NT
+  L"VM/CMS",
+  L"Atari",
+  L"HPFS",
+  L"Macintosh",
+  L"Z-System",
+  L"CP/M",
+  L"TOPS-20",
+  L"NTFS",
+  L"SMS/QDOS",
+  L"Acorn",
+  L"VFAT",
   L"MVS",
-  L"BeOS", // hybrid POSIX/database filesystem
-                        // BeBOX or PowerMac 
+  L"BeOS",
   L"Tandem",
-  L"THEOS"
+  L"OS/400",
+  L"OS/X"
 };
 
 
@@ -120,6 +124,33 @@ const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 const wchar_t *kPPMdMethod = L"PPMd";
 const wchar_t *kAESMethod = L"AES";
 const wchar_t *kZipCryptoMethod = L"ZipCrypto";
+const wchar_t *kStrongCryptoMethod = L"StrongCrypto";
+
+struct CStrongCryptoPair
+{
+  UInt16 Id;
+  const wchar_t *Name;
+};
+
+CStrongCryptoPair g_StrongCryptoPairs[] = 
+{
+  { NStrongCryptoFlags::kDES, L"DES" },
+  { NStrongCryptoFlags::kRC2old, L"RC2a" },
+  { NStrongCryptoFlags::k3DES168, L"3DES-168" },
+  { NStrongCryptoFlags::k3DES112, L"3DES-112" },
+  { NStrongCryptoFlags::kAES128, L"pkAES-128" },
+  { NStrongCryptoFlags::kAES192, L"pkAES-192" },
+  { NStrongCryptoFlags::kAES256, L"pkAES-256" },
+  { NStrongCryptoFlags::kRC2, L"RC2" },
+  { NStrongCryptoFlags::kBlowfish, L"Blowfish" },
+  { NStrongCryptoFlags::kTwofish, L"Twofish" },
+  { NStrongCryptoFlags::kRC4, L"RC4" }
+};
+
+STATPROPSTG kArcProperties[] = 
+{
+  { NULL, kpidComment, VT_BSTR}
+};
 
 CHandler::CHandler():
   m_ArchiveIsOpen(false)
@@ -127,9 +158,33 @@ CHandler::CHandler():
   InitMethodProperties();
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
+static void StringToProp(const CByteBuffer &data, UINT codePage, NWindows::NCOM::CPropVariant &propVariant)
 {
-  value->vt = VT_EMPTY;
+  int size = (int)data.GetCapacity();
+  if (size <= 0)
+    return;
+  AString s;
+  char *p = s.GetBuffer(size + 1);
+  memcpy(p, (const Byte *)data, size);
+  p[size] = '\0';
+  s.ReleaseBuffer();
+  propVariant = MultiByteToUnicodeString(s, codePage);
+}
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant propVariant;
+  switch(propID)
+  {
+    case kpidComment:
+    {
+      StringToProp(m_Archive.m_ArchiveInfo.Comment, CP_ACP, propVariant);
+      break;
+    }
+  }
+  propVariant.Detach(value);
+  COM_TRY_END
   return S_OK;
 }
 
@@ -142,7 +197,7 @@ STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
 STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
       BSTR *name, PROPID *propID, VARTYPE *varType)
 {
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
+  if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
     return E_INVALIDARG;
   const STATPROPSTG &srcItem = kProperties[index];
   *propID = srcItem.propid;
@@ -153,14 +208,20 @@ STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,
 
 STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
 {
-  *numProperties = 0;
+  *numProperties = sizeof(kArcProperties) / sizeof(kArcProperties[0]);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
+STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
+      BSTR * name, PROPID * propID, VARTYPE *varType)
 {
-  return E_NOTIMPL;
+  if (index >= sizeof(kArcProperties) / sizeof(kArcProperties[0]))
+    return E_INVALIDARG;
+  const STATPROPSTG &srcItem = kArcProperties[index];
+  *propID = srcItem.propid;
+  *varType = srcItem.vt;
+  *name = 0;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
@@ -169,23 +230,12 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static void MyStrNCpy(char *dest, const char *src, int size)
-{
-  for (int i = 0; i < size; i++)
-  {
-    char c = src[i];
-    dest[i] = c;
-    if (c == 0)
-      break;
-  }
-}
-
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *aValue)
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant propVariant;
   const CItemEx &item = m_Items[index];
-  switch(aPropID)
+  switch(propID)
   {
     case kpidPath:
       propVariant = NItemName::GetOSName2(
@@ -202,15 +252,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
       break;
     case kpidLastWriteTime:
     {
-      FILETIME aLocalFileTime, anUTCFileTime;
-      if (DosTimeToFileTime(item.Time, aLocalFileTime))
+      FILETIME localFileTime, utcFileTime;
+      if (DosTimeToFileTime(item.Time, localFileTime))
       {
-        if (!LocalFileTimeToFileTime(&aLocalFileTime, &anUTCFileTime))
-          anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
+        if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
       }
       else
-        anUTCFileTime.dwHighDateTime = anUTCFileTime.dwLowDateTime = 0;
-      propVariant = anUTCFileTime;
+        utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+      propVariant = utcFileTime;
       break;
     }
     case kpidAttributes:
@@ -221,16 +271,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
       break;
     case kpidComment:
     {
-      int size = (int)item.Comment.GetCapacity();
-      if (size > 0)
-      {
-        AString s;
-        char *p = s.GetBuffer(size + 1);
-        MyStrNCpy(p, (const char *)(const Byte *)item.Comment, size);
-        p[size] = '\0';
-        s.ReleaseBuffer();
-        propVariant = MultiByteToUnicodeString(s, item.GetCodePage());
-      }
+      StringToProp(item.Comment, item.GetCodePage(), propVariant);
       break;
     }
     case kpidCRC:
@@ -259,7 +300,28 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
         }
         else
         {
-          method += kZipCryptoMethod;
+          if (item.IsStrongEncrypted())
+          {
+            CStrongCryptoField f;
+            bool finded = false;
+            if (item.CentralExtra.GetStrongCryptoField(f))
+            {
+              for (int i = 0; i < sizeof(g_StrongCryptoPairs) / sizeof(g_StrongCryptoPairs[0]); i++)
+              {
+                const CStrongCryptoPair &pair = g_StrongCryptoPairs[i];
+                if (f.AlgId == pair.Id)
+                {
+                  method += pair.Name;
+                  finded = true;
+                  break;
+                }
+              }
+            }
+            if (!finded)
+              method += kStrongCryptoMethod;
+          }
+          else
+            method += kZipCryptoMethod;
           method += L" ";
         }
       }
@@ -281,7 +343,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID aPropID,  PROPVARIANT *a
         (kHostOS[item.MadeByVersion.HostOS]) : kUnknownOS;
       break;
   }
-  propVariant.Detach(aValue);
+  propVariant.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -353,6 +415,10 @@ class CZipDecoder
   NCrypto::NWzAES::CDecoder *_aesDecoderSpec;
   CMyComPtr<ICompressFilter> _zipCryptoDecoder;
   CMyComPtr<ICompressFilter> _aesDecoder;
+  #ifdef ZIP_STRONG_SUPORT
+  NCrypto::NZipStrong::CDecoder *_zsDecoderSpec;
+  CMyComPtr<ICompressFilter> _zsDecoder;
+  #endif
   CFilterCoder *filterStreamSpec;
   CMyComPtr<ISequentialInStream> filterStream;
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
@@ -383,8 +449,27 @@ HRESULT CZipDecoder::Decode(
 
   bool needCRC = true;
   bool aesMode = false;
+  #ifdef ZIP_STRONG_SUPORT
+  bool pkAesMode = false;
+  #endif
   UInt16 methodId = item.CompressionMethod;
   if (item.IsEncrypted())
+  {
+    if (item.IsStrongEncrypted())
+    {
+      #ifdef ZIP_STRONG_SUPORT
+      CStrongCryptoField f;
+      if (item.CentralExtra.GetStrongCryptoField(f))
+      {
+        pkAesMode = true;
+      }
+      if (!pkAesMode)
+      #endif
+      {
+        res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+        return S_OK;
+      }
+    }
     if (methodId == NFileHeader::NCompressionMethod::kWzAES)
     {
       CWzAesExtraField aesField;
@@ -394,8 +479,9 @@ HRESULT CZipDecoder::Decode(
         needCRC = aesField.NeedCrc();
       }
     }
+  }
     
-  COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;;
+  COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
   CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
   outStreamSpec->SetStream(realOutStream);
   outStreamSpec->Init(needCRC);
@@ -434,6 +520,17 @@ HRESULT CZipDecoder::Decode(
       Byte properties = aesField.Strength;
       RINOK(_aesDecoderSpec->SetDecoderProperties2(&properties, 1));
     }
+    #ifdef ZIP_STRONG_SUPORT
+    else if (pkAesMode)
+    {
+      if (!_zsDecoder)
+      {
+        _zsDecoderSpec = new NCrypto::NZipStrong::CDecoder;
+        _zsDecoder = _zsDecoderSpec;
+      }
+      cryptoFilter = _zsDecoder;
+    }
+    #endif
     else
     {
       if (!_zipCryptoDecoder)
@@ -454,7 +551,11 @@ HRESULT CZipDecoder::Decode(
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password));
       AString charPassword;
-      if (aesMode)
+      if (aesMode 
+        #ifdef ZIP_STRONG_SUPORT
+        || pkAesMode
+        #endif
+        )
       {
         charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_ACP);
         /*
@@ -566,6 +667,12 @@ HRESULT CZipDecoder::Decode(
       {
         RINOK(_aesDecoderSpec->ReadHeader(inStream));
       }
+      #ifdef ZIP_STRONG_SUPORT
+      else if (pkAesMode)
+      {
+        RINOK(_zsDecoderSpec->ReadHeader(inStream));
+      }
+      #endif
       else
       {
         RINOK(_zipCryptoDecoderSpec->ReadHeader(inStream));

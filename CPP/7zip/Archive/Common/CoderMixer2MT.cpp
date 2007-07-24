@@ -26,13 +26,13 @@ void CCoder2::Code(ICompressProgressInfo *progress)
   {
     if (InSizePointers[i] != NULL)
       InSizePointers[i] = &InSizes[i];
-    InStreamPointers.Add(InStreams[i]);
+    InStreamPointers.Add((ISequentialInStream *)InStreams[i]);
   }
   for (i = 0; i < NumOutStreams; i++)
   {
     if (OutSizePointers[i] != NULL)
       OutSizePointers[i] = &OutSizes[i];
-    OutStreamPointers.Add(OutStreams[i]);
+    OutStreamPointers.Add((ISequentialOutStream *)OutStreams[i]);
   }
   if (Coder)
     Result = Coder->Code(InStreamPointers[0], OutStreamPointers[0], 

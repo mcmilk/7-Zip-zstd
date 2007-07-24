@@ -2,6 +2,8 @@
 /*
 This code implements Brian Gladman's scheme 
 specified in password Based File Encryption Utility.
+
+Note: you must include Crypto/AES/MyAES.cpp to project to initialize AES tables
 */
 
 #include "StdAfx.h"
@@ -13,8 +15,6 @@ specified in password Based File Encryption Utility.
 #include "../Hash/RandGen.h"
 
 #include "WzAES.h"
-
-#include "../AES/MyAES.h"
 
 // define it if you don't want to use speed-optimized version of Pbkdf2HmacSha1
 // #define _NO_WZAES_OPTIMIZATIONS
@@ -35,20 +35,24 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
+#define SetUi32(p, d) { UInt32 x = (d); (p)[0] = (Byte)x; (p)[1] = (Byte)(x >> 8); \
+    (p)[2] = (Byte)(x >> 16); (p)[3] = (Byte)(x >> 24); }
+
 void CBaseCoder::EncryptData(Byte *data, UInt32 size)
 {   
   unsigned int pos = _blockPos;
   for (; size > 0; size--)
   {
-    if (pos == kAesBlockSize)
+    if (pos == AES_BLOCK_SIZE)
     {   
-      int j;
-      for (j = 0; j < 8 && ++_counter[j] == 0; j++);
-      for (j = 0; j < 8; j++)
-        _buffer[j] = _counter[j];
-      for (; j < kAesBlockSize; j++)
-        _buffer[j] = 0;
-      _aesFilter->Filter(_buffer, kAesBlockSize);
+      if (++_counter[0] == 0)
+        _counter[1]++;
+      UInt32 outBuf[4];
+      AesEncode32(_counter, outBuf, Aes.rkey, Aes.numRounds2);
+      SetUi32(_buffer,      outBuf[0]);
+      SetUi32(_buffer + 4,  outBuf[1]);
+      SetUi32(_buffer + 8,  outBuf[2]);
+      SetUi32(_buffer + 12, outBuf[3]);
       pos = 0;
     }
     *data++ ^= _buffer[pos++];
@@ -107,14 +111,12 @@ STDMETHODIMP CBaseCoder::Init()
   _hmac.SetKey(buf + keySize, keySize);
   memcpy(_key.PwdVerifComputed, buf + 2 * keySize, kPwdVerifCodeSize);
   
-  _blockPos = kAesBlockSize;
-  for (int i = 0; i < 8; i++)
+  _blockPos = AES_BLOCK_SIZE;
+  for (int i = 0; i < 4; i++)
     _counter[i] = 0;
 
-  RINOK(CreateFilters());
-  CMyComPtr<ICryptoProperties> cp;
-  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
-  return cp->SetKey(buf, keySize);
+  AesSetKeyEncode(&Aes, buf, keySize);
+  return S_OK;
 }
 
 static HRESULT SafeWrite(ISequentialOutStream *outStream, const Byte *data, UInt32 size)
@@ -216,14 +218,6 @@ STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
   _hmac.Update(data, size);
   EncryptData(data, size);
   return size;
-}
-
-
-HRESULT CBaseCoder::CreateFilters()
-{
-  if (!_aesFilter)
-    _aesFilter = new CAES_ECB_Encoder;
-  return S_OK;
 }
 
 }}

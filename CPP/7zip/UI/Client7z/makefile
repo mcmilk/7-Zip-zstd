@@ -36,7 +36,7 @@ OBJS = \
 !include "../../../Build.mak"
 
 $(CONSOLE_OBJS): $(*B).cpp
-	$(COMPL_O1_W3)
+	$(COMPL)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
 	$(COMPL)
 $(WIN_OBJS): ../../../Windows/$(*B).cpp

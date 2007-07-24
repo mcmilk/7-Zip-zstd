@@ -136,6 +136,10 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   else
     s = ConvertPropertyToString(propVariant, propID, false);
 
+  {
+    s.Replace(wchar_t(0xA), L' '); 
+    s.Replace(wchar_t(0xD), L' '); 
+  }
   int size = item.cchTextMax;
   if(size > 0)
   {

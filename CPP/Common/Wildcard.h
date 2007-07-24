@@ -5,6 +5,8 @@
 
 #include "MyString.h"
 
+int CompareFileNames(const UString &s1, const UString &s2);
+
 void SplitPathToParts(const UString &path, UStringVector &pathParts);
 void SplitPathToParts(const UString &path, UString &dirPrefix, UString &name);
 UString ExtractDirPrefixFromPath(const UString &path);

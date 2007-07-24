@@ -3,8 +3,6 @@
 #ifndef __WINDOWS_THREAD_H
 #define __WINDOWS_THREAD_H
 
-#include <process.h>
-
 #include "Defs.h"
 
 extern "C" 

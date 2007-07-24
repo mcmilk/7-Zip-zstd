@@ -340,37 +340,6 @@ SOURCE=..\..\Compress\Copy\CopyRegister.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\aes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\AES_CBC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescpp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescrypt.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aeskey.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aesopt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aestab.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Crypto\AES\MyAES.cpp
 # End Source File
 # Begin Source File
@@ -877,6 +846,19 @@ SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
+# End Source File
+# End Group
+# Begin Group "C Crypto"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.h
 # End Source File
 # End Group
 # Begin Source File

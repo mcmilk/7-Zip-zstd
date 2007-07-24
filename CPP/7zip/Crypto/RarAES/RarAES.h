@@ -10,8 +10,15 @@
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 
+extern "C" 
+{ 
+#include "../../../../C/Crypto/Aes.h"
+}
+
 namespace NCrypto {
 namespace NRar29 {
+
+const kRarAesKeySize = 16;
 
 class CDecoder: 
   public ICompressFilter,
@@ -22,11 +29,11 @@ class CDecoder:
   Byte _salt[8];
   bool _thereIsSalt;
   CByteBuffer buffer;
-  Byte aesKey[16];
-  Byte aesInit[16];
+  Byte aesKey[kRarAesKeySize];
+  Byte aesInit[AES_BLOCK_SIZE];
   bool _needCalculate;
 
-  CMyComPtr<ICompressFilter> _aesFilter;
+  CAesCbc Aes;
 
   bool _rar350Mode;
 

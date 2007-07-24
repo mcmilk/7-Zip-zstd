@@ -67,6 +67,43 @@ struct CWzAesExtraField
   }
 };
 
+namespace NStrongCryptoFlags
+{
+  const UInt16 kDES = 0x6601;
+  const UInt16 kRC2old = 0x6602;
+  const UInt16 k3DES168 = 0x6603;
+  const UInt16 k3DES112 = 0x6609;
+  const UInt16 kAES128 = 0x660E;
+  const UInt16 kAES192 = 0x660F;
+  const UInt16 kAES256 = 0x6610;
+  const UInt16 kRC2 = 0x6702;
+  const UInt16 kBlowfish = 0x6720;
+  const UInt16 kTwofish = 0x6721;
+  const UInt16 kRC4 = 0x6801;
+}
+
+struct CStrongCryptoField
+{
+  UInt16 Format;
+  UInt16 AlgId;
+  UInt16 BitLen;
+  UInt16 Flags;
+
+  bool ParseFromSubBlock(const CExtraSubBlock &sb)
+  {
+    if (sb.ID != NFileHeader::NExtraID::kStrongEncrypt)
+      return false;
+    const Byte *p = (const Byte *)sb.Data;
+    if (sb.Data.GetCapacity() < 8)
+      return false;
+    Format = (((UInt16)p[1]) << 8) | p[0];
+    AlgId  = (((UInt16)p[3]) << 8) | p[2];
+    BitLen = (((UInt16)p[5]) << 8) | p[4];
+    Flags  = (((UInt16)p[7]) << 8) | p[6];
+    return (Format == 2);
+  }
+};
+
 struct CExtraBlock
 {
   CObjectVector<CExtraSubBlock> SubBlocks;
@@ -80,9 +117,16 @@ struct CExtraBlock
   }
   bool GetWzAesField(CWzAesExtraField &aesField) const 
   {
-    // size_t res = 0;
     for (int i = 0; i < SubBlocks.Size(); i++)
       if (aesField.ParseFromSubBlock(SubBlocks[i]))
+        return true;
+    return false;
+  }
+
+  bool GetStrongCryptoField(CStrongCryptoField &f) const 
+  {
+    for (int i = 0; i < SubBlocks.Size(); i++)
+      if (f.ParseFromSubBlock(SubBlocks[i]))
         return true;
     return false;
   }
@@ -92,6 +136,14 @@ struct CExtraBlock
     CWzAesExtraField aesField;
     return GetWzAesField(aesField);
   }
+
+  /*
+  bool HasStrongCryptoField() const 
+  {
+    CStrongCryptoField f;
+    return GetStrongCryptoField(f);
+  }
+  */
 
   void RemoveUnknownSubBlocks()
   {
@@ -122,7 +174,8 @@ public:
 
   CExtraBlock LocalExtra;
   
-  bool IsEncrypted() const;
+  bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
+  bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; };
   
   bool IsImplodeBigDictionary() const;
   bool IsImplodeLiteralsOn() const;
@@ -131,7 +184,8 @@ public:
   bool IgnoreItem() const { return false; }
   UInt32 GetWinAttributes() const;
   
-  bool HasDescriptor() const;
+  bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
+
   
 private:
   void SetFlagBits(int startBitNumber, int numBits, int value);

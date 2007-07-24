@@ -171,10 +171,8 @@ $O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog/$(*B).cpp
 	$(COMPL)
 
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
+	$(COMPL_O1)
 $(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)
 
 !include "../../Crc.mak"
-

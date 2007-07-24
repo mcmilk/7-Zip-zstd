@@ -146,10 +146,6 @@ OBJS = \
   $(C_LZ_OBJS) \
   $(C_BRANCH_OBJS) \
   $O\RangeCoderBit.obj \
-  $(7ZAES_OPT_OBJS) \
-  $(AES_OPT_OBJS) \
-  $(AES_ORIG_OBJS) \
-  $(CRYPTO_HASH_OBJS) \
   $O\resource.res
 
 

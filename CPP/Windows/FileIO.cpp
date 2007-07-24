@@ -31,8 +31,11 @@ bool GetLongPathBase(LPCWSTR s, UString &res)
   if (len < 1 || c == L'\\' || c == L'.' && (len == 1 || len == 2 && s[1] == L'.'))
     return true;
   UString curDir;
+  bool isAbs = false;
   if (len > 3)
-    if (s[1] != L':' || s[2] != L'\\' || !(c >= L'a' && c <= L'z' || c >= L'A' && c <= L'Z'))
+    isAbs = (s[1] == L':' && s[2] == L'\\' && (c >= L'a' && c <= L'z' || c >= L'A' && c <= L'Z'));
+
+  if (!isAbs)
     {
       DWORD needLength = ::GetCurrentDirectoryW(MAX_PATH + 1, curDir.GetBuffer(MAX_PATH + 1));
       curDir.ReleaseBuffer();

@@ -64,7 +64,6 @@ class CInArchive
   UInt32 m_Signature;
   UInt64 m_StreamStartPosition;
   UInt64 m_Position;
-  CInArchiveInfo m_ArchiveInfo;
   AString m_NameBuffer;
   
   HRESULT Seek(UInt64 offset);
@@ -95,6 +94,8 @@ class CInArchive
   HRESULT ReadCd(CObjectVector<CItemEx> &items, UInt64 &cdOffset, UInt64 &cdSize);
   HRESULT ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset);
 public:
+  CInArchiveInfo m_ArchiveInfo;
+
   HRESULT ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress);
   HRESULT ReadLocalItemAfterCdItem(CItemEx &item);
   HRESULT ReadLocalItemAfterCdItemFull(CItemEx &item);

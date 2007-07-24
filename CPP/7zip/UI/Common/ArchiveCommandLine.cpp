@@ -24,6 +24,8 @@
 #include "SortUtils.h"
 #include "EnumDirItems.h"
 
+extern bool g_CaseSensitive;
+
 #if _MSC_VER >= 1400
 #define MY_isatty_fileno(x) _isatty(_fileno(x))
 #else
@@ -67,7 +69,8 @@ enum Enum
   kLargePages,
   kCharSet,
   kTechMode,
-  kShareForWrite
+  kShareForWrite,
+  kCaseSensitive
 };
 
 }
@@ -131,7 +134,8 @@ static const CSwitchForm kSwitchForms[] =
     { L"SLP", NSwitchType::kUnLimitedPostString, false, 0},
     { L"SCS", NSwitchType::kUnLimitedPostString, false, 0},
     { L"SLT", NSwitchType::kSimple, false },
-    { L"SSW", NSwitchType::kSimple, false }
+    { L"SSW", NSwitchType::kSimple, false },
+    { L"SSC", NSwitchType::kPostChar, false, 0, 0, L"-" }
   };
 
 static const CCommandForm g_CommandForms[] = 
@@ -746,6 +750,9 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
 
   options.TechMode = parser[NKey::kTechMode].ThereIs;
 
+  if (parser[NKey::kCaseSensitive].ThereIs)
+    g_CaseSensitive = (parser[NKey::kCaseSensitive].PostCharIndex < 0);
+
   NRecursedType::EEnum recursedType;
   if (parser[NKey::kRecursed].ThereIs)
     recursedType = GetRecursedTypeFromIndex(parser[NKey::kRecursed].PostCharIndex);
@@ -865,7 +872,7 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
       archivePathsFull.Add(fullPath);
     }
     CIntVector indices;
-    SortStringsToIndices(archivePathsFull, indices);
+    SortFileNames(archivePathsFull, indices);
     options.ArchivePathsSorted.Reserve(indices.Size());
     options.ArchivePathsFullSorted.Reserve(indices.Size());
     for (i = 0; i < indices.Size(); i++)

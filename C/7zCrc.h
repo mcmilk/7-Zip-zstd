@@ -9,7 +9,7 @@
 
 extern UInt32 g_CrcTable[];
 
-void MY_FAST_CALL CrcGenerateTable();
+void MY_FAST_CALL CrcGenerateTable(void);
 
 #define CRC_INIT_VAL 0xFFFFFFFF
 #define CRC_GET_DIGEST(crc) ((crc) ^ 0xFFFFFFFF)

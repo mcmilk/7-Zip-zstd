@@ -132,11 +132,6 @@ PPMD_OPT_OBJS = \
 AES_OPT_OBJS = \
   $O\MyAES.obj \
 
-AES_ORIG_OBJS = \
-  $O\aescrypt.obj \
-  $O\aeskey.obj \
-  $O\aestab.obj \
-
 CRYPTO_HASH_OBJS = \
   $O\RandGen.obj \
   $O\Sha1.obj \
@@ -157,6 +152,9 @@ C_BRANCH_OBJS = \
   $O\BranchPPC.obj \
   $O\BranchSPARC.obj \
   $O\BranchX86.obj \
+
+C_CRYPTO = \
+  $O\Aes.obj \
 
 !include "../../Crc2.mak"
 
@@ -185,8 +183,8 @@ OBJS = \
   $O\RangeCoderBit.obj \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
-  $(AES_ORIG_OBJS) \
   $(CRYPTO_HASH_OBJS) \
+  $(C_CRYPTO) \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -233,8 +231,6 @@ $O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
 
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL_O2)
-$(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O2_W3)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
 	$(COMPL_O2)
 $(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
@@ -245,6 +241,8 @@ $(C_OBJS): ../../../../C/$(*B).c
 $(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
 	$(COMPL_O2)
 $(C_LZ_OBJS): ../../../../C/Compress/Lz/$(*B).c
+	$(COMPL_O2)
+$(C_CRYPTO): ../../../../C/Crypto/$(*B).c
 	$(COMPL_O2)
 
 !include "../../Crc.mak"

@@ -55,7 +55,7 @@ HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index,
   return S_OK;
 }
 
-static HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result)
+HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result)
 {
   NCOM::CPropVariant prop;
   RINOK(archive->GetProperty(index, propID, &prop));

@@ -5,74 +5,76 @@
 
 static UString ReplaceIncorrectChars(const UString &s)
 {
+  #ifdef _WIN32
   UString res;
   for (int i = 0; i < s.Length(); i++)
   {
     wchar_t c = s[i];
-    #ifdef _WIN32
     if (c < 0x20 || c == '*' || c == '?' || c == '<' || c == '>'  || c == '|' || c == ':' || c == '"')
       c = '_';
-    #endif
     res += c;
   }
   return res;
-}
-
-static void ReplaceDisk(UString &s)
-{
-  int i;
-  for (i = 0; i < s.Length(); i++)
-    if (s[i] != ' ')
-      break;
-  if (s.Length() > i + 1)
-  {
-    if (s[i + 1] == L':')
-    {
-      s.Delete(i + 1);
-      // s.Insert(i + 1, L'_');
-    }
-  }
-}
-
-UString GetCorrectFileName(const UString &path)
-{
-  UString result = path;
-  {
-    UString test = path;
-    test.Trim();
-    if (test == L"..")
-      result.Replace(L"..", L"");
-  }
-  ReplaceDisk(result);
-  return result;
-}
-
-UString GetCorrectPath(const UString &path)
-{
-  UString result = path;
-  int first;
-  for (first = 0; first < result.Length(); first++)
-    if (result[first] != ' ')
-      break;
-  while(result.Length() > first)
-  {
-    if (
-      #ifdef _WIN32
-      result[first] == L'\\' || 
-      #endif
-      result[first] == L'/')
-    {
-      result.Delete(first);
-      continue;
-    }
-    break;
-  }
-  #ifdef _WIN32
-  result.Replace(L"..\\", L"");
+  #else
+  return s;
   #endif
-  result.Replace(L"../", L"");
+}
 
-  ReplaceDisk(result);
+#ifdef _WIN32
+static const wchar_t *g_ReservedNames[] =
+{
+  L"CON", L"PRN", L"AUX", L"NUL"
+};
+
+static bool CheckTail(const UString &name, int len)
+{
+  int dotPos = name.Find(L'.');
+  if (dotPos < 0)
+    dotPos = name.Length();
+  UString s = name.Left(dotPos);
+  s.TrimRight();
+  return (s.Length() != len);
+}
+
+static bool CheckNameNum(const UString &name, const wchar_t *reservedName)
+{
+  int len = MyStringLen(reservedName);
+  if (name.Length() <= len)
+    return true;
+  if (name.Left(len).CompareNoCase(reservedName) != 0)
+    return true;
+  wchar_t c = name[len];
+  if (c < L'0' || c > L'9')
+    return true;
+  return CheckTail(name, len + 1);
+}
+
+static bool IsSupportedName(const UString &name)
+{
+  for (int i = 0; i < sizeof(g_ReservedNames) / sizeof(g_ReservedNames[0]); i++)
+  {
+    const wchar_t *reservedName = g_ReservedNames[i];
+    int len = MyStringLen(reservedName);
+    if (name.Length() < len)
+      continue;
+    if (name.Left(len).CompareNoCase(reservedName) != 0)
+      continue;
+    if (!CheckTail(name, len))
+      return false;
+  }
+  if (!CheckNameNum(name, L"COM"))
+    return false;
+  return CheckNameNum(name, L"LPT");
+}
+#endif
+
+static UString GetCorrectFileName(const UString &path)
+{
+  UString result = path;
+  UString test = path;
+  // test.Trim();
+  if (test == L"..")
+    result.Replace(L"..", L"");
   return ReplaceIncorrectChars(result);
 }
 
@@ -85,6 +87,13 @@ void MakeCorrectPath(UStringVector &pathParts)
     if (s.IsEmpty())
       pathParts.Delete(i);
     else
+    {
+      #ifdef _WIN32
+      if (!IsSupportedName(s))
+        s = (UString)L"_" + s;
+      #endif
       i++;
+    }
   }
 }
+

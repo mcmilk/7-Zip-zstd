@@ -109,11 +109,6 @@ PPMD_OPT_OBJS = \
 AES_OPT_OBJS = \
   $O\MyAES.obj \
 
-AES_ORIG_OBJS = \
-  $O\aescrypt.obj \
-  $O\aeskey.obj \
-  $O\aestab.obj \
-
 CRYPTO_HASH_OBJS = \
   $O\Sha256.obj \
 
@@ -123,6 +118,9 @@ C_OBJS = \
 
 C_BRANCH_OBJS = \
   $O\BranchX86.obj \
+
+C_CRYPTO = \
+  $O\Aes.obj \
 
 !include "../../Crc2.mak"
 
@@ -143,10 +141,10 @@ OBJS = \
   $(PPMD_OPT_OBJS) \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
-  $(AES_ORIG_OBJS) \
   $(CRYPTO_HASH_OBJS) \
   $(C_OBJS) \
   $(C_BRANCH_OBJS) \
+  $(C_CRYPTO) \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -184,15 +182,15 @@ $(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
 
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL)
-$(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O1_W3)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
 	$(COMPL)
 $(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)
 $(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)
+$(C_CRYPTO): ../../../../C/Crypto/$(*B).c
+	$(COMPL_O1)
 
 !include "../../Crc.mak"

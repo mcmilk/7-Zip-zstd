@@ -3,32 +3,17 @@
 #ifndef __7Z_IN_H
 #define __7Z_IN_H
 
+#include "../../../Common/MyCom.h"
 #include "../../IStream.h"
 #include "../../IPassword.h"
-
 #include "../../Common/CreateCoder.h"
-
-#include "../../../Common/MyCom.h"
 #include "../../Common/InBuffer.h"
 
-#include "7zHeader.h"
 #include "7zItem.h"
  
 namespace NArchive {
 namespace N7z {
   
-class CInArchiveException
-{
-public:
-  enum CCauseType
-  {
-    kUnsupportedVersion = 0,
-    kUnexpectedEndOfArchive = 0,
-    kIncorrectHeader,
-  } Cause;
-  CInArchiveException(CCauseType cause);
-};
-
 struct CInArchiveInfo
 {
   CArchiveVersion Version;
@@ -42,7 +27,6 @@ struct CInArchiveInfo
     FileInfoPopIDs.Clear();
   }
 };
-
 
 struct CArchiveDatabaseEx: public CArchiveDatabase
 {
@@ -76,8 +60,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   UInt64 GetFolderStreamPos(int folderIndex, int indexInFolder) const
   {
     return ArchiveInfo.DataStartPosition +
-        PackStreamStartPositions[FolderStartPackStreamIndex[folderIndex] +
-        indexInFolder];
+        PackStreamStartPositions[FolderStartPackStreamIndex[folderIndex] + indexInFolder];
   }
   
   UInt64 GetFolderFullPackSize(int folderIndex) const 
@@ -117,44 +100,33 @@ public:
     _size = size;
     _pos = 0;
   }
-  bool ReadByte(Byte &b)
-  {
-    if(_pos >= _size)
-      return false;
-    b = _buffer[_pos++];
-    return true;
-  }
-  void ReadBytes(void *data, size_t size, size_t &processedSize)
-  {
-    for(processedSize = 0; processedSize < size && _pos < _size; processedSize++)
-      ((Byte *)data)[processedSize] = _buffer[_pos++];
-  }
-  
-  bool ReadBytes(void *data, size_t size)
-  {
-    size_t processedSize;
-    ReadBytes(data, size, processedSize);
-    return (processedSize == size);
-  }
-  
-  size_t GetProcessedSize() const { return _pos; }
+  Byte ReadByte();
+  void ReadBytes(Byte *data, size_t size);
+  void SkeepData(UInt64 size);
+  void SkeepData();
+  UInt64 ReadNumber();
+  CNum ReadNum();
+  UInt32 ReadUInt32();
+  UInt64 ReadUInt64();
+  void ReadString(UString &s);
 };
 
 class CStreamSwitch;
+
+const UInt32 kHeaderSize = 32;
+
 class CInArchive
 {
   friend class CStreamSwitch;
 
   CMyComPtr<IInStream> _stream;
-  #ifdef _7Z_VOL
-  bool _finishSignature;
-  #endif
 
   CObjectVector<CInByte2> _inByteVector;
   CInByte2 *_inByteBack;
  
   UInt64 _arhiveBeginStreamPosition;
-  UInt64 _position;
+
+  Byte _header[kHeaderSize];
 
   void AddByteStream(const Byte *buffer, size_t size)
   {
@@ -171,80 +143,42 @@ class CInArchive
   }
 
 private:
-  HRESULT FindAndReadSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit); // S_FALSE means is not archive
-  #ifdef _7Z_VOL
-  HRESULT FindFinishSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit); // S_FALSE means is not archive
-  #endif
+  HRESULT FindAndReadSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit);
   
-  HRESULT ReadFileNames(CObjectVector<CFileItem> &files);
-  
-  HRESULT ReadDirect(IInStream *stream, void *data, UInt32 size, 
-      UInt32 *processedSize);
-  HRESULT ReadDirect(void *data, UInt32 size, UInt32 *processedSize);
-  HRESULT SafeReadDirect(void *data, UInt32 size);
-  HRESULT SafeReadDirectByte(Byte &b);
-  HRESULT SafeReadDirectUInt32(UInt32 &value, UInt32 &crc);
-  HRESULT SafeReadDirectUInt64(UInt64 &value, UInt32 &crc);
+  void ReadBytes(Byte *data, size_t size) { _inByteBack->ReadBytes(data, size); }
+  Byte ReadByte() { return _inByteBack->ReadByte(); }
+  UInt64 ReadNumber() { return _inByteBack->ReadNumber(); }
+  CNum ReadNum() { return _inByteBack->ReadNum(); }
+  UInt64 ReadID() { return _inByteBack->ReadNumber(); }
+  UInt32 ReadUInt32() { return _inByteBack->ReadUInt32(); }
+  UInt64 ReadUInt64() { return _inByteBack->ReadUInt64(); }
+  void SkeepData(UInt64 size) { _inByteBack->SkeepData(size); }
+  void SkeepData() { _inByteBack->SkeepData(); }
+  void WaitAttribute(UInt64 attribute);
 
-  HRESULT ReadBytes(void *data, size_t size)
-  {
-    if (!_inByteBack->ReadBytes(data, size))
-      return E_FAIL;
-    return S_OK;
-  }
-
-  HRESULT ReadByte(Byte &b)
-  {
-    if (!_inByteBack->ReadByte(b))
-      return E_FAIL;
-    return S_OK;
-  }
-
-  HRESULT ReadWideCharLE(wchar_t &c)
-  {
-    Byte b1 = 0;
-    if (!_inByteBack->ReadByte(b1))
-      return E_FAIL;
-    Byte b2 = 0;
-    if (!_inByteBack->ReadByte(b2))
-      return E_FAIL;
-    c = (wchar_t)(((wchar_t)(b2) << 8) + b1);
-    return S_OK;
-  }
-
-  HRESULT ReadNumber(UInt64 &value);
-  HRESULT ReadNum(CNum &value);
-  HRESULT ReadID(UInt64 &value) { return ReadNumber(value); }
-  HRESULT ReadUInt32(UInt32 &value);
-  HRESULT ReadUInt64(UInt64 &value);
-  
-  HRESULT SkeepData(UInt64 size);
-  HRESULT SkeepData();
-  HRESULT WaitAttribute(UInt64 attribute);
-
-  HRESULT ReadArchiveProperties(CInArchiveInfo &archiveInfo);
-  HRESULT GetNextFolderItem(CFolder &itemInfo);
-  HRESULT ReadHashDigests(int numItems,
+  void ReadArchiveProperties(CInArchiveInfo &archiveInfo);
+  void GetNextFolderItem(CFolder &itemInfo);
+  void ReadHashDigests(int numItems,
       CRecordVector<bool> &digestsDefined, CRecordVector<UInt32> &digests);
   
-  HRESULT ReadPackInfo(
+  void ReadPackInfo(
       UInt64 &dataOffset,
       CRecordVector<UInt64> &packSizes,
       CRecordVector<bool> &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs);
   
-  HRESULT ReadUnPackInfo(
+  void ReadUnPackInfo(
       const CObjectVector<CByteBuffer> *dataVector,
       CObjectVector<CFolder> &folders);
   
-  HRESULT ReadSubStreamsInfo(
+  void ReadSubStreamsInfo(
       const CObjectVector<CFolder> &folders,
       CRecordVector<CNum> &numUnPackStreamsInFolders,
       CRecordVector<UInt64> &unPackSizes,
       CRecordVector<bool> &digestsDefined, 
       CRecordVector<UInt32> &digests);
 
-  HRESULT ReadStreamsInfo(
+  void ReadStreamsInfo(
       const CObjectVector<CByteBuffer> *dataVector,
       UInt64 &dataOffset,
       CRecordVector<UInt64> &packSizes,
@@ -257,10 +191,9 @@ private:
       CRecordVector<UInt32> &digests);
 
 
-  HRESULT GetNextFileItem(CFileItem &itemInfo);
-  HRESULT ReadBoolVector(int numItems, CBoolVector &v);
-  HRESULT ReadBoolVector2(int numItems, CBoolVector &v);
-  HRESULT ReadTime(const CObjectVector<CByteBuffer> &dataVector,
+  void ReadBoolVector(int numItems, CBoolVector &v);
+  void ReadBoolVector2(int numItems, CBoolVector &v);
+  void ReadTime(const CObjectVector<CByteBuffer> &dataVector,
       CObjectVector<CFileItem> &files, UInt64 type);
   HRESULT ReadAndDecodePackedStreams(
       DECL_EXTERNAL_CODECS_LOC_VARS
@@ -273,6 +206,13 @@ private:
   HRESULT ReadHeader(
       DECL_EXTERNAL_CODECS_LOC_VARS
       CArchiveDatabaseEx &database
+      #ifndef _NO_CRYPTO
+      ,ICryptoGetTextPassword *getTextPassword
+      #endif
+      );
+  HRESULT ReadDatabase2(
+      DECL_EXTERNAL_CODECS_LOC_VARS
+      CArchiveDatabaseEx &database 
       #ifndef _NO_CRYPTO
       ,ICryptoGetTextPassword *getTextPassword
       #endif

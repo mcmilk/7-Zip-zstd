@@ -1,12 +1,11 @@
 // RarAES.cpp
-// This code is based on UnRar sources
+// Note: you must include Crypto/AES/MyAES.cpp to project to initialize AES tables
 
 #include "StdAfx.h"
 
 #include "RarAES.h"
 #include "../../Common/MethodId.h"
 #include "../Hash/Sha1.h"
-#include "../AES/MyAES.h"
 
 namespace NCrypto {
 namespace NRar29 {
@@ -77,19 +76,14 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  if (!_aesFilter)
-    _aesFilter = new CAES_CBC_Decoder;
-  CMyComPtr<ICryptoProperties> cp;
-  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
-  RINOK(cp->SetKey(aesKey, 16));
-  RINOK(cp->SetInitVector(aesInit, 16));
-  _aesFilter->Init();
+  AesSetKeyDecode(&Aes.aes, aesKey, kRarAesKeySize);
+  AesCbcInit(&Aes, aesInit);
   return S_OK;
 }
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 {
-  return _aesFilter->Filter(data, size);
+  return AesCbcDecode(&Aes, data, size);
 }
 
 void CDecoder::Calculate()

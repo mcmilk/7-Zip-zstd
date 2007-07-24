@@ -1,7 +1,6 @@
 // Rar2Decoder.cpp
-// According to unRAR license,
-// this code may not be used to develop a 
-// RAR (WinRAR) compatible archiver
+// According to unRAR license, this code may not be used to develop 
+// a program that creates RAR archives
  
 #include "StdAfx.h"
 

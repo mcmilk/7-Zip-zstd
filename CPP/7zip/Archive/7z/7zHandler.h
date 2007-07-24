@@ -25,17 +25,6 @@ struct CRef
   int ItemIndex;
 };
 
-/*
-struct CRef2
-{
-  CRecordVector<CRef> Refs;
-  UInt64 UnPackSize;
-  UInt64 PackSize;
-  UInt64 StartPos;
-  CRef2(): UnPackSize(0), PackSize(0), StartPos(0) {}
-};
-*/
-
 struct CVolume
 {
   int StartRef2Index;
@@ -43,10 +32,6 @@ struct CVolume
   CArchiveDatabaseEx Database;
 };
 #endif
-
-// {23170F69-40C1-278A-1000-000110070000}
-DEFINE_GUID(CLSID_CFormat7z, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
 
 #ifndef __7Z_SET_PROPERTIES
 
@@ -93,26 +78,7 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-
-  STDMETHOD(Open)(IInStream *stream, 
-      const UInt64 *maxCheckStartPosition,
-      IArchiveOpenCallback *openArchiveCallback);  
-  STDMETHOD(Close)();  
-  
-  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
-  STDMETHOD(GetProperty)(UInt32 index, PROPID propID,  PROPVARIANT *value);
-  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
-      Int32 testMode, IArchiveExtractCallback *extractCallback);
-
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
-
-  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
-
-  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
+  INTERFACE_IInArchive(;)
 
   #ifdef _7Z_VOL
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
@@ -123,14 +89,7 @@ public:
   #endif
 
   #ifndef EXTRACT_ONLY
-  // IOutArchiveHandler
-  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
-      IArchiveUpdateCallback *updateCallback);
-
-  STDMETHOD(GetFileTimeType)(UInt32 *type);  
-
-  // ISetProperties
-  
+  INTERFACE_IOutArchive(;)
   #endif
 
   DECL_ISetCompressCodecsInfo

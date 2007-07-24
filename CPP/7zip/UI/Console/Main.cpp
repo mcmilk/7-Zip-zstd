@@ -106,6 +106,7 @@ static const char *kHelpString =
     "  -si[{name}]: read data from stdin\n"
     "  -slt: show technical information for l (List) command\n"
     "  -so: write data to stdout\n"
+    "  -ssc[-]: set sensitive case mode\n"
     "  -ssw: compress shared files\n"
     "  -t{Type}: Set type of archive\n"
     "  -v{Size}[b|k|m|g]: Create volumes\n"

@@ -23,24 +23,7 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
   
-  STDMETHOD(Open)(IInStream *aStream, 
-      const UInt64 *aMaxCheckStartPosition,
-      IArchiveOpenCallback *anOpenArchiveCallback);  
-  STDMETHOD(Close)();  
-  STDMETHOD(GetNumberOfItems)(UInt32 *numItems);  
-  STDMETHOD(GetProperty)(UInt32 index, PROPID propID,  PROPVARIANT *value);
-  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
-      Int32 testMode, IArchiveExtractCallback *anExtractCallback);
-
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
-
-  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
-
-  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
+  INTERFACE_IInArchive(;)
 
   DECL_ISetCompressCodecsInfo
 

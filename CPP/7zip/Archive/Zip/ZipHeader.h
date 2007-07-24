@@ -86,6 +86,7 @@ namespace NFileHeader
     enum 
     { 
       kZip64 = 0x01,
+      kStrongEncrypt = 0x17,
       kWzAES = 0x9901
     };
   }
@@ -157,8 +158,9 @@ namespace NFileHeader
     const int kNumUsedBits = 4;
     const int kUsedBitsMask = (1 << kNumUsedBits) - 1;
     
-    const int kEncryptedMask   = 1 << 0;
-    const int kDescriptorUsedMask   = 1 << 3;
+    const int kEncrypted = 1 << 0;
+    const int kDescriptorUsedMask = 1 << 3;
+    const int kStrongEncrypted = 1 << 6;
     
     const int kImplodeDictionarySizeMask = 1 << 1;
     const int kImplodeLiteralsOnMask     = 1 << 2;
@@ -173,8 +175,7 @@ namespace NFileHeader
   {
     enum EEnum
     {
-      kFAT      = 0,  // filesystem used by MS-DOS, OS/2, Win32 
-        // pkzip 2.50 (FAT / VFAT / FAT32 file systems)
+        kFAT      = 0,
         kAMIGA    = 1,
         kVMS      = 2,  // VAX/VMS
         kUnix     = 3,
@@ -191,11 +192,10 @@ namespace NFileHeader
         kVFAT     = 14, // filesystem used by Windows 95, NT
         kMVS      = 15,
         kBeOS     = 16, // hybrid POSIX/database filesystem
-        // BeBOX or PowerMac 
         kTandem   = 17,
-        kTHEOS    = 18
+        kOS400    = 18,
+        kOSX      = 19
     };
-    // const int kNumHostSystems = 19;
   }
   namespace NUnixAttribute
   {

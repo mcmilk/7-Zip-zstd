@@ -2,93 +2,56 @@
 
 #include "StdAfx.h"
 
-#include "windows.h"
-
 #include "MyAES.h"
-#include "Windows/Defs.h"
 
-#include "AES_CBC.h"
+namespace NCrypto {
 
-static const int kAESBlockSize = 16;
+struct CAesTabInit { CAesTabInit() { AesGenTables();} } g_AesTabInit;
 
-extern "C" 
+STDMETHODIMP CAesCbcEncoder::Init() { return S_OK; }
+
+STDMETHODIMP_(UInt32) CAesCbcEncoder::Filter(Byte *data, UInt32 size)
+{
+  return AesCbcEncode(&Aes, data, size);
+}
+
+STDMETHODIMP CAesCbcEncoder::SetKey(const Byte *data, UInt32 size)
 { 
-#include "aesopt.h" 
-}
-
-class CTabInit
-{
-public:
-  CTabInit() { gen_tabs();}
-} g_TabInit;
-
-STDMETHODIMP CAESFilter::Init() { return S_OK; }
-
-STDMETHODIMP_(UInt32) CAESFilter::Filter(Byte *data, UInt32 size)
-{
-  if (size > 0 && size < kAESBlockSize)
-    return kAESBlockSize;
-  UInt32 i;
-  for (i = 0; i + kAESBlockSize <= size; i += kAESBlockSize)
-  {
-    Byte outBlock[kAESBlockSize];
-    SubFilter(data + i, outBlock);
-    for (int j = 0; j < kAESBlockSize; j++)
-      data[i + j] = outBlock[j];
-  }
-  return i;
-}
-
-STDMETHODIMP CAESFilter::SetInitVector(const Byte *data, UInt32 size)
-{
-  if (size != 16)
+  if ((size & 0x7) != 0 || size < 16 || size > 32)
     return E_INVALIDARG;
-  AES.Init(data);
+  AesSetKeyEncode(&Aes.aes, data, size);
   return S_OK;
 }
 
-STDMETHODIMP CAESEncoder::SetKey(const Byte *data, UInt32 size)
-  { return (AES.enc_key(data, size) == aes_good) ? S_OK: E_FAIL; }
-
-void CAESEncoder::SubFilter(const Byte *inBlock, Byte *outBlock)
-  { AES.Encode(inBlock, outBlock); }
-
-STDMETHODIMP CAESDecoder::SetKey(const Byte *data, UInt32 size)
-  { return (AES.dec_key(data, size) == aes_good) ? S_OK: E_FAIL; }
-
-void CAESDecoder::SubFilter(const Byte *inBlock, Byte *outBlock)
-  { AES.Decode(inBlock, outBlock); }
-
-////////////////////////////
-// ECB mode
-
-STDMETHODIMP CAesEcbFilter::Init() { return S_OK; }
-STDMETHODIMP CAesEcbFilter::SetInitVector(const Byte * /* data */, UInt32 size)
-  { return (size == 0) ? S_OK: E_INVALIDARG; }
-
-STDMETHODIMP_(UInt32) CAesEcbFilter::Filter(Byte *data, UInt32 size)
+STDMETHODIMP CAesCbcEncoder::SetInitVector(const Byte *data, UInt32 size)
 {
-  if (size > 0 && size < kAESBlockSize)
-    return kAESBlockSize;
-  UInt32 i;
-  for (i = 0; i + kAESBlockSize <= size; i += kAESBlockSize)
-  {
-    Byte outBlock[kAESBlockSize];
-    SubFilter(data + i, outBlock);
-    for (int j = 0; j < kAESBlockSize; j++)
-      data[i + j] = outBlock[j];
-  }
-  return i;
+  if (size != AES_BLOCK_SIZE)
+    return E_INVALIDARG;
+  AesCbcInit(&Aes, data);
+  return S_OK;
 }
 
-STDMETHODIMP CAesEcbEncoder::SetKey(const Byte *data, UInt32 size)
-  { return (AES.enc_key(data, size) == aes_good) ? S_OK: E_FAIL; }
+STDMETHODIMP CAesCbcDecoder::Init() { return S_OK; }
 
-void CAesEcbEncoder::SubFilter(const Byte *inBlock, Byte *outBlock)
-  { AES.enc_blk(inBlock, outBlock); }
+STDMETHODIMP_(UInt32) CAesCbcDecoder::Filter(Byte *data, UInt32 size)
+{
+  return AesCbcDecode(&Aes, data, size);
+}
 
-STDMETHODIMP CAesEcbDecoder::SetKey(const Byte *data, UInt32 size)
-  { return (AES.dec_key(data, size) == aes_good) ? S_OK: E_FAIL; }
+STDMETHODIMP CAesCbcDecoder::SetKey(const Byte *data, UInt32 size)
+{ 
+  if ((size & 0x7) != 0 || size < 16 || size > 32)
+    return E_INVALIDARG;
+  AesSetKeyDecode(&Aes.aes, data, size);
+  return S_OK;
+}
 
-void CAesEcbDecoder::SubFilter(const Byte *inBlock, Byte *outBlock)
-  { AES.dec_blk(inBlock, outBlock); }
+STDMETHODIMP CAesCbcDecoder::SetInitVector(const Byte *data, UInt32 size)
+{
+  if (size != AES_BLOCK_SIZE)
+    return E_INVALIDARG;
+  AesCbcInit(&Aes, data);
+  return S_OK;
+}
+
+}

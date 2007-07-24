@@ -19,14 +19,9 @@ bool operator!=(const CVersion &v1, const CVersion &v2)
   return !(v1 == v2);
 } 
 
-bool CLocalItem::IsEncrypted() const
-{ return (Flags & NFileHeader::NFlags::kEncryptedMask) != 0; }
-bool CLocalItem::HasDescriptor() const
-  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
-
 bool CLocalItem::IsImplodeBigDictionary() const
 { 
-if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
+  if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
     throw 12312212;
   return (Flags & NFileHeader::NFlags::kImplodeDictionarySizeMask) != 0; 
 }
@@ -130,6 +125,6 @@ void CLocalItem::SetBitMask(int bitMask, bool enable)
 }
 
 void CLocalItem::SetEncrypted(bool encrypted)
-  { SetBitMask(NFileHeader::NFlags::kEncryptedMask, encrypted); }
+  { SetBitMask(NFileHeader::NFlags::kEncrypted, encrypted); }
 
 }}

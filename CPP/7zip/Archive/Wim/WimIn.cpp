@@ -11,6 +11,8 @@
 
 #include "../Common/OutStreamWithSha1.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "WimIn.h"
 
 namespace NArchive{
@@ -26,11 +28,7 @@ static HRESULT ReadBytes(ISequentialInStream *inStream, void *data, UInt32 size)
   return (realProcessedSize == size) ? S_OK : S_FALSE;
 }
 
-#if defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64) || defined(__i386__) || defined(__x86_64__)
-#define WIM_LITTLE_ENDIAN_UNALIGN
-#endif
-
-#ifdef WIM_LITTLE_ENDIAN_UNALIGN 
+#ifdef LITTLE_ENDIAN_UNALIGN
 static inline UInt16 GetUInt16FromMem(const Byte *p) { return *(const UInt16 *)p; }
 static inline UInt32 GetUInt32FromMem(const Byte *p) { return *(const UInt32 *)p; }
 static inline UInt64 GetUInt64FromMem(const Byte *p) { return *(const UInt64 *)p; }

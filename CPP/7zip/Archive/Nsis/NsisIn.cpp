@@ -57,9 +57,11 @@ void CInArchive::ReadBlockHeader(CBlockHeader &bh)
 
 static int CompareItems(void *const *p1, void *const *p2, void * /* param */)
 {
-  RINOZ(MyCompare(
-    (**(const CItem **)p1).Pos, 
-    (**(const CItem **)p2).Pos));
+  const CItem &i1 = **(CItem **)p1;
+  const CItem &i2 = **(CItem **)p2;
+  RINOZ(MyCompare(i1.Pos, i2.Pos));
+  RINOZ(i1.Prefix.Compare(i2.Prefix));
+  RINOZ(i1.Name.Compare(i2.Name));
   return 0;
 }
 
@@ -903,6 +905,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
   {
     Items.Sort(CompareItems, 0);
     int i;
+    if (IsSolid) 
     for (i = 0; i + 1 < Items.Size();)
     {
       if (Items[i].Pos == Items[i + 1].Pos)

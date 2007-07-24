@@ -114,11 +114,6 @@ PPMD_OPT_OBJS = \
 AES_OPT_OBJS = \
   $O\MyAES.obj \
 
-AES_ORIG_OBJS = \
-  $O\aescrypt.obj \
-  $O\aeskey.obj \
-  $O\aestab.obj \
-
 CRYPTO_HASH_OBJS = \
   $O\Sha256.obj \
 
@@ -128,6 +123,9 @@ C_OBJS = \
 
 C_BRANCH_OBJS = \
   $O\BranchX86.obj \
+
+C_CRYPTO = \
+  $O\Aes.obj \
 
 !include "../../Crc2.mak"
 
@@ -151,7 +149,6 @@ OBJS = \
   $(CRYPTO_HASH_OBJS) \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
-  $(AES_ORIG_OBJS) \
   $O\MyMessages.obj \
   $O\MessagesDialog.obj \
   $O\OverwriteDialog.obj \
@@ -160,6 +157,7 @@ OBJS = \
   $(C_OBJS) \
   $(C_BRANCH_OBJS) \
   $(CRC_OBJS) \
+  $(C_CRYPTO) \
   $O\resource.res
 
 
@@ -204,8 +202,6 @@ $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
 	$(COMPL)
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL)
-$(AES_ORIG_OBJS): ../../Crypto/AES/$(*B).c
-	$(COMPL_O1_W3)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
 	$(COMPL)
@@ -218,9 +214,10 @@ $O\PasswordDialog.obj: ../../FileManager/Resource/PasswordDialog/$(*B).cpp
 $O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)
 $(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)
+$(C_CRYPTO): ../../../../C/Crypto/$(*B).c
+	$(COMPL_O1)
 
 !include "../../Crc.mak"
-	

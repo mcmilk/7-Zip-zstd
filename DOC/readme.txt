@@ -1,4 +1,4 @@
-7-Zip 4.49 Sources
+7-Zip 4.50 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP/Vista. 
@@ -10,7 +10,7 @@ License Info
 ------------
 
 7-Zip is free software distributed under the GNU LGPL 
-(except for unRar code and AES code).
+(except for unRar code).
 read License.txt for more infomation about license.
 
 Notes about unRAR license:

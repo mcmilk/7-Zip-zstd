@@ -2067,97 +2067,6 @@ SOURCE=..\..\Crypto\Zip\ZipCrypto.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\aes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\AES_CBC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescpp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescrypt.c
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aeskey.c
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aesopt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aestab.c
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Crypto\AES\MyAES.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -2459,6 +2368,38 @@ SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
 SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
 # End Source File
 # End Group
+# End Group
+# Begin Group "C-Crypto"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.h
+# End Source File
 # End Group
 # Begin Source File
 

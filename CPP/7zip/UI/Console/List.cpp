@@ -335,6 +335,9 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
     else
     {
       UString s = ConvertPropertyToString(propVariant, fieldInfo.PropID);
+      s.Replace(wchar_t(0xA), L' '); 
+      s.Replace(wchar_t(0xD), L' '); 
+
       if (techMode)
         g_StdOut << s;
       else
@@ -457,7 +460,18 @@ HRESULT ListArchives(
     const UString defaultItemName = archiveLink.GetDefaultItemName();
 
     if (enableHeaders)
+    {
       g_StdOut << endl << kListing << archiveName << endl << endl;
+
+      NCOM::CPropVariant propVariant;
+      RINOK(archive->GetArchiveProperty(kpidComment, &propVariant));
+      if (propVariant.vt != VT_EMPTY)
+      {
+        UString s = ConvertPropertyToString(propVariant, kpidComment);
+        if (!s.IsEmpty())
+          g_StdOut << "Comment:\n" << s << "\n\n";
+      }
+    }
 
     if (enableHeaders && !techMode)
     {

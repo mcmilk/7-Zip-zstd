@@ -10,7 +10,7 @@ extern "C"
 #include "../../Common/Defs.h"
 #include "StreamUtils.h"
 
-static const int kBufferSize = 1 << 17;
+static const UInt32 kBufferSize = 1 << 17;
 
 CFilterCoder::CFilterCoder()
 { 

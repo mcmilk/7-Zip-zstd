@@ -111,28 +111,28 @@ ARCHIVE_INTERFACE(IArchiveOpenSetSubArchiveName, 0x50)
 };
 
 
+/*
+IInArchive::Extract:
+  indices must be sorted 
+  numItems = 0xFFFFFFFF means "all files"
+  testMode != 0 means "test files without writing to outStream"
+*/
+
+#define INTERFACE_IInArchive(x) \
+  STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback) x; \
+  STDMETHOD(Close)() x; \
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) x; \
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, Int32 testMode, IArchiveExtractCallback *extractCallback) x; \
+  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) x; \
+  STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties) x; \
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x;
+
 ARCHIVE_INTERFACE(IInArchive, 0x60)
 {
-  STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition,
-      IArchiveOpenCallback *openArchiveCallback) PURE;  
-  STDMETHOD(Close)() PURE;  
-  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) PURE;  
-  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, 
-      Int32 testMode, IArchiveExtractCallback *extractCallback) PURE;
-  // indices must be sorted 
-  // numItems = 0xFFFFFFFF means all files
-  // testMode != 0 means "test files operation"
-
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) PURE;
-
-  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) PURE;  
-  STDMETHOD(GetPropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
-
-  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties) PURE;  
-  STDMETHOD(GetArchivePropertyInfo)(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
+  INTERFACE_IInArchive(PURE)
 };
 
 
@@ -156,11 +156,13 @@ ARCHIVE_INTERFACE_SUB(IArchiveUpdateCallback2, IArchiveUpdateCallback, 0x82)
 };
 
 
+#define INTERFACE_IOutArchive(x) \
+  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems, IArchiveUpdateCallback *updateCallback) x; \
+  STDMETHOD(GetFileTimeType)(UInt32 *type) x;
+
 ARCHIVE_INTERFACE(IOutArchive, 0xA0)
 {
-  STDMETHOD(UpdateItems)(ISequentialOutStream *outStream, UInt32 numItems,
-      IArchiveUpdateCallback *updateCallback) PURE;
-  STDMETHOD(GetFileTimeType)(UInt32 *type) PURE;  
+  INTERFACE_IOutArchive(PURE)
 };
 
 

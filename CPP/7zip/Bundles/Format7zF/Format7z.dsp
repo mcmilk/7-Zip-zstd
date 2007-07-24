@@ -841,70 +841,6 @@ SOURCE=..\..\Compress\Lzh\LzhDecoder.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\aes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\AES_CBC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescpp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aescrypt.c
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aeskey.c
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aesopt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\aestab.c
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Crypto\AES\MyAES.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
@@ -1109,6 +1045,10 @@ SOURCE=..\..\Crypto\Zip\ZipCrypto.cpp
 
 SOURCE=..\..\Crypto\Zip\ZipCrypto.h
 # End Source File
+# End Group
+# Begin Group "ZipStrong"
+
+# PROP Default_Filter ""
 # End Group
 # End Group
 # Begin Group "7zip Common"
@@ -1479,6 +1419,30 @@ SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
 # End Source File
 # End Group
 # End Group
+# Begin Group "Crypto-C"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Crypto\Aes.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zCrc.c
@@ -1507,6 +1471,10 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.h
 # End Source File
 # Begin Source File
 

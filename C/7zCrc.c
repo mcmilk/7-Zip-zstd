@@ -5,7 +5,7 @@
 #define kCrcPoly 0xEDB88320
 UInt32 g_CrcTable[256];
 
-void MY_FAST_CALL CrcGenerateTable()
+void MY_FAST_CALL CrcGenerateTable(void)
 {
   UInt32 i;
   for (i = 0; i < 256; i++)

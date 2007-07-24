@@ -167,7 +167,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 
 HRESULT CEncoder::CreateFilter()
 {
-  _aesFilter = new CAES_CBC_Encoder;
+  _aesFilter = new CAesCbcEncoder;
   return S_OK;
 }
 
@@ -234,7 +234,7 @@ STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
 
 HRESULT CDecoder::CreateFilter()
 {
-  _aesFilter = new CAES_CBC_Decoder;
+  _aesFilter = new CAesCbcDecoder;
   return S_OK;
 }
 

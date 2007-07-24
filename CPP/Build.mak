@@ -39,9 +39,6 @@ CFLAGS_O1 = $(CFLAGS) -O1 -W3
 CFLAGS_O2 = $(CFLAGS) -O2 -W3
 !ENDIF
 
-CFLAGS_O1_W3 = $(CFLAGS) -O1 -W3
-CFLAGS_O2_W3 = $(CFLAGS) -O2 -W3
-
 LFLAGS = $(LFLAGS) -nologo -OPT:NOWIN98 -OPT:REF 
 
 !IFDEF DEF_FILE
@@ -52,8 +49,6 @@ PROGPATH = $O\$(PROG)
 
 COMPL_O1   = $(CPP) $(CFLAGS_O1) $**
 COMPL_O2   = $(CPP) $(CFLAGS_O2) $**
-COMPL_O1_W3   = $(CPP) $(CFLAGS_O1_W3) $**
-COMPL_O2_W3   = $(CPP) $(CFLAGS_O2_W3) $**
 COMPL_PCH  = $(CPP) $(CFLAGS_O1) -Yc"StdAfx.h" -Fp$O/a.pch $** 
 COMPL      = $(CPP) $(CFLAGS_O1) -Yu"StdAfx.h" -Fp$O/a.pch $**
 

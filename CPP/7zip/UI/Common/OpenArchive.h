@@ -14,6 +14,7 @@ HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, UString &result);
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &defaultName, UString &result);
 HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index, 
     const FILETIME &defaultFileTime, FILETIME &fileTime);
+HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result);
 HRESULT IsArchiveItemFolder(IInArchive *archive, UInt32 index, bool &result);
 HRESULT IsArchiveItemAnti(IInArchive *archive, UInt32 index, bool &result);
 

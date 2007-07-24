@@ -21,10 +21,14 @@ specified in password Based File Encryption Utility:
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 
+extern "C" 
+{ 
+#include "../../../../C/Crypto/Aes.h"
+}
+
 namespace NCrypto {
 namespace NWzAES {
 
-const unsigned int kAesBlockSize = 16;
 const unsigned int kSaltSizeMax = 16;
 const unsigned int kMacSize = 10;
 
@@ -56,17 +60,16 @@ class CBaseCoder:
 {
 protected:
   CKeyInfo _key;
-  Byte _counter[8];
-  Byte _buffer[kAesBlockSize];
+  UInt32 _counter[AES_BLOCK_SIZE / 4];
+  Byte _buffer[AES_BLOCK_SIZE];
   NSha1::CHmac _hmac;
   unsigned int _blockPos;
   Byte _pwdVerifFromArchive[kPwdVerifCodeSize];
 
   void EncryptData(Byte *data, UInt32 size);
 
-  CMyComPtr<ICompressFilter> _aesFilter;
+  CAes Aes;
 
-  HRESULT CreateFilters();
 public:
   STDMETHOD(Init)();
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size) = 0;
