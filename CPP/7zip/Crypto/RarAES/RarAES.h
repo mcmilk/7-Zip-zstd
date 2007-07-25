@@ -18,7 +18,7 @@ extern "C"
 namespace NCrypto {
 namespace NRar29 {
 
-const kRarAesKeySize = 16;
+const UInt32 kRarAesKeySize = 16;
 
 class CDecoder: 
   public ICompressFilter,

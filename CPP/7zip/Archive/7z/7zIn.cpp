@@ -188,7 +188,7 @@ UInt64 CInByte2::ReadUInt64()
 void CInByte2::ReadString(UString &s)
 {
   const Byte *buf = _buffer + _pos;
-  size_t rem = (_size - _pos) / 2;
+  size_t rem = (_size - _pos) / 2 * 2;
   {
     size_t i;
     for (i = 0; i < rem; i += 2)
