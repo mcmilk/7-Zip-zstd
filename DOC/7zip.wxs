@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "51" ?>
+<?define VerMinor = "52" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -214,7 +214,6 @@
           <Component Id="Docs" Guid="$(var.CompDocs)" DiskId="1" Win64="$(var.Is64)">
             <File Id="copying.txt" Name="copying.txt" />
             <File Id="descript.ion" Name="descript.ion" />
-            <File Id="file_id.diz" Name="file_id.diz" />
             <File Id="History.txt" Name="History.txt" />
             <File Id="License.txt" Name="License.txt" />
             <File Id="readme.txt" Name="readme.txt" />

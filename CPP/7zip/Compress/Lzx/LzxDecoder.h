@@ -33,14 +33,7 @@ public:
   void SetStream(ISequentialInStream *s) { m_Stream.SetStream(s); }
   void ReleaseStream() { m_Stream.ReleaseStream(); }
 
-  void InitNormal()
-  {
-    m_Stream.Init();
-    m_BitPos = kNumBigValueBits; 
-    Normalize();
-  }
-
-  void InitDirect()
+  void Init()
   {
     m_Stream.Init();
     m_BitPos = kNumBigValueBits; 
@@ -100,12 +93,6 @@ public:
 
   Byte DirectReadByte() { return m_Stream.ReadByte(); }
 
-  void Align(int alignPos)
-  {
-    if (((m_Stream.GetProcessedSize() + alignPos) & 1) != 0)
-      m_Stream.ReadByte();
-    Normalize();
-  }
 };
 }
 
@@ -137,7 +124,7 @@ class CDecoder :
 
   bool _keepHistory;
   int _remainLen;
-  int m_AlignPos;
+  bool _skipByte;
 
   bool _wimMode;
 
@@ -171,11 +158,7 @@ public:
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
   HRESULT SetParams(int numDictBits);
-  void SetKeepHistory(bool keepHistory, int alignPos)
-  {
-    _keepHistory = keepHistory;
-    m_AlignPos = alignPos;
-  }
+  void SetKeepHistory(bool keepHistory) {  _keepHistory = keepHistory; }
 };
 
 }}

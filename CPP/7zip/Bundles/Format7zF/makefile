@@ -108,6 +108,11 @@ CHM_OBJS = \
   $O\ChmIn.obj \
   $O\ChmRegister.obj \
 
+COM_OBJS = \
+  $O\ComHandler.obj \
+  $O\ComIn.obj \
+  $O\ComRegister.obj \
+
 CPIO_OBJS = \
   $O\CpioHandler.obj \
   $O\CpioHeader.obj \
@@ -339,6 +344,7 @@ OBJS = \
   $(BZ2_OBJS) \
   $(CAB_OBJS) \
   $(CHM_OBJS) \
+  $(COM_OBJS) \
   $(CPIO_OBJS) \
   $(DEB_OBJS) \
   $(GZ_OBJS) \
@@ -410,6 +416,8 @@ $(BZ2_OBJS): ../../Archive/BZip2/$(*B).cpp
 $(CAB_OBJS): ../../Archive/Cab/$(*B).cpp
 	$(COMPL)
 $(CHM_OBJS): ../../Archive/Chm/$(*B).cpp
+	$(COMPL)
+$(COM_OBJS): ../../Archive/Com/$(*B).cpp
 	$(COMPL)
 $(CPIO_OBJS): ../../Archive/Cpio/$(*B).cpp
 	$(COMPL)

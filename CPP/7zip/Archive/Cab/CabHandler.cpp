@@ -769,7 +769,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             res = deflateDecoder->Code(cabBlockInStream, outStream, NULL, &unpackRemain, NULL);
             break;
           case NHeader::NCompressionMethodMajor::kLZX:
-            lzxDecoderSpec->SetKeepHistory(keepHistory, cabBlockInStreamSpec->GetAlign());
+            lzxDecoderSpec->SetKeepHistory(keepHistory);
             res = lzxDecoder->Code(cabBlockInStream, outStream, NULL, &unpackRemain, NULL);
             break;
           case NHeader::NCompressionMethodMajor::kQuantum:

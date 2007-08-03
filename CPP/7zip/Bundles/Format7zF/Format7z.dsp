@@ -2373,6 +2373,30 @@ SOURCE=..\..\Archive\Wim\WimIn.h
 SOURCE=..\..\Archive\Wim\WimRegister.cpp
 # End Source File
 # End Group
+# Begin Group "Com"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Com\ComHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Com\ComHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Com\ComIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Com\ComIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Com\ComRegister.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Archive\IArchive.h

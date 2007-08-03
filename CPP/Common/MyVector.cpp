@@ -6,8 +6,7 @@
 
 #include "MyVector.h"
 
-CBaseRecordVector::~CBaseRecordVector()
-  { Free(); }
+CBaseRecordVector::~CBaseRecordVector() { Free(); }
 
 void CBaseRecordVector::Free()
 { 
@@ -17,16 +16,13 @@ void CBaseRecordVector::Free()
   _items = 0;
 }
 
-void CBaseRecordVector::Clear() 
-  { DeleteFrom(0); }
-void CBaseRecordVector::DeleteBack() 
-  { Delete(_size - 1); }
-void CBaseRecordVector::DeleteFrom(int index)
-  { Delete(index, _size - index); }
+void CBaseRecordVector::Clear() { DeleteFrom(0); }
+void CBaseRecordVector::DeleteBack() { Delete(_size - 1); }
+void CBaseRecordVector::DeleteFrom(int index) { Delete(index, _size - index); }
 
 void CBaseRecordVector::ReserveOnePosition()
 {
-  if(_size != _capacity)
+  if (_size != _capacity)
     return;
   int delta;
   if (_capacity > 64)
@@ -40,17 +36,16 @@ void CBaseRecordVector::ReserveOnePosition()
 
 void CBaseRecordVector::Reserve(int newCapacity)
 {
-  if(newCapacity <= _capacity)
+  if (newCapacity <= _capacity)
     return;
-  /*
-  #ifndef _DEBUG
-  static const unsigned int kMaxVectorSize = 0xF0000000;
-  if(newCapacity < _size || 
-      ((unsigned int )newCapacity * (unsigned int )_itemSize) > kMaxVectorSize) 
+  if ((unsigned)newCapacity >= ((unsigned)1 << (sizeof(unsigned) * 8 - 1)))
+    throw 1052353;
+  size_t newSize = (size_t)(unsigned)newCapacity * _itemSize;
+  if (newSize / _itemSize != (size_t)(unsigned)newCapacity)
     throw 1052354;
-  #endif
-  */
-  unsigned char *p = new unsigned char[newCapacity * _itemSize];
+  unsigned char *p = new unsigned char[newSize];
+  if (p == 0)
+    throw 1052355;
   int numRecordsToMove = _capacity;
   memmove(p, _items, _itemSize * numRecordsToMove);
   delete [](unsigned char *)_items;

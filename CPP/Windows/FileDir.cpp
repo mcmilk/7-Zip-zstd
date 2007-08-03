@@ -214,9 +214,12 @@ bool MyCreateDirectory(LPCTSTR pathName)
   if (::CreateDirectory(pathName, NULL))
     return true;
   #ifdef WIN_LONG_PATH2
-  UString longPath;
-  if (GetLongPath(pathName, longPath))
-    return BOOLToBool(::CreateDirectoryW(longPath, NULL));
+  if (::GetLastError() != ERROR_ALREADY_EXISTS)
+  {
+    UString longPath;
+    if (GetLongPath(pathName, longPath))
+      return BOOLToBool(::CreateDirectoryW(longPath, NULL));
+  }
   #endif
   return false;
 }
@@ -227,11 +230,14 @@ bool MyCreateDirectory(LPCWSTR pathName)
   if (!g_IsNT)
     return MyCreateDirectory(GetSysPath(pathName));
   if (::CreateDirectoryW(pathName, NULL))
-    return  true;
+    return true;
   #ifdef WIN_LONG_PATH
-  UString longPath;
-  if (GetLongPath(pathName, longPath))
-    return BOOLToBool(::CreateDirectoryW(longPath, NULL));
+  if (::GetLastError() != ERROR_ALREADY_EXISTS)
+  {
+    UString longPath;
+    if (GetLongPath(pathName, longPath))
+      return BOOLToBool(::CreateDirectoryW(longPath, NULL));
+  }
   #endif
   return false;
 }

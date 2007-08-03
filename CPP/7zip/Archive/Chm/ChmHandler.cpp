@@ -262,7 +262,7 @@ public:
     const CFilesDatabase *database,
     IArchiveExtractCallback *extractCallback,
     bool testMode);
-    HRESULT FlushCorrupted();
+  HRESULT FlushCorrupted(UInt64 maxSize);
 };
 
 void CChmFolderOutStream::Init(
@@ -356,7 +356,7 @@ HRESULT CChmFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *proce
     else
     {
       if (m_CurrentIndex >= m_NumFiles)
-        return E_FAIL;
+        return E_FAIL; 
       int fullIndex = m_StartIndex + m_CurrentIndex;
       m_RemainFileSize = m_Database->GetFileSize(fullIndex);
       UInt64 fileOffset = m_Database->GetFileOffset(fullIndex);
@@ -390,17 +390,21 @@ STDMETHODIMP CChmFolderOutStream::Write(const void *data, UInt32 size, UInt32 *p
   return Write2(data, size, processedSize, true);
 }
 
-HRESULT CChmFolderOutStream::FlushCorrupted()
+HRESULT CChmFolderOutStream::FlushCorrupted(UInt64 maxSize)
 {
   const UInt32 kBufferSize = (1 << 10);
   Byte buffer[kBufferSize];
   for (int i = 0; i < kBufferSize; i++)
     buffer[i] = 0;
-  while(m_PosInFolder < m_FolderSize)
+  if (maxSize > m_FolderSize)
+    maxSize = m_FolderSize;
+  while (m_PosInFolder < maxSize)
   {
-    UInt32 size = (UInt32)MyMin(m_FolderSize - m_PosInFolder, (UInt64)kBufferSize);
+    UInt32 size = (UInt32)MyMin(maxSize - m_PosInFolder, (UInt64)kBufferSize);
     UInt32 processedSizeLocal = 0;
     RINOK(Write2(buffer, size, &processedSizeLocal, false));
+    if (processedSizeLocal == 0)
+      return S_OK;
   }
   return S_OK;
 }
@@ -688,24 +692,28 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           UInt64 bCur = startBlock + b;
           if (bCur >= rt.ResetOffsets.Size())
             return E_FAIL;
-          UInt64 startOffset = rt.ResetOffsets[(int)startBlock];
           UInt64 offset = rt.ResetOffsets[(int)bCur];
           UInt64 compressedSize;
           rt.GetCompressedSizeOfBlock(bCur, compressedSize);
           UInt64 rem = finishPos - chmFolderOutStream->m_PosInSection;
           if (rem > rt.BlockSize)
             rem = rt.BlockSize;
-          // const UInt64 *offsets = (const UInt64 *)&rt.ResetOffsets.Front();
           RINOK(m_Stream->Seek(compressedPos + offset, STREAM_SEEK_SET, NULL));
           streamSpec->SetStream(m_Stream);
           streamSpec->Init(compressedSize);
-          lzxDecoderSpec->SetKeepHistory(b > 0, (int)((offset - startOffset) & 1));
-          RINOK(lzxDecoder->Code(inStream, outStream, NULL, &rem, NULL));
+          lzxDecoderSpec->SetKeepHistory(b > 0);
+          HRESULT res = lzxDecoder->Code(inStream, outStream, NULL, &rem, NULL);
+          if (res != S_OK)
+          {
+            if (res != S_FALSE)
+              return res;
+            throw 1;
+          }
         }
       }
       catch(...)
       {
-        RINOK(chmFolderOutStream->FlushCorrupted());
+        RINOK(chmFolderOutStream->FlushCorrupted(unPackSize));
       }
       currentTotalSize += folderSize;
       if (folderIndex == lastFolderIndex)

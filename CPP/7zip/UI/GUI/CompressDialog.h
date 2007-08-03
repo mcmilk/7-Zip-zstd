@@ -98,7 +98,6 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int FindRegistryFormat(const UString &name);
   int FindRegistryFormatAlways(const UString &name);
   
-  void OnChangeFormat();
   void CheckSFXNameChange();
   void SetArchiveName2(bool prevWasSFX);
   

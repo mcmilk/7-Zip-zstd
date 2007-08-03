@@ -101,7 +101,7 @@ HRESULT CArchiveExtractCallback::GetTime(int index, PROPID propID, FILETIME &fil
   if (prop.vt == VT_FILETIME)
   {
     filetime = prop.filetime;
-    filetimeIsDefined = true;
+    filetimeIsDefined = (filetime.dwHighDateTime != 0 || filetime.dwLowDateTime != 0);
   }
   else if (prop.vt != VT_EMPTY)
     return E_FAIL;

@@ -309,6 +309,7 @@ bool CCompressDialog::OnInit()
   OnButtonSFX();
 
   SetEncryptionMethod();
+  SetMemoryUsage();
   return CModalDialog::OnInit();
 }
 
@@ -350,6 +351,7 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDC_COMPRESS_SFX:
     {
       OnButtonSFX();
+      SetMemoryUsage();
       return true;
     }
     case IDC_COMPRESS_CHECK_SHOW_PASSWORD:
@@ -604,7 +606,16 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
     {
       case IDC_COMPRESS_COMBO_FORMAT:
       {
-        OnChangeFormat();
+        bool isSFX = IsSFX();
+        SaveOptionsInMem();
+        SetLevel();
+        SetSolidBlockSize();
+        SetNumThreads();
+        SetParams();
+        CheckControlsEnable();
+        SetArchiveName2(isSFX);
+        SetEncryptionMethod();
+        SetMemoryUsage();
         return true;
       }
       case IDC_COMPRESS_COMBO_LEVEL:
@@ -617,6 +628,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
+        SetMemoryUsage();
         return true;
       }
       case IDC_COMPRESS_COMBO_METHOD:
@@ -626,6 +638,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
+        SetMemoryUsage();
         return true;
       }
       case IDC_COMPRESS_COMBO_DICTIONARY:
@@ -671,19 +684,6 @@ void CCompressDialog::SetArchiveName2(bool prevWasSFX)
         fileName = fileName.Left(fileName.Length() - prevExtensionLen);
   }
   SetArchiveName(fileName);
-}
-
-void CCompressDialog::OnChangeFormat() 
-{
-  bool isSFX = IsSFX();
-  SaveOptionsInMem();
-  SetLevel();
-  SetSolidBlockSize();
-  SetNumThreads();
-  SetParams();
-  CheckControlsEnable();
-  SetArchiveName2(isSFX);
-  SetEncryptionMethod();
 }
 
 // if type.KeepName then use OriginalFileName
@@ -939,10 +939,7 @@ void CCompressDialog::SetDictionary()
   int methodID = GetMethodID();
   UInt32 level = GetLevel2();
   if (methodID < 0)
-  {
-    SetMemoryUsage();
     return;
-  }
   const UInt64 maxRamSize = GetMaxRamSizeForProgram();
   switch (methodID)
   {
@@ -1042,7 +1039,6 @@ void CCompressDialog::SetDictionary()
       break;
     }
   }
-  SetMemoryUsage();
 }
 
 UInt32 CCompressDialog::GetComboValue(NWindows::NControl::CComboBox &c, int defMax)
@@ -1084,10 +1080,7 @@ void CCompressDialog::SetOrder()
   int methodID = GetMethodID();
   UInt32 level = GetLevel2();
   if (methodID < 0)
-  {
-    SetMemoryUsage();
     return;
-  }
   switch (methodID)
   {
     case kLZMA:
@@ -1161,7 +1154,6 @@ void CCompressDialog::SetOrder()
       break;
     }
   }
-  SetMemoryUsage();
 }
 
 bool CCompressDialog::GetOrderMode()

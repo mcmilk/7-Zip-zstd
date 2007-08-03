@@ -123,7 +123,7 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
     if (outProcessed + outSize > resource.UnpackSize)
       outSize = (UInt32)(resource.UnpackSize - outProcessed);
     UInt64 outSize64 = outSize;
-    lzxDecoderSpec->SetKeepHistory(false, 0);
+    lzxDecoderSpec->SetKeepHistory(false);
     ICompressCoder *coder = (inSize == outSize) ? copyCoder : lzxDecoder;
     RINOK(coder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
     outProcessed += outSize;

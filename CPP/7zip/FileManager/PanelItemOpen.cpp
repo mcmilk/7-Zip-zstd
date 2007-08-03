@@ -143,15 +143,11 @@ HRESULT CPanel::OpenParentArchiveFolder()
 
 static const wchar_t *kStartExtensions[] = 
 {
-  L"exe",
-  L"bat",
-  L"com",
+  L"exe", L"bat", L"com",
   L"chm",
-  L"msi",
-  L"doc",
-  L"odt",
-  L"pdf",
-  L"xls"
+  L"msi", L"doc", L"xls", L"ppt", 
+  L"odt", L"ods",
+  L"pdf"
 };
 
 static bool DoItemAlwaysStart(const UString &name)

@@ -1,4 +1,4 @@
-// LzxDecoder.cpp
+	// LzxDecoder.cpp
 
 #include "StdAfx.h"
 
@@ -18,7 +18,7 @@ const int kLenIdNeedInit = -2;
 
 CDecoder::CDecoder(bool wimMode):
   _keepHistory(false),
-  m_AlignPos(0),
+  _skipByte(false),
   _wimMode(wimMode)
 {
   m_x86ConvertOutStreamSpec = new Cx86ConvertOutStream;
@@ -94,6 +94,10 @@ bool CDecoder::ReadTables(void)
 {
   Byte newLevels[kMaxTableSize];
   {
+    if (_skipByte)
+      m_InBitStream.DirectReadByte();
+    m_InBitStream.Normalize();
+
     int blockType = (int)ReadBits(kNumBlockTypeBits);
     if (blockType > kBlockTypeUncompressed)
       return false;
@@ -106,6 +110,9 @@ bool CDecoder::ReadTables(void)
       m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
 
     m_IsUncompressedBlock = (blockType == kBlockTypeUncompressed);
+
+    _skipByte = (m_IsUncompressedBlock && ((m_UnCompressedBlockSize & 1) != 0));
+
     if (m_IsUncompressedBlock)
     {
       ReadBits(16 - m_InBitStream.GetBitPosition());
@@ -170,12 +177,12 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
   if (_remainLen == kLenIdNeedInit)
   {
     _remainLen = 0;
-    if (_keepHistory && m_IsUncompressedBlock && m_UnCompressedBlockSize > 0)
-      m_InBitStream.InitDirect();
-    else
-      m_InBitStream.InitNormal();
+    m_InBitStream.Init();
+    if (!_keepHistory || !m_IsUncompressedBlock)
+      m_InBitStream.Normalize();
     if (!_keepHistory)
     {
+      _skipByte = false;
       m_UnCompressedBlockSize = 0;
       ClearPrevLevels();
       UInt32 i86TranslationSize = 12000000;
@@ -196,9 +203,6 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
     }
   }
 
-  if (curSize == 0)
-    return S_OK;
-
   while(_remainLen > 0 && curSize > 0)
   {
     m_OutWindowStream.PutByte(m_OutWindowStream.GetByte(m_RepDistances[0]));
@@ -209,8 +213,8 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
   while(curSize > 0)
   {
     if (m_UnCompressedBlockSize == 0)
-     if (!ReadTables())
-       return S_FALSE;
+      if (!ReadTables())
+        return S_FALSE;
     UInt32 next = (Int32)MyMin(m_UnCompressedBlockSize, curSize);
     curSize -= next;
     m_UnCompressedBlockSize -= next;
@@ -220,11 +224,6 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
       {
         m_OutWindowStream.PutByte(m_InBitStream.DirectReadByte());
         next--;
-      }
-      if (m_UnCompressedBlockSize == 0)
-      {
-        m_InBitStream.Align(m_AlignPos);
-        // m_AlignPos = 0;
       }
     }
     else while(next > 0)

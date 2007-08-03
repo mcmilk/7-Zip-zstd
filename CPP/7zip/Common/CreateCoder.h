@@ -30,7 +30,7 @@ HRESULT LoadExternalCodecs(ICompressCodecsInfo *codecsInfo, CObjectVector<CCodec
 #define DECL_ISetCompressCodecsInfo STDMETHOD(SetCompressCodecsInfo)(ICompressCodecsInfo *compressCodecsInfo);
 #define IMPL_ISetCompressCodecsInfo2(x) \
 STDMETHODIMP x::SetCompressCodecsInfo(ICompressCodecsInfo *compressCodecsInfo) { \
-  _codecsInfo = compressCodecsInfo;  return LoadExternalCodecs(_codecsInfo, _externalCodecs); }
+  COM_TRY_BEGIN _codecsInfo = compressCodecsInfo;  return LoadExternalCodecs(_codecsInfo, _externalCodecs); COM_TRY_END }
 #define IMPL_ISetCompressCodecsInfo IMPL_ISetCompressCodecsInfo2(CHandler)
 
 #define EXTERNAL_CODECS_VARS2 _codecsInfo, &_externalCodecs

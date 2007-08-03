@@ -70,12 +70,9 @@ static bool IsSupportedName(const UString &name)
 
 static UString GetCorrectFileName(const UString &path)
 {
-  UString result = path;
-  UString test = path;
-  // test.Trim();
-  if (test == L"..")
-    result.Replace(L"..", L"");
-  return ReplaceIncorrectChars(result);
+  if (path == L".." || path == L".")
+    return UString();
+  return ReplaceIncorrectChars(path);
 }
 
 void MakeCorrectPath(UStringVector &pathParts)
