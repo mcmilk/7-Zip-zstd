@@ -20,9 +20,8 @@
 #include "Windows/DLL.h"
 #include "Windows/Registry.h"
 
-#include "../../IPassword.h"
-#include "../../FileManager/LangUtils.h"
-#include "../Agent/Agent.h"
+#include "../FileManager/LangUtils.h"
+#include "../FileManager/IFolder.h"
 
 #include "ContextMenu.h"
 #include "OptionsDialog.h"
@@ -50,7 +49,6 @@ class CShellExtClassFactory:
 public:
   CShellExtClassFactory() { InterlockedIncrement(&g_DllRefCount); }
   ~CShellExtClassFactory() { InterlockedDecrement(&g_DllRefCount); }
-
 
   MY_UNKNOWN_IMP1_MT(IClassFactory)
   
@@ -258,16 +256,6 @@ STDAPI CreateObject(
   LoadLangOneTime();
   COM_TRY_BEGIN
   *outObject = 0;
-  if (*classID == CLSID_CAgentArchiveHandler)
-  {
-    if (*interfaceID == IID_IFolderManager)
-    {
-      CMyComPtr<IFolderManager> manager = new CArchiveFolderManager;
-      *outObject = manager.Detach();
-      return S_OK;
-    }
-    return E_NOINTERFACE;
-  }
   if (*classID == CLSID_CSevenZipOptions)
   {
     if (*interfaceID == IID_IPluginOptions)
@@ -291,13 +279,6 @@ STDAPI GetPluginProperty(PROPID propID, PROPVARIANT *value)
       if ((value->bstrVal = ::SysAllocString(L"7-Zip")) != 0)
         value->vt = VT_BSTR;
       return S_OK;
-    case NPlugin::kClassID:
-    {
-      if ((value->bstrVal = ::SysAllocStringByteLen(
-          (const char *)&CLSID_CAgentArchiveHandler, sizeof(GUID))) != 0)
-        value->vt = VT_BSTR;
-      return S_OK;
-    }
     case NPlugin::kOptionsClassID:
     {
       if ((value->bstrVal = ::SysAllocStringByteLen(
@@ -305,11 +286,6 @@ STDAPI GetPluginProperty(PROPID propID, PROPVARIANT *value)
         value->vt = VT_BSTR;
       return S_OK;
     }
-    /*
-    case NArchive::kType:
-      propVariant = UINT32(0);
-      break;
-    */
   }
   return S_OK;
 }

@@ -41,7 +41,12 @@
 #define IDS_PASSWORD_PASSWORDS_DO_NOT_MATCH  111
 #define IDS_PASSWORD_IS_TOO_LONG             112         
 
-#define IDD_DIALOG_EXTRACT              137
+#define IDS_FILES_COLON                 2274
+#define IDS_FOLDERS_COLON               2275
+#define IDS_SIZE_COLON                  2276
+#define IDS_COMPRESSED_COLON            2277
+#define IDS_ARCHIVES_COLON              2278
+
 #define IDB_DELETE                      149
 #define IDC_LIST1                       1067
 #define IDC_COLUMN_EDIT_WIDTH           1068

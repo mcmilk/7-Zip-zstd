@@ -57,9 +57,11 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
       folderItem->BindToParentFolder(&newFolder);  
       if (newFolder == NULL)
         break;
-      CMyComBSTR name;
-      folderItem->GetName(&name);
-      pathParts.Insert(0, (const wchar_t *)name);
+
+      NCOM::CPropVariant prop;
+      if (folderItem->GetFolderProperty(kpidName, &prop) == S_OK)
+        if (prop.vt == VT_BSTR)
+          pathParts.Insert(0, (const wchar_t *)prop.bstrVal);
       folderItem = newFolder;
     }
 
@@ -218,9 +220,17 @@ STDMETHODIMP CAgent::DoOperation(
   
   CObjectVector<CUpdatePair2> updatePairs2;
   UpdateProduce(updatePairs, actionSet, updatePairs2);
+
+  UInt32 numFiles = 0;
+  for (i = 0; i < updatePairs2.Size(); i++)
+    if (updatePairs2[i].NewData)
+      numFiles++;
+  
+  RINOK(updateCallback100->SetNumFiles(numFiles));
+
   
   CUpdateCallbackAgent updateCallbackAgent;
-  updateCallbackAgent.Callback = updateCallback100;
+  updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
 
@@ -362,7 +372,7 @@ STDMETHODIMP CAgent::DeleteItems(
   if (!CanUpdate())
     return E_NOTIMPL;
   CUpdateCallbackAgent updateCallbackAgent;
-  updateCallbackAgent.Callback = updateCallback100;
+  updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
@@ -402,7 +412,7 @@ HRESULT CAgent::CreateFolder(
   if (!CanUpdate())
     return E_NOTIMPL;
   CUpdateCallbackAgent updateCallbackAgent;
-  updateCallbackAgent.Callback = updateCallback100;
+  updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
 
@@ -464,7 +474,7 @@ HRESULT CAgent::RenameItem(
   if (numItems != 1)
     return E_INVALIDARG;
   CUpdateCallbackAgent updateCallbackAgent;
-  updateCallbackAgent.Callback = updateCallback100;
+  updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   

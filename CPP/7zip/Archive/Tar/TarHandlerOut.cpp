@@ -53,42 +53,42 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       bool isDirectoryStatusDefined;
       UInt32 attributes;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidAttributes, &prop));
+        if (prop.vt == VT_EMPTY)
           attributes = 0;
-        else if (propVariant.vt != VT_UI4)
+        else if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         else
-          attributes = propVariant.ulVal;
+          attributes = prop.ulVal;
       }
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
-        if (propVariant.vt != VT_FILETIME)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &prop));
+        if (prop.vt != VT_FILETIME)
           return E_INVALIDARG;
-        utcTime = propVariant.filetime;
+        utcTime = prop.filetime;
       }
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidPath, &prop));
+        if (prop.vt == VT_EMPTY)
           name.Empty();
-        else if (propVariant.vt != VT_BSTR)
+        else if (prop.vt != VT_BSTR)
           return E_INVALIDARG;
         else
-          name = propVariant.bstrVal;
+          name = prop.bstrVal;
       }
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &prop));
+        if (prop.vt == VT_EMPTY)
           isDirectoryStatusDefined = false;
-        else if (propVariant.vt != VT_BOOL)
+        else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
         {
-          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          updateItem.IsDirectory = (prop.boolVal != VARIANT_FALSE);
           isDirectoryStatusDefined = true;
         }
       }
@@ -109,11 +109,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       UInt64 size;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
-        if (propVariant.vt != VT_UI8)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidSize, &prop));
+        if (prop.vt != VT_UI8)
           return E_INVALIDARG;
-        size = propVariant.uhVal.QuadPart;
+        size = prop.uhVal.QuadPart;
       }
       updateItem.Size = size;
     }

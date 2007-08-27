@@ -26,51 +26,16 @@ using namespace NTime;
 namespace NArchive {
 namespace NDeb {
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
-  // { NULL, kpidIsFolder, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8},
   { NULL, kpidLastWriteTime, VT_FILETIME}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
-}
-
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::Open(IInStream *stream, 
     const UInt64 * /* maxCheckStartPosition */,
@@ -92,17 +57,17 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
     for (;;)
     {
-      CItemEx itemInfo;
+      CItemEx item;
       bool filled;
-      HRESULT result = archive.GetNextItem(filled, itemInfo);
+      HRESULT result = archive.GetNextItem(filled, item);
       if (result == S_FALSE)
         return S_FALSE;
       if (result != S_OK)
         return S_FALSE;
       if (!filled)
         break;
-      _items.Add(itemInfo);
-      archive.SkeepData(itemInfo.Size);
+      _items.Add(item);
+      archive.SkeepData(item.Size);
       if (openArchiveCallback != NULL)
       {
         UInt64 numFiles = _items.Size();
@@ -131,21 +96,21 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   const CItemEx &item = _items[index];
 
   switch(propID)
   {
     case kpidPath:
-      propVariant = (const wchar_t *)NItemName::GetOSName2(
+      prop = (const wchar_t *)NItemName::GetOSName2(
           MultiByteToUnicodeString(item.Name, CP_OEMCP));
       break;
     case kpidIsFolder:
-      propVariant = false;
+      prop = false;
       break;
     case kpidSize:
     case kpidPackedSize:
-      propVariant = item.Size;
+      prop = item.Size;
       break;
     case kpidLastWriteTime:
     {
@@ -157,11 +122,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         utcFileTime.dwLowDateTime = 0;
         utcFileTime.dwHighDateTime = 0;
       }
-      propVariant = utcFileTime;
+      prop = utcFileTime;
       break;
     }
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -170,83 +135,65 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
+  bool testMode = (_aTestMode != 0);
   bool allFilesMode = (numItems == UInt32(-1));
   if (allFilesMode)
     numItems = _items.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
-  bool testMode = (_aTestMode != 0);
   UInt64 totalSize = 0;
   UInt32 i;
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
     totalSize += _items[allFilesMode ? i : indices[i]].Size;
   extractCallback->SetTotal(totalSize);
 
   UInt64 currentTotalSize = 0;
   UInt64 currentItemSize;
   
-  CMyComPtr<ICompressCoder> copyCoder;
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
-  for(i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
+  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
+  CMyComPtr<ISequentialInStream> inStream(streamSpec);
+  streamSpec->SetStream(_inStream);
+
+  for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
-    RINOK(extractCallback->SetCompleted(&currentTotalSize));
+    lps->InSize = lps->OutSize = currentTotalSize;
+    RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode;
-    askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+    Int32 askMode = testMode ? 
+        NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
-    const CItemEx &itemInfo = _items[index];
-    
+    const CItemEx &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-
-    currentItemSize = itemInfo.Size;
-
-    if(!testMode && (!realOutStream))
+    currentItemSize = item.Size;
+    
+    
+    
+    
+    
+    
+    if (!testMode && (!realOutStream))
+      continue;
+    RINOK(extractCallback->PrepareOperation(askMode));
+    if (testMode)
     {
+      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
       continue;
     }
-    RINOK(extractCallback->PrepareOperation(askMode));
-    {
-      if (testMode)
-      {
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-        continue;
-      }
-
-      RINOK(_inStream->Seek(itemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));
-      CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-      CMyComPtr<ISequentialInStream> inStream(streamSpec);
-      streamSpec->SetStream(_inStream);
-      streamSpec->Init(itemInfo.Size);
-
-      CLocalProgress *localProgressSpec = new CLocalProgress;
-      CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-      localProgressSpec->Init(extractCallback, false);
-
-      CLocalCompressProgressInfo *localCompressProgressSpec = 
-          new CLocalCompressProgressInfo;
-      CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-      localCompressProgressSpec->Init(progress, 
-          &currentTotalSize, &currentTotalSize);
-
-      if(copyCoder == NULL)
-      {
-        copyCoder = new NCompress::CCopyCoder;
-      }
-      try
-      {
-        RINOK(copyCoder->Code(inStream, realOutStream,
-            NULL, NULL, compressProgress));
-      }
-      catch(...)
-      {
-        realOutStream.Release();
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-        continue;
-      }
-      realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-    }
+    RINOK(_inStream->Seek(item.GetDataPosition(), STREAM_SEEK_SET, NULL));
+    streamSpec->Init(item.Size);
+    RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+    realOutStream.Release();
+    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == item.Size) ? 
+        NArchive::NExtract::NOperationResult::kOK:
+        NArchive::NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END

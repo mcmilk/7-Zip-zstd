@@ -30,6 +30,14 @@ void CCoderMixerMT::ReInit()
     _coders[i].ReInit();
 }
 
+HRESULT CCoderMixerMT::ReturnIfError(HRESULT code)
+{
+  for (int i = 0; i < _coders.Size(); i++)
+    if (_coders[i].Result == code)
+      return code;
+  return S_OK;
+}
+
 STDMETHODIMP CCoderMixerMT::Code(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, 
     const UInt64 * /* inSize */, const UInt64 * /* outSize */,
@@ -67,18 +75,10 @@ STDMETHODIMP CCoderMixerMT::Code(ISequentialInStream *inStream,
     if (i != _progressCoderIndex)
       _coders[i].WaitFinish();
 
-  for (i = 0; i < _coders.Size(); i++)
-  {
-    HRESULT result = _coders[i].Result;
-    if (result == E_ABORT)
-      return result;
-  }
-  for (i = 0; i < _coders.Size(); i++)
-  {
-    HRESULT result = _coders[i].Result;
-    if (result == S_FALSE)
-      return result;
-  }
+  RINOK(ReturnIfError(E_ABORT));
+  RINOK(ReturnIfError(E_OUTOFMEMORY));
+  RINOK(ReturnIfError(S_FALSE));
+
   for (i = 0; i < _coders.Size(); i++)
   {
     HRESULT result = _coders[i].Result;

@@ -3,7 +3,7 @@
 #ifndef __SEVENZIP_OPTIONSDIALOG_H
 #define __SEVENZIP_OPTIONSDIALOG_H
 
-#include "../../FileManager/PluginInterface.h"
+#include "../FileManager/PluginInterface.h"
 #include "Common/MyCom.h"
 
 // {23170F69-40C1-278D-1000-000100020000}

@@ -14,14 +14,14 @@
 #include "Windows/FileFind.h"
 #include "Windows/Thread.h"
 
-#include "../../FileManager/FormatUtils.h"
-#include "../../FileManager/ExtractCallback.h"
-#include "../../FileManager/StringUtils.h"
+#include "../FileManager/FormatUtils.h"
+#include "../FileManager/ExtractCallback.h"
+#include "../FileManager/StringUtils.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../Common/WorkDir.h"
 #include "../Explorer/MyMessages.h"
-#include "../Resource/Extract/resource.h"
+#include "ExtractRes.h"
 
 #include "OpenCallbackGUI.h"
 #include "CompressDialog.h"

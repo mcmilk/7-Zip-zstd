@@ -42,12 +42,7 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
-enum // PropID
-{
-  kpidUnPackVersion = kpidUserDefined
-};
-
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -58,7 +53,6 @@ STATPROPSTG kProperties[] =
   { NULL, kpidLastAccessTime, VT_FILETIME},
   { NULL, kpidAttributes, VT_UI4},
 
-
   { NULL, kpidEncrypted, VT_BOOL},
   { NULL, kpidSolid, VT_BOOL},
   { NULL, kpidCommented, VT_BOOL},
@@ -66,16 +60,22 @@ STATPROPSTG kProperties[] =
   { NULL, kpidSplitAfter, VT_BOOL},
   { NULL, kpidCRC, VT_UI4},
   { NULL, kpidHostOS, VT_BSTR},
-  { NULL, kpidMethod, VT_BSTR}
-  // { NULL, kpidDictionarySize, VT_UI4},
-  // { L"UnPack Version", kpidUnPackVersion, VT_UI1}
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidUnpackVer, VT_UI1}
 };
 
-STATPROPSTG kArchiveProperties[] = 
+STATPROPSTG kArcProps[] = 
 {
   { NULL, kpidSolid, VT_BOOL},
-  { NULL, kpidCommented, VT_BOOL},
+  { NULL, kpidNumBlocks, VT_UI4},
+  { NULL, kpidEncrypted, VT_BOOL},
+  { NULL, kpidIsVolume, VT_BOOL},
+  { NULL, kpidNumVolumes, VT_UI4},
+  // { NULL, kpidCommented, VT_BOOL}
 };
+
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
 
 UInt64 CHandler::GetPackSize(int refIndex) const
 {
@@ -88,56 +88,29 @@ UInt64 CHandler::GetPackSize(int refIndex) const
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  // COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
-    case kpidSolid:
-      propVariant = _archiveInfo.IsSolid();
+    case kpidSolid: prop = _archiveInfo.IsSolid(); break;
+    case kpidEncrypted: prop = _archiveInfo.IsEncrypted(); break;
+    case kpidIsVolume: prop = _archiveInfo.IsVolume(); break;
+    case kpidNumBlocks:
+    {
+      UInt32 numBlocks = 0;
+      for (int i = 0; i < _refItems.Size(); i++)
+        if (!IsSolid(i))
+          numBlocks++;
+      prop = (UInt32)numBlocks; 
       break;
-    case kpidCommented:
-      propVariant = _archiveInfo.IsCommented();
-      break;
+    }
+    case kpidNumVolumes: prop = (UInt32)(_archives.Size() - 1);
+
+    // case kpidCommented: prop = _archiveInfo.IsCommented(); break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kArchiveProperties) / sizeof(kArchiveProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kArchiveProperties) / sizeof(kArchiveProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kArchiveProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
+  // COM_TRY_END
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
@@ -160,10 +133,23 @@ static bool RarTimeToFileTime(const CRarTime &rarTime, FILETIME &result)
   return true;
 }
 
+static void RarTimeToProp(const CRarTime &rarTime, NWindows::NCOM::CPropVariant &prop)
+{
+  FILETIME localFileTime, utcFileTime;
+  if (RarTimeToFileTime(rarTime, localFileTime))
+  {
+    if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+      utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+  }
+  else
+    utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+  prop = utcFileTime;
+}
+
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   const CRefItem &refItem = _refItems[index];
   const CItemEx &item = _items[refItem.ItemIndex];
   switch(propID)
@@ -175,102 +161,28 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         u = item.UnicodeName;
       else
         u = MultiByteToUnicodeString(item.Name, CP_OEMCP);
-      propVariant = (const wchar_t *)NItemName::WinNameToOSName(u);
+      prop = (const wchar_t *)NItemName::WinNameToOSName(u);
       break;
     }
-    case kpidIsFolder:
-      propVariant = item.IsDirectory();
-      break;
-    case kpidSize:
-      propVariant = item.UnPackSize;
-      break;
-    case kpidPackedSize:
-    {
-      propVariant = GetPackSize(index);
-      break;
-    }
-    case kpidLastWriteTime:
-    {
-      FILETIME localFileTime, utcFileTime;
-      if (RarTimeToFileTime(item.LastWriteTime, localFileTime))
-      {
-        if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
-          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      }
-      else
-        utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      propVariant = utcFileTime;
-      break;
-    }
-    case kpidCreationTime:
-    {
-      if (item.IsCreationTimeDefined)
-      {
-        FILETIME localFileTime, utcFileTime;
-        if (RarTimeToFileTime(item.CreationTime, localFileTime))
-        {
-          if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
-            utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-        }
-        else
-          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-        propVariant = utcFileTime;
-      }
-      break;
-    }
-    case kpidLastAccessTime:
-    {
-      if (item.IsLastAccessTimeDefined)
-      {
-        FILETIME localFileTime, utcFileTime;
-        if (RarTimeToFileTime(item.LastAccessTime, localFileTime))
-        {
-          if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
-            utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-        }
-        else
-          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-        propVariant = utcFileTime;
-      }
-      break;
-    }
-    case kpidAttributes:
-      propVariant = item.GetWinAttributes();
-      break;
-    case kpidEncrypted:
-      propVariant = item.IsEncrypted();
-      break;
-    case kpidSolid:
-      propVariant = IsSolid(index);
-      break;
-    case kpidCommented:
-      propVariant = item.IsCommented();
-      break;
-    case kpidSplitBefore:
-      propVariant = item.IsSplitBefore();
-      break;
-    case kpidSplitAfter:
-      propVariant = _items[refItem.ItemIndex + refItem.NumItems - 1].IsSplitAfter();
-      break;
-    /*
-    case kpidDictionarySize:
-      if (!item.IsDirectory())
-        propVariant = UInt32(0x10000 << item.GetDictSize());
-      break;
-    */
+    case kpidIsFolder: prop = item.IsDirectory(); break;
+    case kpidSize: prop = item.UnPackSize; break;
+    case kpidPackedSize: prop = GetPackSize(index); break;
+    case kpidLastWriteTime: RarTimeToProp(item.LastWriteTime, prop);
+    case kpidCreationTime: if (item.IsCreationTimeDefined) RarTimeToProp(item.CreationTime, prop); break;
+    case kpidLastAccessTime: if (item.IsLastAccessTimeDefined) RarTimeToProp(item.LastAccessTime, prop); break;
+    case kpidAttributes: prop = item.GetWinAttributes(); break;
+    case kpidEncrypted: prop = item.IsEncrypted(); break;
+    case kpidSolid: prop = IsSolid(index); break;
+    case kpidCommented: prop = item.IsCommented(); break;
+    case kpidSplitBefore: prop = item.IsSplitBefore(); break;
+    case kpidSplitAfter: prop = _items[refItem.ItemIndex + refItem.NumItems - 1].IsSplitAfter(); break;
     case kpidCRC:
     {
-      const CItemEx &lastItem = 
-          _items[refItem.ItemIndex + refItem.NumItems - 1];
-      if (lastItem.IsSplitAfter())
-        propVariant = item.FileCRC;
-      else
-        propVariant = lastItem.FileCRC;
+      const CItemEx &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
+      prop = ((lastItem.IsSplitAfter()) ? item.FileCRC : lastItem.FileCRC);
       break;
     }
-    case kpidUnPackVersion:
-      propVariant = item.UnPackVersion;
-      break;
+    case kpidUnpackVer: prop = item.UnPackVersion; break;
     case kpidMethod:
     {
       UString method;
@@ -293,15 +205,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         ConvertUInt64ToString(item.Method, temp);
         method += temp;
       }
-      propVariant = method;
+      prop = method;
       break;
     }
-    case kpidHostOS:
-      propVariant = (item.HostOS < kNumHostOSes) ?
-        (kHostOS[item.HostOS]) : kUnknownOS;
-      break;
+    case kpidHostOS: prop = (item.HostOS < kNumHostOSes) ? (kHostOS[item.HostOS]) : kUnknownOS; break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -325,8 +234,12 @@ public:
     if (dotPos >= 0)
     {
       UString ext = name.Mid(dotPos + 1);
-      if (ext.CompareNoCase(L"RAR")==0 || 
-        ext.CompareNoCase(L"EXE") == 0)
+      if (ext.CompareNoCase(L"rar") == 0)
+      {
+        _afterPart = name.Mid(dotPos);
+        basePart = name.Left(dotPos);
+      }
+      else if (ext.CompareNoCase(L"exe") == 0)
       {
         _afterPart = L".rar";
         basePart = name.Left(dotPos);
@@ -338,11 +251,11 @@ public:
       _afterPart.Empty();
       _unchangedPart = basePart + UString(L".");
       _changedPart = L"r00";
-      return true;;
+      return true;
     }
 
     int numLetters = 1;
-    if (basePart.Right(numLetters) == L"1")
+    if (basePart.Right(numLetters) == L"1" || basePart.Right(numLetters) == L"0")
     {
       while (numLetters < basePart.Length())
       {
@@ -427,11 +340,11 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
             break;
           UString baseName;
           {
-            NCOM::CPropVariant propVariant;
-            RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
-            if (propVariant.vt != VT_BSTR)
+            NCOM::CPropVariant prop;
+            RINOK(openVolumeCallback->GetProperty(kpidName, &prop));
+            if (prop.vt != VT_BSTR)
               break;
-            baseName = propVariant.bstrVal;
+            baseName = prop.bstrVal;
           }
           seqName.InitName(baseName, _archiveInfo.HaveNewVolumeName());
         }
@@ -572,8 +485,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   CObjectVector<CMethodItem> methodItems;
 
-  NCompress::CCopyCoder *copyCoderSpec = NULL;
-  CMyComPtr<ICompressCoder> copyCoder;
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
   CFilterCoder *filterStreamSpec = new CFilterCoder;
   CMyComPtr<ISequentialInStream> filterStream = filterStreamSpec;
@@ -586,18 +499,24 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CFolderInStream *folderInStreamSpec = NULL;
   CMyComPtr<ISequentialInStream> folderInStream;
 
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
   bool solidStart = true;
   for(int i = 0; i < importantIndexes.Size(); i++, 
       currentImportantTotalUnPacked += currentUnPackSize,
       currentImportantTotalPacked += currentPackSize)
   {
-    RINOK(extractCallback->SetCompleted(
-        &currentImportantTotalUnPacked));
+    lps->InSize = currentImportantTotalPacked;
+    lps->OutSize = currentImportantTotalUnPacked;
+    RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
 
     Int32 askMode;
     if(extractStatuses[i])
-      askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+      askMode = testMode ? 
+          NArchive::NExtract::NAskMode::kTest :
           NArchive::NExtract::NAskMode::kExtract;
     else
       askMode = NArchive::NExtract::NAskMode::kSkip;
@@ -648,9 +567,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     outStreamSpec->Init();
     realOutStream.Release();
     
-    UInt64 packedPos = currentImportantTotalPacked;
-    UInt64 unpackedPos = currentImportantTotalUnPacked;
-
     /*
     for (int partIndex = 0; partIndex < 1; partIndex++)
     {
@@ -671,18 +587,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     }
 
     folderInStreamSpec->Init(&_archives, &_items, refItem);
-
-    
-    CLocalProgress *localProgressSpec = new CLocalProgress;
-    CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-    localProgressSpec->Init(extractCallback, false);
-    
-    CLocalCompressProgressInfo *localCompressProgressSpec = 
-        new CLocalCompressProgressInfo;
-    CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-    localCompressProgressSpec->Init(progress, 
-      &packedPos,
-      &unpackedPos);
 
     UInt64 packSize = currentPackSize;
 
@@ -773,11 +677,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       case '0':
       {
-        if(copyCoderSpec == NULL)
-        {
-          copyCoderSpec = new NCompress::CCopyCoder;
-          copyCoder = copyCoderSpec;
-        }
         commonCoder = copyCoder;
         break;
       }
@@ -850,8 +749,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
         continue;
     }
-    HRESULT result = commonCoder->Code(inStream, outStream,
-      &packSize, &item.UnPackSize, compressProgress);
+    HRESULT result = commonCoder->Code(inStream, outStream, &packSize, &item.UnPackSize, progress);
     if (item.IsEncrypted())
       filterStreamSpec->ReleaseInStream();
     if (result == S_FALSE)

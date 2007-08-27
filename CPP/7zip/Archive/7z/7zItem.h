@@ -170,6 +170,13 @@ struct CArchiveDatabase
       NumUnPackStreamsVector.IsEmpty() && 
       Files.IsEmpty());
   }
+  bool IsSolid() const
+  {
+    for (int i = 0; i < NumUnPackStreamsVector.Size(); i++)
+      if (NumUnPackStreamsVector[i] > 1)
+        return true;
+    return false;
+  }
 };
 
 }}

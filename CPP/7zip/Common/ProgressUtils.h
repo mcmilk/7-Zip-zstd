@@ -8,32 +8,22 @@
 #include "../ICoder.h"
 #include "../IProgress.h"
 
-class CLocalCompressProgressInfo: 
-  public ICompressProgressInfo,
-  public CMyUnknownImp
-{
-  CMyComPtr<ICompressProgressInfo> _progress;
-  bool _inStartValueIsAssigned;
-  bool _outStartValueIsAssigned;
-  UInt64 _inStartValue;
-  UInt64 _outStartValue;
-public:
-  void Init(ICompressProgressInfo *progress, 
-      const UInt64 *inStartValue, const UInt64 *outStartValue);
-
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
-};
-
 class CLocalProgress: 
   public ICompressProgressInfo,
   public CMyUnknownImp
 {
   CMyComPtr<IProgress> _progress;
+  CMyComPtr<ICompressProgressInfo> _ratioProgress;
   bool _inSizeIsMain;
 public:
+  UInt64 ProgressOffset;
+  UInt64 InSize;
+  UInt64 OutSize;
+  bool SendRatio;
+
+  CLocalProgress();
   void Init(IProgress *progress, bool inSizeIsMain);
+  HRESULT SetCur();
 
   MY_UNKNOWN_IMP
 

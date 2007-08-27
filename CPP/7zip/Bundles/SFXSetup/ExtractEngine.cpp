@@ -13,7 +13,7 @@
 #include "../../UI/Common/OpenArchive.h"
 
 #include "../../UI/Explorer/MyMessages.h"
-#include "../../FileManager/FormatUtils.h"
+#include "../../UI/FileManager/FormatUtils.h"
 
 #include "ExtractCallback.h"
 

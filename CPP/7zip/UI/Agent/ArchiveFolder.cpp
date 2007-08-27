@@ -45,16 +45,17 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       NExtract::NPathMode::kNoPathnames :
       NExtract::NPathMode::kCurrentPathnames;
 
+  extractCallbackSpec->InitForMulti(false, pathMode, NExtract::NOverwriteMode::kAskBefore);
   extractCallbackSpec->Init(_agentSpec->GetArchive(), 
       extractCallback2, 
       false,
       path,
-      pathMode, 
-      NExtract::NOverwriteMode::kAskBefore, 
       pathParts, 
       _agentSpec->DefaultName,
       _agentSpec->DefaultTime, 
-      _agentSpec->DefaultAttributes
+      _agentSpec->DefaultAttributes,
+      (UInt64)(Int64)-1
+
       // ,_agentSpec->_srcDirectoryPrefix
       );
   CUIntVector realIndices;

@@ -237,12 +237,93 @@ public:
   }
 };
 
+class CMtProgressMixer2:
+  public ICompressProgressInfo,
+  public CMyUnknownImp
+{
+  UInt64 ProgressOffset;
+  UInt64 InSizes[2];
+  UInt64 OutSizes[2];
+  CMyComPtr<IProgress> Progress;
+  CMyComPtr<ICompressProgressInfo> RatioProgress;
+  bool _inSizeIsMain;
+public:
+  NWindows::NSynchronization::CCriticalSection CriticalSection;
+  MY_UNKNOWN_IMP
+  void Create(IProgress *progress, bool inSizeIsMain);
+  void SetProgressOffset(UInt64 progressOffset);
+  HRESULT SetRatioInfo(int index, const UInt64 *inSize, const UInt64 *outSize);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
+};
+
+void CMtProgressMixer2::Create(IProgress *progress, bool inSizeIsMain)
+{
+  Progress = progress;
+  Progress.QueryInterface(IID_ICompressProgressInfo, &RatioProgress);
+  _inSizeIsMain = inSizeIsMain;
+  ProgressOffset = InSizes[0] = InSizes[1] = OutSizes[0] = OutSizes[1] = 0;
+}
+
+void CMtProgressMixer2::SetProgressOffset(UInt64 progressOffset)
+{
+  CriticalSection.Enter();
+  ProgressOffset = progressOffset;
+  CriticalSection.Leave();
+}
+
+HRESULT CMtProgressMixer2::SetRatioInfo(int index, const UInt64 *inSize, const UInt64 *outSize)
+{
+  NWindows::NSynchronization::CCriticalSectionLock lock(CriticalSection);
+  if (index == 0 && RatioProgress)
+  {
+    RINOK(RatioProgress->SetRatioInfo(inSize, outSize));
+  }
+  if (inSize != 0)
+    InSizes[index] = *inSize;
+  if (outSize != 0)
+    OutSizes[index] = *outSize;
+  UInt64 v = ProgressOffset + (_inSizeIsMain  ? 
+      (InSizes[0] + InSizes[1]) :
+      (OutSizes[0] + OutSizes[1]));
+  return Progress->SetCompleted(&v);
+}
+
+STDMETHODIMP CMtProgressMixer2::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  return SetRatioInfo(0, inSize, outSize);
+}
+
+class CMtProgressMixer: 
+  public ICompressProgressInfo,
+  public CMyUnknownImp
+{
+public:
+  CMtProgressMixer2 *Mixer2;
+  CMyComPtr<ICompressProgressInfo> RatioProgress;
+  void Create(IProgress *progress, bool inSizeIsMain);
+  MY_UNKNOWN_IMP
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
+};
+
+void CMtProgressMixer::Create(IProgress *progress, bool inSizeIsMain)
+{
+  Mixer2 = new CMtProgressMixer2;
+  RatioProgress = Mixer2;
+  Mixer2->Create(progress, inSizeIsMain);
+}
+
+STDMETHODIMP CMtProgressMixer::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  return Mixer2->SetRatioInfo(1, inSize, outSize);
+}
+
+
 #endif
 
 
 static HRESULT UpdateItemOldData(COutArchive &archive, 
     IInStream *inStream,
-    const CUpdateItem &updateItem, CItemEx &item, ICompressProgressInfo *progress, 
+    const CUpdateItem &updateItem, CItemEx &item, ICompressProgressInfo *progress,
     UInt64 &complexity)
 {
   if (updateItem.NewProperties)
@@ -301,21 +382,20 @@ static HRESULT Update2St(
     const CByteBuffer &comment,
     IArchiveUpdateCallback *updateCallback)
 {
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-  localProgressSpec->Init(updateCallback, true);
-
-  CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
 
   CAddCommon compressor(*options);
   
   CObjectVector<CItem> items;
-  UInt64 complexity = 0;
+  UInt64 unpackSizeTotal = 0, packSizeTotal = 0;
 
   for (int itemIndex = 0; itemIndex < updateItems.Size(); itemIndex++)
   {
-    RINOK(updateCallback->SetCompleted(&complexity));
+    lps->InSize = unpackSizeTotal;
+    lps->OutSize = packSizeTotal;
+    RINOK(lps->SetCur());
     const CUpdateItem &updateItem = updateItems[itemIndex];
     CItemEx item;
     if (!updateItem.NewProperties || !updateItem.NewData)
@@ -338,7 +418,7 @@ static HRESULT Update2St(
         HRESULT res = updateCallback->GetStream(updateItem.IndexInClient, &fileInStream);
         if (res == S_FALSE)
         {
-          complexity += updateItem.Size + NFileHeader::kLocalBlockSize;
+          lps->ProgressOffset += updateItem.Size;
           RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
           continue;
         }
@@ -350,23 +430,26 @@ static HRESULT Update2St(
         CCompressingResult compressingResult;
         CMyComPtr<IOutStream> outStream;
         archive.CreateStreamForCompressing(&outStream);
-        localCompressProgressSpec->Init(localProgress, &complexity, NULL);
         RINOK(compressor.Compress(
             EXTERNAL_CODECS_LOC_VARS
-            fileInStream, outStream, compressProgress, compressingResult));
+            fileInStream, outStream, progress, compressingResult));
         SetItemInfoFromCompressingResult(compressingResult, options->IsAesMode, options->AesKeyMode, item);
         archive.WriteLocalHeader(item);
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
-        complexity += item.UnPackSize;
+        unpackSizeTotal += item.UnPackSize;
+        packSizeTotal += item.PackSize;
       }
     }
     else
     {
-      localCompressProgressSpec->Init(localProgress, &complexity, NULL);
-      RINOK(UpdateItemOldData(archive, inStream, updateItem, item, compressProgress, complexity));
+      UInt64 complexity = 0;
+      lps->SendRatio = false;
+      RINOK(UpdateItemOldData(archive, inStream, updateItem, item, progress, complexity));
+      lps->SendRatio = true;
+      lps->ProgressOffset += complexity;
     }
     items.Add(item);
-    complexity += NFileHeader::kLocalBlockSize;
+    lps->ProgressOffset += NFileHeader::kLocalBlockSize;
   }
   archive.WriteCentralDir(items, comment);
   return S_OK;
@@ -477,17 +560,12 @@ static HRESULT Update2(
 
   CObjectVector<CItem> items;
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-  localProgressSpec->Init(updateCallback, true);
+  CMtProgressMixer *mtProgressMixerSpec = new CMtProgressMixer;
+  CMyComPtr<ICompressProgressInfo> progress = mtProgressMixerSpec;
+  mtProgressMixerSpec->Create(updateCallback, true);
 
   CMtCompressProgressMixer mtCompressProgressMixer;
-  mtCompressProgressMixer.Init(numThreads + 1, localProgress); 
-
-  // we need one item for main stream
-  CMtCompressProgress *progressMainSpec  = new CMtCompressProgress();
-  CMyComPtr<ICompressProgressInfo> progressMain = progressMainSpec;
-  progressMainSpec->Init(&mtCompressProgressMixer, (int)numThreads);
+  mtCompressProgressMixer.Init(numThreads, mtProgressMixerSpec->RatioProgress); 
 
   CMemBlockManagerMt memManager(kBlockSize);
   CMemRefs refs(&memManager);
@@ -551,12 +629,13 @@ static HRESULT Update2(
       }
       CMyComPtr<ISequentialInStream> fileInStream;
       {
-        NWindows::NSynchronization::CCriticalSectionLock lock(mtCompressProgressMixer.CriticalSection);
+        NWindows::NSynchronization::CCriticalSectionLock lock(mtProgressMixerSpec->Mixer2->CriticalSection);
         HRESULT res = updateCallback->GetStream(updateItem.IndexInClient, &fileInStream);
         if (res == S_FALSE)
         {
           complexity += updateItem.Size;
-          complexity++;
+          complexity += NFileHeader::kLocalBlockSize;
+          mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
           RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
           refs.Refs[mtItemIndex - 1].Skip = true;
           continue;
@@ -633,7 +712,6 @@ static HRESULT Update2(
               options->IsAesMode, options->AesKeyMode, item);
           SetFileHeader(archive, *options, updateItem, item);
           archive.WriteLocalHeader(item);
-          complexity += item.UnPackSize;
           // RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
           memRef.FreeOpt(&memManager);
         }
@@ -667,7 +745,6 @@ static HRESULT Update2(
                 options->IsAesMode, options->AesKeyMode, item);
             SetFileHeader(archive, *options, updateItem, item);
             archive.WriteLocalHeader(item);
-            complexity += item.UnPackSize;
           }
           else
           {
@@ -682,11 +759,11 @@ static HRESULT Update2(
     }
     else
     {
-      progressMainSpec->Reinit();
-      RINOK(UpdateItemOldData(archive, inStream, updateItem, item, progressMain, complexity));
+      RINOK(UpdateItemOldData(archive, inStream, updateItem, item, progress, complexity));
     }
     items.Add(item);
     complexity += NFileHeader::kLocalBlockSize;
+    mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
     itemIndex++;
   }
   archive.WriteCentralDir(items, comment);

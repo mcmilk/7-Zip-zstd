@@ -42,6 +42,7 @@ class CCoderMixerMT:
   CObjectVector<CStreamBinder> _streamBinders;
   int _progressCoderIndex;
 
+  HRESULT ReturnIfError(HRESULT code);
 public:
   CObjectVector<CCoder> _coders;
   MY_UNKNOWN_IMP

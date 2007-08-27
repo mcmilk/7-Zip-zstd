@@ -226,7 +226,7 @@ public:
       if (CentralExtra.GetWzAesField(aesField))
         return aesField.NeedCrc();
     }
-    return true;
+    return (FileCRC != 0 || !IsDirectory());
   }
   
   WORD GetCodePage() const

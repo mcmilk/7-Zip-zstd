@@ -238,6 +238,13 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
 
     if (progress != NULL)
     {
+      /*
+      const UInt64 compressedSize = 
+        _mainStream.GetProcessedSize() + 
+        _callStream.GetProcessedSize() +
+        _jumpStream.GetProcessedSize() +
+        _rangeEncoder.GetProcessedSize();
+      */
       RINOK(progress->SetRatioInfo(&nowPos64, NULL));
     }
  
@@ -312,7 +319,14 @@ HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams,
   {
     if (processedBytes >= (1 << 20) && progress != NULL)
     {
-      UInt64 nowPos64 = _outStream.GetProcessedSize();
+      /*
+      const UInt64 compressedSize = 
+        _mainInStream.GetProcessedSize() + 
+        _callStream.GetProcessedSize() +
+        _jumpStream.GetProcessedSize() +
+        _rangeDecoder.GetProcessedSize();
+      */
+      const UInt64 nowPos64 = _outStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(NULL, &nowPos64));
       processedBytes = 0;
     }

@@ -96,6 +96,23 @@ public:
     return -1;
   }
 
+  int AddToUniqueSorted(const T& item)
+  {
+    int left = 0, right = Size(); 
+    while (left != right)
+    {
+      int mid = (left + right) / 2;
+      const T& midValue = (*this)[mid];
+      if (item == midValue)
+        return mid;
+      if (item < midValue)
+        right = mid;
+      else
+        left = mid + 1;
+    }
+    Insert(right, item);
+    return right;
+  }
 
   static void SortRefDown(T* p, int k, int size, int (*compare)(const T*, const T*, void *), void *param)
   { 

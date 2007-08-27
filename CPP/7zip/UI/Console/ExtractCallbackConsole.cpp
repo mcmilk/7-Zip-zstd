@@ -95,7 +95,7 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int32 askExtractMode, const UInt64 *position)
+STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, bool /* isFolder */, Int32 askExtractMode, const UInt64 *position)
 {
   switch (askExtractMode)
   {

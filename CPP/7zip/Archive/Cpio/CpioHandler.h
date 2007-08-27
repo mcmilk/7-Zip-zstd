@@ -21,8 +21,8 @@ public:
   INTERFACE_IInArchive(;)
 
 private:
-  CObjectVector<CItemEx> m_Items;
-  CMyComPtr<IInStream> m_InStream;
+  CObjectVector<CItemEx> _items;
+  CMyComPtr<IInStream> _inStream;
 };
 
 }}

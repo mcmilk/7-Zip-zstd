@@ -1,4 +1,4 @@
-// Main.cpp
+/ Main.cpp
 
 #include "StdAfx.h"
 
@@ -396,12 +396,13 @@ int Main2(
       eo.Properties = options.ExtractProperties;
       #endif
       UString errorMessage;
+      CDecompressStat stat;
       HRESULT result = DecompressArchives(
           codecs,
           options.ArchivePathsSorted, 
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head, 
-          eo, &openCallback, ecs, errorMessage);
+          eo, &openCallback, ecs, errorMessage, stat);
       if (!errorMessage.IsEmpty())
       {
         stdStream << endl << "Error: " << errorMessage;
@@ -409,15 +410,20 @@ int Main2(
           result = E_FAIL;
       }
 
+      stdStream << endl << endl << "Total:" << endl;
       if (ecs->NumArchives > 1)
-      {
-        stdStream << endl << endl << "Total:" << endl;
         stdStream << "Archives: " << ecs->NumArchives << endl;
+      {
+        stdStream << "Folders: " << stat.NumFolders << endl;
+        stdStream << "Files: " << stat.NumFiles << endl;
+        stdStream << "Size: " << stat.UnpackSize << endl;
+        stdStream << "Compressed: " << stat.PackSize << endl;
       }
       if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {
         if (ecs->NumArchives > 1)
         {
+          stdStream << endl;
           if (ecs->NumArchiveErrors != 0)
             stdStream << "Archive Errors: " << ecs->NumArchiveErrors << endl;
           if (ecs->NumFileErrors != 0)

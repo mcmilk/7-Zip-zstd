@@ -19,7 +19,6 @@ public:
 
   INTERFACE_IInArchive(;)
 
-  CHandler();
 private:
   CObjectVector<CItemEx> _items;
   CMyComPtr<IInStream> _stream;

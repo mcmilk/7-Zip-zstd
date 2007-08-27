@@ -1,0 +1,41 @@
+#include "AboutDialogRes.h"
+#include "../../GuiCommon.rc"
+#include "../../MyVersion.h"
+
+#define xSize2 224
+#define ySize2 158
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define bXPos (xSize - marg - bXSize)
+#define bYPos (ySize - marg - bYSize)
+
+#undef b2XSize
+#undef b2XPos
+#undef infoYPos
+#undef infoYSize
+
+#define b2XSize 94
+#define b2XPos (xSize - marg - b2XSize)
+#define gSpace 2
+#define gSize (xSize2 - gSpace - b2XSize)
+
+#define infoYPos 91
+#define infoYSize (ySize2 - infoYPos - bYSize - 2)
+
+IDI_LOGO ICON "7zipLogo.ico"
+
+IDD_ABOUT DIALOG  0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "About 7-Zip"
+MY_FONT
+BEGIN
+  PUSHBUTTON  "OK", IDOK, bXPos, bYPos, bXSize, bYSize
+  PUSHBUTTON  "www.7-zip.org", IDC_ABOUT_BUTTON_HOMEPAGE, b2XPos,  7, b2XSize, bYSize
+  PUSHBUTTON  "Support",       IDC_ABOUT_BUTTON_SUPPORT,  b2XPos, 30, b2XSize, bYSize
+  PUSHBUTTON  "Register",      IDC_ABOUT_BUTTON_REGISTER, b2XPos, 53, b2XSize, bYSize
+  ICON   IDI_LOGO, -1, marg, marg, 20, 20, SS_REALSIZEIMAGE
+  LTEXT  MY_7ZIP_VERSION, -1, marg, 54, gSize, 9
+  LTEXT  MY_COPYRIGHT, -1, marg, 67, gSize, 17
+  LTEXT  "7-Zip is free software. However, you can support development of 7-Zip by registering.",
+         IDC_ABOUT_STATIC_REGISTER_INFO, marg, infoYPos, xSize2, infoYSize
+END

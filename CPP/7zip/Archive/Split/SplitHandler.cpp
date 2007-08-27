@@ -23,7 +23,7 @@ using namespace NTime;
 namespace NArchive {
 namespace NSplit {
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
 //  { NULL, kpidIsFolder, VT_BOOL},
@@ -31,41 +31,8 @@ STATPROPSTG kProperties[] =
   { NULL, kpidPackedSize, VT_UI8},
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
 class CSeqName
 {
@@ -158,11 +125,11 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       return S_FALSE;
     
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
-      if (propVariant.vt != VT_BSTR)
+      NCOM::CPropVariant prop;
+      RINOK(openVolumeCallback->GetProperty(kpidName, &prop));
+      if (prop.vt != VT_BSTR)
         return S_FALSE;
-      _name = propVariant.bstrVal;
+      _name = prop.bstrVal;
     }
     
     int dotPos = _name.ReverseFind('.');
@@ -219,11 +186,11 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     _totalSize = 0;
     UInt64 size;
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(openVolumeCallback->GetProperty(kpidSize, &propVariant));
-      if (propVariant.vt != VT_UI8)
+      NCOM::CPropVariant prop;
+      RINOK(openVolumeCallback->GetProperty(kpidSize, &prop));
+      if (prop.vt != VT_UI8)
         return E_INVALIDARG;
-      size = propVariant.uhVal.QuadPart;
+      size = prop.uhVal.QuadPart;
     }
     _totalSize += size;
     _sizes.Add(size);
@@ -247,11 +214,11 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       if (!stream)
         break;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(openVolumeCallback->GetProperty(kpidSize, &propVariant));
-        if (propVariant.vt != VT_UI8)
+        NCOM::CPropVariant prop;
+        RINOK(openVolumeCallback->GetProperty(kpidSize, &prop));
+        if (prop.vt != VT_UI8)
           return E_INVALIDARG;
-        size = propVariant.uhVal.QuadPart;
+        size = prop.uhVal.QuadPart;
       }
       _totalSize += size;
       _sizes.Add(size);
@@ -288,25 +255,22 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 
 STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
 {
-  COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
-
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
     case kpidPath:
-      propVariant = _subName;
+      prop = _subName;
       break;
     case kpidIsFolder:
-      propVariant = false;
+      prop = false;
       break;
     case kpidSize:
     case kpidPackedSize:
-      propVariant = _totalSize;
+      prop = _totalSize;
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
-  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
@@ -348,47 +312,28 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
     return S_OK;
   }
-  // currentItemSize = itemInfo.Size;
   
-  if(!testMode && (!realOutStream))
-  {
+  if (!testMode && (!realOutStream))
     return S_OK;
-  }
 
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
-  for(int i = 0; i < _streams.Size(); i++, currentTotalSize += currentItemSize)
-  {
-    // CMyComPtr<ISequentialInStream> inStream;
-    // RINOK(volumeExtractCallback->GetInStream(_names[i], &inStream));
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
 
-    CLocalProgress *localProgressSpec = new CLocalProgress;
-    CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-    localProgressSpec->Init(extractCallback, false);
-    CLocalCompressProgressInfo *localCompressProgressSpec = 
-        new CLocalCompressProgressInfo;
-    CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-    localCompressProgressSpec->Init(progress, 
-      &currentTotalSize, &currentTotalSize);
+  for (int i = 0; i < _streams.Size(); i++, currentTotalSize += currentItemSize)
+  {
+    lps->InSize = lps->OutSize = currentTotalSize;
+    RINOK(lps->SetCur());
     IInStream *inStream = _streams[i];
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    try
-    {
-      RINOK(copyCoder->Code(inStream, realOutStream,
-          NULL, NULL, compressProgress));
-    }
-    catch(...)
-    {
-      realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-      return S_OK;;
-    }
+    RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
     currentItemSize = copyCoderSpec->TotalSize;
   }
   realOutStream.Release();
-  RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-  return S_OK;
+  return extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK);
   COM_TRY_END
 }
 

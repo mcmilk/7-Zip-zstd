@@ -35,13 +35,12 @@ const UInt32 kLevelTableSize = 20;
 
 const UInt32 kTablesSizesSum = kMainTableSize + kDistTableSize + kAlignTableSize + kLenTableSize;
 
-template<class TInByte>
-class CBitDecoder2
+class CBitDecoder
 {
   UInt32 m_Value;
 public:
   UInt32 m_BitPos;
-  TInByte m_Stream;
+  CInBuffer m_Stream;
   bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
   void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream);}
   void ReleaseStream() { m_Stream.ReleaseStream();}
@@ -97,8 +96,6 @@ public:
     return res;
   }
 };
-
-typedef CBitDecoder2<CInBuffer> CBitDecoder;
 
 const int kNumTopBits = 24;
 const UInt32 kTopValue = (1 << kNumTopBits);

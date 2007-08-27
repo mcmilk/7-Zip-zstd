@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -128,7 +128,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "EXPLORER_EXPORTS" /D "LANG" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -182,14 +182,6 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\Common\ArchiveExtractCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveExtractCallback.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\ArchiveName.cpp
 # End Source File
 # Begin Source File
@@ -198,119 +190,11 @@ SOURCE=..\Common\ArchiveName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\ArchiveOpenCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ArchiveOpenCallback.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\CompressCall.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\CompressCall.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DefaultName.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\DefaultName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\EnumDirItems.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\EnumDirItems.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractingFilePath.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\ExtractingFilePath.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\HandlerLoader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\LoadCodecs.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\LoadCodecs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\OpenArchive.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\OpenArchive.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\PropIDUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\PropIDUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SortUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\SortUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateAction.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateAction.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateCallback.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdatePair.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdatePair.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateProduce.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\UpdateProduce.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\WorkDir.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\WorkDir.h
 # End Source File
 # Begin Source File
 
@@ -344,85 +228,29 @@ SOURCE=.\MyMessages.h
 # Begin Group "Dialogs"
 
 # PROP Default_Filter ""
-# Begin Group "Options"
-
-# PROP Default_Filter ""
-# Begin Group "SystemPage"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\SystemPage\SystemPage.cpp
+SOURCE=.\FoldersPage.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\SystemPage\SystemPage.h
-# End Source File
-# End Group
-# Begin Group "FoldersPage"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\FoldersPage\FoldersPage.cpp
+SOURCE=.\FoldersPage.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\FoldersPage\FoldersPage.h
-# End Source File
-# End Group
-# End Group
-# End Group
-# Begin Group "Agent"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\Agent\Agent.cpp
+SOURCE=.\FoldersPageRes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\Agent.h
+SOURCE=.\SystemPage.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\AgentOut.cpp
+SOURCE=.\SystemPage.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Agent\AgentProxy.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\AgentProxy.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveFolder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveFolderOpen.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\ArchiveFolderOut.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\IFileExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\IFolderArchive.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallbackAgent.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Agent\UpdateCallbackAgent.h
+SOURCE=.\SystemPageRes.h
 # End Source File
 # End Group
 # Begin Group "FileManager"
@@ -430,110 +258,52 @@ SOURCE=..\Agent\UpdateCallbackAgent.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.cpp
+SOURCE=..\FileManager\FormatUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.h
+SOURCE=..\FileManager\FormatUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\HelpUtils.cpp
+SOURCE=..\FileManager\HelpUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\HelpUtils.h
+SOURCE=..\FileManager\HelpUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\IFolder.h
+SOURCE=..\FileManager\IFolder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\LangUtils.cpp
+SOURCE=..\FileManager\LangUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\LangUtils.h
+SOURCE=..\FileManager\LangUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ProgramLocation.cpp
+SOURCE=..\FileManager\ProgramLocation.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ProgramLocation.h
+SOURCE=..\FileManager\ProgramLocation.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\RegistryUtils.cpp
+SOURCE=..\FileManager\RegistryUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\RegistryUtils.h
-# End Source File
-# End Group
-# Begin Group "7-zip common"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FilePathAutoRename.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\FileStreams.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\StreamUtils.h
-# End Source File
-# End Group
-# Begin Group "Compress"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.h
+SOURCE=..\FileManager\RegistryUtils.h
 # End Source File
 # End Group
 # Begin Group "C"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Alloc.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Alloc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Sort.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Sort.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Threads.c
@@ -742,22 +512,6 @@ SOURCE=..\..\..\Windows\Menu.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Menu.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\PropVariant.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\PropVariant.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\PropVariantConversions.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\PropVariantConversions.h
 # End Source File
 # Begin Source File
 

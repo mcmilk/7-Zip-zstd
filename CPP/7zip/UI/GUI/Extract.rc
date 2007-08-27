@@ -1,0 +1,19 @@
+#include "ExtractRes.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+  IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
+  IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC "CRC failed in '{0}'. File is broken."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR  "Data error in '{0}'. File is broken"
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC_ENCRYPTED "CRC failed in encrypted file '{0}'. Wrong password?"
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED  "Data error in encrypted file '{0}'. Wrong password?"
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD  "Unsupported compression method for '{0}'."
+  IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
+  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE  "Can not open output file '{0}'."
+  IDS_PROGRESS_EXTRACTING "Extracting"
+  IDS_CANT_OPEN_ARCHIVE   "Can not open file '{0}' as archive"
+  IDS_CANT_OPEN_ENCRYPTED_ARCHIVE   "Can not open encrypted archive '{0}'. Wrong password?"
+END

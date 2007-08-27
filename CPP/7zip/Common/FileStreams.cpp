@@ -12,9 +12,13 @@
 
 static inline HRESULT ConvertBoolToHRESULT(bool result)
 {
-  // return result ? S_OK: E_FAIL;
   #ifdef _WIN32
-  return result ? S_OK: (::GetLastError());
+  if (result)
+    return S_OK;
+  DWORD lastError = ::GetLastError();
+  if (lastError == 0)
+    return E_FAIL;
+  return lastError;
   #else
   return result ? S_OK: E_FAIL;
   #endif
@@ -141,26 +145,13 @@ STDMETHODIMP CInFileStream::GetSize(UInt64 *size)
 //////////////////////////
 // COutFileStream
 
-bool COutFileStream::Create(LPCTSTR fileName, bool createAlways)
-{
-  return File.Create(fileName, createAlways);
-}
-
-#ifdef USE_WIN_FILE
-#ifndef _UNICODE
-bool COutFileStream::Create(LPCWSTR fileName, bool createAlways)
-{
-  return File.Create(fileName, createAlways);
-}
-#endif
-#endif
-
 STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   #ifdef USE_WIN_FILE
 
   UInt32 realProcessedSize;
   bool result = File.WritePart(data, size, realProcessedSize);
+  ProcessedSize += realProcessedSize;
   if(processedSize != NULL)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
@@ -174,13 +165,13 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
     return E_FAIL;
   if(processedSize != NULL)
     *processedSize = (UInt32)res;
+  ProcessedSize += res;
   return S_OK;
   
   #endif
 }
   
-STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, 
-    UInt64 *newPosition)
+STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
   if(seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;

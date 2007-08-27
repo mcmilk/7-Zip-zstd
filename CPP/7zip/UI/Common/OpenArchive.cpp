@@ -156,6 +156,33 @@ HRESULT OpenArchive(
     orderIndices2 += orderIndices;
     orderIndices = orderIndices2;
   }
+  else if (extension == L"000" || extension == L"001")
+  {
+    CByteBuffer byteBuffer;
+    const UInt32 kBufferSize = (1 << 10);
+    byteBuffer.SetCapacity(kBufferSize);
+    Byte *buffer = byteBuffer;
+    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    UInt32 processedSize;
+    RINOK(ReadStream(inStream, buffer, kBufferSize, &processedSize));
+    if (processedSize >= 16)
+    {
+      Byte kRarHeader[] = {0x52 , 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00};
+      if (TestSignature(buffer, kRarHeader, 7) && buffer[9] == 0x73 && (buffer[10] && 1) != 0)
+      {
+        for (int i = 0; i < orderIndices.Size(); i++)
+        {
+          int index = orderIndices[i];
+          const CArcInfoEx &ai = codecs->Formats[index];
+          if (ai.Name.CompareNoCase(L"rar") != 0)
+            continue;
+          orderIndices.Delete(i--);
+          orderIndices.Insert(0, index);
+          break;
+        }
+      }
+    }
+  }
   #endif
 
   HRESULT badResult = S_OK;

@@ -50,7 +50,7 @@ CPlugin::~CPlugin()
 {
 }
 
-static void MyGetFileTime(IFolderFolder *anArchiveFolder, UINT32 itemIndex,
+static void MyGetFileTime(IFolderFolder *anArchiveFolder, UInt32 itemIndex,
     PROPID propID, FILETIME &fileTime)
 {
   NCOM::CPropVariant propVariant;
@@ -69,7 +69,7 @@ static void MyGetFileTime(IFolderFolder *anArchiveFolder, UINT32 itemIndex,
   }
 }
   
-void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
+void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
 {
   NCOM::CPropVariant propVariant;
   if (_folder->GetProperty(itemIndex, kpidName, &propVariant) != S_OK)
@@ -103,13 +103,13 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
 
   if (_folder->GetProperty(itemIndex, kpidSize, &propVariant) != S_OK)
     throw 271932;
-  UINT64 length;
+  UInt64 length;
   if (propVariant.vt == VT_EMPTY)
     length = 0;
   else
     length = ::ConvertPropVariantToUInt64(propVariant);
-  panelItem.FindData.nFileSizeLow = UINT32(length);
-  panelItem.FindData.nFileSizeHigh = UINT32(length >> 32);
+  panelItem.FindData.nFileSizeLow = (UInt32)length;
+  panelItem.FindData.nFileSizeHigh = (UInt32)(length >> 32);
 
   MyGetFileTime(_folder, itemIndex, kpidCreationTime, panelItem.FindData.ftCreationTime);
   MyGetFileTime(_folder, itemIndex, kpidLastAccessTime, panelItem.FindData.ftLastAccessTime);
@@ -125,8 +125,8 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
     length = 0;
   else
     length = ::ConvertPropVariantToUInt64(propVariant);
-  panelItem.PackSize = UINT32(length);
-  panelItem.PackSizeHigh = UINT32(length >> 32);
+  panelItem.PackSize = UInt32(length);
+  panelItem.PackSizeHigh = UInt32(length >> 32);
 
   panelItem.Flags = 0;
   panelItem.NumberOfLinks = 0;
@@ -139,8 +139,6 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UINT32 itemIndex)
   panelItem.Reserved[0] = 0;
   panelItem.Reserved[1] = 0;
   panelItem.Reserved[2] = 0;
-  
-
 }
 
 int CPlugin::GetFindData(PluginPanelItem **panelItems, 
@@ -151,22 +149,22 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems,
   {
     /*
     screenRestorer.Save();
-    const char *aMsgItems[]=
+    const char *msgItems[]=
     {
       g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
         g_StartupInfo.GetMsgString(NMessageID::kReadingList)
     };
-    g_StartupInfo.ShowMessage(0, NULL, aMsgItems,
-      sizeof(aMsgItems) / sizeof(aMsgItems[0]), 0);
+    g_StartupInfo.ShowMessage(0, NULL, msgItems,
+      sizeof(msgItems) / sizeof(msgItems[0]), 0);
     */
   }
 
-  UINT32 numItems;
+  UInt32 numItems;
   _folder->GetNumberOfItems(&numItems);
   *panelItems = new PluginPanelItem[numItems];
   try
   {
-    for(UINT32 i = 0; i < numItems; i++)
+    for (UInt32 i = 0; i < numItems; i++)
     {
       PluginPanelItem &panelItem = (*panelItems)[i];
       ReadPluginPanelItem(panelItem, i);
@@ -185,8 +183,8 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems,
 void CPlugin::FreeFindData(struct PluginPanelItem *panelItems,
     int itemsNumber)
 {
-  for(int i = 0; i < itemsNumber; i++)
-    if(panelItems[i].Description != NULL)
+  for (int i = 0; i < itemsNumber; i++)
+    if (panelItems[i].Description != NULL)
       delete []panelItems[i].Description;
   delete []panelItems;
 }
@@ -196,7 +194,7 @@ void CPlugin::EnterToDirectory(const UString &aDirName)
 {
   CMyComPtr<IFolderFolder> newFolder;
   _folder->BindToFolder(aDirName, &newFolder);
-  if(newFolder == NULL)
+  if (newFolder == NULL)
     if (aDirName.IsEmpty())
       return;
     else
@@ -232,7 +230,7 @@ int CPlugin::SetDirectory(const char *aszDir, int /* opMode */)
     }
     UStringVector pathParts;
     SplitPathToParts(path, pathParts);
-    for(int i = 0; i < pathParts.Size(); i++)
+    for (int i = 0; i < pathParts.Size(); i++)
       EnterToDirectory(pathParts[i]);
   }
   GetCurrentDir();
@@ -249,9 +247,10 @@ void CPlugin::GetPathParts(UStringVector &pathParts)
     folderItem->BindToParentFolder(&newFolder);  
     if (newFolder == NULL)
       break;
-    CMyComBSTR name;
-    folderItem->GetName(&name);
-    pathParts.Insert(0, (const wchar_t *)name);
+    NCOM::CPropVariant prop;
+    if (folderItem->GetFolderProperty(kpidName, &prop) == S_OK)
+      if (prop.vt == VT_BSTR)
+        pathParts.Insert(0, (const wchar_t *)prop.bstrVal);
     folderItem = newFolder;
   }
 }
@@ -304,16 +303,24 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidGroup, NMessageID::kGroup },
   { kpidBlock, NMessageID::kBlock },
   { kpidComment, NMessageID::kComment },
-  { kpidPosition, NMessageID::kPosition }
-  
+  { kpidPosition, NMessageID::kPosition },
+  { kpidNumSubFolders, NMessageID::kNumSubFolders },
+  { kpidNumSubFiles, NMessageID::kNumSubFiles },
+  { kpidUnpackVer, NMessageID::kUnpackVer },
+  { kpidVolume, NMessageID::kVolume },
+  { kpidIsVolume, NMessageID::kIsVolume },
+  { kpidOffset, NMessageID::kOffset },
+  { kpidLinks, NMessageID::kLinks },
+  { kpidNumBlocks, NMessageID::kNumBlocks },
+  { kpidNumVolumes, NMessageID::kNumVolumes }
 };
 
 static const int kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);
 
 static int FindPropertyToName(PROPID propID)
 {
-  for(int i = 0; i < kNumPROPIDToName; i++)
-    if(kPROPIDToName[i].PropID == propID)
+  for (int i = 0; i < kNumPROPIDToName; i++)
+    if (kPROPIDToName[i].PropID == propID)
       return i;
   return -1;
 }
@@ -353,8 +360,8 @@ static const int kNumPropertyIDInfos = sizeof(kPropertyIDInfos) /
 
 static int FindPropertyInfo(PROPID propID)
 {
-  for(int i = 0; i < kNumPropertyIDInfos; i++)
-    if(kPropertyIDInfos[i].PropID == propID)
+  for (int i = 0; i < kNumPropertyIDInfos; i++)
+    if (kPropertyIDInfos[i].PropID == propID)
       return i;
   return -1;
 }
@@ -376,7 +383,7 @@ void CPlugin::AddColumn(PROPID propID)
   int index = FindPropertyInfo(propID);
   if (index >= 0)
   {
-    for(int i = 0; i < m_ProxyHandler->m_InternalProperties.Size(); i++)
+    for (int i = 0; i < m_ProxyHandler->m_InternalProperties.Size(); i++)
     {
       const CArchiveItemProperty &aHandlerProperty = m_ProxyHandler->m_InternalProperties[i];
       if (aHandlerProperty.ID == propID)
@@ -385,11 +392,11 @@ void CPlugin::AddColumn(PROPID propID)
     if (i == m_ProxyHandler->m_InternalProperties.Size())
       return;
 
-    const CPropertyIDInfo &aPropertyIDInfo = kPropertyIDInfos[index];
-    SmartAddToString(PanelModeColumnTypes, aPropertyIDInfo.FarID);
-    char aTmp[32];
-    itoa(aPropertyIDInfo.Width, aTmp, 10);
-    SmartAddToString(PanelModeColumnWidths, aTmp);
+    const CPropertyIDInfo &propertyIDInfo = kPropertyIDInfos[index];
+    SmartAddToString(PanelModeColumnTypes, propertyIDInfo.FarID);
+    char tmp[32];
+    itoa(propertyIDInfo.Width, tmp, 10);
+    SmartAddToString(PanelModeColumnWidths, tmp);
     return;
   }
 }
@@ -425,7 +432,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
       UString(L':') + 
       name +
       UString(L' ');
-  if(!m_CurrentDir.IsEmpty())
+  if (!m_CurrentDir.IsEmpty())
   {
     // m_PannelTitle += '\\';
     m_PannelTitle += m_CurrentDir;
@@ -434,44 +441,56 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   MyStringCopy(m_PannelTitleBuffer, (const char *)UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
   info->PanelTitle = m_PannelTitleBuffer;
 
-  memset(m_InfoLines,0,sizeof(m_InfoLines));
-  MyStringCopy(m_InfoLines[0].Text,"");
+  memset(m_InfoLines, 0, sizeof(m_InfoLines));
+  MyStringCopy(m_InfoLines[0].Text, "");
   m_InfoLines[0].Separator = TRUE;
 
   MyStringCopy(m_InfoLines[1].Text, g_StartupInfo.GetMsgString(NMessageID::kArchiveType));
   MyStringCopy(m_InfoLines[1].Data, (const char *)UnicodeStringToMultiByte(_archiveTypeName, CP_OEMCP));
 
   int numItems = 2;
-  UINT32 numProps;
-  if (m_ArchiveHandler->GetNumberOfArchiveProperties(&numProps) == S_OK)
+
+  CMyComPtr<IFolderProperties> folderProperties;
+  _folder.QueryInterface(IID_IFolderProperties, &folderProperties);
+  if (folderProperties)
   {
-    for (UINT32 i = 0; i < numProps && numItems < 30; i++)
+    UInt32 numProps;
+    if (folderProperties->GetNumberOfFolderProperties(&numProps) == S_OK)
     {
-      CMyComBSTR name;
-      PROPID propID;
-      VARTYPE vt;
-      if (m_ArchiveHandler->GetArchivePropertyInfo(i, &name, &propID, &vt) != S_OK)
-        continue;
-
-      InfoPanelLine &item = m_InfoLines[numItems];
-      int index = FindPropertyToName(propID);
-      if (index < 0)
+      for (UInt32 i = 0; i < numProps && numItems < kNumInfoLinesMax; i++)
       {
-        if (name != 0)
-          MyStringCopy(item.Text, (const char *)UnicodeStringToMultiByte(
-              (const wchar_t *)name, CP_OEMCP));
+        CMyComBSTR name;
+        PROPID propID;
+        VARTYPE vt;
+        if (folderProperties->GetFolderPropertyInfo(i, &name, &propID, &vt) != S_OK)
+          continue;
+        
+        InfoPanelLine &item = m_InfoLines[numItems];
+        int index = FindPropertyToName(propID);
+        AString s;
+        if (index < 0)
+        {
+          if (name != 0)
+            s = (const char *)UnicodeStringToMultiByte((const wchar_t *)name, CP_OEMCP);
+        }
         else
-          MyStringCopy(item.Text, "");
+          s = g_StartupInfo.GetMsgString(kPROPIDToName[index].PluginID);
+        
+        if (s.Length() > (kInfoPanelLineSize - 1))
+          s = s.Left(kInfoPanelLineSize - 1);
+        MyStringCopy(item.Text, (const char *)s);
+        
+        NCOM::CPropVariant propVariant;
+        if (_folder->GetFolderProperty(propID, &propVariant) != S_OK)
+          continue;
+        s = ConvertPropertyToString2(propVariant, propID);
+        s.Replace((char)0xA, ' ');
+        s.Replace((char)0xD, ' ');
+        if (s.Length() > (kInfoPanelLineSize - 1))
+          s = s.Left(kInfoPanelLineSize - 1);
+        MyStringCopy(item.Data, (const char *)s);
+        numItems++;
       }
-      else
-        MyStringCopy(item.Text, g_StartupInfo.GetMsgString(kPROPIDToName[index].PluginID));
-
-      NCOM::CPropVariant propVariant;
-      if (m_ArchiveHandler->GetArchiveProperty(propID, &propVariant) != S_OK)
-        continue;
-      CSysString s = ConvertPropertyToString2(propVariant, propID);
-      MyStringCopy(item.Data, (const char *)s);
-      numItems++;
     }
   }
 
@@ -539,15 +558,15 @@ HRESULT CPlugin::ShowAttributesWindow()
   int itemIndex = pluginPanelItem.UserData;
 
   CObjectVector<CArchiveItemProperty> properties;
-  UINT32 numProps;
-  RINOK(m_ArchiveHandler->GetNumberOfProperties(&numProps));
+  UInt32 numProps;
+  RINOK(_folder->GetNumberOfProperties(&numProps));
   int i;
   for (i = 0; i < (int)numProps; i++)
   {
     CMyComBSTR name;
     PROPID propID;
     VARTYPE vt;
-    RINOK(m_ArchiveHandler->GetPropertyInfo(i, &name, &propID, &vt));
+    RINOK(_folder->GetPropertyInfo(i, &name, &propID, &vt));
     CArchiveItemProperty destProperty;
     destProperty.Type = vt;
     destProperty.ID = propID;
@@ -556,28 +575,12 @@ HRESULT CPlugin::ShowAttributesWindow()
     AString propName;
     {
       if (name != NULL)
-        destProperty.Name = UnicodeStringToMultiByte(
-            (const wchar_t *)name, CP_OEMCP);
+        destProperty.Name = UnicodeStringToMultiByte((const wchar_t *)name, CP_OEMCP);
       else
-        destProperty.Name = "Error";
+        destProperty.Name = "?";
     }
     properties.Add(destProperty);
   }
-
-  /*
-  LPCITEMIDLIST aProperties;
-  if (index < m_FolderItem->m_DirSubItems.Size())
-  {
-    const CArchiveFolderItem &anItem = m_FolderItem->m_DirSubItems[index];
-    aProperties = anItem.m_Properties;
-  }
-  else
-  {
-    const CArchiveFolderFileItem &anItem = 
-        m_FolderItem->m_FileSubItems[index - m_FolderItem->m_DirSubItems.Size()];
-    aProperties = anItem.m_Properties;
-  }
-  */
 
   int size = 2;
   CRecordVector<CInitDialogItem> initDialogItems;
@@ -586,7 +589,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   CInitDialogItem initDialogItem = 
   { DI_DOUBLEBOX, 3, 1, xSize - 4, size - 2, false, false, 0, false, NMessageID::kProperties, NULL, NULL };
   initDialogItems.Add(initDialogItem);
-  AStringVector aValues;
+  AStringVector values;
 
   for (i = 0; i < properties.Size(); i++)
   {
@@ -605,10 +608,9 @@ HRESULT CPlugin::ShowAttributesWindow()
     initDialogItems.Add(initDialogItem);
     
     NCOM::CPropVariant propVariant;
-    RINOK(_folder->GetProperty(itemIndex, 
-        property.ID, &propVariant));
-    CSysString aString = ConvertPropertyToString2(propVariant, property.ID);
-    aValues.Add(aString);
+    RINOK(_folder->GetProperty(itemIndex, property.ID, &propVariant));
+    CSysString s = ConvertPropertyToString2(propVariant, property.ID);
+    values.Add(s);
     
     {
       CInitDialogItem initDialogItem = 
@@ -617,18 +619,18 @@ HRESULT CPlugin::ShowAttributesWindow()
     }
   }
 
-  int numLines = aValues.Size();
-  for(i = 0; i < numLines; i++)
+  int numLines = values.Size();
+  for (i = 0; i < numLines; i++)
   {
     CInitDialogItem &initDialogItem = initDialogItems[1 + i * 2 + 1];
-    initDialogItem.DataString = aValues[i];
+    initDialogItem.DataString = values[i];
   }
   
   int numDialogItems = initDialogItems.Size();
   
   CRecordVector<FarDialogItem> dialogItems;
   dialogItems.Reserve(numDialogItems);
-  for(i = 0; i < numDialogItems; i++)
+  for (i = 0; i < numDialogItems; i++)
     dialogItems.Add(FarDialogItem());
   g_StartupInfo.InitDialogItems(&initDialogItems.Front(), 
       &dialogItems.Front(), numDialogItems);
@@ -653,17 +655,17 @@ HRESULT CPlugin::ShowAttributesWindow()
   }
   size = numLines + 6;
   xSize = maxLen + kSpace + maxLen2 + 5;
-  FarDialogItem &aFirstDialogItem = dialogItems.Front();
-  aFirstDialogItem.Y2 = size - 2;
-  aFirstDialogItem.X2 = xSize - 4;
+  FarDialogItem &firstDialogItem = dialogItems.Front();
+  firstDialogItem.Y2 = size - 2;
+  firstDialogItem.X2 = xSize - 4;
   
   /* int askCode = */ g_StartupInfo.ShowDialog(xSize, size, NULL, &dialogItems.Front(), numDialogItems);
   return S_OK;
 }
 
-int CPlugin::ProcessKey(int aKey, unsigned int controlState)
+int CPlugin::ProcessKey(int key, unsigned int controlState)
 {
-  if (controlState == PKF_CONTROL && aKey == 'A')
+  if (controlState == PKF_CONTROL && key == 'A')
   {
     HRESULT result = ShowAttributesWindow();
     if (result == S_OK)
@@ -672,7 +674,7 @@ int CPlugin::ProcessKey(int aKey, unsigned int controlState)
       return FALSE;
     throw "Error";
   }
-  if ((controlState & PKF_ALT) != 0 && aKey == VK_F6)
+  if ((controlState & PKF_ALT) != 0 && key == VK_F6)
   {
     UString folderPath;
     if (!NFile::NDirectory::GetOnlyDirPrefix(m_FileName, folderPath))

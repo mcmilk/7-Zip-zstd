@@ -39,6 +39,14 @@ STDMETHODIMP CArchiveUpdateCallback::SetCompleted(const UInt64 *completeValue)
   COM_TRY_END
 }
 
+STDMETHODIMP CArchiveUpdateCallback::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  COM_TRY_BEGIN
+  return Callback->SetRatioInfo(inSize, outSize);
+  COM_TRY_END
+}
+
+
 /*
 STATPROPSTG kProperties[] = 
 {

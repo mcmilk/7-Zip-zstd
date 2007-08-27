@@ -14,10 +14,12 @@ using namespace NWindows;
 
 HRESULT DecompressArchive(
     IInArchive *archive,
+    UInt64 packSize,
     const UString &defaultName,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,
     IExtractCallbackUI *callback,
+    CArchiveExtractCallback *extractCallbackSpec,
     UString &errorMessage)
 {
   CRecordVector<UInt32> realIndices;
@@ -40,9 +42,6 @@ HRESULT DecompressArchive(
     return S_OK;
   }
 
-  CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
-  CMyComPtr<IArchiveExtractCallback> extractCallback(extractCallbackSpec);
-  
   UStringVector removePathParts;
 
   UString outDir = options.OutputDir;
@@ -62,20 +61,18 @@ HRESULT DecompressArchive(
       callback,
       options.StdOutMode,
       outDir, 
-      options.PathMode, 
-      options.OverwriteMode,
       removePathParts, 
       options.DefaultItemName, 
       options.ArchiveFileInfo.LastWriteTime,
-      options.ArchiveFileInfo.Attributes);
+      options.ArchiveFileInfo.Attributes,
+      packSize);
 
   #ifdef COMPRESS_MT
   RINOK(SetProperties(archive, options.Properties));
   #endif
 
   HRESULT result = archive->Extract(&realIndices.Front(), 
-    realIndices.Size(), options.TestMode? 1: 0, 
-      extractCallback);
+    realIndices.Size(), options.TestMode? 1: 0, extractCallbackSpec);
 
   return callback->ExtractResult(result);
 }
@@ -87,10 +84,32 @@ HRESULT DecompressArchives(
     const CExtractOptions &optionsSpec,
     IOpenCallbackUI *openCallback,
     IExtractCallbackUI *extractCallback, 
-    UString &errorMessage)
+    UString &errorMessage, 
+    CDecompressStat &stat)
 {
+  stat.Clear();
   CExtractOptions options = optionsSpec;
-  for (int i = 0; i < archivePaths.Size(); i++)
+  int i;
+  UInt64 totalPackSize = 0;
+  for (i = 0; i < archivePaths.Size(); i++)
+  {
+    const UString &archivePath = archivePaths[i];
+    NFile::NFind::CFileInfoW archiveFileInfo;
+    if (!NFile::NFind::FindFile(archivePath, archiveFileInfo))
+      throw "there is no such archive";
+    if (archiveFileInfo.IsDirectory())
+      throw "can't decompress folder";
+    totalPackSize += archiveFileInfo.Size;
+  }
+  CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
+  CMyComPtr<IArchiveExtractCallback> ec(extractCallbackSpec);
+  bool multi = (archivePaths.Size() > 1);
+  extractCallbackSpec->InitForMulti(multi, options.PathMode, options.OverwriteMode);
+  if (multi)
+  {
+    RINOK(extractCallback->SetTotal(totalPackSize));  
+  }
+  for (i = 0; i < archivePaths.Size(); i++)
   {
     const UString &archivePath = archivePaths[i];
     NFile::NFind::CFileInfoW archiveFileInfo;
@@ -140,10 +159,19 @@ HRESULT DecompressArchives(
 
     options.DefaultItemName = archiveLink.GetDefaultItemName();
     RINOK(DecompressArchive(
-        archiveLink.GetArchive(), archiveLink.GetDefaultItemName(),
-        wildcardCensor, options, extractCallback, errorMessage));
+        archiveLink.GetArchive(), 
+        archiveFileInfo.Size,
+        archiveLink.GetDefaultItemName(),
+        wildcardCensor, options, extractCallback, extractCallbackSpec, errorMessage));
+    extractCallbackSpec->LocalProgressSpec->InSize += archiveFileInfo.Size;
+    extractCallbackSpec->LocalProgressSpec->OutSize = extractCallbackSpec->UnpackSize;
     if (!errorMessage.IsEmpty())
       return E_FAIL;
   }
+  stat.NumFolders = extractCallbackSpec->NumFolders;
+  stat.NumFiles = extractCallbackSpec->NumFiles;
+  stat.UnpackSize = extractCallbackSpec->UnpackSize;
+  stat.NumArchives = archivePaths.Size();
+  stat.PackSize = extractCallbackSpec->LocalProgressSpec->InSize;
   return S_OK;
 }

@@ -10,6 +10,7 @@ CFLAGS = $(CFLAGS) -I ../../../  \
   -D_7ZIP_LARGE_PAGES \
 
 GUI_OBJS = \
+  $O\BenchmarkDialog.obj \
   $O\CompressDialog.obj \
   $O\ExtractDialog.obj \
   $O\ExtractGUI.obj \
@@ -60,6 +61,7 @@ WIN_CTRL_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
+  $O\ProgressUtils.obj \
   $O\StreamUtils.obj \
 
 UI_COMMON_OBJS = \
@@ -97,7 +99,10 @@ FM_OBJS = \
   $O\RegistryUtils.obj \
   $O\SplitUtils.obj \
   $O\StringUtils.obj \
-  $O\UpdateCallback100.obj \
+  $O\MessagesDialog.obj \
+  $O\OverwriteDialog.obj \
+  $O\PasswordDialog.obj \
+  $O\ProgressDialog2.obj \
 
 C_OBJS = \
   $O\Alloc.obj \
@@ -115,11 +120,6 @@ OBJS = \
   $(UI_COMMON_OBJS) \
   $(FM_OBJS)\
   $O\MyMessages.obj \
-  $O\MessagesDialog.obj \
-  $O\OverwriteDialog.obj \
-  $O\PasswordDialog.obj \
-  $O\ProgressDialog.obj \
-  $O\BenchmarkDialog.obj \
   $O\CopyCoder.obj \
   $(LZMA_BENCH_OBJS) \
   $(C_OBJS) \
@@ -140,19 +140,9 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
-$(FM_OBJS): ../../FileManager/$(*B).cpp
+$(FM_OBJS): ../FileManager/$(*B).cpp
 	$(COMPL)
 $O\MyMessages.obj: ../Explorer/MyMessages.cpp
-	$(COMPL)
-$O\MessagesDialog.obj: ../../FileManager/Resource/MessagesDialog/$(*B).cpp
-	$(COMPL)
-$O\OverwriteDialog.obj: ../../FileManager/Resource/OverwriteDialog./$(*B).cpp
-	$(COMPL)
-$O\PasswordDialog.obj: ../../FileManager/Resource/PasswordDialog/$(*B).cpp
-	$(COMPL)
-$O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog2/$(*B).cpp
-	$(COMPL)
-$O\BenchmarkDialog.obj: Resource/BenchmarkDialog/$(*B).cpp
 	$(COMPL)
 
 

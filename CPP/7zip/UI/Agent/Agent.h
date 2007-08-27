@@ -13,19 +13,14 @@
 #include "AgentProxy.h"
 
 #ifdef NEW_FOLDER_INTERFACE
-#include "../../FileManager/IFolder.h"
+#include "../FileManager/IFolder.h"
 #include "../Common/LoadCodecs.h"
 #endif
 
 class CAgentFolder;
 
-// {23170F69-40C1-278A-0000-000100050001}
-DEFINE_GUID(IID_IArchiveFolderInternal, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x05, 0x00, 0x01);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100050001")
-IArchiveFolderInternal: public IUnknown
+DECL_INTERFACE(IArchiveFolderInternal, 0x01, 0xC)
 {
-public:
   STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder) PURE;  
 };
 
@@ -39,12 +34,11 @@ class CAgent;
 
 class CAgentFolder: 
   public IFolderFolder,
+  public IFolderProperties,
+  public IGetFolderArchiveProperties,
   public IArchiveFolder,
   public IArchiveFolderInternal,
 #ifdef NEW_FOLDER_INTERFACE
-  public IEnumProperties,
-  public IFolderGetTypeID,
-  public IFolderGetPath,
   public IFolderOperations,
   public IFolderSetFlatMode,
 #endif
@@ -54,31 +48,25 @@ public:
 
   MY_QUERYINTERFACE_BEGIN 
     MY_QUERYINTERFACE_ENTRY(IFolderFolder)
+    MY_QUERYINTERFACE_ENTRY(IFolderProperties)
+    MY_QUERYINTERFACE_ENTRY(IGetFolderArchiveProperties)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolderInternal)
   #ifdef NEW_FOLDER_INTERFACE
-    MY_QUERYINTERFACE_ENTRY(IEnumProperties)
-    MY_QUERYINTERFACE_ENTRY(IFolderGetTypeID)
-    MY_QUERYINTERFACE_ENTRY(IFolderGetPath)
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
     MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
   #endif
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-  // IFolderFolder
-
   void LoadFolder(CProxyFolder *folder);
   HRESULT BindToFolder(CProxyFolder *folder, IFolderFolder **resultFolder);
   void GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const;
 
-  STDMETHOD(LoadItems)();
-  STDMETHOD(GetNumberOfItems)(UINT32 *numItems);  
-  STDMETHOD(GetProperty)(UINT32 itemIndex, PROPID propID, PROPVARIANT *value);
-  STDMETHOD(BindToFolder)(UINT32 index, IFolderFolder **resultFolder);
-  STDMETHOD(BindToFolder)(const wchar_t *name, IFolderFolder **resultFolder);
-  STDMETHOD(BindToParentFolder)(IFolderFolder **resultFolder);
-  STDMETHOD(GetName)(BSTR *name);
+  INTERFACE_FolderFolder(;)
+  INTERFACE_FolderProperties(;)
+
+  STDMETHOD(GetFolderArchiveProperties)(IFolderArchiveProperties **object);
 
   // IArchiveFolder
   STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
@@ -91,25 +79,7 @@ public:
   STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder);
 
   #ifdef NEW_FOLDER_INTERFACE
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
-  STDMETHOD(GetTypeID)(BSTR *name);
-  STDMETHOD(GetPath)(BSTR *path);
-
-
-  // IFolderOperations
-  STDMETHOD(CreateFolder)(const wchar_t *name, IProgress *progress);
-  STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress);
-  STDMETHOD(Rename)(UINT32 index, const wchar_t *newName, IProgress *progress);
-  STDMETHOD(Delete)(const UINT32 *indices, UINT32 numItems, IProgress *progress);
-  STDMETHOD(CopyTo)(const UINT32 *indices, UINT32 numItems, 
-      const wchar_t *path, IFolderOperationsExtractCallback *callback);
-  STDMETHOD(MoveTo)(const UINT32 *indices, UINT32 numItems, 
-      const wchar_t *path, IFolderOperationsExtractCallback *callback);
-  STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath,
-      const wchar_t **itemsPaths, UINT32 numItems, IProgress *progress);
-  STDMETHOD(SetProperty)(UINT32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress);
+  INTERFACE_FolderOperations(;)
 
   STDMETHOD(SetFlatMode)(Int32 flatMode);
   #endif
@@ -156,12 +126,9 @@ public:
 private:
 };
 
-// {23170F69-40C1-278A-1000-000100030000}
-DEFINE_GUID(CLSID_CAgentArchiveHandler, 
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00);
-
 class CAgent: 
   public IInFolderArchive,
+  public IFolderArchiveProperties,
   #ifndef EXTRACT_ONLY
   public IOutFolderArchive,
   public ISetProperties,
@@ -172,6 +139,7 @@ public:
 
   MY_QUERYINTERFACE_BEGIN 
     MY_QUERYINTERFACE_ENTRY(IInFolderArchive)
+    MY_QUERYINTERFACE_ENTRY(IFolderArchiveProperties)
   #ifndef EXTRACT_ONLY
     MY_QUERYINTERFACE_ENTRY(IOutFolderArchive)
     MY_QUERYINTERFACE_ENTRY(ISetProperties)
@@ -179,45 +147,11 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-  STDMETHOD(Open)(
-      const wchar_t *filePath, 
-      BSTR *archiveType,
-      IArchiveOpenCallback *openArchiveCallback);  
-
-  STDMETHOD(ReOpen)(IArchiveOpenCallback *openArchiveCallback);  
-  STDMETHOD(Close)();  
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value);
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties);  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType);
-  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder);  
-  STDMETHOD(Extract)(
-      NExtract::NPathMode::EEnum pathMode, 
-      NExtract::NOverwriteMode::EEnum overwriteMode, 
-      const wchar_t *path, 
-      INT32 testMode,
-      IFolderArchiveExtractCallback *extractCallback2);
+  INTERFACE_IInFolderArchive(;)
+  INTERFACE_IFolderArchiveProperties(;)
 
   #ifndef EXTRACT_ONLY
-  STDMETHOD(SetFolder)(IFolderFolder *folder);
-  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UINT32 numNames);
-  STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, const UINT32 *indices, 
-      UINT32 numItems, IFolderArchiveUpdateCallback *updateCallback);
-  STDMETHOD(DoOperation)(
-      CCodecs *codecs, 
-      int formatIndex,
-      const wchar_t *newArchiveName, 
-      const Byte *stateActions, 
-      const wchar_t *sfxModule,
-      IFolderArchiveUpdateCallback *updateCallback);
-  STDMETHOD(DoOperation2)(
-      const wchar_t *newArchiveName, 
-      const Byte *stateActions, 
-      const wchar_t *sfxModule,
-      IFolderArchiveUpdateCallback *updateCallback);
+  INTERFACE_IOutFolderArchive(;)
 
   HRESULT CommonUpdate(
       const wchar_t *newArchiveName, 
@@ -252,9 +186,6 @@ public:
   CArchiveLink _archiveLink;
   // IInArchive *_archive2;
   
-  // CLSID _CLSID;
-  // CMyComPtr<IArchiveFolder> m_RootFolder;
-  
   UString DefaultName;
 
   FILETIME DefaultTime;
@@ -286,12 +217,9 @@ class CArchiveFolderManager:
 {
 public:
   MY_UNKNOWN_IMP1(IFolderManager)
-  // IFolderManager
-  STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress);
-  STDMETHOD(GetExtensions)(BSTR *extensions);
-  STDMETHOD(GetIconPath)(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex);
-  // STDMETHOD(GetTypes)(BSTR *types);
-  // STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress);
+
+  INTERFACE_IFolderManager(;)
+
   CArchiveFolderManager(): _codecs(0) {}
 private:
   void LoadFormats();

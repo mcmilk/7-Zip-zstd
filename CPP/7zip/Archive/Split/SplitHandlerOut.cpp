@@ -48,30 +48,30 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (newProperties != 0)
   {
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(fileIndex, kpidIsFolder, &propVariant));
-      if (propVariant.vt == VT_EMPTY)
+      NCOM::CPropVariant prop;
+      RINOK(updateCallback->GetProperty(fileIndex, kpidIsFolder, &prop));
+      if (prop.vt == VT_EMPTY)
       {
       }
-      else if (propVariant.vt != VT_BOOL)
+      else if (prop.vt != VT_BOOL)
         return E_INVALIDARG;
       else
       {
-        if (propVariant.boolVal != VARIANT_FALSE)
+        if (prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
       }
     }
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(fileIndex, kpidIsAnti, &propVariant));
-      if (propVariant.vt == VT_EMPTY)
+      NCOM::CPropVariant prop;
+      RINOK(updateCallback->GetProperty(fileIndex, kpidIsAnti, &prop));
+      if (prop.vt == VT_EMPTY)
       {
       }
-      else if (propVariant.vt != VT_BOOL)
+      else if (prop.vt != VT_BOOL)
         return E_INVALIDARG;
       else
       {
-        if (propVariant.boolVal != VARIANT_FALSE)
+        if (prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
       }
     }
@@ -80,11 +80,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   bool thereIsCopyData = false;
   if (newData != 0)
   {
-    NCOM::CPropVariant propVariant;
-    RINOK(updateCallback->GetProperty(fileIndex, kpidSize, &propVariant));
-    if (propVariant.vt != VT_UI8)
+    NCOM::CPropVariant prop;
+    RINOK(updateCallback->GetProperty(fileIndex, kpidSize, &prop));
+    if (prop.vt != VT_UI8)
       return E_INVALIDARG;
-    newSize = propVariant.uhVal.QuadPart;
+    newSize = prop.uhVal.QuadPart;
   }
   else
     thereIsCopyData = true;

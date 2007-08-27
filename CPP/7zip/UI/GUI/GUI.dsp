@@ -384,11 +384,11 @@ SOURCE=..\Explorer\MyMessages.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.cpp
+SOURCE=..\FileManager\ProgressDialog2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
+SOURCE=..\FileManager\ProgressDialog2.h
 # End Source File
 # End Group
 # Begin Group "Messages"
@@ -396,11 +396,11 @@ SOURCE=..\..\FileManager\Resource\ProgressDialog2\ProgressDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
+SOURCE=..\FileManager\MessagesDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
+SOURCE=..\FileManager\MessagesDialog.h
 # End Source File
 # End Group
 # Begin Group "Overwtite"
@@ -408,11 +408,11 @@ SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.cpp
+SOURCE=..\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
+SOURCE=..\FileManager\OverwriteDialog.h
 # End Source File
 # End Group
 # Begin Group "Password"
@@ -420,11 +420,11 @@ SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
+SOURCE=..\FileManager\PasswordDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
+SOURCE=..\FileManager\PasswordDialog.h
 # End Source File
 # End Group
 # Begin Group "Compress Dialog"
@@ -456,11 +456,11 @@ SOURCE=.\ExtractDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.cpp
+SOURCE=.\BenchmarkDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
+SOURCE=.\BenchmarkDialog.h
 # End Source File
 # End Group
 # End Group
@@ -469,87 +469,79 @@ SOURCE=.\Resource\BenchmarkDialog\BenchmarkDialog.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\ExtractCallback.cpp
+SOURCE=..\FileManager\ExtractCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ExtractCallback.h
+SOURCE=..\FileManager\ExtractCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FolderInterface.h
+SOURCE=..\FileManager\FolderInterface.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.cpp
+SOURCE=..\FileManager\FormatUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.h
+SOURCE=..\FileManager\FormatUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\HelpUtils.cpp
+SOURCE=..\FileManager\HelpUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\HelpUtils.h
+SOURCE=..\FileManager\HelpUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\LangUtils.cpp
+SOURCE=..\FileManager\LangUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\LangUtils.h
+SOURCE=..\FileManager\LangUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\OpenCallback.cpp
+SOURCE=..\FileManager\OpenCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\OpenCallback.h
+SOURCE=..\FileManager\OpenCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ProgramLocation.cpp
+SOURCE=..\FileManager\ProgramLocation.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ProgramLocation.h
+SOURCE=..\FileManager\ProgramLocation.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\RegistryUtils.cpp
+SOURCE=..\FileManager\RegistryUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\RegistryUtils.h
+SOURCE=..\FileManager\RegistryUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\SplitUtils.cpp
+SOURCE=..\FileManager\SplitUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\SplitUtils.h
+SOURCE=..\FileManager\SplitUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\StringUtils.cpp
+SOURCE=..\FileManager\StringUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\StringUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\FileManager\UpdateCallback100.h
+SOURCE=..\FileManager\StringUtils.h
 # End Source File
 # End Group
 # Begin Group "Engine"
@@ -610,6 +602,14 @@ SOURCE=..\..\Common\FileStreams.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FileStreams.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 

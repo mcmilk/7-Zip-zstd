@@ -1,0 +1,35 @@
+#include "SettingsPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+
+IDD_SETTINGS  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "Settings"
+MY_FONT
+BEGIN
+  CONTROL  "Show "".."" item", IDC_SETTINGS_SHOW_DOTS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+           marg, marg, xSize2, 10
+  CONTROL  "Show real file &icons", IDC_SETTINGS_SHOW_REAL_FILE_ICONS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 21, xSize2, 10
+  CONTROL  "Show system &menu", IDC_SETTINGS_SHOW_SYSTEM_MENU, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 35, xSize2, 10
+  CONTROL  "&Full row select", IDC_SETTINGS_FULL_ROW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 63, xSize2, 10
+  CONTROL  "Show &grid lines", IDC_SETTINGS_SHOW_GRID, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 77, xSize2, 10
+  CONTROL  "&Single-click to open an item", IDC_SETTINGS_SINGLE_CLICK, "Button", BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP, 
+           marg, 91, xSize2, 10
+  CONTROL  "&Underline current name", IDC_SETTINGS_UNDERLINE, "Button", BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP, 
+           marg + 12, 105, xSize2 - 12, 10
+
+  CONTROL  "&Alternative selection mode", IDC_SETTINGS_ALTERNATIVE_SELECTION, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 122, xSize2, 10
+
+  CONTROL  "Use &large memory pages", IDC_SETTINGS_LARGE_PAGES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 142, xSize2, 10
+
+END

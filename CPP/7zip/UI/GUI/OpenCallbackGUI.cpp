@@ -9,7 +9,7 @@
 #include "Common/StringConvert.h"
 
 #ifndef _NO_CRYPTO
-#include "../../FileManager/Resource/PasswordDialog/PasswordDialog.h"
+#include "../FileManager/PasswordDialog.h"
 #endif
 
 HRESULT COpenCallbackGUI::CheckBreak()

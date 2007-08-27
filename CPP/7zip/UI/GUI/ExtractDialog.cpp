@@ -13,15 +13,15 @@
 #include "Windows/ResourceString.h"
 
 #ifndef NO_REGISTRY
-#include "../../FileManager/HelpUtils.h"
+#include "../FileManager/HelpUtils.h"
 #endif
 
 #include "../Common/ZipRegistry.h"
 
-#include "../../FileManager/LangUtils.h"
+#include "../FileManager/LangUtils.h"
 
-#include "../Resource/Extract/resource.h"
-#include "../Resource/ExtractDialog/resource.h"
+#include "ExtractRes.h"
+#include "ExtractDialogRes.h"
 
 // #include "Help/Context/Extract.h"
 

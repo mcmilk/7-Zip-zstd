@@ -3,7 +3,7 @@
 #ifndef __EXTRACTDIALOG_H
 #define __EXTRACTDIALOG_H
 
-#include "resource.h"
+#include "ExtractDialogRes.h"
 
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/Edit.h"

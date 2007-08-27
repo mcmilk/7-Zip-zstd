@@ -1,0 +1,24 @@
+#include "ComboDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 233
+#define ySize2 57
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define bYPos  (ySize - marg - bYSize)
+#define b1XPos (xSize - marg - bXSize)
+#define b2XPos (b1XPos - 10 - bXSize)
+
+
+IDD_DIALOG_COMBO  DIALOG  0, 0, xSize, ySize  MY_MODAL_DIALOG_STYLE
+CAPTION "Combo"
+MY_FONT
+BEGIN
+  LTEXT      "", IDC_COMBO_STATIC, marg, marg, xSize2, 8
+  COMBOBOX       IDC_COMBO_COMBO,  marg,   20, xSize2, 65, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+
+  DEFPUSHBUTTON  "OK",     IDOK,     b2XPos, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Cancel", IDCANCEL, b1XPos, bYPos, bXSize, bYSize
+END

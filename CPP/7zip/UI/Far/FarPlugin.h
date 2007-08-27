@@ -456,11 +456,12 @@ struct PluginInfo
   char *CommandPrefix;
 };
 
+const int kInfoPanelLineSize = 80;
 
 struct InfoPanelLine
 {
-  char Text[80];
-  char Data[80];
+  char Text[kInfoPanelLineSize];
+  char Data[kInfoPanelLineSize];
   int Separator;
 };
 

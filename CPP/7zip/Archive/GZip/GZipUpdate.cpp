@@ -34,9 +34,7 @@ HRESULT UpdateArchive(
     int indexInClient,
     IArchiveUpdateCallback *updateCallback)
 {
-  UInt64 complexity = 0;
-
-  complexity += unpackSize;
+  UInt64 complexity = unpackSize;
 
   RINOK(updateCallback->SetTotal(complexity));
 
@@ -54,13 +52,9 @@ HRESULT UpdateArchive(
   inStreamSpec->SetStream(fileInStream);
   inStreamSpec->Init();
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-  localProgressSpec->Init(updateCallback, true);
-  
-  CLocalCompressProgressInfo *localCompressProgressSpec = 
-      new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
   
   COutArchive outArchive;
   outArchive.Create(outStream);
@@ -71,8 +65,6 @@ HRESULT UpdateArchive(
   item.HostOS = kHostOS;
 
   RINOK(outArchive.WriteHeader(item));
-
-  localCompressProgressSpec->Init(localProgress, &complexity, NULL);
 
   {
     RINOK(CreateCoder(
@@ -102,7 +94,7 @@ HRESULT UpdateArchive(
     RINOK(deflateEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
     RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, numProps));
   }
-  RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, compressProgress));
+  RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, progress));
 
   item.FileCRC = inStreamSpec->GetCRC();
   item.UnPackSize32 = (UInt32)inStreamSpec->GetSize();

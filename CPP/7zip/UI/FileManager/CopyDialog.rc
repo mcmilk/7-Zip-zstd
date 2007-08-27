@@ -1,0 +1,28 @@
+#include "CopyDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 346
+#define ySize2 57
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define bYPos  (ySize - marg - bYSize)
+#define b1XPos (xSize - marg - bXSize)
+#define b2XPos (b1XPos - 10 - bXSize)
+
+IDD_DIALOG_COPY  DIALOG  0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "Copy"
+MY_FONT
+BEGIN
+  LTEXT           "",    IDC_COPY_STATIC,   marg, marg, xSize2, 8
+  COMBOBOX               IDC_COPY_COMBO,    marg, 20, xSize2 - bDotsSize - 12, 65,  CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+  PUSHBUTTON      "...", IDC_COPY_SET_PATH,  (xSize - marg - bDotsSize), 20, bDotsSize, 14, WS_GROUP
+  DEFPUSHBUTTON  "OK",     IDOK,     b2XPos, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Cancel", IDCANCEL, b1XPos, bYPos, bXSize, bYSize
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+  IDS_SET_FOLDER  "Specify a location for output folder."
+END

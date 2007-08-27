@@ -51,6 +51,7 @@ class CCoderMixer2MT:
 
   void AddCoderCommon();
   HRESULT Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams);
+  HRESULT ReturnIfError(HRESULT code);
 public:
   CObjectVector<CCoder2> _coders;
   MY_UNKNOWN_IMP

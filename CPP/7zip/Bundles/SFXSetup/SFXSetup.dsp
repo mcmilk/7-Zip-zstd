@@ -668,20 +668,20 @@ SOURCE=..\..\UI\GUI\OpenCallbackGUI.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.cpp
+SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
+SOURCE=..\..\UI\FileManager\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.cpp
+SOURCE=..\..\UI\FileManager\FormatUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.h
+SOURCE=..\..\UI\FileManager\FormatUtils.h
 # End Source File
 # End Group
 # Begin Group "C"

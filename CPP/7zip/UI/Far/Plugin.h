@@ -13,6 +13,8 @@
 
 #include "FarUtils.h"
 
+const UInt32 kNumInfoLinesMax = 30;  // Change it;
+
 class CPlugin
 {
   NWindows::NCOM::CComInitializer m_ComInitializer;
@@ -20,7 +22,7 @@ class CPlugin
 
   UString m_PannelTitle;
   
-  InfoPanelLine m_InfoLines[30]; // Change it;
+  InfoPanelLine m_InfoLines[kNumInfoLinesMax];
 
   char m_FileNameBuffer[1024];
   char m_CurrentDirBuffer[1024];

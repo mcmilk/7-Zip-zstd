@@ -1,0 +1,80 @@
+#include "ExtractDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 285
+#define ySize2 204
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#undef g1XSize
+#undef g1XSize2
+#undef g1XPos2
+#undef g2XPos
+#undef g2XPos2
+#undef g2XSize
+#undef g2XSize2
+
+#define bYPos (ySize - marg - bYSize)
+
+#define g1XSize 127
+#define g1XSize2 (g1XSize - 13)
+#define g1XPos2 (marg + 7)
+
+#define gSpace 14
+#define g2XPos (marg + g1XSize + gSpace)
+#define g2XPos2 (g2XPos + 7)
+#define g2XSize (xSize2 - g1XSize - gSpace)
+#define g2XSize2 (g2XSize - 14)
+
+#define bXPos1 (xSize - marg - bXSize)
+#define bXPos2 (bXPos1 - 10 - bXSize)
+#define bXPos3 (bXPos2 - 10 - bXSize)
+
+IDD_DIALOG_EXTRACT DIALOG DISCARDABLE  0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "Extract"
+MY_FONT
+BEGIN
+  LTEXT    "E&xtract to:", IDC_STATIC_EXTRACT_EXTRACT_TO, marg, marg, xSize2, 8
+  
+  COMBOBOX   IDC_EXTRACT_COMBO_PATH, marg, 21, xSize2 - bDotsSize - 13, 126, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+
+  PUSHBUTTON  "...", IDC_EXTRACT_BUTTON_SET_PATH, xSize - marg - bDotsSize, 20, bDotsSize, bYSize, WS_GROUP
+
+  GROUPBOX  "Path mode",IDC_EXTRACT_PATH_MODE, marg, 44, g1XSize, 57
+  CONTROL  "Full pathnames", IDC_EXTRACT_RADIO_FULL_PATHNAMES,"Button", BS_AUTORADIOBUTTON | WS_GROUP,
+           g1XPos2, 57, g1XSize2, 10
+  CONTROL  "Current pathnames",IDC_EXTRACT_RADIO_CURRENT_PATHNAMES, "Button", BS_AUTORADIOBUTTON,
+           g1XPos2, 71, g1XSize2, 10
+  CONTROL  "No pathnames", IDC_EXTRACT_RADIO_NO_PATHNAMES, "Button", BS_AUTORADIOBUTTON,
+           g1XPos2, 85, g1XSize2, 10
+
+  GROUPBOX "Overwrite mode",IDC_EXTRACT_OVERWRITE_MODE, g2XPos, 44, g2XSize, 88, WS_GROUP
+  CONTROL  "Ask before overwrite", IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE, "Button", BS_AUTORADIOBUTTON | WS_GROUP,
+           g2XPos2, 57, g2XSize2, 10
+  CONTROL  "Overwrite without prompt", IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT, "Button", BS_AUTORADIOBUTTON,
+           g2XPos2, 71, g2XSize2, 10
+  CONTROL  "Skip existing files", IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES, "Button", BS_AUTORADIOBUTTON,
+           g2XPos2, 85, g2XSize2, 10
+  CONTROL  "Auto rename", IDC_EXTRACT_RADIO_AUTO_RENAME, "Button", BS_AUTORADIOBUTTON,
+           g2XPos2, 99, g2XSize2, 10
+  CONTROL  "Auto rename existing files", IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING, "Button", BS_AUTORADIOBUTTON,
+           g2XPos2,113, g2XSize2, 10
+
+  GROUPBOX "Files",IDC_EXTRACT_FILES, marg, 140, 127, 48, NOT WS_VISIBLE | WS_DISABLED | WS_GROUP
+  CONTROL  "&Selected files",IDC_EXTRACT_RADIO_SELECTED_FILES, "Button", BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_DISABLED | WS_GROUP,
+           g1XPos2, 153, g1XSize2, 10
+  CONTROL  "&All files",IDC_EXTRACT_RADIO_ALL_FILES, "Button", BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_DISABLED,
+           g1XPos2, 166, g1XSize2, 10
+
+  GROUPBOX "Password",IDC_EXTRACT_PASSWORD, g2XPos, 142, g2XSize, 46
+  EDITTEXT IDC_EXTRACT_EDIT_PASSWORD,154,153,130,14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL         "Show Password",IDC_EXTRACT_CHECK_SHOW_PASSWORD,"Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+           g2XPos2, 172, g2XSize2, 10
+  
+  DEFPUSHBUTTON  "OK",         IDOK, bXPos3, bYPos, bXSize, bYSize, WS_GROUP
+  PUSHBUTTON     "Cancel", IDCANCEL, bXPos2, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Help",     IDHELP, bXPos1, bYPos, bXSize, bYSize
+END
+
+

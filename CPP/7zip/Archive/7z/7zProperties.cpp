@@ -37,18 +37,14 @@ CPropMap kPropMap[] =
   { NID::kWinAttributes, NULL, kpidAttributes, VT_UI4},
   { NID::kStartPos, NULL, kpidPosition, VT_UI4},
 
-
   { NID::kCRC, NULL, kpidCRC, VT_UI4},
   
-  { NID::kAnti, L"Anti", kpidIsAnti, VT_BOOL},
+  { NID::kAnti, NULL, kpidIsAnti, VT_BOOL},
   // { 97, NULL, kpidSolid, VT_BOOL},
   #ifndef _SFX
   { 98, NULL, kpidMethod, VT_BSTR},
-  { 99, L"Block", kpidBlock, VT_UI4}
+  { 99, NULL, kpidBlock, VT_UI4}
   #endif
-  // { L"ID", kpidID, VT_BSTR},
-  // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
-  // { L"Host OS", kpidHostOS, VT_BSTR}
 };
 
 static const int kPropMapSize = sizeof(kPropMap) / sizeof(kPropMap[0]);

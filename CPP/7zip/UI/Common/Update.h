@@ -140,16 +140,18 @@ struct CUpdateErrorInfo: public CErrorInfo
 {
 };
 
+#define INTERFACE_IUpdateCallbackUI2(x) \
+  INTERFACE_IUpdateCallbackUI(x) \
+  virtual HRESULT OpenResult(const wchar_t *name, HRESULT result) x; \
+  virtual HRESULT StartScanning() x; \
+  virtual HRESULT CanNotFindError(const wchar_t *name, DWORD systemError) x; \
+  virtual HRESULT FinishScanning() x; \
+  virtual HRESULT StartArchive(const wchar_t *name, bool updating) x; \
+  virtual HRESULT FinishArchive() x; \
+
 struct IUpdateCallbackUI2: public IUpdateCallbackUI
 {
-  virtual HRESULT OpenResult(const wchar_t *name, HRESULT result) = 0;
-
-  virtual HRESULT StartScanning() = 0;
-  virtual HRESULT CanNotFindError(const wchar_t *name, DWORD systemError) = 0;
-  virtual HRESULT FinishScanning() = 0;
-
-  virtual HRESULT StartArchive(const wchar_t *name, bool updating) = 0;
-  virtual HRESULT FinishArchive() = 0;
+  INTERFACE_IUpdateCallbackUI2(=0)
 };
 
 HRESULT UpdateArchive(

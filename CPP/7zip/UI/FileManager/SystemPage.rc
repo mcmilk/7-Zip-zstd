@@ -1,0 +1,28 @@
+#include "SystemPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 238
+#define ySize2 214
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+#define gSpace 30
+#define g0Size 160
+#define gYSize (ySize2 - 20 - bYSize)
+
+
+IDD_SYSTEM  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "System"
+MY_FONT
+BEGIN
+  LTEXT     "Associate 7-Zip with:", IDC_SYSTEM_STATIC_ASSOCIATE, marg, marg, xSize2, 8
+  CONTROL   "List1", IDC_SYSTEM_LIST_ASSOCIATE, "SysListView32", 
+             LVS_LIST | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,
+             marg, 20, g0Size, gYSize
+  PUSHBUTTON  "Select all", IDC_SYSTEM_SELECT_ALL, marg, (ySize - marg - bYSize), 90, bYSize
+
+END
+
+STRINGTABLE
+BEGIN
+  IDS_PLUGIN  "Plugin"
+END

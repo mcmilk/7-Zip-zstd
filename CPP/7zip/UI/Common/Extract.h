@@ -54,6 +54,16 @@ public:
   */
 };
 
+struct CDecompressStat
+{
+  UInt64 NumArchives;
+  UInt64 UnpackSize;
+  UInt64 PackSize;
+  UInt64 NumFolders;
+  UInt64 NumFiles;
+  void Clear() { NumArchives = PackSize = UnpackSize = NumFolders = NumFiles = 0; }
+};
+
 HRESULT DecompressArchives(
     CCodecs *codecs,
     UStringVector &archivePaths, UStringVector &archivePathsFull,
@@ -61,6 +71,7 @@ HRESULT DecompressArchives(
     const CExtractOptions &options,
     IOpenCallbackUI *openCallback,
     IExtractCallbackUI *extractCallback,
-    UString &errorMessage);
+    UString &errorMessage, 
+    CDecompressStat &stat);
 
 #endif

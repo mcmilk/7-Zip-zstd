@@ -13,7 +13,7 @@
 #include "../../ICoder.h"
 
 #ifndef _NO_PROGRESS
-#include "../../FileManager/Resource/ProgressDialog/ProgressDialog.h"
+#include "../../UI/FileManager/ProgressDialog.h"
 #endif
 
 class CExtractCallbackImp: 

@@ -13,8 +13,8 @@
 #include "Windows/FileMapping.h"
 #include "Windows/FileDir.h"
 
-#include "../../FileManager/ProgramLocation.h"
-#include "../../FileManager/RegistryUtils.h"
+#include "../FileManager/ProgramLocation.h"
+#include "../FileManager/RegistryUtils.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;

@@ -1,0 +1,116 @@
+#include "BenchmarkDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 330
+#define ySize2 228
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#undef g0XSize
+#undef g1XPos
+#undef g1XSize
+#undef g2XSize
+#undef g3XPos
+#undef g3XSize
+
+#define bXPos1 (xSize - marg - bXSize)
+#define bXPos2 (bXPos1 - 10 - bXSize)
+
+#define bYPos (ySize - marg - bYSize)
+
+#define gSize 160
+#define gSpace 24
+
+#define g0XSize 90
+#define g1XSize 44
+#define g1XPos  (marg + g0XSize)
+#define gc2XPos  (g1XPos + g1XSize + 10)
+#define gc2XSize 80
+
+#define g10XPos (marg + marg)
+
+#define gRatingSize 60
+#define gSpeedSize 60
+#define gUsageSize 60
+#define gRpuSize 60
+
+#define gRatingPos (xSize - marg - marg - gRatingSize)
+#define gRpuPos (gRatingPos - gRpuSize)
+#define gUsagePos (gRpuPos - gUsageSize)
+#define gSpeedPos (gUsagePos - gSpeedSize)
+
+#define gLabelSize (gUsagePos - g10XPos)
+#define gTotalRatingSize (gUsageSize + gRpuSize + gRatingSize + marg + marg)
+#define gTotalRatingPos (xSize - marg - gTotalRatingSize)
+
+#define g2XSize 58
+#define g3XSize 36
+#define g3XPos (marg + g2XSize)
+
+
+IDD_DIALOG_BENCHMARK DIALOG 0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
+CAPTION "Benchmark"
+MY_FONT
+BEGIN
+  PUSHBUTTON  "&Restart", IDC_BUTTON_RESTART, bXPos1, marg, bXSize, bYSize
+  PUSHBUTTON  "&Stop",    IDC_BUTTON_STOP,    bXPos1,   27, bXSize, bYSize
+  
+  PUSHBUTTON  "&Help",    IDHELP,             bXPos2, bYPos, bXSize,bYSize
+  PUSHBUTTON  "Cancel",   IDCANCEL,           bXPos1, bYPos, bXSize, bYSize
+  
+  LTEXT     "&Dictionary size:", IDC_BENCHMARK_DICTIONARY, marg, marg + 1, g0XSize, 8
+  COMBOBOX  IDC_BENCHMARK_COMBO_DICTIONARY, g1XPos, marg, g1XSize, 140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Number of CPU threads:", IDC_BENCHMARK_NUM_THREADS, marg, 24, g0XSize, 8
+  COMBOBOX  IDC_BENCHMARK_COMBO_NUM_THREADS, g1XPos, 23, g1XSize, 140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "Memory usage:", IDC_BENCHMARK_MEMORY, gc2XPos, marg + 1, gc2XSize, 8
+  LTEXT     "0 MB", IDC_BENCHMARK_MEMORY_VALUE, gc2XPos + gc2XSize, marg + 1, 40, 8
+  LTEXT     "1", IDC_BENCHMARK_HARDWARE_THREADS, gc2XPos, 24, 40, 8
+
+  RTEXT     "CPU Usage", IDC_BENCHMARK_USAGE_LABEL,           gUsagePos,  53, gUsageSize,  8
+  RTEXT     "Speed", IDC_BENCHMARK_SPEED_LABEL,               gSpeedPos,  53, gSpeedSize,  8
+  RTEXT     "Rating / Usage", IDC_BENCHMARK_RPU_LABEL,          gRpuPos,  53, gRpuSize,    8
+  RTEXT     "Rating", IDC_BENCHMARK_RATING_LABEL,            gRatingPos,  53, gRatingSize, 8
+  
+  GROUPBOX  "Compressing", IDC_BENCHMARK_COMPRESSING,              marg,  64,      xSize2, 40
+ 
+  LTEXT     "Current", IDC_BENCHMARK_CURRENT,                   g10XPos,  76, gLabelSize,  8
+  RTEXT     "100%", IDC_BENCHMARK_COMPRESSING_USAGE,          gUsagePos,  76, gUsageSize,  8
+  RTEXT     "100 KB/s", IDC_BENCHMARK_COMPRESSING_SPEED,      gSpeedPos,  76, gSpeedSize,  8
+  RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RPU,                 gRpuPos,  76, gRpuSize,    8
+  RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RATING,           gRatingPos,  76, gRatingSize, 8
+  
+  LTEXT     "Resulting", IDC_BENCHMARK_RESULTING,               g10XPos,  89, gLabelSize,  8
+  RTEXT     "100%", IDC_BENCHMARK_COMPRESSING_USAGE2,         gUsagePos,  89, gUsageSize,  8
+  RTEXT     "100 KB/s", IDC_BENCHMARK_COMPRESSING_SPEED2,     gSpeedPos,  89, gSpeedSize,  8
+  RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RPU2,                gRpuPos,  89, gRpuSize,    8
+  RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RATING2,          gRatingPos,  89, gRatingSize, 8
+  
+  GROUPBOX  "Decompressing", IDC_BENCHMARK_DECOMPRESSING,          marg, 111, xSize2, 40
+
+  LTEXT     "Current", IDC_BENCHMARK_CURRENT2,                  g10XPos, 123,  gLabelSize, 8
+  RTEXT     "100%", IDC_BENCHMARK_DECOMPRESSING_USAGE,        gUsagePos, 123,  gUsageSize, 8
+  RTEXT     "100 KB/s", IDC_BENCHMARK_DECOMPRESSING_SPEED,    gSpeedPos, 123,  gSpeedSize, 8
+  RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RPU,               gRpuPos, 123,    gRpuSize, 8
+  RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RATING,         gRatingPos, 123, gRatingSize, 8
+  
+  LTEXT     "Resulting", IDC_BENCHMARK_RESULTING2,              g10XPos, 136,  gLabelSize, 8
+  RTEXT     "100%", IDC_BENCHMARK_DECOMPRESSING_USAGE2,       gUsagePos, 136,  gUsageSize, 8
+  RTEXT     "100 KB/s", IDC_BENCHMARK_DECOMPRESSING_SPEED2,   gSpeedPos, 136,  gSpeedSize, 8
+  RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RPU2,              gRpuPos, 136,    gRpuSize, 8
+  RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RATING2,        gRatingPos, 136, gRatingSize, 8
+  
+  GROUPBOX  "Total Rating", IDC_BENCHMARK_TOTAL_RATING, gTotalRatingPos, 163, gTotalRatingSize, 38
+  RTEXT     "0", IDC_BENCHMARK_TOTAL_USAGE_VALUE,             gUsagePos, 181,  gUsageSize, 8
+  RTEXT     "0", IDC_BENCHMARK_TOTAL_RPU_VALUE,                 gRpuPos, 181,    gRpuSize, 8
+  RTEXT     "0", IDC_BENCHMARK_TOTAL_RATING_VALUE,           gRatingPos, 181, gRatingSize, 8
+  
+  LTEXT     "Elapsed time:", IDC_BENCHMARK_ELAPSED,    marg, 163, g2XSize, 8
+  LTEXT     "Size:", IDC_BENCHMARK_SIZE,               marg, 176, g2XSize, 8
+  LTEXT     "Passes:", IDC_BENCHMARK_PASSES,           marg, 189, g2XSize, 8
+  RTEXT     "00:00:00", IDC_BENCHMARK_ELAPSED_VALUE, g3XPos, 163, g3XSize, 8
+  RTEXT     "0", IDC_BENCHMARK_SIZE_VALUE,           g3XPos, 176, g3XSize, 8
+  RTEXT     "0", IDC_BENCHMARK_PASSES_VALUE,         g3XPos, 189, g3XSize, 8
+END

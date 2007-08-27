@@ -332,9 +332,17 @@ static HRESULT Compress(
   
   CObjectVector<CUpdatePair2> updatePairs2;
   UpdateProduce(updatePairs, actionSet, updatePairs2);
+
+  UInt32 numFiles = 0;
+  for (int i = 0; i < updatePairs2.Size(); i++)
+    if (updatePairs2[i].NewData)
+      numFiles++;
+  
+  RINOK(callback->SetNumFiles(numFiles));
+
   
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
+  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   updateCallbackSpec->ShareForWrite = shareForWrite;
   updateCallbackSpec->StdInMode = stdInMode;

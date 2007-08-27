@@ -26,6 +26,7 @@ public:
   STDMETHOD(DeleteOperation)(const wchar_t *aName);
   STDMETHOD(OperationResult)(INT32 aOperationResult);
   STDMETHOD(UpdateErrorMessage)(const wchar_t *message);
+  STDMETHOD(SetNumFiles)(UInt64 numFiles);
 
 private:
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;

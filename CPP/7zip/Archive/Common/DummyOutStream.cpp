@@ -4,17 +4,19 @@
 
 #include "DummyOutStream.h"
 
-void CDummyOutStream::Init(ISequentialOutStream *outStream)
+STDMETHODIMP CDummyOutStream::Write(const void *data,  UInt32 size, UInt32 *processedSize)
 {
-  m_Stream = outStream;
-}
-
-STDMETHODIMP CDummyOutStream::Write(const void *data, 
-    UInt32 size, UInt32 *processedSize)
-{
-  if(m_Stream)
-    return m_Stream->Write(data, size, processedSize);
+  UInt32 realProcessedSize;
+  HRESULT result;
+  if(!_stream)
+  {
+    realProcessedSize = size;
+    result = S_OK;
+  }
+  else
+    result = _stream->Write(data, size, &realProcessedSize);
+  _size += realProcessedSize;
   if(processedSize != NULL)
-    *processedSize = size;
-  return S_OK;
+    *processedSize = realProcessedSize;
+  return result;
 }

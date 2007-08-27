@@ -57,7 +57,17 @@ static CPropIdToName kPropIdToName[] =
   { kpidGroup, L"Group" },
   { kpidBlock, L"Block" },
   { kpidComment, L"Comment" },
-  { kpidPosition, L"Position" }
+  { kpidPosition, L"Position" },
+  { kpidPrefix, L"Prefix" },
+  { kpidNumSubFolders, L"Folders" },
+  { kpidNumSubFiles, L"Files" },
+  { kpidUnpackVer, L"Version" },
+  { kpidVolume, L"Volume" },
+  { kpidIsVolume, L"Multivolume" },
+  { kpidOffset, L"Offset" },
+  { kpidLinks, L"Links" },
+  { kpidNumBlocks, L"Blocks" },
+  { kpidNumVolumes, L"Volumes" }
 };
 
 static const char kEmptyAttributeChar = '.';
@@ -184,6 +194,19 @@ void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, int numItems)
   }
 }
 
+static UString GetPropName(PROPID propID, BSTR name)
+{
+  for (int i = 0; i < sizeof(kPropIdToName) / sizeof(kPropIdToName[0]); i++)
+  {
+    const CPropIdToName &propIdToName = kPropIdToName[i];
+    if (propIdToName.PropID == propID)
+      return propIdToName.Name;
+  }
+  if (name)
+    return name;
+  return L"?";
+}
+
 HRESULT CFieldPrinter::Init(IInArchive *archive)
 {
   Clear();
@@ -197,21 +220,7 @@ HRESULT CFieldPrinter::Init(IInArchive *archive)
     RINOK(archive->GetPropertyInfo(i, &name, &propID, &vt));
     CFieldInfo fieldInfo;
     fieldInfo.PropID = propID;
-    if (name != NULL)
-      fieldInfo.Name = name;
-    else
-    {
-      fieldInfo.Name = L"Unknown";
-      for (int i = 0; i < sizeof(kPropIdToName) / sizeof(kPropIdToName[0]); i++)
-      {
-        const CPropIdToName &propIdToName = kPropIdToName[i];
-        if (propIdToName.PropID == propID)
-        {
-          fieldInfo.Name = propIdToName.Name;
-          break;
-        }
-      }
-    }
+    fieldInfo.Name = GetPropName(propID, name);
     _fields.Add(fieldInfo);
   }
   return S_OK;
@@ -463,14 +472,28 @@ HRESULT ListArchives(
     {
       g_StdOut << endl << kListing << archiveName << endl << endl;
 
-      NCOM::CPropVariant propVariant;
-      RINOK(archive->GetArchiveProperty(kpidComment, &propVariant));
-      if (propVariant.vt != VT_EMPTY)
+      UInt32 numProps;
+      if (archive->GetNumberOfArchiveProperties(&numProps) == S_OK)
       {
-        UString s = ConvertPropertyToString(propVariant, kpidComment);
-        if (!s.IsEmpty())
-          g_StdOut << "Comment:\n" << s << "\n\n";
+        for (UInt32 i = 0; i < numProps; i++)
+        {
+          CMyComBSTR name;
+          PROPID propID;
+          VARTYPE vt;
+          if (archive->GetArchivePropertyInfo(i, &name, &propID, &vt) != S_OK)
+            continue;
+          NCOM::CPropVariant prop;
+          if (archive->GetArchiveProperty(propID, &prop) != S_OK)
+            continue;
+          UString s = ConvertPropertyToString(prop, propID);
+          if (!s.IsEmpty())
+            g_StdOut << GetPropName(propID, name) << " = " << s << endl;
+        }
       }
+      if (techMode)
+        g_StdOut << "----------\n";
+      if (numProps > 0)
+        g_StdOut << endl;
     }
 
     if (enableHeaders && !techMode)

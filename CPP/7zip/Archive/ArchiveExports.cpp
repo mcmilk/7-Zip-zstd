@@ -85,11 +85,11 @@ STDAPI GetHandlerProperty2(UInt32 formatIndex, PROPID propID, PROPVARIANT *value
   if (formatIndex >= g_NumArcs)
     return E_INVALIDARG;
   const CArcInfo &arc = *g_Arcs[formatIndex];
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
     case NArchive::kName:
-      propVariant = arc.Name;
+      prop = arc.Name;
       break;
     case NArchive::kClassID:
     {
@@ -99,22 +99,22 @@ STDAPI GetHandlerProperty2(UInt32 formatIndex, PROPID propID, PROPVARIANT *value
     }
     case NArchive::kExtension:
       if (arc.Ext != 0)
-        propVariant = arc.Ext;
+        prop = arc.Ext;
       break;
     case NArchive::kAddExtension:
       if (arc.AddExt != 0)
-        propVariant = arc.AddExt;
+        prop = arc.AddExt;
       break;
     case NArchive::kUpdate:
-      propVariant = (bool)(arc.CreateOutArchive != 0);
+      prop = (bool)(arc.CreateOutArchive != 0);
       break;
     case NArchive::kKeepName:
-      propVariant = arc.KeepName;
+      prop = arc.KeepName;
       break;
     case NArchive::kStartSignature:
       return SetPropString((const char *)arc.Signature, arc.SignatureSize, value);
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
 }
 

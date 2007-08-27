@@ -64,6 +64,7 @@ UI_COMMON_OBJS = \
 
 FM_OBJS = \
   $O\FormatUtils.obj \
+  $O\ProgressDialog.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
@@ -125,7 +126,6 @@ OBJS = \
   $(LZ_OBJS) \
   $(LZMA_OPT_OBJS) \
   $O\MyMessages.obj \
-  $O\ProgressDialog.obj \
   $(C_OBJS) \
   $(C_BRANCH_OBJS) \
   $(CRC_OBJS) \
@@ -149,7 +149,7 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
 	$(COMPL)
-$(FM_OBJS): ../../FileManager/$(*B).cpp
+$(FM_OBJS): ../../UI/FileManager//$(*B).cpp
 	$(COMPL)
 $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
@@ -166,8 +166,6 @@ $(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 	$(COMPL)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
-	$(COMPL)
-$O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog/$(*B).cpp
 	$(COMPL)
 
 $(C_OBJS): ../../../../C/$(*B).c

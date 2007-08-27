@@ -7,12 +7,7 @@
 #include "../IProgress.h"
 #include "../PropID.h"
 
-// MIDL_INTERFACE("23170F69-40C1-278A-0000-000600xx0000")
-#define ARCHIVE_INTERFACE_SUB(i, base,  x) \
-DEFINE_GUID(IID_ ## i, \
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x06, 0x00, x, 0x00, 0x00); \
-struct i: public base
-
+#define ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 6, x)
 #define ARCHIVE_INTERFACE(i, x) ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
 
 namespace NFileTimeType
@@ -171,5 +166,42 @@ ARCHIVE_INTERFACE(ISetProperties, 0x03)
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties) PURE;
 };
 
+
+#define IMP_IInArchive_GetProp(k) \
+  (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
+    { if(index >= sizeof(k) / sizeof(k[0])) return E_INVALIDARG; \
+    const STATPROPSTG &srcItem = k[index]; \
+    *propID = srcItem.propid; *varType = srcItem.vt; *name = 0; return S_OK; } \
+
+#define IMP_IInArchive_GetProp_WITH_NAME(k) \
+  (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
+    { if(index >= sizeof(k) / sizeof(k[0])) return E_INVALIDARG; \
+    const STATPROPSTG &srcItem = k[index]; \
+    *propID = srcItem.propid; *varType = srcItem.vt; \
+    if (srcItem.lpwstrName == 0) *name = 0; else *name = ::SysAllocString(srcItem.lpwstrName); return S_OK; } \
+
+#define IMP_IInArchive_Props \
+  STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties) \
+    { *numProperties = sizeof(kProps) / sizeof(kProps[0]); return S_OK; } \
+  STDMETHODIMP CHandler::GetPropertyInfo IMP_IInArchive_GetProp(kProps)
+
+#define IMP_IInArchive_Props_WITH_NAME \
+  STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties) \
+    { *numProperties = sizeof(kProps) / sizeof(kProps[0]); return S_OK; } \
+  STDMETHODIMP CHandler::GetPropertyInfo IMP_IInArchive_GetProp_WITH_NAME(kProps)
+
+
+#define IMP_IInArchive_ArcProps \
+  STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties) \
+    { *numProperties = sizeof(kArcProps) / sizeof(kArcProps[0]); return S_OK; } \
+  STDMETHODIMP CHandler::GetArchivePropertyInfo IMP_IInArchive_GetProp(kArcProps)
+
+#define IMP_IInArchive_ArcProps_NO \
+  STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties) \
+    { *numProperties = 0; return S_OK; } \
+  STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32, BSTR *, PROPID *, VARTYPE *) \
+    { return E_NOTIMPL; } \
+  STDMETHODIMP CHandler::GetArchiveProperty(PROPID, PROPVARIANT *value) \
+    { value->vt = VT_EMPTY; return S_OK; } 
 
 #endif

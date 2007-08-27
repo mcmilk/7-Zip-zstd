@@ -38,7 +38,7 @@ HRESULT WriteStream(ISequentialOutStream *stream, const void *data, UInt32 size,
     size -= processedSizeLoc;
     RINOK(res);
     if (processedSizeLoc == 0)
-      break;
+      return E_FAIL;
   }
   return S_OK;
 }

@@ -112,6 +112,11 @@ HRESULT CUpdateCallbackConsole::Finilize()
   return S_OK;
 }
 
+HRESULT CUpdateCallbackConsole::SetNumFiles(UInt64 /* numFiles */)
+{
+  return S_OK;
+}
+
 HRESULT CUpdateCallbackConsole::SetTotal(UInt64 size)
 {
   MT_LOCK
@@ -134,6 +139,15 @@ HRESULT CUpdateCallbackConsole::SetCompleted(const UInt64 *completeValue)
   }
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackConsole::SetRatioInfo(const UInt64 * /* inSize */, const UInt64 * /* outSize */)
+{
+  /*
+  if (NConsoleClose::TestBreakSignal())
+    return E_ABORT;
+  */
   return S_OK;
 }
 

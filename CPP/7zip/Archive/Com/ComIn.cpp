@@ -338,7 +338,7 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
     if (!db.MiniSids.Allocate(numSectorsInMiniStream))
       return S_FALSE;
     {
-      UInt64 matSize64 = (root.Size + (1 << miniSectorSizeBits) - 1) >> miniSectorSizeBits;
+      UInt64 matSize64 = (root.Size + ((UInt64)1 << miniSectorSizeBits) - 1) >> miniSectorSizeBits;
       if (matSize64 > NFatID::kMaxValue)
         return S_FALSE;
       db.MatSize = (UInt32)matSize64;

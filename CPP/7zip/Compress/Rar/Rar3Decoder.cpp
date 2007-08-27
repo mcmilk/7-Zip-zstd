@@ -52,8 +52,8 @@ CDecoder::CDecoder():
 CDecoder::~CDecoder()
 {
   InitFilters();
-  if (_vmData)
-    ::MidFree(_vmData);
+  ::MidFree(_vmData);
+  ::MidFree(_window);
 }
 
 HRESULT CDecoder::WriteDataToStream(const Byte *data, UInt32 size)
@@ -821,6 +821,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     _unpackSize = *outSize;
     return CodeReal(progress); 
   }
+  catch(const CInBufferException &e)  { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
   // CNewException is possible here. But probably CNewException is caused 
   // by error in data stream.

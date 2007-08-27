@@ -19,47 +19,13 @@
 namespace NArchive {
 namespace NZ {
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
-  { NULL, kpidPath, VT_BSTR},
   { NULL, kpidPackedSize, VT_UI8},
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -67,24 +33,15 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
 {
-  COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
-  if (index != 0)
-    return E_INVALIDARG;
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
-    case kpidIsFolder:
-      propVariant = false;
-      break;
-    case kpidPackedSize:
-      propVariant = _packSize;
-      break;
+    case kpidPackedSize: prop = _packSize; break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
-  COM_TRY_END
 }
 
 static const int kSignatureSize = 3;
@@ -151,26 +108,26 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   
   CMyComPtr<ISequentialOutStream> realOutStream;
-  Int32 askMode;
-  askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
-  NArchive::NExtract::NAskMode::kExtract;
+  Int32 askMode = testMode ? 
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   
   RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
     
-  if(!testMode && !realOutStream)
+  if (!testMode && !realOutStream)
     return S_OK;
 
   extractCallback->PrepareOperation(askMode);
 
   CDummyOutStream *outStreamSpec = new CDummyOutStream;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-  outStreamSpec->Init(realOutStream);
-  
+  outStreamSpec->SetStream(realOutStream);
+  outStreamSpec->Init();
   realOutStream.Release();
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  localProgressSpec->Init(extractCallback, true);
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
   
   RINOK(_stream->Seek(_streamStartPosition + kSignatureSize, STREAM_SEEK_SET, NULL));
 
@@ -182,20 +139,20 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   int opResult;
   if (result != S_OK)
-    opResult = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+    opResult = NExtract::NOperationResult::kUnSupportedMethod;
   else
   {
     result = decoder->Code(_stream, outStream, NULL, NULL, progress);
-    outStream.Release();
     if (result == S_FALSE)
-      opResult = NArchive::NExtract::NOperationResult::kDataError;
-    else if (result == S_OK)
-      opResult = NArchive::NExtract::NOperationResult::kOK;
+      opResult = NExtract::NOperationResult::kDataError;
     else
-      return result;
+    {
+      RINOK(result);
+      opResult = NExtract::NOperationResult::kOK;
+    }
   }
-  RINOK(extractCallback->SetOperationResult(opResult));
-  return S_OK;
+  outStream.Release();
+  return extractCallback->SetOperationResult(opResult);
   COM_TRY_END
 }
 

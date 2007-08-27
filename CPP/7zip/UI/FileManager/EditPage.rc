@@ -1,0 +1,16 @@
+#include "EditPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+IDD_EDIT  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "Editor"
+MY_FONT
+BEGIN
+  LTEXT       "&Editor:", IDC_EDIT_STATIC_EDITOR, marg, marg, xSize2, 8
+  EDITTEXT    IDC_EDIT_EDIT_EDITOR, marg, 20, xSize2 - 12 - bDotsSize, 14, ES_AUTOHSCROLL
+  PUSHBUTTON  "...", IDC_EDIT_BUTTON_SET, (xSize - marg - bDotsSize), 20, bDotsSize, bYSize
+END

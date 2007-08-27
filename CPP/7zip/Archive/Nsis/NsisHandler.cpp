@@ -31,7 +31,7 @@ static const wchar_t *kMethods[] =
 
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -42,43 +42,44 @@ STATPROPSTG kProperties[] =
   { NULL, kpidSolid, VT_BOOL}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
+STATPROPSTG kArcProps[] = 
 {
-  value->vt = VT_EMPTY;
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidSolid, VT_BOOL}
+};
+
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidMethod:
+    {
+      UInt32 dict = 1;
+      bool filter = false;
+      for (int i = 0; i < _archive.Items.Size(); i++)
+      {
+        const CItem &item = _archive.Items[i];
+        filter |= item.UseFilter;
+        if (item.DictionarySize > dict)
+          dict = item.DictionarySize;
+      }
+      prop = GetMethod(filter, dict); 
+      break;
+    }
+    case kpidSolid: prop = _archive.IsSolid; break;
+  }
+  prop.Detach(value);
   return S_OK;
+  COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
 
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
-}
-
-STDMETHODIMP CHandler::Open(
-    IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
+STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   Close();
@@ -142,6 +143,24 @@ static UString GetStringForSizeValue(UInt32 value)
   return result;
 }
 
+UString CHandler::GetMethod(bool useItemFilter, UInt32 dictionary) const
+{
+  NMethodType::EEnum methodIndex = _archive.Method;
+  UString method;
+  if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && useItemFilter)
+  {
+    method += kBcjMethod;
+    method += L" ";
+  }
+  method += (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
+  if (methodIndex == NMethodType::kLZMA)
+  {
+    method += L":";
+    method += GetStringForSizeValue(_archive.IsSolid ? _archive.DictionarySize: dictionary);
+  }
+  return method;
+}
+
 bool CHandler::GetUncompressedSize(int index, UInt32 &size)
 {
   size = 0;
@@ -185,24 +204,24 @@ bool CHandler::GetCompressedSize(int index, UInt32 &size)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   #ifdef NSIS_SCRIPT
   if (index >= (UInt32)_archive.Items.Size())
   {
     switch(propID)
     {
       case kpidPath:
-        propVariant = L"[NSIS].nsi";
+        prop = L"[NSIS].nsi";
         break;
       case kpidIsFolder:
-        propVariant = false;
+        prop = false;
         break;
       case kpidSize:
       case kpidPackedSize:
-        propVariant = (UInt64)_archive.Script.Length();
+        prop = (UInt64)_archive.Script.Length();
         break;
       case kpidSolid:
-        propVariant = false;
+        prop = false;
         break;
     }
   }
@@ -215,57 +234,44 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidPath:
       {
         const UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetReducedName(), CP_ACP));
-        propVariant = (const wchar_t *)s;
+        prop = (const wchar_t *)s;
         break;
       }
       case kpidIsFolder:
-        propVariant = false;
+        prop = false;
         break;
       case kpidSize:
       {
         UInt32 size;
         if (GetUncompressedSize(index, size))
-          propVariant = (UInt64)size;
+          prop = (UInt64)size;
         break;
       }
       case kpidPackedSize:
       {
         UInt32 size;
         if (GetCompressedSize(index, size))
-          propVariant = (UInt64)size;
+          prop = (UInt64)size;
         break;
       }
       case kpidLastWriteTime:
       {
         if (item.DateTime.dwHighDateTime > 0x01000000 && 
             item.DateTime.dwHighDateTime < 0xFF000000)
-          propVariant = item.DateTime;
+          prop = item.DateTime;
         break;
       }
       case kpidMethod:
       {
-        NMethodType::EEnum methodIndex = _archive.Method;
-        UString method;
-        if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && item.UseFilter)
-        {
-          method += kBcjMethod;
-          method += L" ";
-        }
-        method += (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
-        if (methodIndex == NMethodType::kLZMA)
-        {
-          method += L":";
-          method += GetStringForSizeValue(_archive.IsSolid ? _archive.DictionarySize: item.DictionarySize);
-        }
-        propVariant = method;
+        prop = GetMethod(item.UseFilter, item.DictionarySize);
         break;
       }
       case kpidSolid:
-        propVariant = _archive.IsSolid;
+        prop = _archive.IsSolid;
         break;
     }
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -478,8 +484,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         }
       }
     }
-    if (!testMode)
-      realOutStream.Release();
+    realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(dataError ? 
         NArchive::NExtract::NOperationResult::kDataError :
         NArchive::NExtract::NOperationResult::kOK));

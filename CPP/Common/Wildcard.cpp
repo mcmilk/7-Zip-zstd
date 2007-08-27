@@ -44,50 +44,38 @@ int CompareFileNames(const UString &s1, const UString &s2)
 }
 
 // -----------------------------------------
-// this function tests is name matches mask
-// ? - any wchar_t or empty
-// * - any characters or empty
+// this function compares name with mask
+// ? - any char
+// * - any char or empty
 
-static bool EnhancedMaskTest(const UString &mask, int maskPos, 
-    const UString &name, int namePos)
+static bool EnhancedMaskTest(const wchar_t *mask, const wchar_t *name)
 {
-  int maskLen = mask.Length() - maskPos;
-  int nameLen = name.Length() - namePos;
-  if (maskLen == 0) 
-    if (nameLen == 0)
-      return true;
-    else
-      return false;
-  wchar_t maskChar = mask[maskPos];
-  if(maskChar == kAnyCharChar)
+  for (;;)
   {
-    /*
-    if (EnhancedMaskTest(mask, maskPos + 1, name, namePos))
-      return true;
-    */
-    if (nameLen == 0) 
-      return false;
-    return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
-  }
-  else if(maskChar == kAnyCharsChar)
-  {
-    if (EnhancedMaskTest(mask, maskPos + 1, name, namePos))
-      return true;
-    if (nameLen == 0) 
-      return false;
-    return EnhancedMaskTest(mask, maskPos, name, namePos + 1);
-  }
-  else
-  {
-    wchar_t c = name[namePos];
-    if (maskChar != c)
+    wchar_t m = *mask;
+    wchar_t c = *name;
+    if (m == 0) 
+      return (c == 0);
+    if (m == kAnyCharsChar)
     {
-      if (g_CaseSensitive)
-        return false;
-      else if (MyCharUpper(maskChar) != MyCharUpper(c))
+      if (EnhancedMaskTest(mask + 1, name))
+        return true;
+      if (c == 0) 
         return false;
     }
-    return EnhancedMaskTest(mask,  maskPos + 1, name, namePos + 1);
+    else
+    {
+      if (m == kAnyCharChar)
+      {
+        if (c == 0) 
+          return false;
+      }
+      else if (m != c)
+        if (g_CaseSensitive || MyCharUpper(m) != MyCharUpper(c))
+          return false;
+      mask++;
+    }
+    name++;
   }
 }
 
@@ -146,7 +134,7 @@ UString ExtractFileNameFromPath(const UString &path)
 
 bool CompareWildCardWithName(const UString &mask, const UString &name)
 {
-  return EnhancedMaskTest(mask, 0, name, 0);
+  return EnhancedMaskTest(mask, name);
 }
 
 bool DoesNameContainWildCard(const UString &path)

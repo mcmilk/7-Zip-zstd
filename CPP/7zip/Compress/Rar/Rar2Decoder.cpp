@@ -385,6 +385,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
+  catch(const CInBufferException &e) { return e.ErrorCode; }
   catch(const CLZOutWindowException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
 }

@@ -14,6 +14,8 @@
 #include "CabHandler.h"
 #include "CabBlockInStream.h"
 
+#include "../../Common/ProgressUtils.h"
+
 #include "../../Compress/Copy/CopyCoder.h"
 #include "../../Compress/Deflate/DeflateDecoder.h"
 #include "../../Compress/Lzx/LzxDecoder.h"
@@ -31,13 +33,11 @@ namespace NCab {
 #ifdef _CAB_DETAILS
 enum 
 {
-  kpidBlockReal = kpidUserDefined,
-  kpidOffset,
-  kpidVolume,
+  kpidBlockReal = kpidUserDefined
 };
 #endif
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   // { NULL, kpidIsFolder, VT_BOOL},
@@ -49,8 +49,8 @@ STATPROPSTG kProperties[] =
   #ifdef _CAB_DETAILS
   ,
   { L"BlockReal", kpidBlockReal, VT_UI4},
-  { L"Offset", kpidOffset, VT_UI4},
-  { L"Volume", kpidVolume, VT_UI4}
+  { NULL, kpidOffset, VT_UI4},
+  { NULL, kpidVolume, VT_UI4}
   #endif
 };
 
@@ -65,49 +65,69 @@ static const wchar_t *kMethods[] =
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 static const wchar_t *kUnknownMethod = L"Unknown";
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
+STATPROPSTG kArcProps[] = 
 {
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
+  { NULL, kpidMethod, VT_BSTR},
+  // { NULL, kpidSolid, VT_BOOL},
+  { NULL, kpidNumBlocks, VT_UI4},
+  { NULL, kpidNumVolumes, VT_UI4}
+};
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  if (srcItem.lpwstrName == 0)
-    *name = 0;
-  else
-    *name = ::SysAllocString(srcItem.lpwstrName);
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidMethod:
+    {
+      UString resString;
+      CRecordVector<Byte> ids;
+      int i;
+      for (int v = 0; v < m_Database.Volumes.Size(); v++)
+      {
+        const CDatabaseEx &de = m_Database.Volumes[v];
+        for (i = 0; i < de.Folders.Size(); i++)
+          ids.AddToUniqueSorted(de.Folders[i].GetCompressionMethod());
+      }
+      for (i = 0; i < ids.Size(); i++)
+      {
+        Byte id = ids[i];
+        UString method = (id < kNumMethods) ? kMethods[id] : kUnknownMethod;
+        if (!resString.IsEmpty())
+          resString += L' ';
+        resString += method;
+      }
+      prop = resString; 
+      break;
+    }
+    // case kpidSolid: prop = _database.IsSolid(); break;
+    case kpidNumBlocks:
+    {
+      UInt32 numFolders = 0;
+      for (int v = 0; v < m_Database.Volumes.Size(); v++)
+        numFolders += m_Database.Volumes[v].Folders.Size();
+      prop = numFolders;
+      break;
+    }
+    case kpidNumVolumes:
+    {
+      prop = (UInt32)m_Database.Volumes.Size();
+      break;
+    }
+  }
+  prop.Detach(value);
   return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
+  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   
   const CMvItem &mvItem = m_Database.Items[index];
   const CDatabaseEx &db = m_Database.Volumes[mvItem.VolumeIndex];
@@ -122,14 +142,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         ConvertUTF8ToUnicode(item.Name, unicodeName);
       else
         unicodeName = MultiByteToUnicodeString(item.Name, CP_ACP);
-      propVariant = (const wchar_t *)NItemName::WinNameToOSName(unicodeName);
+      prop = (const wchar_t *)NItemName::WinNameToOSName(unicodeName);
       break;
     }
     case kpidIsFolder:
-      propVariant = item.IsDirectory();
+      prop = item.IsDirectory();
       break;
     case kpidSize:
-      propVariant = item.Size;
+      prop = item.Size;
       break;
     case kpidLastWriteTime:
     {
@@ -141,11 +161,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       }
       else
         utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      propVariant = utcFileTime;
+      prop = utcFileTime;
       break;
     }
     case kpidAttributes:
-      propVariant = item.GetWinAttributes();
+      prop = item.GetWinAttributes();
       break;
 
     case kpidMethod:
@@ -162,28 +182,28 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         ConvertUInt64ToString(folder.CompressionTypeMinor, temp);
         method += temp;
       }
-      propVariant = method;
+      prop = method;
       break;
     }
     case kpidBlock:
-      propVariant = (Int32)m_Database.GetFolderIndex(&mvItem);
+      prop = (Int32)m_Database.GetFolderIndex(&mvItem);
       break;
     
     #ifdef _CAB_DETAILS
     
     case kpidBlockReal:
-      propVariant = UInt32(item.FolderIndex);
+      prop = UInt32(item.FolderIndex);
       break;
     case kpidOffset:
-      propVariant = (UInt32)item.Offset;
+      prop = (UInt32)item.Offset;
       break;
     case kpidVolume:
-      propVariant = (UInt32)mvItem.VolumeIndex;
+      prop = (UInt32)mvItem.VolumeIndex;
       break;
-    
+
     #endif
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -568,8 +588,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   totalUnPacked = 0;
 
-  NCompress::CCopyCoder *copyCoderSpec = NULL;
-  CMyComPtr<ICompressCoder> copyCoder;
+  UInt64 totalPacked = 0;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
   NCompress::NDeflate::NDecoder::CCOMCoder *deflateDecoderSpec = NULL;
   CMyComPtr<ICompressCoder> deflateDecoder;
@@ -648,8 +674,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       curUnpack = item.GetEndOffset();
     }
 
-    RINOK(extractCallback->SetCompleted(&totalUnPacked));
-    
+    lps->OutSize = totalUnPacked;
+    lps->InSize = totalPacked;
+    RINOK(lps->SetCur());
+
     CCabFolderOutStream *cabFolderOutStream = new CCabFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(cabFolderOutStream);
 
@@ -662,11 +690,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     switch(folder.GetCompressionMethod())
     {
       case NHeader::NCompressionMethodMajor::kNone:
-        if(copyCoderSpec == NULL)
-        {
-          copyCoderSpec = new NCompress::CCopyCoder;
-          copyCoder = copyCoderSpec;
-        }
         break;
       case NHeader::NCompressionMethodMajor::kMSZip:
         if(deflateDecoderSpec == NULL)
@@ -748,9 +771,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         if (keepInputBuffer)
           continue;
 
-
         UInt64 totalUnPacked2 = totalUnPacked + cabFolderOutStream->GetPosInFolder();
-        RINOK(extractCallback->SetCompleted(&totalUnPacked2));
+        totalPacked += packSize;
+
+        lps->OutSize = totalUnPacked2;
+        lps->InSize = totalPacked;
+        RINOK(lps->SetCur());
+
         UInt64 unpackRemain = cabFolderOutStream->GetRemain();
 
         const UInt32 kBlockSizeMax = (1 << 15);

@@ -1,0 +1,21 @@
+#include "LangPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 238
+#define ySize2 204
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+IDD_LANG  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "Language"
+MY_FONT
+BEGIN
+  LTEXT      "Language:", IDC_LANG_STATIC_LANG, marg, marg, xSize2, 8
+  COMBOBOX   IDC_LANG_COMBO_LANG, marg, 20, 146, ySize2 - 12, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+END
+
+STRINGTABLE
+BEGIN
+  IDS_LANG_ENGLISH  "English"
+  IDS_LANG_NATIVE   "English"
+END

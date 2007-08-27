@@ -13,7 +13,9 @@
 #include "../../Common/CreateCoder.h"
 #include "../../Common/FilterCoder.h"
 
-static UInt64 k_AES = 0x06F10701;
+static const UInt64 k_AES = 0x06F10701;
+static const UInt64 k_BCJ  = 0x03030103;
+static const UInt64 k_BCJ2 = 0x0303011B;
 
 namespace NArchive {
 namespace N7z {
@@ -59,7 +61,8 @@ HRESULT CEncoder::CreateMixerCoder(
   {
     const CMethodFull &methodFull = _options.Methods[i];
     _codersInfo.Add(CCoderInfo());
-    // CCoderInfo &encodingInfo = _codersInfo.Back();
+    CCoderInfo &encodingInfo = _codersInfo.Back();
+    encodingInfo.MethodID = methodFull.Id;
     CMyComPtr<ICompressCoder> encoder;
     CMyComPtr<ICompressCoder2> encoder2;
     
@@ -176,7 +179,7 @@ HRESULT CEncoder::Encode(
     return E_FAIL;
   UInt32 mainCoderIndex, mainStreamIndex;
   _bindInfo.FindInStream(_bindInfo.InStreams[0], mainCoderIndex, mainStreamIndex);
-  _mixerCoderSpec->SetProgressCoderIndex(mainCoderIndex);
+  
   if (inStreamSize != NULL)
   {
     CRecordVector<const UInt64 *> sizePointers;
@@ -234,6 +237,17 @@ HRESULT CEncoder::Encode(
       memmove(encodingInfo.Properties, outStreamSpec->GetBuffer(), size);
     }
   }
+
+  UInt32 progressIndex = mainCoderIndex;
+
+  for (i = 0; i < _codersInfo.Size(); i++)
+  {
+    const CCoderInfo &e = _codersInfo[i];
+    if ((e.MethodID == k_BCJ || e.MethodID == k_BCJ2) && i + 1 < _codersInfo.Size())
+      progressIndex = i + 1;
+  }
+
+  _mixerCoderSpec->SetProgressCoderIndex(progressIndex);
   
   RINOK(_mixerCoder->Code(&inStreamPointers.Front(), NULL, 1,
     &outStreamPointers.Front(), NULL, outStreamPointers.Size(), compressProgress));

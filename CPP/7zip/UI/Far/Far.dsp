@@ -410,6 +410,14 @@ SOURCE=..\Common\OpenArchive.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\ProgressUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\PropIDUtils.cpp
 # End Source File
 # Begin Source File

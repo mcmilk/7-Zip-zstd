@@ -7,7 +7,7 @@
 #include "OpenCallbackGUI.h"
 #include "UpdateCallbackGUI.h"
 
-#include "../../FileManager/UpdateCallback100.h"
+#include "../FileManager/UpdateCallback100.h"
 
 HRESULT UpdateGUI(
     CCodecs *codecs,

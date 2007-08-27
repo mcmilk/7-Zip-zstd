@@ -26,7 +26,7 @@ public:
       const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
       const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
       Int32 *answer);
-  STDMETHOD (PrepareOperation)(const wchar_t *name, Int32 askExtractMode, const UInt64 *position);
+  STDMETHOD (PrepareOperation)(const wchar_t *name, bool isFolder, Int32 askExtractMode, const UInt64 *position);
 
   STDMETHOD(MessageError)(const wchar_t *message);
   STDMETHOD(SetOperationResult)(Int32 operationResult, bool encrypted);

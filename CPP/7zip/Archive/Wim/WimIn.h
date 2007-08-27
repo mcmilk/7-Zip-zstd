@@ -107,6 +107,23 @@ struct CDatabase
 {
   CRecordVector<CStreamInfo> Streams;
   CObjectVector<CItem> Items;
+
+  UInt64 GetUnpackSize() const
+  {
+    UInt64 res = 0;
+    for (int i = 0; i < Streams.Size(); i++)
+      res += Streams[i].Resource.UnpackSize;
+    return res;
+  }
+
+  UInt64 GetPackSize() const
+  {
+    UInt64 res = 0;
+    for (int i = 0; i < Streams.Size(); i++)
+      res += Streams[i].Resource.PackSize;
+    return res;
+  }
+
   void Clear()
   {
     Streams.Clear();

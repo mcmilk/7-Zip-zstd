@@ -10,6 +10,11 @@
 
 using namespace NFar;
 
+STDMETHODIMP CUpdateCallback100Imp::SetNumFiles(UInt64 /* numFiles */)
+{
+  return S_OK;
+}
+
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 aSize)
 {
   if (m_ProgressBox != 0)

@@ -1,0 +1,26 @@
+#include "ListViewDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 342
+#define ySize2 220
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define bYPos  (ySize - marg - bYSize)
+#define b1XPos (xSize - marg - bXSize)
+#define b2XPos (b1XPos - 10 - bXSize)
+
+
+IDD_DIALOG_LISTVIEW  DIALOG  0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "ListView"
+MY_FONT
+BEGIN
+  CONTROL  "List1", IDC_LISTVIEW_LIST, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | 
+            LVS_AUTOARRANGE | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP,
+            marg, marg, xSize2, ySize2 - bYSize - 10
+  DEFPUSHBUTTON  "OK",     IDOK,     b2XPos, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Cancel", IDCANCEL, b1XPos, bYPos, bXSize, bYSize
+END
+
+

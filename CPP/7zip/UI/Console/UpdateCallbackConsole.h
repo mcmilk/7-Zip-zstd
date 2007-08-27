@@ -46,24 +46,7 @@ public:
     m_PercentPrinter.OutStream = outStream;
   }
 
-  HRESULT OpenResult(const wchar_t *name, HRESULT result);
-
-  HRESULT StartScanning();
-  HRESULT CanNotFindError(const wchar_t *name, DWORD systemError);
-  HRESULT FinishScanning();
-
-  HRESULT StartArchive(const wchar_t *name, bool updating);
-  HRESULT FinishArchive();
-
-  HRESULT CheckBreak();
-  HRESULT Finilize();
-  HRESULT SetTotal(UInt64 size);
-  HRESULT SetCompleted(const UInt64 *completeValue);
-
-  HRESULT GetStream(const wchar_t *name, bool isAnti);
-  HRESULT OpenFileError(const wchar_t *name, DWORD systemError);
-  HRESULT SetOperationResult(Int32 operationResult);
-  HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password);
+  INTERFACE_IUpdateCallbackUI2(;)
 
   UStringVector FailedFiles;
   CRecordVector<HRESULT> FailedCodes;

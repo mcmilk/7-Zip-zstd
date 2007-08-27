@@ -49,20 +49,19 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   UInt32 indexInArchive;
   if (!updateCallback)
     return E_FAIL;
-  RINOK(updateCallback->GetUpdateItemInfo(0,
-      &newData, &newProperties, &indexInArchive));
+  RINOK(updateCallback->GetUpdateItemInfo(0,&newData, &newProperties, &indexInArchive));
  
   if (IntToBool(newProperties))
   {
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(0, kpidIsFolder, &propVariant));
-      if (propVariant.vt == VT_BOOL)
+      NCOM::CPropVariant prop;
+      RINOK(updateCallback->GetProperty(0, kpidIsFolder, &prop));
+      if (prop.vt == VT_BOOL)
       {
-        if (propVariant.boolVal != VARIANT_FALSE)
+        if (prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
       }
-      else if (propVariant.vt != VT_EMPTY)
+      else if (prop.vt != VT_EMPTY)
         return E_INVALIDARG;
     }
   }
@@ -71,11 +70,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   {
     UInt64 size;
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(0, kpidSize, &propVariant));
-      if (propVariant.vt != VT_UI8)
+      NCOM::CPropVariant prop;
+      RINOK(updateCallback->GetProperty(0, kpidSize, &prop));
+      if (prop.vt != VT_UI8)
         return E_INVALIDARG;
-      size = propVariant.uhVal.QuadPart;
+      size = prop.uhVal.QuadPart;
     }
   
     UInt32 dicSize = _dicSize;

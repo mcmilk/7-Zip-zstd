@@ -2411,11 +2411,19 @@ SOURCE=..\..\ICoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\IDecl.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\IPassword.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\IProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IStream.h
 # End Source File
 # End Group
 # Begin Source File

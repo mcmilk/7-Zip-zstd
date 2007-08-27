@@ -106,7 +106,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, INT32 /* askExtractMode */, const UINT64 * /* position */)
+STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, INT32 /* askExtractMode */, const UINT64 * /* position */)
 {
   m_CurrentFilePath = name;
   return S_OK;

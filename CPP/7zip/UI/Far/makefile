@@ -43,6 +43,7 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
+  $O\ProgressUtils.obj \
   $O\StreamUtils.obj \
 
 UI_COMMON_OBJS = \

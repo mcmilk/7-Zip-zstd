@@ -53,13 +53,9 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
 #ifdef _SFX
+
+IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 * /* numProperties */)
 {
@@ -72,27 +68,64 @@ STDMETHODIMP CHandler::GetPropertyInfo(UInt32 /* index */,
   return E_NOTIMPL;
 }
 
+
+#else
+
+STATPROPSTG kArcProps[] = 
+{
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidSolid, VT_BOOL},
+  { NULL, kpidNumBlocks, VT_UI4}
+};
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidMethod:
+    {
+      UString resString;
+      CRecordVector<UInt64> ids;
+      int i;
+      for (i = 0; i < _database.Folders.Size(); i++)
+      {
+        const CFolder &f = _database.Folders[i];
+        for (int j = f.Coders.Size() - 1; j >= 0; j--)
+          ids.AddToUniqueSorted(f.Coders[j].MethodID);
+      }
+
+      for (i = 0; i < ids.Size(); i++)
+      {
+        UInt64 id = ids[i];
+        UString methodName;
+        /* bool methodIsKnown = */ FindMethod(EXTERNAL_CODECS_VARS id, methodName);
+        if (methodName.IsEmpty())
+          methodName = ConvertMethodIdToString(id);
+        if (!resString.IsEmpty())
+          resString += L' ';
+        resString += methodName;
+      }
+      prop = resString; 
+      break;
+    }
+    case kpidSolid: prop = _database.IsSolid(); break;
+    case kpidNumBlocks: prop = (UInt32)_database.Folders.Size(); break;
+  }
+  prop.Detach(value);
+  return S_OK;
+  COM_TRY_END
+}
+
+IMP_IInArchive_ArcProps
+
 #endif
 
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_NOTIMPL;
-}
-
-
-static void MySetFileTime(bool timeDefined, FILETIME unixTime, 
-    NWindows::NCOM::CPropVariant &propVariant)
+static void MySetFileTime(bool timeDefined, FILETIME unixTime, NWindows::NCOM::CPropVariant &prop)
 {
   if (timeDefined)
-    propVariant = unixTime;
+    prop = unixTime;
 }
 
 #ifndef _SFX
@@ -171,7 +204,7 @@ bool CHandler::IsEncrypted(UInt32 index2) const
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   
   /*
   const CRef2 &ref2 = _refs[index];
@@ -196,68 +229,68 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
     case kpidPath:
     {
       if (!item.Name.IsEmpty())
-        propVariant = NItemName::GetOSName(item.Name);
+        prop = NItemName::GetOSName(item.Name);
       break;
     }
     case kpidIsFolder:
-      propVariant = item.IsDirectory;
+      prop = item.IsDirectory;
       break;
     case kpidSize:
     {
-      propVariant = item.UnPackSize;
-      // propVariant = ref2.UnPackSize;
+      prop = item.UnPackSize;
+      // prop = ref2.UnPackSize;
       break;
     }
     case kpidPosition:
     {
       /*
       if (ref2.Refs.Size() > 1)
-        propVariant = ref2.StartPos;
+        prop = ref2.StartPos;
       else
       */
         if (item.IsStartPosDefined)
-          propVariant = item.StartPos;
+          prop = item.StartPos;
       break;
     }
     case kpidPackedSize:
     {
-      // propVariant = ref2.PackSize;
+      // prop = ref2.PackSize;
       {
         CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
         if (folderIndex != kNumNoIndex)
         {
           if (_database.FolderStartFileIndex[folderIndex] == (CNum)index2)
-            propVariant = _database.GetFolderFullPackSize(folderIndex);
+            prop = _database.GetFolderFullPackSize(folderIndex);
           /*
           else
-            propVariant = UInt64(0);
+            prop = (UInt64)0;
           */
         }
         else
-          propVariant = UInt64(0);
+          prop = (UInt64)0;
       }
       break;
     }
     case kpidLastAccessTime:
-      MySetFileTime(item.IsLastAccessTimeDefined, item.LastAccessTime, propVariant);
+      MySetFileTime(item.IsLastAccessTimeDefined, item.LastAccessTime, prop);
       break;
     case kpidCreationTime:
-      MySetFileTime(item.IsCreationTimeDefined, item.CreationTime, propVariant);
+      MySetFileTime(item.IsCreationTimeDefined, item.CreationTime, prop);
       break;
     case kpidLastWriteTime:
-      MySetFileTime(item.IsLastWriteTimeDefined, item.LastWriteTime, propVariant);
+      MySetFileTime(item.IsLastWriteTimeDefined, item.LastWriteTime, prop);
       break;
     case kpidAttributes:
       if (item.AreAttributesDefined)
-        propVariant = item.Attributes;
+        prop = item.Attributes;
       break;
     case kpidCRC:
       if (item.IsFileCRCDefined)
-        propVariant = item.FileCRC;
+        prop = item.FileCRC;
       break;
     case kpidEncrypted:
     {
-      propVariant = IsEncrypted(index2);
+      prop = IsEncrypted(index2);
       break;
     }
     #ifndef _SFX
@@ -357,7 +390,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
               }
             }
           }
-          propVariant = methodsString;
+          prop = methodsString;
         }
       }
       break;
@@ -365,7 +398,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       {
         CNum folderIndex = _database.FileIndexToFolderIndexMap[index2];
         if (folderIndex != kNumNoIndex)
-          propVariant = (UInt32)folderIndex;
+          prop = (UInt32)folderIndex;
       }
       break;
     case kpidPackedSize0:
@@ -381,21 +414,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
           if (_database.FolderStartFileIndex[folderIndex] == (CNum)index2 &&
               folderInfo.PackStreams.Size() > (int)(propID - kpidPackedSize0))
           {
-            propVariant = _database.GetFolderPackStreamSize(folderIndex, propID - kpidPackedSize0);
+            prop = _database.GetFolderPackStreamSize(folderIndex, propID - kpidPackedSize0);
           }
           else
-            propVariant = UInt64(0);
+            prop = (UInt64)0;
         }
         else
-          propVariant = UInt64(0);
+          prop = (UInt64)0;
       }
       break;
     #endif
     case kpidIsAnti:
-      propVariant = item.IsAnti;
+      prop = item.IsAnti;
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -522,11 +555,11 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         {
           UString baseName;
           {
-            NCOM::CPropVariant propVariant;
-            RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
-            if (propVariant.vt != VT_BSTR)
+            NCOM::CPropVariant prop;
+            RINOK(openVolumeCallback->GetProperty(kpidName, &prop));
+            if (prop.vt != VT_BSTR)
               break;
-            baseName = propVariant.bstrVal;
+            baseName = prop.bstrVal;
           }
           seqName.InitName(baseName);
         }

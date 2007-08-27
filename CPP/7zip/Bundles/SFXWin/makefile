@@ -68,6 +68,10 @@ UI_COMMON_OBJS = \
 FM_OBJS = \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
+  $O\MessagesDialog.obj \
+  $O\OverwriteDialog.obj \
+  $O\PasswordDialog.obj \
+  $O\ProgressDialog.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
@@ -150,10 +154,6 @@ OBJS = \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $O\MyMessages.obj \
-  $O\MessagesDialog.obj \
-  $O\OverwriteDialog.obj \
-  $O\PasswordDialog.obj \
-  $O\ProgressDialog.obj \
   $(C_OBJS) \
   $(C_BRANCH_OBJS) \
   $(CRC_OBJS) \
@@ -178,7 +178,7 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
 	$(COMPL)
-$(FM_OBJS): ../../FileManager/$(*B).cpp
+$(FM_OBJS): ../../UI/FileManager/$(*B).cpp
 	$(COMPL)
 $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
@@ -204,14 +204,6 @@ $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
-	$(COMPL)
-$O\MessagesDialog.obj: ../../FileManager/Resource/MessagesDialog/$(*B).cpp
-	$(COMPL)
-$O\OverwriteDialog.obj: ../../FileManager/Resource/OverwriteDialog./$(*B).cpp
-	$(COMPL)
-$O\PasswordDialog.obj: ../../FileManager/Resource/PasswordDialog/$(*B).cpp
-	$(COMPL)
-$O\ProgressDialog.obj: ../../FileManager/Resource/ProgressDialog/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O1)

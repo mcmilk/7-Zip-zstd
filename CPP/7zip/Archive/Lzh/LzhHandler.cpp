@@ -67,7 +67,7 @@ static const wchar_t *GetOS(Byte osId)
   return kUnknownOS;
 };
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -85,45 +85,10 @@ STATPROPSTG kProperties[] =
 
 };
 
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
-CHandler::CHandler()
-{}
-
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_NOTIMPL;
-}
+CHandler::CHandler() {}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -134,7 +99,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   const CItemEx &item = _items[index];
   switch(propID)
   {
@@ -145,18 +110,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       {
         if (s[s.Length() - 1] == WCHAR_PATH_SEPARATOR)
            s.Delete(s.Length() - 1);
-        propVariant = s;
+        prop = s;
       }
       break;
     }
     case kpidIsFolder:
-      propVariant = item.IsDirectory();
+      prop = item.IsDirectory();
       break;
     case kpidSize:
-      propVariant = item.Size;
+      prop = item.Size;
       break;
     case kpidPackedSize:
-      propVariant = item.PackSize;
+      prop = item.PackSize;
       break;
     case kpidLastWriteTime:
     {
@@ -177,19 +142,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
         else
           utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
       }
-      propVariant = utcFileTime;
+      prop = utcFileTime;
       break;
     }
     /*
     case kpidAttributes:
-      propVariant = (UInt32)item.Attributes;
+      prop = (UInt32)item.Attributes;
       break;
     case kpidCommented:
-      propVariant = item.IsCommented();
+      prop = item.IsCommented();
       break;
     */
     case kpidCRC:
-      propVariant = (UInt32)item.CRC;
+      prop = (UInt32)item.CRC;
       break;
     case kpidMethod:
     {
@@ -197,14 +162,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       method2[kMethodIdSize] = 0;
       for (int i = 0; i < kMethodIdSize; i++)
         method2[i] = item.Method[i];
-      propVariant = method2;
+      prop = method2;
       break;
     }
     case kpidHostOS:
-      propVariant = GetOS(item.OsId);
+      prop = GetOS(item.OsId);
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -242,17 +207,17 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     }
     for (;;)
     {
-      CItemEx itemInfo;
+      CItemEx item;
       bool filled;
-      HRESULT result = archive.GetNextItem(filled, itemInfo);
+      HRESULT result = archive.GetNextItem(filled, item);
       if (result == S_FALSE)
         return S_FALSE;
       if (result != S_OK)
         return S_FALSE;
       if (!filled)
         break;
-      _items.Add(itemInfo);
-      archive.Skeep(itemInfo.PackSize);
+      _items.Add(item);
+      archive.Skeep(item.PackSize);
       if (callback != NULL)
       {
         UInt64 numFiles = _items.Size();
@@ -298,9 +263,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   UInt32 i;
   for(i = 0; i < numItems; i++)
   {
-    const CItemEx &itemInfo = _items[allFilesMode ? i : indices[i]];
-    totalUnPacked += itemInfo.Size;
-    totalPacked += itemInfo.PackSize;
+    const CItemEx &item = _items[allFilesMode ? i : indices[i]];
+    totalUnPacked += item.Size;
+    totalPacked += item.PackSize;
   }
   extractCallback->SetTotal(totalUnPacked);
 
@@ -311,7 +276,17 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ICompressCoder> lzhDecoder;
   CMyComPtr<ICompressCoder> lzh1Decoder;
   CMyComPtr<ICompressCoder> arj2Decoder;
-  CMyComPtr<ICompressCoder> copyCoder;
+
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
+  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
+  CMyComPtr<ISequentialInStream> inStream(streamSpec);
+  streamSpec->SetStream(_stream);
 
   for(i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
@@ -319,21 +294,24 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentItemUnPacked = 0;
     currentItemPacked = 0;
 
-    RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
+    lps->InSize = currentTotalPacked;
+    lps->OutSize = currentTotalUnPacked;
+    RINOK(lps->SetCur());
+
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode;
-    askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+    askMode = testMode ? NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
-    const CItemEx &itemInfo = _items[index];
+    const CItemEx &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-    if(itemInfo.IsDirectory())
+    if(item.IsDirectory())
     {
       // if (!testMode)
       {
         RINOK(extractCallback->PrepareOperation(askMode));
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       }
       continue;
     }
@@ -342,8 +320,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       continue;
 
     RINOK(extractCallback->PrepareOperation(askMode));
-    currentItemUnPacked = itemInfo.Size;
-    currentItemPacked = itemInfo.PackSize;
+    currentItemUnPacked = item.Size;
+    currentItemPacked = item.PackSize;
 
     {
       COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
@@ -351,109 +329,58 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       outStreamSpec->Init(realOutStream);
       realOutStream.Release();
       
-      CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-      CMyComPtr<ISequentialInStream> inStream(streamSpec);
-      
       UInt64 pos;
-      _stream->Seek(itemInfo.DataPosition, STREAM_SEEK_SET, &pos);
+      _stream->Seek(item.DataPosition, STREAM_SEEK_SET, &pos);
 
-      streamSpec->SetStream(_stream);
-      streamSpec->Init(itemInfo.PackSize);
+      streamSpec->Init(item.PackSize);
 
+      HRESULT result = S_OK;
+      Int32 opRes = NExtract::NOperationResult::kOK;
 
-      CLocalProgress *localProgressSpec = new CLocalProgress;
-      CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-      localProgressSpec->Init(extractCallback, false);
-
-
-      CLocalCompressProgressInfo *localCompressProgressSpec = 
-          new CLocalCompressProgressInfo;
-      CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-      localCompressProgressSpec->Init(progress, 
-          &currentTotalPacked,
-          &currentTotalUnPacked);
-
-      HRESULT result;
-
-      if (itemInfo.IsCopyMethod())
+      if (item.IsCopyMethod())
       {
-        if(!copyCoder)
-          copyCoder = new NCompress::CCopyCoder;
-        try
-        {
-          result = copyCoder->Code(inStream, outStream, NULL, NULL, compressProgress);
-          if (result == S_FALSE)
-            throw "data error";
-          if (result != S_OK)
-            return result;
-        }
-        catch(...)
-        {
-          outStream.Release();
-          RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-          continue;
-        }
+        result = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+        if (result == S_OK && copyCoderSpec->TotalSize != item.PackSize)
+          result = S_FALSE;
       }
-      else if (itemInfo.IsLh4GroupMethod())
+      else if (item.IsLh4GroupMethod())
       {
         if(!lzhDecoder)
         {
           lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
           lzhDecoder = lzhDecoderSpec;
         }
-        try
-        {
-          lzhDecoderSpec->SetDictionary(itemInfo.GetNumDictBits());
-          result = lzhDecoder->Code(inStream, outStream, NULL, &currentItemUnPacked, compressProgress);
-          if (result == S_FALSE)
-            throw "data error";
-          if (result != S_OK)
-            return result;
-        }
-        catch(...)
-        {
-          outStream.Release();
-          RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-          continue;
-        }
+        lzhDecoderSpec->SetDictionary(item.GetNumDictBits());
+        result = lzhDecoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
       }
       /*
-      else if (itemInfo.IsLh1GroupMethod())
+      else if (item.IsLh1GroupMethod())
       {
         if(!lzh1Decoder)
         {
           lzh1DecoderSpec = new NCompress::NLzh1::NDecoder::CCoder;
           lzh1Decoder = lzh1DecoderSpec;
         }
-        try
-        {
-          lzh1DecoderSpec->SetDictionary(itemInfo.GetNumDictBits());
-          result = lzh1Decoder->Code(inStream, outStream, NULL, &currentItemUnPacked, compressProgress);
-          if (result == S_FALSE)
-            throw "data error";
-          if (result != S_OK)
-            return result;
-        }
-        catch(...)
-        {
-          outStream.Release();
-          RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-          continue;
-        }
+        lzh1DecoderSpec->SetDictionary(item.GetNumDictBits());
+        result = lzh1Decoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
       }
       */
       else
-      {
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
-        continue;
-      }
+        opRes = NExtract::NOperationResult::kUnSupportedMethod;
 
-      bool crcOK = (outStreamSpec->GetCRC() == itemInfo.CRC);
+      if (opRes == NExtract::NOperationResult::kOK)
+      {
+        if (result == S_FALSE)
+          opRes = NExtract::NOperationResult::kDataError;
+        else
+        {
+          RINOK(result);
+          if (outStreamSpec->GetCRC() != item.CRC)
+            opRes = NExtract::NOperationResult::kCRCError;
+        }
+      }
       outStream.Release();
-      if(crcOK)
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK))
-      else
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError))
+      RINOK(extractCallback->SetOperationResult(opRes));
     }
   }
   return S_OK;

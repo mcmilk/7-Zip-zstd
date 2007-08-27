@@ -20,18 +20,7 @@ namespace NWim {
 
 #define WIM_DETAILS
 
-#ifdef WIM_DETAILS
-
-enum 
-{
-  kpidVolume = kpidUserDefined,
-  kpidOffset,
-  kpidLinks
-};
-
-#endif
-
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -44,59 +33,63 @@ STATPROPSTG kProperties[] =
   { NULL, kpidLastWriteTime, VT_FILETIME}
   
   #ifdef WIM_DETAILS
-  , { L"Volume", kpidVolume, VT_UI4}
-  , { L"Offset", kpidOffset, VT_UI8}
-  , { L"Links", kpidLinks, VT_UI4}
+  , { NULL, kpidVolume, VT_UI4}
+  , { NULL, kpidOffset, VT_UI8}
+  , { NULL, kpidLinks, VT_UI4}
   #endif
+};
+
+STATPROPSTG kArcProps[] = 
+{
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidIsVolume, VT_BOOL},
+  { NULL, kpidVolume, VT_UI4},
+  { NULL, kpidNumVolumes, VT_UI4}
 };
 
 static const wchar_t *kStreamsNamePrefix = L"Files" WSTRING_PATH_SEPARATOR;
 static const wchar_t *kMethodLZX = L"LZX";
 static const wchar_t *kMethodCopy = L"Copy";
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidSize: prop = m_Database.GetUnpackSize(); break;
+    case kpidPackedSize: prop = m_Database.GetPackSize(); break;
+    case kpidIsVolume: 
+      if (m_Xmls.Size() > 0)
+      {
+        UInt16 volIndex = m_Xmls[0].VolIndex;
+        if (volIndex < m_Volumes.Size())
+          prop = (m_Volumes[volIndex].Header.NumParts > 1);
+      }
+      break;
+    case kpidVolume: 
+      if (m_Xmls.Size() > 0)
+      {
+        UInt16 volIndex = m_Xmls[0].VolIndex;
+        if (volIndex < m_Volumes.Size())
+          prop = m_Volumes[volIndex].Header.PartNumber;
+      }
+      break;
+    case kpidNumVolumes: if (m_Volumes.Size() > 0) prop = (UInt32)(m_Volumes.Size() - 1);
+  }
+  prop.Detach(value);
   return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  if (srcItem.lpwstrName == 0)
-    *name = 0;
-  else
-    *name = ::SysAllocString(srcItem.lpwstrName);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
+  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   if (index < (UInt32)m_Database.Items.Size())
   {
     const CItem &item = m_Database.Items[index];
@@ -108,7 +101,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath:
         if (item.HasMetadata)
-          propVariant = item.Name;
+          prop = item.Name;
         else
         {
           wchar_t sz[32];
@@ -117,62 +110,62 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           while (s.Length() < m_NameLenForStreams)
             s = L'0' + s;
           s = UString(kStreamsNamePrefix) + s;
-          propVariant = s;
+          prop = s;
           break;
         }
         break;
       case kpidIsFolder:
-        propVariant = item.IsDirectory();
+        prop = item.IsDirectory();
         break;
       case kpidAttributes:
         if (item.HasMetadata)
-          propVariant = item.Attributes;
+          prop = item.Attributes;
         break;
       case kpidCreationTime:
         if (item.HasMetadata)
-          propVariant = item.CreationTime;
+          prop = item.CreationTime;
         break;
       case kpidLastAccessTime:
         if (item.HasMetadata)
-          propVariant = item.LastAccessTime;
+          prop = item.LastAccessTime;
         break;
       case kpidLastWriteTime:
         if (item.HasMetadata)
-          propVariant = item.LastWriteTime;
+          prop = item.LastWriteTime;
         break;
       case kpidPackedSize:
         if (si)
-          propVariant = si->Resource.PackSize;
+          prop = si->Resource.PackSize;
         else
-          propVariant = (UInt64)0;
+          prop = (UInt64)0;
         break;
       case kpidSize:
         if (si)
-          propVariant = si->Resource.UnpackSize;
+          prop = si->Resource.UnpackSize;
         else
-          propVariant = (UInt64)0;
+          prop = (UInt64)0;
         break;
       case kpidMethod:
         if (si)
           if (si->Resource.IsCompressed())
-            propVariant = kMethodLZX;
+            prop = kMethodLZX;
           else
-            propVariant = kMethodCopy;
+            prop = kMethodCopy;
         break;
       #ifdef WIM_DETAILS
       case kpidVolume:
         if (si)
-          propVariant = (UInt32)si->PartNumber;
+          prop = (UInt32)si->PartNumber;
         break;
       case kpidOffset:
         if (si)
-          propVariant = (UInt64)si->Resource.Offset;
+          prop = (UInt64)si->Resource.Offset;
         break;
       case kpidLinks:
         if (si)
-          propVariant = (UInt32)si->RefCount;
+          prop = (UInt32)si->RefCount;
         else
-          propVariant = (UInt64)0;
+          prop = (UInt64)0;
         break;
       #endif
     }
@@ -188,23 +181,23 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           wchar_t sz[32];
           ConvertUInt64ToString(m_Xmls[index].VolIndex, sz);
           UString s = (UString)sz + L".xml";
-          propVariant = s;
+          prop = s;
           break;
         }
         case kpidIsFolder:
-          propVariant = false;
+          prop = false;
           break;
         case kpidPackedSize:
         case kpidSize:
-          propVariant = (UInt64)m_Xmls[index].Data.GetCapacity();
+          prop = (UInt64)m_Xmls[index].Data.GetCapacity();
           break;
         case kpidMethod:
-          propVariant = L"Copy";
+          prop = L"Copy";
           break;
       }
     }
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -317,11 +310,11 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
           break;
         numVolumes = header.NumParts;
         {
-          NCOM::CPropVariant propVariant;
-          RINOK(openVolumeCallback->GetProperty(kpidName, &propVariant));
-          if (propVariant.vt != VT_BSTR)
+          NCOM::CPropVariant prop;
+          RINOK(openVolumeCallback->GetProperty(kpidName, &prop));
+          if (prop.vt != VT_BSTR)
             break;
-          seqName.InitName(propVariant.bstrVal);
+          seqName.InitName(prop.bstrVal);
         }
       }
     }
@@ -381,29 +374,33 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   RINOK(extractCallback->SetTotal(totalSize));
 
-  UInt64 currentTotalSize = 0;
-  UInt64 currentItemSize = 0;
-
+  UInt64 currentTotalPacked = 0;
+  UInt64 currentTotalUnPacked = 0;
+  UInt64 currentItemUnPacked, currentItemPacked;
+  
   int prevSuccessStreamIndex = -1;
 
   CUnpacker unpacker;
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  localProgressSpec->Init(extractCallback, false);
-  
-  CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
 
-  for (i = 0; i < numItems; currentTotalSize += currentItemSize)
+  for (i = 0; i < numItems; currentTotalUnPacked += currentItemUnPacked,
+      currentTotalPacked += currentItemPacked)
   {
-    currentItemSize = 0;
-    RINOK(extractCallback->SetCompleted(&currentTotalSize));
+    currentItemUnPacked = 0;
+    currentItemPacked = 0;
+
+    lps->InSize = currentTotalPacked;
+    lps->OutSize = currentTotalUnPacked;
+
+    RINOK(lps->SetCur());
     UInt32 index = allFilesMode ? i : indices[i];
     i++;
     Int32 askMode = testMode ? 
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
 
     CMyComPtr<ISequentialOutStream> realOutStream;
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -413,13 +410,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       const CByteBuffer &data = m_Xmls[index - (UInt32)m_Database.Items.Size()].Data;
-      currentItemSize = data.GetCapacity();
+      currentItemUnPacked = data.GetCapacity();
       if (realOutStream)
       {
         RINOK(WriteStream(realOutStream, (const Byte *)data, (UInt32)data.GetCapacity(), NULL));
         realOutStream.Release();
       }
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
@@ -432,32 +429,32 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(extractCallback->PrepareOperation(askMode));
       realOutStream.Release();
       RINOK(extractCallback->SetOperationResult(item.HasStream() ? 
-            NArchive::NExtract::NOperationResult::kDataError :
-            NArchive::NExtract::NOperationResult::kOK));
+            NExtract::NOperationResult::kDataError :
+            NExtract::NOperationResult::kOK));
       continue;
     }
 
     const CStreamInfo &si = m_Database.Streams[streamIndex];
-    currentItemSize = si.Resource.UnpackSize;
+    currentItemUnPacked = si.Resource.UnpackSize;
+    currentItemPacked = si.Resource.PackSize;
 
     if(!testMode && (!realOutStream))
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
-    Int32 opRes = NArchive::NExtract::NOperationResult::kOK;
+    Int32 opRes = NExtract::NOperationResult::kOK;
     if (streamIndex != prevSuccessStreamIndex || realOutStream)
     {
       Byte digest[20];
-      localCompressProgressSpec->Init(progress, &currentTotalSize, &currentTotalSize);
-      HRESULT res = unpacker.Unpack(m_Volumes[si.PartNumber].Stream, si.Resource, realOutStream, compressProgress, digest);
+      HRESULT res = unpacker.Unpack(m_Volumes[si.PartNumber].Stream, si.Resource, realOutStream, progress, digest);
       if (res == S_OK)
       {
         if (memcmp(digest, si.Hash, kHashSize) == 0)
           prevSuccessStreamIndex = streamIndex;
         else
-          opRes = NArchive::NExtract::NOperationResult::kCRCError;
+          opRes = NExtract::NOperationResult::kCRCError;
       }
       else if (res == S_FALSE)
-        opRes = NArchive::NExtract::NOperationResult::kDataError;
+        opRes = NExtract::NOperationResult::kDataError;
       else
         return res;
     }

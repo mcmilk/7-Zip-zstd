@@ -5,7 +5,7 @@
 
 #include "../Common/ZipRegistry.h"
 #include "../Common/LoadCodecs.h"
-#include "../Resource/CompressDialog/resource.h"
+#include "CompressDialogRes.h"
 
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/Edit.h"

@@ -33,6 +33,6 @@ BEGIN
   IDS_CONFIG_DIALOG_CAPTION "7-Zip Options"
 END
 
-#include "FoldersPage/resource.rc"
-#include "SystemPage/resource.rc"
+#include "FoldersPage.rc"
+#include "SystemPage.rc"
 

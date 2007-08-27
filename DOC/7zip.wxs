@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "52" ?>
-<?define VerBuild = "00" ?>
+<?define VerMinor = "53" ?>
+<?define VerBuild = "03" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
 <?define MmmmVer = "$(var.MmVer).$(var.VerBuild).0" ?>
@@ -189,18 +189,12 @@
             <File Id="_7z.exe" Name="7z.exe" />
           </Component>
 
-
-          <?if $(var.Is64) = "yes" ?>
-
-          <Component Id="CmdLineA" Guid="$(var.CompCmdLineA)" DiskId="1" Win64="$(var.Is64)">
-            <File Id="_7za.exe" Name="7za.exe" />
-          </Component>
-
-          <?endif ?>
-
-
           <Component Id="Gui" Guid="$(var.CompGui)" DiskId="1" Win64="$(var.Is64)">
             <File Id="_7zG.exe" Name="7zG.exe" />
+          </Component>
+
+          <Component Id="Formats" Guid="$(var.CompFormats)" DiskId="1" Win64="$(var.Is64)">
+              <File Id="_7z.dll" Name="7z.dll" />
           </Component>
 
           <Component Id="GuiSfx" Guid="$(var.CompGuiSfx)" DiskId="1" Win64="$(var.Is64)">
@@ -224,10 +218,6 @@
             <File Id="_7zip.chm" Name="7-zip.chm" DiskId="1" >
               <Shortcut Id="startmenuHelpShortcut" Directory="PMenu" Name="7zipHelp" LongName="7-Zip Help" />
             </File>
-          </Component>
-
-          <Component Id="Formats" Guid="$(var.CompFormats)" DiskId="1" Win64="$(var.Is64)">
-              <File Id="_7z.dll" Name="7z.dll" />
           </Component>
 
           <Directory Id="MyLang" Name="Lang">
@@ -288,7 +278,6 @@
               <File Id="sk.txt" Name="sk.txt" />
               <File Id="sl.txt" Name="sl.txt" />
               <File Id="sq.txt" Name="sq.txt" />
-              <File Id="sr.txt" Name="sr.txt" />
               <File Id="sr_spl.txt" Name="sr-spl.txt" />
               <File Id="sr_spc.txt" Name="sr-spc.txt" />
               <File Id="sv.txt" Name="sv.txt" />
@@ -300,7 +289,6 @@
               <File Id="uz.txt" Name="uz.txt" />
               <File Id="va.txt" Name="va.txt" />
               <File Id="vi.txt" Name="vi.txt" />
-              <File Id="vr.txt" Name="vr.txt" />
               <File Id="zh_cn.txt" Name="zh-cn.txt" />
               <File Id="zh_tw.txt" Name="zh-tw.txt" />
             </Component>
@@ -323,9 +311,6 @@
         <ComponentRef Id="Fm" />
         <ComponentRef Id="ShellExt" />
         <ComponentRef Id="CmdLine" />
-        <?if $(var.Is64) = "yes" ?>
-        <ComponentRef Id="CmdLineA" />
-        <?endif ?>
         <ComponentRef Id="Gui" />
         <ComponentRef Id="GuiSfx" />
         <ComponentRef Id="ConSfx" />

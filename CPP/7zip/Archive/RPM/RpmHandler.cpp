@@ -25,49 +25,14 @@ using namespace NWindows;
 namespace NArchive {
 namespace NRpm {
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
-//  { NULL, kpidPath, VT_BSTR},
-//  { NULL, kpidIsFolder, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, 
     const UInt64 * /* maxCheckStartPosition */,
@@ -106,27 +71,16 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 
 STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
 {
-  COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
-
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
-    /*
-    case kpidPath:
-      propVariant = (const wchar_t *)L"a.cpio.gz";
-      break;
-    */
-    case kpidIsFolder:
-      propVariant = false;
-      break;
     case kpidSize:
     case kpidPackedSize:
-      propVariant = m_Size;
+      prop = m_Size;
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
-  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
@@ -149,8 +103,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   RINOK(extractCallback->SetTotal(m_Size));
   RINOK(extractCallback->SetCompleted(&currentTotalSize));
   CMyComPtr<ISequentialOutStream> realOutStream;
-  Int32 askMode;
-  askMode = testMode ? NArchive::NExtract::NAskMode::kTest :
+  Int32 askMode = testMode ? 
+      NArchive::NExtract::NAskMode::kTest :
       NArchive::NExtract::NAskMode::kExtract;
   Int32 index = 0;
  
@@ -171,23 +125,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  localProgressSpec->Init(extractCallback, false);
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
   
-  try
-  {
-    RINOK(copyCoder->Code(m_InStream, realOutStream, NULL, NULL, progress));
-  }
-  catch(...)
-  {
-    realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
-    return S_OK;
-  }
+  RINOK(copyCoder->Code(m_InStream, realOutStream, NULL, NULL, progress));
   realOutStream.Release();
-  RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-  return S_OK;
+  return extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK);
   COM_TRY_END
 }
 

@@ -1,0 +1,24 @@
+#include "SystemPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 196
+#define ySize2 164
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+IDD_SYSTEM  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "System"
+MY_FONT
+BEGIN
+  CONTROL  "Integrate 7-Zip to shell context menu",  IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 
+           "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, marg, xSize2, 10
+  CONTROL  "Cascaded context menu", IDC_SYSTEM_CASCADED_MENU, 
+           "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+           marg, 21, xSize2, 10
+  LTEXT    "Context menu items:", IDC_SYSTEM_STATIC_CONTEXT_MENU_ITEMS, 
+           marg, 37, xSize2, 8
+  CONTROL  "List1", IDC_SYSTEM_OPTIONS_LIST, "SysListView32", 
+           LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP, 
+           marg, 50, xSize2, ySize - marg - 50
+END

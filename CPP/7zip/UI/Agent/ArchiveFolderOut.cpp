@@ -20,19 +20,7 @@ static LPCWSTR kTempArcivePrefix = L"7zA";
 
 void CAgentFolder::GetPathParts(UStringVector &pathParts)
 {
-  pathParts.Clear();
-  CMyComPtr<IFolderFolder> folder = this;
-  for (;;)
-  {
-    CMyComPtr<IFolderFolder> newFolder;
-    folder->BindToParentFolder(&newFolder);  
-    if (newFolder == NULL)
-      break;
-    CMyComBSTR name;
-    folder->GetName(&name);
-    pathParts.Insert(0, (const wchar_t *)name);
-    folder = newFolder;
-  }
+  _proxyFolderItem->GetPathParts(pathParts);
 }
 
 HRESULT CAgentFolder::CommonUpdateOperation(

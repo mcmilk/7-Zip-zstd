@@ -74,15 +74,7 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
-
-/*
-enum // PropID
-{
-  kpidUnPackVersion, 
-};
-*/
-
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -99,7 +91,7 @@ STATPROPSTG kProperties[] =
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidHostOS, VT_BSTR}
 
-  // { L"UnPack Version", kpidUnPackVersion, VT_UI1},
+  // { NULL, kpidUnpackVer, VT_UI1},
 };
 
 const wchar_t *kMethods[] = 
@@ -147,7 +139,7 @@ CStrongCryptoPair g_StrongCryptoPairs[] =
   { NStrongCryptoFlags::kRC4, L"RC4" }
 };
 
-STATPROPSTG kArcProperties[] = 
+STATPROPSTG kArcProps[] = 
 {
   { NULL, kpidComment, VT_BSTR}
 };
@@ -158,7 +150,7 @@ CHandler::CHandler():
   InitMethodProperties();
 }
 
-static void StringToProp(const CByteBuffer &data, UINT codePage, NWindows::NCOM::CPropVariant &propVariant)
+static void StringToProp(const CByteBuffer &data, UINT codePage, NWindows::NCOM::CPropVariant &prop)
 {
   int size = (int)data.GetCapacity();
   if (size <= 0)
@@ -168,59 +160,26 @@ static void StringToProp(const CByteBuffer &data, UINT codePage, NWindows::NCOM:
   memcpy(p, (const Byte *)data, size);
   p[size] = '\0';
   s.ReleaseBuffer();
-  propVariant = MultiByteToUnicodeString(s, codePage);
+  prop = MultiByteToUnicodeString(s, codePage);
 }
+
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
     case kpidComment:
     {
-      StringToProp(m_Archive.m_ArchiveInfo.Comment, CP_ACP, propVariant);
+      StringToProp(m_Archive.m_ArchiveInfo.Comment, CP_ACP, prop);
       break;
     }
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   COM_TRY_END
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kArcProperties) / sizeof(kArcProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 index,     
-      BSTR * name, PROPID * propID, VARTYPE *varType)
-{
-  if (index >= sizeof(kArcProperties) / sizeof(kArcProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kArcProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
   return S_OK;
 }
 
@@ -233,22 +192,22 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   const CItemEx &item = m_Items[index];
   switch(propID)
   {
     case kpidPath:
-      propVariant = NItemName::GetOSName2(
+      prop = NItemName::GetOSName2(
           MultiByteToUnicodeString(item.Name, item.GetCodePage()));
       break;
     case kpidIsFolder:
-      propVariant = item.IsDirectory();
+      prop = item.IsDirectory();
       break;
     case kpidSize:
-      propVariant = item.UnPackSize;
+      prop = item.UnPackSize;
       break;
     case kpidPackedSize:
-      propVariant = item.PackSize;
+      prop = item.PackSize;
       break;
     case kpidLastWriteTime:
     {
@@ -260,23 +219,23 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       else
         utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      propVariant = utcFileTime;
+      prop = utcFileTime;
       break;
     }
     case kpidAttributes:
-      propVariant = item.GetWinAttributes();
+      prop = item.GetWinAttributes();
       break;
     case kpidEncrypted:
-      propVariant = item.IsEncrypted();
+      prop = item.IsEncrypted();
       break;
     case kpidComment:
     {
-      StringToProp(item.Comment, item.GetCodePage(), propVariant);
+      StringToProp(item.Comment, item.GetCodePage(), prop);
       break;
     }
     case kpidCRC:
       if (item.IsThereCrc())
-        propVariant = item.FileCRC;
+        prop = item.FileCRC;
       break;
     case kpidMethod:
     {
@@ -335,15 +294,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         ConvertUInt64ToString(methodId, s);
         method += s;
       }
-      propVariant = method;
+      prop = method;
       break;
     }
     case kpidHostOS:
-      propVariant = (item.MadeByVersion.HostOS < kNumHostOSes) ?
+      prop = (item.MadeByVersion.HostOS < kNumHostOSes) ?
         (kHostOS[item.MadeByVersion.HostOS]) : kUnknownOS;
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -731,15 +690,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     totalUnPacked += item.UnPackSize;
     totalPacked += item.PackSize;
   }
-  extractCallback->SetTotal(totalUnPacked);
+  RINOK(extractCallback->SetTotal(totalUnPacked));
 
   UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   UInt64 currentItemUnPacked, currentItemPacked;
   
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
 
   for (i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
@@ -747,7 +705,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentItemUnPacked = 0;
     currentItemPacked = 0;
 
-    RINOK(extractCallback->SetCompleted(&currentTotalUnPacked));
+    lps->InSize = currentTotalPacked;
+    lps->OutSize = currentTotalUnPacked;
+    RINOK(lps->SetCur());
+
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ? 
         NArchive::NExtract::NAskMode::kTest :
@@ -792,14 +753,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     RINOK(extractCallback->PrepareOperation(askMode));
 
-    localProgressSpec->Init(extractCallback, false);
-    localCompressProgressSpec->Init(progress,  &currentTotalPacked, &currentTotalUnPacked);
-    
     Int32 res;
     RINOK(myDecoder.Decode(
         EXTERNAL_CODECS_VARS
         m_Archive, item, realOutStream, extractCallback, 
-        compressProgress, _numThreads, res));
+        progress, _numThreads, res));
     realOutStream.Release();
     
     RINOK(extractCallback->SetOperationResult(res))

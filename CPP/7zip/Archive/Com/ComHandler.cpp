@@ -10,7 +10,7 @@
 namespace NArchive {
 namespace NCom {
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsFolder, VT_BOOL},
@@ -21,49 +21,32 @@ STATPROPSTG kProperties[] =
   { NULL, kpidLastWriteTime, VT_FILETIME}
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
+STATPROPSTG kArcProps[] = 
 {
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
+  { NULL, kpidClusterSize, VT_UI4}
+};
 
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if(index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kProperties[index];
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  if (srcItem.lpwstrName == 0)
-    *name = 0;
-  else
-    *name = ::SysAllocString(srcItem.lpwstrName);
-  return S_OK;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  *numProperties = 0;
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidClusterSize: prop = (UInt32)1 << _db.SectorSizeBits; break;
+  }
+  prop.Detach(value);
   return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_INVALIDARG;
+  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   const CRef &ref = _db.Refs[index];
   const CItem &item = _db.Items[ref.Did];
     
@@ -72,21 +55,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPath:
     {
       UString name = _db.GetItemPath(index);
-      propVariant = name;
+      prop = name;
       break;
     }
     case kpidIsFolder:
-      propVariant = item.IsDir();
+      prop = item.IsDir();
       break;
     case kpidCreationTime:
-      propVariant = item.CreationTime;
+      prop = item.CreationTime;
       break;
     case kpidLastWriteTime:
-      propVariant = item.LastWriteTime;
+      prop = item.LastWriteTime;
       break;
     /*
     case kpidAttributes:
-      propVariant = item.Falgs;
+      prop = item.Falgs;
       break;
     */
     case kpidPackedSize:
@@ -95,15 +78,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         int numBits = _db.IsLargeStream(item.Size) ? 
             _db.SectorSizeBits : 
             _db.MiniSectorSizeBits;
-        propVariant = (item.Size + ((UInt32)1 << numBits) - 1) >> numBits << numBits;
+        prop = (item.Size + ((UInt64)1 << numBits) - 1) >> numBits << numBits;
         break;
       }
     case kpidSize:
       if (!item.IsDir())
-        propVariant = (UInt64)item.Size;
+        prop = (UInt64)item.Size;
       break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }

@@ -439,7 +439,7 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
       const UInt32 kSaltSize = 8;
       Byte salt[kSaltSize];
       if(!ReadBytesAndTestSize(salt, kSaltSize))
-        return false;
+        return S_FALSE;
       m_Position += kSaltSize;
       RINOK(m_RarAESSpec->SetDecoderProperties2(salt, kSaltSize))
       // Password

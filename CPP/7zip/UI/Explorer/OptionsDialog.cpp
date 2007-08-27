@@ -9,11 +9,11 @@
 #include "Common/StringConvert.h"
 #include "Windows/Control/PropertyPage.h"
 
-#include "../../FileManager/LangUtils.h"
-#include "FoldersPage/FoldersPage.h"
-#include "FoldersPage/resource.h"
-#include "SystemPage/SystemPage.h"
-#include "SystemPage/resource.h"
+#include "../FileManager/LangUtils.h"
+#include "FoldersPage.h"
+#include "FoldersPageRes.h"
+#include "SystemPage.h"
+#include "SystemPageRes.h"
 
 using namespace NWindows;
 

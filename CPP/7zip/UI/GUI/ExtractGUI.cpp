@@ -5,19 +5,21 @@
 #include "ExtractGUI.h"
 
 #include "Common/StringConvert.h"
+#include "Common/IntToString.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/Error.h"
 #include "Windows/FileFind.h"
 #include "Windows/Thread.h"
 
-#include "../../FileManager/FormatUtils.h"
-#include "../../FileManager/ExtractCallback.h"
-#include "../../FileManager/LangUtils.h"
+#include "../FileManager/FormatUtils.h"
+#include "../FileManager/ExtractCallback.h"
+#include "../FileManager/LangUtils.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../Explorer/MyMessages.h"
-#include "../Resource/Extract/resource.h"
+#include "resource.h"
+#include "ExtractRes.h"
 
 #include "OpenCallbackGUI.h"
 #include "ExtractDialog.h"
@@ -36,7 +38,7 @@ struct CThreadExtracting
   const CExtractOptions *Options;
   COpenCallbackGUI *OpenCallback;
   CMyComPtr<IExtractCallbackUI> ExtractCallback;
-
+  CDecompressStat Stat;
   UString ErrorMessage;
   HRESULT Result;
   
@@ -48,7 +50,7 @@ struct CThreadExtracting
       Result = DecompressArchives(
           codecs,
           *ArchivePaths, *ArchivePathsFull,
-          *WildcardCensor, *Options, OpenCallback, ExtractCallback, ErrorMessage);
+          *WildcardCensor, *Options, OpenCallback, ExtractCallback, ErrorMessage, Stat);
     }
     catch(const UString &s)
     {
@@ -77,6 +79,34 @@ struct CThreadExtracting
     return ((CThreadExtracting *)param)->Process();
   }
 };
+
+#ifndef _SFX
+
+static void AddValuePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
+{
+  wchar_t sz[32];
+  s += LangString(resourceID, langID);
+  s += L" ";
+  ConvertUInt64ToString(value, sz);
+  s += sz;
+  s += L"\n";
+}
+
+static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
+{
+  wchar_t sz[32];
+  s += LangString(resourceID, langID);
+  s += L" ";
+  ConvertUInt64ToString(value, sz);
+  s += sz;
+  ConvertUInt64ToString(value >> 20, sz);
+  s += L" (";
+  s += sz;
+  s += L" MB)";
+  s += L"\n";
+}
+
+#endif
 
 HRESULT ExtractGUI(
     CCodecs *codecs,
@@ -162,8 +192,16 @@ HRESULT ExtractGUI(
       extracter.ExtractCallbackSpec->NumArchiveErrors == 0)
   {
     #ifndef _SFX
-    MessageBoxW(0, LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608),
-      LangString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
+    UString s;
+    AddValuePair(IDS_ARCHIVES_COLON, 0x02000324, extracter.Stat.NumArchives, s);
+    AddValuePair(IDS_FOLDERS_COLON, 0x02000321, extracter.Stat.NumFolders, s);
+    AddValuePair(IDS_FILES_COLON, 0x02000320, extracter.Stat.NumFiles, s);
+    AddSizePair(IDS_SIZE_COLON, 0x02000322, extracter.Stat.UnpackSize, s);
+    AddSizePair(IDS_COMPRESSED_COLON, 0x02000323, extracter.Stat.PackSize, s);
+    s += L"\n";
+    s += LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608);
+
+    MessageBoxW(0, s, LangString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
     #endif
   }
   if (extracter.Result != S_OK)

@@ -2,6 +2,7 @@ DIRS = \
   Client7z\~ \
   Console\~ \
   Explorer\~ \
+  FileManager\~ \
   GUI\~ \
 
 all: $(DIRS)

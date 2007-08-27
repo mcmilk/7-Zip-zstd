@@ -1,0 +1,47 @@
+#include "OverwriteDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 357
+#define ySize2 204
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#undef iconSize
+#define iconSize 20
+
+#undef fiXPos
+#undef fiXSize
+#undef fiYSize
+#define fiXPos (iconSize + 12)
+#define fiXSize (xSize2 - fiXPos)
+#define fiYSize 50
+
+#define b1YPos (ySize - marg - bYSize)
+#define b2YPos (b1YPos - bYSize - 10)
+
+IDD_DIALOG_OVERWRITE DIALOG 0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "Confirm File Replace"
+MY_FONT
+BEGIN
+  LTEXT "Destination folder already contains processed file.", IDC_STATIC_OVERWRITE_HEADER, marg, 7, xSize2, 8
+  LTEXT "Would you like to replace the existing file", IDC_STATIC_OVERWRITE_QUESTION_BEGIN, marg, 28, xSize2, 8
+  ICON  "", IDC_STATIC_OVERWRITE_OLD_FILE_ICON,             marg,  44, iconSize, iconSize
+  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,      fiXPos,  44,  fiXSize,  fiYSize, SS_NOPREFIX
+  LTEXT "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END, marg,  98,   xSize2,        8
+  ICON  "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,              marg, 114, iconSize, iconSize
+  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,       fiXPos, 114,  fiXSize,  fiYSize, SS_NOPREFIX
+  PUSHBUTTON "&Yes",         IDYES,                             78, b2YPos, bXSize, bYSize
+  PUSHBUTTON "Yes to &All",  IDC_BUTTON_OVERWRITE_YES_TO_ALL,  152, b2YPos, bXSize, bYSize
+  PUSHBUTTON "&No",          IDNO,                             226, b2YPos, bXSize, bYSize
+  PUSHBUTTON "No to A&ll",   IDC_BUTTON_OVERWRITE_NO_TO_ALL,   300, b2YPos, bXSize, bYSize
+  PUSHBUTTON "A&uto Rename", IDC_BUTTON_OVERWRITE_AUTO_RENAME, 181, b1YPos,    109, bYSize
+  PUSHBUTTON "&Cancel",      IDCANCEL,                         300, b1YPos, bXSize, bYSize
+END
+
+
+STRINGTABLE
+BEGIN
+  IDS_FILE_MODIFIED "modified on"
+  IDS_FILE_SIZE     "{0} bytes"
+END

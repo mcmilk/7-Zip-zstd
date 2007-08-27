@@ -7,35 +7,46 @@
 #include "Common/MyString.h"
 
 #include "../../IPassword.h"
+#include "../../ICoder.h"
 
 #include "../Common/UpdatePair.h"
 #include "../Common/UpdateProduce.h"
 
+#define INTERFACE_IUpdateCallbackUI(x) \
+  virtual HRESULT SetTotal(UInt64 size) x; \
+  virtual HRESULT SetCompleted(const UInt64 *completeValue) x; \
+  virtual HRESULT SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize) x; \
+  virtual HRESULT CheckBreak() x; \
+  virtual HRESULT Finilize() x; \
+  virtual HRESULT SetNumFiles(UInt64 numFiles) x; \
+  virtual HRESULT GetStream(const wchar_t *name, bool isAnti) x; \
+  virtual HRESULT OpenFileError(const wchar_t *name, DWORD systemError) x; \
+  virtual HRESULT SetOperationResult(Int32 operationResult) x; \
+  virtual HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password) x; \
+
+  // virtual HRESULT CloseProgress() { return S_OK; };
+
 struct IUpdateCallbackUI
 {
-  virtual HRESULT SetTotal(UInt64 size) = 0;
-  virtual HRESULT SetCompleted(const UInt64 *completeValue) = 0;
-  virtual HRESULT CheckBreak() = 0;
-  virtual HRESULT Finilize() = 0;
-  virtual HRESULT GetStream(const wchar_t *name, bool isAnti) = 0;
-  virtual HRESULT OpenFileError(const wchar_t *name, DWORD systemError) = 0;
-  virtual HRESULT SetOperationResult(Int32 operationResult) = 0;
-  virtual HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password) = 0;
-  virtual HRESULT CloseProgress() { return S_OK; };
+  INTERFACE_IUpdateCallbackUI(=0)
 };
 
 class CArchiveUpdateCallback: 
   public IArchiveUpdateCallback2,
   public ICryptoGetTextPassword2,
+  public ICompressProgressInfo,
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP2(IArchiveUpdateCallback2, 
-      ICryptoGetTextPassword2)
+  MY_UNKNOWN_IMP3(
+      IArchiveUpdateCallback2, 
+      ICryptoGetTextPassword2,
+      ICompressProgressInfo)
 
   // IProgress
   STDMETHOD(SetTotal)(UInt64 size);
   STDMETHOD(SetCompleted)(const UInt64 *completeValue);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 
   // IUpdateCallback
   STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  

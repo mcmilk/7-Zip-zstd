@@ -389,35 +389,35 @@ SOURCE=..\..\Crypto\Hash\Sha256.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.cpp
+SOURCE=..\..\UI\FileManager\MessagesDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\MessagesDialog\MessagesDialog.h
+SOURCE=..\..\UI\FileManager\MessagesDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.cpp
+SOURCE=..\..\UI\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\OverwriteDialog\OverwriteDialog.h
+SOURCE=..\..\UI\FileManager\OverwriteDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.cpp
+SOURCE=..\..\UI\FileManager\PasswordDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\PasswordDialog\PasswordDialog.h
+SOURCE=..\..\UI\FileManager\PasswordDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.cpp
+SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\Resource\ProgressDialog\ProgressDialog.h
+SOURCE=..\..\UI\FileManager\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Group "7zip Common"
@@ -533,19 +533,19 @@ SOURCE=..\..\Common\VirtThread.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\FileManager\ExtractCallback.cpp
+SOURCE=..\..\UI\FileManager\ExtractCallback.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\ExtractCallback.h
+SOURCE=..\..\UI\FileManager\ExtractCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.cpp
+SOURCE=..\..\UI\FileManager\FormatUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\FileManager\FormatUtils.h
+SOURCE=..\..\UI\FileManager\FormatUtils.h
 # End Source File
 # End Group
 # Begin Group "Windows"

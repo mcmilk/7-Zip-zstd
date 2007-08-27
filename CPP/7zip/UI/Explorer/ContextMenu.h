@@ -9,8 +9,8 @@ DEFINE_GUID(CLSID_CZipContextMenu,
 
 #include "Common/MyString.h"
 
-#include "../../FileManager/PluginInterface.h"
-#include "../../FileManager/MyCom2.h"
+#include "../FileManager/PluginInterface.h"
+#include "../FileManager/MyCom2.h"
 
 
 class CZipContextMenu: 

@@ -1,0 +1,36 @@
+#include "FoldersPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define marg2 marg
+#define marg3 10
+#define gPos (marg + marg2)
+#define gSize (xSize2 - marg2 - marg2)
+#define gPos2 (gPos + marg3)
+
+
+IDD_FOLDERS  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "Folders"
+MY_FONT
+BEGIN
+  GROUPBOX   "&Working folder", IDC_FOLDERS_STATIC_WORKING_FOLDER, marg, marg, xSize2, 98
+  CONTROL    "&System temp folder", IDC_FOLDERS_WORK_RADIO_SYSTEM,    "Button", BS_AUTORADIOBUTTON | WS_GROUP, 
+              gPos, 20, gSize, 10
+  CONTROL    "&Current",            IDC_FOLDERS_WORK_RADIO_CURRENT,   "Button", BS_AUTORADIOBUTTON, 
+              gPos, 34, gSize, 10
+  CONTROL    "Specified:",          IDC_FOLDERS_WORK_RADIO_SPECIFIED, "Button", BS_AUTORADIOBUTTON, 
+              gPos, 48, gSize, 10
+  EDITTEXT    IDC_FOLDERS_WORK_EDIT_PATH, gPos2, 63, gSize - marg3 - bDotsSize - 10, 14, ES_AUTOHSCROLL
+  PUSHBUTTON  "...", IDC_FOLDERS_WORK_BUTTON_PATH, xSize - marg - marg2 - bDotsSize, 63, bDotsSize, bYSize
+  CONTROL     "Use for removable drives only", IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+              gPos, 87, gSize, 10
+END
+
+STRINGTABLE  
+BEGIN
+  IDS_FOLDERS_SET_WORK_PATH_TITLE  "Specify a location for temporary archive files."
+END

@@ -1,0 +1,124 @@
+#include "CompressDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 400
+#define ySize2 305
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#undef gSize
+#undef gSpace
+#undef g0XSize
+#undef g1XPos
+#undef g1XSize
+#undef g2XSize
+#undef g3XPos
+#undef g3XSize
+#undef g4XPos
+#undef g4XPos2
+#undef g4XSize
+#undef g4XSize2
+#undef bXPos1
+#undef bXPos2
+#undef bXPos3
+#undef bYPos
+
+#define gSize 190
+#define gSpace 24
+
+#define g1XSize 90
+#define g0XSize (gSize - g1XSize)
+#define g1XPos  (marg + g0XSize)
+
+#define g3XSize 40
+#define g2XSize (gSize - g3XSize)
+#define g3XPos  (marg + g2XSize)
+
+#define g4XPos (marg + gSize + gSpace)
+#define g4XPos2 (g4XPos + 7)
+#define g4XSize (xSize2 - gSize - gSpace)
+#define g4XSize2 (g4XSize - 14)
+
+#define OptYPos 73
+#define PswYPos 128
+
+#define bXPos1 (xSize - marg - bXSize)
+#define bXPos2 (bXPos1 - 10 - bXSize)
+#define bXPos3 (bXPos2 - 10 - bXSize)
+
+#define bYPos (ySize - marg - bYSize)
+
+IDD_DIALOG_COMPRESS DIALOG 0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+CAPTION "Add to Archive"
+MY_FONT
+BEGIN
+  LTEXT    "&Archive:", IDC_STATIC_COMPRESS_ARCHIVE, marg, marg, xSize2, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ARCHIVE, marg, 18, xSize2 - bDotsSize - 12, 126, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+  PUSHBUTTON  "...", IDC_COMPRESS_BUTTON_SET_ARCHIVE, xSize - marg - bDotsSize, 17, bDotsSize, bYSize, WS_GROUP
+
+  LTEXT     "Archive &format:", IDC_STATIC_COMPRESS_FORMAT,     marg,  41, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_FORMAT,     g1XPos, 39,  g1XSize , 80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+  
+  LTEXT     "Compression &level:",IDC_STATIC_COMPRESS_LEVEL,    marg,  62, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_LEVEL,      g1XPos, 60,  g1XSize,  80,CBS_DROPDOWNLIST |  WS_VSCROLL | WS_TABSTOP
+  
+  LTEXT     "Compression &method:",IDC_STATIC_COMPRESS_METHOD,  marg,  83, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_METHOD,     g1XPos, 81,  g1XSize,  80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Dictionary size:",IDC_STATIC_COMPRESS_DICTIONARY, marg, 104, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_DICTIONARY, g1XPos, 102, g1XSize,  167, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Word size:",IDC_STATIC_COMPRESS_ORDER,            marg, 125, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ORDER,      g1XPos, 123, g1XSize,  141, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Solid Block size:",IDC_STATIC_COMPRESS_SOLID,        marg, 146, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_SOLID,      g1XPos, 144, g1XSize,  140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Number of CPU threads:",IDC_STATIC_COMPRESS_THREADS, marg, 167, g0XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_THREADS,   g1XPos, 165, g1XSize - 35,  140, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+  RTEXT     "1", IDC_COMPRESS_HARDWARE_THREADS, g1XPos + g1XSize - 35 + 10, 167, 25, 8
+
+  
+  LTEXT     "Memory usage for Compressing:", IDC_STATIC_COMPRESS_MEMORY,      marg, 190, g2XSize, 8
+  RTEXT     "0", IDC_STATIC_COMPRESS_MEMORY_VALUE,   g3XPos, 190, g3XSize, 8
+  
+  LTEXT     "Memory usage for Decompressing:", IDC_STATIC_COMPRESS_MEMORY_DE, marg, 206, g2XSize, 8
+  RTEXT     "0",IDC_STATIC_COMPRESS_MEMORY_DE_VALUE, g3XPos, 206, g3XSize, 8
+
+
+  LTEXT     "Split to &volumes, bytes:", IDC_STATIC_COMPRESS_VOLUME, marg, 225, gSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_VOLUME, marg, 237, gSize, 73, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+
+  LTEXT     "&Parameters:",IDC_STATIC_COMPRESS_PARAMETERS, marg, 260, xSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PARAMETERS, marg, 272, xSize2, 14, ES_AUTOHSCROLL
+
+  LTEXT     "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE, g4XPos, 39, g4XSize, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_UPDATE_MODE, g4XPos, 51, g4XSize, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4XPos, OptYPos, g4XSize, 48
+  CONTROL   "Create SF&X archive",IDC_COMPRESS_SFX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            g4XPos2, OptYPos + 14, g4XSize2, 10
+  CONTROL   "Compress shared files",IDC_COMPRESS_SHARED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 
+            g4XPos2, OptYPos + 30, g4XSize2, 10
+  
+  GROUPBOX  "Encryption",IDC_COMPRESS_ENCRYPTION, g4XPos, PswYPos, g4XSize, 127
+
+  LTEXT     "Enter password:",IDC_STATIC_COMPRESS_PASSWORD1, g4XPos2, PswYPos + 14, g4XSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD1, g4XPos2, PswYPos + 26, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  LTEXT     "Reenter password:",IDC_STATIC_COMPRESS_PASSWORD2, g4XPos2, PswYPos + 46, g4XSize2, 8
+  EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD2, g4XPos2, PswYPos + 58, g4XSize2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+
+  CONTROL   "Show Password",IDC_COMPRESS_CHECK_SHOW_PASSWORD,"Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+            g4XPos2, PswYPos + 79, g4XSize2, 10
+
+  LTEXT     "&Encryption method:",IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, g4XPos2, PswYPos + 95, 100, 8
+  COMBOBOX  IDC_COMPRESS_COMBO_ENCRYPTION_METHOD, g4XPos2 + 100, PswYPos + 93, g4XSize2 - 100,  198, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+  CONTROL   "Encrypt file &names", IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+            g4XPos2, PswYPos + 111, g4XSize2, 10
+  
+  DEFPUSHBUTTON  "OK",         IDOK, bXPos3, bYPos, bXSize, bYSize, WS_GROUP
+  PUSHBUTTON     "Cancel", IDCANCEL, bXPos2, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Help",     IDHELP, bXPos1, bYPos, bXSize, bYSize
+END

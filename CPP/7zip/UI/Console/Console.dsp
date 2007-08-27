@@ -648,6 +648,14 @@ SOURCE=..\..\Common\FileStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\ProgressUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\ProgressUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\RegisterArc.h
 # End Source File
 # Begin Source File

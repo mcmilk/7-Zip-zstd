@@ -1,0 +1,32 @@
+#include "SplitDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 223
+#define ySize2 89
+
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+#define bYPos  (ySize - marg - bYSize)
+#define b1XPos (xSize - marg - bXSize)
+#define b2XPos (b1XPos - 10 - bXSize)
+
+
+
+IDD_DIALOG_SPLIT DIALOG 0,  0,  xSize,  ySize  MY_MODAL_DIALOG_STYLE
+CAPTION "Split File"
+MY_FONT
+BEGIN
+  LTEXT           "&Split to:", IDC_STATIC_SPLIT_PATH, marg, marg, xSize2, 8
+  COMBOBOX        IDC_COMBO_SPLIT_PATH, marg, 18, xSize2 - bDotsSize - 12, 126, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+  PUSHBUTTON      "...", IDC_BUTTON_SPLIT_PATH, xSize - marg - bDotsSize, 17, bDotsSize, bYSize, WS_GROUP
+  LTEXT           "Split to &volumes,  bytes:", IDC_STATIC_SPLIT_VOLUME, marg, 38, xSize2, 8
+  COMBOBOX        IDC_COMBO_SPLIT_VOLUME, marg, 50, 120, 52, CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+  DEFPUSHBUTTON  "OK",     IDOK,     b2XPos, bYPos, bXSize, bYSize
+  PUSHBUTTON     "Cancel", IDCANCEL, b1XPos, bYPos, bXSize, bYSize
+END
+
+STRINGTABLE
+BEGIN
+    IDS_COMPRESS_INCORRECT_VOLUME_SIZE "Incorrect volume size"
+END

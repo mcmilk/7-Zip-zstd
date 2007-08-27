@@ -3,10 +3,27 @@
 #include "StdAfx.h"
 
 #include "Windows/Error.h"
+#include "Common/IntToString.h"
 
 #include "UpdateCallbackAgent.h"
 
 using namespace NWindows;
+
+void CUpdateCallbackAgent::SetCallback(IFolderArchiveUpdateCallback *callback)
+{
+  Callback = callback;
+  _compressProgress.Release();
+  if (Callback)
+    Callback.QueryInterface(IID_ICompressProgressInfo, &_compressProgress);
+}
+
+HRESULT CUpdateCallbackAgent::SetNumFiles(UInt64 numFiles)
+{
+  if (Callback)
+    return Callback->SetNumFiles(numFiles);
+  return S_OK;
+}
+
 
 HRESULT CUpdateCallbackAgent::SetTotal(UINT64 size)
 {
@@ -19,6 +36,13 @@ HRESULT CUpdateCallbackAgent::SetCompleted(const UINT64 *completeValue)
 {
   if (Callback)
     return Callback->SetCompleted(completeValue);
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackAgent::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  if (_compressProgress)
+    return _compressProgress->SetRatioInfo(inSize, outSize);
   return S_OK;
 }
 
@@ -57,14 +81,14 @@ HRESULT CUpdateCallbackAgent::GetStream(const wchar_t *name, bool /* isAnti */)
   return S_OK;
 }
 
-HRESULT CUpdateCallbackAgent::SetOperationResult(INT32 operationResult)
+HRESULT CUpdateCallbackAgent::SetOperationResult(Int32 operationResult)
 {
   if (Callback)
     return Callback->OperationResult(operationResult);
   return S_OK;
 }
 
-HRESULT CUpdateCallbackAgent::CryptoGetTextPassword2(INT32 *passwordIsDefined, BSTR *password)
+HRESULT CUpdateCallbackAgent::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
   *passwordIsDefined = BoolToInt(false);
   if (!_cryptoGetTextPassword)

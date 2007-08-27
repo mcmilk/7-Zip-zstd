@@ -33,9 +33,9 @@ class CInArchiveInfo
 {
 public:
   UInt64 StartPosition;
-  WORD Flags;
+  UInt16 Flags;
   UInt64 CommentPosition;
-  WORD CommentSize;
+  UInt16 CommentSize;
   bool IsSolid() const { return (Flags & NHeader::NArchive::kSolid) != 0; }
   bool IsCommented() const {  return (Flags & NHeader::NArchive::kComment) != 0; }
   bool IsVolume() const {  return (Flags & NHeader::NArchive::kVolume) != 0; }

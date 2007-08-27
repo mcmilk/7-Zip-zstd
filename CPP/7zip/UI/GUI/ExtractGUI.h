@@ -6,7 +6,7 @@
 #include "../Common/Extract.h"
 #include "OpenCallbackGUI.h"
 
-#include "../../FileManager/ExtractCallback.h"
+#include "../FileManager/ExtractCallback.h"
 
 HRESULT ExtractGUI(
     CCodecs *codecs,

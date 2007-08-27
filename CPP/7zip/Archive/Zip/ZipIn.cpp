@@ -542,6 +542,10 @@ HRESULT CInArchive::FindCd(CCdInfo &cdInfo)
         // cdInfo.NumEntries = GetUInt16(buf + i + 10);
         cdInfo.Size = GetUInt32(buf + i + 12);
         cdInfo.Offset = GetUInt32(buf + i + 16);
+        UInt64 curPos = endPosition - bufSize + i;
+        UInt64 cdEnd = cdInfo.Size + cdInfo.Offset;
+        if (curPos > cdEnd)
+          m_ArchiveInfo.Base = curPos - cdEnd;
         return S_OK;
       }
     }

@@ -22,52 +22,19 @@ static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
 static const UInt32 kAlgorithmForBCJ2_LZMA = 1;
 static const UInt32 kNumFastBytesForBCJ2_LZMA = 64;
 
-static HRESULT CopyBlock(ISequentialInStream *inStream, 
-    ISequentialOutStream *outStream, ICompressProgressInfo *progress)
+static HRESULT WriteRange(IInStream *inStream, ISequentialOutStream *outStream, 
+    UInt64 position, UInt64 size, ICompressProgressInfo *progress)
 {
-  CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
-  return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
-}
-
-static HRESULT WriteRange(
-    ISequentialInStream *inStream, 
-    ISequentialOutStream *outStream, 
-    UInt64 size,
-    IProgress *progress,
-    UInt64 &currentComplexity)
-{
-  CLimitedSequentialInStream *streamSpec = new 
-      CLimitedSequentialInStream;
+  RINOK(inStream->Seek(position, STREAM_SEEK_SET, 0));
+  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
   streamSpec->SetStream(inStream);
   streamSpec->Init(size);
 
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-  localProgressSpec->Init(progress, true);
-  
-  CLocalCompressProgressInfo *localCompressProgressSpec = 
-      new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-
-  localCompressProgressSpec->Init(localProgress, &currentComplexity, &currentComplexity);
-
-  HRESULT result = CopyBlock(inStreamLimited, outStream, compressProgress);
-  currentComplexity += size;
-  return result;
-}
-
-
-static HRESULT WriteRange(IInStream *inStream, 
-    ISequentialOutStream *outStream, 
-    UInt64 position,
-    UInt64 size,
-    IProgress *progress,
-    UInt64 &currentComplexity)
-{
-  inStream->Seek(position, STREAM_SEEK_SET, 0);
-  return WriteRange(inStream, outStream, 
-    size, progress, currentComplexity);
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+  RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
+  return (copyCoderSpec->TotalSize == size ? S_OK : E_FAIL);
 }
 
 static int GetReverseSlashPos(const UString &name)
@@ -93,14 +60,6 @@ UString CUpdateItem::GetExtension() const
 {
   return Name.Mid(GetExtensionPos());
 }
-
-/*
-struct CFolderRef
-{
-  const CArchiveDatabaseEx *Database;
-  int FolderIndex;
-};
-*/
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
@@ -522,16 +481,10 @@ static HRESULT Update2(
     return E_NOTIMPL;
   */
 
-  UInt64 startBlockSize = database != 0 ? 
-      database->ArchiveInfo.StartPosition: 0;
+  UInt64 startBlockSize = database != 0 ? database->ArchiveInfo.StartPosition: 0;
   if (startBlockSize > 0 && !options.RemoveSfxBlock)
   {
-    CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-    CMyComPtr<ISequentialInStream> limitedStream(streamSpec);
-    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    streamSpec->SetStream(inStream);
-    streamSpec->Init(startBlockSize);
-    RINOK(CopyBlock(limitedStream, seqOutStream, NULL));
+    RINOK(WriteRange(inStream, seqOutStream, 0, startBlockSize, NULL));
   }
 
   CRecordVector<int> fileIndexToUpdateIndexMap;
@@ -607,6 +560,11 @@ static HRESULT Update2(
   complexity = 0;
   RINOK(updateCallback->SetCompleted(&complexity));
 
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
+
   /////////////////////////////////////////
   // Write Copy Items
 
@@ -614,10 +572,11 @@ static HRESULT Update2(
   {
     int folderIndex = folderRefs[i];
     
+    lps->ProgressOffset = complexity;
+    UInt64 packSize = database->GetFolderFullPackSize(folderIndex);
     RINOK(WriteRange(inStream, archive.SeqStream,
-        database->GetFolderStreamPos(folderIndex, 0),
-        database->GetFolderFullPackSize(folderIndex),
-        updateCallback, complexity));
+        database->GetFolderStreamPos(folderIndex, 0), packSize, progress));
+    complexity += packSize;
     
     const CFolder &folder = database->Folders[folderIndex];
     CNum startIndex = database->FolderStartPackStreamIndex[folderIndex];
@@ -736,18 +695,17 @@ static HRESULT Update2(
       inStreamSpec->Init(updateCallback, &indices[i], numSubFiles);
       
       CFolder folderItem;
-      CLocalProgress *localProgressSpec = new CLocalProgress;
-      CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-      localProgressSpec->Init(updateCallback, true);
-      CLocalCompressProgressInfo *localCompressProgressSpec = new CLocalCompressProgressInfo;
-      CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-      localCompressProgressSpec->Init(localProgress, &complexity, NULL);
-      
+
+      int startPackIndex = newDatabase.PackSizes.Size();
       RINOK(encoder.Encode(
           EXTERNAL_CODECS_LOC_VARS
           solidInStream, NULL, &inSizeForReduce, folderItem, 
-          archive.SeqStream, newDatabase.PackSizes, compressProgress));
+          archive.SeqStream, newDatabase.PackSizes, progress));
 
+      for (; startPackIndex < newDatabase.PackSizes.Size(); startPackIndex++)
+        lps->OutSize += newDatabase.PackSizes[startPackIndex];
+
+      lps->InSize += folderItem.GetUnPackSize();
       // for()
       // newDatabase.PackCRCsDefined.Add(false);
       // newDatabase.PackCRCs.Add(0);
@@ -783,7 +741,6 @@ static HRESULT Update2(
           file.IsFileCRCDefined = true;
           file.HasStream = true;
           numUnPackStreams++;
-          complexity += file.UnPackSize;
         }
         else
         {
@@ -935,8 +892,7 @@ HRESULT UpdateVolume(
     CMyComPtr<ISequentialInStream> inCrcStream = inCrcStreamSpec;
     inCrcStreamSpec->Init(fileStream);
 
-    RINOK(WriteRange(inCrcStream, volumeStream, pureSize, 
-        updateCallback, complexity));
+    RINOK(WriteRange(inCrcStream, volumeStream, pureSize, updateCallback, complexity));
     file.UnPackSize = inCrcStreamSpec->GetSize();
     if (file.UnPackSize == 0)
       break;

@@ -905,10 +905,10 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
   {
     Items.Sort(CompareItems, 0);
     int i;
-    if (IsSolid) 
+    // if (IsSolid) 
     for (i = 0; i + 1 < Items.Size();)
     {
-      if (Items[i].Pos == Items[i + 1].Pos)
+      if (Items[i].Pos == Items[i + 1].Pos && (IsSolid || Items[i].Name == Items[i + 1].Name))
         Items.Delete(i + 1);
       else
         i++;

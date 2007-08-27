@@ -27,8 +27,8 @@ BEGIN
   PUSHBUTTON     "Cancel", IDCANCEL, bXPos1, bYPos, bXSize, bYSize
 END
 
-#include "../../FileManager/Resource/MessagesDialog/resource.rc"
-#include "../../FileManager/Resource/OverwriteDialog/resource.rc"
-#include "../../FileManager/Resource/PasswordDialog/resource.rc"
-#include "../../FileManager/Resource/ProgressDialog/resource.rc"
-#include "../../UI/Resource/Extract/resource.rc"
+#include "../../UI/FileManager/MessagesDialog.rc"
+#include "../../UI/FileManager/OverwriteDialog.rc"
+#include "../../UI/FileManager/PasswordDialog.rc"
+#include "../../UI/FileManager/ProgressDialog.rc"
+#include "../../UI/GUI/Extract.rc"

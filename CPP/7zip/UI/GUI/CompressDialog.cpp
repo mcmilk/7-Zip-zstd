@@ -12,9 +12,9 @@
 #include "Windows/ResourceString.h"
 #include "Windows/System.h"
 
-#include "../../FileManager/HelpUtils.h"
-#include "../../FileManager/SplitUtils.h"
-#include "../../FileManager/FormatUtils.h"
+#include "../FileManager/HelpUtils.h"
+#include "../FileManager/SplitUtils.h"
+#include "../FileManager/FormatUtils.h"
 
 #include "../Explorer/MyMessages.h"
 
@@ -27,10 +27,10 @@ extern bool g_IsNT;
 #endif
 
 #ifdef LANG        
-#include "../../FileManager/LangUtils.h"
+#include "../FileManager/LangUtils.h"
 #endif
 
-#include "../Resource/CompressDialog/resource.h"
+#include "CompressDialogRes.h"
 
 #define MY_SIZE_OF_ARRAY(x) (sizeof(x) / sizeof(x[0]))
 
@@ -536,7 +536,7 @@ void CCompressDialog::OnOK()
 
   UInt32 solidLogSize = GetBlockSizeSpec();
   Info.SolidBlockSize = 0;
-  if (solidLogSize > 0)
+  if (solidLogSize > 0 && solidLogSize != (UInt32)-1)
     Info.SolidBlockSize = (solidLogSize >= 64) ? (UInt64)(Int64)-1 : ((UInt64)1 << solidLogSize);
 
   Info.Method = GetMethodSpec();
@@ -1174,6 +1174,10 @@ void CCompressDialog::SetSolidBlockSize()
   m_Solid.ResetContent();
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   if (!fi.Solid)
+    return;
+
+  UInt32 level = GetLevel2();
+  if (level == 0)
     return;
 
   UInt32 dictionary = GetDictionarySpec();

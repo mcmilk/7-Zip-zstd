@@ -59,15 +59,13 @@ enum // PropID
 };
 */
 
-STATPROPSTG kProperties[] = 
+STATPROPSTG kProps[] = 
 {
   { NULL, kpidPath, VT_BSTR},
-  // { NULL, kpidIsFolder, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8},
 
   { NULL, kpidLastWriteTime, VT_FILETIME},
-  // { NULL, kpidCommented, VT_BOOL},
   // { NULL, kpidMethod, VT_UI1},
   { NULL, kpidHostOS, VT_BSTR},
     
@@ -77,39 +75,8 @@ STATPROPSTG kProperties[] =
   // { L"Is Text", kpidIsText, VT_BOOL},
 };
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID /* propID */, PROPVARIANT *value)
-{
-  value->vt = VT_EMPTY;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  const STATPROPSTG &prop = kProperties[index];
-  *propID = prop.propid;
-  *varType = prop.vt;
-  *name = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties)
-{
-  *numProperties = 0;
-  return S_OK;
-}
-
-STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32 /* index */,     
-      BSTR * /* name */, PROPID * /* propID */, VARTYPE * /* varType */)
-{
-  return E_NOTIMPL;
-}
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -120,15 +87,12 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
     case kpidPath:
       if (m_Item.NameIsPresent())
-        propVariant = MultiByteToUnicodeString(m_Item.Name, CP_ACP);
-      break;
-    case kpidIsFolder:
-      propVariant = false;
+        prop = MultiByteToUnicodeString(m_Item.Name, CP_ACP);
       break;
     case kpidLastWriteTime:
     {
@@ -136,47 +100,47 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
       if (m_Item.Time != 0)
       {
         NTime::UnixTimeToFileTime((UInt32)m_Item.Time, utcTime);
-        propVariant = utcTime;
+        prop = utcTime;
       }
       else
       {
         // utcTime.dwLowDateTime = utcTime.dwHighDateTime = 0;
-        // propVariant = utcTime;
+        // prop = utcTime;
       }
       break;
     }
     case kpidSize:
-      propVariant = UInt64(m_Item.UnPackSize32);
+      prop = UInt64(m_Item.UnPackSize32);
       break;
     case kpidPackedSize:
-      propVariant = m_PackSize;
+      prop = m_PackSize;
       break;
     case kpidCommented:
-      propVariant = m_Item.CommentIsPresent();
+      prop = m_Item.CommentIsPresent();
       break;
     case kpidHostOS:
-      propVariant = (m_Item.HostOS < kNumHostOSes) ?
+      prop = (m_Item.HostOS < kNumHostOSes) ?
           kHostOS[m_Item.HostOS] : kUnknownOS;
       break;
     case kpidMethod:
-      propVariant = m_Item.CompressionMethod;
+      prop = m_Item.CompressionMethod;
       break;
     case kpidCRC:
-        propVariant = m_Item.FileCRC;
+        prop = m_Item.FileCRC;
       break;
     /*
     case kpidExtraFlags:
-      propVariant = m_Item.ExtraFlags;
+      prop = m_Item.ExtraFlags;
       break;
     case kpidIsText:
-      propVariant = m_Item.IsText();
+      prop = m_Item.IsText();
       break;
     case kpidExtraIsPresent:
-      propVariant = m_Item.ExtraFieldIsPresent();
+      prop = m_Item.ExtraFieldIsPresent();
       break;
     */
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -232,7 +196,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   extractCallback->SetTotal(m_PackSize);
 
-  UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
+  UInt64 currentTotalPacked = 0;
   
   RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
@@ -253,22 +217,18 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   outStreamSpec->Init();
   realOutStream.Release();
 
-  CLocalProgress *localProgressSpec = new  CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-  localProgressSpec->Init(extractCallback, true);
-  
-  CLocalCompressProgressInfo *localCompressProgressSpec = 
-      new CLocalCompressProgressInfo;
-  CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, true);
 
   CMyComPtr<ICompressCoder> deflateDecoder;
   bool firstItem = true;
   RINOK(m_Stream->Seek(m_StreamStartPosition, STREAM_SEEK_SET, NULL));
+  Int32 opRes;
   for (;;)
   {
-    localCompressProgressSpec->Init(progress, 
-      &currentTotalPacked,
-      &currentTotalUnPacked);
+    lps->InSize = currentTotalPacked;
+    lps->OutSize = outStreamSpec->GetSize();
 
     CInArchive archive;
     CItem item;
@@ -277,9 +237,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       if (firstItem)
         return E_FAIL;
-      outStream.Release();
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK))
-      return S_OK;
+      opRes = NArchive::NExtract::NOperationResult::kOK;
+      break;
     }
     firstItem = false;
 
@@ -288,45 +247,32 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     outStreamSpec->InitCRC();
 
-    switch(item.CompressionMethod)
+    if (item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflate)
     {
-      case NFileHeader::NCompressionMethod::kDeflate:
+      opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+      break;
+    }
+
+    if (!deflateDecoder)
+    {
+      RINOK(CreateCoder(
+          EXTERNAL_CODECS_VARS
+          kMethodId_Deflate, deflateDecoder, false));
+      if (!deflateDecoder)
       {
-        if(!deflateDecoder)
-        {
-          RINOK(CreateCoder(
-              EXTERNAL_CODECS_VARS
-              kMethodId_Deflate, deflateDecoder, false));
-          if (!deflateDecoder)
-          {
-            outStream.Release();
-            RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
-            return S_OK;
-          }
-        }
-        try
-        {
-          HRESULT result = deflateDecoder->Code(m_Stream, outStream, NULL, NULL, compressProgress);
-          if (result == S_FALSE)
-            throw "data error";
-          if (result != S_OK)
-            return result;
-        }
-        catch(...)
-        {
-          outStream.Release();
-          RINOK(extractCallback->SetOperationResult(
-            NArchive::NExtract::NOperationResult::kDataError));
-          return S_OK;
-        }
+        opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
         break;
       }
-    default:
-      outStream.Release();
-      RINOK(extractCallback->SetOperationResult(
-        NArchive::NExtract::NOperationResult::kUnSupportedMethod));
-      return S_OK;
     }
+    result = deflateDecoder->Code(m_Stream, outStream, NULL, NULL, progress);
+    if (result != S_OK)
+    {
+      if (result != S_FALSE)
+        return result;
+      opRes = NArchive::NExtract::NOperationResult::kDataError;
+      break;
+    }
+
     CMyComPtr<ICompressGetInStreamProcessedSize> getInStreamProcessedSize;
     RINOK(deflateDecoder.QueryInterface(IID_ICompressGetInStreamProcessedSize, 
         &getInStreamProcessedSize));
@@ -342,12 +288,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       return E_FAIL;
     if((outStreamSpec->GetCRC() != postItem.FileCRC))
     {
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kCRCError))
+      opRes = NArchive::NExtract::NOperationResult::kCRCError;
       break;
     }
   }
+  outStream.Release();
+  return extractCallback->SetOperationResult(opRes);
   COM_TRY_END
-  return S_OK;
 }
 
 IMPL_ISetCompressCodecsInfo

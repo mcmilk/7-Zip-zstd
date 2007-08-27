@@ -8,7 +8,7 @@
 #include "Windows/ResourceString.h"
 
 #ifdef LANG        
-#include "../../FileManager/LangUtils.h"
+#include "../FileManager/LangUtils.h"
 #endif
 
 using namespace NWindows;

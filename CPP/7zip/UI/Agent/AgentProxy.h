@@ -10,7 +10,7 @@
 class CProxyFile
 {
 public:
-  UINT32 Index;
+  UInt32 Index;
   UString Name;
 };
 
@@ -22,34 +22,41 @@ public:
   CObjectVector<CProxyFile> Files;
   bool IsLeaf;
 
+  bool CrcIsDefined;
+  UInt64 Size;
+  UInt64 PackSize;
+  UInt32 Crc;
+  UInt32 NumSubFolders;
+  UInt32 NumSubFiles;
+
   CProxyFolder(): Parent(NULL) {};
   int FindDirSubItemIndex(const UString &name, int &insertPos) const;
   int FindDirSubItemIndex(const UString &name) const;
-  CProxyFolder* AddDirSubItem(UINT32 index, 
-      bool leaf, const UString &name);
-  void AddFileSubItem(UINT32 index, const UString &name);
+  CProxyFolder* AddDirSubItem(UInt32 index, bool leaf, const UString &name);
+  void AddFileSubItem(UInt32 index, const UString &name);
   void Clear();
 
+  void GetPathParts(UStringVector &pathParts) const;
   UString GetFullPathPrefix() const;
-  UString GetItemName(UINT32 index) const;
+  UString GetItemName(UInt32 index) const;
   void AddRealIndices(CUIntVector &realIndices) const;
-  void GetRealIndices(const UINT32 *indices, UINT32 numItems, 
-      CUIntVector &realIndices) const;
+  void GetRealIndices(const UInt32 *indices, UInt32 numItems, CUIntVector &realIndices) const;
+  void CalculateSizes(IInArchive *archive);
 };
 
 class CProxyArchive
 {
-  HRESULT ReadObjects(IInArchive *inArchive, IProgress *progress);
+  HRESULT ReadObjects(IInArchive *archive, IProgress *progress);
 public:
   UString DefaultName;
   // FILETIME DefaultTime;
-  // UINT32 DefaultAttributes;
+  // UInt32 DefaultAttributes;
   CProxyFolder RootFolder;
   HRESULT Reload(IInArchive *archive, IProgress *progress);
   HRESULT Load(IInArchive *archive, 
       const UString &defaultName,
       // const FILETIME &defaultTime,
-      // UINT32 defaultAttributes,
+      // UInt32 defaultAttributes,
       IProgress *progress);
 };
 

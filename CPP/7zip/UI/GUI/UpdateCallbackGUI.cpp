@@ -10,8 +10,8 @@
 
 #include "Windows/PropVariant.h"
 #include "Windows/Error.h"
-#include "../../FileManager/Resource/MessagesDialog/MessagesDialog.h"
-#include "../../FileManager/Resource/PasswordDialog/PasswordDialog.h"
+#include "../FileManager/MessagesDialog.h"
+#include "../FileManager/PasswordDialog.h"
 
 using namespace NWindows;
 
@@ -30,6 +30,7 @@ void CUpdateCallbackGUI::Init()
   FailedFiles.Clear();
   Messages.Clear();
   NumArchiveErrors = 0;
+  NumFiles = 0;
 }
 
 void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
@@ -102,6 +103,12 @@ HRESULT CUpdateCallbackGUI::Finilize()
   return S_OK;
 }
 
+HRESULT CUpdateCallbackGUI::SetNumFiles(UInt64 numFiles)
+{
+  ProgressDialog.ProgressSynch.SetNumFilesTotal(numFiles);
+  return S_OK;
+}
+
 HRESULT CUpdateCallbackGUI::SetTotal(UInt64 total)
 {
   ProgressDialog.ProgressSynch.SetProgress(total, 0);
@@ -113,6 +120,13 @@ HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completeValue)
   RINOK(CheckBreak());
   if (completeValue != NULL)
     ProgressDialog.ProgressSynch.SetPos(*completeValue);
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackGUI::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  RINOK(CheckBreak());
+  ProgressDialog.ProgressSynch.SetRatioInfo(inSize, outSize);
   return S_OK;
 }
 
@@ -135,6 +149,8 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
 
 HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 {
+  NumFiles++;
+  ProgressDialog.ProgressSynch.SetNumFilesCur(NumFiles);
   return S_OK;  
 }
 

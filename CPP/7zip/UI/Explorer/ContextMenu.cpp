@@ -19,14 +19,14 @@
 #include "Windows/Menu.h"
 #include "Windows/ResourceString.h"
 
-#include "../../FileManager/FormatUtils.h"
-#include "../../FileManager/ProgramLocation.h"
+#include "../FileManager/FormatUtils.h"
+#include "../FileManager/ProgramLocation.h"
 
 #include "../Common/ZipRegistry.h"
 #include "../Common/ArchiveName.h"
 
 #ifdef LANG        
-#include "../../FileManager/LangUtils.h"
+#include "../FileManager/LangUtils.h"
 #endif
 
 #include "resource.h"
@@ -37,7 +37,7 @@
 // #include "CompressEngine.h"
 #include "MyMessages.h"
 
-#include "../Resource/Extract/resource.h"
+#include "../GUI/ExtractRes.h"
 #include "../Common/CompressCall.h"
 
 using namespace NWindows;
@@ -311,7 +311,7 @@ static UString GetReducedString(const UString &s)
 
 static const wchar_t *kExtractExludeExtensions[] = 
 {
-  L"txt", L"htm", L"html", L"xml", L"doc", L"xls",
+  L"txt", L"htm", L"html", L"xml",
   L"bmp", L"gif", L"jpeg", L"jpg"
 };
 

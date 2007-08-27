@@ -5,92 +5,70 @@
 
 #include "../../Archive/IArchive.h"
 // #include "../Format/Common/ArchiveInterface.h"
-#include "../../FileManager/IFolder.h"
+#include "../../UI/FileManager/IFolder.h"
 #include "../Common/IFileExtractCallback.h"
 #include "../Common/ExtractMode.h"
 #include "../../UI/Common/LoadCodecs.h"
 
-// {23170F69-40C1-278A-0000-000100050000}
-DEFINE_GUID(IID_IArchiveFolder, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100050000")
-IArchiveFolder: public IUnknown
+#include "../../IDecl.h"
+
+#define FOLDER_ARCHIVE_INTERFACE_SUB(i, base,  x) DECL_INTERFACE_SUB(i, base, 0x01, x)
+#define FOLDER_ARCHIVE_INTERFACE(i, x) FOLDER_ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
+
+#define INTERFACE_IArchiveFolder(x) \
+  STDMETHOD(Extract)(const UInt32 *indices, UInt32 numItems, \
+      NExtract::NPathMode::EEnum pathMode, \
+      NExtract::NOverwriteMode::EEnum overwriteMode, \
+      const wchar_t *path, Int32 testMode, \
+      IFolderArchiveExtractCallback *extractCallback2) x; \
+
+FOLDER_ARCHIVE_INTERFACE(IArchiveFolder, 0x05)
 {
-public:
-  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
-      NExtract::NPathMode::EEnum pathMode, 
-      NExtract::NOverwriteMode::EEnum overwriteMode, 
-      const wchar_t *path,
-      INT32 testMode,
-      IFolderArchiveExtractCallback *extractCallback2) PURE;
+  INTERFACE_IArchiveFolder(PURE)
 };
 
-// {23170F69-40C1-278A-0000-000100060000}
-DEFINE_GUID(IID_IInFolderArchive, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-000100060000")
-IInFolderArchive: public IUnknown
+#define INTERFACE_IInFolderArchive(x) \
+  STDMETHOD(Open)(const wchar_t *filePath, BSTR *archiveType, IArchiveOpenCallback *openArchiveCallback) x; \
+  STDMETHOD(ReOpen)(IArchiveOpenCallback *openArchiveCallback) x; \
+  STDMETHOD(Close)() x; \
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) x; \
+  STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
+  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder) x; \
+  STDMETHOD(Extract)(NExtract::NPathMode::EEnum pathMode, \
+      NExtract::NOverwriteMode::EEnum overwriteMode, const wchar_t *path, \
+      Int32 testMode, IFolderArchiveExtractCallback *extractCallback2) x; \
+
+FOLDER_ARCHIVE_INTERFACE(IInFolderArchive, 0x06)
 {
-public:
-  STDMETHOD(Open)(
-      const wchar_t *filePath, 
-      // CLSID *clsIDResult,
-      BSTR *archiveType,
-      IArchiveOpenCallback *openArchiveCallback) PURE;  
-  STDMETHOD(ReOpen)(
-      // const wchar_t *filePath, 
-      IArchiveOpenCallback *openArchiveCallback) PURE;  
-  STDMETHOD(Close)() PURE;  
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(GetNumberOfProperties)(UINT32 *numProperties) PURE;  
-  STDMETHOD(GetPropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
-  STDMETHOD(GetNumberOfArchiveProperties)(UINT32 *numProperties) PURE;  
-  STDMETHOD(GetArchivePropertyInfo)(UINT32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType) PURE;
-  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder) PURE;  
-  STDMETHOD(Extract)(
-      NExtract::NPathMode::EEnum pathMode, 
-      NExtract::NOverwriteMode::EEnum overwriteMode, 
-      const wchar_t *path, 
-      INT32 testMode,
-      IFolderArchiveExtractCallback *extractCallback2) PURE;
+  INTERFACE_IInFolderArchive(PURE)
 };
 
-// {23170F69-40C1-278A-0000-0001000B0000}
-DEFINE_GUID(IID_IFolderArchiveUpdateCallback, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0B, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000B0000")
-IFolderArchiveUpdateCallback: public IProgress
+#define INTERFACE_IFolderArchiveUpdateCallback(x) \
+  STDMETHOD(CompressOperation)(const wchar_t *name) x; \
+  STDMETHOD(DeleteOperation)(const wchar_t *name) x; \
+  STDMETHOD(OperationResult)(Int32 operationResult) x; \
+  STDMETHOD(UpdateErrorMessage)(const wchar_t *message) x; \
+  STDMETHOD(SetNumFiles)(UInt64 numFiles) x; \
+
+FOLDER_ARCHIVE_INTERFACE_SUB(IFolderArchiveUpdateCallback, IProgress, 0x0B)
 {
-public:
-  STDMETHOD(CompressOperation)(const wchar_t *name) PURE;
-  STDMETHOD(DeleteOperation)(const wchar_t *name) PURE;
-  STDMETHOD(OperationResult)(INT32 operationResult) PURE;
-  STDMETHOD(UpdateErrorMessage)(const wchar_t *message) PURE;
+  INTERFACE_IFolderArchiveUpdateCallback(PURE)
 };
 
-DEFINE_GUID(IID_IOutFolderArchive, 
-0x23170F69, 0x40C1, 0x278A, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x02);
-MIDL_INTERFACE("23170F69-40C1-278A-0000-0001000A0002")
-IOutFolderArchive: public IUnknown
+#define INTERFACE_IOutFolderArchive(x) \
+  STDMETHOD(SetFolder)(IFolderFolder *folder) x; \
+  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UInt32 numNames) x; \
+  STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, \
+      const UInt32 *indices, UInt32 numItems, IFolderArchiveUpdateCallback *updateCallback) x; \
+  STDMETHOD(DoOperation)(CCodecs *codecs, int index, \
+      const wchar_t *newArchiveName, const Byte *stateActions, const wchar_t *sfxModule, \
+      IFolderArchiveUpdateCallback *updateCallback) x; \
+  STDMETHOD(DoOperation2)(const wchar_t *newArchiveName, const Byte *stateActions, \
+      const wchar_t *sfxModule, IFolderArchiveUpdateCallback *updateCallback) x; \
+
+FOLDER_ARCHIVE_INTERFACE(IOutFolderArchive, 0x0A)
 {
-  STDMETHOD(SetFolder)(IFolderFolder *folder) PURE;
-  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UINT32 numNames) PURE;
-  STDMETHOD(DeleteItems)(const wchar_t *newArchiveName, 
-      const UINT32 *indices, UINT32 numItems, IFolderArchiveUpdateCallback *updateCallback) PURE;
-  STDMETHOD(DoOperation)(
-      CCodecs *codecs, 
-      int index,
-      const wchar_t *newArchiveName, 
-      const Byte *stateActions,
-      const wchar_t *sfxModule,
-      IFolderArchiveUpdateCallback *updateCallback) PURE;
-  STDMETHOD(DoOperation2)(
-      const wchar_t *newArchiveName, 
-      const Byte *stateActions,
-      const wchar_t *sfxModule,
-      IFolderArchiveUpdateCallback *updateCallback) PURE;
+  INTERFACE_IOutFolderArchive(PURE)
 };
 
 #endif

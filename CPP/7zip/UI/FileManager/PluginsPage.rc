@@ -1,0 +1,19 @@
+#include "PluginsPageRes.h"
+#include "../../GuiCommon.rc"
+
+#define xSize2 196
+#define ySize2 140
+#define xSize (xSize2 + marg + marg)
+#define ySize (ySize2 + marg + marg)
+
+
+IDD_PLUGINS  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+CAPTION "Plugins"
+MY_FONT
+BEGIN
+  LTEXT     "&Plugins:", IDC_PLUGINS_STATIC_PLUGINS, marg, marg, xSize2, 8
+  CONTROL   "List1", IDC_PLUGINS_LIST, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | 
+            LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 
+            marg, 20, xSize2 - bXSize - 12, ySize2 - 12
+  PUSHBUTTON  "Options...", IDC_PLUGINS_BUTTON_OPTIONS, (xSize - marg - bXSize), 20, bXSize, bYSize
+END

@@ -27,17 +27,17 @@ extern "C"
 #include "../../IStream.h"
 #include "../../IPassword.h"
 
-#include "../../FileManager/StringUtils.h"
+#include "../FileManager/StringUtils.h"
 
 #include "../Common/ExitCode.h"
 #include "../Common/ArchiveCommandLine.h"
 
-#include "../Resource/Extract/resource.h"
+#include "ExtractRes.h"
 #include "../Explorer/MyMessages.h"
 
 #include "ExtractGUI.h"
 #include "UpdateGUI.h"
-#include "Resource/BenchmarkDialog/BenchmarkDialog.h"
+#include "BenchmarkDialog.h"
 
 using namespace NWindows;
 
@@ -110,6 +110,7 @@ int Main2()
   {
     CExtractCallbackImp *ecs = new CExtractCallbackImp;
     CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
+    ecs->ProgressDialog.CompressingMode = false;
     ecs->PasswordIsDefined = options.PasswordEnabled;
     ecs->Password = options.Password;
     ecs->Init();

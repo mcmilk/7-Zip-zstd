@@ -4,52 +4,37 @@
 
 #include "ProgressUtils.h"
 
-void CLocalCompressProgressInfo::Init(ICompressProgressInfo *progress,
-    const UInt64 *inStartValue, const UInt64 *outStartValue)
+CLocalProgress::CLocalProgress()
 {
-  _progress = progress;
-  _inStartValueIsAssigned = (inStartValue != NULL);
-  if (_inStartValueIsAssigned)
-    _inStartValue = *inStartValue;
-  _outStartValueIsAssigned = (outStartValue != NULL);
-  if (_outStartValueIsAssigned)
-    _outStartValue = *outStartValue;
+  ProgressOffset = InSize = OutSize = 0;
+  SendRatio = true;
 }
-
-STDMETHODIMP CLocalCompressProgressInfo::SetRatioInfo(
-    const UInt64 *inSize, const UInt64 *outSize)
-{
-  UInt64 inSizeNew, outSizeNew;
-  const UInt64 *inSizeNewPointer;
-  const UInt64 *outSizeNewPointer;
-  if (_inStartValueIsAssigned && inSize != NULL)
-  {
-    inSizeNew = _inStartValue + (*inSize);
-    inSizeNewPointer = &inSizeNew;
-  }
-  else
-    inSizeNewPointer = NULL;
-
-  if (_outStartValueIsAssigned && outSize != NULL)
-  {
-    outSizeNew = _outStartValue + (*outSize);
-    outSizeNewPointer = &outSizeNew;
-  }
-  else
-    outSizeNewPointer = NULL;
-  return _progress->SetRatioInfo(inSizeNewPointer, outSizeNewPointer);
-}
-
-///////////////////////////////////
 
 void CLocalProgress::Init(IProgress *progress, bool inSizeIsMain)
 {
+  _ratioProgress.Release();
   _progress = progress;
+  _progress.QueryInterface(IID_ICompressProgressInfo, &_ratioProgress);
   _inSizeIsMain = inSizeIsMain;
 }
 
-STDMETHODIMP CLocalProgress::SetRatioInfo(
-    const UInt64 *inSize, const UInt64 *outSize)
+STDMETHODIMP CLocalProgress::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
 {
-  return _progress->SetCompleted(_inSizeIsMain ? inSize : outSize);
+  UInt64 inSizeNew = InSize, outSizeNew = OutSize;
+  if (inSize)
+    inSizeNew += (*inSize);
+  if (outSize)
+    outSizeNew += (*outSize);
+  if (SendRatio && _ratioProgress)
+  {
+    RINOK(_ratioProgress->SetRatioInfo(&inSizeNew, &outSizeNew));
+  }
+  inSizeNew += ProgressOffset;
+  outSizeNew += ProgressOffset;
+  return _progress->SetCompleted(_inSizeIsMain ? &inSizeNew : &outSizeNew);
+}
+
+HRESULT CLocalProgress::SetCur()
+{
+  return SetRatioInfo(NULL, NULL);
 }

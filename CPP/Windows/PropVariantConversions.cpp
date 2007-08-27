@@ -118,7 +118,7 @@ UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
       return ConvertInt64ToString(propVariant.hVal.QuadPart);
 
     case VT_BOOL:
-      return VARIANT_BOOLToBool(propVariant.boolVal) ? L"1" : L"0";
+      return VARIANT_BOOLToBool(propVariant.boolVal) ? L"+" : L"-";
     default:
       #ifndef _WIN32_WCE
       throw 150245;

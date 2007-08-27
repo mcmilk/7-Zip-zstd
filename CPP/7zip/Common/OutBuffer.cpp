@@ -109,7 +109,7 @@ HRESULT COutBuffer::Flush()
 
 void COutBuffer::FlushWithCheck()
 {
-  HRESULT result = FlushPart();
+  HRESULT result = Flush();
   #ifdef _NO_EXCEPTIONS
   ErrorCode = result;
   #else

@@ -149,16 +149,27 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     );
   // CDecoder1 decoder;
 
-  UInt64 currentImportantTotalUnPacked = 0;
+  UInt64 currentTotalPacked = 0;
+  UInt64 currentTotalUnPacked = 0;
   UInt64 totalFolderUnPacked;
+  UInt64 totalFolderPacked;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
 
   for(int i = 0; i < extractFolderInfoVector.Size(); i++, 
-      currentImportantTotalUnPacked += totalFolderUnPacked)
+      currentTotalUnPacked += totalFolderUnPacked,
+      currentTotalPacked += totalFolderPacked)
   {
+    lps->OutSize = currentTotalUnPacked;
+    lps->InSize = currentTotalPacked;
+    RINOK(lps->SetCur());
+    
     const CExtractFolderInfo &efi = extractFolderInfoVector[i];
     totalFolderUnPacked = efi.UnPackSize;
 
-    RINOK(extractCallback->SetCompleted(&currentImportantTotalUnPacked));
+    totalFolderPacked = 0;
 
     CFolderOutStream *folderOutStream = new CFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(folderOutStream);
@@ -194,14 +205,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     CNum folderIndex = efi.FolderIndex;
     const CFolder &folderInfo = database.Folders[folderIndex];
 
-    CLocalProgress *localProgressSpec = new CLocalProgress;
-    CMyComPtr<ICompressProgressInfo> progress = localProgressSpec;
-    localProgressSpec->Init(extractCallback, false);
-
-    CLocalCompressProgressInfo *localCompressProgressSpec = 
-        new CLocalCompressProgressInfo;
-    CMyComPtr<ICompressProgressInfo> compressProgress = localCompressProgressSpec;
-    localCompressProgressSpec->Init(progress, NULL, &currentImportantTotalUnPacked);
+    totalFolderPacked = _database.GetFolderFullPackSize(folderIndex);
 
     CNum packStreamIndex = database.FolderStartPackStreamIndex[folderIndex];
     UInt64 folderStartPackPos = database.GetFolderStreamPos(folderIndex, 0);
@@ -225,7 +229,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           &database.PackSizes[packStreamIndex],
           folderInfo,
           outStream,
-          compressProgress
+          progress
           #ifndef _NO_CRYPTO
           , getTextPassword
           #endif

@@ -1,11 +1,9 @@
 PROG = 7-zip.dll
 DEF_FILE = Explorer.def
 LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib htmlhelp.lib shell32.lib comctl32.lib ole32.lib comdlg32.lib
-CFLAGS = $(CFLAGS) -I ../../../ \
+CFLAGS = $(CFLAGS) -I ../../../ -Ob2 \
   -DLANG \
-  -DNEW_FOLDER_INTERFACE \
   -DWIN_LONG_PATH \
-  -DEXTERNAL_CODECS \
 
 EXPLORER_OBJS = \
   $O\DllExports.obj \
@@ -13,6 +11,8 @@ EXPLORER_OBJS = \
   $O\MyMessages.obj \
   $O\OptionsDialog.obj \
   $O\RegistryContextMenu.obj \
+  $O\SystemPage.obj \
+  $O\FoldersPage.obj \
 
 COMMON_OBJS = \
   $O\IntToString.obj \
@@ -37,8 +37,6 @@ WIN_OBJS = \
   $O\FileIO.obj \
   $O\FileName.obj \
   $O\Menu.obj \
-  $O\PropVariant.obj \
-  $O\PropVariantConversions.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
   $O\Shell.obj \
@@ -49,39 +47,10 @@ WIN_CTRL_OBJS = \
   $O\Dialog.obj \
   $O\PropertyPage.obj \
 
-7ZIP_COMMON_OBJS = \
-  $O\FilePathAutoRename.obj \
-  $O\FileStreams.obj \
-  $O\StreamUtils.obj \
-
 UI_COMMON_OBJS = \
-  $O\ArchiveExtractCallback.obj \
   $O\ArchiveName.obj \
-  $O\ArchiveOpenCallback.obj \
   $O\CompressCall.obj \
-  $O\DefaultName.obj \
-  $O\EnumDirItems.obj \
-  $O\ExtractingFilePath.obj \
-  $O\LoadCodecs.obj \
-  $O\OpenArchive.obj \
-  $O\PropIDUtils.obj \
-  $O\SortUtils.obj \
-  $O\UpdateAction.obj \
-  $O\UpdateCallback.obj \
-  $O\UpdatePair.obj \
-  $O\UpdateProduce.obj \
-  $O\WorkDir.obj \
   $O\ZipRegistry.obj \
-
-AGENT_OBJS = \
-  $O\Agent.obj \
-  $O\AgentOut.obj \
-  $O\AgentProxy.obj \
-  $O\ArchiveFolder.obj \
-  $O\ArchiveFolderOpen.obj \
-  $O\ArchiveFolderOut.obj \
-  $O\UpdateCallbackAgent.obj \
-
 
 FM_COMMON_OBJS = \
   $O\FormatUtils.obj \
@@ -91,8 +60,6 @@ FM_COMMON_OBJS = \
   $O\RegistryUtils.obj \
 
 C_OBJS = \
-  $O\Alloc.obj \
-  $O\Sort.obj \
   $O\Threads.obj \
 
 OBJS = \
@@ -101,14 +68,9 @@ OBJS = \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(WIN_CTRL_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
-  $(AGENT_OBJS) \
   $(FM_COMMON_OBJS)\
   $(C_OBJS) \
-  $O\SystemPage.obj \
-  $O\FoldersPage.obj \
-  $O\CopyCoder.obj \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -121,19 +83,9 @@ $(WIN_OBJS): ../../../Windows/$(*B).cpp
 	$(COMPL)
 $(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
 	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
-$(AGENT_OBJS): ../Agent/$(*B).cpp
-	$(COMPL)
-$(FM_COMMON_OBJS): ../../FileManager/$(*B).cpp
-	$(COMPL)
-$O\SystemPage.obj: SystemPage/$(*B).cpp
-	$(COMPL)
-$O\FoldersPage.obj: FoldersPage/$(*B).cpp
-	$(COMPL)
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
+$(FM_COMMON_OBJS): ../FileManager/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)

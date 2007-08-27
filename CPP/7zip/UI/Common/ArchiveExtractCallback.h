@@ -10,6 +10,7 @@
 #include "Common/MyCom.h"
 
 #include "../../Common/FileStreams.h"
+#include "../../Common/ProgressUtils.h"
 #include "../../IPassword.h"
 
 #include "ExtractMode.h"
@@ -18,15 +19,17 @@ class CArchiveExtractCallback:
   public IArchiveExtractCallback,
   // public IArchiveVolumeExtractCallback,
   public ICryptoGetTextPassword,
+  public ICompressProgressInfo,
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP1(ICryptoGetTextPassword)
+  MY_UNKNOWN_IMP2(ICryptoGetTextPassword, ICompressProgressInfo)
   // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
 
   // IProgress
   STDMETHOD(SetTotal)(UInt64 size);
   STDMETHOD(SetCompleted)(const UInt64 *completeValue);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 
   // IExtractCallBack
   STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode);
@@ -42,6 +45,7 @@ public:
 private:
   CMyComPtr<IInArchive> _archiveHandler;
   CMyComPtr<IFolderArchiveExtractCallback> _extractCallback2;
+  CMyComPtr<ICompressProgressInfo> _compressProgress;
   CMyComPtr<ICryptoGetTextPassword> _cryptoGetTextPassword;
   UString _directoryPath;
   NExtract::NPathMode::EEnum _pathMode;
@@ -76,6 +80,7 @@ private:
     bool AttributesAreDefined;
   } _processedFileInfo;
 
+  UInt64 _curSize;
   COutFileStream *_outFileStreamSpec;
   CMyComPtr<ISequentialOutStream> _outFileStream;
   UStringVector _removePathParts;
@@ -91,19 +96,39 @@ public:
   CArchiveExtractCallback():
       WriteModified(true),
       WriteCreated(false),
-      WriteAccessed(false) 
+      WriteAccessed(false),
+      _multiArchives(false)
       {}
+  CLocalProgress *LocalProgressSpec;
+  CMyComPtr<ICompressProgressInfo> _localProgress;
+  bool _ratioMode;
+  UInt64 _packTotal;
+  UInt64 _unpTotal;
+
+  bool _multiArchives;
+  UInt64 NumFolders;
+  UInt64 NumFiles;
+  UInt64 UnpackSize;
+  
+  void InitForMulti(bool multiArchives, 
+      NExtract::NPathMode::EEnum pathMode,
+      NExtract::NOverwriteMode::EEnum overwriteMode) 
+  { 
+    _multiArchives = multiArchives; NumFolders = NumFiles = UnpackSize = 0; 
+    _pathMode = pathMode;
+    _overwriteMode = overwriteMode;
+  }
+
   void Init(
       IInArchive *archiveHandler, 
       IFolderArchiveExtractCallback *extractCallback2,
       bool stdOutMode,
       const UString &directoryPath,
-      NExtract::NPathMode::EEnum pathMode,
-      NExtract::NOverwriteMode::EEnum overwriteMode,
       const UStringVector &removePathParts,
       const UString &itemDefaultName,
       const FILETIME &utcLastWriteTimeDefault, 
-      UInt32 attributesDefault);
+      UInt32 attributesDefault,
+      UInt64 packSize);
 
   UInt64 _numErrors;
 };
