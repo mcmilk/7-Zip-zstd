@@ -262,13 +262,11 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   return true;
 }
 
-static inline UINT GetCurrentCodePage() { return AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
-
 static void AddToCensorFromListFile(NWildcard::CCensor &wildcardCensor, 
     LPCWSTR fileName, bool include, NRecursedType::EEnum type, UINT codePage)
 {
   UStringVector names;
-  if (!ReadNamesFromListFile(GetSystemString(fileName, GetCurrentCodePage()), names, codePage))
+  if (!ReadNamesFromListFile(fileName, names, codePage))
     throw kIncorrectListFile;
   for (int i = 0; i < names.Size(); i++)
     if (!AddNameToCensor(wildcardCensor, names[i], include, type))

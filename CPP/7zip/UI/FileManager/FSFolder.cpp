@@ -5,8 +5,6 @@
 #include "FSFolder.h"
 
 #include "Common/StringConvert.h"
-#include "Common/StdInStream.h"
-#include "Common/StdOutStream.h"
 #include "Common/UTFConvert.h"
 #include "Common/ComTry.h"
 
@@ -73,7 +71,7 @@ HRESULT CFSFolder::Init(const UString &path, IFolderFolder *parentFolder)
   return S_OK;
 }
 
-static HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress)
+HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress)
 {
   RINOK(progress->SetCompleted(NULL));
   numFiles = numFolders = size = 0;

@@ -79,6 +79,10 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
     throw 272340;
 
   CSysString oemString = UnicodeStringToMultiByte(propVariant.bstrVal, CP_OEMCP);
+  const int kFileNameSizeMax = (int)(sizeof(panelItem.FindData.cFileName) / sizeof(panelItem.FindData.cFileName[0]) - 1);
+  if (oemString.Length() > kFileNameSizeMax)
+    oemString = oemString.Left(kFileNameSizeMax);
+
   MyStringCopy(panelItem.FindData.cFileName, (const char *)oemString);
   panelItem.FindData.cAlternateFileName[0] = 0;
 

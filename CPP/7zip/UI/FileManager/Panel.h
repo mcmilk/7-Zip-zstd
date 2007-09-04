@@ -32,9 +32,8 @@ const int kToolbarStartID = 2000;
 
 const int kParentIndex = -1;
 
-class CPanelCallback
+struct CPanelCallback
 {
-public:
   virtual void OnTab() = 0;
   virtual void SetFocusToPath(int index) = 0;
   virtual void OnCopy(bool move, bool copyToSame) = 0;
@@ -43,6 +42,7 @@ public:
   virtual void PanelWasFocused() = 0;
   virtual void DragBegin() = 0;
   virtual void DragEnd() = 0;
+  virtual void RefreshTitle(bool always) = 0;
 };
 
 void PanelCopyItems();
@@ -378,6 +378,7 @@ public:
 
   void InvokeSystemCommand(const char *command);
   void Properties();
+  void EditCut();
   void EditCopy();
   void EditPaste();
 
@@ -499,13 +500,17 @@ public:
   HRESULT CopyFrom(const UString &folderPrefix, const UStringVector &filePaths, 
       bool showErrorMessages, UStringVector *messages);
 
-  void CopyFrom(const UStringVector &filePaths);
+  void CopyFromNoAsk(const UStringVector &filePaths);
+  void CopyFromAsk(const UStringVector &filePaths);
 
   // empty folderPath means create new Archive to path of first fileName.
   void DropObject(IDataObject * dataObject, const UString &folderPath);
 
   // empty folderPath means create new Archive to path of first fileName.
   void CompressDropFiles(const UStringVector &fileNames, const UString &folderPath);
+
+  void RefreshTitle(bool always = false) { _panelCallback->RefreshTitle(always);  }
+  void RefreshTitleAlways() { RefreshTitle(true);  }
 };
 
 #endif

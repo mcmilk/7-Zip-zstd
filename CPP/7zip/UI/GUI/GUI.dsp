@@ -759,14 +759,6 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\StdInStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\StdInStream.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File

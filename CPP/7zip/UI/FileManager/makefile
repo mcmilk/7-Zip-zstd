@@ -70,20 +70,18 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
-  $O\ListFileUtils.obj \
+  $O\MyString.obj \
+  $O\MyVector.obj \
   $O\NewHandler.obj \
   $O\Random.obj \
-  $O\StdInStream.obj \
-  $O\StdOutStream.obj \
-  $O\MyString.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\TextConfig.obj \
   $O\UTFConvert.obj \
-  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\Clipboard.obj \
   $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\Error.obj \

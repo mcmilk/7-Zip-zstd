@@ -366,8 +366,10 @@ HRESULT MyOpenArchive(
     UString &defaultItemName0,
     UString &defaultItemName1,
     UStringVector &volumePaths,
+    UInt64 &volumesSize,
     IOpenCallbackUI *openCallbackUI)
 {
+  volumesSize = 0;
   COpenCallbackImp *openCallbackSpec = new COpenCallbackImp;
   CMyComPtr<IArchiveOpenCallback> openCallback = openCallbackSpec;
   openCallbackSpec->Callback = openCallbackUI;
@@ -391,6 +393,7 @@ HRESULT MyOpenArchive(
   volumePaths.Add(prefix + name);
   for (int i = 0; i < openCallbackSpec->FileNames.Size(); i++)
     volumePaths.Add(prefix + openCallbackSpec->FileNames[i]);
+  volumesSize = openCallbackSpec->TotalSize;
   return S_OK;
 }
 
@@ -435,6 +438,7 @@ HRESULT MyOpenArchive(CCodecs *codecs,
     &archiveLink.Archive0, &archiveLink.Archive1, 
     archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
     archiveLink.VolumePaths,
+    archiveLink.VolumesSize,
     openCallbackUI);
   archiveLink.IsOpen = (res == S_OK);
   return res;

@@ -220,6 +220,7 @@ void CPanel::DeleteItemsInternal(CRecordVector<UInt32> &indices)
   if (::MessageBoxW(GetParent(), message, title, MB_OKCANCEL | MB_ICONQUESTION) != IDOK)
     return;
 
+  {
   CThreadDelete deleter;
   deleter.UpdateCallbackSpec = new CUpdateCallback100Imp;
   deleter.UpdateCallback = deleter.UpdateCallbackSpec;
@@ -242,6 +243,8 @@ void CPanel::DeleteItemsInternal(CRecordVector<UInt32> &indices)
   HRESULT result = deleter.Result;
   if (result != S_OK)
     MessageBoxError(result, LangString(IDS_ERROR_DELETING, 0x03020217));
+  }
+  RefreshTitleAlways();
 }
 
 BOOL CPanel::OnBeginLabelEdit(LV_DISPINFOW * lpnmh)
@@ -319,6 +322,7 @@ void CPanel::CreateFolder()
   
   // HRESULT result = folderOperations->CreateFolder(newName, 0);
 
+  {
   CThreadCreateFolder upd;
   upd.UpdateCallbackSpec = new CUpdateCallback100Imp;
   upd.UpdateCallback = upd.UpdateCallbackSpec;
@@ -352,6 +356,8 @@ void CPanel::CreateFolder()
     state.SelectedNames.Clear();
   state.FocusedName = newName;
   state.SelectFocused = true;
+  }
+  RefreshTitleAlways();
   RefreshListCtrl(state);
 }
 

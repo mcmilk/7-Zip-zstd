@@ -6,6 +6,6 @@
 #include "MyString.h"
 #include "Types.h"
 
-bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &strings, UINT codePage = CP_OEMCP);
+bool ReadNamesFromListFile(LPCWSTR fileName, UStringVector &strings, UINT codePage = CP_OEMCP);
 
 #endif

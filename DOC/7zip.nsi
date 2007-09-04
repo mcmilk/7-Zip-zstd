@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 53
+!define VERSION_MINOR 54
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -487,15 +487,26 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.7z"
   DeleteRegKey HKCR "7-Zip.arj"
   DeleteRegKey HKCR "7-Zip.bz2"
+  DeleteRegKey HKCR "7-Zip.bzip2"
+  DeleteRegKey HKCR "7-Zip.tbz"
+  DeleteRegKey HKCR "7-Zip.tbz2"
   DeleteRegKey HKCR "7-Zip.cab"
   DeleteRegKey HKCR "7-Zip.cpio"
   DeleteRegKey HKCR "7-Zip.deb"
   DeleteRegKey HKCR "7-Zip.gz"
+  DeleteRegKey HKCR "7-Zip.gzip"
   DeleteRegKey HKCR "7-Zip.iso"
+  DeleteRegKey HKCR "7-Zip.lha"
+  DeleteRegKey HKCR "7-Zip.lzh"
   DeleteRegKey HKCR "7-Zip.rar"
   DeleteRegKey HKCR "7-Zip.rpm"
   DeleteRegKey HKCR "7-Zip.split"
+  DeleteRegKey HKCR "7-Zip.swm"
   DeleteRegKey HKCR "7-Zip.tar"
+  DeleteRegKey HKCR "7-Zip.taz"
+  DeleteRegKey HKCR "7-Zip.tgz"
+  DeleteRegKey HKCR "7-Zip.tpz"
+  DeleteRegKey HKCR "7-Zip.wim"
   DeleteRegKey HKCR "7-Zip.z"
   DeleteRegKey HKCR "7-Zip.zip"
 

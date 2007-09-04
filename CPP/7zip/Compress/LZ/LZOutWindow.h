@@ -25,7 +25,16 @@ public:
         return false;
       pos += _bufferSize;
     }
-    do
+    if (_limitPos - _pos > len && _bufferSize - pos > len)
+    {
+      const Byte *src = _buffer + pos;
+      Byte *dest = _buffer + _pos;
+      _pos += len;
+      do
+        *dest++ = *src++;
+      while(--len != 0);
+    }
+    else do
     {
       if (pos == _bufferSize)
         pos = 0;

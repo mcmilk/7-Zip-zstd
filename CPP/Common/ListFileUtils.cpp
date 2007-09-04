@@ -2,8 +2,9 @@
 
 #include "StdAfx.h"
 
+#include "../Windows/FileIO.h"
+
 #include "ListFileUtils.h"
-#include "StdInStream.h"
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
@@ -15,14 +16,25 @@ static void RemoveQuote(UString &s)
       s = s.Mid(1, s.Length() - 2);
 }
 
-bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, UINT codePage)
+bool ReadNamesFromListFile(LPCWSTR fileName, UStringVector &resultStrings, UINT codePage)
 {
-  CStdInStream file;
+  NWindows::NFile::NIO::CInFile file;
   if (!file.Open(fileName))
     return false;
-
+  UInt64 length;
+  if (!file.GetLength(length))
+    return false;
+  if (length > ((UInt32)1 << 31))
+    return false;
   AString s;
-  file.ReadToString(s);
+  char *p = s.GetBuffer((int)length + 1);
+  UInt32 processed;
+  if (!file.Read(p, (UInt32)length, processed))
+    return false;
+  p[(UInt32)length] = 0;
+  s.ReleaseBuffer();
+  file.Close();
+
   UString u;
   #ifdef CP_UTF8
   if (codePage == CP_UTF8)
@@ -43,7 +55,7 @@ bool ReadNamesFromListFile(LPCTSTR fileName, UStringVector &resultStrings, UINT 
   for(int i = 0; i < u.Length(); i++)
   {
     wchar_t c = u[i];
-    if (c == L'\n')
+    if (c == L'\n' || c == 0xD)
     {
       t.Trim();
       RemoveQuote(t);

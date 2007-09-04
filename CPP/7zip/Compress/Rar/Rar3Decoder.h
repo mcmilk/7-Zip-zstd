@@ -266,13 +266,26 @@ public:
   {
     _lzSize += len;
     UInt32 pos = (_winPos - distance - 1) & kWindowMask;
+    Byte *window = _window;
+    UInt32 winPos = _winPos;
+    if (kWindowSize - winPos > len && kWindowSize - pos > len)
+    {
+      const Byte *src = window + pos;
+      Byte *dest = window + winPos;
+      _winPos += len;
+      do
+        *dest++ = *src++;
+      while(--len != 0);
+      return;
+    }
     do
     {
-      _window[_winPos] = _window[pos];
-      _winPos = (_winPos + 1) & kWindowMask;
+      window[winPos] = window[pos];
+      winPos = (winPos + 1) & kWindowMask;
       pos = (pos + 1) & kWindowMask;
     }
     while(--len != 0);
+    _winPos = winPos;
   }
   
   void PutByte(Byte b)

@@ -2,8 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
-
+#include "Common/MyInitGuid.h"
 #include "Common/StringConvert.h"
 #include "Common/IntToString.h"
 
@@ -45,6 +44,7 @@ typedef UINT32 (WINAPI * CreateObjectFunc)(
     const GUID *interfaceID, 
     void **outObject);
 
+#ifdef _WIN32
 #ifndef _UNICODE
 bool g_IsNT = false;
 static inline bool IsItWindowsNT()
@@ -55,6 +55,7 @@ static inline bool IsItWindowsNT()
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
+#endif
 #endif
 
 void PrintString(const UString &s)
@@ -678,8 +679,10 @@ __cdecl
 #endif
 main(int argc, char* argv[])
 {
+  #ifdef _WIN32
   #ifndef _UNICODE
   g_IsNT = IsItWindowsNT();
+  #endif
   #endif
 
   PrintStringLn(kCopyrightString);

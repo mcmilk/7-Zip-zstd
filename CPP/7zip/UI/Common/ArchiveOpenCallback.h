@@ -75,6 +75,7 @@ private:
 public:
   UStringVector FileNames;
   IOpenCallbackUI *Callback;
+  UInt64 TotalSize;
 
   COpenCallbackImp(): Callback(NULL) {}
   void Init(const UString &folderPrefix,  const UString &fileName)
@@ -84,6 +85,7 @@ public:
       throw 1;
     FileNames.Clear();
     _subArchiveMode = false;
+    TotalSize = 0;
   }
   int FindName(const UString &name);
 };

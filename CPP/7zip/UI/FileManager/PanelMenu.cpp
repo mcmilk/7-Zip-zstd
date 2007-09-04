@@ -4,6 +4,7 @@
 #include "Windows/Menu.h"
 #include "Windows/COM.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Clipboard.h"
 #include "../Common/PropIDUtils.h"
 #include "../../PropID.h"
 
@@ -27,6 +28,7 @@ static const UINT kSystemStartMenuID = kPluginMenuStartID + 100;
 
 void CPanel::InvokeSystemCommand(const char *command)
 {
+  NCOM::CComInitializer comInitializer;
   if (!IsFSFolder() && !IsFSDrivesFolder())
     return;
   CRecordVector<UInt32> operatedIndices;
@@ -181,18 +183,51 @@ void CPanel::Properties()
   }
 }
 
-// Copy and paste do not work, if you know why write me.
+void CPanel::EditCut()
+{
+  // InvokeSystemCommand("cut");
+}
 
 void CPanel::EditCopy()
 {
-  NCOM::CComInitializer comInitializer;
-  InvokeSystemCommand("copy");
+  /*
+  CMyComPtr<IGetFolderArchiveProperties> getFolderArchiveProperties;
+  _folder.QueryInterface(IID_IGetFolderArchiveProperties, &getFolderArchiveProperties);
+  if (!getFolderArchiveProperties)
+  {
+    InvokeSystemCommand("copy");
+    return;
+  }
+  */
+  UString s;
+  CRecordVector<UInt32> indices;
+  GetSelectedItemsIndices(indices);
+  for (int i = 0; i < indices.Size(); i++)
+  {
+    if (i > 0)
+      s += L"\xD\n";
+    s += GetItemName(indices[i]);
+  }
+  ClipboardSetText(_mainWindow, s);
 }
 
 void CPanel::EditPaste()
 {
-  NCOM::CComInitializer comInitializer;
-  InvokeSystemCommand("paste");
+  /*
+  UStringVector names;
+  ClipboardGetFileNames(names);
+  CopyFromNoAsk(names);
+  UString s;
+  for (int i = 0; i < names.Size(); i++)
+  {
+    s += L" ";
+    s += names[i];
+  }
+
+  MessageBoxW(0, s, L"", 0); 
+  */
+
+  // InvokeSystemCommand("paste");
 }
 
 HRESULT CPanel::CreateShellContextMenu(

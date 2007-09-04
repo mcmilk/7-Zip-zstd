@@ -145,6 +145,7 @@ void CPanel::LoadFullPathAndShow()
 
   // _headerComboBox.SendMessage(CB_RESETCONTENT, 0, 0);
   _headerComboBox.SetText(_currentFolderPrefix); 
+  RefreshTitle();
 
   /*
   for (int i = 0; i < g_Folders.m_Strings.Size(); i++)

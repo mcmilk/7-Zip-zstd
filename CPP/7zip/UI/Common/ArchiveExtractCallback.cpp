@@ -48,11 +48,7 @@ void CArchiveExtractCallback::Init(
   _extractCallback2 = extractCallback2;
   _compressProgress.Release();
   _extractCallback2.QueryInterface(IID_ICompressProgressInfo, &_compressProgress);
-  if (!_localProgress)
-  {
-    LocalProgressSpec = new CLocalProgress();
-    _localProgress = LocalProgressSpec;
-  }
+
   LocalProgressSpec->Init(extractCallback2, true);
 
   _itemDefaultName = itemDefaultName;

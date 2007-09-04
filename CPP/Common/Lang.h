@@ -17,7 +17,7 @@ class CLang
 {
   CObjectVector<CLangPair> _langPairs;
 public:
-  bool Open(LPCTSTR fileName);
+  bool Open(LPCWSTR fileName);
   void Clear() { _langPairs.Clear(); }
   int FindItem(UInt32 value) const;
   bool GetMessage(UInt32 value, UString &message) const;

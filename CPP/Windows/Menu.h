@@ -119,6 +119,9 @@ public:
     { return BOOLToBool(::CheckMenuRadioItem(_menu, idFirst, idLast, idCheck, flags)); }
   DWORD CheckItem(UINT id, UINT uCheck)
     { return ::CheckMenuItem(_menu, id, uCheck); }
+
+  BOOL EnableItem(UINT uIDEnableItem, UINT uEnable) 
+    { return EnableMenuItem(_menu, uIDEnableItem, uEnable); }
 };
 
 class CMenuDestroyer

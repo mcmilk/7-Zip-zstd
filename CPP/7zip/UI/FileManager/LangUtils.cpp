@@ -35,7 +35,7 @@ void ReloadLang()
       if (GetProgramFolderPath(folderPath))
         langPath = folderPath + UString(L"Lang\\") + langPath;
     }
-    g_Lang.Open(GetSystemString(langPath));
+    g_Lang.Open(langPath);
   }
 }
 
@@ -107,7 +107,7 @@ void LoadLangs(CObjectVector<CLangEx> &langs)
     if (fileInfo.Name.Right(kExtSize) != L".txt")
       continue;
     lang.ShortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
-    if (lang.Lang.Open(GetSystemString(filePath)))
+    if (lang.Lang.Open(filePath))
       langs.Add(lang);
   }
 }

@@ -104,7 +104,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       prop = (UInt32)numBlocks; 
       break;
     }
-    case kpidNumVolumes: prop = (UInt32)(_archives.Size() - 1);
+    case kpidNumVolumes: prop = (UInt32)_archives.Size();
 
     // case kpidCommented: prop = _archiveInfo.IsCommented(); break;
   }

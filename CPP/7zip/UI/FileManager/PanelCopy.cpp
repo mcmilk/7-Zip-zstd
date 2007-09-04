@@ -58,37 +58,42 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
     return E_FAIL;
   }
 
+  HRESULT res;
+  {
   CThreadExtractInArchive2 extracter;
-
+  
   extracter.ExtractCallbackSpec = new CExtractCallbackImp;
   extracter.ExtractCallback = extracter.ExtractCallbackSpec;
   extracter.ExtractCallbackSpec->ParentWindow = GetParent();
   extracter.ExtractCallbackSpec->ShowMessages = showErrorMessages;
   extracter.ExtractCallbackSpec->ProgressDialog.CompressingMode = false;
-
+  
   UString title = moveMode ? 
       LangString(IDS_MOVING, 0x03020206):
       LangString(IDS_COPYING, 0x03020205);
   UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
-
+  
   extracter.ExtractCallbackSpec->ProgressDialog.MainWindow = GetParent();
   extracter.ExtractCallbackSpec->ProgressDialog.MainTitle = progressWindowTitle;
   extracter.ExtractCallbackSpec->ProgressDialog.MainAddTitle = title + L" ";
-
+    
   extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kAskBefore;
   extracter.ExtractCallbackSpec->Init();
   extracter.Indices = indices;
   extracter.DestPath = folder;
   extracter.FolderOperations = folderOperations;
   extracter.MoveMode = moveMode;
-
+  
   NWindows::CThread extractThread;
   RINOK(extractThread.Create(CThreadExtractInArchive2::MyThreadFunction, &extracter));
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
-
+  
   if (messages != 0)
     *messages = extracter.ExtractCallbackSpec->Messages;
-  return extracter.Result;
+  res = extracter.Result; 
+  }
+  RefreshTitleAlways();
+  return res;
 }
 
 
@@ -135,6 +140,8 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
     return E_FAIL;
   }
 
+  HRESULT res;
+  {
   CThreadUpdate updater;
   updater.UpdateCallbackSpec = new CUpdateCallback100Imp;
   updater.UpdateCallback = updater.UpdateCallbackSpec;
@@ -164,20 +171,14 @@ HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &fileP
   if (messages != 0)
     *messages = updater.UpdateCallbackSpec->Messages;
 
-  return updater.Result;
+  res = updater.Result;
+  }
+  RefreshTitleAlways();
+  return res;
 }
 
-void CPanel::CopyFrom(const UStringVector &filePaths)
+void CPanel::CopyFromNoAsk(const UStringVector &filePaths)
 {
-  UString title = LangString(IDS_CONFIRM_FILE_COPY, 0x03020222);
-  UString message = LangString(IDS_WANT_TO_COPY_FILES, 0x03020223);
-  message += L"\n\'";
-  message += _currentFolderPrefix;
-  message += L"\' ?";
-  int res = ::MessageBoxW(*(this), message, title, MB_YESNOCANCEL | MB_ICONQUESTION | MB_SYSTEMMODAL);
-  if (res != IDYES)
-    return;
-
   CDisableTimerProcessing disableTimerProcessing(*this);
 
   CSelectedState srcSelState;
@@ -199,5 +200,19 @@ void CPanel::CopyFrom(const UStringVector &filePaths)
 
   disableTimerProcessing.Restore();
   SetFocusToList();
+}
+
+void CPanel::CopyFromAsk(const UStringVector &filePaths)
+{
+  UString title = LangString(IDS_CONFIRM_FILE_COPY, 0x03020222);
+  UString message = LangString(IDS_WANT_TO_COPY_FILES, 0x03020223);
+  message += L"\n\'";
+  message += _currentFolderPrefix;
+  message += L"\' ?";
+  int res = ::MessageBoxW(*(this), message, title, MB_YESNOCANCEL | MB_ICONQUESTION | MB_SYSTEMMODAL);
+  if (res != IDYES)
+    return;
+
+  CopyFromNoAsk(filePaths);
 }
 

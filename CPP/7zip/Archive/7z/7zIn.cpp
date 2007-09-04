@@ -607,7 +607,9 @@ void CInArchive::ReadStreamsInfo(
   for (;;)
   {
     UInt64 type = ReadID();
-    switch(type)
+    if (type > ((UInt32)1 << 30))
+      ThrowIncorrect();
+    switch((UInt32)type)
     {
       case NID::kEnd:
         return;
@@ -627,6 +629,8 @@ void CInArchive::ReadStreamsInfo(
             unPackSizes, digestsDefined, digests);
         break;
       }
+      default:
+        ThrowIncorrect();
     }
   }
 }
@@ -664,7 +668,7 @@ void CInArchive::ReadBoolVector2(int numItems, CBoolVector &v)
 }
 
 void CInArchive::ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-    CObjectVector<CFileItem> &files, UInt64 type)
+    CObjectVector<CFileItem> &files, UInt32 type)
 {
   CBoolVector boolVector;
   ReadBoolVector2(files.Size(), boolVector);
@@ -881,8 +885,10 @@ HRESULT CInArchive::ReadHeader(
     if (type == NID::kEnd)
       break;
     UInt64 size = ReadNumber();
-    database.ArchiveInfo.FileInfoPopIDs.Add(type);
-    switch(type)
+    bool isKnownType = true;
+    if (type > ((UInt32)1 << 30))
+      isKnownType = false;
+    else switch((UInt32)type)
     {
       case NID::kName:
       {
@@ -951,15 +957,16 @@ HRESULT CInArchive::ReadHeader(
       case NID::kLastWriteTime:
       case NID::kLastAccessTime:
       {
-        ReadTime(dataVector, database.Files, type);
+        ReadTime(dataVector, database.Files, (UInt32)type);
         break;
       }
       default:
-      {
-        database.ArchiveInfo.FileInfoPopIDs.DeleteBack();
-        SkeepData(size);
-      }
+        isKnownType = false;
     }
+    if (isKnownType)
+      database.ArchiveInfo.FileInfoPopIDs.Add(type);
+    else
+      SkeepData(size);
   }
 
   CNum emptyFileIndex = 0;

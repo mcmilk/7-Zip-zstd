@@ -469,6 +469,40 @@ STDMETHODIMP CFSFolder::MoveTo(
 STDMETHODIMP CFSFolder::CopyFrom(const wchar_t * /* fromFolderPath */,
     const wchar_t ** /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */)
 {
+  /*
+  UInt64 numFolders, numFiles, totalSize;
+  numFiles = numFolders = totalSize = 0;
+  UInt32 i;
+  for (i = 0; i < numItems; i++)
+  {
+    UString path = (UString)fromFolderPath + itemsPaths[i];
+
+    CFileInfoW fileInfo;
+    if (!FindFile(path, fileInfo))
+      return ::GetLastError();
+    if (fileInfo.IsDirectory())
+    {
+      UInt64 subFolders, subFiles, subSize;
+      RINOK(GetFolderSize(path + UString(L"\\") + fileInfo.Name, subFolders, subFiles, subSize, progress));
+      numFolders += subFolders;
+      numFolders++;
+      numFiles += subFiles;
+      totalSize += subSize;
+    }
+    else
+    {
+      numFiles++;
+      totalSize += fileInfo.Size;
+    }
+  }
+  RINOK(progress->SetTotal(totalSize));
+  RINOK(callback->SetNumFiles(numFiles));
+  for (i = 0; i < numItems; i++)
+  {
+    UString path = (UString)fromFolderPath + itemsPaths[i];
+  }
+  return S_OK;
+  */
   return E_NOTIMPL;
 }
   

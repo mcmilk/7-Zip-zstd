@@ -18,6 +18,7 @@
 #include "ExtractCallback.h"
 #include "ViewSettings.h"
 #include "RegistryUtils.h"
+#include "LangUtils.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -32,6 +33,7 @@ void CPanelCallbackImp::OnTab()
 {
   if (g_App.NumPanels != 1)
     _app->Panels[1 - _index].SetFocusToList();  
+  _app->RefreshTitle();
 }
 
 void CPanelCallbackImp::SetFocusToPath(int index)
@@ -40,26 +42,17 @@ void CPanelCallbackImp::SetFocusToPath(int index)
   if (g_App.NumPanels == 1)
     newPanelIndex = g_App.LastFocusedPanel;
   _app->Panels[newPanelIndex]._headerComboBox.SetFocus();
+  _app->RefreshTitle();
 }
 
 
-void CPanelCallbackImp::OnCopy(bool move, bool copyToSame)
-  { _app->OnCopy(move, copyToSame, _index); }
-
-void CPanelCallbackImp::OnSetSameFolder()
-  { _app->OnSetSameFolder(_index); }
-
-void CPanelCallbackImp::OnSetSubFolder()
-  { _app->OnSetSubFolder(_index); }
-
-void CPanelCallbackImp::PanelWasFocused()
-  { _app->SetFocusedPanel(_index); }
-
-void CPanelCallbackImp::DragBegin()
-  { _app->DragBegin(_index); }
-   
-void CPanelCallbackImp::DragEnd()
-  { _app->DragEnd(); }
+void CPanelCallbackImp::OnCopy(bool move, bool copyToSame) { _app->OnCopy(move, copyToSame, _index); }
+void CPanelCallbackImp::OnSetSameFolder() { _app->OnSetSameFolder(_index); }
+void CPanelCallbackImp::OnSetSubFolder()  { _app->OnSetSubFolder(_index); }
+void CPanelCallbackImp::PanelWasFocused() { _app->SetFocusedPanel(_index); _app->RefreshTitle(_index); }
+void CPanelCallbackImp::DragBegin() { _app->DragBegin(_index); }
+void CPanelCallbackImp::DragEnd() { _app->DragEnd(); }
+void CPanelCallbackImp::RefreshTitle(bool always) { _app->RefreshTitle(_index, always); }
 
 void CApp::SetListSettings()
 {
@@ -636,6 +629,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     }
   }
 
+  RefreshTitleAlways();
   if (copyToSame || move)
   {
     srcPanel.RefreshListCtrl(srcSelState);
@@ -757,3 +751,22 @@ void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
     #endif
   }
 }
+
+void CApp::RefreshTitle(bool always)
+{ 
+  UString path = GetFocusedPanel()._currentFolderPrefix;
+  if (path.IsEmpty())
+    path += LangString(IDS_APP_TITLE, 0x03000000);
+  if (!always && path == PrevTitle)
+    return;
+  PrevTitle = path;
+  NWindows::MySetWindowText(_window, path);
+}
+
+void CApp::RefreshTitle(int panelIndex, bool always)
+{ 
+  if (panelIndex != GetFocusedPanelIndex())
+    return;
+  RefreshTitle(always);
+}
+

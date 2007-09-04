@@ -41,6 +41,7 @@ public:
   virtual void PanelWasFocused();
   virtual void DragBegin();
   virtual void DragEnd();
+  virtual void RefreshTitle(bool always);
 }; 
 
 class CApp;
@@ -216,6 +217,8 @@ public:
     { GetFocusedPanel().CreateFile(); }
 
   // Edit
+  void EditCut()
+    { GetFocusedPanel().EditCut(); }
   void EditCopy()
     { GetFocusedPanel().EditCopy(); }
   void EditPaste()
@@ -327,6 +330,11 @@ public:
     { GetFocusedPanel().TestArchives(); }
 
   void OnNotify(int ctrlID, LPNMHDR pnmh);
+
+  UString PrevTitle;
+  void RefreshTitle(bool always = false);
+  void RefreshTitleAlways() { RefreshTitle(true); }
+  void RefreshTitle(int panelIndex, bool always = false);
 };
 
 #endif

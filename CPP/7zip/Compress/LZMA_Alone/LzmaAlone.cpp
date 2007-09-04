@@ -159,7 +159,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.49 Copyright (c) 1999-2007 Igor Pavlov  2007-07-05\n");
+  fprintf(stderr, "\nLZMA 4.54 Copyright (c) 1999-2007 Igor Pavlov  2007-09-04\n");
 
   if (n == 1)
   {

@@ -759,6 +759,14 @@ SOURCE=..\..\..\Windows\Control\Window2.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Clipboard.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Clipboard.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\CommonDialog.cpp
 # End Source File
 # Begin Source File
@@ -999,14 +1007,6 @@ SOURCE=..\..\..\Common\Lang.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\ListFileUtils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\ListFileUtils.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
@@ -1040,22 +1040,6 @@ SOURCE=..\..\..\Common\Random.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\Random.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\StdInStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\StdInStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\StdOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\StdOutStream.h
 # End Source File
 # Begin Source File
 

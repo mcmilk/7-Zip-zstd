@@ -113,6 +113,8 @@ public:
   }
 };
 
+HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress);
+
 }
 
 #endif

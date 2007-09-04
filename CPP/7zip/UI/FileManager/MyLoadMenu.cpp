@@ -6,6 +6,7 @@
 
 #include "Windows/Menu.h"
 #include "Windows/Error.h"
+#include "Windows/Clipboard.h"
 
 #include "../../PropID.h"
 
@@ -30,6 +31,7 @@ extern void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 using namespace NWindows;
 
 static const int kFileMenuIndex = 0;
+static const int kEditMenuIndex = 1;
 static const int kViewMenuIndex = 2;
 static const int kBookmarksMenuIndex = kViewMenuIndex + 1;
 
@@ -321,7 +323,16 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     }
     // CopyMenu(g_FileMenu, hMenu);
     g_App.GetFocusedPanel().CreateFileMenu(hMenu);
-
+  }
+  else if (position == kEditMenuIndex)
+  {
+    /*
+    CMenu menu;
+    menu.Attach(hMenu);
+    menu.EnableItem(IDM_EDIT_CUT, MF_ENABLED);
+    menu.EnableItem(IDM_EDIT_COPY, MF_ENABLED);
+    menu.EnableItem(IDM_EDIT_PASTE, IsClipboardFormatAvailableHDROP() ? MF_ENABLED : MF_GRAYED);
+    */
   }
   else if (position == kViewMenuIndex)
   {
@@ -545,6 +556,9 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     
     // Edit
+    case IDM_EDIT_CUT:
+      g_App.EditCut();
+      break;
     case IDM_EDIT_COPY:
       g_App.EditCopy();
       break;

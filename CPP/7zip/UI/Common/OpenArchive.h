@@ -69,6 +69,7 @@ HRESULT MyOpenArchive(
     UString &defaultItemName0,
     UString &defaultItemName1,
     UStringVector &volumePaths,
+    UInt64 &volumesSize,
     IOpenCallbackUI *openCallbackUI);
 
 struct CArchiveLink
@@ -82,6 +83,8 @@ struct CArchiveLink
   int FormatIndex1;
   
   UStringVector VolumePaths;
+
+  UInt64 VolumesSize;
 
   int GetNumLevels() const
   { 
@@ -97,7 +100,7 @@ struct CArchiveLink
 
   bool IsOpen;
 
-  CArchiveLink(): IsOpen(false) {};
+  CArchiveLink(): IsOpen(false), VolumesSize(0) {};
 
   IInArchive *GetArchive() { return Archive1 != 0 ? Archive1: Archive0; }
   UString GetDefaultItemName()  { return Archive1 != 0 ? DefaultItemName1: DefaultItemName0; }

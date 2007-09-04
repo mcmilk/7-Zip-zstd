@@ -792,5 +792,5 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
       );
   }
   else
-    CopyFrom(fileNames);
+    CopyFromAsk(fileNames);
 }

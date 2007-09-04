@@ -891,6 +891,7 @@ void CPanel::TestArchives()
   _folder.QueryInterface(IID_IArchiveFolder, &archiveFolder);
   if (archiveFolder)
   {
+    {
     CThreadTest extracter;
 
     extracter.ArchiveFolder = archiveFolder;
@@ -938,6 +939,8 @@ void CPanel::TestArchives()
       if (extracter.Result != S_OK && extracter.Result != E_ABORT)
         MessageBoxError(extracter.Result, L"Testing Error");
     }
+    }
+    RefreshTitleAlways();
     return;
   }
 

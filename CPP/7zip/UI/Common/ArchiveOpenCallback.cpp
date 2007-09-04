@@ -119,6 +119,7 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   inFile->OpenCallbackImp = this;
   inFile->OpenCallbackRef = this;
   FileNames.Add(name);
+  TotalSize += _fileInfo.Size;
   return S_OK;
   COM_TRY_END
 }

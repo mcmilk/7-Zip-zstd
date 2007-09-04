@@ -4,10 +4,6 @@
 
 #include "OpenCallbackGUI.h"
 
-#include "Common/StdOutStream.h"
-#include "Common/StdInStream.h"
-#include "Common/StringConvert.h"
-
 #ifndef _NO_CRYPTO
 #include "../FileManager/PasswordDialog.h"
 #endif

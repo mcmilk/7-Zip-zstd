@@ -163,7 +163,8 @@ HRESULT DecompressArchives(
         archiveFileInfo.Size,
         archiveLink.GetDefaultItemName(),
         wildcardCensor, options, extractCallback, extractCallbackSpec, errorMessage));
-    extractCallbackSpec->LocalProgressSpec->InSize += archiveFileInfo.Size;
+    extractCallbackSpec->LocalProgressSpec->InSize += archiveFileInfo.Size + 
+        archiveLink.VolumesSize;
     extractCallbackSpec->LocalProgressSpec->OutSize = extractCallbackSpec->UnpackSize;
     if (!errorMessage.IsEmpty())
       return E_FAIL;

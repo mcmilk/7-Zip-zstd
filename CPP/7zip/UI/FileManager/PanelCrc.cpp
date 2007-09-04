@@ -290,6 +290,7 @@ void CApp::CalculateCrc()
   combiner.DirEnumerator.BasePrefix = srcPanel._currentFolderPrefix;
   combiner.DirEnumerator.FlatMode = GetFlatMode();
 
+  {
   CProgressDialog progressDialog;
   combiner.ProgressDialog = &progressDialog;
   combiner.ErrorCode = 0;
@@ -362,4 +363,6 @@ void CApp::CalculateCrc()
     }
     srcPanel.MessageBoxInfo(s, LangString(IDS_CHECKSUM_INFORMATION, 0x03020720));
   }
+  }
+  RefreshTitleAlways();
 }

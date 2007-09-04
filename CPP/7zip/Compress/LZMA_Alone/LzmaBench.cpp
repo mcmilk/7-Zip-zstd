@@ -448,7 +448,7 @@ UInt64 GetCompressRating(UInt32 dictionarySize, UInt64 elapsedTime, UInt64 freq,
 UInt64 GetDecompressRating(UInt64 elapsedTime, UInt64 freq, UInt64 outSize, UInt64 inSize, UInt32 numIterations)
 {
   // UInt64 numCommands = (inSize * 216 + outSize * 14) * numIterations; // AMD K8
-  UInt64 numCommands = (inSize * 220 + outSize * 14) * numIterations; // Intel Core2
+  UInt64 numCommands = (inSize * 220 + outSize * 8) * numIterations; // Intel Core2
   return MyMultDiv64(numCommands, elapsedTime, freq);
 }
 

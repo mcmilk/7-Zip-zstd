@@ -259,6 +259,7 @@ void CApp::Split()
   CThreadSplit spliter;
   // spliter.Panel = this;
 
+  {
   CProgressDialog progressDialog;
   spliter.ProgressDialog = &progressDialog;
 
@@ -284,6 +285,9 @@ void CApp::Split()
   if (thread.Create(CThreadSplit::MyThreadFunction, &spliter) != S_OK)
     throw 271824;
   progressDialog.Create(title, _window);
+  }
+  RefreshTitleAlways();
+
 
   if (!spliter.Error.IsEmpty())
     srcPanel.MessageBoxMyError(spliter.Error);
@@ -442,6 +446,7 @@ void CApp::Combine()
   CThreadCombine combiner;
   // combiner.Panel = this;
 
+  {
   CProgressDialog progressDialog;
   combiner.ProgressDialog = &progressDialog;
 
@@ -471,6 +476,8 @@ void CApp::Combine()
   if (thread.Create(CThreadCombine::MyThreadFunction, &combiner) != S_OK)
     throw 271824;
   progressDialog.Create(title, _window);
+  }
+  RefreshTitleAlways();
 
   if (!combiner.Error.IsEmpty())
     srcPanel.MessageBoxMyError(combiner.Error);

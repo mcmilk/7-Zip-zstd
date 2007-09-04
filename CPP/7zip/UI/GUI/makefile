@@ -25,14 +25,13 @@ COMMON_OBJS = \
   $O\IntToString.obj \
   $O\Lang.obj \
   $O\ListFileUtils.obj \
-  $O\NewHandler.obj \
-  $O\StdInStream.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
+  $O\NewHandler.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\TextConfig.obj \
   $O\UTFConvert.obj \
-  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \

@@ -194,7 +194,7 @@ private:
   void ReadBoolVector(int numItems, CBoolVector &v);
   void ReadBoolVector2(int numItems, CBoolVector &v);
   void ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-      CObjectVector<CFileItem> &files, UInt64 type);
+      CObjectVector<CFileItem> &files, UInt32 type);
   HRESULT ReadAndDecodePackedStreams(
       DECL_EXTERNAL_CODECS_LOC_VARS
       UInt64 baseOffset, UInt64 &dataOffset,

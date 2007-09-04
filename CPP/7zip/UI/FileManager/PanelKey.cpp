@@ -157,8 +157,25 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     }
     case VK_INSERT:
     {
-      OnInsert();
-      return true;
+      if (!alt)
+      {
+        if (ctrl && !shift)
+        {
+          EditCopy();
+          return true;
+        }
+        if (shift && !ctrl)
+        {
+          EditPaste();
+          return true;
+        }
+        if (!shift && !ctrl && _mySelectMode)
+        {
+          OnInsert();
+          return true;
+        }
+      }
+      return false;
     }
     case VK_DOWN:
     {
@@ -246,6 +263,27 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
       if(ctrl)
       {
         SelectAll(true);
+        return true;
+      }
+      return false;
+    case 'X':
+      if (ctrl)
+      {
+        EditCut();
+        return true;
+      }
+      return false;
+    case 'C':
+      if (ctrl)
+      {
+        EditCopy();
+        return true;
+      }
+      return false;
+    case 'V':
+      if (ctrl)
+      {
+        EditPaste();
         return true;
       }
       return false;
