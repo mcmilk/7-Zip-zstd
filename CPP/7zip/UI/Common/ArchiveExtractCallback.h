@@ -105,7 +105,6 @@ public:
 
   CLocalProgress *LocalProgressSpec;
   CMyComPtr<ICompressProgressInfo> _localProgress;
-  bool _ratioMode;
   UInt64 _packTotal;
   UInt64 _unpTotal;
 

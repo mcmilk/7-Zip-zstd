@@ -20,6 +20,7 @@ public:
   UInt64 InSize;
   UInt64 OutSize;
   bool SendRatio;
+  bool SendProgress;
 
   CLocalProgress();
   void Init(IProgress *progress, bool inSizeIsMain);

@@ -7,7 +7,7 @@
 CLocalProgress::CLocalProgress()
 {
   ProgressOffset = InSize = OutSize = 0;
-  SendRatio = true;
+  SendRatio = SendProgress = true;
 }
 
 void CLocalProgress::Init(IProgress *progress, bool inSizeIsMain)
@@ -31,7 +31,9 @@ STDMETHODIMP CLocalProgress::SetRatioInfo(const UInt64 *inSize, const UInt64 *ou
   }
   inSizeNew += ProgressOffset;
   outSizeNew += ProgressOffset;
-  return _progress->SetCompleted(_inSizeIsMain ? &inSizeNew : &outSizeNew);
+  if (SendProgress)
+    return _progress->SetCompleted(_inSizeIsMain ? &inSizeNew : &outSizeNew);
+  return S_OK;
 }
 
 HRESULT CLocalProgress::SetCur()

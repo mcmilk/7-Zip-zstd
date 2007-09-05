@@ -226,8 +226,10 @@ STDMETHODIMP CAgent::DoOperation(
     if (updatePairs2[i].NewData)
       numFiles++;
   
-  RINOK(updateCallback100->SetNumFiles(numFiles));
-
+  if (updateCallback100)
+  {
+    RINOK(updateCallback100->SetNumFiles(numFiles));
+  }
   
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);

@@ -91,6 +91,7 @@ HRESULT DecompressArchives(
   CExtractOptions options = optionsSpec;
   int i;
   UInt64 totalPackSize = 0;
+  CRecordVector<UInt64> archiveSizes;
   for (i = 0; i < archivePaths.Size(); i++)
   {
     const UString &archivePath = archivePaths[i];
@@ -99,6 +100,7 @@ HRESULT DecompressArchives(
       throw "there is no such archive";
     if (archiveFileInfo.IsDirectory())
       throw "can't decompress folder";
+    archiveSizes.Add(archiveFileInfo.Size);
     totalPackSize += archiveFileInfo.Size;
   }
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
@@ -145,7 +147,14 @@ HRESULT DecompressArchives(
       {
         archivePaths.Delete(index);
         archivePathsFull.Delete(index);
+        totalPackSize -= archiveSizes[index];
+        archiveSizes.Delete(index);
       }
+    }
+    if (archiveLink.VolumePaths.Size() != 0)
+    {
+      totalPackSize += archiveLink.VolumesSize;
+      RINOK(extractCallback->SetTotal(totalPackSize));  
     }
 
     #ifndef _NO_CRYPTO
@@ -160,7 +169,7 @@ HRESULT DecompressArchives(
     options.DefaultItemName = archiveLink.GetDefaultItemName();
     RINOK(DecompressArchive(
         archiveLink.GetArchive(), 
-        archiveFileInfo.Size,
+        archiveFileInfo.Size + archiveLink.VolumesSize,
         archiveLink.GetDefaultItemName(),
         wildcardCensor, options, extractCallback, extractCallbackSpec, errorMessage));
     extractCallbackSpec->LocalProgressSpec->InSize += archiveFileInfo.Size + 
