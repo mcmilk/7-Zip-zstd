@@ -113,13 +113,14 @@ STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
 STDMETHODIMP CFolderInStream::GetSubStreamSize(UInt64 subStream, UInt64 *value)
 {
   *value = 0;
-  if (subStream < Sizes.Size())
+  int subStreamIndex = (int)subStream;
+  if (subStreamIndex < 0 || subStream > Sizes.Size())
+    return E_FAIL;
+  if (subStreamIndex < Sizes.Size())
   {
-    *value= Sizes[(int)(size_t)subStream];
+    *value= Sizes[subStreamIndex];
     return S_OK;
   }
-  if (subStream > Sizes.Size())
-    return E_FAIL;
   if (!_currentSizeIsDefined)
     return S_FALSE;
   *value = _currentSize;

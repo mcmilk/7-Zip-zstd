@@ -38,6 +38,7 @@ class COutFile: public CFileBase
 {
 public:
   bool Create(const char *name, bool createAlways);
+  bool Open(const char *name, DWORD creationDisposition);
   ssize_t Write(const void *data, size_t size);
 };
 

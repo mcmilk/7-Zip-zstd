@@ -110,7 +110,9 @@ private:
   #ifdef COMPRESS_MT
   UInt32 _numThreads;
   #endif
-  
+
+  UInt32 _crcSize;
+
   #else
   
   CRecordVector<CBind> _binds;

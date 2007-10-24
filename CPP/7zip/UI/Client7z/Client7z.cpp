@@ -79,6 +79,13 @@ void PrintStringLn(const AString &s)
   PrintNewLine();
 }
 
+void PrintError(const AString &s)
+{
+  PrintNewLine();
+  PrintString(s);
+  PrintNewLine();
+}
+
 static HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result)
 {
   NCOM::CPropVariant prop;
@@ -141,7 +148,7 @@ STDMETHODIMP CArchiveOpenCallback::CryptoGetTextPassword(BSTR *password)
     // You can ask real password here from user
     // Password = GetPassword(OutStream); 
     // PasswordIsDefined = true;
-    PrintStringLn("Password is not defined");
+    PrintError("Password is not defined");
     return E_ABORT;
   }
   CMyComBSTR tempName(Password);
@@ -396,8 +403,12 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
     }
   }
 
-  if(_outFileStream != NULL && _processedFileInfo.UTCLastWriteTimeIsDefined)
-    _outFileStreamSpec->SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+  if (_outFileStream != NULL)
+  {
+    if (_processedFileInfo.UTCLastWriteTimeIsDefined)
+      _outFileStreamSpec->SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+    RINOK(_outFileStreamSpec->Close());
+  }
   _outFileStream.Release();
   if (_extractMode && _processedFileInfo.AttributesAreDefined)
     NFile::NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
@@ -413,7 +424,7 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
     // You can ask real password here from user
     // Password = GetPassword(OutStream); 
     // PasswordIsDefined = true;
-    PrintStringLn("Password is not defined");
+    PrintError("Password is not defined");
     return E_ABORT;
   }
   CMyComBSTR tempName(Password);
@@ -603,7 +614,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream
       // if (systemError == ERROR_SHARING_VIOLATION)
       {
         PrintNewLine();
-        PrintStringLn("WARNING: can't open file");
+        PrintError("WARNING: can't open file");
         // PrintString(NError::MyFormatMessageW(systemError));
         return S_FALSE;
       }
@@ -658,7 +669,7 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
       // You can ask real password here from user
       // Password = GetPassword(OutStream); 
       // PasswordIsDefined = true;
-      PrintStringLn("Password is not defined");
+      PrintError("Password is not defined");
       return E_ABORT;
     }
   }
@@ -695,13 +706,13 @@ main(int argc, char* argv[])
   NWindows::NDLL::CLibrary library;
   if (!library.Load(TEXT(kDllName)))
   {
-    PrintStringLn("Can not load library");
+    PrintError("Can not load library");
     return 1;
   }
   CreateObjectFunc createObjectFunc = (CreateObjectFunc)library.GetProcAddress("CreateObject");
   if (createObjectFunc == 0)
   {
-    PrintStringLn("Can not get CreateObject");
+    PrintError("Can not get CreateObject");
     return 1;
   }
 
@@ -742,14 +753,14 @@ main(int argc, char* argv[])
     CMyComPtr<IOutStream> outFileStream = outFileStreamSpec;
     if (!outFileStreamSpec->Create(archiveName, false))
     {
-      PrintStringLn("can't create archive file");
+      PrintError("can't create archive file");
       return 1;
     }
 
     CMyComPtr<IOutArchive> outArchive;
     if (createObjectFunc(&CLSID_CFormat7z, &IID_IOutArchive, (void **)&outArchive) != S_OK)
     {
-      PrintStringLn("Can not get class object");
+      PrintError("Can not get class object");
       return 1;
     }
 
@@ -763,7 +774,7 @@ main(int argc, char* argv[])
     updateCallbackSpec->Finilize();
     if (result != S_OK)
     {
-      PrintStringLn("Update Error");
+      PrintError("Update Error");
       return 1;
     }
     for (i = 0; i < updateCallbackSpec->FailedFiles.Size(); i++)
@@ -789,14 +800,14 @@ main(int argc, char* argv[])
       listCommand = false;
     else
     {
-      PrintStringLn("incorrect command");
+      PrintError("incorrect command");
       return 1;
     }
   
     CMyComPtr<IInArchive> archive;
     if (createObjectFunc(&CLSID_CFormat7z, &IID_IInArchive, (void **)&archive) != S_OK)
     {
-      PrintStringLn("Can not get class object");
+      PrintError("Can not get class object");
       return 1;
     }
     
@@ -805,7 +816,7 @@ main(int argc, char* argv[])
     
     if (!fileSpec->Open(archiveName))
     {
-      PrintStringLn("Can not open archive file");
+      PrintError("Can not open archive file");
       return 1;
     }
 
@@ -818,7 +829,7 @@ main(int argc, char* argv[])
       
       if (archive->Open(file, 0, openCallback) != S_OK)
       {
-        PrintStringLn("Can not open archive");
+        PrintError("Can not open archive");
         return 1;
       }
     }
@@ -857,7 +868,12 @@ main(int argc, char* argv[])
       extractCallbackSpec->PasswordIsDefined = false;
       // extractCallbackSpec->PasswordIsDefined = true;
       // extractCallbackSpec->Password = L"1";
-      archive->Extract(NULL, (UInt32)(Int32)(-1), false, extractCallback);
+      HRESULT result = archive->Extract(NULL, (UInt32)(Int32)(-1), false, extractCallback);
+      if (result != S_OK)
+      {
+        PrintError("Extract Error");
+        return 1;
+      }
     }
   }
   return 0;

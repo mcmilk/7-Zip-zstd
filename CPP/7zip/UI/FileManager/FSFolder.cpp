@@ -185,7 +185,6 @@ bool CFSFolder::LoadComments()
   file.Read(p, (UInt32)length, processedSize);
   p[length] = 0;
   s.ReleaseBuffer();
-  s.Replace("\r\n", "\n");
   if (processedSize != length)
     return false;
   file.Close();
@@ -218,7 +217,6 @@ bool CFSFolder::SaveComments()
     Byte bom [] = { 0xEF, 0xBB, 0xBF, 0x0D, 0x0A };
     file.Write(bom , sizeof(bom), processedSize);
   }
-  utfString.Replace("\n", "\r\n");
   file.Write(utfString, utfString.Length(), processedSize);
   _commentsAreLoaded = false;
   return true;

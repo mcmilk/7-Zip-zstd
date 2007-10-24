@@ -38,7 +38,7 @@ typedef UInt32 * (*Mf_Mix_Matches)(void *p, UInt32 matchMinPos, UInt32 *distance
 /* kMtCacheLineDummy must be >= size_of_CPU_cache_line */
 #define kMtCacheLineDummy 128
 
-typedef void (*Mf_GetHeads)(const Byte *buffer, size_t pos,
+typedef void (*Mf_GetHeads)(const Byte *buffer, UInt32 pos,
   UInt32 *hash, UInt32 hashMask, UInt32 *heads, UInt32 numHeads);
 
 typedef struct _CMatchFinderMt

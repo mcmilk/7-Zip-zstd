@@ -299,7 +299,8 @@ STDMETHODIMP CAgent::DoOperation(
     RINOK(CopyBlock(sfxStream, outStream));
   }
 
-  return outArchive->UpdateItems(outStream, updatePairs2.Size(),updateCallback);
+  RINOK(outArchive->UpdateItems(outStream, updatePairs2.Size(),updateCallback));
+  return outStreamSpec->Close();
 }
 
 STDMETHODIMP CAgent::DoOperation2(
@@ -362,7 +363,8 @@ HRESULT CAgent::CommonUpdate(
     return E_FAIL;
   }
   
-  return outArchive->UpdateItems(outStream, numUpdateItems, updateCallback);
+  RINOK(outArchive->UpdateItems(outStream, numUpdateItems, updateCallback));
+  return outStreamSpec->Close();
 }
 
 

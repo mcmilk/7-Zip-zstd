@@ -103,6 +103,8 @@ public:
   }
   #endif
   #endif
+
+  HRESULT Close();
   
   UInt64 ProcessedSize;
 

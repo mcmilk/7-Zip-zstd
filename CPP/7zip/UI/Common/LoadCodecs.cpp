@@ -93,7 +93,8 @@ typedef UInt32 (WINAPI *GetNumberOfMethodsFunc)(UInt32 *numMethods);
 typedef UInt32 (WINAPI *GetNumberOfFormatsFunc)(UInt32 *numFormats);
 typedef UInt32 (WINAPI *GetHandlerPropertyFunc)(PROPID propID, PROPVARIANT *value);
 typedef UInt32 (WINAPI *GetHandlerPropertyFunc2)(UInt32 index, PROPID propID, PROPVARIANT *value);
-typedef UINT32 (WINAPI *CreateObjectFunc)(const GUID *clsID, const GUID *iid, void **outObject);
+typedef UInt32 (WINAPI *CreateObjectFunc)(const GUID *clsID, const GUID *iid, void **outObject);
+typedef UInt32 (WINAPI *SetLargePageModeFunc)();
 
 
 static HRESULT GetCoderClass(GetMethodPropertyFunc getMethodProperty, UInt32 index, 
@@ -332,6 +333,13 @@ int CCodecLib::FindIconIndex(const UString &ext) const
 }
 #endif
 
+#ifdef _7ZIP_LARGE_PAGES
+extern "C" 
+{
+  extern SIZE_T g_LargePageSize;
+}
+#endif
+
 HRESULT CCodecs::LoadDll(const CSysString &dllPath)
 {
   {
@@ -351,6 +359,16 @@ HRESULT CCodecs::LoadDll(const CSysString &dllPath)
     #ifdef NEW_FOLDER_INTERFACE
     lib.LoadIcons();
     #endif
+
+    #ifdef _7ZIP_LARGE_PAGES
+    if (g_LargePageSize != 0)
+    {
+      SetLargePageModeFunc setLargePageMode = (SetLargePageModeFunc)lib.Lib.GetProcAddress("SetLargePageMode");
+      if (setLargePageMode != 0)
+        setLargePageMode();
+    }
+    #endif
+
     lib.CreateObject = (CreateObjectFunc)lib.Lib.GetProcAddress("CreateObject");
     if (lib.CreateObject != 0)
     {

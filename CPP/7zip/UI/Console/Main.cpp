@@ -407,15 +407,9 @@ int Main2(
           result = E_FAIL;
       }
 
-      stdStream << endl << endl << "Total:" << endl;
+      stdStream << endl;
       if (ecs->NumArchives > 1)
         stdStream << "Archives: " << ecs->NumArchives << endl;
-      {
-        stdStream << "Folders: " << stat.NumFolders << endl;
-        stdStream << "Files: " << stat.NumFiles << endl;
-        stdStream << "Size: " << stat.UnpackSize << endl;
-        stdStream << "Compressed: " << stat.PackSize << endl;
-      }
       if (ecs->NumArchiveErrors != 0 || ecs->NumFileErrors != 0)
       {
         if (ecs->NumArchives > 1)
@@ -432,6 +426,13 @@ int Main2(
       }
       if (result != S_OK)
         throw CSystemException(result);
+      if (stat.NumFolders != 0)
+        stdStream << "Folders: " << stat.NumFolders << endl;
+      if (stat.NumFiles != 1 || stat.NumFolders != 0)
+          stdStream << "Files: " << stat.NumFiles << endl;
+      stdStream 
+           << "Size:       " << stat.UnpackSize << endl
+           << "Compressed: " << stat.PackSize << endl;
     }
     else
     {

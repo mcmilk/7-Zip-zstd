@@ -434,6 +434,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
         (WriteAccessed && _processedFileInfo.IsLastAccessTimeDefined) ? &_processedFileInfo.LastAccessTime : NULL, 
         (WriteModified && _processedFileInfo.IsLastWriteTimeDefined) ? &_processedFileInfo.LastWriteTime : &_utcLastWriteTimeDefault);
     _curSize = _outFileStreamSpec->ProcessedSize;
+    RINOK(_outFileStreamSpec->Close());
     _outFileStream.Release();
   }
   UnpackSize += _curSize;

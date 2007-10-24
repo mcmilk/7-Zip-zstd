@@ -759,9 +759,23 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
           li.ResetInterval = ReadUInt32();
           li.WindowSize = ReadUInt32();
           li.CacheSize = ReadUInt32();
-          if (li.ResetInterval != 2 && li.ResetInterval != 4)
+          if (
+              li.ResetInterval != 1 && 
+              li.ResetInterval != 2 && 
+              li.ResetInterval != 4 && 
+              li.ResetInterval != 8 && 
+              li.ResetInterval != 16 && 
+              li.ResetInterval != 32 && 
+              li.ResetInterval != 64)
             return S_FALSE;
-          if (li.WindowSize != 2 && li.WindowSize != 4)
+          if (
+              li.WindowSize != 1 && 
+              li.WindowSize != 2 && 
+              li.WindowSize != 4 && 
+              li.WindowSize != 8 && 
+              li.WindowSize != 16 && 
+              li.WindowSize != 32 && 
+              li.WindowSize != 64)
             return S_FALSE;
           numDWORDS -= 5;
           while (numDWORDS-- != 0)

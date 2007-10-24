@@ -5,8 +5,6 @@
 
 #include "../../Types.h"
 
-#define HUFFMAN_TEMP_SIZE(num) (num * 2)
-
 /*
 Conditions:
   num <= 1024 = 2 ^ NUM_BITS

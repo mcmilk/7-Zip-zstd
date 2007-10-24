@@ -26,6 +26,8 @@ public:
   UInt32 _numThreads;
   #endif
 
+  UInt32 _crcSize;
+
   CObjectVector<COneMethodInfo> _methods;
   bool _removeSfxBlock;
   

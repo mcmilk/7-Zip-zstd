@@ -67,6 +67,7 @@ class COutMultiVolStream:
 
   struct CSubStreamInfo
   {
+    COutFileStream *StreamSpec;
     CMyComPtr<IOutStream> Stream;
     UString Name;
     UInt64 Pos;
@@ -87,6 +88,8 @@ public:
     _length = 0;
   }
 
+  HRESULT Close(); 
+
   MY_UNKNOWN_IMP1(IOutStream)
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
@@ -95,6 +98,22 @@ public:
 };
 
 // static NSynchronization::CCriticalSection g_TempPathsCS;
+
+HRESULT COutMultiVolStream::Close()
+{
+  HRESULT res = S_OK;
+  for (int i = 0; i < Streams.Size(); i++)
+  {
+    CSubStreamInfo &s = Streams[i];
+    if (s.StreamSpec)
+    {
+      HRESULT res2 = s.StreamSpec->Close();
+      if (res2 != S_OK)
+        res = res2;
+    }
+  }
+  return res;
+}
 
 STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
@@ -112,9 +131,9 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
       while (res.Length() < 3)
         res = UString(L'0') + res;
       UString name = Prefix + res;
-      COutFileStream *streamSpec = new COutFileStream;
-      subStream.Stream = streamSpec;
-      if(!streamSpec->Create(name, false))
+      subStream.StreamSpec = new COutFileStream;
+      subStream.Stream = subStream.StreamSpec;
+      if(!subStream.StreamSpec->Create(name, false))
         return ::GetLastError();
       {
         // NSynchronization::CCriticalSectionLock lock(g_TempPathsCS);
@@ -362,13 +381,17 @@ static HRESULT Compress(
       throw 1417161;
     NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
   }
+
+  COutFileStream *outStreamSpec = NULL;
+  COutMultiVolStream *volStreamSpec = NULL;
+
   if (volumesSizes.Size() == 0)
   {
     if (stdOutMode)
       outStream = new CStdOutFileStream;
     else
     {
-      COutFileStream *outStreamSpec = new COutFileStream;
+      outStreamSpec = new COutFileStream;
       outStream = outStreamSpec;
       bool isOK = false;
       UString realPath;
@@ -410,7 +433,7 @@ static HRESULT Compress(
   {
     if (stdOutMode)
       return E_FAIL;
-    COutMultiVolStream *volStreamSpec = new COutMultiVolStream;
+    volStreamSpec = new COutMultiVolStream;
     outStream = volStreamSpec;
     volStreamSpec->Sizes = volumesSizes;
     volStreamSpec->Prefix = archivePath.GetFinalPath() + UString(L".");
@@ -440,11 +463,12 @@ static HRESULT Compress(
     }
 
     CMyComPtr<ISequentialOutStream> sfxOutStream;
+    COutFileStream *outStreamSpec = NULL;
     if (volumesSizes.Size() == 0)
       sfxOutStream = outStream;
     else
     {
-      COutFileStream *outStreamSpec = new COutFileStream;
+      outStreamSpec = new COutFileStream;
       sfxOutStream = outStreamSpec;
       UString realPath = archivePath.GetFinalPath();
       if (!outStreamSpec->Create(realPath, false))
@@ -456,10 +480,19 @@ static HRESULT Compress(
       }
     }
     RINOK(CopyBlock(sfxStream, sfxOutStream));
+    if (outStreamSpec)
+    {
+      RINOK(outStreamSpec->Close());
+    }
   }
 
   HRESULT result = outArchive->UpdateItems(outStream, updatePairs2.Size(), updateCallback);
   callback->Finilize();
+  RINOK(result);
+  if (outStreamSpec)
+    result = outStreamSpec->Close();
+  else if (volStreamSpec)
+    result = volStreamSpec->Close();
   return result;
 }
 

@@ -282,10 +282,10 @@ NO_INLINE void CCoder::GetMatches()
     {
       UInt32 numAvail = Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) + 1;
       const Byte *pby = Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) - 1;
-      UInt32 distance = distanceTmp[numPairs - 1] + 1;
+      const Byte *pby2 = pby - (distanceTmp[numPairs - 1] + 1);
       if (numAvail > m_MatchMaxLen)
         numAvail = m_MatchMaxLen;
-      for (; len < numAvail && pby[len] == pby[(size_t)len - distance]; len++);
+      for (; len < numAvail && pby[len] == pby2[len]; len++);
       m_MatchDistances[i - 1] = (UInt16)len;
     }
   }

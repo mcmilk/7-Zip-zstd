@@ -19,7 +19,8 @@ HRESULT CFolderOutStream::Init(
     UInt32 startIndex,
     const CBoolVector *extractStatuses, 
     IArchiveExtractCallback *extractCallback,
-    bool testMode)
+    bool testMode,
+    bool checkCrc)
 {
   _archiveDatabase = archiveDatabase;
   _ref2Offset = ref2Offset;
@@ -28,6 +29,8 @@ HRESULT CFolderOutStream::Init(
   _extractStatuses = extractStatuses;
   _extractCallback = extractCallback;
   _testMode = testMode;
+
+  _checkCrc = checkCrc;
 
   _currentIndex = 0;
   _fileIsOpen = false;
@@ -49,7 +52,7 @@ HRESULT CFolderOutStream::OpenFile()
   RINOK(_extractCallback->GetStream(_ref2Offset + index, &realOutStream, askMode));
 
   _outStreamWithHashSpec->SetStream(realOutStream);
-  _outStreamWithHashSpec->Init();
+  _outStreamWithHashSpec->Init(_checkCrc);
   if (askMode == NArchive::NExtract::NAskMode::kExtract &&
       (!realOutStream)) 
   {
@@ -100,7 +103,7 @@ STDMETHODIMP CFolderOutStream::Write(const void *data,
       if (_filePos == fileSize)
       {
         bool digestsAreEqual;
-        if (fileInfo.IsFileCRCDefined)
+        if (fileInfo.IsFileCRCDefined && _checkCrc)
           digestsAreEqual = fileInfo.FileCRC == _outStreamWithHashSpec->GetCRC();
         else
           digestsAreEqual = true;

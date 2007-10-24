@@ -468,6 +468,7 @@ void COutHandler::Init()
   _level = 5;
   _autoFilter = true;
   _volumeMode = false;
+  _crcSize = 4;
   InitSolid();
 }
 
@@ -481,6 +482,7 @@ void COutHandler::BeforeSetProperty()
   mainDicSize = 0xFFFFFFFF;
   mainDicMethodIndex = 0xFFFFFFFF;
   minNumber = 0;
+  _crcSize = 4;
 }
 
 HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
@@ -505,6 +507,13 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
     if (value.vt != VT_EMPTY)
       return E_INVALIDARG;
     return SetSolidSettings(name);
+  }
+  
+  if (name == L"CRC")
+  {
+    _crcSize = 4;
+    name.Delete(0, 3);
+    return ParsePropValue(name, value, _crcSize);
   }
   
   UInt32 number;

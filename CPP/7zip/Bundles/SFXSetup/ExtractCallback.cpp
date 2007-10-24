@@ -240,7 +240,10 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
     }
   }
   if(_outFileStream != NULL)
+  {
     _outFileStreamSpec->SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+    RINOK(_outFileStreamSpec->Close());
+  }
   _outFileStream.Release();
   if (_extractMode)
     NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);

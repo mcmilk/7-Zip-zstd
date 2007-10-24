@@ -36,6 +36,8 @@ private:
   bool _testMode;
 
   bool _fileIsOpen;
+
+  bool _checkCrc;
   UInt64 _filePos;
 
   HRESULT OpenFile();
@@ -47,7 +49,8 @@ public:
       UInt32 startIndex,
       const CBoolVector *extractStatuses, 
       IArchiveExtractCallback *extractCallback,
-      bool testMode);
+      bool testMode,
+      bool checkCrc);
   HRESULT FlushCorrupted(Int32 resultEOperationResult);
   HRESULT WasWritingFinished();
 };

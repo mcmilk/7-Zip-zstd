@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+  Version 4.56 beta           2007-09-13
+  --------------------------------------
+   - some fixes in LZ encoder (LZMA and Deflate) code.
+     size_t was replaces to ptrdiff_t.
+     size_t version worked incorrectly with some compilers.
+
+     
   Version 4.46 beta           2007-05-25
   --------------------------------------
    - CPP Synchronization objects now return HRes (error code) instead of bool.

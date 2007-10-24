@@ -33,6 +33,8 @@ namespace N7z {
 
 CHandler::CHandler()
 {
+  _crcSize = 4;
+
   #ifdef EXTRACT_ONLY
   #ifdef COMPRESS_MT
   _numThreads = NWindows::NSystem::GetNumberOfProcessors();

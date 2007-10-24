@@ -1,4 +1,4 @@
-7-Zip method IDs (4.45)
+7-Zip method IDs (4.56)
 -----------------------
 
 Each compression or crypto method in 7z has unique binary value (ID).
@@ -56,6 +56,9 @@ List of defined IDs
 
    04 - PPMD
       01 - Version
+
+   7F -
+      01 - experimental methods.
 
    80 - reserved for independent developers
 

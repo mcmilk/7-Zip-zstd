@@ -22,6 +22,11 @@ static bool IsSeparatorChar(wchar_t c)
   return (c == kSpaceChar || c == kTabChar);
 }
 
+void RemoveCr(UString &s)
+{
+  s.Replace(L"\x0D", L"");
+}
+
 static UString GetIDString(const wchar_t *srcString, int &finishPos)
 {
   UString result;
@@ -42,6 +47,7 @@ static UString GetIDString(const wchar_t *srcString, int &finishPos)
       result += c;
   }
   result.Trim();
+  RemoveCr(result);
   return result;
 }
 
@@ -59,34 +65,28 @@ static UString GetValueString(const wchar_t *srcString, int &finishPos)
     result += c;
   }
   result.Trim();
+  RemoveCr(result);
   return result;
 }
 
 static bool GetTextPairs(const UString &srcString, CObjectVector<CTextPair> &pairs)
 {
   pairs.Clear();
-  UString srcString2 = srcString;
-  srcString2.Replace(L"\x0D", L"");
-
-  pairs.Clear();
   int pos = 0;
   
-  /////////////////////
-  // read strings
-
-  if (srcString2.Length() > 0)
+  if (srcString.Length() > 0)
   {
-    if (srcString2[0] == kBOM)
+    if (srcString[0] == kBOM)
       pos++;
   }
-  while (pos < srcString2.Length())
+  while (pos < srcString.Length())
   {
     int finishPos;
-    UString id = GetIDString((const wchar_t *)srcString2 + pos, finishPos);
+    UString id = GetIDString((const wchar_t *)srcString + pos, finishPos);
     pos += finishPos;
     if (id.IsEmpty())
       continue;
-    UString value = GetValueString((const wchar_t *)srcString2 + pos, finishPos);
+    UString value = GetValueString((const wchar_t *)srcString + pos, finishPos);
     pos += finishPos;
     if (!id.IsEmpty())
     {
@@ -195,7 +195,7 @@ bool CPairsStorage::ReadFromString(const UString &text)
     Sort();
   else
     Pairs.Clear();
-  return  result;
+  return result;
 }
 
 void CPairsStorage::SaveToString(UString &text)
@@ -211,6 +211,7 @@ void CPairsStorage::SaveToString(UString &text)
       text += L'\"';
     text += L' ';
     text += pair.Value;
+    text += L'\x0D';
     text += L'\n';
   }
 }

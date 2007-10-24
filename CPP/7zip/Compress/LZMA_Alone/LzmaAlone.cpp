@@ -159,7 +159,7 @@ int main2(int n, const char *args[])
   g_IsNT = IsItWindowsNT();
   #endif
 
-  fprintf(stderr, "\nLZMA 4.54 Copyright (c) 1999-2007 Igor Pavlov  2007-09-04\n");
+  fprintf(stderr, "\nLZMA 4.56 Copyright (c) 1999-2007 Igor Pavlov  2007-10-19\n");
 
   if (n == 1)
   {
@@ -276,6 +276,7 @@ int main2(int n, const char *args[])
   }
 
   CMyComPtr<ISequentialOutStream> outStream;
+  COutFileStream *outStreamSpec = NULL;
   if (stdOutMode)
   {
     outStream = new CStdOutFileStream;
@@ -286,7 +287,7 @@ int main2(int n, const char *args[])
     if (paramIndex >= nonSwitchStrings.Size())
       IncorrectCommand();
     const UString &outputName = nonSwitchStrings[paramIndex++]; 
-    COutFileStream *outStreamSpec = new COutFileStream;
+    outStreamSpec = new COutFileStream;
     outStream = outStreamSpec;
     if (!outStreamSpec->Create(GetSystemString(outputName), true))
     {
@@ -368,8 +369,7 @@ int main2(int n, const char *args[])
   UInt64 fileSize;
   if (encodeMode)
   {
-    NCompress::NLZMA::CEncoder *encoderSpec = 
-      new NCompress::NLZMA::CEncoder;
+    NCompress::NLZMA::CEncoder *encoderSpec = new NCompress::NLZMA::CEncoder;
     CMyComPtr<ICompressCoder> encoder = encoderSpec;
 
     if (!dictionaryIsDefined)
@@ -483,8 +483,7 @@ int main2(int n, const char *args[])
   }
   else
   {
-    NCompress::NLZMA::CDecoder *decoderSpec = 
-        new NCompress::NLZMA::CDecoder;
+    NCompress::NLZMA::CDecoder *decoderSpec = new NCompress::NLZMA::CDecoder;
     CMyComPtr<ICompressCoder> decoder = decoderSpec;
     const UInt32 kPropertiesSize = 5;
     Byte properties[kPropertiesSize];
@@ -525,6 +524,14 @@ int main2(int n, const char *args[])
       fprintf(stderr, "Decoder error");
       return 1;
     }   
+  }
+  if (outStreamSpec != NULL)
+  {
+    if (outStreamSpec->Close() != S_OK)
+    {
+      fprintf(stderr, "File closing error");
+      return 1;
+    }
   }
   return 0;
 }

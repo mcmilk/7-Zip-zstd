@@ -33,9 +33,6 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
     #ifndef _UNICODE
     g_IsNT = IsItWindowsNT();
     #endif
-    #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
-    SetLargePageSize();
-    #endif
   }
   return TRUE;
 }
@@ -50,3 +47,10 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
   return CreateArchiver(clsid, iid, outObject);
 }
 
+STDAPI SetLargePageMode()
+{
+  #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
+  SetLargePageSize();
+  #endif
+  return S_OK;
+}

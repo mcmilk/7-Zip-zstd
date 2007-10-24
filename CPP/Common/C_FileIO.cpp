@@ -75,6 +75,11 @@ bool COutFile::Create(const char *name, bool createAlways)
   return OpenBinary(name, O_CREAT | O_EXCL | O_WRONLY);
 }
 
+bool COutFile::Open(const char *name, DWORD creationDisposition)
+{
+  return Create(name, false);
+}
+
 ssize_t COutFile::Write(const void *data, size_t size)
 {
   return write(_handle, data, size);

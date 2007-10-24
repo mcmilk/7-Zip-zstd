@@ -195,7 +195,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         0,
         #endif
         startIndex, 
-        &efi.ExtractStatuses, extractCallback, testMode);
+        &efi.ExtractStatuses, extractCallback, testMode, _crcSize != 0);
 
     RINOK(result);
 

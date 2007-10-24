@@ -6,3 +6,4 @@ EXPORTS
   CreateObject PRIVATE
   GetNumberOfMethods PRIVATE
   GetMethodProperty PRIVATE
+  SetLargePageMode PRIVATE

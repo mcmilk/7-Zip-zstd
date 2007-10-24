@@ -145,6 +145,11 @@ STDMETHODIMP CInFileStream::GetSize(UInt64 *size)
 //////////////////////////
 // COutFileStream
 
+HRESULT COutFileStream::Close()
+{
+  return ConvertBoolToHRESULT(File.Close());
+}
+
 STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   #ifdef USE_WIN_FILE

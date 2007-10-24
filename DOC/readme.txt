@@ -1,4 +1,4 @@
-7-Zip 4.55 Sources
+7-Zip 4.56 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP/Vista. 
@@ -133,7 +133,11 @@ Windows           Win32 wrappers
     SFXCon        7zCon.sfx: Console 7z SFX module
     SFXWin        7z.sfx: Windows 7z SFX module
     SFXSetup      7zS.sfx: Windows 7z SFX module for Installers
-    Format7z      7za.dll: Standalone version of 7z.dll
+    Format7z            7za.dll:  .7z support
+    Format7zExtract     7zxa.dll: .7z support, extracting only
+    Format7zR           7zr.dll:  .7z support, LZMA/BCJ* only
+    Format7zExtractR    7zxr.dll: .7z support, LZMA/BCJ* only, extracting only
+    Format7zF           7z.dll:   all formats
 
   UI
   --

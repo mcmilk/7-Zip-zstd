@@ -610,15 +610,14 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
   for(i = 0; i < kNumRepDistances; i++)
   {
     reps[i] = _repDistances[i];
-    UInt32 backOffset = reps[i] + 1;
-    if (data[0] != data[(size_t)0 - backOffset] || data[1] != data[(size_t)1 - backOffset])
+    const Byte *data2 = data - (reps[i] + 1);
+    if (data[0] != data2[0] || data[1] != data2[1])
     {
       repLens[i] = 0;
       continue;
     }
     UInt32 lenTest;
-    for (lenTest = 2; lenTest < numAvailableBytes && 
-        data[lenTest] == data[(size_t)lenTest - backOffset]; lenTest++);
+    for (lenTest = 2; lenTest < numAvailableBytes && data[lenTest] == data2[lenTest]; lenTest++);
     repLens[i] = lenTest;
     if (lenTest > repLens[repMaxIndex])
       repMaxIndex = i;
@@ -639,7 +638,7 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
     return lenMain;
   }
   Byte currentByte = *data;
-  Byte matchByte = data[(size_t)0 - reps[0] - 1];
+  Byte matchByte = *(data - (reps[0] + 1));
 
   if(lenMain < 2 && currentByte != matchByte && repLens[repMaxIndex] < 2)
   {
@@ -821,13 +820,13 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
     UInt32 curPrice = curOptimum.Price; 
     const Byte *data = _matchFinder.GetPointerToCurrentPos(_matchFinderObj) - 1;
     const Byte currentByte = *data;
-    const Byte matchByte = data[(size_t)0 - reps[0] - 1];
+    const Byte matchByte = *(data - (reps[0] + 1));
 
     UInt32 posState = (position & _posStateMask);
 
     UInt32 curAnd1Price = curPrice +
         _isMatch[state.Index][posState].GetPrice0() +
-        _literalEncoder.GetSubCoder(position, data[(size_t)0 - 1])->GetPrice(!state.IsCharState(), matchByte, currentByte);
+        _literalEncoder.GetSubCoder(position, *(data - 1))->GetPrice(!state.IsCharState(), matchByte, currentByte);
 
     COptimal &nextOptimum = _optimum[cur + 1];
 
@@ -870,11 +869,10 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
     if (!nextIsChar && matchByte != currentByte) // speed optimization
     {
       // try Literal + rep0
-      UInt32 backOffset = reps[0] + 1;
+      const Byte *data2 = data - (reps[0] + 1);
       UInt32 limit = MyMin(numAvailableBytesFull, _numFastBytes + 1);
       UInt32 temp;
-      for (temp = 1; temp < limit && 
-          data[temp] == data[(size_t)temp - backOffset]; temp++);
+      for (temp = 1; temp < limit && data[temp] == data2[temp]; temp++);
       UInt32 lenTest2 = temp - 1;
       if (lenTest2 >= 2)
       {
@@ -908,13 +906,11 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
     for(UInt32 repIndex = 0; repIndex < kNumRepDistances; repIndex++)
     {
       // UInt32 repLen = _matchFinder.GetMatchLen(0 - 1, reps[repIndex], newLen); // test it;
-      UInt32 backOffset = reps[repIndex] + 1;
-      if (data[0] != data[(size_t)0 - backOffset] ||
-          data[1] != data[(size_t)1 - backOffset])
+      const Byte *data2 = data - (reps[repIndex] + 1);
+      if (data[0] != data2[0] || data[1] != data2[1])
         continue;
       UInt32 lenTest;
-      for (lenTest = 2; lenTest < numAvailableBytes && 
-          data[lenTest] == data[(size_t)lenTest - backOffset]; lenTest++);
+      for (lenTest = 2; lenTest < numAvailableBytes && data[lenTest] == data2[lenTest]; lenTest++);
       while(lenEnd < cur + lenTest)
         _optimum[++lenEnd].Price = kIfinityPrice;
       UInt32 lenTestTemp = lenTest;
@@ -941,8 +937,7 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
         {
           UInt32 lenTest2 = lenTest + 1;
           UInt32 limit = MyMin(numAvailableBytesFull, lenTest2 + _numFastBytes);
-          for (; lenTest2 < limit && 
-              data[lenTest2] == data[(size_t)lenTest2 - backOffset]; lenTest2++);
+          for (; lenTest2 < limit && data[lenTest2] == data2[lenTest2]; lenTest2++);
           lenTest2 -= lenTest + 1;
           if (lenTest2 >= 2)
           {
@@ -952,8 +947,8 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
             UInt32 curAndLenCharPrice = 
                 price + _repMatchLenEncoder.GetPrice(lenTest - 2, posState) + 
                 _isMatch[state2.Index][posStateNext].GetPrice0() +
-                _literalEncoder.GetSubCoder(position + lenTest, data[(size_t)lenTest - 1])->GetPrice(
-                true, data[(size_t)lenTest - backOffset], data[lenTest]);
+                _literalEncoder.GetSubCoder(position + lenTest, data[lenTest - 1])->GetPrice(
+                true, data2[lenTest], data[lenTest]);
             state2.UpdateChar();
             posStateNext = (position + lenTest + 1) & _posStateMask;
             UInt32 nextRepMatchPrice = curAndLenCharPrice + 
@@ -1025,11 +1020,10 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
         if (/*_maxMode && */lenTest == matchDistances[offs])
         {
           // Try Match + Literal + Rep0
-          UInt32 backOffset = curBack + 1;
+          const Byte *data2 = data - (curBack + 1);
           UInt32 lenTest2 = lenTest + 1;
           UInt32 limit = MyMin(numAvailableBytesFull, lenTest2 + _numFastBytes);
-          for (; lenTest2 < limit && 
-              data[lenTest2] == data[(size_t)lenTest2 - backOffset]; lenTest2++);
+          for (; lenTest2 < limit && data[lenTest2] == data2[lenTest2]; lenTest2++);
           lenTest2 -= lenTest + 1;
           if (lenTest2 >= 2)
           {
@@ -1038,8 +1032,8 @@ UInt32 CEncoder::GetOptimum(UInt32 position, UInt32 &backRes)
             UInt32 posStateNext = (position + lenTest) & _posStateMask;
             UInt32 curAndLenCharPrice = curAndLenPrice + 
                 _isMatch[state2.Index][posStateNext].GetPrice0() +
-                _literalEncoder.GetSubCoder(position + lenTest, data[(size_t)lenTest - 1])->GetPrice( 
-                true, data[(size_t)lenTest - backOffset], data[lenTest]);
+                _literalEncoder.GetSubCoder(position + lenTest, data[lenTest - 1])->GetPrice( 
+                true, data2[lenTest], data[lenTest]);
             state2.UpdateChar();
             posStateNext = (posStateNext + 1) & _posStateMask;
             UInt32 nextRepMatchPrice = curAndLenCharPrice + 
@@ -1105,7 +1099,9 @@ UInt32 CEncoder::ReadMatchDistances(UInt32 &numDistancePairs)
       UInt32 distance = _matchDistances[numDistancePairs - 1] + 1;
       if (numAvail > kMatchMaxLen)
         numAvail = kMatchMaxLen;
-      for (; lenRes < numAvail && pby[lenRes] == pby[(size_t)lenRes - distance]; lenRes++);
+
+      const Byte *pby2 = pby - distance;
+      for (; lenRes < numAvail && pby[lenRes] == pby2[lenRes]; lenRes++);
     }
   }
   _additionalOffset++;
@@ -1141,14 +1137,14 @@ UInt32 CEncoder::GetOptimumFast(UInt32 &backRes)
 
   for(UInt32 i = 0; i < kNumRepDistances; i++)
   {
-    UInt32 backOffset = _repDistances[i] + 1;
-    if (data[0] != data[(size_t)0 - backOffset] || data[1] != data[(size_t)1 - backOffset])
+    const Byte *data2 = data - (_repDistances[i] + 1);
+    if (data[0] != data2[0] || data[1] != data2[1])
     {
       repLens[i] = 0;
       continue;
     }
     UInt32 len;
-    for (len = 2; len < numAvailableBytes && data[len] == data[(size_t)len - backOffset]; len++);
+    for (len = 2; len < numAvailableBytes && data[len] == data2[len]; len++);
     if(len >= _numFastBytes)
     {
       backRes = i;
@@ -1216,14 +1212,14 @@ UInt32 CEncoder::GetOptimumFast(UInt32 &backRes)
     data = _matchFinder.GetPointerToCurrentPos(_matchFinderObj) - 1;
     for(UInt32 i = 0; i < kNumRepDistances; i++)
     {
-      UInt32 backOffset = _repDistances[i] + 1;
-      if (data[1] != data[(size_t)1 - backOffset] || data[2] != data[(size_t)2 - backOffset])
+      const Byte *data2 = data - (_repDistances[i] + 1);
+      if (data[1] != data2[1] || data[2] != data2[2])
       {
         repLens[i] = 0;
         continue;
       }
       UInt32 len;
-      for (len = 2; len < numAvailableBytes && data[len] == data[(size_t)len - backOffset]; len++);
+      for (len = 2; len < numAvailableBytes && data[len] == data2[len]; len++);
       if (len + 1 >= lenMain)
       {
         _longestMatchWasFound = true;

@@ -503,7 +503,7 @@ UInt32 Bt3_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   if (delta2 < p->cyclicBufferSize && *(cur - delta2) == *cur)
   {
     for (; maxLen != lenLimit; maxLen++)
-      if (cur[(size_t)maxLen - delta2] != cur[maxLen])
+      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
         break;
     distances[0] = maxLen;
     distances[1] = delta2 - 1;
@@ -550,7 +550,7 @@ UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   if (offset != 0)
   {
     for (; maxLen != lenLimit; maxLen++)
-      if (cur[(size_t)maxLen - delta2] != cur[maxLen])
+      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
         break;
     distances[offset - 2] = maxLen;
     if (maxLen == lenLimit)
@@ -597,7 +597,7 @@ UInt32 Hc4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   if (offset != 0)
   {
     for (; maxLen != lenLimit; maxLen++)
-      if (cur[(size_t)maxLen - delta2] != cur[maxLen])
+      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
         break;
     distances[offset - 2] = maxLen;
     if (maxLen == lenLimit)
