@@ -95,6 +95,7 @@ class CInArchive
   HRESULT ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset);
 public:
   CInArchiveInfo m_ArchiveInfo;
+  bool IsZip64;
 
   HRESULT ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress);
   HRESULT ReadLocalItemAfterCdItem(CItemEx &item);

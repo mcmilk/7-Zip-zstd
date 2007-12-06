@@ -18,6 +18,11 @@ public:
   UInt64 GetLocalFullSize() const 
     { return FileHeaderWithNameSize + LocalExtraSize + PackSize + 
       (HasDescriptor() ? NFileHeader::kDataDescriptorSize : 0); };
+  /*
+  UInt64 GetLocalFullSize(bool isZip64) const 
+    { return FileHeaderWithNameSize + LocalExtraSize + PackSize + 
+    (HasDescriptor() ? (isZip64 ? NFileHeader::kDataDescriptor64Size : NFileHeader::kDataDescriptorSize) : 0); };
+  */
   UInt64 GetLocalExtraPosition() const 
     { return LocalHeaderPosition + FileHeaderWithNameSize; };
   UInt64 GetDataPosition() const 

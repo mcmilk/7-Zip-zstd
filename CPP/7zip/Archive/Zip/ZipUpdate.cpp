@@ -267,6 +267,7 @@ void CMtProgressMixer2::Create(IProgress *progress, bool inSizeIsMain)
 void CMtProgressMixer2::SetProgressOffset(UInt64 progressOffset)
 {
   CriticalSection.Enter();
+  InSizes[1] = OutSizes[1] = 0;
   ProgressOffset = progressOffset;
   CriticalSection.Leave();
 }
@@ -323,7 +324,9 @@ STDMETHODIMP CMtProgressMixer::SetRatioInfo(const UInt64 *inSize, const UInt64 *
 
 static HRESULT UpdateItemOldData(COutArchive &archive, 
     IInStream *inStream,
-    const CUpdateItem &updateItem, CItemEx &item, ICompressProgressInfo *progress,
+    const CUpdateItem &updateItem, CItemEx &item, 
+    /* bool izZip64, */
+    ICompressProgressInfo *progress,
     UInt64 &complexity)
 {
   if (updateItem.NewProperties)

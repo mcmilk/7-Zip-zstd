@@ -437,8 +437,21 @@ HRESULT CInArchive::ReadLocalItemAfterCdItemFull(CItemEx &item)
       if (ReadUInt32() != NSignature::kDataDescriptor)
         return S_FALSE;
       UInt32 crc = ReadUInt32();
-      UInt32 packSize = ReadUInt32();
-      UInt32 unpackSize = ReadUInt32();
+      UInt64 packSize, unpackSize;
+
+      /*
+      if (IsZip64)
+      {
+        packSize = ReadUInt64();
+        unpackSize = ReadUInt64();
+      }
+      else
+      */
+      {
+        packSize = ReadUInt32();
+        unpackSize = ReadUInt32();
+      }
+
       if (crc != item.FileCRC || item.PackSize != packSize || item.UnPackSize != unpackSize)
         return S_FALSE;
     }
@@ -681,6 +694,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   // kEndOfCentralDirSignature
   // m_Position points to next byte after signature
 
+  IsZip64 = false;
   items.Clear();
   if (progress != 0)
   {
@@ -722,7 +736,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   UInt64 zip64EcdStartOffset = m_Position - 4 - m_ArchiveInfo.Base;
   if(m_Signature == NSignature::kZip64EndOfCentralDir)
   {
-    isZip64 = true;
+    IsZip64 = isZip64 = true;
     UInt64 recordSize = ReadUInt64();
     /* UInt16 versionMade = */ ReadUInt16();
     /* UInt16 versionNeedExtract = */ ReadUInt16();

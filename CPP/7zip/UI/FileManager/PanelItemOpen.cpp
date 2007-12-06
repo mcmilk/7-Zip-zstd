@@ -145,7 +145,7 @@ static const wchar_t *kStartExtensions[] =
 {
   L"exe", L"bat", L"com",
   L"chm",
-  L"msi", L"doc", L"xls", L"ppt", 
+  L"msi", L"doc", L"xls", L"ppt", L"wps", L"wpt", L"wks", L"xlr", L"wdb",
   L"odt", L"ods",
   L"pdf"
 };

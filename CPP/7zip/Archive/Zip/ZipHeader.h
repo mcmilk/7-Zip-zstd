@@ -109,6 +109,7 @@ namespace NFileHeader
   */
 
   const UInt32 kDataDescriptorSize = 16;
+  // const UInt32 kDataDescriptor64Size = 16 + 8;
   /*
   struct CDataDescriptor
   {

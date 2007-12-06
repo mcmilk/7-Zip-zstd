@@ -24,7 +24,7 @@ void UpdateProduce(
     pair2.ArchiveItemIndex = pair.ArchiveItemIndex;
     pair2.DirItemIndex = pair.DirItemIndex;
     pair2.ExistInArchive = (pair.State != NPairState::kOnlyOnDisk);
-    pair2.ExistOnDisk = (pair.State != NPairState::kOnlyInArchive);
+    pair2.ExistOnDisk = (pair.State != NPairState::kOnlyInArchive && pair.State != NPairState::kNotMasked);
     switch(actionSet.StateActions[pair.State])
     {
       case NPairAction::kIgnore:

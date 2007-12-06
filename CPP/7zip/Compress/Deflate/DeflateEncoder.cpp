@@ -40,11 +40,11 @@ static const UInt32 kMatchArrayLimit = kMatchArraySize - kMatchMaxLen * 4 * size
 static const UInt32 kBlockUncompressedSizeThreshold = kMaxUncompressedBlockSize - 
     kMatchMaxLen - kNumOpts;
 
-static const int kMaxCodeBitLength = 15;
+static const int kMaxCodeBitLength = 12;
 static const int kMaxLevelBitLength = 7;
 
-static Byte kNoLiteralStatPrice = 13;
-static Byte kNoLenStatPrice = 13;
+static Byte kNoLiteralStatPrice = 12;
+static Byte kNoLenStatPrice = 12;
 static Byte kNoPosStatPrice = 6;
 
 static Byte g_LenSlots[kNumLenSymbolsMax];
