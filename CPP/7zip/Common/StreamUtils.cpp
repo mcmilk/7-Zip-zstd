@@ -2,20 +2,21 @@
 
 #include "StdAfx.h"
 
-#include "../../Common/MyCom.h"
 #include "StreamUtils.h"
 
-HRESULT ReadStream(ISequentialInStream *stream, void *data, UInt32 size, UInt32 *processedSize)
+static const UInt32 kBlockSize = ((UInt32)1 << 31);
+
+HRESULT ReadStream(ISequentialInStream *stream, void *data, size_t *processedSize)
 {
-  if (processedSize != 0)
-    *processedSize = 0;
-  while(size != 0)
+  size_t size = *processedSize;
+  *processedSize = 0;
+  while (size != 0)
   {
+    UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
     UInt32 processedSizeLoc; 
-    HRESULT res = stream->Read(data, size, &processedSizeLoc);
-    if (processedSize != 0)
-      *processedSize += processedSizeLoc;
-    data = (Byte *)((Byte *)data + processedSizeLoc);
+    HRESULT res = stream->Read(data, curSize, &processedSizeLoc);
+    *processedSize += processedSizeLoc;
+    data = (void *)((Byte *)data + processedSizeLoc);
     size -= processedSizeLoc;
     RINOK(res);
     if (processedSizeLoc == 0)
@@ -24,16 +25,27 @@ HRESULT ReadStream(ISequentialInStream *stream, void *data, UInt32 size, UInt32 
   return S_OK;
 }
 
-HRESULT WriteStream(ISequentialOutStream *stream, const void *data, UInt32 size, UInt32 *processedSize)
+HRESULT ReadStream_FALSE(ISequentialInStream *stream, void *data, size_t size)
 {
-  if (processedSize != 0)
-    *processedSize = 0;
-  while(size != 0)
+  size_t processedSize = size; 
+  RINOK(ReadStream(stream, data, &processedSize));
+  return (size == processedSize) ? S_OK : S_FALSE;
+}
+
+HRESULT ReadStream_FAIL(ISequentialInStream *stream, void *data, size_t size)
+{
+  size_t processedSize = size; 
+  RINOK(ReadStream(stream, data, &processedSize));
+  return (size == processedSize) ? S_OK : E_FAIL;
+}
+
+HRESULT WriteStream(ISequentialOutStream *stream, const void *data, size_t size)
+{
+  while (size != 0)
   {
+    UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
     UInt32 processedSizeLoc; 
-    HRESULT res = stream->Write(data, size, &processedSizeLoc);
-    if (processedSize != 0)
-      *processedSize += processedSizeLoc;
+    HRESULT res = stream->Write(data, curSize, &processedSizeLoc);
     data = (const void *)((const Byte *)data + processedSizeLoc);
     size -= processedSizeLoc;
     RINOK(res);

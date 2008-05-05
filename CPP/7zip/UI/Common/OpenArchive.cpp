@@ -37,7 +37,18 @@ HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &def
 {
   RINOK(GetArchiveItemPath(archive, index, result));
   if (result.IsEmpty())
+  {
     result = defaultName;
+    NCOM::CPropVariant prop;
+    RINOK(archive->GetProperty(index, kpidExtension, &prop));
+    if (prop.vt == VT_BSTR)
+    {
+      result += L'.';
+      result += prop.bstrVal;
+    }
+    else if (prop.vt != VT_EMPTY)
+      return E_FAIL;
+  }
   return S_OK;
 }
 
@@ -129,12 +140,12 @@ HRESULT OpenArchive(
   {
     CIntVector orderIndices2;
     CByteBuffer byteBuffer;
-    const UInt32 kBufferSize = (200 << 10);
+    const size_t kBufferSize = (200 << 10);
     byteBuffer.SetCapacity(kBufferSize);
     Byte *buffer = byteBuffer;
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    UInt32 processedSize;
-    RINOK(ReadStream(inStream, buffer, kBufferSize, &processedSize));
+    size_t processedSize = kBufferSize;
+    RINOK(ReadStream(inStream, buffer, &processedSize));
     for (UInt32 pos = 0; pos < processedSize; pos++)
     {
       for (int i = 0; i < orderIndices.Size(); i++)
@@ -159,16 +170,16 @@ HRESULT OpenArchive(
   else if (extension == L"000" || extension == L"001")
   {
     CByteBuffer byteBuffer;
-    const UInt32 kBufferSize = (1 << 10);
+    const size_t kBufferSize = (1 << 10);
     byteBuffer.SetCapacity(kBufferSize);
     Byte *buffer = byteBuffer;
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-    UInt32 processedSize;
-    RINOK(ReadStream(inStream, buffer, kBufferSize, &processedSize));
+    size_t processedSize = kBufferSize;
+    RINOK(ReadStream(inStream, buffer, &processedSize));
     if (processedSize >= 16)
     {
       Byte kRarHeader[] = {0x52 , 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00};
-      if (TestSignature(buffer, kRarHeader, 7) && buffer[9] == 0x73 && (buffer[10] && 1) != 0)
+      if (TestSignature(buffer, kRarHeader, 7) && buffer[9] == 0x73 && (buffer[10] & 1) != 0)
       {
         for (int i = 0; i < orderIndices.Size(); i++)
         {

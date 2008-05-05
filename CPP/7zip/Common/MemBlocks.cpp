@@ -125,13 +125,10 @@ HRESULT CMemBlocks::WriteToStream(size_t blockSize, ISequentialOutStream *outStr
     UInt32 curSize = (UInt32)blockSize;
     if (totalSize < curSize)
       curSize = (UInt32)totalSize;
-    UInt32 processedSize;
     if (blockIndex >= Blocks.Size())
       return E_FAIL;
-    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize, &processedSize));
-    if (processedSize != curSize)
-      return E_FAIL;
-    totalSize -= processedSize;
+    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize));
+    totalSize -= curSize;
   }
   return S_OK;
 }

@@ -68,6 +68,9 @@ static void MyGetFileTime(IFolderFolder *anArchiveFolder, UInt32 itemIndex,
     fileTime = propVariant.filetime;
   }
 }
+
+#define kDotsReplaceString "[[..]]"
+#define kDotsReplaceStringU L"[[..]]"
   
 void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
 {
@@ -82,6 +85,9 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
   const int kFileNameSizeMax = (int)(sizeof(panelItem.FindData.cFileName) / sizeof(panelItem.FindData.cFileName[0]) - 1);
   if (oemString.Length() > kFileNameSizeMax)
     oemString = oemString.Left(kFileNameSizeMax);
+
+  if (oemString == "..")
+    oemString = kDotsReplaceString;
 
   MyStringCopy(panelItem.FindData.cFileName, (const char *)oemString);
   panelItem.FindData.cAlternateFileName[0] = 0;
@@ -194,12 +200,15 @@ void CPlugin::FreeFindData(struct PluginPanelItem *panelItems,
 }
 
 
-void CPlugin::EnterToDirectory(const UString &aDirName)
+void CPlugin::EnterToDirectory(const UString &dirName)
 {
   CMyComPtr<IFolderFolder> newFolder;
-  _folder->BindToFolder(aDirName, &newFolder);
+  UString s = dirName;
+  if (dirName == kDotsReplaceStringU)
+    s = L"..";
+  _folder->BindToFolder(s, &newFolder);
   if (newFolder == NULL)
-    if (aDirName.IsEmpty())
+    if (dirName.IsEmpty())
       return;
     else
       throw 40325;

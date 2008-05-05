@@ -1,134 +1,130 @@
-/* 7zItem.c */
+/* 7zItem.c -- 7z Items
+2008-04-09
+Igor Pavlov
+Copyright (c) 1999-2008 Igor Pavlov
+Read 7zItem.h for license options */
 
 #include "7zItem.h"
-#include "7zAlloc.h"
 
-void SzCoderInfoInit(CCoderInfo *coder)
+void SzCoderInfo_Init(CSzCoderInfo *p)
 {
-  SzByteBufferInit(&coder->Properties);
+  Buf_Init(&p->Props);
 }
 
-void SzCoderInfoFree(CCoderInfo *coder, void (*freeFunc)(void *p))
+void SzCoderInfo_Free(CSzCoderInfo *p, ISzAlloc *alloc)
 {
-  SzByteBufferFree(&coder->Properties, freeFunc);
-  SzCoderInfoInit(coder);
+  Buf_Free(&p->Props, alloc);
+  SzCoderInfo_Init(p);
 }
 
-void SzFolderInit(CFolder *folder)
+void SzFolder_Init(CSzFolder *p)
 {
-  folder->NumCoders = 0;
-  folder->Coders = 0;
-  folder->NumBindPairs = 0;
-  folder->BindPairs = 0;
-  folder->NumPackStreams = 0;
-  folder->PackStreams = 0;
-  folder->UnPackSizes = 0;
-  folder->UnPackCRCDefined = 0;
-  folder->UnPackCRC = 0;
-  folder->NumUnPackStreams = 0;
+  p->Coders = 0;
+  p->BindPairs = 0;
+  p->PackStreams = 0;
+  p->UnPackSizes = 0;
+  p->NumCoders = 0;
+  p->NumBindPairs = 0;
+  p->NumPackStreams = 0;
+  p->UnPackCRCDefined = 0;
+  p->UnPackCRC = 0;
+  p->NumUnPackStreams = 0;
 }
 
-void SzFolderFree(CFolder *folder, void (*freeFunc)(void *p))
+void SzFolder_Free(CSzFolder *p, ISzAlloc *alloc)
 {
   UInt32 i;
-  for (i = 0; i < folder->NumCoders; i++)
-    SzCoderInfoFree(&folder->Coders[i], freeFunc);
-  freeFunc(folder->Coders);
-  freeFunc(folder->BindPairs);
-  freeFunc(folder->PackStreams);
-  freeFunc(folder->UnPackSizes);
-  SzFolderInit(folder);
+  if (p->Coders)
+    for (i = 0; i < p->NumCoders; i++)
+      SzCoderInfo_Free(&p->Coders[i], alloc);
+  IAlloc_Free(alloc, p->Coders);
+  IAlloc_Free(alloc, p->BindPairs);
+  IAlloc_Free(alloc, p->PackStreams);
+  IAlloc_Free(alloc, p->UnPackSizes);
+  SzFolder_Init(p);
 }
 
-UInt32 SzFolderGetNumOutStreams(CFolder *folder)
+UInt32 SzFolder_GetNumOutStreams(CSzFolder *p)
 {
   UInt32 result = 0;
   UInt32 i;
-  for (i = 0; i < folder->NumCoders; i++)
-    result += folder->Coders[i].NumOutStreams;
+  for (i = 0; i < p->NumCoders; i++)
+    result += p->Coders[i].NumOutStreams;
   return result;
 }
 
-int SzFolderFindBindPairForInStream(CFolder *folder, UInt32 inStreamIndex)
+int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex)
 {
   UInt32 i;
-  for(i = 0; i < folder->NumBindPairs; i++)
-    if (folder->BindPairs[i].InIndex == inStreamIndex)
+  for (i = 0; i < p->NumBindPairs; i++)
+    if (p->BindPairs[i].InIndex == inStreamIndex)
       return i;
   return -1;
 }
 
 
-int SzFolderFindBindPairForOutStream(CFolder *folder, UInt32 outStreamIndex)
+int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
 {
   UInt32 i;
-  for(i = 0; i < folder->NumBindPairs; i++)
-    if (folder->BindPairs[i].OutIndex == outStreamIndex)
+  for (i = 0; i < p->NumBindPairs; i++)
+    if (p->BindPairs[i].OutIndex == outStreamIndex)
       return i;
   return -1;
 }
 
-CFileSize SzFolderGetUnPackSize(CFolder *folder)
+CFileSize SzFolder_GetUnPackSize(CSzFolder *p)
 { 
-  int i = (int)SzFolderGetNumOutStreams(folder);
+  int i = (int)SzFolder_GetNumOutStreams(p);
   if (i == 0)
     return 0;
   for (i--; i >= 0; i--)
-    if (SzFolderFindBindPairForOutStream(folder, i) < 0)
-      return folder->UnPackSizes[i];
+    if (SzFolder_FindBindPairForOutStream(p, i) < 0)
+      return p->UnPackSizes[i];
   /* throw 1; */
   return 0;
 }
 
-/*
-int FindPackStreamArrayIndex(int inStreamIndex) const
+void SzFile_Init(CSzFileItem *p)
 {
-  for(int i = 0; i < PackStreams.Size(); i++)
-  if (PackStreams[i] == inStreamIndex)
-    return i;
-  return -1;
-}
-*/
-
-void SzFileInit(CFileItem *fileItem)
-{
-  fileItem->IsFileCRCDefined = 0;
-  fileItem->HasStream = 1;
-  fileItem->IsDirectory = 0;
-  fileItem->IsAnti = 0;
-  fileItem->IsLastWriteTimeDefined = 0;
-  fileItem->Name = 0;
+  p->IsFileCRCDefined = 0;
+  p->HasStream = 1;
+  p->IsDirectory = 0;
+  p->IsAnti = 0;
+  p->IsLastWriteTimeDefined = 0;
+  p->Name = 0;
 }
 
-void SzFileFree(CFileItem *fileItem, void (*freeFunc)(void *p))
+static void SzFile_Free(CSzFileItem *p, ISzAlloc *alloc)
 {
-  freeFunc(fileItem->Name);
-  SzFileInit(fileItem);
+  IAlloc_Free(alloc, p->Name);
+  SzFile_Init(p);
 }
 
-void SzArchiveDatabaseInit(CArchiveDatabase *db)
+void SzAr_Init(CSzAr *p)
 {
-  db->NumPackStreams = 0;
-  db->PackSizes = 0;
-  db->PackCRCsDefined = 0;
-  db->PackCRCs = 0;
-  db->NumFolders = 0;
-  db->Folders = 0;
-  db->NumFiles = 0;
-  db->Files = 0;
+  p->PackSizes = 0;
+  p->PackCRCsDefined = 0;
+  p->PackCRCs = 0;
+  p->Folders = 0;
+  p->Files = 0;
+  p->NumPackStreams = 0;
+  p->NumFolders = 0;
+  p->NumFiles = 0;
 }
 
-void SzArchiveDatabaseFree(CArchiveDatabase *db, void (*freeFunc)(void *))
+void SzAr_Free(CSzAr *p, ISzAlloc *alloc)
 {
   UInt32 i;
-  for (i = 0; i < db->NumFolders; i++)
-    SzFolderFree(&db->Folders[i], freeFunc);
-  for (i = 0; i < db->NumFiles; i++)
-    SzFileFree(&db->Files[i], freeFunc);
-  freeFunc(db->PackSizes);
-  freeFunc(db->PackCRCsDefined);
-  freeFunc(db->PackCRCs);
-  freeFunc(db->Folders);
-  freeFunc(db->Files);
-  SzArchiveDatabaseInit(db);
+  if (p->Folders)
+    for (i = 0; i < p->NumFolders; i++)
+      SzFolder_Free(&p->Folders[i], alloc);
+  if (p->Files)
+    for (i = 0; i < p->NumFiles; i++)
+      SzFile_Free(&p->Files[i], alloc);
+  IAlloc_Free(alloc, p->PackSizes);
+  IAlloc_Free(alloc, p->PackCRCsDefined);
+  IAlloc_Free(alloc, p->PackCRCs);
+  IAlloc_Free(alloc, p->Folders);
+  IAlloc_Free(alloc, p->Files);
+  SzAr_Init(p);
 }

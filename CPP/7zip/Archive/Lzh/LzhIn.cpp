@@ -14,7 +14,9 @@ namespace NLzh {
  
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
 {
-  RINOK(ReadStream(m_Stream, data, size, &processedSize));
+  size_t realProcessedSize = size;
+  RINOK(ReadStream(m_Stream, data, &realProcessedSize));
+  processedSize = (UInt32)realProcessedSize;
   m_Position += processedSize;
   return S_OK;
 }

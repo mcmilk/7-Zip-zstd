@@ -63,7 +63,7 @@ public:
   
   void MovePos(UInt32 numBits)
   {
-    m_BitPos += numBits;
+    m_BitPos += (int)numBits;
     Normalize();
   }
 
@@ -76,8 +76,8 @@ public:
 
   UInt32 ReadBitsBig(int numBits)
   {
-    UInt32 numBits0 = numBits / 2;
-    UInt32 numBits1 = numBits - numBits0;
+    int numBits0 = numBits / 2;
+    int numBits1 = numBits - numBits0;
     UInt32 res = ReadBits(numBits0) << numBits1;
     return res + ReadBits(numBits1);
   }
@@ -128,7 +128,7 @@ class CDecoder :
 
   bool _wimMode;
 
-  UInt32 ReadBits(UInt32 numBits);
+  UInt32 ReadBits(int numBits);
   bool ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols);
   bool ReadTables();
   void ClearPrevLevels();

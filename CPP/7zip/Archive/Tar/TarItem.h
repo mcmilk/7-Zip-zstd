@@ -35,16 +35,18 @@ public:
   UInt32 DeviceMinor;
 
   bool IsDirectory() const 
-    {  
-      if (LinkFlag == NFileHeader::NLinkFlag::kDirectory)
+  {  
+    switch(LinkFlag)
+    {
+      case NFileHeader::NLinkFlag::kDirectory:
+      case NFileHeader::NLinkFlag::kDumpDir:
         return true;
-      if (LinkFlag == NFileHeader::NLinkFlag::kOldNormal || 
-          LinkFlag == NFileHeader::NLinkFlag::kNormal)
-      {
+      case NFileHeader::NLinkFlag::kOldNormal:
+      case NFileHeader::NLinkFlag::kNormal:
         return NItemName::HasTailSlash(Name, CP_OEMCP);
-      }
-      return false;
     }
+    return false;
+  }
 
   bool IsMagic() const 
   {  

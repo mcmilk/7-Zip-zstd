@@ -70,9 +70,9 @@ public:
   void SetPos(UInt32 bitPos)
   { 
     m_Pos = bitPos / 8;
-    m_BitPos = 8 - (bitPos & 7); 
+    m_BitPos = 8 - ((int)bitPos & 7); 
   }
-  void SetCurState(UInt32 bitPos, Byte curByte)
+  void SetCurState(int bitPos, Byte curByte)
   { 
     m_BitPos = 8 - bitPos; 
     m_CurByte = curByte; 
@@ -103,7 +103,7 @@ private:
   UInt32 m_CRCs[1 << kNumPassesMax];
   UInt32 m_NumCrcs;
 
-  int m_BlockIndex;
+  UInt32 m_BlockIndex;
 
   void WriteBits2(UInt32 value, UInt32 numBits);
   void WriteByte2(Byte b);
@@ -128,7 +128,7 @@ public:
   UInt64 m_PackSize;
 
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
-  HRes Create();
+  HRESULT Create();
   void FinishStream(bool needLeave);
   DWORD ThreadFunc();
   #endif
@@ -189,7 +189,7 @@ public:
   void WriteCRC(UInt32 v);
 
   #ifdef COMPRESS_BZIP2_MT
-  HRes Create();
+  HRESULT Create();
   void Free();
   #endif
 

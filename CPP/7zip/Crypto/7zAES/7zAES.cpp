@@ -7,8 +7,12 @@
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
 #include "../AES/MyAES.h"
-#include "../Hash/Sha256.h"
 #include "7zAES.h"
+
+extern "C" 
+{ 
+#include "../../../../C/Sha256.h"
+}
 
 #ifndef EXTRACT_ONLY
 #include "../Hash/RandGen.h"
@@ -43,19 +47,20 @@ void CKeyInfo::CalculateDigest()
   }
   else
   {
-    NCrypto::NSha256::CContext sha;
+    CSha256 sha;
+    Sha256_Init(&sha);
     const UInt64 numRounds = UInt64(1) << (NumCyclesPower);
     Byte temp[8] = { 0,0,0,0,0,0,0,0 };
     for (UInt64 round = 0; round < numRounds; round++)
     {
-      sha.Update(Salt, SaltSize);
-      sha.Update(Password, Password.GetCapacity());
-      sha.Update(temp, 8);
+      Sha256_Update(&sha, Salt, (size_t)SaltSize);
+      Sha256_Update(&sha, Password, Password.GetCapacity());
+      Sha256_Update(&sha, temp, 8);
       for (int i = 0; i < 8; i++)
         if (++(temp[i]) != 0)
           break;
     }
-    sha.Final(Key);
+    Sha256_Final(&sha, Key);
   }
 }
 
@@ -129,7 +134,7 @@ STDMETHODIMP CEncoder::ResetSalt()
 STDMETHODIMP CEncoder::ResetInitVector()
 {
   _ivSize = 8;
-  g_RandomGenerator.Generate(_iv, _ivSize);
+  g_RandomGenerator.Generate(_iv, (unsigned)_ivSize);
   return S_OK;
 }
 
@@ -142,7 +147,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   UInt32 ivSize = _ivSize;
   
   // _key.NumCyclesPower = 0x3F;
-  _key.NumCyclesPower = 18;
+  _key.NumCyclesPower = 19;
 
   Byte firstByte = (Byte)(_key.NumCyclesPower | 
     (((_key.SaltSize == 0) ? 0 : 1) << 7) |
@@ -156,11 +161,11 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   RINOK(outStream->Write(&secondByte, 1, NULL));
   if (_key.SaltSize > 0)
   {
-    RINOK(WriteStream(outStream, _key.Salt, _key.SaltSize, NULL));
+    RINOK(WriteStream(outStream, _key.Salt, _key.SaltSize));
   }
   if (ivSize > 0)
   {
-    RINOK(WriteStream(outStream, _iv, ivSize, NULL));
+    RINOK(WriteStream(outStream, _iv, ivSize));
   }
   return S_OK;
 }
@@ -208,8 +213,8 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
-  _key.Password.SetCapacity(size);
-  memcpy(_key.Password, data, size);
+  _key.Password.SetCapacity((size_t)size);
+  memcpy(_key.Password, data, (size_t)size);
   return S_OK;
 }
 

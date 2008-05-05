@@ -116,19 +116,14 @@ HRESULT CCabBlockInStream::PreRead(UInt32 &packSize, UInt32 &unpackSize)
 {
   CTempCabInBuffer2 inBuffer;
   inBuffer.Pos = 0;
-  UInt32 processedSizeLoc; 
-  RINOK(ReadStream(_stream, inBuffer.Buffer, kDataBlockHeaderSize, &processedSizeLoc))
-  if (processedSizeLoc != kDataBlockHeaderSize)
-    return S_FALSE;  // bad block
+  RINOK(ReadStream_FALSE(_stream, inBuffer.Buffer, kDataBlockHeaderSize))
 
   UInt32 checkSum = inBuffer.ReadUInt32();
   packSize = inBuffer.ReadUInt16();
   unpackSize = inBuffer.ReadUInt16();
   if (ReservedSize != 0)
   {
-    RINOK(ReadStream(_stream, _buffer, ReservedSize, &processedSizeLoc));
-    if(ReservedSize != processedSizeLoc)
-      return S_FALSE; // bad block;
+    RINOK(ReadStream_FALSE(_stream, _buffer, ReservedSize));
   }
   _pos = 0;
   CCheckSum2 checkSumCalc;
@@ -139,9 +134,7 @@ HRESULT CCabBlockInStream::PreRead(UInt32 &packSize, UInt32 &unpackSize)
     if (packSize < 2)
       return S_FALSE; // bad block;
     Byte sig[2];
-    RINOK(ReadStream(_stream, sig, 2, &processedSizeLoc));
-    if(processedSizeLoc != 2)
-      return S_FALSE;
+    RINOK(ReadStream_FALSE(_stream, sig, 2));
     if (sig[0] != 0x43 || sig[1] != 0x4B)
       return S_FALSE;
     packSize2 -= 2;
@@ -154,9 +147,10 @@ HRESULT CCabBlockInStream::PreRead(UInt32 &packSize, UInt32 &unpackSize)
   UInt32 curSize = packSize2;
   if (curSize != 0)
   {
-    RINOK(ReadStream(_stream, _buffer + _size, curSize, &processedSizeLoc));
-    checkSumCalc.Update(_buffer + _size, processedSizeLoc);
-    _size += processedSizeLoc;
+    size_t processedSizeLoc = curSize;
+    RINOK(ReadStream(_stream, _buffer + _size, &processedSizeLoc));
+    checkSumCalc.Update(_buffer + _size, (UInt32)processedSizeLoc);
+    _size += (UInt32)processedSizeLoc;
     if (processedSizeLoc != curSize)
       return S_FALSE;
   }

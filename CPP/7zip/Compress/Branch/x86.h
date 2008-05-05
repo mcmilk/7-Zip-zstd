@@ -6,7 +6,7 @@
 #include "BranchCoder.h"
 extern "C" 
 { 
-#include "../../../../C/Compress/Branch/BranchX86.h"
+#include "../../../../C/Bra.h"
 }
 
 struct CBranch86

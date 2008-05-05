@@ -86,13 +86,11 @@ class CCoder :
   UInt32 decode_c();
   UInt32 decode_p();
 
-public:
-  
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
+  HRESULT CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
+public:
+  MY_UNKNOWN_IMP
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,

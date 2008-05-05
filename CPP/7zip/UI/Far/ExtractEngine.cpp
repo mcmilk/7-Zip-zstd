@@ -101,13 +101,15 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     *answer = NOverwriteAnswer::kAutoRename;
     break;
   default:
-    throw 20413;
+    return E_FAIL;
   }
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, INT32 /* askExtractMode */, const UINT64 * /* position */)
 {
+  if(WasEscPressed())
+    return E_ABORT;
   m_CurrentFilePath = name;
   return S_OK;
 }

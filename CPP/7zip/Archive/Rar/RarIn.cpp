@@ -118,9 +118,7 @@ bool CInArchive::ReadBytesAndTestSize(void *data, UInt32 size)
       ((Byte *)data)[i] = bufData[m_CryptoPos++];
     return (i == size);
   }
-  UInt32 processedSize;
-  ReadStream(m_Stream, data, size, &processedSize);
-  return (processedSize == size);
+  return (ReadStream_FALSE(m_Stream, data, size) == S_OK);
 }
 
 void CInArchive::ReadBytesAndTestResult(void *data, UInt32 size)
@@ -131,10 +129,10 @@ void CInArchive::ReadBytesAndTestResult(void *data, UInt32 size)
 
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result = ReadStream(m_Stream, data, size, &realProcessedSize);
-  if(processedSize != NULL)
-    *processedSize = realProcessedSize;
+  size_t realProcessedSize = size;
+  HRESULT result = ReadStream(m_Stream, data, &realProcessedSize);
+  if (processedSize != NULL)
+    *processedSize = (UInt32)realProcessedSize;
   AddToSeekValue(realProcessedSize);
   return result;
 }
@@ -465,7 +463,9 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
         m_DecryptedData.SetCapacity(kDecryptedBufferSize);
       }
       RINOK(m_RarAES->Init());
-      RINOK(ReadStream(m_Stream, (Byte *)m_DecryptedData, kDecryptedBufferSize, &m_DecryptedDataSize));
+      size_t decryptedDataSizeT = kDecryptedBufferSize;
+      RINOK(ReadStream(m_Stream, (Byte *)m_DecryptedData, &decryptedDataSizeT));
+      m_DecryptedDataSize = (UInt32)decryptedDataSizeT;
       m_DecryptedDataSize = m_RarAES->Filter((Byte *)m_DecryptedData, m_DecryptedDataSize);
 
       m_CryptoMode = true;
@@ -527,11 +527,6 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
     FinishCryptoBlock();
     m_CryptoMode = false;
   }
-}
-
-void CInArchive::DirectGetBytes(void *data, UInt32 size)
-{  
-  ReadStream(m_Stream, data, size, NULL);
 }
 
 bool CInArchive::SeekInArchive(UInt64 position)

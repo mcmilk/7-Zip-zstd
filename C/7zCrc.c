@@ -1,4 +1,7 @@
-/* 7zCrc.c */
+/* 7zCrc.c -- CRC32 calculation
+2008-03-13
+Igor Pavlov
+Public domain */
 
 #include "7zCrc.h"
 

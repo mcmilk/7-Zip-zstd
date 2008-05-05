@@ -12,19 +12,14 @@
 namespace NArchive {
 namespace NIso {
  
-HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
-{
-  return ReadStream(_stream, data, size, &processedSize);
-}
-
 Byte CInArchive::ReadByte()
 {
   if (m_BufferPos >= BlockSize)
     m_BufferPos = 0;
   if (m_BufferPos == 0)
   {
-    UInt32 processedSize;
-    if (ReadBytes(m_Buffer, BlockSize, processedSize) != S_OK)
+    size_t processedSize = BlockSize;
+    if (ReadStream(_stream, m_Buffer, &processedSize) != S_OK)
       throw 1;
     if (processedSize != BlockSize)
       throw 1;
@@ -192,7 +187,10 @@ void CInArchive::ReadDirRecord2(CDirRecord &r, Byte len)
 
 void CInArchive::ReadDirRecord(CDirRecord &r)
 {
-  Byte len = ReadByte();
+  Byte len = ReadByte(); 
+  // Some CDs can have incorrect value len = 48 ('0') in VolumeDescriptor.
+  // But maybe we must use real "len" for other records.
+  len = 34;
   ReadDirRecord2(r, len);
 }
 

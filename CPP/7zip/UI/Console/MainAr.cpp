@@ -48,11 +48,7 @@ static const char *kMemoryExceptionMessage = "\n\nERROR: Can't allocate required
 static const char *kUnknownExceptionMessage = "\n\nUnknown Error\n";
 static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
-int 
-#ifdef _MSC_VER
-__cdecl 
-#endif
-main
+int MY_CDECL main
 (
 #ifndef _WIN32  
 int numArguments, const char *arguments[]

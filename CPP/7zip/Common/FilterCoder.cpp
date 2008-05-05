@@ -30,11 +30,8 @@ HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 siz
     if (size > remSize)
       size = (UInt32)remSize;
   }
-  UInt32 processedSize = 0;
-  RINOK(WriteStream(outStream, _buffer, size, &processedSize));
-  if (size != processedSize)
-    return E_FAIL;
-  _nowPos64 += processedSize;
+  RINOK(WriteStream(outStream, _buffer, size));
+  _nowPos64 += size;
   return S_OK;
 }
 
@@ -51,12 +48,12 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
 
   while(NeedMore())
   {
-    UInt32 processedSize;
+    size_t processedSize = kBufferSize - bufferPos;
     
     // Change it: It can be optimized using ReadPart
-    RINOK(ReadStream(inStream, _buffer + bufferPos, kBufferSize - bufferPos, &processedSize));
+    RINOK(ReadStream(inStream, _buffer + bufferPos, &processedSize));
     
-    UInt32 endPos = bufferPos + processedSize;
+    UInt32 endPos = bufferPos + (UInt32)processedSize;
 
     bufferPos = Filter->Filter(_buffer, endPos);
     if (bufferPos > endPos)
@@ -149,10 +146,7 @@ STDMETHODIMP CFilterCoder::Flush()
       if (Filter->Filter(_buffer, endPos) != endPos)
         return E_FAIL;
     }
-    UInt32 processedSize;
-    RINOK(WriteStream(_outStream, _buffer, _bufferPos, &processedSize));
-    if (_bufferPos != processedSize)
-      return E_FAIL;
+    RINOK(WriteStream(_outStream, _buffer, _bufferPos));
     _bufferPos = 0;
   }
   CMyComPtr<IOutStreamFlush> flush;
@@ -196,11 +190,9 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
       _buffer[i] = _buffer[i + _convertedPosEnd];
     _bufferPos = i;
     _convertedPosBegin = _convertedPosEnd = 0;
-    UInt32 processedSizeTemp;
-    UInt32 size0 = kBufferSize - _bufferPos;
-    // Optimize it:
-    RINOK(ReadStream(_inStream, _buffer + _bufferPos, size0, &processedSizeTemp));
-    _bufferPos = _bufferPos + processedSizeTemp;
+    size_t processedSizeTemp = kBufferSize - _bufferPos;
+    RINOK(ReadStream(_inStream, _buffer + _bufferPos, &processedSizeTemp));
+    _bufferPos = _bufferPos + (UInt32)processedSizeTemp;
     _convertedPosEnd = Filter->Filter(_buffer, _bufferPos);
     if (_convertedPosEnd == 0)
     {

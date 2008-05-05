@@ -19,9 +19,10 @@ MY_VERSION_INFO_DLL("7z Standalone Plugin", "7za")
 13  ICON  "../../Archive/Tar/tar.ico"
 14  ICON  "../../Archive/GZip/gz.ico"
 15  ICON  "../../Archive/Wim/wim.ico"
+16  ICON  "../../Archive/Lzma/lzma.ico"
 
 
 STRINGTABLE  
 BEGIN
-  100 "7z:0 zip:1 bz2:2 bzip2:2 tbz2:2 tbz:2 rar:3 arj:4 z:5 taz:5 lzh:6 lha:6 cab:7 iso:8 split:9 rpm:10 deb:11 cpio:12 tar:13 gz:14 gzip:14 tgz:14 tpz:14 wim:15 swm:15"
+  100 "7z:0 zip:1 bz2:2 bzip2:2 tbz2:2 tbz:2 rar:3 arj:4 z:5 taz:5 lzh:6 lha:6 cab:7 iso:8 split:9 rpm:10 deb:11 cpio:12 tar:13 gz:14 gzip:14 tgz:14 tpz:14 wim:15 swm:15 lzma:16"
 END

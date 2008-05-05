@@ -80,14 +80,10 @@ COMPRESS_OBJS = \
   $O\CodecExports.obj \
 
 BRANCH_OPT_OBJS = \
-  $O\BranchCoder.obj \
   $O\x86.obj \
   $O\x86_2.obj \
-  $O\ARM.obj \
-  $O\ARMThumb.obj \
-  $O\IA64.obj \
-  $O\PPC.obj \
-  $O\SPARC.obj \
+  $O\BranchCoder.obj \
+  $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\BCJRegister.obj \
   $O\BCJ2Register.obj \
@@ -135,26 +131,19 @@ AES_OPT_OBJS = \
 CRYPTO_HASH_OBJS = \
   $O\RandGen.obj \
   $O\Sha1.obj \
-  $O\Sha256.obj \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Bra.obj \
+  $O\Bra86.obj \
+  $O\BraIA64.obj \
+  $O\LzmaDec.obj \
+  $O\LzmaEnc.obj \
   $O\Threads.obj \
-
-C_LZ_OBJS = \
-  $O\MatchFinder.obj \
-  $O\MatchFinderMt.obj \
-
-C_BRANCH_OBJS = \
-  $O\BranchARM.obj \
-  $O\BranchARMThumb.obj \
-  $O\BranchIA64.obj \
-  $O\BranchPPC.obj \
-  $O\BranchSPARC.obj \
-  $O\BranchX86.obj \
-
-C_CRYPTO = \
+  $O\LzFind.obj \
+  $O\LzFindMt.obj \
   $O\Aes.obj \
+  $O\Sha256.obj \
 
 !include "../../Crc2.mak"
 
@@ -178,13 +167,9 @@ OBJS = \
   $(LZMA_OPT_OBJS) \
   $(PPMD_OPT_OBJS) \
   $(C_OBJS) \
-  $(C_LZ_OBJS) \
-  $(C_BRANCH_OBJS) \
-  $O\RangeCoderBit.obj \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
   $(CRYPTO_HASH_OBJS) \
-  $(C_CRYPTO) \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -226,9 +211,6 @@ $(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 $(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
 	$(COMPL_O2)
 
-$O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
-	$(COMPL)
-
 $(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
 	$(COMPL_O2)
 $(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
@@ -237,12 +219,6 @@ $(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
 	$(COMPL_O2)
 
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O2)
-$(C_LZ_OBJS): ../../../../C/Compress/Lz/$(*B).c
-	$(COMPL_O2)
-$(C_CRYPTO): ../../../../C/Crypto/$(*B).c
 	$(COMPL_O2)
 
 !include "../../Crc.mak"

@@ -66,138 +66,179 @@ static bool IsAsciiString(const UString &s)
 catch(const CSystemException &e) { return e.ErrorCode; } \
 catch(...) { return E_OUTOFMEMORY; }
 
+static HRESULT GetTime(IArchiveUpdateCallback *callback, int index, PROPID propID, FILETIME &filetime)
+{
+  filetime.dwHighDateTime = filetime.dwLowDateTime = 0;
+  NCOM::CPropVariant prop;
+  RINOK(callback->GetProperty(index, propID, &prop));
+  if (prop.vt == VT_FILETIME)
+    filetime = prop.filetime;
+  else if (prop.vt != VT_EMPTY)
+    return E_INVALIDARG;
+  return S_OK;
+}
+
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
-    IArchiveUpdateCallback *updateCallback)
+    IArchiveUpdateCallback *callback)
 {
   COM_TRY_BEGIN2
   CObjectVector<CUpdateItem> updateItems;
   for(UInt32 i = 0; i < numItems; i++)
   {
-    CUpdateItem updateItem;
+    CUpdateItem ui;
     Int32 newData;
     Int32 newProperties;
     UInt32 indexInArchive;
-    if (!updateCallback)
+    if (!callback)
       return E_FAIL;
-    RINOK(updateCallback->GetUpdateItemInfo(i,
+    RINOK(callback->GetUpdateItemInfo(i,
         &newData, // 1 - compress 0 - copy
         &newProperties,
         &indexInArchive));
-    updateItem.NewProperties = IntToBool(newProperties);
-    updateItem.NewData = IntToBool(newData);
-    updateItem.IndexInArchive = indexInArchive;
-    updateItem.IndexInClient = i;
+    ui.NewProperties = IntToBool(newProperties);
+    ui.NewData = IntToBool(newData);
+    ui.IndexInArchive = indexInArchive;
+    ui.IndexInClient = i;
     // bool existInArchive = (indexInArchive != UInt32(-1));
     if (IntToBool(newProperties))
     {
-      FILETIME utcFileTime;
       UString name;
       bool isDirectoryStatusDefined;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
-          updateItem.Attributes = 0;
-        else if (propVariant.vt != VT_UI4)
+        NCOM::CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidAttributes, &prop));
+        if (prop.vt == VT_EMPTY)
+          ui.Attributes = 0;
+        else if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         else
-          updateItem.Attributes = propVariant.ulVal;
+          ui.Attributes = prop.ulVal;
       }
+
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &propVariant));
-        if (propVariant.vt != VT_FILETIME)
-          return E_INVALIDARG;
-        utcFileTime = propVariant.filetime;
-      }
-      {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidPath, &prop));
+        if (prop.vt == VT_EMPTY)
           name.Empty();
-        else if (propVariant.vt != VT_BSTR)
+        else if (prop.vt != VT_BSTR)
           return E_INVALIDARG;
         else
-          name = propVariant.bstrVal;
+          name = prop.bstrVal;
       }
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidIsFolder, &prop));
+        if (prop.vt == VT_EMPTY)
           isDirectoryStatusDefined = false;
-        else if (propVariant.vt != VT_BOOL)
+        else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
         {
-          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          ui.IsDirectory = (prop.boolVal != VARIANT_FALSE);
           isDirectoryStatusDefined = true;
         }
       }
-      FILETIME localFileTime;
-      if(!FileTimeToLocalFileTime(&utcFileTime, &localFileTime))
-        return E_INVALIDARG;
-      if(!FileTimeToDosTime(localFileTime, updateItem.Time))
+
       {
-        // return E_INVALIDARG;
+        CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidTimeType, &prop));
+        if (prop.vt == VT_UI4)
+          ui.NtfsTimeIsDefined = (prop.ulVal == NFileTimeType::kWindows);
+        else
+          ui.NtfsTimeIsDefined = m_WriteNtfsTimeExtra;
+      }
+      RINOK(GetTime(callback, i, kpidLastWriteTime, ui.NtfsMTime));
+      RINOK(GetTime(callback, i, kpidLastAccessTime, ui.NtfsATime));
+      RINOK(GetTime(callback, i, kpidCreationTime, ui.NtfsCTime));
+
+      {
+        FILETIME localFileTime = { 0, 0 };
+        if (ui.NtfsMTime.dwHighDateTime != 0 ||
+            ui.NtfsMTime.dwLowDateTime != 0)
+          if (!FileTimeToLocalFileTime(&ui.NtfsMTime, &localFileTime))
+            return E_INVALIDARG;
+        FileTimeToDosTime(localFileTime, ui.Time);
       }
 
       if (!isDirectoryStatusDefined)
-        updateItem.IsDirectory = ((updateItem.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+        ui.IsDirectory = ((ui.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 
       name = NItemName::MakeLegalName(name);
-      bool needSlash = updateItem.IsDirectory;
+      bool needSlash = ui.IsDirectory;
       const wchar_t kSlash = L'/';
       if (!name.IsEmpty())
       {
         if (name[name.Length() - 1] == kSlash)
         {
-          if (!updateItem.IsDirectory)
+          if (!ui.IsDirectory)
             return E_INVALIDARG;
           needSlash = false;
         }
       }
       if (needSlash)
         name += kSlash;
-      updateItem.Name = UnicodeStringToMultiByte(name, CP_OEMCP);
-      if (updateItem.Name.Length() > 0xFFFF)
+
+      bool tryUtf8 = true;
+      if (m_ForseLocal || !m_ForseUtf8)
+      {
+        bool defaultCharWasUsed;
+        ui.Name = UnicodeStringToMultiByte(name, CP_OEMCP, '_', defaultCharWasUsed);
+        tryUtf8 = (!m_ForseLocal && defaultCharWasUsed);
+      }
+
+      if (tryUtf8)
+      {
+        bool needUtf = false;
+        for (int i = 0; i < name.Length(); i++)
+          if ((unsigned)name[i] >= 0x80)
+          {
+            needUtf = true;
+            break;
+          }
+        ui.IsUtf8 = needUtf;
+        if (!ConvertUnicodeToUTF8(name, ui.Name))
+          return E_INVALIDARG;
+      }
+
+      if (ui.Name.Length() > 0xFFFF)
         return E_INVALIDARG;
 
-      updateItem.IndexInClient = i;
+      ui.IndexInClient = i;
       /*
       if(existInArchive)
       {
         const CItemEx &itemInfo = m_Items[indexInArchive];
-        // updateItem.Commented = itemInfo.IsCommented();
-        updateItem.Commented = false;
-        if(updateItem.Commented)
+        // ui.Commented = itemInfo.IsCommented();
+        ui.Commented = false;
+        if(ui.Commented)
         {
-          updateItem.CommentRange.Position = itemInfo.GetCommentPosition();
-          updateItem.CommentRange.Size  = itemInfo.CommentSize;
+          ui.CommentRange.Position = itemInfo.GetCommentPosition();
+          ui.CommentRange.Size  = itemInfo.CommentSize;
         }
       }
       else
-        updateItem.Commented = false;
+        ui.Commented = false;
       */
     }
     if (IntToBool(newData))
     {
       UInt64 size;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
-        if (propVariant.vt != VT_UI8)
+        NCOM::CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidSize, &prop));
+        if (prop.vt != VT_UI8)
           return E_INVALIDARG;
-        size = propVariant.uhVal.QuadPart;
+        size = prop.uhVal.QuadPart;
       }
-      updateItem.Size = size;
+      ui.Size = size;
     }
-    updateItems.Add(updateItem);
+    updateItems.Add(ui);
   }
 
   CMyComPtr<ICryptoGetTextPassword2> getTextPassword;
   if (!getTextPassword)
   {
-    CMyComPtr<IArchiveUpdateCallback> udateCallBack2(updateCallback);
+    CMyComPtr<IArchiveUpdateCallback> udateCallBack2(callback);
     udateCallBack2.QueryInterface(IID_ICryptoGetTextPassword2, &getTextPassword);
   }
   CCompressionMethodMode options;
@@ -281,7 +322,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   return Update(
       EXTERNAL_CODECS_VARS
       m_Items, updateItems, outStream, 
-      m_ArchiveIsOpen ? &m_Archive : NULL, &options, updateCallback);
+      m_ArchiveIsOpen ? &m_Archive : NULL, &options, callback);
   COM_TRY_END2
 }
 
@@ -405,6 +446,22 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       UInt32 num = kDeflateAlgoX5;
       RINOK(ParsePropValue(name.Mid(1), prop, num));
       m_Algo = num;
+    }
+    else if (name.CompareNoCase(L"TC") == 0)
+      return SetBoolProperty(m_WriteNtfsTimeExtra, prop);
+    else if (name.CompareNoCase(L"CL") == 0)
+    {
+      RINOK(SetBoolProperty(m_ForseLocal, prop));
+      if (m_ForseLocal)
+        m_ForseUtf8 = false;
+      return S_OK;
+    }
+    else if (name.CompareNoCase(L"CU") == 0)
+    {
+      RINOK(SetBoolProperty(m_ForseUtf8, prop));
+      if (m_ForseUtf8)
+        m_ForseLocal = false;
+      return S_OK;
     }
     else 
       return E_INVALIDARG;

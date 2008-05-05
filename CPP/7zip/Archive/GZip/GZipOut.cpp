@@ -12,11 +12,7 @@ namespace NGZip {
 
 HRESULT COutArchive::WriteBytes(const void *buffer, UInt32 size)
 {
-  UInt32 processedSize;
-  RINOK(WriteStream(m_Stream, buffer, size, &processedSize));
-  if(processedSize != size)
-    return E_FAIL;
-  return S_OK;
+  return WriteStream(m_Stream, buffer, size);
 }
 
 HRESULT COutArchive::WriteByte(Byte value)

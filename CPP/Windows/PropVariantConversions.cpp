@@ -66,6 +66,11 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
     {
       *s++ = ':';
       UIntToStringSpec(st.wSecond, s, 2);
+      /*
+      s += 2;
+      *s++ = '.';
+      UIntToStringSpec(st.wMilliseconds, s, 3);
+      */
     }
   }
   /*

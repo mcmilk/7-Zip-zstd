@@ -14,8 +14,7 @@
 using namespace NWindows;
 using namespace NTime;
 
-static int MyCompareTime(NFileTimeType::EEnum fileTimeType, 
-    const FILETIME &time1, const FILETIME &time2)
+static int MyCompareTime(NFileTimeType::EEnum fileTimeType, const FILETIME &time1, const FILETIME &time2)
 {
   switch(fileTimeType)
   {
@@ -24,16 +23,8 @@ static int MyCompareTime(NFileTimeType::EEnum fileTimeType,
     case NFileTimeType::kUnix:
       {
         UInt32 unixTime1, unixTime2;
-        if (!FileTimeToUnixTime(time1, unixTime1))
-        {
-          unixTime1 = 0;
-          // throw 4191614;
-        }
-        if (!FileTimeToUnixTime(time2, unixTime2))
-        {
-          unixTime2 = 0;
-          // throw 4191615;
-        }
+        FileTimeToUnixTime(time1, unixTime1);
+        FileTimeToUnixTime(time2, unixTime2);
         return MyCompare(unixTime1, unixTime2);
       }
     case NFileTimeType::kDOS:
@@ -41,12 +32,6 @@ static int MyCompareTime(NFileTimeType::EEnum fileTimeType,
         UInt32 dosTime1, dosTime2;
         FileTimeToDosTime(time1, dosTime1);
         FileTimeToDosTime(time2, dosTime2);
-        /*
-        if (!FileTimeToDosTime(time1, dosTime1))
-          throw 4191616;
-        if (!FileTimeToDosTime(time2, dosTime2))
-          throw 4191617;
-        */
         return MyCompare(dosTime1, dosTime2);
       }
   }
@@ -125,7 +110,8 @@ void GetUpdatePairInfoList(
         throw 1082022;; // TTString(kNotCensoredCollisionMessaged + dirItem.Name);
       pair.DirItemIndex = dirItemIndex2;
       pair.ArchiveItemIndex = archiveItemIndex2;
-      switch (MyCompareTime(fileTimeType, dirItem.LastWriteTime, archiveItem.LastWriteTime))
+      switch (MyCompareTime(archiveItem.FileTimeType != - 1 ? 
+          (NFileTimeType::EEnum)archiveItem.FileTimeType : fileTimeType, dirItem.LastWriteTime, archiveItem.LastWriteTime))
       {
         case -1:
           pair.State = NUpdateArchive::NPairState::kNewInArchive;

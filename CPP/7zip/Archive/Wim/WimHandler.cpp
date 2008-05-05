@@ -76,7 +76,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         UInt16 volIndex = m_Xmls[0].VolIndex;
         if (volIndex < m_Volumes.Size())
-          prop = m_Volumes[volIndex].Header.PartNumber;
+          prop = (UInt32)m_Volumes[volIndex].Header.PartNumber;
       }
       break;
     case kpidNumVolumes: if (m_Volumes.Size() > 0) prop = (UInt32)(m_Volumes.Size() - 1);
@@ -413,7 +413,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       currentItemUnPacked = data.GetCapacity();
       if (realOutStream)
       {
-        RINOK(WriteStream(realOutStream, (const Byte *)data, (UInt32)data.GetCapacity(), NULL));
+        RINOK(WriteStream(realOutStream, (const Byte *)data, data.GetCapacity()));
         realOutStream.Release();
       }
       RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));

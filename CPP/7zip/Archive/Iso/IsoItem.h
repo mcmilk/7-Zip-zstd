@@ -36,9 +36,9 @@ struct CRecordingDateTime
     if (!SystemTimeToFileTime(&st, &ft))
       return false;
     UInt64 value =  (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
-    value += (UInt64)((Int64)(int)GmtOffset * 15 * 60);
+    value -= (UInt64)((Int64)GmtOffset * 15 * 60 * 10000000);
     ft.dwLowDateTime = (DWORD)value;
-    ft.dwHighDateTime = DWORD(value >> 32);
+    ft.dwHighDateTime = (DWORD)(value >> 32);
     return true;
   }
 };

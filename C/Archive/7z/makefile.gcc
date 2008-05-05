@@ -2,9 +2,9 @@ PROG = 7zDec
 CXX = g++
 LIB = 
 RM = rm -f
-CFLAGS = -c -O2 -Wall -D_LZMA_IN_CB
+CFLAGS = -c -O2 -Wall
 
-OBJS = 7zAlloc.o 7zBuffer.o 7zCrc.o 7zDecode.o 7zExtract.o 7zHeader.o 7zIn.o 7zItem.o 7zMain.o 7zMethodID.o LzmaDecode.o BranchX86.o BranchX86_2.o
+OBJS = 7zAlloc.o 7zBuf.o 7zCrc.o 7zDecode.o 7zExtract.o 7zHeader.o 7zIn.o 7zItem.o 7zMain.o LzmaDec.o Bra86.o Bcj2.o
 
 all: $(PROG)
 
@@ -14,8 +14,8 @@ $(PROG): $(OBJS)
 7zAlloc.o: 7zAlloc.c
 	$(CXX) $(CFLAGS) 7zAlloc.c
 
-7zBuffer.o: 7zBuffer.c
-	$(CXX) $(CFLAGS) 7zBuffer.c
+7zBuf.o: ../../7zBuf.c
+	$(CXX) $(CFLAGS) ../../7zBuf.c
 
 7zCrc.o: ../../7zCrc.c
 	$(CXX) $(CFLAGS) ../../7zCrc.c
@@ -38,17 +38,14 @@ $(PROG): $(OBJS)
 7zMain.o: 7zMain.c
 	$(CXX) $(CFLAGS) 7zMain.c
 
-7zMethodID.o: 7zMethodID.c
-	$(CXX) $(CFLAGS) 7zMethodID.c
+LzmaDec.o: ../../LzmaDec.c
+	$(CXX) $(CFLAGS) ../../LzmaDec.c
 
-LzmaDecode.o: ../../Compress/Lzma/LzmaDecode.c
-	$(CXX) $(CFLAGS) ../../Compress/Lzma/LzmaDecode.c
+Bra86.o: ../../Bra86.c
+	$(CXX) $(CFLAGS) ../../Bra86.c
 
-BranchX86.o: ../../Compress/Branch/BranchX86.c
-	$(CXX) $(CFLAGS) ../../Compress/Branch/BranchX86.c
-
-BranchX86_2.o: ../../Compress/Branch/BranchX86_2.c
-	$(CXX) $(CFLAGS) ../../Compress/Branch/BranchX86_2.c
+Bcj2.o: ../../Bcj2.c
+	$(CXX) $(CFLAGS) ../../Bcj2.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)

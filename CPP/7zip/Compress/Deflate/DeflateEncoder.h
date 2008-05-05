@@ -12,7 +12,7 @@
 
 extern "C"
 {
-  #include "../../../../C/Compress/Lz/MatchFinder.h"
+  #include "../../../../C/LzFind.h"
 }
 
 namespace NCompress {
@@ -132,7 +132,7 @@ public:
   void WriteBits(UInt32 value, int numBits);
   void LevelTableCode(const Byte *levels, int numLevels, const Byte *lens, const UInt32 *codes);
 
-  void MakeTables();
+  void MakeTables(unsigned maxHuffLen);
   UInt32 GetLzBlockPrice() const;
   void TryBlock();
   UInt32 TryDynBlock(int tableIndex, UInt32 numPasses);

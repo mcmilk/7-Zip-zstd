@@ -22,6 +22,7 @@ private:
   CMyComPtr<IInStream> m_InStream;
   UInt64 m_Pos;
   UInt64 m_Size;
+  Byte _sig[4];
 };
 
 }}

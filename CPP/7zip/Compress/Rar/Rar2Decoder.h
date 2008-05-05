@@ -147,6 +147,10 @@ class CDecoder :
   bool DecodeMm(UInt32 pos);
   bool DecodeLz(Int32 pos);
 
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
+      ICompressProgressInfo *progress);
+
 public:
   CDecoder();
 
@@ -157,10 +161,6 @@ public:
     m_OutWindowStream.ReleaseStream();
     m_InBitStream.ReleaseStream();
   }
-
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,

@@ -10,7 +10,7 @@
 
 extern "C" 
 { 
-#include "../../../../C/Crypto/Aes.h"
+#include "../../../../C/Aes.h"
 }
 
 namespace NCrypto {

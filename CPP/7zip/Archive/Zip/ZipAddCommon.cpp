@@ -43,7 +43,7 @@ static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
       resultCRC = CRC_GET_DIGEST(crc);
       return S_OK;
     }
-    crc = CrcUpdate(crc, buffer, realProcessedSize);
+    crc = CrcUpdate(crc, buffer, (size_t)realProcessedSize);
   }
 }
 

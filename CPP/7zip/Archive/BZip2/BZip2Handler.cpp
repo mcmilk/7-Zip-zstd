@@ -56,10 +56,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
     const int kSignatureSize = 3;
     Byte buffer[kSignatureSize];
-    UInt32 processedSize;
-    RINOK(ReadStream(stream, buffer, kSignatureSize, &processedSize));
-    if (processedSize != kSignatureSize)
-      return S_FALSE;
+    RINOK(ReadStream_FALSE(stream, buffer, kSignatureSize));
     if (buffer[0] != 'B' || buffer[1] != 'Z' || buffer[2] != 'h')
       return S_FALSE;
 
@@ -166,9 +163,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     const int kSignatureSize = 3;
     Byte buffer[kSignatureSize];
-    UInt32 processedSize;
-    RINOK(ReadStream(_stream, buffer, kSignatureSize, &processedSize));
-    if (processedSize < kSignatureSize)
+    size_t processedSize = kSignatureSize;
+    RINOK(ReadStream(_stream, buffer, &processedSize));
+    if (processedSize != kSignatureSize)
     {
       if (firstItem)
         return E_FAIL;

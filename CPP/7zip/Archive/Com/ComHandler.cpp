@@ -217,16 +217,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           size = (UInt32)rem;
 
         RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-        UInt32 realProcessedSize;
-        RINOK(ReadStream(_stream, sect, size, &realProcessedSize));
+        size_t realProcessedSize = size;
+        RINOK(ReadStream(_stream, sect, &realProcessedSize));
         if (realProcessedSize != size)
           break;
 
         if (realOutStream)
         {
-          RINOK(WriteStream(realOutStream, sect, size, &realProcessedSize));
-          if (realProcessedSize != size)
-            break;
+          RINOK(WriteStream(realOutStream, sect, size));
         }
         pos += size;
       }

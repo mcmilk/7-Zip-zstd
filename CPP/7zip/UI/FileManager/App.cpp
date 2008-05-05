@@ -443,6 +443,12 @@ static void ReducePathToRealFileSystemPath(UString &path)
       path = path.Left(pos + 1);
       if (path.Length() == 3 && path[1] == L':')
         break;
+      if (path.Length() > 2 && path[0] == '\\' && path[1] == '\\')
+      {
+        int nextPos = path.Find('\\', 2); // pos after \\COMPNAME
+        if (nextPos > 0 && path.Find('\\', nextPos + 1) == pos)
+          break;
+      }
       path = path.Left(pos);
     }
   }
@@ -524,6 +530,12 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
     destPath = copyDialog.Value;
 
+    if (destPath.IsEmpty())
+    {
+      srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+      return;
+    }
+
     if (!IsPathAbsolute(destPath))
     {
       if (!srcPanel.IsFSFolder())
@@ -533,6 +545,13 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       }
       destPath = srcPanel._currentFolderPrefix + destPath;
     }
+
+    if (destPath.Length() > 0 && destPath[0] == '\\')
+      if (destPath.Length() == 1 || destPath[1] != '\\')
+      {
+        srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+        return;
+      }
 
     if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1) || 
         IsThereFolderOfPath(destPath))

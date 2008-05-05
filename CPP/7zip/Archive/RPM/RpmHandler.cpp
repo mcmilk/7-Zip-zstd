@@ -5,20 +5,15 @@
 #include "RpmHandler.h"
 #include "RpmIn.h"
 
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-#include "Common/NewHandler.h"
 #include "Common/ComTry.h"
+#include "Common/MyString.h"
 
 #include "Windows/PropVariant.h"
-#include "Windows/Defs.h"
 
-#include "../../Common/StreamObjects.h"
 #include "../../Common/ProgressUtils.h"
-#include "../../Common/LimitedStreams.h"
+#include "../../Common/StreamUtils.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
-#include "../Common/ItemNameUtils.h"
 
 using namespace NWindows;
 
@@ -44,10 +39,14 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     if(OpenArchive(inStream) != S_OK)
       return S_FALSE;
     RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Pos));
-    m_InStream = inStream;
     UInt64 endPosition;
     RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPosition));
     m_Size = endPosition - m_Pos;
+    
+    RINOK(inStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
+    RINOK(ReadStream_FALSE(inStream, _sig, sizeof(_sig) / sizeof(_sig[0])));
+
+    m_InStream = inStream;
     return S_OK;
   }
   catch(...)
@@ -78,6 +77,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
     case kpidPackedSize:
       prop = m_Size;
       break;
+    case kpidExtension:
+    {
+      wchar_t s[32];
+      MyStringCopy(s, L"cpio.");
+      const wchar_t *ext;
+      if (_sig[0] == 0x1F && _sig[1] == 0x8B)
+        ext = L"gz";
+      else if (_sig[0] == 'B' && _sig[1] == 'Z' && _sig[2] == 'h')
+        ext = L"bz2";
+      else
+        ext = L"lzma";
+      MyStringCopy(s + MyStringLen(s), ext);
+      prop = s;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;

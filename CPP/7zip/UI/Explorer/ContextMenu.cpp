@@ -352,7 +352,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   {
     CCommandMapItem commandMapItem;
     if(!popupMenu.CreatePopup())
-      throw 210503;
+      return E_FAIL;
     menuDestroyer.Attach(popupMenu);
     commandMapItem.CommandInternalID = kCommandNULL;
     commandMapItem.Verb = kMainVerb;

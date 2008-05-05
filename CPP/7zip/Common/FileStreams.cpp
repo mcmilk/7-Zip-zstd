@@ -18,7 +18,7 @@ static inline HRESULT ConvertBoolToHRESULT(bool result)
   DWORD lastError = ::GetLastError();
   if (lastError == 0)
     return E_FAIL;
-  return lastError;
+  return HRESULT_FROM_WIN32(lastError);
   #else
   return result ? S_OK: E_FAIL;
   #endif

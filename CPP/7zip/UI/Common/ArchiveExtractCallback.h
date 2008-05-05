@@ -95,7 +95,7 @@ private:
 public:
   CArchiveExtractCallback():
       WriteModified(true),
-      WriteCreated(false),
+      WriteCreated(true),
       WriteAccessed(false),
       _multiArchives(false)
   {

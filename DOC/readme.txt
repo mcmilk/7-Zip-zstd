@@ -1,4 +1,4 @@
-7-Zip 4.57 Sources
+7-Zip 4.58 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP/Vista. 
@@ -63,6 +63,10 @@ Tools / Options / Directories
 To compile 7-Zip for AMD64 and IA64 you need:
   Windows Server 2003 SP1 Platform SDK from microsoft.com
 
+Also you need Microsoft Macro Assembler:
+  - ml.exe for x86 
+  - ml64.exe for AMD64
+You can use ml.exe from Windows SDK for Windows Vista or some other version.
 
 
 Compiling under Unix/Linux

@@ -1,7 +1,10 @@
-/* Sort.h */
+/* Sort.h -- Sort functions
+2008-03-19
+Igor Pavlov
+Public domain */
 
-#ifndef __7Z_Sort_H
-#define __7Z_Sort_H
+#ifndef __7Z_SORT_H
+#define __7Z_SORT_H
 
 #include "Types.h"
 

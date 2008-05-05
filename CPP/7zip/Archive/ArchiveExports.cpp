@@ -44,9 +44,9 @@ int FindFormatCalssId(const GUID *clsID)
   if (cls != CLSID_CArchiveHandler)
     return -1;
   Byte id = CLS_ARC_ID_ITEM(*clsID);
-  for (UInt32 i = 0; i < g_NumArcs; i++)
+  for (unsigned i = 0; i < g_NumArcs; i++)
     if (g_Arcs[i]->ClassId == id)
-      return i;
+      return (int)i;
   return -1;
 }
 

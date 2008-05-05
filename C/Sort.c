@@ -1,4 +1,7 @@
-/* Sort.c */
+/* Sort.c -- Sort functions
+2008-03-13
+Igor Pavlov
+Public domain */
 
 #include "Sort.h"
 

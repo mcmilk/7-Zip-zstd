@@ -5,7 +5,9 @@
 
 #include "../IStream.h"
 
-HRESULT ReadStream(ISequentialInStream *stream, void *data, UInt32 size, UInt32 *processedSize);
-HRESULT WriteStream(ISequentialOutStream *stream, const void *data, UInt32 size, UInt32 *processedSize);
+HRESULT ReadStream(ISequentialInStream *stream, void *data, size_t *size);
+HRESULT ReadStream_FALSE(ISequentialInStream *stream, void *data, size_t size);
+HRESULT ReadStream_FAIL(ISequentialInStream *stream, void *data, size_t size);
+HRESULT WriteStream(ISequentialOutStream *stream, const void *data, size_t size);
 
 #endif

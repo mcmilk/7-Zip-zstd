@@ -172,7 +172,8 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   WriteUInt32(isUnPack64 ? 0xFFFFFFFF: (UInt32)item.UnPackSize);
   WriteUInt16((UInt16)item.Name.Length());
   UInt16 zip64ExtraSize = (UInt16)((isUnPack64 ? 8: 0) +  (isPack64 ? 8: 0) + (isPosition64 ? 8: 0));
-  UInt16 centralExtraSize = (UInt16)(isZip64 ? (4 + zip64ExtraSize) : 0);
+  const UInt16 kNtfsExtraSize = 4 + 2 + 2 + (3 * 8);
+  UInt16 centralExtraSize = (UInt16)(isZip64 ? (4 + zip64ExtraSize) : 0) + (item.NtfsTimeIsDefined ? (4 + kNtfsExtraSize) : 0);
   centralExtraSize = (UInt16)(centralExtraSize + item.CentralExtra.GetSize());
   WriteUInt16(centralExtraSize); // test it;
   WriteUInt16((UInt16)item.Comment.GetCapacity());
@@ -191,6 +192,20 @@ void COutArchive::WriteCentralHeader(const CItem &item)
       WriteUInt64(item.PackSize);
     if(isPosition64)
       WriteUInt64(item.LocalHeaderPosition);
+  }
+  if (item.NtfsTimeIsDefined)
+  {
+    WriteUInt16(NFileHeader::NExtraID::kNTFS);
+    WriteUInt16(kNtfsExtraSize);
+    WriteUInt32(0); // reserved
+    WriteUInt16(NFileHeader::NNtfsExtra::kTagTime);
+    WriteUInt16(8 * 3);
+    WriteUInt32(item.NtfsMTime.dwLowDateTime);
+    WriteUInt32(item.NtfsMTime.dwHighDateTime);
+    WriteUInt32(item.NtfsATime.dwLowDateTime);
+    WriteUInt32(item.NtfsATime.dwHighDateTime);
+    WriteUInt32(item.NtfsCTime.dwLowDateTime);
+    WriteUInt32(item.NtfsCTime.dwHighDateTime);
   }
   WriteExtra(item.CentralExtra);
   if (item.Comment.GetCapacity() > 0)

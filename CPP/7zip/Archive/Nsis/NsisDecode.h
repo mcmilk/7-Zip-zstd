@@ -39,7 +39,7 @@ public:
   HRESULT Init(
       DECL_EXTERNAL_CODECS_LOC_VARS
       IInStream *inStream, NMethodType::EEnum method, bool thereIsFilterFlag, bool &useFilter);
-  HRESULT Read(void *data, UInt32 size, UInt32 *processedSize);
+  HRESULT Read(void *data, size_t *processedSize);
 };
 
 }}

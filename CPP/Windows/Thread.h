@@ -19,10 +19,10 @@ public:
   CThread() { Thread_Construct(&thread); }
   ~CThread() { Close(); }
   bool IsCreated() { return Thread_WasCreated(&thread) != 0; }
-  HRes Close()  { return Thread_Close(&thread); }
-  HRes Create(THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE *startAddress)(void *), LPVOID parameter)
+  WRes Close()  { return Thread_Close(&thread); }
+  WRes Create(THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE *startAddress)(void *), LPVOID parameter)
     { return Thread_Create(&thread, startAddress, parameter); }
-  HRes Wait() { return Thread_Wait(&thread); }
+  WRes Wait() { return Thread_Wait(&thread); }
   
   #ifdef _WIN32
   DWORD Resume() { return ::ResumeThread(thread.handle); }

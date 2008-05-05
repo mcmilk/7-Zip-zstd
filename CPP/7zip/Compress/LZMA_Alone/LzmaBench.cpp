@@ -438,17 +438,14 @@ static UInt64 MyMultDiv64(UInt64 value, UInt64 elapsedTime, UInt64 freq)
 UInt64 GetCompressRating(UInt32 dictionarySize, UInt64 elapsedTime, UInt64 freq, UInt64 size)
 {
   UInt64 t = GetLogSize(dictionarySize) - (kBenchMinDicLogSize << kSubBits);
-  // UInt64 numCommandsForOne = 1000 + ((t * t * 7) >> (2 * kSubBits)); // AMD K8
-  UInt64 numCommandsForOne = 870 + ((t * t * 5) >> (2 * kSubBits)); // Intel Core2
-
+  UInt64 numCommandsForOne = 870 + ((t * t * 5) >> (2 * kSubBits));
   UInt64 numCommands = (UInt64)(size) * numCommandsForOne;
   return MyMultDiv64(numCommands, elapsedTime, freq);
 }
 
 UInt64 GetDecompressRating(UInt64 elapsedTime, UInt64 freq, UInt64 outSize, UInt64 inSize, UInt32 numIterations)
 {
-  // UInt64 numCommands = (inSize * 216 + outSize * 14) * numIterations; // AMD K8
-  UInt64 numCommands = (inSize * 220 + outSize * 8) * numIterations; // Intel Core2
+  UInt64 numCommands = (inSize * 200 + outSize * 4) * numIterations;
   return MyMultDiv64(numCommands, elapsedTime, freq);
 }
 
@@ -796,10 +793,9 @@ HRESULT LzmaBench(
     {
       for (UInt32 j = 0; j < numSubDecoderThreads; j++)
       {
-        size_t allocaSize = ((i * numSubDecoderThreads + j) * 16 * 21) & 0x7FF;
         HRESULT res = encoder.CreateDecoderThread(j, (i == 0 && j == 0)
             #ifdef USE_ALLOCA
-            , allocaSize
+            , ((i * numSubDecoderThreads + j) * 16 * 21) & 0x7FF
             #endif
             );
         RINOK(res);

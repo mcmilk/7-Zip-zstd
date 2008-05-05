@@ -208,14 +208,16 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
 
   RINOK(ReturnIfError(E_ABORT));
   RINOK(ReturnIfError(E_OUTOFMEMORY));
-  RINOK(ReturnIfError(S_FALSE));
 
   for (i = 0; i < _coders.Size(); i++)
   {
     HRESULT result = _coders[i].Result;
-    if (result != S_OK && result != E_FAIL)
+    if (result != S_OK && result != E_FAIL && result != S_FALSE)
       return result;
   }
+
+  RINOK(ReturnIfError(S_FALSE));
+
   for (i = 0; i < _coders.Size(); i++)
   {
     HRESULT result = _coders[i].Result;

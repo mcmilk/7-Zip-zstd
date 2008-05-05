@@ -112,8 +112,6 @@ public:
   
   void GetArchiveInfo(CInArchiveInfo &archiveInfo) const;
   
-  void DirectGetBytes(void *data, UInt32 size);
-  
   bool SeekInArchive(UInt64 position);
   ISequentialInStream *CreateLimitedStream(UInt64 position, UInt64 size);
 };

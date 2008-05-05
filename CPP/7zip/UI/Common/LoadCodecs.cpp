@@ -482,10 +482,10 @@ int CCodecs::FindFormatForArchiveType(const UString &arcType) const
 extern unsigned int g_NumCodecs;
 STDAPI CreateCoder2(bool encode, UInt32 index, const GUID *iid, void **outObject);
 STDAPI GetMethodProperty(UInt32 codecIndex, PROPID propID, PROPVARIANT *value);
-// STDAPI GetNumberOfMethods(UINT32 *numCodecs);
+// STDAPI GetNumberOfMethods(UInt32 *numCodecs);
 #endif
 
-STDMETHODIMP CCodecs::GetNumberOfMethods(UINT32 *numMethods)
+STDMETHODIMP CCodecs::GetNumberOfMethods(UInt32 *numMethods)
 {
   *numMethods = 
       #ifdef EXPORT_CODECS
@@ -495,7 +495,7 @@ STDMETHODIMP CCodecs::GetNumberOfMethods(UINT32 *numMethods)
   return S_OK;
 }
 
-STDMETHODIMP CCodecs::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CCodecs::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   #ifdef EXPORT_CODECS
   if (index < g_NumCodecs)
@@ -525,7 +525,7 @@ STDMETHODIMP CCodecs::GetProperty(UINT32 index, PROPID propID, PROPVARIANT *valu
   return Libs[ci.LibIndex].GetMethodProperty(ci.CodecIndex, propID, value);
 }
 
-STDMETHODIMP CCodecs::CreateDecoder(UINT32 index, const GUID *iid, void **coder)
+STDMETHODIMP CCodecs::CreateDecoder(UInt32 index, const GUID *iid, void **coder)
 {
   #ifdef EXPORT_CODECS
   if (index < g_NumCodecs)
@@ -541,7 +541,7 @@ STDMETHODIMP CCodecs::CreateDecoder(UINT32 index, const GUID *iid, void **coder)
   return S_OK;
 }
 
-STDMETHODIMP CCodecs::CreateEncoder(UINT32 index, const GUID *iid, void **coder)
+STDMETHODIMP CCodecs::CreateEncoder(UInt32 index, const GUID *iid, void **coder)
 {
   #ifdef EXPORT_CODECS
   if (index < g_NumCodecs)

@@ -10,7 +10,7 @@
 #define bYPos (ySize - marg - bYSize)
 
 #undef bXSize
-#define bXSize 72
+#define bXSize 80
 
 #define bXPos1 (xSize - marg - bXSize)
 #define bXPos2 (bXPos1 - 10 - bXSize)

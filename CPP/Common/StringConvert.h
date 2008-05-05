@@ -8,7 +8,9 @@
 #include "Types.h"
 
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage = CP_ACP);
+AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage, char defaultChar, bool &defaultCharWasUsed);
 AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage = CP_ACP);
+
 
 inline const wchar_t* GetUnicodeString(const wchar_t* unicodeString)
   { return unicodeString; }

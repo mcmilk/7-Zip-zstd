@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "MyWindows.h"
 #include "../Windows/FileIO.h"
 
 #include "ListFileUtils.h"

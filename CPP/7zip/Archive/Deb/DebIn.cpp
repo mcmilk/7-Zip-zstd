@@ -15,22 +15,12 @@ namespace NDeb {
 
 using namespace NHeader;
 
-HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
-{
-  RINOK(ReadStream(m_Stream, data, size, &processedSize));
-  m_Position += processedSize;
-  return S_OK;
-}
-
 HRESULT CInArchive::Open(IInStream *inStream)
 {
   RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
   char signature[kSignatureLen];
-  UInt32 processedSize;
-  RINOK(ReadStream(inStream, signature, kSignatureLen, &processedSize));
-  m_Position += processedSize;
-  if (processedSize != kSignatureLen)
-    return S_FALSE;
+  RINOK(ReadStream_FALSE(inStream, signature, kSignatureLen));
+  m_Position += kSignatureLen;
   if (memcmp(signature, kSignature, kSignatureLen) != 0)
     return S_FALSE;
   m_Stream = inStream;
@@ -100,10 +90,11 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   char header[NHeader::kHeaderSize];
   const char *cur = header;
 
-  UInt32 processedSize;
+  size_t processedSize = sizeof(header);
   item.HeaderPosition = m_Position;
-  RINOK(ReadBytes(header, sizeof(header), processedSize));
-  if (processedSize < sizeof(header))
+  RINOK(ReadStream(m_Stream, header, &processedSize));
+  m_Position += processedSize;
+  if (processedSize != sizeof(header))
     return S_OK;
   
   char tempString[kNameSize + 1];

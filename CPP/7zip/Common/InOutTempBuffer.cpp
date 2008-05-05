@@ -92,7 +92,7 @@ HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
   if (_currentPositionInBuffer < _bufferPosition)
   {
     UInt32 sizeToWrite = _bufferPosition - _currentPositionInBuffer;
-    RINOK(WriteStream(stream, _buffer + _currentPositionInBuffer, sizeToWrite, NULL));
+    RINOK(WriteStream(stream, _buffer + _currentPositionInBuffer, sizeToWrite));
     _currentPositionInBuffer += sizeToWrite;
   }
   if (!_tmpFileCreated)
@@ -104,7 +104,7 @@ HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
       return E_FAIL;
     if (localProcessedSize == 0)
       return S_OK;
-    RINOK(WriteStream(stream, _buffer, localProcessedSize, NULL));
+    RINOK(WriteStream(stream, _buffer, localProcessedSize));
   }
 }
 

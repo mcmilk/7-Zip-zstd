@@ -371,69 +371,26 @@ SOURCE=..\..\Common\StreamUtils.h
 # Begin Group "C"
 
 # PROP Default_Filter ""
-# Begin Group "C-Lz"
+# Begin Group "LzmaUtil"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinder.c
+SOURCE=..\..\..\..\C\LzmaUtil\Lzma86Dec.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinder.h
+SOURCE=..\..\..\..\C\LzmaUtil\Lzma86Dec.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinderMt.c
+SOURCE=..\..\..\..\C\LzmaUtil\Lzma86Enc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinderMt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Threads.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Threads.h
-# End Source File
-# End Group
-# Begin Group "LZMA_C"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lzma\LzmaDecode.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lzma\LzmaDecode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lzma\LzmaTypes.h
-# End Source File
-# End Group
-# Begin Group "Branch"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchTypes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
+SOURCE=..\..\..\..\C\LzmaUtil\Lzma86Enc.h
 # End Source File
 # End Group
 # Begin Source File
@@ -453,6 +410,64 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra86.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzHash.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Threads.h
 # End Source File
 # Begin Source File
 
@@ -482,23 +497,6 @@ SOURCE=.\LzmaBenchCon.cpp
 # Begin Source File
 
 SOURCE=.\LzmaBenchCon.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaRam.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaRam.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaRamDecode.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaRamDecode.h
 # End Source File
 # End Target
 # End Project

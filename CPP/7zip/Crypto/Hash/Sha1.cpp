@@ -5,7 +5,10 @@
 #include "StdAfx.h"
 
 #include "Sha1.h"
-#include "RotateDefs.h"
+extern "C" 
+{ 
+#include "../../../../C/RotateDefs.h"
+}
 
 namespace NCrypto {
 namespace NSha1 {

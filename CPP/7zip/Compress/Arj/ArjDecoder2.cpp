@@ -12,7 +12,7 @@ static const UInt32 kHistorySize = 26624;
 // static const UInt32 kMatchMaxLen = 256;
 static const UInt32 kMatchMinLen = 3;
 
-STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
+HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo * /* progress */)
 {
@@ -71,7 +71,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
       if (width != 0)
         distance += m_InBitStream.ReadBits(width);
       if (distance >= pos)
-        throw "data error";
+        return S_FALSE;
       m_OutWindowStream.CopyBlock(distance, len);
         pos += len;
     }

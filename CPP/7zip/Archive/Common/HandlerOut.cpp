@@ -380,15 +380,6 @@ HRESULT COutHandler::SetParams(COneMethodInfo &oneMethodInfo, const UString &src
 
 HRESULT COutHandler::SetSolidSettings(const UString &s)
 {
-  bool res;
-  if (StringToBool(s, res))
-  {
-    if (res)
-      InitSolid();
-    else
-      _numSolidFiles = 1;
-    return S_OK;
-  }
   UString s2 = s;
   s2.MakeUpper();
   for (int i = 0; i < s2.Length();)
@@ -439,16 +430,27 @@ HRESULT COutHandler::SetSolidSettings(const UString &s)
 
 HRESULT COutHandler::SetSolidSettings(const PROPVARIANT &value)
 {
+  bool isSolid;
   switch(value.vt)
   {
     case VT_EMPTY:
-      InitSolid();
-      return S_OK;
+      isSolid = true;
+      break;
+    case VT_BOOL:
+      isSolid = (value.boolVal != VARIANT_FALSE);
+      break;
     case VT_BSTR:
+      if (StringToBool(value.bstrVal, isSolid))
+        break;
       return SetSolidSettings(value.bstrVal);
     default:
       return E_INVALIDARG;
   }
+  if (isSolid)
+    InitSolid();
+  else
+    _numSolidFiles = 1;
+  return S_OK;
 }
 
 void COutHandler::Init()
@@ -586,6 +588,14 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
       oneMethodInfo.Properties.Add(property);
       if (number <= mainDicMethodIndex)
         mainDicSize = dicSize;
+    }
+    else if (realName.Left(1).CompareNoCase(L"B") == 0)
+    {
+      UInt32 blockSize;
+      RINOK(ParsePropDictionaryValue(realName.Mid(1), value, blockSize));
+      property.Id = NCoderPropID::kBlockSize;
+      property.Value = blockSize;
+      oneMethodInfo.Properties.Add(property);
     }
     else if (realName.Left(3).CompareNoCase(L"MEM") == 0)
     {

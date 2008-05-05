@@ -99,12 +99,12 @@ HRESULT ParsePropDictionaryValue(const UString &name, const PROPVARIANT &prop, U
 
 bool StringToBool(const UString &s, bool &res)
 {
-  if (s.IsEmpty() || s.CompareNoCase(L"ON") == 0)
+  if (s.IsEmpty() || s.CompareNoCase(L"ON") == 0 || s.Compare(L"+") == 0)
   {
     res = true;
     return true;
   }
-  if (s.CompareNoCase(L"OFF") == 0)
+  if (s.CompareNoCase(L"OFF") == 0 || s.Compare(L"-") == 0)
   {
     res = false;
     return true;
@@ -118,6 +118,9 @@ HRESULT SetBoolProperty(bool &dest, const PROPVARIANT &value)
   {
     case VT_EMPTY:
       dest = true;
+      return S_OK;
+    case VT_BOOL:
+      dest = (value.boolVal != VARIANT_FALSE);
       return S_OK;
     /*
     case VT_UI4:

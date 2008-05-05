@@ -409,6 +409,8 @@ void CCompressDialog::CheckControlsEnable()
   EnableItem(IDC_STATIC_COMPRESS_ENCRYPTION_METHOD, fi.Encrypt);
   EnableItem(IDC_COMPRESS_COMBO_ENCRYPTION_METHOD, fi.Encrypt);
   EnableItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
+
+  ShowItem(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
 }
 
 bool CCompressDialog::IsSFX()
@@ -1022,13 +1024,16 @@ void CCompressDialog::SetDictionary()
     }
     case kBZip2:
     {
-      UInt32 defaultDictionary;
-      if (level >= 5)
-        defaultDictionary = (900 << 10);
-      else if (level >= 3)
-        defaultDictionary = (500 << 10);
-      else
-        defaultDictionary = (100 << 10);
+      // UInt32 defaultDictionary;
+      if (defaultDictionary == UInt32(-1))
+      {
+        if (level >= 5)
+          defaultDictionary = (900 << 10);
+        else if (level >= 3)
+          defaultDictionary = (500 << 10);
+        else
+          defaultDictionary = (100 << 10);
+      }
       for (int i = 1; i <= 9; i++)
       {
         UInt32 dictionary = (i * 100) << 10;

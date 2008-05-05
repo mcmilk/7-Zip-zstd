@@ -83,9 +83,9 @@ AR_COMMON_OBJS = \
   $O\7zRegister.obj \
 
 BRANCH_OPT_OBJS = \
-  $O\BranchCoder.obj \
   $O\x86.obj \
   $O\x86_2.obj \
+  $O\BranchCoder.obj \
   $O\BCJRegister.obj \
   $O\BCJ2Register.obj \
 
@@ -102,10 +102,9 @@ LZMA_OPT_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Bra86.obj \
+  $O\LzmaDec.obj \
   $O\Threads.obj \
-
-C_BRANCH_OBJS = \
-  $O\BranchX86.obj \
 
 !include "../../Crc2.mak"
 
@@ -127,7 +126,6 @@ OBJS = \
   $(LZMA_OPT_OBJS) \
   $O\MyMessages.obj \
   $(C_OBJS) \
-  $(C_BRANCH_OBJS) \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -169,8 +167,6 @@ $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
 	$(COMPL)
 
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O1)
-$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O1)
+	$(COMPL_O2)
 
 !include "../../Crc.mak"

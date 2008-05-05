@@ -144,10 +144,8 @@ HRESULT CUpdateCallbackConsole::SetCompleted(const UInt64 *completeValue)
 
 HRESULT CUpdateCallbackConsole::SetRatioInfo(const UInt64 * /* inSize */, const UInt64 * /* outSize */)
 {
-  /*
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
-  */
   return S_OK;
 }
 

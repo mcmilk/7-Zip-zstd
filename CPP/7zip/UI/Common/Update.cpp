@@ -2,10 +2,6 @@
 
 #include "StdAfx.h"
 
-#ifdef _WIN32
-#include <mapi.h>
-#endif
-
 #include "Update.h"
 
 #include "Common/IntToString.h"
@@ -338,9 +334,9 @@ static HRESULT Compress(
   switch(value)
   {
     case NFileTimeType::kWindows:
-    case NFileTimeType::kDOS:
     case NFileTimeType::kUnix:
-      fileTimeType = NFileTimeType::EEnum(value);
+    case NFileTimeType::kDOS:
+      fileTimeType = (NFileTimeType::EEnum)value;
       break;
     default:
       return E_FAIL;
@@ -516,11 +512,31 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
     RINOK(GetArchiveItemFileTime(archive, i, 
         archiveFileInfo.LastWriteTime, ai.LastWriteTime));
 
-    CPropVariant propertySize;
-    RINOK(archive->GetProperty(i, kpidSize, &propertySize));
-    ai.SizeIsDefined = (propertySize.vt != VT_EMPTY);
-    if (ai.SizeIsDefined)
-      ai.Size = ConvertPropVariantToUInt64(propertySize);
+    {
+      CPropVariant prop;
+      RINOK(archive->GetProperty(i, kpidSize, &prop));
+      ai.SizeIsDefined = (prop.vt != VT_EMPTY);
+      if (ai.SizeIsDefined)
+        ai.Size = ConvertPropVariantToUInt64(prop);
+    }
+
+    {
+      CPropVariant prop;
+      RINOK(archive->GetProperty(i, kpidTimeType, &prop));
+      if (prop.vt == VT_UI4)
+      {
+        ai.FileTimeType = (int)(NFileTimeType::EEnum)prop.ulVal;
+        switch(ai.FileTimeType)
+        {
+          case NFileTimeType::kWindows:
+          case NFileTimeType::kUnix:
+          case NFileTimeType::kDOS:
+            break;
+          default:
+            return E_FAIL;
+        }
+      }
+    }
 
     ai.IndexInServer = i;
     archiveItems.Add(ai);
@@ -592,6 +608,17 @@ struct CEnumDirItemUpdateCallback: public IEnumDirItemCallback
   IUpdateCallbackUI2 *Callback;
   HRESULT CheckBreak() { return Callback->CheckBreak(); }
 };
+
+#ifdef _WIN32
+typedef ULONG (FAR PASCAL MY_MAPISENDDOCUMENTS)(
+  ULONG_PTR ulUIParam,
+  LPSTR lpszDelimChar,
+  LPSTR lpszFilePaths,
+  LPSTR lpszFileNames,
+  ULONG ulReserved
+);
+typedef MY_MAPISENDDOCUMENTS FAR *MY_LPMAPISENDDOCUMENTS;
+#endif
 
 HRESULT UpdateArchive(
     CCodecs *codecs,
@@ -814,7 +841,7 @@ HRESULT UpdateArchive(
       errorInfo.Message = L"can not load Mapi32.dll";
       return E_FAIL;
     }
-    LPMAPISENDDOCUMENTS fnSend = (LPMAPISENDDOCUMENTS)
+    MY_LPMAPISENDDOCUMENTS fnSend = (MY_LPMAPISENDDOCUMENTS)
         mapiLib.GetProcAddress("MAPISendDocuments");
     if (fnSend == 0)
     {

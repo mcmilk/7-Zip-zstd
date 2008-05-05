@@ -147,6 +147,12 @@ LZH_OBJS = \
   $O\LzhOutStreamWithCRC.obj \
   $O\LzhRegister.obj \
 
+LZM_OBJS = \
+  $O\LzmaArcRegister.obj \
+  $O\LzmaFiltersDecode.obj \
+  $O\LzmaHandler.obj \
+  $O\LzmaIn.obj \
+
 NSIS_OBJS = \
   $O\NsisDecode.obj \
   $O\NsisHandler.obj \
@@ -204,17 +210,13 @@ COMPRESS_OBJS = \
   $O\CodecExports.obj \
 
 BRANCH_OPT_OBJS = \
+  $O\x86.obj \
+  $O\x86_2.obj \
   $O\BranchCoder.obj \
+  $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\BCJRegister.obj \
   $O\BCJ2Register.obj \
-  $O\x86.obj \
-  $O\x86_2.obj \
-  $O\ARM.obj \
-  $O\ARMThumb.obj \
-  $O\IA64.obj \
-  $O\PPC.obj \
-  $O\SPARC.obj \
 
 SWAP_OPT_OBJS = \
   $O\ByteSwap.obj \
@@ -292,7 +294,6 @@ CRYPTO_HASH_OBJS = \
   $O\Pbkdf2HmacSha1.obj \
   $O\RandGen.obj \
   $O\Sha1.obj \
-  $O\Sha256.obj \
 
 CRYPTO_WZAES_OBJS = \
   $O\WzAES.obj \
@@ -311,23 +312,19 @@ CRYPTO_RARAES_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
-  $O\Threads.obj \
+  $O\Bra.obj \
+  $O\Bra86.obj \
+  $O\BraIA64.obj \
+  $O\BwtSort.obj \
+  $O\HuffEnc.obj \
+  $O\LzFind.obj \
+  $O\LzFindMt.obj \
+  $O\LzmaDec.obj \
+  $O\LzmaEnc.obj \
   $O\Sort.obj \
-
-C_LZ_OBJS = \
-  $O\MatchFinder.obj \
-  $O\MatchFinderMt.obj \
-
-C_BRANCH_OBJS = \
-  $O\BranchARM.obj \
-  $O\BranchARMThumb.obj \
-  $O\BranchIA64.obj \
-  $O\BranchPPC.obj \
-  $O\BranchSPARC.obj \
-  $O\BranchX86.obj \
-
-C_CRYPTO = \
+  $O\Threads.obj \
   $O\Aes.obj \
+  $O\Sha256.obj \
 
 !include "../../Crc2.mak"
 
@@ -350,6 +347,7 @@ OBJS = \
   $(GZ_OBJS) \
   $(ISO_OBJS) \
   $(LZH_OBJS) \
+  $(LZM_OBJS) \
   $(NSIS_OBJS) \
   $(RAR_OBJS) \
   $(RPM_OBJS) \
@@ -377,11 +375,6 @@ OBJS = \
   $(COMPRESS_Z_OBJS) \
   $O\QuantumDecoder.obj \
   $(C_OBJS) \
-  $(C_LZ_OBJS) \
-  $(C_BRANCH_OBJS) \
-  $(C_CRYPTO) \
-  $O\HuffmanEncode.obj \
-  $O\BlockSort.obj \
   $O\RangeCoderBit.obj \
   $(7ZAES_OPT_OBJS) \
   $(AES_OPT_OBJS) \
@@ -428,6 +421,8 @@ $(GZ_OBJS): ../../Archive/GZip/$(*B).cpp
 $(ISO_OBJS): ../../Archive/Iso/$(*B).cpp
 	$(COMPL)
 $(LZH_OBJS): ../../Archive/Lzh/$(*B).cpp
+	$(COMPL)
+$(LZM_OBJS): ../../Archive/Lzma/$(*B).cpp
 	$(COMPL)
 $(NSIS_OBJS): ../../Archive/Nsis/$(*B).cpp
 	$(COMPL)
@@ -483,8 +478,6 @@ $(COMPRESS_Z_OBJS): ../../Compress/Z/$(*B).cpp
 $O\QuantumDecoder.obj: ../../Compress/Quantum/$(*B).cpp
 	$(COMPL)
 
-$O\BlockSort.obj: ../../Compress/BWT/$(*B).cpp
-	$(COMPL_O2)
 $O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
 	$(COMPL)
 
@@ -504,14 +497,6 @@ $(CRYPTO_RARAES_OBJS): ../../Crypto/RarAES/$(*B).cpp
 	$(COMPL)
 
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-$(C_LZ_OBJS): ../../../../C/Compress/Lz/$(*B).c
-	$(COMPL_O2)
-$(C_BRANCH_OBJS): ../../../../C/Compress/Branch/$(*B).c
-	$(COMPL_O2)
-$O\HuffmanEncode.obj: ../../../../C/Compress/Huffman/$(*B).c
-	$(COMPL_O2)
-$(C_CRYPTO): ../../../../C/Crypto/$(*B).c
 	$(COMPL_O2)
 
 !include "../../Crc.mak"

@@ -19,10 +19,10 @@ namespace NArj {
  
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result = ReadStream(_stream, data, size, &realProcessedSize);
-  if(processedSize != NULL)
-    *processedSize = realProcessedSize;
+  size_t realProcessedSize = size;
+  HRESULT result = ReadStream(_stream, data, &realProcessedSize);
+  if (processedSize != NULL)
+    *processedSize = (UInt32)realProcessedSize;
   IncreasePositionValue(realProcessedSize);
   return result;
 }

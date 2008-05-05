@@ -1,55 +1,63 @@
-/* 7zIn.h */
+/* 7zIn.h -- 7z Input functions
+2008-05-05
+Igor Pavlov
+Copyright (c) 1999-2008 Igor Pavlov
+Read 7zItem.h for license options */
 
 #ifndef __7Z_IN_H
 #define __7Z_IN_H
 
 #include "7zHeader.h"
 #include "7zItem.h"
-#include "7zAlloc.h"
- 
-typedef struct _CInArchiveInfo
+
+typedef struct
 {
   CFileSize StartPositionAfterHeader; 
   CFileSize DataStartPosition;
-}CInArchiveInfo;
+} CInArchiveInfo;
 
-typedef struct _CArchiveDatabaseEx
+typedef struct
 {
-  CArchiveDatabase Database;
+  CSzAr db;
   CInArchiveInfo ArchiveInfo;
   UInt32 *FolderStartPackStreamIndex;
   CFileSize *PackStreamStartPositions;
   UInt32 *FolderStartFileIndex;
   UInt32 *FileIndexToFolderIndexMap;
-}CArchiveDatabaseEx;
+} CSzArEx;
 
-void SzArDbExInit(CArchiveDatabaseEx *db);
-void SzArDbExFree(CArchiveDatabaseEx *db, void (*freeFunc)(void *));
-CFileSize SzArDbGetFolderStreamPos(CArchiveDatabaseEx *db, UInt32 folderIndex, UInt32 indexInFolder);
-int SzArDbGetFolderFullPackSize(CArchiveDatabaseEx *db, UInt32 folderIndex, CFileSize *resSize);
+void SzArEx_Init(CSzArEx *p);
+void SzArEx_Free(CSzArEx *p, ISzAlloc *alloc);
+CFileSize SzArEx_GetFolderStreamPos(const CSzArEx *p, UInt32 folderIndex, UInt32 indexInFolder);
+int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, CFileSize *resSize);
 
-typedef struct _ISzInStream
+typedef enum 
 {
-  #ifdef _LZMA_IN_CB
-  SZ_RESULT (*Read)(
-      void *object,           /* pointer to ISzInStream itself */
-      void **buffer,          /* out: pointer to buffer with data */
-      size_t maxRequiredSize, /* max required size to read */
-      size_t *processedSize); /* real processed size. 
-                                 processedSize can be less than maxRequiredSize.
-                                 If processedSize == 0, then there are no more 
-                                 bytes in stream. */
-  #else
-  SZ_RESULT (*Read)(void *object, void *buffer, size_t size, size_t *processedSize);
-  #endif
-  SZ_RESULT (*Seek)(void *object, CFileSize pos);
+  SZ_SEEK_SET = 0,
+  SZ_SEEK_CUR = 1,
+  SZ_SEEK_END = 2
+} ESzSeek;
+
+typedef struct
+{
+  SRes (*Read)(void *object, void **buf, size_t *size);
+    /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
+       (output(*size) < input(*size)) is allowed */
+  SRes (*Seek)(void *object, CFileSize pos, ESzSeek origin);
 } ISzInStream;
 
  
-int SzArchiveOpen(
-    ISzInStream *inStream, 
-    CArchiveDatabaseEx *db,
-    ISzAlloc *allocMain, 
-    ISzAlloc *allocTemp);
+/*
+Errors:
+SZ_ERROR_NO_ARCHIVE
+SZ_ERROR_ARCHIVE
+SZ_ERROR_UNSUPPORTED
+SZ_ERROR_MEM
+SZ_ERROR_CRC
+SZ_ERROR_INPUT_EOF
+SZ_ERROR_FAIL
+*/
+
+SRes SzArEx_Open(CSzArEx *p, ISzInStream *inStream, ISzAlloc *allocMain, ISzAlloc *allocTemp);
  
 #endif

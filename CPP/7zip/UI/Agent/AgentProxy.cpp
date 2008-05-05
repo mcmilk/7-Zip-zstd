@@ -228,7 +228,20 @@ HRESULT CProxyArchive::ReadObjects(IInArchive *archive, IProgress *progress)
     CProxyFolder *currentItem = &RootFolder;
     UString fileName;
     if(propVariantPath.vt == VT_EMPTY)
+    {
       fileName = DefaultName;
+
+      NCOM::CPropVariant prop;
+      RINOK(archive->GetProperty(i, kpidExtension, &prop));
+      if (prop.vt == VT_BSTR)
+      {
+        fileName += L'.';
+        fileName += prop.bstrVal;
+      }
+      else if (prop.vt != VT_EMPTY)
+        return E_FAIL;
+
+    }
     else
     {
       if(propVariantPath.vt != VT_BSTR)

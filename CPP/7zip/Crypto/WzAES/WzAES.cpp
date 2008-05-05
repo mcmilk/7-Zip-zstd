@@ -47,12 +47,12 @@ void CBaseCoder::EncryptData(Byte *data, UInt32 size)
     {   
       if (++_counter[0] == 0)
         _counter[1]++;
-      UInt32 outBuf[4];
-      AesEncode32(_counter, outBuf, Aes.rkey, Aes.numRounds2);
-      SetUi32(_buffer,      outBuf[0]);
-      SetUi32(_buffer + 4,  outBuf[1]);
-      SetUi32(_buffer + 8,  outBuf[2]);
-      SetUi32(_buffer + 12, outBuf[3]);
+      UInt32 temp[4];
+      Aes_Encode32(&Aes, temp, _counter);
+      SetUi32(_buffer,      temp[0]);
+      SetUi32(_buffer + 4,  temp[1]);
+      SetUi32(_buffer + 8,  temp[2]);
+      SetUi32(_buffer + 12, temp[3]);
       pos = 0;
     }
     *data++ ^= _buffer[pos++];
@@ -115,15 +115,8 @@ STDMETHODIMP CBaseCoder::Init()
   for (int i = 0; i < 4; i++)
     _counter[i] = 0;
 
-  AesSetKeyEncode(&Aes, buf, keySize);
+  Aes_SetKeyEncode(&Aes, buf, keySize);
   return S_OK;
-}
-
-static HRESULT SafeWrite(ISequentialOutStream *outStream, const Byte *data, UInt32 size)
-{
-  UInt32 processedSize;
-  RINOK(WriteStream(outStream, data, size, &processedSize));
-  return ((processedSize == size) ? S_OK : E_FAIL);
 }
 
 /*
@@ -139,15 +132,15 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
   UInt32 saltSize = _key.GetSaltSize();
   g_RandomGenerator.Generate(_key.Salt, saltSize);
   Init();
-  RINOK(SafeWrite(outStream, _key.Salt, saltSize));
-  return SafeWrite(outStream, _key.PwdVerifComputed, kPwdVerifCodeSize);
+  RINOK(WriteStream(outStream, _key.Salt, saltSize));
+  return WriteStream(outStream, _key.PwdVerifComputed, kPwdVerifCodeSize);
 }
 
 HRESULT CEncoder::WriteFooter(ISequentialOutStream *outStream)
 {
   Byte mac[kMacSize];
   _hmac.Final(mac, kMacSize);
-  return SafeWrite(outStream, mac, kMacSize);
+  return WriteStream(outStream, mac, kMacSize);
 }
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
@@ -167,10 +160,7 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
   UInt32 saltSize = _key.GetSaltSize();
   UInt32 extraSize = saltSize + kPwdVerifCodeSize;
   Byte temp[kSaltSizeMax + kPwdVerifCodeSize];
-  UInt32 processedSize;
-  RINOK(ReadStream(inStream, temp, extraSize, &processedSize));
-  if (processedSize != extraSize)
-    return E_FAIL;
+  RINOK(ReadStream_FAIL(inStream, temp, extraSize));
   UInt32 i;
   for (i = 0; i < saltSize; i++)
     _key.Salt[i] = temp[i];
@@ -195,11 +185,8 @@ bool CDecoder::CheckPasswordVerifyCode()
 HRESULT CDecoder::CheckMac(ISequentialInStream *inStream, bool &isOK)
 {
   isOK = false;
-  UInt32 processedSize;
   Byte mac1[kMacSize];
-  RINOK(ReadStream(inStream, mac1, kMacSize, &processedSize));
-  if (processedSize != kMacSize)
-    return E_FAIL;
+  RINOK(ReadStream_FAIL(inStream, mac1, kMacSize));
   Byte mac2[kMacSize];
   _hmac.Final(mac2, kMacSize);
   isOK = CompareArrays(mac1, mac2, kMacSize);

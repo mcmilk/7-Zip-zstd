@@ -117,6 +117,8 @@ int APIENTRY WinMain2()
   */
   if (result == S_OK)
   {
+    if (ecs->Messages.Size() > 0 || ecs->NumArchiveErrors != 0)
+      return NExitCode::kFatalError;    
     return 0;
   }
   if (result == E_ABORT)

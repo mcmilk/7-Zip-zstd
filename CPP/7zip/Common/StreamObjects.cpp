@@ -8,11 +8,13 @@
 
 STDMETHODIMP CSequentialInStreamImp::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 numBytesToRead = (UInt32)(MyMin(_pos + size, _size) - _pos);
-  memmove(data, _dataPointer + _pos, numBytesToRead);
-  _pos += numBytesToRead;
-  if(processedSize != NULL)
-    *processedSize = numBytesToRead;
+  size_t rem = _size - _pos;
+  if (size < rem)
+    rem = (size_t)size;
+  memcpy(data, _dataPointer + _pos, rem);
+  _pos += rem;
+  if (processedSize != NULL)
+    *processedSize = (UInt32)rem;
   return S_OK;
 }
 
@@ -21,13 +23,13 @@ void CWriteBuffer::Write(const void *data, size_t size)
 {
   size_t newCapacity = _size + size;
   _buffer.EnsureCapacity(newCapacity);
-  memmove(_buffer + _size, data, size);
+  memcpy(_buffer + _size, data, size);
   _size += size;
 }
 
 STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  _writeBuffer.Write(data, size);
+  _writeBuffer.Write(data, (size_t)size);
   if(processedSize != NULL)
     *processedSize = size;
   return S_OK; 
@@ -35,16 +37,14 @@ STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UInt32 size, UInt3
 
 STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 newSize = size;
-  if (_pos + size > _size)
-    newSize = (UInt32)(_size - _pos);
-  memmove(_buffer + _pos, data, newSize);
-  if(processedSize != NULL)
-    *processedSize = newSize;
-  _pos += newSize;
-  if (newSize != size)
-    return E_FAIL;
-  return S_OK; 
+  size_t rem = _size - _pos;
+  if (size < rem)
+    rem = (size_t)size;
+  memcpy(_buffer + _pos, data, rem);
+  _pos += rem;
+  if (processedSize != NULL)
+    *processedSize = (UInt32)rem;
+  return (rem == size ? S_OK : E_FAIL);
 }
 
 STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UInt32 size, UInt32 *processedSize)

@@ -48,7 +48,7 @@ static HRESULT FindCodecClassId(const GUID *clsID, UInt32 isCoder2, bool isFilte
   UInt64 id = 0;
   for (int j = 0; j < 8; j++)
     id |= ((UInt64)clsID->Data4[j]) << (8 * j);
-  for (UInt32 i = 0; i < g_NumCodecs; i++)
+  for (unsigned i = 0; i < g_NumCodecs; i++)
   {
     const CCodecInfo &codec = *g_Codecs[i];
     if (id != codec.Id || encode && !codec.CreateEncoder || !encode && !codec.CreateDecoder)
@@ -142,7 +142,7 @@ STDAPI GetMethodProperty(UInt32 codecIndex, PROPID propID, PROPVARIANT *value)
       if (codec.NumInStreams != 1)
       {
         value->vt = VT_UI4;
-        value->ulVal = codec.NumInStreams;
+        value->ulVal = (ULONG)codec.NumInStreams;
       }
       break;
     }

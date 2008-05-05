@@ -22,7 +22,8 @@ public:
   
   bool SetCodeLengths(const Byte *codeLengths)
   {
-    int lenCounts[kNumBitsMax + 1], tmpPositions[kNumBitsMax + 1];
+    int lenCounts[kNumBitsMax + 1];
+    UInt32 tmpPositions[kNumBitsMax + 1];
     int i;
     for(i = 1; i <= kNumBitsMax; i++)
       lenCounts[i] = 0;

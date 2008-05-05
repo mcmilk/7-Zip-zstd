@@ -250,7 +250,7 @@ STDMETHODIMP CAgent::DoOperation(
     UString resultPath;
     int pos;
     if(!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
-      throw 141716;
+      return E_FAIL;
     NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
   }
   if (!outStreamSpec->Create(archiveName, true))
@@ -282,7 +282,7 @@ STDMETHODIMP CAgent::DoOperation(
       catch(...)
       {
         delete []propValues;
-        throw;
+        return E_FAIL;
       }
       delete []propValues;
     }
@@ -295,7 +295,8 @@ STDMETHODIMP CAgent::DoOperation(
     CInFileStream *sfxStreamSpec = new CInFileStream;
     CMyComPtr<IInStream> sfxStream(sfxStreamSpec);
     if (!sfxStreamSpec->Open(sfxModule))
-      throw "Can't open sfx module";
+      return E_FAIL;
+      // throw "Can't open sfx module";
     RINOK(CopyBlock(sfxStream, outStream));
   }
 

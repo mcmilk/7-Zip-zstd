@@ -71,13 +71,12 @@ public:
     Low = (UInt32)Low << 8;                           
   }
   
-  void EncodeDirectBits(UInt32 value, int numTotalBits)
+  void EncodeDirectBits(UInt32 value, int numBits)
   {
-    for (int i = numTotalBits - 1; i >= 0; i--)
+    for (numBits--; numBits >= 0; numBits--)
     {
       Range >>= 1;
-      if (((value >> i) & 1) == 1)
-        Low += Range;
+      Low += Range & (0 - ((value >> numBits) & 1));
       if (Range < kTopValue)
       {
         Range <<= 8;

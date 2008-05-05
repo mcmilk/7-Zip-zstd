@@ -295,7 +295,16 @@ HRESULT CFieldPrinter::PrintItemInfo(IInArchive *archive,
       PrintSpaces(fieldInfo.PrefixSpacesWidth);
 
     NCOM::CPropVariant propVariant;
-    RINOK(archive->GetProperty(index, fieldInfo.PropID, &propVariant));
+    if (fieldInfo.PropID == kpidPath)
+    {
+      UString s;
+      RINOK(GetArchiveItemPath(archive, index, defaultItemName, s));
+      propVariant = s;
+    }
+    else
+    {
+      RINOK(archive->GetProperty(index, fieldInfo.PropID, &propVariant));
+    }
     if (techMode)
     {
       g_StdOut << fieldInfo.Name << " = ";

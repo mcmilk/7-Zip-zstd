@@ -56,38 +56,53 @@ struct CBlockHeader
 
 struct CItem
 {
-  AString Prefix;
-  AString Name;
-  UInt32 Pos;
+  AString PrefixA;
+  UString PrefixU;
+  AString NameA;
+  UString NameU;
+  FILETIME DateTime;
+  bool IsUnicode;
+  bool UseFilter;
+  bool IsCompressed;
   bool SizeIsDefined;
   bool CompressedSizeIsDefined;
   bool EstimatedSizeIsDefined;
+  UInt32 Pos;
   UInt32 Size;
   UInt32 CompressedSize;
   UInt32 EstimatedSize;
-  FILETIME DateTime;
   UInt32 DictionarySize;
-  bool IsCompressed;
-  bool UseFilter;
-  CItem(): UseFilter(false), SizeIsDefined(false), EstimatedSizeIsDefined(false), 
-    IsCompressed(true), CompressedSizeIsDefined(false), Size(0) {}
+  
+  CItem(): IsUnicode(false), UseFilter(false), IsCompressed(true), SizeIsDefined(false), 
+      CompressedSizeIsDefined(false), EstimatedSizeIsDefined(false), Size(0) {}
 
   bool IsINSTDIR() const
   {
-   if (Prefix.Length() < 3)
-     return false;
-   return true;
+    return (PrefixA.Length() >= 3 || PrefixU.Length() >= 3);
   }
 
-  AString GetReducedName() const 
+  AString GetReducedNameA() const 
   {
-    AString prefix = Prefix;
+    AString prefix = PrefixA;
     if (prefix.Length() > 0)
       if (prefix[prefix.Length() - 1] != '\\')
         prefix += '\\';
-    AString s2 = prefix + Name;
+    AString s2 = prefix + NameA;
     const int len = 9;
     if (s2.Left(len).CompareNoCase("$INSTDIR\\") == 0)
+      s2 = s2.Mid(len);
+    return s2;
+  }
+  
+  UString GetReducedNameU() const 
+  {
+    UString prefix = PrefixU;
+    if (prefix.Length() > 0)
+      if (prefix[prefix.Length() - 1] != L'\\')
+        prefix += L'\\';
+    UString s2 = prefix + NameU;
+    const int len = 9;
+    if (s2.Left(len).CompareNoCase(L"$INSTDIR\\") == 0)
       s2 = s2.Mid(len);
     return s2;
   }
@@ -105,7 +120,10 @@ class CInArchive
       DECL_EXTERNAL_CODECS_LOC_VARS2
       );
   void ReadBlockHeader(CBlockHeader &bh);
-  AString ReadString(UInt32 pos);
+  AString ReadStringA(UInt32 pos);
+  UString ReadStringU(UInt32 pos);
+  AString ReadString2A(UInt32 pos);
+  UString ReadString2U(UInt32 pos);
   AString ReadString2(UInt32 pos);
   HRESULT ReadEntries(const CBlockHeader &bh);
   HRESULT Parse();
@@ -129,12 +147,13 @@ public:
   UInt64 StreamOffset;
   CDecoder Decoder;
   CObjectVector<CItem> Items;
-  bool IsSolid;
   CFirstHeader FirstHeader;
   NMethodType::EEnum Method;
-  bool UseFilter;
   UInt32 DictionarySize;
+  bool IsSolid;
+  bool UseFilter;
   bool FilterFlag;
+  bool IsUnicode;
 
   #ifdef NSIS_SCRIPT
   AString Script;

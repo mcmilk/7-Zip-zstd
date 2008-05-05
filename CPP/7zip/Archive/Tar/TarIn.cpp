@@ -13,9 +13,10 @@
 namespace NArchive {
 namespace NTar {
  
-HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
+HRESULT CInArchive::ReadBytes(void *data, size_t size, size_t &processedSize)
 {
-  RINOK(ReadStream(m_Stream, data, size, &processedSize));
+  processedSize = size;
+  RINOK(ReadStream(m_Stream, data, &processedSize));
   m_Position += processedSize;
   return S_OK;
 }
@@ -93,7 +94,7 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
 
   filled = false;
 
-  UInt32 processedSize;
+  size_t processedSize;
   item.HeaderPosition = m_Position;
   RINOK(ReadBytes(record, NFileHeader::kRecordSize, processedSize));
   if (processedSize == 0 || 
@@ -174,7 +175,8 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   AString prefix;
   ReadString(cur, NFileHeader::kPrefixSize, prefix);
   cur += NFileHeader::kPrefixSize;
-  if (!prefix.IsEmpty() && item.IsMagic())
+  if (!prefix.IsEmpty() && item.IsMagic() && 
+      (item.LinkFlag != 'L' /* || prefix != "00000000000" */ ))
     item.Name = prefix + AString('/') + item.Name;
 
   if (item.LinkFlag == NFileHeader::NLinkFlag::kLink)
@@ -205,10 +207,12 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
         return S_FALSE;
     UInt64 headerPosition = item.HeaderPosition;
 
-    UInt32 processedSize;
+    size_t processedSize;
     AString fullName;
-    char *buffer = fullName.GetBuffer((UInt32)item.Size + 1);
-    RINOK(ReadBytes(buffer, (UInt32)item.Size, processedSize));
+    if (item.Size > (1 << 15))
+      return S_FALSE;
+    char *buffer = fullName.GetBuffer((int)item.Size + 1);
+    RINOK(ReadBytes(buffer, (size_t)item.Size, processedSize));
     buffer[item.Size] = '\0';
     fullName.ReleaseBuffer();
     if (processedSize != item.Size)
@@ -222,6 +226,11 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   else if (item.LinkFlag == 'g' || item.LinkFlag == 'x' || item.LinkFlag == 'X')
   {
     // pax Extended Header
+    return S_OK;
+  }
+  else if (item.LinkFlag == NFileHeader::NLinkFlag::kDumpDir)
+  {
+    // GNU Extensions to the Archive Format
     return S_OK;
   }
   else if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))

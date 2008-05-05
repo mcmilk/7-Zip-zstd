@@ -69,12 +69,19 @@ static void SetFileHeader(
   item.UnPackSize = updateItem.Size;
   bool isDirectory;
 
+  item.ClearFlags();
+
   if (updateItem.NewProperties)
   {
     isDirectory = updateItem.IsDirectory;
     item.Name = updateItem.Name; 
+    item.SetUtf8(updateItem.IsUtf8);
     item.ExternalAttributes = updateItem.Attributes;
     item.Time = updateItem.Time;
+    item.NtfsMTime = updateItem.NtfsMTime;
+    item.NtfsATime = updateItem.NtfsATime;
+    item.NtfsCTime = updateItem.NtfsCTime;
+    item.NtfsTimeIsDefined = updateItem.NtfsTimeIsDefined;
   }
   else
     isDirectory = item.IsDirectory();
@@ -86,7 +93,6 @@ static void SetFileHeader(
   item.ExtractVersion.HostOS = kExtractHostOS;
 
   item.InternalAttributes = 0; // test it
-  item.ClearFlags();
   item.SetEncrypted(!isDirectory && options.PasswordIsDefined);
   if (isDirectory)
   {
@@ -341,7 +347,13 @@ static HRESULT UpdateItemOldData(COutArchive &archive,
     // item.ExternalAttributes = updateItem.Attributes;
     // Test it
     item.Name = updateItem.Name; 
+    item.SetUtf8(updateItem.IsUtf8);
     item.Time = updateItem.Time;
+    item.NtfsMTime = updateItem.NtfsMTime;
+    item.NtfsATime = updateItem.NtfsATime;
+    item.NtfsCTime = updateItem.NtfsCTime;
+    item.NtfsTimeIsDefined = updateItem.NtfsTimeIsDefined;
+
     item.CentralExtra.RemoveUnknownSubBlocks();
     item.LocalExtra.RemoveUnknownSubBlocks();
     

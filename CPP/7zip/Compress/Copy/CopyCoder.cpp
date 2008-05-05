@@ -42,7 +42,7 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     RINOK(inStream->Read(_buffer, size, &realProcessedSize));
     if (realProcessedSize == 0)
       break;
-    RINOK(WriteStream(outStream, _buffer, realProcessedSize, NULL));
+    RINOK(WriteStream(outStream, _buffer, realProcessedSize));
     TotalSize += realProcessedSize;
     if (progress != NULL)
     {

@@ -38,7 +38,7 @@ STDMETHODIMP CDecoder::Flush()
   return m_x86ConvertOutStreamSpec->Flush();
 }
 
-UInt32 CDecoder::ReadBits(UInt32 numBits) { return m_InBitStream.ReadBits(numBits); }
+UInt32 CDecoder::ReadBits(int numBits) { return m_InBitStream.ReadBits(numBits); }
 
 #define RIF(x) { if (!(x)) return false; }
 
@@ -63,12 +63,12 @@ bool CDecoder::ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols)
     UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
     if (number == kLevelSymbolZeros)
     {
-      num = kLevelSymbolZerosStartValue + ReadBits(kLevelSymbolZerosNumBits);
+      num = kLevelSymbolZerosStartValue + (int)ReadBits(kLevelSymbolZerosNumBits);
       symbol = 0;
     }
     else if (number == kLevelSymbolZerosBig)
     {
-      num = kLevelSymbolZerosBigStartValue + ReadBits(kLevelSymbolZerosBigNumBits);
+      num = kLevelSymbolZerosBigStartValue + (int)ReadBits(kLevelSymbolZerosBigNumBits);
       symbol = 0;
     }
     else if (number == kLevelSymbolSame || number <= kNumHuffmanBits)
@@ -77,7 +77,7 @@ bool CDecoder::ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols)
         num = 1;
       else
       {
-        num = kLevelSymbolSameStartValue + ReadBits(kLevelSymbolSameNumBits);
+        num = kLevelSymbolSameStartValue + (int)ReadBits(kLevelSymbolSameNumBits);
         number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
         if (number > kNumHuffmanBits)
           return false;
@@ -262,7 +262,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
           int numDirectBits;
           if (posSlot < kNumPowerPosSlots)
           {
-            numDirectBits = (posSlot >> 1) - 1;
+            numDirectBits = (int)(posSlot >> 1) - 1;
             distance = ((2 | (posSlot & 1)) << numDirectBits);
           }
           else
@@ -297,7 +297,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
         next -= locLen;
         if (len != 0)
         {
-          _remainLen = len;
+          _remainLen = (int)len;
           return S_OK;
         }
       }

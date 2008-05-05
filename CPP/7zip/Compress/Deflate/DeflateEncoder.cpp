@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "DeflateEncoder.h"
 
 #include "Windows/Defs.h"
@@ -9,19 +11,14 @@
 extern "C" 
 { 
 #include "../../../../C/Alloc.h"
+#include "../../../../C/HuffEnc.h"
 }
-// #include "../LZ/BinTree/BinTree3Z.h"
 
 #if _MSC_VER >= 1300
 #define NO_INLINE __declspec(noinline) 
 #else
 #define NO_INLINE 
 #endif
-
-extern "C"
-{
-  #include "../../../../C/Compress/Huffman/HuffmanEncode.h"
-}
 
 namespace NCompress {
 namespace NDeflate {
@@ -31,7 +28,7 @@ const int kNumDivPassesMax = 10; // [0, 16); ratio/speed/ram tradeoff; use big v
 const UInt32 kNumTables = (1 << kNumDivPassesMax);
 
 static UInt32 kFixedHuffmanCodeBlockSizeMax = (1 << 8); // [0, (1 << 32)); ratio/speed tradeoff; use big value for better compression ratio.
-static UInt32 kDivideCodeBlockSizeMin = (1 << 6); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
+static UInt32 kDivideCodeBlockSizeMin = (1 << 7); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
 static UInt32 kDivideBlockSizeMin = (1 << 6); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
 
 static const UInt32 kMaxUncompressedBlockSize = ((1 << 16) - 1) * 1; // [1, (1 << 32))
@@ -40,11 +37,11 @@ static const UInt32 kMatchArrayLimit = kMatchArraySize - kMatchMaxLen * 4 * size
 static const UInt32 kBlockUncompressedSizeThreshold = kMaxUncompressedBlockSize - 
     kMatchMaxLen - kNumOpts;
 
-static const int kMaxCodeBitLength = 12;
+static const int kMaxCodeBitLength = 11;
 static const int kMaxLevelBitLength = 7;
 
-static Byte kNoLiteralStatPrice = 12;
-static Byte kNoLenStatPrice = 12;
+static Byte kNoLiteralStatPrice = 11;
+static Byte kNoLenStatPrice = 11;
 static Byte kNoPosStatPrice = 6;
 
 static Byte g_LenSlots[kNumLenSymbolsMax];
@@ -85,19 +82,9 @@ inline UInt32 GetPosSlot(UInt32 pos)
   return g_FastPos[pos >> 8] + 16;
 }
 
-void *SzAlloc(size_t size)
-{
-  if (size == 0)
-    return 0;
-  return malloc(size);
-}
-
-void SzFree(void *address)
-{
-  free(address);
-}
-
-ISzAlloc g_Alloc = { SzAlloc, SzFree };
+static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
+static void SzFree(void *p, void *address) { p = p; MyFree(address); }
+static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 CCoder::CCoder(bool deflate64Mode):
   m_Deflate64Mode(deflate64Mode),
@@ -591,10 +578,10 @@ NO_INLINE void CCoder::LevelTableCode(const Byte *levels, int numLevels, const B
   }
 }
 
-NO_INLINE void CCoder::MakeTables()
+NO_INLINE void CCoder::MakeTables(unsigned maxHuffLen)
 {
-  Huffman_Generate(mainFreqs, mainCodes, m_NewLevels.litLenLevels, kFixedMainTableSize, kMaxCodeBitLength);
-  Huffman_Generate(distFreqs, distCodes, m_NewLevels.distLevels, kDistTableSize64, kMaxCodeBitLength);
+  Huffman_Generate(mainFreqs, mainCodes, m_NewLevels.litLenLevels, kFixedMainTableSize, maxHuffLen);
+  Huffman_Generate(distFreqs, distCodes, m_NewLevels.distLevels, kDistTableSize64, maxHuffLen);
 }
 
 NO_INLINE UInt32 Huffman_GetPrice(const UInt32 *freqs, const Byte *lens, UInt32 num)
@@ -632,7 +619,7 @@ NO_INLINE void CCoder::TryBlock()
     if (m_OptimumCurrentIndex == m_OptimumEndIndex)
     {
       if (m_Pos >= kMatchArrayLimit || BlockSizeRes >= blockSize || !m_SecondPass && 
-          ((Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow)  == 0) || m_ValueIndex >= m_ValueBlockSize))
+          ((Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) == 0) || m_ValueIndex >= m_ValueBlockSize))
         break;
     }
     UInt32 pos;
@@ -773,7 +760,11 @@ NO_INLINE UInt32 CCoder::TryDynBlock(int tableIndex, UInt32 numPasses)
   {
     m_Pos = posTemp;
     TryBlock();
-    MakeTables();
+    unsigned numHuffBits = 
+        (m_ValueIndex > 18000 ? 12 :
+        (m_ValueIndex >  7000 ? 11 :
+        (m_ValueIndex >  2000 ? 10 : 9)));
+    MakeTables(numHuffBits);
     SetPrices(m_NewLevels);
   }
 
@@ -893,11 +884,12 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
         WriteBits(NBlockType::kFixedHuffman, kBlockTypeFieldSize);
         TryFixedBlock(tableIndex);
         int i;
+        const int kMaxStaticHuffLen = 9;
         for (i = 0; i < kFixedMainTableSize; i++)
-          mainFreqs[i] = (UInt32)1 << (kNumHuffmanBits - m_NewLevels.litLenLevels[i]);
+          mainFreqs[i] = (UInt32)1 << (kMaxStaticHuffLen - m_NewLevels.litLenLevels[i]);
         for (i = 0; i < kFixedDistTableSize; i++)
-          distFreqs[i] = (UInt32)1 << (kNumHuffmanBits - m_NewLevels.distLevels[i]);
-        MakeTables();
+          distFreqs[i] = (UInt32)1 << (kMaxStaticHuffLen - m_NewLevels.distLevels[i]);
+        MakeTables(kMaxStaticHuffLen);
       }
       else 
       {
@@ -921,9 +913,13 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
   }
 }
 
-HRes Read(void *object, void *data, UInt32 size, UInt32 *processedSize)
+SRes Read(void *object, void *data, size_t *size)
 {
-  return (HRes)((CSeqInStream *)object)->RealStream->Read(data, size, processedSize);
+  const UInt32 kStepSize = (UInt32)1 << 31; 
+  UInt32 curSize = ((*size < kStepSize) ? (UInt32)*size : kStepSize);
+  HRESULT res = ((CSeqInStream *)object)->RealStream->Read(data, curSize, &curSize);
+  *size = curSize;
+  return (SRes)res;
 }
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
@@ -935,7 +931,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
 
   RINOK(Create());
 
-  m_ValueBlockSize = (1 << 13) + (1 << 12) * m_NumDivPasses;
+  m_ValueBlockSize = (7 << 10) + (1 << 12) * m_NumDivPasses;
 
   UInt64 nowPos = 0;
 

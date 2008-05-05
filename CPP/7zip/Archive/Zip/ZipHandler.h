@@ -59,6 +59,10 @@ private:
   bool m_IsAesMode;
   Byte m_AesKeyMode;
 
+  bool m_WriteNtfsTimeExtra;
+  bool m_ForseLocal;
+  bool m_ForseUtf8;
+
   #ifdef COMPRESS_MT
   UInt32 _numThreads;
   #endif
@@ -77,6 +81,9 @@ private:
     m_NumMatchFinderCyclesDefined = false;
     m_IsAesMode = false;
     m_AesKeyMode = 3; // aes-256
+    m_WriteNtfsTimeExtra = false;
+    m_ForseLocal = false;
+    m_ForseUtf8 = false;
     #ifdef COMPRESS_MT
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
     #endif

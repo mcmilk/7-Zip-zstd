@@ -11,18 +11,12 @@ namespace NRangeCoder {
 const int kNumBitModelTotalBits  = 11;
 const UInt32 kBitModelTotal = (1 << kNumBitModelTotalBits);
 
-const int kNumMoveReducingBits = 2;
+const int kNumMoveReducingBits = 4;
 
-const int kNumBitPriceShiftBits = 6;
+const int kNumBitPriceShiftBits = 4;
 const UInt32 kBitPrice = 1 << kNumBitPriceShiftBits;
 
-class CPriceTables
-{
-public:
-  static UInt32 ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
-  static void Init();
-  CPriceTables();
-};
+extern UInt32 ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
 
 template <int numMoveBits>
 class CBitModel
@@ -74,11 +68,10 @@ public:
   }
   UInt32 GetPrice(UInt32 symbol) const
   {
-    return CPriceTables::ProbPrices[
-      (((this->Prob - symbol) ^ ((-(int)symbol))) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
+    return ProbPrices[(this->Prob ^ ((-(int)symbol)) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
   }
-  UInt32 GetPrice0() const { return CPriceTables::ProbPrices[this->Prob >> kNumMoveReducingBits]; }
-  UInt32 GetPrice1() const { return CPriceTables::ProbPrices[(kBitModelTotal - this->Prob) >> kNumMoveReducingBits]; }
+  UInt32 GetPrice0() const { return ProbPrices[this->Prob >> kNumMoveReducingBits]; }
+  UInt32 GetPrice1() const { return ProbPrices[(this->Prob ^ (kBitModelTotal - 1)) >> kNumMoveReducingBits]; }
 };
 
 

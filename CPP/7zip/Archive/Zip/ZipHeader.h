@@ -86,8 +86,20 @@ namespace NFileHeader
     enum 
     { 
       kZip64 = 0x01,
+      kNTFS = 0x0A,
       kStrongEncrypt = 0x17,
       kWzAES = 0x9901
+    };
+  }
+
+  namespace NNtfsExtra
+  {
+    const UInt16 kTagTime = 1;
+    enum
+    {
+      kMTime = 0,
+      kATime = 1,
+      kCTime = 2
     };
   }
 
@@ -156,13 +168,11 @@ namespace NFileHeader
 
   namespace NFlags 
   {
-    const int kNumUsedBits = 4;
-    const int kUsedBitsMask = (1 << kNumUsedBits) - 1;
-    
     const int kEncrypted = 1 << 0;
     const int kDescriptorUsedMask = 1 << 3;
     const int kStrongEncrypted = 1 << 6;
-    
+    const int kUtf8 = 1 << 11;
+
     const int kImplodeDictionarySizeMask = 1 << 1;
     const int kImplodeLiteralsOnMask     = 1 << 2;
     

@@ -154,10 +154,10 @@ public:
   MY_UNKNOWN_IMP
 
   #ifdef EXTERNAL_CODECS
-  STDMETHOD(GetNumberOfMethods)(UINT32 *numMethods);
-  STDMETHOD(GetProperty)(UINT32 index, PROPID propID, PROPVARIANT *value);
-  STDMETHOD(CreateDecoder)(UINT32 index, const GUID *interfaceID, void **coder);
-  STDMETHOD(CreateEncoder)(UINT32 index, const GUID *interfaceID, void **coder);
+  STDMETHOD(GetNumberOfMethods)(UInt32 *numMethods);
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value);
+  STDMETHOD(CreateDecoder)(UInt32 index, const GUID *interfaceID, void **coder);
+  STDMETHOD(CreateEncoder)(UInt32 index, const GUID *interfaceID, void **coder);
   #endif
 
   int GetCodecLibIndex(UInt32 index);

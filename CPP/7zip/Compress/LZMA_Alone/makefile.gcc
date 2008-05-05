@@ -22,11 +22,8 @@ OBJS = \
   LzmaAlone.o \
   LzmaBench.o \
   LzmaBenchCon.o \
-  LzmaRam.o \
   LZMADecoder.o \
   LZMAEncoder.o \
-  LZOutWindow.o \
-  RangeCoderBit.o \
   InBuffer.o \
   OutBuffer.o \
   FileStreams.o \
@@ -41,10 +38,12 @@ OBJS = \
   MyVector.o \
   7zCrc.o \
   Alloc.o \
-  BranchX86.o \
-  MatchFinder.o \
-  LzmaDecode.o \
-  LzmaRamDecode.o \
+  Bra86.o \
+  LzFind.o \
+  LzmaDec.o \
+  LzmaEnc.o \
+  Lzma86Dec.o \
+  Lzma86Enc.o \
 
 
 all: $(PROG)
@@ -61,20 +60,11 @@ LzmaBench.o: LzmaBench.cpp
 LzmaBenchCon.o: LzmaBenchCon.cpp
 	$(CXX) $(CFLAGS) LzmaBenchCon.cpp
 
-LzmaRam.o: LzmaRam.cpp
-	$(CXX) $(CFLAGS) LzmaRam.cpp
-
 LZMADecoder.o: ../LZMA/LZMADecoder.cpp
 	$(CXX) $(CFLAGS) ../LZMA/LZMADecoder.cpp
 
 LZMAEncoder.o: ../LZMA/LZMAEncoder.cpp
 	$(CXX) $(CFLAGS) ../LZMA/LZMAEncoder.cpp
-
-LZOutWindow.o: ../LZ/LZOutWindow.cpp
-	$(CXX) $(CFLAGS) ../LZ/LZOutWindow.cpp
-
-RangeCoderBit.o: ../RangeCoder/RangeCoderBit.cpp
-	$(CXX) $(CFLAGS) ../RangeCoder/RangeCoderBit.cpp
 
 InBuffer.o: ../../Common/InBuffer.cpp
 	$(CXX) $(CFLAGS) ../../Common/InBuffer.cpp
@@ -122,17 +112,23 @@ MyVector.o: ../../../Common/MyVector.cpp
 Alloc.o: ../../../../C/Alloc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/Alloc.c
 
-BranchX86.o: ../../../../C/Compress/Branch/BranchX86.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Branch/BranchX86.c
+Bra86.o: ../../../../C/Bra86.c
+	$(CXX_C) $(CFLAGS) ../../../../C/Bra86.c
 
-MatchFinder.o: ../../../../C/Compress/Lz/MatchFinder.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lz/MatchFinder.c
+LzFind.o: ../../../../C/LzFind.c
+	$(CXX_C) $(CFLAGS) ../../../../C/LzFind.c
 
-LzmaDecode.o: ../../../../C/Compress/Lzma/LzmaDecode.c
-	$(CXX_C) $(CFLAGS) ../../../../C/Compress/Lzma/LzmaDecode.c
+LzmaDec.o: ../../../../C/LzmaDec.c
+	$(CXX_C) $(CFLAGS) ../../../../C/LzmaDec.c
 
-LzmaRamDecode.o: LzmaRamDecode.c
-	$(CXX_C) $(CFLAGS) LzmaRamDecode.c
+LzmaEnc.o: ../../../../C/LzmaEnc.c
+	$(CXX_C) $(CFLAGS) ../../../../C/LzmaEnc.c
+
+Lzma86Dec.o: ../../../../C/LzmaUtil/Lzma86Dec.c
+	$(CXX_C) $(CFLAGS) ../../../../C/LzmaUtil/Lzma86Dec.c
+
+Lzma86Enc.o: ../../../../C/LzmaUtil/Lzma86Enc.c
+	$(CXX_C) $(CFLAGS) ../../../../C/LzmaUtil/Lzma86Enc.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)

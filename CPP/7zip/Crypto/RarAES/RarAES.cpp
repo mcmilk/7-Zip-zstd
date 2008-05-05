@@ -76,14 +76,14 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  AesSetKeyDecode(&Aes.aes, aesKey, kRarAesKeySize);
-  AesCbcInit(&Aes, aesInit);
+  Aes_SetKeyDecode(&Aes.aes, aesKey, kRarAesKeySize);
+  AesCbc_Init(&Aes, aesInit);
   return S_OK;
 }
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 {
-  return AesCbcDecode(&Aes, data, size);
+  return (UInt32)AesCbc_Decode(&Aes, data, size);
 }
 
 void CDecoder::Calculate()

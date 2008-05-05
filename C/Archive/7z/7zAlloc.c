@@ -1,4 +1,7 @@
-/* 7zAlloc.c */
+/* 7zAlloc.c -- Allocation functions
+2008-03-28
+Igor Pavlov
+Public domain */
 
 #include <stdlib.h>
 #include "7zAlloc.h"
@@ -11,13 +14,16 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
 #include <stdio.h>
 int g_allocCount = 0;
 int g_allocCountTemp = 0;
+
 #endif
 
-void *SzAlloc(size_t size)
+void *SzAlloc(void *p, size_t size)
 {
+  p = p;
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
@@ -27,8 +33,9 @@ void *SzAlloc(size_t size)
   return malloc(size);
 }
 
-void SzFree(void *address)
+void SzFree(void *p, void *address)
 {
+  p = p;
   #ifdef _SZ_ALLOC_DEBUG
   if (address != 0)
   {
@@ -39,8 +46,9 @@ void SzFree(void *address)
   free(address);
 }
 
-void *SzAllocTemp(size_t size)
+void *SzAllocTemp(void *p, size_t size)
 {
+  p = p;
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
@@ -53,8 +61,9 @@ void *SzAllocTemp(size_t size)
   return malloc(size);
 }
 
-void SzFreeTemp(void *address)
+void SzFreeTemp(void *p, void *address)
 {
+  p = p;
   #ifdef _SZ_ALLOC_DEBUG
   if (address != 0)
   {

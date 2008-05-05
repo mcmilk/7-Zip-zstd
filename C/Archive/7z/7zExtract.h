@@ -1,4 +1,8 @@
-/* 7zExtract.h */
+/* 7zExtract.h -- Extracting from 7z archive
+2008-04-09
+Igor Pavlov
+Copyright (c) 1999-2008 Igor Pavlov
+Read 7zItem.h for license options */
 
 #ifndef __7Z_EXTRACT_H
 #define __7Z_EXTRACT_H
@@ -25,9 +29,9 @@
     Free *outBuffer and set *outBuffer to 0, if you want to flush cache.
 */
 
-SZ_RESULT SzExtract(
+SRes SzAr_Extract(
+    const CSzArEx *db,
     ISzInStream *inStream, 
-    CArchiveDatabaseEx *db,
     UInt32 fileIndex,         /* index of file */
     UInt32 *blockIndex,       /* index of solid block */
     Byte **outBuffer,         /* pointer to pointer to output buffer (allocated with allocMain) */

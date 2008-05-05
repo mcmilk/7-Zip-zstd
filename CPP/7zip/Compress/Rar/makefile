@@ -16,7 +16,7 @@ RAR29_OPT_OBJS = \
 
 COMMON_OBJS = \
   $O\CRC.obj \
-  $O\Vector.obj \
+  $O\MyVector.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \

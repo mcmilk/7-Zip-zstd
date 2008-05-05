@@ -69,16 +69,6 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
 }
 }
 
-class CException
-{
-public:
-  enum ECauseType
-  {
-    kData
-  } Cause;
-  CException(ECauseType cause): Cause(cause) {}
-};
-
 static const char *kNumberErrorMessage = "Number error";
 
 static const UInt32 kHistorySize = 1 << 20;
@@ -307,7 +297,7 @@ bool CDecoder::DecodeLz(Int32 pos)
   return true;
 }
 
-STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
+HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
@@ -373,7 +363,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
     }
   }
   if (pos > unPackSize)
-    throw CException(CException::kData);
+    return S_FALSE;
 
   if (!ReadLastTables())
     return S_FALSE;

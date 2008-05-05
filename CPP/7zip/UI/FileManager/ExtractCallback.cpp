@@ -162,7 +162,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
     *answer = NOverwriteAnswer::kYes;
     break;
   default:
-    throw 20413;
+    return E_FAIL;
   }
   return S_OK;
 }
@@ -408,7 +408,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
             OverwriteMode = NExtract::NOverwriteMode::kAutoRename;
             break;
           default:
-            throw 20413;
+            return E_FAIL;
         }
       }
     }

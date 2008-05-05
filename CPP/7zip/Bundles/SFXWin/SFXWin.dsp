@@ -374,14 +374,6 @@ SOURCE=..\..\Crypto\7zAES\MySHA256.h
 
 SOURCE=..\..\Crypto\Hash\RotateDefs.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Hash\Sha256.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Hash\Sha256.h
-# End Source File
 # End Group
 # End Group
 # Begin Group "Dialogs"
@@ -835,32 +827,6 @@ SOURCE=..\..\UI\Explorer\MyMessages.h
 # Begin Group "C"
 
 # PROP Default_Filter ""
-# Begin Group "C Branch"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
-# End Source File
-# End Group
-# Begin Group "C Crypto"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Crypto\Aes.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Crypto\Aes.h
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zCrc.c
@@ -872,12 +838,44 @@ SOURCE=..\..\..\..\C\7zCrc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Aes.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Aes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Alloc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra86.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 

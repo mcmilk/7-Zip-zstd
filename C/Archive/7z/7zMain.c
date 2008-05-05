@@ -1,8 +1,7 @@
-/* 
-7zMain.c
-Test application for 7z Decoder
-LZMA SDK 4.43 Copyright (c) 1999-2006 Igor Pavlov (2006-06-04)
-*/
+/* 7zMain.c - Test application for 7z Decoder
+2008-04-09
+Igor Pavlov
+Public domain */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +17,7 @@ LZMA SDK 4.43 Copyright (c) 1999-2006 Igor Pavlov (2006-06-04)
 
 #include "7zIn.h"
 #include "7zExtract.h"
+#include "7zAlloc.h"
 
 #include "../../7zCrc.h"
 
@@ -48,7 +48,7 @@ void ConvertNumberToString(CFileSize value, char *s)
 #define PERIOD_100 (PERIOD_4 * 25 - 1)
 #define PERIOD_400 (PERIOD_100 * 4 + 1)
 
-void ConvertFileTimeToString(CArchiveFileTime *ft, char *s)
+void ConvertFileTimeToString(CNtfsFileTime *ft, char *s)
 {
   unsigned year, mon, day, hour, min, sec;
   UInt64 v64 = ft->Low | ((UInt64)ft->High << 32);
@@ -177,61 +177,59 @@ typedef struct _CFileInStream
   MY_FILE_HANDLE File;
 } CFileInStream;
 
-#ifdef _LZMA_IN_CB
 
 #define kBufferSize (1 << 12)
 Byte g_Buffer[kBufferSize];
 
-SZ_RESULT SzFileReadImp(void *object, void **buffer, size_t maxRequiredSize, size_t *processedSize)
+SRes SzFileReadImp(void *object, void **buffer, size_t *size)
 {
   CFileInStream *s = (CFileInStream *)object;
-  size_t processedSizeLoc;
-  if (maxRequiredSize > kBufferSize)
-    maxRequiredSize = kBufferSize;
-  processedSizeLoc = MyReadFile(s->File, g_Buffer, maxRequiredSize);
+  if (*size > kBufferSize)
+    *size = kBufferSize;
+  *size = MyReadFile(s->File, g_Buffer, *size);
   *buffer = g_Buffer;
-  if (processedSize != 0)
-    *processedSize = processedSizeLoc;
   return SZ_OK;
 }
 
-#else
-
-SZ_RESULT SzFileReadImp(void *object, void *buffer, size_t size, size_t *processedSize)
-{
-  CFileInStream *s = (CFileInStream *)object;
-  size_t processedSizeLoc = MyReadFile(s->File, buffer, size);
-  if (processedSize != 0)
-    *processedSize = processedSizeLoc;
-  return SZ_OK;
-}
-
-#endif
-
-SZ_RESULT SzFileSeekImp(void *object, CFileSize pos)
+SRes SzFileSeekImp(void *object, CFileSize pos, ESzSeek origin)
 {
   CFileInStream *s = (CFileInStream *)object;
 
   #ifdef USE_WINDOWS_FUNCTIONS
   {
     LARGE_INTEGER value;
+    DWORD moveMethod;
     value.LowPart = (DWORD)pos;
     value.HighPart = (LONG)((UInt64)pos >> 32);
     #ifdef _SZ_FILE_SIZE_32
     /* VC 6.0 has bug with >> 32 shifts. */
     value.HighPart = 0;
     #endif
-    value.LowPart = SetFilePointer(s->File, value.LowPart, &value.HighPart, FILE_BEGIN);
+    switch (origin) 
+    {
+      case SZ_SEEK_SET: moveMethod = FILE_BEGIN; break;
+      case SZ_SEEK_CUR: moveMethod = FILE_CURRENT; break;
+      case SZ_SEEK_END: moveMethod = FILE_END; break;
+      default: return SZ_ERROR_PARAM;
+    }
+    value.LowPart = SetFilePointer(s->File, value.LowPart, &value.HighPart, moveMethod);
     if (value.LowPart == 0xFFFFFFFF)
-      if(GetLastError() != NO_ERROR) 
-        return SZE_FAIL;
+      if (GetLastError() != NO_ERROR) 
+        return SZ_ERROR_FAIL;
     return SZ_OK;
   }
   #else
-  int res = fseek(s->File, (long)pos, SEEK_SET);
-  if (res == 0)
-    return SZ_OK;
-  return SZE_FAIL;
+  int moveMethod;
+  int res;
+  switch (origin) 
+  {
+    case SZ_SEEK_SET: moveMethod = SEEK_SET; break;
+    case SZ_SEEK_CUR: moveMethod = SEEK_CUR; break;
+    case SZ_SEEK_END: moveMethod = SEEK_END; break;
+    default: return SZ_ERROR_PARAM;
+  }
+  res = fseek(s->File, (long)pos, moveMethod );
+  return (res == 0) ? SZ_OK : SZ_ERROR_FAIL;
   #endif
 }
 
@@ -240,15 +238,15 @@ void PrintError(char *sz)
   printf("\nERROR: %s\n", sz);
 }
 
-int main(int numargs, char *args[])
+int MY_CDECL main(int numargs, char *args[])
 {
   CFileInStream archiveStream;
-  CArchiveDatabaseEx db;
-  SZ_RESULT res;
+  CSzArEx db;
+  SRes res;
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.48  Copyright (c) 1999-2007 Igor Pavlov  2007-06-21\n");
+  printf("\n7z ANSI-C Decoder 4.58  Copyright (c) 1999-2008 Igor Pavlov  2008-04-09\n");
   if (numargs == 1)
   {
     printf(
@@ -267,7 +265,7 @@ int main(int numargs, char *args[])
 
   archiveStream.File = 
   #ifdef USE_WINDOWS_FUNCTIONS
-  CreateFile(args[2], GENERIC_READ, FILE_SHARE_READ, 
+  CreateFileA(args[2], GENERIC_READ, FILE_SHARE_READ, 
       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (archiveStream.File == INVALID_HANDLE_VALUE)
   #else
@@ -290,8 +288,8 @@ int main(int numargs, char *args[])
 
   CrcGenerateTable();
 
-  SzArDbExInit(&db);
-  res = SzArchiveOpen(&archiveStream.InStream, &db, &allocImp, &allocTempImp);
+  SzArEx_Init(&db);
+  res = SzArEx_Open(&db, &archiveStream.InStream, &allocImp, &allocTempImp);
   if (res == SZ_OK)
   {
     char *command = args[1];
@@ -308,9 +306,9 @@ int main(int numargs, char *args[])
     if (listCommand)
     {
       UInt32 i;
-      for (i = 0; i < db.Database.NumFiles; i++)
+      for (i = 0; i < db.db.NumFiles; i++)
       {
-        CFileItem *f = db.Database.Files + i;
+        CSzFileItem *f = db.db.Files + i;
         char s[32], t[32];
         ConvertNumberToString(f->Size, s);
         if (f->IsLastWriteTimeDefined)
@@ -334,11 +332,11 @@ int main(int numargs, char *args[])
       size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
 
       printf("\n");
-      for (i = 0; i < db.Database.NumFiles; i++)
+      for (i = 0; i < db.db.NumFiles; i++)
       {
         size_t offset;
         size_t outSizeProcessed;
-        CFileItem *f = db.Database.Files + i;
+        CSzFileItem *f = db.db.Files + i;
         if (f->IsDirectory)
           printf("Directory ");
         else
@@ -351,7 +349,7 @@ int main(int numargs, char *args[])
           printf("\n");
           continue;
         }
-        res = SzExtract(&archiveStream.InStream, &db, i, 
+        res = SzAr_Extract(&db, &archiveStream.InStream, i, 
             &blockIndex, &outBuffer, &outBufferSize, 
             &offset, &outSizeProcessed, 
             &allocImp, &allocTempImp);
@@ -372,7 +370,7 @@ int main(int numargs, char *args[])
             
           outputHandle = 
           #ifdef USE_WINDOWS_FUNCTIONS
-            CreateFile(fileName, GENERIC_WRITE, FILE_SHARE_READ, 
+            CreateFileA(fileName, GENERIC_WRITE, FILE_SHARE_READ, 
                 NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
           if (outputHandle == INVALID_HANDLE_VALUE)
           #else
@@ -381,34 +379,34 @@ int main(int numargs, char *args[])
           #endif
           {
             PrintError("can not open output file");
-            res = SZE_FAIL;
+            res = SZ_ERROR_FAIL;
             break;
           }
           processedSize = MyWriteFile(outputHandle, outBuffer + offset, outSizeProcessed);
           if (processedSize != outSizeProcessed)
           {
             PrintError("can not write output file");
-            res = SZE_FAIL;
+            res = SZ_ERROR_FAIL;
             break;
           }
           if (MyCloseFile(outputHandle))
           {
             PrintError("can not close output file");
-            res = SZE_FAIL;
+            res = SZ_ERROR_FAIL;
             break;
           }
         }
         printf("\n");
       }
-      allocImp.Free(outBuffer);
+      IAlloc_Free(&allocImp, outBuffer);
     }
     else
     {
       PrintError("incorrect command");
-      res = SZE_FAIL;
+      res = SZ_ERROR_FAIL;
     }
   }
-  SzArDbExFree(&db, allocImp.Free);
+  SzArEx_Free(&db, &allocImp);
 
   MyCloseFile(archiveStream.File);
   if (res == SZ_OK)
@@ -416,11 +414,11 @@ int main(int numargs, char *args[])
     printf("\nEverything is Ok\n");
     return 0;
   }
-  if (res == (SZ_RESULT)SZE_NOTIMPL)
+  if (res == SZ_ERROR_UNSUPPORTED)
     PrintError("decoder doesn't support this archive");
-  else if (res == (SZ_RESULT)SZE_OUTOFMEMORY)
+  else if (res == SZ_ERROR_MEM)
     PrintError("can not allocate memory");
-  else if (res == (SZ_RESULT)SZE_CRC_ERROR)
+  else if (res == SZ_ERROR_CRC)
     PrintError("CRC error");
   else     
     printf("\nERROR #%d\n", res);

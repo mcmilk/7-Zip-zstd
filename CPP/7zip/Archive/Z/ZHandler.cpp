@@ -55,10 +55,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   {
     RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
     Byte buffer[kSignatureSize];
-    UInt32 processedSize;
-    RINOK(ReadStream(stream, buffer, kSignatureSize, &processedSize));
-    if (processedSize != kSignatureSize)
-      return S_FALSE;
+    RINOK(ReadStream_FALSE(stream, buffer, kSignatureSize));
     if (buffer[0] != 0x1F || buffer[1] != 0x9D)
       return S_FALSE;
     _properties = buffer[2];

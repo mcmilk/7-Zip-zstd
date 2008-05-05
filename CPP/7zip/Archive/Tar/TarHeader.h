@@ -75,6 +75,15 @@ namespace NFileHeader
     const char kDirectory    = '5'; // Directory
     const char kFIFO         = '6'; // FIFO special file
     const char kContiguous   = '7'; // Contiguous file
+
+    const char kDumpDir       = 'D'; /* GNUTYPE_DUMPDIR. 
+      data: list of files created by the --incremental (-G) option
+      Each file name is preceded by either 
+        - 'Y' (file should be in this archive) 
+        - 'N' (file is a directory, or is not stored in the archive.) 
+        Each file name is terminated by a null + an additional null after 
+        the last file name. */
+
   }
   // Further link types may be defined later.
 

@@ -26,23 +26,31 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
   return resultString;
 }
 
-AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
+AString UnicodeStringToMultiByte(const UString &s, UINT codePage, char defaultChar, bool &defaultCharWasUsed)
 {
-  AString resultString;
-  if(!srcString.IsEmpty())
+  AString dest;
+  defaultCharWasUsed = false;
+  if (!s.IsEmpty())
   {
-    int numRequiredBytes = srcString.Length() * 2;
-    char defaultChar = '_';
-    int numChars = WideCharToMultiByte(codePage, 0, srcString, 
-      srcString.Length(), resultString.GetBuffer(numRequiredBytes), 
-      numRequiredBytes + 1, &defaultChar, NULL);
+    int numRequiredBytes = s.Length() * 2;
+    BOOL defUsed;
+    int numChars = WideCharToMultiByte(codePage, 0, s, s.Length(), 
+        dest.GetBuffer(numRequiredBytes), numRequiredBytes + 1, 
+        &defaultChar, &defUsed);
+    defaultCharWasUsed = (defUsed != FALSE);
     #ifndef _WIN32_WCE
     if(numChars == 0)
       throw 282229;
     #endif
-    resultString.ReleaseBuffer(numChars);
+    dest.ReleaseBuffer(numChars);
   }
-  return resultString;
+  return dest;
+}
+
+AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
+{
+  bool defaultCharWasUsed;
+  return UnicodeStringToMultiByte(srcString, codePage, '_', defaultCharWasUsed);
 }
 
 #ifndef _WIN32_WCE

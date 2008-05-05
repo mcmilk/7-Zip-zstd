@@ -167,7 +167,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
     case kpidIsFolder: prop = item.IsDirectory(); break;
     case kpidSize: prop = item.UnPackSize; break;
     case kpidPackedSize: prop = GetPackSize(index); break;
-    case kpidLastWriteTime: RarTimeToProp(item.LastWriteTime, prop);
+    case kpidLastWriteTime: RarTimeToProp(item.LastWriteTime, prop); break;
     case kpidCreationTime: if (item.IsCreationTimeDefined) RarTimeToProp(item.CreationTime, prop); break;
     case kpidLastAccessTime: if (item.IsLastAccessTimeDefined) RarTimeToProp(item.LastAccessTime, prop); break;
     case kpidAttributes: prop = item.GetWinAttributes(); break;
@@ -243,6 +243,17 @@ public:
       {
         _afterPart = L".rar";
         basePart = name.Left(dotPos);
+      } 
+      else if (!_newStyle)
+      {
+        if (ext.CompareNoCase(L"000") == 0 || ext.CompareNoCase(L"001") == 0)
+        {
+          _afterPart.Empty();
+          _first = false;
+          _changedPart = ext;
+          _unchangedPart = name.Left(dotPos + 1);
+          return true;
+        }
       }
     }
 

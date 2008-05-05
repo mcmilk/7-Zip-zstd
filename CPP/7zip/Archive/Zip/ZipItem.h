@@ -6,6 +6,8 @@
 #include "Common/Types.h"
 #include "Common/MyString.h"
 #include "Common/Buffer.h"
+#include "Common/UTFConvert.h"
+#include "Common/StringConvert.h"
 
 #include "ZipHeader.h"
 
@@ -25,6 +27,7 @@ struct CExtraSubBlock
 {
   UInt16 ID;
   CByteBuffer Data;
+  bool ExtractNtfsTime(int index, FILETIME &ft) const;
 };
 
 struct CWzAesExtraField
@@ -137,6 +140,17 @@ struct CExtraBlock
     return GetWzAesField(aesField);
   }
 
+  bool GetNtfsTime(int index, FILETIME &ft) const 
+  {
+    for (int i = 0; i < SubBlocks.Size(); i++)
+    {
+      const CExtraSubBlock &sb = SubBlocks[i];
+      if (sb.ID == NFileHeader::NExtraID::kNTFS)
+        return sb.ExtractNtfsTime(index, ft);
+    }
+    return false;
+  }
+
   /*
   bool HasStrongCryptoField() const 
   {
@@ -147,14 +161,9 @@ struct CExtraBlock
 
   void RemoveUnknownSubBlocks()
   {
-    for (int i = SubBlocks.Size() - 1; i >= 0;)
-    {
-      const CExtraSubBlock &subBlock = SubBlocks[i];
-      if (subBlock.ID != NFileHeader::NExtraID::kWzAES)
+    for (int i = SubBlocks.Size() - 1; i >= 0; i--)
+      if (SubBlocks[i].ID != NFileHeader::NExtraID::kWzAES)
         SubBlocks.Delete(i);
-      else
-        i--;
-    }
   }
 };
 
@@ -173,6 +182,8 @@ public:
   AString Name;
 
   CExtraBlock LocalExtra;
+
+  bool IsUtf8() const { return (Flags & NFileHeader::NFlags::kUtf8) != 0; }
   
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
   bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; };
@@ -186,6 +197,16 @@ public:
   
   bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
+  UString GetUnicodeString(const AString &s) const 
+  { 
+    UString res;
+    if (IsUtf8())
+      if (!ConvertUTF8ToUnicode(s, res))
+        res.Empty();
+    if (res.IsEmpty())
+      res = MultiByteToUnicodeString(s, GetCodePage());
+    return res;
+  }
   
 private:
   void SetFlagBits(int startBitNumber, int numBits, int value);
@@ -193,11 +214,9 @@ private:
 public:
   void ClearFlags() { Flags = 0; }
   void SetEncrypted(bool encrypted);
+  void SetUtf8(bool isUtf8);
 
-  WORD GetCodePage() const
-  {
-    return  CP_OEMCP;
-  }
+  WORD GetCodePage() const { return  CP_OEMCP; }
 };
 
 class CItem: public CLocalItem
@@ -209,11 +228,16 @@ public:
   
   UInt64 LocalHeaderPosition;
   
+  FILETIME NtfsMTime;
+  FILETIME NtfsATime;
+  FILETIME NtfsCTime;
+
   CExtraBlock CentralExtra;
   CByteBuffer Comment;
 
   bool FromLocal;
   bool FromCentral;
+  bool NtfsTimeIsDefined;
   
   bool IsDirectory() const;
   UInt32 GetWinAttributes() const;
@@ -235,7 +259,7 @@ public:
         || MadeByVersion.HostOS == NFileHeader::NHostOS::kNTFS
         ) ? CP_OEMCP : CP_ACP);
   }
-  CItem() : FromLocal(false), FromCentral(false) {}
+  CItem() : FromLocal(false), FromCentral(false), NtfsTimeIsDefined(false) {}
 };
 
 }}

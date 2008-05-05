@@ -39,6 +39,7 @@ namespace NCoderPropID
     kDictionarySize = 0x400,
     kUsedMemorySize,
     kOrder,
+    kBlockSize,
     kPosStateBits = 0x440,
     kLitContextBits,
     kLitPosBits,

@@ -766,38 +766,40 @@ void OnSize(HWND hWnd)
   MoveSubWindows(hWnd);
 }
 
+int Window_GetRealHeight(NWindows::CWindow &w)
+{
+  RECT rect;
+  WINDOWPLACEMENT placement;
+  w.GetWindowRect(&rect);
+  int res = rect.bottom - rect.top;
+  if (w.GetPlacement(&placement))
+    res += placement.rcNormalPosition.top;
+  return res;
+}
+
 void MoveSubWindows(HWND hWnd)
 {
   RECT rect;
   ::GetClientRect(hWnd, &rect);
   int xSize = rect.right;
-  int kHeaderSize = 0;
-  int ySize = MyMax(int(rect.bottom - kHeaderSize), 0);
+  int headerSize = 0;
   if (g_App._rebar)
-  {
-    RECT barRect;
-    g_App._rebar.GetWindowRect(&barRect);
-    kHeaderSize = barRect.bottom - barRect.top;
-    ySize = MyMax(int(rect.bottom - kHeaderSize), 0);
-  }
+    headerSize = Window_GetRealHeight(g_App._rebar);
+  int ySize = MyMax((int)(rect.bottom - headerSize), 0);
  
-  // g_App._headerToolBar.Move(0, 2, xSize, kHeaderSize - 2);
-  RECT rect2 = rect;
-  rect2.bottom = 0;
-  // g_App._headerReBar.SizeToRect(&rect2);
   if (g_App.NumPanels > 1)
   {
-    g_App.Panels[0].Move(0, kHeaderSize, g_Splitter.GetPos(), ySize);
+    g_App.Panels[0].Move(0, headerSize, g_Splitter.GetPos(), ySize);
     int xWidth1 = g_Splitter.GetPos() + kSplitterWidth;
-    g_App.Panels[1].Move(xWidth1, kHeaderSize, xSize - xWidth1, ySize);
+    g_App.Panels[1].Move(xWidth1, headerSize, xSize - xWidth1, ySize);
   }
   else
   {
     /*
     int otherPanel = 1 - g_App.LastFocusedPanel;
     if (g_App.PanelsCreated[otherPanel])
-      g_App.Panels[otherPanel].Move(0, kHeaderSize, 0, ySize);
+      g_App.Panels[otherPanel].Move(0, headerSize, 0, ySize);
     */
-    g_App.Panels[g_App.LastFocusedPanel].Move(0, kHeaderSize, xSize, ySize);
+    g_App.Panels[g_App.LastFocusedPanel].Move(0, headerSize, xSize, ySize);
   }
 }

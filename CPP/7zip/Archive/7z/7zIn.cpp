@@ -9,6 +9,7 @@
 extern "C" 
 { 
 #include "../../../../C/7zCrc.h"
+#include "../../../../C/CpuArch.h"
 }
 
 // define FORMAT_7Z_RECOVERY if you want to recover multivolume archives with empty StartHeader 
@@ -96,11 +97,7 @@ void CStreamSwitch::Set(CInArchive *archive, const CObjectVector<CByteBuffer> *d
   }
 }
 
-#if defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64) || defined(__i386__) || defined(__x86_64__)
-#define SZ_LITTLE_ENDIAN_UNALIGN
-#endif
-
-#ifdef SZ_LITTLE_ENDIAN_UNALIGN
+#ifdef LITTLE_ENDIAN_UNALIGN
 static inline UInt16 GetUInt16FromMem(const Byte *p) { return *(const UInt16 *)p; }
 static inline UInt32 GetUInt32FromMem(const Byte *p) { return *(const UInt32 *)p; }
 static inline UInt64 GetUInt64FromMem(const Byte *p) { return *(const UInt64 *)p; }
@@ -220,10 +217,8 @@ static inline bool TestSignatureCandidate(const Byte *p)
 
 HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
 {
-  UInt32 processedSize; 
-  RINOK(ReadStream(stream, _header, kHeaderSize, &processedSize));
-  if (processedSize != kHeaderSize)
-    return S_FALSE;
+  RINOK(ReadStream_FALSE(stream, _header, kHeaderSize));
+
   if (TestSignatureCandidate(_header))
     return S_OK;
 
@@ -240,6 +235,7 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
       if (curTestPos - _arhiveBeginStreamPosition > *searchHeaderSizeLimit)
         break;
     UInt32 numReadBytes = kBufferSize - numPrevBytes;
+    UInt32 processedSize;
     RINOK(stream->Read(buffer + numPrevBytes, numReadBytes, &processedSize));
     UInt32 numBytesInBuffer = numPrevBytes + processedSize;
     if (numBytesInBuffer < kHeaderSize)

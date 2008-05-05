@@ -81,6 +81,9 @@ STATPROPSTG kProps[] =
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackedSize, VT_UI8},
   { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidCreationTime, VT_FILETIME},
+  { NULL, kpidLastAccessTime, VT_FILETIME},
+  
   { NULL, kpidAttributes, VT_UI4},
 
   { NULL, kpidEncrypted, VT_BOOL},
@@ -150,17 +153,18 @@ CHandler::CHandler():
   InitMethodProperties();
 }
 
-static void StringToProp(const CByteBuffer &data, UINT codePage, NWindows::NCOM::CPropVariant &prop)
+static AString BytesToString(const CByteBuffer &data)
 {
-  int size = (int)data.GetCapacity();
-  if (size <= 0)
-    return;
   AString s;
-  char *p = s.GetBuffer(size + 1);
-  memcpy(p, (const Byte *)data, size);
-  p[size] = '\0';
-  s.ReleaseBuffer();
-  prop = MultiByteToUnicodeString(s, codePage);
+  int size = (int)data.GetCapacity();
+  if (size > 0)
+  {
+    char *p = s.GetBuffer(size + 1);
+    memcpy(p, (const Byte *)data, size);
+    p[size] = '\0';
+    s.ReleaseBuffer();
+  }
+  return s;
 }
 
 IMP_IInArchive_Props
@@ -173,10 +177,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidComment:
-    {
-      StringToProp(m_Archive.m_ArchiveInfo.Comment, CP_ACP, prop);
+      prop = MultiByteToUnicodeString(BytesToString(m_Archive.m_ArchiveInfo.Comment), CP_ACP);
       break;
-    }
   }
   prop.Detach(value);
   COM_TRY_END
@@ -197,8 +199,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   switch(propID)
   {
     case kpidPath:
-      prop = NItemName::GetOSName2(
-          MultiByteToUnicodeString(item.Name, item.GetCodePage()));
+      prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name));
       break;
     case kpidIsFolder:
       prop = item.IsDirectory();
@@ -209,16 +210,39 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPackedSize:
       prop = item.PackSize;
       break;
+    case kpidTimeType:
+      FILETIME utcFileTime;
+      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kTagTime, utcFileTime))
+        prop = (UInt32)NFileTimeType::kWindows;
+      break;
+    case kpidCreationTime: 
+    {
+      FILETIME ft;
+      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kCTime, ft))
+        prop = ft;
+      break;
+    }
+    case kpidLastAccessTime:
+    {
+      FILETIME ft;
+      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kATime, ft))
+        prop = ft;
+      break;
+    }
     case kpidLastWriteTime:
     {
-      FILETIME localFileTime, utcFileTime;
-      if (DosTimeToFileTime(item.Time, localFileTime))
+      FILETIME utcFileTime;
+      if (!item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utcFileTime))
       {
-        if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+        FILETIME localFileTime;
+        if (DosTimeToFileTime(item.Time, localFileTime))
+        {
+          if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
+            utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
+        }
+        else
           utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
       }
-      else
-        utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
       prop = utcFileTime;
       break;
     }
@@ -230,7 +254,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       break;
     case kpidComment:
     {
-      StringToProp(item.Comment, item.GetCodePage(), prop);
+      prop = item.GetUnicodeString(BytesToString(item.Comment));
       break;
     }
     case kpidCRC:

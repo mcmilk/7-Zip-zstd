@@ -5,6 +5,7 @@
 #include "ZipHeader.h"
 #include "ZipItem.h"
 #include "../Common/ItemNameUtils.h"
+#include "../../../../C/CpuArch.h"
 
 namespace NArchive {
 namespace NZip {
@@ -18,6 +19,37 @@ bool operator!=(const CVersion &v1, const CVersion &v2)
 {
   return !(v1 == v2);
 } 
+
+bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
+{
+  ft.dwHighDateTime = ft.dwLowDateTime = 0;
+  UInt32 size = (UInt32)Data.GetCapacity();
+  if (ID != NFileHeader::NExtraID::kNTFS || size < 32)
+    return false;
+  const Byte *p = (const Byte *)Data;
+  p += 4; // for reserved
+  size -= 4;
+  while (size > 4)
+  {
+    UInt16 tag = GetUi16(p);
+    UInt32 attrSize = GetUi16(p + 2);
+    p += 4;
+    size -= 4;
+    if (attrSize > size)
+      attrSize = size;
+    
+    if (tag == NFileHeader::NNtfsExtra::kTagTime && attrSize >= 24)
+    {
+      p += 8 * index;
+      ft.dwLowDateTime = GetUi32(p);
+      ft.dwHighDateTime = GetUi32(p + 4);
+      return true;
+    }
+    p += attrSize;
+    size -= attrSize;
+  }
+  return false;
+}
 
 bool CLocalItem::IsImplodeBigDictionary() const
 { 
@@ -126,5 +158,7 @@ void CLocalItem::SetBitMask(int bitMask, bool enable)
 
 void CLocalItem::SetEncrypted(bool encrypted)
   { SetBitMask(NFileHeader::NFlags::kEncrypted, encrypted); }
+void CLocalItem::SetUtf8(bool isUtf8)
+  { SetBitMask(NFileHeader::NFlags::kUtf8, isUtf8); }
 
 }}

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+// #include <stdio.h>
+
 #include "NsisIn.h"
 #include "NsisDecode.h"
 
@@ -9,6 +11,7 @@
 
 #include "../../Common/StreamUtils.h"
 
+#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
 
 namespace NArchive {
@@ -26,6 +29,14 @@ public:
 #ifdef NSIS_SCRIPT
 static const char *kCrLf = "\x0D\x0A";
 #endif
+
+#define NS_UN_SKIP_CODE  0xE000
+#define NS_UN_VAR_CODE   0xE001
+#define NS_UN_SHELL_CODE 0xE002
+#define NS_UN_LANG_CODE  0xE003
+#define NS_UN_CODES_START NS_UN_SKIP_CODE
+#define NS_UN_CODES_END   NS_UN_LANG_CODE 
+
 
 UInt32 GetUInt32FromMemLE(const Byte *p)
 {
@@ -60,12 +71,20 @@ static int CompareItems(void *const *p1, void *const *p2, void * /* param */)
   const CItem &i1 = **(CItem **)p1;
   const CItem &i2 = **(CItem **)p2;
   RINOZ(MyCompare(i1.Pos, i2.Pos));
-  RINOZ(i1.Prefix.Compare(i2.Prefix));
-  RINOZ(i1.Name.Compare(i2.Name));
+  if (i1.IsUnicode)
+  {
+    RINOZ(i1.PrefixU.Compare(i2.PrefixU));
+    RINOZ(i1.NameU.Compare(i2.NameU));
+  }
+  else
+  {
+    RINOZ(i1.PrefixA.Compare(i2.PrefixA));
+    RINOZ(i1.NameA.Compare(i2.NameA));
+  }
   return 0;
 }
 
-AString CInArchive::ReadString(UInt32 pos)
+AString CInArchive::ReadStringA(UInt32 pos)
 {
   AString s;
   UInt32 offset = GetOffset() + _stringsPos + pos;
@@ -74,6 +93,24 @@ AString CInArchive::ReadString(UInt32 pos)
     if (offset >= _size)
       throw 1;
     char c = _data[offset++];
+    if (c == 0)
+      break;
+    s += c;
+  }
+  return s;
+}
+
+UString CInArchive::ReadStringU(UInt32 pos)
+{
+  UString s;
+  UInt32 offset = GetOffset() + _stringsPos + (pos * 2);
+  for (;;)
+  {
+    if (offset >= _size || offset + 1 >= _size)
+      throw 1;
+    char c0 = _data[offset++];
+    char c1 = _data[offset++];
+    wchar_t c = (c0 | ((wchar_t)c1 << 8));
     if (c == 0)
       break;
     s += c;
@@ -466,12 +503,26 @@ static AString GetVar(UInt32 index)
   return res;
 }
 
-// $0..$9, $INSTDIR, etc are encoded as ASCII bytes starting from this value.
 #define NS_SKIP_CODE  252
 #define NS_VAR_CODE   253
 #define NS_SHELL_CODE 254
 #define NS_LANG_CODE  255
 #define NS_CODES_START NS_SKIP_CODE
+
+static AString GetShellString(int index)
+{
+  AString res = "$";
+  if (index < kNumShellStrings)
+  {
+    const char *sz = kShellStrings[index];
+    if (sz[0] != 0)
+      return res + sz;
+  }
+  res += "SHELL[";
+  res += UIntToString(index);
+  res += "]";
+  return res;
+}
 
 // Based on Dave Laundon's simplified process_string
 AString GetNsisString(const AString &s)
@@ -487,26 +538,7 @@ AString GetNsisString(const AString &s)
       nData |= (((int)(c1 & 0x7F)) << 7);
 
       if (nVarIdx == NS_SHELL_CODE)
-      {
-        UInt32 index = c1;
-        bool needPrint = true;
-        res += "$";
-        if (index < kNumShellStrings)
-        {
-          const char *sz = kShellStrings[index];
-          if (sz[0] != 0)
-          {
-            res += sz;
-            needPrint = false;
-          }
-        }
-        if (needPrint)
-        {
-          res += "SHELL[";
-          res += UIntToString(index);
-          res += "]";
-        }
-      }
+        res += GetShellString(c1);
       else if (nVarIdx == NS_VAR_CODE)
         res += GetVar(nData);
       else if (nVarIdx == NS_LANG_CODE)
@@ -523,9 +555,53 @@ AString GetNsisString(const AString &s)
   return res;
 }
 
+UString GetNsisString(const UString &s)
+{
+  UString res;
+  for (int i = 0; i < s.Length();)
+  {
+    wchar_t nVarIdx = s[i++];
+    if (nVarIdx > NS_UN_CODES_START && nVarIdx <= NS_UN_CODES_END)
+    {
+      if (i == s.Length())
+        break;
+      int nData = s[i++] & 0x7FFF;
+
+      if (nVarIdx == NS_UN_SHELL_CODE)
+        res += GetUnicodeString(GetShellString(nData >> 8));
+      else if (nVarIdx == NS_UN_VAR_CODE)
+        res += GetUnicodeString(GetVar(nData));
+      else if (nVarIdx == NS_UN_LANG_CODE)
+        res += L"NS_LANG_CODE";
+    }
+    else if (nVarIdx == NS_UN_SKIP_CODE)
+    {
+      if (i == s.Length())
+        break;
+      res += s[i++];
+    }
+    else // Normal char
+      res += (char)nVarIdx;
+  }
+  return res;
+}
+
+AString CInArchive::ReadString2A(UInt32 pos)
+{
+  return GetNsisString(ReadStringA(pos));
+}
+
+UString CInArchive::ReadString2U(UInt32 pos)
+{
+  return GetNsisString(ReadStringU(pos));
+}
+
 AString CInArchive::ReadString2(UInt32 pos)
 {
-  return GetNsisString(ReadString(pos));
+  if (IsUnicode)
+    return UnicodeStringToMultiByte(ReadString2U(pos));
+  else
+    return ReadString2A(pos);
 }
 
 #define DEL_DIR 1
@@ -566,7 +642,8 @@ AString CEntry::GetParamsString(int numParams)
 HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 {
   _posInData = bh.Offset + GetOffset();
-  AString prefix;
+  AString prefixA;
+  UString prefixU;
   for (UInt32 i = 0; i < bh.Num; i++)
   {
     CEntry e;
@@ -585,11 +662,22 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
     {
       case EW_CREATEDIR:
       {
-        prefix.Empty();
-        prefix = ReadString2(e.Params[0]);
+        if (IsUnicode)
+        {
+          prefixU.Empty();
+          prefixU = ReadString2U(e.Params[0]);
+        }
+        else
+        {
+          prefixA.Empty();
+          prefixA = ReadString2A(e.Params[0]);
+        }
         #ifdef NSIS_SCRIPT
         Script += " ";
-        Script += prefix;
+        if (IsUnicode)
+          Script += UnicodeStringToMultiByte(prefixU);
+        else
+          Script += prefixA;
         #endif
         break;
       }
@@ -597,9 +685,18 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_EXTRACTFILE:
       {
         CItem item;
-        item.Prefix = prefix;
+        item.IsUnicode = IsUnicode;
+        if (IsUnicode)
+        {
+          item.PrefixU = prefixU;
+          item.NameU = ReadString2U(e.Params[1]);
+        }
+        else
+        {
+          item.PrefixA = prefixA;
+          item.NameA = ReadString2A(e.Params[1]);
+        }
         /* UInt32 overwriteFlag = e.Params[0]; */
-        item.Name = ReadString2(e.Params[1]);
         item.Pos = e.Params[2];
         item.DateTime.dwLowDateTime = e.Params[3];
         item.DateTime.dwHighDateTime = e.Params[4];
@@ -614,7 +711,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         Items.Add(item);
         #ifdef NSIS_SCRIPT
         Script += " ";
-        Script += item.Name;
+
+        if (IsUnicode)
+          Script += UnicodeStringToMultiByte(item.NameU);
+        else
+          Script += item.NameA;
         #endif
         break;
       }
@@ -908,7 +1009,10 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
     // if (IsSolid) 
     for (i = 0; i + 1 < Items.Size();)
     {
-      if (Items[i].Pos == Items[i + 1].Pos && (IsSolid || Items[i].Name == Items[i + 1].Name))
+      bool sameName = IsUnicode ?
+        (Items[i].NameU == Items[i + 1].NameU) :
+        (Items[i].NameA == Items[i + 1].NameA);
+      if (Items[i].Pos == Items[i + 1].Pos && (IsSolid || sameName))
         Items.Delete(i + 1);
       else
         i++;
@@ -927,8 +1031,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         RINOK(_stream->Seek(GetPosOfNonSolidItem(i), STREAM_SEEK_SET, NULL));
         const UInt32 kSigSize = 4 + 1 + 5;
         BYTE sig[kSigSize];
-        UInt32 processedSize;
-        RINOK(ReadStream(_stream, sig, kSigSize, &processedSize));
+        size_t processedSize = kSigSize;
+        RINOK(ReadStream(_stream, sig, &processedSize));
         if (processedSize < 4)
           return S_FALSE;
         UInt32 size = GetUInt32FromMemLE(sig);
@@ -977,7 +1081,37 @@ HRESULT CInArchive::Parse()
   ReadBlockHeader(bhData);
 
   _stringsPos = bhStrings.Offset;
+  UInt32 pos = GetOffset() + _stringsPos;
+  int numZeros0 = 0;
+  int numZeros1 = 0;
+  int i;
+  const kBlockSize = 256;
+  for (i = 0; i < kBlockSize; i++)
+  {
+    if (pos >= _size || pos + 1 >= _size)
+      break;
+    char c0 = _data[pos++];
+    char c1 = _data[pos++];
+    wchar_t c = (c0 | ((wchar_t)c1 << 8));
 
+    if (c >= NS_UN_CODES_START && c < NS_UN_CODES_END)
+    {
+      if (pos >= _size || pos + 1 >= _size)
+        break;
+      pos += 2;
+      numZeros1++;
+    }
+    else
+    {
+      if (c0 == 0 && c1 != 0)
+        numZeros0++;
+      if (c1 == 0)
+        numZeros1++;
+    }
+    // printf("\nnumZeros0 = %2x %2x", _data[pos + 0],  _data[pos + 1]);
+  }
+  IsUnicode = (numZeros1 > numZeros0 * 3 + kBlockSize / 16);
+  // printf("\nnumZeros0 = %3d    numZeros1 = %3d", numZeros0,  numZeros1);
   return ReadEntries(bhEntries);
 }
 
@@ -1010,10 +1144,7 @@ HRESULT CInArchive::Open2(
 
   const UInt32 kSigSize = 4 + 1 + 5 + 1; // size, flag, lzma props, lzma first byte
   BYTE sig[kSigSize];
-  UInt32 processedSize;
-  RINOK(ReadStream(_stream, sig, kSigSize, &processedSize));
-  if (processedSize != kSigSize)
-    return S_FALSE;
+  RINOK(ReadStream_FALSE(_stream, sig, kSigSize));
   UInt64 position;
   RINOK(_stream->Seek(StreamOffset, STREAM_SEEK_SET, &position));
 
@@ -1065,11 +1196,11 @@ HRESULT CInArchive::Open2(
     RINOK(Decoder.Init(
         EXTERNAL_CODECS_LOC_VARS
         _stream, Method, FilterFlag, UseFilter));
-    UInt32 processedSize;
-    RINOK(Decoder.Read(_data, unpackSize, &processedSize));
+    size_t processedSize = unpackSize;
+    RINOK(Decoder.Read(_data, &processedSize));
     if (processedSize != unpackSize)
       return S_FALSE;
-    _size = (size_t)processedSize;
+    _size = processedSize;
     if (IsSolid)
     {
       UInt32 size2 = ReadUInt32();
@@ -1081,9 +1212,7 @@ HRESULT CInArchive::Open2(
   {
     _data.SetCapacity(unpackSize);
     _size = (size_t)unpackSize;
-    RINOK(ReadStream(_stream, (Byte *)_data, unpackSize, &processedSize));
-    if (processedSize != unpackSize)
-      return S_FALSE;
+    RINOK(ReadStream_FALSE(_stream, (Byte *)_data, unpackSize));
   }
   return Parse();
 }
@@ -1138,22 +1267,17 @@ HRESULT CInArchive::Open(
   UInt64 headerPosition = 0;
   while (position <= maxSize)
   {
-    UInt32 processedSize;
-    RINOK(ReadStream(inStream, buffer, kStartHeaderSize, &processedSize));
-    if (processedSize != kStartHeaderSize)
-      return S_FALSE;
+    RINOK(ReadStream_FALSE(inStream, buffer, kStartHeaderSize));
     headerPosition = position;
-    position += processedSize;
+    position += kStartHeaderSize;
     if(memcmp(buffer + 4, kSignature, kSignatureSize) == 0)
     {
       found = true;
       break;
     }
     const UInt32 kRem = kStep - kStartHeaderSize;
-    RINOK(ReadStream(inStream, buffer + kStartHeaderSize, kRem, &processedSize));
-    if (processedSize != kRem)
-      return S_FALSE;
-    position += processedSize;
+    RINOK(ReadStream_FALSE(inStream, buffer + kStartHeaderSize, kRem));
+    position += kRem;
   }
   if (!found)
     return S_FALSE;

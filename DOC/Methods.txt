@@ -1,4 +1,4 @@
-7-Zip method IDs (4.56)
+7-Zip method IDs (4.58)
 -----------------------
 
 Each compression or crypto method in 7z has unique binary value (ID).
@@ -40,19 +40,19 @@ List of defined IDs
          03  - BCJ
          1B  - BCJ2
       02 - PPC
-         05 - BC_PPC_B (Big Endian)
+         05 - PPC (Big Endian)
       03 - Alpha
-         01 - BC_Alpha
+         01 - Alpha
       04 - IA64
-         01 - BC_IA64
+         01 - IA64
       05 - ARM
-         01 - BC_ARM
+         01 - ARM
       06 - M68
-         05 - BC_M68_B (Big Endian)
+         05 - M68 (Big Endian)
       07 - ARM Thumb
-         01 - BC_ARMThumb
+         01 - ARMT
       08 - SPARC
-         05 - BC_SPARC
+         05 - SPARC
 
    04 - PPMD
       01 - Version

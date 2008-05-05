@@ -473,7 +473,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         if (!testMode)
         {
           UInt32 size = m_Database.NewFormatString.Length();
-          RINOK(WriteStream(realOutStream, (const char *)m_Database.NewFormatString, size, 0));
+          RINOK(WriteStream(realOutStream, (const char *)m_Database.NewFormatString, size));
         }
         RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
         continue;

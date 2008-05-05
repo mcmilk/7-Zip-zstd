@@ -11,9 +11,6 @@
 #include "../../../../C/CpuArch.h"
 
 #define RARVM_STANDARD_FILTERS
-#ifdef LITTLE_ENDIAN_UNALIGN
-#define RARVM_LITTLE_ENDIAN_UNALIGN
-#endif
 
 namespace NCompress {
 namespace NRar3 {
@@ -37,27 +34,8 @@ public:
 
 namespace NVm {
 
-inline UInt32 GetValue32(const void *addr)
-{
-  #ifdef RARVM_LITTLE_ENDIAN_UNALIGN
-  return *(const UInt32 *)addr;
-  #else
-  const Byte *b = (const Byte *)addr;
-  return UInt32((UInt32)b[0]|((UInt32)b[1]<<8)|((UInt32)b[2]<<16)|((UInt32)b[3]<<24));
-  #endif
-}
-
-inline void SetValue32(void *addr, UInt32 value)
-{
-  #ifdef RARVM_LITTLE_ENDIAN_UNALIGN
-  *(UInt32 *)addr = value;
-  #else
-  ((Byte *)addr)[0] = (Byte)value;
-  ((Byte *)addr)[1] = (Byte)(value >> 8);
-  ((Byte *)addr)[2] = (Byte)(value >> 16);
-  ((Byte *)addr)[3] = (Byte)(value >> 24);
-  #endif
-}
+inline UInt32 GetValue32(const void *addr) { return GetUi32(addr); }
+inline void SetValue32(void *addr, UInt32 value) { SetUi32(addr, value); }
 
 UInt32 ReadEncodedUInt32(CMemBitDecoder &inp);
 
@@ -147,14 +125,7 @@ class CVm
     if (byteMode)
       return(*(const Byte *)addr);
     else
-    {
-      #ifdef RARVM_LITTLE_ENDIAN_UNALIGN
-      return *(const UInt32 *)addr;
-      #else
-      const Byte *b = (const Byte *)addr;
-      return UInt32((UInt32)b[0]|((UInt32)b[1]<<8)|((UInt32)b[2]<<16)|((UInt32)b[3]<<24));
-      #endif
-    }
+      return GetUi32(addr);
   }
 
   static void SetValue(bool byteMode, void *addr, UInt32 value)
@@ -162,16 +133,7 @@ class CVm
     if (byteMode)
       *(Byte *)addr = (Byte)value;
     else
-    {
-      #ifdef RARVM_LITTLE_ENDIAN_UNALIGN
-      *(UInt32 *)addr = value;
-      #else
-      ((Byte *)addr)[0] = (Byte)value;
-      ((Byte *)addr)[1] = (Byte)(value >> 8);
-      ((Byte *)addr)[2] = (Byte)(value >> 16);
-      ((Byte *)addr)[3] = (Byte)(value >> 24);
-      #endif
-    }
+      SetUi32(addr, value);
   }
 
   UInt32 GetFixedGlobalValue32(UInt32 globalOffset) { return GetValue(false, &Mem[kGlobalOffset + globalOffset]); }

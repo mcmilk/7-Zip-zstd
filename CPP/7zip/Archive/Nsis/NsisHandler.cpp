@@ -12,6 +12,7 @@
 #include "Windows/PropVariant.h"
 
 #include "../Common/ItemNameUtils.h"
+#include "../../Common/StreamUtils.h"
 
 using namespace NWindows;
 
@@ -233,8 +234,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath:
       {
-        const UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetReducedName(), CP_ACP));
-        prop = (const wchar_t *)s;
+        UString s;
+        if (_archive.IsUnicode)
+          s = item.GetReducedNameU();
+        else
+          s = MultiByteToUnicodeString(item.GetReducedNameA(), CP_ACP);
+        s = NItemName::WinNameToOSName(s);
+        if (!s.IsEmpty())
+          prop = (const wchar_t *)s;
         break;
       }
       case kpidIsFolder:
@@ -348,7 +355,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       if (!testMode)
-        RINOK(realOutStream->Write((const char *)_archive.Script, (UInt32)_archive.Script.Length(), NULL));
+        RINOK(WriteStream(realOutStream, (const char *)_archive.Script, (UInt32)_archive.Script.Length()));
     }
     else
     #endif
@@ -379,9 +386,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           UInt64 pos = _archive.GetPosOfSolidItem(index);
           while(streamPos < pos)
           {
-            UInt32 curSize = (UInt32)MyMin(pos - streamPos, (UInt64)kBufferLength);
-            UInt32 processedSize;
-            HRESULT res = _archive.Decoder.Read(buffer, curSize, &processedSize);
+            size_t processedSize = (UInt32)MyMin(pos - streamPos, (UInt64)kBufferLength);
+            HRESULT res = _archive.Decoder.Read(buffer, &processedSize);
             if (res != S_OK)
             {
               if (res != S_FALSE)
@@ -398,8 +404,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           }
           if (streamPos == pos)
           {
-            UInt32 processedSize;
-            RINOK(_archive.Decoder.Read(buffer, 4, &processedSize));
+            size_t processedSize = 4;
+            RINOK(_archive.Decoder.Read(buffer, &processedSize));
             if (processedSize != 4)
               return E_FAIL;
             streamPos += processedSize;
@@ -433,8 +439,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
               UInt32 curSize = kBufferLength;
               if (sizeIsKnown && curSize > fullSize)
                 curSize = fullSize;
-              UInt32 processedSize;
-              HRESULT res = _archive.Decoder.Read(buffer, curSize, &processedSize);
+              size_t processedSize = curSize;
+              HRESULT res = _archive.Decoder.Read(buffer, &processedSize);
               if (res != S_OK)
               {
                 if (res != S_FALSE)
@@ -449,7 +455,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
                 break;
               }
               
-              fullSize -= processedSize;
+              fullSize -= (UInt32)processedSize;
               streamPos += processedSize;
               offset += processedSize;
               
@@ -460,7 +466,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
                 completed = currentTotalSize + offset;
               RINOK(extractCallback->SetCompleted(&completed));
               if (!testMode)
-                RINOK(realOutStream->Write(buffer, processedSize, NULL));
+                RINOK(WriteStream(realOutStream, buffer, processedSize));
             }
           }
           else
@@ -478,7 +484,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
               fullSize -= processedSize;
               streamPos += processedSize;
               if (!testMode)
-                RINOK(realOutStream->Write(buffer, processedSize, 0));
+                RINOK(WriteStream(realOutStream, buffer, processedSize));
             }
           }
         }

@@ -16,7 +16,7 @@ class CInArchive
   CMyComPtr<IInStream> m_Stream;
   UInt64 m_Position;
   
-  HRESULT ReadBytes(void *data, UInt32 size, UInt32 &processedSize);
+  HRESULT ReadBytes(void *data, size_t size, size_t &processedSize);
 public:
   HRESULT Open(IInStream *inStream);
   HRESULT GetNextItemReal(bool &filled, CItemEx &itemInfo);

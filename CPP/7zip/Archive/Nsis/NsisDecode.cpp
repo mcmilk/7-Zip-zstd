@@ -133,9 +133,9 @@ HRESULT CDecoder::Init(
   return S_OK;
 }
 
-HRESULT CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
+HRESULT CDecoder::Read(void *data, size_t *processedSize)
 {
-  return ReadStream(_decoderInStream, data, size, processedSize);;
+  return ReadStream(_decoderInStream, data, processedSize);;
 }
 
 }}

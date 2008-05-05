@@ -5,18 +5,14 @@
 extern "C" 
 { 
 #include "../../../../C/Alloc.h"
+#include "../../../../C/BwtSort.h"
+#include "../../../../C/HuffEnc.h"
 }
 
 #include "BZip2Encoder.h"
 
-#include "../BWT/BlockSort.h"
 #include "../BWT/Mtf8.h"
 #include "BZip2CRC.h"
-
-extern "C"
-{
-  #include "../../../../C/Compress/Huffman/HuffmanEncode.h"
-}
 
 namespace NCompress {
 namespace NBZip2 {
@@ -61,12 +57,15 @@ static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
   return ((CThreadInfo *)threadCoderInfo)->ThreadFunc();
 }
 
-HRes CThreadInfo::Create()
+#define RINOK_THREAD(x) { WRes __result_ = (x); if(__result_ != 0) return __result_; }
+
+HRESULT CThreadInfo::Create()
 {
-  RINOK(StreamWasFinishedEvent.Create());
-  RINOK(WaitingWasStartedEvent.Create());
-  RINOK(CanWriteEvent.Create());
-  return Thread.Create(MFThread, this);
+  RINOK_THREAD(StreamWasFinishedEvent.Create());
+  RINOK_THREAD(WaitingWasStartedEvent.Create());
+  RINOK_THREAD(CanWriteEvent.Create());
+  RINOK_THREAD(Thread.Create(MFThread, this));
+  return S_OK;
 }
 
 void CThreadInfo::FinishStream(bool needLeave)
@@ -145,10 +144,10 @@ CEncoder::~CEncoder()
   Free();
 }
 
-HRes CEncoder::Create()
+HRESULT CEncoder::Create()
 {
-  RINOK(CanProcessEvent.CreateIfNotCreated());
-  RINOK(CanStartWaitingEvent.CreateIfNotCreated());
+  RINOK_THREAD(CanProcessEvent.CreateIfNotCreated());
+  RINOK_THREAD(CanStartWaitingEvent.CreateIfNotCreated());
   if (ThreadsInfo != 0 && m_NumThreadsPrev == NumThreads)
     return S_OK;
   try 
@@ -167,7 +166,7 @@ HRes CEncoder::Create()
     ti.Encoder = this;
     if (MtMode)
     {
-      HRes res = ti.Create();
+      HRESULT res = ti.Create();
       if (res != S_OK)
       {
         NumThreads = t;
@@ -733,9 +732,12 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   {
     #ifdef COMPRESS_BZIP2_MT
     CThreadInfo &ti = ThreadsInfo[t];
-    ti.StreamWasFinishedEvent.Reset();
-    ti.WaitingWasStartedEvent.Reset();
-    ti.CanWriteEvent.Reset();
+    if (MtMode)
+    {
+      RINOK(ti.StreamWasFinishedEvent.Reset());
+      RINOK(ti.WaitingWasStartedEvent.Reset());
+      RINOK(ti.CanWriteEvent.Reset());
+    }
     #else
     CThreadInfo &ti = ThreadsInfo;
     ti.Encoder = this;

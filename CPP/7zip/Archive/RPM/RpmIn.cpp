@@ -32,10 +32,7 @@ static HRESULT RedSigHeaderSig(IInStream *inStream, CSigHeaderSig &h)
 {
   char dat[kCSigHeaderSigSize];
   char *cur = dat;
-  UInt32 processedSize;
-  RINOK(ReadStream(inStream, dat, kCSigHeaderSigSize, &processedSize));
-  if (kCSigHeaderSigSize != processedSize)
-    return S_FALSE;
+  RINOK(ReadStream_FALSE(inStream, dat, kCSigHeaderSigSize));
   memmove(h.Magic, cur, 4);
   cur += 4;
   cur += 4;
@@ -51,10 +48,7 @@ HRESULT OpenArchive(IInStream *inStream)
   char leadData[kLeadSize];
   char *cur = leadData;
   CLead lead;
-  UInt32 processedSize;
-  RINOK(ReadStream(inStream, leadData, kLeadSize, &processedSize));
-  if (kLeadSize != processedSize)
-    return S_FALSE;
+  RINOK(ReadStream_FALSE(inStream, leadData, kLeadSize));
   memmove(lead.Magic, cur, 4);
   cur += 4;
   lead.Major = *cur++;

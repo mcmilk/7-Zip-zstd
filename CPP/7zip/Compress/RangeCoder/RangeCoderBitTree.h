@@ -16,7 +16,7 @@ class CBitTreeEncoder
 public:
   void Init()
   {
-    for(UInt32 i = 1; i < (1 << NumBitLevels); i++)
+    for(UInt32 i = 0; i < (1 << NumBitLevels); i++)
       Models[i].Init();
   }
   void Encode(CEncoder *rangeEncoder, UInt32 symbol)
@@ -74,7 +74,7 @@ class CBitTreeDecoder
 public:
   void Init()
   {
-    for(UInt32 i = 1; i < (1 << NumBitLevels); i++)
+    for(UInt32 i = 0; i < (1 << NumBitLevels); i++)
       Models[i].Init();
   }
   UInt32 Decode(CDecoder *rangeDecoder)

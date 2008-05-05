@@ -432,10 +432,12 @@ CDecoder::~CDecoder()
   Free();
 }
 
-HRes CDecoder::Create()
+#define RINOK_THREAD(x) { WRes __result_ = (x); if(__result_ != 0) return __result_; }
+
+HRESULT CDecoder::Create()
 {
-  RINOK(CanProcessEvent.CreateIfNotCreated());
-  RINOK(CanStartWaitingEvent.CreateIfNotCreated());
+  RINOK_THREAD(CanProcessEvent.CreateIfNotCreated());
+  RINOK_THREAD(CanStartWaitingEvent.CreateIfNotCreated());
   if (m_States != 0 && m_NumThreadsPrev == NumThreads)
     return S_OK;
   Free();
@@ -454,7 +456,7 @@ HRes CDecoder::Create()
     ti.Decoder = this;
     if (MtMode)
     {
-      HRes res = ti.Create();
+      HRESULT res = ti.Create();
       if (res != S_OK)
       {
         NumThreads = t;
@@ -524,9 +526,12 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     CState &s = m_States[t];
     if (!s.Alloc())
       return E_OUTOFMEMORY;
-    s.StreamWasFinishedEvent.Reset();
-    s.WaitingWasStartedEvent.Reset();
-    s.CanWriteEvent.Reset();
+    if (MtMode)
+    {
+      RINOK(s.StreamWasFinishedEvent.Reset());
+      RINOK(s.WaitingWasStartedEvent.Reset());
+      RINOK(s.CanWriteEvent.Reset());
+    }
   }
   #else
   if (!m_States[0].Alloc())
@@ -647,12 +652,13 @@ STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
 
 static THREAD_FUNC_DECL MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
 
-HRes CState::Create()
+HRESULT CState::Create()
 {
-  RINOK(StreamWasFinishedEvent.CreateIfNotCreated());
-  RINOK(WaitingWasStartedEvent.CreateIfNotCreated());
-  RINOK(CanWriteEvent.CreateIfNotCreated());
-  return Thread.Create(MFThread, this);
+  RINOK_THREAD(StreamWasFinishedEvent.CreateIfNotCreated());
+  RINOK_THREAD(WaitingWasStartedEvent.CreateIfNotCreated());
+  RINOK_THREAD(CanWriteEvent.CreateIfNotCreated());
+  RINOK_THREAD(Thread.Create(MFThread, this));
+  return S_OK;
 }
 
 void CState::FinishStream()

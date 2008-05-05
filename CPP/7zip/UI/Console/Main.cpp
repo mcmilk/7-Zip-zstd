@@ -1,4 +1,4 @@
-/ Main.cpp
+// Main.cpp
 
 #include "StdAfx.h"
 
@@ -298,7 +298,7 @@ int Main2(
     stdStream << endl << "Codecs:" << endl;
 
     #ifdef EXTERNAL_CODECS
-    UINT32 numMethods;
+    UInt32 numMethods;
     if (codecs->GetNumberOfMethods(&numMethods) == S_OK)
     for (UInt32 j = 0; j < numMethods; j++)
     {

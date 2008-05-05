@@ -17,13 +17,7 @@
 #include "../../../Windows/Synchronization.h"
 #endif
 
-#if _MSC_VER >= 1300
-#define NO_INLINE __declspec(noinline) __fastcall 
-#else
-#ifdef _MSC_VER
-#define NO_INLINE __fastcall 
-#endif
-#endif
+#define NO_INLINE MY_FAST_CALL
 
 namespace NCompress {
 namespace NBZip2 {
@@ -50,7 +44,7 @@ struct CState
 
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
 
-  HRes Create();
+  HRESULT Create();
   void FinishStream();
   void ThreadFunc();
 
@@ -126,7 +120,7 @@ public:
   UInt32 BlockSizeMax;
   CDecoder();
   ~CDecoder();
-  HRes Create();
+  HRESULT Create();
   void Free();
 
   #else

@@ -237,7 +237,7 @@ UInt32 CCoder::decode_p()
 }
 
 
-STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
+HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
@@ -297,7 +297,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
       UInt32 len = number - 256 + kMatchMinLen;
       UInt32 distance = decode_p();
       if (distance >= pos)
-        throw "data error";
+        return S_FALSE;
       m_OutWindowStream.CopyBlock(distance, len);
         pos += len;
     }

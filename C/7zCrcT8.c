@@ -1,4 +1,7 @@
-/* 7zCrcT8.c */
+/* 7zCrcT8.c -- CRC32 calculation with 8 tables
+2008-03-19
+Igor Pavlov
+Public domain */
 
 #include "7zCrc.h"
 

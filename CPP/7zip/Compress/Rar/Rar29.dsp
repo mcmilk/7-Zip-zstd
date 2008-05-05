@@ -182,19 +182,19 @@ SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyVector.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\NewHandler.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\NewHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Vector.h
 # End Source File
 # End Group
 # Begin Group "Rar3"

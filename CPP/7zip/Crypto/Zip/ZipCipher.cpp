@@ -36,12 +36,8 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
   header[kHeaderSize - 1] = Byte(_crc >> 24);
   header[kHeaderSize - 2] = Byte(_crc >> 16);
 
-  UInt32 processedSize;
   _cipher.EncryptHeader(header);
-  RINOK(WriteStream(outStream, header, kHeaderSize, &processedSize));
-  if (processedSize != kHeaderSize)
-    return E_FAIL;
-  return S_OK;
+  return WriteStream(outStream, header, kHeaderSize);
 }
 
 STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
@@ -61,10 +57,7 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
 {
   Byte header[kHeaderSize];
-  UInt32 processedSize;
-  RINOK(ReadStream(inStream, header, kHeaderSize, &processedSize));
-  if (processedSize != kHeaderSize)
-    return E_FAIL;
+  RINOK(ReadStream_FAIL(inStream, header, kHeaderSize));
   _cipher.DecryptHeader(header);
   return S_OK;
 }

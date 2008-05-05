@@ -114,10 +114,10 @@ bool CInArchive::FindAndReadMarker(const UInt64 *searchHeaderSizeLimit)
 
 HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result = ReadStream(m_Stream, data, size, &realProcessedSize);
+  size_t realProcessedSize = size;
+  HRESULT result = ReadStream(m_Stream, data, &realProcessedSize);
   if(processedSize != NULL)
-    *processedSize = realProcessedSize;
+    *processedSize = (UInt32)realProcessedSize;
   m_Position += realProcessedSize;
   return result;
 }
@@ -304,7 +304,7 @@ HRESULT CInArchive::ReadLocalItem(CItemEx &item)
 {
   item.ExtractVersion.Version = ReadByte();
   item.ExtractVersion.HostOS = ReadByte();
-  item.Flags = ReadUInt16(); // & NFileHeader::NFlags::kUsedBitsMask; 
+  item.Flags = ReadUInt16();
   item.CompressionMethod = ReadUInt16();
   item.Time =  ReadUInt32();
   item.FileCRC = ReadUInt32();
@@ -467,7 +467,7 @@ HRESULT CInArchive::ReadCdItem(CItemEx &item)
   item.MadeByVersion.HostOS = ReadByte();
   item.ExtractVersion.Version = ReadByte();
   item.ExtractVersion.HostOS = ReadByte();
-  item.Flags = ReadUInt16(); //  & NFileHeader::NFlags::kUsedBitsMask; 
+  item.Flags = ReadUInt16();
   item.CompressionMethod = ReadUInt16();
   item.Time = ReadUInt32();
   item.FileCRC = ReadUInt32();
@@ -772,7 +772,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       return S_FALSE;
 
   UInt16 thisDiskNumber16 = ReadUInt16();
-  if (!isZip64 || thisDiskNumber16)
+  if (!isZip64 || thisDiskNumber16 != 0xFFFF)
     thisDiskNumber = thisDiskNumber16;
 
   UInt16 startCDDiskNumber16 = ReadUInt16();

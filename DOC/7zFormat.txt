@@ -238,24 +238,19 @@ Folder
   {
     BYTE 
     {
-      0:3 DecompressionMethod.IDSize
-      4:
-        0 - IsSimple
-        1 - Is not simple
-      5:
-        0 - No Attributes
-        1 - There Are Attributes
-      7:
-        0 - Last Method in Alternative_Method_List
-        1 - There are more alternative methods
+      0:3 CodecIdSize
+      4:  Is Complex Coder
+      5:  There Are Attributes
+      6:  Reserved
+      7:  There are more alternative methods. (Not used anymore, must be 0).
     } 
-    BYTE DecompressionMethod.ID[DecompressionMethod.IDSize]
-    if (!IsSimple)
+    BYTE CodecId[CodecIdSize]
+    if (Is Complex Coder)
     {
       UINT64 NumInStreams;
       UINT64 NumOutStreams;
     }
-    if (DecompressionMethod[0] != 0)
+    if (There Are Attributes)
     {
       UINT64 PropertiesSize
       BYTE Properties[PropertiesSize]

@@ -81,7 +81,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   properties[0] = _order;
   for (int i = 0; i < 4; i++)
     properties[1 + i] = Byte(_usedMemorySize >> (8 * i));
-  return WriteStream(outStream, properties, kPropSize, NULL);
+  return WriteStream(outStream, properties, kPropSize);
 }
 
 const UInt32 kUsedMemorySizeDefault = (1 << 24);

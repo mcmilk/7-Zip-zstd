@@ -708,22 +708,6 @@ SOURCE=..\..\Common\VirtThread.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\ARM.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\ARM.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\ARMThumb.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\ARMThumb.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\Branch\BCJ2Register.cpp
 # End Source File
 # Begin Source File
@@ -740,35 +724,19 @@ SOURCE=..\..\Compress\Branch\BranchCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Compress\Branch\BranchMisc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Branch\BranchMisc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\Branch\BranchRegister.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\Branch\Coder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\IA64.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\IA64.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\PPC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\PPC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\SPARC.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\SPARC.h
 # End Source File
 # Begin Source File
 
@@ -1270,31 +1238,6 @@ SOURCE=..\..\Compress\Z\ZDecoder.h
 # Begin Group "BWT"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\BWT\BlockSort.cpp
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\BWT\BlockSort.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\BWT\Mtf8.h
@@ -1852,6 +1795,42 @@ SOURCE=..\..\Archive\Cab\CabItem.h
 SOURCE=..\..\Archive\Cab\CabRegister.cpp
 # End Source File
 # End Group
+# Begin Group "Lzma - Ar"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaArcRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaFiltersDecode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaFiltersDecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Lzma\LzmaItem.h
+# End Source File
+# End Group
 # End Group
 # Begin Group "UI Common"
 
@@ -2213,28 +2192,6 @@ SOURCE=..\..\Crypto\Hash\Sha1.cpp
 
 SOURCE=..\..\Crypto\Hash\Sha1.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Hash\Sha256.cpp
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Hash\Sha256.h
-# End Source File
 # End Group
 # End Group
 # Begin Group "7-zip"
@@ -2268,113 +2225,9 @@ SOURCE=..\..\PropID.h
 # Begin Group "C"
 
 # PROP Default_Filter ""
-# Begin Group "C-Compress"
-
-# PROP Default_Filter ""
-# Begin Group "C Lz"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Compress\Lz\LzHash.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinder.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinderMt.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Lz\MatchFinderMt.h
-# End Source File
-# End Group
-# Begin Group "C Huffman"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Huffman\HuffmanEncode.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Huffman\HuffmanEncode.h
-# End Source File
-# End Group
-# Begin Group "C Branch"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchARM.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchARM.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchARMThumb.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchARMThumb.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchIA64.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchIA64.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchPPC.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchPPC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchSPARC.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchSPARC.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchTypes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compress\Branch\BranchX86.h
-# End Source File
-# End Group
-# End Group
-# Begin Group "C-Crypto"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Crypto\Aes.c
+SOURCE=..\..\..\..\C\7zCrc.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
 
@@ -2398,22 +2251,59 @@ SOURCE=..\..\..\..\C\Crypto\Aes.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Crypto\Aes.h
-# End Source File
-# End Group
-# Begin Source File
-
-SOURCE=..\..\..\..\C\7zCrc.c
-# SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\C\7zCrc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\C\Alloc.c
+SOURCE=..\..\..\..\C\Aes.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Aes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Alloc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -2421,7 +2311,300 @@ SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Bcj2.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bcj2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bra86.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\BraIA64.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\BwtSort.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\BwtSort.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\HuffEnc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\HuffEnc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\IStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzHash.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\RotateDefs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256.h
 # End Source File
 # Begin Source File
 
@@ -2454,7 +2637,26 @@ SOURCE=..\..\..\..\C\Sort.h
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Threads.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

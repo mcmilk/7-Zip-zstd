@@ -232,7 +232,6 @@ class CInArchive
   bool _bootIsDefined;
   CBootRecordDescriptor _bootDesc;
 
-  HRESULT ReadBytes(void *data, UInt32 size, UInt32 &processedSize);
   void Skeep(size_t size);
   void SkeepZeros(size_t size);
   Byte ReadByte();

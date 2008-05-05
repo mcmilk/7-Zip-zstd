@@ -275,7 +275,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     else
     {
       if (propVariant.vt != VT_UI4)
-        throw "incorrect item";
+        return E_FAIL;
       _processedFileInfo.Attributes = propVariant.ulVal;
       _processedFileInfo.AttributesAreDefined = true;
     }
@@ -684,11 +684,7 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
 //////////////////////////////////////////////////////////////////////////
 // Main function
 
-int 
-#ifdef _MSC_VER
-__cdecl 
-#endif
-main(int argc, char* argv[])
+int MY_CDECL main(int argc, char* argv[])
 {
   #ifdef _WIN32
   #ifndef _UNICODE

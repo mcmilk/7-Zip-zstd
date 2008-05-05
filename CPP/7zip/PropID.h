@@ -45,6 +45,7 @@ enum
   kpidLinks,
   kpidNumBlocks,
   kpidNumVolumes,
+  kpidTimeType,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace, 

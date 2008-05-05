@@ -40,8 +40,9 @@ CPropMap kPropMap[] =
   { NID::kCRC, NULL, kpidCRC, VT_UI4},
   
   { NID::kAnti, NULL, kpidIsAnti, VT_BOOL},
-  // { 97, NULL, kpidSolid, VT_BOOL},
+
   #ifndef _SFX
+  { 97, NULL, kpidEncrypted, VT_BOOL},
   { 98, NULL, kpidMethod, VT_BSTR},
   { 99, NULL, kpidBlock, VT_UI4}
   #endif
@@ -119,6 +120,7 @@ void CHandler::FillPopIDs()
   _fileInfoPopIDs += fileInfoPopIDs; 
  
   #ifndef _SFX
+  _fileInfoPopIDs.Add(97);
   _fileInfoPopIDs.Add(98);
   _fileInfoPopIDs.Add(99);
   #endif
@@ -144,10 +146,9 @@ STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index,     
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
 {
-  if((int)index >= _fileInfoPopIDs.Size())
+  if ((int)index >= _fileInfoPopIDs.Size())
     return E_INVALIDARG;
   int indexInMap = FindPropInMap(_fileInfoPopIDs[index]);
   if (indexInMap == -1)

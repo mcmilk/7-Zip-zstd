@@ -21,27 +21,10 @@ namespace NWim{
 static const int kChunkSizeBits = 15;
 static const UInt32 kChunkSize = (1 << kChunkSizeBits);
 
-static HRESULT ReadBytes(ISequentialInStream *inStream, void *data, UInt32 size)
-{
-  UInt32 realProcessedSize;
-  RINOK(ReadStream(inStream, data, size, &realProcessedSize));
-  return (realProcessedSize == size) ? S_OK : S_FALSE;
-}
-
-#ifdef LITTLE_ENDIAN_UNALIGN
-static inline UInt16 GetUInt16FromMem(const Byte *p) { return *(const UInt16 *)p; }
-static inline UInt32 GetUInt32FromMem(const Byte *p) { return *(const UInt32 *)p; }
-static inline UInt64 GetUInt64FromMem(const Byte *p) { return *(const UInt64 *)p; }
-#else
-static UInt16 GetUInt16FromMem(const Byte *p) { return p[0] | ((UInt16)p[1] << 8); }
-static UInt32 GetUInt32FromMem(const Byte *p) { return p[0] | ((UInt32)p[1] << 8) | ((UInt32)p[2] << 16) | ((UInt32)p[3] << 24); }
-static UInt64 GetUInt64FromMem(const Byte *p) { return GetUInt32FromMem(p) | ((UInt64)GetUInt32FromMem(p + 4) << 32); }
-#endif
-
 static void GetFileTimeFromMem(const Byte *p, FILETIME *ft)
 {
-  ft->dwLowDateTime = GetUInt32FromMem(p);
-  ft->dwHighDateTime = GetUInt32FromMem(p + 4);
+  ft->dwLowDateTime = GetUi32(p);
+  ft->dwHighDateTime = GetUi32(p + 4);
 }
 
 HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
@@ -70,7 +53,7 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
   UInt64 numChunks = (resource.UnpackSize + kChunkSize - 1) >> kChunkSizeBits;
   unsigned entrySize = ((resource.UnpackSize > (UInt64)1 << 32) ? 8 : 4);
   UInt64 sizesBufSize64 = entrySize * (numChunks - 1);
-  UInt32 sizesBufSize = (UInt32)sizesBufSize64;
+  size_t sizesBufSize = (size_t)sizesBufSize64;
   if (sizesBufSize != sizesBufSize64)
     return E_OUTOFMEMORY;
   if (sizesBufSize > sizesBuf.GetCapacity())
@@ -78,7 +61,7 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
     sizesBuf.Free();
     sizesBuf.SetCapacity(sizesBufSize);
   }
-  RINOK(ReadBytes(inStream, (Byte *)sizesBuf, sizesBufSize));
+  RINOK(ReadStream_FALSE(inStream, (Byte *)sizesBuf, sizesBufSize));
   const Byte *p = (const Byte *)sizesBuf;
   
   if (!lzxDecoder)
@@ -96,17 +79,17 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
     if (i > 0)
     {
       if (entrySize == 4)
-        offset = GetUInt32FromMem(p);
+        offset = GetUi32(p);
       else
-        offset = GetUInt64FromMem(p);
+        offset = GetUi64(p);
       p += entrySize;
     }
     UInt64 nextOffset = resource.PackSize - sizesBufSize64;
     if (i + 1 < (UInt32)numChunks)
       if (entrySize == 4)
-        nextOffset = GetUInt32FromMem(p);
+        nextOffset = GetUi32(p);
       else
-        nextOffset = GetUInt64FromMem(p);
+        nextOffset = GetUi64(p);
     if (nextOffset < offset)
       return S_FALSE;
 
@@ -166,16 +149,16 @@ static const Byte kSignature[kSignatureSize] = { 'M', 'S', 'W', 'I', 'M', 0, 0, 
 static void GetResource(const Byte *p, CResource &res)
 {
   res.Flags = p[7];
-  res.PackSize = GetUInt64FromMem(p) & (((UInt64)1 << 56) - 1);
-  res.Offset = GetUInt64FromMem(p + 8);
-  res.UnpackSize = GetUInt64FromMem(p + 16);
+  res.PackSize = GetUi64(p) & (((UInt64)1 << 56) - 1);
+  res.Offset = GetUi64(p + 8);
+  res.UnpackSize = GetUi64(p + 16);
 }
 
 static void GetStream(const Byte *p, CStreamInfo &s)
 {
   GetResource(p, s.Resource);
-  s.PartNumber = GetUInt16FromMem(p + 24);
-  s.RefCount = GetUInt32FromMem(p + 26);
+  s.PartNumber = GetUi16(p + 24);
+  s.RefCount = GetUi32(p + 26);
   memcpy(s.Hash, p + 30, kHashSize);
 }
 
@@ -187,22 +170,22 @@ static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
     if (pos + 8 > size)
       return S_FALSE;
     const Byte *p = base + pos;
-    UInt64 length = GetUInt64FromMem(p);
+    UInt64 length = GetUi64(p);
     if (length == 0)
       return S_OK;
     if (pos + 102 > size || pos + length + 8 > size || length > ((UInt64)1 << 62))
       return S_FALSE;
     CItem item;
-    item.Attributes = GetUInt32FromMem(p + 8);
-    // item.SecurityId = GetUInt32FromMem(p + 0xC);
-    UInt64 subdirOffset = GetUInt64FromMem(p + 0x10);
+    item.Attributes = GetUi32(p + 8);
+    // item.SecurityId = GetUi32(p + 0xC);
+    UInt64 subdirOffset = GetUi64(p + 0x10);
     GetFileTimeFromMem(p + 0x28, &item.CreationTime);
     GetFileTimeFromMem(p + 0x30, &item.LastAccessTime);
     GetFileTimeFromMem(p + 0x38, &item.LastWriteTime);
     memcpy(item.Hash, p + 0x40, kHashSize);
 
-    // UInt16 shortNameLen = GetUInt16FromMem(p + 98);
-    UInt16 fileNameLen = GetUInt16FromMem(p + 100);
+    // UInt16 shortNameLen = GetUi16(p + 98);
+    UInt16 fileNameLen = GetUi16(p + 100);
     
     size_t tempPos = pos + 102;
     if (tempPos + fileNameLen > size)
@@ -212,7 +195,7 @@ static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
     MyStringCopy(sz, (const wchar_t *)prefix);
     sz += prefix.Length();
     for (UInt16 i = 0; i + 2 <= fileNameLen; i += 2)
-      *sz++ = GetUInt16FromMem(base + tempPos + i);
+      *sz++ = GetUi16(base + tempPos + i);
     *sz++ = '\0';
     item.Name.ReleaseBuffer();
     if (fileNameLen == 0 && item.IsDirectory() && !item.HasStream())
@@ -238,8 +221,8 @@ static HRESULT ParseDir(const Byte *base, size_t size,
   if (pos + 8 > size)
     return S_FALSE;
   const Byte *p = base + pos;
-  UInt32 totalLength = GetUInt32FromMem(p);
-  // UInt32 numEntries = GetUInt32FromMem(p + 4);
+  UInt32 totalLength = GetUi32(p);
+  // UInt32 numEntries = GetUi32(p + 4);
   pos += 8;
   {
     /*
@@ -249,7 +232,7 @@ static HRESULT ParseDir(const Byte *base, size_t size,
     {
       if (pos + 8 > size)
         return S_FALSE;
-      UInt64 len = GetUInt64FromMem(p + pos);
+      UInt64 len = GetUi64(p + pos);
       entryLens.Add(len);
       sum += len;
       pos += 8;
@@ -322,25 +305,25 @@ HRESULT ReadHeader(IInStream *inStream, CHeader &h)
 {
   const UInt32 kHeaderSizeMax = 0xD0;
   Byte p[kHeaderSizeMax];
-  RINOK(ReadBytes(inStream, p, kHeaderSizeMax));
-  UInt32 haderSize = GetUInt32FromMem(p + 8);
+  RINOK(ReadStream_FALSE(inStream, p, kHeaderSizeMax));
+  UInt32 haderSize = GetUi32(p + 8);
   if (memcmp(p, kSignature, kSignatureSize) != 0)
     return S_FALSE;
   if (haderSize < 0x74)
     return S_FALSE;
-  h.Version = GetUInt32FromMem(p + 0x0C);
-  h.Flags = GetUInt32FromMem(p + 0x10);
+  h.Version = GetUi32(p + 0x0C);
+  h.Flags = GetUi32(p + 0x10);
   if (!h.IsSupported())
     return S_FALSE;
-  if (GetUInt32FromMem(p + 0x14) != kChunkSize)
+  if (GetUi32(p + 0x14) != kChunkSize)
     return S_FALSE;
   memcpy(h.Guid, p + 0x18, 16);
-  h.PartNumber = GetUInt16FromMem(p + 0x28);
-  h.NumParts = GetUInt16FromMem(p + 0x2A);
+  h.PartNumber = GetUi16(p + 0x28);
+  h.NumParts = GetUi16(p + 0x2A);
   int offset = 0x2C;
   if (h.IsNewVersion())
   {
-    h.NumImages = GetUInt32FromMem(p + offset);
+    h.NumImages = GetUi32(p + offset);
     offset += 4;
   }
   GetResource(p + offset, h.OffsetResource);
@@ -352,7 +335,7 @@ HRESULT ReadHeader(IInStream *inStream, CHeader &h)
     if (haderSize < 0xD0)
       return S_FALSE;
     GetResource(p + offset + 0x4C, h.IntegrityResource);
-    h.BootIndex = GetUInt32FromMem(p + 0x48);
+    h.BootIndex = GetUi32(p + 0x48);
   }
   */
   return S_OK;

@@ -1,7 +1,7 @@
-7z ANSI-C Decoder 4.48
+7z ANSI-C Decoder 4.58
 ----------------------
 
-7z ANSI-C Decoder 4.48 Copyright (C) 1999-2006 Igor Pavlov
+7z ANSI-C Decoder 4.58 Copyright (C) 1999-2008 Igor Pavlov
 
 7z ANSI-C provides 7z/LZMA decoding.
 7z ANSI-C version is simplified version ported from C++ code.
@@ -20,17 +20,12 @@ Read lzma.txt for information about license.
 Files
 ---------------------
 
-7zAlloc.*    - Allocate and Free
-7zBuffer.*   - Buffer structure
-7zCrc.*      - CRC32 code
-7zDecode.*   - Low level memory->memory decoding
-7zExtract.*  - High level stream->memory decoding
+7zDecode.*   - Low level 7z decoding
+7zExtract.*  - High level 7z decoding
 7zHeader.*   - .7z format constants
 7zIn.*       - .7z archive opening
 7zItem.*     - .7z structures
 7zMain.c     - Test application
-7zMethodID.* - MethodID structure
-7zTypes.h    - Base types and constants
 
 
 How To Use
@@ -85,17 +80,6 @@ extracts files from archive.7z to current folder.
 How to use .7z Decoder
 ----------------------
 
-.7z Decoder can be compiled in one of two modes:
-
-1) Default mode. In that mode 7z Decoder will read full compressed 
-   block to RAM before decompressing.
-  
-2) Mode with defined _LZMA_IN_CB. In that mode 7z Decoder can read
-   compressed block by parts. And you can specify desired buffer size. 
-   So memory requirements can be reduced. But decompressing speed will 
-   be 5-10% lower and code size is slightly larger.
-
-   
 Memory allocation
 ~~~~~~~~~~~~~~~~~
 
@@ -104,26 +88,27 @@ Memory allocation
 2) Main pool
 Such scheme can allow you to avoid fragmentation of allocated blocks.
 
+
 Steps for using 7z decoder
 --------------------------
 
 Use code at 7zMain.c as example.
 
 1) Declare variables:
-  inStream                     /* implements ISzInStream interface */
-  CArchiveDatabaseEx db;       /* 7z archive database structure */
-  ISzAlloc allocImp;           /* memory functions for main pool */
-  ISzAlloc allocTempImp;       /* memory functions for temporary pool */
+  inStream                 /* implements ISzInStream interface */
+  CSzArEx db;              /* 7z archive database structure */
+  ISzAlloc allocImp;       /* memory functions for main pool */
+  ISzAlloc allocTempImp;   /* memory functions for temporary pool */
 
-2) call InitCrcTable(); function to initialize CRC structures.
+2) call CrcGenerateTable(); function to initialize CRC structures.
 
-3) call SzArDbExInit(&db); function to initialize db structures.
+3) call SzArEx_Init(&db); function to initialize db structures.
 
-4) call SzArchiveOpen(inStream, &db, &allocMain, &allocTemp) to open archive
+4) call SzArEx_Open(&db, inStream, &allocMain, &allocTemp) to open archive
 
 This function opens archive "inStream" and reads headers to "db".
 All items in "db" will be allocated with "allocMain" functions.
-SzArchiveOpen function allocates and frees temporary structures by "allocTemp" functions.
+SzArEx_Open function allocates and frees temporary structures by "allocTemp" functions.
 
 5) List items or Extract items
 
@@ -131,9 +116,9 @@ SzArchiveOpen function allocates and frees temporary structures by "allocTemp" f
   ~~~~~~~~~~~~~
     {
       UInt32 i;
-      for (i = 0; i < db.Database.NumFiles; i++)
+      for (i = 0; i < db.db.NumFiles; i++)
       {
-        CFileItem *f = db.Database.Files + i;
+        CFileItem *f = db.db.Files + i;
         printf("%10d  %s\n", (int)f->Size, f->Name);
       }
     }
@@ -141,9 +126,9 @@ SzArchiveOpen function allocates and frees temporary structures by "allocTemp" f
   Extracting code:
   ~~~~~~~~~~~~~~~~
 
-  SZ_RESULT SzExtract(
-    ISzInStream *inStream, 
+  SZ_RESULT SzAr_Extract(
     CArchiveDatabaseEx *db,
+    ISzInStream *inStream, 
     UInt32 fileIndex,         /* index of file */
     UInt32 *blockIndex,       /* index of solid block */
     Byte **outBuffer,         /* pointer to pointer to output buffer (allocated with allocMain) */
@@ -163,7 +148,7 @@ SzArchiveOpen function allocates and frees temporary structures by "allocTemp" f
   After decompressing you must free "outBuffer":
   allocImp.Free(outBuffer);
 
-6) call SzArDbExFree(&db, allocImp.Free) to free allocated items in "db".
+6) call SzArEx_Free(&db, allocImp.Free) to free allocated items in "db".
 
 
 
@@ -173,7 +158,6 @@ Memory requirements for .7z decoding
 
 Memory usage for Archive opening:
   - Temporary pool:
-     - Memory for compressed .7z headers (if _LZMA_IN_CB is not defined)
      - Memory for uncompressed .7z headers
      - some other temporary blocks
   - Main pool:
@@ -187,7 +171,6 @@ Memory usage for Archive opening:
 
 Memory usage for archive Decompressing:
   - Temporary pool:
-     - Memory for compressed solid block (if _LZMA_IN_CB is not defined)
      - Memory for LZMA decompressing structures
   - Main pool:
      - Memory for decompressed solid block
@@ -195,38 +178,13 @@ Memory usage for archive Decompressing:
        temprorary buffers can be about 15% of solid block size. 
   
 
-If _LZMA_IN_CB is defined, 7z Decoder will not allocate memory for 
-compressed blocks. Instead of this, you must allocate buffer with desired 
+7z Decoder doesn't allocate memory for compressed blocks. 
+Instead of this, you must allocate buffer with desired 
 size before calling 7z Decoder. Use 7zMain.c as example.
 
 
-
-EXIT codes
------------
-
-7z Decoder functions can return one of the following codes:
-
-#define SZ_OK (0)
-#define SZE_DATA_ERROR (1)
-#define SZE_OUTOFMEMORY (2)
-#define SZE_CRC_ERROR (3)
-
-#define SZE_NOTIMPL (4)
-#define SZE_FAIL (5)
-
-#define SZE_ARCHIVE_ERROR (6)
-
-
-
-LZMA Defines
-------------
-
-_LZMA_IN_CB       - Use special callback mode for input stream to reduce memory requirements
-
-_SZ_FILE_SIZE_32  - define it if you need only support for files smaller than 4 GB
-_SZ_NO_INT_64     - define it if your compiler doesn't support long long int or __int64.
-
-_LZMA_PROB32      - it can increase LZMA decompressing speed on some 32-bit CPUs.
+Defines
+-------
 
 _SZ_ALLOC_DEBUG   - define it if you want to debug alloc/free operations to stderr.
 

@@ -17,7 +17,7 @@ static THREAD_FUNC_DECL CoderThread(void *p)
   }
 }
 
-HRes CVirtThread::Create()
+WRes CVirtThread::Create()
 {
   RINOK(StartEvent.CreateIfNotCreated());
   RINOK(FinishedEvent.CreateIfNotCreated());

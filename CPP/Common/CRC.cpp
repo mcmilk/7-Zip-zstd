@@ -7,8 +7,4 @@ extern "C"
 #include "../../C/7zCrc.h"
 }
 
-class CCRCTableInit
-{
-public:
-  CCRCTableInit() { CrcGenerateTable(); }
-} g_CRCTableInit;
+struct CCRCTableInit { CCRCTableInit() { CrcGenerateTable(); } } g_CRCTableInit;

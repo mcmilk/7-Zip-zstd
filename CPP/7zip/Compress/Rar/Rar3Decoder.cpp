@@ -58,11 +58,7 @@ CDecoder::~CDecoder()
 
 HRESULT CDecoder::WriteDataToStream(const Byte *data, UInt32 size)
 {
-  UInt32 processedSize;
-  HRESULT res = WriteStream(_outStream, data, size, &processedSize);
-  if (res == S_OK && processedSize != size)
-    res = E_FAIL;
-  return res;
+  return WriteStream(_outStream, data, size);
 }
 
 HRESULT CDecoder::WriteData(const Byte *data, UInt32 size)
