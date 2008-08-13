@@ -14,7 +14,7 @@
 
 template <class T>
 inline int MyStringLen(const T *s)
-{ 
+{
   int i;
   for (i = 0; s[i] != '\0'; i++);
   return i;
@@ -22,7 +22,7 @@ inline int MyStringLen(const T *s)
 
 template <class T>
 inline T * MyStringCopy(T *dest, const T *src)
-{ 
+{
   T *destStart = dest;
   while((*dest++ = *src++) != 0);
   return destStart;
@@ -140,7 +140,7 @@ class CStringBase
   }
   void MoveItems(int destIndex, int srcIndex)
   {
-    memmove(_chars + destIndex, _chars + srcIndex, 
+    memmove(_chars + destIndex, _chars + srcIndex,
         sizeof(T) * (_length - srcIndex + 1));
   }
   
@@ -167,7 +167,7 @@ protected:
   void SetCapacity(int newCapacity)
   {
     int realCapacity = newCapacity + 1;
-    if(realCapacity == _capacity)
+    if (realCapacity == _capacity)
       return;
     /*
     const int kMaxStringSize = 0x20000000;
@@ -177,25 +177,21 @@ protected:
     #endif
     */
     T *newBuffer = new T[realCapacity];
-    if(_capacity > 0)
+    if (_capacity > 0)
     {
-      for (int i = 0; i < (_length + 1); i++)
+      for (int i = 0; i < _length; i++)
         newBuffer[i] = _chars[i];
       delete []_chars;
-      _chars = newBuffer;
     }
-    else
-    {
-      _chars = newBuffer;
-      _chars[0] = 0;
-    }
+    _chars = newBuffer;
+    _chars[_length] = 0;
     _capacity = realCapacity;
   }
 
   void GrowLength(int n)
   {
     int freeSize = _capacity - _length - 1;
-    if (n <= freeSize) 
+    if (n <= freeSize)
       return;
     int delta;
     if (_capacity > 64)
@@ -216,8 +212,7 @@ protected:
   }
 
 public:
-  CStringBase(): _chars(0), _length(0), _capacity(0)
-    { SetCapacity(16 - 1); }
+  CStringBase(): _chars(0), _length(0), _capacity(0) { SetCapacity(3); }
   CStringBase(T c):  _chars(0), _length(0), _capacity(0)
   {
     SetCapacity(1);
@@ -240,14 +235,14 @@ public:
   }
   ~CStringBase() {  delete []_chars; }
 
-  operator const T*() const { return _chars;} 
+  operator const T*() const { return _chars;}
 
-  // The minimum size of the character buffer in characters. 
+  // The minimum size of the character buffer in characters.
   // This value does not include space for a null terminator.
   T* GetBuffer(int minBufLength)
   {
-    if(minBufLength >= _capacity)
-      SetCapacity(minBufLength + 1);
+    if (minBufLength >= _capacity)
+      SetCapacity(minBufLength);
     return _chars;
   }
   void ReleaseBuffer() { ReleaseBuffer(MyStringLen(_chars)); }
@@ -278,9 +273,9 @@ public:
     int length = MyStringLen(chars);
     SetCapacity(length);
     MyStringCopy(_chars, chars);
-    _length = length; 
+    _length = length;
     return *this;
-  }  
+  }
   CStringBase& operator=(const CStringBase& s)
   {
     if(&s == this)
@@ -508,7 +503,7 @@ public:
     while (pos < Length())
     {
       pos = Find(oldChar, pos);
-      if (pos < 0) 
+      if (pos < 0)
         break;
       _chars[pos] = newChar;
       pos++;
@@ -529,7 +524,7 @@ public:
     while (pos < _length)
     {
       pos = Find(oldString, pos);
-      if (pos < 0) 
+      if (pos < 0)
         break;
       Delete(pos, oldStringLength);
       Insert(pos, newString);
@@ -556,7 +551,7 @@ CStringBase<T> operator+(const CStringBase<T>& s1, const CStringBase<T>& s2)
 {
   CStringBase<T> result(s1);
   result += s2;
-  return result; 
+  return result;
 }
 
 template <class T>
@@ -564,7 +559,7 @@ CStringBase<T> operator+(const CStringBase<T>& s, T c)
 {
   CStringBase<T> result(s);
   result += c;
-  return result; 
+  return result;
 }
 
 template <class T>
@@ -572,7 +567,7 @@ CStringBase<T> operator+(T c, const CStringBase<T>& s)
 {
   CStringBase<T> result(c);
   result += s;
-  return result; 
+  return result;
 }
 
 template <class T>
@@ -580,7 +575,7 @@ CStringBase<T> operator+(const CStringBase<T>& s, const T * chars)
 {
   CStringBase<T> result(s);
   result += chars;
-  return result; 
+  return result;
 }
 
 template <class T>
@@ -588,7 +583,7 @@ CStringBase<T> operator+(const T * chars, const CStringBase<T>& s)
 {
   CStringBase<T> result(chars);
   result += s;
-  return result; 
+  return result;
 }
 
 template <class T>

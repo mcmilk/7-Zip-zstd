@@ -49,37 +49,38 @@ class CStartupInfo
   CSysString m_RegistryPath;
 
   CSysString GetFullKeyName(const CSysString &keyName) const;
-  LONG CreateRegKey(HKEY parentKey, 
+  LONG CreateRegKey(HKEY parentKey,
     const CSysString &keyName, NWindows::NRegistry::CKey &destKey) const;
-  LONG OpenRegKey(HKEY parentKey, 
+  LONG OpenRegKey(HKEY parentKey,
     const CSysString &keyName, NWindows::NRegistry::CKey &destKey) const;
 
 public:
-  void Init(const PluginStartupInfo &pluginStartupInfo, 
+  void Init(const PluginStartupInfo &pluginStartupInfo,
       const CSysString &pliginNameForRegestry);
   const char *GetMsgString(int messageId);
-  int ShowMessage(unsigned int flags, const char *helpTopic, 
+  int ShowMessage(unsigned int flags, const char *helpTopic,
       const char **items, int numItems, int numButtons);
   int ShowMessage(const char *message);
+  int ShowMessageLines(const char *message);
   int ShowMessage(int messageId);
 
-  int ShowDialog(int X1, int Y1, int X2, int Y2, 
+  int ShowDialog(int X1, int Y1, int X2, int Y2,
       const char *helpTopic, struct FarDialogItem *items, int numItems);
   int ShowDialog(int sizeX, int sizeY,
       const char *helpTopic, struct FarDialogItem *items, int numItems);
 
-  void InitDialogItems(const CInitDialogItem *srcItems, 
+  void InitDialogItems(const CInitDialogItem *srcItems,
       FarDialogItem *destItems, int numItems);
   
   HANDLE SaveScreen(int X1, int Y1, int X2, int Y2);
   HANDLE SaveScreen();
   void RestoreScreen(HANDLE handle);
 
-  void SetRegKeyValue(HKEY parentKey, const CSysString &keyName, 
+  void SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
       const LPCTSTR valueName, LPCTSTR value) const;
-  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName, 
+  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
       const LPCTSTR valueName, UINT32 value) const;
-  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName, 
+  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
       const LPCTSTR valueName, bool value) const;
 
   CSysString QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
@@ -124,17 +125,17 @@ public:
       unsigned int flags,
       const char *title,
       const char *helpTopic,
-      const CSysStringVector &items, 
+      const CSysStringVector &items,
       int selectedItem);
 
-  int Editor(const char *fileName, const char *title, 
+  int Editor(const char *fileName, const char *title,
       int X1, int Y1, int X2, int Y2, DWORD flags, int startLine, int startChar)
-      { return m_Data.Editor((char *)fileName, (char *)title, X1, Y1, X2, Y2, 
+      { return m_Data.Editor((char *)fileName, (char *)title, X1, Y1, X2, Y2,
         flags, startLine, startChar); }
   int Editor(const char *fileName)
       { return Editor(fileName, NULL, 0, 0, -1, -1, 0, -1, -1); }
 
-  int Viewer(const char *fileName, const char *title, 
+  int Viewer(const char *fileName, const char *title,
       int X1, int Y1, int X2, int Y2, DWORD flags)
       { return m_Data.Viewer((char *)fileName, (char *)title, X1, Y1, X2, Y2, flags); }
   int Viewer(const char *fileName)
@@ -157,7 +158,8 @@ public:
 extern CStartupInfo g_StartupInfo;
 
 void PrintErrorMessage(const char *message, int code);
-void PrintErrorMessage(const char *message, const char *aText);
+void PrintErrorMessage(const char *message, const char *text);
+void PrintErrorMessage(const char *message, const wchar_t *text);
 
 #define  MY_TRY_BEGIN   try\
   {
@@ -170,8 +172,10 @@ void PrintErrorMessage(const char *message, const char *aText);
 
 #define  MY_TRY_END2(x, y)     }\
   catch(int n) { PrintErrorMessage(x, n); return y; }\
-  catch(const CSysString &s) { PrintErrorMessage(x, s); return y; }\
+  catch(const AString &s) { PrintErrorMessage(x, s); return y; }\
   catch(const char *s) { PrintErrorMessage(x, s); return y; }\
+  catch(const UString &s) { PrintErrorMessage(x, s); return y; }\
+  catch(const wchar_t *s) { PrintErrorMessage(x, s); return y; }\
   catch(...) { g_StartupInfo.ShowMessage(x); return y; }
 
 bool WasEscPressed();

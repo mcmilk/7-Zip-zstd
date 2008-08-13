@@ -1,6 +1,6 @@
 {23170F69-40C1-278A-0000-00yy00xx0000}
 
-00 IProgress.h 
+00 IProgress.h
 
   05  IProgress
 
@@ -13,7 +13,7 @@
   0B  IFolderArchiveUpdateCallback
   0Ñ  Agent.h::IArchiveFolderInternal
 
-03 IStream.h   
+03 IStream.h
 
   01  ISequentialInStream
   02  ISequentialOutStream
@@ -29,7 +29,7 @@
   05  ICompressCoder
   18  ICompressCoder2
   20  ICompressSetCoderProperties
-  21  ICompressSetDecoderProperties // 
+  21  ICompressSetDecoderProperties //
   22  ICompressSetDecoderProperties2
   23  ICompressWriteCoderProperties
   24  ICompressGetInStreamProcessedSize
@@ -55,7 +55,7 @@
   11 ICryptoGetTextPassword2
 
 
-06 IArchive.h 
+06 IArchive.h
 
   03  ISetProperties
 
@@ -118,6 +118,14 @@ Handler GUIDs:
   09 Nsis
   0A Lzma
 
+  DD Pe
+  DE Elf
+  DF Mach-O
+  E0 Udf
+  E1 Xar
+  E2 Mub
+  E3 Hfs
+  E4 Dmg
   E5 Compound
   E6 Wim
   E7 Iso
@@ -131,7 +139,7 @@ Handler GUIDs:
   EF GZip
 
 {23170F69-40C1-278A-1000-000100030000} CAgentArchiveHandle
-{23170F69-40C1-278A-1000-000100020000} ContextMenu.h::CZipContextMenu 
+{23170F69-40C1-278A-1000-000100020000} ContextMenu.h::CZipContextMenu
 
 {23170F69-40C1-278B- old codecs clsids
 

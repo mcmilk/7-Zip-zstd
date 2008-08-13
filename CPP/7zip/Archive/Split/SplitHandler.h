@@ -10,10 +10,10 @@
 namespace NArchive {
 namespace NSplit {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public IInArchiveGetStream,
-  // public IOutArchive, 
+  // public IOutArchive,
   public CMyUnknownImp
 {
 public:
@@ -21,7 +21,7 @@ public:
 
   INTERFACE_IInArchive(;)
 
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 
 private:
   UString _subName;

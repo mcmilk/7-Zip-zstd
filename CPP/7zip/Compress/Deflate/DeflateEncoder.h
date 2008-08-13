@@ -180,7 +180,7 @@ public:
       ICompressProgressInfo *progress);
 
   // ICompressSetCoderProperties
-  HRESULT BaseSetEncoderProperties2(const PROPID *propIDs, 
+  HRESULT BaseSetEncoderProperties2(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
 };
 
@@ -188,7 +188,7 @@ public:
 
 class CCOMCoder :
   public ICompressCoder,
-  public ICompressSetCoderProperties, 
+  public ICompressSetCoderProperties,
   public CMyUnknownImp,
   public CCoder
 {
@@ -199,7 +199,7 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   // ICompressSetCoderProperties
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
 };
 
@@ -216,7 +216,7 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   // ICompressSetCoderProperties
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
 };
 

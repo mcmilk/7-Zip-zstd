@@ -6,12 +6,12 @@
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/7zCrc.h"
 }
 
-class CSequentialInStreamWithCRC: 
+class CSequentialInStreamWithCRC:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -38,7 +38,7 @@ public:
   bool WasFinished() const { return _wasFinished; }
 };
 
-class CInStreamWithCRC: 
+class CInStreamWithCRC:
   public IInStream,
   public CMyUnknownImp
 {

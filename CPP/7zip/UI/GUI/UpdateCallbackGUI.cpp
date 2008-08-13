@@ -41,9 +41,9 @@ void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
 void CUpdateCallbackGUI::AddErrorMessage(const wchar_t *name, DWORD systemError)
 {
   AddErrorMessage(
-      UString(L"WARNING: ") + 
-      NError::MyFormatMessageW(systemError) + 
-      UString(L": ") + 
+      UString(L"WARNING: ") +
+      NError::MyFormatMessageW(systemError) +
+      UString(L": ") +
       UString(name));
 }
 
@@ -87,15 +87,14 @@ HRESULT CUpdateCallbackGUI::FinishArchive()
 
 HRESULT CUpdateCallbackGUI::CheckBreak()
 {
-  for (;;)
-  {
-    if(ProgressDialog.ProgressSynch.GetStopped())
-      return E_ABORT;
-    if(!ProgressDialog.ProgressSynch.GetPaused())
-      break;
-    ::Sleep(100);
-  }
-  return S_OK;
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+}
+
+HRESULT CUpdateCallbackGUI::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, const wchar_t *path)
+{
+  ProgressDialog.ProgressSynch.SetCurrentFileName(path);
+  ProgressDialog.ProgressSynch.SetNumFilesTotal(numFiles);
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
 }
 
 HRESULT CUpdateCallbackGUI::Finilize()
@@ -151,17 +150,17 @@ HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 {
   NumFiles++;
   ProgressDialog.ProgressSynch.SetNumFilesCur(NumFiles);
-  return S_OK;  
+  return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
-  if (!PasswordIsDefined) 
+  if (!PasswordIsDefined)
   {
     if (AskPassword)
     {
       CPasswordDialog dialog;
-      if (dialog.Create(ParentWindow) == IDCANCEL)
+      if (dialog.Create(ProgressDialog) == IDCANCEL)
         return E_ABORT;
       Password = dialog.Password;
       PasswordIsDefined = true;
@@ -175,9 +174,63 @@ HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BST
 
 /*
 It doesn't work, since main stream waits Dialog
-HRESULT CUpdateCallbackGUI::CloseProgress() 
-{ 
-  ProgressDialog.MyClose(); 
+HRESULT CUpdateCallbackGUI::CloseProgress()
+{
+  ProgressDialog.MyClose();
   return S_OK;
 };
 */
+
+
+HRESULT CUpdateCallbackGUI::Open_CheckBreak()
+{
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+}
+
+HRESULT CUpdateCallbackGUI::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  // if (numFiles != NULL) ProgressDialog.ProgressSynch.SetNumFilesTotal(*numFiles);
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackGUI::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+}
+
+#ifndef _NO_CRYPTO
+
+HRESULT CUpdateCallbackGUI::Open_CryptoGetTextPassword(BSTR *password)
+{
+  PasswordWasAsked = true;
+  if (!PasswordIsDefined)
+  {
+    CPasswordDialog dialog;
+    if (dialog.Create(ProgressDialog) == IDCANCEL)
+      return E_ABORT;
+    Password = dialog.Password;
+    PasswordIsDefined = true;
+  }
+  CMyComBSTR tempName(Password);
+  *password = tempName.Detach();
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackGUI::Open_GetPasswordIfAny(UString &password)
+{
+  if (PasswordIsDefined)
+    password = Password;
+  return S_OK;
+}
+
+bool CUpdateCallbackGUI::Open_WasPasswordAsked()
+{
+  return PasswordWasAsked;
+}
+
+void CUpdateCallbackGUI::Open_ClearPasswordWasAskedFlag()
+{
+  PasswordWasAsked = false;
+}
+
+#endif

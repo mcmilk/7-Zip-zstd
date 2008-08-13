@@ -3,4 +3,6 @@
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#endif 
+#include "../../../Common/MyWindows.h"
+
+#endif

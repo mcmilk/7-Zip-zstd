@@ -21,14 +21,14 @@ static LPCWSTR kHelpTopic = L"fm/benchmark.htm";
 static const UINT_PTR kTimerID = 4;
 static const UINT kTimerElapse = 1000;
 
-#ifdef LANG        
+#ifdef LANG
 #include "../FileManager/LangUtils.h"
 #endif
 
 using namespace NWindows;
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_BENCHMARK_DICTIONARY, 0x02000D0C },
   { IDC_BENCHMARK_MEMORY, 0x03080001 },
@@ -69,16 +69,16 @@ const LPCTSTR kKBs = TEXT(" KB/s");
 
 static const int kMinDicLogSize = 21;
 static const UInt32 kMinDicSize = (1 << kMinDicLogSize);
-static const UInt32 kMaxDicSize =       
+static const UInt32 kMaxDicSize =
     #ifdef _WIN64
     (1 << 30);
     #else
     (1 << 27);
     #endif
 
-bool CBenchmarkDialog::OnInit() 
+bool CBenchmarkDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetWindowText(HWND(*this), 0x03080000);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
@@ -177,7 +177,7 @@ UInt32 CBenchmarkDialog::OnChangeDictionary()
   return dictionary;
 }
 
-static const UInt32 g_IDs[] = 
+static const UInt32 g_IDs[] =
 {
   IDC_BENCHMARK_COMPRESSING_USAGE,
   IDC_BENCHMARK_COMPRESSING_USAGE2,
@@ -231,12 +231,12 @@ void CBenchmarkDialog::OnStopButton()
   _syncInfo.Pause();
 }
 
-void CBenchmarkDialog::OnHelp() 
+void CBenchmarkDialog::OnHelp()
 {
   ShowHelpWindow(NULL, kHelpTopic);
 }
 
-void CBenchmarkDialog::OnCancel() 
+void CBenchmarkDialog::OnCancel()
 {
   _syncInfo.Stop();
   KillTimer(_timer);
@@ -245,9 +245,9 @@ void CBenchmarkDialog::OnCancel()
 
 static void GetTimeString(UInt64 timeValue, TCHAR *s)
 {
-  wsprintf(s, TEXT("%02d:%02d:%02d"), 
+  wsprintf(s, TEXT("%02d:%02d:%02d"),
       UInt32(timeValue / 3600),
-      UInt32((timeValue / 60) % 60), 
+      UInt32((timeValue / 60) % 60),
       UInt32(timeValue % 60));
 }
 
@@ -281,7 +281,7 @@ void CBenchmarkDialog::PrintUsage(UInt64 usage, UINT controlID)
 
 void CBenchmarkDialog::PrintResults(
     UInt32 dictionarySize,
-    const CBenchInfo2 &info, 
+    const CBenchInfo2 &info,
     UINT usageID, UINT speedID, UINT rpuID, UINT ratingID,
     bool decompressMode)
 {
@@ -327,8 +327,8 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
   {
     UInt32 dicSizeTemp = (UInt32)MyMax(_syncInfo.ProcessedSize, UInt64(1) << 20);
-    dicSizeTemp = MyMin(dicSizeTemp, _syncInfo.DictionarySize), 
-    PrintResults(dicSizeTemp, 
+    dicSizeTemp = MyMin(dicSizeTemp, _syncInfo.DictionarySize),
+    PrintResults(dicSizeTemp,
       _syncInfo.CompressingInfoTemp,
       IDC_BENCHMARK_COMPRESSING_USAGE,
       IDC_BENCHMARK_COMPRESSING_SPEED,
@@ -338,7 +338,7 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
   {
     PrintResults(
-      _syncInfo.DictionarySize, 
+      _syncInfo.DictionarySize,
       _syncInfo.CompressingInfo,
       IDC_BENCHMARK_COMPRESSING_USAGE2,
       IDC_BENCHMARK_COMPRESSING_SPEED2,
@@ -348,7 +348,7 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
   {
     PrintResults(
-      _syncInfo.DictionarySize, 
+      _syncInfo.DictionarySize,
       _syncInfo.DecompressingInfoTemp,
       IDC_BENCHMARK_DECOMPRESSING_USAGE,
       IDC_BENCHMARK_DECOMPRESSING_SPEED,
@@ -358,8 +358,8 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   }
   {
     PrintResults(
-      _syncInfo.DictionarySize, 
-      _syncInfo.DecompressingInfo, 
+      _syncInfo.DictionarySize,
+      _syncInfo.DecompressingInfo,
       IDC_BENCHMARK_DECOMPRESSING_USAGE2,
       IDC_BENCHMARK_DECOMPRESSING_SPEED2,
       IDC_BENCHMARK_DECOMPRESSING_RPU2,
@@ -368,14 +368,14 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
     if (_syncInfo.DecompressingInfo.GlobalTime > 0 &&
         _syncInfo.CompressingInfo.GlobalTime > 0)
     {
-      UInt64 comprRating = GetCompressRating(_syncInfo.DictionarySize, 
+      UInt64 comprRating = GetCompressRating(_syncInfo.DictionarySize,
           _syncInfo.CompressingInfo.GlobalTime, _syncInfo.CompressingInfo.GlobalFreq, _syncInfo.CompressingInfo.UnpackSize);
-      UInt64 decomprRating = GetDecompressRating(_syncInfo.DecompressingInfo.GlobalTime, 
-          _syncInfo.DecompressingInfo.GlobalFreq, _syncInfo.DecompressingInfo.UnpackSize, 
+      UInt64 decomprRating = GetDecompressRating(_syncInfo.DecompressingInfo.GlobalTime,
+          _syncInfo.DecompressingInfo.GlobalFreq, _syncInfo.DecompressingInfo.UnpackSize,
           _syncInfo.DecompressingInfo.PackSize, 1);
       PrintRating((comprRating + decomprRating) / 2, IDC_BENCHMARK_TOTAL_RATING_VALUE);
       PrintRating((
-          GetRatingPerUsage(_syncInfo.CompressingInfo, comprRating) + 
+          GetRatingPerUsage(_syncInfo.CompressingInfo, comprRating) +
           GetRatingPerUsage(_syncInfo.DecompressingInfo, decomprRating)) / 2, IDC_BENCHMARK_TOTAL_RPU_VALUE);
       PrintUsage((GetUsage(_syncInfo.CompressingInfo) + GetUsage(_syncInfo.DecompressingInfo)) / 2, IDC_BENCHMARK_TOTAL_USAGE_VALUE);
     }
@@ -385,8 +385,8 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
 bool CBenchmarkDialog::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (code == CBN_SELCHANGE && 
-      (itemID == IDC_BENCHMARK_COMBO_DICTIONARY || 
+  if (code == CBN_SELCHANGE &&
+      (itemID == IDC_BENCHMARK_COMBO_DICTIONARY ||
        itemID == IDC_BENCHMARK_COMBO_NUM_THREADS))
   {
     OnChangeSettings();
@@ -395,8 +395,8 @@ bool CBenchmarkDialog::OnCommand(int code, int itemID, LPARAM lParam)
   return CModalDialog::OnCommand(code, itemID, lParam);
 }
 
-bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
-{ 
+bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+{
   switch(buttonID)
   {
     case IDC_BUTTON_RESTART:

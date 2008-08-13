@@ -38,7 +38,7 @@ bool HasTailSlash(const AString &name, UINT codePage)
 {
   if (name.IsEmpty())
     return false;
-  LPCSTR prev = 
+  LPCSTR prev =
   #ifdef _WIN32
     CharPrevExA((WORD)codePage, name, &name[name.Length()], 0);
   #else

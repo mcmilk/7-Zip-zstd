@@ -4,6 +4,8 @@
 #define __ARCHIVE_WIM_HANDLER_H
 
 #include "Common/MyCom.h"
+#include "Common/MyXml.h"
+
 #include "../IArchive.h"
 #include "WimIn.h"
 
@@ -16,13 +18,35 @@ struct CVolume
   CMyComPtr<IInStream> Stream;
 };
 
+struct CImageInfo
+{
+  bool CTimeDefined;
+  bool MTimeDefined;
+  bool NameDefined;
+  // bool IndexDefined;
+  
+  FILETIME CTime;
+  FILETIME MTime;
+  UString Name;
+  // UInt32 Index;
+  
+  CImageInfo(): CTimeDefined(false), MTimeDefined(false), NameDefined(false)
+      // , IndexDefined(false)
+      {}
+  void Parse(const CXmlItem &item);
+};
+
 struct CXml
 {
   CByteBuffer Data;
   UInt16 VolIndex;
+
+  CObjectVector<CImageInfo> Images;
+
+  void Parse();
 };
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {

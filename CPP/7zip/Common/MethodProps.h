@@ -30,7 +30,7 @@ struct CMethodsMode
 
   CMethodsMode()
       #ifdef COMPRESS_MT
-      : NumThreads(1) 
+      : NumThreads(1)
       #endif
   {}
   bool IsEmpty() const { return Methods.IsEmpty() ; }

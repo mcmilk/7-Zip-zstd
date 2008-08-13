@@ -51,7 +51,7 @@ static UString ConvertSizeToStringShort(UInt64 value)
   return s;
 }
 
-static UString ConvertSizeToString(UInt64 value)
+UString ConvertSizeToString(UInt64 value)
 {
   wchar_t s[32];
   ConvertUInt64ToString(value, s);
@@ -90,22 +90,16 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
     if (!defined)
     {
       NCOM::CPropVariant prop;
-      _folder->GetProperty(index, kpidAttributes, &prop);
-      UINT32 attributes = 0;
+      _folder->GetProperty(index, kpidAttrib, &prop);
+      UINT32 attrib = 0;
       if (prop.vt == VT_UI4)
-        attributes = prop.ulVal;
-      else
-      {
-        if (IsItemFolder(index))
-          attributes |= FILE_ATTRIBUTE_DIRECTORY;
-      }
+        attrib = prop.ulVal;
+      else if (IsItemFolder(index))
+        attrib |= FILE_ATTRIBUTE_DIRECTORY;
       if (_currentFolderPrefix.IsEmpty())
-      {
         throw 1;
-      }
       else
-        item.iImage = _extToIconMap.GetIconIndex(attributes, 
-            GetSystemString(GetItemName(index)));
+        item.iImage = _extToIconMap.GetIconIndex(attrib, GetSystemString(GetItemName(index)));
     }
     // item.iImage = 1;
   }
@@ -156,8 +150,8 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (_folder->GetProperty(realIndex, propID, &prop) != S_OK)
       throw 2723407;
 
-  if ((propID == kpidSize || propID == kpidPackedSize || propID == kpidClusterSize || 
-      propID == kpidNumSubFolders || propID == kpidNumSubFiles) &&
+  if ((propID == kpidSize || propID == kpidPackSize || propID == kpidClusterSize ||
+      propID == kpidNumSubDirs || propID == kpidNumSubFiles) &&
       (prop.vt == VT_UI8 || prop.vt == VT_UI4))
     s = ConvertSizeToString(ConvertPropVariantToUInt64(prop));
   else if ((propID == kpidTotalSize || propID == kpidFreeSpace) &&
@@ -166,8 +160,8 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   else
   {
     s = ConvertPropertyToString(prop, propID, false);
-    s.Replace(wchar_t(0xA), L' '); 
-    s.Replace(wchar_t(0xD), L' '); 
+    s.Replace(wchar_t(0xA), L' ');
+    s.Replace(wchar_t(0xD), L' ');
   }
   int size = item.cchTextMax;
   if(size > 0)
@@ -224,7 +218,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 
       //is the sub-item information being requested?
 
-      if((dispInfo->item.mask & LVIF_TEXT) != 0 || 
+      if((dispInfo->item.mask & LVIF_TEXT) != 0 ||
         (dispInfo->item.mask & LVIF_IMAGE) != 0)
         SetItemText(dispInfo->item);
       return false;
@@ -327,7 +321,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 
 bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
 {
-  switch(lplvcd->nmcd.dwDrawStage) 
+  switch(lplvcd->nmcd.dwDrawStage)
   {
   case CDDS_PREPAINT :
     result = CDRF_NOTIFYITEMDRAW;
@@ -410,8 +404,8 @@ void CPanel::OnRefreshStatusBar()
     {
       sizeString = ConvertSizeToString(GetItemSize(realIndex));
       NCOM::CPropVariant prop;
-      if (_folder->GetProperty(realIndex, kpidLastWriteTime, &prop) == S_OK)
-        dateString = ConvertPropertyToString(prop, kpidLastWriteTime, false);
+      if (_folder->GetProperty(realIndex, kpidMTime, &prop) == S_OK)
+        dateString = ConvertPropertyToString(prop, kpidMTime, false);
     }
   }
   _statusBar.SetText(2, sizeString);

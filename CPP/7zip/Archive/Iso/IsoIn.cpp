@@ -174,7 +174,7 @@ void CInArchive::ReadDirRecord2(CDirRecord &r, Byte len)
   ReadBytes((Byte *)r.FileId, idLen);
   int padSize = 1 - (idLen & 1);
   
-  // SkeepZeros(1 - (idLen & 1)); 
+  // SkeepZeros(1 - (idLen & 1));
   Skeep(1 - (idLen & 1)); // it's bug in some cd's. Must be zeros
 
   int curPos = 33 + idLen + padSize;
@@ -187,7 +187,7 @@ void CInArchive::ReadDirRecord2(CDirRecord &r, Byte len)
 
 void CInArchive::ReadDirRecord(CDirRecord &r)
 {
-  Byte len = ReadByte(); 
+  Byte len = ReadByte();
   // Some CDs can have incorrect value len = 48 ('0') in VolumeDescriptor.
   // But maybe we must use real "len" for other records.
   len = 34;
@@ -218,8 +218,8 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   ReadBytes(d.CopyrightFileId, sizeof(d.CopyrightFileId));
   ReadBytes(d.AbstractFileId, sizeof(d.AbstractFileId));
   ReadBytes(d.BibFileId, sizeof(d.BibFileId));
-  ReadDateTime(d.CreationTime);
-  ReadDateTime(d.ModificationTime);
+  ReadDateTime(d.CTime);
+  ReadDateTime(d.MTime);
   ReadDateTime(d.ExpirationTime);
   ReadDateTime(d.EffectiveTime);
   d.FileStructureVersion = ReadByte(); // = 1
@@ -228,13 +228,19 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   SkeepZeros(653);
 }
 
-static inline bool CheckDescriptorSignature(const Byte *sig)
+static const Byte kSig_CD001[5] = { 'C', 'D', '0', '0', '1' };
+
+static const Byte kSig_NSR02[5] = { 'N', 'S', 'R', '0', '2' };
+static const Byte kSig_NSR03[5] = { 'N', 'S', 'R', '0', '3' };
+static const Byte kSig_BEA01[5] = { 'B', 'E', 'A', '0', '1' };
+static const Byte kSig_TEA01[5] = { 'T', 'E', 'A', '0', '1' };
+
+static inline bool CheckSignature(const Byte *sig, const Byte *data)
 {
-  return sig[0] == 'C' && 
-         sig[1] == 'D' && 
-         sig[2] == '0' && 
-         sig[3] == '0' && 
-         sig[4] == '1';
+  for (int i = 0; i < 5; i++)
+    if (sig[i] != data[i])
+      return false;
+  return true;
 }
 
 void CInArchive::SeekToBlock(UInt32 blockIndex)
@@ -346,17 +352,41 @@ HRESULT CInArchive::Open2()
   VolDescs.Add(CVolumeDescriptor());
   for (;;)
   {
-    Byte sig[6];
-    ReadBytes(sig, 6);
-    if (!CheckDescriptorSignature(sig + 1))
+    Byte sig[7];
+    ReadBytes(sig, 7);
+    Byte ver = sig[6];
+    if (!CheckSignature(kSig_CD001, sig + 1))
+    {
       return S_FALSE;
+      /*
+      if (sig[0] != 0 || ver != 1)
+        break;
+      if (CheckSignature(kSig_BEA01, sig + 1))
+      {
+      }
+      else if (CheckSignature(kSig_TEA01, sig + 1))
+      {
+        break;
+      }
+      else if (CheckSignature(kSig_NSR02, sig + 1))
+      {
+      }
+      else
+        break;
+      SkeepZeros(0x800 - 7);
+      continue;
+      */
+    }
     // version = 2 for ISO 9660:1999?
-    Byte ver = ReadByte();
     if (ver > 2)
       throw S_FALSE;
 
     if (sig[0] == NVolDescType::kTerminator)
+    {
       break;
+      // Skeep(0x800 - 7);
+      // continue;
+    }
     switch(sig[0])
     {
       case NVolDescType::kBootRecord:

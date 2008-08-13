@@ -31,11 +31,11 @@ using namespace NWindows;
 
 HINSTANCE g_hInstance;
 
-static LPCTSTR kTempDirPrefix = TEXT("7zS"); 
+static LPCTSTR kTempDirPrefix = TEXT("7zS");
 
 #define _SHELL_EXECUTE
 
-static bool ReadDataString(LPCWSTR fileName, LPCSTR startID, 
+static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
     LPCSTR endID, AString &stringResult)
 {
   stringResult.Empty();
@@ -64,7 +64,7 @@ static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
     UInt32 numBytesInBuffer = numBytesPrev + processedSize;
     UInt32 pos = 0;
     for (;;)
-    { 
+    {
       if (writeMode)
       {
         if (pos > numBytesInBuffer - signatureEndSize)
@@ -128,7 +128,7 @@ static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -164,7 +164,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   if (!ReadDataString(fullPath, kStartID, kEndID, config))
   {
     if (!assumeYes)
-      MyMessageBox(L"Can't load config info");
+      ShowErrorMessage(L"Can't load config info");
     return 1;
   }
 
@@ -177,7 +177,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     if (!GetTextConfig(config, pairs))
     {
       if (!assumeYes)
-        MyMessageBox(L"Config failed");
+        ShowErrorMessage(L"Config failed");
       return 1;
     }
     UString friendlyName = GetTextConfigValue(pairs, L"Title");
@@ -190,7 +190,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
       dirPrefix = pairs[index].String;
     if (!installPrompt.IsEmpty() && !assumeYes)
     {
-      if (MessageBoxW(0, installPrompt, friendlyName, MB_YESNO | 
+      if (MessageBoxW(0, installPrompt, friendlyName, MB_YESNO |
           MB_ICONQUESTION) != IDYES)
         return 0;
     }
@@ -206,7 +206,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   if (!tempDir.Create(kTempDirPrefix))
   {
     if (!assumeYes)
-      MyMessageBox(L"Can not create temp folder archive");
+      ShowErrorMessage(L"Can not create temp folder archive");
     return 1;
   }
 
@@ -215,17 +215,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   HRESULT result = codecs->Load();
   if (result != S_OK)
   {
-    MyMessageBox(L"Can not load codecs");
+    ShowErrorMessage(L"Can not load codecs");
     return 1;
   }
-
-  COpenCallbackGUI openCallback;
 
   UString tempDirPath = GetUnicodeString(tempDir.GetPath());
   {
     bool isCorrupt = false;
     UString errorMessage;
-    HRESULT result = ExtractArchive(codecs, fullPath, tempDirPath, &openCallback, showProgress, 
+    HRESULT result = ExtractArchive(codecs, fullPath, tempDirPath, showProgress,
       isCorrupt, errorMessage);
     
     if (result != S_OK)
@@ -278,7 +276,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     if(result <= 32)
     {
       if (!assumeYes)
-        MyMessageBox(L"Can not open file");
+        ShowErrorMessage(L"Can not open file");
       return 1;
     }
     hProcess = execInfo.hProcess;
@@ -292,7 +290,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
       if (!NFile::NFind::DoesFileExist(GetSystemString(appLaunched)))
       {
         if (!assumeYes)
-          MyMessageBox(L"Can not find setup.exe");
+          ShowErrorMessage(L"Can not find setup.exe");
         return 1;
       }
     }
@@ -323,8 +321,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     
     CSysString appLaunchedSys = GetSystemString(dirPrefix + appLaunched);
     
-    BOOL createResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)appLaunchedSys, 
-      NULL, NULL, FALSE, 0, NULL, NULL /*tempDir.GetPath() */, 
+    BOOL createResult = CreateProcess(NULL, (LPTSTR)(LPCTSTR)appLaunchedSys,
+      NULL, NULL, FALSE, 0, NULL, NULL /*tempDir.GetPath() */,
       &startupInfo, &processInformation);
     if (createResult == 0)
     {

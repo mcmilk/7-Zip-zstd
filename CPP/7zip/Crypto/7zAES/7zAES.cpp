@@ -9,8 +9,8 @@
 #include "../AES/MyAES.h"
 #include "7zAES.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Sha256.h"
 }
 
@@ -139,7 +139,7 @@ STDMETHODIMP CEncoder::ResetInitVector()
 }
 
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
-{ 
+{
    // _key.Init();
    for (UInt32 i = _ivSize; i < sizeof(_iv); i++)
     _iv[i] = 0;
@@ -149,7 +149,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
   // _key.NumCyclesPower = 0x3F;
   _key.NumCyclesPower = 19;
 
-  Byte firstByte = (Byte)(_key.NumCyclesPower | 
+  Byte firstByte = (Byte)(_key.NumCyclesPower |
     (((_key.SaltSize == 0) ? 0 : 1) << 7) |
     (((ivSize == 0) ? 0 : 1) << 6));
   RINOK(outStream->Write(&firstByte, 1, NULL));

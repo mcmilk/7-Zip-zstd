@@ -138,7 +138,7 @@ int ParseStringToUInt32(const UString &srcString, UInt32 &number)
   const wchar_t *start = srcString;
   const wchar_t *end;
   UInt64 number64 = ConvertStringToUInt64(start, &end);
-  if (number64 > 0xFFFFFFFF) 
+  if (number64 > 0xFFFFFFFF)
   {
     number = 0;
     return 0;
@@ -158,7 +158,7 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 default
         break;
       default:
       {
-        bool val; 
+        bool val;
         RINOK(SetBoolProperty(val, prop));
         numThreads = (val ? defaultNumThreads : 1);
         break;

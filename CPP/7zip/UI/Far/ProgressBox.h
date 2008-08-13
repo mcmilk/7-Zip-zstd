@@ -6,30 +6,25 @@
 #include "Common/MyString.h"
 #include "Common/Types.h"
 
+void ConvertUInt64ToStringAligned(UInt64 value, char *s, int alignSize);
+
 class CMessageBox
 {
-  CSysString m_Title;
-  CSysString m_Message;
-  int m_NumStrings;
-  int m_Width;
+  AString _title;
+  int _width;
 public:
-  void Init(const CSysString &title, 
-      const CSysString &message, int numStrings, int width);
-  void ShowProcessMessages(const char *messages[]);
+  void Init(const AString &title, int width);
+  void ShowMessages(const char *strings[], int numStrings);
 };
 
 class CProgressBox: public CMessageBox
 {
-  UInt64 m_Total;
-  UInt64 m_CompletedPrev;
-  UInt64 m_Step;
+  AString _prevMessage;
+  AString _prevPercentMessage;
+  bool _wasShown;
 public:
-  void Init(const CSysString &title, 
-      const CSysString &message, UInt64 step);
-  void ShowProcessMessage(const char *message);
-  void PrintPercent(UInt64 percent);
-  void PrintCompeteValue(UInt64 completed);
-  void SetTotal(UInt64 total);
+  void Init(const AString &title, int width);
+  void Progress(const UInt64 *total, const UInt64 *completed, const AString &message);
 };
 
 #endif

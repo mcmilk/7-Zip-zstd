@@ -156,8 +156,8 @@ CPropVariant& CPropVariant::operator=(LONG value)
 }
 */
 
-static HRESULT MyPropVariantClear(PROPVARIANT *propVariant) 
-{ 
+static HRESULT MyPropVariantClear(PROPVARIANT *propVariant)
+{
   switch(propVariant->vt)
   {
     case VT_UI1:
@@ -177,20 +177,20 @@ static HRESULT MyPropVariantClear(PROPVARIANT *propVariant)
     case VT_CY:
     case VT_DATE:
       propVariant->vt = VT_EMPTY;
-      propVariant->wReserved1 = 0; 
+      propVariant->wReserved1 = 0;
       return S_OK;
   }
-  return ::VariantClear((VARIANTARG *)propVariant); 
+  return ::VariantClear((VARIANTARG *)propVariant);
 }
 
-HRESULT CPropVariant::Clear() 
-{ 
+HRESULT CPropVariant::Clear()
+{
   return MyPropVariantClear(this);
 }
 
-HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc) 
-{ 
-  ::VariantClear((tagVARIANT *)this); 
+HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
+{
+  ::VariantClear((tagVARIANT *)this);
   switch(pSrc->vt)
   {
     case VT_UI1:
@@ -212,7 +212,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
       memmove((PROPVARIANT*)this, pSrc, sizeof(PROPVARIANT));
       return S_OK;
   }
-  return ::VariantCopy((tagVARIANT *)this, (tagVARIANT *)(pSrc)); 
+  return ::VariantCopy((tagVARIANT *)this, (tagVARIANT *)(pSrc));
 }
 
 
@@ -295,13 +295,13 @@ int CPropVariant::Compare(const CPropVariant &a)
     case VT_UI8:
       return MyCompare(uhVal.QuadPart, a.uhVal.QuadPart);
 
-    case VT_BOOL:    
+    case VT_BOOL:
       return -MyCompare(boolVal, a.boolVal);
 
     case VT_FILETIME:
       return ::CompareFileTime(&filetime, &a.filetime);
     case VT_BSTR:
-      return 0; // Not implemented 
+      return 0; // Not implemented
       // return MyCompare(aPropVarint.cVal);
 
     default:

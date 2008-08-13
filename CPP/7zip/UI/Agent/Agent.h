@@ -21,7 +21,7 @@ class CAgentFolder;
 
 DECL_INTERFACE(IArchiveFolderInternal, 0x01, 0xC)
 {
-  STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder) PURE;  
+  STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder) PURE;
 };
 
 struct CProxyItem
@@ -32,7 +32,7 @@ struct CProxyItem
 
 class CAgent;
 
-class CAgentFolder: 
+class CAgentFolder:
   public IFolderFolder,
   public IFolderProperties,
   public IGetFolderArchiveProperties,
@@ -46,7 +46,7 @@ class CAgentFolder:
 {
 public:
 
-  MY_QUERYINTERFACE_BEGIN 
+  MY_QUERYINTERFACE_BEGIN
     MY_QUERYINTERFACE_ENTRY(IFolderFolder)
     MY_QUERYINTERFACE_ENTRY(IFolderProperties)
     MY_QUERYINTERFACE_ENTRY(IGetFolderArchiveProperties)
@@ -69,9 +69,9 @@ public:
   STDMETHOD(GetFolderArchiveProperties)(IFolderArchiveProperties **object);
 
   // IArchiveFolder
-  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems, 
-      NExtract::NPathMode::EEnum pathMode, 
-      NExtract::NOverwriteMode::EEnum overwriteMode, 
+  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems,
+      NExtract::NPathMode::EEnum pathMode,
+      NExtract::NOverwriteMode::EEnum overwriteMode,
       const wchar_t *path,
       INT32 testMode,
       IFolderArchiveExtractCallback *extractCallback);
@@ -103,7 +103,7 @@ public:
       bool deleteOperation,
       bool createFolderOperation,
       bool renameOperation,
-      const wchar_t *newItemName, 
+      const wchar_t *newItemName,
       const NUpdateArchive::CActionSet *actionSet,
       const UINT32 *indices, UINT32 numItems,
       IFolderArchiveUpdateCallback *updateCallback100);
@@ -126,7 +126,7 @@ public:
 private:
 };
 
-class CAgent: 
+class CAgent:
   public IInFolderArchive,
   public IFolderArchiveProperties,
   #ifndef EXTRACT_ONLY
@@ -137,7 +137,7 @@ class CAgent:
 {
 public:
 
-  MY_QUERYINTERFACE_BEGIN 
+  MY_QUERYINTERFACE_BEGIN
     MY_QUERYINTERFACE_ENTRY(IInFolderArchive)
     MY_QUERYINTERFACE_ENTRY(IFolderArchiveProperties)
   #ifndef EXTRACT_ONLY
@@ -154,19 +154,19 @@ public:
   INTERFACE_IOutFolderArchive(;)
 
   HRESULT CommonUpdate(
-      const wchar_t *newArchiveName, 
+      const wchar_t *newArchiveName,
       int numUpdateItems,
       IArchiveUpdateCallback *updateCallback);
   
   HRESULT CreateFolder(
-    const wchar_t *newArchiveName, 
-    const wchar_t *folderName, 
+    const wchar_t *newArchiveName,
+    const wchar_t *folderName,
     IFolderArchiveUpdateCallback *updateCallback100);
 
   HRESULT RenameItem(
-    const wchar_t *newArchiveName, 
-    const UINT32 *indices, UINT32 numItems, 
-    const wchar_t *newItemName, 
+    const wchar_t *newArchiveName,
+    const UINT32 *indices, UINT32 numItems,
+    const wchar_t *newItemName,
     IFolderArchiveUpdateCallback *updateCallback100);
 
   // ISetProperties
@@ -189,7 +189,7 @@ public:
   UString DefaultName;
 
   FILETIME DefaultTime;
-  UINT32 DefaultAttributes;
+  DWORD DefaultAttrib;
 
   UString ArchiveType;
 
@@ -211,7 +211,7 @@ public:
 };
 
 #ifdef NEW_FOLDER_INTERFACE
-class CArchiveFolderManager: 
+class CArchiveFolderManager:
   public IFolderManager,
   public CMyUnknownImp
 {
@@ -223,7 +223,7 @@ public:
   CArchiveFolderManager(): _codecs(0) {}
 private:
   void LoadFormats();
-  int FindFormat(const UString &type); 
+  int FindFormat(const UString &type);
   CCodecs *_codecs;
   CMyComPtr<ICompressCodecsInfo> _compressCodecsInfo;
 };

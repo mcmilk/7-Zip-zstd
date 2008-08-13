@@ -31,7 +31,7 @@ public:
   
   bool Create(int width, int height, UINT flags, int initialNumber, int grow)
   {
-    HIMAGELIST a = ImageList_Create(width, height, flags, 
+    HIMAGELIST a = ImageList_Create(width, height, flags,
       initialNumber, grow);
     if(a == NULL)
       return false;

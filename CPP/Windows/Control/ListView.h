@@ -16,7 +16,7 @@ class CListView: public NWindows::CWindow
 public:
   bool CreateEx(DWORD exStyle, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam);
 
   bool SetUnicodeFormat(bool fUnicode)
@@ -24,27 +24,28 @@ public:
  
   bool DeleteAllItems()
     { return BOOLToBool(ListView_DeleteAllItems(_window)); }
-  int InsertColumn(int columnIndex, const LVCOLUMN *columnInfo)
-    { return ListView_InsertColumn(_window, columnIndex, columnInfo); }
-  #ifndef _UNICODE
-  int InsertColumn(int columnIndex, const LVCOLUMNW *columnInfo)
-    { return (int)SendMessage(LVM_INSERTCOLUMNW, (WPARAM)columnIndex, (LPARAM)columnInfo); }
-  #endif
+
   bool DeleteColumn(int columnIndex)
     { return BOOLToBool(ListView_DeleteColumn(_window, columnIndex)); }
 
-  int InsertItem(const LVITEM* item)
-    { return ListView_InsertItem(_window, item); }
-  #ifndef _UNICODE
-  int InsertItem(const LV_ITEMW* item)
-    { return (int)SendMessage(LVM_INSERTITEMW, 0, (LPARAM)item); }
-  #endif
+  int InsertColumn(int columnIndex, const LVCOLUMN *columnInfo)
+    { return ListView_InsertColumn(_window, columnIndex, columnInfo); }
+  int InsertColumn(int columnIndex, LPCTSTR text, int width);
+  int InsertItem(const LVITEM* item) { return ListView_InsertItem(_window, item); }
+  int InsertItem(int index, LPCTSTR text);
+  bool SetItem(const LVITEM* item) { return BOOLToBool(ListView_SetItem(_window, item)); }
+  int SetSubItem(int index, int subIndex, LPCTSTR text);
 
-  bool SetItem(const LVITEM* item)
-    { return BOOLToBool(ListView_SetItem(_window, item)); }
   #ifndef _UNICODE
-  bool SetItem(const LV_ITEMW* item)
-    { return BOOLToBool((BOOL)SendMessage(LVM_SETITEMW, 0, (LPARAM)item)); }
+
+  int InsertColumn(int columnIndex, const LVCOLUMNW *columnInfo)
+    { return (int)SendMessage(LVM_INSERTCOLUMNW, (WPARAM)columnIndex, (LPARAM)columnInfo); }
+  int InsertColumn(int columnIndex, LPCWSTR text, int width);
+  int InsertItem(const LV_ITEMW* item) { return (int)SendMessage(LVM_INSERTITEMW, 0, (LPARAM)item); }
+  int InsertItem(int index, LPCWSTR text);
+  bool SetItem(const LV_ITEMW* item) { return BOOLToBool((BOOL)SendMessage(LVM_SETITEMW, 0, (LPARAM)item)); }
+  int SetSubItem(int index, int subIndex, LPCWSTR text);
+
   #endif
 
   bool DeleteItem(int itemIndex)
@@ -70,10 +71,10 @@ public:
   int GetFocusedItem() const
     { return GetNextItem(-1, LVNI_FOCUSED); }
   
-  bool GetItem(LVITEM* item) const 
+  bool GetItem(LVITEM* item) const
     { return BOOLToBool(ListView_GetItem(_window, item)); }
   bool GetItemParam(int itemIndex, LPARAM &param) const;
-  void GetItemText(int itemIndex, int aSubItemIndex, LPTSTR aText, int aTextSizeMax) const 
+  void GetItemText(int itemIndex, int aSubItemIndex, LPTSTR aText, int aTextSizeMax) const
     { ListView_GetItemText(_window, itemIndex, aSubItemIndex, aText, aTextSizeMax); }
   bool SortItems(PFNLVCOMPARE compareFunction, LPARAM dataParam)
     { return BOOLToBool(ListView_SortItems(_window, compareFunction, dataParam)); }
@@ -119,7 +120,7 @@ public:
   bool RedrawItems(int firstIndex, int lastIndex)
     { return BOOLToBool(ListView_RedrawItems(_window, firstIndex, lastIndex)); }
   bool RedrawAllItems()
-  { 
+  {
     if (GetItemCount() > 0)
       return RedrawItems(0, GetItemCount() - 1);
     return true;
@@ -135,4 +136,5 @@ public:
 };
 
 }}
+
 #endif

@@ -8,8 +8,8 @@
 
 #include "../../ICoder.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Aes.h"
 }
 
@@ -19,7 +19,7 @@ class CAesCbcEncoder:
   public ICompressFilter,
   public ICryptoProperties,
   public CMyUnknownImp
-{ 
+{
   CAesCbc Aes;
 public:
   MY_UNKNOWN_IMP1(ICryptoProperties)
@@ -33,7 +33,7 @@ class CAesCbcDecoder:
   public ICompressFilter,
   public ICryptoProperties,
   public CMyUnknownImp
-{ 
+{
   CAesCbc Aes;
 public:
   MY_UNKNOWN_IMP1(ICryptoProperties)

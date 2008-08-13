@@ -1,5 +1,5 @@
 // Rar3Decoder.h
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
 #ifndef __RAR3DECODER_H
@@ -50,11 +50,11 @@ public:
     m_Stream.Init();
     m_BitPos = 0;
     m_Value = 0;
-    // m_BitPos = kNumBigValueBits; 
+    // m_BitPos = kNumBigValueBits;
     // Normalize();
   }
   
-  UInt64 GetProcessedSize() const 
+  UInt64 GetProcessedSize() const
     { return m_Stream.GetProcessedSize() - (m_BitPos) / 8; }
   UInt32 GetBitPosition() const { return ((8 - m_BitPos) & 7); }
   
@@ -110,7 +110,7 @@ public:
 
   void Normalize()
   {
-    while ((Low ^ (Low + Range)) < kTopValue || 
+    while ((Low ^ (Low + Range)) < kTopValue ||
        Range < kBot && ((Range = (0 - Low) & (kBot - 1)), 1))
     {
       Code = (Code << 8) | m_Stream.ReadByte();
@@ -190,7 +190,7 @@ class CDecoder:
   UInt32 _wrPtr;
   UInt64 _lzSize;
   UInt64 _unpackSize;
-  UInt64 _writtenFileSize; // if it's > _unpackSize, then _unpackSize only written 
+  UInt64 _writtenFileSize; // if it's > _unpackSize, then _unpackSize only written
   CMyComPtr<ISequentialOutStream> _outStream;
   NHuffman::CDecoder<kNumHuffmanBits, kMainTableSize> m_MainDecoder;
   NHuffman::CDecoder<kNumHuffmanBits, kDistTableSize> m_DistDecoder;

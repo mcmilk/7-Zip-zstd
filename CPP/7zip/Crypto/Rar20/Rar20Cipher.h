@@ -13,7 +13,7 @@
 namespace NCrypto {
 namespace NRar20 {
 
-class CDecoder: 
+class CDecoder:
   public ICompressFilter,
   public ICryptoSetPassword,
   public CMyUnknownImp

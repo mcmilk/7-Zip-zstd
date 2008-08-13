@@ -8,28 +8,61 @@
 #include "../../Archive/IArchive.h"
 
 struct CDirItem
-{ 
-  FILETIME CreationTime;
-  FILETIME LastAccessTime;
-  FILETIME LastWriteTime;
+{
   UInt64 Size;
+  FILETIME CTime;
+  FILETIME ATime;
+  FILETIME MTime;
   UString Name;
-  UString FullPath;
-  UInt32 Attributes;
-  bool IsDirectory() const { return (Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
+  UInt32 Attrib;
+  int PhyParent;
+  int LogParent;
+  
+  CDirItem(): PhyParent(-1), LogParent(-1) {}
+  bool IsDir() const { return (Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
 };
 
-struct CArchiveItem
-{ 
-  FILETIME LastWriteTime;
+class CDirItems
+{
+  UStringVector Prefixes;
+  CIntVector PhyParents;
+  CIntVector LogParents;
+
+  UString GetPrefixesPath(const CIntVector &parents, int index, const UString &name) const;
+public:
+  CObjectVector<CDirItem> Items;
+
+  int GetNumFolders() const { return Prefixes.Size(); }
+  UString GetPhyPath(int index) const;
+  UString GetLogPath(int index) const;
+
+  int AddPrefix(int phyParent, int logParent, const UString &prefix);
+  void DeleteLastPrefix();
+
+  void EnumerateDirectory(int phyParent, int logParent, const UString &phyPrefix,
+    UStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
+
+  void EnumerateDirItems2(
+    const UString &phyPrefix,
+    const UString &logPrefix,
+    const UStringVector &filePaths,
+    UStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
+
+  void ReserveDown();
+};
+
+struct CArcItem
+{
   UInt64 Size;
+  FILETIME MTime;
   UString Name;
-  bool IsDirectory;
-  bool SizeIsDefined;
+  bool IsDir;
+  bool SizeDefined;
   bool Censored;
   UInt32 IndexInServer;
-  int FileTimeType;
-  CArchiveItem(): IsDirectory(false), SizeIsDefined(false), Censored(false), FileTimeType(-1) {}
+  int TimeType;
+  
+  CArcItem(): IsDir(false), SizeDefined(false), Censored(false), TimeType(-1) {}
 };
 
 #endif

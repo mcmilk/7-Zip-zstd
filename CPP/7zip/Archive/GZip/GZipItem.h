@@ -39,7 +39,7 @@ public:
     {  return TestFlag(NFileHeader::NFlags::kComentIsPresent); }
 
   void SetNameIsPresentFlag(bool nameIsPresent)
-  {    
+  {
     if (nameIsPresent)
       Flags |= NFileHeader::NFlags::kNameIsPresent;
     else

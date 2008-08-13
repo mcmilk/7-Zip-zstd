@@ -15,7 +15,7 @@
 namespace NArchive {
 namespace NBZip2 {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public IOutArchive,
   public ISetProperties,
@@ -35,11 +35,11 @@ class CHandler:
 
   DECL_EXTERNAL_CODECS_VARS
 
-  void InitMethodProperties() 
-  { 
+  void InitMethodProperties()
+  {
     _level = 5;
-    _dicSize = 
-    _numPasses = 0xFFFFFFFF; 
+    _dicSize =
+    _numPasses = 0xFFFFFFFF;
     #ifdef COMPRESS_MT
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
     #endif

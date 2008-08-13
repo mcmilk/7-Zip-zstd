@@ -1,5 +1,5 @@
 // Rar2Decoder.cpp
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
  
 #include "StdAfx.h"
@@ -56,7 +56,7 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
       case 1: if (K1 >= -16) K1--; break;
       case 2: if (K1 <   16) K1++; break;
       case 3: if (K2 >= -16) K2--; break;
-      case 4: if (K2 <   16) K2++; break; 
+      case 4: if (K2 <   16) K2++; break;
       case 5: if (K3 >= -16) K3--; break;
       case 6: if (K3 <   16) K3++; break;
       case 7: if (K4 >= -16) K4--; break;
@@ -143,7 +143,7 @@ bool CDecoder::ReadTables(void)
           num = ReadBits(3) + 3;
         else if (number == kTableLevel0Number2)
           num = ReadBits(7) + 11;
-        else 
+        else
           return false;
         for (;num > 0 && i < numLevels; num--)
           newLevels[i++] = 0;
@@ -170,8 +170,8 @@ bool CDecoder::ReadLastTables()
   // it differs a little from pure RAR sources;
   // UInt64 ttt = m_InBitStream.GetProcessedSize() + 2;
   // + 2 works for: return 0xFF; in CInBuffer::ReadByte.
-  if (m_InBitStream.GetProcessedSize() + 7 <= m_PackSize) // test it: probably incorrect; 
-  // if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect; 
+  if (m_InBitStream.GetProcessedSize() + 7 <= m_PackSize) // test it: probably incorrect;
+  // if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
     if (m_AudioMode)
     {
       UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].DecodeSymbol(&m_InBitStream);
@@ -180,7 +180,7 @@ bool CDecoder::ReadLastTables()
       if (symbol >= kMMTableSize)
         return false;
     }
-    else 
+    else
     {
       UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
       if (number == kReadTableNumber)
@@ -239,7 +239,7 @@ bool CDecoder::DecodeLz(Int32 pos)
     else if (number >= kMatchNumber)
     {
       number -= kMatchNumber;
-      length = kNormalMatchMinLen + UInt32(kLenStart[number]) + 
+      length = kNormalMatchMinLen + UInt32(kLenStart[number]) +
         m_InBitStream.ReadBits(kLenDirectBits[number]);
       number = m_DistDecoder.DecodeSymbol(&m_InBitStream);
       if (number >= kDistTableSize)
@@ -280,7 +280,7 @@ bool CDecoder::DecodeLz(Int32 pos)
     else if (number < kReadTableNumber)
     {
       number -= kLen2Number;
-      distance = kLen2DistStarts[number] + 
+      distance = kLen2DistStarts[number] +
         m_InBitStream.ReadBits(kLen2DistDirectBits[number]);
       length = 2;
     }
@@ -324,7 +324,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
     InitStructures();
     if (unPackSize == 0)
     {
-      if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect; 
+      if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
         if (!ReadTables())
           return S_FALSE;
       return S_OK;
@@ -340,7 +340,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
     if (blockSize > unPackSize - pos)
       blockSize = (UInt32)(unPackSize - pos);
     UInt64 blockStartPos = m_OutWindowStream.GetProcessedSize();
-    if (m_AudioMode) 
+    if (m_AudioMode)
     {
       if (!DecodeMm(blockSize))
         return S_FALSE;

@@ -4,8 +4,8 @@
 
 #include <initguid.h>
 
-extern "C" 
-{ 
+extern "C"
+{
   #include "../../../../C/Alloc.h"
 }
 
@@ -14,18 +14,10 @@ extern "C"
 #include "Common/CommandLineParser.h"
 #include "Common/MyException.h"
 
-#include "Windows/COM.h"
-#include "Windows/FileMapping.h"
-#include "Windows/FileDir.h"
-#include "Windows/Synchronization.h"
 #include "Windows/Error.h"
-#include "Windows/FileName.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
-
-#include "../../IStream.h"
-#include "../../IPassword.h"
 
 #include "../FileManager/StringUtils.h"
 
@@ -33,7 +25,6 @@ extern "C"
 #include "../Common/ArchiveCommandLine.h"
 
 #include "ExtractRes.h"
-#include "../Explorer/MyMessages.h"
 
 #include "ExtractGUI.h"
 #include "UpdateGUI.h"
@@ -46,31 +37,37 @@ HINSTANCE g_hInstance;
 bool g_IsNT = false;
 #endif
 
-// static const wchar_t *kExceptionErrorMessage = L"Error:";
-// static const wchar_t *kUserBreak  = L"Break signaled";
-
-static const wchar_t *kMemoryExceptionMessage = L"ERROR: Can't allocate required memory!";
-static const wchar_t *kUnknownExceptionMessage = L"Unknown Error";
-// static const wchar_t *kInternalExceptionMessage = L"Internal Error #";
-// static const wchar_t *kIncorrectCommandMessage = L"Incorrect command";
-
-static void ErrorMessage(const wchar_t *message)
+static void ErrorMessage(LPCWSTR message)
 {
-  MessageBoxW(0, message, L"7-Zip GUI", MB_ICONERROR);
+  MessageBoxW(NULL, message, L"7-Zip", MB_ICONERROR | MB_OK);
 }
 
-int Main2()
+static void ErrorLangMessage(UINT resourceID, UInt32 langID)
 {
-  /*
-  TCHAR t[512];
-  GetCurrentDirectory(512, t);
-  ErrorMessage(t);
-  return 0;
-  */
+  ErrorMessage(LangString(resourceID, langID));
+}
 
+static const char *kNoFormats = "7-Zip cannot find the code that works with archives.";
+
+static int ShowMemErrorMessage()
+{
+  ErrorLangMessage(IDS_MEM_ERROR, 0x0200060B);
+  return NExitCode::kMemoryError;
+}
+
+static int ShowSysErrorMessage(DWORD errorCode)
+{
+  if (errorCode == E_OUTOFMEMORY)
+    return ShowMemErrorMessage();
+  ErrorMessage(NError::MyFormatMessageW(errorCode));
+  return NExitCode::kFatalError;
+}
+
+static int Main2()
+{
   UStringVector commandStrings;
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
-  if(commandStrings.Size() <= 1)
+  if (commandStrings.Size() <= 1)
   {
     MessageBoxW(0, L"Specify command", L"7-Zip", 0);
     return 0;
@@ -95,6 +92,17 @@ int Main2()
     throw CSystemException(result);
   
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
+  if (codecs->Formats.Size() == 0 &&
+        (isExtractGroupCommand ||
+        options.Command.IsFromUpdateGroup()))
+    throw kNoFormats;
+
+  CIntVector formatIndices;
+  if (!codecs->FindFormatForArchiveType(options.ArcType, formatIndices))
+  {
+    ErrorLangMessage(IDS_UNSUPPORTED_ARCHIVE_TYPE, 0x0200060D);
+    return NExitCode::kFatalError;
+  }
  
   if (options.Command.CommandType == NCommandType::kBenchmark)
   {
@@ -115,10 +123,6 @@ int Main2()
     ecs->Password = options.Password;
     ecs->Init();
 
-    COpenCallbackGUI openCallback;
-    openCallback.PasswordIsDefined = options.PasswordEnabled;
-    openCallback.Password = options.Password;
-
     CExtractOptions eo;
     eo.StdOutMode = options.StdOutMode;
     eo.OutputDir = options.OutputDir;
@@ -130,24 +134,20 @@ int Main2()
     eo.Properties = options.ExtractProperties;
     #endif
 
-    HRESULT result = ExtractGUI(codecs,
-          options.ArchivePathsSorted, 
+    HRESULT result = ExtractGUI(codecs, formatIndices,
+          options.ArchivePathsSorted,
           options.ArchivePathsFullSorted,
-          options.WildcardCensor.Pairs.Front().Head, 
-          eo, options.ShowDialog, &openCallback, ecs);
+          options.WildcardCensor.Pairs.Front().Head,
+          eo, options.ShowDialog, ecs);
     if (result != S_OK)
       throw CSystemException(result);
     if (ecs->Messages.Size() > 0 || ecs->NumArchiveErrors != 0)
-      return NExitCode::kFatalError;    
+      return NExitCode::kFatalError;
   }
   else if (options.Command.IsFromUpdateGroup())
   {
-    bool passwordIsDefined = 
+    bool passwordIsDefined =
         options.PasswordEnabled && !options.Password.IsEmpty();
-
-    COpenCallbackGUI openCallback;
-    openCallback.PasswordIsDefined = passwordIsDefined;
-    openCallback.Password = options.Password;
 
     CUpdateCallbackGUI callback;
     // callback.EnablePercents = options.EnablePercents;
@@ -159,27 +159,33 @@ int Main2()
 
     CUpdateErrorInfo errorInfo;
 
-    if (!options.UpdateOptions.Init(codecs, options.ArchiveName, options.ArcType))
-      throw "Unsupported archive type";
+    if (!options.UpdateOptions.Init(codecs, formatIndices, options.ArchiveName))
+    {
+      ErrorLangMessage(IDS_UPDATE_NOT_SUPPORTED, 0x02000601);
+      return NExitCode::kFatalError;
+    }
     HRESULT result = UpdateGUI(
         codecs,
-        options.WildcardCensor, options.UpdateOptions, 
+        options.WildcardCensor, options.UpdateOptions,
         options.ShowDialog,
-        errorInfo, &openCallback, &callback);
+        errorInfo, &callback);
 
     if (result != S_OK)
     {
       if (!errorInfo.Message.IsEmpty())
+      {
         ErrorMessage(errorInfo.Message);
+        if (result == E_FAIL)
+          return NExitCode::kFatalError;
+      }
       throw CSystemException(result);
     }
     if (callback.FailedFiles.Size() > 0)
-      return NExitCode::kWarning;    
+      return NExitCode::kWarning;
   }
   else
   {
-    ErrorMessage(L"Use correct command");
-    return 0;
+    throw "Unsupported command";
   }
   return 0;
 }
@@ -188,7 +194,7 @@ static bool inline IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -199,7 +205,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   #ifdef _UNICODE
   if (!IsItWindowsNT())
   {
-    MyMessageBox(L"This program requires Windows NT/2000/XP/2003");
+    ErrorMessage(L"This program requires Windows NT/2000/2003/2008/XP/Vista");
     return NExitCode::kFatalError;
   }
   #else
@@ -221,64 +227,43 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   }
   catch(const CNewException &)
   {
-    MyMessageBox(kMemoryExceptionMessage);
-    return (NExitCode::kMemoryError);
+    return ShowMemErrorMessage();
   }
   catch(const CArchiveCommandLineException &e)
   {
-    MyMessageBox(GetUnicodeString(e));
-    return (NExitCode::kUserError);
+    ErrorMessage(GetUnicodeString(e));
+    return NExitCode::kUserError;
   }
   catch(const CSystemException &systemError)
   {
-    if (systemError.ErrorCode == E_OUTOFMEMORY)
-    {
-      MyMessageBox(kMemoryExceptionMessage);
-      return (NExitCode::kMemoryError);
-    }
     if (systemError.ErrorCode == E_ABORT)
-    {
-      // MyMessageBox(kUserBreak);
-      return (NExitCode::kUserBreak);
-    }
-    UString message;
-    NError::MyFormatMessage(systemError.ErrorCode, message);
-    MyMessageBox(message);
-    return (NExitCode::kFatalError);
+      return NExitCode::kUserBreak;
+    return ShowSysErrorMessage(systemError.ErrorCode);
   }
-  /*
-  catch(NExitCode::EEnum &exitCode)
-  {
-    g_StdErr << kInternalExceptionMessage << exitCode << endl;
-    return (exitCode);
-  }
-  */
   catch(const UString &s)
   {
-    MyMessageBox(s);
-    return (NExitCode::kFatalError);
+    ErrorMessage(s);
+    return NExitCode::kFatalError;
   }
   catch(const AString &s)
   {
-    MyMessageBox(GetUnicodeString(s));
-    return (NExitCode::kFatalError);
+    ErrorMessage(GetUnicodeString(s));
+    return NExitCode::kFatalError;
+  }
+  catch(const wchar_t *s)
+  {
+    ErrorMessage(s);
+    return NExitCode::kFatalError;
   }
   catch(const char *s)
   {
-    MyMessageBox(GetUnicodeString(s));
-    return (NExitCode::kFatalError);
+    ErrorMessage(GetUnicodeString(s));
+    return NExitCode::kFatalError;
   }
-  /*
-  catch(int t)
-  {
-    g_StdErr << kInternalExceptionMessage << t << endl;
-    return (NExitCode::kFatalError);
-  }
-  */
   catch(...)
   {
-    MyMessageBox(kUnknownExceptionMessage);
-    return (NExitCode::kFatalError);
+    ErrorLangMessage(IDS_UNKNOWN_ERROR, 0x0200060C);
+    return NExitCode::kFatalError;
   }
 }
 

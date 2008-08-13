@@ -23,7 +23,7 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_BitPos = 8; 
+    m_BitPos = 8;
     m_CurByte = 0;
   }
   HRESULT Flush()
@@ -50,7 +50,7 @@ public:
       m_CurByte = 0;
     }
   }
-  UInt64 GetProcessedSize() const { 
+  UInt64 GetProcessedSize() const {
       return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) / 8; }
 };
 

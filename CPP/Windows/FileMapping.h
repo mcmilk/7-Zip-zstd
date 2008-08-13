@@ -27,18 +27,18 @@ public:
     return (_handle != NULL);
   }
 
-  LPVOID MapViewOfFile(DWORD desiredAccess, UINT64 fileOffset, 
+  LPVOID MapViewOfFile(DWORD desiredAccess, UINT64 fileOffset,
       SIZE_T numberOfBytesToMap)
   {
-    return ::MapViewOfFile(_handle, desiredAccess, 
+    return ::MapViewOfFile(_handle, desiredAccess,
         DWORD(fileOffset >> 32), DWORD(fileOffset), numberOfBytesToMap);
   }
 
-  LPVOID MapViewOfFileEx(DWORD desiredAccess, UINT64 fileOffset, 
+  LPVOID MapViewOfFileEx(DWORD desiredAccess, UINT64 fileOffset,
       SIZE_T numberOfBytesToMap, LPVOID baseAddress)
   {
-    return ::MapViewOfFileEx(_handle, desiredAccess, 
-      DWORD(fileOffset >> 32), DWORD(fileOffset), 
+    return ::MapViewOfFileEx(_handle, desiredAccess,
+      DWORD(fileOffset >> 32), DWORD(fileOffset),
       numberOfBytesToMap, baseAddress);
   }
   

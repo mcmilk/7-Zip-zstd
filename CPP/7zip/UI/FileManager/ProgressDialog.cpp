@@ -11,16 +11,29 @@ using namespace NWindows;
 static const UINT_PTR kTimerID = 3;
 static const UINT kTimerElapse = 50;
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDCANCEL, 0x02000711 }
 };
 #endif
+
+HRESULT CProgressSynch::ProcessStopAndPause()
+{
+  for (;;)
+  {
+    if (GetStopped())
+      return E_ABORT;
+    if (!GetPaused())
+      break;
+    ::Sleep(100);
+  }
+  return S_OK;
+}
 
 #ifndef _SFX
 CProgressDialog::~CProgressDialog()
@@ -36,12 +49,12 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
 
 
 
-bool CProgressDialog::OnInit() 
+bool CProgressDialog::OnInit()
 {
   _range = UINT64(-1);
   _prevPercentValue = -1;
 
-  #ifdef LANG        
+  #ifdef LANG
   // LangSetWindowText(HWND(*this), 0x02000C00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
@@ -53,7 +66,7 @@ bool CProgressDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-void CProgressDialog::OnCancel() 
+void CProgressDialog::OnCancel()
 {
   ProgressSynch.SetStopped(true);
 }
@@ -96,7 +109,7 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
     total = 1;
 
   int percentValue = (int)(completed * 100 / total);
-  if (percentValue != _prevPercentValue) 
+  if (percentValue != _prevPercentValue)
   {
     wchar_t s[64];
     ConvertUInt64ToString(percentValue, s);
@@ -154,16 +167,16 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   return CModalDialog::OnMessage(message, wParam, lParam);
 }
 
-bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
-{ 
+bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+{
   switch(buttonID)
   {
     case IDCANCEL:
     {
       bool paused = ProgressSynch.GetPaused();;
       ProgressSynch.SetPaused(true);
-      int res = ::MessageBoxW(HWND(*this), 
-          L"Are you sure you want to cancel?", 
+      int res = ::MessageBoxW(HWND(*this),
+          L"Are you sure you want to cancel?",
           _title, MB_YESNOCANCEL);
       ProgressSynch.SetPaused(paused);
       if (res == IDCANCEL || res == IDNO)

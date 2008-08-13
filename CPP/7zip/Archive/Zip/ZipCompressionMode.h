@@ -26,12 +26,12 @@ struct CCompressionMethodMode
   bool IsAesMode;
   Byte AesKeyMode;
   
-  CCompressionMethodMode(): 
-      NumMatchFinderCyclesDefined(false), 
-      PasswordIsDefined(false), 
-      IsAesMode(false), 
-      AesKeyMode(3) 
-      {} 
+  CCompressionMethodMode():
+      NumMatchFinderCyclesDefined(false),
+      PasswordIsDefined(false),
+      IsAesMode(false),
+      AesKeyMode(3)
+      {}
 };
 
 }}

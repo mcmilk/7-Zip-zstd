@@ -42,6 +42,11 @@ HRESULT CUpdateCallbackConsole::StartScanning()
   return S_OK;
 }
 
+HRESULT CUpdateCallbackConsole::ScanProgress(UInt64 /* numFolders */, UInt64 /* numFiles */, const wchar_t * /* path */)
+{
+  return CheckBreak();
+}
+
 HRESULT CUpdateCallbackConsole::CanNotFindError(const wchar_t *name, DWORD systemError)
 {
   CantFindFiles.Add(name);
@@ -71,7 +76,7 @@ HRESULT CUpdateCallbackConsole::StartArchive(const wchar_t *name, bool updating)
   if(updating)
     (*OutStream) << kUpdatingArchiveMessage;
   else
-    (*OutStream) << kCreatingArchiveMessage; 
+    (*OutStream) << kCreatingArchiveMessage;
   if (name != 0)
     (*OutStream) << name;
   else
@@ -186,21 +191,32 @@ HRESULT CUpdateCallbackConsole::SetOperationResult(Int32 )
 {
   m_NeedBeClosed = true;
   m_NeedNewLine = true;
-  return S_OK;  
+  return S_OK;
 }
 
 HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
-  if (!PasswordIsDefined) 
+  #ifdef _NO_CRYPTO
+
+  *passwordIsDefined = false;
+  CMyComBSTR tempName(L"");
+  *password = tempName.Detach();
+  
+  #else
+  
+  if (!PasswordIsDefined)
   {
     if (AskPassword)
     {
-      Password = GetPassword(OutStream); 
+      Password = GetPassword(OutStream);
       PasswordIsDefined = true;
     }
   }
   *passwordIsDefined = BoolToInt(PasswordIsDefined);
   CMyComBSTR tempName(Password);
   *password = tempName.Detach();
+  
+  #endif
+  
   return S_OK;
 }

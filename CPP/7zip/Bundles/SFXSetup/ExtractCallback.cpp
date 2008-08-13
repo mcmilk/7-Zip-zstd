@@ -5,42 +5,55 @@
 #include "ExtractCallback.h"
 
 #include "Common/Wildcard.h"
-#include "Common/StringConvert.h"
 
-#include "Windows/COM.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
-#include "Windows/Time.h"
-#include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
-
-#include "Windows/PropVariantConversions.h"
 
 using namespace NWindows;
 using namespace NFile;
 
-// static LPCWSTR kErrorTitle = L"7-Zip";
 static LPCWSTR kCantDeleteFile = L"Can not delete output file";
 static LPCWSTR kCantOpenFile = L"Can not open output file";
 static LPCWSTR kUnsupportedMethod = L"Unsupported Method";
-// static LPCWSTR kCRCFailed = L"CRC Failed";
-// static LPCWSTR kDataError = L"Data Error";
-// static LPCWSTR kUnknownError = L""Unknown Error";
 
 void CExtractCallbackImp::Init(IInArchive *archiveHandler,
-    const UString &directoryPath,   
+    const UString &directoryPath,
     const UString &itemDefaultName,
-    const FILETIME &utcLastWriteTimeDefault,
-    UInt32 attributesDefault)
+    const FILETIME &defaultMTime,
+    UInt32 defaultAttributes)
 {
   _message.Empty();
   _isCorrupt = false;
   _itemDefaultName = itemDefaultName;
-  _utcLastWriteTimeDefault = utcLastWriteTimeDefault;
-  _attributesDefault = attributesDefault;
+  _defaultMTime = defaultMTime;
+  _defaultAttributes = defaultAttributes;
   _archiveHandler = archiveHandler;
   _directoryPath = directoryPath;
   NName::NormalizeDirPathPrefix(_directoryPath);
+}
+
+HRESULT CExtractCallbackImp::Open_CheckBreak()
+{
+  #ifndef _NO_PROGRESS
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  #else
+  return S_OK;
+  #endif
+}
+
+HRESULT CExtractCallbackImp::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  #ifndef _NO_PROGRESS
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  #else
+  return S_OK;
+  #endif
 }
 
 STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
@@ -54,14 +67,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
   #ifndef _NO_PROGRESS
-  for (;;)
-  {
-    if(ProgressDialog.ProgressSynch.GetStopped())
-      return E_ABORT;
-    if(!ProgressDialog.ProgressSynch.GetPaused())
-      break;
-    ::Sleep(100);
-  }
+  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
   if (completeValue != NULL)
     ProgressDialog.ProgressSynch.SetPos(*completeValue);
   #endif
@@ -83,18 +89,18 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     ISequentialOutStream **outStream, Int32 askExtractMode)
 {
   #ifndef _NO_PROGRESS
-  if(ProgressDialog.ProgressSynch.GetStopped())
+  if (ProgressDialog.ProgressSynch.GetStopped())
     return E_ABORT;
   #endif
   _outFileStream.Release();
   NCOM::CPropVariant propVariantName;
   RINOK(_archiveHandler->GetProperty(index, kpidPath, &propVariantName));
   UString fullPath;
-  if(propVariantName.vt == VT_EMPTY)
+  if (propVariantName.vt == VT_EMPTY)
     fullPath = _itemDefaultName;
-  else 
+  else
   {
-    if(propVariantName.vt != VT_BSTR)
+    if (propVariantName.vt != VT_BSTR)
       return E_FAIL;
     fullPath = propVariantName.bstrVal;
   }
@@ -102,52 +108,51 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
 
   // m_CurrentFilePath = GetSystemString(fullPath, _codePage);
   
-  if(askExtractMode == NArchive::NExtract::NAskMode::kExtract)
+  if (askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
-    NCOM::CPropVariant propVariant;
-    RINOK(_archiveHandler->GetProperty(index, kpidAttributes, &propVariant));
-    if (propVariant.vt == VT_EMPTY)
-      _processedFileInfo.Attributes = _attributesDefault;
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidAttrib, &prop));
+    if (prop.vt == VT_EMPTY)
+      _processedFileInfo.Attributes = _defaultAttributes;
     else
     {
-      if (propVariant.vt != VT_UI4)
+      if (prop.vt != VT_UI4)
         return E_FAIL;
-      _processedFileInfo.Attributes = propVariant.ulVal;
+      _processedFileInfo.Attributes = prop.ulVal;
     }
 
-    RINOK(_archiveHandler->GetProperty(index, kpidIsFolder, &propVariant));
-    _processedFileInfo.IsDirectory = VARIANT_BOOLToBool(propVariant.boolVal);
+    RINOK(_archiveHandler->GetProperty(index, kpidIsDir, &prop));
+    _processedFileInfo.IsDir = VARIANT_BOOLToBool(prop.boolVal);
 
     bool isAnti = false;
     {
-      NCOM::CPropVariant propVariantTemp;
-      RINOK(_archiveHandler->GetProperty(index, kpidIsAnti, 
-          &propVariantTemp));
-      if (propVariantTemp.vt == VT_BOOL)
-        isAnti = VARIANT_BOOLToBool(propVariantTemp.boolVal);
+      NCOM::CPropVariant propTemp;
+      RINOK(_archiveHandler->GetProperty(index, kpidIsAnti, &propTemp));
+      if (propTemp.vt == VT_BOOL)
+        isAnti = VARIANT_BOOLToBool(propTemp.boolVal);
     }
 
-    RINOK(_archiveHandler->GetProperty(index, kpidLastWriteTime, &propVariant));
-    switch(propVariant.vt)
+    RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
+    switch(prop.vt)
     {
       case VT_EMPTY:
-        _processedFileInfo.UTCLastWriteTime = _utcLastWriteTimeDefault;
+        _processedFileInfo.MTime = _defaultMTime;
         break;
       case VT_FILETIME:
-        _processedFileInfo.UTCLastWriteTime = propVariant.filetime;
+        _processedFileInfo.MTime = prop.filetime;
         break;
       default:
         return E_FAIL;
     }
 
-    UStringVector pathParts; 
+    UStringVector pathParts;
     SplitPathToParts(fullPath, pathParts);
-    if(pathParts.IsEmpty())
+    if (pathParts.IsEmpty())
       return E_FAIL;
 
     UString processedPath = fullPath;
 
-    if(!_processedFileInfo.IsDirectory)
+    if (!_processedFileInfo.IsDir)
       pathParts.DeleteBack();
     if (!pathParts.IsEmpty())
     {
@@ -157,7 +162,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
 
     UString fullProcessedPath = _directoryPath + processedPath;
 
-    if(_processedFileInfo.IsDirectory)
+    if (_processedFileInfo.IsDir)
     {
       _diskFilePath = fullProcessedPath;
 
@@ -167,7 +172,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     }
 
     NFind::CFileInfoW fileInfo;
-    if(NFind::FindFile(fullProcessedPath, fileInfo))
+    if (NFind::FindFile(fullProcessedPath, fileInfo))
     {
       if (!NDirectory::DeleteFileAlways(fullProcessedPath))
       {
@@ -214,9 +219,8 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
   switch(resultEOperationResult)
   {
     case NArchive::NExtract::NOperationResult::kOK:
-    {
       break;
-    }
+
     default:
     {
       _outFileStream.Release();
@@ -225,23 +229,15 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
         case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
           _message = kUnsupportedMethod;
           break;
-        case NArchive::NExtract::NOperationResult::kCRCError:
-          _isCorrupt = true;
-          // _message = kCRCFailed;
-          break;
-        case NArchive::NExtract::NOperationResult::kDataError:
-          _isCorrupt = true;
-          // _message = kDataError;
-          break;
         default:
           _isCorrupt = true;
       }
       return E_FAIL;
     }
   }
-  if(_outFileStream != NULL)
+  if (_outFileStream != NULL)
   {
-    _outFileStreamSpec->SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+    _outFileStreamSpec->SetMTime(&_processedFileInfo.MTime);
     RINOK(_outFileStreamSpec->Close());
   }
   _outFileStream.Release();
@@ -249,4 +245,3 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
     NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
   return S_OK;
 }
-

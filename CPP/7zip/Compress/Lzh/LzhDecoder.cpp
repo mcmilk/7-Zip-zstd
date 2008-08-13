@@ -21,28 +21,28 @@ UInt32 CCoder::ReadBits(int numBits) {  return m_InBitStream.ReadBits(numBits); 
 HRESULT CCoder::ReadLevelTable()
 {
   int n = ReadBits(kNumLevelBits);
-  if (n == 0) 
+  if (n == 0)
   {
     m_LevelHuffman.Symbol = ReadBits(kNumLevelBits);
     if (m_LevelHuffman.Symbol >= kNumLevelSymbols)
       return S_FALSE;
   }
-  else 
+  else
   {
     if (n > kNumLevelSymbols)
       return S_FALSE;
     m_LevelHuffman.Symbol = -1;
     Byte lens[kNumLevelSymbols];
     int i = 0;
-    while (i < n) 
+    while (i < n)
     {
       int c = m_InBitStream.ReadBits(3);
-      if (c == 7) 
-        while (ReadBits(1)) 
+      if (c == 7)
+        while (ReadBits(1))
           if (c++ > kMaxHuffmanLen)
             return S_FALSE;
       lens[i++] = (Byte)c;
-      if (i == kNumSpecLevelSymbols) 
+      if (i == kNumSpecLevelSymbols)
       {
         c = ReadBits(2);
         while (--c >= 0)
@@ -65,18 +65,18 @@ HRESULT CCoder::ReadPTable(int numBits)
     if (m_PHuffmanDecoder.Symbol >= kNumDistanceSymbols)
       return S_FALSE;
   }
-  else 
+  else
   {
     if (n > kNumDistanceSymbols)
       return S_FALSE;
     m_PHuffmanDecoder.Symbol = -1;
     Byte lens[kNumDistanceSymbols];
     int i = 0;
-    while (i < n) 
+    while (i < n)
     {
       int c = m_InBitStream.ReadBits(3);
-      if (c == 7) 
-        while (ReadBits(1)) 
+      if (c == 7)
+        while (ReadBits(1))
         {
           if (c > kMaxHuffmanLen)
             return S_FALSE;
@@ -94,23 +94,23 @@ HRESULT CCoder::ReadPTable(int numBits)
 HRESULT CCoder::ReadCTable()
 {
   int n = ReadBits(kNumCBits);
-  if (n == 0) 
+  if (n == 0)
   {
     m_CHuffmanDecoder.Symbol = ReadBits(kNumCBits);
     if (m_CHuffmanDecoder.Symbol >= kNumCSymbols)
       return S_FALSE;
   }
-  else 
+  else
   {
     if (n > kNumCSymbols)
       return S_FALSE;
     m_CHuffmanDecoder.Symbol = -1;
     Byte lens[kNumCSymbols];
     int i = 0;
-    while (i < n) 
+    while (i < n)
     {
       int c = m_LevelHuffman.Decode(&m_InBitStream);
-      if (c < kNumSpecLevelSymbols) 
+      if (c < kNumSpecLevelSymbols)
       {
         if (c == 0)
           c = 1;
@@ -156,9 +156,9 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
   CCoderReleaser coderReleaser(this);
 
   int pbit;
-  if (m_NumDictBits <= 13)  
+  if (m_NumDictBits <= 13)
     pbit = 4;
-  else   
+  else
     pbit = 5;
 
   UInt32 blockSize = 0;
@@ -167,7 +167,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
   {
     // for (i = 0; i < dictSize; i++) dtext[i] = 0x20;
     
-    if (blockSize == 0) 
+    if (blockSize == 0)
     {
       if (progress != NULL)
       {
@@ -181,7 +181,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     }
     blockSize--;
     UInt32 c = m_CHuffmanDecoder.Decode(&m_InBitStream);
-    if (c < 256) 
+    if (c < 256)
     {
       m_OutWindowStream.PutByte((Byte)c);
       pos++;

@@ -7,16 +7,16 @@
 #include "Windows/Defs.h"
 #include "Common/Defs.h"
 
-extern "C" 
-{ 
-  #include "../../../../C/7zCrc.h" 
+extern "C"
+{
+  #include "../../../../C/7zCrc.h"
 }
 
 namespace NArchive {
 namespace NRar {
 
 void CFolderInStream::Init(
-    CObjectVector<CInArchive> *archives, 
+    CObjectVector<CInArchive> *archives,
     const CObjectVector<CItemEx> *items,
     const CRefItem &refItem)
 {

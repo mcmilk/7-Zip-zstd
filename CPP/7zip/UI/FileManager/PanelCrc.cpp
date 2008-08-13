@@ -4,8 +4,8 @@
 
 #include "resource.h"
 
-extern "C" 
-{ 
+extern "C"
+{
   #include "../../../../C/Alloc.h"
   #include "../../../../C/7zCrc.h"
 }
@@ -93,7 +93,7 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
     Prefixes.DeleteBack();
   }
   resPath += fileInfo.Name;
-  if (!FlatMode && fileInfo.IsDirectory())
+  if (!FlatMode && fileInfo.IsDir())
   {
     UString prefix = resPath + (UString)(wchar_t)kDirDelimiter;
     Enumerators.Add(NFind::CEnumeratorW(BasePrefix + prefix + (UString)(wchar_t)kAnyStringWildcard));
@@ -171,7 +171,7 @@ struct CThreadCrc
       }
       if (!filled)
         break;
-      if (!fileInfo.IsDirectory())
+      if (!fileInfo.IsDir())
         totalSize += fileInfo.Size;
       ProgressDialog->ProgressSynch.SetCurrentFileName(scanningStr + resPath);
       ProgressDialog->ProgressSynch.SetProgress(totalSize, 0);
@@ -199,7 +199,7 @@ struct CThreadCrc
         break;
 
       UInt32 crc = CRC_INIT_VAL;
-      if (fileInfo.IsDirectory())
+      if (fileInfo.IsDir())
         NumFolders++;
       else
       {
@@ -276,7 +276,7 @@ void CApp::CalculateCrc()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
   }
   CRecordVector<UInt32> indices;

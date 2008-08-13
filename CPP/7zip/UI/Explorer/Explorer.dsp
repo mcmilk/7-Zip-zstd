@@ -430,6 +430,14 @@ SOURCE=..\..\..\Windows\Control\Dialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Control\ListView.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Control\ListView.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Control\PropertyPage.cpp
 # End Source File
 # Begin Source File

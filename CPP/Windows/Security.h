@@ -71,7 +71,7 @@ protected:
   #endif
 public:
   operator LSA_HANDLE() const { return _handle; }
-  CPolicy(): _handle(NULL) 
+  CPolicy(): _handle(NULL)
   {
     #ifndef _UNICODE
     hModule = GetModuleHandle(TEXT("Advapi32.dll"));
@@ -91,7 +91,7 @@ public:
     #endif
 
     Close();
-    return 
+    return
       #ifdef _UNICODE
       ::LsaOpenPolicy
       #else
@@ -113,7 +113,7 @@ public:
       return MY_STATUS_NOT_IMPLEMENTED;
     #endif
 
-    NTSTATUS res = 
+    NTSTATUS res =
       #ifdef _UNICODE
       ::LsaClose
       #else
@@ -131,12 +131,12 @@ public:
   NTSTATUS EnumerateAccountRights(PSID sid,  PLSA_UNICODE_STRING* userRights, PULONG countOfRights)
     { return ::LsaEnumerateAccountRights(_handle, sid,  userRights, countOfRights); }
 
-  NTSTATUS LookupSids(ULONG count, PSID* sids, 
+  NTSTATUS LookupSids(ULONG count, PSID* sids,
       PLSA_REFERENCED_DOMAIN_LIST* referencedDomains, PLSA_TRANSLATED_NAME* names)
     { return LsaLookupSids(_handle, count, sids, referencedDomains, names); }
 
   NTSTATUS AddAccountRights(PSID accountSid, PLSA_UNICODE_STRING userRights, ULONG countOfRights)
-  { 
+  {
     #ifndef _UNICODE
     if (hModule == NULL)
       return MY_STATUS_NOT_IMPLEMENTED;
@@ -145,13 +145,13 @@ public:
       return MY_STATUS_NOT_IMPLEMENTED;
     #endif
 
-    return 
+    return
       #ifdef _UNICODE
       ::LsaAddAccountRights
       #else
       lsaAddAccountRights
       #endif
-      (_handle, accountSid, userRights, countOfRights); 
+      (_handle, accountSid, userRights, countOfRights);
   }
   NTSTATUS AddAccountRights(PSID accountSid, PLSA_UNICODE_STRING userRights)
     { return AddAccountRights(accountSid, userRights, 1); }

@@ -1,5 +1,5 @@
 /* 7zIn.h -- 7z Input functions
-2008-05-05
+2008-08-05
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zItem.h for license options */
@@ -12,7 +12,7 @@ Read 7zItem.h for license options */
 
 typedef struct
 {
-  CFileSize StartPositionAfterHeader; 
+  CFileSize StartPositionAfterHeader;
   CFileSize DataStartPosition;
 } CInArchiveInfo;
 
@@ -31,7 +31,7 @@ void SzArEx_Free(CSzArEx *p, ISzAlloc *alloc);
 CFileSize SzArEx_GetFolderStreamPos(const CSzArEx *p, UInt32 folderIndex, UInt32 indexInFolder);
 int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, CFileSize *resSize);
 
-typedef enum 
+typedef enum
 {
   SZ_SEEK_SET = 0,
   SZ_SEEK_CUR = 1,

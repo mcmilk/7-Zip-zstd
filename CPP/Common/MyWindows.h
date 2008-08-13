@@ -85,9 +85,9 @@ typedef LONG SCODE;
 #define E_INVALIDARG ((HRESULT)0x80070057L)
 
 #ifdef _MSC_VER
-#define STDMETHODCALLTYPE __stdcall 
+#define STDMETHODCALLTYPE __stdcall
 #else
-#define STDMETHODCALLTYPE 
+#define STDMETHODCALLTYPE
 #endif
 
 #define STDMETHOD_(t, f) virtual t STDMETHODCALLTYPE f
@@ -97,7 +97,7 @@ typedef LONG SCODE;
 
 #define PURE = 0
 
-#define MIDL_INTERFACE(x) struct 
+#define MIDL_INTERFACE(x) struct
 
 #ifdef __cplusplus
 
@@ -163,7 +163,7 @@ typedef struct tagPROPVARIANT
   PROPVAR_PAD1 wReserved1;
   PROPVAR_PAD2 wReserved2;
   PROPVAR_PAD3 wReserved3;
-  union 
+  union
   {
     CHAR cVal;
     UCHAR bVal;

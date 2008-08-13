@@ -12,7 +12,7 @@
 namespace NArchive {
 namespace NIso {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {

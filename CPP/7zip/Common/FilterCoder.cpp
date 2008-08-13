@@ -3,8 +3,8 @@
 #include "StdAfx.h"
 
 #include "FilterCoder.h"
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../C/Alloc.h"
 }
 #include "../../Common/Defs.h"
@@ -13,13 +13,13 @@ extern "C"
 static const UInt32 kBufferSize = 1 << 17;
 
 CFilterCoder::CFilterCoder()
-{ 
-  _buffer = (Byte *)::MidAlloc(kBufferSize); 
+{
+  _buffer = (Byte *)::MidAlloc(kBufferSize);
 }
 
-CFilterCoder::~CFilterCoder() 
-{ 
-  ::MidFree(_buffer); 
+CFilterCoder::~CFilterCoder()
+{
+  ::MidFree(_buffer);
 }
 
 HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 size)
@@ -226,7 +226,7 @@ STDMETHODIMP CFilterCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 #endif
 
 #ifndef EXTRACT_ONLY
-STDMETHODIMP CFilterCoder::SetCoderProperties(const PROPID *propIDs, 
+STDMETHODIMP CFilterCoder::SetCoderProperties(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties)
 {
   return _SetCoderProperties->SetCoderProperties(propIDs, properties, numProperties);

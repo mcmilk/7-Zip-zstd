@@ -21,7 +21,7 @@
 
 using namespace NContextMenuFlags;
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 0x01000301},
   { IDC_SYSTEM_CASCADED_MENU, 0x01000302},
@@ -37,7 +37,7 @@ struct CContextMenuItem
   UInt32 Flag;
 };
 
-static CContextMenuItem kMenuItems[] = 
+static CContextMenuItem kMenuItems[] =
 {
   { IDS_CONTEXT_OPEN, 0x02000103, kOpen},
   { IDS_CONTEXT_EXTRACT, 0x02000105, kExtract},
@@ -61,7 +61,7 @@ bool CSystemPage::OnInit()
   _initMode = true;
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
 
-  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 
+  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,
       NZipRootRegistry::CheckContextMenuHandler());
 
   CheckButton(IDC_SYSTEM_CASCADED_MENU, ReadCascadedMenu());
@@ -73,29 +73,18 @@ bool CSystemPage::OnInit()
   m_ListView.Attach(GetItem(IDC_SYSTEM_OPTIONS_LIST));
 
   /*
-  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 
+  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,
       NRegistryAssociations::CheckContextMenuHandler());
   */
 
   UInt32 newFlags = LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT;
   m_ListView.SetExtendedListViewStyle(newFlags, newFlags);
 
-  UString s; //  = TEXT("Items"); // LangLoadString(IDS_PROPERTY_EXTENSION, 0x02000205);
-  LVCOLUMNW column;
-  column.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
-  column.cx = 270;
-  column.fmt = LVCFMT_LEFT;
-  column.pszText = (LPWSTR)(LPCWSTR)s;
-  column.iSubItem = 0;
-  m_ListView.InsertColumn(0, &column);
+  m_ListView.InsertColumn(0, L"", 270);
 
   for (int i = 0; i < kNumMenuItems; i++)
   {
     CContextMenuItem &menuItem = kMenuItems[i];
-    LVITEMW item;
-    item.iItem = i;
-    item.mask = LVIF_TEXT | LVIF_PARAM;
-    item.lParam = i;
 
     UString s = LangString(menuItem.ControlID, menuItem.LangID);
 
@@ -126,11 +115,7 @@ bool CSystemPage::OnInit()
       }
     }
 
-    // UString MyFormatNew(const UString &format, const UString &argument);
-
-    item.pszText = (LPWSTR)(LPCWSTR)s;
-    item.iSubItem = 0;
-    int itemIndex = m_ListView.InsertItem(&item);
+    int itemIndex = m_ListView.InsertItem(i, s);
     m_ListView.SetCheckState(itemIndex, ((contextMenuFlags & menuItem.Flag) != 0));
   }
 
@@ -170,7 +155,7 @@ void CSystemPage::OnNotifyHelp()
 }
 
 bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
-{ 
+{
   switch(buttonID)
   {
     case IDC_SYSTEM_CASCADED_MENU:
@@ -182,8 +167,8 @@ bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 }
 
-bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam) 
-{ 
+bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
+{
   if (lParam->hwndFrom == HWND(m_ListView))
   {
     switch(lParam->code)
@@ -191,8 +176,8 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
       case (LVN_ITEMCHANGED):
         return OnItemChanged((const NMLISTVIEW *)lParam);
     }
-  } 
-  return CPropertyPage::OnNotify(controlID, lParam); 
+  }
+  return CPropertyPage::OnNotify(controlID, lParam);
 }
 
 

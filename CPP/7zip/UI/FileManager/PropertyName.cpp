@@ -2,32 +2,35 @@
 
 #include "StdAfx.h"
 
-#include "../../PropID.h"
+#include "Common/IntToString.h"
 #include "Windows/ResourceString.h"
+
+#include "../../PropID.h"
+
 #include "resource.h"
-#include "PropertyName.h"
 #include "PropertyNameRes.h"
 #include "LangUtils.h"
+#include "PropertyName.h"
 
 struct CPropertyIDNamePair
 {
   PROPID PropID;
   UINT ResourceID;
-  UINT LangID;
+  UInt32 LangID;
 };
 
-static CPropertyIDNamePair kPropertyIDNamePairs[] =  
+static CPropertyIDNamePair kPropertyIDNamePairs[] =
 {
   { kpidPath, IDS_PROPERTY_PATH, 0x02000203 },
   { kpidName, IDS_PROPERTY_NAME, 0x02000204 },
-  // { kpidExtension, L"Extension" },
-  { kpidIsFolder, IDS_PROPERTY_IS_FOLDER,  0x02000206},
+  { kpidExtension, IDS_PROPERTY_EXTENSION, 0x02000205 },
+  { kpidIsDir, IDS_PROPERTY_IS_FOLDER,  0x02000206},
   { kpidSize, IDS_PROPERTY_SIZE, 0x02000207},
-  { kpidPackedSize, IDS_PROPERTY_PACKED_SIZE, 0x02000208 }, 
-  { kpidAttributes, IDS_PROPERTY_ATTRIBUTES, 0x02000209 },
-  { kpidCreationTime, IDS_PROPERTY_CREATION_TIME, 0x0200020A },
-  { kpidLastAccessTime, IDS_PROPERTY_LAST_ACCESS_TIME, 0x0200020B },
-  { kpidLastWriteTime, IDS_PROPERTY_LAST_WRITE_TIME, 0x0200020C },
+  { kpidPackSize, IDS_PROPERTY_PACKED_SIZE, 0x02000208 },
+  { kpidAttrib, IDS_PROPERTY_ATTRIBUTES, 0x02000209 },
+  { kpidCTime, IDS_PROPERTY_CTIME, 0x0200020A },
+  { kpidATime, IDS_PROPERTY_ATIME, 0x0200020B },
+  { kpidMTime, IDS_PROPERTY_MTIME, 0x0200020C },
   { kpidSolid, IDS_PROPERTY_SOLID, 0x0200020D },
   { kpidCommented, IDS_PROPERTY_C0MMENTED, 0x0200020E },
   { kpidEncrypted, IDS_PROPERTY_ENCRYPTED, 0x0200020F },
@@ -46,7 +49,7 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidComment, IDS_PROPERTY_COMMENT, 0x0200021C },
   { kpidPosition, IDS_PROPERTY_POSITION, 0x0200021D },
   { kpidPrefix, IDS_PROPERTY_PREFIX, 0x0200021E },
-  { kpidNumSubFolders, IDS_PROPERTY_FOLDERS, 0x0200021F },
+  { kpidNumSubDirs, IDS_PROPERTY_FOLDERS, 0x0200021F },
   { kpidNumSubFiles, IDS_PROPERTY_FILES, 0x02000220 },
   { kpidUnpackVer, IDS_PROPERTY_VERSION, 0x02000221},
   { kpidVolume, IDS_PROPERTY_VOLUME, 0x02000222},
@@ -56,8 +59,17 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidNumBlocks, IDS_PROPERTY_NUM_BLOCKS, 0x02000226},
   { kpidNumVolumes, IDS_PROPERTY_NUM_VOLUMES, 0x02000227},
 
+  { kpidBit64, IDS_PROPERTY_BIT64, 0x02000229},
+  { kpidBigEndian, IDS_PROPERTY_BIG_ENDIAN, 0x0200022A},
+  { kpidCpu, IDS_PROPERTY_CPU, 0x0200022B},
+  { kpidPhySize, IDS_PROPERTY_PHY_SIZE, 0x0200022C},
+  { kpidHeadersSize, IDS_PROPERTY_HEADERS_SIZE, 0x0200022D},
+  { kpidChecksum, IDS_PROPERTY_CHECKSUM, 0x0200022E},
+  { kpidCharacts, IDS_PROPERTY_CHARACTS, 0x0200022F},
+  { kpidVa, IDS_PROPERTY_VA, 0x02000230},
+
   { kpidTotalSize, IDS_PROPERTY_TOTAL_SIZE, 0x03031100 },
-  { kpidFreeSpace, IDS_PROPERTY_FREE_SPACE, 0x03031101 }, 
+  { kpidFreeSpace, IDS_PROPERTY_FREE_SPACE, 0x03031101 },
   { kpidClusterSize, IDS_PROPERTY_CLUSTER_SIZE, 0x03031102},
   { kpidVolumeName, IDS_PROPERTY_VOLUME_NAME, 0x03031103 },
 
@@ -68,16 +80,22 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
 int FindProperty(PROPID propID)
 {
   for (int i = 0; i < sizeof(kPropertyIDNamePairs) / sizeof(kPropertyIDNamePairs[0]); i++)
-    if(kPropertyIDNamePairs[i].PropID == propID)
+    if (kPropertyIDNamePairs[i].PropID == propID)
       return i;
   return -1;
 }
 
-UString GetNameOfProperty(PROPID propID)
+UString GetNameOfProperty(PROPID propID, const wchar_t *name)
 {
   int index = FindProperty(propID);
   if (index < 0)
-    return UString();
+  {
+    if (name)
+      return name;
+    wchar_t s[32];
+    ConvertUInt64ToString(propID, s);
+    return s;
+  }
   const CPropertyIDNamePair &pair = kPropertyIDNamePairs[index];
   return LangString(pair.ResourceID, pair.LangID);
 }

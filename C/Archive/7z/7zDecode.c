@@ -1,5 +1,5 @@
 /* 7zDecode.c  Decoding from 7z folder
-2008-04-09
+2008-08-05
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zDecode.h for license options */
@@ -60,13 +60,13 @@ static SRes SzDecodeLzma(CSzCoderInfo *coder, CFileSize inSize, ISzInStream *inS
       if (state.dicPos == state.dicBufSize || (inProcessed == 0 && dicPos == state.dicPos))
       {
         if (state.dicBufSize != outSize || _inSize != 0 ||
-            (status != LZMA_STATUS_FINISHED_WITH_MARK && 
+            (status != LZMA_STATUS_FINISHED_WITH_MARK &&
              status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK))
           res = SZ_ERROR_DATA;
         break;
       }
     }
-  } 
+  }
 
   LzmaDec_FreeProbs(&state, allocMain);
 
@@ -126,7 +126,7 @@ SRes CheckSupportedFolder(const CSzFolder *f)
         IS_UNSUPPORTED_CODER(f->Coders[2]) ||
         IS_NO_BCJ2(f->Coders[3]))
       return SZ_ERROR_UNSUPPORTED;
-    if (f->NumPackStreams != 4 || 
+    if (f->NumPackStreams != 4 ||
         f->PackStreams[0] != 2 ||
         f->PackStreams[1] != 6 ||
         f->PackStreams[2] != 1 ||
@@ -184,7 +184,7 @@ SRes SzDecode2(const CFileSize *packSizes, const CSzFolder *folder,
       if (folder->NumCoders == 4)
       {
         UInt32 indices[] = { 3, 2, 0 };
-        CFileSize unpackSize = folder->UnPackSizes[ci];
+        CFileSize unpackSize = folder->UnpackSizes[ci];
         si = indices[ci];
         if (ci < 2)
         {
@@ -287,22 +287,22 @@ SRes SzDecode2(const CFileSize *packSizes, const CSzFolder *folder,
       */
 
       res = Bcj2_Decode(
-          tempBuf3, tempSize3, 
-          tempBuf[0], tempSizes[0], 
-          tempBuf[1], tempSizes[1], 
+          tempBuf3, tempSize3,
+          tempBuf[0], tempSizes[0],
+          tempBuf[1], tempSizes[1],
           /*
           #ifdef _LZMA_IN_CB
           */
-          tempBuf[2], tempSizes[2], 
-          /* 
+          tempBuf[2], tempSizes[2],
+          /*
           #else
-          inBuffer + (size_t)offset, (size_t)s3Size, 
+          inBuffer + (size_t)offset, (size_t)s3Size,
           #endif
           */
           outBuffer, outSize);
       RINOK(res)
     }
-    else 
+    else
       return SZ_ERROR_UNSUPPORTED;
   }
   return SZ_OK;

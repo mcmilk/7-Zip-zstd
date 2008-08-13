@@ -36,10 +36,10 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_BitPos = kNumBigValueBits; 
+    m_BitPos = kNumBigValueBits;
   }
 
-  UInt64 GetProcessedSize() const 
+  UInt64 GetProcessedSize() const
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   
   int GetBitPosition() const { return m_BitPos & 0xF; }
@@ -57,7 +57,7 @@ public:
 
   UInt32 GetValue(int numBits) const
   {
-    return ((m_Value >> ((32 - kNumValueBits) - m_BitPos)) & kBitDecoderValueMask) >> 
+    return ((m_Value >> ((32 - kNumValueBits) - m_BitPos)) & kBitDecoderValueMask) >>
         (kNumValueBits - numBits);
   }
   
@@ -96,7 +96,7 @@ public:
 };
 }
 
-class CDecoder : 
+class CDecoder :
   public ICompressCoder,
   public CMyUnknownImp
 {
@@ -135,8 +135,8 @@ class CDecoder :
 
   HRESULT CodeSpec(UInt32 size);
 
-  HRESULT CodeReal(ISequentialInStream *inStream, 
-      ISequentialOutStream *outStream, 
+  HRESULT CodeReal(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 public:
@@ -148,8 +148,8 @@ public:
   STDMETHOD(Flush)();
 
   // ICompressCoder interface
-  STDMETHOD(Code)(ISequentialInStream *inStream, 
-      ISequentialOutStream *outStream, 
+  STDMETHOD(Code)(ISequentialInStream *inStream,
+      ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 

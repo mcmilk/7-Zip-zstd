@@ -17,7 +17,7 @@ namespace NError {
 bool MyFormatMessage(DWORD messageID, CSysString &message)
 {
   LPVOID msgBuf;
-  if(::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+  if(::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
       NULL,messageID, 0, (LPTSTR) &msgBuf,0, NULL) == 0)
     return false;
@@ -32,7 +32,7 @@ bool MyFormatMessage(DWORD messageID, UString &message)
   if (g_IsNT)
   {
     LPVOID msgBuf;
-    if(::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+    if(::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL, messageID, 0, (LPWSTR) &msgBuf, 0, NULL) == 0)
       return false;

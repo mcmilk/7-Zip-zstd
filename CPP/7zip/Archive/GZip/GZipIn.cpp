@@ -10,9 +10,9 @@
 
 #include "../../Common/StreamUtils.h"
 
-extern "C" 
-{ 
-  #include "../../../../C/7zCrc.h" 
+extern "C"
+{
+  #include "../../../../C/7zCrc.h"
 }
 
 namespace NArchive {

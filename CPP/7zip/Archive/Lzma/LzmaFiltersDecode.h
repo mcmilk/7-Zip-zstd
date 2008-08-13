@@ -17,7 +17,7 @@ class CDecoder
 public:
   HRESULT Code(DECL_EXTERNAL_CODECS_LOC_VARS
       const CHeader &block,
-      ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+      ISequentialInStream *inStream, ISequentialOutStream *outStream,
       UInt64 *inProcessedSize, ICompressProgressInfo *progress);
 };
 

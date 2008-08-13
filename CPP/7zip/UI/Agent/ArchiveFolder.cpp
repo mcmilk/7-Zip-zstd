@@ -19,11 +19,11 @@
 using namespace NWindows;
 using namespace NCOM;
 
-STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems, 
+STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
   COM_TRY_BEGIN
-  CArchiveExtractCallback *extractCallbackSpec = new 
+  CArchiveExtractCallback *extractCallbackSpec = new
       CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UStringVector pathParts;
@@ -41,31 +41,31 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
         IID_IFolderArchiveExtractCallback, &extractCallback2));
   }
 
-  NExtract::NPathMode::EEnum pathMode = _flatMode ? 
+  NExtract::NPathMode::EEnum pathMode = _flatMode ?
       NExtract::NPathMode::kNoPathnames :
       NExtract::NPathMode::kCurrentPathnames;
 
   extractCallbackSpec->InitForMulti(false, pathMode, NExtract::NOverwriteMode::kAskBefore);
-  extractCallbackSpec->Init(_agentSpec->GetArchive(), 
-      extractCallback2, 
+  extractCallbackSpec->Init(_agentSpec->GetArchive(),
+      extractCallback2,
       false,
       path,
-      pathParts, 
+      pathParts,
       _agentSpec->DefaultName,
-      _agentSpec->DefaultTime, 
-      _agentSpec->DefaultAttributes,
+      _agentSpec->DefaultTime,
+      _agentSpec->DefaultAttrib,
       (UInt64)(Int64)-1
 
       // ,_agentSpec->_srcDirectoryPrefix
       );
   CUIntVector realIndices;
   GetRealIndices(indices, numItems, realIndices);
-  return _agentSpec->GetArchive()->Extract(&realIndices.Front(), 
+  return _agentSpec->GetArchive()->Extract(&realIndices.Front(),
       realIndices.Size(), BoolToInt(false), extractCallback);
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::MoveTo(const UINT32 * /* indices */, UINT32 /* numItems */, 
+STDMETHODIMP CAgentFolder::MoveTo(const UINT32 * /* indices */, UINT32 /* numItems */,
     const wchar_t * /* path */, IFolderOperationsExtractCallback * /* callback */)
 {
   return E_NOTIMPL;

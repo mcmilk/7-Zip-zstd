@@ -14,7 +14,7 @@ extern "C"
 namespace NCompress {
 namespace NLZMA {
 
-class CDecoder: 
+class CDecoder:
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
   public ICompressGetInStreamProcessedSize,
@@ -38,10 +38,10 @@ public:
 
   #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP5(
-      ICompressSetDecoderProperties2, 
+      ICompressSetDecoderProperties2,
       ICompressGetInStreamProcessedSize,
-      ICompressSetInStream, 
-      ICompressSetOutStreamSize, 
+      ICompressSetInStream,
+      ICompressSetOutStreamSize,
       ISequentialInStream)
   #else
   MY_UNKNOWN_IMP2(

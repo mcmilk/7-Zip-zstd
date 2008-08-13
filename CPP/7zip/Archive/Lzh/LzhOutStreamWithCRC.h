@@ -10,7 +10,7 @@
 namespace NArchive {
 namespace NLzh {
 
-class COutStreamWithCRC: 
+class COutStreamWithCRC:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

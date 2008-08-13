@@ -4,8 +4,8 @@
 
 #include "BZip2Decoder.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -20,58 +20,58 @@ const UInt32 kNumThreadsMax = 4;
 
 static const UInt32 kBufferSize = (1 << 17);
 
-static Int16 kRandNums[512] = { 
-   619, 720, 127, 481, 931, 816, 813, 233, 566, 247, 
-   985, 724, 205, 454, 863, 491, 741, 242, 949, 214, 
-   733, 859, 335, 708, 621, 574, 73, 654, 730, 472, 
-   419, 436, 278, 496, 867, 210, 399, 680, 480, 51, 
-   878, 465, 811, 169, 869, 675, 611, 697, 867, 561, 
-   862, 687, 507, 283, 482, 129, 807, 591, 733, 623, 
-   150, 238, 59, 379, 684, 877, 625, 169, 643, 105, 
-   170, 607, 520, 932, 727, 476, 693, 425, 174, 647, 
-   73, 122, 335, 530, 442, 853, 695, 249, 445, 515, 
-   909, 545, 703, 919, 874, 474, 882, 500, 594, 612, 
-   641, 801, 220, 162, 819, 984, 589, 513, 495, 799, 
-   161, 604, 958, 533, 221, 400, 386, 867, 600, 782, 
-   382, 596, 414, 171, 516, 375, 682, 485, 911, 276, 
-   98, 553, 163, 354, 666, 933, 424, 341, 533, 870, 
-   227, 730, 475, 186, 263, 647, 537, 686, 600, 224, 
-   469, 68, 770, 919, 190, 373, 294, 822, 808, 206, 
-   184, 943, 795, 384, 383, 461, 404, 758, 839, 887, 
-   715, 67, 618, 276, 204, 918, 873, 777, 604, 560, 
-   951, 160, 578, 722, 79, 804, 96, 409, 713, 940, 
-   652, 934, 970, 447, 318, 353, 859, 672, 112, 785, 
-   645, 863, 803, 350, 139, 93, 354, 99, 820, 908, 
-   609, 772, 154, 274, 580, 184, 79, 626, 630, 742, 
-   653, 282, 762, 623, 680, 81, 927, 626, 789, 125, 
-   411, 521, 938, 300, 821, 78, 343, 175, 128, 250, 
-   170, 774, 972, 275, 999, 639, 495, 78, 352, 126, 
-   857, 956, 358, 619, 580, 124, 737, 594, 701, 612, 
-   669, 112, 134, 694, 363, 992, 809, 743, 168, 974, 
-   944, 375, 748, 52, 600, 747, 642, 182, 862, 81, 
-   344, 805, 988, 739, 511, 655, 814, 334, 249, 515, 
-   897, 955, 664, 981, 649, 113, 974, 459, 893, 228, 
-   433, 837, 553, 268, 926, 240, 102, 654, 459, 51, 
-   686, 754, 806, 760, 493, 403, 415, 394, 687, 700, 
-   946, 670, 656, 610, 738, 392, 760, 799, 887, 653, 
-   978, 321, 576, 617, 626, 502, 894, 679, 243, 440, 
-   680, 879, 194, 572, 640, 724, 926, 56, 204, 700, 
-   707, 151, 457, 449, 797, 195, 791, 558, 945, 679, 
-   297, 59, 87, 824, 713, 663, 412, 693, 342, 606, 
-   134, 108, 571, 364, 631, 212, 174, 643, 304, 329, 
-   343, 97, 430, 751, 497, 314, 983, 374, 822, 928, 
-   140, 206, 73, 263, 980, 736, 876, 478, 430, 305, 
-   170, 514, 364, 692, 829, 82, 855, 953, 676, 246, 
-   369, 970, 294, 750, 807, 827, 150, 790, 288, 923, 
-   804, 378, 215, 828, 592, 281, 565, 555, 710, 82, 
-   896, 831, 547, 261, 524, 462, 293, 465, 502, 56, 
-   661, 821, 976, 991, 658, 869, 905, 758, 745, 193, 
-   768, 550, 608, 933, 378, 286, 215, 979, 792, 961, 
-   61, 688, 793, 644, 986, 403, 106, 366, 905, 644, 
-   372, 567, 466, 434, 645, 210, 389, 550, 919, 135, 
-   780, 773, 635, 389, 707, 100, 626, 958, 165, 504, 
-   920, 176, 193, 713, 857, 265, 203, 50, 668, 108, 
-   645, 990, 626, 197, 510, 357, 358, 850, 858, 364, 
+static Int16 kRandNums[512] = {
+   619, 720, 127, 481, 931, 816, 813, 233, 566, 247,
+   985, 724, 205, 454, 863, 491, 741, 242, 949, 214,
+   733, 859, 335, 708, 621, 574, 73, 654, 730, 472,
+   419, 436, 278, 496, 867, 210, 399, 680, 480, 51,
+   878, 465, 811, 169, 869, 675, 611, 697, 867, 561,
+   862, 687, 507, 283, 482, 129, 807, 591, 733, 623,
+   150, 238, 59, 379, 684, 877, 625, 169, 643, 105,
+   170, 607, 520, 932, 727, 476, 693, 425, 174, 647,
+   73, 122, 335, 530, 442, 853, 695, 249, 445, 515,
+   909, 545, 703, 919, 874, 474, 882, 500, 594, 612,
+   641, 801, 220, 162, 819, 984, 589, 513, 495, 799,
+   161, 604, 958, 533, 221, 400, 386, 867, 600, 782,
+   382, 596, 414, 171, 516, 375, 682, 485, 911, 276,
+   98, 553, 163, 354, 666, 933, 424, 341, 533, 870,
+   227, 730, 475, 186, 263, 647, 537, 686, 600, 224,
+   469, 68, 770, 919, 190, 373, 294, 822, 808, 206,
+   184, 943, 795, 384, 383, 461, 404, 758, 839, 887,
+   715, 67, 618, 276, 204, 918, 873, 777, 604, 560,
+   951, 160, 578, 722, 79, 804, 96, 409, 713, 940,
+   652, 934, 970, 447, 318, 353, 859, 672, 112, 785,
+   645, 863, 803, 350, 139, 93, 354, 99, 820, 908,
+   609, 772, 154, 274, 580, 184, 79, 626, 630, 742,
+   653, 282, 762, 623, 680, 81, 927, 626, 789, 125,
+   411, 521, 938, 300, 821, 78, 343, 175, 128, 250,
+   170, 774, 972, 275, 999, 639, 495, 78, 352, 126,
+   857, 956, 358, 619, 580, 124, 737, 594, 701, 612,
+   669, 112, 134, 694, 363, 992, 809, 743, 168, 974,
+   944, 375, 748, 52, 600, 747, 642, 182, 862, 81,
+   344, 805, 988, 739, 511, 655, 814, 334, 249, 515,
+   897, 955, 664, 981, 649, 113, 974, 459, 893, 228,
+   433, 837, 553, 268, 926, 240, 102, 654, 459, 51,
+   686, 754, 806, 760, 493, 403, 415, 394, 687, 700,
+   946, 670, 656, 610, 738, 392, 760, 799, 887, 653,
+   978, 321, 576, 617, 626, 502, 894, 679, 243, 440,
+   680, 879, 194, 572, 640, 724, 926, 56, 204, 700,
+   707, 151, 457, 449, 797, 195, 791, 558, 945, 679,
+   297, 59, 87, 824, 713, 663, 412, 693, 342, 606,
+   134, 108, 571, 364, 631, 212, 174, 643, 304, 329,
+   343, 97, 430, 751, 497, 314, 983, 374, 822, 928,
+   140, 206, 73, 263, 980, 736, 876, 478, 430, 305,
+   170, 514, 364, 692, 829, 82, 855, 953, 676, 246,
+   369, 970, 294, 750, 807, 827, 150, 790, 288, 923,
+   804, 378, 215, 828, 592, 281, 565, 555, 710, 82,
+   896, 831, 547, 261, 524, 462, 293, 465, 502, 56,
+   661, 821, 976, 991, 658, 869, 905, 758, 745, 193,
+   768, 550, 608, 933, 378, 286, 215, 979, 792, 961,
+   61, 688, 793, 644, 986, 403, 106, 366, 905, 644,
+   372, 567, 466, 434, 645, 210, 389, 550, 919, 135,
+   780, 773, 635, 389, 707, 100, 626, 958, 165, 504,
+   920, 176, 193, 713, 857, 265, 203, 50, 668, 108,
+   645, 990, 626, 197, 510, 357, 358, 850, 858, 364,
    936, 638
 };
 
@@ -113,15 +113,15 @@ UInt32 NO_INLINE ReadBit(NStream::NMSBF::CDecoder<CInBuffer> *m_InStream)
   return m_InStream->ReadBits(1);
 }
 
-static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStream, 
-  UInt32 *CharCounters, UInt32 blockSizeMax, Byte *m_Selectors, CHuffmanDecoder *m_HuffmanDecoders, 
+static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStream,
+  UInt32 *CharCounters, UInt32 blockSizeMax, Byte *m_Selectors, CHuffmanDecoder *m_HuffmanDecoders,
   UInt32 *blockSizeRes, UInt32 *origPtrRes, bool *randRes)
 {
   *randRes = ReadBit(m_InStream) ? true : false;
   *origPtrRes = ReadBits(m_InStream, kNumOrigBits);
   
   // in original code it compares OrigPtr to (UInt32)(10 + blockSizeMax)) : why ?
-  if (*origPtrRes >= blockSizeMax) 
+  if (*origPtrRes >= blockSizeMax)
     return S_FALSE;
 
   CMtf8Decoder mtf;
@@ -131,7 +131,7 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
   {
     Byte inUse16[16];
     int i;
-    for (i = 0; i < 16; i++) 
+    for (i = 0; i < 16; i++)
       inUse16[i] = (Byte)ReadBit(m_InStream);
     for (i = 0; i < 256; i++)
       if (inUse16[i >> 4])
@@ -139,7 +139,7 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
         if (ReadBit(m_InStream))
           mtf.Add(numInUse++, (Byte)i);
       }
-    if (numInUse == 0) 
+    if (numInUse == 0)
       return S_FALSE;
     // mtf.Init(numInUse);
   }
@@ -164,11 +164,11 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
     {
       int j = 0;
       while (ReadBit(m_InStream))
-        if (++j >= numTables) 
+        if (++j >= numTables)
           return S_FALSE;
       Byte tmp = mtfPos[j];
-      for (;j > 0; j--) 
-        mtfPos[j] = mtfPos[j - 1]; 
+      for (;j > 0; j--)
+        mtfPos[j] = mtfPos[j - 1];
       m_Selectors[i] = mtfPos[0] = tmp;
     }
     while(++i < numSelectors);
@@ -180,19 +180,19 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
     Byte lens[kMaxAlphaSize];
     int len = (int)ReadBits(m_InStream, kNumLevelsBits);
     int i;
-    for (i = 0; i < alphaSize; i++) 
+    for (i = 0; i < alphaSize; i++)
     {
       for (;;)
       {
-        if (len < 1 || len > kMaxHuffmanLen) 
+        if (len < 1 || len > kMaxHuffmanLen)
           return S_FALSE;
-        if (!ReadBit(m_InStream)) 
+        if (!ReadBit(m_InStream))
           break;
         len += 1 - (int)(ReadBit(m_InStream) << 1);
       }
       lens[i] = (Byte)len;
     }
-    for (; i < kMaxAlphaSize; i++) 
+    for (; i < kMaxAlphaSize; i++)
       lens[i] = 0;
     if(!m_HuffmanDecoders[t].SetCodeLengths(lens))
       return S_FALSE;
@@ -200,7 +200,7 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
   while(++t < numTables);
 
   {
-    for (int i = 0; i < 256; i++) 
+    for (int i = 0; i < 256; i++)
       CharCounters[i] = 0;
   }
   
@@ -214,7 +214,7 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
     
     for (;;)
     {
-      if (groupSize == 0) 
+      if (groupSize == 0)
       {
         if (groupIndex >= numSelectors)
           return S_FALSE;
@@ -225,9 +225,9 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
         
       UInt32 nextSym = huffmanDecoder->DecodeSymbol(m_InStream);
       
-      if (nextSym < 2) 
+      if (nextSym < 2)
       {
-        runCounter += ((UInt32)(nextSym + 1) << runPower++); 
+        runCounter += ((UInt32)(nextSym + 1) << runPower++);
         if (blockSizeMax - blockSize < runCounter)
           return S_FALSE;
         continue;
@@ -236,22 +236,22 @@ static HRESULT NO_INLINE ReadBlock(NStream::NMSBF::CDecoder<CInBuffer> *m_InStre
       {
         UInt32 b = (UInt32)mtf.GetHead();
         CharCounters[b] += runCounter;
-        do 
+        do
           CharCounters[256 + blockSize++] = b;
         while(--runCounter != 0);
         runPower = 0;
-      } 
-      if (nextSym <= (UInt32)numInUse) 
+      }
+      if (nextSym <= (UInt32)numInUse)
       {
         UInt32 b = (UInt32)mtf.GetAndMove((int)nextSym - 1);
-        if (blockSize >= blockSizeMax) 
+        if (blockSize >= blockSizeMax)
           return S_FALSE;
         CharCounters[b]++;
         CharCounters[256 + blockSize++] = b;
       }
-      else if (nextSym == (UInt32)numInUse + 1) 
+      else if (nextSym == (UInt32)numInUse + 1)
         break;
-      else 
+      else
         return S_FALSE;
     }
   }
@@ -263,7 +263,7 @@ void NO_INLINE DecodeBlock1(UInt32 *charCounters, UInt32 blockSize)
 {
   {
     UInt32 sum = 0;
-    for (UInt32 i = 0; i < 256; i++) 
+    for (UInt32 i = 0; i < 256; i++)
     {
       sum += charCounters[i];
       charCounters[i] = sum - charCounters[i];
@@ -388,7 +388,7 @@ static UInt32 NO_INLINE DecodeBlock2Rand(const UInt32 *tt, UInt32 blockSize, UIn
     tPos = tt[tPos >> 8];
     
     {
-      if (randToGo == 0) 
+      if (randToGo == 0)
       {
         b ^= 1;
         randToGo = kRandNums[randIndex++];
@@ -443,8 +443,8 @@ HRESULT CDecoder::Create()
   Free();
   MtMode = (NumThreads > 1);
   m_NumThreadsPrev = NumThreads;
-  try 
-  { 
+  try
+  {
     m_States = new CState[NumThreads];
     if (m_States == 0)
       return E_OUTOFMEMORY;
@@ -461,7 +461,7 @@ HRESULT CDecoder::Create()
       {
         NumThreads = t;
         Free();
-        return res; 
+        return res;
       }
     }
   }
@@ -495,21 +495,21 @@ HRESULT CDecoder::ReadSignatures(bool &wasFinished, UInt32 &crc)
   crc = ReadCRC();
   if (s[0] == kFinSig0)
   {
-    if (s[1] != kFinSig1 || 
-        s[2] != kFinSig2 || 
-        s[3] != kFinSig3 || 
-        s[4] != kFinSig4 || 
+    if (s[1] != kFinSig1 ||
+        s[2] != kFinSig2 ||
+        s[3] != kFinSig3 ||
+        s[4] != kFinSig4 ||
         s[5] != kFinSig5)
       return S_FALSE;
     
     wasFinished = true;
     return (crc == CombinedCRC.GetDigest()) ? S_OK : S_FALSE;
   }
-  if (s[0] != kBlockSig0 || 
-      s[1] != kBlockSig1 || 
-      s[2] != kBlockSig2 || 
-      s[3] != kBlockSig3 || 
-      s[4] != kBlockSig4 || 
+  if (s[0] != kBlockSig0 ||
+      s[1] != kBlockSig1 ||
+      s[2] != kBlockSig2 ||
+      s[3] != kBlockSig3 ||
+      s[4] != kBlockSig4 ||
       s[5] != kBlockSig5)
     return S_FALSE;
   CombinedCRC.Update(crc);
@@ -543,10 +543,10 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
   int i;
   for (i = 0; i < 4; i++)
     s[i] = ReadByte();
-  if (s[0] != kArSig0 || 
-      s[1] != kArSig1 || 
-      s[2] != kArSig2 || 
-      s[3] <= kArSig3 || 
+  if (s[0] != kArSig0 ||
+      s[1] != kArSig1 ||
+      s[2] != kArSig2 ||
+      s[3] <= kArSig3 ||
       s[3] > kArSig3 + kBlockSizeMultMax)
     return S_OK;
   isBZ = true;
@@ -595,11 +595,11 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
 
       UInt32 blockSize, origPtr;
       bool randMode;
-      RINOK(ReadBlock(&m_InStream, state.Counters, dicSize, 
-        m_Selectors, m_HuffmanDecoders, 
+      RINOK(ReadBlock(&m_InStream, state.Counters, dicSize,
+        m_Selectors, m_HuffmanDecoders,
         &blockSize, &origPtr, &randMode));
       DecodeBlock1(state.Counters, blockSize);
-      if ((randMode ? 
+      if ((randMode ?
           DecodeBlock2Rand(state.Counters + 256, blockSize, origPtr, m_OutStream) :
           DecodeBlock2(state.Counters + 256, blockSize, origPtr, m_OutStream)) != crc)
         return S_FALSE;
@@ -698,7 +698,7 @@ void CState::ThreadFunc()
     UInt32 blockSize = 0, origPtr = 0;
     bool randMode = false;
 
-    try 
+    try
     {
       bool wasFinished;
       res = Decoder->ReadSignatures(wasFinished, crc);
@@ -715,8 +715,8 @@ void CState::ThreadFunc()
         continue;
       }
 
-      res = ReadBlock(&Decoder->m_InStream, Counters, Decoder->BlockSizeMax, 
-          Decoder->m_Selectors, Decoder->m_HuffmanDecoders, 
+      res = ReadBlock(&Decoder->m_InStream, Counters, Decoder->BlockSizeMax,
+          Decoder->m_Selectors, Decoder->m_HuffmanDecoders,
           &blockSize, &origPtr, &randMode);
       if (res != S_OK)
       {
@@ -746,7 +746,7 @@ void CState::ThreadFunc()
       needFinish = Decoder->StreamWasFinished2;
       if (!needFinish)
       {
-        if ((randMode ? 
+        if ((randMode ?
           DecodeBlock2Rand(Counters + 256, blockSize, origPtr, Decoder->m_OutStream) :
           DecodeBlock2(Counters + 256, blockSize, origPtr, Decoder->m_OutStream)) == crc)
         {

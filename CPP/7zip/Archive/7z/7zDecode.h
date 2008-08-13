@@ -51,11 +51,11 @@ public:
       IInStream *inStream,
       UInt64 startPos,
       const UInt64 *packSizes,
-      const CFolder &folder, 
+      const CFolder &folder,
       ISequentialOutStream *outStream,
       ICompressProgressInfo *compressProgress
       #ifndef _NO_CRYPTO
-      , ICryptoGetTextPassword *getTextPasswordSpec
+      , ICryptoGetTextPassword *getTextPasswordSpec, bool &passwordIsDefined
       #endif
       #ifdef COMPRESS_MT
       , bool mtMode, UInt32 numThreads

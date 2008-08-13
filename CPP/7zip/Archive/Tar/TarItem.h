@@ -3,8 +3,6 @@
 #ifndef __ARCHIVE_TAR_ITEM_H
 #define __ARCHIVE_TAR_ITEM_H
 
-#include <time.h>
-
 #include "Common/Types.h"
 #include "Common/MyString.h"
 
@@ -14,28 +12,29 @@
 namespace NArchive {
 namespace NTar {
 
-class CItem
+struct CItem
 {
-public:
   AString Name;
+  UInt64 Size;
+
   UInt32 Mode;
   UInt32 UID;
   UInt32 GID;
-  UInt64 Size;
-  UInt32 ModificationTime;
-  char LinkFlag;
+  UInt32 MTime;
+  UInt32 DeviceMajor;
+  UInt32 DeviceMinor;
+
   AString LinkName;
-  char Magic[8];
   AString UserName;
   AString GroupName;
 
+  char Magic[8];
+  char LinkFlag;
   bool DeviceMajorDefined;
-  UInt32 DeviceMajor;
   bool DeviceMinorDefined;
-  UInt32 DeviceMinor;
 
-  bool IsDirectory() const 
-  {  
+  bool IsDir() const
+  {
     switch(LinkFlag)
     {
       case NFileHeader::NLinkFlag::kDirectory:
@@ -48,22 +47,23 @@ public:
     return false;
   }
 
-  bool IsMagic() const 
-  {  
+  bool IsMagic() const
+  {
     for (int i = 0; i < 5; i++)
       if (Magic[i] != NFileHeader::NMagic::kUsTar[i])
         return false;
     return true;
   }
+
+  UInt64 GetPackSize() const { return (Size + 0x1FF) & (~((UInt64)0x1FF)); }
 };
 
-class CItemEx: public CItem
+struct CItemEx: public CItem
 {
-public:
   UInt64 HeaderPosition;
-  UInt64 LongLinkSize;
-  UInt64 GetDataPosition() const { return HeaderPosition + LongLinkSize + NFileHeader::kRecordSize; };
-  UInt64 GetFullSize() const { return LongLinkSize + NFileHeader::kRecordSize + Size; };
+  unsigned LongLinkSize;
+  UInt64 GetDataPosition() const { return HeaderPosition + LongLinkSize + NFileHeader::kRecordSize; }
+  UInt64 GetFullSize() const { return LongLinkSize + NFileHeader::kRecordSize + Size; }
 };
 
 }}

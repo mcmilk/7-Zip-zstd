@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -69,8 +69,8 @@ static void ReadItem(Byte *p, CItem &item, bool mode64bit)
   item.RightDid = GetUi32(p + 72);
   item.SonDid = GetUi32(p + 76);
   // item.Flags = GetUi32(p + 96);
-  GetFileTimeFromMem(p + 100, &item.CreationTime);
-  GetFileTimeFromMem(p + 108, &item.LastWriteTime);
+  GetFileTimeFromMem(p + 100, &item.CTime);
+  GetFileTimeFromMem(p + 108, &item.MTime);
   item.Sid = GetUi32(p + 116);
   item.Size = GetUi32(p + 120);
   if (mode64bit)
@@ -127,7 +127,7 @@ static UString CompoundNameToFileName(const UString &s)
     }
     else
       res += c;
-  } 
+  }
   return res;
 }
 
@@ -219,7 +219,7 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
   db.SectorSizeBits = sectorSizeBits;
   db.MiniSectorSizeBits = miniSectorSizeBits;
 
-  if (sectorSizeBits > 28 || miniSectorSizeBits > 28 || 
+  if (sectorSizeBits > 28 || miniSectorSizeBits > 28 ||
       sectorSizeBits < 7 || miniSectorSizeBits < 2 || miniSectorSizeBits > sectorSizeBits)
     return S_FALSE;
   UInt32 numSectorsForFAT = GetUi32(p + 0x2C);

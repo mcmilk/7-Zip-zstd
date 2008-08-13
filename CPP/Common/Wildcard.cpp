@@ -4,7 +4,7 @@
 
 #include "Wildcard.h"
 
-bool g_CaseSensitive = 
+bool g_CaseSensitive =
   #ifdef _WIN32
     false;
   #else
@@ -31,7 +31,7 @@ static inline bool IsCharDirLimiter(wchar_t c)
 {
   return (
     #ifdef _WIN32
-    c == kDirDelimiter1 || 
+    c == kDirDelimiter1 ||
     #endif
     c == kDirDelimiter2);
 }
@@ -54,20 +54,20 @@ static bool EnhancedMaskTest(const wchar_t *mask, const wchar_t *name)
   {
     wchar_t m = *mask;
     wchar_t c = *name;
-    if (m == 0) 
+    if (m == 0)
       return (c == 0);
     if (m == kAnyCharsChar)
     {
       if (EnhancedMaskTest(mask + 1, name))
         return true;
-      if (c == 0) 
+      if (c == 0)
         return false;
     }
     else
     {
       if (m == kAnyCharChar)
       {
-        if (c == 0) 
+        if (c == 0)
           return false;
       }
       else if (m != c)
@@ -155,7 +155,7 @@ N = TestNameParts.Size();
 
                            File                          Dir
 ForFile     req   M<=N  [N-M, N)                          -
-         nonreq   M=N   [0, M)                            -  
+         nonreq   M=N   [0, M)                            -
  
 ForDir      req   M<N   [0, M) ... [N-M-1, N-1)  same as ForBoth-File
          nonreq         [0, M)                   same as ForBoth-File
@@ -301,7 +301,7 @@ bool CCensorNode::CheckPath(UStringVector &pathParts, bool isFile, bool &include
 
 bool CCensorNode::CheckPath(const UString &path, bool isFile, bool &include) const
 {
-  UStringVector pathParts; 
+  UStringVector pathParts;
   SplitPathToParts(path, pathParts);
   return CheckPath(pathParts, isFile, include);
 }
@@ -327,7 +327,7 @@ bool CCensorNode::CheckPathToRoot(bool include, UStringVector &pathParts, bool i
 /*
 bool CCensorNode::CheckPathToRoot(bool include, const UString &path, bool isFile) const
 {
-  UStringVector pathParts; 
+  UStringVector pathParts;
   SplitPathToParts(path, pathParts);
   return CheckPathToRoot(include, pathParts, isFile);
 }

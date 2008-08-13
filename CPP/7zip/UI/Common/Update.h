@@ -17,7 +17,7 @@ struct CArchivePath
 {
   UString Prefix;   // path(folder) prefix including slash
   UString Name; // base name
-  UString BaseExtension; // archive type extension or "exe" extension 
+  UString BaseExtension; // archive type extension or "exe" extension
   UString VolExtension;  // archive type extension for volumes
 
   bool Temp;
@@ -70,7 +70,7 @@ struct CArchivePath
       path += UString(L'.') + BaseExtension;
     path += L".tmp";
     path += TempPostfix;
-    return path; 
+    return path;
   }
 };
 
@@ -111,7 +111,7 @@ struct CUpdateOptions
 
   UString WorkingDir;
 
-  bool Init(const CCodecs *codecs, const UString &arcPath, const UString &arcType);
+  bool Init(const CCodecs *codecs, const CIntVector &formatIndices, const UString &arcPath);
 
   CUpdateOptions():
     UpdateArchiveItself(true),
@@ -144,6 +144,7 @@ struct CUpdateErrorInfo: public CErrorInfo
   INTERFACE_IUpdateCallbackUI(x) \
   virtual HRESULT OpenResult(const wchar_t *name, HRESULT result) x; \
   virtual HRESULT StartScanning() x; \
+  virtual HRESULT ScanProgress(UInt64 numFolders, UInt64 numFiles, const wchar_t *path) x; \
   virtual HRESULT CanNotFindError(const wchar_t *name, DWORD systemError) x; \
   virtual HRESULT FinishScanning() x; \
   virtual HRESULT StartArchive(const wchar_t *name, bool updating) x; \
@@ -156,7 +157,7 @@ struct IUpdateCallbackUI2: public IUpdateCallbackUI
 
 HRESULT UpdateArchive(
     CCodecs *codecs,
-    const NWildcard::CCensor &censor, 
+    const NWildcard::CCensor &censor,
     CUpdateOptions &options,
     CUpdateErrorInfo &errorInfo,
     IOpenCallbackUI *openCallback,

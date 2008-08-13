@@ -1,5 +1,5 @@
 /* LzmaDec.c -- LZMA Decoder
-2008-04-29
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzmaDec.h for license options */
 
@@ -23,8 +23,8 @@ Read LzmaDec.h for license options */
 #define UPDATE_1(p) range -= bound; code -= bound; *(p) = (CLzmaProb)(ttt - (ttt >> kNumMoveBits));
 #define GET_BIT2(p, i, A0, A1) IF_BIT_0(p) \
   { UPDATE_0(p); i = (i + i); A0; } else \
-  { UPDATE_1(p); i = (i + i) + 1; A1; } 
-#define GET_BIT(p, i) GET_BIT2(p, i, ; , ;)               
+  { UPDATE_1(p); i = (i + i) + 1; A1; }
+#define GET_BIT(p, i) GET_BIT2(p, i, ; , ;)
 
 #define TREE_GET_BIT(probs, i) { GET_BIT((probs + i), i); }
 #define TREE_DECODE(probs, limit, i) \
@@ -53,8 +53,8 @@ Read LzmaDec.h for license options */
 #define UPDATE_1_CHECK range -= bound; code -= bound;
 #define GET_BIT2_CHECK(p, i, A0, A1) IF_BIT_0_CHECK(p) \
   { UPDATE_0_CHECK; i = (i + i); A0; } else \
-  { UPDATE_1_CHECK; i = (i + i) + 1; A1; } 
-#define GET_BIT_CHECK(p, i) GET_BIT2_CHECK(p, i, ; , ;)               
+  { UPDATE_1_CHECK; i = (i + i) + 1; A1; }
+#define GET_BIT_CHECK(p, i) GET_BIT2_CHECK(p, i, ; , ;)
 #define TREE_DECODE_CHECK(probs, limit, i) \
   { i = 1; do { GET_BIT_CHECK(probs + i, i) } while(i < limit); i -= limit; }
 
@@ -74,7 +74,7 @@ Read LzmaDec.h for license options */
 #define LenLow (LenChoice2 + 1)
 #define LenMid (LenLow + (kNumPosStatesMax << kLenNumLowBits))
 #define LenHigh (LenMid + (kNumPosStatesMax << kLenNumMidBits))
-#define kNumLenProbs (LenHigh + kLenNumHighSymbols) 
+#define kNumLenProbs (LenHigh + kLenNumHighSymbols)
 
 
 #define kNumStates 12
@@ -120,16 +120,16 @@ StopCompilingDueBUG
 #define LZMA_SPEC_LEN_OFFSET (-3)
 */
 
-Byte kLiteralNextStates[kNumStates * 2] = 
+const Byte kLiteralNextStates[kNumStates * 2] =
 {
-  0, 0, 0, 0, 1, 2, 3,  4,  5,  6,  4,  5, 
+  0, 0, 0, 0, 1, 2, 3,  4,  5,  6,  4,  5,
   7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10
 };
 
 #define LZMA_DIC_MIN (1 << 12)
 
-/* First LZMA-symbol is always decoded. 
-And it decodes new LZMA-symbols while (buf < bufLimit), but "buf" is without last normalization 
+/* First LZMA-symbol is always decoded.
+And it decodes new LZMA-symbols while (buf < bufLimit), but "buf" is without last normalization
 Out:
   Result:
     0 - OK
@@ -177,7 +177,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
       UPDATE_0(prob);
       prob = probs + Literal;
       if (checkDicSize != 0 || processedPos != 0)
-        prob += (LZMA_LIT_SIZE * (((processedPos & lpMask) << lc) + 
+        prob += (LZMA_LIT_SIZE * (((processedPos & lpMask) << lc) +
         (dic[(dicPos == 0 ? dicBufSize : dicPos) - 1] >> (8 - lc))));
 
       if (state < kNumLitStates)
@@ -208,7 +208,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
       /* if (state < 4) state = 0; else if (state < 10) state -= 3; else state -= 6; */
       continue;
     }
-    else             
+    else
     {
       UPDATE_1(prob);
       prob = probs + IsRep + state;
@@ -249,7 +249,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
             UPDATE_0(prob);
             distance = rep1;
           }
-          else 
+          else
           {
             UPDATE_1(prob);
             prob = probs + IsRepG2 + state;
@@ -313,7 +313,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
         TREE_6_DECODE(prob, distance);
         if (distance >= kStartPosModelIndex)
         {
-          unsigned posSlot = (unsigned)distance; 
+          unsigned posSlot = (unsigned)distance;
           int numDirectBits = (int)(((distance >> 1) - 1));
           distance = (2 | (distance & 1));
           if (posSlot < kEndPosModelIndex)
@@ -376,7 +376,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
         rep3 = rep2;
         rep2 = rep1;
         rep1 = rep0;
-        rep0 = distance + 1; 
+        rep0 = distance + 1;
         if (checkDicSize == 0)
         {
           if (distance >= processedPos)
@@ -404,8 +404,8 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
           ptrdiff_t src = (ptrdiff_t)pos - (ptrdiff_t)dicPos;
           const Byte *lim = dest + curLen;
           dicPos += curLen;
-          do 
-            *(dest) = (Byte)*(dest + src); 
+          do
+            *(dest) = (Byte)*(dest + src);
           while (++dest != lim);
         }
         else
@@ -491,7 +491,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal2(CLzmaDec *p, SizeT limit, const Byte
   return 0;
 }
 
-typedef enum 
+typedef enum
 {
   DUMMY_ERROR, /* unexpected end of input stream */
   DUMMY_LIT,
@@ -523,8 +523,8 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 
       prob = probs + Literal;
       if (p->checkDicSize != 0 || p->processedPos != 0)
-        prob += (LZMA_LIT_SIZE * 
-          ((((p->processedPos) & ((1 << (p->prop.lp)) - 1)) << p->prop.lc) + 
+        prob += (LZMA_LIT_SIZE *
+          ((((p->processedPos) & ((1 << (p->prop.lp)) - 1)) << p->prop.lc) +
           (p->dic[(p->dicPos == 0 ? p->dicBufSize : p->dicPos) - 1] >> (8 - p->prop.lc))));
 
       if (state < kNumLitStates)
@@ -534,7 +534,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
       }
       else
       {
-        unsigned matchByte = p->dic[p->dicPos - p->reps[0] + 
+        unsigned matchByte = p->dic[p->dicPos - p->reps[0] +
             ((p->dicPos < p->reps[0]) ? p->dicBufSize : 0)];
         unsigned offs = 0x100;
         unsigned symbol = 1;
@@ -551,7 +551,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
       }
       res = DUMMY_LIT;
     }
-    else             
+    else
     {
       unsigned len;
       UPDATE_1_CHECK;
@@ -592,7 +592,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
           {
             UPDATE_0_CHECK;
           }
-          else 
+          else
           {
             UPDATE_1_CHECK;
             prob = probs + IsRepG2 + state;
@@ -646,7 +646,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
       {
         unsigned posSlot;
         prob = probs + PosSlot +
-            ((len < kNumLenToPosStates ? len : kNumLenToPosStates - 1) << 
+            ((len < kNumLenToPosStates ? len : kNumLenToPosStates - 1) <<
             kNumPosSlotBits);
         TREE_DECODE_CHECK(prob, 1 << kNumPosSlotBits, posSlot);
         if (posSlot >= kStartPosModelIndex)
@@ -697,11 +697,11 @@ static void LzmaDec_InitRc(CLzmaDec *p, const Byte *data)
   p->needFlush = 0;
 }
 
-void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState) 
-{ 
-  p->needFlush = 1; 
-  p->remainLen = 0; 
-  p->tempBufSize = 0; 
+void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
+{
+  p->needFlush = 1;
+  p->remainLen = 0;
+  p->tempBufSize = 0;
 
   if (initDic)
   {
@@ -713,9 +713,9 @@ void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
     p->needInitState = 1;
 }
 
-void LzmaDec_Init(CLzmaDec *p) 
-{ 
-  p->dicPos = 0; 
+void LzmaDec_Init(CLzmaDec *p)
+{
+  p->dicPos = 0;
   LzmaDec_InitDicAndState(p, True, True);
 }
 
@@ -725,13 +725,13 @@ static void LzmaDec_InitStateReal(CLzmaDec *p)
   UInt32 i;
   CLzmaProb *probs = p->probs;
   for (i = 0; i < numProbs; i++)
-    probs[i] = kBitModelTotal >> 1; 
+    probs[i] = kBitModelTotal >> 1;
   p->reps[0] = p->reps[1] = p->reps[2] = p->reps[3] = 1;
   p->state = 0;
   p->needInitState = 0;
 }
 
-SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *srcLen, 
+SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *srcLen,
     ELzmaFinishMode finishMode, ELzmaStatus *status)
 {
   SizeT inSize = *srcLen;
@@ -847,7 +847,7 @@ SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *sr
         p->tempBufSize = 0;
       }
   }
-  if (p->code == 0) 
+  if (p->code == 0)
     *status = LZMA_STATUS_FINISHED_WITH_MARK;
   return (p->code == 0) ? SZ_OK : SZ_ERROR_DATA;
 }
@@ -892,16 +892,16 @@ SRes LzmaDec_DecodeToBuf(CLzmaDec *p, Byte *dest, SizeT *destLen, const Byte *sr
   }
 }
 
-void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc) 
-{ 
-  alloc->Free(alloc, p->probs);  
-  p->probs = 0; 
+void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc)
+{
+  alloc->Free(alloc, p->probs);
+  p->probs = 0;
 }
 
-static void LzmaDec_FreeDict(CLzmaDec *p, ISzAlloc *alloc) 
-{ 
-  alloc->Free(alloc, p->dic); 
-  p->dic = 0; 
+static void LzmaDec_FreeDict(CLzmaDec *p, ISzAlloc *alloc)
+{
+  alloc->Free(alloc, p->dic);
+  p->dic = 0;
 }
 
 void LzmaDec_Free(CLzmaDec *p, ISzAlloc *alloc)
@@ -912,7 +912,7 @@ void LzmaDec_Free(CLzmaDec *p, ISzAlloc *alloc)
 
 SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
 {
-  UInt32 dicSize; 
+  UInt32 dicSize;
   Byte d;
   
   if (size < LZMA_PROPS_SIZE)
@@ -982,7 +982,7 @@ SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAll
 }
 
 SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
-    const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode, 
+    const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
     ELzmaStatus *status, ISzAlloc *alloc)
 {
   CLzmaDec p;

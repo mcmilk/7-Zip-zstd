@@ -28,7 +28,7 @@
 // Maybe it's possible to restore original timer value from generated value.
 
 void CRandomGenerator::Init()
-{ 
+{
   NCrypto::NSha1::CContext hash;
   hash.Init();
 
@@ -82,7 +82,7 @@ void CRandomGenerator::Init()
 static NWindows::NSynchronization::CCriticalSection g_CriticalSection;
 
 void CRandomGenerator::Generate(Byte *data, unsigned int size)
-{ 
+{
   g_CriticalSection.Enter();
   if (_needInit)
     Init();

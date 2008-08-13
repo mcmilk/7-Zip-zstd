@@ -11,11 +11,11 @@
 
 static const unsigned int kNumCodecsMax = 64;
 unsigned int g_NumCodecs = 0;
-const CCodecInfo *g_Codecs[kNumCodecsMax]; 
-void RegisterCodec(const CCodecInfo *codecInfo) 
-{ 
+const CCodecInfo *g_Codecs[kNumCodecsMax];
+void RegisterCodec(const CCodecInfo *codecInfo)
+{
   if (g_NumCodecs < kNumCodecsMax)
-    g_Codecs[g_NumCodecs++] = codecInfo; 
+    g_Codecs[g_NumCodecs++] = codecInfo;
 }
 
 #ifdef EXTERNAL_CODECS
@@ -59,7 +59,7 @@ HRESULT LoadExternalCodecs(ICompressCodecsInfo *codecsInfo, CObjectVector<CCodec
     // memmove(info.Id.ID, prop.bstrVal, info.Id.IDSize);
     if (prop.vt != VT_UI8)
     {
-      continue; // old Interface 
+      continue; // old Interface
       // return E_INVALIDARG;
     }
     info.Id = prop.uhVal.QuadPart;
@@ -93,7 +93,7 @@ bool FindMethod(
   UInt32 i;
   for (i = 0; i < g_NumCodecs; i++)
   {
-    const CCodecInfo &codec = *g_Codecs[i]; 
+    const CCodecInfo &codec = *g_Codecs[i];
     if (name.CompareNoCase(codec.Name) == 0)
     {
       methodId = codec.Id;
@@ -106,7 +106,7 @@ bool FindMethod(
   if (externalCodecs)
     for (i = 0; i < (UInt32)externalCodecs->Size(); i++)
     {
-      const CCodecInfoEx &codec = (*externalCodecs)[i]; 
+      const CCodecInfoEx &codec = (*externalCodecs)[i];
       if (codec.Name.CompareNoCase(name) == 0)
       {
         methodId = codec.Id;
@@ -128,7 +128,7 @@ bool FindMethod(
   UInt32 i;
   for (i = 0; i < g_NumCodecs; i++)
   {
-    const CCodecInfo &codec = *g_Codecs[i]; 
+    const CCodecInfo &codec = *g_Codecs[i];
     if (methodId == codec.Id)
     {
       name = codec.Name;
@@ -139,7 +139,7 @@ bool FindMethod(
   if (externalCodecs)
     for (i = 0; i < (UInt32)externalCodecs->Size(); i++)
     {
-      const CCodecInfoEx &codec = (*externalCodecs)[i]; 
+      const CCodecInfoEx &codec = (*externalCodecs)[i];
       if (methodId == codec.Id)
       {
         name = codec.Name;
@@ -162,7 +162,7 @@ HRESULT CreateCoder(
   UInt32 i;
   for (i = 0; i < g_NumCodecs; i++)
   {
-    const CCodecInfo &codec = *g_Codecs[i]; 
+    const CCodecInfo &codec = *g_Codecs[i];
     if (codec.Id == methodId)
     {
       if (encode)
@@ -194,7 +194,7 @@ HRESULT CreateCoder(
   if (!created && externalCodecs)
     for (i = 0; i < (UInt32)externalCodecs->Size(); i++)
     {
-      const CCodecInfoEx &codec = (*externalCodecs)[i]; 
+      const CCodecInfoEx &codec = (*externalCodecs)[i];
       if (codec.Id == methodId)
       {
         if (encode)
@@ -204,7 +204,7 @@ HRESULT CreateCoder(
             if (codec.IsSimpleCodec())
             {
               HRESULT result = codecsInfo->CreateEncoder(i, &IID_ICompressCoder, (void **)&coder);
-              if (result != S_OK && result != E_NOINTERFACE && result != CLASS_E_CLASSNOTAVAILABLE) 
+              if (result != S_OK && result != E_NOINTERFACE && result != CLASS_E_CLASSNOTAVAILABLE)
                 return result;
               if (!coder)
               {
@@ -224,7 +224,7 @@ HRESULT CreateCoder(
             if (codec.IsSimpleCodec())
             {
               HRESULT result = codecsInfo->CreateDecoder(i, &IID_ICompressCoder, (void **)&coder);
-              if (result != S_OK && result != E_NOINTERFACE && result != CLASS_E_CLASSNOTAVAILABLE) 
+              if (result != S_OK && result != E_NOINTERFACE && result != CLASS_E_CLASSNOTAVAILABLE)
                 return result;
               if (!coder)
               {
@@ -253,7 +253,7 @@ HRESULT CreateCoder(
 HRESULT CreateCoder(
   DECL_EXTERNAL_CODECS_LOC_VARS
   CMethodId methodId,
-  CMyComPtr<ICompressCoder> &coder, 
+  CMyComPtr<ICompressCoder> &coder,
   CMyComPtr<ICompressCoder2> &coder2,
   bool encode)
 {

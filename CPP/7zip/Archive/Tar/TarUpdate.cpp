@@ -18,7 +18,7 @@ namespace NTar {
 
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     const CObjectVector<NArchive::NTar::CItemEx> &inputItems,
-    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CObjectVector<CUpdateItem> &updateItems,
     IArchiveUpdateCallback *updateCallback)
 {
   COutArchive outArchive;
@@ -29,11 +29,11 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   int i;
   for(i = 0; i < updateItems.Size(); i++)
   {
-    const CUpdateItemInfo &updateItem = updateItems[i];
-    if (updateItem.NewData)
-      complexity += updateItem.Size;
+    const CUpdateItem &ui = updateItems[i];
+    if (ui.NewData)
+      complexity += ui.Size;
     else
-      complexity += inputItems[updateItem.IndexInArchive].GetFullSize();
+      complexity += inputItems[ui.IndexInArchive].GetFullSize();
   }
 
   RINOK(updateCallback->SetTotal(complexity));
@@ -56,13 +56,13 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     lps->InSize = lps->OutSize = complexity;
     RINOK(lps->SetCur());
 
-    const CUpdateItemInfo &updateItem = updateItems[i];
+    const CUpdateItem &ui = updateItems[i];
     CItem item;
-    if (updateItem.NewProperties)
+    if (ui.NewProperties)
     {
       item.Mode = 0777;
-      item.Name = (updateItem.Name);
-      if (updateItem.IsDirectory)
+      item.Name = (ui.Name);
+      if (ui.IsDir)
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
         item.Size = 0;
@@ -70,9 +70,9 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       else
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kNormal;
-        item.Size = updateItem.Size;
+        item.Size = ui.Size;
       }
-      item.ModificationTime = updateItem.Time;
+      item.MTime = ui.Time;
       item.DeviceMajorDefined = false;
       item.DeviceMinorDefined = false;
       item.UID = 0;
@@ -81,30 +81,30 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     }
     else
     {
-      const CItemEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
       item = existItemInfo;
     }
-    if (updateItem.NewData)
+    if (ui.NewData)
     {
-      item.Size = updateItem.Size;
+      item.Size = ui.Size;
       if (item.Size == UInt64(Int64(-1)))
         return E_INVALIDARG;
     }
     else
     {
-      const CItemEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
       item.Size = existItemInfo.Size;
     }
   
-    if (updateItem.NewData)
+    if (ui.NewData)
     {
       CMyComPtr<ISequentialInStream> fileInStream;
-      HRESULT res = updateCallback->GetStream(updateItem.IndexInClient, &fileInStream);
+      HRESULT res = updateCallback->GetStream(ui.IndexInClient, &fileInStream);
       if (res != S_FALSE)
       {
         RINOK(res);
         RINOK(outArchive.WriteHeader(item));
-        if (!updateItem.IsDirectory)
+        if (!ui.IsDir)
         {
           RINOK(copyCoder->Code(fileInStream, outStream, NULL, NULL, progress));
           if (copyCoderSpec->TotalSize != item.Size)
@@ -112,14 +112,14 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
           RINOK(outArchive.FillDataResidual(item.Size));
         }
       }
-      complexity += updateItem.Size;
+      complexity += ui.Size;
       RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
     }
     else
     {
-      const CItemEx &existItemInfo = inputItems[updateItem.IndexInArchive];
+      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
       UInt64 size;
-      if (updateItem.NewProperties)
+      if (ui.NewProperties)
       {
         RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));

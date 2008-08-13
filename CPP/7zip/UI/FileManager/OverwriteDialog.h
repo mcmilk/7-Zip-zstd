@@ -20,7 +20,7 @@ namespace NOverwriteDialog
 
 class COverwriteDialog: public NWindows::NControl::CModalDialog
 {
-  void SetFileInfoControl(int textID, int iconID, 
+  void SetFileInfoControl(int textID, int iconID,
       const NOverwriteDialog::CFileInfo &fileInfo);
   virtual bool OnInit();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);

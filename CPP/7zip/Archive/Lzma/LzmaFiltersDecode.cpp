@@ -13,7 +13,7 @@ static const UInt64 k_BCJ = 0x03030103;
 HRESULT CDecoder::Code(
     DECL_EXTERNAL_CODECS_LOC_VARS
     const CHeader &block,
-    ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+    ISequentialInStream *inStream, ISequentialOutStream *outStream,
     UInt64 *inProcessedSize, ICompressProgressInfo *progress)
 {
   *inProcessedSize = (UInt64)(Int64)-1;
@@ -57,7 +57,7 @@ HRESULT CDecoder::Code(
     if (!setOutStream)
       return E_NOTIMPL;
     RINOK(setOutStream->SetOutStream(outStream));
-    outStream = _bcjStream; 
+    outStream = _bcjStream;
   }
 
   const UInt64 *unpackSize = block.HasUnpackSize() ? &block.UnpackSize : NULL;

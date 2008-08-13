@@ -7,7 +7,7 @@
 #include "../../ICoder.h"
 #include "../../../Common/MyCom.h"
 
-class CSequentialInStreamSizeCount2: 
+class CSequentialInStreamSizeCount2:
   public ISequentialInStream,
   public ICompressGetSubStreamSize,
   public CMyUnknownImp

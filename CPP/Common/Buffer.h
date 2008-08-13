@@ -6,7 +6,7 @@
 #include "Defs.h"
 
 template <class T> class CBuffer
-{    
+{
 protected:
   size_t _capacity;
   T *_items;

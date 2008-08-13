@@ -5,23 +5,23 @@
 
 #include "Windows/Control/Static.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
 using namespace NWindows;
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDOK, 0x02000702 },
   { IDCANCEL, 0x02000710 }
 };
 #endif
 
-bool CComboDialog::OnInit() 
+bool CComboDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _comboBox.Attach(GetItem(IDC_COMBO_COMBO));

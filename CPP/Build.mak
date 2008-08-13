@@ -1,6 +1,6 @@
 !IFDEF CPU
 !IFNDEF NO_BUFFEROVERFLOWU
-LIBS = $(LIBS) bufferoverflowU.lib 
+LIBS = $(LIBS) bufferoverflowU.lib
 !ENDIF
 !ENDIF
 
@@ -52,13 +52,13 @@ PROGPATH = $O\$(PROG)
 
 COMPL_O1   = $(CPP) $(CFLAGS_O1) $**
 COMPL_O2   = $(CPP) $(CFLAGS_O2) $**
-COMPL_PCH  = $(CPP) $(CFLAGS_O1) -Yc"StdAfx.h" -Fp$O/a.pch $** 
+COMPL_PCH  = $(CPP) $(CFLAGS_O1) -Yc"StdAfx.h" -Fp$O/a.pch $**
 COMPL      = $(CPP) $(CFLAGS_O1) -Yu"StdAfx.h" -Fp$O/a.pch $**
 
-all: $(PROGPATH) 
+all: $(PROGPATH)
 
 clean:
-	-del /Q $(PROGPATH) $O\*.exe $O\*.dll $O\*.obj $O\*.lib $O\*.exp $O\*.res $O\*.pch 
+	-del /Q $(PROGPATH) $O\*.exe $O\*.dll $O\*.obj $O\*.lib $O\*.exp $O\*.res $O\*.pch
 
 $O:
 	if not exist "$O" mkdir "$O"

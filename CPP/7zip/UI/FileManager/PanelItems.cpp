@@ -4,19 +4,18 @@
 
 #include "Common/StringConvert.h"
 
+#include "Windows/Menu.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
-#include "Windows/Menu.h"
 
 #include "../../PropID.h"
 
-#include "Panel.h"
 #include "resource.h"
 
-#include "RootFolder.h"
-
-#include "PropertyName.h"
 #include "LangUtils.h"
+#include "Panel.h"
+#include "PropertyName.h"
+#include "RootFolder.h"
 
 extern "C"
 {
@@ -29,9 +28,9 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
 {
   switch(propID)
   {
-    case kpidCreationTime:
-    case kpidLastAccessTime:
-    case kpidLastWriteTime:
+    case kpidCTime:
+    case kpidATime:
+    case kpidMTime:
       return LVCFMT_LEFT;
   }
   switch(varType)
@@ -45,7 +44,7 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
     case VT_UINT:
     case VT_I8:
     case VT_UI8:
-    case VT_BOOL:    
+    case VT_BOOL:
       return LVCFMT_RIGHT;
     
     case VT_EMPTY:
@@ -84,7 +83,7 @@ void CPanel::InitColumns()
   _needSaveInfo = true;
 
   UInt32 numProperties;
-  _folder->GetNumberOfProperties(&numProperties);  
+  _folder->GetNumberOfProperties(&numProperties);
   int i;
   for (i = 0; i < (int)numProperties; i++)
   {
@@ -95,24 +94,17 @@ void CPanel::InitColumns()
     if (_folder->GetPropertyInfo(i, &name, &propID, &varType) != S_OK)
       throw 1;
 
-    CItemProperty destProperty;
-    destProperty.Type = varType;
-    destProperty.ID = propID;
-    if (propID == kpidIsFolder)
+    if (propID == kpidIsDir)
       continue;
-    {
-      if (name != NULL)
-        destProperty.Name = name;
-      else
-        destProperty.Name = L"Error";
-    }
-    UString propName = GetNameOfProperty(propID);
-    if (!propName.IsEmpty())
-      destProperty.Name = propName;
-    destProperty.Order = -1;
-    destProperty.IsVisible = true;
-    destProperty.Width = 100;
-    _properties.Add(destProperty);
+
+    CItemProperty prop;
+    prop.Type = varType;
+    prop.ID = propID;
+    prop.Name = GetNameOfProperty(propID, name);
+    prop.Order = -1;
+    prop.IsVisible = true;
+    prop.Width = 100;
+    _properties.Add(prop);
   }
   // InitColumns2(sortID);
 
@@ -177,10 +169,7 @@ void CPanel::InsertColumn(int index)
   column.fmt = GetColumnAlign(property.ID, property.Type);
   column.iOrder = property.Order;
   column.iSubItem = index;
-  UString propertyName = GetNameOfProperty(property.ID);
-  if (propertyName.IsEmpty())
-    propertyName = property.Name;
-  column.pszText = (wchar_t *)(const wchar_t *)propertyName;
+  column.pszText = (wchar_t *)(const wchar_t *)property.Name;
   _listView.InsertColumn(index, &column);
 }
 
@@ -338,7 +327,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   _listView.SetItemCount(numItems + (showDots ? 1 : 0));
 
   _selectedStatusVector.Reserve(numItems);
-  int cursorIndex = -1;  
+  int cursorIndex = -1;
 
   CMyComPtr<IFolderGetSystemIconIndex> folderGetSystemIconIndex;
   if (!IsFSFolder() || _showRealFileIcons)
@@ -414,7 +403,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
       item.pszText = (wchar_t *)(const wchar_t *)itemName;
 
     NCOM::CPropVariant propVariant;
-    _folder->GetProperty(i, kpidAttributes, &propVariant);
+    _folder->GetProperty(i, kpidAttrib, &propVariant);
     UInt32 attributes = 0;
     if (propVariant.vt == VT_UI4)
       attributes = propVariant.ulVal;
@@ -459,7 +448,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   {
     if (focusedPos >= _listView.GetItemCount())
       focusedPos = _listView.GetItemCount() - 1;
-    SetFocusedSelectedItem(focusedPos, true);
+    SetFocusedSelectedItem(focusedPos, showDots);
   }
   // m_RedrawEnabled = true;
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
@@ -517,6 +506,13 @@ void CPanel::GetAllItemIndices(CRecordVector<UInt32> &indices) const
       indices.Add(i);
 }
 
+void CPanel::GetOperatedIndicesSmart(CRecordVector<UInt32> &indices) const
+{
+  GetOperatedItemIndices(indices);
+  if (indices.IsEmpty() || (indices.Size() == 1 && indices[0] == (UInt32)(Int32)-1))
+    GetAllItemIndices(indices);
+}
+
 /*
 void CPanel::GetOperatedListViewIndices(CRecordVector<UInt32> &indices) const
 {
@@ -568,7 +564,7 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   GetOperatedItemIndices(indices);
   if (indices.Size() > 20)
   {
-    MessageBox(LangString(IDS_TOO_MANY_ITEMS, 0x02000606));
+    MessageBoxErrorLang(IDS_TOO_MANY_ITEMS, 0x02000606);
     return;
   }
   
@@ -640,7 +636,7 @@ bool CPanel::IsItemFolder(int itemIndex) const
   if (itemIndex == kParentIndex)
     return true;
   NCOM::CPropVariant propVariant;
-  if (_folder->GetProperty(itemIndex, kpidIsFolder, &propVariant) != S_OK)
+  if (_folder->GetProperty(itemIndex, kpidIsDir, &propVariant) != S_OK)
     throw 2723400;
   if (propVariant.vt == VT_BOOL)
     return VARIANT_BOOLToBool(propVariant.boolVal);
@@ -745,7 +741,7 @@ bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
       flags |= MF_GRAYED;
     menu.AppendItem(flags, kCommandStart + i, GetSystemString(property.Name));
   }
-  int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, 
+  int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY,
       point.x, point.y, _listView);
   if (menuResult >= kCommandStart && menuResult <= kCommandStart + _properties.Size())
   {

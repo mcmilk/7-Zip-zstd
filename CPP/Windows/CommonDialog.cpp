@@ -71,28 +71,28 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
     CHAR buffer[kBufferSize];
     MyStringCopy(buffer, (const char *)GetSystemString(fullFileName));
     OPENFILENAME info;
-    info.lStructSize = sizeof(info); 
-    info.hwndOwner = hwnd; 
-    info.hInstance = 0; 
+    info.lStructSize = sizeof(info);
+    info.hwndOwner = hwnd;
+    info.hInstance = 0;
     const int kFilterBufferSize = MAX_PATH;
     CHAR filterBuffer[kFilterBufferSize];
     CDoubleZeroStringListA doubleZeroStringList;
     doubleZeroStringList.Add(GetSystemString(s));
     doubleZeroStringList.Add("*.*");
     doubleZeroStringList.SetForBuffer(filterBuffer);
-    info.lpstrFilter = filterBuffer; 
+    info.lpstrFilter = filterBuffer;
     
-    info.lpstrCustomFilter = NULL; 
-    info.nMaxCustFilter = 0; 
-    info.nFilterIndex = 0; 
+    info.lpstrCustomFilter = NULL;
+    info.nMaxCustFilter = 0;
+    info.nFilterIndex = 0;
     
-    info.lpstrFile = buffer; 
+    info.lpstrFile = buffer;
     info.nMaxFile = kBufferSize;
     
-    info.lpstrFileTitle = NULL; 
-    info.nMaxFileTitle = 0; 
+    info.lpstrFileTitle = NULL;
+    info.nMaxFileTitle = 0;
     
-    info.lpstrInitialDir= NULL; 
+    info.lpstrInitialDir= NULL;
 
     info.lpstrTitle = 0;
     AString titleA;
@@ -102,14 +102,14 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
       info.lpstrTitle = titleA;
     }
     
-    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY; 
-    info.nFileOffset = 0; 
-    info.nFileExtension = 0; 
-    info.lpstrDefExt = NULL; 
+    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY;
+    info.nFileOffset = 0;
+    info.nFileExtension = 0;
+    info.lpstrDefExt = NULL;
     
-    info.lCustData = 0; 
-    info.lpfnHook = NULL; 
-    info.lpTemplateName = NULL; 
+    info.lCustData = 0;
+    info.lpfnHook = NULL;
+    info.lpTemplateName = NULL;
     
     bool res = BOOLToBool(::GetOpenFileNameA(&info));
     resPath = GetUnicodeString(buffer);
@@ -121,39 +121,39 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
     WCHAR buffer[kBufferSize];
     MyStringCopy(buffer, fullFileName);
     OPENFILENAMEW info;
-    info.lStructSize = sizeof(info); 
-    info.hwndOwner = hwnd; 
-    info.hInstance = 0; 
+    info.lStructSize = sizeof(info);
+    info.hwndOwner = hwnd;
+    info.hInstance = 0;
     const int kFilterBufferSize = MAX_PATH;
     WCHAR filterBuffer[kFilterBufferSize];
     CDoubleZeroStringListW doubleZeroStringList;
     doubleZeroStringList.Add(s);
     doubleZeroStringList.Add(L"*.*");
     doubleZeroStringList.SetForBuffer(filterBuffer);
-    info.lpstrFilter = filterBuffer; 
+    info.lpstrFilter = filterBuffer;
         
-    info.lpstrCustomFilter = NULL; 
-    info.nMaxCustFilter = 0; 
-    info.nFilterIndex = 0; 
+    info.lpstrCustomFilter = NULL;
+    info.nMaxCustFilter = 0;
+    info.nFilterIndex = 0;
     
-    info.lpstrFile = buffer; 
+    info.lpstrFile = buffer;
     info.nMaxFile = kBufferSize;
     
-    info.lpstrFileTitle = NULL; 
-    info.nMaxFileTitle = 0; 
+    info.lpstrFileTitle = NULL;
+    info.nMaxFileTitle = 0;
     
-    info.lpstrInitialDir= NULL; 
+    info.lpstrInitialDir= NULL;
        
     info.lpstrTitle = title;
     
-    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY; 
-    info.nFileOffset = 0; 
-    info.nFileExtension = 0; 
-    info.lpstrDefExt = NULL; 
+    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY;
+    info.nFileOffset = 0;
+    info.nFileExtension = 0;
+    info.lpstrDefExt = NULL;
     
-    info.lCustData = 0; 
-    info.lpfnHook = NULL; 
-    info.lpTemplateName = NULL; 
+    info.lCustData = 0;
+    info.lpfnHook = NULL;
+    info.lpTemplateName = NULL;
     
     bool res = BOOLToBool(::GetOpenFileNameW(&info));
     resPath = buffer;

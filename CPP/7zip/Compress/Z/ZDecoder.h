@@ -24,7 +24,6 @@ public:
   CDecoder(): _properties(0), _numMaxBits(0), _parents(0), _suffixes(0), _stack(0) {};
   ~CDecoder();
   void Free();
-  bool Alloc(size_t numItems);
 
   MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
 

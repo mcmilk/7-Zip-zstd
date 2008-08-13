@@ -554,6 +554,14 @@ SOURCE=..\..\..\Windows\Control\Dialog.cpp
 
 SOURCE=..\..\..\Windows\Control\Dialog.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Control\ListView.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Control\ListView.h
+# End Source File
 # End Group
 # Begin Source File
 
@@ -801,14 +809,6 @@ SOURCE=..\..\UI\GUI\ExtractGUI.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\GUI\ExtractGUI.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\GUI\OpenCallbackGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\GUI\OpenCallbackGUI.h
 # End Source File
 # End Group
 # Begin Group "Explorer"

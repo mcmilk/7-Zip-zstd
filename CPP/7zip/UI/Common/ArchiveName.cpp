@@ -31,7 +31,7 @@ UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName)
     if (!NFile::NFind::FindFile(srcName, fileInfo))
       return resultName;
     resultName = fileInfo.Name;
-    if (!fileInfo.IsDirectory() && !keepName)
+    if (!fileInfo.IsDir() && !keepName)
     {
       int dotPos = resultName.ReverseFind('.');
       if (dotPos > 0)

@@ -17,7 +17,7 @@ public:
   HRESULT Read(UInt64 startPos, void *data, UInt32 size, UInt32 *processedSize);
 };
 
-class CLockedSequentialInStreamImp: 
+class CLockedSequentialInStreamImp:
   public ISequentialInStream,
   public CMyUnknownImp
 {

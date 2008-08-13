@@ -6,11 +6,11 @@
 #include "Windows/DLL.h"
 
 typedef UINT32 (WINAPI * CreateObjectPointer)(
-    const GUID *clsID, 
-    const GUID *interfaceID, 
+    const GUID *clsID,
+    const GUID *interfaceID,
     void **outObject);
 
-class CPluginLibrary: public NWindows::NDLL::CLibrary 
+class CPluginLibrary: public NWindows::NDLL::CLibrary
 {
 public:
   HRESULT CreateManager(REFGUID clsID, IFolderManager **manager)

@@ -80,7 +80,7 @@ void CProxyFolder::Clear()
   Files.Clear();
 }
 
-void CProxyFolder::GetPathParts(UStringVector &pathParts) const 
+void CProxyFolder::GetPathParts(UStringVector &pathParts) const
 {
   pathParts.Clear();
   UString result;
@@ -92,7 +92,7 @@ void CProxyFolder::GetPathParts(UStringVector &pathParts) const
   }
 }
 
-UString CProxyFolder::GetFullPathPrefix() const 
+UString CProxyFolder::GetFullPathPrefix() const
 {
   UString result;
   const CProxyFolder *current = this;
@@ -104,7 +104,7 @@ UString CProxyFolder::GetFullPathPrefix() const
   return result;
 }
 
-UString CProxyFolder::GetItemName(UInt32 index) const 
+UString CProxyFolder::GetItemName(UInt32 index) const
 {
   if (index < (UInt32)Folders.Size())
     return Folders[index].Name;
@@ -146,8 +146,8 @@ HRESULT CProxyArchive::Reload(IInArchive *archive, IProgress *progress)
   return ReadObjects(archive, progress);
 }
 
-HRESULT CProxyArchive::Load(IInArchive *archive, 
-    const UString &defaultName, 
+HRESULT CProxyArchive::Load(IInArchive *archive,
+    const UString &defaultName,
     // const FILETIME &defaultTime,
     // UInt32 defaultAttributes,
     IProgress *progress)
@@ -179,7 +179,7 @@ void CProxyFolder::CalculateSizes(IInArchive *archive)
   {
     UInt32 index = Files[i].Index;
     Size += GetSize(archive, index, kpidSize);
-    PackSize += GetSize(archive, index, kpidPackedSize);
+    PackSize += GetSize(archive, index, kpidPackSize);
     {
       NCOM::CPropVariant prop;
       if (archive->GetProperty(index, kpidCRC, &prop) == S_OK)
@@ -213,14 +213,14 @@ HRESULT CProxyArchive::ReadObjects(IInArchive *archive, IProgress *progress)
   RINOK(archive->GetNumberOfItems(&numItems));
   if (progress != NULL)
   {
-    UINT64 totalItems = numItems; 
+    UINT64 totalItems = numItems;
     RINOK(progress->SetTotal(totalItems));
   }
   for(UInt32 i = 0; i < numItems; i++)
   {
     if (progress != NULL)
     {
-      UINT64 currentItemIndex = i; 
+      UINT64 currentItemIndex = i;
       RINOK(progress->SetCompleted(&currentItemIndex));
     }
     NCOM::CPropVariant propVariantPath;

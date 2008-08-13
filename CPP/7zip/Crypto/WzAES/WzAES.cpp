@@ -1,6 +1,6 @@
 // WzAES.cpp
 /*
-This code implements Brian Gladman's scheme 
+This code implements Brian Gladman's scheme
 specified in password Based File Encryption Utility.
 
 Note: you must include Crypto/AES/MyAES.cpp to project to initialize AES tables
@@ -39,12 +39,12 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
     (p)[2] = (Byte)(x >> 16); (p)[3] = (Byte)(x >> 24); }
 
 void CBaseCoder::EncryptData(Byte *data, UInt32 size)
-{   
+{
   unsigned int pos = _blockPos;
   for (; size > 0; size--)
   {
     if (pos == AES_BLOCK_SIZE)
-    {   
+    {
       if (++_counter[0] == 0)
         _counter[1]++;
       UInt32 temp[4];
@@ -65,7 +65,7 @@ void CBaseCoder::EncryptData(Byte *data, UInt32 size)
 static void BytesToBeUInt32s(const Byte *src, UInt32 *dest, int destSize)
 {
   for (int i = 0 ; i < destSize; i++)
-      dest[i] = 
+      dest[i] =
           ((UInt32)(src[i * 4 + 0]) << 24) |
           ((UInt32)(src[i * 4 + 1]) << 16) |
           ((UInt32)(src[i * 4 + 2]) <<  8) |
@@ -85,9 +85,9 @@ STDMETHODIMP CBaseCoder::Init()
     #ifdef _NO_WZAES_OPTIMIZATIONS
 
     NSha1::Pbkdf2Hmac(
-      _key.Password, _key.Password.GetCapacity(), 
+      _key.Password, _key.Password.GetCapacity(),
       _key.Salt, _key.GetSaltSize(),
-      kNumKeyGenIterations, 
+      kNumKeyGenIterations,
       buf, keysTotalSize);
 
     #else
@@ -98,11 +98,11 @@ STDMETHODIMP CBaseCoder::Init()
     UInt32 saltSizeInWords = _key.GetSaltSize() / 4;
     BytesToBeUInt32s(_key.Salt, salt, saltSizeInWords);
     NSha1::Pbkdf2Hmac32(
-      _key.Password, _key.Password.GetCapacity(), 
+      _key.Password, _key.Password.GetCapacity(),
       salt, saltSizeInWords,
-      kNumKeyGenIterations, 
+      kNumKeyGenIterations,
       buf32, key32SizeTotal);
-    for (UInt32 j = 0; j < keysTotalSize; j++) 
+    for (UInt32 j = 0; j < keysTotalSize; j++)
       buf[j] = (Byte)(buf32[j / 4] >> (24 - 8 * (j & 3)));
     
     #endif
@@ -121,7 +121,7 @@ STDMETHODIMP CBaseCoder::Init()
 
 /*
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
-{ 
+{
   Byte keySizeMode = 3;
   return outStream->Write(&keySizeMode, 1, NULL);
 }

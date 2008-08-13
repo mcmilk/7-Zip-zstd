@@ -9,7 +9,7 @@
 using namespace NWindows;
 using namespace NSynchronization;
 
-class CSequentialInStreamForBinder: 
+class CSequentialInStreamForBinder:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -27,7 +27,7 @@ public:
 STDMETHODIMP CSequentialInStreamForBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
   { return m_StreamBinder->Read(data, size, processedSize); }
 
-class CSequentialOutStreamForBinder: 
+class CSequentialOutStreamForBinder:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -67,16 +67,16 @@ void CStreamBinder::ReInit()
 
 
   
-void CStreamBinder::CreateStreams(ISequentialInStream **inStream, 
+void CStreamBinder::CreateStreams(ISequentialInStream **inStream,
       ISequentialOutStream **outStream)
 {
-  CSequentialInStreamForBinder *inStreamSpec = new 
+  CSequentialInStreamForBinder *inStreamSpec = new
       CSequentialInStreamForBinder;
   CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
   inStreamSpec->SetBinder(this);
   *inStream = inStreamLoc.Detach();
 
-  CSequentialOutStreamForBinder *outStreamSpec = new 
+  CSequentialOutStreamForBinder *outStreamSpec = new
       CSequentialOutStreamForBinder;
   CMyComPtr<ISequentialOutStream> outStreamLoc(outStreamSpec);
   outStreamSpec->SetBinder(this);
@@ -96,7 +96,7 @@ HRESULT CStreamBinder::Read(void *data, UInt32 size, UInt32 *processedSize)
     sizeToRead = MyMin(_bufferSize, size);
     if (_bufferSize > 0)
     {
-      MoveMemory(data, _buffer, sizeToRead);
+      memcpy(data, _buffer, sizeToRead);
       _buffer = ((const Byte *)_buffer) + sizeToRead;
       _bufferSize -= sizeToRead;
       if (_bufferSize == 0)
@@ -126,9 +126,9 @@ HRESULT CStreamBinder::Write(const void *data, UInt32 size, UInt32 *processedSiz
     _allBytesAreWritenEvent.Reset();
     _thereAreBytesToReadEvent.Set();
 
-    HANDLE events[2]; 
+    HANDLE events[2];
     events[0] = _allBytesAreWritenEvent;
-    events[1] = _readStreamIsClosedEvent; 
+    events[1] = _readStreamIsClosedEvent;
     DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
     if (waitResult != WAIT_OBJECT_0 + 0)
     {

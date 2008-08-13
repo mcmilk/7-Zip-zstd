@@ -37,7 +37,7 @@ struct CDirItem: public CFileInfoEx
   }
 };
 
-class CFSFolder: 
+class CFSFolder:
   public IFolderFolder,
   public IFolderWasChanged,
   public IFolderOperations,
@@ -87,7 +87,7 @@ private:
 
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
-  HRESULT GetItemsFullSize(const UInt32 *indices, UInt32 numItems, 
+  HRESULT GetItemsFullSize(const UInt32 *indices, UInt32 numItems,
       UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress);
   HRESULT GetItemFullSize(int index, UInt64 &size, IProgress *progress);
   HRESULT GetComplexName(const wchar_t *name, UString &resultPath);

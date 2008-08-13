@@ -4,7 +4,7 @@
 #define __CONTEXTMENU_H
 
 // {23170F69-40C1-278A-1000-000100020000}
-DEFINE_GUID(CLSID_CZipContextMenu, 
+DEFINE_GUID(CLSID_CZipContextMenu,
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
 
 #include "Common/MyString.h"
@@ -13,7 +13,7 @@ DEFINE_GUID(CLSID_CZipContextMenu,
 #include "../FileManager/MyCom2.h"
 
 
-class CZipContextMenu: 
+class CZipContextMenu:
   public IContextMenu,
   public IShellExtInit,
   public IInitContextMenu,
@@ -53,7 +53,7 @@ public:
   ///////////////////////////////
   // IShellExtInit
 
-  STDMETHOD(Initialize)(LPCITEMIDLIST pidlFolder, 
+  STDMETHOD(Initialize)(LPCITEMIDLIST pidlFolder,
       LPDATAOBJECT dataObject, HKEY hkeyProgID);
 
   /////////////////////////////
@@ -67,7 +67,7 @@ public:
 
 
   // IInitContextMenu
-  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);  
+  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);
 private:
   UStringVector _fileNames;
   bool _dropMode;
@@ -76,7 +76,7 @@ private:
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   int FindVerb(const UString &verb);
 
-  void FillCommand(ECommandInternalID id, UString &mainString, 
+  void FillCommand(ECommandInternalID id, UString &mainString,
       CCommandMapItem &commandMapItem);
 public:
   CZipContextMenu();

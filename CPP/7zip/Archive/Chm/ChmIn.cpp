@@ -17,16 +17,16 @@ namespace NChm{
 // define CHM_LOW, if you want to see low level items
 // #define CHM_LOW
 
-static const GUID kChmLzxGuid = 
+static const GUID kChmLzxGuid =
   { 0x7FC28940, 0x9D31, 0x11D0, 0x9B, 0x27, 0x00, 0xA0, 0xC9, 0x1E, 0x9C, 0x7C };
-static const GUID kHelp2LzxGuid = 
+static const GUID kHelp2LzxGuid =
   { 0x0A9007C6, 0x4076, 0x11D3, 0x87, 0x89, 0x00, 0x00, 0xF8, 0x10, 0x57, 0x54 };
-static const GUID kDesGuid = 
+static const GUID kDesGuid =
   { 0x67F6E4A2, 0x60BF, 0x11D3, 0x85, 0x40, 0x00, 0xC0, 0x4F, 0x58, 0xC3, 0xCF };
 
 static bool AreGuidsEqual(REFGUID g1, REFGUID g2)
-{ 
-  if (g1.Data1 != g2.Data1 || 
+{
+  if (g1.Data1 != g2.Data1 ||
       g1.Data2 != g2.Data2 ||
       g1.Data3 != g2.Data3)
     return false;
@@ -60,7 +60,7 @@ static void PrintUInt32(UInt32 v, AString &s)
 }
 
 AString CMethodInfo::GetGuidString() const
-{ 
+{
   AString s;
   s += '{';
   PrintUInt32(Guid.Data1, s);
@@ -278,9 +278,9 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   if (unknown1 != 0 && unknown1 != 1) // it's 0 in one .sll file
     return S_FALSE;
   /* UInt32 timeStamp = */ ReadUInt32();
-      // Considered as a big-endian DWORD, it appears to contain seconds (MSB) and 
-      // fractional seconds (second byte). 
-      // The third and fourth bytes may contain even more fractional bits.  
+      // Considered as a big-endian DWORD, it appears to contain seconds (MSB) and
+      // fractional seconds (second byte).
+      // The third and fourth bytes may contain even more fractional bits.
       // The 4 least significant bits in the last byte are constant.
   /* UInt32 lang = */ ReadUInt32();
   GUID g;
@@ -326,12 +326,12 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   if (dirChunkSize < 32)
     return S_FALSE;
   /* UInt32 density = */ ReadUInt32(); //  "Density" of quickref section, usually 2.
-  /* UInt32 depth = */ ReadUInt32(); //  Depth of the index tree: 1 there is no index, 
+  /* UInt32 depth = */ ReadUInt32(); //  Depth of the index tree: 1 there is no index,
                                // 2 if there is one level of PMGI chunks.
 
   /* UInt32 chunkNumber = */ ReadUInt32(); //  Chunk number of root index chunk, -1 if there is none
-                                     // (though at least one file has 0 despite there being no 
-                                     // index chunk, probably a bug.) 
+                                     // (though at least one file has 0 despite there being no
+                                     // index chunk, probably a bug.)
   /* UInt32 firstPmglChunkNumber = */ ReadUInt32(); // Chunk number of first PMGL (listing) chunk
   /* UInt32 lastPmglChunkNumber = */ ReadUInt32();  // Chunk number of last PMGL (listing) chunk
   ReadUInt32(); // -1 (unknown)
@@ -348,11 +348,11 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
     UInt64 chunkPos = _inBuffer.GetProcessedSize();
     if (ReadUInt32() == NHeader::kPmglSignature)
     {
-      // The quickref area is written backwards from the end of the chunk. 
-      // One quickref entry exists for every n entries in the file, where n 
-      // is calculated as 1 + (1 << quickref density). So for density = 2, n = 5. 
+      // The quickref area is written backwards from the end of the chunk.
+      // One quickref entry exists for every n entries in the file, where n
+      // is calculated as 1 + (1 << quickref density). So for density = 2, n = 5.
 
-      UInt32 quickrefLength = ReadUInt32(); // Length of free space and/or quickref area at end of directory chunk 
+      UInt32 quickrefLength = ReadUInt32(); // Length of free space and/or quickref area at end of directory chunk
       if (quickrefLength > dirChunkSize || quickrefLength < 2)
         return S_FALSE;
       ReadUInt32(); // Always 0
@@ -393,10 +393,10 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   if (numHeaderSections != kNumHeaderSectionsMax)
     return S_FALSE;
   ReadUInt32(); // Length of post-header table
-  GUID g; 
+  GUID g;
   ReadGUID(g);  // {0A9007C1-4076-11D3-8789-0000F8105754}
 
-  // header section table 
+  // header section table
   UInt64 sectionOffsets[kNumHeaderSectionsMax];
   UInt64 sectionSizes[kNumHeaderSectionsMax];
   UInt32 i;
@@ -434,9 +434,9 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   ReadUInt64(); // Number of directory index entries (same as number of AOLL
                // chunks in main directory)
   
-  // (The obvious guess for the following two fields, which recur in a number 
-  // of places, is they are maximum sizes for the directory and directory index. 
-  // However, I have seen no direct evidence that this is the case.) 
+  // (The obvious guess for the following two fields, which recur in a number
+  // of places, is they are maximum sizes for the directory and directory index.
+  // However, I have seen no direct evidence that this is the case.)
 
   ReadUInt32(); // $100000 (Same as field following chunk size in directory)
   ReadUInt32(); // $20000 (Same as field following chunk size in directory index)
@@ -480,8 +480,8 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       if (unknown != 0 && unknown != 1) // = 0 for some HxW files, 1 in other cases;
         return S_FALSE;
       database.ContentOffset = _startPosition + ReadUInt64();
-      /* UInt32 timeStamp = */ ReadUInt32(); 
-          // A timestamp of some sort.  
+      /* UInt32 timeStamp = */ ReadUInt32();
+          // A timestamp of some sort.
           // Considered as a big-endian DWORD, it appears to contain
           // seconds (MSB) and fractional seconds (second byte).
           // The third and fourth bytes may contain even more fractional
@@ -527,7 +527,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       UInt32 quickrefLength = ReadUInt32(); // Length of quickref area at end of directory chunk
       if (quickrefLength > dirChunkSize || quickrefLength < 2)
         return S_FALSE;
-      ReadUInt64(); // Directory chunk number 
+      ReadUInt64(); // Directory chunk number
             // This must match physical position in file, that is
             // the chunk size times the chunk number must be the
             // offset from the end of the directory header.
@@ -625,8 +625,8 @@ static int CompareFiles(const int *p1, const int *p2, void *param)
   const CObjectVector<CItem> &items = *(const CObjectVector<CItem> *)param;
   const CItem &item1 = items[*p1];
   const CItem &item2 = items[*p2];
-  bool isDir1 = item1.IsDirectory();
-  bool isDir2 = item2.IsDirectory();
+  bool isDir1 = item1.IsDir();
+  bool isDir2 = item2.IsDir();
   if (isDir1 && !isDir2)
     return -1;
   if (isDir2)
@@ -663,7 +663,7 @@ bool CFilesDatabase::Check()
   for(int i = 0; i < Indices.Size(); i++)
   {
     const CItem &item = Items[Indices[i]];
-    if (item.Section == 0 || item.IsDirectory())
+    if (item.Section == 0 || item.IsDir())
       continue;
     if (item.Section != prevSection)
     {
@@ -718,7 +718,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     AString transformPrefix = sectionPrefix + kTransform;
     if (database.Help2Format)
     {
-      // Transform List 
+      // Transform List
       RINOK(DecompressStream(inStream, database, transformPrefix + kTransformList));
       if ((_chunkSize & 0xF) != 0)
         return S_FALSE;
@@ -760,21 +760,21 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
           li.WindowSize = ReadUInt32();
           li.CacheSize = ReadUInt32();
           if (
-              li.ResetInterval != 1 && 
-              li.ResetInterval != 2 && 
-              li.ResetInterval != 4 && 
-              li.ResetInterval != 8 && 
-              li.ResetInterval != 16 && 
-              li.ResetInterval != 32 && 
+              li.ResetInterval != 1 &&
+              li.ResetInterval != 2 &&
+              li.ResetInterval != 4 &&
+              li.ResetInterval != 8 &&
+              li.ResetInterval != 16 &&
+              li.ResetInterval != 32 &&
               li.ResetInterval != 64)
             return S_FALSE;
           if (
-              li.WindowSize != 1 && 
-              li.WindowSize != 2 && 
-              li.WindowSize != 4 && 
-              li.WindowSize != 8 && 
-              li.WindowSize != 16 && 
-              li.WindowSize != 32 && 
+              li.WindowSize != 1 &&
+              li.WindowSize != 2 &&
+              li.WindowSize != 4 &&
+              li.WindowSize != 8 &&
+              li.WindowSize != 16 &&
+              li.WindowSize != 32 &&
               li.WindowSize != 64)
             return S_FALSE;
           numDWORDS -= 5;
@@ -803,7 +803,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
       if (method.IsLzx())
       {
         // ResetTable;
-        RINOK(DecompressStream(inStream, database, transformPrefix + 
+        RINOK(DecompressStream(inStream, database, transformPrefix +
             method.GetGuidString() + kResetTable));
         CResetTable &rt = method.LzxInfo.ResetTable;
         if (_chunkSize < 4)
@@ -845,7 +845,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
   return database.Check() ? S_OK : S_FALSE;
 }
 
-HRESULT CInArchive::Open2(IInStream *inStream, 
+HRESULT CInArchive::Open2(IInStream *inStream,
     const UInt64 *searchHeaderSizeLimit,
     CFilesDatabase &database)
 {
@@ -864,6 +864,11 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     const int kSignatureSize = 8;
     UInt64 hxsSignature = NHeader::GetHxsSignature();
     UInt64 chmSignature = ((UInt64)chmVersion << 32)| NHeader::kItsfSignature;
+    UInt64 limit = 1 << 18;
+    if (searchHeaderSizeLimit)
+      if (limit > *searchHeaderSizeLimit)
+        limit = *searchHeaderSizeLimit;
+
     for (;;)
     {
       Byte b;
@@ -880,9 +885,8 @@ HRESULT CInArchive::Open2(IInStream *inStream,
           database.Help2Format = true;
           break;
         }
-        if (searchHeaderSizeLimit != NULL)
-          if (_inBuffer.GetProcessedSize() > (*searchHeaderSizeLimit))
-            return S_FALSE;
+        if (_inBuffer.GetProcessedSize() > limit)
+          return S_FALSE;
       }
     }
     _startPosition += _inBuffer.GetProcessedSize() - kSignatureSize;
@@ -919,7 +923,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
   return S_OK;
 }
 
-HRESULT CInArchive::Open(IInStream *inStream, 
+HRESULT CInArchive::Open(IInStream *inStream,
     const UInt64 *searchHeaderSizeLimit,
     CFilesDatabase &database)
 {

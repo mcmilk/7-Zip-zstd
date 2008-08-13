@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2008-03-26
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -22,12 +22,12 @@ Public domain */
 #ifdef BLOCK_SORT_EXTERNAL_FLAGS
 
 /* 32 Flags in UInt32 word */
-#define kNumFlagsBits 5 
+#define kNumFlagsBits 5
 #define kNumFlagsInWord (1 << kNumFlagsBits)
 #define kFlagsMask (kNumFlagsInWord - 1)
 #define kAllFlags 0xFFFFFFFF
 
-#else 
+#else
 
 #define kNumBitsMax 20
 #define kIndexMask ((1 << kNumBitsMax) - 1)
@@ -78,7 +78,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
     return 0;
   }
   Groups = Indices + BlockSize + BS_TEMP_SIZE;
-  if (groupSize <= ((UInt32)1 << NumRefBits) 
+  if (groupSize <= ((UInt32)1 << NumRefBits)
       #ifndef BLOCK_SORT_USE_HEAP_SORT
       && groupSize <= range
       #endif
@@ -117,7 +117,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
     
     HeapSort(temp, groupSize);
     mask = ((1 << NumRefBits) - 1);
-    thereAreGroups = 0; 
+    thereAreGroups = 0;
     
     group = groupOffset;
     cg = (temp[0] >> NumRefBits);
@@ -233,7 +233,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
     }
     else if (i == groupSize)
       range = (mid - left);
-    else 
+    else
       break;
   }
 
@@ -307,7 +307,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
     }
     {
     /* Write new Groups values and Check that there are groups */
-    UInt32 thereAreGroups = 0; 
+    UInt32 thereAreGroups = 0;
     for (j = 0; j < groupSize; j++)
     {
       UInt32 group = groupOffset + j;
@@ -438,8 +438,8 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
         i++;
         continue;
       }
-      for(groupSize = 1; 
-        (Flags[(i + groupSize) >> kNumFlagsBits] & (1 << ((i + groupSize) & kFlagsMask))) != 0; 
+      for(groupSize = 1;
+        (Flags[(i + groupSize) >> kNumFlagsBits] & (1 << ((i + groupSize) & kFlagsMask))) != 0;
         groupSize++);
       
       groupSize++;
@@ -488,7 +488,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
         if (SortGroup(blockSize, NumSortedBytes, i, groupSize, NumRefBits, Indices
           #ifndef BLOCK_SORT_USE_HEAP_SORT
           , 0, blockSize
-          #endif       
+          #endif
           ) != 0)
           newLimit = i + groupSize;
       i += groupSize;

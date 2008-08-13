@@ -11,7 +11,7 @@ namespace NLzx {
 
 const int kUncompressedBlockSize = 1 << 15;
 
-class Cx86ConvertOutStream: 
+class Cx86ConvertOutStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

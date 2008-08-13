@@ -3,8 +3,8 @@
 #include "StdAfx.h"
 
 #include "ZipCipher.h"
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/7zCrc.h"
 }
 

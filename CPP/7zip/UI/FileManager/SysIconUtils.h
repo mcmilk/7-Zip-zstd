@@ -32,7 +32,7 @@ class CExtToIconMap
   CObjectVector<CExtIconPair> _map;
 public:
   CExtToIconMap(): _dirIconIndex(-1), _noExtIconIndex(-1) {}
-  void Clear() 
+  void Clear()
   {
     _dirIconIndex = -1;
     _noExtIconIndex = -1;
@@ -42,10 +42,10 @@ public:
   int GetIconIndex(UINT32 attributes, const UString &fileName);
 };
 
-DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex);
+DWORD_PTR GetRealIconIndex(LPCTSTR path, DWORD attributes, int &iconIndex);
 #ifndef _UNICODE
-DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex);
+DWORD_PTR GetRealIconIndex(LPCWSTR path, DWORD attributes, int &iconIndex);
 #endif
-int GetIconIndexForCSIDL(int aCSIDL);
+int GetIconIndexForCSIDL(int csidl);
 
 #endif

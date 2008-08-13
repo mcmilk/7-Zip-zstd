@@ -9,17 +9,17 @@ namespace NControl {
 
 bool CListView::CreateEx(DWORD exStyle, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam)
 {
   return CWindow::CreateEx(exStyle, WC_LISTVIEW, TEXT(""), style, x, y, width,
       height, parentWindow, idOrHMenu, instance, createParam);
 }
 
-bool CListView::GetItemParam(int itemIndex, LPARAM &param) const 
-{ 
+bool CListView::GetItemParam(int index, LPARAM &param) const
+{
   LVITEM item;
-  item.iItem = itemIndex;
+  item.iItem = index;
   item.iSubItem = 0;
   item.mask = LVIF_PARAM;
   bool aResult = GetItem(&item);
@@ -27,32 +27,70 @@ bool CListView::GetItemParam(int itemIndex, LPARAM &param) const
   return aResult;
 }
 
-/*
-int CListView::InsertItem(UINT mask, int item, LPCTSTR itemText, 
-    UINT nState, UINT nStateMask, int nImage, LPARAM lParam)
+int CListView::InsertColumn(int columnIndex, LPCTSTR text, int width)
+{
+  LVCOLUMN ci;
+  ci.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+  ci.pszText = (LPTSTR)text;
+  ci.iSubItem = columnIndex;
+  ci.cx = width;
+  return InsertColumn(columnIndex, &ci);
+}
+
+int CListView::InsertItem(int index, LPCTSTR text)
 {
   LVITEM item;
-  item.mask = nMask;
-  item.iItem = nItem;
+  item.mask = LVIF_TEXT | LVIF_PARAM;
+  item.iItem = index;
+  item.lParam = index;
+  item.pszText = (LPTSTR)text;
   item.iSubItem = 0;
-  item.pszText = (LPTSTR)itemText;
-  item.state = nState;
-  item.stateMask = nStateMask;
-  item.iImage = nImage;
-  item.lParam = lParam;
   return InsertItem(&item);
 }
 
-int CListView::InsertItem(int nItem, LPCTSTR itemText)
-{ 
-  return InsertItem(LVIF_TEXT, nItem, itemText, 0, 0, 0, 0); 
+int CListView::SetSubItem(int index, int subIndex, LPCTSTR text)
+{
+  LVITEM item;
+  item.mask = LVIF_TEXT;
+  item.iItem = index;
+  item.pszText = (LPTSTR)text;
+  item.iSubItem = subIndex;
+  return SetItem(&item);
 }
 
-int CListView::InsertItem(int nItem, LPCTSTR itemText, int nImage)
-{ 
-  return InsertItem(LVIF_TEXT | LVIF_IMAGE, nItem, itemText, 0, 0, nImage, 0); 
+#ifndef _UNICODE
+
+int CListView::InsertColumn(int columnIndex, LPCWSTR text, int width)
+{
+  LVCOLUMNW ci;
+  ci.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+  ci.pszText = (LPWSTR)text;
+  ci.iSubItem = columnIndex;
+  ci.cx = width;
+  return InsertColumn(columnIndex, &ci);
 }
-*/
+
+int CListView::InsertItem(int index, LPCWSTR text)
+{
+  LVITEMW item;
+  item.mask = LVIF_TEXT | LVIF_PARAM;
+  item.iItem = index;
+  item.lParam = index;
+  item.pszText = (LPWSTR)text;
+  item.iSubItem = 0;
+  return InsertItem(&item);
+}
+
+int CListView::SetSubItem(int index, int subIndex, LPCWSTR text)
+{
+  LVITEMW item;
+  item.mask = LVIF_TEXT;
+  item.iItem = index;
+  item.pszText = (LPWSTR)text;
+  item.iSubItem = subIndex;
+  return SetItem(&item);
+}
+
+#endif
 
 }}
-

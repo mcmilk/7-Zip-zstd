@@ -6,6 +6,8 @@
 #include "Common/Types.h"
 #include "Common/MyString.h"
 
+#include "RarHeader.h"
+
 namespace NArchive{
 namespace NRar{
 
@@ -16,59 +18,47 @@ struct CRarTime
   Byte SubTime[3];
 };
 
-class CItem
+struct CItem
 {
-public:
-  UInt16 Flags;
+  UInt64 Size;
   UInt64 PackSize;
-  UInt64 UnPackSize;
-  Byte HostOS;
-  UInt32 FileCRC;
   
-  CRarTime CreationTime;
-  CRarTime LastWriteTime;
-  CRarTime LastAccessTime;
-  bool IsCreationTimeDefined;
-  // bool IsLastWriteTimeDefined;
-  bool IsLastAccessTimeDefined;
+  CRarTime CTime;
+  CRarTime ATime;
+  CRarTime MTime;
 
+  UInt32 FileCRC;
+  UInt32 Attrib;
+
+  UInt16 Flags;
+  Byte HostOS;
   Byte UnPackVersion;
   Byte Method;
-  UInt32 Attributes;
+
+  bool CTimeDefined;
+  bool ATimeDefined;
+
   AString Name;
   UString UnicodeName;
 
   Byte Salt[8];
   
-  bool IsEncrypted() const;
-  bool IsSolid() const;
-  bool IsCommented() const;
-  bool IsSplitBefore() const;
-  bool IsSplitAfter() const;
-  bool HasSalt() const;
-  bool HasExtTime() const;
-
-  bool HasUnicodeName() const;
-  bool IsOldVersion() const;
+  bool IsEncrypted()   const { return (Flags & NHeader::NFile::kEncrypted) != 0; }
+  bool IsSolid()       const { return (Flags & NHeader::NFile::kSolid) != 0; }
+  bool IsCommented()   const { return (Flags & NHeader::NFile::kComment) != 0; }
+  bool IsSplitBefore() const { return (Flags & NHeader::NFile::kSplitBefore) != 0; }
+  bool IsSplitAfter()  const { return (Flags & NHeader::NFile::kSplitAfter) != 0; }
+  bool HasSalt()       const { return (Flags & NHeader::NFile::kSalt) != 0; }
+  bool HasExtTime()    const { return (Flags & NHeader::NFile::kExtTime) != 0; }
+  bool HasUnicodeName()const { return (Flags & NHeader::NFile::kUnicodeName) != 0; }
+  bool IsOldVersion()  const { return (Flags & NHeader::NFile::kOldVersion) != 0; }
   
-  UInt32 GetDictSize() const;
-  bool IsDirectory() const;
+  UInt32 GetDictSize() const { return (Flags >> NHeader::NFile::kDictBitStart) & NHeader::NFile::kDictMask; }
+  bool IsDir() const;
   bool IgnoreItem() const;
   UInt32 GetWinAttributes() const;
   
-  CItem(): IsCreationTimeDefined(false),  IsLastAccessTimeDefined(false) {}
-private:
-  void SetFlagBits(int startBitNumber, int numBits, int value);
-  void SetBitMask(int bitMask, bool enable);
-public:
-  void ClearFlags();
-  void SetDictSize(UInt32 size);
-  void SetAsDirectory(bool directory);
-  void SetEncrypted(bool encrypted);
-  void SetSolid(bool solid);
-  void SetCommented(bool commented);
-  void SetSplitBefore(bool splitBefore);
-  void SetSplitAfter(bool splitAfter);
+  CItem(): CTimeDefined(false), ATimeDefined(false) {}
 };
 
 class CItemEx: public CItem
@@ -87,5 +77,3 @@ public:
 }}
 
 #endif
-
-

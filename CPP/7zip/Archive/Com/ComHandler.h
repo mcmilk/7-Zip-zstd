@@ -10,7 +10,7 @@
 namespace NArchive {
 namespace NCom {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {

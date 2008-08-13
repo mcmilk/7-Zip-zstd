@@ -11,7 +11,7 @@ STDMETHODIMP CSequentialInStreamSizeCount2::Read(void *data, UInt32 size, UInt32
   _size += realProcessedSize;
   if (processedSize != 0)
     *processedSize = realProcessedSize;
-  return result; 
+  return result;
 }
 
 STDMETHODIMP CSequentialInStreamSizeCount2::GetSubStreamSize(

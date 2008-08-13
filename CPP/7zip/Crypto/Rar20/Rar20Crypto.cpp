@@ -3,9 +3,9 @@
 #include "StdAfx.h"
 
 #include "Rar20Crypto.h"
-extern "C" 
-{ 
-  #include "../../../../C/7zCrc.h" 
+extern "C"
+{
+  #include "../../../../C/7zCrc.h"
 }
 
 #define  rol(x,n)  (((x) << (n)) | ((x) >> (8 * sizeof(x) - (n))))

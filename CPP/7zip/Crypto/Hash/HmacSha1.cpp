@@ -20,7 +20,7 @@ void CHmac::SetKey(const Byte *key, size_t keySize)
     _sha.Final(keyTemp);
     keySize = kDigestSize;
   }
-  else 
+  else
     for (i = 0; i < keySize; i++)
       keyTemp[i] = key[i];
   for (i = 0; i < kBlockSize; i++)
@@ -34,7 +34,7 @@ void CHmac::SetKey(const Byte *key, size_t keySize)
 }
 
 void CHmac::Final(Byte *mac, size_t macSize)
-{   
+{
   Byte digest[kDigestSize];
   _sha.Final(digest);
   _sha2.Update(digest, kDigestSize);
@@ -59,14 +59,14 @@ void CHmac32::SetKey(const Byte *key, size_t keySize)
     sha.Final(digest);
     
     for (int i = 0 ; i < kDigestSizeInWords; i++)
-      keyTemp[i] = 
+      keyTemp[i] =
           ((UInt32)(digest[i * 4 + 0]) << 24) |
           ((UInt32)(digest[i * 4 + 1]) << 16) |
           ((UInt32)(digest[i * 4 + 2]) <<  8) |
           ((UInt32)(digest[i * 4 + 3]));
     keySize = kDigestSizeInWords;
   }
-  else 
+  else
     for (size_t i = 0; i < keySize; i++)
       keyTemp[i / 4] |= (key[i] << (24 - 8 * (i & 3)));
   for (i = 0; i < kBlockSizeInWords; i++)
@@ -80,7 +80,7 @@ void CHmac32::SetKey(const Byte *key, size_t keySize)
 }
 
 void CHmac32::Final(UInt32 *mac, size_t macSize)
-{   
+{
   UInt32 digest[kDigestSizeInWords];
   _sha.Final(digest);
   _sha2.Update(digest, kDigestSizeInWords);

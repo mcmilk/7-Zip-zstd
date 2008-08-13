@@ -23,16 +23,16 @@ public:
 };
 
 #define MyClassEncoderA(Name) class C ## Name: public CBranchConverter \
-  { public: UInt32 SubFilter(Byte *data, UInt32 size); }; 
+  { public: UInt32 SubFilter(Byte *data, UInt32 size); };
 
 #define MyClassDecoderA(Name) class C ## Name: public CBranchConverter \
-  { public: UInt32 SubFilter(Byte *data, UInt32 size); }; 
+  { public: UInt32 SubFilter(Byte *data, UInt32 size); };
 
 #define MyClassEncoderB(Name, ADD_ITEMS, ADD_INIT) class C ## Name: public CBranchConverter, public ADD_ITEMS \
-  { public: UInt32 SubFilter(Byte *data, UInt32 size); ADD_INIT}; 
+  { public: UInt32 SubFilter(Byte *data, UInt32 size); ADD_INIT};
 
 #define MyClassDecoderB(Name, ADD_ITEMS, ADD_INIT) class C ## Name: public CBranchConverter, public ADD_ITEMS \
-  { public: UInt32 SubFilter(Byte *data, UInt32 size); ADD_INIT}; 
+  { public: UInt32 SubFilter(Byte *data, UInt32 size); ADD_INIT};
 
 #define MyClassA(Name, id, subId)  \
 MyClassEncoderA(Name ## _Encoder) \

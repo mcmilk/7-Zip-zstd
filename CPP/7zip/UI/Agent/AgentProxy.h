@@ -53,7 +53,7 @@ public:
   // UInt32 DefaultAttributes;
   CProxyFolder RootFolder;
   HRESULT Reload(IInArchive *archive, IProgress *progress);
-  HRESULT Load(IInArchive *archive, 
+  HRESULT Load(IInArchive *archive,
       const UString &defaultName,
       // const FILETIME &defaultTime,
       // UInt32 defaultAttributes,

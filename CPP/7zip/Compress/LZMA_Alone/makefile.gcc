@@ -12,7 +12,7 @@ endif
 ifdef IS_MINGW
 FILE_IO =FileIO
 FILE_IO_2 =Windows/$(FILE_IO)
-LIB2 = -luuid 
+LIB2 = -luuid
 else
 FILE_IO =C_FileIO
 FILE_IO_2 =Common/$(FILE_IO)

@@ -4,7 +4,7 @@
 #define __STDAFX_H
 
 #define _WIN32_WINNT 0x0400
-// it's hack for Windows NT supporting 
+// it's hack for Windows NT supporting
 #define WINVER 0x0400
 
 // #define _WIN32_IE 0x0500
@@ -23,4 +23,4 @@
 
 #include "Common/NewHandler.h"
 
-#endif 
+#endif

@@ -1,5 +1,5 @@
 /* 7zExtract.c -- Extracting from 7z archive
-2008-04-09
+2008-08-05
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zExtract.h for license options */
@@ -10,13 +10,13 @@ Read 7zExtract.h for license options */
 
 SRes SzAr_Extract(
     const CSzArEx *p,
-    ISzInStream *inStream, 
+    ISzInStream *inStream,
     UInt32 fileIndex,
     UInt32 *blockIndex,
-    Byte **outBuffer, 
+    Byte **outBuffer,
     size_t *outBufferSize,
-    size_t *offset, 
-    size_t *outSizeProcessed, 
+    size_t *offset,
+    size_t *outSizeProcessed,
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp)
 {
@@ -36,11 +36,11 @@ SRes SzAr_Extract(
   if (*outBuffer == 0 || *blockIndex != folderIndex)
   {
     CSzFolder *folder = p->db.Folders + folderIndex;
-    CFileSize unPackSizeSpec = SzFolder_GetUnPackSize(folder);
-    size_t unPackSize = (size_t)unPackSizeSpec;
+    CFileSize unpackSizeSpec = SzFolder_GetUnpackSize(folder);
+    size_t unpackSize = (size_t)unpackSizeSpec;
     CFileSize startOffset = SzArEx_GetFolderStreamPos(p, folderIndex, 0);
 
-    if (unPackSize != unPackSizeSpec)
+    if (unpackSize != unpackSizeSpec)
       return SZ_ERROR_MEM;
     *blockIndex = folderIndex;
     IAlloc_Free(allocMain, *outBuffer);
@@ -50,24 +50,24 @@ SRes SzAr_Extract(
     
     if (res == SZ_OK)
     {
-      *outBufferSize = unPackSize;
-      if (unPackSize != 0)
+      *outBufferSize = unpackSize;
+      if (unpackSize != 0)
       {
-        *outBuffer = (Byte *)IAlloc_Alloc(allocMain, unPackSize);
+        *outBuffer = (Byte *)IAlloc_Alloc(allocMain, unpackSize);
         if (*outBuffer == 0)
           res = SZ_ERROR_MEM;
       }
       if (res == SZ_OK)
       {
-        res = SzDecode(p->db.PackSizes + 
-          p->FolderStartPackStreamIndex[folderIndex], folder, 
-          inStream, startOffset, 
-          *outBuffer, unPackSize, allocTemp);
+        res = SzDecode(p->db.PackSizes +
+          p->FolderStartPackStreamIndex[folderIndex], folder,
+          inStream, startOffset,
+          *outBuffer, unpackSize, allocTemp);
         if (res == SZ_OK)
         {
-          if (folder->UnPackCRCDefined)
+          if (folder->UnpackCRCDefined)
           {
-            if (CrcCalc(*outBuffer, unPackSize) != folder->UnPackCRC)
+            if (CrcCalc(*outBuffer, unpackSize) != folder->UnpackCRC)
               res = SZ_ERROR_CRC;
           }
         }
@@ -76,7 +76,7 @@ SRes SzAr_Extract(
   }
   if (res == SZ_OK)
   {
-    UInt32 i; 
+    UInt32 i;
     CSzFileItem *fileItem = p->db.Files + fileIndex;
     *offset = 0;
     for(i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++)
@@ -85,7 +85,7 @@ SRes SzAr_Extract(
     if (*offset + *outSizeProcessed > *outBufferSize)
       return SZ_ERROR_FAIL;
     {
-      if (fileItem->IsFileCRCDefined)
+      if (fileItem->FileCRCDefined)
       {
         if (CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->FileCRC)
           res = SZ_ERROR_CRC;

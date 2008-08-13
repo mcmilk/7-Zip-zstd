@@ -9,7 +9,7 @@ template<class T> class CMyAutoPtr
 public:
   CMyAutoPtr(T *p = 0) : _p(p) {}
   CMyAutoPtr(CMyAutoPtr<T>& p): _p(p.release()) {}
-  CMyAutoPtr<T>& operator=(CMyAutoPtr<T>& p) 
+  CMyAutoPtr<T>& operator=(CMyAutoPtr<T>& p)
   {
     reset(p.release());
     return (*this);

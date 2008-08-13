@@ -7,6 +7,8 @@
 #include "Common/MyString.h"
 #include "Common/Buffer.h"
 
+#include "Windows/Time.h"
+
 #include "IsoHeader.h"
 
 namespace NArchive {
@@ -24,22 +26,16 @@ struct CRecordingDateTime
   
   bool GetFileTime(FILETIME &ft) const
   {
-    SYSTEMTIME st;
-    st.wYear = (WORD)(Year + 1900);
-    st.wMonth = Month;
-    st.wDayOfWeek = 0; // check it
-    st.wDay = Day;
-    st.wHour = Hour;
-    st.wMinute = Minute;
-    st.wSecond = Second;
-    st.wMilliseconds = 0;
-    if (!SystemTimeToFileTime(&st, &ft))
-      return false;
-    UInt64 value =  (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
-    value -= (UInt64)((Int64)GmtOffset * 15 * 60 * 10000000);
+    UInt64 value;
+    bool res = NWindows::NTime::GetSecondsSince1601(Year + 1900, Month, Day, Hour, Minute, Second, value);
+    if (res)
+    {
+      value -= (UInt64)((Int64)GmtOffset * 15 * 60);
+      value *= 10000000;
+    }
     ft.dwLowDateTime = (DWORD)value;
     ft.dwHighDateTime = (DWORD)(value >> 32);
-    return true;
+    return res;
   }
 };
 
@@ -57,8 +53,8 @@ struct CDirRecord
   CByteBuffer SystemUse;
 
   bool IsDir() const { return  (FileFlags & NFileFlags::kDirectory) != 0; }
-  bool IsSystemItem() const 
-  { 
+  bool IsSystemItem() const
+  {
     if (FileId.GetCapacity() != 1)
       return false;
     Byte b = *(const Byte *)FileId;
@@ -111,11 +107,11 @@ struct CDirRecord
 
   bool CheckSusp(const Byte *p, int &startPos) const
   {
-    if (p[0] == 'S' && 
-        p[1] == 'P' && 
-        p[2] == 0x7 && 
-        p[3] == 0x1 && 
-        p[4] == 0xBE && 
+    if (p[0] == 'S' &&
+        p[1] == 'P' &&
+        p[2] == 0x7 &&
+        p[3] == 0x1 &&
+        p[4] == 0xBE &&
         p[5] == 0xEF)
     {
       startPos = p[6];

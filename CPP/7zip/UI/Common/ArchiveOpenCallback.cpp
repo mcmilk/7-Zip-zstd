@@ -15,61 +15,46 @@ using namespace NWindows;
 STDMETHODIMP COpenCallbackImp::SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
   COM_TRY_BEGIN
+  if (ReOpenCallback)
+    return ReOpenCallback->SetTotal(files, bytes);
   if (!Callback)
     return S_OK;
-  return Callback->SetTotal(files, bytes);
+  return Callback->Open_SetTotal(files, bytes);
   COM_TRY_END
 }
 
 STDMETHODIMP COpenCallbackImp::SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
   COM_TRY_BEGIN
+  if (ReOpenCallback)
+    return ReOpenCallback->SetCompleted(files, bytes);
   if (!Callback)
     return S_OK;
-  return Callback->SetTotal(files, bytes);
+  return Callback->Open_SetCompleted(files, bytes);
   COM_TRY_END
 }
   
 STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NCOM::CPropVariant propVariant;
+  NCOM::CPropVariant prop;
   if (_subArchiveMode)
-  {
     switch(propID)
     {
-      case kpidName:
-        propVariant = _subArchiveName;
-        break;
+      case kpidName: prop = _subArchiveName; break;
     }
-    propVariant.Detach(value);
-    return S_OK;
-  }
-  switch(propID)
-  {
-    case kpidName:
-      propVariant = _fileInfo.Name;
-      break;
-    case kpidIsFolder:
-      propVariant = _fileInfo.IsDirectory();
-      break;
-    case kpidSize:
-      propVariant = _fileInfo.Size;
-      break;
-    case kpidAttributes:
-      propVariant = (UInt32)_fileInfo.Attributes;
-      break;
-    case kpidLastAccessTime:
-      propVariant = _fileInfo.LastAccessTime;
-      break;
-    case kpidCreationTime:
-      propVariant = _fileInfo.CreationTime;
-      break;
-    case kpidLastWriteTime:
-      propVariant = _fileInfo.LastWriteTime;
-      break;
+  else
+    switch(propID)
+    {
+      case kpidName:  prop = _fileInfo.Name; break;
+      case kpidIsDir:  prop = _fileInfo.IsDir(); break;
+      case kpidSize:  prop = _fileInfo.Size; break;
+      case kpidAttrib:  prop = (UInt32)_fileInfo.Attrib; break;
+      case kpidCTime:  prop = _fileInfo.CTime; break;
+      case kpidATime:  prop = _fileInfo.ATime; break;
+      case kpidMTime:  prop = _fileInfo.MTime; break;
     }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
@@ -102,13 +87,13 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
     return S_FALSE;
   if (Callback)
   {
-    RINOK(Callback->CheckBreak());
+    RINOK(Callback->Open_CheckBreak());
   }
   *inStream = NULL;
   UString fullPath = _folderPrefix + name;
   if (!NFile::NFind::FindFile(fullPath, _fileInfo))
     return S_FALSE;
-  if (_fileInfo.IsDirectory())
+  if (_fileInfo.IsDir())
     return S_FALSE;
   CInFileStreamVol *inFile = new CInFileStreamVol;
   CMyComPtr<IInStream> inStreamTemp = inFile;
@@ -128,9 +113,16 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
 STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
   COM_TRY_BEGIN
+  if (ReOpenCallback)
+  {
+    CMyComPtr<ICryptoGetTextPassword> getTextPassword;
+    ReOpenCallback.QueryInterface(IID_ICryptoGetTextPassword, &getTextPassword);
+    if (getTextPassword)
+      return getTextPassword->CryptoGetTextPassword(password);
+  }
   if (!Callback)
     return E_NOTIMPL;
-  return Callback->CryptoGetTextPassword(password);
+  return Callback->Open_CryptoGetTextPassword(password);
   COM_TRY_END
 }
 #endif

@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -45,7 +45,7 @@ public:
       m_Value ^= ((UInt32)(m_Hist[i])) << (8 * (m_Pos - i - 1));
   }
   void UpdateUInt32(UInt32 v) { m_Value ^= v; }
-  UInt32 GetResult() const {  return m_Value; } 
+  UInt32 GetResult() const {  return m_Value; }
 };
 
 void CCheckSum2::Update(const void *data, UInt32 size)
@@ -65,7 +65,7 @@ void CCheckSum2::Update(const void *data, UInt32 size)
 
   int numWords = size / 4;
   
-  while (numWords-- != 0) 
+  while (numWords-- != 0)
   {
     UInt32 temp = *dataPointer++;
     temp |= ((UInt32)(*dataPointer++)) <<  8;

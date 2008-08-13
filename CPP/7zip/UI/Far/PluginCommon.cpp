@@ -5,7 +5,7 @@
 #include "Plugin.h"
 
 /*
-void CPlugin::AddRealIndexOfFile(const CArchiveFolderItem &aFolder, 
+void CPlugin::AddRealIndexOfFile(const CArchiveFolderItem &aFolder,
     int anIndexInVector, vector<int> &aRealIndexes)
 {
   const CArchiveFolderFileItem &anItem = aFolder.m_FileSubItems[anIndexInVector];
@@ -15,7 +15,7 @@ void CPlugin::AddRealIndexOfFile(const CArchiveFolderItem &aFolder,
   aRealIndexes.push_back(aHandlerItemIndex);
 }
 
-void CPlugin::AddRealIndexes(const CArchiveFolderItem &anItem, 
+void CPlugin::AddRealIndexes(const CArchiveFolderItem &anItem,
     vector<int> &aRealIndexes)
 {
   int aHandlerItemIndex = m_ProxyHandler->GetHandlerItemIndex(anItem.m_Properties);
@@ -28,7 +28,7 @@ void CPlugin::AddRealIndexes(const CArchiveFolderItem &anItem,
 }
 
 
-void CPlugin::GetRealIndexes(PluginPanelItem *aPanelItems, int anItemsNumber, 
+void CPlugin::GetRealIndexes(PluginPanelItem *aPanelItems, int anItemsNumber,
     vector<int> &aRealIndexes)
 {
   aRealIndexes.clear();

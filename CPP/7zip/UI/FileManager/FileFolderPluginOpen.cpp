@@ -2,11 +2,14 @@
 
 #include "StdAfx.h"
 
+#include "resource.h"
+
 #include "Common/StringConvert.h"
 #include "Windows/Defs.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/DLL.h"
+#include "Windows/Thread.h"
 
 #include "IFolder.h"
 #include "RegistryAssociations.h"
@@ -14,12 +17,37 @@
 
 #include "OpenCallback.h"
 #include "PluginLoader.h"
+#include "LangUtils.h"
 #include "../Agent/Agent.h"
 
 using namespace NWindows;
 using namespace NRegistryAssociations;
 
-static int FindPlugin(const CObjectVector<CPluginInfo> &plugins, 
+struct CThreadArchiveOpen
+{
+  UString Path;
+  CMyComPtr<IFolderManager> FolderManager;
+  CMyComPtr<IProgress> OpenCallback;
+  COpenArchiveCallback *OpenCallbackSpec;
+
+  CMyComPtr<IFolderFolder> Folder;
+  HRESULT Result;
+
+  void Process()
+  {
+    OpenCallbackSpec->ProgressDialog.WaitCreating();
+    Result = FolderManager->OpenFolderFile(Path, &Folder, OpenCallback);
+    OpenCallbackSpec->ProgressDialog.MyClose();
+  }
+  
+  static THREAD_FUNC_DECL MyThreadFunction(void *param)
+  {
+    ((CThreadArchiveOpen *)param)->Process();
+    return 0;
+  }
+};
+
+static int FindPlugin(const CObjectVector<CPluginInfo> &plugins,
     const UString &pluginName)
 {
   for (int i = 0; i < plugins.Size(); i++)
@@ -29,13 +57,12 @@ static int FindPlugin(const CObjectVector<CPluginInfo> &plugins,
 }
 
 HRESULT OpenFileFolderPlugin(
-    const UString &path, 
+    const UString &path,
     HMODULE *module,
-    IFolderFolder **resultFolder, 
-    HWND parentWindow, 
-    bool &encrypted)
+    IFolderFolder **resultFolder,
+    HWND parentWindow,
+    bool &encrypted, UString &password)
 {
-  encrypted = false;
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
 
@@ -82,33 +109,50 @@ HRESULT OpenFileFolderPlugin(
     if (!plugin.ClassIDDefined)
       continue;
     CPluginLibrary library;
-    CMyComPtr<IFolderManager> folderManager;
-    CMyComPtr<IFolderFolder> folder;
+
+    CThreadArchiveOpen t;
+
     if (plugin.FilePath.IsEmpty())
-      folderManager = new CArchiveFolderManager;
-    else if (library.LoadAndCreateManager(plugin.FilePath, plugin.ClassID, &folderManager) != S_OK)
+      t.FolderManager = new CArchiveFolderManager;
+    else if (library.LoadAndCreateManager(plugin.FilePath, plugin.ClassID, &t.FolderManager) != S_OK)
       continue;
 
-    COpenArchiveCallback *openCallbackSpec = new COpenArchiveCallback;
-    CMyComPtr<IProgress> openCallback = openCallbackSpec;
-    openCallbackSpec->PasswordIsDefined = false;
-    openCallbackSpec->ParentWindow = parentWindow;
-    openCallbackSpec->LoadFileInfo(dirPrefix, fileName);
-    HRESULT result = folderManager->OpenFolderFile(path, &folder, openCallback);
-    if (openCallbackSpec->PasswordWasAsked)
-      encrypted = true;
-    if (result == S_OK)
+    t.OpenCallbackSpec = new COpenArchiveCallback;
+    t.OpenCallback = t.OpenCallbackSpec;
+    t.OpenCallbackSpec->PasswordIsDefined = encrypted;
+    t.OpenCallbackSpec->Password = password;
+    t.OpenCallbackSpec->ParentWindow = parentWindow;
+    t.OpenCallbackSpec->LoadFileInfo(dirPrefix, fileName);
+
+    t.Path = path;
+
+    UString progressTitle = LangString(IDS_OPENNING, 0x03020283);
+    t.OpenCallbackSpec->ProgressDialog.MainWindow = parentWindow;
+    t.OpenCallbackSpec->ProgressDialog.MainTitle = LangString(IDS_APP_TITLE, 0x03000000);
+    t.OpenCallbackSpec->ProgressDialog.MainAddTitle = progressTitle + UString(L" ");
+
+    NWindows::CThread thread;
+    if (thread.Create(CThreadArchiveOpen::MyThreadFunction, &t) != S_OK)
+      throw 271824;
+    t.OpenCallbackSpec->StartProgressDialog(progressTitle);
+
+    if (t.Result == E_ABORT)
+      return t.Result;
+
+    if (t.Result == S_OK)
     {
+      // if (openCallbackSpec->PasswordWasAsked)
+      {
+        encrypted = t.OpenCallbackSpec->PasswordIsDefined;
+        password = t.OpenCallbackSpec->Password;
+      }
       *module = library.Detach();
-      *resultFolder = folder.Detach();
+      *resultFolder = t.Folder.Detach();
       return S_OK;
     }
-    continue;
-
-    /*
-    if (result != S_FALSE)
-      return result;
-    */
+    
+    if (t.Result != S_FALSE)
+      return t.Result;
   }
   return S_FALSE;
 }

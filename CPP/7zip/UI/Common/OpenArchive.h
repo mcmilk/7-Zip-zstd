@@ -12,7 +12,7 @@
 
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, UString &result);
 HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &defaultName, UString &result);
-HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index, 
+HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index,
     const FILETIME &defaultFileTime, FILETIME &fileTime);
 HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result);
 HRESULT IsArchiveItemFolder(IInArchive *archive, UInt32 index, bool &result);
@@ -25,26 +25,29 @@ struct ISetSubArchiveName
 
 HRESULT OpenArchive(
     CCodecs *codecs,
+    int arcTypeIndex,
     IInStream *inStream,
-    const UString &fileName, 
-    IInArchive **archiveResult, 
+    const UString &fileName,
+    IInArchive **archiveResult,
     int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback);
 
 HRESULT OpenArchive(
     CCodecs *codecs,
-    const UString &filePath, 
-    IInArchive **archive, 
+    int arcTypeIndex,
+    const UString &filePath,
+    IInArchive **archive,
     int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback);
 
 HRESULT OpenArchive(
     CCodecs *codecs,
-    const UString &filePath, 
-    IInArchive **archive0, 
-    IInArchive **archive1, 
+    const CIntVector &formatIndices,
+    const UString &filePath,
+    IInArchive **archive0,
+    IInArchive **archive1,
     int &formatIndex0,
     int &formatIndex1,
     UString &defaultItemName0,
@@ -53,24 +56,6 @@ HRESULT OpenArchive(
 
 
 HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName, IArchiveOpenCallback *openArchiveCallback);
-
-HRESULT MyOpenArchive(
-    CCodecs *codecs,
-    const UString &archiveName, 
-    IInArchive **archive,
-    UString &defaultItemName,
-    IOpenCallbackUI *openCallbackUI);
-
-HRESULT MyOpenArchive(
-    CCodecs *codecs,
-    const UString &archiveName, 
-    IInArchive **archive0,
-    IInArchive **archive1,
-    UString &defaultItemName0,
-    UString &defaultItemName1,
-    UStringVector &volumePaths,
-    UInt64 &volumesSize,
-    IOpenCallbackUI *openCallbackUI);
 
 struct CArchiveLink
 {
@@ -84,10 +69,11 @@ struct CArchiveLink
   
   UStringVector VolumePaths;
 
+  bool IsOpen;
   UInt64 VolumesSize;
 
   int GetNumLevels() const
-  { 
+  {
     int result = 0;
     if (Archive0)
     {
@@ -97,8 +83,6 @@ struct CArchiveLink
     }
     return result;
   }
-
-  bool IsOpen;
 
   CArchiveLink(): IsOpen(false), VolumesSize(0) {};
 
@@ -111,20 +95,23 @@ struct CArchiveLink
 
 HRESULT OpenArchive(
     CCodecs *codecs,
-    const UString &archiveName, 
+    const CIntVector &formatIndices,
+    const UString &archiveName,
     CArchiveLink &archiveLink,
     IArchiveOpenCallback *openCallback);
 
 HRESULT MyOpenArchive(
     CCodecs *codecs,
-    const UString &archiveName, 
+    const CIntVector &formatIndices,
+    const UString &archiveName,
     CArchiveLink &archiveLink,
     IOpenCallbackUI *openCallbackUI);
 
 HRESULT ReOpenArchive(
     CCodecs *codecs,
-    CArchiveLink &archiveLink, 
-    const UString &fileName);
+    CArchiveLink &archiveLink,
+    const UString &fileName,
+    IArchiveOpenCallback *openCallback);
 
 #endif
 

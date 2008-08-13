@@ -26,7 +26,7 @@ using namespace NRegistryAssociations;
 const int kRefreshpluginsListMessage  = WM_USER + 1;
 const int kUpdateDatabase = kRefreshpluginsListMessage  + 1;
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_SYSTEM_STATIC_ASSOCIATE,  0x03010302},
   { IDC_SYSTEM_SELECT_ALL,        0x03000330}
@@ -44,7 +44,7 @@ bool CSystemPage::OnInit()
   _listViewPlugins.Attach(GetItem(IDC_SYSTEM_LIST_PLUGINS));
 
   /*
-  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU, 
+  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,
       NRegistryAssociations::CheckContextMenuHandler());
   */
 
@@ -52,26 +52,11 @@ bool CSystemPage::OnInit()
   _listViewExt.SetExtendedListViewStyle(newFlags, newFlags);
   _listViewPlugins.SetExtendedListViewStyle(newFlags, newFlags);
 
-  UString s = LangString(IDS_PROPERTY_EXTENSION, 0x02000205);
-  LVCOLUMNW column;
-  column.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT | LVCF_SUBITEM;
-  column.cx = 70;
-  column.fmt = LVCFMT_LEFT;
-  column.pszText = (LPWSTR)(LPCWSTR)s;
-  column.iSubItem = 0;
-  _listViewExt.InsertColumn(0, &column);
+  _listViewExt.InsertColumn(0, LangString(IDS_PROPERTY_EXTENSION, 0x02000205), 70);
+  const UString s = LangString(IDS_PLUGIN, 0x03010310);
+  _listViewExt.InsertColumn(1, s, 70);
 
-  s = LangString(IDS_PLUGIN, 0x03010310);
-  column.cx = 70;
-  column.pszText = (LPWSTR)(LPCWSTR)s;
-  column.iSubItem = 1;
-  _listViewExt.InsertColumn(1, &column);
-
-  s = LangString(IDS_PLUGIN, 0x03010310);
-  column.cx = 70;
-  column.pszText = (LPWSTR)(LPCWSTR)s;
-  column.iSubItem = 0;
-  _listViewPlugins.InsertColumn(0, &column);
+  _listViewPlugins.InsertColumn(0, s, 70);
 
   _extDatabase.Read();
 
@@ -79,13 +64,7 @@ bool CSystemPage::OnInit()
   {
     CExtInfoBig &extInfo = _extDatabase.ExtBigItems[i];
 
-    LVITEMW item;
-    item.iItem = i;
-    item.mask = LVIF_TEXT | LVIF_PARAM;
-    item.lParam = i;
-    item.pszText = (LPWSTR)(LPCWSTR)extInfo.Ext;
-    item.iSubItem = 0;
-    int itemIndex = _listViewExt.InsertItem(&item);
+    int itemIndex = _listViewExt.InsertItem(i, (LPCWSTR)extInfo.Ext);
 
     UString iconPath;
     int iconIndex;
@@ -111,13 +90,7 @@ bool CSystemPage::OnInit()
 
 void CSystemPage::SetMainPluginText(int itemIndex, int indexInDatabase)
 {
-  LVITEMW item;
-  item.iItem = itemIndex;
-  item.mask = LVIF_TEXT;
-  UString mainPlugin = _extDatabase.GetMainPluginNameForExtItem(indexInDatabase);
-  item.pszText = (WCHAR *)(const WCHAR *)mainPlugin;
-  item.iSubItem = 1;
-  _listViewExt.SetItem(&item);
+  _listViewExt.SetSubItem(itemIndex, 1, _extDatabase.GetMainPluginNameForExtItem(indexInDatabase));
 }
 
 static UString GetProgramCommand()
@@ -181,7 +154,7 @@ LONG CSystemPage::OnApply()
         const CPluginInfo &plugin = _extDatabase.Plugins[extInfo.PluginsPairs[0].Index];
         iconPath = GetIconPath(plugin.FilePath, plugin.ClassID, extInfo.Ext, iconIndex);
       }
-      NRegistryAssociations::AddShellExtensionInfo(GetSystemString(extInfo.Ext), 
+      NRegistryAssociations::AddShellExtensionInfo(GetSystemString(extInfo.Ext),
             title, command, iconPath, iconIndex, NULL, 0);
     }
     else
@@ -203,7 +176,7 @@ void CSystemPage::OnNotifyHelp()
 }
 
 void CSystemPage::SelectAll()
-{ 
+{
   int count = _listViewExt.GetItemCount();
   for (int i = 0; i < count; i++)
     _listViewExt.SetCheckState(i, true);
@@ -211,7 +184,7 @@ void CSystemPage::SelectAll()
 }
 
 bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
-{ 
+{
   switch(buttonID)
   {
     case IDC_SYSTEM_SELECT_ALL:
@@ -224,8 +197,8 @@ bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
 
-bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam) 
-{ 
+bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
+{
   if (lParam->hwndFrom == HWND(_listViewExt))
   {
     switch(lParam->code)
@@ -241,7 +214,7 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
         PostMessage(kUpdateDatabase, 0);
         break;
     }
-  } 
+  }
   else if (lParam->hwndFrom == HWND(_listViewPlugins))
   {
     switch(lParam->code)
@@ -268,7 +241,7 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
       }
     }
   }
-  return CPropertyPage::OnNotify(controlID, lParam); 
+  return CPropertyPage::OnNotify(controlID, lParam);
 }
 
 bool CSystemPage::OnPluginsKeyDown(LPNMLVKEYDOWN keyDownInfo)
@@ -394,14 +367,7 @@ void CSystemPage::RefreshPluginsList(int selectIndex)
   for (int i = 0; i < extInfo.PluginsPairs.Size(); i++)
   {
     CPluginEnabledPair pluginPair = extInfo.PluginsPairs[i];
-    UString pluginName = _extDatabase.Plugins[pluginPair.Index].Name;
-    LVITEMW item;
-    item.iItem = i;
-    item.mask = LVIF_TEXT | LVIF_PARAM;
-    item.lParam = i;
-    item.pszText = (LPWSTR)(LPCWSTR)pluginName;
-    item.iSubItem = 0;
-    int itemIndex = _listViewPlugins.InsertItem(&item);
+    int itemIndex = _listViewPlugins.InsertItem(i, _extDatabase.Plugins[pluginPair.Index].Name);
     _listViewPlugins.SetCheckState(itemIndex, pluginPair.Enabled);
   }
   if(_listViewPlugins.GetItemCount() > 0)

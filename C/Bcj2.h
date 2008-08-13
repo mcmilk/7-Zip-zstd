@@ -1,5 +1,5 @@
 /* Bcj2.h -- Converter for x86 code (BCJ2)
-2008-04-11
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
@@ -10,7 +10,7 @@ Read Bra.h for license options */
 
 /*
 Conditions:
-  outSize <= FullOutputSize, 
+  outSize <= FullOutputSize,
   where FullOutputSize is full size of output stream of x86_2 filter.
 
 If buf0 overlaps outBuf, there are two required conditions:
@@ -23,10 +23,10 @@ Returns:
 */
 
 int Bcj2_Decode(
-    const Byte *buf0, SizeT size0, 
-    const Byte *buf1, SizeT size1, 
-    const Byte *buf2, SizeT size2, 
-    const Byte *buf3, SizeT size3, 
+    const Byte *buf0, SizeT size0,
+    const Byte *buf1, SizeT size1,
+    const Byte *buf2, SizeT size2,
+    const Byte *buf3, SizeT size3,
     Byte *outBuf, SizeT outSize);
 
 #endif

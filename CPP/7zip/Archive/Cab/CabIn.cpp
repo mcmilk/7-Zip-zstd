@@ -2,15 +2,12 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-#include "Common/MyCom.h"
 #include "CabIn.h"
-#include "Windows/Defs.h"
 
-#include "../../Common/StreamUtils.h"
+#include "../Common/FindSignature.h"
 
-namespace NArchive{
-namespace NCab{
+namespace NArchive {
+namespace NCab {
 
 /*
 static HRESULT ReadBytes(IInStream *inStream, void *data, UInt32 size)
@@ -94,39 +91,21 @@ void CInArchive::Skeep(size_t size)
     ReadByte();
 }
 
-HRESULT CInArchive::Open2(IInStream *inStream, 
+HRESULT CInArchive::Open2(IInStream *stream,
     const UInt64 *searchHeaderSizeLimit,
     CDatabase &database)
 {
   database.Clear();
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &database.StartPosition));
+  RINOK(stream->Seek(0, STREAM_SEEK_SET, &database.StartPosition));
 
-  {
-    if (!inBuffer.Create(1 << 17))
-      return E_OUTOFMEMORY;
-    inBuffer.SetStream(inStream);
-    inBuffer.Init();
-    UInt64 value = 0;
-    const int kSignatureSize = 8;
-    UInt64 kSignature64 = NHeader::NArchive::kSignature;
-    for (;;)
-    {
-      Byte b;
-      if (!inBuffer.ReadByte(b))
-        return S_FALSE;
-      value >>= 8;
-      value |= ((UInt64)b) << ((kSignatureSize - 1) * 8);
-      if (inBuffer.GetProcessedSize() >= kSignatureSize)
-      {
-        if (value == kSignature64)
-          break;
-        if (searchHeaderSizeLimit != NULL)
-          if (inBuffer.GetProcessedSize() > (*searchHeaderSizeLimit))
-            return S_FALSE;
-      }
-    }
-    database.StartPosition += inBuffer.GetProcessedSize() - kSignatureSize;
-  }
+  RINOK(FindSignatureInStream(stream, NHeader::kMarker, NHeader::kMarkerSize,
+      searchHeaderSizeLimit, database.StartPosition));
+
+  RINOK(stream->Seek(database.StartPosition + NHeader::kMarkerSize, STREAM_SEEK_SET, NULL));
+  if (!inBuffer.Create(1 << 17))
+    return E_OUTOFMEMORY;
+  inBuffer.SetStream(stream);
+  inBuffer.Init();
 
   CInArchiveInfo &archiveInfo = database.ArchiveInfo;
 
@@ -141,7 +120,9 @@ HRESULT CInArchive::Open2(IInStream *inStream,
   archiveInfo.VersionMajor = ReadByte(); // cabinet file format version, major
   archiveInfo.NumFolders = ReadUInt16(); // number of CFFOLDER entries in this cabinet
   archiveInfo.NumFiles  = ReadUInt16(); // number of CFFILE entries in this cabinet
-  archiveInfo.Flags = ReadUInt16(); // number of CFFILE entries in this cabinet
+  archiveInfo.Flags = ReadUInt16();
+  if (archiveInfo.Flags > 7)
+    return S_FALSE;
   archiveInfo.SetID = ReadUInt16(); // must be the same for all cabinets in a set
   archiveInfo.CabinetNumber = ReadUInt16(); // number of this cabinet file in a set
 
@@ -175,9 +156,9 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     database.Folders.Add(folder);
   }
   
-  RINOK(inStream->Seek(database.StartPosition + archiveInfo.FileHeadersOffset, STREAM_SEEK_SET, NULL));
+  RINOK(stream->Seek(database.StartPosition + archiveInfo.FileHeadersOffset, STREAM_SEEK_SET, NULL));
 
-  inBuffer.SetStream(inStream);
+  inBuffer.SetStream(stream);
   inBuffer.Init();
   for(i = 0; i < archiveInfo.NumFiles; i++)
   {
@@ -221,8 +202,8 @@ static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
   const CDatabaseEx &db2 = mvDb.Volumes[p2->VolumeIndex];
   const CItem &item1 = db1.Items[p1->ItemIndex];
   const CItem &item2 = db2.Items[p2->ItemIndex];;
-  bool isDir1 = item1.IsDirectory();
-  bool isDir2 = item2.IsDirectory();
+  bool isDir1 = item1.IsDir();
+  bool isDir2 = item2.IsDir();
   if (isDir1 && !isDir2)
     return -1;
   if (isDir2 && !isDir1)
@@ -322,7 +303,7 @@ bool CMvDatabaseEx::Check()
     if (fIndex >= FolderStartFileIndex.Size())
       return false;
     const CItem &item = Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-    if (item.IsDirectory())
+    if (item.IsDir())
       continue;
     int folderIndex = GetFolderIndex(&mvItem);
     if (folderIndex != prevFolder)

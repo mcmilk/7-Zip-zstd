@@ -28,7 +28,7 @@ void Cx86ConvertOutStream::MakeTranslation()
       Int32 pos = (Int32)(m_ProcessedSize + i - 1);
       if (absValue >= -pos && absValue < (Int32)m_TranslationSize)
       {
-        UInt32 offset = (absValue >= 0) ? 
+        UInt32 offset = (absValue >= 0) ?
             absValue - pos :
             absValue + m_TranslationSize;
         for(j = 0; j < 4; j++)

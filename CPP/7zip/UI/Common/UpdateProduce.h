@@ -7,25 +7,23 @@
 
 struct CUpdatePair2
 {
-  // bool OperationIsCompress;
   bool NewData;
-  bool NewProperties;
-
-  bool ExistInArchive;
-  bool ExistOnDisk;
+  bool NewProps;
   bool IsAnti;
-  int ArchiveItemIndex;
-  int DirItemIndex;
+  
+  int DirIndex;
+  int ArcIndex;
+  int NewNameIndex;
 
-  bool NewNameIsDefined;
-  UString NewName;
+  bool ExistOnDisk() const { return DirIndex != -1; }
+  bool ExistInArchive() const { return ArcIndex != -1; }
 
-  CUpdatePair2(): NewNameIsDefined(false) {}
+  CUpdatePair2(): IsAnti(false), DirIndex(-1), ArcIndex(-1), NewNameIndex(-1) {}
 };
 
 void UpdateProduce(
-    const CObjectVector<CUpdatePair> &updatePairs,
+    const CRecordVector<CUpdatePair> &updatePairs,
     const NUpdateArchive::CActionSet &actionSet,
-    CObjectVector<CUpdatePair2> &operationChain);
+    CRecordVector<CUpdatePair2> &operationChain);
 
 #endif

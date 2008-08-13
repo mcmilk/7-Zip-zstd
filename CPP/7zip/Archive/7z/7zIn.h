@@ -36,6 +36,9 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
   CRecordVector<CNum> FolderStartFileIndex;
   CRecordVector<CNum> FileIndexToFolderIndexMap;
 
+  UInt64 HeadersSize;
+  UInt64 PhySize;
+
   void Clear()
   {
     CArchiveDatabase::Clear();
@@ -44,6 +47,9 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
     FolderStartPackStreamIndex.Clear();
     FolderStartFileIndex.Clear();
     FileIndexToFolderIndexMap.Clear();
+
+    HeadersSize = 0;
+    PhySize = 0;
   }
 
   void FillFolderStartPackStream();
@@ -63,7 +69,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
         PackStreamStartPositions[FolderStartPackStreamIndex[folderIndex] + indexInFolder];
   }
   
-  UInt64 GetFolderFullPackSize(int folderIndex) const 
+  UInt64 GetFolderFullPackSize(int folderIndex) const
   {
     CNum packStreamIndex = FolderStartPackStreamIndex[folderIndex];
     const CFolder &folder = Folders[folderIndex];
@@ -73,7 +79,7 @@ struct CArchiveDatabaseEx: public CArchiveDatabase
     return size;
   }
   
-  UInt64 GetFolderPackStreamSize(int folderIndex, int streamIndex) const 
+  UInt64 GetFolderPackStreamSize(int folderIndex, int streamIndex) const
   {
     return PackSizes[FolderStartPackStreamIndex[folderIndex] + streamIndex];
   }
@@ -92,8 +98,8 @@ class CInByte2
 {
   const Byte *_buffer;
   size_t _size;
-  size_t _pos;
 public:
+  size_t _pos;
   void Init(const Byte *buffer, size_t size)
   {
     _buffer = buffer;
@@ -127,6 +133,8 @@ class CInArchive
   UInt64 _arhiveBeginStreamPosition;
 
   Byte _header[kHeaderSize];
+
+  UInt64 HeadersSize;
 
   void AddByteStream(const Byte *buffer, size_t size)
   {
@@ -167,15 +175,15 @@ private:
       CRecordVector<bool> &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs);
   
-  void ReadUnPackInfo(
+  void ReadUnpackInfo(
       const CObjectVector<CByteBuffer> *dataVector,
       CObjectVector<CFolder> &folders);
   
   void ReadSubStreamsInfo(
       const CObjectVector<CFolder> &folders,
-      CRecordVector<CNum> &numUnPackStreamsInFolders,
-      CRecordVector<UInt64> &unPackSizes,
-      CRecordVector<bool> &digestsDefined, 
+      CRecordVector<CNum> &numUnpackStreamsInFolders,
+      CRecordVector<UInt64> &unpackSizes,
+      CRecordVector<bool> &digestsDefined,
       CRecordVector<UInt32> &digests);
 
   void ReadStreamsInfo(
@@ -185,36 +193,36 @@ private:
       CRecordVector<bool> &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs,
       CObjectVector<CFolder> &folders,
-      CRecordVector<CNum> &numUnPackStreamsInFolders,
-      CRecordVector<UInt64> &unPackSizes,
-      CRecordVector<bool> &digestsDefined, 
+      CRecordVector<CNum> &numUnpackStreamsInFolders,
+      CRecordVector<UInt64> &unpackSizes,
+      CRecordVector<bool> &digestsDefined,
       CRecordVector<UInt32> &digests);
 
 
   void ReadBoolVector(int numItems, CBoolVector &v);
   void ReadBoolVector2(int numItems, CBoolVector &v);
-  void ReadTime(const CObjectVector<CByteBuffer> &dataVector,
-      CObjectVector<CFileItem> &files, UInt32 type);
+  void ReadUInt64DefVector(const CObjectVector<CByteBuffer> &dataVector,
+      CUInt64DefVector &v, int numFiles);
   HRESULT ReadAndDecodePackedStreams(
       DECL_EXTERNAL_CODECS_LOC_VARS
       UInt64 baseOffset, UInt64 &dataOffset,
       CObjectVector<CByteBuffer> &dataVector
       #ifndef _NO_CRYPTO
-      , ICryptoGetTextPassword *getTextPassword
+      , ICryptoGetTextPassword *getTextPassword, bool &passwordIsDefined
       #endif
       );
   HRESULT ReadHeader(
       DECL_EXTERNAL_CODECS_LOC_VARS
-      CArchiveDatabaseEx &database
+      CArchiveDatabaseEx &db
       #ifndef _NO_CRYPTO
-      ,ICryptoGetTextPassword *getTextPassword
+      ,ICryptoGetTextPassword *getTextPassword, bool &passwordIsDefined
       #endif
       );
   HRESULT ReadDatabase2(
       DECL_EXTERNAL_CODECS_LOC_VARS
-      CArchiveDatabaseEx &database 
+      CArchiveDatabaseEx &db
       #ifndef _NO_CRYPTO
-      ,ICryptoGetTextPassword *getTextPassword
+      ,ICryptoGetTextPassword *getTextPassword, bool &passwordIsDefined
       #endif
       );
 public:
@@ -223,9 +231,9 @@ public:
 
   HRESULT ReadDatabase(
       DECL_EXTERNAL_CODECS_LOC_VARS
-      CArchiveDatabaseEx &database 
+      CArchiveDatabaseEx &db
       #ifndef _NO_CRYPTO
-      ,ICryptoGetTextPassword *getTextPassword
+      ,ICryptoGetTextPassword *getTextPassword, bool &passwordIsDefined
       #endif
       );
 };

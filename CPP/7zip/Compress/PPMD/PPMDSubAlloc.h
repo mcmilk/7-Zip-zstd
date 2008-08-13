@@ -6,8 +6,8 @@
 
 #include "PPMDType.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -19,19 +19,19 @@ const UINT UNIT_SIZE=12, N_INDEXES=N1+N2+N3+N4;
 const UInt32 kExtraSize = (UNIT_SIZE * 3);
 const UInt32 kMaxMemBlockSize = 0xFFFFFFFF - kExtraSize;
 
-struct MEM_BLK 
+struct MEM_BLK
 {
   UInt16 Stamp, NU;
   UInt32 Next, Prev;
-  void InsertAt(Byte *Base, UInt32 p) 
+  void InsertAt(Byte *Base, UInt32 p)
   {
     Prev = p;
     MEM_BLK *pp = (MEM_BLK *)(Base + p);
     Next = pp->Next;
     pp->Next = ((MEM_BLK *)(Base + Next))->Prev = (UInt32)((Byte *)this - Base);
   }
-  void Remove(Byte *Base) 
-  { 
+  void Remove(Byte *Base)
+  {
     ((MEM_BLK *)(Base + Prev))->Next = Next;
     ((MEM_BLK *)(Base + Next))->Prev = Prev;
   }
@@ -71,13 +71,13 @@ public:
   MEM_BLK *GetBlk(UInt32 offset) const { return (MEM_BLK *)(Base + offset); }
   UInt32 *GetNode(UInt32 offset) const { return (UInt32 *)(Base + offset); }
 
-  void InsertNode(void* p, int indx) 
+  void InsertNode(void* p, int indx)
   {
     *(UInt32 *)p = FreeList[indx];
     FreeList[indx] = GetOffsetNoCheck(p);
   }
 
-  void* RemoveNode(int indx) 
+  void* RemoveNode(int indx)
   {
     UInt32 offset = FreeList[indx];
     UInt32 *p = GetNode(offset);
@@ -91,7 +91,7 @@ public:
   {
     int i, UDiff = Indx2Units[oldIndx] - Indx2Units[newIndx];
     Byte* p = ((Byte*)pv) + U2B(Indx2Units[newIndx]);
-    if (Indx2Units[i = Units2Indx[UDiff-1]] != UDiff) 
+    if (Indx2Units[i = Units2Indx[UDiff-1]] != UDiff)
     {
       InsertNode(p, --i);
       p += U2B(i = Indx2Units[i]);
@@ -103,7 +103,7 @@ public:
   UInt32 GetUsedMemory() const
   {
     UInt32 RetVal = SubAllocatorSize - (UInt32)(HiUnit - LoUnit) - (UInt32)(UnitsStart - pText);
-    for (UInt32 i = 0; i < N_INDEXES; i++) 
+    for (UInt32 i = 0; i < N_INDEXES; i++)
       for (UInt32 pn = FreeList[i]; pn != 0; RetVal -= (UInt32)Indx2Units[i] * UNIT_SIZE)
         pn = *GetNode(pn);
     return (RetVal >> 2);
@@ -111,9 +111,9 @@ public:
   
   UInt32 GetSubAllocatorSize() const { return SubAllocatorSize; }
 
-  void StopSubAllocator() 
+  void StopSubAllocator()
   {
-    if (SubAllocatorSize != 0) 
+    if (SubAllocatorSize != 0)
     {
       BigFree(Base);
       SubAllocatorSize = 0;
@@ -123,7 +123,7 @@ public:
 
   bool StartSubAllocator(UInt32 size)
   {
-    if (SubAllocatorSize == size)              
+    if (SubAllocatorSize == size)
       return true;
     StopSubAllocator();
     if (size == 0)
@@ -134,7 +134,7 @@ public:
         return false;
       HeapStart = Base + UNIT_SIZE; // we need such code to support NULL;
     }
-    SubAllocatorSize = size;                     
+    SubAllocatorSize = size;
     return true;
   }
 
@@ -150,7 +150,7 @@ public:
     for (k++; i < N1 + N2 + N3   ;i++,k += 3)     Indx2Units[i] = (Byte)k;
     for (k++; i < N1 + N2 + N3 + N4; i++, k += 4) Indx2Units[i] = (Byte)k;
     GlueCount = 0;
-    for (k = i = 0; k < 128; k++) 
+    for (k = i = 0; k < 128; k++)
     {
       i += (Indx2Units[i] < k+1);
         Units2Indx[k] = (Byte)i;
@@ -173,7 +173,7 @@ public:
     ps0->Next = ps0->Prev = s0;
 
     for (i = 0; i < N_INDEXES; i++)
-      while (FreeList[i] != 0) 
+      while (FreeList[i] != 0)
       {
         MEM_BLK *pp = (MEM_BLK *)RemoveNode(i);
         pp->InsertAt(Base, s0);
@@ -192,14 +192,14 @@ public:
         pp->NU = (UInt16)(pp->NU + pp1->NU);
       }
     }
-    while ((p = ps0->Next) != s0) 
+    while ((p = ps0->Next) != s0)
     {
       MEM_BLK *pp = GetBlk(p);
       pp->Remove(Base);
       int sz;
       for (sz = pp->NU; sz > 128; sz -= 128, p += 128 * UNIT_SIZE)
         InsertNode(Base + p, N_INDEXES - 1);
-      if (Indx2Units[i = Units2Indx[sz-1]] != sz) 
+      if (Indx2Units[i = Units2Indx[sz-1]] != sz)
       {
         int k = sz - Indx2Units[--i];
         InsertNode(Base + p + (sz - k) * UNIT_SIZE, k - 1);
@@ -209,7 +209,7 @@ public:
   }
   void* AllocUnitsRare(int indx)
   {
-    if ( !GlueCount ) 
+    if ( !GlueCount )
     {
       GlueCount = 255;
       GlueFreeBlocks();
@@ -217,11 +217,11 @@ public:
         return RemoveNode(indx);
     }
     int i = indx;
-    do 
+    do
     {
-      if (++i == N_INDEXES) 
+      if (++i == N_INDEXES)
       {
-        GlueCount--;                    
+        GlueCount--;
         i = U2B(Indx2Units[indx]);
         return (UnitsStart - pText > i) ? (UnitsStart -= i) : (NULL);
       }
@@ -259,9 +259,9 @@ public:
     if (i0 == i1)
       return oldPtr;
     void* ptr = AllocUnits(oldNU + 1);
-    if (ptr) 
+    if (ptr)
     {
-      memcpy(ptr, oldPtr, U2B(oldNU));      
+      memcpy(ptr, oldPtr, U2B(oldNU));
       InsertNode(oldPtr, i0);
     }
     return ptr;
@@ -272,14 +272,14 @@ public:
     int i0 = Units2Indx[oldNU - 1], i1 = Units2Indx[newNU - 1];
     if (i0 == i1)
       return oldPtr;
-    if (FreeList[i1] != 0) 
+    if (FreeList[i1] != 0)
     {
       void* ptr = RemoveNode(i1);
       memcpy(ptr, oldPtr, U2B(newNU));
-      InsertNode(oldPtr,i0);              
+      InsertNode(oldPtr,i0);
       return ptr;
-    } 
-    else 
+    }
+    else
     {
       SplitBlock(oldPtr, i0, i1);
       return oldPtr;

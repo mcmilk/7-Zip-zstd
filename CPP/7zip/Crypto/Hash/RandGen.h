@@ -13,7 +13,7 @@ class CRandomGenerator
   void Init();
 public:
   CRandomGenerator(): _needInit(true) {};
-  void Generate(Byte *data, unsigned int size);
+  void Generate(Byte *data, unsigned size);
 };
 
 extern CRandomGenerator g_RandomGenerator;

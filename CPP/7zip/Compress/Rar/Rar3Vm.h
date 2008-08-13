@@ -1,5 +1,5 @@
 // Rar3Vm.h
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
 #ifndef __RAR3VM_H
@@ -65,7 +65,7 @@ enum ECommand
   CMD_SHL,  CMD_SHR,  CMD_SAR,  CMD_NEG,  CMD_PUSHA,CMD_POPA, CMD_PUSHF,CMD_POPF,
   CMD_MOVZX,CMD_MOVSX,CMD_XCHG, CMD_MUL,  CMD_DIV,  CMD_ADC,  CMD_SBB,  CMD_PRINT,
 
-  CMD_MOVB, CMD_CMPB, CMD_ADDB, CMD_SUBB, CMD_INCB, CMD_DECB, 
+  CMD_MOVB, CMD_CMPB, CMD_ADDB, CMD_SUBB, CMD_INCB, CMD_DECB,
   CMD_XORB, CMD_ANDB, CMD_ORB,  CMD_TESTB,CMD_NEGB,
   CMD_SHLB, CMD_SHRB, CMD_SARB, CMD_MULB
 };
@@ -168,7 +168,7 @@ public:
   bool Create();
   void PrepareProgram(const Byte *code, UInt32 codeSize, CProgram *prg);
   void SetMemory(UInt32 pos, const Byte *data, UInt32 dataSize);
-  bool Execute(CProgram *prg, const CProgramInitState *initState, 
+  bool Execute(CProgram *prg, const CProgramInitState *initState,
       CBlockRef &outBlockRef, CRecordVector<Byte> &outGlobalData);
   const Byte *GetDataPointer(UInt32 offset) const { return Mem + offset; }
 

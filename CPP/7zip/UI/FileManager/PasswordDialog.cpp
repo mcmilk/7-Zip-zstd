@@ -3,12 +3,12 @@
 #include "StdAfx.h"
 #include "PasswordDialog.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_STATIC_PASSWORD_HEADER, 0x02000B01 },
   { IDC_CHECK_PASSWORD_SHOW, 0x02000B02 },
@@ -17,9 +17,9 @@ static CIDLangPair kIDLangPairs[] =
 #endif
 
 
-bool CPasswordDialog::OnInit() 
+bool CPasswordDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetWindowText(HWND(*this), 0x02000B00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif

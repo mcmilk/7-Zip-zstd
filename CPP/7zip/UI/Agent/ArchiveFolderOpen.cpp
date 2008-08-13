@@ -28,7 +28,7 @@ int CArchiveFolderManager::FindFormat(const UString &type)
   return -1;
 }
 
-STDMETHODIMP CArchiveFolderManager::OpenFolderFile(const wchar_t *filePath, 
+STDMETHODIMP CArchiveFolderManager::OpenFolderFile(const wchar_t *filePath,
     IFolderFolder **resultFolder, IProgress *progress)
 {
   CMyComPtr<IArchiveOpenCallback> openArchiveCallback;
@@ -122,7 +122,7 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
   *types = valueTemp.Detach();
   return S_OK;
 }
-STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t * type, 
+STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t * type,
     const wchar_t * filePath, IProgress progress)
 {
   return E_NOTIMPL;

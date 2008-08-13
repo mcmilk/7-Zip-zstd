@@ -19,7 +19,7 @@ public:
   CCRC():  _value(0){};
   void Init() { _value = 0; }
   void Update(const void *data, size_t size);
-  UInt16 GetDigest() const { return _value; } 
+  UInt16 GetDigest() const { return _value; }
 };
 
 }}

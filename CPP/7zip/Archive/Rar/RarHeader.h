@@ -17,7 +17,7 @@ const int kArchiveSolid = 0x1;
 namespace NBlockType
 {
   enum EBlockType
-  { 
+  {
     kMarker        = 0x72,
     kArchiveHeader = 0x73,
     kFileHeader    = 0x74,
@@ -129,7 +129,7 @@ namespace NFile
     Byte Method;
     UInt16 NameSize;
     UInt32 Attributes;
-    UInt16 GetRealCRC(const void *aName, UInt32 aNameSize, 
+    UInt16 GetRealCRC(const void *aName, UInt32 aNameSize,
         bool anExtraDataDefined = false, Byte *anExtraData = 0) const;
   };
   struct CBlock64
@@ -157,10 +157,10 @@ namespace NFile
   const int kWinFileDirectoryAttributeMask = 0x10;
   
   enum CHostOS
-  { 
-    kHostMSDOS = 0, 
-      kHostOS2   = 1, 
-      kHostWin32 = 2, 
+  {
+    kHostMSDOS = 0,
+      kHostOS2   = 1,
+      kHostWin32 = 2,
       kHostUnix  = 3,
       kHostMacOS = 4,
       kHostBeOS = 5

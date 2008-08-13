@@ -50,7 +50,7 @@ bool GetLongPathBase(LPCWSTR s, UString &res)
 
 bool GetLongPath(LPCWSTR path, UString &longPath)
 {
-  if (GetLongPathBase(path, longPath)) 
+  if (GetLongPathBase(path, longPath))
     return !longPath.IsEmpty();
   return false;
 }
@@ -65,16 +65,16 @@ bool CFileBase::Create(LPCTSTR fileName, DWORD desiredAccess,
 {
   if (!Close())
     return false;
-  _handle = ::CreateFile(fileName, desiredAccess, shareMode, 
-      (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+  _handle = ::CreateFile(fileName, desiredAccess, shareMode,
+      (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
       flagsAndAttributes, (HANDLE)NULL);
   #ifdef WIN_LONG_PATH2
   if (_handle == INVALID_HANDLE_VALUE)
   {
     UString longPath;
     if (GetLongPath(fileName, longPath))
-      _handle = ::CreateFileW(longPath, desiredAccess, shareMode, 
-        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+      _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
+        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
         flagsAndAttributes, (HANDLE)NULL);
   }
   #endif
@@ -86,20 +86,20 @@ bool CFileBase::Create(LPCWSTR fileName, DWORD desiredAccess,
     DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
   if (!g_IsNT)
-    return Create(UnicodeStringToMultiByte(fileName, ::AreFileApisANSI() ? CP_ACP : CP_OEMCP), 
+    return Create(UnicodeStringToMultiByte(fileName, ::AreFileApisANSI() ? CP_ACP : CP_OEMCP),
       desiredAccess, shareMode, creationDisposition, flagsAndAttributes);
   if (!Close())
     return false;
-  _handle = ::CreateFileW(fileName, desiredAccess, shareMode, 
-    (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+  _handle = ::CreateFileW(fileName, desiredAccess, shareMode,
+    (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
     flagsAndAttributes, (HANDLE)NULL);
   #ifdef WIN_LONG_PATH
   if (_handle == INVALID_HANDLE_VALUE)
   {
     UString longPath;
     if (GetLongPath(fileName, longPath))
-      _handle = ::CreateFileW(longPath, desiredAccess, shareMode, 
-        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, 
+      _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
+        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
         flagsAndAttributes, (HANDLE)NULL);
   }
   #endif
@@ -139,7 +139,7 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
   value.QuadPart = distanceToMove;
   value.LowPart = ::SetFilePointer(_handle, value.LowPart, &value.HighPart, moveMethod);
   if (value.LowPart == 0xFFFFFFFF)
-    if(::GetLastError() != NO_ERROR) 
+    if(::GetLastError() != NO_ERROR)
       return false;
   newPosition = value.QuadPart;
   return true;
@@ -164,13 +164,13 @@ bool CFileBase::SeekToEnd(UInt64 &newPosition)
 bool CFileBase::GetFileInformation(CByHandleFileInfo &fileInfo) const
 {
   BY_HANDLE_FILE_INFORMATION winFileInfo;
-  if(!::GetFileInformationByHandle(_handle, &winFileInfo))
+  if (!::GetFileInformationByHandle(_handle, &winFileInfo))
     return false;
   fileInfo.Attributes = winFileInfo.dwFileAttributes;
-  fileInfo.CreationTime = winFileInfo.ftCreationTime;
-  fileInfo.LastAccessTime = winFileInfo.ftLastAccessTime;
-  fileInfo.LastWriteTime = winFileInfo.ftLastWriteTime;
-  fileInfo.VolumeSerialNumber = winFileInfo.dwFileAttributes; 
+  fileInfo.CTime = winFileInfo.ftCreationTime;
+  fileInfo.ATime = winFileInfo.ftLastAccessTime;
+  fileInfo.MTime = winFileInfo.ftLastWriteTime;
+  fileInfo.VolumeSerialNumber = winFileInfo.dwFileAttributes;
   fileInfo.Size = (((UInt64)winFileInfo.nFileSizeHigh) << 32) +  winFileInfo.nFileSizeLow;
   fileInfo.NumberOfLinks = winFileInfo.nNumberOfLinks;
   fileInfo.FileIndex = (((UInt64)winFileInfo.nFileIndexHigh) << 32) + winFileInfo.nFileIndexLow;
@@ -201,12 +201,12 @@ bool CInFile::Open(LPCWSTR fileName)
 #endif
 
 // ReadFile and WriteFile functions in Windows have BUG:
-// If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1) 
-// from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
+// If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1)
+// from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES
 // (Insufficient system resources exist to complete the requested service).
 
-// Probably in some version of Windows there are problems with other sizes: 
-// for 32 MB (maybe also for 16 MB). 
+// Probably in some version of Windows there are problems with other sizes:
+// for 32 MB (maybe also for 16 MB).
 // And message can be "Network connection was lost"
 
 static UInt32 kChunkSizeMax = (1 << 22);
@@ -268,11 +268,10 @@ bool COutFile::Create(LPCWSTR fileName, bool createAlways)
 
 #endif
 
-bool COutFile::SetTime(const FILETIME *creationTime, const FILETIME *lastAccessTime, const FILETIME *lastWriteTime)
-  { return BOOLToBool(::SetFileTime(_handle, creationTime, lastAccessTime, lastWriteTime)); }
+bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+  { return BOOLToBool(::SetFileTime(_handle, cTime, aTime, mTime)); }
 
-bool COutFile::SetLastWriteTime(const FILETIME *lastWriteTime)
-  {  return SetTime(NULL, NULL, lastWriteTime); }
+bool COutFile::SetMTime(const FILETIME *mTime) {  return SetTime(NULL, NULL, mTime); }
 
 bool COutFile::WritePart(const void *data, UInt32 size, UInt32 &processedSize)
 {

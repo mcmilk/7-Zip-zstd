@@ -8,7 +8,7 @@
 #include "Windows/FileName.h"
 
 #include "SplitUtils.h"
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
@@ -16,8 +16,8 @@
 
 using namespace NWindows;
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_STATIC_SPLIT_PATH, 0x03020501 },
   { IDC_STATIC_SPLIT_VOLUME, 0x02000D40 },
@@ -25,9 +25,9 @@ static CIDLangPair kIDLangPairs[] =
 #endif
 
 
-bool CSplitDialog::OnInit() 
+bool CSplitDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetWindowText(HWND(*this), 0x03020500);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
@@ -59,7 +59,7 @@ bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
-void CSplitDialog::OnButtonSetPath() 
+void CSplitDialog::OnButtonSetPath()
 {
   UString currentPath;
   _pathCombo.GetText(currentPath);
@@ -82,7 +82,7 @@ void CSplitDialog::OnOK()
   volumeString.Trim();
   if (!ParseVolumeSizes(volumeString, VolumeSizes) || VolumeSizes.Size() == 0)
   {
-    ::MessageBoxW(*this, LangString(IDS_COMPRESS_INCORRECT_VOLUME_SIZE, 0x02000D41), L"7-Zip", 0); 
+    ::MessageBoxW(*this, LangString(IDS_COMPRESS_INCORRECT_VOLUME_SIZE, 0x02000D41), L"7-Zip", 0);
     return;
   }
   CModalDialog::OnOK();

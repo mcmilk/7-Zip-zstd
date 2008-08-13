@@ -12,7 +12,6 @@ SFX_WIN_OBJS = \
 GUI_OBJS = \
   $O\ExtractDialog.obj \
   $O\ExtractGUI.obj \
-  $O\OpenCallbackGUI.obj \
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -40,6 +39,7 @@ WIN_OBJS = \
 
 WIN_CTRL_OBJS = \
   $O\Dialog.obj \
+  $O\ListView.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \

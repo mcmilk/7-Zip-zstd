@@ -81,7 +81,7 @@ void CBindReverseConverter::CreateReverseBindInfo(CBindInfo &destBindInfo)
     destBindInfo.InStreams.Add(_srcOutToDestInMap[_srcBindInfo.OutStreams[i]]);
 }
 
-CCoderInfo2::CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams): 
+CCoderInfo2::CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams):
     NumInStreams(numInStreams),
     NumOutStreams(numOutStreams)
 {
@@ -91,7 +91,7 @@ CCoderInfo2::CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams):
   OutSizePointers.Reserve(NumOutStreams);
 }
 
-static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes, 
+static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes,
     CRecordVector<const UInt64 *> &sizePointers, UInt32 numItems)
 {
   sizes.Clear();
@@ -118,4 +118,4 @@ void CCoderInfo2::SetCoderInfo(const UInt64 **inSizes,
   SetSizes(outSizes, OutSizes, OutSizePointers, NumOutStreams);
 }
 
-}  
+}

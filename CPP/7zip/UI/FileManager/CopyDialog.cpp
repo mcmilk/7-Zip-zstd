@@ -9,23 +9,23 @@
 #include "Windows/Shell.h"
 #include "Windows/FileName.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
 using namespace NWindows;
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDOK, 0x02000702 },
   { IDCANCEL, 0x02000710 }
 };
 #endif
 
-bool CCopyDialog::OnInit() 
+bool CCopyDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _path.Attach(GetItem(IDC_COPY_COMBO));
@@ -34,9 +34,10 @@ bool CCopyDialog::OnInit()
   NControl::CStatic staticContol;
   staticContol.Attach(GetItem(IDC_COPY_STATIC));
   staticContol.SetText(Static);
-  for(int i = 0; i < Strings.Size(); i++)
+  for (int i = 0; i < Strings.Size(); i++)
     _path.AddString(Strings[i]);
   _path.SetText(Value);
+  SetItemText(IDC_COPY_INFO, Info);
   return CModalDialog::OnInit();
 }
 
@@ -51,13 +52,13 @@ bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
-void CCopyDialog::OnButtonSetPath() 
+void CCopyDialog::OnButtonSetPath()
 {
   UString currentPath;
   _path.GetText(currentPath);
 
   /*
-  #ifdef LANG        
+  #ifdef LANG
   UString title = LangLoadString(IDS_EXTRACT_SET_FOLDER, 0x02000881);
   #else
   UString title = MyLoadString(IDS_EXTRACT_SET_FOLDER);

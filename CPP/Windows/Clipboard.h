@@ -12,7 +12,7 @@ class CClipboard
   bool m_Open;
 public:
   CClipboard(): m_Open(false) {};
-  ~CClipboard(); 
+  ~CClipboard();
   bool Open(HWND wndNewOwner);
   bool Close();
 };

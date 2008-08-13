@@ -947,6 +947,10 @@ SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Time.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Time.h
 # End Source File
 # Begin Source File

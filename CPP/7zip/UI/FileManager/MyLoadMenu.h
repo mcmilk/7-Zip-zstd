@@ -10,7 +10,8 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position);
 void MyLoadMenu(HWND hWnd);
 bool OnMenuCommand(HWND hWnd, int id);
 void MyLoadMenu();
-void LoadFileMenu(HMENU hMenu, int startPos, bool forFileMode, bool programMenu);
+void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
+    bool isFsFolder, int numItems, bool allAreFiles);
 bool ExecuteFileCommand(int id);
 
 #endif

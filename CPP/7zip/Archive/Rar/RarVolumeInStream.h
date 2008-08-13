@@ -16,7 +16,7 @@ struct CRefItem
   int NumItems;
 };
 
-class CFolderInStream: 
+class CFolderInStream:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -37,7 +37,7 @@ private:
   HRESULT OpenStream();
   HRESULT CloseStream();
 public:
-  void Init(CObjectVector<CInArchive> *archives, 
+  void Init(CObjectVector<CInArchive> *archives,
       const CObjectVector<CItemEx> *items,
       const CRefItem &refItem);
 

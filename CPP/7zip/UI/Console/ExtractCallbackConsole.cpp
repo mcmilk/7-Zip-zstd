@@ -24,9 +24,9 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
 
-static const char *kTestingString    =  "Testing     ";
-static const char *kExtractingString =  "Extracting  ";
-static const char *kSkippingString   =  "Skipping    ";
+static const char *kTestString    =  "Testing     ";
+static const char *kExtractString =  "Extracting  ";
+static const char *kSkipString   =  "Skipping    ";
 
 // static const char *kCantAutoRename = "can not create file with auto name\n";
 // static const char *kCantRenameFile = "can not rename existing file\n";
@@ -64,7 +64,7 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
     const wchar_t *newName, const FILETIME *, const UInt64 *,
     Int32 *answer)
 {
-  (*OutStream) << "file " << existName << 
+  (*OutStream) << "file " << existName <<
     "\nalready exists. Overwrite with " << endl;
   (*OutStream) << newName;
   
@@ -72,25 +72,13 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
   
   switch(overwriteAnswer)
   {
-    case NUserAnswerMode::kQuit:
-      return E_ABORT;
-    case NUserAnswerMode::kNo:
-      *answer = NOverwriteAnswer::kNo;
-      break;
-    case NUserAnswerMode::kNoAll:
-      *answer = NOverwriteAnswer::kNoToAll;
-      break;
-    case NUserAnswerMode::kYesAll:
-      *answer = NOverwriteAnswer::kYesToAll;
-      break;
-    case NUserAnswerMode::kYes:
-      *answer = NOverwriteAnswer::kYes;
-      break;
-    case NUserAnswerMode::kAutoRename:
-      *answer = NOverwriteAnswer::kAutoRename;
-      break;
-    default:
-      return E_FAIL;
+    case NUserAnswerMode::kQuit:  return E_ABORT;
+    case NUserAnswerMode::kNo:     *answer = NOverwriteAnswer::kNo; break;
+    case NUserAnswerMode::kNoAll:  *answer = NOverwriteAnswer::kNoToAll; break;
+    case NUserAnswerMode::kYesAll: *answer = NOverwriteAnswer::kYesToAll; break;
+    case NUserAnswerMode::kYes:    *answer = NOverwriteAnswer::kYes; break;
+    case NUserAnswerMode::kAutoRename: *answer = NOverwriteAnswer::kAutoRename; break;
+    default: return E_FAIL;
   }
   return S_OK;
 }
@@ -99,15 +87,9 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, bool
 {
   switch (askExtractMode)
   {
-    case NArchive::NExtract::NAskMode::kExtract:
-      (*OutStream) << kExtractingString;
-      break;
-    case NArchive::NExtract::NAskMode::kTest:
-      (*OutStream) << kTestingString;
-      break;
-    case NArchive::NExtract::NAskMode::kSkip:
-      (*OutStream) << kSkippingString;
-      break;
+    case NArchive::NExtract::NAskMode::kExtract: (*OutStream) << kExtractString; break;
+    case NArchive::NExtract::NAskMode::kTest:    (*OutStream) << kTestString; break;
+    case NArchive::NExtract::NAskMode::kSkip:    (*OutStream) << kSkipString; break;
   };
   (*OutStream) << name;
   if (position != 0)
@@ -154,17 +136,28 @@ STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult, 
   return S_OK;
 }
 
+#ifndef _NO_CRYPTO
+
+HRESULT CExtractCallbackConsole::SetPassword(const UString &password)
+{
+  PasswordIsDefined = true;
+  Password = password;
+  return S_OK;
+}
+
 STDMETHODIMP CExtractCallbackConsole::CryptoGetTextPassword(BSTR *password)
 {
   if (!PasswordIsDefined)
   {
-    Password = GetPassword(OutStream); 
+    Password = GetPassword(OutStream);
     PasswordIsDefined = true;
   }
   CMyComBSTR tempName(Password);
   *password = tempName.Detach();
   return S_OK;
 }
+
+#endif
 
 HRESULT CExtractCallbackConsole::BeforeOpen(const wchar_t *name)
 {
@@ -180,10 +173,19 @@ HRESULT CExtractCallbackConsole::OpenResult(const wchar_t * /* name */, HRESULT 
   if (result != S_OK)
   {
     (*OutStream) << "Error: ";
-    if (encrypted)
-      (*OutStream) << "Can not open encrypted archive. Wrong password?";
+    if (result == S_FALSE)
+    {
+      (*OutStream) << (encrypted ?
+        "Can not open encrypted archive. Wrong password?" :
+        "Can not open file as archive");
+    }
     else
-      (*OutStream) << "Can not open file as archive";
+    {
+      if (result == E_OUTOFMEMORY)
+        (*OutStream) << "Can't allocate required memory";
+      else
+        (*OutStream) << NError::MyFormatMessage(result);
+    }
     (*OutStream) << endl;
     NumArchiveErrors++;
   }
@@ -203,7 +205,7 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
     (*OutStream) << endl;
     if (NumFileErrorsInCurrentArchive == 0)
       (*OutStream) << kEverythingIsOk << endl;
-    else 
+    else
     {
       NumArchiveErrors++;
       (*OutStream) << "Sub items Errors: " << NumFileErrorsInCurrentArchive << endl;
@@ -224,12 +226,5 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
     (*OutStream) << message;
   }
   (*OutStream) << endl;
-  return S_OK;
-}
-
-HRESULT CExtractCallbackConsole::SetPassword(const UString &password)
-{
-  PasswordIsDefined = true;
-  Password = password;
   return S_OK;
 }

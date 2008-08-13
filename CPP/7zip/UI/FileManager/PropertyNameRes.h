@@ -5,9 +5,9 @@
 #define IDS_PROPERTY_SIZE                7
 #define IDS_PROPERTY_PACKED_SIZE         8
 #define IDS_PROPERTY_ATTRIBUTES          9
-#define IDS_PROPERTY_CREATION_TIME      10
-#define IDS_PROPERTY_LAST_ACCESS_TIME   11
-#define IDS_PROPERTY_LAST_WRITE_TIME    12
+#define IDS_PROPERTY_CTIME              10
+#define IDS_PROPERTY_ATIME              11
+#define IDS_PROPERTY_MTIME              12
 #define IDS_PROPERTY_SOLID              13
 #define IDS_PROPERTY_C0MMENTED          14
 #define IDS_PROPERTY_ENCRYPTED          15
@@ -35,3 +35,12 @@
 #define IDS_PROPERTY_LINKS              37
 #define IDS_PROPERTY_NUM_BLOCKS         38
 #define IDS_PROPERTY_NUM_VOLUMES        39
+
+#define IDS_PROPERTY_BIT64              41
+#define IDS_PROPERTY_BIG_ENDIAN         42
+#define IDS_PROPERTY_CPU                43
+#define IDS_PROPERTY_PHY_SIZE           44
+#define IDS_PROPERTY_HEADERS_SIZE       45
+#define IDS_PROPERTY_CHECKSUM           46
+#define IDS_PROPERTY_CHARACTS           47
+#define IDS_PROPERTY_VA                 48

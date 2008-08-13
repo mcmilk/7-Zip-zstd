@@ -14,9 +14,9 @@ Byte kFinishSignature[kSignatureSize] = {'7' + 1, 'z', 0xBC, 0xAF, 0x27, 0x1C + 
 class SignatureInitializer
 {
 public:
-  SignatureInitializer() 
-  { 
-    kSignature[0]--; 
+  SignatureInitializer()
+  {
+    kSignature[0]--;
     #ifdef _7Z_VOL
     kFinishSignature[0]--;
     #endif

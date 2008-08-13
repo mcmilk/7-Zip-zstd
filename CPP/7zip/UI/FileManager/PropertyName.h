@@ -5,6 +5,6 @@
 
 #include "Common/MyString.h"
 
-UString GetNameOfProperty(PROPID propID);
+UString GetNameOfProperty(PROPID propID, const wchar_t *name);
 
 #endif

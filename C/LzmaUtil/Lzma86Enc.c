@@ -1,5 +1,5 @@
 /* Lzma86Enc.c -- LZMA + x86 (BCJ) Filter Encoder
-2008-04-07
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -20,7 +20,7 @@ static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 #define LZMA86_SIZE_OFFSET (1 + LZMA_PROPS_SIZE)
 #define LZMA86_HEADER_SIZE (LZMA86_SIZE_OFFSET + 8)
 
-int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen, 
+int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
     int level, UInt32 dictSize, int filterMode)
 {
   size_t outSize2 = *destLen;
@@ -32,7 +32,7 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
   props.level = level;
   props.dictSize = dictSize;
   
-  *destLen = 0; 
+  *destLen = 0;
   if (outSize2 < LZMA86_HEADER_SIZE)
     return SZ_ERROR_OUTPUT_EOF;
 
@@ -66,8 +66,8 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
     Bool bestIsFiltered = False;
 
     /* passes for SZ_FILTER_AUTO:
-        0 - BCJ + LZMA 
-        1 - LZMA 
+        0 - BCJ + LZMA
+        1 - LZMA
         2 - BCJ + LZMA agaian, if pass 0 (BCJ + LZMA) is better.
     */
     int numPasses = (filterMode == SZ_FILTER_AUTO) ? 3 : 1;
@@ -84,9 +84,9 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
       if (useFilter && i == 0)
         curModeIsFiltered = True;
       
-      curRes = LzmaEncode(dest + LZMA86_HEADER_SIZE, &outSizeProcessed, 
+      curRes = LzmaEncode(dest + LZMA86_HEADER_SIZE, &outSizeProcessed,
           curModeIsFiltered ? filteredStream : src, srcLen,
-          &props, dest + 1, &outPropsSize, 0, 
+          &props, dest + 1, &outPropsSize, 0,
           NULL, &g_Alloc, &g_Alloc);
       
       if (curRes != SZ_ERROR_OUTPUT_EOF)
@@ -95,7 +95,7 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
         {
           mainResult = curRes;
           break;
-        } 
+        }
         if (outSizeProcessed <= minSize || mainResult != SZ_OK)
         {
           minSize = outSizeProcessed;

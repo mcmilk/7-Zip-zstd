@@ -10,19 +10,19 @@
 namespace NArchive {
 namespace NCom {
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   // { NULL, kpidAttributes, VT_UI4},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidCreationTime, VT_FILETIME},
-  { NULL, kpidLastWriteTime, VT_FILETIME}
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidMTime, VT_FILETIME}
 };
 
 
-STATPROPSTG kArcProps[] = 
+STATPROPSTG kArcProps[] =
 {
   { NULL, kpidClusterSize, VT_UI4}
 };
@@ -58,25 +58,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       prop = name;
       break;
     }
-    case kpidIsFolder:
-      prop = item.IsDir();
-      break;
-    case kpidCreationTime:
-      prop = item.CreationTime;
-      break;
-    case kpidLastWriteTime:
-      prop = item.LastWriteTime;
-      break;
+    case kpidIsDir:  prop = item.IsDir(); break;
+    case kpidCTime:  prop = item.CTime; break;
+    case kpidMTime:  prop = item.MTime; break;
     /*
     case kpidAttributes:
       prop = item.Falgs;
       break;
     */
-    case kpidPackedSize:
+    case kpidPackSize:
       if (!item.IsDir())
       {
-        int numBits = _db.IsLargeStream(item.Size) ? 
-            _db.SectorSizeBits : 
+        int numBits = _db.IsLargeStream(item.Size) ?
+            _db.SectorSizeBits :
             _db.MiniSectorSizeBits;
         prop = (item.Size + ((UInt64)1 << numBits) - 1) >> numBits << numBits;
         break;
@@ -91,7 +85,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {
@@ -150,7 +144,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       currentItemSize = item.Size;
 
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ? 
+    Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -204,7 +198,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           if (fid >= _db.NumSectorsInMiniStream)
             break;
           size = 1 << _db.MiniSectorSizeBits;
-          offset = (((UInt64)_db.MiniSids[fid] + 1) << _db.SectorSizeBits) + 
+          offset = (((UInt64)_db.MiniSids[fid] + 1) << _db.SectorSizeBits) +
             ((sid & ((1 << subBits) - 1)) << _db.MiniSectorSizeBits);
           if (sid >= _db.MatSize)
             break;

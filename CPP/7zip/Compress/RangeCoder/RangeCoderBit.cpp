@@ -9,7 +9,7 @@ namespace NRangeCoder {
 
 UInt32 ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
 
-struct CPriceTables { CPriceTables()   
+struct CPriceTables { CPriceTables()
 {
   for (UInt32 i = (1 << kNumMoveReducingBits) / 2; i < kBitModelTotal; i += (1 << kNumMoveReducingBits))
   {

@@ -1,5 +1,5 @@
 /* 7zItem.c -- 7z Items
-2008-04-09
+2008-08-05
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zItem.h for license options */
@@ -22,13 +22,13 @@ void SzFolder_Init(CSzFolder *p)
   p->Coders = 0;
   p->BindPairs = 0;
   p->PackStreams = 0;
-  p->UnPackSizes = 0;
+  p->UnpackSizes = 0;
   p->NumCoders = 0;
   p->NumBindPairs = 0;
   p->NumPackStreams = 0;
-  p->UnPackCRCDefined = 0;
-  p->UnPackCRC = 0;
-  p->NumUnPackStreams = 0;
+  p->UnpackCRCDefined = 0;
+  p->UnpackCRC = 0;
+  p->NumUnpackStreams = 0;
 }
 
 void SzFolder_Free(CSzFolder *p, ISzAlloc *alloc)
@@ -40,7 +40,7 @@ void SzFolder_Free(CSzFolder *p, ISzAlloc *alloc)
   IAlloc_Free(alloc, p->Coders);
   IAlloc_Free(alloc, p->BindPairs);
   IAlloc_Free(alloc, p->PackStreams);
-  IAlloc_Free(alloc, p->UnPackSizes);
+  IAlloc_Free(alloc, p->UnpackSizes);
   SzFolder_Init(p);
 }
 
@@ -72,25 +72,25 @@ int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
   return -1;
 }
 
-CFileSize SzFolder_GetUnPackSize(CSzFolder *p)
-{ 
+CFileSize SzFolder_GetUnpackSize(CSzFolder *p)
+{
   int i = (int)SzFolder_GetNumOutStreams(p);
   if (i == 0)
     return 0;
   for (i--; i >= 0; i--)
     if (SzFolder_FindBindPairForOutStream(p, i) < 0)
-      return p->UnPackSizes[i];
+      return p->UnpackSizes[i];
   /* throw 1; */
   return 0;
 }
 
 void SzFile_Init(CSzFileItem *p)
 {
-  p->IsFileCRCDefined = 0;
   p->HasStream = 1;
-  p->IsDirectory = 0;
+  p->IsDir = 0;
   p->IsAnti = 0;
-  p->IsLastWriteTimeDefined = 0;
+  p->FileCRCDefined = 0;
+  p->MTimeDefined = 0;
   p->Name = 0;
 }
 

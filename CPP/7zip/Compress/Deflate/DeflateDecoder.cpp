@@ -11,10 +11,11 @@ namespace NDecoder {
 static const int kLenIdFinished = -1;
 static const int kLenIdNeedInit = -2;
 
-CCoder::CCoder(bool deflate64Mode, bool deflateNSIS):  
-    _deflate64Mode(deflate64Mode), 
-    _deflateNSIS(deflateNSIS), 
-    _keepHistory(false) {}
+CCoder::CCoder(bool deflate64Mode, bool deflateNSIS):
+    _deflate64Mode(deflate64Mode),
+    _deflateNSIS(deflateNSIS),
+    _keepHistory(false),
+    ZlibMode(false) {}
 
 UInt32 CCoder::ReadBits(int numBits)
 {
@@ -99,7 +100,7 @@ bool CCoder::ReadTables(void)
     Byte levelLevels[kLevelTableSize];
     for (int i = 0; i < kLevelTableSize; i++)
     {
-      int position = kCodeLengthAlphabetOrder[i]; 
+      int position = kCodeLengthAlphabetOrder[i];
       if(i < numLevelCodes)
         levelLevels[position] = (Byte)ReadBits(kLevelFieldSize);
       else
@@ -231,7 +232,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize)
 }
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, 
+    ISequentialOutStream *outStream,
     const UInt64 *, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
@@ -261,7 +262,15 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
       const UInt64 nowPos64 = m_OutWindowStream.GetProcessedSize() - start;
       RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
-  } 
+  }
+  if (_remainLen == kLenIdFinished && ZlibMode)
+  {
+    UInt32 currentBitPosition = m_InBitStream.GetBitPosition();
+    int numBitsForAlign = (int)(currentBitPosition > 0 ? (8 - currentBitPosition): 0);
+    ReadBits(numBitsForAlign);
+    for (int i = 0; i < 4; i++)
+      ZlibFooter[i] = (Byte)m_InBitStream.ReadBits(8);
+  }
   flusher.NeedFlush = false;
   return Flush();
 }
@@ -274,7 +283,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
 
 #else
 
-#define DEFLATE_TRY_BEGIN try { 
+#define DEFLATE_TRY_BEGIN try {
 #define DEFLATE_TRY_END } \
   catch(const CInBufferException &e)  { return e.ErrorCode; } \
   catch(const CLZOutWindowException &e)  { return e.ErrorCode; } \

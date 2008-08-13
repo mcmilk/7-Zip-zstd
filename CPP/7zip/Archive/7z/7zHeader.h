@@ -13,7 +13,7 @@ extern Byte kSignature[kSignatureSize];
 
 // #define _7Z_VOL
 // 7z-MultiVolume is not finished yet.
-// It can work already, but I still do not like some 
+// It can work already, but I still do not like some
 // things of that new multivolume format.
 // So please keep it commented.
 
@@ -63,7 +63,7 @@ namespace NID
     kFilesInfo,
     
     kPackInfo,
-    kUnPackInfo,
+    kUnpackInfo,
     kSubStreamsInfo,
 
     kSize,
@@ -71,23 +71,24 @@ namespace NID
 
     kFolder,
 
-    kCodersUnPackSize,
-    kNumUnPackStream,
+    kCodersUnpackSize,
+    kNumUnpackStream,
 
     kEmptyStream,
     kEmptyFile,
     kAnti,
 
     kName,
-    kCreationTime,
-    kLastAccessTime,
-    kLastWriteTime,
+    kCTime,
+    kATime,
+    kMTime,
     kWinAttributes,
     kComment,
 
     kEncodedHeader,
 
-    kStartPos
+    kStartPos,
+    kDummy
   };
 }
 

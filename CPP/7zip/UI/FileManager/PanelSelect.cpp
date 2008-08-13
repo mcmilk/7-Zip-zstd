@@ -97,7 +97,7 @@ void CPanel::OnInsert()
   int nextIndex = focusedItem + 1;
   if (nextIndex < _listView.GetItemCount())
   {
-    _listView.SetItemState(nextIndex, LVIS_FOCUSED | LVIS_SELECTED, 
+    _listView.SetItemState(nextIndex, LVIS_FOCUSED | LVIS_SELECTED,
         LVIS_FOCUSED | LVIS_SELECTED);
     _listView.EnsureVisible(nextIndex, false);
   }
@@ -151,7 +151,7 @@ void CPanel::UpdateSelection()
 void CPanel::SelectSpec(bool selectMode)
 {
   CComboDialog comboDialog;
-  comboDialog.Title = selectMode ? 
+  comboDialog.Title = selectMode ?
       LangString(IDS_SELECT, 0x03020250):
       LangString(IDS_DESELECT, 0x03020251);
   comboDialog.Static = LangString(IDS_SELECT_MASK, 0x03020252);
@@ -279,7 +279,7 @@ void CPanel::OnLeftClick(LPNMITEMACTIVATE itemActivate)
       }
     }
   }
-  else 
+  else
   {
     _startGroupSelect = indexInList;
     if ((itemActivate->uKeyFlags & LVKF_CONTROL) != 0)

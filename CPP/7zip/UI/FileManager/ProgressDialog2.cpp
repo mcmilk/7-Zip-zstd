@@ -10,12 +10,12 @@ using namespace NWindows;
 static const UINT_PTR kTimerID = 3;
 static const UINT kTimerElapse = 100;
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDCANCEL, 0x02000C00 },
   { IDC_PROGRESS_ELAPSED, 0x02000C01 },
@@ -33,16 +33,22 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
-HRESULT CProgressSynch::SetPosAndCheckPaused(UInt64 completed)
+HRESULT CProgressSynch::ProcessStopAndPause()
 {
   for (;;)
   {
-    if(GetStopped())
+    if (GetStopped())
       return E_ABORT;
-    if(!GetPaused())
+    if (!GetPaused())
       break;
     ::Sleep(100);
   }
+  return S_OK;
+}
+
+HRESULT CProgressSynch::SetPosAndCheckPaused(UInt64 completed)
+{
+  RINOK(ProcessStopAndPause());
   SetPos(completed);
   return S_OK;
 }
@@ -62,7 +68,7 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
 }
 
 static const int kTitleFileNameSizeLimit = 36;
-static const int kCurrentFileNameSizeLimit = 68;
+static const int kCurrentFileNameSizeLimit = 70;
 
 static void ReduceString(UString &s, int size)
 {
@@ -71,7 +77,7 @@ static void ReduceString(UString &s, int size)
 }
 #endif
 
-bool CProgressDialog::OnInit() 
+bool CProgressDialog::OnInit()
 {
   _range = (UInt64)(Int64)(-1);
   _prevPercentValue = UInt32(-1);
@@ -83,7 +89,7 @@ bool CProgressDialog::OnInit()
   _elapsedTime = 0;
   _foreground = true;
 
-  #ifdef LANG        
+  #ifdef LANG
   // LangSetWindowText(HWND(*this), 0x02000C00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
@@ -110,7 +116,7 @@ bool CProgressDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-void CProgressDialog::OnCancel() 
+void CProgressDialog::OnCancel()
 {
   ProgressSynch.SetStopped(true);
 }
@@ -161,9 +167,9 @@ void CProgressDialog::SetPos(UInt64 pos)
 
 static void GetTimeString(UInt64 timeValue, TCHAR *s)
 {
-  wsprintf(s, TEXT("%02d:%02d:%02d"), 
+  wsprintf(s, TEXT("%02d:%02d:%02d"),
       UInt32(timeValue / 3600),
-      UInt32((timeValue / 60) % 60), 
+      UInt32((timeValue / 60) % 60),
       UInt32(timeValue % 60));
 }
 
@@ -235,7 +241,8 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
     }
     // if (elapsedChanged)
     {
-      UInt64 speedB = (completed * 1000) / _elapsedTime;
+      UInt32 elapsedTime = (_elapsedTime == 0) ? 1 : _elapsedTime;
+      UInt64 speedB = (completed * 1000) / elapsedTime;
       UInt64 speedKB = speedB / 1024;
       UInt64 speedMB = speedKB / 1024;
       const UInt32 kLimit1 = 10;
@@ -263,7 +270,7 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
           needRedraw = true;
         }
       }
-      else 
+      else
       {
         if (_prevMode != kSpeedBytes || speedB != _prevSpeed)
         {
@@ -284,7 +291,7 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
     UInt32 percentValue = (UInt32)(completed * 100 / total);
     UString titleName;
     ProgressSynch.GetTitleFileName(titleName);
-    if (percentValue != _prevPercentValue || _prevTitleName != titleName) 
+    if (percentValue != _prevPercentValue || _prevTitleName != titleName)
     {
       _prevPercentValue = percentValue;
       SetTitleText();
@@ -329,8 +336,19 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   ProgressSynch.GetCurrentFileName(fileName);
   if (_prevFileName != fileName)
   {
-    ReduceString(fileName, kCurrentFileNameSizeLimit);
-    SetItemText(IDC_PROGRESS_FILE_NAME, fileName);
+    int slashPos = fileName.ReverseFind(L'\\');
+    UString s1, s2;
+    if (slashPos >= 0)
+    {
+      s1 = fileName.Left(slashPos + 1);
+      s2 = fileName.Mid(slashPos + 1);
+    }
+    else
+      s2 = fileName;
+    ReduceString(s1, kCurrentFileNameSizeLimit);
+    ReduceString(s2, kCurrentFileNameSizeLimit);
+    UString s = s1 + L"\n" + s2;
+    SetItemText(IDC_PROGRESS_FILE_NAME, s);
     _prevFileName == fileName;
   }
 
@@ -418,7 +436,7 @@ void CProgressDialog::SetTitleText()
 
 void CProgressDialog::SetPauseText()
 {
-  SetItemText(IDC_BUTTON_PAUSE, ProgressSynch.GetPaused() ? 
+  SetItemText(IDC_BUTTON_PAUSE, ProgressSynch.GetPaused() ?
     continueString : pauseString);
   SetTitleText();
 }
@@ -436,8 +454,8 @@ void CProgressDialog::OnPauseButton()
 
 void CProgressDialog::SetPriorityText()
 {
-  SetItemText(IDC_BUTTON_PROGRESS_PRIORITY, _foreground ? 
-      backgroundString : 
+  SetItemText(IDC_BUTTON_PROGRESS_PRIORITY, _foreground ?
+      backgroundString :
       foregroundString);
   SetTitleText();
 }
@@ -450,8 +468,8 @@ void CProgressDialog::OnPriorityButton()
   SetPriorityText();
 }
 
-bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND) 
-{ 
+bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+{
   switch(buttonID)
   {
     case IDCANCEL:
@@ -460,8 +478,8 @@ bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       // ProgressSynch.SetPaused(true);
       if (!paused)
         OnPauseButton();
-      int res = ::MessageBoxW(HWND(*this), 
-          LangString(IDS_PROGRESS_ASK_CANCEL, 0x02000C30), 
+      int res = ::MessageBoxW(HWND(*this),
+          LangString(IDS_PROGRESS_ASK_CANCEL, 0x02000C30),
           _title, MB_YESNOCANCEL);
       // ProgressSynch.SetPaused(paused);
       if (!paused)

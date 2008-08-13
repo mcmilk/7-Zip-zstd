@@ -32,10 +32,10 @@ void CArchiveExtractCallback::Init(
     IInArchive *archiveHandler,
     IFolderArchiveExtractCallback *extractCallback2,
     bool stdOutMode,
-    const UString &directoryPath, 
+    const UString &directoryPath,
     const UStringVector &removePathParts,
     const UString &itemDefaultName,
-    const FILETIME &utcLastWriteTimeDefault,
+    const FILETIME &utcMTimeDefault,
     UInt32 attributesDefault,
     UInt64 packSize)
 {
@@ -52,7 +52,7 @@ void CArchiveExtractCallback::Init(
   LocalProgressSpec->SendProgress = false;
 
   _itemDefaultName = itemDefaultName;
-  _utcLastWriteTimeDefault = utcLastWriteTimeDefault;
+  _utcMTimeDefault = utcMTimeDefault;
   _attributesDefault = attributesDefault;
   _removePathParts = removePathParts;
   _archiveHandler = archiveHandler;
@@ -167,7 +167,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
   UString fullPath;
 
   RINOK(GetArchiveItemPath(_archiveHandler, index, _itemDefaultName, fullPath));
-  RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.IsDirectory));
+  RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.IsDir));
 
   _filePath = fullPath;
 
@@ -209,7 +209,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
 
     {
       NCOM::CPropVariant prop;
-      RINOK(_archiveHandler->GetProperty(index, kpidAttributes, &prop));
+      RINOK(_archiveHandler->GetProperty(index, kpidAttrib, &prop));
       if (prop.vt == VT_EMPTY)
       {
         _processedFileInfo.Attributes = _attributesDefault;
@@ -224,17 +224,14 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       }
     }
 
-    RINOK(GetTime(index, kpidCreationTime, _processedFileInfo.CreationTime,
-        _processedFileInfo.IsCreationTimeDefined));
-    RINOK(GetTime(index, kpidLastWriteTime, _processedFileInfo.LastWriteTime, 
-        _processedFileInfo.IsLastWriteTimeDefined));
-    RINOK(GetTime(index, kpidLastAccessTime, _processedFileInfo.LastAccessTime,
-        _processedFileInfo.IsLastAccessTimeDefined));
+    RINOK(GetTime(index, kpidCTime, _processedFileInfo.CTime, _processedFileInfo.CTimeDefined));
+    RINOK(GetTime(index, kpidATime, _processedFileInfo.ATime, _processedFileInfo.ATimeDefined));
+    RINOK(GetTime(index, kpidMTime, _processedFileInfo.MTime, _processedFileInfo.MTimeDefined));
 
     bool isAnti = false;
     RINOK(IsArchiveItemProp(_archiveHandler, index, kpidIsAnti, isAnti));
 
-    UStringVector pathParts; 
+    UStringVector pathParts;
     SplitPathToParts(fullPath, pathParts);
     
     if(pathParts.IsEmpty())
@@ -265,7 +262,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     UString processedPath = MakePathNameFromParts(pathParts);
     if (!isAnti)
     {
-      if (!_processedFileInfo.IsDirectory)
+      if (!_processedFileInfo.IsDir)
       {
         if (!pathParts.IsEmpty())
           pathParts.DeleteBack();
@@ -275,18 +272,18 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       {
         UString fullPathNew;
         CreateComplexDirectory(pathParts, fullPathNew);
-        if (_processedFileInfo.IsDirectory)
-          NFile::NDirectory::SetDirTime(fullPathNew, 
-            (WriteCreated && _processedFileInfo.IsCreationTimeDefined) ? &_processedFileInfo.CreationTime : NULL, 
-            (WriteAccessed && _processedFileInfo.IsLastAccessTimeDefined) ? &_processedFileInfo.LastAccessTime : NULL, 
-            (WriteModified && _processedFileInfo.IsLastWriteTimeDefined) ? &_processedFileInfo.LastWriteTime : &_utcLastWriteTimeDefault);
+        if (_processedFileInfo.IsDir)
+          NFile::NDirectory::SetDirTime(fullPathNew,
+            (WriteCTime && _processedFileInfo.CTimeDefined) ? &_processedFileInfo.CTime : NULL,
+            (WriteATime && _processedFileInfo.ATimeDefined) ? &_processedFileInfo.ATime : NULL,
+            (WriteMTime && _processedFileInfo.MTimeDefined) ? &_processedFileInfo.MTime : &_utcMTimeDefault);
       }
     }
 
 
     UString fullProcessedPath = _directoryPath + processedPath;
 
-    if(_processedFileInfo.IsDirectory)
+    if(_processedFileInfo.IsDir)
     {
       _diskFilePath = fullProcessedPath;
       if (isAnti)
@@ -307,9 +304,9 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
         {
           Int32 overwiteResult;
           RINOK(_extractCallback2->AskOverwrite(
-              fullProcessedPath, &fileInfo.LastWriteTime, &fileInfo.Size, fullPath, 
-              _processedFileInfo.IsLastWriteTimeDefined ? &_processedFileInfo.LastWriteTime : NULL, 
-              newFileSizeDefined ? &newFileSize : NULL, 
+              fullProcessedPath, &fileInfo.MTime, &fileInfo.Size, fullPath,
+              _processedFileInfo.MTimeDefined ? &_processedFileInfo.MTime : NULL,
+              newFileSizeDefined ? &newFileSize : NULL,
               &overwiteResult))
 
           switch(overwiteResult)
@@ -408,7 +405,7 @@ STDMETHODIMP CArchiveExtractCallback::PrepareOperation(Int32 askExtractMode)
     case NArchive::NExtract::NAskMode::kExtract:
       _extractMode = true;
   };
-  return _extractCallback2->PrepareOperation(_filePath, _processedFileInfo.IsDirectory, 
+  return _extractCallback2->PrepareOperation(_filePath, _processedFileInfo.IsDir,
       askExtractMode, _isSplit ? &_position: 0);
   COM_TRY_END
 }
@@ -430,15 +427,15 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
   if (_outFileStream != NULL)
   {
     _outFileStreamSpec->SetTime(
-        (WriteCreated && _processedFileInfo.IsCreationTimeDefined) ? &_processedFileInfo.CreationTime : NULL, 
-        (WriteAccessed && _processedFileInfo.IsLastAccessTimeDefined) ? &_processedFileInfo.LastAccessTime : NULL, 
-        (WriteModified && _processedFileInfo.IsLastWriteTimeDefined) ? &_processedFileInfo.LastWriteTime : &_utcLastWriteTimeDefault);
+        (WriteCTime && _processedFileInfo.CTimeDefined) ? &_processedFileInfo.CTime : NULL,
+        (WriteATime && _processedFileInfo.ATimeDefined) ? &_processedFileInfo.ATime : NULL,
+        (WriteMTime && _processedFileInfo.MTimeDefined) ? &_processedFileInfo.MTime : &_utcMTimeDefault);
     _curSize = _outFileStreamSpec->ProcessedSize;
     RINOK(_outFileStreamSpec->Close());
     _outFileStream.Release();
   }
   UnpackSize += _curSize;
-  if (_processedFileInfo.IsDirectory)
+  if (_processedFileInfo.IsDir)
     NumFolders++;
   else
     NumFiles++;
@@ -470,7 +467,7 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
   COM_TRY_BEGIN
   if (!_cryptoGetTextPassword)
   {
-    RINOK(_extractCallback2.QueryInterface(IID_ICryptoGetTextPassword, 
+    RINOK(_extractCallback2.QueryInterface(IID_ICryptoGetTextPassword,
         &_cryptoGetTextPassword));
   }
   return _cryptoGetTextPassword->CryptoGetTextPassword(password);

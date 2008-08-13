@@ -57,7 +57,7 @@ bool MyGetVolumeInformation(
     return result;
   }
   AString volumeNameA, fileSystemNameA;
-  bool result = MyGetVolumeInformation(GetSystemString(rootPathName), volumeNameA, 
+  bool result = MyGetVolumeInformation(GetSystemString(rootPathName), volumeNameA,
       volumeSerialNumber, maximumComponentLength, fileSystemFlags,fileSystemNameA);
   if (result)
   {
@@ -78,7 +78,7 @@ typedef BOOL (WINAPI * GetDiskFreeSpaceExPointer)(
 bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
     UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
 {
-  GetDiskFreeSpaceExPointer pGetDiskFreeSpaceEx = 
+  GetDiskFreeSpaceExPointer pGetDiskFreeSpaceEx =
       (GetDiskFreeSpaceExPointer)GetProcAddress(
       GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
 

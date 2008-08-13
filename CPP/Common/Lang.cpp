@@ -105,7 +105,7 @@ bool CLang::Open(LPCWSTR fileName)
 
 int CLang::FindItem(UInt32 value) const
 {
-  int left = 0, right = _langPairs.Size(); 
+  int left = 0, right = _langPairs.Size();
   while (left != right)
   {
     UInt32 mid = (left + right) / 2;

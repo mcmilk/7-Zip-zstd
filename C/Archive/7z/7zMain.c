@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2008-04-09
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -32,7 +32,7 @@ void ConvertNumberToString(CFileSize value, char *s)
 {
   char temp[32];
   int pos = 0;
-  do 
+  do
   {
     temp[pos++] = (char)('0' + (int)(value % 10));
     value /= 10;
@@ -54,7 +54,7 @@ void ConvertFileTimeToString(CNtfsFileTime *ft, char *s)
   UInt64 v64 = ft->Low | ((UInt64)ft->High << 32);
   Byte ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
   unsigned temp;
-  UInt32 v; 
+  UInt32 v;
   v64 /= 10000000;
   sec = (unsigned)(v64 % 60);
   v64 /= 60;
@@ -103,15 +103,15 @@ void ConvertFileTimeToString(CNtfsFileTime *ft, char *s)
 #ifdef USE_WINDOWS_FUNCTIONS
 /*
    ReadFile and WriteFile functions in Windows have BUG:
-   If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1) 
-   from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES 
+   If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1)
+   from/to Network file, it returns ERROR_NO_SYSTEM_RESOURCES
    (Insufficient system resources exist to complete the requested service).
 */
 #define kChunkSizeMax (1 << 24)
 #endif
 
 size_t MyReadFile(MY_FILE_HANDLE file, void *data, size_t size)
-{ 
+{
   if (size == 0)
     return 0;
   #ifdef USE_WINDOWS_FUNCTIONS
@@ -132,12 +132,12 @@ size_t MyReadFile(MY_FILE_HANDLE file, void *data, size_t size)
     return processedSize;
   }
   #else
-  return fread(data, 1, size, file); 
+  return fread(data, 1, size, file);
   #endif
 }
 
 size_t MyWriteFile(MY_FILE_HANDLE file, void *data, size_t size)
-{ 
+{
   if (size == 0)
     return 0;
   #ifdef USE_WINDOWS_FUNCTIONS
@@ -158,16 +158,16 @@ size_t MyWriteFile(MY_FILE_HANDLE file, void *data, size_t size)
     return processedSize;
   }
   #else
-  return fwrite(data, 1, size, file); 
+  return fwrite(data, 1, size, file);
   #endif
 }
 
 int MyCloseFile(MY_FILE_HANDLE file)
-{ 
+{
   #ifdef USE_WINDOWS_FUNCTIONS
   return (CloseHandle(file) != FALSE) ? 0 : 1;
   #else
-  return fclose(file); 
+  return fclose(file);
   #endif
 }
 
@@ -205,7 +205,7 @@ SRes SzFileSeekImp(void *object, CFileSize pos, ESzSeek origin)
     /* VC 6.0 has bug with >> 32 shifts. */
     value.HighPart = 0;
     #endif
-    switch (origin) 
+    switch (origin)
     {
       case SZ_SEEK_SET: moveMethod = FILE_BEGIN; break;
       case SZ_SEEK_CUR: moveMethod = FILE_CURRENT; break;
@@ -214,14 +214,14 @@ SRes SzFileSeekImp(void *object, CFileSize pos, ESzSeek origin)
     }
     value.LowPart = SetFilePointer(s->File, value.LowPart, &value.HighPart, moveMethod);
     if (value.LowPart == 0xFFFFFFFF)
-      if (GetLastError() != NO_ERROR) 
+      if (GetLastError() != NO_ERROR)
         return SZ_ERROR_FAIL;
     return SZ_OK;
   }
   #else
   int moveMethod;
   int res;
-  switch (origin) 
+  switch (origin)
   {
     case SZ_SEEK_SET: moveMethod = SEEK_SET; break;
     case SZ_SEEK_CUR: moveMethod = SEEK_CUR; break;
@@ -246,7 +246,7 @@ int MY_CDECL main(int numargs, char *args[])
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
 
-  printf("\n7z ANSI-C Decoder 4.58  Copyright (c) 1999-2008 Igor Pavlov  2008-04-09\n");
+  printf("\n7z ANSI-C Decoder 4.59  Copyright (c) 1999-2008 Igor Pavlov  2008-07-09\n");
   if (numargs == 1)
   {
     printf(
@@ -263,9 +263,9 @@ int MY_CDECL main(int numargs, char *args[])
     return 1;
   }
 
-  archiveStream.File = 
+  archiveStream.File =
   #ifdef USE_WINDOWS_FUNCTIONS
-  CreateFileA(args[2], GENERIC_READ, FILE_SHARE_READ, 
+  CreateFileA(args[2], GENERIC_READ, FILE_SHARE_READ,
       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (archiveStream.File == INVALID_HANDLE_VALUE)
   #else
@@ -311,8 +311,8 @@ int MY_CDECL main(int numargs, char *args[])
         CSzFileItem *f = db.db.Files + i;
         char s[32], t[32];
         ConvertNumberToString(f->Size, s);
-        if (f->IsLastWriteTimeDefined)
-          ConvertFileTimeToString(&f->LastWriteTime, t);
+        if (f->MTimeDefined)
+          ConvertFileTimeToString(&f->MTime, t);
         else
           strcpy(t, "                   ");
 
@@ -337,21 +337,21 @@ int MY_CDECL main(int numargs, char *args[])
         size_t offset;
         size_t outSizeProcessed;
         CSzFileItem *f = db.db.Files + i;
-        if (f->IsDirectory)
+        if (f->IsDir)
           printf("Directory ");
         else
-          printf(testCommand ? 
+          printf(testCommand ?
             "Testing   ":
             "Extracting");
         printf(" %s", f->Name);
-        if (f->IsDirectory)
+        if (f->IsDir)
         {
           printf("\n");
           continue;
         }
-        res = SzAr_Extract(&db, &archiveStream.InStream, i, 
-            &blockIndex, &outBuffer, &outBufferSize, 
-            &offset, &outSizeProcessed, 
+        res = SzAr_Extract(&db, &archiveStream.InStream, i,
+            &blockIndex, &outBuffer, &outBufferSize,
+            &offset, &outSizeProcessed,
             &allocImp, &allocTempImp);
         if (res != SZ_OK)
           break;
@@ -368,9 +368,9 @@ int MY_CDECL main(int numargs, char *args[])
               break;
             }
             
-          outputHandle = 
+          outputHandle =
           #ifdef USE_WINDOWS_FUNCTIONS
-            CreateFileA(fileName, GENERIC_WRITE, FILE_SHARE_READ, 
+            CreateFileA(fileName, GENERIC_WRITE, FILE_SHARE_READ,
                 NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
           if (outputHandle == INVALID_HANDLE_VALUE)
           #else
@@ -420,7 +420,7 @@ int MY_CDECL main(int numargs, char *args[])
     PrintError("can not allocate memory");
   else if (res == SZ_ERROR_CRC)
     PrintError("CRC error");
-  else     
+  else
     printf("\nERROR #%d\n", res);
   return 1;
 }

@@ -16,7 +16,7 @@ static const UInt32 kMatchMinLen = 3;
 
 // static const UInt32 kNC = 255 + kMatchMaxLen + 2 - kMatchMinLen;
 
-void CCoder::MakeTable(int nchar, Byte *bitlen, int tablebits, 
+void CCoder::MakeTable(int nchar, Byte *bitlen, int tablebits,
     UInt32 *table, int tablesize)
 {
   UInt32 count[17], weight[17], start[18], *p;

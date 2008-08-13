@@ -12,9 +12,6 @@ SFX_WIN_OBJS = \
   $O\ExtractCallback.obj \
   $O\ExtractEngine.obj \
 
-GUI_OBJS = \
-  $O\OpenCallbackGUI.obj \
-
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
@@ -111,7 +108,6 @@ C_OBJS = \
 OBJS = \
   $O\StdAfx.obj \
   $(SFX_WIN_OBJS) \
-  $(GUI_OBJS) \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(WIN_CTRL_OBJS) \
@@ -135,8 +131,6 @@ OBJS = \
 $(SFX_WIN_OBJS): $(*B).cpp
 	$(COMPL)
 
-$(GUI_OBJS): ../../UI/GUI/$(*B).cpp
-	$(COMPL)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
 	$(COMPL)
 $(WIN_OBJS): ../../../Windows/$(*B).cpp

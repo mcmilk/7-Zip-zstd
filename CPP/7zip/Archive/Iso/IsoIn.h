@@ -109,7 +109,7 @@ struct CDateTime
   Byte Second;
   Byte Hundredths;
   signed char GmtOffset; // min intervals from -48 (West) to +52 (East) recorded.
-  bool NotSpecified() const { return Year == 0 && Month == 0 && Day == 0 && 
+  bool NotSpecified() const { return Year == 0 && Month == 0 && Day == 0 &&
       Hour == 0 && Minute == 0 && Second == 0 && GmtOffset == 0; }
 };
 
@@ -130,7 +130,7 @@ struct CBootInitialEntry
 {
   bool Bootable;
   Byte BootMediaType;
-  UInt16 LoadSegment;  
+  UInt16 LoadSegment;
   /* This is the load segment for the initial boot image. If this
      value is 0 the system will use the traditional segment of 7C0. If this value
      is non-zero the system will use the specified segment. This applies to x86
@@ -143,10 +143,10 @@ struct CBootInitialEntry
   UInt32 LoadRBA;     // This is the start address of the virtual disk. CD’s use
                       // Relative/Logical block addressing.
 
-  UInt64 GetSize() const 
-  { 
+  UInt64 GetSize() const
+  {
     // if (BootMediaType == NBootMediaType::k1d44Floppy) (1440 << 10);
-    return SectorCount * 512; 
+    return SectorCount * 512;
   }
 
   UString GetName() const
@@ -173,7 +173,7 @@ struct CBootInitialEntry
 struct CVolumeDescriptor
 {
   Byte VolFlags;
-  Byte SystemId[32]; // a-characters. An identification of a system 
+  Byte SystemId[32]; // a-characters. An identification of a system
                      // which can recognize and act upon the content of the Logical
                      // Sectors with logical Sector Numbers 0 to 15 of the volume.
   Byte VolumeId[32]; // d-characters. An identification of the volume.
@@ -195,19 +195,19 @@ struct CVolumeDescriptor
   Byte CopyrightFileId[37];
   Byte AbstractFileId[37];
   Byte BibFileId[37];
-  CDateTime CreationTime;
-  CDateTime ModificationTime;
+  CDateTime CTime;
+  CDateTime MTime;
   CDateTime ExpirationTime;
   CDateTime EffectiveTime;
   Byte FileStructureVersion; // = 1;
   Byte ApplicationUse[512];
 
-  bool IsJoliet() const 
+  bool IsJoliet() const
   {
     if ((VolFlags & 1) != 0)
       return false;
     Byte b = EscapeSequence[2];
-    return (EscapeSequence[0] == 0x25 && EscapeSequence[1] == 0x2F && 
+    return (EscapeSequence[0] == 0x25 && EscapeSequence[1] == 0x2F &&
       (b == 0x40 || b == 0x43 || b == 0x45));
   }
 };
@@ -272,8 +272,8 @@ public:
 
   bool IsJoliet() const { return VolDescs[MainVolDescIndex].IsJoliet(); }
 
-  UInt64 GetBootItemSize(int index) const 
-  { 
+  UInt64 GetBootItemSize(int index) const
+  {
     const CBootInitialEntry &be = BootEntries[index];
     UInt64 size = be.GetSize();
     if (be.BootMediaType == NBootMediaType::k1d2Floppy)
@@ -288,7 +288,7 @@ public:
       if (_archiveSize - startPos < size)
         size = _archiveSize - startPos;
     }
-    return size; 
+    return size;
   }
 
   bool IsSusp;

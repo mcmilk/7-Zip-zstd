@@ -22,13 +22,13 @@ namespace NContextMenuFlags
   const UINT32 kCompressToZip = 1 << 12;
   const UINT32 kCompressToZipEmail = 1 << 13;
 
-  inline UINT32 GetDefaultFlags() { 
-    return 
-      kOpen | kTest | 
+  inline UINT32 GetDefaultFlags() {
+    return
+      kOpen | kTest |
       kExtract | kExtractHere | kExtractTo |
-      kCompress | kCompressEmail | 
-      kCompressTo7z | kCompressTo7zEmail | 
-      kCompressToZip | kCompressToZipEmail; }     
+      kCompress | kCompressEmail |
+      kCompressTo7z | kCompressTo7zEmail |
+      kCompressToZip | kCompressToZipEmail; }
 }
 
 #endif

@@ -21,9 +21,9 @@ namespace NBZip2 {
 
 static const CMethodId kMethodId_BZip2 = 0x040202;
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
-  { NULL, kpidPackedSize, VT_UI8}
+  { NULL, kpidPackSize, VT_UI8}
 };
 
 IMP_IInArchive_Props
@@ -40,13 +40,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
   NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
-    case kpidPackedSize: prop = _item.PackSize; break;
+    case kpidPackSize: prop = _item.PackSize; break;
   }
   prop.Detach(value);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, 
+STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {

@@ -31,7 +31,7 @@ void NormalizeDirPathPrefix(UString &dirPath)
 
 const wchar_t kExtensionDelimiter = L'.';
 
-void SplitNameToPureNameAndExtension(const UString &fullName, 
+void SplitNameToPureNameAndExtension(const UString &fullName,
     UString &pureName, UString &extensionDelimiter, UString &extension)
 {
   int index = fullName.ReverseFind(kExtensionDelimiter);

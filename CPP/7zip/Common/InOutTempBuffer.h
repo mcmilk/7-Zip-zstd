@@ -36,7 +36,7 @@ public:
   HRESULT WriteToStream(ISequentialOutStream *stream);
 };
 
-class CSequentialOutTempBufferImp: 
+class CSequentialOutTempBufferImp:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

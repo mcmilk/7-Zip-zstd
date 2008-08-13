@@ -13,13 +13,13 @@ struct CColumnInfo
 };
 
 inline bool operator==(const CColumnInfo &a1, const CColumnInfo &a2)
-{ 
-  return (a1.PropID == a2.PropID) && 
-    (a1.IsVisible == a2.IsVisible) && (a1.Width == a2.Width); 
+{
+  return (a1.PropID == a2.PropID) &&
+    (a1.IsVisible == a2.IsVisible) && (a1.Width == a2.Width);
 }
 
 inline bool operator!=(const CColumnInfo &a1, const CColumnInfo &a2)
-{ 
+{
   return !(a1 == a2);
 }
 
@@ -44,11 +44,11 @@ struct CListViewInfo
     return -1;
   }
 
-  bool IsEqual(const CListViewInfo &aNewInfo) const 
+  bool IsEqual(const CListViewInfo &aNewInfo) const
   {
     if (Columns.Size() != aNewInfo.Columns.Size() ||
-      // SortIndex != aNewInfo.SortIndex ||  
-      SortID != aNewInfo.SortID ||  
+      // SortIndex != aNewInfo.SortIndex ||
+      SortID != aNewInfo.SortID ||
       Ascending != aNewInfo.Ascending)
       return false;
     for (int i = 0; i < Columns.Size(); i++)
@@ -92,7 +92,7 @@ void ReadFastFolders(UStringVector &folders);
 void SaveCopyHistory(const UStringVector &folders);
 void ReadCopyHistory(UStringVector &folders);
 
-void AddUniqueStringToHeadOfList(UStringVector &list, 
+void AddUniqueStringToHeadOfList(UStringVector &list,
     const UString &string);
 
 #endif

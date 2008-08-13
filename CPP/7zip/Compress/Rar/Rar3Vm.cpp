@@ -1,11 +1,11 @@
 // Rar3Vm.cpp
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
 /*
 Note:
-  Due to performance considerations Rar VM may set Flags C incorrectly 
-  for some operands (SHL x, 0, ... ). 
+  Due to performance considerations Rar VM may set Flags C incorrectly
+  for some operands (SHL x, 0, ... ).
   Check implementation of concrete VM command
   to see if it sets flags right.
 */
@@ -14,10 +14,10 @@ Note:
 
 #include "Rar3Vm.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
-#include "../../../../C/7zCrc.h" 
+#include "../../../../C/7zCrc.h"
 }
 
 namespace NCompress {
@@ -121,7 +121,7 @@ CVm::~CVm()
 
 // CVm::Execute can change CProgram object: it clears progarm if VM returns error.
 
-bool CVm::Execute(CProgram *prg, const CProgramInitState *initState, 
+bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
     CBlockRef &outBlockRef, CRecordVector<Byte> &outGlobalData)
 {
   memcpy(R, initState->InitR, sizeof(initState->InitR));
@@ -762,14 +762,14 @@ void CVm::ReadVmProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
 
 #ifdef RARVM_STANDARD_FILTERS
 
-enum EStandardFilter 
+enum EStandardFilter
 {
-  SF_E8, 
-  SF_E8E9, 
-  SF_ITANIUM, 
-  SF_RGB, 
-  SF_AUDIO, 
-  SF_DELTA, 
+  SF_E8,
+  SF_E8E9,
+  SF_ITANIUM,
+  SF_RGB,
+  SF_AUDIO,
+  SF_DELTA,
   SF_UPCASE
 };
 
@@ -778,7 +778,7 @@ struct StandardFilterSignature
   UInt32 Length;
   UInt32 CRC;
   EStandardFilter Type;
-} 
+}
 kStdFilters[]=
 {
    53, 0xad576887, SF_E8,
@@ -813,7 +813,7 @@ void CVm::PrepareProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
   prg->Commands.Clear();
   #ifdef RARVM_STANDARD_FILTERS
   prg->StandardFilterIndex = -1;
-  #endif  
+  #endif
 
   if (xorSum == code[0] && codeSize > 0)
   {
@@ -821,7 +821,7 @@ void CVm::PrepareProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
     prg->StandardFilterIndex = FindStandardFilter(code, codeSize);
     if (prg->StandardFilterIndex >= 0)
       return;
-    #endif  
+    #endif
     // 1 byte for checksum
     ReadVmProgram(code + 1, codeSize - 1, prg);
   }

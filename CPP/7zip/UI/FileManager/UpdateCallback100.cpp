@@ -42,14 +42,7 @@ STDMETHODIMP CUpdateCallback100Imp::SetTotal(UInt64 size)
 
 STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 *completeValue)
 {
-  for (;;)
-  {
-    if(ProgressDialog.ProgressSynch.GetStopped())
-      return E_ABORT;
-    if(!ProgressDialog.ProgressSynch.GetPaused())
-      break;
-    ::Sleep(100);
-  }
+  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
   if (completeValue != NULL)
     ProgressDialog.ProgressSynch.SetPos(*completeValue);
   return S_OK;
@@ -104,3 +97,23 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(Int32 *passwordIsDefi
   *password = tempName.Detach();
   return S_OK;
 }
+
+STDMETHODIMP CUpdateCallback100Imp::SetTotal(const UInt64 * /* files */, const UInt64 * /* bytes */)
+{
+  return S_OK;
+}
+
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 * /* files */, const UInt64 * /* bytes */)
+{
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+}
+
+STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
+{
+  if (!_passwordIsDefined)
+    return S_FALSE;
+  CMyComBSTR tempName = _password;
+  *password = tempName.Detach();
+  return S_OK;
+}
+

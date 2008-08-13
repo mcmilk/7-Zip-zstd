@@ -47,7 +47,7 @@ public:
     ~CCoderReleaser() {  _coder->ReleaseStreams(); }
   };
 
-public: 
+public:
 
   MY_UNKNOWN_IMP
 
@@ -65,14 +65,14 @@ public:
       const UInt64 **outSizes,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress);
-}; 
+};
 
 #endif
 
 class CDecoder:
   public ICompressCoder2,
   public CMyUnknownImp
-{ 
+{
 public:
   CInBuffer _mainInStream;
   CInBuffer _callStream;
@@ -100,7 +100,7 @@ public:
     ~CCoderReleaser()  { _coder->ReleaseStreams(); }
   };
 
-public: 
+public:
   MY_UNKNOWN_IMP
   HRESULT CodeReal(ISequentialInStream **inStreams,
       const UInt64 **inSizes,
@@ -116,7 +116,7 @@ public:
       const UInt64 **outSizes,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress);
-}; 
+};
 
 }}
 

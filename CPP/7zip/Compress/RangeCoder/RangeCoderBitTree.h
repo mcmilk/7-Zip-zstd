@@ -108,7 +108,7 @@ public:
 };
 
 template <int numMoveBits>
-void ReverseBitTreeEncode(CBitEncoder<numMoveBits> *Models, 
+void ReverseBitTreeEncode(CBitEncoder<numMoveBits> *Models,
     CEncoder *rangeEncoder, int NumBitLevels, UInt32 symbol)
 {
   UInt32 modelIndex = 1;
@@ -122,7 +122,7 @@ void ReverseBitTreeEncode(CBitEncoder<numMoveBits> *Models,
 }
 
 template <int numMoveBits>
-UInt32 ReverseBitTreeGetPrice(CBitEncoder<numMoveBits> *Models, 
+UInt32 ReverseBitTreeGetPrice(CBitEncoder<numMoveBits> *Models,
     UInt32 NumBitLevels, UInt32 symbol)
 {
   UInt32 price = 0;
@@ -138,7 +138,7 @@ UInt32 ReverseBitTreeGetPrice(CBitEncoder<numMoveBits> *Models,
 }
 
 template <int numMoveBits>
-UInt32 ReverseBitTreeDecode(CBitDecoder<numMoveBits> *Models, 
+UInt32 ReverseBitTreeDecode(CBitDecoder<numMoveBits> *Models,
     CDecoder *rangeDecoder, int NumBitLevels)
 {
   UInt32 modelIndex = 1;

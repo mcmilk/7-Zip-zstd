@@ -13,14 +13,14 @@
 
 static const unsigned int kNumArcsMax = 32;
 static unsigned int g_NumArcs = 0;
-static const CArcInfo *g_Arcs[kNumArcsMax]; 
-void RegisterArc(const CArcInfo *arcInfo) 
-{ 
+static const CArcInfo *g_Arcs[kNumArcsMax];
+void RegisterArc(const CArcInfo *arcInfo)
+{
   if (g_NumArcs < kNumArcsMax)
-    g_Arcs[g_NumArcs++] = arcInfo; 
+    g_Arcs[g_NumArcs++] = arcInfo;
 }
 
-DEFINE_GUID(CLSID_CArchiveHandler, 
+DEFINE_GUID(CLSID_CArchiveHandler,
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x00, 0x00, 0x00);
 
 #define CLS_ARC_ID_ITEM(cls) ((cls).Data4[5])

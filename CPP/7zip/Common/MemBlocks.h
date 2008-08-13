@@ -3,8 +3,8 @@
 #ifndef __MEMBLOCKS_H
 #define __MEMBLOCKS_H
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../C/Alloc.h"
 }
 
@@ -46,7 +46,7 @@ public:
   void FreeSpace();
   void *AllocateBlock();
   void FreeBlock(void *p, bool lockMode = true);
-  HRes ReleaseLockedBlocks(int number) { return Semaphore.Release(number); } 
+  HRes ReleaseLockedBlocks(int number) { return Semaphore.Release(number); }
 };
 
 
@@ -70,7 +70,7 @@ struct CMemLockBlocks: public CMemBlocks
   CMemLockBlocks(): LockMode(true) {};
   void Free(CMemBlockManagerMt *memManager);
   void FreeBlock(int index, CMemBlockManagerMt *memManager);
-  HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager); 
+  HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager);
   void Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManager);
 };
 

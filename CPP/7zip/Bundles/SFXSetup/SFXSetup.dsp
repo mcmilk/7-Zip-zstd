@@ -647,18 +647,6 @@ SOURCE=..\..\UI\Common\OpenArchive.cpp
 SOURCE=..\..\UI\Common\OpenArchive.h
 # End Source File
 # End Group
-# Begin Group "GUI"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\UI\GUI\OpenCallbackGUI.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\GUI\OpenCallbackGUI.h
-# End Source File
-# End Group
 # End Group
 # Begin Group "File Manager"
 

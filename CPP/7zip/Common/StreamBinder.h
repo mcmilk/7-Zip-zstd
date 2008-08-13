@@ -19,7 +19,7 @@ public:
   CStreamBinder() {}
   HRes CreateEvents();
 
-  void CreateStreams(ISequentialInStream **inStream, 
+  void CreateStreams(ISequentialInStream **inStream,
       ISequentialOutStream **outStream);
   HRESULT Read(void *data, UInt32 size, UInt32 *processedSize);
   void CloseRead();

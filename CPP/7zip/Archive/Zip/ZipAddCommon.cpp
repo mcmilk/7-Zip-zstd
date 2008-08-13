@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/7zCrc.h"
 }
 
@@ -49,7 +49,7 @@ static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
 
 HRESULT CAddCommon::Compress(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    ISequentialInStream *inStream, IOutStream *outStream, 
+    ISequentialInStream *inStream, IOutStream *outStream,
     ICompressProgressInfo *progress, CCompressingResult &operationResult)
 {
   CSequentialInStreamWithCRC *inSecCrcStreamSpec = 0;
@@ -57,7 +57,7 @@ HRESULT CAddCommon::Compress(
   CMyComPtr<ISequentialInStream> inCrcStream;
   {
     CMyComPtr<IInStream> inStream2;
-    // we don't support stdin, since stream from stdin can require 64-bit size header 
+    // we don't support stdin, since stream from stdin can require 64-bit size header
     RINOK(inStream->QueryInterface(IID_IInStream, (void **)&inStream2));
     if (inStream2)
     {
@@ -149,10 +149,10 @@ HRESULT CAddCommon::Compress(
           switch(method)
           {
             case NFileHeader::NCompressionMethod::kBZip2:
-              methodId = kMethodId_BZip2; 
+              methodId = kMethodId_BZip2;
               break;
             default:
-              methodId = kMethodId_ZipBase + method; 
+              methodId = kMethodId_ZipBase + method;
               break;
           }
           RINOK(CreateCoder(
@@ -164,14 +164,14 @@ HRESULT CAddCommon::Compress(
           if (method == NFileHeader::NCompressionMethod::kDeflated ||
               method == NFileHeader::NCompressionMethod::kDeflated64)
           {
-            NWindows::NCOM::CPropVariant properties[] = 
+            NWindows::NCOM::CPropVariant properties[] =
             {
-              _options.Algo, 
-              _options.NumPasses, 
+              _options.Algo,
+              _options.NumPasses,
               _options.NumFastBytes,
               _options.NumMatchFinderCycles
             };
-            PROPID propIDs[] = 
+            PROPID propIDs[] =
             {
               NCoderPropID::kAlgorithm,
               NCoderPropID::kNumPasses,
@@ -187,18 +187,18 @@ HRESULT CAddCommon::Compress(
             {
               RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, numProps));
             }
-          } 
+          }
           else if (method == NFileHeader::NCompressionMethod::kBZip2)
           {
-            NWindows::NCOM::CPropVariant properties[] = 
+            NWindows::NCOM::CPropVariant properties[] =
             {
-              _options.DicSize, 
+              _options.DicSize,
               _options.NumPasses
               #ifdef COMPRESS_MT
               , _options.NumThreads
               #endif
             };
-            PROPID propIDs[] = 
+            PROPID propIDs[] =
             {
               NCoderPropID::kDictionarySize,
               NCoderPropID::kNumPasses
@@ -240,11 +240,11 @@ HRESULT CAddCommon::Compress(
 
     if (_options.PasswordIsDefined)
     {
-      if (operationResult.PackSize < operationResult.UnpackSize + 
+      if (operationResult.PackSize < operationResult.UnpackSize +
           (_options.IsAesMode ? _filterAesSpec->GetHeaderSize() : NCrypto::NZip::kHeaderSize))
         break;
     }
-    else if (operationResult.PackSize < operationResult.UnpackSize) 
+    else if (operationResult.PackSize < operationResult.UnpackSize)
       break;
   }
   if (_options.IsAesMode)

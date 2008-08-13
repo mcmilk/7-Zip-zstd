@@ -5,7 +5,7 @@
 
 #include "Windows/Synchronization.h"
 
-void inline AddUniqueStringToHead(UStringVector &list, 
+void inline AddUniqueStringToHead(UStringVector &list,
     const UString &string)
 {
   for(int i = 0; i < list.Size();)

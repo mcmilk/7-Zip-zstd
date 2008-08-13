@@ -4,8 +4,8 @@
 
 #include "ShrinkDecoder.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 #include "../../Common/InBuffer.h"
@@ -17,7 +17,7 @@ namespace NShrink {
 
 static const UInt32 kBufferSize = (1 << 20);
 
-static const int kNumMinBits = 9;   
+static const int kNumMinBits = 9;
 
 STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
@@ -90,7 +90,7 @@ STDMETHODIMP CDecoder ::CodeReal(ISequentialInStream *inStream,
           head++;
         }
       }
-      else 
+      else
         return S_FALSE;
       continue;
     }

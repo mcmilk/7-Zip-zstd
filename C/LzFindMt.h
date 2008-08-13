@@ -1,5 +1,5 @@
 /* LzFindMt.h  -- multithreaded Match finder for LZ algorithms
-2008-04-04
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzFind.h for license options */
 
@@ -91,7 +91,7 @@ typedef struct _CMatchFinderMt
 
 void MatchFinderMt_Construct(CMatchFinderMt *p);
 void MatchFinderMt_Destruct(CMatchFinderMt *p, ISzAlloc *alloc);
-SRes MatchFinderMt_Create(CMatchFinderMt *p, UInt32 historySize, UInt32 keepAddBufferBefore, 
+SRes MatchFinderMt_Create(CMatchFinderMt *p, UInt32 historySize, UInt32 keepAddBufferBefore,
     UInt32 matchMaxLen, UInt32 keepAddBufferAfter, ISzAlloc *alloc);
 void MatchFinderMt_CreateVTable(CMatchFinderMt *p, IMatchFinder *vTable);
 void MatchFinderMt_ReleaseStream(CMatchFinderMt *p);

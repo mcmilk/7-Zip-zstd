@@ -11,20 +11,20 @@ namespace NWindows {
 struct CMenuItem
 {
   UString StringValue;
-  UINT fMask; 
-  UINT fType; 
-  UINT fState; 
-  UINT wID; 
-  HMENU hSubMenu; 
-  HBITMAP hbmpChecked; 
-  HBITMAP hbmpUnchecked; 
-  ULONG_PTR dwItemData; 
-  // LPTSTR dwTypeData; 
-  // UINT cch; 
+  UINT fMask;
+  UINT fType;
+  UINT fState;
+  UINT wID;
+  HMENU hSubMenu;
+  HBITMAP hbmpChecked;
+  HBITMAP hbmpUnchecked;
+  ULONG_PTR dwItemData;
+  // LPTSTR dwTypeData;
+  // UINT cch;
   // HBITMAP hbmpItem;
   bool IsString() const // change it MIIM_STRING
     { return ((fMask & MIIM_TYPE) != 0 && (fType == MFT_STRING)); }
-  CMenuItem(): fMask(0), fType(0), fState(0), wID(0), hSubMenu(0), hbmpChecked(0), 
+  CMenuItem(): fMask(0), fType(0), fState(0), wID(0), hSubMenu(0), hbmpChecked(0),
     hbmpUnchecked(0), dwItemData(0) {}
 };
 
@@ -44,19 +44,19 @@ public:
   }
   
   bool Create()
-  { 
+  {
     _menu = ::CreateMenu();
-    return (_menu != NULL); 
+    return (_menu != NULL);
   }
 
   bool CreatePopup()
-  { 
+  {
     _menu = ::CreatePopupMenu();
-    return (_menu != NULL); 
+    return (_menu != NULL);
   }
   
   bool Destroy()
-  { 
+  {
     if (_menu == NULL)
       return false;
     return BOOLToBool(::DestroyMenu(Detach()));
@@ -71,7 +71,7 @@ public:
   {
     result.Empty();
     int len = ::GetMenuString(_menu, idItem, 0, 0, flag);
-    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2), 
+    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2),
         len + 1, flag);
     result.ReleaseBuffer();
     return (len != 0);
@@ -120,7 +120,7 @@ public:
   DWORD CheckItem(UINT id, UINT uCheck)
     { return ::CheckMenuItem(_menu, id, uCheck); }
 
-  BOOL EnableItem(UINT uIDEnableItem, UINT uEnable) 
+  BOOL EnableItem(UINT uIDEnableItem, UINT uEnable)
     { return EnableMenuItem(_menu, uIDEnableItem, uEnable); }
 };
 

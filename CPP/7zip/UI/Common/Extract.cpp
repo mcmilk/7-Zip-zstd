@@ -12,10 +12,9 @@
 
 using namespace NWindows;
 
-HRESULT DecompressArchive(
+static HRESULT DecompressArchive(
     IInArchive *archive,
     UInt64 packSize,
-    const UString &defaultName,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,
     IExtractCallbackUI *callback,
@@ -45,7 +44,11 @@ HRESULT DecompressArchive(
   UStringVector removePathParts;
 
   UString outDir = options.OutputDir;
-  outDir.Replace(L"*", defaultName);
+  outDir.Replace(L"*", options.DefaultItemName);
+  #ifdef _WIN32
+  outDir.TrimRight();
+  #endif
+
   if(!outDir.IsEmpty())
     if(!NFile::NDirectory::CreateComplexDirectory(outDir))
     {
@@ -57,34 +60,34 @@ HRESULT DecompressArchive(
     }
 
   extractCallbackSpec->Init(
-      archive, 
+      archive,
       callback,
       options.StdOutMode,
-      outDir, 
-      removePathParts, 
-      options.DefaultItemName, 
-      options.ArchiveFileInfo.LastWriteTime,
-      options.ArchiveFileInfo.Attributes,
+      outDir,
+      removePathParts,
+      options.DefaultItemName,
+      options.ArchiveFileInfo.MTime,
+      options.ArchiveFileInfo.Attrib,
       packSize);
 
   #ifdef COMPRESS_MT
   RINOK(SetProperties(archive, options.Properties));
   #endif
 
-  HRESULT result = archive->Extract(&realIndices.Front(), 
+  HRESULT result = archive->Extract(&realIndices.Front(),
     realIndices.Size(), options.TestMode? 1: 0, extractCallbackSpec);
 
   return callback->ExtractResult(result);
 }
 
 HRESULT DecompressArchives(
-    CCodecs *codecs,
-    UStringVector &archivePaths, UStringVector &archivePathsFull,    
+    CCodecs *codecs, const CIntVector &formatIndices,
+    UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &optionsSpec,
     IOpenCallbackUI *openCallback,
-    IExtractCallbackUI *extractCallback, 
-    UString &errorMessage, 
+    IExtractCallbackUI *extractCallback,
+    UString &errorMessage,
     CDecompressStat &stat)
 {
   stat.Clear();
@@ -95,13 +98,13 @@ HRESULT DecompressArchives(
   for (i = 0; i < archivePaths.Size(); i++)
   {
     const UString &archivePath = archivePaths[i];
-    NFile::NFind::CFileInfoW archiveFileInfo;
-    if (!NFile::NFind::FindFile(archivePath, archiveFileInfo))
+    NFile::NFind::CFileInfoW fi;
+    if (!NFile::NFind::FindFile(archivePath, fi))
       throw "there is no such archive";
-    if (archiveFileInfo.IsDirectory())
+    if (fi.IsDir())
       throw "can't decompress folder";
-    archiveSizes.Add(archiveFileInfo.Size);
-    totalPackSize += archiveFileInfo.Size;
+    archiveSizes.Add(fi.Size);
+    totalPackSize += fi.Size;
   }
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> ec(extractCallbackSpec);
@@ -109,31 +112,60 @@ HRESULT DecompressArchives(
   extractCallbackSpec->InitForMulti(multi, options.PathMode, options.OverwriteMode);
   if (multi)
   {
-    RINOK(extractCallback->SetTotal(totalPackSize));  
+    RINOK(extractCallback->SetTotal(totalPackSize));
   }
   for (i = 0; i < archivePaths.Size(); i++)
   {
     const UString &archivePath = archivePaths[i];
-    NFile::NFind::CFileInfoW archiveFileInfo;
-    if (!NFile::NFind::FindFile(archivePath, archiveFileInfo))
+    NFile::NFind::CFileInfoW fi;
+    if (!NFile::NFind::FindFile(archivePath, fi))
       throw "there is no such archive";
 
-    if (archiveFileInfo.IsDirectory())
+    if (fi.IsDir())
       throw "there is no such archive";
 
-    options.ArchiveFileInfo = archiveFileInfo;
+    options.ArchiveFileInfo = fi;
 
     #ifndef _NO_CRYPTO
-    openCallback->ClearPasswordWasAskedFlag();
+    openCallback->Open_ClearPasswordWasAskedFlag();
     #endif
 
     RINOK(extractCallback->BeforeOpen(archivePath));
     CArchiveLink archiveLink;
-    HRESULT result = MyOpenArchive(codecs, archivePath, archiveLink, openCallback);
+
+    CIntVector formatIndices2 = formatIndices;
+    #ifndef _SFX
+    if (formatIndices.IsEmpty())
+    {
+      int pos = archivePath.ReverseFind(L'.');
+      if (pos >= 0)
+      {
+        UString s = archivePath.Mid(pos + 1);
+        int index = codecs->FindFormatForExtension(s);
+        if (index >= 0 && s == L"001")
+        {
+          s = archivePath.Left(pos);
+          pos = s.ReverseFind(L'.');
+          if (pos >= 0)
+          {
+            int index2 = codecs->FindFormatForExtension(s.Mid(pos + 1));
+            if (index2 >= 0 && s.CompareNoCase(L"rar") != 0)
+            {
+              formatIndices2.Add(index2);
+              formatIndices2.Add(index);
+            }
+          }
+        }
+      }
+    }
+    #endif
+    HRESULT result = MyOpenArchive(codecs, formatIndices2, archivePath, archiveLink, openCallback);
+    if (result == E_ABORT)
+      return result;
 
     bool crypted = false;
     #ifndef _NO_CRYPTO
-    crypted = openCallback->WasPasswordAsked();
+    crypted = openCallback->Open_WasPasswordAsked();
     #endif
 
     RINOK(extractCallback->OpenResult(archivePath, result, crypted));
@@ -154,12 +186,12 @@ HRESULT DecompressArchives(
     if (archiveLink.VolumePaths.Size() != 0)
     {
       totalPackSize += archiveLink.VolumesSize;
-      RINOK(extractCallback->SetTotal(totalPackSize));  
+      RINOK(extractCallback->SetTotal(totalPackSize));
     }
 
     #ifndef _NO_CRYPTO
     UString password;
-    RINOK(openCallback->GetPasswordIfAny(password));
+    RINOK(openCallback->Open_GetPasswordIfAny(password));
     if (!password.IsEmpty())
     {
       RINOK(extractCallback->SetPassword(password));
@@ -168,11 +200,10 @@ HRESULT DecompressArchives(
 
     options.DefaultItemName = archiveLink.GetDefaultItemName();
     RINOK(DecompressArchive(
-        archiveLink.GetArchive(), 
-        archiveFileInfo.Size + archiveLink.VolumesSize,
-        archiveLink.GetDefaultItemName(),
+        archiveLink.GetArchive(),
+        fi.Size + archiveLink.VolumesSize,
         wildcardCensor, options, extractCallback, extractCallbackSpec, errorMessage));
-    extractCallbackSpec->LocalProgressSpec->InSize += archiveFileInfo.Size + 
+    extractCallbackSpec->LocalProgressSpec->InSize += fi.Size +
         archiveLink.VolumesSize;
     extractCallbackSpec->LocalProgressSpec->OutSize = extractCallbackSpec->UnpackSize;
     if (!errorMessage.IsEmpty())

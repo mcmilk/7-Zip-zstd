@@ -14,7 +14,7 @@ static const char kIllegalChar = '\0';
 static const char kNewLineChar = '\n';
 
 static const char *kEOFMessage = "Unexpected end of input stream";
-static const char *kReadErrorMessage  ="Error reading input stream"; 
+static const char *kReadErrorMessage  ="Error reading input stream";
 static const char *kIllegalCharMessage = "Illegal character in input stream";
 
 static LPCTSTR kFileOpenMode = TEXT("r");

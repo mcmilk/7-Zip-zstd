@@ -4,27 +4,25 @@
 #define __MYMESSAGES_H
 
 #include "Common/MyString.h"
+#include "Common/Types.h"
 
-void MyMessageBox(HWND window, LPCWSTR message);
+void ShowErrorMessage(HWND window, LPCWSTR message);
+inline void ShowErrorMessage(LPCWSTR message) { ShowErrorMessage(0, message); }
 
-inline void MyMessageBox(LPCWSTR message)
-  {  MyMessageBox(0, message); }
-
-void MyMessageBoxResource(HWND window, UINT32 id
-    #ifdef LANG        
-    ,UINT32 langID
+void ShowErrorMessageHwndRes(HWND window, UINT resID
+    #ifdef LANG
+    , UInt32 langID
     #endif
     );
 
-void MyMessageBox(UINT32 id
-    #ifdef LANG        
-    ,UINT32 langID
+void ShowErrorMessageRes(UINT resID
+    #ifdef LANG
+    , UInt32 langID
     #endif
     );
 
-void ShowErrorMessage(HWND window, DWORD errorMessage);
-inline void ShowErrorMessage(DWORD errorMessage)
-  { ShowErrorMessage(0, errorMessage); }
+// void ShowErrorMessageDWORD(HWND window, DWORD errorCode);
+// inline void ErrorMessageDWORD(DWORD errorCode) { ShowErrorMessageDWORD(0, errorCode); }
 void ShowLastErrorMessage(HWND window = 0);
 
 #endif

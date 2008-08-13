@@ -1,5 +1,5 @@
 /* 7zCrc.c -- CRC32 calculation
-2008-03-13
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -24,7 +24,7 @@ void MY_FAST_CALL CrcGenerateTable(void)
 UInt32 MY_FAST_CALL CrcUpdate(UInt32 v, const void *data, size_t size)
 {
   const Byte *p = (const Byte *)data;
-  for (; size > 0 ; size--, p++) 
+  for (; size > 0 ; size--, p++)
     v = CRC_UPDATE_BYTE(v, *p);
   return v;
 }

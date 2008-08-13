@@ -26,7 +26,7 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_Value = 0x10000; 
+    m_Value = 0x10000;
   }
 
   UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize(); }
@@ -45,7 +45,7 @@ public:
   {
     UInt32 res = 0;
     do
-      res = (res << 1) | ReadBit(); 
+      res = (res << 1) | ReadBit();
     while(--numBits != 0);
     return res;
   }
@@ -98,7 +98,7 @@ public:
 
   UInt64 GetProcessedSize() const { return Stream.GetProcessedSize(); }
 
-  UInt32 GetThreshold(UInt32 total) const 
+  UInt32 GetThreshold(UInt32 total) const
   {
     return ((Code + 1) * total - 1) / Range; // & 0xFFFF is not required;
   }
@@ -111,9 +111,9 @@ public:
     Low += offset;
     for (;;)
     {
-      if ((Low & 0x8000) != (high & 0x8000)) 
+      if ((Low & 0x8000) != (high & 0x8000))
       {
-        if ((Low & 0x4000) == 0 || (high & 0x4000) != 0) 
+        if ((Low & 0x4000) == 0 || (high & 0x4000) != 0)
           break;
         Low &= 0x3FFF;
         high |= 0x4000;
@@ -156,7 +156,7 @@ public:
     unsigned int i;
     for (i = 1; Freqs[i] > threshold; i++);
     rangeDecoder->Decode(Freqs[i], Freqs[i - 1], Freqs[0]);
-    unsigned int res = Values[--i]; 
+    unsigned int res = Values[--i];
     do
       Freqs[i] += kUpdateStep;
     while(i-- != 0);
@@ -201,7 +201,7 @@ public:
 
 }
 
-class CDecoder: 
+class CDecoder:
   public ICompressCoder,
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
@@ -231,7 +231,7 @@ class CDecoder:
   HRESULT CodeSpec(UInt32 size);
 public:
   MY_UNKNOWN_IMP2(
-      ICompressSetInStream, 
+      ICompressSetInStream,
       ICompressSetOutStreamSize)
 
   void ReleaseStreams()
@@ -246,15 +246,15 @@ public:
   public:
     bool NeedFlush;
     CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
-    ~CDecoderFlusher() 
-    { 
+    ~CDecoderFlusher()
+    {
       if (NeedFlush)
         _decoder->Flush();
-      _decoder->ReleaseStreams(); 
+      _decoder->ReleaseStreams();
     }
   };
 
-  HRESULT Flush() {  return _outWindowStream.Flush(); }  
+  HRESULT Flush() {  return _outWindowStream.Flush(); }
 
   HRESULT CodeReal(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,

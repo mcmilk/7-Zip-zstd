@@ -336,6 +336,10 @@ SOURCE=..\..\..\Windows\Synchronization.cpp
 
 SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Time.cpp
+# End Source File
 # End Group
 # Begin Group "UI Common"
 

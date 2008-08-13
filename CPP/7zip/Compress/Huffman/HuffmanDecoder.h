@@ -13,8 +13,8 @@ const int kNumTableBits = 9;
 template <int kNumBitsMax, UInt32 m_NumSymbols>
 class CDecoder
 {
-  UInt32 m_Limits[kNumBitsMax + 1];     // m_Limits[i] = value limit for symbols with length = i 
-  UInt32 m_Positions[kNumBitsMax + 1];  // m_Positions[i] = index in m_Symbols[] of first symbol with length = i 
+  UInt32 m_Limits[kNumBitsMax + 1];     // m_Limits[i] = value limit for symbols with length = i
+  UInt32 m_Positions[kNumBitsMax + 1];  // m_Positions[i] = index in m_Symbols[] of first symbol with length = i
   UInt32 m_Symbols[m_NumSymbols];
   Byte m_Lengths[1 << kNumTableBits];   // Table oh length for short codes.
 
@@ -72,10 +72,10 @@ public:
     UInt32 value = bitStream->GetValue(kNumBitsMax);
     if (value < m_Limits[kNumTableBits])
       numBits = m_Lengths[value >> (kNumBitsMax - kNumTableBits)];
-    else 
+    else
       for (numBits = kNumTableBits + 1; value >= m_Limits[numBits]; numBits++);
     bitStream->MovePos(numBits);
-    UInt32 index = m_Positions[numBits] + 
+    UInt32 index = m_Positions[numBits] +
       ((value - m_Limits[numBits - 1]) >> (kNumBitsMax - numBits));
     if (index >= m_NumSymbols)
       // throw CDecoderException(); // test it

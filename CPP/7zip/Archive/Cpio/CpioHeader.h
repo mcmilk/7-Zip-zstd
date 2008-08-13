@@ -10,7 +10,7 @@ namespace NCpio {
 
 namespace NFileHeader
 {
-  namespace NMagic 
+  namespace NMagic
   {
     extern const char *kMagic1;
     extern const char *kMagic2;
@@ -56,7 +56,7 @@ namespace NFileHeader
     char NameSize[8]; // count includes terminating NUL in pathname
     char ChkSum[8];  // 0 for "new" portable format; for CRC format the sum of all the bytes in the file
     bool CheckMagic() const
-    { return memcmp(Magic, NMagic::kMagic1, 6) == 0 || 
+    { return memcmp(Magic, NMagic::kMagic1, 6) == 0 ||
              memcmp(Magic, NMagic::kMagic2, 6) == 0;  };
   };
   */

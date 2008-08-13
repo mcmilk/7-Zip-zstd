@@ -5,13 +5,21 @@
 #include "Common/IntToString.h"
 #include "Common/Defs.h"
 #include "Common/ComTry.h"
+#include "Common/StringToInt.h"
+#include "Common/UTFConvert.h"
 
 #include "Windows/PropVariant.h"
 
 #include "../../Common/StreamUtils.h"
 #include "../../Common/ProgressUtils.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "WimHandler.h"
+
+#define Get16(p) GetUi16(p)
+#define Get32(p) GetUi32(p)
+#define Get64(p) GetUi64(p)
 
 using namespace NWindows;
 
@@ -20,17 +28,17 @@ namespace NWim {
 
 #define WIM_DETAILS
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidAttributes, VT_UI8},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidAttrib, VT_UI4},
   { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidCreationTime, VT_FILETIME},
-  { NULL, kpidLastAccessTime, VT_FILETIME},
-  { NULL, kpidLastWriteTime, VT_FILETIME}
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidATime, VT_FILETIME}
   
   #ifdef WIM_DETAILS
   , { NULL, kpidVolume, VT_UI4}
@@ -39,17 +47,113 @@ STATPROPSTG kProps[] =
   #endif
 };
 
-STATPROPSTG kArcProps[] = 
+STATPROPSTG kArcProps[] =
 {
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidComment, VT_FILETIME},
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidVolume, VT_UI4},
   { NULL, kpidNumVolumes, VT_UI4}
 };
 
+static bool ParseNumber64(const AString &s, UInt64 &res)
+{
+  const char *end;
+  if (s.Left(2) == "0x")
+  {
+    if (s.Length() == 2)
+      return false;
+    res = ConvertHexStringToUInt64((const char *)s + 2, &end);
+  }
+  else
+  {
+    if (s.IsEmpty())
+      return false;
+    res = ConvertStringToUInt64(s, &end);
+  }
+  return *end == 0;
+}
+
+static bool ParseNumber32(const AString &s, UInt32 &res)
+{
+  UInt64 res64;
+  if (!ParseNumber64(s, res64) || res64 >= ((UInt64)1 << 32))
+    return false;
+  res = (UInt32)res64;
+  return true;
+}
+
+void ParseTime(const CXmlItem &item, bool &defined, FILETIME &ft, const AString &s)
+{
+  defined = false;
+  int cTimeIndex = item.FindSubTag(s);
+  if (cTimeIndex >= 0)
+  {
+    const CXmlItem &timeItem = item.SubItems[cTimeIndex];
+    UInt32 high = 0, low = 0;
+    if (ParseNumber32(timeItem.GetSubStringForTag("HIGHPART"), high) &&
+      ParseNumber32(timeItem.GetSubStringForTag("LOWPART"), low))
+    {
+      defined = true;
+      ft.dwHighDateTime = high;
+      ft.dwLowDateTime = low;
+    }
+  }
+}
+
+void CImageInfo::Parse(const CXmlItem &item)
+{
+  ParseTime(item, CTimeDefined, CTime, "CREATIONTIME");
+  ParseTime(item, MTimeDefined, MTime, "LASTMODIFICATIONTIME");
+  NameDefined = ConvertUTF8ToUnicode(item.GetSubStringForTag("NAME"), Name);
+  // IndexDefined = ParseNumber32(item.GetPropertyValue("INDEX"), Index);
+}
+
+void CXml::Parse()
+{
+  size_t size = Data.GetCapacity();
+  if (size < 2 || (size & 1) != 0 || (size > 1 << 24))
+    return;
+  const Byte *p = Data;
+  if (Get16(p) != 0xFEFF)
+    return;
+  UString s;
+  {
+    wchar_t *chars = s.GetBuffer((int)size / 2 + 1);
+    for (size_t i = 2; i < size; i += 2)
+      *chars++ = (wchar_t)Get16(p + i);
+    *chars = 0;
+    s.ReleaseBuffer();
+  }
+
+  AString utf;
+  if (!ConvertUnicodeToUTF8(s, utf))
+    return;
+  ::CXml xml;
+  if (!xml.Parse(utf))
+    return;
+  if (xml.Root.Name != "WIM")
+    return;
+
+  for (int i = 0; i < xml.Root.SubItems.Size(); i++)
+  {
+    const CXmlItem &item = xml.Root.SubItems[i];
+    if (item.IsTagged("IMAGE"))
+    {
+      CImageInfo imageInfo;
+      imageInfo.Parse(item);
+      Images.Add(imageInfo);
+    }
+  }
+}
+
 static const wchar_t *kStreamsNamePrefix = L"Files" WSTRING_PATH_SEPARATOR;
 static const wchar_t *kMethodLZX = L"LZX";
+static const wchar_t *kMethodXpress = L"XPress";
 static const wchar_t *kMethodCopy = L"Copy";
 
 IMP_IInArchive_Props
@@ -59,11 +163,57 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
+
+  const CImageInfo *image = NULL;
+  if (m_Xmls.Size() == 1)
+  {
+    const CXml &xml = m_Xmls[0];
+    if (xml.Images.Size() == 1)
+      image = &xml.Images[0];
+  }
+
   switch(propID)
   {
     case kpidSize: prop = m_Database.GetUnpackSize(); break;
-    case kpidPackedSize: prop = m_Database.GetPackSize(); break;
-    case kpidIsVolume: 
+    case kpidPackSize: prop = m_Database.GetPackSize(); break;
+    
+    case kpidCTime:
+      if (m_Xmls.Size() == 1)
+      {
+        const CXml &xml = m_Xmls[0];
+        int index = -1;
+        for (int i = 0; i < xml.Images.Size(); i++)
+        {
+          const CImageInfo &image = xml.Images[i];
+          if (image.CTimeDefined)
+            if (index < 0 || ::CompareFileTime(&image.CTime, &xml.Images[index].CTime) < 0)
+              index = i;
+        }
+        if (index >= 0)
+          prop = xml.Images[index].CTime;
+      }
+      break;
+
+    case kpidMTime:
+      if (m_Xmls.Size() == 1)
+      {
+        const CXml &xml = m_Xmls[0];
+        int index = -1;
+        for (int i = 0; i < xml.Images.Size(); i++)
+        {
+          const CImageInfo &image = xml.Images[i];
+          if (image.MTimeDefined)
+            if (index < 0 || ::CompareFileTime(&image.MTime, &xml.Images[index].MTime) > 0)
+              index = i;
+        }
+        if (index >= 0)
+          prop = xml.Images[index].MTime;
+      }
+      break;
+
+    case kpidComment: if (image != NULL && image->NameDefined) prop = image->Name; break;
+
+    case kpidIsVolume:
       if (m_Xmls.Size() > 0)
       {
         UInt16 volIndex = m_Xmls[0].VolIndex;
@@ -71,7 +221,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           prop = (m_Volumes[volIndex].Header.NumParts > 1);
       }
       break;
-    case kpidVolume: 
+    case kpidVolume:
       if (m_Xmls.Size() > 0)
       {
         UInt16 volIndex = m_Xmls[0].VolIndex;
@@ -79,7 +229,39 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           prop = (UInt32)m_Volumes[volIndex].Header.PartNumber;
       }
       break;
-    case kpidNumVolumes: if (m_Volumes.Size() > 0) prop = (UInt32)(m_Volumes.Size() - 1);
+    case kpidNumVolumes: if (m_Volumes.Size() > 0) prop = (UInt32)(m_Volumes.Size() - 1); break;
+    case kpidMethod:
+    {
+      bool lzx = false, xpress = false, copy = false;
+      for (int i = 0; i < m_Xmls.Size(); i++)
+      {
+        const CVolume &vol = m_Volumes[m_Xmls[i].VolIndex];
+        const CHeader &header = vol.Header;
+        if (header.IsCompressed())
+          if (header.IsLzxMode())
+            lzx = true;
+          else
+            xpress = true;
+        else
+          copy = true;
+      }
+      UString res;
+      if (lzx)
+        res = kMethodLZX;
+      if (xpress)
+      {
+        if (!res.IsEmpty())
+          res += L' ';
+        res += kMethodXpress;
+      }
+      if (copy)
+      {
+        if (!res.IsEmpty())
+          res += L' ';
+        res += kMethodCopy;
+      }
+      prop = res;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -94,8 +276,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     const CItem &item = m_Database.Items[index];
     const CStreamInfo *si = NULL;
+    const CVolume *vol = NULL;
     if (item.StreamIndex >= 0)
+    {
       si = &m_Database.Streams[item.StreamIndex];
+      vol = &m_Volumes[si->PartNumber];
+    }
 
     switch(propID)
     {
@@ -114,59 +300,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           break;
         }
         break;
-      case kpidIsFolder:
-        prop = item.IsDirectory();
-        break;
-      case kpidAttributes:
-        if (item.HasMetadata)
-          prop = item.Attributes;
-        break;
-      case kpidCreationTime:
-        if (item.HasMetadata)
-          prop = item.CreationTime;
-        break;
-      case kpidLastAccessTime:
-        if (item.HasMetadata)
-          prop = item.LastAccessTime;
-        break;
-      case kpidLastWriteTime:
-        if (item.HasMetadata)
-          prop = item.LastWriteTime;
-        break;
-      case kpidPackedSize:
-        if (si)
-          prop = si->Resource.PackSize;
-        else
-          prop = (UInt64)0;
-        break;
-      case kpidSize:
-        if (si)
-          prop = si->Resource.UnpackSize;
-        else
-          prop = (UInt64)0;
-        break;
-      case kpidMethod:
-        if (si)
-          if (si->Resource.IsCompressed())
-            prop = kMethodLZX;
-          else
-            prop = kMethodCopy;
-        break;
+      case kpidIsDir: prop = item.isDir(); break;
+      case kpidAttrib: if (item.HasMetadata) prop = item.Attrib; break;
+      case kpidCTime: if (item.HasMetadata) prop = item.CTime; break;
+      case kpidATime: if (item.HasMetadata) prop = item.ATime; break;
+      case kpidMTime: if (item.HasMetadata) prop = item.MTime; break;
+      case kpidPackSize: prop = si ? si->Resource.PackSize : (UInt64)0; break;
+      case kpidSize: prop = si ? si->Resource.UnpackSize : (UInt64)0; break;
+      case kpidMethod: if (si) prop = si->Resource.IsCompressed() ?
+          (vol->Header.IsLzxMode() ? kMethodLZX : kMethodXpress) : kMethodCopy; break;
       #ifdef WIM_DETAILS
-      case kpidVolume:
-        if (si)
-          prop = (UInt32)si->PartNumber;
-        break;
-      case kpidOffset:
-        if (si)
-          prop = (UInt64)si->Resource.Offset;
-        break;
-      case kpidLinks:
-        if (si)
-          prop = (UInt32)si->RefCount;
-        else
-          prop = (UInt64)0;
-        break;
+      case kpidVolume: if (si) prop = (UInt32)si->PartNumber; break;
+      case kpidOffset: if (si)  prop = (UInt64)si->Resource.Offset; break;
+      case kpidLinks: prop = si ? (UInt32)si->RefCount : (UInt32)0; break;
       #endif
     }
   }
@@ -184,16 +330,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           prop = s;
           break;
         }
-        case kpidIsFolder:
-          prop = false;
-          break;
-        case kpidPackedSize:
-        case kpidSize:
-          prop = (UInt64)m_Xmls[index].Data.GetCapacity();
-          break;
-        case kpidMethod:
-          prop = L"Copy";
-          break;
+        case kpidIsDir: prop = false; break;
+        case kpidPackSize:
+        case kpidSize: prop = (UInt64)m_Xmls[index].Data.GetCapacity(); break;
+        case kpidMethod: prop = L"Copy"; break;
       }
     }
   }
@@ -206,7 +346,7 @@ class CVolumeName
 {
   // UInt32 _volIndex;
   UString _before;
-  UString _after;    
+  UString _after;
 public:
   CVolumeName() {};
 
@@ -228,7 +368,7 @@ public:
   }
 };
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback *openArchiveCallback)
 {
@@ -300,7 +440,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         if (xml.Data == m_Xmls[0].Data)
           needAddXml = false;
       if (needAddXml)
+      {
+        xml.Parse();
         m_Xmls.Add(xml);
+      }
       
       if (i == 1)
       {
@@ -398,7 +541,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     UInt32 index = allFilesMode ? i : indices[i];
     i++;
-    Int32 askMode = testMode ? 
+    Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
 
@@ -428,7 +571,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(item.HasStream() ? 
+      RINOK(extractCallback->SetOperationResult(item.HasStream() ?
             NExtract::NOperationResult::kDataError :
             NExtract::NOperationResult::kOK));
       continue;
@@ -445,7 +588,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (streamIndex != prevSuccessStreamIndex || realOutStream)
     {
       Byte digest[20];
-      HRESULT res = unpacker.Unpack(m_Volumes[si.PartNumber].Stream, si.Resource, realOutStream, progress, digest);
+      const CVolume &vol = m_Volumes[si.PartNumber];
+      HRESULT res = unpacker.Unpack(vol.Stream, si.Resource, vol.Header.IsLzxMode(),
+          realOutStream, progress, digest);
       if (res == S_OK)
       {
         if (memcmp(digest, si.Hash, kHashSize) == 0)

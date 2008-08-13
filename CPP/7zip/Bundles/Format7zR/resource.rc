@@ -2,4 +2,4 @@
 
 MY_VERSION_INFO_DLL("7z Standalone Plugin", "7zr")
 
-101  ICON  "../../Archive/7z/7z.ico"
+101  ICON  "../../Archive/Icons/7z.ico"

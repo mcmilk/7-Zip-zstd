@@ -22,7 +22,7 @@ static void ParseNumberString(const UString &s, NCOM::CPropVariant &prop)
     prop = s;
   else if (result <= 0xFFFFFFFF)
     prop = (UInt32)result;
-  else 
+  else
     prop = result;
 }
 

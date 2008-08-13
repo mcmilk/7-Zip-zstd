@@ -102,6 +102,7 @@ WIN_OBJS = \
   $O\Security.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
+  $O\Time.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \

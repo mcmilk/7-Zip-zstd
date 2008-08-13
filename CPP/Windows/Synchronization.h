@@ -5,8 +5,8 @@
 
 #include "Defs.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../C/Threads.h"
 }
 
@@ -113,8 +113,8 @@ public:
       return 0;
     return ::GetLastError();
   }
-  WRes Release() 
-  { 
+  WRes Release()
+  {
     return ::ReleaseMutex(_handle) ? 0 : ::GetLastError();
   }
 };
@@ -122,7 +122,7 @@ class CMutexLock
 {
   CMutex *_object;
 public:
-  CMutexLock(CMutex &object): _object(&object) { _object->Lock(); } 
+  CMutexLock(CMutex &object): _object(&object) { _object->Lock(); }
   ~CMutexLock() { _object->Release(); }
 };
 #endif
@@ -159,7 +159,7 @@ class CCriticalSectionLock
   CCriticalSection *_object;
   void Unlock()  { _object->Leave(); }
 public:
-  CCriticalSectionLock(CCriticalSection &object): _object(&object) {_object->Enter(); } 
+  CCriticalSectionLock(CCriticalSection &object): _object(&object) {_object->Enter(); }
   ~CCriticalSectionLock() { Unlock(); }
 };
 

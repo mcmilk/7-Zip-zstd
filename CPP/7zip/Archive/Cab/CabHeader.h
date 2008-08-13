@@ -7,11 +7,13 @@
 
 namespace NArchive {
 namespace NCab {
-namespace NHeader{
+namespace NHeader {
 
-namespace NArchive 
+const unsigned kMarkerSize = 8;
+extern Byte kMarker[kMarkerSize];
+
+namespace NArchive
 {
-  extern UInt32 kSignature;
   namespace NFlags
   {
     const int kPrevCabinet = 0x0001;

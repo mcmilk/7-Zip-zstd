@@ -9,7 +9,7 @@
 namespace NArchive {
 namespace NTar {
 
-struct CUpdateItemInfo
+struct CUpdateItem
 {
   bool NewData;
   bool NewProperties;
@@ -19,12 +19,12 @@ struct CUpdateItemInfo
   UInt32 Time;
   UInt64 Size;
   AString Name;
-  bool IsDirectory;
+  bool IsDir;
 };
 
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     const CObjectVector<CItemEx> &inputItems,
-    const CObjectVector<CUpdateItemInfo> &updateItems,
+    const CObjectVector<CUpdateItem> &updateItems,
     IArchiveUpdateCallback *updateCallback);
 
 }}

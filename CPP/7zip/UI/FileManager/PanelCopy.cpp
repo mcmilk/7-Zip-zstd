@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "Panel.h"
-#include "resource.h" 
+#include "resource.h"
 #include "LangUtils.h"
 #include "ExtractCallback.h"
 #include "Windows/Thread.h"
@@ -29,10 +29,10 @@ struct CThreadExtractInArchive2
   {
     ExtractCallbackSpec->ProgressDialog.WaitCreating();
     if (MoveMode)
-      Result = FolderOperations->MoveTo(&Indices.Front(), Indices.Size(), 
+      Result = FolderOperations->MoveTo(&Indices.Front(), Indices.Size(),
           DestPath, ExtractCallback);
     else
-      Result = FolderOperations->CopyTo(&Indices.Front(), Indices.Size(), 
+      Result = FolderOperations->CopyTo(&Indices.Front(), Indices.Size(),
           DestPath, ExtractCallback);
     ExtractCallbackSpec->ProgressDialog.MyClose();
     return 0;
@@ -44,8 +44,9 @@ struct CThreadExtractInArchive2
   }
 };
 
-HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &folder, 
-    bool moveMode, bool showErrorMessages, UStringVector *messages)
+HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &folder,
+    bool moveMode, bool showErrorMessages, UStringVector *messages,
+    bool &usePassword, UString &password)
 {
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
@@ -68,7 +69,7 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   extracter.ExtractCallbackSpec->ShowMessages = showErrorMessages;
   extracter.ExtractCallbackSpec->ProgressDialog.CompressingMode = false;
   
-  UString title = moveMode ? 
+  UString title = moveMode ?
       LangString(IDS_MOVING, 0x03020206):
       LangString(IDS_COPYING, 0x03020205);
   UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
@@ -83,6 +84,9 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   extracter.DestPath = folder;
   extracter.FolderOperations = folderOperations;
   extracter.MoveMode = moveMode;
+
+  extracter.ExtractCallbackSpec->PasswordIsDefined = usePassword;
+  extracter.ExtractCallbackSpec->Password = password;
   
   NWindows::CThread extractThread;
   RINOK(extractThread.Create(CThreadExtractInArchive2::MyThreadFunction, &extracter));
@@ -90,7 +94,13 @@ HRESULT CPanel::CopyTo(const CRecordVector<UInt32> &indices, const UString &fold
   
   if (messages != 0)
     *messages = extracter.ExtractCallbackSpec->Messages;
-  res = extracter.Result; 
+  res = extracter.Result;
+
+  if (res == S_OK && extracter.ExtractCallbackSpec->Messages.IsEmpty())
+  {
+    usePassword = extracter.ExtractCallbackSpec->PasswordIsDefined;
+    password = extracter.ExtractCallbackSpec->Password;
+  }
   }
   RefreshTitleAlways();
   return res;
@@ -126,7 +136,7 @@ struct CThreadUpdate
 };
 
 
-HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &filePaths, 
+HRESULT CPanel::CopyFrom(const UString &folderPrefix, const UStringVector &filePaths,
     bool showErrorMessages, UStringVector *messages)
 {
   CMyComPtr<IFolderOperations> folderOperations;

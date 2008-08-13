@@ -13,7 +13,7 @@ CFolderInStream::CFolderInStream()
   _inStreamWithHash = _inStreamWithHashSpec;
 }
 
-void CFolderInStream::Init(IArchiveUpdateCallback *updateCallback, 
+void CFolderInStream::Init(IArchiveUpdateCallback *updateCallback,
     const UInt32 *fileIndices, UInt32 numFiles)
 {
   _updateCallback = updateCallback;

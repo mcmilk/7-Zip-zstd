@@ -64,7 +64,7 @@ wchar_t * MyStringUpper(wchar_t *s)
 }
 
 wchar_t * MyStringLower(wchar_t *s)
-{ 
+{
   if (s == 0)
     return 0;
   wchar_t *res = CharLowerW(s);
@@ -81,43 +81,43 @@ wchar_t * MyStringLower(wchar_t *s)
 inline int ConvertCompareResult(int r) { return r - 2; }
 
 int MyStringCollate(const wchar_t *s1, const wchar_t *s2)
-{ 
+{
   int res = CompareStringW(
-        LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1); 
+        LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1);
   #ifdef _UNICODE
   return ConvertCompareResult(res);
   #else
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return ConvertCompareResult(res);
-  return MyStringCollate(UnicodeStringToMultiByte(s1), 
+  return MyStringCollate(UnicodeStringToMultiByte(s1),
         UnicodeStringToMultiByte(s2));
   #endif
 }
 
 #ifndef _WIN32_WCE
 int MyStringCollate(const char *s1, const char *s2)
-{ 
+{
   return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1)); 
+    LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1));
 }
 
 int MyStringCollateNoCase(const char *s1, const char *s2)
-{ 
+{
   return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1)); 
+    LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1));
 }
 #endif
 
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
-{ 
+{
   int res = CompareStringW(
-        LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1); 
+        LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1);
   #ifdef _UNICODE
   return ConvertCompareResult(res);
   #else
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
     return ConvertCompareResult(res);
-  return MyStringCollateNoCase(UnicodeStringToMultiByte(s1), 
+  return MyStringCollateNoCase(UnicodeStringToMultiByte(s1),
       UnicodeStringToMultiByte(s2));
   #endif
 }
@@ -132,7 +132,7 @@ wchar_t MyCharUpper(wchar_t c)
 
 /*
 int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
-{ 
+{
   for (;;)
   {
     wchar_t c1 = *s1++;
@@ -150,7 +150,7 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
 #endif
 
 int MyStringCompare(const char *s1, const char *s2)
-{ 
+{
   for (;;)
   {
     unsigned char c1 = (unsigned char)*s1++;
@@ -162,7 +162,7 @@ int MyStringCompare(const char *s1, const char *s2)
 }
 
 int MyStringCompare(const wchar_t *s1, const wchar_t *s2)
-{ 
+{
   for (;;)
   {
     wchar_t c1 = *s1++;
@@ -174,7 +174,7 @@ int MyStringCompare(const wchar_t *s1, const wchar_t *s2)
 }
 
 int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
-{ 
+{
   for (;;)
   {
     wchar_t c1 = *s1++;
@@ -192,7 +192,7 @@ int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
 
 #ifdef _WIN32
 int MyStringCompareNoCase(const char *s1, const char *s2)
-{ 
+{
   return MyStringCompareNoCase(MultiByteToUnicodeString(s1), MultiByteToUnicodeString(s2));
 }
 #endif

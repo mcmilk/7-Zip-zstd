@@ -21,7 +21,7 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_BitPos = 8; 
+    m_BitPos = 8;
     m_CurByte = 0;
   }
   HRESULT Flush()
@@ -34,7 +34,7 @@ public:
   {
     if(m_BitPos < 8)
       m_Stream.WriteByte(m_CurByte);
-    m_BitPos = 8; 
+    m_BitPos = 8;
     m_CurByte = 0;
   }
 
@@ -56,7 +56,7 @@ public:
     }
   }
   UInt32 GetBitPosition() const {  return (8 - m_BitPos); }
-  UInt64 GetProcessedSize() const { 
+  UInt64 GetProcessedSize() const {
       return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) /8; }
   void WriteByte(Byte b) { m_Stream.WriteByte(b);}
 };

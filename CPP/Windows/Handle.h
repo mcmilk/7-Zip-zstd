@@ -22,12 +22,12 @@ public:
     _handle = NULL;
     return true;
   }
-  void Attach(HANDLE handle) 
+  void Attach(HANDLE handle)
     { _handle = handle; }
-  HANDLE Detach() 
-  { 
+  HANDLE Detach()
+  {
     HANDLE handle = _handle;
-    _handle = NULL; 
+    _handle = NULL;
     return handle;
   }
 };

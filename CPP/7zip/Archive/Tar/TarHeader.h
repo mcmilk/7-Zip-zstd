@@ -45,7 +45,7 @@ namespace NFileHeader
   namespace NMode
   {
     const int kSetUID   = 04000;  // Set UID on execution
-    const int kSetGID   = 02000;  // Set GID on execution 
+    const int kSetGID   = 02000;  // Set GID on execution
     const int kSaveText = 01000;  // Save text (sticky bit)
   }
 
@@ -67,7 +67,7 @@ namespace NFileHeader
   namespace NLinkFlag
   {
     const char kOldNormal    = '\0'; // Normal disk file, Unix compatible
-    const char kNormal       = '0'; // Normal disk file 
+    const char kNormal       = '0'; // Normal disk file
     const char kLink         = '1'; // Link to previously dumped file
     const char kSymbolicLink = '2'; // Symbolic link
     const char kCharacter    = '3'; // Character special file
@@ -76,12 +76,12 @@ namespace NFileHeader
     const char kFIFO         = '6'; // FIFO special file
     const char kContiguous   = '7'; // Contiguous file
 
-    const char kDumpDir       = 'D'; /* GNUTYPE_DUMPDIR. 
+    const char kDumpDir       = 'D'; /* GNUTYPE_DUMPDIR.
       data: list of files created by the --incremental (-G) option
-      Each file name is preceded by either 
-        - 'Y' (file should be in this archive) 
-        - 'N' (file is a directory, or is not stored in the archive.) 
-        Each file name is terminated by a null + an additional null after 
+      Each file name is preceded by either
+        - 'Y' (file should be in this archive)
+        - 'N' (file is a directory, or is not stored in the archive.)
+        Each file name is terminated by a null + an additional null after
         the last file name. */
 
   }
@@ -94,7 +94,7 @@ namespace NFileHeader
   extern const char *kLongLink2; //   = "@LongLink";
 
   // The magic field is filled with this if uname and gname are valid.
-  namespace NMagic 
+  namespace NMagic
   {
     extern const char *kUsTar; //   = "ustar"; // 5 chars
     extern const char *kGNUTar; //  = "GNUtar "; // 7 chars and a null

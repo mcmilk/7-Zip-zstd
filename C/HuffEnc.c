@@ -1,5 +1,5 @@
 /* HuffEnc.c -- functions for Huffman encoding
-2008-03-26
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -24,22 +24,22 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
     #ifdef HUFFMAN_SPEED_OPT
     
     UInt32 counters[NUM_COUNTERS];
-    for (i = 0; i < NUM_COUNTERS; i++) 
+    for (i = 0; i < NUM_COUNTERS; i++)
       counters[i] = 0;
-    for (i = 0; i < numSymbols; i++) 
+    for (i = 0; i < numSymbols; i++)
     {
       UInt32 freq = freqs[i];
       counters[(freq < NUM_COUNTERS - 1) ? freq : NUM_COUNTERS - 1]++;
     }
  
-    for (i = 1; i < NUM_COUNTERS; i++) 
+    for (i = 1; i < NUM_COUNTERS; i++)
     {
       UInt32 temp = counters[i];
       counters[i] = num;
       num += temp;
     }
 
-    for (i = 0; i < numSymbols; i++) 
+    for (i = 0; i < numSymbols; i++)
     {
       UInt32 freq = freqs[i];
       if (freq == 0)
@@ -52,7 +52,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
     
     #else
 
-    for (i = 0; i < numSymbols; i++) 
+    for (i = 0; i < numSymbols; i++)
     {
       UInt32 freq = freqs[i];
       if (freq == 0)
@@ -65,7 +65,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
     #endif
   }
 
-  if (num < 2) 
+  if (num < 2)
   {
     int minCode = 0;
     int maxCode = 1;
@@ -85,7 +85,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
     UInt32 b, e, i;
   
     i = b = e = 0;
-    do 
+    do
     {
       UInt32 n, m, freq;
       n = (i != num && (b == e || (p[i] >> NUM_BITS) <= (p[b] >> NUM_BITS))) ? i++ : b++;
@@ -96,21 +96,21 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
       p[m] = (p[m] & MASK) | (e << NUM_BITS);
       p[e] = (p[e] & MASK) | freq;
       e++;
-    } 
+    }
     while (num - e > 1);
     
     {
       UInt32 lenCounters[kMaxLen + 1];
-      for (i = 0; i <= kMaxLen; i++) 
+      for (i = 0; i <= kMaxLen; i++)
         lenCounters[i] = 0;
       
       p[--e] &= MASK;
       lenCounters[1] = 2;
-      while (e > 0) 
+      while (e > 0)
       {
         UInt32 len = (p[p[--e] >> NUM_BITS] >> NUM_BITS) + 1;
         p[e] = (p[e] & MASK) | (len << NUM_BITS);
-        if (len >= maxLen) 
+        if (len >= maxLen)
           for (len = maxLen - 1; lenCounters[len] == 0; len--);
         lenCounters[len]--;
         lenCounters[len + 1] += 2;
@@ -119,10 +119,10 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
       {
         UInt32 len;
         i = 0;
-        for (len = maxLen; len != 0; len--) 
+        for (len = maxLen; len != 0; len--)
         {
           UInt32 num;
-          for (num = lenCounters[len]; num != 0; num--) 
+          for (num = lenCounters[len]; num != 0; num--)
             lens[p[i++] & MASK] = (Byte)len;
         }
       }
@@ -132,14 +132,14 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
         {
           UInt32 code = 0;
           UInt32 len;
-          for (len = 1; len <= kMaxLen; len++) 
+          for (len = 1; len <= kMaxLen; len++)
             nextCodes[len] = code = (code + lenCounters[len - 1]) << 1;
         }
         /* if (code + lenCounters[kMaxLen] - 1 != (1 << kMaxLen) - 1) throw 1; */
 
         {
           UInt32 i;
-          for (i = 0; i < numSymbols; i++) 
+          for (i = 0; i < numSymbols; i++)
             p[i] = nextCodes[lens[i]]++;
         }
       }

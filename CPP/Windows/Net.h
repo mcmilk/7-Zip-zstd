@@ -11,10 +11,10 @@ namespace NNet {
 
 struct CResourceBase
 {
-  DWORD Scope; 
-  DWORD Type; 
-  DWORD DisplayType; 
-  DWORD Usage; 
+  DWORD Scope;
+  DWORD Type;
+  DWORD DisplayType;
+  DWORD Usage;
   bool LocalNameIsDefined;
   bool RemoteNameIsDefined;
   bool CommentIsDefined;
@@ -70,10 +70,10 @@ DWORD GetResourceParent(const CResource &resource, CResource &parentResource);
 DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource);
 #endif
 
-DWORD GetResourceInformation(const CResource &resource, 
+DWORD GetResourceInformation(const CResource &resource,
     CResource &destResource, CSysString &systemPathPart);
 #ifndef _UNICODE
-DWORD GetResourceInformation(const CResourceW &resource, 
+DWORD GetResourceInformation(const CResourceW &resource,
     CResourceW &destResource, UString &systemPathPart);
 #endif
 

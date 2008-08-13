@@ -20,7 +20,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream,
     return E_INVALIDARG;
 
   if (!m_OutWindowStream.Create(kHistorySize))
-    return E_OUTOFMEMORY; 
+    return E_OUTOFMEMORY;
   if (!m_InBitStream.Create(1 << 20))
     return E_OUTOFMEMORY;
 

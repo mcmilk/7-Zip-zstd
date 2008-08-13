@@ -26,19 +26,19 @@ using namespace NTime;
 namespace NArchive {
 namespace NIso {
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidLastWriteTime, VT_FILETIME}
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME}
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO
 
-STDMETHODIMP CHandler::Open(IInStream *stream, 
+STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {
@@ -89,15 +89,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = (const wchar_t *)s;
         break;
       }
-      case kpidIsFolder:
+      case kpidIsDir:
         prop = false;
         break;
       case kpidSize:
-      case kpidPackedSize:
-      {
+      case kpidPackSize:
         prop = (UInt64)_archive.GetBootItemSize(index);
         break;
-      }
     }
   }
   else
@@ -125,15 +123,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           prop = (const wchar_t *)NItemName::GetOSName2(s);
         }
         break;
-      case kpidIsFolder:
+      case kpidIsDir:
         prop = item.IsDir();
         break;
       case kpidSize:
-      case kpidPackedSize:
+      case kpidPackSize:
         if (!item.IsDir())
           prop = (UInt64)item.DataLength;
         break;
-      case kpidLastWriteTime:
+      case kpidMTime:
       {
         FILETIME utcFileTime;
         if (item.DateTime.GetFileTime(utcFileTime))
@@ -242,7 +240,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     streamSpec->Init(currentItemSize);
     RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
     realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == currentItemSize) ? 
+    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == currentItemSize) ?
         NArchive::NExtract::NOperationResult::kOK:
         NArchive::NExtract::NOperationResult::kDataError));
   }

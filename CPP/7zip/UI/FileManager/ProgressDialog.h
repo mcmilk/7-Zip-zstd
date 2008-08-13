@@ -19,6 +19,7 @@ class CProgressSynch
 public:
   CProgressSynch(): _stopped(false), _paused(false), _total(1), _completed(0) {}
 
+  HRESULT ProcessStopAndPause();
   bool GetStopped()
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
@@ -103,7 +104,7 @@ public:
 
   CProgressDialog(): _timer(0)
     #ifndef _SFX
-    ,MainWindow(0) 
+    ,MainWindow(0)
     #endif
   {
     if (_dialogCreatedEvent.Create() != S_OK)
@@ -114,9 +115,9 @@ public:
 
 
   INT_PTR Create(const UString &title, HWND wndParent = 0)
-  { 
+  {
     _title = title;
-    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent); 
+    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent);
   }
 
   static const UINT kCloseMessage;

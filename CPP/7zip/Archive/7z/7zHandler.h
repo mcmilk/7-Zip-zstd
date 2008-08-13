@@ -18,56 +18,35 @@
 namespace NArchive {
 namespace N7z {
 
-#ifdef _7Z_VOL
-struct CRef
-{
-  int VolumeIndex;
-  int ItemIndex;
-};
-
-struct CVolume
-{
-  int StartRef2Index;
-  CMyComPtr<IInStream> Stream;
-  CArchiveDatabaseEx Database;
-};
-#endif
-
 #ifndef __7Z_SET_PROPERTIES
 
 #ifdef EXTRACT_ONLY
 #ifdef COMPRESS_MT
 #define __7Z_SET_PROPERTIES
 #endif
-#else 
+#else
 #define __7Z_SET_PROPERTIES
 #endif
 
 #endif
 
 
-class CHandler: 
+class CHandler:
   #ifndef EXTRACT_ONLY
   public NArchive::COutHandler,
   #endif
   public IInArchive,
-  #ifdef _7Z_VOL
-  public IInArchiveGetStream,
-  #endif
   #ifdef __7Z_SET_PROPERTIES
-  public ISetProperties, 
+  public ISetProperties,
   #endif
   #ifndef EXTRACT_ONLY
-  public IOutArchive, 
+  public IOutArchive,
   #endif
   PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
 public:
   MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  #ifdef _7Z_VOL
-  MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
-  #endif
   #ifdef __7Z_SET_PROPERTIES
   MY_QUERYINTERFACE_ENTRY(ISetProperties)
   #endif
@@ -79,10 +58,6 @@ public:
   MY_ADDREF_RELEASE
 
   INTERFACE_IInArchive(;)
-
-  #ifdef _7Z_VOL
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);  
-  #endif
 
   #ifdef __7Z_SET_PROPERTIES
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
@@ -97,12 +72,10 @@ public:
   CHandler();
 
 private:
-  #ifdef _7Z_VOL
-  CObjectVector<CVolume> _volumes;
-  CObjectVector<CRef> _refs;
-  #else
   CMyComPtr<IInStream> _inStream;
-  NArchive::N7z::CArchiveDatabaseEx _database;
+  NArchive::N7z::CArchiveDatabaseEx _db;
+  #ifndef _NO_CRYPTO
+  bool _passwordIsDefined;
   #endif
 
   #ifdef EXTRACT_ONLY
@@ -139,6 +112,8 @@ private:
   void FillPopIDs();
 
   #endif
+
+  DECL_EXTERNAL_CODECS_VARS
 };
 
 }}

@@ -27,7 +27,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *properties, UInt32 size
 
   if (!_rangeDecoder.Create(1 << 20))
     return E_OUTOFMEMORY;
-  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
+  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize))
     return E_OUTOFMEMORY;
 
   return S_OK;
@@ -123,7 +123,7 @@ STDMETHODIMP CDecoder::CodeReal(ISequentialInStream *inStream,
 
 #else
 
-#define PPMD_TRY_BEGIN try { 
+#define PPMD_TRY_BEGIN try {
 #define PPMD_TRY_END } \
   catch(const CInBufferException &e)  { return e.ErrorCode; } \
   catch(const COutBufferException &e)  { return e.ErrorCode; } \

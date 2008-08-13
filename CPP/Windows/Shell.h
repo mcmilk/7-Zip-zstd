@@ -60,7 +60,7 @@ public:
   ~CDrop();
   void Attach(HDROP object);
   operator HDROP() { return m_Object;}
-  bool QueryPoint(LPPOINT point) 
+  bool QueryPoint(LPPOINT point)
     { return BOOLToBool(::DragQueryPoint(m_Object, point)); }
   void Finish() {  ::DragFinish(m_Object); }
   UINT QueryFile(UINT fileIndex, LPTSTR fileName, UINT fileNameSize)

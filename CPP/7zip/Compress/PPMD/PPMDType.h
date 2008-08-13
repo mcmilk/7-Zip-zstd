@@ -3,7 +3,7 @@
  *  Written and distributed to public domain by Dmitry Shkarin 1997,        *
  *  1999-2001                                                               *
  *  Contents: compilation parameters and miscelaneous definitions           *
- *  Comments: system & compiler dependent file                              
+ *  Comments: system & compiler dependent file
  
  *  modified by Igor Pavlov (2004-08-29).
  ****************************************************************************/

@@ -8,12 +8,8 @@ namespace NArchive{
 namespace NCab{
 namespace NHeader{
 
-namespace NArchive {
+Byte kMarker[kMarkerSize] = {'M' + 1, 'S', 'C', 'F', 0, 0, 0, 0 };
 
-UInt32 kSignature = 0x4643534d + 1;
-static class CSignatureInitializer
-{ public:  CSignatureInitializer() { kSignature--; }} g_SignatureInitializer;
-
-}
+struct SignatureInitializer { SignatureInitializer() {  kMarker[0]--;  }; } g_SignatureInitializer;
 
 }}}

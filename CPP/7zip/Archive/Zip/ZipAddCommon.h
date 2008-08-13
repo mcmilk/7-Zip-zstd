@@ -48,7 +48,7 @@ public:
   CAddCommon(const CCompressionMethodMode &options);
   HRESULT Compress(
       DECL_EXTERNAL_CODECS_LOC_VARS
-      ISequentialInStream *inStream, IOutStream *outStream, 
+      ISequentialInStream *inStream, IOutStream *outStream,
       ICompressProgressInfo *progress, CCompressingResult &operationResult);
 };
 

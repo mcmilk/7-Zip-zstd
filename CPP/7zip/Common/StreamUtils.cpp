@@ -13,7 +13,7 @@ HRESULT ReadStream(ISequentialInStream *stream, void *data, size_t *processedSiz
   while (size != 0)
   {
     UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
-    UInt32 processedSizeLoc; 
+    UInt32 processedSizeLoc;
     HRESULT res = stream->Read(data, curSize, &processedSizeLoc);
     *processedSize += processedSizeLoc;
     data = (void *)((Byte *)data + processedSizeLoc);
@@ -27,14 +27,14 @@ HRESULT ReadStream(ISequentialInStream *stream, void *data, size_t *processedSiz
 
 HRESULT ReadStream_FALSE(ISequentialInStream *stream, void *data, size_t size)
 {
-  size_t processedSize = size; 
+  size_t processedSize = size;
   RINOK(ReadStream(stream, data, &processedSize));
   return (size == processedSize) ? S_OK : S_FALSE;
 }
 
 HRESULT ReadStream_FAIL(ISequentialInStream *stream, void *data, size_t size)
 {
-  size_t processedSize = size; 
+  size_t processedSize = size;
   RINOK(ReadStream(stream, data, &processedSize));
   return (size == processedSize) ? S_OK : E_FAIL;
 }
@@ -44,7 +44,7 @@ HRESULT WriteStream(ISequentialOutStream *stream, const void *data, size_t size)
   while (size != 0)
   {
     UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
-    UInt32 processedSizeLoc; 
+    UInt32 processedSizeLoc;
     HRESULT res = stream->Write(data, curSize, &processedSizeLoc);
     data = (const void *)((const Byte *)data + processedSizeLoc);
     size -= processedSizeLoc;

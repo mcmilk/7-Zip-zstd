@@ -15,7 +15,6 @@
 
 using namespace NWindows;
 using namespace NCOM;
-using namespace NTime;
 
 namespace NArchive {
 namespace NTar {
@@ -27,34 +26,33 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 }
 
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
-    IArchiveUpdateCallback *updateCallback)
+    IArchiveUpdateCallback *callback)
 {
   COM_TRY_BEGIN
-  CObjectVector<CUpdateItemInfo> updateItems;
-  for(UInt32 i = 0; i < numItems; i++)
+  CObjectVector<CUpdateItem> updateItems;
+  for (UInt32 i = 0; i < numItems; i++)
   {
-    CUpdateItemInfo updateItem;
+    CUpdateItem ui;
     Int32 newData;
     Int32 newProperties;
     UInt32 indexInArchive;
-    if (!updateCallback)
+    if (!callback)
       return E_FAIL;
-    RINOK(updateCallback->GetUpdateItemInfo(i,
-        &newData, &newProperties, &indexInArchive));
-    updateItem.NewProperties = IntToBool(newProperties);
-    updateItem.NewData = IntToBool(newData);
-    updateItem.IndexInArchive = indexInArchive;
-    updateItem.IndexInClient = i;
+    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProperties, &indexInArchive));
+    ui.NewProperties = IntToBool(newProperties);
+    ui.NewData = IntToBool(newData);
+    ui.IndexInArchive = indexInArchive;
+    ui.IndexInClient = i;
 
     if (IntToBool(newProperties))
     {
       FILETIME utcTime;
       UString name;
-      bool isDirectoryStatusDefined;
+      /*
       UInt32 attributes;
       {
         NCOM::CPropVariant prop;
-        RINOK(updateCallback->GetProperty(i, kpidAttributes, &prop));
+        RINOK(callback->GetProperty(i, kpidAttrib, &prop));
         if (prop.vt == VT_EMPTY)
           attributes = 0;
         else if (prop.vt != VT_UI4)
@@ -62,16 +60,17 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         else
           attributes = prop.ulVal;
       }
+      */
       {
         NCOM::CPropVariant prop;
-        RINOK(updateCallback->GetProperty(i, kpidLastWriteTime, &prop));
+        RINOK(callback->GetProperty(i, kpidMTime, &prop));
         if (prop.vt != VT_FILETIME)
           return E_INVALIDARG;
         utcTime = prop.filetime;
       }
       {
         NCOM::CPropVariant prop;
-        RINOK(updateCallback->GetProperty(i, kpidPath, &prop));
+        RINOK(callback->GetProperty(i, kpidPath, &prop));
         if (prop.vt == VT_EMPTY)
           name.Empty();
         else if (prop.vt != VT_BSTR)
@@ -81,27 +80,21 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
       {
         NCOM::CPropVariant prop;
-        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &prop));
+        RINOK(callback->GetProperty(i, kpidIsDir, &prop));
         if (prop.vt == VT_EMPTY)
-          isDirectoryStatusDefined = false;
+          ui.IsDir = false;
         else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
-        {
-          updateItem.IsDirectory = (prop.boolVal != VARIANT_FALSE);
-          isDirectoryStatusDefined = true;
-        }
+          ui.IsDir = (prop.boolVal != VARIANT_FALSE);
       }
-      updateItem.Name = UnicodeStringToMultiByte(
-          NItemName::MakeLegalName(name), CP_OEMCP);
-      if (!isDirectoryStatusDefined)
-        updateItem.IsDirectory = ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-      if (updateItem.IsDirectory)
-        updateItem.Name += '/';
+      ui.Name = UnicodeStringToMultiByte(NItemName::MakeLegalName(name), CP_OEMCP);
+      if (ui.IsDir)
+        ui.Name += '/';
 
-      if(!FileTimeToUnixTime(utcTime, updateItem.Time))
+      if (!NTime::FileTimeToUnixTime(utcTime, ui.Time))
       {
-        updateItem.Time = 0;
+        ui.Time = 0;
         // return E_INVALIDARG;
       }
     }
@@ -110,16 +103,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       UInt64 size;
       {
         NCOM::CPropVariant prop;
-        RINOK(updateCallback->GetProperty(i, kpidSize, &prop));
+        RINOK(callback->GetProperty(i, kpidSize, &prop));
         if (prop.vt != VT_UI8)
           return E_INVALIDARG;
         size = prop.uhVal.QuadPart;
       }
-      updateItem.Size = size;
+      ui.Size = size;
     }
-    updateItems.Add(updateItem);
+    updateItems.Add(ui);
   }
-  return UpdateArchive(_inStream, outStream, _items, updateItems, updateCallback);
+  return UpdateArchive(_inStream, outStream, _items, updateItems, callback);
   COM_TRY_END
 }
 

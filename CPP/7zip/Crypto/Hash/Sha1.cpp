@@ -1,12 +1,12 @@
 // Sha1.cpp
-// This file is based on public domain 
+// This file is based on public domain
 // Steve Reid and Wei Dai's code from Crypto++
 
 #include "StdAfx.h"
 
 #include "Sha1.h"
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/RotateDefs.h"
 }
 
@@ -16,7 +16,7 @@ namespace NSha1 {
 // define it for speed optimization
 // #define _SHA1_UNROLL
 
-static const unsigned int kNumW = 
+static const unsigned int kNumW =
   #ifdef _SHA1_UNROLL
   16;
   #else
@@ -79,9 +79,9 @@ void CContextBase::GetBlockDigest(UInt32 *data, UInt32 *destDigest, bool returnR
 
 
   #ifdef _SHA1_UNROLL
-  RX_5(R2, 20); RX_5(R2, 25); RX_5(R2, 30); RX_5(R2, 35); 
-  RX_5(R3, 40); RX_5(R3, 45); RX_5(R3, 50); RX_5(R3, 55); 
-  RX_5(R4, 60); RX_5(R4, 65); RX_5(R4, 70); RX_5(R4, 75); 
+  RX_5(R2, 20); RX_5(R2, 25); RX_5(R2, 30); RX_5(R2, 35);
+  RX_5(R3, 40); RX_5(R3, 45); RX_5(R3, 50); RX_5(R3, 55);
+  RX_5(R4, 60); RX_5(R4, 65); RX_5(R4, 70); RX_5(R4, 75);
   #else
   i = 20;
   for (; i < 40; i += 5) { RX_5(R2, i); }
@@ -101,7 +101,7 @@ void CContextBase::GetBlockDigest(UInt32 *data, UInt32 *destDigest, bool returnR
   
   // Wipe variables
   // a = b = c = d = e = 0;
-}  
+}
 
 void CContextBase::PrepareBlock(UInt32 *block, unsigned int size) const
 {
@@ -165,7 +165,7 @@ void CContext::Final(Byte *digest)
   UpdateBlock();
 
   int i;
-  for (i = 0; i < kDigestSizeInWords; i++) 
+  for (i = 0; i < kDigestSizeInWords; i++)
   {
     UInt32 state = _state[i] & 0xFFFFFFFF;
     *digest++ = (Byte)(state >> 24);

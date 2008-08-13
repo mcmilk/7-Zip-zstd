@@ -35,7 +35,7 @@ struct CCoder2: public CCoderInfo2, public CVirtThread
   {
     ReInit()
     for each coder
-      SetCoderInfo  
+      SetCoderInfo
     Code
   }
 */
@@ -57,9 +57,9 @@ public:
   MY_UNKNOWN_IMP
 
   STDMETHOD(Code)(ISequentialInStream **inStreams,
-      const UInt64 **inSizes, 
+      const UInt64 **inSizes,
       UInt32 numInStreams,
-      ISequentialOutStream **outStreams, 
+      ISequentialOutStream **outStreams,
       const UInt64 **outSizes,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress);

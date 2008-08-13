@@ -55,7 +55,7 @@ namespace NFileHeader
   namespace NCompressionMethod
   {
     enum EType
-    { 
+    {
       kStored = 0,
       kShrunk = 1,
       kReduced1 = 2,
@@ -64,12 +64,13 @@ namespace NFileHeader
       kReduced4 = 5,
       kImploded = 6,
       kReservedTokenizing = 7, // reserved for tokenizing
-      kDeflated = 8, 
+      kDeflated = 8,
       kDeflated64 = 9,
       kPKImploding = 10,
       
       kBZip2 = 12,
-      kWzPPMd = 0x62,
+      kWavPack = 0x61,
+      kPPMd = 0x62,
       kWzAES = 0x63
     };
     const int kNumCompressionMethods = 11;
@@ -83,8 +84,8 @@ namespace NFileHeader
 
   namespace NExtraID
   {
-    enum 
-    { 
+    enum
+    {
       kZip64 = 0x01,
       kNTFS = 0x0A,
       kStrongEncrypt = 0x17,
@@ -166,7 +167,7 @@ namespace NFileHeader
   };
   */
 
-  namespace NFlags 
+  namespace NFlags
   {
     const int kEncrypted = 1 << 0;
     const int kDescriptorUsedMask = 1 << 3;
@@ -196,8 +197,8 @@ namespace NFileHeader
         kMac      = 7,
         kZ_System = 8,
         kCPM      = 9,
-        kTOPS20   = 10, // pkzip 2.50 NTFS 
-        kNTFS     = 11, // filesystem used by Windows NT 
+        kTOPS20   = 10, // pkzip 2.50 NTFS
+        kNTFS     = 11, // filesystem used by Windows NT
         kQDOS     = 12, // SMS/QDOS
         kAcorn    = 13, // Archimedes Acorn RISC OS
         kVFAT     = 14, // filesystem used by Windows 95, NT

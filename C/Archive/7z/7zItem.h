@@ -1,5 +1,5 @@
 /* 7zItem.h -- 7z Items
-2008-05-01
+2008-07-09
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzmaDec.h for license options */
@@ -13,9 +13,9 @@ Read LzmaDec.h for license options */
 /* You can define _SZ_FILE_SIZE_32, if you don't need support for files larger than 4 GB*/
 
 #ifdef _SZ_FILE_SIZE_32
-typedef UInt32 CFileSize; 
+typedef UInt32 CFileSize;
 #else
-typedef UInt64 CFileSize; 
+typedef UInt64 CFileSize;
 #endif
 
 typedef UInt64 CMethodID;
@@ -42,21 +42,21 @@ typedef struct
   CSzCoderInfo *Coders;
   CBindPair *BindPairs;
   UInt32 *PackStreams;
-  CFileSize *UnPackSizes;
+  CFileSize *UnpackSizes;
   UInt32 NumCoders;
   UInt32 NumBindPairs;
-  UInt32 NumPackStreams; 
-  int UnPackCRCDefined;
-  UInt32 UnPackCRC;
+  UInt32 NumPackStreams;
+  int UnpackCRCDefined;
+  UInt32 UnpackCRC;
 
-  UInt32 NumUnPackStreams;
+  UInt32 NumUnpackStreams;
 } CSzFolder;
 
 void SzFolder_Init(CSzFolder *p);
-CFileSize SzFolder_GetUnPackSize(CSzFolder *p);
+CFileSize SzFolder_GetUnpackSize(CSzFolder *p);
 int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex);
 UInt32 SzFolder_GetNumOutStreams(CSzFolder *p);
-CFileSize SzFolder_GetUnPackSize(CSzFolder *p);
+CFileSize SzFolder_GetUnpackSize(CSzFolder *p);
 
 typedef struct
 {
@@ -66,25 +66,16 @@ typedef struct
 
 typedef struct
 {
-  CNtfsFileTime LastWriteTime;
-  /*
-  CFileSize StartPos;
-  UInt32 Attributes; 
-  */
+  CNtfsFileTime MTime;
   CFileSize Size;
   char *Name;
   UInt32 FileCRC;
 
-  Byte IsFileCRCDefined;
   Byte HasStream;
-  Byte IsDirectory;
+  Byte IsDir;
   Byte IsAnti;
-  Byte IsLastWriteTimeDefined;
-  /*
-  int AreAttributesDefined;
-  int IsLastWriteTimeDefined;
-  int IsStartPosDefined;
-  */
+  Byte FileCRCDefined;
+  Byte MTimeDefined;
 } CSzFileItem;
 
 void SzFile_Init(CSzFileItem *p);

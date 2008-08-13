@@ -11,7 +11,7 @@
 namespace NArchive {
 namespace NTar {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public IOutArchive,
   public CMyUnknownImp
@@ -24,6 +24,8 @@ public:
 
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
+
+  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
 
 private:
   CObjectVector<CItemEx> _items;

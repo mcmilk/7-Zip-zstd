@@ -25,8 +25,8 @@ namespace NFind {
 static const TCHAR kDot = TEXT('.');
 
 bool CFileInfo::IsDots() const
-{ 
-  if (!IsDirectory() || Name.IsEmpty())
+{
+  if (!IsDir() || Name.IsEmpty())
     return false;
   if (Name[0] != kDot)
     return false;
@@ -35,8 +35,8 @@ bool CFileInfo::IsDots() const
 
 #ifndef _UNICODE
 bool CFileInfoW::IsDots() const
-{ 
-  if (!IsDirectory() || Name.IsEmpty())
+{
+  if (!IsDir() || Name.IsEmpty())
     return false;
   if (Name[0] != kDot)
     return false;
@@ -44,58 +44,52 @@ bool CFileInfoW::IsDots() const
 }
 #endif
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(
-    const WIN32_FIND_DATA &findData,
-    CFileInfo &fileInfo)
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfo &fi)
 {
-  fileInfo.Attributes = findData.dwFileAttributes; 
-  fileInfo.CreationTime = findData.ftCreationTime;  
-  fileInfo.LastAccessTime = findData.ftLastAccessTime; 
-  fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
-  fileInfo.Name = findData.cFileName;
+  fi.Attrib = fd.dwFileAttributes;
+  fi.CTime = fd.ftCreationTime;
+  fi.ATime = fd.ftLastAccessTime;
+  fi.MTime = fd.ftLastWriteTime;
+  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
+  fi.Name = fd.cFileName;
   #ifndef _WIN32_WCE
-  fileInfo.ReparseTag = findData.dwReserved0;
+  fi.ReparseTag = fd.dwReserved0;
   #else
-  fileInfo.ObjectID = findData.dwOID;
+  fi.ObjectID = fd.dwOID;
   #endif
 }
 
 #ifndef _UNICODE
 
-static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(
-    const WIN32_FIND_DATAW &findData,
-    CFileInfoW &fileInfo)
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATAW &fd, CFileInfoW &fi)
 {
-  fileInfo.Attributes = findData.dwFileAttributes; 
-  fileInfo.CreationTime = findData.ftCreationTime;  
-  fileInfo.LastAccessTime = findData.ftLastAccessTime; 
-  fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
-  fileInfo.Name = findData.cFileName;
+  fi.Attrib = fd.dwFileAttributes;
+  fi.CTime = fd.ftCreationTime;
+  fi.ATime = fd.ftLastAccessTime;
+  fi.MTime = fd.ftLastWriteTime;
+  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
+  fi.Name = fd.cFileName;
   #ifndef _WIN32_WCE
-  fileInfo.ReparseTag = findData.dwReserved0;
+  fi.ReparseTag = fd.dwReserved0;
   #else
-  fileInfo.ObjectID = findData.dwOID;
+  fi.ObjectID = fd.dwOID;
   #endif
 }
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(
-    const WIN32_FIND_DATA &findData,
-    CFileInfoW &fileInfo)
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfoW &fi)
 {
-  fileInfo.Attributes = findData.dwFileAttributes; 
-  fileInfo.CreationTime = findData.ftCreationTime;  
-  fileInfo.LastAccessTime = findData.ftLastAccessTime; 
-  fileInfo.LastWriteTime = findData.ftLastWriteTime;
-  fileInfo.Size  = (((UInt64)findData.nFileSizeHigh) << 32) + findData.nFileSizeLow; 
-  fileInfo.Name = GetUnicodeString(findData.cFileName, GetCurrentCodePage());
+  fi.Attrib = fd.dwFileAttributes;
+  fi.CTime = fd.ftCreationTime;
+  fi.ATime = fd.ftLastAccessTime;
+  fi.MTime = fd.ftLastWriteTime;
+  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
+  fi.Name = GetUnicodeString(fd.cFileName, GetCurrentCodePage());
   #ifndef _WIN32_WCE
-  fileInfo.ReparseTag = findData.dwReserved0;
+  fi.ReparseTag = fd.dwReserved0;
   #else
-  fileInfo.ObjectID = findData.dwOID;
+  fi.ObjectID = fd.dwOID;
   #endif
 }
 #endif
@@ -118,19 +112,19 @@ bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
 {
   if (!Close())
     return false;
-  WIN32_FIND_DATA findData;
-  _handle = ::FindFirstFile(wildcard, &findData);
+  WIN32_FIND_DATA fd;
+  _handle = ::FindFirstFile(wildcard, &fd);
   #ifdef WIN_LONG_PATH2
   if (_handle == INVALID_HANDLE_VALUE)
   {
     UString longPath;
     if (GetLongPath(wildcard, longPath))
-      _handle = ::FindFirstFileW(longPath, &findData);
+      _handle = ::FindFirstFileW(longPath, &fd);
   }
   #endif
   if (_handle == INVALID_HANDLE_VALUE)
     return false;
-  ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+  ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   return true;
 }
 
@@ -141,26 +135,26 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
     return false;
   if (g_IsNT)
   {
-    WIN32_FIND_DATAW findData;
-    _handle = ::FindFirstFileW(wildcard, &findData);
+    WIN32_FIND_DATAW fd;
+    _handle = ::FindFirstFileW(wildcard, &fd);
     #ifdef WIN_LONG_PATH
     if (_handle == INVALID_HANDLE_VALUE)
     {
       UString longPath;
       if (GetLongPath(wildcard, longPath))
-        _handle = ::FindFirstFileW(longPath, &findData);
+        _handle = ::FindFirstFileW(longPath, &fd);
     }
     #endif
     if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   }
   else
   {
-    WIN32_FIND_DATAA findData;
-    _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard, 
-        GetCurrentCodePage()), &findData);
+    WIN32_FIND_DATAA fd;
+    _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard,
+        GetCurrentCodePage()), &fd);
     if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   }
   return (_handle != INVALID_HANDLE_VALUE);
 }
@@ -168,10 +162,10 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
 
 bool CFindFile::FindNext(CFileInfo &fileInfo)
 {
-  WIN32_FIND_DATA findData;
-  bool result = BOOLToBool(::FindNextFile(_handle, &findData));
+  WIN32_FIND_DATA fd;
+  bool result = BOOLToBool(::FindNextFile(_handle, &fd));
   if (result)
-    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   return result;
 }
 
@@ -180,17 +174,17 @@ bool CFindFile::FindNext(CFileInfoW &fileInfo)
 {
   if (g_IsNT)
   {
-    WIN32_FIND_DATAW findData;
-    if (!::FindNextFileW(_handle, &findData))
+    WIN32_FIND_DATAW fd;
+    if (!::FindNextFileW(_handle, &fd))
       return false;
-    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   }
   else
   {
-    WIN32_FIND_DATAA findData;
-    if (!::FindNextFileA(_handle, &findData))
+    WIN32_FIND_DATAA fd;
+    if (!::FindNextFileA(_handle, &fd))
       return false;
-    ConvertWIN32_FIND_DATA_To_FileInfo(findData, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
   }
   return true;
 }
@@ -340,11 +334,11 @@ HANDLE CFindChangeNotification::FindFirst(LPCWSTR pathName, bool watchSubtree, D
 bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
 {
   driveStrings.Clear();
-  UINT32 size = GetLogicalDriveStrings(0, NULL); 
+  UINT32 size = GetLogicalDriveStrings(0, NULL);
   if (size == 0)
     return false;
   CSysString buffer;
-  UINT32 newSize = GetLogicalDriveStrings(size, buffer.GetBuffer(size)); 
+  UINT32 newSize = GetLogicalDriveStrings(size, buffer.GetBuffer(size));
   if (newSize == 0)
     return false;
   if (newSize > size)
@@ -372,11 +366,11 @@ bool MyGetLogicalDriveStrings(UStringVector &driveStrings)
   driveStrings.Clear();
   if (g_IsNT)
   {
-    UINT32 size = GetLogicalDriveStringsW(0, NULL); 
+    UINT32 size = GetLogicalDriveStringsW(0, NULL);
     if (size == 0)
       return false;
     UString buffer;
-    UINT32 newSize = GetLogicalDriveStringsW(size, buffer.GetBuffer(size)); 
+    UINT32 newSize = GetLogicalDriveStringsW(size, buffer.GetBuffer(size));
     if (newSize == 0)
       return false;
     if (newSize > size)

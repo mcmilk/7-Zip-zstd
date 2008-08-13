@@ -76,6 +76,9 @@ class CCoder:
 
   HRESULT CodeSpec(UInt32 curSize);
 public:
+  bool ZlibMode;
+  Byte ZlibFooter[4];
+
   CCoder(bool deflate64Mode, bool deflateNSIS = false);
   void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
 
@@ -86,7 +89,7 @@ public:
   #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP4(
       ICompressGetInStreamProcessedSize,
-      ICompressSetInStream, 
+      ICompressSetInStream,
       ICompressSetOutStreamSize,
       ISequentialInStream
       )

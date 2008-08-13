@@ -61,7 +61,7 @@ static bool CheckDragDropMenuHandlerCommon(const CSysString &keyName)
 }
 
 bool CheckContextMenuHandler()
-{ 
+{
   return CheckContextMenuHandlerCommon(kRootKeyNameForFile) &&
     // CheckContextMenuHandlerCommon(kRootKeyNameForFolder) &&
     CheckContextMenuHandlerCommon(kRootKeyNameForDirectory)  &&
@@ -86,12 +86,12 @@ static void DeleteDragDropMenuHandlerCommon(const CSysString &keyName)
 }
 
 void DeleteContextMenuHandler()
-{ 
-  DeleteContextMenuHandlerCommon(kRootKeyNameForFile); 
+{
+  DeleteContextMenuHandlerCommon(kRootKeyNameForFile);
   DeleteContextMenuHandlerCommon(kRootKeyNameForFolder);
   DeleteContextMenuHandlerCommon(kRootKeyNameForDirectory);
   DeleteContextMenuHandlerCommon(kRootKeyNameForDrive);
-  DeleteDragDropMenuHandlerCommon(kRootKeyNameForFile); 
+  DeleteDragDropMenuHandlerCommon(kRootKeyNameForFile);
   DeleteDragDropMenuHandlerCommon(kRootKeyNameForFolder);
   DeleteDragDropMenuHandlerCommon(kRootKeyNameForDirectory);
   DeleteDragDropMenuHandlerCommon(kRootKeyNameForDrive);
@@ -116,8 +116,8 @@ static void AddDragDropMenuHandlerCommon(const CSysString &keyName)
 }
 
 void AddContextMenuHandler()
-{ 
-  AddContextMenuHandlerCommon(kRootKeyNameForFile); 
+{
+  AddContextMenuHandlerCommon(kRootKeyNameForFile);
   // AddContextMenuHandlerCommon(kRootKeyNameForFolder);
   AddContextMenuHandlerCommon(kRootKeyNameForDirectory);
 

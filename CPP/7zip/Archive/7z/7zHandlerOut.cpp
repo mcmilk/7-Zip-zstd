@@ -163,7 +163,7 @@ HRESULT CHandler::SetCompressionMethod(
       for (int j = 0; j < methodFull.Properties.Size(); j++)
       {
         const CProp &prop = methodFull.Properties[j];
-        if ((prop.Id == NCoderPropID::kDictionarySize || 
+        if ((prop.Id == NCoderPropID::kDictionarySize ||
              prop.Id == NCoderPropID::kUsedMemorySize) && prop.Value.vt == VT_UI4)
         {
           _numSolidBytes = ((UInt64)prop.Value.ulVal) << 7;
@@ -185,17 +185,20 @@ HRESULT CHandler::SetCompressionMethod(
   return S_OK;
 }
 
-static HRESULT GetTime(IArchiveUpdateCallback *updateCallback, int index, PROPID propID, CArchiveFileTime &filetime, bool &filetimeIsDefined)
+static HRESULT GetTime(IArchiveUpdateCallback *updateCallback, int index, bool writeTime, PROPID propID, UInt64 &ft, bool &ftDefined)
 {
-  filetimeIsDefined = false;
-  NCOM::CPropVariant propVariant;
-  RINOK(updateCallback->GetProperty(index, propID, &propVariant));
-  if (propVariant.vt == VT_FILETIME)
+  ft = 0;
+  ftDefined = false;
+  if (!writeTime)
+    return S_OK;
+  NCOM::CPropVariant prop;
+  RINOK(updateCallback->GetProperty(index, propID, &prop));
+  if (prop.vt == VT_FILETIME)
   {
-    filetime = propVariant.filetime;
-    filetimeIsDefined = true;
+    ft = prop.filetime.dwLowDateTime | ((UInt64)prop.filetime.dwHighDateTime << 32);
+    ftDefined = true;
   }
-  else if (propVariant.vt != VT_EMPTY)
+  else if (prop.vt != VT_EMPTY)
     return E_INVALIDARG;
   return S_OK;
 }
@@ -205,7 +208,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 {
   COM_TRY_BEGIN
 
-  const CArchiveDatabaseEx *database = 0;
+  const CArchiveDatabaseEx *db = 0;
   #ifdef _7Z_VOL
   if(_volumes.Size() > 1)
     return E_FAIL;
@@ -213,139 +216,131 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (_volumes.Size() == 1)
   {
     volume = &_volumes.Front();
-    database = &volume->Database;
+    db = &volume->Database;
   }
   #else
   if (_inStream != 0)
-    database = &_database;
+    db = &_db;
   #endif
 
-  // CRecordVector<bool> compressStatuses;
   CObjectVector<CUpdateItem> updateItems;
-  // CRecordVector<UInt32> copyIndices;
   
-  // CMyComPtr<IUpdateCallback2> updateCallback2;
-  // updateCallback->QueryInterface(&updateCallback2);
-
-  for(UInt32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     Int32 newData;
     Int32 newProperties;
     UInt32 indexInArchive;
     if (!updateCallback)
       return E_FAIL;
-    RINOK(updateCallback->GetUpdateItemInfo(i,
-        &newData, &newProperties, &indexInArchive));
-    CUpdateItem updateItem;
-    updateItem.NewProperties = IntToBool(newProperties);
-    updateItem.NewData = IntToBool(newData);
-    updateItem.IndexInArchive = indexInArchive;
-    updateItem.IndexInClient = i;
-    updateItem.IsAnti = false;
-    updateItem.Size = 0;
+    RINOK(updateCallback->GetUpdateItemInfo(i, &newData, &newProperties, &indexInArchive));
+    CUpdateItem ui;
+    ui.NewProperties = IntToBool(newProperties);
+    ui.NewData = IntToBool(newData);
+    ui.IndexInArchive = indexInArchive;
+    ui.IndexInClient = i;
+    ui.IsAnti = false;
+    ui.Size = 0;
 
-    if (updateItem.IndexInArchive != -1)
+    if (ui.IndexInArchive != -1)
     {
-      const CFileItem &fileItem = database->Files[updateItem.IndexInArchive];
-      updateItem.Name = fileItem.Name;
-      updateItem.IsDirectory = fileItem.IsDirectory;
-      updateItem.Size = fileItem.UnPackSize;
-      updateItem.IsAnti = fileItem.IsAnti;
+      const CFileItem &fi = db->Files[ui.IndexInArchive];
+      ui.Name = fi.Name;
+      ui.IsDir = fi.IsDir;
+      ui.Size = fi.Size;
+      ui.IsAnti = db->IsItemAnti(ui.IndexInArchive);
       
-      updateItem.CreationTime = fileItem.CreationTime;
-      updateItem.IsCreationTimeDefined = fileItem.IsCreationTimeDefined;
-      updateItem.LastWriteTime = fileItem.LastWriteTime;
-      updateItem.IsLastWriteTimeDefined = fileItem.IsLastWriteTimeDefined;
-      updateItem.LastAccessTime = fileItem.LastAccessTime;
-      updateItem.IsLastAccessTimeDefined = fileItem.IsLastAccessTimeDefined;
+      ui.CTimeDefined = db->CTime.GetItem(ui.IndexInArchive, ui.CTime);
+      ui.ATimeDefined = db->ATime.GetItem(ui.IndexInArchive, ui.ATime);
+      ui.MTimeDefined = db->MTime.GetItem(ui.IndexInArchive, ui.MTime);
     }
 
-    if (updateItem.NewProperties)
+    if (ui.NewProperties)
     {
       bool nameIsDefined;
       bool folderStatusIsDefined;
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidAttributes, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
-          updateItem.AttributesAreDefined = false;
-        else if (propVariant.vt != VT_UI4)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidAttrib, &prop));
+        if (prop.vt == VT_EMPTY)
+          ui.AttribDefined = false;
+        else if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         else
         {
-          updateItem.Attributes = propVariant.ulVal;
-          updateItem.AttributesAreDefined = true;
+          ui.Attrib = prop.ulVal;
+          ui.AttribDefined = true;
         }
       }
       
-      RINOK(GetTime(updateCallback, i, kpidCreationTime, updateItem.CreationTime, updateItem.IsCreationTimeDefined));
-      RINOK(GetTime(updateCallback, i, kpidLastWriteTime, updateItem.LastWriteTime , updateItem.IsLastWriteTimeDefined));
-      RINOK(GetTime(updateCallback, i, kpidLastAccessTime, updateItem.LastAccessTime, updateItem.IsLastAccessTimeDefined));
+      // we need MTime to sort files.
+      RINOK(GetTime(updateCallback, i, WriteCTime, kpidCTime, ui.CTime, ui.CTimeDefined));
+      RINOK(GetTime(updateCallback, i, WriteATime, kpidATime, ui.ATime, ui.ATimeDefined));
+      RINOK(GetTime(updateCallback, i, true,       kpidMTime, ui.MTime, ui.MTimeDefined));
 
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidPath, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidPath, &prop));
+        if (prop.vt == VT_EMPTY)
           nameIsDefined = false;
-        else if (propVariant.vt != VT_BSTR)
+        else if (prop.vt != VT_BSTR)
           return E_INVALIDARG;
         else
         {
-          updateItem.Name = NItemName::MakeLegalName(propVariant.bstrVal);
+          ui.Name = NItemName::MakeLegalName(prop.bstrVal);
           nameIsDefined = true;
         }
       }
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidIsFolder, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidIsDir, &prop));
+        if (prop.vt == VT_EMPTY)
           folderStatusIsDefined = false;
-        else if (propVariant.vt != VT_BOOL)
+        else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
         {
-          updateItem.IsDirectory = (propVariant.boolVal != VARIANT_FALSE);
+          ui.IsDir = (prop.boolVal != VARIANT_FALSE);
           folderStatusIsDefined = true;
         }
       }
 
       {
-        NCOM::CPropVariant propVariant;
-        RINOK(updateCallback->GetProperty(i, kpidIsAnti, &propVariant));
-        if (propVariant.vt == VT_EMPTY)
-          updateItem.IsAnti = false;
-        else if (propVariant.vt != VT_BOOL)
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidIsAnti, &prop));
+        if (prop.vt == VT_EMPTY)
+          ui.IsAnti = false;
+        else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
-          updateItem.IsAnti = (propVariant.boolVal != VARIANT_FALSE);
+          ui.IsAnti = (prop.boolVal != VARIANT_FALSE);
       }
 
-      if (updateItem.IsAnti)
+      if (ui.IsAnti)
       {
-        updateItem.AttributesAreDefined = false;
+        ui.AttribDefined = false;
 
-        updateItem.IsCreationTimeDefined = false;
-        updateItem.IsLastWriteTimeDefined = false;
-        updateItem.IsLastAccessTimeDefined = false;
+        ui.CTimeDefined = false;
+        ui.ATimeDefined = false;
+        ui.MTimeDefined = false;
         
-        updateItem.Size = 0;
+        ui.Size = 0;
       }
 
-      if (!folderStatusIsDefined && updateItem.AttributesAreDefined)
-        updateItem.SetDirectoryStatusFromAttributes();
+      if (!folderStatusIsDefined && ui.AttribDefined)
+        ui.SetDirStatusFromAttrib();
     }
 
-    if (updateItem.NewData)
+    if (ui.NewData)
     {
-      NCOM::CPropVariant propVariant;
-      RINOK(updateCallback->GetProperty(i, kpidSize, &propVariant));
-      if (propVariant.vt != VT_UI8)
+      NCOM::CPropVariant prop;
+      RINOK(updateCallback->GetProperty(i, kpidSize, &prop));
+      if (prop.vt != VT_UI8)
         return E_INVALIDARG;
-      updateItem.Size = (UInt64)propVariant.uhVal.QuadPart;
-      if (updateItem.Size != 0 && updateItem.IsAnti)
+      ui.Size = (UInt64)prop.uhVal.QuadPart;
+      if (ui.Size != 0 && ui.IsAnti)
         return E_INVALIDARG;
     }
-    updateItems.Add(updateItem);
+    updateItems.Add(ui);
   }
 
   CCompressionMethodMode methodMode, headerMethod;
@@ -359,10 +354,18 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   bool compressMainHeader = _compressHeaders;  // check it
 
+  bool encryptHeaders = false;
+
   if (methodMode.PasswordIsDefined)
   {
-    compressMainHeader = true; 
-    if(_encryptHeaders)
+    if (_encryptHeadersSpecified)
+      encryptHeaders = _encryptHeaders;
+    #ifndef _NO_CRYPTO
+    else
+      encryptHeaders = _passwordIsDefined;
+    #endif
+    compressMainHeader = true;
+    if(encryptHeaders)
       RINOK(SetPassword(headerMethod, updateCallback));
   }
 
@@ -371,32 +374,42 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   CUpdateOptions options;
   options.Method = &methodMode;
-  options.HeaderMethod = (_compressHeaders || 
-      (methodMode.PasswordIsDefined && _encryptHeaders)) ? 
-      &headerMethod : 0;
+  options.HeaderMethod = (_compressHeaders || encryptHeaders) ? &headerMethod : 0;
   options.UseFilters = _level != 0 && _autoFilter;
   options.MaxFilter = _level >= 8;
 
   options.HeaderOptions.CompressMainHeader = compressMainHeader;
-  options.HeaderOptions.WriteModified = WriteModified;
-  options.HeaderOptions.WriteCreated = WriteCreated;
-  options.HeaderOptions.WriteAccessed = WriteAccessed;
+  options.HeaderOptions.WriteCTime = WriteCTime;
+  options.HeaderOptions.WriteATime = WriteATime;
+  options.HeaderOptions.WriteMTime = WriteMTime;
   
   options.NumSolidFiles = _numSolidFiles;
   options.NumSolidBytes = _numSolidBytes;
   options.SolidExtension = _solidExtension;
   options.RemoveSfxBlock = _removeSfxBlock;
   options.VolumeMode = _volumeMode;
-  return Update(
+
+  COutArchive archive;
+  CArchiveDatabase newDatabase;
+  HRESULT res = Update(
       EXTERNAL_CODECS_VARS
       #ifdef _7Z_VOL
-      volume ? volume->Stream: 0, 
-      volume ? database: 0, 
+      volume ? volume->Stream: 0,
+      volume ? db : 0,
       #else
-      _inStream, 
-      database,
+      _inStream,
+      db,
       #endif
-      updateItems, outStream, updateCallback, options);
+      updateItems,
+      archive, newDatabase, outStream, updateCallback, options);
+
+  RINOK(res);
+
+  updateItems.ClearAndFree();
+
+  return archive.WriteDatabase(EXTERNAL_CODECS_VARS
+      newDatabase, options.HeaderMethod, options.HeaderOptions);
+
   COM_TRY_END
 }
 
@@ -459,6 +472,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
 
   return S_OK;
   COM_TRY_END
-}  
+}
 
 }}

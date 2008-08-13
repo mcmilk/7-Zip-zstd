@@ -19,21 +19,21 @@ struct CItem
   UInt64 Size;
   AString Name;
 
-  bool IsFormatRelatedItem() const 
+  bool IsFormatRelatedItem() const
   {
     if (Name.Length() < 2)
       return false;
     return Name[0] == ':' && Name[1] == ':';
   }
   
-  bool IsUserItem() const 
+  bool IsUserItem() const
   {
     if (Name.Length() < 2)
       return false;
     return Name[0] == '/';
   }
   
-  bool IsDirectory() const 
+  bool IsDir() const
   {
     if (Name.Length() == 0)
       return false;
@@ -57,12 +57,12 @@ struct CDatabase
     return -1;
   }
 
-  void Clear() 
-  { 
+  void Clear()
+  {
     NewFormat = false;
     NewFormatString.Empty();
     Help2Format = false;
-    Items.Clear(); 
+    Items.Clear();
   }
 };
 
@@ -72,7 +72,7 @@ struct CResetTable
   UInt64 CompressedSize;
   UInt64 BlockSize;
   CRecordVector<UInt64> ResetOffsets;
-  bool GetCompressedSizeOfBlocks(UInt64 blockIndex, UInt32 numBlocks, UInt64 &size) const 
+  bool GetCompressedSizeOfBlocks(UInt64 blockIndex, UInt32 numBlocks, UInt64 &size) const
   {
     if (blockIndex >= ResetOffsets.Size())
       return false;
@@ -83,11 +83,11 @@ struct CResetTable
       size = ResetOffsets[(int)(blockIndex + numBlocks)] - startPos;
     return true;
   }
-  bool GetCompressedSizeOfBlock(UInt64 blockIndex, UInt64 &size) const 
+  bool GetCompressedSizeOfBlock(UInt64 blockIndex, UInt64 &size) const
   {
     return GetCompressedSizeOfBlocks(blockIndex, 1, size);
   }
-  UInt64 GetNumBlocks(UInt64 size) const 
+  UInt64 GetNumBlocks(UInt64 size) const
   {
     return (size + BlockSize - 1) / BlockSize;
   }
@@ -116,16 +116,16 @@ struct CLzxInfo
   UInt64 GetFolder(UInt64 offset) const { return offset / GetFolderSize(); };
   UInt64 GetFolderPos(UInt64 folderIndex) const { return folderIndex * GetFolderSize(); };
   UInt64 GetBlockIndexFromFolderIndex(UInt64 folderIndex) const { return folderIndex * ResetInterval; };
-  bool GetOffsetOfFolder(UInt64 folderIndex, UInt64 &offset) const 
-  { 
+  bool GetOffsetOfFolder(UInt64 folderIndex, UInt64 &offset) const
+  {
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
     if (blockIndex >= ResetTable.ResetOffsets.Size())
       return false;
     offset = ResetTable.ResetOffsets[(int)blockIndex];
     return true;
   }
-  bool GetCompressedSizeOfFolder(UInt64 folderIndex, UInt64 &size) const 
-  { 
+  bool GetCompressedSizeOfFolder(UInt64 folderIndex, UInt64 &size) const
+  {
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
     return ResetTable.GetCompressedSizeOfBlocks(blockIndex, ResetInterval, size);
   }
@@ -165,8 +165,8 @@ public:
   UInt64 GetFileSize(int fileIndex) const { return Items[Indices[fileIndex]].Size; }
   UInt64 GetFileOffset(int fileIndex) const { return Items[Indices[fileIndex]].Offset; }
 
-  UInt64 GetFolder(int fileIndex) const 
-  { 
+  UInt64 GetFolder(int fileIndex) const
+  {
     const CItem &item = Items[Indices[fileIndex]];
     const CSectionInfo &section = Sections[(int)item.Section];
     if (section.IsLzx())
@@ -174,8 +174,8 @@ public:
     return 0;
   }
 
-  UInt64 GetLastFolder(int fileIndex) const 
-  { 
+  UInt64 GetLastFolder(int fileIndex) const
+  {
     const CItem &item = Items[Indices[fileIndex]];
     const CSectionInfo &section = Sections[(int)item.Section];
     if (section.IsLzx())
@@ -183,16 +183,16 @@ public:
     return 0;
   }
 
-  void HighLevelClear() 
-  { 
+  void HighLevelClear()
+  {
     LowLevel = true;
-    Indices.Clear(); 
-    Sections.Clear(); 
+    Indices.Clear();
+    Sections.Clear();
   }
 
-  void Clear() 
-  { 
-    CDatabase::Clear(); 
+  void Clear()
+  {
+    CDatabase::Clear();
     HighLevelClear();
   }
   void SetIndices();

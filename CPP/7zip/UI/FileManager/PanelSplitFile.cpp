@@ -4,8 +4,8 @@
 
 #include "resource.h"
 
-extern "C" 
-{ 
+extern "C"
+{
   #include "../../../../C/Alloc.h"
 }
 
@@ -48,7 +48,7 @@ public:
 struct CVolSeqName
 {
   UString UnchangedPart;
-  UString ChangedPart;    
+  UString ChangedPart;
   CVolSeqName(): ChangedPart(L"000") {};
 
   bool ParseName(const UString &name)
@@ -69,7 +69,7 @@ struct CVolSeqName
 
   UString GetNextName()
   {
-    UString newName; 
+    UString newName;
     int i;
     int numLetters = ChangedPart.Length();
     for (i = numLetters - 1; i >= 0; i--)
@@ -172,18 +172,18 @@ struct CThreadSplit
         return;
     }
   }
-  DWORD Process()
+  void Process()
   {
     try { Process2(); }
     catch(const wchar_t *s) { Error = s; }
     catch(...) { Error = L"Error"; }
     ProgressDialog->MyClose();
-    return 0;
   }
   
   static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
-    return ((CThreadSplit *)param)->Process();
+    ((CThreadSplit *)param)->Process();
+    return 0;
   }
 };
 
@@ -193,7 +193,7 @@ void CApp::Split()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
   }
   CRecordVector<UInt32> indices;
@@ -202,13 +202,13 @@ void CApp::Split()
     return;
   if (indices.Size() != 1)
   {
-    srcPanel.MessageBox(L"Select one file");
+    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE, 0x03020A02);
     return;
   }
   int index = indices[0];
   if (srcPanel.IsItemFolder(index))
   {
-    srcPanel.MessageBox(L"Select one file");
+    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE, 0x03020A02);
     return;
   }
   const UString itemName = srcPanel.GetItemName(index);
@@ -234,7 +234,7 @@ void CApp::Split()
   }
   if (fileInfo.Size <= splitDialog.VolumeSizes.Front())
   {
-    srcPanel.MessageBoxMyError(LangString(IDS_SPLIT_VOL_MUST_BE_SMALLER, 0x03020522));
+    srcPanel.MessageBoxErrorLang(IDS_SPLIT_VOL_MUST_BE_SMALLER, 0x03020522);
     return;
   }
   const UInt64 numVolumes = GetNumberOfVolumes(fileInfo.Size, splitDialog.VolumeSizes);
@@ -242,8 +242,8 @@ void CApp::Split()
   {
     wchar_t s[32];
     ConvertUInt64ToString(numVolumes, s);
-    if (::MessageBoxW(srcPanel, MyFormatNew(IDS_SPLIT_CONFIRM_MESSAGE, 0x03020521, s), 
-        LangString(IDS_SPLIT_CONFIRM_TITLE, 0x03020520), 
+    if (::MessageBoxW(srcPanel, MyFormatNew(IDS_SPLIT_CONFIRM_MESSAGE, 0x03020521, s),
+        LangString(IDS_SPLIT_CONFIRM_TITLE, 0x03020520),
         MB_YESNOCANCEL | MB_ICONQUESTION | MB_TASKMODAL) != IDYES)
       return;
   }
@@ -301,109 +301,83 @@ void CApp::Split()
 struct CThreadCombine
 {
   CProgressDialog *ProgressDialog;
+
   UString InputDirPrefix;
-  UString FirstVolumeName;
-  UString OutputDirPrefix;
+  UStringVector Names;
+  UString OutputPath;
+  UInt64 TotalSize;
+
   UString Error;
+  HRESULT Res;
   
   void Process2()
   {
-    // NCOM::CComInitializer comInitializer;
-    ProgressDialog->WaitCreating();
-
-    CVolSeqName volSeqName;
-    if (!volSeqName.ParseName(FirstVolumeName))
-      throw L"Can not detect file as splitted file";
-
-    UString nextName = InputDirPrefix + FirstVolumeName;
-    UInt64 totalSize = 0;
-    for (;;)
-    {
-      NFile::NFind::CFileInfoW fileInfo;
-      if (!NFile::NFind::FindFile(nextName, fileInfo))
-        break;
-      if (fileInfo.IsDirectory())
-        break;
-      totalSize += fileInfo.Size;
-      nextName = InputDirPrefix + volSeqName.GetNextName();
-    }
-    if (totalSize == 0)
-      throw L"no data";
-    ProgressDialog->ProgressSynch.SetProgress(totalSize, 0);
-
-    if (!volSeqName.ParseName(FirstVolumeName))
-      throw L"Can not detect file as splitted file";
-
-    UString outName = volSeqName.UnchangedPart;
-    while(!outName.IsEmpty())
-    {
-      int lastIndex = outName.Length() - 1;
-      if (outName[lastIndex] != L'.')
-        break;
-      outName.Delete(lastIndex);
-    }
-    if (outName.IsEmpty())
-      outName = L"file";
     NFile::NIO::COutFile outFile;
-    if (!outFile.Create(OutputDirPrefix + outName, false))
-      throw L"Can create open output file";
+    if (!outFile.Create(OutputPath, false))
+    {
+      Error = L"Can create open output file:\n" + OutputPath;
+      return;
+    }
 
-    NFile::NIO::CInFile inFile;
+    ProgressDialog->ProgressSynch.SetProgress(TotalSize, 0);
+
     CMyBuffer bufferObject;
     if (!bufferObject.Allocate(kBufSize))
       throw L"Can not allocate buffer";
     Byte *buffer = (Byte *)(void *)bufferObject;
     UInt64 pos = 0;
-    nextName = InputDirPrefix + FirstVolumeName;
-    bool needOpen = true;
-    for (;;)
+    for (int i = 0; i < Names.Size(); i++)
     {
-      if (needOpen)
+      NFile::NIO::CInFile inFile;
+      const UString nextName = InputDirPrefix + Names[i];
+      if (!inFile.Open(nextName))
       {
-        NFile::NFind::CFileInfoW fileInfo;
-        if (!NFile::NFind::FindFile(nextName, fileInfo))
-          break;
-        if (fileInfo.IsDirectory())
-          break;
-        if (!inFile.Open(nextName))
-          throw L"Can not open file";
-        ProgressDialog->ProgressSynch.SetCurrentFileName(fileInfo.Name);
-        nextName = InputDirPrefix + volSeqName.GetNextName();
-        needOpen = false;
-      }
-      UInt32 processedSize;
-      if (!inFile.Read(buffer, kBufSize, processedSize))
-        throw L"Can not read input file";
-      if (processedSize == 0)
-      {
-        needOpen = true;
-        continue;
-      }
-      UInt32 needSize = processedSize;
-      if (!outFile.Write(buffer, needSize, processedSize))
-        throw L"Can not write output file";
-      if (needSize != processedSize)
-        throw L"Can not write output file";
-      pos += processedSize;
-      HRESULT res = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(pos);
-      if (res != S_OK)
+        Error = L"Can not open input file:\n" + nextName;
         return;
+      }
+      ProgressDialog->ProgressSynch.SetCurrentFileName(nextName);
+      for (;;)
+      {
+        UInt32 processedSize;
+        if (!inFile.Read(buffer, kBufSize, processedSize))
+          throw L"Can not read input file";
+        if (processedSize == 0)
+          break;
+        UInt32 needSize = processedSize;
+        if (!outFile.Write(buffer, needSize, processedSize) || needSize != processedSize)
+          throw L"Can not write output file";
+        pos += processedSize;
+        Res = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(pos);
+        if (Res != S_OK)
+          return;
+      }
     }
   }
-  DWORD Process()
+
+  void Process()
   {
+    Res = S_OK;
+    ProgressDialog->WaitCreating();
     try { Process2(); }
     catch(const wchar_t *s) { Error = s; }
     catch(...) { Error = L"Error";}
     ProgressDialog->MyClose();
-    return 0;
   }
   
   static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
-    return ((CThreadCombine *)param)->Process();
+    ((CThreadCombine *)param)->Process();
+    return 0;
   }
 };
+
+extern void AddValuePair2(UINT resourceID, UInt32 langID, UInt64 num, UInt64 size, UString &s);
+
+static void AddInfoFileName(const UString &name, UString &dest)
+{
+  dest += L"\n  ";
+  dest += name;
+}
 
 void CApp::Combine()
 {
@@ -411,7 +385,7 @@ void CApp::Combine()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
   }
   CRecordVector<UInt32> indices;
@@ -421,7 +395,7 @@ void CApp::Combine()
   int index = indices[0];
   if (indices.Size() != 1 || srcPanel.IsItemFolder(index))
   {
-    srcPanel.MessageBox(LangString(IDS_COMBINE_SELECT_ONE_FILE, 0x03020620));
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_SELECT_ONE_FILE, 0x03020620);
     return;
   }
   const UString itemName = srcPanel.GetItemName(index);
@@ -433,49 +407,115 @@ void CApp::Combine()
   if (NumPanels > 1)
     if (destPanel.IsFSFolder())
       path = destPanel._currentFolderPrefix;
-  CCopyDialog copyDialog;
-  copyDialog.Value = path;
-  copyDialog.Title = LangString(IDS_COMBINE, 0x03020600);
-  copyDialog.Title += ' ';
-  copyDialog.Title += srcPanel.GetItemRelPath(index);
 
-  copyDialog.Static = LangString(IDS_COMBINE_TO, 0x03020601);;
-  if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
-    return;
-
-  CThreadCombine combiner;
-  // combiner.Panel = this;
-
+  CVolSeqName volSeqName;
+  if (!volSeqName.ParseName(itemName))
   {
-  CProgressDialog progressDialog;
-  combiner.ProgressDialog = &progressDialog;
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_DETECT_SPLIT_FILE, 0x03020621);
+    return;
+  }
+  
+  CThreadCombine combiner;
+  
+  UString nextName = itemName;
+  combiner.TotalSize = 0;
+  for (;;)
+  {
+    NFile::NFind::CFileInfoW fileInfo;
+    if (!NFile::NFind::FindFile(srcPath + nextName, fileInfo) || fileInfo.IsDir())
+      break;
+    combiner.Names.Add(nextName);
+    combiner.TotalSize += fileInfo.Size;
+    nextName = volSeqName.GetNextName();
+  }
+  if (combiner.Names.Size() == 1)
+  {
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART, 0x03020622);
+    return;
+  }
+  
+  if (combiner.TotalSize == 0)
+  {
+    srcPanel.MessageBoxMyError(L"No data");
+    return;
+  }
+  
+  UString info;
+  AddValuePair2(IDS_FILES_COLON, 0x02000320, combiner.Names.Size(), combiner.TotalSize, info);
+  
+  info += L"\n";
+  info += srcPath;
+  
+  int i;
+  for (i = 0; i < combiner.Names.Size() && i < 2; i++)
+    AddInfoFileName(combiner.Names[i], info);
+  if (i != combiner.Names.Size())
+  {
+    if (i + 1 != combiner.Names.Size())
+      AddInfoFileName(L"...", info);
+    AddInfoFileName(combiner.Names.Back(), info);
+  }
+  
+  {
+    CCopyDialog copyDialog;
+    copyDialog.Value = path;
+    copyDialog.Title = LangString(IDS_COMBINE, 0x03020600);
+    copyDialog.Title += ' ';
+    copyDialog.Title += srcPanel.GetItemRelPath(index);
+    copyDialog.Static = LangString(IDS_COMBINE_TO, 0x03020601);
+    copyDialog.Info = info;
+    if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
+      return;
+    path = copyDialog.Value;
+  }
 
-  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
-  UString title = LangString(IDS_COMBINING, 0x03020610);
-
-  progressDialog.MainWindow = _window;
-  progressDialog.MainTitle = progressWindowTitle;
-  progressDialog.MainAddTitle = title + UString(L" ");
-
-  path = copyDialog.Value;
   NFile::NName::NormalizeDirPathPrefix(path);
   if (!NFile::NDirectory::CreateComplexDirectory(path))
   {
     srcPanel.MessageBoxMyError(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 0x02000603, path));
     return;
   }
-
-  combiner.InputDirPrefix = srcPath;
-  combiner.FirstVolumeName = itemName;
-  combiner.OutputDirPrefix = path;
-
-  // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
-  // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
-
-  NWindows::CThread thread;
-  if (thread.Create(CThreadCombine::MyThreadFunction, &combiner) != S_OK)
-    throw 271824;
-  progressDialog.Create(title, _window);
+  
+  UString outName = volSeqName.UnchangedPart;
+  while (!outName.IsEmpty())
+  {
+    int lastIndex = outName.Length() - 1;
+    if (outName[lastIndex] != L'.')
+      break;
+    outName.Delete(lastIndex);
+  }
+  if (outName.IsEmpty())
+    outName = L"file";
+  
+  NFile::NFind::CFileInfoW fileInfo;
+  UString destFilePath = path + outName;
+  combiner.OutputPath = destFilePath;
+  if (NFile::NFind::FindFile(destFilePath, fileInfo))
+  {
+    srcPanel.MessageBoxMyError(MyFormatNew(IDS_FILE_EXIST, 0x03020A04, destFilePath));
+    return;
+  }
+  
+  {
+    CProgressDialog progressDialog;
+    combiner.ProgressDialog = &progressDialog;
+    
+    UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
+    UString title = LangString(IDS_COMBINING, 0x03020610);
+    
+    progressDialog.MainWindow = _window;
+    progressDialog.MainTitle = progressWindowTitle;
+    progressDialog.MainAddTitle = title + UString(L" ");
+    
+    combiner.InputDirPrefix = srcPath;
+    
+    // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
+    // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
+    
+    NWindows::CThread thread;
+    if (thread.Create(CThreadCombine::MyThreadFunction, &combiner) != S_OK)
+      throw 271824;
+    progressDialog.Create(title, _window);
   }
   RefreshTitleAlways();
 

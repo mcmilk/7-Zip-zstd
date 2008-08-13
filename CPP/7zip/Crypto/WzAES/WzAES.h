@@ -1,10 +1,10 @@
 // WzAES.h
 /*
-This code implements Brian Gladman's scheme 
+This code implements Brian Gladman's scheme
 specified in password Based File Encryption Utility:
   - AES encryption (128,192,256-bit) in Counter (CTR) mode.
   - HMAC-SHA1 authentication for encrypted data (10 bytes)
-  - Keys are derived by PPKDF2(RFC2898)-HMAC-SHA1 from ASCII password and 
+  - Keys are derived by PPKDF2(RFC2898)-HMAC-SHA1 from ASCII password and
     Salt (saltSize = aesKeySize / 2).
   - 2 bytes contain Password Verifier's Code
 */
@@ -21,8 +21,8 @@ specified in password Based File Encryption Utility:
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Aes.h"
 }
 
@@ -53,7 +53,7 @@ public:
   void Init() { KeySizeMode = 3; }
 };
 
-class CBaseCoder: 
+class CBaseCoder:
   public ICompressFilter,
   public ICryptoSetPassword,
   public CMyUnknownImp
@@ -79,7 +79,7 @@ public:
   UInt32 GetHeaderSize() const { return _key.GetSaltSize() + kPwdVerifCodeSize; }
 };
 
-class CEncoder: 
+class CEncoder:
   public CBaseCoder
   // public ICompressWriteCoderProperties
 {
@@ -99,7 +99,7 @@ public:
   }
 };
 
-class CDecoder: 
+class CDecoder:
   public CBaseCoder,
   public ICompressSetDecoderProperties2
 {

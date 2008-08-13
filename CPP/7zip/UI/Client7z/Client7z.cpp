@@ -20,7 +20,7 @@
 
 
 // {23170F69-40C1-278A-1000-000110070000}
-DEFINE_GUID(CLSID_CFormat7z, 
+DEFINE_GUID(CLSID_CFormat7z,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
 
 using namespace NWindows;
@@ -28,10 +28,10 @@ using namespace NWindows;
 #define kDllName "7z.dll"
 
 static const char *kCopyrightString = MY_7ZIP_VERSION
-" ("  kDllName " client) "  
+" ("  kDllName " client) "
 MY_COPYRIGHT " " MY_DATE;
 
-static const char *kHelpString = 
+static const char *kHelpString =
 "Usage: Client7z.exe [a | l | x ] archive.7z [fileName ...]\n"
 "Examples:\n"
 "  Client7z.exe a archive.7z f1.txt f2.txt  : compress two files to archive.7z\n"
@@ -40,8 +40,8 @@ static const char *kHelpString =
 
 
 typedef UINT32 (WINAPI * CreateObjectFunc)(
-    const GUID *clsID, 
-    const GUID *interfaceID, 
+    const GUID *clsID,
+    const GUID *interfaceID,
     void **outObject);
 
 #ifdef _WIN32
@@ -51,7 +51,7 @@ static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -90,7 +90,7 @@ static HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propI
 {
   NCOM::CPropVariant prop;
   RINOK(archive->GetProperty(index, propID, &prop));
-  if(prop.vt == VT_BOOL)
+  if (prop.vt == VT_BOOL)
     result = VARIANT_BOOLToBool(prop.boolVal);
   else if (prop.vt == VT_EMPTY)
     result = false;
@@ -101,7 +101,7 @@ static HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propI
 
 static HRESULT IsArchiveItemFolder(IInArchive *archive, UInt32 index, bool &result)
 {
-  return IsArchiveItemProp(archive, index, kpidIsFolder, result);
+  return IsArchiveItemProp(archive, index, kpidIsDir, result);
 }
 
 
@@ -112,7 +112,7 @@ static const wchar_t *kEmptyFileAlias = L"[Content]";
 // Archive Open callback class
 
 
-class CArchiveOpenCallback: 
+class CArchiveOpenCallback:
   public IArchiveOpenCallback,
   public ICryptoGetTextPassword,
   public CMyUnknownImp
@@ -146,7 +146,7 @@ STDMETHODIMP CArchiveOpenCallback::CryptoGetTextPassword(BSTR *password)
   if (!PasswordIsDefined)
   {
     // You can ask real password here from user
-    // Password = GetPassword(OutStream); 
+    // Password = GetPassword(OutStream);
     // PasswordIsDefined = true;
     PrintError("Password is not defined");
     return E_ABORT;
@@ -171,7 +171,7 @@ static const char *kCRCFailed = "CRC Failed";
 static const char *kDataError = "Data Error";
 static const char *kUnknownError = "Unknown Error";
 
-class CArchiveExtractCallback: 
+class CArchiveExtractCallback:
   public IArchiveExtractCallback,
   public ICryptoGetTextPassword,
   public CMyUnknownImp
@@ -199,11 +199,11 @@ private:
   bool _extractMode;
   struct CProcessedFileInfo
   {
-    FILETIME UTCLastWriteTime;
-    UInt32 Attributes;
-    bool IsDirectory;
-    bool AttributesAreDefined;
-    bool UTCLastWriteTimeIsDefined;
+    FILETIME MTime;
+    UInt32 Attrib;
+    bool isDir;
+    bool AttribDefined;
+    bool MTimeDefined;
   } _processedFileInfo;
 
   COutFileStream *_outFileStreamSpec;
@@ -237,7 +237,7 @@ STDMETHODIMP CArchiveExtractCallback::SetCompleted(const UInt64 * /* completeVal
   return S_OK;
 }
 
-STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, 
+STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     ISequentialOutStream **outStream, Int32 askExtractMode)
 {
   *outStream = 0;
@@ -245,17 +245,17 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
 
   {
     // Get Name
-    NCOM::CPropVariant propVariant;
-    RINOK(_archiveHandler->GetProperty(index, kpidPath, &propVariant));
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidPath, &prop));
     
     UString fullPath;
-    if(propVariant.vt == VT_EMPTY)
+    if (prop.vt == VT_EMPTY)
       fullPath = kEmptyFileAlias;
-    else 
+    else
     {
-      if(propVariant.vt != VT_BSTR)
+      if (prop.vt != VT_BSTR)
         return E_FAIL;
-      fullPath = propVariant.bstrVal;
+      fullPath = prop.bstrVal;
     }
     _filePath = fullPath;
   }
@@ -264,38 +264,38 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     return S_OK;
 
   {
-    // Get Attributes
-    NCOM::CPropVariant propVariant;
-    RINOK(_archiveHandler->GetProperty(index, kpidAttributes, &propVariant));
-    if (propVariant.vt == VT_EMPTY)
+    // Get Attrib
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidAttrib, &prop));
+    if (prop.vt == VT_EMPTY)
     {
-      _processedFileInfo.Attributes = 0;
-      _processedFileInfo.AttributesAreDefined = false;
+      _processedFileInfo.Attrib = 0;
+      _processedFileInfo.AttribDefined = false;
     }
     else
     {
-      if (propVariant.vt != VT_UI4)
+      if (prop.vt != VT_UI4)
         return E_FAIL;
-      _processedFileInfo.Attributes = propVariant.ulVal;
-      _processedFileInfo.AttributesAreDefined = true;
+      _processedFileInfo.Attrib = prop.ulVal;
+      _processedFileInfo.AttribDefined = true;
     }
   }
 
-  RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.IsDirectory));
+  RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.isDir));
 
   {
     // Get Modified Time
-    NCOM::CPropVariant propVariant;
-    RINOK(_archiveHandler->GetProperty(index, kpidLastWriteTime, &propVariant));
-    _processedFileInfo.UTCLastWriteTimeIsDefined = false;
-    switch(propVariant.vt)
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
+    _processedFileInfo.MTimeDefined = false;
+    switch(prop.vt)
     {
       case VT_EMPTY:
-        // _processedFileInfo.UTCLastWriteTime = _utcLastWriteTimeDefault;
+        // _processedFileInfo.MTime = _utcMTimeDefault;
         break;
       case VT_FILETIME:
-        _processedFileInfo.UTCLastWriteTime = propVariant.filetime;
-        _processedFileInfo.UTCLastWriteTimeIsDefined = true;
+        _processedFileInfo.MTime = prop.filetime;
+        _processedFileInfo.MTimeDefined = true;
         break;
       default:
         return E_FAIL;
@@ -304,12 +304,12 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
   }
   {
     // Get Size
-    NCOM::CPropVariant propVariant;
-    RINOK(_archiveHandler->GetProperty(index, kpidSize, &propVariant));
-    bool newFileSizeDefined = (propVariant.vt != VT_EMPTY);
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidSize, &prop));
+    bool newFileSizeDefined = (prop.vt != VT_EMPTY);
     UInt64 newFileSize;
     if (newFileSizeDefined)
-      newFileSize = ConvertPropVariantToUInt64(propVariant);
+      newFileSize = ConvertPropVariantToUInt64(prop);
   }
 
   
@@ -323,14 +323,14 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
   UString fullProcessedPath = _directoryPath + _filePath;
   _diskFilePath = fullProcessedPath;
 
-  if (_processedFileInfo.IsDirectory)
+  if (_processedFileInfo.isDir)
   {
     NFile::NDirectory::CreateComplexDirectory(fullProcessedPath);
   }
   else
   {
-    NFile::NFind::CFileInfoW fileInfo;
-    if(NFile::NFind::FindFile(fullProcessedPath, fileInfo))
+    NFile::NFind::CFileInfoW fi;
+    if (NFile::NFind::FindFile(fullProcessedPath, fi))
     {
       if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
       {
@@ -357,20 +357,13 @@ STDMETHODIMP CArchiveExtractCallback::PrepareOperation(Int32 askExtractMode)
   _extractMode = false;
   switch (askExtractMode)
   {
-    case NArchive::NExtract::NAskMode::kExtract:
-      _extractMode = true;
+    case NArchive::NExtract::NAskMode::kExtract:  _extractMode = true; break;
   };
   switch (askExtractMode)
   {
-    case NArchive::NExtract::NAskMode::kExtract:
-      PrintString(kExtractingString);
-      break;
-    case NArchive::NExtract::NAskMode::kTest:
-      PrintString(kTestingString);
-      break;
-    case NArchive::NExtract::NAskMode::kSkip:
-      PrintString(kSkippingString);
-      break;
+    case NArchive::NExtract::NAskMode::kExtract:  PrintString(kExtractingString); break;
+    case NArchive::NExtract::NAskMode::kTest:  PrintString(kTestingString); break;
+    case NArchive::NExtract::NAskMode::kSkip:  PrintString(kSkippingString); break;
   };
   PrintString(_filePath);
   return S_OK;
@@ -405,13 +398,13 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
 
   if (_outFileStream != NULL)
   {
-    if (_processedFileInfo.UTCLastWriteTimeIsDefined)
-      _outFileStreamSpec->SetLastWriteTime(&_processedFileInfo.UTCLastWriteTime);
+    if (_processedFileInfo.MTimeDefined)
+      _outFileStreamSpec->SetMTime(&_processedFileInfo.MTime);
     RINOK(_outFileStreamSpec->Close());
   }
   _outFileStream.Release();
-  if (_extractMode && _processedFileInfo.AttributesAreDefined)
-    NFile::NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attributes);
+  if (_extractMode && _processedFileInfo.AttribDefined)
+    NFile::NDirectory::MySetFileAttributes(_diskFilePath, _processedFileInfo.Attrib);
   PrintNewLine();
   return S_OK;
 }
@@ -422,7 +415,7 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
   if (!PasswordIsDefined)
   {
     // You can ask real password here from user
-    // Password = GetPassword(OutStream); 
+    // Password = GetPassword(OutStream);
     // PasswordIsDefined = true;
     PrintError("Password is not defined");
     return E_ABORT;
@@ -438,18 +431,19 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
 // Archive Creating callback class
 
 struct CDirItem
-{ 
-  UInt32 Attributes;
-  FILETIME CreationTime;
-  FILETIME LastAccessTime;
-  FILETIME LastWriteTime;
+{
   UInt64 Size;
+  FILETIME CTime;
+  FILETIME ATime;
+  FILETIME MTime;
   UString Name;
   UString FullPath;
-  bool IsDirectory() const { return (Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
+  UInt32 Attrib;
+
+  bool isDir() const { return (Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
 };
 
-class CArchiveUpdateCallback: 
+class CArchiveUpdateCallback:
   public IArchiveUpdateCallback2,
   public ICryptoGetTextPassword2,
   public CMyUnknownImp
@@ -462,8 +456,8 @@ public:
   STDMETHOD(SetCompleted)(const UInt64 *completeValue);
 
   // IUpdateCallback2
-  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);  
-  STDMETHOD(GetUpdateItemInfo)(UInt32 index, 
+  STDMETHOD(EnumProperties)(IEnumSTATPROPSTG **enumerator);
+  STDMETHOD(GetUpdateItemInfo)(UInt32 index,
       Int32 *newData, Int32 *newProperties, UInt32 *indexInArchive);
   STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value);
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **inStream);
@@ -520,26 +514,26 @@ STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG ** /* enume
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 /* index */, 
+STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 /* index */,
       Int32 *newData, Int32 *newProperties, UInt32 *indexInArchive)
 {
-  if(newData != NULL)
+  if (newData != NULL)
     *newData = BoolToInt(true);
-  if(newProperties != NULL)
+  if (newProperties != NULL)
     *newProperties = BoolToInt(true);
-  if(indexInArchive != NULL)
-    *indexInArchive = UInt32(-1);
+  if (indexInArchive != NULL)
+    *indexInArchive = (UInt32)-1;
   return S_OK;
 }
 
 STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
-  NWindows::NCOM::CPropVariant propVariant;
+  NWindows::NCOM::CPropVariant prop;
   
   if (propID == kpidIsAnti)
   {
-    propVariant = false;
-    propVariant.Detach(value);
+    prop = false;
+    prop.Detach(value);
     return S_OK;
   }
 
@@ -547,30 +541,16 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     const CDirItem &dirItem = (*DirItems)[index];
     switch(propID)
     {
-      case kpidPath:
-        propVariant = dirItem.Name;
-        break;
-      case kpidIsFolder:
-        propVariant = dirItem.IsDirectory();
-        break;
-      case kpidSize:
-        propVariant = dirItem.Size;
-        break;
-      case kpidAttributes:
-        propVariant = dirItem.Attributes;
-        break;
-      case kpidLastAccessTime:
-        propVariant = dirItem.LastAccessTime;
-        break;
-      case kpidCreationTime:
-        propVariant = dirItem.CreationTime;
-        break;
-      case kpidLastWriteTime:
-        propVariant = dirItem.LastWriteTime;
-        break;
+      case kpidPath:  prop = dirItem.Name; break;
+      case kpidIsDir:  prop = dirItem.isDir(); break;
+      case kpidSize:  prop = dirItem.Size; break;
+      case kpidAttrib:  prop = dirItem.Attrib; break;
+      case kpidCTime:  prop = dirItem.CTime; break;
+      case kpidATime:  prop = dirItem.ATime; break;
+      case kpidMTime:  prop = dirItem.MTime; break;
     }
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
 }
 
@@ -599,14 +579,14 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream
   const CDirItem &dirItem = (*DirItems)[index];
   GetStream2(dirItem.Name);
  
-  if(dirItem.IsDirectory())
+  if (dirItem.isDir())
     return S_OK;
 
   {
     CInFileStream *inStreamSpec = new CInFileStream;
     CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
     UString path = DirPrefix + dirItem.FullPath;
-    if(!inStreamSpec->Open(path))
+    if (!inStreamSpec->Open(path))
     {
       DWORD sysError = ::GetLastError();
       FailedCodes.Add(sysError);
@@ -654,7 +634,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
   fileName += VolExt;
   COutFileStream *streamSpec = new COutFileStream;
   CMyComPtr<ISequentialOutStream> streamLoc(streamSpec);
-  if(!streamSpec->Create(fileName, false))
+  if (!streamSpec->Create(fileName, false))
     return ::GetLastError();
   *volumeStream = streamLoc.Detach();
   return S_OK;
@@ -662,12 +642,12 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
 
 STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
-  if (!PasswordIsDefined) 
+  if (!PasswordIsDefined)
   {
     if (AskPassword)
     {
       // You can ask real password here from user
-      // Password = GetPassword(OutStream); 
+      // Password = GetPassword(OutStream);
       // PasswordIsDefined = true;
       PrintError("Password is not defined");
       return E_ABORT;
@@ -726,24 +706,24 @@ int MY_CDECL main(int argc, char* argv[])
     int i;
     for (i = 3; i < argc; i++)
     {
-      CDirItem item;
+      CDirItem di;
       UString name = GetUnicodeString(argv[i], CP_OEMCP);
       
-      NFile::NFind::CFileInfoW fileInfo;
-      if (!NFile::NFind::FindFile(name, fileInfo))
+      NFile::NFind::CFileInfoW fi;
+      if (!NFile::NFind::FindFile(name, fi))
       {
         PrintString(UString(L"Can't find file") + name);
         return 1;
       }
 
-      item.Attributes = fileInfo.Attributes;
-      item.Size = fileInfo.Size;
-      item.CreationTime = fileInfo.CreationTime;
-      item.LastAccessTime = fileInfo.LastAccessTime;
-      item.LastWriteTime = fileInfo.LastWriteTime;
-      item.Name = name;
-      item.FullPath = name;
-      dirItems.Add(item);
+      di.Attrib = fi.Attrib;
+      di.Size = fi.Size;
+      di.CTime = fi.CTime;
+      di.ATime = fi.ATime;
+      di.MTime = fi.MTime;
+      di.Name = name;
+      di.FullPath = name;
+      dirItems.Add(di);
     }
     COutFileStream *outFileStreamSpec = new COutFileStream;
     CMyComPtr<IOutStream> outFileStream = outFileStreamSpec;
@@ -834,22 +814,22 @@ int MY_CDECL main(int argc, char* argv[])
     {
       // List command
       UInt32 numItems = 0;
-      archive->GetNumberOfItems(&numItems);  
+      archive->GetNumberOfItems(&numItems);
       for (UInt32 i = 0; i < numItems; i++)
       {
         {
           // Get uncompressed size of file
-          NWindows::NCOM::CPropVariant propVariant;
-          archive->GetProperty(i, kpidSize, &propVariant);
-          UString s = ConvertPropVariantToString(propVariant);
+          NWindows::NCOM::CPropVariant prop;
+          archive->GetProperty(i, kpidSize, &prop);
+          UString s = ConvertPropVariantToString(prop);
           PrintString(s);
           PrintString("  ");
         }
         {
           // Get name of file
-          NWindows::NCOM::CPropVariant propVariant;
-          archive->GetProperty(i, kpidPath, &propVariant);
-          UString s = ConvertPropVariantToString(propVariant);
+          NWindows::NCOM::CPropVariant prop;
+          archive->GetProperty(i, kpidPath, &prop);
+          UString s = ConvertPropVariantToString(prop);
           PrintString(s);
         }
         PrintString("\n");

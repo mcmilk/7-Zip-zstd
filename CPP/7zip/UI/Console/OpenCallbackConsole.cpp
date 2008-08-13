@@ -7,30 +7,32 @@
 #include "ConsoleClose.h"
 #include "UserInputUtils.h"
 
-HRESULT COpenCallbackConsole::CheckBreak()
+HRESULT COpenCallbackConsole::Open_CheckBreak()
 {
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
   return S_OK;
 }
 
-HRESULT COpenCallbackConsole::SetTotal(const UInt64 *, const UInt64 *)
+HRESULT COpenCallbackConsole::Open_SetTotal(const UInt64 *, const UInt64 *)
 {
-  return CheckBreak();
+  return Open_CheckBreak();
 }
 
-HRESULT COpenCallbackConsole::SetCompleted(const UInt64 *, const UInt64 *)
+HRESULT COpenCallbackConsole::Open_SetCompleted(const UInt64 *, const UInt64 *)
 {
-  return CheckBreak();
+  return Open_CheckBreak();
 }
  
-HRESULT COpenCallbackConsole::CryptoGetTextPassword(BSTR *password)
+#ifndef _NO_CRYPTO
+
+HRESULT COpenCallbackConsole::Open_CryptoGetTextPassword(BSTR *password)
 {
   PasswordWasAsked = true;
-  RINOK(CheckBreak());
+  RINOK(Open_CheckBreak());
   if (!PasswordIsDefined)
   {
-    Password = GetPassword(OutStream); 
+    Password = GetPassword(OutStream);
     PasswordIsDefined = true;
   }
   CMyComBSTR temp(Password);
@@ -38,21 +40,21 @@ HRESULT COpenCallbackConsole::CryptoGetTextPassword(BSTR *password)
   return S_OK;
 }
 
-HRESULT COpenCallbackConsole::GetPasswordIfAny(UString &password)
+HRESULT COpenCallbackConsole::Open_GetPasswordIfAny(UString &password)
 {
   if (PasswordIsDefined)
     password = Password;
   return S_OK;
 }
 
-bool COpenCallbackConsole::WasPasswordAsked()
+bool COpenCallbackConsole::Open_WasPasswordAsked()
 {
   return PasswordWasAsked;
 }
 
-void COpenCallbackConsole::ClearPasswordWasAskedFlag()
+void COpenCallbackConsole::Open_ClearPasswordWasAskedFlag()
 {
   PasswordWasAsked = false;
 }
 
-  
+#endif

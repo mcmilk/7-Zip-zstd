@@ -3,26 +3,30 @@
 MY_VERSION_INFO_DLL("7z Standalone Plugin", "7za")
 
 
-0  ICON  "../../Archive/7z/7z.ico"
-1  ICON  "../../Archive/Zip/zip.ico"
-2  ICON  "../../Archive/BZip2/bz2.ico"
-3  ICON  "../../Archive/Rar/rar.ico"
-4  ICON  "../../Archive/Arj/arj.ico"
-5  ICON  "../../Archive/Z/z.ico"
-6  ICON  "../../Archive/Lzh/lzh.ico"
-7  ICON  "../../Archive/Cab/cab.ico"
-8  ICON  "../../Archive/Iso/iso.ico"
-9  ICON  "../../Archive/Split/split.ico"
-10  ICON  "../../Archive/RPM/rpm.ico"
-11  ICON  "../../Archive/Deb/deb.ico"
-12  ICON  "../../Archive/Cpio/cpio.ico"
-13  ICON  "../../Archive/Tar/tar.ico"
-14  ICON  "../../Archive/GZip/gz.ico"
-15  ICON  "../../Archive/Wim/wim.ico"
-16  ICON  "../../Archive/Lzma/lzma.ico"
+0  ICON  "../../Archive/Icons/7z.ico"
+1  ICON  "../../Archive/Icons/zip.ico"
+2  ICON  "../../Archive/Icons/bz2.ico"
+3  ICON  "../../Archive/Icons/rar.ico"
+4  ICON  "../../Archive/Icons/arj.ico"
+5  ICON  "../../Archive/Icons/z.ico"
+6  ICON  "../../Archive/Icons/lzh.ico"
+7  ICON  "../../Archive/Icons/cab.ico"
+8  ICON  "../../Archive/Icons/iso.ico"
+9  ICON  "../../Archive/Icons/split.ico"
+10  ICON  "../../Archive/Icons/rpm.ico"
+11  ICON  "../../Archive/Icons/deb.ico"
+12  ICON  "../../Archive/Icons/cpio.ico"
+13  ICON  "../../Archive/Icons/tar.ico"
+14  ICON  "../../Archive/Icons/gz.ico"
+15  ICON  "../../Archive/Icons/wim.ico"
+16  ICON  "../../Archive/Icons/lzma.ico"
+17  ICON  "../../Archive/Icons/dmg.ico"
+18  ICON  "../../Archive/Icons/hfs.ico"
+19  ICON  "../../Archive/Icons/xar.ico"
 
 
-STRINGTABLE  
+
+STRINGTABLE
 BEGIN
-  100 "7z:0 zip:1 bz2:2 bzip2:2 tbz2:2 tbz:2 rar:3 arj:4 z:5 taz:5 lzh:6 lha:6 cab:7 iso:8 split:9 rpm:10 deb:11 cpio:12 tar:13 gz:14 gzip:14 tgz:14 tpz:14 wim:15 swm:15 lzma:16"
+  100 "7z:0 zip:1 bz2:2 bzip2:2 tbz2:2 tbz:2 rar:3 arj:4 z:5 taz:5 lzh:6 lha:6 cab:7 iso:8 split:9 rpm:10 deb:11 cpio:12 tar:13 gz:14 gzip:14 tgz:14 tpz:14 wim:15 swm:15 lzma:16 dmg:17 hfs:18 xar:19"
 END

@@ -9,10 +9,10 @@ namespace NWindows {
 namespace NNational {
 namespace NTime {
 
-bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
     LPCTSTR format, CSysString &resultString);
 
-bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time, 
+bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
     LPCTSTR format, CSysString &resultString);
 
 }}}

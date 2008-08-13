@@ -7,8 +7,8 @@
 #include "../../Common/Types.h"
 #include "../../Windows/PropVariant.h"
 #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../C/Alloc.h"
 }
 #endif
@@ -25,7 +25,7 @@ static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -47,12 +47,12 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
   return TRUE;
 }
 
-DEFINE_GUID(CLSID_CArchiveHandler, 
+DEFINE_GUID(CLSID_CArchiveHandler,
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x00, 0x00, 0x00);
 
 static const UInt16 kDecodeId = 0x2790;
 
-DEFINE_GUID(CLSID_CCodec, 
+DEFINE_GUID(CLSID_CCodec,
 0x23170F69, 0x40C1, kDecodeId, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 STDAPI CreateCoder(const GUID *clsid, const GUID *iid, void **outObject);

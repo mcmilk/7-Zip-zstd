@@ -9,7 +9,7 @@
 namespace NArchive {
 namespace NCab {
 
-class CCabBlockInStream: 
+class CCabBlockInStream:
   public ISequentialInStream,
   public CMyUnknownImp
 {

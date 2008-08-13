@@ -3,18 +3,18 @@
 #include "StdAfx.h"
 #include "ListViewDialog.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDOK, 0x02000702 },
   { IDCANCEL, 0x02000710 }
 };
 #endif
 
-bool CListViewDialog::OnInit() 
+bool CListViewDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _listView.Attach(GetItem(IDC_LISTVIEW_LIST));
@@ -28,15 +28,9 @@ bool CListViewDialog::OnInit()
 
   _listView.InsertColumn(0, &columnInfo);
 
-  for(int i = 0; i < Strings.Size(); i++)
-  {
-    LVITEMW item;
-    item.mask = LVIF_TEXT;
-    item.iItem = i;
-    item.pszText = (LPWSTR)(LPCWSTR)Strings[i];
-    item.iSubItem = 0;
-    _listView.InsertItem(&item);
-  }
+  for (int i = 0; i < Strings.Size(); i++)
+    _listView.InsertItem(i, Strings[i]);
+
   if (Strings.Size() > 0)
     _listView.SetItemState(0, LVIS_FOCUSED | LVIS_SELECTED, LVIS_FOCUSED | LVIS_SELECTED);
   StringsWereChanged = false;

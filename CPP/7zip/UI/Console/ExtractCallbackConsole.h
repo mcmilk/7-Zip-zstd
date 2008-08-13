@@ -10,13 +10,20 @@
 #include "../../Archive/IArchive.h"
 #include "../Common/ArchiveExtractCallback.h"
 
-class CExtractCallbackConsole: 
+class CExtractCallbackConsole:
   public IExtractCallbackUI,
+  #ifndef _NO_CRYPTO
   public ICryptoGetTextPassword,
+  #endif
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP2(IFolderArchiveExtractCallback, ICryptoGetTextPassword)
+  MY_QUERYINTERFACE_BEGIN2(IFolderArchiveExtractCallback)
+  #ifndef _NO_CRYPTO
+  MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
+  #endif
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(SetTotal)(UInt64 total);
   STDMETHOD(SetCompleted)(const UInt64 *completeValue);
@@ -31,19 +38,20 @@ public:
   STDMETHOD(MessageError)(const wchar_t *message);
   STDMETHOD(SetOperationResult)(Int32 operationResult, bool encrypted);
 
-  // ICryptoGetTextPassword
-  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
-
   HRESULT BeforeOpen(const wchar_t *name);
   HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted);
   HRESULT ThereAreNoFiles();
   HRESULT ExtractResult(HRESULT result);
 
+ 
+  #ifndef _NO_CRYPTO
   HRESULT SetPassword(const UString &password);
+  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
-public:
   bool PasswordIsDefined;
   UString Password;
+
+  #endif
   
   UInt64 NumArchives;
   UInt64 NumArchiveErrors;

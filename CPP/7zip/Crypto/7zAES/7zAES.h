@@ -60,7 +60,7 @@ protected:
   CBase();
 };
 
-class CBaseCoder: 
+class CBaseCoder:
   public ICompressFilter,
   public ICryptoSetPassword,
   public CMyUnknownImp,
@@ -82,7 +82,7 @@ public:
 
 #ifndef EXTRACT_ONLY
 
-class CEncoder: 
+class CEncoder:
   public CBaseCoder,
   public ICompressWriteCoderProperties,
   // public ICryptoResetSalt,
@@ -101,7 +101,7 @@ public:
 };
 #endif
 
-class CDecoder: 
+class CDecoder:
   public CBaseCoder,
   public ICompressSetDecoderProperties2
 {

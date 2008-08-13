@@ -14,7 +14,7 @@
 namespace NCompress {
 namespace NPPMD {
 
-class CDecoder : 
+class CDecoder :
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
   #ifndef NO_READ_FROM_CODER
@@ -43,9 +43,9 @@ public:
 
   #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP4(
-      ICompressSetDecoderProperties2, 
-      ICompressSetInStream, 
-      ICompressSetOutStreamSize, 
+      ICompressSetDecoderProperties2,
+      ICompressSetInStream,
+      ICompressSetOutStreamSize,
       ISequentialInStream)
   #else
   MY_UNKNOWN_IMP1(
@@ -61,7 +61,7 @@ public:
   HRESULT Flush() { return _outStream.Flush(); }
 
   STDMETHOD(CodeReal)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, 
+      ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 

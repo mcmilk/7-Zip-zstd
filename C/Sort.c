@@ -44,7 +44,7 @@ void HeapSort(UInt32 *p, UInt32 size)
     UInt32 temp = p[size];
     UInt32 k = (p[3] > p[2]) ? 3 : 2;
     p[size--] = p[1];
-    p[1] = p[k]; 
+    p[1] = p[k];
     HeapSortDown(p, k, size, temp)
   }
   {

@@ -8,9 +8,9 @@
 #include "../../Common/MyException.h"
 
 #ifndef _NO_EXCEPTIONS
-struct CInBufferException: public CSystemException 
+struct CInBufferException: public CSystemException
 {
-  CInBufferException(HRESULT errorCode): CSystemException(errorCode) {} 
+  CInBufferException(HRESULT errorCode): CSystemException(errorCode) {}
 };
 #endif
 
@@ -44,29 +44,35 @@ public:
 
   bool ReadByte(Byte &b)
   {
-    if(_buffer >= _bufferLimit)
-      if(!ReadBlock())
+    if (_buffer >= _bufferLimit)
+      if (!ReadBlock())
         return false;
     b = *_buffer++;
     return true;
   }
   Byte ReadByte()
   {
-    if(_buffer >= _bufferLimit)
+    if (_buffer >= _bufferLimit)
       return ReadBlock2();
     return *_buffer++;
   }
-  void ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
+  UInt32 ReadBytes(Byte *buf, UInt32 size)
   {
-    for(processedSize = 0; processedSize < size; processedSize++)
-      if (!ReadByte(((Byte *)data)[processedSize]))
-        return;
-  }
-  bool ReadBytes(void *data, UInt32 size)
-  {
-    UInt32 processedSize;
-    ReadBytes(data, size, processedSize);
-    return (processedSize == size);
+    if ((UInt32)(_bufferLimit - _buffer) >= size)
+    {
+      for (UInt32 i = 0; i < size; i++)
+        buf[i] = _buffer[i];
+      _buffer += size;
+      return size;
+    }
+    for (UInt32 i = 0; i < size; i++)
+    {
+      if (_buffer >= _bufferLimit)
+        if (!ReadBlock())
+          return i;
+      buf[i] = *_buffer++;
+    }
+    return size;
   }
   UInt64 GetProcessedSize() const { return _processedSize + (_buffer - _bufferBase); }
   bool WasFinished() const { return _wasFinished; }

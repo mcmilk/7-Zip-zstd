@@ -10,8 +10,8 @@
 namespace NCompress {
 namespace NShrink {
 
-const int kNumMaxBits = 13;   
-const UInt32 kNumItems = 1 << kNumMaxBits;   
+const int kNumMaxBits = 13;
+const UInt32 kNumItems = 1 << kNumMaxBits;
 
 class CDecoder :
   public ICompressCoder,
@@ -25,11 +25,11 @@ class CDecoder :
 public:
   MY_UNKNOWN_IMP
 
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+  STDMETHOD(CodeReal)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 };

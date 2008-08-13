@@ -42,7 +42,7 @@
 #define IDM_OPEN_PARENT_FOLDER          431
 #define IDM_FOLDERS_HISTORY             432
 #define IDM_VIEW_REFRESH                440
-#define IDM_VIEW_FLAT_VIEW              449     
+#define IDM_VIEW_FLAT_VIEW              449
 #define IDM_VIEW_TWO_PANELS             450
 #define IDM_VIEW_TOOLBARS               451
 #define IDM_VIEW_STANDARD_TOOLBAR       460
@@ -86,6 +86,7 @@
 #define IDS_WANT_TO_DELETE_ITEMS        2215
 #define IDS_DELETING                    2216
 #define IDS_ERROR_DELETING              2217
+#define IDS_ERROR_LONG_PATH_TO_RECYCLE  2218
 
 #define IDS_RENAMING                    2220
 #define IDS_ERROR_RENAMING              2221
@@ -116,8 +117,10 @@
 #define IDS_CANNOT_UPDATE_FILE          2281
 #define IDS_CANNOT_START_EDITOR         2282
 #define IDS_OPENNING                    2283
+#define IDS_VIRUS                       2284
 #define IDS_COMPUTER                    2300
 #define IDS_NETWORK                     2301
+#define IDS_DOCUMENTS                   2302
 #define IDS_ADD                         2400
 #define IDS_EXTRACT                     2401
 #define IDS_TEST                        2402
@@ -145,6 +148,8 @@
 #define IDS_COMBINE_TO                  4031
 #define IDS_COMBINING                   4032
 #define IDS_COMBINE_SELECT_ONE_FILE     4033
+#define IDS_COMBINE_CANT_DETECT_SPLIT_FILE 4034
+#define IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART 4035
 
 #define IDS_CHECKSUM_CALCULATING        4040
 #define IDS_CHECKSUM_INFORMATION        4041
@@ -157,3 +162,7 @@
 #define IDS_PROGRESS_TESTING            4100
 #define IDS_MESSAGE_NO_ERRORS           4200
 
+#define IDS_MESSAGE_UNSUPPORTED_OPERATION_FOR_LONG_PATH_FOLDER  4301
+#define IDS_SELECT_ONE_FILE             4302
+#define IDS_SELECT_FILES                4303
+#define IDS_FILE_EXIST                  4304

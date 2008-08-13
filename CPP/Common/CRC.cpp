@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../C/7zCrc.h"
 }
 

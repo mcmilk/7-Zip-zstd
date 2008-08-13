@@ -58,9 +58,9 @@ namespace NCompressDialog
     bool EncryptHeadersIsAllowed;
     bool EncryptHeaders;
 
-    void Init() 
-    { 
-      Level = Dictionary = Order = UInt32(-1); 
+    void Init()
+    {
+      Level = Dictionary = Order = UInt32(-1);
       OrderMode = false;
       Method.Empty();
       Options.Empty();

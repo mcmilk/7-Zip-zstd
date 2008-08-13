@@ -17,7 +17,7 @@
 
 using namespace NWindows;
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_FOLDERS_STATIC_WORKING_FOLDER,    0x01000210 },
   { IDC_FOLDERS_WORK_RADIO_SYSTEM,        0x01000211 },
@@ -35,14 +35,14 @@ static const int kWorkModeButtons[] =
 
 static const int kNumWorkModeButtons = sizeof(kWorkModeButtons) / sizeof(kWorkModeButtons[0]);
  
-bool CFoldersPage::OnInit() 
+bool CFoldersPage::OnInit()
 {
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   ReadWorkDirInfo(m_WorkDirInfo);
 
   CheckButton(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, m_WorkDirInfo.ForRemovableOnly);
   
-  CheckRadioButton(kWorkModeButtons[0], kWorkModeButtons[kNumWorkModeButtons - 1], 
+  CheckRadioButton(kWorkModeButtons[0], kWorkModeButtons[kNumWorkModeButtons - 1],
       kWorkModeButtons[m_WorkDirInfo.Mode]);
 
   m_WorkPath.Init(*this, IDC_FOLDERS_WORK_EDIT_PATH);
@@ -100,7 +100,7 @@ void CFoldersPage::ModifiedEvent()
 }
 
 bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
-{ 
+{
   for (int i = 0; i < kNumWorkModeButtons; i++)
     if (buttonID == kWorkModeButtons[i])
     {
@@ -132,7 +132,7 @@ bool CFoldersPage::OnCommand(int code, int itemID, LPARAM lParam)
   return CPropertyPage::OnCommand(code, itemID, lParam);
 }
 
-void CFoldersPage::OnFoldersWorkButtonPath() 
+void CFoldersPage::OnFoldersWorkButtonPath()
 {
   UString currentPath;
   m_WorkPath.GetText(currentPath);
@@ -142,7 +142,7 @@ void CFoldersPage::OnFoldersWorkButtonPath()
     m_WorkPath.SetText(resultPath);
 }
 
-LONG CFoldersPage::OnApply() 
+LONG CFoldersPage::OnApply()
 {
   GetWorkDir(m_WorkDirInfo);
   SaveWorkDirInfo(m_WorkDirInfo);
@@ -151,7 +151,7 @@ LONG CFoldersPage::OnApply()
 
 static LPCWSTR kFoldersTopic = L"fm/plugins/7-zip/options.htm#folders";
 
-void CFoldersPage::OnNotifyHelp() 
+void CFoldersPage::OnNotifyHelp()
 {
   ShowHelpWindow(NULL, kFoldersTopic);
 }

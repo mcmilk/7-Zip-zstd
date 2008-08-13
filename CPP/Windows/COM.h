@@ -8,6 +8,8 @@
 namespace NWindows {
 namespace NCOM {
 
+#ifdef _WIN32
+  
 class CComInitializer
 {
 public:
@@ -22,16 +24,18 @@ public:
   bool _mustBeReleased;
   CStgMedium(): _mustBeReleased(false) {}
   ~CStgMedium() { Free(); }
-  void Free() 
-  { 
-    if(_mustBeReleased) 
-      ReleaseStgMedium(&_object); 
+  void Free()
+  {
+    if(_mustBeReleased)
+      ReleaseStgMedium(&_object);
     _mustBeReleased = false;
   }
   const STGMEDIUM* operator->() const { return &_object;}
   STGMEDIUM* operator->() { return &_object;}
   STGMEDIUM* operator&() { return &_object; }
 };
+
+#endif
 
 //////////////////////////////////
 // GUID <--> String Conversions

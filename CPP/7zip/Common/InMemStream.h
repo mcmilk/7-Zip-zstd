@@ -162,7 +162,7 @@ struct IInMemStreamMtCallback
   // must be same for all calls
   virtual size_t GetBlockSize() = 0;
   
-  // Out: 
+  // Out:
   //  result != S_OK stops Reading
   //   if *p = 0, result must be != S_OK;
   // Locking is allowed
@@ -249,7 +249,7 @@ public:
   ~CInMemStreamMt() { Free(); }
   void SetStream(ISequentialInStream *stream) { _stream = stream; }
   
-  // to stop reading you must implement 
+  // to stop reading you must implement
   // returning Error in IInMemStreamMtCallback::AllocateBlock
   // and then you must free at least one substream
   HRes StartReadThread();
@@ -260,7 +260,7 @@ public:
   // void StopReading() { _stopReading = true; }
 };
 
-class CInMemStream: 
+class CInMemStream:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -269,8 +269,8 @@ class CInMemStream:
 public:
   int Index;
   CInMemStreamMt *mtStream;
-  void Init(bool keepData = false) 
-  { 
+  void Init(bool keepData = false)
+  {
     _size = 0; _keepData = keepData ;
   }
   MY_UNKNOWN_IMP

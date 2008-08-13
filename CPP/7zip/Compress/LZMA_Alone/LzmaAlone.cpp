@@ -49,7 +49,7 @@ static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -80,7 +80,7 @@ enum Enum
 };
 }
 
-static const CSwitchForm kSwitchForms[] = 
+static const CSwitchForm kSwitchForms[] =
 {
   { L"?",  NSwitchType::kSimple, false },
   { L"H",  NSwitchType::kSimple, false },
@@ -135,7 +135,7 @@ static void IncorrectCommand()
   PrintHelpAndExit("Incorrect command");
 }
 
-static void WriteArgumentsToStringList(int numArguments, const char *arguments[], 
+static void WriteArgumentsToStringList(int numArguments, const char *arguments[],
     UStringVector &strings)
 {
   for(int i = 1; i < numArguments; i++)
@@ -176,7 +176,7 @@ int main2(int n, const char *args[])
   {
     fprintf(stderr, "Unsupported base types. Edit Common/Types.h and recompile");
     return 1;
-  }   
+  }
 
   UStringVector commandStrings;
   WriteArgumentsToStringList(n, args, commandStrings);
@@ -185,7 +185,7 @@ int main2(int n, const char *args[])
   {
     parser.ParseStrings(kSwitchForms, commandStrings);
   }
-  catch(...) 
+  catch(...)
   {
     IncorrectCommand();
   }
@@ -200,7 +200,7 @@ int main2(int n, const char *args[])
   int paramIndex = 0;
   if (paramIndex >= nonSwitchStrings.Size())
     IncorrectCommand();
-  const UString &command = nonSwitchStrings[paramIndex++]; 
+  const UString &command = nonSwitchStrings[paramIndex++];
 
   bool dictionaryIsDefined = false;
   UInt32 dictionary = (UInt32)-1;
@@ -268,12 +268,12 @@ int main2(int n, const char *args[])
   {
     if (paramIndex >= nonSwitchStrings.Size())
       IncorrectCommand();
-    const UString &inputName = nonSwitchStrings[paramIndex++]; 
+    const UString &inputName = nonSwitchStrings[paramIndex++];
     inStreamSpec = new CInFileStream;
     inStream = inStreamSpec;
     if (!inStreamSpec->Open(GetSystemString(inputName)))
     {
-      fprintf(stderr, "\nError: can not open input file %s\n", 
+      fprintf(stderr, "\nError: can not open input file %s\n",
           (const char *)GetOemString(inputName));
       return 1;
     }
@@ -290,12 +290,12 @@ int main2(int n, const char *args[])
   {
     if (paramIndex >= nonSwitchStrings.Size())
       IncorrectCommand();
-    const UString &outputName = nonSwitchStrings[paramIndex++]; 
+    const UString &outputName = nonSwitchStrings[paramIndex++];
     outStreamSpec = new COutFileStream;
     outStream = outStreamSpec;
     if (!outStreamSpec->Create(GetSystemString(outputName), true))
     {
-      fprintf(stderr, "\nError: can not open output file %s\n", 
+      fprintf(stderr, "\nError: can not open output file %s\n",
         (const char *)GetOemString(outputName));
       return 1;
     }
@@ -314,7 +314,7 @@ int main2(int n, const char *args[])
     Byte *inBuffer = 0;
     if (inSize != 0)
     {
-      inBuffer = (Byte *)MyAlloc((size_t)inSize); 
+      inBuffer = (Byte *)MyAlloc((size_t)inSize);
       if (inBuffer == 0)
         throw kCantAllocate;
     }
@@ -330,7 +330,7 @@ int main2(int n, const char *args[])
       outSize = (size_t)fileSize / 20 * 21 + (1 << 16);
       if (outSize != 0)
       {
-        outBuffer = (Byte *)MyAlloc((size_t)outSize); 
+        outBuffer = (Byte *)MyAlloc((size_t)outSize);
         if (outBuffer == 0)
           throw kCantAllocate;
       }
@@ -354,7 +354,7 @@ int main2(int n, const char *args[])
         throw "too big";
       if (outSize != 0)
       {
-        outBuffer = (Byte *)MyAlloc(outSize); 
+        outBuffer = (Byte *)MyAlloc(outSize);
         if (outBuffer == 0)
           throw kCantAllocate;
       }
@@ -414,7 +414,7 @@ int main2(int n, const char *args[])
       if (!GetNumber(parser[NKey::kPosBits].PostStrings[0], posStateBits))
         IncorrectCommand();
 
-    PROPID propIDs[] = 
+    PROPID propIDs[] =
     {
       NCoderPropID::kDictionarySize,
       NCoderPropID::kPosStateBits,
@@ -480,12 +480,12 @@ int main2(int n, const char *args[])
     {
       fprintf(stderr, "\nError: Can not allocate memory\n");
       return 1;
-    }   
+    }
     else if (result != S_OK)
     {
       fprintf(stderr, "\nEncoder error = %X\n", (unsigned int)result);
       return 1;
-    }   
+    }
   }
   else
   {
@@ -511,7 +511,7 @@ int main2(int n, const char *args[])
     {
       fprintf(stderr, "Decoder error");
       return 1;
-    }   
+    }
   }
   if (outStreamSpec != NULL)
   {
@@ -527,14 +527,14 @@ int main2(int n, const char *args[])
 int MY_CDECL main(int n, const char *args[])
 {
   try { return main2(n, args); }
-  catch(const char *s) 
-  { 
+  catch(const char *s)
+  {
     fprintf(stderr, "\nError: %s\n", s);
-    return 1; 
+    return 1;
   }
-  catch(...) 
-  { 
+  catch(...)
+  {
     fprintf(stderr, "\nError\n");
-    return 1; 
+    return 1;
   }
 }

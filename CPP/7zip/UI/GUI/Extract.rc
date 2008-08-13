@@ -2,8 +2,9 @@
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE DISCARDABLE
 BEGIN
+  IDS_UPDATE_NOT_SUPPORTED "Update operations are not supported for this archive."
   IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
   IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
   IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC "CRC failed in '{0}'. File is broken."
@@ -16,4 +17,7 @@ BEGIN
   IDS_PROGRESS_EXTRACTING "Extracting"
   IDS_CANT_OPEN_ARCHIVE   "Can not open file '{0}' as archive"
   IDS_CANT_OPEN_ENCRYPTED_ARCHIVE   "Can not open encrypted archive '{0}'. Wrong password?"
+  IDS_MEM_ERROR  "The system cannot allocate the required amount of memory"
+  IDS_UNKNOWN_ERROR  "Unknown Error"
+  IDS_UNSUPPORTED_ARCHIVE_TYPE  "Unsupported archive type"
 END

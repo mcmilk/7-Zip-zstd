@@ -24,18 +24,18 @@ struct CTotalBenchRes
   UInt64 Usage;
   UInt64 RPU;
   void Init() { NumIterations = 0; Rating = 0; Usage = 0; RPU = 0; }
-  void Normalize() 
-  { 
-    if (NumIterations == 0) 
+  void Normalize()
+  {
+    if (NumIterations == 0)
       return;
-    Rating /= NumIterations; 
-    Usage /= NumIterations; 
-    RPU /= NumIterations; 
+    Rating /= NumIterations;
+    Usage /= NumIterations;
+    RPU /= NumIterations;
     NumIterations = 1;
   }
-  void SetMid(const CTotalBenchRes &r1, const CTotalBenchRes &r2) 
-  { 
-    Rating = (r1.Rating + r2.Rating) / 2; 
+  void SetMid(const CTotalBenchRes &r1, const CTotalBenchRes &r2)
+  {
+    Rating = (r1.Rating + r2.Rating) / 2;
     Usage = (r1.Usage + r2.Usage) / 2;
     RPU = (r1.RPU + r2.RPU) / 2;
     NumIterations = (r1.NumIterations + r2.NumIterations) / 2;
@@ -168,7 +168,7 @@ HRESULT LzmaBenchCon(
   if (!CrcInternalTest())
     return S_FALSE;
   #ifdef BENCH_MT
-  UInt64 ramSize = NWindows::NSystem::GetRamSize();  // 
+  UInt64 ramSize = NWindows::NSystem::GetRamSize();  //
   UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
   PrintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
   if (numThreads == (UInt32)-1)

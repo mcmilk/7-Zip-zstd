@@ -23,7 +23,6 @@
 #include "../Explorer/MyMessages.h"
 #include "ExtractRes.h"
 
-#include "OpenCallbackGUI.h"
 #include "CompressDialog.h"
 #include "UpdateGUI.h"
 
@@ -41,7 +40,6 @@ struct CThreadUpdating
   CUpdateCallbackGUI *UpdateCallbackGUI;
   const NWildcard::CCensor *WildcardCensor;
   CUpdateOptions *Options;
-  COpenCallbackGUI *OpenCallback;
 
   CUpdateErrorInfo *ErrorInfo;
   HRESULT Result;
@@ -51,19 +49,19 @@ struct CThreadUpdating
     UpdateCallbackGUI->ProgressDialog.WaitCreating();
     try
     {
-      Result = UpdateArchive(codecs, *WildcardCensor, *Options, 
-        *ErrorInfo, OpenCallback, UpdateCallbackGUI);
+      Result = UpdateArchive(codecs, *WildcardCensor, *Options,
+        *ErrorInfo, UpdateCallbackGUI, UpdateCallbackGUI);
     }
     catch(const UString &s)
     {
       ErrorInfo->Message = s;
       Result = E_FAIL;
-    } 
+    }
     catch(const wchar_t *s)
     {
       ErrorInfo->Message = s;
       Result = E_FAIL;
-    } 
+    }
     catch(const char *s)
     {
       ErrorInfo->Message = GetUnicodeString(s);
@@ -126,7 +124,7 @@ static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
   return false;
 }
 
-static void ParseAndAddPropertires(CObjectVector<CProperty> &properties, 
+static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
     const UString &propertiesString)
 {
   UStringVector strings;
@@ -160,14 +158,14 @@ static UString GetNumInBytesString(UInt64 v)
 static void SetOutProperties(
     CObjectVector<CProperty> &properties,
     bool is7z,
-    UInt32 level, 
+    UInt32 level,
     bool setMethod,
     const UString &method,
     UInt32 dictionary,
     bool orderMode,
     UInt32 order,
-    bool solidIsSpecified, UInt64 solidBlockSize, 
-    bool multiThreadIsAllowed, UInt32 numThreads, 
+    bool solidIsSpecified, UInt64 solidBlockSize,
+    bool multiThreadIsAllowed, UInt32 numThreads,
     const UString &encryptionMethod,
     bool encryptHeadersIsAllowed, bool encryptHeaders,
     bool /* sfxMode */)
@@ -247,7 +245,7 @@ static HRESULT ShowDialog(
         if (NFind::FindFile(name, fileInfo))
         {
           if (censor.Pairs.Size() == 1 && pair.Head.IncludeItems.Size() == 1)
-            oneFile = !fileInfo.IsDirectory();
+            oneFile = !fileInfo.IsDir();
         }
       }
     }
@@ -263,7 +261,7 @@ static HRESULT ShowDialog(
   }
   if(dialog.m_ArchiverInfoList.Size() == 0)
   {
-    MyMessageBox(L"No Update Engines");
+    ShowErrorMessage(L"No Update Engines");
     return E_FAIL;
   }
 
@@ -324,13 +322,13 @@ static HRESULT ShowDialog(
   SetOutProperties(
       options.MethodMode.Properties,
       is7z,
-      di.Level, 
+      di.Level,
       !methodOverride,
-      di.Method, 
-      di.Dictionary, 
+      di.Method,
+      di.Dictionary,
       di.OrderMode, di.Order,
-      di.SolidIsSpecified, di.SolidBlockSize, 
-      di.MultiThreadIsAllowed, di.NumThreads, 
+      di.SolidIsSpecified, di.SolidBlockSize,
+      di.MultiThreadIsAllowed, di.NumThreads,
       di.EncryptionMethod,
       di.EncryptHeadersIsAllowed, di.EncryptHeaders,
       di.SFXMode);
@@ -364,11 +362,10 @@ static HRESULT ShowDialog(
 
 HRESULT UpdateGUI(
     CCodecs *codecs,
-    const NWildcard::CCensor &censor, 
+    const NWildcard::CCensor &censor,
     CUpdateOptions &options,
     bool showDialog,
     CUpdateErrorInfo &errorInfo,
-    COpenCallbackGUI *openCallback,
     CUpdateCallbackGUI *callback)
 {
   if (showDialog)
@@ -387,7 +384,6 @@ HRESULT UpdateGUI(
 
   tu.WildcardCensor = &censor;
   tu.Options = &options;
-  tu.OpenCallback = openCallback;
   tu.ErrorInfo = &errorInfo;
 
   NWindows::CThread thread;
@@ -395,5 +391,3 @@ HRESULT UpdateGUI(
   tu.UpdateCallbackGUI->StartProgressDialog(LangString(IDS_PROGRESS_COMPRESSING, 0x02000DC0));
   return tu.Result;
 }
-
-

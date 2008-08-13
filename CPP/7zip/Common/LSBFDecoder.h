@@ -33,13 +33,13 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_BitPos = kNumBigValueBits; 
+    m_BitPos = kNumBigValueBits;
     m_Value = 0;
     NumExtraBytes = 0;
   }
-  UInt64 GetProcessedSize() const 
+  UInt64 GetProcessedSize() const
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
-  UInt64 GetProcessedBitsSize() const 
+  UInt64 GetProcessedBitsSize() const
     { return (m_Stream.GetProcessedSize() << 3) - (kNumBigValueBits - m_BitPos); }
   int GetBitPosition() const { return (m_BitPos & 7); }
 

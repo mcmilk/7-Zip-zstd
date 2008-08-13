@@ -18,7 +18,7 @@ bool operator==(const CVersion &v1, const CVersion &v2)
 bool operator!=(const CVersion &v1, const CVersion &v2)
 {
   return !(v1 == v2);
-} 
+}
 
 bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
 {
@@ -52,26 +52,26 @@ bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
 }
 
 bool CLocalItem::IsImplodeBigDictionary() const
-{ 
+{
   if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
     throw 12312212;
-  return (Flags & NFileHeader::NFlags::kImplodeDictionarySizeMask) != 0; 
+  return (Flags & NFileHeader::NFlags::kImplodeDictionarySizeMask) != 0;
 }
 
 bool CLocalItem::IsImplodeLiteralsOn() const
 {
   if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
     throw 12312213;
-  return (Flags & NFileHeader::NFlags::kImplodeLiteralsOnMask) != 0; 
+  return (Flags & NFileHeader::NFlags::kImplodeLiteralsOnMask) != 0;
 }
 
-bool CLocalItem::IsDirectory() const
-{ 
+bool CLocalItem::IsDir() const
+{
   return NItemName::HasTailSlash(Name, GetCodePage());
 }
 
-bool CItem::IsDirectory() const
-{ 
+bool CItem::IsDir() const
+{
   if (NItemName::HasTailSlash(Name, GetCodePage()))
     return true;
   if (!FromCentral)
@@ -80,14 +80,11 @@ bool CItem::IsDirectory() const
   switch(MadeByVersion.HostOS)
   {
     case NFileHeader::NHostOS::kAMIGA:
-      switch (highAttributes & NFileHeader::NAmigaAttribute::kIFMT) 
+      switch (highAttributes & NFileHeader::NAmigaAttribute::kIFMT)
       {
-        case NFileHeader::NAmigaAttribute::kIFDIR:
-          return true;
-        case NFileHeader::NAmigaAttribute::kIFREG:  
-          return false;
-        default:
-          return false; // change it throw kUnknownAttributes;
+        case NFileHeader::NAmigaAttribute::kIFDIR: return true;
+        case NFileHeader::NAmigaAttribute::kIFREG: return false;
+        default: return false; // change it throw kUnknownAttributes;
       }
     case NFileHeader::NHostOS::kFAT:
     case NFileHeader::NHostOS::kNTFS:
@@ -103,7 +100,7 @@ bool CItem::IsDirectory() const
       return false; // change it throw kUnknownAttributes;
     default:
       /*
-      switch (highAttributes & NFileHeader::NUnixAttribute::kIFMT) 
+      switch (highAttributes & NFileHeader::NUnixAttribute::kIFMT)
       {
         case NFileHeader::NUnixAttribute::kIFDIR:
           return true;
@@ -118,7 +115,7 @@ bool CItem::IsDirectory() const
 UInt32 CLocalItem::GetWinAttributes() const
 {
   DWORD winAttributes = 0;
-  if (IsDirectory())
+  if (IsDir())
     winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
   return winAttributes;
 }
@@ -131,26 +128,26 @@ UInt32 CItem::GetWinAttributes() const
     case NFileHeader::NHostOS::kFAT:
     case NFileHeader::NHostOS::kNTFS:
       if (FromCentral)
-        winAttributes = ExternalAttributes; 
+        winAttributes = ExternalAttributes;
       break;
     default:
       winAttributes = 0; // must be converted from unix value;
   }
-  if (IsDirectory())       // test it;
+  if (IsDir())       // test it;
     winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
   return winAttributes;
 }
 
 void CLocalItem::SetFlagBits(int startBitNumber, int numBits, int value)
-{  
+{
   UInt16 mask = (UInt16)(((1 << numBits) - 1) << startBitNumber);
   Flags &= ~mask;
   Flags |= value << startBitNumber;
 }
 
 void CLocalItem::SetBitMask(int bitMask, bool enable)
-{  
-  if(enable) 
+{
+  if(enable)
     Flags |= bitMask;
   else
     Flags &= ~bitMask;

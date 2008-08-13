@@ -62,7 +62,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
       _outWindowStream.PutByte(b);
       curSize--;
     }
-    else             
+    else
     {
       selector -= kNumLitSelectors;
       unsigned int len = selector + kMatchMinLen;
@@ -105,7 +105,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, 
+    ISequentialOutStream *outStream,
     const UInt64 *, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
@@ -134,7 +134,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
       UInt64 nowPos64 = _outWindowStream.GetProcessedSize() - start;
       RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
-  } 
+  }
   flusher.NeedFlush = false;
   return Flush();
 }

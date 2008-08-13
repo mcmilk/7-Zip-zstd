@@ -15,7 +15,7 @@
 
 #include "ExtractMode.h"
 
-class CArchiveExtractCallback: 
+class CArchiveExtractCallback:
   public IArchiveExtractCallback,
   // public IArchiveVolumeExtractCallback,
   public ICryptoGetTextPassword,
@@ -26,15 +26,9 @@ public:
   MY_UNKNOWN_IMP2(ICryptoGetTextPassword, ICompressProgressInfo)
   // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
 
-  // IProgress
-  STDMETHOD(SetTotal)(UInt64 size);
-  STDMETHOD(SetCompleted)(const UInt64 *completeValue);
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
+  INTERFACE_IArchiveExtractCallback(;)
 
-  // IExtractCallBack
-  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode);
-  STDMETHOD(PrepareOperation)(Int32 askExtractMode);
-  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult);
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 
   // IArchiveVolumeExtractCallback
   // STDMETHOD(GetInStream)(const wchar_t *name, ISequentialInStream **inStream);
@@ -59,24 +53,24 @@ private:
 
   bool _extractMode;
 
-  bool WriteModified;
-  bool WriteCreated;
-  bool WriteAccessed;
+  bool WriteCTime;
+  bool WriteATime;
+  bool WriteMTime;
 
   bool _encrypted;
 
   struct CProcessedFileInfo
   {
-    FILETIME CreationTime;
-    FILETIME LastWriteTime;
-    FILETIME LastAccessTime;
+    FILETIME CTime;
+    FILETIME ATime;
+    FILETIME MTime;
     UInt32 Attributes;
   
-    bool IsCreationTimeDefined;
-    bool IsLastWriteTimeDefined;
-    bool IsLastAccessTimeDefined;
+    bool CTimeDefined;
+    bool ATimeDefined;
+    bool MTimeDefined;
 
-    bool IsDirectory;
+    bool IsDir;
     bool AttributesAreDefined;
   } _processedFileInfo;
 
@@ -86,7 +80,7 @@ private:
   UStringVector _removePathParts;
 
   UString _itemDefaultName;
-  FILETIME _utcLastWriteTimeDefault;
+  FILETIME _utcMTimeDefault;
   UInt32 _attributesDefault;
   bool _stdOutMode;
 
@@ -94,9 +88,9 @@ private:
   HRESULT GetTime(int index, PROPID propID, FILETIME &filetime, bool &filetimeIsDefined);
 public:
   CArchiveExtractCallback():
-      WriteModified(true),
-      WriteCreated(true),
-      WriteAccessed(false),
+      WriteCTime(true),
+      WriteATime(true),
+      WriteMTime(true),
       _multiArchives(false)
   {
     LocalProgressSpec = new CLocalProgress();
@@ -113,23 +107,23 @@ public:
   UInt64 NumFiles;
   UInt64 UnpackSize;
   
-  void InitForMulti(bool multiArchives, 
+  void InitForMulti(bool multiArchives,
       NExtract::NPathMode::EEnum pathMode,
-      NExtract::NOverwriteMode::EEnum overwriteMode) 
-  { 
-    _multiArchives = multiArchives; NumFolders = NumFiles = UnpackSize = 0; 
+      NExtract::NOverwriteMode::EEnum overwriteMode)
+  {
+    _multiArchives = multiArchives; NumFolders = NumFiles = UnpackSize = 0;
     _pathMode = pathMode;
     _overwriteMode = overwriteMode;
   }
 
   void Init(
-      IInArchive *archiveHandler, 
+      IInArchive *archiveHandler,
       IFolderArchiveExtractCallback *extractCallback2,
       bool stdOutMode,
       const UString &directoryPath,
       const UStringVector &removePathParts,
       const UString &itemDefaultName,
-      const FILETIME &utcLastWriteTimeDefault, 
+      const FILETIME &utcMTimeDefault,
       UInt32 attributesDefault,
       UInt64 packSize);
 

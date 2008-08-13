@@ -9,7 +9,7 @@
 class CLangPage: public NWindows::NControl::CPropertyPage
 {
   NWindows::NControl::CComboBox _langCombo;
-  UStringVector _paths; 
+  UStringVector _paths;
 public:
   bool _langWasChanged;
   virtual bool OnInit();

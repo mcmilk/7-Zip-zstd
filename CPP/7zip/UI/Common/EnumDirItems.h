@@ -4,35 +4,21 @@
 #define __ENUM_DIR_ITEMS_H
 
 #include "Common/Wildcard.h"
+#include "Windows/FileFind.h"
 #include "DirItem.h"
 
-#include "Windows/FileFind.h"
-
-void AddDirFileInfo(
-    const UString &prefix, 
-    const UString &fullPathName,
-    const NWindows::NFile::NFind::CFileInfoW &fileInfo, 
-    CObjectVector<CDirItem> &dirItems);
-
-
-void EnumerateDirItems(
-    const UString &baseFolderPrefix,
-    const UStringVector &fileNames,
-    const UString &archiveNamePrefix, 
-    CObjectVector<CDirItem> &dirItems, 
-    UStringVector &errorPaths,
-    CRecordVector<DWORD> &errorCodes);
+void AddDirFileInfo(int phyParent, int logParent,
+    const NWindows::NFile::NFind::CFileInfoW &fi, CObjectVector<CDirItem> &dirItems);
 
 struct IEnumDirItemCallback
 {
-  virtual HRESULT CheckBreak() { return  S_OK; }
+  virtual HRESULT ScanProgress(UInt64 numFolders, UInt64 numFiles, const wchar_t *path) = 0;
 };
 
-
 HRESULT EnumerateItems(
-    const NWildcard::CCensor &censor, 
-    CObjectVector<CDirItem> &dirItems, 
-    IEnumDirItemCallback *callback, 
+    const NWildcard::CCensor &censor,
+    CDirItems &dirItems,
+    IEnumDirItemCallback *callback,
     UStringVector &errorPaths,
     CRecordVector<DWORD> &errorCodes);
 

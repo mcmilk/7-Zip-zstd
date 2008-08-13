@@ -27,20 +27,20 @@ namespace NArchive {
 namespace NCpio {
 
 /*
-enum // PropID
+enum
 {
   kpidinode = kpidUserDefined,
   kpidiChkSum
 };
 */
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME},
   // { NULL, kpidUser, VT_BSTR},
   // { NULL, kpidGroup, VT_BSTR},
   // { L"inode", kpidinode, VT_UI4}
@@ -50,26 +50,27 @@ STATPROPSTG kProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO
 
-STDMETHODIMP CHandler::Open(IInStream *stream, 
+STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback *openArchiveCallback)
+    IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   // try
   {
     CInArchive archive;
 
-    if (archive.Open(stream) != S_OK)
-      return S_FALSE;
+    UInt64 endPos = 0;
+    bool needSetTotal = true;
+
+    if (callback != NULL)
+    {
+      RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
+      RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+    }
+
+    RINOK(archive.Open(stream));
 
     _items.Clear();
-
-    if (openArchiveCallback != NULL)
-    {
-      RINOK(openArchiveCallback->SetTotal(NULL, NULL));
-      UInt64 numFiles = _items.Size();
-      RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
-    }
 
     for (;;)
     {
@@ -84,10 +85,19 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         break;
       _items.Add(item);
       archive.SkeepDataRecords(item.Size, item.Align);
-      if (openArchiveCallback != NULL)
+      if (callback != NULL)
       {
-        UInt64 numFiles = _items.Size();
-        RINOK(openArchiveCallback->SetCompleted(&numFiles, NULL));
+        if (needSetTotal)
+        {
+          RINOK(callback->SetTotal(NULL, &endPos));
+          needSetTotal = false;
+        }
+        if (_items.Size() % 100 == 0)
+        {
+          UInt64 numFiles = _items.Size();
+          UInt64 numBytes = item.HeaderPosition;
+          RINOK(callback->SetCompleted(&numFiles, &numBytes));
+        }
       }
     }
     if (_items.Size() == 0)
@@ -127,17 +137,16 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   switch(propID)
   {
     case kpidPath:
-      prop = (const wchar_t *)NItemName::GetOSName(
-          MultiByteToUnicodeString(item.Name, CP_OEMCP));
+      prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, CP_OEMCP));
       break;
-    case kpidIsFolder:
-      prop = item.IsDirectory();
+    case kpidIsDir:
+      prop = item.IsDir();
       break;
     case kpidSize:
-    case kpidPackedSize:
+    case kpidPackSize:
       prop = (UInt64)item.Size;
       break;
-    case kpidLastWriteTime:
+    case kpidMTime:
     {
       FILETIME utcFileTime;
       if (item.ModificationTime != 0)
@@ -151,12 +160,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       break;
     }
     /*
-    case kpidinode:
-      prop = item.inode;
-      break;
-    case kpidiChkSum:
-      prop = item.ChkSum;
-      break;
+    case kpidinode:  prop = item.inode; break;
+    case kpidiChkSum:  prop = item.ChkSum; break;
     */
   }
   prop.Detach(value);
@@ -199,14 +204,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     lps->InSize = lps->OutSize = currentTotalSize;
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ? 
+    Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     const CItemEx &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     currentItemSize = item.Size;
-    if (item.IsDirectory())
+    if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
       RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
@@ -224,7 +229,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     streamSpec->Init(item.Size);
     RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
     realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == item.Size) ? 
+    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == item.Size) ?
         NArchive::NExtract::NOperationResult::kOK:
         NArchive::NExtract::NOperationResult::kDataError));
   }

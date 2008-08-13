@@ -23,7 +23,7 @@ struct CArcInfo
 
 void RegisterArc(const CArcInfo *arcInfo);
 
-#define REGISTER_ARC_NAME(x) CRegister ## x 
+#define REGISTER_ARC_NAME(x) CRegister ## x
 
 #define REGISTER_ARC_DEC_SIG(x) struct REGISTER_ARC_NAME(x) { \
     REGISTER_ARC_NAME(x)() { g_ArcInfo.Signature[0]--; RegisterArc(&g_ArcInfo); }}; \

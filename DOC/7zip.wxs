@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "4" ?>
-<?define VerMinor = "58" ?>
-<?define VerBuild = "10" ?>
+<?define VerMinor = "59" ?>
+<?define VerBuild = "07" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
 <?define MmmmVer = "$(var.MmVer).$(var.VerBuild).0" ?>
@@ -74,26 +74,26 @@
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2003/01/wi">
   <Product
-      Id="$(var.ProductId)" 
+      Id="$(var.ProductId)"
       UpgradeCode="$(var.UpgradeCode)"
-      Name="$(var.ProductName) $(var.MmVer)$(var.CpuPostfix)" 
+      Name="$(var.ProductName) $(var.MmVer)$(var.CpuPostfix)"
       Language="1033"
-      Version="$(var.MmmmVer)" 
+      Version="$(var.MmmmVer)"
       Manufacturer="$(var.Manufacturer)">
    
-    <Package 
+    <Package
         Id="$(var.PackageId)"
         Description="$(var.ProductName)$(var.CpuPostfix) Package"
         Comments="$(var.ProductName)$(var.CpuPostfix) Package"
         Manufacturer="$(var.Manufacturer)"
         InstallerVersion="200"
-        Compressed="yes" 
+        Compressed="yes"
         Platforms="$(var.Platforms)"
         />
 
     <!-- Major upgrade -->
     <Upgrade Id="$(var.UpgradeCode)">
-      <UpgradeVersion Minimum="$(var.UpgradeMinVer)" IncludeMinimum="yes" 
+      <UpgradeVersion Minimum="$(var.UpgradeMinVer)" IncludeMinimum="yes"
            Maximum="$(var.MmmmVer)" IncludeMaximum="no" Property="OLDERVERSIONBEINGUPGRADED" />
     </Upgrade>
 
@@ -127,32 +127,32 @@
           
 
           <Component Id="InstallRegWild" Guid="$(var.CompInstallRegWild)" DiskId="1" Win64="$(var.Is64)">
-            <Registry Id="MyInstallRegWild" Action="write" Type="string" 
+            <Registry Id="MyInstallRegWild" Action="write" Type="string"
                Root="HKCR" Key="*\shellex\ContextMenuHandlers\7-Zip"
                Value="$(var.ShellExtId)" />
           </Component>
 
           <Component Id="InstallRegDirectory" Guid="$(var.CompInstallRegDirectory)" DiskId="1" Win64="$(var.Is64)">
-            <Registry Id="MyInstallRegDirectory" Action="write" Type="string" 
+            <Registry Id="MyInstallRegDirectory" Action="write" Type="string"
                Root="HKCR" Key="Directory\shellex\ContextMenuHandlers\7-Zip"
                Value="$(var.ShellExtId)" />
           </Component>
 
           <Component Id="InstallRegDirDD" Guid="$(var.CompInstallRegDirDD)" DiskId="1" Win64="$(var.Is64)">
-            <Registry Id="MyInstallRegDirDD" Action="write" Type="string" 
+            <Registry Id="MyInstallRegDirDD" Action="write" Type="string"
                Root="HKCR" Key="Directory\shellex\DragDropHandlers\7-Zip"
                Value="$(var.ShellExtId)" />
           </Component>
 
           <Component Id="InstallRegDriveDD" Guid="$(var.CompInstallRegDriveDD)" DiskId="1" Win64="$(var.Is64)">
-            <Registry Id="MyInstallRegDriveDD" Action="write" Type="string" 
+            <Registry Id="MyInstallRegDriveDD" Action="write" Type="string"
                Root="HKCR" Key="Drive\shellex\DragDropHandlers\7-Zip"
                Value="$(var.ShellExtId)" />
           </Component>
 
           <Component Id="InstallRegApproved" Guid="$(var.CompInstallRegApproved)" DiskId="1" Win64="$(var.Is64)">
             <Condition>Privileged</Condition>
-            <Registry Id="MyInstallRegApproved" Action="write" Type="string" 
+            <Registry Id="MyInstallRegApproved" Action="write" Type="string"
                Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved"
                Name="$(var.ShellExtId)" Value="7-Zip Shell Extension" />
           </Component>
@@ -160,10 +160,10 @@
 
           <Component Id="InstallRegAppPath" Guid="$(var.CompInstallRegAppPath)" DiskId="1" Win64="$(var.Is64)">
             <Condition>Privileged</Condition>
-            <Registry Id="MyInstallRegAppPath" Action="write" Type="string" 
+            <Registry Id="MyInstallRegAppPath" Action="write" Type="string"
                Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe"
                Value="[INSTALLDIR]7zFM.exe" />
-            <Registry Id="MyInstallRegAppPath2" Action="write" Type="string" 
+            <Registry Id="MyInstallRegAppPath2" Action="write" Type="string"
                Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" Name="Path"
                Value="[INSTALLDIR]" />
           </Component>
@@ -176,12 +176,12 @@
 
           <Component Id="ShellExt" Guid="$(var.CompShellExt)" DiskId="1" Win64="$(var.Is64)">
             <File Id="_7zip.dll" Name="7-zip.dll" />
-            <Registry Id="shellReg0" Action="write" Type="string" Root="HKCR" 
-               Key="CLSID\$(var.ShellExtId)\InprocServer32" 
+            <Registry Id="shellReg0" Action="write" Type="string" Root="HKCR"
+               Key="CLSID\$(var.ShellExtId)\InprocServer32"
                Value="[INSTALLDIR]7-zip.dll" />
-            <Registry Id="shellReg1" Action="write" Type="string" Root="HKCR" 
-               Key="CLSID\$(var.ShellExtId)\InprocServer32" 
-               Name="ThreadingModel" 
+            <Registry Id="shellReg1" Action="write" Type="string" Root="HKCR"
+               Key="CLSID\$(var.ShellExtId)\InprocServer32"
+               Name="ThreadingModel"
                Value="Apartment" />
           </Component>
 
@@ -255,11 +255,13 @@
               <File Id="hy.txt" Name="hy.txt" />
               <File Id="id.txt" Name="id.txt" />
               <File Id="io.txt" Name="io.txt" />
+              <File Id="is.txt" Name="is.txt" />
               <File Id="it.txt" Name="it.txt" />
               <File Id="ja.txt" Name="ja.txt" />
               <File Id="ka.txt" Name="ka.txt" />
               <File Id="ko.txt" Name="ko.txt" />
               <File Id="ku.txt" Name="ku.txt" />
+              <File Id="ku_ckb.txt" Name="ku-ckb.txt" />
               <File Id="lt.txt" Name="lt.txt" />
               <File Id="lv.txt" Name="lv.txt" />
               <File Id="mk.txt" Name="mk.txt" />
@@ -306,7 +308,7 @@
     </Directory>
 
     <Feature Id="Complete" Title="7-Zip" Description="The complete package."
-         Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR" 
+         Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR"
          Absent="disallow" AllowAdvertise="no" >
       <Feature Id="Program" Title="Program files" Description="Program files." Level="1"
          Absent="disallow" AllowAdvertise="no">
@@ -329,7 +331,7 @@
         <ComponentRef Id="InstallRegAppPath" />
 
       </Feature>
-      <Feature Id="LanguageFiles" Title="Localization files" Description="Localization files for 71 languages." 
+      <Feature Id="LanguageFiles" Title="Localization files" Description="Localization files for 71 languages."
           Level="1" AllowAdvertise="no">
         <ComponentRef Id="Lang" />
       </Feature>

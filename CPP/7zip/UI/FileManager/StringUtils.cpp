@@ -23,7 +23,7 @@ void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2)
         break;
       }
     }
-    else 
+    else
       dest1 += c;
   }
   dest2 = src.Mid(i);

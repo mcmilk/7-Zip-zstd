@@ -8,7 +8,7 @@ namespace NArchive {
 namespace NCpio {
 namespace NFileHeader {
 
-  namespace NMagic 
+  namespace NMagic
   {
     extern const char *kMagic1 = "070701";
     extern const char *kMagic2 = "070702";

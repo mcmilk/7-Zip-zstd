@@ -36,7 +36,7 @@ void COutArchive::PrepareWriteCompressedDataZip64(UInt16 fileNameLength, bool is
 
 void COutArchive::PrepareWriteCompressedData(UInt16 fileNameLength, UInt64 unPackSize, bool aesEncryption)
 {
-  // We test it to 0xF8000000 to support case when compressed size 
+  // We test it to 0xF8000000 to support case when compressed size
   // can be larger than uncompressed size.
   PrepareWriteCompressedDataZip64(fileNameLength, unPackSize >= 0xF8000000, aesEncryption);
 }

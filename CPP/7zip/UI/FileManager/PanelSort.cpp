@@ -20,7 +20,7 @@ static UString GetExtension(const UString &name)
 
 int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
-  if(lpData == NULL)
+  if (lpData == NULL)
     return 0;
   CPanel *panel = (CPanel*)lpData;
   
@@ -55,7 +55,7 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   /*
   if (panel->_sortIndex == 1)
     return MyCompare(file1.Size, file2.Size);
-  return ::CompareFileTime(&file1.LastWriteTime, &file2.LastWriteTime);
+  return ::CompareFileTime(&file1.MTime, &file2.MTime);
   */
 
   // PROPID propID = panel->_properties[panel->_sortIndex].ID;
@@ -65,7 +65,7 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   // Name must be first property
   panel->_folder->GetProperty((UINT32)lParam1, propID, &propVariant1);
   panel->_folder->GetProperty((UINT32)lParam2, propID, &propVariant2);
-  if(propVariant1.vt != propVariant2.vt)
+  if (propVariant1.vt != propVariant2.vt)
     return 0; // It means some BUG
   if (propVariant1.vt == VT_BSTR)
   {
@@ -77,22 +77,17 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
 int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
-  if(lpData == NULL)
-    return 0;
-  if (lParam1 == kParentIndex)
-    return -1;
-  if (lParam2 == kParentIndex)
-    return 1;
+  if (lpData == NULL) return 0;
+  if (lParam1 == kParentIndex) return -1;
+  if (lParam2 == kParentIndex) return 1;
 
   CPanel *panel = (CPanel*)lpData;
 
-  bool isDirectory1 = panel->IsItemFolder((int)lParam1);
-  bool isDirectory2 = panel->IsItemFolder((int)lParam2);
+  bool isDir1 = panel->IsItemFolder((int)lParam1);
+  bool isDir2 = panel->IsItemFolder((int)lParam2);
   
-  if(isDirectory1 && (!isDirectory2))
-    return -1;
-  if((!isDirectory1) && isDirectory2)
-    return 1;
+  if (isDir1 && !isDir2) return -1;
+  if (isDir2 && !isDir1) return 1;
 
   int result = CompareItems2(lParam1, lParam2, lpData);
   return panel->_ascending ? result: (-result);
@@ -102,7 +97,7 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 /*
 void CPanel::SortItems(int index)
 {
-  if(index == _sortIndex)
+  if (index == _sortIndex)
     _ascending = !_ascending;
   else
   {
@@ -112,9 +107,9 @@ void CPanel::SortItems(int index)
     {
       case kpidSize:
       case kpidPackedSize:
-      case kpidCreationTime:
-      case kpidLastAccessTime:
-      case kpidLastWriteTime:
+      case kpidCTime:
+      case kpidATime:
+      case kpidMTime:
       _ascending = false;
       break;
     }
@@ -131,7 +126,7 @@ void CPanel::SortItemsWithPropID(PROPID propID)
 */
 void CPanel::SortItemsWithPropID(PROPID propID)
 {
-  if(propID == _sortID)
+  if (propID == _sortID)
     _ascending = !_ascending;
   else
   {
@@ -140,11 +135,11 @@ void CPanel::SortItemsWithPropID(PROPID propID)
     switch (propID)
     {
       case kpidSize:
-      case kpidPackedSize:
-      case kpidCreationTime:
-      case kpidLastAccessTime:
-      case kpidLastWriteTime:
-      _ascending = false;
+      case kpidPackSize:
+      case kpidCTime:
+      case kpidATime:
+      case kpidMTime:
+        _ascending = false;
       break;
     }
   }

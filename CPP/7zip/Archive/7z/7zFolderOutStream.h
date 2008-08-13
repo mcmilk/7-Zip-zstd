@@ -12,7 +12,7 @@
 namespace NArchive {
 namespace N7z {
 
-class CFolderOutStream: 
+class CFolderOutStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -47,7 +47,7 @@ public:
       const CArchiveDatabaseEx *archiveDatabase,
       UInt32 ref2Offset,
       UInt32 startIndex,
-      const CBoolVector *extractStatuses, 
+      const CBoolVector *extractStatuses,
       IArchiveExtractCallback *extractCallback,
       bool testMode,
       bool checkCrc);

@@ -21,15 +21,18 @@ public:
   bool EnablePercents;
   bool StdOutMode;
 
+  #ifndef _NO_CRYPTO
   bool PasswordIsDefined;
   UString Password;
   bool AskPassword;
+  #endif
 
-
-  CUpdateCallbackConsole(): 
+  CUpdateCallbackConsole():
       m_PercentPrinter(1 << 16),
+      #ifndef _NO_CRYPTO
       PasswordIsDefined(false),
       AskPassword(false),
+      #endif
       StdOutMode(false),
       EnablePercents(true),
       m_WarningsMode(false)

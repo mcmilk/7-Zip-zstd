@@ -4,9 +4,10 @@
 
 #include "ExtractCallback.h"
 
+#include "Windows/Error.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
-#include "Windows/Error.h"
+#include "Windows/ResourceString.h"
 
 #include "OverwriteDialog.h"
 #ifndef _NO_CRYPTO
@@ -52,7 +53,7 @@ void CExtractCallbackImp::AddErrorMessage(LPCWSTR message)
   Messages.Add(message);
 }
 
-STDMETHODIMP CExtractCallbackImp::SetNumFiles(UInt64 
+STDMETHODIMP CExtractCallbackImp::SetNumFiles(UInt64
   #ifndef _SFX
   numFiles
   #endif
@@ -72,18 +73,56 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 total)
 
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *value)
 {
-  for (;;)
-  {
-    if(ProgressDialog.ProgressSynch.GetStopped())
-      return E_ABORT;
-    if(!ProgressDialog.ProgressSynch.GetPaused())
-      break;
-    ::Sleep(100);
-  }
+  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
   if (value != NULL)
     ProgressDialog.ProgressSynch.SetPos(*value);
   return S_OK;
 }
+
+HRESULT CExtractCallbackImp::Open_CheckBreak()
+{
+  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+}
+
+HRESULT CExtractCallbackImp::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  // if (numFiles != NULL) ProgressDialog.ProgressSynch.SetNumFilesTotal(*numFiles);
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+{
+  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
+  // if (numFiles != NULL) ProgressDialog.ProgressSynch.SetNumFilesCur(*numFiles);
+  return S_OK;
+}
+
+#ifndef _NO_CRYPTO
+
+HRESULT CExtractCallbackImp::Open_CryptoGetTextPassword(BSTR *password)
+{
+  return CryptoGetTextPassword(password);
+}
+
+HRESULT CExtractCallbackImp::Open_GetPasswordIfAny(UString &password)
+{
+  if (PasswordIsDefined)
+    password = Password;
+  return S_OK;
+}
+
+bool CExtractCallbackImp::Open_WasPasswordAsked()
+{
+  return PasswordWasAsked;
+}
+
+void CExtractCallbackImp::Open_ClearPasswordWasAskedFlag()
+{
+  PasswordWasAsked = false;
+}
+
+#endif
+
 
 #ifndef _SFX
 STDMETHODIMP CExtractCallbackImp::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
@@ -135,34 +174,20 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   dialog.NewFileInfo.Name = newName;
   
   /*
-  NOverwriteDialog::NResult::EEnum writeAnswer = 
+  NOverwriteDialog::NResult::EEnum writeAnswer =
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   */
-  INT_PTR writeAnswer = dialog.Create(NULL); // ParentWindow doesn't work with 7z
+  INT_PTR writeAnswer = dialog.Create(ProgressDialog); // ParentWindow doesn't work with 7z
   
   switch(writeAnswer)
   {
-  case IDCANCEL:
-    return E_ABORT;
-    // askResult = NAskOverwriteAnswer::kCancel;
-    // break;
-  case IDNO:
-    *answer = NOverwriteAnswer::kNo;
-    break;
-  case IDC_BUTTON_OVERWRITE_NO_TO_ALL:
-    *answer = NOverwriteAnswer::kNoToAll;
-    break;
-  case IDC_BUTTON_OVERWRITE_YES_TO_ALL:
-    *answer = NOverwriteAnswer::kYesToAll;
-    break;
-  case IDC_BUTTON_OVERWRITE_AUTO_RENAME:
-    *answer = NOverwriteAnswer::kAutoRename;
-    break;
-  case IDYES:
-    *answer = NOverwriteAnswer::kYes;
-    break;
-  default:
-    return E_FAIL;
+    case IDCANCEL: *answer = NOverwriteAnswer::kCancel; return E_ABORT;
+    case IDYES: *answer = NOverwriteAnswer::kYes; break;
+    case IDNO: *answer = NOverwriteAnswer::kNo; break;
+    case IDC_BUTTON_OVERWRITE_YES_TO_ALL: *answer = NOverwriteAnswer::kYesToAll; break;
+    case IDC_BUTTON_OVERWRITE_NO_TO_ALL: *answer = NOverwriteAnswer::kNoToAll; break;
+    case IDC_BUTTON_OVERWRITE_AUTO_RENAME: *answer = NOverwriteAnswer::kAutoRename; break;
+    default: return E_FAIL;
   }
   return S_OK;
 }
@@ -203,13 +228,13 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult, bool
           langID = 0x02000A91;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          messageID = encrypted ? 
+          messageID = encrypted ?
               IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED:
               IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR;
           langID = encrypted ? 0x02000A94 : 0x02000A92;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          messageID = encrypted ? 
+          messageID = encrypted ?
               IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC_ENCRYPTED:
               IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC;
           langID = encrypted ? 0x02000A95 : 0x02000A93;
@@ -223,10 +248,10 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 operationResult, bool
         _needWriteArchivePath = false;
       }
       AddErrorMessage(
-        MyFormatNew(messageID, 
-          #ifdef LANG 
-          langID, 
-          #endif 
+        MyFormatNew(messageID,
+          #ifdef LANG
+          langID,
+          #endif
           _currentFilePath));
     }
   }
@@ -276,11 +301,32 @@ HRESULT CExtractCallbackImp::OpenResult(const wchar_t *name, HRESULT result, boo
 {
   if (result != S_OK)
   {
-    MessageError(MyFormatNew(encrypted ? IDS_CANT_OPEN_ENCRYPTED_ARCHIVE : IDS_CANT_OPEN_ARCHIVE, 
+    UString message;
+    if (result == S_FALSE)
+    {
+      message = MyFormatNew(encrypted ? IDS_CANT_OPEN_ENCRYPTED_ARCHIVE : IDS_CANT_OPEN_ARCHIVE,
         #ifdef LANG
         (encrypted ? 0x0200060A : 0x02000609),
         #endif
-        name));
+        name);
+    }
+    else
+    {
+      message = name;
+      message += L": ";
+      UString message2;
+      if (result == E_OUTOFMEMORY)
+        message2 =
+        #ifdef LANG
+        LangString(IDS_MEM_ERROR, 0x0200060B);
+        #else
+        MyLoadStringW(IDS_MEM_ERROR);
+        #endif
+      else
+        NError::MyFormatMessage(result, message2);
+      message += message2;
+    }
+    MessageError(message);
     NumArchiveErrors++;
   }
   _currentArchivePath = name;
@@ -314,29 +360,27 @@ HRESULT CExtractCallbackImp::SetPassword(const UString &password)
 
 STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
+  PasswordWasAsked = true;
   if (!PasswordIsDefined)
   {
     CPasswordDialog dialog;
-   
-    if (dialog.Create(ParentWindow) == IDCANCEL)
+    if (dialog.Create(ProgressDialog) == IDCANCEL)
       return E_ABORT;
-
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
   CMyComBSTR tempName(Password);
   *password = tempName.Detach();
-
   return S_OK;
 }
 
 
 // IExtractCallBack3
 STDMETHODIMP CExtractCallbackImp::AskWrite(
-    const wchar_t *srcPath, Int32 srcIsFolder, 
+    const wchar_t *srcPath, Int32 srcIsFolder,
     const FILETIME *srcTime, const UInt64 *srcSize,
-    const wchar_t *destPath, 
-    BSTR *destPathResult, 
+    const wchar_t *destPath,
+    BSTR *destPathResult,
     Int32 *writeAnswer)
 {
   UString destPathResultTemp = destPath;
@@ -357,7 +401,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   {
     if (srcIsFolderSpec)
     {
-      if (!destFileInfo.IsDirectory())
+      if (!destFileInfo.IsDir())
       {
         UString message = UString(L"can not replace file \'")
           + destPathSpec +
@@ -368,7 +412,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
       *writeAnswer = BoolToInt(false);
       return S_OK;
     }
-    if (destFileInfo.IsDirectory())
+    if (destFileInfo.IsDir())
     {
       UString message = UString(L"can not replace folder \'")
           + destPathSpec +
@@ -385,10 +429,10 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
       {
         Int32 overwiteResult;
         RINOK(AskOverwrite(
-            destPathSpec, 
-            &destFileInfo.LastWriteTime, &destFileInfo.Size,
+            destPathSpec,
+            &destFileInfo.MTime, &destFileInfo.Size,
             srcPath,
-            srcTime, srcSize, 
+            srcTime, srcSize,
             &overwiteResult));
           switch(overwiteResult)
         {
@@ -432,7 +476,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
         return E_ABORT;
       }
   }
-  CMyComBSTR destPathResultBSTR = destPathResultTemp;
+  CMyComBSTR destPathResultBSTR(destPathResultTemp);
   *destPathResult = destPathResultBSTR.Detach();
   *writeAnswer = BoolToInt(true);
   return S_OK;

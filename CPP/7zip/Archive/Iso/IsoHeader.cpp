@@ -9,7 +9,7 @@ namespace NIso {
 
 const char *kElToritoSpec = "EL TORITO SPECIFICATION\0\0\0\0\0\0\0\0\0";
 
-const wchar_t *kMediaTypes[5] = 
+const wchar_t *kMediaTypes[5] =
 {
   L"NoEmulation",
   L"1.2M",

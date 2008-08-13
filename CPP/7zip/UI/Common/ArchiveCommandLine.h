@@ -63,11 +63,13 @@ struct CArchiveCommandLineOptions
   // NWildcard::CCensor ArchiveWildcardCensor;
   NWildcard::CCensor WildcardCensor;
 
-  CArchiveCommand Command; 
+  CArchiveCommand Command;
   UString ArchiveName;
 
+  #ifndef _NO_CRYPTO
   bool PasswordEnabled;
   UString Password;
+  #endif
 
   bool TechMode;
   // Extract
@@ -82,7 +84,7 @@ struct CArchiveCommandLineOptions
   UString ArcType;
   bool EnablePercents;
 
-  // Benchmark 
+  // Benchmark
   UInt32 NumIterations;
   UInt32 NumThreads;
   UInt32 DictionarySize;

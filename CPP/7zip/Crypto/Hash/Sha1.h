@@ -1,5 +1,5 @@
 // Sha1.h
-// This file is based on public domain 
+// This file is based on public domain
 // Steve Reid and Wei Dai's code from Crypto++
 
 #ifndef __SHA1_H
@@ -26,9 +26,9 @@ class CContextBase
 protected:
   UInt32 _state[5];
   UInt64 _count;
-  void UpdateBlock(UInt32 *data, bool returnRes = false) 
-  { 
-    GetBlockDigest(data, _state, returnRes);  
+  void UpdateBlock(UInt32 *data, bool returnRes = false)
+  {
+    GetBlockDigest(data, _state, returnRes);
     _count++;
   }
 public:

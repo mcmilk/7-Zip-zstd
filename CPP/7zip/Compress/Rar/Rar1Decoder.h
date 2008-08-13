@@ -1,5 +1,5 @@
 // Rar15Decoder.h
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
 #ifndef __RAR10_DECODER_H

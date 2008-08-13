@@ -1,5 +1,5 @@
 // Rar2Decoder.h
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
 #ifndef __RAR2DECODER_H
@@ -67,9 +67,9 @@ const UInt32 kDistLimit2 = 0x101 - 1;
 const UInt32 kDistLimit3 = 0x2000 - 1;
 const UInt32 kDistLimit4 = 0x40000 - 1;
 
-const UInt32 kMatchMaxLen = 255 + 2; 
-const UInt32 kMatchMaxLenMax = 255 + 5; 
-const UInt32 kNormalMatchMinLen = 3; 
+const UInt32 kMatchMaxLen = 255 + 2;
+const UInt32 kMatchMaxLenMax = 255 + 5;
+const UInt32 kNormalMatchMinLen = 3;
 
 namespace NMultimedia {
 

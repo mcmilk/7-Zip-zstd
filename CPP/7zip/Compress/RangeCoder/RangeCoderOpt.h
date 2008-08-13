@@ -5,7 +5,7 @@
 
 #define RC_INIT_VAR \
   UInt32 range = rangeDecoder->Range; \
-  UInt32 code = rangeDecoder->Code;        
+  UInt32 code = rangeDecoder->Code;
 
 #define RC_FLUSH_VAR \
   rangeDecoder->Range = range; \

@@ -24,17 +24,17 @@ UString MyFormatNew(const UString &format, const UString &argument)
   return result;
 }
 
-UString MyFormatNew(UINT resourceID, 
+UString MyFormatNew(UINT resourceID,
     #ifdef LANG
-    UInt32 langID, 
+    UInt32 langID,
     #endif
     const UString &argument)
 {
   return MyFormatNew(
     #ifdef LANG
-    LangString(resourceID, langID), 
+    LangString(resourceID, langID),
     #else
-    NWindows::MyLoadStringW(resourceID), 
+    NWindows::MyLoadStringW(resourceID),
     #endif
     argument);
 }

@@ -74,7 +74,7 @@ class CCoder :
   };
   friend class CCoderReleaser;
 
-  void MakeTable(int nchar, Byte *bitlen, int tablebits, 
+  void MakeTable(int nchar, Byte *bitlen, int tablebits,
       UInt32 *table, int tablesize);
   
   UInt32 ReadBits(int numBits);

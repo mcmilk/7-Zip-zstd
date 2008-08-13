@@ -8,9 +8,9 @@
 #include "../../Common/MyException.h"
 
 #ifndef _NO_EXCEPTIONS
-struct COutBufferException: public CSystemException 
-{ 
-  COutBufferException(HRESULT errorCode): CSystemException(errorCode) {} 
+struct COutBufferException: public CSystemException
+{
+  COutBufferException(HRESULT errorCode): CSystemException(errorCode) {}
 };
 #endif
 

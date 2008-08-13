@@ -1,5 +1,5 @@
 /* Lzma86Dec.h -- LZMA + x86 (BCJ) Filter Decoder
-2008-04-07
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -10,10 +10,10 @@ Public domain */
 
 /*
 Lzma86_GetUnpackSize:
-  In: 
+  In:
     src      - input data
     srcLen   - input data size
-  Out: 
+  Out:
     unpackSize - size of uncompressed stream
   Return code:
     SZ_OK               - OK
@@ -24,14 +24,14 @@ SRes Lzma86_GetUnpackSize(const Byte *src, SizeT srcLen, UInt64 *unpackSize);
 
 /*
 Lzma86_Decode:
-  In: 
+  In:
     dest     - output data
     destLen  - output data size
     src      - input data
     srcLen   - input data size
-  Out: 
-    destLen  - processed output size 
-    srcLen   - processed input size 
+  Out:
+    destLen  - processed output size
+    srcLen   - processed input size
   Return code:
     SZ_OK           - OK
     SZ_ERROR_DATA  - Data error

@@ -94,7 +94,7 @@ void CExtractDialog::SetPathMode()
     for (int i = 0; i < kNumPathnamesButtons; i++)
       if(PathMode == kPathModeButtonsVals[i])
       {
-        CheckRadioButton(kPathModeButtons[0], kPathModeButtons[kNumPathnamesButtons - 1], 
+        CheckRadioButton(kPathModeButtons[0], kPathModeButtons[kNumPathnamesButtons - 1],
           kPathModeButtons[i]);
         return;
       }
@@ -121,7 +121,7 @@ void CExtractDialog::SetOverwriteMode()
     for (int i = 0; i < kNumOverwriteButtons; i++)
       if(OverwriteMode == kOverwriteButtonsVals[i])
       {
-        CheckRadioButton(kOverwriteButtons[0], kOverwriteButtons[kNumOverwriteButtons - 1], 
+        CheckRadioButton(kOverwriteButtons[0], kOverwriteButtons[kNumOverwriteButtons - 1],
             kOverwriteButtons[i]);
         return;
       }
@@ -142,8 +142,8 @@ int CExtractDialog::GetFilesMode() const
 
 #endif
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_STATIC_EXTRACT_EXTRACT_TO,      0x02000801 },
   { IDC_EXTRACT_PATH_MODE,               0x02000810 },
@@ -174,9 +174,9 @@ static CIDLangPair kIDLangPairs[] =
 static const int kHistorySize = 8;
 #endif
 
-bool CExtractDialog::OnInit() 
+bool CExtractDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetWindowText(HWND(*this), 0x02000800);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
@@ -210,7 +210,7 @@ bool CExtractDialog::OnInit()
   #endif
 
   /*
-  if(extractionInfo.Paths.Size() > 0) 
+  if(extractionInfo.Paths.Size() > 0)
     _path.SetCurSel(0);
   else
     _path.SetCurSel(-1);
@@ -223,7 +223,7 @@ bool CExtractDialog::OnInit()
   SetOverwriteMode();
 
   /*
-  CheckRadioButton(kFilesButtons[0], kFilesButtons[kNumFilesButtons - 1], 
+  CheckRadioButton(kFilesButtons[0], kFilesButtons[kNumFilesButtons - 1],
       kFilesButtons[_filesMode]);
   */
 
@@ -278,7 +278,7 @@ bool CExtractDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
 
-void CExtractDialog::OnButtonSetPath() 
+void CExtractDialog::OnButtonSetPath()
 {
   UString currentPath;
   _path.GetText(currentPath);
@@ -300,7 +300,7 @@ void AddUniqueString(UStringVector &list, const UString &s)
   list.Add(s);
 }
 
-void CExtractDialog::OnOK() 
+void CExtractDialog::OnOK()
 {
   #ifndef _SFX
   GetPathMode();
@@ -365,7 +365,7 @@ void CExtractDialog::UpdateWildCardState()
 
 #ifndef  NO_REGISTRY
 static LPCWSTR kHelpTopic = L"fm/plugins/7-zip/extract.htm";
-void CExtractDialog::OnHelp() 
+void CExtractDialog::OnHelp()
 {
   ShowHelpWindow(NULL, kHelpTopic);
   CModalDialog::OnHelp();

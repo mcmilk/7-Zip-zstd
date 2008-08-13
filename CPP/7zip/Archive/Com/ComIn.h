@@ -46,8 +46,8 @@ struct CItem
   Byte Name[kNameSizeMax];
   // UInt16 NameSize;
   // UInt32 Flags;
-  FILETIME CreationTime;
-  FILETIME LastWriteTime;
+  FILETIME CTime;
+  FILETIME MTime;
   UInt64 Size;
   UInt32 LeftDid;
   UInt32 RightDid;

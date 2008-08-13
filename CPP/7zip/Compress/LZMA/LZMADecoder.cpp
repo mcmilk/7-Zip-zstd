@@ -76,11 +76,11 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 }
 
 STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 * /* inSize */, 
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */,
     const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   if (_inBuf == 0)
-    return S_FALSE; 
+    return S_FALSE;
   SetOutStreamSize(outSize);
 
   for (;;)
@@ -104,7 +104,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
       if (rem < curSize)
       {
         curSize = (SizeT)rem;
-        /* 
+        /*
         // finishMode = LZMA_FINISH_END;
         we can't use LZMA_FINISH_END here to allow partial decoding
         */
@@ -141,7 +141,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     {
       RINOK(progress->SetRatioInfo(&_inSizeProcessed, &_outSizeProcessed));
     }
-  } 
+  }
 }
 
 #ifndef NO_READ_FROM_CODER
@@ -169,7 +169,7 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 
       SizeT outProcessed = size;
       ELzmaStatus status;
-      SRes res = LzmaDec_DecodeToBuf(&_state, (Byte *)data, &outProcessed, 
+      SRes res = LzmaDec_DecodeToBuf(&_state, (Byte *)data, &outProcessed,
           _inBuf + _inPos, &inProcessed, LZMA_FINISH_ANY, &status);
       _inPos += (UInt32)inProcessed;
       _inSizeProcessed += inProcessed;

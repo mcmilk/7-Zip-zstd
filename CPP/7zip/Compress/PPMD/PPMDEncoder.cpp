@@ -16,7 +16,7 @@
 namespace NCompress {
 namespace NPPMD {
 
-const UInt32 kMinMemSize = (1 << 11); 
+const UInt32 kMinMemSize = (1 << 11);
 const UInt32 kMinOrder = 2;
 
 /*
@@ -31,7 +31,7 @@ class CCounter
 {
 public:
   CCounter() {}
-  ~CCounter() 
+  ~CCounter()
   {
     ofstream ofs("Res.dat");
     ofs << "innerEncode1    = " << setw(10) << g_NumInner << endl;
@@ -45,7 +45,7 @@ public:
 CCounter g_Counter;
 */
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, 
+STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
     const PROPVARIANT *properties, UInt32 numProperties)
 {
   for (UInt32 i = 0; i < numProperties; i++)
@@ -75,7 +75,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
 }
 
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
-{ 
+{
   const UInt32 kPropSize = 5;
   Byte properties[kPropSize];
   properties[0] = _order;
@@ -95,7 +95,7 @@ CEncoder::CEncoder():
 
 
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, 
+      ISequentialOutStream *outStream,
       const UInt64 * /* inSize */, const UInt64 * /* outSize */,
       ICompressProgressInfo *progress)
 {
@@ -103,7 +103,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
     return E_OUTOFMEMORY;
   if (!_rangeEncoder.Create(1 << 20))
     return E_OUTOFMEMORY;
-  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize)) 
+  if (!_info.SubAllocator.StartSubAllocator(_usedMemorySize))
     return E_OUTOFMEMORY;
 
   _inStream.SetStream(inStream);
@@ -125,12 +125,12 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
       Byte symbol;
       if (!_inStream.ReadByte(symbol))
       {
-        // here we can write End Mark for stream version. 
+        // here we can write End Mark for stream version.
         // In current version this feature is not used.
-        // _info.EncodeSymbol(-1, &_rangeEncoder);   
+        // _info.EncodeSymbol(-1, &_rangeEncoder);
         return S_OK;
       }
-      _info.EncodeSymbol(symbol, &_rangeEncoder);   
+      _info.EncodeSymbol(symbol, &_rangeEncoder);
     }
     while (--size != 0);
     if (progress != NULL)

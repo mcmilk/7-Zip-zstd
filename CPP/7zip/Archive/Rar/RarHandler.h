@@ -12,7 +12,7 @@
 namespace NArchive {
 namespace NRar {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
@@ -49,6 +49,10 @@ private:
     }
     return item.IsSolid();
   }
+
+  HRESULT Open2(IInStream *stream,
+      const UInt64 *maxCheckStartPosition,
+      IArchiveOpenCallback *openArchiveCallback);
 };
 
 }}

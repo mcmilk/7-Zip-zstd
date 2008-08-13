@@ -22,7 +22,7 @@ namespace NGZip {
 
 static const CMethodId kMethodId_Deflate = 0x040108;
 
-const wchar_t *kHostOS[] = 
+const wchar_t *kHostOS[] =
 {
   L"FAT",
   L"AMIGA",
@@ -34,14 +34,14 @@ const wchar_t *kHostOS[] =
   L"Mac",
   L"Z_System",
   L"CPM",
-  L"TOPS20", // pkzip 2.50 NTFS 
-  L"NTFS", // filesystem used by Windows NT 
+  L"TOPS20", // pkzip 2.50 NTFS
+  L"NTFS", // filesystem used by Windows NT
   L"QDOS ", // SMS/QDOS
   L"Acorn", // Archimedes Acorn RISC OS
   L"VFAT", // filesystem used by Windows 95, NT
   L"MVS",
   L"BeOS", // hybrid POSIX/database filesystem
-                        // BeBOX or PowerMac 
+                        // BeBOX or PowerMac
   L"Tandem",
   L"THEOS"
 };
@@ -59,16 +59,14 @@ enum // PropID
 };
 */
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-
-  { NULL, kpidLastWriteTime, VT_FILETIME},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME},
   // { NULL, kpidMethod, VT_UI1},
   { NULL, kpidHostOS, VT_BSTR},
-    
   { NULL, kpidCRC, VT_UI4}
   // { L"Extra", kpidExtraIsPresent, VT_BOOL}
   // { L"Extra flags", kpidExtraFlags, VT_UI1},
@@ -94,7 +92,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
       if (m_Item.NameIsPresent())
         prop = MultiByteToUnicodeString(m_Item.Name, CP_ACP);
       break;
-    case kpidLastWriteTime:
+    case kpidMTime:
     {
       FILETIME utcTime;
       if (m_Item.Time != 0)
@@ -109,35 +107,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
       }
       break;
     }
-    case kpidSize:
-      prop = UInt64(m_Item.UnPackSize32);
-      break;
-    case kpidPackedSize:
-      prop = m_PackSize;
-      break;
-    case kpidCommented:
-      prop = m_Item.CommentIsPresent();
-      break;
+    case kpidSize:  prop = UInt64(m_Item.UnPackSize32); break;
+    case kpidPackSize:  prop = m_PackSize; break;
+    case kpidCommented:  prop = m_Item.CommentIsPresent(); break;
     case kpidHostOS:
       prop = (m_Item.HostOS < kNumHostOSes) ?
           kHostOS[m_Item.HostOS] : kUnknownOS;
       break;
-    case kpidMethod:
-      prop = m_Item.CompressionMethod;
-      break;
-    case kpidCRC:
-        prop = m_Item.FileCRC;
-      break;
+    case kpidMethod:  prop = m_Item.CompressionMethod; break;
+    case kpidCRC:  prop = m_Item.FileCRC; break;
     /*
-    case kpidExtraFlags:
-      prop = m_Item.ExtraFlags;
-      break;
-    case kpidIsText:
-      prop = m_Item.IsText();
-      break;
-    case kpidExtraIsPresent:
-      prop = m_Item.ExtraFieldIsPresent();
-      break;
+    case kpidExtraFlags:  prop = m_Item.ExtraFlags; break;
+    case kpidIsText:  prop = m_Item.IsText(); break;
+    case kpidExtraIsPresent:  prop = m_Item.ExtraFieldIsPresent(); break;
     */
   }
   prop.Detach(value);
@@ -145,7 +127,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {
@@ -155,7 +137,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     CInArchive archive;
     RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_StreamStartPosition));
     RINOK(archive.ReadHeader(inStream, m_Item));
-    m_DataOffset = archive.GetOffset(); 
+    m_DataOffset = archive.GetOffset();
     UInt64 newPosition;
     RINOK(inStream->Seek(-8, STREAM_SEEK_END, &newPosition));
     m_PackSize = newPosition - (m_StreamStartPosition + m_DataOffset);
@@ -274,7 +256,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     }
 
     CMyComPtr<ICompressGetInStreamProcessedSize> getInStreamProcessedSize;
-    RINOK(deflateDecoder.QueryInterface(IID_ICompressGetInStreamProcessedSize, 
+    RINOK(deflateDecoder.QueryInterface(IID_ICompressGetInStreamProcessedSize,
         &getInStreamProcessedSize));
     UInt64 packSize;
     RINOK(getInStreamProcessedSize->GetInStreamProcessedSize(&packSize));

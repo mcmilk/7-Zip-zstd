@@ -6,7 +6,7 @@
 
 static const wchar_t *kEmptyFileAlias = L"[Content]";
 
-UString GetDefaultName2(const UString &fileName, 
+static UString GetDefaultName3(const UString &fileName,
     const UString &extension, const UString &addSubExtension)
 {
   int extLength = extension.Length();
@@ -24,3 +24,10 @@ UString GetDefaultName2(const UString &fileName,
   return kEmptyFileAlias;
 }
 
+UString GetDefaultName2(const UString &fileName,
+    const UString &extension, const UString &addSubExtension)
+{
+  UString name = GetDefaultName3(fileName, extension, addSubExtension);
+  name.TrimRight();
+  return name;
+}

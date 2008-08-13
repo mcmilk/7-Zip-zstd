@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 #include "../../../../C/BwtSort.h"
 #include "../../../../C/HuffEnc.h"
@@ -96,7 +96,7 @@ DWORD CThreadInfo::ThreadFunc()
     }
     HRESULT res = S_OK;
     bool needLeave = true;
-    try 
+    try
     {
       UInt32 blockSize = Encoder->ReadRleBlock(m_Block);
       m_PackSize = Encoder->m_InStream.GetProcessedSize();
@@ -127,7 +127,7 @@ DWORD CThreadInfo::ThreadFunc()
 #endif
 
 CEncoder::CEncoder():
-  NumPasses(1), 
+  NumPasses(1),
   m_OptimizeNumTables(false),
   m_BlockSizeMult(kBlockSizeMultMax)
 {
@@ -150,8 +150,8 @@ HRESULT CEncoder::Create()
   RINOK_THREAD(CanStartWaitingEvent.CreateIfNotCreated());
   if (ThreadsInfo != 0 && m_NumThreadsPrev == NumThreads)
     return S_OK;
-  try 
-  { 
+  try
+  {
     Free();
     MtMode = (NumThreads > 1);
     m_NumThreadsPrev = NumThreads;
@@ -171,7 +171,7 @@ HRESULT CEncoder::Create()
       {
         NumThreads = t;
         Free();
-        return res; 
+        return res;
       }
     }
   }
@@ -239,8 +239,8 @@ void CThreadInfo::WriteBits2(UInt32 value, UInt32 numBits)
   { m_OutStreamCurrent->WriteBits(value, numBits); }
 void CThreadInfo::WriteByte2(Byte b) { WriteBits2(b , 8); }
 void CThreadInfo::WriteBit2(bool v) { WriteBits2((v ? 1 : 0), 1); }
-void CThreadInfo::WriteCRC2(UInt32 v) 
-{ 
+void CThreadInfo::WriteCRC2(UInt32 v)
+{
   for (int i = 0; i < 4; i++)
     WriteByte2(((Byte)(v >> (24 - i * 8))));
 }
@@ -249,8 +249,8 @@ void CEncoder::WriteBits(UInt32 value, UInt32 numBits)
   { m_OutStream.WriteBits(value, numBits); }
 void CEncoder::WriteByte(Byte b) { WriteBits(b , 8); }
 void CEncoder::WriteBit(bool v) { WriteBits((v ? 1 : 0), 1); }
-void CEncoder::WriteCRC(UInt32 v) 
-{ 
+void CEncoder::WriteCRC(UInt32 v)
+{
   for (int i = 0; i < 4; i++)
     WriteByte(((Byte)(v >> (24 - i * 8))));
 }
@@ -274,21 +274,21 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     bool inUse[256];
     bool inUse16[16];
     UInt32 i;
-    for (i = 0; i < 256; i++) 
+    for (i = 0; i < 256; i++)
       inUse[i] = false;
-    for (i = 0; i < 16; i++) 
+    for (i = 0; i < 16; i++)
       inUse16[i] = false;
     for (i = 0; i < blockSize; i++)
       inUse[block[i]] = true;
-    for (i = 0; i < 256; i++) 
+    for (i = 0; i < 256; i++)
       if (inUse[i])
       {
         inUse16[i >> 4] = true;
         mtf.Buffer[numInUse++] = (Byte)i;
       }
-    for (i = 0; i < 16; i++) 
+    for (i = 0; i < 16; i++)
       WriteBit2(inUse16[i]);
-    for (i = 0; i < 256; i++) 
+    for (i = 0; i < 256; i++)
       if (inUse16[i >> 4])
         WriteBit2(inUse[i]);
   }
@@ -307,7 +307,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     UInt32 i = 0;
     const UInt32 *bsIndex = m_BlockSorterIndex;
     block--;
-    do 
+    do
     {
       int pos = mtf.FindAndMove(block[bsIndex[i]]);
       if (pos == 0)
@@ -376,10 +376,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     }
     else
     {
-      if (numSymbols < 200)  numTables = 2; 
-      else if (numSymbols < 600) numTables = 3; 
-      else if (numSymbols < 1200) numTables = 4; 
-      else if (numSymbols < 2400) numTables = 5; 
+      if (numSymbols < 200)  numTables = 2;
+      else if (numSymbols < 600) numTables = 3;
+      else if (numSymbols < 1200) numTables = 4;
+      else if (numSymbols < 2400) numTables = 5;
       else numTables = 6;
     }
 
@@ -397,10 +397,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         UInt32 tFreq = remFreq / t;
         int ge = gs;
         UInt32 aFreq = 0;
-        while (aFreq < tFreq) //  && ge < alphaSize) 
+        while (aFreq < tFreq) //  && ge < alphaSize)
           aFreq += symbolCounts[ge++];
         
-        if (ge - 1 > gs && t != numTables && t != 1 && (((numTables - t) & 1) == 1)) 
+        if (ge - 1 > gs && t != numTables && t != 1 && (((numTables - t) & 1) == 1))
           aFreq -= symbolCounts[--ge];
         
         Byte *lens = Lens[t - 1];
@@ -427,7 +427,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
       {
         UInt32 mtfPos = 0;
         UInt32 g = 0;
-        do 
+        do
         {
           UInt32 symbols[kGroupSize];
           int i = 0;
@@ -523,7 +523,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
               WriteBit2(false);
               len++;
             }
-            else 
+            else
             {
               WriteBit2(true);
               len--;
@@ -547,7 +547,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         UInt32 symbol = mtfs[mtfPos++];
         if (symbol >= 0xFF)
           symbol += mtfs[mtfPos++];
-        if (groupSize == 0) 
+        if (groupSize == 0)
         {
           groupSize = kGroupSize;
           int t = m_Selectors[groupIndex++];
@@ -587,7 +587,7 @@ UInt32 CThreadInfo::EncodeBlockWithHeaders(const Byte *block, UInt32 blockSize)
   int numReps = 0;
   Byte prevByte = block[0];
   UInt32 i = 0;
-  do 
+  do
   {
     Byte b = block[i];
     if (numReps == kRleModeRepSize)
@@ -627,7 +627,7 @@ void CThreadInfo::EncodeBlock2(const Byte *block, UInt32 blockSize, UInt32 numPa
   {
     UInt32 blockSize0 = blockSize / 2;
     for (;(block[blockSize0] == block[blockSize0 - 1] ||
-          block[blockSize0 - 1] == block[blockSize0 - 2]) && 
+          block[blockSize0 - 1] == block[blockSize0 - 2]) &&
           blockSize0 < blockSize; blockSize0++);
     if (blockSize0 < blockSize)
     {
@@ -651,7 +651,7 @@ void CThreadInfo::EncodeBlock2(const Byte *block, UInt32 blockSize, UInt32 numPa
   {
     UInt32 size2 = endPos2 - startPos2;
     if (size2 < endPos - startPos)
-    { 
+    {
       UInt32 numBytes = m_OutStreamCurrent->GetBytePos() - startBytePos2;
       Byte *buffer = m_OutStreamCurrent->GetStream();
       for (UInt32 i = 0; i < numBytes; i++)
@@ -799,7 +799,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream,
   {
     for (;;)
     {
-      CThreadInfo &ti = 
+      CThreadInfo &ti =
       #ifdef COMPRESS_BZIP2_MT
       ThreadsInfo[0];
       #else
@@ -838,12 +838,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   catch(...) { return S_FALSE; }
 }
 
-HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, 
+HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs,
     const PROPVARIANT *properties, UInt32 numProperties)
 {
   for(UInt32 i = 0; i < numProperties; i++)
   {
-    const PROPVARIANT &property = properties[i]; 
+    const PROPVARIANT &property = properties[i];
     switch(propIDs[i])
     {
       case NCoderPropID::kNumPasses:

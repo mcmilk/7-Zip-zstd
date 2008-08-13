@@ -4,12 +4,14 @@
 
 #include <initguid.h>
 
-#include "Common/StringConvert.h"
 #include "Common/CommandLineParser.h"
+#include "Common/StringConvert.h"
 
+#include "Windows/DLL.h"
+#include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileName.h"
-#include "Windows/DLL.h"
+#include "Windows/ResourceString.h"
 
 #include "../../ICoder.h"
 #include "../../IPassword.h"
@@ -18,6 +20,7 @@
 #include "../../UI/Common/ExitCode.h"
 #include "../../UI/Explorer/MyMessages.h"
 #include "../../UI/GUI/ExtractGUI.h"
+#include "../../UI/GUI/ExtractRes.h"
 
 HINSTANCE g_hInstance;
 #ifndef _UNICODE
@@ -26,14 +29,23 @@ static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
 #endif
 
-static const wchar_t *kMemoryExceptionMessage = L"ERROR: Can't allocate required memory!";
 static const wchar_t *kUnknownExceptionMessage = L"ERROR: Unknown Error!";
+
+void ErrorMessageForHRESULT(HRESULT res)
+{
+  UString s;
+  if (res == E_OUTOFMEMORY)
+    s = NWindows::MyLoadStringW(IDS_MEM_ERROR);
+  else
+    s = NWindows::NError::MyFormatMessageW(res);
+  ShowErrorMessage(s);
+}
 
 int APIENTRY WinMain2()
 {
@@ -67,7 +79,7 @@ int APIENTRY WinMain2()
   int fileNamePartStartIndex;
   if (!NWindows::NFile::NDirectory::MyGetFullPathName(path, fullPath, fileNamePartStartIndex))
   {
-    MyMessageBox(L"Error 1329484");
+    ShowErrorMessage(L"Error 1329484");
     return 1;
   }
 
@@ -76,14 +88,14 @@ int APIENTRY WinMain2()
   HRESULT result = codecs->Load();
   if (result != S_OK)
   {
-    ShowErrorMessage(0, result);
-    return S_OK;
+    ErrorMessageForHRESULT(result);
+    return 1;
   }
 
-  COpenCallbackGUI openCallback;
+  // COpenCallbackGUI openCallback;
 
-  openCallback.PasswordIsDefined = !password.IsEmpty();
-  openCallback.Password = password;
+  // openCallback.PasswordIsDefined = !password.IsEmpty();
+  // openCallback.Password = password;
 
   CExtractCallbackImp *ecs = new CExtractCallbackImp;
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
@@ -92,11 +104,11 @@ int APIENTRY WinMain2()
   ecs->Password = password;
   
   CExtractOptions eo;
-  eo.OutputDir = outputFolderDefined ? outputFolder : 
+  eo.OutputDir = outputFolderDefined ? outputFolder :
       fullPath.Left(fileNamePartStartIndex);
   eo.YesToAll = assumeYes;
-  eo.OverwriteMode = assumeYes ? 
-      NExtract::NOverwriteMode::kWithoutPrompt : 
+  eo.OverwriteMode = assumeYes ?
+      NExtract::NOverwriteMode::kWithoutPrompt :
       NExtract::NOverwriteMode::kAskBefore;
   eo.PathMode = NExtract::NPathMode::kFullPathnames;
   eo.TestMode = false;
@@ -107,26 +119,23 @@ int APIENTRY WinMain2()
   NWildcard::CCensorNode wildcardCensor;
   wildcardCensor.AddItem(true, L"*", true, true, true);
 
-  result = ExtractGUI(codecs, v1, v2,
-    wildcardCensor, eo, (assumeYes ? false: true), &openCallback, ecs);
+  result = ExtractGUI(codecs, CIntVector(), v1, v2,
+    wildcardCensor, eo, (assumeYes ? false: true), ecs);
 
-  /*
-  HRESULT result = ExtractArchive(NULL, path, assumeYes, !assumeYes, 
-      outputFolderDefined ? outputFolder : 
-      fullPath.Left(fileNamePartStartIndex));
-  */
   if (result == S_OK)
   {
     if (ecs->Messages.Size() > 0 || ecs->NumArchiveErrors != 0)
-      return NExitCode::kFatalError;    
+      return NExitCode::kFatalError;
     return 0;
   }
   if (result == E_ABORT)
     return NExitCode::kUserBreak;
   if (result == S_FALSE)
-    MyMessageBox(L"Error in archive");
+    ShowErrorMessage(L"Error in archive");
   else
-    ShowErrorMessage(0, result);
+    ErrorMessageForHRESULT(result);
+  if (result == E_OUTOFMEMORY)
+    return NExitCode::kMemoryError;
   return NExitCode::kFatalError;
 }
 
@@ -142,12 +151,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
   }
   catch(const CNewException &)
   {
-    MyMessageBox(kMemoryExceptionMessage);
-    return (NExitCode::kMemoryError);
+    ErrorMessageForHRESULT(E_OUTOFMEMORY);
+    return NExitCode::kMemoryError;
   }
   catch(...)
   {
-    MyMessageBox(kUnknownExceptionMessage);
+    ShowErrorMessage(kUnknownExceptionMessage);
     return NExitCode::kFatalError;
   }
 }

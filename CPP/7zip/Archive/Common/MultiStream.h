@@ -7,7 +7,7 @@
 #include "../../../Common/MyVector.h"
 #include "../../Archive/IArchive.h"
 
-class CMultiStream: 
+class CMultiStream:
   public IInStream,
   public CMyUnknownImp
 {
@@ -40,7 +40,7 @@ public:
 };
 
 /*
-class COutMultiStream: 
+class COutMultiStream:
   public IOutStream,
   public CMyUnknownImp
 {

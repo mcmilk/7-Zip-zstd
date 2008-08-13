@@ -29,7 +29,7 @@ class CCoder :
   bool m_BigDictionaryOn;
   bool m_LiteralsOn;
 
-  int m_NumDistanceLowDirectBits; 
+  int m_NumDistanceLowDirectBits;
   UInt32 m_MinMatchLength;
 
   bool ReadLevelItems(NImplode::NHuffman::CDecoder &table, Byte *levels, int numLevelItems);
@@ -43,11 +43,11 @@ public:
   void ReleaseStreams();
   HRESULT (Flush)() { return m_OutWindowStream.Flush(); }
 
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+  STDMETHOD(CodeReal)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, 
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 

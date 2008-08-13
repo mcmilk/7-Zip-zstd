@@ -37,7 +37,7 @@ static void AddLagePagesSwitch(UString &params)
     params += kLargePagesDisable;
 }
 
-HRESULT MyCreateProcess(const UString &params, 
+HRESULT MyCreateProcess(const UString &params,
     LPCWSTR curDir, bool waitFinish,
     NWindows::NSynchronization::CBaseEvent *event)
 {
@@ -59,9 +59,9 @@ HRESULT MyCreateProcess(const UString &params,
     CSysString curDirA;
     if (curDir != 0)
       curDirA = GetSystemString(curDir);
-    result = ::CreateProcessA(NULL, (LPSTR)(LPCSTR)GetSystemString(params), 
-      NULL, NULL, FALSE, 0, NULL, 
-      ((curDir != 0) ? (LPCSTR)curDirA: 0), 
+    result = ::CreateProcessA(NULL, (LPSTR)(LPCSTR)GetSystemString(params),
+      NULL, NULL, FALSE, 0, NULL,
+      ((curDir != 0) ? (LPCSTR)curDirA: 0),
       &startupInfo, &processInformation);
   }
   else
@@ -76,9 +76,9 @@ HRESULT MyCreateProcess(const UString &params,
     startupInfo.cbReserved2 = 0;
     startupInfo.lpReserved2 = 0;
     
-    result = ::CreateProcessW(NULL, (LPWSTR)(LPCWSTR)params,  
-      NULL, NULL, FALSE, 0, NULL, 
-      curDir, 
+    result = ::CreateProcessW(NULL, (LPWSTR)(LPCWSTR)params,
+      NULL, NULL, FALSE, 0, NULL,
+      curDir,
       &startupInfo, &processInformation);
   }
   if (result == 0)
@@ -114,7 +114,7 @@ static UString Get7zGuiPath()
   return GetQuotedString(path);
 }
 
-static HRESULT CreateTempEvent(const wchar_t *name, 
+static HRESULT CreateTempEvent(const wchar_t *name,
     NSynchronization::CManualResetEvent &event, UString &eventName)
 {
   CRandom random;
@@ -133,8 +133,8 @@ static HRESULT CreateTempEvent(const wchar_t *name,
   }
 }
 
-static HRESULT CreateMap(const UStringVector &names, 
-    const UString &id,   
+static HRESULT CreateMap(const UStringVector &names,
+    const UString &id,
     CFileMapping &fileMapping, NSynchronization::CManualResetEvent &event,
     UString &params)
 {
@@ -198,10 +198,10 @@ HRESULT CompressFiles(
     const UString &curDir,
     const UString &archiveName,
     const UString &archiveType,
-    const UStringVector &names, 
-    // const UString &outFolder, 
+    const UStringVector &names,
+    // const UString &outFolder,
     bool email,
-    bool showDialog, 
+    bool showDialog,
     bool waitFinish)
 {
   /*
@@ -292,14 +292,14 @@ HRESULT CompressFiles(
     for (int i = 0; i < names.Size(); i++)
     {
       const UString &unicodeString = names[i];
-      memcpy(curData, (const wchar_t *)unicodeString , 
+      memcpy(curData, (const wchar_t *)unicodeString ,
         unicodeString .Length() * sizeof(wchar_t));
       curData += unicodeString.Length();
       *curData++ = L'\0';
     }
     // MessageBox(0, params, 0, 0);
-    RINOK(MyCreateProcess(params, 
-      (curDir.IsEmpty()? 0: (LPCWSTR)curDir), 
+    RINOK(MyCreateProcess(params,
+      (curDir.IsEmpty()? 0: (LPCWSTR)curDir),
       waitFinish, &event));
   }
   catch(...)

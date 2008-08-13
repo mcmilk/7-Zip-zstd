@@ -92,7 +92,7 @@ struct CBindInfo
   }
 
 
-  void FindInStream(UInt32 streamIndex, UInt32 &coderIndex, 
+  void FindInStream(UInt32 streamIndex, UInt32 &coderIndex,
       UInt32 &coderStreamIndex) const
   {
     for (coderIndex = 0; coderIndex < (UInt32)Coders.Size(); coderIndex++)
@@ -107,7 +107,7 @@ struct CBindInfo
     }
     throw 1;
   }
-  void FindOutStream(UInt32 streamIndex, UInt32 &coderIndex, 
+  void FindOutStream(UInt32 streamIndex, UInt32 &coderIndex,
       UInt32 &coderStreamIndex) const
   {
     for (coderIndex = 0; coderIndex < (UInt32)Coders.Size(); coderIndex++)

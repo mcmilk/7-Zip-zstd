@@ -65,25 +65,25 @@ void CPercentPrinter::RePrintRatio()
   int i;
   if (m_NumExtraChars == 0)
   {
-    for (i = 0; i < extraSize; i++) 
+    for (i = 0; i < extraSize; i++)
       *p++ = ' ';
     m_NumExtraChars = extraSize;
   }
 
-  for (i = 0; i < m_NumExtraChars; i++) 
+  for (i = 0; i < m_NumExtraChars; i++)
     *p++ = '\b';
   m_NumExtraChars = extraSize;
   for (; size < m_NumExtraChars; size++)
     *p++ = ' ';
   MyStringCopy(p, s);
   (*OutStream) << fullString;
-  OutStream->Flush(); 
+  OutStream->Flush();
   m_PrevValue = m_CurValue;
 }
 
 void CPercentPrinter::PrintRatio()
 {
-  if (m_CurValue < m_PrevValue + m_MinStepSize && 
+  if (m_CurValue < m_PrevValue + m_MinStepSize &&
       m_CurValue + m_MinStepSize > m_PrevValue && m_NumExtraChars != 0)
     return;
   RePrintRatio();

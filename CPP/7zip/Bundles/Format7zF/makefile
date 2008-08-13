@@ -12,7 +12,9 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
+  $O\MyMap.obj \
   $O\MyString.obj \
+  $O\MyXml.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\MyVector.obj \
@@ -24,8 +26,10 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\PropVariant.obj \
+  $O\PropVariantUtils.obj \
   $O\Synchronization.obj \
   $O\System.obj \
+  $O\Time.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\InBuffer.obj \
@@ -52,12 +56,23 @@ WIN_OBJS = \
 AR_OBJS = \
   $O\ArchiveExports.obj \
   $O\DllExports2.obj \
+  $O\ArjHandler.obj \
+  $O\DebHandler.obj \
+  $O\DmgHandler.obj \
+  $O\ElfHandler.obj \
+  $O\MachoHandler.obj \
+  $O\MubHandler.obj \
+  $O\PeHandler.obj \
+  $O\RpmHandler.obj \
+  $O\XarHandler.obj \
+  $O\ZHandler.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
+  $O\FindSignature.obj \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
@@ -83,11 +98,6 @@ AR_COMMON_OBJS = \
   $O\7zSpecStream.obj \
   $O\7zUpdate.obj \
   $O\7zRegister.obj \
-
-ARJ_OBJS = \
-  $O\ArjHandler.obj \
-  $O\ArjIn.obj \
-  $O\ArjRegister.obj \
 
 BZ2_OBJS = \
   $O\BZip2Handler.obj \
@@ -119,12 +129,6 @@ CPIO_OBJS = \
   $O\CpioIn.obj \
   $O\CpioRegister.obj \
 
-DEB_OBJS = \
-  $O\DebHandler.obj \
-  $O\DebHeader.obj \
-  $O\DebIn.obj \
-  $O\DebRegister.obj \
-
 GZ_OBJS = \
   $O\GZipHandler.obj \
   $O\GZipHandlerOut.obj \
@@ -133,6 +137,11 @@ GZ_OBJS = \
   $O\GZipOut.obj \
   $O\GZipUpdate.obj \
   $O\GZipRegister.obj \
+
+HFS_OBJS = \
+  $O\HfsHandler.obj \
+  $O\HfsIn.obj \
+  $O\HfsRegister.obj \
 
 ISO_OBJS = \
   $O\IsoHandler.obj \
@@ -167,11 +176,6 @@ RAR_OBJS = \
   $O\RarVolumeInStream.obj \
   $O\RarRegister.obj \
 
-RPM_OBJS = \
-  $O\RpmHandler.obj \
-  $O\RpmIn.obj \
-  $O\RpmRegister.obj \
-
 SPLIT_OBJS = \
   $O\SplitHandler.obj \
   $O\SplitHandlerOut.obj \
@@ -186,14 +190,15 @@ TAR_OBJS = \
   $O\TarUpdate.obj \
   $O\TarRegister.obj \
 
+UDF_OBJS = \
+  $O\UdfHandler.obj \
+  $O\UdfIn.obj \
+  $O\UdfRegister.obj \
+
 WIM_OBJS = \
   $O\WimHandler.obj \
   $O\WimIn.obj \
   $O\WimRegister.obj \
-
-Z_OBJS = \
-  $O\ZHandler.obj \
-  $O\ZRegister.obj \
 
 ZIP_OBJS = \
   $O\ZipAddCommon.obj \
@@ -240,6 +245,7 @@ DEFLATE_OPT_OBJS = \
   $O\DeflateRegister.obj \
   $O\Deflate64Register.obj \
   $O\DeflateNsisRegister.obj \
+  $O\ZlibDecoder.obj \
 
 IMPLODE_OBJS = \
   $O\ImplodeDecoder.obj \
@@ -337,24 +343,22 @@ OBJS = \
   $(AR_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
-  $(ARJ_OBJS) \
   $(BZ2_OBJS) \
   $(CAB_OBJS) \
   $(CHM_OBJS) \
   $(COM_OBJS) \
   $(CPIO_OBJS) \
-  $(DEB_OBJS) \
   $(GZ_OBJS) \
+  $(HFS_OBJS) \
   $(ISO_OBJS) \
   $(LZH_OBJS) \
   $(LZM_OBJS) \
   $(NSIS_OBJS) \
   $(RAR_OBJS) \
-  $(RPM_OBJS) \
   $(SPLIT_OBJS) \
   $(TAR_OBJS) \
+  $(UDF_OBJS) \
   $(WIM_OBJS) \
-  $(Z_OBJS) \
   $(ZIP_OBJS) \
   $(BZIP2_OBJS) \
   $(BZIP2_OPT_OBJS) \
@@ -402,8 +406,6 @@ $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 
 $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
-$(ARJ_OBJS): ../../Archive/Arj/$(*B).cpp
-	$(COMPL)
 $(BZ2_OBJS): ../../Archive/BZip2/$(*B).cpp
 	$(COMPL)
 $(CAB_OBJS): ../../Archive/Cab/$(*B).cpp
@@ -414,9 +416,9 @@ $(COM_OBJS): ../../Archive/Com/$(*B).cpp
 	$(COMPL)
 $(CPIO_OBJS): ../../Archive/Cpio/$(*B).cpp
 	$(COMPL)
-$(DEB_OBJS): ../../Archive/Deb/$(*B).cpp
-	$(COMPL)
 $(GZ_OBJS): ../../Archive/GZip/$(*B).cpp
+	$(COMPL)
+$(HFS_OBJS): ../../Archive/Hfs/$(*B).cpp
 	$(COMPL)
 $(ISO_OBJS): ../../Archive/Iso/$(*B).cpp
 	$(COMPL)
@@ -428,15 +430,13 @@ $(NSIS_OBJS): ../../Archive/Nsis/$(*B).cpp
 	$(COMPL)
 $(RAR_OBJS): ../../Archive/Rar/$(*B).cpp
 	$(COMPL)
-$(RPM_OBJS): ../../Archive/Rpm/$(*B).cpp
-	$(COMPL)
 $(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
 $(TAR_OBJS): ../../Archive/Tar/$(*B).cpp
 	$(COMPL)
-$(WIM_OBJS): ../../Archive/Wim/$(*B).cpp
+$(UDF_OBJS): ../../Archive/Udf/$(*B).cpp
 	$(COMPL)
-$(Z_OBJS): ../../Archive/Z/$(*B).cpp
+$(WIM_OBJS): ../../Archive/Wim/$(*B).cpp
 	$(COMPL)
 $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
 	$(COMPL)

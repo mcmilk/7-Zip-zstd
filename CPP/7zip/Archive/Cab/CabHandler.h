@@ -10,7 +10,7 @@
 namespace NArchive {
 namespace NCab {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {

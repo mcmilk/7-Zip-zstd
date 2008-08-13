@@ -15,7 +15,7 @@ namespace NFar {
 
 CStartupInfo g_StartupInfo;
 
-void CStartupInfo::Init(const PluginStartupInfo &pluginStartupInfo, 
+void CStartupInfo::Init(const PluginStartupInfo &pluginStartupInfo,
     const CSysString &pliginNameForRegestry)
 {
   m_Data = pluginStartupInfo;
@@ -29,18 +29,18 @@ const char *CStartupInfo::GetMsgString(int messageId)
   return (const char*)m_Data.GetMsg(m_Data.ModuleNumber, messageId);
 }
 
-int CStartupInfo::ShowMessage(unsigned int flags, 
+int CStartupInfo::ShowMessage(unsigned int flags,
     const char *helpTopic, const char **items, int numItems, int numButtons)
 {
-  return m_Data.Message(m_Data.ModuleNumber, flags, (char *)helpTopic, 
+  return m_Data.Message(m_Data.ModuleNumber, flags, (char *)helpTopic,
     (char **)items, numItems, numButtons);
 }
 
 namespace NMessageID
 {
-  enum 
+  enum
   {
-    kOk,     
+    kOk,
     kCancel,
     kWarning,
     kError
@@ -49,10 +49,47 @@ namespace NMessageID
 
 int CStartupInfo::ShowMessage(const char *message)
 {
-  const char *messagesItems[]= { GetMsgString(NMessageID::kError), message, 
-      GetMsgString(NMessageID::kOk) };
-  return ShowMessage(FMSG_WARNING, NULL, messagesItems, 
-      sizeof(messagesItems) / sizeof(messagesItems[0]), 1);
+  const char *items[]= { GetMsgString(NMessageID::kError), message, GetMsgString(NMessageID::kOk) };
+  return ShowMessage(FMSG_WARNING, NULL, items, sizeof(items) / sizeof(items[0]), 1);
+}
+
+static void SplitString(const AString &srcString, AStringVector &destStrings)
+{
+  destStrings.Clear();
+  AString string;
+  int len = srcString.Length();
+  if (len == 0)
+    return;
+  for (int i = 0; i < len; i++)
+  {
+    char c = srcString[i];
+    if (c == '\n')
+    {
+      if (!string.IsEmpty())
+      {
+        destStrings.Add(string);
+        string.Empty();
+      }
+    }
+    else
+      string += c;
+  }
+  if (!string.IsEmpty())
+    destStrings.Add(string);
+}
+
+int CStartupInfo::ShowMessageLines(const char *message)
+{
+  AStringVector strings;
+  SplitString(message, strings);
+  const int kNumStringsMax = 20;
+  const char *items[kNumStringsMax + 1] = { GetMsgString(NMessageID::kError) };
+  int pos = 1;
+  for (int i = 0; i < strings.Size() && pos < kNumStringsMax; i++)
+    items[pos++] = strings[i];
+  items[pos++] = GetMsgString(NMessageID::kOk);
+
+  return ShowMessage(FMSG_WARNING, NULL, items, pos, 1);
 }
 
 int CStartupInfo::ShowMessage(int messageId)
@@ -60,10 +97,10 @@ int CStartupInfo::ShowMessage(int messageId)
   return ShowMessage(GetMsgString(messageId));
 }
 
-int CStartupInfo::ShowDialog(int X1, int Y1, int X2, int Y2, 
+int CStartupInfo::ShowDialog(int X1, int Y1, int X2, int Y2,
     const char *helpTopic, struct FarDialogItem *items, int numItems)
 {
-  return m_Data.Dialog(m_Data.ModuleNumber, X1, Y1, X2, Y2, (char *)helpTopic, 
+  return m_Data.Dialog(m_Data.ModuleNumber, X1, Y1, X2, Y2, (char *)helpTopic,
       items, numItems);
 }
 
@@ -75,7 +112,7 @@ int CStartupInfo::ShowDialog(int sizeX, int sizeY,
 
 inline static BOOL GetBOOLValue(bool v) { return (v? TRUE: FALSE); }
 
-void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems, 
+void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems,
     FarDialogItem *destItems, int numItems)
 {
   for (int i = 0; i < numItems; i++)
@@ -136,19 +173,19 @@ CSysString CStartupInfo::GetFullKeyName(const CSysString &keyName) const
 }
 
 
-LONG CStartupInfo::CreateRegKey(HKEY parentKey, 
+LONG CStartupInfo::CreateRegKey(HKEY parentKey,
     const CSysString &keyName, NRegistry::CKey &destKey) const
 {
   return destKey.Create(parentKey, GetFullKeyName(keyName));
 }
 
-LONG CStartupInfo::OpenRegKey(HKEY parentKey, 
-    const CSysString &keyName, NRegistry::CKey &destKey) const 
+LONG CStartupInfo::OpenRegKey(HKEY parentKey,
+    const CSysString &keyName, NRegistry::CKey &destKey) const
 {
   return destKey.Open(parentKey, GetFullKeyName(keyName));
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName, 
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
     LPCTSTR valueName, LPCTSTR value) const
 {
   NRegistry::CKey regKey;
@@ -156,7 +193,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
   regKey.SetValue(valueName, value);
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName, 
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
     LPCTSTR valueName, UINT32 value) const
 {
   NRegistry::CKey regKey;
@@ -164,7 +201,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
   regKey.SetValue(valueName, value);
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName, 
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
     LPCTSTR valueName, bool value) const
 {
   NRegistry::CKey regKey;
@@ -289,7 +326,7 @@ int CStartupInfo::Menu(
     struct FarMenuItem *items,
     int numItems)
 {
-  return m_Data.Menu(m_Data.ModuleNumber, x, y, maxHeight, flags, (char *)title, 
+  return m_Data.Menu(m_Data.ModuleNumber, x, y, maxHeight, flags, (char *)title,
       (char *)aBottom, (char *)helpTopic, breakKeys, breakCode, items, numItems);
 }
 
@@ -308,7 +345,7 @@ int CStartupInfo::Menu(
     unsigned int flags,
     const char *title,
     const char *helpTopic,
-    const CSysStringVector &items, 
+    const CSysStringVector &items,
     int selectedItem)
 {
   CRecordVector<FarMenuItem> farMenuItems;
@@ -368,9 +405,14 @@ void PrintErrorMessage(const char *message, int code)
 void PrintErrorMessage(const char *message, const char *text)
 {
   CSysString tmp = message;
-  tmp += ": ";
+  tmp += ":\n";
   tmp += text;
-  g_StartupInfo.ShowMessage(tmp);
+  g_StartupInfo.ShowMessageLines(tmp);
+}
+
+void PrintErrorMessage(const char *message, const wchar_t *text)
+{
+  PrintErrorMessage(message, UnicodeStringToMultiByte(text, CP_OEMCP));
 }
 
 bool WasEscPressed()

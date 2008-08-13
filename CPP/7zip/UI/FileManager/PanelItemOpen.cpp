@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "resource.h" 
+#include "resource.h"
 
-#include "Common/StringConvert.h" 
+#include "Common/StringConvert.h"
 #include "Common/Random.h"
 #include "Common/StringConvert.h"
 #include "Common/AutoPtr.h"
@@ -14,14 +14,15 @@
 #include "Windows/Thread.h"
 #include "Windows/Synchronization.h"
 #include "Windows/Error.h"
-// #include "Windows/COM.h"
 
 #include "ExtractCallback.h"
+#include "UpdateCallback100.h"
 #include "IFolder.h"
 #include "FileFolderPluginOpen.h"
 #include "FormatUtils.h"
 #include "Panel.h"
 #include "RegistryUtils.h"
+#include "LangUtils.h"
 
 using namespace NWindows;
 using namespace NSynchronization;
@@ -33,9 +34,8 @@ extern HWND g_HWND;
 extern bool g_IsNT;
 #endif
 
-static wchar_t *kTempDirPrefix = L"7zO"; 
+static wchar_t *kTempDirPrefix = L"7zO";
 
-static const wchar_t *virusMessage = L"File looks like virus (file name has long spaces in name). 7-Zip will not open it";
 
 static bool IsNameVirus(const UString &name)
 {
@@ -47,6 +47,9 @@ struct CTmpProcessInfo: public CTempFileInfo
   HANDLE ProcessHandle;
   HWND Window;
   UString FullPathFolderPrefix;
+  bool UsePassword;
+  UString Password;
+  CTmpProcessInfo(): UsePassword(false) {}
 };
 
 class CTmpProcessInfoRelease
@@ -63,18 +66,21 @@ public:
   }
 };
 
-HRESULT CPanel::OpenItemAsArchive(const UString &name, 
-    const UString &folderPath, const UString &filePath, bool &encrypted)
+HRESULT CPanel::OpenItemAsArchive(const UString &name,
+    const UString &folderPath, const UString &filePath,
+    const UString &virtualFilePath,
+    bool &encrypted)
 {
   encrypted = false;
   CFolderLink folderLink;
   if (!NFile::NFind::FindFile(filePath, folderLink.FileInfo))
     return E_FAIL;
-  if (folderLink.FileInfo.IsDirectory())
+  if (folderLink.FileInfo.IsDir())
     return S_FALSE;
 
   folderLink.FilePath = filePath;
   folderLink.FolderPath = folderPath;
+  folderLink.VirtualPath = virtualFilePath;
 
   CMyComPtr<IFolderFolder> newFolder;
 
@@ -82,8 +88,13 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name,
   // _password.Empty();
 
   NDLL::CLibrary library;
-  RINOK(OpenFileFolderPlugin(filePath, &library, &newFolder, GetParent(), encrypted));
+
+  UString password;
+  RINOK(OpenFileFolderPlugin(filePath, &library, &newFolder, GetParent(), encrypted, password));
  
+  folderLink.Password = password;
+  folderLink.UsePassword = encrypted;
+
   folderLink.ParentFolder = _folder;
   folderLink.ItemName = name;
   _parentFolders.Add(folderLink);
@@ -100,7 +111,10 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name,
 HRESULT CPanel::OpenItemAsArchive(const UString &name)
 {
   bool encrypted;
-  return OpenItemAsArchive(name, _currentFolderPrefix, _currentFolderPrefix + name, encrypted);
+  return OpenItemAsArchive(name, _currentFolderPrefix,
+      _currentFolderPrefix + name,
+      _currentFolderPrefix + name,
+      encrypted);
 }
 
 HRESULT CPanel::OpenItemAsArchive(int index)
@@ -120,17 +134,17 @@ HRESULT CPanel::OpenParentArchiveFolder()
   NFind::CFileInfoW newFileInfo;
   if (NFind::FindFile(folderLink.FilePath, newFileInfo))
   {
-    if (newFileInfo.Size != folderLink.FileInfo.Size || 
-        CompareFileTime(&newFileInfo.LastWriteTime, 
-        &folderLink.FileInfo.LastWriteTime) != 0)
+    if (newFileInfo.Size != folderLink.FileInfo.Size ||
+        CompareFileTime(&newFileInfo.MTime, &folderLink.FileInfo.MTime) != 0)
     {
-      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE, 
+      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE,
           0x03020280, folderLink.ItemName);
       if (::MessageBoxW(HWND(*this), message, L"7-Zip", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
       {
-        if (OnOpenItemChanged(folderLink.FolderPath, folderLink.ItemName) != S_OK)
+        if (OnOpenItemChanged(folderLink.FolderPath, folderLink.ItemName,
+            folderLink.UsePassword, folderLink.Password) != S_OK)
         {
-          ::MessageBoxW(HWND(*this), MyFormatNew(IDS_CANNOT_UPDATE_FILE, 
+          ::MessageBoxW(HWND(*this), MyFormatNew(IDS_CANNOT_UPDATE_FILE,
               0x03020281, folderLink.FilePath), L"7-Zip", MB_OK | MB_ICONSTOP);
           return S_OK;
         }
@@ -141,17 +155,17 @@ HRESULT CPanel::OpenParentArchiveFolder()
   return S_OK;
 }
 
-static const wchar_t *kStartExtensions[] = 
+static const wchar_t *kStartExtensions[] =
 {
   L"exe", L"bat", L"com",
   L"chm",
   L"msi", L"doc", L"xls", L"ppt", L"pps", L"wps", L"wpt", L"wks", L"xlr", L"wdb",
 
-  L"docx", L"docm", L"dotx", L"dotm", L"xlsx", L"xlsm", L"xltx", L"xltm", L"xlsb", 
-  L"xlam", L"pptx", L"pptm", L"potx", L"potm", L"ppam", L"ppsx", L"ppsm", L"xsn", 
+  L"docx", L"docm", L"dotx", L"dotm", L"xlsx", L"xlsm", L"xltx", L"xltm", L"xlsb",
+  L"xlam", L"pptx", L"pptm", L"potx", L"potm", L"ppam", L"ppsx", L"ppsm", L"xsn",
 
   L"odt", L"ods",
-  L"wb3", 
+  L"wb3",
   L"pdf"
 };
 
@@ -198,7 +212,7 @@ static HANDLE StartEditApplication(const UString &path, HWND window)
     startupInfo.cbReserved2 = 0;
     startupInfo.lpReserved2 = 0;
     
-    result = ::CreateProcessA(NULL, (CHAR *)(const CHAR *)GetSystemString(command), 
+    result = ::CreateProcessA(NULL, (CHAR *)(const CHAR *)GetSystemString(command),
       NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInformation);
   }
   else
@@ -213,7 +227,7 @@ static HANDLE StartEditApplication(const UString &path, HWND window)
     startupInfo.cbReserved2 = 0;
     startupInfo.lpReserved2 = 0;
     
-    result = ::CreateProcessW(NULL, (WCHAR *)(const WCHAR *)command, 
+    result = ::CreateProcessW(NULL, (WCHAR *)(const WCHAR *)command,
       NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInformation);
   }
 
@@ -222,7 +236,7 @@ static HANDLE StartEditApplication(const UString &path, HWND window)
     ::CloseHandle(processInformation.hThread);
     return processInformation.hProcess;
   }
-  ::MessageBoxW(window, LangString(IDS_CANNOT_START_EDITOR, 0x03020282), 
+  ::MessageBoxW(window, LangString(IDS_CANNOT_START_EDITOR, 0x03020282),
       L"7-Zip", MB_OK  | MB_ICONSTOP);
   return 0;
 }
@@ -279,7 +293,7 @@ static HANDLE StartApplication(const UString &path, HWND window)
     switch(result)
     {
       case SE_ERR_NOASSOC:
-        ::MessageBoxW(window, 
+        ::MessageBoxW(window,
           NError::MyFormatMessageW(::GetLastError()),
           // L"There is no application associated with the given file name extension",
           L"7-Zip", MB_OK | MB_ICONSTOP);
@@ -318,29 +332,39 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   UString name = GetItemRelPath(index);
   if (IsNameVirus(name))
   {
-    MessageBoxMyError(virusMessage);
+    MessageBoxErrorLang(IDS_VIRUS, 0x03020284);
     return;
   }
   UString fullPath = _currentFolderPrefix + name;
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(name))
-      if (OpenItemAsArchive(index) == S_OK)
+    {
+      HRESULT res = OpenItemAsArchive(index);
+      if (res == S_OK || res == E_ABORT)
         return;
+      if (res != S_FALSE)
+      {
+        MessageBoxError(res);
+        return;
+      }
+    }
   if (tryExternal)
   {
-    NDirectory::MySetCurrentDirectory(_currentFolderPrefix);
+    // SetCurrentDirectory opens HANDLE to folder!!!
+    // NDirectory::MySetCurrentDirectory(_currentFolderPrefix);
     HANDLE hProcess = StartApplication(fullPath, (HWND)*this);
     if (hProcess != 0)
       ::CloseHandle(hProcess);
   }
 }
-       
-HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName)
+      
+HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName,
+    bool usePassword, const UString &password)
 {
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
   {
-    MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return E_FAIL;
   }
   UStringVector fileNames;
@@ -350,7 +374,12 @@ HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &item
 
   UString pathPrefix = folderPath;
   NName::NormalizeDirPathPrefix(pathPrefix);
-  return folderOperations->CopyFrom(pathPrefix, &fileNamePointers.Front(),fileNamePointers.Size(), NULL);
+
+  CUpdateCallback100Imp *callbackSpec = new CUpdateCallback100Imp;
+  CMyComPtr<IProgress> callback = callbackSpec;
+  callbackSpec->Init((HWND)*this, usePassword, password);
+
+  return folderOperations->CopyFrom(pathPrefix, &fileNamePointers.Front(), fileNamePointers.Size(), callback);
 }
 
 LRESULT CPanel::OnOpenItemChanged(LPARAM lParam)
@@ -363,7 +392,8 @@ LRESULT CPanel::OnOpenItemChanged(LPARAM lParam)
   CSelectedState state;
   SaveSelectedState(state);
 
-  HRESULT result = OnOpenItemChanged(tmpProcessInfo.FolderPath, tmpProcessInfo.ItemName);
+  HRESULT result = OnOpenItemChanged(tmpProcessInfo.FolderPath, tmpProcessInfo.ItemName,
+      tmpProcessInfo.UsePassword, tmpProcessInfo.Password);
   if (result != S_OK)
     return 0;
   RefreshListCtrl(state);
@@ -407,17 +437,16 @@ static THREAD_FUNC_DECL MyThreadFunction(void *param)
   NFind::CFileInfoW newFileInfo;
   if (NFind::FindFile(tmpProcessInfo->FilePath, newFileInfo))
   {
-    if (newFileInfo.Size != tmpProcessInfo->FileInfo.Size || 
-        CompareFileTime(&newFileInfo.LastWriteTime, 
-        &tmpProcessInfo->FileInfo.LastWriteTime) != 0)
+    if (newFileInfo.Size != tmpProcessInfo->FileInfo.Size ||
+        CompareFileTime(&newFileInfo.MTime, &tmpProcessInfo->FileInfo.MTime) != 0)
     {
-      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE, 
+      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE,
           0x03020280, tmpProcessInfo->ItemName);
       if (::MessageBoxW(g_HWND, message, L"7-Zip", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
       {
         if (SendMessage(tmpProcessInfo->Window, kOpenItemChanged, 0, (LONG_PTR)tmpProcessInfo) != 1)
         {
-          ::MessageBoxW(g_HWND, MyFormatNew(IDS_CANNOT_UPDATE_FILE, 
+          ::MessageBoxW(g_HWND, MyFormatNew(IDS_CANNOT_UPDATE_FILE,
               0x03020281, tmpProcessInfo->FilePath), L"7-Zip", MB_OK | MB_ICONSTOP);
           return 0;
         }
@@ -428,20 +457,19 @@ static THREAD_FUNC_DECL MyThreadFunction(void *param)
   return 0;
 }
 
-void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
-    bool editMode)
+void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bool editMode)
 {
   const UString name = GetItemName(index);
   if (IsNameVirus(name))
   {
-    MessageBoxMyError(virusMessage);
+    MessageBoxErrorLang(IDS_VIRUS, 0x03020284);
     return;
   }
 
   CMyComPtr<IFolderOperations> folderOperations;
   if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
   {
-    MessageBox(LangString(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208));
+    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
   }
 
@@ -455,7 +483,24 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   indices.Add(index);
 
   UStringVector messages;
-  HRESULT result = CopyTo(indices, tempDirNorm, false, true, &messages);
+
+  bool usePassword = false;
+  UString password;
+  if (_parentFolders.Size() > 0)
+  {
+    const CFolderLink &fl = _parentFolders.Back();
+    usePassword = fl.UsePassword;
+    password = fl.Password;
+  }
+
+  HRESULT result = CopyTo(indices, tempDirNorm, false, true, &messages, usePassword, password);
+
+  if (_parentFolders.Size() > 0)
+  {
+    CFolderLink &fl = _parentFolders.Back();
+    fl.UsePassword = usePassword;
+    fl.Password = password;
+  }
 
   if (!messages.IsEmpty())
     return;
@@ -472,6 +517,9 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
   CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
   tmpProcessInfo->FolderPath = tempDir;
   tmpProcessInfo->FilePath = tempFilePath;
+  tmpProcessInfo->UsePassword = usePassword;
+  tmpProcessInfo->Password = password;
+
   if (!NFind::FindFile(tempFilePath, tmpProcessInfo->FileInfo))
     return;
 
@@ -480,7 +528,8 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
     if (!tryExternal || !DoItemAlwaysStart(name))
     {
       bool encrypted;
-      if (OpenItemAsArchive(name, tempDir, tempFilePath, encrypted) == S_OK)
+      if (OpenItemAsArchive(name, tempDir, tempFilePath,
+         _currentFolderPrefix + name, encrypted) == S_OK)
       {
         RefreshListCtrl();
         return;
@@ -530,21 +579,18 @@ void DeleteOldTempFiles()
   if(!NFile::NDirectory::MyGetTempPath(tempPath))
     throw 1;
 
-  SYSTEMTIME systemTime;
-  ::GetSystemTime(&systemTime);
   UINT64 currentFileTime;
-  if(!::SystemTimeToFileTime(&systemTime, (FILETIME *)&currentFileTime))
-    throw 2;
+  NTime::GetCurUtcFileTime(currentFileTime);
   UString searchWildCard = tempPath + kTempDirPrefix + L"*.tmp";
   searchWildCard += WCHAR(NName::kAnyStringWildcard);
   NFind::CEnumeratorW enumerator(searchWildCard);
   NFind::CFileInfoW fileInfo;
   while(enumerator.Next(fileInfo))
   {
-    if (!fileInfo.IsDirectory())
+    if (!fileInfo.IsDir())
       continue;
-    const UINT64 &creationTime = *(const UINT64 *)(&fileInfo.CreationTime);
-    if(CheckDeleteItem(creationTime, currentFileTime))
+    const UINT64 &cTime = *(const UINT64 *)(&fileInfo.CTime);
+    if(CheckDeleteItem(cTime, currentFileTime))
       RemoveDirectoryWithSubItems(tempPath + fileInfo.Name);
   }
 }

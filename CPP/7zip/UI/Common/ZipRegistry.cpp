@@ -15,7 +15,7 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-static const TCHAR *kCUBasePath = TEXT("Software\\7-ZIP");
+static const TCHAR *kCUBasePath = TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP");
 
 static NSynchronization::CCriticalSection g_RegistryOperationsCriticalSection;
 
@@ -31,7 +31,7 @@ static const TCHAR *kExtractionShowPasswordValueName = TEXT("ShowPassword");
 
 static CSysString GetKeyPath(const CSysString &path)
 {
-  return CSysString(kCUBasePath) + CSysString('\\') + CSysString(path);
+  return CSysString(kCUBasePath) + CSysString(CHAR_PATH_SEPARATOR) + path;
 }
 
 void SaveExtractionInfo(const NExtract::CInfo &info)
@@ -69,9 +69,9 @@ void ReadExtractionInfo(NExtract::CInfo &info)
   
   {
     CKey pathHistoryKey;
-    if(pathHistoryKey.Open(extractionKey, kExtractionPathHistoryKeyName, KEY_READ) == 
+    if(pathHistoryKey.Open(extractionKey, kExtractionPathHistoryKeyName, KEY_READ) ==
         ERROR_SUCCESS)
-    {        
+    {
       for (;;)
       {
         wchar_t numberString[16];
@@ -109,7 +109,7 @@ void ReadExtractionInfo(NExtract::CInfo &info)
         break;
     }
   }
-  if (extractionKey.QueryValue(kExtractionShowPasswordValueName, 
+  if (extractionKey.QueryValue(kExtractionShowPasswordValueName,
       info.ShowPassword) != ERROR_SUCCESS)
     info.ShowPassword = false;
 }
@@ -234,15 +234,15 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey compressionKey;
 
-  if(compressionKey.Open(HKEY_CURRENT_USER, 
+  if(compressionKey.Open(HKEY_CURRENT_USER,
       GetKeyPath(kCompressionKeyName), KEY_READ) != ERROR_SUCCESS)
     return;
   
   {
     CKey historyArchivesKey;
-    if(historyArchivesKey.Open(compressionKey, kCompressionHistoryArchivesKeyName, KEY_READ) == 
+    if(historyArchivesKey.Open(compressionKey, kCompressionHistoryArchivesKeyName, KEY_READ) ==
         ERROR_SUCCESS)
-    {        
+    {
       for (;;)
       {
         wchar_t numberString[16];
@@ -267,9 +267,9 @@ void ReadCompressionInfo(NCompression::CInfo &info)
 
   {
     CKey optionsKey;
-    if(optionsKey.Open(compressionKey, kCompressionOptionsKeyName, KEY_READ) == 
+    if(optionsKey.Open(compressionKey, kCompressionOptionsKeyName, KEY_READ) ==
         ERROR_SUCCESS)
-    { 
+    {
       CSysStringVector formatIDs;
       optionsKey.EnumKeys(formatIDs);
       for(int i = 0; i < formatIDs.Size(); i++)
@@ -302,10 +302,10 @@ void ReadCompressionInfo(NCompression::CInfo &info)
   CSysString archiveType;
   if (compressionKey.QueryValue(kCompressionLastFormatValueName, archiveType) == ERROR_SUCCESS)
     info.ArchiveType = GetUnicodeString(archiveType);
-  if (compressionKey.QueryValue(kCompressionShowPasswordValueName, 
+  if (compressionKey.QueryValue(kCompressionShowPasswordValueName,
       info.ShowPassword) != ERROR_SUCCESS)
     info.ShowPassword = false;
-  if (compressionKey.QueryValue(kCompressionEncryptHeadersValueName, 
+  if (compressionKey.QueryValue(kCompressionEncryptHeadersValueName,
       info.EncryptHeaders) != ERROR_SUCCESS)
     info.EncryptHeaders = false;
   /*

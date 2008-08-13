@@ -14,7 +14,7 @@
 namespace NCrypto {
 namespace NZip {
 
-class CEncoder : 
+class CEncoder :
   public ICompressFilter,
   public ICryptoSetPassword,
   public ICryptoSetCRC,
@@ -36,7 +36,7 @@ public:
 };
 
 
-class CDecoder: 
+class CDecoder:
   public ICompressFilter,
   public ICryptoSetPassword,
   public CMyUnknownImp

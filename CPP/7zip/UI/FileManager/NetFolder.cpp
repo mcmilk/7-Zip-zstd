@@ -16,7 +16,7 @@
 using namespace NWindows;
 using namespace NNet;
 
-static const STATPROPSTG kProperties[] = 
+static const STATPROPSTG kProperties[] =
 {
   { NULL, kpidName, VT_BSTR},
   { NULL, kpidLocalName, VT_BSTR},
@@ -63,7 +63,7 @@ void CNetFolder::Init(const UString &path)
   return;
 }
 
-void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource, 
+void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource,
       IFolderFolder *parentFolder, const UString &path)
 {
   _path = path;
@@ -105,7 +105,7 @@ STDMETHODIMP CNetFolder::LoadItems()
   }
 
   for (;;)
-  {  
+  {
     CResourceEx resource;
     DWORD result = enumerator.Next(resource);
     if (result == NO_ERROR)
@@ -123,7 +123,7 @@ STDMETHODIMP CNetFolder::LoadItems()
     }
     else if (result == ERROR_NO_MORE_ITEMS)
       break;
-    else 
+    else
       return result;
   }
 
@@ -162,31 +162,20 @@ STDMETHODIMP CNetFolder::GetNumberOfItems(UInt32 *numItems)
 
 STDMETHODIMP CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
-  NCOM::CPropVariant propVariant;
+  NCOM::CPropVariant prop;
   const CResourceEx &item = _items[itemIndex];
   switch(propID)
   {
-    case kpidIsFolder:
-      propVariant = true;
-      break;
+    case kpidIsDir:  prop = true; break;
     case kpidName:
       // if (item.RemoteNameIsDefined)
-        propVariant = item.Name;
+        prop = item.Name;
       break;
-    case kpidLocalName:
-      if (item.LocalNameIsDefined)
-        propVariant = item.LocalName;
-      break;
-    case kpidComment:
-      if (item.CommentIsDefined)
-        propVariant = item.Comment;
-      break;
-    case kpidProvider:
-      if (item.ProviderIsDefined)
-        propVariant = item.Provider;
-      break;
+    case kpidLocalName:  if (item.LocalNameIsDefined) prop = item.LocalName; break;
+    case kpidComment: if (item.CommentIsDefined) prop = item.Comment; break;
+    case kpidProvider: if (item.ProviderIsDefined) prop = item.Provider; break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
 }
 
@@ -194,7 +183,7 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
 {
   *resultFolder = 0;
   const CResourceEx &resource = _items[index];
-  if (resource.Usage == RESOURCEUSAGE_CONNECTABLE || 
+  if (resource.Usage == RESOURCEUSAGE_CONNECTABLE ||
       resource.DisplayType == RESOURCEDISPLAYTYPE_SHARE)
   {
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
@@ -249,7 +238,7 @@ STDMETHODIMP CNetFolder::GetNumberOfProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetPropertyInfo(UInt32 index,     
+STDMETHODIMP CNetFolder::GetPropertyInfo(UInt32 index,
     BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -280,7 +269,7 @@ STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
   *iconIndex = 0;
   const CResourceW &resource = _items[index];
   int iconIndexTemp;
-  if (resource.DisplayType == RESOURCEDISPLAYTYPE_SERVER || 
+  if (resource.DisplayType == RESOURCEDISPLAYTYPE_SERVER ||
       resource.Usage == RESOURCEUSAGE_CONNECTABLE)
   {
     if (GetRealIconIndex(resource.RemoteName, 0, iconIndexTemp))

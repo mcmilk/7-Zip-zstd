@@ -20,7 +20,7 @@ namespace NShell {
 // CItemIDList
 
 void CItemIDList::Free()
-{ 
+{
   if(m_Object == NULL)
     return;
   CMyComPtr<IMalloc> shellMalloc;
@@ -143,9 +143,9 @@ bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 }
 
 
-int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data) 
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
-  switch(uMsg) 
+  switch(uMsg)
   {
     case BFFM_INITIALIZED:
     {
@@ -153,10 +153,10 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM da
       break;
     }
     /*
-    case BFFM_SELCHANGED: 
+    case BFFM_SELCHANGED:
     {
       TCHAR dir[MAX_PATH];
-      if (::SHGetPathFromIDList((LPITEMIDLIST) lp , dir)) 
+      if (::SHGetPathFromIDList((LPITEMIDLIST) lp , dir))
         SendMessage(hwnd, BFFM_SETSTATUSTEXT, 0, (LPARAM)dir);
       else
         SendMessage(hwnd, BFFM_SETSTATUSTEXT, 0, (LPARAM)TEXT(""));
@@ -170,13 +170,13 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM da
 }
 
 
-bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags, 
+bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags,
     LPCTSTR initialFolder, CSysString &resultPath)
 {
   CSysString displayName;
   BROWSEINFO browseInfo;
   browseInfo.hwndOwner = owner;
-  browseInfo.pidlRoot = NULL; 
+  browseInfo.pidlRoot = NULL;
   browseInfo.pszDisplayName = displayName.GetBuffer(MAX_PATH);
   browseInfo.lpszTitle = title;
   browseInfo.ulFlags = ulFlags;
@@ -185,10 +185,10 @@ bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags,
   return BrowseForFolder(&browseInfo, resultPath);
 }
 
-bool BrowseForFolder(HWND owner, LPCTSTR title, 
+bool BrowseForFolder(HWND owner, LPCTSTR title,
     LPCTSTR initialFolder, CSysString &resultPath)
 {
-  return BrowseForFolder(owner, title, 
+  return BrowseForFolder(owner, title,
       BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT, initialFolder, resultPath);
   // BIF_STATUSTEXT; BIF_USENEWUI   (Version 5.0)
 }
@@ -227,9 +227,9 @@ bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
 }
 
 
-int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data) 
+int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
-  switch(uMsg) 
+  switch(uMsg)
   {
     case BFFM_INITIALIZED:
     {
@@ -237,11 +237,11 @@ int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM d
       break;
     }
     /*
-    case BFFM_SELCHANGED: 
+    case BFFM_SELCHANGED:
     {
       wchar_t dir[MAX_PATH * 2];
 
-      if (shGetPathFromIDListW((LPITEMIDLIST)lp , dir)) 
+      if (shGetPathFromIDListW((LPITEMIDLIST)lp , dir))
         SendMessageW(hwnd, BFFM_SETSTATUSTEXTW, 0, (LPARAM)dir);
       else
         SendMessageW(hwnd, BFFM_SETSTATUSTEXTW, 0, (LPARAM)L"");
@@ -255,13 +255,13 @@ int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM d
 }
 
 
-static bool BrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags, 
+static bool BrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
     LPCWSTR initialFolder, UString &resultPath)
 {
   UString displayName;
   BROWSEINFOW browseInfo;
   browseInfo.hwndOwner = owner;
-  browseInfo.pidlRoot = NULL; 
+  browseInfo.pidlRoot = NULL;
   browseInfo.pszDisplayName = displayName.GetBuffer(MAX_PATH);
   browseInfo.lpszTitle = title;
   browseInfo.ulFlags = ulFlags;
@@ -273,16 +273,16 @@ static bool BrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
 bool BrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &resultPath)
 {
   if (g_IsNT)
-    return BrowseForFolder(owner, title, 
-      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS 
+    return BrowseForFolder(owner, title,
+      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS
       //  | BIF_STATUSTEXT // This flag is not supported when BIF_NEWDIALOGSTYLE is specified.
       , initialFolder, resultPath);
   // BIF_STATUSTEXT; BIF_USENEWUI   (Version 5.0)
   CSysString s;
-  bool res = BrowseForFolder(owner, GetSystemString(title), 
-      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS 
+  bool res = BrowseForFolder(owner, GetSystemString(title),
+      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS
       // | BIF_STATUSTEXT  // This flag is not supported when BIF_NEWDIALOGSTYLE is specified.
-      , GetSystemString(initialFolder), s); 
+      , GetSystemString(initialFolder), s);
   resultPath = GetUnicodeString(s);
   return res;
 }

@@ -54,11 +54,11 @@ public:
   bool CreateEx(DWORD exStyle, LPCTSTR className,
       LPCTSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam)
   {
     _window = ::CreateWindowEx(exStyle, className, windowName,
-      style, x, y, width, height, parentWindow, 
+      style, x, y, width, height, parentWindow,
       idOrHMenu, instance, createParam);
     return (_window != NULL);
   }
@@ -66,11 +66,11 @@ public:
   bool Create(LPCTSTR className,
       LPCTSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam)
   {
     _window = ::CreateWindow(className, windowName,
-      style, x, y, width, height, parentWindow, 
+      style, x, y, width, height, parentWindow,
       idOrHMenu, instance, createParam);
     return (_window != NULL);
   }
@@ -79,12 +79,12 @@ public:
   bool Create(LPCWSTR className,
       LPCWSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam);
   bool CreateEx(DWORD exStyle, LPCWSTR className,
       LPCWSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance, LPVOID createParam);
   #endif
 
@@ -127,20 +127,20 @@ public:
   LONG_PTR GetLong(int index) const
     { return ::GetWindowLong(_window, index ); }
   LONG_PTR SetUserDataLong(LONG newLongPtr )
-    { return SetLong(GWLP_USERDATA, newLongPtr); } 
+    { return SetLong(GWLP_USERDATA, newLongPtr); }
   LONG_PTR GetUserDataLong() const
     { return GetLong(GWLP_USERDATA); }
 
   #ifndef _WIN32_WCE
   LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr )
-    { return ::SetWindowLongPtr(_window, index, 
+    { return ::SetWindowLongPtr(_window, index,
           #ifndef _WIN64
           (LONG)
           #endif
           newLongPtr); }
   #ifndef _UNICODE
   LONG_PTR SetLongPtrW(int index, LONG_PTR newLongPtr )
-    { return ::SetWindowLongPtrW(_window, index, 
+    { return ::SetWindowLongPtrW(_window, index,
           #ifndef _WIN64
           (LONG)
           #endif
@@ -183,7 +183,7 @@ public:
   bool CWindow::SetText(LPCWSTR s) { return MySetWindowText(_window, s); }
   #endif
 
-  int GetTextLength() const 
+  int GetTextLength() const
     { return GetWindowTextLength(_window); }
   UINT GetText(LPTSTR string, int maxCount) const
     { return GetWindowText(_window, string, maxCount); }

@@ -10,4 +10,4 @@ bool EnableLockMemoryPrivilege(bool enable = true);
 
 }}
 
-#endif 
+#endif

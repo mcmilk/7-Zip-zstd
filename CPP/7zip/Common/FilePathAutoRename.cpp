@@ -11,7 +11,7 @@
 
 using namespace NWindows;
 
-static bool MakeAutoName(const UString &name, 
+static bool MakeAutoName(const UString &name,
     const UString &extension, int value, UString &path)
 {
   wchar_t number[32];

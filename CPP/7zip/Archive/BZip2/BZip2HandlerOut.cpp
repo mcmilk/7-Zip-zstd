@@ -55,7 +55,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   {
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidIsFolder, &prop));
+      RINOK(updateCallback->GetProperty(0, kpidIsDir, &prop));
       if (prop.vt == VT_BOOL)
       {
         if (prop.boolVal != VARIANT_FALSE)
@@ -79,21 +79,21 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   
     UInt32 dicSize = _dicSize;
     if (dicSize == 0xFFFFFFFF)
-      dicSize = (_level >= 5 ? kDicSizeX5 : 
-                (_level >= 3 ? kDicSizeX3 : 
+      dicSize = (_level >= 5 ? kDicSizeX5 :
+                (_level >= 3 ? kDicSizeX3 :
                                kDicSizeX1));
 
     UInt32 numPasses = _numPasses;
     if (numPasses == 0xFFFFFFFF)
-      numPasses = (_level >= 9 ? kNumPassesX9 : 
-                  (_level >= 7 ? kNumPassesX7 : 
+      numPasses = (_level >= 9 ? kNumPassesX9 :
+                  (_level >= 7 ? kNumPassesX7 :
                                  kNumPassesX1));
 
     return UpdateArchive(
         EXTERNAL_CODECS_VARS
-        size, outStream, 0, dicSize, numPasses, 
+        size, outStream, 0, dicSize, numPasses,
         #ifdef COMPRESS_MT
-        _numThreads, 
+        _numThreads,
         #endif
         updateCallback);
   }
@@ -151,6 +151,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     return E_INVALIDARG;
   }
   return S_OK;
-}  
+}
 
 }}

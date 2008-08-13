@@ -1,13 +1,13 @@
-#define IDS_CONTEXT_EXTRACT             42
-#define IDS_CONTEXT_EXTRACT_HELP        43
-#define IDS_CONTEXT_COMPRESS            44
-#define IDS_CONTEXT_COMPRESS_HELP       45
-#define IDS_CONTEXT_OPEN                46
-#define IDS_CONTEXT_OPEN_HELP           47
-#define IDS_CONTEXT_TEST                48
-#define IDS_CONTEXT_TEST_HELP           49
-#define IDS_CONTEXT_CAPTION_HELP        50
-#define IDS_CONTEXT_POPUP_CAPTION       51
+#define IDS_CONTEXT_EXTRACT             142
+#define IDS_CONTEXT_EXTRACT_HELP        143
+#define IDS_CONTEXT_COMPRESS            144
+#define IDS_CONTEXT_COMPRESS_HELP       145
+#define IDS_CONTEXT_OPEN                146
+#define IDS_CONTEXT_OPEN_HELP           147
+#define IDS_CONTEXT_TEST                148
+#define IDS_CONTEXT_TEST_HELP           149
+#define IDS_CONTEXT_CAPTION_HELP        150
+#define IDS_CONTEXT_POPUP_CAPTION       151
 #define IDS_OPEN_TYPE_ALL_FILES         80
 
 #define IDS_METHOD_STORE                81
@@ -39,15 +39,11 @@
 
 #define IDS_PASSWORD_USE_ASCII               110
 #define IDS_PASSWORD_PASSWORDS_DO_NOT_MATCH  111
-#define IDS_PASSWORD_IS_TOO_LONG             112         
+#define IDS_PASSWORD_IS_TOO_LONG             112
 
 #define IDS_FILES_COLON                 2274
 #define IDS_FOLDERS_COLON               2275
 #define IDS_SIZE_COLON                  2276
 #define IDS_COMPRESSED_COLON            2277
 #define IDS_ARCHIVES_COLON              2278
-
-#define IDB_DELETE                      149
-#define IDC_LIST1                       1067
-#define IDC_COLUMN_EDIT_WIDTH           1068
 

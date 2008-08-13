@@ -23,16 +23,16 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-static const STATPROPSTG kProperties[] = 
+static const STATPROPSTG kProperties[] =
 {
   { NULL, kpidName, VT_BSTR},
-  // { NULL, kpidIsFolder, VT_BOOL},
+  // { NULL, kpidIsDir, VT_BOOL},
   { L"Total Size", kpidTotalSize, VT_UI8},
   { L"Free Space", kpidFreeSpace, VT_UI8},
   { NULL, kpidType, VT_BSTR},
   { L"Label", kpidVolumeName, VT_BSTR},
   { L"File system", kpidFileSystem, VT_BSTR},
-  { L"Cluster Size", kpidClusterSize, VT_UI8} 
+  { L"Cluster Size", kpidClusterSize, VT_UI8}
 };
 
 static const wchar_t *kDriveTypes[] =
@@ -54,31 +54,31 @@ STDMETHODIMP CFSDrives::LoadItems()
   MyGetLogicalDriveStrings(driveStrings);
   for (int i = 0; i < driveStrings.Size(); i++)
   {
-    CDriveInfo driveInfo;
+    CDriveInfo di;
 
     const UString &driveName = driveStrings[i];
 
-    driveInfo.FullSystemName = driveName;
+    di.FullSystemName = driveName;
 
-    driveInfo.Name = driveInfo.FullSystemName.Left(
-        driveInfo.FullSystemName.Length() - 1);
-    driveInfo.ClusterSize = 0;
-    driveInfo.DriveSize = 0;
-    driveInfo.FreeSpace = 0;
+    di.Name = di.FullSystemName.Left(
+        di.FullSystemName.Length() - 1);
+    di.ClusterSize = 0;
+    di.DriveSize = 0;
+    di.FreeSpace = 0;
     UINT driveType = NFile::NSystem::MyGetDriveType(driveName);
     if (driveType < sizeof(kDriveTypes) / sizeof(kDriveTypes[0]))
     {
-      driveInfo.Type = kDriveTypes[driveType];
+      di.Type = kDriveTypes[driveType];
     }
     bool needRead = true;
     if (driveType == DRIVE_CDROM || driveType == DRIVE_REMOVABLE)
     {
       /*
       DWORD dwSerialNumber;`
-      if (!::GetVolumeInformation(driveInfo.FullSystemName, 
-          NULL, 0, &dwSerialNumber, NULL, NULL, NULL, 0)) 
+      if (!::GetVolumeInformation(di.FullSystemName,
+          NULL, 0, &dwSerialNumber, NULL, NULL, NULL, 0))
       */
-      driveInfo.KnownSizes = false;
+      di.KnownSizes = false;
       {
         needRead = false;
       }
@@ -87,18 +87,18 @@ STDMETHODIMP CFSDrives::LoadItems()
     {
       UString volumeName, fileSystemName;
       DWORD volumeSerialNumber, maximumComponentLength, fileSystemFlags;
-      NFile::NSystem::MyGetVolumeInformation(driveName, 
+      NFile::NSystem::MyGetVolumeInformation(driveName,
           volumeName,
-          &volumeSerialNumber, &maximumComponentLength, &fileSystemFlags, 
+          &volumeSerialNumber, &maximumComponentLength, &fileSystemFlags,
           fileSystemName);
-      driveInfo.VolumeName = volumeName;
-      driveInfo.FileSystemName = fileSystemName;
+      di.VolumeName = volumeName;
+      di.FileSystemName = fileSystemName;
 
       NFile::NSystem::MyGetDiskFreeSpace(driveName,
-          driveInfo.ClusterSize, driveInfo.DriveSize, driveInfo.FreeSpace);
-      driveInfo.KnownSizes = true;
+          di.ClusterSize, di.DriveSize, di.FreeSpace);
+      di.KnownSizes = true;
     }
-    _drives.Add(driveInfo);
+    _drives.Add(di);
   }
   return S_OK;
 }
@@ -113,39 +113,20 @@ STDMETHODIMP CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
 {
   if (itemIndex >= (UInt32)_drives.Size())
     return E_INVALIDARG;
-  NCOM::CPropVariant propVariant;
-  const CDriveInfo &driveInfo = _drives[itemIndex];
+  NCOM::CPropVariant prop;
+  const CDriveInfo &di = _drives[itemIndex];
   switch(propID)
   {
-    case kpidIsFolder:
-      propVariant = true;
-      break;
-    case kpidName:
-      propVariant = driveInfo.Name;
-      break;
-    case kpidTotalSize:
-      if (driveInfo.KnownSizes)
-        propVariant = driveInfo.DriveSize;
-      break;
-    case kpidFreeSpace:
-      if (driveInfo.KnownSizes)
-        propVariant = driveInfo.FreeSpace;
-      break;
-    case kpidClusterSize:
-      if (driveInfo.KnownSizes)
-        propVariant = driveInfo.ClusterSize;
-      break;
-    case kpidType:
-      propVariant = driveInfo.Type;
-      break;
-    case kpidVolumeName:
-      propVariant = driveInfo.VolumeName;
-      break;
-    case kpidFileSystem:
-      propVariant = driveInfo.FileSystemName;
-      break;
+    case kpidIsDir:  prop = true; break;
+    case kpidName:  prop = di.Name; break;
+    case kpidTotalSize:   if (di.KnownSizes) prop = di.DriveSize; break;
+    case kpidFreeSpace:   if (di.KnownSizes) prop = di.FreeSpace; break;
+    case kpidClusterSize: if (di.KnownSizes) prop = di.ClusterSize; break;
+    case kpidType:  prop = di.Type; break;
+    case kpidVolumeName:  prop = di.VolumeName; break;
+    case kpidFileSystem:  prop = di.FileSystemName; break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
 }
 
@@ -164,17 +145,17 @@ STDMETHODIMP CFSDrives::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
   *resultFolder = 0;
   if (index >= (UInt32)_drives.Size())
     return E_INVALIDARG;
-  const CDriveInfo &driveInfo = _drives[index];
+  const CDriveInfo &di = _drives[index];
   if (_volumeMode)
   {
     *resultFolder = 0;
     CPhysDriveFolder *folderSpec = new CPhysDriveFolder;
     CMyComPtr<IFolderFolder> subFolder = folderSpec;
-    RINOK(folderSpec->Init(driveInfo.Name));
+    RINOK(folderSpec->Init(di.Name));
     *resultFolder = subFolder.Detach();
     return S_OK;
   }
-  return BindToFolderSpec(driveInfo.FullSystemName, resultFolder);
+  return BindToFolderSpec(di.FullSystemName, resultFolder);
 }
 
 STDMETHODIMP CFSDrives::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
@@ -194,7 +175,7 @@ STDMETHODIMP CFSDrives::GetNumberOfProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::GetPropertyInfo(UInt32 index,     
+STDMETHODIMP CFSDrives::GetPropertyInfo(UInt32 index,
     BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -224,9 +205,9 @@ STDMETHODIMP CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 STDMETHODIMP CFSDrives::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
 {
   *iconIndex = 0;
-  const CDriveInfo &driveInfo = _drives[index];
+  const CDriveInfo &di = _drives[index];
   int iconIndexTemp;
-  if (GetRealIconIndex(driveInfo.FullSystemName, 0, iconIndexTemp) != 0)
+  if (GetRealIconIndex(di.FullSystemName, 0, iconIndexTemp) != 0)
   {
     *iconIndex = iconIndexTemp;
     return S_OK;

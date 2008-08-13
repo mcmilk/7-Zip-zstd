@@ -36,7 +36,6 @@
 #endif
 
 using namespace NWindows;
-using namespace NTime;
 
 namespace NArchive {
 namespace NZip {
@@ -45,7 +44,7 @@ namespace NZip {
 static const CMethodId kMethodId_ZipBase = 0x040100;
 static const CMethodId kMethodId_BZip2 = 0x040202;
 
-const wchar_t *kHostOS[] = 
+const wchar_t *kHostOS[] =
 {
   L"FAT",
   L"AMIGA",
@@ -74,17 +73,17 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidLastWriteTime, VT_FILETIME},
-  { NULL, kpidCreationTime, VT_FILETIME},
-  { NULL, kpidLastAccessTime, VT_FILETIME},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidATime, VT_FILETIME},
   
-  { NULL, kpidAttributes, VT_UI4},
+  { NULL, kpidAttrib, VT_UI4},
 
   { NULL, kpidEncrypted, VT_BOOL},
   { NULL, kpidComment, VT_BSTR},
@@ -97,7 +96,7 @@ STATPROPSTG kProps[] =
   // { NULL, kpidUnpackVer, VT_UI1},
 };
 
-const wchar_t *kMethods[] = 
+const wchar_t *kMethods[] =
 {
   L"Store",
   L"Shrink",
@@ -116,6 +115,7 @@ const wchar_t *kMethods[] =
 
 const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 // const wchar_t *kUnknownMethod = L"Unknown";
+const wchar_t *kWavPackMethod = L"WavPack";
 const wchar_t *kPPMdMethod = L"PPMd";
 const wchar_t *kAESMethod = L"AES";
 const wchar_t *kZipCryptoMethod = L"ZipCrypto";
@@ -127,7 +127,7 @@ struct CStrongCryptoPair
   const wchar_t *Name;
 };
 
-CStrongCryptoPair g_StrongCryptoPairs[] = 
+CStrongCryptoPair g_StrongCryptoPairs[] =
 {
   { NStrongCryptoFlags::kDES, L"DES" },
   { NStrongCryptoFlags::kRC2old, L"RC2a" },
@@ -142,13 +142,13 @@ CStrongCryptoPair g_StrongCryptoPairs[] =
   { NStrongCryptoFlags::kRC4, L"RC4" }
 };
 
-STATPROPSTG kArcProps[] = 
+STATPROPSTG kArcProps[] =
 {
+  { NULL, kpidBit64, VT_BOOL},
   { NULL, kpidComment, VT_BSTR}
 };
 
-CHandler::CHandler():
-  m_ArchiveIsOpen(false)
+CHandler::CHandler()
 {
   InitMethodProperties();
 }
@@ -176,6 +176,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
+    case kpidBit64:  if (m_Archive.IsZip64) prop = m_Archive.IsZip64; break;
     case kpidComment:
       prop = MultiByteToUnicodeString(BytesToString(m_Archive.m_ArchiveInfo.Comment), CP_ACP);
       break;
@@ -198,44 +199,38 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   const CItemEx &item = m_Items[index];
   switch(propID)
   {
-    case kpidPath:
-      prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name));
-      break;
-    case kpidIsFolder:
-      prop = item.IsDirectory();
-      break;
-    case kpidSize:
-      prop = item.UnPackSize;
-      break;
-    case kpidPackedSize:
-      prop = item.PackSize;
-      break;
+    case kpidPath:  prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name)); break;
+    case kpidIsDir:  prop = item.IsDir(); break;
+    case kpidSize:  prop = item.UnPackSize; break;
+    case kpidPackSize:  prop = item.PackSize; break;
     case kpidTimeType:
+    {
       FILETIME utcFileTime;
       if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kTagTime, utcFileTime))
         prop = (UInt32)NFileTimeType::kWindows;
       break;
-    case kpidCreationTime: 
+    }
+    case kpidCTime:
     {
       FILETIME ft;
       if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kCTime, ft))
         prop = ft;
       break;
     }
-    case kpidLastAccessTime:
+    case kpidATime:
     {
       FILETIME ft;
       if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kATime, ft))
         prop = ft;
       break;
     }
-    case kpidLastWriteTime:
+    case kpidMTime:
     {
       FILETIME utcFileTime;
       if (!item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utcFileTime))
       {
         FILETIME localFileTime;
-        if (DosTimeToFileTime(item.Time, localFileTime))
+        if (NTime::DosTimeToFileTime(item.Time, localFileTime))
         {
           if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
             utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
@@ -246,21 +241,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       prop = utcFileTime;
       break;
     }
-    case kpidAttributes:
-      prop = item.GetWinAttributes();
-      break;
-    case kpidEncrypted:
-      prop = item.IsEncrypted();
-      break;
-    case kpidComment:
-    {
-      prop = item.GetUnicodeString(BytesToString(item.Comment));
-      break;
-    }
-    case kpidCRC:
-      if (item.IsThereCrc())
-        prop = item.FileCRC;
-      break;
+    case kpidAttrib:  prop = item.GetWinAttributes(); break;
+    case kpidEncrypted:  prop = item.IsEncrypted(); break;
+    case kpidComment:  prop = item.GetUnicodeString(BytesToString(item.Comment)); break;
+    case kpidCRC:  if (item.IsThereCrc()) prop = item.FileCRC; break;
     case kpidMethod:
     {
       UInt16 methodId = item.CompressionMethod;
@@ -310,8 +294,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       if (methodId < kNumMethods)
         method += kMethods[methodId];
-      else if (methodId == NFileHeader::NCompressionMethod::kWzPPMd)
+      else if (methodId == NFileHeader::NCompressionMethod::kPPMd)
         method += kPPMdMethod;
+      else if (methodId == NFileHeader::NCompressionMethod::kWavPack)
+        method += kWavPackMethod;
       else
       {
         wchar_t s[32];
@@ -331,55 +317,50 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-class CPropgressImp: public CProgressVirt
+class CProgressImp: public CProgressVirt
 {
-  CMyComPtr<IArchiveOpenCallback> m_OpenArchiveCallback;
+  CMyComPtr<IArchiveOpenCallback> _callback;
 public:
-  STDMETHOD(SetCompleted)(const UInt64 *numFiles);
-  void Init(IArchiveOpenCallback *openArchiveCallback)
-    { m_OpenArchiveCallback = openArchiveCallback; }
+  STDMETHOD(SetTotal)(UInt64 numFiles);
+  STDMETHOD(SetCompleted)(UInt64 numFiles);
+  CProgressImp(IArchiveOpenCallback *callback): _callback(callback) {}
 };
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
+STDMETHODIMP CProgressImp::SetTotal(UInt64 numFiles)
 {
-  if (m_OpenArchiveCallback)
-    return m_OpenArchiveCallback->SetCompleted(numFiles, NULL);
+  if (_callback)
+    return _callback->SetTotal(&numFiles, NULL);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
-    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openArchiveCallback)
+STDMETHODIMP CProgressImp::SetCompleted(UInt64 numFiles)
+{
+  if (_callback)
+    return _callback->SetCompleted(&numFiles, NULL);
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::Open(IInStream *inStream,
+    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
-  // try
+  try
   {
-    if(!m_Archive.Open(inStream, maxCheckStartPosition))
-      return S_FALSE;
-    m_ArchiveIsOpen = true;
-    m_Items.Clear();
-    if (openArchiveCallback != NULL)
-    {
-      RINOK(openArchiveCallback->SetTotal(NULL, NULL));
-    }
-    CPropgressImp propgressImp;
-    propgressImp.Init(openArchiveCallback);
-    RINOK(m_Archive.ReadHeaders(m_Items, &propgressImp));
+    Close();
+    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(m_Archive.Open(inStream, maxCheckStartPosition));
+    CProgressImp progressImp(callback);
+    return m_Archive.ReadHeaders(m_Items, &progressImp);
   }
-  /*
-  catch(...)
-  {
-    return S_FALSE;
-  }
-  */
+  catch(const CInArchiveException &) { Close(); return S_FALSE; }
+  catch(...) { Close(); throw; }
   COM_TRY_END
-  return S_OK;
 }
 
 STDMETHODIMP CHandler::Close()
 {
   m_Items.Clear();
   m_Archive.Close();
-  m_ArchiveIsOpen = false;
   return S_OK;
 }
 
@@ -412,17 +393,17 @@ public:
 
   HRESULT Decode(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    CInArchive &archive, const CItemEx &item, 
-    ISequentialOutStream *realOutStream, 
-    IArchiveExtractCallback *extractCallback, 
+    CInArchive &archive, const CItemEx &item,
+    ISequentialOutStream *realOutStream,
+    IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
     UInt32 numThreads, Int32 &res);
 };
 
 HRESULT CZipDecoder::Decode(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    CInArchive &archive, const CItemEx &item, 
-    ISequentialOutStream *realOutStream, 
+    CInArchive &archive, const CItemEx &item,
+    ISequentialOutStream *realOutStream,
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
     UInt32 numThreads, Int32 &res)
@@ -534,7 +515,7 @@ HRESULT CZipDecoder::Decode(
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password));
       AString charPassword;
-      if (aesMode 
+      if (aesMode
         #ifdef ZIP_STRONG_SUPORT
         || pkAesMode
         #endif
@@ -662,7 +643,7 @@ HRESULT CZipDecoder::Decode(
       }
       RINOK(filterStreamSpec->SetInStream(inStream));
       inStreamReleaser.FilterCoder = filterStreamSpec;
-      inStreamNew = filterStream; 
+      inStreamNew = filterStream;
       
       if (aesMode)
       {
@@ -671,7 +652,7 @@ HRESULT CZipDecoder::Decode(
       }
     }
     else
-      inStreamNew = inStream; 
+      inStreamNew = inStream;
     result = coder->Code(inStreamNew, outStream, NULL, &item.UnPackSize, compressProgress);
     if (result == S_FALSE)
       return S_OK;
@@ -688,7 +669,7 @@ HRESULT CZipDecoder::Decode(
       authOk = false;
   }
   
-  res = ((crcOK && authOk) ? 
+  res = ((crcOK && authOk) ?
     NArchive::NExtract::NOperationResult::kOK :
     NArchive::NExtract::NOperationResult::kCRCError);
   return S_OK;
@@ -734,7 +715,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
 
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ? 
+    Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
@@ -747,7 +728,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       HRESULT res = m_Archive.ReadLocalItemAfterCdItem(item);
       if (res == S_FALSE)
       {
-        if (item.IsDirectory() || realOutStream || testMode)
+        if (item.IsDir() || realOutStream || testMode)
         {
           RINOK(extractCallback->PrepareOperation(askMode));
           realOutStream.Release();
@@ -758,7 +739,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(res);
     }
 
-    if (item.IsDirectory() || item.IgnoreItem())
+    if (item.IsDir() || item.IgnoreItem())
     {
       // if (!testMode)
       {
@@ -772,7 +753,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentItemUnPacked = item.UnPackSize;
     currentItemPacked = item.PackSize;
 
-    if (!testMode && (!realOutStream)) 
+    if (!testMode && (!realOutStream))
       continue;
 
     RINOK(extractCallback->PrepareOperation(askMode));
@@ -780,7 +761,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     Int32 res;
     RINOK(myDecoder.Decode(
         EXTERNAL_CODECS_VARS
-        m_Archive, item, realOutStream, extractCallback, 
+        m_Archive, item, realOutStream, extractCallback,
         progress, _numThreads, res));
     realOutStream.Release();
     

@@ -15,38 +15,31 @@
 #ifndef _NO_PROGRESS
 #include "../../UI/FileManager/ProgressDialog.h"
 #endif
+#include "../../UI/Common/ArchiveOpenCallback.h"
 
-class CExtractCallbackImp: 
+class CExtractCallbackImp:
   public IArchiveExtractCallback,
+  public IOpenCallbackUI,
   public CMyUnknownImp
 {
 public:
   
   MY_UNKNOWN_IMP
 
-  // IProgress
-  STDMETHOD(SetTotal)(UInt64 size);
-  STDMETHOD(SetCompleted)(const UInt64 *completeValue);
-
-  // IExtractCallback
-  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, 
-      Int32 askExtractMode);
-  STDMETHOD(PrepareOperation)(Int32 askExtractMode);
-  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult);
+  INTERFACE_IArchiveExtractCallback(;)
+  INTERFACE_IOpenCallbackUI(;)
 
 private:
   CMyComPtr<IInArchive> _archiveHandler;
   UString _directoryPath;
-
   UString _filePath;
-
   UString _diskFilePath;
 
   bool _extractMode;
   struct CProcessedFileInfo
   {
-    FILETIME UTCLastWriteTime;
-    bool IsDirectory;
+    FILETIME MTime;
+    bool IsDir;
     UInt32 Attributes;
   } _processedFileInfo;
 
@@ -54,8 +47,8 @@ private:
   CMyComPtr<ISequentialOutStream> _outFileStream;
 
   UString _itemDefaultName;
-  FILETIME _utcLastWriteTimeDefault;
-  UInt32 _attributesDefault;
+  FILETIME _defaultMTime;
+  UInt32 _defaultAttributes;
 
   void CreateComplexDirectory(const UStringVector &dirPathParts);
 public:
@@ -66,25 +59,25 @@ public:
   bool _isCorrupt;
   UString _message;
 
-  void Init(IInArchive *archiveHandler,     
-    const UString &directoryPath, 
+  void Init(IInArchive *archiveHandler,
+    const UString &directoryPath,
     const UString &itemDefaultName,
-    const FILETIME &utcLastWriteTimeDefault,
-    UInt32 attributesDefault);
+    const FILETIME &defaultMTime,
+    UInt32 defaultAttributes);
 
   #ifndef _NO_PROGRESS
   HRESULT StartProgressDialog(const UString &title)
   {
     ProgressDialog.Create(title, 0);
     {
-      #ifdef LANG        
+      #ifdef LANG
       ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));
       #else
       ProgressDialog.SetText(NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING));
       #endif
     }
 
-    ProgressDialog.Show(SW_SHOWNORMAL);    
+    ProgressDialog.Show(SW_SHOWNORMAL);
     return S_OK;
   }
   virtual ~CExtractCallbackImp() { ProgressDialog.Destroy(); }

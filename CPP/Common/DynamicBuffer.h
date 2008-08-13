@@ -6,7 +6,7 @@
 #include "Buffer.h"
 
 template <class T> class CDynamicBuffer: public CBuffer<T>
-{    
+{
   void GrowLength(size_t size)
   {
     size_t delta;

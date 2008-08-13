@@ -20,9 +20,9 @@
 
 #include "../../Common/StreamUtils.h"
 
-extern "C" 
-{ 
-#include "../../../../C/Alloc.h" 
+extern "C"
+{
+#include "../../../../C/Alloc.h"
 }
 
 static HRESULT SResToHRESULT(SRes res)
@@ -40,7 +40,7 @@ static HRESULT SResToHRESULT(SRes res)
 namespace NCompress {
 namespace NLZMA {
 
-static const UInt32 kStreamStepSize = (UInt32)1 << 31; 
+static const UInt32 kStreamStepSize = (UInt32)1 << 31;
 
 static SRes MyRead(void *object, void *data, size_t *size)
 {
@@ -122,7 +122,7 @@ static int ParseMatchFinder(const wchar_t *s, int *btMode, int *numHashBytes)
   return 1;
 }
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, 
+STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
     const PROPVARIANT *properties, UInt32 numProperties)
 {
   CLzmaEncProps props;
@@ -154,7 +154,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
       case NCoderPropID::kEndMarker:
         if (prop.vt != VT_BOOL) return E_INVALIDARG; props.writeEndMark = (prop.boolVal == VARIANT_TRUE); break;
       case NCoderPropID::kMatchFinder:
-        if (prop.vt != VT_BSTR) return E_INVALIDARG; 
+        if (prop.vt != VT_BSTR) return E_INVALIDARG;
         if (!ParseMatchFinder(prop.bstrVal, &props.btMode, &props.numHashBytes /* , &_matchFinderBase.skipModeBits */))
           return E_INVALIDARG; break;
       default:
@@ -165,7 +165,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
 }
 
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
-{ 
+{
   Byte props[LZMA_PROPS_SIZE];
   size_t size = LZMA_PROPS_SIZE;
   RINOK(LzmaEnc_WriteProperties(_encoder, props, &size));
@@ -204,7 +204,7 @@ SRes CompressProgress(void *pp, UInt64 inSize, UInt64 outSize)
 }
 
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 * /* inSize */, 
+    ISequentialOutStream *outStream, const UInt64 * /* inSize */,
     const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {

@@ -1,7 +1,7 @@
-// Interface/PropID.h
+// PropID.h
 
-#ifndef __INTERFACE_PROPID_H
-#define __INTERFACE_PROPID_H
+#ifndef __7ZIP_PROPID_H
+#define __7ZIP_PROPID_H
 
 enum
 {
@@ -11,20 +11,20 @@ enum
   kpidPath,
   kpidName,
   kpidExtension,
-  kpidIsFolder,
+  kpidIsDir,
   kpidSize,
-  kpidPackedSize,
-  kpidAttributes,
-  kpidCreationTime,
-  kpidLastAccessTime,
-  kpidLastWriteTime,
-  kpidSolid, 
-  kpidCommented, 
-  kpidEncrypted, 
-  kpidSplitBefore, 
-  kpidSplitAfter, 
-  kpidDictionarySize, 
-  kpidCRC, 
+  kpidPackSize,
+  kpidAttrib,
+  kpidCTime,
+  kpidATime,
+  kpidMTime,
+  kpidSolid,
+  kpidCommented,
+  kpidEncrypted,
+  kpidSplitBefore,
+  kpidSplitAfter,
+  kpidDictionarySize,
+  kpidCRC,
   kpidType,
   kpidIsAnti,
   kpidMethod,
@@ -36,7 +36,7 @@ enum
   kpidComment,
   kpidPosition,
   kpidPrefix,
-  kpidNumSubFolders,
+  kpidNumSubDirs,
   kpidNumSubFiles,
   kpidUnpackVer,
   kpidVolume,
@@ -46,9 +46,17 @@ enum
   kpidNumBlocks,
   kpidNumVolumes,
   kpidTimeType,
+  kpidBit64,
+  kpidBigEndian,
+  kpidCpu,
+  kpidPhySize,
+  kpidHeadersSize,
+  kpidChecksum,
+  kpidCharacts,
+  kpidVa,
 
   kpidTotalSize = 0x1100,
-  kpidFreeSpace, 
+  kpidFreeSpace,
   kpidClusterSize,
   kpidVolumeName,
 

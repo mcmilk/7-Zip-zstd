@@ -83,7 +83,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 {
   COM_TRY_BEGIN2
   CObjectVector<CUpdateItem> updateItems;
-  for(UInt32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     CUpdateItem ui;
     Int32 newData;
@@ -91,10 +91,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     UInt32 indexInArchive;
     if (!callback)
       return E_FAIL;
-    RINOK(callback->GetUpdateItemInfo(i,
-        &newData, // 1 - compress 0 - copy
-        &newProperties,
-        &indexInArchive));
+    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProperties, &indexInArchive));
     ui.NewProperties = IntToBool(newProperties);
     ui.NewData = IntToBool(newData);
     ui.IndexInArchive = indexInArchive;
@@ -103,10 +100,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (IntToBool(newProperties))
     {
       UString name;
-      bool isDirectoryStatusDefined;
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidAttributes, &prop));
+        RINOK(callback->GetProperty(i, kpidAttrib, &prop));
         if (prop.vt == VT_EMPTY)
           ui.Attributes = 0;
         else if (prop.vt != VT_UI4)
@@ -127,16 +123,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidIsFolder, &prop));
+        RINOK(callback->GetProperty(i, kpidIsDir, &prop));
         if (prop.vt == VT_EMPTY)
-          isDirectoryStatusDefined = false;
+          ui.IsDir = false;
         else if (prop.vt != VT_BOOL)
           return E_INVALIDARG;
         else
-        {
-          ui.IsDirectory = (prop.boolVal != VARIANT_FALSE);
-          isDirectoryStatusDefined = true;
-        }
+          ui.IsDir = (prop.boolVal != VARIANT_FALSE);
       }
 
       {
@@ -147,9 +140,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         else
           ui.NtfsTimeIsDefined = m_WriteNtfsTimeExtra;
       }
-      RINOK(GetTime(callback, i, kpidLastWriteTime, ui.NtfsMTime));
-      RINOK(GetTime(callback, i, kpidLastAccessTime, ui.NtfsATime));
-      RINOK(GetTime(callback, i, kpidCreationTime, ui.NtfsCTime));
+      RINOK(GetTime(callback, i, kpidMTime, ui.NtfsMTime));
+      RINOK(GetTime(callback, i, kpidATime, ui.NtfsATime));
+      RINOK(GetTime(callback, i, kpidCTime, ui.NtfsCTime));
 
       {
         FILETIME localFileTime = { 0, 0 };
@@ -160,17 +153,14 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         FileTimeToDosTime(localFileTime, ui.Time);
       }
 
-      if (!isDirectoryStatusDefined)
-        ui.IsDirectory = ((ui.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-
       name = NItemName::MakeLegalName(name);
-      bool needSlash = ui.IsDirectory;
+      bool needSlash = ui.IsDir;
       const wchar_t kSlash = L'/';
       if (!name.IsEmpty())
       {
         if (name[name.Length() - 1] == kSlash)
         {
-          if (!ui.IsDirectory)
+          if (!ui.IsDir)
             return E_INVALIDARG;
           needSlash = false;
         }
@@ -205,12 +195,12 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
       ui.IndexInClient = i;
       /*
-      if(existInArchive)
+      if (existInArchive)
       {
         const CItemEx &itemInfo = m_Items[indexInArchive];
         // ui.Commented = itemInfo.IsCommented();
         ui.Commented = false;
-        if(ui.Commented)
+        if (ui.Commented)
         {
           ui.CommentRange.Position = itemInfo.GetCommentPosition();
           ui.CommentRange.Size  = itemInfo.CommentSize;
@@ -280,7 +270,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.MethodSequence.Add(mainMethod);
   if (mainMethod != NFileHeader::NCompressionMethod::kStored)
     options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
-  bool isDeflate = (mainMethod == NFileHeader::NCompressionMethod::kDeflated) || 
+  bool isDeflate = (mainMethod == NFileHeader::NCompressionMethod::kDeflated) ||
       (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
   bool isBZip2 = (mainMethod == NFileHeader::NCompressionMethod::kBZip2);
   options.NumPasses = m_NumPasses;
@@ -295,34 +285,34 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (isDeflate)
   {
     if (options.NumPasses == 0xFFFFFFFF)
-      options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :  
-                          (level >= 7 ? kDeflateNumPassesX7 : 
+      options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :
+                          (level >= 7 ? kDeflateNumPassesX7 :
                                         kDeflateNumPassesX1));
     if (options.NumFastBytes == 0xFFFFFFFF)
-      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
-                             (level >= 7 ? kNumFastBytesX7 : 
+      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 :
+                             (level >= 7 ? kNumFastBytesX7 :
                                            kNumFastBytesX1));
     if (options.Algo == 0xFFFFFFFF)
-        options.Algo = 
-                    (level >= 5 ? kDeflateAlgoX5 : 
-                                  kDeflateAlgoX1); 
+        options.Algo =
+                    (level >= 5 ? kDeflateAlgoX5 :
+                                  kDeflateAlgoX1);
   }
   if (isBZip2)
   {
     if (options.NumPasses == 0xFFFFFFFF)
-      options.NumPasses = (level >= 9 ? kBZip2NumPassesX9 : 
-                          (level >= 7 ? kBZip2NumPassesX7 :  
+      options.NumPasses = (level >= 9 ? kBZip2NumPassesX9 :
+                          (level >= 7 ? kBZip2NumPassesX7 :
                                         kBZip2NumPassesX1));
     if (options.DicSize == 0xFFFFFFFF)
-      options.DicSize = (level >= 5 ? kBZip2DicSizeX5 : 
-                        (level >= 3 ? kBZip2DicSizeX3 : 
+      options.DicSize = (level >= 5 ? kBZip2DicSizeX5 :
+                        (level >= 3 ? kBZip2DicSizeX3 :
                                       kBZip2DicSizeX1));
   }
 
   return Update(
       EXTERNAL_CODECS_VARS
-      m_Items, updateItems, outStream, 
-      m_ArchiveIsOpen ? &m_Archive : NULL, &options, callback);
+      m_Items, updateItems, outStream,
+      m_Archive.IsOpen() ? &m_Archive : NULL, &options, callback);
   COM_TRY_END2
 }
 
@@ -363,7 +353,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
         else if (valueString == L"BZIP2")
           m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
-        else 
+        else
           return E_INVALIDARG;
       }
       else if (prop.vt == VT_UI4)
@@ -463,10 +453,10 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         m_ForseLocal = false;
       return S_OK;
     }
-    else 
+    else
       return E_INVALIDARG;
   }
   return S_OK;
-}  
+}
 
 }}

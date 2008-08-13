@@ -18,7 +18,7 @@
 
 using namespace NWindows;
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_EDIT_STATIC_EDITOR, 0x03010201}
 };

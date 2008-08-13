@@ -1,6 +1,6 @@
-/* RotateDefs.h -- Rotate functions 
-2008-03-24
-Igor Pavlov 
+/* RotateDefs.h -- Rotate functions
+2008-08-05
+Igor Pavlov
 Public domain */
 
 #ifndef __ROTATEDEFS_H

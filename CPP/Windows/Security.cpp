@@ -90,7 +90,7 @@ static PSID GetSid(LPWSTR accountName)
     {
       PSID pSid = ::HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sidLen);
       LPWSTR domainName = (LPWSTR)::HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (domainLen + 1) * sizeof(WCHAR));
-      BOOL res = 
+      BOOL res =
         #ifdef _UNICODE
         ::LookupAccountNameW
         #else
@@ -115,11 +115,11 @@ bool AddLockMemoryPrivilege()
   attr.Attributes = 0;
   attr.SecurityDescriptor = NULL;
   attr.SecurityQualityOfService  = NULL;
-  if (policy.Open(NULL, &attr, 
+  if (policy.Open(NULL, &attr,
       // GENERIC_WRITE)
       POLICY_ALL_ACCESS)
-      // STANDARD_RIGHTS_REQUIRED, 
-      // GENERIC_READ | GENERIC_EXECUTE | POLICY_VIEW_LOCAL_INFORMATION | POLICY_LOOKUP_NAMES) 
+      // STANDARD_RIGHTS_REQUIRED,
+      // GENERIC_READ | GENERIC_EXECUTE | POLICY_VIEW_LOCAL_INFORMATION | POLICY_LOOKUP_NAMES)
       != 0)
     return false;
   LSA_UNICODE_STRING userRights;

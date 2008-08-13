@@ -9,34 +9,25 @@
 
 #include "ProgressBox.h"
 
-class CUpdateCallback100Imp: 
+class CUpdateCallback100Imp:
   public IFolderArchiveUpdateCallback,
   public CMyUnknownImp
 {
+  // CMyComPtr<IInFolderArchive> _archiveHandler;
+  CProgressBox *_progressBox;
+  UInt64 _total;
+
 public:
   MY_UNKNOWN_IMP
 
-  // IProfress
+  INTERFACE_IProgress(;)
+  INTERFACE_IFolderArchiveUpdateCallback(;)
 
-  STDMETHOD(SetTotal)(UINT64 aSize);
-  STDMETHOD(SetCompleted)(const UINT64 *aCompleteValue);
-
-  // IUpdateCallBack
-  STDMETHOD(CompressOperation)(const wchar_t *aName);
-  STDMETHOD(DeleteOperation)(const wchar_t *aName);
-  STDMETHOD(OperationResult)(INT32 aOperationResult);
-  STDMETHOD(UpdateErrorMessage)(const wchar_t *message);
-  STDMETHOD(SetNumFiles)(UInt64 numFiles);
-
-private:
-  CMyComPtr<IInFolderArchive> m_ArchiveHandler;
-  CProgressBox *m_ProgressBox;
-public:
-  void Init(IInFolderArchive *anArchiveHandler,
-      CProgressBox *aProgressBox)
+  CUpdateCallback100Imp(): _total(0) {}
+  void Init(/* IInFolderArchive *archiveHandler, */ CProgressBox *progressBox)
   {
-    m_ArchiveHandler = anArchiveHandler;
-    m_ProgressBox = aProgressBox;
+    // _archiveHandler = archiveHandler;
+    _progressBox = progressBox;
   }
 };
 

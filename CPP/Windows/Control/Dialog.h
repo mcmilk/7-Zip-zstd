@@ -29,9 +29,9 @@ public:
 
   #ifndef _UNICODE
   bool SetItemText(int itemID, LPCWSTR s)
-  { 
+  {
     CWindow window(GetItem(itemID));
-    return window.SetText(s); 
+    return window.SetText(s);
   }
   #endif
 
@@ -40,9 +40,9 @@ public:
   #ifndef _UNICODE
   /*
   bool GetItemText(int itemID, LPWSTR string, int maxCount)
-  { 
+  {
     CWindow window(GetItem(itemID));
-    return window.GetText(string, maxCount); 
+    return window.GetText(string, maxCount);
   }
   */
   #endif
@@ -50,7 +50,7 @@ public:
   bool SetItemInt(int itemID, UINT value, bool isSigned)
     { return BOOLToBool(SetDlgItemInt(_window, itemID, value, BoolToBOOL(isSigned))); }
   bool GetItemInt(int itemID, bool isSigned, UINT &value)
-    { 
+    {
       BOOL result;
       value = GetDlgItemInt(_window, itemID, &result, BoolToBOOL(isSigned));
       return BOOLToBool(result);

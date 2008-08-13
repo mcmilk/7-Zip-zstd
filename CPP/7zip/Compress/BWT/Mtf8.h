@@ -70,7 +70,7 @@ public:
 #ifdef MODE_64BIT
 typedef UInt64 CMtfVar;
 #define MTF_MOVS 3
-#else 
+#else
 typedef UInt32 CMtfVar;
 #define MTF_MOVS 2
 #endif
@@ -127,17 +127,17 @@ class CMtf8Decoder
 public:
   Byte Buffer[256];
 
-  Byte GetHead() const 
-  { 
+  Byte GetHead() const
+  {
     if (SmallSize > 0)
       return SmallBuffer[kSmallSize - SmallSize];
     return Buffer[0];
   }
 
-  void Init(int size) 
-  { 
-    Size = size; 
-    SmallSize = 0; 
+  void Init(int size)
+  {
+    Size = size;
+    SmallSize = 0;
     for (int i = 0; i < 16; i++)
     {
       Counts[i] = ((size >= 16) ? 16 : size);

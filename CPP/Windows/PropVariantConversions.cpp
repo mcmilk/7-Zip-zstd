@@ -25,11 +25,13 @@ static UString ConvertInt64ToString(Int64 value)
   return buffer;
 }
 
-static char *UIntToStringSpec(UInt32 value, char *s, int numPos)
+static char *UIntToStringSpec(char c, UInt32 value, char *s, int numPos)
 {
+  if (c != 0)
+    *s++ = c;
   char temp[16];
   int pos = 0;
-  do 
+  do
   {
     temp[pos++] = (char)('0' + value % 10);
     value /= 10;
@@ -51,27 +53,15 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
   SYSTEMTIME st;
   if(!BOOLToBool(FileTimeToSystemTime(&ft, &st)))
     return false;
-  s = UIntToStringSpec(st.wYear, s, 4);
-  *s++ = '-';
-  s = UIntToStringSpec(st.wMonth, s, 2);
-  *s++ = '-';
-  s = UIntToStringSpec(st.wDay, s, 2);
+  s = UIntToStringSpec(0, st.wYear, s, 4);
+  s = UIntToStringSpec('-', st.wMonth, s, 2);
+  s = UIntToStringSpec('-', st.wDay, s, 2);
   if (includeTime)
   {
-    *s++ = ' ';
-    s = UIntToStringSpec(st.wHour, s, 2);
-    *s++ = ':';
-    s = UIntToStringSpec(st.wMinute, s, 2);
+    s = UIntToStringSpec(' ', st.wHour, s, 2);
+    s = UIntToStringSpec(':', st.wMinute, s, 2);
     if (includeSeconds)
-    {
-      *s++ = ':';
-      UIntToStringSpec(st.wSecond, s, 2);
-      /*
-      s += 2;
-      *s++ = '.';
-      UIntToStringSpec(st.wMilliseconds, s, 3);
-      */
-    }
+      UIntToStringSpec(':', st.wSecond, s, 2);
   }
   /*
   sprintf(s, "%04d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
@@ -93,37 +83,22 @@ UString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime, bool
 }
  
 
-UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
+UString ConvertPropVariantToString(const PROPVARIANT &prop)
 {
-  switch (propVariant.vt)
+  switch (prop.vt)
   {
-    case VT_EMPTY:
-      return UString();
-    case VT_BSTR:
-      return propVariant.bstrVal;
-    case VT_UI1:
-      return ConvertUInt64ToString(propVariant.bVal);
-    case VT_UI2:
-      return ConvertUInt64ToString(propVariant.uiVal);
-    case VT_UI4:
-      return ConvertUInt64ToString(propVariant.ulVal);
-    case VT_UI8:
-      return ConvertUInt64ToString(propVariant.uhVal.QuadPart);
-    case VT_FILETIME:
-      return ConvertFileTimeToString(propVariant.filetime, true, true);
-    /*
-    case VT_I1:
-      return ConvertInt64ToString(propVariant.cVal);
-    */
-    case VT_I2:
-      return ConvertInt64ToString(propVariant.iVal);
-    case VT_I4:
-      return ConvertInt64ToString(propVariant.lVal);
-    case VT_I8:
-      return ConvertInt64ToString(propVariant.hVal.QuadPart);
-
-    case VT_BOOL:
-      return VARIANT_BOOLToBool(propVariant.boolVal) ? L"+" : L"-";
+    case VT_EMPTY: return UString();
+    case VT_BSTR: return prop.bstrVal;
+    case VT_UI1: return ConvertUInt64ToString(prop.bVal);
+    case VT_UI2: return ConvertUInt64ToString(prop.uiVal);
+    case VT_UI4: return ConvertUInt64ToString(prop.ulVal);
+    case VT_UI8: return ConvertUInt64ToString(prop.uhVal.QuadPart);
+    case VT_FILETIME: return ConvertFileTimeToString(prop.filetime, true, true);
+    // case VT_I1: return ConvertInt64ToString(prop.cVal);
+    case VT_I2: return ConvertInt64ToString(prop.iVal);
+    case VT_I4: return ConvertInt64ToString(prop.lVal);
+    case VT_I8: return ConvertInt64ToString(prop.hVal.QuadPart);
+    case VT_BOOL: return VARIANT_BOOLToBool(prop.boolVal) ? L"+" : L"-";
     default:
       #ifndef _WIN32_WCE
       throw 150245;
@@ -133,18 +108,14 @@ UString ConvertPropVariantToString(const PROPVARIANT &propVariant)
   }
 }
 
-UInt64 ConvertPropVariantToUInt64(const PROPVARIANT &propVariant)
+UInt64 ConvertPropVariantToUInt64(const PROPVARIANT &prop)
 {
-  switch (propVariant.vt)
+  switch (prop.vt)
   {
-    case VT_UI1:
-      return propVariant.bVal;
-    case VT_UI2:
-      return propVariant.uiVal;
-    case VT_UI4:
-      return propVariant.ulVal;
-    case VT_UI8:
-      return (UInt64)propVariant.uhVal.QuadPart;
+    case VT_UI1: return prop.bVal;
+    case VT_UI2: return prop.uiVal;
+    case VT_UI4: return prop.ulVal;
+    case VT_UI8: return (UInt64)prop.uhVal.QuadPart;
     default:
       #ifndef _WIN32_WCE
       throw 151199;

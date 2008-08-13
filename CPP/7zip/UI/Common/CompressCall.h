@@ -14,8 +14,8 @@ HRESULT CompressFiles(
     const UString &curDir,
     const UString &archiveName,
     const UString &archiveType,
-    const UStringVector &names, 
-    // const UString &outFolder, 
+    const UStringVector &names,
+    // const UString &outFolder,
     bool email, bool showDialog, bool waitFinish);
 
 HRESULT ExtractArchives(

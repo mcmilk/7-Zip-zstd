@@ -11,9 +11,9 @@
 #ifndef DEBUG_MEMORY_LEAK
 
 #ifdef _WIN32
-void * 
+void *
 #ifdef _MSC_VER
-__cdecl 
+__cdecl
 #endif
 operator new(size_t size)
 {
@@ -24,9 +24,9 @@ operator new(size_t size)
   return p;
 }
 
-void 
+void
 #ifdef _MSC_VER
-__cdecl 
+__cdecl
 #endif
 operator delete(void *p) throw()
 {

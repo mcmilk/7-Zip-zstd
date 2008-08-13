@@ -12,8 +12,8 @@
 struct CBenchInfo
 {
   UInt64 GlobalTime;
-  UInt64 GlobalFreq; 
-  UInt64 UserTime; 
+  UInt64 GlobalFreq;
+  UInt64 UserTime;
   UInt64 UserFreq;
   UInt64 UnpackSize;
   UInt64 PackSize;

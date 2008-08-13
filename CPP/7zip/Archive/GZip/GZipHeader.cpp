@@ -12,7 +12,7 @@ extern UInt16 kSignature = 0x8B1F + 1;
 static class CMarkersInitializer
 {
 public:
-  CMarkersInitializer() 
+  CMarkersInitializer()
     { kSignature--; }
 } g_MarkerInitializer;
 

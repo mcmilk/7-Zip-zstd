@@ -6,11 +6,11 @@
 class CNewException {};
 
 #ifdef _WIN32
-void 
+void
 #ifdef _MSC_VER
-__cdecl 
+__cdecl
 #endif
 operator delete(void *p) throw();
-#endif 
+#endif
 
-#endif 
+#endif

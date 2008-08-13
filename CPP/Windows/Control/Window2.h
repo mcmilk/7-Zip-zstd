@@ -17,17 +17,17 @@ public:
   virtual ~CWindow2() {};
 
 
-  bool CreateEx(DWORD exStyle, LPCTSTR className, 
+  bool CreateEx(DWORD exStyle, LPCTSTR className,
       LPCTSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance);
 
   #ifndef _UNICODE
   bool CreateEx(DWORD exStyle, LPCWSTR className,
       LPCWSTR windowName, DWORD style,
       int x, int y, int width, int height,
-      HWND parentWindow, HMENU idOrHMenu, 
+      HWND parentWindow, HMENU idOrHMenu,
       HINSTANCE instance);
   #endif
 

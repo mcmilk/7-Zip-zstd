@@ -1,8 +1,11 @@
 #include "CopyDialogRes.h"
 #include "../../GuiCommon.rc"
 
+#undef infoSize
+#define infoSize 100
+
 #define xSize2 346
-#define ySize2 57
+#define ySize2 (infoSize + 50)
 
 #define xSize (xSize2 + marg + marg)
 #define ySize (ySize2 + marg + marg)
@@ -17,12 +20,13 @@ MY_FONT
 BEGIN
   LTEXT           "",    IDC_COPY_STATIC,   marg, marg, xSize2, 8
   COMBOBOX               IDC_COPY_COMBO,    marg, 20, xSize2 - bDotsSize - 12, 65,  CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-  PUSHBUTTON      "...", IDC_COPY_SET_PATH,  (xSize - marg - bDotsSize), 20, bDotsSize, 14, WS_GROUP
+  PUSHBUTTON      "...", IDC_COPY_SET_PATH, (xSize - marg - bDotsSize), 20, bDotsSize, 14, WS_GROUP
+  LTEXT           "",    IDC_COPY_INFO,     marg, bYPos - (infoSize + 2), xSize2, infoSize, SS_NOPREFIX | SS_LEFTNOWORDWRAP
   DEFPUSHBUTTON  "OK",     IDOK,     b2XPos, bYPos, bXSize, bYSize
   PUSHBUTTON     "Cancel", IDCANCEL, b1XPos, bYPos, bXSize, bYSize
 END
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE DISCARDABLE
 BEGIN
   IDS_SET_FOLDER  "Specify a location for output folder."
 END

@@ -87,7 +87,7 @@ public:
   void WaitCreating() { _startEvent.Lock(); }
 };
 
-class CBenchmarkDialog: 
+class CBenchmarkDialog:
   public NWindows::NControl::CModalDialog
 {
   NWindows::NControl::CComboBox m_Dictionary;
@@ -109,7 +109,7 @@ class CBenchmarkDialog:
   void PrintUsage(UInt64 usage, UINT controlID);
   void PrintResults(
       UINT32 dictionarySize,
-      const CBenchInfo2 &info, UINT usageID, UINT speedID, UINT rpuID, UINT ratingID, 
+      const CBenchInfo2 &info, UINT usageID, UINT speedID, UINT rpuID, UINT ratingID,
       bool decompressMode = false);
 
   UInt32 GetNumberOfThreads();
@@ -122,7 +122,7 @@ public:
   INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_DIALOG_BENCHMARK, wndParent); }
 };
 
-HRESULT Benchmark(  
+HRESULT Benchmark(
   #ifdef EXTERNAL_LZMA
   CCodecs *codecs,
   #endif

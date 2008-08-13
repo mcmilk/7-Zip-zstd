@@ -16,4 +16,4 @@ void CCoderInfo::SetCoderInfo(const UInt64 *inSize, const UInt64 *outSize)
     OutSizeValue = *outSize;
 }
 
-}  
+}

@@ -86,7 +86,7 @@ HRESULT CreateCoder(
 
 HRESULT CreateCoder(
   DECL_EXTERNAL_CODECS_LOC_VARS
-  CMethodId methodId, 
+  CMethodId methodId,
   CMyComPtr<ICompressCoder> &coder, bool encode);
 
 HRESULT CreateFilter(

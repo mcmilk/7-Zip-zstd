@@ -15,7 +15,6 @@ GUI_OBJS = \
   $O\ExtractDialog.obj \
   $O\ExtractGUI.obj \
   $O\GUI.obj \
-  $O\OpenCallbackGUI.obj \
   $O\UpdateCallbackGUI.obj \
   $O\UpdateGUI.obj \
 
@@ -50,6 +49,7 @@ WIN_OBJS = \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\System.obj \
+  $O\Time.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \

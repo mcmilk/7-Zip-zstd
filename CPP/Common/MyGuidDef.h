@@ -23,7 +23,7 @@ typedef struct {
 
 #ifdef __cplusplus
 inline int operator==(REFGUID g1, REFGUID g2)
-{ 
+{
   for (int i = 0; i < (int)sizeof(g1); i++)
     if (((unsigned char *)&g1)[i] != ((unsigned char *)&g2)[i])
       return 0;

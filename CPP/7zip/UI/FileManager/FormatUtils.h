@@ -9,9 +9,9 @@
 UString NumberToString(UInt64 number);
 
 UString MyFormatNew(const UString &format, const UString &argument);
-UString MyFormatNew(UINT resourceID, 
+UString MyFormatNew(UINT resourceID,
     #ifdef LANG
-    UInt32 langID, 
+    UInt32 langID,
     #endif
     const UString &argument);
 

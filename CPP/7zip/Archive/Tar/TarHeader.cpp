@@ -15,7 +15,7 @@ namespace NFileHeader {
   const char *kLongLink2 = "@LongLink";
 
   // The magic field is filled with this if uname and gname are valid.
-  namespace NMagic 
+  namespace NMagic
   {
     const char *kUsTar  = "ustar"; // 5 chars
     const char *kGNUTar = "GNUtar "; // 7 chars and a null

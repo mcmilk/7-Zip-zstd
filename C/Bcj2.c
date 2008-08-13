@@ -1,11 +1,9 @@
 /* Bcj2.c -- Converter for x86 code (BCJ2)
-2008-04-11
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
 #include "Bcj2.h"
-
-#include "Alloc.h"
 
 #ifdef _LZMA_PROB32
 #define CProb UInt32
@@ -31,14 +29,14 @@ Read Bra.h for license options */
 #define NORMALIZE if (range < kTopValue) { RC_TEST; range <<= 8; code = (code << 8) | RC_READ_BYTE; }
 
 #define IF_BIT_0(p) ttt = *(p); bound = (range >> kNumBitModelTotalBits) * ttt; if (code < bound)
-#define UPDATE_0(p) range = bound; *(p) = (CProb)(ttt + ((kBitModelTotal - ttt) >> kNumMoveBits)); NORMALIZE; 
-#define UPDATE_1(p) range -= bound; code -= bound; *(p) = (CProb)(ttt - (ttt >> kNumMoveBits)); NORMALIZE; 
+#define UPDATE_0(p) range = bound; *(p) = (CProb)(ttt + ((kBitModelTotal - ttt) >> kNumMoveBits)); NORMALIZE;
+#define UPDATE_1(p) range -= bound; code -= bound; *(p) = (CProb)(ttt - (ttt >> kNumMoveBits)); NORMALIZE;
 
 int Bcj2_Decode(
-    const Byte *buf0, SizeT size0, 
-    const Byte *buf1, SizeT size1, 
-    const Byte *buf2, SizeT size2, 
-    const Byte *buf3, SizeT size3, 
+    const Byte *buf0, SizeT size0,
+    const Byte *buf1, SizeT size1,
+    const Byte *buf2, SizeT size2,
+    const Byte *buf3, SizeT size3,
     Byte *outBuf, SizeT outSize)
 {
   CProb p[256 + 2];
@@ -50,10 +48,10 @@ int Bcj2_Decode(
 
   unsigned int i;
   for (i = 0; i < sizeof(p) / sizeof(p[0]); i++)
-    p[i] = kBitModelTotal >> 1; 
+    p[i] = kBitModelTotal >> 1;
 
-  buffer = buf3; 
-  bufferLim = buffer + size3; 
+  buffer = buf3;
+  bufferLim = buffer + size3;
   RC_INIT2
 
   if (outSize == 0)
@@ -118,7 +116,7 @@ int Bcj2_Decode(
         buf2 += 4;
         size2 -= 4;
       }
-      dest = (((UInt32)v[0] << 24) | ((UInt32)v[1] << 16) | 
+      dest = (((UInt32)v[0] << 24) | ((UInt32)v[1] << 16) |
           ((UInt32)v[2] << 8) | ((UInt32)v[3])) - ((UInt32)outPos + 4);
       outBuf[outPos++] = (Byte)dest;
       if (outPos == outSize)

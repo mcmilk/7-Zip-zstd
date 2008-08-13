@@ -16,7 +16,7 @@ namespace NZip {
 
 struct CUpdateRange
 {
-  UInt64 Position; 
+  UInt64 Position;
   UInt64 Size;
   CUpdateRange() {};
   CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {};
@@ -26,7 +26,7 @@ struct CUpdateItem
 {
   bool NewData;
   bool NewProperties;
-  bool IsDirectory;
+  bool IsDir;
   bool NtfsTimeIsDefined;
   bool IsUtf8;
   int IndexInArchive;

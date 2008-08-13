@@ -11,7 +11,15 @@
 
 #include "../../Archive/IArchive.h"
 
-class COpenArchiveCallback: 
+
+#ifdef _SFX
+#include "ProgressDialog.h"
+#else
+#include "ProgressDialog2.h"
+#endif
+
+
+class COpenArchiveCallback:
   public IArchiveOpenCallback,
   public IArchiveOpenVolumeCallback,
   public IArchiveOpenSetSubArchiveName,
@@ -21,6 +29,11 @@ class COpenArchiveCallback:
 {
   UString _folderPrefix;
   NWindows::NFile::NFind::CFileInfoW _fileInfo;
+
+  bool _numFilesTotalDefined;
+  bool _numBytesTotalDefined;
+  NWindows::NSynchronization::CCriticalSection _criticalSection;
+
 public:
   bool PasswordIsDefined;
   UString Password;
@@ -31,6 +44,8 @@ public:
   UString _subArchiveName;
 
 public:
+  CProgressDialog ProgressDialog;
+
   MY_UNKNOWN_IMP5(
     IArchiveOpenCallback,
     IArchiveOpenVolumeCallback,
@@ -38,17 +53,9 @@ public:
     IProgress,
     ICryptoGetTextPassword)
 
-  // IProgress
-  STDMETHOD(SetTotal)(UINT64 total);
-  STDMETHOD(SetCompleted)(const UINT64 *completeValue);
-
-  // IArchiveOpenCallback
-  STDMETHOD(SetTotal)(const UINT64 *numFiles, const UINT64 *numBytes);
-  STDMETHOD(SetCompleted)(const UINT64 *numFiles, const UINT64 *numBytes);
-
-  // IArchiveOpenVolumeCallback
-  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value);
-  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream);
+  INTERFACE_IProgress(;)
+  INTERFACE_IArchiveOpenCallback(;)
+  INTERFACE_IArchiveOpenVolumeCallback(;)
 
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
@@ -60,8 +67,12 @@ public:
     return  S_OK;
   }
 
-  COpenArchiveCallback()
+  COpenArchiveCallback():
+    ParentWindow(0)
   {
+    _numFilesTotalDefined = false;
+    _numBytesTotalDefined = false;
+
     _subArchiveMode = false;
     PasswordIsDefined = false;
     PasswordWasAsked = false;
@@ -79,7 +90,13 @@ public:
     if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
       throw 1;
   }
-  void ShowMessage(const UINT64 *completed);
+  void ShowMessage(const UInt64 *completed);
+
+  INT_PTR StartProgressDialog(const UString &title)
+  {
+    return ProgressDialog.Create(title, ParentWindow);
+  }
+
 };
 
 #endif

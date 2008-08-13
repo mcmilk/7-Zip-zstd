@@ -89,11 +89,11 @@ private:
   public:
     bool NeedFlush;
     CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
-    ~CDecoderFlusher() 
-    { 
+    ~CDecoderFlusher()
+    {
       if (NeedFlush)
         _decoder->Flush();
-      _decoder->ReleaseStreams(); 
+      _decoder->ReleaseStreams();
     }
   };
 

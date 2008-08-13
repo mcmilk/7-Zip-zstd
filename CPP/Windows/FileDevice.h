@@ -10,7 +10,7 @@ namespace NWindows {
 namespace NFile {
 namespace NDevice {
 
-typedef struct _GET_LENGTH_INFORMATION 
+typedef struct _GET_LENGTH_INFORMATION
 {
   LARGE_INTEGER   Length;
 } GET_LENGTH_INFORMATION, *PGET_LENGTH_INFORMATION;
@@ -32,10 +32,10 @@ typedef struct _DISK_GEOMETRY_EX {
 class CFileBase: public NIO::CFileBase
 {
 public:
-  bool DeviceIoControl(DWORD controlCode, LPVOID inBuffer, DWORD inSize, 
+  bool DeviceIoControl(DWORD controlCode, LPVOID inBuffer, DWORD inSize,
       LPVOID outBuffer, DWORD outSize, LPDWORD bytesReturned, LPOVERLAPPED overlapped) const
   {
-    return BOOLToBool(::DeviceIoControl(_handle, controlCode, inBuffer, inSize, 
+    return BOOLToBool(::DeviceIoControl(_handle, controlCode, inBuffer, inSize,
         outBuffer, outSize, bytesReturned, overlapped));
   }
 
@@ -82,8 +82,8 @@ public:
 
 
   /*
-  bool FormatTracks(const FORMAT_PARAMETERS *formatParams, 
-    BAD_TRACK_NUMBER *badTrackNumbers, DWORD numBadTrackNumbers, 
+  bool FormatTracks(const FORMAT_PARAMETERS *formatParams,
+    BAD_TRACK_NUMBER *badTrackNumbers, DWORD numBadTrackNumbers,
     DWORD &numBadTrackNumbersReturned)
   {
     DWORD ret;

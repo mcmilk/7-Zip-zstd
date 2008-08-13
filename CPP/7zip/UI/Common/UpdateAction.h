@@ -5,7 +5,7 @@
 
 namespace NUpdateArchive {
 
-  namespace NPairState 
+  namespace NPairState
   {
     const int kNumValues = 7;
     enum EEnum

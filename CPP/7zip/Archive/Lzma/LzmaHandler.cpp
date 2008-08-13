@@ -20,10 +20,10 @@
 namespace NArchive {
 namespace NLzma {
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
+  { NULL, kpidPackSize, VT_UI8},
   { NULL, kpidMethod, VT_UI1}
 };
 
@@ -82,7 +82,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       if (m_StreamInfo.HasUnpackSize())
         propVariant = (UInt64)m_StreamInfo.UnpackSize;
       break;
-    case kpidPackedSize:
+    case kpidPackSize:
       propVariant = (UInt64)m_PackSize;
       break;
     case kpidMethod:
@@ -111,7 +111,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {
@@ -169,7 +169,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   {
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ? 
+    Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
     

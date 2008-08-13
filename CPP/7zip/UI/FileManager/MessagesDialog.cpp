@@ -6,14 +6,14 @@
 #include "Common/IntToString.h"
 #include "Windows/ResourceString.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
 using namespace NWindows;
 
-#ifdef LANG        
-static CIDLangPair kIDLangPairs[] = 
+#ifdef LANG
+static CIDLangPair kIDLangPairs[] =
 {
   { IDOK, 0x02000713 }
 };
@@ -22,20 +22,10 @@ static CIDLangPair kIDLangPairs[] =
 void CMessagesDialog::AddMessageDirect(LPCWSTR message)
 {
   int itemIndex = _messageList.GetItemCount();
-  LVITEMW item;
-  item.mask = LVIF_TEXT;
-  item.iItem = itemIndex;
-
   wchar_t sz[32];
   ConvertInt64ToString(itemIndex, sz);
-
-  item.pszText = sz;
-  item.iSubItem = 0;
-  _messageList.InsertItem(&item);
-
-  item.pszText = (LPWSTR)message;
-  item.iSubItem = 1;
-  _messageList.SetItem(&item);
+  _messageList.InsertItem(itemIndex, sz);
+  _messageList.SetSubItem(itemIndex, 1, message);
 }
 
 void CMessagesDialog::AddMessage(LPCWSTR message)
@@ -52,39 +42,25 @@ void CMessagesDialog::AddMessage(LPCWSTR message)
   AddMessageDirect(s);
 }
 
-bool CMessagesDialog::OnInit() 
+bool CMessagesDialog::OnInit()
 {
-  #ifdef LANG        
+  #ifdef LANG
   LangSetWindowText(HWND(*this), 0x02000A00);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _messageList.Attach(GetItem(IDC_MESSAGE_LIST));
   _messageList.SetUnicodeFormat(true);
 
-  LVCOLUMNW columnInfo;
-  columnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
-  columnInfo.fmt = LVCFMT_LEFT;
-  columnInfo.pszText = L"#";
-  columnInfo.iSubItem = 0;
-  columnInfo.cx = 30;
+  _messageList.InsertColumn(0, L"#", 30);
 
-  _messageList.InsertColumn(0, &columnInfo);
+  const UString s =
+    #ifdef LANG
+    LangString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
+    #else
+    MyLoadStringW(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
+    #endif
 
-
-  columnInfo.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
-  columnInfo.fmt = LVCFMT_LEFT;
-  UString s = 
-  #ifdef LANG        
-  LangString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
-  #else
-  MyLoadStringW(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
-  #endif
-
-  columnInfo.pszText = (LPWSTR)(LPCWSTR)s;
-  columnInfo.iSubItem = 1;
-  columnInfo.cx = 600;
-
-  _messageList.InsertColumn(1, &columnInfo);
+  _messageList.InsertColumn(1, s, 600);
 
   for(int i = 0; i < Messages->Size(); i++)
     AddMessage((*Messages)[i]);

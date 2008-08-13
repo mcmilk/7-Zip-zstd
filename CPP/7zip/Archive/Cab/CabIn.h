@@ -93,7 +93,7 @@ public:
         return true;
     return false;
   }
-  int GetNumberOfNewFolders() const 
+  int GetNumberOfNewFolders() const
   {
     int res = Folders.Size();
     if (IsTherePrevFolder())
@@ -124,10 +124,10 @@ public:
   CRecordVector<CMvItem> Items;
   CRecordVector<int> StartFolderOfVol;
   CRecordVector<int> FolderStartFileIndex;
-  int GetFolderIndex(const CMvItem *mvi) const 
+  int GetFolderIndex(const CMvItem *mvi) const
   {
     const CDatabaseEx &db = Volumes[mvi->VolumeIndex];
-    return StartFolderOfVol[mvi->VolumeIndex] + 
+    return StartFolderOfVol[mvi->VolumeIndex] +
         db.Items[mvi->ItemIndex].GetFolderIndex(db.Folders.Size());
   }
   void Clear()
@@ -152,7 +152,7 @@ class CInArchive
   void Skeep(size_t size);
   void ReadOtherArchive(COtherArchive &oa);
 
-  HRESULT Open2(IInStream *inStream, 
+  HRESULT Open2(IInStream *inStream,
       const UInt64 *searchHeaderSizeLimit,
       CDatabase &database);
 public:

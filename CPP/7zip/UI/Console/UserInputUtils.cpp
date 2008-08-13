@@ -15,7 +15,7 @@ static const char kAutoRename = 'U';
 static const char kQuit = 'Q';
 
 static const char *kFirstQuestionMessage = "?\n";
-static const char *kHelpQuestionMessage = 
+static const char *kHelpQuestionMessage =
   "(Y)es / (N)o / (A)lways / (S)kip all / A(u)to rename / (Q)uit? ";
 
 // return true if pressed Quite;
@@ -54,5 +54,5 @@ UString GetPassword(CStdOutStream *outStream)
   (*outStream) << "\nEnter password:";
   outStream->Flush();
   AString oemPassword = g_StdIn.ScanStringUntilNewLine();
-  return MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+  return MultiByteToUnicodeString(oemPassword, CP_OEMCP);
 }

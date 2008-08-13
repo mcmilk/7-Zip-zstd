@@ -34,7 +34,7 @@ struct COsPair
   const wchar_t *Name;
 };
 
-COsPair g_OsPairs[] = 
+COsPair g_OsPairs[] =
 {
   { 'M', L"MS-DOS" },
   { '2', L"OS/2" },
@@ -67,14 +67,14 @@ static const wchar_t *GetOS(Byte osId)
   return kUnknownOS;
 };
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsFolder, VT_BOOL},
+  { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackedSize, VT_UI8},
-  { NULL, kpidLastWriteTime, VT_FILETIME},
-  { NULL, kpidAttributes, VT_UI4},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidAttrib, VT_UI4},
 
   // { NULL, kpidCommented, VT_BOOL},
     
@@ -114,23 +114,17 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       }
       break;
     }
-    case kpidIsFolder:
-      prop = item.IsDirectory();
-      break;
-    case kpidSize:
-      prop = item.Size;
-      break;
-    case kpidPackedSize:
-      prop = item.PackSize;
-      break;
-    case kpidLastWriteTime:
+    case kpidIsDir:  prop = item.IsDir(); break;
+    case kpidSize:   prop = item.Size; break;
+    case kpidPackSize:  prop = item.PackSize; break;
+    case kpidCRC:  prop = (UInt32)item.CRC; break;
+    case kpidHostOS:  prop = GetOS(item.OsId); break;
+    case kpidMTime:
     {
       FILETIME utcFileTime;
       UInt32 unixTime;
       if (item.GetUnixTime(unixTime))
-      {
         NTime::UnixTimeToFileTime(unixTime, utcFileTime);
-      }
       else
       {
         FILETIME localFileTime;
@@ -146,16 +140,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       break;
     }
     /*
-    case kpidAttributes:
-      prop = (UInt32)item.Attributes;
-      break;
-    case kpidCommented:
-      prop = item.IsCommented();
-      break;
+    case kpidAttrib:  prop = (UInt32)item.Attributes; break;
+    case kpidCommented:  prop = item.IsCommented(); break;
     */
-    case kpidCRC:
-      prop = (UInt32)item.CRC;
-      break;
     case kpidMethod:
     {
       wchar_t method2[kMethodIdSize + 1];
@@ -165,9 +152,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       prop = method2;
       break;
     }
-    case kpidHostOS:
-      prop = GetOS(item.OsId);
-      break;
   }
   prop.Detach(value);
   return S_OK;
@@ -175,14 +159,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
 }
 
 /*
-class CPropgressImp: public CProgressVirt
+class CProgressImp: public CProgressVirt
 {
 public:
   CMyComPtr<IArchiveOpenCallback> Callback;
   STDMETHOD(SetCompleted)(const UInt64 *numFiles);
 };
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
+STDMETHODIMP CProgressImp::SetCompleted(const UInt64 *numFiles)
 {
   if (Callback)
     return Callback->SetCompleted(numFiles, NULL);
@@ -190,7 +174,7 @@ STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
 }
 */
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
@@ -198,13 +182,17 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   {
     _items.Clear();
     CInArchive archive;
-    RINOK(archive.Open(inStream));
+
+    UInt64 endPos = 0;
+    bool needSetTotal = true;
+
     if (callback != NULL)
     {
-      RINOK(callback->SetTotal(NULL, NULL));
-      UInt64 numFiles = _items.Size();
-      RINOK(callback->SetCompleted(&numFiles, NULL));
+      RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
+      RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
     }
+
+    RINOK(archive.Open(stream));
     for (;;)
     {
       CItemEx item;
@@ -220,14 +208,23 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       archive.Skeep(item.PackSize);
       if (callback != NULL)
       {
-        UInt64 numFiles = _items.Size();
-        RINOK(callback->SetCompleted(&numFiles, NULL));
+        if (needSetTotal)
+        {
+          RINOK(callback->SetTotal(NULL, &endPos));
+          needSetTotal = false;
+        }
+        if (_items.Size() % 100 == 0)
+        {
+          UInt64 numFiles = _items.Size();
+          UInt64 numBytes = item.DataPosition;
+          RINOK(callback->SetCompleted(&numFiles, &numBytes));
+        }
       }
     }
     if (_items.IsEmpty())
       return S_FALSE;
 
-    _stream = inStream;
+    _stream = stream;
   }
   catch(...)
   {
@@ -306,7 +303,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CItemEx &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-    if(item.IsDirectory())
+    if (item.IsDir())
     {
       // if (!testMode)
       {
@@ -316,7 +313,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       continue;
     }
 
-    if (!testMode && (!realOutStream)) 
+    if (!testMode && (!realOutStream))
       continue;
 
     RINOK(extractCallback->PrepareOperation(askMode));
@@ -345,7 +342,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       else if (item.IsLh4GroupMethod())
       {
-        if(!lzhDecoder)
+        if (!lzhDecoder)
         {
           lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
           lzhDecoder = lzhDecoderSpec;
@@ -356,7 +353,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       /*
       else if (item.IsLh1GroupMethod())
       {
-        if(!lzh1Decoder)
+        if (!lzh1Decoder)
         {
           lzh1DecoderSpec = new NCompress::NLzh1::NDecoder::CCoder;
           lzh1Decoder = lzh1DecoderSpec;

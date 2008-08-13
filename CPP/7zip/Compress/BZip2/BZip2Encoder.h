@@ -32,7 +32,7 @@ public:
   void Init()
   {
     m_Pos = 0;
-    m_BitPos = 8; 
+    m_BitPos = 8;
     m_CurByte = 0;
   }
 
@@ -68,14 +68,14 @@ public:
   UInt32 GetPos() const { return m_Pos * 8 + (8 - m_BitPos); }
   Byte GetCurByte() const { return m_CurByte; }
   void SetPos(UInt32 bitPos)
-  { 
+  {
     m_Pos = bitPos / 8;
-    m_BitPos = 8 - ((int)bitPos & 7); 
+    m_BitPos = 8 - ((int)bitPos & 7);
   }
   void SetCurState(int bitPos, Byte curByte)
-  { 
-    m_BitPos = 8 - bitPos; 
-    m_CurByte = curByte; 
+  {
+    m_BitPos = 8 - bitPos;
+    m_CurByte = curByte;
   }
 };
 
@@ -143,7 +143,7 @@ public:
 
 class CEncoder :
   public ICompressCoder,
-  public ICompressSetCoderProperties, 
+  public ICompressSetCoderProperties,
   #ifdef COMPRESS_BZIP2_MT
   public ICompressSetCoderMt,
   #endif
@@ -213,11 +213,11 @@ public:
   public:
     bool NeedFlush;
     CFlusher(CEncoder *coder): _coder(coder), NeedFlush(true) {}
-    ~CFlusher() 
-    { 
+    ~CFlusher()
+    {
       if (NeedFlush)
         _coder->Flush();
-      _coder->ReleaseStreams(); 
+      _coder->ReleaseStreams();
     }
   };
 
@@ -234,7 +234,7 @@ public:
   STDMETHOD(Code)(ISequentialInStream *inStream,
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
 
   #ifdef COMPRESS_BZIP2_MT

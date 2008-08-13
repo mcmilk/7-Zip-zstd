@@ -34,19 +34,24 @@ public:
     { return SendMessage(CB_SETITEMDATA, index, lParam); }
   LRESULT GetItemData(int index)
     { return SendMessage(CB_GETITEMDATA, index, 0); }
+
+  void ShowDropDown(bool show = true)
+    { SendMessage(CB_SHOWDROPDOWN, show ? TRUE : FALSE, 0);  }
 };
 
-class CComboBoxEx: public CWindow
+class CComboBoxEx: public CComboBox
 {
 public:
-  LRESULT DeleteItem(int index)
-    { return SendMessage(CBEM_DELETEITEM, index, 0); }
-  LRESULT InsertItem(COMBOBOXEXITEM *item)
-    { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)item); }
-  DWORD SetExtendedStyle(DWORD exMask, DWORD exStyle)
-    { return (DWORD)SendMessage(CBEM_SETEXTENDEDSTYLE, exMask, exStyle); }
-  HWND GetEditControl()
-    { return (HWND)SendMessage(CBEM_GETEDITCONTROL, 0, 0); }
+  LRESULT DeleteItem(int index) { return SendMessage(CBEM_DELETEITEM, index, 0); }
+  LRESULT InsertItem(COMBOBOXEXITEM *item) { return SendMessage(CBEM_INSERTITEM, 0, (LPARAM)item); }
+  #ifndef _UNICODE
+  LRESULT InsertItem(COMBOBOXEXITEMW *item) { return SendMessage(CBEM_INSERTITEMW, 0, (LPARAM)item); }
+  #endif
+
+  LRESULT SetItem(COMBOBOXEXITEM *item) { return SendMessage(CBEM_SETITEM, 0, (LPARAM)item); }
+  DWORD SetExtendedStyle(DWORD exMask, DWORD exStyle) { return (DWORD)SendMessage(CBEM_SETEXTENDEDSTYLE, exMask, exStyle); }
+  HWND GetEditControl() { return (HWND)SendMessage(CBEM_GETEDITCONTROL, 0, 0); }
+  HIMAGELIST SetImageList(HIMAGELIST imageList) { return (HIMAGELIST)SendMessage(CBEM_SETIMAGELIST, 0, (LPARAM)imageList); }
 };
 
 }}

@@ -19,7 +19,7 @@
 namespace NArchive {
 namespace NZip {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public IOutArchive,
   public ISetProperties,
@@ -45,7 +45,6 @@ public:
 private:
   CObjectVector<CItemEx> m_Items;
   CInArchive m_Archive;
-  bool m_ArchiveIsOpen;
 
   int m_Level;
   int m_MainMethod;
@@ -73,10 +72,10 @@ private:
   {
     m_Level = -1;
     m_MainMethod = -1;
-    m_Algo = 
-    m_DicSize = 
-    m_NumPasses = 
-    m_NumFastBytes = 
+    m_Algo =
+    m_DicSize =
+    m_NumPasses =
+    m_NumFastBytes =
     m_NumMatchFinderCycles = 0xFFFFFFFF;
     m_NumMatchFinderCyclesDefined = false;
     m_IsAesMode = false;

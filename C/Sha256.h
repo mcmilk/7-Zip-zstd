@@ -1,6 +1,6 @@
 /* Crypto/Sha256.h -- SHA-256 Hash function
-2008-03-24
-Igor Pavlov 
+2008-08-05
+Igor Pavlov
 Public domain */
 
 #ifndef __CRYPTO_SHA256_H

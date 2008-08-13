@@ -10,7 +10,7 @@
 
 namespace NPlugin
 {
-  enum 
+  enum
   {
     kName = 0,
     kType,
@@ -45,12 +45,12 @@ FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x0B)
   // STDMETHOD(SetTotalFiles)(UInt64 total) PURE;
   // STDMETHOD(SetCompletedFiles)(const UInt64 *completedValue) PURE;
   STDMETHOD(AskWrite)(
-      const wchar_t *srcPath, 
-      Int32 srcIsFolder, 
-      const FILETIME *srcTime, 
+      const wchar_t *srcPath,
+      Int32 srcIsFolder,
+      const FILETIME *srcTime,
       const UInt64 *srcSize,
-      const wchar_t *destPathRequest, 
-      BSTR *destPathResult, 
+      const wchar_t *destPathRequest,
+      BSTR *destPathResult,
       Int32 *writeAnswer) PURE;
   STDMETHOD(ShowMessage)(const wchar_t *message) PURE;
   STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath) PURE;

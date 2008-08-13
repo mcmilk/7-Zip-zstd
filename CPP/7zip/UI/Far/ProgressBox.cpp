@@ -5,100 +5,108 @@
 #include <stdio.h>
 
 #include "ProgressBox.h"
-
+#include "Common/IntToString.h"
 #include "FarUtils.h"
 
-using namespace NFar;
-
-static void CopySpaces(char *destString, int numSpaces)
+static void CopySpaces(char *dest, int numSpaces)
 {
   int i;
-  for(i = 0; i < numSpaces; i++)
-    destString[i] = ' ';
-  destString[i] = '\0';
+  for (i = 0; i < numSpaces; i++)
+    dest[i] = ' ';
+  dest[i] = '\0';
 }
 
-/////////////////////////////////
-// CMessageBox
-
-const int kNumStringsMax = 10;
-
-void CMessageBox::Init(const CSysString &title, const CSysString &message, 
-    int numStrings, int width)
+void ConvertUInt64ToStringAligned(UInt64 value, char *s, int alignSize)
 {
+  char temp[32];
+  ConvertUInt64ToString(value, temp);
+  int len = (int)strlen(temp);
+  int numSpaces = 0;
+  if (len < alignSize)
+  {
+    numSpaces = alignSize - len;
+    CopySpaces(s, numSpaces);
+  }
+  strcpy(s + numSpaces, temp);
+}
+
+
+// ---------- CMessageBox ----------
+
+static const int kMaxLen = 255;
+
+void CMessageBox::Init(const AString &title, int width)
+{
+  _title = title;
+  _width = MyMin(width, kMaxLen);
+}
+
+void CMessageBox::ShowMessages(const char *strings[], int numStrings)
+{
+  const int kNumStaticStrings = 1;
+  const int kNumStringsMax = 10;
+
   if (numStrings > kNumStringsMax)
-    throw 120620;
-  m_NumStrings = numStrings;
-  m_Width = width;
+    numStrings = kNumStringsMax;
 
-  m_Title = title;
-  m_Message = message;
-}
-
-const int kNumStaticStrings = 2;
-
-void CMessageBox::ShowProcessMessages(const char *messages[])
-{
   const char *msgItems[kNumStaticStrings + kNumStringsMax];
-  msgItems[0] = m_Title;
-  msgItems[1] = m_Message;
+  msgItems[0] = _title;
 
-  char formattedMessages[kNumStringsMax][256];
+  char formattedMessages[kNumStringsMax][kMaxLen + 1];
 
-  for (int i = 0; i < m_NumStrings; i++)
+  for (int i = 0; i < numStrings; i++)
   {
     char *formattedMessage = formattedMessages[i];
-    int len = (int)strlen(messages[i]);
-    int size = MyMax(m_Width, len);
-    int startPos = (size - len) / 2;
-    CopySpaces(formattedMessage, startPos);
-    MyStringCopy(formattedMessage + startPos, messages[i]);
-    CopySpaces(formattedMessage + startPos + len, size - startPos - len);
+    const char *s = strings[i];
+    int len = (int)strlen(s);
+    if (len < kMaxLen)
+    {
+      int size = MyMax(_width, len);
+      int startPos = (size - len) / 2;
+      CopySpaces(formattedMessage, startPos);
+      strcpy(formattedMessage + startPos, s);
+      CopySpaces(formattedMessage + startPos + len, size - startPos - len);
+    }
+    else
+    {
+      strncpy(formattedMessage, s, kMaxLen);
+      formattedMessage[kMaxLen] = 0;
+    }
     msgItems[kNumStaticStrings + i] = formattedMessage;
   }
-
-  g_StartupInfo.ShowMessage(0, NULL, msgItems, kNumStaticStrings + m_NumStrings, 0);
-}
-
-/////////////////////////////////
-// CProgressBox
-
-void CProgressBox::Init(const CSysString &title, const CSysString &message,
-    UInt64 step)
-{
-  CMessageBox::Init(title, message, 1, 22);
-  m_Step = step;
-  m_CompletedPrev = 0;
-  m_Total = 0;
+  NFar::g_StartupInfo.ShowMessage(0, NULL, msgItems, kNumStaticStrings + numStrings, 0);
 }
 
 
-void CProgressBox::ShowProcessMessage(const char *message)
+// ---------- CProgressBox ----------
+
+void CProgressBox::Init(const AString &title, int width)
 {
-  CMessageBox::ShowProcessMessages(&message);
+  CMessageBox::Init(title, width);
+  _prevMessage.Empty();
+  _prevPercentMessage.Empty();
+  _wasShown = false;
 }
 
-void CProgressBox::PrintPercent(UInt64 percent)
+void CProgressBox::Progress(const UInt64 *total, const UInt64 *completed, const AString &message)
 {
-  char valueBuffer[32];
-  sprintf(valueBuffer, "%I64u%%", percent);
-  ShowProcessMessage(valueBuffer);
-}
-
-void CProgressBox::SetTotal(UInt64 total)
-{
-  m_Total = total;
-}
-
-void CProgressBox::PrintCompeteValue(UInt64 completed)
-{
-  if (completed >= m_CompletedPrev + m_Step || completed < m_CompletedPrev ||
-      completed == 0)
+  AString percentMessage;
+  if (total != 0 && completed != 0)
   {
-    if (m_Total == 0)
-      PrintPercent(0);
-    else
-      PrintPercent(completed * 100 / m_Total);
-    m_CompletedPrev = completed;
+    UInt64 totalVal = *total;
+    if (totalVal == 0)
+      totalVal = 1;
+    char buf[32];
+    ConvertUInt64ToStringAligned(*completed * 100 / totalVal, buf, 3);
+    strcat(buf, "%");
+    percentMessage = buf;
+  }
+  if (message != _prevMessage || percentMessage != _prevPercentMessage || !_wasShown)
+  {
+    _prevMessage = message;
+    _prevPercentMessage = percentMessage;
+    const char *strings[] = { message, percentMessage };
+    ShowMessages(strings, sizeof(strings) / sizeof(strings[0]));
+    _wasShown = true;
   }
 }

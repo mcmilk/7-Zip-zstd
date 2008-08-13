@@ -47,6 +47,7 @@ WIN_OBJS = \
   $O\PropVariantConversions.obj \
   $O\Synchronization.obj \
   $O\System.obj \
+  $O\Time.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
@@ -93,11 +94,15 @@ UI_COMMON_OBJS = \
   $O\UpdateProduce.obj \
   $O\WorkDir.obj \
 
+AR_OBJS = \
+  $O\ZHandler.obj \
+
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
+  $O\FindSignature.obj \
   $O\HandlerOut.obj \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \
@@ -164,10 +169,6 @@ TAR_OBJS = \
   $O\TarOut.obj \
   $O\TarUpdate.obj \
   $O\TarRegister.obj \
-
-Z_OBJS = \
-  $O\ZHandler.obj \
-  $O\ZRegister.obj \
 
 ZIP_OBJS = \
   $O\ZipAddCommon.obj \
@@ -290,6 +291,7 @@ OBJS = \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
+  $(AR_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(BZ2_OBJS) \
@@ -298,7 +300,6 @@ OBJS = \
   $(LZM_OBJS) \
   $(SPLIT_OBJS) \
   $(TAR_OBJS) \
-  $(Z_OBJS) \
   $(ZIP_OBJS) \
   $(BZIP2_OBJS) \
   $(BZIP2_OPT_OBJS) \
@@ -339,6 +340,8 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
 	$(COMPL)
+$(AR_OBJS): ../../Archive/$(*B).cpp
+	$(COMPL)
 $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
 
@@ -355,8 +358,6 @@ $(LZM_OBJS): ../../Archive/Lzma/$(*B).cpp
 $(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
 $(TAR_OBJS): ../../Archive/Tar/$(*B).cpp
-	$(COMPL)
-$(Z_OBJS): ../../Archive/Z/$(*B).cpp
 	$(COMPL)
 $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
 	$(COMPL)

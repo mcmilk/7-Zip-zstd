@@ -1,5 +1,5 @@
-7z Format description (2.30 Beta 25)
------------------------------------
+7z Format description (4.59)
+----------------------------
 
 This file contains description of 7z archive format. 
 7z archive can contain files compressed with any method.
@@ -126,40 +126,43 @@ UINT64 means real UINT64 encoded with the following scheme:
 Property IDs
 ------------
 
-0x00 = kEnd,
+0x00 = kEnd
 
-0x01 = kHeader,
+0x01 = kHeader
 
-0x02 = kArchiveProperties,
+0x02 = kArchiveProperties
     
-0x03 = kAdditionalStreamsInfo,
-0x04 = kMainStreamsInfo,
-0x05 = kFilesInfo,
+0x03 = kAdditionalStreamsInfo
+0x04 = kMainStreamsInfo
+0x05 = kFilesInfo
     
-0x06 = kPackInfo,
-0x07 = kUnPackInfo,
-0x08 = kSubStreamsInfo,
+0x06 = kPackInfo
+0x07 = kUnPackInfo
+0x08 = kSubStreamsInfo
 
-0x09 = kSize,
-0x0A = kCRC,
+0x09 = kSize
+0x0A = kCRC
 
-0x0B = kFolder,
+0x0B = kFolder
 
-0x0C = kCodersUnPackSize,
-0x0D = kNumUnPackStream,
+0x0C = kCodersUnPackSize
+0x0D = kNumUnPackStream
 
-0x0E = kEmptyStream,
-0x0F = kEmptyFile,
-0x10 = kAnti,
+0x0E = kEmptyStream
+0x0F = kEmptyFile
+0x10 = kAnti
 
-0x11 = kName,
-0x12 = kCreationTime,
-0x13 = kLastAccessTime,
-0x14 = kLastWriteTime,
-0x15 = kWinAttributes,
-0x16 = kComment,
+0x11 = kName
+0x12 = kCTime
+0x13 = kATime
+0x14 = kMTime
+0x15 = kWinAttributes
+0x16 = kComment
 
-0x17 = kEncodedHeader,
+0x17 = kEncodedHeader
+
+0x18 = kStartPos
+0x19 = kDummy
 
 
 7z format headers
@@ -382,9 +385,9 @@ FilesInfo
         for(EmptyStreams)
           BIT IsAntiFile
       
-      case kCreationTime:   (0x12)
-      case kLastAccessTime: (0x13)
-      case kLastWriteTime:  (0x14)
+      case kCTime: (0x12)
+      case kATime: (0x13)
+      case kMTime: (0x14)
         BYTE AllAreDefined
         if (AllAreDefined == 0)
         {

@@ -14,9 +14,9 @@ class CData
   UInt32 Keys[4];
   UInt32 SubstLong(UInt32 t)
   {
-    return (UInt32)SubstTable[(int)t & 255] | 
+    return (UInt32)SubstTable[(int)t & 255] |
            ((UInt32)SubstTable[(int)(t >> 8) & 255] << 8) |
-           ((UInt32)SubstTable[(int)(t >> 16) & 255] << 16) | 
+           ((UInt32)SubstTable[(int)(t >> 16) & 255] << 16) |
            ((UInt32)SubstTable[(int)(t >> 24) & 255] << 24);
   }
 

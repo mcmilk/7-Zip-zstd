@@ -27,13 +27,13 @@ void ReloadLang()
   if (!g_LangID.IsEmpty() && g_LangID != L"-")
   {
     UString langPath = g_LangID;
-    if (langPath.Find('\\') < 0)
+    if (langPath.Find(WCHAR_PATH_SEPARATOR) < 0)
     {
-      if (langPath.Find('.') < 0)
+      if (langPath.Find(L'.') < 0)
         langPath += L".txt";
       UString folderPath;
       if (GetProgramFolderPath(folderPath))
-        langPath = folderPath + UString(L"Lang\\") + langPath;
+        langPath = folderPath + UString(L"Lang" WSTRING_PATH_SEPARATOR) + langPath;
     }
     g_Lang.Open(langPath);
   }
@@ -94,12 +94,12 @@ void LoadLangs(CObjectVector<CLangEx> &langs)
   UString folderPath;
   if (!::GetProgramFolderPath(folderPath))
     return;
-  folderPath += L"Lang\\";
+  folderPath += L"Lang" WSTRING_PATH_SEPARATOR;
   NWindows::NFile::NFind::CEnumeratorW enumerator(folderPath + L"*.txt");
   NWindows::NFile::NFind::CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))
   {
-    if (fileInfo.IsDirectory())
+    if (fileInfo.IsDir())
       continue;
     CLangEx lang;
     UString filePath = folderPath + fileInfo.Name;

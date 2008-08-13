@@ -11,14 +11,15 @@
 struct CUpdatePair
 {
   NUpdateArchive::NPairState::EEnum State;
-  int ArchiveItemIndex;
-  int DirItemIndex;
+  int ArcIndex;
+  int DirIndex;
+  CUpdatePair(): ArcIndex(-1), DirIndex(-1) {}
 };
 
 void GetUpdatePairInfoList(
-    const CObjectVector<CDirItem> &dirItems,
-    const CObjectVector<CArchiveItem> &archiveItems,
+    const CDirItems &dirItems,
+    const CObjectVector<CArcItem> &arcItems,
     NFileTimeType::EEnum fileTimeType,
-    CObjectVector<CUpdatePair> &updatePairs);
+    CRecordVector<CUpdatePair> &updatePairs);
 
 #endif

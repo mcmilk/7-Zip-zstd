@@ -18,8 +18,8 @@ void NormalizeDirPathPrefix(UString &dirPath); // ensures that it ended with '\\
 #endif
 
 #ifdef _WIN32
-void SplitNameToPureNameAndExtension(const UString &fullName, 
-    UString &pureName, UString &extensionDelimiter, UString &extension); 
+void SplitNameToPureNameAndExtension(const UString &fullName,
+    UString &pureName, UString &extensionDelimiter, UString &extension);
 #endif
 
 }}}

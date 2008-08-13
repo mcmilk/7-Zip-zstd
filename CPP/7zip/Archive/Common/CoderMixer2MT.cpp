@@ -6,7 +6,7 @@
 
 namespace NCoderMixer {
 
-CCoder2::CCoder2(UInt32 numInStreams, UInt32 numOutStreams): 
+CCoder2::CCoder2(UInt32 numInStreams, UInt32 numOutStreams):
     CCoderInfo2(numInStreams, numOutStreams)
 {
   InStreams.Reserve(NumInStreams);
@@ -35,7 +35,7 @@ void CCoder2::Code(ICompressProgressInfo *progress)
     OutStreamPointers.Add((ISequentialOutStream *)OutStreams[i]);
   }
   if (Coder)
-    Result = Coder->Code(InStreamPointers[0], OutStreamPointers[0], 
+    Result = Coder->Code(InStreamPointers[0], OutStreamPointers[0],
         InSizePointers[0], OutSizePointers[0], progress);
   else
     Result = Coder2->Code(&InStreamPointers.Front(), &InSizePointers.Front(), NumInStreams,
@@ -49,7 +49,7 @@ void CCoder2::Code(ICompressProgressInfo *progress)
   }
 }
 
-static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes, 
+static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes,
     CRecordVector<const UInt64 *> &sizePointers, UInt32 numItems)
 {
   sizes.Clear();
@@ -80,8 +80,8 @@ void CCoder2::SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes)
 // CCoderMixer2MT
 
 HRESULT CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
-{  
-  _bindInfo = bindInfo; 
+{
+  _bindInfo = bindInfo;
   _streamBinders.Clear();
   for(int i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
@@ -118,7 +118,7 @@ void CCoderMixer2MT::ReInit()
 }
 
 
-HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams) 
+HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams)
 {
   /*
   if (_coders.Size() != _bindInfo.Coders.Size())
@@ -176,9 +176,9 @@ HRESULT CCoderMixer2MT::ReturnIfError(HRESULT code)
 }
 
 STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
-      const UInt64 ** /* inSizes */, 
+      const UInt64 ** /* inSizes */,
       UInt32 numInStreams,
-      ISequentialOutStream **outStreams, 
+      ISequentialOutStream **outStreams,
       const UInt64 ** /* outSizes */,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress)
@@ -227,4 +227,4 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
   return S_OK;
 }
 
-}  
+}

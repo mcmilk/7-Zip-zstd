@@ -24,7 +24,7 @@ struct CCompressionMethodMode
 
 HRESULT UpdateArchive(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    IInStream *inStream, 
+    IInStream *inStream,
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     const CItem &newItem,

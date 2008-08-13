@@ -8,11 +8,11 @@
 #include "../ICoder.h"
 
 extern unsigned int g_NumCodecs;
-extern const CCodecInfo *g_Codecs[]; 
+extern const CCodecInfo *g_Codecs[];
 
 static const UInt16 kDecodeId = 0x2790;
 
-DEFINE_GUID(CLSID_CCodec, 
+DEFINE_GUID(CLSID_CCodec,
 0x23170F69, 0x40C1, kDecodeId, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 static inline HRESULT SetPropString(const char *s, unsigned int size, PROPVARIANT *value)
@@ -40,7 +40,7 @@ static HRESULT SetClassID(CMethodId id, bool encode, PROPVARIANT *value)
 static HRESULT FindCodecClassId(const GUID *clsID, UInt32 isCoder2, bool isFilter, bool &encode, int &index)
 {
   index = -1;
-  if (clsID->Data1 != CLSID_CCodec.Data1 || 
+  if (clsID->Data1 != CLSID_CCodec.Data1 ||
       clsID->Data2 != CLSID_CCodec.Data2 ||
       (clsID->Data3 & ~1) != kDecodeId)
     return S_OK;

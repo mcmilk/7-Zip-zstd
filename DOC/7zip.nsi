@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 58
+!define VERSION_MINOR 59
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -216,11 +216,13 @@ Section
   File hy.txt
   File id.txt
   File io.txt
+  File is.txt
   File it.txt
   File ja.txt
   File ka.txt
   File ko.txt
   File ku.txt
+  File ku-ckb.txt
   File lt.txt
   File lv.txt
   File mk.txt
@@ -400,11 +402,13 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\hy.txt
   Delete $INSTDIR\Lang\id.txt
   Delete $INSTDIR\Lang\io.txt
+  Delete $INSTDIR\Lang\is.txt
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt
+  Delete $INSTDIR\Lang\ku-ckb.txt
   Delete $INSTDIR\Lang\lt.txt
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt
@@ -497,11 +501,14 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.cab"
   DeleteRegKey HKCR "7-Zip.cpio"
   DeleteRegKey HKCR "7-Zip.deb"
+  DeleteRegKey HKCR "7-Zip.dmg"
   DeleteRegKey HKCR "7-Zip.gz"
   DeleteRegKey HKCR "7-Zip.gzip"
+  DeleteRegKey HKCR "7-Zip.hfs"
   DeleteRegKey HKCR "7-Zip.iso"
   DeleteRegKey HKCR "7-Zip.lha"
   DeleteRegKey HKCR "7-Zip.lzh"
+  DeleteRegKey HKCR "7-Zip.lzma"
   DeleteRegKey HKCR "7-Zip.rar"
   DeleteRegKey HKCR "7-Zip.rpm"
   DeleteRegKey HKCR "7-Zip.split"
@@ -511,6 +518,7 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.tgz"
   DeleteRegKey HKCR "7-Zip.tpz"
   DeleteRegKey HKCR "7-Zip.wim"
+  DeleteRegKey HKCR "7-Zip.xar"
   DeleteRegKey HKCR "7-Zip.z"
   DeleteRegKey HKCR "7-Zip.zip"
 

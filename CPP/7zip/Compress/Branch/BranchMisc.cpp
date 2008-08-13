@@ -3,8 +3,8 @@
 #include "StdAfx.h"
 #include "BranchMisc.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Bra.h"
 }
 

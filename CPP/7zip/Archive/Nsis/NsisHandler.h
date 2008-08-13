@@ -13,7 +13,7 @@
 namespace NArchive {
 namespace NNsis {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp

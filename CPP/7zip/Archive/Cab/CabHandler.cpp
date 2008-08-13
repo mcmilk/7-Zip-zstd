@@ -31,19 +31,18 @@ namespace NCab {
 // #define _CAB_DETAILS
 
 #ifdef _CAB_DETAILS
-enum 
+enum
 {
   kpidBlockReal = kpidUserDefined
 };
 #endif
 
-STATPROPSTG kProps[] = 
+STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
-  // { NULL, kpidIsFolder, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  { NULL, kpidLastWriteTime, VT_FILETIME},
-  { NULL, kpidAttributes, VT_UI4},
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidAttrib, VT_UI4},
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidBlock, VT_I4}
   #ifdef _CAB_DETAILS
@@ -54,7 +53,7 @@ STATPROPSTG kProps[] =
   #endif
 };
 
-static const wchar_t *kMethods[] = 
+static const wchar_t *kMethods[] =
 {
   L"None",
   L"MSZip",
@@ -65,7 +64,7 @@ static const wchar_t *kMethods[] =
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 static const wchar_t *kUnknownMethod = L"Unknown";
 
-STATPROPSTG kArcProps[] = 
+STATPROPSTG kArcProps[] =
 {
   { NULL, kpidMethod, VT_BSTR},
   // { NULL, kpidSolid, VT_BOOL},
@@ -101,7 +100,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           resString += L' ';
         resString += method;
       }
-      prop = resString; 
+      prop = resString;
       break;
     }
     // case kpidSolid: prop = _database.IsSolid(); break;
@@ -145,13 +144,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       prop = (const wchar_t *)NItemName::WinNameToOSName(unicodeName);
       break;
     }
-    case kpidIsFolder:
-      prop = item.IsDirectory();
-      break;
-    case kpidSize:
-      prop = item.Size;
-      break;
-    case kpidLastWriteTime:
+    case kpidIsDir:  prop = item.IsDir(); break;
+    case kpidSize:  prop = item.Size; break;
+    case kpidAttrib:  prop = item.GetWinAttributes(); break;
+
+    case kpidMTime:
     {
       FILETIME localFileTime, utcFileTime;
       if (NTime::DosTimeToFileTime(item.Time, localFileTime))
@@ -164,9 +161,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       prop = utcFileTime;
       break;
     }
-    case kpidAttributes:
-      prop = item.GetWinAttributes();
-      break;
 
     case kpidMethod:
     {
@@ -174,7 +168,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       const CFolder &folder = db.Folders[realFolderIndex];
       int methodIndex = folder.GetCompressionMethod();
       UString method = (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
-      if (methodIndex == NHeader::NCompressionMethodMajor::kLZX || 
+      if (methodIndex == NHeader::NCompressionMethodMajor::kLZX ||
         methodIndex == NHeader::NCompressionMethodMajor::kQuantum)
       {
         method += L":";
@@ -185,21 +179,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       prop = method;
       break;
     }
-    case kpidBlock:
-      prop = (Int32)m_Database.GetFolderIndex(&mvItem);
-      break;
+    case kpidBlock:  prop = (Int32)m_Database.GetFolderIndex(&mvItem); break;
     
     #ifdef _CAB_DETAILS
     
-    case kpidBlockReal:
-      prop = UInt32(item.FolderIndex);
-      break;
-    case kpidOffset:
-      prop = (UInt32)item.Offset;
-      break;
-    case kpidVolume:
-      prop = (UInt32)mvItem.VolumeIndex;
-      break;
+    case kpidBlockReal:  prop = (UInt32)item.FolderIndex; break;
+    case kpidOffset:  prop = (UInt32)item.Offset; break;
+    case kpidVolume:  prop = (UInt32)mvItem.VolumeIndex; break;
 
     #endif
   }
@@ -209,7 +195,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
 }
 
 /*
-class CPropgressImp: public CProgressVirt
+class CProgressImp: public CProgressVirt
 {
   CMyComPtr<IArchiveOpenCallback> m_OpenArchiveCallback;
 public:
@@ -219,14 +205,14 @@ public:
     { m_OpenArchiveCallback = openArchiveCallback; }
 };
 
-STDMETHODIMP CPropgressImp::SetTotal(const UInt64 *numFiles)
+STDMETHODIMP CProgressImp::SetTotal(const UInt64 *numFiles)
 {
   if (m_OpenArchiveCallback)
     return m_OpenArchiveCallback->SetCompleted(numFiles, NULL);
   return S_OK;
 }
 
-STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
+STDMETHODIMP CProgressImp::SetCompleted(const UInt64 *numFiles)
 {
   if (m_OpenArchiveCallback)
     return m_OpenArchiveCallback->SetCompleted(numFiles, NULL);
@@ -234,9 +220,9 @@ STDMETHODIMP CPropgressImp::SetCompleted(const UInt64 *numFiles)
 }
 */
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, 
+STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *openArchiveCallback)
+    IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   Close();
@@ -244,7 +230,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   CInArchive archive;
   CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
   {
-    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = openArchiveCallback;
+    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = callback;
     openArchiveCallbackWrap.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
   }
 
@@ -264,7 +250,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         {
           const CDatabaseEx &dbPrev = m_Database.Volumes[prevChecked ? m_Database.Volumes.Size() - 1 : 0];
           if (dbPrev.ArchiveInfo.SetID != db.ArchiveInfo.SetID ||
-              dbPrev.ArchiveInfo.CabinetNumber + (prevChecked ? 1: - 1) != 
+              dbPrev.ArchiveInfo.CabinetNumber + (prevChecked ? 1: - 1) !=
               db.ArchiveInfo.CabinetNumber)
             res = S_FALSE;
         }
@@ -273,7 +259,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         m_Database.Volumes.Insert(prevChecked ? m_Database.Volumes.Size() : 0, db);
       else if (res != S_FALSE)
         return res;
-      else 
+      else
       {
         if (m_Database.Volumes.IsEmpty())
           return S_FALSE;
@@ -283,7 +269,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       }
 
       numItems += db.Items.Size();
-      RINOK(openArchiveCallback->SetCompleted(&numItems, NULL));
+      RINOK(callback->SetCompleted(&numItems, NULL));
         
       nextStream = 0;
       for (;;)
@@ -342,7 +328,7 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-class CCabFolderOutStream: 
+class CCabFolderOutStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -373,8 +359,8 @@ public:
 
   void Init(
       const CMvDatabaseEx *database,
-      const CRecordVector<bool> *extractStatuses, 
-      int startIndex, 
+      const CRecordVector<bool> *extractStatuses,
+      int startIndex,
       UInt64 folderSize,
       IArchiveExtractCallback *extractCallback,
       bool testMode);
@@ -387,8 +373,8 @@ public:
 
 void CCabFolderOutStream::Init(
     const CMvDatabaseEx *database,
-    const CRecordVector<bool> *extractStatuses, 
-    int startIndex, 
+    const CRecordVector<bool> *extractStatuses,
+    int startIndex,
     UInt64 folderSize,
     IArchiveExtractCallback *extractCallback,
     bool testMode)
@@ -409,7 +395,7 @@ void CCabFolderOutStream::Init(
 
 HRESULT CCabFolderOutStream::OpenFile()
 {
-  Int32 askMode = (*m_ExtractStatuses)[m_CurrentIndex] ? (m_TestMode ? 
+  Int32 askMode = (*m_ExtractStatuses)[m_CurrentIndex] ? (m_TestMode ?
       NExtract::NAskMode::kTest :
       NExtract::NAskMode::kExtract) :
       NExtract::NAskMode::kSkip;
@@ -474,7 +460,7 @@ HRESULT CCabFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *proce
       {
         m_RealOutStream.Release();
         RINOK(m_ExtractCallback->SetOperationResult(
-          m_IsOk ? 
+          m_IsOk ?
             NArchive::NExtract::NOperationResult::kOK:
             NArchive::NExtract::NOperationResult::kDataError));
         m_FileIsOpen = false;
@@ -574,7 +560,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     int index = allFilesMode ? i : indices[i];
     const CMvItem &mvItem = m_Database.Items[index];
     const CItem &item = m_Database.Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-    if (item.IsDirectory())
+    if (item.IsDir())
       continue;
     int folderIndex = m_Database.GetFolderIndex(&mvItem);
     if (folderIndex != lastFolder)
@@ -622,9 +608,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CItem &item = db.Items[itemIndex];
 
     i++;
-    if (item.IsDirectory())
+    if (item.IsDir())
     {
-      Int32 askMode= testMode ? 
+      Int32 askMode= testMode ?
           NArchive::NExtract::NAskMode::kTest :
           NArchive::NExtract::NAskMode::kExtract;
       CMyComPtr<ISequentialOutStream> realOutStream;
@@ -638,7 +624,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (folderIndex < 0)
     {
       // If we need previous archive
-      Int32 askMode= testMode ? 
+      Int32 askMode= testMode ?
           NArchive::NExtract::NAskMode::kTest :
           NArchive::NExtract::NAskMode::kExtract;
       CMyComPtr<ISequentialOutStream> realOutStream;
@@ -661,7 +647,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       int indexNext = allFilesMode ? i : indices[i];
       const CMvItem &mvItem = m_Database.Items[indexNext];
       const CItem &item = m_Database.Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-      if (item.IsDirectory())
+      if (item.IsDir())
         continue;
       int newFolderIndex = m_Database.GetFolderIndex(&mvItem);
 
@@ -683,7 +669,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     const CFolder &folder = db.Folders[item.GetFolderIndex(db.Folders.Size())];
 
-    cabFolderOutStream->Init(&m_Database, &extractStatuses, startIndex2, 
+    cabFolderOutStream->Init(&m_Database, &extractStatuses, startIndex2,
         curUnpack, extractCallback, testMode);
 
     cabBlockInStreamSpec->MsZip = false;

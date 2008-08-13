@@ -30,7 +30,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   UInt64 volumeSize = 0;
 
   CMyComPtr<IArchiveUpdateCallback2> callback2;
-  updateCallback->QueryInterface(IID_IArchiveUpdateCallback2, 
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallback2,
       (void **)&callback2);
 
   RINOK(callback2->GetVolumeSize(0, &volumeSize));

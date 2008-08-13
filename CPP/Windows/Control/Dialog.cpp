@@ -15,7 +15,7 @@ extern bool g_IsNT;
 namespace NWindows {
 namespace NControl {
 
-static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message, 
+static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message,
     WPARAM wParam, LPARAM lParam)
 {
   CWindow dialogTmp(dialogHWND);
@@ -54,8 +54,8 @@ bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   }
 }
 
-bool CDialog::OnCommand(WPARAM wParam, LPARAM lParam) 
-{ 
+bool CDialog::OnCommand(WPARAM wParam, LPARAM lParam)
+{
   return OnCommand(HIWORD(wParam), LOWORD(wParam), lParam);
 }
 
@@ -63,11 +63,11 @@ bool CDialog::OnCommand(int code, int itemID, LPARAM lParam)
 {
   if (code == BN_CLICKED)
     return OnButtonClicked(itemID, (HWND)lParam);
-  return false; 
+  return false;
 }
 
-bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */) 
-{ 
+bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */)
+{
   switch(buttonID)
   {
     case IDOK:
@@ -86,7 +86,7 @@ bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */)
 }
 
 bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)
-{ 
+{
   HWND aHWND = CreateDialogParam(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
   if (aHWND == 0)
     return false;
@@ -95,14 +95,14 @@ bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)
 }
 
 INT_PTR CModalDialog::Create(LPCTSTR templateName, HWND parentWindow)
-{ 
+{
   return DialogBoxParam(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
 }
 
 #ifndef _UNICODE
 
 bool CModelessDialog::Create(LPCWSTR templateName, HWND parentWindow)
-{ 
+{
   HWND aHWND;
   if (g_IsNT)
     aHWND = CreateDialogParamW(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
@@ -126,7 +126,7 @@ bool CModelessDialog::Create(LPCWSTR templateName, HWND parentWindow)
 }
 
 INT_PTR CModalDialog::Create(LPCWSTR templateName, HWND parentWindow)
-{ 
+{
   if (g_IsNT)
     return DialogBoxParamW(g_hInstance, templateName, parentWindow, DialogProcedure, (LPARAM)this);
   AString name;
@@ -140,6 +140,6 @@ INT_PTR CModalDialog::Create(LPCWSTR templateName, HWND parentWindow)
   }
   return DialogBoxParamA(g_hInstance, templateNameA, parentWindow, DialogProcedure, (LPARAM)this);
 }
-#endif 
+#endif
 
 }}

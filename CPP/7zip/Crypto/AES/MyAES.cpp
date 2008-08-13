@@ -16,7 +16,7 @@ STDMETHODIMP_(UInt32) CAesCbcEncoder::Filter(Byte *data, UInt32 size)
 }
 
 STDMETHODIMP CAesCbcEncoder::SetKey(const Byte *data, UInt32 size)
-{ 
+{
   if ((size & 0x7) != 0 || size < 16 || size > 32)
     return E_INVALIDARG;
   Aes_SetKeyEncode(&Aes.aes, data, size);
@@ -39,7 +39,7 @@ STDMETHODIMP_(UInt32) CAesCbcDecoder::Filter(Byte *data, UInt32 size)
 }
 
 STDMETHODIMP CAesCbcDecoder::SetKey(const Byte *data, UInt32 size)
-{ 
+{
   if ((size & 0x7) != 0 || size < 16 || size > 32)
     return E_INVALIDARG;
   Aes_SetKeyDecode(&Aes.aes, data, size);

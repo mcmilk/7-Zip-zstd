@@ -26,8 +26,8 @@ CExtractCallBackImp::~CExtractCallBackImp()
 
 void CExtractCallBackImp::Init(
     UINT codePage,
-    CProgressBox *progressBox, 
-    bool passwordIsDefined, 
+    CProgressBox *progressBox,
+    bool passwordIsDefined,
     const UString &password)
 {
   m_PasswordIsDefined = passwordIsDefined;
@@ -36,28 +36,30 @@ void CExtractCallBackImp::Init(
   m_ProgressBox = progressBox;
 }
 
-STDMETHODIMP CExtractCallBackImp::SetTotal(UINT64 size)
+STDMETHODIMP CExtractCallBackImp::SetTotal(UInt64 size)
 {
-  if (m_ProgressBox != 0)
-  {
-    m_ProgressBox->SetTotal(size);
-    m_ProgressBox->PrintCompeteValue(0);
-  }
+  _total = size;
+  _totalIsDefined = true;
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::SetCompleted(const UINT64 *completeValue)
+STDMETHODIMP CExtractCallBackImp::SetCompleted(const UInt64 *completeValue)
 {
-  if(WasEscPressed())
+  if (WasEscPressed())
     return E_ABORT;
-  if (m_ProgressBox != 0 && completeValue != NULL)
-    m_ProgressBox->PrintCompeteValue(*completeValue);
+  _processedIsDefined = (completeValue != NULL);
+  if (_processedIsDefined)
+    _processed = *completeValue;
+  if (m_ProgressBox != 0)
+    m_ProgressBox->Progress(
+      _totalIsDefined ? &_total: NULL,
+      _processedIsDefined ? &_processed: NULL, AString());
   return S_OK;
 }
 
 STDMETHODIMP CExtractCallBackImp::AskOverwrite(
-    const wchar_t *existName, const FILETIME *existTime, const UINT64 *existSize,
-    const wchar_t *newName, const FILETIME *newTime, const UINT64 *newSize,
+    const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
+    const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
     INT32 *answer)
 {
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
@@ -76,7 +78,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     newFileInfo.Size = *newSize;
   newFileInfo.Name = GetSystemString(newName, m_CodePage);
   
-  NOverwriteDialog::NResult::EEnum result = 
+  NOverwriteDialog::NResult::EEnum result =
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   
   switch(result)
@@ -106,9 +108,9 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, INT32 /* askExtractMode */, const UINT64 * /* position */)
+STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, INT32 /* askExtractMode */, const UInt64 * /* position */)
 {
-  if(WasEscPressed())
+  if (WasEscPressed())
     return E_ABORT;
   m_CurrentFilePath = name;
   return S_OK;
@@ -137,12 +139,12 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool
           idMessage = NMessageID::kExtractUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          idMessage = encrypted ? 
+          idMessage = encrypted ?
             NMessageID::kExtractCRCFailedEncrypted :
             NMessageID::kExtractCRCFailed;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          idMessage = encrypted ? 
+          idMessage = encrypted ?
             NMessageID::kExtractDataErrorEncrypted :
             NMessageID::kExtractDataError;
           break;
@@ -150,7 +152,7 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool
           return E_FAIL;
       }
       char buffer[512];
-      const AString s = GetSystemString(m_CurrentFilePath, m_CodePage);
+      const AString s = UnicodeStringToMultiByte(m_CurrentFilePath, m_CodePage);
       sprintf(buffer, g_StartupInfo.GetMsgString(idMessage), (const char *)s);
       if (g_StartupInfo.ShowMessage(buffer) == -1)
         return E_ABORT;

@@ -11,7 +11,7 @@
 #include "../../Crypto/Hash/Sha1.h"
 
 
-class COutStreamWithSha1: 
+class COutStreamWithSha1:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

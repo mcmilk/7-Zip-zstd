@@ -13,6 +13,6 @@ static IOutArchive *CreateArcOut() { return new NArchive::NGZip::CHandler;  }
 #endif
 
 static CArcInfo g_ArcInfo =
-  { L"GZip", L"gz gzip tgz tpz", L"* * .tar .tar", 0xEF, { 0x1F, 0x8B }, 2, true, CreateArc, CreateArcOut };
+  { L"GZip", L"gz gzip tgz tpz", L"* * .tar .tar", 0xEF, { 0x1F, 0x8B, 8 }, 3, true, CreateArc, CreateArcOut };
 
 REGISTER_ARC(GZip)

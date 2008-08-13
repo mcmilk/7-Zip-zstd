@@ -6,12 +6,12 @@
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/7zCrc.h"
 }
 
-class COutStreamWithCRC: 
+class COutStreamWithCRC:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

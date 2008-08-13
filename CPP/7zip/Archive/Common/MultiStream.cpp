@@ -33,7 +33,7 @@ STDMETHODIMP CMultiStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   return S_OK;
 }
   
-STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin, 
+STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin,
     UInt64 *newPosition)
 {
   UInt64 newPos;
@@ -76,7 +76,7 @@ STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin,
 
 
 /*
-class COutVolumeStream: 
+class COutVolumeStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -93,9 +93,9 @@ public:
   CFileItem _file;
   CUpdateOptions _options;
   CMyComPtr<IArchiveUpdateCallback2> VolumeCallback;
-  void Init(IArchiveUpdateCallback2 *volumeCallback, 
-      const UString &name)  
-  { 
+  void Init(IArchiveUpdateCallback2 *volumeCallback,
+      const UString &name)
+  {
     _file.Name = name;
     _file.IsStartPosDefined = true;
     _file.StartPos = 0;

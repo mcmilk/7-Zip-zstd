@@ -23,7 +23,7 @@ CSysString MyLoadString(HINSTANCE hInstance, UINT resourceID)
   {
     size += 256;
     len = ::LoadString(hInstance, resourceID, s.GetBuffer(size - 1), size);
-  } 
+  }
   while (size - len <= 1);
   s.ReleaseBuffer();
   return s;
@@ -46,7 +46,7 @@ UString MyLoadStringW(HINSTANCE hInstance, UINT resourceID)
     {
       size += 256;
       len = ::LoadStringW(hInstance, resourceID, s.GetBuffer(size - 1), size);
-    } 
+    }
     while (size - len <= 1);
     s.ReleaseBuffer();
     return s;

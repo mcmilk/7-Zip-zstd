@@ -21,7 +21,7 @@ bool MyGetWindowsDirectory(UString &path);
 bool MyGetSystemDirectory(UString &path);
 #endif
 
-bool SetDirTime(LPCWSTR fileName, const FILETIME *creationTime, const FILETIME *lastAccessTime, const FILETIME *lastWriteTime);
+bool SetDirTime(LPCWSTR fileName, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
 
 bool MySetFileAttributes(LPCTSTR fileName, DWORD fileAttributes);
 bool MyMoveFile(LPCTSTR existFileName, LPCTSTR newFileName);
@@ -44,13 +44,13 @@ bool RemoveDirectoryWithSubItems(const UString &path);
 #ifndef _WIN32_WCE
 bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath);
 
-bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, 
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath,
     int &fileNamePartStartIndex);
 bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath);
 bool GetOnlyName(LPCTSTR fileName, CSysString &resultName);
 bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName);
 #ifndef _UNICODE
-bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, 
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath,
     int &fileNamePartStartIndex);
 bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath);
 bool GetOnlyName(LPCWSTR fileName, UString &resultName);
@@ -66,14 +66,14 @@ bool MyGetCurrentDirectory(UString &resultPath);
 #endif
 #endif
 
-bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, 
+bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
   CSysString &resultPath, UINT32 &filePart);
 #ifndef _UNICODE
-bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension, 
+bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
   UString &resultPath, UINT32 &filePart);
 #endif
 
-inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, 
+inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
   CSysString &resultPath)
 {
   UINT32 value;
@@ -81,7 +81,7 @@ inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
 }
 
 #ifndef _UNICODE
-inline bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension, 
+inline bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
   UString &resultPath)
 {
   UINT32 value;

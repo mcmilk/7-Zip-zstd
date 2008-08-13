@@ -15,7 +15,7 @@ public:
   bool GetMaxSize(LPSIZE size)
     { return LRESULTToBool(SendMessage(TB_GETMAXSIZE, 0, (LPARAM)size)); }
   bool EnableButton(UINT buttonID, bool enable)
-    { return LRESULTToBool(SendMessage(TB_ENABLEBUTTON, buttonID, 
+    { return LRESULTToBool(SendMessage(TB_ENABLEBUTTON, buttonID,
           MAKELONG(BoolToBOOL(enable), 0))); }
   void ButtonStructSize()
     { SendMessage(TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON)); }

@@ -11,21 +11,21 @@
 extern bool g_IsNT;
 #endif
 
-int GetIconIndexForCSIDL(int aCSIDL)
+int GetIconIndexForCSIDL(int csidl)
 {
-  LPITEMIDLIST  pidlMyComputer = 0;
-  SHGetSpecialFolderLocation(NULL, aCSIDL, &pidlMyComputer);
-  if (pidlMyComputer)
+  LPITEMIDLIST pidl = 0;
+  SHGetSpecialFolderLocation(NULL, csidl, &pidl);
+  if (pidl)
   {
     SHFILEINFO shellInfo;
-    SHGetFileInfo(LPCTSTR(pidlMyComputer),  FILE_ATTRIBUTE_NORMAL, 
-      &shellInfo, sizeof(shellInfo), 
+    SHGetFileInfo(LPCTSTR(pidl),  FILE_ATTRIBUTE_NORMAL,
+      &shellInfo, sizeof(shellInfo),
       SHGFI_PIDL | SHGFI_SYSICONINDEX);
     IMalloc  *pMalloc;
     SHGetMalloc(&pMalloc);
     if(pMalloc)
     {
-      pMalloc->Free(pidlMyComputer);
+      pMalloc->Free(pidl);
       pMalloc->Release();
     }
     return shellInfo.iIcon;
@@ -33,10 +33,10 @@ int GetIconIndexForCSIDL(int aCSIDL)
   return 0;
 }
 
-DWORD_PTR GetRealIconIndex(LPCTSTR path, UINT32 attributes, int &iconIndex)
+DWORD_PTR GetRealIconIndex(LPCTSTR path, DWORD attributes, int &iconIndex)
 {
   SHFILEINFO shellInfo;
-  DWORD_PTR res = ::SHGetFileInfo(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+  DWORD_PTR res = ::SHGetFileInfo(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo,
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
   iconIndex = shellInfo.iIcon;
   return res;
@@ -70,13 +70,13 @@ DWORD_PTR MySHGetFileInfoW(LPCWSTR pszPath, DWORD dwFileAttributes, SHFILEINFOW 
 }
 
 #ifndef _UNICODE
-// static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
-DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
+// static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
+DWORD_PTR GetRealIconIndex(LPCWSTR path, DWORD attributes, int &iconIndex)
 {
   if(g_IsNT)
   {
     SHFILEINFOW shellInfo;
-    DWORD_PTR res = ::MySHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
+    DWORD_PTR res = ::MySHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo,
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
     iconIndex = shellInfo.iIcon;
     return res;
@@ -86,7 +86,7 @@ DWORD_PTR GetRealIconIndex(LPCWSTR path, UINT32 attributes, int &iconIndex)
 }
 #endif
 
-DWORD_PTR GetRealIconIndex(const UString &fileName, UINT32 attributes, 
+DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attributes,
     int &iconIndex, UString &typeName)
 {
   #ifndef _UNICODE
@@ -94,8 +94,8 @@ DWORD_PTR GetRealIconIndex(const UString &fileName, UINT32 attributes,
   {
     SHFILEINFO shellInfo;
     shellInfo.szTypeName[0] = 0;
-    DWORD_PTR res = ::SHGetFileInfoA(GetSystemString(fileName), FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
-      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
+    DWORD_PTR res = ::SHGetFileInfoA(GetSystemString(fileName), FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo,
+      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX
       | SHGFI_TYPENAME);
     typeName = GetUnicodeString(shellInfo.szTypeName);
     iconIndex = shellInfo.iIcon;
@@ -106,8 +106,8 @@ DWORD_PTR GetRealIconIndex(const UString &fileName, UINT32 attributes,
   {
     SHFILEINFOW shellInfo;
     shellInfo.szTypeName[0] = 0;
-    DWORD_PTR res = ::MySHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo, 
-      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX 
+    DWORD_PTR res = ::MySHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attributes, &shellInfo,
+      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX
       | SHGFI_TYPENAME);
     typeName = shellInfo.szTypeName;
     iconIndex = shellInfo.iIcon;

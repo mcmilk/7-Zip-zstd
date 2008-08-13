@@ -7,7 +7,7 @@
 #include "../../../Windows/Synchronization.h"
 #include "../../../Common/MyCom.h"
 
-class CCrossThreadProgress: 
+class CCrossThreadProgress:
   public ICompressProgressInfo,
   public CMyUnknownImp
 {

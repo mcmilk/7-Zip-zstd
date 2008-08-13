@@ -46,9 +46,9 @@ void COutBuffer::Init()
 }
 
 UInt64 COutBuffer::GetProcessedSize() const
-{ 
+{
   UInt64 res = _processedSize + _pos - _streamPos;
-  if (_streamPos > _pos) 
+  if (_streamPos > _pos)
     res += _bufferSize;
   return res;
 }

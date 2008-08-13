@@ -22,7 +22,7 @@ namespace NFileTimeType
 
 namespace NArchive
 {
-  enum 
+  enum
   {
     kName = 0,
     kClassID,
@@ -39,7 +39,7 @@ namespace NArchive
   {
     namespace NAskMode
     {
-      enum 
+      enum
       {
         kExtract = 0,
         kTest,
@@ -48,7 +48,7 @@ namespace NArchive
     }
     namespace NOperationResult
     {
-      enum 
+      enum
       {
         kOK = 0,
         kUnSupportedMethod,
@@ -61,7 +61,7 @@ namespace NArchive
   {
     namespace NOperationResult
     {
-      enum 
+      enum
       {
         kOK = 0,
         kError
@@ -70,33 +70,42 @@ namespace NArchive
   }
 }
 
+#define INTERFACE_IArchiveOpenCallback(x) \
+  STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes) x; \
+  STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes) x; \
+
 ARCHIVE_INTERFACE(IArchiveOpenCallback, 0x10)
 {
-  STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes) PURE;
-  STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes) PURE;
+  INTERFACE_IArchiveOpenCallback(PURE);
 };
 
+
+#define INTERFACE_IArchiveExtractCallback(x) \
+  INTERFACE_IProgress(x) \
+  /* GetStream OUT: S_OK - OK, S_FALSE - skeep this file */ \
+  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) x; \
+  STDMETHOD(PrepareOperation)(Int32 askExtractMode) x; \
+  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult) x; \
 
 ARCHIVE_INTERFACE_SUB(IArchiveExtractCallback, IProgress, 0x20)
 {
-  STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream, 
-      Int32 askExtractMode) PURE;
-  // GetStream OUT: S_OK - OK, S_FALSE - skeep this file
-  STDMETHOD(PrepareOperation)(Int32 askExtractMode) PURE;
-  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult) PURE;
+  INTERFACE_IArchiveExtractCallback(PURE)
 };
 
 
+#define INTERFACE_IArchiveOpenVolumeCallback(x) \
+  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream) x; \
+
 ARCHIVE_INTERFACE(IArchiveOpenVolumeCallback, 0x30)
 {
-  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream) PURE;
+  INTERFACE_IArchiveOpenVolumeCallback(PURE);
 };
 
 
 ARCHIVE_INTERFACE(IInArchiveGetStream, 0x40)
 {
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream) PURE;  
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream) PURE;
 };
 
 
@@ -108,7 +117,7 @@ ARCHIVE_INTERFACE(IArchiveOpenSetSubArchiveName, 0x50)
 
 /*
 IInArchive::Extract:
-  indices must be sorted 
+  indices must be sorted
   numItems = 0xFFFFFFFF means "all files"
   testMode != 0 means "test files without writing to outStream"
 */
@@ -131,23 +140,30 @@ ARCHIVE_INTERFACE(IInArchive, 0x60)
 };
 
 
+#define INTERFACE_IArchiveUpdateCallback(x) \
+  INTERFACE_IProgress(x); \
+  STDMETHOD(GetUpdateItemInfo)(UInt32 index,  \
+      Int32 *newData, /*1 - new data, 0 - old data */ \
+      Int32 *newProperties, /* 1 - new properties, 0 - old properties */ \
+      UInt32 *indexInArchive /* -1 if there is no in archive, or if doesn't matter */ \
+      )  x; \
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **inStream) x; \
+  STDMETHOD(SetOperationResult)(Int32 operationResult) x; \
+
 ARCHIVE_INTERFACE_SUB(IArchiveUpdateCallback, IProgress, 0x80)
 {
-  STDMETHOD(GetUpdateItemInfo)(UInt32 index, 
-      Int32 *newData, // 1 - new data, 0 - old data
-      Int32 *newProperties, // 1 - new properties, 0 - old properties
-      UInt32 *indexInArchive // -1 if there is no in archive, or if doesn't matter
-      ) PURE;
-  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **inStream) PURE;
-  STDMETHOD(SetOperationResult)(Int32 operationResult) PURE;
+  INTERFACE_IArchiveUpdateCallback(PURE);
 };
 
+#define INTERFACE_IArchiveUpdateCallback2(x) \
+  INTERFACE_IArchiveUpdateCallback(x) \
+  STDMETHOD(GetVolumeSize)(UInt32 index, UInt64 *size) x; \
+  STDMETHOD(GetVolumeStream)(UInt32 index, ISequentialOutStream **volumeStream) x; \
 
 ARCHIVE_INTERFACE_SUB(IArchiveUpdateCallback2, IArchiveUpdateCallback, 0x82)
 {
-  STDMETHOD(GetVolumeSize)(UInt32 index, UInt64 *size) PURE;
-  STDMETHOD(GetVolumeStream)(UInt32 index, ISequentialOutStream **volumeStream) PURE;
+  INTERFACE_IArchiveUpdateCallback2(PURE);
 };
 
 
@@ -196,12 +212,17 @@ ARCHIVE_INTERFACE(ISetProperties, 0x03)
     { *numProperties = sizeof(kArcProps) / sizeof(kArcProps[0]); return S_OK; } \
   STDMETHODIMP CHandler::GetArchivePropertyInfo IMP_IInArchive_GetProp(kArcProps)
 
+#define IMP_IInArchive_ArcProps_WITH_NAME \
+  STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties) \
+    { *numProperties = sizeof(kArcProps) / sizeof(kArcProps[0]); return S_OK; } \
+  STDMETHODIMP CHandler::GetArchivePropertyInfo IMP_IInArchive_GetProp_WITH_NAME(kArcProps)
+
 #define IMP_IInArchive_ArcProps_NO \
   STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties) \
     { *numProperties = 0; return S_OK; } \
   STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32, BSTR *, PROPID *, VARTYPE *) \
     { return E_NOTIMPL; } \
   STDMETHODIMP CHandler::GetArchiveProperty(PROPID, PROPVARIANT *value) \
-    { value->vt = VT_EMPTY; return S_OK; } 
+    { value->vt = VT_EMPTY; return S_OK; }
 
 #endif

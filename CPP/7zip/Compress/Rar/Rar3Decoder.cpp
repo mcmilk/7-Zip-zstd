@@ -1,5 +1,5 @@
 // Rar3Decoder.cpp
-// According to unRAR license, this code may not be used to develop 
+// According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
  
 #include "StdAfx.h"
@@ -19,7 +19,7 @@ static const UInt32 kSymbolLen2 = kSymbolRep + kNumReps;
 static const Byte kLenStart[kLenTableSize]      = {0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224};
 static const Byte kLenDirectBits[kLenTableSize] = {0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5};
 
-static const Byte kDistDirectBits[kDistTableSize] = 
+static const Byte kDistDirectBits[kDistTableSize] =
   {0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,
   16,16,16,16,16,16,16,16,16,16,16,16,16,16,
   18,18,18,18,18,18,18,18,18,18,18,18};
@@ -32,12 +32,12 @@ static const Byte kLen2DistDirectBits[kNumLen2Symbols]={2,2,3, 4, 5, 6,  6,  6};
 static const UInt32 kDistLimit3 = 0x2000 - 2;
 static const UInt32 kDistLimit4 = 0x40000 - 2;
 
-static const UInt32 kNormalMatchMinLen = 3; 
+static const UInt32 kNormalMatchMinLen = 3;
 
 static const UInt32 kVmDataSizeMax = 1 << 16;
 static const UInt32 kVmCodeSizeMax = 1 << 16;
 
-CDecoder::CDecoder(): 
+CDecoder::CDecoder():
   _window(0),
   _winPos(0),
   _wrPtr(0),
@@ -382,7 +382,7 @@ HRESULT CDecoder::InitPPM()
     // SubAlloc.StartSubAllocator(MaxMB+1);
     // StartModelRare(maxOrder);
 
-    if (!_ppm.SubAllocator.StartSubAllocator((maxMB + 1) << 20)) 
+    if (!_ppm.SubAllocator.StartSubAllocator((maxMB + 1) << 20))
       return E_OUTOFMEMORY;
     _ppm.MaxOrder = 0;
     _ppm.StartModelRare(maxOrder);
@@ -667,7 +667,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         return S_FALSE;
       length = 2 + kLenStart[number] + m_InBitStream.ReadBits(kLenDirectBits[number]);
     }
-    else 
+    else
     {
       rep3 = rep2;
       rep2 = rep1;
@@ -709,7 +709,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
               PrevAlignCount = kNumAlignReps;
               rep0 += PrevAlignBits;
             }
-            else 
+            else
               return S_FALSE;
           }
         }
@@ -784,8 +784,8 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
     ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
-  try 
-  { 
+  try
+  {
     if (inSize == NULL || outSize == NULL)
       return E_INVALIDARG;
 
@@ -815,11 +815,11 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream,
    
     CCoderReleaser coderReleaser(this);
     _unpackSize = *outSize;
-    return CodeReal(progress); 
+    return CodeReal(progress);
   }
   catch(const CInBufferException &e)  { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
-  // CNewException is possible here. But probably CNewException is caused 
+  // CNewException is possible here. But probably CNewException is caused
   // by error in data stream.
 }
 

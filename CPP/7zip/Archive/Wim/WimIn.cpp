@@ -15,19 +15,127 @@
 
 #include "WimIn.h"
 
+#define Get16(p) GetUi16(p)
+#define Get32(p) GetUi32(p)
+#define Get64(p) GetUi64(p)
+
 namespace NArchive{
 namespace NWim{
 
 static const int kChunkSizeBits = 15;
 static const UInt32 kChunkSize = (1 << kChunkSizeBits);
 
-static void GetFileTimeFromMem(const Byte *p, FILETIME *ft)
+namespace NXpress {
+
+class CDecoderFlusher
 {
-  ft->dwLowDateTime = GetUi32(p);
-  ft->dwHighDateTime = GetUi32(p + 4);
+  CDecoder *m_Decoder;
+public:
+  bool NeedFlush;
+  CDecoderFlusher(CDecoder *decoder): m_Decoder(decoder), NeedFlush(true) {}
+  ~CDecoderFlusher()
+  {
+    if (NeedFlush)
+      m_Decoder->Flush();
+    m_Decoder->ReleaseStreams();
+  }
+};
+
+HRESULT CDecoder::CodeSpec(UInt32 outSize)
+{
+  {
+    Byte levels[kMainTableSize];
+    for (int i = 0; i < kMainTableSize; i += 2)
+    {
+      Byte b = m_InBitStream.DirectReadByte();
+      levels[i] = b & 0xF;
+      levels[i + 1] = b >> 4;
+    }
+    if (!m_MainDecoder.SetCodeLengths(levels))
+      return S_FALSE;
+  }
+
+  while (outSize > 0)
+  {
+    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
+    if (number < 256)
+    {
+      m_OutWindowStream.PutByte((Byte)number);
+      outSize--;
+    }
+    else
+    {
+      if (number >= kMainTableSize)
+        return S_FALSE;
+      UInt32 posLenSlot = number - 256;
+      UInt32 posSlot = posLenSlot / kNumLenSlots;
+      UInt32 len = posLenSlot % kNumLenSlots;
+      UInt32 distance = (1 << posSlot) - 1 + m_InBitStream.ReadBits(posSlot);
+      
+      if (len == kNumLenSlots - 1)
+      {
+        len = m_InBitStream.DirectReadByte();
+        if (len == 0xFF)
+        {
+          len = m_InBitStream.DirectReadByte();
+          len |= (UInt32)m_InBitStream.DirectReadByte() << 8;
+        }
+        else
+          len += kNumLenSlots - 1;
+      }
+      
+      len += kMatchMinLen;
+      UInt32 locLen = (len <= outSize ? len : outSize);
+
+      if (!m_OutWindowStream.CopyBlock(distance, locLen))
+        return S_FALSE;
+      
+      len -= locLen;
+      outSize -= locLen;
+      if (len != 0)
+        return S_FALSE;
+    }
+  }
+  return S_OK;
 }
 
-HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
+const UInt32 kDictSize = (1 << kNumPosSlots);
+
+HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream, UInt32 outSize)
+{
+  if (!m_OutWindowStream.Create(kDictSize) || !m_InBitStream.Create(1 << 16))
+    return E_OUTOFMEMORY;
+
+  CDecoderFlusher flusher(this);
+
+  m_InBitStream.SetStream(inStream);
+  m_OutWindowStream.SetStream(outStream);
+  m_InBitStream.Init();
+  m_OutWindowStream.Init(false);
+
+  RINOK(CodeSpec(outSize));
+
+  flusher.NeedFlush = false;
+  return Flush();
+}
+
+HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream, UInt32 outSize)
+{
+  try { return CodeReal(inStream, outStream, outSize); }
+  catch(const CInBufferException &e) { return e.ErrorCode; } \
+  catch(const CLZOutWindowException &e) { return e.ErrorCode; }
+  catch(...) { return S_FALSE; }
+}
+
+}
+
+static void GetFileTimeFromMem(const Byte *p, FILETIME *ft)
+{
+  ft->dwLowDateTime = Get32(p);
+  ft->dwHighDateTime = Get32(p + 4);
+}
+
+HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource, bool lzxMode,
     ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
   RINOK(inStream->Seek(resource.Offset, STREAM_SEEK_SET, NULL));
@@ -64,7 +172,7 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
   RINOK(ReadStream_FALSE(inStream, (Byte *)sizesBuf, sizesBufSize));
   const Byte *p = (const Byte *)sizesBuf;
   
-  if (!lzxDecoder)
+  if (lzxMode && !lzxDecoder)
   {
     lzxDecoderSpec = new NCompress::NLzx::CDecoder(true);
     lzxDecoder = lzxDecoderSpec;
@@ -78,18 +186,12 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
     UInt64 offset = 0;
     if (i > 0)
     {
-      if (entrySize == 4)
-        offset = GetUi32(p);
-      else
-        offset = GetUi64(p);
+      offset = (entrySize == 4) ? Get32(p): Get64(p);
       p += entrySize;
     }
     UInt64 nextOffset = resource.PackSize - sizesBufSize64;
     if (i + 1 < (UInt32)numChunks)
-      if (entrySize == 4)
-        nextOffset = GetUi32(p);
-      else
-        nextOffset = GetUi64(p);
+      nextOffset = (entrySize == 4) ? Get32(p): Get64(p);
     if (nextOffset < offset)
       return S_FALSE;
 
@@ -106,28 +208,41 @@ HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
     if (outProcessed + outSize > resource.UnpackSize)
       outSize = (UInt32)(resource.UnpackSize - outProcessed);
     UInt64 outSize64 = outSize;
-    lzxDecoderSpec->SetKeepHistory(false);
-    ICompressCoder *coder = (inSize == outSize) ? copyCoder : lzxDecoder;
-    RINOK(coder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
+    if (inSize == outSize)
+    {
+      RINOK(copyCoder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
+    }
+    else
+    {
+      if (lzxMode)
+      {
+        lzxDecoderSpec->SetKeepHistory(false);
+        RINOK(lzxDecoder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
+      }
+      else
+      {
+        RINOK(xpressDecoder.Code(limitedStreamSpec, outStream, outSize));
+      }
+    }
     outProcessed += outSize;
   }
   return S_OK;
 }
 
-HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource,
+HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource, bool lzxMode,
     ISequentialOutStream *outStream, ICompressProgressInfo *progress, Byte *digest)
 {
   COutStreamWithSha1 *shaStreamSpec = new COutStreamWithSha1();
   CMyComPtr<ISequentialOutStream> shaStream = shaStreamSpec;
   shaStreamSpec->SetStream(outStream);
   shaStreamSpec->Init(digest != NULL);
-  HRESULT result = Unpack(inStream, resource, shaStream, progress);
+  HRESULT result = Unpack(inStream, resource, lzxMode, shaStream, progress);
   if (digest)
     shaStreamSpec->Final(digest);
   return result;
 }
 
-static HRESULT UnpackData(IInStream *inStream, const CResource &resource, CByteBuffer &buf, Byte *digest)
+static HRESULT UnpackData(IInStream *inStream, const CResource &resource, bool lzxMode, CByteBuffer &buf, Byte *digest)
 {
   size_t size = (size_t)resource.UnpackSize;
   if (size != resource.UnpackSize)
@@ -140,29 +255,31 @@ static HRESULT UnpackData(IInStream *inStream, const CResource &resource, CByteB
   outStreamSpec->Init((Byte *)buf, size);
 
   CUnpacker unpacker;
-  return unpacker.Unpack(inStream, resource, outStream, NULL, digest);
+  return unpacker.Unpack(inStream, resource, lzxMode, outStream, NULL, digest);
 }
 
 static const UInt32 kSignatureSize = 8;
 static const Byte kSignature[kSignatureSize] = { 'M', 'S', 'W', 'I', 'M', 0, 0, 0 };
 
-static void GetResource(const Byte *p, CResource &res)
+void CResource::Parse(const Byte *p)
 {
-  res.Flags = p[7];
-  res.PackSize = GetUi64(p) & (((UInt64)1 << 56) - 1);
-  res.Offset = GetUi64(p + 8);
-  res.UnpackSize = GetUi64(p + 16);
+  Flags = p[7];
+  PackSize = Get64(p) & (((UInt64)1 << 56) - 1);
+  Offset = Get64(p + 8);
+  UnpackSize = Get64(p + 16);
 }
+
+#define GetResource(p, res) res.Parse(p)
 
 static void GetStream(const Byte *p, CStreamInfo &s)
 {
-  GetResource(p, s.Resource);
-  s.PartNumber = GetUi16(p + 24);
-  s.RefCount = GetUi32(p + 26);
+  s.Resource.Parse(p);
+  s.PartNumber = Get16(p + 24);
+  s.RefCount = Get32(p + 26);
   memcpy(s.Hash, p + 30, kHashSize);
 }
 
-static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size, 
+static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
     const UString &prefix, CObjectVector<CItem> &items)
 {
   for (;;)
@@ -170,22 +287,22 @@ static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
     if (pos + 8 > size)
       return S_FALSE;
     const Byte *p = base + pos;
-    UInt64 length = GetUi64(p);
+    UInt64 length = Get64(p);
     if (length == 0)
       return S_OK;
     if (pos + 102 > size || pos + length + 8 > size || length > ((UInt64)1 << 62))
       return S_FALSE;
     CItem item;
-    item.Attributes = GetUi32(p + 8);
-    // item.SecurityId = GetUi32(p + 0xC);
-    UInt64 subdirOffset = GetUi64(p + 0x10);
-    GetFileTimeFromMem(p + 0x28, &item.CreationTime);
-    GetFileTimeFromMem(p + 0x30, &item.LastAccessTime);
-    GetFileTimeFromMem(p + 0x38, &item.LastWriteTime);
+    item.Attrib = Get32(p + 8);
+    // item.SecurityId = Get32(p + 0xC);
+    UInt64 subdirOffset = Get64(p + 0x10);
+    GetFileTimeFromMem(p + 0x28, &item.CTime);
+    GetFileTimeFromMem(p + 0x30, &item.ATime);
+    GetFileTimeFromMem(p + 0x38, &item.MTime);
     memcpy(item.Hash, p + 0x40, kHashSize);
 
-    // UInt16 shortNameLen = GetUi16(p + 98);
-    UInt16 fileNameLen = GetUi16(p + 100);
+    // UInt16 shortNameLen = Get16(p + 98);
+    UInt16 fileNameLen = Get16(p + 100);
     
     size_t tempPos = pos + 102;
     if (tempPos + fileNameLen > size)
@@ -195,17 +312,17 @@ static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
     MyStringCopy(sz, (const wchar_t *)prefix);
     sz += prefix.Length();
     for (UInt16 i = 0; i + 2 <= fileNameLen; i += 2)
-      *sz++ = GetUi16(base + tempPos + i);
+      *sz++ = Get16(base + tempPos + i);
     *sz++ = '\0';
     item.Name.ReleaseBuffer();
-    if (fileNameLen == 0 && item.IsDirectory() && !item.HasStream())
+    if (fileNameLen == 0 && item.isDir() && !item.HasStream())
     {
-      item.Attributes = 0x10; // some swm archives have system/hidden attributes for root
+      item.Attrib = 0x10; // some swm archives have system/hidden attributes for root
       item.Name.Delete(item.Name.Length() - 1);
     }
     items.Add(item);
     pos += (size_t)length;
-    if (item.IsDirectory() && (subdirOffset != 0))
+    if (item.isDir() && (subdirOffset != 0))
     {
       if (subdirOffset >= size)
         return S_FALSE;
@@ -214,15 +331,15 @@ static HRESULT ParseDirItem(const Byte *base, size_t pos, size_t size,
   }
 }
 
-static HRESULT ParseDir(const Byte *base, size_t size, 
+static HRESULT ParseDir(const Byte *base, size_t size,
     const UString &prefix, CObjectVector<CItem> &items)
 {
-  size_t pos = 0; 
+  size_t pos = 0;
   if (pos + 8 > size)
     return S_FALSE;
   const Byte *p = base + pos;
-  UInt32 totalLength = GetUi32(p);
-  // UInt32 numEntries = GetUi32(p + 4);
+  UInt32 totalLength = Get32(p);
+  // UInt32 numEntries = Get32(p + 4);
   pos += 8;
   {
     /*
@@ -232,7 +349,7 @@ static HRESULT ParseDir(const Byte *base, size_t size,
     {
       if (pos + 8 > size)
         return S_FALSE;
-      UInt64 len = GetUi64(p + pos);
+      UInt64 len = Get64(p + pos);
       entryLens.Add(len);
       sum += len;
       pos += 8;
@@ -267,9 +384,9 @@ int CompareItems(void *const *a1, void *const *a2, void * /* param */)
   const CItem &i1 = **((const CItem **)a1);
   const CItem &i2 = **((const CItem **)a2);
 
-  if (i1.IsDirectory() != i2.IsDirectory())
-    return (i1.IsDirectory()) ? 1 : -1;
-  if (i1.IsDirectory())
+  if (i1.isDir() != i2.isDir())
+    return (i1.isDir()) ? 1 : -1;
+  if (i1.isDir())
     return -MyStringCompareNoCase(i1.Name, i2.Name);
 
   int res = MyCompare(i1.StreamIndex, i2.StreamIndex);
@@ -278,10 +395,10 @@ int CompareItems(void *const *a1, void *const *a2, void * /* param */)
   return MyStringCompareNoCase(i1.Name, i2.Name);
 }
 
-static int FindHash(const CRecordVector<CStreamInfo> &streams, 
+static int FindHash(const CRecordVector<CStreamInfo> &streams,
     const CRecordVector<int> &sortedByHash, const Byte *hash)
 {
-  int left = 0, right = streams.Size(); 
+  int left = 0, right = streams.Size();
   while (left != right)
   {
     int mid = (left + right) / 2;
@@ -301,50 +418,56 @@ static int FindHash(const CRecordVector<CStreamInfo> &streams,
   return -1;
 }
 
-HRESULT ReadHeader(IInStream *inStream, CHeader &h)
+HRESULT CHeader::Parse(const Byte *p)
 {
-  const UInt32 kHeaderSizeMax = 0xD0;
-  Byte p[kHeaderSizeMax];
-  RINOK(ReadStream_FALSE(inStream, p, kHeaderSizeMax));
-  UInt32 haderSize = GetUi32(p + 8);
-  if (memcmp(p, kSignature, kSignatureSize) != 0)
-    return S_FALSE;
+  UInt32 haderSize = Get32(p + 8);
   if (haderSize < 0x74)
     return S_FALSE;
-  h.Version = GetUi32(p + 0x0C);
-  h.Flags = GetUi32(p + 0x10);
-  if (!h.IsSupported())
+  Version = Get32(p + 0x0C);
+  Flags = Get32(p + 0x10);
+  if (!IsSupported())
     return S_FALSE;
-  if (GetUi32(p + 0x14) != kChunkSize)
+  UInt32 chunkSize = Get32(p + 0x14);
+  if (chunkSize != kChunkSize && chunkSize != 0)
     return S_FALSE;
-  memcpy(h.Guid, p + 0x18, 16);
-  h.PartNumber = GetUi16(p + 0x28);
-  h.NumParts = GetUi16(p + 0x2A);
+  memcpy(Guid, p + 0x18, 16);
+  PartNumber = Get16(p + 0x28);
+  NumParts = Get16(p + 0x2A);
   int offset = 0x2C;
-  if (h.IsNewVersion())
+  if (IsNewVersion())
   {
-    h.NumImages = GetUi32(p + offset);
+    NumImages = Get32(p + offset);
     offset += 4;
   }
-  GetResource(p + offset, h.OffsetResource);
-  GetResource(p + offset + 0x18, h.XmlResource);
-  GetResource(p + offset + 0x30, h.MetadataResource);
+  GetResource(p + offset, OffsetResource);
+  GetResource(p + offset + 0x18, XmlResource);
+  GetResource(p + offset + 0x30, MetadataResource);
   /*
-  if (h.IsNewVersion())
+  if (IsNewVersion())
   {
     if (haderSize < 0xD0)
       return S_FALSE;
-    GetResource(p + offset + 0x4C, h.IntegrityResource);
-    h.BootIndex = GetUi32(p + 0x48);
+    IntegrityResource.Parse(p + offset + 0x4C);
+    BootIndex = Get32(p + 0x48);
   }
   */
   return S_OK;
 }
 
+HRESULT ReadHeader(IInStream *inStream, CHeader &h)
+{
+  const UInt32 kHeaderSizeMax = 0xD0;
+  Byte p[kHeaderSizeMax];
+  RINOK(ReadStream_FALSE(inStream, p, kHeaderSizeMax));
+  if (memcmp(p, kSignature, kSignatureSize) != 0)
+    return S_FALSE;
+  return h.Parse(p);
+}
+
 HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
 {
   CByteBuffer offsetBuf;
-  RINOK(UnpackData(inStream, h.OffsetResource, offsetBuf, NULL));
+  RINOK(UnpackData(inStream, h.OffsetResource, h.IsLzxMode(), offsetBuf, NULL));
   for (size_t i = 0; i + kStreamInfoSize <= offsetBuf.GetCapacity(); i += kStreamInfoSize)
   {
     CStreamInfo s;
@@ -357,7 +480,7 @@ HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
 
 HRESULT OpenArchive(IInStream *inStream, const CHeader &h, CByteBuffer &xml, CDatabase &db)
 {
-  RINOK(UnpackData(inStream, h.XmlResource, xml, NULL));
+  RINOK(UnpackData(inStream, h.XmlResource, h.IsLzxMode(), xml, NULL));
 
   RINOK(ReadStreams(inStream, h, db));
   bool needBootMetadata = !h.MetadataResource.IsEmpty();
@@ -372,13 +495,13 @@ HRESULT OpenArchive(IInStream *inStream, const CHeader &h, CByteBuffer &xml, CDa
         continue;
       Byte hash[kHashSize];
       CByteBuffer metadata;
-      RINOK(UnpackData(inStream, si.Resource, metadata, hash));
+      RINOK(UnpackData(inStream, si.Resource, h.IsLzxMode(), metadata, hash));
       if (memcmp(hash, si.Hash, kHashSize) != 0)
         return S_FALSE;
       wchar_t sz[32];
       ConvertUInt64ToString(imageIndex++, sz);
       UString s = sz;
-      s += WCHAR_PATH_SEPARATOR; 
+      s += WCHAR_PATH_SEPARATOR;
       RINOK(ParseDir(metadata, metadata.GetCapacity(), s, db.Items));
       if (needBootMetadata)
         if (h.MetadataResource.Offset == si.Resource.Offset)
@@ -389,7 +512,7 @@ HRESULT OpenArchive(IInStream *inStream, const CHeader &h, CByteBuffer &xml, CDa
   if (needBootMetadata)
   {
     CByteBuffer metadata;
-    RINOK(UnpackData(inStream, h.MetadataResource, metadata, NULL));
+    RINOK(UnpackData(inStream, h.MetadataResource, h.IsLzxMode(), metadata, NULL));
     RINOK(ParseDir(metadata, metadata.GetCapacity(), L"0" WSTRING_PATH_SEPARATOR, db.Items));
   }
   return S_OK;

@@ -17,9 +17,9 @@ void CCRC::InitTable()
   {
     UInt32 r = i;
     for (int j = 0; j < 8; j++)
-      if (r & 1) 
+      if (r & 1)
         r = (r >> 1) ^ kCRCPoly;
-      else     
+      else
         r >>= 1;
     CCRC::Table[i] = (UInt16)r;
   }

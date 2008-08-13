@@ -9,19 +9,16 @@
 class COpenCallbackConsole: public IOpenCallbackUI
 {
 public:
-  HRESULT CheckBreak();
-  HRESULT SetTotal(const UInt64 *files, const UInt64 *bytes);
-  HRESULT SetCompleted(const UInt64 *files, const UInt64 *bytes);
-  HRESULT CryptoGetTextPassword(BSTR *password);
-  HRESULT GetPasswordIfAny(UString &password);
-  bool WasPasswordAsked();
-  void ClearPasswordWasAskedFlag();
+  INTERFACE_IOpenCallbackUI(;)
   
   CStdOutStream *OutStream;
+
+  #ifndef _NO_CRYPTO
   bool PasswordIsDefined;
-  UString Password;
   bool PasswordWasAsked;
+  UString Password;
   COpenCallbackConsole(): PasswordIsDefined(false), PasswordWasAsked(false) {}
+  #endif
 };
 
 #endif

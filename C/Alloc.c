@@ -1,5 +1,5 @@
 /* Alloc.c -- Memory allocation functions
-2008-03-13
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -98,7 +98,7 @@ void *BigAlloc(size_t size)
   #ifdef _7ZIP_LARGE_PAGES
   if (g_LargePageSize != 0 && g_LargePageSize <= (1 << 30) && size >= (1 << 18))
   {
-    void *res = VirtualAlloc(0, (size + g_LargePageSize - 1) & (~(g_LargePageSize - 1)), 
+    void *res = VirtualAlloc(0, (size + g_LargePageSize - 1) & (~(g_LargePageSize - 1)),
         MEM_COMMIT | MEM_LARGE_PAGES, PAGE_READWRITE);
     if (res != 0)
       return res;

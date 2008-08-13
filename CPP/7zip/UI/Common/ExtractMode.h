@@ -26,6 +26,6 @@ namespace NExtract {
       kAutoRenameExisting
     };
   }
-}  
+}
 
 #endif

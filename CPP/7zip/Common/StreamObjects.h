@@ -7,7 +7,7 @@
 #include "../../Common/MyCom.h"
 #include "../IStream.h"
 
-class CSequentialInStreamImp: 
+class CSequentialInStreamImp:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -41,7 +41,7 @@ public:
   const CByteDynamicBuffer& GetBuffer() const { return _buffer; }
 };
 
-class CSequentialOutStreamImp: 
+class CSequentialOutStreamImp:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -56,7 +56,7 @@ public:
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
-class CSequentialOutStreamImp2: 
+class CSequentialOutStreamImp2:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
@@ -65,11 +65,11 @@ class CSequentialOutStreamImp2:
   size_t _pos;
 public:
 
-  void Init(Byte *buffer, size_t size)  
-  { 
+  void Init(Byte *buffer, size_t size)
+  {
     _buffer = buffer;
     _pos = 0;
-    _size = size; 
+    _size = size;
   }
 
   size_t GetPos() const { return _pos; }
@@ -79,7 +79,7 @@ public:
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 };
 
-class CSequentialInStreamSizeCount: 
+class CSequentialInStreamSizeCount:
   public ISequentialInStream,
   public CMyUnknownImp
 {
@@ -98,7 +98,7 @@ public:
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
-class CSequentialOutStreamSizeCount: 
+class CSequentialOutStreamSizeCount:
   public ISequentialOutStream,
   public CMyUnknownImp
 {

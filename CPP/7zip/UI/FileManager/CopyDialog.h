@@ -7,6 +7,8 @@
 #include "Windows/Control/ComboBox.h"
 #include "CopyDialogRes.h"
 
+const int kCopyDialog_NumInfoLines = 11;
+
 class CCopyDialog: public NWindows::NControl::CModalDialog
 {
   NWindows::NControl::CComboBox _path;
@@ -19,6 +21,8 @@ public:
   UString Static;
   UString Value;
   UStringVector Strings;
+
+  UString Info;
 
   INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_DIALOG_COPY, parentWindow); }
 };

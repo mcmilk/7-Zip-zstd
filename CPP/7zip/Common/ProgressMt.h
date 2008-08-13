@@ -24,7 +24,7 @@ public:
   HRESULT SetRatioInfo(int index, const UInt64 *inSize, const UInt64 *outSize);
 };
 
-class CMtCompressProgress: 
+class CMtCompressProgress:
   public ICompressProgressInfo,
   public CMyUnknownImp
 {

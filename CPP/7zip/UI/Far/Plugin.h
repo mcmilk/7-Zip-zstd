@@ -13,7 +13,7 @@
 
 #include "FarUtils.h"
 
-const UInt32 kNumInfoLinesMax = 30;  // Change it;
+const UInt32 kNumInfoLinesMax = 64;
 
 class CPlugin
 {
@@ -53,8 +53,8 @@ public:
   UString Password;
 
 
-  CPlugin(const UString &fileName, 
-        // const UString &aDefaultName, 
+  CPlugin(const UString &fileName,
+        // const UString &aDefaultName,
         IInFolderArchive *archiveHandler,
         UString archiveTypeName
         );
@@ -73,10 +73,10 @@ public:
 
   HRESULT ExtractFiles(
       bool decompressAllItems,
-      const UINT32 *indices, 
-      UINT32 numIndices, 
-      bool silent, 
-      NExtract::NPathMode::EEnum pathMode, 
+      const UINT32 *indices,
+      UINT32 numIndices,
+      bool silent,
+      NExtract::NPathMode::EEnum pathMode,
       NExtract::NOverwriteMode::EEnum overwriteMode,
       const UString &destPath,
       bool passwordIsDefined, const UString &password);
@@ -84,7 +84,7 @@ public:
   NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *aPanelItem, int itemsNumber,
     int move, char *destPath, int opMode);
   
-  NFar::NFileOperationReturnCode::EEnum GetFilesReal(struct PluginPanelItem *aPanelItems, 
+  NFar::NFileOperationReturnCode::EEnum GetFilesReal(struct PluginPanelItem *aPanelItems,
     int itemsNumber, int move, const char *_aDestPath, int opMode, bool aShowBox);
 
   NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *aPanelItems, int itemsNumber,

@@ -15,7 +15,7 @@ extern bool g_IsNT;
 namespace NWindows {
 namespace NControl {
 
-INT_PTR APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message, 
+INT_PTR APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message,
     WPARAM wParam, LPARAM lParam)
 {
   CDialog tempDialog(dialogHWND);
@@ -38,7 +38,7 @@ INT_PTR APIENTRY ProperyPageProcedure(HWND dialogHWND, UINT message,
   return dialog->OnMessage(message, wParam, lParam);
 }
 
-bool CPropertyPage::OnNotify(UINT /* controlID */, LPNMHDR lParam) 
+bool CPropertyPage::OnNotify(UINT /* controlID */, LPNMHDR lParam)
 {
   switch(lParam->code)
   {

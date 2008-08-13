@@ -5,7 +5,7 @@
 MY_VERSION_INFO_APP("7-Zip File Manager", "7zFM")
 
 
-IDR_ACCELERATOR1 ACCELERATORS 
+IDR_ACCELERATOR1 ACCELERATORS
 BEGIN
   "N",     IDM_CREATE_FILE,      VIRTKEY, CONTROL, NOINVERT
   VK_F1,   IDM_HELP_CONTENTS,    VIRTKEY, NOINVERT
@@ -42,10 +42,10 @@ BEGIN
   END
   POPUP "&Edit"
   BEGIN
-    MENUITEM "Cu&t\tCtrl+X",                IDM_EDIT_CUT, GRAYED
-    MENUITEM "&Copy\tCtrl+C",               IDM_EDIT_COPY, GRAYED
-    MENUITEM "&Paste\tCtrl+V",              IDM_EDIT_PASTE, GRAYED
-    MENUITEM SEPARATOR
+    // MENUITEM "Cu&t\tCtrl+X",                IDM_EDIT_CUT, GRAYED
+    // MENUITEM "&Copy\tCtrl+C",               IDM_EDIT_COPY, GRAYED
+    // MENUITEM "&Paste\tCtrl+V",              IDM_EDIT_PASTE, GRAYED
+    // MENUITEM SEPARATOR
     MENUITEM "Select &All\tShift+[Grey +]", IDM_SELECT_ALL
     MENUITEM "Deselect All\tShift+[Grey -]", IDM_DESELECT_ALL
     MENUITEM "&Invert Selection\tGrey *",   IDM_INVERT_SELECTION
@@ -126,7 +126,7 @@ IDB_DELETE2    BITMAP  "Delete2.bmp"
 IDB_INFO2      BITMAP  "Info2.bmp"
 
 
-STRINGTABLE  
+STRINGTABLE
 BEGIN
   IDS_APP_TITLE           "7-Zip File Manager"
   IDS_COPY                "Copy"
@@ -144,7 +144,9 @@ BEGIN
   IDS_COMBINE             "Combine Files"
   IDS_COMBINE_TO          "&Combine to:"
   IDS_COMBINING           "Combining..."
-  IDS_COMBINE_SELECT_ONE_FILE "Select only first file"
+  IDS_COMBINE_SELECT_ONE_FILE "Select only first part of split file"
+  IDS_COMBINE_CANT_DETECT_SPLIT_FILE "Can not detect file as split file"
+  IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART "Can not find more than one part of split file"
 
   IDS_CHECKSUM_CALCULATING "Checksum calculating..."
   IDS_CHECKSUM_INFORMATION "Checksum information"
@@ -165,6 +167,7 @@ BEGIN
   IDS_WANT_TO_DELETE_ITEMS  "Are you sure you want to delete these {0} items?"
   IDS_DELETING            "Deleting..."
   IDS_ERROR_DELETING      "Error Deleting File or Folder"
+  IDS_ERROR_LONG_PATH_TO_RECYCLE  "The system cannot move a file with long path to the Recycle Bin"
   IDS_RENAMING            "Renaming..."
   IDS_ERROR_RENAMING      "Error Renaming File or Folder"
   IDS_CONFIRM_FILE_COPY   "Confirm File Copy"
@@ -202,6 +205,7 @@ BEGIN
   IDS_CANNOT_UPDATE_FILE  "Can not update file\n'{0}'"
   IDS_CANNOT_START_EDITOR "Cannot start editor."
   IDS_OPENNING            "Opening..."
+  IDS_VIRUS               "The file looks like a virus (the file name contains long spaces in name)."
   IDS_ADD                 "Add"
   IDS_EXTRACT             "Extract"
   IDS_TEST                "Test"
@@ -212,9 +216,14 @@ BEGIN
   IDS_BOOKMARK            "Bookmark"
   IDS_COMPUTER            "Computer"
   IDS_NETWORK             "Network"
+  IDS_DOCUMENTS           "Documents"
 
   IDS_PROGRESS_TESTING    "Testing"
   IDS_MESSAGE_NO_ERRORS   "There are no errors"
+  IDS_MESSAGE_UNSUPPORTED_OPERATION_FOR_LONG_PATH_FOLDER "The operation cannot be called from a folder that has a long path."
+  IDS_SELECT_ONE_FILE  "You must select one file"
+  IDS_SELECT_FILES  "You must select one or more files"
+  IDS_FILE_EXIST  "File {0} is already exist"
 END
 
 

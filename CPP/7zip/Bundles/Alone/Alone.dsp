@@ -505,6 +505,10 @@ SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Time.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Time.h
 # End Source File
 # End Group
@@ -1672,6 +1676,14 @@ SOURCE=..\..\Archive\Common\DummyOutStream.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\FindSignature.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FindSignature.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\HandlerOut.cpp
 # End Source File
 # Begin Source File
@@ -1733,22 +1745,6 @@ SOURCE=..\..\Archive\Split\SplitHandler.h
 # Begin Source File
 
 SOURCE=..\..\Archive\Split\SplitRegister.cpp
-# End Source File
-# End Group
-# Begin Group "Z Format"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZRegister.cpp
 # End Source File
 # End Group
 # Begin Group "cab"
@@ -1831,6 +1827,10 @@ SOURCE=..\..\Archive\Lzma\LzmaIn.h
 SOURCE=..\..\Archive\Lzma\LzmaItem.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\Archive\ZHandler.cpp
+# End Source File
 # End Group
 # Begin Group "UI Common"
 

@@ -11,7 +11,7 @@
 namespace NArchive {
 namespace NCpio {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {

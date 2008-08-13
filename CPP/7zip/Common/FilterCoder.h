@@ -9,7 +9,7 @@
 
 #define MY_QUERYINTERFACE_ENTRY_AG(i, sub0, sub) if (iid == IID_ ## i) \
 { if (!sub) RINOK(sub0->QueryInterface(IID_ ## i, (void **)&sub)) \
-*outObject = (void *)(i *)this; AddRef(); return S_OK; } 
+*outObject = (void *)(i *)this; AddRef(); return S_OK; }
 
 class CFilterCoder:
   public ICompressCoder,
@@ -46,11 +46,11 @@ protected:
   UInt64 _outSize;
   UInt64 _nowPos64;
 
-  HRESULT Init() 
-  { 
+  HRESULT Init()
+  {
     _nowPos64 = 0;
     _outSizeIsDefined = false;
-    return Filter->Init(); 
+    return Filter->Init();
   }
 
   CMyComPtr<ICryptoSetPassword> _setPassword;
@@ -67,7 +67,7 @@ public:
   CFilterCoder();
   ~CFilterCoder();
   HRESULT WriteWithLimit(ISequentialOutStream *outStream, UInt32 size);
-  bool NeedMore() const  
+  bool NeedMore() const
     { return (!_outSizeIsDefined || (_nowPos64 < _outSize)); }
 
 public:
@@ -113,7 +113,7 @@ public:
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
   #endif
   #ifndef EXTRACT_ONLY
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
   // STDMETHOD(ResetSalt)();

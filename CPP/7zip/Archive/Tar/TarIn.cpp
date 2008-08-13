@@ -13,21 +13,6 @@
 namespace NArchive {
 namespace NTar {
  
-HRESULT CInArchive::ReadBytes(void *data, size_t size, size_t &processedSize)
-{
-  processedSize = size;
-  RINOK(ReadStream(m_Stream, data, &processedSize));
-  m_Position += processedSize;
-  return S_OK;
-}
-
-HRESULT CInArchive::Open(IInStream *inStream)
-{
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
-  m_Stream = inStream;
-  return S_OK;
-}
-
 static void MyStrNCpy(char *dest, const char *src, int size)
 {
   for (int i = 0; i < size; i++)
@@ -62,130 +47,76 @@ static bool OctalToNumber32(const char *srcString, int size, UInt32 &res)
 
 #define RIF(x) { if (!(x)) return S_FALSE; }
 
-static bool IsRecordLast(const char *record)
+static bool IsRecordLast(const char *buf)
 {
   for (int i = 0; i < NFileHeader::kRecordSize; i++)
-    if (record[i] != 0)
+    if (buf[i] != 0)
       return false;
   return true;
 }
 
 static void ReadString(const char *s, int size, AString &result)
 {
-  if (size > NFileHeader::kRecordSize)
-    size = NFileHeader::kNameSize;
-  char tempString[NFileHeader::kRecordSize + 1];
-  MyStrNCpy(tempString, s, size);
-  tempString[size] = '\0';
-  result = tempString;
+  char temp[NFileHeader::kRecordSize + 1];
+  MyStrNCpy(temp, s, size);
+  temp[size] = '\0';
+  result = temp;
 }
 
-static char GetHex(Byte value)
-{
-  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
-}
-
-HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
+static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemEx &item, size_t &processedSize)
 {
   item.LongLinkSize = 0;
-  // NFileHeader::CRecord record;
-  char record[NFileHeader::kRecordSize];
-  char *cur = record;
+  char buf[NFileHeader::kRecordSize];
+  char *p = buf;
 
   filled = false;
 
-  size_t processedSize;
-  item.HeaderPosition = m_Position;
-  RINOK(ReadBytes(record, NFileHeader::kRecordSize, processedSize));
-  if (processedSize == 0 || 
-      (processedSize == NFileHeader::kRecordSize && IsRecordLast(record)))
+  processedSize = NFileHeader::kRecordSize;
+  RINOK(ReadStream(stream, buf, &processedSize));
+  if (processedSize == 0 || (processedSize == NFileHeader::kRecordSize && IsRecordLast(buf)))
     return S_OK;
   if (processedSize < NFileHeader::kRecordSize)
     return S_FALSE;
   
-  // NFileHeader::CHeader &header = record.Header;
-  
-  AString name;
-  ReadString(cur, NFileHeader::kNameSize, name);
-  cur += NFileHeader::kNameSize;
+  ReadString(p, NFileHeader::kNameSize, item.Name); p += NFileHeader::kNameSize;
 
-  item.Name.Empty();
-  int i;
-  for (i = 0; i < name.Length(); i++)
-  {
-    char c = name[i];
-    if (((Byte)c) < 0x08)
-    {
-      return S_FALSE;
-    }
-    if (((Byte)c) < 0x20)
-    {
-      item.Name += '[';
-      item.Name += GetHex((Byte)(((Byte)c) >> 4));
-      item.Name += GetHex((Byte)(((Byte)c) & 0xF));
-      item.Name += ']';
-    }
-    else
-      item.Name += c;
-  }
+  RIF(OctalToNumber32(p, 8, item.Mode)); p += 8;
 
-  RIF(OctalToNumber32(cur, 8, item.Mode));
-  cur += 8;
+  if (!OctalToNumber32(p, 8, item.UID)) item.UID = 0; p += 8;
+  if (!OctalToNumber32(p, 8, item.GID)) item.GID = 0; p += 8;
 
-  if (!OctalToNumber32(cur, 8, item.UID))
-    item.UID = 0;
-  cur += 8;
-
-  if (!OctalToNumber32(cur, 8, item.GID))
-    item.GID = 0;
-  cur += 8;
-
-  RIF(OctalToNumber(cur, 12, item.Size));
-  cur += 12;
-
-  RIF(OctalToNumber32(cur, 12, item.ModificationTime));
-  cur += 12;
+  RIF(OctalToNumber(p, 12, item.Size)); p += 12;
+  RIF(OctalToNumber32(p, 12, item.MTime)); p += 12;
   
   UInt32 checkSum;
-  RIF(OctalToNumber32(cur, 8, checkSum));
-  memmove(cur, NFileHeader::kCheckSumBlanks, 8);
-  cur += 8;
+  RIF(OctalToNumber32(p, 8, checkSum));
+  memcpy(p, NFileHeader::kCheckSumBlanks, 8); p += 8;
 
-  item.LinkFlag = *cur++;
+  item.LinkFlag = *p++;
 
-  ReadString(cur, NFileHeader::kNameSize, item.LinkName);
-  cur += NFileHeader::kNameSize;
+  ReadString(p, NFileHeader::kNameSize, item.LinkName); p += NFileHeader::kNameSize;
 
-  memmove(item.Magic, cur, 8);
-  cur += 8;
+  memcpy(item.Magic, p, 8); p += 8;
 
-  ReadString(cur, NFileHeader::kUserNameSize, item.UserName);
-  cur += NFileHeader::kUserNameSize;
-  ReadString(cur, NFileHeader::kUserNameSize, item.GroupName);
-  cur += NFileHeader::kUserNameSize;
+  ReadString(p, NFileHeader::kUserNameSize, item.UserName);  p += NFileHeader::kUserNameSize;
+  ReadString(p, NFileHeader::kUserNameSize, item.GroupName); p += NFileHeader::kUserNameSize;
 
-  item.DeviceMajorDefined = (cur[0] != 0);
-  RIF(OctalToNumber32(cur, 8, item.DeviceMajor));
-  cur += 8;
- 
-  item.DeviceMinorDefined = (cur[0] != 0);
-  RIF(OctalToNumber32(cur, 8, item.DeviceMinor));
-  cur += 8;
+  item.DeviceMajorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMajor)); p += 8;
+  item.DeviceMinorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMinor)); p += 8;
 
   AString prefix;
-  ReadString(cur, NFileHeader::kPrefixSize, prefix);
-  cur += NFileHeader::kPrefixSize;
-  if (!prefix.IsEmpty() && item.IsMagic() && 
+  ReadString(p, NFileHeader::kPrefixSize, prefix);
+  p += NFileHeader::kPrefixSize;
+  if (!prefix.IsEmpty() && item.IsMagic() &&
       (item.LinkFlag != 'L' /* || prefix != "00000000000" */ ))
     item.Name = prefix + AString('/') + item.Name;
 
   if (item.LinkFlag == NFileHeader::NLinkFlag::kLink)
     item.Size = 0;
  
-  
   UInt32 checkSumReal = 0;
-  for(i = 0; i < NFileHeader::kRecordSize; i++)
-    checkSumReal += Byte(record[i]);
+  for (int i = 0; i < NFileHeader::kRecordSize; i++)
+    checkSumReal += (Byte)buf[i];
   
   if (checkSumReal != checkSum)
     return S_FALSE;
@@ -194,9 +125,10 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItemEx &item)
   return S_OK;
 }
 
-HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
+HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item)
 {
-  RINOK(GetNextItemReal(filled, item));
+  size_t processedSize;
+  RINOK(GetNextItemReal(stream, filled, item, processedSize));
   if (!filled)
     return S_OK;
   // GNUtar extension
@@ -205,22 +137,25 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     if (item.Name.Compare(NFileHeader::kLongLink) != 0)
       if (item.Name.Compare(NFileHeader::kLongLink2) != 0)
         return S_FALSE;
-    UInt64 headerPosition = item.HeaderPosition;
 
-    size_t processedSize;
     AString fullName;
     if (item.Size > (1 << 15))
       return S_FALSE;
-    char *buffer = fullName.GetBuffer((int)item.Size + 1);
-    RINOK(ReadBytes(buffer, (size_t)item.Size, processedSize));
+    int packSize = (int)item.GetPackSize();
+    char *buffer = fullName.GetBuffer(packSize + 1);
+
+    RINOK(ReadStream_FALSE(stream, buffer, packSize));
+    processedSize += packSize;
     buffer[item.Size] = '\0';
     fullName.ReleaseBuffer();
-    if (processedSize != item.Size)
-      return S_FALSE;
-    RINOK(Skeep((0 - item.Size) & 0x1FF));
-    RINOK(GetNextItemReal(filled, item));
+
+    UInt64 headerPosition = item.HeaderPosition;
+    {
+      size_t processedSize2;
+      RINOK(GetNextItemReal(stream, filled, item, processedSize2));
+    }
+    item.LongLinkSize = (unsigned)processedSize;
     item.Name = fullName;
-    item.LongLinkSize = item.HeaderPosition - headerPosition;
     item.HeaderPosition = headerPosition;
   }
   else if (item.LinkFlag == 'g' || item.LinkFlag == 'x' || item.LinkFlag == 'X')
@@ -236,22 +171,6 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
   else if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))
     return S_FALSE;
   return S_OK;
-}
-
-HRESULT CInArchive::Skeep(UInt64 numBytes)
-{
-  UInt64 newPostion;
-  RINOK(m_Stream->Seek(numBytes, STREAM_SEEK_CUR, &newPostion));
-  m_Position += numBytes;
-  if (m_Position != newPostion)
-    return E_FAIL;
-  return S_OK;
-}
-
-
-HRESULT CInArchive::SkeepDataRecords(UInt64 dataSize)
-{
-  return Skeep((dataSize + 0x1FF) & (~((UInt64)0x1FF)));
 }
 
 }}

@@ -22,7 +22,7 @@ void SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
       i++;
       break;
     }
-    else 
+    else
       dest1 += c;
   }
   dest2 = src.Mid(i);
@@ -55,8 +55,8 @@ static const wchar_t kSwitchMinus = '-';
 static const wchar_t *kStopSwitchParsing = L"--";
 
 static bool IsItSwitchChar(wchar_t c)
-{ 
-  return (c == kSwitchID1 /*|| c == kSwitchID2 */); 
+{
+  return (c == kSwitchID1 /*|| c == kSwitchID2 */);
 }
 
 CParser::CParser(int numSwitches):
@@ -70,7 +70,7 @@ CParser::~CParser()
   delete []_switches;
 }
 
-void CParser::ParseStrings(const CSwitchForm *switchForms, 
+void CParser::ParseStrings(const CSwitchForm *switchForms,
   const UStringVector &commandStrings)
 {
   int numCommandStrings = commandStrings.Size();
@@ -94,7 +94,7 @@ void CParser::ParseStrings(const CSwitchForm *switchForms,
 bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
 {
   int len = s.Length();
-  if (len == 0) 
+  if (len == 0)
     return false;
   int pos = 0;
   if (!IsItSwitchChar(s[pos]))
@@ -109,7 +109,7 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
     for(int switchIndex = 0; switchIndex < _numSwitches; switchIndex++)
     {
       int switchLen = MyStringLen(switchForms[switchIndex].IDString);
-      if (switchLen <= maxLen || pos + switchLen > len) 
+      if (switchLen <= maxLen || pos + switchLen > len)
         continue;
 
       UString temp = s + pos;
@@ -166,8 +166,8 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
           }
           break;
         }
-      case NSwitchType::kLimitedPostString: 
-      case NSwitchType::kUnLimitedPostString: 
+      case NSwitchType::kLimitedPostString:
+      case NSwitchType::kUnLimitedPostString:
         {
           int minLen = switchForm.MinLen;
           if (tailSize < minLen)
@@ -205,7 +205,7 @@ const CSwitchResult& CParser::operator[](size_t index) const
 /////////////////////////////////
 // Command parsing procedures
 
-int ParseCommand(int numCommandForms, const CCommandForm *commandForms, 
+int ParseCommand(int numCommandForms, const CCommandForm *commandForms,
     const UString &commandString, UString &postString)
 {
   for(int i = 0; i < numCommandForms; i++)

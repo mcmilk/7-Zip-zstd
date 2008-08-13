@@ -45,15 +45,15 @@ public:
 
   bool IsValidMethod() const  { return (Method[0] == '-' && Method[1] == 'l' && Method[4] == '-'); }
   bool IsLhMethod() const  {return (IsValidMethod() && Method[2] == 'h'); }
-  bool IsDirectory() const {return (IsLhMethod() && Method[3] == 'd'); }
+  bool IsDir() const {return (IsLhMethod() && Method[3] == 'd'); }
 
-  bool IsCopyMethod() const 
+  bool IsCopyMethod() const
   {
-    return (IsLhMethod() && Method[3] == '0') || 
+    return (IsLhMethod() && Method[3] == '0') ||
       (IsValidMethod() && Method[2] == 'z' && Method[3] == '4');
   }
   
-  bool IsLh1GroupMethod() const 
+  bool IsLh1GroupMethod() const
   {
     if (!IsLhMethod())
       return false;
@@ -65,7 +65,7 @@ public:
     return false;
   }
   
-  bool IsLh4GroupMethod() const 
+  bool IsLh4GroupMethod() const
   {
     if (!IsLhMethod())
       return false;
@@ -80,7 +80,7 @@ public:
     return false;
   }
   
-  int GetNumDictBits() const 
+  int GetNumDictBits() const
   {
     if (!IsLhMethod())
       return 0;
@@ -124,9 +124,9 @@ public:
       return false;
     }
     const Byte *data = (const Byte *)(Extensions[index].Data);
-    value = data[0] | 
-        ((UInt32)data[1] << 8) | 
-        ((UInt32)data[2] << 16) | 
+    value = data[0] |
+        ((UInt32)data[1] << 8) |
+        ((UInt32)data[2] << 16) |
         ((UInt32)data[3] << 24);
     return true;
   }

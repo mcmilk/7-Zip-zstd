@@ -52,11 +52,11 @@ HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &def
   return S_OK;
 }
 
-HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index, 
+HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index,
     const FILETIME &defaultFileTime, FILETIME &fileTime)
 {
   NCOM::CPropVariant prop;
-  RINOK(archive->GetProperty(index, kpidLastWriteTime, &prop));
+  RINOK(archive->GetProperty(index, kpidMTime, &prop));
   if (prop.vt == VT_FILETIME)
     fileTime = prop.filetime;
   else if (prop.vt == VT_EMPTY)
@@ -81,7 +81,7 @@ HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool
 
 HRESULT IsArchiveItemFolder(IInArchive *archive, UInt32 index, bool &result)
 {
-  return IsArchiveItemProp(archive, index, kpidIsFolder, result);
+  return IsArchiveItemProp(archive, index, kpidIsDir, result);
 }
 
 HRESULT IsArchiveItemAnti(IInArchive *archive, UInt32 index, bool &result)
@@ -112,9 +112,10 @@ static inline bool TestSignature(const Byte *p1, const Byte *p2, size_t size)
 
 HRESULT OpenArchive(
     CCodecs *codecs,
+    int arcTypeIndex,
     IInStream *inStream,
-    const UString &fileName, 
-    IInArchive **archiveResult, 
+    const UString &fileName,
+    IInArchive **archiveResult,
     int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback)
@@ -127,6 +128,11 @@ HRESULT OpenArchive(
       extension = fileName.Mid(dotPos + 1);
   }
   CIntVector orderIndices;
+  if (arcTypeIndex >= 0)
+    orderIndices.Add(arcTypeIndex);
+  else
+  {
+
   int i;
   int numFinded = 0;
   for (i = 0; i < codecs->Formats.Size(); i++)
@@ -140,32 +146,84 @@ HRESULT OpenArchive(
   {
     CIntVector orderIndices2;
     CByteBuffer byteBuffer;
-    const size_t kBufferSize = (200 << 10);
+    const size_t kBufferSize = (1 << 21);
     byteBuffer.SetCapacity(kBufferSize);
-    Byte *buffer = byteBuffer;
     RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
     size_t processedSize = kBufferSize;
-    RINOK(ReadStream(inStream, buffer, &processedSize));
+    RINOK(ReadStream(inStream, byteBuffer, &processedSize));
+    if (processedSize == 0)
+      return S_FALSE;
+
+    const Byte *buf = byteBuffer;
+    Byte hash[1 << 16];
+    memset(hash, 0xFF, 1 << 16);
+    Byte prevs[256];
+    if (orderIndices.Size() > 255)
+      return S_FALSE;
+    int i;
+    for (i = 0; i < orderIndices.Size(); i++)
+    {
+      const CArcInfoEx &ai = codecs->Formats[orderIndices[i]];
+      const CByteBuffer &sig = ai.StartSignature;
+      if (sig.GetCapacity() < 2)
+        continue;
+      UInt32 v = sig[0] | ((UInt32)sig[1] << 8);
+      prevs[i] = hash[v];
+      hash[v] = (Byte)i;
+    }
+
+    processedSize--;
     for (UInt32 pos = 0; pos < processedSize; pos++)
     {
-      for (int i = 0; i < orderIndices.Size(); i++)
+      for (; hash[buf[pos] | ((UInt32)buf[pos + 1] << 8)] == 0xFF && pos < processedSize; pos++);
+      if (pos == processedSize)
+        break;
+      UInt32 v = buf[pos] | ((UInt32)buf[pos + 1] << 8);
+      Byte *ptr = &hash[v];
+      int i = *ptr;
+      do
       {
         int index = orderIndices[i];
         const CArcInfoEx &ai = codecs->Formats[index];
         const CByteBuffer &sig = ai.StartSignature;
-        if (sig.GetCapacity() == 0)
-          continue;
-        if (pos + sig.GetCapacity() > processedSize)
-          continue;
-        if (TestSignature(buffer + pos, sig, sig.GetCapacity()))
-        {
-          orderIndices2.Add(index);
-          orderIndices.Delete(i--);
-        }
+        if (sig.GetCapacity() != 0 && pos + sig.GetCapacity() <= processedSize + 1)
+          if (TestSignature(buf + pos, sig, sig.GetCapacity()))
+          {
+            orderIndices2.Add(index);
+            orderIndices[i] = 0xFF;
+            *ptr = prevs[i];
+          }
+        ptr = &prevs[i];
+        i = *ptr;
+      }
+      while (i != 0xFF);
+    }
+    
+    for (i = 0; i < orderIndices.Size(); i++)
+    {
+      int val = orderIndices[i];
+      if (val != 0xFF)
+        orderIndices2.Add(val);
+    }
+    orderIndices = orderIndices2;
+
+    if (orderIndices.Size() >= 2)
+    {
+      int isoIndex = codecs->FindFormatForArchiveType(L"iso");
+      int udfIndex = codecs->FindFormatForArchiveType(L"udf");
+      int iIso = -1;
+      int iUdf = -1;
+      for (int i = 0; i < orderIndices.Size(); i++)
+      {
+        if (orderIndices[i] == isoIndex) iIso = i;
+        if (orderIndices[i] == udfIndex) iUdf = i;
+      }
+      if (iUdf == iIso + 1)
+      {
+        orderIndices[iUdf] = isoIndex;
+        orderIndices[iIso] = udfIndex;
       }
     }
-    orderIndices2 += orderIndices;
-    orderIndices = orderIndices2;
   }
   else if (extension == L"000" || extension == L"001")
   {
@@ -195,9 +253,9 @@ HRESULT OpenArchive(
     }
   }
   #endif
+  }
 
-  HRESULT badResult = S_OK;
-  for(i = 0; i < orderIndices.Size(); i++)
+  for(int i = 0; i < orderIndices.Size(); i++)
   {
     inStream->Seek(0, STREAM_SEEK_SET, NULL);
 
@@ -222,13 +280,7 @@ HRESULT OpenArchive(
     HRESULT result = archive->Open(inStream, &kMaxCheckStartPosition, openArchiveCallback);
     if (result == S_FALSE)
       continue;
-    if(result != S_OK)
-    {
-      badResult = result;
-      if(result == E_ABORT)
-        break;
-      continue;
-    }
+    RINOK(result);
     *archiveResult = archive.Detach();
     const CArcInfoEx &format = codecs->Formats[formatIndex];
     if (format.Exts.Size() == 0)
@@ -240,21 +292,20 @@ HRESULT OpenArchive(
       int subExtIndex = format.FindExtension(extension);
       if (subExtIndex < 0)
         subExtIndex = 0;
-      defaultItemName = GetDefaultName2(fileName, 
-          format.Exts[subExtIndex].Ext, 
+      defaultItemName = GetDefaultName2(fileName,
+          format.Exts[subExtIndex].Ext,
           format.Exts[subExtIndex].AddExt);
     }
     return S_OK;
   }
-  if (badResult != S_OK)
-    return badResult;
   return S_FALSE;
 }
 
 HRESULT OpenArchive(
     CCodecs *codecs,
-    const UString &filePath, 
-    IInArchive **archiveResult, 
+    int arcTypeIndex,
+    const UString &filePath,
+    IInArchive **archiveResult,
     int &formatIndex,
     UString &defaultItemName,
     IArchiveOpenCallback *openArchiveCallback)
@@ -263,7 +314,7 @@ HRESULT OpenArchive(
   CMyComPtr<IInStream> inStream(inStreamSpec);
   if (!inStreamSpec->Open(filePath))
     return GetLastError();
-  return OpenArchive(codecs, inStream, ExtractFileNameFromPath(filePath),
+  return OpenArchive(codecs, arcTypeIndex, inStream, ExtractFileNameFromPath(filePath),
     archiveResult, formatIndex,
     defaultItemName, openArchiveCallback);
 }
@@ -284,38 +335,54 @@ static void MakeDefaultName(UString &name)
 
 HRESULT OpenArchive(
     CCodecs *codecs,
-    const UString &fileName, 
-    IInArchive **archive0, 
-    IInArchive **archive1, 
+    const CIntVector &formatIndices,
+    const UString &fileName,
+    IInArchive **archive0,
+    IInArchive **archive1,
     int &formatIndex0,
     int &formatIndex1,
     UString &defaultItemName0,
     UString &defaultItemName1,
     IArchiveOpenCallback *openArchiveCallback)
 {
-  HRESULT result = OpenArchive(codecs, fileName, 
-      archive0, formatIndex0, defaultItemName0, openArchiveCallback);
+  if (formatIndices.Size() >= 3)
+    return E_NOTIMPL;
+  
+  int arcTypeIndex = -1;
+  if (formatIndices.Size() >= 1)
+    arcTypeIndex = formatIndices[formatIndices.Size() - 1];
+  
+  HRESULT result = OpenArchive(codecs, arcTypeIndex, fileName,
+    archive0, formatIndex0, defaultItemName0, openArchiveCallback);
   RINOK(result);
+
+  if (formatIndices.Size() == 1)
+    return S_OK;
+  arcTypeIndex = -1;
+  if (formatIndices.Size() >= 2)
+    arcTypeIndex = formatIndices[formatIndices.Size() - 2];
+
+  HRESULT resSpec = (formatIndices.Size() == 0 ? S_OK : E_NOTIMPL);
+
   CMyComPtr<IInArchiveGetStream> getStream;
   result = (*archive0)->QueryInterface(IID_IInArchiveGetStream, (void **)&getStream);
-  if (result != S_OK || getStream == 0)
-    return S_OK;
+  if (result != S_OK || !getStream)
+    return resSpec;
 
   CMyComPtr<ISequentialInStream> subSeqStream;
   result = getStream->GetStream(0, &subSeqStream);
-  if (result != S_OK)
-    return S_OK;
+  if (result != S_OK || !subSeqStream)
+    return resSpec;
 
   CMyComPtr<IInStream> subStream;
-  if (subSeqStream.QueryInterface(IID_IInStream, &subStream) != S_OK)
-    return S_OK;
-  if (!subStream)
-    return S_OK;
+  result = subSeqStream.QueryInterface(IID_IInStream, &subStream);
+  if (result != S_OK || !subStream)
+    return resSpec;
 
   UInt32 numItems;
   RINOK((*archive0)->GetNumberOfItems(&numItems));
   if (numItems < 1)
-    return S_OK;
+    return resSpec;
 
   UString subPath;
   RINOK(GetArchiveItemPath(*archive0, 0, subPath))
@@ -338,39 +405,47 @@ HRESULT OpenArchive(
   if (setSubArchiveName)
     setSubArchiveName->SetSubArchiveName(subPath);
 
-  result = OpenArchive(codecs, subStream, subPath,
+  result = OpenArchive(codecs, arcTypeIndex, subStream, subPath,
       archive1, formatIndex1, defaultItemName1, openArchiveCallback);
+  resSpec = (formatIndices.Size() == 0 ? S_OK : S_FALSE);
+  if (result != S_OK)
+    return resSpec;
   return S_OK;
 }
 
 static void SetCallback(const UString &archiveName,
-    IOpenCallbackUI *openCallbackUI, CMyComPtr<IArchiveOpenCallback> &openCallback)
+    IOpenCallbackUI *openCallbackUI,
+    IArchiveOpenCallback *reOpenCallback,
+    CMyComPtr<IArchiveOpenCallback> &openCallback)
 {
   COpenCallbackImp *openCallbackSpec = new COpenCallbackImp;
   openCallback = openCallbackSpec;
   openCallbackSpec->Callback = openCallbackUI;
+  openCallbackSpec->ReOpenCallback = reOpenCallback;
 
   UString fullName;
   int fileNamePartStartIndex;
   NFile::NDirectory::MyGetFullPathName(archiveName, fullName, fileNamePartStartIndex);
   openCallbackSpec->Init(
-      fullName.Left(fileNamePartStartIndex), 
+      fullName.Left(fileNamePartStartIndex),
       fullName.Mid(fileNamePartStartIndex));
 }
 
 HRESULT MyOpenArchive(
-    CCodecs *codecs, 
+    CCodecs *codecs,
+    int arcTypeIndex,
     const UString &archiveName,
     IInArchive **archive, UString &defaultItemName, IOpenCallbackUI *openCallbackUI)
 {
   CMyComPtr<IArchiveOpenCallback> openCallback;
-  SetCallback(archiveName, openCallbackUI, openCallback);
+  SetCallback(archiveName, openCallbackUI, NULL, openCallback);
   int formatInfo;
-  return OpenArchive(codecs, archiveName, archive, formatInfo, defaultItemName, openCallback);
+  return OpenArchive(codecs, arcTypeIndex, archiveName, archive, formatInfo, defaultItemName, openCallback);
 }
 
 HRESULT MyOpenArchive(
     CCodecs *codecs,
+    const CIntVector &formatIndices,
     const UString &archiveName,
     IInArchive **archive0,
     IInArchive **archive1,
@@ -393,11 +468,11 @@ HRESULT MyOpenArchive(
   openCallbackSpec->Init(prefix, name);
 
   int formatIndex0, formatIndex1;
-  RINOK(OpenArchive(codecs, archiveName,
-      archive0, 
-      archive1, 
-      formatIndex0, 
-      formatIndex1, 
+  RINOK(OpenArchive(codecs, formatIndices, archiveName,
+      archive0,
+      archive1,
+      formatIndex0,
+      formatIndex1,
       defaultItemName0,
       defaultItemName1,
       openCallback));
@@ -427,27 +502,29 @@ void CArchiveLink::Release()
 
 HRESULT OpenArchive(
     CCodecs *codecs,
+    const CIntVector &formatIndices,
     const UString &archiveName,
     CArchiveLink &archiveLink,
     IArchiveOpenCallback *openCallback)
 {
-  HRESULT res = OpenArchive(codecs, archiveName, 
-    &archiveLink.Archive0, &archiveLink.Archive1, 
-    archiveLink.FormatIndex0, archiveLink.FormatIndex1, 
-    archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
+  HRESULT res = OpenArchive(codecs, formatIndices, archiveName,
+    &archiveLink.Archive0, &archiveLink.Archive1,
+    archiveLink.FormatIndex0, archiveLink.FormatIndex1,
+    archiveLink.DefaultItemName0, archiveLink.DefaultItemName1,
     openCallback);
   archiveLink.IsOpen = (res == S_OK);
   return res;
 }
 
 HRESULT MyOpenArchive(CCodecs *codecs,
-    const UString &archiveName, 
+    const CIntVector &formatIndices,
+    const UString &archiveName,
     CArchiveLink &archiveLink,
     IOpenCallbackUI *openCallbackUI)
 {
-  HRESULT res = MyOpenArchive(codecs, archiveName,
-    &archiveLink.Archive0, &archiveLink.Archive1, 
-    archiveLink.DefaultItemName0, archiveLink.DefaultItemName1, 
+  HRESULT res = MyOpenArchive(codecs, formatIndices, archiveName,
+    &archiveLink.Archive0, &archiveLink.Archive1,
+    archiveLink.DefaultItemName0, archiveLink.DefaultItemName1,
     archiveLink.VolumePaths,
     archiveLink.VolumesSize,
     openCallbackUI);
@@ -455,18 +532,19 @@ HRESULT MyOpenArchive(CCodecs *codecs,
   return res;
 }
 
-HRESULT ReOpenArchive(CCodecs *codecs, CArchiveLink &archiveLink, const UString &fileName)
+HRESULT ReOpenArchive(CCodecs *codecs, CArchiveLink &archiveLink, const UString &fileName,
+    IArchiveOpenCallback *openCallback)
 {
   if (archiveLink.GetNumLevels() > 1)
     return E_NOTIMPL;
 
   if (archiveLink.GetNumLevels() == 0)
-    return MyOpenArchive(codecs, fileName, archiveLink, 0);
+    return MyOpenArchive(codecs, CIntVector(), fileName, archiveLink, 0);
 
-  CMyComPtr<IArchiveOpenCallback> openCallback;
-  SetCallback(fileName, NULL, openCallback);
+  CMyComPtr<IArchiveOpenCallback> openCallbackNew;
+  SetCallback(fileName, NULL, openCallback, openCallbackNew);
 
-  HRESULT res = ReOpenArchive(archiveLink.GetArchive(), fileName, openCallback);
+  HRESULT res = ReOpenArchive(archiveLink.GetArchive(), fileName, openCallbackNew);
   archiveLink.IsOpen = (res == S_OK);
   return res;
 }

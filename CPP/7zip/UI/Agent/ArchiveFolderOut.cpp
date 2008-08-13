@@ -27,7 +27,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     bool deleteOperation,
     bool createFolderOperation,
     bool renameOperation,
-    const wchar_t *newItemName, 
+    const wchar_t *newItemName,
     const NUpdateArchive::CActionSet *actionSet,
     const UINT32 *indices, UINT32 numItems,
     IFolderArchiveUpdateCallback *updateCallback100)
@@ -67,8 +67,8 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   {
     result = _agentSpec->RenameItem(
         tempFileName,
-        indices, numItems, 
-        newItemName, 
+        indices, numItems,
+        newItemName,
         updateCallback100);
   }
   else
@@ -92,8 +92,15 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   tempFile.DisableDeleting();
   if (!MyMoveFile(tempFileName, archiveFilePath ))
     return GetLastError();
-  
-  RINOK(_agentSpec->ReOpen(NULL));
+
+  {
+    CMyComPtr<IArchiveOpenCallback> openCallback;
+    if (updateCallback100)
+    {
+      RINOK(updateCallback100->QueryInterface(IID_IArchiveOpenCallback, (void **)&openCallback));
+    }
+    RINOK(_agentSpec->ReOpen(openCallback));
+  }
    
   ////////////////////////////
   // Restore FolderItem;
@@ -136,7 +143,7 @@ STDMETHODIMP CAgentFolder::CopyFrom(
     RINOK(progressWrapper.QueryInterface(
       IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(false, false, false, NULL, 
+  return CommonUpdateOperation(false, false, false, NULL,
     &NUpdateArchive::kAddActionSet, 0, 0, updateCallback100);
   COM_TRY_END
 }
@@ -152,7 +159,7 @@ STDMETHODIMP CAgentFolder::Delete(const UINT32 *indices, UINT32 numItems, IProgr
     RINOK(progressWrapper.QueryInterface(
         IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(true, false, false, NULL, 
+  return CommonUpdateOperation(true, false, false, NULL,
     &NUpdateArchive::kDeleteActionSet, indices, numItems, updateCallback100);
   COM_TRY_END
 }
@@ -185,7 +192,7 @@ STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgres
     CMyComPtr<IProgress> progressWrapper = progress;
     RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(), 
+  return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(),
       indices.Size(), updateCallback100);
   COM_TRY_END
 }
@@ -195,7 +202,7 @@ STDMETHODIMP CAgentFolder::CreateFile(const wchar_t * /* name */, IProgress * /*
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAgentFolder::SetProperty(UINT32 /* index */, PROPID /* propID */, 
+STDMETHODIMP CAgentFolder::SetProperty(UINT32 /* index */, PROPID /* propID */,
     const PROPVARIANT * /* value */, IProgress * /* progress */)
 {
   return E_NOTIMPL;

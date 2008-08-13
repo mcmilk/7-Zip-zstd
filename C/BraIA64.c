@@ -1,16 +1,16 @@
 /* BraIA64.c -- converter for IA-64 code
-2008-03-19
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
 #include "Bra.h"
 
-static const Byte kBranchTable[32] = 
-{ 
+static const Byte kBranchTable[32] =
+{
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,
   4, 4, 6, 6, 0, 0, 7, 7,
-  4, 4, 0, 0, 4, 4, 0, 0 
+  4, 4, 0, 0, 4, 4, 0, 0
 };
 
 SizeT IA64_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)

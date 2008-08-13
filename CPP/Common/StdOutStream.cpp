@@ -51,7 +51,7 @@ CStdOutStream::~CStdOutStream ()
 
 CStdOutStream & CStdOutStream::operator<<(CStdOutStream & (*aFunction)(CStdOutStream  &))
 {
-  (*aFunction)(*this);    
+  (*aFunction)(*this);
   return *this;
 }
 

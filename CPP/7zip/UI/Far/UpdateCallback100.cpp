@@ -15,22 +15,18 @@ STDMETHODIMP CUpdateCallback100Imp::SetNumFiles(UInt64 /* numFiles */)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::SetTotal(UINT64 aSize)
+STDMETHODIMP CUpdateCallback100Imp::SetTotal(UInt64 size)
 {
-  if (m_ProgressBox != 0)
-  {
-    m_ProgressBox->SetTotal(aSize);
-    m_ProgressBox->PrintCompeteValue(0);
-  }
+  _total = size;
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UINT64 *aCompleteValue)
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 *completeValue)
 {
-  if(WasEscPressed())
+  if (WasEscPressed())
     return E_ABORT;
-  if (m_ProgressBox != 0 && aCompleteValue != NULL)
-    m_ProgressBox->PrintCompeteValue(*aCompleteValue);
+  if (_progressBox != 0)
+    _progressBox->Progress(&_total, completeValue, AString());
   return S_OK;
 }
 
@@ -44,15 +40,14 @@ STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t* /* name */)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::OperationResult(INT32 /* operationResult */)
+STDMETHODIMP CUpdateCallback100Imp::OperationResult(Int32 /* opRes */)
 {
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
 {
-  CSysString s = UnicodeStringToMultiByte(message, CP_OEMCP);
-  if (g_StartupInfo.ShowMessage(s) == -1)
+  if (g_StartupInfo.ShowMessage(UnicodeStringToMultiByte(message, CP_OEMCP)) == -1)
     return E_ABORT;
   return S_OK;
 }

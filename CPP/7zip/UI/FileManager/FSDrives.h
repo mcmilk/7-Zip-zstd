@@ -24,7 +24,7 @@ struct CDriveInfo
   UString FileSystemName;
 };
 
-class CFSDrives: 
+class CFSDrives:
   public IFolderFolder,
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp

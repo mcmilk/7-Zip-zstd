@@ -43,6 +43,7 @@ WIN_OBJS = \
 
 WIN_CTRL_OBJS = \
   $O\Dialog.obj \
+  $O\ListView.obj \
   $O\PropertyPage.obj \
 
 UI_COMMON_OBJS = \

@@ -5,6 +5,7 @@
 #include "Windows/COM.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Clipboard.h"
+#include "Windows/PropVariantConversions.h"
 #include "../Common/PropIDUtils.h"
 #include "../../PropID.h"
 
@@ -20,7 +21,7 @@
 using namespace NWindows;
 
 // {23170F69-40C1-278A-1000-000100020000}
-DEFINE_GUID(CLSID_CZipContextMenu, 
+DEFINE_GUID(CLSID_CZipContextMenu,
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
 
 static const UINT kSevenZipStartMenuID = kPluginMenuStartID ;
@@ -50,18 +51,30 @@ void CPanel::InvokeSystemCommand(const char *command)
 static const wchar_t *kSeparator = L"--------------------------------------\n";
 static const wchar_t *kPropValueSeparator = L": ";
 
-static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR, 
+extern UString ConvertSizeToString(UInt64 value);
+
+static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
     const NCOM::CPropVariant &prop, UString &s)
 {
   if (prop.vt != VT_EMPTY)
   {
-    UString name = GetNameOfProperty(propID);
-    if (name.IsEmpty() && nameBSTR != NULL)
-      name = nameBSTR;
-    if (name.IsEmpty())
-      name = L"?";
-    
-    const UString val = ConvertPropertyToString(prop, propID);
+    const UString name = GetNameOfProperty(propID, nameBSTR);
+    UString val;
+
+    if ((
+        propID == kpidSize ||
+        propID == kpidPackSize ||
+        propID == kpidNumSubDirs ||
+        propID == kpidNumSubFiles ||
+        propID == kpidNumBlocks ||
+        propID == kpidPhySize ||
+        propID == kpidHeadersSize ||
+        propID == kpidClusterSize
+        ) && (prop.vt == VT_UI8 || prop.vt == VT_UI4))
+      val = ConvertSizeToString(ConvertPropVariantToUInt64(prop));
+    else
+      val = ConvertPropertyToString(prop, propID);
+
     if (!val.IsEmpty())
     {
       s += name;
@@ -77,7 +90,7 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
 }
 
 void CPanel::Properties()
-{  
+{
   CMyComPtr<IGetFolderArchiveProperties> getFolderArchiveProperties;
   _folder.QueryInterface(IID_IGetFolderArchiveProperties, &getFolderArchiveProperties);
   if (!getFolderArchiveProperties)
@@ -224,7 +237,7 @@ void CPanel::EditPaste()
     s += names[i];
   }
 
-  MessageBoxW(0, s, L"", 0); 
+  MessageBoxW(0, s, L"", 0);
   */
 
   // InvokeSystemCommand("paste");
@@ -239,7 +252,7 @@ HRESULT CPanel::CreateShellContextMenu(
 
   CMyComPtr<IShellFolder> desktopFolder;
   RINOK(::SHGetDesktopFolder(&desktopFolder));
-  if (!desktopFolder) 
+  if (!desktopFolder)
   {
     // ShowMessage("Failed to get Desktop folder.");
     return E_FAIL;
@@ -253,7 +266,7 @@ HRESULT CPanel::CreateShellContextMenu(
   LPITEMIDLIST parentPidl;
   DWORD eaten;
   RINOK(desktopFolder->ParseDisplayName(
-      GetParent(), 0, (wchar_t *)(const wchar_t *)folderPath, 
+      GetParent(), 0, (wchar_t *)(const wchar_t *)folderPath,
       &eaten, &parentPidl, 0));
   
   // Get an IShellFolder for the folder
@@ -261,7 +274,7 @@ HRESULT CPanel::CreateShellContextMenu(
   CMyComPtr<IShellFolder> parentFolder;
   RINOK(desktopFolder->BindToObject(parentPidl,
       0, IID_IShellFolder, (void**)&parentFolder));
-  if (!parentFolder) 
+  if (!parentFolder)
   {
     // ShowMessage("Invalid file name.");
     return E_FAIL;
@@ -276,7 +289,7 @@ HRESULT CPanel::CreateShellContextMenu(
     UString fileName = GetItemRelPath(operatedIndices[i]);
     if (IsFSDrivesFolder())
       fileName += L'\\';
-    RINOK(parentFolder->ParseDisplayName(GetParent(), 0, 
+    RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
       (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
     pidls.Add(pidl);
   }
@@ -287,7 +300,7 @@ HRESULT CPanel::CreateShellContextMenu(
     temp.mkid.cb = 0;
     /*
     LPITEMIDLIST pidl;
-    HRESULT result = parentFolder->ParseDisplayName(GetParent(), 0, 
+    HRESULT result = parentFolder->ParseDisplayName(GetParent(), 0,
       L".\\", &eaten, &pidl, 0);
     if (result != NOERROR)
       return;
@@ -297,9 +310,9 @@ HRESULT CPanel::CreateShellContextMenu(
 
   // Get the IContextMenu for the file.
   CMyComPtr<IContextMenu> cm;
-  RINOK( parentFolder->GetUIObjectOf(GetParent(), pidls.Size(), 
+  RINOK( parentFolder->GetUIObjectOf(GetParent(), pidls.Size(),
       (LPCITEMIDLIST *)&pidls.Front(), IID_IContextMenu, 0, (void**)&cm));
-  if (!cm) 
+  if (!cm)
   {
     // ShowMessage("Unable to get context menu interface.");
     return E_FAIL;
@@ -308,7 +321,7 @@ HRESULT CPanel::CreateShellContextMenu(
   return S_OK;
 }
 
-void CPanel::CreateSystemMenu(HMENU menuSpec, 
+void CPanel::CreateSystemMenu(HMENU menuSpec,
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
@@ -326,7 +339,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
   ci.hwnd = GetParent();
   
   /*
-  if (Sender == GoBtn) 
+  if (Sender == GoBtn)
   {
     // Verbs that can be used are cut, paste,
     // properties, delete, and so on.
@@ -346,8 +359,8 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
       ShowMessage(
       "Error copying file to clipboard.");
     
-  } 
-  else 
+  }
+  else
   */
   {
     // HMENU hMenu = CreatePopupMenu();
@@ -381,7 +394,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
       menu.InsertItem(0, true, menuItem);
     }
     /*
-    if (Cmd < 100 && Cmd != 0) 
+    if (Cmd < 100 && Cmd != 0)
     {
       ci.lpVerb = MAKEINTRESOURCE(Cmd - 1);
       ci.lpParameters = "";
@@ -393,7 +406,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     // inserted menu items.
     else
       // Find the menu item.
-      for (int i = 0; i < popupMenu1->Items->Count; i++) 
+      for (int i = 0; i < popupMenu1->Items->Count; i++)
       {
         TMenuItem* menu = popupMenu1->Items->Items[i];
         // Call its OnClick handler.
@@ -411,7 +424,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec)
   CreateFileMenu(menuSpec, _sevenZipContextMenu, _systemContextMenu, true);
 }
 
-void CPanel::CreateSevenZipMenu(HMENU menuSpec, 
+void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &sevenZipContextMenu)
 {
@@ -443,7 +456,7 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     if (initContextMenu->InitContextMenu(currentFolderUnicode, &namePointers.Front(),
         operatedIndices.Size()) == S_OK)
     {
-      HRESULT res = contextMenu->QueryContextMenu(menu, 0, kSevenZipStartMenuID, 
+      HRESULT res = contextMenu->QueryContextMenu(menu, 0, kSevenZipStartMenuID,
           kSystemStartMenuID - 1, 0);
       sevenZipMenuCreated = (HRESULT_SEVERITY(res) == SEVERITY_SUCCESS);
       if (sevenZipMenuCreated)
@@ -454,7 +467,7 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
   }
 }
 
-void CPanel::CreateFileMenu(HMENU menuSpec, 
+void CPanel::CreateFileMenu(HMENU menuSpec,
     CMyComPtr<IContextMenu> &sevenZipContextMenu,
     CMyComPtr<IContextMenu> &systemContextMenu,
     bool programMenu)
@@ -475,7 +488,13 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   if (menu.GetItemCount() > 0)
     menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
 
-  LoadFileMenu(menu, menu.GetItemCount(), !operatedIndices.IsEmpty(), programMenu);
+  int i;
+  for (i = 0; i < operatedIndices.Size(); i++)
+    if (IsItemFolder(operatedIndices[i]))
+      break;
+  bool allAreFiles = (i == operatedIndices.Size());
+  LoadFileMenu(menu, menu.GetItemCount(), programMenu,
+      IsFSFolder(), operatedIndices.Size(), allAreFiles);
 }
 
 bool CPanel::InvokePluginCommand(int id)
@@ -483,7 +502,7 @@ bool CPanel::InvokePluginCommand(int id)
   return InvokePluginCommand(id, _sevenZipContextMenu, _systemContextMenu);
 }
 
-bool CPanel::InvokePluginCommand(int id, 
+bool CPanel::InvokePluginCommand(int id,
     IContextMenu *sevenZipContextMenu, IContextMenu *systemContextMenu)
 {
   UInt32 offset;
@@ -576,7 +595,7 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
   CMyComPtr<IContextMenu> systemContextMenu;
   CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false);
 
-  int result = menu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, 
+  int result = menu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY,
     xPos, yPos, _listView);
 
   if (result == 0)

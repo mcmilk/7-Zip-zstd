@@ -21,7 +21,6 @@
 #include "resource.h"
 #include "ExtractRes.h"
 
-#include "OpenCallbackGUI.h"
 #include "ExtractDialog.h"
 
 using namespace NWindows;
@@ -32,11 +31,12 @@ struct CThreadExtracting
 {
   CCodecs *codecs;
   CExtractCallbackImp *ExtractCallbackSpec;
+  CIntVector FormatIndices;
+
   UStringVector *ArchivePaths;
   UStringVector *ArchivePathsFull;
   const NWildcard::CCensorNode *WildcardCensor;
   const CExtractOptions *Options;
-  COpenCallbackGUI *OpenCallback;
   CMyComPtr<IExtractCallbackUI> ExtractCallback;
   CDecompressStat Stat;
   UString ErrorMessage;
@@ -48,20 +48,20 @@ struct CThreadExtracting
     try
     {
       Result = DecompressArchives(
-          codecs,
+          codecs, FormatIndices,
           *ArchivePaths, *ArchivePathsFull,
-          *WildcardCensor, *Options, OpenCallback, ExtractCallback, ErrorMessage, Stat);
+          *WildcardCensor, *Options, ExtractCallbackSpec, ExtractCallback, ErrorMessage, Stat);
     }
     catch(const UString &s)
     {
       ErrorMessage = s;
       Result = E_FAIL;
-    } 
+    }
     catch(const wchar_t *s)
     {
       ErrorMessage = s;
       Result = E_FAIL;
-    } 
+    }
     catch(const char *s)
     {
       ErrorMessage = GetUnicodeString(s);
@@ -110,16 +110,17 @@ static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s
 
 HRESULT ExtractGUI(
     CCodecs *codecs,
-    UStringVector &archivePaths, 
+    const CIntVector &formatIndices,
+    UStringVector &archivePaths,
     UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     CExtractOptions &options,
     bool showDialog,
-    COpenCallbackGUI *openCallback,
     CExtractCallbackImp *extractCallback)
 {
   CThreadExtracting extracter;
   extracter.codecs = codecs;
+  extracter.FormatIndices = formatIndices;
 
   if (!options.TestMode)
   {
@@ -131,7 +132,7 @@ HRESULT ExtractGUI(
       CExtractDialog dialog;
       if (!NFile::NDirectory::MyGetFullPathName(outputDir, dialog.DirectoryPath))
       {
-        MyMessageBox(kIncorrectOutDir);
+        ShowErrorMessage(kIncorrectOutDir);
         return E_FAIL;
       }
       NFile::NName::NormalizeDirPathPrefix(dialog.DirectoryPath);
@@ -145,13 +146,13 @@ HRESULT ExtractGUI(
       options.OverwriteMode = dialog.OverwriteMode;
       options.PathMode = dialog.PathMode;
       #ifndef _SFX
-      openCallback->Password = dialog.Password;
-      openCallback->PasswordIsDefined = !dialog.Password.IsEmpty();
+      extractCallback->Password = dialog.Password;
+      extractCallback->PasswordIsDefined = !dialog.Password.IsEmpty();
       #endif
     }
     if (!NFile::NDirectory::MyGetFullPathName(outputDir, options.OutputDir))
     {
-      MyMessageBox(kIncorrectOutDir);
+      ShowErrorMessage(kIncorrectOutDir);
       return E_FAIL;
     }
     NFile::NName::NormalizeDirPathPrefix(options.OutputDir);
@@ -160,10 +161,10 @@ HRESULT ExtractGUI(
     if(!NFile::NDirectory::CreateComplexDirectory(options.OutputDir))
     {
       UString s = GetUnicodeString(NError::MyFormatMessage(GetLastError()));
-      UString s2 = MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
-      #ifdef LANG        
-      0x02000603, 
-      #endif 
+      UString s2 = MyFormatNew(IDS_CANNOT_CREATE_FOLDER,
+      #ifdef LANG
+      0x02000603,
+      #endif
       options.OutputDir);
       MyMessageBox(s2 + UString(L"\n") + s);
       return E_FAIL;
@@ -171,7 +172,7 @@ HRESULT ExtractGUI(
     */
   }
   
-  UString title = LangStringSpec(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING, 
+  UString title = LangStringSpec(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING,
       options.TestMode ? 0x02000F90: 0x02000890);
 
   extracter.ExtractCallbackSpec = extractCallback;
@@ -182,12 +183,11 @@ HRESULT ExtractGUI(
   extracter.ArchivePathsFull = &archivePathsFull;
   extracter.WildcardCensor = &wildcardCensor;
   extracter.Options = &options;
-  extracter.OpenCallback = openCallback;
 
   NWindows::CThread thread;
   RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &extracter));
   extracter.ExtractCallbackSpec->StartProgressDialog(title);
-  if (extracter.Result == S_OK && options.TestMode && 
+  if (extracter.Result == S_OK && options.TestMode &&
       extracter.ExtractCallbackSpec->Messages.IsEmpty() &&
       extracter.ExtractCallbackSpec->NumArchiveErrors == 0)
   {

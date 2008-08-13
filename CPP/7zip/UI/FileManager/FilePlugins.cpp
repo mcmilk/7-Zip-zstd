@@ -57,7 +57,7 @@ void CExtDatabase::Read()
 
     if (pluginInfo.FilePath.IsEmpty())
       folderManager = new CArchiveFolderManager;
-    else if (pluginLibrary.LoadAndCreateManager(pluginInfo.FilePath, 
+    else if (pluginLibrary.LoadAndCreateManager(pluginInfo.FilePath,
          pluginInfo.ClassID, &folderManager) != S_OK)
       continue;
     CMyComBSTR extBSTR;

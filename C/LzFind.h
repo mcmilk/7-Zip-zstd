@@ -1,12 +1,12 @@
 /* LzFind.h  -- Match finder for LZ algorithms
-2008-04-04
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 You can use any of the following license options:
   1) GNU Lesser General Public License (GNU LGPL)
   2) Common Public License (CPL)
-  3) Common Development and Distribution License (CDDL) Version 1.0 
-  4) Igor Pavlov, as the author of this code, expressly permits you to 
-     statically or dynamically link your code (or bind by name) to this file, 
+  3) Common Development and Distribution License (CDDL) Version 1.0
+  4) Igor Pavlov, as the author of this code, expressly permits you to
+     statically or dynamically link your code (or bind by name) to this file,
      while you keep this file unmodified.
 */
 
@@ -71,18 +71,18 @@ void MatchFinder_Construct(CMatchFinder *p);
      historySize <= 3 GB
      keepAddBufferBefore + matchMaxLen + keepAddBufferAfter < 511MB
 */
-int MatchFinder_Create(CMatchFinder *p, UInt32 historySize, 
+int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
     UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
     ISzAlloc *alloc);
 void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);
 void MatchFinder_Normalize3(UInt32 subValue, CLzRef *items, UInt32 numItems);
 void MatchFinder_ReduceOffsets(CMatchFinder *p, UInt32 subValue);
 
-UInt32 * GetMatchesSpec1(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const Byte *buffer, CLzRef *son, 
-    UInt32 _cyclicBufferPos, UInt32 _cyclicBufferSize, UInt32 _cutValue, 
+UInt32 * GetMatchesSpec1(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const Byte *buffer, CLzRef *son,
+    UInt32 _cyclicBufferPos, UInt32 _cyclicBufferSize, UInt32 _cutValue,
     UInt32 *distances, UInt32 maxLen);
 
-/* 
+/*
 Conditions:
   Mf_GetNumAvailableBytes_Func must be called before each Mf_GetMatchLen_Func.
   Mf_GetPointerToCurrentPos_Func's result must be used only before any other function

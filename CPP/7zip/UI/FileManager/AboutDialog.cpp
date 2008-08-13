@@ -7,7 +7,7 @@
 #include "HelpUtils.h"
 #include "LangUtils.h"
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_ABOUT_STATIC_REGISTER_INFO, 0x01000103 },
   { IDC_ABOUT_BUTTON_SUPPORT, 0x01000104 },
@@ -23,7 +23,7 @@ static LPCTSTR kSupportPageURL  = MY_HOME_PAGE TEXT("support.html");
 
 static LPCWSTR kHelpTopic = L"start.htm";
 
-bool CAboutDialog::OnInit() 
+bool CAboutDialog::OnInit()
 {
   LangSetWindowText(HWND(*this), 0x01000100);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));

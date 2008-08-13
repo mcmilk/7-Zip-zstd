@@ -32,7 +32,7 @@ LRESULT CComboBox::GetLBText(int index, CSysString &s)
 
 #ifndef _UNICODE
 LRESULT CComboBox::AddString(LPCWSTR s)
-{ 
+{
   if (g_IsNT)
     return SendMessageW(CB_ADDSTRING, 0, (LPARAM)s);
   return AddString(GetSystemString(s));

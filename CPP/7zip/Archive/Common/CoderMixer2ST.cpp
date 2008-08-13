@@ -11,9 +11,9 @@ CCoderMixer2ST::CCoderMixer2ST() {}
 CCoderMixer2ST::~CCoderMixer2ST(){ }
 
 HRESULT CCoderMixer2ST::SetBindInfo(const CBindInfo &bindInfo)
-{  
-  _bindInfo = bindInfo; 
-  return S_OK; 
+{
+  _bindInfo = bindInfo;
+  return S_OK;
 }
 
 void CCoderMixer2ST::AddCoderCommon(bool isMain)
@@ -37,7 +37,7 @@ void CCoderMixer2ST::AddCoder2(ICompressCoder2 *coder, bool isMain)
 void CCoderMixer2ST::ReInit() { }
 
 HRESULT CCoderMixer2ST::GetInStream(
-    ISequentialInStream **inStreams, const UInt64 **inSizes, 
+    ISequentialInStream **inStreams, const UInt64 **inSizes,
     UInt32 streamIndex, ISequentialInStream **inStreamRes)
 {
   CMyComPtr<ISequentialInStream> seqInStream;
@@ -54,7 +54,7 @@ HRESULT CCoderMixer2ST::GetInStream(
     return E_INVALIDARG;
 
   UInt32 coderIndex, coderStreamIndex;
-  _bindInfo.FindOutStream(_bindInfo.BindPairs[binderIndex].OutIndex, 
+  _bindInfo.FindOutStream(_bindInfo.BindPairs[binderIndex].OutIndex,
       coderIndex, coderStreamIndex);
 
   CCoderInfo &coder = _coders[coderIndex];
@@ -86,7 +86,7 @@ HRESULT CCoderMixer2ST::GetInStream(
 }
 
 HRESULT CCoderMixer2ST::GetOutStream(
-    ISequentialOutStream **outStreams, const UInt64 **outSizes, 
+    ISequentialOutStream **outStreams, const UInt64 **outSizes,
     UInt32 streamIndex, ISequentialOutStream **outStreamRes)
 {
   CMyComPtr<ISequentialOutStream> seqOutStream;
@@ -103,7 +103,7 @@ HRESULT CCoderMixer2ST::GetOutStream(
     return E_INVALIDARG;
 
   UInt32 coderIndex, coderStreamIndex;
-  _bindInfo.FindInStream(_bindInfo.BindPairs[binderIndex].InIndex, 
+  _bindInfo.FindInStream(_bindInfo.BindPairs[binderIndex].InIndex,
       coderIndex, coderStreamIndex);
 
   CCoderInfo &coder = _coders[coderIndex];
@@ -136,9 +136,9 @@ HRESULT CCoderMixer2ST::GetOutStream(
     
 
 STDMETHODIMP CCoderMixer2ST::Code(ISequentialInStream **inStreams,
-      const UInt64 **inSizes, 
+      const UInt64 **inSizes,
       UInt32 numInStreams,
-      ISequentialOutStream **outStreams, 
+      ISequentialOutStream **outStreams,
       const UInt64 **outSizes,
       UInt32 numOutStreams,
       ICompressProgressInfo *progress)
@@ -216,9 +216,9 @@ STDMETHODIMP CCoderMixer2ST::Code(ISequentialInStream **inStreams,
   else
   {
     RINOK(mainCoder.Coder2->Code(
-        &seqInStreamsSpec.Front(), 
+        &seqInStreamsSpec.Front(),
         &mainCoder.InSizePointers.Front(), mainCoder.NumInStreams,
-        &seqOutStreamsSpec.Front(), 
+        &seqOutStreamsSpec.Front(),
         &mainCoder.OutSizePointers.Front(), mainCoder.NumOutStreams,
         progress));
   }
@@ -236,4 +236,4 @@ UInt64 CCoderMixer2ST::GetWriteProcessedSize(UInt32 binderIndex) const
 }
 */
 
-}  
+}

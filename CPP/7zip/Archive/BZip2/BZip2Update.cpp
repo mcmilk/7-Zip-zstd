@@ -47,15 +47,15 @@ HRESULT UpdateArchive(
   encoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
   if (setCoderProperties)
   {
-    NWindows::NCOM::CPropVariant properties[] = 
+    NWindows::NCOM::CPropVariant properties[] =
     {
-      dictionary, 
+      dictionary,
       numPasses
       #ifdef COMPRESS_MT
       , numThreads
       #endif
     };
-    PROPID propIDs[] = 
+    PROPID propIDs[] =
     {
       NCoderPropID::kDictionarySize,
       NCoderPropID::kNumPasses

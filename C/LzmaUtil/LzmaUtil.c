@@ -1,5 +1,5 @@
 /* LzmaUtil.c -- Test application for LZMA compression
-2008-04-29
+2008-08-05
 Igor Pavlov
 public domain */
 
@@ -35,10 +35,10 @@ int MyReadFileAndCheck(FILE *file, void *data, size_t size)
   { return (MyReadFile(file, data, size) == size); }
 
 size_t MyWriteFile(FILE *file, const void *data, size_t size)
-{ 
+{
   if (size == 0)
     return 0;
-  return fwrite(data, 1, size, file); 
+  return fwrite(data, 1, size, file);
 }
 
 int MyWriteFileAndCheck(FILE *file, const void *data, size_t size)
@@ -137,7 +137,7 @@ static int Decode(FILE *inFile, FILE *outFile, char *rs)
           finishMode = LZMA_FINISH_END;
         }
 
-        res = LzmaDec_DecodeToBuf(&state, outBuf + outPos, &outProcessed, 
+        res = LzmaDec_DecodeToBuf(&state, outBuf + outPos, &outProcessed,
             inBuf + inPos, &inProcessed, finishMode, &status);
         inPos += (UInt32)inProcessed;
         outPos += outProcessed;
@@ -228,7 +228,7 @@ static SRes Encode(FILE *inFile, FILE *outFile, char *rs)
       return PrintError(rs, "writing error");
 
     if (res == SZ_OK)
-      res = LzmaEnc_Encode(enc, &outStream.funcTable, &inStream.funcTable, 
+      res = LzmaEnc_Encode(enc, &outStream.funcTable, &inStream.funcTable,
         NULL, &g_Alloc, &g_Alloc);
   }
   LzmaEnc_Destroy(enc, &g_Alloc, &g_Alloc);

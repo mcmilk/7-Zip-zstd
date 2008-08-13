@@ -30,11 +30,11 @@ public:
   void Init()
   {
     m_Stream.Init();
-    m_BitPos = kNumBigValueBits; 
+    m_BitPos = kNumBigValueBits;
     Normalize();
   }
   
-  UInt64 GetProcessedSize() const 
+  UInt64 GetProcessedSize() const
     { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   UInt32 GetBitPosition() const { return (m_BitPos & 7); }
   

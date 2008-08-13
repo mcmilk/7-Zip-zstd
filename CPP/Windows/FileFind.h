@@ -14,34 +14,34 @@ namespace NFind {
 
 namespace NAttributes
 {
-  inline bool IsReadOnly(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_READONLY) != 0; }
-  inline bool IsHidden(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_HIDDEN) != 0; }
-  inline bool IsSystem(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_SYSTEM) != 0; }
-  inline bool IsDirectory(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0; }
-  inline bool IsArchived(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_ARCHIVE) != 0; }
-  inline bool IsCompressed(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_COMPRESSED) != 0; }
-  inline bool IsEncrypted(DWORD attributes) { return (attributes & FILE_ATTRIBUTE_ENCRYPTED) != 0; }
+  inline bool IsReadOnly(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_READONLY) != 0; }
+  inline bool IsHidden(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_HIDDEN) != 0; }
+  inline bool IsSystem(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_SYSTEM) != 0; }
+  inline bool IsDir(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_DIRECTORY) != 0; }
+  inline bool IsArchived(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_ARCHIVE) != 0; }
+  inline bool IsCompressed(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_COMPRESSED) != 0; }
+  inline bool IsEncrypted(DWORD attrib) { return (attrib & FILE_ATTRIBUTE_ENCRYPTED) != 0; }
 }
 
 class CFileInfoBase
-{ 
-  bool MatchesMask(UINT32 mask) const  { return ((Attributes & mask) != 0); }
+{
+  bool MatchesMask(UINT32 mask) const { return ((Attrib & mask) != 0); }
 public:
-  DWORD Attributes;
-  FILETIME CreationTime;  
-  FILETIME LastAccessTime; 
-  FILETIME LastWriteTime;
   UInt64 Size;
+  FILETIME CTime;
+  FILETIME ATime;
+  FILETIME MTime;
+  DWORD Attrib;
   
   #ifndef _WIN32_WCE
   UINT32 ReparseTag;
   #else
-  DWORD ObjectID; 
+  DWORD ObjectID;
   #endif
 
   bool IsArchived() const { return MatchesMask(FILE_ATTRIBUTE_ARCHIVE); }
   bool IsCompressed() const { return MatchesMask(FILE_ATTRIBUTE_COMPRESSED); }
-  bool IsDirectory() const { return MatchesMask(FILE_ATTRIBUTE_DIRECTORY); }
+  bool IsDir() const { return MatchesMask(FILE_ATTRIBUTE_DIRECTORY); }
   bool IsEncrypted() const { return MatchesMask(FILE_ATTRIBUTE_ENCRYPTED); }
   bool IsHidden() const { return MatchesMask(FILE_ATTRIBUTE_HIDDEN); }
   bool IsNormal() const { return MatchesMask(FILE_ATTRIBUTE_NORMAL); }
@@ -54,7 +54,7 @@ public:
 };
 
 class CFileInfo: public CFileInfoBase
-{ 
+{
 public:
   CSysString Name;
   bool IsDots() const;
@@ -64,7 +64,7 @@ public:
 typedef CFileInfo CFileInfoW;
 #else
 class CFileInfoW: public CFileInfoBase
-{ 
+{
 public:
   UString Name;
   bool IsDots() const;

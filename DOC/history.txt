@@ -1,6 +1,19 @@
 Sources history of the 7-Zip
 ----------------------------
 
+4.59           2008-07-27
+-------------------------
+- Bug was fixed:
+   LZMA Encoder in fast compression mode could access memory outside of 
+   allocated range in some rare cases.
+   
+
+4.59 alpha     2008-05-30
+-------------------------
+- BUGS was fixed: 
+    7zOut.cpp: 7-Zip incorrectly wrote size of property records in some cases.
+    7zIn.cpp:  7-Zip incorrectly work with archive, containg archive properties.
+
 4.58 alpha 9   2008-04-29
 -------------------------
 - BUG was fixed: 7-Zip showed incorrect timestamps in ISO files.

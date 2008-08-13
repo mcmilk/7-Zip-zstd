@@ -5,6 +5,7 @@
 
 #include "../Agent/IFolderArchive.h"
 #include "Common/MyString.h"
+#include "../Common/ArchiveOpenCallback.h"
 
 #ifdef _SFX
 #include "ProgressDialog.h"
@@ -14,7 +15,7 @@
 
 #include "Windows/ResourceString.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "LangUtils.h"
 #endif
 
@@ -24,8 +25,9 @@
 #include "Common/MyCom.h"
 #include "IFolder.h"
 
-class CExtractCallbackImp: 
+class CExtractCallbackImp:
   public IExtractCallbackUI,
+  public IOpenCallbackUI,
   public IFolderOperationsExtractCallback,
   // public IFolderArchiveExtractCallback, // mkultiple from IProgress
   #ifndef _SFX
@@ -48,13 +50,12 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-  // IProgress
-  STDMETHOD(SetTotal)(UInt64 total);
-  STDMETHOD(SetCompleted)(const UInt64 *value);
-
   #ifndef _SFX
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
   #endif
+
+  INTERFACE_IProgress(;)
+  INTERFACE_IOpenCallbackUI(;)
 
   // IFolderArchiveExtractCallback
   // STDMETHOD(SetTotalFiles)(UInt64 total);
@@ -81,12 +82,12 @@ public:
 
   // IFolderOperationsExtractCallback
   STDMETHOD(AskWrite)(
-      const wchar_t *srcPath, 
-      Int32 srcIsFolder, 
-      const FILETIME *srcTime, 
+      const wchar_t *srcPath,
+      Int32 srcIsFolder,
+      const FILETIME *srcTime,
       const UInt64 *srcSize,
-      const wchar_t *destPathRequest, 
-      BSTR *destPathResult, 
+      const wchar_t *destPathRequest,
+      BSTR *destPathResult,
       Int32 *writeAnswer);
   STDMETHOD(ShowMessage)(const wchar_t *message);
   STDMETHOD(SetCurrentFilePath)(const wchar_t *filePath);
@@ -128,12 +129,14 @@ public:
 
   #ifndef _NO_CRYPTO
   bool PasswordIsDefined;
+  bool PasswordWasAsked;
   UString Password;
   #endif
 
-  CExtractCallbackImp(): 
+  CExtractCallbackImp():
     #ifndef _NO_CRYPTO
     PasswordIsDefined(false),
+    PasswordWasAsked(false),
     #endif
     OverwriteMode(NExtract::NOverwriteMode::kAskBefore),
     ParentWindow(0),

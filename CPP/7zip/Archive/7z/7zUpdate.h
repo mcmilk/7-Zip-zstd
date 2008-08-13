@@ -14,38 +14,40 @@ namespace N7z {
 
 struct CUpdateItem
 {
-  bool NewData;
-  bool NewProperties;
   int IndexInArchive;
   int IndexInClient;
   
-  UInt32 Attributes;
-  FILETIME CreationTime;
-  FILETIME LastWriteTime;
-  FILETIME LastAccessTime;
+  UInt64 CTime;
+  UInt64 ATime;
+  UInt64 MTime;
 
   UInt64 Size;
   UString Name;
+
+  UInt32 Attrib;
   
+  bool NewData;
+  bool NewProperties;
+
   bool IsAnti;
-  bool IsDirectory;
+  bool IsDir;
 
-  bool IsCreationTimeDefined;
-  bool IsLastWriteTimeDefined;
-  bool IsLastAccessTimeDefined;
-  bool AttributesAreDefined;
+  bool AttribDefined;
+  bool CTimeDefined;
+  bool ATimeDefined;
+  bool MTimeDefined;
 
-  bool HasStream() const 
-    { return !IsDirectory && !IsAnti && Size != 0; }
-  CUpdateItem():  
-      IsAnti(false), 
-      AttributesAreDefined(false), 
-      IsCreationTimeDefined(false), 
-      IsLastWriteTimeDefined(false), 
-      IsLastAccessTimeDefined(false)
+  bool HasStream() const { return !IsDir && !IsAnti && Size != 0; }
+
+  CUpdateItem():
+      IsAnti(false),
+      IsDir(false),
+      AttribDefined(false),
+      CTimeDefined(false),
+      ATimeDefined(false),
+      MTimeDefined(false)
       {}
-  void SetDirectoryStatusFromAttributes()
-    { IsDirectory = ((Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0); };
+  void SetDirStatusFromAttrib() { IsDir = ((Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0); };
 
   int GetExtensionPos() const;
   UString GetExtension() const;
@@ -70,8 +72,10 @@ struct CUpdateOptions
 HRESULT Update(
     DECL_EXTERNAL_CODECS_LOC_VARS
     IInStream *inStream,
-    const CArchiveDatabaseEx *database,
+    const CArchiveDatabaseEx *db,
     const CObjectVector<CUpdateItem> &updateItems,
+    COutArchive &archive,
+    CArchiveDatabase &newDatabase,
     ISequentialOutStream *seqOutStream,
     IArchiveUpdateCallback *updateCallback,
     const CUpdateOptions &options);

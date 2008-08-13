@@ -15,7 +15,7 @@
 namespace NArchive {
 namespace NGZip {
 
-class CHandler: 
+class CHandler:
   public IInArchive,
   public IOutArchive,
   public ISetProperties,
@@ -53,7 +53,7 @@ private:
   void InitMethodProperties()
   {
     m_Method.NumMatchFinderCyclesDefined = false;
-    m_Level = m_Method.NumPasses = m_Method.NumFastBytes = 
+    m_Level = m_Method.NumPasses = m_Method.NumFastBytes =
         m_Method.NumMatchFinderCycles = m_Method.Algo = 0xFFFFFFFF;
   }
 };

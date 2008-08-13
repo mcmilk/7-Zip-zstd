@@ -10,15 +10,15 @@ namespace NFile {
 namespace NIO {
 
 struct CByHandleFileInfo
-{ 
-  DWORD    Attributes; 
-  FILETIME CreationTime; 
-  FILETIME LastAccessTime; 
-  FILETIME LastWriteTime; 
-  DWORD    VolumeSerialNumber; 
+{
+  DWORD    Attributes;
+  FILETIME CTime;
+  FILETIME ATime;
+  FILETIME MTime;
+  DWORD    VolumeSerialNumber;
   UInt64   Size;
-  DWORD    NumberOfLinks; 
-  UInt64   FileIndex; 
+  DWORD    NumberOfLinks;
+  UInt64   FileIndex;
 };
 
 class CFileBase
@@ -42,9 +42,9 @@ public:
   bool GetLength(UInt64 &length) const;
 
   bool Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition) const;
-  bool Seek(UInt64 position, UInt64 &newPosition); 
-  bool SeekToBegin(); 
-  bool SeekToEnd(UInt64 &newPosition); 
+  bool Seek(UInt64 position, UInt64 &newPosition);
+  bool SeekToBegin();
+  bool SeekToEnd(UInt64 &newPosition);
   
   bool GetFileInformation(CByHandleFileInfo &fileInfo) const;
 };
@@ -86,8 +86,8 @@ public:
     { m_CreationDisposition = CREATE_ALWAYS; }
   */
 
-  bool SetTime(const FILETIME *creationTime, const FILETIME *lastAccessTime, const FILETIME *lastWriteTime);
-  bool SetLastWriteTime(const FILETIME *lastWriteTime);
+  bool SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
+  bool SetMTime(const FILETIME *mTime);
   bool WritePart(const void *data, UInt32 size, UInt32 &processedSize);
   bool Write(const void *data, UInt32 size, UInt32 &processedSize);
   bool SetEndOfFile();

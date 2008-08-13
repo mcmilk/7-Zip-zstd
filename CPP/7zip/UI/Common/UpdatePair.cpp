@@ -42,7 +42,7 @@ static const wchar_t *kDuplicateFileNameMessage = L"Duplicate filename:";
 
 /*
 static const char *kNotCensoredCollisionMessaged = "Internal file name collision:\n";
-static const char *kSameTimeChangedSizeCollisionMessaged = 
+static const char *kSameTimeChangedSizeCollisionMessaged =
     "Collision between files with same date/time and different sizes:\n";
 */
 
@@ -61,92 +61,103 @@ static void TestDuplicateString(const UStringVector &strings, const CIntVector &
 }
 
 void GetUpdatePairInfoList(
-    const CObjectVector<CDirItem> &dirItems, 
-    const CObjectVector<CArchiveItem> &archiveItems,
+    const CDirItems &dirItems,
+    const CObjectVector<CArcItem> &arcItems,
     NFileTimeType::EEnum fileTimeType,
-    CObjectVector<CUpdatePair> &updatePairs)
+    CRecordVector<CUpdatePair> &updatePairs)
 {
-  CIntVector dirIndices, archiveIndices;
-  UStringVector dirNames, archiveNames;
+  CIntVector dirIndices, arcIndices;
   
-  int numDirItems = dirItems.Size(); 
-  int i;
-  for(i = 0; i < numDirItems; i++)
-    dirNames.Add(dirItems[i].Name);
-  SortFileNames(dirNames, dirIndices);
-  TestDuplicateString(dirNames, dirIndices);
-
-  int numArchiveItems = archiveItems.Size(); 
-  for(i = 0; i < numArchiveItems; i++)
-    archiveNames.Add(archiveItems[i].Name);
-  SortFileNames(archiveNames, archiveIndices);
-  TestDuplicateString(archiveNames, archiveIndices);
+  int numDirItems = dirItems.Items.Size();
+  int numArcItems = arcItems.Size();
   
-  int dirItemIndex = 0, archiveItemIndex = 0; 
-  CUpdatePair pair;
-  while(dirItemIndex < numDirItems && archiveItemIndex < numArchiveItems)
+  
   {
-    int dirItemIndex2 = dirIndices[dirItemIndex],
-        archiveItemIndex2 = archiveIndices[archiveItemIndex]; 
-    const CDirItem &dirItem = dirItems[dirItemIndex2];
-    const CArchiveItem &archiveItem = archiveItems[archiveItemIndex2];
-    int compareResult = CompareFileNames(dirItem.Name, archiveItem.Name);
+    UStringVector arcNames;
+    arcNames.Reserve(numArcItems);
+    for (int i = 0; i < numArcItems; i++)
+      arcNames.Add(arcItems[i].Name);
+    SortFileNames(arcNames, arcIndices);
+    TestDuplicateString(arcNames, arcIndices);
+  }
+
+  UStringVector dirNames;
+  {
+    dirNames.Reserve(numDirItems);
+    for (int i = 0; i < numDirItems; i++)
+      dirNames.Add(dirItems.GetLogPath(i));
+    SortFileNames(dirNames, dirIndices);
+    TestDuplicateString(dirNames, dirIndices);
+  }
+  
+  int dirIndex = 0, arcIndex = 0;
+  while (dirIndex < numDirItems && arcIndex < numArcItems)
+  {
+    CUpdatePair pair;
+    int dirIndex2 = dirIndices[dirIndex];
+    int arcIndex2 = arcIndices[arcIndex];
+    const CDirItem &di = dirItems.Items[dirIndex2];
+    const CArcItem &ai = arcItems[arcIndex2];
+    int compareResult = CompareFileNames(dirNames[dirIndex2], ai.Name);
     if (compareResult < 0)
     {
-        pair.State = NUpdateArchive::NPairState::kOnlyOnDisk;
-        pair.DirItemIndex = dirItemIndex2;
-        dirItemIndex++;
+      pair.State = NUpdateArchive::NPairState::kOnlyOnDisk;
+      pair.DirIndex = dirIndex2;
+      dirIndex++;
     }
     else if (compareResult > 0)
     {
-      pair.State = archiveItem.Censored ? 
-        NUpdateArchive::NPairState::kOnlyInArchive: NUpdateArchive::NPairState::kNotMasked;
-      pair.ArchiveItemIndex = archiveItemIndex2;
-      archiveItemIndex++;
+      pair.State = ai.Censored ?
+          NUpdateArchive::NPairState::kOnlyInArchive:
+          NUpdateArchive::NPairState::kNotMasked;
+      pair.ArcIndex = arcIndex2;
+      arcIndex++;
     }
     else
     {
-      if (!archiveItem.Censored)
-        throw 1082022;; // TTString(kNotCensoredCollisionMessaged + dirItem.Name);
-      pair.DirItemIndex = dirItemIndex2;
-      pair.ArchiveItemIndex = archiveItemIndex2;
-      switch (MyCompareTime(archiveItem.FileTimeType != - 1 ? 
-          (NFileTimeType::EEnum)archiveItem.FileTimeType : fileTimeType, dirItem.LastWriteTime, archiveItem.LastWriteTime))
+      if (!ai.Censored)
+        throw 1082022;
+      pair.DirIndex = dirIndex2;
+      pair.ArcIndex = arcIndex2;
+      switch (MyCompareTime(
+          ai.TimeType != - 1 ? (NFileTimeType::EEnum)ai.TimeType : fileTimeType,
+          di.MTime, ai.MTime))
       {
-        case -1:
-          pair.State = NUpdateArchive::NPairState::kNewInArchive;
-          break;
-        case 1:
-          pair.State = NUpdateArchive::NPairState::kOldInArchive;
-          break;
+        case -1: pair.State = NUpdateArchive::NPairState::kNewInArchive; break;
+        case 1:  pair.State = NUpdateArchive::NPairState::kOldInArchive; break;
         default:
-          if (archiveItem.SizeIsDefined)
-            if (dirItem.Size != archiveItem.Size)
-              // throw 1082034; // kSameTimeChangedSizeCollisionMessaged;
+          if (ai.SizeDefined)
+            if (di.Size != ai.Size)
               pair.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
             else
               pair.State = NUpdateArchive::NPairState::kSameFiles;
           else
               pair.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
       }
-      dirItemIndex++;
-      archiveItemIndex++;
+      dirIndex++;
+      arcIndex++;
     }
     updatePairs.Add(pair);
   }
-  for(;dirItemIndex < numDirItems; dirItemIndex++)
+
+  for (; dirIndex < numDirItems; dirIndex++)
   {
+    CUpdatePair pair;
     pair.State = NUpdateArchive::NPairState::kOnlyOnDisk;
-    pair.DirItemIndex = dirIndices[dirItemIndex];
+    pair.DirIndex = dirIndices[dirIndex];
     updatePairs.Add(pair);
   }
-  for(;archiveItemIndex < numArchiveItems; archiveItemIndex++)
+  
+  for (; arcIndex < numArcItems; arcIndex++)
   {
-    int archiveItemIndex2 = archiveIndices[archiveItemIndex]; 
-    const CArchiveItem &archiveItem = archiveItems[archiveItemIndex2];
-    pair.State = archiveItem.Censored ?  
-        NUpdateArchive::NPairState::kOnlyInArchive: NUpdateArchive::NPairState::kNotMasked;
-    pair.ArchiveItemIndex = archiveItemIndex2;
+    CUpdatePair pair;
+    int arcIndex2 = arcIndices[arcIndex];
+    pair.State = arcItems[arcIndex2].Censored ?
+        NUpdateArchive::NPairState::kOnlyInArchive:
+        NUpdateArchive::NPairState::kNotMasked;
+    pair.ArcIndex = arcIndex2;
     updatePairs.Add(pair);
   }
+
+  updatePairs.ReserveDown();
 }

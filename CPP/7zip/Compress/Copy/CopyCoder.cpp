@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -20,7 +20,7 @@ CCopyCoder::~CCopyCoder()
 }
 
 STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, 
+    ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {

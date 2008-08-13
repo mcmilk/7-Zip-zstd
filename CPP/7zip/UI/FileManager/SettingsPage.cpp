@@ -16,7 +16,7 @@
 
 using namespace NWindows;
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_SETTINGS_SHOW_DOTS, 0x03010401},
   { IDC_SETTINGS_SHOW_REAL_FILE_ICONS, 0x03010402},
@@ -91,7 +91,7 @@ void CSettingsPage::OnNotifyHelp()
 }
 
 bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
-{ 
+{
   switch(buttonID)
   {
     /*

@@ -19,9 +19,9 @@ namespace NSignature
   class CMarkersInitializer
   {
   public:
-    CMarkersInitializer() 
-    { 
-      kLocalFileHeader--; 
+    CMarkersInitializer()
+    {
+      kLocalFileHeader--;
       kDataDescriptor--;
       kCentralFileHeader--;
       kEndOfCentralDir--;

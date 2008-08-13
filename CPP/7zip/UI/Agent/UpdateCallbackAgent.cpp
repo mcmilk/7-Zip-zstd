@@ -63,9 +63,9 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemErr
     if (Callback)
     {
       RINOK(Callback->UpdateErrorMessage(
-        UString(L"WARNING: ") + 
-        NError::MyFormatMessageW(systemError) + 
-        UString(L": ") + 
+        UString(L"WARNING: ") +
+        NError::MyFormatMessageW(systemError) +
+        UString(L": ") +
         UString(name)));
       return S_FALSE;
     }

@@ -17,11 +17,11 @@ struct CPropMap
   STATPROPSTG StatPROPSTG;
 };
 
-CPropMap kPropMap[] = 
+CPropMap kPropMap[] =
 {
   { NID::kName, NULL, kpidPath, VT_BSTR},
   { NID::kSize, NULL, kpidSize, VT_UI8},
-  { NID::kPackInfo, NULL, kpidPackedSize, VT_UI8},
+  { NID::kPackInfo, NULL, kpidPackSize, VT_UI8},
   
   #ifdef _MULTI_PACK
   { 100, L"Pack0", kpidPackedSize0, VT_UI8},
@@ -31,10 +31,10 @@ CPropMap kPropMap[] =
   { 104, L"Pack4", kpidPackedSize4, VT_UI8},
   #endif
 
-  { NID::kCreationTime, NULL, kpidCreationTime, VT_FILETIME},
-  { NID::kLastWriteTime, NULL, kpidLastWriteTime, VT_FILETIME},
-  { NID::kLastAccessTime, NULL, kpidLastAccessTime, VT_FILETIME},
-  { NID::kWinAttributes, NULL, kpidAttributes, VT_UI4},
+  { NID::kCTime, NULL, kpidCTime, VT_FILETIME},
+  { NID::kMTime, NULL, kpidMTime, VT_FILETIME},
+  { NID::kATime, NULL, kpidATime, VT_FILETIME},
+  { NID::kWinAttributes, NULL, kpidAttrib, VT_UI4},
   { NID::kStartPos, NULL, kpidPosition, VT_UI4},
 
   { NID::kCRC, NULL, kpidCRC, VT_UI4},
@@ -58,7 +58,7 @@ static int FindPropInMap(UInt64 filePropID)
   return -1;
 }
 
-static void CopyOneItem(CRecordVector<UInt64> &src, 
+static void CopyOneItem(CRecordVector<UInt64> &src,
     CRecordVector<UInt64> &dest, UInt32 item)
 {
   for (int i = 0; i < src.Size(); i++)
@@ -92,17 +92,17 @@ static void InsertToHead(CRecordVector<UInt64> &dest, UInt32 item)
 }
 
 void CHandler::FillPopIDs()
-{ 
+{
   _fileInfoPopIDs.Clear();
 
   #ifdef _7Z_VOL
   if(_volumes.Size() < 1)
     return;
   const CVolume &volume = _volumes.Front();
-  const CArchiveDatabaseEx &_database = volume.Database;
+  const CArchiveDatabaseEx &_db = volume.Database;
   #endif
 
-  CRecordVector<UInt64> fileInfoPopIDs = _database.ArchiveInfo.FileInfoPopIDs;
+  CRecordVector<UInt64> fileInfoPopIDs = _db.ArchiveInfo.FileInfoPopIDs;
 
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyStream);
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyFile);
@@ -111,13 +111,13 @@ void CHandler::FillPopIDs()
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kAnti);
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kSize);
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kPackInfo);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCreationTime);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kLastWriteTime);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kLastAccessTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kMTime);
+  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kATime);
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kWinAttributes);
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCRC);
   CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kComment);
-  _fileInfoPopIDs += fileInfoPopIDs; 
+  _fileInfoPopIDs += fileInfoPopIDs;
  
   #ifndef _SFX
   _fileInfoPopIDs.Add(97);
@@ -133,7 +133,7 @@ void CHandler::FillPopIDs()
   #endif
 
   #ifndef _SFX
-  InsertToHead(_fileInfoPopIDs, NID::kLastWriteTime);
+  InsertToHead(_fileInfoPopIDs, NID::kMTime);
   InsertToHead(_fileInfoPopIDs, NID::kPackInfo);
   InsertToHead(_fileInfoPopIDs, NID::kSize);
   InsertToHead(_fileInfoPopIDs, NID::kName);

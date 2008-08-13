@@ -1,6 +1,6 @@
 PROG = lzma
 CXX = g++
-LIB = 
+LIB =
 RM = rm -f
 CFLAGS = -c -O2 -Wall
 

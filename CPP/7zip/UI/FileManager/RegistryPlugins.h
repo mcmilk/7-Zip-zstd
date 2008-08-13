@@ -5,7 +5,7 @@
 
 #include "Common/MyString.h"
 
-enum EPluginType 
+enum EPluginType
 {
   kPluginTypeFF = 0
 };

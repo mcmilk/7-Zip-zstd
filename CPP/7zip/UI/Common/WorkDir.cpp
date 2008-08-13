@@ -10,8 +10,8 @@
 #include "Windows/FileName.h"
 #include "Windows/FileDir.h"
 
-static inline UINT GetCurrentCodePage() 
-  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; } 
+static inline UINT GetCurrentCodePage()
+  { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
 using namespace NWindows;
 using namespace NFile;

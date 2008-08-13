@@ -4,7 +4,7 @@
 
 #include "LockedStream.h"
 
-HRESULT CLockedInStream::Read(UInt64 startPos, void *data, UInt32 size, 
+HRESULT CLockedInStream::Read(UInt64 startPos, void *data, UInt32 size,
   UInt32 *processedSize)
 {
   NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);

@@ -17,8 +17,8 @@ namespace NRegistry {
 #define MYASSERT(expr) // _ASSERTE(expr)
 
 CKey::~CKey()
-{ 
-  Close(); 
+{
+  Close();
 }
 
 HKEY CKey::Detach()
@@ -41,7 +41,7 @@ LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
   MYASSERT(parentKey != NULL);
   DWORD dispositionReal;
   HKEY key = NULL;
-  LONG res = RegCreateKeyEx(parentKey, keyName, 0, keyClass, 
+  LONG res = RegCreateKeyEx(parentKey, keyName, 0, keyClass,
       options, accessMask, securityAttributes, &key, &dispositionReal);
   if (disposition != NULL)
     *disposition = dispositionReal;
@@ -170,7 +170,7 @@ LONG CKey::SetValue(LPCWSTR name, LPCWSTR value)
   if (g_IsNT)
     return RegSetValueExW(_object, name, NULL, REG_SZ,
       (const BYTE * )value, (DWORD)((wcslen(value) + 1) * sizeof(wchar_t)));
-  return SetValue(name == 0 ? 0 : (LPCSTR)GetSystemString(name), 
+  return SetValue(name == 0 ? 0 : (LPCSTR)GetSystemString(name),
     value == 0 ? 0 : (LPCSTR)GetSystemString(value));
 }
 
@@ -309,7 +309,7 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
     const UInt32 kBufferSize = MAX_PATH + 1; // 256 in ATL
     FILETIME lastWriteTime;
     UInt32 nameSize = kBufferSize;
-    LONG result = ::RegEnumKeyEx(_object, index, keyName.GetBuffer(kBufferSize), 
+    LONG result = ::RegEnumKeyEx(_object, index, keyName.GetBuffer(kBufferSize),
         (DWORD *)&nameSize, NULL, NULL, NULL, &lastWriteTime);
     keyName.ReleaseBuffer();
     if(result == ERROR_NO_MORE_ITEMS)

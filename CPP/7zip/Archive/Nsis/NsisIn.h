@@ -37,7 +37,7 @@ struct CFirstHeader
  
   UInt32 ArchiveSize;
 
-  bool ThereIsCrc() const 
+  bool ThereIsCrc() const
   {
     if ((Flags & NFlags::kForceCrc ) != 0)
       return true;
@@ -60,7 +60,7 @@ struct CItem
   UString PrefixU;
   AString NameA;
   UString NameU;
-  FILETIME DateTime;
+  FILETIME MTime;
   bool IsUnicode;
   bool UseFilter;
   bool IsCompressed;
@@ -73,7 +73,7 @@ struct CItem
   UInt32 EstimatedSize;
   UInt32 DictionarySize;
   
-  CItem(): IsUnicode(false), UseFilter(false), IsCompressed(true), SizeIsDefined(false), 
+  CItem(): IsUnicode(false), UseFilter(false), IsCompressed(true), SizeIsDefined(false),
       CompressedSizeIsDefined(false), EstimatedSizeIsDefined(false), Size(0) {}
 
   bool IsINSTDIR() const
@@ -81,7 +81,7 @@ struct CItem
     return (PrefixA.Length() >= 3 || PrefixU.Length() >= 3);
   }
 
-  AString GetReducedNameA() const 
+  AString GetReducedNameA() const
   {
     AString prefix = PrefixA;
     if (prefix.Length() > 0)
@@ -94,7 +94,7 @@ struct CItem
     return s2;
   }
   
-  UString GetReducedNameU() const 
+  UString GetReducedNameU() const
   {
     UString prefix = PrefixU;
     if (prefix.Length() > 0)
@@ -120,11 +120,12 @@ class CInArchive
       DECL_EXTERNAL_CODECS_LOC_VARS2
       );
   void ReadBlockHeader(CBlockHeader &bh);
-  AString ReadStringA(UInt32 pos);
-  UString ReadStringU(UInt32 pos);
-  AString ReadString2A(UInt32 pos);
-  UString ReadString2U(UInt32 pos);
-  AString ReadString2(UInt32 pos);
+  AString ReadStringA(UInt32 pos) const;
+  UString ReadStringU(UInt32 pos) const;
+  AString ReadString2A(UInt32 pos) const;
+  UString ReadString2U(UInt32 pos) const;
+  AString ReadString2(UInt32 pos) const;
+  AString ReadString2Qw(UInt32 pos) const;
   HRESULT ReadEntries(const CBlockHeader &bh);
   HRESULT Parse();
 
@@ -165,14 +166,14 @@ public:
     return GetOffset() + FirstHeader.HeaderLength + item.Pos;
   }
 
-  UInt64 GetPosOfSolidItem(int index) const 
-  { 
+  UInt64 GetPosOfSolidItem(int index) const
+  {
     const CItem &item = Items[index];
     return 4 + FirstHeader.HeaderLength + item.Pos;
   }
   
-  UInt64 GetPosOfNonSolidItem(int index) const 
-  { 
+  UInt64 GetPosOfNonSolidItem(int index) const
+  {
     const CItem &item = Items[index];
     return StreamOffset + _nonSolidStartOffset + 4  + item.Pos;
   }
@@ -184,8 +185,6 @@ public:
 
 };
 
-UInt32 GetUInt32FromMemLE(const Byte *p);
-  
 }}
   
 #endif

@@ -3,8 +3,8 @@
 #include "StdAfx.h"
 #include "x86_2.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 
@@ -130,7 +130,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
     
     if (endPos < 5)
     {
-      // change it 
+      // change it
       for (bufferPos = 0; bufferPos < endPos; bufferPos++)
       {
         Byte b = _buffer[bufferPos];
@@ -167,7 +167,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
         continue;
       }
       Byte nextByte = _buffer[bufferPos + 4];
-      UInt32 src = 
+      UInt32 src =
         (UInt32(nextByte) << 24) |
         (UInt32(_buffer[bufferPos + 3]) << 16) |
         (UInt32(_buffer[bufferPos + 2]) << 8) |
@@ -185,14 +185,14 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
           if (result == S_OK)
           {
             subStreamStartPos = subStreamEndPos;
-            subStreamEndPos += subStreamSize;          
+            subStreamEndPos += subStreamSize;
             subStreamIndex++;
           }
           else if (result == S_FALSE || result == E_NOTIMPL)
           {
             getSubStreamSize.Release();
             subStreamStartPos = 0;
-            subStreamEndPos = subStreamStartPos - 1;          
+            subStreamEndPos = subStreamStartPos - 1;
           }
           else
             return result;
@@ -239,8 +239,8 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
     if (progress != NULL)
     {
       /*
-      const UInt64 compressedSize = 
-        _mainStream.GetProcessedSize() + 
+      const UInt64 compressedSize =
+        _mainStream.GetProcessedSize() +
         _callStream.GetProcessedSize() +
         _jumpStream.GetProcessedSize() +
         _rangeEncoder.GetProcessedSize();
@@ -320,8 +320,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams,
     if (processedBytes >= (1 << 20) && progress != NULL)
     {
       /*
-      const UInt64 compressedSize = 
-        _mainInStream.GetProcessedSize() + 
+      const UInt64 compressedSize =
+        _mainInStream.GetProcessedSize() +
         _callStream.GetProcessedSize() +
         _jumpStream.GetProcessedSize() +
         _rangeDecoder.GetProcessedSize();

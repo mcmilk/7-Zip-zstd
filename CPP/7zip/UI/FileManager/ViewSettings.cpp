@@ -416,7 +416,7 @@ void SaveCopyHistory(const UStringVector &folders)
 void ReadCopyHistory(UStringVector &folders)
   { ReadStringList(kCopyHistoryValueName, folders); }
 
-void AddUniqueStringToHeadOfList(UStringVector &list, 
+void AddUniqueStringToHeadOfList(UStringVector &list,
     const UString &string)
 {
   for(int i = 0; i < list.Size();)

@@ -32,8 +32,8 @@ struct CExtraSubBlock
 
 struct CWzAesExtraField
 {
-  UInt16 VendorVersion; // 0x0001 - AE-1, 0x0002 - AE-2, 
-  // UInt16 VendorId; // "AE" 
+  UInt16 VendorVersion; // 0x0001 - AE-1, 0x0002 - AE-2,
+  // UInt16 VendorId; // "AE"
   Byte Strength; // 1 - 128-bit , 2 - 192-bit , 3 - 256-bit
   UInt16 Method;
 
@@ -111,14 +111,14 @@ struct CExtraBlock
 {
   CObjectVector<CExtraSubBlock> SubBlocks;
   void Clear() { SubBlocks.Clear(); }
-  size_t GetSize() const 
+  size_t GetSize() const
   {
     size_t res = 0;
     for (int i = 0; i < SubBlocks.Size(); i++)
       res += SubBlocks[i].Data.GetCapacity() + 2 + 2;
     return res;
   }
-  bool GetWzAesField(CWzAesExtraField &aesField) const 
+  bool GetWzAesField(CWzAesExtraField &aesField) const
   {
     for (int i = 0; i < SubBlocks.Size(); i++)
       if (aesField.ParseFromSubBlock(SubBlocks[i]))
@@ -126,7 +126,7 @@ struct CExtraBlock
     return false;
   }
 
-  bool GetStrongCryptoField(CStrongCryptoField &f) const 
+  bool GetStrongCryptoField(CStrongCryptoField &f) const
   {
     for (int i = 0; i < SubBlocks.Size(); i++)
       if (f.ParseFromSubBlock(SubBlocks[i]))
@@ -134,13 +134,13 @@ struct CExtraBlock
     return false;
   }
 
-  bool HasWzAesField() const 
+  bool HasWzAesField() const
   {
     CWzAesExtraField aesField;
     return GetWzAesField(aesField);
   }
 
-  bool GetNtfsTime(int index, FILETIME &ft) const 
+  bool GetNtfsTime(int index, FILETIME &ft) const
   {
     for (int i = 0; i < SubBlocks.Size(); i++)
     {
@@ -152,7 +152,7 @@ struct CExtraBlock
   }
 
   /*
-  bool HasStrongCryptoField() const 
+  bool HasStrongCryptoField() const
   {
     CStrongCryptoField f;
     return GetStrongCryptoField(f);
@@ -191,14 +191,14 @@ public:
   bool IsImplodeBigDictionary() const;
   bool IsImplodeLiteralsOn() const;
   
-  bool IsDirectory() const;
+  bool IsDir() const;
   bool IgnoreItem() const { return false; }
   UInt32 GetWinAttributes() const;
   
   bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
-  UString GetUnicodeString(const AString &s) const 
-  { 
+  UString GetUnicodeString(const AString &s) const
+  {
     UString res;
     if (IsUtf8())
       if (!ConvertUTF8ToUnicode(s, res))
@@ -239,10 +239,10 @@ public:
   bool FromCentral;
   bool NtfsTimeIsDefined;
   
-  bool IsDirectory() const;
+  bool IsDir() const;
   UInt32 GetWinAttributes() const;
 
-  bool IsThereCrc() const 
+  bool IsThereCrc() const
   {
     if (CompressionMethod == NFileHeader::NCompressionMethod::kWzAES)
     {
@@ -250,12 +250,12 @@ public:
       if (CentralExtra.GetWzAesField(aesField))
         return aesField.NeedCrc();
     }
-    return (FileCRC != 0 || !IsDirectory());
+    return (FileCRC != 0 || !IsDir());
   }
   
   WORD GetCodePage() const
   {
-    return (WORD)((MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT 
+    return (WORD)((MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT
         || MadeByVersion.HostOS == NFileHeader::NHostOS::kNTFS
         ) ? CP_OEMCP : CP_ACP);
   }

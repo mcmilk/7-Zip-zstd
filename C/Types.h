@@ -1,5 +1,5 @@
 /* Types.h -- Basic types
-2008-04-11
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -83,8 +83,8 @@ typedef int Bool;
 #endif
 
 #define MY_CDECL __cdecl
-#define MY_STD_CALL __stdcall 
-#define MY_FAST_CALL MY_NO_INLINE __fastcall 
+#define MY_STD_CALL __stdcall
+#define MY_FAST_CALL MY_NO_INLINE __fastcall
 
 #else
 

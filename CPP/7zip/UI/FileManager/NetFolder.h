@@ -16,7 +16,7 @@ struct CResourceEx: public NWindows::NNet::CResourceW
   UString Name;
 };
 
-class CNetFolder: 
+class CNetFolder:
   public IFolderFolder,
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp
@@ -41,7 +41,7 @@ private:
   
 public:
   void Init(const UString &path);
-  void Init(const NWindows::NNet::CResourceW *netResource, 
+  void Init(const NWindows::NNet::CResourceW *netResource,
       IFolderFolder *parentFolder, const UString &path);
   CNetFolder(): _netResourcePointer(0) {}
 };

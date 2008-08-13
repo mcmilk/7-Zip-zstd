@@ -10,8 +10,8 @@
 #include "../../ICoder.h"
 #include "../../IPassword.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Aes.h"
 }
 
@@ -20,7 +20,7 @@ namespace NRar29 {
 
 const UInt32 kRarAesKeySize = 16;
 
-class CDecoder: 
+class CDecoder:
   public ICompressFilter,
   public ICompressSetDecoderProperties2,
   public ICryptoSetPassword,

@@ -134,7 +134,7 @@ static void ConvertResourceToResourceW(const CResource &resource, CResourceW &re
   resourceW.Comment = GetUnicodeString(resource.Comment);
   resourceW.Provider = GetUnicodeString(resource.Provider);
 }
-#endif 
+#endif
 
 DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, const CResource *resource)
 {
@@ -290,7 +290,7 @@ DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource)
 }
 #endif
 
-DWORD GetResourceInformation(const CResource &resource, 
+DWORD GetResourceInformation(const CResource &resource,
     CResource &destResource, CSysString &systemPathPart)
 {
   CByteBuffer byteBuffer;
@@ -301,8 +301,8 @@ DWORD GetResourceInformation(const CResource &resource,
   DWORD bufferSize = kBufferSize;
   NETRESOURCE netResource;
   ConvertCResourceToNETRESOURCE(resource, netResource);
-  LPTSTR lplpSystem; 
-  DWORD result = ::WNetGetResourceInformation(&netResource, 
+  LPTSTR lplpSystem;
+  DWORD result = ::WNetGetResourceInformation(&netResource,
       lpnrLocal, &bufferSize, &lplpSystem);
   if (result != NO_ERROR)
     return result;
@@ -313,7 +313,7 @@ DWORD GetResourceInformation(const CResource &resource,
 }
 
 #ifndef _UNICODE
-DWORD GetResourceInformation(const CResourceW &resource, 
+DWORD GetResourceInformation(const CResourceW &resource,
     CResourceW &destResource, UString &systemPathPart)
 {
   if (g_IsNT)
@@ -326,8 +326,8 @@ DWORD GetResourceInformation(const CResourceW &resource,
     DWORD bufferSize = kBufferSize;
     NETRESOURCEW netResource;
     ConvertCResourceToNETRESOURCE(resource, netResource);
-    LPWSTR lplpSystem; 
-    DWORD result = ::WNetGetResourceInformationW(&netResource, 
+    LPWSTR lplpSystem;
+    DWORD result = ::WNetGetResourceInformationW(&netResource,
       lpnrLocal, &bufferSize, &lplpSystem);
     if (result != NO_ERROR)
       return result;
@@ -346,7 +346,7 @@ DWORD GetResourceInformation(const CResourceW &resource,
 }
 #endif
 
-DWORD AddConnection2(const CResource &resource, 
+DWORD AddConnection2(const CResource &resource,
     LPCTSTR password, LPCTSTR userName, DWORD flags)
 {
   NETRESOURCE netResource;
@@ -370,8 +370,8 @@ DWORD AddConnection2(const CResourceW &resource, LPCWSTR password, LPCWSTR userN
   ConvertResourceWToResource(resource, resourceA);
   CSysString passwordA = GetSystemString(password);
   CSysString userNameA = GetSystemString(userName);
-  return AddConnection2(resourceA, 
-    password ? (LPCTSTR)passwordA: 0, 
+  return AddConnection2(resourceA,
+    password ? (LPCTSTR)passwordA: 0,
     userName ? (LPCTSTR)userNameA: 0,
     flags);
 }

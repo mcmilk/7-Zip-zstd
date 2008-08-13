@@ -16,7 +16,7 @@ const int kNumPanelsMax = 2;
 
 extern void MoveSubWindows(HWND hWnd);
 
-enum 
+enum
 {
   kAddCommand = kToolbarStartID,
   kExtractCommand,
@@ -28,10 +28,10 @@ class CPanelCallbackImp: public CPanelCallback
   CApp *_app;
   int _index;
 public:
-  void Init(CApp *app, int index) 
-  { 
+  void Init(CApp *app, int index)
+  {
     _app = app;
-    _index = index; 
+    _index = index;
   }
   virtual void OnTab();
   virtual void SetFocusToPath(int index);
@@ -42,11 +42,11 @@ public:
   virtual void DragBegin();
   virtual void DragEnd();
   virtual void RefreshTitle(bool always);
-}; 
+};
 
 class CApp;
 
-class CDropTarget: 
+class CDropTarget:
   public IDropTarget,
   public CMyUnknownImp
 {
@@ -54,7 +54,7 @@ class CDropTarget:
   UStringVector m_SourcePaths;
   int m_SelectionIndex;
   bool m_DropIsAllowed;      // = true, if data contain fillist
-  bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel. 
+  bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel.
                              // check it only if m_DropIsAllowed == true
   int m_SubFolderIndex;
   UString m_SubFolderName;
@@ -77,22 +77,22 @@ class CDropTarget:
 
 public:
   MY_UNKNOWN_IMP1_MT(IDropTarget)
-  STDMETHOD(DragEnter)(IDataObject * dataObject, DWORD keyState, 
+  STDMETHOD(DragEnter)(IDataObject * dataObject, DWORD keyState,
       POINTL pt, DWORD *effect);
   STDMETHOD(DragOver)(DWORD keyState, POINTL pt, DWORD * effect);
   STDMETHOD(DragLeave)();
-  STDMETHOD(Drop)(IDataObject * dataObject, DWORD keyState, 
+  STDMETHOD(Drop)(IDataObject * dataObject, DWORD keyState,
       POINTL pt, DWORD *effect);
 
-  CDropTarget(): 
-      TargetPanelIndex(-1), 
-      SrcPanelIndex(-1), 
-      m_IsAppTarget(false), 
-      m_Panel(0), 
-      App(0), 
-      m_PanelDropIsAllowed(false), 
-      m_DropIsAllowed(false), 
-      m_SelectionIndex(-1), 
+  CDropTarget():
+      TargetPanelIndex(-1),
+      SrcPanelIndex(-1),
+      m_IsAppTarget(false),
+      m_Panel(0),
+      App(0),
+      m_PanelDropIsAllowed(false),
+      m_DropIsAllowed(false),
+      m_SelectionIndex(-1),
       m_SubFolderIndex(-1),
       m_SetPathIsOK(false) {}
 
@@ -138,18 +138,18 @@ public:
 
   void SetFocusedPanel(int index)
   {
-    LastFocusedPanel = index; 
+    LastFocusedPanel = index;
     _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
   }
 
   void DragBegin(int panelIndex)
-  { 
+  {
     _dropTargetSpec->TargetPanelIndex = (NumPanels > 1) ? 1 - panelIndex : panelIndex;
     _dropTargetSpec->SrcPanelIndex = panelIndex;
   }
 
   void DragEnd()
-  { 
+  {
     _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
     _dropTargetSpec->SrcPanelIndex = -1;
   }
@@ -159,8 +159,8 @@ public:
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
-  void CreateOnePanel(int panelIndex, const UString &mainPath, bool &archiveIsOpened, bool &encrypted);
-  void Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &archiveIsOpened, bool &encrypted);
+  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, bool &archiveIsOpened, bool &encrypted);
+  HRESULT Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &archiveIsOpened, bool &encrypted);
   void Read();
   void Save();
   void Release();
@@ -253,7 +253,7 @@ public:
   void RefreshView()
     { GetFocusedPanel().OnReload(); }
   void RefreshAllPanels()
-  { 
+  {
     for (int i = 0; i < NumPanels; i++)
     {
       int index = i;
@@ -264,7 +264,7 @@ public:
   }
   void SetListSettings();
   void SetShowSystemMenu();
-  void SwitchOnOffOnePanel();
+  HRESULT SwitchOnOffOnePanel();
   bool GetFlatMode() { return Panels[LastFocusedPanel].GetFlatMode(); }
   void ChangeFlatMode() { Panels[LastFocusedPanel].ChangeFlatMode(); }
 
@@ -293,41 +293,37 @@ public:
     SaveToolbarsMask(mask);
   }
   void SwitchStandardToolbar()
-  { 
+  {
     ShowStandardToolbar = !ShowStandardToolbar;
     SaveToolbar();
     ReloadRebar(g_HWND);
     MoveSubWindows(_window);
   }
   void SwitchArchiveToolbar()
-  { 
+  {
     ShowArchiveToolbar = !ShowArchiveToolbar;
     SaveToolbar();
     ReloadRebar(g_HWND);
     MoveSubWindows(_window);
   }
   void SwitchButtonsLables()
-  { 
+  {
     ShowButtonsLables = !ShowButtonsLables;
     SaveToolbar();
     ReloadRebar(g_HWND);
     MoveSubWindows(_window);
   }
   void SwitchLargeButtons()
-  { 
+  {
     LargeButtons = !LargeButtons;
     SaveToolbar();
     ReloadRebar(g_HWND);
     MoveSubWindows(_window);
   }
 
-
-  void AddToArchive()
-    { GetFocusedPanel().AddToArchive(); }
-  void ExtractArchives()
-    { GetFocusedPanel().ExtractArchives(); }
-  void TestArchives()
-    { GetFocusedPanel().TestArchives(); }
+  void AddToArchive() { GetFocusedPanel().AddToArchive(); }
+  void ExtractArchives() { GetFocusedPanel().ExtractArchives(); }
+  void TestArchives() { GetFocusedPanel().TestArchives(); }
 
   void OnNotify(int ctrlID, LPNMHDR pnmh);
 

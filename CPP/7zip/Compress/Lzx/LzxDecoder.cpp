@@ -1,12 +1,12 @@
-	// LzxDecoder.cpp
+// LzxDecoder.cpp
 
 #include "StdAfx.h"
 
 #include "LzxDecoder.h"
 
 #include "Common/Defs.h"
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Alloc.h"
 }
 #include "Windows/Defs.h"
@@ -307,7 +307,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, 
+    ISequentialOutStream *outStream,
     const UInt64 *, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
@@ -338,7 +338,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream,
       UInt64 nowPos64 = m_OutWindowStream.GetProcessedSize() - start;
       RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
-  } 
+  }
   flusher.NeedFlush = false;
   return Flush();
 }
@@ -374,7 +374,7 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 }
 
 HRESULT CDecoder::SetParams(int numDictBits)
-{ 
+{
   if (numDictBits < kNumDictionaryBitsMin || numDictBits > kNumDictionaryBitsMax)
     return E_INVALIDARG;
   UInt32 numPosSlots;

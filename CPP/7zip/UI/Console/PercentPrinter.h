@@ -16,7 +16,7 @@ class CPercentPrinter
 public:
   CStdOutStream *OutStream;
 
-  CPercentPrinter(UInt64 minStepSize = 1): m_MinStepSize(minStepSize), 
+  CPercentPrinter(UInt64 minStepSize = 1): m_MinStepSize(minStepSize),
       m_PrevValue(0), m_CurValue(0), m_Total(1), m_NumExtraChars(0) {}
   void SetTotal(UInt64 total) { m_Total = total; m_PrevValue = 0; }
   void SetRatio(UInt64 doneValue) { m_CurValue = doneValue; }

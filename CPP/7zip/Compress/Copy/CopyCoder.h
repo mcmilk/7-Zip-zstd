@@ -8,7 +8,7 @@
 
 namespace NCompress {
 
-class CCopyCoder: 
+class CCopyCoder:
   public ICompressCoder,
   public ICompressGetInStreamProcessedSize,
   public CMyUnknownImp
@@ -22,7 +22,7 @@ public:
   MY_UNKNOWN_IMP1(ICompressGetInStreamProcessedSize)
 
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, 
+      ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);

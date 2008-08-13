@@ -31,9 +31,9 @@ namespace NCompression {
     UInt32 Order;
     UInt32 BlockLogSize;
     UInt32 NumThreads;
-    void ResetForLevelChange() 
-    { 
-      BlockLogSize = NumThreads = Level = Dictionary = Order = UInt32(-1); 
+    void ResetForLevelChange()
+    {
+      BlockLogSize = NumThreads = Level = Dictionary = Order = UInt32(-1);
       Method.Empty();
       // EncryptionMethod.Empty();
       // Options.Empty();

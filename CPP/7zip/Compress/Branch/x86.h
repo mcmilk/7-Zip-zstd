@@ -4,8 +4,8 @@
 #define __X86_H
 
 #include "BranchCoder.h"
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../../../C/Bra.h"
 }
 
@@ -15,7 +15,7 @@ struct CBranch86
   void x86Init() { x86_Convert_Init(_prevMask); }
 };
 
-MyClassB(BCJ_x86, 0x01, 3, CBranch86 , 
+MyClassB(BCJ_x86, 0x01, 3, CBranch86 ,
     virtual void SubInit() { x86Init(); })
 
 #endif

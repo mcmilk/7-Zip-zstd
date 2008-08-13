@@ -12,128 +12,122 @@
 
 #include "../../UI/Common/OpenArchive.h"
 
-#include "../../UI/Explorer/MyMessages.h"
 #include "../../UI/FileManager/FormatUtils.h"
 
 #include "ExtractCallback.h"
 
 using namespace NWindows;
 
+static LPCWSTR kCantFindArchive = L"Can not find archive file";
+static LPCWSTR kCantOpenArchive = L"Can not open the file as archive";
+
 struct CThreadExtracting
 {
-  CArchiveLink ArchiveLink;
+  #ifndef _NO_PROGRESS
+  bool ShowProgress;
+  #endif
+  CCodecs *Codecs;
+  UString FileName;
+  UString DestFolder;
 
   CExtractCallbackImp *ExtractCallbackSpec;
   CMyComPtr<IArchiveExtractCallback> ExtractCallback;
 
-  #ifndef _NO_PROGRESS
+  CArchiveLink ArchiveLink;
   HRESULT Result;
+  UString ErrorMessage;
 
-  HRESULT Extract()
+  void Process()
   {
-    return ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), ExtractCallback);
+    NFile::NFind::CFileInfoW fi;
+    if (!NFile::NFind::FindFile(FileName, fi))
+    {
+      ErrorMessage = kCantFindArchive;
+      Result = E_FAIL;
+      return;
+    }
+    
+    Result = MyOpenArchive(Codecs, CIntVector(), FileName, ArchiveLink, ExtractCallbackSpec);
+    if (Result != S_OK)
+    {
+      if (Result != S_OK)
+      ErrorMessage = kCantOpenArchive;
+      return;
+    }
+
+    UString dirPath = DestFolder;
+    NFile::NName::NormalizeDirPathPrefix(dirPath);
+    
+    if (!NFile::NDirectory::CreateComplexDirectory(dirPath))
+    {
+      ErrorMessage = MyFormatNew(IDS_CANNOT_CREATE_FOLDER,
+        #ifdef LANG
+        0x02000603,
+        #endif
+        dirPath);
+      Result = E_FAIL;
+      return;
+    }
+
+    ExtractCallbackSpec->Init(ArchiveLink.GetArchive(), dirPath, L"Default", fi.MTime, 0);
+
+    #ifndef _NO_PROGRESS
+    if (ShowProgress)
+      ExtractCallbackSpec->ProgressDialog.WaitCreating();
+    #endif
+    Result = ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), ExtractCallback);
+    #ifndef _NO_PROGRESS
+    if (ShowProgress)
+      ExtractCallbackSpec->ProgressDialog.MyClose();
+    #endif
   }
-  DWORD Process()
-  {
-    ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    Result = Extract();
-    ExtractCallbackSpec->ProgressDialog.MyClose();
-    return 0;
-  }
+  
   static THREAD_FUNC_DECL MyThreadFunction(void *param)
   {
-    return ((CThreadExtracting *)param)->Process();
+    ((CThreadExtracting *)param)->Process();
+    return 0;
   }
-  #endif
 };
 
-static const LPCWSTR kCantFindArchive = L"Can not find archive file";
-static const LPCWSTR kCantOpenArchive = L"File is not correct archive";
-
-HRESULT ExtractArchive(
-    CCodecs *codecs,
-    const UString &fileName, 
-    const UString &folderName,
-    COpenCallbackGUI *openCallback,
-    bool showProgress,
-    bool &isCorrupt,
-    UString &errorMessage)
+HRESULT ExtractArchive(CCodecs *codecs,const UString &fileName, const UString &destFolder,
+    bool showProgress, bool &isCorrupt, UString &errorMessage)
 {
   isCorrupt = false;
-  NFile::NFind::CFileInfoW archiveFileInfo;
-  if (!NFile::NFind::FindFile(fileName, archiveFileInfo))
-  {
-    errorMessage = kCantFindArchive;
-    return E_FAIL;
-  }
+  CThreadExtracting t;
 
-  CThreadExtracting extracter;
+  t.Codecs = codecs;
+  t.FileName = fileName;
+  t.DestFolder = destFolder;
 
-  HRESULT result = MyOpenArchive(codecs, fileName, extracter.ArchiveLink, openCallback);
-
-  if (result != S_OK)
-  {
-    errorMessage = kCantOpenArchive;
-    return result;
-  }
-
-  UString directoryPath = folderName;
-  NFile::NName::NormalizeDirPathPrefix(directoryPath);
-
-  /*
-  UString directoryPath;
-  {
-    UString fullPath;
-    int fileNamePartStartIndex;
-    if (!NWindows::NFile::NDirectory::MyGetFullPathName(fileName, fullPath, fileNamePartStartIndex))
-    {
-      MessageBox(NULL, "Error 1329484", "7-Zip", 0);
-      return E_FAIL;
-    }
-    directoryPath = fullPath.Left(fileNamePartStartIndex);
-  }
-  */
-
-  if(!NFile::NDirectory::CreateComplexDirectory(directoryPath))
-  {
-    errorMessage = MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 
-        #ifdef LANG        
-        0x02000603, 
-        #endif 
-        directoryPath);
-    return E_FAIL;
-  }
+  t.ExtractCallbackSpec = new CExtractCallbackImp;
+  t.ExtractCallback = t.ExtractCallbackSpec;
   
-  extracter.ExtractCallbackSpec = new CExtractCallbackImp;
-  extracter.ExtractCallback = extracter.ExtractCallbackSpec;
-  
-  extracter.ExtractCallbackSpec->Init(
-      extracter.ArchiveLink.GetArchive(), 
-      directoryPath, L"Default", archiveFileInfo.LastWriteTime, 0);
-
   #ifndef _NO_PROGRESS
 
+  t.ShowProgress = showProgress;
   if (showProgress)
   {
     NWindows::CThread thread;
-    RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &extracter));
+    RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &t));
     
     UString title;
-    #ifdef LANG        
+    #ifdef LANG
     title = LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890);
     #else
     title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
     #endif
-    extracter.ExtractCallbackSpec->StartProgressDialog(title);
-    result = extracter.Result;
+    t.ExtractCallbackSpec->StartProgressDialog(title);
   }
   else
 
   #endif
   {
-    result = extracter.Extract();
+    t.Process();
   }
-  errorMessage = extracter.ExtractCallbackSpec->_message;
-  isCorrupt = extracter.ExtractCallbackSpec->_isCorrupt;
-  return result;
+
+  errorMessage = t.ErrorMessage;
+  if (errorMessage.IsEmpty())
+    errorMessage = t.ExtractCallbackSpec->_message;
+  isCorrupt = t.ExtractCallbackSpec->_isCorrupt;
+  return t.Result;
 }

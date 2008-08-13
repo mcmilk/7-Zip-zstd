@@ -28,7 +28,7 @@ static inline bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -36,7 +36,7 @@ static inline bool IsItWindowsNT()
 #endif
 
 extern int Main2(
-  #ifndef _WIN32  
+  #ifndef _WIN32
   int numArguments, const char *arguments[]
   #endif
 );
@@ -50,7 +50,7 @@ static const char *kInternalExceptionMessage = "\n\nInternal Error #";
 
 int MY_CDECL main
 (
-#ifndef _WIN32  
+#ifndef _WIN32
 int numArguments, const char *arguments[]
 #endif
 )
@@ -62,7 +62,7 @@ int numArguments, const char *arguments[]
   #ifndef _WIN64
   if (!IsItWindowsNT())
   {
-    (*g_StdStream) << "This program requires Windows NT/2000/XP/2003/Vista";
+    (*g_StdStream) << "This program requires Windows NT/2000/2003/2008/XP/Vista";
     return NExitCode::kFatalError;
   }
   #endif
@@ -112,7 +112,7 @@ int numArguments, const char *arguments[]
     }
     UString message;
     NError::MyFormatMessage(systemError.ErrorCode, message);
-    (*g_StdStream) << endl << endl << "System error:" << endl << 
+    (*g_StdStream) << endl << endl << "System error:" << endl <<
         message << endl;
     return (NExitCode::kFatalError);
   }

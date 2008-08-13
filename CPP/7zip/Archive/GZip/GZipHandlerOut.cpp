@@ -9,7 +9,6 @@
 #include "Common/StringToInt.h"
 
 #include "Windows/Time.h"
-#include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
@@ -65,23 +64,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   newItem.Flags = 0;
   if (IntToBool(newProperties))
   {
-    UInt32 attributes;
     FILETIME utcTime;
     UString name;
-    bool isDirectory;
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(itemIndex, kpidAttributes, &prop));
-      if (prop.vt == VT_EMPTY)
-        attributes = 0;
-      else if (prop.vt != VT_UI4)
-        return E_INVALIDARG;
-      else
-        attributes = prop.ulVal;
-    }
-    {
-      NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(itemIndex, kpidLastWriteTime, &prop));
+      RINOK(updateCallback->GetProperty(itemIndex, kpidMTime, &prop));
       if (prop.vt != VT_FILETIME)
         return E_INVALIDARG;
       utcTime = prop.filetime;
@@ -98,16 +85,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(itemIndex, kpidIsFolder, &prop));
-      if (prop.vt == VT_EMPTY)
-        isDirectory = false;
-      else if (prop.vt != VT_BOOL)
+      RINOK(updateCallback->GetProperty(itemIndex, kpidIsDir, &prop));
+      if (prop.vt == VT_BOOL)
+      {
+        if (prop.boolVal != VARIANT_FALSE)
+          return E_INVALIDARG;
+      }
+      else if (prop.vt != VT_EMPTY)
         return E_INVALIDARG;
-      else
-        isDirectory = (prop.boolVal != VARIANT_FALSE);
     }
-    if (isDirectory || NFile::NFind::NAttributes::IsDirectory(attributes))
-      return E_INVALIDARG;
     if(!FileTimeToUnixTime(utcTime, newItem.Time))
       return E_INVALIDARG;
     newItem.Name = UnicodeStringToMultiByte(name, CP_ACP);
@@ -133,17 +119,17 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (level == 0xFFFFFFFF)
       level = 5;
     if (m_Method.NumPasses == 0xFFFFFFFF)
-      m_Method.NumPasses = (level >= 9 ? kNumPassesX9 : 
-                           (level >= 7 ? kNumPassesX7 : 
+      m_Method.NumPasses = (level >= 9 ? kNumPassesX9 :
+                           (level >= 7 ? kNumPassesX7 :
                                          kNumPassesX1));
     if (m_Method.NumFastBytes == 0xFFFFFFFF)
-      m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 : 
-                              (level >= 7 ? kNumFastBytesX7 : 
+      m_Method.NumFastBytes = (level >= 9 ? kNumFastBytesX9 :
+                              (level >= 7 ? kNumFastBytesX7 :
                                             kNumFastBytesX1));
     if (m_Method.Algo == 0xFFFFFFFF)
-      m_Method.Algo = 
-                    (level >= 5 ? kAlgoX5 : 
-                                  kAlgoX1); 
+      m_Method.Algo =
+                    (level >= 5 ? kAlgoX5 :
+                                  kAlgoX1);
 
     return UpdateArchive(
         EXTERNAL_CODECS_VARS
@@ -210,6 +196,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       return E_INVALIDARG;
   }
   return S_OK;
-}  
+}
 
 }}

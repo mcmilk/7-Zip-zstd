@@ -1,14 +1,14 @@
 // PhysDriveFolder.h
 
-#ifndef __PHYSDRIVEFOLDER_H 
-#define __PHYSDRIVEFOLDER_H 
+#ifndef __PHYSDRIVEFOLDER_H
+#define __PHYSDRIVEFOLDER_H
 
 #include "Common/MyString.h"
 #include "Common/MyCom.h"
 
 #include "IFolder.h"
 
-class CPhysDriveFolder: 
+class CPhysDriveFolder:
   public IFolderFolder,
   public IFolderWasChanged,
   public IFolderOperations,

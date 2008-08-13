@@ -28,11 +28,11 @@ public:
   // T& operator*() const {  return *_p; }
   T** operator&() { return &_p; }
   T* operator->() const { return _p; }
-  T* operator=(T* p) 
-  { 
+  T* operator=(T* p)
+  {
     if (p != 0)
       p->AddRef();
-    if (_p) 
+    if (_p)
       _p->Release();
     _p = p;
     return p;
@@ -116,8 +116,8 @@ public:
   unsigned int Length() const { return ::SysStringLen(m_str); }
   operator BSTR() const { return m_str; }
   BSTR* operator&() { return &m_str; }
-  BSTR MyCopy() const 
-  { 
+  BSTR MyCopy() const
+  {
     int byteLen = ::SysStringByteLen(m_str);
     BSTR res = ::SysAllocStringByteLen(NULL, byteLen);
     memmove(res, m_str, byteLen);
@@ -149,7 +149,7 @@ public:
 };
 
 #define MY_QUERYINTERFACE_BEGIN STDMETHOD(QueryInterface) \
-    (REFGUID iid, void **outObject) { 
+    (REFGUID iid, void **outObject) {
 
 #define MY_QUERYINTERFACE_ENTRY(i) if (iid == IID_ ## i) \
     { *outObject = (void *)(i *)this; AddRef(); return S_OK; }

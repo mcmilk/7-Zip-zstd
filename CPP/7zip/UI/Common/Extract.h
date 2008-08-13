@@ -40,16 +40,16 @@ public:
   CCodecs *Codecs;
   #endif
 
-  CExtractOptions(): 
-      StdOutMode(false), 
-      YesToAll(false), 
+  CExtractOptions():
+      StdOutMode(false),
+      YesToAll(false),
       TestMode(false),
       PathMode(NExtract::NPathMode::kFullPathnames),
       OverwriteMode(NExtract::NOverwriteMode::kAskBefore)
       {}
 
   /*
-    bool FullPathMode() const { return (ExtractMode == NExtractMode::kTest) || 
+    bool FullPathMode() const { return (ExtractMode == NExtractMode::kTest) ||
     (ExtractMode == NExtractMode::kFullPath); }
   */
 };
@@ -65,13 +65,13 @@ struct CDecompressStat
 };
 
 HRESULT DecompressArchives(
-    CCodecs *codecs,
+    CCodecs *codecs, const CIntVector &formatIndices,
     UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     const CExtractOptions &options,
     IOpenCallbackUI *openCallback,
     IExtractCallbackUI *extractCallback,
-    UString &errorMessage, 
+    UString &errorMessage,
     CDecompressStat &stat);
 
 #endif

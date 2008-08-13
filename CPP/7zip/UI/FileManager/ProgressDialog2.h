@@ -25,11 +25,11 @@ class CProgressSynch
   UString TitleFileName;
   UString CurrentFileName;
 public:
-  CProgressSynch(): 
-      _stopped(false), _paused(false), 
-      _total((UInt64)(Int64)-1), 
+  CProgressSynch():
+      _stopped(false), _paused(false),
+      _total((UInt64)(Int64)-1),
       _completed(0),
-      _totalFiles((UInt64)(Int64)-1), 
+      _totalFiles((UInt64)(Int64)-1),
       _completedFiles(0),
       _inSize((UInt64)(Int64)-1),
       _outSize((UInt64)(Int64)-1)
@@ -84,9 +84,10 @@ public:
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
     _completedFiles = value;
   }
+  HRESULT ProcessStopAndPause();
   HRESULT SetPosAndCheckPaused(UInt64 completed);
-  void GetProgress(UInt64 &total, UInt64 &completed, 
-    UInt64 &totalFiles, UInt64 &completedFiles, 
+  void GetProgress(UInt64 &total, UInt64 &completed,
+    UInt64 &totalFiles, UInt64 &completedFiles,
     UInt64 &inSize, UInt64 &outSize)
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
@@ -211,9 +212,9 @@ public:
 
 
   INT_PTR Create(const UString &title, HWND wndParent = 0)
-  { 
+  {
     _title = title;
-    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent); 
+    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent);
   }
 
   static const UINT kCloseMessage;

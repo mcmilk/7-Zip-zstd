@@ -17,15 +17,15 @@ protected:
   void ReserveOnePosition();
   void InsertOneItem(int index);
   void TestIndexAndCorrectNum(int index, int &num) const
-    { if (index + num > _size) num = _size - index; } 
+    { if (index + num > _size) num = _size - index; }
 public:
-  CBaseRecordVector(size_t itemSize):
-      _capacity(0), _size(0), _items(0), _itemSize(itemSize) {}
+  CBaseRecordVector(size_t itemSize): _capacity(0), _size(0), _items(0), _itemSize(itemSize) {}
   virtual ~CBaseRecordVector();
-  void Free();
+  void ClearAndFree();
   int Size() const { return _size; }
   bool IsEmpty() const { return (_size == 0); }
   void Reserve(int newCapacity);
+  void ReserveDown();
   virtual void Delete(int index, int num = 1);
   void Clear();
   void DeleteFrom(int index);
@@ -36,9 +36,8 @@ template <class T>
 class CRecordVector: public CBaseRecordVector
 {
 public:
-  CRecordVector():CBaseRecordVector(sizeof(T)){};
-  CRecordVector(const CRecordVector &v):
-    CBaseRecordVector(sizeof(T)) { *this = v;}
+  CRecordVector(): CBaseRecordVector(sizeof(T)){};
+  CRecordVector(const CRecordVector &v): CBaseRecordVector(sizeof(T)) { *this = v; }
   CRecordVector& operator=(const CRecordVector &v)
   {
     Clear();
@@ -68,9 +67,9 @@ public:
   const T& operator[](int index) const { return ((T *)_items)[index]; }
   T& operator[](int index) { return ((T *)_items)[index]; }
   const T& Front() const { return operator[](0); }
-  T& Front()   { return operator[](0); }
+  T& Front() { return operator[](0); }
   const T& Back() const { return operator[](_size - 1); }
-  T& Back()   { return operator[](_size - 1); }
+  T& Back() { return operator[](_size - 1); }
 
   void Swap(int i, int j)
   {
@@ -81,7 +80,7 @@ public:
 
   int FindInSorted(const T& item) const
   {
-    int left = 0, right = Size(); 
+    int left = 0, right = Size();
     while (left != right)
     {
       int mid = (left + right) / 2;
@@ -98,7 +97,7 @@ public:
 
   int AddToUniqueSorted(const T& item)
   {
-    int left = 0, right = Size(); 
+    int left = 0, right = Size();
     while (left != right)
     {
       int mid = (left + right) / 2;
@@ -115,7 +114,7 @@ public:
   }
 
   static void SortRefDown(T* p, int k, int size, int (*compare)(const T*, const T*, void *), void *param)
-  { 
+  {
     T temp = p[k];
     for (;;)
     {
@@ -126,10 +125,10 @@ public:
         s++;
       if (compare(&temp, p + s, param) >= 0)
         break;
-      p[k] = p[s]; 
+      p[k] = p[s];
       k = s;
-    } 
-    p[k] = temp; 
+    }
+    p[k] = temp;
   }
 
   void Sort(int (*compare)(const T*, const T*, void *), void *param)
@@ -165,21 +164,20 @@ template <class T>
 class CObjectVector: public CPointerVector
 {
 public:
-  CObjectVector(){};
-  ~CObjectVector() { Clear(); }
-  CObjectVector(const CObjectVector &objectVector)
-    { *this = objectVector; }
-  CObjectVector& operator=(const CObjectVector &objectVector)
+  CObjectVector() {};
+  ~CObjectVector() { Clear(); };
+  CObjectVector(const CObjectVector &v) { *this = v; }
+  CObjectVector& operator=(const CObjectVector &v)
   {
     Clear();
-    return (*this += objectVector);
+    return (*this += v);
   }
-  CObjectVector& operator+=(const CObjectVector &objectVector)
+  CObjectVector& operator+=(const CObjectVector &v)
   {
-    int size = objectVector.Size();
+    int size = v.Size();
     Reserve(Size() + size);
     for(int i = 0; i < size; i++)
-      Add(objectVector[i]);
+      Add(v[i]);
     return *this;
   }
   const T& operator[](int index) const { return *((T *)CPointerVector::operator[](index)); }
@@ -188,10 +186,8 @@ public:
   const T& Front() const { return operator[](0); }
   T& Back() { return operator[](_size - 1); }
   const T& Back() const { return operator[](_size - 1); }
-  int Add(const T& item)
-    { return CPointerVector::Add(new T(item)); }
-  void Insert(int index, const T& item)
-    { CPointerVector::Insert(index, new T(item)); }
+  int Add(const T& item) { return CPointerVector::Add(new T(item)); }
+  void Insert(int index, const T& item) { CPointerVector::Insert(index, new T(item)); }
   virtual void Delete(int index, int num = 1)
   {
     TestIndexAndCorrectNum(index, num);
@@ -204,11 +200,11 @@ public:
     for(int i = 0; i < Size(); i++)
       if (item == (*this)[i])
         return i;
-      return -1;
+    return -1;
   }
   int FindInSorted(const T& item) const
   {
-    int left = 0, right = Size(); 
+    int left = 0, right = Size();
     while (left != right)
     {
       int mid = (left + right) / 2;
@@ -224,7 +220,7 @@ public:
   }
   int AddToSorted(const T& item)
   {
-    int left = 0, right = Size(); 
+    int left = 0, right = Size();
     while (left != right)
     {
       int mid = (left + right) / 2;
@@ -243,7 +239,7 @@ public:
     return right;
   }
 
-  void Sort(int (*compare)(void *const *, void *const *, void *), void *param) 
+  void Sort(int (*compare)(void *const *, void *const *, void *), void *param)
     { CPointerVector::Sort(compare, param); }
 
   static int CompareObjectItems(void *const *a1, void *const *a2, void * /* param */)
@@ -251,4 +247,4 @@ public:
   void Sort() { CPointerVector::Sort(CompareObjectItems, 0); }
 };
 
-#endif 
+#endif

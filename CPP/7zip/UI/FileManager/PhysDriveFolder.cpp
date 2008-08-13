@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C" 
-{ 
+extern "C"
+{
   #include "../../../../C/Alloc.h"
 }
 
@@ -18,7 +18,7 @@ using namespace NWindows;
 
 static const UInt32 kBufferSize = (4 << 20);
 
-static STATPROPSTG kProperties[] = 
+static STATPROPSTG kProperties[] =
 {
   { NULL, kpidName, VT_BSTR},
   { NULL, kpidSize, VT_UI8}
@@ -56,22 +56,16 @@ STDMETHODIMP CPhysDriveFolder::GetNumberOfItems(UInt32 *numItems)
 
 STDMETHODIMP CPhysDriveFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
-  NCOM::CPropVariant propVariant;
+  NCOM::CPropVariant prop;
   if (itemIndex >= 1)
     return E_INVALIDARG;
   switch(propID)
   {
-    case kpidIsFolder:
-      propVariant = false;
-      break;
-    case kpidName:
-      propVariant = _name;
-      break;
-    case kpidSize:
-      propVariant = _length;
-      break;
+    case kpidIsDir:  prop = false; break;
+    case kpidName:  prop = _name; break;
+    case kpidSize:  prop = _length; break;
   }
-  propVariant.Detach(value);
+  prop.Detach(value);
   return S_OK;
 }
 
@@ -93,7 +87,7 @@ STDMETHODIMP CPhysDriveFolder::GetNumberOfProperties(UInt32 *numProperties)
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::GetPropertyInfo(UInt32 index,     
+STDMETHODIMP CPhysDriveFolder::GetPropertyInfo(UInt32 index,
     BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
@@ -136,13 +130,13 @@ STDMETHODIMP CPhysDriveFolder::Clone(IFolderFolder **resultFolder)
 
 STDMETHODIMP CPhysDriveFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgress * /* progress */)
 {
-  NCOM::CPropVariant propVariant;
+  NCOM::CPropVariant prop;
   if (index >= 1)
     return E_INVALIDARG;
   UInt64 size = 0;
   HRESULT result = GetLength(size);
-  propVariant = size;
-  propVariant.Detach(value);
+  prop = size;
+  prop.Detach(value);
   return result;
 }
 
@@ -235,7 +229,7 @@ HRESULT CopyFileSpec(LPCWSTR fromPath, LPCWSTR toPath, bool writeToDisk, UInt64 
   return S_OK;
 }
 
-STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numItems, 
+STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numItems,
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
   if (numItems == 0)
@@ -260,7 +254,7 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numIt
 
   Int32 writeAskResult;
   CMyComBSTR destPathResult;
-  RINOK(callback->AskWrite(GetFullPath(), BoolToInt(false), NULL, &fileSize, 
+  RINOK(callback->AskWrite(GetFullPath(), BoolToInt(false), NULL, &fileSize,
       destPath, &destPathResult, &writeAskResult));
   if (!IntToBool(writeAskResult))
     return S_OK;
@@ -275,8 +269,8 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numIt
 // Move Operations
 
 STDMETHODIMP CPhysDriveFolder::MoveTo(
-    const UInt32 * /* indices */, 
-    UInt32 /* numItems */, 
+    const UInt32 * /* indices */,
+    UInt32 /* numItems */,
     const wchar_t * /* path */,
     IFolderOperationsExtractCallback * /* callback */)
 {

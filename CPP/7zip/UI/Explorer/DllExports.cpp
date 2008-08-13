@@ -42,8 +42,8 @@ static LPCTSTR kApprovedKeyPath = TEXT("Software\\Microsoft\\Windows\\CurrentVer
 
 // #define ODS(sz) OutputDebugString(L#sz)
 
-class CShellExtClassFactory: 
-  public IClassFactory, 
+class CShellExtClassFactory:
+  public IClassFactory,
   public CMyUnknownImp
 {
 public:
@@ -89,7 +89,7 @@ static bool IsItWindowsNT()
 {
   OSVERSIONINFO versionInfo;
   versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo)) 
+  if (!::GetVersionEx(&versionInfo))
     return false;
   return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 }
@@ -107,7 +107,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
       return FALSE;
     #else
     g_IsNT = IsItWindowsNT();
-    #endif    
+    #endif
   }
   else if (dwReason == DLL_PROCESS_DETACH)
   {
@@ -183,7 +183,7 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
   if (!NDLL::MyGetModuleFileName(g_hInstance, modulePath))
     return FALSE;
   
-  CRegItem clsidEntries[] = 
+  CRegItem clsidEntries[] =
   {
     HKEY_CLASSES_ROOT, kClsidMask,        NULL,              title,
     HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,              modulePath,
@@ -197,7 +197,7 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
     TCHAR subKey[MAX_PATH];
     wsprintf(subKey, clsidEntries[i].SubKey, clsidString);
     NRegistry::CKey key;
-    if (key.Create(clsidEntries[i].hRootKey, subKey, NULL, 
+    if (key.Create(clsidEntries[i].hRootKey, subKey, NULL,
         REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
       return FALSE;
     key.SetValue(clsidEntries[i].ValueName, clsidEntries[i].Data);
@@ -206,7 +206,7 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
   if(IsItWindowsNT())
   {
     NRegistry::CKey key;
-    if (key.Create(HKEY_LOCAL_MACHINE, kApprovedKeyPath, NULL, 
+    if (key.Create(HKEY_LOCAL_MACHINE, kApprovedKeyPath, NULL,
         REG_OPTION_NON_VOLATILE, KEY_WRITE) == NOERROR)
       key.SetValue(GetUnicodeString(clsidString), title);
   }
@@ -249,8 +249,8 @@ STDAPI DllUnregisterServer(void)
 }
 
 STDAPI CreateObject(
-    const GUID *classID, 
-    const GUID *interfaceID, 
+    const GUID *classID,
+    const GUID *interfaceID,
     void **outObject)
 {
   LoadLangOneTime();

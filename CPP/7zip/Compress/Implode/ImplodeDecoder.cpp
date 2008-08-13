@@ -19,8 +19,8 @@ public:
   CException(ECauseType cause): m_Cause(cause) {}
 };
 
-static const int kNumDistanceLowDirectBitsForBigDict = 7;  
-static const int kNumDistanceLowDirectBitsForSmallDict = 6;  
+static const int kNumDistanceLowDirectBitsForBigDict = 7;
+static const int kNumDistanceLowDirectBitsForSmallDict = 6;
 
 static const int kNumBitsInByte = 8;
 
@@ -38,14 +38,14 @@ static const int kLiteralTableSize = (1 << kNumBitsInByte);
 static const int kDistanceTableSize = 64;
 static const int kLengthTableSize = 64;
 
-static const UInt32 kHistorySize = 
-    (1 << MyMax(kNumDistanceLowDirectBitsForBigDict, 
-                kNumDistanceLowDirectBitsForSmallDict)) * 
+static const UInt32 kHistorySize =
+    (1 << MyMax(kNumDistanceLowDirectBitsForBigDict,
+                kNumDistanceLowDirectBitsForSmallDict)) *
     kDistanceTableSize; // = 8 KB;
 
 static const int kNumAdditionalLengthBits = 8;
 
-static const UInt32 kMatchMinLenWhenLiteralsOn = 3;  
+static const UInt32 kMatchMinLenWhenLiteralsOn = 3;
 static const UInt32 kMatchMinLenWhenLiteralsOff = 2;
 
 static const UInt32 kMatchMinLenMax = MyMax(kMatchMinLenWhenLiteralsOn,
@@ -73,17 +73,17 @@ void CCoder::ReleaseStreams()
   m_InBitStream.ReleaseStream();
 }
 
-bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder, 
+bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
     Byte *levels, int numLevelItems)
 {
-  int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) + 
+  int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) +
       kLevelStructuresNumberAdditionalValue;
   int currentIndex = 0;
   for(int i = 0; i < numCodedStructures; i++)
   {
-    int level = m_InBitStream.ReadBits(kNumLevelStructureLevelBits) + 
+    int level = m_InBitStream.ReadBits(kNumLevelStructureLevelBits) +
       kLevelStructureLevelAdditionalValue;
-    int rep = m_InBitStream.ReadBits(kNumLevelStructureRepNumberBits) + 
+    int rep = m_InBitStream.ReadBits(kNumLevelStructureRepNumberBits) +
       kLevelStructureRepNumberAdditionalValue;
     if (currentIndex + rep > numLevelItems)
       throw CException(CException::kData);
@@ -208,12 +208,12 @@ STDMETHODIMP CCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
     return E_INVALIDARG;
   Byte flag = data[0];
   m_BigDictionaryOn = ((flag & 2) != 0);
-  m_NumDistanceLowDirectBits = m_BigDictionaryOn ? 
+  m_NumDistanceLowDirectBits = m_BigDictionaryOn ?
       kNumDistanceLowDirectBitsForBigDict:
       kNumDistanceLowDirectBitsForSmallDict;
   m_LiteralsOn = ((flag & 4) != 0);
-  m_MinMatchLength = m_LiteralsOn ? 
-      kMatchMinLenWhenLiteralsOn : 
+  m_MinMatchLength = m_LiteralsOn ?
+      kMatchMinLenWhenLiteralsOn :
       kMatchMinLenWhenLiteralsOff;
   return S_OK;
 }

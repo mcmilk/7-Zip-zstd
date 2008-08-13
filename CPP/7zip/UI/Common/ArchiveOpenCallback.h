@@ -9,54 +9,61 @@
 
 #ifndef _NO_CRYPTO
 #include "../../IPassword.h"
-#endif  
+#endif
 #include "../../Archive/IArchive.h"
+
+#ifdef _NO_CRYPTO
+
+#define INTERFACE_IOpenCallbackUI_Crypto(x)
+
+#else
+
+#define INTERFACE_IOpenCallbackUI_Crypto(x) \
+  virtual HRESULT Open_CryptoGetTextPassword(BSTR *password) x; \
+  virtual HRESULT Open_GetPasswordIfAny(UString &password) x; \
+  virtual bool Open_WasPasswordAsked() x; \
+  virtual void Open_ClearPasswordWasAskedFlag() x; \
+  
+#endif
+
+#define INTERFACE_IOpenCallbackUI(x) \
+  virtual HRESULT Open_CheckBreak() x; \
+  virtual HRESULT Open_SetTotal(const UInt64 *files, const UInt64 *bytes) x; \
+  virtual HRESULT Open_SetCompleted(const UInt64 *files, const UInt64 *bytes) x; \
+  INTERFACE_IOpenCallbackUI_Crypto(x)
 
 struct IOpenCallbackUI
 {
-  virtual HRESULT CheckBreak() = 0;
-  virtual HRESULT SetTotal(const UInt64 *files, const UInt64 *bytes) = 0;
-  virtual HRESULT SetCompleted(const UInt64 *files, const UInt64 *bytes) = 0;
-  #ifndef _NO_CRYPTO
-  virtual HRESULT CryptoGetTextPassword(BSTR *password) = 0;
-  virtual HRESULT GetPasswordIfAny(UString &password) = 0;
-  virtual bool WasPasswordAsked() = 0;
-  virtual void ClearPasswordWasAskedFlag() = 0;
-  #endif  
+  INTERFACE_IOpenCallbackUI(=0)
 };
 
-class COpenCallbackImp: 
+class COpenCallbackImp:
   public IArchiveOpenCallback,
   public IArchiveOpenVolumeCallback,
   public IArchiveOpenSetSubArchiveName,
   #ifndef _NO_CRYPTO
   public ICryptoGetTextPassword,
-  #endif  
+  #endif
   public CMyUnknownImp
 {
 public:
   #ifndef _NO_CRYPTO
   MY_UNKNOWN_IMP3(
-      IArchiveOpenVolumeCallback, 
+      IArchiveOpenVolumeCallback,
       ICryptoGetTextPassword,
       IArchiveOpenSetSubArchiveName
       )
   #else
   MY_UNKNOWN_IMP2(
-      IArchiveOpenVolumeCallback, 
+      IArchiveOpenVolumeCallback,
       IArchiveOpenSetSubArchiveName
       )
   #endif
 
-  STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes);
-  STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes);
-
-  // IArchiveOpenVolumeCallback
-  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value);
-  STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream);
+  INTERFACE_IArchiveOpenCallback(;)
+  INTERFACE_IArchiveOpenVolumeCallback(;)
 
   #ifndef _NO_CRYPTO
-  // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
   #endif
 
@@ -75,6 +82,7 @@ private:
 public:
   UStringVector FileNames;
   IOpenCallbackUI *Callback;
+  CMyComPtr<IArchiveOpenCallback> ReOpenCallback;
   UInt64 TotalSize;
 
   COpenCallbackImp(): Callback(NULL) {}

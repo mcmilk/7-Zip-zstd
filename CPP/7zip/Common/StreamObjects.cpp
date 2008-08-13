@@ -32,7 +32,7 @@ STDMETHODIMP CSequentialOutStreamImp::Write(const void *data, UInt32 size, UInt3
   _writeBuffer.Write(data, (size_t)size);
   if(processedSize != NULL)
     *processedSize = size;
-  return S_OK; 
+  return S_OK;
 }
 
 STDMETHODIMP CSequentialOutStreamImp2::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -54,7 +54,7 @@ STDMETHODIMP CSequentialInStreamSizeCount::Read(void *data, UInt32 size, UInt32 
   _size += realProcessedSize;
   if (processedSize != 0)
     *processedSize = realProcessedSize;
-  return result; 
+  return result;
 }
 
 STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -64,5 +64,5 @@ STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UInt32 size,
   _size += realProcessedSize;
   if (processedSize != 0)
     *processedSize = realProcessedSize;
-  return result; 
+  return result;
 }

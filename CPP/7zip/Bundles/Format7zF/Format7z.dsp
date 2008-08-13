@@ -91,10 +91,90 @@ LINK32=link.exe
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
+# Begin Group "Icons"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7z.ico
+SOURCE=..\..\Archive\Icons\7z.ico
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\arj.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\bz2.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\cab.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\cpio.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\deb.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\dmg.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\gz.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\hfs.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\iso.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\lzh.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\lzma.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\rar.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\rpm.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\split.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\tar.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\wim.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\xar.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\z.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\zip.ico
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Archive\Archive2.def
@@ -105,27 +185,7 @@ SOURCE=..\..\Archive\ArchiveExports.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Arj\arj.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\BZip2\bz2.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Cab\cab.ico
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\CodecExports.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Cpio\cpio.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\deb.ico
 # End Source File
 # Begin Source File
 
@@ -133,35 +193,7 @@ SOURCE=..\..\Archive\DllExports2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\GZip\gz.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Iso\Iso.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Lzh\lzh.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Lzma\lzma.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\rar.ico
-# End Source File
-# Begin Source File
-
 SOURCE=.\resource.rc
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\rpm.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Split\Split.ico
 # End Source File
 # Begin Source File
 
@@ -171,22 +203,6 @@ SOURCE=.\StdAfx.cpp
 # Begin Source File
 
 SOURCE=.\StdAfx.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Tar\tar.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Wim\wim.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\Z.ico
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Zip\zip.ico
 # End Source File
 # End Group
 # Begin Group "Common"
@@ -222,6 +238,14 @@ SOURCE=..\..\..\Common\MyInitGuid.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyMap.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyMap.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyString.cpp
 # End Source File
 # Begin Source File
@@ -243,6 +267,14 @@ SOURCE=..\..\..\Common\MyVector.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyWindows.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyXml.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyXml.h
 # End Source File
 # Begin Source File
 
@@ -590,6 +622,14 @@ SOURCE=..\..\Compress\Deflate\DeflateNsisRegister.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\Deflate\DeflateRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\ZlibDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Deflate\ZlibDecoder.h
 # End Source File
 # End Group
 # Begin Group "BZip2"
@@ -1670,38 +1710,6 @@ SOURCE=..\..\Archive\Rar\RarVolumeInStream.cpp
 SOURCE=..\..\Archive\Rar\RarVolumeInStream.h
 # End Source File
 # End Group
-# Begin Group "Arj"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjHeader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Arj\ArjRegister.cpp
-# End Source File
-# End Group
 # Begin Group "bz2"
 
 # PROP Default_Filter ""
@@ -1839,6 +1847,14 @@ SOURCE=..\..\Archive\Common\DummyOutStream.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\FindSignature.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FindSignature.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\HandlerOut.cpp
 # End Source File
 # Begin Source File
@@ -1928,42 +1944,6 @@ SOURCE=..\..\Archive\Cpio\CpioItem.h
 # Begin Source File
 
 SOURCE=..\..\Archive\Cpio\CpioRegister.cpp
-# End Source File
-# End Group
-# Begin Group "Deb"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebHeader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebHeader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Deb\DebRegister.cpp
 # End Source File
 # End Group
 # Begin Group "GZip"
@@ -2141,30 +2121,6 @@ SOURCE=..\..\Archive\Nsis\NsisRegister.cpp
 # Begin Group "RPM"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmHeader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\RPM\RpmRegister.cpp
-# End Source File
 # End Group
 # Begin Group "Split"
 
@@ -2240,22 +2196,6 @@ SOURCE=..\..\Archive\Tar\TarUpdate.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Tar\TarUpdate.h
-# End Source File
-# End Group
-# Begin Group "Z"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Z\ZRegister.cpp
 # End Source File
 # End Group
 # Begin Group "Zip"
@@ -2418,9 +2358,97 @@ SOURCE=..\..\Archive\Lzma\LzmaIn.h
 SOURCE=..\..\Archive\Lzma\LzmaItem.h
 # End Source File
 # End Group
+# Begin Group "Hfs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Hfs\HfsHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Hfs\HfsHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Hfs\HfsIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Hfs\HfsIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Hfs\HfsRegister.cpp
+# End Source File
+# End Group
+# Begin Group "Udf"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Udf\UdfHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Udf\UdfHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Udf\UdfIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Udf\UdfIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Udf\UdfRegister.cpp
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\Archive\ArjHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\DebHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\DmgHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\ElfHandler.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\IArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\MachoHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\MubHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\PeHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\RpmHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\XarHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\ZHandler.cpp
 # End Source File
 # End Group
 # Begin Group "7zip"
@@ -2445,6 +2473,10 @@ SOURCE=..\..\IProgress.h
 # Begin Source File
 
 SOURCE=..\..\IStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\PropID.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -2484,6 +2516,14 @@ SOURCE=..\..\..\Windows\PropVariant.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\PropVariantUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariantUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
@@ -2501,6 +2541,14 @@ SOURCE=..\..\..\Windows\System.h
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Thread.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Time.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Time.h
 # End Source File
 # End Group
 # End Target

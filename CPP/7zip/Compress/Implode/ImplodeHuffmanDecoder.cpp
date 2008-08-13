@@ -51,8 +51,8 @@ bool CDecoder::SetCodeLengths(const Byte *codeLengths)
 
   }
 
-  // if _ZIP_MODE do not throw exception for trees containing only one node 
-  // #ifndef _ZIP_MODE 
+  // if _ZIP_MODE do not throw exception for trees containing only one node
+  // #ifndef _ZIP_MODE
   if (startPos != kMaxValue)
     return false;
   // #endif
@@ -79,7 +79,7 @@ UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
   if (i == 0)
     return 0xFFFFFFFF;
   inStream->MovePos(numBits);
-  UInt32 index = m_Positions[numBits] + 
+  UInt32 index = m_Positions[numBits] +
       ((value - m_Limitits[numBits + 1]) >> (kNumBitsInLongestCode - numBits));
   if (index >= m_NumSymbols)
     return 0xFFFFFFFF;

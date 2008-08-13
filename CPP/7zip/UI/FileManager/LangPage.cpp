@@ -12,7 +12,7 @@
 #include "HelpUtils.h"
 #include "LangUtils.h"
 
-static CIDLangPair kIDLangPairs[] = 
+static CIDLangPair kIDLangPairs[] =
 {
   { IDC_LANG_STATIC_LANG, 0x01000401}
 };
@@ -40,7 +40,7 @@ bool CLangPage::OnInit()
   for (int i = 0; i < langs.Size(); i++)
   {
     const CLangEx &lang = langs[i];
-    UString name; 
+    UString name;
     UString englishName, nationalName;
     if (lang.Lang.GetMessage(0x00000000, englishName))
       name = englishName;

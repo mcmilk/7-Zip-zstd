@@ -5,8 +5,8 @@
 
 #include "Defs.h"
 
-extern "C" 
-{ 
+extern "C"
+{
 #include "../../C/Threads.h"
 }
 

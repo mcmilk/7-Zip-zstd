@@ -54,11 +54,11 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
     }
     else if (numItems > 1)
     {
-      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), 
+      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles),
           numItems);
       msgItems[1] = msg;
     }
-    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, 
+    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems,
         sizeof(msgItems) / sizeof(msgItems[0]), 2) != 0)
       return (FALSE);
   }
@@ -71,8 +71,9 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
     screenRestorer.Save();
 
     progressBoxPointer = &progressBox;
-    progressBox.Init(g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
-        g_StartupInfo.GetMsgString(NMessageID::kDeleting), 1 << 17);
+    progressBox.Init(
+        // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
+        g_StartupInfo.GetMsgString(NMessageID::kDeleting), 48);
   }
 
   NWorkDir::CInfo workDirInfo;
@@ -112,11 +113,11 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
-  updateCallbackSpec->Init(m_ArchiveHandler, &progressBox);
+  updateCallbackSpec->Init(/* m_ArchiveHandler, */ &progressBox);
 
 
   result = outArchive->DeleteItems(
-      tempFileName, 
+      tempFileName,
       &indices.Front(), indices.Size(),
       updateCallback);
   updateCallback.Release();

@@ -17,7 +17,7 @@ STDMETHODIMP COffsetOutStream::Write(const void *data, UInt32 size, UInt32 *proc
   return _stream->Write(data, size, processedSize);
 }
 
-STDMETHODIMP COffsetOutStream::Seek(Int64 offset, UInt32 seekOrigin, 
+STDMETHODIMP COffsetOutStream::Seek(Int64 offset, UInt32 seekOrigin,
     UInt64 *newPosition)
 {
   UInt64 absoluteNewPosition;

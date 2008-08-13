@@ -38,8 +38,8 @@ static UString GetIDString(const wchar_t *srcString, int &finishPos)
       break;
     finishPos++;
     bool isSeparatorChar = IsSeparatorChar(c);
-    if (c == kNewLineChar || (isSeparatorChar && !quotes) 
-        || (c == kQuoteChar && quotes)) 
+    if (c == kNewLineChar || (isSeparatorChar && !quotes)
+        || (c == kQuoteChar && quotes))
       break;
     else if (c == kQuoteChar)
       quotes = true;
@@ -60,7 +60,7 @@ static UString GetValueString(const wchar_t *srcString, int &finishPos)
     if (c == kEndOfLine)
       break;
     finishPos++;
-    if (c == kNewLineChar) 
+    if (c == kNewLineChar)
       break;
     result += c;
   }
@@ -131,7 +131,7 @@ void CPairsStorage::Sort()
 
 int CPairsStorage::FindID(const UString &id, int &insertPos)
 {
-  int left = 0, right = Pairs.Size(); 
+  int left = 0, right = Pairs.Size();
   while (left != right)
   {
     UINT32 mid = (left + right) / 2;

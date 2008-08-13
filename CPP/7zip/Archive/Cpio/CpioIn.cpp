@@ -140,12 +140,12 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
 
   UInt32 nameSize;
 
-  bool oldBE = 
+  bool oldBE =
     _block[0] == NFileHeader::NMagic::kMagicForRecord2[1] &&
     _block[1] == NFileHeader::NMagic::kMagicForRecord2[0];
 
   bool binMode = (_block[0] == NFileHeader::NMagic::kMagicForRecord2[0] &&
-    _block[1] == NFileHeader::NMagic::kMagicForRecord2[1]) || 
+    _block[1] == NFileHeader::NMagic::kMagicForRecord2[1]) ||
     oldBE;
 
   if (binMode)
@@ -175,7 +175,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     item.ChkSum = 0;
     item.HeaderSize = GetAlignedSize(
         nameSize + NFileHeader::kRecord2Size, item.Align);
-    nameSize = item.HeaderSize - NFileHeader::kRecord2Size;  
+    nameSize = item.HeaderSize - NFileHeader::kRecord2Size;
   }
   else
   {
@@ -183,8 +183,8 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     if (processedSize != 4)
       return S_FALSE;
 
-    bool magicOK = 
-        memcmp(_block, NFileHeader::NMagic::kMagic1, 6) == 0 || 
+    bool magicOK =
+        memcmp(_block, NFileHeader::NMagic::kMagic1, 6) == 0 ||
         memcmp(_block, NFileHeader::NMagic::kMagic2, 6) == 0;
     _blockPos = 6;
     if (magicOK)
@@ -211,7 +211,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
       GetFromHex(item.ChkSum);
       item.HeaderSize = GetAlignedSize(
           nameSize + NFileHeader::kRecordSize, item.Align);
-      nameSize = item.HeaderSize - NFileHeader::kRecordSize;  
+      nameSize = item.HeaderSize - NFileHeader::kRecordSize;
     }
     else
     {
@@ -237,7 +237,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
       GetFromOct11(item.Size);  // ?????
       item.HeaderSize = GetAlignedSize(
           nameSize + NFileHeader::kOctRecordSize, item.Align);
-      nameSize = item.HeaderSize - NFileHeader::kOctRecordSize;  
+      nameSize = item.HeaderSize - NFileHeader::kOctRecordSize;
     }
   }
   if (nameSize == 0 || nameSize >= (1 << 27))

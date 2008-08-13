@@ -10,9 +10,9 @@ void CCoder::Execute() { Code(NULL); }
 
 void CCoder::Code(ICompressProgressInfo *progress)
 {
-  Result = Coder->Code(InStream, OutStream, 
-      InSizeAssigned ? &InSizeValue : NULL, 
-      OutSizeAssigned ? &OutSizeValue : NULL, 
+  Result = Coder->Code(InStream, OutStream,
+      InSizeAssigned ? &InSizeValue : NULL,
+      OutSizeAssigned ? &OutSizeValue : NULL,
       progress);
   InStream.Release();
   OutStream.Release();
@@ -39,7 +39,7 @@ HRESULT CCoderMixerMT::ReturnIfError(HRESULT code)
 }
 
 STDMETHODIMP CCoderMixerMT::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, 
+    ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 * /* outSize */,
     ICompressProgressInfo *progress)
 {
@@ -96,4 +96,4 @@ STDMETHODIMP CCoderMixerMT::Code(ISequentialInStream *inStream,
   return S_OK;
 }
 
-}  
+}

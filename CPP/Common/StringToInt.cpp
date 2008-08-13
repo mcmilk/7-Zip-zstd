@@ -40,6 +40,28 @@ UInt64 ConvertOctStringToUInt64(const char *s, const char **end)
   }
 }
 
+UInt64 ConvertHexStringToUInt64(const char *s, const char **end)
+{
+  UInt64 result = 0;
+  for (;;)
+  {
+    char c = *s;
+    UInt32 v;
+    if (c >= '0' && c <= '9') v = (c - '0');
+    else if (c >= 'A' && c <= 'F') v = 10 + (c - 'A');
+    else if (c >= 'a' && c <= 'f') v = 10 + (c - 'a');
+    else
+    {
+      if (end != NULL)
+        *end = s;
+      return result;
+    }
+    result <<= 4;
+    result |= v;
+    s++;
+  }
+}
+
 
 UInt64 ConvertStringToUInt64(const wchar_t *s, const wchar_t **end)
 {

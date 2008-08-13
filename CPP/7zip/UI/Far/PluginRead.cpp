@@ -24,14 +24,14 @@ static const char *kHelpTopicExtrFromSevenZip =  "Extract";
 
 static const char kDirDelimiter = '\\';
 
-static const char *kExractPathHistoryName  = "7-ZipExtractPath"; 
+static const char *kExractPathHistoryName  = "7-ZipExtractPath";
 
 HRESULT CPlugin::ExtractFiles(
     bool decompressAllItems,
-    const UINT32 *indices, 
-    UINT32 numIndices, 
+    const UINT32 *indices,
+    UINT32 numIndices,
     bool silent,
-    NExtract::NPathMode::EEnum pathMode, 
+    NExtract::NPathMode::EEnum pathMode,
     NExtract::NOverwriteMode::EEnum overwriteMode,
     const UString &destPath,
     bool passwordIsDefined, const UString &password)
@@ -44,8 +44,9 @@ HRESULT CPlugin::ExtractFiles(
     screenRestorer.Save();
 
     progressBoxPointer = &progressBox;
-    progressBox.Init(g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
-        g_StartupInfo.GetMsgString(NMessageID::kExtracting), 1 << 17);
+    progressBox.Init(
+        // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
+        g_StartupInfo.GetMsgString(NMessageID::kExtracting), 48);
   }
 
 
@@ -54,10 +55,10 @@ HRESULT CPlugin::ExtractFiles(
   
   extractCallbackSpec->Init(
       CP_OEMCP,
-      progressBoxPointer,       
+      progressBoxPointer,
       /*
       GetDefaultName(m_FileName, m_ArchiverInfo.Extension),
-      m_FileInfo.LastWriteTime, m_FileInfo.Attributes,
+      m_FileInfo.MTime, m_FileInfo.Attributes,
       */
       passwordIsDefined, password);
 
@@ -74,14 +75,14 @@ HRESULT CPlugin::ExtractFiles(
   }
 }
 
-NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *panelItems, 
+NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *panelItems,
     int itemsNumber, int move, char *_aDestPath, int opMode)
 {
-  return GetFilesReal(panelItems, itemsNumber, move, 
+  return GetFilesReal(panelItems, itemsNumber, move,
       _aDestPath, opMode, (opMode & OPM_SILENT) == 0);
 }
 
-NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *panelItems, 
+NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *panelItems,
     int itemsNumber, int move, const char *_aDestPath, int opMode, bool showBox)
 {
   if(move != 0)
@@ -130,31 +131,31 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       // { DI_EDIT, 5, 3, kXSize - 6, 3, true, false, 0, false, -1, destPath, NULL},
       
       { DI_SINGLEBOX, 4, 5, kXMid - 2, 5 + 4, false, false, 0, false, NMessageID::kExtractPathMode, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 6, 0, 0, false, 
-          extractionInfo.PathMode == NExtract::NPathMode::kFullPathnames, 
+      { DI_RADIOBUTTON, 6, 6, 0, 0, false,
+          extractionInfo.PathMode == NExtract::NPathMode::kFullPathnames,
           DIF_GROUP, false, NMessageID::kExtractPathFull, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 7, 0, 0, false, 
+      { DI_RADIOBUTTON, 6, 7, 0, 0, false,
           extractionInfo.PathMode == NExtract::NPathMode::kCurrentPathnames,
           0, false, NMessageID::kExtractPathCurrent, NULL, NULL },
       { DI_RADIOBUTTON, 6, 8, 0, 0, false,
-          extractionInfo.PathMode == NExtract::NPathMode::kNoPathnames, 
+          extractionInfo.PathMode == NExtract::NPathMode::kNoPathnames,
           false, 0, NMessageID::kExtractPathNo, NULL, NULL },
       
       { DI_SINGLEBOX, kXMid, 5, kXSize - 6, 5 + kNumOverwriteOptions, false, false, 0, false, NMessageID::kExtractOwerwriteMode, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAskBefore, 
+      { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false,
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAskBefore,
           DIF_GROUP, false, NMessageID::kExtractOwerwriteAsk, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 7, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kWithoutPrompt, 
+      { DI_RADIOBUTTON, kXMid + 2, 7, 0, 0, false,
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kWithoutPrompt,
           0, false, NMessageID::kExtractOwerwritePrompt, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kSkipExisting, 
+      { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false,
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kSkipExisting,
           0, false, NMessageID::kExtractOwerwriteSkip, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 9, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRename, 
+      { DI_RADIOBUTTON, kXMid + 2, 9, 0, 0, false,
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRename,
           0, false, NMessageID::kExtractOwerwriteAutoRename, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 10, 0, 0, false, 
-          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRenameExisting, 
+      { DI_RADIOBUTTON, kXMid + 2, 10, 0, 0, false,
+          extractionInfo.OverwriteMode == NExtract::NOverwriteMode::kAutoRenameExisting,
           0, false, NMessageID::kExtractOwerwriteAutoRenameExisting, NULL, NULL },
       
       { DI_SINGLEBOX, 4, 10, kXMid- 2, 10 + 3, false, false, 0, false, NMessageID::kExtractFilesMode, NULL, NULL },
@@ -164,7 +165,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       { DI_SINGLEBOX, kXMid, kPasswordYPos, kXSize - 6, kPasswordYPos + 2, false, false, 0, false, NMessageID::kExtractPassword, NULL, NULL },
       { DI_PSWEDIT, kXMid + 2, kPasswordYPos + 1, kXSize - 8, 12, false, false, 0, false, -1, oemPassword, NULL},
       
-      { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },  
+      { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },
       
       
       { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, true, NMessageID::kExtractExtract, NULL, NULL  },
@@ -179,7 +180,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
     for (;;)
     {
-      int askCode = g_StartupInfo.ShowDialog(kXSize, kYSize, 
+      int askCode = g_StartupInfo.ShowDialog(kXSize, kYSize,
         kHelpTopicExtrFromSevenZip, dialogItems, kNumDialogItems);
       if (askCode != kOkButtonIndex)
         return NFileOperationReturnCode::kInterruptedByUser;
@@ -239,7 +240,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       throw 31806;
 
     oemPassword = dialogItems[kPasswordIndex].Data;
-    password = MultiByteToUnicodeString(oemPassword, CP_OEMCP); 
+    password = MultiByteToUnicodeString(oemPassword, CP_OEMCP);
     passwordIsDefined = !password.IsEmpty();
   }
 
@@ -255,11 +256,11 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   for (int i = 0; i < itemsNumber; i++)
     indices.Add(panelItems[i].UserData);
 
-  HRESULT result = ExtractFiles(decompressAllItems, &indices.Front(), itemsNumber, 
-      !showBox, extractionInfo.PathMode, extractionInfo.OverwriteMode, 
-      MultiByteToUnicodeString(destPath, CP_OEMCP), 
+  HRESULT result = ExtractFiles(decompressAllItems, &indices.Front(), itemsNumber,
+      !showBox, extractionInfo.PathMode, extractionInfo.OverwriteMode,
+      MultiByteToUnicodeString(destPath, CP_OEMCP),
       passwordIsDefined, password);
-  // HRESULT result = ExtractFiles(decompressAllItems, realIndices, !showBox, 
+  // HRESULT result = ExtractFiles(decompressAllItems, realIndices, !showBox,
   //     extractionInfo, destPath, passwordIsDefined, password);
   if (result != S_OK)
   {

@@ -34,11 +34,11 @@ static INT_PTR OptionsDialog(HWND hwndOwner)
     page.Page = pagePinters[i];
     pages.Add(page);
   }
-  return NControl::MyPropertySheet(pages, hwndOwner, 
+  return NControl::MyPropertySheet(pages, hwndOwner,
     LangString(IDS_CONFIG_DIALOG_CAPTION, 0x01000000));
 }
 
-STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd, 
+STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd,
     IPluginOptionsCallback * /* callback */)
 {
   /*

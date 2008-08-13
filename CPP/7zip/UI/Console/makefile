@@ -47,6 +47,7 @@ WIN_OBJS = \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \
   $O\System.obj \
+  $O\Time.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\FilePathAutoRename.obj \

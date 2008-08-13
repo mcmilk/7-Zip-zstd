@@ -85,7 +85,7 @@ struct CArcInfoEx
 
   void AddExts(const wchar_t* ext, const wchar_t* addExt);
 
-  CArcInfoEx(): 
+  CArcInfoEx():
     #ifdef EXTERNAL_CODECS
     LibIndex(-1),
     #endif
@@ -130,7 +130,7 @@ class CCodecs:
   #endif
   public CMyUnknownImp
 {
-public:  
+public:
   #ifdef EXTERNAL_CODECS
   CObjectVector<CCodecLib> Libs;
   CObjectVector<CDllCodecInfo> Codecs;
@@ -148,8 +148,13 @@ public:
 public:
   CObjectVector<CArcInfoEx> Formats;
   HRESULT Load();
-  int FindFormatForArchiveName(const UString &archivePath) const;
+  
+  #ifndef _SFX
+  int FindFormatForArchiveName(const UString &arcPath) const;
+  int FindFormatForExtension(const UString &ext) const;
   int FindFormatForArchiveType(const UString &arcType) const;
+  bool FindFormatForArchiveType(const UString &arcType, CIntVector &formatIndices) const;
+  #endif
 
   MY_UNKNOWN_IMP
 
@@ -166,8 +171,8 @@ public:
   UString GetCodecName(UInt32 index);
 
   HRESULT CreateInArchive(int formatIndex, CMyComPtr<IInArchive> &archive) const
-  { 
-    const CArcInfoEx &ai = Formats[formatIndex]; 
+  {
+    const CArcInfoEx &ai = Formats[formatIndex];
     #ifdef EXTERNAL_CODECS
     if (ai.LibIndex < 0)
     #endif
@@ -176,12 +181,12 @@ public:
       return S_OK;
     }
     #ifdef EXTERNAL_CODECS
-    return CreateArchiveHandler(ai, (void **)&archive, false); 
+    return CreateArchiveHandler(ai, (void **)&archive, false);
     #endif
   }
   HRESULT CreateOutArchive(int formatIndex, CMyComPtr<IOutArchive> &archive) const
-  { 
-    const CArcInfoEx &ai = Formats[formatIndex]; 
+  {
+    const CArcInfoEx &ai = Formats[formatIndex];
     #ifdef EXTERNAL_CODECS
     if (ai.LibIndex < 0)
     #endif
@@ -190,7 +195,7 @@ public:
       return S_OK;
     }
     #ifdef EXTERNAL_CODECS
-    return CreateArchiveHandler(ai, (void **)&archive, true); 
+    return CreateArchiveHandler(ai, (void **)&archive, true);
     #endif
   }
   int FindOutFormatFromName(const UString &name) const

@@ -25,7 +25,7 @@ namespace NFileHeader
   };
   */
   
-  namespace NFlags 
+  namespace NFlags
   {
     const int kDataIsText = 1 << 0;
     const int kHeaderCRCIsPresent = 1 << 1;
@@ -34,7 +34,7 @@ namespace NFileHeader
     const int kComentIsPresent = 1 << 4;
   }
   
-  namespace NExtraFlags 
+  namespace NExtraFlags
   {
     enum EEnum
     {
@@ -52,7 +52,7 @@ namespace NFileHeader
   {
     enum EEnum
     {
-      kFAT      = 0,  // filesystem used by MS-DOS, OS/2, Win32 
+      kFAT      = 0,  // filesystem used by MS-DOS, OS/2, Win32
         // pkzip 2.50 (FAT / VFAT / FAT32 file systems)
         kAMIGA    = 1,
         kVMS      = 2,  // VAX/VMS
@@ -63,14 +63,14 @@ namespace NFileHeader
         kMac      = 7,
         kZ_System = 8,
         kCPM      = 9,
-        kTOPS20   = 10, // pkzip 2.50 NTFS 
-        kNTFS     = 11, // filesystem used by Windows NT 
+        kTOPS20   = 10, // pkzip 2.50 NTFS
+        kNTFS     = 11, // filesystem used by Windows NT
         kQDOS     = 12, // SMS/QDOS
         kAcorn    = 13, // Archimedes Acorn RISC OS
         kVFAT     = 14, // filesystem used by Windows 95, NT
         kMVS      = 15,
         kBeOS     = 16, // hybrid POSIX/database filesystem
-                        // BeBOX or PowerMac 
+                        // BeBOX or PowerMac
         kTandem   = 17,
         kTHEOS    = 18,
 

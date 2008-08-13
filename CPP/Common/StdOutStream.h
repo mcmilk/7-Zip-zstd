@@ -7,7 +7,7 @@
 
 #include "Types.h"
 
-class CStdOutStream 
+class CStdOutStream
 {
   bool _streamIsOpen;
   FILE *_stream;

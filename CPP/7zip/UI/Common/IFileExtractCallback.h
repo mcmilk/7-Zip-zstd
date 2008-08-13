@@ -37,7 +37,10 @@ struct IExtractCallbackUI: IFolderArchiveExtractCallback
   virtual HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted) = 0;
   virtual HRESULT ThereAreNoFiles() = 0;
   virtual HRESULT ExtractResult(HRESULT result) = 0;
+
+  #ifndef _NO_CRYPTO
   virtual HRESULT SetPassword(const UString &password) = 0;
+  #endif
 };
 
 #endif

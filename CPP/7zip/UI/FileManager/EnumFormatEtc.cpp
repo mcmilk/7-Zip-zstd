@@ -5,7 +5,7 @@
 #include "EnumFormatEtc.h"
 #include "MyCom2.h"
 
-class CEnumFormatEtc : 
+class CEnumFormatEtc :
 public IEnumFORMATETC,
 public CMyUnknownImp
 {
@@ -13,7 +13,7 @@ public:
   MY_UNKNOWN_IMP1_MT(IEnumFORMATETC)
     
   STDMETHOD(Next)(ULONG celt, FORMATETC *rgelt, ULONG *pceltFetched);
-  STDMETHOD(Skip)(ULONG celt); 
+  STDMETHOD(Skip)(ULONG celt);
   STDMETHOD(Reset)(void);
   STDMETHOD(Clone)(IEnumFORMATETC **ppEnumFormatEtc);
   
@@ -73,7 +73,7 @@ STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, FORMATETC *pFormatEtc, ULONG *pcel
     copied++;
     m_Index++;
   }
-  if(pceltFetched != 0) 
+  if(pceltFetched != 0)
     *pceltFetched = copied;
   return (copied == celt) ? S_OK : S_FALSE;
 }

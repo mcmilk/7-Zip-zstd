@@ -14,6 +14,7 @@ static UString ReplaceIncorrectChars(const UString &s)
       c = '_';
     res += c;
   }
+  res.TrimRight();
   return res;
   #else
   return s;

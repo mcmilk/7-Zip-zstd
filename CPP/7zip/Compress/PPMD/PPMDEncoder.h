@@ -14,7 +14,7 @@
 namespace NCompress {
 namespace NPPMD {
 
-class CEncoder : 
+class CEncoder :
   public ICompressCoder,
   public ICompressSetCoderProperties,
   public ICompressWriteCoderProperties,
@@ -67,7 +67,7 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
 
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);

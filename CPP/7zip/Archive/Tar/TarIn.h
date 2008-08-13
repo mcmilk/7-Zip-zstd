@@ -11,20 +11,8 @@
 namespace NArchive {
 namespace NTar {
   
-class CInArchive
-{
-  CMyComPtr<IInStream> m_Stream;
-  UInt64 m_Position;
-  
-  HRESULT ReadBytes(void *data, size_t size, size_t &processedSize);
-public:
-  HRESULT Open(IInStream *inStream);
-  HRESULT GetNextItemReal(bool &filled, CItemEx &itemInfo);
-  HRESULT GetNextItem(bool &filled, CItemEx &itemInfo);
-  HRESULT Skeep(UInt64 numBytes);
-  HRESULT SkeepDataRecords(UInt64 dataSize);
-};
-  
+HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &itemInfo);
+
 }}
   
 #endif

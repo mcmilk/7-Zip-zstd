@@ -1,5 +1,5 @@
 /* Bra.c -- converters for RISC  code
-2008-03-19
+2008-08-05
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
@@ -41,11 +41,11 @@ SizeT ARMT_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
   ip += 4;
   for (i = 0; i <= size; i += 2)
   {
-    if ((data[i + 1] & 0xF8) == 0xF0 && 
+    if ((data[i + 1] & 0xF8) == 0xF0 &&
         (data[i + 3] & 0xF8) == 0xF8)
     {
       UInt32 dest;
-      UInt32 src = 
+      UInt32 src =
         (((UInt32)data[i + 1] & 0x7) << 19) |
         ((UInt32)data[i + 0] << 11) |
         (((UInt32)data[i + 3] & 0x7) << 8) |
@@ -106,10 +106,10 @@ SizeT SPARC_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
   size -= 4;
   for (i = 0; i <= size; i += 4)
   {
-    if (data[i] == 0x40 && (data[i + 1] & 0xC0) == 0x00 || 
+    if (data[i] == 0x40 && (data[i + 1] & 0xC0) == 0x00 ||
         data[i] == 0x7F && (data[i + 1] & 0xC0) == 0xC0)
     {
-      UInt32 src = 
+      UInt32 src =
         ((UInt32)data[i + 0] << 24) |
         ((UInt32)data[i + 1] << 16) |
         ((UInt32)data[i + 2] << 8) |

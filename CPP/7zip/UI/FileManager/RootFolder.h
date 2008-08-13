@@ -9,7 +9,9 @@
 
 #include "FSFolder.h"
 
-class CRootFolder: 
+const int kNumRootFolderItems = 3;
+
+class CRootFolder:
   public IFolderFolder,
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp
@@ -25,8 +27,8 @@ public:
 
   void Init();
 private:
-  UString _computerName;
-  UString _networkName;
+  UString _names[kNumRootFolderItems];
+  int _iconIndices[kNumRootFolderItems];
 };
 
 #endif

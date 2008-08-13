@@ -16,11 +16,11 @@ struct CVKeyPropIDPair
   PROPID PropID;
 };
 
-static CVKeyPropIDPair g_VKeyPropIDPairs[] = 
+static CVKeyPropIDPair g_VKeyPropIDPairs[] =
 {
   { VK_F3, kpidName },
   { VK_F4, kpidExtension },
-  { VK_F5, kpidLastWriteTime },
+  { VK_F5, kpidMTime },
   { VK_F6, kpidSize },
   { VK_F7, kpidNoProperty }
 };
@@ -48,7 +48,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
   bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   result = 0;
 
-  if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' && 
+  if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' &&
       (rightCtrl || alt))
   {
     int index = keyDownInfo->wVKey - '0';
@@ -64,7 +64,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     }
   }
 
-  if ((keyDownInfo->wVKey == VK_F2 || 
+  if ((keyDownInfo->wVKey == VK_F2 ||
     keyDownInfo->wVKey == VK_F1) && alt && !ctrl && !shift)
   {
     _panelCallback->SetFocusToPath(keyDownInfo->wVKey == VK_F1 ? 0 : 1);

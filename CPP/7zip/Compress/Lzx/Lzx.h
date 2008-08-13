@@ -40,7 +40,7 @@ const int kLevelSymbolSame = 19;
 const int kLevelSymbolZerosStartValue = 4;
 const int kLevelSymbolZerosNumBits = 4;
 
-const int kLevelSymbolZerosBigStartValue = kLevelSymbolZerosStartValue + 
+const int kLevelSymbolZerosBigStartValue = kLevelSymbolZerosStartValue +
     (1 << kLevelSymbolZerosNumBits);
 const int kLevelSymbolZerosBigNumBits = 5;
 

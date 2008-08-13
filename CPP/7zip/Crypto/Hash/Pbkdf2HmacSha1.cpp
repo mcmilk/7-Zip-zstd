@@ -7,7 +7,7 @@
 namespace NCrypto {
 namespace NSha1 {
 
-void Pbkdf2Hmac(const Byte *pwd, size_t pwdSize, const Byte *salt, size_t saltSize, 
+void Pbkdf2Hmac(const Byte *pwd, size_t pwdSize, const Byte *salt, size_t saltSize,
     UInt32 numIterations, Byte *key, size_t keySize)
 {
   CHmac baseCtx;
@@ -39,7 +39,7 @@ void Pbkdf2Hmac(const Byte *pwd, size_t pwdSize, const Byte *salt, size_t saltSi
   }
 }
 
-void Pbkdf2Hmac32(const Byte *pwd, size_t pwdSize, const UInt32 *salt, size_t saltSize, 
+void Pbkdf2Hmac32(const Byte *pwd, size_t pwdSize, const UInt32 *salt, size_t saltSize,
     UInt32 numIterations, UInt32 *key, size_t keySize)
 {
   CHmac32 baseCtx;

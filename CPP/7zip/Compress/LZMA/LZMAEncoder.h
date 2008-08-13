@@ -27,7 +27,7 @@ struct CSeqOutStream
   HRESULT Res;
 };
 
-class CEncoder : 
+class CEncoder :
   public ICompressCoder,
   public ICompressSetOutStream,
   public ICompressSetCoderProperties,
@@ -50,12 +50,12 @@ public:
     
  
   STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, 
+      ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
   // ICompressSetCoderProperties2
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, 
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs,
       const PROPVARIANT *properties, UInt32 numProperties);
   
   // ICompressWriteCoderProperties

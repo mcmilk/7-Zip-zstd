@@ -191,8 +191,8 @@ HRESULT CInMemStreamMt::ReadSubStream(int subStreamIndex, void *data, UInt32 siz
     if (curPos == Callback->GetBlockSize())
       needFree = true;
     blocks.Cs->Enter();
-    if (blocks.CurBlockIndex == blocks.LastBlockIndex && 
-        blocks.CurBlockPos == blocks.LastBlockPos && 
+    if (blocks.CurBlockIndex == blocks.LastBlockIndex &&
+        blocks.CurBlockPos == blocks.LastBlockPos &&
         blocks.StreamWasFinished)
       needFree = true;
     blocks.Cs->Leave();

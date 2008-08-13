@@ -1,5 +1,5 @@
 /* Aes.h -- AES encryption / decryption
-2008-03-26
+2008-08-05
 Igor Pavlov
 Public domain */
 
@@ -20,7 +20,7 @@ typedef struct
 void AesGenTables(void);
 
 /* keySize = 16 or 24 or 32 (bytes) */
-void Aes_SetKeyEncode(CAes *p, const Byte *key, unsigned keySize); 
+void Aes_SetKeyEncode(CAes *p, const Byte *key, unsigned keySize);
 void Aes_SetKeyDecode(CAes *p, const Byte *key, unsigned keySize);
 
 /* Aes_Encode32 and Aes_Decode32 functions work with little-endian words.
@@ -39,8 +39,8 @@ void AesCbc_Init(CAesCbc *p, const Byte *iv); /* iv size is AES_BLOCK_SIZE */
 
 /* AesCbc_Encode and AesCbc_Decode:
   if (res <= size): Filter have converted res bytes
-  if (res > size):  Filter have not converted anything. And it needs at 
-                    least res = AES_BLOCK_SIZE bytes to convert one block */ 
+  if (res > size):  Filter have not converted anything. And it needs at
+                    least res = AES_BLOCK_SIZE bytes to convert one block */
 
 SizeT AesCbc_Encode(CAesCbc *p, Byte *data, SizeT size);
 SizeT AesCbc_Decode(CAesCbc *p, Byte *data, SizeT size);

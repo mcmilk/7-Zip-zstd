@@ -36,14 +36,14 @@ UString ConvertPropertyToString(const PROPVARIANT &propVariant, PROPID propID, b
 {
   switch(propID)
   {
-    case kpidCreationTime:
-    case kpidLastWriteTime:
-    case kpidLastAccessTime:
+    case kpidCTime:
+    case kpidATime:
+    case kpidMTime:
     {
       if (propVariant.vt != VT_FILETIME)
         return UString(); // It is error;
       FILETIME localFileTime;
-      if (propVariant.filetime.dwHighDateTime == 0 && 
+      if (propVariant.filetime.dwHighDateTime == 0 &&
           propVariant.filetime.dwLowDateTime == 0)
         return UString();
       if (!::FileTimeToLocalFileTime(&propVariant.filetime, &localFileTime))
@@ -58,7 +58,7 @@ UString ConvertPropertyToString(const PROPVARIANT &propVariant, PROPID propID, b
       ConvertUInt32ToHex(propVariant.ulVal, temp);
       return temp;
     }
-    case kpidAttributes:
+    case kpidAttrib:
     {
       if(propVariant.vt != VT_UI4)
         break;
@@ -67,7 +67,7 @@ UString ConvertPropertyToString(const PROPVARIANT &propVariant, PROPID propID, b
       if (NFile::NFind::NAttributes::IsReadOnly(attributes)) result += L'R';
       if (NFile::NFind::NAttributes::IsHidden(attributes)) result += L'H';
       if (NFile::NFind::NAttributes::IsSystem(attributes)) result += L'S';
-      if (NFile::NFind::NAttributes::IsDirectory(attributes)) result += L'D';
+      if (NFile::NFind::NAttributes::IsDir(attributes)) result += L'D';
       if (NFile::NFind::NAttributes::IsArchived(attributes)) result += L'A';
       if (NFile::NFind::NAttributes::IsCompressed(attributes)) result += L'C';
       if (NFile::NFind::NAttributes::IsEncrypted(attributes)) result += L'E';

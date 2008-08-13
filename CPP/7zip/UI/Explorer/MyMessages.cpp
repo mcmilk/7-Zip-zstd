@@ -7,50 +7,52 @@
 #include "Windows/Error.h"
 #include "Windows/ResourceString.h"
 
-#ifdef LANG        
+#ifdef LANG
 #include "../FileManager/LangUtils.h"
 #endif
 
 using namespace NWindows;
 
-void MyMessageBox(HWND window, LPCWSTR message)
-{ 
-  ::MessageBoxW(window, message, L"7-Zip", 0); 
+void ShowErrorMessage(HWND window, LPCWSTR message)
+{
+  ::MessageBoxW(window, message, L"7-Zip", MB_OK | MB_ICONSTOP);
 }
 
-void MyMessageBoxResource(HWND window, UINT32 id
-    #ifdef LANG        
-    ,UINT32 langID
+void ShowErrorMessageHwndRes(HWND window, UINT resID
+    #ifdef LANG
+    , UInt32 langID
     #endif
     )
 {
-  #ifdef LANG        
-  MyMessageBox(window, LangString(id, langID));
+  ShowErrorMessage(window,
+  #ifdef LANG
+  LangString(resID, langID)
   #else
-  MyMessageBox(window, MyLoadStringW(id));
+  MyLoadStringW(resID)
   #endif
+  );
 }
 
-void MyMessageBox(UINT32 id
-    #ifdef LANG        
-    ,UINT32 langID
+void ShowErrorMessageRes(UINT resID
+    #ifdef LANG
+    , UInt32 langID
     #endif
     )
 {
-  MyMessageBoxResource(0, id
-  #ifdef LANG        
+  ShowErrorMessageHwndRes(0, resID
+  #ifdef LANG
   , langID
   #endif
   );
 }
 
-void ShowErrorMessage(HWND window, DWORD message)
+void ShowErrorMessageDWORD(HWND window, DWORD errorCode)
 {
-  MyMessageBox(window, NError::MyFormatMessageW(message));
+  ShowErrorMessage(window, NError::MyFormatMessageW(errorCode));
 }
 
 void ShowLastErrorMessage(HWND window)
 {
-  ShowErrorMessage(window, ::GetLastError());
+  ShowErrorMessageDWORD(window, ::GetLastError());
 }
 
