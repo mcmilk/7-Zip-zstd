@@ -1,5 +1,5 @@
 /* Bcj2.c -- Converter for x86 code (BCJ2)
-2008-08-05
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
@@ -24,7 +24,7 @@ Read Bra.h for license options */
 #define RC_READ_BYTE (*buffer++)
 #define RC_TEST { if (buffer == bufferLim) return SZ_ERROR_DATA; }
 #define RC_INIT2 code = 0; range = 0xFFFFFFFF; \
-  { int i; for(i = 0; i < 5; i++) { RC_TEST; code = (code << 8) | RC_READ_BYTE; }}
+  { int i; for (i = 0; i < 5; i++) { RC_TEST; code = (code << 8) | RC_READ_BYTE; }}
 
 #define NORMALIZE if (range < kTopValue) { RC_TEST; range <<= 8; code = (code << 8) | RC_READ_BYTE; }
 

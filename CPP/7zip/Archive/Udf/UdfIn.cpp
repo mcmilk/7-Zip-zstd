@@ -26,6 +26,7 @@ const int kNumFilesMax = 1 << 28;
 const int kNumRefsMax = 1 << 28;
 const UInt32 kNumExtentsMax = (UInt32)1 << 30;
 const UInt64 kFileNameLengthTotalMax = (UInt64)1 << 33;
+const UInt64 kInlineExtentsSizeMax = (UInt64)1 << 33;
 
 void MY_FAST_CALL Crc16GenerateTable(void);
 
@@ -275,6 +276,11 @@ HRESULT CInArchive::ReadFromFile(int volIndex, const CItem &item, CByteBuffer &b
 {
   if (item.Size >= (UInt32)1 << 30)
     return S_FALSE;
+  if (item.IsInline)
+  {
+    buf = item.InlineData;
+    return S_OK;
+  }
   buf.SetCapacity((size_t)item.Size);
   size_t pos = 0;
   for (int i = 0; i < item.Extents.Size(); i++)
@@ -448,37 +454,46 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   pos += extendedAttrLen;
 
   int desctType = item.IcbTag.GetDescriptorType();
-  // if (desctType == ICB_DESC_TYPE_INLINE || desctType == ICB_DESC_TYPE_EXTENDED)
-  if (desctType != ICB_DESC_TYPE_SHORT && desctType != ICB_DESC_TYPE_LONG)
-    return S_FALSE;
   if (allocDescriptorsLen > size - pos)
     return S_FALSE;
-  for (UInt32 i = 0; i < allocDescriptorsLen;)
+  if (desctType == ICB_DESC_TYPE_INLINE)
   {
-    CMyExtent e;
-    if (desctType == ICB_DESC_TYPE_SHORT)
+    item.IsInline = true;
+    item.InlineData.SetCapacity(allocDescriptorsLen);
+    memcpy(item.InlineData, p + pos, allocDescriptorsLen);
+  }
+  else
+  {
+    item.IsInline = false;
+    if (desctType != ICB_DESC_TYPE_SHORT && desctType != ICB_DESC_TYPE_LONG)
+      return S_FALSE;
+    for (UInt32 i = 0; i < allocDescriptorsLen;)
     {
-      if (i + 8 > allocDescriptorsLen)
-        return S_FALSE;
-      CShortAllocDesc sad;
-      sad.Parse(p + pos + i);
-      e.Pos = sad.Pos;
-      e.Len = sad.Len;
-      e.PartitionRef = lad.Location.PartitionRef;
-      i += 8;
+      CMyExtent e;
+      if (desctType == ICB_DESC_TYPE_SHORT)
+      {
+        if (i + 8 > allocDescriptorsLen)
+          return S_FALSE;
+        CShortAllocDesc sad;
+        sad.Parse(p + pos + i);
+        e.Pos = sad.Pos;
+        e.Len = sad.Len;
+        e.PartitionRef = lad.Location.PartitionRef;
+        i += 8;
+      }
+      else
+      {
+        if (i + 16 > allocDescriptorsLen)
+          return S_FALSE;
+        CLongAllocDesc ladNew;
+        ladNew.Parse(p + pos + i);
+        e.Pos = ladNew.Location.Pos;
+        e.PartitionRef = ladNew.Location.PartitionRef;
+        e.Len = ladNew.Len;
+        i += 16;
+      }
+      item.Extents.Add(e);
     }
-    else
-    {
-      if (i + 16 > allocDescriptorsLen)
-        return S_FALSE;
-      CLongAllocDesc ladNew;
-      ladNew.Parse(p + pos + i);
-      e.Pos = ladNew.Location.Pos;
-      e.PartitionRef = ladNew.Location.PartitionRef;
-      e.Len = ladNew.Len;
-      i += 16;
-    }
-    item.Extents.Add(e);
   }
 
   if (item.IcbTag.IsDir())
@@ -489,6 +504,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
     RINOK(ReadFromFile(volIndex, item, buf));
     item.Size = 0;
     item.Extents.ClearAndFree();
+    item.InlineData.Free();
 
     const Byte *p = buf;
     size = buf.GetCapacity();
@@ -524,6 +540,10 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
     if ((UInt32)item.Extents.Size() > kNumExtentsMax - _numExtents)
       return S_FALSE;
     _numExtents += item.Extents.Size();
+
+    if (item.InlineData.GetCapacity() > kInlineExtentsSizeMax - _inlineExtentsSize)
+      return S_FALSE;
+    _inlineExtentsSize += item.InlineData.GetCapacity();
   }
 
   return S_OK;
@@ -769,6 +789,7 @@ void CInArchive::Clear()
   _fileNameLengthTotal = 0;
   _numRefs = 0;
   _numExtents = 0;
+  _inlineExtentsSize = 0;
   _processedProgressBytes = 0;
 }
 

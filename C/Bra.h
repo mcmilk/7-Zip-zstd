@@ -1,5 +1,5 @@
 /* Bra.h -- Branch converters for executables
-2008-08-05
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzmaDec.h for license options */
 
@@ -41,7 +41,7 @@ in CALL instructions to increase the compression ratio.
   Example:
 
     UInt32 ip = 0;
-    for()
+    for ()
     {
       // size must be >= Alignment + LookAhead, if it's not last block
       SizeT processed = Convert(data, size, ip, 1);

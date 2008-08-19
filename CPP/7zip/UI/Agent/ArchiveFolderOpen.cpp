@@ -59,9 +59,8 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(const wchar_t *type, BSTR *ext
   int formatIndex = FindFormat(type);
   if (formatIndex <  0)
     return E_INVALIDARG;
-  CMyComBSTR valueTemp = _codecs.Formats[formatIndex].GetAllExtensions(); // Exts[0].Ext;
-  *extensions = valueTemp.Detach();
-  return S_OK;
+  // Exts[0].Ext;
+  return StringToBstr(_codecs.Formats[formatIndex].GetAllExtensions(), extensions);
 }
 */
 STDMETHODIMP CArchiveFolderManager::GetExtensions(BSTR *extensions)
@@ -79,9 +78,7 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(BSTR *extensions)
       res += lib.IconPairs[j].Ext;
     }
   }
-  CMyComBSTR valueTemp = res;
-  *extensions = valueTemp.Detach();
-  return S_OK;
+  return StringToBstr(res, extensions);
 }
 
 STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex)
@@ -95,10 +92,8 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPa
     int ii = lib.FindIconIndex(ext);
     if (ii >= 0)
     {
-      CMyComBSTR iconPathTemp = GetUnicodeString(lib.Path, GetCurrentFileCodePage());
       *iconIndex = ii;
-      *iconPath = iconPathTemp.Detach();
-      return S_OK;
+      return StringToBstr(GetUnicodeString(lib.Path, GetCurrentFileCodePage()), iconPath);
     }
   }
   return S_OK;
@@ -118,9 +113,7 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
       typesStrings += L' ';
     typesStrings += ai.Name;
   }
-  CMyComBSTR valueTemp = typesStrings;
-  *types = valueTemp.Detach();
-  return S_OK;
+  return StringToBstr(typesStrings, types);
 }
 STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t * type,
     const wchar_t * filePath, IProgress progress)

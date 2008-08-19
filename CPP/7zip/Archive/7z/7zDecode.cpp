@@ -264,7 +264,7 @@ HRESULT CDecoder::Decode(
         RINOK(getTextPassword->CryptoGetTextPassword(&passwordBSTR));
         CByteBuffer buffer;
         passwordIsDefined = true;
-        UString password = passwordBSTR;
+        const UString password(passwordBSTR);
         const UInt32 sizeInBytes = password.Length() * 2;
         buffer.SetCapacity(sizeInBytes);
         for (int i = 0; i < password.Length(); i++)

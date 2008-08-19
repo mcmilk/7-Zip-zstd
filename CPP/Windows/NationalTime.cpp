@@ -13,7 +13,7 @@ bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
 {
   resultString.Empty();
   int numChars = ::GetTimeFormat(locale, flags, time, format, NULL, 0);
-  if(numChars == 0)
+  if (numChars == 0)
     return false;
   numChars = ::GetTimeFormat(locale, flags, time, format,
       resultString.GetBuffer(numChars), numChars + 1);
@@ -26,7 +26,7 @@ bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
 {
   resultString.Empty();
   int numChars = ::GetDateFormat(locale, flags, time, format, NULL, 0);
-  if(numChars == 0)
+  if (numChars == 0)
     return false;
   numChars = ::GetDateFormat(locale, flags, time, format,
       resultString.GetBuffer(numChars), numChars + 1);

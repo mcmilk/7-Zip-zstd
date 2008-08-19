@@ -95,8 +95,8 @@ UString GetMyDocsPath()
       us = GetUnicodeString(s2);
   }
   #endif
-  if (us.Length() > 0 && us[us.Length() - 1] != L'\\')
-    us += L'\\';
+  if (us.Length() > 0 && us[us.Length() - 1] != WCHAR_PATH_SEPARATOR)
+    us += WCHAR_PATH_SEPARATOR;
   return us;
 }
 
@@ -113,7 +113,7 @@ STDMETHODIMP CRootFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolde
   {
     CNetFolder *netFolderSpec = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolderSpec;
-    netFolderSpec->Init(0, 0, _names[ROOT_INDEX_NETWORK] + L'\\');
+    netFolderSpec->Init(0, 0, _names[ROOT_INDEX_NETWORK] + WCHAR_PATH_SEPARATOR);
     *resultFolder = subFolder.Detach();
   }
   else if (index == ROOT_INDEX_DOCUMENTS)
@@ -134,7 +134,7 @@ STDMETHODIMP CRootFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolde
 
 static bool AreEqualNames(const UString &name1, const UString &name2)
 {
-  return (name1 == name2 || name1 == (name2 + UString(L'\\')));
+  return (name1 == name2 || name1 == (name2 + UString(WCHAR_PATH_SEPARATOR)));
 }
 
 STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
@@ -159,7 +159,7 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
   if (AreEqualNames(name2, L"My Computer") ||
       AreEqualNames(name2, L"Computer"))
     return BindToFolder((UInt32)ROOT_INDEX_COMPUTER, resultFolder);
-  if (name2 == UString(L'\\'))
+  if (name2 == UString(WCHAR_PATH_SEPARATOR))
   {
     CMyComPtr<IFolderFolder> subFolder = this;
     *resultFolder = subFolder.Detach();
@@ -179,13 +179,13 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
   }
   else
   {
-    if (name2[name2.Length () - 1] != L'\\')
-      name2 += L'\\';
+    if (name2[name2.Length () - 1] != WCHAR_PATH_SEPARATOR)
+      name2 += WCHAR_PATH_SEPARATOR;
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     subFolder = fsFolderSpec;
     if (fsFolderSpec->Init(name2, 0) != S_OK)
     {
-      if (name2[0] == L'\\')
+      if (name2[0] == WCHAR_PATH_SEPARATOR)
       {
         CNetFolder *netFolderSpec = new CNetFolder;
         subFolder = netFolderSpec;
@@ -240,7 +240,3 @@ STDMETHODIMP CRootFolder::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
   *iconIndex = _iconIndices[index];
   return S_OK;
 }
-
-
-
-

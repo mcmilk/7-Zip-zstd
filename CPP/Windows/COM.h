@@ -26,7 +26,7 @@ public:
   ~CStgMedium() { Free(); }
   void Free()
   {
-    if(_mustBeReleased)
+    if (_mustBeReleased)
       ReleaseStgMedium(&_object);
     _mustBeReleased = false;
   }

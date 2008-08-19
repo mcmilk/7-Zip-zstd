@@ -10,8 +10,6 @@
 namespace NWindows {
 namespace NRegistry {
 
-const TCHAR kKeyNameDelimiter = TEXT('\\');
-
 LONG SetValue(HKEY parentKey, LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value);
 
 class CKey

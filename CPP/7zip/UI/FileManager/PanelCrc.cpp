@@ -64,7 +64,7 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
       if (Index >= FileNames.Size())
         return true;
       const UString &path = FileNames[Index];
-      int pos = path.ReverseFind('\\');
+      int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
       resPath.Empty();
       if (pos >= 0)
         resPath = path.Left(pos + 1);

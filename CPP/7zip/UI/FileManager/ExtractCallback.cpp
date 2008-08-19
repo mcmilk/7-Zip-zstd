@@ -369,9 +369,7 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 
@@ -384,12 +382,9 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     Int32 *writeAnswer)
 {
   UString destPathResultTemp = destPath;
-  /*
-  {
-    CMyComBSTR destPathResultBSTR = destPath;
-    *destPathResult = destPathResultBSTR.Detach();
-  }
-  */
+
+  // RINOK(StringToBstr(destPath, destPathResult));
+
   *destPathResult = 0;
   *writeAnswer = BoolToInt(false);
 
@@ -476,9 +471,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
         return E_ABORT;
       }
   }
-  CMyComBSTR destPathResultBSTR(destPathResultTemp);
-  *destPathResult = destPathResultBSTR.Detach();
   *writeAnswer = BoolToInt(true);
-  return S_OK;
+  return StringToBstr(destPathResultTemp, destPathResult);
 }
 

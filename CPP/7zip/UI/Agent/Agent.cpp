@@ -94,9 +94,9 @@ UString CAgentFolder::GetPrefix(UInt32 index) const
   const CProxyItem &item = _items[index];
   const CProxyFolder *folder = item.Folder;
   UString path;
-  while(folder != _proxyFolderItem)
+  while (folder != _proxyFolderItem)
   {
-    path = folder->Name + UString(L"\\") + path;
+    path = folder->Name + UString(WCHAR_PATH_SEPARATOR) + path;
     folder = folder->Parent;
   }
   return path;
@@ -460,12 +460,9 @@ STDMETHODIMP CAgent::Open(
   DefaultTime = fileInfo.MTime;
   DefaultAttrib = fileInfo.Attrib;
   ArchiveType = ai.Name;
-  if (archiveType != 0)
-  {
-    CMyComBSTR name = ArchiveType;
-    *archiveType = name.Detach();
-  }
-  return S_OK;
+  if (archiveType == 0)
+    return S_OK;
+  return StringToBstr(ArchiveType, archiveType);
   COM_TRY_END
 }
 

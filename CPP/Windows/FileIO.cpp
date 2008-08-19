@@ -126,8 +126,8 @@ bool CFileBase::GetLength(UInt64 &length) const
 {
   DWORD sizeHigh;
   DWORD sizeLow = ::GetFileSize(_handle, &sizeHigh);
-  if(sizeLow == 0xFFFFFFFF)
-    if(::GetLastError() != NO_ERROR)
+  if (sizeLow == 0xFFFFFFFF)
+    if (::GetLastError() != NO_ERROR)
       return false;
   length = (((UInt64)sizeHigh) << 32) + sizeLow;
   return true;
@@ -139,7 +139,7 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
   value.QuadPart = distanceToMove;
   value.LowPart = ::SetFilePointer(_handle, value.LowPart, &value.HighPart, moveMethod);
   if (value.LowPart == 0xFFFFFFFF)
-    if(::GetLastError() != NO_ERROR)
+    if (::GetLastError() != NO_ERROR)
       return false;
   newPosition = value.QuadPart;
   return true;
@@ -307,9 +307,9 @@ bool COutFile::SetEndOfFile() { return BOOLToBool(::SetEndOfFile(_handle)); }
 bool COutFile::SetLength(UInt64 length)
 {
   UInt64 newPosition;
-  if(!Seek(length, newPosition))
+  if (!Seek(length, newPosition))
     return false;
-  if(newPosition != length)
+  if (newPosition != length)
     return false;
   return SetEndOfFile();
 }

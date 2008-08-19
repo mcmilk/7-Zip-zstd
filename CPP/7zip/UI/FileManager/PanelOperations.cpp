@@ -362,7 +362,7 @@ void CPanel::CreateFolder()
       return;
     }
   }
-  int pos = newName.Find(L'\\');
+  int pos = newName.Find(WCHAR_PATH_SEPARATOR);
   if (pos >= 0)
     newName = newName.Left(pos);
   if (!_mySelectMode)
@@ -397,7 +397,7 @@ void CPanel::CreateFile()
     MessageBoxError(result, LangString(IDS_CREATE_FILE_ERROR, 0x03020243));
     return;
   }
-  int pos = newName.Find(L'\\');
+  int pos = newName.Find(WCHAR_PATH_SEPARATOR);
   if (pos >= 0)
     newName = newName.Left(pos);
   if (!_mySelectMode)

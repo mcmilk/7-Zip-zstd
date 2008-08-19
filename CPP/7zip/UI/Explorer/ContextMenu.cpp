@@ -309,6 +309,16 @@ static UString GetReducedString(const UString &s)
   return s.Left(kFirstPartSize) + UString(L" ... ") + s.Right(kMaxSize - kFirstPartSize);
 }
 
+static UString GetQuotedString(const UString &s)
+{
+  return UString(L'\"') + s + UString(L'\"');
+}
+
+static UString GetQuotedReducedString(const UString &s)
+{
+  return GetQuotedString(GetReducedString(s));
+}
+
 static const wchar_t *kExtractExludeExtensions[] =
 {
   L"txt", L"htm", L"html", L"xml", L"xsd", L"xsl", L"xslt", L"asp", L"aspx", L"css", L"shtml",
@@ -435,7 +445,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           commandMapItem.Folder = _dropPath;
         else
           commandMapItem.Folder = folderPrefix;
-        commandMapItem.Folder += GetSubFolderNameForExtract(fileInfo.Name) + UString(L'\\');
+        commandMapItem.Folder += GetSubFolderNameForExtract(fileInfo.Name) + UString(WCHAR_PATH_SEPARATOR);
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString);
         _commandMap.Add(commandMapItem);
       }
@@ -469,7 +479,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         else
           commandMapItem.Folder = folderPrefix;
         commandMapItem.Folder += folder;
-        s = MyFormatNew(s, GetReducedString(UString(L"\"") + folder + UString(L"\\\"")));
+        s = MyFormatNew(s, GetQuotedReducedString(folder + UString(WCHAR_PATH_SEPARATOR)));
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
         _commandMap.Add(commandMapItem);
       }
@@ -525,8 +535,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         commandMapItem.Folder = archivePathPrefix;
       commandMapItem.Archive = archiveName7z;
       commandMapItem.ArchiveType = L"7z";
-      UString t = UString(L"\"") + GetReducedString(archiveName7z) + UString(L"\"");
-      s = MyFormatNew(s, t);
+      s = MyFormatNew(s, GetQuotedReducedString(archiveName7z));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
       _commandMap.Add(commandMapItem);
     }
@@ -539,8 +548,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       FillCommand(kCompressTo7zEmail, s, commandMapItem);
       commandMapItem.Archive = archiveName7z;
       commandMapItem.ArchiveType = L"7z";
-      UString t = UString(L"\"") + GetReducedString(archiveName7z) + UString(L"\"");
-      s = MyFormatNew(s, t);
+      s = MyFormatNew(s, GetQuotedReducedString(archiveName7z));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
       _commandMap.Add(commandMapItem);
     }
@@ -557,8 +565,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         commandMapItem.Folder = archivePathPrefix;
       commandMapItem.Archive = archiveNameZip;
       commandMapItem.ArchiveType = L"zip";
-      UString t = UString(L"\"") + GetReducedString(archiveNameZip) + UString(L"\"");
-      s = MyFormatNew(s, t);
+      s = MyFormatNew(s, GetQuotedReducedString(archiveNameZip));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
       _commandMap.Add(commandMapItem);
     }
@@ -571,8 +578,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       FillCommand(kCompressToZipEmail, s, commandMapItem);
       commandMapItem.Archive = archiveNameZip;
       commandMapItem.ArchiveType = L"zip";
-      UString t = UString(L"\"") + GetReducedString(archiveNameZip) + UString(L"\"");
-      s = MyFormatNew(s, t);
+      s = MyFormatNew(s, GetQuotedReducedString(archiveNameZip));
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
       _commandMap.Add(commandMapItem);
     }
@@ -614,12 +620,11 @@ extern const char *kShellFolderClassIDString;
 
 static UString GetProgramCommand()
 {
-  UString path = L"\"";
+  UString path;
   UString folder;
   if (GetProgramFolderPath(folder))
-    path += folder;
-  path += L"7zFM.exe\"";
-  return path;
+    path = folder;
+  return GetQuotedString(path + L"7zFM.exe");
 }
 
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
@@ -658,9 +663,8 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       {
         UString params;
         params = GetProgramCommand();
-        params += L" \"";
-        params += _fileNames[0];
-        params += L"\"";
+        params += L' ';
+        params += GetQuotedString(_fileNames[0]);
         MyCreateProcess(params, 0, false, 0);
         break;
       }

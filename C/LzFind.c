@@ -1,5 +1,5 @@
 /* LzFind.c  -- Match finder for LZ algorithms
-2008-08-05
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzFind.h for license options */
 
@@ -263,7 +263,7 @@ static void MatchFinder_SetLimits(CMatchFinder *p)
 void MatchFinder_Init(CMatchFinder *p)
 {
   UInt32 i;
-  for(i = 0; i < p->hashSizeSum; i++)
+  for (i = 0; i < p->hashSizeSum; i++)
     p->hash[i] = kEmptyHashValue;
   p->cyclicBufferPos = 0;
   p->buffer = p->bufferBase;
@@ -327,7 +327,7 @@ static UInt32 * Hc_GetMatchesSpec(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, 
       if (pb[maxLen] == cur[maxLen] && *pb == *cur)
       {
         UInt32 len = 0;
-        while(++len != lenLimit)
+        while (++len != lenLimit)
           if (pb[len] != cur[len])
             break;
         if (maxLen < len)
@@ -364,7 +364,7 @@ UInt32 * GetMatchesSpec1(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const Byt
       if (pb[len] == cur[len])
       {
         if (++len != lenLimit && pb[len] == cur[len])
-          while(++len != lenLimit)
+          while (++len != lenLimit)
             if (pb[len] != cur[len])
               break;
         if (maxLen < len)
@@ -417,7 +417,7 @@ static void SkipMatchesSpec(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const 
       UInt32 len = (len0 < len1 ? len0 : len1);
       if (pb[len] == cur[len])
       {
-        while(++len != lenLimit)
+        while (++len != lenLimit)
           if (pb[len] != cur[len])
             break;
         {

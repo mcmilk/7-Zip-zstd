@@ -67,7 +67,7 @@ bool enable)
 bool EnableLockMemoryPrivilege(bool enable)
 {
   HMODULE hModule = LoadLibrary(TEXT("Advapi32.dll"));
-  if(hModule == NULL)
+  if (hModule == NULL)
     return false;
   bool res = EnableLockMemoryPrivilege2(hModule, enable);
   ::FreeLibrary(hModule);

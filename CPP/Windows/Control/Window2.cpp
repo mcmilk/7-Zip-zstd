@@ -49,7 +49,7 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCTSTR className,
       HINSTANCE instance)
 {
   WNDCLASS windowClass;
-  if(!::GetClassInfo(instance, className, &windowClass))
+  if (!::GetClassInfo(instance, className, &windowClass))
   {
     // windowClass.style          = CS_HREDRAW | CS_VREDRAW;
     windowClass.style          = 0;
@@ -80,7 +80,7 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCWSTR className,
       HINSTANCE instance)
 {
   bool needRegister;
-  if(g_IsNT)
+  if (g_IsNT)
   {
     WNDCLASSW windowClass;
     needRegister = ::GetClassInfoW(instance, className, &windowClass) == 0;

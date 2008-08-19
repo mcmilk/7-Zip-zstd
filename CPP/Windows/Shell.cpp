@@ -21,10 +21,10 @@ namespace NShell {
 
 void CItemIDList::Free()
 {
-  if(m_Object == NULL)
+  if (m_Object == NULL)
     return;
   CMyComPtr<IMalloc> shellMalloc;
-  if(::SHGetMalloc(&shellMalloc) != NOERROR)
+  if (::SHGetMalloc(&shellMalloc) != NOERROR)
     throw 41099;
   shellMalloc->Free(m_Object);
   m_Object = NULL;
@@ -43,7 +43,7 @@ CItemIDList& CItemIDList::operator=(LPCITEMIDLIST object)
   {
     UINT32 size = GetSize(object);
     m_Object = (LPITEMIDLIST)CoTaskMemAlloc(size);
-    if(m_Object != NULL)
+    if (m_Object != NULL)
       MoveMemory(m_Object, object, size);
   }
   return *this;
@@ -52,11 +52,11 @@ CItemIDList& CItemIDList::operator=(LPCITEMIDLIST object)
 CItemIDList& CItemIDList::operator=(const CItemIDList &object)
 {
   Free();
-  if(object.m_Object != NULL)
+  if (object.m_Object != NULL)
   {
     UINT32 size = GetSize(object.m_Object);
     m_Object = (LPITEMIDLIST)CoTaskMemAlloc(size);
-    if(m_Object != NULL)
+    if (m_Object != NULL)
       MoveMemory(m_Object, object.m_Object, size);
   }
   return *this;
@@ -74,7 +74,7 @@ void CDrop::Attach(HDROP object)
 
 void CDrop::Free()
 {
-  if(m_MustBeFinished && m_Assigned)
+  if (m_MustBeFinished && m_Assigned)
     Finish();
   m_Assigned = false;
 }
@@ -116,7 +116,7 @@ void CDrop::QueryFileNames(UStringVector &fileNames)
   fileNames.Clear();
   UINT numFiles = QueryCountOfFiles();
   fileNames.Reserve(numFiles);
-  for(UINT i = 0; i < numFiles; i++)
+  for (UINT i = 0; i < numFiles; i++)
     fileNames.Add(QueryFileName(i));
 }
 

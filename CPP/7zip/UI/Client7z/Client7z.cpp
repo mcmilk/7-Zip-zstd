@@ -151,9 +151,7 @@ STDMETHODIMP CArchiveOpenCallback::CryptoGetTextPassword(BSTR *password)
     PrintError("Password is not defined");
     return E_ABORT;
   }
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 
@@ -420,9 +418,7 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
     PrintError("Password is not defined");
     return E_ABORT;
   }
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 
@@ -654,9 +650,7 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
     }
   }
   *passwordIsDefined = BoolToInt(PasswordIsDefined);
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 

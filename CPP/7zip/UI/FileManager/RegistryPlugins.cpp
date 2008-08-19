@@ -110,7 +110,7 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
     if (::ReadPluginInfo(pluginInfo))
       plugins.Add(pluginInfo);
   }
-  UString folderPath = baseFolderPrefix + L"Plugins\\";
+  UString folderPath = baseFolderPrefix + L"Plugins" WSTRING_PATH_SEPARATOR;
   NFind::CEnumeratorW enumerator(folderPath + L"*");
   NFind::CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))

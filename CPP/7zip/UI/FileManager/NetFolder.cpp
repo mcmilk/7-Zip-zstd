@@ -75,7 +75,7 @@ void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource,
     _netResourcePointer = &_netResource;
 
     // if (_netResource.DisplayType == RESOURCEDISPLAYTYPE_SERVER)
-    _path = _netResource.RemoteName + L'\\';
+    _path = _netResource.RemoteName + WCHAR_PATH_SEPARATOR;
   }
   _parentFolder = parentFolder;
 }
@@ -113,11 +113,11 @@ STDMETHODIMP CNetFolder::LoadItems()
       if (!resource.RemoteNameIsDefined) // For Win 98, I don't know what's wrong
         resource.RemoteName = resource.Comment;
       resource.Name = resource.RemoteName;
-      int aPos = resource.Name.ReverseFind(L'\\');
-      if (aPos >= 0)
+      int pos = resource.Name.ReverseFind(WCHAR_PATH_SEPARATOR);
+      if (pos >= 0)
       {
-        // _path = resource.Name.Left(aPos + 1);
-        resource.Name = resource.Name.Mid(aPos + 1);
+        // _path = resource.Name.Left(pos + 1);
+        resource.Name = resource.Name.Mid(pos + 1);
       }
       _items.Add(resource);
     }
@@ -140,7 +140,7 @@ STDMETHODIMP CNetFolder::LoadItems()
 
       NFile::NFind::CFindFile findFile;
       NFile::NFind::CFileInfoW fileInfo;
-      if (!findFile.FindFirst(resource.RemoteName + UString(L"\\*"), fileInfo))
+      if (!findFile.FindFirst(resource.RemoteName + UString(WCHAR_PATH_SEPARATOR) + UString(L"*"), fileInfo))
         continue;
       resource.Usage = RESOURCEUSAGE_CONNECTABLE;
       resource.LocalNameIsDefined = false;
@@ -188,14 +188,14 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
   {
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(resource.RemoteName + L'\\', this));
+    RINOK(fsFolderSpec->Init(resource.RemoteName + WCHAR_PATH_SEPARATOR, this));
     *resultFolder = subFolder.Detach();
   }
   else
   {
     CNetFolder *netFolder = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolder;
-    netFolder->Init(&resource, this, resource.Name + L'\\');
+    netFolder->Init(&resource, this, resource.Name + WCHAR_PATH_SEPARATOR);
     *resultFolder = subFolder.Detach();
   }
   return S_OK;
@@ -226,7 +226,7 @@ STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
 
     CNetFolder *netFolder = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolder;
-    netFolder->Init(&resourceParent, 0, L'\\');
+    netFolder->Init(&resourceParent, 0, WCHAR_PATH_SEPARATOR);
     *resultFolder = subFolder.Detach();
   }
   return S_OK;

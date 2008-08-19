@@ -250,12 +250,12 @@ bool CreateComplexDirectory(LPCTSTR pathName)
   path.ParsePath(pathName);
   CSysString fullPath = path.Prefix;
   DWORD errorCode = ERROR_SUCCESS;
-  for(int i = 0; i < path.PathParts.Size(); i++)
+  for (int i = 0; i < path.PathParts.Size(); i++)
   {
     const CSysString &string = path.PathParts[i];
-    if(string.IsEmpty())
+    if (string.IsEmpty())
     {
-      if(i != path.PathParts.Size() - 1)
+      if (i != path.PathParts.Size() - 1)
         return false;
       return true;
     }
@@ -263,7 +263,7 @@ bool CreateComplexDirectory(LPCTSTR pathName)
     if (!MyCreateDirectory(fullPath))
     {
       DWORD errorCode = GetLastError();
-      if(errorCode != ERROR_ALREADY_EXISTS)
+      if (errorCode != ERROR_ALREADY_EXISTS)
         return false;
     }
     fullPath += NName::kDirDelimiter;
@@ -286,7 +286,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
   pos = pathName.Length();
   for (;;)
   {
-    if(MyCreateDirectory(pathName))
+    if (MyCreateDirectory(pathName))
       break;
     if (::GetLastError() == ERROR_ALREADY_EXISTS)
     {
@@ -305,7 +305,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
     pathName = pathName.Left(pos);
   }
   pathName = pathName2;
-  while(pos < pathName.Length())
+  while (pos < pathName.Length())
   {
     pos = pathName.Find(TEXT(CHAR_PATH_SEPARATOR), pos + 1);
     if (pos < 0)
@@ -332,7 +332,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
   pos = pathName.Length();
   for (;;)
   {
-    if(MyCreateDirectory(pathName))
+    if (MyCreateDirectory(pathName))
       break;
     if (::GetLastError() == ERROR_ALREADY_EXISTS)
     {
@@ -351,7 +351,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
     pathName = pathName.Left(pos);
   }
   pathName = pathName2;
-  while(pos < pathName.Length())
+  while (pos < pathName.Length())
   {
     pos = pathName.Find(WCHAR_PATH_SEPARATOR, pos + 1);
     if (pos < 0)
@@ -398,7 +398,7 @@ bool DeleteFileAlways(LPCWSTR name)
 
 static bool RemoveDirectorySubItems2(const CSysString pathPrefix, const NFind::CFileInfo &fileInfo)
 {
-  if(fileInfo.IsDir())
+  if (fileInfo.IsDir())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
   return DeleteFileAlways(pathPrefix + fileInfo.Name);
 }
@@ -409,7 +409,7 @@ bool RemoveDirectoryWithSubItems(const CSysString &path)
   CSysString pathPrefix = path + NName::kDirDelimiter;
   {
     NFind::CEnumerator enumerator(pathPrefix + TCHAR(NName::kAnyStringWildcard));
-    while(enumerator.Next(fileInfo))
+    while (enumerator.Next(fileInfo))
       if (!RemoveDirectorySubItems2(pathPrefix, fileInfo))
         return false;
   }
@@ -421,7 +421,7 @@ bool RemoveDirectoryWithSubItems(const CSysString &path)
 #ifndef _UNICODE
 static bool RemoveDirectorySubItems2(const UString pathPrefix, const NFind::CFileInfoW &fileInfo)
 {
-  if(fileInfo.IsDir())
+  if (fileInfo.IsDir())
     return RemoveDirectoryWithSubItems(pathPrefix + fileInfo.Name);
   return DeleteFileAlways(pathPrefix + fileInfo.Name);
 }
@@ -431,7 +431,7 @@ bool RemoveDirectoryWithSubItems(const UString &path)
   UString pathPrefix = path + UString(NName::kDirDelimiter);
   {
     NFind::CEnumeratorW enumerator(pathPrefix + UString(NName::kAnyStringWildcard));
-    while(enumerator.Next(fileInfo))
+    while (enumerator.Next(fileInfo))
       if (!RemoveDirectorySubItems2(pathPrefix, fileInfo))
         return false;
   }
@@ -700,7 +700,7 @@ UINT CTempFile::Create(LPCTSTR dirPath, LPCTSTR prefix, CSysString &resultPath)
 {
   Remove();
   UINT number = MyGetTempFileName(dirPath, prefix, resultPath);
-  if(number != 0)
+  if (number != 0)
   {
     _fileName = resultPath;
     _mustBeDeleted = true;
@@ -734,7 +734,7 @@ UINT CTempFileW::Create(LPCWSTR dirPath, LPCWSTR prefix, UString &resultPath)
 {
   Remove();
   UINT number = MyGetTempFileName(dirPath, prefix, resultPath);
-  if(number != 0)
+  if (number != 0)
   {
     _fileName = resultPath;
     _mustBeDeleted = true;
@@ -784,7 +784,7 @@ bool CreateTempDirectory(LPCTSTR prefix, CSysString &dirName)
     _stprintf(randomNumberString, _T("%04X"), randomNumber);
     dirName = prefix + randomNumberString;
     */
-    if(NFind::DoesFileExist(dirName))
+    if (NFind::DoesFileExist(dirName))
       continue;
     if (MyCreateDirectory(dirName))
       return true;
@@ -821,7 +821,7 @@ bool CreateTempDirectory(LPCWSTR prefix, UString &dirName)
     _stprintf(randomNumberString, _T("%04X"), randomNumber);
     dirName = prefix + randomNumberString;
     */
-    if(NFind::DoesFileExist(dirName))
+    if (NFind::DoesFileExist(dirName))
       continue;
     if (MyCreateDirectory(dirName))
       return true;

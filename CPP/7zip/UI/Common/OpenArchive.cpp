@@ -175,7 +175,7 @@ HRESULT OpenArchive(
     processedSize--;
     for (UInt32 pos = 0; pos < processedSize; pos++)
     {
-      for (; hash[buf[pos] | ((UInt32)buf[pos + 1] << 8)] == 0xFF && pos < processedSize; pos++);
+      for (; pos < processedSize && hash[buf[pos] | ((UInt32)buf[pos + 1] << 8)] == 0xFF; pos++);
       if (pos == processedSize)
         break;
       UInt32 v = buf[pos] | ((UInt32)buf[pos + 1] << 8);

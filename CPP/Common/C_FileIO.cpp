@@ -21,7 +21,7 @@ bool CFileBase::OpenBinary(const char *name, int flags)
 
 bool CFileBase::Close()
 {
-  if(_handle == -1)
+  if (_handle == -1)
     return true;
   if (close(_handle) != 0)
     return false;

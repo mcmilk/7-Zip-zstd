@@ -239,7 +239,7 @@ static HRESULT ShowDialog(
         for (int i = 0; i < item.PathParts.Size(); i++)
         {
           if (i > 0)
-            name += L'\\';
+            name += WCHAR_PATH_SEPARATOR;
           name += item.PathParts[i];
         }
         if (NFind::FindFile(name, fileInfo))

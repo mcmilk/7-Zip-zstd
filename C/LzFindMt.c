@@ -1,5 +1,5 @@
 /* LzFindMt.c -- multithreaded Match finder for LZ algorithms
-2008-08-05
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzFind.h for license options */
 
@@ -97,7 +97,7 @@ void MtSync_Destruct(CMtSync *p)
   p->wasCreated = False;
 }
 
-#define RINOK_THREAD(x) { if((x) != 0) return SZ_ERROR_THREAD; }
+#define RINOK_THREAD(x) { if ((x) != 0) return SZ_ERROR_THREAD; }
 
 static SRes MtSync_Create2(CMtSync *p, unsigned (MY_STD_CALL *startAddress)(void *), void *obj, UInt32 numBlocks)
 {
@@ -262,7 +262,7 @@ Int32 NO_INLINE GetMatchesSpecN(UInt32 lenLimit, UInt32 pos, const Byte *cur, CL
       if (pb[len] == cur[len])
       {
         if (++len != lenLimit && pb[len] == cur[len])
-          while(++len != lenLimit)
+          while (++len != lenLimit)
             if (pb[len] != cur[len])
               break;
         if (maxLen < len)
@@ -715,7 +715,7 @@ UInt32 MatchFinderMt_GetMatches(CMatchFinderMt *p, UInt32 *distances)
 
 #define SKIP_HEADER2  do { GET_NEXT_BLOCK_IF_REQUIRED
 #define SKIP_HEADER(n) SKIP_HEADER2 if (p->btNumAvailBytes-- >= (n)) { const Byte *cur = p->pointerToCurPos; UInt32 *hash = p->hash;
-#define SKIP_FOOTER } INCREASE_LZ_POS p->btBufPos += p->btBuf[p->btBufPos] + 1; } while(--num != 0);
+#define SKIP_FOOTER } INCREASE_LZ_POS p->btBufPos += p->btBuf[p->btBufPos] + 1; } while (--num != 0);
 
 void MatchFinderMt0_Skip(CMatchFinderMt *p, UInt32 num)
 {

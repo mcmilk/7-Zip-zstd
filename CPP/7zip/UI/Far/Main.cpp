@@ -359,9 +359,7 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
     RINOK(GetPassword(Password));
     PasswordIsDefined = true;
   }
-  CMyComBSTR temp = Password;
-  *password = temp.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 /*

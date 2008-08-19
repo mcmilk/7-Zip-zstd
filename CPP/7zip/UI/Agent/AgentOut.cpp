@@ -66,10 +66,10 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
       folderItem = newFolder;
     }
 
-  for(int i = 0; i < pathParts.Size(); i++)
+  for (int i = 0; i < pathParts.Size(); i++)
   {
     _archiveNamePrefix += pathParts[i];
-    _archiveNamePrefix += L'\\';
+    _archiveNamePrefix += WCHAR_PATH_SEPARATOR;
   }
   return S_OK;
 }
@@ -138,7 +138,7 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
       ai.IndexInServer = dirItem.Index;
       arcItems.Add(ai);
     }
-    RINOK(EnumerateArchiveItems(agent, dirItem, fullName + UString(L'\\'), arcItems));
+    RINOK(EnumerateArchiveItems(agent, dirItem, fullName + UString(WCHAR_PATH_SEPARATOR), arcItems));
   }
   return S_OK;
 }
@@ -537,5 +537,3 @@ STDMETHODIMP CAgent::SetProperties(const wchar_t **names,
   }
   return S_OK;
 }
-
-

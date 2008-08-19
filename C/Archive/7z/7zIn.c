@@ -1,5 +1,5 @@
 /* 7zIn.c -- 7z Input functions
-2008-08-05
+2008-08-17
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zIn.h for license options */
@@ -8,7 +8,7 @@ Read 7zIn.h for license options */
 #include "7zDecode.h"
 #include "../../7zCrc.h"
 
-#define RINOM(x) { if((x) == 0) return SZ_ERROR_MEM; }
+#define RINOM(x) { if ((x) == 0) return SZ_ERROR_MEM; }
 
 void SzArEx_Init(CSzArEx *p)
 {
@@ -847,7 +847,7 @@ static SRes SzReadFileNames(CSzData *sd, UInt32 numFiles, CSzFileItem *files, IS
     UInt32 len = 0;
     UInt32 pos = 0;
     CSzFileItem *file = files + i;
-    while(pos + 2 <= sd->Size)
+    while (pos + 2 <= sd->Size)
     {
       int numAdds;
       UInt32 value = (UInt32)(sd->Data[pos] | (((UInt32)sd->Data[pos + 1]) << 8));
@@ -879,7 +879,7 @@ static SRes SzReadFileNames(CSzData *sd, UInt32 numFiles, CSzFileItem *files, IS
     MY_ALLOC(char, file->Name, (size_t)len, alloc);
 
     len = 0;
-    while(2 <= sd->Size)
+    while (2 <= sd->Size)
     {
       int numAdds;
       UInt32 value = (UInt32)(sd->Data[0] | (((UInt32)sd->Data[1]) << 8));
@@ -906,7 +906,7 @@ static SRes SzReadFileNames(CSzData *sd, UInt32 numFiles, CSzFileItem *files, IS
         numAdds--;
         file->Name[len++] = (char)(0x80 + ((value >> (6 * numAdds)) & 0x3F));
       }
-      while(numAdds > 0);
+      while (numAdds > 0);
 
       len += numAdds;
     }
@@ -1041,7 +1041,7 @@ static SRes SzReadHeader2(
         file->HasStream = 1;
       else
         file->HasStream = (Byte)((*emptyStreamVector)[i] ? 0 : 1);
-      if(file->HasStream)
+      if (file->HasStream)
       {
         file->IsDir = 0;
         file->Size = (*unpackSizes)[sizeIndex];

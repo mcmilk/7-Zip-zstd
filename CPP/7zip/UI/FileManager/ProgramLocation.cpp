@@ -15,7 +15,7 @@ bool GetProgramFolderPath(UString &folder)
 {
   if (!NDLL::MyGetModuleFileName(g_hInstance, folder))
     return false;
-  int pos = folder.ReverseFind(L'\\');
+  int pos = folder.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (pos < 0)
     return false;
   folder = folder.Left(pos + 1);

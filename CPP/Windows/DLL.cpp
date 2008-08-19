@@ -36,7 +36,7 @@ bool CLibrary::LoadOperations(HMODULE newModule)
 {
   if (newModule == NULL)
     return false;
-  if(!Free())
+  if (!Free())
     return false;
   _module = newModule;
   return true;

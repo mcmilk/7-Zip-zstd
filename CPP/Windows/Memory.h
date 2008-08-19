@@ -35,7 +35,7 @@ public:
   };
   ~CGlobalLock()
   {
-    if(m_Pointer != NULL)
+    if (m_Pointer != NULL)
       ::GlobalUnlock(m_Global);
   }
 };

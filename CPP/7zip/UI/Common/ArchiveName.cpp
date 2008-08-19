@@ -16,7 +16,7 @@ UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName)
     if (NFile::NDirectory::GetOnlyDirPrefix(srcName, dirPrefix))
     {
       if (dirPrefix.Length() > 0)
-        if (dirPrefix[dirPrefix.Length() - 1] == '\\')
+        if (dirPrefix[dirPrefix.Length() - 1] == WCHAR_PATH_SEPARATOR)
         {
           dirPrefix.Delete(dirPrefix.Length() - 1);
           NFile::NFind::CFileInfoW fileInfo;

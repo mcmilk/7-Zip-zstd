@@ -236,25 +236,40 @@ STDMETHODIMP CUdfInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     const CFile &file = _archive->Files[ref.FileIndex];
     const CItem &item = _archive->Items[file.ItemIndex];
 
-    const CMyExtent &extent = item.Extents[_extentIndex];
-    UInt32 rem = extent.GetLen() - _offsetInExtent;
-    if (rem == 0)
+    HRESULT res = S_OK;
+    if (item.IsInline)
     {
-      _extentIndex++;
-      _offsetInExtent = 0;
-      continue;
+      size_t rem = item.InlineData.GetCapacity() - _offsetInExtent;
+      if (rem == 0)
+        return S_OK;
+      if (rem > _rem)
+        rem = (size_t)_rem;
+      memcpy(data, (const Byte *)item.InlineData + _offsetInExtent, rem);
     }
-    if (size > rem)
-      size = rem;
-
-    int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
-    UInt32 logBlockNumber = extent.Pos;
-    const CPartition &partition = _archive->Partitions[partitionIndex];
-    UInt64 offset = ((UInt64)partition.Pos << _archive->SecLogSize) +
+    else
+    {
+      if (_extentIndex >= item.Extents.Size())
+        return S_OK;
+      const CMyExtent &extent = item.Extents[_extentIndex];
+      UInt32 rem = extent.GetLen() - _offsetInExtent;
+      if (rem == 0)
+      {
+        _extentIndex++;
+        _offsetInExtent = 0;
+        continue;
+      }
+      if (size > rem)
+        size = rem;
+      
+      int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
+      UInt32 logBlockNumber = extent.Pos;
+      const CPartition &partition = _archive->Partitions[partitionIndex];
+      UInt64 offset = ((UInt64)partition.Pos << _archive->SecLogSize) +
         (UInt64)logBlockNumber * vol.BlockSize + _offsetInExtent;
-
-    RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-    HRESULT res = _stream->Read(data, size, &size);
+      
+      RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
+      res = _stream->Read(data, size, &size);
+    }
     _offsetInExtent += size;
     _rem -= size;
     if (processedSize)

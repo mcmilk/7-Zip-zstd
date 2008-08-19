@@ -168,7 +168,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     return 1;
   }
 
-  UString dirPrefix = L".\\";
+  UString dirPrefix = L"." WSTRING_PATH_SEPARATOR;
   UString appLaunched;
   bool showProgress = true;
   if (!config.IsEmpty())
@@ -298,7 +298,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     {
       UString s2 = tempDirPath;
       NFile::NName::NormalizeDirPathPrefix(s2);
-      appLaunched.Replace(L"%%T\\", s2);
+      appLaunched.Replace(L"%%T" WSTRING_PATH_SEPARATOR, s2);
     }
     
     appLaunched.Replace(L"%%T", tempDirPath);

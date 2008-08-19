@@ -426,7 +426,7 @@ void CCompressDialog::OnButtonSFX()
   UString fileName;
   m_ArchivePath.GetText(fileName);
   int dotPos = fileName.ReverseFind(L'.');
-  int slashPos = fileName.ReverseFind(L'\\');
+  int slashPos = fileName.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (dotPos < 0 || dotPos <= slashPos)
     dotPos = -1;
   bool isSFX = IsSFX();
@@ -707,7 +707,7 @@ void CCompressDialog::SetArchiveName(const UString &name)
     if (!Info.KeepName)
     {
       int dotPos = fileName.ReverseFind('.');
-      int slashPos = MyMax(fileName.ReverseFind('\\'), fileName.ReverseFind('/'));
+      int slashPos = MyMax(fileName.ReverseFind(WCHAR_PATH_SEPARATOR), fileName.ReverseFind('/'));
       if (dotPos >= 0 && dotPos > slashPos + 1)
         fileName = fileName.Left(dotPos);
     }

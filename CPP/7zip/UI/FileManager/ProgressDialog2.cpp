@@ -336,7 +336,7 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   ProgressSynch.GetCurrentFileName(fileName);
   if (_prevFileName != fileName)
   {
-    int slashPos = fileName.ReverseFind(L'\\');
+    int slashPos = fileName.ReverseFind(WCHAR_PATH_SEPARATOR);
     UString s1, s2;
     if (slashPos >= 0)
     {

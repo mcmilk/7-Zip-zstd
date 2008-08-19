@@ -106,8 +106,8 @@ void SplitPathToParts(const UString &path, UStringVector &pathParts)
 void SplitPathToParts(const UString &path, UString &dirPrefix, UString &name)
 {
   int i;
-  for(i = path.Length() - 1; i >= 0; i--)
-    if(IsCharDirLimiter(path[i]))
+  for (i = path.Length() - 1; i >= 0; i--)
+    if (IsCharDirLimiter(path[i]))
       break;
   dirPrefix = path.Left(i + 1);
   name = path.Mid(i + 1);
@@ -116,8 +116,8 @@ void SplitPathToParts(const UString &path, UString &dirPrefix, UString &name)
 UString ExtractDirPrefixFromPath(const UString &path)
 {
   int i;
-  for(i = path.Length() - 1; i >= 0; i--)
-    if(IsCharDirLimiter(path[i]))
+  for (i = path.Length() - 1; i >= 0; i--)
+    if (IsCharDirLimiter(path[i]))
       break;
   return path.Left(i + 1);
 }
@@ -125,8 +125,8 @@ UString ExtractDirPrefixFromPath(const UString &path)
 UString ExtractFileNameFromPath(const UString &path)
 {
   int i;
-  for(i = path.Length() - 1; i >= 0; i--)
-    if(IsCharDirLimiter(path[i]))
+  for (i = path.Length() - 1; i >= 0; i--)
+    if (IsCharDirLimiter(path[i]))
       break;
   return path.Mid(i + 1);
 }
@@ -309,7 +309,7 @@ bool CCensorNode::CheckPath(const UString &path, bool isFile, bool &include) con
 bool CCensorNode::CheckPath(const UString &path, bool isFile) const
 {
   bool include;
-  if(CheckPath(path, isFile, include))
+  if (CheckPath(path, isFile, include))
     return include;
   return false;
 }

@@ -237,7 +237,7 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numIt
   UString destPath = path;
   if (destPath.IsEmpty())
     return E_INVALIDARG;
-  bool directName = (destPath[destPath.Length() - 1] != L'\\');
+  bool directName = (destPath[destPath.Length() - 1] != WCHAR_PATH_SEPARATOR);
   if (directName)
   {
     if (numItems > 1)

@@ -208,7 +208,7 @@ void CPlugin::EnterToDirectory(const UString &dirName)
 int CPlugin::SetDirectory(const char *aszDir, int /* opMode */)
 {
   UString path = MultiByteToUnicodeString(aszDir, CP_OEMCP);
-  if (path == L"\\")
+  if (path == WSTRING_PATH_SEPARATOR)
   {
     _folder.Release();
     m_ArchiveHandler->BindToRootFolder(&_folder);
@@ -225,7 +225,7 @@ int CPlugin::SetDirectory(const char *aszDir, int /* opMode */)
     EnterToDirectory(path);
   else
   {
-    if (path[0] == L'\\')
+    if (path[0] == WCHAR_PATH_SEPARATOR)
     {
       _folder.Release();
       m_ArchiveHandler->BindToRootFolder(&_folder);
@@ -265,7 +265,7 @@ void CPlugin::GetCurrentDir()
   GetPathParts(pathParts);
   for (int i = 0; i < pathParts.Size(); i++)
   {
-    m_CurrentDir += L'\\';
+    m_CurrentDir += WCHAR_PATH_SEPARATOR;
     m_CurrentDir += pathParts[i];
   }
 }

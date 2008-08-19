@@ -12,9 +12,10 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-static const TCHAR *kCUBasePath = TEXT("Software\\7-Zip\\FM");
+#define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
 
-static const TCHAR *kCulumnsKeyName = TEXT("Columns");
+static const TCHAR *kCUBasePath = REG_PATH_FM;
+static const TCHAR *kCulumnsKeyName = REG_PATH_FM TEXT(STRING_PATH_SEPARATOR) TEXT("Columns");
 
 static const TCHAR *kPositionValueName = TEXT("Position");
 static const TCHAR *kPanelsInfoValueName = TEXT("Panels");
@@ -126,11 +127,8 @@ void SaveListViewInfo(const UString &id, const CListViewInfo &viewInfo)
   }
   {
     NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-    CSysString keyName = kCUBasePath;
-    keyName += kKeyNameDelimiter;
-    keyName += kCulumnsKeyName;
     CKey key;
-    key.Create(HKEY_CURRENT_USER, keyName);
+    key.Create(HKEY_CURRENT_USER, kCulumnsKeyName);
     key.SetValue(GetSystemString(id), (const Byte *)buffer, dataSize);
   }
 }
@@ -143,11 +141,8 @@ void ReadListViewInfo(const UString &id, CListViewInfo &viewInfo)
   UInt32 size;
   {
     NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-    CSysString keyName = kCUBasePath;
-    keyName += kKeyNameDelimiter;
-    keyName += kCulumnsKeyName;
     CKey key;
-    if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
+    if(key.Open(HKEY_CURRENT_USER, kCulumnsKeyName, KEY_READ) != ERROR_SUCCESS)
       return;
     if (key.QueryValue(GetSystemString(id), buffer, size) != ERROR_SUCCESS)
       return;

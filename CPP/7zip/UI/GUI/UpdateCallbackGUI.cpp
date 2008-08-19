@@ -167,9 +167,7 @@ HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BST
     }
   }
   *passwordIsDefined = BoolToInt(PasswordIsDefined);
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 /*
@@ -211,9 +209,7 @@ HRESULT CUpdateCallbackGUI::Open_CryptoGetTextPassword(BSTR *password)
     Password = dialog.Password;
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 HRESULT CUpdateCallbackGUI::Open_GetPasswordIfAny(UString &password)

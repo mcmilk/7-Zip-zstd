@@ -1,5 +1,5 @@
 /* 7zExtract.c -- Extracting from 7z archive
-2008-08-05
+2008-08-17
 Igor Pavlov
 Copyright (c) 1999-2008 Igor Pavlov
 Read 7zExtract.h for license options */
@@ -79,7 +79,7 @@ SRes SzAr_Extract(
     UInt32 i;
     CSzFileItem *fileItem = p->db.Files + fileIndex;
     *offset = 0;
-    for(i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++)
+    for (i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++)
       *offset += (UInt32)p->db.Files[i].Size;
     *outSizeProcessed = (size_t)fileItem->Size;
     if (*offset + *outSizeProcessed > *outBufferSize)

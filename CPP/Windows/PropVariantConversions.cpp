@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-// #include <stdio.h>
-
 #include "PropVariantConversions.h"
 
 #include "Windows/Defs.h"
@@ -51,7 +49,7 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
 {
   s[0] = '\0';
   SYSTEMTIME st;
-  if(!BOOLToBool(FileTimeToSystemTime(&ft, &st)))
+  if (!BOOLToBool(FileTimeToSystemTime(&ft, &st)))
     return false;
   s = UIntToStringSpec(0, st.wYear, s, 4);
   s = UIntToStringSpec('-', st.wMonth, s, 2);
@@ -63,15 +61,6 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
     if (includeSeconds)
       UIntToStringSpec(':', st.wSecond, s, 2);
   }
-  /*
-  sprintf(s, "%04d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
-  if (includeTime)
-  {
-    sprintf(s + strlen(s), " %02d:%02d", st.wHour, st.wMinute);
-    if (includeSeconds)
-      sprintf(s + strlen(s), ":%02d", st.wSecond);
-  }
-  */
   return true;
 }
 

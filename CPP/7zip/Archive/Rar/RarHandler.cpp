@@ -68,7 +68,7 @@ STATPROPSTG kArcProps[] =
 {
   { NULL, kpidSolid, VT_BOOL},
   { NULL, kpidNumBlocks, VT_UI4},
-  { NULL, kpidEncrypted, VT_BOOL},
+  // { NULL, kpidEncrypted, VT_BOOL},
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidNumVolumes, VT_UI4},
   { NULL, kpidPhySize, VT_UI8}
@@ -94,7 +94,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidSolid: prop = _archiveInfo.IsSolid(); break;
-    case kpidEncrypted: prop = _archiveInfo.IsEncrypted(); break;
+    // case kpidEncrypted: prop = _archiveInfo.IsEncrypted(); break; // it's for encrypted names.
     case kpidIsVolume: prop = _archiveInfo.IsVolume(); break;
     case kpidNumVolumes: prop = (UInt32)_archives.Size(); break;
     case kpidOffset: if (_archiveInfo.StartPosition != 0) prop = _archiveInfo.StartPosition; break;

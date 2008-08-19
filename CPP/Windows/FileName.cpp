@@ -27,8 +27,6 @@ void NormalizeDirPathPrefix(UString &dirPath)
 }
 #endif
 
-#ifdef _WIN32
-
 const wchar_t kExtensionDelimiter = L'.';
 
 void SplitNameToPureNameAndExtension(const UString &fullName,
@@ -48,7 +46,5 @@ void SplitNameToPureNameAndExtension(const UString &fullName,
     extension = fullName.Mid(index + 1);
   }
 }
-
-#endif
 
 }}}

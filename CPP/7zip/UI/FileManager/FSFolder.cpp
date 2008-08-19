@@ -75,14 +75,14 @@ HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles,
 {
   RINOK(progress->SetCompleted(NULL));
   numFiles = numFolders = size = 0;
-  CEnumeratorW enumerator(path + UString(L"\\*"));
+  CEnumeratorW enumerator(path + UString(WSTRING_PATH_SEPARATOR L"*"));
   CFileInfoW fileInfo;
   while (enumerator.Next(fileInfo))
   {
     if (fileInfo.IsDir())
     {
       UInt64 subFolders, subFiles, subSize;
-      RINOK(GetFolderSize(path + UString(L"\\") + fileInfo.Name, subFolders, subFiles, subSize, progress));
+      RINOK(GetFolderSize(path + UString(WCHAR_PATH_SEPARATOR) + fileInfo.Name, subFolders, subFiles, subSize, progress));
       numFolders += subFolders;
       numFolders++;
       numFiles += subFiles;
@@ -125,7 +125,7 @@ HRESULT CFSFolder::LoadSubItems(CDirItem &dirItem, const UString &path)
   {
     CDirItem &item = dirItem.Files[i];
     if (item.IsDir())
-      LoadSubItems(item, path + item.Name + L'\\');
+      LoadSubItems(item, path + item.Name + WCHAR_PATH_SEPARATOR);
   }
   return S_OK;
 }
@@ -311,7 +311,7 @@ HRESULT CFSFolder::BindToFolderSpec(const wchar_t *name, IFolderFolder **resultF
   *resultFolder = 0;
   CFSFolder *folderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = folderSpec;
-  RINOK(folderSpec->Init(_path + name + UString(L'\\'), 0));
+  RINOK(folderSpec->Init(_path + name + UString(WCHAR_PATH_SEPARATOR), 0));
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
@@ -322,7 +322,7 @@ UString CFSFolder::GetPrefix(const CDirItem &item) const
   CDirItem *cur = item.Parent;
   while (cur->Parent != 0)
   {
-    path = cur->Name + UString('\\') + path;
+    path = cur->Name + UString(WCHAR_PATH_SEPARATOR) + path;
     cur = cur->Parent;
   }
   return path;
@@ -358,11 +358,11 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   }
   if (_path.IsEmpty())
     return E_INVALIDARG;
-  int pos = _path.ReverseFind(L'\\');
+  int pos = _path.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (pos < 0 || pos != _path.Length() - 1)
     return E_FAIL;
   UString parentPath = _path.Left(pos);
-  pos = parentPath.ReverseFind(L'\\');
+  pos = parentPath.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (pos < 0)
   {
     parentPath.Empty();
@@ -374,10 +374,10 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   }
   UString parentPathReduced = parentPath.Left(pos);
   parentPath = parentPath.Left(pos + 1);
-  pos = parentPathReduced.ReverseFind(L'\\');
+  pos = parentPathReduced.ReverseFind(WCHAR_PATH_SEPARATOR);
   if (pos == 1)
   {
-    if (parentPath[0] != L'\\')
+    if (parentPath[0] != WCHAR_PATH_SEPARATOR)
       return E_FAIL;
     CNetFolder *netFolderSpec = new CNetFolder;
     CMyComPtr<IFolderFolder> netFolder = netFolderSpec;
@@ -537,7 +537,7 @@ HRESULT CFSFolder::GetComplexName(const wchar_t *name, UString &resultPath)
   resultPath = _path + newName;
   if (newName.Length() < 1)
     return S_OK;
-  if (newName[0] == L'\\')
+  if (newName[0] == WCHAR_PATH_SEPARATOR)
   {
     resultPath = newName;
     return S_OK;

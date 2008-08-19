@@ -129,16 +129,19 @@ void CDirItems::EnumerateDirItems2(const UString &phyPrefix, const UString &logP
       continue;
     }
     int delimiter = filePath.ReverseFind((wchar_t)kDirDelimiter);
-
+    UString phyPrefixCur;
     int phyParentCur = phyParent;
     if (delimiter >= 0)
-      phyParentCur = AddPrefix(phyParentCur, logParent, filePath.Left(delimiter + 1));
+    {
+      phyPrefixCur = filePath.Left(delimiter + 1);
+      phyParentCur = AddPrefix(phyParent, logParent, phyPrefixCur);
+    }
     AddDirFileInfo(phyParentCur, logParent, fi, Items);
     if (fi.IsDir())
     {
       const UString name2 = fi.Name + (wchar_t)kDirDelimiter;
       int parent = AddPrefix(phyParentCur, logParent, name2);
-      EnumerateDirectory(parent, parent, phyPrefix + name2, errorPaths, errorCodes);
+      EnumerateDirectory(parent, parent, phyPrefix + phyPrefixCur + name2, errorPaths, errorCodes);
     }
   }
   ReserveDown();

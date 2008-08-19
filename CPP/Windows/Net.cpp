@@ -181,7 +181,7 @@ DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, const CResourceW *resour
 
 DWORD CEnum::Close()
 {
-  if(!_handleAllocated)
+  if (!_handleAllocated)
     return NO_ERROR;
   DWORD result = ::WNetCloseEnum(_handle);
   _handleAllocated = (result != NO_ERROR);

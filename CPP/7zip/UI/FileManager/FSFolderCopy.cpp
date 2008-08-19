@@ -216,6 +216,11 @@ static HRESULT MyCopyFile(
   return callback->SetCompleted(&completedSize);
 }
 
+static UString CombinePath(const UString &folderPath, const UString &fileName)
+{
+  return folderPath + UString(WCHAR_PATH_SEPARATOR) + fileName;
+}
+
 static HRESULT CopyFolder(
     const UString &srcPath,
     const UString &destPathSpec,
@@ -224,11 +229,11 @@ static HRESULT CopyFolder(
 {
   RINOK(callback->SetCompleted(&completedSize));
 
-  UString destPath = destPathSpec;
+  const UString destPath = destPathSpec;
   int len = srcPath.Length();
   if (destPath.Length() >= len && srcPath.CompareNoCase(destPath.Left(len)) == 0)
   {
-    if (destPath.Length() == len || destPath[len] == L'\\')
+    if (destPath.Length() == len || destPath[len] == WCHAR_PATH_SEPARATOR)
     {
       UString message = UString(L"can not copy folder \'") +
           destPath + UString(L"\' onto itself");
@@ -243,19 +248,19 @@ static HRESULT CopyFolder(
     RINOK(callback->ShowMessage(message));
     return E_ABORT;
   }
-  CEnumeratorW enumerator(srcPath + UString(L"\\*"));
-  CFileInfoEx fileInfo;
-  while (enumerator.Next(fileInfo))
+  CEnumeratorW enumerator(CombinePath(srcPath, L"*"));
+  CFileInfoEx fi;
+  while (enumerator.Next(fi))
   {
-    const UString srcPath2 = srcPath + UString(L"\\") + fileInfo.Name;
-    const UString destPath2 = destPath + UString(L"\\") + fileInfo.Name;
-    if (fileInfo.IsDir())
+    const UString srcPath2 = CombinePath(srcPath, fi.Name);
+    const UString destPath2 = CombinePath(destPath, fi.Name);
+    if (fi.IsDir())
     {
-      RINOK(CopyFolder(srcPath2, destPath2, callback, completedSize));
+      RINOK(CopyFolder(srcPath2, destPath2, callback, completedSize))
     }
     else
     {
-      RINOK(MyCopyFile(srcPath2, fileInfo, destPath2, callback, completedSize));
+      RINOK(MyCopyFile(srcPath2, fi, destPath2, callback, completedSize));
     }
   }
   return S_OK;
@@ -275,7 +280,7 @@ STDMETHODIMP CFSFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
   UString destPath = path;
   if (destPath.IsEmpty())
     return E_INVALIDARG;
-  bool directName = (destPath[destPath.Length() - 1] != L'\\');
+  bool directName = (destPath[destPath.Length() - 1] != WCHAR_PATH_SEPARATOR);
   if (directName)
   {
     if (numItems > 1)
@@ -298,18 +303,18 @@ STDMETHODIMP CFSFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
   RINOK(callback->SetCompleted(&completedSize));
   for (UInt32 i = 0; i < numItems; i++)
   {
-    const CDirItem &fileInfo = *_refs[indices[i]];
+    const CDirItem &fi = *_refs[indices[i]];
     UString destPath2 = destPath;
     if (!directName)
-      destPath2 += fileInfo.Name;
-    UString srcPath = _path + GetPrefix(fileInfo) + fileInfo.Name;
-    if (fileInfo.IsDir())
+      destPath2 += fi.Name;
+    UString srcPath = _path + GetPrefix(fi) + fi.Name;
+    if (fi.IsDir())
     {
       RINOK(CopyFolder(srcPath, destPath2, callback, completedSize));
     }
     else
     {
-      RINOK(MyCopyFile(srcPath, fileInfo, destPath2, callback, completedSize));
+      RINOK(MyCopyFile(srcPath, fi, destPath2, callback, completedSize));
     }
   }
   return S_OK;
@@ -369,7 +374,7 @@ HRESULT MyMoveFolder(
   int len = srcPath.Length();
   if (destPath.Length() >= len && srcPath.CompareNoCase(destPath.Left(len)) == 0)
   {
-    if (destPath.Length() == len || destPath[len] == L'\\')
+    if (destPath.Length() == len || destPath[len] == WCHAR_PATH_SEPARATOR)
     {
       UString message = UString(L"can not move folder \'") +
           destPath + UString(L"\' onto itself");
@@ -388,19 +393,19 @@ HRESULT MyMoveFolder(
     return E_ABORT;
   }
   {
-    CEnumeratorW enumerator(srcPath + UString(L"\\*"));
-    CFileInfoEx fileInfo;
-    while (enumerator.Next(fileInfo))
+    CEnumeratorW enumerator(CombinePath(srcPath, L"*"));
+    CFileInfoEx fi;
+    while (enumerator.Next(fi))
     {
-      const UString srcPath2 = srcPath + UString(L"\\") + fileInfo.Name;
-      const UString destPath2 = destPath + UString(L"\\") + fileInfo.Name;
-      if (fileInfo.IsDir())
+      const UString srcPath2 = CombinePath(srcPath, fi.Name);
+      const UString destPath2 = CombinePath(destPath, fi.Name);
+      if (fi.IsDir())
       {
         RINOK(MyMoveFolder(srcPath2, destPath2, callback, completedSize));
       }
       else
       {
-        RINOK(MyMoveFile(srcPath2, fileInfo, destPath2, callback, completedSize));
+        RINOK(MyMoveFile(srcPath2, fi, destPath2, callback, completedSize));
       }
     }
   }
@@ -430,7 +435,7 @@ STDMETHODIMP CFSFolder::MoveTo(
   UString destPath = path;
   if (destPath.IsEmpty())
     return E_INVALIDARG;
-  bool directName = (destPath[destPath.Length() - 1] != L'\\');
+  bool directName = (destPath[destPath.Length() - 1] != WCHAR_PATH_SEPARATOR);
   if (directName)
   {
     if (numItems > 1)
@@ -449,18 +454,18 @@ STDMETHODIMP CFSFolder::MoveTo(
   RINOK(callback->SetCompleted(&completedSize));
   for (UInt32 i = 0; i < numItems; i++)
   {
-    const CDirItem &fileInfo = *_refs[indices[i]];
+    const CDirItem &fi = *_refs[indices[i]];
     UString destPath2 = destPath;
     if (!directName)
-      destPath2 += fileInfo.Name;
-    UString srcPath = _path + GetPrefix(fileInfo) + fileInfo.Name;
-    if (fileInfo.IsDir())
+      destPath2 += fi.Name;
+    UString srcPath = _path + GetPrefix(fi) + fi.Name;
+    if (fi.IsDir())
     {
       RINOK(MyMoveFolder(srcPath, destPath2, callback, completedSize));
     }
     else
     {
-      RINOK(MyMoveFile(srcPath, fileInfo, destPath2, callback, completedSize));
+      RINOK(MyMoveFile(srcPath, fi, destPath2, callback, completedSize));
     }
   }
   return S_OK;
@@ -477,13 +482,13 @@ STDMETHODIMP CFSFolder::CopyFrom(const wchar_t * /* fromFolderPath */,
   {
     UString path = (UString)fromFolderPath + itemsPaths[i];
 
-    CFileInfoW fileInfo;
-    if (!FindFile(path, fileInfo))
+    CFileInfoW fi;
+    if (!FindFile(path, fi))
       return ::GetLastError();
-    if (fileInfo.IsDir())
+    if (fi.IsDir())
     {
       UInt64 subFolders, subFiles, subSize;
-      RINOK(GetFolderSize(path + UString(L"\\") + fileInfo.Name, subFolders, subFiles, subSize, progress));
+      RINOK(GetFolderSize(CombinePath(path, fi.Name), subFolders, subFiles, subSize, progress));
       numFolders += subFolders;
       numFolders++;
       numFiles += subFiles;
@@ -492,7 +497,7 @@ STDMETHODIMP CFSFolder::CopyFrom(const wchar_t * /* fromFolderPath */,
     else
     {
       numFiles++;
-      totalSize += fileInfo.Size;
+      totalSize += fi.Size;
     }
   }
   RINOK(progress->SetTotal(totalSize));

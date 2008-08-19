@@ -99,14 +99,14 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
   int pos = 0;
   if (!IsItSwitchChar(s[pos]))
     return false;
-  while(pos < len)
+  while (pos < len)
   {
     if (IsItSwitchChar(s[pos]))
       pos++;
     const int kNoLen = -1;
     int matchedSwitchIndex = 0; // GCC Warning
     int maxLen = kNoLen;
-    for(int switchIndex = 0; switchIndex < _numSwitches; switchIndex++)
+    for (int switchIndex = 0; switchIndex < _numSwitches; switchIndex++)
     {
       int switchLen = MyStringLen(switchForms[switchIndex].IDString);
       if (switchLen <= maxLen || pos + switchLen > len)
@@ -114,8 +114,8 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
 
       UString temp = s + pos;
       temp = temp.Left(switchLen);
-      if(temp.CompareNoCase(switchForms[switchIndex].IDString) == 0)
-      // if(_strnicmp(switchForms[switchIndex].IDString, LPCSTR(s) + pos, switchLen) == 0)
+      if (temp.CompareNoCase(switchForms[switchIndex].IDString) == 0)
+      // if (_strnicmp(switchForms[switchIndex].IDString, LPCSTR(s) + pos, switchLen) == 0)
       {
         matchedSwitchIndex = switchIndex;
         maxLen = switchLen;
@@ -180,7 +180,7 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms)
           int maxLen = switchForm.MaxLen;
           UString stringSwitch = s.Mid(pos, minLen);
           pos += minLen;
-          for(int i = minLen; i < maxLen && pos < len; i++, pos++)
+          for (int i = minLen; i < maxLen && pos < len; i++, pos++)
           {
             wchar_t c = s[pos];
             if (IsItSwitchChar(c))
@@ -208,12 +208,12 @@ const CSwitchResult& CParser::operator[](size_t index) const
 int ParseCommand(int numCommandForms, const CCommandForm *commandForms,
     const UString &commandString, UString &postString)
 {
-  for(int i = 0; i < numCommandForms; i++)
+  for (int i = 0; i < numCommandForms; i++)
   {
     const UString id = commandForms[i].IDString;
     if (commandForms[i].PostStringMode)
     {
-      if(commandString.Find(id) == 0)
+      if (commandString.Find(id) == 0)
       {
         postString = commandString.Mid(id.Length());
         return i;

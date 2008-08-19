@@ -83,7 +83,7 @@ bool CMenu::GetItem(UINT itemIndex, bool byPosition, CMenuItem &item)
       si.cch = kMaxSize;
       si.dwTypeData = s;
     }
-    if(GetItemInfo(itemIndex, byPosition, &si))
+    if (GetItemInfo(itemIndex, byPosition, &si))
     {
       ConvertItemToMyForm(si, item);
       if (item.IsString())
@@ -102,7 +102,7 @@ bool CMenu::GetItem(UINT itemIndex, bool byPosition, CMenuItem &item)
       si.cch = kMaxSize;
       si.dwTypeData = s;
     }
-    if(GetItemInfo(itemIndex, byPosition, &si))
+    if (GetItemInfo(itemIndex, byPosition, &si))
     {
       ConvertItemToMyForm(si, item);
       if (item.IsString())

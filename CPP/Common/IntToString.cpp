@@ -22,7 +22,7 @@ void ConvertUInt64ToString(UInt64 value, char *s, UInt32 base)
   while (value != 0);
   do
     *s++ = temp[--pos];
-  while(pos > 0);
+  while (pos > 0);
   *s = '\0';
 }
 
@@ -38,7 +38,7 @@ void ConvertUInt64ToString(UInt64 value, wchar_t *s)
   while (value != 0);
   do
     *s++ = temp[--pos];
-  while(pos > 0);
+  while (pos > 0);
   *s = L'\0';
 }
 

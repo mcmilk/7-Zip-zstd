@@ -288,7 +288,7 @@ HRESULT CPanel::CreateShellContextMenu(
     LPITEMIDLIST pidl;
     UString fileName = GetItemRelPath(operatedIndices[i]);
     if (IsFSDrivesFolder())
-      fileName += L'\\';
+      fileName += WCHAR_PATH_SEPARATOR;
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
       (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
     pidls.Add(pidl);
@@ -301,7 +301,7 @@ HRESULT CPanel::CreateShellContextMenu(
     /*
     LPITEMIDLIST pidl;
     HRESULT result = parentFolder->ParseDisplayName(GetParent(), 0,
-      L".\\", &eaten, &pidl, 0);
+      L"." WSTRING_PATH_SEPARATOR, &eaten, &pidl, 0);
     if (result != NOERROR)
       return;
     */

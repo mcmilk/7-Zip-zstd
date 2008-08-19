@@ -149,7 +149,7 @@ STDMETHODIMP CDataObject::QueryGetData(LPFORMATETC etc)
 
 STDMETHODIMP CDataObject::EnumFormatEtc(DWORD direction, LPENUMFORMATETC FAR* enumFormatEtc)
 {
-  if(direction != DATADIR_GET)
+  if (direction != DATADIR_GET)
     return E_NOTIMPL;
   return CreateEnumFormatEtc(1, &m_Etc, enumFormatEtc);
 }
@@ -183,9 +183,9 @@ public:
 
 STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
 {
-  if(escapePressed == TRUE)
+  if (escapePressed == TRUE)
     return DRAGDROP_S_CANCEL;
-  if((keyState & MK_LBUTTON) == 0)
+  if ((keyState & MK_LBUTTON) == 0)
   {
     if (m_Effect == DROPEFFECT_NONE)
       return DRAGDROP_S_CANCEL;
@@ -570,7 +570,7 @@ bool CDropTarget::IsItSameDrive() const
       return false;
   }
   else if (m_Panel->IsFSDrivesFolder() && m_SelectionIndex >= 0)
-    drive = m_SubFolderName + L'\\';
+    drive = m_SubFolderName + WCHAR_PATH_SEPARATOR;
   else
     return false;
 
@@ -591,10 +591,7 @@ DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffec
   if (!m_DropIsAllowed || !m_PanelDropIsAllowed)
     return DROPEFFECT_NONE;
 
-  if (!IsFsFolderPath())
-    allowedEffect &= ~DROPEFFECT_MOVE;
-
-  if (!m_SetPathIsOK)
+  if (!IsFsFolderPath() || !m_SetPathIsOK)
     allowedEffect &= ~DROPEFFECT_MOVE;
 
   DWORD effect = 0;
@@ -602,17 +599,17 @@ DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffec
     effect = allowedEffect & DROPEFFECT_COPY;
   else if (keyState & MK_SHIFT)
     effect = allowedEffect & DROPEFFECT_MOVE;
-  if(effect == 0)
+  if (effect == 0)
   {
-    if(allowedEffect & DROPEFFECT_COPY)
+    if (allowedEffect & DROPEFFECT_COPY)
     effect = DROPEFFECT_COPY;
-    if(allowedEffect & DROPEFFECT_MOVE)
+    if (allowedEffect & DROPEFFECT_MOVE)
     {
       if (IsItSameDrive())
         effect = DROPEFFECT_MOVE;
     }
   }
-  if(effect == 0)
+  if (effect == 0)
     return DROPEFFECT_NONE;
   return effect;
 }
@@ -627,7 +624,7 @@ UString CDropTarget::GetTargetPath() const
   if (m_SubFolderIndex >= 0 && !m_SubFolderName.IsEmpty())
   {
     path += m_SubFolderName;
-    path += L"\\";
+    path += WCHAR_PATH_SEPARATOR;
   }
   return path;
 }
@@ -703,11 +700,11 @@ STDMETHODIMP CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
   PositionCursor(pt);
   m_DataObject = dataObject;
   bool needDrop = true;
-  if(m_DropIsAllowed && m_PanelDropIsAllowed)
+  if (m_DropIsAllowed && m_PanelDropIsAllowed)
     if (IsFsFolderPath())
       needDrop = !SetPath();
   *effect = GetEffect(keyState, pt, *effect);
-  if(m_DropIsAllowed && m_PanelDropIsAllowed)
+  if (m_DropIsAllowed && m_PanelDropIsAllowed)
   {
     if (needDrop)
     {

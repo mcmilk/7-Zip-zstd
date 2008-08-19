@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2008-08-13
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzmaEnc.h for license options */
 
@@ -1966,7 +1966,7 @@ void LzmaEnc_Init(CLzmaEnc *p)
 {
   UInt32 i;
   p->state = 0;
-  for(i = 0 ; i < LZMA_NUM_REPS; i++)
+  for (i = 0 ; i < LZMA_NUM_REPS; i++)
     p->reps[i] = 0;
 
   RangeEnc_Init(&p->rc);
@@ -2002,7 +2002,7 @@ void LzmaEnc_Init(CLzmaEnc *p)
     }
   }
   {
-    for(i = 0; i < kNumFullDistances - kEndPosModelIndex; i++)
+    for (i = 0; i < kNumFullDistances - kEndPosModelIndex; i++)
       p->posEncoders[i] = kProbInitValue;
   }
 

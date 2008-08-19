@@ -35,9 +35,7 @@ HRESULT COpenCallbackConsole::Open_CryptoGetTextPassword(BSTR *password)
     Password = GetPassword(OutStream);
     PasswordIsDefined = true;
   }
-  CMyComBSTR temp(Password);
-  *password = temp.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 HRESULT COpenCallbackConsole::Open_GetPasswordIfAny(UString &password)

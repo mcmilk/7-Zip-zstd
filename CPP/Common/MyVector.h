@@ -47,7 +47,7 @@ public:
   {
     int size = v.Size();
     Reserve(Size() + size);
-    for(int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
       Add(v[i]);
     return *this;
   }
@@ -141,7 +141,7 @@ public:
       int i = size / 2;
       do
         SortRefDown(p, i, size, compare, param);
-      while(--i != 0);
+      while (--i != 0);
     }
     do
     {
@@ -176,7 +176,7 @@ public:
   {
     int size = v.Size();
     Reserve(Size() + size);
-    for(int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
       Add(v[i]);
     return *this;
   }
@@ -191,13 +191,13 @@ public:
   virtual void Delete(int index, int num = 1)
   {
     TestIndexAndCorrectNum(index, num);
-    for(int i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
       delete (T *)(((void **)_items)[index + i]);
     CPointerVector::Delete(index, num);
   }
   int Find(const T& item) const
   {
-    for(int i = 0; i < Size(); i++)
+    for (int i = 0; i < Size(); i++)
       if (item == (*this)[i])
         return i;
     return -1;

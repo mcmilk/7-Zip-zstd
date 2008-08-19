@@ -12,13 +12,13 @@
 UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 {
   UString resultString;
-  if(!srcString.IsEmpty())
+  if (!srcString.IsEmpty())
   {
     int numChars = MultiByteToWideChar(codePage, 0, srcString,
       srcString.Length(), resultString.GetBuffer(srcString.Length()),
       srcString.Length() + 1);
     #ifndef _WIN32_WCE
-    if(numChars == 0)
+    if (numChars == 0)
       throw 282228;
     #endif
     resultString.ReleaseBuffer(numChars);
@@ -39,7 +39,7 @@ AString UnicodeStringToMultiByte(const UString &s, UINT codePage, char defaultCh
         &defaultChar, &defUsed);
     defaultCharWasUsed = (defUsed != FALSE);
     #ifndef _WIN32_WCE
-    if(numChars == 0)
+    if (numChars == 0)
       throw 282229;
     #endif
     dest.ReleaseBuffer(numChars);
@@ -71,7 +71,7 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
   for (int i = 0; i < srcString.Length(); i++)
     resultString += wchar_t(srcString[i]);
   /*
-  if(!srcString.IsEmpty())
+  if (!srcString.IsEmpty())
   {
     int numChars = mbstowcs(resultString.GetBuffer(srcString.Length()), srcString, srcString.Length() + 1);
     if (numChars < 0) throw "Your environment does not support UNICODE";
@@ -87,7 +87,7 @@ AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
   for (int i = 0; i < srcString.Length(); i++)
     resultString += char(srcString[i]);
   /*
-  if(!srcString.IsEmpty())
+  if (!srcString.IsEmpty())
   {
     int numRequiredBytes = srcString.Length() * 6 + 1;
     int numChars = wcstombs(resultString.GetBuffer(numRequiredBytes), srcString, numRequiredBytes);

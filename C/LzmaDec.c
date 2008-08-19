@@ -1,5 +1,5 @@
 /* LzmaDec.c -- LZMA Decoder
-2008-08-05
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read LzmaDec.h for license options */
 
@@ -56,7 +56,7 @@ Read LzmaDec.h for license options */
   { UPDATE_1_CHECK; i = (i + i) + 1; A1; }
 #define GET_BIT_CHECK(p, i) GET_BIT2_CHECK(p, i, ; , ;)
 #define TREE_DECODE_CHECK(probs, limit, i) \
-  { i = 1; do { GET_BIT_CHECK(probs + i, i) } while(i < limit); i -= limit; }
+  { i = 1; do { GET_BIT_CHECK(probs + i, i) } while (i < limit); i -= limit; }
 
 
 #define kNumPosBitsMax 4
@@ -328,7 +328,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
                 GET_BIT2(prob + i, i, ; , distance |= mask);
                 mask <<= 1;
               }
-              while(--numDirectBits != 0);
+              while (--numDirectBits != 0);
             }
           }
           else
@@ -679,7 +679,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
             {
               GET_BIT_CHECK(prob + i, i);
             }
-            while(--numDirectBits != 0);
+            while (--numDirectBits != 0);
           }
         }
       }

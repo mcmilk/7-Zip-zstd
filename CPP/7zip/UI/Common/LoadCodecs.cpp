@@ -50,7 +50,7 @@ static CSysString GetLibraryFolderPrefix()
 static const TCHAR *kMainDll = TEXT("7z.dll");
 
 #ifdef _WIN32
-static LPCTSTR kRegistryPath = TEXT("Software\\7-zip");
+static LPCTSTR kRegistryPath = TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-zip");
 static LPCTSTR kProgramPathValue = TEXT("Path");
 static bool ReadPathFromRegistry(HKEY baseKey, CSysString &path)
 {
@@ -446,7 +446,7 @@ HRESULT CCodecs::Load()
 
 int CCodecs::FindFormatForArchiveName(const UString &arcPath) const
 {
-  int slashPos1 = arcPath.ReverseFind(L'\\');
+  int slashPos1 = arcPath.ReverseFind(WCHAR_PATH_SEPARATOR);
   int slashPos2 = arcPath.ReverseFind(L'.');
   int dotPos = arcPath.ReverseFind(L'.');
   if (dotPos < 0 || dotPos < slashPos1 || dotPos < slashPos2)

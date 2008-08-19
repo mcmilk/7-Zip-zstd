@@ -195,7 +195,7 @@ STDMETHODIMP CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidType: prop = L"FSDrives"; break;
-    case kpidPath: prop = LangString(IDS_COMPUTER, 0x03020300) +  UString(L'\\'); break;
+    case kpidPath: prop = LangString(IDS_COMPUTER, 0x03020300) + UString(WCHAR_PATH_SEPARATOR); break;
   }
   prop.Detach(value);
   return S_OK;

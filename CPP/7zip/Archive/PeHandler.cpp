@@ -130,7 +130,7 @@ void CDebugEntry::Parse(const Byte *p)
   Pa = Get32(p + 24);
 }
 
-static const kNumDirItemsMax = 16;
+static const UInt32 kNumDirItemsMax = 16;
 
 struct COptHeader
 {

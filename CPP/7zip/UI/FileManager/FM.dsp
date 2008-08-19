@@ -767,6 +767,10 @@ SOURCE=..\..\..\Windows\Clipboard.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\COM.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\CommonDialog.cpp
 # End Source File
 # Begin Source File

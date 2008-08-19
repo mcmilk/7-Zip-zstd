@@ -740,8 +740,8 @@ void CEcd64::Parse(const Byte *p)
   cdStartOffset = Get64(p + 36);
 }
 
-#define COPY_ECD_ITEM_16(n) if (!isZip64 || ecd. ## n != 0xFFFF)     ecd64. ## n = ecd. ## n;
-#define COPY_ECD_ITEM_32(n) if (!isZip64 || ecd. ## n != 0xFFFFFFFF) ecd64. ## n = ecd. ## n;
+#define COPY_ECD_ITEM_16(n) if (!isZip64 || ecd. n != 0xFFFF)     ecd64. n = ecd. n;
+#define COPY_ECD_ITEM_32(n) if (!isZip64 || ecd. n != 0xFFFFFFFF) ecd64. n = ecd. n;
 
 HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress)
 {

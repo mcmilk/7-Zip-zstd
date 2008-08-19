@@ -152,9 +152,7 @@ STDMETHODIMP CExtractCallbackConsole::CryptoGetTextPassword(BSTR *password)
     Password = GetPassword(OutStream);
     PasswordIsDefined = true;
   }
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(Password, password);
 }
 
 #endif

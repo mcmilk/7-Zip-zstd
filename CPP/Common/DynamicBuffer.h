@@ -26,7 +26,7 @@ public:
   CDynamicBuffer& operator=(const CDynamicBuffer &buffer)
   {
     this->Free();
-    if(buffer._capacity > 0)
+    if (buffer._capacity > 0)
     {
       SetCapacity(buffer._capacity);
       memmove(this->_items, buffer._items, buffer._capacity * sizeof(T));

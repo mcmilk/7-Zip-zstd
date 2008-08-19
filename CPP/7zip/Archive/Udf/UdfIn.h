@@ -167,6 +167,8 @@ struct CPartitionMap
   int PartitionIndex;
 };
 
+// ECMA 4/14.6
+
 enum EIcbFileType
 {
   ICB_FILE_TYPE_DIR = 4,
@@ -243,6 +245,8 @@ struct CItem
   // CRegId ImplId;
   // UInt64 UniqueId;
 
+  bool IsInline;
+  CByteBuffer InlineData;
   CRecordVector<CMyExtent> Extents;
   CRecordVector<int> SubFiles;
 
@@ -258,6 +262,8 @@ struct CItem
 
   UInt64 GetChunksSumSize() const
   {
+    if (IsInline)
+      return InlineData.GetCapacity();
     UInt64 size = 0;
     for (int i = 0; i < Extents.Size(); i++)
       size += Extents[i].GetLen();
@@ -343,6 +349,7 @@ class CInArchive
   UInt64 _fileNameLengthTotal;
   int _numRefs;
   UInt32 _numExtents;
+  UInt64 _inlineExtentsSize;
   bool CheckExtent(int volIndex, int partitionRef, UInt32 blockPos, UInt32 len) const;
 public:
   HRESULT Open(IInStream *inStream, CProgressVirt *progress);

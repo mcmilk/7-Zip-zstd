@@ -53,7 +53,7 @@ bool ReadNamesFromListFile(LPCWSTR fileName, UStringVector &resultStrings, UINT 
   }
 
   UString t;
-  for(int i = 0; i < u.Length(); i++)
+  for (int i = 0; i < u.Length(); i++)
   {
     wchar_t c = u[i];
     if (c == L'\n' || c == 0xD)

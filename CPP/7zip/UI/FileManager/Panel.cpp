@@ -800,7 +800,7 @@ void CPanel::AddToArchive()
 
 static UString GetSubFolderNameForExtract(const UString &archiveName)
 {
-  int slashPos = archiveName.ReverseFind(L'\\');
+  int slashPos = archiveName.ReverseFind(WCHAR_PATH_SEPARATOR);
   int dotPos = archiveName.ReverseFind(L'.');
   if (dotPos < 0 || slashPos > dotPos)
     return archiveName + UString(L"~");
@@ -846,7 +846,7 @@ void CPanel::ExtractArchives()
     folderName = GetSubFolderNameForExtract(GetItemRelPath(indices[0]));
   else
     folderName = L"*";
-  ::ExtractArchives(paths, _currentFolderPrefix + folderName + UString(L"\\"), true);
+  ::ExtractArchives(paths, _currentFolderPrefix + folderName + UString(WCHAR_PATH_SEPARATOR), true);
 }
 
 struct CThreadTest

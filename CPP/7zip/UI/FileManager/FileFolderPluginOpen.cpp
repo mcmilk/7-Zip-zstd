@@ -74,7 +74,7 @@ HRESULT OpenFileFolderPlugin(
   NFile::NName::SplitNameToPureNameAndExtension(name, pureName, dot, extension);
 
 
-  int slashPos = path.ReverseFind(L'\\');
+  int slashPos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
   UString dirPrefix;
   UString fileName;
   if (slashPos >= 0)

@@ -1,5 +1,5 @@
 /* Bra86.c -- converter for x86 code (BCJ)
-2008-03-19
+2008-08-17
 Copyright (c) 1999-2008 Igor Pavlov
 Read Bra.h for license options */
 
@@ -19,7 +19,7 @@ SizeT x86_Convert(Byte *data, SizeT size, UInt32 ip, UInt32 *state, int encoding
   ip += 5;
   prevPosT = (SizeT)0 - 1;
 
-  for(;;)
+  for (;;)
   {
     Byte *p = data + bufferPos;
     Byte *limit = data + size - 4;

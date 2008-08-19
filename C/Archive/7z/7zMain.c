@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2008-08-05
+2008-08-17
 Igor Pavlov
 Public domain */
 
@@ -40,7 +40,7 @@ void ConvertNumberToString(CFileSize value, char *s)
   while (value != 0);
   do
     *s++ = temp[--pos];
-  while(pos > 0);
+  while (pos > 0);
   *s = '\0';
 }
 

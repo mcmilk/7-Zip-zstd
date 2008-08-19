@@ -67,7 +67,7 @@ static UString GetProgramPath()
 UString GetProgramFolderPrefix()
 {
   UString path = GetProgramPath();
-  int pos = path.ReverseFind(L'\\');
+  int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
   return path.Left(pos + 1);
 }
 

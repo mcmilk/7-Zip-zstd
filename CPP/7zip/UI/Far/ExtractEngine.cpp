@@ -170,8 +170,5 @@ STDMETHODIMP CExtractCallBackImp::CryptoGetTextPassword(BSTR *password)
     RINOK(GetPassword(m_Password));
     m_PasswordIsDefined = true;
   }
-  CMyComBSTR tempName = m_Password;
-  *password = tempName.Detach();
-
-  return S_OK;
+  return StringToBstr(m_Password, password);
 }

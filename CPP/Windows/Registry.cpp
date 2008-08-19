@@ -304,7 +304,7 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
 {
   keyNames.Clear();
   CSysString keyName;
-  for(UInt32 index = 0; ; index++)
+  for (UInt32 index = 0; ; index++)
   {
     const UInt32 kBufferSize = MAX_PATH + 1; // 256 in ATL
     FILETIME lastWriteTime;
@@ -312,9 +312,9 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
     LONG result = ::RegEnumKeyEx(_object, index, keyName.GetBuffer(kBufferSize),
         (DWORD *)&nameSize, NULL, NULL, NULL, &lastWriteTime);
     keyName.ReleaseBuffer();
-    if(result == ERROR_NO_MORE_ITEMS)
+    if (result == ERROR_NO_MORE_ITEMS)
       break;
-    if(result != ERROR_SUCCESS)
+    if (result != ERROR_SUCCESS)
       return result;
     keyNames.Add(keyName);
   }

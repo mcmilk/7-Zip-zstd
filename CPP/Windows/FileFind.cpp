@@ -344,7 +344,7 @@ bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
   if (newSize > size)
     return false;
   CSysString string;
-  for(UINT32 i = 0; i < newSize; i++)
+  for (UINT32 i = 0; i < newSize; i++)
   {
     TCHAR c = buffer[i];
     if (c == TEXT('\0'))
@@ -376,7 +376,7 @@ bool MyGetLogicalDriveStrings(UStringVector &driveStrings)
     if (newSize > size)
       return false;
     UString string;
-    for(UINT32 i = 0; i < newSize; i++)
+    for (UINT32 i = 0; i < newSize; i++)
     {
       WCHAR c = buffer[i];
       if (c == L'\0')

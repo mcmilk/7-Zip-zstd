@@ -8,9 +8,11 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-static const TCHAR *kCUBasePath = TEXT("Software\\7-ZIP");
-static const TCHAR *kCU_FMPath = TEXT("Software\\7-ZIP\\FM");
-// static const TCHAR *kLM_Path = TEXT("Software\\7-ZIP\\FM");
+#define REG_PATH_7Z TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP")
+
+static const TCHAR *kCUBasePath = REG_PATH_7Z;
+static const TCHAR *kCU_FMPath = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("FM");
+// static const TCHAR *kLM_Path = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("FM");
 
 static const WCHAR *kLangValueName = L"Lang";
 static const WCHAR *kEditor = L"Editor";

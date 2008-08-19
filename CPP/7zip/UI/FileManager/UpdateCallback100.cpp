@@ -93,9 +93,7 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(Int32 *passwordIsDefi
     */
   }
   *passwordIsDefined = BoolToInt(_passwordIsDefined);
-  CMyComBSTR tempName = _password;
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(_password, password);
 }
 
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(const UInt64 * /* files */, const UInt64 * /* bytes */)
@@ -112,8 +110,5 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
 {
   if (!_passwordIsDefined)
     return S_FALSE;
-  CMyComBSTR tempName = _password;
-  *password = tempName.Detach();
-  return S_OK;
+  return StringToBstr(_password, password);
 }
-

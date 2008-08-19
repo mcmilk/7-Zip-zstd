@@ -94,7 +94,7 @@ public:
     if (_window == NULL)
       return true;
     bool result = BOOLToBool(::DestroyWindow(_window));
-    if(result)
+    if (result)
       _window = NULL;
     return result;
   }

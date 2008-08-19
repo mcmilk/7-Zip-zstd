@@ -94,14 +94,10 @@ HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src)
 
 LONG CompareFileTime(const FILETIME* ft1, const FILETIME* ft2)
 {
-  if(ft1->dwHighDateTime < ft2->dwHighDateTime)
-    return -1;
-  if(ft1->dwHighDateTime > ft2->dwHighDateTime)
-    return 1;
-  if(ft1->dwLowDateTime < ft2->dwLowDateTime)
-    return -1;
-  if(ft1->dwLowDateTime > ft2->dwLowDateTime)
-    return 1;
+  if (ft1->dwHighDateTime < ft2->dwHighDateTime) return -1;
+  if (ft1->dwHighDateTime > ft2->dwHighDateTime) return 1;
+  if (ft1->dwLowDateTime < ft2->dwLowDateTime) return -1;
+  if (ft1->dwLowDateTime > ft2->dwLowDateTime) return 1;
   return 0;
 }
 

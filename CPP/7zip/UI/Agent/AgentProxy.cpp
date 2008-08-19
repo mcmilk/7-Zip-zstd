@@ -98,7 +98,7 @@ UString CProxyFolder::GetFullPathPrefix() const
   const CProxyFolder *current = this;
   while (current->Parent != NULL)
   {
-    result = current->Name + UString(L'\\') + result;
+    result = current->Name + UString(WCHAR_PATH_SEPARATOR) + result;
     current = current->Parent;
   }
   return result;
@@ -252,7 +252,7 @@ HRESULT CProxyArchive::ReadObjects(IInArchive *archive, IProgress *progress)
       for (int i = 0; i < len; i++)
       {
         wchar_t c = filePath[i];
-        if (c == '\\' || c == '/')
+        if (c == WCHAR_PATH_SEPARATOR || c == L'/')
         {
           currentItem = currentItem->AddDirSubItem((UInt32)(Int32)-1, false, fileName);
           fileName.Empty();

@@ -199,8 +199,7 @@ HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined,
   #ifdef _NO_CRYPTO
 
   *passwordIsDefined = false;
-  CMyComBSTR tempName(L"");
-  *password = tempName.Detach();
+  return StringToBstr(L"", password);
   
   #else
   
@@ -213,10 +212,8 @@ HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined,
     }
   }
   *passwordIsDefined = BoolToInt(PasswordIsDefined);
-  CMyComBSTR tempName(Password);
-  *password = tempName.Detach();
+  return StringToBstr(Password, password);
   
   #endif
   
-  return S_OK;
 }

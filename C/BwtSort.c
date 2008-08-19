@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2008-08-05
+2008-08-17
 Igor Pavlov
 Public domain */
 
@@ -225,7 +225,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
           break;
       }
     }
-    while(++i < j);
+    while (++i < j);
     if (i == 0)
     {
       range = range - (mid - left);
@@ -438,7 +438,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
         i++;
         continue;
       }
-      for(groupSize = 1;
+      for (groupSize = 1;
         (Flags[(i + groupSize) >> kNumFlagsBits] & (1 << ((i + groupSize) & kFlagsMask))) != 0;
         groupSize++);
       

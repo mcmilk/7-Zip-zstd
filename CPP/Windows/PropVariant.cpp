@@ -259,7 +259,7 @@ void CPropVariant::InternalCopy(const PROPVARIANT* pSrc)
 
 int CPropVariant::Compare(const CPropVariant &a)
 {
-  if(vt != a.vt)
+  if (vt != a.vt)
     return 0; // it's mean some bug
   switch (vt)
   {

@@ -86,7 +86,7 @@ static PSID GetSid(LPWSTR accountName)
     #endif
     (NULL, accountName, NULL, &sidLen, NULL, &domainLen, &sidNameUse))
   {
-    if(::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+    if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
     {
       PSID pSid = ::HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sidLen);
       LPWSTR domainName = (LPWSTR)::HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (domainLen + 1) * sizeof(WCHAR));

@@ -118,9 +118,7 @@ STDMETHODIMP CPluginOptionsCallback::GetProgramFolderPath(BSTR *value)
   UString folder;
   if (!::GetProgramFolderPath(folder))
     return E_FAIL;
-  CMyComBSTR valueTemp = folder;
-  *value = valueTemp.Detach();
-  return S_OK;
+  return StringToBstr(folder, value);
 }
 
 static UString GetDefaultProgramName()
@@ -134,16 +132,16 @@ STDMETHODIMP CPluginOptionsCallback::GetProgramPath(BSTR *value)
   UString folder;
   if (!::GetProgramFolderPath(folder))
     return E_FAIL;
-  CMyComBSTR valueTemp = folder + GetDefaultProgramName();
-  *value = valueTemp.Detach();
-  return S_OK;
+  return StringToBstr(folder + GetDefaultProgramName(), value);
 }
 
 STDMETHODIMP CPluginOptionsCallback::GetRegistryCUPath(BSTR *value)
 {
-  CMyComBSTR valueTemp = UString(L"Software\\7-Zip\\FM\\Plugins\\") + _pluginName;
-  *value = valueTemp.Detach();
-  return S_OK;
+  return StringToBstr(UString(L"Software"
+    WSTRING_PATH_SEPARATOR L"7-Zip"
+    WSTRING_PATH_SEPARATOR L"FM"
+    WSTRING_PATH_SEPARATOR L"Plugins"
+    WSTRING_PATH_SEPARATOR) + _pluginName, value);
 }
 
 void CPluginsPage::OnButtonOptions()

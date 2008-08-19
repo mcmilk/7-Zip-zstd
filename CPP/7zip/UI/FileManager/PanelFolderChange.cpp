@@ -69,11 +69,11 @@ HRESULT CPanel::BindToPath(const UString &fullPath, bool &archiveIsOpened, bool 
   UString sysPath = fullPath;
   CFileInfoW fileInfo;
   UStringVector reducedParts;
-  while(!sysPath.IsEmpty())
+  while (!sysPath.IsEmpty())
   {
     if (FindFile(sysPath, fileInfo))
       break;
-    int pos = sysPath.ReverseFind(L'\\');
+    int pos = sysPath.ReverseFind(WCHAR_PATH_SEPARATOR);
     if (pos < 0)
       sysPath.Empty();
     else
@@ -175,7 +175,7 @@ void CPanel::LoadFullPath()
     const CFolderLink &folderLink = _parentFolders[i];
     _currentFolderPrefix += GetFolderPath(folderLink.ParentFolder);
     _currentFolderPrefix += folderLink.ItemName;
-    _currentFolderPrefix += L'\\';
+    _currentFolderPrefix += WCHAR_PATH_SEPARATOR;
   }
   if (_folder)
     _currentFolderPrefix += GetFolderPath(_folder);
@@ -199,7 +199,13 @@ void CPanel::LoadFullPathAndShow()
   item.mask = 0;
 
   UString path = _currentFolderPrefix;
-  if (path.Length() > 3 && path[path.Length() - 1] == L'\\')
+  if (path.Length() >
+      #ifdef _WIN32
+      3
+      #else
+      1
+      #endif
+      && path[path.Length() - 1] == WCHAR_PATH_SEPARATOR)
     path.Delete(path.Length() - 1);
 
   CFileInfoW info;
@@ -334,12 +340,12 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
         sumPass += name;
         UString curName = sumPass;
         if (i == 0)
-          curName += L"\\";
+          curName += WCHAR_PATH_SEPARATOR;
         CFileInfoW info;
         DWORD attrib = FILE_ATTRIBUTE_DIRECTORY;
         if (NFile::NFind::FindFile(sumPass, info))
           attrib = info.Attrib;
-        sumPass += L"\\";
+        sumPass += WCHAR_PATH_SEPARATOR;
         AddComboBoxItem(name, GetRealIconIndex(curName, attrib), i, false);
         ComboBoxPaths.Add(sumPass);
       }
@@ -357,7 +363,7 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
         UString s = driveStrings[i];
         ComboBoxPaths.Add(s);
         int iconIndex = GetRealIconIndex(s, 0);
-        if (s.Length() > 0 && s[s.Length() - 1] == '\\')
+        if (s.Length() > 0 && s[s.Length() - 1] == WCHAR_PATH_SEPARATOR)
           s.Delete(s.Length() - 1);
         AddComboBoxItem(s, iconIndex, 1, false);
       }
@@ -463,7 +469,7 @@ void CPanel::OpenParentFolder()
   {
     UString string = _currentFolderPrefix;
     string.Delete(string.Length() - 1);
-    int pos = string.ReverseFind(L'\\');
+    int pos = string.ReverseFind(WCHAR_PATH_SEPARATOR);
     if (pos < 0)
       pos = 0;
     else
@@ -512,7 +518,7 @@ void CPanel::OpenParentFolder()
 
 void CPanel::CloseOpenFolders()
 {
-  while(_parentFolders.Size() > 0)
+  while (_parentFolders.Size() > 0)
   {
     _folder.Release();
     _library.Free();

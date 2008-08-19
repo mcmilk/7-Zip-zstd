@@ -269,7 +269,7 @@ void CApp::ReloadToolbars()
     return;
   HWND parent = _rebar;
 
-  while(_rebar.GetBandCount() > 0)
+  while (_rebar.GetBandCount() > 0)
     _rebar.DeleteBand(0);
 
   _archiveToolBar.Destroy();
@@ -436,14 +436,14 @@ static bool IsThereFolderOfPath(const UString &path)
 // reduces path to part that exists on disk
 static void ReducePathToRealFileSystemPath(UString &path)
 {
-  while(!path.IsEmpty())
+  while (!path.IsEmpty())
   {
     if (IsThereFolderOfPath(path))
     {
       NName::NormalizeDirPathPrefix(path);
       break;
     }
-    int pos = path.ReverseFind('\\');
+    int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
     if (pos < 0)
       path.Empty();
     else
@@ -453,8 +453,8 @@ static void ReducePathToRealFileSystemPath(UString &path)
         break;
       if (path.Length() > 2 && path[0] == '\\' && path[1] == '\\')
       {
-        int nextPos = path.Find('\\', 2); // pos after \\COMPNAME
-        if (nextPos > 0 && path.Find('\\', nextPos + 1) == pos)
+        int nextPos = path.Find(WCHAR_PATH_SEPARATOR, 2); // pos after \\COMPNAME
+        if (nextPos > 0 && path.Find(WCHAR_PATH_SEPARATOR, nextPos + 1) == pos)
           break;
       }
       path = path.Left(pos);
@@ -472,9 +472,12 @@ static bool CheckFolderPath(const UString &path)
 
 static bool IsPathAbsolute(const UString &path)
 {
-  if ((path.Length() >= 1 && path[0] == L'\\') ||
-      (path.Length() >= 3 && path[1] == L':' && path[2] == L'\\'))
+  if (path.Length() >= 1 && path[0] == WCHAR_PATH_SEPARATOR)
     return true;
+  #ifdef _WIN32
+  if (path.Length() >= 3 && path[1] == L':' && path[2] == L'\\')
+    return true;
+  #endif
   return false;
 }
 
@@ -564,7 +567,7 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
     int index = indices[i];
     info += GetItemRelPath(index);
     if (IsItemFolder(index))
-      info += L'\\';
+      info += WCHAR_PATH_SEPARATOR;
   }
   if (i != indices.Size())
     info += L"\n  ...";
@@ -656,7 +659,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
         return;
       }
 
-    if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind('\\') == destPath.Length() - 1) ||
+    if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind(WCHAR_PATH_SEPARATOR) == destPath.Length() - 1) ||
         IsThereFolderOfPath(destPath))
     {
       NDirectory::CreateComplexDirectory(destPath);
@@ -673,7 +676,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     }
     else
     {
-      int pos = destPath.ReverseFind('\\');
+      int pos = destPath.ReverseFind(WCHAR_PATH_SEPARATOR);
       if (pos >= 0)
       {
         UString prefix = destPath.Left(pos + 1);
@@ -734,7 +737,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     else
       folderPrefix = srcPanel._currentFolderPrefix;
     filePaths.Reserve(indices.Size());
-    for(int i = 0; i < indices.Size(); i++)
+    for (int i = 0; i < indices.Size(); i++)
       filePaths.Add(srcPanel.GetItemRelPath(indices[i]));
 
     result = destPanel.CopyFrom(folderPrefix, filePaths, true, 0);
@@ -789,12 +792,8 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
   if (!srcPanel.IsItemFolder(realIndex))
     return;
 
+  // destPanel.BindToFolder(srcPanel._currentFolderPrefix + srcPanel.GetItemName(realIndex) + WCHAR_PATH_SEPARATOR);
 
-  /*
-  UString string = srcPanel._currentFolderPrefix +
-      srcPanel.GetItemName(realIndex) + L'\\';
-  destPanel.BindToFolder(string);
-  */
   CMyComPtr<IFolderFolder> newFolder;
   if (realIndex == kParentIndex)
   {
