@@ -346,10 +346,8 @@ HRESULT CInArchive::Open2()
   Clear();
   RINOK(_stream->Seek(kStartPos, STREAM_SEEK_CUR, &_position));
 
-  bool primVolDescDefined = false;
   m_BufferPos = 0;
   BlockSize = kBlockSize;
-  VolDescs.Add(CVolumeDescriptor());
   for (;;)
   {
     Byte sig[7];
@@ -396,42 +394,33 @@ HRESULT CInArchive::Open2()
         break;
       }
       case NVolDescType::kPrimaryVol:
-      {
-        if (primVolDescDefined)
-          return S_FALSE;
-        primVolDescDefined = true;
-        CVolumeDescriptor &volDesc = VolDescs[0];
-        ReadVolumeDescriptor(volDesc);
-        // some burners write "Joliet" Escape Sequence to primary volume
-        memset(volDesc.EscapeSequence, 0, sizeof(volDesc.EscapeSequence));
-        break;
-      }
       case NVolDescType::kSupplementaryVol:
       {
-        CVolumeDescriptor sd;
-        ReadVolumeDescriptor(sd);
-        VolDescs.Add(sd);
+        // some ISOs have two PrimaryVols.
+        CVolumeDescriptor vd;
+        ReadVolumeDescriptor(vd);
+        if (sig[0] == NVolDescType::kPrimaryVol)
+        {
+          // some burners write "Joliet" Escape Sequence to primary volume
+          memset(vd.EscapeSequence, 0, sizeof(vd.EscapeSequence));
+        }
+        VolDescs.Add(vd);
         break;
       }
       default:
         break;
     }
   }
-  MainVolDescIndex = 0;
-  if (!primVolDescDefined)
+  if (VolDescs.IsEmpty())
     return S_FALSE;
-  for (int i = VolDescs.Size() - 1; i >= 0; i--)
-  {
-    if (VolDescs[i].IsJoliet())
-    {
-      MainVolDescIndex = i;
+  for (MainVolDescIndex = VolDescs.Size() - 1; MainVolDescIndex > 0; MainVolDescIndex--)
+    if (VolDescs[MainVolDescIndex].IsJoliet())
       break;
-    }
-  }
   // MainVolDescIndex = 0; // to read primary volume
-  if (VolDescs[MainVolDescIndex].LogicalBlockSize != kBlockSize)
+  const CVolumeDescriptor &vd = VolDescs[MainVolDescIndex];
+  if (vd.LogicalBlockSize != kBlockSize)
     return S_FALSE;
-  (CDirRecord &)_rootDir = VolDescs[MainVolDescIndex].RootDirRecord;
+  (CDirRecord &)_rootDir = vd.RootDirRecord;
   ReadDir(_rootDir, 0);
   CreateRefs(_rootDir);
   ReadBootInfo();

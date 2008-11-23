@@ -1,8 +1,6 @@
 /* Crypto/Sha256.c -- SHA-256 Hash function
-2008-08-05
-This code is based on public domain code from Wei Dai's Crypto++ library.
-Igor Pavlov
-Public domain */
+2008-11-06 : Igor Pavlov : Public domain
+This code is based on public domain code from Wei Dai's Crypto++ library. */
 
 #include "Sha256.h"
 #include "RotateDefs.h"

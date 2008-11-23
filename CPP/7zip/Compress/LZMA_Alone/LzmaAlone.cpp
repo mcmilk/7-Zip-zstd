@@ -31,11 +31,9 @@
 #include "../../../Windows/System.h"
 #endif
 
-#include "../../MyVersion.h"
-
-
 extern "C"
 {
+  #include "../../../../C/7zVersion.h"
   #include "../../../../C/Alloc.h"
   #include "../../../../C/LzmaUtil/Lzma86Dec.h"
   #include "../../../../C/LzmaUtil/Lzma86Enc.h"
@@ -64,13 +62,13 @@ enum Enum
 {
   kHelp1 = 0,
   kHelp2,
-  kMode,
-  kDictionary,
-  kFastBytes,
-  kMatchFinderCycles,
-  kLitContext,
-  kLitPos,
-  kPosBits,
+  kAlgo,
+  kDict,
+  kFb,
+  kMc,
+  kLc,
+  kLp,
+  kPb,
   kMatchFinder,
   kMultiThread,
   kEOS,
@@ -109,7 +107,7 @@ static void PrintHelp()
              "  b: Benchmark\n"
     "<Switches>\n"
     "  -a{N}:  set compression mode - [0, 1], default: 1 (max)\n"
-    "  -d{N}:  set dictionary - [12, 30], default: 23 (8MB)\n"
+    "  -d{N}:  set dictionary size - [12, 30], default: 23 (8MB)\n"
     "  -fb{N}: set number of fast bytes - [5, 273], default: 128\n"
     "  -mc{N}: set number of cycles for match finder\n"
     "  -lc{N}: set number of literal context bits - [0, 8], default: 3\n"
@@ -157,6 +155,13 @@ static bool GetNumber(const wchar_t *s, UInt32 &value)
   return true;
 }
 
+static void ParseUInt32(const CParser &parser, int index, UInt32 &res)
+{
+  if (parser[index].ThereIs)
+    if (!GetNumber(parser[index].PostStrings[0], res))
+      IncorrectCommand();
+}
+
 int main2(int n, const char *args[])
 {
   #ifdef _WIN32
@@ -202,15 +207,15 @@ int main2(int n, const char *args[])
     IncorrectCommand();
   const UString &command = nonSwitchStrings[paramIndex++];
 
-  bool dictionaryIsDefined = false;
-  UInt32 dictionary = (UInt32)-1;
-  if(parser[NKey::kDictionary].ThereIs)
+  bool dictDefined = false;
+  UInt32 dict = (UInt32)-1;
+  if(parser[NKey::kDict].ThereIs)
   {
     UInt32 dicLog;
-    if (!GetNumber(parser[NKey::kDictionary].PostStrings[0], dicLog))
+    if (!GetNumber(parser[NKey::kDict].PostStrings[0], dicLog))
       IncorrectCommand();
-    dictionary = 1 << dicLog;
-    dictionaryIsDefined = true;
+    dict = 1 << dicLog;
+    dictDefined = true;
   }
   UString mf = L"BT4";
   if (parser[NKey::kMatchFinder].ThereIs)
@@ -240,7 +245,7 @@ int main2(int n, const char *args[])
         if (!GetNumber(nonSwitchStrings[paramIndex++], numIterations))
           numIterations = kNumDefaultItereations;
     }
-    return LzmaBenchCon(stderr, numIterations, numThreads, dictionary);
+    return LzmaBenchCon(stderr, numIterations, numThreads, dict);
   }
 
   if (numThreads == (UInt32)-1)
@@ -334,10 +339,10 @@ int main2(int n, const char *args[])
         if (outBuffer == 0)
           throw kCantAllocate;
       }
-      if (!dictionaryIsDefined)
-        dictionary = 1 << 23;
+      if (!dictDefined)
+        dict = 1 << 23;
       int res = Lzma86_Encode(outBuffer, &outSize, inBuffer, inSize,
-          5, dictionary, parser[NKey::kFilter86].PostCharIndex == 0 ? SZ_FILTER_YES : SZ_FILTER_AUTO);
+          5, dict, parser[NKey::kFilter86].PostCharIndex == 0 ? SZ_FILTER_YES : SZ_FILTER_AUTO);
       if (res != 0)
       {
         fprintf(stderr, "\nEncoder error = %d\n", (int)res);
@@ -378,42 +383,30 @@ int main2(int n, const char *args[])
     NCompress::NLZMA::CEncoder *encoderSpec = new NCompress::NLZMA::CEncoder;
     CMyComPtr<ICompressCoder> encoder = encoderSpec;
 
-    if (!dictionaryIsDefined)
-      dictionary = 1 << 23;
+    if (!dictDefined)
+      dict = 1 << 23;
 
-    UInt32 posStateBits = 2;
-    UInt32 litContextBits = 3; // for normal files
-    // UInt32 litContextBits = 0; // for 32-bit data
-    UInt32 litPosBits = 0;
-    // UInt32 litPosBits = 2; // for 32-bit data
-    UInt32 algorithm = 1;
-    UInt32 numFastBytes = 128;
-    UInt32 matchFinderCycles = 16 + numFastBytes / 2;
-    bool matchFinderCyclesDefined = false;
+    UInt32 pb = 2;
+    UInt32 lc = 3; // = 0; for 32-bit data
+    UInt32 lp = 0; // = 2; for 32-bit data
+    UInt32 algo = 1;
+    UInt32 fb = 128;
+    UInt32 mc = 16 + fb / 2;
+    bool mcDefined = false;
 
     bool eos = parser[NKey::kEOS].ThereIs || stdInMode;
  
-    if(parser[NKey::kMode].ThereIs)
-      if (!GetNumber(parser[NKey::kMode].PostStrings[0], algorithm))
-        IncorrectCommand();
+    ParseUInt32(parser, NKey::kAlgo, algo);
+    ParseUInt32(parser, NKey::kFb, fb);
+    ParseUInt32(parser, NKey::kLc, lc);
+    ParseUInt32(parser, NKey::kLp, lp);
+    ParseUInt32(parser, NKey::kPb, pb);
 
-    if(parser[NKey::kFastBytes].ThereIs)
-      if (!GetNumber(parser[NKey::kFastBytes].PostStrings[0], numFastBytes))
+    mcDefined = parser[NKey::kMc].ThereIs;
+    if (mcDefined)
+      if (!GetNumber(parser[NKey::kMc].PostStrings[0], mc))
         IncorrectCommand();
-    matchFinderCyclesDefined = parser[NKey::kMatchFinderCycles].ThereIs;
-    if (matchFinderCyclesDefined)
-      if (!GetNumber(parser[NKey::kMatchFinderCycles].PostStrings[0], matchFinderCycles))
-        IncorrectCommand();
-    if(parser[NKey::kLitContext].ThereIs)
-      if (!GetNumber(parser[NKey::kLitContext].PostStrings[0], litContextBits))
-        IncorrectCommand();
-    if(parser[NKey::kLitPos].ThereIs)
-      if (!GetNumber(parser[NKey::kLitPos].PostStrings[0], litPosBits))
-        IncorrectCommand();
-    if(parser[NKey::kPosBits].ThereIs)
-      if (!GetNumber(parser[NKey::kPosBits].PostStrings[0], posStateBits))
-        IncorrectCommand();
-
+    
     PROPID propIDs[] =
     {
       NCoderPropID::kDictionarySize,
@@ -429,35 +422,35 @@ int main2(int n, const char *args[])
     };
     const int kNumPropsMax = sizeof(propIDs) / sizeof(propIDs[0]);
 
-    PROPVARIANT properties[kNumPropsMax];
+    PROPVARIANT props[kNumPropsMax];
     for (int p = 0; p < 6; p++)
-      properties[p].vt = VT_UI4;
+      props[p].vt = VT_UI4;
 
-    properties[0].ulVal = (UInt32)dictionary;
-    properties[1].ulVal = (UInt32)posStateBits;
-    properties[2].ulVal = (UInt32)litContextBits;
-    properties[3].ulVal = (UInt32)litPosBits;
-    properties[4].ulVal = (UInt32)algorithm;
-    properties[5].ulVal = (UInt32)numFastBytes;
+    props[0].ulVal = (UInt32)dict;
+    props[1].ulVal = (UInt32)pb;
+    props[2].ulVal = (UInt32)lc;
+    props[3].ulVal = (UInt32)lp;
+    props[4].ulVal = (UInt32)algo;
+    props[5].ulVal = (UInt32)fb;
 
-    properties[6].vt = VT_BSTR;
-    properties[6].bstrVal = (BSTR)(const wchar_t *)mf;
+    props[6].vt = VT_BSTR;
+    props[6].bstrVal = (BSTR)(const wchar_t *)mf;
 
-    properties[7].vt = VT_BOOL;
-    properties[7].boolVal = eos ? VARIANT_TRUE : VARIANT_FALSE;
+    props[7].vt = VT_BOOL;
+    props[7].boolVal = eos ? VARIANT_TRUE : VARIANT_FALSE;
 
-    properties[8].vt = VT_UI4;
-    properties[8].ulVal = (UInt32)numThreads;
+    props[8].vt = VT_UI4;
+    props[8].ulVal = (UInt32)numThreads;
 
     // it must be last in property list
-    properties[9].vt = VT_UI4;
-    properties[9].ulVal = (UInt32)matchFinderCycles;
+    props[9].vt = VT_UI4;
+    props[9].ulVal = (UInt32)mc;
 
     int numProps = kNumPropsMax;
-    if (!matchFinderCyclesDefined)
+    if (!mcDefined)
       numProps--;
 
-    if (encoderSpec->SetCoderProperties(propIDs, properties, numProps) != S_OK)
+    if (encoderSpec->SetCoderProperties(propIDs, props, numProps) != S_OK)
       IncorrectCommand();
     encoderSpec->WriteCoderProperties(outStream);
 
@@ -491,6 +484,7 @@ int main2(int n, const char *args[])
   {
     NCompress::NLZMA::CDecoder *decoderSpec = new NCompress::NLZMA::CDecoder;
     CMyComPtr<ICompressCoder> decoder = decoderSpec;
+    decoderSpec->FinishStream = true;
     const UInt32 kPropertiesSize = 5;
     Byte header[kPropertiesSize + 8];
     if (ReadStream_FALSE(inStream, header, kPropertiesSize + 8) != S_OK)

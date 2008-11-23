@@ -164,6 +164,8 @@ static const wchar_t *kStartExtensions[] =
   L"docx", L"docm", L"dotx", L"dotm", L"xlsx", L"xlsm", L"xltx", L"xltm", L"xlsb",
   L"xlam", L"pptx", L"pptm", L"potx", L"potm", L"ppam", L"ppsx", L"ppsm", L"xsn",
 
+  L"dwf", 
+ 
   L"odt", L"ods",
   L"wb3",
   L"pdf"

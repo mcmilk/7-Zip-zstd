@@ -1,6 +1,14 @@
 Sources history of the 7-Zip
 ----------------------------
 
+4.61           2008-11-23
+-------------------------
+- Bug in ver. 4.58+ was fixed:
+   7-Zip didn't use any -m* switch after -mtc, -mcl or -mcu for .zip archives. 
+- Bug in .CAB code was fixed. 7-Zip didn't show some empty files,
+  if .CAB archive contains more than one empty file.
+   
+
 4.59           2008-07-27
 -------------------------
 - Bug was fixed:

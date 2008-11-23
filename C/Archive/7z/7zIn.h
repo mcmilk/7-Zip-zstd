@@ -1,8 +1,5 @@
 /* 7zIn.h -- 7z Input functions
-2008-08-05
-Igor Pavlov
-Copyright (c) 1999-2008 Igor Pavlov
-Read 7zItem.h for license options */
+2008-11-23 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_IN_H
 #define __7Z_IN_H
@@ -12,41 +9,22 @@ Read 7zItem.h for license options */
 
 typedef struct
 {
-  CFileSize StartPositionAfterHeader;
-  CFileSize DataStartPosition;
-} CInArchiveInfo;
-
-typedef struct
-{
   CSzAr db;
-  CInArchiveInfo ArchiveInfo;
+  
+  UInt64 startPosAfterHeader;
+  UInt64 dataPos;
+
   UInt32 *FolderStartPackStreamIndex;
-  CFileSize *PackStreamStartPositions;
+  UInt64 *PackStreamStartPositions;
   UInt32 *FolderStartFileIndex;
   UInt32 *FileIndexToFolderIndexMap;
 } CSzArEx;
 
 void SzArEx_Init(CSzArEx *p);
 void SzArEx_Free(CSzArEx *p, ISzAlloc *alloc);
-CFileSize SzArEx_GetFolderStreamPos(const CSzArEx *p, UInt32 folderIndex, UInt32 indexInFolder);
-int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, CFileSize *resSize);
+UInt64 SzArEx_GetFolderStreamPos(const CSzArEx *p, UInt32 folderIndex, UInt32 indexInFolder);
+int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, UInt64 *resSize);
 
-typedef enum
-{
-  SZ_SEEK_SET = 0,
-  SZ_SEEK_CUR = 1,
-  SZ_SEEK_END = 2
-} ESzSeek;
-
-typedef struct
-{
-  SRes (*Read)(void *object, void **buf, size_t *size);
-    /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
-       (output(*size) < input(*size)) is allowed */
-  SRes (*Seek)(void *object, CFileSize pos, ESzSeek origin);
-} ISzInStream;
-
- 
 /*
 Errors:
 SZ_ERROR_NO_ARCHIVE
@@ -58,6 +36,6 @@ SZ_ERROR_INPUT_EOF
 SZ_ERROR_FAIL
 */
 
-SRes SzArEx_Open(CSzArEx *p, ISzInStream *inStream, ISzAlloc *allocMain, ISzAlloc *allocTemp);
+SRes SzArEx_Open(CSzArEx *p, ILookInStream *inStream, ISzAlloc *allocMain, ISzAlloc *allocTemp);
  
 #endif

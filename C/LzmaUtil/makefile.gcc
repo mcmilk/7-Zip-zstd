@@ -10,6 +10,8 @@ OBJS = \
   LzFind.o \
   LzmaDec.o \
   LzmaEnc.o \
+  7zFile.o \
+  7zStream.o \
 
 
 all: $(PROG)
@@ -31,6 +33,12 @@ LzmaDec.o: ../LzmaDec.c
 
 LzmaEnc.o: ../LzmaEnc.c
 	$(CXX) $(CFLAGS) ../LzmaEnc.c
+
+7zFile.o: ../7zFile.c
+	$(CXX) $(CFLAGS) ../7zFile.c
+
+7zStream.o: ../7zStream.c
+	$(CXX) $(CFLAGS) ../7zStream.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)

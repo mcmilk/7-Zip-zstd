@@ -31,13 +31,13 @@ struct COtherArchive
 
 struct CArchiveInfo
 {
-  Byte  VersionMinor; /* cabinet file format version, minor */
-  Byte  VersionMajor; /* cabinet file format version, major */
-  UInt16  NumFolders; /* number of CFFOLDER entries in this cabinet */
-  UInt16  NumFiles;   /* number of CFFILE entries in this cabinet */
-  UInt16  Flags;      /* cabinet file option indicators */
-  UInt16  SetID;      /* must be the same for all cabinets in a set */
-  UInt16  CabinetNumber; /* number of this cabinet file in a set */
+  Byte VersionMinor; /* cabinet file format version, minor */
+  Byte VersionMajor; /* cabinet file format version, major */
+  UInt16 NumFolders; /* number of CFFOLDER entries in this cabinet */
+  UInt16 NumFiles;   /* number of CFFILE entries in this cabinet */
+  UInt16 Flags;      /* cabinet file option indicators */
+  UInt16 SetID;      /* must be the same for all cabinets in a set */
+  UInt16 CabinetNumber; /* number of this cabinet file in a set */
 
   bool ReserveBlockPresent() const { return (Flags & NHeader::NArchive::NFlags::kReservePresent) != 0; }
 

@@ -16,10 +16,12 @@
 
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamObjects.h"
+#include "../../Common/StreamUtils.h"
 #include "../../Common/CreateCoder.h"
 #include "../../Common/FilterCoder.h"
 
 #include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/LZMA/LZMADecoder.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
@@ -108,13 +110,13 @@ const wchar_t *kMethods[] =
   L"Tokenizing",
   L"Deflate",
   L"Deflate64",
-  L"PKImploding",
-  L"Unknown",
-  L"BZip2"
+  L"PKImploding"
 };
 
 const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
-// const wchar_t *kUnknownMethod = L"Unknown";
+const wchar_t *kBZip2Method = L"BZip2";
+const wchar_t *kLZMAMethod = L"LZMA";
+const wchar_t *kJpegMethod = L"Jpeg";
 const wchar_t *kWavPackMethod = L"WavPack";
 const wchar_t *kPPMdMethod = L"PPMd";
 const wchar_t *kAESMethod = L"AES";
@@ -294,15 +296,23 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       if (methodId < kNumMethods)
         method += kMethods[methodId];
-      else if (methodId == NFileHeader::NCompressionMethod::kPPMd)
-        method += kPPMdMethod;
-      else if (methodId == NFileHeader::NCompressionMethod::kWavPack)
-        method += kWavPackMethod;
-      else
+      else switch (methodId)
       {
-        wchar_t s[32];
-        ConvertUInt64ToString(methodId, s);
-        method += s;
+        case NFileHeader::NCompressionMethod::kLZMA:
+          method += kLZMAMethod;
+          if (item.IsLzmaEOS())
+            method += L":EOS";
+          break;
+        case NFileHeader::NCompressionMethod::kBZip2: method += kBZip2Method; break;
+        case NFileHeader::NCompressionMethod::kJpeg: method += kJpegMethod; break;
+        case NFileHeader::NCompressionMethod::kWavPack: method += kWavPackMethod; break;
+        case NFileHeader::NCompressionMethod::kPPMd: method += kPPMdMethod; break;
+        default:
+        {
+          wchar_t s[32];
+          ConvertUInt64ToString(methodId, s);
+          method += s;
+        }
       }
       prop = method;
       break;
@@ -366,6 +376,37 @@ STDMETHODIMP CHandler::Close()
 
 //////////////////////////////////////
 // CHandler::DecompressItems
+
+class CLzmaDecoder:
+  public ICompressCoder,
+  public CMyUnknownImp
+{
+  NCompress::NLZMA::CDecoder *DecoderSpec;
+  CMyComPtr<ICompressCoder> Decoder;
+public:
+  CLzmaDecoder();
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+
+  MY_UNKNOWN_IMP
+};
+
+CLzmaDecoder::CLzmaDecoder()
+{
+  DecoderSpec = new NCompress::NLZMA::CDecoder;
+  Decoder = DecoderSpec;
+}
+
+HRESULT CLzmaDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  Byte buf[9];
+  RINOK(ReadStream_FALSE(inStream, buf, 9));
+  if (buf[2] != 5 || buf[3] != 0)
+    return E_NOTIMPL;
+  RINOK(DecoderSpec->SetDecoderProperties2(buf + 4, 5));
+  return Decoder->Code(inStream, outStream, NULL, outSize, progress);
+}
 
 struct CMethodItem
 {
@@ -568,6 +609,8 @@ HRESULT CZipDecoder::Decode(
       mi.Coder = new NCompress::NShrink::CDecoder;
     else if (methodId == NFileHeader::NCompressionMethod::kImploded)
       mi.Coder = new NCompress::NImplode::NDecoder::CCoder;
+    else if (methodId == NFileHeader::NCompressionMethod::kLZMA)
+      mi.Coder = new CLzmaDecoder;
     else
     {
       CMethodId szMethodID;
@@ -656,6 +699,12 @@ HRESULT CZipDecoder::Decode(
     result = coder->Code(inStreamNew, outStream, NULL, &item.UnPackSize, compressProgress);
     if (result == S_FALSE)
       return S_OK;
+    if (result == E_NOTIMPL)
+    {
+      res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+      return S_OK;
+    }
+
     RINOK(result);
   }
   bool crcOK = true;

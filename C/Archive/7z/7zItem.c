@@ -1,8 +1,5 @@
 /* 7zItem.c -- 7z Items
-2008-08-05
-Igor Pavlov
-Copyright (c) 1999-2008 Igor Pavlov
-Read 7zItem.h for license options */
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include "7zItem.h"
 
@@ -72,7 +69,7 @@ int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
   return -1;
 }
 
-CFileSize SzFolder_GetUnpackSize(CSzFolder *p)
+UInt64 SzFolder_GetUnpackSize(CSzFolder *p)
 {
   int i = (int)SzFolder_GetNumOutStreams(p);
   if (i == 0)

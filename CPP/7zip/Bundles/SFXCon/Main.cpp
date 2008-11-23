@@ -5,27 +5,30 @@
 #include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
-#include "Common/StdOutStream.h"
-#include "Common/Wildcard.h"
-#include "Common/StringConvert.h"
 #include "Common/MyCom.h"
 #include "Common/MyException.h"
+#include "Common/StdOutStream.h"
+#include "Common/StringConvert.h"
+#include "Common/Wildcard.h"
 
-#include "Windows/FileDir.h"
-#include "Windows/FileName.h"
 #include "Windows/Defs.h"
+#include "Windows/FileName.h"
+#ifdef _WIN32
+#include "Windows/DLL.h"
+#include "Windows/FileDir.h"
+#endif
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
 
-#include "../../UI/Common/OpenArchive.h"
 #include "../../UI/Common/DefaultName.h"
 #include "../../UI/Common/ExitCode.h"
 #include "../../UI/Common/Extract.h"
+#include "../../UI/Common/OpenArchive.h"
 
+#include "../../UI/Console/ExtractCallbackConsole.h"
 #include "../../UI/Console/List.h"
 #include "../../UI/Console/OpenCallbackConsole.h"
-#include "../../UI/Console/ExtractCallbackConsole.h"
 
 #include "../../MyVersion.h"
 
@@ -39,11 +42,6 @@ static const char *kCopyrightString =
 "\n7-Zip SFX " MY_VERSION_COPYRIGHT_DATE "\n";
 
 static const int kNumSwitches = 6;
-
-#ifdef _WIN32
-static const wchar_t *kDefaultExt = L".exe";
-static const int kDefaultExtLength = 4;
-#endif
 
 namespace NKey {
 enum Enum
@@ -271,7 +269,25 @@ int Main2(
   GetArguments(numArguments, arguments, commandStrings);
   #endif
 
-  UString archiveName = commandStrings.Front();
+  #ifdef _WIN32
+  
+  UString arcPath;
+  {
+    UString path;
+    NDLL::MyGetModuleFileName(NULL, path);
+    int fileNamePartStartIndex;
+    if (!NDirectory::MyGetFullPathName(path, arcPath, fileNamePartStartIndex))
+    {
+      g_StdOut << "GetFullPathName Error";
+      return NExitCode::kFatalError;
+    }
+  }
+
+  #else
+
+  UString arcPath = commandStrings.Front();
+
+  #endif
 
   commandStrings.Delete(0);
 
@@ -318,11 +334,6 @@ int Main2(
 
   bool yesToAll = parser[NKey::kYes].ThereIs;
 
-  #ifdef _WIN32
-  if (archiveName.Right(kDefaultExtLength).CompareNoCase(kDefaultExt) != 0)
-    archiveName += kDefaultExt;
-  #endif
-
   // NExtractMode::EEnum extractMode;
   // bool isExtractGroupCommand = command.IsFromExtractGroup(extractMode);
 
@@ -333,13 +344,13 @@ int Main2(
     password = parser[NKey::kPassword].PostStrings[0];
 
   NFind::CFileInfoW archiveFileInfo;
-  if (!NFind::FindFile(archiveName, archiveFileInfo))
+  if (!NFind::FindFile(arcPath, archiveFileInfo))
     throw kCantFindSFX;
   if (archiveFileInfo.IsDir())
     throw kCantFindSFX;
   
   UString outputDir;
-  if(parser[NKey::kOutputDir].ThereIs)
+  if (parser[NKey::kOutputDir].ThereIs)
   {
     outputDir = parser[NKey::kOutputDir].PostStrings[0];
     NName::NormalizeDirPathPrefix(outputDir);
@@ -347,8 +358,8 @@ int Main2(
 
   {
     UStringVector v1, v2;
-    v1.Add(archiveName);
-    v2.Add(archiveName);
+    v1.Add(arcPath);
+    v2.Add(arcPath);
     const NWildcard::CCensorNode &wildcardCensorHead =
       wildcardCensor.Pairs.Front().Head;
 

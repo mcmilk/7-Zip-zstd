@@ -4,10 +4,13 @@ PROG = 7zDec.exe
 
 C_OBJS = \
   $O\7zBuf.obj \
+  $O\7zBuf2.obj \
   $O\7zCrc.obj \
   $O\LzmaDec.obj \
   $O\Bra86.obj \
   $O\Bcj2.obj \
+  $O\7zFile.obj \
+  $O\7zStream.obj \
 
 7Z_OBJS = \
   $O\7zAlloc.obj \

@@ -11,7 +11,7 @@ namespace NZip {
 struct CCompressionMethodMode
 {
   CRecordVector<Byte> MethodSequence;
-  // bool MaximizeRatio;
+  UString MatchFinder;
   UInt32 Algo;
   UInt32 NumPasses;
   UInt32 NumFastBytes;

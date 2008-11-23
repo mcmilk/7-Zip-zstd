@@ -39,25 +39,23 @@ static int MyCompareTime(NFileTimeType::EEnum fileTimeType, const FILETIME &time
 }
 
 static const wchar_t *kDuplicateFileNameMessage = L"Duplicate filename:";
+static const wchar_t *kNotCensoredCollisionMessaged = L"Internal file name collision (file on disk, file in archive):";
 
-/*
-static const char *kNotCensoredCollisionMessaged = "Internal file name collision:\n";
-static const char *kSameTimeChangedSizeCollisionMessaged =
-    "Collision between files with same date/time and different sizes:\n";
-*/
+static void ThrowError(const UString &message, const UString &s1, const UString &s2)
+{
+  UString m = message;
+  m += L'\n';
+  m += s1;
+  m += L'\n';
+  m += s2;
+  throw m;
+}
 
 static void TestDuplicateString(const UStringVector &strings, const CIntVector &indices)
 {
   for(int i = 0; i + 1 < indices.Size(); i++)
     if (CompareFileNames(strings[indices[i]], strings[indices[i + 1]]) == 0)
-    {
-      UString message = kDuplicateFileNameMessage;
-      message += L"\n";
-      message += strings[indices[i]];
-      message += L"\n";
-      message += strings[indices[i + 1]];
-      throw message;
-    }
+      ThrowError(kDuplicateFileNameMessage, strings[indices[i]], strings[indices[i + 1]]);
 }
 
 void GetUpdatePairInfoList(
@@ -116,7 +114,7 @@ void GetUpdatePairInfoList(
     else
     {
       if (!ai.Censored)
-        throw 1082022;
+        ThrowError(kNotCensoredCollisionMessaged, dirNames[dirIndex2], ai.Name);
       pair.DirIndex = dirIndex2;
       pair.ArcIndex = arcIndex2;
       switch (MyCompareTime(

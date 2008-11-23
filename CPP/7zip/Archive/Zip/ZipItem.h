@@ -188,8 +188,7 @@ public:
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
   bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; };
   
-  bool IsImplodeBigDictionary() const;
-  bool IsImplodeLiteralsOn() const;
+  bool IsLzmaEOS() const { return (Flags & NFileHeader::NFlags::kLzmaEOS) != 0; }
   
   bool IsDir() const;
   bool IgnoreItem() const { return false; }

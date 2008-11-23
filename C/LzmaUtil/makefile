@@ -13,6 +13,8 @@ C_OBJS = \
   $O\LzFindMt.obj \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
+  $O\7zFile.obj \
+  $O\7zStream.obj \
   $O\Threads.obj \
 
 OBJS = \

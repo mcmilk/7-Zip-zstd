@@ -1,14 +1,5 @@
 /* LzmaDec.h -- LZMA Decoder
-2008-08-05
-Copyright (c) 1999-2008 Igor Pavlov
-You can use any of the following license options:
-  1) GNU Lesser General Public License (GNU LGPL)
-  2) Common Public License (CPL)
-  3) Common Development and Distribution License (CDDL) Version 1.0
-  4) Igor Pavlov, as the author of this code, expressly permits you to
-     statically or dynamically link your code (or bind by name) to this file,
-     while you keep this file unmodified.
-*/
+2008-10-04 : Igor Pavlov : Public domain */
 
 #ifndef __LZMADEC_H
 #define __LZMADEC_H

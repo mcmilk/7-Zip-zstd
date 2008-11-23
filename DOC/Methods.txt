@@ -1,4 +1,4 @@
-7-Zip method IDs (4.58)
+7-Zip method IDs (4.61)
 -----------------------
 
 Each compression or crypto method in 7z has unique binary value (ID).
@@ -8,9 +8,9 @@ If you want to add some new ID, you have two ways:
 1) Write request for allocating IDs to 7-zip developers.
 2) Generate 8-bytes ID:
 
-    7F ZZ ZZ ZZ ZZ ZZ MM MM 
+    3F ZZ ZZ ZZ ZZ ZZ MM MM 
 
-    7F              - Prefix for random IDs (1 byte)
+    3F              - Prefix for random IDs (1 byte)
     ZZ ZZ ZZ ZZ ZZ  - Developer ID (5 bytes). Use real random bytes. 
                       
     MM MM           - Method ID (2 bytes)

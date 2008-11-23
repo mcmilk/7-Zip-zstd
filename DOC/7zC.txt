@@ -1,7 +1,5 @@
-7z ANSI-C Decoder 4.58
+7z ANSI-C Decoder 4.61
 ----------------------
-
-7z ANSI-C Decoder 4.58 Copyright (C) 1999-2008 Igor Pavlov
 
 7z ANSI-C provides 7z/LZMA decoding.
 7z ANSI-C version is simplified version ported from C++ code.
@@ -95,7 +93,7 @@ Steps for using 7z decoder
 Use code at 7zMain.c as example.
 
 1) Declare variables:
-  inStream                 /* implements ISzInStream interface */
+  inStream                 /* implements ILookInStream interface */
   CSzArEx db;              /* 7z archive database structure */
   ISzAlloc allocImp;       /* memory functions for main pool */
   ISzAlloc allocTempImp;   /* memory functions for temporary pool */
@@ -128,7 +126,7 @@ SzArEx_Open function allocates and frees temporary structures by "allocTemp" fun
 
   SZ_RESULT SzAr_Extract(
     CArchiveDatabaseEx *db,
-    ISzInStream *inStream, 
+    ILookInStream *inStream, 
     UInt32 fileIndex,         /* index of file */
     UInt32 *blockIndex,       /* index of solid block */
     Byte **outBuffer,         /* pointer to pointer to output buffer (allocated with allocMain) */
@@ -192,4 +190,3 @@ _SZ_ALLOC_DEBUG   - define it if you want to debug alloc/free operations to stde
 ---
 
 http://www.7-zip.org
-http://www.7-zip.org/support.html

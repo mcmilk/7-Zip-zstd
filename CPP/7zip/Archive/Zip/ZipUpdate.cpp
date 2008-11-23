@@ -1,4 +1,4 @@
-// ZipUpdate.cpp
+lzma// ZipUpdate.cpp
 
 #include "StdAfx.h"
 
@@ -565,6 +565,14 @@ static HRESULT Update2(
         numBZip2Threads = 1;
       numThreads = numThreads / numBZip2Threads;
       options2.NumThreads = numBZip2Threads;
+      if (numThreads <= 1)
+        mtMode = false;
+    }
+    if (method == NFileHeader::NCompressionMethod::kLZMA)
+    {
+      UInt32 numLZMAThreads = (options->Algo > 0 ? 2 : 1);
+      numThreads /= numLZMAThreads;
+      options2.NumThreads = numLZMAThreads;
       if (numThreads <= 1)
         mtMode = false;
     }

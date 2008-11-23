@@ -81,17 +81,24 @@ STDMETHODIMP CRootFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIA
   return S_OK;
 }
 
+typedef BOOL (WINAPI *SHGetSpecialFolderPathWp)(HWND hwnd, LPWSTR pszPath, int csidl, BOOL fCreate);
+typedef BOOL (WINAPI *SHGetSpecialFolderPathAp)(HWND hwnd, LPSTR pszPath, int csidl, BOOL fCreate);
+
 UString GetMyDocsPath()
 {
   UString us;
   WCHAR s[MAX_PATH + 1];
-  if (SHGetSpecialFolderPathW(0, s, CSIDL_PERSONAL, FALSE))
+  SHGetSpecialFolderPathWp getW = (SHGetSpecialFolderPathWp)
+      ::GetProcAddress(::GetModuleHandleA("shell32.dll"), "SHGetSpecialFolderPathW");
+  if (getW && getW(0, s, CSIDL_PERSONAL, FALSE))
     us = s;
   #ifndef _UNICODE
   else
   {
+    SHGetSpecialFolderPathAp getA = (SHGetSpecialFolderPathAp)
+        ::GetProcAddress(::GetModuleHandleA("shell32.dll"), "SHGetSpecialFolderPathA");
     CHAR s2[MAX_PATH + 1];
-    if (SHGetSpecialFolderPathA(0, s2, CSIDL_PERSONAL, FALSE))
+    if (getA && getA(0, s2, CSIDL_PERSONAL, FALSE))
       us = GetUnicodeString(s2);
   }
   #endif

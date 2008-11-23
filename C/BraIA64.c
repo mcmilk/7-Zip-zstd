@@ -1,7 +1,5 @@
-/* BraIA64.c -- converter for IA-64 code
-2008-08-05
-Copyright (c) 1999-2008 Igor Pavlov
-Read Bra.h for license options */
+/* BraIA64.c -- Converter for IA-64 code
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include "Bra.h"
 

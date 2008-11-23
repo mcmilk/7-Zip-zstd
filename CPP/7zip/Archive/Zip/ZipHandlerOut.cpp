@@ -25,16 +25,28 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-static const UInt32 kDeflateAlgoX1 = 0;
-static const UInt32 kDeflateAlgoX5 = 1;
+static const UInt32 kLzAlgoX1 = 0;
+static const UInt32 kLzAlgoX5 = 1;
 
 static const UInt32 kDeflateNumPassesX1  = 1;
 static const UInt32 kDeflateNumPassesX7  = 3;
 static const UInt32 kDeflateNumPassesX9  = 10;
 
-static const UInt32 kNumFastBytesX1 = 32;
-static const UInt32 kNumFastBytesX7 = 64;
-static const UInt32 kNumFastBytesX9 = 128;
+static const UInt32 kDeflateNumFastBytesX1 = 32;
+static const UInt32 kDeflateNumFastBytesX7 = 64;
+static const UInt32 kDeflateNumFastBytesX9 = 128;
+
+static const wchar_t *kLzmaMatchFinderX1 = L"HC4";
+static const wchar_t *kLzmaMatchFinderX5 = L"BT4";
+
+static const UInt32 kLzmaNumFastBytesX1 = 32;
+static const UInt32 kLzmaNumFastBytesX7 = 64;
+
+static const UInt32 kLzmaDicSizeX1 = 1 << 16;
+static const UInt32 kLzmaDicSizeX3 = 1 << 20;
+static const UInt32 kLzmaDicSizeX5 = 1 << 24;
+static const UInt32 kLzmaDicSizeX7 = 1 << 25;
+static const UInt32 kLzmaDicSizeX9 = 1 << 26;
 
 static const UInt32 kBZip2NumPassesX1 = 1;
 static const UInt32 kBZip2NumPassesX7 = 2;
@@ -173,24 +185,20 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       {
         bool defaultCharWasUsed;
         ui.Name = UnicodeStringToMultiByte(name, CP_OEMCP, '_', defaultCharWasUsed);
-        tryUtf8 = (!m_ForseLocal && defaultCharWasUsed);
+        tryUtf8 = (!m_ForseLocal && (defaultCharWasUsed ||
+          MultiByteToUnicodeString(ui.Name, CP_OEMCP) != name));
       }
 
       if (tryUtf8)
       {
-        bool needUtf = false;
-        for (int i = 0; i < name.Length(); i++)
-          if ((unsigned)name[i] >= 0x80)
-          {
-            needUtf = true;
-            break;
-          }
-        ui.IsUtf8 = needUtf;
+        int i;
+        for (i = 0; i < name.Length() && (unsigned)name[i] < 0x80; i++);
+        ui.IsUtf8 = (i != name.Length());
         if (!ConvertUnicodeToUTF8(name, ui.Name))
           return E_INVALIDARG;
       }
 
-      if (ui.Name.Length() > 0xFFFF)
+      if (ui.Name.Length() >= (1 << 16))
         return E_INVALIDARG;
 
       ui.IndexInClient = i;
@@ -272,6 +280,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
   bool isDeflate = (mainMethod == NFileHeader::NCompressionMethod::kDeflated) ||
       (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
+  bool isLZMA = (mainMethod == NFileHeader::NCompressionMethod::kLZMA);
+  bool isLz = (isLZMA || isDeflate);
   bool isBZip2 = (mainMethod == NFileHeader::NCompressionMethod::kBZip2);
   options.NumPasses = m_NumPasses;
   options.DicSize = m_DicSize;
@@ -282,20 +292,41 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   #ifdef COMPRESS_MT
   options.NumThreads = _numThreads;
   #endif
-  if (isDeflate)
+  if (isLz)
   {
-    if (options.NumPasses == 0xFFFFFFFF)
-      options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :
-                          (level >= 7 ? kDeflateNumPassesX7 :
-                                        kDeflateNumPassesX1));
-    if (options.NumFastBytes == 0xFFFFFFFF)
-      options.NumFastBytes = (level >= 9 ? kNumFastBytesX9 :
-                             (level >= 7 ? kNumFastBytesX7 :
-                                           kNumFastBytesX1));
+    if (isDeflate)
+    {
+      if (options.NumPasses == 0xFFFFFFFF)
+        options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :
+                            (level >= 7 ? kDeflateNumPassesX7 :
+                                          kDeflateNumPassesX1));
+      if (options.NumFastBytes == 0xFFFFFFFF)
+        options.NumFastBytes = (level >= 9 ? kDeflateNumFastBytesX9 :
+                               (level >= 7 ? kDeflateNumFastBytesX7 :
+                                             kDeflateNumFastBytesX1));
+    }
+    else if (isLZMA)
+    {
+      if (options.DicSize == 0xFFFFFFFF)
+        options.DicSize =
+          (level >= 9 ? kLzmaDicSizeX9 :
+          (level >= 7 ? kLzmaDicSizeX7 :
+          (level >= 5 ? kLzmaDicSizeX5 :
+          (level >= 3 ? kLzmaDicSizeX3 :
+                        kLzmaDicSizeX1))));
+
+      if (options.NumFastBytes == 0xFFFFFFFF)
+        options.NumFastBytes = (level >= 7 ? kLzmaNumFastBytesX7 :
+                                             kLzmaNumFastBytesX1);
+
+      options.MatchFinder =
+        (level >= 5 ? kLzmaMatchFinderX5 :
+                      kLzmaMatchFinderX1);
+    }
+
     if (options.Algo == 0xFFFFFFFF)
-        options.Algo =
-                    (level >= 5 ? kDeflateAlgoX5 :
-                                  kDeflateAlgoX1);
+        options.Algo = (level >= 5 ? kLzAlgoX5 :
+                                     kLzAlgoX1);
   }
   if (isBZip2)
   {
@@ -343,18 +374,14 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if (prop.vt == VT_BSTR)
       {
-        UString valueString = prop.bstrVal;
-        valueString.MakeUpper();
-        if (valueString == L"COPY")
-          m_MainMethod = NFileHeader::NCompressionMethod::kStored;
-        else if (valueString == L"DEFLATE")
-          m_MainMethod = NFileHeader::NCompressionMethod::kDeflated;
-        else if (valueString == L"DEFLATE64")
-          m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
-        else if (valueString == L"BZIP2")
-          m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
-        else
-          return E_INVALIDARG;
+        UString m = prop.bstrVal;
+        m.MakeUpper();
+        if (m == L"COPY") m_MainMethod = NFileHeader::NCompressionMethod::kStored;
+        else if (m == L"DEFLATE") m_MainMethod = NFileHeader::NCompressionMethod::kDeflated;
+        else if (m == L"DEFLATE64") m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
+        else if (m == L"BZIP2") m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
+        else if (m == L"LZMA") m_MainMethod = NFileHeader::NCompressionMethod::kLZMA;
+        else return E_INVALIDARG;
       }
       else if (prop.vt == VT_UI4)
       {
@@ -364,6 +391,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           case NFileHeader::NCompressionMethod::kDeflated:
           case NFileHeader::NCompressionMethod::kDeflated64:
           case NFileHeader::NCompressionMethod::kBZip2:
+          case NFileHeader::NCompressionMethod::kLZMA:
             m_MainMethod = (Byte)prop.ulVal;
             break;
           default:
@@ -414,7 +442,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     }
     else if (name.Left(2) == L"FB")
     {
-      UInt32 num = kNumFastBytesX9;
+      UInt32 num = kDeflateNumFastBytesX9;
       RINOK(ParsePropValue(name.Mid(2), prop, num));
       m_NumFastBytes = num;
     }
@@ -433,25 +461,25 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     }
     else if (name.Left(1) == L"A")
     {
-      UInt32 num = kDeflateAlgoX5;
+      UInt32 num = kLzAlgoX5;
       RINOK(ParsePropValue(name.Mid(1), prop, num));
       m_Algo = num;
     }
     else if (name.CompareNoCase(L"TC") == 0)
-      return SetBoolProperty(m_WriteNtfsTimeExtra, prop);
+    {
+      RINOK(SetBoolProperty(m_WriteNtfsTimeExtra, prop));
+    }
     else if (name.CompareNoCase(L"CL") == 0)
     {
       RINOK(SetBoolProperty(m_ForseLocal, prop));
       if (m_ForseLocal)
         m_ForseUtf8 = false;
-      return S_OK;
     }
     else if (name.CompareNoCase(L"CU") == 0)
     {
       RINOK(SetBoolProperty(m_ForseUtf8, prop));
       if (m_ForseUtf8)
         m_ForseLocal = false;
-      return S_OK;
     }
     else
       return E_INVALIDARG;

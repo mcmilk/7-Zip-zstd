@@ -1,7 +1,5 @@
 /* Bcj2.h -- Converter for x86 code (BCJ2)
-2008-08-05
-Copyright (c) 1999-2008 Igor Pavlov
-Read Bra.h for license options */
+2008-10-04 : Igor Pavlov : Public domain */
 
 #ifndef __BCJ2_H
 #define __BCJ2_H

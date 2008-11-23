@@ -1,8 +1,5 @@
 /* 7zExtract.h -- Extracting from 7z archive
-2008-08-05
-Igor Pavlov
-Copyright (c) 1999-2008 Igor Pavlov
-Read 7zItem.h for license options */
+2008-11-23 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_EXTRACT_H
 #define __7Z_EXTRACT_H
@@ -31,7 +28,7 @@ Read 7zItem.h for license options */
 
 SRes SzAr_Extract(
     const CSzArEx *db,
-    ISzInStream *inStream,
+    ILookInStream *inStream,
     UInt32 fileIndex,         /* index of file */
     UInt32 *blockIndex,       /* index of solid block */
     Byte **outBuffer,         /* pointer to pointer to output buffer (allocated with allocMain) */

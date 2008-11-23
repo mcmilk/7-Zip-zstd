@@ -1,12 +1,8 @@
 /* Threads.h -- multithreading library
-2008-04-11
-Igor Pavlov
-Public domain */
+2008-11-22 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_THRESDS_H
 #define __7Z_THRESDS_H
-
-#include <windows.h>
 
 #include "Types.h"
 
@@ -21,8 +17,6 @@ typedef struct _CThread
 typedef unsigned THREAD_FUNC_RET_TYPE;
 #define THREAD_FUNC_CALL_TYPE MY_STD_CALL
 #define THREAD_FUNC_DECL THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE
-
-typedef DWORD WRes;
 
 WRes Thread_Create(CThread *thread, THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE *startAddress)(void *), LPVOID parameter);
 WRes Thread_Wait(CThread *thread);

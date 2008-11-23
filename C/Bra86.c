@@ -1,7 +1,5 @@
-/* Bra86.c -- converter for x86 code (BCJ)
-2008-08-17
-Copyright (c) 1999-2008 Igor Pavlov
-Read Bra.h for license options */
+/* Bra86.c -- Converter for x86 code (BCJ)
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include "Bra.h"
 

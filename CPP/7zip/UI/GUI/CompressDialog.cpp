@@ -146,7 +146,8 @@ static EMethodID g_ZipMethods[] =
 {
   kDeflate,
   kDeflate64,
-  kBZip2
+  kBZip2,
+  kLZMA
 };
 
 static EMethodID g_GZipMethods[] =
@@ -173,6 +174,8 @@ struct CFormatInfo
   bool EncryptFileNames;
 };
 
+#define METHODS_PAIR(x) x, MY_SIZE_OF_ARRAY(x)
+
 static const CFormatInfo g_Formats[] =
 {
   {
@@ -184,26 +187,25 @@ static const CFormatInfo g_Formats[] =
   {
     k7zFormat,
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    g_7zMethods, MY_SIZE_OF_ARRAY(g_7zMethods),
+    METHODS_PAIR(g_7zMethods),
     true, true, true, true, true, true
   },
   {
     L"Zip",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    g_ZipMethods, MY_SIZE_OF_ARRAY(g_ZipMethods) ,
+    METHODS_PAIR(g_ZipMethods),
     false, false, true, false, true, false
   },
   {
     L"GZip",
     (1 << 1) | (1 << 5) | (1 << 7) | (1 << 9),
-    g_GZipMethods, MY_SIZE_OF_ARRAY(g_GZipMethods),
+    METHODS_PAIR(g_GZipMethods),
     false, false, false, false, false, false
   },
   {
     L"BZip2",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    g_BZip2Methods,
-    MY_SIZE_OF_ARRAY(g_BZip2Methods),
+    METHODS_PAIR(g_BZip2Methods),
     false, false, true, false, false
   },
   {
@@ -1289,8 +1291,12 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dictionary, UInt64 &decompressMemo
   UInt32 numThreads = GetNumThreads2();
   if (IsZipFormat())
   {
-    if (numThreads > 1)
-      size += (UInt64)numThreads << 25;
+    UInt32 numSubThreads = 1;
+    if (GetMethodID() == kLZMA && numThreads > 1 && level >= 5)
+      numSubThreads = 2;
+    UInt32 numMainThreads = numThreads / numSubThreads;
+    if (numMainThreads > 1)
+      size += (UInt64)numMainThreads << 25;
   }
   switch (GetMethodID())
   {
@@ -1306,13 +1312,19 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dictionary, UInt64 &decompressMemo
       if (hs > (1 << 24))
         hs >>= 1;
       hs++;
-      size += hs * 4;
-      size += (UInt64)dictionary * 11 / 2;
+      UInt64 size1 = (UInt64)hs * 4;
+      size1 += (UInt64)dictionary * 11 / 2;
       if (level >= 5)
-        size += dictionary * 4;
-      size += (2 << 20);
+        size1 += dictionary * 4;
+      size1 += (2 << 20);
+
+      UInt32 numThreads1 = 1;
       if (numThreads > 1 && level >= 5)
-        size += (2 << 20) + (4 << 20);
+      {
+        size1 += (2 << 20) + (4 << 20);
+        numThreads1 = 2;
+      }
+      size += size1 * numThreads / numThreads1;
 
       decompressMemory = dictionary + (2 << 20);
       return size;

@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 4
-!define VERSION_MINOR 59
+!define VERSION_MINOR 61
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -240,6 +240,7 @@ Section
   File pt-br.txt
   File ro.txt
   File ru.txt
+  File si.txt
   File sk.txt
   File sl.txt
   File sq.txt
@@ -318,6 +319,8 @@ Section
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoRepair" 1
   WriteUninstaller $INSTDIR\Uninstall.exe
+
+  DeleteRegValue HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "InprocServer32"
 
   !ifdef WIN64
   ExecWait 'regsvr32 /s "$INSTDIR\7-zip.dll"'
@@ -426,6 +429,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\pt-br.txt
   Delete $INSTDIR\Lang\ro.txt
   Delete $INSTDIR\Lang\ru.txt
+  Delete $INSTDIR\Lang\si.txt
   Delete $INSTDIR\Lang\sk.txt
   Delete $INSTDIR\Lang\sl.txt
   Delete $INSTDIR\Lang\sq.txt

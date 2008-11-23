@@ -1,7 +1,5 @@
-LZMA SDK 4.60 beta
+LZMA SDK 4.61 beta
 ------------------
-
-LZMA SDK   Copyright (C) 1999-2008 Igor Pavlov
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
 and tools you need to develop applications that use LZMA compression.
@@ -20,62 +18,7 @@ decompressing.
 LICENSE
 -------
 
-LZMA SDK is available under any of the following licenses:
-
-1) GNU Lesser General Public License (GNU LGPL)
-2) Common Public License (CPL)
-3) Common Development and Distribution License (CDDL) Version 1.0 
-4) Simplified license for unmodified code (read SPECIAL EXCEPTION) 
-
-It means that you can select one of these options and follow rules of that license.
-
-
-1,2,3) GNU LGPL, CPL and CDDL licenses are classified as 
- - "Free software licenses" at http://www.gnu.org/ 
- - "OSI-approved" at http://www.opensource.org/
-
-4) Simplified license for unmodified code (read SPECIAL EXCEPTION) 
-
-Igor Pavlov, as the author of this code, expressly permits you 
-to statically or dynamically link your code (or bind by name) 
-to the files from LZMA SDK. 
-
-SPECIAL EXCEPTION allows you to use LZMA SDK in applications with closed code, 
-while you keep LZMA SDK code unmodified.
-
-
-SPECIAL EXCEPTION #2: Igor Pavlov, as the author of this code, expressly permits 
-you to use this code under the same terms and conditions contained in the License 
-Agreement you have for any previous version of LZMA SDK developed by Igor Pavlov.
-
-SPECIAL EXCEPTION #2 allows owners of proprietary licenses to use latest version 
-of LZMA SDK as update for previous versions.
-
-Some files in LZMA SDK are placed in public domain.
-Some of these "public domain" files:
-C\Types.h,
-C\LzmaLib.*
-C\LzmaLibUtil.*
-LzmaAlone.cpp, 
-LzmaAlone.cs, 
-LzmaAlone.java
-
-So you can change them as you want and use "SPECIAL EXCEPTION" 
-for other unmodified files. For example, you can edit C\Types.h to solve some 
-compatibility problems with your compiler.
-
-
------
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-You should have received a copy of the Common Public License
-along with this library.
-
-You should have received a copy of the Common Development and Distribution 
-License Version 1.0 along with this library.
+LZMA SDK is written and placed in the public domain by Igor Pavlov.
 
 
 LZMA SDK Contents
@@ -107,9 +50,6 @@ lzma.txt     - LZMA SDK description (this file)
 methods.txt  - Compression method IDs for .7z
 lzma.exe     - Compiled file->file LZMA encoder/decoder for Windows
 history.txt  - history of the LZMA SDK
-LGPL.txt     - GNU Lesser General Public License
-CPL.html     - Common Public License
-CDDL.html    - Common Development and Distribution License (CDDL)
 
 
 Source code structure

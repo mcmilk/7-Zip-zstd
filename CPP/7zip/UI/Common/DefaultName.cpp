@@ -4,8 +4,6 @@
 
 #include "DefaultName.h"
 
-static const wchar_t *kEmptyFileAlias = L"[Content]";
-
 static UString GetDefaultName3(const UString &fileName,
     const UString &extension, const UString &addSubExtension)
 {
@@ -21,7 +19,11 @@ static UString GetDefaultName3(const UString &fileName,
   int dotPos = fileName.ReverseFind(L'.');
   if (dotPos > 0)
     return fileName.Left(dotPos) + addSubExtension;
-  return kEmptyFileAlias;
+
+  if (addSubExtension.IsEmpty())
+    return fileName + L"~";
+  else
+    return fileName + addSubExtension;
 }
 
 UString GetDefaultName2(const UString &fileName,

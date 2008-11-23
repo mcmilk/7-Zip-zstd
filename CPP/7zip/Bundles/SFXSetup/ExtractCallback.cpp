@@ -106,8 +106,6 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
   }
   _filePath = fullPath;
 
-  // m_CurrentFilePath = GetSystemString(fullPath, _codePage);
-  
   if (askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {
     NCOM::CPropVariant prop;
@@ -135,14 +133,9 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
     switch(prop.vt)
     {
-      case VT_EMPTY:
-        _processedFileInfo.MTime = _defaultMTime;
-        break;
-      case VT_FILETIME:
-        _processedFileInfo.MTime = prop.filetime;
-        break;
-      default:
-        return E_FAIL;
+      case VT_EMPTY: _processedFileInfo.MTime = _defaultMTime; break;
+      case VT_FILETIME: _processedFileInfo.MTime = prop.filetime; break;
+      default: return E_FAIL;
     }
 
     UStringVector pathParts;
@@ -168,6 +161,8 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
 
       if (isAnti)
         NDirectory::MyRemoveDirectory(_diskFilePath);
+      else
+        NDirectory::SetDirTime(_diskFilePath, NULL, NULL, &_processedFileInfo.MTime);
       return S_OK;
     }
 
@@ -204,13 +199,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
 
 STDMETHODIMP CExtractCallbackImp::PrepareOperation(Int32 askExtractMode)
 {
-  _extractMode = false;
-  switch (askExtractMode)
-  {
-    case NArchive::NExtract::NAskMode::kExtract:
-      _extractMode = true;
-      break;
-  };
+  _extractMode = (askExtractMode == NArchive::NExtract::NAskMode::kExtract);
   return S_OK;
 }
 

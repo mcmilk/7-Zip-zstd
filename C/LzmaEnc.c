@@ -1,7 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2008-08-17
-Copyright (c) 1999-2008 Igor Pavlov
-Read LzmaEnc.h for license options */
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -2092,6 +2090,8 @@ void LzmaEnc_Finish(CLzmaEncHandle pp)
   CLzmaEnc *p = (CLzmaEnc *)pp;
   if (p->mtMode)
     MatchFinderMt_ReleaseStream(&p->matchFinderMt);
+  #else
+  pp = pp;
   #endif
 }
 
@@ -2154,7 +2154,7 @@ SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, Bool reInit,
   RangeEnc_Init(&p->rc);
   p->rc.outStream = &outStream.funcTable;
 
-  res = LzmaEnc_CodeOneBlock(pp, True, desiredPackSize, *unpackSize);
+  res = LzmaEnc_CodeOneBlock(p, True, desiredPackSize, *unpackSize);
   
   *unpackSize = (UInt32)(p->nowPos64 - nowPos64);
   *destLen -= outStream.rem;
@@ -2181,7 +2181,7 @@ SRes LzmaEnc_Encode(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *i
 
   for (;;)
   {
-    res = LzmaEnc_CodeOneBlock(pp, False, 0, 0);
+    res = LzmaEnc_CodeOneBlock(p, False, 0, 0);
     if (res != SZ_OK || p->finished != 0)
       break;
     if (progress != 0)

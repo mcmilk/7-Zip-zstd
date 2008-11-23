@@ -1,7 +1,5 @@
 /* 7zHeader.h -- 7z Headers
-2008-07-14
-Copyright (c) 1999-2008 Igor Pavlov
-Read LzmaDec.h for license options */
+2008-10-04 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_HEADER_H
 #define __7Z_HEADER_H

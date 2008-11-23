@@ -1,7 +1,5 @@
-/* LzmaLibExports.c  -- LZMA library DLL Entry point
-2008-03-26
-Igor Pavlov
-Public domain */
+/* LzmaLibExports.c -- LZMA library DLL Entry point
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include <windows.h>
 

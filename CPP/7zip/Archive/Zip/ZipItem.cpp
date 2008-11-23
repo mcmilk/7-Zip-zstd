@@ -51,20 +51,6 @@ bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
   return false;
 }
 
-bool CLocalItem::IsImplodeBigDictionary() const
-{
-  if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
-    throw 12312212;
-  return (Flags & NFileHeader::NFlags::kImplodeDictionarySizeMask) != 0;
-}
-
-bool CLocalItem::IsImplodeLiteralsOn() const
-{
-  if (CompressionMethod != NFileHeader::NCompressionMethod::kImploded)
-    throw 12312213;
-  return (Flags & NFileHeader::NFlags::kImplodeLiteralsOnMask) != 0;
-}
-
 bool CLocalItem::IsDir() const
 {
   return NItemName::HasTailSlash(Name, GetCodePage());

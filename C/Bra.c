@@ -1,7 +1,5 @@
-/* Bra.c -- converters for RISC  code
-2008-08-05
-Copyright (c) 1999-2008 Igor Pavlov
-Read Bra.h for license options */
+/* Bra.c -- Converters for RISC code
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include "Bra.h"
 

@@ -86,6 +86,22 @@ LINK32=link.exe
 # Name "LzmaUtil - Win32 Debug"
 # Begin Source File
 
+SOURCE=..\7zFile.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\7zFile.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\7zStream.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\7zVersion.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Alloc.c
 # End Source File
 # Begin Source File

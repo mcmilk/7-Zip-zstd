@@ -1,7 +1,5 @@
-/* LzFind.c  -- Match finder for LZ algorithms
-2008-08-17
-Copyright (c) 1999-2008 Igor Pavlov
-Read LzFind.h for license options */
+/* LzFind.c -- Match finder for LZ algorithms
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include <string.h>
 

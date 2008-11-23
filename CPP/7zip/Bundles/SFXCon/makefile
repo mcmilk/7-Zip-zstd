@@ -29,6 +29,7 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\DLL.obj \
   $O\Error.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \

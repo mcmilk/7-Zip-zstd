@@ -1,7 +1,5 @@
-/* LzHash.h  -- HASH functions for LZ algorithms
-2008-03-26
-Copyright (c) 1999-2008 Igor Pavlov
-Read LzFind.h for license options */
+/* LzHash.h -- HASH functions for LZ algorithms
+2008-10-04 : Igor Pavlov : Public domain */
 
 #ifndef __LZHASH_H
 #define __LZHASH_H

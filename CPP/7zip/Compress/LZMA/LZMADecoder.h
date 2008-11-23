@@ -65,6 +65,8 @@ public:
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
 
+  bool FinishStream;
+
   CDecoder();
   virtual ~CDecoder();
 

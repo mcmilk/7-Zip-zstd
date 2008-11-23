@@ -69,6 +69,10 @@ namespace NFileHeader
       kPKImploding = 10,
       
       kBZip2 = 12,
+      kLZMA = 14,
+      kTerse = 18,
+      kLz77 = 19,
+      kJpeg = 0x60,
       kWavPack = 0x61,
       kPPMd = 0x62,
       kWzAES = 0x63
@@ -170,6 +174,7 @@ namespace NFileHeader
   namespace NFlags
   {
     const int kEncrypted = 1 << 0;
+    const int kLzmaEOS = 1 << 1;
     const int kDescriptorUsedMask = 1 << 3;
     const int kStrongEncrypted = 1 << 6;
     const int kUtf8 = 1 << 11;

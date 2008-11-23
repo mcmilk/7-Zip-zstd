@@ -264,6 +264,9 @@ struct CSection
   void Parse(const Byte *p);
 };
 
+static bool operator <(const CSection &a1, const CSection &a2) { return (a1.Pa < a2.Pa); }
+static bool operator ==(const CSection &a1, const CSection &a2) { return (a1.Pa == a2.Pa); }
+
 static AString GetName(const Byte *name)
 {
   const int kNameSize = 8;
@@ -726,6 +729,34 @@ HRESULT CHandler::Open2(IInStream *stream)
   if (fileSize > _totalSize)
     return S_FALSE;
   _totalSizeLimited = (_totalSize < fileSize) ? _totalSize : (UInt32)fileSize;
+
+  {
+    CObjectVector<CSection> sections = _sections;
+    sections.Sort();
+    UInt32 limit = (1 << 12);
+    int num = 0;
+    for (int i = 0; i < sections.Size(); i++)
+    {
+      const CSection &s = sections[i];
+      if (s.Pa > limit)
+      {
+        CSection s2;
+        s2.Pa = s2.Va = limit;
+        s2.PSize = s2.VSize = s.Pa - limit;
+        char sz[32];
+        ConvertUInt64ToString(++num, sz);
+        s2.Name = "[data-";
+        s2.Name += sz;
+        s2.Name += "]";
+        _sections.Add(s2);
+      }
+      UInt32 next = s.Pa + s.PSize;
+      if (next < limit)
+        break;
+      limit = next;
+    }
+  }
+
   return S_OK;
 }
 

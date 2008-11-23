@@ -1,8 +1,5 @@
 /*  7zHeader.c -- 7z Headers
-2008-04-09
-Igor Pavlov
-Copyright (c) 1999-2008 Igor Pavlov
-Read 7zHeader.h for license options */
+2008-10-04 : Igor Pavlov : Public domain */
 
 #include "7zHeader.h"
 

@@ -1,7 +1,5 @@
-/* LzFindMt.h  -- multithreaded Match finder for LZ algorithms
-2008-08-05
-Copyright (c) 1999-2008 Igor Pavlov
-Read LzFind.h for license options */
+/* LzFindMt.h -- multithreaded Match finder for LZ algorithms
+2008-10-04 : Igor Pavlov : Public domain */
 
 #ifndef __LZFINDMT_H
 #define __LZFINDMT_H

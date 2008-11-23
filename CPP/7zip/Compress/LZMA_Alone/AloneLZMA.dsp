@@ -179,42 +179,6 @@ SOURCE=..\LZMA\LZMAEncoder.cpp
 SOURCE=..\LZMA\LZMAEncoder.h
 # End Source File
 # End Group
-# Begin Group "RangeCoder"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\RangeCoder\RangeCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\RangeCoder\RangeCoderBit.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\RangeCoder\RangeCoderBit.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\RangeCoder\RangeCoderBitTree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\RangeCoder\RangeCoderOpt.h
-# End Source File
-# End Group
-# Begin Group "LZ"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\LZ\LZOutWindow.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZ\LZOutWindow.h
-# End Source File
-# End Group
 # End Group
 # Begin Group "Windows"
 

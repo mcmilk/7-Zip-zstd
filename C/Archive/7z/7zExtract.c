@@ -1,16 +1,13 @@
 /* 7zExtract.c -- Extracting from 7z archive
-2008-08-17
-Igor Pavlov
-Copyright (c) 1999-2008 Igor Pavlov
-Read 7zExtract.h for license options */
+2008-11-23 : Igor Pavlov : Public domain */
 
-#include "7zExtract.h"
-#include "7zDecode.h"
 #include "../../7zCrc.h"
+#include "7zDecode.h"
+#include "7zExtract.h"
 
 SRes SzAr_Extract(
     const CSzArEx *p,
-    ISzInStream *inStream,
+    ILookInStream *inStream,
     UInt32 fileIndex,
     UInt32 *blockIndex,
     Byte **outBuffer,
@@ -36,9 +33,9 @@ SRes SzAr_Extract(
   if (*outBuffer == 0 || *blockIndex != folderIndex)
   {
     CSzFolder *folder = p->db.Folders + folderIndex;
-    CFileSize unpackSizeSpec = SzFolder_GetUnpackSize(folder);
+    UInt64 unpackSizeSpec = SzFolder_GetUnpackSize(folder);
     size_t unpackSize = (size_t)unpackSizeSpec;
-    CFileSize startOffset = SzArEx_GetFolderStreamPos(p, folderIndex, 0);
+    UInt64 startOffset = SzArEx_GetFolderStreamPos(p, folderIndex, 0);
 
     if (unpackSize != unpackSizeSpec)
       return SZ_ERROR_MEM;
@@ -46,7 +43,7 @@ SRes SzAr_Extract(
     IAlloc_Free(allocMain, *outBuffer);
     *outBuffer = 0;
     
-    RINOK(inStream->Seek(inStream, startOffset, SZ_SEEK_SET));
+    RINOK(LookInStream_SeekTo(inStream, startOffset));
     
     if (res == SZ_OK)
     {

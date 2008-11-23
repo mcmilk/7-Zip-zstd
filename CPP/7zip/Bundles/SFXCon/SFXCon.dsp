@@ -381,6 +381,14 @@ SOURCE=..\..\Crypto\Hash\RotateDefs.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Windows\DLL.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\DLL.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Error.cpp
 # End Source File
 # Begin Source File
