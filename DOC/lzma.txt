@@ -1,5 +1,5 @@
-LZMA SDK 4.61 beta
-------------------
+LZMA SDK 4.62
+-------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
 and tools you need to develop applications that use LZMA compression.

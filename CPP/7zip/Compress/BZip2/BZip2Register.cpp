@@ -6,7 +6,7 @@
 
 #include "BZip2Decoder.h"
 static void *CreateCodec() { return (void *)(ICompressCoder *)(new NCompress::NBZip2::CDecoder); }
-#if !defined(EXTRACT_ONLY) && !defined(DEFLATE_EXTRACT_ONLY)
+#if !defined(EXTRACT_ONLY) && !defined(BZIP2_EXTRACT_ONLY)
 #include "BZip2Encoder.h"
 static void *CreateCodecOut() { return (void *)(ICompressCoder *)(new NCompress::NBZip2::CEncoder);  }
 #else

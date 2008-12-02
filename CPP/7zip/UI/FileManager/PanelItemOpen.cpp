@@ -247,7 +247,7 @@ static HANDLE StartEditApplication(const UString &path, HWND window)
 typedef BOOL (WINAPI * ShellExecuteExWP)(LPSHELLEXECUTEINFOW lpExecInfo);
 #endif
 
-static HANDLE StartApplication(const UString &path, HWND window)
+static HANDLE StartApplication(const UString &dir, const UString &path, HWND window)
 {
   UINT32 result;
   HANDLE hProcess;
@@ -261,7 +261,7 @@ static HANDLE StartApplication(const UString &path, HWND window)
     execInfo.lpVerb = NULL;
     execInfo.lpFile = path;
     execInfo.lpParameters = NULL;
-    execInfo.lpDirectory = NULL;
+    execInfo.lpDirectory = dir.IsEmpty() ? NULL : (LPCWSTR)dir;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ShellExecuteExWP shellExecuteExW = (ShellExecuteExWP)
@@ -281,9 +281,10 @@ static HANDLE StartApplication(const UString &path, HWND window)
     execInfo.hwnd = NULL;
     execInfo.lpVerb = NULL;
     const CSysString sysPath = GetSystemString(path);
+    const CSysString sysDir = GetSystemString(dir);
     execInfo.lpFile = sysPath;
     execInfo.lpParameters = NULL;
-    execInfo.lpDirectory = NULL;
+    execInfo.lpDirectory = sysDir.IsEmpty() ? NULL : (LPCTSTR)sysDir;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ::ShellExecuteEx(&execInfo);
@@ -318,7 +319,7 @@ void CPanel::EditItem(int index)
 
 void CPanel::OpenFolderExternal(int index)
 {
-  HANDLE hProcess = StartApplication(GetFsPath() + GetItemRelPath(index), (HWND)*this);
+  HANDLE hProcess = StartApplication(GetFsPath(), GetFsPath() + GetItemRelPath(index), (HWND)*this);
   if (hProcess != 0)
     ::CloseHandle(hProcess);
 }
@@ -354,7 +355,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   {
     // SetCurrentDirectory opens HANDLE to folder!!!
     // NDirectory::MySetCurrentDirectory(_currentFolderPrefix);
-    HANDLE hProcess = StartApplication(fullPath, (HWND)*this);
+    HANDLE hProcess = StartApplication(_currentFolderPrefix, fullPath, (HWND)*this);
     if (hProcess != 0)
       ::CloseHandle(hProcess);
   }
@@ -548,7 +549,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (editMode)
     hProcess = StartEditApplication(tempFilePath, (HWND)*this);
   else
-    hProcess = StartApplication(tempFilePath, (HWND)*this);
+    hProcess = StartApplication(tempDirNorm, tempFilePath, (HWND)*this);
 
   if (hProcess == 0)
     return;

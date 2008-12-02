@@ -1,4 +1,4 @@
-7z ANSI-C Decoder 4.61
+7z ANSI-C Decoder 4.62
 ----------------------
 
 7z ANSI-C provides 7z/LZMA decoding.
@@ -12,8 +12,8 @@ compression ratio and very fast decompression.
 LICENSE
 -------
 
-Read lzma.txt for information about license.
-
+7z ANSI-C Decoder is part of the LZMA SDK.
+LZMA SDK is written and placed in the public domain by Igor Pavlov.
 
 Files
 ---------------------
@@ -190,3 +190,5 @@ _SZ_ALLOC_DEBUG   - define it if you want to debug alloc/free operations to stde
 ---
 
 http://www.7-zip.org
+http://www.7-zip.org/sdk.html
+http://www.7-zip.org/support.html

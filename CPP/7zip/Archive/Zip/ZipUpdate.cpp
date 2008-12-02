@@ -1,4 +1,4 @@
-lzma// ZipUpdate.cpp
+// ZipUpdate.cpp
 
 #include "StdAfx.h"
 
