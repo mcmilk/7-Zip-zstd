@@ -271,6 +271,8 @@ public:
   int _xSize;
 
   bool _flatMode;
+  bool _flatModeForDisk;
+  bool _flatModeForArc;
 
   bool _dontShowMode;
 
@@ -336,6 +338,8 @@ public:
       _selectionIsDefined(false),
       _ListViewMode(3),
       _flatMode(false),
+      _flatModeForDisk(false),
+      _flatModeForArc(false),
       _xSize(300),
       _mySelectMode(false),
       _enableItemChangeNotify(true),

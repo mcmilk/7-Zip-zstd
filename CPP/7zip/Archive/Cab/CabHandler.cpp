@@ -2,26 +2,26 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-#include "Common/Defs.h"
-#include "Common/UTFConvert.h"
 #include "Common/ComTry.h"
+#include "Common/Defs.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
+#include "Common/UTFConvert.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
-#include "CabHandler.h"
-#include "CabBlockInStream.h"
-
 #include "../../Common/ProgressUtils.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Compress/Deflate/DeflateDecoder.h"
-#include "../../Compress/Lzx/LzxDecoder.h"
-#include "../../Compress/Quantum/QuantumDecoder.h"
+#include "../../Compress/CopyCoder.h"
+#include "../../Compress/DeflateDecoder.h"
+#include "../../Compress/LzxDecoder.h"
+#include "../../Compress/QuantumDecoder.h"
 
 #include "../Common/ItemNameUtils.h"
+
+#include "CabBlockInStream.h"
+#include "CabHandler.h"
 
 using namespace NWindows;
 

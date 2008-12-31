@@ -756,6 +756,10 @@ void CPanel::SetListViewMode(UInt32 index)
 void CPanel::ChangeFlatMode()
 {
   _flatMode = !_flatMode;
+  if (_parentFolders.Size() > 0)
+    _flatModeForArc = _flatMode;
+  else
+    _flatModeForDisk = _flatMode;
   RefreshListCtrlSaveFocused();
 }
 

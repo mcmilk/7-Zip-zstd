@@ -160,23 +160,19 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\LZMA\LZMA.h
+SOURCE=..\LzmaDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\LZMA\LZMADecoder.cpp
+SOURCE=..\LzmaDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\LZMA\LZMADecoder.h
+SOURCE=..\LzmaEncoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\LZMA\LZMAEncoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\LZMA\LZMAEncoder.h
+SOURCE=..\LzmaEncoder.h
 # End Source File
 # End Group
 # End Group

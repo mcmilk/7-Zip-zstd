@@ -10,8 +10,9 @@ static const char *kUpdateActionSetCollision = "Internal collision in update act
 
 void UpdateProduce(
     const CRecordVector<CUpdatePair> &updatePairs,
-    const NUpdateArchive::CActionSet &actionSet,
-    CRecordVector<CUpdatePair2> &operationChain)
+    const CActionSet &actionSet,
+    CRecordVector<CUpdatePair2> &operationChain,
+    IUpdateProduceCallback *callback)
 {
   for (int i = 0; i < updatePairs.Size(); i++)
   {
@@ -22,6 +23,7 @@ void UpdateProduce(
     up2.DirIndex = pair.DirIndex;
     up2.ArcIndex = pair.ArcIndex;
     up2.NewData = up2.NewProps = true;
+    
     switch(actionSet.StateActions[pair.State])
     {
       case NPairAction::kIgnore:
@@ -30,6 +32,8 @@ void UpdateProduce(
           IgnoreArchiveItem(m_ArchiveItems[pair.ArcIndex]);
         // cout << "deleting";
         */
+        if (callback)
+          callback->ShowDeleteFile(pair.ArcIndex);
         continue;
 
       case NPairAction::kCopy:

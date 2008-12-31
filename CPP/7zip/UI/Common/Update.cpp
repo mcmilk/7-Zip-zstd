@@ -19,7 +19,8 @@
 #include "Windows/Time.h"
 
 #include "../../Common/FileStreams.h"
-#include "../../Compress/Copy/CopyCoder.h"
+
+#include "../../Compress/CopyCoder.h"
 
 #include "../Common/DirItem.h"
 #include "../Common/EnumDirItems.h"
@@ -285,6 +286,22 @@ bool CUpdateOptions::Init(const CCodecs *codecs, const CIntVector &formatIndices
   return true;
 }
 
+/*
+struct CUpdateProduceCallbackImp: public IUpdateProduceCallback
+{
+  const CObjectVector<CArcItem> *_arcItems;
+  IUpdateCallbackUI *_callback;
+  
+  CUpdateProduceCallbackImp(const CObjectVector<CArcItem> *a, 
+      IUpdateCallbackUI *callback): _arcItems(a), _callback(callback) {}
+  virtual HRESULT ShowDeleteFile(int arcIndex);
+};
+
+HRESULT CUpdateProduceCallbackImp::ShowDeleteFile(int arcIndex)
+{
+  return _callback->ShowDeleteFile((*_arcItems)[arcIndex].Name);
+}
+*/
 
 static HRESULT Compress(
     CCodecs *codecs,
@@ -351,7 +368,8 @@ static HRESULT Compress(
   {
     CRecordVector<CUpdatePair> updatePairs;
     GetUpdatePairInfoList(dirItems, arcItems, fileTimeType, updatePairs); // must be done only once!!!
-    UpdateProduce(updatePairs, actionSet, updatePairs2);
+    // CUpdateProduceCallbackImp upCallback(&arcItems, callback);
+    UpdateProduce(updatePairs, actionSet, updatePairs2, NULL /* &upCallback */);
   }
 
   UInt32 numFiles = 0;

@@ -1,18 +1,19 @@
-// Archive/GZip/OutHandler.cpp
+// GZipHandlerOut.cpp
 
 #include "StdAfx.h"
-
-#include "GZipHandler.h"
-#include "GZipUpdate.h"
 
 #include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
+
 #include "../Common/ParseProperties.h"
+
+#include "GZipHandler.h"
+#include "GZipUpdate.h"
 
 using namespace NWindows;
 using namespace NTime;

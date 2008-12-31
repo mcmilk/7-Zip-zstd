@@ -1,18 +1,19 @@
-// UpdateMain.cpp
+// 7zUpdate.cpp
 
 #include "StdAfx.h"
 
-#include "7zUpdate.h"
-#include "7zFolderInStream.h"
+#include "../../Common/LimitedStreams.h"
+#include "../../Common/ProgressUtils.h"
+
+#include "../../Compress/CopyCoder.h"
+
+#include "../Common/ItemNameUtils.h"
+
 #include "7zEncode.h"
+#include "7zFolderInStream.h"
 #include "7zHandler.h"
 #include "7zOut.h"
-
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Common/ProgressUtils.h"
-#include "../../Common/LimitedStreams.h"
-#include "../../Common/LimitedStreams.h"
-#include "../Common/ItemNameUtils.h"
+#include "7zUpdate.h"
 
 namespace NArchive {
 namespace N7z {
@@ -78,7 +79,7 @@ static int CompareCoders(const CCoderInfo &c1, const CCoderInfo &c2)
   RINOZ(MyCompare(c1.NumInStreams, c2.NumInStreams));
   RINOZ(MyCompare(c1.NumOutStreams, c2.NumOutStreams));
   RINOZ(MyCompare(c1.MethodID, c2.MethodID));
-  return CompareBuffers(c1.Properties, c2.Properties);
+  return CompareBuffers(c1.Props, c2.Props);
 }
 
 static int CompareBindPairs(const CBindPair &b1, const CBindPair &b2)
@@ -336,28 +337,28 @@ static bool MakeExeMethod(const CCompressionMethodMode &method,
     if (!GetMethodFull(k_LZMA, 1, methodFull))
       return false;
     {
-      CProp property;
-      property.Id = NCoderPropID::kAlgorithm;
-      property.Value = kAlgorithmForBCJ2_LZMA;
-      methodFull.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kAlgorithm;
+      prop.Value = kAlgorithmForBCJ2_LZMA;
+      methodFull.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kMatchFinder;
-      property.Value = kMatchFinderForBCJ2_LZMA;
-      methodFull.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kMatchFinder;
+      prop.Value = kMatchFinderForBCJ2_LZMA;
+      methodFull.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kDictionarySize;
-      property.Value = kDictionaryForBCJ2_LZMA;
-      methodFull.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kDictionarySize;
+      prop.Value = kDictionaryForBCJ2_LZMA;
+      methodFull.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kNumFastBytes;
-      property.Value = kNumFastBytesForBCJ2_LZMA;
-      methodFull.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kNumFastBytes;
+      prop.Value = kNumFastBytesForBCJ2_LZMA;
+      methodFull.Props.Add(prop);
     }
 
     exeMethod.Methods.Add(methodFull);

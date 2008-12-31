@@ -5,7 +5,9 @@
 
 #include "../../../Common/Buffer.h"
 #include "../../../Common/MyString.h"
+
 #include "../../Common/MethodId.h"
+
 #include "7zHeader.h"
 
 namespace NArchive {
@@ -18,7 +20,7 @@ const CNum kNumNoIndex = 0xFFFFFFFF;
 struct CCoderInfo
 {
   CMethodId MethodID;
-  CByteBuffer Properties;
+  CByteBuffer Props;
   CNum NumInStreams;
   CNum NumOutStreams;
   bool IsSimpleCoder() const { return (NumInStreams == 1) && (NumOutStreams == 1); }
@@ -80,6 +82,8 @@ struct CFolder
         return i;
     return -1;
   }
+
+  bool CheckStructure() const;
 };
 
 struct CUInt64DefVector

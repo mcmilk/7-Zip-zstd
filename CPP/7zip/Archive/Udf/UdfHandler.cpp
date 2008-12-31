@@ -1,18 +1,20 @@
-// Udf/Handler.cpp
+// UdfHandler.cpp
 
 #include "StdAfx.h"
 
-#include "UdfHandler.h"
-
-#include "Common/NewHandler.h"
 #include "Common/ComTry.h"
+#include "Common/NewHandler.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
 #include "../../Common/ProgressUtils.h"
-#include "../../Compress/Copy/CopyCoder.h"
+
+#include "../../Compress/CopyCoder.h"
+
 #include "../Common/DummyOutStream.h"
+
+#include "UdfHandler.h"
 
 namespace NArchive {
 namespace NUdf {

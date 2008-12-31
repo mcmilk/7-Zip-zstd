@@ -23,7 +23,7 @@
   virtual HRESULT OpenFileError(const wchar_t *name, DWORD systemError) x; \
   virtual HRESULT SetOperationResult(Int32 operationResult) x; \
   virtual HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password) x; \
-
+  // virtual HRESULT ShowDeleteFile(const wchar_t *name) x; \
   // virtual HRESULT CloseProgress() { return S_OK; };
 
 struct IUpdateCallbackUI

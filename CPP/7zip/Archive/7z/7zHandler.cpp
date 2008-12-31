@@ -2,23 +2,27 @@
 
 #include "StdAfx.h"
 
-#include "7zHandler.h"
-#include "7zProperties.h"
+extern "C"
+{
+  #include "../../../../C/CpuArch.h"
+}
 
-#include "../../../Common/IntToString.h"
 #include "../../../Common/ComTry.h"
-#include "../../../Windows/Defs.h"
+#include "../../../Common/IntToString.h"
+
+#ifdef COMPRESS_MT
+#include "../../../Windows/System.h"
+#endif
 
 #include "../Common/ItemNameUtils.h"
+
+#include "7zHandler.h"
+#include "7zProperties.h"
 
 #ifdef __7Z_SET_PROPERTIES
 #ifdef EXTRACT_ONLY
 #include "../Common/ParseProperties.h"
 #endif
-#endif
-
-#ifdef COMPRESS_MT
-#include "../../../Windows/System.h"
 #endif
 
 using namespace NWindows;
@@ -191,13 +195,6 @@ static inline UString GetHex2(Byte value)
 
 static const UInt64 k_AES  = 0x06F10701;
 
-#ifndef _SFX
-static inline UInt32 GetUInt32FromMemLE(const Byte *p)
-{
-  return p[0] | (((UInt32)p[1]) << 8) | (((UInt32)p[2]) << 16) | (((UInt32)p[3]) << 24);
-}
-#endif
-
 bool CHandler::IsEncrypted(UInt32 index2) const
 {
   CNum folderIndex = _db.FileIndexToFolderIndexMap[index2];
@@ -291,33 +288,31 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                 methodsString += methodName;
                 if (coderInfo.MethodID == k_LZMA)
                 {
-                  if (coderInfo.Properties.GetCapacity() >= 5)
+                  if (coderInfo.Props.GetCapacity() >= 5)
                   {
                     methodsString += L":";
-                    UInt32 dicSize = GetUInt32FromMemLE(
-                      ((const Byte *)coderInfo.Properties + 1));
+                    UInt32 dicSize = GetUi32((const Byte *)coderInfo.Props + 1);
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
                 else if (coderInfo.MethodID == k_PPMD)
                 {
-                  if (coderInfo.Properties.GetCapacity() >= 5)
+                  if (coderInfo.Props.GetCapacity() >= 5)
                   {
-                    Byte order = *(const Byte *)coderInfo.Properties;
+                    Byte order = *(const Byte *)coderInfo.Props;
                     methodsString += L":o";
                     methodsString += ConvertUInt32ToString(order);
                     methodsString += L":mem";
-                    UInt32 dicSize = GetUInt32FromMemLE(
-                      ((const Byte *)coderInfo.Properties + 1));
+                    UInt32 dicSize = GetUi32((const Byte *)coderInfo.Props + 1);
                     methodsString += GetStringForSizeValue(dicSize);
                   }
                 }
                 else if (coderInfo.MethodID == k_AES)
                 {
-                  if (coderInfo.Properties.GetCapacity() >= 1)
+                  if (coderInfo.Props.GetCapacity() >= 1)
                   {
                     methodsString += L":";
-                    const Byte *data = (const Byte *)coderInfo.Properties;
+                    const Byte *data = (const Byte *)coderInfo.Props;
                     Byte firstByte = *data++;
                     UInt32 numCyclesPower = firstByte & 0x3F;
                     methodsString += ConvertUInt32ToString(numCyclesPower);
@@ -328,7 +323,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                       return S_OK;
                       UInt32 saltSize = (firstByte >> 7) & 1;
                       UInt32 ivSize = (firstByte >> 6) & 1;
-                      if (coderInfo.Properties.GetCapacity() >= 2)
+                      if (coderInfo.Props.GetCapacity() >= 2)
                       {
                         Byte secondByte = *data++;
                         saltSize += (secondByte >> 4);
@@ -340,18 +335,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
                 }
                 else
                 {
-                  if (coderInfo.Properties.GetCapacity() > 0)
+                  if (coderInfo.Props.GetCapacity() > 0)
                   {
                     methodsString += L":[";
-                    for (size_t bi = 0; bi < coderInfo.Properties.GetCapacity(); bi++)
+                    for (size_t bi = 0; bi < coderInfo.Props.GetCapacity(); bi++)
                     {
-                      if (bi > 5 && bi + 1 < coderInfo.Properties.GetCapacity())
+                      if (bi > 5 && bi + 1 < coderInfo.Props.GetCapacity())
                       {
                         methodsString += L"..";
                         break;
                       }
                       else
-                        methodsString += GetHex2(coderInfo.Properties[bi]);
+                        methodsString += GetHex2(coderInfo.Props[bi]);
                     }
                     methodsString += L"]";
                   }

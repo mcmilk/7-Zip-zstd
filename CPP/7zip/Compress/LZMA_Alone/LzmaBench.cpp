@@ -30,22 +30,23 @@
 
 extern "C"
 {
-#include "../../../../C/Alloc.h"
 #include "../../../../C/7zCrc.h"
+#include "../../../../C/Alloc.h"
 }
+
 #include "../../../Common/MyCom.h"
-#include "../../ICoder.h"
 
 #ifdef BENCH_MT
-#include "../../../Windows/Thread.h"
 #include "../../../Windows/Synchronization.h"
+#include "../../../Windows/Thread.h"
 #endif
 
 #ifdef EXTERNAL_LZMA
 #include "../../../Windows/PropVariant.h"
+#include "../../ICoder.h"
 #else
-#include "../LZMA/LZMADecoder.h"
-#include "../LZMA/LZMAEncoder.h"
+#include "../LzmaDecoder.h"
+#include "../LzmaEncoder.h"
 #endif
 
 static const UInt32 kUncompressMinBlockSize = 1 << 26;
@@ -697,14 +698,14 @@ HRESULT LzmaBench(
     #ifdef EXTERNAL_LZMA
     RINOK(codecs->CreateCoder(name, true, encoder.encoder));
     #else
-    encoder.encoder = new NCompress::NLZMA::CEncoder;
+    encoder.encoder = new NCompress::NLzma::CEncoder;
     #endif
     for (UInt32 j = 0; j < numSubDecoderThreads; j++)
     {
       #ifdef EXTERNAL_LZMA
       RINOK(codecs->CreateCoder(name, false, encoder.decoders[j]));
       #else
-      encoder.decoders[j] = new NCompress::NLZMA::CDecoder;
+      encoder.decoders[j] = new NCompress::NLzma::CDecoder;
       #endif
     }
   }

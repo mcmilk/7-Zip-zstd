@@ -2,19 +2,19 @@
 
 #include "StdAfx.h"
 
-#include "7zHandler.h"
-#include "7zOut.h"
-#include "7zUpdate.h"
-
 #include "../../../Windows/PropVariant.h"
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/StringToInt.h"
-#include "../../IPassword.h"
+
 #include "../../ICoder.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/ParseProperties.h"
+
+#include "7zHandler.h"
+#include "7zOut.h"
+#include "7zUpdate.h"
 
 using namespace NWindows;
 
@@ -85,28 +85,28 @@ HRESULT CHandler::SetCompressionMethod(
     COneMethodInfo oneMethodInfo;
     oneMethodInfo.MethodName = kLZMAMethodName;
     {
-      CProp property;
-      property.Id = NCoderPropID::kMatchFinder;
-      property.Value = kLzmaMatchFinderForHeaders;
-      oneMethodInfo.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kMatchFinder;
+      prop.Value = kLzmaMatchFinderForHeaders;
+      oneMethodInfo.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kAlgorithm;
-      property.Value = kAlgorithmForHeaders;
-      oneMethodInfo.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kAlgorithm;
+      prop.Value = kAlgorithmForHeaders;
+      oneMethodInfo.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kNumFastBytes;
-      property.Value = UInt32(kNumFastBytesForHeaders);
-      oneMethodInfo.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kNumFastBytes;
+      prop.Value = (UInt32)kNumFastBytesForHeaders;
+      oneMethodInfo.Props.Add(prop);
     }
     {
-      CProp property;
-      property.Id = NCoderPropID::kDictionarySize;
-      property.Value = UInt32(kDictionaryForHeaders);
-      oneMethodInfo.Properties.Add(property);
+      CProp prop;
+      prop.Id = NCoderPropID::kDictionarySize;
+      prop.Value = (UInt32)kDictionaryForHeaders;
+      oneMethodInfo.Props.Add(prop);
     }
     headerMethodInfoVector.Add(oneMethodInfo);
     HRESULT res = SetCompressionMethod(headerMethod, headerMethodInfoVector
@@ -155,14 +155,14 @@ HRESULT CHandler::SetCompressionMethod(
         EXTERNAL_CODECS_VARS
         oneMethodInfo.MethodName, methodFull.Id, methodFull.NumInStreams, methodFull.NumOutStreams))
       return E_INVALIDARG;
-    methodFull.Properties = oneMethodInfo.Properties;
+    methodFull.Props = oneMethodInfo.Props;
     methodMode.Methods.Add(methodFull);
 
     if (!_numSolidBytesDefined)
     {
-      for (int j = 0; j < methodFull.Properties.Size(); j++)
+      for (int j = 0; j < methodFull.Props.Size(); j++)
       {
-        const CProp &prop = methodFull.Properties[j];
+        const CProp &prop = methodFull.Props[j];
         if ((prop.Id == NCoderPropID::kDictionarySize ||
              prop.Id == NCoderPropID::kUsedMemorySize) && prop.Value.vt == VT_UI4)
         {

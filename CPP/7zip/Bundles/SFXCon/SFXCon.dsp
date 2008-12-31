@@ -255,126 +255,74 @@ SOURCE=..\..\Archive\7z\7zRegister.cpp
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
-# Begin Group "LZMA"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
+SOURCE=..\..\Compress\Bcj2Coder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMARegister.cpp
-# End Source File
-# End Group
-# Begin Group "Branch"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\BCJ2Register.cpp
+SOURCE=..\..\Compress\Bcj2Register.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BCJRegister.cpp
+SOURCE=..\..\Compress\BcjCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+SOURCE=..\..\Compress\BcjRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.h
+SOURCE=..\..\Compress\BranchCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\x86.cpp
+SOURCE=..\..\Compress\CopyCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\x86_2.cpp
-# End Source File
-# End Group
-# Begin Group "PPMD"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\PPMD\PPMDDecoder.cpp
+SOURCE=..\..\Compress\CopyRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDRegister.cpp
-# End Source File
-# End Group
-# Begin Group "LZ"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
+SOURCE=..\..\Compress\LzmaDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZ\LZOutWindow.h
-# End Source File
-# End Group
-# Begin Group "Copy"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+SOURCE=..\..\Compress\LzmaRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyCoder.h
+SOURCE=..\..\Compress\PpmdDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyRegister.cpp
+SOURCE=..\..\Compress\PpmdRegister.cpp
 # End Source File
-# End Group
 # End Group
 # Begin Group "Crypto"
 
 # PROP Default_Filter ""
-# Begin Group "7zAES"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\7zAES.cpp
+SOURCE=..\..\Crypto\7zAes.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\7zAES.h
+SOURCE=..\..\Crypto\7zAes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\7zAESRegister.cpp
-# End Source File
-# End Group
-# Begin Group "AES"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\AES\MyAES.cpp
+SOURCE=..\..\Crypto\7zAesRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\MyAES.h
+SOURCE=..\..\Crypto\MyAes.cpp
 # End Source File
-# End Group
-# Begin Group "Hash"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\RotateDefs.h
+SOURCE=..\..\Crypto\MyAes.h
 # End Source File
-# End Group
 # End Group
 # Begin Group "Windows"
 

@@ -217,3 +217,22 @@ HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined,
   #endif
   
 }
+
+/*
+HRESULT CUpdateCallbackConsole::ShowDeleteFile(const wchar_t *name)
+{
+  // MT_LOCK
+  if (StdOutMode)
+    return S_OK;
+  RINOK(Finilize());
+  m_PercentPrinter.PrintString("Deleting  ");
+  if (name[0] == 0)
+    name = kEmptyFileAlias;
+  m_PercentPrinter.PrintString(name);
+  if (EnablePercents)
+    m_PercentPrinter.RePrintRatio();
+  m_NeedBeClosed = true;
+  m_NeedNewLine = true;
+  return S_OK;
+}
+*/

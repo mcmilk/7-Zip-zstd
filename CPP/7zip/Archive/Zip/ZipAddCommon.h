@@ -1,16 +1,18 @@
-// Zip/AddCommon.h
+// ZipAddCommon.h
 
-#ifndef __ZIP_ADDCOMMON_H
-#define __ZIP_ADDCOMMON_H
+#ifndef __ZIP_ADD_COMMON_H
+#define __ZIP_ADD_COMMON_H
 
 #include "../../ICoder.h"
 #include "../../IProgress.h"
-#include "../../Compress/Copy/CopyCoder.h"
 
 #include "../../Common/CreateCoder.h"
 #include "../../Common/FilterCoder.h"
-#include "../../Crypto/Zip/ZipCipher.h"
-#include "../../Crypto/WzAES/WzAES.h"
+
+#include "../../Compress/CopyCoder.h"
+
+#include "../../Crypto/ZipCrypto.h"
+#include "../../Crypto/WzAes.h"
 
 #include "ZipCompressionMode.h"
 
@@ -38,7 +40,7 @@ class CAddCommon
   CMyComPtr<ISequentialOutStream> _cryptoStream;
 
   NCrypto::NZip::CEncoder *_filterSpec;
-  NCrypto::NWzAES::CEncoder *_filterAesSpec;
+  NCrypto::NWzAes::CEncoder *_filterAesSpec;
 
   CMyComPtr<ICompressFilter> _zipCryptoFilter;
   CMyComPtr<ICompressFilter> _aesFilter;

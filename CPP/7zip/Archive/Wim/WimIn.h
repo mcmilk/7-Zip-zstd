@@ -3,11 +3,11 @@
 #ifndef __ARCHIVE_WIM_IN_H
 #define __ARCHIVE_WIM_IN_H
 
-#include "Common/MyString.h"
 #include "Common/Buffer.h"
+#include "Common/MyString.h"
 
-#include "../../Compress/Lzx/LzxDecoder.h"
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
+#include "../../Compress/LzxDecoder.h"
 
 namespace NArchive {
 namespace NWim {
@@ -66,7 +66,7 @@ const UInt32 kMainTableSize = 256 + kNumPosLenSlots;
 class CDecoder
 {
   CBitStream m_InBitStream;
-  CLZOutWindow m_OutWindowStream;
+  CLzOutWindow m_OutWindowStream;
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kMainTableSize> m_MainDecoder;
 
   HRESULT CodeSpec(UInt32 size);

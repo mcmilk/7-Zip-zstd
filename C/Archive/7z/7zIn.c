@@ -1,5 +1,5 @@
 /* 7zIn.c -- 7z Input functions
-2008-11-23 : Igor Pavlov : Public domain */
+2008-12-31 : Igor Pavlov : Public domain */
 
 #include "../../7zCrc.h"
 #include "../../CpuArch.h"
@@ -8,6 +8,9 @@
 #include "7zIn.h"
 
 #define RINOM(x) { if ((x) == 0) return SZ_ERROR_MEM; }
+
+#define NUM_FOLDER_CODERS_MAX 32
+#define NUM_CODER_STREAMS_MAX 32
 
 void SzArEx_Init(CSzArEx *p)
 {
@@ -409,15 +412,14 @@ static SRes SzReadSwitch(CSzData *sd)
 
 static SRes SzGetNextFolderItem(CSzData *sd, CSzFolder *folder, ISzAlloc *alloc)
 {
-  UInt32 numCoders;
-  UInt32 numBindPairs;
-  UInt32 numPackedStreams;
-  UInt32 i;
-  UInt32 numInStreams = 0;
-  UInt32 numOutStreams = 0;
+  UInt32 numCoders, numBindPairs, numPackStreams, i;
+  UInt32 numInStreams = 0, numOutStreams = 0;
+  
   RINOK(SzReadNumber32(sd, &numCoders));
+  if (numCoders > NUM_FOLDER_CODERS_MAX)
+    return SZ_ERROR_UNSUPPORTED;
   folder->NumCoders = numCoders;
-
+  
   MY_ALLOC(CSzCoderInfo, folder->Coders, (size_t)numCoders, alloc);
 
   for (i = 0; i < numCoders; i++)
@@ -443,6 +445,9 @@ static SRes SzGetNextFolderItem(CSzData *sd, CSzFolder *folder, ISzAlloc *alloc)
       {
         RINOK(SzReadNumber32(sd, &coder->NumInStreams));
         RINOK(SzReadNumber32(sd, &coder->NumOutStreams));
+        if (coder->NumInStreams > NUM_CODER_STREAMS_MAX ||
+            coder->NumOutStreams > NUM_CODER_STREAMS_MAX)
+          return SZ_ERROR_UNSUPPORTED;
       }
       else
       {
@@ -475,41 +480,40 @@ static SRes SzGetNextFolderItem(CSzData *sd, CSzFolder *folder, ISzAlloc *alloc)
         RINOK(SzSkeepDataSize(sd, propertiesSize));
       }
     }
-    numInStreams += (UInt32)coder->NumInStreams;
-    numOutStreams += (UInt32)coder->NumOutStreams;
+    numInStreams += coder->NumInStreams;
+    numOutStreams += coder->NumOutStreams;
   }
 
-  numBindPairs = numOutStreams - 1;
-  folder->NumBindPairs = numBindPairs;
+  if (numOutStreams == 0)
+    return SZ_ERROR_UNSUPPORTED;
 
-
+  folder->NumBindPairs = numBindPairs = numOutStreams - 1;
   MY_ALLOC(CBindPair, folder->BindPairs, (size_t)numBindPairs, alloc);
 
   for (i = 0; i < numBindPairs; i++)
   {
-    CBindPair *bindPair = folder->BindPairs + i;
-    RINOK(SzReadNumber32(sd, &bindPair->InIndex));
-    RINOK(SzReadNumber32(sd, &bindPair->OutIndex));
+    CBindPair *bp = folder->BindPairs + i;
+    RINOK(SzReadNumber32(sd, &bp->InIndex));
+    RINOK(SzReadNumber32(sd, &bp->OutIndex));
   }
 
-  numPackedStreams = numInStreams - (UInt32)numBindPairs;
+  if (numInStreams < numBindPairs)
+    return SZ_ERROR_UNSUPPORTED;
 
-  folder->NumPackStreams = numPackedStreams;
-  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackedStreams, alloc);
+  folder->NumPackStreams = numPackStreams = numInStreams - numBindPairs;
+  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackStreams, alloc);
 
-  if (numPackedStreams == 1)
+  if (numPackStreams == 1)
   {
-    UInt32 j;
-    UInt32 pi = 0;
-    for (j = 0; j < numInStreams; j++)
-      if (SzFolder_FindBindPairForInStream(folder, j) < 0)
-      {
-        folder->PackStreams[pi++] = j;
+    for (i = 0; i < numInStreams ; i++)
+      if (SzFolder_FindBindPairForInStream(folder, i) < 0)
         break;
-      }
+    if (i == numInStreams)
+      return SZ_ERROR_UNSUPPORTED;
+    folder->PackStreams[0] = i;
   }
   else
-    for (i = 0; i < numPackedStreams; i++)
+    for (i = 0; i < numPackStreams; i++)
     {
       RINOK(SzReadNumber32(sd, folder->PackStreams + i));
     }

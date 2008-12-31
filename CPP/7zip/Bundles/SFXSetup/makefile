@@ -79,23 +79,16 @@ AR_COMMON_OBJS = \
   $O\7zIn.obj \
   $O\7zRegister.obj \
 
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+COMPRESS_OBJS = \
   $O\BranchCoder.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-COPY_OBJS = \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
-
-LZ_OBJS = \
-  $O\LZOutWindow.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMARegister.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaRegister.obj \
 
 C_OBJS = \
   $O\Alloc.obj \
@@ -116,10 +109,7 @@ OBJS = \
   $(FM_OBJS)\
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(LZ_OBJS) \
-  $(LZMA_OPT_OBJS) \
+  $(COMPRESS_OBJS) \
   $O\MyMessages.obj \
   $(C_OBJS) \
   $(CRC_OBJS) \
@@ -148,13 +138,7 @@ $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 
 $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
-	$(COMPL)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
-	$(COMPL)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
+$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp

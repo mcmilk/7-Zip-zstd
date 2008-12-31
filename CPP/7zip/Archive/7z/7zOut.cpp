@@ -278,7 +278,7 @@ void COutArchive::WriteFolder(const CFolder &folder)
   {
     const CCoderInfo &coder = folder.Coders[i];
     {
-      size_t propertiesSize = coder.Properties.GetCapacity();
+      size_t propsSize = coder.Props.GetCapacity();
       
       UInt64 id = coder.MethodID;
       int idSize;
@@ -292,7 +292,7 @@ void COutArchive::WriteFolder(const CFolder &folder)
       b = (Byte)(idSize & 0xF);
       bool isComplex = !coder.IsSimpleCoder();
       b |= (isComplex ? 0x10 : 0);
-      b |= ((propertiesSize != 0) ? 0x20 : 0 );
+      b |= ((propsSize != 0) ? 0x20 : 0 );
       WriteByte(b);
       WriteBytes(longID, idSize);
       if (isComplex)
@@ -300,10 +300,10 @@ void COutArchive::WriteFolder(const CFolder &folder)
         WriteNumber(coder.NumInStreams);
         WriteNumber(coder.NumOutStreams);
       }
-      if (propertiesSize == 0)
+      if (propsSize == 0)
         continue;
-      WriteNumber(propertiesSize);
-      WriteBytes(coder.Properties, propertiesSize);
+      WriteNumber(propsSize);
+      WriteBytes(coder.Props, propsSize);
     }
   }
   for (i = 0; i < folder.BindPairs.Size(); i++)

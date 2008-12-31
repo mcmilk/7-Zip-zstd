@@ -16,7 +16,7 @@
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/Copy/CopyCoder.h"
+#include "../Compress/CopyCoder.h"
 
 #include "Common/DummyOutStream.h"
 
@@ -605,7 +605,11 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
     }
   }
   if (i == _sections.Size())
-    return S_FALSE;
+  {
+    return S_OK;
+    // Exe for ARM requires S_OK
+    // return S_FALSE;
+  }
   
   CByteBuffer buffer;
   buffer.SetCapacity(debugLink.Size);

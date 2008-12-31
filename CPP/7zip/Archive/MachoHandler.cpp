@@ -14,7 +14,7 @@
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/Copy/CopyCoder.h"
+#include "../Compress/CopyCoder.h"
 
 #include "Common/DummyOutStream.h"
 

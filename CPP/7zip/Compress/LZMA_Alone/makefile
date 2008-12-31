@@ -10,8 +10,8 @@ LZMA_OBJS = \
   $O\LzmaBenchCon.obj \
 
 LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMAEncoder.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaEncoder.obj \
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -61,7 +61,7 @@ OBJS = \
 
 $(LZMA_OBJS): $(*B).cpp
 	$(COMPL)
-$(LZMA_OPT_OBJS): ../LZMA/$(*B).cpp
+$(LZMA_OPT_OBJS): ../$(*B).cpp
 	$(COMPL_O2)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
 	$(COMPL)

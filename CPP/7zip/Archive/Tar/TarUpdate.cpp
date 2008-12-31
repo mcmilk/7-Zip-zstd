@@ -2,13 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-#include "Windows/Defs.h"
-
-#include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Common/ProgressUtils.h"
+
+#include "../../Compress/CopyCoder.h"
 
 #include "TarOut.h"
 #include "TarUpdate.h"

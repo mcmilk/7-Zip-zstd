@@ -132,27 +132,21 @@ SPLIT_OBJS = \
   $O\SplitHandlerOut.obj \
   $O\SplitRegister.obj \
 
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+COMPRESS_OBJS = \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
   $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-SWAP_OPT_OBJS = \
   $O\ByteSwap.obj \
   $O\ByteSwapRegister.obj \
-
-COPY_OBJS = \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMAEncoder.obj \
-  $O\LZMARegister.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaEncoder.obj \
+  $O\LzmaRegister.obj \
 
 LZMA_BENCH_OBJS = \
   $O\LzmaBench.obj \
@@ -181,10 +175,7 @@ OBJS = \
   $(7Z_OBJS) \
   $(LZM_OBJS) \
   $(SPLIT_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(SWAP_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(LZMA_OPT_OBJS) \
+  $(COMPRESS_OBJS) \
   $(LZMA_BENCH_OBJS) \
   $(C_OBJS) \
   $(CRC_OBJS) \
@@ -213,13 +204,7 @@ $(LZM_OBJS): ../../Archive/Lzma/$(*B).cpp
 	$(COMPL)
 $(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
-	$(COMPL_O2)
-$(SWAP_OPT_OBJS): ../../Compress/ByteSwap/$(*B).cpp
-	$(COMPL_O2)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
+$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
 $(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)

@@ -1,24 +1,24 @@
-// Iso/Handler.cpp
+// IsoHandler.cpp
 
 #include "StdAfx.h"
 
-#include "IsoHandler.h"
-
+#include "Common/ComTry.h"
 #include "Common/Defs.h"
-#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
 #include "Common/NewHandler.h"
-#include "Common/ComTry.h"
+#include "Common/StringConvert.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
-#include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
+#include "../../Common/ProgressUtils.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
 
 #include "../Common/ItemNameUtils.h"
+
+#include "IsoHandler.h"
 
 using namespace NWindows;
 using namespace NTime;

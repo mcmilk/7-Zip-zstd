@@ -16,11 +16,9 @@
 #include "../Common/StreamObjects.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/Arj/ArjDecoder1.h"
-#include "../Compress/Arj/ArjDecoder2.h"
-#include "../Compress/Copy/CopyCoder.h"
-
-#include "IArchive.h"
+#include "../Compress/ArjDecoder1.h"
+#include "../Compress/ArjDecoder2.h"
+#include "../Compress/CopyCoder.h"
 
 #include "Common/ItemNameUtils.h"
 #include "Common/OutStreamWithCRC.h"
@@ -427,7 +425,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItem &item)
   /*
   UInt32 extraData;
   if ((header.Flags & NFileHeader::NFlags::kExtFile) != 0)
-    extraData = GetUInt32FromMemLE(_block + pos);
+    extraData = GetUi32(_block + pos);
   */
 
   RINOK(SkeepExtendedHeaders());

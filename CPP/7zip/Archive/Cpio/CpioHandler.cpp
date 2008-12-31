@@ -1,24 +1,24 @@
-// Archive/cpio/Handler.cpp
+// CpioHandler.cpp
 
 #include "StdAfx.h"
 
-#include "CpioHandler.h"
-#include "CpioIn.h"
-
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-#include "Common/NewHandler.h"
 #include "Common/ComTry.h"
+#include "Common/Defs.h"
+#include "Common/NewHandler.h"
+#include "Common/StringConvert.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
+#include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
-#include "../../Common//LimitedStreams.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
 
 #include "../Common/ItemNameUtils.h"
+
+#include "CpioHandler.h"
+#include "CpioIn.h"
 
 using namespace NWindows;
 using namespace NTime;

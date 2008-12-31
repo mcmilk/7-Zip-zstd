@@ -2,23 +2,23 @@
 
 #include "StdAfx.h"
 
+#include "Common/ComTry.h"
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
-#include "Common/ComTry.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
 #include "LzhHandler.h"
 #include "LzhOutStreamWithCRC.h"
 
 #include "../../ICoder.h"
 
-#include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
+#include "../../Common/ProgressUtils.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Compress/Lzh/LzhDecoder.h"
+#include "../../Compress/CopyCoder.h"
+#include "../../Compress/LzhDecoder.h"
 
 #include "../Common/ItemNameUtils.h"
 
@@ -383,6 +383,5 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
-
 
 }}

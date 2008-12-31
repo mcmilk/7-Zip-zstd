@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "GZipUpdate.h"
-
 #include "Common/Defs.h"
 #include "Common/StringConvert.h"
 
@@ -11,11 +9,15 @@
 #include "Windows/PropVariant.h"
 
 #include "../../ICoder.h"
-#include "../../Common/ProgressUtils.h"
+
 #include "../../Common/CreateCoder.h"
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Common/ProgressUtils.h"
+
+#include "../../Compress/CopyCoder.h"
 
 #include "../Common/InStreamWithCRC.h"
+
+#include "GZipUpdate.h"
 
 namespace NArchive {
 namespace NGZip {

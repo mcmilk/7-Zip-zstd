@@ -5,10 +5,14 @@
 
 #include "Common/DynamicBuffer.h"
 #include "Common/MyCom.h"
-#include "../../IStream.h"
+
 #include "../../ICoder.h"
+#include "../../IStream.h"
+
 #include "../../Common/StreamObjects.h"
-#include "../../Crypto/RarAES/RarAES.h"
+
+#include "../../Crypto/RarAes.h"
+
 #include "RarHeader.h"
 #include "RarItem.h"
 

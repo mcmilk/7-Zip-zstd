@@ -1,25 +1,25 @@
-// Tar/Handler.cpp
+// TarHandler.cpp
 
 #include "StdAfx.h"
 
+#include "Common/ComTry.h"
+#include "Common/Defs.h"
+#include "Common/NewHandler.h"
+#include "Common/StringConvert.h"
+
+#include "Windows/PropVariant.h"
+#include "Windows/Time.h"
+
+#include "../../Common/LimitedStreams.h"
+#include "../../Common/ProgressUtils.h"
+
+#include "../../Compress/CopyCoder.h"
+
+#include "../Common/DummyOutStream.h"
+#include "../Common/ItemNameUtils.h"
+
 #include "TarHandler.h"
 #include "TarIn.h"
-
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-#include "Common/NewHandler.h"
-#include "Common/ComTry.h"
-
-#include "Windows/Time.h"
-#include "Windows/PropVariant.h"
-
-#include "../../Common/ProgressUtils.h"
-#include "../../Common/LimitedStreams.h"
-#include "../Common/DummyOutStream.h"
-
-#include "../../Compress/Copy/CopyCoder.h"
-
-#include "../Common/ItemNameUtils.h"
 
 using namespace NWindows;
 

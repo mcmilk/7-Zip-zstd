@@ -355,8 +355,10 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &ar
   ReadListMode(listMode);
   for (i = 0; i < kNumPanelsMax; i++)
   {
-    Panels[i]._ListViewMode = listMode.Panels[i];
-    Panels[i]._xSize = xSizes[i];
+    CPanel &panel = Panels[i];
+    panel._ListViewMode = listMode.Panels[i];
+    panel._xSize = xSizes[i];
+    panel._flatModeForArc = ReadFlatView(i);
   }
   for (i = 0; i < kNumPanelsMax; i++)
     if (NumPanels > 1 || i == LastFocusedPanel)
@@ -414,6 +416,7 @@ void CApp::Save()
       path = GetFolderPath(panel._parentFolders[0].ParentFolder);
     SavePanelPath(i, path);
     listMode.Panels[i] = panel.GetListViewMode();
+    SaveFlatView(i, panel._flatModeForArc);
   }
   SaveListMode(listMode);
 }

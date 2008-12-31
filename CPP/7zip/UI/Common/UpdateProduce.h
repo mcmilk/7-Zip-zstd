@@ -21,9 +21,15 @@ struct CUpdatePair2
   CUpdatePair2(): IsAnti(false), DirIndex(-1), ArcIndex(-1), NewNameIndex(-1) {}
 };
 
+struct IUpdateProduceCallback
+{
+  virtual HRESULT ShowDeleteFile(int arcIndex) = 0;
+};
+
 void UpdateProduce(
     const CRecordVector<CUpdatePair> &updatePairs,
     const NUpdateArchive::CActionSet &actionSet,
-    CRecordVector<CUpdatePair2> &operationChain);
+    CRecordVector<CUpdatePair2> &operationChain,
+    IUpdateProduceCallback *callback);
 
 #endif

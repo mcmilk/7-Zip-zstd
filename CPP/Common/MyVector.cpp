@@ -49,7 +49,7 @@ void CBaseRecordVector::Reserve(int newCapacity)
     p = new unsigned char[newSize];
     if (p == 0)
       throw 1052355;
-    int numRecordsToMove = _size;
+    int numRecordsToMove = (_size < newCapacity ? _size : newCapacity);
     memcpy(p, _items, _itemSize * numRecordsToMove);
   }
   delete [](unsigned char *)_items;

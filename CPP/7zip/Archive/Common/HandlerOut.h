@@ -3,14 +3,14 @@
 #ifndef __HANDLER_OUT_H
 #define __HANDLER_OUT_H
 
-#include "../../Common/MethodProps.h"
 #include "../../../Common/MyString.h"
+#include "../../Common/MethodProps.h"
 
 namespace NArchive {
 
 struct COneMethodInfo
 {
-  CObjectVector<CProp> Properties;
+  CObjectVector<CProp> Props;
   UString MethodName;
 };
 

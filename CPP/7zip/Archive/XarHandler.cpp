@@ -18,9 +18,9 @@
 #include "../Common/StreamObjects.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/BZip2/BZip2Decoder.h"
-#include "../Compress/Copy/CopyCoder.h"
-#include "../Compress/Deflate/ZlibDecoder.h"
+#include "../Compress/BZip2Decoder.h"
+#include "../Compress/CopyCoder.h"
+#include "../Compress/ZlibDecoder.h"
 
 #include "Common/OutStreamWithSha1.h"
 

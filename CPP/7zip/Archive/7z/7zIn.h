@@ -4,8 +4,10 @@
 #define __7Z_IN_H
 
 #include "../../../Common/MyCom.h"
-#include "../../IStream.h"
+
 #include "../../IPassword.h"
+#include "../../IStream.h"
+
 #include "../../Common/CreateCoder.h"
 #include "../../Common/InBuffer.h"
 
@@ -167,12 +169,12 @@ private:
   void ReadArchiveProperties(CInArchiveInfo &archiveInfo);
   void GetNextFolderItem(CFolder &itemInfo);
   void ReadHashDigests(int numItems,
-      CRecordVector<bool> &digestsDefined, CRecordVector<UInt32> &digests);
+      CBoolVector &digestsDefined, CRecordVector<UInt32> &digests);
   
   void ReadPackInfo(
       UInt64 &dataOffset,
       CRecordVector<UInt64> &packSizes,
-      CRecordVector<bool> &packCRCsDefined,
+      CBoolVector &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs);
   
   void ReadUnpackInfo(
@@ -183,19 +185,19 @@ private:
       const CObjectVector<CFolder> &folders,
       CRecordVector<CNum> &numUnpackStreamsInFolders,
       CRecordVector<UInt64> &unpackSizes,
-      CRecordVector<bool> &digestsDefined,
+      CBoolVector &digestsDefined,
       CRecordVector<UInt32> &digests);
 
   void ReadStreamsInfo(
       const CObjectVector<CByteBuffer> *dataVector,
       UInt64 &dataOffset,
       CRecordVector<UInt64> &packSizes,
-      CRecordVector<bool> &packCRCsDefined,
+      CBoolVector &packCRCsDefined,
       CRecordVector<UInt32> &packCRCs,
       CObjectVector<CFolder> &folders,
       CRecordVector<CNum> &numUnpackStreamsInFolders,
       CRecordVector<UInt64> &unpackSizes,
-      CRecordVector<bool> &digestsDefined,
+      CBoolVector &digestsDefined,
       CRecordVector<UInt32> &digests);
 
 

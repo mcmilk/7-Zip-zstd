@@ -1,7 +1,7 @@
 // OutStreamWithCRC.h
 
-#ifndef __OUTSTREAMWITHCRC_H
-#define __OUTSTREAMWITHCRC_H
+#ifndef __OUT_STREAM_WITH_CRC_H
+#define __OUT_STREAM_WITH_CRC_H
 
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"

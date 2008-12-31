@@ -2,15 +2,12 @@
 
 #include "StdAfx.h"
 
-#include "7zDecode.h"
-
-#include "../../IPassword.h"
-#include "../../Common/LockedStream.h"
-#include "../../Common/StreamObjects.h"
-#include "../../Common/ProgressUtils.h"
 #include "../../Common/LimitedStreams.h"
-#include "../../Common/CreateCoder.h"
-#include "../../Common/FilterCoder.h"
+#include "../../Common/LockedStream.h"
+#include "../../Common/ProgressUtils.h"
+#include "../../Common/StreamObjects.h"
+
+#include "7zDecode.h"
 
 namespace NArchive {
 namespace N7z {
@@ -105,6 +102,8 @@ HRESULT CDecoder::Decode(
     #endif
     )
 {
+  if (!folderInfo.CheckStructure())
+    return E_NOTIMPL;
   #ifndef _NO_CRYPTO
   passwordIsDefined = false;
   #endif
@@ -229,13 +228,13 @@ HRESULT CDecoder::Decode(
       decoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
       if (setDecoderProperties)
       {
-        const CByteBuffer &properties = coderInfo.Properties;
-        size_t size = properties.GetCapacity();
+        const CByteBuffer &props = coderInfo.Props;
+        size_t size = props.GetCapacity();
         if (size > 0xFFFFFFFF)
           return E_NOTIMPL;
         if (size > 0)
         {
-          RINOK(setDecoderProperties->SetDecoderProperties2((const Byte *)properties, (UInt32)size));
+          RINOK(setDecoderProperties->SetDecoderProperties2((const Byte *)props, (UInt32)size));
         }
       }
     }

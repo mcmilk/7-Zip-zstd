@@ -2,8 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "MethodProps.h"
 #include "../../Common/MyCom.h"
+
+#include "../ICoder.h"
+
+#include "MethodProps.h"
 
 static UInt64 k_LZMA = 0x030101;
 // static UInt64 k_LZMA2 = 0x030102;
@@ -35,24 +38,24 @@ HRESULT SetMethodProperties(const CMethod &method, const UInt64 *inSizeForReduce
   }
 
   {
-    int numProperties = method.Properties.Size();
+    int numProps = method.Props.Size();
     CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
     coder->QueryInterface(IID_ICompressSetCoderProperties, (void **)&setCoderProperties);
     if (setCoderProperties == NULL)
     {
-      if (numProperties != 0)
+      if (numProps != 0)
         return E_INVALIDARG;
     }
     else
     {
       CRecordVector<PROPID> propIDs;
-      NWindows::NCOM::CPropVariant *values = new NWindows::NCOM::CPropVariant[numProperties];
+      NWindows::NCOM::CPropVariant *values = new NWindows::NCOM::CPropVariant[numProps];
       HRESULT res = S_OK;
       try
       {
-        for (int i = 0; i < numProperties; i++)
+        for (int i = 0; i < numProps; i++)
         {
-          const CProp &prop = method.Properties[i];
+          const CProp &prop = method.Props[i];
           propIDs.Add(prop.Id);
           NWindows::NCOM::CPropVariant &value = values[i];
           value = prop.Value;
@@ -65,7 +68,7 @@ HRESULT SetMethodProperties(const CMethod &method, const UInt64 *inSizeForReduce
         }
         CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
         coder->QueryInterface(IID_ICompressSetCoderProperties, (void **)&setCoderProperties);
-        res = setCoderProperties->SetCoderProperties(&propIDs.Front(), values, numProperties);
+        res = setCoderProperties->SetCoderProperties(&propIDs.Front(), values, numProps);
       }
       catch(...)
       {

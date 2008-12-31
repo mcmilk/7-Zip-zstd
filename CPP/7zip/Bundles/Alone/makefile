@@ -58,8 +58,6 @@ WIN_OBJS = \
   $O\InOutTempBuffer.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
-  $O\LSBFDecoder.obj \
-  $O\LSBFEncoder.obj \
   $O\MemBlocks.obj \
   $O\MethodId.obj \
   $O\MethodProps.obj \
@@ -182,88 +180,57 @@ ZIP_OBJS = \
   $O\ZipRegister.obj \
 
 
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+COMPRESS_OBJS = \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
+  $O\BitlDecoder.obj \
   $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-SWAP_OPT_OBJS = \
   $O\ByteSwap.obj \
   $O\ByteSwapRegister.obj \
-
-BZIP2_OBJS = \
   $O\BZip2CRC.obj \
-  $O\BZip2Register.obj \
-
-BZIP2_OPT_OBJS = \
   $O\BZip2Decoder.obj \
   $O\BZip2Encoder.obj \
-
-COPY_OBJS = \
+  $O\BZip2Register.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
-
-DEFLATE_OPT_OBJS = \
+  $O\Deflate64Register.obj \
   $O\DeflateDecoder.obj \
   $O\DeflateEncoder.obj \
   $O\DeflateRegister.obj \
-  $O\Deflate64Register.obj \
-
-LZ_OBJS = \
+  $O\ImplodeDecoder.obj \
+  $O\ImplodeHuffmanDecoder.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaEncoder.obj \
+  $O\LzmaRegister.obj \
   $O\LzOutWindow.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMAEncoder.obj \
-  $O\LZMARegister.obj \
+  $O\Lzx86Converter.obj \
+  $O\LzxDecoder.obj \
+  $O\PpmdDecoder.obj \
+  $O\PpmdEncoder.obj \
+  $O\PpmdRegister.obj \
+  $O\QuantumDecoder.obj \
+  $O\ShrinkDecoder.obj \
+  $O\ZDecoder.obj \
 
 LZMA_BENCH_OBJS = \
   $O\LzmaBench.obj \
   $O\LzmaBenchCon.obj \
 
-LZX_OBJS = \
-  $O\LzxDecoder.obj \
-  $O\Lzx86Converter.obj \
-
-IMPLODE_OBJS = \
-  $O\ImplodeDecoder.obj \
-  $O\ImplodeHuffmanDecoder.obj \
-
-PPMD_OPT_OBJS = \
-  $O\PPMDDecoder.obj \
-  $O\PPMDEncoder.obj \
-  $O\PPMDRegister.obj \
-
-SHRINK_OBJS = \
-  $O\ShrinkDecoder.obj \
-
-COMPRESS_Z_OBJS = \
-  $O\ZDecoder.obj \
-
-
-7ZAES_OPT_OBJS = \
-  $O\7zAES.obj \
-  $O\7zAESRegister.obj \
-
-AES_OPT_OBJS = \
-  $O\MyAES.obj \
-
-CRYPTO_HASH_OBJS = \
+CRYPTO_OBJS = \
+  $O\7zAes.obj \
+  $O\7zAesRegister.obj \
   $O\HmacSha1.obj \
+  $O\MyAes.obj \
   $O\Pbkdf2HmacSha1.obj \
   $O\RandGen.obj \
   $O\Sha1.obj \
-
-CRYPTO_WZAES_OBJS = \
-  $O\WzAES.obj \
-
-CRYPTO_ZIP_OBJS = \
-  $O\ZipCipher.obj \
+  $O\WzAes.obj \
   $O\ZipCrypto.obj \
+  $O\ZipStrong.obj \
 
 C_OBJS = \
   $O\Alloc.obj \
@@ -301,28 +268,10 @@ OBJS = \
   $(SPLIT_OBJS) \
   $(TAR_OBJS) \
   $(ZIP_OBJS) \
-  $(BZIP2_OBJS) \
-  $(BZIP2_OPT_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(SWAP_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(DEFLATE_OPT_OBJS) \
-  $(IMPLODE_OBJS) \
-  $(LZ_OBJS) \
-  $(LZMA_OPT_OBJS) \
+  $(COMPRESS_OBJS) \
   $(LZMA_BENCH_OBJS) \
-  $(LZX_OBJS) \
-  $(PPMD_OPT_OBJS) \
-  $(SHRINK_OBJS) \
-  $(COMPRESS_Z_OBJS) \
+  $(CRYPTO_OBJS) \
   $(C_OBJS) \
-  $O\RangeCoderBit.obj \
-  $(7ZAES_OPT_OBJS) \
-  $(AES_OPT_OBJS) \
-  $(CRYPTO_HASH_OBJS) \
-  $(CRYPTO_ZIP_OBJS) \
-  $(CRYPTO_WZAES_OBJS) \
-  $O\QuantumDecoder.obj \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -362,50 +311,13 @@ $(TAR_OBJS): ../../Archive/Tar/$(*B).cpp
 $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
 	$(COMPL)
 
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
+$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
-$(SWAP_OPT_OBJS): ../../Compress/ByteSwap/$(*B).cpp
-	$(COMPL_O2)
-$(BZIP2_OBJS): ../../Compress/BZip2/$(*B).cpp
-	$(COMPL)
-$(BZIP2_OPT_OBJS): ../../Compress/BZip2/$(*B).cpp
-	$(COMPL_O2)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(DEFLATE_OPT_OBJS): ../../Compress/Deflate/$(*B).cpp
-	$(COMPL_O2)
-$(IMPLODE_OBJS): ../../Compress/Implode/$(*B).cpp
-	$(COMPL)
-$(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
-	$(COMPL_O2)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
-	$(COMPL_O2)
+
 $(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)
 
-$(LZX_OBJS): ../../Compress/Lzx/$(*B).cpp
-	$(COMPL_O2)
-$(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
-	$(COMPL_O2)
-$(SHRINK_OBJS): ../../Compress/Shrink/$(*B).cpp
-	$(COMPL)
-$(COMPRESS_Z_OBJS): ../../Compress/Z/$(*B).cpp
-	$(COMPL)
-
-$O\RangeCoderBit.obj: ../../Compress/RangeCoder/$(*B).cpp
-	$(COMPL)
-$O\QuantumDecoder.obj: ../../Compress/Quantum/$(*B).cpp
-	$(COMPL)
-
-$(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
-	$(COMPL_O2)
-$(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
-	$(COMPL_O2)
-$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
-	$(COMPL_O2)
-$(CRYPTO_ZIP_OBJS): ../../Crypto/Zip/$(*B).cpp
-	$(COMPL)
-$(CRYPTO_WZAES_OBJS): ../../Crypto/WzAES/$(*B).cpp
+$(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
 	$(COMPL_O2)
 
 $(C_OBJS): ../../../../C/$(*B).c

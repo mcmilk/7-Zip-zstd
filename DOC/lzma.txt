@@ -1,4 +1,4 @@
-LZMA SDK 4.62
+LZMA SDK 4.63
 -------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
@@ -413,7 +413,7 @@ Memory Requirements:
  - LZMA dictionary (dictionary size is encoded in LZMA properties header)
 
 1) read LZMA properties (5 bytes) and uncompressed size (8 bytes, little-endian) to header:
-   unsigned char header[LZMA_PROPERTIES_SIZE + 8];
+   unsigned char header[LZMA_PROPS_SIZE + 8];
    ReadFile(inFile, header, sizeof(header)
 
 2) Allocate CLzmaDec structures (state + dictionary) using LZMA properties

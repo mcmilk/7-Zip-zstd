@@ -572,7 +572,8 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   if (focusedItem >= 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
-    if (realIndex == kParentIndex && (tryInternal || indices.Size() == 0))
+    if (realIndex == kParentIndex && (tryInternal || indices.Size() == 0) && 
+        _listView.GetItemState(focusedItem, LVIS_SELECTED) == LVIS_SELECTED)
       indices.Insert(0, realIndex);
   }
 

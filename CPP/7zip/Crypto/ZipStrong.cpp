@@ -1,0 +1,180 @@
+// Crypto/ZipStrong.cpp
+
+#include "StdAfx.h"
+
+extern "C"
+{
+#include "../../../C/7zCrc.h"
+#include "../../../C/CpuArch.h"
+}
+
+#include "../Common/StreamUtils.h"
+
+#include "MyAES.h"
+#include "Sha1.h"
+#include "ZipStrong.h"
+
+namespace NCrypto {
+namespace NZipStrong {
+
+static const UInt16 kAES128 = 0x660E;
+
+// DeriveKey* function is similar to CryptDeriveKey() from Windows.
+// But MSDN tells that we need such scheme only if
+// "the required key length is longer than the hash value"
+// but ZipStrong uses it always.
+
+static void DeriveKey2(const Byte *digest, Byte c, Byte *dest)
+{
+  Byte buf[64];
+  memset(buf, c, 64);
+  for (unsigned i = 0; i < NSha1::kDigestSize; i++)
+    buf[i] ^= digest[i];
+  NSha1::CContext sha;
+  sha.Init();
+  sha.Update(buf, 64);
+  sha.Final(dest);
+}
+ 
+static void DeriveKey(NSha1::CContext &sha, Byte *key)
+{
+  Byte digest[NSha1::kDigestSize];
+  sha.Final(digest);
+  Byte temp[NSha1::kDigestSize * 2];
+  DeriveKey2(digest, 0x36, temp);
+  DeriveKey2(digest, 0x5C, temp + NSha1::kDigestSize);
+  memcpy(key, temp, 32);
+}
+
+void CKeyInfo::SetPassword(const Byte *data, UInt32 size)
+{
+  NSha1::CContext sha;
+  sha.Init();
+  sha.Update(data, size);
+  DeriveKey(sha, MasterKey);
+}
+
+STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
+{
+  _key.SetPassword(data, size);
+  return S_OK;
+}
+
+STDMETHODIMP CBaseCoder::Init()
+{
+  return S_OK;
+}
+
+HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UInt64 /* unpackSize */)
+{
+  Byte temp[4];
+  RINOK(ReadStream_FALSE(inStream, temp, 2));
+  _ivSize = GetUi16(temp);
+  if (_ivSize == 0)
+  {
+    return E_NOTIMPL;
+    /*
+    SetUi32(_iv, crc);
+    for (int i = 0; i < 8; i++)
+     _iv[4 + i] = (Byte)(unpackSize >> (8 * i));
+    SetUi32(_iv + 12, 0);
+    */
+  }
+  else if (_ivSize == 16)
+  {
+    RINOK(ReadStream_FALSE(inStream, _iv, _ivSize));
+  }
+  else
+    return E_NOTIMPL;
+  RINOK(ReadStream_FALSE(inStream, temp, 4));
+  _remSize = GetUi32(temp);
+  if (_remSize > _buf.GetCapacity())
+  {
+    _buf.Free();
+    _buf.SetCapacity(_remSize);
+  }
+  return ReadStream_FALSE(inStream, _buf, _remSize);
+}
+
+HRESULT CDecoder::CheckPassword(bool &passwOK)
+{
+  passwOK = false;
+  if (_remSize < 10)
+    return E_NOTIMPL;
+  Byte *p = _buf;
+  UInt16 format = GetUi16(p);
+  if (format != 3)
+    return E_NOTIMPL;
+  UInt16 algId  = GetUi16(p + 2);
+  if (algId < kAES128)
+    return E_NOTIMPL;
+  algId -= kAES128;
+  if (algId > 2)
+    return E_NOTIMPL;
+  UInt16 bitLen = GetUi16(p + 4);
+  UInt16 flags  = GetUi16(p + 6);
+  if (algId * 64 + 128 != bitLen)
+    return E_NOTIMPL;
+  _key.KeySize = 16 + algId * 8;
+  if ((flags & 1) == 0)
+    return E_NOTIMPL;
+  UInt32 rdSize = GetUi16(p + 8);
+  UInt32 pos = 10;
+  Byte *rd = p + pos;
+  pos += rdSize;
+  if (pos + 4 > _remSize)
+    return E_NOTIMPL;
+  UInt32 reserved = GetUi32(p + pos);
+  pos += 4;
+  if (reserved != 0)
+    return E_NOTIMPL;
+  if (pos + 2 > _remSize)
+    return E_NOTIMPL;
+  UInt32 validSize = GetUi16(p + pos);
+  pos += 2;
+  Byte *validData = p + pos;
+  if (pos + validSize != _remSize)
+    return E_NOTIMPL;
+
+  if (!_aesFilter)
+    _aesFilter = new CAesCbcDecoder;
+
+  CMyComPtr<ICryptoProperties> cp;
+  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
+  {
+    RINOK(cp->SetKey(_key.MasterKey, _key.KeySize));
+    RINOK(cp->SetInitVector(_iv, 16));
+    _aesFilter->Init();
+    if (_aesFilter->Filter(rd, rdSize) != rdSize)
+      return E_NOTIMPL;
+  }
+
+  Byte fileKey[32];
+  NSha1::CContext sha;
+  sha.Init();
+  sha.Update(_iv, 16);
+  sha.Update(rd, rdSize - 16); // we don't use last 16 bytes (PAD bytes)
+  DeriveKey(sha, fileKey);
+  
+  RINOK(cp->SetKey(fileKey, _key.KeySize));
+  RINOK(cp->SetInitVector(_iv, 16));
+  _aesFilter->Init();
+  if (_aesFilter->Filter(validData, validSize) != validSize)
+    return E_NOTIMPL;
+
+  if (validSize < 4)
+    return E_NOTIMPL;
+  validSize -= 4;
+  if (GetUi32(validData + validSize) != CrcCalc(validData, validSize))
+    return S_OK;
+  passwOK = true;
+  _aesFilter->Init();
+  return S_OK;
+}
+
+STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+{
+  return _aesFilter->Filter(data, size);
+}
+
+}}

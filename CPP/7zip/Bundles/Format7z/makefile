@@ -33,7 +33,6 @@ WIN_OBJS = \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
-  $O\LSBFDecoder.obj \
   $O\MethodId.obj \
   $O\MethodProps.obj \
   $O\OutBuffer.obj \
@@ -78,57 +77,37 @@ AR_COMMON_OBJS = \
 
 COMPRESS_OBJS = \
   $O\CodecExports.obj \
-
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
+  $O\BitlDecoder.obj \
   $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-SWAP_OPT_OBJS = \
   $O\ByteSwap.obj \
   $O\ByteSwapRegister.obj \
-
-BZIP2_OBJS = \
-  $O\BZip2CRC.obj \
-  $O\BZip2Register.obj \
-
-BZIP2_OPT_OBJS = \
+  $O\BZip2Crc.obj \
   $O\BZip2Decoder.obj \
-
-COPY_OBJS = \
+  $O\BZip2Encoder.obj \
+  $O\BZip2Register.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
-
-DEFLATE_OPT_OBJS = \
   $O\DeflateDecoder.obj \
+  $O\DeflateEncoder.obj \
   $O\DeflateRegister.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaEncoder.obj \
+  $O\LzmaRegister.obj \
+  $O\LzOutWindow.obj \
+  $O\PpmdDecoder.obj \
+  $O\PpmdEncoder.obj \
+  $O\PpmdRegister.obj \
 
-LZ_OBJS = \
-  $O\LZOutWindow.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMAEncoder.obj \
-  $O\LZMARegister.obj \
-
-PPMD_OPT_OBJS = \
-  $O\PPMDDecoder.obj \
-  $O\PPMDEncoder.obj \
-  $O\PPMDRegister.obj \
-
-
-7ZAES_OPT_OBJS = \
-  $O\7zAES.obj \
-  $O\7zAESRegister.obj \
-
-AES_OPT_OBJS = \
-  $O\MyAES.obj \
-
-CRYPTO_HASH_OBJS = \
+CRYPTO_OBJS = \
+  $O\7zAes.obj \
+  $O\7zAesRegister.obj \
+  $O\MyAes.obj \
   $O\RandGen.obj \
   $O\Sha1.obj \
 
@@ -137,11 +116,14 @@ C_OBJS = \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
-  $O\LzmaDec.obj \
-  $O\LzmaEnc.obj \
-  $O\Threads.obj \
+  $O\BwtSort.obj \
+  $O\HuffEnc.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
+  $O\LzmaDec.obj \
+  $O\LzmaEnc.obj \
+  $O\Sort.obj \
+  $O\Threads.obj \
   $O\Aes.obj \
   $O\Sha256.obj \
 
@@ -157,19 +139,8 @@ OBJS = \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(COMPRESS_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(SWAP_OPT_OBJS) \
-  $(BZIP2_OBJS) \
-  $(BZIP2_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(DEFLATE_OPT_OBJS) \
-  $(LZ_OBJS) \
-  $(LZMA_OPT_OBJS) \
-  $(PPMD_OPT_OBJS) \
+  $(CRYPTO_OBJS) \
   $(C_OBJS) \
-  $(7ZAES_OPT_OBJS) \
-  $(AES_OPT_OBJS) \
-  $(CRYPTO_HASH_OBJS) \
   $(CRC_OBJS) \
   $O\resource.res
 
@@ -191,31 +162,9 @@ $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
 
 $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
-	$(COMPL)
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
-	$(COMPL_O2)
-$(SWAP_OPT_OBJS): ../../Compress/ByteSwap/$(*B).cpp
-	$(COMPL_O2)
-$(BZIP2_OBJS): ../../Compress/BZip2/$(*B).cpp
-	$(COMPL)
-$(BZIP2_OPT_OBJS): ../../Compress/BZip2/$(*B).cpp
-	$(COMPL_O2)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(DEFLATE_OPT_OBJS): ../../Compress/Deflate/$(*B).cpp
-	$(COMPL_O2)
-$(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
-	$(COMPL)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
-	$(COMPL_O2)
-$(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
 	$(COMPL_O2)
 
-$(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
-	$(COMPL_O2)
-$(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
-	$(COMPL_O2)
-$(CRYPTO_HASH_OBJS): ../../Crypto/Hash/$(*B).cpp
+$(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
 	$(COMPL_O2)
 
 $(C_OBJS): ../../../../C/$(*B).c

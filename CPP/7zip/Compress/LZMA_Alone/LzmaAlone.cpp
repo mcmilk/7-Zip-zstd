@@ -22,8 +22,8 @@
 #include "../../Common/FileStreams.h"
 #include "../../Common/StreamUtils.h"
 
-#include "../LZMA/LZMADecoder.h"
-#include "../LZMA/LZMAEncoder.h"
+#include "../LzmaDecoder.h"
+#include "../LzmaEncoder.h"
 
 #include "LzmaBenchCon.h"
 
@@ -380,7 +380,7 @@ int main2(int n, const char *args[])
   UInt64 fileSize;
   if (encodeMode)
   {
-    NCompress::NLZMA::CEncoder *encoderSpec = new NCompress::NLZMA::CEncoder;
+    NCompress::NLzma::CEncoder *encoderSpec = new NCompress::NLzma::CEncoder;
     CMyComPtr<ICompressCoder> encoder = encoderSpec;
 
     if (!dictDefined)
@@ -482,7 +482,7 @@ int main2(int n, const char *args[])
   }
   else
   {
-    NCompress::NLZMA::CDecoder *decoderSpec = new NCompress::NLZMA::CDecoder;
+    NCompress::NLzma::CDecoder *decoderSpec = new NCompress::NLzma::CDecoder;
     CMyComPtr<ICompressCoder> decoder = decoderSpec;
     decoderSpec->FinishStream = true;
     const UInt32 kPropertiesSize = 5;

@@ -102,3 +102,10 @@ HRESULT CUpdateCallbackAgent::CryptoGetTextPassword2(Int32 *passwordIsDefined, B
   }
   return _cryptoGetTextPassword->CryptoGetTextPassword2(passwordIsDefined, password);
 }
+
+/*
+HRESULT CUpdateCallbackAgent::ShowDeleteFile(const wchar_t *name)
+{
+  return Callback->DeleteOperation(name);
+}
+*/

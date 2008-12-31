@@ -60,8 +60,9 @@ STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *name)
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t * /* name */)
+STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *name)
 {
+  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
   return S_OK;
 }
 

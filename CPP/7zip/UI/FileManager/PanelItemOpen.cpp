@@ -105,6 +105,8 @@ HRESULT CPanel::OpenItemAsArchive(const UString &name,
   _folder = newFolder;
   _library.Attach(library.Detach());
 
+  _flatMode = _flatModeForArc;
+
   return S_OK;
 }
 

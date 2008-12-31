@@ -2,27 +2,26 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
-#include "ZipUpdate.h"
-#include "ZipAddCommon.h"
-#include "ZipOut.h"
-
-#include "Common/Defs.h"
 #include "Common/AutoPtr.h"
+#include "Common/Defs.h"
 #include "Common/StringConvert.h"
+
 #include "Windows/Defs.h"
 #include "Windows/Thread.h"
 
+#include "../../Common/CreateCoder.h"
+#include "../../Common/LimitedStreams.h"
+#include "../../Common/OutMemStream.h"
 #include "../../Common/ProgressUtils.h"
 #ifdef COMPRESS_MT
 #include "../../Common/ProgressMt.h"
 #endif
-#include "../../Common/LimitedStreams.h"
-#include "../../Common/OutMemStream.h"
-#include "../../Common/CreateCoder.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
+
+#include "ZipAddCommon.h"
+#include "ZipOut.h"
+#include "ZipUpdate.h"
 
 using namespace NWindows;
 using namespace NSynchronization;

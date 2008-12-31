@@ -11,14 +11,15 @@
 #include "Windows/PropVariantConversions.h"
 #include "Windows/Time.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
+
 #include "../../Common/FileStreams.h"
 
-#include "../Common/UpdatePair.h"
 #include "../Common/EnumDirItems.h"
 #include "../Common/HandlerLoader.h"
-#include "../Common/UpdateCallback.h"
 #include "../Common/OpenArchive.h"
+#include "../Common/UpdateCallback.h"
+#include "../Common/UpdatePair.h"
 
 #include "Agent.h"
 #include "UpdateCallbackAgent.h"
@@ -143,6 +144,21 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
   return S_OK;
 }
 
+struct CAgUpCallbackImp: public IUpdateProduceCallback
+{
+  const CObjectVector<CArcItem> *_arcItems;
+  IFolderArchiveUpdateCallback *_callback;
+  
+  CAgUpCallbackImp(const CObjectVector<CArcItem> *a, 
+      IFolderArchiveUpdateCallback *callback): _arcItems(a), _callback(callback) {}
+  HRESULT ShowDeleteFile(int arcIndex);
+};
+
+HRESULT CAgUpCallbackImp::ShowDeleteFile(int arcIndex)
+{
+  return _callback->DeleteOperation((*_arcItems)[arcIndex].Name);
+}
+
 STDMETHODIMP CAgent::DoOperation(
     CCodecs *codecs,
     int formatIndex,
@@ -221,7 +237,8 @@ STDMETHODIMP CAgent::DoOperation(
   {
     CRecordVector<CUpdatePair> updatePairs;
     GetUpdatePairInfoList(dirItems, arcItems, fileTimeType, updatePairs);
-    UpdateProduce(updatePairs, actionSet, updatePairs2);
+    CAgUpCallbackImp upCallback(&arcItems, updateCallback100);
+    UpdateProduce(updatePairs, actionSet, updatePairs2, &upCallback);
   }
 
   UInt32 numFiles = 0;

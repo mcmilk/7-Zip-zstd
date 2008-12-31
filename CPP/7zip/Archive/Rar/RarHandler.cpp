@@ -2,25 +2,29 @@
 
 #include "StdAfx.h"
 
-#include "RarHandler.h"
-
-#include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
 #include "../../IPassword.h"
-#include "../../Common/ProgressUtils.h"
+
 #include "../../Common/CreateCoder.h"
-#include "../../Common/MethodId.h"
 #include "../../Common/FilterCoder.h"
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Crypto/Rar20/Rar20Cipher.h"
-#include "../../Crypto/RarAES/RarAES.h"
-#include "../Common/OutStreamWithCRC.h"
+#include "../../Common/MethodId.h"
+#include "../../Common/ProgressUtils.h"
+
+#include "../../Compress/CopyCoder.h"
+
+#include "../../Crypto/Rar20Crypto.h"
+#include "../../Crypto/RarAes.h"
+
 #include "../Common/ItemNameUtils.h"
+#include "../Common/OutStreamWithCRC.h"
+
+#include "RarHandler.h"
 
 using namespace NWindows;
 using namespace NTime;

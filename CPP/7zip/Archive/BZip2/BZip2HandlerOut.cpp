@@ -9,7 +9,7 @@
 
 #include "Windows/PropVariant.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
+#include "../../Compress/CopyCoder.h"
 
 #include "../Common/ParseProperties.h"
 

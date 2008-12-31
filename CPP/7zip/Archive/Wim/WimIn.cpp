@@ -123,7 +123,7 @@ HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outS
 {
   try { return CodeReal(inStream, outStream, outSize); }
   catch(const CInBufferException &e) { return e.ErrorCode; } \
-  catch(const CLZOutWindowException &e) { return e.ErrorCode; }
+  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
 }
 

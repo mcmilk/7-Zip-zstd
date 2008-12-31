@@ -68,27 +68,19 @@ AR_COMMON_OBJS = \
 
 COMPRESS_OBJS = \
   $O\CodecExports.obj \
-
-SWAP_OPT_OBJS = \
-  $O\ByteSwap.obj \
-  $O\ByteSwapRegister.obj \
-
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
   $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-COPY_OBJS = \
+  $O\ByteSwap.obj \
+  $O\ByteSwapRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMARegister.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaRegister.obj \
 
 C_OBJS = \
   $O\7zCrc.obj \
@@ -109,10 +101,6 @@ OBJS = \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(COMPRESS_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(SWAP_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(LZMA_OPT_OBJS) \
   $(C_OBJS) \
   $O\resource.res
 
@@ -134,14 +122,6 @@ $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
 
 $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
-	$(COMPL)
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
-	$(COMPL_O2)
-$(SWAP_OPT_OBJS): ../../Compress/ByteSwap/$(*B).cpp
-	$(COMPL_O2)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
 	$(COMPL_O2)
 
 $(C_OBJS): ../../../../C/$(*B).c

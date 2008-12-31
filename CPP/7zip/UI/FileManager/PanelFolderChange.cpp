@@ -501,6 +501,8 @@ void CPanel::OpenParentFolder()
       if (_parentFolders.Size () > 1)
         OpenParentArchiveFolder();
       _parentFolders.DeleteBack();
+      if (_parentFolders.IsEmpty())
+        _flatMode = _flatModeForDisk;
     }
   }
 
@@ -528,6 +530,7 @@ void CPanel::CloseOpenFolders()
       OpenParentArchiveFolder();
     _parentFolders.DeleteBack();
   }
+  _flatMode = _flatModeForDisk;
   _folder.Release();
   _library.Free();
 }

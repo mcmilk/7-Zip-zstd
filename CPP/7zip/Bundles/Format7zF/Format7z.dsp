@@ -324,610 +324,417 @@ SOURCE=..\..\..\Common\Wildcard.h
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
-# Begin Group "LZ"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\LZOutWindow.h
-# End Source File
-# End Group
 # Begin Group "PPMD"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDContext.h
+SOURCE=..\..\Compress\PpmdContext.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDDecode.h
+SOURCE=..\..\Compress\PpmdDecode.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDDecoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Compress\PpmdDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDDecoder.h
+SOURCE=..\..\Compress\PpmdDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDEncode.h
+SOURCE=..\..\Compress\PpmdEncode.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDEncoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Compress\PpmdEncoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDEncoder.h
+SOURCE=..\..\Compress\PpmdEncoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDRegister.cpp
+SOURCE=..\..\Compress\PpmdRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDSubAlloc.h
+SOURCE=..\..\Compress\PpmdSubAlloc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PPMD\PPMDType.h
+SOURCE=..\..\Compress\PpmdType.h
 # End Source File
 # End Group
-# Begin Group "Branch"
+# Begin Group "Bit Coder"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BCJ2Register.cpp
+SOURCE=..\..\Compress\BitlDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BCJRegister.cpp
+SOURCE=..\..\Compress\BitlDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+SOURCE=..\..\Compress\BitlEncoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.h
+SOURCE=..\..\Compress\BitmDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchMisc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\BranchMisc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\BranchRegister.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\x86.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\x86.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\x86_2.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\x86_2.h
+SOURCE=..\..\Compress\BitmEncoder.h
 # End Source File
 # End Group
-# Begin Group "LZMA"
+# Begin Group "Rar Compress"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMA.h
+SOURCE=..\..\Compress\Rar1Decoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Compress\Rar1Decoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMADecoder.h
+SOURCE=..\..\Compress\Rar2Decoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMAEncoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Compress\Rar2Decoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMAEncoder.h
+SOURCE=..\..\Compress\Rar3Decoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMARegister.cpp
+SOURCE=..\..\Compress\Rar3Decoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Rar3Vm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Rar3Vm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\RarCodecsRegister.cpp
 # End Source File
 # End Group
-# Begin Group "Copy"
+# Begin Group "BZip2 Compress"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+SOURCE=..\..\Compress\BZip2Const.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyCoder.h
+SOURCE=..\..\Compress\BZip2Crc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyRegister.cpp
+SOURCE=..\..\Compress\BZip2Crc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BZip2Decoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BZip2Decoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BZip2Encoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BZip2Encoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BZip2Register.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Mtf8.h
 # End Source File
 # End Group
-# Begin Group "RangeCoder"
+# Begin Group "Zip Compress"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\RangeCoder\RangeCoder.h
+SOURCE=..\..\Compress\Deflate64Register.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\RangeCoder\RangeCoderBit.cpp
+SOURCE=..\..\Compress\DeflateConst.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\RangeCoder\RangeCoderBit.h
+SOURCE=..\..\Compress\DeflateDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\RangeCoder\RangeCoderBitTree.h
+SOURCE=..\..\Compress\DeflateDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\RangeCoder\RangeCoderOpt.h
+SOURCE=..\..\Compress\DeflateEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\DeflateEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\DeflateNsisRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\DeflateRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ImplodeDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ImplodeDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ImplodeHuffmanDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ImplodeHuffmanDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ShrinkDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ShrinkDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZlibDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZlibDecoder.h
 # End Source File
 # End Group
-# Begin Group "Deflate"
+# Begin Group "7z Compress"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\Deflate64Register.cpp
+SOURCE=..\..\Compress\Bcj2Coder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateConst.h
+SOURCE=..\..\Compress\Bcj2Coder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateDecoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\..\Compress\Bcj2Register.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateDecoder.h
+SOURCE=..\..\Compress\BcjCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateEncoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\..\Compress\BcjCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateEncoder.h
+SOURCE=..\..\Compress\BcjRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateNsisRegister.cpp
+SOURCE=..\..\Compress\BranchCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\DeflateRegister.cpp
+SOURCE=..\..\Compress\BranchCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\ZlibDecoder.cpp
+SOURCE=..\..\Compress\BranchMisc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Deflate\ZlibDecoder.h
+SOURCE=..\..\Compress\BranchMisc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\BranchRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ByteSwap.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ByteSwap.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ByteSwapRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\CopyCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\CopyCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\CopyRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\RangeCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\RangeCoderBit.h
 # End Source File
 # End Group
-# Begin Group "BZip2"
+# Begin Group "Cab Compress"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2Const.h
+SOURCE=..\..\Compress\Lzx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2CRC.cpp
+SOURCE=..\..\Compress\Lzx86Converter.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2CRC.h
+SOURCE=..\..\Compress\Lzx86Converter.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2Decoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\..\Compress\LzxDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2Decoder.h
+SOURCE=..\..\Compress\LzxDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2Encoder.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Compress\QuantumDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BZip2\BZip2Encoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\BZip2\BZip2Register.cpp
+SOURCE=..\..\Compress\QuantumDecoder.h
 # End Source File
 # End Group
-# Begin Group "Rar Codecs"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar1Decoder.cpp
+SOURCE=..\..\Compress\ArjDecoder1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar1Decoder.h
+SOURCE=..\..\Compress\ArjDecoder1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar2Decoder.cpp
+SOURCE=..\..\Compress\ArjDecoder2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar2Decoder.h
+SOURCE=..\..\Compress\ArjDecoder2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar3Decoder.cpp
+SOURCE=..\..\Compress\HuffmanDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar3Decoder.h
+SOURCE=..\..\Compress\LzhDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar3Vm.cpp
+SOURCE=..\..\Compress\LzhDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\Rar3Vm.h
+SOURCE=..\..\Compress\LzOutWindow.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Rar\RarCodecsRegister.cpp
-# End Source File
-# End Group
-# Begin Group "BWT"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\BWT\Mtf8.h
-# End Source File
-# End Group
-# Begin Group "Implode"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Implode\ImplodeDecoder.cpp
+SOURCE=..\..\Compress\LzOutWindow.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Implode\ImplodeDecoder.h
+SOURCE=..\..\Compress\ZDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Implode\ImplodeHuffmanDecoder.cpp
+SOURCE=..\..\Compress\ZDecoder.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Implode\ImplodeHuffmanDecoder.h
-# End Source File
-# End Group
-# Begin Group "Lzx"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx\Lzx.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx\Lzx86Converter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx\Lzx86Converter.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx\LzxDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx\LzxDecoder.h
-# End Source File
-# End Group
-# Begin Group "Z Codec"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Z\ZDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Z\ZDecoder.h
-# End Source File
-# End Group
-# Begin Group "Arj Codecs"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Arj\ArjDecoder1.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Arj\ArjDecoder1.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Arj\ArjDecoder2.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Arj\ArjDecoder2.h
-# End Source File
-# End Group
-# Begin Group "ByteSwap"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\ByteSwap\ByteSwap.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ByteSwap\ByteSwap.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ByteSwap\ByteSwapRegister.cpp
-# End Source File
-# End Group
-# Begin Group "Shrink"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Shrink\ShrinkDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Shrink\ShrinkDecoder.h
-# End Source File
-# End Group
-# Begin Group "Quantum"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Quantum\QuantumDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Quantum\QuantumDecoder.h
-# End Source File
-# End Group
-# Begin Group "Lzh Codecs"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzh\LzhDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzh\LzhDecoder.h
-# End Source File
-# End Group
 # End Group
 # Begin Group "Crypto"
 
 # PROP Default_Filter ""
-# Begin Group "AES"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\MyAES.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Crypto\7zAes.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\AES\MyAES.h
-# End Source File
-# End Group
-# Begin Group "7zAES"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\7zAES\7zAES.cpp
-
-!IF  "$(CFG)" == "7z - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
+SOURCE=..\..\Crypto\7zAes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\7zAES.h
+SOURCE=..\..\Crypto\7zAesRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\7zAES\7zAESRegister.cpp
-# End Source File
-# End Group
-# Begin Group "Hash"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\Hash\HmacSha1.cpp
+SOURCE=..\..\Crypto\HmacSha1.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -941,11 +748,19 @@ SOURCE=..\..\Crypto\Hash\HmacSha1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\HmacSha1.h
+SOURCE=..\..\Crypto\HmacSha1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.cpp
+SOURCE=..\..\Crypto\MyAes.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\MyAes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Pbkdf2HmacSha1.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -959,11 +774,11 @@ SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\Pbkdf2HmacSha1.h
+SOURCE=..\..\Crypto\Pbkdf2HmacSha1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\RandGen.cpp
+SOURCE=..\..\Crypto\RandGen.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -977,11 +792,11 @@ SOURCE=..\..\Crypto\Hash\RandGen.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\RandGen.h
+SOURCE=..\..\Crypto\RandGen.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\Sha1.cpp
+SOURCE=..\..\Crypto\Rar20Crypto.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -995,47 +810,19 @@ SOURCE=..\..\Crypto\Hash\Sha1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Hash\Sha1.h
-# End Source File
-# End Group
-# Begin Group "RarAES"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\RarAES\RarAES.cpp
+SOURCE=..\..\Crypto\Rar20Crypto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\RarAES\RarAES.h
-# End Source File
-# End Group
-# Begin Group "RarCrypto"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\Rar20\Rar20Cipher.cpp
+SOURCE=..\..\Crypto\RarAes.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Rar20\Rar20Cipher.h
+SOURCE=..\..\Crypto\RarAes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Rar20\Rar20Crypto.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Rar20\Rar20Crypto.h
-# End Source File
-# End Group
-# Begin Group "WzAES"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\WzAES\WzAES.cpp
+SOURCE=..\..\Crypto\Sha1.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -1049,33 +836,52 @@ SOURCE=..\..\Crypto\WzAES\WzAES.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\WzAES\WzAES.h
-# End Source File
-# End Group
-# Begin Group "ZipCrypto"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\Zip\ZipCipher.cpp
+SOURCE=..\..\Crypto\Sha1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Zip\ZipCipher.h
+SOURCE=..\..\Crypto\WzAes.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Zip\ZipCrypto.cpp
+SOURCE=..\..\Crypto\WzAes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Crypto\Zip\ZipCrypto.h
-# End Source File
-# End Group
-# Begin Group "ZipStrong"
+SOURCE=..\..\Crypto\ZipCrypto.cpp
 
-# PROP Default_Filter ""
-# End Group
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\ZipCrypto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\ZipStrong.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\ZipStrong.h
+# End Source File
 # End Group
 # Begin Group "7zip Common"
 
@@ -1127,22 +933,6 @@ SOURCE=..\..\Common\LockedStream.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\LockedStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\LSBFDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\LSBFDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\LSBFEncoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\LSBFEncoder.h
 # End Source File
 # Begin Source File
 

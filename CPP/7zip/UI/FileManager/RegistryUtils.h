@@ -43,4 +43,7 @@ void SaveUnderline(bool enable);
 bool ReadUnderline();
 */
 
+void SaveFlatView(UInt32 panelIndex, bool enable);
+bool ReadFlatView(UInt32 panelIndex);
+
 #endif

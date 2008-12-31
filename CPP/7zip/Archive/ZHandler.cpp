@@ -10,7 +10,7 @@
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/Z/ZDecoder.h"
+#include "../Compress/ZDecoder.h"
 
 #include "Common/DummyOutStream.h"
 

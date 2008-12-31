@@ -111,7 +111,7 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
+$O\CopyCoder.obj: ../../Compress/$(*B).cpp
 	$(COMPL)
 $(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)

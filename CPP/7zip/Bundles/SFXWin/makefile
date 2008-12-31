@@ -89,35 +89,24 @@ AR_COMMON_OBJS = \
   $O\7zIn.obj \
   $O\7zRegister.obj \
 
-BRANCH_OPT_OBJS = \
-  $O\x86.obj \
-  $O\x86_2.obj \
+COMPRESS_OBJS = \
   $O\BranchCoder.obj \
-  $O\BCJRegister.obj \
-  $O\BCJ2Register.obj \
-
-COPY_OBJS = \
+  $O\Bcj2Coder.obj \
+  $O\Bcj2Register.obj \
+  $O\BcjCoder.obj \
+  $O\BcjRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\LzmaDecoder.obj \
+  $O\LzmaRegister.obj \
+  $O\PpmdDecoder.obj \
+  $O\PpmdRegister.obj \
 
-LZ_OBJS = \
-  $O\LZOutWindow.obj \
-
-LZMA_OPT_OBJS = \
-  $O\LZMADecoder.obj \
-  $O\LZMARegister.obj \
-
-PPMD_OPT_OBJS = \
-  $O\PPMDDecoder.obj \
-  $O\PPMDRegister.obj \
-
-7ZAES_OPT_OBJS = \
-  $O\7zAES.obj \
-  $O\7zAESRegister.obj \
-
-AES_OPT_OBJS = \
-  $O\MyAES.obj \
-
+CRYPTO_OBJS = \
+  $O\7zAes.obj \
+  $O\7zAesRegister.obj \
+  $O\MyAes.obj \
+  
 C_OBJS = \
   $O\Alloc.obj \
   $O\Bra86.obj \
@@ -140,13 +129,8 @@ OBJS = \
   $(FM_OBJS)\
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
-  $(BRANCH_OPT_OBJS) \
-  $(COPY_OBJS) \
-  $(LZ_OBJS) \
-  $(LZMA_OPT_OBJS) \
-  $(PPMD_OPT_OBJS) \
-  $(7ZAES_OPT_OBJS) \
-  $(AES_OPT_OBJS) \
+  $(COMPRESS_OBJS) \
+  $(CRYPTO_OBJS) \
   $O\MyMessages.obj \
   $(C_OBJS) \
   $(CRC_OBJS) \
@@ -177,20 +161,9 @@ $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 
 $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
-$(BRANCH_OPT_OBJS): ../../Compress/Branch/$(*B).cpp
+$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL)
-$(COPY_OBJS): ../../Compress/Copy/$(*B).cpp
-	$(COMPL)
-$(LZ_OBJS): ../../Compress/LZ/$(*B).cpp
-	$(COMPL)
-$(LZMA_OPT_OBJS): ../../Compress/LZMA/$(*B).cpp
-	$(COMPL)
-$(PPMD_OPT_OBJS): ../../Compress/PPMD/$(*B).cpp
-	$(COMPL)
-
-$(7ZAES_OPT_OBJS): ../../Crypto/7zAES/$(*B).cpp
-	$(COMPL)
-$(AES_OPT_OBJS): ../../Crypto/AES/$(*B).cpp
+$(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
 	$(COMPL)
 
 $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp

@@ -2,40 +2,35 @@
 
 #include "StdAfx.h"
 
-#include "ZipHandler.h"
-
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
 #include "Common/ComTry.h"
+#include "Common/Defs.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
-#include "Windows/Time.h"
 #include "Windows/PropVariant.h"
+#include "Windows/Time.h"
 
 #include "../../IPassword.h"
 
+#include "../../Common/CreateCoder.h"
+#include "../../Common/FilterCoder.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
-#include "../../Common/CreateCoder.h"
-#include "../../Common/FilterCoder.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Compress/LZMA/LZMADecoder.h"
+#include "../../Compress/CopyCoder.h"
+#include "../../Compress/LzmaDecoder.h"
+#include "../../Compress/ImplodeDecoder.h"
+#include "../../Compress/ShrinkDecoder.h"
+
+#include "../../Crypto/WzAes.h"
+#include "../../Crypto/ZipCrypto.h"
+#include "../../Crypto/ZipStrong.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
 
-#include "../../Compress/Shrink/ShrinkDecoder.h"
-#include "../../Compress/Implode/ImplodeDecoder.h"
-
-
-#include "../../Crypto/Zip/ZipCipher.h"
-#include "../../Crypto/WzAES/WzAES.h"
-
-#ifdef ZIP_STRONG_SUPORT
-#include "../../Crypto/ZipStrong/ZipStrong.h"
-#endif
+#include "ZipHandler.h"
 
 using namespace NWindows;
 
@@ -381,7 +376,7 @@ class CLzmaDecoder:
   public ICompressCoder,
   public CMyUnknownImp
 {
-  NCompress::NLZMA::CDecoder *DecoderSpec;
+  NCompress::NLzma::CDecoder *DecoderSpec;
   CMyComPtr<ICompressCoder> Decoder;
 public:
   CLzmaDecoder();
@@ -393,7 +388,7 @@ public:
 
 CLzmaDecoder::CLzmaDecoder()
 {
-  DecoderSpec = new NCompress::NLZMA::CDecoder;
+  DecoderSpec = new NCompress::NLzma::CDecoder;
   Decoder = DecoderSpec;
 }
 
@@ -417,20 +412,24 @@ struct CMethodItem
 class CZipDecoder
 {
   NCrypto::NZip::CDecoder *_zipCryptoDecoderSpec;
-  NCrypto::NWzAES::CDecoder *_aesDecoderSpec;
+  NCrypto::NZipStrong::CDecoder *_pkAesDecoderSpec;
+  NCrypto::NWzAes::CDecoder *_wzAesDecoderSpec;
+
   CMyComPtr<ICompressFilter> _zipCryptoDecoder;
-  CMyComPtr<ICompressFilter> _aesDecoder;
-  #ifdef ZIP_STRONG_SUPORT
-  NCrypto::NZipStrong::CDecoder *_zsDecoderSpec;
-  CMyComPtr<ICompressFilter> _zsDecoder;
-  #endif
+  CMyComPtr<ICompressFilter> _pkAesDecoder;
+  CMyComPtr<ICompressFilter> _wzAesDecoder;
+
   CFilterCoder *filterStreamSpec;
   CMyComPtr<ISequentialInStream> filterStream;
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
   CObjectVector<CMethodItem> methodItems;
 
 public:
-  CZipDecoder(): _zipCryptoDecoderSpec(0), _aesDecoderSpec(0), filterStreamSpec(0) {}
+  CZipDecoder(): 
+      _zipCryptoDecoderSpec(0),
+      _pkAesDecoderSpec(0),
+      _wzAesDecoderSpec(0),
+      filterStreamSpec(0) {}
 
   HRESULT Decode(
     DECL_EXTERNAL_CODECS_LOC_VARS
@@ -453,23 +452,19 @@ HRESULT CZipDecoder::Decode(
   CInStreamReleaser inStreamReleaser;
 
   bool needCRC = true;
-  bool aesMode = false;
-  #ifdef ZIP_STRONG_SUPORT
+  bool wzAesMode = false;
   bool pkAesMode = false;
-  #endif
   UInt16 methodId = item.CompressionMethod;
   if (item.IsEncrypted())
   {
     if (item.IsStrongEncrypted())
     {
-      #ifdef ZIP_STRONG_SUPORT
       CStrongCryptoField f;
       if (item.CentralExtra.GetStrongCryptoField(f))
       {
         pkAesMode = true;
       }
       if (!pkAesMode)
-      #endif
       {
         res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
         return S_OK;
@@ -480,7 +475,7 @@ HRESULT CZipDecoder::Decode(
       CWzAesExtraField aesField;
       if (item.CentralExtra.GetWzAesField(aesField))
       {
-        aesMode = true;
+        wzAesMode = true;
         needCRC = aesField.NeedCrc();
       }
     }
@@ -496,11 +491,11 @@ HRESULT CZipDecoder::Decode(
   CMyComPtr<ISequentialInStream> inStream;
   {
     UInt64 packSize = item.PackSize;
-    if (aesMode)
+    if (wzAesMode)
     {
-      if (packSize < NCrypto::NWzAES::kMacSize)
+      if (packSize < NCrypto::NWzAes::kMacSize)
         return S_OK;
-      packSize -= NCrypto::NWzAES::kMacSize;
+      packSize -= NCrypto::NWzAes::kMacSize;
     }
     UInt64 dataPos = item.GetDataPosition();
     inStream.Attach(archive.CreateLimitedStream(dataPos, packSize));
@@ -510,32 +505,30 @@ HRESULT CZipDecoder::Decode(
   CMyComPtr<ICompressFilter> cryptoFilter;
   if (item.IsEncrypted())
   {
-    if (aesMode)
+    if (wzAesMode)
     {
       CWzAesExtraField aesField;
       if (!item.CentralExtra.GetWzAesField(aesField))
         return S_OK;
       methodId = aesField.Method;
-      if (!_aesDecoder)
+      if (!_wzAesDecoder)
       {
-        _aesDecoderSpec = new NCrypto::NWzAES::CDecoder;
-        _aesDecoder = _aesDecoderSpec;
+        _wzAesDecoderSpec = new NCrypto::NWzAes::CDecoder;
+        _wzAesDecoder = _wzAesDecoderSpec;
       }
-      cryptoFilter = _aesDecoder;
+      cryptoFilter = _wzAesDecoder;
       Byte properties = aesField.Strength;
-      RINOK(_aesDecoderSpec->SetDecoderProperties2(&properties, 1));
+      RINOK(_wzAesDecoderSpec->SetDecoderProperties2(&properties, 1));
     }
-    #ifdef ZIP_STRONG_SUPORT
     else if (pkAesMode)
     {
-      if (!_zsDecoder)
+      if (!_pkAesDecoder)
       {
-        _zsDecoderSpec = new NCrypto::NZipStrong::CDecoder;
-        _zsDecoder = _zsDecoderSpec;
+        _pkAesDecoderSpec = new NCrypto::NZipStrong::CDecoder;
+        _pkAesDecoder = _pkAesDecoderSpec;
       }
-      cryptoFilter = _zsDecoder;
+      cryptoFilter = _pkAesDecoder;
     }
-    #endif
     else
     {
       if (!_zipCryptoDecoder)
@@ -556,11 +549,7 @@ HRESULT CZipDecoder::Decode(
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password));
       AString charPassword;
-      if (aesMode
-        #ifdef ZIP_STRONG_SUPORT
-        || pkAesMode
-        #endif
-        )
+      if (wzAesMode || pkAesMode)
       {
         charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_ACP);
         /*
@@ -583,9 +572,9 @@ HRESULT CZipDecoder::Decode(
         // we use OEM. WinZip/Windows probably use ANSI for some files
         charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
       }
-      HRESULT res = cryptoSetPassword->CryptoSetPassword(
+      HRESULT result = cryptoSetPassword->CryptoSetPassword(
         (const Byte *)(const char *)charPassword, charPassword.Length());
-      if (res != S_OK)
+      if (result != S_OK)
         return S_OK;
     }
     else
@@ -660,7 +649,7 @@ HRESULT CZipDecoder::Decode(
   #endif
   
   {
-    HRESULT result;
+    HRESULT result = S_OK;
     CMyComPtr<ISequentialInStream> inStreamNew;
     if (item.IsEncrypted())
     {
@@ -670,33 +659,42 @@ HRESULT CZipDecoder::Decode(
         filterStream = filterStreamSpec;
       }
       filterStreamSpec->Filter = cryptoFilter;
-      if (aesMode)
+      if (wzAesMode)
       {
-        RINOK(_aesDecoderSpec->ReadHeader(inStream));
+        result = _wzAesDecoderSpec->ReadHeader(inStream);
+        if (result == S_OK)
+        {
+          if (!_wzAesDecoderSpec->CheckPasswordVerifyCode())
+            result = S_FALSE;
+        }
       }
-      #ifdef ZIP_STRONG_SUPORT
       else if (pkAesMode)
       {
-        RINOK(_zsDecoderSpec->ReadHeader(inStream));
+        result =_pkAesDecoderSpec->ReadHeader(inStream, item.FileCRC, item.UnPackSize);
+        if (result == S_OK)
+        {
+          bool passwOK;
+          result = _pkAesDecoderSpec->CheckPassword(passwOK);
+          if (result == S_OK && !passwOK)
+            result = S_FALSE;
+        }
       }
-      #endif
       else
       {
-        RINOK(_zipCryptoDecoderSpec->ReadHeader(inStream));
+        result = _zipCryptoDecoderSpec->ReadHeader(inStream);
       }
-      RINOK(filterStreamSpec->SetInStream(inStream));
-      inStreamReleaser.FilterCoder = filterStreamSpec;
-      inStreamNew = filterStream;
-      
-      if (aesMode)
+
+      if (result == S_OK)
       {
-        if (!_aesDecoderSpec->CheckPasswordVerifyCode())
-          return S_OK;
+        RINOK(filterStreamSpec->SetInStream(inStream));
+        inStreamReleaser.FilterCoder = filterStreamSpec;
+        inStreamNew = filterStream;
       }
     }
     else
       inStreamNew = inStream;
-    result = coder->Code(inStreamNew, outStream, NULL, &item.UnPackSize, compressProgress);
+    if (result == S_OK)
+      result = coder->Code(inStreamNew, outStream, NULL, &item.UnPackSize, compressProgress);
     if (result == S_FALSE)
       return S_OK;
     if (result == E_NOTIMPL)
@@ -711,10 +709,10 @@ HRESULT CZipDecoder::Decode(
   bool authOk = true;
   if (needCRC)
     crcOK = (outStreamSpec->GetCRC() == item.FileCRC);
-  if (aesMode)
+  if (wzAesMode)
   {
-    inStream.Attach(archive.CreateLimitedStream(authenticationPos, NCrypto::NWzAES::kMacSize));
-    if (_aesDecoderSpec->CheckMac(inStream, authOk) != S_OK)
+    inStream.Attach(archive.CreateLimitedStream(authenticationPos, NCrypto::NWzAes::kMacSize));
+    if (_wzAesDecoderSpec->CheckMac(inStream, authOk) != S_OK)
       authOk = false;
   }
   

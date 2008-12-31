@@ -185,7 +185,7 @@ $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 $(AGENT_OBJS): ../Agent/$(*B).cpp
 	$(COMPL)
 
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
+$O\CopyCoder.obj: ../../Compress/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)

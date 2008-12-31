@@ -22,8 +22,8 @@ OBJS = \
   LzmaAlone.o \
   LzmaBench.o \
   LzmaBenchCon.o \
-  LZMADecoder.o \
-  LZMAEncoder.o \
+  LzmaDecoder.o \
+  LzmaEncoder.o \
   InBuffer.o \
   OutBuffer.o \
   FileStreams.o \
@@ -60,11 +60,11 @@ LzmaBench.o: LzmaBench.cpp
 LzmaBenchCon.o: LzmaBenchCon.cpp
 	$(CXX) $(CFLAGS) LzmaBenchCon.cpp
 
-LZMADecoder.o: ../LZMA/LZMADecoder.cpp
-	$(CXX) $(CFLAGS) ../LZMA/LZMADecoder.cpp
+LzmaDecoder.o: ../LzmaDecoder.cpp
+	$(CXX) $(CFLAGS) ../LzmaDecoder.cpp
 
-LZMAEncoder.o: ../LZMA/LZMAEncoder.cpp
-	$(CXX) $(CFLAGS) ../LZMA/LZMAEncoder.cpp
+LzmaEncoder.o: ../LzmaEncoder.cpp
+	$(CXX) $(CFLAGS) ../LzmaEncoder.cpp
 
 InBuffer.o: ../../Common/InBuffer.cpp
 	$(CXX) $(CFLAGS) ../../Common/InBuffer.cpp

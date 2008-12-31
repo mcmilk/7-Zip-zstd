@@ -1,4 +1,4 @@
-// AddCommon.cpp
+// ZipAddCommon.cpp
 
 #include "StdAfx.h"
 
@@ -8,14 +8,17 @@ extern "C"
 }
 
 #include "Windows/PropVariant.h"
-#include "Windows/Defs.h"
-#include "../../MyVersion.h"
+
 #include "../../ICoder.h"
 #include "../../IPassword.h"
+#include "../../MyVersion.h"
+
 #include "../../Common/CreateCoder.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
-#include "../../Compress/LZMA/LZMAEncoder.h"
+
+#include "../../Compress/LzmaEncoder.h"
+
 #include "../Common/InStreamWithCRC.h"
 
 #include "ZipAddCommon.h"
@@ -34,7 +37,7 @@ class CLzmaEncoder:
   public ICompressCoder,
   public CMyUnknownImp
 {
-  NCompress::NLZMA::CEncoder *EncoderSpec;
+  NCompress::NLzma::CEncoder *EncoderSpec;
   CMyComPtr<ICompressCoder> Encoder;
   Byte Header[kLzmaHeaderSize];
 public:
@@ -49,7 +52,7 @@ HRESULT CLzmaEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIAN
 {
   if (!Encoder)
   {
-    EncoderSpec = new NCompress::NLZMA::CEncoder;
+    EncoderSpec = new NCompress::NLzma::CEncoder;
     Encoder = EncoderSpec;
   }
   CSequentialOutStreamImp *outStreamSpec = new CSequentialOutStreamImp;
@@ -153,7 +156,7 @@ HRESULT CAddCommon::Compress(
       }
       if (_options.IsAesMode)
       {
-        _cryptoStreamSpec->Filter = _aesFilter = _filterAesSpec = new NCrypto::NWzAES::CEncoder;
+        _cryptoStreamSpec->Filter = _aesFilter = _filterAesSpec = new NCrypto::NWzAes::CEncoder;
         _filterAesSpec->SetKeyMode(_options.AesKeyMode);
         RINOK(_filterAesSpec->CryptoSetPassword(
             (const Byte *)(const char *)_options.Password, _options.Password.Length()));

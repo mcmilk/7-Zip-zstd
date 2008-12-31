@@ -1,16 +1,20 @@
-// HandlerOutCommon.cpp
+// HandlerOut.cpp
 
 #include "StdAfx.h"
 
-#include "HandlerOut.h"
-#include "../../../Windows/PropVariant.h"
 #include "../../../Common/StringToInt.h"
-#include "../../ICoder.h"
-#include "../Common/ParseProperties.h"
+
+#include "../../../Windows/PropVariant.h"
 
 #ifdef COMPRESS_MT
 #include "../../../Windows/System.h"
 #endif
+
+#include "../../ICoder.h"
+
+#include "../Common/ParseProperties.h"
+
+#include "HandlerOut.h"
 
 using namespace NWindows;
 
@@ -161,13 +165,13 @@ static int FindPropIdFromStringName(const UString &name)
 static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID,
     const NWindows::NCOM::CPropVariant &value)
 {
-  for (int j = 0; j < oneMethodInfo.Properties.Size(); j++)
-    if (oneMethodInfo.Properties[j].Id == propID)
+  for (int j = 0; j < oneMethodInfo.Props.Size(); j++)
+    if (oneMethodInfo.Props[j].Id == propID)
       return;
-  CProp property;
-  property.Id = propID;
-  property.Value = value;
-  oneMethodInfo.Properties.Add(property);
+  CProp prop;
+  prop.Id = propID;
+  prop.Value = value;
+  oneMethodInfo.Props.Add(prop);
 }
 
 void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
@@ -311,19 +315,16 @@ static void SplitParam(const UString &param, UString &name, UString &value)
 
 HRESULT COutHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value)
 {
-  CProp property;
-  if (
-    name.CompareNoCase(L"D") == 0 ||
-    name.CompareNoCase(L"MEM") == 0)
+  CProp prop;
+  if (name.CompareNoCase(L"D") == 0 ||
+      name.CompareNoCase(L"MEM") == 0)
   {
     UInt32 dicSize;
     RINOK(ParsePropDictionaryValue(value, dicSize));
-    if (name.CompareNoCase(L"D") == 0)
-      property.Id = NCoderPropID::kDictionarySize;
-    else
-      property.Id = NCoderPropID::kUsedMemorySize;
-    property.Value = dicSize;
-    oneMethodInfo.Properties.Add(property);
+    prop.Id = (name.CompareNoCase(L"D") == 0) ?
+        NCoderPropID::kDictionarySize :
+        NCoderPropID::kUsedMemorySize;
+    prop.Value = dicSize;
   }
   else
   {
@@ -332,7 +333,7 @@ HRESULT COutHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name
       return E_INVALIDARG;
     
     const CNameToPropID &nameToPropID = g_NameToPropID[index];
-    property.Id = nameToPropID.PropID;
+    prop.Id = nameToPropID.PropID;
     
     NCOM::CPropVariant propValue;
     
@@ -354,11 +355,10 @@ HRESULT COutHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name
         propValue = value;
     }
     
-    if (!ConvertProperty(propValue, nameToPropID.VarType, property.Value))
+    if (!ConvertProperty(propValue, nameToPropID.VarType, prop.Value))
       return E_INVALIDARG;
-    
-    oneMethodInfo.Properties.Add(property);
   }
+  oneMethodInfo.Props.Add(prop);
   return S_OK;
 }
 
@@ -576,14 +576,13 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
   }
   else
   {
-    CProp property;
+    CProp prop;
     if (realName.Left(1).CompareNoCase(L"D") == 0)
     {
       UInt32 dicSize;
       RINOK(ParsePropDictionaryValue(realName.Mid(1), value, dicSize));
-      property.Id = NCoderPropID::kDictionarySize;
-      property.Value = dicSize;
-      oneMethodInfo.Properties.Add(property);
+      prop.Id = NCoderPropID::kDictionarySize;
+      prop.Value = dicSize;
       if (number <= mainDicMethodIndex)
         mainDicSize = dicSize;
     }
@@ -591,17 +590,15 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
     {
       UInt32 blockSize;
       RINOK(ParsePropDictionaryValue(realName.Mid(1), value, blockSize));
-      property.Id = NCoderPropID::kBlockSize;
-      property.Value = blockSize;
-      oneMethodInfo.Properties.Add(property);
+      prop.Id = NCoderPropID::kBlockSize;
+      prop.Value = blockSize;
     }
     else if (realName.Left(3).CompareNoCase(L"MEM") == 0)
     {
       UInt32 dicSize;
       RINOK(ParsePropDictionaryValue(realName.Mid(3), value, dicSize));
-      property.Id = NCoderPropID::kUsedMemorySize;
-      property.Value = dicSize;
-      oneMethodInfo.Properties.Add(property);
+      prop.Id = NCoderPropID::kUsedMemorySize;
+      prop.Value = dicSize;
       if (number <= mainDicMethodIndex)
         mainDicSize = dicSize;
     }
@@ -610,15 +607,12 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
       int index = FindPropIdFromStringName(realName);
       if (index < 0)
         return E_INVALIDARG;
-      
       const CNameToPropID &nameToPropID = g_NameToPropID[index];
-      property.Id = nameToPropID.PropID;
-      
-      if (!ConvertProperty(value, nameToPropID.VarType, property.Value))
+      prop.Id = nameToPropID.PropID;
+      if (!ConvertProperty(value, nameToPropID.VarType, prop.Value))
         return E_INVALIDARG;
-      
-      oneMethodInfo.Properties.Add(property);
     }
+    oneMethodInfo.Props.Add(prop);
   }
   return S_OK;
 }

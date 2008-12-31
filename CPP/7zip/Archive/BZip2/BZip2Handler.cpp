@@ -3,13 +3,13 @@
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
-#include "Common/Defs.h"
-#include "Windows/PropVariant.h"
-#include "Windows/Defs.h"
 
+#include "Windows/PropVariant.h"
+
+#include "../../Common/CreateCoder.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamUtils.h"
-#include "../../Common/CreateCoder.h"
+
 #include "../Common/DummyOutStream.h"
 
 #include "BZip2Handler.h"

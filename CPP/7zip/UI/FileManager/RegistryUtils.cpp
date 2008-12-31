@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "RegistryUtils.h"
+#include "Common/IntToString.h"
 #include "Windows/Registry.h"
 
 using namespace NWindows;
@@ -27,6 +28,8 @@ static const TCHAR *kAlternativeSelection = TEXT("AlternativeSelection");
 static const TCHAR *kLargePagesEnable = TEXT("LargePages");
 // static const TCHAR *kSingleClick = TEXT("SingleClick");
 // static const TCHAR *kUnderline = TEXT("Underline");
+
+static const TCHAR *kFlatViewName = TEXT("FlatViewArc");
 
 void SaveRegLang(const UString &langFile)
 {
@@ -149,4 +152,12 @@ bool ReadUnderline(){ return ReadOption(kUnderline, false); }
 void SaveLockMemoryEnable(bool enable) { Save7ZipOption(kLargePagesEnable, enable); }
 bool ReadLockMemoryEnable() { return Read7ZipOption(kLargePagesEnable, false); }
 
+static CSysString GetFlatViewName(UInt32 panelIndex)
+{
+  TCHAR panelString[32];
+  ConvertUInt64ToString(panelIndex, panelString);
+  return (CSysString)kFlatViewName + panelString;
+}
 
+void SaveFlatView(UInt32 panelIndex, bool enable) { SaveOption(GetFlatViewName(panelIndex), enable); }
+bool ReadFlatView(UInt32 panelIndex) { return ReadOption(GetFlatViewName(panelIndex), false); }

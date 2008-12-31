@@ -243,74 +243,42 @@ SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
-# Begin Group "LZMA"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMADecoder.cpp
+SOURCE=..\..\Compress\Bcj2Coder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\LZMA\LZMARegister.cpp
-# End Source File
-# End Group
-# Begin Group "Branch"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Branch\BCJ2Register.cpp
+SOURCE=..\..\Compress\Bcj2Register.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BCJRegister.cpp
+SOURCE=..\..\Compress\BcjCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.cpp
+SOURCE=..\..\Compress\BcjRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\BranchCoder.h
+SOURCE=..\..\Compress\BranchCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\x86.cpp
+SOURCE=..\..\Compress\CopyCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Branch\x86_2.cpp
-# End Source File
-# End Group
-# Begin Group "Copy"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\Copy\CopyCoder.cpp
+SOURCE=..\..\Compress\CopyRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyCoder.h
+SOURCE=..\..\Compress\LzmaDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Copy\CopyRegister.cpp
+SOURCE=..\..\Compress\LzmaRegister.cpp
 # End Source File
-# End Group
-# Begin Group "LZ"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\LZOutWindow.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\LZ\LZOutWindow.h
-# End Source File
-# End Group
 # End Group
 # Begin Group "Common"
 

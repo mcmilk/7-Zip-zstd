@@ -1,22 +1,25 @@
-// Zip/HandlerOut.cpp
+// ZipHandlerOut.cpp
 
 #include "StdAfx.h"
 
-#include "ZipHandler.h"
-#include "ZipUpdate.h"
-
-#include "Common/StringConvert.h"
 #include "Common/ComTry.h"
+#include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
 #include "../../IPassword.h"
+
+#include "../../Common/OutBuffer.h"
+
+#include "../../Crypto/WzAes.h"
+
 #include "../Common/ItemNameUtils.h"
 #include "../Common/ParseProperties.h"
-#include "../../Crypto/WzAES/WzAES.h"
-#include "../../Common/OutBuffer.h"
+
+#include "ZipHandler.h"
+#include "ZipUpdate.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -253,7 +256,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       if (m_IsAesMode)
       {
-        if (options.Password.Length() > NCrypto::NWzAES::kPasswordSizeMax)
+        if (options.Password.Length() > NCrypto::NWzAes::kPasswordSizeMax)
           return E_INVALIDARG;
       }
       options.Password = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);

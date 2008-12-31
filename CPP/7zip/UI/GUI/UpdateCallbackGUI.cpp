@@ -2,16 +2,17 @@
 
 #include "StdAfx.h"
 
-#include "UpdateCallbackGUI.h"
-
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
 #include "Common/Defs.h"
+#include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
-#include "Windows/PropVariant.h"
 #include "Windows/Error.h"
+#include "Windows/PropVariant.h"
+
 #include "../FileManager/MessagesDialog.h"
 #include "../FileManager/PasswordDialog.h"
+
+#include "UpdateCallbackGUI.h"
 
 using namespace NWindows;
 
@@ -228,5 +229,13 @@ void CUpdateCallbackGUI::Open_ClearPasswordWasAskedFlag()
 {
   PasswordWasAsked = false;
 }
+
+/*
+HRESULT CUpdateCallbackGUI::ShowDeleteFile(const wchar_t *name)
+{
+  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
+  return S_OK;
+}
+*/
 
 #endif

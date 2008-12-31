@@ -145,7 +145,7 @@ $O\MyMessages.obj: ../Explorer/MyMessages.cpp
 	$(COMPL)
 
 
-$O\CopyCoder.obj: ../../Compress/Copy/$(*B).cpp
+$O\CopyCoder.obj: ../../Compress/$(*B).cpp
 	$(COMPL)
 $(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)

@@ -1,26 +1,25 @@
-// Chm/Handler.cpp
+// ChmHandler.cpp
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-#include "Common/Defs.h"
-#include "Common/UTFConvert.h"
 #include "Common/ComTry.h"
+#include "Common/Defs.h"
+#include "Common/StringConvert.h"
+#include "Common/UTFConvert.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
 #include "../../Common/LimitedStreams.h"
-#include "../../Common/StreamUtils.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/StreamUtils.h"
 
-#include "../../Compress/Copy/CopyCoder.h"
-#include "../../Compress/Lzx/LzxDecoder.h"
+#include "../../Compress/CopyCoder.h"
+#include "../../Compress/LzxDecoder.h"
 
 #include "../Common/ItemNameUtils.h"
 
 #include "ChmHandler.h"
-
 
 using namespace NWindows;
 using namespace NTime;

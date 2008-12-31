@@ -233,8 +233,8 @@ HRESULT CEncoder::Encode(
       outStreamSpec->Init();
       writeCoderProperties->WriteCoderProperties(outStream);
       size_t size = outStreamSpec->GetSize();
-      encodingInfo.Properties.SetCapacity(size);
-      memmove(encodingInfo.Properties, outStreamSpec->GetBuffer(), size);
+      encodingInfo.Props.SetCapacity(size);
+      memmove(encodingInfo.Props, outStreamSpec->GetBuffer(), size);
     }
   }
 
@@ -278,7 +278,7 @@ HRESULT CEncoder::Encode(
     folderItem.UnpackSizes.Add(streamSize);
   }
   for (i = numMethods - 1; i >= 0; i--)
-    folderItem.Coders[numMethods - 1 - i].Properties = _codersInfo[i].Properties;
+    folderItem.Coders[numMethods - 1 - i].Props = _codersInfo[i].Props;
   return S_OK;
 }
 

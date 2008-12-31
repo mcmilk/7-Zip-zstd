@@ -3,11 +3,11 @@
 #ifndef __7Z_METHOD_PROPS_H
 #define __7Z_METHOD_PROPS_H
 
-#include "MethodId.h"
+#include "../../Common/MyVector.h"
 
 #include "../../Windows/PropVariant.h"
-#include "../../Common/MyVector.h"
-#include "../ICoder.h"
+
+#include "MethodId.h"
 
 struct CProp
 {
@@ -18,7 +18,7 @@ struct CProp
 struct CMethod
 {
   CMethodId Id;
-  CObjectVector<CProp> Properties;
+  CObjectVector<CProp> Props;
 };
 
 struct CMethodsMode
