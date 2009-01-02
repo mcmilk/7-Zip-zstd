@@ -1,9 +1,9 @@
-7-Zip 4.62 Sources
+7-Zip 4.64 Sources
 ------------------
 
 7-Zip is a file archiver for Windows 95/98/ME/NT/2000/2003/XP/Vista. 
 
-7-Zip Copyright (C) 1999-2008 Igor Pavlov.
+7-Zip Copyright (C) 1999-2009 Igor Pavlov.
 
 
 License Info

@@ -425,7 +425,7 @@ class CZipDecoder
   CObjectVector<CMethodItem> methodItems;
 
 public:
-  CZipDecoder(): 
+  CZipDecoder():
       _zipCryptoDecoderSpec(0),
       _pkAesDecoderSpec(0),
       _wzAesDecoderSpec(0),
@@ -662,11 +662,6 @@ HRESULT CZipDecoder::Decode(
       if (wzAesMode)
       {
         result = _wzAesDecoderSpec->ReadHeader(inStream);
-        if (result == S_OK)
-        {
-          if (!_wzAesDecoderSpec->CheckPasswordVerifyCode())
-            result = S_FALSE;
-        }
       }
       else if (pkAesMode)
       {
@@ -689,6 +684,11 @@ HRESULT CZipDecoder::Decode(
         RINOK(filterStreamSpec->SetInStream(inStream));
         inStreamReleaser.FilterCoder = filterStreamSpec;
         inStreamNew = filterStream;
+        if (wzAesMode)
+        {
+          if (!_wzAesDecoderSpec->CheckPasswordVerifyCode())
+            result = S_FALSE;
+        }
       }
     }
     else
