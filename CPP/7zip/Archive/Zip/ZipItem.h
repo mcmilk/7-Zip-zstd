@@ -187,6 +187,7 @@ public:
   
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
   bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; };
+  bool IsAesEncrypted() const { return IsEncrypted() && (IsStrongEncrypted() || CompressionMethod == NFileHeader::NCompressionMethod::kWzAES); };
   
   bool IsLzmaEOS() const { return (Flags & NFileHeader::NFlags::kLzmaEOS) != 0; }
   

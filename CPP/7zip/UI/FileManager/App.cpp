@@ -151,7 +151,7 @@ static void CreateToolbar(
   imageList.Create(
       LargeButtons ? 48: 24,
       LargeButtons ? 36: 24,
-      ILC_MASK, 0, 0);
+      ILC_MASK | ILC_COLOR32, 0, 0);
   toolBar.SetImageList(0, imageList);
 }
 

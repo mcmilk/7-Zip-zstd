@@ -20,7 +20,7 @@ public:
     { SendMessage(TBM_SETTICFREQ, freq); }
   
   int GetPos()
-    { return SendMessage(TBM_GETPOS); }
+    { return (int)SendMessage(TBM_GETPOS); }
 };
 
 }}

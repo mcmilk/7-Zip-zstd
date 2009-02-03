@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2008-10-04 : Igor Pavlov : Public domain */
+2009-02-02 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -64,7 +64,13 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
   if (p->btMode < 0) p->btMode = (p->algo == 0 ? 0 : 1);
   if (p->numHashBytes < 0) p->numHashBytes = 4;
   if (p->mc == 0)  p->mc = (16 + (p->fb >> 1)) >> (p->btMode ? 0 : 1);
-  if (p->numThreads < 0) p->numThreads = ((p->btMode && p->algo) ? 2 : 1);
+  if (p->numThreads < 0)
+    p->numThreads =
+      #ifdef COMPRESS_MF_MT
+      ((p->btMode && p->algo) ? 2 : 1);
+      #else
+      1;
+      #endif
 }
 
 UInt32 LzmaEncProps_GetDictSize(const CLzmaEncProps *props2)

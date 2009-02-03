@@ -586,7 +586,7 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
       if (number <= mainDicMethodIndex)
         mainDicSize = dicSize;
     }
-    else if (realName.Left(1).CompareNoCase(L"B") == 0)
+    else if (realName.Left(1).CompareNoCase(L"C") == 0)
     {
       UInt32 blockSize;
       RINOK(ParsePropDictionaryValue(realName.Mid(1), value, blockSize));

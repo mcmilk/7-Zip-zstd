@@ -2,23 +2,25 @@
 
 #include "StdAfx.h"
 
+#include "Common/IntToString.h"
 #include "Common/MyInitGuid.h"
 #include "Common/StringConvert.h"
-#include "Common/IntToString.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/PropVariantConversions.h"
 #include "Windows/DLL.h"
 #include "Windows/FileDir.h"
-#include "Windows/FileName.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
+#include "Windows/PropVariant.h"
+#include "Windows/PropVariantConversions.h"
 
 #include "../../Common/FileStreams.h"
+
 #include "../../Archive/IArchive.h"
+
 #include "../../IPassword.h"
 #include "../../MyVersion.h"
 
-
+// use another CLSIDs, if you want to support other formats (zip, rar, ...).
 // {23170F69-40C1-278A-1000-000110070000}
 DEFINE_GUID(CLSID_CFormat7z,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
@@ -687,8 +689,9 @@ int MY_CDECL main(int argc, char* argv[])
   }
 
   AString command = argv[1];
+  command.MakeLower();
   UString archiveName = GetUnicodeString(argv[2], CP_OEMCP);
-  if (command.CompareNoCase("a") == 0)
+  if (command.Compare("a") == 0)
   {
     // create archive command
     if (argc < 4)
@@ -764,9 +767,9 @@ int MY_CDECL main(int argc, char* argv[])
     }
 
     bool listCommand;
-    if (command.CompareNoCase("l") == 0)
+    if (command.Compare("l") == 0)
       listCommand = true;
-    else if (command.CompareNoCase("x") == 0)
+    else if (command.Compare("x") == 0)
       listCommand = false;
     else
     {

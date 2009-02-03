@@ -2,29 +2,30 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
-
 extern "C"
 {
   #include "../../../../C/Alloc.h"
   #include "../../../../C/7zCrc.h"
+  #include "../../../../C/Sha256.h"
 }
 
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/FileIO.h"
+#include "Windows/Error.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileIO.h"
 #include "Windows/FileName.h"
 #include "Windows/Thread.h"
-#include "Windows/Error.h"
 
-#include "ProgressDialog2.h"
 #include "OverwriteDialogRes.h"
+#include "ProgressDialog2.h"
 
 #include "App.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
+
+#include "resource.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -125,10 +126,12 @@ struct CThreadCrc
 
   CDirEnumerator DirEnumerator;
   
+  UInt64 NumFilesScan;
   UInt64 NumFiles;
   UInt64 NumFolders;
   UInt64 DataSize;
   UInt32 DataCrcSum;
+  Byte Sha256Sum[SHA256_DIGEST_SIZE];
   UInt32 DataNameCrcSum;
 
   HRESULT Result;
@@ -139,7 +142,8 @@ struct CThreadCrc
   
   void Process2()
   {
-    DataSize = NumFolders = NumFiles = DataCrcSum = DataNameCrcSum = 0;
+    DataSize = NumFolders = NumFiles = NumFilesScan = DataCrcSum = DataNameCrcSum = 0;
+    memset(Sha256Sum, 0, SHA256_DIGEST_SIZE);
     ProgressDialog->WaitCreating();
 
     CMyBuffer bufferObject;
@@ -172,14 +176,17 @@ struct CThreadCrc
       if (!filled)
         break;
       if (!fileInfo.IsDir())
+      {
         totalSize += fileInfo.Size;
+        NumFilesScan++;
+      }
       ProgressDialog->ProgressSynch.SetCurrentFileName(scanningStr + resPath);
       ProgressDialog->ProgressSynch.SetProgress(totalSize, 0);
       Result = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(0);
       if (Result != S_OK)
         return;
     }
-
+    ProgressDialog->ProgressSynch.SetNumFilesTotal(NumFilesScan);
     ProgressDialog->ProgressSynch.SetProgress(totalSize, 0);
 
     DirEnumerator.Init();
@@ -199,6 +206,9 @@ struct CThreadCrc
         break;
 
       UInt32 crc = CRC_INIT_VAL;
+      CSha256 sha256;
+      Sha256_Init(&sha256);
+
       if (fileInfo.IsDir())
         NumFolders++;
       else
@@ -211,8 +221,9 @@ struct CThreadCrc
           ErrorPath = resPath;
           return;
         }
-        NumFiles++;
         ProgressDialog->ProgressSynch.SetCurrentFileName(resPath);
+        ProgressDialog->ProgressSynch.SetNumFilesCur(NumFiles);
+        NumFiles++;
         for (;;)
         {
           UInt32 processedSize;
@@ -226,12 +237,17 @@ struct CThreadCrc
           if (processedSize == 0)
             break;
           crc = CrcUpdate(crc, buffer, processedSize);
+          if (NumFilesScan == 1)
+            Sha256_Update(&sha256, buffer, processedSize);
+          
           DataSize += processedSize;
           Result = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(DataSize);
           if (Result != S_OK)
             return;
         }
         DataCrcSum += CRC_GET_DIGEST(crc);
+        if (NumFilesScan == 1)
+          Sha256_Final(&sha256, Sha256Sum);
       }
       for (int i = 0; i < resPath.Length(); i++)
       {
@@ -259,13 +275,22 @@ struct CThreadCrc
   }
 };
 
+static void ConvertByteToHex(unsigned value, wchar_t *s)
+{
+  for (int i = 0; i < 2; i++)
+  {
+    unsigned t = value & 0xF;
+    value >>= 4;
+    s[1 - i] = (wchar_t)((t < 10) ? (L'0' + t) : (L'A' + (t - 10)));
+  }
+}
+
 static void ConvertUInt32ToHex(UInt32 value, wchar_t *s)
 {
-  for (int i = 0; i < 8; i++)
+  for (int i = 6; i >= 0; i -= 2)
   {
-    int t = value & 0xF;
-    value >>= 4;
-    s[7 - i] = (wchar_t)((t < 10) ? (L'0' + t) : (L'A' + (t - 10)));
+    ConvertByteToHex(value & 0xFF, s + i);
+    value >>= 8;
   }
   s[8] = L'\0';
 }
@@ -360,6 +385,19 @@ void CApp::CalculateCrc()
       s += L" ";
       ConvertUInt32ToHex(combiner.DataNameCrcSum, sz);
       s += sz;
+      s += L"\n";
+
+      if (combiner.NumFiles == 1 && combiner.NumFilesScan == 1)
+      {
+        s += L"SHA-256: ";
+        for (int i = 0; i < SHA256_DIGEST_SIZE; i++)
+        {
+          wchar_t s2[4];
+          ConvertByteToHex(combiner.Sha256Sum[i], s2);
+          s2[2] = 0;
+          s += s2;
+        }
+      }
     }
     srcPanel.MessageBoxInfo(s, LangString(IDS_CHECKSUM_INFORMATION, 0x03020720));
   }

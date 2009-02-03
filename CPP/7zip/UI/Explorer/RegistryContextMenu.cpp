@@ -35,38 +35,27 @@ static CSysString GetFullContextMenuKeyName(const CSysString &keyName)
 static CSysString GetFullDragDropMenuKeyName(const CSysString &keyName)
   { return (keyName + kDragDropMenuKeyName); }
 
-static bool CheckContextMenuHandlerCommon(const CSysString &keyName)
+static bool CheckHandlerCommon(const CSysString &keyName)
 {
   NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   CKey key;
-  if (key.Open(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(keyName), KEY_READ)
-      != ERROR_SUCCESS)
+  if (key.Open(HKEY_CLASSES_ROOT, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   CSysString value;
   if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  return (value.CompareNoCase(kExtensionCLSID) == 0);
-}
-
-static bool CheckDragDropMenuHandlerCommon(const CSysString &keyName)
-{
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-  CKey key;
-  if (key.Open(HKEY_CLASSES_ROOT, GetFullDragDropMenuKeyName(keyName), KEY_READ) != ERROR_SUCCESS)
-    return false;
-  CSysString value;
-  if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
-    return false;
-  return (value.CompareNoCase(kExtensionCLSID) == 0);
+  value.MakeUpper();
+  return (value.Compare(kExtensionCLSID) == 0);
 }
 
 bool CheckContextMenuHandler()
 {
-  return CheckContextMenuHandlerCommon(kRootKeyNameForFile) &&
-    // CheckContextMenuHandlerCommon(kRootKeyNameForFolder) &&
-    CheckContextMenuHandlerCommon(kRootKeyNameForDirectory)  &&
-    CheckDragDropMenuHandlerCommon(kRootKeyNameForDirectory)  &&
-    CheckDragDropMenuHandlerCommon(kRootKeyNameForDrive);
+  return
+    // CheckHandlerCommon(GetFullContextMenuKeyName(kRootKeyNameForFolder)) &&
+    CheckHandlerCommon(GetFullContextMenuKeyName(kRootKeyNameForDirectory))  &&
+    CheckHandlerCommon(GetFullContextMenuKeyName(kRootKeyNameForFile)) &&
+    CheckHandlerCommon(GetFullDragDropMenuKeyName(kRootKeyNameForDirectory))  &&
+    CheckHandlerCommon(GetFullDragDropMenuKeyName(kRootKeyNameForDrive));
 }
 
 static void DeleteContextMenuHandlerCommon(const CSysString &keyName)

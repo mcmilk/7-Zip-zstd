@@ -308,11 +308,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
 static AString GetName(const char *name)
 {
-  AString res;
-  char *p = res.GetBuffer(kNameSize);
-  strncpy(p, name, kNameSize);
-  p[kNameSize] = 0;
-  res.ReleaseBuffer();
+  char res[kNameSize + 1];
+  memcpy(res, name, kNameSize);
+  res[kNameSize] = 0;
   return res;
 }
 

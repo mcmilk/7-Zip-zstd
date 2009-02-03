@@ -3,15 +3,16 @@
 #ifndef __ARCHIVE_NSIS_IN_H
 #define __ARCHIVE_NSIS_IN_H
 
-#include "Common/MyCom.h"
-#include "Common/IntToString.h"
 #include "Common/Buffer.h"
+#include "Common/IntToString.h"
+#include "Common/MyCom.h"
+#include "Common/StringConvert.h"
+
+#include "../../Common/CreateCoder.h"
 
 #include "../../IStream.h"
 
 #include "NsisDecode.h"
-
-#include "../../Common/CreateCoder.h"
 
 // #define NSIS_SCRIPT
 
@@ -81,32 +82,25 @@ struct CItem
     return (PrefixA.Length() >= 3 || PrefixU.Length() >= 3);
   }
 
-  AString GetReducedNameA() const
+  UString GetReducedName(bool unicode) const
   {
-    AString prefix = PrefixA;
-    if (prefix.Length() > 0)
-      if (prefix[prefix.Length() - 1] != '\\')
-        prefix += '\\';
-    AString s2 = prefix + NameA;
+    UString s;
+    if (unicode)
+      s = PrefixU;
+    else
+      s = MultiByteToUnicodeString(PrefixA);
+    if (s.Length() > 0)
+      if (s[s.Length() - 1] != L'\\')
+        s += L'\\';
+    if (unicode)
+      s += NameU;
+    else
+      s += MultiByteToUnicodeString(NameA);
     const int len = 9;
-    if (s2.Left(len).CompareNoCase("$INSTDIR\\") == 0)
-      s2 = s2.Mid(len);
-    return s2;
+    if (s.Left(len).CompareNoCase(L"$INSTDIR\\") == 0)
+      s = s.Mid(len);
+    return s;
   }
-  
-  UString GetReducedNameU() const
-  {
-    UString prefix = PrefixU;
-    if (prefix.Length() > 0)
-      if (prefix[prefix.Length() - 1] != L'\\')
-        prefix += L'\\';
-    UString s2 = prefix + NameU;
-    const int len = 9;
-    if (s2.Left(len).CompareNoCase(L"$INSTDIR\\") == 0)
-      s2 = s2.Mid(len);
-    return s2;
-  }
-
 };
 
 class CInArchive

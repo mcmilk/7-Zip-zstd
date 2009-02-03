@@ -149,6 +149,7 @@ AGENT_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 

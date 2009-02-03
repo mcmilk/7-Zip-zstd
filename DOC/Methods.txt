@@ -1,4 +1,4 @@
-7-Zip method IDs (4.61)
+7-Zip method IDs (4.65)
 -----------------------
 
 Each compression or crypto method in 7z has unique binary value (ID).
@@ -24,12 +24,11 @@ List of defined IDs
 -------------------
       
 00 - Copy
-01 - Reserved
+
 02 - Common
    03 Swap
       - 2 Swap2
       - 4 Swap4
-   04 Delta (subject to change)
 
 03 - 7z
    01 - LZMA
@@ -60,9 +59,6 @@ List of defined IDs
    7F -
       01 - experimental methods.
 
-   80 - reserved for independent developers
-
-   E0 - Random IDs
 
 04 - Misc
    00 - Reserved

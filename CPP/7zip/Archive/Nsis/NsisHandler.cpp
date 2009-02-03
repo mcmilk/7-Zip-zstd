@@ -2,19 +2,19 @@
 
 #include "StdAfx.h"
 
-#include "NsisHandler.h"
+#include "../../../../C/CpuArch.h"
 
-#include "Common/StringConvert.h"
+#include "Common/ComTry.h"
 #include "Common/IntToString.h"
 #include "Common/NewHandler.h"
-#include "Common/ComTry.h"
 
 #include "Windows/PropVariant.h"
 
-#include "../Common/ItemNameUtils.h"
 #include "../../Common/StreamUtils.h"
 
-#include "../../../../C/CpuArch.h"
+#include "../Common/ItemNameUtils.h"
+
+#include "NsisHandler.h"
 
 #define Get32(p) GetUi32(p)
 
@@ -228,12 +228,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath:
       {
-        UString s;
-        if (_archive.IsUnicode)
-          s = item.GetReducedNameU();
-        else
-          s = MultiByteToUnicodeString(item.GetReducedNameA(), CP_ACP);
-        s = NItemName::WinNameToOSName(s);
+        UString s = NItemName::WinNameToOSName(item.GetReducedName(_archive.IsUnicode));
         if (!s.IsEmpty())
           prop = (const wchar_t *)s;
         break;
@@ -320,6 +315,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         _inStream, _archive.Method, _archive.FilterFlag, useFilter));
   }
 
+  CByteBuffer byteBuf;
+  const UInt32 kBufferLength = 1 << 16;
+  byteBuf.SetCapacity(kBufferLength);
+  Byte *buffer = byteBuf;
+
   bool dataError = false;
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
@@ -363,9 +363,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         bool sizeIsKnown = false;
         UInt32 fullSize = 0;
 
-        const UInt32 kBufferLength = 1 << 11;
-        Byte buffer[kBufferLength];
-        
         if (_archive.IsSolid)
         {
           UInt64 pos = _archive.GetPosOfSolidItem(index);
@@ -389,12 +386,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           }
           if (streamPos == pos)
           {
+            Byte buffer2[4];
             size_t processedSize = 4;
-            RINOK(_archive.Decoder.Read(buffer, &processedSize));
+            RINOK(_archive.Decoder.Read(buffer2, &processedSize));
             if (processedSize != 4)
               return E_FAIL;
             streamPos += processedSize;
-            fullSize = Get32(buffer);
+            fullSize = Get32(buffer2);
             sizeIsKnown = true;
             needDecompress = true;
           }
@@ -409,7 +407,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             RINOK(_archive.Decoder.Init(
                 EXTERNAL_CODECS_VARS
                 _inStream, _archive.Method, _archive.FilterFlag, useFilter));
-            fullSize = Get32(buffer);
+            // fullSize = Get32(buffer); // It's bug !!!
+            // Test it: what is exact fullSize?
+            fullSize =  0xFFFFFFFF;
           }
           else
             fullSize = item.Size;

@@ -100,10 +100,7 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
 int MyStringCompare(const char *s1, const char  *s2);
 int MyStringCompare(const wchar_t *s1, const wchar_t *s2);
 
-#ifdef _WIN32
-int MyStringCompareNoCase(const char *s1, const char  *s2);
-#endif
-
+// int MyStringCompareNoCase(const char *s1, const char  *s2);
 int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2);
 
 template <class T>

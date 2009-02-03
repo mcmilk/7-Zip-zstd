@@ -2,10 +2,12 @@
 
 #include "StdAfx.h"
 
-#ifdef _WIN32
-#include "StringConvert.h"
-#else
+#ifndef _WIN32
 #include <ctype.h>
+#endif
+
+#ifndef _UNICODE
+#include "StringConvert.h"
 #endif
 
 #include "MyString.h"
@@ -190,9 +192,9 @@ int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-#ifdef _WIN32
+/*
 int MyStringCompareNoCase(const char *s1, const char *s2)
 {
   return MyStringCompareNoCase(MultiByteToUnicodeString(s1), MultiByteToUnicodeString(s2));
 }
-#endif
+*/

@@ -531,8 +531,11 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
     CArcItem ai;
 
     RINOK(GetArchiveItemPath(archive, i, ai.Name));
+    // check it: defaultItemName !!!
+    if (ai.Name.IsEmpty())
+      ai.Name = defaultItemName;
     RINOK(IsArchiveItemFolder(archive, i, ai.IsDir));
-    ai.Censored = censor.CheckPath(ai.Name.IsEmpty() ? defaultItemName : ai.Name, !ai.IsDir);
+    ai.Censored = censor.CheckPath(ai.Name, !ai.IsDir);
     RINOK(GetArchiveItemFileTime(archive, i, archiveFileInfo.MTime, ai.MTime));
 
     {

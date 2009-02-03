@@ -98,6 +98,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 {
   COM_TRY_BEGIN2
   CObjectVector<CUpdateItem> updateItems;
+  bool thereAreAesUpdates = false;
   for (UInt32 i = 0; i < numItems; i++)
   {
     CUpdateItem ui;
@@ -111,7 +112,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     ui.NewData = IntToBool(newData);
     ui.IndexInArchive = indexInArchive;
     ui.IndexInClient = i;
-    // bool existInArchive = (indexInArchive != UInt32(-1));
+    bool existInArchive = (indexInArchive != UInt32(-1));
+    if (existInArchive && newData)
+      if (m_Items[indexInArchive].IsAesEncrypted())
+        thereAreAesUpdates = true;
+
     if (IntToBool(newProperties))
     {
       UString name;
@@ -237,7 +242,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   }
 
   CMyComPtr<ICryptoGetTextPassword2> getTextPassword;
-  if (!getTextPassword)
   {
     CMyComPtr<IArchiveUpdateCallback> udateCallBack2(callback);
     udateCallBack2.QueryInterface(IID_ICryptoGetTextPassword2, &getTextPassword);
@@ -252,16 +256,17 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     options.PasswordIsDefined = IntToBool(passwordIsDefined);
     if (options.PasswordIsDefined)
     {
+      options.IsAesMode = (m_ForceAesMode ? m_IsAesMode : thereAreAesUpdates);
+      options.AesKeyMode = m_AesKeyMode;
+
       if (!IsAsciiString((const wchar_t *)password))
         return E_INVALIDARG;
-      if (m_IsAesMode)
+      if (options.IsAesMode)
       {
         if (options.Password.Length() > NCrypto::NWzAes::kPasswordSizeMax)
           return E_INVALIDARG;
       }
       options.Password = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
-      options.IsAesMode = m_IsAesMode;
-      options.AesKeyMode = m_AesKeyMode;
     }
   }
   else
@@ -422,9 +427,13 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
           else
             return E_INVALIDARG;
           m_IsAesMode = true;
+          m_ForceAesMode = true;
         }
         else if (valueString == L"ZIPCRYPTO")
+        {
           m_IsAesMode = false;
+          m_ForceAesMode = true;
+        }
         else
           return E_INVALIDARG;
       }

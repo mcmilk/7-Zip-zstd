@@ -55,6 +55,7 @@ private:
   UInt32 m_NumMatchFinderCycles;
   bool m_NumMatchFinderCyclesDefined;
 
+  bool m_ForceAesMode;
   bool m_IsAesMode;
   Byte m_AesKeyMode;
 
@@ -78,6 +79,7 @@ private:
     m_NumFastBytes =
     m_NumMatchFinderCycles = 0xFFFFFFFF;
     m_NumMatchFinderCyclesDefined = false;
+    m_ForceAesMode = false;
     m_IsAesMode = false;
     m_AesKeyMode = 3; // aes-256
     m_WriteNtfsTimeExtra = false;

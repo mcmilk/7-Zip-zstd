@@ -73,7 +73,7 @@ using namespace NFile;
 using namespace NName;
 using namespace NDirectory;
 
-static const int kHistorySize = 8;
+static const int kHistorySize = 20;
 
 static LPCWSTR kExeExt = L".exe";
 static LPCWSTR k7zFormat = L"7z";
@@ -1315,7 +1315,7 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dictionary, UInt64 &decompressMemo
       UInt64 size1 = (UInt64)hs * 4;
       size1 += (UInt64)dictionary * 11 / 2;
       if (level >= 5)
-        size1 += dictionary * 4;
+        size1 += (UInt64)dictionary * 4;
       size1 += (2 << 20);
 
       UInt32 numThreads1 = 1;

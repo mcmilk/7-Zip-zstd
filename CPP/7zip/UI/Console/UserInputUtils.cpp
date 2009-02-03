@@ -11,16 +11,14 @@ static const char kYes = 'Y';
 static const char kNo = 'N';
 static const char kYesAll = 'A';
 static const char kNoAll = 'S';
-static const char kAutoRename = 'U';
+static const char kAutoRenameAll = 'U';
 static const char kQuit = 'Q';
 
 static const char *kFirstQuestionMessage = "?\n";
 static const char *kHelpQuestionMessage =
-  "(Y)es / (N)o / (A)lways / (S)kip all / A(u)to rename / (Q)uit? ";
+  "(Y)es / (N)o / (A)lways / (S)kip all / A(u)to rename all / (Q)uit? ";
 
 // return true if pressed Quite;
-// in: anAll
-// out: anAll, anYes;
 
 NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
 {
@@ -41,8 +39,8 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
           return NUserAnswerMode::kYesAll;
         case kNoAll:
           return NUserAnswerMode::kNoAll;
-        case kAutoRename:
-          return NUserAnswerMode::kAutoRename;
+        case kAutoRenameAll:
+          return NUserAnswerMode::kAutoRenameAll;
         case kQuit:
           return NUserAnswerMode::kQuit;
       }

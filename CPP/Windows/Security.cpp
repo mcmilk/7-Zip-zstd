@@ -1,12 +1,8 @@
-// Windows/Security.h
+// Windows/Security.cpp
 
 #include "StdAfx.h"
 
-#include "Windows/Security.h"
-#include "Windows/Defs.h"
-
-#include "Common/StringConvert.h"
-#include "Defs.h"
+#include "Security.h"
 
 namespace NWindows {
 namespace NSecurity {
@@ -105,6 +101,8 @@ static PSID GetSid(LPWSTR accountName)
   return NULL;
 }
 
+#define MY__SE_LOCK_MEMORY_NAME L"SeLockMemoryPrivilege"
+
 bool AddLockMemoryPrivilege()
 {
   CPolicy policy;
@@ -123,8 +121,9 @@ bool AddLockMemoryPrivilege()
       != 0)
     return false;
   LSA_UNICODE_STRING userRights;
-  UString s = GetUnicodeString(SE_LOCK_MEMORY_NAME);
-  SetLsaString((LPWSTR)(LPCWSTR)s, &userRights);
+  wchar_t s[128];
+  wcscpy(s, MY__SE_LOCK_MEMORY_NAME);
+  SetLsaString(s, &userRights);
   WCHAR userName[256 + 2];
   DWORD size = 256;
   if (!GetUserNameW(userName, &size))

@@ -77,7 +77,7 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
     case NUserAnswerMode::kNoAll:  *answer = NOverwriteAnswer::kNoToAll; break;
     case NUserAnswerMode::kYesAll: *answer = NOverwriteAnswer::kYesToAll; break;
     case NUserAnswerMode::kYes:    *answer = NOverwriteAnswer::kYes; break;
-    case NUserAnswerMode::kAutoRename: *answer = NOverwriteAnswer::kAutoRename; break;
+    case NUserAnswerMode::kAutoRenameAll: *answer = NOverwriteAnswer::kAutoRename; break;
     default: return E_FAIL;
   }
   return S_OK;

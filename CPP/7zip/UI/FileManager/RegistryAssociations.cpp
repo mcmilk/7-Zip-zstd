@@ -126,7 +126,8 @@ static bool CheckShellExtensionInfo2(const CSysString &extension, UString &iconP
   if (extKey.QueryValue(NULL, programNameValue) != ERROR_SUCCESS)
     return false;
   CSysString extProgramKeyName = GetExtProgramKeyName(extension);
-  if (programNameValue.CompareNoCase(extProgramKeyName) != 0)
+  UString programNameValueU = GetUnicodeString(programNameValue);
+  if (programNameValueU.CompareNoCase(GetUnicodeString(extProgramKeyName)) != 0)
     return false;
   CKey iconKey;
   if (extKey.Open(HKEY_CLASSES_ROOT, extProgramKeyName + CSysString(TEXT(CHAR_PATH_SEPARATOR)) + kDefaultIconKeyName, KEY_READ) != ERROR_SUCCESS)
