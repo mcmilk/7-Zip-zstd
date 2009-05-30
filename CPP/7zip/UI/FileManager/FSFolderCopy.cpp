@@ -4,13 +4,14 @@
 
 #include <Winbase.h>
 
-#include "FSFolder.h"
+#include "Common/StringConvert.h"
+
 #include "Windows/FileDir.h"
 #include "Windows/Error.h"
 
-#include "Common/StringConvert.h"
-
 #include "../../Common/FilePathAutoRename.h"
+
+#include "FSFolder.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -189,7 +190,7 @@ static HRESULT MyCopyFile(
     return E_ABORT;
   }
 
-  INT32 writeAskResult;
+  Int32 writeAskResult;
   CMyComBSTR destPathResult;
   RINOK(callback->AskWrite(
       srcPath,
@@ -340,7 +341,7 @@ HRESULT MyMoveFile(
     return E_ABORT;
   }
 
-  INT32 writeAskResult;
+  Int32 writeAskResult;
   CMyComBSTR destPathResult;
   RINOK(callback->AskWrite(
       srcPath,
@@ -510,5 +511,5 @@ STDMETHODIMP CFSFolder::CopyFrom(const wchar_t * /* fromFolderPath */,
   */
   return E_NOTIMPL;
 }
-  
+
 }

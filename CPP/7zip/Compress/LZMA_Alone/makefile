@@ -26,6 +26,7 @@ WIN_OBJS = \
   $O\System.obj
 
 7ZIP_COMMON_OBJS = \
+  $O\CWrappers.obj \
   $O\InBuffer.obj \
   $O\OutBuffer.obj \
   $O\StreamUtils.obj \

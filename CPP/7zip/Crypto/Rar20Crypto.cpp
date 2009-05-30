@@ -2,12 +2,9 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
-  #include "../../../C/7zCrc.h"
-  #include "../../../C/CpuArch.h"
-  #include "../../../C/RotateDefs.h"
-}
+#include "../../../C/7zCrc.h"
+#include "../../../C/CpuArch.h"
+#include "../../../C/RotateDefs.h"
 
 #include "Rar20Crypto.h"
 

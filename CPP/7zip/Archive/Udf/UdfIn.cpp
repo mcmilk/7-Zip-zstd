@@ -2,14 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "UdfIn.h"
+#include "../../../../C/CpuArch.h"
 
 #include "../../Common/StreamUtils.h"
 
-extern "C"
-{
-  #include "../../../../C/CpuArch.h"
-}
+#include "UdfIn.h"
 
 #define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
@@ -580,11 +577,16 @@ HRESULT CInArchive::Open2()
   UInt64 fileSize;
   RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
 
-  const int kSecLogSizeMax = 11;
-  const int kSecLogSizeMin = 8;
+  // Some UDFs contain additional 2 KB of zeros, so we also check 12, corrected to 11.
+  const int kSecLogSizeMax = 12;
   Byte buf[1 << kSecLogSizeMax];
-  for (SecLogSize = kSecLogSizeMax; SecLogSize >= kSecLogSizeMin; SecLogSize -= 3)
+  Byte kSizesLog[] = { 11, 8, 12 };
+
+  for (int i = 0;; i++)
   {
+    if (i == sizeof(kSizesLog) / sizeof(kSizesLog[0]))
+      return S_FALSE;
+    SecLogSize = kSizesLog[i];
     Int32 bufSize = 1 << SecLogSize;
     if (bufSize > fileSize)
       return S_FALSE;
@@ -595,8 +597,8 @@ HRESULT CInArchive::Open2()
       if (tag.Id == DESC_TYPE_AnchorVolPtr)
         break;
   }
-  if (SecLogSize < kSecLogSizeMin)
-    return S_FALSE;
+  if (SecLogSize == 12)
+    SecLogSize = 11;
 
   CExtent extentVDS;
   extentVDS.Parse(buf + 16);

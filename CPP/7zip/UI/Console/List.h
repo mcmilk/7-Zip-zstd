@@ -7,6 +7,7 @@
 #include "../Common/LoadCodecs.h"
 
 HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
+    bool stdInMode,
     UStringVector &archivePaths, UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     bool enableHeaders, bool techMode,

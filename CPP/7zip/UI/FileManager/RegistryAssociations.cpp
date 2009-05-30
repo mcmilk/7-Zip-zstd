@@ -4,20 +4,17 @@
 
 #include "RegistryAssociations.h"
 
-#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
 
-#include "Windows/Synchronization.h"
 #include "Windows/Registry.h"
-
-#include "Windows/FileName.h"
+#include "Windows/Synchronization.h"
 
 #include "StringUtils.h"
 
 using namespace NWindows;
 using namespace NRegistry;
-
 
 namespace NRegistryAssociations {
   
@@ -218,8 +215,8 @@ void AddShellExtensionInfo(const CSysString &extension,
     if (iconIndex >= 0)
     {
       iconPathFull += L",";
-      wchar_t s[32];
-      ConvertUInt64ToString((UInt64)iconIndex, s);
+      wchar_t s[16];
+      ConvertUInt32ToString(iconIndex, s);
       iconPathFull += s;
     }
     iconKey.SetValue(NULL, iconPathFull);

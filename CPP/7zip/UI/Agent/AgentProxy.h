@@ -5,18 +5,16 @@
 
 #include "Common/MyString.h"
 
-#include "../../Archive/IArchive.h"
+#include "../Common/OpenArchive.h"
 
-class CProxyFile
+struct CProxyFile
 {
-public:
   UInt32 Index;
   UString Name;
 };
 
-class CProxyFolder: public CProxyFile
+struct CProxyFolder: public CProxyFile
 {
-public:
   CProxyFolder *Parent;
   CObjectVector<CProxyFolder> Folders;
   CObjectVector<CProxyFile> Files;
@@ -44,20 +42,12 @@ public:
   void CalculateSizes(IInArchive *archive);
 };
 
-class CProxyArchive
+struct CProxyArchive
 {
-  HRESULT ReadObjects(IInArchive *archive, IProgress *progress);
-public:
-  UString DefaultName;
-  // FILETIME DefaultTime;
-  // UInt32 DefaultAttributes;
   CProxyFolder RootFolder;
-  HRESULT Reload(IInArchive *archive, IProgress *progress);
-  HRESULT Load(IInArchive *archive,
-      const UString &defaultName,
-      // const FILETIME &defaultTime,
-      // UInt32 defaultAttributes,
-      IProgress *progress);
+  bool ThereIsPathProp;
+
+  HRESULT Load(const CArc &arc, IProgress *progress);
 };
 
 #endif

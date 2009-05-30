@@ -1,4 +1,5 @@
 // Compress/RangeCoderBit.h
+// 2009-05-30 : Igor Pavlov : Public domain
 
 #ifndef __COMPRESS_RANGE_CODER_BIT_H
 #define __COMPRESS_RANGE_CODER_BIT_H

@@ -204,6 +204,7 @@ public:
   void Delete(bool toRecycleBin)
     { GetFocusedPanel().DeleteItems(toRecycleBin); }
   void CalculateCrc();
+  void DiffFiles();
   void Split();
   void Combine();
   void Properties()

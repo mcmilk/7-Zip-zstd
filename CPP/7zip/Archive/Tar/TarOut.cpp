@@ -1,13 +1,12 @@
-// Archive/TarOut.cpp
+// TarOut.cpp
 
 #include "StdAfx.h"
 
-#include "TarOut.h"
-#include "TarHeader.h"
-
 #include "Common/IntToString.h"
-#include "Windows/Defs.h"
+
 #include "../../Common/StreamUtils.h"
+
+#include "TarOut.h"
 
 namespace NArchive {
 namespace NTar {
@@ -114,10 +113,10 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item)
   memmove(cur, item.Magic, 8);
   cur += 8;
 
-  RETURN_IF_NOT_TRUE(CopyString(cur, item.UserName, NFileHeader::kUserNameSize));
+  RETURN_IF_NOT_TRUE(CopyString(cur, item.User, NFileHeader::kUserNameSize));
   cur += NFileHeader::kUserNameSize;
-  RETURN_IF_NOT_TRUE(CopyString(cur, item.GroupName, NFileHeader::kGroupNameSize));
-  cur += NFileHeader::kUserNameSize;
+  RETURN_IF_NOT_TRUE(CopyString(cur, item.Group, NFileHeader::kGroupNameSize));
+  cur += NFileHeader::kGroupNameSize;
 
 
   if (item.DeviceMajorDefined)

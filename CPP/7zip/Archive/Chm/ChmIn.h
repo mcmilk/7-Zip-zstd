@@ -3,10 +3,12 @@
 #ifndef __ARCHIVE_CHM_IN_H
 #define __ARCHIVE_CHM_IN_H
 
-#include "Common/MyString.h"
 #include "Common/Buffer.h"
+#include "Common/MyString.h"
+
 #include "../../IStream.h"
 #include "../../Common/InBuffer.h"
+
 #include "ChmHeader.h"
 
 namespace NArchive {
@@ -215,7 +217,7 @@ class CInArchive
 
   Byte ReadByte();
   void ReadBytes(Byte *data, UInt32 size);
-  void Skeep(size_t size);
+  void Skip(size_t size);
   UInt16 ReadUInt16();
   UInt32 ReadUInt32();
   UInt64 ReadUInt64();

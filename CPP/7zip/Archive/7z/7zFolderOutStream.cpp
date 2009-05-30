@@ -9,156 +9,132 @@ namespace N7z {
 
 CFolderOutStream::CFolderOutStream()
 {
-  _outStreamWithHashSpec = new COutStreamWithCRC;
-  _outStreamWithHash = _outStreamWithHashSpec;
+  _crcStreamSpec = new COutStreamWithCRC;
+  _crcStream = _crcStreamSpec;
 }
 
 HRESULT CFolderOutStream::Init(
     const CArchiveDatabaseEx *archiveDatabase,
-    UInt32 ref2Offset,
-    UInt32 startIndex,
+    UInt32 ref2Offset, UInt32 startIndex,
     const CBoolVector *extractStatuses,
     IArchiveExtractCallback *extractCallback,
-    bool testMode,
-    bool checkCrc)
+    bool testMode, bool checkCrc)
 {
-  _archiveDatabase = archiveDatabase;
+  _db = archiveDatabase;
   _ref2Offset = ref2Offset;
   _startIndex = startIndex;
 
   _extractStatuses = extractStatuses;
   _extractCallback = extractCallback;
   _testMode = testMode;
-
   _checkCrc = checkCrc;
 
   _currentIndex = 0;
   _fileIsOpen = false;
-  return WriteEmptyFiles();
+  return ProcessEmptyFiles();
 }
 
 HRESULT CFolderOutStream::OpenFile()
 {
-  Int32 askMode;
-  if((*_extractStatuses)[_currentIndex])
-    askMode = _testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
-  else
-    askMode = NArchive::NExtract::NAskMode::kSkip;
+  Int32 askMode = ((*_extractStatuses)[_currentIndex]) ? (_testMode ?
+      NArchive::NExtract::NAskMode::kTest :
+      NArchive::NExtract::NAskMode::kExtract):
+      NArchive::NExtract::NAskMode::kSkip;
   CMyComPtr<ISequentialOutStream> realOutStream;
-
   UInt32 index = _startIndex + _currentIndex;
   RINOK(_extractCallback->GetStream(_ref2Offset + index, &realOutStream, askMode));
-
-  _outStreamWithHashSpec->SetStream(realOutStream);
-  _outStreamWithHashSpec->Init(_checkCrc);
-  if (askMode == NArchive::NExtract::NAskMode::kExtract &&
-      (!realOutStream))
-  {
-    const CFileItem &fi = _archiveDatabase->Files[index];
-    if (!_archiveDatabase->IsItemAnti(index) && !fi.IsDir)
-      askMode = NArchive::NExtract::NAskMode::kSkip;
-  }
+  _crcStreamSpec->SetStream(realOutStream);
+  _crcStreamSpec->Init(_checkCrc);
+  _fileIsOpen = true;
+  const CFileItem &fi = _db->Files[index];
+  _rem = fi.Size;
+  if (askMode == NArchive::NExtract::NAskMode::kExtract && !realOutStream &&
+      !_db->IsItemAnti(index) && !fi.IsDir)
+    askMode = NArchive::NExtract::NAskMode::kSkip;
   return _extractCallback->PrepareOperation(askMode);
 }
 
-HRESULT CFolderOutStream::WriteEmptyFiles()
+HRESULT CFolderOutStream::CloseFileAndSetResult(Int32 res)
 {
-  for(;_currentIndex < _extractStatuses->Size(); _currentIndex++)
+  _crcStreamSpec->ReleaseStream();
+  _fileIsOpen = false;
+  _currentIndex++;
+  return _extractCallback->SetOperationResult(res);
+}
+
+HRESULT CFolderOutStream::CloseFileAndSetResult()
+{
+  const CFileItem &fi = _db->Files[_startIndex + _currentIndex];
+  return CloseFileAndSetResult(
+      (fi.IsDir || !fi.CrcDefined || !_checkCrc || fi.Crc == _crcStreamSpec->GetCRC()) ?
+      NArchive::NExtract::NOperationResult::kOK :
+      NArchive::NExtract::NOperationResult::kCRCError);
+}
+
+HRESULT CFolderOutStream::ProcessEmptyFiles()
+{
+  while (_currentIndex < _extractStatuses->Size() && _db->Files[_startIndex + _currentIndex].Size == 0)
   {
-    UInt32 index = _startIndex + _currentIndex;
-    const CFileItem &fi = _archiveDatabase->Files[index];
-    if (!_archiveDatabase->IsItemAnti(index) && !fi.IsDir && fi.Size != 0)
-      return S_OK;
     RINOK(OpenFile());
-    RINOK(_extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-    _outStreamWithHashSpec->ReleaseStream();
+    RINOK(CloseFileAndSetResult());
   }
   return S_OK;
 }
 
-STDMETHODIMP CFolderOutStream::Write(const void *data,
-    UInt32 size, UInt32 *processedSize)
+STDMETHODIMP CFolderOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize = 0;
-  while(_currentIndex < _extractStatuses->Size())
+  if (processedSize != NULL)
+    *processedSize = 0;
+  while (size != 0)
   {
     if (_fileIsOpen)
     {
-      UInt32 index = _startIndex + _currentIndex;
-      const CFileItem &fi = _archiveDatabase->Files[index];
-      UInt64 fileSize = fi.Size;
-      
-      UInt32 numBytesToWrite = (UInt32)MyMin(fileSize - _filePos,
-          UInt64(size - realProcessedSize));
-      
-      UInt32 processedSizeLocal;
-      RINOK(_outStreamWithHash->Write((const Byte *)data + realProcessedSize,
-            numBytesToWrite, &processedSizeLocal));
-
-      _filePos += processedSizeLocal;
-      realProcessedSize += processedSizeLocal;
-      if (_filePos == fileSize)
+      UInt32 cur = size < _rem ? size : (UInt32)_rem;
+      RINOK(_crcStream->Write(data, cur, &cur));
+      if (cur == 0)
+        break;
+      data = (const Byte *)data + cur;
+      size -= cur;
+      _rem -= cur;
+      if (processedSize != NULL)
+        *processedSize += cur;
+      if (_rem == 0)
       {
-        bool digestsAreEqual;
-        if (fi.CrcDefined && _checkCrc)
-          digestsAreEqual = fi.Crc == _outStreamWithHashSpec->GetCRC();
-        else
-          digestsAreEqual = true;
-
-        RINOK(_extractCallback->SetOperationResult(
-            digestsAreEqual ?
-            NArchive::NExtract::NOperationResult::kOK :
-            NArchive::NExtract::NOperationResult::kCRCError));
-        _outStreamWithHashSpec->ReleaseStream();
-        _fileIsOpen = false;
-        _currentIndex++;
-      }
-      if (realProcessedSize == size)
-      {
-        if (processedSize != NULL)
-          *processedSize = realProcessedSize;
-        return WriteEmptyFiles();
+        RINOK(CloseFileAndSetResult());
+        RINOK(ProcessEmptyFiles());
+        continue;
       }
     }
     else
     {
+      RINOK(ProcessEmptyFiles());
+      if (_currentIndex == _extractStatuses->Size())
+      {
+        // we support partial extracting
+        if (processedSize != NULL)
+          *processedSize += size;
+        break;
+      }
       RINOK(OpenFile());
-      _fileIsOpen = true;
-      _filePos = 0;
     }
   }
-  if (processedSize != NULL)
-    *processedSize = size;
   return S_OK;
 }
 
 HRESULT CFolderOutStream::FlushCorrupted(Int32 resultEOperationResult)
 {
-  while(_currentIndex < _extractStatuses->Size())
+  while (_currentIndex < _extractStatuses->Size())
   {
     if (_fileIsOpen)
     {
-      RINOK(_extractCallback->SetOperationResult(resultEOperationResult));
-      _outStreamWithHashSpec->ReleaseStream();
-      _fileIsOpen = false;
-      _currentIndex++;
+      RINOK(CloseFileAndSetResult(resultEOperationResult));
     }
     else
     {
       RINOK(OpenFile());
-      _fileIsOpen = true;
     }
   }
   return S_OK;
-}
-
-HRESULT CFolderOutStream::WasWritingFinished()
-{
-  if (_currentIndex == _extractStatuses->Size())
-    return S_OK;
-  return E_FAIL;
 }
 
 }}

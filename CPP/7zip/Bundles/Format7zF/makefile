@@ -35,6 +35,7 @@ WIN_OBJS = \
   $O\InBuffer.obj \
   $O\InOutTempBuffer.obj \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
@@ -55,14 +56,25 @@ AR_OBJS = \
   $O\ArchiveExports.obj \
   $O\DllExports2.obj \
   $O\ArjHandler.obj \
+  $O\Bz2Handler.obj \
+  $O\CpioHandler.obj \
   $O\DebHandler.obj \
   $O\DmgHandler.obj \
   $O\ElfHandler.obj \
+  $O\FatHandler.obj \
+  $O\GzHandler.obj \
+  $O\LzhHandler.obj \
+  $O\LzmaHandler.obj \
   $O\MachoHandler.obj \
+  $O\MbrHandler.obj \
   $O\MubHandler.obj \
+  $O\NtfsHandler.obj \
   $O\PeHandler.obj \
   $O\RpmHandler.obj \
+  $O\SplitHandler.obj \
+  $O\VhdHandler.obj \
   $O\XarHandler.obj \
+  $O\XzHandler.obj \
   $O\ZHandler.obj \
 
 AR_COMMON_OBJS = \
@@ -97,12 +109,6 @@ AR_COMMON_OBJS = \
   $O\7zUpdate.obj \
   $O\7zRegister.obj \
 
-BZ2_OBJS = \
-  $O\BZip2Handler.obj \
-  $O\BZip2HandlerOut.obj \
-  $O\BZip2Update.obj \
-  $O\bz2Register.obj \
-
 CAB_OBJS = \
   $O\CabBlockInStream.obj \
   $O\CabHandler.obj \
@@ -121,21 +127,6 @@ COM_OBJS = \
   $O\ComIn.obj \
   $O\ComRegister.obj \
 
-CPIO_OBJS = \
-  $O\CpioHandler.obj \
-  $O\CpioHeader.obj \
-  $O\CpioIn.obj \
-  $O\CpioRegister.obj \
-
-GZ_OBJS = \
-  $O\GZipHandler.obj \
-  $O\GZipHandlerOut.obj \
-  $O\GZipHeader.obj \
-  $O\GZipIn.obj \
-  $O\GZipOut.obj \
-  $O\GZipUpdate.obj \
-  $O\GZipRegister.obj \
-
 HFS_OBJS = \
   $O\HfsHandler.obj \
   $O\HfsIn.obj \
@@ -146,19 +137,6 @@ ISO_OBJS = \
   $O\IsoHeader.obj \
   $O\IsoIn.obj \
   $O\IsoRegister.obj \
-
-LZH_OBJS = \
-  $O\LzhCRC.obj \
-  $O\LzhHandler.obj \
-  $O\LzhIn.obj \
-  $O\LzhOutStreamWithCRC.obj \
-  $O\LzhRegister.obj \
-
-LZM_OBJS = \
-  $O\LzmaArcRegister.obj \
-  $O\LzmaFiltersDecode.obj \
-  $O\LzmaHandler.obj \
-  $O\LzmaIn.obj \
 
 NSIS_OBJS = \
   $O\NsisDecode.obj \
@@ -173,11 +151,6 @@ RAR_OBJS = \
   $O\RarItem.obj \
   $O\RarVolumeInStream.obj \
   $O\RarRegister.obj \
-
-SPLIT_OBJS = \
-  $O\SplitHandler.obj \
-  $O\SplitHandlerOut.obj \
-  $O\SplitRegister.obj \
 
 TAR_OBJS = \
   $O\TarHandler.obj \
@@ -222,7 +195,6 @@ COMPRESS_OBJS = \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
-  $O\ByteSwapRegister.obj \
   $O\BZip2Crc.obj \
   $O\BZip2Decoder.obj \
   $O\BZip2Encoder.obj \
@@ -234,9 +206,13 @@ COMPRESS_OBJS = \
   $O\DeflateEncoder.obj \
   $O\DeflateNsisRegister.obj \
   $O\DeflateRegister.obj \
+  $O\DeltaFilter.obj \
   $O\ImplodeDecoder.obj \
   $O\ImplodeHuffmanDecoder.obj \
   $O\LzhDecoder.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Encoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
@@ -272,20 +248,31 @@ CRYPTO_OBJS = \
 
 
 C_OBJS = \
+  $O\7zBuf2.obj \
+  $O\7zStream.obj \
+  $O\Aes.obj \
   $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
   $O\BwtSort.obj \
+  $O\Delta.obj \
   $O\HuffEnc.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
+  $O\Lzma2Dec.obj \
+  $O\Lzma2Enc.obj \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
+  $O\MtCoder.obj \
+  $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
-  $O\Aes.obj \
-  $O\Sha256.obj \
+  $O\Xz.obj \
+  $O\XzCrc64.obj \
+  $O\XzDec.obj \
+  $O\XzEnc.obj \
+  $O\XzIn.obj \
 
 !include "../../Crc2.mak"
 
@@ -298,19 +285,13 @@ OBJS = \
   $(AR_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
-  $(BZ2_OBJS) \
   $(CAB_OBJS) \
   $(CHM_OBJS) \
   $(COM_OBJS) \
-  $(CPIO_OBJS) \
-  $(GZ_OBJS) \
   $(HFS_OBJS) \
   $(ISO_OBJS) \
-  $(LZH_OBJS) \
-  $(LZM_OBJS) \
   $(NSIS_OBJS) \
   $(RAR_OBJS) \
-  $(SPLIT_OBJS) \
   $(TAR_OBJS) \
   $(UDF_OBJS) \
   $(WIM_OBJS) \
@@ -337,31 +318,19 @@ $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 
 $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
-$(BZ2_OBJS): ../../Archive/BZip2/$(*B).cpp
-	$(COMPL)
 $(CAB_OBJS): ../../Archive/Cab/$(*B).cpp
 	$(COMPL)
 $(CHM_OBJS): ../../Archive/Chm/$(*B).cpp
 	$(COMPL)
 $(COM_OBJS): ../../Archive/Com/$(*B).cpp
 	$(COMPL)
-$(CPIO_OBJS): ../../Archive/Cpio/$(*B).cpp
-	$(COMPL)
-$(GZ_OBJS): ../../Archive/GZip/$(*B).cpp
-	$(COMPL)
 $(HFS_OBJS): ../../Archive/Hfs/$(*B).cpp
 	$(COMPL)
 $(ISO_OBJS): ../../Archive/Iso/$(*B).cpp
 	$(COMPL)
-$(LZH_OBJS): ../../Archive/Lzh/$(*B).cpp
-	$(COMPL)
-$(LZM_OBJS): ../../Archive/Lzma/$(*B).cpp
-	$(COMPL)
 $(NSIS_OBJS): ../../Archive/Nsis/$(*B).cpp
 	$(COMPL)
 $(RAR_OBJS): ../../Archive/Rar/$(*B).cpp
-	$(COMPL)
-$(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
 $(TAR_OBJS): ../../Archive/Tar/$(*B).cpp
 	$(COMPL)

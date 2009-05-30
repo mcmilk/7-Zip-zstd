@@ -4,11 +4,9 @@
 
 #include "StdAfx.h"
 
-#include "Sha1.h"
-extern "C"
-{
 #include "../../../C/RotateDefs.h"
-}
+
+#include "Sha1.h"
 
 namespace NCrypto {
 namespace NSha1 {

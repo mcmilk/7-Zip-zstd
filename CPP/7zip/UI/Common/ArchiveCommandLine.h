@@ -73,6 +73,7 @@ struct CArchiveCommandLineOptions
 
   bool TechMode;
   // Extract
+  bool CalcCrc;
   bool AppendName;
   UString OutputDir;
   NExtract::NOverwriteMode::EEnum OverwriteMode;

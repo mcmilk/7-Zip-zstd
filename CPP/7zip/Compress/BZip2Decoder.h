@@ -62,7 +62,6 @@ class CDecoder :
   #ifdef COMPRESS_BZIP2_MT
   public ICompressSetCoderMt,
   #endif
-  public ICompressGetInStreamProcessedSize,
   public CMyUnknownImp
 {
 public:
@@ -71,9 +70,11 @@ public:
   NBitm::CDecoder<CInBuffer> m_InStream;
   Byte m_Selectors[kNumSelectorsMax];
   CHuffmanDecoder m_HuffmanDecoders[kNumTablesMax];
+  UInt64 _inStart;
+
 private:
 
-  UInt32 m_NumThreadsPrev;
+  bool _needInStreamInit;
 
   UInt32 ReadBits(int numBits);
   Byte ReadByte();
@@ -82,18 +83,22 @@ private:
   HRESULT PrepareBlock(CState &state);
   HRESULT DecodeFile(bool &isBZ, ICompressProgressInfo *progress);
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+      bool &isBZ, ICompressProgressInfo *progress);
   class CDecoderFlusher
   {
     CDecoder *_decoder;
   public:
     bool NeedFlush;
-    CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
+    bool ReleaseInStream;
+    CDecoderFlusher(CDecoder *decoder, bool releaseInStream):
+      _decoder(decoder),
+      ReleaseInStream(releaseInStream),
+      NeedFlush(true) {}
     ~CDecoderFlusher()
     {
       if (NeedFlush)
         _decoder->Flush();
-      _decoder->ReleaseStreams();
+      _decoder->ReleaseStreams(ReleaseInStream);
     }
   };
 
@@ -103,6 +108,7 @@ public:
   #ifdef COMPRESS_BZIP2_MT
   ICompressProgressInfo *Progress;
   CState *m_States;
+  UInt32 m_NumThreadsPrev;
 
   NWindows::NSynchronization::CManualResetEvent CanProcessEvent;
   NWindows::NSynchronization::CCriticalSection CS;
@@ -118,7 +124,6 @@ public:
   HRESULT Result2;
 
   UInt32 BlockSizeMax;
-  CDecoder();
   ~CDecoder();
   HRESULT Create();
   void Free();
@@ -127,28 +132,37 @@ public:
   CState m_States[1];
   #endif
 
+  CDecoder();
+
   HRESULT ReadSignatures(bool &wasFinished, UInt32 &crc);
 
 
   HRESULT Flush() { return m_OutStream.Flush(); }
-  void ReleaseStreams()
+  void ReleaseStreams(bool releaseInStream)
   {
-    m_InStream.ReleaseStream();
+    if (releaseInStream)
+      m_InStream.ReleaseStream();
     m_OutStream.ReleaseStream();
   }
 
+  MY_QUERYINTERFACE_BEGIN
   #ifdef COMPRESS_BZIP2_MT
-  MY_UNKNOWN_IMP2(ICompressSetCoderMt, ICompressGetInStreamProcessedSize)
-  #else
-  MY_UNKNOWN_IMP1(ICompressGetInStreamProcessedSize)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   #endif
+
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
-  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
 
+  HRESULT CodeResume(ISequentialOutStream *outStream, bool &isBZ, ICompressProgressInfo *progress);
+  UInt64 GetInputProcessedSize() const { return m_InStream.GetProcessedSize(); }
+  
   #ifdef COMPRESS_BZIP2_MT
   STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
   #endif

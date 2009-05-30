@@ -2,12 +2,6 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
-#include "Common/StringConvert.h"
-#include "Common/Wildcard.h"
-#include "Common/MyCom.h"
-
 #include "EnumDirItems.h"
 
 using namespace NWindows;
@@ -122,7 +116,7 @@ void CDirItems::EnumerateDirItems2(const UString &phyPrefix, const UString &logP
     const UString &filePath = filePaths[i];
     NFind::CFileInfoW fi;
     const UString phyPath = phyPrefix + filePath;
-    if (!NFind::FindFile(phyPath, fi))
+    if (!fi.Find(phyPath))
     {
       errorCodes.Add(::GetLastError());
       errorPaths.Add(phyPath);
@@ -218,7 +212,7 @@ static HRESULT EnumerateDirItems(const NWildcard::CCensorNode &curNode,
         const UString &name = item.PathParts.Front();
         const UString fullPath = phyPrefix + name;
         NFind::CFileInfoW fi;
-        if (!NFind::FindFile(fullPath, fi))
+        if (!fi.Find(fullPath))
         {
           errorCodes.Add(::GetLastError());
           errorPaths.Add(fullPath);
@@ -268,7 +262,7 @@ static HRESULT EnumerateDirItems(const NWildcard::CCensorNode &curNode,
         const NWildcard::CCensorNode &nextNode = curNode.SubNodes[i];
         const UString fullPath = phyPrefix + nextNode.Name;
         NFind::CFileInfoW fi;
-        if (!NFind::FindFile(fullPath, fi))
+        if (!fi.Find(fullPath))
         {
           if (!nextNode.AreThereIncludeItems())
             continue;

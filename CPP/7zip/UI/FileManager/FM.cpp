@@ -2,40 +2,28 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
-#include "Panel.h"
+#include "../../../../C/Alloc.h"
 
-extern "C"
-{
-  #include "../../../../C/Alloc.h"
-}
-
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-// #include "Common/CommandLineParser.h"
-
-#include "Windows/Control/Toolbar.h"
 #include "Windows/Error.h"
-#include "Windows/COM.h"
-#include "Windows/DLL.h"
-#include "Windows/Security.h"
 #include "Windows/MemoryLock.h"
+#include "Windows/Security.h"
 
-#include "ViewSettings.h"
 #include "../GUI/ExtractRes.h"
 
-#include "App.h"
-#include "StringUtils.h"
+#include "resource.h"
 
-#include "MyLoadMenu.h"
-#include "LangUtils.h"
+#include "App.h"
 #include "FormatUtils.h"
+#include "LangUtils.h"
+#include "MyLoadMenu.h"
+#include "Panel.h"
 #include "RegistryUtils.h"
+#include "StringUtils.h"
+#include "ViewSettings.h"
 
 using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
-// using namespace NCommandLineParser;
 
 #define MAX_LOADSTRING 100
 
@@ -617,10 +605,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       bool needOpenFile = false;
       if (!g_MainPath.IsEmpty() /* && g_OpenArchive */)
       {
-        NFile::NFind::CFileInfoW fileInfo;
-        if (NFile::NFind::FindFile(g_MainPath, fileInfo))
-          if (!fileInfo.IsDir())
-            needOpenFile = true;
+        if (NFile::NFind::DoesFileExist(g_MainPath))
+          needOpenFile = true;
       }
       HRESULT res = g_App.Create(hWnd, g_MainPath, xSizes, archiveIsOpened, encrypted);
 

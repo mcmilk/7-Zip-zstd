@@ -65,6 +65,26 @@ CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
 }
 
 
+CPropVariant& CPropVariant::operator=(const char *s)
+{
+  InternalClear();
+  vt = VT_BSTR;
+  wReserved1 = 0;
+  UINT len = (UINT)strlen(s);
+  bstrVal = ::SysAllocStringByteLen(0, (UINT)len * sizeof(OLECHAR));
+  if (bstrVal == NULL)
+  {
+    vt = VT_ERROR;
+    scode = E_OUTOFMEMORY;
+  }
+  else
+  {
+    for (UINT i = 0; i <= len; i++)
+      bstrVal[i] = s[i];
+  }
+  return *this;
+}
+
 CPropVariant& CPropVariant::operator=(bool bSrc)
 {
   if (vt != VT_BOOL)

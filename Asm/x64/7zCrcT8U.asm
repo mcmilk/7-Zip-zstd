@@ -24,8 +24,8 @@ CrcUpdateT8 PROC
     push RDI
     push RBP
 
-    mov	EAX, ECX
-    mov	RSI, RDX
+    mov EAX, ECX
+    mov RSI, RDX
     mov RDI, R9
 
 
@@ -77,8 +77,8 @@ CrcUpdateT8 PROC
     xor EAX,EDX
 
     cmp RSI, R9
-    jne	main_loop
-    xor	EAX, [RSI]
+    jne main_loop
+    xor EAX, [RSI]
 
 
   

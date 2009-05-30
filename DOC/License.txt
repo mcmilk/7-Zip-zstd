@@ -7,7 +7,7 @@
 
   Licenses for files are:
 
-    1) CPP/7zip/Compress/Rar files:  GNU LGPL + unRAR restriction
+    1) CPP/7zip/Compress/Rar* files:  GNU LGPL + unRAR restriction
     2) All other files:  GNU LGPL
 
   The GNU LGPL + unRAR restriction means that you must follow both 

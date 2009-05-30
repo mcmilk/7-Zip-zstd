@@ -3,12 +3,9 @@
 #ifndef __WINDOWS_SYNCHRONIZATION_H
 #define __WINDOWS_SYNCHRONIZATION_H
 
-#include "Defs.h"
-
-extern "C"
-{
 #include "../../C/Threads.h"
-}
+
+#include "Defs.h"
 
 #ifdef _WIN32
 #include "Handle.h"
@@ -23,7 +20,7 @@ protected:
   ::CEvent _object;
 public:
   bool IsCreated() { return Event_IsCreated(&_object) != 0; }
-  operator HANDLE() { return _object.handle; }
+  operator HANDLE() { return _object; }
   CBaseEvent() { Event_Construct(&_object); }
   ~CBaseEvent() { Close(); }
   WRes Close() { return Event_Close(&_object); }
@@ -31,16 +28,16 @@ public:
   WRes Create(bool manualReset, bool initiallyOwn, LPCTSTR name = NULL,
       LPSECURITY_ATTRIBUTES securityAttributes = NULL)
   {
-    _object.handle = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
+    _object = ::CreateEvent(securityAttributes, BoolToBOOL(manualReset),
         BoolToBOOL(initiallyOwn), name);
-    if (_object.handle != 0)
+    if (_object != 0)
       return 0;
     return ::GetLastError();
   }
   WRes Open(DWORD desiredAccess, bool inheritHandle, LPCTSTR name)
   {
-    _object.handle = ::OpenEvent(desiredAccess, BoolToBOOL(inheritHandle), name);
-    if (_object.handle != 0)
+    _object = ::OpenEvent(desiredAccess, BoolToBOOL(inheritHandle), name);
+    if (_object != 0)
       return 0;
     return ::GetLastError();
   }
@@ -134,7 +131,7 @@ public:
   CSemaphore() { Semaphore_Construct(&_object); }
   ~CSemaphore() { Close(); }
   WRes Close() {  return Semaphore_Close(&_object); }
-  operator HANDLE() { return _object.handle; }
+  operator HANDLE() { return _object; }
   WRes Create(UInt32 initiallyCount, UInt32 maxCount)
   {
     return Semaphore_Create(&_object, initiallyCount, maxCount);

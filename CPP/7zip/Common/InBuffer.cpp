@@ -2,12 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "InBuffer.h"
+#include "../../../C/Alloc.h"
 
-extern "C"
-{
-  #include "../../../C/Alloc.h"
-}
+#include "InBuffer.h"
 
 CInBuffer::CInBuffer():
   _buffer(0),

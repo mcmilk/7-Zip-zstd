@@ -131,10 +131,7 @@ int CExtToIconMap::GetIconIndex(UINT32 attributes, const UString &fileNameSpec, 
   {
     fileName = L"__File__";
     if (_noExtIconIndex < 0)
-    {
-      int iconIndexTemp;
-      GetRealIconIndex(fileName, attributes, iconIndexTemp, _noExtTypeName);
-    }
+      GetRealIconIndex(fileName, attributes, _noExtIconIndex, _noExtTypeName);
     typeName = _noExtTypeName;
     return _noExtIconIndex;
   }

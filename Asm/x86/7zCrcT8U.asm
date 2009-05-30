@@ -24,9 +24,9 @@ public @CrcUpdateT8@16
     push EDI
     push EBP
 
-    mov	EAX, ECX
-    mov	ESI, EDX
-    mov	EDI, [ESP + data_size]
+    mov EAX, ECX
+    mov ESI, EDX
+    mov EDI, [ESP + data_size]
     mov EBP, [ESP + crc_table]
 
     test EDI, EDI
@@ -77,8 +77,8 @@ public @CrcUpdateT8@16
     xor EAX,EDX
 
     cmp ESI, EDI
-    jne	main_loop
-    xor	EAX, [ESI]
+    jne main_loop
+    xor EAX, [ESI]
 
     mov EDI, [ESP + data_size]
 

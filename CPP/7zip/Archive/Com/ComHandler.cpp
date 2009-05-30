@@ -3,8 +3,15 @@
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
+
 #include "Windows/PropVariant.h"
+
+#include "../../Common/LimitedStreams.h"
+#include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamUtils.h"
+
+#include "../../Compress/CopyCoder.h"
+
 #include "ComHandler.h"
 
 namespace NArchive {
@@ -15,16 +22,15 @@ STATPROPSTG kProps[] =
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
-  // { NULL, kpidAttributes, VT_UI4},
   { NULL, kpidPackSize, VT_UI8},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidMTime, VT_FILETIME}
 };
 
-
 STATPROPSTG kArcProps[] =
 {
-  { NULL, kpidClusterSize, VT_UI4}
+  { NULL, kpidClusterSize, VT_UI4},
+  { NULL, kpidSectorSize, VT_UI4}
 };
 
 IMP_IInArchive_Props
@@ -37,6 +43,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidClusterSize: prop = (UInt32)1 << _db.SectorSizeBits; break;
+    case kpidSectorSize: prop = (UInt32)1 << _db.MiniSectorSizeBits; break;
   }
   prop.Detach(value);
   return S_OK;
@@ -52,33 +59,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     
   switch(propID)
   {
-    case kpidPath:
-    {
-      UString name = _db.GetItemPath(index);
-      prop = name;
-      break;
-    }
+    case kpidPath:  prop = _db.GetItemPath(index); break;
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidCTime:  prop = item.CTime; break;
     case kpidMTime:  prop = item.MTime; break;
-    /*
-    case kpidAttributes:
-      prop = item.Falgs;
-      break;
-    */
-    case kpidPackSize:
-      if (!item.IsDir())
-      {
-        int numBits = _db.IsLargeStream(item.Size) ?
-            _db.SectorSizeBits :
-            _db.MiniSectorSizeBits;
-        prop = (item.Size + ((UInt64)1 << numBits) - 1) >> numBits << numBits;
-        break;
-      }
-    case kpidSize:
-      if (!item.IsDir())
-        prop = (UInt64)item.Size;
-      break;
+    case kpidPackSize:  if (!item.IsDir()) prop = _db.GetItemPackSize(item.Size); break;
+    case kpidSize:  if (!item.IsDir()) prop = item.Size; break;
   }
   prop.Detach(value);
   return S_OK;
@@ -93,7 +79,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   Close();
   try
   {
-    if (OpenArchive(inStream, _db) != S_OK)
+    if (_db.Open(inStream) != S_OK)
       return S_FALSE;
     _stream = inStream;
   }
@@ -129,25 +115,29 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   }
   RINOK(extractCallback->SetTotal(totalSize));
 
-  UInt64 currentTotalSize = 0, currentItemSize = 0;
+  UInt64 totalPackSize;
+  totalSize = totalPackSize = 0;
   
-  CByteBuffer sect;
-  sect.SetCapacity((UInt32)1 << _db.SectorSizeBits);
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
-  for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
+  for (i = 0; i < numItems; i++)
   {
-    RINOK(extractCallback->SetCompleted(&currentTotalSize));
+    lps->InSize = totalPackSize;
+    lps->OutSize = totalSize;
+    RINOK(lps->SetCur());
     Int32 index = allFilesMode ? i : indices[i];
     const CItem &item = _db.Items[_db.Refs[index].Did];
-    currentItemSize = 0;
-    if (!item.IsDir())
-      currentItemSize = item.Size;
 
-    CMyComPtr<ISequentialOutStream> realOutStream;
+    CMyComPtr<ISequentialOutStream> outStream;
     Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
         NArchive::NExtract::NAskMode::kExtract;
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &outStream, askMode));
 
     if (item.IsDir())
     {
@@ -155,75 +145,31 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
       continue;
     }
-    if (!testMode && (!realOutStream))
+
+    totalPackSize += _db.GetItemPackSize(item.Size);
+    totalSize += item.Size;
+    
+    if (!testMode && (!outStream))
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     Int32 res = NArchive::NExtract::NOperationResult::kDataError;
+    CMyComPtr<ISequentialInStream> inStream;
+    HRESULT hres = GetStream(index, &inStream);
+    if (hres == S_FALSE)
+      res = NArchive::NExtract::NOperationResult::kDataError;
+    else if (hres == E_NOTIMPL)
+      res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+    else
     {
-      UInt32 sid = item.Sid;
-      UInt64 prev = 0;
-      for (UInt64 pos = 0;;)
+      RINOK(hres);
+      if (inStream)
       {
-        if (sid == NFatID::kEndOfChain)
-        {
-          if (pos != item.Size)
-            break;
+        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+        if (copyCoderSpec->TotalSize == item.Size)
           res = NArchive::NExtract::NOperationResult::kOK;
-          break;
-        }
-        if (pos >= item.Size)
-          break;
-          
-        UInt64 offset;
-        UInt32 size;
-
-        if (_db.IsLargeStream(item.Size))
-        {
-          if (pos - prev > (1 << 20))
-          {
-            UInt64 processed = currentTotalSize + pos;
-            RINOK(extractCallback->SetCompleted(&processed));
-            prev = pos;
-          }
-          size = 1 << _db.SectorSizeBits;
-          offset = ((UInt64)sid + 1) << _db.SectorSizeBits;
-          if (sid >= _db.FatSize)
-            break;
-          sid = _db.Fat[sid];
-        }
-        else
-        {
-          int subBits = (_db.SectorSizeBits - _db.MiniSectorSizeBits);
-          UInt32 fid = sid >> subBits;
-          if (fid >= _db.NumSectorsInMiniStream)
-            break;
-          size = 1 << _db.MiniSectorSizeBits;
-          offset = (((UInt64)_db.MiniSids[fid] + 1) << _db.SectorSizeBits) +
-            ((sid & ((1 << subBits) - 1)) << _db.MiniSectorSizeBits);
-          if (sid >= _db.MatSize)
-            break;
-          sid = _db.Mat[sid];
-        }
-        
-        // last sector can be smaller than sector size (it can contain requied data only).
-        UInt64 rem = item.Size - pos;
-        if (size > rem)
-          size = (UInt32)rem;
-
-        RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-        size_t realProcessedSize = size;
-        RINOK(ReadStream(_stream, sect, &realProcessedSize));
-        if (realProcessedSize != size)
-          break;
-
-        if (realOutStream)
-        {
-          RINOK(WriteStream(realOutStream, sect, size));
-        }
-        pos += size;
       }
     }
-    realOutStream.Release();
+    outStream.Release();
     RINOK(extractCallback->SetOperationResult(res));
   }
   return S_OK;
@@ -234,6 +180,60 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _db.Refs.Size();
   return S_OK;
+}
+
+STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+{
+  COM_TRY_BEGIN
+  *stream = 0;
+  const CItem &item = _db.Items[_db.Refs[index].Did];
+  CClusterInStream *streamSpec = new CClusterInStream;
+  CMyComPtr<ISequentialInStream> streamTemp = streamSpec;
+  streamSpec->Stream = _stream;
+  streamSpec->StartOffset = 0;
+
+  bool isLargeStream = _db.IsLargeStream(item.Size);
+  int bsLog = isLargeStream ? _db.SectorSizeBits : _db.MiniSectorSizeBits;
+  streamSpec->BlockSizeLog = bsLog;
+  streamSpec->Size = item.Size;
+
+  UInt32 clusterSize = (UInt32)1 << bsLog;
+  UInt64 numClusters64 = (item.Size + clusterSize - 1) >> bsLog;
+  if (numClusters64 >= ((UInt32)1 << 31))
+    return E_NOTIMPL;
+  streamSpec->Vector.Reserve((int)numClusters64);
+  UInt32 sid = item.Sid;
+  UInt64 size = item.Size;
+
+  if (size != 0)
+  {
+    for (;; size -= clusterSize)
+    {
+      if (isLargeStream)
+      {
+        if (sid >= _db.FatSize)
+          return S_FALSE;
+        streamSpec->Vector.Add(sid + 1);
+        sid = _db.Fat[sid];
+      }
+      else
+      {
+        UInt64 val;
+        if (sid >= _db.MatSize || !_db.GetMiniCluster(sid, val) || val >= (UInt64)1 << 32)
+          return S_FALSE;
+        streamSpec->Vector.Add((UInt32)val);
+        sid = _db.Mat[sid];
+      }
+      if (size <= clusterSize)
+        break;
+    }
+  }
+  if (sid != NFatID::kEndOfChain)
+    return S_FALSE;
+  RINOK(streamSpec->InitAndSeek());
+  *stream = streamTemp.Detach();
+  return S_OK;
+  COM_TRY_END
 }
 
 }}

@@ -4,7 +4,10 @@
 #define __ZIP_IN_H
 
 #include "Common/MyCom.h"
+
 #include "../../IStream.h"
+
+#include "../../Common/InBuffer.h"
 
 #include "ZipHeader.h"
 #include "ZipItemEx.h"
@@ -65,13 +68,14 @@ class CInArchive
   UInt32 m_Signature;
   UInt64 m_StreamStartPosition;
   UInt64 m_Position;
-  AString m_NameBuffer;
+ 
+  bool _inBufMode;
+  CInBuffer _inBuffer;
   
   HRESULT Seek(UInt64 offset);
 
   HRESULT FindAndReadMarker(IInStream *stream, const UInt64 *searchHeaderSizeLimit);
-  bool ReadUInt32(UInt32 &signature);
-  AString ReadFileName(UInt32 nameSize);
+  void ReadFileName(UInt32 nameSize, AString &dest);
   
   HRESULT ReadBytes(void *data, UInt32 size, UInt32 *processedSize);
   bool ReadBytesAndTestSize(void *data, UInt32 size);
@@ -81,7 +85,9 @@ class CInArchive
   UInt16 ReadUInt16();
   UInt32 ReadUInt32();
   UInt64 ReadUInt64();
+  bool ReadUInt32(UInt32 &signature);
   
+  void Skip(UInt64 num);
   void IncreaseRealPosition(UInt64 addValue);
  
   void ReadExtra(UInt32 extraSize, CExtraBlock &extraBlock,

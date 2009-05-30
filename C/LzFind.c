@@ -1,5 +1,5 @@
 /* LzFind.c -- Match finder for LZ algorithms
-2008-10-04 : Igor Pavlov : Public domain */
+2009-04-22 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -58,6 +58,17 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
 {
   if (p->streamEndWasReached || p->result != SZ_OK)
     return;
+  if (p->directInput)
+  {
+    UInt32 curSize = 0xFFFFFFFF - p->streamPos;
+    if (curSize > p->directInputRem)
+      curSize = (UInt32)p->directInputRem;
+    p->directInputRem -= curSize;
+    p->streamPos += curSize;
+    if (p->directInputRem == 0)
+      p->streamEndWasReached = 1;
+    return;
+  }
   for (;;)
   {
     Byte *dest = p->buffer + (p->streamPos - p->pos);
@@ -88,6 +99,8 @@ void MatchFinder_MoveBlock(CMatchFinder *p)
 
 int MatchFinder_NeedMove(CMatchFinder *p)
 {
+  if (p->directInput)
+    return 0;
   /* if (p->streamEndWasReached) return 0; */
   return ((size_t)(p->bufferBase + p->blockSize - p->buffer) <= p->keepSizeAfter);
 }
@@ -112,8 +125,6 @@ static void MatchFinder_SetDefaultSettings(CMatchFinder *p)
   p->cutValue = 32;
   p->btMode = 1;
   p->numHashBytes = 4;
-  /* p->skipModeBits = 0; */
-  p->directInput = 0;
   p->bigHash = 0;
 }
 
@@ -177,7 +188,7 @@ int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
   /* we need one additional byte, since we use MoveBlock after pos++ and before dictionary using */
   if (LzInWindow_Create(p, sizeReserv, alloc))
   {
-    UInt32 newCyclicBufferSize = (historySize /* >> p->skipModeBits */) + 1;
+    UInt32 newCyclicBufferSize = historySize + 1;
     UInt32 hs;
     p->matchMaxLen = matchMaxLen;
     {
@@ -192,7 +203,6 @@ int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
         hs |= (hs >> 4);
         hs |= (hs >> 8);
         hs >>= 1;
-        /* hs >>= p->skipModeBits; */
         hs |= 0xFFFF; /* don't change it! It's required for Deflate */
         if (hs > (1 << 24))
         {

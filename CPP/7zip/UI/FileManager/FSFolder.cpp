@@ -2,22 +2,20 @@
 
 #include "StdAfx.h"
 
-#include "FSFolder.h"
-
+#include "Common/ComTry.h"
 #include "Common/StringConvert.h"
 #include "Common/UTFConvert.h"
-#include "Common/ComTry.h"
 
-#include "Windows/Defs.h"
-#include "Windows/PropVariant.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileIO.h"
+#include "Windows/PropVariant.h"
 
 #include "../../PropID.h"
 
-#include "SysIconUtils.h"
 #include "FSDrives.h"
+#include "FSFolder.h"
 #include "NetFolder.h"
+#include "SysIconUtils.h"
 
 namespace NWindows {
 namespace NFile {
@@ -32,10 +30,9 @@ using namespace NFind;
 
 namespace NFsFolder {
 
-static STATPROPSTG kProperties[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidName, VT_BSTR},
-  // { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidCTime, VT_FILETIME},
@@ -152,7 +149,7 @@ void CFSFolder::AddRefs(CDirItem &dirItem)
 STDMETHODIMP CFSFolder::LoadItems()
 {
   // OutputDebugString(TEXT("Start\n"));
-  INT32 dummy;
+  Int32 dummy;
   WasChanged(&dummy);
   Clear();
   RINOK(LoadSubItems(_root, _path));
@@ -394,24 +391,13 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
 
 STDMETHODIMP CFSFolder::GetNumberOfProperties(UInt32 *numProperties)
 {
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
+  *numProperties = sizeof(kProps) / sizeof(kProps[0]);
   if (!_flatMode)
     (*numProperties)--;
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetPropertyInfo(UInt32 index,
-    BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &prop = kProperties[index];
-  *propID = prop.propid;
-  *varType = prop.vt;
-  *name = 0;
-  return S_OK;
-}
-
+STDMETHODIMP CFSFolder::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
 
 STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -427,7 +413,7 @@ STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CFSFolder::WasChanged(INT32 *wasChanged)
+STDMETHODIMP CFSFolder::WasChanged(Int32 *wasChanged)
 {
   bool wasChangedMain = false;
   for (;;)
@@ -640,7 +626,7 @@ STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID,
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
+STDMETHODIMP CFSFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
 {
   if (index >= (UInt32)_refs.Size())
     return E_INVALIDARG;

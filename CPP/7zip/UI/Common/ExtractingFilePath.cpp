@@ -1,6 +1,9 @@
 // ExtractingFilePath.cpp
 
 #include "StdAfx.h"
+
+#include "Common/Wildcard.h"
+
 #include "ExtractingFilePath.h"
 
 static UString ReplaceIncorrectChars(const UString &s)
@@ -15,6 +18,8 @@ static UString ReplaceIncorrectChars(const UString &s)
     res += c;
   }
   res.TrimRight();
+  while (!res.IsEmpty() && res[res.Length() - 1] == '.')
+    res.Delete(res.Length() - 1);
   return res;
   #else
   return s;
@@ -95,3 +100,41 @@ void MakeCorrectPath(UStringVector &pathParts)
   }
 }
 
+UString MakePathNameFromParts(const UStringVector &parts)
+{
+  UString result;
+  for (int i = 0; i < parts.Size(); i++)
+  {
+    if (i != 0)
+      result += WCHAR_PATH_SEPARATOR;
+    result += parts[i];
+  }
+  return result;
+}
+
+UString GetCorrectFsPath(const UString &path)
+{
+  UString res = GetCorrectFileName(path);
+  #ifdef _WIN32
+  if (!IsSupportedName(res))
+    res = (UString)L"_" + res;
+  #endif
+  return res;
+}
+  
+UString GetCorrectFullFsPath(const UString &path)
+{
+  UStringVector parts;
+  SplitPathToParts(path, parts);
+  for (int i = 0; i < parts.Size(); i++)
+  {
+    UString &s = parts[i];
+    #ifdef _WIN32
+    while (!s.IsEmpty() && s[s.Length() - 1] == '.')
+      s.Delete(s.Length() - 1);
+    if (!IsSupportedName(s))
+      s = (UString)L"_" + s;
+    #endif
+  }
+  return MakePathNameFromParts(parts);
+}

@@ -1,16 +1,14 @@
 // FolderOut.cpp
 
 #include "StdAfx.h"
-#include "Agent.h"
 
-#include "Common/StringConvert.h"
 #include "Common/ComTry.h"
+
 #include "Windows/FileDir.h"
 
-// #include "../Common/CompressEngineCommon.h"
-#include "../Common/ZipRegistry.h"
-#include "../Common/UpdateAction.h"
 #include "../Common/WorkDir.h"
+
+#include "Agent.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -35,7 +33,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   NWorkDir::CInfo workDirInfo;
   ReadWorkDirInfo(workDirInfo);
   UString archiveFilePath  = _agentSpec->_archiveFilePath;
-  UString workDir = GetWorkDir(workDirInfo, archiveFilePath );
+  UString workDir = GetWorkDir(workDirInfo, archiveFilePath);
   CreateComplexDirectory(workDir);
 
   CTempFileW tempFile;
@@ -86,11 +84,12 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   
   // m_FolderItem = NULL;
   
-  if (!DeleteFileAlways(archiveFilePath ))
-    return GetLastError();
+  if (NFind::DoesFileExist(archiveFilePath))
+    if (!DeleteFileAlways(archiveFilePath))
+      return GetLastError();
 
   tempFile.DisableDeleting();
-  if (!MyMoveFile(tempFileName, archiveFilePath ))
+  if (!MyMoveFile(tempFileName, archiveFilePath))
     return GetLastError();
 
   {
@@ -134,17 +133,23 @@ STDMETHODIMP CAgentFolder::CopyFrom(
     IProgress *progress)
 {
   COM_TRY_BEGIN
-  RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
-  RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
   if (progress != 0)
   {
-    CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(
-      IID_IFolderArchiveUpdateCallback, &updateCallback100));
+    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100));
   }
-  return CommonUpdateOperation(false, false, false, NULL,
-    &NUpdateArchive::kAddActionSet, 0, 0, updateCallback100);
+  try
+  {
+    RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
+    RINOK(_agentSpec->SetFolder(this));
+    return CommonUpdateOperation(false, false, false, NULL,
+      &NUpdateArchive::kAddActionSet, 0, 0, updateCallback100);
+  }
+  catch(const UString &s)
+  {
+    RINOK(updateCallback100->UpdateErrorMessage(UString(L"Error: ") + s));
+    return E_FAIL;
+  }
   COM_TRY_END
 }
 

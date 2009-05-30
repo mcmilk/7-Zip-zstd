@@ -683,7 +683,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   CMyComPtr<IOutFolderArchive> outArchive;
 
   CMyComPtr<IInFolderArchive> archiveHandler;
-  if(NFind::FindFile(fullArchiveName, fileInfo))
+  if(fileInfo.Find(fullArchiveName))
   {
     if (fileInfo.IsDir())
       throw "There is Directory with such name";
@@ -692,7 +692,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     archiveHandler = agentSpec;
     // CLSID realClassID;
     CMyComBSTR archiveType;
-    RINOK(agentSpec->Open(
+    RINOK(agentSpec->Open(NULL,
         GetUnicodeString(fullArchiveName, CP_OEMCP),
         // &realClassID,
         &archiveType,

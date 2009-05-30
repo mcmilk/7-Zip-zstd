@@ -2,12 +2,9 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Alloc.h"
 #include "../../../C/BwtSort.h"
 #include "../../../C/HuffEnc.h"
-}
 
 #include "BZip2Crc.h"
 #include "BZip2Encoder.h"
@@ -823,7 +820,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   WriteByte(kFinSig5);
 
   WriteCrc(CombinedCrc.GetDigest());
-  return S_OK;
+  return Flush();
 }
 
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,

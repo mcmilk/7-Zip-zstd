@@ -1,23 +1,20 @@
-// MyLoadMenu
+// MyLoadMenu.cpp
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-
 #include "Windows/Menu.h"
-#include "Windows/Error.h"
-#include "Windows/Clipboard.h"
 
 #include "../../PropID.h"
 
-#include "resource.h"
-#include "App.h"
-#include "AboutDialog.h"
 #include "../Common/CompressCall.h"
 
+#include "AboutDialog.h"
+#include "App.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
-#include "PluginInterface.h"
+#include "RegistryUtils.h"
+
+#include "resource.h"
 
 static const UINT kOpenBookmarkMenuID = 730;
 static const UINT kSetBookmarkMenuID = 740;
@@ -428,6 +425,9 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
 
   CMenu destMenu;
   destMenu.Attach(hMenu);
+
+  UString diffPath;
+  ReadRegDiff(diffPath);
   
   for (int i = 0; i < g_FileMenu.GetItemCount(); i++)
   {
@@ -440,6 +440,10 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
       if (!programMenu)
         if (item.wID == IDCLOSE)
           continue;
+
+      if (item.wID == IDM_FILE_DIFF && diffPath.IsEmpty())
+        continue;
+
       bool isOneFsFile = (isFsFolder && numItems == 1 && allAreFiles);
       if ((item.wID == IDM_FILE_SPLIT || item.wID == IDM_FILE_COMBINE) && !isOneFsFile)
         item.fState |= MFS_DISABLED;
@@ -521,6 +525,9 @@ bool ExecuteFileCommand(int id)
     }
     case IDM_FILE_CRC:
       g_App.CalculateCrc();
+      break;
+    case IDM_FILE_DIFF:
+      g_App.DiffFiles();
       break;
     case IDM_FILE_SPLIT:
       g_App.Split();

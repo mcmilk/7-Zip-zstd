@@ -6,8 +6,6 @@
 
 #include "Common/StringConvert.h"
 
-#include "../Common/OpenArchive.h"
-
 static inline UINT GetCurrentFileCodePage()
   {  return AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
@@ -28,7 +26,7 @@ int CArchiveFolderManager::FindFormat(const UString &type)
   return -1;
 }
 
-STDMETHODIMP CArchiveFolderManager::OpenFolderFile(const wchar_t *filePath,
+STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream, const wchar_t *filePath,
     IFolderFolder **resultFolder, IProgress *progress)
 {
   CMyComPtr<IArchiveOpenCallback> openArchiveCallback;
@@ -39,7 +37,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(const wchar_t *filePath,
   }
   CAgent *agent = new CAgent();
   CMyComPtr<IInFolderArchive> archive = agent;
-  RINOK(agent->Open(filePath, NULL, openArchiveCallback));
+  RINOK(agent->Open(inStream, filePath, NULL, openArchiveCallback));
   return agent->BindToRootFolder(resultFolder);
 }
 

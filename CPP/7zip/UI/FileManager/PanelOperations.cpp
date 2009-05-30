@@ -2,24 +2,24 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
-
-#include "Panel.h"
-
-#include "Common/StringConvert.h"
 #include "Common/DynamicBuffer.h"
+#include "Common/StringConvert.h"
+
+#include "Windows/COM.h"
 #include "Windows/FileDir.h"
+#include "Windows/PropVariant.h"
 #include "Windows/ResourceString.h"
 #include "Windows/Thread.h"
-#include "Windows/COM.h"
 
 #include "ComboDialog.h"
 
 #include "FSFolder.h"
-#include "LangUtils.h"
 #include "FormatUtils.h"
-
+#include "LangUtils.h"
+#include "Panel.h"
 #include "UpdateCallback100.h"
+
+#include "resource.h"
 
 using namespace NWindows;
 using namespace NFile;

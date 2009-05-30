@@ -2,13 +2,13 @@
 
 #include "StdAfx.h"
 
+#include "../../../C/CpuArch.h"
+
 #include "Common/ComTry.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
-
-#include "../../../C/CpuArch.h"
 
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
@@ -180,6 +180,7 @@ struct CItem
   UInt32 PackSize;
   UInt32 Size;
   UInt32 FileCRC;
+  UInt32 SplitPos;
 
   Byte Version;
   Byte ExtractVersion;
@@ -197,6 +198,8 @@ struct CItem
   
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kGarbled) != 0; }
   bool IsDir() const { return (FileType == NFileHeader::NFileType::kDirectory); }
+  bool IsSplitAfter() const { return (Flags & NFileHeader::NFlags::kVolume) != 0; }
+  bool IsSplitBefore() const { return (Flags & NFileHeader::NFlags::kExtFile) != 0; }
   UInt32 GetWinAttributes() const
   {
     UInt32 winAtrributes;
@@ -240,6 +243,10 @@ HRESULT CItem::Parse(const Byte *p, unsigned size)
   // FirstChapter = p[28];
   // FirstChapter = p[29];
 
+  SplitPos = 0;
+  if (IsSplitBefore() && firstHeaderSize >= 34)
+    SplitPos = Get32(p + 30);
+
   unsigned pos = firstHeaderSize;
   unsigned size1 = size - pos;
   RINOK(ReadString(p + pos, size1, Name));
@@ -270,7 +277,7 @@ class CInArchive
   
   HRESULT ReadBlock(bool &filled);
   HRESULT ReadSignatureAndBlock(bool &filled);
-  HRESULT SkeepExtendedHeaders();
+  HRESULT SkipExtendedHeaders();
 
   HRESULT SafeReadBytes(void *data, UInt32 size);
     
@@ -389,7 +396,7 @@ HRESULT CInArchive::ReadSignatureAndBlock(bool &filled)
   return ReadBlock(filled);
 }
 
-HRESULT CInArchive::SkeepExtendedHeaders()
+HRESULT CInArchive::SkipExtendedHeaders()
 {
   for (UInt32 i = 0;; i++)
   {
@@ -412,7 +419,7 @@ HRESULT CInArchive::Open(const UInt64 *searchHeaderSizeLimit)
   if (!filled)
     return S_FALSE;
   RINOK(Header.Parse(_block, _blockSize));
-  return SkeepExtendedHeaders();
+  return SkipExtendedHeaders();
 }
 
 HRESULT CInArchive::GetNextItem(bool &filled, CItem &item)
@@ -428,7 +435,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItem &item)
     extraData = GetUi32(_block + pos);
   */
 
-  RINOK(SkeepExtendedHeaders());
+  RINOK(SkipExtendedHeaders());
   filled = true;
   return S_OK;
 }
@@ -482,8 +489,9 @@ STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidSize, VT_UI4},
+  { NULL, kpidPosition, VT_UI8},
+  { NULL, kpidPackSize, VT_UI4},
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidAttrib, VT_UI4},
   { NULL, kpidEncrypted, VT_BOOL},
@@ -556,6 +564,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidSize:  prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;
+    case kpidPosition:  if (item.IsSplitBefore() || item.IsSplitAfter()) prop = (UInt64)item.SplitPos; break;
     case kpidAttrib:  prop = item.GetWinAttributes(); break;
     case kpidEncrypted:  prop = item.IsEncrypted(); break;
     case kpidCRC:  prop = item.FileCRC; break;

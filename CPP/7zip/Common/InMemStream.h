@@ -1,11 +1,14 @@
 // InMemStream.h
 
-#ifndef __INMEMSTREAM_H
-#define __INMEMSTREAM_H
+#ifndef __IN_MEM_STREAM_H
+#define __IN_MEM_STREAM_H
 
 #include <stdio.h>
 
+#include "../../../C/Alloc.h"
+
 #include "../../Common/MyCom.h"
+
 #include "MemBlocks.h"
 
 class CIntListCheck

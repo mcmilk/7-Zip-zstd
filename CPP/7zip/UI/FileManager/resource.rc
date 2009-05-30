@@ -34,6 +34,7 @@ BEGIN
     MENUITEM "P&roperties\tAlt+Enter",      IDM_FILE_PROPERTIES
     MENUITEM "Comme&nt\tCtrl+Z",            IDM_FILE_COMMENT
     MENUITEM "Calculate checksum",          IDM_FILE_CRC
+    MENUITEM "Di&ff",                       IDM_FILE_DIFF
     MENUITEM SEPARATOR
     MENUITEM "Create Folder\tF7",           IDM_CREATE_FOLDER
     MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
@@ -190,12 +191,12 @@ BEGIN
   IDS_FOLDERS_COLON       "Folders:"
   IDS_SIZE_COLON          "Size:"
 
-  IDS_PROPERTY_TOTAL_SIZE "Total Size"
-  IDS_PROPERTY_FREE_SPACE "Free Space"
-  IDS_PROPERTY_CLUSTER_SIZE "Cluster Size"
-  IDS_PROPERTY_VOLUME_NAME "Label"
-  IDS_PROPERTY_LOCAL_NAME "Local Name"
-  IDS_PROPERTY_PROVIDER   "Provider"
+  IDS_PROP_TOTAL_SIZE     "Total Size"
+  IDS_PROP_FREE_SPACE     "Free Space"
+  IDS_PROP_CLUSTER_SIZE   "Cluster Size"
+  IDS_PROP_VOLUME_NAME    "Label"
+  IDS_PROP_LOCAL_NAME     "Local Name"
+  IDS_PROP_PROVIDER       "Provider"
   IDS_OPTIONS             "Options"
   IDS_COMMENT             "Comment"
   IDS_COMMENT2            "&Comment:"

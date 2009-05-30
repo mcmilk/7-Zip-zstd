@@ -1,9 +1,9 @@
 ;--------------------------------
 ;Defines
 
-!define VERSION_MAJOR 4
-!define VERSION_MINOR 65
-!define VERSION_POSTFIX_FULL ""
+!define VERSION_MAJOR 9
+!define VERSION_MINOR 04
+!define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -159,11 +159,7 @@ Section
   File descript.ion
   File History.txt
   File License.txt
-  File copying.txt
   File readme.txt
-  !ifndef WIN64
-  File 7zip_pad.xml
-  !endif
 
   # File 7-zip.dll
   # File 7-zipn.dll

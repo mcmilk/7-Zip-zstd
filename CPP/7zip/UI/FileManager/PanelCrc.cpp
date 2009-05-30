@@ -2,15 +2,11 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
-  #include "../../../../C/Alloc.h"
-  #include "../../../../C/7zCrc.h"
-  #include "../../../../C/Sha256.h"
-}
+#include "../../../../C/7zCrc.h"
+#include "../../../../C/Alloc.h"
+#include "../../../../C/Sha256.h"
 
 #include "Common/IntToString.h"
-#include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #include "Windows/FileFind.h"
@@ -24,6 +20,8 @@ extern "C"
 #include "App.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
+
+#include "../Common/PropIDUtils.h"
 
 #include "resource.h"
 
@@ -69,7 +67,18 @@ bool CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UStr
       resPath.Empty();
       if (pos >= 0)
         resPath = path.Left(pos + 1);
-      if (!NFind::FindFile(BasePrefix + path, fileInfo))
+
+      #ifdef _WIN32
+      // it's for "c:" paths/
+      if (BasePrefix.IsEmpty() && path.Length() == 2 && path[1] == ':')
+      {
+        fileInfo.Name = path;
+        fileInfo.Attrib = FILE_ATTRIBUTE_DIRECTORY;
+        fileInfo.Size = 0;
+      }
+      else
+      #endif
+      if (!fileInfo.Find(BasePrefix + path))
       {
         errorCode = ::GetLastError();
         resPath = path;
@@ -285,21 +294,11 @@ static void ConvertByteToHex(unsigned value, wchar_t *s)
   }
 }
 
-static void ConvertUInt32ToHex(UInt32 value, wchar_t *s)
-{
-  for (int i = 6; i >= 0; i -= 2)
-  {
-    ConvertByteToHex(value & 0xFF, s + i);
-    value >>= 8;
-  }
-  s[8] = L'\0';
-}
-
 void CApp::CalculateCrc()
 {
   int srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
-  if (!srcPanel.IsFSFolder())
+  if (!srcPanel.IsFsOrDrivesFolder())
   {
     srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
@@ -312,7 +311,7 @@ void CApp::CalculateCrc()
   CThreadCrc combiner;
   for (int i = 0; i < indices.Size(); i++)
     combiner.DirEnumerator.FileNames.Add(srcPanel.GetItemRelPath(indices[i]));
-  combiner.DirEnumerator.BasePrefix = srcPanel._currentFolderPrefix;
+  combiner.DirEnumerator.BasePrefix = srcPanel.GetFsPath();
   combiner.DirEnumerator.FlatMode = GetFlatMode();
 
   {

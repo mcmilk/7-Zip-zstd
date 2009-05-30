@@ -2,12 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "FilterCoder.h"
-extern "C"
-{
 #include "../../../C/Alloc.h"
-}
+
 #include "../../Common/Defs.h"
+
+#include "FilterCoder.h"
 #include "StreamUtils.h"
 
 static const UInt32 kBufferSize = 1 << 17;

@@ -1,8 +1,8 @@
 /* LzHash.h -- HASH functions for LZ algorithms
-2008-10-04 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
-#ifndef __LZHASH_H
-#define __LZHASH_H
+#ifndef __LZ_HASH_H
+#define __LZ_HASH_H
 
 #define kHash2Size (1 << 10)
 #define kHash3Size (1 << 16)

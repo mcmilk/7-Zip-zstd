@@ -5,6 +5,7 @@
 
 #include "Common/MyString.h"
 #include "Common/MyCom.h"
+#include "../../Archive/IArchive.h"
 
 #include "IFolder.h"
 
@@ -32,11 +33,11 @@ public:
   INTERFACE_FolderFolder(;)
   INTERFACE_FolderOperations(;)
 
-  STDMETHOD(WasChanged)(INT32 *wasChanged);
-  STDMETHOD(Clone)(IFolderFolder **resultFolder);
+  STDMETHOD(WasChanged)(Int32 *wasChanged);
   STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress);
+  STDMETHOD(Clone)(IFolderFolder **resultFolder);
 
-  // STDMETHOD(GetSystemIconIndex)(UInt32 index, INT32 *iconIndex);
+  // STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
 
 private:
   UString _name;

@@ -3,14 +3,14 @@
 #ifndef __OPENCALLBACK_H
 #define __OPENCALLBACK_H
 
-#include "Common/MyString.h"
 #include "Common/MyCom.h"
+#include "Common/MyString.h"
+
 #include "Windows/FileFind.h"
 
 #include "../../IPassword.h"
 
 #include "../../Archive/IArchive.h"
-
 
 #ifdef _SFX
 #include "ProgressDialog.h"
@@ -29,21 +29,15 @@ class COpenArchiveCallback:
 {
   UString _folderPrefix;
   NWindows::NFile::NFind::CFileInfoW _fileInfo;
-
-  bool _numFilesTotalDefined;
-  bool _numBytesTotalDefined;
   NWindows::NSynchronization::CCriticalSection _criticalSection;
-
-public:
-  bool PasswordIsDefined;
-  UString Password;
-  bool PasswordWasAsked;
-  HWND ParentWindow;
-
   bool _subArchiveMode;
   UString _subArchiveName;
 
 public:
+  bool PasswordIsDefined;
+  bool PasswordWasAsked;
+  UString Password;
+  HWND ParentWindow;
   CProgressDialog ProgressDialog;
 
   MY_UNKNOWN_IMP5(
@@ -70,9 +64,6 @@ public:
   COpenArchiveCallback():
     ParentWindow(0)
   {
-    _numFilesTotalDefined = false;
-    _numBytesTotalDefined = false;
-
     _subArchiveMode = false;
     PasswordIsDefined = false;
     PasswordWasAsked = false;
@@ -87,7 +78,7 @@ public:
   void LoadFileInfo(const UString &folderPrefix,  const UString &fileName)
   {
     _folderPrefix = folderPrefix;
-    if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
+    if (!_fileInfo.Find(_folderPrefix + fileName))
       throw 1;
   }
   void ShowMessage(const UInt64 *completed);
@@ -96,7 +87,6 @@ public:
   {
     return ProgressDialog.Create(title, ParentWindow);
   }
-
 };
 
 #endif

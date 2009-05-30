@@ -3,10 +3,7 @@
 #ifndef __CRYPTO_MY_AES_H
 #define __CRYPTO_MY_AES_H
 
-extern "C"
-{
 #include "../../../C/Aes.h"
-}
 
 #include "../../Common/MyCom.h"
 #include "../../Common/Types.h"

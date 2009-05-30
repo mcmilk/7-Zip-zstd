@@ -2,13 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "FileDir.h"
-#include "FileName.h"
-#include "FileFind.h"
-#include "Defs.h"
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
 #endif
+
+#include "FileDir.h"
+#include "FileFind.h"
+#include "FileName.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -291,7 +291,7 @@ bool CreateComplexDirectory(LPCTSTR _aPathName)
     if (::GetLastError() == ERROR_ALREADY_EXISTS)
     {
       NFind::CFileInfo fileInfo;
-      if (!NFind::FindFile(pathName, fileInfo)) // For network folders
+      if (!fileInfo.Find(pathName)) // For network folders
         return true;
       if (!fileInfo.IsDir())
         return false;
@@ -337,7 +337,7 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
     if (::GetLastError() == ERROR_ALREADY_EXISTS)
     {
       NFind::CFileInfoW fileInfo;
-      if (!NFind::FindFile(pathName, fileInfo)) // For network folders
+      if (!fileInfo.Find(pathName)) // For network folders
         return true;
       if (!fileInfo.IsDir())
         return false;
@@ -773,18 +773,20 @@ bool CreateTempDirectory(LPCTSTR prefix, CSysString &dirName)
   */
   for (;;)
   {
-    CTempFile tempFile;
-    if (!tempFile.Create(prefix, dirName))
-      return false;
-    if (!::DeleteFile(dirName))
-      return false;
+    {
+      CTempFile tempFile;
+      if (!tempFile.Create(prefix, dirName))
+        return false;
+      if (!tempFile.Remove())
+        return false;
+    }
     /*
     UINT32 randomNumber = random.Generate();
     TCHAR randomNumberString[32];
     _stprintf(randomNumberString, _T("%04X"), randomNumber);
     dirName = prefix + randomNumberString;
     */
-    if (NFind::DoesFileExist(dirName))
+    if (NFind::DoesFileOrDirExist(dirName))
       continue;
     if (MyCreateDirectory(dirName))
       return true;
@@ -810,18 +812,20 @@ bool CreateTempDirectory(LPCWSTR prefix, UString &dirName)
   */
   for (;;)
   {
-    CTempFileW tempFile;
-    if (!tempFile.Create(prefix, dirName))
-      return false;
-    if (!DeleteFileAlways(dirName))
-      return false;
+    {
+      CTempFileW tempFile;
+      if (!tempFile.Create(prefix, dirName))
+        return false;
+      if (!tempFile.Remove())
+        return false;
+    }
     /*
     UINT32 randomNumber = random.Generate();
     TCHAR randomNumberString[32];
     _stprintf(randomNumberString, _T("%04X"), randomNumber);
     dirName = prefix + randomNumberString;
     */
-    if (NFind::DoesFileExist(dirName))
+    if (NFind::DoesFileOrDirExist(dirName))
       continue;
     if (MyCreateDirectory(dirName))
       return true;

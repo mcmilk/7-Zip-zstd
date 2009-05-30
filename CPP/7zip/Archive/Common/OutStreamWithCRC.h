@@ -3,13 +3,11 @@
 #ifndef __OUT_STREAM_WITH_CRC_H
 #define __OUT_STREAM_WITH_CRC_H
 
-#include "../../../Common/MyCom.h"
-#include "../../IStream.h"
-
-extern "C"
-{
 #include "../../../../C/7zCrc.h"
-}
+
+#include "../../../Common/MyCom.h"
+
+#include "../../IStream.h"
 
 class COutStreamWithCRC:
   public ISequentialOutStream,

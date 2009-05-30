@@ -27,11 +27,11 @@ public:
   STDMETHOD(AskOverwrite)(
       const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
       const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
-      INT32 *result);
-  STDMETHOD (PrepareOperation)(const wchar_t *name, bool isFolder, INT32 askExtractMode, const UInt64 *position);
+      Int32 *result);
+  STDMETHOD (PrepareOperation)(const wchar_t *name, bool isFolder, Int32 askExtractMode, const UInt64 *position);
 
   STDMETHOD(MessageError)(const wchar_t *message);
-  STDMETHOD(SetOperationResult)(INT32 resultEOperationResult, bool encrypted);
+  STDMETHOD(SetOperationResult)(Int32 resultEOperationResult, bool encrypted);
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
@@ -43,15 +43,6 @@ private:
   bool _processedIsDefined;
 
   UString m_CurrentFilePath;
-
-  /*
-  struct CProcessedFileInfo
-  {
-    FILETIME MTime;
-    bool isDir;
-    UINT32 Attributes;
-  } m_ProcessedFileInfo;
-  */
 
   CProgressBox *m_ProgressBox;
   UINT m_CodePage;

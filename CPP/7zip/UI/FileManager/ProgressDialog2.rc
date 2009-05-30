@@ -1,7 +1,7 @@
 #include "ProgressDialog2Res.h"
 #include "../../GuiCommon.rc"
 
-#define xSize2 320
+#define xSize2 350
 #define ySize2 110
 
 #define xSize (xSize2 + marg + marg)
@@ -20,7 +20,7 @@
 #define x1 (marg + x0Size)
 #define x1Size 70
 
-#define x3Size 40
+#define x3Size 60
 #define x3 (xSize - marg - x3Size)
 
 #define x2Size 90

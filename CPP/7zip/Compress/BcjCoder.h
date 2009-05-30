@@ -3,10 +3,7 @@
 #ifndef __COMPRESS_BCJ_CODER_H
 #define __COMPRESS_BCJ_CODER_H
 
-extern "C"
-{
 #include "../../../C/Bra.h"
-}
 
 #include "BranchCoder.h"
 

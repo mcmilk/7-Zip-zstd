@@ -12,11 +12,8 @@ Note:
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/7zCrc.h"
 #include "../../../C/Alloc.h"
-}
 
 #include "Rar3Vm.h"
 

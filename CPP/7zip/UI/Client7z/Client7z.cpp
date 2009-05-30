@@ -330,7 +330,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
   else
   {
     NFile::NFind::CFileInfoW fi;
-    if (NFile::NFind::FindFile(fullProcessedPath, fi))
+    if (fi.Find(fullProcessedPath))
     {
       if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
       {
@@ -621,8 +621,8 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
 
 STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream **volumeStream)
 {
-  wchar_t temp[32];
-  ConvertUInt64ToString(index + 1, temp);
+  wchar_t temp[16];
+  ConvertUInt32ToString(index + 1, temp);
   UString res = temp;
   while (res.Length() < 2)
     res = UString(L'0') + res;
@@ -707,7 +707,7 @@ int MY_CDECL main(int argc, char* argv[])
       UString name = GetUnicodeString(argv[i], CP_OEMCP);
       
       NFile::NFind::CFileInfoW fi;
-      if (!NFile::NFind::FindFile(name, fi))
+      if (!fi.Find(name))
       {
         PrintString(UString(L"Can't find file") + name);
         return 1;

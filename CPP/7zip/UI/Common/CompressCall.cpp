@@ -2,19 +2,19 @@
 
 #include "StdAfx.h"
 
-#include "CompressCall.h"
-
-#include "Common/Random.h"
 #include "Common/IntToString.h"
 #include "Common/MyCom.h"
+#include "Common/Random.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/Synchronization.h"
-#include "Windows/FileMapping.h"
 #include "Windows/FileDir.h"
+#include "Windows/FileMapping.h"
+#include "Windows/Synchronization.h"
 
 #include "../FileManager/ProgramLocation.h"
 #include "../FileManager/RegistryUtils.h"
+
+#include "CompressCall.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -122,8 +122,8 @@ static HRESULT CreateTempEvent(const wchar_t *name,
   for (;;)
   {
     int number = random.Generate();
-    wchar_t temp[32];
-    ConvertUInt64ToString((UInt32)number, temp);
+    wchar_t temp[16];
+    ConvertUInt32ToString((UInt32)number, temp);
     eventName = name;
     eventName += temp;
     RINOK(event.CreateWithName(false, GetSystemString(eventName)));
@@ -151,8 +151,8 @@ static HRESULT CreateMap(const UStringVector &names,
   for (;;)
   {
     int number = random.Generate();
-    wchar_t temp[32];
-    ConvertUInt64ToString(UInt32(number), temp);
+    wchar_t temp[16];
+    ConvertUInt32ToString(UInt32(number), temp);
     mappingName = id;
     mappingName += L"Mapping";
     mappingName += temp;
@@ -169,8 +169,8 @@ static HRESULT CreateMap(const UStringVector &names,
 
   params += mappingName;
   params += L":";
-  wchar_t string[10];
-  ConvertUInt64ToString(totalSize, string);
+  wchar_t string[16];
+  ConvertUInt32ToString(totalSize, string);
   params += string;
   
   params += L":";
@@ -231,8 +231,8 @@ HRESULT CompressFiles(
   for (;;)
   {
     int number = random.Generate();
-    wchar_t temp[32];
-    ConvertUInt64ToString(UInt32(number), temp);
+    wchar_t temp[16];
+    ConvertUInt32ToString(UInt32(number), temp);
     mappingName = L"7zCompressMapping";
     mappingName += temp;
     if (!fileMapping.Create(INVALID_HANDLE_VALUE, NULL,
@@ -252,8 +252,8 @@ HRESULT CompressFiles(
 
   params += mappingName;
   params += L":";
-  wchar_t string[10];
-  ConvertUInt64ToString(totalSize, string);
+  wchar_t string[16];
+  ConvertUInt32ToString(totalSize, string);
   params += string;
   
   params += L":";

@@ -3,10 +3,7 @@
 #ifndef __DEFLATE_ENCODER_H
 #define __DEFLATE_ENCODER_H
 
-extern "C"
-{
-  #include "../../../C/LzFind.h"
-}
+#include "../../../C/LzFind.h"
 
 #include "Common/MyCom.h"
 

@@ -1,17 +1,10 @@
-// UpdateCallback.h
+// UpdateCallback100.cpp
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-
-#include "UpdateCallback100.h"
-// #include "Windows/ProcessMessages.h"
-// #include "Resource/PasswordDialog/PasswordDialog.h"
 #include "MessagesDialog.h"
-
-#include "Common/Defs.h"
-
-using namespace NWindows;
+#include "PasswordDialog.h"
+#include "UpdateCallback100.h"
 
 CUpdateCallback100Imp::~CUpdateCallback100Imp()
 {
@@ -81,19 +74,10 @@ STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
 
 STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
+  *password = NULL;
   *passwordIsDefined = BoolToInt(_passwordIsDefined);
   if (!_passwordIsDefined)
-  {
     return S_OK;
-    /*
-    CPasswordDialog dialog;
-    if (dialog.Create(_parentWindow) == IDCANCEL)
-      return E_ABORT;
-    _password = dialog._password;
-    _passwordIsDefined = true;
-    */
-  }
-  *passwordIsDefined = BoolToInt(_passwordIsDefined);
   return StringToBstr(_password, password);
 }
 
@@ -109,7 +93,14 @@ STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 * /* files */, con
 
 STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
 {
+  *password = NULL;
   if (!_passwordIsDefined)
-    return S_FALSE;
+  {
+    CPasswordDialog dialog;
+    if (dialog.Create(_parentWindow) == IDCANCEL)
+      return E_ABORT;
+    _password = dialog.Password;
+    _passwordIsDefined = true;
+  }
   return StringToBstr(_password, password);
 }

@@ -132,6 +132,14 @@ SOURCE=..\..\Bra86.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Lzma2Dec.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Lzma2Dec.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\LzmaDec.c
 # End Source File
 # Begin Source File

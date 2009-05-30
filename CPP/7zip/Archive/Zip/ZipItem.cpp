@@ -51,6 +51,31 @@ bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
   return false;
 }
 
+bool CExtraSubBlock::ExtractUnixTime(int index, UInt32 &res) const
+{
+  res = 0;
+  UInt32 size = (UInt32)Data.GetCapacity();
+  if (ID != NFileHeader::NExtraID::kUnixTime || size < 5)
+    return false;
+  const Byte *p = (const Byte *)Data;
+  Byte flags = *p++;
+  size--;
+  for (int i = 0; i < 3; i++)
+    if ((flags & (1 << i)) != 0)
+    {
+      if (size < 4)
+        return false;
+      if (index == i)
+      {
+        res = GetUi32(p);
+        return true;
+      }
+      p += 4;
+      size -= 4;
+    }
+  return false;
+}
+
 bool CLocalItem::IsDir() const
 {
   return NItemName::HasTailSlash(Name, GetCodePage());

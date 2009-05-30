@@ -4,6 +4,7 @@
 #define __IFOLDER_H
 
 #include "../../IProgress.h"
+#include "../../IStream.h"
 
 #define FOLDER_INTERFACE_SUB(i, b, x) DECL_INTERFACE_SUB(i, b, 8, x)
 #define FOLDER_INTERFACE(i, x) FOLDER_INTERFACE_SUB(i, IUnknown, x)
@@ -106,7 +107,7 @@ FOLDER_INTERFACE(IFolderSetFlatMode, 0x0A)
   STDMETHOD(GetNumberOfFolderProperties)(UInt32 *numProperties) x; \
   STDMETHOD(GetFolderPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
 
-FOLDER_INTERFACE(IFolderProperties, 0x0B)
+FOLDER_INTERFACE(IFolderProperties, 0x0E)
 {
   INTERFACE_FolderProperties(PURE)
 };
@@ -129,17 +130,28 @@ FOLDER_INTERFACE(IGetFolderArchiveProperties, 0x0D)
 #define FOLDER_MANAGER_INTERFACE(i, x)  DECL_INTERFACE(i, 9, x)
 
 #define INTERFACE_IFolderManager(x) \
-  STDMETHOD(OpenFolderFile)(const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) x; \
+  STDMETHOD(OpenFolderFile)(IInStream *inStream, const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) x; \
   STDMETHOD(GetExtensions)(BSTR *extensions) x; \
   STDMETHOD(GetIconPath)(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex) x; \
   
   // STDMETHOD(GetTypes)(BSTR *types) PURE;
   // STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) PURE;
             
-FOLDER_MANAGER_INTERFACE(IFolderManager, 0x03)
+FOLDER_MANAGER_INTERFACE(IFolderManager, 0x04)
 {
   INTERFACE_IFolderManager(PURE);
 };
 
+
+#define IMP_IFolderFolder_GetProp(k) \
+  (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
+    { if(index >= sizeof(k) / sizeof(k[0])) return E_INVALIDARG; \
+    const STATPROPSTG &srcItem = k[index]; \
+    *propID = srcItem.propid; *varType = srcItem.vt; *name = 0; return S_OK; } \
+
+#define IMP_IFolderFolder_Props(c) \
+  STDMETHODIMP c::GetNumberOfProperties(UInt32 *numProperties) \
+    { *numProperties = sizeof(kProps) / sizeof(kProps[0]); return S_OK; } \
+  STDMETHODIMP c::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
 
 #endif

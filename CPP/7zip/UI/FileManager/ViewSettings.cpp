@@ -297,8 +297,8 @@ UInt32 ReadToolbarsMask()
 
 static UString GetPanelPathName(UInt32 panelIndex)
 {
-  WCHAR panelString[32];
-  ConvertUInt64ToString(panelIndex, panelString);
+  WCHAR panelString[16];
+  ConvertUInt32ToString(panelIndex, panelString);
   return UString(kPanelPathValueName) + panelString;
 }
 

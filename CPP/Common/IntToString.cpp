@@ -42,6 +42,9 @@ void ConvertUInt64ToString(UInt64 value, wchar_t *s)
   *s = L'\0';
 }
 
+void ConvertUInt32ToString(UInt32 value, char *s) { ConvertUInt64ToString(value, s); }
+void ConvertUInt32ToString(UInt32 value, wchar_t *s) { ConvertUInt64ToString(value, s); }
+
 void ConvertInt64ToString(Int64 value, char *s)
 {
   if (value < 0)

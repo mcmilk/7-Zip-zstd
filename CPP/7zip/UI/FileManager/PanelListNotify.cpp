@@ -18,6 +18,7 @@
 
 using namespace NWindows;
 
+/*
 static UString ConvertSizeToStringShort(UInt64 value)
 {
   wchar_t s[32];
@@ -50,6 +51,7 @@ static UString ConvertSizeToStringShort(UInt64 value)
   s[p++] = L'\0';
   return s;
 }
+*/
 
 UString ConvertSizeToString(UInt64 value)
 {
@@ -116,7 +118,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   /*
   {
     NCOM::CPropVariant property;
-    if(propID == kpidType)
+    if (propID == kpidType)
       string = GetFileType(index);
     else
     {
@@ -150,13 +152,18 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (_folder->GetProperty(realIndex, propID, &prop) != S_OK)
       throw 2723407;
 
-  if ((propID == kpidSize || propID == kpidPackSize || propID == kpidClusterSize ||
-      propID == kpidNumSubDirs || propID == kpidNumSubFiles) &&
-      (prop.vt == VT_UI8 || prop.vt == VT_UI4))
+  if ((prop.vt == VT_UI8 || prop.vt == VT_UI4) && (
+      propID == kpidSize ||
+      propID == kpidPackSize ||
+      propID == kpidNumSubDirs ||
+      propID == kpidNumSubFiles ||
+      propID == kpidPosition ||
+      propID == kpidNumBlocks ||
+      propID == kpidClusterSize ||
+      propID == kpidTotalSize ||
+      propID == kpidFreeSpace
+      ))
     s = ConvertSizeToString(ConvertPropVariantToUInt64(prop));
-  else if ((propID == kpidTotalSize || propID == kpidFreeSpace) &&
-      (prop.vt == VT_UI8 || prop.vt == VT_UI4))
-    s = ConvertSizeToStringShort(ConvertPropVariantToUInt64(prop));
   else
   {
     s = ConvertPropertyToString(prop, propID, false);
@@ -164,9 +171,9 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
     s.Replace(wchar_t(0xD), L' ');
   }
   int size = item.cchTextMax;
-  if(size > 0)
+  if (size > 0)
   {
-    if(s.Length() + 1 > size)
+    if (s.Length() + 1 > size)
       s = s.Left(size - 1);
     MyStringCopy(item.pszText, (const wchar_t *)s);
   }
@@ -183,7 +190,7 @@ void CPanel::OnItemChanged(NMLISTVIEW *item)
   bool oldSelected = (item->uOldState & LVIS_SELECTED) != 0;
   bool newSelected = (item->uNewState & LVIS_SELECTED) != 0;
   // Don't change this code. It works only with such check
-  if(oldSelected != newSelected)
+  if (oldSelected != newSelected)
     _selectedStatusVector[index] = newSelected;
 }
 
@@ -218,7 +225,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 
       //is the sub-item information being requested?
 
-      if((dispInfo->item.mask & LVIF_TEXT) != 0 ||
+      if ((dispInfo->item.mask & LVIF_TEXT) != 0 ||
         (dispInfo->item.mask & LVIF_IMAGE) != 0)
         SetItemText(dispInfo->item);
       return false;
@@ -290,8 +297,8 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       // we need SetFocusToList, if we drag-select items from other panel.
       SetFocusToList();
       RefreshStatusBar();
-      if(_mySelectMode)
-        if(g_ComCtl32Version >= MAKELONG(71, 4))
+      if (_mySelectMode)
+        if (g_ComCtl32Version >= MAKELONG(71, 4))
           OnLeftClick((LPNMITEMACTIVATE)header);
       return false;
     }

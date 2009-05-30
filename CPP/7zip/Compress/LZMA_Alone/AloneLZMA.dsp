@@ -297,6 +297,14 @@ SOURCE=..\..\..\Common\Types.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\CWrappers.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CWrappers.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\FileStreams.cpp
 # End Source File
 # Begin Source File

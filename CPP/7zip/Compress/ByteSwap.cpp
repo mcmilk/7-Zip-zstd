@@ -2,7 +2,31 @@
 
 #include "StdAfx.h"
 
-#include "ByteSwap.h"
+#include "../../Common/MyCom.h"
+
+#include "../ICoder.h"
+
+#include "../Common/RegisterCodec.h"
+
+class CByteSwap2:
+  public ICompressFilter,
+  public CMyUnknownImp
+{
+public:
+  MY_UNKNOWN_IMP
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
+};
+
+class CByteSwap4:
+  public ICompressFilter,
+  public CMyUnknownImp
+{
+public:
+  MY_UNKNOWN_IMP
+  STDMETHOD(Init)();
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
+};
 
 STDMETHODIMP CByteSwap2::Init() { return S_OK; }
 
@@ -36,3 +60,14 @@ STDMETHODIMP_(UInt32) CByteSwap4::Filter(Byte *data, UInt32 size)
   }
   return i;
 }
+
+static void *CreateCodec2() { return (void *)(ICompressFilter *)(new CByteSwap2); }
+static void *CreateCodec4() { return (void *)(ICompressFilter *)(new CByteSwap4); }
+
+static CCodecInfo g_CodecsInfo[] =
+{
+  { CreateCodec2, CreateCodec2, 0x020302, L"Swap2", 1, true },
+  { CreateCodec4, CreateCodec4, 0x020304, L"Swap4", 1, true }
+};
+
+REGISTER_CODECS(ByteSwap)

@@ -7,10 +7,7 @@
 #include "../../Common/Types.h"
 #include "../../Windows/PropVariant.h"
 #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
-extern "C"
-{
 #include "../../../C/Alloc.h"
-}
 #endif
 
 #include "IArchive.h"

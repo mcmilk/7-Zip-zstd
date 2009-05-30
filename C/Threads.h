@@ -1,68 +1,59 @@
 /* Threads.h -- multithreading library
-2008-11-22 : Igor Pavlov : Public domain */
+2009-03-27 : Igor Pavlov : Public domain */
 
-#ifndef __7Z_THRESDS_H
-#define __7Z_THRESDS_H
+#ifndef __7Z_THREADS_H
+#define __7Z_THREADS_H
 
 #include "Types.h"
 
-typedef struct _CThread
-{
-  HANDLE handle;
-} CThread;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define Thread_Construct(thread) (thread)->handle = NULL
-#define Thread_WasCreated(thread) ((thread)->handle != NULL)
- 
+WRes HandlePtr_Close(HANDLE *h);
+WRes Handle_WaitObject(HANDLE h);
+
+typedef HANDLE CThread;
+#define Thread_Construct(p) *(p) = NULL
+#define Thread_WasCreated(p) (*(p) != NULL)
+#define Thread_Close(p) HandlePtr_Close(p)
+#define Thread_Wait(p) Handle_WaitObject(*(p))
 typedef unsigned THREAD_FUNC_RET_TYPE;
 #define THREAD_FUNC_CALL_TYPE MY_STD_CALL
 #define THREAD_FUNC_DECL THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE
+typedef THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE * THREAD_FUNC_TYPE)(void *);
+WRes Thread_Create(CThread *p, THREAD_FUNC_TYPE func, LPVOID param);
 
-WRes Thread_Create(CThread *thread, THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE *startAddress)(void *), LPVOID parameter);
-WRes Thread_Wait(CThread *thread);
-WRes Thread_Close(CThread *thread);
-
-typedef struct _CEvent
-{
-  HANDLE handle;
-} CEvent;
-
+typedef HANDLE CEvent;
 typedef CEvent CAutoResetEvent;
 typedef CEvent CManualResetEvent;
+#define Event_Construct(p) *(p) = NULL
+#define Event_IsCreated(p) (*(p) != NULL)
+#define Event_Close(p) HandlePtr_Close(p)
+#define Event_Wait(p) Handle_WaitObject(*(p))
+WRes Event_Set(CEvent *p);
+WRes Event_Reset(CEvent *p);
+WRes ManualResetEvent_Create(CManualResetEvent *p, int signaled);
+WRes ManualResetEvent_CreateNotSignaled(CManualResetEvent *p);
+WRes AutoResetEvent_Create(CAutoResetEvent *p, int signaled);
+WRes AutoResetEvent_CreateNotSignaled(CAutoResetEvent *p);
 
-#define Event_Construct(event) (event)->handle = NULL
-#define Event_IsCreated(event) ((event)->handle != NULL)
-
-WRes ManualResetEvent_Create(CManualResetEvent *event, int initialSignaled);
-WRes ManualResetEvent_CreateNotSignaled(CManualResetEvent *event);
-WRes AutoResetEvent_Create(CAutoResetEvent *event, int initialSignaled);
-WRes AutoResetEvent_CreateNotSignaled(CAutoResetEvent *event);
-WRes Event_Set(CEvent *event);
-WRes Event_Reset(CEvent *event);
-WRes Event_Wait(CEvent *event);
-WRes Event_Close(CEvent *event);
-
-
-typedef struct _CSemaphore
-{
-  HANDLE handle;
-} CSemaphore;
-
-#define Semaphore_Construct(p) (p)->handle = NULL
-
-WRes Semaphore_Create(CSemaphore *p, UInt32 initiallyCount, UInt32 maxCount);
+typedef HANDLE CSemaphore;
+#define Semaphore_Construct(p) (*p) = NULL
+#define Semaphore_Close(p) HandlePtr_Close(p)
+#define Semaphore_Wait(p) Handle_WaitObject(*(p))
+WRes Semaphore_Create(CSemaphore *p, UInt32 initCount, UInt32 maxCount);
 WRes Semaphore_ReleaseN(CSemaphore *p, UInt32 num);
 WRes Semaphore_Release1(CSemaphore *p);
-WRes Semaphore_Wait(CSemaphore *p);
-WRes Semaphore_Close(CSemaphore *p);
-
 
 typedef CRITICAL_SECTION CCriticalSection;
-
 WRes CriticalSection_Init(CCriticalSection *p);
 #define CriticalSection_Delete(p) DeleteCriticalSection(p)
 #define CriticalSection_Enter(p) EnterCriticalSection(p)
 #define CriticalSection_Leave(p) LeaveCriticalSection(p)
 
+#ifdef __cplusplus
+}
 #endif
 
+#endif

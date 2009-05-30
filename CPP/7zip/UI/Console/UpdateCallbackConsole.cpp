@@ -196,10 +196,12 @@ HRESULT CUpdateCallbackConsole::SetOperationResult(Int32 )
 
 HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
+  *password = NULL;
+
   #ifdef _NO_CRYPTO
 
   *passwordIsDefined = false;
-  return StringToBstr(L"", password);
+  return S_OK;
   
   #else
   
@@ -215,7 +217,28 @@ HRESULT CUpdateCallbackConsole::CryptoGetTextPassword2(Int32 *passwordIsDefined,
   return StringToBstr(Password, password);
   
   #endif
+}
+
+HRESULT CUpdateCallbackConsole::CryptoGetTextPassword(BSTR *password)
+{
+  *password = NULL;
+
+  #ifdef _NO_CRYPTO
+
+  return E_NOTIMPL;
   
+  #else
+  
+  if (!PasswordIsDefined)
+  {
+    {
+      Password = GetPassword(OutStream);
+      PasswordIsDefined = true;
+    }
+  }
+  return StringToBstr(Password, password);
+  
+  #endif
 }
 
 /*

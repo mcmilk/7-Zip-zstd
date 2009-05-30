@@ -40,31 +40,6 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
   return S_OK;
 }
 
-HRESULT CHandler::SetPassword(CCompressionMethodMode &methodMode,
-    IArchiveUpdateCallback *updateCallback)
-{
-  CMyComPtr<ICryptoGetTextPassword2> getTextPassword;
-  if (!getTextPassword)
-  {
-    CMyComPtr<IArchiveUpdateCallback> udateCallback2(updateCallback);
-    udateCallback2.QueryInterface(IID_ICryptoGetTextPassword2, &getTextPassword);
-  }
-  
-  if (getTextPassword)
-  {
-    CMyComBSTR password;
-    Int32 passwordIsDefined;
-    RINOK(getTextPassword->CryptoGetTextPassword2(
-        &passwordIsDefined, &password));
-    methodMode.PasswordIsDefined = IntToBool(passwordIsDefined);
-    if (methodMode.PasswordIsDefined)
-      methodMode.Password = password;
-  }
-  else
-    methodMode.PasswordIsDefined = false;
-  return S_OK;
-}
-
 HRESULT CHandler::SetCompressionMethod(
     CCompressionMethodMode &methodMode,
     CCompressionMethodMode &headerMethod)
@@ -210,7 +185,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   const CArchiveDatabaseEx *db = 0;
   #ifdef _7Z_VOL
-  if(_volumes.Size() > 1)
+  if (_volumes.Size() > 1)
     return E_FAIL;
   const CVolume *volume = 0;
   if (_volumes.Size() == 1)
@@ -227,14 +202,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   
   for (UInt32 i = 0; i < numItems; i++)
   {
-    Int32 newData;
-    Int32 newProperties;
+    Int32 newData, newProps;
     UInt32 indexInArchive;
     if (!updateCallback)
       return E_FAIL;
-    RINOK(updateCallback->GetUpdateItemInfo(i, &newData, &newProperties, &indexInArchive));
+    RINOK(updateCallback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArchive));
     CUpdateItem ui;
-    ui.NewProperties = IntToBool(newProperties);
+    ui.NewProps = IntToBool(newProps);
     ui.NewData = IntToBool(newData);
     ui.IndexInArchive = indexInArchive;
     ui.IndexInClient = i;
@@ -243,6 +217,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
     if (ui.IndexInArchive != -1)
     {
+      if (db == 0 || ui.IndexInArchive >= db->Files.Size())
+        return E_INVALIDARG;
       const CFileItem &fi = db->Files[ui.IndexInArchive];
       ui.Name = fi.Name;
       ui.IsDir = fi.IsDir;
@@ -254,7 +230,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       ui.MTimeDefined = db->MTime.GetItem(ui.IndexInArchive, ui.MTime);
     }
 
-    if (ui.NewProperties)
+    if (ui.NewProps)
     {
       bool nameIsDefined;
       bool folderStatusIsDefined;
@@ -350,7 +326,20 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   headerMethod.NumThreads = 1;
   #endif
 
-  RINOK(SetPassword(methodMode, updateCallback));
+  CMyComPtr<ICryptoGetTextPassword2> getPassword2;
+  updateCallback->QueryInterface(IID_ICryptoGetTextPassword2, (void **)&getPassword2);
+
+  if (getPassword2)
+  {
+    CMyComBSTR password;
+    Int32 passwordIsDefined;
+    RINOK(getPassword2->CryptoGetTextPassword2(&passwordIsDefined, &password));
+    methodMode.PasswordIsDefined = IntToBool(passwordIsDefined);
+    if (methodMode.PasswordIsDefined)
+      methodMode.Password = password;
+  }
+  else
+    methodMode.PasswordIsDefined = false;
 
   bool compressMainHeader = _compressHeaders;  // check it
 
@@ -365,8 +354,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       encryptHeaders = _passwordIsDefined;
     #endif
     compressMainHeader = true;
-    if(encryptHeaders)
-      RINOK(SetPassword(headerMethod, updateCallback));
+    if (encryptHeaders)
+    {
+      headerMethod.PasswordIsDefined = methodMode.PasswordIsDefined;
+      headerMethod.Password = methodMode.Password;
+    }
   }
 
   if (numItems < 2)
@@ -391,6 +383,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   COutArchive archive;
   CArchiveDatabase newDatabase;
+
+  CMyComPtr<ICryptoGetTextPassword> getPassword;
+  updateCallback->QueryInterface(IID_ICryptoGetTextPassword, (void **)&getPassword);
+  
   HRESULT res = Update(
       EXTERNAL_CODECS_VARS
       #ifdef _7Z_VOL
@@ -401,7 +397,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       db,
       #endif
       updateItems,
-      archive, newDatabase, outStream, updateCallback, options);
+      archive, newDatabase, outStream, updateCallback, options
+      #ifndef _NO_CRYPTO
+      , getPassword
+      #endif
+      );
 
   RINOK(res);
 

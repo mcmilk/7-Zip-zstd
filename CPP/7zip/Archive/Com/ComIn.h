@@ -57,6 +57,8 @@ struct CItem
 
   bool IsEmpty() const { return Type == NItemType::kEmpty; }
   bool IsDir() const { return Type == NItemType::kStorage || Type == NItemType::kRootStorage; }
+
+  void Parse(const Byte *p, bool mode64bit);
 };
 
 struct CRef
@@ -67,15 +69,15 @@ struct CRef
 
 class CDatabase
 {
-public:
+  UInt32 NumSectorsInMiniStream;
+  CUInt32Buf MiniSids;
+
   HRESULT AddNode(int parent, UInt32 did);
+public:
 
   CUInt32Buf Fat;
   UInt32 FatSize;
   
-  CUInt32Buf MiniSids;
-  UInt32 NumSectorsInMiniStream;
-
   CUInt32Buf Mat;
   UInt32 MatSize;
 
@@ -86,20 +88,29 @@ public:
   int SectorSizeBits;
   int MiniSectorSizeBits;
 
-  void Clear()
+  void Clear();
+  bool IsLargeStream(UInt64 size) const { return size >= LongStreamMinSize; }
+  UString GetItemPath(UInt32 index) const;
+
+  UInt64 GetItemPackSize(UInt64 size) const
   {
-    Fat.Free();
-    MiniSids.Free();
-    Mat.Free();
-    Items.Clear();
-    Refs.Clear();
+    UInt64 mask = ((UInt64)1 << (IsLargeStream(size) ? SectorSizeBits : MiniSectorSizeBits)) - 1;
+    return (size + mask) & ~mask;
   }
 
-  bool IsLargeStream(UInt64 size) { return size >= LongStreamMinSize; }
-  UString GetItemPath(UInt32 index) const;
+  bool GetMiniCluster(UInt32 sid, UInt64 &res) const
+  {
+    int subBits = SectorSizeBits - MiniSectorSizeBits;
+    UInt32 fid = sid >> subBits;
+    if (fid >= NumSectorsInMiniStream)
+      return false;
+    res = (((UInt64)MiniSids[fid] + 1) << subBits) + (sid & ((1 << subBits) - 1));
+    return true;
+  }
+
+  HRESULT Open(IInStream *inStream);
 };
 
-HRESULT OpenArchive(IInStream *inStream, CDatabase &database);
 
 }}
   

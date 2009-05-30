@@ -1,7 +1,5 @@
 /* 7zCrc.h -- CRC32 calculation
-2008-03-13
-Igor Pavlov
-Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_CRC_H
 #define __7Z_CRC_H
@@ -9,6 +7,10 @@ Public domain */
 #include <stddef.h>
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern UInt32 g_CrcTable[];
 
@@ -20,5 +22,9 @@ void MY_FAST_CALL CrcGenerateTable(void);
 
 UInt32 MY_FAST_CALL CrcUpdate(UInt32 crc, const void *data, size_t size);
 UInt32 MY_FAST_CALL CrcCalc(const void *data, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,9 +1,10 @@
 // ProgressDialog2.cpp
 
 #include "StdAfx.h"
-#include "resource.h"
-#include "ProgressDialog2.h"
+
 #include "Common/IntToString.h"
+
+#include "ProgressDialog2.h"
 
 using namespace NWindows;
 
@@ -67,8 +68,8 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
   }
 }
 
-static const int kTitleFileNameSizeLimit = 36;
-static const int kCurrentFileNameSizeLimit = 70;
+static const int kTitleFileNameSizeLimit = 40;
+static const int kCurrentFileNameSizeLimit = 82;
 
 static void ReduceString(UString &s, int size)
 {
@@ -143,11 +144,7 @@ void CProgressDialog::SetRange(UInt64 range)
   _range = range;
   _previousPos = (UInt64)(Int64)-1;
   _converter.Init(range);
-  m_ProgressBar.SetRange32(0 , _converter.Count(range)); // Test it for 100%
-
-  wchar_t s[32];
-  ConvertSizeToString(_range, s);
-  SetItemText(IDC_PROGRESS_TOTAL_VALUE, s);
+  m_ProgressBar.SetRange32(0, _converter.Count(range)); // Test it for 100%
 }
 
 void CProgressDialog::SetPos(UInt64 pos)
@@ -187,19 +184,28 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   if (ProgressSynch.GetPaused())
     return true;
   UInt64 total, completed, totalFiles, completedFiles, inSize, outSize;
-  ProgressSynch.GetProgress(total, completed, totalFiles, completedFiles, inSize, outSize);
+  bool bytesProgressMode;
+  ProgressSynch.GetProgress(total, completed, totalFiles, completedFiles, inSize, outSize, bytesProgressMode);
 
   UInt32 curTime = ::GetTickCount();
 
-  if (total != _range)
-    SetRange(total);
-  if (total == (UInt64)(Int64)-1)
+  UInt64 progressTotal = bytesProgressMode ? total : totalFiles;
+  UInt64 progressCompleted = bytesProgressMode ? completed : completedFiles;
+
+  if (progressTotal != _range)
+    SetRange(progressTotal);
+  if (progressTotal == (UInt64)(Int64)-1)
   {
     SetPos(0);
-    SetRange(completed);
+    SetRange(progressCompleted);
   }
   else
-    SetPos(completed);
+    SetPos(progressCompleted);
+
+  wchar_t s[32] = { 0 };
+  if (total != (UInt64)(Int64)-1)
+    ConvertSizeToString(total, s);
+  SetItemText(IDC_PROGRESS_TOTAL_VALUE, s);
 
   _elapsedTime += (curTime - _prevTime);
   _prevTime = curTime;

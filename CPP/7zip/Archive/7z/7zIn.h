@@ -110,8 +110,8 @@ public:
   }
   Byte ReadByte();
   void ReadBytes(Byte *data, size_t size);
-  void SkeepData(UInt64 size);
-  void SkeepData();
+  void SkipData(UInt64 size);
+  void SkipData();
   UInt64 ReadNumber();
   CNum ReadNum();
   UInt32 ReadUInt32();
@@ -162,8 +162,8 @@ private:
   UInt64 ReadID() { return _inByteBack->ReadNumber(); }
   UInt32 ReadUInt32() { return _inByteBack->ReadUInt32(); }
   UInt64 ReadUInt64() { return _inByteBack->ReadUInt64(); }
-  void SkeepData(UInt64 size) { _inByteBack->SkeepData(size); }
-  void SkeepData() { _inByteBack->SkeepData(); }
+  void SkipData(UInt64 size) { _inByteBack->SkipData(size); }
+  void SkipData() { _inByteBack->SkipData(); }
   void WaitAttribute(UInt64 attribute);
 
   void ReadArchiveProperties(CInArchiveInfo &archiveInfo);

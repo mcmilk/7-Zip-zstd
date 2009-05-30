@@ -1,4 +1,4 @@
-// Tar/Update.h
+// TarUpdate.h
 
 #ifndef __TAR_UPDATE_H
 #define __TAR_UPDATE_H
@@ -11,14 +11,16 @@ namespace NTar {
 
 struct CUpdateItem
 {
-  bool NewData;
-  bool NewProperties;
   int IndexInArchive;
   int IndexInClient;
-
   UInt32 Time;
+  UInt32 Mode;
   UInt64 Size;
   AString Name;
+  AString User;
+  AString Group;
+  bool NewData;
+  bool NewProps;
   bool IsDir;
 };
 

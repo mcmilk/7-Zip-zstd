@@ -9,6 +9,7 @@
 
 #include "Windows/PropVariant.h"
 
+#include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
@@ -113,23 +114,23 @@ HRESULT OpenArchive(IInStream *inStream)
     return S_FALSE;
 
   CSigHeaderSig sigHeader, header;
-  if(lead.SignatureType == RPMSIG_NONE)
+  if (lead.SignatureType == RPMSIG_NONE)
   {
     ;
   }
-  else if(lead.SignatureType == RPMSIG_PGP262_1024)
+  else if (lead.SignatureType == RPMSIG_PGP262_1024)
   {
     UInt64 pos;
     RINOK(inStream->Seek(256, STREAM_SEEK_CUR, &pos));
   }
-  else if(lead.SignatureType == RPMSIG_HEADERSIG)
+  else if (lead.SignatureType == RPMSIG_HEADERSIG)
   {
     RINOK(RedSigHeaderSig(inStream, sigHeader));
-    if(!sigHeader.MagicCheck())
+    if (!sigHeader.MagicCheck())
       return S_FALSE;
     UInt32 len = sigHeader.GetLostHeaderLen();
     RINOK(inStream->Seek(len, STREAM_SEEK_CUR, &pos));
-    if((pos % 8) != 0)
+    if ((pos % 8) != 0)
     {
       RINOK(inStream->Seek((pos / 8 + 1) * 8 - pos,
           STREAM_SEEK_CUR, &pos));
@@ -139,10 +140,10 @@ HRESULT OpenArchive(IInStream *inStream)
     return S_FALSE;
 
   RINOK(RedSigHeaderSig(inStream, header));
-  if(!header.MagicCheck())
+  if (!header.MagicCheck())
     return S_FALSE;
   int headerLen = header.GetLostHeaderLen();
-  if(headerLen == -1)
+  if (headerLen == -1)
     return S_FALSE;
   RINOK(inStream->Seek(headerLen, STREAM_SEEK_CUR, &pos));
   return S_OK;
@@ -150,28 +151,34 @@ HRESULT OpenArchive(IInStream *inStream)
 
 class CHandler:
   public IInArchive,
+  public IInArchiveGetStream,
   public CMyUnknownImp
 {
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
-
-  INTERFACE_IInArchive(;)
-
-private:
-  CMyComPtr<IInStream> m_InStream;
-  UInt64 m_Pos;
-  UInt64 m_Size;
+  CMyComPtr<IInStream> _stream;
+  UInt64 _pos;
+  UInt64 _size;
   Byte _sig[4];
+public:
+  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
+  INTERFACE_IInArchive(;)
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 STATPROPSTG kProps[] =
 {
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8}
+  { NULL, kpidSize, VT_UI8}
 };
 
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO
+IMP_IInArchive_ArcProps_NO_Table
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  NCOM::CPropVariant prop;
+  switch(propID) { case kpidMainSubfile: prop = (UInt32)0; break; }
+  prop.Detach(value);
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
@@ -180,29 +187,24 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_BEGIN
   try
   {
-    if(OpenArchive(inStream) != S_OK)
+    Close();
+    if (OpenArchive(inStream) != S_OK)
       return S_FALSE;
-    RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Pos));
+    RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &_pos));
+    RINOK(ReadStream_FALSE(inStream, _sig, sizeof(_sig) / sizeof(_sig[0])));
     UInt64 endPosition;
     RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPosition));
-    m_Size = endPosition - m_Pos;
-    
-    RINOK(inStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(inStream, _sig, sizeof(_sig) / sizeof(_sig[0])));
-
-    m_InStream = inStream;
+    _size = endPosition - _pos;
+    _stream = inStream;
     return S_OK;
   }
-  catch(...)
-  {
-    return S_FALSE;
-  }
+  catch(...) { return S_FALSE; }
   COM_TRY_END
 }
 
 STDMETHODIMP CHandler::Close()
 {
-  m_InStream.Release();
+  _stream.Release();
   return S_OK;
 }
 
@@ -219,19 +221,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
   {
     case kpidSize:
     case kpidPackSize:
-      prop = m_Size;
+      prop = _size;
       break;
     case kpidExtension:
     {
-      wchar_t s[32];
-      MyStringCopy(s, L"cpio.");
-      const wchar_t *ext;
+      char s[32];
+      MyStringCopy(s, "cpio.");
+      const char *ext;
       if (_sig[0] == 0x1F && _sig[1] == 0x8B)
-        ext = L"gz";
+        ext = "gz";
       else if (_sig[0] == 'B' && _sig[1] == 'Z' && _sig[2] == 'h')
-        ext = L"bz2";
+        ext = "bz2";
       else
-        ext = L"lzma";
+        ext = "lzma";
       MyStringCopy(s + MyStringLen(s), ext);
       prop = s;
       break;
@@ -245,58 +247,50 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == UInt32(-1));
-  if (allFilesMode)
+  if (numItems == UInt32(-1))
     numItems = 1;
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
-  if(numItems != 1)
-    return E_FAIL;
-  if (indices[0] != 0)
-    return E_FAIL;
+  if (numItems != 1 || indices[0] != 0)
+    return E_INVALIDARG;
 
   bool testMode = (_aTestMode != 0);
-  
-  UInt64 currentTotalSize = 0;
-  RINOK(extractCallback->SetTotal(m_Size));
-  RINOK(extractCallback->SetCompleted(&currentTotalSize));
-  CMyComPtr<ISequentialOutStream> realOutStream;
+
+  RINOK(extractCallback->SetTotal(_size));
+  CMyComPtr<ISequentialOutStream> outStream;
   Int32 askMode = testMode ?
       NArchive::NExtract::NAskMode::kTest :
       NArchive::NExtract::NAskMode::kExtract;
-  Int32 index = 0;
- 
-  RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-
-  if(!testMode && (!realOutStream))
+  RINOK(extractCallback->GetStream(0, &outStream, askMode));
+  if (!testMode && !outStream)
     return S_OK;
-
   RINOK(extractCallback->PrepareOperation(askMode));
 
-  if (testMode)
-  {
-    RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-    return S_OK;
-  }
-
-  RINOK(m_InStream->Seek(m_Pos, STREAM_SEEK_SET, NULL));
-
+  
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
   
-  RINOK(copyCoder->Code(m_InStream, realOutStream, NULL, NULL, progress));
-  realOutStream.Release();
+  RINOK(_stream->Seek(_pos, STREAM_SEEK_SET, NULL));
+  RINOK(copyCoder->Code(_stream, outStream, NULL, NULL, progress));
+  outStream.Release();
   return extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK);
+  COM_TRY_END
+}
+
+STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream)
+{
+  COM_TRY_BEGIN
+  return CreateLimitedInStream(_stream, _pos, _size, stream);
   COM_TRY_END
 }
 
 static IInArchive *CreateArc() { return new NArchive::NRpm::CHandler;  }
 
 static CArcInfo g_ArcInfo =
-  { L"Rpm", L"rpm", 0, 0xEB, { 0}, 0, false, CreateArc, 0 };
+  { L"Rpm", L"rpm", 0, 0xEB, { 0xED, 0xAB, 0xEE, 0xDB}, 4, false, CreateArc, 0 };
 
 REGISTER_ARC(Rpm)
 

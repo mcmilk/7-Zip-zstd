@@ -1,17 +1,9 @@
-// Zip/ArchiveFolder.cpp
+// Agent/ArchiveFolder.cpp
 
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
-#include "Common/StringConvert.h"
-#include "Windows/Defs.h"
-#include "Windows/PropVariant.h"
-#include "Windows/PropVariantConversions.h"
-#include "Windows/FileDir.h"
 
-#include "../../Common/FileStreams.h"
-
-#include "../Common/UpdatePair.h"
 #include "../Common/ArchiveExtractCallback.h"
 
 #include "Agent.h"
@@ -19,7 +11,7 @@
 using namespace NWindows;
 using namespace NCOM;
 
-STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
+STDMETHODIMP CAgentFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
   COM_TRY_BEGIN
@@ -46,18 +38,12 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
       NExtract::NPathMode::kCurrentPathnames;
 
   extractCallbackSpec->InitForMulti(false, pathMode, NExtract::NOverwriteMode::kAskBefore);
-  extractCallbackSpec->Init(_agentSpec->GetArchive(),
+  extractCallbackSpec->Init(NULL, &_agentSpec->GetArc(),
       extractCallback2,
-      false,
+      false, false, false,
       path,
       pathParts,
-      _agentSpec->DefaultName,
-      _agentSpec->DefaultTime,
-      _agentSpec->DefaultAttrib,
-      (UInt64)(Int64)-1
-
-      // ,_agentSpec->_srcDirectoryPrefix
-      );
+      (UInt64)(Int64)-1);
   CUIntVector realIndices;
   GetRealIndices(indices, numItems, realIndices);
   return _agentSpec->GetArchive()->Extract(&realIndices.Front(),
@@ -65,7 +51,7 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::MoveTo(const UINT32 * /* indices */, UINT32 /* numItems */,
+STDMETHODIMP CAgentFolder::MoveTo(const UInt32 * /* indices */, UInt32 /* numItems */,
     const wchar_t * /* path */, IFolderOperationsExtractCallback * /* callback */)
 {
   return E_NOTIMPL;

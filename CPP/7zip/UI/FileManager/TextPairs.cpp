@@ -1,28 +1,20 @@
-// Common/TextPairs.cpp
+// TextPairs.cpp
 
 #include "StdAfx.h"
 
 #include "TextPairs.h"
 
-#include "Common/Defs.h"
-#include "Common/UTFConvert.h"
-
 static const wchar_t kNewLineChar = '\n';
+static const wchar_t kQuoteChar = '\"';
 
-static const wchar_t kSpaceChar     = ' ';
-static const wchar_t kTabChar       = '\t';
-
-static const wchar_t kQuoteChar     = '\"';
-static const wchar_t kEndOfLine     = '\0';
-
-static const wchar_t kBOM = wchar_t(0xFEFF);
+static const wchar_t kBOM = (wchar_t)0xFEFF;
 
 static bool IsSeparatorChar(wchar_t c)
 {
-  return (c == kSpaceChar || c == kTabChar);
+  return (c == ' ' || c == '\t');
 }
 
-void RemoveCr(UString &s)
+static void RemoveCr(UString &s)
 {
   s.Replace(L"\x0D", L"");
 }
@@ -34,7 +26,7 @@ static UString GetIDString(const wchar_t *srcString, int &finishPos)
   for (finishPos = 0;;)
   {
     wchar_t c = srcString[finishPos];
-    if (c == kEndOfLine)
+    if (c == 0)
       break;
     finishPos++;
     bool isSeparatorChar = IsSeparatorChar(c);
@@ -57,7 +49,7 @@ static UString GetValueString(const wchar_t *srcString, int &finishPos)
   for (finishPos = 0;;)
   {
     wchar_t c = srcString[finishPos];
-    if (c == kEndOfLine)
+    if (c == 0)
       break;
     finishPos++;
     if (c == kNewLineChar)
@@ -99,42 +91,22 @@ static bool GetTextPairs(const UString &srcString, CObjectVector<CTextPair> &pai
   return true;
 }
 
-int FindItem(const CObjectVector<CTextPair> &pairs, const UString &id)
-{
-  for (int  i = 0; i < pairs.Size(); i++)
-    if (pairs[i].ID.CompareNoCase(id) == 0)
-      return i;
-  return -1;
-}
-
-UString GetTextConfigValue(const CObjectVector<CTextPair> &pairs, const UString &id)
-{
-  int index = FindItem(pairs, id);
-  if (index < 0)
-    return UString();
-  return pairs[index].Value;
-}
-
 static int ComparePairIDs(const UString &s1, const UString &s2)
   { return s1.CompareNoCase(s2); }
 static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
   { return ComparePairIDs(p1.ID, p2.ID); }
 
-// typedef void* MY_PVOID;
-
-// static int ComparePairItems(const MY_PVOID *a1, const MY_PVOID *a2, void *param)
 static int ComparePairItems(void *const *a1, void *const *a2, void * /* param */)
   { return ComparePairItems(**(const CTextPair **)a1, **(const CTextPair **)a2); }
 
-void CPairsStorage::Sort()
-  { Pairs.Sort(ComparePairItems, 0); }
+void CPairsStorage::Sort() { Pairs.Sort(ComparePairItems, 0); }
 
 int CPairsStorage::FindID(const UString &id, int &insertPos)
 {
   int left = 0, right = Pairs.Size();
   while (left != right)
   {
-    UINT32 mid = (left + right) / 2;
+    int mid = (left + right) / 2;
     int compResult = ComparePairIDs(id, Pairs[mid].ID);
     if (compResult == 0)
       return mid;

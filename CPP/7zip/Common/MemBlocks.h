@@ -1,14 +1,8 @@
 // MemBlocks.h
 
-#ifndef __MEMBLOCKS_H
-#define __MEMBLOCKS_H
+#ifndef __MEM_BLOCKS_H
+#define __MEM_BLOCKS_H
 
-extern "C"
-{
-#include "../../../C/Alloc.h"
-}
-
-#include "Common/Types.h"
 #include "Common/MyVector.h"
 
 #include "Windows/Synchronization.h"

@@ -52,7 +52,7 @@ bool CSystemPage::OnInit()
   _listViewExt.SetExtendedListViewStyle(newFlags, newFlags);
   _listViewPlugins.SetExtendedListViewStyle(newFlags, newFlags);
 
-  _listViewExt.InsertColumn(0, LangString(IDS_PROPERTY_EXTENSION, 0x02000205), 70);
+  _listViewExt.InsertColumn(0, LangString(IDS_PROP_EXTENSION, 0x02000205), 70);
   const UString s = LangString(IDS_PLUGIN, 0x03010310);
   _listViewExt.InsertColumn(1, s, 70);
 

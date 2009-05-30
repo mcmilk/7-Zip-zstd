@@ -27,12 +27,6 @@
 using namespace NWindows;
 using namespace NCOM;
 
-static HRESULT CopyBlock(ISequentialInStream *inStream, ISequentialOutStream *outStream)
-{
-  CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
-  return copyCoder->Code(inStream, outStream, NULL, NULL, NULL);
-}
-
 STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
 {
   _archiveNamePrefix.Empty();
@@ -86,20 +80,6 @@ STDMETHODIMP CAgent::SetFiles(const wchar_t *folderPrefix,
   return S_OK;
 }
 
-
-static HRESULT GetFileTime(CAgent *agent, UInt32 itemIndex, FILETIME &fileTime)
-{
-  CPropVariant property;
-  RINOK(agent->GetArchive()->GetProperty(itemIndex, kpidMTime, &property));
-  if (property.vt == VT_FILETIME)
-    fileTime = property.filetime;
-  else if (property.vt == VT_EMPTY)
-    fileTime = agent->DefaultTime;
-  else
-    throw 4190407;
-  return S_OK;
-}
-
 static HRESULT EnumerateArchiveItems(CAgent *agent,
     const CProxyFolder &item,
     const UString &prefix,
@@ -110,8 +90,7 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
   {
     const CProxyFile &fileItem = item.Files[i];
     CArcItem ai;
-
-    RINOK(::GetFileTime(agent, fileItem.Index, ai.MTime));
+    RINOK(agent->GetArc().GetItemMTime(fileItem.Index, ai.MTime, ai.MTimeDefined));
 
     CPropVariant property;
     agent->GetArchive()->GetProperty(fileItem.Index, kpidSize, &property);
@@ -128,10 +107,10 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
   {
     const CProxyFolder &dirItem = item.Folders[i];
     UString fullName = prefix + dirItem.Name;
-    if(dirItem.IsLeaf)
+    if (dirItem.IsLeaf)
     {
       CArcItem ai;
-      RINOK(::GetFileTime(agent, dirItem.Index, ai.MTime));
+      RINOK(agent->GetArc().GetItemMTime(dirItem.Index, ai.MTime, ai.MTimeDefined));
       ai.IsDir = true;
       ai.SizeDefined = false;
       ai.Name = fullName;
@@ -149,7 +128,7 @@ struct CAgUpCallbackImp: public IUpdateProduceCallback
   const CObjectVector<CArcItem> *_arcItems;
   IFolderArchiveUpdateCallback *_callback;
   
-  CAgUpCallbackImp(const CObjectVector<CArcItem> *a, 
+  CAgUpCallbackImp(const CObjectVector<CArcItem> *a,
       IFolderArchiveUpdateCallback *callback): _arcItems(a), _callback(callback) {}
   HRESULT ShowDeleteFile(int arcIndex);
 };
@@ -268,7 +247,7 @@ STDMETHODIMP CAgent::DoOperation(
   {
     UString resultPath;
     int pos;
-    if(!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
+    if (!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
       return E_FAIL;
     NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
   }
@@ -316,7 +295,7 @@ STDMETHODIMP CAgent::DoOperation(
     if (!sfxStreamSpec->Open(sfxModule))
       return E_FAIL;
       // throw "Can't open sfx module";
-    RINOK(CopyBlock(sfxStream, outStream));
+    RINOK(NCompress::CopyStream(sfxStream, outStream, NULL));
   }
 
   RINOK(outArchive->UpdateItems(outStream, updatePairs2.Size(),updateCallback));
@@ -350,7 +329,7 @@ HRESULT CAgent::CommonUpdate(
   {
     UString resultPath;
     int pos;
-    if(!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
+    if (!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
       throw 141716;
     NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
   }
@@ -362,8 +341,8 @@ HRESULT CAgent::CommonUpdate(
     resultName = newArchiveName;
     if (i > 0)
     {
-      wchar_t s[32];
-      ConvertUInt64ToString(i, s);
+      wchar_t s[16];
+      ConvertUInt32ToString(i, s);
       resultName += s;
     }
     if (outStreamSpec->Open(realPath))
@@ -515,11 +494,11 @@ HRESULT CAgent::RenameItem(
         CUpdatePair2 up2;
         up2.NewData = false;
         up2.NewProps = true;
-        RINOK(IsArchiveItemAnti(GetArchive(), i, up2.IsAnti));
+        RINOK(GetArc().IsItemAnti(i, up2.IsAnti));
         up2.ArcIndex = i;
 
         UString oldFullPath;
-        RINOK(GetArchiveItemPath(GetArchive(), i, DefaultName, oldFullPath));
+        RINOK(GetArc().GetItemPath(i, oldFullPath));
 
         if (oldItemPath.CompareNoCase(oldFullPath.Left(oldItemPath.Length())) != 0)
           return E_INVALIDARG;
@@ -543,7 +522,7 @@ HRESULT CAgent::RenameItem(
 }
 
 STDMETHODIMP CAgent::SetProperties(const wchar_t **names,
-    const PROPVARIANT *values, INT32 numProperties)
+    const PROPVARIANT *values, Int32 numProperties)
 {
   m_PropNames.Clear();
   m_PropValues.Clear();

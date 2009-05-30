@@ -2,7 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Common/MyCom.h"
+#include "../../../../C/CpuArch.h"
+
 #include "Common/IntToString.h"
 
 #include "../../Common/StreamUtils.h"
@@ -10,8 +11,6 @@
 #include "../../Common/LimitedStreams.h"
 
 #include "../Common/OutStreamWithSha1.h"
-
-#include "../../../../C/CpuArch.h"
 
 #include "WimIn.h"
 
@@ -354,7 +353,7 @@ static HRESULT ParseDir(const Byte *base, size_t size,
       sum += len;
       pos += 8;
     }
-    pos += sum; // skeep security descriptors
+    pos += sum; // skip security descriptors
     while ((pos & 7) != 0)
       pos++;
     if (pos != totalLength)
@@ -498,8 +497,8 @@ HRESULT OpenArchive(IInStream *inStream, const CHeader &h, CByteBuffer &xml, CDa
       RINOK(UnpackData(inStream, si.Resource, h.IsLzxMode(), metadata, hash));
       if (memcmp(hash, si.Hash, kHashSize) != 0)
         return S_FALSE;
-      wchar_t sz[32];
-      ConvertUInt64ToString(imageIndex++, sz);
+      wchar_t sz[16];
+      ConvertUInt32ToString(imageIndex++, sz);
       UString s = sz;
       s += WCHAR_PATH_SEPARATOR;
       RINOK(ParseDir(metadata, metadata.GetCapacity(), s, db.Items));

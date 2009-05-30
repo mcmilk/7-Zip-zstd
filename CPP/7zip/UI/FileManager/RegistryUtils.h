@@ -1,15 +1,18 @@
 // RegistryUtils.h
 
-#include "Common/StringConvert.h"
+#ifndef __REGISTRY_UTILS_H
+#define __REGISTRY_UTILS_H
 
-#ifndef __REGISTRYUTILS_H
-#define __REGISTRYUTILS_H
+#include "Common/MyString.h"
 
-void SaveRegLang(const UString &langFile);
-void ReadRegLang(UString &langFile);
+void SaveRegLang(const UString &path);
+void ReadRegLang(UString &path);
 
-void SaveRegEditor(const UString &editorPath);
-void ReadRegEditor(UString &editorPath);
+void SaveRegEditor(const UString &path);
+void ReadRegEditor(UString &path);
+
+void SaveRegDiff(const UString &path);
+void ReadRegDiff(UString &path);
 
 void SaveShowDots(bool showDots);
 bool ReadShowDots();

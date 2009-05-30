@@ -1,10 +1,14 @@
 /* LzFind.h -- Match finder for LZ algorithms
-2008-10-04 : Igor Pavlov : Public domain */
+2009-04-22 : Igor Pavlov : Public domain */
 
-#ifndef __LZFIND_H
-#define __LZFIND_H
+#ifndef __LZ_FIND_H
+#define __LZ_FIND_H
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef UInt32 CLzRef;
 
@@ -35,8 +39,8 @@ typedef struct _CMatchFinder
 
   UInt32 numHashBytes;
   int directInput;
+  size_t directInputRem;
   int btMode;
-  /* int skipModeBits; */
   int bigHash;
   UInt32 historySize;
   UInt32 fixedHashSize;
@@ -103,5 +107,9 @@ UInt32 Bt3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances);
 UInt32 Hc3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances);
 void Bt3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
 void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

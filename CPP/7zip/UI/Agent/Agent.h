@@ -4,18 +4,19 @@
 #define __AGENT_AGENT_H
 
 #include "Common/MyCom.h"
+
 #include "Windows/PropVariant.h"
 
-#include "../Common/UpdateAction.h"
 #include "../Common/OpenArchive.h"
-
-#include "IFolderArchive.h"
-#include "AgentProxy.h"
+#include "../Common/UpdateAction.h"
 
 #ifdef NEW_FOLDER_INTERFACE
 #include "../FileManager/IFolder.h"
 #include "../Common/LoadCodecs.h"
 #endif
+
+#include "AgentProxy.h"
+#include "IFolderArchive.h"
 
 class CAgentFolder;
 
@@ -38,6 +39,7 @@ class CAgentFolder:
   public IGetFolderArchiveProperties,
   public IArchiveFolder,
   public IArchiveFolderInternal,
+  public IInArchiveGetStream,
 #ifdef NEW_FOLDER_INTERFACE
   public IFolderOperations,
   public IFolderSetFlatMode,
@@ -52,6 +54,7 @@ public:
     MY_QUERYINTERFACE_ENTRY(IGetFolderArchiveProperties)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolderInternal)
+    MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
   #ifdef NEW_FOLDER_INTERFACE
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
     MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
@@ -73,10 +76,12 @@ public:
       NExtract::NPathMode::EEnum pathMode,
       NExtract::NOverwriteMode::EEnum overwriteMode,
       const wchar_t *path,
-      INT32 testMode,
+      Int32 testMode,
       IFolderArchiveExtractCallback *extractCallback);
   
   STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder);
+
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 
   #ifdef NEW_FOLDER_INTERFACE
   INTERFACE_FolderOperations(;)
@@ -170,7 +175,7 @@ public:
     IFolderArchiveUpdateCallback *updateCallback100);
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, INT32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
   #endif
 
   CCodecs *_codecs;
@@ -182,14 +187,8 @@ private:
   HRESULT ReadItems();
 public:
   CProxyArchive *_proxyArchive;
-
   CArchiveLink _archiveLink;
-  // IInArchive *_archive2;
-  
-  UString DefaultName;
 
-  FILETIME DefaultTime;
-  DWORD DefaultAttrib;
 
   UString ArchiveType;
 
@@ -206,8 +205,9 @@ public:
   CObjectVector<NWindows::NCOM::CPropVariant> m_PropValues;
   #endif
 
-  IInArchive *GetArchive() { return _archiveLink.GetArchive(); }
-  bool CanUpdate() const { return _archiveLink.GetNumLevels() <= 1; }
+  const CArc &GetArc() { return _archiveLink.Arcs.Back(); }
+  IInArchive *GetArchive() { return GetArc().Archive; }
+  bool CanUpdate() const { return _archiveLink.Arcs.Size() == 1; }
 };
 
 #ifdef NEW_FOLDER_INTERFACE

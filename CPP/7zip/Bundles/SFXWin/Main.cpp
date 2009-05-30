@@ -100,9 +100,12 @@ int APIENTRY WinMain2()
   CExtractCallbackImp *ecs = new CExtractCallbackImp;
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
   ecs->Init();
+
+  #ifndef _NO_CRYPTO
   ecs->PasswordIsDefined = !password.IsEmpty();
   ecs->Password = password;
-  
+  #endif
+
   CExtractOptions eo;
   eo.OutputDir = outputFolderDefined ? outputFolder :
       fullPath.Left(fileNamePartStartIndex);

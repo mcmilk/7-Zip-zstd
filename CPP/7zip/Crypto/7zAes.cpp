@@ -2,14 +2,13 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Sha256.h"
-}
 
 #include "Windows/Synchronization.h"
+
 #include "../Common/StreamObjects.h"
 #include "../Common/StreamUtils.h"
+
 #include "7zAes.h"
 #include "MyAes.h"
 

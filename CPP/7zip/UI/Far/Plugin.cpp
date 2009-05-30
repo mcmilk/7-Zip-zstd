@@ -21,17 +21,14 @@ using namespace NWindows;
 using namespace NFar;
 
 CPlugin::CPlugin(const UString &fileName,
-    // const UString &defaultName,
     IInFolderArchive *archiveHandler,
     UString archiveTypeName
     ):
   m_ArchiveHandler(archiveHandler),
   m_FileName(fileName),
   _archiveTypeName(archiveTypeName)
-  // , m_DefaultName(defaultName)
-  // , m_ArchiverInfo(archiverInfo)
 {
-  if (!NFile::NFind::FindFile(m_FileName, m_FileInfo))
+  if (!m_FileInfo.Find(m_FileName))
     throw "error";
   archiveHandler->BindToRootFolder(&_folder);
 }
@@ -324,7 +321,18 @@ static CPROPIDToName kPROPIDToName[] =
   { kpidHeadersSize, NMessageID::kHeadersSize },
   { kpidChecksum, NMessageID::kChecksum },
   { kpidCharacts, NMessageID::kCharacts },
-  { kpidVa, NMessageID::kVa }
+  { kpidVa, NMessageID::kVa },
+  { kpidId, NMessageID::kId },
+  { kpidShortName, NMessageID::kShortName},
+  { kpidCreatorApp, NMessageID::kCreatorApp },
+  { kpidSectorSize, NMessageID::kSectorSize },
+  { kpidPosixAttrib, NMessageID::kPosixAttrib },
+  { kpidLink, NMessageID::kLink },
+
+  { kpidTotalSize, NMessageID::kTotalSize },
+  { kpidFreeSpace, NMessageID::kFreeSpace },
+  { kpidClusterSize, NMessageID::kClusterSize },
+  { kpidVolumeName, NMessageID::kLabel }
 };
 
 static const int kNumPROPIDToName = sizeof(kPROPIDToName) /  sizeof(kPROPIDToName[0]);

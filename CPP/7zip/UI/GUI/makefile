@@ -8,6 +8,7 @@ CFLAGS = $(CFLAGS) -I ../../../  \
   -DEXTERNAL_CODECS \
   -DBENCH_MT \
   -D_7ZIP_LARGE_PAGES \
+  -DSUPPORT_DEVICE_FILE \
 
 GUI_OBJS = \
   $O\BenchmarkDialog.obj \
@@ -85,6 +86,9 @@ UI_COMMON_OBJS = \
   $O\WorkDir.obj \
   $O\ZipRegistry.obj \
 
+AR_COMMON_OBJS = \
+  $O\OutStreamWithCRC.obj \
+
 LZMA_BENCH_OBJS = \
   $O\LzmaBench.obj \
 
@@ -117,6 +121,7 @@ OBJS = \
   $(WIN_CTRL_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
+  $(AR_COMMON_OBJS) \
   $(FM_OBJS)\
   $O\MyMessages.obj \
   $O\CopyCoder.obj \
@@ -138,6 +143,8 @@ $(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
+	$(COMPL)
+$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
 $(FM_OBJS): ../FileManager/$(*B).cpp
 	$(COMPL)

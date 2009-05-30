@@ -5,6 +5,7 @@ CFLAGS = $(CFLAGS) -I ../../../ \
   -DWIN_LONG_PATH \
   -DNEW_FOLDER_INTERFACE \
   -DEXTERNAL_CODECS \
+  -DSUPPORT_DEVICE_FILE \
 
 FM_OBJS = \
   $O\App.obj \
@@ -38,7 +39,6 @@ FM_OBJS = \
   $O\PanelSelect.obj \
   $O\PanelSort.obj \
   $O\PanelSplitFile.obj \
-  $O\PhysDriveFolder.obj \
   $O\ProgramLocation.obj \
   $O\PropertyName.obj \
   $O\RegistryAssociations.obj \
@@ -85,7 +85,6 @@ WIN_OBJS = \
   $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\Error.obj \
-  $O\FileDevice.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
@@ -138,6 +137,9 @@ UI_COMMON_OBJS = \
   $O\WorkDir.obj \
   $O\ZipRegistry.obj \
 
+AR_COMMON_OBJS = \
+  $O\OutStreamWithCRC.obj \
+
 AGENT_OBJS = \
   $O\Agent.obj \
   $O\AgentOut.obj \
@@ -163,6 +165,7 @@ OBJS = \
   $(WIN_CTRL_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
+  $(AR_COMMON_OBJS) \
   $(AGENT_OBJS) \
   $O\CopyCoder.obj \
   $(CRC_OBJS) \
@@ -182,6 +185,8 @@ $(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
+	$(COMPL)
+$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
 $(AGENT_OBJS): ../Agent/$(*B).cpp
 	$(COMPL)

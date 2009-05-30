@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "COMPRESS_MT" /D "WIN_LONG_PATH" /D "EXTERNAL_LZMA" /D "EXTERNAL_CODECS" /D "BENCH_MT" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -379,81 +379,6 @@ SOURCE=..\Explorer\MyMessages.h
 # Begin Group "Dialogs"
 
 # PROP Default_Filter ""
-# Begin Group "Progress"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\FileManager\ProgressDialog2.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\ProgressDialog2.h
-# End Source File
-# End Group
-# Begin Group "Messages"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\FileManager\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\MessagesDialog.h
-# End Source File
-# End Group
-# Begin Group "Overwtite"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\FileManager\OverwriteDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\OverwriteDialog.h
-# End Source File
-# End Group
-# Begin Group "Password"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\FileManager\PasswordDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\PasswordDialog.h
-# End Source File
-# End Group
-# Begin Group "Compress Dialog"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\CompressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\CompressDialog.h
-# End Source File
-# End Group
-# Begin Group "Extract Dialog"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\ExtractDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\ExtractDialog.h
-# End Source File
-# End Group
-# Begin Group "Benchmark Dialog"
-
-# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=.\BenchmarkDialog.cpp
@@ -462,7 +387,54 @@ SOURCE=.\BenchmarkDialog.cpp
 
 SOURCE=.\BenchmarkDialog.h
 # End Source File
-# End Group
+# Begin Source File
+
+SOURCE=.\CompressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\CompressDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ExtractDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\MessagesDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\MessagesDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\OverwriteDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\OverwriteDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\PasswordDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\PasswordDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ProgressDialog2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ProgressDialog2.h
+# End Source File
 # End Group
 # Begin Group "FM Common"
 
@@ -960,6 +932,18 @@ SOURCE=..\..\..\Windows\Window.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Window.h
+# End Source File
+# End Group
+# Begin Group "Archive Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
 # End Source File
 # End Group
 # End Target

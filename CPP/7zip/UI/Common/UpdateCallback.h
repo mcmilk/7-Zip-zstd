@@ -23,6 +23,7 @@
   virtual HRESULT OpenFileError(const wchar_t *name, DWORD systemError) x; \
   virtual HRESULT SetOperationResult(Int32 operationResult) x; \
   virtual HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password) x; \
+  virtual HRESULT CryptoGetTextPassword(BSTR *password) x; \
   // virtual HRESULT ShowDeleteFile(const wchar_t *name) x; \
   // virtual HRESULT CloseProgress() { return S_OK; };
 
@@ -34,13 +35,15 @@ struct IUpdateCallbackUI
 class CArchiveUpdateCallback:
   public IArchiveUpdateCallback2,
   public ICryptoGetTextPassword2,
+  public ICryptoGetTextPassword,
   public ICompressProgressInfo,
   public CMyUnknownImp
 {
 public:
-  MY_UNKNOWN_IMP3(
+  MY_UNKNOWN_IMP4(
       IArchiveUpdateCallback2,
       ICryptoGetTextPassword2,
+      ICryptoGetTextPassword,
       ICompressProgressInfo)
 
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
@@ -48,6 +51,7 @@ public:
   INTERFACE_IArchiveUpdateCallback2(;)
 
   STDMETHOD(CryptoGetTextPassword2)(Int32 *passwordIsDefined, BSTR *password);
+  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
 public:
   CRecordVector<UInt64> VolumesSizes;

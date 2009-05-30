@@ -35,15 +35,11 @@ public:
     m_Value = 0;
     NumExtraBytes = 0;
   }
-  UInt64 GetProcessedSize() const
-    { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
-  UInt64 GetProcessedBitsSize() const
-    { return (m_Stream.GetProcessedSize() << 3) - (kNumBigValueBits - m_BitPos); }
-  int GetBitPosition() const { return (m_BitPos & 7); }
+  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() + NumExtraBytes - (kNumBigValueBits - m_BitPos) / 8; }
 
   void Normalize()
   {
-    for (;m_BitPos >= 8; m_BitPos -= 8)
+    for (; m_BitPos >= 8; m_BitPos -= 8)
     {
       Byte b = 0;
       if (!m_Stream.ReadByte(b))
@@ -114,9 +110,30 @@ public:
   UInt32 ReadBits(int numBits)
   {
     Normalize();
-    UInt32 res = m_NormalValue & ( (1 << numBits) - 1);
+    UInt32 res = m_NormalValue & ((1 << numBits) - 1);
     MovePos(numBits);
     return res;
+  }
+
+  void AlignToByte() { MovePos((32 - this->m_BitPos) & 7); }
+
+  Byte ReadByte()
+  {
+    if (this->m_BitPos == kNumBigValueBits)
+    {
+      Byte b = 0;
+      if (!this->m_Stream.ReadByte(b))
+      {
+        b = 0xFF;
+        this->NumExtraBytes++;
+      }
+      return b;
+    }
+    {
+      Byte b = (Byte)(m_NormalValue & 0xFF);
+      MovePos(8);
+      return b;
+    }
   }
 };
 

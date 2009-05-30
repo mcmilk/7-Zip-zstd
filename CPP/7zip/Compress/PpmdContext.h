@@ -1,5 +1,6 @@
 // PpmdContext.h
-// This code is based on Dmitry Shkarin's PPMdH code
+// 2009-05-30 : Igor Pavlov : Public domain
+// This code is based on Dmitry Shkarin's PPMdH code (public domain)
 
 #ifndef __COMPRESS_PPMD_CONTEXT_H
 #define __COMPRESS_PPMD_CONTEXT_H

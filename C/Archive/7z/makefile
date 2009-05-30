@@ -7,6 +7,7 @@ C_OBJS = \
   $O\7zBuf2.obj \
   $O\7zCrc.obj \
   $O\LzmaDec.obj \
+  $O\Lzma2Dec.obj \
   $O\Bra86.obj \
   $O\Bcj2.obj \
   $O\7zFile.obj \

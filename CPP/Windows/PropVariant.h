@@ -31,6 +31,7 @@ public:
   CPropVariant& operator=(const PROPVARIANT& varSrc);
   CPropVariant& operator=(BSTR bstrSrc);
   CPropVariant& operator=(LPCOLESTR lpszSrc);
+  CPropVariant& operator=(const char *s);
   CPropVariant& operator=(bool bSrc);
   CPropVariant& operator=(UInt32 value);
   CPropVariant& operator=(UInt64 value);

@@ -28,11 +28,8 @@
 #endif
 #endif
 
-extern "C"
-{
 #include "../../../../C/7zCrc.h"
 #include "../../../../C/Alloc.h"
-}
 
 #include "../../../Common/MyCom.h"
 
@@ -575,22 +572,22 @@ HRESULT CEncoderInfo::Init(UInt32 dictionarySize, UInt32 numThreads, CBaseRandom
   PROPID propIDs[] =
   {
     NCoderPropID::kDictionarySize,
-    NCoderPropID::kMultiThread
+    NCoderPropID::kNumThreads
   };
   const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
-  PROPVARIANT properties[kNumProps];
-  properties[0].vt = VT_UI4;
-  properties[0].ulVal = (UInt32)dictionarySize;
+  PROPVARIANT props[kNumProps];
+  props[0].vt = VT_UI4;
+  props[0].ulVal = dictionarySize;
 
-  properties[1].vt = VT_BOOL;
-  properties[1].boolVal = (numThreads > 1) ? VARIANT_TRUE : VARIANT_FALSE;
+  props[1].vt = VT_UI4;
+  props[1].ulVal = numThreads;
 
   {
     CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
     RINOK(encoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties));
     if (!setCoderProperties)
       return E_FAIL;
-    RINOK(setCoderProperties->SetCoderProperties(propIDs, properties, kNumProps));
+    RINOK(setCoderProperties->SetCoderProperties(propIDs, props, kNumProps));
 
     CMyComPtr<ICompressWriteCoderProperties> writeCoderProperties;
     encoder.QueryInterface(IID_ICompressWriteCoderProperties, &writeCoderProperties);

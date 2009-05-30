@@ -1,4 +1,4 @@
-PROG = 7za.exe
+PROG = 7zr.exe
 LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
 
 CFLAGS = $(CFLAGS) -I ../../../ \
@@ -53,6 +53,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\InBuffer.obj \
@@ -91,6 +92,11 @@ UI_COMMON_OBJS = \
   $O\UpdateProduce.obj \
   $O\WorkDir.obj \
 
+AR_OBJS = \
+  $O\LzmaHandler.obj \
+  $O\SplitHandler.obj \
+  $O\XzHandler.obj \
+
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
@@ -121,17 +127,6 @@ AR_COMMON_OBJS = \
   $O\7zSpecStream.obj \
   $O\7zUpdate.obj \
 
-LZM_OBJS = \
-  $O\LzmaArcRegister.obj \
-  $O\LzmaFiltersDecode.obj \
-  $O\LzmaHandler.obj \
-  $O\LzmaIn.obj \
-
-SPLIT_OBJS = \
-  $O\SplitHandler.obj \
-  $O\SplitHandlerOut.obj \
-  $O\SplitRegister.obj \
-
 COMPRESS_OBJS = \
   $O\Bcj2Coder.obj \
   $O\Bcj2Register.obj \
@@ -141,9 +136,12 @@ COMPRESS_OBJS = \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
-  $O\ByteSwapRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\DeltaFilter.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Encoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
@@ -153,16 +151,28 @@ LZMA_BENCH_OBJS = \
   $O\LzmaBenchCon.obj \
 
 C_OBJS = \
-  $O\7zCrc.obj \
+  $O\7zStream.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
   $O\Alloc.obj \
-  $O\LzmaDec.obj \
-  $O\LzmaEnc.obj \
+  $O\Delta.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
+  $O\Lzma2Dec.obj \
+  $O\Lzma2Enc.obj \
+  $O\LzmaDec.obj \
+  $O\LzmaEnc.obj \
+  $O\MtCoder.obj \
+  $O\Sha256.obj \
   $O\Threads.obj \
+  $O\Xz.obj \
+  $O\XzCrc64.obj \
+  $O\XzDec.obj \
+  $O\XzEnc.obj \
+  $O\XzIn.obj \
+
+!include "../../Crc2.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -171,10 +181,9 @@ OBJS = \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
+  $(AR_OBJS) \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
-  $(LZM_OBJS) \
-  $(SPLIT_OBJS) \
   $(COMPRESS_OBJS) \
   $(LZMA_BENCH_OBJS) \
   $(C_OBJS) \
@@ -195,14 +204,12 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
 	$(COMPL)
+$(AR_OBJS): ../../Archive/$(*B).cpp
+	$(COMPL)
 $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
 
 $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
-	$(COMPL)
-$(LZM_OBJS): ../../Archive/Lzma/$(*B).cpp
-	$(COMPL)
-$(SPLIT_OBJS): ../../Archive/Split/$(*B).cpp
 	$(COMPL)
 $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
@@ -210,3 +217,4 @@ $(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
+!include "../../Crc.mak"

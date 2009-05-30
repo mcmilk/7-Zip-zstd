@@ -97,6 +97,8 @@ COMPRESS_OBJS = \
   $O\BcjRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaRegister.obj \
   $O\PpmdDecoder.obj \
@@ -108,12 +110,13 @@ CRYPTO_OBJS = \
   $O\MyAes.obj \
   
 C_OBJS = \
+  $O\Aes.obj \
   $O\Alloc.obj \
   $O\Bra86.obj \
+  $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
-  $O\Threads.obj \
-  $O\Aes.obj \
   $O\Sha256.obj \
+  $O\Threads.obj \
 
 !include "../../Crc2.mak"
 

@@ -40,7 +40,6 @@ class CPlugin
   void GetCurrentDir();
 public:
   UString m_FileName;
-  // UString m_DefaultName;
   NWindows::NFile::NFind::CFileInfoW m_FileInfo;
 
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;

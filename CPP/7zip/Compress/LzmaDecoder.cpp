@@ -2,10 +2,7 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Alloc.h"
-}
 
 #include "../Common/StreamUtils.h"
 
@@ -19,7 +16,6 @@ static HRESULT SResToHRESULT(SRes res)
     case SZ_ERROR_MEM: return E_OUTOFMEMORY;
     case SZ_ERROR_PARAM: return E_INVALIDARG;
     case SZ_ERROR_UNSUPPORTED: return E_NOTIMPL;
-    // case SZ_ERROR_PROGRESS: return E_ABORT;
     case SZ_ERROR_DATA: return S_FALSE;
   }
   return E_FAIL;
@@ -30,8 +26,10 @@ namespace NLzma {
 
 static const UInt32 kInBufSize = 1 << 20;
 
-CDecoder::CDecoder(): _inBuf(0), _outSizeDefined(false), FinishStream(false)
+CDecoder::CDecoder(): _inBuf(0), _propsWereSet(false), _outSizeDefined(false), FinishStream(false)
 {
+  _inSizeProcessed = 0;
+  _inPos = _inSize = 0;
   LzmaDec_Construct(&_state);
 }
 
@@ -45,43 +43,47 @@ CDecoder::~CDecoder()
   MyFree(_inBuf);
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *prop, UInt32 size)
+HRESULT CDecoder::CreateInputBuffer()
 {
-  RINOK(SResToHRESULT(LzmaDec_Allocate(&_state, prop, size, &g_Alloc)));
-
   if (_inBuf == 0)
   {
     _inBuf = (Byte *)MyAlloc(kInBufSize);
     if (_inBuf == 0)
       return E_OUTOFMEMORY;
   }
-
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value) { *value = _inSizeProcessed; return S_OK; }
-STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream) { _inStream = inStream; return S_OK; }
-STDMETHODIMP CDecoder::ReleaseInStream() { _inStream.Release(); return S_OK; }
+STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *prop, UInt32 size)
+{
+  RINOK(SResToHRESULT(LzmaDec_Allocate(&_state, prop, size, &g_Alloc)));
+  _propsWereSet = true;
+  return CreateInputBuffer();
+}
 
-STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
+void CDecoder::SetOutStreamSizeResume(const UInt64 *outSize)
 {
   _outSizeDefined = (outSize != NULL);
   if (_outSizeDefined)
     _outSize = *outSize;
-
+  _outSizeProcessed = 0;
   LzmaDec_Init(&_state);
-  
+}
+
+STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
+{
+  _inSizeProcessed = 0;
   _inPos = _inSize = 0;
-  _inSizeProcessed = _outSizeProcessed = 0;
+  SetOutStreamSizeResume(outSize);
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+HRESULT CDecoder::CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
-  if (_inBuf == 0)
+  if (_inBuf == 0 || !_propsWereSet)
     return S_FALSE;
-  SetOutStreamSize(outSize);
+
+  UInt64 startInProgress = _inSizeProcessed;
 
   for (;;)
   {
@@ -135,14 +137,25 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     if (_state.dicPos == _state.dicBufSize)
       _state.dicPos = 0;
 
-    if (progress != NULL)
+    if (progress)
     {
-      RINOK(progress->SetRatioInfo(&_inSizeProcessed, &_outSizeProcessed));
+      UInt64 inSize = _inSizeProcessed - startInProgress;
+      RINOK(progress->SetRatioInfo(&inSize, &_outSizeProcessed));
     }
   }
 }
 
+STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  SetOutStreamSize(outSize);
+  return CodeSpec(inStream, outStream, progress);
+}
+
 #ifndef NO_READ_FROM_CODER
+
+STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream) { _inStream = inStream; return S_OK; }
+STDMETHODIMP CDecoder::ReleaseInStream() { _inStream.Release(); return S_OK; }
 
 STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
@@ -182,6 +195,42 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
     }
   }
   while (size != 0);
+  return S_OK;
+}
+
+HRESULT CDecoder::CodeResume(ISequentialOutStream *outStream, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  SetOutStreamSizeResume(outSize);
+  return CodeSpec(_inStream, outStream, progress);
+}
+
+HRESULT CDecoder::ReadFromInputStream(void *data, UInt32 size, UInt32 *processedSize)
+{
+  RINOK(CreateInputBuffer());
+  if (processedSize)
+    *processedSize = 0;
+  while (size > 0)
+  {
+    if (_inPos == _inSize)
+    {
+      _inPos = _inSize = 0;
+      RINOK(_inStream->Read(_inBuf, kInBufSize, &_inSize));
+      if (_inSize == 0)
+        break;
+    }
+    {
+      UInt32 curSize = _inSize - _inPos;
+      if (curSize > size)
+        curSize = size;
+      memcpy(data, _inBuf + _inPos, curSize);
+      _inPos += curSize;
+      _inSizeProcessed += curSize;
+      size -= curSize;
+      data = (Byte *)data + curSize;
+      if (processedSize)
+        *processedSize += curSize;
+    }
+  }
   return S_OK;
 }
 

@@ -157,12 +157,12 @@ static void CreateToolbar(
 
 struct CButtonInfo
 {
-  UINT commandID;
+  int CommandID;
   UINT BitmapResID;
   UINT Bitmap2ResID;
   UINT StringResID;
-  UINT32 LangID;
-  UString GetText()const { return LangString(StringResID, LangID); };
+  UInt32 LangID;
+  UString GetText() const { return LangString(StringResID, LangID); };
 };
 
 static CButtonInfo g_StandardButtons[] =
@@ -180,12 +180,12 @@ static CButtonInfo g_ArchiveButtons[] =
   { kTestCommand , IDB_TEST, IDB_TEST2, IDS_TEST, 0x03020402}
 };
 
-bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, UString &s)
+static bool SetButtonText(int commandID, CButtonInfo *buttons, int numButtons, UString &s)
 {
   for (int i = 0; i < numButtons; i++)
   {
     const CButtonInfo &b = buttons[i];
-    if (b.commandID == commandID)
+    if (b.CommandID == commandID)
     {
       s = b.GetText();
       return true;
@@ -194,7 +194,7 @@ bool SetButtonText(UINT32 commandID, CButtonInfo *buttons, int numButtons, UStri
   return false;
 }
 
-void SetButtonText(UINT32 commandID, UString &s)
+static void SetButtonText(int commandID, UString &s)
 {
   if (SetButtonText(commandID, g_StandardButtons,
       sizeof(g_StandardButtons) / sizeof(g_StandardButtons[0]), s))
@@ -212,7 +212,7 @@ static void AddButton(
 {
   TBBUTTON but;
   but.iBitmap = 0;
-  but.idCommand = butInfo.commandID;
+  but.idCommand = butInfo.CommandID;
   but.fsState = TBSTATE_ENABLED;
   but.fsStyle = BTNS_BUTTON
     // | BTNS_AUTOSIZE
@@ -428,20 +428,12 @@ void CApp::Release()
     Panels[i].Release();
 }
 
-static bool IsThereFolderOfPath(const UString &path)
-{
-  CFileInfoW fi;
-  if (!FindFile(path, fi))
-    return false;
-  return fi.IsDir();
-}
-
 // reduces path to part that exists on disk
 static void ReducePathToRealFileSystemPath(UString &path)
 {
   while (!path.IsEmpty())
   {
-    if (IsThereFolderOfPath(path))
+    if (NFind::DoesDirExist(path))
     {
       NName::NormalizeDirPathPrefix(path);
       break;
@@ -663,7 +655,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       }
 
     if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind(WCHAR_PATH_SEPARATOR) == destPath.Length() - 1) ||
-        IsThereFolderOfPath(destPath))
+        NFind::DoesDirExist(destPath))
     {
       NDirectory::CreateComplexDirectory(destPath);
       NName::NormalizeDirPathPrefix(destPath);
@@ -698,7 +690,15 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     SaveCopyHistory(copyFolders);
   }
 
-  bool useSrcPanel = (!useDestPanel || !srcPanel.IsFSFolder() || destPanel.IsFSFolder());
+  /*
+  if (destPath == destPanel._currentFolderPrefix)
+  {
+    if (destPanel.GetFolderTypeID() == L"PhysDrive")
+      useDestPanel = true;
+  }
+  */
+
+  bool useSrcPanel = (!useDestPanel || !srcPanel.IsFsOrDrivesFolder() || destPanel.IsFSFolder());
   bool useTemp = useSrcPanel && useDestPanel;
   NFile::NDirectory::CTempDirectoryW tempDirectory;
   UString tempDirPrefix;
@@ -857,7 +857,7 @@ void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
       LPNMTTDISPINFO info = (LPNMTTDISPINFO)pnmh;
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
-      SetButtonText((UINT32)info->hdr.idFrom, g_ToolTipBuffer);
+      SetButtonText((int)info->hdr.idFrom, g_ToolTipBuffer);
       g_ToolTipBufferSys = GetSystemString(g_ToolTipBuffer);
       info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBufferSys;
       return;
@@ -868,7 +868,7 @@ void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
       LPNMTTDISPINFOW info = (LPNMTTDISPINFOW)pnmh;
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
-      SetButtonText((UINT32)info->hdr.idFrom, g_ToolTipBuffer);
+      SetButtonText((int)info->hdr.idFrom, g_ToolTipBuffer);
       info->lpszText = (LPWSTR)(LPCWSTR)g_ToolTipBuffer;
       return;
     }
@@ -893,4 +893,3 @@ void CApp::RefreshTitle(int panelIndex, bool always)
     return;
   RefreshTitle(always);
 }
-

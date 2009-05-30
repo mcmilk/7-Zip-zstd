@@ -26,6 +26,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\InBuffer.obj \
   $O\InOutTempBuffer.obj \
   $O\FilterCoder.obj \
@@ -74,7 +75,6 @@ COMPRESS_OBJS = \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
-  $O\ByteSwapRegister.obj \
   $O\BZip2Crc.obj \
   $O\BZip2Decoder.obj \
   $O\BZip2Register.obj \
@@ -82,6 +82,9 @@ COMPRESS_OBJS = \
   $O\CopyRegister.obj \
   $O\DeflateDecoder.obj \
   $O\DeflateRegister.obj \
+  $O\DeltaFilter.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaRegister.obj \
   $O\LzOutWindow.obj \
@@ -94,14 +97,16 @@ CRYPTO_OBJS = \
   $O\MyAes.obj \
 
 C_OBJS = \
+  $O\Aes.obj \
   $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
+  $O\Delta.obj \
+  $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
-  $O\Threads.obj \
-  $O\Aes.obj \
   $O\Sha256.obj \
+  $O\Threads.obj \
 
 !include "../../Crc2.mak"
 

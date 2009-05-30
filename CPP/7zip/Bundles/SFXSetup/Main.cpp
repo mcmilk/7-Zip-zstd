@@ -4,24 +4,17 @@
 
 #include <initguid.h>
 
-#include "Common/StringConvert.h"
-#include "Common/Random.h"
-#include "Common/TextConfig.h"
 #include "Common/CommandLineParser.h"
+#include "Common/StringConvert.h"
+#include "Common/TextConfig.h"
 
-#include "Windows/FileDir.h"
-#include "Windows/FileIO.h"
-#include "Windows/FileFind.h"
-#include "Windows/FileName.h"
 #include "Windows/DLL.h"
+#include "Windows/FileDir.h"
+#include "Windows/FileFind.h"
+#include "Windows/FileIO.h"
 #include "Windows/ResourceString.h"
 
-#include "../../IPassword.h"
-#include "../../ICoder.h"
-#include "../../Archive/IArchive.h"
 #include "../../UI/Explorer/MyMessages.h"
-
-// #include "../../UI/GUI/ExtractGUI.h"
 
 #include "ExtractEngine.h"
 

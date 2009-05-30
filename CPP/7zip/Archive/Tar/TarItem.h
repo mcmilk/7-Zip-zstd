@@ -1,12 +1,10 @@
-// Archive/Tar/Item.h
+// TarItem.h
 
 #ifndef __ARCHIVE_TAR_ITEM_H
 #define __ARCHIVE_TAR_ITEM_H
 
-#include "Common/Types.h"
-#include "Common/MyString.h"
-
 #include "../Common/ItemNameUtils.h"
+
 #include "TarHeader.h"
 
 namespace NArchive {
@@ -25,8 +23,8 @@ struct CItem
   UInt32 DeviceMinor;
 
   AString LinkName;
-  AString UserName;
-  AString GroupName;
+  AString User;
+  AString Group;
 
   char Magic[8];
   char LinkFlag;

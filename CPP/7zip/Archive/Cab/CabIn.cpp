@@ -57,7 +57,7 @@ void CInArchive::ReadOtherArchive(COtherArchive &oa)
   oa.DiskName = SafeReadName();
 }
 
-void CInArchive::Skeep(size_t size)
+void CInArchive::Skip(size_t size)
 {
   while (size-- != 0)
     ReadByte();
@@ -104,7 +104,7 @@ HRESULT CInArchive::Open2(IInStream *stream,
     ai.PerFolderAreaSize = ReadByte();
     ai.PerDataBlockAreaSize = ReadByte();
 
-    Skeep(ai.PerCabinetAreaSize);
+    Skip(ai.PerCabinetAreaSize);
   }
 
   {
@@ -124,7 +124,7 @@ HRESULT CInArchive::Open2(IInStream *stream,
     folder.CompressionTypeMajor = ReadByte();
     folder.CompressionTypeMinor = ReadByte();
 
-    Skeep(ai.PerFolderAreaSize);
+    Skip(ai.PerFolderAreaSize);
     database.Folders.Add(folder);
   }
   

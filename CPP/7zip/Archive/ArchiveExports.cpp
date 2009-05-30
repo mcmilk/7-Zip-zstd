@@ -3,15 +3,12 @@
 #include "StdAfx.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/Types.h"
+
 #include "../../Windows/PropVariant.h"
+
 #include "../Common/RegisterArc.h"
 
-#include "IArchive.h"
-#include "../ICoder.h"
-#include "../IPassword.h"
-
-static const unsigned int kNumArcsMax = 32;
+static const unsigned int kNumArcsMax = 48;
 static unsigned int g_NumArcs = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
 void RegisterArc(const CArcInfo *arcInfo)

@@ -1,21 +1,23 @@
 #include "StdAfx.h"
 
 #include "Common/StringConvert.h"
-#include "Windows/Menu.h"
+
 #include "Windows/COM.h"
-#include "Windows/PropVariant.h"
 #include "Windows/Clipboard.h"
+#include "Windows/Menu.h"
+#include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
+
 #include "../Common/PropIDUtils.h"
 #include "../../PropID.h"
 
-#include "Panel.h"
-#include "PluginInterface.h"
-#include "MyLoadMenu.h"
 #include "App.h"
 #include "LangUtils.h"
-#include "resource.h"
+#include "MyLoadMenu.h"
+#include "PluginInterface.h"
 #include "PropertyName.h"
+
+#include "resource.h"
 #include "PropertyNameRes.h"
 
 using namespace NWindows;
@@ -30,7 +32,7 @@ static const UINT kSystemStartMenuID = kPluginMenuStartID + 100;
 void CPanel::InvokeSystemCommand(const char *command)
 {
   NCOM::CComInitializer comInitializer;
-  if (!IsFSFolder() && !IsFSDrivesFolder())
+  if (!IsFsOrPureDrivesFolder())
     return;
   CRecordVector<UInt32> operatedIndices;
   GetOperatedItemIndices(operatedIndices);
@@ -58,26 +60,28 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
 {
   if (prop.vt != VT_EMPTY)
   {
-    const UString name = GetNameOfProperty(propID, nameBSTR);
     UString val;
 
-    if ((
+    if ((prop.vt == VT_UI8 || prop.vt == VT_UI4) && (
         propID == kpidSize ||
         propID == kpidPackSize ||
         propID == kpidNumSubDirs ||
         propID == kpidNumSubFiles ||
         propID == kpidNumBlocks ||
+        propID == kpidClusterSize ||
+        propID == kpidTotalSize ||
+        propID == kpidFreeSpace ||
         propID == kpidPhySize ||
         propID == kpidHeadersSize ||
-        propID == kpidClusterSize
-        ) && (prop.vt == VT_UI8 || prop.vt == VT_UI4))
+        propID == kpidFreeSpace
+        ))
       val = ConvertSizeToString(ConvertPropVariantToUInt64(prop));
     else
       val = ConvertPropertyToString(prop, propID);
 
     if (!val.IsEmpty())
     {
-      s += name;
+      s += GetNameOfProperty(propID, nameBSTR);
       s += kPropValueSeparator;
       /*
       if (propID == kpidComment)
@@ -129,7 +133,7 @@ void CPanel::Properties()
       message += kSeparator;
     }
         
-    message += LangString(IDS_PROPERTY_FILE_TYPE, 0x02000214);
+    message += LangString(IDS_PROP_FILE_TYPE, 0x02000214);
     message += kPropValueSeparator;
     message += GetFolderTypeID();
     message += L"\n";

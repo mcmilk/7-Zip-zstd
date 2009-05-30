@@ -2,10 +2,7 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Alloc.h"
-}
 
 #include "../Common/InBuffer.h"
 #include "../Common/OutBuffer.h"

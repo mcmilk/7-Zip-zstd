@@ -2,30 +2,25 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
+#include "../../../../C/Alloc.h"
 
-extern "C"
-{
-  #include "../../../../C/Alloc.h"
-}
-
-#include "Common/Types.h"
 #include "Common/IntToString.h"
 
-// #include "Windows/COM.h"
 #include "Windows/FileIO.h"
 #include "Windows/FileFind.h"
 #include "Windows/Thread.h"
-#include "ProgressDialog2.h"
-#include "SplitDialog.h"
-#include "CopyDialog.h"
 
 #include "../GUI/ExtractRes.h"
 
-#include "SplitUtils.h"
+#include "resource.h"
+
 #include "App.h"
+#include "CopyDialog.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
+#include "ProgressDialog2.h"
+#include "SplitDialog.h"
+#include "SplitUtils.h"
 
 using namespace NWindows;
 
@@ -227,7 +222,7 @@ void CApp::Split()
     return;
 
   NFile::NFind::CFileInfoW fileInfo;
-  if (!NFile::NFind::FindFile(srcPath + itemName, fileInfo))
+  if (!fileInfo.Find(srcPath + itemName))
   {
     srcPanel.MessageBoxMyError(L"Can not find file");
     return;
@@ -422,7 +417,7 @@ void CApp::Combine()
   for (;;)
   {
     NFile::NFind::CFileInfoW fileInfo;
-    if (!NFile::NFind::FindFile(srcPath + nextName, fileInfo) || fileInfo.IsDir())
+    if (!fileInfo.Find(srcPath + nextName) || fileInfo.IsDir())
       break;
     combiner.Names.Add(nextName);
     combiner.TotalSize += fileInfo.Size;
@@ -490,7 +485,7 @@ void CApp::Combine()
   NFile::NFind::CFileInfoW fileInfo;
   UString destFilePath = path + outName;
   combiner.OutputPath = destFilePath;
-  if (NFile::NFind::FindFile(destFilePath, fileInfo))
+  if (fileInfo.Find(destFilePath))
   {
     srcPanel.MessageBoxMyError(MyFormatNew(IDS_FILE_EXIST, 0x03020A04, destFilePath));
     return;

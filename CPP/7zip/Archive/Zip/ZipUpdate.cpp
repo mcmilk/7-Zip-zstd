@@ -47,8 +47,7 @@ static HRESULT CopyBlockToArchive(ISequentialInStream *inStream,
 {
   CMyComPtr<ISequentialOutStream> outStream;
   outArchive.CreateStreamForCopying(&outStream);
-  CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
-  return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+  return NCompress::CopyStream(inStream, outStream, progress);
 }
 
 static HRESULT WriteRange(IInStream *inStream, COutArchive &outArchive,

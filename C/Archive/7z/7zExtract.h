@@ -1,10 +1,14 @@
 /* 7zExtract.h -- Extracting from 7z archive
-2008-11-23 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_EXTRACT_H
 #define __7Z_EXTRACT_H
 
 #include "7zIn.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
   SzExtract extracts file from archive
@@ -37,5 +41,9 @@ SRes SzAr_Extract(
     size_t *outSizeProcessed, /* size of file in *outBuffer */
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

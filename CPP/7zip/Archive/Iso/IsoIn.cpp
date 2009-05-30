@@ -3,9 +3,6 @@
 #include "StdAfx.h"
 
 #include "IsoIn.h"
-#include "IsoHeader.h"
-
-#include "Windows/Defs.h"
 
 #include "../../Common/StreamUtils.h"
 
@@ -35,13 +32,13 @@ void CInArchive::ReadBytes(Byte *data, UInt32 size)
     data[i] = ReadByte();
 }
 
-void CInArchive::Skeep(size_t size)
+void CInArchive::Skip(size_t size)
 {
   while (size-- != 0)
     ReadByte();
 }
 
-void CInArchive::SkeepZeros(size_t size)
+void CInArchive::SkipZeros(size_t size)
 {
   while (size-- != 0)
   {
@@ -174,8 +171,8 @@ void CInArchive::ReadDirRecord2(CDirRecord &r, Byte len)
   ReadBytes((Byte *)r.FileId, idLen);
   int padSize = 1 - (idLen & 1);
   
-  // SkeepZeros(1 - (idLen & 1));
-  Skeep(1 - (idLen & 1)); // it's bug in some cd's. Must be zeros
+  // SkipZeros(1 - (idLen & 1));
+  Skip(1 - (idLen & 1)); // it's bug in some cd's. Must be zeros
 
   int curPos = 33 + idLen + padSize;
   if (curPos > len)
@@ -199,7 +196,7 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   d.VolFlags = ReadByte();
   ReadBytes(d.SystemId, sizeof(d.SystemId));
   ReadBytes(d.VolumeId, sizeof(d.VolumeId));
-  SkeepZeros(8);
+  SkipZeros(8);
   d.VolumeSpaceSize = ReadUInt32();
   ReadBytes(d.EscapeSequence, sizeof(d.EscapeSequence));
   d.VolumeSetSize = ReadUInt16();
@@ -223,9 +220,9 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   ReadDateTime(d.ExpirationTime);
   ReadDateTime(d.EffectiveTime);
   d.FileStructureVersion = ReadByte(); // = 1
-  SkeepZeros(1);
+  SkipZeros(1);
   ReadBytes(d.ApplicationUse, sizeof(d.ApplicationUse));
-  SkeepZeros(653);
+  SkipZeros(653);
 }
 
 static const Byte kSig_CD001[5] = { 'C', 'D', '0', '0', '1' };
@@ -371,7 +368,7 @@ HRESULT CInArchive::Open2()
       }
       else
         break;
-      SkeepZeros(0x800 - 7);
+      SkipZeros(0x800 - 7);
       continue;
       */
     }
@@ -382,7 +379,7 @@ HRESULT CInArchive::Open2()
     if (sig[0] == NVolDescType::kTerminator)
     {
       break;
-      // Skeep(0x800 - 7);
+      // Skip(0x800 - 7);
       // continue;
     }
     switch(sig[0])

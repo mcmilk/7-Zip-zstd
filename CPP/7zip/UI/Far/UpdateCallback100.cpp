@@ -52,3 +52,15 @@ STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
   return S_OK;
 }
 
+extern HRESULT GetPassword(UString &password);
+
+STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
+{
+  *password = NULL;
+  if (!m_PasswordIsDefined)
+  {
+    RINOK(GetPassword(m_Password));
+    m_PasswordIsDefined = true;
+  }
+  return StringToBstr(m_Password, password);
+}

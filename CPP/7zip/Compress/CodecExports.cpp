@@ -3,9 +3,12 @@
 #include "StdAfx.h"
 
 #include "../../Common/ComTry.h"
+
 #include "../../Windows/PropVariant.h"
-#include "../Common/RegisterCodec.h"
+
 #include "../ICoder.h"
+
+#include "../Common/RegisterCodec.h"
 
 extern unsigned int g_NumCodecs;
 extern const CCodecInfo *g_Codecs[];

@@ -5,40 +5,30 @@
 #include "ContextMenu.h"
 
 #include "Common/StringConvert.h"
-#include "Common/MyCom.h"
 
-#include "Windows/Shell.h"
-#include "Windows/Memory.h"
 #include "Windows/COM.h"
-#include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
-#include "Windows/FileName.h"
-#include "Windows/Thread.h"
-#include "Windows/Window.h"
-
+#include "Windows/FileFind.h"
+#include "Windows/Memory.h"
 #include "Windows/Menu.h"
-#include "Windows/ResourceString.h"
+#include "Windows/Shell.h"
+
+#include "../Common/ArchiveName.h"
+#include "../Common/CompressCall.h"
+#include "../Common/ExtractingFilePath.h"
+#include "../Common/ZipRegistry.h"
 
 #include "../FileManager/FormatUtils.h"
 #include "../FileManager/ProgramLocation.h"
-
-#include "../Common/ZipRegistry.h"
-#include "../Common/ArchiveName.h"
 
 #ifdef LANG
 #include "../FileManager/LangUtils.h"
 #endif
 
-#include "resource.h"
 #include "ContextMenuFlags.h"
-
-// #include "ExtractEngine.h"
-// #include "TestEngine.h"
-// #include "CompressEngine.h"
 #include "MyMessages.h"
 
-#include "../GUI/ExtractRes.h"
-#include "../Common/CompressCall.h"
+#include "resource.h"
 
 using namespace NWindows;
 
@@ -297,7 +287,7 @@ static UString GetSubFolderNameForExtract(const UString &archiveName)
       res = res.Left(dotPos);
     res.TrimRight();
   }
-  return res;
+  return GetCorrectFullFsPath(res);
 }
 
 static UString GetReducedString(const UString &s)
@@ -316,27 +306,34 @@ static UString GetQuotedString(const UString &s)
 
 static UString GetQuotedReducedString(const UString &s)
 {
-  return GetQuotedString(GetReducedString(s));
+  UString s2 = GetReducedString(s);
+  s2.Replace(L"&", L"&&");
+  return GetQuotedString(s2);
 }
 
-static const wchar_t *kExtractExludeExtensions[] =
-{
-  L"txt", L"htm", L"html", L"xml", L"xsd", L"xsl", L"xslt", L"asp", L"aspx", L"css", L"shtml",
-  L"bmp", L"gif", L"jpeg", L"jpg", L"png", L"tiff", L"ico",
-  L"3gp", L"avi", L"mov", L"mpeg", L"mpg", L"mpe", L"wmv",
-  L"aac", L"ape", L"fla", L"flac", L"la", L"mp3", L"m4a", L"mp4", L"ofr", L"ogg",
-  L"pac", L"ra", L"rm", L"rka", L"shn", L"swa", L"tta", L"wv", L"wma", L"wav",
-  L"ps", L"eps",
-  L"inl", L"inc", L"idl", L"h", L"hpp", L"hxx", L"c", L"cpp", L"cxx", L"rc", L"java",
-  L"cs", L"pas", L"bas", L"vb", L"cls", L"ctl", L"frm", L"dlg", L"def",
-  L"f77", L"f", L"f90", L"f95",
-  L"asm", L"sql", L"manifest", L"dep",
-  L"mak", L"clw", L"csproj", L"vcproj", L"sln", L"dsp", L"dsw",
-  L"bat", L"cmd",
-  L"awk", L"sed", L"hta", L"js", L"php", L"php3", L"php4", L"php5",
-  L"phptml", L"pl", L"pm", L"py", L"pyo", L"rb", L"sh", L"tcl", L"vbs",
-  L"tex", L"ans", L"asc", L"srt", L"reg", L"ini", L"rtf", L"pdf"
-};
+static const char *kExtractExludeExtensions =
+  " 3gp"
+  " aac ans ape asc asm asp aspx avi awk"
+  " bas bat bmp"
+  " c cs cls clw cmd cpp csproj css ctl cxx"
+  " def dep dlg dsp dsw"
+  " eps"
+  " f f77 f90 f95 fla flac frm"
+  " gif"
+  " h hpp hta htm html hxx"
+  " ico idl inc ini inl"
+  " java jpeg jpg js"
+  " la"
+  " mak manifest wmv mov mp3 mp4 mpe mpeg mpg m4a"
+  " ofr ogg"
+  " pac pas pdf php php3 php4 php5 phptml pl pm png ps py pyo"
+  " ra rb rc reg rka rm rtf"
+  " sed sh shn shtml sln sql srt swa"
+  " tcl tex tiff tta txt"
+  " vb vcproj vbs"
+  " wav wma wv"
+  " xml xsd xsl xslt"
+  " ";
 
 static bool DoNeedExtract(const UString &name)
 {
@@ -345,9 +342,16 @@ static bool DoNeedExtract(const UString &name)
     return true;
   UString ext = name.Mid(extPos + 1);
   ext.MakeLower();
-  for (int i = 0; i < sizeof(kExtractExludeExtensions) / sizeof(kExtractExludeExtensions[0]); i++)
-    if (ext.Compare(kExtractExludeExtensions[i]) == 0)
+  AString ext2 = UnicodeStringToMultiByte(ext);
+  const char *p = kExtractExludeExtensions;
+  for (int i = 0; p[i] != 0;)
+  {
+    int j;
+    for (j = i; p[j] != ' '; j++);
+    if (ext2.Length() == j - i && memcmp(p + i, (const char *)ext2, ext2.Length()) == 0)
       return false;
+    i = j + 1;
+  }
   return true;
 }
 
@@ -402,7 +406,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     NFile::NDirectory::GetOnlyDirPrefix(fileName, folderPrefix);
    
     NFile::NFind::CFileInfoW fileInfo;
-    if (!NFile::NFind::FindFile(fileName, fileInfo))
+    if (!fileInfo.Find(fileName))
       return E_FAIL;
     if (!fileInfo.IsDir() && DoNeedExtract(fileInfo.Name))
     {
@@ -423,7 +427,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     for(int i = 0; i < _fileNames.Size(); i++)
     {
       NFile::NFind::CFileInfoW fileInfo;
-      if (!NFile::NFind::FindFile(_fileNames[i], fileInfo))
+      if (!fileInfo.Find(_fileNames[i]))
         return E_FAIL;
       if (!fileInfo.IsDir() && DoNeedExtract(fileInfo.Name))
         needExtract = true;
@@ -434,7 +438,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UString folderPrefix;
       NFile::NDirectory::GetOnlyDirPrefix(fileName, folderPrefix);
       NFile::NFind::CFileInfoW fileInfo;
-      if (!NFile::NFind::FindFile(fileName, fileInfo))
+      if (!fileInfo.Find(fileName))
         return E_FAIL;
       // Extract
       if ((contextMenuFlags & NContextMenuFlags::kExtract) != 0)

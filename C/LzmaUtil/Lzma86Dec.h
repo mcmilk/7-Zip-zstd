@@ -1,12 +1,14 @@
 /* Lzma86Dec.h -- LZMA + x86 (BCJ) Filter Decoder
-2008-08-05
-Igor Pavlov
-Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
-#ifndef __LZMA86DEC_H
-#define __LZMA86DEC_H
+#ifndef __LZMA86_DEC_H
+#define __LZMA86_DEC_H
 
 #include "../Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 Lzma86_GetUnpackSize:
@@ -41,5 +43,9 @@ Lzma86_Decode:
 */
 
 SRes Lzma86_Decode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

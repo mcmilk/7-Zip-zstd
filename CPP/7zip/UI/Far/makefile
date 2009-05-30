@@ -64,6 +64,9 @@ UI_COMMON_OBJS = \
   $O\WorkDir.obj \
   $O\ZipRegistry.obj \
 
+AR_COMMON_OBJS = \
+  $O\OutStreamWithCRC.obj \
+
 AGENT_OBJS = \
   $O\Agent.obj \
   $O\AgentOut.obj \
@@ -75,6 +78,8 @@ C_OBJS = \
   $O\Sort.obj \
   $O\Threads.obj \
 
+!include "../../Crc2.mak"
+
 OBJS = \
   $O\StdAfx.obj \
   $(FAR_OBJS) \
@@ -82,9 +87,11 @@ OBJS = \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
+  $(AR_COMMON_OBJS) \
   $(AGENT_OBJS) \
   $(C_OBJS) \
   $O\CopyCoder.obj \
+  $(CRC_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -99,9 +106,12 @@ $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
 $(UI_COMMON_OBJS): ../Common/$(*B).cpp
 	$(COMPL)
+$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
+	$(COMPL)
 $(AGENT_OBJS): ../Agent/$(*B).cpp
 	$(COMPL)
 $O\CopyCoder.obj: ../../Compress/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
+!include "../../Crc.mak"

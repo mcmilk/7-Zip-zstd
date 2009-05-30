@@ -2,16 +2,16 @@
 
 #include "StdAfx.h"
 
-#include "UpdateCallback.h"
-
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
-#include "Common/Defs.h"
 #include "Common/ComTry.h"
+#include "Common/Defs.h"
+#include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"
 
 #include "../../Common/FileStreams.h"
+
+#include "UpdateCallback.h"
 
 using namespace NWindows;
 
@@ -216,8 +216,8 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
 STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream **volumeStream)
 {
   COM_TRY_BEGIN
-  wchar_t temp[32];
-  ConvertUInt64ToString(index + 1, temp);
+  wchar_t temp[16];
+  ConvertUInt32ToString(index + 1, temp);
   UString res = temp;
   while (res.Length() < 2)
     res = UString(L'0') + res;
@@ -238,5 +238,12 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
 {
   COM_TRY_BEGIN
   return Callback->CryptoGetTextPassword2(passwordIsDefined, password);
+  COM_TRY_END
+}
+
+STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword(BSTR *password)
+{
+  COM_TRY_BEGIN
+  return Callback->CryptoGetTextPassword(password);
   COM_TRY_END
 }

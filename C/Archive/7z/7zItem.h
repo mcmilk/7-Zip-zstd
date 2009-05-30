@@ -1,10 +1,14 @@
 /* 7zItem.h -- 7z Items
-2008-10-04 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_ITEM_H
 #define __7Z_ITEM_H
 
 #include "../../7zBuf.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -80,5 +84,9 @@ typedef struct
 
 void SzAr_Init(CSzAr *p);
 void SzAr_Free(CSzAr *p, ISzAlloc *alloc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

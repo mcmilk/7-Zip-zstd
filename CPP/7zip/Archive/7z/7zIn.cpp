@@ -2,11 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
-  #include "../../../../C/7zCrc.h"
-  #include "../../../../C/CpuArch.h"
-}
+#include "../../../../C/7zCrc.h"
+#include "../../../../C/CpuArch.h"
 
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
@@ -198,16 +195,16 @@ void CInByte2::ReadBytes(Byte *data, size_t size)
     data[i] = _buffer[_pos++];
 }
 
-void CInByte2::SkeepData(UInt64 size)
+void CInByte2::SkipData(UInt64 size)
 {
   if (size > _size - _pos)
     ThrowEndOfData();
   _pos += (size_t)size;
 }
 
-void CInByte2::SkeepData()
+void CInByte2::SkipData()
 {
-  SkeepData(ReadNumber());
+  SkipData(ReadNumber());
 }
 
 UInt64 CInByte2::ReadNumber()
@@ -363,7 +360,7 @@ void CInArchive::ReadArchiveProperties(CInArchiveInfo & /* archiveInfo */)
   {
     if (ReadID() == NID::kEnd)
       break;
-    SkeepData();
+    SkipData();
   }
 }
 
@@ -456,7 +453,7 @@ void CInArchive::WaitAttribute(UInt64 attribute)
       return;
     if (type == NID::kEnd)
       ThrowIncorrect();
-    SkeepData();
+    SkipData();
   }
 }
 
@@ -502,7 +499,7 @@ void CInArchive::ReadPackInfo(
       ReadHashDigests(numPackStreams, packCRCsDefined, packCRCs);
       continue;
     }
-    SkeepData();
+    SkipData();
   }
   if (packCRCsDefined.IsEmpty())
   {
@@ -563,7 +560,7 @@ void CInArchive::ReadUnpackInfo(
       }
       continue;
     }
-    SkeepData();
+    SkipData();
   }
 }
 
@@ -590,7 +587,7 @@ void CInArchive::ReadSubStreamsInfo(
       break;
     if (type == NID::kEnd)
       break;
-    SkeepData();
+    SkipData();
   }
 
   if (numUnpackStreamsInFolders.IsEmpty())
@@ -665,7 +662,7 @@ void CInArchive::ReadSubStreamsInfo(
       return;
     }
     else
-      SkeepData();
+      SkipData();
     type = ReadID();
   }
 }
@@ -1006,7 +1003,7 @@ HRESULT CInArchive::ReadHeader(
         db.ArchiveInfo.FileInfoPopIDs.Add(type);
     }
     else
-      SkeepData(size);
+      SkipData(size);
     bool checkRecordsSize = (db.ArchiveInfo.Version.Major > 0 ||
         db.ArchiveInfo.Version.Minor > 2);
     if (checkRecordsSize && _inByteBack->_pos - ppp != size)

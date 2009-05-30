@@ -198,6 +198,14 @@ SOURCE=..\Common\CompressCall.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractingFilePath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\ExtractingFilePath.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\ZipRegistry.cpp
 # End Source File
 # Begin Source File

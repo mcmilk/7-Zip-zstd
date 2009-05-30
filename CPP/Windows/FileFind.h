@@ -5,8 +5,8 @@
 
 #include "../Common/MyString.h"
 #include "../Common/Types.h"
-#include "FileName.h"
 #include "Defs.h"
+#include "FileName.h"
 
 namespace NWindows {
 namespace NFile {
@@ -26,18 +26,23 @@ namespace NAttributes
 class CFileInfoBase
 {
   bool MatchesMask(UINT32 mask) const { return ((Attrib & mask) != 0); }
+protected:
+  void Clear();
 public:
   UInt64 Size;
   FILETIME CTime;
   FILETIME ATime;
   FILETIME MTime;
   DWORD Attrib;
-  
+  bool IsDevice;
+
+  /*
   #ifndef _WIN32_WCE
   UINT32 ReparseTag;
   #else
   DWORD ObjectID;
   #endif
+  */
 
   bool IsArchived() const { return MatchesMask(FILE_ATTRIBUTE_ARCHIVE); }
   bool IsCompressed() const { return MatchesMask(FILE_ATTRIBUTE_COMPRESSED); }
@@ -53,21 +58,23 @@ public:
   bool IsTemporary() const { return MatchesMask(FILE_ATTRIBUTE_TEMPORARY); }
 };
 
-class CFileInfo: public CFileInfoBase
+struct CFileInfo: public CFileInfoBase
 {
-public:
   CSysString Name;
+
   bool IsDots() const;
+  bool Find(LPCTSTR wildcard);
 };
 
 #ifdef _UNICODE
 typedef CFileInfo CFileInfoW;
 #else
-class CFileInfoW: public CFileInfoBase
+struct CFileInfoW: public CFileInfoBase
 {
-public:
   UString Name;
+
   bool IsDots() const;
+  bool Find(LPCWSTR wildcard);
 };
 #endif
 
@@ -88,12 +95,13 @@ public:
   bool Close();
 };
 
-bool FindFile(LPCTSTR wildcard, CFileInfo &fileInfo);
-
 bool DoesFileExist(LPCTSTR name);
+bool DoesDirExist(LPCTSTR name);
+bool DoesFileOrDirExist(LPCTSTR name);
 #ifndef _UNICODE
-bool FindFile(LPCWSTR wildcard, CFileInfoW &fileInfo);
 bool DoesFileExist(LPCWSTR name);
+bool DoesDirExist(LPCWSTR name);
+bool DoesFileOrDirExist(LPCWSTR name);
 #endif
 
 class CEnumerator

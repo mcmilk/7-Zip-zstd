@@ -2,15 +2,9 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
-#include "ExtractEngine.h"
-
-#include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/Defs.h"
-
+#include "ExtractEngine.h"
 #include "FarUtils.h"
 #include "Messages.h"
 #include "OverwriteDialog.h"
@@ -60,7 +54,7 @@ STDMETHODIMP CExtractCallBackImp::SetCompleted(const UInt64 *completeValue)
 STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
     const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
-    INT32 *answer)
+    Int32 *answer)
 {
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
   oldFileInfo.Time = *existTime;
@@ -108,7 +102,7 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, INT32 /* askExtractMode */, const UInt64 * /* position */)
+STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, Int32 /* askExtractMode */, const UInt64 * /* position */)
 {
   if (WasEscPressed())
     return E_ABORT;
@@ -124,7 +118,7 @@ STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *message)
   return S_OK;
 }
 
-STDMETHODIMP CExtractCallBackImp::SetOperationResult(INT32 operationResult, bool encrypted)
+STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool encrypted)
 {
   switch(operationResult)
   {

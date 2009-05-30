@@ -8,11 +8,10 @@
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
 
+#include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
 
 #include "../../Compress/CopyCoder.h"
-
-#include "../Common/DummyOutStream.h"
 
 #include "UdfHandler.h"
 
@@ -201,83 +200,210 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-class CUdfInStream:
-  public ISequentialInStream,
+class CBufInStream:
+  public IInStream,
   public CMyUnknownImp
 {
+  CByteBuffer _data;
+  UInt64 _pos;
+
+public:
+  void Init(const CByteBuffer &data)
+  {
+    _data = data;
+    _pos = 0;
+  }
+
   MY_UNKNOWN_IMP
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  UInt64 _rem;
-public:
-  CInArchive *_archive;
-  CMyComPtr<IInStream> _stream;
-  CRef2 _ref2;
-  int _extentIndex;
-  UInt32 _offsetInExtent;
-
-  void Init(UInt64 size)
-  {
-    _extentIndex = 0;
-    _offsetInExtent = 0;
-    _rem = size;
-  }
-  void ReleaseStream() { _stream.Release(); }
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
 };
 
-STDMETHODIMP CUdfInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+  
+STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+  if (processedSize != NULL)
+    *processedSize = 0;
+  if (_pos > _data.GetCapacity())
+    return E_FAIL;
+  size_t rem = _data.GetCapacity() - (size_t)_pos;
+  if (size < rem)
+    rem = (size_t)size;
+  memcpy(data, (const Byte *)_data + _pos, rem);
+  _pos += rem;
+  if (processedSize != NULL)
+    *processedSize = (UInt32)rem;
+  return S_OK;
+}
+
+STDMETHODIMP CBufInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  switch(seekOrigin)
+  {
+    case STREAM_SEEK_SET: _pos = offset; break;
+    case STREAM_SEEK_CUR: _pos += offset; break;
+    case STREAM_SEEK_END: _pos = _data.GetCapacity() + offset; break;
+    default: return STG_E_INVALIDFUNCTION;
+  }
+  if (newPosition)
+    *newPosition = _pos;
+  return S_OK;
+}
+
+struct CSeekExtent
+{
+  UInt64 Phy;
+  UInt64 Virt;
+};
+
+class CExtentsStream:
+  public IInStream,
+  public CMyUnknownImp
+{
+  UInt64 _phyPos;
+  UInt64 _virtPos;
+  bool _needStartSeek;
+
+  HRESULT SeekToPhys() { return Stream->Seek(_phyPos, STREAM_SEEK_SET, NULL); }
+
+public:
+  CMyComPtr<IInStream> Stream;
+  CRecordVector<CSeekExtent> Extents;
+
+  MY_UNKNOWN_IMP1(IInStream)
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+  void ReleaseStream() { Stream.Release(); }
+
+  void Init()
+  {
+    _virtPos = 0;
+    _phyPos = 0;
+    _needStartSeek = true;
+  }
+
+};
+
+
+STDMETHODIMP CExtentsStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize)
     *processedSize = 0;
-  if (size > _rem)
-    size = (UInt32)_rem;
-  while (size > 0)
+  if (size > 0)
   {
-    const CLogVol &vol = _archive->LogVols[_ref2.Vol];
-    const CRef &ref = vol.FileSets[_ref2.Fs].Refs[_ref2.Ref];
-    const CFile &file = _archive->Files[ref.FileIndex];
-    const CItem &item = _archive->Items[file.ItemIndex];
+    UInt64 totalSize = Extents.Back().Virt;
+    if (_virtPos >= totalSize)
+      return (_virtPos == totalSize) ? S_OK : E_FAIL;
+    int left = 0, right = Extents.Size() - 1;
+    for (;;)
+    {
+      int mid = (left + right) / 2;
+      if (mid == left)
+        break;
+      if (_virtPos < Extents[mid].Virt)
+        right = mid;
+      else
+        left = mid;
+    }
+    
+    const CSeekExtent &extent = Extents[left];
+    UInt64 phyPos = extent.Phy + (_virtPos - extent.Virt);
+    if (_needStartSeek || _phyPos != phyPos)
+    {
+      _needStartSeek = false;
+      _phyPos = phyPos;
+      RINOK(SeekToPhys());
+    }
 
-    HRESULT res = S_OK;
-    if (item.IsInline)
-    {
-      size_t rem = item.InlineData.GetCapacity() - _offsetInExtent;
-      if (rem == 0)
-        return S_OK;
-      if (rem > _rem)
-        rem = (size_t)_rem;
-      memcpy(data, (const Byte *)item.InlineData + _offsetInExtent, rem);
-    }
-    else
-    {
-      if (_extentIndex >= item.Extents.Size())
-        return S_OK;
-      const CMyExtent &extent = item.Extents[_extentIndex];
-      UInt32 rem = extent.GetLen() - _offsetInExtent;
-      if (rem == 0)
-      {
-        _extentIndex++;
-        _offsetInExtent = 0;
-        continue;
-      }
-      if (size > rem)
-        size = rem;
-      
-      int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
-      UInt32 logBlockNumber = extent.Pos;
-      const CPartition &partition = _archive->Partitions[partitionIndex];
-      UInt64 offset = ((UInt64)partition.Pos << _archive->SecLogSize) +
-        (UInt64)logBlockNumber * vol.BlockSize + _offsetInExtent;
-      
-      RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-      res = _stream->Read(data, size, &size);
-    }
-    _offsetInExtent += size;
-    _rem -= size;
+    UInt64 rem = Extents[left + 1].Virt - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+ 
+    HRESULT res = Stream->Read(data, size, &size);
+    _phyPos += size;
+    _virtPos += size;
     if (processedSize)
       *processedSize = size;
     return res;
   }
+  return S_OK;
+}
+
+STDMETHODIMP CExtentsStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  switch(seekOrigin)
+  {
+    case STREAM_SEEK_SET: _virtPos = offset; break;
+    case STREAM_SEEK_CUR: _virtPos += offset; break;
+    case STREAM_SEEK_END: _virtPos = Extents.Back().Virt + offset; break;
+    default: return STG_E_INVALIDFUNCTION;
+  }
+  if (newPosition)
+    *newPosition = _virtPos;
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+{
+  *stream = 0;
+
+  const CRef2 &ref2 = _refs2[index];
+  const CLogVol &vol = _archive.LogVols[ref2.Vol];
+  const CRef &ref = vol.FileSets[ref2.Fs].Refs[ref2.Ref];
+  const CFile &file = _archive.Files[ref.FileIndex];
+  const CItem &item = _archive.Items[file.ItemIndex];
+  UInt64 size = item.Size;
+
+  if (!item.IsRecAndAlloc() || !item.CheckChunkSizes() || ! _archive.CheckItemExtents(ref2.Vol, item))
+    return E_NOTIMPL;
+
+  if (item.IsInline)
+  {
+    CBufInStream *inStreamSpec = new CBufInStream;
+    CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
+    inStreamSpec->Init(item.InlineData);
+    *stream = inStream .Detach();
+    return S_OK;
+  }
+
+  CExtentsStream *extentStreamSpec = new CExtentsStream();
+  CMyComPtr<ISequentialInStream> extentStream = extentStreamSpec;
+  
+  extentStreamSpec->Stream = _inStream;
+
+  UInt64 virtOffset = 0;
+  for (int extentIndex = 0; extentIndex < item.Extents.Size(); extentIndex++)
+  {
+    const CMyExtent &extent = item.Extents[extentIndex];
+    UInt32 len = extent.GetLen();
+    if (len == 0)
+      continue;
+    if (size < len)
+      return S_FALSE;
+      
+    int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
+    UInt32 logBlockNumber = extent.Pos;
+    const CPartition &partition = _archive.Partitions[partitionIndex];
+    UInt64 offset = ((UInt64)partition.Pos << _archive.SecLogSize) +
+      (UInt64)logBlockNumber * vol.BlockSize;
+      
+    CSeekExtent se;
+    se.Phy = offset;
+    se.Virt = virtOffset;
+    virtOffset += len;
+    extentStreamSpec->Extents.Add(se);
+
+    size -= len;
+  }
+  if (size != 0)
+    return S_FALSE;
+  CSeekExtent se;
+  se.Phy = 0;
+  se.Virt = virtOffset;
+  extentStreamSpec->Extents.Add(se);
+  extentStreamSpec->Init();
+  *stream = extentStream.Detach();
   return S_OK;
 }
 
@@ -307,7 +433,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   extractCallback->SetTotal(totalSize);
 
   UInt64 currentTotalSize = 0;
-  UInt64 currentItemSize;
   
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
@@ -316,20 +441,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  CUdfInStream *udfInStreamSpec = new CUdfInStream();
-  CMyComPtr<ISequentialInStream> udfInStream = udfInStreamSpec;
-
-  udfInStreamSpec->_archive = &_archive;
-  udfInStreamSpec->_stream = _inStream;
-
-  CDummyOutStream *outStreamSpec = new CDummyOutStream;
+  CLimitedSequentialOutStream *outStreamSpec = new CLimitedSequentialOutStream;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
 
-  for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
+  for (i = 0; i < numItems; i++)
   {
     lps->InSize = lps->OutSize = currentTotalSize;
     RINOK(lps->SetCur());
-    currentItemSize = 0;
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
         NArchive::NExtract::NAskMode::kTest :
@@ -349,24 +467,28 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
       continue;
     }
-    currentItemSize = item.Size;
+    currentTotalSize += item.Size;
 
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
 
+    RINOK(extractCallback->PrepareOperation(askMode));
     outStreamSpec->SetStream(realOutStream);
     realOutStream.Release();
-    outStreamSpec->Init();
-    Int32 opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
-    if (item.IsRecAndAlloc() && item.CheckChunkSizes() && _archive.CheckItemExtents(ref2.Vol, item))
+    outStreamSpec->Init(item.Size);
+    Int32 opRes;
+    CMyComPtr<ISequentialInStream> udfInStream;
+    HRESULT res = GetStream(index, &udfInStream);
+    if (res == E_NOTIMPL)
+      opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+    else if (res != S_OK)
+      opRes = NArchive::NExtract::NOperationResult::kDataError;
+    else
     {
-      udfInStreamSpec->_ref2 = ref2;
-      udfInStreamSpec->Init(item.Size);
       RINOK(copyCoder->Code(udfInStream, outStream, NULL, NULL, progress));
-      opRes = (outStreamSpec->GetSize() == currentItemSize) ?
-          NArchive::NExtract::NOperationResult::kOK:
-          NArchive::NExtract::NOperationResult::kDataError;
+      opRes = outStreamSpec->IsFinishedOK() ?
+        NArchive::NExtract::NOperationResult::kOK:
+        NArchive::NExtract::NOperationResult::kDataError;
     }
     outStreamSpec->ReleaseStream();
     RINOK(extractCallback->SetOperationResult(opRes));

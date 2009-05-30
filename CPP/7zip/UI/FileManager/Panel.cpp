@@ -5,28 +5,30 @@
 #include <Windowsx.h>
 
 #include "Common/Defs.h"
-#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
+
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Thread.h"
 
 #include "../../PropID.h"
 
-#include "Panel.h"
-#include "RootFolder.h"
-#include "FSFolder.h"
-#include "FormatUtils.h"
-#include "App.h"
-#include "ExtractCallback.h"
-
 #include "resource.h"
-#include "..\GUI\ExtractRes.h"
+#include "../GUI/ExtractRes.h"
+
+#include "../Common/ArchiveName.h"
+#include "../Common/CompressCall.h"
 
 #include "../Agent/IFolderArchive.h"
 
-#include "../Common/CompressCall.h"
-#include "../Common/ArchiveName.h"
+#include "App.h"
+#include "ExtractCallback.h"
+#include "FSFolder.h"
+#include "FormatUtils.h"
+#include "Panel.h"
+#include "RootFolder.h"
+
 
 using namespace NWindows;
 using namespace NControl;
@@ -707,7 +709,7 @@ bool CPanel::IsFSDrivesFolder() const
 
 UString CPanel::GetFsPath() const
 {
-  if (IsFSDrivesFolder())
+  if (IsFSDrivesFolder() && !IsDeviceDrivesPrefix())
     return UString();
   return _currentFolderPrefix;
 }
@@ -773,7 +775,7 @@ void CPanel::AddToArchive()
 {
   CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
-  if (!IsFSFolder())
+  if (!IsFsOrDrivesFolder())
   {
     MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return;
@@ -784,14 +786,25 @@ void CPanel::AddToArchive()
     return;
   }
   UStringVector names;
+
+  UString curPrefix = _currentFolderPrefix;
+  UString destCurDirPrefix = _currentFolderPrefix;
+  if (IsFSDrivesFolder())
+  {
+    destCurDirPrefix = L"C:\\";
+    if (!IsDeviceDrivesPrefix())
+      curPrefix.Empty();
+  }
+
   for (int i = 0; i < indices.Size(); i++)
   {
     int index = indices[i];
-    names.Add(_currentFolderPrefix + GetItemRelPath(index));
+    names.Add(curPrefix + GetItemRelPath(index));
   }
   const UString archiveName = CreateArchiveName(
       names.Front(), (names.Size() > 1), false);
-  HRESULT res = CompressFiles(_currentFolderPrefix, archiveName, L"", names, false, true, false);
+
+  HRESULT res = CompressFiles(destCurDirPrefix, archiveName, L"", names, false, true, false);
   if (res != S_OK)
   {
     if (_currentFolderPrefix.Length() >= MAX_PATH)
@@ -823,7 +836,7 @@ void CPanel::GetFilePaths(const CRecordVector<UInt32> &indices, UStringVector &p
       paths.Clear();
       break;
     }
-    paths.Add(_currentFolderPrefix + GetItemRelPath(index));
+    paths.Add(GetItemFullPath(index));
   }
   if (paths.Size() == 0)
   {

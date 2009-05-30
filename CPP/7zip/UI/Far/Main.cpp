@@ -173,11 +173,10 @@ public:
   }
   void ShowMessage();
 
-  void LoadFileInfo(const UString &folderPrefix,
-      const UString &fileName)
+  void LoadFileInfo(const UString &folderPrefix, const UString &fileName)
   {
     _folderPrefix = folderPrefix;
-    if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
+    if (!_fileInfo.Find(_folderPrefix + fileName))
       throw 1;
   }
 };
@@ -297,7 +296,7 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
     return E_ABORT;
   *inStream = NULL;
   UString fullPath = _folderPrefix + name;
-  if (!NWindows::NFile::NFind::FindFile(fullPath, _fileInfo))
+  if (!_fileInfo.Find(fullPath))
     return S_FALSE;
   if (_fileInfo.IsDir())
     return S_FALSE;
@@ -386,7 +385,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
   int fileNamePartStartIndex;
   NFile::NDirectory::MyGetFullPathName(normalizedName, fullName, fileNamePartStartIndex);
   NFile::NFind::CFileInfoW fileInfo;
-  if (!NFile::NFind::FindFile(fullName, fileInfo))
+  if (!fileInfo.Find(fullName))
     return INVALID_HANDLE_VALUE;
   if (fileInfo.IsDir())
      return INVALID_HANDLE_VALUE;
@@ -415,7 +414,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
   
   archiveHandler = new CAgent;
   CMyComBSTR archiveType;
-  HRESULT result = archiveHandler->Open(
+  HRESULT result = archiveHandler->Open(NULL,
       GetUnicodeString(fullName, CP_OEMCP), &archiveType, openArchiveCallback);
   /*
   HRESULT result = ::OpenArchive(fullName, &archiveHandler,

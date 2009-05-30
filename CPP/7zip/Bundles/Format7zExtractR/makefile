@@ -26,6 +26,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\InBuffer.obj \
   $O\InOutTempBuffer.obj \
   $O\FilterCoder.obj \
@@ -76,9 +77,11 @@ COMPRESS_OBJS = \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
-  $O\ByteSwapRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\DeltaFilter.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaRegister.obj \
 
@@ -88,6 +91,8 @@ C_OBJS = \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
+  $O\Delta.obj \
+  $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
   $O\Threads.obj \
 

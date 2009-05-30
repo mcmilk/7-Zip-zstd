@@ -2,10 +2,7 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Bra.h"
-}
 
 #include "BranchMisc.h"
 

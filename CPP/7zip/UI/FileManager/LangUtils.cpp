@@ -104,7 +104,8 @@ void LoadLangs(CObjectVector<CLangEx> &langs)
     CLangEx lang;
     UString filePath = folderPath + fileInfo.Name;
     const int kExtSize = 4;
-    if (fileInfo.Name.Right(kExtSize) != L".txt")
+    const UString ext = fileInfo.Name.Right(kExtSize);
+    if (ext.CompareNoCase(L".txt") != 0)
       continue;
     lang.ShortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
     if (lang.Lang.Open(filePath))

@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2008-11-23 : Igor Pavlov : Public domain */
+2009-04-04 : Igor Pavlov : Public domain */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +12,37 @@
 #include "7zAlloc.h"
 #include "7zExtract.h"
 #include "7zIn.h"
+
+#ifndef USE_WINDOWS_FILE
+/* for mkdir */
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#include <errno.h>
+#endif
+#endif
+
+#ifdef _WIN32
+#define CHAR_PATH_SEPARATOR '\\'
+#else
+#define CHAR_PATH_SEPARATOR '/'
+#endif
+
+static WRes MyCreateDir(const char *name)
+{
+  #ifdef USE_WINDOWS_FILE
+  return CreateDirectoryA(name, NULL) ? 0 : GetLastError();
+  #else
+  #ifdef _WIN32
+  return _mkdir(name)
+  #else
+  return mkdir(name, 0777)
+  #endif
+  == 0 ? 0 : errno;
+  #endif
+}
+
 
 static void ConvertNumberToString(UInt64 value, char *s)
 {
@@ -33,7 +64,7 @@ static void ConvertNumberToString(UInt64 value, char *s)
 #define PERIOD_100 (PERIOD_4 * 25 - 1)
 #define PERIOD_400 (PERIOD_100 * 4 + 1)
 
-static void ConvertFileTimeToString(CNtfsFileTime *ft, char *s)
+static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
 {
   unsigned year, mon, day, hour, min, sec;
   UInt64 v64 = ft->Low | ((UInt64)ft->High << 32);
@@ -97,16 +128,19 @@ int MY_CDECL main(int numargs, char *args[])
   SRes res;
   ISzAlloc allocImp;
   ISzAlloc allocTempImp;
+  char *temp = NULL;
+  size_t tempSize = 0;
 
-  printf("\n7z ANSI-C Decoder " MY_VERSION_COPYRIGHT_DATE "\n");
+  printf("\n7z ANSI-C Decoder " MY_VERSION_COPYRIGHT_DATE "\n\n");
   if (numargs == 1)
   {
     printf(
-      "\nUsage: 7zDec <command> <archive_name>\n\n"
+      "Usage: 7zDec <command> <archive_name>\n\n"
       "<Commands>\n"
-      "  e: Extract files from archive\n"
+      "  e: Extract files from archive (without using directory names)\n"
       "  l: List contents of archive\n"
-      "  t: Test integrity of archive\n");
+      "  t: Test integrity of archive\n"
+      "  x: eXtract files with full paths\n");
     return 0;
   }
   if (numargs < 3)
@@ -141,17 +175,18 @@ int MY_CDECL main(int numargs, char *args[])
   if (res == SZ_OK)
   {
     char *command = args[1];
-    int listCommand = 0, testCommand = 0, extractCommand = 0;
+    int listCommand = 0, testCommand = 0, extractCommand = 0, fullPaths = 0;
     if (strcmp(command, "l") == 0) listCommand = 1;
     else if (strcmp(command, "t") == 0) testCommand = 1;
     else if (strcmp(command, "e") == 0) extractCommand = 1;
+    else if (strcmp(command, "x") == 0) { extractCommand = 1; fullPaths = 1; }
 
     if (listCommand)
     {
       UInt32 i;
       for (i = 0; i < db.db.NumFiles; i++)
       {
-        CSzFileItem *f = db.db.Files + i;
+        const CSzFileItem *f = db.db.Files + i;
         char s[32], t[32];
         ConvertNumberToString(f->Size, s);
         if (f->MTimeDefined)
@@ -159,7 +194,10 @@ int MY_CDECL main(int numargs, char *args[])
         else
           strcpy(t, "                   ");
 
-        printf("%s %10s  %s\n", t, s, f->Name);
+        printf("%s %10s  %s", t, s, f->Name);
+        if (f->IsDir)
+          printf("/");
+        printf("\n");
       }
     }
     else if (testCommand || extractCommand)
@@ -174,44 +212,67 @@ int MY_CDECL main(int numargs, char *args[])
       Byte *outBuffer = 0; /* it must be 0 before first call for each new archive. */
       size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
 
-      printf("\n");
       for (i = 0; i < db.db.NumFiles; i++)
       {
         size_t offset;
         size_t outSizeProcessed;
-        CSzFileItem *f = db.db.Files + i;
-        if (f->IsDir)
-          printf("Directory ");
-        else
-          printf(testCommand ?
+        const CSzFileItem *f = db.db.Files + i;
+        if (f->IsDir && !fullPaths)
+          continue;
+        printf(testCommand ?
             "Testing   ":
             "Extracting");
         printf(" %s", f->Name);
         if (f->IsDir)
+          printf("/");
+        else
         {
-          printf("\n");
-          continue;
+          res = SzAr_Extract(&db, &lookStream.s, i,
+              &blockIndex, &outBuffer, &outBufferSize,
+              &offset, &outSizeProcessed,
+              &allocImp, &allocTempImp);
+          if (res != SZ_OK)
+            break;
         }
-        res = SzAr_Extract(&db, &lookStream.s, i,
-            &blockIndex, &outBuffer, &outBufferSize,
-            &offset, &outSizeProcessed,
-            &allocImp, &allocTempImp);
-        if (res != SZ_OK)
-          break;
         if (!testCommand)
         {
           CSzFile outFile;
           size_t processedSize;
-          char *fileName = f->Name;
-          size_t nameLen = strlen(f->Name);
-          for (; nameLen > 0; nameLen--)
-            if (f->Name[nameLen - 1] == '/')
+          size_t j, nameLen = strlen(f->Name);
+          const char *destPath;
+          if (nameLen + 1 > tempSize)
+          {
+            SzFree(NULL, temp);
+            tempSize = nameLen + 1;
+            temp = (char *)SzAlloc(NULL, tempSize);
+            if (temp == 0)
             {
-              fileName = f->Name + nameLen;
+              res = SZ_ERROR_MEM;
               break;
             }
-            
-          if (OutFile_Open(&outFile, fileName))
+          }
+          destPath = temp;
+          strcpy(temp, f->Name);
+          for (j = 0; j < nameLen; j++)
+            if (temp[j] == '/')
+            {
+              if (fullPaths)
+              {
+                temp[j] = 0;
+                MyCreateDir(temp);
+                temp[j] = CHAR_PATH_SEPARATOR;
+              }
+              else
+                destPath = temp + j + 1;
+            }
+    
+          if (f->IsDir)
+          {
+            MyCreateDir(destPath);
+            printf("\n");
+            continue;
+          }
+          else if (OutFile_Open(&outFile, destPath))
           {
             PrintError("can not open output file");
             res = SZ_ERROR_FAIL;
@@ -243,6 +304,7 @@ int MY_CDECL main(int numargs, char *args[])
     }
   }
   SzArEx_Free(&db, &allocImp);
+  SzFree(NULL, temp);
 
   File_Close(&archiveStream.file);
   if (res == SZ_OK)

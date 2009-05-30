@@ -4,16 +4,18 @@
 
 #include "Common/StringConvert.h"
 #include "Common/Wildcard.h"
-#include "Windows/FileDir.h"
+
+#include "Windows/PropVariant.h"
 
 #include "../../PropID.h"
 
-#include "Panel.h"
-#include "ListViewDialog.h"
-#include "RootFolder.h"
-#include "ViewSettings.h"
 #include "FSDrives.h"
 #include "LangUtils.h"
+#include "ListViewDialog.h"
+#include "Panel.h"
+#include "RootFolder.h"
+#include "ViewSettings.h"
+
 #include "resource.h"
 
 using namespace NWindows;
@@ -71,7 +73,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, bool &archiveIsOpened, bool 
   UStringVector reducedParts;
   while (!sysPath.IsEmpty())
   {
-    if (FindFile(sysPath, fileInfo))
+    if (fileInfo.Find(sysPath))
       break;
     int pos = sysPath.ReverseFind(WCHAR_PATH_SEPARATOR);
     if (pos < 0)
@@ -108,11 +110,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, bool &archiveIsOpened, bool 
       UString fileName;
       if (NDirectory::GetOnlyName(sysPath, fileName))
       {
-        HRESULT res =
-          OpenItemAsArchive(fileName, _currentFolderPrefix,
-            _currentFolderPrefix + fileName,
-            _currentFolderPrefix + fileName,
-            encrypted);
+        HRESULT res = OpenItemAsArchive(fileName, encrypted);
         if (res != S_FALSE)
         {
           RINOK(res);
@@ -210,7 +208,7 @@ void CPanel::LoadFullPathAndShow()
 
   CFileInfoW info;
   DWORD attrib = FILE_ATTRIBUTE_DIRECTORY;
-  if (NFile::NFind::FindFile(path, info))
+  if (info.Find(path))
     attrib = info.Attrib;
   
   item.iImage = GetRealIconIndex(path, attrib);
@@ -343,7 +341,7 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
           curName += WCHAR_PATH_SEPARATOR;
         CFileInfoW info;
         DWORD attrib = FILE_ATTRIBUTE_DIRECTORY;
-        if (NFile::NFind::FindFile(sumPass, info))
+        if (info.Find(sumPass))
           attrib = info.Attrib;
         sumPass += WCHAR_PATH_SEPARATOR;
         AddComboBoxItem(name, GetRealIconIndex(curName, attrib), i, false);
@@ -498,7 +496,7 @@ void CPanel::OpenParentFolder()
       _folder = link.ParentFolder;
       _library.Attach(link.Library.Detach());
       focucedName = link.ItemName;
-      if (_parentFolders.Size () > 1)
+      if (_parentFolders.Size() > 1)
         OpenParentArchiveFolder();
       _parentFolders.DeleteBack();
       if (_parentFolders.IsEmpty())
@@ -526,7 +524,7 @@ void CPanel::CloseOpenFolders()
     _library.Free();
     _folder = _parentFolders.Back().ParentFolder;
     _library.Attach(_parentFolders.Back().Library.Detach());
-    if (_parentFolders.Size () > 1)
+    if (_parentFolders.Size() > 1)
       OpenParentArchiveFolder();
     _parentFolders.DeleteBack();
   }

@@ -4,31 +4,27 @@
 
 #include <initguid.h>
 
-extern "C"
-{
-  #include "../../../../C/Alloc.h"
-}
+#include "../../../../C/Alloc.h"
 
-#include "Common/NewHandler.h"
-#include "Common/StringConvert.h"
 #include "Common/CommandLineParser.h"
 #include "Common/MyException.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
 
+#include "../Common/ArchiveCommandLine.h"
+#include "../Common/ExitCode.h"
+
 #include "../FileManager/StringUtils.h"
 
-#include "../Common/ExitCode.h"
-#include "../Common/ArchiveCommandLine.h"
-
-#include "ExtractRes.h"
-
+#include "BenchmarkDialog.h"
 #include "ExtractGUI.h"
 #include "UpdateGUI.h"
-#include "BenchmarkDialog.h"
+
+#include "ExtractRes.h"
 
 using namespace NWindows;
 
@@ -119,8 +115,12 @@ static int Main2()
     CExtractCallbackImp *ecs = new CExtractCallbackImp;
     CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
     ecs->ProgressDialog.CompressingMode = false;
+
+    #ifndef _NO_CRYPTO
     ecs->PasswordIsDefined = options.PasswordEnabled;
     ecs->Password = options.Password;
+    #endif
+
     ecs->Init();
 
     CExtractOptions eo;
@@ -130,6 +130,7 @@ static int Main2()
     eo.OverwriteMode = options.OverwriteMode;
     eo.PathMode = options.Command.GetPathMode();
     eo.TestMode = options.Command.IsTestMode();
+    eo.CalcCrc = options.CalcCrc;
     #ifdef COMPRESS_MT
     eo.Properties = options.ExtractProperties;
     #endif
@@ -146,14 +147,19 @@ static int Main2()
   }
   else if (options.Command.IsFromUpdateGroup())
   {
-    bool passwordIsDefined =
-        options.PasswordEnabled && !options.Password.IsEmpty();
+    #ifndef _NO_CRYPTO
+    bool passwordIsDefined = options.PasswordEnabled && !options.Password.IsEmpty();
+    #endif
 
     CUpdateCallbackGUI callback;
     // callback.EnablePercents = options.EnablePercents;
+
+    #ifndef _NO_CRYPTO
     callback.PasswordIsDefined = passwordIsDefined;
     callback.AskPassword = options.PasswordEnabled && options.Password.IsEmpty();
     callback.Password = options.Password;
+    #endif
+
     // callback.StdOutMode = options.UpdateOptions.StdOutMode;
     callback.Init();
 

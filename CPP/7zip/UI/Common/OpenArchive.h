@@ -1,117 +1,86 @@
 // OpenArchive.h
 
-#ifndef __OPENARCHIVE_H
-#define __OPENARCHIVE_H
+#ifndef __OPEN_ARCHIVE_H
+#define __OPEN_ARCHIVE_H
 
 #include "Common/MyString.h"
+
 #include "Windows/FileFind.h"
 
 #include "../../Archive/IArchive.h"
-#include "LoadCodecs.h"
+
 #include "ArchiveOpenCallback.h"
+#include "LoadCodecs.h"
 
-HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, UString &result);
-HRESULT GetArchiveItemPath(IInArchive *archive, UInt32 index, const UString &defaultName, UString &result);
-HRESULT GetArchiveItemFileTime(IInArchive *archive, UInt32 index,
-    const FILETIME &defaultFileTime, FILETIME &fileTime);
-HRESULT IsArchiveItemProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result);
+HRESULT GetArchiveItemBoolProp(IInArchive *archive, UInt32 index, PROPID propID, bool &result);
 HRESULT IsArchiveItemFolder(IInArchive *archive, UInt32 index, bool &result);
-HRESULT IsArchiveItemAnti(IInArchive *archive, UInt32 index, bool &result);
 
-struct ISetSubArchiveName
+struct CArc
 {
-  virtual void SetSubArchiveName(const wchar_t *name) = 0;
+  CMyComPtr<IInArchive> Archive;
+  UString Path;
+  UString DefaultName;
+  int FormatIndex;
+  int SubfileIndex;
+  FILETIME MTime;
+  bool MTimeDefined;
+
+  CArc(): MTimeDefined(false) {}
+
+  HRESULT GetItemPath(UInt32 index, UString &result) const;
+  HRESULT GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const;
+  HRESULT IsItemAnti(UInt32 index, bool &result) const
+    { return GetArchiveItemBoolProp(Archive, index, kpidIsAnti, result); }
+
+  HRESULT OpenStream(
+    CCodecs *codecs,
+    int formatIndex,
+    IInStream *stream,
+    ISequentialInStream *seqStream,
+    IArchiveOpenCallback *callback);
+
+  HRESULT OpenStreamOrFile(
+    CCodecs *codecs,
+    int formatIndex,
+    bool stdInMode,
+    IInStream *stream,
+    IArchiveOpenCallback *callback);
 };
-
-HRESULT OpenArchive(
-    CCodecs *codecs,
-    int arcTypeIndex,
-    IInStream *inStream,
-    const UString &fileName,
-    IInArchive **archiveResult,
-    int &formatIndex,
-    UString &defaultItemName,
-    IArchiveOpenCallback *openArchiveCallback);
-
-HRESULT OpenArchive(
-    CCodecs *codecs,
-    int arcTypeIndex,
-    const UString &filePath,
-    IInArchive **archive,
-    int &formatIndex,
-    UString &defaultItemName,
-    IArchiveOpenCallback *openArchiveCallback);
-
-HRESULT OpenArchive(
-    CCodecs *codecs,
-    const CIntVector &formatIndices,
-    const UString &filePath,
-    IInArchive **archive0,
-    IInArchive **archive1,
-    int &formatIndex0,
-    int &formatIndex1,
-    UString &defaultItemName0,
-    UString &defaultItemName1,
-    IArchiveOpenCallback *openArchiveCallback);
-
-
-HRESULT ReOpenArchive(IInArchive *archive, const UString &fileName, IArchiveOpenCallback *openArchiveCallback);
 
 struct CArchiveLink
 {
-  CMyComPtr<IInArchive> Archive0;
-  CMyComPtr<IInArchive> Archive1;
-  UString DefaultItemName0;
-  UString DefaultItemName1;
-
-  int FormatIndex0;
-  int FormatIndex1;
-  
+  CObjectVector<CArc> Arcs;
   UStringVector VolumePaths;
-
-  bool IsOpen;
   UInt64 VolumesSize;
+  bool IsOpen;
 
-  int GetNumLevels() const
-  {
-    int result = 0;
-    if (Archive0)
-    {
-      result++;
-      if (Archive1)
-        result++;
-    }
-    return result;
-  }
-
-  CArchiveLink(): IsOpen(false), VolumesSize(0) {};
-
-  IInArchive *GetArchive() { return Archive1 != 0 ? Archive1: Archive0; }
-  UString GetDefaultItemName()  { return Archive1 != 0 ? DefaultItemName1: DefaultItemName0; }
-  int GetArchiverIndex() const { return Archive1 != 0 ? FormatIndex1: FormatIndex0; }
+  CArchiveLink(): VolumesSize(0), IsOpen(false) {}
   HRESULT Close();
   void Release();
+  ~CArchiveLink() { Release(); }
+
+  IInArchive *GetArchive() const { return Arcs.Back().Archive; }
+
+  HRESULT Open(
+    CCodecs *codecs,
+    const CIntVector &formatIndices,
+    bool stdInMode,
+    IInStream *stream,
+    const UString &filePath,
+    IArchiveOpenCallback *callback);
+
+  HRESULT Open2(
+    CCodecs *codecs,
+    const CIntVector &formatIndices,
+    bool stdInMode,
+    IInStream *stream,
+    const UString &filePath,
+    IOpenCallbackUI *callbackUI);
+
+  HRESULT ReOpen(
+    CCodecs *codecs,
+    const UString &filePath,
+    IArchiveOpenCallback *callback);
 };
 
-HRESULT OpenArchive(
-    CCodecs *codecs,
-    const CIntVector &formatIndices,
-    const UString &archiveName,
-    CArchiveLink &archiveLink,
-    IArchiveOpenCallback *openCallback);
-
-HRESULT MyOpenArchive(
-    CCodecs *codecs,
-    const CIntVector &formatIndices,
-    const UString &archiveName,
-    CArchiveLink &archiveLink,
-    IOpenCallbackUI *openCallbackUI);
-
-HRESULT ReOpenArchive(
-    CCodecs *codecs,
-    CArchiveLink &archiveLink,
-    const UString &fileName,
-    IArchiveOpenCallback *openCallback);
-
 #endif
-

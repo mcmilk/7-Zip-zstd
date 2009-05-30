@@ -1,12 +1,14 @@
 /* Lzma86Enc.h -- LZMA + x86 (BCJ) Filter Encoder
-2008-08-05
-Igor Pavlov
-Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
-#ifndef __LZMA86ENC_H
-#define __LZMA86ENC_H
+#ifndef __LZMA86_ENC_H
+#define __LZMA86_ENC_H
 
 #include "../Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 It's an example for LZMA + x86 Filter use.
@@ -68,5 +70,9 @@ enum ESzFilterMode
 
 SRes Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
     int level, UInt32 dictSize, int filterMode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

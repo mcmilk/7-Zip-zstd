@@ -149,7 +149,7 @@ class CInArchive
   UInt16 ReadUInt16();
   UInt32 ReadUInt32();
   AString SafeReadName();
-  void Skeep(size_t size);
+  void Skip(size_t size);
   void ReadOtherArchive(COtherArchive &oa);
 
   HRESULT Open2(IInStream *inStream,

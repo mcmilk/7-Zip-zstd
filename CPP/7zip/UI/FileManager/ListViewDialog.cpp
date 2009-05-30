@@ -43,6 +43,9 @@ bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
     return false;
   switch(header->code)
   {
+    case NM_DBLCLK:
+      OnOK();
+      return true;
     case LVN_KEYDOWN:
     {
       LPNMLVKEYDOWN keyDownInfo = LPNMLVKEYDOWN(header);

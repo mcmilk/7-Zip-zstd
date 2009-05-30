@@ -3,9 +3,9 @@
 #ifndef __7Z_UPDATE_H
 #define __7Z_UPDATE_H
 
+#include "7zCompressionMode.h"
 #include "7zIn.h"
 #include "7zOut.h"
-#include "7zCompressionMode.h"
 
 #include "../IArchive.h"
 
@@ -27,7 +27,7 @@ struct CUpdateItem
   UInt32 Attrib;
   
   bool NewData;
-  bool NewProperties;
+  bool NewProps;
 
   bool IsAnti;
   bool IsDir;
@@ -78,7 +78,11 @@ HRESULT Update(
     CArchiveDatabase &newDatabase,
     ISequentialOutStream *seqOutStream,
     IArchiveUpdateCallback *updateCallback,
-    const CUpdateOptions &options);
+    const CUpdateOptions &options
+    #ifndef _NO_CRYPTO
+    , ICryptoGetTextPassword *getDecoderPassword
+    #endif
+    );
 }}
 
 #endif

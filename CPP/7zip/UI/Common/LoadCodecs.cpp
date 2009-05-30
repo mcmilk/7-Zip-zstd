@@ -69,22 +69,17 @@ static bool ReadPathFromRegistry(HKEY baseKey, CSysString &path)
 CSysString GetBaseFolderPrefixFromRegistry()
 {
   CSysString moduleFolderPrefix = GetLibraryFolderPrefix();
-  NFind::CFileInfo fi;
-  if (NFind::FindFile(moduleFolderPrefix + kMainDll, fi))
-    if (!fi.IsDir())
-      return moduleFolderPrefix;
-  if (NFind::FindFile(moduleFolderPrefix + kCodecsFolderName, fi))
-    if (fi.IsDir())
-      return moduleFolderPrefix;
-  if (NFind::FindFile(moduleFolderPrefix + kFormatsFolderName, fi))
-    if (fi.IsDir())
-      return moduleFolderPrefix;
   #ifdef _WIN32
-  CSysString path;
-  if (ReadPathFromRegistry(HKEY_CURRENT_USER, path))
-    return path;
-  if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, path))
-    return path;
+  if (!NFind::DoesFileExist(moduleFolderPrefix + kMainDll) &&
+      !NFind::DoesDirExist(moduleFolderPrefix + kCodecsFolderName) &&
+      !NFind::DoesDirExist(moduleFolderPrefix + kFormatsFolderName))
+  {
+    CSysString path;
+    if (ReadPathFromRegistry(HKEY_CURRENT_USER, path))
+      return path;
+    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, path))
+      return path;
+  }
   #endif
   return moduleFolderPrefix;
 }
@@ -181,7 +176,7 @@ static HRESULT ReadStringProp(
 
 #endif
 
-static const unsigned int kNumArcsMax = 32;
+static const unsigned int kNumArcsMax = 48;
 static unsigned int g_NumArcs = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
 void RegisterArc(const CArcInfo *arcInfo)
@@ -457,9 +452,7 @@ int CCodecs::FindFormatForArchiveName(const UString &arcPath) const
     const CArcInfoEx &arc = Formats[i];
     if (!arc.UpdateEnabled)
       continue;
-    // if (arc.FindExtension(ext) >= 0)
-    UString mainExt = arc.GetMainExt();
-    if (!mainExt.IsEmpty() && ext.CompareNoCase(mainExt) == 0)
+    if (arc.FindExtension(ext) >= 0)
       return i;
   }
   return -1;

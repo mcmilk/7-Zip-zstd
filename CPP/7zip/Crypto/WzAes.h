@@ -12,10 +12,7 @@ specified in password Based File Encryption Utility:
 #ifndef __CRYPTO_WZ_AES_H
 #define __CRYPTO_WZ_AES_H
 
-extern "C"
-{
 #include "../../../C/Aes.h"
-}
 
 #include "Common/Buffer.h"
 #include "Common/MyCom.h"

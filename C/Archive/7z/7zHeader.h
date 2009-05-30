@@ -1,10 +1,14 @@
 /* 7zHeader.h -- 7z Headers
-2008-10-04 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_HEADER_H
 #define __7Z_HEADER_H
 
 #include "../../Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define k7zSignatureSize 6
 extern Byte k7zSignature[k7zSignatureSize];
@@ -53,5 +57,9 @@ enum EIdEnum
   k7zIdStartPos,
   k7zIdDummy
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

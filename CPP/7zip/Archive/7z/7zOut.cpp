@@ -2,15 +2,13 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/7zCrc.h"
+
 #include "../../../Common/AutoPtr.h"
+
 #include "../../Common/StreamObjects.h"
 
 #include "7zOut.h"
-
-extern "C"
-{
-#include "../../../../C/7zCrc.h"
-}
 
 static HRESULT WriteBytes(ISequentialOutStream *stream, const void *data, size_t size)
 {
@@ -141,7 +139,7 @@ void COutArchive::Close()
   Stream.Release();
 }
 
-HRESULT COutArchive::SkeepPrefixArchiveHeader()
+HRESULT COutArchive::SkipPrefixArchiveHeader()
 {
   #ifdef _7Z_VOL
   if (_endMarker)

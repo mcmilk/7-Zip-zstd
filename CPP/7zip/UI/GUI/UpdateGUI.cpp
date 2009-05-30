@@ -4,32 +4,28 @@
 
 #include "UpdateGUI.h"
 
-#include "resource.h"
-#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
 
-#include "Windows/FileDir.h"
 #include "Windows/Error.h"
-#include "Windows/FileFind.h"
+#include "Windows/FileDir.h"
 #include "Windows/Thread.h"
 
-#include "../FileManager/FormatUtils.h"
-#include "../FileManager/ExtractCallback.h"
-#include "../FileManager/StringUtils.h"
-
-#include "../Common/ArchiveExtractCallback.h"
 #include "../Common/WorkDir.h"
+
 #include "../Explorer/MyMessages.h"
-#include "ExtractRes.h"
+
+#include "../FileManager/StringUtils.h"
 
 #include "CompressDialog.h"
 #include "UpdateGUI.h"
 
+#include "resource.h"
+
 using namespace NWindows;
 using namespace NFile;
 
-// static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
 static const wchar_t *kDefaultSfxModule = L"7z.sfx";
 static const wchar_t *kSFXExtension = L"exe";
 
@@ -242,7 +238,7 @@ static HRESULT ShowDialog(
             name += WCHAR_PATH_SEPARATOR;
           name += item.PathParts[i];
         }
-        if (NFind::FindFile(name, fileInfo))
+        if (fileInfo.Find(name))
         {
           if (censor.Pairs.Size() == 1 && pair.Head.IncludeItems.Size() == 1)
             oneFile = !fileInfo.IsDir();
@@ -355,7 +351,7 @@ static HRESULT ShowDialog(
     UString fullPath;
     NDirectory::MyGetFullPathName(di.ArchiveName, fullPath);
     options.WorkingDir = GetWorkDir(workDirInfo, fullPath);
-    NFile::NDirectory::CreateComplexDirectory(options.WorkingDir);
+    NDirectory::CreateComplexDirectory(options.WorkingDir);
   }
   return S_OK;
 }

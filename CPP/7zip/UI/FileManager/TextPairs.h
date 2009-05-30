@@ -1,7 +1,7 @@
-// Common/TextPairs.h
+// TextPairs.h
 
-#ifndef __COMMON_TEXTPAIRS_H
-#define __COMMON_TEXTPAIRS_H
+#ifndef __FM_TEXT_PAIRS_H
+#define __FM_TEXT_PAIRS_H
 
 #include "Common/MyString.h"
 

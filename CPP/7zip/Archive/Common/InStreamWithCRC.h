@@ -1,15 +1,13 @@
 // InStreamWithCRC.h
 
-#ifndef __INSTREAMWITHCRC_H
-#define __INSTREAMWITHCRC_H
+#ifndef __IN_STREAM_WITH_CRC_H
+#define __IN_STREAM_WITH_CRC_H
+
+#include "../../../../C/7zCrc.h"
 
 #include "../../../Common/MyCom.h"
-#include "../../IStream.h"
 
-extern "C"
-{
-#include "../../../../C/7zCrc.h"
-}
+#include "../../IStream.h"
 
 class CSequentialInStreamWithCRC:
   public ISequentialInStream,

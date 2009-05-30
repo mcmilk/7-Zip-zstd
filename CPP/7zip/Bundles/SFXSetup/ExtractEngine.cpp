@@ -2,12 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "ExtractEngine.h"
-
-#include "Common/StringConvert.h"
-
 #include "Windows/FileDir.h"
-#include "Windows/FileFind.h"
 #include "Windows/Thread.h"
 
 #include "../../UI/Common/OpenArchive.h"
@@ -15,6 +10,7 @@
 #include "../../UI/FileManager/FormatUtils.h"
 
 #include "ExtractCallback.h"
+#include "ExtractEngine.h"
 
 using namespace NWindows;
 
@@ -40,18 +36,18 @@ struct CThreadExtracting
   void Process()
   {
     NFile::NFind::CFileInfoW fi;
-    if (!NFile::NFind::FindFile(FileName, fi))
+    if (!fi.Find(FileName))
     {
       ErrorMessage = kCantFindArchive;
       Result = E_FAIL;
       return;
     }
     
-    Result = MyOpenArchive(Codecs, CIntVector(), FileName, ArchiveLink, ExtractCallbackSpec);
+    Result = ArchiveLink.Open2(Codecs, CIntVector(), false, NULL, FileName, ExtractCallbackSpec);
     if (Result != S_OK)
     {
       if (Result != S_OK)
-      ErrorMessage = kCantOpenArchive;
+        ErrorMessage = kCantOpenArchive;
       return;
     }
 

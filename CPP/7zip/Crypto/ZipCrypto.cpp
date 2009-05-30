@@ -2,10 +2,7 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/7zCrc.h"
-}
 
 #include "../Common/StreamUtils.h"
 

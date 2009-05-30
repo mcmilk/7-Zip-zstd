@@ -4,9 +4,10 @@
 
 #include <tchar.h>
 
-#include "StdOutStream.h"
 #include "IntToString.h"
+#include "StdOutStream.h"
 #include "StringConvert.h"
+#include "UTFConvert.h"
 
 #ifdef _MSC_VER
 // "was declared deprecated" disabling
@@ -16,6 +17,8 @@
 static const char kNewLineChar =  '\n';
 
 static const char *kFileOpenMode = "wt";
+
+extern int g_CodePage;
 
 CStdOutStream  g_StdOut(stdout);
 CStdOutStream  g_StdErr(stderr);
@@ -60,15 +63,23 @@ CStdOutStream & endl(CStdOutStream & outStream)
   return outStream << kNewLineChar;
 }
 
-CStdOutStream & CStdOutStream::operator<<(const char *string)
+CStdOutStream & CStdOutStream::operator<<(const char *s)
 {
-  fputs(string, _stream);
+  fputs(s, _stream);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(const wchar_t *string)
+CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
 {
-  *this << (const char *)UnicodeStringToMultiByte(string, CP_OEMCP);
+  int codePage = g_CodePage;
+  if (codePage == -1)
+    codePage = CP_OEMCP;
+  AString dest;
+  if (codePage == CP_UTF8)
+    ConvertUnicodeToUTF8(s, dest);
+  else
+    dest = UnicodeStringToMultiByte(s, (UINT)codePage);
+  *this << (const char *)dest;
   return *this;
 }
 

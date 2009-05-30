@@ -12,6 +12,8 @@ struct COneMethodInfo
 {
   CObjectVector<CProp> Props;
   UString MethodName;
+
+  bool IsLzma() const;
 };
 
 class COutHandler

@@ -459,7 +459,7 @@ void CDropTarget::PositionCursor(POINTL ptl)
     return;
   */
 
-  if (!m_Panel->IsFSFolder() && !m_Panel->IsFSDrivesFolder())
+  if (!m_Panel->IsFsOrPureDrivesFolder())
     return;
 
   if (WindowFromPoint(pt) != (HWND)m_Panel->_listView)

@@ -1,6 +1,16 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.04           2009-05-30
+-------------------------
+- ICoder.h: NCoderPropID::EEnum values were changed
+
+
+9.02           2009-04-23
+-------------------------
+- Bug was fixed: if swap2 filter was requests at compression,
+  7-zip used swap4 filter instead (but id was swap2), so archives were incorrect.
+  
 4.61           2008-11-23
 -------------------------
 - Bug in ver. 4.58+ was fixed:

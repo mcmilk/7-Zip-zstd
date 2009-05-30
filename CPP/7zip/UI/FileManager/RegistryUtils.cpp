@@ -2,9 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "RegistryUtils.h"
 #include "Common/IntToString.h"
+
 #include "Windows/Registry.h"
+
+#include "RegistryUtils.h"
 
 using namespace NWindows;
 using namespace NRegistry;
@@ -17,6 +19,7 @@ static const TCHAR *kCU_FMPath = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("F
 
 static const WCHAR *kLangValueName = L"Lang";
 static const WCHAR *kEditor = L"Editor";
+static const WCHAR *kDiff = L"Diff";
 static const TCHAR *kShowDots = TEXT("ShowDots");
 static const TCHAR *kShowRealFileIcons = TEXT("ShowRealFileIcons");
 static const TCHAR *kShowSystemMenu = TEXT("ShowSystemMenu");
@@ -31,35 +34,29 @@ static const TCHAR *kLargePagesEnable = TEXT("LargePages");
 
 static const TCHAR *kFlatViewName = TEXT("FlatViewArc");
 
-void SaveRegLang(const UString &langFile)
+static void SaveCuString(LPCTSTR keyPath, LPCWSTR valuePath, LPCWSTR value)
 {
   CKey key;
-  key.Create(HKEY_CURRENT_USER, kCUBasePath);
-  key.SetValue(kLangValueName, langFile);
+  key.Create(HKEY_CURRENT_USER, keyPath);
+  key.SetValue(valuePath, value);
 }
 
-void ReadRegLang(UString &langFile)
+static void ReadCuString(LPCTSTR keyPath, LPCWSTR valuePath, UString &res)
 {
-  langFile.Empty();
+  res.Empty();
   CKey key;
-  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) == ERROR_SUCCESS)
-    key.QueryValue(kLangValueName, langFile);
+  if (key.Open(HKEY_CURRENT_USER, keyPath, KEY_READ) == ERROR_SUCCESS)
+    key.QueryValue(valuePath, res);
 }
 
-void SaveRegEditor(const UString &editorPath)
-{
-  CKey key;
-  key.Create(HKEY_CURRENT_USER, kCU_FMPath);
-  key.SetValue(kEditor, editorPath);
-}
+void SaveRegLang(const UString &path) { SaveCuString(kCUBasePath, kLangValueName, path); }
+void ReadRegLang(UString &path) { ReadCuString(kCUBasePath, kLangValueName, path); }
 
-void ReadRegEditor(UString &editorPath)
-{
-  editorPath.Empty();
-  CKey key;
-  if (key.Open(HKEY_CURRENT_USER, kCU_FMPath, KEY_READ) == ERROR_SUCCESS)
-    key.QueryValue(kEditor, editorPath);
-}
+void SaveRegEditor(const UString &path) { SaveCuString(kCU_FMPath, kEditor, path); }
+void ReadRegEditor(UString &path) { ReadCuString(kCU_FMPath, kEditor, path); }
+
+void SaveRegDiff(const UString &path) { SaveCuString(kCU_FMPath, kDiff, path); }
+void ReadRegDiff(UString &path) { ReadCuString(kCU_FMPath, kDiff, path); }
 
 static void Save7ZipOption(const TCHAR *value, bool enabled)
 {
@@ -154,8 +151,8 @@ bool ReadLockMemoryEnable() { return Read7ZipOption(kLargePagesEnable, false); }
 
 static CSysString GetFlatViewName(UInt32 panelIndex)
 {
-  TCHAR panelString[32];
-  ConvertUInt64ToString(panelIndex, panelString);
+  TCHAR panelString[16];
+  ConvertUInt32ToString(panelIndex, panelString);
   return (CSysString)kFlatViewName + panelString;
 }
 

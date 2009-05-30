@@ -3,8 +3,8 @@
 #ifndef __IARCHIVE_H
 #define __IARCHIVE_H
 
-#include "../IStream.h"
 #include "../IProgress.h"
+#include "../IStream.h"
 #include "../PropID.h"
 
 #define ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 6, x)
@@ -82,7 +82,6 @@ ARCHIVE_INTERFACE(IArchiveOpenCallback, 0x10)
 
 #define INTERFACE_IArchiveExtractCallback(x) \
   INTERFACE_IProgress(x) \
-  /* GetStream OUT: S_OK - OK, S_FALSE - skeep this file */ \
   STDMETHOD(GetStream)(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) x; \
   STDMETHOD(PrepareOperation)(Int32 askExtractMode) x; \
   STDMETHOD(SetOperationResult)(Int32 resultEOperationResult) x; \
@@ -139,6 +138,10 @@ ARCHIVE_INTERFACE(IInArchive, 0x60)
   INTERFACE_IInArchive(PURE)
 };
 
+ARCHIVE_INTERFACE(IArchiveOpenSeq, 0x61)
+{
+  STDMETHOD(OpenSeq)(ISequentialInStream *stream) PURE;
+};
 
 #define INTERFACE_IArchiveUpdateCallback(x) \
   INTERFACE_IProgress(x); \
@@ -217,11 +220,14 @@ ARCHIVE_INTERFACE(ISetProperties, 0x03)
     { *numProperties = sizeof(kArcProps) / sizeof(kArcProps[0]); return S_OK; } \
   STDMETHODIMP CHandler::GetArchivePropertyInfo IMP_IInArchive_GetProp_WITH_NAME(kArcProps)
 
-#define IMP_IInArchive_ArcProps_NO \
+#define IMP_IInArchive_ArcProps_NO_Table \
   STDMETHODIMP CHandler::GetNumberOfArchiveProperties(UInt32 *numProperties) \
     { *numProperties = 0; return S_OK; } \
   STDMETHODIMP CHandler::GetArchivePropertyInfo(UInt32, BSTR *, PROPID *, VARTYPE *) \
     { return E_NOTIMPL; } \
+
+#define IMP_IInArchive_ArcProps_NO \
+  IMP_IInArchive_ArcProps_NO_Table \
   STDMETHODIMP CHandler::GetArchiveProperty(PROPID, PROPVARIANT *value) \
     { value->vt = VT_EMPTY; return S_OK; }
 

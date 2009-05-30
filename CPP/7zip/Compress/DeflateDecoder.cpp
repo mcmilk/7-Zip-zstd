@@ -15,6 +15,7 @@ CCoder::CCoder(bool deflate64Mode, bool deflateNSIS):
     _deflate64Mode(deflate64Mode),
     _deflateNSIS(deflateNSIS),
     _keepHistory(false),
+    _needInitInStream(true),
     ZlibMode(false) {}
 
 UInt32 CCoder::ReadBits(int numBits)
@@ -70,9 +71,7 @@ bool CCoder::ReadTables(void)
   if (blockType == NBlockType::kStored)
   {
     m_StoredMode = true;
-    UInt32 currentBitPosition = m_InBitStream.GetBitPosition();
-    int numBitsForAlign = (int)(currentBitPosition > 0 ? (8 - currentBitPosition): 0);
-    ReadBits(numBitsForAlign);
+    m_InBitStream.AlignToByte();
     m_StoredBlockSize = ReadBits(kStoredBlockLengthFieldSize);
     if (_deflateNSIS)
       return true;
@@ -130,10 +129,8 @@ HRESULT CCoder::CodeSpec(UInt32 curSize)
     if (!_keepHistory)
       if (!m_OutWindowStream.Create(_deflate64Mode ? kHistorySize64: kHistorySize32))
         return E_OUTOFMEMORY;
-    if (!m_InBitStream.Create(1 << 17))
-      return E_OUTOFMEMORY;
+    RINOK(InitInStream(_needInitInStream));
     m_OutWindowStream.Init(_keepHistory);
-    m_InBitStream.Init();
     m_FinalBlock = false;
     _remainLen = 0;
     _needReadTable = true;
@@ -167,7 +164,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize)
     if(m_StoredMode)
     {
       for (; m_StoredBlockSize > 0 && curSize > 0; m_StoredBlockSize--, curSize--)
-        m_OutWindowStream.PutByte((Byte)m_InBitStream.ReadBits(8));
+        m_OutWindowStream.PutByte(m_InBitStream.ReadByte());
       _needReadTable = (m_StoredBlockSize == 0);
       continue;
     }
@@ -231,14 +228,29 @@ HRESULT CCoder::CodeSpec(UInt32 curSize)
   return S_OK;
 }
 
-HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *, const UInt64 *outSize, ICompressProgressInfo *progress)
+#ifdef _NO_EXCEPTIONS
+
+#define DEFLATE_TRY_BEGIN
+#define DEFLATE_TRY_END
+
+#else
+
+#define DEFLATE_TRY_BEGIN try {
+#define DEFLATE_TRY_END } \
+  catch(const CInBufferException &e)  { return e.ErrorCode; } \
+  catch(const CLzOutWindowException &e)  { return e.ErrorCode; } \
+  catch(...) { return S_FALSE; }
+
+#endif
+
+HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
+      const UInt64 *outSize, ICompressProgressInfo *progress)
 {
-  SetInStream(inStream);
+  DEFLATE_TRY_BEGIN
   m_OutWindowStream.SetStream(outStream);
-  SetOutStreamSize(outSize);
   CCoderReleaser flusher(this);
 
+  const UInt64 inStart = m_InBitStream.GetProcessedSize();
   const UInt64 start = m_OutWindowStream.GetProcessedSize();
   for (;;)
   {
@@ -256,45 +268,33 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
       break;
     if (progress != NULL)
     {
-      const UInt64 inSize = m_InBitStream.GetProcessedSize();
+      const UInt64 inSize = m_InBitStream.GetProcessedSize() - inStart;
       const UInt64 nowPos64 = m_OutWindowStream.GetProcessedSize() - start;
       RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
   }
   if (_remainLen == kLenIdFinished && ZlibMode)
   {
-    UInt32 currentBitPosition = m_InBitStream.GetBitPosition();
-    int numBitsForAlign = (int)(currentBitPosition > 0 ? (8 - currentBitPosition): 0);
-    ReadBits(numBitsForAlign);
+    m_InBitStream.AlignToByte();
     for (int i = 0; i < 4; i++)
-      ZlibFooter[i] = (Byte)m_InBitStream.ReadBits(8);
+      ZlibFooter[i] = m_InBitStream.ReadByte();
   }
   flusher.NeedFlush = false;
-  return Flush();
+  HRESULT res = Flush();
+  if (res == S_OK && InputEofError())
+    return S_FALSE;
+  return res;
+  DEFLATE_TRY_END
 }
 
-
-#ifdef _NO_EXCEPTIONS
-
-#define DEFLATE_TRY_BEGIN
-#define DEFLATE_TRY_END
-
-#else
-
-#define DEFLATE_TRY_BEGIN try {
-#define DEFLATE_TRY_END } \
-  catch(const CInBufferException &e)  { return e.ErrorCode; } \
-  catch(const CLzOutWindowException &e)  { return e.ErrorCode; } \
-  catch(...) { return S_FALSE; }
-
-#endif
-
 HRESULT CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
-  DEFLATE_TRY_BEGIN
-  return CodeReal(inStream, outStream, inSize, outSize, progress);
-  DEFLATE_TRY_END
+  SetInStream(inStream);
+  SetOutStreamSize(outSize);
+  HRESULT res = CodeReal(outStream, outSize, progress);
+  ReleaseInStream();
+  return res;
 }
 
 STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
@@ -320,6 +320,7 @@ STDMETHODIMP CCoder::ReleaseInStream()
 STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 * /* outSize */)
 {
   _remainLen = kLenIdNeedInit;
+  _needInitInStream = true;
   m_OutWindowStream.Init(_keepHistory);
   return S_OK;
 }
@@ -341,5 +342,12 @@ STDMETHODIMP CCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 }
 
 #endif
+
+STDMETHODIMP CCoder::CodeResume(ISequentialOutStream *outStream, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  _remainLen = kLenIdNeedInit;
+  m_OutWindowStream.Init(_keepHistory);
+  return CodeReal(outStream, outSize, progress);
+}
 
 }}}

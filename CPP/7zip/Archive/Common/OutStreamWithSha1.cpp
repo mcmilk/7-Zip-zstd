@@ -6,19 +6,13 @@
 
 STDMETHODIMP COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result;
-  if(!_stream)
-  {
-    realProcessedSize = size;
-    result = S_OK;
-  }
-  else
-    result = _stream->Write(data, size, &realProcessedSize);
+  HRESULT result = S_OK;
+  if (_stream)
+    result = _stream->Write(data, size, &size);
   if (_calculate)
-    _sha.Update((const Byte *)data, realProcessedSize);
-  _size += realProcessedSize;
-  if(processedSize != NULL)
-    *processedSize = realProcessedSize;
+    _sha.Update((const Byte *)data, size);
+  _size += size;
+  if (processedSize != NULL)
+    *processedSize = size;
   return result;
 }

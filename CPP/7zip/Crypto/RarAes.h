@@ -3,10 +3,7 @@
 #ifndef __CRYPTO_RAR_AES_H
 #define __CRYPTO_RAR_AES_H
 
-extern "C"
-{
 #include "../../../C/Aes.h"
-}
 
 #include "Common/Buffer.h"
 #include "Common/MyCom.h"

@@ -31,13 +31,10 @@
 #include "../../../Windows/System.h"
 #endif
 
-extern "C"
-{
-  #include "../../../../C/7zVersion.h"
-  #include "../../../../C/Alloc.h"
-  #include "../../../../C/LzmaUtil/Lzma86Dec.h"
-  #include "../../../../C/LzmaUtil/Lzma86Enc.h"
-}
+#include "../../../../C/7zVersion.h"
+#include "../../../../C/Alloc.h"
+#include "../../../../C/LzmaUtil/Lzma86Dec.h"
+#include "../../../../C/LzmaUtil/Lzma86Enc.h"
 
 using namespace NCommandLineParser;
 

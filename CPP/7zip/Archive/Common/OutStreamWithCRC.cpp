@@ -6,19 +6,13 @@
 
 STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result;
-  if(!_stream)
-  {
-    realProcessedSize = size;
-    result = S_OK;
-  }
-  else
-    result = _stream->Write(data, size, &realProcessedSize);
+  HRESULT result = S_OK;
+  if (_stream)
+    result = _stream->Write(data, size, &size);
   if (_calculate)
-    _crc = CrcUpdate(_crc, data, realProcessedSize);
-  _size += realProcessedSize;
-  if(processedSize != NULL)
-    *processedSize = realProcessedSize;
+    _crc = CrcUpdate(_crc, data, size);
+  _size += size;
+  if (processedSize != NULL)
+    *processedSize = size;
   return result;
 }

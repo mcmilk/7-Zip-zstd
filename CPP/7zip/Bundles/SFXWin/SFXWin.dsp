@@ -261,6 +261,14 @@ SOURCE=..\..\Compress\CopyRegister.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Compress\Lzma2Decoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Register.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\LzmaDecoder.cpp
 # End Source File
 # Begin Source File
@@ -786,6 +794,15 @@ SOURCE=..\..\..\..\C\Bra.h
 
 SOURCE=..\..\..\..\C\Bra86.c
 # SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2Dec.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2Dec.h
 # End Source File
 # Begin Source File
 

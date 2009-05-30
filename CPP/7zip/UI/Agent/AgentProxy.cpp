@@ -2,18 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "AgentProxy.h"
+#include "../../../../C/Sort.h"
 
-#include "Common/MyCom.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
-#include "Windows/Defs.h"
+
 #include "../Common/OpenArchive.h"
 
-extern "C"
-{
-  #include "../../../../C/Sort.h"
-}
+#include "AgentProxy.h"
 
 using namespace NWindows;
 
@@ -58,7 +54,7 @@ CProxyFolder* CProxyFolder::AddDirSubItem(UInt32 index, bool leaf, const UString
   if (folderIndex >= 0)
   {
     CProxyFolder *item = &Folders[folderIndex];
-    if(leaf)
+    if (leaf)
     {
       item->Index = index;
       item->IsLeaf = true;
@@ -116,16 +112,16 @@ void CProxyFolder::AddRealIndices(CUIntVector &realIndices) const
   if (IsLeaf)
     realIndices.Add(Index);
   int i;
-  for(i = 0; i < Folders.Size(); i++)
+  for (i = 0; i < Folders.Size(); i++)
     Folders[i].AddRealIndices(realIndices);
-  for(i = 0; i < Files.Size(); i++)
+  for (i = 0; i < Files.Size(); i++)
     realIndices.Add(Files[i].Index);
 }
 
 void CProxyFolder::GetRealIndices(const UInt32 *indices, UInt32 numItems, CUIntVector &realIndices) const
 {
   realIndices.Clear();
-  for(UInt32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     int index = indices[i];
     int numDirItems = Folders.Size();
@@ -139,24 +135,6 @@ void CProxyFolder::GetRealIndices(const UInt32 *indices, UInt32 numItems, CUIntV
 
 ///////////////////////////////////////////////
 // CProxyArchive
-
-HRESULT CProxyArchive::Reload(IInArchive *archive, IProgress *progress)
-{
-  RootFolder.Clear();
-  return ReadObjects(archive, progress);
-}
-
-HRESULT CProxyArchive::Load(IInArchive *archive,
-    const UString &defaultName,
-    // const FILETIME &defaultTime,
-    // UInt32 defaultAttributes,
-    IProgress *progress)
-{
-  DefaultName = defaultName;
-  // DefaultTime = defaultTime;
-  // DefaultAttributes = defaultAttributes;
-  return Reload(archive, progress);
-}
 
 static UInt64 GetSize(IInArchive *archive, UInt32 index, PROPID propID)
 {
@@ -182,13 +160,8 @@ void CProxyFolder::CalculateSizes(IInArchive *archive)
     PackSize += GetSize(archive, index, kpidPackSize);
     {
       NCOM::CPropVariant prop;
-      if (archive->GetProperty(index, kpidCRC, &prop) == S_OK)
-      {
-        if (prop.vt == VT_UI4)
-          Crc += prop.ulVal;
-        else
-          CrcIsDefined = false;
-      }
+      if (archive->GetProperty(index, kpidCRC, &prop) == S_OK && prop.vt == VT_UI4)
+        Crc += prop.ulVal;
       else
         CrcIsDefined = false;
     }
@@ -207,70 +180,67 @@ void CProxyFolder::CalculateSizes(IInArchive *archive)
   }
 }
 
-HRESULT CProxyArchive::ReadObjects(IInArchive *archive, IProgress *progress)
+HRESULT CProxyArchive::Load(const CArc &arc, IProgress *progress)
 {
+  RootFolder.Clear();
+  IInArchive *archive = arc.Archive;
+  {
+    ThereIsPathProp = false;
+    UInt32 numProps;
+    archive->GetNumberOfProperties(&numProps);
+    for (UInt32 i = 0; i < numProps; i++)
+    {
+      CMyComBSTR name;
+      PROPID propID;
+      VARTYPE varType;
+      RINOK(archive->GetPropertyInfo(i, &name, &propID, &varType));
+      if (propID == kpidPath)
+      {
+        ThereIsPathProp = true;
+        break;
+      }
+    }
+  }
+
   UInt32 numItems;
   RINOK(archive->GetNumberOfItems(&numItems));
   if (progress != NULL)
   {
-    UINT64 totalItems = numItems;
+    UInt64 totalItems = numItems;
     RINOK(progress->SetTotal(totalItems));
   }
-  for(UInt32 i = 0; i < numItems; i++)
+  UString fileName;
+  for (UInt32 i = 0; i < numItems; i++)
   {
-    if (progress != NULL)
+    if (progress != NULL && (i & 0xFFFFF) == 0)
     {
-      UINT64 currentItemIndex = i;
+      UInt64 currentItemIndex = i;
       RINOK(progress->SetCompleted(&currentItemIndex));
     }
-    NCOM::CPropVariant propVariantPath;
-    RINOK(archive->GetProperty(i, kpidPath, &propVariantPath));
-    CProxyFolder *currentItem = &RootFolder;
-    UString fileName;
-    if(propVariantPath.vt == VT_EMPTY)
+    UString filePath;
+    RINOK(arc.GetItemPath(i, filePath));
+    CProxyFolder *curItem = &RootFolder;
+    int len = filePath.Length();
+    fileName.Empty();
+    for (int j = 0; j < len; j++)
     {
-      fileName = DefaultName;
-
-      NCOM::CPropVariant prop;
-      RINOK(archive->GetProperty(i, kpidExtension, &prop));
-      if (prop.vt == VT_BSTR)
+      wchar_t c = filePath[j];
+      if (c == WCHAR_PATH_SEPARATOR || c == L'/')
       {
-        fileName += L'.';
-        fileName += prop.bstrVal;
+        curItem = curItem->AddDirSubItem((UInt32)(Int32)-1, false, fileName);
+        fileName.Empty();
       }
-      else if (prop.vt != VT_EMPTY)
-        return E_FAIL;
-
-    }
-    else
-    {
-      if(propVariantPath.vt != VT_BSTR)
-        return E_FAIL;
-      UString filePath = propVariantPath.bstrVal;
-
-      int len = filePath.Length();
-      for (int i = 0; i < len; i++)
-      {
-        wchar_t c = filePath[i];
-        if (c == WCHAR_PATH_SEPARATOR || c == L'/')
-        {
-          currentItem = currentItem->AddDirSubItem((UInt32)(Int32)-1, false, fileName);
-          fileName.Empty();
-        }
-        else
-          fileName += c;
-      }
+      else
+        fileName += c;
     }
 
-    NCOM::CPropVariant propVariantIsFolder;
     bool isFolder;
     RINOK(IsArchiveItemFolder(archive, i, isFolder));
-    if(isFolder)
-      currentItem->AddDirSubItem(i, true, fileName);
+    if (isFolder)
+      curItem->AddDirSubItem(i, true, fileName);
     else
-      currentItem->AddFileSubItem(i, fileName);
+      curItem->AddFileSubItem(i, fileName);
   }
   RootFolder.CalculateSizes(archive);
   return S_OK;
 }
-

@@ -1,14 +1,12 @@
-// Archive/TarIn.cpp
+// TarIn.cpp
 
 #include "StdAfx.h"
 
-#include "TarIn.h"
-#include "TarHeader.h"
-
 #include "Common/StringToInt.h"
-#include "Windows/Defs.h"
 
 #include "../../Common/StreamUtils.h"
+
+#include "TarIn.h"
 
 namespace NArchive {
 namespace NTar {
@@ -98,8 +96,8 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
 
   memcpy(item.Magic, p, 8); p += 8;
 
-  ReadString(p, NFileHeader::kUserNameSize, item.UserName);  p += NFileHeader::kUserNameSize;
-  ReadString(p, NFileHeader::kUserNameSize, item.GroupName); p += NFileHeader::kUserNameSize;
+  ReadString(p, NFileHeader::kUserNameSize, item.User); p += NFileHeader::kUserNameSize;
+  ReadString(p, NFileHeader::kGroupNameSize, item.Group); p += NFileHeader::kGroupNameSize;
 
   item.DeviceMajorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMajor)); p += 8;
   item.DeviceMinorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMinor)); p += 8;
@@ -132,7 +130,8 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item)
   if (!filled)
     return S_OK;
   // GNUtar extension
-  if (item.LinkFlag == 'L')
+  if (item.LinkFlag == 'L' || // NEXT file has a long name
+      item.LinkFlag == 'K') // NEXT file has a long linkname
   {
     if (item.Name.Compare(NFileHeader::kLongLink) != 0)
       if (item.Name.Compare(NFileHeader::kLongLink2) != 0)
@@ -150,11 +149,17 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item)
     fullName.ReleaseBuffer();
 
     UInt64 headerPosition = item.HeaderPosition;
+    if (item.LinkFlag == 'L')
     {
       size_t processedSize2;
       RINOK(GetNextItemReal(stream, filled, item, processedSize2));
+      item.LongLinkSize = (unsigned)processedSize;
     }
-    item.LongLinkSize = (unsigned)processedSize;
+    else
+    {
+      item.LongLinkSize = (unsigned)processedSize - NFileHeader::kRecordSize;
+      item.Size = 0;
+    }
     item.Name = fullName;
     item.HeaderPosition = headerPosition;
   }

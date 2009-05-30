@@ -1,10 +1,14 @@
 /*  LzmaEnc.h -- LZMA Encoder
-2008-10-04 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
-#ifndef __LZMAENC_H
-#define __LZMAENC_H
+#ifndef __LZMA_ENC_H
+#define __LZMA_ENC_H
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define LZMA_PROPS_SIZE 5
 
@@ -68,5 +72,9 @@ Return code:
 SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
     const CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark,
     ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

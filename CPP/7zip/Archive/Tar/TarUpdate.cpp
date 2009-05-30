@@ -55,10 +55,12 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 
     const CUpdateItem &ui = updateItems[i];
     CItem item;
-    if (ui.NewProperties)
+    if (ui.NewProps)
     {
-      item.Mode = 0777;
-      item.Name = (ui.Name);
+      item.Mode = ui.Mode;
+      item.Name = ui.Name;
+      item.User = ui.User;
+      item.Group = ui.Group;
       if (ui.IsDir)
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
@@ -77,21 +79,16 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       memmove(item.Magic, NFileHeader::NMagic::kEmpty, 8);
     }
     else
-    {
-      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
-      item = existItemInfo;
-    }
+      item = inputItems[ui.IndexInArchive];
+
     if (ui.NewData)
     {
       item.Size = ui.Size;
-      if (item.Size == UInt64(Int64(-1)))
+      if (item.Size == (UInt64)(Int64)-1)
         return E_INVALIDARG;
     }
     else
-    {
-      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
-      item.Size = existItemInfo.Size;
-    }
+      item.Size = inputItems[ui.IndexInArchive].Size;
   
     if (ui.NewData)
     {
@@ -116,7 +113,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     {
       const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
       UInt64 size;
-      if (ui.NewProperties)
+      if (ui.NewProps)
       {
         RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));

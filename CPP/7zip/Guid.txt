@@ -7,11 +7,12 @@
 01 IFolderArchive.h
 
   05  IArchiveFolder
-  06  IInFolderArchive
+  // 06  IInFolderArchive // old
   07  IFileExtractCallback.h::IFolderArchiveExtractCallback
   0A  IOutFolderArchive
   0B  IFolderArchiveUpdateCallback
   0Ñ  Agent.h::IArchiveFolderInternal
+  0D  IInFolderArchive
 
 03 IStream.h
 
@@ -65,6 +66,7 @@
   40  IInArchiveGetStream
   50  IArchiveOpenSetSubArchiveName
   60  IInArchive
+  61  IArchiveOpenSeq
 
   80  IArchiveUpdateCallback
   82  IArchiveUpdateCallback2
@@ -86,12 +88,15 @@
   09 IFolderClone
   0A IFolderSetFlatMode
   0B IFolderOperationsExtractCallback
+  0C IFolderArchiveProperties
+  0D IGetFolderArchiveProperties
+  0E IFolderProperties
 
 
-09 FolderInterface.h
+09 IFolder.h :: FOLDER_MANAGER_INTERFACE
 
-  00 // old IFolderManager
-  01 IFolderManager
+  00 - 03 // old IFolderManager
+  04 IFolderManager
 
 
 
@@ -116,8 +121,14 @@ Handler GUIDs:
   07 7z
   08 Cab
   09 Nsis
-  0A Lzma
+  0A lzma
+  0B lzma86
+  0C xz
 
+  D9 Ntfs
+  DA Fat
+  DB Mbr
+  DC Vhd
   DD Pe
   DE Elf
   DF Mach-O

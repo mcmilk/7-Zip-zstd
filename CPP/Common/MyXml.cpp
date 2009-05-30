@@ -18,7 +18,7 @@ static bool IsSpaceChar(char c)
   return (c == ' ' || c == '\t' || c == 0x0D || c == 0x0A);
 }
 
-#define SKEEP_SPACES(s, pos) while (IsSpaceChar(s[pos])) pos++;
+#define SKIP_SPACES(s, pos) while (IsSpaceChar(s[pos])) pos++;
 
 static bool ReadProperty(const AString &s, int &pos, CXmlProp &prop)
 {
@@ -35,11 +35,11 @@ static bool ReadProperty(const AString &s, int &pos, CXmlProp &prop)
   if (prop.Name.IsEmpty())
     return false;
 
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
   if (s[pos++] != '=')
     return false;
 
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
   if (s[pos++] != '\"')
     return false;
   
@@ -109,7 +109,7 @@ bool CXmlItem::ParseItems(const AString &s, int &pos, int numAllowedLevels)
   AString finishString = "</";
   for (;;)
   {
-    SKEEP_SPACES(s, pos);
+    SKIP_SPACES(s, pos);
 
     if (s.Mid(pos, finishString.Length()) == finishString)
       return true;
@@ -123,7 +123,7 @@ bool CXmlItem::ParseItems(const AString &s, int &pos, int numAllowedLevels)
 
 bool CXmlItem::ParseItem(const AString &s, int &pos, int numAllowedLevels)
 {
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
 
   int pos2 = s.Find('<', pos);
   if (pos2 < 0)
@@ -138,7 +138,7 @@ bool CXmlItem::ParseItem(const AString &s, int &pos, int numAllowedLevels)
   IsTag = true;
 
   pos++;
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
 
   for (; pos < s.Length(); pos++)
   {
@@ -153,11 +153,11 @@ bool CXmlItem::ParseItem(const AString &s, int &pos, int numAllowedLevels)
   int posTemp = pos;
   for (;;)
   {
-    SKEEP_SPACES(s, pos);
+    SKIP_SPACES(s, pos);
     if (s[pos] == '/')
     {
       pos++;
-      // SKEEP_SPACES(s, pos);
+      // SKIP_SPACES(s, pos);
       return (s[pos++] == '>');
     }
     if (s[pos] == '>')
@@ -181,16 +181,16 @@ bool CXmlItem::ParseItem(const AString &s, int &pos, int numAllowedLevels)
   }
 }
 
-bool SkeepHeader(const AString &s, int &pos, const AString &startString, const AString &endString)
+static bool SkipHeader(const AString &s, int &pos, const AString &startString, const AString &endString)
 {
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
   if (s.Mid(pos, startString.Length()) == startString)
   {
     pos = s.Find(endString, pos);
     if (pos < 0)
       return false;
     pos += endString.Length();
-    SKEEP_SPACES(s, pos);
+    SKIP_SPACES(s, pos);
   }
   return true;
 }
@@ -198,12 +198,12 @@ bool SkeepHeader(const AString &s, int &pos, const AString &startString, const A
 bool CXml::Parse(const AString &s)
 {
   int pos = 0;
-  if (!SkeepHeader(s, pos, "<?xml", "?>"))
+  if (!SkipHeader(s, pos, "<?xml", "?>"))
     return false;
-  if (!SkeepHeader(s, pos, "<!DOCTYPE", ">"))
+  if (!SkipHeader(s, pos, "<!DOCTYPE", ">"))
     return false;
   if (!Root.ParseItem(s, pos, 1000))
     return false;
-  SKEEP_SPACES(s, pos);
+  SKIP_SPACES(s, pos);
   return (pos == s.Length() && Root.IsTag);
 }

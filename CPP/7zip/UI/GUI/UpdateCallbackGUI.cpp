@@ -156,6 +156,7 @@ HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 
 HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
+  *password = NULL;
   if (!PasswordIsDefined)
   {
     if (AskPassword)
@@ -168,6 +169,20 @@ HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BST
     }
   }
   *passwordIsDefined = BoolToInt(PasswordIsDefined);
+  return StringToBstr(Password, password);
+}
+
+HRESULT CUpdateCallbackGUI::CryptoGetTextPassword(BSTR *password)
+{
+  *password = NULL;
+  if (!PasswordIsDefined)
+  {
+    CPasswordDialog dialog;
+    if (dialog.Create(ProgressDialog) == IDCANCEL)
+      return E_ABORT;
+    Password = dialog.Password;
+    PasswordIsDefined = true;
+  }
   return StringToBstr(Password, password);
 }
 

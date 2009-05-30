@@ -2,22 +2,21 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
-  #include "../../../../C/Alloc.h"
-}
+#include "../../../../C/Alloc.h"
 
-#include "PhysDriveFolder.h"
+#include "Common/Buffer.h"
+
 #include "Windows/PropVariant.h"
 #include "Windows/FileDevice.h"
 #include "Windows/FileSystem.h"
 
 #include "../../PropID.h"
 
+#include "PhysDriveFolder.h"
+
 using namespace NWindows;
 
 static const UInt32 kBufferSize = (4 << 20);
-
 static STATPROPSTG kProperties[] =
 {
   { NULL, kpidName, VT_BSTR},
@@ -177,7 +176,8 @@ struct CPhysTempBuffer
   ~CPhysTempBuffer() { MyFree(buffer); }
 };
 
-HRESULT CopyFileSpec(LPCWSTR fromPath, LPCWSTR toPath, bool writeToDisk, UInt64 fileSize, UInt32 bufferSize, IProgress *progress)
+HRESULT CopyFileSpec(LPCWSTR fromPath, LPCWSTR toPath, bool writeToDisk, UInt64 fileSize,
+    UInt32 bufferSize, UInt64 progressStart, IProgress *progress)
 {
   NFile::NIO::CInFile inFile;
   if (!inFile.Open(fromPath))
@@ -203,7 +203,8 @@ HRESULT CopyFileSpec(LPCWSTR fromPath, LPCWSTR toPath, bool writeToDisk, UInt64 
  
   for (UInt64 pos = 0; pos < fileSize;)
   {
-    RINOK(progress->SetCompleted(&pos));
+    UInt64 progressCur = progressStart + pos;
+    RINOK(progress->SetCompleted(&progressCur));
     UInt64 rem = fileSize - pos;
     UInt32 curSize = (UInt32)MyMin(rem, (UInt64)bufferSize);
     UInt32 processedSize;
@@ -262,7 +263,7 @@ STDMETHODIMP CPhysDriveFolder::CopyTo(const UInt32 * /* indices */, UInt32 numIt
   RINOK(callback->SetCurrentFilePath(GetFullPathWithName()));
 
   UInt32 bufferSize = (_driveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
-  return CopyFileSpec(GetFullPath(), destPathResult, false, fileSize, bufferSize, callback);
+  return CopyFileSpec(GetFullPath(), destPathResult, false, fileSize, bufferSize, 0, callback);
 }
 
 /////////////////////////////////////////////////
@@ -289,5 +290,6 @@ STDMETHODIMP CPhysDriveFolder::CopyFrom(
     return E_NOTIMPL;
   UInt32 bufferSize = (_driveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
   // MessageBoxW(0, fromFolderPath, itemsPaths[0], 0);
-  return CopyFileSpec((UString)fromFolderPath + itemsPaths[0], GetFullPath(), true, (UInt64)(Int64)-1, bufferSize, callback);
+  return CopyFileSpec((UString)fromFolderPath + itemsPaths[0], GetFullPath(), true, (UInt64)(Int64)-1, bufferSize, 0, callback);
 }
+

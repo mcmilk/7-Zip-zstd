@@ -2,15 +2,9 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/7zCrc.h"
+
 #include "RarVolumeInStream.h"
-
-#include "Windows/Defs.h"
-#include "Common/Defs.h"
-
-extern "C"
-{
-  #include "../../../../C/7zCrc.h"
-}
 
 namespace NArchive {
 namespace NRar {

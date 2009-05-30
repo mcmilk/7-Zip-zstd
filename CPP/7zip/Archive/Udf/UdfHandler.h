@@ -20,14 +20,16 @@ struct CRef2
 
 class CHandler:
   public IInArchive,
+  public IInArchiveGetStream,
   public CMyUnknownImp
 {
   CMyComPtr<IInStream> _inStream;
   CInArchive _archive;
   CRecordVector<CRef2> _refs2;
 public:
-  MY_UNKNOWN_IMP1(IInArchive)
+  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 }}

@@ -1,4 +1,4 @@
-LZMA SDK 4.65
+LZMA SDK 9.04
 -------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
@@ -49,6 +49,7 @@ lzma.txt     - LZMA SDK description (this file)
 7zC.txt      - 7z ANSI-C Decoder description
 methods.txt  - Compression method IDs for .7z
 lzma.exe     - Compiled file->file LZMA encoder/decoder for Windows
+7zr.exe      - 7-Zip with 7z/lzma/xz support.
 history.txt  - history of the LZMA SDK
 
 
@@ -66,7 +67,7 @@ C/  - C files
         LzmaEnc.*  - LZMA encoding
         LzmaLib.*  - LZMA Library for DLL calling
         Types.h    - Basic types for another .c files
-	Threads.*  - The code for multithreading.
+        Threads.*  - The code for multithreading.
 
     LzmaLib  - LZMA Library (.DLL for Windows)
     
@@ -86,11 +87,7 @@ CPP/ -- CPP files
 
     Compress - files related to compression/decompression
 
-      Copy         - Copy coder
-      RangeCoder   - Range Coder (special code of compression/decompression)
-      LZMA         - LZMA compression/decompression on C++
       LZMA_Alone   - file->file LZMA compression/decompression
-      Branch       - Filters for x86, IA-64, ARM, ARM-Thumb, PowerPC and SPARC code
 
     Archive - files related to archiving
 
@@ -369,8 +366,8 @@ Interface:
     propData - LZMA properties  (5 bytes)
     propSize - size of propData buffer (5 bytes)
     finishMode - It has meaning only if the decoding reaches output limit (*destLen).
-	 LZMA_FINISH_ANY - Decode just destLen bytes.
-	 LZMA_FINISH_END - Stream must be finished after (*destLen).
+         LZMA_FINISH_ANY - Decode just destLen bytes.
+         LZMA_FINISH_END - Stream must be finished after (*destLen).
                            You can use LZMA_FINISH_END, when you know that 
                            current output buffer covers last bytes of stream. 
     alloc    - Memory allocator.
@@ -431,7 +428,7 @@ Memory Requirements:
   {
     ... 
     int res = LzmaDec_DecodeToBuf(CLzmaDec *p, Byte *dest, SizeT *destLen, 
-    	const Byte *src, SizeT *srcLen, ELzmaFinishMode finishMode);
+        const Byte *src, SizeT *srcLen, ELzmaFinishMode finishMode);
     ...
   }
 

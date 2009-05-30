@@ -251,7 +251,10 @@ public:
       }
       else if (!_newStyle)
       {
-        if (ext.CompareNoCase(L"000") == 0 || ext.CompareNoCase(L"001") == 0)
+        if (ext.CompareNoCase(L"000") == 0 ||
+            ext.CompareNoCase(L"001") == 0 ||
+            ext.CompareNoCase(L"r00") == 0 ||
+            ext.CompareNoCase(L"r01") == 0)
         {
           _afterPart.Empty();
           _first = false;

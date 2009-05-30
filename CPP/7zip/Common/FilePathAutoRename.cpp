@@ -1,25 +1,25 @@
 // FilePathAutoRename.cpp
 
 #include "StdAfx.h"
-#include "FilePathAutoRename.h"
 
 #include "Common/Defs.h"
 #include "Common/IntToString.h"
 
-#include "Windows/FileName.h"
 #include "Windows/FileFind.h"
+
+#include "FilePathAutoRename.h"
 
 using namespace NWindows;
 
 static bool MakeAutoName(const UString &name,
-    const UString &extension, int value, UString &path)
+    const UString &extension, unsigned value, UString &path)
 {
-  wchar_t number[32];
-  ConvertUInt64ToString(value, number);
+  wchar_t number[16];
+  ConvertUInt32ToString(value, number);
   path = name;
   path += number;
   path += extension;
-  return NFile::NFind::DoesFileExist(path);
+  return NFile::NFind::DoesFileOrDirExist(path);
 }
 
 bool AutoRenamePath(UString &fullProcessedPath)
@@ -34,7 +34,7 @@ bool AutoRenamePath(UString &fullProcessedPath)
   #endif
 
   UString name, extension;
-  if (dotPos > slashPos &&  dotPos > 0)
+  if (dotPos > slashPos && dotPos > 0)
   {
     name = fullProcessedPath.Left(dotPos);
     extension = fullProcessedPath.Mid(dotPos);
@@ -42,16 +42,14 @@ bool AutoRenamePath(UString &fullProcessedPath)
   else
     name = fullProcessedPath;
   name += L'_';
-  int indexLeft = 1, indexRight = (1 << 30);
-  while (indexLeft != indexRight)
+  unsigned left = 1, right = (1 << 30);
+  while (left != right)
   {
-    int indexMid = (indexLeft + indexRight) / 2;
-    if (MakeAutoName(name, extension, indexMid, path))
-      indexLeft = indexMid + 1;
+    unsigned mid = (left + right) / 2;
+    if (MakeAutoName(name, extension, mid, path))
+      left = mid + 1;
     else
-      indexRight = indexMid;
+      right = mid;
   }
-  if (MakeAutoName(name, extension, indexRight, fullProcessedPath))
-    return false;
-  return true;
+  return !MakeAutoName(name, extension, right, fullProcessedPath);
 }

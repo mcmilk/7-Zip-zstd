@@ -2,11 +2,8 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../C/Alloc.h"
 #include "../../../C/HuffEnc.h"
-}
 
 #include "Common/ComTry.h"
 

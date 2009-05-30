@@ -3,12 +3,9 @@
 #ifndef __WINDOWS_THREAD_H
 #define __WINDOWS_THREAD_H
 
-#include "Defs.h"
-
-extern "C"
-{
 #include "../../C/Threads.h"
-}
+
+#include "Defs.h"
 
 namespace NWindows {
 
@@ -25,14 +22,14 @@ public:
   WRes Wait() { return Thread_Wait(&thread); }
   
   #ifdef _WIN32
-  operator HANDLE() { return thread.handle; }
-  void Attach(HANDLE handle) { thread.handle = handle; }
-  HANDLE Detach() { HANDLE h = thread.handle; thread.handle = NULL; return h; }
-  DWORD Resume() { return ::ResumeThread(thread.handle); }
-  DWORD Suspend() { return ::SuspendThread(thread.handle); }
-  bool Terminate(DWORD exitCode) { return BOOLToBool(::TerminateThread(thread.handle, exitCode)); }
-  int GetPriority() { return ::GetThreadPriority(thread.handle); }
-  bool SetPriority(int priority) { return BOOLToBool(::SetThreadPriority(thread.handle, priority)); }
+  operator HANDLE() { return thread; }
+  void Attach(HANDLE handle) { thread = handle; }
+  HANDLE Detach() { HANDLE h = thread; thread = NULL; return h; }
+  DWORD Resume() { return ::ResumeThread(thread); }
+  DWORD Suspend() { return ::SuspendThread(thread); }
+  bool Terminate(DWORD exitCode) { return BOOLToBool(::TerminateThread(thread, exitCode)); }
+  int GetPriority() { return ::GetThreadPriority(thread); }
+  bool SetPriority(int priority) { return BOOLToBool(::SetThreadPriority(thread, priority)); }
   #endif
 };
 

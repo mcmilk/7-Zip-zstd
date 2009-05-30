@@ -1,15 +1,16 @@
 // CompressDialog.h
 
-#ifndef __COMPRESSDIALOG_H
-#define __COMPRESSDIALOG_H
+#ifndef __COMPRESS_DIALOG_H
+#define __COMPRESS_DIALOG_H
 
-#include "../Common/ZipRegistry.h"
-#include "../Common/LoadCodecs.h"
-#include "CompressDialogRes.h"
-
+#include "Windows/Control/ComboBox.h"
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/Edit.h"
-#include "Windows/Control/ComboBox.h"
+
+#include "../Common/LoadCodecs.h"
+#include "../Common/ZipRegistry.h"
+
+#include "CompressDialogRes.h"
 
 namespace NCompressDialog
 {
@@ -107,7 +108,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 
   void SetLevel();
   
-  void SetMethod();
+  void SetMethod(int keepMethodId = -1);
   int GetMethodID();
   UString GetMethodSpec();
   UString GetEncryptionMethodSpec();
@@ -151,6 +152,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void UpdatePasswordControl();
   bool IsShowPasswordChecked() const
     { return IsButtonChecked(IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED; }
+
+  int GetFormatIndex();
 public:
   CObjectVector<CArcInfoEx> m_ArchiverInfoList;
 

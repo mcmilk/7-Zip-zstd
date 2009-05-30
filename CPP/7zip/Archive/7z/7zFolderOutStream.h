@@ -1,7 +1,7 @@
 // 7zFolderOutStream.h
 
-#ifndef __7Z_FOLDEROUTSTREAM_H
-#define __7Z_FOLDEROUTSTREAM_H
+#ifndef __7Z_FOLDER_OUT_STREAM_H
+#define __7Z_FOLDER_OUT_STREAM_H
 
 #include "7zIn.h"
 
@@ -16,43 +16,39 @@ class CFolderOutStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
+  COutStreamWithCRC *_crcStreamSpec;
+  CMyComPtr<ISequentialOutStream> _crcStream;
+  const CArchiveDatabaseEx *_db;
+  const CBoolVector *_extractStatuses;
+  CMyComPtr<IArchiveExtractCallback> _extractCallback;
+  UInt32 _ref2Offset;
+  UInt32 _startIndex;
+  int _currentIndex;
+  bool _testMode;
+  bool _checkCrc;
+  bool _fileIsOpen;
+  UInt64 _rem;
+
+  HRESULT OpenFile();
+  HRESULT CloseFileAndSetResult(Int32 res);
+  HRESULT CloseFileAndSetResult();
+  HRESULT ProcessEmptyFiles();
 public:
   MY_UNKNOWN_IMP
   
   CFolderOutStream();
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-private:
 
-  COutStreamWithCRC *_outStreamWithHashSpec;
-  CMyComPtr<ISequentialOutStream> _outStreamWithHash;
-  const CArchiveDatabaseEx *_archiveDatabase;
-  const CBoolVector *_extractStatuses;
-  UInt32 _startIndex;
-  UInt32 _ref2Offset;
-  int _currentIndex;
-  // UInt64 _currentDataPos;
-  CMyComPtr<IArchiveExtractCallback> _extractCallback;
-  bool _testMode;
-
-  bool _fileIsOpen;
-
-  bool _checkCrc;
-  UInt64 _filePos;
-
-  HRESULT OpenFile();
-  HRESULT WriteEmptyFiles();
-public:
   HRESULT Init(
       const CArchiveDatabaseEx *archiveDatabase,
-      UInt32 ref2Offset,
-      UInt32 startIndex,
+      UInt32 ref2Offset, UInt32 startIndex,
       const CBoolVector *extractStatuses,
       IArchiveExtractCallback *extractCallback,
-      bool testMode,
-      bool checkCrc);
+      bool testMode, bool checkCrc);
   HRESULT FlushCorrupted(Int32 resultEOperationResult);
-  HRESULT WasWritingFinished();
+  HRESULT WasWritingFinished() const
+      { return (_currentIndex == _extractStatuses->Size()) ? S_OK: E_FAIL; }
 };
 
 }}

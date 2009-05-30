@@ -1,12 +1,6 @@
-/****************************************************************************
- *  This file is part of PPMd project                                       *
- *  Written and distributed to public domain by Dmitry Shkarin 1997,        *
- *  1999-2001                                                               *
- *  Contents: compilation parameters and miscelaneous definitions           *
- *  Comments: system & compiler dependent file
- 
- *  modified by Igor Pavlov (2004-08-29).
- ****************************************************************************/
+// PpmdType.h
+// 2009-05-30 : Igor Pavlov : Public domain
+// This code is based on Dmitry Shkarin's PPMdH code (public domain)
 
 #ifndef __COMPRESS_PPMD_TYPE_H
 #define __COMPRESS_PPMD_TYPE_H

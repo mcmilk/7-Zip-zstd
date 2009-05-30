@@ -1,4 +1,5 @@
 // PpmdRegister.cpp
+// 2009-05-30 : Igor Pavlov : Public domain
 
 #include "StdAfx.h"
 

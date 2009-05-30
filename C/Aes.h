@@ -1,12 +1,14 @@
 /* Aes.h -- AES encryption / decryption
-2008-08-05
-Igor Pavlov
-Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __AES_H
 #define __AES_H
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define AES_BLOCK_SIZE 16
 
@@ -44,5 +46,9 @@ void AesCbc_Init(CAesCbc *p, const Byte *iv); /* iv size is AES_BLOCK_SIZE */
 
 SizeT AesCbc_Encode(CAesCbc *p, Byte *data, SizeT size);
 SizeT AesCbc_Decode(CAesCbc *p, Byte *data, SizeT size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

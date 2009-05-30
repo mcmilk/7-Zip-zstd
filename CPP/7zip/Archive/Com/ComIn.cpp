@@ -2,18 +2,18 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../../C/Alloc.h"
-}
-
 #include "../../../../C/CpuArch.h"
 
-#include "Common/MyCom.h"
-#include "../../Common/StreamUtils.h"
 #include "Common/IntToString.h"
+#include "Common/MyCom.h"
+
+#include "../../Common/StreamUtils.h"
 
 #include "ComIn.h"
+
+#define Get16(p) GetUi16(p)
+#define Get32(p) GetUi32(p)
 
 namespace NArchive{
 namespace NCom{
@@ -50,31 +50,40 @@ static HRESULT ReadIDs(IInStream *inStream, Byte *buf, int sectorSizeBits, UInt3
   RINOK(ReadSector(inStream, buf, sectorSizeBits, sid));
   UInt32 sectorSize = (UInt32)1 << sectorSizeBits;
   for (UInt32 t = 0; t < sectorSize; t += 4)
-    *dest++ = GetUi32(buf + t);
+    *dest++ = Get32(buf + t);
   return S_OK;
 }
 
 static void GetFileTimeFromMem(const Byte *p, FILETIME *ft)
 {
-  ft->dwLowDateTime = GetUi32(p);
-  ft->dwHighDateTime = GetUi32(p + 4);
+  ft->dwLowDateTime = Get32(p);
+  ft->dwHighDateTime = Get32(p + 4);
 }
 
-static void ReadItem(Byte *p, CItem &item, bool mode64bit)
+void CItem::Parse(const Byte *p, bool mode64bit)
 {
-  memcpy(item.Name, p, 64);
-  // item.NameSize = GetUi16(p + 64);
-  item.Type = p[66];
-  item.LeftDid = GetUi32(p + 68);
-  item.RightDid = GetUi32(p + 72);
-  item.SonDid = GetUi32(p + 76);
-  // item.Flags = GetUi32(p + 96);
-  GetFileTimeFromMem(p + 100, &item.CTime);
-  GetFileTimeFromMem(p + 108, &item.MTime);
-  item.Sid = GetUi32(p + 116);
-  item.Size = GetUi32(p + 120);
+  memcpy(Name, p, kNameSizeMax);
+  // NameSize = Get16(p + 64);
+  Type = p[66];
+  LeftDid = Get32(p + 68);
+  RightDid = Get32(p + 72);
+  SonDid = Get32(p + 76);
+  // Flags = Get32(p + 96);
+  GetFileTimeFromMem(p + 100, &CTime);
+  GetFileTimeFromMem(p + 108, &MTime);
+  Sid = Get32(p + 116);
+  Size = Get32(p + 120);
   if (mode64bit)
-    item.Size |= ((UInt64)GetUi32(p + 124) << 32);
+    Size |= ((UInt64)Get32(p + 124) << 32);
+}
+
+void CDatabase::Clear()
+{
+  Fat.Free();
+  MiniSids.Free();
+  Mat.Free();
+  Items.Clear();
+  Refs.Clear();
 }
 
 static const UInt32 kNoDid = 0xFFFFFFFF;
@@ -106,13 +115,6 @@ HRESULT CDatabase::AddNode(int parent, UInt32 did)
 static const char kCharOpenBracket  = '[';
 static const char kCharCloseBracket = ']';
 
-UString DWORDToString(UInt32 val)
-{
-  wchar_t buf[32];
-  ConvertUInt64ToString(val, buf);
-  return buf;
-}
-
 static UString CompoundNameToFileName(const UString &s)
 {
   UString res;
@@ -122,7 +124,9 @@ static UString CompoundNameToFileName(const UString &s)
     if (c < 0x20)
     {
       res += kCharOpenBracket;
-      res += DWORDToString(c);
+      wchar_t buf[32];
+      ConvertUInt32ToString(c, buf);
+      res += buf;
       res += kCharCloseBracket;
     }
     else
@@ -201,31 +205,30 @@ UString CDatabase::GetItemPath(UInt32 index) const
   return s;
 }
 
-HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
+HRESULT CDatabase::Open(IInStream *inStream)
 {
   static const UInt32 kHeaderSize = 512;
   Byte p[kHeaderSize];
   RINOK(ReadStream_FALSE(inStream, p, kHeaderSize));
   if (memcmp(p, kSignature, kSignatureSize) != 0)
     return S_FALSE;
-  UInt16 majorVer = GetUi16(p + 0x1A);
-  if (majorVer > 4)
+  if (Get16(p + 0x1A) > 4) // majorVer
     return S_FALSE;
-  if (GetUi16(p + 0x1C) != 0xFFFE)
+  if (Get16(p + 0x1C) != 0xFFFE)
     return S_FALSE;
-  UInt16 sectorSizeBits = GetUi16(p + 0x1E);
+  int sectorSizeBits = Get16(p + 0x1E);
   bool mode64bit = (sectorSizeBits >= 12);
-  UInt16 miniSectorSizeBits = GetUi16(p + 0x20);
-  db.SectorSizeBits = sectorSizeBits;
-  db.MiniSectorSizeBits = miniSectorSizeBits;
+  int miniSectorSizeBits = Get16(p + 0x20);
+  SectorSizeBits = sectorSizeBits;
+  MiniSectorSizeBits = miniSectorSizeBits;
 
   if (sectorSizeBits > 28 || miniSectorSizeBits > 28 ||
       sectorSizeBits < 7 || miniSectorSizeBits < 2 || miniSectorSizeBits > sectorSizeBits)
     return S_FALSE;
-  UInt32 numSectorsForFAT = GetUi32(p + 0x2C);
-  db.LongStreamMinSize = GetUi32(p + 0x38);
+  UInt32 numSectorsForFAT = Get32(p + 0x2C);
+  LongStreamMinSize = Get32(p + 0x38);
   
-  UInt32 sectSize = (UInt32)1 << (int)(sectorSizeBits);
+  UInt32 sectSize = (UInt32)1 << (int)sectorSizeBits;
 
   CByteBuffer sect;
   sect.SetCapacity(sectSize);
@@ -235,11 +238,11 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
   UInt32 numFatItems = numSectorsForFAT << ssb2;
   if ((numFatItems >> ssb2) != numSectorsForFAT)
     return S_FALSE;
-  db.FatSize = numFatItems;
+  FatSize = numFatItems;
 
   {
     CUInt32Buf bat;
-    UInt32 numSectorsForBat = GetUi32(p + 0x48);
+    UInt32 numSectorsForBat = Get32(p + 0x48);
     const UInt32 kNumHeaderBatItems = 109;
     UInt32 numBatItems = kNumHeaderBatItems + (numSectorsForBat << ssb2);
     if (numBatItems < kNumHeaderBatItems || ((numBatItems - kNumHeaderBatItems) >> ssb2) != numSectorsForBat)
@@ -248,8 +251,8 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
       return S_FALSE;
     UInt32 i;
     for (i = 0; i < kNumHeaderBatItems; i++)
-      bat[i] = GetUi32(p + 0x4c + i * 4);
-    UInt32 sid = GetUi32(p + 0x44);
+      bat[i] = Get32(p + 0x4c + i * 4);
+    UInt32 sid = Get32(p + 0x44);
     for (UInt32 s = 0; s < numSectorsForBat; s++)
     {
       RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, bat + i));
@@ -258,7 +261,7 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
     }
     numBatItems = i;
     
-    if (!db.Fat.Allocate(numFatItems))
+    if (!Fat.Allocate(numFatItems))
       return S_FALSE;
     UInt32 j = 0;
       
@@ -266,33 +269,33 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
     {
       if (j >= numBatItems)
         return S_FALSE;
-      RINOK(ReadIDs(inStream, sect, sectorSizeBits, bat[j], db.Fat + i));
+      RINOK(ReadIDs(inStream, sect, sectorSizeBits, bat[j], Fat + i));
     }
   }
 
   UInt32 numMatItems;
   {
-    UInt32 numSectorsForMat = GetUi32(p + 0x40);
+    UInt32 numSectorsForMat = Get32(p + 0x40);
     numMatItems = (UInt32)numSectorsForMat << ssb2;
     if ((numMatItems >> ssb2) != numSectorsForMat)
       return S_FALSE;
-    if (!db.Mat.Allocate(numMatItems))
+    if (!Mat.Allocate(numMatItems))
       return S_FALSE;
     UInt32 i;
-    UInt32 sid = GetUi32(p + 0x3C);
+    UInt32 sid = Get32(p + 0x3C);
     for (i = 0; i < numMatItems; i += numSidsInSec)
     {
-      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, db.Mat + i));
+      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, Mat + i));
       if (sid >= numFatItems)
         return S_FALSE;
-      sid = db.Fat[sid];
+      sid = Fat[sid];
     }
     if (sid != NFatID::kEndOfChain)
       return S_FALSE;
   }
 
   {
-    UInt32 sid = GetUi32(p + 0x30);
+    UInt32 sid = Get32(p + 0x30);
     for (;;)
     {
       if (sid >= numFatItems)
@@ -301,16 +304,16 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
       for (UInt32 i = 0; i < sectSize; i += 128)
       {
         CItem item;
-        ReadItem(sect + i, item, mode64bit);
-        db.Items.Add(item);
+        item.Parse(sect + i, mode64bit);
+        Items.Add(item);
       }
-      sid = db.Fat[sid];
+      sid = Fat[sid];
       if (sid == NFatID::kEndOfChain)
         break;
     }
   }
 
-  CItem root = db.Items[0];
+  CItem root = Items[0];
 
   {
     UInt32 numSectorsInMiniStream;
@@ -320,18 +323,17 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
         return S_FALSE;
       numSectorsInMiniStream = (UInt32)numSatSects64;
     }
-    db.NumSectorsInMiniStream = numSectorsInMiniStream;
-    if (!db.MiniSids.Allocate(numSectorsInMiniStream))
+    NumSectorsInMiniStream = numSectorsInMiniStream;
+    if (!MiniSids.Allocate(numSectorsInMiniStream))
       return S_FALSE;
     {
       UInt64 matSize64 = (root.Size + ((UInt64)1 << miniSectorSizeBits) - 1) >> miniSectorSizeBits;
       if (matSize64 > NFatID::kMaxValue)
         return S_FALSE;
-      db.MatSize = (UInt32)matSize64;
-      if (numMatItems < db.MatSize)
+      MatSize = (UInt32)matSize64;
+      if (numMatItems < MatSize)
         return S_FALSE;
     }
-
 
     UInt32 sid = root.Sid;
     for (UInt32 i = 0; ; i++)
@@ -344,14 +346,14 @@ HRESULT OpenArchive(IInStream *inStream, CDatabase &db)
       }
       if (i >= numSectorsInMiniStream)
         return S_FALSE;
-      db.MiniSids[i] = sid;
+      MiniSids[i] = sid;
       if (sid >= numFatItems)
         return S_FALSE;
-      sid = db.Fat[sid];
+      sid = Fat[sid];
     }
   }
 
-  return db.AddNode(-1, root.SonDid);
+  return AddNode(-1, root.SonDid);
 }
 
 }}

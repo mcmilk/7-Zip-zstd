@@ -82,11 +82,11 @@ static const UInt32 kAlgorithmForHeaders = kLzmaAlgoX5;
 static bool AreEqual(const UString &methodName, const wchar_t *s)
   { return (methodName.CompareNoCase(s) == 0); }
 
-static inline bool IsLZMAMethod(const UString &methodName)
+bool COneMethodInfo::IsLzma() const
 {
   return
-    AreEqual(methodName, kLZMAMethodName) ||
-    AreEqual(methodName, kLZMA2MethodName);
+    AreEqual(MethodName, kLZMAMethodName) ||
+    AreEqual(MethodName, kLZMA2MethodName);
 }
 
 static inline bool IsBZip2Method(const UString &methodName)
@@ -109,8 +109,12 @@ struct CNameToPropID
   const wchar_t *Name;
 };
 
-CNameToPropID g_NameToPropID[] =
+static CNameToPropID g_NameToPropID[] =
 {
+  { NCoderPropID::kBlockSize, VT_UI4, L"C" },
+  { NCoderPropID::kDictionarySize, VT_UI4, L"D" },
+  { NCoderPropID::kUsedMemorySize, VT_UI4, L"MEM" },
+
   { NCoderPropID::kOrder, VT_UI4, L"O" },
   { NCoderPropID::kPosStateBits, VT_UI4, L"PB" },
   { NCoderPropID::kLitContextBits, VT_UI4, L"LC" },
@@ -122,7 +126,8 @@ CNameToPropID g_NameToPropID[] =
   { NCoderPropID::kMatchFinderCycles, VT_UI4, L"mc" },
   { NCoderPropID::kAlgorithm, VT_UI4, L"a" },
   { NCoderPropID::kMatchFinder, VT_BSTR, L"mf" },
-  { NCoderPropID::kNumThreads, VT_UI4, L"mt" }
+  { NCoderPropID::kNumThreads, VT_UI4, L"mt" },
+  { NCoderPropID::kDefaultProp, VT_UI4, L"" }
 };
 
 static bool ConvertProperty(PROPVARIANT srcProp, VARTYPE varType, NCOM::CPropVariant &destProp)
@@ -154,7 +159,7 @@ static bool ConvertProperty(PROPVARIANT srcProp, VARTYPE varType, NCOM::CPropVar
   return false;
 }
     
-static int FindPropIdFromStringName(const UString &name)
+static int FindPropIdExact(const UString &name)
 {
   for (int i = 0; i < sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]); i++)
     if (name.CompareNoCase(g_NameToPropID[i].Name) == 0)
@@ -162,16 +167,26 @@ static int FindPropIdFromStringName(const UString &name)
   return -1;
 }
 
-static void SetOneMethodProp(COneMethodInfo &oneMethodInfo, PROPID propID,
-    const NWindows::NCOM::CPropVariant &value)
+static int FindPropIdStart(const UString &name)
 {
-  for (int j = 0; j < oneMethodInfo.Props.Size(); j++)
-    if (oneMethodInfo.Props[j].Id == propID)
+  for (int i = 0; i < sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]); i++)
+  {
+    UString t = g_NameToPropID[i].Name;
+    if (t.CompareNoCase(name.Left(t.Length())) == 0)
+      return i;
+  }
+  return -1;
+}
+
+static void SetMethodProp(COneMethodInfo &m, PROPID propID, const NCOM::CPropVariant &value)
+{
+  for (int j = 0; j < m.Props.Size(); j++)
+    if (m.Props[j].Id == propID)
       return;
   CProp prop;
   prop.Id = propID;
   prop.Value = value;
-  oneMethodInfo.Props.Add(prop);
+  m.Props.Add(prop);
 }
 
 void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
@@ -184,7 +199,7 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
   if (oneMethodInfo.MethodName.IsEmpty())
     oneMethodInfo.MethodName = kDefaultMethodName;
   
-  if (IsLZMAMethod(oneMethodInfo.MethodName))
+  if (oneMethodInfo.IsLzma())
   {
     UInt32 dicSize =
       (level >= 9 ? kLzmaDicSizeX9 :
@@ -205,12 +220,12 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
       (level >= 5 ? kLzmaMatchFinderX5 :
                     kLzmaMatchFinderX1);
     
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kMatchFinder, matchFinder);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kMatchFinder, matchFinder);
     #ifdef COMPRESS_MT
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
     #endif
   }
   else if (IsDeflateMethod(oneMethodInfo.MethodName))
@@ -229,9 +244,9 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
       (level >= 5 ? kDeflateAlgoX5 :
                     kDeflateAlgoX1);
     
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
   }
   else if (IsBZip2Method(oneMethodInfo.MethodName))
   {
@@ -245,10 +260,10 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
       (level >= 3 ? kBZip2DicSizeX3 :
                     kBZip2DicSizeX1));
     
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
     #ifdef COMPRESS_MT
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
     #endif
   }
   else if (IsPpmdMethod(oneMethodInfo.MethodName))
@@ -265,8 +280,8 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
       (level >= 5 ? kPpmdOrderX5 :
                     kPpmdOrderX1)));
     
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kUsedMemorySize, useMemSize);
-    SetOneMethodProp(oneMethodInfo, NCoderPropID::kOrder, order);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kUsedMemorySize, useMemSize);
+    SetMethodProp(oneMethodInfo, NCoderPropID::kOrder, order);
   }
 }
 
@@ -316,25 +331,22 @@ static void SplitParam(const UString &param, UString &name, UString &value)
 HRESULT COutHandler::SetParam(COneMethodInfo &oneMethodInfo, const UString &name, const UString &value)
 {
   CProp prop;
-  if (name.CompareNoCase(L"D") == 0 ||
-      name.CompareNoCase(L"MEM") == 0)
+  int index = FindPropIdExact(name);
+  if (index < 0)
+    return E_INVALIDARG;
+  const CNameToPropID &nameToPropID = g_NameToPropID[index];
+  prop.Id = nameToPropID.PropID;
+
+  if (prop.Id == NCoderPropID::kBlockSize ||
+      prop.Id == NCoderPropID::kDictionarySize ||
+      prop.Id == NCoderPropID::kUsedMemorySize)
   {
     UInt32 dicSize;
     RINOK(ParsePropDictionaryValue(value, dicSize));
-    prop.Id = (name.CompareNoCase(L"D") == 0) ?
-        NCoderPropID::kDictionarySize :
-        NCoderPropID::kUsedMemorySize;
     prop.Value = dicSize;
   }
   else
   {
-    int index = FindPropIdFromStringName(name);
-    if (index < 0)
-      return E_INVALIDARG;
-    
-    const CNameToPropID &nameToPropID = g_NameToPropID[index];
-    prop.Id = nameToPropID.PropID;
-    
     NCOM::CPropVariant propValue;
     
     if (nameToPropID.VarType == VT_BSTR)
@@ -465,7 +477,7 @@ void COutHandler::Init()
   WriteMTime = true;
   
   #ifdef COMPRESS_MT
-  _numThreads = NWindows::NSystem::GetNumberOfProcessors();
+  _numThreads = NSystem::GetNumberOfProcessors();
   #endif
   
   _level = 5;
@@ -576,35 +588,26 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
   }
   else
   {
+    int index = FindPropIdStart(realName);
+    if (index < 0)
+      return E_INVALIDARG;
+    const CNameToPropID &nameToPropID = g_NameToPropID[index];
     CProp prop;
-    if (realName.Left(1).CompareNoCase(L"D") == 0)
+    prop.Id = nameToPropID.PropID;
+
+    if (prop.Id == NCoderPropID::kBlockSize ||
+        prop.Id == NCoderPropID::kDictionarySize ||
+        prop.Id == NCoderPropID::kUsedMemorySize)
     {
       UInt32 dicSize;
-      RINOK(ParsePropDictionaryValue(realName.Mid(1), value, dicSize));
-      prop.Id = NCoderPropID::kDictionarySize;
-      prop.Value = dicSize;
-      if (number <= mainDicMethodIndex)
-        mainDicSize = dicSize;
-    }
-    else if (realName.Left(1).CompareNoCase(L"C") == 0)
-    {
-      UInt32 blockSize;
-      RINOK(ParsePropDictionaryValue(realName.Mid(1), value, blockSize));
-      prop.Id = NCoderPropID::kBlockSize;
-      prop.Value = blockSize;
-    }
-    else if (realName.Left(3).CompareNoCase(L"MEM") == 0)
-    {
-      UInt32 dicSize;
-      RINOK(ParsePropDictionaryValue(realName.Mid(3), value, dicSize));
-      prop.Id = NCoderPropID::kUsedMemorySize;
+      RINOK(ParsePropDictionaryValue(realName.Mid(MyStringLen(nameToPropID.Name)), value, dicSize));
       prop.Value = dicSize;
       if (number <= mainDicMethodIndex)
         mainDicSize = dicSize;
     }
     else
     {
-      int index = FindPropIdFromStringName(realName);
+      int index = FindPropIdExact(realName);
       if (index < 0)
         return E_INVALIDARG;
       const CNameToPropID &nameToPropID = g_NameToPropID[index];

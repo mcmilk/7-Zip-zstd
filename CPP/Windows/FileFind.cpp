@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "FileFind.h"
+#include "FileIO.h"
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
 #endif
@@ -13,6 +14,13 @@ extern bool g_IsNT;
 
 namespace NWindows {
 namespace NFile {
+
+#ifdef SUPPORT_DEVICE_FILE
+bool IsDeviceName(LPCTSTR n);
+#ifndef _UNICODE
+bool IsDeviceName(LPCWSTR n);
+#endif
+#endif
 
 #if defined(WIN_LONG_PATH) && defined(_UNICODE)
 #define WIN_LONG_PATH2
@@ -44,19 +52,26 @@ bool CFileInfoW::IsDots() const
 }
 #endif
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfo &fi)
-{
-  fi.Attrib = fd.dwFileAttributes;
-  fi.CTime = fd.ftCreationTime;
-  fi.ATime = fd.ftLastAccessTime;
-  fi.MTime = fd.ftLastWriteTime;
-  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
-  fi.Name = fd.cFileName;
+#define WIN_FD_TO_MY_FI(fi, fd) \
+  fi.Attrib = fd.dwFileAttributes; \
+  fi.CTime = fd.ftCreationTime; \
+  fi.ATime = fd.ftLastAccessTime; \
+  fi.MTime = fd.ftLastWriteTime; \
+  fi.Size = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow; \
+  fi.IsDevice = false;
+
+  /*
   #ifndef _WIN32_WCE
   fi.ReparseTag = fd.dwReserved0;
   #else
   fi.ObjectID = fd.dwOID;
   #endif
+  */
+
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfo &fi)
+{
+  WIN_FD_TO_MY_FI(fi, fd);
+  fi.Name = fd.cFileName;
 }
 
 #ifndef _UNICODE
@@ -65,32 +80,14 @@ static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : 
 
 static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATAW &fd, CFileInfoW &fi)
 {
-  fi.Attrib = fd.dwFileAttributes;
-  fi.CTime = fd.ftCreationTime;
-  fi.ATime = fd.ftLastAccessTime;
-  fi.MTime = fd.ftLastWriteTime;
-  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
+  WIN_FD_TO_MY_FI(fi, fd);
   fi.Name = fd.cFileName;
-  #ifndef _WIN32_WCE
-  fi.ReparseTag = fd.dwReserved0;
-  #else
-  fi.ObjectID = fd.dwOID;
-  #endif
 }
 
 static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfoW &fi)
 {
-  fi.Attrib = fd.dwFileAttributes;
-  fi.CTime = fd.ftCreationTime;
-  fi.ATime = fd.ftLastAccessTime;
-  fi.MTime = fd.ftLastWriteTime;
-  fi.Size  = (((UInt64)fd.nFileSizeHigh) << 32) + fd.nFileSizeLow;
+  WIN_FD_TO_MY_FI(fi, fd);
   fi.Name = GetUnicodeString(fd.cFileName, GetCurrentCodePage());
-  #ifndef _WIN32_WCE
-  fi.ReparseTag = fd.dwReserved0;
-  #else
-  fi.ObjectID = fd.dwOID;
-  #endif
 }
 #endif
   
@@ -108,7 +105,7 @@ bool CFindFile::Close()
 }
 
           
-bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
+bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fi)
 {
   if (!Close())
     return false;
@@ -124,12 +121,12 @@ bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo)
   #endif
   if (_handle == INVALID_HANDLE_VALUE)
     return false;
-  ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+  ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   return true;
 }
 
 #ifndef _UNICODE
-bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
+bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fi)
 {
   if (!Close())
     return false;
@@ -146,7 +143,7 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
     }
     #endif
     if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
   else
   {
@@ -154,95 +151,158 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo)
     _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard,
         GetCurrentCodePage()), &fd);
     if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
   return (_handle != INVALID_HANDLE_VALUE);
 }
 #endif
 
-bool CFindFile::FindNext(CFileInfo &fileInfo)
+bool CFindFile::FindNext(CFileInfo &fi)
 {
   WIN32_FIND_DATA fd;
   bool result = BOOLToBool(::FindNextFile(_handle, &fd));
   if (result)
-    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   return result;
 }
 
 #ifndef _UNICODE
-bool CFindFile::FindNext(CFileInfoW &fileInfo)
+bool CFindFile::FindNext(CFileInfoW &fi)
 {
   if (g_IsNT)
   {
     WIN32_FIND_DATAW fd;
     if (!::FindNextFileW(_handle, &fd))
       return false;
-    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
   else
   {
     WIN32_FIND_DATAA fd;
     if (!::FindNextFileA(_handle, &fd))
       return false;
-    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fileInfo);
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
   return true;
 }
 #endif
 
-bool FindFile(LPCTSTR wildcard, CFileInfo &fileInfo)
+#define MY_CLEAR_FILETIME(ft) ft.dwLowDateTime = ft.dwHighDateTime = 0;
+
+void CFileInfoBase::Clear()
 {
+  Size = 0;
+  MY_CLEAR_FILETIME(CTime);
+  MY_CLEAR_FILETIME(ATime);
+  MY_CLEAR_FILETIME(MTime);
+  Attrib = 0;
+}
+  
+bool CFileInfo::Find(LPCTSTR wildcard)
+{
+  #ifdef SUPPORT_DEVICE_FILE
+  if (IsDeviceName(wildcard))
+  {
+    Clear();
+    IsDevice = true;
+    NIO::CInFile inFile;
+    if (!inFile.Open(wildcard))
+      return false;
+    Name = wildcard + 4;
+    if (inFile.LengthDefined)
+      Size = inFile.Length;
+    return true;
+  }
+  #endif
   CFindFile finder;
-  return finder.FindFirst(wildcard, fileInfo);
+  return finder.FindFirst(wildcard, *this);
 }
 
+
 #ifndef _UNICODE
-bool FindFile(LPCWSTR wildcard, CFileInfoW &fileInfo)
+bool CFileInfoW::Find(LPCWSTR wildcard)
 {
+  #ifdef SUPPORT_DEVICE_FILE
+  if (IsDeviceName(wildcard))
+  {
+    Clear();
+    IsDevice = true;
+    NIO::CInFile inFile;
+    if (!inFile.Open(wildcard))
+      return false;
+    Name = wildcard + 4;
+    if (inFile.LengthDefined)
+      Size = inFile.Length;
+    return true;
+  }
+  #endif
   CFindFile finder;
-  return finder.FindFirst(wildcard, fileInfo);
+  return finder.FindFirst(wildcard, *this);
 }
 #endif
 
 bool DoesFileExist(LPCTSTR name)
 {
-  CFileInfo fileInfo;
-  return FindFile(name, fileInfo);
+  CFileInfo fi;
+  return fi.Find(name) && !fi.IsDir();
+}
+
+bool DoesDirExist(LPCTSTR name)
+{
+  CFileInfo fi;
+  return fi.Find(name) && fi.IsDir();
+}
+
+bool DoesFileOrDirExist(LPCTSTR name)
+{
+  CFileInfo fi;
+  return fi.Find(name);
 }
 
 #ifndef _UNICODE
 bool DoesFileExist(LPCWSTR name)
 {
-  CFileInfoW fileInfo;
-  return FindFile(name, fileInfo);
+  CFileInfoW fi;
+  return fi.Find(name) && !fi.IsDir();
+}
+
+bool DoesDirExist(LPCWSTR name)
+{
+  CFileInfoW fi;
+  return fi.Find(name) && fi.IsDir();
+}
+bool DoesFileOrDirExist(LPCWSTR name)
+{
+  CFileInfoW fi;
+  return fi.Find(name);
 }
 #endif
 
 /////////////////////////////////////
 // CEnumerator
 
-bool CEnumerator::NextAny(CFileInfo &fileInfo)
+bool CEnumerator::NextAny(CFileInfo &fi)
 {
   if (_findFile.IsHandleAllocated())
-    return _findFile.FindNext(fileInfo);
+    return _findFile.FindNext(fi);
   else
-    return _findFile.FindFirst(_wildcard, fileInfo);
+    return _findFile.FindFirst(_wildcard, fi);
 }
 
-bool CEnumerator::Next(CFileInfo &fileInfo)
+bool CEnumerator::Next(CFileInfo &fi)
 {
   for (;;)
   {
-    if (!NextAny(fileInfo))
+    if (!NextAny(fi))
       return false;
-    if (!fileInfo.IsDots())
+    if (!fi.IsDots())
       return true;
   }
 }
 
-bool CEnumerator::Next(CFileInfo &fileInfo, bool &found)
+bool CEnumerator::Next(CFileInfo &fi, bool &found)
 {
-  if (Next(fileInfo))
+  if (Next(fi))
   {
     found = true;
     return true;
@@ -252,28 +312,28 @@ bool CEnumerator::Next(CFileInfo &fileInfo, bool &found)
 }
 
 #ifndef _UNICODE
-bool CEnumeratorW::NextAny(CFileInfoW &fileInfo)
+bool CEnumeratorW::NextAny(CFileInfoW &fi)
 {
   if (_findFile.IsHandleAllocated())
-    return _findFile.FindNext(fileInfo);
+    return _findFile.FindNext(fi);
   else
-    return _findFile.FindFirst(_wildcard, fileInfo);
+    return _findFile.FindFirst(_wildcard, fi);
 }
 
-bool CEnumeratorW::Next(CFileInfoW &fileInfo)
+bool CEnumeratorW::Next(CFileInfoW &fi)
 {
   for (;;)
   {
-    if (!NextAny(fileInfo))
+    if (!NextAny(fi))
       return false;
-    if (!fileInfo.IsDots())
+    if (!fi.IsDots())
       return true;
   }
 }
 
-bool CEnumeratorW::Next(CFileInfoW &fileInfo, bool &found)
+bool CEnumeratorW::Next(CFileInfoW &fi, bool &found)
 {
-  if (Next(fileInfo))
+  if (Next(fi))
   {
     found = true;
     return true;

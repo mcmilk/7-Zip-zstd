@@ -58,11 +58,12 @@ struct CArcItem
   UString Name;
   bool IsDir;
   bool SizeDefined;
+  bool MTimeDefined;
   bool Censored;
   UInt32 IndexInServer;
   int TimeType;
   
-  CArcItem(): IsDir(false), SizeDefined(false), Censored(false), TimeType(-1) {}
+  CArcItem(): IsDir(false), SizeDefined(false), MTimeDefined(false), Censored(false), TimeType(-1) {}
 };
 
 #endif

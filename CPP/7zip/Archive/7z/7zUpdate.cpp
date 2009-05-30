@@ -5,10 +5,14 @@
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
 
+#include "../../Common/CreateCoder.h"
+
 #include "../../Compress/CopyCoder.h"
 
 #include "../Common/ItemNameUtils.h"
+#include "../Common/OutStreamWithCRC.h"
 
+#include "7zDecode.h"
 #include "7zEncode.h"
 #include "7zFolderInStream.h"
 #include "7zHandler.h"
@@ -17,6 +21,11 @@
 
 namespace NArchive {
 namespace N7z {
+
+static const UInt64 k_LZMA = 0x030101;
+static const UInt64 k_BCJ  = 0x03030103;
+static const UInt64 k_BCJ2 = 0x0303011B;
+static const UInt64 k_AES  = 0x06F10701;
 
 static const wchar_t *kMatchFinderForBCJ2_LZMA = L"BT2";
 static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
@@ -64,27 +73,29 @@ UString CUpdateItem::GetExtension() const
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
+#define RINOZ_COMP(a, b) RINOZ(MyCompare(a, b))
+
 static int CompareBuffers(const CByteBuffer &a1, const CByteBuffer &a2)
 {
   size_t c1 = a1.GetCapacity();
   size_t c2 = a2.GetCapacity();
-  RINOZ(MyCompare(c1, c2));
+  RINOZ_COMP(c1, c2);
   for (size_t i = 0; i < c1; i++)
-    RINOZ(MyCompare(a1[i], a2[i]));
+    RINOZ_COMP(a1[i], a2[i]);
   return 0;
 }
 
 static int CompareCoders(const CCoderInfo &c1, const CCoderInfo &c2)
 {
-  RINOZ(MyCompare(c1.NumInStreams, c2.NumInStreams));
-  RINOZ(MyCompare(c1.NumOutStreams, c2.NumOutStreams));
-  RINOZ(MyCompare(c1.MethodID, c2.MethodID));
+  RINOZ_COMP(c1.NumInStreams, c2.NumInStreams);
+  RINOZ_COMP(c1.NumOutStreams, c2.NumOutStreams);
+  RINOZ_COMP(c1.MethodID, c2.MethodID);
   return CompareBuffers(c1.Props, c2.Props);
 }
 
 static int CompareBindPairs(const CBindPair &b1, const CBindPair &b2)
 {
-  RINOZ(MyCompare(b1.InIndex, b2.InIndex));
+  RINOZ_COMP(b1.InIndex, b2.InIndex);
   return MyCompare(b1.OutIndex, b2.OutIndex);
 }
 
@@ -92,39 +103,52 @@ static int CompareFolders(const CFolder &f1, const CFolder &f2)
 {
   int s1 = f1.Coders.Size();
   int s2 = f2.Coders.Size();
-  RINOZ(MyCompare(s1, s2));
+  RINOZ_COMP(s1, s2);
   int i;
   for (i = 0; i < s1; i++)
     RINOZ(CompareCoders(f1.Coders[i], f2.Coders[i]));
   s1 = f1.BindPairs.Size();
   s2 = f2.BindPairs.Size();
-  RINOZ(MyCompare(s1, s2));
+  RINOZ_COMP(s1, s2);
   for (i = 0; i < s1; i++)
     RINOZ(CompareBindPairs(f1.BindPairs[i], f2.BindPairs[i]));
   return 0;
 }
 
+/*
 static int CompareFiles(const CFileItem &f1, const CFileItem &f2)
 {
   return MyStringCompareNoCase(f1.Name, f2.Name);
 }
+*/
 
-static int CompareFolderRefs(const int *p1, const int *p2, void *param)
+const struct CFolderRepack
 {
-  int i1 = *p1;
-  int i2 = *p2;
+  int FolderIndex;
+  int Group;
+  CNum NumCopyFiles;
+};
+
+static int CompareFolderRepacks(const CFolderRepack *p1, const CFolderRepack *p2, void *param)
+{
+  RINOZ_COMP(p1->Group, p2->Group);
+  int i1 = p1->FolderIndex;
+  int i2 = p2->FolderIndex;
   const CArchiveDatabaseEx &db = *(const CArchiveDatabaseEx *)param;
   RINOZ(CompareFolders(
       db.Folders[i1],
       db.Folders[i2]));
-  RINOZ(MyCompare(
+  return MyCompare(i1, i2);
+  /*
+  RINOZ_COMP(
       db.NumUnpackStreamsVector[i1],
-      db.NumUnpackStreamsVector[i2]));
+      db.NumUnpackStreamsVector[i2]);
   if (db.NumUnpackStreamsVector[i1] == 0)
     return 0;
   return CompareFiles(
       db.Files[db.FolderStartFileIndex[i1]],
       db.Files[db.FolderStartFileIndex[i2]]);
+  */
 }
 
 ////////////////////////////////////////////////////////////
@@ -277,20 +301,19 @@ static int CompareUpdateItems(const CRefItem *p1, const CRefItem *p2, void *para
   bool sortByType = *(bool *)param;
   if (sortByType)
   {
-    RINOZ(MyCompare(a1.ExtensionIndex, a2.ExtensionIndex))
+    RINOZ_COMP(a1.ExtensionIndex, a2.ExtensionIndex);
     RINOZ(MyStringCompareNoCase(u1.Name + a1.ExtensionPos, u2.Name + a2.ExtensionPos));
     RINOZ(MyStringCompareNoCase(u1.Name + a1.NamePos, u2.Name + a2.NamePos));
     if (!u1.MTimeDefined && u2.MTimeDefined) return 1;
     if (u1.MTimeDefined && !u2.MTimeDefined) return -1;
-    if (u1.MTimeDefined && u2.MTimeDefined) RINOZ(MyCompare(u1.MTime, u2.MTime));
-    RINOZ(MyCompare(u1.Size, u2.Size))
+    if (u1.MTimeDefined && u2.MTimeDefined) RINOZ_COMP(u1.MTime, u2.MTime);
+    RINOZ_COMP(u1.Size, u2.Size);
   }
   return MyStringCompareNoCase(u1.Name, u2.Name);
 }
 
 struct CSolidGroup
 {
-  CCompressionMethodMode Method;
   CRecordVector<UInt32> Indices;
 };
 
@@ -303,7 +326,7 @@ static wchar_t *g_ExeExts[] =
   L"sys"
 };
 
-static bool IsExeFile(const UString &ext)
+static bool IsExeExt(const UString &ext)
 {
   for (int i = 0; i < sizeof(g_ExeExts) / sizeof(g_ExeExts[0]); i++)
     if (ext.CompareNoCase(g_ExeExts[i]) == 0)
@@ -311,31 +334,23 @@ static bool IsExeFile(const UString &ext)
   return false;
 }
 
-static const UInt64 k_LZMA  = 0x030101;
-static const UInt64 k_BCJ   = 0x03030103;
-static const UInt64 k_BCJ2  = 0x0303011B;
-
-static bool GetMethodFull(UInt64 methodID,
-    UInt32 numInStreams, CMethodFull &methodResult)
+static void GetMethodFull(UInt64 methodID, UInt32 numInStreams, CMethodFull &methodResult)
 {
   methodResult.Id = methodID;
   methodResult.NumInStreams = numInStreams;
   methodResult.NumOutStreams = 1;
-  return true;
 }
 
-static bool MakeExeMethod(const CCompressionMethodMode &method,
+static void MakeExeMethod(const CCompressionMethodMode &method,
     bool bcj2Filter, CCompressionMethodMode &exeMethod)
 {
   exeMethod = method;
   if (bcj2Filter)
   {
     CMethodFull methodFull;
-    if (!GetMethodFull(k_BCJ2, 4, methodFull))
-      return false;
+    GetMethodFull(k_BCJ2, 4, methodFull);
     exeMethod.Methods.Insert(0, methodFull);
-    if (!GetMethodFull(k_LZMA, 1, methodFull))
-      return false;
+    GetMethodFull(k_LZMA, 1, methodFull);
     {
       CProp prop;
       prop.Id = NCoderPropID::kAlgorithm;
@@ -383,8 +398,7 @@ static bool MakeExeMethod(const CCompressionMethodMode &method,
   else
   {
     CMethodFull methodFull;
-    if (!GetMethodFull(k_BCJ, 1, methodFull))
-      return false;
+    GetMethodFull(k_BCJ, 1, methodFull);
     exeMethod.Methods.Insert(0, methodFull);
     CBind bind;
     bind.OutCoder = 0;
@@ -393,55 +407,6 @@ static bool MakeExeMethod(const CCompressionMethodMode &method,
     bind.OutStream = 0;
     exeMethod.Binds.Add(bind);
   }
-  return true;
-}
-
-static void SplitFilesToGroups(
-    const CCompressionMethodMode &method,
-    bool useFilters, bool maxFilter,
-    const CObjectVector<CUpdateItem> &updateItems,
-    CObjectVector<CSolidGroup> &groups)
-{
-  if (method.Methods.Size() != 1 || method.Binds.Size() != 0)
-    useFilters = false;
-  groups.Clear();
-  groups.Add(CSolidGroup());
-  groups.Add(CSolidGroup());
-  CSolidGroup &generalGroup = groups[0];
-  CSolidGroup &exeGroup = groups[1];
-  generalGroup.Method = method;
-  int i;
-  for (i = 0; i < updateItems.Size(); i++)
-  {
-    const CUpdateItem &ui = updateItems[i];
-    if (!ui.NewData)
-      continue;
-    if (!ui.HasStream())
-      continue;
-    if (useFilters)
-    {
-      const UString name = ui.Name;
-      int dotPos = name.ReverseFind(L'.');
-      if (dotPos >= 0)
-      {
-        UString ext = name.Mid(dotPos + 1);
-        if (IsExeFile(ext))
-        {
-          exeGroup.Indices.Add(i);
-          continue;
-        }
-      }
-    }
-    generalGroup.Indices.Add(i);
-  }
-  if (exeGroup.Indices.Size() > 0)
-    if (!MakeExeMethod(method, maxFilter, exeGroup.Method))
-      exeGroup.Method = method;
-  for (i = 0; i < groups.Size();)
-    if (groups[i].Indices.Size() == 0)
-      groups.Delete(i);
-    else
-      i++;
 }
 
 static void FromUpdateItemToFileItem(const CUpdateItem &ui,
@@ -462,7 +427,250 @@ static void FromUpdateItemToFileItem(const CUpdateItem &ui,
   file.HasStream = ui.HasStream();
 }
 
-static HRESULT Update2(
+class CFolderOutStream2:
+  public ISequentialOutStream,
+  public CMyUnknownImp
+{
+  COutStreamWithCRC *_crcStreamSpec;
+  CMyComPtr<ISequentialOutStream> _crcStream;
+  const CArchiveDatabaseEx *_db;
+  const CBoolVector *_extractStatuses;
+  CMyComPtr<ISequentialOutStream> _outStream;
+  UInt32 _startIndex;
+  int _currentIndex;
+  bool _fileIsOpen;
+  UInt64 _rem;
+
+  void OpenFile();
+  void CloseFile();
+  HRESULT CloseFileAndSetResult();
+  HRESULT ProcessEmptyFiles();
+public:
+  MY_UNKNOWN_IMP
+  
+  CFolderOutStream2()
+  {
+    _crcStreamSpec = new COutStreamWithCRC;
+    _crcStream = _crcStreamSpec;
+  }
+
+  HRESULT Init(const CArchiveDatabaseEx *db, UInt32 startIndex,
+      const CBoolVector *extractStatuses, ISequentialOutStream *outStream);
+  void ReleaseOutStream();
+  HRESULT CheckFinishedState() const { return (_currentIndex == _extractStatuses->Size()) ? S_OK: E_FAIL; }
+
+  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+};
+
+HRESULT CFolderOutStream2::Init(const CArchiveDatabaseEx *db, UInt32 startIndex,
+    const CBoolVector *extractStatuses, ISequentialOutStream *outStream)
+{
+  _db = db;
+  _startIndex = startIndex;
+  _extractStatuses = extractStatuses;
+  _outStream = outStream;
+
+  _currentIndex = 0;
+  _fileIsOpen = false;
+  return ProcessEmptyFiles();
+}
+
+void CFolderOutStream2::ReleaseOutStream()
+{
+  _outStream.Release();
+  _crcStreamSpec->ReleaseStream();
+}
+
+void CFolderOutStream2::OpenFile()
+{
+  _crcStreamSpec->SetStream((*_extractStatuses)[_currentIndex] ? _outStream : NULL);
+  _crcStreamSpec->Init(true);
+  _fileIsOpen = true;
+  _rem = _db->Files[_startIndex + _currentIndex].Size;
+}
+
+void CFolderOutStream2::CloseFile()
+{
+  _crcStreamSpec->ReleaseStream();
+  _fileIsOpen = false;
+  _currentIndex++;
+}
+
+HRESULT CFolderOutStream2::CloseFileAndSetResult()
+{
+  const CFileItem &file = _db->Files[_startIndex + _currentIndex];
+  CloseFile();
+  return (file.IsDir || !file.CrcDefined || file.Crc == _crcStreamSpec->GetCRC()) ? S_OK: S_FALSE;
+}
+
+HRESULT CFolderOutStream2::ProcessEmptyFiles()
+{
+  while (_currentIndex < _extractStatuses->Size() && _db->Files[_startIndex + _currentIndex].Size == 0)
+  {
+    OpenFile();
+    RINOK(CloseFileAndSetResult());
+  }
+  return S_OK;
+}
+
+STDMETHODIMP CFolderOutStream2::Write(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  if (processedSize != NULL)
+    *processedSize = 0;
+  while (size != 0)
+  {
+    if (_fileIsOpen)
+    {
+      UInt32 cur = size < _rem ? size : (UInt32)_rem;
+      RINOK(_crcStream->Write(data, cur, &cur));
+      if (cur == 0)
+        break;
+      data = (const Byte *)data + cur;
+      size -= cur;
+      _rem -= cur;
+      if (processedSize != NULL)
+        *processedSize += cur;
+      if (_rem == 0)
+      {
+        RINOK(CloseFileAndSetResult());
+        RINOK(ProcessEmptyFiles());
+        continue;
+      }
+    }
+    else
+    {
+      RINOK(ProcessEmptyFiles());
+      if (_currentIndex == _extractStatuses->Size())
+      {
+        // we don't support partial extracting
+        return E_FAIL;
+      }
+      OpenFile();
+    }
+  }
+  return S_OK;
+}
+
+class CThreadDecoder: public CVirtThread
+{
+public:
+  HRESULT Result;
+  CMyComPtr<IInStream> InStream;
+
+  CFolderOutStream2 *FosSpec;
+  CMyComPtr<ISequentialOutStream> Fos;
+
+  UInt64 StartPos;
+  const UInt64 *PackSizes;
+  const CFolder *Folder;
+  #ifndef _NO_CRYPTO
+  CMyComPtr<ICryptoGetTextPassword> GetTextPassword;
+  #endif
+
+  DECL_EXTERNAL_CODECS_VARS
+  CDecoder Decoder;
+
+  #ifdef COMPRESS_MT
+  bool MtMode;
+  UInt32 NumThreads;
+  #endif
+
+  CThreadDecoder():
+    Decoder(true)
+  {
+    #ifdef COMPRESS_MT
+    MtMode = false;
+    NumThreads = 1;
+    #endif
+    FosSpec = new CFolderOutStream2;
+    Fos = FosSpec;
+    Result = E_FAIL;
+  }
+  virtual void Execute();
+};
+
+void CThreadDecoder::Execute()
+{
+  try
+  {
+    #ifndef _NO_CRYPTO
+    bool passwordIsDefined;
+    #endif
+    Result = Decoder.Decode(
+      EXTERNAL_CODECS_VARS
+      InStream,
+      StartPos,
+      PackSizes,
+      *Folder,
+      Fos,
+      NULL
+      #ifndef _NO_CRYPTO
+      , GetTextPassword, passwordIsDefined
+      #endif
+      #ifdef COMPRESS_MT
+      , MtMode, NumThreads
+      #endif
+      );
+  }
+  catch(...)
+  {
+    Result = E_FAIL;
+  }
+  if (Result == S_OK)
+    Result = FosSpec->CheckFinishedState();
+  FosSpec->ReleaseOutStream();
+}
+
+bool static Is86FilteredFolder(const CFolder &f)
+{
+  for (int i = 0; i < f.Coders.Size(); i++)
+  {
+    CMethodId m = f.Coders[i].MethodID;
+    if (m == k_BCJ || m == k_BCJ2)
+      return true;
+  }
+  return false;
+}
+
+bool static IsEncryptedFolder(const CFolder &f)
+{
+  for (int i = 0; i < f.Coders.Size(); i++)
+  {
+    CMethodId m = f.Coders[i].MethodID;
+    if (m == k_AES)
+      return true;
+  }
+  return false;
+}
+
+#ifndef _NO_CRYPTO
+
+class CCryptoGetTextPassword:
+  public ICryptoGetTextPassword,
+  public CMyUnknownImp
+{
+public:
+  UString Password;
+
+  MY_UNKNOWN_IMP
+  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
+};
+
+STDMETHODIMP CCryptoGetTextPassword::CryptoGetTextPassword(BSTR *password)
+{
+  return StringToBstr(Password, password);
+}
+
+#endif
+
+static const int kNumGroupsMax = 4;
+
+static bool Is86Group(int group) { return (group & 1) != 0; }
+static bool IsEncryptedGroup(int group) { return (group & 2) != 0; }
+static int GetGroupIndex(bool encrypted, int bcjFiltered)
+  { return (encrypted ? 2 : 0) + (bcjFiltered ? 1 : 0); }
+
+HRESULT Update(
     DECL_EXTERNAL_CODECS_LOC_VARS
     IInStream *inStream,
     const CArchiveDatabaseEx *db,
@@ -471,7 +679,11 @@ static HRESULT Update2(
     CArchiveDatabase &newDatabase,
     ISequentialOutStream *seqOutStream,
     IArchiveUpdateCallback *updateCallback,
-    const CUpdateOptions &options)
+    const CUpdateOptions &options
+    #ifndef _NO_CRYPTO
+    , ICryptoGetTextPassword *getDecoderPassword
+    #endif
+    )
 {
   UInt64 numSolidFiles = options.NumSolidFiles;
   if (numSolidFiles == 0)
@@ -490,153 +702,305 @@ static HRESULT Update2(
   }
 
   CRecordVector<int> fileIndexToUpdateIndexMap;
+  CRecordVector<CFolderRepack> folderRefs;
+  UInt64 complexity = 0;
+  UInt64 inSizeForReduce2 = 0;
+  bool needEncryptedRepack = false;
   if (db != 0)
   {
     fileIndexToUpdateIndexMap.Reserve(db->Files.Size());
-    for (int i = 0; i < db->Files.Size(); i++)
+    int i;
+    for (i = 0; i < db->Files.Size(); i++)
       fileIndexToUpdateIndexMap.Add(-1);
-  }
-  int i;
-  for(i = 0; i < updateItems.Size(); i++)
-  {
-    int index = updateItems[i].IndexInArchive;
-    if (index != -1)
-      fileIndexToUpdateIndexMap[index] = i;
-  }
 
-  CRecordVector<int> folderRefs;
-  if (db != 0)
-  {
-    for(i = 0; i < db->Folders.Size(); i++)
+    for (i = 0; i < updateItems.Size(); i++)
+    {
+      int index = updateItems[i].IndexInArchive;
+      if (index != -1)
+        fileIndexToUpdateIndexMap[index] = i;
+    }
+
+    for (i = 0; i < db->Folders.Size(); i++)
     {
       CNum indexInFolder = 0;
       CNum numCopyItems = 0;
       CNum numUnpackStreams = db->NumUnpackStreamsVector[i];
-      for (CNum fileIndex = db->FolderStartFileIndex[i];
-      indexInFolder < numUnpackStreams; fileIndex++)
+      UInt64 repackSize = 0;
+      for (CNum fi = db->FolderStartFileIndex[i]; indexInFolder < numUnpackStreams; fi++)
       {
-        if (db->Files[fileIndex].HasStream)
+        const CFileItem &file = db->Files[fi];
+        if (file.HasStream)
         {
           indexInFolder++;
-          int updateIndex = fileIndexToUpdateIndexMap[fileIndex];
-          if (updateIndex >= 0)
-            if (!updateItems[updateIndex].NewData)
-              numCopyItems++;
+          int updateIndex = fileIndexToUpdateIndexMap[fi];
+          if (updateIndex >= 0 && !updateItems[updateIndex].NewData)
+          {
+            numCopyItems++;
+            repackSize += file.Size;
+          }
         }
       }
-      if (numCopyItems != numUnpackStreams && numCopyItems != 0)
-        return E_NOTIMPL; // It needs repacking !!!
-      if (numCopyItems > 0)
-        folderRefs.Add(i);
+
+      if (numCopyItems == 0)
+        continue;
+
+      CFolderRepack rep;
+      rep.FolderIndex = i;
+      rep.NumCopyFiles = numCopyItems;
+      const CFolder &f = db->Folders[i];
+      bool isEncrypted = IsEncryptedFolder(f);
+      rep.Group = GetGroupIndex(isEncrypted, Is86FilteredFolder(f));
+      folderRefs.Add(rep);
+      if (numCopyItems == numUnpackStreams)
+        complexity += db->GetFolderFullPackSize(i);
+      else
+      {
+        complexity += repackSize;
+        if (repackSize > inSizeForReduce2)
+          inSizeForReduce2 = repackSize;
+        if (isEncrypted)
+          needEncryptedRepack = true;
+      }
     }
-    folderRefs.Sort(CompareFolderRefs, (void *)db);
+    folderRefs.Sort(CompareFolderRepacks, (void *)db);
   }
 
-  ////////////////////////////
-
-  RINOK(archive.Create(seqOutStream, false));
-  RINOK(archive.SkeepPrefixArchiveHeader());
-  UInt64 complexity = 0;
-  for(i = 0; i < folderRefs.Size(); i++)
-    complexity += db->GetFolderFullPackSize(folderRefs[i]);
   UInt64 inSizeForReduce = 0;
-  for(i = 0; i < updateItems.Size(); i++)
+  int i;
+  for (i = 0; i < updateItems.Size(); i++)
   {
     const CUpdateItem &ui = updateItems[i];
     if (ui.NewData)
     {
       complexity += ui.Size;
-      if (numSolidFiles == 1)
-      {
-        if (ui.Size > inSizeForReduce)
-          inSizeForReduce = ui.Size;
-      }
-      else
+      if (numSolidFiles != 1)
         inSizeForReduce += ui.Size;
-    }
-  }
-  RINOK(updateCallback->SetTotal(complexity));
-  complexity = 0;
-  RINOK(updateCallback->SetCompleted(&complexity));
-
-
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
-  lps->Init(updateCallback, true);
-
-  /////////////////////////////////////////
-  // Write Copy Items
-
-  for(i = 0; i < folderRefs.Size(); i++)
-  {
-    int folderIndex = folderRefs[i];
-    
-    lps->ProgressOffset = complexity;
-    UInt64 packSize = db->GetFolderFullPackSize(folderIndex);
-    RINOK(WriteRange(inStream, archive.SeqStream,
-        db->GetFolderStreamPos(folderIndex, 0), packSize, progress));
-    complexity += packSize;
-    
-    const CFolder &folder = db->Folders[folderIndex];
-    CNum startIndex = db->FolderStartPackStreamIndex[folderIndex];
-    for (int j = 0; j < folder.PackStreams.Size(); j++)
-    {
-      newDatabase.PackSizes.Add(db->PackSizes[startIndex + j]);
-      // newDatabase.PackCRCsDefined.Add(db.PackCRCsDefined[startIndex + j]);
-      // newDatabase.PackCRCs.Add(db.PackCRCs[startIndex + j]);
-    }
-    newDatabase.Folders.Add(folder);
-
-    CNum numUnpackStreams = db->NumUnpackStreamsVector[folderIndex];
-    newDatabase.NumUnpackStreamsVector.Add(numUnpackStreams);
-
-    CNum indexInFolder = 0;
-    for (CNum fi = db->FolderStartFileIndex[folderIndex];
-        indexInFolder < numUnpackStreams; fi++)
-    {
-      CFileItem file;
-      CFileItem2 file2;
-      db->GetFile(fi, file, file2);
-      if (file.HasStream)
-      {
-        indexInFolder++;
-        int updateIndex = fileIndexToUpdateIndexMap[fi];
-        if (updateIndex >= 0)
-        {
-          const CUpdateItem &ui = updateItems[updateIndex];
-          if (ui.NewProperties)
-          {
-            CFileItem uf;
-            FromUpdateItemToFileItem(ui, uf, file2);
-            uf.Size = file.Size;
-            uf.Crc = file.Crc;
-            uf.CrcDefined = file.CrcDefined;
-            uf.HasStream = file.HasStream;
-            file = uf;
-          }
-        }
-        newDatabase.AddFile(file, file2);
-      }
+      else if (ui.Size > inSizeForReduce)
+        inSizeForReduce = ui.Size;
     }
   }
 
-  folderRefs.ClearAndFree();
-  fileIndexToUpdateIndexMap.ClearAndFree();
-
-  /////////////////////////////////////////
-  // Compress New Files
-
-  CObjectVector<CSolidGroup> groups;
-  SplitFilesToGroups(*options.Method, options.UseFilters, options.MaxFilter,
-      updateItems, groups);
+  if (inSizeForReduce2 > inSizeForReduce)
+    inSizeForReduce = inSizeForReduce2;
 
   const UInt32 kMinReduceSize = (1 << 16);
   if (inSizeForReduce < kMinReduceSize)
     inSizeForReduce = kMinReduceSize;
 
-  for (int groupIndex = 0; groupIndex < groups.Size(); groupIndex++)
+  RINOK(updateCallback->SetTotal(complexity));
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
+
+  CThreadDecoder threadDecoder;
+  if (!folderRefs.IsEmpty())
+  {
+    #ifdef EXTERNAL_CODECS
+    threadDecoder._codecsInfo = codecsInfo;
+    threadDecoder._externalCodecs = *externalCodecs;
+    #endif
+    RINOK(threadDecoder.Create());
+  }
+
+  CObjectVector<CSolidGroup> groups;
+  for (i = 0; i < kNumGroupsMax; i++)
+    groups.Add(CSolidGroup());
+
+  {
+    // ---------- Split files to 2 groups ----------
+
+    bool useFilters = options.UseFilters;
+    const CCompressionMethodMode &method = *options.Method;
+    if (method.Methods.Size() != 1 || method.Binds.Size() != 0)
+      useFilters = false;
+    for (i = 0; i < updateItems.Size(); i++)
+    {
+      const CUpdateItem &ui = updateItems[i];
+      if (!ui.NewData || !ui.HasStream())
+        continue;
+      bool filteredGroup = false;
+      if (useFilters)
+      {
+        int dotPos = ui.Name.ReverseFind(L'.');
+        if (dotPos >= 0)
+          filteredGroup = IsExeExt(ui.Name.Mid(dotPos + 1));
+      }
+      groups[GetGroupIndex(method.PasswordIsDefined, filteredGroup)].Indices.Add(i);
+    }
+  }
+
+  #ifndef _NO_CRYPTO
+
+  CCryptoGetTextPassword *getPasswordSpec = NULL;
+  if (needEncryptedRepack)
+  {
+    getPasswordSpec = new CCryptoGetTextPassword;
+    threadDecoder.GetTextPassword = getPasswordSpec;
+
+    if (options.Method->PasswordIsDefined)
+      getPasswordSpec->Password = options.Method->Password;
+    else
+    {
+      if (!getDecoderPassword)
+        return E_NOTIMPL;
+      CMyComBSTR password;
+      RINOK(getDecoderPassword->CryptoGetTextPassword(&password));
+      getPasswordSpec->Password = password;
+    }
+  }
+
+  #endif
+
+  // ---------- Compress ----------
+
+  RINOK(archive.Create(seqOutStream, false));
+  RINOK(archive.SkipPrefixArchiveHeader());
+
+  int folderRefIndex = 0;
+  lps->ProgressOffset = 0;
+
+  for (int groupIndex = 0; groupIndex < kNumGroupsMax; groupIndex++)
   {
     const CSolidGroup &group = groups[groupIndex];
+
+    CCompressionMethodMode method;
+    if (Is86Group(groupIndex))
+      MakeExeMethod(*options.Method, options.MaxFilter, method);
+    else
+      method = *options.Method;
+
+    if (IsEncryptedGroup(groupIndex))
+    {
+      if (!method.PasswordIsDefined)
+      {
+        #ifndef _NO_CRYPTO
+        if (getPasswordSpec)
+          method.Password = getPasswordSpec->Password;
+        #endif
+        method.PasswordIsDefined = true;
+      }
+    }
+    else
+    {
+      method.PasswordIsDefined = false;
+      method.Password.Empty();
+    }
+
+    CEncoder encoder(method);
+
+    for (; folderRefIndex < folderRefs.Size(); folderRefIndex++)
+    {
+      const CFolderRepack &rep = folderRefs[folderRefIndex];
+      if (rep.Group != groupIndex)
+        break;
+      int folderIndex = rep.FolderIndex;
+      
+      if (rep.NumCopyFiles == db->NumUnpackStreamsVector[folderIndex])
+      {
+        UInt64 packSize = db->GetFolderFullPackSize(folderIndex);
+        RINOK(WriteRange(inStream, archive.SeqStream,
+          db->GetFolderStreamPos(folderIndex, 0), packSize, progress));
+        lps->ProgressOffset += packSize;
+        
+        const CFolder &folder = db->Folders[folderIndex];
+        CNum startIndex = db->FolderStartPackStreamIndex[folderIndex];
+        for (int j = 0; j < folder.PackStreams.Size(); j++)
+        {
+          newDatabase.PackSizes.Add(db->PackSizes[startIndex + j]);
+          // newDatabase.PackCRCsDefined.Add(db.PackCRCsDefined[startIndex + j]);
+          // newDatabase.PackCRCs.Add(db.PackCRCs[startIndex + j]);
+        }
+        newDatabase.Folders.Add(folder);
+      }
+      else
+      {
+        CStreamBinder sb;
+        RINOK(sb.CreateEvents());
+        CMyComPtr<ISequentialOutStream> sbOutStream;
+        CMyComPtr<ISequentialInStream> sbInStream;
+        sb.CreateStreams(&sbInStream, &sbOutStream);
+        CBoolVector extractStatuses;
+        
+        CNum numUnpackStreams = db->NumUnpackStreamsVector[folderIndex];
+        CNum indexInFolder = 0;
+        
+        for (CNum fi = db->FolderStartFileIndex[folderIndex]; indexInFolder < numUnpackStreams; fi++)
+        {
+          bool needExtract = false;
+          if (db->Files[fi].HasStream)
+          {
+            indexInFolder++;
+            int updateIndex = fileIndexToUpdateIndexMap[fi];
+            if (updateIndex >= 0 && !updateItems[updateIndex].NewData)
+              needExtract = true;
+          }
+          extractStatuses.Add(needExtract);
+        }
+
+        RINOK(threadDecoder.FosSpec->Init(db, db->FolderStartFileIndex[folderIndex], &extractStatuses, sbOutStream));
+        sbOutStream.Release();
+        
+        threadDecoder.InStream = inStream;
+        threadDecoder.Folder = &db->Folders[folderIndex];
+        threadDecoder.StartPos = db->GetFolderStreamPos(folderIndex, 0);
+        threadDecoder.PackSizes = &db->PackSizes[db->FolderStartPackStreamIndex[folderIndex]];
+        
+        threadDecoder.Start();
+        
+        int startPackIndex = newDatabase.PackSizes.Size();
+        CFolder newFolder;
+        RINOK(encoder.Encode(
+          EXTERNAL_CODECS_LOC_VARS
+          sbInStream, NULL, &inSizeForReduce, newFolder,
+          archive.SeqStream, newDatabase.PackSizes, progress));
+        
+        threadDecoder.WaitFinish();
+
+        RINOK(threadDecoder.Result);
+
+        for (; startPackIndex < newDatabase.PackSizes.Size(); startPackIndex++)
+          lps->OutSize += newDatabase.PackSizes[startPackIndex];
+        lps->InSize += newFolder.GetUnpackSize();
+        
+        newDatabase.Folders.Add(newFolder);
+      }
+      
+      newDatabase.NumUnpackStreamsVector.Add(rep.NumCopyFiles);
+      
+      CNum numUnpackStreams = db->NumUnpackStreamsVector[folderIndex];
+      
+      CNum indexInFolder = 0;
+      for (CNum fi = db->FolderStartFileIndex[folderIndex]; indexInFolder < numUnpackStreams; fi++)
+      {
+        CFileItem file;
+        CFileItem2 file2;
+        db->GetFile(fi, file, file2);
+        if (file.HasStream)
+        {
+          indexInFolder++;
+          int updateIndex = fileIndexToUpdateIndexMap[fi];
+          if (updateIndex >= 0)
+          {
+            const CUpdateItem &ui = updateItems[updateIndex];
+            if (ui.NewData)
+              continue;
+            if (ui.NewProps)
+            {
+              CFileItem uf;
+              FromUpdateItemToFileItem(ui, uf, file2);
+              uf.Size = file.Size;
+              uf.Crc = file.Crc;
+              uf.CrcDefined = file.CrcDefined;
+              uf.HasStream = file.HasStream;
+              file = uf;
+            }
+            newDatabase.AddFile(file, file2);
+          }
+        }
+      }
+    }
+
     int numFiles = group.Indices.Size();
     if (numFiles == 0)
       continue;
@@ -657,7 +1021,7 @@ static HRESULT Update2(
       /*
       const CUpdateItem &ui = updateItems[index];
       CFileItem file;
-      if (ui.NewProperties)
+      if (ui.NewProps)
         FromUpdateItemToFileItem(ui, file);
       else
         file = db.Files[ui.IndexInArchive];
@@ -667,8 +1031,6 @@ static HRESULT Update2(
       */
     }
     
-    CEncoder encoder(group.Method);
-
     for (i = 0; i < numFiles;)
     {
       UInt64 totalSize = 0;
@@ -710,7 +1072,7 @@ static HRESULT Update2(
         lps->OutSize += newDatabase.PackSizes[startPackIndex];
 
       lps->InSize += folderItem.GetUnpackSize();
-      // for()
+      // for ()
       // newDatabase.PackCRCsDefined.Add(false);
       // newDatabase.PackCRCs.Add(0);
       
@@ -722,7 +1084,7 @@ static HRESULT Update2(
         const CUpdateItem &ui = updateItems[indices[i + subIndex]];
         CFileItem file;
         CFileItem2 file2;
-        if (ui.NewProperties)
+        if (ui.NewProps)
           FromUpdateItemToFileItem(ui, file, file2);
         else
           db->GetFile(ui.IndexInArchive, file, file2);
@@ -761,14 +1123,20 @@ static HRESULT Update2(
     }
   }
 
+  if (folderRefIndex != folderRefs.Size())
+    return E_FAIL;
+
+  /*
+  folderRefs.ClearAndFree();
+  fileIndexToUpdateIndexMap.ClearAndFree();
   groups.ClearAndFree();
+  */
 
   {
-    /////////////////////////////////////////
-    // Write Empty Files & Folders
+    // ---------- Write Folders & Empty Files ----------
     
     CRecordVector<int> emptyRefs;
-    for(i = 0; i < updateItems.Size(); i++)
+    for (i = 0; i < updateItems.Size(); i++)
     {
       const CUpdateItem &ui = updateItems[i];
       if (ui.NewData)
@@ -776,10 +1144,8 @@ static HRESULT Update2(
         if (ui.HasStream())
           continue;
       }
-      else
-        if (ui.IndexInArchive != -1)
-          if (db->Files[ui.IndexInArchive].HasStream)
-            continue;
+      else if (ui.IndexInArchive != -1 && db->Files[ui.IndexInArchive].HasStream)
+        continue;
       emptyRefs.Add(i);
     }
     emptyRefs.Sort(CompareEmptyItems, (void *)&updateItems);
@@ -788,7 +1154,7 @@ static HRESULT Update2(
       const CUpdateItem &ui = updateItems[emptyRefs[i]];
       CFileItem file;
       CFileItem2 file2;
-      if (ui.NewProperties)
+      if (ui.NewProps)
         FromUpdateItemToFileItem(ui, file, file2);
       else
         db->GetFile(ui.IndexInArchive, file, file2);
@@ -798,23 +1164,6 @@ static HRESULT Update2(
     
   newDatabase.ReserveDown();
   return S_OK;
-}
-
-HRESULT Update(
-    DECL_EXTERNAL_CODECS_LOC_VARS
-    IInStream *inStream,
-    const CArchiveDatabaseEx *db,
-    const CObjectVector<CUpdateItem> &updateItems,
-    COutArchive &archive,
-    CArchiveDatabase &newDatabase,
-    ISequentialOutStream *seqOutStream,
-    IArchiveUpdateCallback *updateCallback,
-    const CUpdateOptions &options)
-{
-  return Update2(
-        EXTERNAL_CODECS_LOC_VARS
-        inStream, db, updateItems,
-        archive, newDatabase, seqOutStream, updateCallback, options);
 }
 
 }}

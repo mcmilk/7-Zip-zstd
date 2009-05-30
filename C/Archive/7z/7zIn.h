@@ -1,11 +1,15 @@
-/* 7zIn.h -- 7z Input functions
-2008-11-23 : Igor Pavlov : Public domain */
+/* 7zIn.h -- 7z Input
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_IN_H
 #define __7Z_IN_H
 
 #include "7zHeader.h"
 #include "7zItem.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -38,4 +42,8 @@ SZ_ERROR_FAIL
 
 SRes SzArEx_Open(CSzArEx *p, ILookInStream *inStream, ISzAlloc *allocMain, ISzAlloc *allocTemp);
  
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/MyCom.h"
+#include "../../../C/Alloc.h"
 
-#include "StreamUtils.h"
 #include "MemBlocks.h"
+#include "StreamUtils.h"
 
 bool CMemBlockManager::AllocateSpace(size_t numBlocks)
 {

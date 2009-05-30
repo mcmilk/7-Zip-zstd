@@ -6,25 +6,24 @@
 #include "Common/MyCom.h"
 
 #include "Windows/DLL.h"
-#include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
-#include "Windows/Synchronization.h"
+#include "Windows/FileFind.h"
 #include "Windows/Handle.h"
+#include "Windows/Synchronization.h"
 
-#include "Windows/Control/ToolBar.h"
-#include "Windows/Control/ReBar.h"
-#include "Windows/Control/ListView.h"
-#include "Windows/Control/Static.h"
-#include "Windows/Control/Edit.h"
 #include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Window2.h"
+#include "Windows/Control/Edit.h"
+#include "Windows/Control/ListView.h"
+#include "Windows/Control/ReBar.h"
+#include "Windows/Control/Static.h"
 #include "Windows/Control/StatusBar.h"
+#include "Windows/Control/ToolBar.h"
+#include "Windows/Control/Window2.h"
 
-#include "SysIconUtils.h"
-#include "IFolder.h"
-#include "ViewSettings.h"
 #include "AppState.h"
+#include "IFolder.h"
 #include "MyCom2.h"
+#include "SysIconUtils.h"
 
 const int kParentFolderID = 100;
 const int kPluginMenuStartID = 1000;
@@ -81,10 +80,21 @@ struct CTempFileInfo
   UString FolderPath;
   UString FilePath;
   NWindows::NFile::NFind::CFileInfoW FileInfo;
-  void DeleteDirAndFile()
+  bool NeedDelete;
+
+  CTempFileInfo(): NeedDelete(false) {}
+  void DeleteDirAndFile() const
   {
-    NWindows::NFile::NDirectory::DeleteFileAlways(FilePath);
-    NWindows::NFile::NDirectory::MyRemoveDirectory(FolderPath);
+    if (NeedDelete)
+    {
+      NWindows::NFile::NDirectory::DeleteFileAlways(FilePath);
+      NWindows::NFile::NDirectory::MyRemoveDirectory(FolderPath);
+    }
+  }
+  bool WasChanged(const NWindows::NFile::NFind::CFileInfoW &newFileInfo) const
+  {
+    return newFileInfo.Size != FileInfo.Size ||
+        CompareFileTime(&newFileInfo.MTime, &FileInfo.MTime) != 0;
   }
 };
 
@@ -94,9 +104,16 @@ struct CFolderLink: public CTempFileInfo
   CMyComPtr<IFolderFolder> ParentFolder;
   bool UsePassword;
   UString Password;
+  bool IsVirtual;
 
   UString VirtualPath;
-  CFolderLink(): UsePassword(false) {}
+  CFolderLink(): UsePassword(false), IsVirtual(false) {}
+
+  bool WasChanged(const NWindows::NFile::NFind::CFileInfoW &newFileInfo) const
+  {
+    return IsVirtual || CTempFileInfo::WasChanged(newFileInfo);
+  }
+
 };
 
 enum MyMessages
@@ -294,6 +311,7 @@ public:
   UString GetItemName(int itemIndex) const;
   UString GetItemPrefix(int itemIndex) const;
   UString GetItemRelPath(int itemIndex) const;
+  UString GetItemFullPath(int itemIndex) const;
   bool IsItemFolder(int itemIndex) const;
   UInt64 GetItemSize(int itemIndex) const;
 
@@ -419,6 +437,9 @@ public:
   bool IsRootFolder() const;
   bool IsFSFolder() const;
   bool IsFSDrivesFolder() const;
+  bool IsFsOrDrivesFolder() const { return IsFSFolder() || IsFSDrivesFolder(); }
+  bool IsDeviceDrivesPrefix() const { return _currentFolderPrefix == L"\\\\.\\"; }
+  bool IsFsOrPureDrivesFolder() const { return IsFSFolder() || (IsFSDrivesFolder() && !IsDeviceDrivesPrefix()); }
 
   UString GetFsPath() const;
   UString GetDriveOrNetworkPrefix() const;
@@ -482,12 +503,11 @@ public:
 
   void OpenFolder(int index);
   HRESULT OpenParentArchiveFolder();
-  HRESULT OpenItemAsArchive(const UString &name,
-      const UString &folderPath,
-      const UString &filePath,
+  HRESULT OpenItemAsArchive(IInStream *inStream,
+      const CTempFileInfo &tempFileInfo,
       const UString &virtualFilePath,
       bool &encrypted);
-  HRESULT OpenItemAsArchive(const UString &name);
+  HRESULT OpenItemAsArchive(const UString &name, bool &encrypted);
   HRESULT OpenItemAsArchive(int index);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode);

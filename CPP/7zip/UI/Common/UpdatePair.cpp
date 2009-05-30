@@ -6,10 +6,11 @@
 
 #include "Common/Defs.h"
 #include "Common/Wildcard.h"
+
 #include "Windows/Time.h"
 
-#include "UpdatePair.h"
 #include "SortUtils.h"
+#include "UpdatePair.h"
 
 using namespace NWindows;
 using namespace NTime;
@@ -117,20 +118,16 @@ void GetUpdatePairInfoList(
         ThrowError(kNotCensoredCollisionMessaged, dirNames[dirIndex2], ai.Name);
       pair.DirIndex = dirIndex2;
       pair.ArcIndex = arcIndex2;
-      switch (MyCompareTime(
+      switch (ai.MTimeDefined ? MyCompareTime(
           ai.TimeType != - 1 ? (NFileTimeType::EEnum)ai.TimeType : fileTimeType,
-          di.MTime, ai.MTime))
+          di.MTime, ai.MTime): 0)
       {
         case -1: pair.State = NUpdateArchive::NPairState::kNewInArchive; break;
         case 1:  pair.State = NUpdateArchive::NPairState::kOldInArchive; break;
         default:
-          if (ai.SizeDefined)
-            if (di.Size != ai.Size)
-              pair.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
-            else
-              pair.State = NUpdateArchive::NPairState::kSameFiles;
-          else
-              pair.State = NUpdateArchive::NPairState::kUnknowNewerFiles;
+          pair.State = (ai.SizeDefined && di.Size == ai.Size) ?
+              NUpdateArchive::NPairState::kSameFiles :
+              NUpdateArchive::NPairState::kUnknowNewerFiles;
       }
       dirIndex++;
       arcIndex++;

@@ -2,19 +2,17 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/7zCrc.h"
+
 #include "Common/StringConvert.h"
 #include "Common/UTFConvert.h"
 
-#include "RarIn.h"
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/StreamUtils.h"
 
 #include "../Common/FindSignature.h"
 
-extern "C"
-{
-  #include "../../../../C/7zCrc.h"
-}
+#include "RarIn.h"
 
 namespace NArchive {
 namespace NRar {

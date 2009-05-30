@@ -46,7 +46,7 @@ void SaveExtractionInfo(const NExtract::CInfo &info)
     for(int i = 0; i < info.Paths.Size(); i++)
     {
       wchar_t numberString[16];
-      ConvertUInt64ToString(i, numberString);
+      ConvertUInt32ToString(i, numberString);
       pathHistoryKey.SetValue(numberString, info.Paths[i]);
     }
   }
@@ -75,7 +75,7 @@ void ReadExtractionInfo(NExtract::CInfo &info)
       for (;;)
       {
         wchar_t numberString[16];
-        ConvertUInt64ToString(info.Paths.Size(), numberString);
+        ConvertUInt32ToString(info.Paths.Size(), numberString);
         UString path;
         if (pathHistoryKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;
@@ -180,7 +180,7 @@ void SaveCompressionInfo(const NCompression::CInfo &info)
     for(int i = 0; i < info.HistoryArchives.Size(); i++)
     {
       wchar_t numberString[16];
-      ConvertUInt64ToString(i, numberString);
+      ConvertUInt32ToString(i, numberString);
       historyArchivesKey.SetValue(numberString, info.HistoryArchives[i]);
     }
   }
@@ -246,7 +246,7 @@ void ReadCompressionInfo(NCompression::CInfo &info)
       for (;;)
       {
         wchar_t numberString[16];
-        ConvertUInt64ToString(info.HistoryArchives.Size(), numberString);
+        ConvertUInt32ToString(info.HistoryArchives.Size(), numberString);
         UString path;
         if (historyArchivesKey.QueryValue(numberString, path) != ERROR_SUCCESS)
           break;

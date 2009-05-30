@@ -1,9 +1,11 @@
 // AppState.h
 
-#ifndef __APPSTATE_H
-#define __APPSTATE_H
+#ifndef __APP_STATE_H
+#define __APP_STATE_H
 
 #include "Windows/Synchronization.h"
+
+#include "ViewSettings.h"
 
 void inline AddUniqueStringToHead(UStringVector &list,
     const UString &string)

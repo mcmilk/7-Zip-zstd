@@ -2,27 +2,26 @@
 
 #include "StdAfx.h"
 
-#include "ExtractCallback.h"
+#include "Common/Wildcard.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
-#include "Windows/FileFind.h"
 #include "Windows/FileDir.h"
+#include "Windows/FileFind.h"
 #include "Windows/ResourceString.h"
 
+#include "../../Common/FilePathAutoRename.h"
+
+#include "../GUI/ExtractRes.h"
+#include "../GUI/resource.h"
+
+#include "ExtractCallback.h"
+#include "FormatUtils.h"
+#include "MessagesDialog.h"
 #include "OverwriteDialog.h"
 #ifndef _NO_CRYPTO
 #include "PasswordDialog.h"
 #endif
-#include "MessagesDialog.h"
-#include "../GUI/ExtractRes.h"
-#include "../GUI/resource.h"
-
-#include "Common/Wildcard.h"
-#include "Common/StringConvert.h"
-
-#include "FormatUtils.h"
-
-#include "../../Common/FilePathAutoRename.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -351,6 +350,8 @@ HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
   return S_OK;
 }
 
+#ifndef _NO_CRYPTO
+
 HRESULT CExtractCallbackImp::SetPassword(const UString &password)
 {
   PasswordIsDefined = true;
@@ -372,6 +373,7 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
   return StringToBstr(Password, password);
 }
 
+#endif
 
 // IExtractCallBack3
 STDMETHODIMP CExtractCallbackImp::AskWrite(
@@ -392,7 +394,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   UString destPathSys = destPathSpec;
   bool srcIsFolderSpec = IntToBool(srcIsFolder);
   CFileInfoW destFileInfo;
-  if (FindFile(destPathSys, destFileInfo))
+  if (destFileInfo.Find(destPathSys))
   {
     if (srcIsFolderSpec)
     {
@@ -474,4 +476,3 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   *writeAnswer = BoolToInt(true);
   return StringToBstr(destPathResultTemp, destPathResult);
 }
-

@@ -51,6 +51,5 @@ UString GetPassword(CStdOutStream *outStream)
 {
   (*outStream) << "\nEnter password:";
   outStream->Flush();
-  AString oemPassword = g_StdIn.ScanStringUntilNewLine();
-  return MultiByteToUnicodeString(oemPassword, CP_OEMCP);
+  return g_StdIn.ScanUStringUntilNewLine();
 }

@@ -18,8 +18,6 @@
 
 #include "../Compress/CopyCoder.h"
 
-#include "Common/DummyOutStream.h"
-
 #define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
@@ -549,11 +547,6 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidStackCommit: prop = _optHeader.StackCommit; break;
     case kpidHeapReserve: prop = _optHeader.HeapReserve; break;
     case kpidHeapCommit: prop = _optHeader.HeapCommit; break;
-
-    /*
-    if (_optHeader.Is64Bit())
-      s += " 64-bit";
-    */
   }
   prop.Detach(value);
   return S_OK;
@@ -785,8 +778,6 @@ HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 excludePos
     RINOK(ReadStream(stream, buf, &processed));
     
     /*
-    */
-    /*
     for (; processed < rem; processed++)
       buf[processed] = 0;
     */
@@ -880,9 +871,6 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
   streamSpec->SetStream(_inStream);
 
-  CDummyOutStream *outStreamSpec = new CDummyOutStream;
-  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
     lps->InSize = lps->OutSize = currentTotalSize;
@@ -893,20 +881,17 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     UInt32 index = allFilesMode ? i : indices[i];
     const CSection &item = _sections[index];
     currentItemSize = item.GetPackSize();
-    {
-      CMyComPtr<ISequentialOutStream> realOutStream;
-      RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-      if (!testMode && (!realOutStream))
-        continue;
-      outStreamSpec->SetStream(realOutStream);
-      outStreamSpec->Init();
-    }
+
+    CMyComPtr<ISequentialOutStream> outStream;
+    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    if (!testMode && !outStream)
+      continue;
       
     RINOK(extractCallback->PrepareOperation(askMode));
     RINOK(_inStream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
     streamSpec->Init(currentItemSize);
     RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-    outStreamSpec->ReleaseStream();
+    outStream.Release();
     RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == currentItemSize) ?
       checkSumOK ?
         NArchive::NExtract::NOperationResult::kOK:

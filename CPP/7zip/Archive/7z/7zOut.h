@@ -1,12 +1,12 @@
-// 7z/Out.h
+// 7zOut.h
 
 #ifndef __7Z_OUT_H
 #define __7Z_OUT_H
 
-#include "7zHeader.h"
-#include "7zItem.h"
 #include "7zCompressionMode.h"
 #include "7zEncode.h"
+#include "7zHeader.h"
+#include "7zItem.h"
 
 #include "../../Common/OutBuffer.h"
 
@@ -137,7 +137,7 @@ public:
   CMyComPtr<ISequentialOutStream> SeqStream;
   HRESULT Create(ISequentialOutStream *stream, bool endMarker);
   void Close();
-  HRESULT SkeepPrefixArchiveHeader();
+  HRESULT SkipPrefixArchiveHeader();
   HRESULT WriteDatabase(
       DECL_EXTERNAL_CODECS_LOC_VARS
       const CArchiveDatabase &db,

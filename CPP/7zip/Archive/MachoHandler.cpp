@@ -16,8 +16,6 @@
 
 #include "../Compress/CopyCoder.h"
 
-#include "Common/DummyOutStream.h"
-
 static UInt32 Get32(const Byte *p, int be) { if (be) return GetBe32(p); return GetUi32(p); }
 static UInt64 Get64(const Byte *p, int be) { if (be) return GetBe64(p); return GetUi64(p); }
 
@@ -35,8 +33,8 @@ namespace NMacho {
 #define MACH_MACHINE_PPC64 (MACH_ARCH_ABI64 | MACH_MACHINE_PPC)
 #define MACH_MACHINE_AMD64 (MACH_ARCH_ABI64 | MACH_MACHINE_386)
 
-#define	MACH_CMD_SEGMENT_32 1
-#define	MACH_CMD_SEGMENT_64 0x19
+#define MACH_CMD_SEGMENT_32 1
+#define MACH_CMD_SEGMENT_64 0x19
 
 #define MACH_SECT_TYPE_MASK 0x000000FF
 #define MACH_SECT_ATTR_MASK 0xFFFFFF00
@@ -427,21 +425,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  
-  
-  
-  
-
-
-
-
-  
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
   streamSpec->SetStream(_inStream);
-
-  CDummyOutStream *outStreamSpec = new CDummyOutStream;
-  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
 
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
@@ -453,24 +439,19 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     UInt32 index = allFilesMode ? i : indices[i];
     const CSection &item = _sections[index];
     currentItemSize = item.GetPackSize();
-    {
-      CMyComPtr<ISequentialOutStream> realOutStream;
-      RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-      if (!testMode && (!realOutStream))
-        continue;
-      outStreamSpec->SetStream(realOutStream);
-      outStreamSpec->Init();
-    }
+
+    CMyComPtr<ISequentialOutStream> outStream;
+    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    if (!testMode && !outStream)
+      continue;
     
     RINOK(extractCallback->PrepareOperation(askMode));
     RINOK(_inStream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
     streamSpec->Init(currentItemSize);
     RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-    outStreamSpec->ReleaseStream();
-    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == currentItemSize) ?
-
+    outStream.Release();
+    RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == currentItemSize ?
         NArchive::NExtract::NOperationResult::kOK:
-        
         NArchive::NExtract::NOperationResult::kDataError));
   }
   return S_OK;
@@ -485,4 +466,3 @@ static CArcInfo g_ArcInfo =
 REGISTER_ARC(Macho)
 
 }}
-  

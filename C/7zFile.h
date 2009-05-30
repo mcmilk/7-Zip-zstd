@@ -1,5 +1,5 @@
 /* 7zFile.h -- File IO
-2008-11-22 : Igor Pavlov : Public domain */
+2009-02-07 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_FILE_H
 #define __7Z_FILE_H
@@ -15,6 +15,10 @@
 #endif
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 /* ---------- File ---------- */
@@ -70,5 +74,9 @@ typedef struct
 } CFileOutStream;
 
 void FileOutStream_CreateVTable(CFileOutStream *p);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

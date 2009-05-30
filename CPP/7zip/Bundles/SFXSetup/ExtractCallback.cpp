@@ -2,13 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "ExtractCallback.h"
-
 #include "Common/Wildcard.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"
+
+#include "ExtractCallback.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -167,7 +167,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     }
 
     NFind::CFileInfoW fileInfo;
-    if (NFind::FindFile(fullProcessedPath, fileInfo))
+    if (fileInfo.Find(fullProcessedPath))
     {
       if (!NDirectory::DeleteFileAlways(fullProcessedPath))
       {

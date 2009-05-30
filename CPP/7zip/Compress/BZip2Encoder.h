@@ -1,4 +1,4 @@
-// Compress/BZip2Encoder.h
+// BZip2Encoder.h
 
 #ifndef __COMPRESS_BZIP2_ENCODER_H
 #define __COMPRESS_BZIP2_ENCODER_H
@@ -215,12 +215,9 @@ public:
   {
     CEncoder *_coder;
   public:
-    bool NeedFlush;
-    CFlusher(CEncoder *coder): _coder(coder), NeedFlush(true) {}
+    CFlusher(CEncoder *coder): _coder(coder) {}
     ~CFlusher()
     {
-      if (NeedFlush)
-        _coder->Flush();
       _coder->ReleaseStreams();
     }
   };

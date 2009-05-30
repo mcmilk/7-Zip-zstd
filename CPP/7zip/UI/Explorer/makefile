@@ -49,6 +49,7 @@ WIN_CTRL_OBJS = \
 UI_COMMON_OBJS = \
   $O\ArchiveName.obj \
   $O\CompressCall.obj \
+  $O\ExtractingFilePath.obj \
   $O\ZipRegistry.obj \
 
 FM_COMMON_OBJS = \

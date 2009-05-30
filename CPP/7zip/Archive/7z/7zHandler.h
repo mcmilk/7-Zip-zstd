@@ -5,15 +5,15 @@
 
 #include "../../ICoder.h"
 #include "../IArchive.h"
-#include "7zIn.h"
-
-#include "7zCompressionMode.h"
 
 #include "../../Common/CreateCoder.h"
 
 #ifndef EXTRACT_ONLY
 #include "../Common/HandlerOut.h"
 #endif
+
+#include "7zCompressionMode.h"
+#include "7zIn.h"
 
 namespace NArchive {
 namespace N7z {
@@ -89,8 +89,6 @@ private:
   #else
   
   CRecordVector<CBind> _binds;
-
-  HRESULT SetPassword(CCompressionMethodMode &methodMode, IArchiveUpdateCallback *updateCallback);
 
   HRESULT SetCompressionMethod(CCompressionMethodMode &method,
       CObjectVector<COneMethodInfo> &methodsInfo

@@ -90,17 +90,27 @@ HRESULT CUpdateCallbackAgent::SetOperationResult(Int32 operationResult)
 
 HRESULT CUpdateCallbackAgent::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
+  *password = NULL;
   *passwordIsDefined = BoolToInt(false);
   if (!_cryptoGetTextPassword)
   {
     if (!Callback)
       return S_OK;
-    HRESULT result = Callback.QueryInterface(
-        IID_ICryptoGetTextPassword2, &_cryptoGetTextPassword);
-    if (result != S_OK)
+    Callback.QueryInterface(IID_ICryptoGetTextPassword2, &_cryptoGetTextPassword);
+    if (!_cryptoGetTextPassword)
       return S_OK;
   }
   return _cryptoGetTextPassword->CryptoGetTextPassword2(passwordIsDefined, password);
+}
+
+HRESULT CUpdateCallbackAgent::CryptoGetTextPassword(BSTR *password)
+{
+  *password = NULL;
+  CMyComPtr<ICryptoGetTextPassword> getTextPassword;
+  Callback.QueryInterface(IID_ICryptoGetTextPassword, &getTextPassword);
+  if (!getTextPassword)
+    return E_NOTIMPL;
+  return getTextPassword->CryptoGetTextPassword(password);
 }
 
 /*

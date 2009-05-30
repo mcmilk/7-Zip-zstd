@@ -17,6 +17,7 @@
 #define IDM_FILE_PROPERTIES             240
 #define IDM_FILE_COMMENT                241
 #define IDM_FILE_CRC                    242
+#define IDM_FILE_DIFF                   243
 #define IDM_CREATE_FOLDER               250
 #define IDM_CREATE_FILE                 251
 #define IDM_EDIT_CUT                    320
@@ -128,12 +129,12 @@
 #define IDS_BUTTON_MOVE                 2421
 #define IDS_BUTTON_DELETE               2422
 #define IDS_BUTTON_INFO                 2423
-#define IDS_PROPERTY_TOTAL_SIZE         3100
-#define IDS_PROPERTY_FREE_SPACE         3101
-#define IDS_PROPERTY_CLUSTER_SIZE       3102
-#define IDS_PROPERTY_VOLUME_NAME        3103
-#define IDS_PROPERTY_LOCAL_NAME         3200
-#define IDS_PROPERTY_PROVIDER           3201
+#define IDS_PROP_TOTAL_SIZE             3100
+#define IDS_PROP_FREE_SPACE             3101
+#define IDS_PROP_CLUSTER_SIZE           3102
+#define IDS_PROP_VOLUME_NAME            3103
+#define IDS_PROP_LOCAL_NAME             3200
+#define IDS_PROP_PROVIDER               3201
 #define IDS_OPTIONS                     4000
 #define IDS_COMMENT                     4001
 #define IDS_COMMENT2                    4002

@@ -118,6 +118,10 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\CRC.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -566,6 +570,15 @@ SOURCE=..\..\Common\StreamUtils.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zCrc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Alloc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -590,6 +603,18 @@ SOURCE=..\..\..\..\C\Threads.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Threads.h
+# End Source File
+# End Group
+# Begin Group "Arc Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
 # End Source File
 # End Group
 # End Target

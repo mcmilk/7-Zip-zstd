@@ -93,6 +93,7 @@ namespace NFileHeader
       kZip64 = 0x01,
       kNTFS = 0x0A,
       kStrongEncrypt = 0x17,
+      kUnixTime = 0x5455,
       kWzAES = 0x9901
     };
   }
@@ -103,8 +104,18 @@ namespace NFileHeader
     enum
     {
       kMTime = 0,
-      kATime = 1,
-      kCTime = 2
+      kATime,
+      kCTime
+    };
+  }
+
+  namespace NUnixTime
+  {
+    enum
+    {
+      kMTime = 0,
+      kATime,
+      kCTime
     };
   }
 

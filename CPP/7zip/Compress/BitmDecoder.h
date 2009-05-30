@@ -31,9 +31,7 @@ public:
     Normalize();
   }
   
-  UInt64 GetProcessedSize() const
-    { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
-  UInt32 GetBitPosition() const { return (m_BitPos & 7); }
+  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   
   void Normalize()
   {
@@ -59,6 +57,8 @@ public:
     MovePos(numBits);
     return res;
   }
+
+  void AlignToByte() { MovePos((32 - m_BitPos) & 7); }
 };
 
 }

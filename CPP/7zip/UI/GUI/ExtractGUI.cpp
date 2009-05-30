@@ -2,26 +2,27 @@
 
 #include "StdAfx.h"
 
-#include "ExtractGUI.h"
-
-#include "Common/StringConvert.h"
 #include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
-#include "Windows/FileDir.h"
 #include "Windows/Error.h"
+#include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/Thread.h"
 
-#include "../FileManager/FormatUtils.h"
 #include "../FileManager/ExtractCallback.h"
+#include "../FileManager/FormatUtils.h"
 #include "../FileManager/LangUtils.h"
 
 #include "../Common/ArchiveExtractCallback.h"
+#include "../Common/PropIDUtils.h"
+
 #include "../Explorer/MyMessages.h"
+
 #include "resource.h"
 #include "ExtractRes.h"
-
 #include "ExtractDialog.h"
+#include "ExtractGUI.h"
 
 using namespace NWindows;
 
@@ -198,6 +199,16 @@ HRESULT ExtractGUI(
     AddValuePair(IDS_FILES_COLON, 0x02000320, extracter.Stat.NumFiles, s);
     AddSizePair(IDS_SIZE_COLON, 0x02000322, extracter.Stat.UnpackSize, s);
     AddSizePair(IDS_COMPRESSED_COLON, 0x02000323, extracter.Stat.PackSize, s);
+
+    if (options.CalcCrc)
+    {
+      wchar_t temp[16];
+      ConvertUInt32ToHex(extracter.Stat.CrcSum, temp);
+      s += L"CRC: ";
+      s += temp;
+      s += L"\n";
+    }
+
     s += L"\n";
     s += LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608);
 
@@ -209,5 +220,3 @@ HRESULT ExtractGUI(
       throw extracter.ErrorMessage;
   return extracter.Result;
 }
-
-

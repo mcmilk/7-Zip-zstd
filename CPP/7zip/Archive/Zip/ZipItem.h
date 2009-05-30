@@ -28,6 +28,7 @@ struct CExtraSubBlock
   UInt16 ID;
   CByteBuffer Data;
   bool ExtractNtfsTime(int index, FILETIME &ft) const;
+  bool ExtractUnixTime(int index, UInt32 &res) const;
 };
 
 struct CWzAesExtraField
@@ -147,6 +148,17 @@ struct CExtraBlock
       const CExtraSubBlock &sb = SubBlocks[i];
       if (sb.ID == NFileHeader::NExtraID::kNTFS)
         return sb.ExtractNtfsTime(index, ft);
+    }
+    return false;
+  }
+
+  bool GetUnixTime(int index, UInt32 &res) const
+  {
+    for (int i = 0; i < SubBlocks.Size(); i++)
+    {
+      const CExtraSubBlock &sb = SubBlocks[i];
+      if (sb.ID == NFileHeader::NExtraID::kUnixTime)
+        return sb.ExtractUnixTime(index, res);
     }
     return false;
   }

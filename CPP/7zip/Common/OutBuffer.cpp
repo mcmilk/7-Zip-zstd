@@ -1,13 +1,10 @@
-// OutByte.cpp
+// OutBuffer.cpp
 
 #include "StdAfx.h"
 
-#include "OutBuffer.h"
+#include "../../../C/Alloc.h"
 
-extern "C"
-{
-  #include "../../../C/Alloc.h"
-}
+#include "OutBuffer.h"
 
 bool COutBuffer::Create(UInt32 bufferSize)
 {

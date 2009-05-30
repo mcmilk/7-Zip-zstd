@@ -2,10 +2,7 @@
 
 #include "StdAfx.h"
 
-extern "C"
-{
 #include "../../../../C/Alloc.h"
-}
 
 #include "Common/Defs.h"
 

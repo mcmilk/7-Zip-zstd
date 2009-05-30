@@ -3,8 +3,9 @@
 #ifndef __ARCHIVE_OPEN_CALLBACK_H
 #define __ARCHIVE_OPEN_CALLBACK_H
 
-#include "Common/MyString.h"
 #include "Common/MyCom.h"
+#include "Common/MyString.h"
+
 #include "Windows/FileFind.h"
 
 #ifndef _NO_CRYPTO
@@ -71,6 +72,7 @@ public:
   {
     _subArchiveMode = true;
     _subArchiveName = name;
+    TotalSize = 0;
     return  S_OK;
   }
 
@@ -86,10 +88,10 @@ public:
   UInt64 TotalSize;
 
   COpenCallbackImp(): Callback(NULL) {}
-  void Init(const UString &folderPrefix,  const UString &fileName)
+  void Init(const UString &folderPrefix, const UString &fileName)
   {
     _folderPrefix = folderPrefix;
-    if (!NWindows::NFile::NFind::FindFile(_folderPrefix + fileName, _fileInfo))
+    if (!_fileInfo.Find(_folderPrefix + fileName))
       throw 1;
     FileNames.Clear();
     _subArchiveMode = false;

@@ -40,6 +40,7 @@ CVirtThread::~CVirtThread()
   ExitEvent = true;
   if (StartEvent.IsCreated())
     StartEvent.Set();
-  Thread.Wait();
+  if (Thread.IsCreated())
+    Thread.Wait();
 }
 

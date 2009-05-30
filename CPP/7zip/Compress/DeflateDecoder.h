@@ -44,6 +44,7 @@ class CCoder:
   bool _deflateNSIS;
   bool _deflate64Mode;
   bool _keepHistory;
+  bool _needInitInStream;
   Int32 _remainLen;
   UInt32 _rep0;
   bool _needReadTable;
@@ -53,24 +54,18 @@ class CCoder:
   bool DeCodeLevelTable(Byte *values, int numSymbols);
   bool ReadTables();
   
-  void ReleaseStreams()
-  {
-    m_OutWindowStream.ReleaseStream();
-    ReleaseInStream();
-  }
-
   HRESULT Flush() { return m_OutWindowStream.Flush(); }
   class CCoderReleaser
   {
-    CCoder *m_Coder;
+    CCoder *_coder;
   public:
     bool NeedFlush;
-    CCoderReleaser(CCoder *coder): m_Coder(coder), NeedFlush(true) {}
+    CCoderReleaser(CCoder *coder): _coder(coder), NeedFlush(true) {}
     ~CCoderReleaser()
     {
       if (NeedFlush)
-        m_Coder->Flush();
-      m_Coder->ReleaseStreams();
+        _coder->Flush();
+      _coder->ReleaseOutStream();
     }
   };
   friend class CCoderReleaser;
@@ -81,10 +76,17 @@ public:
   Byte ZlibFooter[4];
 
   CCoder(bool deflate64Mode, bool deflateNSIS = false);
+  virtual ~CCoder() {};
+
   void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
 
-  HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+  void ReleaseOutStream()
+  {
+    m_OutWindowStream.ReleaseStream();
+  }
+
+  HRESULT CodeReal(ISequentialOutStream *outStream,
+      const UInt64 *outSize, ICompressProgressInfo *progress);
 
   #ifndef NO_READ_FROM_CODER
   MY_UNKNOWN_IMP4(
@@ -108,6 +110,25 @@ public:
   #ifndef NO_READ_FROM_CODER
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
+
+  STDMETHOD(CodeResume)(ISequentialOutStream *outStream, const UInt64 *outSize, ICompressProgressInfo *progress);
+
+  HRESULT InitInStream(bool needInit)
+  {
+    if (!m_InBitStream.Create(1 << 17))
+      return E_OUTOFMEMORY;
+    if (needInit)
+    {
+      m_InBitStream.Init();
+      _needInitInStream = false;
+    }
+    return S_OK;
+  }
+
+  void AlignToByte() { m_InBitStream.AlignToByte(); }
+  Byte ReadByte() { return (Byte)m_InBitStream.ReadBits(8); }
+  bool InputEofError() const { return m_InBitStream.ExtraBitsWereRead(); }
+  UInt64 GetInputProcessedSize() const { return m_InBitStream.GetProcessedSize(); }
 
   // IGetInStreamProcessedSize
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);

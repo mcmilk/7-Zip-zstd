@@ -46,9 +46,9 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   Close();
   // try
   {
-    if(_archive.Open(stream) != S_OK)
+    if (_archive.Open(stream) != S_OK)
       return S_FALSE;
-    _inStream = stream;
+    _stream = stream;
   }
   // catch(...) { return S_FALSE; }
   return S_OK;
@@ -58,7 +58,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 STDMETHODIMP CHandler::Close()
 {
   _archive.Clear();
-  _inStream.Release();
+  _stream.Release();
   return S_OK;
 }
 
@@ -160,7 +160,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   bool allFilesMode = (numItems == UInt32(-1));
   if (allFilesMode)
     numItems = _archive.Refs.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   UInt64 totalSize = 0;
   UInt32 i;
@@ -192,7 +192,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
-  streamSpec->SetStream(_inStream);
+  streamSpec->SetStream(_stream);
+
+  CLimitedSequentialOutStream *outStreamSpec = new CLimitedSequentialOutStream;
+  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
 
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
@@ -211,7 +214,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       const CRef &ref = _archive.Refs[index];
       const CDir &item = ref.Dir->_subItems[ref.Index];
-      if(item.IsDir())
+      if (item.IsDir())
       {
         RINOK(extractCallback->PrepareOperation(askMode));
         RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
@@ -231,20 +234,44 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (!testMode && (!realOutStream))
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
-    if (testMode)
-    {
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
-      continue;
-    }
-    RINOK(_inStream->Seek(blockIndex * _archive.BlockSize, STREAM_SEEK_SET, NULL));
-    streamSpec->Init(currentItemSize);
-    RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+    outStreamSpec->SetStream(realOutStream);
     realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == currentItemSize) ?
+    outStreamSpec->Init(currentItemSize);
+    RINOK(_stream->Seek(blockIndex * _archive.BlockSize, STREAM_SEEK_SET, NULL));
+    streamSpec->Init(currentItemSize);
+    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+    outStreamSpec->ReleaseStream();
+    RINOK(extractCallback->SetOperationResult(outStreamSpec->IsFinishedOK() ?
         NArchive::NExtract::NOperationResult::kOK:
         NArchive::NExtract::NOperationResult::kDataError));
   }
   return S_OK;
+  COM_TRY_END
+}
+
+STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+{
+  COM_TRY_BEGIN
+  *stream = 0;
+  UInt64 blockIndex;
+  UInt64 currentItemSize;
+  if (index < (UInt32)_archive.Refs.Size())
+  {
+    const CRef &ref = _archive.Refs[index];
+    const CDir &item = ref.Dir->_subItems[ref.Index];
+    if (item.IsDir())
+      return S_FALSE;
+    currentItemSize = item.DataLength;
+    blockIndex = item.ExtentLocation;
+  }
+  else
+  {
+    int bootIndex = index - _archive.Refs.Size();
+    const CBootInitialEntry &be = _archive.BootEntries[bootIndex];
+    currentItemSize = _archive.GetBootItemSize(bootIndex);
+    blockIndex = be.LoadRBA;
+  }
+  return CreateLimitedInStream(_stream, blockIndex * _archive.BlockSize, currentItemSize, stream);
   COM_TRY_END
 }
 

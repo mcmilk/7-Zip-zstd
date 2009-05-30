@@ -1,12 +1,14 @@
-/* HuffEnc.h -- functions for Huffman encoding
-2008-03-26
-Igor Pavlov
-Public domain */
+/* HuffEnc.h -- Huffman encoding
+2009-02-07 : Igor Pavlov : Public domain */
 
-#ifndef __HUFFENC_H
-#define __HUFFENC_H
+#ifndef __HUFF_ENC_H
+#define __HUFF_ENC_H
 
 #include "Types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 Conditions:
@@ -17,5 +19,9 @@ Conditions:
 */
  
 void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 num, UInt32 maxLen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

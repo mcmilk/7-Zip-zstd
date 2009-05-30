@@ -2,21 +2,18 @@
 
 #include "StdAfx.h"
 
-#include "NetFolder.h"
-
-#include "Common/StringConvert.h"
-#include "../../PropID.h"
-#include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
-#include "Windows/FileFind.h"
 
-#include "SysIconUtils.h"
+#include "../../PropID.h"
+
 #include "FSFolder.h"
+#include "NetFolder.h"
+#include "SysIconUtils.h"
 
 using namespace NWindows;
 using namespace NNet;
 
-static const STATPROPSTG kProperties[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidName, VT_BSTR},
   { NULL, kpidLocalName, VT_BSTR},
@@ -232,23 +229,7 @@ STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = sizeof(kProperties) / sizeof(kProperties[0]);
-  return S_OK;
-}
-
-STDMETHODIMP CNetFolder::GetPropertyInfo(UInt32 index,
-    BSTR *name, PROPID *propID, VARTYPE *varType)
-{
-  if (index >= sizeof(kProperties) / sizeof(kProperties[0]))
-    return E_INVALIDARG;
-  const STATPROPSTG &prop = kProperties[index];
-  *propID = prop.propid;
-  *varType = prop.vt;
-  *name = 0;
-  return S_OK;
-}
+IMP_IFolderFolder_Props(CNetFolder)
 
 STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -262,7 +243,7 @@ STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, INT32 *iconIndex)
+STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
 {
   if (index >= (UInt32)_items.Size())
     return E_INVALIDARG;

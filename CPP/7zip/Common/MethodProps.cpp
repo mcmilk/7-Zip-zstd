@@ -8,14 +8,14 @@
 
 #include "MethodProps.h"
 
-static UInt64 k_LZMA = 0x030101;
-// static UInt64 k_LZMA2 = 0x030102;
+static const UInt64 k_LZMA = 0x030101;
+static const UInt64 k_LZMA2 = 0x21;
 
 HRESULT SetMethodProperties(const CMethod &method, const UInt64 *inSizeForReduce, IUnknown *coder)
 {
   bool tryReduce = false;
   UInt32 reducedDictionarySize = 1 << 10;
-  if (inSizeForReduce != 0 && (method.Id == k_LZMA /* || methodFull.MethodID == k_LZMA2 */))
+  if (inSizeForReduce != 0 && (method.Id == k_LZMA || method.Id == k_LZMA2))
   {
     for (;;)
     {
