@@ -75,9 +75,12 @@ struct CInFileStreamVol: public CInFileStream
   CMyComPtr<IArchiveOpenCallback> OpenCallbackRef;
   ~CInFileStreamVol()
   {
-    int index = OpenCallbackImp->FindName(Name);
-    if (index >= 0)
-      OpenCallbackImp->FileNames.Delete(index);
+    if (OpenCallbackRef)
+    {
+      int index = OpenCallbackImp->FindName(Name);
+      if (index >= 0)
+        OpenCallbackImp->FileNames.Delete(index);
+    }
   }
 };
 

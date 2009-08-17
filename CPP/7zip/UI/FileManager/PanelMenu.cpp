@@ -8,8 +8,9 @@
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
 
-#include "../Common/PropIDUtils.h"
 #include "../../PropID.h"
+#include "../Common/PropIDUtils.h"
+#include "../Explorer/ContextMenu.h"
 
 #include "App.h"
 #include "LangUtils.h"
@@ -22,9 +23,12 @@
 
 using namespace NWindows;
 
+LONG g_DllRefCount = 0;
+/*
 // {23170F69-40C1-278A-1000-000100020000}
 DEFINE_GUID(CLSID_CZipContextMenu,
 0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
+*/
 
 static const UINT kSevenZipStartMenuID = kPluginMenuStartID ;
 static const UINT kSystemStartMenuID = kPluginMenuStartID + 100;
@@ -50,7 +54,7 @@ void CPanel::InvokeSystemCommand(const char *command)
   contextMenu->InvokeCommand(&ci);
 }
 
-static const wchar_t *kSeparator = L"--------------------------------------\n";
+static const wchar_t *kSeparator = L"----------------------------\n";
 static const wchar_t *kPropValueSeparator = L": ";
 
 extern UString ConvertSizeToString(UInt64 value);
@@ -442,7 +446,8 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
   bool sevenZipMenuCreated = false;
 
   CMyComPtr<IContextMenu> contextMenu;
-  if (contextMenu.CoCreateInstance(CLSID_CZipContextMenu, IID_IContextMenu) == S_OK)
+  contextMenu = new CZipContextMenu;
+  // if (contextMenu.CoCreateInstance(CLSID_CZipContextMenu, IID_IContextMenu) == S_OK)
   {
     CMyComPtr<IInitContextMenu> initContextMenu;
     if (contextMenu.QueryInterface(IID_IInitContextMenu, &initContextMenu) != S_OK)
@@ -489,8 +494,10 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   if (g_App.ShowSystemMenu)
     CreateSystemMenu(menu, operatedIndices, systemContextMenu);
 
+  /*
   if (menu.GetItemCount() > 0)
     menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
+  */
 
   int i;
   for (i = 0; i < operatedIndices.Size(); i++)
@@ -516,18 +523,28 @@ bool CPanel::InvokePluginCommand(int id,
   else
     offset = id  - kSevenZipStartMenuID;
 
-  CMINVOKECOMMANDINFOEX commandInfo;
+  #ifdef UNDER_CE
+  CMINVOKECOMMANDINFO
+  #else
+  CMINVOKECOMMANDINFOEX
+  #endif
+    commandInfo;
   commandInfo.cbSize = sizeof(commandInfo);
-  commandInfo.fMask = CMIC_MASK_UNICODE;
+  commandInfo.fMask = 0
+  #ifndef UNDER_CE
+  | CMIC_MASK_UNICODE
+  #endif
+  ;
   commandInfo.hwnd = GetParent();
   commandInfo.lpVerb = (LPCSTR)(MAKEINTRESOURCE(offset));
   commandInfo.lpParameters = NULL;
   CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
   commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
   commandInfo.nShow = SW_SHOW;
+  commandInfo.lpParameters = NULL;
+  #ifndef UNDER_CE
   commandInfo.lpTitle = "";
   commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));
-  commandInfo.lpParameters = NULL;
   UString currentFolderUnicode = _currentFolderPrefix;
   commandInfo.lpDirectoryW = currentFolderUnicode;
   commandInfo.lpTitleW = L"";
@@ -535,6 +552,7 @@ bool CPanel::InvokePluginCommand(int id,
   // commandInfo.ptInvoke.y = yPos;
   commandInfo.ptInvoke.x = 0;
   commandInfo.ptInvoke.y = 0;
+  #endif
   HRESULT result;
   if (isSystemMenu)
     result = systemContextMenu->InvokeCommand(LPCMINVOKECOMMANDINFO(&commandInfo));
@@ -550,6 +568,12 @@ bool CPanel::InvokePluginCommand(int id,
 
 bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
 {
+  if (::GetParent((HWND)windowHandle) == _listView)
+  {
+    ShowColumnsContextMenu(xPos, yPos);
+    return true;
+  }
+
   if (windowHandle != _listView)
     return false;
   /*
@@ -599,7 +623,11 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
   CMyComPtr<IContextMenu> systemContextMenu;
   CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false);
 
-  int result = menu.Track(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY,
+  int result = menu.Track(TPM_LEFTALIGN
+      #ifndef UNDER_CE
+      | TPM_RIGHTBUTTON
+      #endif
+      | TPM_RETURNCMD | TPM_NONOTIFY,
     xPos, yPos, _listView);
 
   if (result == 0)

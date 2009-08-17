@@ -15,11 +15,9 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <mbstring.h>
 #include <wchar.h>
 
 #include <shlguid.h>
-#include <regstr.h>
 
 #include "Common/NewHandler.h"
 

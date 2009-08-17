@@ -1,7 +1,7 @@
 // SystemPage.h
  
-#ifndef __SYSTEMPAGE_H
-#define __SYSTEMPAGE_H
+#ifndef __SYSTEM_PAGE_H
+#define __SYSTEM_PAGE_H
 
 #include "Windows/Control/PropertyPage.h"
 #include "Windows/Control/ListView.h"
@@ -13,7 +13,6 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   bool _initMode;
   CExtDatabase _extDatabase;
 
-  // CObjectVector<NZipRootRegistry::CArchiverInfo> m_Archivers;
   NWindows::NControl::CListView _listViewExt;
   NWindows::NControl::CListView _listViewPlugins;
 
@@ -26,6 +25,8 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   void SelectAll();
 
 public:
+  bool WasChanged;
+  CSystemPage(): WasChanged(false) {}
   virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
   virtual bool OnInit();
   virtual void OnNotifyHelp();

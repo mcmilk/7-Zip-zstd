@@ -154,28 +154,23 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
-  if (!allFilesMode)
-  {
-    if (numItems == 0)
-      return S_OK;
-    if (numItems != 1 || indices[0] != 0)
-      return E_INVALIDARG;
-  }
+  if (numItems == 0)
+    return S_OK;
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+    return E_INVALIDARG;
 
-  bool testMode = (_aTestMode != 0);
   if (_stream)
     extractCallback->SetTotal(_packSize);
   UInt64 currentTotalPacked = 0;
   RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
   if (!testMode && !realOutStream)
     return S_OK;
@@ -421,7 +416,7 @@ static IOutArchive *CreateArcOut() { return new CHandler; }
 #endif
 
 static CArcInfo g_ArcInfo =
-  { L"BZip2", L"bz2 bzip2 tbz2 tbz", L"* * .tar .tar", 2, { 'B', 'Z', 'h' }, 3, true, CreateArc, CreateArcOut };
+  { L"bzip2", L"bz2 bzip2 tbz2 tbz", L"* * .tar .tar", 2, { 'B', 'Z', 'h' }, 3, true, CreateArc, CreateArcOut };
 
 REGISTER_ARC(BZip2)
 

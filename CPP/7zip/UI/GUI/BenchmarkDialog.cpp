@@ -3,18 +3,17 @@
 #include "StdAfx.h"
 
 #include "Common/IntToString.h"
-#include "Common/StringToInt.h"
 #include "Common/MyException.h"
-#include "Windows/Thread.h"
+
 #include "Windows/Error.h"
 #include "Windows/System.h"
+#include "Windows/Thread.h"
+
 #include "../FileManager/HelpUtils.h"
-// #include "BenchmarkDialogRes.h"
+
 #include "BenchmarkDialog.h"
 
 using namespace NWindows;
-
-// const int kNumBenchDictionaryBitsStart = 21;
 
 static LPCWSTR kHelpTopic = L"fm/benchmark.htm";
 
@@ -26,6 +25,8 @@ static const UINT kTimerElapse = 1000;
 #endif
 
 using namespace NWindows;
+
+UString HResultToMessage(HRESULT errorCode);
 
 #ifdef LANG
 static CIDLangPair kIDLangPairs[] =
@@ -57,17 +58,16 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
-static void MyMessageBoxError(HWND hwnd, LPCWSTR message)
-{
-  MessageBoxW(hwnd, message, L"7-Zip", MB_ICONERROR);
-}
-
 const LPCTSTR kProcessingString = TEXT("...");
 const LPCTSTR kMB = TEXT(" MB");
 const LPCTSTR kMIPS =  TEXT(" MIPS");
 const LPCTSTR kKBs = TEXT(" KB/s");
 
+#ifdef UNDER_CE
+static const int kMinDicLogSize = 20;
+#else
 static const int kMinDicLogSize = 21;
+#endif
 static const UInt32 kMinDicSize = (1 << kMinDicLogSize);
 static const UInt32 kMaxDicSize =
     #ifdef _WIN64
@@ -83,39 +83,59 @@ bool CBenchmarkDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
 
-  _syncInfo.Init();
+  Sync.Init();
 
-  m_Dictionary.Attach(GetItem(IDC_BENCHMARK_COMBO_DICTIONARY));
-  int cur = 0;
-  // _syncInfo.DictionarySize = (1 << kNumBenchDictionaryBitsStart);
 
   UInt32 numCPUs = NSystem::GetNumberOfProcessors();
   if (numCPUs < 1)
     numCPUs = 1;
   numCPUs = MyMin(numCPUs, (UInt32)(1 << 8));
-  cur = 0;
-  bool setDefaultThreads = (_syncInfo.NumThreads == (UInt32)(-1));
-  if (setDefaultThreads)
-  {
-    _syncInfo.NumThreads = numCPUs;
-    if (_syncInfo.NumThreads > 1)
-      _syncInfo.NumThreads &= ~1;
-  }
 
+  if (Sync.NumThreads == (UInt32)-1)
+  {
+    Sync.NumThreads = numCPUs;
+    if (Sync.NumThreads > 1)
+      Sync.NumThreads &= ~1;
+  }
+  m_NumThreads.Attach(GetItem(IDC_BENCHMARK_COMBO_NUM_THREADS));
+  int cur = 0;
+  for (UInt32 num = 1; num <= numCPUs * 2;)
+  {
+    TCHAR s[40];
+    ConvertUInt64ToString(num, s);
+    int index = (int)m_NumThreads.AddString(s);
+    m_NumThreads.SetItemData(index, num);
+    if (num <= Sync.NumThreads)
+      cur = index;
+    if (num > 1)
+      num++;
+    num++;
+  }
+  m_NumThreads.SetCurSel(cur);
+  Sync.NumThreads = GetNumberOfThreads();
+
+  m_Dictionary.Attach(GetItem(IDC_BENCHMARK_COMBO_DICTIONARY));
+  cur = 0;
   UInt64 ramSize = NSystem::GetRamSize();
-  bool setDefaultDictionary = (_syncInfo.DictionarySize == (UInt32)(-1));
-  if (setDefaultDictionary)
+  
+  #ifdef UNDER_CE
+  const UInt32 kNormalizedCeSize = (16 << 20);
+  if (ramSize > kNormalizedCeSize && ramSize < (33 << 20))
+    ramSize = kNormalizedCeSize;
+  #endif
+
+  if (Sync.DictionarySize == (UInt32)-1)
   {
     int dicSizeLog;
-    for (dicSizeLog = 25; dicSizeLog >= kBenchMinDicLogSize; dicSizeLog--)
-      if (GetBenchMemoryUsage(_syncInfo.NumThreads, ((UInt32)1 << dicSizeLog)) + (8 << 20) <= ramSize)
+    for (dicSizeLog = 25; dicSizeLog > kBenchMinDicLogSize; dicSizeLog--)
+      if (GetBenchMemoryUsage(Sync.NumThreads, ((UInt32)1 << dicSizeLog)) + (8 << 20) <= ramSize)
         break;
-    _syncInfo.DictionarySize = (1 << dicSizeLog);
+    Sync.DictionarySize = (1 << dicSizeLog);
   }
-  if (_syncInfo.DictionarySize < kMinDicSize)
-    _syncInfo.DictionarySize = kMinDicSize;
-  if (_syncInfo.DictionarySize > kMaxDicSize)
-    _syncInfo.DictionarySize = kMaxDicSize;
+  if (Sync.DictionarySize < kMinDicSize)
+    Sync.DictionarySize = kMinDicSize;
+  if (Sync.DictionarySize > kMaxDicSize)
+    Sync.DictionarySize = kMaxDicSize;
 
   for (int i = kMinDicLogSize; i <= 30; i++)
     for (int j = 0; j < 2; j++)
@@ -128,35 +148,17 @@ bool CBenchmarkDialog::OnInit()
       lstrcat(s, kMB);
       int index = (int)m_Dictionary.AddString(s);
       m_Dictionary.SetItemData(index, dictionary);
-      if (dictionary <= _syncInfo.DictionarySize)
+      if (dictionary <= Sync.DictionarySize)
         cur = index;
     }
   m_Dictionary.SetCurSel(cur);
 
-  m_NumThreads.Attach(GetItem(IDC_BENCHMARK_COMBO_NUM_THREADS));
-  for (UInt32 num = 1; ;)
-  {
-    if (num > numCPUs * 2)
-      break;
-    TCHAR s[40];
-    ConvertUInt64ToString(num, s);
-    int index = (int)m_NumThreads.AddString(s);
-    m_NumThreads.SetItemData(index, num);
-    if (num <= numCPUs && setDefaultThreads)
-    {
-      _syncInfo.NumThreads = num;
-      cur = index;
-    }
-    if (num > 1)
-      num++;
-    num++;
-  }
-  m_NumThreads.SetCurSel(cur);
-
   OnChangeSettings();
 
-  _syncInfo._startEvent.Set();
+  Sync._startEvent.Set();
   _timer = SetTimer(kTimerID, kTimerElapse);
+
+  NormalizePosition();
   return CModalDialog::OnInit();
 }
 
@@ -213,11 +215,11 @@ void CBenchmarkDialog::OnChangeSettings()
     SetItemText(g_IDs[i], kProcessingString);
   _startTime = GetTickCount();
   PrintTime();
-  NWindows::NSynchronization::CCriticalSectionLock lock(_syncInfo.CS);
-  _syncInfo.Init();
-  _syncInfo.DictionarySize = dictionary;
-  _syncInfo.Changed = true;
-  _syncInfo.NumThreads = GetNumberOfThreads();
+  NWindows::NSynchronization::CCriticalSectionLock lock(Sync.CS);
+  Sync.Init();
+  Sync.DictionarySize = dictionary;
+  Sync.Changed = true;
+  Sync.NumThreads = GetNumberOfThreads();
 }
 
 void CBenchmarkDialog::OnRestartButton()
@@ -228,7 +230,7 @@ void CBenchmarkDialog::OnRestartButton()
 void CBenchmarkDialog::OnStopButton()
 {
   EnableItem(IDC_BUTTON_STOP, false);
-  _syncInfo.Pause();
+  Sync.Pause();
 }
 
 void CBenchmarkDialog::OnHelp()
@@ -238,7 +240,7 @@ void CBenchmarkDialog::OnHelp()
 
 void CBenchmarkDialog::OnCancel()
 {
-  _syncInfo.Stop();
+  Sync.Stop();
   KillTimer(_timer);
   CModalDialog::OnCancel();
 }
@@ -256,7 +258,7 @@ void CBenchmarkDialog::PrintTime()
   UInt32 curTime = ::GetTickCount();
   UInt32 elapsedTime = (curTime - _startTime);
   UInt32 elapsedSec = elapsedTime / 1000;
-  if (elapsedSec != 0 && _syncInfo.WasPaused())
+  if (elapsedSec != 0 && Sync.WasPaused())
     return;
   TCHAR s[40];
   GetTimeString(elapsedSec, s);
@@ -310,26 +312,26 @@ void CBenchmarkDialog::PrintResults(
 bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 {
   PrintTime();
-  NWindows::NSynchronization::CCriticalSectionLock lock(_syncInfo.CS);
+  NWindows::NSynchronization::CCriticalSectionLock lock(Sync.CS);
 
   TCHAR s[40];
-  ConvertUInt64ToString((_syncInfo.ProcessedSize >> 20), s);
+  ConvertUInt64ToString((Sync.ProcessedSize >> 20), s);
   lstrcat(s, kMB);
   SetItemText(IDC_BENCHMARK_SIZE_VALUE, s);
 
-  ConvertUInt64ToString(_syncInfo.NumPasses, s);
+  ConvertUInt64ToString(Sync.NumPasses, s);
   SetItemText(IDC_BENCHMARK_PASSES_VALUE, s);
 
   /*
-  ConvertUInt64ToString(_syncInfo.NumErrors, s);
+  ConvertUInt64ToString(Sync.NumErrors, s);
   SetItemText(IDC_BENCHMARK_ERRORS_VALUE, s);
   */
 
   {
-    UInt32 dicSizeTemp = (UInt32)MyMax(_syncInfo.ProcessedSize, UInt64(1) << 20);
-    dicSizeTemp = MyMin(dicSizeTemp, _syncInfo.DictionarySize),
+    UInt32 dicSizeTemp = (UInt32)MyMax(Sync.ProcessedSize, UInt64(1) << 20);
+    dicSizeTemp = MyMin(dicSizeTemp, Sync.DictionarySize),
     PrintResults(dicSizeTemp,
-      _syncInfo.CompressingInfoTemp,
+      Sync.CompressingInfoTemp,
       IDC_BENCHMARK_COMPRESSING_USAGE,
       IDC_BENCHMARK_COMPRESSING_SPEED,
       IDC_BENCHMARK_COMPRESSING_RPU,
@@ -338,8 +340,8 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
   {
     PrintResults(
-      _syncInfo.DictionarySize,
-      _syncInfo.CompressingInfo,
+      Sync.DictionarySize,
+      Sync.CompressingInfo,
       IDC_BENCHMARK_COMPRESSING_USAGE2,
       IDC_BENCHMARK_COMPRESSING_SPEED2,
       IDC_BENCHMARK_COMPRESSING_RPU2,
@@ -348,8 +350,8 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
   {
     PrintResults(
-      _syncInfo.DictionarySize,
-      _syncInfo.DecompressingInfoTemp,
+      Sync.DictionarySize,
+      Sync.DecompressingInfoTemp,
       IDC_BENCHMARK_DECOMPRESSING_USAGE,
       IDC_BENCHMARK_DECOMPRESSING_SPEED,
       IDC_BENCHMARK_DECOMPRESSING_RPU,
@@ -358,26 +360,26 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   }
   {
     PrintResults(
-      _syncInfo.DictionarySize,
-      _syncInfo.DecompressingInfo,
+      Sync.DictionarySize,
+      Sync.DecompressingInfo,
       IDC_BENCHMARK_DECOMPRESSING_USAGE2,
       IDC_BENCHMARK_DECOMPRESSING_SPEED2,
       IDC_BENCHMARK_DECOMPRESSING_RPU2,
       IDC_BENCHMARK_DECOMPRESSING_RATING2,
       true);
-    if (_syncInfo.DecompressingInfo.GlobalTime > 0 &&
-        _syncInfo.CompressingInfo.GlobalTime > 0)
+    if (Sync.DecompressingInfo.GlobalTime > 0 &&
+        Sync.CompressingInfo.GlobalTime > 0)
     {
-      UInt64 comprRating = GetCompressRating(_syncInfo.DictionarySize,
-          _syncInfo.CompressingInfo.GlobalTime, _syncInfo.CompressingInfo.GlobalFreq, _syncInfo.CompressingInfo.UnpackSize);
-      UInt64 decomprRating = GetDecompressRating(_syncInfo.DecompressingInfo.GlobalTime,
-          _syncInfo.DecompressingInfo.GlobalFreq, _syncInfo.DecompressingInfo.UnpackSize,
-          _syncInfo.DecompressingInfo.PackSize, 1);
+      UInt64 comprRating = GetCompressRating(Sync.DictionarySize,
+          Sync.CompressingInfo.GlobalTime, Sync.CompressingInfo.GlobalFreq, Sync.CompressingInfo.UnpackSize);
+      UInt64 decomprRating = GetDecompressRating(Sync.DecompressingInfo.GlobalTime,
+          Sync.DecompressingInfo.GlobalFreq, Sync.DecompressingInfo.UnpackSize,
+          Sync.DecompressingInfo.PackSize, 1);
       PrintRating((comprRating + decomprRating) / 2, IDC_BENCHMARK_TOTAL_RATING_VALUE);
       PrintRating((
-          GetRatingPerUsage(_syncInfo.CompressingInfo, comprRating) +
-          GetRatingPerUsage(_syncInfo.DecompressingInfo, decomprRating)) / 2, IDC_BENCHMARK_TOTAL_RPU_VALUE);
-      PrintUsage((GetUsage(_syncInfo.CompressingInfo) + GetUsage(_syncInfo.DecompressingInfo)) / 2, IDC_BENCHMARK_TOTAL_USAGE_VALUE);
+          GetRatingPerUsage(Sync.CompressingInfo, comprRating) +
+          GetRatingPerUsage(Sync.DecompressingInfo, decomprRating)) / 2, IDC_BENCHMARK_TOTAL_RPU_VALUE);
+      PrintUsage((GetUsage(Sync.CompressingInfo) + GetUsage(Sync.DecompressingInfo)) / 2, IDC_BENCHMARK_TOTAL_USAGE_VALUE);
     }
   }
   return true;
@@ -411,7 +413,7 @@ bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 struct CThreadBenchmark
 {
-  CProgressSyncInfo *SyncInfo;
+  CBenchmarkDialog *BenchmarkDialog;
   UInt64 _startTime;
   #ifdef EXTERNAL_LZMA
   CCodecs *codecs;
@@ -431,33 +433,33 @@ struct CThreadBenchmark
 struct CBenchCallback: public IBenchCallback
 {
   UInt32 dictionarySize;
-  CProgressSyncInfo *SyncInfo;
+  CProgressSyncInfo *Sync;
   HRESULT SetEncodeResult(const CBenchInfo &info, bool final);
   HRESULT SetDecodeResult(const CBenchInfo &info, bool final);
 };
 
 HRESULT CBenchCallback::SetEncodeResult(const CBenchInfo &info, bool final)
 {
-  NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-  if (SyncInfo->Changed || SyncInfo->Paused || SyncInfo->Stopped)
+  NSynchronization::CCriticalSectionLock lock(Sync->CS);
+  if (Sync->Changed || Sync->Paused || Sync->Stopped)
     return E_ABORT;
-  SyncInfo->ProcessedSize = info.UnpackSize;
-  if (final && SyncInfo->CompressingInfo.GlobalTime == 0)
+  Sync->ProcessedSize = info.UnpackSize;
+  if (final && Sync->CompressingInfo.GlobalTime == 0)
   {
-    (CBenchInfo&)SyncInfo->CompressingInfo = info;
-    if (SyncInfo->CompressingInfo.GlobalTime == 0)
-      SyncInfo->CompressingInfo.GlobalTime = 1;
+    (CBenchInfo&)Sync->CompressingInfo = info;
+    if (Sync->CompressingInfo.GlobalTime == 0)
+      Sync->CompressingInfo.GlobalTime = 1;
   }
   else
-    (CBenchInfo&)SyncInfo->CompressingInfoTemp = info;
+    (CBenchInfo&)Sync->CompressingInfoTemp = info;
 
   return S_OK;
 }
 
 HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
 {
-  NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-  if (SyncInfo->Changed || SyncInfo->Paused || SyncInfo->Stopped)
+  NSynchronization::CCriticalSectionLock lock(Sync->CS);
+  if (Sync->Changed || Sync->Paused || Sync->Stopped)
     return E_ABORT;
   CBenchInfo info2 = info;
   if (info2.NumIterations == 0)
@@ -467,27 +469,28 @@ HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
   info2.PackSize *= info2.NumIterations;
   info2.NumIterations = 1;
 
-  if (final && SyncInfo->DecompressingInfo.GlobalTime == 0)
+  if (final && Sync->DecompressingInfo.GlobalTime == 0)
   {
-    (CBenchInfo&)SyncInfo->DecompressingInfo = info2;
-    if (SyncInfo->DecompressingInfo.GlobalTime == 0)
-      SyncInfo->DecompressingInfo.GlobalTime = 1;
+    (CBenchInfo&)Sync->DecompressingInfo = info2;
+    if (Sync->DecompressingInfo.GlobalTime == 0)
+      Sync->DecompressingInfo.GlobalTime = 1;
   }
   else
-    (CBenchInfo&)SyncInfo->DecompressingInfoTemp = info2;
+    (CBenchInfo&)Sync->DecompressingInfoTemp = info2;
   return S_OK;
 }
 
 HRESULT CThreadBenchmark::Process()
 {
+  CProgressSyncInfo &sync = BenchmarkDialog->Sync;
+  sync.WaitCreating();
   try
   {
-    SyncInfo->WaitCreating();
     for (;;)
     {
-      if (SyncInfo->WasStopped())
+      if (sync.WasStopped())
         return 0;
-      if (SyncInfo->WasPaused())
+      if (sync.WasPaused())
       {
         Sleep(200);
         continue;
@@ -495,18 +498,18 @@ HRESULT CThreadBenchmark::Process()
       UInt32 dictionarySize;
       UInt32 numThreads;
       {
-        NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-        if (SyncInfo->Stopped || SyncInfo->Paused)
+        NSynchronization::CCriticalSectionLock lock(sync.CS);
+        if (sync.Stopped || sync.Paused)
           continue;
-        if (SyncInfo->Changed)
-          SyncInfo->Init();
-        dictionarySize = SyncInfo->DictionarySize;
-        numThreads = SyncInfo->NumThreads;
+        if (sync.Changed)
+          sync.Init();
+        dictionarySize = sync.DictionarySize;
+        numThreads = sync.NumThreads;
       }
       
       CBenchCallback callback;
       callback.dictionarySize = dictionarySize;
-      callback.SyncInfo = SyncInfo;
+      callback.Sync = &sync;
       HRESULT result;
       try
       {
@@ -525,44 +528,46 @@ HRESULT CThreadBenchmark::Process()
       {
         if (result != E_ABORT)
         {
-          // SyncInfo->NumErrors++;
+          // sync.NumErrors++;
           {
-            NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-            SyncInfo->Pause();
+            NSynchronization::CCriticalSectionLock lock(sync.CS);
+            sync.Pause();
           }
-          CSysString message;
+          UString message;
           if (result == S_FALSE)
-            message = TEXT("Decoding error");
+            message = L"Decoding error";
+          else if (result == CLASS_E_CLASSNOTAVAILABLE)
+            message = L"Can't find 7z.dll";
           else
-            message = NError::MyFormatMessage(result);
-          MessageBox(0, message, TEXT("7-Zip"), MB_ICONERROR);
+            message = HResultToMessage(result);
+          BenchmarkDialog->MessageBoxError(message);
         }
       }
       else
       {
-        NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-        SyncInfo->NumPasses++;
+        NSynchronization::CCriticalSectionLock lock(sync.CS);
+        sync.NumPasses++;
       }
     }
     // return S_OK;
   }
   catch(CSystemException &e)
   {
-    MessageBox(0, NError::MyFormatMessage(e.ErrorCode), TEXT("7-Zip"), MB_ICONERROR);
+    BenchmarkDialog->MessageBoxError(HResultToMessage(e.ErrorCode));
     return E_FAIL;
   }
   catch(...)
   {
-    MyMessageBoxError(0, L"Some error");
+    BenchmarkDialog->MessageBoxError(HResultToMessage(E_FAIL));
     return E_FAIL;
   }
 }
 
 HRESULT Benchmark(
-  #ifdef EXTERNAL_LZMA
-  CCodecs *codecs,
-  #endif
-  UInt32 numThreads, UInt32 dictionarySize)
+    #ifdef EXTERNAL_LZMA
+    CCodecs *codecs,
+    #endif
+    UInt32 numThreads, UInt32 dictionarySize, HWND hwndParent)
 {
   CThreadBenchmark benchmarker;
   #ifdef EXTERNAL_LZMA
@@ -570,12 +575,12 @@ HRESULT Benchmark(
   #endif
 
   CBenchmarkDialog benchmarkDialog;
-  benchmarkDialog._syncInfo.DictionarySize = dictionarySize;
-  benchmarkDialog._syncInfo.NumThreads = numThreads;
+  benchmarkDialog.Sync.DictionarySize = dictionarySize;
+  benchmarkDialog.Sync.NumThreads = numThreads;
 
-  benchmarker.SyncInfo = &benchmarkDialog._syncInfo;
+  benchmarker.BenchmarkDialog = &benchmarkDialog;
   NWindows::CThread thread;
   RINOK(thread.Create(CThreadBenchmark::MyThreadFunction, &benchmarker));
-  benchmarkDialog.Create(0);
+  benchmarkDialog.Create(hwndParent);
   return thread.Wait();
 }

@@ -1,0 +1,11 @@
+#include "ExtractDialog.rc"
+#include "CompressDialog.rc"
+#include "BenchmarkDialog.rc"
+#include "resource2.h"
+
+STRINGTABLE
+BEGIN
+    IDS_COMPRESSED_COLON    "Compressed size:"
+    IDS_ARCHIVES_COLON      "Archives:"
+    IDS_PROGRESS_COMPRESSING "Compressing"
+END

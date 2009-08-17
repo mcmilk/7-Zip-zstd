@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2009-05-29 : Igor Pavlov : Public domain */
+2009-06-08 : Igor Pavlov : Public domain */
 
 /* #define XZ_DUMP */
 
@@ -291,9 +291,10 @@ static void Lzma2State_Init(void *pp)
 }
 
 static SRes Lzma2State_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
-    int srcWasFinished, ELzmaFinishMode finishMode, int *wasFinished)
+    int srcWasFinished, ECoderFinishMode finishMode, int *wasFinished)
 {
   ELzmaStatus status;
+  /* ELzmaFinishMode fm = (finishMode == LZMA_FINISH_ANY) ? LZMA_FINISH_ANY : LZMA_FINISH_END; */
   SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, finishMode, &status);
   srcWasFinished = srcWasFinished;
   *wasFinished = (status == LZMA_STATUS_FINISHED_WITH_MARK);
@@ -373,7 +374,7 @@ SRes MixCoder_SetFromMethod(CMixCoder *p, int coderIndex, UInt64 methodId)
 
 SRes MixCoder_Code(CMixCoder *p, Byte *dest, SizeT *destLen,
     const Byte *src, SizeT *srcLen, int srcWasFinished,
-    ELzmaFinishMode finishMode, ECoderStatus *status)
+    ECoderFinishMode finishMode, ECoderStatus *status)
 {
   SizeT destLenOrig = *destLen;
   SizeT srcLenOrig = *srcLen;

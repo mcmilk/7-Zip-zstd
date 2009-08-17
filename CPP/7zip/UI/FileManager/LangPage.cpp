@@ -1,16 +1,16 @@
 // LangPage.cpp
 
 #include "StdAfx.h"
-#include "LangPageRes.h"
-#include "LangPage.h"
 
 #include "Common/StringConvert.h"
 
 #include "Windows/ResourceString.h"
 
-#include "RegistryUtils.h"
 #include "HelpUtils.h"
+#include "LangPage.h"
+#include "LangPageRes.h"
 #include "LangUtils.h"
+#include "RegistryUtils.h"
 
 static CIDLangPair kIDLangPairs[] =
 {
@@ -19,17 +19,19 @@ static CIDLangPair kIDLangPairs[] =
 
 static LPCWSTR kLangTopic = L"fm/options.htm#language";
 
+static UString NativeLangString(const UString &s)
+{
+  return L" (" + s + L')';
+}
+
 bool CLangPage::OnInit()
 {
-  _langWasChanged = false;
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
 
   _langCombo.Attach(GetItem(IDC_LANG_COMBO_LANG));
 
-  UString s = NWindows::MyLoadStringW(IDS_LANG_ENGLISH);
-  s += L" (";
-  s += NWindows::MyLoadStringW(IDS_LANG_NATIVE);
-  s += L")";
+  UString s = NWindows::MyLoadStringW(IDS_LANG_ENGLISH) +
+      NativeLangString(NWindows::MyLoadStringW(IDS_LANG_NATIVE));
   int index = (int)_langCombo.AddString(s);
   _langCombo.SetItemData(index, _paths.Size());
   _paths.Add(L"-");
@@ -40,21 +42,12 @@ bool CLangPage::OnInit()
   for (int i = 0; i < langs.Size(); i++)
   {
     const CLangEx &lang = langs[i];
-    UString name;
-    UString englishName, nationalName;
-    if (lang.Lang.GetMessage(0x00000000, englishName))
-      name = englishName;
-    else
+    UString name, nationalName;
+    if (!lang.Lang.GetMessage(0, name))
       name = lang.ShortName;
-    if (lang.Lang.GetMessage(0x00000001, nationalName))
-    {
-      if (!nationalName.IsEmpty())
-      {
-        name += L" (";
-        name += nationalName;
-        name += L")";
-      }
-    }
+    if (lang.Lang.GetMessage(1, nationalName) && !nationalName.IsEmpty())
+      name += NativeLangString(nationalName);
+
     index = (int)_langCombo.AddString(name);
     _langCombo.SetItemData(index, _paths.Size());
     _paths.Add(lang.ShortName);
@@ -70,13 +63,13 @@ LONG CLangPage::OnApply()
   int pathIndex = (int)_langCombo.GetItemData(selectedIndex);
   SaveRegLang(_paths[pathIndex]);
   ReloadLang();
-  _langWasChanged = true;
+  LangWasChanged = true;
   return PSNRET_NOERROR;
 }
 
 void CLangPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kLangTopic); // change it
+  ShowHelpWindow(NULL, kLangTopic);
 }
 
 bool CLangPage::OnCommand(int code, int itemID, LPARAM param)

@@ -2,89 +2,40 @@
 
 #include "StdAfx.h"
 
-// #include <locale.h>
-#include <initguid.h>
+#include "Common/MyInitGuid.h"
 
-#include "Plugin.h"
-
-#include "Common/Wildcard.h"
-#include "Common/DynamicBuffer.h"
 #include "Common/StringConvert.h"
-#include "Common/Defs.h"
 
-#include "Windows/FileFind.h"
-#include "Windows/FileIO.h"
 #include "Windows/FileDir.h"
-#include "Windows/Defs.h"
+#include "Windows/NtCheck.h"
 
-#include "../../IPassword.h"
 #include "../../Common/FileStreams.h"
 
-#include "../Common/DefaultName.h"
-#include "../Common/OpenArchive.h"
 #include "../Agent/Agent.h"
 
-#include "ProgressBox.h"
-#include "FarUtils.h"
 #include "Messages.h"
+#include "Plugin.h"
+#include "ProgressBox.h"
 
 using namespace NWindows;
 using namespace NFar;
 
 static const char *kCommandPrefix = "7-zip";
-
 static const char *kRegisrtryMainKeyName = "";
-
 static const char *kRegisrtryValueNameEnabled = "UsedByDefault3";
+static const char *kHelpTopicConfig =  "Config";
 static bool kPluginEnabledDefault = true;
 
-static const char *kHelpTopicConfig =  "Config";
-
-extern "C"
-{
-  void WINAPI SetStartupInfo(struct PluginStartupInfo *info);
-  HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char *Data,
-      unsigned int DataSize);
-  HANDLE WINAPI OpenPlugin(int openFrom, int item);
-  void WINAPI ClosePlugin(HANDLE plugin);
-  int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems,
-      int *itemsNumber, int OpMode);
-  void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems,
-    int itemsNumber);
-  int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
-    int itemsNumber, int move, char *destPath, int opMode);
-  int WINAPI SetDirectory(HANDLE plugin, char *dir, int opMode);
-  void WINAPI GetPluginInfo(struct PluginInfo *info);
-  int WINAPI Configure(int itemNumber);
-  void WINAPI GetOpenPluginInfo(HANDLE plugin, struct OpenPluginInfo *info);
-  int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
-      int itemsNumber, int move, int opMode);
-  int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems,
-      int itemsNumber, int opMode);
-  int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState);
-};
-
 HINSTANCE g_hInstance;
-#ifndef _UNICODE
-bool g_IsNT = false;
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
+
+#define NT_CHECK_FAIL_ACTION return FALSE;
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
   {
     g_hInstance = hInstance;
-    #ifndef _UNICODE
-    g_IsNT = IsItWindowsNT();
-    #endif
+    NT_CHECK
   }
   return TRUE;
 }
@@ -96,7 +47,7 @@ static struct COptions
 
 static const char *kPliginNameForRegestry = "7-ZIP";
 
-void WINAPI SetStartupInfo(struct PluginStartupInfo *info)
+EXTERN_C void WINAPI SetStartupInfo(struct PluginStartupInfo *info)
 {
   MY_TRY_BEGIN;
   g_StartupInfo.Init(*info, kPliginNameForRegestry);
@@ -289,8 +240,7 @@ STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *completed)
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
-    IInStream **inStream)
+STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **inStream)
 {
   if (WasEscPressed())
     return E_ABORT;
@@ -443,8 +393,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
   return (HANDLE)(plugin);
 }
 
-HANDLE WINAPI OpenFilePlugin(char *name,
-    const unsigned char * /* data */, unsigned int /* dataSize */)
+EXTERN_C HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char * /* data */, unsigned int /* dataSize */)
 {
   MY_TRY_BEGIN;
   if (name == NULL || (!g_Options.Enabled))
@@ -456,7 +405,7 @@ HANDLE WINAPI OpenFilePlugin(char *name,
   MY_TRY_END2("OpenFilePlugin", INVALID_HANDLE_VALUE);
 }
 
-HANDLE WINAPI OpenPlugin(int openFrom, int item)
+EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, int item)
 {
   MY_TRY_BEGIN;
   if(openFrom == OPEN_COMMANDLINE)
@@ -504,30 +453,28 @@ HANDLE WINAPI OpenPlugin(int openFrom, int item)
   MY_TRY_END2("OpenPlugin", INVALID_HANDLE_VALUE);
 }
 
-void WINAPI ClosePlugin(HANDLE plugin)
+EXTERN_C void WINAPI ClosePlugin(HANDLE plugin)
 {
   MY_TRY_BEGIN;
   delete (CPlugin *)plugin;
   MY_TRY_END1("ClosePlugin");
 }
 
-int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems,
-    int *itemsNumber,int opMode)
+EXTERN_C int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems, int *itemsNumber, int opMode)
 {
   MY_TRY_BEGIN;
   return(((CPlugin *)plugin)->GetFindData(panelItems, itemsNumber, opMode));
   MY_TRY_END2("GetFindData", FALSE);
 }
 
-void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems,
-    int itemsNumber)
+EXTERN_C void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems, int itemsNumber)
 {
   MY_TRY_BEGIN;
   ((CPlugin *)plugin)->FreeFindData(panelItems, itemsNumber);
   MY_TRY_END1("FreeFindData");
 }
 
-int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
+EXTERN_C int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
     int itemsNumber, int move, char *destPath, int opMode)
 {
   MY_TRY_BEGIN;
@@ -535,14 +482,14 @@ int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
   MY_TRY_END2("GetFiles", NFileOperationReturnCode::kError);
 }
 
-int WINAPI SetDirectory(HANDLE plugin, char *dir, int opMode)
+EXTERN_C int WINAPI SetDirectory(HANDLE plugin, char *dir, int opMode)
 {
   MY_TRY_BEGIN;
   return(((CPlugin *)plugin)->SetDirectory(dir, opMode));
   MY_TRY_END2("SetDirectory", FALSE);
 }
 
-void WINAPI GetPluginInfo(struct PluginInfo *info)
+EXTERN_C void WINAPI GetPluginInfo(struct PluginInfo *info)
 {
   MY_TRY_BEGIN;
 
@@ -564,7 +511,7 @@ void WINAPI GetPluginInfo(struct PluginInfo *info)
   MY_TRY_END1("GetPluginInfo");
 }
 
-int WINAPI Configure(int /* itemNumber */)
+EXTERN_C int WINAPI Configure(int /* itemNumber */)
 {
   MY_TRY_BEGIN;
 
@@ -601,30 +548,28 @@ int WINAPI Configure(int /* itemNumber */)
   MY_TRY_END2("Configure", FALSE);
 }
 
-void WINAPI GetOpenPluginInfo(HANDLE plugin,struct OpenPluginInfo *info)
+EXTERN_C void WINAPI GetOpenPluginInfo(HANDLE plugin,struct OpenPluginInfo *info)
 {
   MY_TRY_BEGIN;
   ((CPlugin *)plugin)->GetOpenPluginInfo(info);
   MY_TRY_END1("GetOpenPluginInfo");
 }
 
-int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems,
-                   int itemsNumber, int move, int opMode)
+EXTERN_C int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems, int itemsNumber, int move, int opMode)
 {
   MY_TRY_BEGIN;
   return(((CPlugin *)plugin)->PutFiles(panelItems, itemsNumber, move, opMode));
   MY_TRY_END2("PutFiles", NFileOperationReturnCode::kError);
 }
 
-int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems,
-    int itemsNumber, int opMode)
+EXTERN_C int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems, int itemsNumber, int opMode)
 {
   MY_TRY_BEGIN;
   return(((CPlugin *)plugin)->DeleteFiles(panelItems, itemsNumber, opMode));
   MY_TRY_END2("DeleteFiles", FALSE);
 }
 
-int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState)
+EXTERN_C int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState)
 {
   MY_TRY_BEGIN;
   return (((CPlugin *)plugin)->ProcessKey(key, controlState));

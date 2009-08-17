@@ -100,10 +100,6 @@ class COutArchive
 
   HRESULT EncodeStream(
       DECL_EXTERNAL_CODECS_LOC_VARS
-      CEncoder &encoder, const Byte *data, size_t dataSize,
-      CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
-  HRESULT EncodeStream(
-      DECL_EXTERNAL_CODECS_LOC_VARS
       CEncoder &encoder, const CByteBuffer &data,
       CRecordVector<UInt64> &packSizes, CObjectVector<CFolder> &folders);
   void WriteHeader(

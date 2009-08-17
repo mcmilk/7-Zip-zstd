@@ -1,59 +1,61 @@
 // ProgressDialog.h
 
-#ifndef __PROGRESSDIALOG_H
-#define __PROGRESSDIALOG_H
+#ifndef __PROGRESS_DIALOG_H
+#define __PROGRESS_DIALOG_H
 
-#include "ProgressDialogRes.h"
+#include "Windows/Synchronization.h"
+#include "Windows/Thread.h"
 
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/ProgressBar.h"
-#include "Windows/Synchronization.h"
 
-class CProgressSynch
+#include "ProgressDialogRes.h"
+
+class CProgressSync
 {
-  NWindows::NSynchronization::CCriticalSection _criticalSection;
+  NWindows::NSynchronization::CCriticalSection _cs;
   bool _stopped;
   bool _paused;
-  UINT64 _total;
-  UINT64 _completed;
+  UInt64 _total;
+  UInt64 _completed;
 public:
-  CProgressSynch(): _stopped(false), _paused(false), _total(1), _completed(0) {}
+  CProgressSync(): _stopped(false), _paused(false), _total(1), _completed(0) {}
 
   HRESULT ProcessStopAndPause();
   bool GetStopped()
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     return _stopped;
   }
   void SetStopped(bool value)
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     _stopped = value;
   }
   bool GetPaused()
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     return _paused;
   }
   void SetPaused(bool value)
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     _paused = value;
   }
-  void SetProgress(UINT64 total, UINT64 completed)
+  void SetProgress(UInt64 total, UInt64 completed)
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     _total = total;
     _completed = completed;
   }
-  void SetPos(UINT64 completed)
+  void SetPos(UInt64 completed)
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     _completed = completed;
   }
-  void GetProgress(UINT64 &total, UINT64 &completed)
+  void GetProgress(UInt64 &total, UInt64 &completed)
   {
-    NWindows::NSynchronization::CCriticalSectionLock lock(_criticalSection);
+    NWindows::NSynchronization::CCriticalSectionLock lock(_cs);
     total = _total;
     completed = _completed;
   }
@@ -61,13 +63,16 @@ public:
 
 class CU64ToI32Converter
 {
-  UINT64 _numShiftBits;
+  UInt64 _numShiftBits;
 public:
-  void Init(UINT64 _range);
-  int Count(UINT64 aValue);
+  void Init(UInt64 range)
+  {
+    // Windows CE doesn't like big number here.
+    for (_numShiftBits = 0; range > (1 << 15); _numShiftBits++)
+      range >>= 1;
+  }
+  int Count(UInt64 value) { return int(value >> _numShiftBits); }
 };
-
-// class CProgressDialog: public NWindows::NControl::CModelessDialog
 
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
@@ -76,24 +81,35 @@ private:
 
   UString _title;
   CU64ToI32Converter _converter;
-  UINT64 _peviousPos;
-  UINT64 _range;
+  UInt64 _peviousPos;
+  UInt64 _range;
   NWindows::NControl::CProgressBar m_ProgressBar;
 
   int _prevPercentValue;
 
+  bool _wasCreated;
+  bool _needClose;
+  bool _inCancelMessageBox;
+  bool _externalCloseMessageWasReceived;
+
   bool OnTimer(WPARAM timerID, LPARAM callback);
-  void SetRange(UINT64 range);
-  void SetPos(UINT64 pos);
+  void SetRange(UInt64 range);
+  void SetPos(UInt64 pos);
   virtual bool OnInit();
   virtual void OnCancel();
+  virtual void OnOK();
   NWindows::NSynchronization::CManualResetEvent _dialogCreatedEvent;
   #ifndef _SFX
   void AddToTitle(LPCWSTR string);
   #endif
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
+
+  void WaitCreating() { _dialogCreatedEvent.Lock(); }
+  void CheckNeedClose();
+  bool OnExternalCloseMessage();
 public:
-  CProgressSynch ProgressSynch;
+  CProgressSync Sync;
+  int IconID;
 
   #ifndef _SFX
   HWND MainWindow;
@@ -107,27 +123,48 @@ public:
     ,MainWindow(0)
     #endif
   {
+    IconID = -1;
+    _wasCreated = false;
+    _needClose = false;
+    _inCancelMessageBox = false;
+    _externalCloseMessageWasReceived = false;
+
     if (_dialogCreatedEvent.Create() != S_OK)
       throw 1334987;
   }
 
-  void WaitCreating() { _dialogCreatedEvent.Lock(); }
-
-
-  INT_PTR Create(const UString &title, HWND wndParent = 0)
+  INT_PTR Create(const UString &title, NWindows::CThread &thread, HWND wndParent = 0)
   {
     _title = title;
-    return CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent);
+    INT_PTR res = CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent);
+    thread.Wait();
+    return res;
   }
 
-  static const UINT kCloseMessage;
+  enum
+  {
+    kCloseMessage = WM_USER + 1
+  };
 
   virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
-  void MyClose()
+  void ProcessWasFinished()
   {
-    PostMessage(kCloseMessage);
+    WaitCreating();
+    if (_wasCreated)
+      PostMessage(kCloseMessage);
+    else
+      _needClose = true;
   };
+};
+
+
+class CProgressCloser
+{
+  CProgressDialog *_p;
+public:
+  CProgressCloser(CProgressDialog &p) : _p(&p) {}
+  ~CProgressCloser() { _p->ProcessWasFinished(); }
 };
 
 #endif

@@ -71,15 +71,14 @@ void CApp::SetListSettings()
     extendedStyle |= LVS_EX_GRIDLINES;
   bool mySelectionMode = ReadAlternativeSelection();
   
-  /*
   if (ReadSingleClick())
   {
-    extendedStyle |= LVS_EX_ONECLICKACTIVATE
-      | LVS_EX_TRACKSELECT;
+    extendedStyle |= LVS_EX_ONECLICKACTIVATE | LVS_EX_TRACKSELECT;
+    /*
     if (ReadUnderline())
       extendedStyle |= LVS_EX_UNDERLINEHOT;
+    */
   }
-  */
 
   for (int i = 0; i < kNumPanelsMax; i++)
   {
@@ -104,6 +103,10 @@ void CApp::SetShowSystemMenu()
   ShowSystemMenu = ReadShowSystemMenu();
 }
 
+#ifndef ILC_COLOR32
+#define ILC_COLOR32 0x0020
+#endif
+
 HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, bool &archiveIsOpened, bool &encrypted)
 {
   if (PanelsCreated[panelIndex])
@@ -124,24 +127,23 @@ HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, bool &arch
   return S_OK;
 }
 
-static void CreateToolbar(
-    HWND parent,
+static void CreateToolbar(HWND parent,
     NWindows::NControl::CImageList &imageList,
     NWindows::NControl::CToolBar &toolBar,
-    bool LargeButtons)
+    bool largeButtons)
 {
-  toolBar.Attach(::CreateWindowEx(0,
-      TOOLBARCLASSNAME,
-      NULL, 0
+  toolBar.Attach(::CreateWindowEx(0, TOOLBARCLASSNAME, NULL, 0
+      | WS_CHILD
       | WS_VISIBLE
       | TBSTYLE_FLAT
       | TBSTYLE_TOOLTIPS
-      | WS_CHILD
-      | CCS_NOPARENTALIGN
-      | CCS_NORESIZE
-      | CCS_NODIVIDER
+      | TBSTYLE_WRAPABLE
       // | TBSTYLE_AUTOSIZE
-      // | CCS_ADJUSTABLE
+      // | CCS_NORESIZE
+      #ifdef UNDER_CE
+      | CCS_NODIVIDER
+      | CCS_NOPARENTALIGN
+      #endif
       ,0,0,0,0, parent, NULL, g_hInstance, NULL));
 
   // TB_BUTTONSTRUCTSIZE message, which is required for
@@ -149,8 +151,8 @@ static void CreateToolbar(
   toolBar.ButtonStructSize();
 
   imageList.Create(
-      LargeButtons ? 48: 24,
-      LargeButtons ? 36: 24,
+      largeButtons ? 48: 24,
+      largeButtons ? 36: 24,
       ILC_MASK | ILC_COLOR32, 0, 0);
   toolBar.SetImageList(0, imageList);
 }
@@ -162,7 +164,7 @@ struct CButtonInfo
   UINT Bitmap2ResID;
   UINT StringResID;
   UInt32 LangID;
-  UString GetText() const { return LangString(StringResID, LangID); };
+  UString GetText() const { return LangString(StringResID, LangID); }
 };
 
 static CButtonInfo g_StandardButtons[] =
@@ -206,17 +208,13 @@ static void SetButtonText(int commandID, UString &s)
 static void AddButton(
     NControl::CImageList &imageList,
     NControl::CToolBar &toolBar,
-    CButtonInfo &butInfo,
-    bool showText,
-    bool large)
+    CButtonInfo &butInfo, bool showText, bool large)
 {
   TBBUTTON but;
   but.iBitmap = 0;
   but.idCommand = butInfo.CommandID;
   but.fsState = TBSTATE_ENABLED;
-  but.fsStyle = BTNS_BUTTON
-    // | BTNS_AUTOSIZE
-    ;
+  but.fsStyle = TBSTYLE_BUTTON;
   but.dwData = 0;
 
   UString s = butInfo.GetText();
@@ -241,110 +239,54 @@ static void AddButton(
   #endif
 }
 
-static void AddBand(NControl::CReBar &reBar, NControl::CToolBar &toolBar)
-{
-  SIZE size;
-  toolBar.GetMaxSize(&size);
-
-  RECT rect;
-  toolBar.GetWindowRect(&rect);
-  
-  REBARBANDINFO rbBand;
-  rbBand.cbSize = sizeof(REBARBANDINFO);  // Required
-  rbBand.fMask  = RBBIM_STYLE
-    | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE;
-  rbBand.fStyle = RBBS_CHILDEDGE; // RBBS_NOGRIPPER;
-  rbBand.cxMinChild = size.cx; // rect.right - rect.left;
-  rbBand.cyMinChild = size.cy; // rect.bottom - rect.top;
-  rbBand.cyChild = rbBand.cyMinChild;
-  rbBand.cx = rbBand.cxMinChild;
-  rbBand.cxIdeal = rbBand.cxMinChild;
-  rbBand.hwndChild = toolBar;
-  reBar.InsertBand(-1, &rbBand);
-}
-
 void CApp::ReloadToolbars()
 {
-  if (!_rebar)
-    return;
-  HWND parent = _rebar;
+  _buttonsImageList.Destroy();
+  _toolBar.Destroy();
 
-  while (_rebar.GetBandCount() > 0)
-    _rebar.DeleteBand(0);
 
-  _archiveToolBar.Destroy();
-  _archiveButtonsImageList.Destroy();
-
-  _standardButtonsImageList.Destroy();
-  _standardToolBar.Destroy();
-
-  if (ShowArchiveToolbar)
+  if (ShowArchiveToolbar || ShowStandardToolbar)
   {
-    CreateToolbar(parent, _archiveButtonsImageList, _archiveToolBar, LargeButtons);
-    for (int i = 0; i < sizeof(g_ArchiveButtons) / sizeof(g_ArchiveButtons[0]); i++)
-      AddButton(_archiveButtonsImageList, _archiveToolBar, g_ArchiveButtons[i],
-          ShowButtonsLables, LargeButtons);
-    AddBand(_rebar, _archiveToolBar);
-  }
+    CreateToolbar(_window, _buttonsImageList, _toolBar, LargeButtons);
+    int i;
+    if (ShowArchiveToolbar)
+      for (i = 0; i < sizeof(g_ArchiveButtons) / sizeof(g_ArchiveButtons[0]); i++)
+        AddButton(_buttonsImageList, _toolBar, g_ArchiveButtons[i], ShowButtonsLables, LargeButtons);
+    if (ShowStandardToolbar)
+      for (i = 0; i < sizeof(g_StandardButtons) / sizeof(g_StandardButtons[0]); i++)
+        AddButton(_buttonsImageList, _toolBar, g_StandardButtons[i], ShowButtonsLables, LargeButtons);
 
-  if (ShowStandardToolbar)
-  {
-    CreateToolbar(parent, _standardButtonsImageList, _standardToolBar, LargeButtons);
-    for (int i = 0; i < sizeof(g_StandardButtons) / sizeof(g_StandardButtons[0]); i++)
-      AddButton(_standardButtonsImageList, _standardToolBar, g_StandardButtons[i],
-          ShowButtonsLables, LargeButtons);
-    AddBand(_rebar, _standardToolBar);
+    _toolBar.AutoSize();
   }
 }
 
-void CApp::ReloadRebar(HWND hwnd)
+void CApp::SaveToolbarChanges()
 {
-  _rebar.Destroy();
-  if (!ShowArchiveToolbar && !ShowStandardToolbar)
-    return;
-  if (g_ComCtl32Version >= MAKELONG(71, 4))
-  {
-    INITCOMMONCONTROLSEX icex;
-    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icex.dwICC  = ICC_COOL_CLASSES | ICC_BAR_CLASSES;
-    InitCommonControlsEx(&icex);
-    
-    _rebar.Attach(::CreateWindowEx(WS_EX_TOOLWINDOW,
-      REBARCLASSNAME,
-      NULL,
-      WS_VISIBLE
-      | WS_BORDER
-      | WS_CHILD
-      | WS_CLIPCHILDREN
-      | WS_CLIPSIBLINGS
-      // | CCS_NODIVIDER
-      // | CCS_NOPARENTALIGN  // it's bead for moveing of two bands
-      // | CCS_TOP
-      | RBS_VARHEIGHT
-      | RBS_BANDBORDERS
-      // | RBS_AUTOSIZE
-      ,0,0,0,0, hwnd, NULL, g_hInstance, NULL));
-  }
-  if (_rebar == 0)
-    return;
-  REBARINFO rbi;
-  rbi.cbSize = sizeof(REBARINFO);  // Required when using this struct.
-  rbi.fMask = 0;
-  rbi.himl = (HIMAGELIST)NULL;
-  _rebar.SetBarInfo(&rbi);
+  SaveToolbar();
   ReloadToolbars();
+  MoveSubWindows();
 }
+
+void MyLoadMenu();
 
 HRESULT CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &archiveIsOpened, bool &encrypted)
 {
+  _window.Attach(hwnd);
+  #ifdef UNDER_CE
+  _commandBar.Create(g_hInstance, hwnd, 1);
+  #endif
+  MyLoadMenu();
+  #ifdef UNDER_CE
+  _commandBar.AutoSize();
+  #endif
+
   ReadToolbar();
-  ReloadRebar(hwnd);
+  ReloadToolbars();
 
   int i;
   for (i = 0; i < kNumPanelsMax; i++)
     PanelsCreated[i] = false;
 
-  _window.Attach(hwnd);
   AppState.Read();
   SetListSettings();
   SetShowSystemMenu();
@@ -380,8 +322,6 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &ar
   return S_OK;
 }
 
-extern void MoveSubWindows(HWND hWnd);
-
 HRESULT CApp::SwitchOnOffOnePanel()
 {
   if (NumPanels == 1)
@@ -398,7 +338,7 @@ HRESULT CApp::SwitchOnOffOnePanel()
     Panels[1 - LastFocusedPanel].Enable(false);
     Panels[1 - LastFocusedPanel].Show(SW_HIDE);
   }
-  MoveSubWindows(_window);
+  MoveSubWindows();
   return S_OK;
 }
 
@@ -647,14 +587,16 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       destPath = srcPanel._currentFolderPrefix + destPath;
     }
 
+    #ifndef UNDER_CE
     if (destPath.Length() > 0 && destPath[0] == '\\')
       if (destPath.Length() == 1 || destPath[1] != '\\')
       {
         srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
         return;
       }
+    #endif
 
-    if (indices.Size() > 1 || (destPath.Length() > 0 && destPath.ReverseFind(WCHAR_PATH_SEPARATOR) == destPath.Length() - 1) ||
+    if (indices.Size() > 1 || (!destPath.IsEmpty() && destPath.Back() == WCHAR_PATH_SEPARATOR) ||
         NFind::DoesDirExist(destPath))
     {
       NDirectory::CreateComplexDirectory(destPath);
@@ -831,26 +773,13 @@ int CApp::GetFocusedPanelIndex() const
     hwnd = GetParent(hwnd);
   }
 }
-  */
+*/
 
 static UString g_ToolTipBuffer;
 static CSysString g_ToolTipBufferSys;
 
 void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
 {
-  if (pnmh->hwndFrom == _rebar)
-  {
-    switch(pnmh->code)
-    {
-      case RBN_HEIGHTCHANGE:
-      {
-        MoveSubWindows(g_HWND);
-        return;
-      }
-    }
-    return ;
-  }
-  else
   {
     if (pnmh->code == TTN_GETDISPINFO)
     {

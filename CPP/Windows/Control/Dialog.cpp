@@ -15,8 +15,7 @@ extern bool g_IsNT;
 namespace NWindows {
 namespace NControl {
 
-static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message,
-    WPARAM wParam, LPARAM lParam)
+static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message, WPARAM wParam, LPARAM lParam)
 {
   CWindow dialogTmp(dialogHWND);
   if (message == WM_INITDIALOG)
@@ -27,30 +26,31 @@ static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message,
   if (message == WM_INITDIALOG)
     dialog->Attach(dialogHWND);
 
-  return BoolToBOOL(dialog->OnMessage(message, wParam, lParam));
+  try { return BoolToBOOL(dialog->OnMessage(message, wParam, lParam)); }
+  catch(...) { return true; }
 }
 
 bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch (message)
   {
-    case WM_INITDIALOG:
-      return OnInit();
-    case WM_COMMAND:
-      return OnCommand(wParam, lParam);
-    case WM_NOTIFY:
-      return OnNotify((UINT)wParam, (LPNMHDR) lParam);
-    case WM_HELP:
-      {
-        OnHelp((LPHELPINFO)lParam);
+    case WM_INITDIALOG: return OnInit();
+    case WM_COMMAND: return OnCommand(wParam, lParam);
+    case WM_NOTIFY: return OnNotify((UINT)wParam, (LPNMHDR) lParam);
+    case WM_TIMER: return OnTimer(wParam, lParam);
+    case WM_SIZE: return OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
+    case WM_HELP: OnHelp(); return true;
+    /*
+        OnHelp(
+          #ifdef UNDER_CE
+          (void *)
+          #else
+          (LPHELPINFO)
+          #endif
+          lParam);
         return true;
-      }
-    case WM_TIMER:
-      {
-        return OnTimer(wParam, lParam);
-      }
-    default:
-      return false;
+    */
+    default: return false;
   }
 }
 
@@ -70,19 +70,75 @@ bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */)
 {
   switch(buttonID)
   {
-    case IDOK:
-      OnOK();
-      break;
-    case IDCANCEL:
-      OnCancel();
-      break;
-    case IDHELP:
-      OnHelp();
-      break;
-    default:
-      return false;
+    case IDOK: OnOK(); break;
+    case IDCANCEL: OnCancel(); break;
+    case IDHELP: OnHelp(); break;
+    default: return false;
   }
   return true;
+}
+
+static bool GetWorkAreaRect(RECT *rect)
+{
+  // use another function for multi-monitor.
+  return BOOLToBool(::SystemParametersInfo(SPI_GETWORKAREA, NULL, rect, NULL));
+}
+
+bool IsDialogSizeOK(int xSize, int ySize)
+{
+  // it returns for system font. Real font uses another values
+  LONG v = GetDialogBaseUnits();
+  int x = LOWORD(v);
+  int y = HIWORD(v);
+
+  RECT rect;
+  GetWorkAreaRect(&rect);
+  int wx = RECT_SIZE_X(rect);
+  int wy = RECT_SIZE_Y(rect);
+  return
+    xSize / 4 * x <= wx &&
+    ySize / 8 * y <= wy;
+}
+
+void CDialog::NormalizeSize(bool fullNormalize)
+{
+  RECT workRect;
+	GetWorkAreaRect(&workRect);
+  int xSize = RECT_SIZE_X(workRect);
+  int ySize = RECT_SIZE_Y(workRect);
+  RECT rect;
+  GetWindowRect(&rect);
+  int xSize2 = RECT_SIZE_X(rect);
+  int ySize2 = RECT_SIZE_Y(rect);
+  bool needMove = (xSize2 > xSize || ySize2 > ySize);
+  if (xSize2 > xSize || (needMove && fullNormalize))
+  {
+    rect.left = workRect.left;
+    rect.right = workRect.right;
+    xSize2 = xSize;
+  }
+  if (ySize2 > ySize || (needMove && fullNormalize))
+  {
+    rect.top = workRect.top;
+    rect.bottom = workRect.bottom;
+    ySize2 = ySize;
+  }
+  if (needMove)
+  {
+    if (fullNormalize)
+      Show(SW_SHOWMAXIMIZED);
+    else
+      Move(rect.left, rect.top, xSize2, ySize2, true);
+  }
+}
+
+void CDialog::NormalizePosition()
+{
+  RECT workRect, rect;
+	GetWorkAreaRect(&workRect);
+  GetWindowRect(&rect);
+  if (rect.bottom > workRect.bottom && rect.top > workRect.top)
+    Move(rect.left, workRect.top, RECT_SIZE_X(rect), RECT_SIZE_Y(rect), true);
 }
 
 bool CModelessDialog::Create(LPCTSTR templateName, HWND parentWindow)

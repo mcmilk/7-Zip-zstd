@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifdef UNDER_CE
+#include <winuserm.h>
+#endif
+
 #include "Common/StringConvert.h"
 
 #include "Windows/Memory.h"
@@ -413,6 +417,10 @@ void CDropTarget::RemoveSelection()
   m_SelectionIndex = -1;
 }
 
+#ifdef UNDER_CE
+#define ChildWindowFromPointEx(hwndParent, pt, uFlags) ChildWindowFromPoint(hwndParent, pt)
+#endif
+
 void CDropTarget::PositionCursor(POINTL ptl)
 {
   m_SubFolderIndex = -1;
@@ -767,8 +775,6 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
 {
   if (fileNames.Size() == 0)
     return;
-  const UString archiveName = CreateArchiveName(fileNames.Front(),
-      (fileNames.Size() > 1), false);
   bool createNewArchive = true;
   if (!IsFSFolder())
     createNewArchive = !DoesItSupportOperations();
@@ -780,8 +786,9 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
     {
       NFile::NDirectory::GetOnlyDirPrefix(fileNames.Front(), folderPath2);
       if (IsFolderInTemp(folderPath2))
-        folderPath2 = L"C:\\"; // fix it
+        folderPath2 = ROOT_FS_FOLDER;
     }
+    const UString archiveName = CreateArchiveName(fileNames.Front(), (fileNames.Size() > 1), false);
     CompressFiles(folderPath2, archiveName, L"", fileNames,
       false, // email
       true, // showDialog

@@ -7,6 +7,7 @@
 
 namespace NRegistryAssociations {
 
+  /*
   struct CExtInfo
   {
     UString Ext;
@@ -16,6 +17,7 @@ namespace NRegistryAssociations {
   bool ReadInternalAssociation(const wchar_t *ext, CExtInfo &extInfo);
   void ReadInternalAssociations(CObjectVector<CExtInfo> &items);
   void WriteInternalAssociations(const CObjectVector<CExtInfo> &items);
+  */
 
   bool CheckShellExtensionInfo(const CSysString &extension, UString &iconPath, int &iconIndex);
 

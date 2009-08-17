@@ -2,20 +2,13 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
-#include "Plugin.h"
-#include "Messages.h"
-#include "UpdateCallback100.h"
-
 #include "Windows/FileDir.h"
 
-#include "../../Common/FileStreams.h"
-
-#include "Common/StringConvert.h"
-
-#include "../Common/ZipRegistry.h"
 #include "../Common/WorkDir.h"
+
+#include "Messages.h"
+#include "Plugin.h"
+#include "UpdateCallback100.h"
 
 using namespace NFar;
 using namespace NWindows;
@@ -24,8 +17,7 @@ using namespace NDirectory;
 
 static LPCWSTR kTempArchivePrefix = L"7zA";
 
-int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
-    int opMode)
+int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
 {
   if (numItems == 0)
     return FALSE;
@@ -48,8 +40,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
     char msg[1024];
     if (numItems == 1)
     {
-      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile),
-          panelItems[0].FindData.cFileName);
+      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile), panelItems[0].FindData.cFileName);
       msgItems[1] = msg;
     }
     else if (numItems > 1)
@@ -77,7 +68,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
   }
 
   NWorkDir::CInfo workDirInfo;
-  ReadWorkDirInfo(workDirInfo);
+  workDirInfo.Load();
 
   UString workDir = GetWorkDir(workDirInfo, m_FileName);
   CreateComplexDirectory(workDir);
@@ -101,8 +92,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems,
   GetPathParts(pathVector);
   
   CMyComPtr<IOutFolderArchive> outArchive;
-  HRESULT result = m_ArchiveHandler.QueryInterface(
-      IID_IOutFolderArchive, &outArchive);
+  HRESULT result = m_ArchiveHandler.QueryInterface(IID_IOutFolderArchive, &outArchive);
   if(result != S_OK)
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);

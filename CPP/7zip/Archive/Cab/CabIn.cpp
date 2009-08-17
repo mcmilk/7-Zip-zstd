@@ -2,14 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "CabIn.h"
-
 #include "../Common/FindSignature.h"
+
+#include "CabIn.h"
 
 namespace NArchive {
 namespace NCab {
 
-Byte CInArchive::ReadByte()
+Byte CInArchive::Read8()
 {
   Byte b;
   if (!inBuffer.ReadByte(b))
@@ -17,23 +17,23 @@ Byte CInArchive::ReadByte()
   return b;
 }
 
-UInt16 CInArchive::ReadUInt16()
+UInt16 CInArchive::Read16()
 {
   UInt16 value = 0;
   for (int i = 0; i < 2; i++)
   {
-    Byte b = ReadByte();
+    Byte b = Read8();
     value |= (UInt16(b) << (8 * i));
   }
   return value;
 }
 
-UInt32 CInArchive::ReadUInt32()
+UInt32 CInArchive::Read32()
 {
   UInt32 value = 0;
   for (int i = 0; i < 4; i++)
   {
-    Byte b = ReadByte();
+    Byte b = Read8();
     value |= (UInt32(b) << (8 * i));
   }
   return value;
@@ -44,7 +44,7 @@ AString CInArchive::SafeReadName()
   AString name;
   for (;;)
   {
-    Byte b = ReadByte();
+    Byte b = Read8();
     if (b == 0)
       return name;
     name += (char)b;
@@ -57,61 +57,60 @@ void CInArchive::ReadOtherArchive(COtherArchive &oa)
   oa.DiskName = SafeReadName();
 }
 
-void CInArchive::Skip(size_t size)
+void CInArchive::Skip(UInt32 size)
 {
   while (size-- != 0)
-    ReadByte();
+    Read8();
 }
 
-HRESULT CInArchive::Open2(IInStream *stream,
-    const UInt64 *searchHeaderSizeLimit,
-    CDatabase &database)
+HRESULT CInArchive::Open(const UInt64 *searchHeaderSizeLimit, CDatabaseEx &db)
 {
-  database.Clear();
-  RINOK(stream->Seek(0, STREAM_SEEK_SET, &database.StartPosition));
+  IInStream *stream = db.Stream;
+  db.Clear();
+  RINOK(stream->Seek(0, STREAM_SEEK_SET, &db.StartPosition));
 
   RINOK(FindSignatureInStream(stream, NHeader::kMarker, NHeader::kMarkerSize,
-      searchHeaderSizeLimit, database.StartPosition));
+      searchHeaderSizeLimit, db.StartPosition));
 
-  RINOK(stream->Seek(database.StartPosition + NHeader::kMarkerSize, STREAM_SEEK_SET, NULL));
+  RINOK(stream->Seek(db.StartPosition + NHeader::kMarkerSize, STREAM_SEEK_SET, NULL));
   if (!inBuffer.Create(1 << 17))
     return E_OUTOFMEMORY;
   inBuffer.SetStream(stream);
   inBuffer.Init();
 
-  CInArchiveInfo &ai = database.ArchiveInfo;
+  CInArchiveInfo &ai = db.ArchiveInfo;
 
-  ai.Size = ReadUInt32();
-  if (ReadUInt32() != 0)
+  ai.Size = Read32();
+  if (Read32() != 0)
     return S_FALSE;
-  ai.FileHeadersOffset = ReadUInt32();
-  if (ReadUInt32() != 0)
+  ai.FileHeadersOffset = Read32();
+  if (Read32() != 0)
     return S_FALSE;
 
-  ai.VersionMinor = ReadByte();
-  ai.VersionMajor = ReadByte();
-  ai.NumFolders = ReadUInt16();
-  ai.NumFiles = ReadUInt16();
-  ai.Flags = ReadUInt16();
+  ai.VersionMinor = Read8();
+  ai.VersionMajor = Read8();
+  ai.NumFolders = Read16();
+  ai.NumFiles = Read16();
+  ai.Flags = Read16();
   if (ai.Flags > 7)
     return S_FALSE;
-  ai.SetID = ReadUInt16();
-  ai.CabinetNumber = ReadUInt16();
+  ai.SetID = Read16();
+  ai.CabinetNumber = Read16();
 
   if (ai.ReserveBlockPresent())
   {
-    ai.PerCabinetAreaSize = ReadUInt16();
-    ai.PerFolderAreaSize = ReadByte();
-    ai.PerDataBlockAreaSize = ReadByte();
+    ai.PerCabinetAreaSize = Read16();
+    ai.PerFolderAreaSize = Read8();
+    ai.PerDataBlockAreaSize = Read8();
 
     Skip(ai.PerCabinetAreaSize);
   }
 
   {
     if (ai.IsTherePrev())
-      ReadOtherArchive(ai.PreviousArchive);
+      ReadOtherArchive(ai.PrevArc);
     if (ai.IsThereNext())
-      ReadOtherArchive(ai.NextArchive);
+      ReadOtherArchive(ai.NextArc);
   }
   
   int i;
@@ -119,53 +118,39 @@ HRESULT CInArchive::Open2(IInStream *stream,
   {
     CFolder folder;
 
-    folder.DataStart = ReadUInt32();
-    folder.NumDataBlocks = ReadUInt16();
-    folder.CompressionTypeMajor = ReadByte();
-    folder.CompressionTypeMinor = ReadByte();
+    folder.DataStart = Read32();
+    folder.NumDataBlocks = Read16();
+    folder.CompressionTypeMajor = Read8();
+    folder.CompressionTypeMinor = Read8();
 
     Skip(ai.PerFolderAreaSize);
-    database.Folders.Add(folder);
+    db.Folders.Add(folder);
   }
   
-  RINOK(stream->Seek(database.StartPosition + ai.FileHeadersOffset, STREAM_SEEK_SET, NULL));
+  RINOK(stream->Seek(db.StartPosition + ai.FileHeadersOffset, STREAM_SEEK_SET, NULL));
 
   inBuffer.SetStream(stream);
   inBuffer.Init();
   for (i = 0; i < ai.NumFiles; i++)
   {
     CItem item;
-    item.Size = ReadUInt32();
-    item.Offset = ReadUInt32();
-    item.FolderIndex = ReadUInt16();
-    UInt16 pureDate = ReadUInt16();
-    UInt16 pureTime = ReadUInt16();
+    item.Size = Read32();
+    item.Offset = Read32();
+    item.FolderIndex = Read16();
+    UInt16 pureDate = Read16();
+    UInt16 pureTime = Read16();
     item.Time = ((UInt32(pureDate) << 16)) | pureTime;
-    item.Attributes = ReadUInt16();
+    item.Attributes = Read16();
     item.Name = SafeReadName();
-    int folderIndex = item.GetFolderIndex(database.Folders.Size());
-    if (folderIndex >= database.Folders.Size())
+    int folderIndex = item.GetFolderIndex(db.Folders.Size());
+    if (folderIndex >= db.Folders.Size())
       return S_FALSE;
-    database.Items.Add(item);
+    db.Items.Add(item);
   }
   return S_OK;
 }
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
-
-HRESULT CInArchive::Open(
-    const UInt64 *searchHeaderSizeLimit,
-    CDatabaseEx &database)
-{
-  return Open2(database.Stream, searchHeaderSizeLimit, database);
-}
-
-
-static int CompareMvItems2(const CMvItem *p1, const CMvItem *p2)
-{
-  RINOZ(MyCompare(p1->VolumeIndex, p2->VolumeIndex));
-  return MyCompare(p1->ItemIndex, p2->ItemIndex);
-}
 
 static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
 {
@@ -185,7 +170,8 @@ static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
   RINOZ(MyCompare(f1, f2));
   RINOZ(MyCompare(item1.Offset, item2.Offset));
   RINOZ(MyCompare(item1.Size, item2.Size));
-  return CompareMvItems2(p1, p2);
+  RINOZ(MyCompare(p1->VolumeIndex, p2->VolumeIndex));
+  return MyCompare(p1->ItemIndex, p2->ItemIndex);
 }
 
 bool CMvDatabaseEx::AreItemsEqual(int i1, int i2)
@@ -236,8 +222,7 @@ void CMvDatabaseEx::FillSortAndShrink()
 
   for (i = 0; i < Items.Size(); i++)
   {
-    const CMvItem &mvItem = Items[i];
-    int folderIndex = GetFolderIndex(&mvItem);
+    int folderIndex = GetFolderIndex(&Items[i]);
     if (folderIndex >= FolderStartFileIndex.Size())
       FolderStartFileIndex.Add(i);
   }
@@ -260,7 +245,8 @@ bool CMvDatabaseEx::Check()
         return false;
     }
   }
-  UInt64 maxPos = 0;
+  UInt32 beginPos = 0;
+  UInt64 endPos = 0;
   int prevFolder = -2;
   for (int i = 0; i < Items.Size(); i++)
   {
@@ -273,16 +259,12 @@ bool CMvDatabaseEx::Check()
       continue;
     int folderIndex = GetFolderIndex(&mvItem);
     if (folderIndex != prevFolder)
-    {
       prevFolder = folderIndex;
-      maxPos = 0;
-      continue;
-    }
-    if (item.Offset < maxPos)
+    else if (item.Offset < endPos &&
+        (item.Offset != beginPos || item.GetEndOffset() != endPos))
       return false;
-    maxPos = item.GetEndOffset();
-    if (maxPos < item.Offset)
-      return false;
+    beginPos = item.Offset;
+    endPos = item.GetEndOffset();
   }
   return true;
 }

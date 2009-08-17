@@ -1,5 +1,5 @@
 PROG = 7z.exe
-LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib
+MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -I ../../../
 
 CONSOLE_OBJS = \

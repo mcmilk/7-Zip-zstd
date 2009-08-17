@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#if defined( _WIN32) && defined( _7ZIP_LARGE_PAGES)
+#include "../../../../C/Alloc.h"
+#endif
+
 #include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
@@ -11,16 +15,10 @@
 #include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
 
-#include "Windows/Defs.h"
 #include "Windows/Error.h"
-#include "Windows/FileDir.h"
-#include "Windows/FileName.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
-
-#include "../../ICoder.h"
-#include "../../IPassword.h"
 
 #include "../Common/ArchiveCommandLine.h"
 #include "../Common/ExitCode.h"
@@ -29,8 +27,6 @@
 #include "../Common/LoadCodecs.h"
 #endif
 #include "../Common/PropIDUtils.h"
-#include "../Common/Update.h"
-#include "../Common/UpdateAction.h"
 
 #include "../../Compress/LZMA_Alone/LzmaBenchCon.h"
 
@@ -40,10 +36,6 @@
 #include "UpdateCallbackConsole.h"
 
 #include "../../MyVersion.h"
-
-#if defined( _WIN32) && defined( _7ZIP_LARGE_PAGES)
-#include "../../../../C/Alloc.h"
-#endif
 
 using namespace NWindows;
 using namespace NFile;
@@ -117,8 +109,9 @@ static const char *kHelpString =
 // exception messages
 
 static const char *kEverythingIsOk = "Everything is Ok";
-static const char *kUserErrorMessage  = "Incorrect command line"; // NExitCode::kUserError
+static const char *kUserErrorMessage = "Incorrect command line";
 static const char *kNoFormats = "7-Zip cannot find the code that works with archives.";
+static const char *kUnsupportedArcTypeMessage = "Unsupported archive type";
 
 static const wchar_t *kDefaultSfxModule = L"7zCon.sfx";
 
@@ -128,19 +121,19 @@ static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExit
   throw code;
 }
 
-static void PrintHelpAndExit(CStdOutStream &s) // yyy
+static void PrintHelpAndExit(CStdOutStream &s)
 {
   s << kHelpString;
   ShowMessageAndThrowException(s, kUserErrorMessage, NExitCode::kUserError);
 }
 
 #ifndef _WIN32
-static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
+static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
 {
   parts.Clear();
-  for(int i = 0; i < numArguments; i++)
+  for (int i = 0; i < numArgs; i++)
   {
-    UString s = MultiByteToUnicodeString(arguments[i]);
+    UString s = MultiByteToUnicodeString(args[i]);
     parts.Add(s);
   }
 }
@@ -177,15 +170,13 @@ static inline char GetHex(Byte value)
   return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
 }
 
-const char *kUnsupportedArcTypeMessage = "Unsupported archive type";
-
 int Main2(
   #ifndef _WIN32
-  int numArguments, const char *arguments[]
+  int numArgs, const char *args[]
   #endif
 )
 {
-  #ifdef _WIN32
+  #if defined(_WIN32) && !defined(UNDER_CE)
   SetFileApisToOEM();
   #endif
   
@@ -193,7 +184,7 @@ int Main2(
   #ifdef _WIN32
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
   #else
-  GetArguments(numArguments, arguments, commandStrings);
+  GetArguments(numArgs, args, commandStrings);
   #endif
 
   if (commandStrings.Size() == 1)

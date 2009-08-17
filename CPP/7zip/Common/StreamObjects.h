@@ -1,33 +1,43 @@
 // StreamObjects.h
 
-#ifndef __STREAMOBJECTS_H
-#define __STREAMOBJECTS_H
+#ifndef __STREAM_OBJECTS_H
+#define __STREAM_OBJECTS_H
 
 #include "../../Common/DynamicBuffer.h"
 #include "../../Common/MyCom.h"
 #include "../IStream.h"
 
-class CSequentialInStreamImp:
-  public ISequentialInStream,
+struct CReferenceBuf:
+  public IUnknown,
   public CMyUnknownImp
 {
-  const Byte *_dataPointer;
-  size_t _size;
-  size_t _pos;
-
-public:
-  void Init(const Byte *dataPointer, size_t size)
-  {
-    _dataPointer = dataPointer;
-    _size = size;
-    _pos = 0;
-  }
-
+  CByteBuffer Buf;
   MY_UNKNOWN_IMP
-
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
+class CBufInStream:
+  public IInStream,
+  public CMyUnknownImp
+{
+  const Byte *_data;
+  UInt64 _pos;
+  size_t _size;
+  CMyComPtr<IUnknown> _ref;
+public:
+  void Init(const Byte *data, size_t size, IUnknown *ref = 0)
+  {
+    _data = data;
+    _size = size;
+    _pos = 0;
+    _ref = ref;
+  }
+  void Init(CReferenceBuf *ref) { Init(ref->Buf, ref->Buf.GetCapacity(), ref); }
+
+  MY_UNKNOWN_IMP1(IInStream)
+
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+};
 
 class CWriteBuffer
 {

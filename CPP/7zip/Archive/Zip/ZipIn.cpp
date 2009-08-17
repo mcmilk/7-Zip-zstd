@@ -318,14 +318,17 @@ HRESULT CInArchive::ReadLocalItemAfterCdItem(CItemEx &item)
     RINOK(ReadLocalItem(localItem));
     if (item.Flags != localItem.Flags)
     {
-      if (
-          (item.CompressionMethod != NFileHeader::NCompressionMethod::kDeflated ||
-            (item.Flags & 0x7FF9) != (localItem.Flags & 0x7FF9)) &&
-          (item.CompressionMethod != NFileHeader::NCompressionMethod::kStored ||
-            (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF)) &&
-          (item.CompressionMethod != NFileHeader::NCompressionMethod::kImploded ||
-            (item.Flags & 0x7FFF) != (localItem.Flags & 0x7FFF))
-        )
+      UInt32 mask = 0xFFFF;
+      switch(item.CompressionMethod)
+      {
+        case NFileHeader::NCompressionMethod::kDeflated:
+          mask = 0x7FF9;
+          break;
+        default:
+          if (item.CompressionMethod <= NFileHeader::NCompressionMethod::kImploded)
+            mask = 0x7FFF;
+      }
+      if ((item.Flags & mask) != (localItem.Flags & mask))
         return S_FALSE;
     }
 
@@ -501,7 +504,9 @@ HRESULT CInArchive::FindCd(CCdInfo &cdInfo)
   UInt64 endPosition;
   RINOK(m_Stream->Seek(0, STREAM_SEEK_END, &endPosition));
   const UInt32 kBufSizeMax = (1 << 16) + kEcdSize + kZip64EcdLocatorSize;
-  Byte buf[kBufSizeMax];
+  CByteBuffer byteBuffer;
+  byteBuffer.SetCapacity(kBufSizeMax);
+  Byte *buf = byteBuffer;
   UInt32 bufSize = (endPosition < kBufSizeMax) ? (UInt32)endPosition : kBufSizeMax;
   if (bufSize < kEcdSize)
     return S_FALSE;
@@ -622,10 +627,7 @@ HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt
     RINOK(ReadCdItem(cdItem));
 
     if (i == 0)
-    {
-      if (cdItem.LocalHeaderPosition == 0)
-        m_ArchiveInfo.Base = m_ArchiveInfo.StartPosition;
-    }
+      m_ArchiveInfo.Base = items[i].LocalHeaderPosition - cdItem.LocalHeaderPosition;
 
     int index;
     int left = 0, right = items.Size();
@@ -733,7 +735,15 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   items.Clear();
 
   UInt64 cdSize, cdStartOffset;
-  HRESULT res = ReadCd(items, cdStartOffset, cdSize, progress);
+  HRESULT res;
+  try
+  {
+    res = ReadCd(items, cdStartOffset, cdSize, progress);
+  }
+  catch(CInArchiveException &)
+  {
+    res = S_FALSE;
+  }
   if (res != S_FALSE && res != S_OK)
     return res;
 
@@ -793,7 +803,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       return S_FALSE;
   }
   if (m_Signature != NSignature::kEndOfCentralDir)
-      return S_FALSE;
+    return S_FALSE;
 
   const int kBufSize = kEcdSize - 4;
   Byte buf[kBufSize];
@@ -817,7 +827,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       (UInt32)ecd64.cdSize != (UInt32)cdSize ||
       ((UInt32)(ecd64.cdStartOffset) != (UInt32)cdStartOffset &&
         (!items.IsEmpty())))
-      return S_FALSE;
+    return S_FALSE;
   
   _inBufMode = false;
   _inBuffer.Free();

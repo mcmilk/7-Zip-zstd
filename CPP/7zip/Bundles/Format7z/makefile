@@ -1,6 +1,5 @@
 PROG = 7za.dll
 DEF_FILE = ../../Archive/Archive2.def
-LIBS = $(LIBS) user32.lib oleaut32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DCOMPRESS_MT \
   -DCOMPRESS_MF_MT \

@@ -13,6 +13,7 @@ public:
   operator HANDLE() { return _handle; }
   CHandle(): _handle(NULL) {}
   ~CHandle() { Close(); }
+  bool IsCreated() const { return (_handle != NULL); }
   bool Close()
   {
     if (_handle == NULL)
@@ -22,8 +23,7 @@ public:
     _handle = NULL;
     return true;
   }
-  void Attach(HANDLE handle)
-    { _handle = handle; }
+  void Attach(HANDLE handle) { _handle = handle; }
   HANDLE Detach()
   {
     HANDLE handle = _handle;

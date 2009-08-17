@@ -1,18 +1,18 @@
 // SplitDialog.cpp
 
 #include "StdAfx.h"
-#include "SplitDialog.h"
 
-#include "Common/StringToInt.h"
-#include "Windows/Shell.h"
 #include "Windows/FileName.h"
 
-#include "SplitUtils.h"
 #ifdef LANG
 #include "LangUtils.h"
 #endif
 
+#include "BrowseDialog.h"
 #include "CopyDialogRes.h"
+#include "SplitDialog.h"
+#include "SplitUtils.h"
+#include "resourceGui.h"
 
 using namespace NWindows;
 
@@ -45,7 +45,34 @@ bool CSplitDialog::OnInit()
   _pathCombo.SetText(Path);
   AddVolumeItems(_volumeCombo);
   _volumeCombo.SetCurSel(0);
+  NormalizeSize();
   return CModalDialog::OnInit();
+}
+
+bool CSplitDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
+{
+  int mx, my;
+  GetMargins(8, mx, my);
+  int bx1, bx2, by;
+  GetItemSizes(IDCANCEL, bx1, by);
+  GetItemSizes(IDOK, bx2, by);
+  int yPos = ySize - my - by;
+  int xPos = xSize - mx - bx1;
+
+  InvalidateRect(NULL);
+
+  {
+    RECT rect;
+    GetClientRectOfItem(IDC_BUTTON_SPLIT_PATH, rect);
+    int bx = rect.right - rect.left;
+    MoveItem(IDC_BUTTON_SPLIT_PATH, xSize - mx - bx, rect.top, bx, rect.bottom - rect.top);
+    ChangeSubWindowSizeX(_pathCombo, xSize - mx - mx - bx - mx);
+  }
+
+  MoveItem(IDCANCEL, xPos, yPos, bx1, by);
+  MoveItem(IDOK, xPos - mx - bx2, yPos, bx2, by);
+
+  return false;
 }
 
 bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
@@ -67,7 +94,7 @@ void CSplitDialog::OnButtonSetPath()
   UString title = LangStringSpec(IDS_SET_FOLDER, 0x03020209);
 
   UString resultPath;
-  if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, resultPath))
+  if (!MyBrowseForFolder(HWND(*this), title, currentPath, resultPath))
     return;
   NFile::NName::NormalizeDirPathPrefix(resultPath);
   _pathCombo.SetCurSel(-1);
@@ -82,7 +109,7 @@ void CSplitDialog::OnOK()
   volumeString.Trim();
   if (!ParseVolumeSizes(volumeString, VolumeSizes) || VolumeSizes.Size() == 0)
   {
-    ::MessageBoxW(*this, LangString(IDS_COMPRESS_INCORRECT_VOLUME_SIZE, 0x02000D41), L"7-Zip", 0);
+    ::MessageBoxW(*this, LangString(IDS_INCORRECT_VOLUME_SIZE, 0x02000D41), L"7-Zip", 0);
     return;
   }
   CModalDialog::OnOK();

@@ -1,7 +1,5 @@
 /* Aes.c -- AES encryption / decryption
-2008-08-05
-Igor Pavlov
-Public domain */
+2009-06-10 : Igor Pavlov : Public domain */
 
 #include "Aes.h"
 #include "CpuArch.h"
@@ -49,7 +47,7 @@ void AesGenTables(void)
     {
       UInt32 a1 = Sbox[i];
       UInt32 a2 = xtime(a1);
-      UInt32 a3 = xtime(a1) ^ a1;
+      UInt32 a3 = a2 ^ a1;
       T[        i] = Ui32(a2, a1, a1, a3);
       T[0x100 + i] = Ui32(a3, a2, a1, a1);
       T[0x200 + i] = Ui32(a1, a3, a2, a1);
@@ -115,7 +113,7 @@ void Aes_SetKeyEncode(CAes *p, const Byte *key, unsigned keySize)
   w = p->rkey;
 
   for (i = 0; i < keySize; i++, key += 4)
-    w[i] = Ui32(key[0], key[1], key[2], key[3]);
+    w[i] = GetUi32(key);
 
   for (; i < wSize; i++)
   {

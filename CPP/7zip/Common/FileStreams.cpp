@@ -195,7 +195,15 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   #endif
 }
 
-#ifndef _WIN32_WCE
+#ifdef UNDER_CE
+STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+  size_t s2 = fread(data, 1, size, stdout);
+  if (processedSize != 0)
+    *processedSize = s2;
+  return (s2 = size) ? S_OK : E_FAIL;
+}
+#else
 STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   #ifdef _WIN32
@@ -360,7 +368,15 @@ STDMETHODIMP COutFileStream::SetSize(Int64 newSize)
   #endif
 }
 
-#ifndef _WIN32_WCE
+#ifdef UNDER_CE
+STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
+{
+  size_t s2 = fwrite(data, 1, size, stdout);
+  if (processedSize != 0)
+    *processedSize = s2;
+  return (s2 = size) ? S_OK : E_FAIL;
+}
+#else
 STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize != NULL)
@@ -402,5 +418,4 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   return S_OK;
   #endif
 }
-  
 #endif

@@ -1,5 +1,5 @@
 PROG = 7zCon.sfx
-LIBS = $(LIBS) user32.lib oleaut32.lib
+MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXTRACT_ONLY \
   -DNO_READ_FROM_CODER \

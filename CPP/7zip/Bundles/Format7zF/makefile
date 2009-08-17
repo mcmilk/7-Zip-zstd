@@ -1,23 +1,25 @@
 PROG = 7z.dll
 DEF_FILE = ../../Archive/Archive2.def
-LIBS = $(LIBS) user32.lib oleaut32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXTERNAL_CODECS \
   -DCOMPRESS_MT \
   -DCOMPRESS_BZIP2_MT \
   -DCOMPRESS_MF_MT \
-  -D_7ZIP_LARGE_PAGES \
+
+!IFNDEF UNDER_CE
+CFLAGS = $(CFLAGS) -D_7ZIP_LARGE_PAGES
+!ENDIF
 
 COMMON_OBJS = \
   $O\CRC.obj \
   $O\IntToString.obj \
-  $O\NewHandler.obj \
   $O\MyMap.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
   $O\MyXml.obj \
+  $O\NewHandler.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\MyVector.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
 
@@ -32,16 +34,16 @@ WIN_OBJS = \
   $O\Time.obj \
 
 7ZIP_COMMON_OBJS = \
-  $O\InBuffer.obj \
-  $O\InOutTempBuffer.obj \
   $O\CreateCoder.obj \
   $O\CWrappers.obj \
+  $O\InBuffer.obj \
+  $O\InOutTempBuffer.obj \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
+  $O\MemBlocks.obj \
   $O\MethodId.obj \
   $O\MethodProps.obj \
-  $O\MemBlocks.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
   $O\OutMemStream.obj \
@@ -59,19 +61,23 @@ AR_OBJS = \
   $O\Bz2Handler.obj \
   $O\CpioHandler.obj \
   $O\DebHandler.obj \
+  $O\DeflateProps.obj \
   $O\DmgHandler.obj \
   $O\ElfHandler.obj \
   $O\FatHandler.obj \
+  $O\FlvHandler.obj \
   $O\GzHandler.obj \
   $O\LzhHandler.obj \
   $O\LzmaHandler.obj \
   $O\MachoHandler.obj \
   $O\MbrHandler.obj \
+  $O\MslzHandler.obj \
   $O\MubHandler.obj \
   $O\NtfsHandler.obj \
   $O\PeHandler.obj \
   $O\RpmHandler.obj \
   $O\SplitHandler.obj \
+  $O\SwfHandler.obj \
   $O\VhdHandler.obj \
   $O\XarHandler.obj \
   $O\XzHandler.obj \
@@ -230,6 +236,7 @@ COMPRESS_OBJS = \
   $O\RarCodecsRegister.obj \
   $O\ShrinkDecoder.obj \
   $O\ZlibDecoder.obj \
+  $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
 
 CRYPTO_OBJS = \

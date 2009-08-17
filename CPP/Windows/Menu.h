@@ -24,6 +24,7 @@ struct CMenuItem
   // HBITMAP hbmpItem;
   bool IsString() const // change it MIIM_STRING
     { return ((fMask & MIIM_TYPE) != 0 && (fType == MFT_STRING)); }
+  bool IsSeparator() const { return (fType == MFT_SEPARATOR); }
   CMenuItem(): fMask(0), fType(0), fState(0), wID(0), hSubMenu(0), hbmpChecked(0),
     hbmpUnchecked(0), dwItemData(0) {}
 };
@@ -63,23 +64,33 @@ public:
   }
   
   int GetItemCount()
-    { return GetMenuItemCount(_menu); }
+  {
+    #ifdef UNDER_CE
+    for (int i = 0;; i++)
+    {
+      CMenuItem item;
+      item.fMask = MIIM_STATE;
+      if (!GetItem(i, true, item))
+        return i;
+    }
+    #else
+    return GetMenuItemCount(_menu);
+    #endif
+  }
 
-  HMENU GetSubMenu(int pos)
-    { return ::GetSubMenu(_menu, pos); }
+  HMENU GetSubMenu(int pos) { return ::GetSubMenu(_menu, pos); }
+  #ifndef UNDER_CE
   bool GetItemString(UINT idItem, UINT flag, CSysString &result)
   {
     result.Empty();
     int len = ::GetMenuString(_menu, idItem, 0, 0, flag);
-    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2),
-        len + 1, flag);
+    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2), len + 1, flag);
     result.ReleaseBuffer();
     return (len != 0);
   }
-  UINT GetItemID(int pos)
-    { return ::GetMenuItemID(_menu, pos);   }
-  UINT GetItemState(UINT id, UINT flags)
-    { return ::GetMenuState(_menu, id, flags);   }
+  UINT GetItemID(int pos) { return ::GetMenuItemID(_menu, pos);   }
+  UINT GetItemState(UINT id, UINT flags) { return ::GetMenuState(_menu, id, flags);   }
+  #endif
   
   bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFO itemInfo)
     { return BOOLToBool(::GetMenuItemInfo(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
@@ -92,11 +103,14 @@ public:
   bool Insert(UINT position, UINT flags, UINT_PTR idNewItem, LPCTSTR newItem)
     { return BOOLToBool(::InsertMenu(_menu, position, flags, idNewItem, newItem)); }
 
+  #ifndef UNDER_CE
   bool InsertItem(UINT itemIndex, bool byPosition, LPCMENUITEMINFO itemInfo)
     { return BOOLToBool(::InsertMenuItem(_menu, itemIndex, BoolToBOOL(byPosition), itemInfo)); }
+  #endif
 
-  bool RemoveItem(UINT item, UINT flags)
-    { return BOOLToBool(::RemoveMenu(_menu, item, flags)); }
+  bool RemoveItem(UINT item, UINT flags) { return BOOLToBool(::RemoveMenu(_menu, item, flags)); }
+  void RemoveAllItemsFrom(UINT index) { while (RemoveItem(index, MF_BYPOSITION)); }
+  void RemoveAllItems() { RemoveAllItemsFrom(0); }
 
   #ifndef _UNICODE
   bool GetItemInfo(UINT itemIndex, bool byPosition, LPMENUITEMINFOW itemInfo)
@@ -112,16 +126,15 @@ public:
   bool SetItem(UINT itemIndex, bool byPosition, const CMenuItem &item);
   bool InsertItem(UINT itemIndex, bool byPosition, const CMenuItem &item);
 
-  int Track(UINT flags, int x, int y, HWND hWnd)
-    { return ::TrackPopupMenuEx(_menu, flags, x, y, hWnd, NULL); }
+  int Track(UINT flags, int x, int y, HWND hWnd) { return ::TrackPopupMenuEx(_menu, flags, x, y, hWnd, NULL); }
 
   bool CheckRadioItem(UINT idFirst, UINT idLast, UINT idCheck, UINT flags)
     { return BOOLToBool(::CheckMenuRadioItem(_menu, idFirst, idLast, idCheck, flags)); }
-  DWORD CheckItem(UINT id, UINT uCheck)
-    { return ::CheckMenuItem(_menu, id, uCheck); }
 
-  BOOL EnableItem(UINT uIDEnableItem, UINT uEnable)
-    { return EnableMenuItem(_menu, uIDEnableItem, uEnable); }
+  DWORD CheckItem(UINT id, UINT uCheck) { return ::CheckMenuItem(_menu, id, uCheck); }
+  DWORD CheckItemByID(UINT id, bool check) { return CheckItem(id, MF_BYCOMMAND | (check ? MF_CHECKED : MF_UNCHECKED)); }
+
+  BOOL EnableItem(UINT uIDEnableItem, UINT uEnable) { return EnableMenuItem(_menu, uIDEnableItem, uEnable); }
 };
 
 class CMenuDestroyer

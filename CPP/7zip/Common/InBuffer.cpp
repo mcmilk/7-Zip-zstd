@@ -74,7 +74,10 @@ bool CInBuffer::ReadBlock()
 
 Byte CInBuffer::ReadBlock2()
 {
-  if(!ReadBlock())
+  if (!ReadBlock())
+  {
+    _processedSize++;
     return 0xFF;
+  }
   return *_buffer++;
 }

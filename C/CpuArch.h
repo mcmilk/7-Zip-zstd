@@ -1,5 +1,5 @@
 /* CpuArch.h
-2009-03-22 : Igor Pavlov : Public domain */
+2009-08-11 : Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -16,7 +16,19 @@ if LITTLE_ENDIAN_UNALIGN is not defined, it means that we don't know
 about these properties of platform.
 */
 
-#if defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64) || defined(__i386__) || defined(__x86_64__)
+#if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__)
+#define MY_CPU_AMD64
+#endif
+
+#if defined(MY_CPU_AMD64) || defined(_M_IA64)
+#define MY_CPU_64BIT
+#endif
+
+#if defined(_M_IX86) || defined(__i386__) || defined(MY_CPU_AMD64)
+#define MY_CPU_X86_OR_AMD64
+#endif
+
+#if defined(MY_CPU_X86_OR_AMD64)
 #define LITTLE_ENDIAN_UNALIGN
 #endif
 

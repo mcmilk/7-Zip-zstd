@@ -12,7 +12,7 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-#define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
+#define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
 
 static const TCHAR *kCUBasePath = REG_PATH_FM;
 static const TCHAR *kCulumnsKeyName = REG_PATH_FM TEXT(STRING_PATH_SEPARATOR) TEXT("Columns");
@@ -48,7 +48,7 @@ static const UInt32 kColumnHeaderSize = 12;
 
 static const UInt32 kColumnInfoVersion = 1;
 
-static NSynchronization::CCriticalSection g_RegistryOperationsCriticalSection;
+static NSynchronization::CCriticalSection g_CS;
 
 class CTempOutBufferSpec
 {
@@ -126,7 +126,7 @@ void SaveListViewInfo(const UString &id, const CListViewInfo &viewInfo)
     buffer.WriteUInt32(column.Width);
   }
   {
-    NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+    NSynchronization::CCriticalSectionLock lock(g_CS);
     CKey key;
     key.Create(HKEY_CURRENT_USER, kCulumnsKeyName);
     key.SetValue(GetSystemString(id), (const Byte *)buffer, dataSize);
@@ -140,9 +140,9 @@ void ReadListViewInfo(const UString &id, CListViewInfo &viewInfo)
   CByteBuffer buffer;
   UInt32 size;
   {
-    NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+    NSynchronization::CCriticalSectionLock lock(g_CS);
     CKey key;
-    if(key.Open(HKEY_CURRENT_USER, kCulumnsKeyName, KEY_READ) != ERROR_SUCCESS)
+    if (key.Open(HKEY_CURRENT_USER, kCulumnsKeyName, KEY_READ) != ERROR_SUCCESS)
       return;
     if (key.QueryValue(GetSystemString(id), buffer, size) != ERROR_SUCCESS)
       return;
@@ -197,8 +197,8 @@ struct CPanelsInfo
 void SaveWindowSize(const RECT &rect, bool maximized)
 {
   CSysString keyName = kCUBasePath;
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, keyName);
   // CWindowPosition position;
   CTempOutBufferSpec buffer;
@@ -214,9 +214,9 @@ void SaveWindowSize(const RECT &rect, bool maximized)
 bool ReadWindowSize(RECT &rect, bool &maximized)
 {
   CSysString keyName = kCUBasePath;
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-  if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   CByteBuffer buffer;
   UInt32 size;
@@ -239,8 +239,8 @@ bool ReadWindowSize(RECT &rect, bool &maximized)
 void SavePanelsInfo(UInt32 numPanels, UInt32 currentPanel, UInt32 splitterPos)
 {
   CSysString keyName = kCUBasePath;
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, keyName);
 
   CTempOutBufferSpec buffer;
@@ -254,9 +254,9 @@ void SavePanelsInfo(UInt32 numPanels, UInt32 currentPanel, UInt32 splitterPos)
 bool ReadPanelsInfo(UInt32 &numPanels, UInt32 &currentPanel, UInt32 &splitterPos)
 {
   CSysString keyName = kCUBasePath;
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-  if(key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CURRENT_USER, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   CByteBuffer buffer;
   UInt32 size;
@@ -286,7 +286,7 @@ static const UInt32 kDefaultToolbarMask = 8 | 4 | 1;
 UInt32 ReadToolbarsMask()
 {
   CKey key;
-  if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
     return kDefaultToolbarMask;
   UInt32 mask;
   if (key.QueryValue(kToolbars, mask) != ERROR_SUCCESS)
@@ -305,17 +305,17 @@ static UString GetPanelPathName(UInt32 panelIndex)
 
 void SavePanelPath(UInt32 panel, const UString &path)
 {
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, kCUBasePath);
   key.SetValue(GetPanelPathName(panel), path);
 }
 
 bool ReadPanelPath(UInt32 panel, UString &path)
 {
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-  if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
     return false;
   return (key.QueryValue(GetPanelPathName(panel), path) == ERROR_SUCCESS);
 }
@@ -334,7 +334,7 @@ void ReadListMode(CListMode &listMode)
 {
   CKey key;
   listMode.Init();
-  if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
     return;
   UInt32 t;
   if (key.QueryValue(kListMode, t) != ERROR_SUCCESS)
@@ -347,53 +347,21 @@ void ReadListMode(CListMode &listMode)
 }
 
 
-void SaveStringList(LPCTSTR valueName, const UStringVector &folders)
+static void SaveStringList(LPCTSTR valueName, const UStringVector &folders)
 {
-  UInt32 sizeInChars = 0;
-  int i;
-  for (i = 0; i < folders.Size(); i++)
-    sizeInChars += folders[i].Length() + 1;
-  CBuffer<wchar_t> buffer;
-  buffer.SetCapacity(sizeInChars);
-  int pos = 0;
-  for (i = 0; i < folders.Size(); i++)
-  {
-    MyStringCopy((wchar_t *)buffer + pos, (const wchar_t *)folders[i]);
-    pos += folders[i].Length() + 1;
-  }
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
   key.Create(HKEY_CURRENT_USER, kCUBasePath);
-  key.SetValue(valueName, buffer, sizeInChars * sizeof(wchar_t));
+  key.SetValue_Strings(valueName, folders);
 }
 
-void ReadStringList(LPCTSTR valueName, UStringVector &folders)
+static void ReadStringList(LPCTSTR valueName, UStringVector &folders)
 {
   folders.Clear();
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
-  if(key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
-    return;
-  CByteBuffer buffer;
-  UInt32 dataSize;
-  if (key.QueryValue(valueName, buffer, dataSize) != ERROR_SUCCESS)
-    return;
-  if (dataSize % sizeof(wchar_t) != 0)
-    return;
-  const wchar_t *data = (const wchar_t *)(const Byte  *)buffer;
-  int sizeInChars = dataSize / sizeof(wchar_t);
-  UString string;
-  for (int i = 0; i < sizeInChars; i++)
-  {
-    wchar_t c = data[i];
-    if (c == L'\0')
-    {
-      folders.Add(string);
-      string.Empty();
-    }
-    else
-      string += c;
-  }
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) == ERROR_SUCCESS)
+    key.GetValue_Strings(valueName, folders);
 }
 
 void SaveFolderHistory(const UStringVector &folders)
@@ -411,14 +379,12 @@ void SaveCopyHistory(const UStringVector &folders)
 void ReadCopyHistory(UStringVector &folders)
   { ReadStringList(kCopyHistoryValueName, folders); }
 
-void AddUniqueStringToHeadOfList(UStringVector &list,
-    const UString &string)
+void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s)
 {
-  for(int i = 0; i < list.Size();)
-    if (string.CompareNoCase(list[i]) == 0)
+  for (int i = 0; i < list.Size();)
+    if (s.CompareNoCase(list[i]) == 0)
       list.Delete(i);
     else
       i++;
-  list.Insert(0, string);
+  list.Insert(0, s);
 }
-

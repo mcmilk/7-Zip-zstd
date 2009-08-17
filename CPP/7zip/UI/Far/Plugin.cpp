@@ -2,40 +2,33 @@
 
 #include "StdAfx.h"
 
-#include "Plugin.h"
-
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 #include "Common/Wildcard.h"
 
 #include "Windows/FileDir.h"
-#include "Windows/FileName.h"
 #include "Windows/PropVariantConversions.h"
 
 #include "../Common/PropIDUtils.h"
 
 #include "FarUtils.h"
 #include "Messages.h"
+#include "Plugin.h"
 
 using namespace NWindows;
 using namespace NFar;
 
-CPlugin::CPlugin(const UString &fileName,
-    IInFolderArchive *archiveHandler,
-    UString archiveTypeName
-    ):
-  m_ArchiveHandler(archiveHandler),
-  m_FileName(fileName),
-  _archiveTypeName(archiveTypeName)
+CPlugin::CPlugin(const UString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName):
+    m_ArchiveHandler(archiveHandler),
+    m_FileName(fileName),
+    _archiveTypeName(archiveTypeName)
 {
   if (!m_FileInfo.Find(m_FileName))
     throw "error";
   archiveHandler->BindToRootFolder(&_folder);
 }
 
-CPlugin::~CPlugin()
-{
-}
+CPlugin::~CPlugin() {}
 
 static void MyGetFileTime(IFolderFolder *anArchiveFolder, UInt32 itemIndex,
     PROPID propID, FILETIME &fileTime)
@@ -59,6 +52,17 @@ static void MyGetFileTime(IFolderFolder *anArchiveFolder, UInt32 itemIndex,
 #define kDotsReplaceString "[[..]]"
 #define kDotsReplaceStringU L"[[..]]"
   
+static void CopyStrLimited(char *dest, const AString &src, int len)
+{
+  len--;
+  if (src.Length() < len)
+    len = src.Length();
+  memcpy(dest, src, sizeof(dest[0]) * len);
+  dest[len] = 0;
+}
+
+#define COPY_STR_LIMITED(dest, src) CopyStrLimited(dest, src, sizeof(dest) / sizeof(dest[0]))
+
 void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
 {
   NCOM::CPropVariant prop;
@@ -69,14 +73,10 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
     throw 272340;
 
   CSysString oemString = UnicodeStringToMultiByte(prop.bstrVal, CP_OEMCP);
-  const int kFileNameSizeMax = (int)(sizeof(panelItem.FindData.cFileName) / sizeof(panelItem.FindData.cFileName[0]) - 1);
-  if (oemString.Length() > kFileNameSizeMax)
-    oemString = oemString.Left(kFileNameSizeMax);
-
   if (oemString == "..")
     oemString = kDotsReplaceString;
 
-  MyStringCopy(panelItem.FindData.cFileName, (const char *)oemString);
+  COPY_STR_LIMITED(panelItem.FindData.cFileName, oemString);
   panelItem.FindData.cAlternateFileName[0] = 0;
 
   if (_folder->GetProperty(itemIndex, kpidAttrib, &prop) != S_OK)
@@ -138,8 +138,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
   panelItem.Reserved[2] = 0;
 }
 
-int CPlugin::GetFindData(PluginPanelItem **panelItems,
-    int *itemsNumber, int opMode)
+int CPlugin::GetFindData(PluginPanelItem **panelItems, int *itemsNumber, int opMode)
 {
   // CScreenRestorer screenRestorer;
   if ((opMode & OPM_SILENT) == 0 && (opMode & OPM_FIND ) == 0)
@@ -177,15 +176,13 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems,
   return(TRUE);
 }
 
-void CPlugin::FreeFindData(struct PluginPanelItem *panelItems,
-    int itemsNumber)
+void CPlugin::FreeFindData(struct PluginPanelItem *panelItems, int itemsNumber)
 {
   for (int i = 0; i < itemsNumber; i++)
     if (panelItems[i].Description != NULL)
       delete []panelItems[i].Description;
   delete []panelItems;
 }
-
 
 void CPlugin::EnterToDirectory(const UString &dirName)
 {
@@ -510,12 +507,10 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   info->Flags = OPIF_USEFILTER | OPIF_USESORTGROUPS| OPIF_USEHIGHLIGHTING|
               OPIF_ADDDOTS | OPIF_COMPAREFATTIME;
 
-  UINT codePage = ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
-
-  MyStringCopy(m_FileNameBuffer, (const char *)UnicodeStringToMultiByte(m_FileName, codePage));
+  COPY_STR_LIMITED(m_FileNameBuffer, UnicodeStringToMultiByte(m_FileName, CP_OEMCP));
   info->HostFile = m_FileNameBuffer; // test it it is not static
   
-  MyStringCopy(m_CurrentDirBuffer, (const char *)UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
+  COPY_STR_LIMITED(m_CurrentDirBuffer, UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
   info->CurDir = m_CurrentDirBuffer;
 
   info->Format = kPluginFormatName;
@@ -540,7 +535,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
     m_PannelTitle += m_CurrentDir;
   }
  
-  MyStringCopy(m_PannelTitleBuffer, (const char *)UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
+  COPY_STR_LIMITED(m_PannelTitleBuffer, UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
   info->PanelTitle = m_PannelTitleBuffer;
 
   memset(m_InfoLines, 0, sizeof(m_InfoLines));
@@ -572,8 +567,8 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
             continue;
           
           InfoPanelLine &item = m_InfoLines[numItems++];
-          MyStringCopy(item.Text, (const char *)GetNameOfProp2(propID, name));
-          MyStringCopy(item.Data, (const char *)PropToString2(prop, propID));
+          COPY_STR_LIMITED(item.Text, GetNameOfProp2(propID, name));
+          COPY_STR_LIMITED(item.Data, PropToString2(prop, propID));
         }
       }
     }
@@ -614,8 +609,8 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
             if (getProps->GetArchiveProperty(propID, &prop) != S_OK || prop.vt == VT_EMPTY)
               continue;
             InfoPanelLine &item = m_InfoLines[numItems++];
-            MyStringCopy(item.Text, (const char *)GetNameOfProp2(propID, name));
-            MyStringCopy(item.Data, (const char *)PropToString2(prop, propID));
+            COPY_STR_LIMITED(item.Text, GetNameOfProp2(propID, name));
+            COPY_STR_LIMITED(item.Data, PropToString2(prop, propID));
 
           }
         }

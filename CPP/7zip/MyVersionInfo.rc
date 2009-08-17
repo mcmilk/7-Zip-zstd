@@ -1,4 +1,11 @@
-#include <WinVer.h>
+#define MY_VS_FFI_FILEFLAGSMASK  0x0000003FL
+#define MY_VOS_NT_WINDOWS32  0x00040004L
+#define MY_VOS_CE_WINDOWS32  0x00050004L
+
+#define MY_VFT_APP  0x00000001L
+#define MY_VFT_DLL  0x00000002L
+
+// #include <WinVer.h>
 #include "MyVersion.h"
 
 #define MY_VER MY_VER_MAJOR,MY_VER_MINOR,MY_VER_BUILD,0
@@ -14,9 +21,9 @@ LANGUAGE 9, 1 \
 1 VERSIONINFO \
   FILEVERSION MY_VER \
   PRODUCTVERSION MY_VER \
-  FILEFLAGSMASK VS_FFI_FILEFLAGSMASK \
+  FILEFLAGSMASK MY_VS_FFI_FILEFLAGSMASK \
   FILEFLAGS DBG_FL \
-  FILEOS VOS_NT_WINDOWS32 \
+  FILEOS MY_VOS_NT_WINDOWS32 \
   FILETYPE fileType \
   FILESUBTYPE 0x0L \
 BEGIN \
@@ -40,6 +47,6 @@ BEGIN \
     END \
 END
 
-#define MY_VERSION_INFO_APP(descr, intName) MY_VERSION_INFO(VFT_APP, descr, intName, intName ".exe")
+#define MY_VERSION_INFO_APP(descr, intName) MY_VERSION_INFO(MY_VFT_APP, descr, intName, intName ".exe")
 
-#define MY_VERSION_INFO_DLL(descr, intName) MY_VERSION_INFO(VFT_DLL, descr, intName, intName ".dll")
+#define MY_VERSION_INFO_DLL(descr, intName) MY_VERSION_INFO(MY_VFT_DLL, descr, intName, intName ".dll")

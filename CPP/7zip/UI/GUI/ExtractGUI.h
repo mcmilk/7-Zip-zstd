@@ -7,6 +7,18 @@
 
 #include "../FileManager/ExtractCallback.h"
 
+/*
+  RESULT can be S_OK, even if there are errors!!!
+  if RESULT == S_OK, check extractCallback->IsOK() after ExtractGUI().
+
+  RESULT = E_ABORT - user break.
+  RESULT != E_ABORT:
+  {
+   messageWasDisplayed = true  - message was displayed already.
+   messageWasDisplayed = false - there was some internal error, so you must show error message.
+  }
+*/
+
 HRESULT ExtractGUI(
     CCodecs *codecs,
     const CIntVector &formatIndices,
@@ -15,6 +27,8 @@ HRESULT ExtractGUI(
     const NWildcard::CCensorNode &wildcardCensor,
     CExtractOptions &options,
     bool showDialog,
-    CExtractCallbackImp *extractCallback);
+    bool &messageWasDisplayed,
+    CExtractCallbackImp *extractCallback,
+    HWND hwndParent = NULL);
 
 #endif

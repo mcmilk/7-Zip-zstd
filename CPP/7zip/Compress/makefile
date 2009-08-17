@@ -1,12 +1,5 @@
 DIRS = \
-  Branch\~ \
-  ByteSwap\~ \
-  BZip2\~ \
-  Copy\~ \
-  Deflate\~ \
-  LZMA\~ \
-  PPMD\~ \
-  Rar\~ \
+  LZMA_Alone\~ \
   
 all: $(DIRS)
 

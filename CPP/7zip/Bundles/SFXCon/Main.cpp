@@ -191,7 +191,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
     const UString &name, bool include, NRecursedType::EEnum type)
 {
   /*
-  if(!IsWildCardFilePathLegal(name))
+  if (!IsWildCardFilePathLegal(name))
     return false;
   */
   bool isWildCard = DoesNameContainWildCard(name);
@@ -229,12 +229,12 @@ void AddToCensorFromNonSwitchesStrings(NWildcard::CCensor &wildcardCensor,
 
 
 #ifndef _WIN32
-static void GetArguments(int numArguments, const char *arguments[], UStringVector &parts)
+static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
 {
   parts.Clear();
-  for(int i = 0; i < numArguments; i++)
+  for (int i = 0; i < numArgs; i++)
   {
-    UString s = MultiByteToUnicodeString(arguments[i]);
+    UString s = MultiByteToUnicodeString(args[i]);
     parts.Add(s);
   }
 }
@@ -242,11 +242,11 @@ static void GetArguments(int numArguments, const char *arguments[], UStringVecto
 
 int Main2(
   #ifndef _WIN32
-  int numArguments, const char *arguments[]
+  int numArgs, const char *args[]
   #endif
 )
 {
-  #ifdef _WIN32
+  #if defined(_WIN32) && !defined(UNDER_CE)
   SetFileApisToOEM();
   #endif
   
@@ -256,7 +256,7 @@ int Main2(
   #ifdef _WIN32
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
   #else
-  GetArguments(numArguments, arguments, commandStrings);
+  GetArguments(numArgs, args, commandStrings);
   #endif
 
   #ifdef _WIN32

@@ -1,16 +1,18 @@
 // Windows/CommonDialog.h
 
-#ifndef __WINDOWS_COMMONDIALOG_H
-#define __WINDOWS_COMMONDIALOG_H
-
-#include <windows.h>
+#ifndef __WINDOWS_COMMON_DIALOG_H
+#define __WINDOWS_COMMON_DIALOG_H
 
 #include "Common/MyString.h"
-#include "Windows/Defs.h"
 
 namespace NWindows{
 
-bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s, UString &resPath);
+bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName,
+    LPCWSTR s, UString &resPath
+    #ifdef UNDER_CE
+    , bool openFolder = false
+    #endif
+);
 
 }
 

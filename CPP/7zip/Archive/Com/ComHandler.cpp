@@ -95,12 +95,11 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _db.Refs.Size();
   if (numItems == 0)
@@ -135,30 +134,30 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     CMyComPtr<ISequentialOutStream> outStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     RINOK(extractCallback->GetStream(index, &outStream, askMode));
 
     if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
     totalPackSize += _db.GetItemPackSize(item.Size);
     totalSize += item.Size;
     
-    if (!testMode && (!outStream))
+    if (!testMode && !outStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
-    Int32 res = NArchive::NExtract::NOperationResult::kDataError;
+    Int32 res = NExtract::NOperationResult::kDataError;
     CMyComPtr<ISequentialInStream> inStream;
     HRESULT hres = GetStream(index, &inStream);
     if (hres == S_FALSE)
-      res = NArchive::NExtract::NOperationResult::kDataError;
+      res = NExtract::NOperationResult::kDataError;
     else if (hres == E_NOTIMPL)
-      res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+      res = NExtract::NOperationResult::kUnSupportedMethod;
     else
     {
       RINOK(hres);
@@ -166,7 +165,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
         if (copyCoderSpec->TotalSize == item.Size)
-          res = NArchive::NExtract::NOperationResult::kOK;
+          res = NExtract::NOperationResult::kOK;
       }
     }
     outStream.Release();

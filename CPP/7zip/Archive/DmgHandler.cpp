@@ -573,12 +573,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _files.Size();
   if (numItems == 0)
@@ -635,14 +634,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     // const CItemEx &item = _files[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     
     
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -652,7 +651,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     
     realOutStream.Release();
 
-    Int32 opRes = NArchive::NExtract::NOperationResult::kOK;
+    Int32 opRes = NExtract::NOperationResult::kOK;
     #ifdef DMG_SHOW_RAW
     if (index > _fileIndices.Size())
     {
@@ -688,7 +687,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           packPos += block.PackSize;
           if (block.UnpPos != unpPos)
           {
-            opRes = NArchive::NExtract::NOperationResult::kDataError;
+            opRes = NExtract::NOperationResult::kDataError;
             break;
           }
 
@@ -705,13 +704,13 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             case METHOD_ZERO_2:
               realMethod = false;
               if (block.PackSize != 0)
-                opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+                opRes = NExtract::NOperationResult::kUnSupportedMethod;
               break;
 
             case METHOD_COPY:
               if (block.UnpSize != block.PackSize)
               {
-                opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+                opRes = NExtract::NOperationResult::kUnSupportedMethod;
                 break;
               }
               res = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
@@ -730,26 +729,26 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
               res = bzip2Coder->Code(inStream, outStream, NULL, NULL, progress);
               if (res == S_OK)
                 if (streamSpec->GetSize() != block.PackSize)
-                  opRes = NArchive::NExtract::NOperationResult::kDataError;
+                  opRes = NExtract::NOperationResult::kDataError;
               break;
             }
             
             default:
-              opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+              opRes = NExtract::NOperationResult::kUnSupportedMethod;
               break;
           }
           if (res != S_OK)
           {
             if (res != S_FALSE)
               return res;
-            if (opRes == NArchive::NExtract::NOperationResult::kOK)
-              opRes = NArchive::NExtract::NOperationResult::kDataError;
+            if (opRes == NExtract::NOperationResult::kOK)
+              opRes = NExtract::NOperationResult::kDataError;
           }
           unpPos += block.UnpSize;
           if (!outStreamSpec->IsFinishedOK())
           {
-            if (realMethod && opRes == NArchive::NExtract::NOperationResult::kOK)
-              opRes = NArchive::NExtract::NOperationResult::kDataError;
+            if (realMethod && opRes == NExtract::NOperationResult::kOK)
+              opRes = NExtract::NOperationResult::kDataError;
 
             while (outStreamSpec->GetRem() != 0)
             {

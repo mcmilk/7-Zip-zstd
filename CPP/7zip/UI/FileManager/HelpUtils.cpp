@@ -10,6 +10,11 @@
 
 static LPCWSTR kHelpFileName = L"7-zip.chm::/";
 
+#ifdef UNDER_CE
+void ShowHelpWindow(HWND, LPCWSTR)
+{
+}
+#else
 void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile)
 {
   UString path;
@@ -19,5 +24,4 @@ void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile)
   path += topicFile;
   HtmlHelp(hwnd, GetSystemString(path), HH_DISPLAY_TOPIC, NULL);
 }
-
-
+#endif

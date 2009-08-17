@@ -449,28 +449,22 @@ struct CXzUnpackerCPP
   }
 };
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == UInt32(-1));
-  if (!allFilesMode)
-  {
-    if (numItems == 0)
-      return S_OK;
-    if (numItems != 1 || indices[0] != 0)
-      return E_INVALIDARG;
-  }
-
-  bool testMode = (_aTestMode != 0);
+  if (numItems == 0)
+    return S_OK;
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+    return E_INVALIDARG;
 
   extractCallback->SetTotal(_packSize);
   UInt64 currentTotalPacked = 0;
   RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   
   RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
   
@@ -567,15 +561,15 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   switch(res)
   {
     case SZ_OK:
-      opRes = NArchive::NExtract::NOperationResult::kOK; break;
+      opRes = NExtract::NOperationResult::kOK; break;
     case SZ_ERROR_UNSUPPORTED:
-      opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod; break;
+      opRes = NExtract::NOperationResult::kUnSupportedMethod; break;
     case SZ_ERROR_CRC:
-      opRes = NArchive::NExtract::NOperationResult::kCRCError; break;
+      opRes = NExtract::NOperationResult::kCRCError; break;
     case SZ_ERROR_DATA:
     case SZ_ERROR_ARCHIVE:
     case SZ_ERROR_NO_ARCHIVE:
-      opRes = NArchive::NExtract::NOperationResult::kDataError; break;
+      opRes = NExtract::NOperationResult::kDataError; break;
     default:
       return SResToHRESULT(res);
   }
@@ -699,9 +693,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
 
 #endif
 
-static IInArchive *CreateArc() { return new NArchive::NXz::CHandler;  }
+static IInArchive *CreateArc() { return new NArchive::NXz::CHandler; }
 #ifndef EXTRACT_ONLY
-static IOutArchive *CreateArcOut() { return new NArchive::NXz::CHandler;  }
+static IOutArchive *CreateArcOut() { return new NArchive::NXz::CHandler; }
 #else
 #define CreateArcOut 0
 #endif

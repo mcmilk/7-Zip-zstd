@@ -19,7 +19,7 @@ public:
   }
   CBuffer(): _capacity(0), _items(0) {};
   CBuffer(const CBuffer &buffer): _capacity(0), _items(0) { *this = buffer; }
-  CBuffer(size_t size): _items(0),  _capacity(0) {  SetCapacity(size); }
+  CBuffer(size_t size): _items(0), _capacity(0) {  SetCapacity(size); }
   virtual ~CBuffer() { delete []_items; }
   operator T *() { return _items; };
   operator const T *() const { return _items; };

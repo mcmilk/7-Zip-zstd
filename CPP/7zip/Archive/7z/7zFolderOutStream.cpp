@@ -37,9 +37,9 @@ HRESULT CFolderOutStream::Init(
 HRESULT CFolderOutStream::OpenFile()
 {
   Int32 askMode = ((*_extractStatuses)[_currentIndex]) ? (_testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract):
-      NArchive::NExtract::NAskMode::kSkip;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract) :
+      NExtract::NAskMode::kSkip;
   CMyComPtr<ISequentialOutStream> realOutStream;
   UInt32 index = _startIndex + _currentIndex;
   RINOK(_extractCallback->GetStream(_ref2Offset + index, &realOutStream, askMode));
@@ -48,9 +48,9 @@ HRESULT CFolderOutStream::OpenFile()
   _fileIsOpen = true;
   const CFileItem &fi = _db->Files[index];
   _rem = fi.Size;
-  if (askMode == NArchive::NExtract::NAskMode::kExtract && !realOutStream &&
+  if (askMode == NExtract::NAskMode::kExtract && !realOutStream &&
       !_db->IsItemAnti(index) && !fi.IsDir)
-    askMode = NArchive::NExtract::NAskMode::kSkip;
+    askMode = NExtract::NAskMode::kSkip;
   return _extractCallback->PrepareOperation(askMode);
 }
 
@@ -67,8 +67,8 @@ HRESULT CFolderOutStream::CloseFileAndSetResult()
   const CFileItem &fi = _db->Files[_startIndex + _currentIndex];
   return CloseFileAndSetResult(
       (fi.IsDir || !fi.CrcDefined || !_checkCrc || fi.Crc == _crcStreamSpec->GetCRC()) ?
-      NArchive::NExtract::NOperationResult::kOK :
-      NArchive::NExtract::NOperationResult::kCRCError);
+      NExtract::NOperationResult::kOK :
+      NExtract::NOperationResult::kCRCError);
 }
 
 HRESULT CFolderOutStream::ProcessEmptyFiles()

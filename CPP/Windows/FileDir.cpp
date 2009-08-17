@@ -38,6 +38,8 @@ static CSysString GetSysPath(LPCWSTR sysPath)
   { return UnicodeStringToMultiByte(sysPath, GetCurrentCodePage()); }
 #endif
 
+#ifndef UNDER_CE
+
 bool MyGetWindowsDirectory(CSysString &path)
 {
   UINT needLength = ::GetWindowsDirectory(path.GetBuffer(MAX_PATH + 1), MAX_PATH + 1);
@@ -51,6 +53,8 @@ bool MyGetSystemDirectory(CSysString &path)
   path.ReleaseBuffer();
   return (needLength > 0 && needLength <= MAX_PATH);
 }
+
+#endif
 
 #ifndef _UNICODE
 bool MyGetWindowsDirectory(UString &path)
@@ -441,7 +445,41 @@ bool RemoveDirectoryWithSubItems(const UString &path)
 }
 #endif
 
-#ifndef _WIN32_WCE
+bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName)
+{
+  int index;
+  if (!MyGetFullPathName(fileName, resultName, index))
+    return false;
+  resultName = resultName.Left(index);
+  return true;
+}
+
+bool GetOnlyName(LPCTSTR fileName, CSysString &resultName)
+{
+  int index;
+  if (!MyGetFullPathName(fileName, resultName, index))
+    return false;
+  resultName = resultName.Mid(index);
+  return true;
+}
+
+#ifdef UNDER_CE
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath)
+{
+  resultPath = fileName;
+  return true;
+}
+
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, int &fileNamePartStartIndex)
+{
+  resultPath = fileName;
+  // change it
+  fileNamePartStartIndex = resultPath.ReverseFind('\\');
+  fileNamePartStartIndex++;
+  return true;
+}
+
+#else
 
 bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath)
 {
@@ -534,15 +572,6 @@ bool MyGetFullPathName(LPCWSTR fileName, UString &path)
 }
 #endif
 
-bool GetOnlyName(LPCTSTR fileName, CSysString &resultName)
-{
-  int index;
-  if (!MyGetFullPathName(fileName, resultName, index))
-    return false;
-  resultName = resultName.Mid(index);
-  return true;
-}
-
 #ifndef _UNICODE
 bool GetOnlyName(LPCWSTR fileName, UString &resultName)
 {
@@ -553,15 +582,6 @@ bool GetOnlyName(LPCWSTR fileName, UString &resultName)
   return true;
 }
 #endif
-
-bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName)
-{
-  int index;
-  if (!MyGetFullPathName(fileName, resultName, index))
-    return false;
-  resultName = resultName.Left(index);
-  return true;
-}
 
 #ifndef _UNICODE
 bool GetOnlyDirPrefix(LPCWSTR fileName, UString &resultName)
@@ -603,7 +623,6 @@ bool MyGetCurrentDirectory(UString &path)
   return true;
 }
 #endif
-#endif
 
 bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
   CSysString &resultPath, UINT32 &filePart)
@@ -615,6 +634,7 @@ bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
   resultPath.ReleaseBuffer();
   return (value > 0 && value <= MAX_PATH);
 }
+#endif
 
 #ifndef _UNICODE
 bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
@@ -715,9 +735,13 @@ bool CTempFile::Create(LPCTSTR prefix, CSysString &resultPath)
     return false;
   if (Create(tempPath, prefix, resultPath) != 0)
     return true;
+  #ifdef UNDER_CE
+  return false;
+  #else
   if (!MyGetWindowsDirectory(tempPath))
     return false;
   return (Create(tempPath, prefix, resultPath) != 0);
+  #endif
 }
 
 bool CTempFile::Remove()

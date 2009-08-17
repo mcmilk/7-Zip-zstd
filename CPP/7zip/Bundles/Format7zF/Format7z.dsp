@@ -234,6 +234,10 @@ SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\DynamicBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -554,6 +558,14 @@ SOURCE=..\..\Compress\ZlibDecoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\ZlibDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZlibEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZlibEncoder.h
 # End Source File
 # End Group
 # Begin Group "7z Compress"
@@ -2179,6 +2191,14 @@ SOURCE=..\..\Archive\DebHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\DeflateProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\DeflateProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\DmgHandler.cpp
 # End Source File
 # Begin Source File
@@ -2188,6 +2208,10 @@ SOURCE=..\..\Archive\ElfHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\FatHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\FlvHandler.cpp
 # End Source File
 # Begin Source File
 
@@ -2215,6 +2239,10 @@ SOURCE=..\..\Archive\MbrHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\MslzHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\MubHandler.cpp
 # End Source File
 # Begin Source File
@@ -2232,6 +2260,10 @@ SOURCE=..\..\Archive\RpmHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\SplitHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\SwfHandler.cpp
 # End Source File
 # Begin Source File
 

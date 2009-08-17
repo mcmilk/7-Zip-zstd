@@ -337,11 +337,11 @@ SOURCE=..\..\UI\FileManager\PasswordDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
+SOURCE=..\..\UI\FileManager\ProgressDialog2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\FileManager\ProgressDialog.h
+SOURCE=..\..\UI\FileManager\ProgressDialog2.h
 # End Source File
 # End Group
 # Begin Group "7zip Common"

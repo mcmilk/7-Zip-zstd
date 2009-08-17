@@ -31,7 +31,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     IFolderArchiveUpdateCallback *updateCallback100)
 {
   NWorkDir::CInfo workDirInfo;
-  ReadWorkDirInfo(workDirInfo);
+  workDirInfo.Load();
   UString archiveFilePath  = _agentSpec->_archiveFilePath;
   UString workDir = GetWorkDir(workDirInfo, archiveFilePath);
   CreateComplexDirectory(workDir);

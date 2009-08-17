@@ -1,6 +1,7 @@
 // PasswordDialog.cpp
 
 #include "StdAfx.h"
+
 #include "PasswordDialog.h"
 
 #ifdef LANG
@@ -12,7 +13,8 @@ static CIDLangPair kIDLangPairs[] =
 {
   { IDC_STATIC_PASSWORD_HEADER, 0x02000B01 },
   { IDC_CHECK_PASSWORD_SHOW, 0x02000B02 },
-    
+  { IDOK, 0x02000702 },
+  { IDCANCEL, 0x02000710 }
 };
 #endif
 
@@ -33,8 +35,7 @@ bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   if (buttonID == IDC_CHECK_PASSWORD_SHOW)
   {
-    _passwordControl.SetPasswordChar((IsButtonChecked(
-        IDC_CHECK_PASSWORD_SHOW) == BST_CHECKED) ? 0: TEXT('*'));
+    _passwordControl.SetPasswordChar(IsButtonCheckedBool(IDC_CHECK_PASSWORD_SHOW) ? 0: TEXT('*'));
     UString password;
     _passwordControl.GetText(password);
     _passwordControl.SetText(password);

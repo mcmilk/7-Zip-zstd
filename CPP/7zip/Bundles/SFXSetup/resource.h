@@ -1,4 +1,4 @@
-#define IDI_ICON3                       159
+#define IDI_ICON                        1
 
 #define IDS_EXTRACTION_ERROR_TITLE      7
 #define IDS_EXTRACTION_ERROR_MESSAGE    8

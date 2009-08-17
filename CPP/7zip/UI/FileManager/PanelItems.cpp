@@ -716,13 +716,20 @@ void CPanel::SaveListViewInfo()
   }
 }
 
-bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
+
+bool CPanel::OnRightClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActiveate, LRESULT &result)
 {
   if(itemActiveate->hdr.hwndFrom == HWND(_listView))
     return false;
-
   POINT point;
   ::GetCursorPos(&point);
+  ShowColumnsContextMenu(point.x, point.y);
+  result = TRUE;
+  return true;
+}
+
+void CPanel::ShowColumnsContextMenu(int x, int y)
+{
 
   CMenu menu;
   CMenuDestroyer menuDestroyer(menu);
@@ -740,8 +747,7 @@ bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
       flags |= MF_GRAYED;
     menu.AppendItem(flags, kCommandStart + i, prop.Name);
   }
-  int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY,
-      point.x, point.y, _listView);
+  int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, x, y, _listView);
   if (menuResult >= kCommandStart && menuResult <= kCommandStart + _properties.Size())
   {
     int index = menuResult - kCommandStart;
@@ -775,8 +781,6 @@ bool CPanel::OnRightClick(LPNMITEMACTIVATE itemActiveate, LRESULT &result)
       _listView.DeleteColumn(visibleIndex);
     }
   }
-  result = TRUE;
-  return true;
 }
 
 void CPanel::OnReload()

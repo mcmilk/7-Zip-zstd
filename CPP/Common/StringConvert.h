@@ -1,7 +1,7 @@
 // Common/StringConvert.h
 
-#ifndef __COMMON_STRINGCONVERT_H
-#define __COMMON_STRINGCONVERT_H
+#ifndef __COMMON_STRING_CONVERT_H
+#define __COMMON_STRING_CONVERT_H
 
 #include "MyWindows.h"
 #include "MyString.h"
@@ -66,7 +66,7 @@ inline AString GetOemString(const UString &unicodeString)
     { return UnicodeStringToMultiByte(unicodeString, codePage); }
 #endif
 
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 AString SystemStringToOemString(const CSysString &srcString);
 #endif
 

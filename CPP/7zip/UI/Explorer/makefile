@@ -1,18 +1,20 @@
 PROG = 7-zip.dll
 DEF_FILE = Explorer.def
-LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib htmlhelp.lib shell32.lib comctl32.lib ole32.lib comdlg32.lib
-CFLAGS = $(CFLAGS) -I ../../../ -Ob2 \
+CFLAGS = $(CFLAGS) -I ../../../ \
   -DLANG \
-  -DWIN_LONG_PATH \
+
+!IFDEF UNDER_CE
+LIBS = $(LIBS) Commctrl.lib
+!ELSE
+LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
+!ENDIF
 
 EXPLORER_OBJS = \
   $O\DllExports.obj \
   $O\ContextMenu.obj \
   $O\MyMessages.obj \
-  $O\OptionsDialog.obj \
   $O\RegistryContextMenu.obj \
-  $O\SystemPage.obj \
-  $O\FoldersPage.obj \
 
 COMMON_OBJS = \
   $O\IntToString.obj \
@@ -35,11 +37,19 @@ WIN_OBJS = \
   $O\FileIO.obj \
   $O\FileName.obj \
   $O\Menu.obj \
+  $O\Process.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\Window.obj \
+
+!IFDEF UNDER_CE
+
+WIN_OBJS = $(WIN_OBJS) \
+  $O\CommonDialog.obj \
+
+!ENDIF
 
 WIN_CTRL_OBJS = \
   $O\Dialog.obj \

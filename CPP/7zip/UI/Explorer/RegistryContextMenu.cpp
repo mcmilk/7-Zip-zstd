@@ -2,25 +2,22 @@
 
 #include "StdAfx.h"
 
-#include "RegistryContextMenu.h"
-#include "Windows/COM.h"
-#include "Windows/Synchronization.h"
 #include "Windows/Registry.h"
-#include "Windows/FileName.h"
+#include "Windows/Synchronization.h"
+
+#include "RegistryContextMenu.h"
 
 using namespace NWindows;
-using namespace NCOM;
 using namespace NRegistry;
 
 namespace NZipRootRegistry {
   
-static NSynchronization::CCriticalSection g_RegistryOperationsCriticalSection;
-  
-///////////////////////////
-// ContextMenu
+#ifndef UNDER_CE
 
-static const TCHAR *kContextMenuKeyName  = TEXT("\\shellex\\ContextMenuHandlers\\7-ZIP");
-static const TCHAR *kDragDropMenuKeyName = TEXT("\\shellex\\DragDropHandlers\\7-ZIP");
+static NSynchronization::CCriticalSection g_CS;
+  
+static const TCHAR *kContextMenuKeyName  = TEXT("\\shellex\\ContextMenuHandlers\\7-Zip");
+static const TCHAR *kDragDropMenuKeyName = TEXT("\\shellex\\DragDropHandlers\\7-Zip");
 
 static const TCHAR *kExtensionCLSID = TEXT("{23170F69-40C1-278A-1000-000100020000}");
 
@@ -37,7 +34,7 @@ static CSysString GetFullDragDropMenuKeyName(const CSysString &keyName)
 
 static bool CheckHandlerCommon(const CSysString &keyName)
 {
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
   if (key.Open(HKEY_CLASSES_ROOT, keyName, KEY_READ) != ERROR_SUCCESS)
     return false;
@@ -89,7 +86,7 @@ void DeleteContextMenuHandler()
 static void AddContextMenuHandlerCommon(const CSysString &keyName)
 {
   DeleteContextMenuHandlerCommon(keyName);
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
   key.Create(HKEY_CLASSES_ROOT, GetFullContextMenuKeyName(keyName));
   key.SetValue(NULL, kExtensionCLSID);
@@ -98,7 +95,7 @@ static void AddContextMenuHandlerCommon(const CSysString &keyName)
 static void AddDragDropMenuHandlerCommon(const CSysString &keyName)
 {
   DeleteDragDropMenuHandlerCommon(keyName);
-  NSynchronization::CCriticalSectionLock lock(g_RegistryOperationsCriticalSection);
+  NSynchronization::CCriticalSectionLock lock(g_CS);
   CKey key;
   key.Create(HKEY_CLASSES_ROOT, GetFullDragDropMenuKeyName(keyName));
   key.SetValue(NULL, kExtensionCLSID);
@@ -113,5 +110,7 @@ void AddContextMenuHandler()
   AddDragDropMenuHandlerCommon(kRootKeyNameForDirectory);
   AddDragDropMenuHandlerCommon(kRootKeyNameForDrive);
 }
+
+#endif
 
 }

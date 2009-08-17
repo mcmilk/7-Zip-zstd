@@ -1,22 +1,18 @@
 // PluginLoader.h
 
-#ifndef __PLUGINLOADER_H
-#define __PLUGINLOADER_H
+#ifndef __PLUGIN_LOADER_H
+#define __PLUGIN_LOADER_H
 
 #include "Windows/DLL.h"
 
-typedef UINT32 (WINAPI * CreateObjectPointer)(
-    const GUID *clsID,
-    const GUID *interfaceID,
-    void **outObject);
+typedef UINT32 (WINAPI * CreateObjectPointer)(const GUID *clsID, const GUID *interfaceID, void **outObject);
 
 class CPluginLibrary: public NWindows::NDLL::CLibrary
 {
 public:
   HRESULT CreateManager(REFGUID clsID, IFolderManager **manager)
   {
-    CreateObjectPointer createObject = (CreateObjectPointer)
-        GetProcAddress("CreateObject");
+    CreateObjectPointer createObject = (CreateObjectPointer)GetProc("CreateObject");
     if (createObject == NULL)
       return GetLastError();
     return createObject(&clsID, &IID_IFolderManager, (void **)manager);

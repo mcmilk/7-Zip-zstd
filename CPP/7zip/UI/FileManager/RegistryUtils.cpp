@@ -11,7 +11,7 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-#define REG_PATH_7Z TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP")
+#define REG_PATH_7Z TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip")
 
 static const TCHAR *kCUBasePath = REG_PATH_7Z;
 static const TCHAR *kCU_FMPath = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("FM");
@@ -29,7 +29,7 @@ static const TCHAR *kShowGrid = TEXT("ShowGrid");
 static const TCHAR *kAlternativeSelection = TEXT("AlternativeSelection");
 // static const TCHAR *kLockMemoryAdd = TEXT("LockMemoryAdd");
 static const TCHAR *kLargePagesEnable = TEXT("LargePages");
-// static const TCHAR *kSingleClick = TEXT("SingleClick");
+static const TCHAR *kSingleClick = TEXT("SingleClick");
 // static const TCHAR *kUnderline = TEXT("Underline");
 
 static const TCHAR *kFlatViewName = TEXT("FlatViewArc");
@@ -135,10 +135,10 @@ bool ReadShowGrid(){ return ReadOption(kShowGrid, false); }
 void SaveAlternativeSelection(bool enable) { SaveOption(kAlternativeSelection, enable); }
 bool ReadAlternativeSelection(){ return ReadOption(kAlternativeSelection, false); }
 
-/*
 void SaveSingleClick(bool enable) { SaveOption(kSingleClick, enable); }
 bool ReadSingleClick(){ return ReadOption(kSingleClick, false); }
 
+/*
 void SaveUnderline(bool enable) { SaveOption(kUnderline, enable); }
 bool ReadUnderline(){ return ReadOption(kUnderline, false); }
 */

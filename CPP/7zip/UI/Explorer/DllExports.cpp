@@ -8,30 +8,38 @@
 
 #include "StdAfx.h"
 
-// #include <locale.h>
+#include "Common/MyInitGuid.h"
 
-#include <initguid.h>
-#include <windows.h>
 #include <ShlGuid.h>
 #include <OleCtl.h>
 
 #include "Common/ComTry.h"
 #include "Common/StringConvert.h"
+
 #include "Windows/DLL.h"
+#include "Windows/Error.h"
+#include "Windows/NtCheck.h"
 #include "Windows/Registry.h"
 
-#include "../FileManager/LangUtils.h"
 #include "../FileManager/IFolder.h"
+#include "../FileManager/LangUtils.h"
 
 #include "ContextMenu.h"
-#include "OptionsDialog.h"
 
 using namespace NWindows;
 
-HINSTANCE g_hInstance;
-#ifndef _UNICODE
-bool g_IsNT = false;
-#endif
+HINSTANCE g_hInstance = 0;
+HWND g_HWND = 0;
+
+UString HResultToMessage(HRESULT errorCode)
+{
+  UString message;
+  if (!NError::MyFormatMessage(errorCode, message))
+    message.Empty();
+  if (message.IsEmpty())
+    message = L"Error";
+  return message;
+}
 
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
@@ -85,29 +93,23 @@ STDMETHODIMP CShellExtClassFactory::LockServer(BOOL /* fLock */)
   return S_OK; // Check it
 }
 
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
+
+#define NT_CHECK_FAIL_ACTION return FALSE;
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID)
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE hInstance
+  #else
+  HINSTANCE hInstance
+  #endif
+  , DWORD dwReason, LPVOID)
 {
-  // setlocale(LC_COLLATE, ".ACP");
   if (dwReason == DLL_PROCESS_ATTACH)
   {
-    g_hInstance = hInstance;
+    g_hInstance = (HINSTANCE)hInstance;
     // ODS("In DLLMain, DLL_PROCESS_ATTACH\r\n");
-    #ifdef _UNICODE
-    if (!IsItWindowsNT())
-      return FALSE;
-    #else
-    g_IsNT = IsItWindowsNT();
-    #endif
+    NT_CHECK
   }
   else if (dwReason == DLL_PROCESS_DETACH)
   {
@@ -153,10 +155,16 @@ static BOOL GetStringFromIID(CLSID clsid, LPTSTR s, int size)
   LPWSTR pwsz;
   if (StringFromIID(clsid, &pwsz) != S_OK)
     return FALSE;
-  if(!pwsz)
+  if (!pwsz)
     return FALSE;
   #ifdef UNICODE
-  lstrcpyn(s, pwsz, size);
+  for (int i = 0; i < size; i++)
+  {
+    s[i] = pwsz[i];
+    if (pwsz[i] == 0)
+      break;
+  }
+  s[size - 1] = 0;
   #else
   WideCharToMultiByte(CP_ACP, 0, pwsz, -1, s, size, NULL, NULL);
   #endif
@@ -192,18 +200,20 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
   };
   
   //register the CLSID entries
-  for(int i = 0; clsidEntries[i].hRootKey; i++)
+  for (int i = 0; clsidEntries[i].hRootKey; i++)
   {
     TCHAR subKey[MAX_PATH];
-    wsprintf(subKey, clsidEntries[i].SubKey, clsidString);
+    const CRegItem &r = clsidEntries[i];
+    wsprintf(subKey, r.SubKey, clsidString);
     NRegistry::CKey key;
-    if (key.Create(clsidEntries[i].hRootKey, subKey, NULL,
-        REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
+    if (key.Create(r.hRootKey, subKey, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
       return FALSE;
     key.SetValue(clsidEntries[i].ValueName, clsidEntries[i].Data);
   }
  
-  if(IsItWindowsNT())
+  #if !defined(_WIN64) && !defined(UNDER_CE)
+  if (IsItWindowsNT())
+  #endif
   {
     NRegistry::CKey key;
     if (key.Create(HKEY_LOCAL_MACHINE, kApprovedKeyPath, NULL,
@@ -231,7 +241,9 @@ static BOOL UnregisterServer(CLSID clsid)
   wsprintf (subKey, kClsidMask, clsidString);
   RegDeleteKey(HKEY_CLASSES_ROOT, subKey);
 
-  if(IsItWindowsNT())
+  #if !defined(_WIN64) && !defined(UNDER_CE)
+  if (IsItWindowsNT())
+  #endif
   {
     HKEY hKey;
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, kApprovedKeyPath, 0, KEY_SET_VALUE, &hKey) == NOERROR)
@@ -246,46 +258,4 @@ static BOOL UnregisterServer(CLSID clsid)
 STDAPI DllUnregisterServer(void)
 {
   return UnregisterServer(CLSID_CZipContextMenu) ? S_OK: SELFREG_E_CLASS;
-}
-
-STDAPI CreateObject(
-    const GUID *classID,
-    const GUID *interfaceID,
-    void **outObject)
-{
-  LoadLangOneTime();
-  COM_TRY_BEGIN
-  *outObject = 0;
-  if (*classID == CLSID_CSevenZipOptions)
-  {
-    if (*interfaceID == IID_IPluginOptions)
-    {
-      CMyComPtr<IPluginOptions> options = new CSevenZipOptions;
-      *outObject = options.Detach();
-      return S_OK;
-    }
-    return E_NOINTERFACE;
-  }
-  return CLASS_E_CLASSNOTAVAILABLE;
-  COM_TRY_END
-}
-
-STDAPI GetPluginProperty(PROPID propID, PROPVARIANT *value)
-{
-  ::VariantClear((tagVARIANT *)value);
-  switch(propID)
-  {
-    case NPlugin::kName:
-      if ((value->bstrVal = ::SysAllocString(L"7-Zip")) != 0)
-        value->vt = VT_BSTR;
-      return S_OK;
-    case NPlugin::kOptionsClassID:
-    {
-      if ((value->bstrVal = ::SysAllocStringByteLen(
-          (const char *)&CLSID_CSevenZipOptions, sizeof(GUID))) != 0)
-        value->vt = VT_BSTR;
-      return S_OK;
-    }
-  }
-  return S_OK;
 }

@@ -485,17 +485,16 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
 
   if (allFilesMode)
     numItems = m_Database.Items.Size() + m_Xmls.Size();
   if (numItems == 0)
     return S_OK;
-  bool testMode = (_aTestMode != 0);
 
   UInt32 i;
   UInt64 totalSize = 0;
@@ -549,7 +548,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     if (index >= (UInt32)m_Database.Items.Size())
     {
-      if(!testMode && (!realOutStream))
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       const CByteBuffer &data = m_Xmls[index - (UInt32)m_Database.Items.Size()].Data;
@@ -567,7 +566,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     int streamIndex = item.StreamIndex;
     if (streamIndex < 0)
     {
-      if(!testMode && (!realOutStream))
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       realOutStream.Release();
@@ -581,7 +580,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentItemUnPacked = si.Resource.UnpackSize;
     currentItemPacked = si.Resource.PackSize;
 
-    if(!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     Int32 opRes = NExtract::NOperationResult::kOK;

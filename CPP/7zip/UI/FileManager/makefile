@@ -1,28 +1,33 @@
 PROG = 7zFM.exe
-LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib shell32.lib ole32.lib comctl32.lib htmlhelp.lib Mpr.lib Gdi32.lib comdlg32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DLANG \
-  -DWIN_LONG_PATH \
   -DNEW_FOLDER_INTERFACE \
   -DEXTERNAL_CODECS \
-  -DSUPPORT_DEVICE_FILE \
+
+!IFDEF UNDER_CE
+LIBS = $(LIBS) ceshell.lib Commctrl.lib
+!ELSE
+LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE
+!ENDIF
 
 FM_OBJS = \
   $O\App.obj \
+  $O\BrowseDialog.obj \
   $O\ClassDefs.obj \
   $O\EnumFormatEtc.obj \
   $O\ExtractCallback.obj \
   $O\FileFolderPluginOpen.obj \
   $O\FilePlugins.obj \
   $O\FM.obj \
+  $O\FoldersPage.obj \
   $O\FormatUtils.obj \
-  $O\FSDrives.obj \
   $O\FSFolder.obj \
   $O\FSFolderCopy.obj \
   $O\HelpUtils.obj \
   $O\LangUtils.obj \
+  $O\MenuPage.obj \
   $O\MyLoadMenu.obj \
-  $O\NetFolder.obj \
   $O\OpenCallback.obj \
   $O\OptionsDialog.obj \
   $O\Panel.obj \
@@ -89,20 +94,32 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
-  $O\FileSystem.obj \
   $O\Memory.obj \
   $O\MemoryLock.obj \
   $O\Menu.obj \
-  $O\Net.obj \
+  $O\Process.obj \
   $O\PropVariant.obj \
   $O\PropVariantConversions.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
-  $O\Security.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\Time.obj \
   $O\Window.obj \
+
+!IFNDEF UNDER_CE
+
+FM_OBJS = $(FM_OBJS) \
+  $O\FSDrives.obj \
+  $O\NetFolder.obj \
+
+WIN_OBJS = $(WIN_OBJS) \
+  $O\FileSystem.obj \
+  $O\Net.obj \
+  $O\Security.obj \
+
+!ENDIF
+
 
 WIN_CTRL_OBJS = \
   $O\ComboBox.obj \
@@ -117,6 +134,9 @@ WIN_CTRL_OBJS = \
   $O\ProgressUtils.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+
+AR_COMMON_OBJS = \
+  $O\OutStreamWithCRC.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
@@ -137,8 +157,9 @@ UI_COMMON_OBJS = \
   $O\WorkDir.obj \
   $O\ZipRegistry.obj \
 
-AR_COMMON_OBJS = \
-  $O\OutStreamWithCRC.obj \
+EXPLORER_OBJS = \
+  $O\ContextMenu.obj \
+  $O\RegistryContextMenu.obj \
 
 AGENT_OBJS = \
   $O\Agent.obj \
@@ -164,8 +185,9 @@ OBJS = \
   $(WIN_OBJS) \
   $(WIN_CTRL_OBJS) \
   $(7ZIP_COMMON_OBJS) \
-  $(UI_COMMON_OBJS) \
   $(AR_COMMON_OBJS) \
+  $(UI_COMMON_OBJS) \
+  $(EXPLORER_OBJS) \
   $(AGENT_OBJS) \
   $O\CopyCoder.obj \
   $(CRC_OBJS) \
@@ -184,11 +206,13 @@ $(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
-$(UI_COMMON_OBJS): ../Common/$(*B).cpp
-	$(COMPL)
 $(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
 	$(COMPL)
+$(UI_COMMON_OBJS): ../Common/$(*B).cpp
+	$(COMPL)
 $(AGENT_OBJS): ../Agent/$(*B).cpp
+	$(COMPL)
+$(EXPLORER_OBJS): ../Explorer/$(*B).cpp
 	$(COMPL)
 
 $O\CopyCoder.obj: ../../Compress/$(*B).cpp

@@ -4,20 +4,18 @@
 
 #include "../Common/StreamUtils.h"
 
-#include "DeflateDecoder.h"
 #include "ZlibDecoder.h"
 
 namespace NCompress {
 namespace NZlib {
 
 #define DEFLATE_TRY_BEGIN try {
-#define DEFLATE_TRY_END } \
-  catch(...) { return S_FALSE; }
+#define DEFLATE_TRY_END } catch(...) { return S_FALSE; }
 
 #define ADLER_MOD 65521
 #define ADLER_LOOP_MAX 5550
 
-static UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
+UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
 {
   UInt32 a = adler & 0xFFFF;
   UInt32 b = (adler >> 16) & 0xFFFF;
@@ -52,13 +50,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 {
   DEFLATE_TRY_BEGIN
   if (!AdlerStream)
-  {
-    AdlerSpec = new COutStreamWithAdler;
-    AdlerStream = AdlerSpec;
-  }
+    AdlerStream = AdlerSpec = new COutStreamWithAdler;
   if (!DeflateDecoder)
   {
-    DeflateDecoderSpec = new NCompress::NDeflate::NDecoder::CCOMCoder;
+    DeflateDecoderSpec = new NDeflate::NDecoder::CCOMCoder;
     DeflateDecoderSpec->ZlibMode = true;
     DeflateDecoder = DeflateDecoderSpec;
   }

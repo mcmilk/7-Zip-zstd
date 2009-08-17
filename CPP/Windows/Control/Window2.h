@@ -4,7 +4,6 @@
 #define __WINDOWS_CONTROL_WINDOW2_H
 
 #include "Windows/Window.h"
-#include "Windows/Defs.h"
 
 namespace NWindows {
 namespace NControl {

@@ -2,12 +2,13 @@
 
 #include "StdAfx.h"
 
+#include "Common/MyCom.h"
 #ifndef _UNICODE
 #include "Common/StringConvert.h"
 #endif
-#include "Common/MyCom.h"
-#include "Windows/Shell.h"
+
 #include "Windows/COM.h"
+#include "Windows/Shell.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -16,8 +17,9 @@ extern bool g_IsNT;
 namespace NWindows {
 namespace NShell {
 
-/////////////////////////
-// CItemIDList
+#ifndef UNDER_CE
+
+// SHGetMalloc is unsupported in Windows Mobile?
 
 void CItemIDList::Free()
 {
@@ -62,6 +64,7 @@ CItemIDList& CItemIDList::operator=(const CItemIDList &object)
   return *this;
 }
 */
+
 /////////////////////////////
 // CDrop
 
@@ -77,11 +80,6 @@ void CDrop::Free()
   if (m_MustBeFinished && m_Assigned)
     Finish();
   m_Assigned = false;
-}
-
-CDrop::~CDrop()
-{
-  Free();
 }
 
 UINT CDrop::QueryCountOfFiles()
@@ -121,15 +119,46 @@ void CDrop::QueryFileNames(UStringVector &fileNames)
 }
 
 
-/////////////////////////////
-// Functions
-
 bool GetPathFromIDList(LPCITEMIDLIST itemIDList, CSysString &path)
 {
   bool result = BOOLToBool(::SHGetPathFromIDList(itemIDList, path.GetBuffer(MAX_PATH * 2)));
   path.ReleaseBuffer();
   return result;
 }
+
+#endif
+
+#ifdef UNDER_CE
+
+bool BrowseForFolder(LPBROWSEINFO, CSysString)
+{
+  return false;
+}
+
+bool BrowseForFolder(HWND, LPCTSTR, UINT, LPCTSTR, CSysString &)
+{
+  return false;
+}
+
+bool BrowseForFolder(HWND owner, LPCTSTR title,
+    LPCTSTR initialFolder, CSysString &resultPath)
+{
+  /*
+  // SHBrowseForFolder doesn't work before CE 6.0 ?
+  if (GetProcAddress(LoadLibrary(L"ceshell.dll", L"SHBrowseForFolder") == 0)
+    MessageBoxW(0, L"no", L"", 0);
+  else
+    MessageBoxW(0, L"yes", L"", 0);
+  */
+  /*
+  UString s = L"all files";
+  s += L" (*.*)";
+  return MyGetOpenFileName(owner, title, initialFolder, s, resultPath, true);
+  */
+  return false;
+}
+
+#else
 
 bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 {
@@ -145,6 +174,7 @@ bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 
 int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
+  #ifndef UNDER_CE
   switch(uMsg)
   {
     case BFFM_INITIALIZED:
@@ -166,6 +196,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM da
     default:
       break;
   }
+  #endif
   return 0;
 }
 
@@ -177,8 +208,15 @@ bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags,
   BROWSEINFO browseInfo;
   browseInfo.hwndOwner = owner;
   browseInfo.pidlRoot = NULL;
+
+  // there are Unicode/astring problems in WinCE SDK!!!
+  #ifdef UNDER_CE
+  browseInfo.pszDisplayName = (LPSTR)displayName.GetBuffer(MAX_PATH);
+  browseInfo.lpszTitle = (LPCSTR)title;
+  #else
   browseInfo.pszDisplayName = displayName.GetBuffer(MAX_PATH);
   browseInfo.lpszTitle = title;
+  #endif
   browseInfo.ulFlags = ulFlags;
   browseInfo.lpfn = (initialFolder != NULL) ? BrowseCallbackProc : NULL;
   browseInfo.lParam = (LPARAM)initialFolder;
@@ -189,7 +227,10 @@ bool BrowseForFolder(HWND owner, LPCTSTR title,
     LPCTSTR initialFolder, CSysString &resultPath)
 {
   return BrowseForFolder(owner, title,
-      BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT, initialFolder, resultPath);
+      #ifndef UNDER_CE
+      BIF_NEWDIALOGSTYLE |
+      #endif
+      BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT, initialFolder, resultPath);
   // BIF_STATUSTEXT; BIF_USENEWUI   (Version 5.0)
 }
 
@@ -286,6 +327,8 @@ bool BrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &
   resultPath = GetUnicodeString(s);
   return res;
 }
+
+#endif
 
 #endif
 

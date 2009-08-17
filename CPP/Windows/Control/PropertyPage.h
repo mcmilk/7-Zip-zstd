@@ -3,8 +3,7 @@
 #ifndef __WINDOWS_CONTROL_PROPERTYPAGE_H
 #define __WINDOWS_CONTROL_PROPERTYPAGE_H
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Defs.h"
+#include "Dialog.h"
 
 namespace NWindows {
 namespace NControl {
@@ -16,21 +15,21 @@ class CPropertyPage: public CDialog
 public:
   CPropertyPage(HWND window = NULL): CDialog(window){};
   
-  void Changed() { PropSheet_Changed(GetParent(), HWND(*this)); }
-  void UnChanged() { PropSheet_UnChanged(GetParent(), HWND(*this)); }
+  void Changed() { PropSheet_Changed(GetParent(), (HWND)*this); }
+  void UnChanged() { PropSheet_UnChanged(GetParent(), (HWND)*this); }
 
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam);
 
   virtual bool OnKillActive() { return false; } // false = OK
-  virtual bool OnKillActive(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnKillActive(); }
+  virtual bool OnKillActive(const PSHNOTIFY *) { return OnKillActive(); }
   virtual LONG OnSetActive() { return false; } // false = OK
-  virtual LONG OnSetActive(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnKillActive(); }
+  virtual LONG OnSetActive(const PSHNOTIFY *) { return OnSetActive(); }
   virtual LONG OnApply() { return PSNRET_NOERROR; }
-  virtual LONG OnApply(const PSHNOTIFY * /* aPSHNOTIFY */) { return OnApply(); }
-  virtual void OnNotifyHelp() { }
-  virtual void OnNotifyHelp(const PSHNOTIFY * /* aPSHNOTIFY */) { OnNotifyHelp(); }
-  virtual void OnReset() { }
-  virtual void OnReset(const PSHNOTIFY * /* aPSHNOTIFY */) { OnReset(); }
+  virtual LONG OnApply(const PSHNOTIFY *) { return OnApply(); }
+  virtual void OnNotifyHelp() {}
+  virtual void OnNotifyHelp(const PSHNOTIFY *) { OnNotifyHelp(); }
+  virtual void OnReset() {}
+  virtual void OnReset(const PSHNOTIFY *) { OnReset(); }
 };
 
 struct CPageInfo

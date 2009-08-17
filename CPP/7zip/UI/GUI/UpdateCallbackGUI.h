@@ -12,7 +12,6 @@ class CUpdateCallbackGUI:
   public IUpdateCallbackUI2
 {
 public:
-  // bool StdOutMode;
   bool PasswordIsDefined;
   UString Password;
   bool AskPassword;
@@ -22,9 +21,7 @@ public:
   CUpdateCallbackGUI():
       PasswordIsDefined(false),
       PasswordWasAsked(false),
-      AskPassword(false),
-      // StdOutMode(false)
-      ParentWindow(0)
+      AskPassword(false)
       {}
   
   ~CUpdateCallbackGUI();
@@ -33,19 +30,10 @@ public:
   INTERFACE_IUpdateCallbackUI2(;)
   INTERFACE_IOpenCallbackUI(;)
 
-  // HRESULT CloseProgress();
-
   UStringVector FailedFiles;
 
-  CProgressDialog ProgressDialog;
-  HWND ParentWindow;
-  void StartProgressDialog(const UString &title)
-  {
-    ProgressDialog.Create(title, ParentWindow);
-  }
+  CProgressDialog *ProgressDialog;
 
-  UStringVector Messages;
-  int NumArchiveErrors;
   void AddErrorMessage(LPCWSTR message);
   void AddErrorMessage(const wchar_t *name, DWORD systemError);
 };

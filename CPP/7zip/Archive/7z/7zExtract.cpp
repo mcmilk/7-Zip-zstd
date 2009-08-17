@@ -44,7 +44,7 @@ struct CExtractFolderInfo
   };
 };
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testModeSpec, IArchiveExtractCallback *extractCallbackSpec)
 {
   COM_TRY_BEGIN
@@ -52,7 +52,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UInt64 importantTotalUnpacked = 0;
 
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems =
     #ifdef _7Z_VOL
@@ -244,25 +244,25 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
       if (result == S_FALSE)
       {
-        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+        RINOK(folderOutStream->FlushCorrupted(NExtract::NOperationResult::kDataError));
         continue;
       }
       if (result == E_NOTIMPL)
       {
-        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(folderOutStream->FlushCorrupted(NExtract::NOperationResult::kUnSupportedMethod));
         continue;
       }
       if (result != S_OK)
         return result;
       if (folderOutStream->WasWritingFinished() != S_OK)
       {
-        RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+        RINOK(folderOutStream->FlushCorrupted(NExtract::NOperationResult::kDataError));
         continue;
       }
     }
     catch(...)
     {
-      RINOK(folderOutStream->FlushCorrupted(NArchive::NExtract::NOperationResult::kDataError));
+      RINOK(folderOutStream->FlushCorrupted(NExtract::NOperationResult::kDataError));
       continue;
     }
   }

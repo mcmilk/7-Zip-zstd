@@ -1,6 +1,7 @@
 DIRS = \
   Alone\~ \
   Alone7z\~ \
+  Fm\~ \
   Format7z\~ \
   Format7zF\~ \
   Format7zR\~ \

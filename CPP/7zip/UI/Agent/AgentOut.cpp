@@ -5,7 +5,6 @@
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/Defs.h"
 #include "Windows/FileDir.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
@@ -16,7 +15,6 @@
 #include "../../Common/FileStreams.h"
 
 #include "../Common/EnumDirItems.h"
-#include "../Common/HandlerLoader.h"
 #include "../Common/OpenArchive.h"
 #include "../Common/UpdateCallback.h"
 #include "../Common/UpdatePair.h"
@@ -208,7 +206,7 @@ STDMETHODIMP CAgent::DoOperation(
   if (GetArchive())
   {
     RINOK(ReadItems());
-    EnumerateArchiveItems(this, _proxyArchive->RootFolder,  L"", arcItems);
+    EnumerateArchiveItems(this, _proxyArchive->RootFolder, L"", arcItems);
   }
 
   CRecordVector<CUpdatePair2> updatePairs2;

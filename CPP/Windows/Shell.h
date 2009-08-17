@@ -9,12 +9,12 @@
 #include "Common/MyString.h"
 #include "Windows/Defs.h"
 
-
 namespace NWindows{
 namespace NShell{
 
 /////////////////////////
 // CItemIDList
+#ifndef UNDER_CE
 
 class CItemIDList
 {
@@ -55,9 +55,9 @@ class CDrop
   bool m_Assigned;
   void Free();
 public:
-  CDrop(bool mustBeFinished) : m_MustBeFinished(mustBeFinished),
-      m_Assigned(false) {}
-  ~CDrop();
+  CDrop(bool mustBeFinished) : m_MustBeFinished(mustBeFinished), m_Assigned(false) {}
+  ~CDrop() { Free(); }
+
   void Attach(HDROP object);
   operator HDROP() { return m_Object;}
   bool QueryPoint(LPPOINT point)
@@ -74,6 +74,8 @@ public:
   void QueryFileNames(UStringVector &fileNames);
 };
 
+#endif
+
 /////////////////////////////
 // Functions
 
@@ -87,6 +89,5 @@ bool BrowseForFolder(LPBROWSEINFO lpbi, UString &resultPath);
 bool BrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &resultPath);
 #endif
 }}
-
 
 #endif

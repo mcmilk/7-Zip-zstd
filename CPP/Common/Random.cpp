@@ -2,16 +2,25 @@
 
 #include "StdAfx.h"
 
-#include <time.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
+#include <time.h>
+#endif
 
 #include "Random.h"
 
-void CRandom::Init(unsigned int seed)
-  { srand(seed); }
+void CRandom::Init(unsigned int seed) { srand(seed); }
 
 void CRandom::Init()
-  { Init((unsigned int)time(NULL)); }
+{
+  Init((unsigned int)
+    #ifdef _WIN32
+    GetTickCount()
+    #else
+    time(NULL)
+    #endif
+    );
+}
 
-int CRandom::Generate() const
-  { return rand(); }
+int CRandom::Generate() const { return rand(); }

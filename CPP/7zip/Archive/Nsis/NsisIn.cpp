@@ -1,30 +1,21 @@
-// Archive/NsisIn.cpp
+// NsisIn.cpp
 
 #include "StdAfx.h"
 
-// #include <stdio.h>
+#include "../../../../C/CpuArch.h"
 
-#include "NsisIn.h"
-#include "NsisDecode.h"
-
-#include "Windows/Defs.h"
+#include "Common/IntToString.h"
 
 #include "../../Common/StreamUtils.h"
 
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
-
-#include "../../../../C/CpuArch.h"
+#include "NsisIn.h"
 
 #define Get32(p) GetUi32(p)
 
 namespace NArchive {
 namespace NNsis {
 
-Byte kSignature[kSignatureSize] = { 0xEF + 1, 0xBE, 0xAD, 0xDE,
-0x4E, 0x75, 0x6C, 0x6C, 0x73, 0x6F, 0x66, 0x74, 0x49, 0x6E, 0x73, 0x74};
-
-struct CSignatureInit { CSignatureInit() { kSignature[0]--; } } g_SignatureInit;
+Byte kSignature[kSignatureSize] = NSIS_SIGNATURE;
 
 #ifdef NSIS_SCRIPT
 static const char *kCrLf = "\x0D\x0A";

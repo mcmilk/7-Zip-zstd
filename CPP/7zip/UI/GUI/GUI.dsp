@@ -405,14 +405,6 @@ SOURCE=.\ExtractDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\FileManager\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\MessagesDialog.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
@@ -800,7 +792,15 @@ SOURCE=..\..\..\Windows\Control\ListView.h
 
 SOURCE=..\..\..\Windows\Control\ProgressBar.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Control\Static.h
+# End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\..\Windows\COM.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\CommonDialog.cpp
@@ -848,6 +848,10 @@ SOURCE=..\..\..\Windows\FileIO.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileIO.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileMapping.h
 # End Source File
 # Begin Source File
 

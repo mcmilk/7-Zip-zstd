@@ -399,12 +399,11 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _sections.Size();
   if (numItems == 0)
@@ -434,8 +433,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     lps->InSize = lps->OutSize = currentTotalSize;
     RINOK(lps->SetCur());
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     UInt32 index = allFilesMode ? i : indices[i];
     const CSection &item = _sections[index];
     currentItemSize = item.GetPackSize();
@@ -451,8 +450,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
     outStream.Release();
     RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == currentItemSize ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END

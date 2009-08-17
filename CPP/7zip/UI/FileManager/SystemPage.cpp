@@ -52,11 +52,11 @@ bool CSystemPage::OnInit()
   _listViewExt.SetExtendedListViewStyle(newFlags, newFlags);
   _listViewPlugins.SetExtendedListViewStyle(newFlags, newFlags);
 
-  _listViewExt.InsertColumn(0, LangString(IDS_PROP_EXTENSION, 0x02000205), 70);
+  _listViewExt.InsertColumn(0, LangString(IDS_PROP_EXTENSION, 0x02000205), 40);
   const UString s = LangString(IDS_PLUGIN, 0x03010310);
-  _listViewExt.InsertColumn(1, s, 70);
+  _listViewExt.InsertColumn(1, s, 40);
 
-  _listViewPlugins.InsertColumn(0, s, 70);
+  _listViewPlugins.InsertColumn(0, s, 40);
 
   _extDatabase.Read();
 
@@ -77,11 +77,8 @@ bool CSystemPage::OnInit()
   }
   // _listViewExt.SortItems();
   
-  if(_listViewExt.GetItemCount() > 0)
-  {
-    UINT state = LVIS_SELECTED | LVIS_FOCUSED;
-    _listViewExt.SetItemState(0, state, state);
-  }
+  if (_listViewExt.GetItemCount() > 0)
+    _listViewExt.SetItemState_FocusedSelected(0);
   RefreshPluginsList(-1);
   _initMode = false;
 
@@ -166,7 +163,10 @@ LONG CSystemPage::OnApply()
   else
     NRegistryAssociations::DeleteContextMenuHandler();
   */
+  #ifndef UNDER_CE
   SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+  WasChanged = true;
+  #endif
   return PSNRET_NOERROR;
 }
 
@@ -370,12 +370,11 @@ void CSystemPage::RefreshPluginsList(int selectIndex)
     int itemIndex = _listViewPlugins.InsertItem(i, _extDatabase.Plugins[pluginPair.Index].Name);
     _listViewPlugins.SetCheckState(itemIndex, pluginPair.Enabled);
   }
-  if(_listViewPlugins.GetItemCount() > 0)
+  if (_listViewPlugins.GetItemCount() > 0)
   {
     if (selectIndex < 0)
       selectIndex = 0;
-    UINT state = LVIS_SELECTED | LVIS_FOCUSED;
-    _listViewPlugins.SetItemState(selectIndex, state, state);
+    _listViewPlugins.SetItemState_FocusedSelected(selectIndex);
   }
   _initMode = false;
 }

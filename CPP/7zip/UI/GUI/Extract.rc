@@ -20,4 +20,14 @@ BEGIN
   IDS_MEM_ERROR  "The system cannot allocate the required amount of memory"
   IDS_UNKNOWN_ERROR  "Unknown Error"
   IDS_UNSUPPORTED_ARCHIVE_TYPE  "Unsupported archive type"
+
+  IDC_EXTRACT_RADIO_FULL_PATHNAMES "Full pathnames"
+  IDC_EXTRACT_RADIO_CURRENT_PATHNAMES "Current pathnames"
+  IDC_EXTRACT_RADIO_NO_PATHNAMES "No pathnames"
+
+  IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE "Ask before overwrite"
+  IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT "Overwrite without prompt"
+  IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES "Skip existing files"
+  IDC_EXTRACT_RADIO_AUTO_RENAME "Auto rename"
+  IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING "Auto rename existing files"
 END

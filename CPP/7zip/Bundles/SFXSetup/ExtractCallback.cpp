@@ -36,7 +36,7 @@ void CExtractCallbackImp::Init(IInArchive *archiveHandler,
 HRESULT CExtractCallbackImp::Open_CheckBreak()
 {
   #ifndef _NO_PROGRESS
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  return ProgressDialog.Sync.ProcessStopAndPause();
   #else
   return S_OK;
   #endif
@@ -50,7 +50,7 @@ HRESULT CExtractCallbackImp::Open_SetTotal(const UInt64 * /* numFiles */, const 
 HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
 {
   #ifndef _NO_PROGRESS
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  return ProgressDialog.Sync.ProcessStopAndPause();
   #else
   return S_OK;
   #endif
@@ -59,7 +59,7 @@ HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, co
 STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 {
   #ifndef _NO_PROGRESS
-  ProgressDialog.ProgressSynch.SetProgress(size, 0);
+  ProgressDialog.Sync.SetProgress(size, 0);
   #endif
   return S_OK;
 }
@@ -67,9 +67,9 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
   #ifndef _NO_PROGRESS
-  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
+  RINOK(ProgressDialog.Sync.ProcessStopAndPause());
   if (completeValue != NULL)
-    ProgressDialog.ProgressSynch.SetPos(*completeValue);
+    ProgressDialog.Sync.SetPos(*completeValue);
   #endif
   return S_OK;
 }
@@ -89,7 +89,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     ISequentialOutStream **outStream, Int32 askExtractMode)
 {
   #ifndef _NO_PROGRESS
-  if (ProgressDialog.ProgressSynch.GetStopped())
+  if (ProgressDialog.Sync.GetStopped())
     return E_ABORT;
   #endif
   _outFileStream.Release();

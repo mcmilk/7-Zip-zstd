@@ -1,18 +1,20 @@
 // SettingsPage.cpp
 
 #include "StdAfx.h"
-#include "SettingsPageRes.h"
-#include "SettingsPage.h"
 
 #include "Common/StringConvert.h"
 
-#include "Windows/Defs.h"
+#ifndef UNDER_CE
 #include "Windows/MemoryLock.h"
+#endif
 
-#include "RegistryUtils.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
 #include "ProgramLocation.h"
+#include "RegistryUtils.h"
+#include "SettingsPage.h"
+
+#include "SettingsPageRes.h"
 
 using namespace NWindows;
 
@@ -48,7 +50,7 @@ bool CSettingsPage::OnInit()
     CheckButton(IDC_SETTINGS_LARGE_PAGES, ReadLockMemoryEnable());
   else
     EnableItem(IDC_SETTINGS_LARGE_PAGES, false);
-  // CheckButton(IDC_SETTINGS_SINGLE_CLICK, ReadSingleClick());
+  CheckButton(IDC_SETTINGS_SINGLE_CLICK, ReadSingleClick());
   // CheckButton(IDC_SETTINGS_UNDERLINE, ReadUnderline());
 
   // EnableSubItems();
@@ -72,14 +74,16 @@ LONG CSettingsPage::OnApply()
   SaveFullRow(IsButtonCheckedBool(IDC_SETTINGS_FULL_ROW));
   SaveShowGrid(IsButtonCheckedBool(IDC_SETTINGS_SHOW_GRID));
   SaveAlternativeSelection(IsButtonCheckedBool(IDC_SETTINGS_ALTERNATIVE_SELECTION));
+  #ifndef UNDER_CE
   if (IsLargePageSupported())
   {
     bool enable = IsButtonCheckedBool(IDC_SETTINGS_LARGE_PAGES);
     NSecurity::EnableLockMemoryPrivilege(enable);
     SaveLockMemoryEnable(enable);
   }
+  #endif
   
-  // SaveSingleClick(IsButtonCheckedBool(IDC_SETTINGS_SINGLE_CLICK));
+  SaveSingleClick(IsButtonCheckedBool(IDC_SETTINGS_SINGLE_CLICK));
   // SaveUnderline(IsButtonCheckedBool(IDC_SETTINGS_UNDERLINE));
 
   return PSNRET_NOERROR;
@@ -94,8 +98,8 @@ bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   switch(buttonID)
   {
-    /*
     case IDC_SETTINGS_SINGLE_CLICK:
+    /*
       EnableSubItems();
       break;
     */

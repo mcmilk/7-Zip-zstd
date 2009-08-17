@@ -3,7 +3,7 @@
 
 MY_VERSION_INFO_APP("7z Setup SFX", "7zS.sfx")
 
-IDI_ICON3  ICON "setup.ico"
+IDI_ICON  ICON "setup.ico"
 
 STRINGTABLE
 BEGIN

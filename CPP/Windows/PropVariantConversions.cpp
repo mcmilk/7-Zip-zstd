@@ -2,12 +2,12 @@
 
 #include "StdAfx.h"
 
-#include "PropVariantConversions.h"
+#include "Common/IntToString.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/Defs.h"
 
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
+#include "PropVariantConversions.h"
 
 static UString ConvertUInt64ToString(UInt64 value)
 {
@@ -64,10 +64,10 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
   return true;
 }
 
-UString ConvertFileTimeToString(const FILETIME &fileTime, bool includeTime, bool includeSeconds)
+UString ConvertFileTimeToString(const FILETIME &ft, bool includeTime, bool includeSeconds)
 {
   char s[32];
-  ConvertFileTimeToString(fileTime, s,  includeTime, includeSeconds);
+  ConvertFileTimeToString(ft, s, includeTime, includeSeconds);
   return GetUnicodeString(s);
 }
  
@@ -88,12 +88,7 @@ UString ConvertPropVariantToString(const PROPVARIANT &prop)
     case VT_I4: return ConvertInt64ToString(prop.lVal);
     case VT_I8: return ConvertInt64ToString(prop.hVal.QuadPart);
     case VT_BOOL: return VARIANT_BOOLToBool(prop.boolVal) ? L"+" : L"-";
-    default:
-      #ifndef _WIN32_WCE
-      throw 150245;
-      #else
-      return UString();
-      #endif
+    default: throw 150245;
   }
 }
 
@@ -105,11 +100,6 @@ UInt64 ConvertPropVariantToUInt64(const PROPVARIANT &prop)
     case VT_UI2: return prop.uiVal;
     case VT_UI4: return prop.ulVal;
     case VT_UI8: return (UInt64)prop.uhVal.QuadPart;
-    default:
-      #ifndef _WIN32_WCE
-      throw 151199;
-      #else
-      return 0;
-      #endif
+    default: throw 151199;
   }
 }

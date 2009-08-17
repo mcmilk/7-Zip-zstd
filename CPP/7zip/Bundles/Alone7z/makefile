@@ -1,15 +1,15 @@
 PROG = 7zr.exe
-LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
-
+MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -I ../../../ \
-  -D_NO_CRYPTO \
-  -DWIN_LONG_PATH \
   -DCOMPRESS_MT \
   -DCOMPRESS_MF_MT \
   -D_NO_CRYPTO \
   -DBREAK_HANDLER \
   -DBENCH_MT \
 
+!IFNDEF UNDER_CE
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
+!ENDIF
 
 CONSOLE_OBJS = \
   $O\ConsoleClose.obj \

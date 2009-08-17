@@ -1,9 +1,10 @@
 // ViewSettings.h
 
-#ifndef __VIEWSETTINGS_H
-#define __VIEWSETTINGS_H
+#ifndef __VIEW_SETTINGS_H
+#define __VIEW_SETTINGS_H
 
 #include "Common/MyString.h"
+#include "Common/Types.h"
 
 struct CColumnInfo
 {
@@ -44,15 +45,15 @@ struct CListViewInfo
     return -1;
   }
 
-  bool IsEqual(const CListViewInfo &aNewInfo) const
+  bool IsEqual(const CListViewInfo &info) const
   {
-    if (Columns.Size() != aNewInfo.Columns.Size() ||
-      // SortIndex != aNewInfo.SortIndex ||
-      SortID != aNewInfo.SortID ||
-      Ascending != aNewInfo.Ascending)
+    if (Columns.Size() != info.Columns.Size() ||
+        // SortIndex != info.SortIndex ||
+        SortID != info.SortID ||
+        Ascending != info.Ascending)
       return false;
     for (int i = 0; i < Columns.Size(); i++)
-      if (Columns[i] != aNewInfo.Columns[i])
+      if (Columns[i] != info.Columns[i])
         return false;
     return true;
   }
@@ -92,7 +93,6 @@ void ReadFastFolders(UStringVector &folders);
 void SaveCopyHistory(const UStringVector &folders);
 void ReadCopyHistory(UStringVector &folders);
 
-void AddUniqueStringToHeadOfList(UStringVector &list,
-    const UString &string);
+void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s);
 
 #endif

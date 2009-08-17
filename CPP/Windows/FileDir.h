@@ -41,14 +41,16 @@ bool DeleteFileAlways(LPCWSTR name);
 bool RemoveDirectoryWithSubItems(const UString &path);
 #endif
 
-#ifndef _WIN32_WCE
+bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName);
+bool GetOnlyName(LPCTSTR fileName, CSysString &resultName);
+#ifdef UNDER_CE
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath);
+bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, int &fileNamePartStartIndex);
+#else
 bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath);
 
-bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath,
-    int &fileNamePartStartIndex);
+bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, int &fileNamePartStartIndex);
 bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath);
-bool GetOnlyName(LPCTSTR fileName, CSysString &resultName);
-bool GetOnlyDirPrefix(LPCTSTR fileName, CSysString &resultName);
 #ifndef _UNICODE
 bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath,
     int &fileNamePartStartIndex);
@@ -64,29 +66,26 @@ bool MyGetCurrentDirectory(CSysString &resultPath);
 bool MySetCurrentDirectory(LPCWSTR path);
 bool MyGetCurrentDirectory(UString &resultPath);
 #endif
-#endif
 
-bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
-  CSysString &resultPath, UINT32 &filePart);
+bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, CSysString &resultPath, UINT32 &filePart);
 #ifndef _UNICODE
-bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
-  UString &resultPath, UINT32 &filePart);
+bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension, UString &resultPath, UINT32 &filePart);
 #endif
 
-inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension,
-  CSysString &resultPath)
+inline bool MySearchPath(LPCTSTR path, LPCTSTR fileName, LPCTSTR extension, CSysString &resultPath)
 {
   UINT32 value;
   return MySearchPath(path, fileName, extension, resultPath, value);
 }
 
 #ifndef _UNICODE
-inline bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension,
-  UString &resultPath)
+inline bool MySearchPath(LPCWSTR path, LPCWSTR fileName, LPCWSTR extension, UString &resultPath)
 {
   UINT32 value;
   return MySearchPath(path, fileName, extension, resultPath, value);
 }
+#endif
+
 #endif
 
 bool MyGetTempPath(CSysString &resultPath);

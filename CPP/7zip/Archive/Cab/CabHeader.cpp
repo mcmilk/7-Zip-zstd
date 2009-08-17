@@ -1,15 +1,15 @@
-// Archive/Cab/Header.h
+// CabHeader.cpp
 
 #include "StdAfx.h"
 
 #include "CabHeader.h"
 
-namespace NArchive{
-namespace NCab{
-namespace NHeader{
+namespace NArchive {
+namespace NCab {
+namespace NHeader {
 
-Byte kMarker[kMarkerSize] = {'M' + 1, 'S', 'C', 'F', 0, 0, 0, 0 };
+Byte kMarker[kMarkerSize] = {'M', 'S', 'C', 'F', 0, 0, 0, 0 };
 
-struct SignatureInitializer { SignatureInitializer() {  kMarker[0]--;  }; } g_SignatureInitializer;
+// struct CSignatureInitializer { CSignatureInitializer() { kMarker[0]--; }; } g_SignatureInitializer;
 
 }}}

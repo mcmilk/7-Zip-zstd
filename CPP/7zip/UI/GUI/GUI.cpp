@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
+#include "Common/MyInitGuid.h"
 
 #include "../../../../C/Alloc.h"
 
@@ -11,6 +11,7 @@
 #include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
+#include "Windows/NtCheck.h"
 #ifdef _WIN32
 #include "Windows/MemoryLock.h"
 #endif
@@ -30,7 +31,10 @@ using namespace NWindows;
 
 HINSTANCE g_hInstance;
 #ifndef _UNICODE
-bool g_IsNT = false;
+#endif
+
+#ifdef UNDER_CE
+bool g_LVN_ITEMACTIVATE_Support = true;
 #endif
 
 static void ErrorMessage(LPCWSTR message)
@@ -55,7 +59,7 @@ static int ShowSysErrorMessage(DWORD errorCode)
 {
   if (errorCode == E_OUTOFMEMORY)
     return ShowMemErrorMessage();
-  ErrorMessage(NError::MyFormatMessageW(errorCode));
+  ErrorMessage(HResultToMessage(errorCode));
   return NExitCode::kFatalError;
 }
 
@@ -63,12 +67,16 @@ static int Main2()
 {
   UStringVector commandStrings;
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
-  if (commandStrings.Size() <= 1)
+
+  #ifndef UNDER_CE
+  if (commandStrings.Size() > 0)
+    commandStrings.Delete(0);
+  #endif
+  if (commandStrings.Size() == 0)
   {
     MessageBoxW(0, L"Specify command", L"7-Zip", 0);
     return 0;
   }
-  commandStrings.Delete(0);
 
   CArchiveCommandLineOptions options;
   CArchiveCommandLineParser parser;
@@ -76,7 +84,7 @@ static int Main2()
   parser.Parse1(commandStrings, options);
   parser.Parse2(options);
 
-  #ifdef _WIN32
+  #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
   if (options.LargePages)
     NSecurity::EnableLockMemoryPrivilege();
   #endif
@@ -114,7 +122,6 @@ static int Main2()
   {
     CExtractCallbackImp *ecs = new CExtractCallbackImp;
     CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
-    ecs->ProgressDialog.CompressingMode = false;
 
     #ifndef _NO_CRYPTO
     ecs->PasswordIsDefined = options.PasswordEnabled;
@@ -135,14 +142,19 @@ static int Main2()
     eo.Properties = options.ExtractProperties;
     #endif
 
+    bool messageWasDisplayed = false;
     HRESULT result = ExtractGUI(codecs, formatIndices,
           options.ArchivePathsSorted,
           options.ArchivePathsFullSorted,
           options.WildcardCensor.Pairs.Front().Head,
-          eo, options.ShowDialog, ecs);
+          eo, options.ShowDialog, messageWasDisplayed, ecs);
     if (result != S_OK)
+    {
+      if (result != E_ABORT && messageWasDisplayed)
+        return NExitCode::kFatalError;
       throw CSystemException(result);
-    if (ecs->Messages.Size() > 0 || ecs->NumArchiveErrors != 0)
+    }
+    if (!ecs->IsOK())
       return NExitCode::kFatalError;
   }
   else if (options.Command.IsFromUpdateGroup())
@@ -163,31 +175,30 @@ static int Main2()
     // callback.StdOutMode = options.UpdateOptions.StdOutMode;
     callback.Init();
 
-    CUpdateErrorInfo errorInfo;
-
     if (!options.UpdateOptions.Init(codecs, formatIndices, options.ArchiveName))
     {
       ErrorLangMessage(IDS_UPDATE_NOT_SUPPORTED, 0x02000601);
       return NExitCode::kFatalError;
     }
+    bool messageWasDisplayed = false;
     HRESULT result = UpdateGUI(
         codecs,
         options.WildcardCensor, options.UpdateOptions,
         options.ShowDialog,
-        errorInfo, &callback);
+        messageWasDisplayed, &callback);
 
     if (result != S_OK)
     {
-      if (!errorInfo.Message.IsEmpty())
-      {
-        ErrorMessage(errorInfo.Message);
-        if (result == E_FAIL)
-          return NExitCode::kFatalError;
-      }
+      if (result != E_ABORT && messageWasDisplayed)
+        return NExitCode::kFatalError;
       throw CSystemException(result);
     }
     if (callback.FailedFiles.Size() > 0)
+    {
+      if (!messageWasDisplayed)
+        throw CSystemException(E_FAIL);
       return NExitCode::kWarning;
+    }
   }
   else
   {
@@ -196,29 +207,19 @@ static int Main2()
   return 0;
 }
 
-static bool inline IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
+#define NT_CHECK_FAIL_ACTION ErrorMessage(L"Unsupported Windows version"); return NExitCode::kFatalError;
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */, int /* nCmdShow */)
+int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
+  #ifdef UNDER_CE
+  LPWSTR
+  #else
+  LPSTR
+  #endif
+  /* lpCmdLine */, int /* nCmdShow */)
 {
   g_hInstance = hInstance;
-  #ifdef _UNICODE
-  if (!IsItWindowsNT())
-  {
-    ErrorMessage(L"This program requires Windows NT/2000/2003/2008/XP/Vista");
-    return NExitCode::kFatalError;
-  }
-  #else
-  g_IsNT = IsItWindowsNT();
-  #endif
-
   #ifdef _WIN32
+  NT_CHECK
   SetLargePageSize();
   #endif
 

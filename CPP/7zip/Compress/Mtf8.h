@@ -3,6 +3,8 @@
 #ifndef __COMPRESS_MTF8_H
 #define __COMPRESS_MTF8_H
 
+#include "../../../C/CpuArch.h"
+
 #include "../../Common/Types.h"
 
 namespace NCompress {
@@ -63,11 +65,7 @@ struct CMtf8Decoder
 };
 */
 
-#ifdef _WIN64
-#define MODE_64BIT
-#endif
-
-#ifdef MODE_64BIT
+#ifdef MY_CPU_64BIT
 typedef UInt64 CMtfVar;
 #define MTF_MOVS 3
 #else
@@ -102,12 +100,11 @@ struct CMtf8Decoder
     }
     for (; i < lim; i += 2)
     {
-      CMtfVar next = Buf[i];
-      Buf[i] = (next << 8) | prev;
-      prev = (next >> (MTF_MASK << 3));
-      next = Buf[i + 1];
-      Buf[i + 1] = (next << 8) | prev;
-      prev = (next >> (MTF_MASK << 3));
+      CMtfVar n0 = Buf[i];
+      CMtfVar n1 = Buf[i + 1];
+      Buf[i    ] = (n0 << 8) | prev;
+      Buf[i + 1] = (n1 << 8) | (n0 >> (MTF_MASK << 3));
+      prev = (n1 >> (MTF_MASK << 3));
     }
     CMtfVar next = Buf[i];
     CMtfVar mask = (((CMtfVar)0x100 << pos) - 1);

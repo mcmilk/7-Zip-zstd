@@ -20,7 +20,9 @@ namespace NRegistryAssociations {
   
 static NSynchronization::CCriticalSection g_CriticalSection;
 
-#define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-ZIP") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
+#define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
+
+/*
 
 static const TCHAR *kCUKeyPath = REG_PATH_FM;
 static const WCHAR *kExtPlugins = L"Plugins";
@@ -64,10 +66,8 @@ void ReadInternalAssociations(CObjectVector<CExtInfo> &items)
     UString pluginsString;
     key.QueryValue(kExtPlugins, pluginsString);
     SplitString(pluginsString, extInfo.Plugins);
-    /*
-    if (key.QueryValue(kExtEnabled, extInfo.Enabled) != ERROR_SUCCESS)
-      extInfo.Enabled = false;
-    */
+    // if (key.QueryValue(kExtEnabled, extInfo.Enabled) != ERROR_SUCCESS)
+    //   extInfo.Enabled = false;
     items.Add(extInfo);
   }
 }
@@ -89,6 +89,7 @@ void WriteInternalAssociations(const CObjectVector<CExtInfo> &items)
     // key.SetValue(kExtEnabled, extInfo.Enabled);
   }
 }
+*/
 
 ///////////////////////////////////
 // External
@@ -100,6 +101,7 @@ static const TCHAR *kDefaultIconKeyName = TEXT("DefaultIcon");
 static const TCHAR *kShellKeyName = TEXT("shell");
 static const TCHAR *kOpenKeyName = TEXT("open");
 static const TCHAR *kCommandKeyName = TEXT("command");
+static const TCHAR *k7zipPrefix = TEXT("7-Zip.");
 
 static CSysString GetExtensionKeyName(const CSysString &extension)
 {
@@ -108,10 +110,11 @@ static CSysString GetExtensionKeyName(const CSysString &extension)
 
 static CSysString GetExtProgramKeyName(const CSysString &extension)
 {
-  return CSysString(TEXT("7-Zip.")) + extension;
+  return CSysString(k7zipPrefix) + extension;
 }
 
-static bool CheckShellExtensionInfo2(const CSysString &extension, UString &iconPath, int &iconIndex)
+static bool CheckShellExtensionInfo2(const CSysString &extension,
+    CSysString programKeyName, UString &iconPath, int &iconIndex)
 {
   iconIndex = -1;
   iconPath.Empty();
@@ -119,15 +122,13 @@ static bool CheckShellExtensionInfo2(const CSysString &extension, UString &iconP
   CKey extKey;
   if (extKey.Open(HKEY_CLASSES_ROOT, GetExtensionKeyName(extension), KEY_READ) != ERROR_SUCCESS)
     return false;
-  CSysString programNameValue;
-  if (extKey.QueryValue(NULL, programNameValue) != ERROR_SUCCESS)
+  if (extKey.QueryValue(NULL, programKeyName) != ERROR_SUCCESS)
     return false;
-  CSysString extProgramKeyName = GetExtProgramKeyName(extension);
-  UString programNameValueU = GetUnicodeString(programNameValue);
-  if (programNameValueU.CompareNoCase(GetUnicodeString(extProgramKeyName)) != 0)
+  UString s = GetUnicodeString(k7zipPrefix);
+  if (s.CompareNoCase(GetUnicodeString(programKeyName.Left(s.Length()))) != 0)
     return false;
   CKey iconKey;
-  if (extKey.Open(HKEY_CLASSES_ROOT, extProgramKeyName + CSysString(TEXT(CHAR_PATH_SEPARATOR)) + kDefaultIconKeyName, KEY_READ) != ERROR_SUCCESS)
+  if (extKey.Open(HKEY_CLASSES_ROOT, programKeyName + CSysString(TEXT(CHAR_PATH_SEPARATOR)) + kDefaultIconKeyName, KEY_READ) != ERROR_SUCCESS)
     return false;
   UString value;
   if (extKey.QueryValue(NULL, value) == ERROR_SUCCESS)
@@ -151,10 +152,11 @@ static bool CheckShellExtensionInfo2(const CSysString &extension, UString &iconP
 bool CheckShellExtensionInfo(const CSysString &extension, UString &iconPath, int &iconIndex)
 {
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
-  if (!CheckShellExtensionInfo2(extension, iconPath, iconIndex))
+  CSysString programKeyName;
+  if (!CheckShellExtensionInfo2(extension, programKeyName, iconPath, iconIndex))
     return false;
   CKey extProgKey;
-  return (extProgKey.Open(HKEY_CLASSES_ROOT, GetExtProgramKeyName(extension), KEY_READ) == ERROR_SUCCESS);
+  return (extProgKey.Open(HKEY_CLASSES_ROOT, programKeyName, KEY_READ) == ERROR_SUCCESS);
 }
 
 static void DeleteShellExtensionKey(const CSysString &extension)
@@ -177,9 +179,10 @@ static void DeleteShellExtensionProgramKey(const CSysString &extension)
 
 void DeleteShellExtensionInfo(const CSysString &extension)
 {
+  CSysString programKeyName;
   UString iconPath;
   int iconIndex;
-  if (CheckShellExtensionInfo2(extension, iconPath, iconIndex))
+  if (CheckShellExtensionInfo2(extension, programKeyName, iconPath, iconIndex))
     DeleteShellExtensionKey(extension);
   DeleteShellExtensionProgramKey(extension);
 }
@@ -193,7 +196,13 @@ void AddShellExtensionInfo(const CSysString &extension,
   DeleteShellExtensionKey(extension);
   DeleteShellExtensionProgramKey(extension);
   NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
-  CSysString programKeyName = GetExtProgramKeyName(extension);
+  CSysString programKeyName;
+  {
+    CSysString ext = extension;
+    if (iconIndex < 0)
+      ext = TEXT("*");
+    programKeyName = GetExtProgramKeyName(ext);
+  }
   {
     CKey extKey;
     extKey.Create(HKEY_CLASSES_ROOT, GetExtensionKeyName(extension));
@@ -212,7 +221,9 @@ void AddShellExtensionInfo(const CSysString &extension,
     CKey iconKey;
     iconKey.Create(programKey, kDefaultIconKeyName);
     UString iconPathFull = iconPath;
-    if (iconIndex >= 0)
+    if (iconIndex < 0)
+      iconIndex = 0;
+    // if (iconIndex >= 0)
     {
       iconPathFull += L",";
       wchar_t s[16];
@@ -240,7 +251,7 @@ void AddShellExtensionInfo(const CSysString &extension,
 // ContextMenu
 /*
 
-static const TCHAR *kContextMenuKeyName = TEXT("\\shellex\\ContextMenuHandlers\\7-ZIP");
+static const TCHAR *kContextMenuKeyName = TEXT("\\shellex\\ContextMenuHandlers\\7-Zip");
 static const TCHAR *kContextMenuHandlerCLASSIDValue =
     TEXT("{23170F69-40C1-278A-1000-000100020000}");
 static const TCHAR *kRootKeyNameForFile = TEXT("*");

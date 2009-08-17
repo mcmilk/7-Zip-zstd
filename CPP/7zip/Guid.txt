@@ -125,6 +125,10 @@ Handler GUIDs:
   0B lzma86
   0C xz
 
+  D5 Mslz
+  D6 Flv
+  D7 Swf
+  D8 Swfc
   D9 Ntfs
   DA Fat
   DB Mbr

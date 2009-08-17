@@ -7,7 +7,13 @@
 
 #include "IFolder.h"
 
-const int kNumRootFolderItems = 4;
+const int kNumRootFolderItems =
+  #ifdef UNDER_CE
+  1
+  #else
+  4
+  #endif
+  ;
 
 class CRootFolder:
   public IFolderFolder,

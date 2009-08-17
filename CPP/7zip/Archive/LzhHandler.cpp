@@ -168,13 +168,11 @@ struct CItem
   AString GetName() const
   {
     AString dirName = GetDirName();
-    dirName.Replace((char)(unsigned char)0xFF, '\\');
-    if (!dirName.IsEmpty())
-    {
-      char c = dirName[dirName.Length() - 1];
-      if (c != '\\')
-        dirName += '\\';
-    }
+    const char kDirSeparator = '\\';
+    // check kDirSeparator in Linux
+    dirName.Replace((char)(unsigned char)0xFF, kDirSeparator);
+    if (!dirName.IsEmpty() && dirName.Back() != kDirSeparator)
+      dirName += kDirSeparator;
     return dirName + GetFileName();
   }
 };
@@ -469,7 +467,7 @@ STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *pro
 {
   UInt32 realProcessedSize;
   HRESULT result;
-  if(!_stream)
+  if (!_stream)
   {
     realProcessedSize = size;
     result = S_OK;
@@ -477,7 +475,7 @@ STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *pro
   else
     result = _stream->Write(data, size, &realProcessedSize);
   _crc.Update(data, realProcessedSize);
-  if(processedSize != NULL)
+  if (processedSize != NULL)
     *processedSize = realProcessedSize;
   return result;
 }
@@ -630,24 +628,19 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-
-
-//////////////////////////////////////
-// CHandler::DecompressItems
-
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testModeSpec, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   bool testMode = (testModeSpec != 0);
   UInt64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _items.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   UInt32 i;
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
   {
     const CItemEx &item = _items[allFilesMode ? i : indices[i]];
     totalUnPacked += item.Size;
@@ -674,7 +667,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
   streamSpec->SetStream(_stream);
 
-  for(i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
+  for (i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
   {
     currentItemUnPacked = 0;
@@ -702,7 +695,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       continue;
     }
 
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
 
     RINOK(extractCallback->PrepareOperation(askMode));
@@ -773,7 +766,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"Lzh", L"lzh lha", 0, 6, { '-', 'l' }, 2, false, CreateArc, 0 };

@@ -124,7 +124,11 @@ bool CHeader::Parse(const Byte *p)
   // DriveNumber = p[0x24];
   if (p[0x25] != 0) // CurrentHead
     return false;
-  if (p[0x26] != 0x80) // ExtendedBootSig
+  /*
+  NTFS-HDD:   p[0x26] = 0x80
+  NTFS-FLASH: p[0x26] = 0
+  */
+  if (p[0x26] != 0x80 && p[0x26] != 0) // ExtendedBootSig
     return false;
   if (p[0x27] != 0) // reserved
     return false;
@@ -916,6 +920,9 @@ struct CDataRef
   int Num;
 };
 
+static const UInt32 kMagic_FILE = 0x454c4946;
+static const UInt32 kMagic_BAAD = 0x44414142;
+
 struct CMftRec
 {
   UInt32 Magic;
@@ -933,7 +940,6 @@ struct CMftRec
   CRecordVector<CDataRef> DataRefs;
 
   CSiAttr SiAttr;
-
 
   void MoveAttrsFrom(CMftRec &src)
   {
@@ -954,6 +960,8 @@ struct CMftRec
   bool Parse(Byte *p, int sectorSizeLog, UInt32 numSectors, UInt32 recNumber, CObjectVector<CAttr> *attrs);
 
   bool IsEmpty() const { return (Magic <= 2); }
+  bool IsFILE() const { return (Magic == kMagic_FILE); }
+  bool IsBAAD() const { return (Magic == kMagic_BAAD); }
 
   bool InUse() const { return (Flags & 1) != 0; }
   bool IsDir() const { return (Flags & 2) != 0; }
@@ -1032,10 +1040,8 @@ bool CMftRec::Parse(Byte *p, int sectorSizeLog, UInt32 numSectors, UInt32 recNum
     CObjectVector<CAttr> *attrs)
 {
   G32(p, Magic);
-  if (IsEmpty())
-    return true;
-  if (Magic != 0x454c4946)
-    return false;
+  if (!IsFILE())
+    return IsEmpty() || IsBAAD();
 
   UInt32 usaOffset;
   UInt32 numUsaItems;
@@ -1246,7 +1252,7 @@ HRESULT CDatabase::Open()
     numSectorsInRec = 1 << (recSizeLog - Header.SectorSizeLog);
     if (!mftRec.Parse(ByteBuf, Header.SectorSizeLog, numSectorsInRec, NULL, 0))
       return S_FALSE;
-    if (mftRec.IsEmpty())
+    if (!mftRec.IsFILE())
       return S_FALSE;
     mftRec.ParseDataNames();
     if (mftRec.DataRefs.IsEmpty())
@@ -1331,7 +1337,7 @@ HRESULT CDatabase::Open()
   for (i = 0; i < Recs.Size(); i++)
   {
     CMftRec &rec = Recs[i];
-    if (rec.IsEmpty() || !rec.BaseMftRef.IsBaseItself())
+    if (!rec.IsFILE() || !rec.BaseMftRef.IsBaseItself())
       continue;
     int numNames = 0;
     // printf("\n%4d: ", i);
@@ -1610,12 +1616,11 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = Items.Size();
   if (numItems == 0)
@@ -1655,8 +1660,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
@@ -1664,11 +1669,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -1679,12 +1684,12 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CMftRec &rec = Recs[item.RecIndex];
     const CAttr &data = rec.DataAttrs[rec.DataRefs[item.DataIndex].Start];
 
-    int res = NArchive::NExtract::NOperationResult::kDataError;
+    int res = NExtract::NOperationResult::kDataError;
     {
       CMyComPtr<IInStream> inStream;
       HRESULT hres = rec.GetStream(InStream, item.DataIndex, Header.ClusterSizeLog, Header.NumClusters, &inStream);
       if (hres == S_FALSE)
-        res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnSupportedMethod;
       else
       {
         RINOK(hres);
@@ -1696,7 +1701,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
             RINOK(hres);
           }
           if (/* copyCoderSpec->TotalSize == item.GetSize() && */ hres == S_OK)
-            res = NArchive::NExtract::NOperationResult::kOK;
+            res = NExtract::NOperationResult::kOK;
         }
       }
     }
@@ -1715,7 +1720,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"NTFS", L"ntfs img", 0, 0xD9, { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' ', 0 }, 9, false, CreateArc, 0 };

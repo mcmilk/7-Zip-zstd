@@ -1,5 +1,5 @@
 /* 7zFile.c -- File IO
-2008-11-22 : Igor Pavlov : Public domain */
+2009-08-16 : Igor Pavlov : Public domain */
 
 #include "7zFile.h"
 
@@ -51,6 +51,20 @@ static WRes File_Open(CSzFile *p, const char *name, int writeMode)
 
 WRes InFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 0); }
 WRes OutFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 1); }
+
+#ifdef USE_WINDOWS_FILE
+static WRes File_OpenW(CSzFile *p, const WCHAR *name, int writeMode)
+{
+  p->handle = CreateFileW(name,
+      writeMode ? GENERIC_WRITE : GENERIC_READ,
+      FILE_SHARE_READ, NULL,
+      writeMode ? CREATE_ALWAYS : OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL, NULL);
+  return (p->handle != INVALID_HANDLE_VALUE) ? 0 : GetLastError();
+}
+WRes InFile_OpenW(CSzFile *p, const WCHAR *name) { return File_OpenW(p, name, 0); }
+WRes OutFile_OpenW(CSzFile *p, const WCHAR *name) { return File_OpenW(p, name, 1); }
+#endif
 
 WRes File_Close(CSzFile *p)
 {

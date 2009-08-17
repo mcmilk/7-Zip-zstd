@@ -46,7 +46,20 @@
 #include "../LzmaEncoder.h"
 #endif
 
-static const UInt32 kUncompressMinBlockSize = 1 << 26;
+static const UInt32 kUncompressMinBlockSize =
+#ifdef UNDER_CE
+1 << 24;
+#else
+1 << 26;
+#endif
+
+static const UInt32 kCrcBlockSize =
+#ifdef UNDER_CE
+1 << 25;
+#else
+1 << 30;
+#endif
+
 static const UInt32 kAdditionalSize = (1 << 16);
 static const UInt32 kCompressedAdditionalSize = (1 << 10);
 static const UInt32 kMaxLzmaPropSize = 5;
@@ -273,13 +286,20 @@ static UInt64 GetFreq()
 #ifndef USE_POSIX_TIME
 static inline UInt64 GetTime64(const FILETIME &t) { return ((UInt64)t.dwHighDateTime << 32) | t.dwLowDateTime; }
 #endif
+
 static UInt64 GetUserTime()
 {
   #ifdef USE_POSIX_TIME
   return clock();
   #else
   FILETIME creationTime, exitTime, kernelTime, userTime;
-  if (::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime) != 0)
+  if (
+  #ifdef UNDER_CE
+    ::GetThreadTimes(::GetCurrentThread()
+  #else
+    ::GetProcessTimes(::GetCurrentProcess()
+  #endif
+    , &creationTime, &exitTime, &kernelTime, &userTime) != 0)
     return GetTime64(userTime) + GetTime64(kernelTime);
   return (UInt64)GetTickCount() * 10000;
   #endif
@@ -332,7 +352,7 @@ public:
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
-void SetStartTime(CBenchInfo &bi)
+static void SetStartTime(CBenchInfo &bi)
 {
   bi.GlobalFreq = GetFreq();
   bi.UserFreq = GetUserFreq();
@@ -340,7 +360,7 @@ void SetStartTime(CBenchInfo &bi)
   bi.UserTime = ::GetUserTime();
 }
 
-void SetFinishTime(const CBenchInfo &biStart, CBenchInfo &dest)
+static void SetFinishTime(const CBenchInfo &biStart, CBenchInfo &dest)
 {
   dest.GlobalFreq = GetFreq();
   dest.UserFreq = GetUserFreq();
@@ -820,6 +840,18 @@ HRESULT LzmaBench(
   #endif
   RINOK(status.Res);
   SetFinishTime(encoders[0].progressInfoSpec[0]->BenchInfo, info);
+  #ifdef BENCH_MT
+  #ifdef UNDER_CE
+  if (numDecoderThreads > 1)
+    for (i = 0; i < numEncoderThreads; i++)
+      for (UInt32 j = 0; j < numSubDecoderThreads; j++)
+      {
+        FILETIME creationTime, exitTime, kernelTime, userTime;
+        if (::GetThreadTimes(encoders[i].thread[j], &creationTime, &exitTime, &kernelTime, &userTime) != 0)
+          info.UserTime += GetTime64(userTime) + GetTime64(kernelTime);
+      }
+  #endif
+  #endif
   info.UnpackSize = 0;
   info.PackSize = 0;
   info.NumIterations = numSubDecoderThreads * encoders[0].NumIterations;
@@ -969,7 +1001,7 @@ HRESULT CrcBench(UInt32 numThreads, UInt32 bufferSize, UInt64 &speed)
 
   Byte *buf = buffer.Buffer;
   CBaseRandomGenerator RG;
-  UInt32 numCycles = ((UInt32)1 << 30) / ((bufferSize >> 2) + 1) + 1;
+  UInt32 numCycles = (kCrcBlockSize) / ((bufferSize >> 2) + 1) + 1;
 
   UInt64 timeVal;
   #ifdef BENCH_MT

@@ -1,7 +1,7 @@
 // ExtractCallback.h
 
-#ifndef __EXTRACTCALLBACK_H
-#define __EXTRACTCALLBACK_H
+#ifndef __EXTRACT_CALLBACK_H
+#define __EXTRACT_CALLBACK_H
 
 #include "resource.h"
 
@@ -66,9 +66,9 @@ public:
     UInt32 defaultAttributes);
 
   #ifndef _NO_PROGRESS
-  HRESULT StartProgressDialog(const UString &title)
+  HRESULT StartProgressDialog(const UString &title, NWindows::CThread &thread)
   {
-    ProgressDialog.Create(title, 0);
+    ProgressDialog.Create(title, thread, 0);
     {
       #ifdef LANG
       ProgressDialog.SetText(LangLoadString(IDS_PROGRESS_EXTRACTING, 0x02000890));

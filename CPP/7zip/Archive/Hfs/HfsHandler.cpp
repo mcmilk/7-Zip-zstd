@@ -137,12 +137,11 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _db.Items.Size();
   if (numItems == 0)
@@ -174,27 +173,27 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
     if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     UInt64 pos = 0;
-    int res = NArchive::NExtract::NOperationResult::kOK;
+    int res = NExtract::NOperationResult::kOK;
     int i;
     for (i = 0; i < item.Extents.Size(); i++)
     {
       if (item.Size == pos)
         break;
-      if (res != NArchive::NExtract::NOperationResult::kOK)
+      if (res != NExtract::NOperationResult::kOK)
         break;
       const CExtent &e = item.Extents[i];
       RINOK(_stream->Seek((UInt64)e.Pos << _db.Header.BlockSizeLog, STREAM_SEEK_SET, NULL));
@@ -207,7 +206,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         if (rem == 0)
         {
           if (extentSize >= (UInt64)((UInt32)1 << _db.Header.BlockSizeLog))
-            res = NArchive::NExtract::NOperationResult::kDataError;
+            res = NExtract::NOperationResult::kDataError;
           break;
         }
         UInt32 curSize = kBufSize;
@@ -227,7 +226,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
     }
     if (i != item.Extents.Size() || item.Size != pos)
-      res = NArchive::NExtract::NOperationResult::kDataError;
+      res = NExtract::NOperationResult::kDataError;
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(res));
   }

@@ -63,7 +63,6 @@ public:
   STDMETHOD(GetSize)(UInt64 *size);
 };
 
-#ifndef _WIN32_WCE
 class CStdInFileStream:
   public ISequentialInStream,
   public CMyUnknownImp
@@ -74,7 +73,6 @@ public:
   virtual ~CStdInFileStream() {}
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
-#endif
 
 class COutFileStream:
   public IOutStream,
@@ -132,7 +130,6 @@ public:
   STDMETHOD(SetSize)(Int64 newSize);
 };
 
-#ifndef _WIN32_WCE
 class CStdOutFileStream:
   public ISequentialOutStream,
   public CMyUnknownImp
@@ -143,6 +140,5 @@ public:
   virtual ~CStdOutFileStream() {}
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 };
-#endif
 
 #endif

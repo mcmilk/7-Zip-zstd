@@ -439,7 +439,7 @@ static HRESULT Compress(
       {
         errorInfo.SystemError = ::GetLastError();
         errorInfo.FileName = realPath;
-        errorInfo.Message = L"Can not open file";
+        errorInfo.Message = L"7-Zip cannot open file";
         return E_FAIL;
       }
     }
@@ -472,7 +472,7 @@ static HRESULT Compress(
     if (!sfxStreamSpec->Open(sfxModule))
     {
       errorInfo.SystemError = ::GetLastError();
-      errorInfo.Message = L"Can't open sfx module";
+      errorInfo.Message = L"7-Zip cannot open SFX module";
       errorInfo.FileName = sfxModule;
       return E_FAIL;
     }
@@ -490,7 +490,7 @@ static HRESULT Compress(
       {
         errorInfo.SystemError = ::GetLastError();
         errorInfo.FileName = realPath;
-        errorInfo.Message = L"Can not open file";
+        errorInfo.Message = L"7-Zip cannot open file";
         return E_FAIL;
       }
     }
@@ -606,17 +606,14 @@ static HRESULT UpdateWithItemLists(
   return S_OK;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(UNDER_CE)
 class CCurrentDirRestorer
 {
-  UString m_CurrentDirectory;
+  UString _path;
 public:
-  CCurrentDirRestorer()
-    { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
-  ~CCurrentDirRestorer()
-    { RestoreDirectory();}
-  bool RestoreDirectory()
-    { return BOOLToBool(NFile::NDirectory::MySetCurrentDirectory(m_CurrentDirectory)); }
+  CCurrentDirRestorer() { NFile::NDirectory::MyGetCurrentDirectory(_path); }
+  ~CCurrentDirRestorer() { RestoreDirectory();}
+  bool RestoreDirectory() { return BOOLToBool(NFile::NDirectory::MySetCurrentDirectory(_path)); }
 };
 #endif
 
@@ -662,13 +659,19 @@ HRESULT UpdateArchive(
     options.MethodMode.Properties.Add(property);
     if (options.SfxModule.IsEmpty())
     {
-      errorInfo.Message = L"sfx file is not specified";
+      errorInfo.Message = L"SFX file is not specified";
       return E_FAIL;
     }
     UString name = options.SfxModule;
+    #ifdef UNDER_CE
+    if (!NFind::DoesFileExist(name))
+    #else
     if (!NDirectory::MySearchPath(NULL, name, NULL, options.SfxModule))
+    #endif
     {
-      errorInfo.Message = L"can't find specified sfx module";
+      errorInfo.SystemError = ::GetLastError();
+      errorInfo.Message = L"7-Zip cannot find specified SFX module";
+      errorInfo.FileName = name;
       return E_FAIL;
     }
   }
@@ -744,7 +747,6 @@ HRESULT UpdateArchive(
       {
         if (res != E_ABORT)
           errorInfo.Message = L"Scanning error";
-        // errorInfo.FileName = errorPath;
         return res;
       }
       RINOK(callback->FinishScanning());
@@ -804,7 +806,7 @@ HRESULT UpdateArchive(
       if (NFind::DoesFileOrDirExist(path))
       {
         errorInfo.SystemError = 0;
-        errorInfo.Message = L"File already exists";
+        errorInfo.Message = L"The file already exists";
         errorInfo.FileName = path;
         return E_FAIL;
       }
@@ -839,14 +841,14 @@ HRESULT UpdateArchive(
         if (!NDirectory::DeleteFileAlways(archiveName))
         {
           errorInfo.SystemError = ::GetLastError();
-          errorInfo.Message = L"delete file error";
+          errorInfo.Message = L"7-Zip cannot delete the file";
           errorInfo.FileName = archiveName;
           return E_FAIL;
         }
       if (!NDirectory::MyMoveFile(tempPath, archiveName))
       {
         errorInfo.SystemError = ::GetLastError();
-        errorInfo.Message = L"move file error";
+        errorInfo.Message = L"7-Zip cannot move the file";
         errorInfo.FileName = tempPath;
         errorInfo.FileName2 = archiveName;
         return E_FAIL;
@@ -858,22 +860,21 @@ HRESULT UpdateArchive(
     }
   }
 
-  #ifdef _WIN32
+  #if defined(_WIN32) && !defined(UNDER_CE)
   if (options.EMailMode)
   {
     NDLL::CLibrary mapiLib;
     if (!mapiLib.Load(TEXT("Mapi32.dll")))
     {
       errorInfo.SystemError = ::GetLastError();
-      errorInfo.Message = L"can not load Mapi32.dll";
+      errorInfo.Message = L"7-Zip cannot load Mapi32.dll";
       return E_FAIL;
     }
-    MY_LPMAPISENDDOCUMENTS fnSend = (MY_LPMAPISENDDOCUMENTS)
-        mapiLib.GetProcAddress("MAPISendDocuments");
+    MY_LPMAPISENDDOCUMENTS fnSend = (MY_LPMAPISENDDOCUMENTS)mapiLib.GetProc("MAPISendDocuments");
     if (fnSend == 0)
     {
       errorInfo.SystemError = ::GetLastError();
-      errorInfo.Message = L"can not find MAPISendDocuments function";
+      errorInfo.Message = L"7-Zip cannot find MAPISendDocuments function";
       return E_FAIL;
     }
     UStringVector fullPaths;
@@ -885,6 +886,7 @@ HRESULT UpdateArchive(
       if (!NFile::NDirectory::MyGetFullPathName(ap.GetFinalPath(), arcPath))
       {
         errorInfo.SystemError = ::GetLastError();
+        errorInfo.Message = L"GetFullPathName error";
         return E_FAIL;
       }
       fullPaths.Add(arcPath);

@@ -1,5 +1,5 @@
 PROG = lzma.exe
-LIBS = $(LIBS) user32.lib
+MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) \
   -DCOMPRESS_MF_MT \
   -DBENCH_MT \
@@ -37,13 +37,11 @@ C_OBJS = \
   $O\Bra86.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
+  $O\Lzma86Dec.obj \
+  $O\Lzma86Enc.obj \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
   $O\Threads.obj \
-
-C_LZMAUTIL_OBJS = \
-  $O\Lzma86Dec.obj \
-  $O\Lzma86Enc.obj \
 
 OBJS = \
   $O\StdAfx.obj \
@@ -53,7 +51,6 @@ OBJS = \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(C_OBJS) \
-  $(C_LZMAUTIL_OBJS) \
   $O\FileStreams.obj \
   $O\FileIO.obj \
 
@@ -75,6 +72,4 @@ $O\FileStreams.obj: ../../Common/FileStreams.cpp
 $O\FileIO.obj: ../../../Windows/FileIO.cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-$(C_LZMAUTIL_OBJS): ../../../../C/LzmaUtil/$(*B).c
 	$(COMPL_O2)

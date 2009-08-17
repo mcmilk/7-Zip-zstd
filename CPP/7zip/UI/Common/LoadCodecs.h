@@ -102,21 +102,31 @@ typedef UInt32 (WINAPI *GetMethodPropertyFunc)(UInt32 index, PROPID propID, PROP
 typedef UInt32 (WINAPI *CreateObjectFunc)(const GUID *clsID, const GUID *interfaceID, void **outObject);
 
 
+#ifdef NEW_FOLDER_INTERFACE
+struct CCodecIcons
+{
+  struct CIconPair
+  {
+    UString Ext;
+    int IconIndex;
+  };
+  CObjectVector<CIconPair> IconPairs;
+  void LoadIcons(HMODULE m);
+  bool FindIconIndex(const UString &ext, int &iconIndex) const;
+};
+#endif
+
 struct CCodecLib
+#ifdef NEW_FOLDER_INTERFACE
+: public CCodecIcons
+#endif
 {
   NWindows::NDLL::CLibrary Lib;
   GetMethodPropertyFunc GetMethodProperty;
   CreateObjectFunc CreateObject;
   #ifdef NEW_FOLDER_INTERFACE
-  struct CIconPair
-  {
-    UString Ext;
-    UInt32 IconIndex;
-  };
   CSysString Path;
-  CObjectVector<CIconPair> IconPairs;
-  void LoadIcons();
-  int FindIconIndex(const UString &ext) const;
+  void LoadIcons() { CCodecIcons::LoadIcons((HMODULE)Lib); }
   #endif
   CCodecLib(): GetMethodProperty(0) {}
 };
@@ -134,9 +144,14 @@ public:
   #ifdef EXTERNAL_CODECS
   CObjectVector<CCodecLib> Libs;
   CObjectVector<CDllCodecInfo> Codecs;
+
+  #ifdef NEW_FOLDER_INTERFACE
+  CCodecIcons InternalIcons;
+  #endif
+
   HRESULT LoadCodecs();
   HRESULT LoadFormats();
-  HRESULT LoadDll(const CSysString &path);
+  HRESULT LoadDll(const CSysString &path, bool needCheckDll);
   HRESULT LoadDllsFromFolder(const CSysString &folderPrefix);
 
   HRESULT CreateArchiveHandler(const CArcInfoEx &ai, void **archive, bool outHandler) const

@@ -4,6 +4,7 @@
 #define __REGISTRY_UTILS_H
 
 #include "Common/MyString.h"
+#include "Common/Types.h"
 
 void SaveRegLang(const UString &path);
 void ReadRegLang(UString &path);
@@ -38,10 +39,10 @@ bool ReadAlternativeSelection();
 bool ReadLockMemoryEnable();
 void SaveLockMemoryEnable(bool enable);
 
-/*
 void SaveSingleClick(bool enable);
 bool ReadSingleClick();
 
+/*
 void SaveUnderline(bool enable);
 bool ReadUnderline();
 */

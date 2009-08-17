@@ -1,10 +1,15 @@
 PROG = 7z.sfx
-LIBS = $(LIBS) user32.lib oleaut32.lib shell32.lib ole32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DNO_REGISTRY \
   -DEXTRACT_ONLY \
   -DNO_READ_FROM_CODER \
   -D_SFX \
+
+!IFDEF UNDER_CE
+LIBS = $(LIBS) ceshell.lib Commctrl.lib
+!ELSE
+LIBS = $(LIBS) comctl32.lib comdlg32.lib
+!ENDIF
 
 SFX_WIN_OBJS = \
   $O\Main.obj \
@@ -68,10 +73,15 @@ UI_COMMON_OBJS = \
 FM_OBJS = \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
-  $O\MessagesDialog.obj \
   $O\OverwriteDialog.obj \
   $O\PasswordDialog.obj \
-  $O\ProgressDialog.obj \
+  $O\ProgressDialog2.obj \
+
+!IFDEF UNDER_CE
+FM_OBJS = $(FM_OBJS) \
+  $O\BrowseDialog.obj \
+  $O\SysIconUtils.obj \
+!ENDIF
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \

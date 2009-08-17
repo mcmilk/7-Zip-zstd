@@ -431,12 +431,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -467,14 +466,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> outStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     const CItem &item = _items[index];
     const CPartition &part = item.Part;
     RINOK(extractCallback->GetStream(index, &outStream, askMode));
     totalSize += item.Size;
-    if (!testMode && (!outStream))
+    if (!testMode && !outStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -483,8 +482,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
     outStream.Release();
     RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == item.Size ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END
@@ -498,7 +497,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"MBR", L"mbr", 0, 0xDB, { 1, 1, 0 }, 3, false, CreateArc, 0 };

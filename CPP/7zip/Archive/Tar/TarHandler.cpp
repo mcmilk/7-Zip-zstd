@@ -227,8 +227,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   ISequentialInStream *stream = _seqStream;
@@ -236,7 +236,6 @@ HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
   if (!seqMode)
     stream = _stream;
 
-  bool testMode = (_aTestMode != 0);
   bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _items.Size();
@@ -269,8 +268,8 @@ HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     const CItemEx *item;
     if (seqMode)
@@ -290,7 +289,7 @@ HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (item->IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
     bool skipMode = false;
@@ -299,7 +298,7 @@ HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
       if (!seqMode)
         continue;
       skipMode = true;
-      askMode = NArchive::NExtract::NAskMode::kSkip;
+      askMode = NExtract::NAskMode::kSkip;
     }
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -320,8 +319,8 @@ HRESULT CHandler::Extract(const UInt32* indices, UInt32 numItems,
     }
     outStreamSpec->ReleaseStream();
     RINOK(extractCallback->SetOperationResult(outStreamSpec->GetRem() == 0 ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END

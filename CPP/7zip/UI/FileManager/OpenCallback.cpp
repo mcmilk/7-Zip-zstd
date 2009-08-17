@@ -15,43 +15,43 @@ using namespace NWindows;
 
 STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 *numFiles, const UInt64 *numBytes)
 {
-  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
+  RINOK(ProgressDialog.Sync.ProcessStopAndPause());
   {
     NSynchronization::CCriticalSectionLock lock(_criticalSection);
     if (numFiles != NULL)
     {
-      ProgressDialog.ProgressSynch.SetNumFilesTotal(*numFiles);
-      ProgressDialog.ProgressSynch.SetBytesProgressMode(false);
+      ProgressDialog.Sync.SetNumFilesTotal(*numFiles);
+      ProgressDialog.Sync.SetBytesProgressMode(false);
     }
     if (numBytes != NULL)
-      ProgressDialog.ProgressSynch.SetNumBytesTotal(*numBytes);
+      ProgressDialog.Sync.SetNumBytesTotal(*numBytes);
   }
   return S_OK;
 }
 
 STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *numFiles, const UInt64 *numBytes)
 {
-  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
+  RINOK(ProgressDialog.Sync.ProcessStopAndPause());
   NSynchronization::CCriticalSectionLock lock(_criticalSection);
   if (numFiles != NULL)
-    ProgressDialog.ProgressSynch.SetNumFilesCur(*numFiles);
+    ProgressDialog.Sync.SetNumFilesCur(*numFiles);
   if (numBytes != NULL)
-    ProgressDialog.ProgressSynch.SetPos(*numBytes);
+    ProgressDialog.Sync.SetPos(*numBytes);
   return S_OK;
 }
 
 STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 total)
 {
-  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
-  ProgressDialog.ProgressSynch.SetNumBytesTotal(total);
+  RINOK(ProgressDialog.Sync.ProcessStopAndPause());
+  ProgressDialog.Sync.SetNumBytesTotal(total);
   return S_OK;
 }
 
 STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *completed)
 {
-  RINOK(ProgressDialog.ProgressSynch.ProcessStopAndPause());
+  RINOK(ProgressDialog.Sync.ProcessStopAndPause());
   if (completed != NULL)
-    ProgressDialog.ProgressSynch.SetPos(*completed);
+    ProgressDialog.Sync.SetPos(*completed);
   return S_OK;
 }
 
@@ -112,6 +112,7 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
   {
     CPasswordDialog dialog;
    
+    ProgressDialog.WaitCreating();
     if (dialog.Create(ProgressDialog) == IDCANCEL)
       return E_ABORT;
 

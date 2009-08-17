@@ -4,16 +4,28 @@
 #define __UPDATE_GUI_H
 
 #include "../Common/Update.h"
+
 #include "UpdateCallbackGUI.h"
 
-#include "../FileManager/UpdateCallback100.h"
+/*
+  callback->FailedFiles contains names of files for that there were problems.
+  RESULT can be S_OK, even if there are such warnings!!!
+  
+  RESULT = E_ABORT - user break.
+  RESULT != E_ABORT:
+  {
+   messageWasDisplayed = true  - message was displayed already.
+   messageWasDisplayed = false - there was some internal error, so you must show error message.
+  }
+*/
 
 HRESULT UpdateGUI(
     CCodecs *codecs,
     const NWildcard::CCensor &censor,
     CUpdateOptions &options,
     bool showDialog,
-    CUpdateErrorInfo &errorInfo,
-    CUpdateCallbackGUI *callback);
+    bool &messageWasDisplayed,
+    CUpdateCallbackGUI *callback,
+    HWND hwndParent = NULL);
 
 #endif

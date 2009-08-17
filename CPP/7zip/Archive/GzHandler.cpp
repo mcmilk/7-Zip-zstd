@@ -20,7 +20,8 @@
 
 #include "Common/InStreamWithCRC.h"
 #include "Common/OutStreamWithCRC.h"
-#include "Common/ParseProperties.h"
+
+#include "DeflateProps.h"
 
 #define Get32(p) GetUi32(p)
 
@@ -288,54 +289,6 @@ HRESULT CItem::WriteFooter(ISequentialOutStream *stream)
   return WriteStream(stream, buf, 8);
 }
 
-static const UInt32 kAlgoX1 = 0;
-static const UInt32 kAlgoX5 = 1;
-
-static const UInt32 kNumPassesX1  = 1;
-static const UInt32 kNumPassesX7  = 3;
-static const UInt32 kNumPassesX9  = 10;
-
-static const UInt32 kNumFastBytesX1 = 32;
-static const UInt32 kNumFastBytesX7 = 64;
-static const UInt32 kNumFastBytesX9 = 128;
-
-struct CCompressMode
-{
-  UInt32 NumPasses;
-  UInt32 NumFastBytes;
-  UInt32 Algo;
-  UInt32 Mc;
-  bool McDefined;
-
-  bool IsMaximum() const { return Algo > 0; }
-
-  void Init()
-  {
-    NumPasses = NumFastBytes = Mc = Algo = 0xFFFFFFFF;
-    McDefined = false;
-  }
- 
-  void Normalize(UInt32 level)
-  {
-    if (level == 0xFFFFFFFF)
-      level = 5;
-    if (NumPasses == 0xFFFFFFFF)
-      NumPasses =
-        (level >= 9 ? kNumPassesX9 :
-        (level >= 7 ? kNumPassesX7 :
-                      kNumPassesX1));
-    if (NumFastBytes == 0xFFFFFFFF)
-      NumFastBytes =
-        (level >= 9 ? kNumFastBytesX9 :
-        (level >= 7 ? kNumFastBytesX7 :
-                      kNumFastBytesX1));
-    if (Algo == 0xFFFFFFFF)
-      Algo = (level >= 5 ?
-        kAlgoX5 :
-        kAlgoX1);
-  }
-};
-
 class CHandler:
   public IInArchive,
   public IArchiveOpenSeq,
@@ -352,14 +305,7 @@ class CHandler:
   CMyComPtr<ICompressCoder> _decoder;
   NCompress::NDeflate::NDecoder::CCOMCoder *_decoderSpec;
 
-  CCompressMode _method;
-  UInt32 _level;
-
-  void InitMethodProperties()
-  {
-    _level = 0xFFFFFFFF;
-    _method.Init();
-  }
+  CDeflateProps _method;
 
 public:
   MY_UNKNOWN_IMP4(IInArchive, IArchiveOpenSeq, IOutArchive, ISetProperties)
@@ -370,7 +316,6 @@ public:
 
   CHandler()
   {
-    InitMethodProperties();
     _decoderSpec = new NCompress::NDeflate::NDecoder::CCOMCoder;
     _decoder = _decoderSpec;
   }
@@ -496,28 +441,23 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
-  if (!allFilesMode)
-  {
-    if (numItems == 0)
-      return S_OK;
-    if (numItems != 1 || indices[0] != 0)
-      return E_INVALIDARG;
-  }
+  if (numItems == 0)
+    return S_OK;
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+    return E_INVALIDARG;
 
-  bool testMode = (_aTestMode != 0);
   if (_stream)
     extractCallback->SetTotal(_packSize);
   UInt64 currentTotalPacked = 0;
   RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
   if (!testMode && !realOutStream)
     return S_OK;
@@ -557,8 +497,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         if (result != S_FALSE)
           return result;
         opRes = firstItem ?
-            NArchive::NExtract::NOperationResult::kDataError :
-            NArchive::NExtract::NOperationResult::kOK;
+            NExtract::NOperationResult::kDataError :
+            NExtract::NOperationResult::kOK;
         break;
       }
     }
@@ -572,20 +512,20 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       if (result != S_FALSE)
         return result;
-      opRes = NArchive::NExtract::NOperationResult::kDataError;
+      opRes = NExtract::NOperationResult::kDataError;
       break;
     }
 
     _decoderSpec->AlignToByte();
     if (item.ReadFooter1(_decoderSpec) != S_OK)
     {
-      opRes = NArchive::NExtract::NOperationResult::kDataError;
+      opRes = NExtract::NOperationResult::kDataError;
       break;
     }
     if (item.Crc != outStreamSpec->GetCRC() ||
         item.Size32 != (UInt32)(outStreamSpec->GetSize() - startOffset))
     {
-      opRes = NArchive::NExtract::NOperationResult::kCRCError;
+      opRes = NExtract::NOperationResult::kCRCError;
       break;
     }
   }
@@ -605,7 +545,7 @@ static HRESULT UpdateArchive(
     ISequentialOutStream *outStream,
     UInt64 unpackSize,
     const CItem &newItem,
-    const CCompressMode &compressionMode,
+    CDeflateProps &deflateProps,
     IArchiveUpdateCallback *updateCallback)
 {
   UInt64 complexity = 0;
@@ -627,7 +567,7 @@ static HRESULT UpdateArchive(
   
   CItem item = newItem;
   item.Method = NHeader::NCompressionMethod::kDeflate;
-  item.ExtraFlags = compressionMode.IsMaximum() ?
+  item.ExtraFlags = deflateProps.IsMaximum() ?
       NHeader::NExtraFlags::kMaximum :
       NHeader::NExtraFlags::kFastest;
 
@@ -637,26 +577,7 @@ static HRESULT UpdateArchive(
 
   NCompress::NDeflate::NEncoder::CCOMCoder *deflateEncoderSpec = new NCompress::NDeflate::NEncoder::CCOMCoder;
   CMyComPtr<ICompressCoder> deflateEncoder = deflateEncoderSpec;
-  {
-    NWindows::NCOM::CPropVariant props[] =
-    {
-      compressionMode.Algo,
-      compressionMode.NumPasses,
-      compressionMode.NumFastBytes,
-      compressionMode.Mc
-    };
-    PROPID propIDs[] =
-    {
-      NCoderPropID::kAlgorithm,
-      NCoderPropID::kNumPasses,
-      NCoderPropID::kNumFastBytes,
-      NCoderPropID::kMatchFinderCycles
-    };
-    int numProps = sizeof(propIDs) / sizeof(propIDs[0]);
-    if (!compressionMode.McDefined)
-      numProps--;
-    RINOK(deflateEncoderSpec->SetCoderProperties(propIDs, props, numProps));
-  }
+  RINOK(deflateProps.SetCoderProperties(deflateEncoderSpec));
   RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, progress));
 
   item.Crc = inStreamSpec->GetCRC();
@@ -738,7 +659,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       size = prop.uhVal.QuadPart;
     }
 
-    _method.Normalize(_level);
     return UpdateArchive(outStream, size, newItem, _method, updateCallback);
   }
     
@@ -760,49 +680,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
-  InitMethodProperties();
-  for (int i = 0; i < numProps; i++)
-  {
-    UString name = names[i];
-    name.MakeUpper();
-    if (name.IsEmpty())
-      return E_INVALIDARG;
-    const PROPVARIANT &prop = values[i];
-    if (name[0] == L'X')
-    {
-      UInt32 level = 9;
-      RINOK(ParsePropValue(name.Mid(1), prop, level));
-      _level = level;
-    }
-    else if (name.Left(4) == L"PASS")
-    {
-      UInt32 num = kNumPassesX9;
-      RINOK(ParsePropValue(name.Mid(4), prop, num));
-      _method.NumPasses = num;
-    }
-    else if (name.Left(2) == L"FB")
-    {
-      UInt32 num = kNumFastBytesX9;
-      RINOK(ParsePropValue(name.Mid(2), prop, num));
-      _method.NumFastBytes = num;
-    }
-    else if (name.Left(2) == L"MC")
-    {
-      UInt32 num = 0xFFFFFFFF;
-      RINOK(ParsePropValue(name.Mid(2), prop, num));
-      _method.Mc = num;
-      _method.McDefined = true;
-    }
-    else if (name.Left(1) == L"A")
-    {
-      UInt32 num = kAlgoX5;
-      RINOK(ParsePropValue(name.Mid(1), prop, num));
-      _method.Algo = num;
-    }
-    else
-      return E_INVALIDARG;
-  }
-  return S_OK;
+  return _method.SetProperties(names, values, numProps);
 }
 
 static IInArchive *CreateArc() { return new CHandler; }
@@ -813,7 +691,7 @@ static IOutArchive *CreateArcOut() { return new CHandler; }
 #endif
 
 static CArcInfo g_ArcInfo =
-  { L"GZip", L"gz gzip tgz tpz", L"* * .tar .tar", 0xEF, { 0x1F, 0x8B, 8 }, 3, true, CreateArc, CreateArcOut };
+  { L"gzip", L"gz gzip tgz tpz", L"* * .tar .tar", 0xEF, { 0x1F, 0x8B, 8 }, 3, true, CreateArc, CreateArcOut };
 
 REGISTER_ARC(GZip)
 

@@ -13,7 +13,15 @@ namespace NCOM {
 class CComInitializer
 {
 public:
-  CComInitializer() { CoInitialize(NULL);};
+  CComInitializer()
+  {
+    #ifdef UNDER_CE
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    #else
+    // it's single thread. Do we need multithread?
+    CoInitialize(NULL);
+    #endif
+  };
   ~CComInitializer() { CoUninitialize(); };
 };
 

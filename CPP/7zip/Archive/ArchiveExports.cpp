@@ -10,11 +10,17 @@
 
 static const unsigned int kNumArcsMax = 48;
 static unsigned int g_NumArcs = 0;
+static unsigned int g_DefaultArcIndex = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
 void RegisterArc(const CArcInfo *arcInfo)
 {
   if (g_NumArcs < kNumArcsMax)
+  {
+    const wchar_t *p = arcInfo->Name;
+    if (p[0] == '7' && p[1] == 'z' && p[2] == 0)
+      g_DefaultArcIndex = g_NumArcs;
     g_Arcs[g_NumArcs++] = arcInfo;
+  }
 }
 
 DEFINE_GUID(CLSID_CArchiveHandler,
@@ -117,7 +123,7 @@ STDAPI GetHandlerProperty2(UInt32 formatIndex, PROPID propID, PROPVARIANT *value
 
 STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
 {
-  return GetHandlerProperty2(0, propID, value);
+  return GetHandlerProperty2(g_DefaultArcIndex, propID, value);
 }
 
 STDAPI GetNumberOfFormats(UINT32 *numFormats)

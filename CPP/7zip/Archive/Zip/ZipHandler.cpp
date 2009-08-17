@@ -448,7 +448,7 @@ HRESULT CZipDecoder::Decode(
     ICompressProgressInfo *compressProgress,
     UInt32 numThreads, Int32 &res)
 {
-  res = NArchive::NExtract::NOperationResult::kDataError;
+  res = NExtract::NOperationResult::kDataError;
   CInStreamReleaser inStreamReleaser;
 
   bool needCRC = true;
@@ -466,7 +466,7 @@ HRESULT CZipDecoder::Decode(
       }
       if (!pkAesMode)
       {
-        res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnSupportedMethod;
         return S_OK;
       }
     }
@@ -560,7 +560,7 @@ HRESULT CZipDecoder::Decode(
             break;
           if (c >= 0x80)
           {
-            res = NArchive::NExtract::NOperationResult::kDataError;
+            res = NExtract::NOperationResult::kDataError;
             return S_OK;
           }
           charPassword += (char)c;
@@ -609,7 +609,7 @@ HRESULT CZipDecoder::Decode(
       {
         if (methodId > 0xFF)
         {
-          res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+          res = NExtract::NOperationResult::kUnSupportedMethod;
           return S_OK;
         }
         szMethodID = kMethodId_ZipBase + (Byte)methodId;
@@ -619,7 +619,7 @@ HRESULT CZipDecoder::Decode(
 
       if (mi.Coder == 0)
       {
-        res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnSupportedMethod;
         return S_OK;
       }
     }
@@ -699,7 +699,7 @@ HRESULT CZipDecoder::Decode(
       return S_OK;
     if (result == E_NOTIMPL)
     {
-      res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+      res = NExtract::NOperationResult::kUnSupportedMethod;
       return S_OK;
     }
 
@@ -717,26 +717,25 @@ HRESULT CZipDecoder::Decode(
   }
   
   res = ((crcOK && authOk) ?
-    NArchive::NExtract::NOperationResult::kOK :
-    NArchive::NExtract::NOperationResult::kCRCError);
+    NExtract::NOperationResult::kOK :
+    NExtract::NOperationResult::kCRCError);
   return S_OK;
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   CZipDecoder myDecoder;
-  bool testMode = (_aTestMode != 0);
   UInt64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = m_Items.Size();
   if(numItems == 0)
     return S_OK;
   UInt32 i;
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
   {
     const CItemEx &item = m_Items[allFilesMode ? i : indices[i]];
     totalUnPacked += item.UnPackSize;
@@ -763,8 +762,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -779,7 +778,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         {
           RINOK(extractCallback->PrepareOperation(askMode));
           realOutStream.Release();
-          RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
         }
         continue;
       }
@@ -792,7 +791,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         RINOK(extractCallback->PrepareOperation(askMode));
         realOutStream.Release();
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       }
       continue;
     }
@@ -800,7 +799,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentItemUnPacked = item.UnPackSize;
     currentItemPacked = item.PackSize;
 
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
 
     RINOK(extractCallback->PrepareOperation(askMode));

@@ -10,6 +10,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
+#include "Windows/NtCheck.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
 
@@ -46,19 +47,6 @@ typedef UINT32 (WINAPI * CreateObjectFunc)(
     const GUID *interfaceID,
     void **outObject);
 
-#ifdef _WIN32
-#ifndef _UNICODE
-bool g_IsNT = false;
-static inline bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
-#endif
 
 void PrintString(const UString &s)
 {
@@ -660,51 +648,57 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
 //////////////////////////////////////////////////////////////////////////
 // Main function
 
-int MY_CDECL main(int argc, char* argv[])
+#define NT_CHECK_FAIL_ACTION PrintError("Unsupported Windows version"); return 1;
+
+int MY_CDECL main(int numArgs, const char *args[])
 {
-  #ifdef _WIN32
-  #ifndef _UNICODE
-  g_IsNT = IsItWindowsNT();
-  #endif
-  #endif
+  NT_CHECK
 
   PrintStringLn(kCopyrightString);
 
-  if (argc < 3)
+  if (numArgs < 3)
   {
     PrintStringLn(kHelpString);
     return 1;
   }
-  NWindows::NDLL::CLibrary library;
-  if (!library.Load(TEXT(kDllName)))
+  NWindows::NDLL::CLibrary lib;
+  if (!lib.Load(TEXT(kDllName)))
   {
-    PrintError("Can not load library");
+    PrintError("Can not load 7-zip library");
     return 1;
   }
-  CreateObjectFunc createObjectFunc = (CreateObjectFunc)library.GetProcAddress("CreateObject");
+  CreateObjectFunc createObjectFunc = (CreateObjectFunc)lib.GetProc("CreateObject");
   if (createObjectFunc == 0)
   {
     PrintError("Can not get CreateObject");
     return 1;
   }
 
-  AString command = argv[1];
-  command.MakeLower();
-  UString archiveName = GetUnicodeString(argv[2], CP_OEMCP);
-  if (command.Compare("a") == 0)
+  char c;
+  {
+    AString command = args[1];
+    if (command.Length() != 1)
+    {
+      PrintError("incorrect command");
+      return 1;
+    }
+    c = MyCharLower(command[0]);
+  }
+  UString archiveName = GetUnicodeString(args[2]);
+  if (c == 'a')
   {
     // create archive command
-    if (argc < 4)
+    if (numArgs < 4)
     {
       PrintStringLn(kHelpString);
       return 1;
     }
     CObjectVector<CDirItem> dirItems;
     int i;
-    for (i = 3; i < argc; i++)
+    for (i = 3; i < numArgs; i++)
     {
       CDirItem di;
-      UString name = GetUnicodeString(argv[i], CP_OEMCP);
+      UString name = GetUnicodeString(args[i]);
       
       NFile::NFind::CFileInfoW fi;
       if (!fi.Find(name))
@@ -743,6 +737,30 @@ int MY_CDECL main(int argc, char* argv[])
     // updateCallbackSpec->PasswordIsDefined = true;
     // updateCallbackSpec->Password = L"1";
 
+    /*
+    {
+      const wchar_t *names[] =
+      {
+        L"s",
+        L"x"
+      };
+      const int kNumProps = sizeof(names) / sizeof(names[0]);
+      NWindows::NCOM::CPropVariant values[kNumProps] =
+      {
+        false,    // solid mode OFF
+        (UInt32)9 // compression level = 9 - ultra
+      };
+      CMyComPtr<ISetProperties> setProperties;
+      outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties);
+      if (!setProperties)
+      {
+        PrintError("ISetProperties unsupported");
+        return 1;
+      }
+      RINOK(setProperties->SetProperties(names, values, kNumProps));
+    }
+    */
+    
     HRESULT result = outArchive->UpdateItems(outFileStream, dirItems.Size(), updateCallback);
     updateCallbackSpec->Finilize();
     if (result != S_OK)
@@ -760,16 +778,16 @@ int MY_CDECL main(int argc, char* argv[])
   }
   else
   {
-    if (argc != 3)
+    if (numArgs != 3)
     {
       PrintStringLn(kHelpString);
       return 1;
     }
 
     bool listCommand;
-    if (command.Compare("l") == 0)
+    if (c == 'l')
       listCommand = true;
-    else if (command.Compare("x") == 0)
+    else if (c == 'x')
       listCommand = false;
     else
     {

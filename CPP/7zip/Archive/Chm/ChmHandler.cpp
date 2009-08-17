@@ -275,7 +275,7 @@ HRESULT CChmFolderOutStream::OpenFile()
   m_RealOutStream.Release();
   RINOK(m_ExtractCallback->GetStream(m_StartIndex + m_CurrentIndex, &m_RealOutStream, askMode));
   if (!m_RealOutStream && !m_TestMode)
-    askMode = NArchive::NExtract::NAskMode::kSkip;
+    askMode = NExtract::NAskMode::kSkip;
   return m_ExtractCallback->PrepareOperation(askMode);
 }
 
@@ -291,7 +291,7 @@ HRESULT CChmFolderOutStream::WriteEmptyFiles()
     HRESULT result = OpenFile();
     m_RealOutStream.Release();
     RINOK(result);
-    RINOK(m_ExtractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+    RINOK(m_ExtractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
   }
   return S_OK;
 }
@@ -334,8 +334,8 @@ HRESULT CChmFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *proce
         m_RealOutStream.Release();
         RINOK(m_ExtractCallback->SetOperationResult(
           m_IsOk ?
-            NArchive::NExtract::NOperationResult::kOK:
-            NArchive::NExtract::NOperationResult::kDataError));
+            NExtract::NOperationResult::kOK:
+            NExtract::NOperationResult::kDataError));
         m_FileIsOpen = false;
       }
       if (realProcessed > 0)
@@ -398,11 +398,11 @@ HRESULT CChmFolderOutStream::FlushCorrupted(UInt64 maxSize)
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testModeSpec, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
 
   if (allFilesMode)
     numItems = m_Database.NewFormat ? 1:
@@ -411,7 +411,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       m_Database.Indices.Size());
   if (numItems == 0)
     return S_OK;
-  bool testMode = (_aTestMode != 0);
+  bool testMode = (testModeSpec != 0);
 
   UInt64 currentTotalSize = 0;
 
@@ -447,8 +447,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(lps->SetCur());
       CMyComPtr<ISequentialOutStream> realOutStream;
       Int32 askMode= testMode ?
-          NArchive::NExtract::NAskMode::kTest :
-          NArchive::NExtract::NAskMode::kExtract;
+          NExtract::NAskMode::kTest :
+          NExtract::NAskMode::kExtract;
       Int32 index = allFilesMode ? i : indices[i];
       RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
@@ -456,32 +456,32 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         if (index != 0)
           return E_FAIL;
-        if (!testMode && (!realOutStream))
+        if (!testMode && !realOutStream)
           continue;
         if (!testMode)
         {
           UInt32 size = m_Database.NewFormatString.Length();
           RINOK(WriteStream(realOutStream, (const char *)m_Database.NewFormatString, size));
         }
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
         continue;
       }
       const CItem &item = m_Database.Items[index];
       
       currentItemSize = item.Size;
       
-      if (!testMode && (!realOutStream))
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       if (item.Section != 0)
       {
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
         continue;
       }
 
       if (testMode)
       {
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
         continue;
       }
       
@@ -491,8 +491,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
       realOutStream.Release();
       RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == item.Size) ?
-          NArchive::NExtract::NOperationResult::kOK:
-          NArchive::NExtract::NOperationResult::kDataError));
+          NExtract::NOperationResult::kOK:
+          NExtract::NOperationResult::kDataError));
     }
     return S_OK;
   }
@@ -543,15 +543,15 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     const CItem &item = m_Database.Items[entryIndex];
     UInt64 sectionIndex = item.Section;
     Int32 askMode= testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     if (item.IsDir())
     {
       CMyComPtr<ISequentialOutStream> realOutStream;
       RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
       RINOK(extractCallback->PrepareOperation(askMode));
       realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
@@ -562,17 +562,17 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       CMyComPtr<ISequentialOutStream> realOutStream;
       RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-      if (!testMode && (!realOutStream))
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
-      Int32 opRes = NArchive::NExtract::NOperationResult::kOK;
+      Int32 opRes = NExtract::NOperationResult::kOK;
       if (!testMode && item.Size != 0)
       {
         RINOK(m_Stream->Seek(m_Database.ContentOffset + item.Offset, STREAM_SEEK_SET, NULL));
         streamSpec->Init(item.Size);
         RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
         if (copyCoderSpec->TotalSize != item.Size)
-          opRes = NArchive::NExtract::NOperationResult::kDataError;
+          opRes = NExtract::NOperationResult::kDataError;
       }
       realOutStream.Release();
       RINOK(extractCallback->SetOperationResult(opRes));
@@ -586,10 +586,10 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     {
       CMyComPtr<ISequentialOutStream> realOutStream;
       RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-      if(!testMode && (!realOutStream))
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
       continue;
     }
 
@@ -603,7 +603,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     chmFolderOutStream->Init(&m_Database, extractCallback, testMode);
 
-    if(lzxDecoderSpec == NULL)
+    if (lzxDecoderSpec == NULL)
     {
       lzxDecoderSpec = new NCompress::NLzx::CDecoder;
       lzxDecoder = lzxDecoderSpec;

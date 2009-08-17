@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
 
@@ -31,6 +33,10 @@ static const wchar_t *kMatchFinderForBCJ2_LZMA = L"BT2";
 static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
 static const UInt32 kAlgorithmForBCJ2_LZMA = 1;
 static const UInt32 kNumFastBytesForBCJ2_LZMA = 64;
+
+#ifdef MY_CPU_X86_OR_AMD64
+#define USE_86_FILTER
+#endif
 
 static HRESULT WriteRange(IInStream *inStream, ISequentialOutStream *outStream,
     UInt64 position, UInt64 size, ICompressProgressInfo *progress)
@@ -122,7 +128,7 @@ static int CompareFiles(const CFileItem &f1, const CFileItem &f2)
 }
 */
 
-const struct CFolderRepack
+struct CFolderRepack
 {
   int FolderIndex;
   int Group;
@@ -334,7 +340,9 @@ static bool IsExeExt(const UString &ext)
   return false;
 }
 
-static void GetMethodFull(UInt64 methodID, UInt32 numInStreams, CMethodFull &methodResult)
+#ifdef USE_86_FILTER
+
+static inline void GetMethodFull(UInt64 methodID, UInt32 numInStreams, CMethodFull &methodResult)
 {
   methodResult.Id = methodID;
   methodResult.NumInStreams = numInStreams;
@@ -408,6 +416,8 @@ static void MakeExeMethod(const CCompressionMethodMode &method,
     exeMethod.Binds.Add(bind);
   }
 }
+
+#endif
 
 static void FromUpdateItemToFileItem(const CUpdateItem &ui,
     CFileItem &file, CFileItem2 &file2)
@@ -665,7 +675,9 @@ STDMETHODIMP CCryptoGetTextPassword::CryptoGetTextPassword(BSTR *password)
 
 static const int kNumGroupsMax = 4;
 
+#ifdef USE_86_FILTER
 static bool Is86Group(int group) { return (group & 1) != 0; }
+#endif
 static bool IsEncryptedGroup(int group) { return (group & 2) != 0; }
 static int GetGroupIndex(bool encrypted, int bcjFiltered)
   { return (encrypted ? 2 : 0) + (bcjFiltered ? 1 : 0); }
@@ -865,9 +877,11 @@ HRESULT Update(
     const CSolidGroup &group = groups[groupIndex];
 
     CCompressionMethodMode method;
+    #ifdef USE_86_FILTER
     if (Is86Group(groupIndex))
       MakeExeMethod(*options.Method, options.MaxFilter, method);
     else
+    #endif
       method = *options.Method;
 
     if (IsEncryptedGroup(groupIndex))

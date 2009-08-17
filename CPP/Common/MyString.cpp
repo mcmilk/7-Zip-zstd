@@ -96,7 +96,7 @@ int MyStringCollate(const wchar_t *s1, const wchar_t *s2)
   #endif
 }
 
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 int MyStringCollate(const char *s1, const char *s2)
 {
   return ConvertCompareResult(CompareStringA(

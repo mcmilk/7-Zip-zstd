@@ -641,24 +641,20 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  if (numItems == UInt32(-1))
-    numItems = 1;
   if (numItems == 0)
     return S_OK;
-  if (numItems != 1 || indices[0] != 0)
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
-
-  bool testMode = (_aTestMode != 0);
 
   RINOK(extractCallback->SetTotal(GetSize()));
   CMyComPtr<ISequentialOutStream> outStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   RINOK(extractCallback->GetStream(0, &outStream, askMode));
   if (!testMode && !outStream)
     return S_OK;
@@ -671,11 +667,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  int res = NArchive::NExtract::NOperationResult::kDataError;
+  int res = NExtract::NOperationResult::kDataError;
   CMyComPtr<ISequentialInStream> inStream;
   HRESULT hres = GetStream(0, &inStream);
   if (hres == S_FALSE)
-    res = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+    res = NExtract::NOperationResult::kUnSupportedMethod;
   else
   {
     RINOK(hres);
@@ -683,7 +679,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (hres == S_OK)
     {
       if (copyCoderSpec->TotalSize == GetSize())
-        res = NArchive::NExtract::NOperationResult::kOK;
+        res = NExtract::NOperationResult::kOK;
     }
     else
     {
@@ -721,7 +717,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"VHD", L"vhd", L".mbr", 0xDC, { 'c', 'o', 'n', 'e', 'c', 't', 'i', 'x', 0, 0 }, 10, false, CreateArc, 0 };

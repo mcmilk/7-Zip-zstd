@@ -4,7 +4,6 @@
 #define __COMMON_STRING_H
 
 #include <string.h>
-// #include <wchar.h>
 
 #include "MyVector.h"
 
@@ -39,13 +38,15 @@ inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *, const wchar_t 
 
 #ifdef _WIN32
 
-inline char* MyStringGetNextCharPointer(char *p)
-  { return CharNextA(p); }
 inline const char* MyStringGetNextCharPointer(const char *p)
-  { return CharNextA(p); }
+{
+  #ifdef UNDER_CE
+  return p + 1;
+  #else
+  return CharNextA(p);
+  #endif
+}
 
-inline char* MyStringGetPrevCharPointer(char *base, char *p)
-  { return CharPrevA(base, p); }
 inline const char* MyStringGetPrevCharPointer(const char *base, const char *p)
   { return CharPrevA(base, p); }
 
@@ -58,13 +59,18 @@ inline wchar_t MyCharUpper(wchar_t c)
 wchar_t MyCharUpper(wchar_t c);
 #endif
 
-inline char MyCharLower(char c)
-  { return (char)(unsigned int)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
 #ifdef _UNICODE
 inline wchar_t MyCharLower(wchar_t c)
   { return (wchar_t)(unsigned int)(UINT_PTR)CharLowerW((LPWSTR)(UINT_PTR)(unsigned int)c); }
 #else
 wchar_t MyCharLower(wchar_t c);
+#endif
+
+inline char MyCharLower(char c)
+#ifdef UNDER_CE
+  { return (char)MyCharLower((wchar_t)c); }
+#else
+  { return (char)(unsigned int)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
 #endif
 
 inline char * MyStringUpper(char *s) { return CharUpperA(s); }
@@ -89,7 +95,7 @@ wchar_t MyCharUpper(wchar_t c);
 // Compare
 
 /*
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 int MyStringCollate(const char *s1, const char *s2);
 int MyStringCollateNoCase(const char *s1, const char *s2);
 #endif
@@ -148,12 +154,8 @@ class CStringBase
     MoveItems(index + size, index);
   }
 
-  static T *GetNextCharPointer(T *p)
-    { return MyStringGetNextCharPointer(p); }
   static const T *GetNextCharPointer(const T *p)
     { return MyStringGetNextCharPointer(p); }
-  static T *GetPrevCharPointer(T *base, T *p)
-    { return MyStringGetPrevCharPointer(base, p); }
   static const T *GetPrevCharPointer(const T *base, const T *p)
     { return MyStringGetPrevCharPointer(base, p); }
 protected:
@@ -168,10 +170,8 @@ protected:
       return;
     /*
     const int kMaxStringSize = 0x20000000;
-    #ifndef _WIN32_WCE
     if (newCapacity > kMaxStringSize || newCapacity < _length)
       throw 1052337;
-    #endif
     */
     T *newBuffer = new T[realCapacity];
     if (_capacity > 0)
@@ -234,6 +234,8 @@ public:
 
   operator const T*() const { return _chars;}
 
+  T Back() const { return _chars[_length - 1]; }
+
   // The minimum size of the character buffer in characters.
   // This value does not include space for a null terminator.
   T* GetBuffer(int minBufLength)
@@ -246,10 +248,8 @@ public:
   void ReleaseBuffer(int newLength)
   {
     /*
-    #ifndef _WIN32_WCE
     if (newLength >= _capacity)
       throw 282217;
-    #endif
     */
     _chars[newLength] = 0;
     _length = newLength;
@@ -316,7 +316,7 @@ public:
 
   CStringBase Mid(int startIndex) const
     { return Mid(startIndex, _length - startIndex); }
-  CStringBase Mid(int startIndex, int count ) const
+  CStringBase Mid(int startIndex, int count) const
   {
     if (startIndex + count > _length)
       count = _length - startIndex;
@@ -369,7 +369,7 @@ public:
   int Find(T c) const { return Find(c, 0); }
   int Find(T c, int startIndex) const
   {
-    T *p = _chars + startIndex;
+    const T *p = _chars + startIndex;
     for (;;)
     {
       if (*p == c)
@@ -399,7 +399,7 @@ public:
   {
     if (_length == 0)
       return -1;
-    T *p = _chars + _length - 1;
+    const T *p = _chars + _length - 1;
     for (;;)
     {
       if (*p == c)
@@ -530,7 +530,7 @@ public:
     }
     return number;
   }
-  int Delete(int index, int count = 1 )
+  int Delete(int index, int count = 1)
   {
     if (index + count > _length)
       count = _length - index;
@@ -541,6 +541,7 @@ public:
     }
     return _length;
   }
+  void DeleteBack() { Delete(_length - 1); }
 };
 
 template <class T>

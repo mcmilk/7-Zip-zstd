@@ -1,10 +1,10 @@
 // ArchiveCommandLine.h
 
-#ifndef __ARCHIVECOMMANDLINE_H
-#define __ARCHIVECOMMANDLINE_H
+#ifndef __ARCHIVE_COMMAND_LINE_H
+#define __ARCHIVE_COMMAND_LINE_H
 
-#include "Common/Wildcard.h"
 #include "Common/CommandLineParser.h"
+#include "Common/Wildcard.h"
 
 #include "Extract.h"
 #include "Update.h"
@@ -103,5 +103,9 @@ public:
   void Parse1(const UStringVector &commandStrings, CArchiveCommandLineOptions &options);
   void Parse2(CArchiveCommandLineOptions &options);
 };
+
+void EnumerateDirItemsAndSort(NWildcard::CCensor &wildcardCensor,
+    UStringVector &sortedPaths,
+    UStringVector &sortedFullPaths);
 
 #endif

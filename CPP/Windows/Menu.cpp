@@ -161,7 +161,20 @@ bool CMenu::InsertItem(UINT itemIndex, bool byPosition, const CMenuItem &item)
     ConvertItemToSysForm(item, si);
     if (item.IsString())
       si.dwTypeData = (LPWSTR)(LPCWSTR)item.StringValue;
+    #ifdef UNDER_CE
+    UINT flags = (item.fType & MFT_SEPARATOR) ? MF_SEPARATOR : MF_STRING;
+    UINT id = item.wID;
+    if ((item.fMask & MIIM_SUBMENU) != 0)
+    {
+      flags |= MF_POPUP;
+      id = (UINT)item.hSubMenu;
+    }
+    if (!Insert(itemIndex, flags | (byPosition ? MF_BYPOSITION : MF_BYCOMMAND), id, item.StringValue))
+      return false;
+    return SetItemInfo(itemIndex, byPosition, &si);
+    #else
     return InsertItem(itemIndex, byPosition, &si);
+    #endif
   }
 }
 

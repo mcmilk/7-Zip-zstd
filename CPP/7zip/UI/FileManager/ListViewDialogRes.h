@@ -1,3 +1,2 @@
-#define IDD_DIALOG_LISTVIEW             201
-
-#define IDC_LISTVIEW_LIST               1000
+#define IDD_DIALOG_LISTVIEW 508
+#define IDC_LISTVIEW_LIST 1000

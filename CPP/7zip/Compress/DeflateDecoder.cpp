@@ -250,7 +250,7 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
   m_OutWindowStream.SetStream(outStream);
   CCoderReleaser flusher(this);
 
-  const UInt64 inStart = m_InBitStream.GetProcessedSize();
+  const UInt64 inStart = _needInitInStream ? 0 : m_InBitStream.GetProcessedSize();
   const UInt64 start = m_OutWindowStream.GetProcessedSize();
   for (;;)
   {

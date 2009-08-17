@@ -1,4 +1,4 @@
-#define IDD_DIALOG_COPY                 202
+#define IDD_DIALOG_COPY                506
 
 #define IDC_COPY_STATIC                1000
 #define IDC_COPY_COMBO                 1001

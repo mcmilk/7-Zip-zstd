@@ -206,8 +206,8 @@ public:
   #endif
 
   const CArc &GetArc() { return _archiveLink.Arcs.Back(); }
-  IInArchive *GetArchive() { return GetArc().Archive; }
-  bool CanUpdate() const { return _archiveLink.Arcs.Size() == 1; }
+  IInArchive *GetArchive() { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
+  bool CanUpdate() const { return _archiveLink.Arcs.Size() <= 1; }
 };
 
 #ifdef NEW_FOLDER_INTERFACE

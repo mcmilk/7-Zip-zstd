@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifdef UNDER_CE
+#include <winuserm.h>
+#endif
+
 #include "Windows/Clipboard.h"
 #include "Windows/Defs.h"
 #include "Windows/Memory.h"

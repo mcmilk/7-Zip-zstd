@@ -11,7 +11,7 @@
 #include "../Common/ExtractMode.h"
 #include "../Common/IFileExtractCallback.h"
 
-#define FOLDER_ARCHIVE_INTERFACE_SUB(i, base,  x) DECL_INTERFACE_SUB(i, base, 0x01, x)
+#define FOLDER_ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 0x01, x)
 #define FOLDER_ARCHIVE_INTERFACE(i, x) FOLDER_ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
 
 #define INTERFACE_IArchiveFolder(x) \

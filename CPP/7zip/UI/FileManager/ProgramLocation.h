@@ -1,7 +1,7 @@
 // ProgramLocation.h
 
-#ifndef __PROGRAMLOCATION_H
-#define __PROGRAMLOCATION_H
+#ifndef __PROGRAM_LOCATION_H
+#define __PROGRAM_LOCATION_H
 
 #include "Common/MyString.h"
 

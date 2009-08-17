@@ -1,5 +1,5 @@
 CRC_OBJS = \
-!IF "$(CPU)" != "IA64"
+!IF "$(CPU)" != "IA64" && "$(CPU)" != "ARM"
   $O\7zCrcT8U.obj \
   $O\7zCrcT8.obj \
 !ELSE

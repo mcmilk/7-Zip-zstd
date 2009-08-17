@@ -1,0 +1,7 @@
+#include "../../UI/FileManager/resource.rc"
+#include "../../UI/GUI/resource2.rc"
+
+STRINGTABLE
+BEGIN
+  100 "7z zip bz2 bzip2 tbz2 tbz rar arj z taz lzh lha cab iso 001 rpm deb cpio tar gz gzip tgz tpz4 wim swm lzma dmg hfs xar vhd fat ntfs xz"
+END

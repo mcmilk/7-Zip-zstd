@@ -21,23 +21,14 @@ class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
-  INTERFACE_IInArchive(;)
-
-private:
   CMyComPtr<IInStream> _stream;
   UInt64 _streamStartPosition;
   UInt64 _packSize;
   Byte _properties;
+public:
+  MY_UNKNOWN_IMP1(IInArchive)
+  INTERFACE_IInArchive(;)
 };
-
-static IInArchive *CreateArc() { return new CHandler;  }
-
-static CArcInfo g_ArcInfo =
-  { L"Z", L"z taz", L"* .tar", 5, { 0x1F, 0x9D }, 2, false, CreateArc, 0 };
-
-REGISTER_ARC(Z)
 
 STATPROPSTG kProps[] =
 {
@@ -96,22 +87,14 @@ STDMETHODIMP CHandler::Close()
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 testModeSpec, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(-1));
-  if (!allFilesMode)
-  {
-    if (numItems == 0)
-      return S_OK;
-    if (numItems != 1)
-      return E_INVALIDARG;
-    if (indices[0] != 0)
-      return E_INVALIDARG;
-  }
-
-  bool testMode = (testModeSpec != 0);
+  if (numItems == 0)
+    return S_OK;
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+    return E_INVALIDARG;
 
   extractCallback->SetTotal(_packSize);
 
@@ -167,5 +150,12 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   return extractCallback->SetOperationResult(opResult);
   COM_TRY_END
 }
+
+static IInArchive *CreateArc() { return new CHandler; }
+
+static CArcInfo g_ArcInfo =
+  { L"Z", L"z taz", L"* .tar", 5, { 0x1F, 0x9D }, 2, false, CreateArc, 0 };
+
+REGISTER_ARC(Z)
 
 }}

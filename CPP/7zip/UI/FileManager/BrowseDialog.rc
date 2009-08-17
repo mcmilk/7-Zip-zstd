@@ -1,0 +1,17 @@
+#include "BrowseDialogRes.h"
+#include "../../GuiCommon.rc"
+
+#define xc 180
+#define yc 160
+
+IDD_DIALOG_BROWSE  MY_RESIZE_DIALOG
+CAPTION "7-Zip: Browse"
+{
+  LTEXT   "", IDC_BROWSE_PATH, m + 20, m + 3, xc - 20, 8
+  CONTROL "List1", IDC_BROWSE_LIST, "SysListView32",
+          LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_SINGLESEL | WS_BORDER | WS_TABSTOP,
+          m, m + 16, xc, yc - bys - m - 16
+  PUSHBUTTON  "OK",     IDOK,     bx2, by, bxs, bys
+  PUSHBUTTON  "Cancel", IDCANCEL, bx1, by, bxs, bys
+  PUSHBUTTON  "..", IDC_BROWSE_PARENT, m, m, 16, 14
+}

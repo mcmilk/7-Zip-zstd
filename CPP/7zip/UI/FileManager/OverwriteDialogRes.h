@@ -1,7 +1,8 @@
+#define IDD_DIALOG_OVERWRITE             502
+#define IDD_DIALOG_OVERWRITE_2           602
+
 #define IDS_FILE_MODIFIED               600
 #define IDS_FILE_SIZE                   601
-
-#define IDD_DIALOG_OVERWRITE             502
 
 #define IDC_STATIC_OVERWRITE_HEADER     1000
 

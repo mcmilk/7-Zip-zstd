@@ -5,6 +5,8 @@
 namespace NWindows {
 namespace NSecurity {
 
+#ifndef UNDER_CE
+
 #ifndef _UNICODE
 typedef BOOL (WINAPI * OpenProcessTokenP)(HANDLE ProcessHandle, DWORD DesiredAccess, PHANDLE TokenHandle);
 typedef BOOL (WINAPI * LookupPrivilegeValueP)(LPCTSTR lpSystemName, LPCTSTR lpName, PLUID  lpLuid);
@@ -73,6 +75,8 @@ bool EnableLockMemoryPrivilege(bool enable)
   ::FreeLibrary(hModule);
   return res;
 }
+#endif
+
 #endif
 
 }}

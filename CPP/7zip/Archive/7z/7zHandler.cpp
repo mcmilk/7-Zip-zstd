@@ -300,11 +300,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
               else if (coder.MethodID == k_PPMD && coder.Props.GetCapacity() == 5)
               {
                 Byte order = *(const Byte *)coder.Props;
-                methodsString += L'o';
-                methodsString += ConvertUInt32ToString(order);
-                methodsString += L":mem";
+                propsString = L'o';
+                propsString += ConvertUInt32ToString(order);
+                propsString += L":mem";
                 UInt32 dicSize = GetUi32((const Byte *)coder.Props + 1);
-                propsString = GetStringForSizeValue(dicSize);
+                propsString += GetStringForSizeValue(dicSize);
               }
               else if (coder.MethodID == k_AES && coder.Props.GetCapacity() >= 1)
               {

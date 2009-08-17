@@ -236,7 +236,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   COM_TRY_BEGIN
   {
     CInArchive archive;
-    if(archive.Open(stream) != S_OK)
+    if (archive.Open(stream) != S_OK)
       return S_FALSE;
     _items.Clear();
 
@@ -314,12 +314,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -349,19 +348,19 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     const CItem &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     currentTotalSize += item.Size;
     
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     if (testMode)
     {
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
     RINOK(_stream->Seek(item.GetDataPos(), STREAM_SEEK_SET, NULL));
@@ -369,8 +368,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult((copyCoderSpec->TotalSize == item.Size) ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END
@@ -384,7 +383,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new NArchive::NDeb::CHandler;  }
+static IInArchive *CreateArc() { return new NArchive::NDeb::CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"Deb", L"deb", 0, 0xEC, { '!', '<', 'a', 'r', 'c', 'h', '>', '\n' }, 8, false, CreateArc, 0 };

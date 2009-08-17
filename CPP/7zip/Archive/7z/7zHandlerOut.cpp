@@ -27,7 +27,13 @@ static const wchar_t *kDefaultMethodName = kLZMAMethodName;
 
 static const UInt32 kLzmaAlgorithmX5 = 1;
 static const wchar_t *kLzmaMatchFinderForHeaders = L"BT2";
-static const UInt32 kDictionaryForHeaders = 1 << 20;
+static const UInt32 kDictionaryForHeaders =
+  #ifdef UNDER_CE
+  1 << 18
+  #else
+  1 << 20
+  #endif
+;
 static const UInt32 kNumFastBytesForHeaders = 273;
 static const UInt32 kAlgorithmForHeaders = kLzmaAlgorithmX5;
 

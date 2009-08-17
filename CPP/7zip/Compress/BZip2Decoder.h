@@ -134,8 +134,8 @@ public:
 
   CDecoder();
 
+  HRESULT SetRatioProgress(UInt64 packSize);
   HRESULT ReadSignatures(bool &wasFinished, UInt32 &crc);
-
 
   HRESULT Flush() { return m_OutStream.Flush(); }
   void ReleaseStreams(bool releaseInStream)

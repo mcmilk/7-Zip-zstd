@@ -29,10 +29,10 @@ protected:
   HANDLE _handle;
   
   bool Create(LPCTSTR fileName, DWORD desiredAccess,
-      DWORD shareMode, DWORD creationDisposition,  DWORD flagsAndAttributes);
+      DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
   #ifndef _UNICODE
   bool Create(LPCWSTR fileName, DWORD desiredAccess,
-      DWORD shareMode, DWORD creationDisposition,  DWORD flagsAndAttributes);
+      DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
   #endif
 
 public:
@@ -82,6 +82,7 @@ class CInFile: public CFileBase
   bool DeviceIoControlOut(DWORD controlCode, LPVOID outBuffer, DWORD outSize) const
     { return DeviceIoControl(controlCode, NULL, 0, outBuffer, outSize); }
 
+  #ifndef UNDER_CE
   bool GetGeometry(DISK_GEOMETRY *res) const
     { return DeviceIoControlOut(IOCTL_DISK_GET_DRIVE_GEOMETRY, res, sizeof(*res)); }
 
@@ -90,6 +91,7 @@ class CInFile: public CFileBase
   
   bool GetPartitionInfo(PARTITION_INFORMATION *res)
     { return DeviceIoControlOut(IOCTL_DISK_GET_PARTITION_INFO, LPVOID(res), sizeof(*res)); }
+  #endif
 
   void GetDeviceLength();
   #endif

@@ -24,11 +24,11 @@ static bool inline Test86MSByte(Byte b)
 
 bool CEncoder::Create()
 {
-  if (!_mainStream.Create(1 << 16))
+  if (!_mainStream.Create(1 << 18))
     return false;
-  if (!_callStream.Create(1 << 20))
+  if (!_callStream.Create(1 << 18))
     return false;
-  if (!_jumpStream.Create(1 << 20))
+  if (!_jumpStream.Create(1 << 18))
     return false;
   if (!_rangeEncoder.Create(1 << 20))
     return false;

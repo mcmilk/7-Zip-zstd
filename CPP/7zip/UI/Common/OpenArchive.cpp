@@ -94,6 +94,15 @@ static inline bool TestSignature(const Byte *p1, const Byte *p2, size_t size)
 }
 #endif
 
+#ifdef UNDER_CE
+static const int kNumHashBytes = 1;
+#define HASH_VAL(buf, pos) ((buf)[pos])
+#else
+static const int kNumHashBytes = 2;
+#define HASH_VAL(buf, pos) ((buf)[pos] | ((UInt32)(buf)[pos + 1] << 8))
+#endif
+
+
 HRESULT CArc::OpenStream(
     CCodecs *codecs,
     int formatIndex,
@@ -144,30 +153,33 @@ HRESULT CArc::OpenStream(
       return S_FALSE;
 
     const Byte *buf = byteBuffer;
-    Byte hash[1 << 16];
-    memset(hash, 0xFF, 1 << 16);
+    CByteBuffer hashBuffer;
+    const UInt32 kNumVals = 1 << (kNumHashBytes * 8);
+    hashBuffer.SetCapacity(kNumVals);
+    Byte *hash = hashBuffer;
+    memset(hash, 0xFF, kNumVals);
     Byte prevs[256];
-    if (orderIndices.Size() > 255)
+    if (orderIndices.Size() >= 256)
       return S_FALSE;
     int i;
     for (i = 0; i < orderIndices.Size(); i++)
     {
       const CArcInfoEx &ai = codecs->Formats[orderIndices[i]];
       const CByteBuffer &sig = ai.StartSignature;
-      if (sig.GetCapacity() < 2)
+      if (sig.GetCapacity() < kNumHashBytes)
         continue;
-      UInt32 v = sig[0] | ((UInt32)sig[1] << 8);
+      UInt32 v = HASH_VAL(sig, 0);
       prevs[i] = hash[v];
       hash[v] = (Byte)i;
     }
 
-    processedSize--;
+    processedSize -= (kNumHashBytes - 1);
     for (UInt32 pos = 0; pos < processedSize; pos++)
     {
-      for (; pos < processedSize && hash[buf[pos] | ((UInt32)buf[pos + 1] << 8)] == 0xFF; pos++);
+      for (; pos < processedSize && hash[HASH_VAL(buf, pos)] == 0xFF; pos++);
       if (pos == processedSize)
         break;
-      UInt32 v = buf[pos] | ((UInt32)buf[pos + 1] << 8);
+      UInt32 v = HASH_VAL(buf, pos);
       Byte *ptr = &hash[v];
       int i = *ptr;
       do
@@ -175,14 +187,15 @@ HRESULT CArc::OpenStream(
         int index = orderIndices[i];
         const CArcInfoEx &ai = codecs->Formats[index];
         const CByteBuffer &sig = ai.StartSignature;
-        if (sig.GetCapacity() != 0 && pos + sig.GetCapacity() <= processedSize + 1)
-          if (TestSignature(buf + pos, sig, sig.GetCapacity()))
-          {
-            orderIndices2.Add(index);
-            orderIndices[i] = 0xFF;
-            *ptr = prevs[i];
-          }
-        ptr = &prevs[i];
+        if (sig.GetCapacity() != 0 && pos + sig.GetCapacity() <= processedSize + (kNumHashBytes - 1) &&
+            TestSignature(buf + pos, sig, sig.GetCapacity()))
+        {
+          orderIndices2.Add(index);
+          orderIndices[i] = 0xFF;
+          *ptr = prevs[i];
+        }
+        else
+          ptr = &prevs[i];
         i = *ptr;
       }
       while (i != 0xFF);
@@ -322,6 +335,15 @@ HRESULT CArc::OpenStreamOrFile(
       return GetLastError();
     stream = fileStream;
   }
+
+  /*
+  if (callback)
+  {
+    UInt64 fileSize;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
+    RINOK(callback->SetTotal(NULL, &fileSize))
+  }
+  */
 
   return OpenStream(codecs, formatIndex, stream, seqStream, callback);
 }

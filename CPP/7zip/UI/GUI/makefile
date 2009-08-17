@@ -1,14 +1,17 @@
 PROG = 7zG.exe
-LIBS = $(LIBS) user32.lib advapi32.lib oleaut32.lib shell32.lib comctl32.lib htmlhelp.lib ole32.lib comdlg32.lib
 CFLAGS = $(CFLAGS) -I ../../../  \
   -DLANG \
   -DCOMPRESS_MT \
-  -DWIN_LONG_PATH \
   -DEXTERNAL_LZMA \
   -DEXTERNAL_CODECS \
   -DBENCH_MT \
-  -D_7ZIP_LARGE_PAGES \
-  -DSUPPORT_DEVICE_FILE \
+
+!IFDEF UNDER_CE
+LIBS = $(LIBS) ceshell.lib Commctrl.lib
+!ELSE
+LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES
+!ENDIF
 
 GUI_OBJS = \
   $O\BenchmarkDialog.obj \
@@ -102,10 +105,15 @@ FM_OBJS = \
   $O\RegistryUtils.obj \
   $O\SplitUtils.obj \
   $O\StringUtils.obj \
-  $O\MessagesDialog.obj \
   $O\OverwriteDialog.obj \
   $O\PasswordDialog.obj \
   $O\ProgressDialog2.obj \
+
+!IFDEF UNDER_CE
+FM_OBJS = $(FM_OBJS) \
+  $O\BrowseDialog.obj \
+  $O\SysIconUtils.obj \
+!ENDIF
 
 C_OBJS = \
   $O\Alloc.obj \

@@ -3,6 +3,8 @@
 #ifndef __PANEL_H
 #define __PANEL_H
 
+#include "../../../../C/Alloc.h"
+
 #include "Common/MyCom.h"
 
 #include "Windows/DLL.h"
@@ -23,6 +25,7 @@
 #include "AppState.h"
 #include "IFolder.h"
 #include "MyCom2.h"
+#include "ProgressDialog2.h"
 #include "SysIconUtils.h"
 
 const int kParentFolderID = 100;
@@ -30,6 +33,12 @@ const int kPluginMenuStartID = 1000;
 const int kToolbarStartID = 2000;
 
 const int kParentIndex = -1;
+
+#ifdef UNDER_CE
+#define ROOT_FS_FOLDER L"\\"
+#else
+#define ROOT_FS_FOLDER L"C:\\\\"
+#endif
 
 struct CPanelCallback
 {
@@ -118,11 +127,12 @@ struct CFolderLink: public CTempFileInfo
 
 enum MyMessages
 {
-  kShiftSelectMessage  = WM_USER + 1,
+  kShiftSelectMessage = WM_USER + 1,
   kReLoadMessage,
   kSetFocusToListView,
   kOpenItemChanged,
-  kRefreshStatusBar
+  kRefreshStatusBar,
+  kRefreshHeaderComboBox
 };
 
 UString GetFolderPath(IFolderFolder * folder);
@@ -163,6 +173,12 @@ struct CSelectedState
   CSelectedState(): FocusedItem(-1), SelectFocused(false) {}
 };
 
+#ifdef UNDER_CE
+#define MY_NMLISTVIEW_NMITEMACTIVATE NMLISTVIEW
+#else
+#define MY_NMLISTVIEW_NMITEMACTIVATE NMITEMACTIVATE
+#endif
+
 class CPanel: public NWindows::NControl::CWindow2
 {
   CExtToIconMap _extToIconMap;
@@ -183,14 +199,20 @@ class CPanel: public NWindows::NControl::CWindow2
 
   bool OnComboBoxCommand(UINT code, LPARAM param, LRESULT &result);
   
+  #ifndef UNDER_CE
+  
   LRESULT OnNotifyComboBoxEnter(const UString &s);
   bool OnNotifyComboBoxEndEdit(PNMCBEENDEDITW info, LRESULT &result);
   #ifndef _UNICODE
   bool OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result);
   #endif
+
+  #endif
+
   bool OnNotifyReBar(LPNMHDR lParam, LRESULT &result);
   bool OnNotifyComboBox(LPNMHDR lParam, LRESULT &result);
   void OnItemChanged(NMLISTVIEW *item);
+  void OnNotifyActivateItems();
   bool OnNotifyList(LPNMHDR lParam, LRESULT &result);
   void OnDrag(LPNMLISTVIEW nmListView);
   bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
@@ -202,6 +224,8 @@ class CPanel: public NWindows::NControl::CWindow2
 public:
   HWND _mainWindow;
   CPanelCallback *_panelCallback;
+
+  void SysIconsWereChanged() { _extToIconMap.Clear(); }
 
   void DeleteItems(bool toRecycleBin);
   void DeleteItemsInternal(CRecordVector<UInt32> &indices);
@@ -242,7 +266,13 @@ private:
 public:
   NWindows::NControl::CReBar _headerReBar;
   NWindows::NControl::CToolBar _headerToolBar;
-  NWindows::NControl::CComboBoxEx _headerComboBox;
+  NWindows::NControl::
+    #ifdef UNDER_CE
+    CComboBox
+    #else
+    CComboBoxEx
+    #endif
+    _headerComboBox;
   UStringVector ComboBoxPaths;
   // CMyComboBox _headerComboBox;
   CMyComboBoxEdit _comboBoxEdit;
@@ -383,8 +413,9 @@ public:
 
   void Release();
   ~CPanel();
-  void OnLeftClick(LPNMITEMACTIVATE itemActivate);
-  bool OnRightClick(LPNMITEMACTIVATE itemActivate, LRESULT &result);
+  void OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate);
+  bool OnRightClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate, LRESULT &result);
+  void ShowColumnsContextMenu(int x, int y);
 
   void OnTimer();
   void OnReload();
@@ -494,6 +525,8 @@ public:
   void MessageBoxLastError(LPCWSTR caption);
   void MessageBoxLastError();
 
+  void MessageBoxErrorForUpdate(HRESULT errorCode, UINT resourceID, UInt32 langID);
+
   void MessageBoxErrorLang(UINT resourceID, UInt32 langID);
 
   void OpenFocusedItemAsInternal();
@@ -522,10 +555,11 @@ public:
   void ChangeComment();
 
   void SetListViewMode(UInt32 index);
-  UInt32 GetListViewMode() const { return _ListViewMode; };
+  UInt32 GetListViewMode() const { return _ListViewMode; }
+  PROPID GetSortID() const { return _sortID; }
 
   void ChangeFlatMode();
-  bool GetFlatMode() const { return _flatMode; };
+  bool GetFlatMode() const { return _flatMode; }
 
   void RefreshStatusBar();
   void OnRefreshStatusBar();
@@ -570,6 +604,22 @@ public:
   void RefreshTitleAlways() { RefreshTitle(true);  }
 
   UString GetItemsInfoString(const CRecordVector<UInt32> &indices);
+};
+
+class CMyBuffer
+{
+  void *_data;
+public:
+  CMyBuffer(): _data(0) {}
+  operator void *() { return _data; }
+  bool Allocate(size_t size)
+  {
+    if (_data != 0)
+      return false;
+    _data = ::MidAlloc(size);
+    return _data != 0;
+  }
+  ~CMyBuffer() { ::MidFree(_data); }
 };
 
 #endif

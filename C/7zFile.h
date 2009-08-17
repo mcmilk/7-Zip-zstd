@@ -1,5 +1,5 @@
 /* 7zFile.h -- File IO
-2009-02-07 : Igor Pavlov : Public domain */
+2009-08-16 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_FILE_H
 #define __7Z_FILE_H
@@ -16,10 +16,7 @@
 
 #include "Types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+EXTERN_C_BEGIN
 
 /* ---------- File ---------- */
 
@@ -35,6 +32,10 @@ typedef struct
 void File_Construct(CSzFile *p);
 WRes InFile_Open(CSzFile *p, const char *name);
 WRes OutFile_Open(CSzFile *p, const char *name);
+#ifdef USE_WINDOWS_FILE
+WRes InFile_OpenW(CSzFile *p, const WCHAR *name);
+WRes OutFile_OpenW(CSzFile *p, const WCHAR *name);
+#endif
 WRes File_Close(CSzFile *p);
 
 /* reads max(*size, remain file's size) bytes */
@@ -75,8 +76,6 @@ typedef struct
 
 void FileOutStream_CreateVTable(CFileOutStream *p);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

@@ -1,22 +1,16 @@
 // PluginsPage.cpp
 
 #include "StdAfx.h"
-#include "PluginsPageRes.h"
-#include "PluginsPage.h"
 
-#include "Common/StringConvert.h"
 #include "Common/MyCom.h"
 
-#include "Windows/Defs.h"
 #include "Windows/DLL.h"
-#include "Windows/Control/ListView.h"
-#include "Windows/FileFind.h"
 
-#include "RegistryUtils.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
+#include "PluginsPage.h"
+#include "PluginsPageRes.h"
 #include "ProgramLocation.h"
-
 #include "PluginInterface.h"
 
 static CIDLangPair kIDLangPairs[] =
@@ -33,16 +27,16 @@ bool CPluginsPage::OnInit()
 
   _listView.Attach(GetItem(IDC_PLUGINS_LIST));
 
-  UINT32 newFlags = /*LVS_EX_CHECKBOXES | */ LVS_EX_FULLROWSELECT;
+  UINT32 newFlags = /* LVS_EX_CHECKBOXES | */ LVS_EX_FULLROWSELECT;
   _listView.SetExtendedListViewStyle(newFlags, newFlags);
 
-  _listView.InsertColumn(0, L"Plugins", 160);
+  _listView.InsertColumn(0, L"Plugins", 50);
   
   ReadFileFolderPluginInfoList(_plugins);
 
   _listView.SetRedraw(false);
   // _listView.DeleteAllItems();
-  for(int i = 0; i < _plugins.Size(); i++)
+  for (int i = 0; i < _plugins.Size(); i++)
   {
     const CPluginInfo &p = _plugins[i];
     if (!p.OptionsClassIDDefined)
@@ -59,11 +53,12 @@ bool CPluginsPage::OnInit()
     _listView.SetCheckState(i, true);
   }
   _listView.SetRedraw(true);
-  if(_listView.GetItemCount() > 0)
+  if (_listView.GetItemCount() > 0)
   {
     UINT state = LVIS_SELECTED | LVIS_FOCUSED;
     _listView.SetItemState(0, state, state);
   }
+  _listView.SetColumnWidthAuto(0);
 
   return CPropertyPage::OnInit();
 }
@@ -156,17 +151,15 @@ void CPluginsPage::OnButtonOptions()
     MessageBoxW(HWND(*this), L"There are no options", L"7-Zip", 0);
     return;
   }
-  NWindows::NDLL::CLibrary library;
+  NWindows::NDLL::CLibrary lib;
   CMyComPtr<IPluginOptions> pluginOptions;
-  if (!library.Load(pluginInfo.FilePath))
+  if (!lib.Load(pluginInfo.FilePath))
   {
     MessageBoxW(HWND(*this), L"Can't load plugin", L"7-Zip", 0);
     return;
   }
-  typedef UINT32 (WINAPI * CreateObjectPointer)(
-      const GUID *clsID, const GUID *interfaceID, void **outObject);
-  CreateObjectPointer createObject = (CreateObjectPointer)
-        library.GetProcAddress("CreateObject");
+  typedef UINT32 (WINAPI * CreateObjectPointer)(const GUID *clsID, const GUID *interfaceID, void **outObject);
+  CreateObjectPointer createObject = (CreateObjectPointer)lib.GetProc("CreateObject");
   if (createObject == NULL)
   {
     MessageBoxW(HWND(*this), L"Incorrect plugin", L"7-Zip", 0);

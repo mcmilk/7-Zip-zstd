@@ -456,8 +456,11 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, int level)
     const Byte *p = ByteBuf + pos;
     if (p[0] == 0)
     {
+      /*
+      // FreeDOS formats FAT partition with cluster chain longer than required.
       if (clusterMode && !Header.IsEoc(cluster))
         return S_FALSE;
+      */
       break;
     }
     if (p[0] == 0xE5)
@@ -883,12 +886,11 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = Items.Size();
   if (numItems == 0)
@@ -923,8 +925,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     Int32 index = allFilesMode ? i : indices[i];
     const CItem &item = Items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -932,14 +934,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
     totalPackSize += Header.GetFilePackSize(item.Size);
     totalSize += item.Size;
 
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -947,7 +949,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     realOutStream.Release();
     outStreamSpec->Init();
 
-    int res = NArchive::NExtract::NOperationResult::kDataError;
+    int res = NExtract::NOperationResult::kDataError;
     CMyComPtr<ISequentialInStream> inStream;
     HRESULT hres = GetStream(index, &inStream);
     if (hres != S_FALSE)
@@ -957,7 +959,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       {
         RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
         if (copyCoderSpec->TotalSize == item.Size)
-          res = NArchive::NExtract::NOperationResult::kOK;
+          res = NExtract::NOperationResult::kOK;
       }
     }
     outStreamSpec->ReleaseStream();
@@ -973,7 +975,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"FAT", L"fat img", 0, 0xDA, { 0x55, 0xAA }, 2, false, CreateArc, 0 };

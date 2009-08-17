@@ -1,7 +1,7 @@
 // ContextMenu.h
 
-#ifndef __CONTEXTMENU_H
-#define __CONTEXTMENU_H
+#ifndef __CONTEXT_MENU_H
+#define __CONTEXT_MENU_H
 
 // {23170F69-40C1-278A-1000-000100020000}
 DEFINE_GUID(CLSID_CZipContextMenu,
@@ -19,7 +19,6 @@ class CZipContextMenu:
   public IInitContextMenu,
   public CMyUnknownImp
 {
-
 public:
 
   enum ECommandInternalID
@@ -50,21 +49,13 @@ public:
 
   MY_UNKNOWN_IMP3_MT(IContextMenu, IShellExtInit, IInitContextMenu)
 
-  ///////////////////////////////
   // IShellExtInit
+  STDMETHOD(Initialize)(LPCITEMIDLIST pidlFolder, LPDATAOBJECT dataObject, HKEY hkeyProgID);
 
-  STDMETHOD(Initialize)(LPCITEMIDLIST pidlFolder,
-      LPDATAOBJECT dataObject, HKEY hkeyProgID);
-
-  /////////////////////////////
   // IContextMenu
-  
-  STDMETHOD(QueryContextMenu)(HMENU hmenu, UINT indexMenu,
-      UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
+  STDMETHOD(QueryContextMenu)(HMENU hmenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
   STDMETHOD(InvokeCommand)(LPCMINVOKECOMMANDINFO lpici);
-  STDMETHOD(GetCommandString)(UINT_PTR idCmd, UINT uType, UINT *pwReserved,
-      LPSTR pszName, UINT cchMax);
-
+  STDMETHOD(GetCommandString)(UINT_PTR idCmd, UINT uType, UINT *pwReserved, LPSTR pszName, UINT cchMax);
 
   // IInitContextMenu
   STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);
@@ -73,11 +64,12 @@ private:
   bool _dropMode;
   UString _dropPath;
   CObjectVector<CCommandMapItem> _commandMap;
+
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
+
   int FindVerb(const UString &verb);
 
-  void FillCommand(ECommandInternalID id, UString &mainString,
-      CCommandMapItem &commandMapItem);
+  void FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);
 public:
   CZipContextMenu();
   ~CZipContextMenu();

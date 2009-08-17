@@ -8,17 +8,25 @@
 namespace NWindows {
 namespace NDLL {
 
+#ifdef UNDER_CE
+#define My_GetProcAddress(module, proceName) GetProcAddressA(module, proceName)
+#else
+#define My_GetProcAddress(module, proceName) ::GetProcAddress(module, proceName)
+#endif
+ 
 class CLibrary
 {
   bool LoadOperations(HMODULE newModule);
 protected:
   HMODULE _module;
 public:
+  CLibrary(): _module(NULL) {};
+  ~CLibrary() { Free(); }
+
   operator HMODULE() const { return _module; }
   HMODULE* operator&() { return &_module; }
+  bool IsLoaded() const { return (_module != NULL); };
 
-  CLibrary():_module(NULL) {};
-  ~CLibrary();
   void Attach(HMODULE m)
   {
     Free();
@@ -31,8 +39,6 @@ public:
     return m;
   }
 
-  // operator HMODULE() const { return _module; };
-  bool IsLoaded() const { return (_module != NULL); };
   bool Free();
   bool LoadEx(LPCTSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
   bool Load(LPCTSTR fileName);
@@ -40,8 +46,7 @@ public:
   bool LoadEx(LPCWSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
   bool Load(LPCWSTR fileName);
   #endif
-  FARPROC GetProcAddress(LPCSTR procName) const
-    { return ::GetProcAddress(_module, procName); }
+  FARPROC GetProc(LPCSTR procName) const { return My_GetProcAddress(_module, procName); }
 };
 
 bool MyGetModuleFileName(HMODULE hModule, CSysString &result);

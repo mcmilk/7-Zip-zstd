@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "AboutDialogRes.h"
 #include "AboutDialog.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
@@ -18,15 +17,17 @@ static CIDLangPair kIDLangPairs[] =
 #define MY_HOME_PAGE TEXT("http://www.7-zip.org/")
 
 static LPCTSTR kHomePageURL     = MY_HOME_PAGE;
+/*
 static LPCTSTR kRegisterPageURL = MY_HOME_PAGE TEXT("register.html");
 static LPCTSTR kSupportPageURL  = MY_HOME_PAGE TEXT("support.html");
-
+*/
 static LPCWSTR kHelpTopic = L"start.htm";
 
 bool CAboutDialog::OnInit()
 {
   LangSetWindowText(HWND(*this), 0x01000100);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  NormalizePosition();
   return CModalDialog::OnInit();
 }
 
@@ -35,26 +36,29 @@ void CAboutDialog::OnHelp()
   ShowHelpWindow(NULL, kHelpTopic);
 }
 
-static void MyShellExecute(LPCTSTR url)
-{
-  ::ShellExecute(NULL, NULL, url, NULL, NULL, SW_SHOWNORMAL);
-}
-
 bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
+  LPCTSTR url;
   switch(buttonID)
   {
-    case IDC_ABOUT_BUTTON_HOMEPAGE:
-      ::MyShellExecute(kHomePageURL);
-      break;
-    case IDC_ABOUT_BUTTON_REGISTER:
-      ::MyShellExecute(kRegisterPageURL);
-      break;
-    case IDC_ABOUT_BUTTON_SUPPORT:
-      ::MyShellExecute(kSupportPageURL);
-      break;
+    case IDC_ABOUT_BUTTON_HOMEPAGE: url = kHomePageURL; break;
+    /*
+    case IDC_ABOUT_BUTTON_REGISTER: url = kRegisterPageURL; break;
+    case IDC_ABOUT_BUTTON_SUPPORT: url = kSupportPageURL; break;
+    */
     default:
       return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
   }
+
+  #ifdef UNDER_CE
+  SHELLEXECUTEINFO s;
+  memset(&s, 0, sizeof(s));
+  s.cbSize = sizeof(s);
+  s.lpFile = url;
+  ::ShellExecuteEx(&s);
+  #else
+  ::ShellExecute(NULL, NULL, url, NULL, NULL, SW_SHOWNORMAL);
+  #endif
+
   return true;
 }

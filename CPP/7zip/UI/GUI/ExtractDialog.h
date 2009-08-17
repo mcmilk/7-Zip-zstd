@@ -1,11 +1,10 @@
 // ExtractDialog.h
 
-#ifndef __EXTRACTDIALOG_H
-#define __EXTRACTDIALOG_H
+#ifndef __EXTRACT_DIALOG_H
+#define __EXTRACT_DIALOG_H
 
 #include "ExtractDialogRes.h"
 
-#include "Windows/Control/Dialog.h"
 #include "Windows/Control/Edit.h"
 #include "Windows/Control/ComboBox.h"
 
@@ -13,6 +12,8 @@
 #include "../Common/ZipRegistry.h"
 #endif
 #include "../Common/ExtractMode.h"
+
+#include "../FileManager/DialogSize.h"
 
 namespace NExtractionDialog
 {
@@ -39,13 +40,11 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   
   #ifndef _SFX
   NWindows::NControl::CEdit _passwordControl;
+  NWindows::NControl::CComboBox _pathMode;
+  NWindows::NControl::CComboBox _overwriteMode;
   #endif
 
   #ifndef _SFX
-  void GetPathMode();
-  void SetPathMode();
-  void GetOverwriteMode();
-  void SetOverwriteMode();
   // int GetFilesMode() const;
   void UpdatePasswordControl();
   #endif
@@ -71,7 +70,14 @@ public:
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 
   INT_PTR Create(HWND aWndParent = 0)
-    { return CModalDialog::Create(IDD_DIALOG_EXTRACT, aWndParent); }
+  {
+    #ifdef _SFX
+    BIG_DIALOG_SIZE(240, 64);
+    #else
+    BIG_DIALOG_SIZE(300, 160);
+    #endif
+    return CModalDialog::Create(SIZED_DIALOG(IDD_DIALOG_EXTRACT), aWndParent);
+  }
 };
 
 #endif

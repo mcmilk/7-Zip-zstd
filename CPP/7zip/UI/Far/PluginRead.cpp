@@ -109,7 +109,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   {
     const int kPathIndex = 2;
 
-    ReadExtractionInfo(extractionInfo);
+    extractionInfo.Load();
 
     const int kPathModeRadioIndex = 4;
     const int kOverwriteModeRadioIndex = kPathModeRadioIndex + 4;
@@ -230,7 +230,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     else
       throw 31806;
 
-    SaveExtractionInfo(extractionInfo);
+    extractionInfo.Save();
 
     if (dialogItems[kFilesModeIndex].Selected)
       extractSelectedFiles = true;

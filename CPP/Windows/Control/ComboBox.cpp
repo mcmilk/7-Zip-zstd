@@ -1,8 +1,5 @@
 // Windows/Control/ComboBox.cpp
 
-// #define _UNICODE
-// #define UNICODE
-
 #include "StdAfx.h"
 
 #ifndef _UNICODE
@@ -10,7 +7,6 @@
 #endif
 
 #include "Windows/Control/ComboBox.h"
-#include "Windows/Defs.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -58,6 +54,5 @@ LRESULT CComboBox::GetLBText(int index, UString &s)
   return s.Length();
 }
 #endif
-
 
 }}

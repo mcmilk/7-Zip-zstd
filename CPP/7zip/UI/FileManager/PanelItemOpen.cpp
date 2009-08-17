@@ -8,21 +8,18 @@
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
-#include "Windows/Synchronization.h"
+#include "Windows/Process.h"
 #include "Windows/Thread.h"
 
-#include "ExtractCallback.h"
-#include "FileFolderPluginOpen.h"
-#include "FormatUtils.h"
-#include "IFolder.h"
-#include "LangUtils.h"
-#include "Panel.h"
-#include "RegistryUtils.h"
-#include "UpdateCallback100.h"
+#include "../Common/ExtractingFilePath.h"
 
 #include "App.h"
 
-#include "../Common/ExtractingFilePath.h"
+#include "FileFolderPluginOpen.h"
+#include "FormatUtils.h"
+#include "LangUtils.h"
+#include "RegistryUtils.h"
+#include "UpdateCallback100.h"
 
 #include "resource.h"
 
@@ -31,7 +28,6 @@ using namespace NSynchronization;
 using namespace NFile;
 using namespace NDirectory;
 
-extern HWND g_HWND;
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif
@@ -167,6 +163,9 @@ HRESULT CPanel::OpenParentArchiveFolder()
 
 static const wchar_t *kStartExtensions[] =
 {
+  #ifdef UNDER_CE
+  L"cab",
+  #endif
   L"exe", L"bat", L"com",
   L"chm",
   L"msi", L"doc", L"xls", L"ppt", L"pps", L"wps", L"wpt", L"wks", L"xlr", L"wdb",
@@ -175,7 +174,9 @@ static const wchar_t *kStartExtensions[] =
   L"xlam", L"pptx", L"pptm", L"potx", L"potm", L"ppam", L"ppsx", L"ppsm", L"xsn",
 
   L"dwf",
- 
+
+  L"flv", L"swf",
+  
   L"odt", L"ods",
   L"wb3",
   L"pdf"
@@ -194,81 +195,31 @@ static bool DoItemAlwaysStart(const UString &name)
   return false;
 }
 
-static HRESULT MyCreateProcess(const UString &command, HANDLE *hProcess)
+static UString GetQuotedString(const UString &s)
 {
-  PROCESS_INFORMATION processInformation;
-  BOOL result;
-  #ifndef _UNICODE
-  if (!g_IsNT)
-  {
-    STARTUPINFOA startupInfo;
-    startupInfo.cb = sizeof(startupInfo);
-    startupInfo.lpReserved = 0;
-    startupInfo.lpDesktop = 0;
-    startupInfo.lpTitle = 0;
-    startupInfo.dwFlags = 0;
-    startupInfo.cbReserved2 = 0;
-    startupInfo.lpReserved2 = 0;
-    
-    result = ::CreateProcessA(NULL, (CHAR *)(const CHAR *)GetSystemString(command),
-      NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInformation);
-  }
-  else
-  #endif
-  {
-    STARTUPINFOW startupInfo;
-    startupInfo.cb = sizeof(startupInfo);
-    startupInfo.lpReserved = 0;
-    startupInfo.lpDesktop = 0;
-    startupInfo.lpTitle = 0;
-    startupInfo.dwFlags = 0;
-    startupInfo.cbReserved2 = 0;
-    startupInfo.lpReserved2 = 0;
-    
-    result = ::CreateProcessW(NULL, (WCHAR *)(const WCHAR *)command,
-      NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInformation);
-  }
-
-  if (result == 0)
-    return ::GetLastError();
-
-  ::CloseHandle(processInformation.hThread);
-  *hProcess = processInformation.hProcess;
-  return S_OK;
+  return UString(L'\"') + s + UString(L'\"');
 }
 
-static HRESULT MyCreateProcess(const UString &command)
-{
-  HANDLE hProcess;
-  HRESULT res = MyCreateProcess(command, &hProcess);
-  if (res == SZ_OK)
-    ::CloseHandle(hProcess);
-  return res;
-}
-
-static HANDLE StartEditApplication(const UString &path, HWND window)
+static HRESULT StartEditApplication(const UString &path, HWND window, CProcess &process)
 {
   UString command;
   ReadRegEditor(command);
   if (command.IsEmpty())
   {
+    #ifdef UNDER_CE
+    command = L"\\Windows\\";
+    #else
     if (!MyGetWindowsDirectory(command))
       return 0;
     NFile::NName::NormalizeDirPathPrefix(command);
+    #endif
     command += L"notepad.exe";
   }
-  command = UString(L"\"") + command + UString(L"\"");
-  command += L" \"";
-  command += path;
-  command += L"\"";
 
-  HANDLE hProcess;
-  HRESULT res = MyCreateProcess(command, &hProcess);
-  if (res == SZ_OK)
-    return hProcess;
-  ::MessageBoxW(window, LangString(IDS_CANNOT_START_EDITOR, 0x03020282),
-      L"7-Zip", MB_OK  | MB_ICONSTOP);
-  return 0;
+  HRESULT res = process.Create(command, GetQuotedString(path), NULL);
+  if (res != SZ_OK)
+    ::MessageBoxW(window, LangString(IDS_CANNOT_START_EDITOR, 0x03020282), L"7-Zip", MB_OK  | MB_ICONSTOP);
+  return res;
 }
 
 void CApp::DiffFiles()
@@ -304,16 +255,9 @@ void CApp::DiffFiles()
   if (command.IsEmpty())
     return;
 
-  command = UString(L"\"") + command + UString(L"\"");
-  command += L" \"";
-  command += path1;
-  command += L"\"";
+  UString param = GetQuotedString(path1) + L' ' + GetQuotedString(path2);
 
-  command += L" \"";
-  command += path2;
-  command += L"\"";
-
-  HRESULT res = MyCreateProcess(command);
+  HRESULT res = MyCreateProcess(command, param);
   if (res == SZ_OK)
     return;
   ::MessageBoxW(_window, LangString(IDS_CANNOT_START_EDITOR, 0x03020282), L"7-Zip", MB_OK  | MB_ICONSTOP);
@@ -323,10 +267,9 @@ void CApp::DiffFiles()
 typedef BOOL (WINAPI * ShellExecuteExWP)(LPSHELLEXECUTEINFOW lpExecInfo);
 #endif
 
-static HANDLE StartApplication(const UString &dir, const UString &path, HWND window)
+static HRESULT StartApplication(const UString &dir, const UString &path, HWND window, CProcess &process)
 {
   UINT32 result;
-  HANDLE hProcess;
   #ifndef _UNICODE
   if (g_IsNT)
   {
@@ -346,28 +289,38 @@ static HANDLE StartApplication(const UString &dir, const UString &path, HWND win
       return 0;
     shellExecuteExW(&execInfo);
     result = (UINT32)(UINT_PTR)execInfo.hInstApp;
-    hProcess = execInfo.hProcess;
+    process.Attach(execInfo.hProcess);
   }
   else
   #endif
   {
     SHELLEXECUTEINFO execInfo;
     execInfo.cbSize = sizeof(execInfo);
-    execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
+    execInfo.fMask = SEE_MASK_NOCLOSEPROCESS
+      #ifndef UNDER_CE
+      | SEE_MASK_FLAG_DDEWAIT
+      #endif
+      ;
     execInfo.hwnd = NULL;
     execInfo.lpVerb = NULL;
     const CSysString sysPath = GetSystemString(path);
     const CSysString sysDir = GetSystemString(dir);
     execInfo.lpFile = sysPath;
     execInfo.lpParameters = NULL;
-    execInfo.lpDirectory = sysDir.IsEmpty() ? NULL : (LPCTSTR)sysDir;
+    execInfo.lpDirectory =
+    #ifdef UNDER_CE
+    NULL
+    #else
+    sysDir.IsEmpty() ? NULL : (LPCTSTR)sysDir
+    #endif
+    ;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ::ShellExecuteEx(&execInfo);
     result = (UINT32)(UINT_PTR)execInfo.hInstApp;
-    hProcess = execInfo.hProcess;
+    process.Attach(execInfo.hProcess);
   }
-  if(result <= 32)
+  if (result <= 32)
   {
     switch(result)
     {
@@ -378,7 +331,13 @@ static HANDLE StartApplication(const UString &dir, const UString &path, HWND win
           L"7-Zip", MB_OK | MB_ICONSTOP);
     }
   }
-  return hProcess;
+  return S_OK;
+}
+
+static void StartApplicationDontWait(const UString &dir, const UString &path, HWND window)
+{
+  CProcess process;
+  StartApplication(dir, path, window, process);
 }
 
 void CPanel::EditItem(int index)
@@ -388,18 +347,29 @@ void CPanel::EditItem(int index)
     OpenItemInArchive(index, false, true, true);
     return;
   }
-  HANDLE hProcess = StartEditApplication(GetItemFullPath(index), (HWND)*this);
-  if (hProcess != 0)
-    ::CloseHandle(hProcess);
+  CProcess process;
+  StartEditApplication(GetItemFullPath(index), (HWND)*this, process);
 }
 
 void CPanel::OpenFolderExternal(int index)
 {
   UString fsPrefix = GetFsPath();
-  HANDLE hProcess = StartApplication(fsPrefix,
-    fsPrefix + GetItemRelPath(index) + WCHAR_PATH_SEPARATOR, (HWND)*this);
-  if (hProcess != 0)
-    ::CloseHandle(hProcess);
+  UString name;
+  if (index == kParentIndex)
+  {
+    int pos = fsPrefix.ReverseFind(WCHAR_PATH_SEPARATOR);
+    if (pos >= 0 && pos == fsPrefix.Length() - 1)
+    {
+      UString s = fsPrefix.Left(pos);
+      pos = s.ReverseFind(WCHAR_PATH_SEPARATOR);
+      if (pos >= 0)
+        fsPrefix = s.Left(pos + 1);
+    }
+    name = fsPrefix;
+  }
+  else
+    name = fsPrefix + GetItemRelPath(index) + WCHAR_PATH_SEPARATOR;
+  StartApplicationDontWait(fsPrefix, name, (HWND)*this);
 }
 
 void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
@@ -416,7 +386,8 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
     MessageBoxErrorLang(IDS_VIRUS, 0x03020284);
     return;
   }
-  UString fullPath = _currentFolderPrefix + name;
+  UString prefix = GetFsPath();
+  UString fullPath = prefix + name;
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(name))
     {
@@ -432,12 +403,31 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   if (tryExternal)
   {
     // SetCurrentDirectory opens HANDLE to folder!!!
-    // NDirectory::MySetCurrentDirectory(_currentFolderPrefix);
-    HANDLE hProcess = StartApplication(_currentFolderPrefix, fullPath, (HWND)*this);
-    if (hProcess != 0)
-      ::CloseHandle(hProcess);
+    // NDirectory::MySetCurrentDirectory(prefix);
+    StartApplicationDontWait(prefix, fullPath, (HWND)*this);
   }
 }
+
+class CThreadCopyFrom: public CProgressThreadVirt
+{
+  HRESULT ProcessVirt();
+public:
+  UString PathPrefix;
+  UString Name;
+
+  CMyComPtr<IFolderOperations> FolderOperations;
+  CMyComPtr<IProgress> UpdateCallback;
+  CUpdateCallback100Imp *UpdateCallbackSpec;
+};
+  
+HRESULT CThreadCopyFrom::ProcessVirt()
+{
+  UStringVector fileNames;
+  CRecordVector<const wchar_t *> fileNamePointers;
+  fileNames.Add(Name);
+  fileNamePointers.Add(fileNames[0]);
+  return FolderOperations->CopyFrom(PathPrefix, &fileNamePointers.Front(), fileNamePointers.Size(), UpdateCallback);
+};
       
 HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName,
     bool usePassword, const UString &password)
@@ -448,19 +438,18 @@ HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &item
     MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
     return E_FAIL;
   }
-  UStringVector fileNames;
-  CRecordVector<const wchar_t *> fileNamePointers;
-  fileNames.Add(itemName);
-  fileNamePointers.Add(fileNames[0]);
 
-  UString pathPrefix = folderPath;
-  NName::NormalizeDirPathPrefix(pathPrefix);
-
-  CUpdateCallback100Imp *callbackSpec = new CUpdateCallback100Imp;
-  CMyComPtr<IProgress> callback = callbackSpec;
-  callbackSpec->Init((HWND)*this, usePassword, password);
-
-  return folderOperations->CopyFrom(pathPrefix, &fileNamePointers.Front(), fileNamePointers.Size(), callback);
+  CThreadCopyFrom t;
+  t.UpdateCallbackSpec = new CUpdateCallback100Imp;
+  t.UpdateCallback = t.UpdateCallbackSpec;
+  t.UpdateCallbackSpec->ProgressDialog = &t.ProgressDialog;
+  t.Name = itemName;
+  t.PathPrefix = folderPath;
+  NName::NormalizeDirPathPrefix(t.PathPrefix);
+  t.FolderOperations = folderOperations;
+  t.UpdateCallbackSpec->Init(usePassword, password);
+  RINOK(t.Create(itemName, (HWND)*this));
+  return t.Result;
 }
 
 LRESULT CPanel::OnOpenItemChanged(LPARAM lParam)
@@ -658,19 +647,20 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (!tryExternal)
     return;
 
-  HANDLE hProcess;
+  CProcess process;
+  HRESULT res;
   if (editMode)
-    hProcess = StartEditApplication(tempFilePath, (HWND)*this);
+    res = StartEditApplication(tempFilePath, (HWND)*this, process);
   else
-    hProcess = StartApplication(tempDirNorm, tempFilePath, (HWND)*this);
+    res = StartApplication(tempDirNorm, tempFilePath, (HWND)*this, process);
 
-  if (hProcess == 0)
+  if ((HANDLE)process == 0)
     return;
 
   tmpProcessInfo->Window = (HWND)(*this);
   tmpProcessInfo->FullPathFolderPrefix = _currentFolderPrefix;
   tmpProcessInfo->ItemName = name;
-  tmpProcessInfo->ProcessHandle = hProcess;
+  tmpProcessInfo->ProcessHandle = process.Detach();
 
   NWindows::CThread thread;
   if (thread.Create(MyThreadFunction, tmpProcessInfo) != S_OK)

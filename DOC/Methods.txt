@@ -1,4 +1,4 @@
-7-Zip method IDs (4.65)
+7-Zip method IDs (9.04)
 -----------------------
 
 Each compression or crypto method in 7z has unique binary value (ID).
@@ -25,12 +25,21 @@ List of defined IDs
       
 00 - Copy
 
-02 - Common
+03 - Delta
+04 - x86 (BCJ)
+05 - PPC (Big Endian)
+06 - IA64
+07 - ARM (little endian)
+08 - ARM Thumb (little endian)
+09 - SPARC
+21 - LZMA2
+          
+02.. - Common
    03 Swap
       - 2 Swap2
       - 4 Swap4
 
-03 - 7z
+03.. - 7z
    01 - LZMA
       01 - Version
   
@@ -60,7 +69,7 @@ List of defined IDs
       01 - experimental methods.
 
 
-04 - Misc
+04.. - Misc
    00 - Reserved
    01 - Zip
       00 - Copy (not used). Use {00} instead
@@ -87,7 +96,7 @@ List of defined IDs
       02 - BZip2NSIS
 
 
-06 - Crypto 
+06.. - Crypto 
    00 - 
    01 - AES
       0x - AES-128
@@ -114,7 +123,7 @@ List of defined IDs
       07 - 7z
          01 - AES-256 + SHA-256
 
-07 - Hash (subject to change)
+07.. - Hash (subject to change)
    00 - 
    01 - CRC
    02 - SHA-1

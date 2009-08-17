@@ -1,29 +1,26 @@
 // ExtractCallback.h
 
-#ifndef __EXTRACTCALLBACK_H
-#define __EXTRACTCALLBACK_H
+#ifndef __EXTRACT_CALLBACK_H
+#define __EXTRACT_CALLBACK_H
 
-#include "../Agent/IFolderArchive.h"
-#include "Common/MyString.h"
-#include "../Common/ArchiveOpenCallback.h"
-
-#ifdef _SFX
-#include "ProgressDialog.h"
-#else
-#include "ProgressDialog2.h"
-#endif
+#include "Common/MyCom.h"
 
 #include "Windows/ResourceString.h"
 
-#ifdef LANG
-#include "LangUtils.h"
-#endif
+#include "../Agent/IFolderArchive.h"
+#include "../Common/ArchiveOpenCallback.h"
 
 #ifndef _NO_CRYPTO
 #include "../../IPassword.h"
 #endif
-#include "Common/MyCom.h"
+
 #include "IFolder.h"
+
+#include "ProgressDialog2.h"
+
+#ifdef LANG
+#include "LangUtils.h"
+#endif
 
 class CExtractCallbackImp:
   public IExtractCallbackUI,
@@ -99,32 +96,23 @@ public:
   #endif
 
 private:
-  // bool _extractMode;
   UString _currentArchivePath;
   bool _needWriteArchivePath;
 
   UString _currentFilePath;
   bool _isFolder;
 
-  // void CreateComplexDirectory(const UStringVector &aDirPathParts);
-
   HRESULT SetCurrentFilePath2(const wchar_t *filePath);
   void AddErrorMessage(LPCWSTR message);
 public:
-  CProgressDialog ProgressDialog;
-  UStringVector Messages;
-  bool ShowMessages;
+  CProgressDialog *ProgressDialog;
   #ifndef _SFX
   UInt64 NumFolders;
   UInt64 NumFiles;
   bool NeedAddFile;
   #endif
-  HWND ParentWindow;
-  INT_PTR StartProgressDialog(const UString &title)
-  {
-    return ProgressDialog.Create(title, ParentWindow);
-  }
   UInt32 NumArchiveErrors;
+  bool ThereAreMessageErrors;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
 
   #ifndef _NO_CRYPTO
@@ -138,13 +126,13 @@ public:
     PasswordIsDefined(false),
     PasswordWasAsked(false),
     #endif
-    OverwriteMode(NExtract::NOverwriteMode::kAskBefore),
-    ParentWindow(0),
-    ShowMessages(true)
+    OverwriteMode(NExtract::NOverwriteMode::kAskBefore)
     {}
    
   ~CExtractCallbackImp();
   void Init();
+
+  bool IsOK() const { return NumArchiveErrors == 0 && !ThereAreMessageErrors; }
 };
 
 #endif

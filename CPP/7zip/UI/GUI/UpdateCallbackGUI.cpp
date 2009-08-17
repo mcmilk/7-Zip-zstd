@@ -2,41 +2,29 @@
 
 #include "StdAfx.h"
 
-#include "Common/Defs.h"
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #include "Windows/PropVariant.h"
 
-#include "../FileManager/MessagesDialog.h"
 #include "../FileManager/PasswordDialog.h"
 
 #include "UpdateCallbackGUI.h"
 
 using namespace NWindows;
 
-CUpdateCallbackGUI::~CUpdateCallbackGUI()
-{
-  if (!Messages.IsEmpty())
-  {
-    CMessagesDialog messagesDialog;
-    messagesDialog.Messages = &Messages;
-    messagesDialog.Create(ParentWindow);
-  }
-}
+CUpdateCallbackGUI::~CUpdateCallbackGUI() {}
 
 void CUpdateCallbackGUI::Init()
 {
   FailedFiles.Clear();
-  Messages.Clear();
-  NumArchiveErrors = 0;
   NumFiles = 0;
 }
 
 void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
 {
-  Messages.Add(message);
+  ProgressDialog->Sync.AddErrorMessage(message);
 }
 
 void CUpdateCallbackGUI::AddErrorMessage(const wchar_t *name, DWORD systemError)
@@ -52,8 +40,7 @@ HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result)
 {
   if (result != S_OK)
   {
-    AddErrorMessage (UString(L"Error: ") + name +
-        UString(L" is not supported archive"));
+    AddErrorMessage (UString(L"Error: ") + name + UString(L" is not supported archive"));
   }
   return S_OK;
 }
@@ -77,7 +64,7 @@ HRESULT CUpdateCallbackGUI::FinishScanning()
 
 HRESULT CUpdateCallbackGUI::StartArchive(const wchar_t *name, bool /* updating */)
 {
-  ProgressDialog.ProgressSynch.SetTitleFileName(name);
+  ProgressDialog->Sync.SetTitleFileName(name);
   return S_OK;
 }
 
@@ -88,14 +75,14 @@ HRESULT CUpdateCallbackGUI::FinishArchive()
 
 HRESULT CUpdateCallbackGUI::CheckBreak()
 {
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  return ProgressDialog->Sync.ProcessStopAndPause();
 }
 
 HRESULT CUpdateCallbackGUI::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, const wchar_t *path)
 {
-  ProgressDialog.ProgressSynch.SetCurrentFileName(path);
-  ProgressDialog.ProgressSynch.SetNumFilesTotal(numFiles);
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  ProgressDialog->Sync.SetCurrentFileName(path);
+  ProgressDialog->Sync.SetNumFilesTotal(numFiles);
+  return ProgressDialog->Sync.ProcessStopAndPause();
 }
 
 HRESULT CUpdateCallbackGUI::Finilize()
@@ -105,13 +92,13 @@ HRESULT CUpdateCallbackGUI::Finilize()
 
 HRESULT CUpdateCallbackGUI::SetNumFiles(UInt64 numFiles)
 {
-  ProgressDialog.ProgressSynch.SetNumFilesTotal(numFiles);
+  ProgressDialog->Sync.SetNumFilesTotal(numFiles);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::SetTotal(UInt64 total)
 {
-  ProgressDialog.ProgressSynch.SetProgress(total, 0);
+  ProgressDialog->Sync.SetProgress(total, 0);
   return S_OK;
 }
 
@@ -119,20 +106,20 @@ HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completeValue)
 {
   RINOK(CheckBreak());
   if (completeValue != NULL)
-    ProgressDialog.ProgressSynch.SetPos(*completeValue);
+    ProgressDialog->Sync.SetPos(*completeValue);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
 {
   RINOK(CheckBreak());
-  ProgressDialog.ProgressSynch.SetRatioInfo(inSize, outSize);
+  ProgressDialog->Sync.SetRatioInfo(inSize, outSize);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool /* isAnti */)
 {
-  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
+  ProgressDialog->Sync.SetCurrentFileName(name);
   return S_OK;
 }
 
@@ -150,7 +137,7 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
 HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 {
   NumFiles++;
-  ProgressDialog.ProgressSynch.SetNumFilesCur(NumFiles);
+  ProgressDialog->Sync.SetNumFilesCur(NumFiles);
   return S_OK;
 }
 
@@ -159,38 +146,31 @@ HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BST
   *password = NULL;
   if (!PasswordIsDefined)
   {
-    if (AskPassword)
+    if (passwordIsDefined == 0 || AskPassword)
     {
       CPasswordDialog dialog;
-      if (dialog.Create(ProgressDialog) == IDCANCEL)
+      ProgressDialog->WaitCreating();
+      if (dialog.Create(*ProgressDialog) == IDCANCEL)
         return E_ABORT;
       Password = dialog.Password;
       PasswordIsDefined = true;
     }
   }
-  *passwordIsDefined = BoolToInt(PasswordIsDefined);
+  if (passwordIsDefined != 0)
+    *passwordIsDefined = BoolToInt(PasswordIsDefined);
   return StringToBstr(Password, password);
 }
 
 HRESULT CUpdateCallbackGUI::CryptoGetTextPassword(BSTR *password)
 {
-  *password = NULL;
-  if (!PasswordIsDefined)
-  {
-    CPasswordDialog dialog;
-    if (dialog.Create(ProgressDialog) == IDCANCEL)
-      return E_ABORT;
-    Password = dialog.Password;
-    PasswordIsDefined = true;
-  }
-  return StringToBstr(Password, password);
+  return CryptoGetTextPassword2(NULL, password);
 }
 
 /*
 It doesn't work, since main stream waits Dialog
 HRESULT CUpdateCallbackGUI::CloseProgress()
 {
-  ProgressDialog.MyClose();
+  ProgressDialog->MyClose();
   return S_OK;
 };
 */
@@ -198,18 +178,18 @@ HRESULT CUpdateCallbackGUI::CloseProgress()
 
 HRESULT CUpdateCallbackGUI::Open_CheckBreak()
 {
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  return ProgressDialog->Sync.ProcessStopAndPause();
 }
 
 HRESULT CUpdateCallbackGUI::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
 {
-  // if (numFiles != NULL) ProgressDialog.ProgressSynch.SetNumFilesTotal(*numFiles);
+  // if (numFiles != NULL) ProgressDialog->Sync.SetNumFilesTotal(*numFiles);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
 {
-  return ProgressDialog.ProgressSynch.ProcessStopAndPause();
+  return ProgressDialog->Sync.ProcessStopAndPause();
 }
 
 #ifndef _NO_CRYPTO
@@ -217,15 +197,7 @@ HRESULT CUpdateCallbackGUI::Open_SetCompleted(const UInt64 * /* numFiles */, con
 HRESULT CUpdateCallbackGUI::Open_CryptoGetTextPassword(BSTR *password)
 {
   PasswordWasAsked = true;
-  if (!PasswordIsDefined)
-  {
-    CPasswordDialog dialog;
-    if (dialog.Create(ProgressDialog) == IDCANCEL)
-      return E_ABORT;
-    Password = dialog.Password;
-    PasswordIsDefined = true;
-  }
-  return StringToBstr(Password, password);
+  return CryptoGetTextPassword2(NULL, password);
 }
 
 HRESULT CUpdateCallbackGUI::Open_GetPasswordIfAny(UString &password)
@@ -248,7 +220,7 @@ void CUpdateCallbackGUI::Open_ClearPasswordWasAskedFlag()
 /*
 HRESULT CUpdateCallbackGUI::ShowDeleteFile(const wchar_t *name)
 {
-  ProgressDialog.ProgressSynch.SetCurrentFileName(name);
+  ProgressDialog->Sync.SetCurrentFileName(name);
   return S_OK;
 }
 */

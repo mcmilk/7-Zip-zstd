@@ -3,7 +3,6 @@
 #ifndef __FSFOLDER_H
 #define __FSFOLDER_H
 
-#include "Common/MyString.h"
 #include "Common/MyCom.h"
 
 #include "Windows/FileFind.h"
@@ -17,8 +16,10 @@ class CFSFolder;
 
 struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfoW
 {
+  #ifndef UNDER_CE
   bool CompressedSizeIsDefined;
   UInt64 CompressedSize;
+  #endif
 };
 
 struct CDirItem;
@@ -98,6 +99,9 @@ private:
   void AddRefs(CDirItem &dirItem);
 public:
   HRESULT Init(const UString &path, IFolderFolder *parentFolder);
+  #ifdef UNDER_CE
+  HRESULT InitToRoot() { return Init(L"\\", NULL); }
+  #endif
 
   CFSFolder() : _flatMode(false) {}
 

@@ -26,6 +26,3 @@
 
 #define IDS_CONTEXT_FOLDER  170
 #define IDS_CONTEXT_ARCHIVE 171
-
-#define IDS_ERROR                       100
-#define IDS_CONFIG_DIALOG_CAPTION       102

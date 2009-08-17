@@ -1,6 +1,5 @@
 PROG = 7zxr.dll
 DEF_FILE = ../../Archive/Archive2.def
-LIBS = $(LIBS) user32.lib oleaut32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXTRACT_ONLY \
   -DCOMPRESS_MT \
@@ -17,9 +16,6 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
-  $O\FileDir.obj \
-  $O\FileFind.obj \
-  $O\FileIO.obj \
   $O\PropVariant.obj \
   $O\Synchronization.obj \
   $O\System.obj \
@@ -28,7 +24,6 @@ WIN_OBJS = \
   $O\CreateCoder.obj \
   $O\CWrappers.obj \
   $O\InBuffer.obj \
-  $O\InOutTempBuffer.obj \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \

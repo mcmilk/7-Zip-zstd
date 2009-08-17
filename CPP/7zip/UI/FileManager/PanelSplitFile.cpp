@@ -2,13 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "../../../../C/Alloc.h"
-
 #include "Common/IntToString.h"
 
+#include "Windows/Error.h"
 #include "Windows/FileIO.h"
 #include "Windows/FileFind.h"
-#include "Windows/Thread.h"
 
 #include "../GUI/ExtractRes.h"
 
@@ -18,27 +16,12 @@
 #include "CopyDialog.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
-#include "ProgressDialog2.h"
 #include "SplitDialog.h"
 #include "SplitUtils.h"
 
 using namespace NWindows;
 
-class CMyBuffer
-{
-  void *_data;
-public:
-  CMyBuffer(): _data(0) {}
-  operator void *() { return _data; }
-  bool Allocate(size_t size)
-  {
-    if (_data != 0)
-      return false;
-    _data = ::MidAlloc(size);
-    return _data != 0;
-  }
-  ~CMyBuffer() { ::MidFree(_data); }
-};
+static const wchar_t *g_Message_FileWriteError = L"File write error";
 
 struct CVolSeqName
 {
@@ -92,95 +75,85 @@ struct CVolSeqName
 
 static const UInt32 kBufSize = (1 << 20);
 
-struct CThreadSplit
+class CThreadSplit: public CProgressThreadVirt
 {
-  // HRESULT Result;
-  // CPanel *Panel;
-  CProgressDialog *ProgressDialog;
+  HRESULT ProcessVirt();
+public:
   UString FilePath;
   UString VolBasePath;
   CRecordVector<UInt64> VolumeSizes;
-  UString Error;
-  
-  void Process2()
-  {
-    // NCOM::CComInitializer comInitializer;
-    ProgressDialog->WaitCreating();
-    NFile::NIO::CInFile inFile;
-    if (!inFile.Open(FilePath))
-      throw L"Can not open file";
-    NFile::NIO::COutFile outFile;
-    CMyBuffer bufferObject;
-    if (!bufferObject.Allocate(kBufSize))
-      throw L"Can not allocate buffer";
-    Byte *buffer = (Byte *)(void *)bufferObject;
-    UInt64 curVolSize = 0;
-    CVolSeqName seqName;
-    UInt64 length;
-    if (!inFile.GetLength(length))
-      throw "error";
-
-    ProgressDialog->ProgressSynch.SetProgress(length, 0);
-    UInt64 pos = 0;
-
-    int volIndex = 0;
-
-    for (;;)
-    {
-      UInt64 volSize;
-      if (volIndex < VolumeSizes.Size())
-        volSize = VolumeSizes[volIndex];
-      else
-        volSize = VolumeSizes.Back();
-
-      UInt32 needSize = (UInt32)(MyMin((UInt64)kBufSize, volSize - curVolSize));
-      UInt32 processedSize;
-      if (!inFile.Read(buffer, needSize, processedSize))
-        throw L"Can not read input file";
-      if (processedSize == 0)
-        break;
-      needSize = processedSize;
-      if (curVolSize == 0)
-      {
-        UString name = VolBasePath;
-        name += L".";
-        name += seqName.GetNextName();
-        if (!outFile.Create(name, false))
-          throw L"Can not create output file";
-        ProgressDialog->ProgressSynch.SetCurrentFileName(name);
-      }
-      if (!outFile.Write(buffer, needSize, processedSize))
-        throw L"Can not write output file";
-      if (needSize != processedSize)
-        throw L"Can not write output file";
-      curVolSize += processedSize;
-      if (curVolSize == volSize)
-      {
-        outFile.Close();
-        if (volIndex < VolumeSizes.Size())
-          volIndex++;
-        curVolSize = 0;
-      }
-      pos += processedSize;
-      HRESULT res = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(pos);
-      if (res != S_OK)
-        return;
-    }
-  }
-  void Process()
-  {
-    try { Process2(); }
-    catch(const wchar_t *s) { Error = s; }
-    catch(...) { Error = L"Error"; }
-    ProgressDialog->MyClose();
-  }
-  
-  static THREAD_FUNC_DECL MyThreadFunction(void *param)
-  {
-    ((CThreadSplit *)param)->Process();
-    return 0;
-  }
 };
+
+HRESULT CThreadSplit::ProcessVirt()
+{
+  NFile::NIO::CInFile inFile;
+  if (!inFile.Open(FilePath))
+    return GetLastError();
+  NFile::NIO::COutFile outFile;
+  CMyBuffer bufferObject;
+  if (!bufferObject.Allocate(kBufSize))
+    return E_OUTOFMEMORY;
+  Byte *buffer = (Byte *)(void *)bufferObject;
+  UInt64 curVolSize = 0;
+  CVolSeqName seqName;
+  UInt64 length;
+  if (!inFile.GetLength(length))
+    return GetLastError();
+  
+  CProgressSync &sync = ProgressDialog.Sync;
+  sync.SetProgress(length, 0);
+  UInt64 pos = 0;
+  
+  UInt64 numFiles = 0;
+  int volIndex = 0;
+  
+  for (;;)
+  {
+    UInt64 volSize;
+    if (volIndex < VolumeSizes.Size())
+      volSize = VolumeSizes[volIndex];
+    else
+      volSize = VolumeSizes.Back();
+    
+    UInt32 needSize = (UInt32)(MyMin((UInt64)kBufSize, volSize - curVolSize));
+    UInt32 processedSize;
+    if (!inFile.Read(buffer, needSize, processedSize))
+      return GetLastError();
+    if (processedSize == 0)
+      break;
+    needSize = processedSize;
+    if (curVolSize == 0)
+    {
+      UString name = VolBasePath;
+      name += L'.';
+      name += seqName.GetNextName();
+      sync.SetCurrentFileName(name);
+      sync.SetNumFilesCur(numFiles++);
+      if (!outFile.Create(name, false))
+      {
+        HRESULT res = GetLastError();
+        ErrorPath1 = name;
+        return res;
+      }
+    }
+    if (!outFile.Write(buffer, needSize, processedSize))
+      return GetLastError();
+    if (needSize != processedSize)
+      throw g_Message_FileWriteError;
+    curVolSize += processedSize;
+    if (curVolSize == volSize)
+    {
+      outFile.Close();
+      if (volIndex < VolumeSizes.Size())
+        volIndex++;
+      curVolSize = 0;
+    }
+    pos += processedSize;
+    RINOK(sync.SetPosAndCheckPaused(pos));
+  }
+  sync.SetNumFilesCur(numFiles);
+  return S_OK;
+}
 
 void CApp::Split()
 {
@@ -239,7 +212,7 @@ void CApp::Split()
     ConvertUInt64ToString(numVolumes, s);
     if (::MessageBoxW(srcPanel, MyFormatNew(IDS_SPLIT_CONFIRM_MESSAGE, 0x03020521, s),
         LangString(IDS_SPLIT_CONFIRM_TITLE, 0x03020520),
-        MB_YESNOCANCEL | MB_ICONQUESTION | MB_TASKMODAL) != IDYES)
+        MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
       return;
   }
 
@@ -251,20 +224,20 @@ void CApp::Split()
     return;
   }
 
-  CThreadSplit spliter;
-  // spliter.Panel = this;
-
   {
-  CProgressDialog progressDialog;
-  spliter.ProgressDialog = &progressDialog;
+  CThreadSplit spliter;
+
+  CProgressDialog &progressDialog = spliter.ProgressDialog;
 
   UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
   UString title = LangString(IDS_SPLITTING, 0x03020510);
 
+  progressDialog.ShowCompressionInfo = false;
+
   progressDialog.MainWindow = _window;
   progressDialog.MainTitle = progressWindowTitle;
   progressDialog.MainAddTitle = title + UString(L" ");
-  progressDialog.ProgressSynch.SetTitleFileName(itemName);
+  progressDialog.Sync.SetTitleFileName(itemName);
 
 
   spliter.FilePath = srcPath + itemName;
@@ -276,16 +249,12 @@ void CApp::Split()
   // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
   // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
 
-  NWindows::CThread thread;
-  if (thread.Create(CThreadSplit::MyThreadFunction, &spliter) != S_OK)
-    throw 271824;
-  progressDialog.Create(title, _window);
+  if (spliter.Create(title, _window) != 0)
+    return;
   }
   RefreshTitleAlways();
 
 
-  if (!spliter.Error.IsEmpty())
-    srcPanel.MessageBoxMyError(spliter.Error);
   // disableTimerProcessing1.Restore();
   // disableTimerProcessing2.Restore();
   // srcPanel.SetFocusToList();
@@ -293,78 +262,71 @@ void CApp::Split()
 }
 
 
-struct CThreadCombine
+class CThreadCombine: public CProgressThreadVirt
 {
-  CProgressDialog *ProgressDialog;
-
+  HRESULT ProcessVirt();
+public:
   UString InputDirPrefix;
   UStringVector Names;
   UString OutputPath;
   UInt64 TotalSize;
-
-  UString Error;
-  HRESULT Res;
-  
-  void Process2()
-  {
-    NFile::NIO::COutFile outFile;
-    if (!outFile.Create(OutputPath, false))
-    {
-      Error = L"Can create open output file:\n" + OutputPath;
-      return;
-    }
-
-    ProgressDialog->ProgressSynch.SetProgress(TotalSize, 0);
-
-    CMyBuffer bufferObject;
-    if (!bufferObject.Allocate(kBufSize))
-      throw L"Can not allocate buffer";
-    Byte *buffer = (Byte *)(void *)bufferObject;
-    UInt64 pos = 0;
-    for (int i = 0; i < Names.Size(); i++)
-    {
-      NFile::NIO::CInFile inFile;
-      const UString nextName = InputDirPrefix + Names[i];
-      if (!inFile.Open(nextName))
-      {
-        Error = L"Can not open input file:\n" + nextName;
-        return;
-      }
-      ProgressDialog->ProgressSynch.SetCurrentFileName(nextName);
-      for (;;)
-      {
-        UInt32 processedSize;
-        if (!inFile.Read(buffer, kBufSize, processedSize))
-          throw L"Can not read input file";
-        if (processedSize == 0)
-          break;
-        UInt32 needSize = processedSize;
-        if (!outFile.Write(buffer, needSize, processedSize) || needSize != processedSize)
-          throw L"Can not write output file";
-        pos += processedSize;
-        Res = ProgressDialog->ProgressSynch.SetPosAndCheckPaused(pos);
-        if (Res != S_OK)
-          return;
-      }
-    }
-  }
-
-  void Process()
-  {
-    Res = S_OK;
-    ProgressDialog->WaitCreating();
-    try { Process2(); }
-    catch(const wchar_t *s) { Error = s; }
-    catch(...) { Error = L"Error";}
-    ProgressDialog->MyClose();
-  }
-  
-  static THREAD_FUNC_DECL MyThreadFunction(void *param)
-  {
-    ((CThreadCombine *)param)->Process();
-    return 0;
-  }
 };
+
+HRESULT CThreadCombine::ProcessVirt()
+{
+  NFile::NIO::COutFile outFile;
+  if (!outFile.Create(OutputPath, false))
+  {
+    HRESULT res = GetLastError();
+    ErrorPath1 = OutputPath;
+    return res;
+  }
+  
+  CProgressSync &sync = ProgressDialog.Sync;
+  sync.SetProgress(TotalSize, 0);
+  
+  CMyBuffer bufferObject;
+  if (!bufferObject.Allocate(kBufSize))
+    return E_OUTOFMEMORY;
+  Byte *buffer = (Byte *)(void *)bufferObject;
+  UInt64 pos = 0;
+  for (int i = 0; i < Names.Size(); i++)
+  {
+    NFile::NIO::CInFile inFile;
+    const UString nextName = InputDirPrefix + Names[i];
+    if (!inFile.Open(nextName))
+    {
+      HRESULT res = GetLastError();
+      ErrorPath1 = nextName;
+      return res;
+    }
+    sync.SetCurrentFileName(nextName);
+    for (;;)
+    {
+      UInt32 processedSize;
+      if (!inFile.Read(buffer, kBufSize, processedSize))
+      {
+        HRESULT res = GetLastError();
+        ErrorPath1 = nextName;
+        return res;
+      }
+      if (processedSize == 0)
+        break;
+      UInt32 needSize = processedSize;
+      if (!outFile.Write(buffer, needSize, processedSize))
+      {
+        HRESULT res = GetLastError();
+        ErrorPath1 = OutputPath;
+        return res;
+      }
+      if (needSize != processedSize)
+        throw g_Message_FileWriteError;
+      pos += processedSize;
+      RINOK(sync.SetPosAndCheckPaused(pos));
+    }
+  }
+  return S_OK;
+}
 
 extern void AddValuePair2(UINT resourceID, UInt32 langID, UInt64 num, UInt64 size, UString &s);
 
@@ -410,6 +372,7 @@ void CApp::Combine()
     return;
   }
   
+  {
   CThreadCombine combiner;
   
   UString nextName = itemName;
@@ -491,10 +454,9 @@ void CApp::Combine()
     return;
   }
   
-  {
-    CProgressDialog progressDialog;
-    combiner.ProgressDialog = &progressDialog;
-    
+    CProgressDialog &progressDialog = combiner.ProgressDialog;
+    progressDialog.ShowCompressionInfo = false;
+  
     UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
     UString title = LangString(IDS_COMBINING, 0x03020610);
     
@@ -507,15 +469,11 @@ void CApp::Combine()
     // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
     // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);
     
-    NWindows::CThread thread;
-    if (thread.Create(CThreadCombine::MyThreadFunction, &combiner) != S_OK)
-      throw 271824;
-    progressDialog.Create(title, _window);
+    if (combiner.Create(title, _window) != 0)
+      return;
   }
   RefreshTitleAlways();
 
-  if (!combiner.Error.IsEmpty())
-    srcPanel.MessageBoxMyError(combiner.Error);
   // disableTimerProcessing1.Restore();
   // disableTimerProcessing2.Restore();
   // srcPanel.SetFocusToList();

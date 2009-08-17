@@ -1,5 +1,5 @@
-#define IDI_FAM                         101
-#define IDI_FM                          101
+#include "resourceGui.h"
+
 #define IDR_MENUBAR1                    103
 #define IDM_MENU                        103
 #define IDR_ACCELERATOR1                209
@@ -109,9 +109,6 @@
 #define IDS_SELECT_MASK                 2252
 #define IDS_FOLDERS_HISTORY             2260
 #define IDS_N_SELECTED_ITEMS            2270
-#define IDS_FILES_COLON                 2274
-#define IDS_FOLDERS_COLON               2275
-#define IDS_SIZE_COLON                  2276
 
 #define IDS_TOO_MANY_ITEMS              2279
 #define IDS_WANT_UPDATE_MODIFIED_FILE   2280
@@ -159,9 +156,6 @@
 
 #define IDS_SCANNING                    4050
 #define IDS_PROPERTIES                  4060
-
-#define IDS_PROGRESS_TESTING            4100
-#define IDS_MESSAGE_NO_ERRORS           4200
 
 #define IDS_MESSAGE_UNSUPPORTED_OPERATION_FOR_LONG_PATH_FOLDER  4301
 #define IDS_SELECT_ONE_FILE             4302

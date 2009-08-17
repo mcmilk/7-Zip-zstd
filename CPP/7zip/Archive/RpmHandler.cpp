@@ -71,7 +71,7 @@ struct CSigHeaderSig
   bool MagicCheck()
     { return Magic[0] == 0x8e && Magic[1] == 0xad && Magic[2] == 0xe8 && Magic[3] == 0x01; };
   UInt32 GetLostHeaderLen()
-    { return IndexLen * kEntryInfoSize + DataLen;  };
+    { return IndexLen * kEntryInfoSize + DataLen; };
 };
 
 static HRESULT RedSigHeaderSig(IInStream *inStream, CSigHeaderSig &h)
@@ -243,30 +243,25 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  if (numItems == UInt32(-1))
-    numItems = 1;
   if (numItems == 0)
     return S_OK;
-  if (numItems != 1 || indices[0] != 0)
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
-
-  bool testMode = (_aTestMode != 0);
 
   RINOK(extractCallback->SetTotal(_size));
   CMyComPtr<ISequentialOutStream> outStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   RINOK(extractCallback->GetStream(0, &outStream, askMode));
   if (!testMode && !outStream)
     return S_OK;
   RINOK(extractCallback->PrepareOperation(askMode));
 
-  
   CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
 
   CLocalProgress *lps = new CLocalProgress;
@@ -276,7 +271,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   RINOK(_stream->Seek(_pos, STREAM_SEEK_SET, NULL));
   RINOK(copyCoder->Code(_stream, outStream, NULL, NULL, progress));
   outStream.Release();
-  return extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK);
+  return extractCallback->SetOperationResult(NExtract::NOperationResult::kOK);
   COM_TRY_END
 }
 
@@ -287,7 +282,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new NArchive::NRpm::CHandler;  }
+static IInArchive *CreateArc() { return new NArchive::NRpm::CHandler; }
 
 static CArcInfo g_ArcInfo =
   { L"Rpm", L"rpm", 0, 0xEB, { 0xED, 0xAB, 0xEE, 0xDB}, 4, false, CreateArc, 0 };

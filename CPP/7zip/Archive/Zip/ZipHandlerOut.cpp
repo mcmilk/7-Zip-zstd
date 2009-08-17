@@ -112,7 +112,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     ui.NewData = IntToBool(newData);
     ui.IndexInArchive = indexInArchive;
     ui.IndexInClient = i;
-    bool existInArchive = (indexInArchive != UInt32(-1));
+    bool existInArchive = (indexInArchive != (UInt32)-1);
     if (existInArchive && newData)
       if (m_Items[indexInArchive].IsAesEncrypted())
         thereAreAesUpdates = true;

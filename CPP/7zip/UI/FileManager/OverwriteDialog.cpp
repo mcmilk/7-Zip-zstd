@@ -2,9 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "OverwriteDialog.h"
-
 #include "Common/StringConvert.h"
+
 #include "Windows/FileName.h"
 #include "Windows/Defs.h"
 #include "Windows/ResourceString.h"
@@ -12,6 +11,7 @@
 #include "Windows/PropVariantConversions.h"
 
 #include "FormatUtils.h"
+#include "OverwriteDialog.h"
 
 // #include "../resource.h"
 
@@ -36,6 +36,16 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
+static const int kCurrentFileNameSizeLimit = 82;
+static const int kCurrentFileNameSizeLimit2 = 30;
+
+void COverwriteDialog::ReduceString(UString &s)
+{
+  int size = _isBig ? kCurrentFileNameSizeLimit : kCurrentFileNameSizeLimit2;
+  if (s.Length() > size)
+    s = s.Left(size / 2) + UString(L" ... ") + s.Right(size / 2);
+}
+
 void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
     const NOverwriteDialog::CFileInfo &fileInfo)
 {
@@ -47,19 +57,23 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
         #endif
         NumberToString(fileInfo.Size));
 
-  UString reducedName;
-  const int kLineSize = 88;
-  for (int i = 0; i < fileInfo.Name.Length();)
+  const UString &fileName = fileInfo.Name;
+  int slashPos = fileName.ReverseFind(WCHAR_PATH_SEPARATOR);
+  UString s1, s2;
+  if (slashPos >= 0)
   {
-    reducedName += fileInfo.Name.Mid(i, kLineSize);
-    reducedName += L" ";
-    i += kLineSize;
+    s1 = fileName.Left(slashPos + 1);
+    s2 = fileName.Mid(slashPos + 1);
   }
-
-  UString fullString = reducedName;
-  fullString += L"\n";
+  else
+    s2 = fileName;
+  ReduceString(s1);
+  ReduceString(s2);
+  
+  UString fullString = s1 + L'\n' + s2;
+  fullString += L'\n';
   fullString += sizeString;
-  fullString += L"\n";
+  fullString += L'\n';
 
   if (fileInfo.TimeIsDefined)
   {
@@ -101,10 +115,9 @@ bool COverwriteDialog::OnInit()
   LangSetWindowText(HWND(*this), 0x02000900);
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
-  SetFileInfoControl(IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,
-      IDC_STATIC_OVERWRITE_OLD_FILE_ICON, OldFileInfo);
-  SetFileInfoControl(IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,
-      IDC_STATIC_OVERWRITE_NEW_FILE_ICON, NewFileInfo);
+  SetFileInfoControl(IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME, IDC_STATIC_OVERWRITE_OLD_FILE_ICON, OldFileInfo);
+  SetFileInfoControl(IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME, IDC_STATIC_OVERWRITE_NEW_FILE_ICON, NewFileInfo);
+  NormalizePosition();
   return CModalDialog::OnInit();
 }
 

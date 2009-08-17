@@ -1,4 +1,5 @@
-#define IDD_DIALOG_BENCHMARK            800
+#define IDD_DIALOG_BENCHMARK            550
+#define IDD_DIALOG_BENCHMARK_2          650
 #define IDC_BUTTON_STOP                 1001
 #define IDC_BUTTON_RESTART              1002
 #define IDC_BENCHMARK_DICTIONARY        1010

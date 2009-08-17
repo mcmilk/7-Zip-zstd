@@ -111,7 +111,7 @@ protected:
 public:
   HRESULT Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
-  HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword);
+  HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError);
   
   void SkipArchiveComment();
   

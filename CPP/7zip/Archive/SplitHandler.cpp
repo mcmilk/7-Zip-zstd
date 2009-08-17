@@ -294,24 +294,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  if (numItems == UInt32(-1))
-    numItems = 1;
   if (numItems == 0)
     return S_OK;
-  if (numItems != 1 || indices[0] != 0)
+  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
 
-  bool testMode = (_aTestMode != 0);
   UInt64 currentTotalSize = 0;
   RINOK(extractCallback->SetTotal(_totalSize));
   CMyComPtr<ISequentialOutStream> outStream;
   Int32 askMode = testMode ?
-      NArchive::NExtract::NAskMode::kTest :
-      NArchive::NExtract::NAskMode::kExtract;
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract;
   RINOK(extractCallback->GetStream(0, &outStream, askMode));
   if (!testMode && !outStream)
     return S_OK;
@@ -334,7 +331,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     currentTotalSize += copyCoderSpec->TotalSize;
   }
   outStream.Release();
-  return extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK);
+  return extractCallback->SetOperationResult(NExtract::NOperationResult::kOK);
   COM_TRY_END
 }
 
@@ -360,7 +357,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler;  }
+static IInArchive *CreateArc() { return new CHandler; }
 
 static CArcInfo g_ArcInfo =
 { L"Split", L"001", 0, 0xEA, { 0 }, 0, false, CreateArc, 0 };

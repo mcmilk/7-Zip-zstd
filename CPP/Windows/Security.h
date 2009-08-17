@@ -3,9 +3,9 @@
 #ifndef __WINDOWS_SECURITY_H
 #define __WINDOWS_SECURITY_H
 
-#include "Defs.h"
-
 #include <NTSecAPI.h>
+
+#include "Defs.h"
 
 namespace NWindows {
 namespace NSecurity {
@@ -128,8 +128,8 @@ public:
       PLSA_ENUMERATION_INFORMATION *enumerationBuffer, PULONG countReturned)
     { return LsaEnumerateAccountsWithUserRight(_handle, userRights, (void **)enumerationBuffer, countReturned); }
 
-  NTSTATUS EnumerateAccountRights(PSID sid,  PLSA_UNICODE_STRING* userRights, PULONG countOfRights)
-    { return ::LsaEnumerateAccountRights(_handle, sid,  userRights, countOfRights); }
+  NTSTATUS EnumerateAccountRights(PSID sid, PLSA_UNICODE_STRING* userRights, PULONG countOfRights)
+    { return ::LsaEnumerateAccountRights(_handle, sid, userRights, countOfRights); }
 
   NTSTATUS LookupSids(ULONG count, PSID* sids,
       PLSA_REFERENCED_DOMAIN_LIST* referencedDomains, PLSA_TRANSLATED_NAME* names)

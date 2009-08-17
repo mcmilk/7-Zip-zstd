@@ -1,0 +1,13 @@
+#include "resourceGui.h"
+
+STRINGTABLE
+BEGIN
+    IDS_INCORRECT_VOLUME_SIZE "Incorrect volume size"
+
+    IDS_FILES_COLON         "Files:"
+    IDS_FOLDERS_COLON       "Folders:"
+    IDS_SIZE_COLON          "Size:"
+
+    IDS_PROGRESS_TESTING    "Testing"
+    IDS_MESSAGE_NO_ERRORS   "There are no errors"
+END

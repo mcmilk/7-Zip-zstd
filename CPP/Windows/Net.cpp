@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Net.h"
-
 #ifndef _UNICODE
 #include "Common/StringConvert.h"
 #endif
+
+#include "Windows/Net.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -105,7 +105,7 @@ static void SetComplexString2(LPWSTR *destString, bool defined, const UString &s
     *destString = 0;
 }
 
-static void ConvertCResourceToNETRESOURCE(const CResourceW &resource,  NETRESOURCEW &netResource)
+static void ConvertCResourceToNETRESOURCE(const CResourceW &resource, NETRESOURCEW &netResource)
 {
   netResource.dwScope = resource.Scope;
   netResource.dwType = resource.Type;
@@ -209,7 +209,7 @@ DWORD CEnum::Next(CResource &resource)
   ZeroMemory(lpnrLocal, kBufferSize);
   DWORD bufferSize = kBufferSize;
   DWORD numEntries = 1;
-  DWORD result = Next(&numEntries,  lpnrLocal, &bufferSize);
+  DWORD result = Next(&numEntries, lpnrLocal, &bufferSize);
   if (result != NO_ERROR)
     return result;
   if (numEntries != 1)
@@ -230,7 +230,7 @@ DWORD CEnum::Next(CResourceW &resource)
     ZeroMemory(lpnrLocal, kBufferSize);
     DWORD bufferSize = kBufferSize;
     DWORD numEntries = 1;
-    DWORD result = NextW(&numEntries,  lpnrLocal, &bufferSize);
+    DWORD result = NextW(&numEntries, lpnrLocal, &bufferSize);
     if (result != NO_ERROR)
       return result;
     if (numEntries != 1)
@@ -256,7 +256,7 @@ DWORD GetResourceParent(const CResource &resource, CResource &parentResource)
   DWORD bufferSize = kBufferSize;
   NETRESOURCE netResource;
   ConvertCResourceToNETRESOURCE(resource, netResource);
-  DWORD result = ::WNetGetResourceParent(&netResource,  lpnrLocal, &bufferSize);
+  DWORD result = ::WNetGetResourceParent(&netResource, lpnrLocal, &bufferSize);
   if (result != NO_ERROR)
     return result;
   ConvertNETRESOURCEToCResource(lpnrLocal[0], parentResource);
@@ -276,7 +276,7 @@ DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource)
     DWORD bufferSize = kBufferSize;
     NETRESOURCEW netResource;
     ConvertCResourceToNETRESOURCE(resource, netResource);
-    DWORD result = ::WNetGetResourceParentW(&netResource,  lpnrLocal, &bufferSize);
+    DWORD result = ::WNetGetResourceParentW(&netResource, lpnrLocal, &bufferSize);
     if (result != NO_ERROR)
       return result;
     ConvertNETRESOURCEToCResource(lpnrLocal[0], parentResource);

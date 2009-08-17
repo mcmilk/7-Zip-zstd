@@ -1,25 +1,41 @@
 #include "SystemPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xSize2 196
-#define ySize2 200
-#define xSize (xSize2 + marg + marg)
-#define ySize (ySize2 + marg + marg)
-#define g0Size xSize2
-#define gYSize (ySize2 - 20 - bYSize)
+#define xc 200
+#define yc 200
 
-
-IDD_SYSTEM  DIALOG  0, 0, xSize, ySize  MY_PAGE_STYLE
+IDD_SYSTEM  MY_PAGE
 CAPTION "System"
-MY_FONT
 BEGIN
-  LTEXT     "Associate 7-Zip with:", IDC_SYSTEM_STATIC_ASSOCIATE, marg, marg, xSize2, 8
-  CONTROL   "List1", IDC_SYSTEM_LIST_ASSOCIATE, "SysListView32",
+  LTEXT      "Associate 7-Zip with:", IDC_SYSTEM_STATIC_ASSOCIATE, m, m, xc, 8
+  CONTROL    "List1", IDC_SYSTEM_LIST_ASSOCIATE, "SysListView32",
              LVS_LIST | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,
-             marg, 20, g0Size, gYSize
-  PUSHBUTTON  "Select all", IDC_SYSTEM_SELECT_ALL, marg, (ySize - marg - bYSize), 90, bYSize
-
+             m, m + 12, xc, (yc - m - 12 - 1 - bys)
+  PUSHBUTTON  "Select all", IDC_SYSTEM_SELECT_ALL, m, (ys - m - bys), 90, bys
 END
+
+#ifdef UNDER_CE
+
+#undef m
+#undef xc
+#undef yc
+
+#define m 4
+#define xc (SMALL_PAGE_SIZE_X + 8)
+#define yc (128 + 8)
+
+IDD_SYSTEM_2  MY_PAGE
+CAPTION "System"
+BEGIN
+  LTEXT      "Associate 7-Zip with:", IDC_SYSTEM_STATIC_ASSOCIATE, m, m, xc, 8
+  CONTROL    "List1", IDC_SYSTEM_LIST_ASSOCIATE, "SysListView32",
+             LVS_LIST | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,
+             m, m + 12, xc, (yc - m - 12 - 1 - bys - 8)
+  PUSHBUTTON  "Select all", IDC_SYSTEM_SELECT_ALL, m, (ys - m - bys - 8), 90, bys
+END
+
+#endif
+
 
 STRINGTABLE
 BEGIN

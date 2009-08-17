@@ -3,46 +3,58 @@
 #ifndef __WINDOWS_FILEMAPPING_H
 #define __WINDOWS_FILEMAPPING_H
 
-#include "Windows/Handle.h"
-#include "Windows/Defs.h"
+#include "Common/Types.h"
+
+#include "Handle.h"
 
 namespace NWindows {
-// namespace NFile {
-// namespace NMapping {
 
 class CFileMapping: public CHandle
 {
 public:
-  bool Create(HANDLE file, LPSECURITY_ATTRIBUTES attributes,
-    DWORD protect, UINT64 maximumSize, LPCTSTR name)
+  WRes Create(DWORD protect, UInt64 maxSize, LPCTSTR name)
   {
-    _handle = ::CreateFileMapping(file, attributes,
-      protect, DWORD(maximumSize >> 32), DWORD(maximumSize), name);
-    return (_handle != NULL);
+    _handle = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, protect, (DWORD)(maxSize >> 32), (DWORD)maxSize, name);
+    return ::GetLastError();
   }
 
-  bool Open(DWORD desiredAccess, bool inheritHandle, LPCTSTR name)
+  WRes Open(DWORD desiredAccess, LPCTSTR name)
   {
-    _handle = ::OpenFileMapping(desiredAccess, BoolToBOOL(inheritHandle), name);
-    return (_handle != NULL);
+    #ifdef UNDER_CE
+    WRes res = Create(PAGE_READONLY, 0, name);
+    if (res == ERROR_ALREADY_EXISTS)
+      return 0;
+    Close();
+    if (res == 0)
+      res = ERROR_FILE_NOT_FOUND;
+    return res;
+    #else
+    _handle = ::OpenFileMapping(desiredAccess, FALSE, name);
+    if (_handle != 0)
+      return 0;
+    return ::GetLastError();
+    #endif
   }
 
-  LPVOID MapViewOfFile(DWORD desiredAccess, UINT64 fileOffset,
-      SIZE_T numberOfBytesToMap)
+  LPVOID Map(DWORD desiredAccess, UInt64 fileOffset, SIZE_T numberOfBytesToMap)
   {
-    return ::MapViewOfFile(_handle, desiredAccess,
-        DWORD(fileOffset >> 32), DWORD(fileOffset), numberOfBytesToMap);
+    return ::MapViewOfFile(_handle, desiredAccess, (DWORD)(fileOffset >> 32), (DWORD)fileOffset, numberOfBytesToMap);
   }
 
-  LPVOID MapViewOfFileEx(DWORD desiredAccess, UINT64 fileOffset,
-      SIZE_T numberOfBytesToMap, LPVOID baseAddress)
+  #ifndef UNDER_CE
+  LPVOID Map(DWORD desiredAccess, UInt64 fileOffset, SIZE_T numberOfBytesToMap, LPVOID baseAddress)
   {
-    return ::MapViewOfFileEx(_handle, desiredAccess,
-      DWORD(fileOffset >> 32), DWORD(fileOffset),
-      numberOfBytesToMap, baseAddress);
+    return ::MapViewOfFileEx(_handle, desiredAccess, (DWORD)(fileOffset >> 32), (DWORD)fileOffset, numberOfBytesToMap, baseAddress);
   }
-  
+  #endif
+};
 
+class CFileUnmapper
+{
+  const void *_data;
+public:
+  CFileUnmapper(const void *data) : _data(data) {}
+  ~CFileUnmapper() { ::UnmapViewOfFile(_data); }
 };
 
 }

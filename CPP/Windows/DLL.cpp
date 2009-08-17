@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "DLL.h"
-#include "Defs.h"
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
 #endif
+
+#include "DLL.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -14,11 +14,6 @@ extern bool g_IsNT;
 
 namespace NWindows {
 namespace NDLL {
-
-CLibrary::~CLibrary()
-{
-  Free();
-}
 
 bool CLibrary::Free()
 {

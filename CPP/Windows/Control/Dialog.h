@@ -4,7 +4,6 @@
 #define __WINDOWS_CONTROL_DIALOG_H
 
 #include "Windows/Window.h"
-#include "Windows/Defs.h"
 
 namespace NWindows {
 namespace NControl {
@@ -23,6 +22,8 @@ public:
 
   bool ShowItem(int itemID, int cmdShow) const
     { return BOOLToBool(::ShowWindow(GetItem(itemID), cmdShow)); }
+
+  bool HideItem(int itemID) const { return ShowItem(itemID, SW_HIDE); }
 
   bool SetItemText(int itemID, LPCTSTR s)
     { return BOOLToBool(SetDlgItemText(_window, itemID, s)); }
@@ -50,11 +51,11 @@ public:
   bool SetItemInt(int itemID, UINT value, bool isSigned)
     { return BOOLToBool(SetDlgItemInt(_window, itemID, value, BoolToBOOL(isSigned))); }
   bool GetItemInt(int itemID, bool isSigned, UINT &value)
-    {
-      BOOL result;
-      value = GetDlgItemInt(_window, itemID, &result, BoolToBOOL(isSigned));
-      return BOOLToBool(result);
-    }
+  {
+    BOOL result;
+    value = GetDlgItemInt(_window, itemID, &result, BoolToBOOL(isSigned));
+    return BOOLToBool(result);
+  }
 
   HWND GetNextGroupItem(HWND control, bool previous)
     { return GetNextDlgGroupItem(_window, control, BoolToBOOL(previous)); }
@@ -87,8 +88,17 @@ public:
   virtual bool OnInit() { return true; }
   virtual bool OnCommand(WPARAM wParam, LPARAM lParam);
   virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual void OnHelp(LPHELPINFO /* helpInfo */) { OnHelp(); };
+  virtual bool OnSize(WPARAM /* wParam */, int /* xSize */, int /* ySize */) { return false; }
+
+  /*
+  #ifdef UNDER_CE
+  virtual void OnHelp(void *) { OnHelp(); };
+  #else
+  virtual void OnHelp(LPHELPINFO) { OnHelp(); };
+  #endif
+  */
   virtual void OnHelp() {};
+
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK() {};
   virtual void OnCancel() {};
@@ -99,12 +109,63 @@ public:
     { return SetLongPtr(DWLP_MSGRESULT, newLongPtr); }
   LONG_PTR GetMsgResult() const
     { return GetLongPtr(DWLP_MSGRESULT); }
+
+
+  bool GetMargins(int margin, int &x, int &y)
+  {
+    RECT rect;
+    rect.left = 0;
+    rect.top = 0;
+    rect.right = margin;
+    rect.bottom = margin;
+    if (!MapRect(&rect))
+      return false;
+    x = rect.right - rect.left;
+    y = rect.bottom - rect.top;
+    return true;
+  }
+
+  int Units_To_Pixels_X(int units)
+  {
+    RECT rect;
+    rect.left = 0;
+    rect.top = 0;
+    rect.right = units;
+    rect.bottom = units;
+    if (!MapRect(&rect))
+      return units * 3 / 2;
+    return rect.right - rect.left;
+  }
+
+  bool GetItemSizes(int id, int &x, int &y)
+  {
+    RECT rect;
+    if (!::GetWindowRect(GetItem(id), &rect))
+      return false;
+    x = rect.right - rect.left;
+    y = rect.bottom - rect.top;
+    return true;
+  }
+
+  void GetClientRectOfItem(int id, RECT &rect)
+  {
+    ::GetWindowRect(GetItem(id), &rect);
+    ScreenToClient(&rect);
+  }
+
+  
+  bool MoveItem(int id, int x, int y, int width, int height, bool repaint = true)
+    { return BOOLToBool(::MoveWindow(GetItem(id), x, y, width, height, BoolToBOOL(repaint))); }
+
+  void NormalizeSize(bool fullNormalize = false);
+  void NormalizePosition();
 };
 
 class CModelessDialog: public CDialog
 {
 public:
   bool Create(LPCTSTR templateName, HWND parentWindow);
+  bool Create(UINT resID, HWND parentWindow) { return Create(MAKEINTRESOURCEW(resID), parentWindow); }
   #ifndef _UNICODE
   bool Create(LPCWSTR templateName, HWND parentWindow);
   #endif
@@ -116,28 +177,28 @@ class CModalDialog: public CDialog
 {
 public:
   INT_PTR Create(LPCTSTR templateName, HWND parentWindow);
-  INT_PTR Create(UINT resID, HWND parentWindow)
-    {  return Create(MAKEINTRESOURCEW(resID), parentWindow); }
+  INT_PTR Create(UINT resID, HWND parentWindow) { return Create(MAKEINTRESOURCEW(resID), parentWindow); }
   #ifndef _UNICODE
   INT_PTR Create(LPCWSTR templateName, HWND parentWindow);
   #endif
 
-  bool End(INT_PTR result)
-    { return BOOLToBool(::EndDialog(_window, result)); }
+  bool End(INT_PTR result) { return BOOLToBool(::EndDialog(_window, result)); }
   virtual void OnOK() { End(IDOK); }
   virtual void OnCancel() { End(IDCANCEL); }
 };
 
 class CDialogChildControl: public NWindows::CWindow
 {
-public:
   int m_ID;
+public:
   void Init(const NWindows::NControl::CDialog &parentDialog, int id)
   {
     m_ID = id;
     Attach(parentDialog.GetItem(id));
   }
 };
+
+bool IsDialogSizeOK(int xSize, int ySize);
 
 }}
 

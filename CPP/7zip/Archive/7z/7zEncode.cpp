@@ -164,8 +164,7 @@ HRESULT CEncoder::Encode(
   }
   for (i = 1; i < _bindInfo.OutStreams.Size(); i++)
   {
-    CSequentialOutTempBufferImp *tempBufferSpec =
-        new CSequentialOutTempBufferImp;
+    CSequentialOutTempBufferImp *tempBufferSpec = new CSequentialOutTempBufferImp;
     CMyComPtr<ISequentialOutStream> tempBuffer = tempBufferSpec;
     tempBufferSpec->Init(&inOutTempBuffers[i - 1]);
     tempBuffers.Add(tempBuffer);
@@ -260,9 +259,7 @@ HRESULT CEncoder::Encode(
   for (i = 1; i < _bindInfo.OutStreams.Size(); i++)
   {
     CInOutTempBuffer &inOutTempBuffer = inOutTempBuffers[i - 1];
-    inOutTempBuffer.FlushWrite();
-    inOutTempBuffer.InitReading();
-    inOutTempBuffer.WriteToStream(outStream);
+    RINOK(inOutTempBuffer.WriteToStream(outStream));
     packSizes.Add(inOutTempBuffer.GetDataSize());
   }
   

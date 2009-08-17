@@ -152,12 +152,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _archive.Refs.Size();
   if (numItems == 0)
@@ -203,8 +202,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     currentItemSize = 0;
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode;
-    askMode = testMode ? NArchive::NExtract::NAskMode::kTest : NArchive::NExtract::NAskMode::kExtract;
+    Int32 askMode = testMode ?
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     UInt32 index = allFilesMode ? i : indices[i];
     
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -217,7 +217,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       if (item.IsDir())
       {
         RINOK(extractCallback->PrepareOperation(askMode));
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
         continue;
       }
       currentItemSize = item.DataLength;
@@ -231,7 +231,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       blockIndex = be.LoadRBA;
     }
    
-    if (!testMode && (!realOutStream))
+    if (!testMode && !realOutStream)
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     outStreamSpec->SetStream(realOutStream);
@@ -242,8 +242,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
     outStreamSpec->ReleaseStream();
     RINOK(extractCallback->SetOperationResult(outStreamSpec->IsFinishedOK() ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError));
   }
   return S_OK;
   COM_TRY_END

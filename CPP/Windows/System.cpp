@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../Common/Defs.h"
+
 #include "System.h"
 
 namespace NWindows {
@@ -13,6 +15,8 @@ UInt32 GetNumberOfProcessors()
   GetSystemInfo(&systemInfo);
   return (UInt32)systemInfo.dwNumberOfProcessors;
 }
+
+#ifndef UNDER_CE
 
 #if !defined(_WIN64) && defined(__GNUC__)
 
@@ -37,26 +41,30 @@ typedef struct _MY_MEMORYSTATUSEX {
 
 typedef BOOL (WINAPI *GlobalMemoryStatusExP)(MY_LPMEMORYSTATUSEX lpBuffer);
 
+#endif
+
 UInt64 GetRamSize()
 {
+  #ifndef UNDER_CE
   MY_MEMORYSTATUSEX stat;
   stat.dwLength = sizeof(stat);
+  #endif
   #ifdef _WIN64
   if (!::GlobalMemoryStatusEx(&stat))
     return 0;
-  return stat.ullTotalPhys;
+  return MyMin(stat.ullTotalVirtual, stat.ullTotalPhys);
   #else
+  #ifndef UNDER_CE
   GlobalMemoryStatusExP globalMemoryStatusEx = (GlobalMemoryStatusExP)
-        ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")),
-        "GlobalMemoryStatusEx");
-  if (globalMemoryStatusEx != 0)
-    if (globalMemoryStatusEx(&stat))
-      return stat.ullTotalPhys;
+      ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")), "GlobalMemoryStatusEx");
+  if (globalMemoryStatusEx != 0 && globalMemoryStatusEx(&stat))
+    return MyMin(stat.ullTotalVirtual, stat.ullTotalPhys);
+  #endif
   {
     MEMORYSTATUS stat;
     stat.dwLength = sizeof(stat);
-    GlobalMemoryStatus(&stat);
-    return stat.dwTotalPhys;
+    ::GlobalMemoryStatus(&stat);
+    return MyMin(stat.dwTotalVirtual, stat.dwTotalPhys);
   }
   #endif
 }

@@ -350,7 +350,7 @@ HRESULT CHandler::Open2(IInStream *stream,
         if (!openVolumeCallback)
           break;
         
-        if(_archives.Size() == 1)
+        if (_archives.Size() == 1)
         {
           if (!_archiveInfo.IsVolume())
             break;
@@ -395,9 +395,14 @@ HRESULT CHandler::Open2(IInStream *stream,
       CItemEx item;
       for (;;)
       {
-        HRESULT result = archive.GetNextItem(item, getTextPassword);
+        bool decryptionError;
+        HRESULT result = archive.GetNextItem(item, getTextPassword, decryptionError);
         if (result == S_FALSE)
+        {
+          if (decryptionError && _items.IsEmpty())
+            return S_FALSE;
           break;
+        }
         RINOK(result);
         if (item.IgnoreItem())
           continue;
@@ -470,27 +475,25 @@ struct CMethodItem
 };
 
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *_anExtractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
-  bool testMode = (_aTestMode != 0);
-  CMyComPtr<IArchiveExtractCallback> extractCallback = _anExtractCallback;
   UInt64 censoredTotalUnPacked = 0,
         // censoredTotalPacked = 0,
         importantTotalUnPacked = 0;
         // importantTotalPacked = 0;
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _refItems.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   int lastIndex = 0;
   CRecordVector<int> importantIndexes;
   CRecordVector<bool> extractStatuses;
 
-  for(UInt32 t = 0; t < numItems; t++)
+  for (UInt32 t = 0; t < numItems; t++)
   {
     int index = allFilesMode ? t : indices[t];
     const CRefItem &refItem = _refItems[index];
@@ -498,11 +501,11 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     censoredTotalUnPacked += item.Size;
     // censoredTotalPacked += item.PackSize;
     int j;
-    for(j = lastIndex; j <= index; j++)
-      // if(!_items[_refItems[j].ItemIndex].IsSolid())
-      if(!IsSolid(j))
+    for (j = lastIndex; j <= index; j++)
+      // if (!_items[_refItems[j].ItemIndex].IsSolid())
+      if (!IsSolid(j))
         lastIndex = j;
-    for(j = lastIndex; j <= index; j++)
+    for (j = lastIndex; j <= index; j++)
     {
       const CRefItem &refItem = _refItems[j];
       const CItemEx &item = _items[refItem.ItemIndex];
@@ -543,7 +546,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
   lps->Init(extractCallback, false);
 
   bool solidStart = true;
-  for(int i = 0; i < importantIndexes.Size(); i++,
+  for (int i = 0; i < importantIndexes.Size(); i++,
       currentImportantTotalUnPacked += currentUnPackSize,
       currentImportantTotalPacked += currentPackSize)
   {
@@ -553,12 +556,12 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     CMyComPtr<ISequentialOutStream> realOutStream;
 
     Int32 askMode;
-    if(extractStatuses[i])
+    if (extractStatuses[i])
       askMode = testMode ?
-          NArchive::NExtract::NAskMode::kTest :
-          NArchive::NExtract::NAskMode::kExtract;
+          NExtract::NAskMode::kTest :
+          NExtract::NAskMode::kExtract;
     else
-      askMode = NArchive::NExtract::NAskMode::kSkip;
+      askMode = NExtract::NAskMode::kSkip;
 
     UInt32 index = importantIndexes[i];
 
@@ -569,22 +572,22 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
 
     currentPackSize = GetPackSize(index);
 
-    if(item.IgnoreItem())
+    if (item.IgnoreItem())
       continue;
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
     if (!IsSolid(index))
       solidStart = true;
-    if(item.IsDir())
+    if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
 
     bool mustBeProcessedAnywhere = false;
-    if(i < importantIndexes.Size() - 1)
+    if (i < importantIndexes.Size() - 1)
     {
       // const CRefItem &nextRefItem = _refItems[importantIndexes[i + 1]];
       // const CItemEx &nextItemInfo = _items[nextRefItem.ItemIndex];
@@ -596,7 +599,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       continue;
     
     if (!realOutStream && !testMode)
-      askMode = NArchive::NExtract::NAskMode::kSkip;
+      askMode = NExtract::NAskMode::kSkip;
 
     RINOK(extractCallback->PrepareOperation(askMode));
 
@@ -664,15 +667,14 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       else
       {
         outStream.Release();
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
         continue;
       }
       RINOK(filterStreamSpec->Filter.QueryInterface(IID_ICryptoSetPassword,
           &cryptoSetPassword));
 
       if (!getTextPassword)
-        extractCallback.QueryInterface(IID_ICryptoGetTextPassword,
-          &getTextPassword);
+        extractCallback->QueryInterface(IID_ICryptoGetTextPassword, (void **)&getTextPassword);
       if (getTextPassword)
       {
         CMyComBSTR password;
@@ -729,7 +731,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
         if (item.UnPackVersion >= 29)
         {
           outStream.Release();
-          RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
           continue;
         }
         */
@@ -758,7 +760,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           if (mi.Coder == 0)
           {
             outStream.Release();
-            RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+            RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
             continue;
           }
 
@@ -785,7 +787,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       }
       default:
         outStream.Release();
-        RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
         continue;
     }
     HRESULT result = commonCoder->Code(inStream, outStream, &packSize, &item.Size, progress);
@@ -794,7 +796,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (result == S_FALSE)
     {
       outStream.Release();
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kDataError));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kDataError));
       continue;
     }
     if (result != S_OK)
@@ -808,8 +810,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
       const CItemEx &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
       bool crcOK = outStreamSpec->GetCRC() == lastItem.FileCRC;
       outStream.Release();
-      RINOK(extractCallback->SetOperationResult(crcOK ? NArchive::NExtract::NOperationResult::kOK:
-          NArchive::NExtract::NOperationResult::kCRCError));
+      RINOK(extractCallback->SetOperationResult(crcOK ?
+          NExtract::NOperationResult::kOK:
+          NExtract::NOperationResult::kCRCError));
     }
     /*
     else
@@ -824,8 +827,9 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
           break;
         }
       }
-      RINOK(extractCallback->SetOperationResult(crcOK ? NArchive::NExtract::NOperationResult::kOK:
-          NArchive::NExtract::NOperationResult::kCRCError));
+      RINOK(extractCallback->SetOperationResult(crcOK ?
+          NExtract::NOperationResult::kOK:
+          NExtract::NOperationResult::kCRCError));
     }
     */
   }

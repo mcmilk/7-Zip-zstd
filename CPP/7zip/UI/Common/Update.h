@@ -122,6 +122,15 @@ struct CUpdateOptions
     EMailRemoveAfter(false),
     OpenShareForWrite(false)
       {};
+
+  void SetAddActionCommand()
+  {
+    Commands.Clear();
+    CUpdateArchiveCommand c;
+    c.ActionSet = NUpdateArchive::kAddActionSet;
+    Commands.Add(c);
+  }
+
   CRecordVector<UInt64> VolumesSizes;
 };
 

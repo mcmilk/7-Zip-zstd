@@ -75,7 +75,7 @@ public:
     _subArchiveMode = false;
   }
   */
-  void LoadFileInfo(const UString &folderPrefix,  const UString &fileName)
+  void LoadFileInfo(const UString &folderPrefix, const UString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!_fileInfo.Find(_folderPrefix + fileName))
@@ -83,9 +83,9 @@ public:
   }
   void ShowMessage(const UInt64 *completed);
 
-  INT_PTR StartProgressDialog(const UString &title)
+  INT_PTR StartProgressDialog(const UString &title, NWindows::CThread &thread)
   {
-    return ProgressDialog.Create(title, ParentWindow);
+    return ProgressDialog.Create(title, thread, ParentWindow);
   }
 };
 

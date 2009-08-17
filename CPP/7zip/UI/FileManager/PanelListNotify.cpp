@@ -180,7 +180,9 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   return 0;
 }
 
+#ifndef UNDER_CE
 extern DWORD g_ComCtl32Version;
+#endif
 
 void CPanel::OnItemChanged(NMLISTVIEW *item)
 {
@@ -194,11 +196,23 @@ void CPanel::OnItemChanged(NMLISTVIEW *item)
     _selectedStatusVector[index] = newSelected;
 }
 
+extern bool g_LVN_ITEMACTIVATE_Support;
+
+void CPanel::OnNotifyActivateItems()
+{
+  // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
+  // bool rightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+  bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+  if (!shift && alt && !ctrl)
+    Properties();
+  else
+    OpenSelectedItems(!shift || alt || ctrl);
+}
+
 bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 {
-  // bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-  // bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  // bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
   switch(header->code)
   {
     case LVN_ITEMCHANGED:
@@ -240,33 +254,23 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_COLUMNCLICK:
       OnColumnClick(LPNMLISTVIEW(header));
       return false;
-    /*
-    case LVN_ITEMACTIVATE:
-      RefreshStatusBar();
-      if (!alt && !ctrl && !shift)
-        OpenSelectedItems(true);
-      return false;
-    */
 
-    case NM_DBLCLK:
-      RefreshStatusBar();
-      OpenSelectedItems(true);
-      return false;
-    case NM_RETURN:
-    {
-      bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-      bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-      // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-      // bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
-      bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
-      if (!shift && alt && !ctrl)
+    case LVN_ITEMACTIVATE:
+      if (g_LVN_ITEMACTIVATE_Support)
       {
-        Properties();
+        OnNotifyActivateItems();
         return false;
       }
-      OpenSelectedItems(true);
-      return false;
-    }
+      break;
+    case NM_DBLCLK:
+    case NM_RETURN:
+      if (!g_LVN_ITEMACTIVATE_Support)
+      {
+        OnNotifyActivateItems();
+        return false;
+      }
+      break;
+
     case NM_RCLICK:
       RefreshStatusBar();
       break;
@@ -298,8 +302,10 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       SetFocusToList();
       RefreshStatusBar();
       if (_mySelectMode)
+        #ifndef UNDER_CE
         if (g_ComCtl32Version >= MAKELONG(71, 4))
-          OnLeftClick((LPNMITEMACTIVATE)header);
+        #endif
+          OnLeftClick((MY_NMLISTVIEW_NMITEMACTIVATE *)header);
       return false;
     }
     case LVN_BEGINLABELEDITW:

@@ -4,8 +4,6 @@ CFLAGS = $(CFLAGS) -I ../../../  \
   -DCOMPRESS_MT \
   -DEXTERNAL_CODECS \
 
-LIBS = $(LIBS) oleaut32.lib user32.lib
-
 AR_OBJS = \
   $O\ArchiveExports.obj \
   $O\DllExports.obj \

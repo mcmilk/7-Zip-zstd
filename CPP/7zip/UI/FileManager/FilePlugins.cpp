@@ -2,14 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
 #include "Common/MyCom.h"
 
-#include "IFolder.h"
-#include "FilePlugins.h"
-#include "StringUtils.h"
-#include "PluginLoader.h"
 #include "../Agent/Agent.h"
+
+#include "FilePlugins.h"
+#include "PluginLoader.h"
+#include "StringUtils.h"
 
 using namespace NRegistryAssociations;
 
@@ -31,9 +30,12 @@ int CExtDatabase::FindPlugin(const UString &plugin)
 
 void CExtDatabase::Read()
 {
+  /*
   CObjectVector<CExtInfo> extItems;
   ReadInternalAssociations(extItems);
+  */
   ReadFileFolderPluginInfoList(Plugins);
+  /*
   for (int i = 0; i < extItems.Size(); i++)
   {
     const CExtInfo &extInfo = extItems[i];
@@ -48,6 +50,7 @@ void CExtDatabase::Read()
     }
     ExtBigItems.Add(extInfoBig);
   }
+  */
   for (int pluginIndex = 0; pluginIndex < Plugins.Size(); pluginIndex++)
   {
     const CPluginInfo &pluginInfo = Plugins[pluginIndex];
@@ -69,6 +72,10 @@ void CExtDatabase::Read()
     for (int i = 0; i < exts.Size(); i++)
     {
       const UString &ext = exts[i];
+      #ifdef UNDER_CE
+      if (ext == L"cab")
+        continue;
+      #endif
       int index = FindExtInfoBig(ext);
       if (index < 0)
       {
@@ -91,6 +98,7 @@ void CExtDatabase::Read()
 
 void CExtDatabase::Save()
 {
+  /*
   CObjectVector<CExtInfo> extItems;
   for (int i = 0; i < ExtBigItems.Size(); i++)
   {
@@ -107,6 +115,5 @@ void CExtDatabase::Save()
     extItems.Add(extInfo);
   }
   WriteInternalAssociations(extItems);
+  */
 }
-
-

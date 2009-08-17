@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_WINDOW_H
 #define __WINDOWS_WINDOW_H
 
-#include "Windows/Defs.h"
+#include "Defs.h"
 #include "Common/MyString.h"
 
 namespace NWindows {
@@ -22,6 +22,13 @@ bool MySetWindowText(HWND wnd, LPCWSTR s);
 #endif
 
 
+#ifdef UNDER_CE
+#define GWLP_USERDATA GWL_USERDATA
+#define GWLP_WNDPROC GWL_WNDPROC
+#define BTNS_BUTTON TBSTYLE_BUTTON
+#define WC_COMBOBOXW L"ComboBox"
+#define DWLP_MSGRESULT DWL_MSGRESULT
+#endif
 
 class CWindow
 {
@@ -45,9 +52,13 @@ public:
     return window;
   }
 
+  bool Foreground() { return BOOLToBool(::SetForegroundWindow(_window)); }
+  
   HWND GetParent() const { return ::GetParent(_window); }
-  bool GetWindowRect(LPRECT rect) const { return BOOLToBool(::GetWindowRect(_window,rect )); }
+  bool GetWindowRect(LPRECT rect) const { return BOOLToBool(::GetWindowRect(_window,rect)); }
+  #ifndef UNDER_CE
   bool IsZoomed() const { return BOOLToBool(::IsZoomed(_window)); }
+  #endif
   bool ClientToScreen(LPPOINT point) const { return BOOLToBool(::ClientToScreen(_window, point)); }
   bool ScreenToClient(LPPOINT point) const { return BOOLToBool(::ScreenToClient(_window, point)); }
 
@@ -101,45 +112,73 @@ public:
   bool IsWindow() {  return BOOLToBool(::IsWindow(_window)); }
   bool Move(int x, int y, int width, int height, bool repaint = true)
     { return BOOLToBool(::MoveWindow(_window, x, y, width, height, BoolToBOOL(repaint))); }
+
+  bool ChangeSubWindowSizeX(HWND hwnd, int xSize)
+  {
+    RECT rect;
+    ::GetWindowRect(hwnd, &rect);
+    POINT p1;
+    p1.x = rect.left;
+    p1.y = rect.top;
+    ScreenToClient(&p1);
+    return BOOLToBool(::MoveWindow(hwnd, p1.x, p1.y, xSize, rect.bottom - rect.top, TRUE));
+  }
+
+  void ScreenToClient(RECT *rect)
+  {
+    POINT p1, p2;
+    p1.x = rect->left;
+    p1.y = rect->top;
+    p2.x = rect->right;
+    p2.y = rect->bottom;
+    ScreenToClient(&p1);
+    ScreenToClient(&p2);
+
+    rect->left = p1.x;
+    rect->top = p1.y;
+    rect->right = p2.x;
+    rect->bottom = p2.y;
+  }
+
   bool GetClientRect(LPRECT rect) { return BOOLToBool(::GetClientRect(_window, rect)); }
   bool Show(int cmdShow) { return BOOLToBool(::ShowWindow(_window, cmdShow)); }
+  #ifndef UNDER_CE
   bool SetPlacement(CONST WINDOWPLACEMENT *placement) { return BOOLToBool(::SetWindowPlacement(_window, placement)); }
   bool GetPlacement(WINDOWPLACEMENT *placement) { return BOOLToBool(::GetWindowPlacement(_window, placement)); }
+  #endif
   bool Update() { return BOOLToBool(::UpdateWindow(_window)); }
   bool InvalidateRect(LPCRECT rect, bool backgroundErase = true)
     { return BOOLToBool(::InvalidateRect(_window, rect, BoolToBOOL(backgroundErase))); }
   void SetRedraw(bool redraw = true) { SendMessage(WM_SETREDRAW, BoolToBOOL(redraw), 0); }
 
-  #ifndef _WIN32_WCE
-  LONG_PTR SetStyle(LONG_PTR style)
-    { return SetLongPtr(GWL_STYLE, style); }
-  LONG_PTR GetStyle( ) const
-    { return GetLongPtr(GWL_STYLE); }
+  LONG_PTR SetStyle(LONG_PTR style) { return SetLongPtr(GWL_STYLE, style); }
+  LONG_PTR GetStyle() const { return GetLongPtr(GWL_STYLE); }
+  // bool MyIsMaximized() const { return ((GetStyle() & WS_MAXIMIZE) != 0); }
+
+  LONG_PTR SetLong(int index, LONG newLongPtr) { return ::SetWindowLong(_window, index, newLongPtr); }
+  LONG_PTR GetLong(int index) const { return ::GetWindowLong(_window, index); }
+  LONG_PTR SetUserDataLong(LONG newLongPtr) { return SetLong(GWLP_USERDATA, newLongPtr); }
+  LONG_PTR GetUserDataLong() const { return GetLong(GWLP_USERDATA); }
+
+
+  #ifdef UNDER_CE
+
+  LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr) { return SetLong(index, newLongPtr); }
+  LONG_PTR GetLongPtr(int index) const { return GetLong(index); }
+
+  LONG_PTR SetUserDataLongPtr(LONG_PTR newLongPtr) { return SetUserDataLong(newLongPtr); }
+  LONG_PTR GetUserDataLongPtr() const { return GetUserDataLong(); }
+  
   #else
-  LONG SetStyle(LONG_PTR style)
-    { return SetLong(GWL_STYLE, style); }
-  DWORD GetStyle( ) const
-    { return GetLong(GWL_STYLE); }
-  #endif
-
-  LONG_PTR SetLong(int index, LONG newLongPtr )
-    { return ::SetWindowLong(_window, index, newLongPtr); }
-  LONG_PTR GetLong(int index) const
-    { return ::GetWindowLong(_window, index ); }
-  LONG_PTR SetUserDataLong(LONG newLongPtr )
-    { return SetLong(GWLP_USERDATA, newLongPtr); }
-  LONG_PTR GetUserDataLong() const
-    { return GetLong(GWLP_USERDATA); }
-
-  #ifndef _WIN32_WCE
-  LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr )
+  
+  LONG_PTR SetLongPtr(int index, LONG_PTR newLongPtr)
     { return ::SetWindowLongPtr(_window, index,
           #ifndef _WIN64
           (LONG)
           #endif
           newLongPtr); }
   #ifndef _UNICODE
-  LONG_PTR SetLongPtrW(int index, LONG_PTR newLongPtr )
+  LONG_PTR SetLongPtrW(int index, LONG_PTR newLongPtr)
     { return ::SetWindowLongPtrW(_window, index,
           #ifndef _WIN64
           (LONG)
@@ -147,12 +186,10 @@ public:
           newLongPtr); }
   #endif
 
-  LONG_PTR GetLongPtr(int index) const
-    { return ::GetWindowLongPtr(_window, index ); }
-  LONG_PTR SetUserDataLongPtr(LONG_PTR newLongPtr )
-    { return SetLongPtr(GWLP_USERDATA, newLongPtr); }
-  LONG_PTR GetUserDataLongPtr() const
-    { return GetLongPtr(GWLP_USERDATA); }
+  LONG_PTR GetLongPtr(int index) const { return ::GetWindowLongPtr(_window, index); }
+  LONG_PTR SetUserDataLongPtr(LONG_PTR newLongPtr) { return SetLongPtr(GWLP_USERDATA, newLongPtr); }
+  LONG_PTR GetUserDataLongPtr() const { return GetLongPtr(GWLP_USERDATA); }
+  
   #endif
   
   /*
@@ -202,7 +239,7 @@ public:
   bool IsEnabled()
     { return BOOLToBool(::IsWindowEnabled(_window)); }
   
-  #ifndef _WIN32_WCE
+  #ifndef UNDER_CE
   HMENU GetSystemMenu(bool revert)
     { return ::GetSystemMenu(_window, BoolToBOOL(revert)); }
   #endif
@@ -211,7 +248,12 @@ public:
     { return ::SetTimer(_window, idEvent, elapse, timerFunc); }
   bool KillTimer(UINT_PTR idEvent)
     {return BOOLToBool(::KillTimer(_window, idEvent)); }
+
+  HICON SetIcon(WPARAM sizeType, HICON icon) { return (HICON)SendMessage(WM_SETICON, sizeType, (LPARAM)icon); }
 };
+
+#define RECT_SIZE_X(r) ((r).right - (r).left)
+#define RECT_SIZE_Y(r) ((r).bottom - (r).top)
 
 }
 

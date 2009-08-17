@@ -38,6 +38,8 @@ public:
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
+  UInt64 GetInputProcessedSize() const { return DeflateDecoderSpec->GetInputProcessedSize() + 2; }
+
   MY_UNKNOWN_IMP
 };
 

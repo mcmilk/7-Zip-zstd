@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include <initguid.h>
+#include "Common/MyInitGuid.h"
 
 #include "Common/CommandLineParser.h"
 #include "Common/StringConvert.h"
@@ -12,6 +12,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileIO.h"
+#include "Windows/NtCheck.h"
 #include "Windows/ResourceString.h"
 
 #include "../../UI/Explorer/MyMessages.h"
@@ -38,8 +39,8 @@ static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
   const int kBufferSize = (1 << 12);
 
   Byte buffer[kBufferSize];
-  int signatureStartSize = lstrlenA(startID);
-  int signatureEndSize = lstrlenA(endID);
+  int signatureStartSize = MyStringLen(startID);
+  int signatureEndSize = MyStringLen(endID);
   
   UInt32 numBytesPrev = 0;
   bool writeMode = false;
@@ -103,37 +104,32 @@ public:
 } g_CInstallIDInit;
 
 
+#ifndef UNDER_CE
 class CCurrentDirRestorer
 {
   CSysString m_CurrentDirectory;
 public:
-  CCurrentDirRestorer()
-    { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
-  ~CCurrentDirRestorer()
-    { RestoreDirectory();}
-  bool RestoreDirectory()
-    { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
+  CCurrentDirRestorer() { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
+  ~CCurrentDirRestorer() { RestoreDirectory();}
+  bool RestoreDirectory() { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
 };
-
-#ifndef _UNICODE
-bool g_IsNT = false;
-static inline bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
 #endif
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /* lpCmdLine */,int /* nCmdShow */)
+#define NT_CHECK_FAIL_ACTION ShowErrorMessage(L"Unsupported Windows version"); return 1;
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
+    #ifdef UNDER_CE
+    LPWSTR
+    #else
+    LPSTR
+    #endif
+    /* lpCmdLine */,int /* nCmdShow */)
 {
   g_hInstance = (HINSTANCE)hInstance;
-  #ifndef _UNICODE
-  g_IsNT = IsItWindowsNT();
-  #endif
-  InitCommonControls();
+
+  NT_CHECK
+
+  // InitCommonControls();
 
   UString archiveName, switches;
   #ifdef _SHELL_EXECUTE
@@ -235,10 +231,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     }
   }
 
+  #ifndef UNDER_CE
   CCurrentDirRestorer currentDirRestorer;
-
   if (!SetCurrentDirectory(tempDir.GetPath()))
     return 1;
+  #endif
   
   HANDLE hProcess = 0;
 #ifdef _SHELL_EXECUTE
@@ -247,7 +244,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */, LPSTR /
     CSysString filePath = GetSystemString(executeFile);
     SHELLEXECUTEINFO execInfo;
     execInfo.cbSize = sizeof(execInfo);
-    execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
+    execInfo.fMask = SEE_MASK_NOCLOSEPROCESS
+      #ifndef UNDER_CE
+      | SEE_MASK_FLAG_DDEWAIT
+      #endif
+      ;
     execInfo.hwnd = NULL;
     execInfo.lpVerb = NULL;
     execInfo.lpFile = filePath;

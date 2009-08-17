@@ -1,20 +1,14 @@
 // EditPage.cpp
 
 #include "StdAfx.h"
-#include "EditPageRes.h"
+
 #include "EditPage.h"
+#include "EditPageRes.h"
 
-#include "Common/StringConvert.h"
-
-#include "Windows/Defs.h"
-#include "Windows/CommonDialog.h"
-// #include "Windows/FileFind.h"
-// #include "Windows/FileDir.h"
-
-#include "RegistryUtils.h"
+#include "BrowseDialog.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
-#include "ProgramLocation.h"
+#include "RegistryUtils.h"
 
 using namespace NWindows;
 
@@ -38,9 +32,6 @@ bool CEditPage::OnInit()
 
 LONG CEditPage::OnApply()
 {
-  // int selectedIndex = _langCombo.GetCurSel();
-  // int pathIndex = _langCombo.GetItemData(selectedIndex);
-  // ReloadLang();
   UString editorPath;
   _editorEdit.GetText(editorPath);
   SaveRegEditor(editorPath);
@@ -49,33 +40,27 @@ LONG CEditPage::OnApply()
 
 void CEditPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kEditTopic); // change it
+  ShowHelpWindow(NULL, kEditTopic);
 }
 
-bool CEditPage::OnButtonClicked(int aButtonID, HWND aButtonHWND)
+bool CEditPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(aButtonID)
+  switch (buttonID)
   {
     case IDC_EDIT_BUTTON_SET:
     {
-      OnSetEditorButton();
-      // if (!NShell::BrowseForFolder(HWND(*this), title, currentPath, aResultPath))
-      //   return;
+      UString editorPath;
+      _editorEdit.GetText(editorPath);
+      UString resPath;
+      if (MyBrowseForFile(HWND(*this), 0, editorPath, L"*.exe", resPath))
+      {
+        _editorEdit.SetText(resPath);
+        // Changed();
+      }
       return true;
     }
   }
-  return CPropertyPage::OnButtonClicked(aButtonID, aButtonHWND);
-}
-
-void CEditPage::OnSetEditorButton()
-{
-  UString editorPath;
-  _editorEdit.GetText(editorPath);
-  UString resPath;
-  if(!MyGetOpenFileName(HWND(*this), 0, editorPath, L"*.exe", resPath))
-    return;
-  _editorEdit.SetText(resPath);
-  // Changed();
+  return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
 
 bool CEditPage::OnCommand(int code, int itemID, LPARAM param)
@@ -87,5 +72,3 @@ bool CEditPage::OnCommand(int code, int itemID, LPARAM param)
   }
   return CPropertyPage::OnCommand(code, itemID, param);
 }
-
-

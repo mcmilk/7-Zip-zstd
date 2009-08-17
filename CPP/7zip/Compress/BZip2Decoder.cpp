@@ -584,12 +584,7 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     CState &state = m_States[0];
     for (;;)
     {
-      if (progress)
-      {
-        UInt64 packSize = m_InStream.GetProcessedSize();
-        UInt64 unpackSize = m_OutStream.GetProcessedSize();
-        RINOK(progress->SetRatioInfo(&packSize, &unpackSize));
-      }
+      RINOK(SetRatioProgress(m_InStream.GetProcessedSize()));
       bool wasFinished;
       UInt32 crc;
       RINOK(ReadSignatures(wasFinished, crc));
@@ -608,7 +603,7 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
         return S_FALSE;
     }
   }
-  return S_OK;
+  return SetRatioProgress(m_InStream.GetProcessedSize());
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
@@ -766,16 +761,9 @@ void CState::ThreadFunc()
       if (!needFinish)
       {
         if ((randMode ?
-          DecodeBlock2Rand(Counters + 256, blockSize, origPtr, Decoder->m_OutStream) :
-          DecodeBlock2(Counters + 256, blockSize, origPtr, Decoder->m_OutStream)) == crc)
-        {
-          if (Decoder->Progress)
-          {
-            UInt64 inSize = packSize - Decoder->_inStart;
-            UInt64 unpackSize = Decoder->m_OutStream.GetProcessedSize();
-            res = Decoder->Progress->SetRatioInfo(&inSize, &unpackSize);
-          }
-        }
+            DecodeBlock2Rand(Counters + 256, blockSize, origPtr, Decoder->m_OutStream) :
+            DecodeBlock2(Counters + 256, blockSize, origPtr, Decoder->m_OutStream)) == crc)
+          res = Decoder->SetRatioProgress(packSize);
         else
           res = S_FALSE;
       }
@@ -807,5 +795,14 @@ STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
   return S_OK;
 }
 #endif
+
+HRESULT CDecoder::SetRatioProgress(UInt64 packSize)
+{
+  if (!Progress)
+    return S_OK;
+  packSize -= _inStart;
+  UInt64 unpackSize = m_OutStream.GetProcessedSize();
+  return Progress->SetRatioInfo(&packSize, &unpackSize);
+}
 
 }}

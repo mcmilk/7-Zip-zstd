@@ -37,10 +37,10 @@ public:
   bool IsDevice;
 
   /*
-  #ifndef _WIN32_WCE
-  UINT32 ReparseTag;
-  #else
+  #ifdef UNDER_CE
   DWORD ObjectID;
+  #else
+  UINT32 ReparseTag;
   #endif
   */
 
@@ -148,7 +148,7 @@ public:
   bool FindNext() { return BOOLToBool(::FindNextChangeNotification(_handle)); }
 };
 
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings);
 #ifndef _UNICODE
 bool MyGetLogicalDriveStrings(UStringVector &driveStrings);

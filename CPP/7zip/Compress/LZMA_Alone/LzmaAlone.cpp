@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#if defined(_WIN32) || defined(OS2) || defined(MSDOS)
+#if (defined(_WIN32) || defined(OS2) || defined(MSDOS)) && !defined(UNDER_CE)
 #include <fcntl.h>
 #include <io.h>
 #define MY_SET_BINARY_MODE(file) _setmode(_fileno(file), O_BINARY)
@@ -18,6 +18,8 @@
 #include "../../../Common/CommandLineParser.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
+
+#include "../../../Windows/NtCheck.h"
 
 #include "../../Common/FileStreams.h"
 #include "../../Common/StreamUtils.h"
@@ -33,22 +35,9 @@
 
 #include "../../../../C/7zVersion.h"
 #include "../../../../C/Alloc.h"
-#include "../../../../C/LzmaUtil/Lzma86Dec.h"
-#include "../../../../C/LzmaUtil/Lzma86Enc.h"
+#include "../../../../C/Lzma86.h"
 
 using namespace NCommandLineParser;
-
-#ifdef _WIN32
-bool g_IsNT = false;
-static inline bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
 
 static const char *kCantAllocate = "Can not allocate memory";
 static const char *kReadError = "Read error";
@@ -96,9 +85,14 @@ static const CSwitchForm kSwitchForms[] =
 
 static const int kNumSwitches = sizeof(kSwitchForms) / sizeof(kSwitchForms[0]);
 
+static void PrintMessage(const char *s)
+{
+  fprintf(stderr, s);
+}
+
 static void PrintHelp()
 {
-  fprintf(stderr, "\nUsage:  LZMA <e|d> inputFile outputFile [<switches>...]\n"
+  PrintMessage("\nUsage:  LZMA <e|d> inputFile outputFile [<switches>...]\n"
              "  e: encode file\n"
              "  d: decode file\n"
              "  b: Benchmark\n"
@@ -130,11 +124,10 @@ static void IncorrectCommand()
   PrintHelpAndExit("Incorrect command");
 }
 
-static void WriteArgumentsToStringList(int numArguments, const char *arguments[],
-    UStringVector &strings)
+static void WriteArgumentsToStringList(int numArgs, const char *args[], UStringVector &strings)
 {
-  for(int i = 1; i < numArguments; i++)
-    strings.Add(MultiByteToUnicodeString(arguments[i]));
+  for (int i = 1; i < numArgs; i++)
+    strings.Add(MultiByteToUnicodeString(args[i]));
 }
 
 static bool GetNumber(const wchar_t *s, UInt32 &value)
@@ -159,15 +152,15 @@ static void ParseUInt32(const CParser &parser, int index, UInt32 &res)
       IncorrectCommand();
 }
 
-int main2(int n, const char *args[])
+#define NT_CHECK_FAIL_ACTION PrintMessage("Unsupported Windows version"); return 1;
+
+int main2(int numArgs, const char *args[])
 {
-  #ifdef _WIN32
-  g_IsNT = IsItWindowsNT();
-  #endif
+  NT_CHECK
 
-  fprintf(stderr, "\nLZMA " MY_VERSION_COPYRIGHT_DATE "\n");
+  PrintMessage("\nLZMA " MY_VERSION_COPYRIGHT_DATE "\n");
 
-  if (n == 1)
+  if (numArgs == 1)
   {
     PrintHelp();
     return 0;
@@ -176,12 +169,12 @@ int main2(int n, const char *args[])
   bool unsupportedTypes = (sizeof(Byte) != 1 || sizeof(UInt32) < 4 || sizeof(UInt64) < 4);
   if (unsupportedTypes)
   {
-    fprintf(stderr, "Unsupported base types. Edit Common/Types.h and recompile");
+    PrintMessage("Unsupported base types. Edit Common/Types.h and recompile");
     return 1;
   }
 
   UStringVector commandStrings;
-  WriteArgumentsToStringList(n, args, commandStrings);
+  WriteArgumentsToStringList(numArgs, args, commandStrings);
   CParser parser(kNumSwitches);
   try
   {
@@ -461,14 +454,14 @@ int main2(int n, const char *args[])
       Byte b = Byte(fileSize >> (8 * i));
       if (outStream->Write(&b, 1, 0) != S_OK)
       {
-        fprintf(stderr, kWriteError);
+        PrintMessage(kWriteError);
         return 1;
       }
     }
     HRESULT result = encoder->Code(inStream, outStream, 0, 0, 0);
     if (result == E_OUTOFMEMORY)
     {
-      fprintf(stderr, "\nError: Can not allocate memory\n");
+      PrintMessage("\nError: Can not allocate memory\n");
       return 1;
     }
     else if (result != S_OK)
@@ -486,12 +479,12 @@ int main2(int n, const char *args[])
     Byte header[kPropertiesSize + 8];
     if (ReadStream_FALSE(inStream, header, kPropertiesSize + 8) != S_OK)
     {
-      fprintf(stderr, kReadError);
+      PrintMessage(kReadError);
       return 1;
     }
     if (decoderSpec->SetDecoderProperties2(header, kPropertiesSize) != S_OK)
     {
-      fprintf(stderr, "SetDecoderProperties error");
+      PrintMessage("SetDecoderProperties error");
       return 1;
     }
     fileSize = 0;
@@ -500,7 +493,7 @@ int main2(int n, const char *args[])
 
     if (decoder->Code(inStream, outStream, 0, (fileSize == (UInt64)(Int64)-1) ? 0 : &fileSize, 0) != S_OK)
     {
-      fprintf(stderr, "Decoder error");
+      PrintMessage("Decoder error");
       return 1;
     }
   }
@@ -508,16 +501,16 @@ int main2(int n, const char *args[])
   {
     if (outStreamSpec->Close() != S_OK)
     {
-      fprintf(stderr, "File closing error");
+      PrintMessage("File closing error");
       return 1;
     }
   }
   return 0;
 }
 
-int MY_CDECL main(int n, const char *args[])
+int MY_CDECL main(int numArgs, const char *args[])
 {
-  try { return main2(n, args); }
+  try { return main2(numArgs, args); }
   catch(const char *s)
   {
     fprintf(stderr, "\nError: %s\n", s);
@@ -525,7 +518,7 @@ int MY_CDECL main(int n, const char *args[])
   }
   catch(...)
   {
-    fprintf(stderr, "\nError\n");
+    PrintMessage("\nError\n");
     return 1;
   }
 }

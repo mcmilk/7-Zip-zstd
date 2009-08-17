@@ -1,25 +1,14 @@
 #include "MessagesDialogRes.h"
 #include "../../GuiCommon.rc"
 
-#define xSize2 430
-#define ySize2 140
-#define xSize (xSize2 + marg + marg)
-#define ySize (ySize2 + marg + marg)
-#define bXPos (xSize - marg - bXSize)
-#define bYPos (ySize - marg - bYSize)
+#define xc 440
+#define yc 160
 
-
-IDD_DIALOG_MESSAGES DIALOG 0, 0, xSize, ySize  MY_MODAL_DIALOG_STYLE
+IDD_DIALOG_MESSAGES  MY_RESIZE_DIALOG
 CAPTION "7-Zip: Diagnostic messages"
-MY_FONT
-BEGIN
-  DEFPUSHBUTTON "&Close", IDOK, bXPos, bYPos, bXSize, bYSize
-  CONTROL "List1",IDC_MESSAGE_LIST,"SysListView32",
+{
+  DEFPUSHBUTTON "&Close", IDOK, bx, by, bxs, bys
+  CONTROL "List1", IDC_MESSAGE_LIST, "SysListView32",
           LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,
-          marg, marg, xSize2, ySize2 - bYSize - 6
-END
-
-STRINGTABLE
-BEGIN
-  IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
-END
+          m, m, xc, yc - bys - m
+}

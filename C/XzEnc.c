@@ -1,5 +1,5 @@
 /* XzEnc.c -- Xz Encode
-2009-05-26 : Igor Pavlov : Public domain */
+2009-06-04 : Igor Pavlov : Public domain */
 
 #include <stdlib.h>
 #include <string.h>
@@ -442,7 +442,7 @@ static SRes Xz_Compress(CXzStream *xz,
     
     {
       UInt64 packPos = seqSizeOutStream.processed;
-      HRESULT res = Lzma2Enc_Encode(lzmaf->lzma2, &seqSizeOutStream.p,
+      SRes res = Lzma2Enc_Encode(lzmaf->lzma2, &seqSizeOutStream.p,
         #ifdef USE_SUBBLOCK
         useSubblock ? &lzmaf->sb.p:
         #endif

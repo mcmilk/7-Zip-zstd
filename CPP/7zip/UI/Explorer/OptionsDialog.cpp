@@ -2,27 +2,29 @@
 
 #include "StdAfx.h"
 
-#include "resource.h"
-
-#include "OptionsDialog.h"
-
-#include "Common/StringConvert.h"
 #include "Windows/Control/PropertyPage.h"
 
+#include "../FileManager/DialogSize.h"
 #include "../FileManager/LangUtils.h"
+
 #include "FoldersPage.h"
 #include "FoldersPageRes.h"
-#include "SystemPage.h"
-#include "SystemPageRes.h"
+#include "OptionsDialog.h"
+#include "MenuPage.h"
+#include "MenuPageRes.h"
+
+#include "resource.h"
 
 using namespace NWindows;
 
 static INT_PTR OptionsDialog(HWND hwndOwner)
 {
-  CSystemPage systemPage;
+  CMenuPage systemPage;
   CFoldersPage foldersPage;
   UINT32 langIDs[] = { 0x01000300, 0x01000200};
-  UINT pageIDs[] = { IDD_SYSTEM, IDD_FOLDERS};
+
+  BIG_DIALOG_SIZE(200, 200);
+  UINT pageIDs[] = { SIZED_DIALOG(IDD_MENU), SIZED_DIALOG(IDD_FOLDERS) };
   NControl::CPropertyPage *pagePinters[] = { &systemPage, &foldersPage };
   CObjectVector<NControl::CPageInfo> pages;
   const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
@@ -43,7 +45,7 @@ STDMETHODIMP CSevenZipOptions::PluginOptions(HWND hWnd,
 {
   /*
   CComBSTR programPath;
-  RETUEN_IF_NOT_S_OK(callback->GetProgramPath(programName)));
+  RINOK(callback->GetProgramPath(programName)));
   */
   OptionsDialog(hWnd);
   return S_OK;
@@ -67,5 +69,3 @@ STDMETHODIMP CSevenZipOptions::GetFileExtensions(BSTR * /* extensions */)
   */
   return E_NOTIMPL;
 }
-
-

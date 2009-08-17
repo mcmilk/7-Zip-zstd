@@ -1,6 +1,5 @@
 PROG = 7-ZipFar.dll
 DEF_FILE = Far.def
-LIBS = $(LIBS) user32.lib oleaut32.lib advapi32.lib ole32.lib
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DWIN_LONG_PATH \
   -DEXTERNAL_CODECS

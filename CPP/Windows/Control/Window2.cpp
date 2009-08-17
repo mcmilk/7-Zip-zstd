@@ -20,15 +20,21 @@ ATOM MyRegisterClass(CONST WNDCLASSW *wndClass);
 
 namespace NControl {
 
+#ifdef UNDER_CE
+#define MY_START_WM_CREATE WM_CREATE
+#else
+#define MY_START_WM_CREATE WM_NCCREATE
+#endif
+
 static LRESULT CALLBACK WindowProcedure(HWND aHWND, UINT message,
     WPARAM wParam, LPARAM lParam)
 {
   CWindow tempWindow(aHWND);
-  if (message == WM_NCCREATE)
+  if (message == MY_START_WM_CREATE)
     tempWindow.SetUserDataLongPtr(
         LONG_PTR(((LPCREATESTRUCT)lParam)->lpCreateParams));
   CWindow2 *window = (CWindow2*)(tempWindow.GetUserDataLongPtr());
-  if (window != NULL && message == WM_NCCREATE)
+  if (window != NULL && message == MY_START_WM_CREATE)
     window->Attach(aHWND);
   if (window == 0)
   {

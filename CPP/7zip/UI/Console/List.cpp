@@ -433,6 +433,7 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
   for (int i = 0; i < numArcs; i++)
   {
     const UString &archiveName = arcPaths[i];
+    UInt64 arcPackSize = 0;
     if (!stdInMode)
     {
       NFile::NFind::CFileInfoW fi;
@@ -442,6 +443,7 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
         numErrors++;
         continue;
       }
+      arcPackSize = fi.Size;
     }
 
     CArchiveLink archiveLink;
@@ -582,6 +584,14 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
         numFiles++;
       totalPackSize += packSize;
       totalUnPackSize += unpackSize;
+    }
+
+    if (!stdInMode && totalPackSizePointer == 0)
+    {
+      if (archiveLink.VolumePaths.Size() != 0)
+        arcPackSize += archiveLink.VolumesSize;
+      totalPackSize = arcPackSize;
+      totalPackSizePointer = &totalPackSize;
     }
     if (enableHeaders && !techMode)
     {

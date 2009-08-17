@@ -284,6 +284,10 @@ SOURCE=..\..\..\Windows\MemoryLock.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\NtCheck.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\PropVariant.cpp
 # End Source File
 # Begin Source File

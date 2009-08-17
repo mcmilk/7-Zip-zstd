@@ -619,18 +619,6 @@ SOURCE=..\..\UI\Common\OpenArchive.h
 # Begin Group "File Manager"
 
 # PROP Default_Filter ""
-# Begin Group "Dialog"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\FileManager\ProgressDialog.h
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\UI\FileManager\FormatUtils.cpp
@@ -638,6 +626,14 @@ SOURCE=..\..\UI\FileManager\FormatUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\FileManager\FormatUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\ProgressDialog.h
 # End Source File
 # End Group
 # Begin Group "C"

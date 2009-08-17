@@ -13,14 +13,16 @@
 #include "../FileManager/ExtractCallback.h"
 #include "../FileManager/FormatUtils.h"
 #include "../FileManager/LangUtils.h"
+#include "../FileManager/resourceGui.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../Common/PropIDUtils.h"
 
 #include "../Explorer/MyMessages.h"
 
-#include "resource.h"
+#include "resource2.h"
 #include "ExtractRes.h"
+
 #include "ExtractDialog.h"
 #include "ExtractGUI.h"
 
@@ -28,8 +30,38 @@ using namespace NWindows;
 
 static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
 
-struct CThreadExtracting
+#ifndef _SFX
+
+static void AddValuePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
 {
+  wchar_t sz[32];
+  s += LangString(resourceID, langID);
+  s += L' ';
+  ConvertUInt64ToString(value, sz);
+  s += sz;
+  s += L'\n';
+}
+
+static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
+{
+  wchar_t sz[32];
+  s += LangString(resourceID, langID);
+  s += L' ';
+  ConvertUInt64ToString(value, sz);
+  s += sz;
+  ConvertUInt64ToString(value >> 20, sz);
+  s += L" (";
+  s += sz;
+  s += L" MB)";
+  s += L'\n';
+}
+
+#endif
+
+class CThreadExtracting: public CProgressThreadVirt
+{
+  HRESULT ProcessVirt();
+public:
   CCodecs *codecs;
   CExtractCallbackImp *ExtractCallbackSpec;
   CIntVector FormatIndices;
@@ -39,75 +71,42 @@ struct CThreadExtracting
   const NWildcard::CCensorNode *WildcardCensor;
   const CExtractOptions *Options;
   CMyComPtr<IExtractCallbackUI> ExtractCallback;
-  CDecompressStat Stat;
-  UString ErrorMessage;
-  HRESULT Result;
-  
-  DWORD Process()
-  {
-    ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    try
-    {
-      Result = DecompressArchives(
-          codecs, FormatIndices,
-          *ArchivePaths, *ArchivePathsFull,
-          *WildcardCensor, *Options, ExtractCallbackSpec, ExtractCallback, ErrorMessage, Stat);
-    }
-    catch(const UString &s)
-    {
-      ErrorMessage = s;
-      Result = E_FAIL;
-    }
-    catch(const wchar_t *s)
-    {
-      ErrorMessage = s;
-      Result = E_FAIL;
-    }
-    catch(const char *s)
-    {
-      ErrorMessage = GetUnicodeString(s);
-      Result = E_FAIL;
-    }
-    catch(...)
-    {
-      Result = E_FAIL;
-    }
-    ExtractCallbackSpec->ProgressDialog.MyClose();
-    return 0;
-  }
-  static THREAD_FUNC_DECL MyThreadFunction(void *param)
-  {
-    return ((CThreadExtracting *)param)->Process();
-  }
+  UString Title;
 };
 
-#ifndef _SFX
-
-static void AddValuePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
+HRESULT CThreadExtracting::ProcessVirt()
 {
-  wchar_t sz[32];
-  s += LangString(resourceID, langID);
-  s += L" ";
-  ConvertUInt64ToString(value, sz);
-  s += sz;
-  s += L"\n";
-}
-
-static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
-{
-  wchar_t sz[32];
-  s += LangString(resourceID, langID);
-  s += L" ";
-  ConvertUInt64ToString(value, sz);
-  s += sz;
-  ConvertUInt64ToString(value >> 20, sz);
-  s += L" (";
-  s += sz;
-  s += L" MB)";
-  s += L"\n";
-}
-
-#endif
+  CDecompressStat Stat;
+  HRESULT res = DecompressArchives(codecs, FormatIndices, *ArchivePaths, *ArchivePathsFull,
+      *WildcardCensor, *Options, ExtractCallbackSpec, ExtractCallback, ErrorMessage, Stat);
+  #ifndef _SFX
+  if (Options->TestMode && ExtractCallbackSpec->IsOK())
+  {
+    UString s;
+    AddValuePair(IDS_ARCHIVES_COLON, 0x02000324, Stat.NumArchives, s);
+    AddValuePair(IDS_FOLDERS_COLON, 0x02000321, Stat.NumFolders, s);
+    AddValuePair(IDS_FILES_COLON, 0x02000320, Stat.NumFiles, s);
+    AddSizePair(IDS_SIZE_COLON, 0x02000322, Stat.UnpackSize, s);
+    AddSizePair(IDS_COMPRESSED_COLON, 0x02000323, Stat.PackSize, s);
+    
+    if (Options->CalcCrc)
+    {
+      wchar_t temp[16];
+      ConvertUInt32ToHex(Stat.CrcSum, temp);
+      s += L"CRC: ";
+      s += temp;
+      s += L'\n';
+    }
+    
+    s += L'\n';
+    s += LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608);
+    
+    OkMessageTitle = Title;
+    OkMessage = s;
+  }
+  #endif
+  return res;
+};
 
 HRESULT ExtractGUI(
     CCodecs *codecs,
@@ -117,8 +116,12 @@ HRESULT ExtractGUI(
     const NWildcard::CCensorNode &wildcardCensor,
     CExtractOptions &options,
     bool showDialog,
-    CExtractCallbackImp *extractCallback)
+    bool &messageWasDisplayed,
+    CExtractCallbackImp *extractCallback,
+    HWND hwndParent)
 {
+  messageWasDisplayed = false;
+
   CThreadExtracting extracter;
   extracter.codecs = codecs;
   extracter.FormatIndices = formatIndices;
@@ -126,14 +129,17 @@ HRESULT ExtractGUI(
   if (!options.TestMode)
   {
     UString outputDir = options.OutputDir;
+    #ifndef UNDER_CE
     if (outputDir.IsEmpty())
       NFile::NDirectory::MyGetCurrentDirectory(outputDir);
+    #endif
     if (showDialog)
     {
       CExtractDialog dialog;
       if (!NFile::NDirectory::MyGetFullPathName(outputDir, dialog.DirectoryPath))
       {
         ShowErrorMessage(kIncorrectOutDir);
+        messageWasDisplayed = true;
         return E_FAIL;
       }
       NFile::NName::NormalizeDirPathPrefix(dialog.DirectoryPath);
@@ -141,7 +147,7 @@ HRESULT ExtractGUI(
       // dialog.OverwriteMode = options.OverwriteMode;
       // dialog.PathMode = options.PathMode;
 
-      if(dialog.Create(0) != IDOK)
+      if (dialog.Create(hwndParent) != IDOK)
         return E_ABORT;
       outputDir = dialog.DirectoryPath;
       options.OverwriteMode = dialog.OverwriteMode;
@@ -154,6 +160,7 @@ HRESULT ExtractGUI(
     if (!NFile::NDirectory::MyGetFullPathName(outputDir, options.OutputDir))
     {
       ShowErrorMessage(kIncorrectOutDir);
+      messageWasDisplayed = true;
       return E_FAIL;
     }
     NFile::NName::NormalizeDirPathPrefix(options.OutputDir);
@@ -167,7 +174,7 @@ HRESULT ExtractGUI(
       0x02000603,
       #endif
       options.OutputDir);
-      MyMessageBox(s2 + UString(L"\n") + s);
+      MyMessageBox(s2 + UString(L'\n') + s);
       return E_FAIL;
     }
     */
@@ -176,47 +183,23 @@ HRESULT ExtractGUI(
   UString title = LangStringSpec(options.TestMode ? IDS_PROGRESS_TESTING : IDS_PROGRESS_EXTRACTING,
       options.TestMode ? 0x02000F90: 0x02000890);
 
+  extracter.Title = title;
   extracter.ExtractCallbackSpec = extractCallback;
+  extracter.ExtractCallbackSpec->ProgressDialog = &extracter.ProgressDialog;
   extracter.ExtractCallback = extractCallback;
   extracter.ExtractCallbackSpec->Init();
+
+  extracter.ProgressDialog.CompressingMode = false;
 
   extracter.ArchivePaths = &archivePaths;
   extracter.ArchivePathsFull = &archivePathsFull;
   extracter.WildcardCensor = &wildcardCensor;
   extracter.Options = &options;
 
-  NWindows::CThread thread;
-  RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &extracter));
-  extracter.ExtractCallbackSpec->StartProgressDialog(title);
-  if (extracter.Result == S_OK && options.TestMode &&
-      extracter.ExtractCallbackSpec->Messages.IsEmpty() &&
-      extracter.ExtractCallbackSpec->NumArchiveErrors == 0)
-  {
-    #ifndef _SFX
-    UString s;
-    AddValuePair(IDS_ARCHIVES_COLON, 0x02000324, extracter.Stat.NumArchives, s);
-    AddValuePair(IDS_FOLDERS_COLON, 0x02000321, extracter.Stat.NumFolders, s);
-    AddValuePair(IDS_FILES_COLON, 0x02000320, extracter.Stat.NumFiles, s);
-    AddSizePair(IDS_SIZE_COLON, 0x02000322, extracter.Stat.UnpackSize, s);
-    AddSizePair(IDS_COMPRESSED_COLON, 0x02000323, extracter.Stat.PackSize, s);
+  extracter.ProgressDialog.IconID = IDI_ICON;
 
-    if (options.CalcCrc)
-    {
-      wchar_t temp[16];
-      ConvertUInt32ToHex(extracter.Stat.CrcSum, temp);
-      s += L"CRC: ";
-      s += temp;
-      s += L"\n";
-    }
-
-    s += L"\n";
-    s += LangString(IDS_MESSAGE_NO_ERRORS, 0x02000608);
-
-    MessageBoxW(0, s, LangString(IDS_PROGRESS_TESTING, 0x02000F90), 0);
-    #endif
-  }
-  if (extracter.Result != S_OK)
-    if (!extracter.ErrorMessage.IsEmpty())
-      throw extracter.ErrorMessage;
+  RINOK(extracter.Create(title, hwndParent));
+  messageWasDisplayed = extracter.ThreadFinishedOK &
+      extracter.ProgressDialog.MessagesDisplayed;
   return extracter.Result;
 }

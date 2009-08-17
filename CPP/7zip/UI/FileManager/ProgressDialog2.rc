@@ -1,77 +1,41 @@
 #include "ProgressDialog2Res.h"
 #include "../../GuiCommon.rc"
 
-#define xSize2 350
-#define ySize2 110
+#undef DIALOG_ID
+#define DIALOG_ID  IDD_DIALOG_PROGRESS
+#define xc 360
+#define k 11
+#define z1s 16
 
-#define xSize (xSize2 + marg + marg)
-#define ySize (ySize2 + marg + marg)
+#include "ProgressDialog2a.rc"
 
-#define bYPos (ySize - marg - bYSize)
+#ifdef UNDER_CE
 
-#undef bXSize
-#define bXSize 80
-
-#define bXPos1 (xSize - marg - bXSize)
-#define bXPos2 (bXPos1 - 10 - bXSize)
-#define bXPos3 (bXPos2 - 10 - bXSize)
-
-#define x0Size 90
-#define x1 (marg + x0Size)
-#define x1Size 70
-
-#define x3Size 60
-#define x3 (xSize - marg - x3Size)
-
-#define x2Size 90
-#define x2 (x3 - x2Size)
-
-#undef y0
-#undef y1
-#undef y2
-#undef y3
-#define y0 marg
-#define y1 (y0 + 11)
-#define y2 (y1 + 11)
-#define y3 (y2 + 11)
+#include "../../GuiCommon.rc"
 
 
-IDD_DIALOG_PROGRESS  DIALOG  0, 0, xSize, ySize  MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
-CAPTION "Progress"
-MY_FONT
-BEGIN
-  PUSHBUTTON  "&Background", IDC_BUTTON_PROGRESS_PRIORITY,  bXPos3, bYPos, bXSize, bYSize
-  PUSHBUTTON  "&Pause",      IDC_BUTTON_PAUSE,              bXPos2, bYPos, bXSize, bYSize
-  PUSHBUTTON  "Cancel",      IDCANCEL,                      bXPos1, bYPos, bXSize, bYSize
-  LTEXT  "Elapsed time:",   IDC_PROGRESS_ELAPSED,   marg, y0, x0Size, 8
-  LTEXT  "Remaining time:", IDC_PROGRESS_REMAINING, marg, y1, x0Size, 8
-  LTEXT  "Files:",          IDC_PROGRESS_FILES,     marg, y2, x0Size, 8
-  LTEXT  "Compression ratio:",IDC_PROGRESS_RATIO,   marg, y3, x0Size, 8
+#undef DIALOG_ID
+#undef m
+#undef k
+#undef z1s
 
-  LTEXT  "Total size:",      IDC_PROGRESS_TOTAL,    x2, y0, x2Size, 8
-  LTEXT  "Speed:",           IDC_PROGRESS_SPEED,    x2, y1, x2Size, 8
-  LTEXT  "Processed:",       IDC_PROGRESS_UNPACKED, x2, y2, x2Size, 8
-  LTEXT  "Compressed size:", IDC_PROGRESS_PACKED,   x2, y3, x2Size, 8
+#define DIALOG_ID  IDD_DIALOG_PROGRESS_2
+#define m 4
+#define k 8
+#define z1s 12
 
-  RTEXT  "00:00:00",  IDC_PROGRESS_ELAPSED_VALUE,     x1, y0, x1Size, 8
-  RTEXT  "",          IDC_PROGRESS_REMAINING_VALUE,   x1, y1, x1Size, 8
-  RTEXT  "",          IDC_PROGRESS_FILES_VALUE,       x1, y2, x1Size, 8
-  RTEXT  "",          IDC_PROGRESS_RATIO_VALUE,       x1, y3, x1Size, 8
+#define xc 280
 
-  RTEXT  "",          IDC_PROGRESS_TOTAL_VALUE,       x3, y0, x3Size, 8
-  RTEXT  "",          IDC_PROGRESS_SPEED_VALUE,       x3, y1, x3Size, 8
-  RTEXT  "",          IDC_PROGRESS_UNPACKED_VALUE,    x3, y2, x3Size, 8
-  RTEXT  "",          IDC_PROGRESS_PACKED_VALUE,      x3, y3, x3Size, 8
+#include "ProgressDialog2a.rc"
 
-  LTEXT  "", IDC_PROGRESS_FILE_NAME, marg, bYPos - 42, xSize2, 21, SS_NOPREFIX | SS_LEFTNOWORDWRAP
-  CONTROL "Progress1", IDC_PROGRESS1, "msctls_progress32", PBS_SMOOTH | WS_BORDER, marg, bYPos - 20, xSize2, 13
-END
-
+#endif
 
 STRINGTABLE DISCARDABLE
-BEGIN
+{
   IDS_PROGRESS_PAUSED     "Paused"
   IDS_PROGRESS_FOREGROUND "&Foreground"
   IDS_PROGRESS_CONTINUE   "&Continue"
   IDS_PROGRESS_ASK_CANCEL "Are you sure you want to cancel?"
-END
+  IDS_CLOSE "&Close"
+  IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
+}

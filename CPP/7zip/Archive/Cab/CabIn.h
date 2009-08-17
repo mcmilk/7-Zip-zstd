@@ -50,8 +50,8 @@ struct CArchiveInfo
 
   Byte GetDataBlockReserveSize() const { return (Byte)(ReserveBlockPresent() ? PerDataBlockAreaSize : 0); }
 
-  COtherArchive PreviousArchive;
-  COtherArchive NextArchive;
+  COtherArchive PrevArc;
+  COtherArchive NextArc;
 
   CArchiveInfo()
   {
@@ -63,7 +63,7 @@ struct CArchiveInfo
     PerCabinetAreaSize = 0;
     PerFolderAreaSize = 0;
     PerDataBlockAreaSize = 0;
-   }
+  }
 };
 
 struct CInArchiveInfo: public CArchiveInfo
@@ -73,13 +73,13 @@ struct CInArchiveInfo: public CArchiveInfo
 };
 
 
-class CDatabase
+struct CDatabase
 {
-public:
   UInt64 StartPosition;
   CInArchiveInfo ArchiveInfo;
   CObjectVector<CFolder> Folders;
   CObjectVector<CItem> Items;
+  
   void Clear()
   {
     ArchiveInfo.Clear();
@@ -104,9 +104,8 @@ public:
   UInt32 GetFileSize(int index) const { return Items[index].Size; }
 };
 
-class CDatabaseEx: public CDatabase
+struct CDatabaseEx: public CDatabase
 {
-public:
   CMyComPtr<IInStream> Stream;
 };
 
@@ -124,6 +123,7 @@ public:
   CRecordVector<CMvItem> Items;
   CRecordVector<int> StartFolderOfVol;
   CRecordVector<int> FolderStartFileIndex;
+  
   int GetFolderIndex(const CMvItem *mvi) const
   {
     const CDatabaseEx &db = Volumes[mvi->VolumeIndex];
@@ -145,20 +145,15 @@ class CInArchive
 {
   CInBuffer inBuffer;
 
-  Byte ReadByte();
-  UInt16 ReadUInt16();
-  UInt32 ReadUInt32();
+  Byte Read8();
+  UInt16 Read16();
+  UInt32 Read32();
   AString SafeReadName();
-  void Skip(size_t size);
+  void Skip(UInt32 size);
   void ReadOtherArchive(COtherArchive &oa);
 
-  HRESULT Open2(IInStream *inStream,
-      const UInt64 *searchHeaderSizeLimit,
-      CDatabase &database);
 public:
-  HRESULT Open(
-      const UInt64 *searchHeaderSizeLimit,
-      CDatabaseEx &database);
+  HRESULT Open(const UInt64 *searchHeaderSizeLimit, CDatabaseEx &db);
 };
   
 }}

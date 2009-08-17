@@ -1,43 +1,88 @@
 #include "OverwriteDialogRes.h"
 #include "../../GuiCommon.rc"
 
-#define xSize2 357
-#define ySize2 204
-
-#define xSize (xSize2 + marg + marg)
-#define ySize (ySize2 + marg + marg)
+#define xc 280
+#define yc 200
 
 #undef iconSize
-#define iconSize 20
+#define iconSize 24
 
-#undef fiXPos
-#undef fiXSize
-#undef fiYSize
-#define fiXPos (iconSize + 12)
-#define fiXSize (xSize2 - fiXPos)
-#define fiYSize 50
+#undef x
+#undef fx
+#undef fy
+#define x (m + iconSize + m)
+#define fx (xc - iconSize - m)
+#define fy 50
 
-#define b1YPos (ySize - marg - bYSize)
-#define b2YPos (b1YPos - bYSize - 10)
+#define bSizeBig 104
+#undef bx1
+#define bx1 (xs - m - bSizeBig)
 
-IDD_DIALOG_OVERWRITE DIALOG 0, 0, xSize, ySize MY_MODAL_DIALOG_STYLE
+IDD_DIALOG_OVERWRITE MY_DIALOG
 CAPTION "Confirm File Replace"
-MY_FONT
 BEGIN
-  LTEXT "Destination folder already contains processed file.", IDC_STATIC_OVERWRITE_HEADER, marg, 7, xSize2, 8
-  LTEXT "Would you like to replace the existing file", IDC_STATIC_OVERWRITE_QUESTION_BEGIN, marg, 28, xSize2, 8
-  ICON  "", IDC_STATIC_OVERWRITE_OLD_FILE_ICON,             marg,  44, iconSize, iconSize
-  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,      fiXPos,  44,  fiXSize,  fiYSize, SS_NOPREFIX
-  LTEXT "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END, marg,  98,   xSize2,        8
-  ICON  "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,              marg, 114, iconSize, iconSize
-  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,       fiXPos, 114,  fiXSize,  fiYSize, SS_NOPREFIX
-  PUSHBUTTON "&Yes",         IDYES,                             78, b2YPos, bXSize, bYSize
-  PUSHBUTTON "Yes to &All",  IDC_BUTTON_OVERWRITE_YES_TO_ALL,  152, b2YPos, bXSize, bYSize
-  PUSHBUTTON "&No",          IDNO,                             226, b2YPos, bXSize, bYSize
-  PUSHBUTTON "No to A&ll",   IDC_BUTTON_OVERWRITE_NO_TO_ALL,   300, b2YPos, bXSize, bYSize
-  PUSHBUTTON "A&uto Rename", IDC_BUTTON_OVERWRITE_AUTO_RENAME, 181, b1YPos,    109, bYSize
-  PUSHBUTTON "&Cancel",      IDCANCEL,                         300, b1YPos, bXSize, bYSize
+  LTEXT "Destination folder already contains processed file.", IDC_STATIC_OVERWRITE_HEADER, m, 7, xc, 8
+  LTEXT "Would you like to replace the existing file", IDC_STATIC_OVERWRITE_QUESTION_BEGIN, m, 28, xc, 8
+  
+  ICON  "", IDC_STATIC_OVERWRITE_OLD_FILE_ICON,             m,  44, iconSize, iconSize
+  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,        x,  44, fx, fy, SS_NOPREFIX
+  
+  LTEXT "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END, m,  98, xc, 8
+
+  ICON  "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,              m, 114, iconSize, iconSize
+  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,         x, 114, fx, fy, SS_NOPREFIX
+  
+  PUSHBUTTON "&Yes",         IDYES,                            bx3, by2, bxs, bys
+  PUSHBUTTON "Yes to &All",  IDC_BUTTON_OVERWRITE_YES_TO_ALL,  bx2, by2, bxs, bys
+  PUSHBUTTON "A&uto Rename", IDC_BUTTON_OVERWRITE_AUTO_RENAME, bx1, by2, bSizeBig, bys
+  PUSHBUTTON "&No",          IDNO,                             bx3, by1, bxs, bys
+  PUSHBUTTON "No to A&ll",   IDC_BUTTON_OVERWRITE_NO_TO_ALL,   bx2, by1, bxs, bys
+  PUSHBUTTON "&Cancel",      IDCANCEL,                xs - m - bxs, by1, bxs, bys
 END
+
+
+#ifdef UNDER_CE
+
+#undef m
+#undef xc
+#undef yc
+
+#define m 4
+#define xc 152
+#define yc 144
+
+#undef fy
+#define fy 40
+
+#undef  bxs
+#define bxs 48
+
+#undef bx1
+
+#define bx1 (xs - m - bxs)
+
+IDD_DIALOG_OVERWRITE_2 MY_DIALOG
+CAPTION "Confirm File Replace"
+BEGIN
+  LTEXT "Would you like to replace the existing file", IDC_STATIC_OVERWRITE_QUESTION_BEGIN, m, m, xc, 8
+  
+  ICON  "", IDC_STATIC_OVERWRITE_OLD_FILE_ICON,             m,  20, iconSize, iconSize
+  LTEXT "", IDC_STATIC_OVERWRITE_OLD_FILE_SIZE_TIME,        x,  20, fx, fy, SS_NOPREFIX
+  
+  LTEXT "with this one?",IDC_STATIC_OVERWRITE_QUESTION_END, m,  60, xc, 8
+
+  ICON  "",IDC_STATIC_OVERWRITE_NEW_FILE_ICON,              m,  72, iconSize, iconSize
+  LTEXT "",IDC_STATIC_OVERWRITE_NEW_FILE_SIZE_TIME,         x,  72, fx, fy, SS_NOPREFIX
+  
+  PUSHBUTTON "&Yes",         IDYES,                            bx3, by2, bxs, bys
+  PUSHBUTTON "Yes to &All",  IDC_BUTTON_OVERWRITE_YES_TO_ALL,  bx2, by2, bxs, bys
+  PUSHBUTTON "A&uto Rename", IDC_BUTTON_OVERWRITE_AUTO_RENAME, bx1, by2, bxs, bys
+  PUSHBUTTON "&No",          IDNO,                             bx3, by1, bxs, bys
+  PUSHBUTTON "No to A&ll",   IDC_BUTTON_OVERWRITE_NO_TO_ALL,   bx2, by1, bxs, bys
+  PUSHBUTTON "&Cancel",      IDCANCEL,                         bx1, by1, bxs, bys
+END
+
+#endif
 
 
 STRINGTABLE

@@ -2,36 +2,69 @@
 #include <WinUser.h>
 #include <CommCtrl.h>
 
-#define marg 7
-#undef bXSize
-#undef bYSize
-#define bXSize 64
-#define bYSize 14
-#define bDotsSize 20
-
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
-#undef xSize2
-#undef ySize2
-#undef xSize
-#undef ySize
-#undef bXPos
-#undef bYPos
-#undef b1XPos
-#undef b1YPos
-#undef b2XPos
-#undef b2YPos
-#undef b3XPos
-#undef b3YPos
-#undef gPos
-#undef gPos2
+#undef m
+#undef bxs
+#undef bys
+#undef bxsDots
+#undef y
+#undef xc
+#undef yc
+#undef xs
+#undef ys
+#undef bx
+#undef bx1
+#undef bx2
+#undef bx3
+#undef by
+#undef by1
+#undef by2
+#undef by3
 #undef gSpace
 #undef gSize
 #undef marg2
 #undef marg3
 
+#define m 8
+#define bxs 64
+#define bys 16
+#define bxsDots 20
 
-#define MY_MODAL_DIALOG_STYLE  STYLE  DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-#define MY_PAGE_STYLE  STYLE  DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+#define xs (xc + m + m)
+#define ys (yc + m + m)
 
-#define MY_FONT FONT 8, "MS Shell Dlg"
+#define bx1 (xs - m - bxs)
+#define bx2 (bx1 - m - bxs)
+#define bx3 (bx2 - m - bxs)
+#define bx bx1
+
+#define by1 (ys - m - bys)
+#define by2 (by1 - m - bys)
+#define by by1
+
+
+#define MY_MODAL_DIALOG_STYLE  STYLE  DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+
+#define MY_MODAL_RESIZE_DIALOG_STYLE  MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX | WS_THICKFRAME
+
+#define MY_PAGE_STYLE  STYLE  WS_CHILD | WS_DISABLED | WS_CAPTION
+
+#define MY_FONT  FONT 8, "MS Shell Dlg"
+
+#define SMALL_PAGE_SIZE_X 120
+
+#define MY_DIALOG         DIALOG 0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
+#define MY_RESIZE_DIALOG  DIALOG 0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
+#define MY_PAGE           DIALOG 0, 0, xs, ys  MY_PAGE_STYLE  MY_FONT
+
+#define OK_CANCEL \
+  DEFPUSHBUTTON  "OK",     IDOK,     bx2, by, bxs, bys \
+  PUSHBUTTON     "Cancel", IDCANCEL, bx1, by, bxs, bys
+
+
+#define MY_COMBO  CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+#define MY_COMBO_SORTED  MY_COMBO | CBS_SORT
+#define MY_COMBO_WITH_EDIT  CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP 
+
+#define MY_CHECKBOX "Button", BS_AUTOCHECKBOX | WS_TABSTOP

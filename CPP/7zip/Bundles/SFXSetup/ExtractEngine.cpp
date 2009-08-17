@@ -19,9 +19,6 @@ static LPCWSTR kCantOpenArchive = L"Can not open the file as archive";
 
 struct CThreadExtracting
 {
-  #ifndef _NO_PROGRESS
-  bool ShowProgress;
-  #endif
   CCodecs *Codecs;
   UString FileName;
   UString DestFolder;
@@ -33,7 +30,7 @@ struct CThreadExtracting
   HRESULT Result;
   UString ErrorMessage;
 
-  void Process()
+  void Process2()
   {
     NFile::NFind::CFileInfoW fi;
     if (!fi.Find(FileName))
@@ -67,15 +64,19 @@ struct CThreadExtracting
 
     ExtractCallbackSpec->Init(ArchiveLink.GetArchive(), dirPath, L"Default", fi.MTime, 0);
 
-    #ifndef _NO_PROGRESS
-    if (ShowProgress)
-      ExtractCallbackSpec->ProgressDialog.WaitCreating();
-    #endif
     Result = ArchiveLink.GetArchive()->Extract(0, (UInt32)-1 , BoolToInt(false), ExtractCallback);
-    #ifndef _NO_PROGRESS
-    if (ShowProgress)
-      ExtractCallbackSpec->ProgressDialog.MyClose();
-    #endif
+  }
+
+  void Process()
+  {
+    try
+    {
+      #ifndef _NO_PROGRESS
+      CProgressCloser closer(ExtractCallbackSpec->ProgressDialog);
+      #endif
+      Process2();
+    }
+    catch(...) { Result = E_FAIL; }
   }
   
   static THREAD_FUNC_DECL MyThreadFunction(void *param)
@@ -100,9 +101,9 @@ HRESULT ExtractArchive(CCodecs *codecs,const UString &fileName, const UString &d
   
   #ifndef _NO_PROGRESS
 
-  t.ShowProgress = showProgress;
   if (showProgress)
   {
+    t.ExtractCallbackSpec->ProgressDialog.IconID = IDI_ICON;
     NWindows::CThread thread;
     RINOK(thread.Create(CThreadExtracting::MyThreadFunction, &t));
     
@@ -112,13 +113,13 @@ HRESULT ExtractArchive(CCodecs *codecs,const UString &fileName, const UString &d
     #else
     title = NWindows::MyLoadStringW(IDS_PROGRESS_EXTRACTING);
     #endif
-    t.ExtractCallbackSpec->StartProgressDialog(title);
+    t.ExtractCallbackSpec->StartProgressDialog(title, thread);
   }
   else
 
   #endif
   {
-    t.Process();
+    t.Process2();
   }
 
   errorMessage = t.ErrorMessage;

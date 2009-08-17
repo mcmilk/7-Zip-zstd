@@ -3,18 +3,34 @@
 #include "StdAfx.h"
 
 #include "StreamObjects.h"
-#include "../../Common/Defs.h"
 
-
-STDMETHODIMP CSequentialInStreamImp::Read(void *data, UInt32 size, UInt32 *processedSize)
+STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  size_t rem = _size - _pos;
+  if (processedSize != NULL)
+    *processedSize = 0;
+  if (_pos > _size)
+    return E_FAIL;
+  size_t rem = _size - (size_t)_pos;
   if (size < rem)
     rem = (size_t)size;
-  memcpy(data, _dataPointer + _pos, rem);
+  memcpy(data, _data + (size_t)_pos, rem);
   _pos += rem;
   if (processedSize != NULL)
     *processedSize = (UInt32)rem;
+  return S_OK;
+}
+
+STDMETHODIMP CBufInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  switch(seekOrigin)
+  {
+    case STREAM_SEEK_SET: _pos = offset; break;
+    case STREAM_SEEK_CUR: _pos += offset; break;
+    case STREAM_SEEK_END: _pos = _size + offset; break;
+    default: return STG_E_INVALIDFUNCTION;
+  }
+  if (newPosition)
+    *newPosition = _pos;
   return S_OK;
 }
 

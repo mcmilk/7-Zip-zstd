@@ -1,10 +1,9 @@
-// ProgramLocation.h
+// ProgramLocation.cpp
 
 #include "StdAfx.h"
 
 #include "ProgramLocation.h"
 
-#include "Windows/FileName.h"
 #include "Windows/DLL.h"
 
 using namespace NWindows;

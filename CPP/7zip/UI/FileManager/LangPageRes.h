@@ -1,4 +1,6 @@
-#define IDD_LANG           900
+#define IDD_LANG           544
+#define IDD_LANG_2         644
+
 #define IDS_LANG_ENGLISH   995
 #define IDS_LANG_NATIVE    996
 

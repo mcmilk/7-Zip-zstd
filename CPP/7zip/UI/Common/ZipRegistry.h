@@ -1,10 +1,11 @@
 // ZipRegistry.h
 
-#ifndef __ZIPREGISTRY_H
-#define __ZIPREGISTRY_H
+#ifndef __ZIP_REGISTRY_H
+#define __ZIP_REGISTRY_H
 
 #include "Common/MyString.h"
 #include "Common/Types.h"
+
 #include "ExtractMode.h"
 
 namespace NExtract
@@ -13,49 +14,56 @@ namespace NExtract
   {
     NPathMode::EEnum PathMode;
     NOverwriteMode::EEnum OverwriteMode;
-    UStringVector Paths;
     bool ShowPassword;
+    UStringVector Paths;
+
+    void Save() const;
+    void Load();
   };
 }
 
-namespace NCompression {
-  
+namespace NCompression
+{
   struct CFormatOptions
   {
-    CSysString FormatID;
-    UString Options;
-    UString Method;
-    UString EncryptionMethod;
     UInt32 Level;
     UInt32 Dictionary;
     UInt32 Order;
     UInt32 BlockLogSize;
     UInt32 NumThreads;
+    
+    CSysString FormatID;
+    UString Method;
+    UString Options;
+    UString EncryptionMethod;
+
     void ResetForLevelChange()
     {
       BlockLogSize = NumThreads = Level = Dictionary = Order = UInt32(-1);
       Method.Empty();
-      // EncryptionMethod.Empty();
       // Options.Empty();
+      // EncryptionMethod.Empty();
     }
     CFormatOptions() { ResetForLevelChange(); }
   };
 
   struct CInfo
   {
-    UStringVector HistoryArchives;
     UInt32 Level;
-    UString ArchiveType;
-
-    CObjectVector<CFormatOptions> FormatOptionsVector;
-
     bool ShowPassword;
     bool EncryptHeaders;
+    UString ArcType;
+    UStringVector ArcPaths;
+
+    CObjectVector<CFormatOptions> Formats;
+
+    void Save() const;
+    void Load();
   };
 }
 
-namespace NWorkDir{
-  
+namespace NWorkDir
+{
   namespace NMode
   {
     enum EEnum
@@ -70,6 +78,7 @@ namespace NWorkDir{
     NMode::EEnum Mode;
     UString Path;
     bool ForRemovableOnly;
+
     void SetForRemovableOnlyDefault() { ForRemovableOnly = true; }
     void SetDefault()
     {
@@ -77,22 +86,20 @@ namespace NWorkDir{
       Path.Empty();
       SetForRemovableOnlyDefault();
     }
+
+    void Save() const;
+    void Load();
   };
 }
 
-void SaveExtractionInfo(const NExtract::CInfo &info);
-void ReadExtractionInfo(NExtract::CInfo &info);
 
-void SaveCompressionInfo(const NCompression::CInfo &info);
-void ReadCompressionInfo(NCompression::CInfo &info);
+struct CContextMenuInfo
+{
+  bool Cascaded;
+  UInt32 Flags;
 
-void SaveWorkDirInfo(const NWorkDir::CInfo &info);
-void ReadWorkDirInfo(NWorkDir::CInfo &info);
-
-void SaveCascadedMenu(bool enabled);
-bool ReadCascadedMenu();
-
-void SaveContextMenuStatus(UInt32 value);
-bool ReadContextMenuStatus(UInt32 &value);
+  void Save() const;
+  void Load();
+};
 
 #endif

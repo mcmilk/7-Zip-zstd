@@ -1,14 +1,15 @@
 PROG = 7za.exe
-LIBS = $(LIBS) user32.lib oleaut32.lib Advapi32.lib
+MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -I ../../../  \
-  -DWIN_LONG_PATH \
   -DCOMPRESS_MT \
   -DCOMPRESS_BZIP2_MT \
   -DCOMPRESS_MF_MT \
-  -D_7ZIP_LARGE_PAGES \
   -DBREAK_HANDLER \
   -DBENCH_MT \
-  -DSUPPORT_DEVICE_FILE \
+
+!IFNDEF UNDER_CE
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE
+!ENDIF
 
 CONSOLE_OBJS = \
   $O\ConsoleClose.obj \
@@ -96,6 +97,7 @@ UI_COMMON_OBJS = \
 
 AR_OBJS = \
   $O\Bz2Handler.obj \
+  $O\DeflateProps.obj \
   $O\GzHandler.obj \
   $O\LzmaHandler.obj \
   $O\SplitHandler.obj \

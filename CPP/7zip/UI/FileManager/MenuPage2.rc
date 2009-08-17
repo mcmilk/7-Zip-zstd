@@ -1,0 +1,14 @@
+#define y 40
+
+CAPTION "7-Zip"
+BEGIN
+  CONTROL  "Integrate 7-Zip to shell context menu", IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,
+           MY_CHECKBOX, m, m, xc, 10
+  CONTROL  "Cascaded context menu", IDC_SYSTEM_CASCADED_MENU,
+           MY_CHECKBOX, m, m + 14, xc, 10
+  LTEXT    "Context menu items:", IDC_SYSTEM_STATIC_CONTEXT_MENU_ITEMS,
+           m, m + 28, xc, 8
+  CONTROL  "List", IDC_SYSTEM_OPTIONS_LIST, "SysListView32",
+           LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP,
+           m, m + y, xc, yc - y
+END

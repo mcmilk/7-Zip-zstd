@@ -17,10 +17,8 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
     int numChars = MultiByteToWideChar(codePage, 0, srcString,
       srcString.Length(), resultString.GetBuffer(srcString.Length()),
       srcString.Length() + 1);
-    #ifndef _WIN32_WCE
     if (numChars == 0)
       throw 282228;
-    #endif
     resultString.ReleaseBuffer(numChars);
   }
   return resultString;
@@ -38,10 +36,8 @@ AString UnicodeStringToMultiByte(const UString &s, UINT codePage, char defaultCh
         dest.GetBuffer(numRequiredBytes), numRequiredBytes + 1,
         &defaultChar, &defUsed);
     defaultCharWasUsed = (defUsed != FALSE);
-    #ifndef _WIN32_WCE
     if (numChars == 0)
       throw 282229;
-    #endif
     dest.ReleaseBuffer(numChars);
   }
   return dest;
@@ -53,7 +49,7 @@ AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
   return UnicodeStringToMultiByte(srcString, codePage, '_', defaultCharWasUsed);
 }
 
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 AString SystemStringToOemString(const CSysString &srcString)
 {
   AString result;
@@ -99,4 +95,3 @@ AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage)
 }
 
 #endif
-

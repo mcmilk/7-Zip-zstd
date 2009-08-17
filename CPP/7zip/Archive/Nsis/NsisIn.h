@@ -1,16 +1,11 @@
-// Archive/NsisIn.h
+// NsisIn.h
 
 #ifndef __ARCHIVE_NSIS_IN_H
 #define __ARCHIVE_NSIS_IN_H
 
 #include "Common/Buffer.h"
-#include "Common/IntToString.h"
 #include "Common/MyCom.h"
 #include "Common/StringConvert.h"
-
-#include "../../Common/CreateCoder.h"
-
-#include "../../IStream.h"
 
 #include "NsisDecode.h"
 
@@ -20,6 +15,8 @@ namespace NArchive {
 namespace NNsis {
 
 const int kSignatureSize = 16;
+#define NSIS_SIGNATURE { 0xEF, 0xBE, 0xAD, 0xDE, 0x4E, 0x75, 0x6C, 0x6C, 0x73, 0x6F, 0x66, 0x74, 0x49, 0x6E, 0x73, 0x74}
+
 extern Byte kSignature[kSignatureSize];
 
 const UInt32 kFlagsMask = 0xF;

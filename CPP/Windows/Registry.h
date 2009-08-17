@@ -17,19 +17,23 @@ class CKey
   HKEY _object;
 public:
   CKey(): _object(NULL) {}
-  ~CKey();
+  ~CKey() { Close(); }
 
   operator HKEY() const { return _object; }
+  void Attach(HKEY key) { _object = key; }
+  HKEY Detach()
+  {
+    HKEY key = _object;
+    _object = NULL;
+    return key;
+  }
 
-  HKEY Detach();
-  void Attach(HKEY key);
   LONG Create(HKEY parentKey, LPCTSTR keyName,
       LPTSTR keyClass = REG_NONE, DWORD options = REG_OPTION_NON_VOLATILE,
       REGSAM accessMask = KEY_ALL_ACCESS,
       LPSECURITY_ATTRIBUTES securityAttributes = NULL,
       LPDWORD disposition = NULL);
-  LONG Open(HKEY parentKey, LPCTSTR keyName,
-      REGSAM accessMask = KEY_ALL_ACCESS);
+  LONG Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask = KEY_ALL_ACCESS);
 
   LONG Close();
 
@@ -52,12 +56,18 @@ public:
 
   LONG SetValue(LPCTSTR name, const void *value, UInt32 size);
 
+  LONG SetValue_Strings(LPCTSTR valueName, const UStringVector &strings);
+  LONG GetValue_Strings(LPCTSTR valueName, UStringVector &strings);
+
   LONG SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value);
 
   LONG QueryValue(LPCTSTR name, UInt32 &value);
   LONG QueryValue(LPCTSTR name, bool &value);
   LONG QueryValue(LPCTSTR name, LPTSTR value, UInt32 &dataSize);
   LONG QueryValue(LPCTSTR name, CSysString &value);
+
+  LONG GetValue_IfOk(LPCTSTR name, UInt32 &value);
+  LONG GetValue_IfOk(LPCTSTR name, bool &value);
 
   #ifndef _UNICODE
   LONG QueryValue(LPCWSTR name, LPWSTR value, UInt32 &dataSize);

@@ -6,7 +6,9 @@
 namespace NWindows {
 namespace NSecurity {
 
+#ifndef UNDER_CE
 bool EnableLockMemoryPrivilege(bool enable = true);
+#endif
 
 }}
 

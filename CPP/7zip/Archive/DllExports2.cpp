@@ -3,43 +3,38 @@
 #include "StdAfx.h"
 
 #include "../../Common/MyInitGuid.h"
-#include "../../Common/ComTry.h"
-#include "../../Common/Types.h"
-#include "../../Windows/PropVariant.h"
+
 #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
 #include "../../../C/Alloc.h"
 #endif
 
-#include "IArchive.h"
+#include "../../Common/ComTry.h"
+
+#include "../../Windows/NtCheck.h"
+#include "../../Windows/PropVariant.h"
+
 #include "../ICoder.h"
 #include "../IPassword.h"
 
+#include "IArchive.h"
+
 HINSTANCE g_hInstance;
-#ifndef _UNICODE
-#ifdef _WIN32
-bool g_IsNT = false;
-static bool IsItWindowsNT()
-{
-  OSVERSIONINFO versionInfo;
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  if (!::GetVersionEx(&versionInfo))
-    return false;
-  return (versionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-}
-#endif
-#endif
+
+#define NT_CHECK_FAIL_ACTION return FALSE;
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE
+  #else
+  HINSTANCE
+  #endif
+  hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
   {
-    g_hInstance = hInstance;
-    #ifndef _UNICODE
-    #ifdef _WIN32
-    g_IsNT = IsItWindowsNT();
-    #endif
-    #endif
+    g_hInstance = (HINSTANCE)hInstance;
+    NT_CHECK;
   }
   return TRUE;
 }

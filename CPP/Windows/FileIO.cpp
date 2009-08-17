@@ -21,6 +21,14 @@ namespace NFile {
 #ifdef SUPPORT_DEVICE_FILE
 bool IsDeviceName(LPCTSTR n)
 {
+  #ifdef UNDER_CE
+  int len = (int)MyStringLen(n);
+  if (len < 5 || len > 5 || memcmp(n, TEXT("DSK"), 3 * sizeof(TCHAR)) != 0)
+    return false;
+  if (n[4] != ':')
+    return false;
+  // for reading use SG_REQ sg; if (DeviceIoControl(dsk, IOCTL_DISK_READ));
+  #else
   if (n[0] != '\\' || n[1] != '\\' || n[2] != '.' ||  n[3] != '\\')
     return false;
   int len = (int)MyStringLen(n);
@@ -31,6 +39,7 @@ bool IsDeviceName(LPCTSTR n)
   for (int i = 17; i < len; i++)
     if (n[i] < '0' || n[i] > '9')
       return false;
+  #endif
   return true;
 }
 
@@ -241,6 +250,11 @@ void CInFile::GetDeviceLength()
 {
   if (_handle != INVALID_HANDLE_VALUE && IsDeviceFile)
   {
+    #ifdef UNDER_CE
+    LengthDefined = true;
+    Length = 128 << 20;
+
+    #else
     PARTITION_INFORMATION partInfo;
     LengthDefined = true;
     Length = 0;
@@ -257,6 +271,7 @@ void CInFile::GetDeviceLength()
         Length = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack * geom.BytesPerSector;
     }
     // SeekToBegin();
+    #endif
   }
 }
 
@@ -360,10 +375,10 @@ bool COutFile::Create(LPCTSTR fileName, bool createAlways)
 #ifndef _UNICODE
 
 bool COutFile::Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
-  { return CFileBase::Create(fileName, GENERIC_WRITE, shareMode,      creationDisposition, flagsAndAttributes); }
+  { return CFileBase::Create(fileName, GENERIC_WRITE, shareMode, creationDisposition, flagsAndAttributes); }
 
 bool COutFile::Open(LPCWSTR fileName, DWORD creationDisposition)
-  { return Open(fileName, FILE_SHARE_READ,  creationDisposition, FILE_ATTRIBUTE_NORMAL); }
+  { return Open(fileName, FILE_SHARE_READ, creationDisposition, FILE_ATTRIBUTE_NORMAL); }
 
 bool COutFile::Create(LPCWSTR fileName, bool createAlways)
   { return Open(fileName, GetCreationDisposition(createAlways)); }

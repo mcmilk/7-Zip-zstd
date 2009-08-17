@@ -1,13 +1,16 @@
 // RegistryContextMenu.h
 
-#ifndef __REGISTRYCONTEXTMENU_H
-#define __REGISTRYCONTEXTMENU_H
+#ifndef __REGISTRY_CONTEXT_MENU_H
+#define __REGISTRY_CONTEXT_MENU_H
 
 namespace NZipRootRegistry {
 
+#ifndef UNDER_CE
   bool CheckContextMenuHandler();
   void AddContextMenuHandler();
   void DeleteContextMenuHandler();
+#endif
+
 }
 
 #endif

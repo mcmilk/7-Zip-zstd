@@ -2,10 +2,17 @@
 
 #include "StdAfx.h"
 
+#ifdef UNDER_CE
+#include <commdlg.h>
+#endif
+
 #ifndef _UNICODE
 #include "Common/StringConvert.h"
 #endif
 #include "Common/MyCom.h"
+
+#include "Windows/Defs.h"
+
 #include "CommonDialog.h"
 
 #ifndef _UNICODE
@@ -62,7 +69,15 @@ void CDoubleZeroStringListW::SetForBuffer(LPWSTR buffer)
     buffer[m_Indexes[i]] = L'\0';
 }
 
-bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s, UString &resPath)
+#define MY_OFN_PROJECT 0x00400000
+#define MY_OFN_SHOW_ALL 0x01000000
+
+bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName,
+    LPCWSTR s, UString &resPath
+    #ifdef UNDER_CE
+    , bool openFolder
+    #endif
+    )
 {
   const int kBufferSize = MAX_PATH * 2;
   #ifndef _UNICODE
@@ -146,7 +161,12 @@ bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName, LPCWSTR s
        
     info.lpstrTitle = title;
     
-    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY;
+    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY
+        #ifdef UNDER_CE
+        | (openFolder ? (MY_OFN_PROJECT | MY_OFN_SHOW_ALL) : 0)
+        #endif
+    ;
+
     info.nFileOffset = 0;
     info.nFileExtension = 0;
     info.lpstrDefExt = NULL;

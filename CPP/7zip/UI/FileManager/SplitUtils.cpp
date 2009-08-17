@@ -59,10 +59,11 @@ bool ParseVolumeSizes(const UString &s, CRecordVector<UInt64> &values)
 
 void AddVolumeItems(NWindows::NControl::CComboBox &volumeCombo)
 {
-  volumeCombo.AddString(TEXT("1457664 - 3.5\" floppy"));
+  volumeCombo.AddString(TEXT("10M"));
   volumeCombo.AddString(TEXT("650M - CD"));
   volumeCombo.AddString(TEXT("700M - CD"));
   volumeCombo.AddString(TEXT("4480M - DVD"));
+  volumeCombo.AddString(TEXT("1457664 - 3.5\" floppy"));
 }
 
 UInt64 GetNumberOfVolumes(UInt64 size, CRecordVector<UInt64> &volSizes)

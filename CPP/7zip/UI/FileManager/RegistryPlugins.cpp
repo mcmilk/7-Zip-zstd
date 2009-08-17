@@ -2,21 +2,16 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-// #include "Windows/Registry.h"
-// #include "Windows/Synchronization.h"
-
 #include "Windows/DLL.h"
 #include "Windows/PropVariant.h"
 #include "Windows/FileFind.h"
 
+#include "ProgramLocation.h"
 #include "RegistryPlugins.h"
 #include "IFolder.h"
 
 using namespace NWindows;
 using namespace NFile;
-// using namespace NRegistry;
-// using namespace NCOM;
 
 /*
 static const TCHAR *kLMBasePath = TEXT("Software\\7-Zip\\FM");
@@ -32,66 +27,65 @@ static CSysString GetFileFolderPluginsKeyName()
       CSysString(kPluginsKeyName);
 }
 
-static NSynchronization::CCriticalSection g_CriticalSection;
 */
-typedef UINT32 (WINAPI * GetPluginPropertyFunc)(
-    PROPID propID, PROPVARIANT *value);
 
-static bool ReadPluginInfo(CPluginInfo &pluginInfo)
+typedef UINT32 (WINAPI * GetPluginPropertyFunc)(PROPID propID, PROPVARIANT *value);
+
+static bool ReadPluginInfo(CPluginInfo &pluginInfo, bool needCheckDll)
 {
+  if (needCheckDll)
   {
-    NDLL::CLibrary library;
-    if (!library.LoadEx(pluginInfo.FilePath, LOAD_LIBRARY_AS_DATAFILE))
+    NDLL::CLibrary lib;
+    if (!lib.LoadEx(pluginInfo.FilePath, LOAD_LIBRARY_AS_DATAFILE))
       return false;
   }
-  NDLL::CLibrary library;
-  if (!library.Load(pluginInfo.FilePath))
+  NDLL::CLibrary lib;
+  if (!lib.Load(pluginInfo.FilePath))
     return false;
-  GetPluginPropertyFunc getPluginProperty = (GetPluginPropertyFunc)
-    library.GetProcAddress("GetPluginProperty");
+  GetPluginPropertyFunc getPluginProperty = (GetPluginPropertyFunc)lib.GetProc("GetPluginProperty");
   if (getPluginProperty == NULL)
     return false;
   
-  NCOM::CPropVariant propVariant;
-  if (getPluginProperty(NPlugin::kName, &propVariant) != S_OK)
+  NCOM::CPropVariant prop;
+  if (getPluginProperty(NPlugin::kName, &prop) != S_OK)
     return false;
-  if (propVariant.vt != VT_BSTR)
+  if (prop.vt != VT_BSTR)
     return false;
-  pluginInfo.Name = propVariant.bstrVal;
-  propVariant.Clear();
+  pluginInfo.Name = prop.bstrVal;
+  prop.Clear();
   
-  if (getPluginProperty(NPlugin::kClassID, &propVariant) != S_OK)
+  if (getPluginProperty(NPlugin::kClassID, &prop) != S_OK)
     return false;
-  if (propVariant.vt == VT_EMPTY)
+  if (prop.vt == VT_EMPTY)
     pluginInfo.ClassIDDefined = false;
-  else if (propVariant.vt != VT_BSTR)
+  else if (prop.vt != VT_BSTR)
     return false;
   else
   {
     pluginInfo.ClassIDDefined = true;
-    pluginInfo.ClassID = *(const GUID *)propVariant.bstrVal;
+    pluginInfo.ClassID = *(const GUID *)prop.bstrVal;
   }
-  propVariant.Clear();
+  prop.Clear();
   
-  if (getPluginProperty(NPlugin::kOptionsClassID, &propVariant) != S_OK)
+  if (getPluginProperty(NPlugin::kOptionsClassID, &prop) != S_OK)
     return false;
-  if (propVariant.vt == VT_EMPTY)
+  if (prop.vt == VT_EMPTY)
     pluginInfo.OptionsClassIDDefined = false;
-  else if (propVariant.vt != VT_BSTR)
+  else if (prop.vt != VT_BSTR)
     return false;
   else
   {
     pluginInfo.OptionsClassIDDefined = true;
-    pluginInfo.OptionsClassID = *(const GUID *)propVariant.bstrVal;
+    pluginInfo.OptionsClassID = *(const GUID *)prop.bstrVal;
   }
-  propVariant.Clear();
+  prop.Clear();
 
-  if (getPluginProperty(NPlugin::kType, &propVariant) != S_OK)
+  if (getPluginProperty(NPlugin::kType, &prop) != S_OK)
     return false;
-  if (propVariant.vt == VT_EMPTY)
+  if (prop.vt == VT_EMPTY)
     pluginInfo.Type = kPluginTypeFF;
-  else if (propVariant.vt == VT_UI4)
-    pluginInfo.Type = (EPluginType)propVariant.ulVal;
+  else if (prop.vt == VT_UI4)
+    pluginInfo.Type = (EPluginType)prop.ulVal;
   else
     return false;
   return true;
@@ -103,11 +97,12 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 {
   plugins.Clear();
 
-  UString baseFolderPrefix = GetProgramFolderPrefix();
+  UString baseFolderPrefix;
+  GetProgramFolderPath(baseFolderPrefix);
   {
     CPluginInfo pluginInfo;
     pluginInfo.FilePath = baseFolderPrefix + L"7-zip.dll";
-    if (::ReadPluginInfo(pluginInfo))
+    if (::ReadPluginInfo(pluginInfo, false))
       plugins.Add(pluginInfo);
   }
   UString folderPath = baseFolderPrefix + L"Plugins" WSTRING_PATH_SEPARATOR;
@@ -119,7 +114,7 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
       continue;
     CPluginInfo pluginInfo;
     pluginInfo.FilePath = folderPath + fileInfo.Name;
-    if (::ReadPluginInfo(pluginInfo))
+    if (::ReadPluginInfo(pluginInfo, true))
       plugins.Add(pluginInfo);
   }
 }

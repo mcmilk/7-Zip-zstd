@@ -61,10 +61,10 @@ bool CFileInfoW::IsDots() const
   fi.IsDevice = false;
 
   /*
-  #ifndef _WIN32_WCE
-  fi.ReparseTag = fd.dwReserved0;
-  #else
+  #ifdef UNDER_CE
   fi.ObjectID = fd.dwOID;
+  #else
+  fi.ReparseTag = fd.dwReserved0;
   #endif
   */
 
@@ -390,7 +390,7 @@ HANDLE CFindChangeNotification::FindFirst(LPCWSTR pathName, bool watchSubtree, D
 }
 #endif
 
-#ifndef _WIN32_WCE
+#ifndef UNDER_CE
 bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
 {
   driveStrings.Clear();

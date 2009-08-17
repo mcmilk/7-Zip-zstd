@@ -10,6 +10,7 @@
 
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/StreamObjects.h"
 
 #include "../../Compress/CopyCoder.h"
 
@@ -200,57 +201,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-class CBufInStream:
-  public IInStream,
-  public CMyUnknownImp
-{
-  CByteBuffer _data;
-  UInt64 _pos;
-
-public:
-  void Init(const CByteBuffer &data)
-  {
-    _data = data;
-    _pos = 0;
-  }
-
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
-};
-
-  
-STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
-{
-  if (processedSize != NULL)
-    *processedSize = 0;
-  if (_pos > _data.GetCapacity())
-    return E_FAIL;
-  size_t rem = _data.GetCapacity() - (size_t)_pos;
-  if (size < rem)
-    rem = (size_t)size;
-  memcpy(data, (const Byte *)_data + _pos, rem);
-  _pos += rem;
-  if (processedSize != NULL)
-    *processedSize = (UInt32)rem;
-  return S_OK;
-}
-
-STDMETHODIMP CBufInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
-{
-  switch(seekOrigin)
-  {
-    case STREAM_SEEK_SET: _pos = offset; break;
-    case STREAM_SEEK_CUR: _pos += offset; break;
-    case STREAM_SEEK_END: _pos = _data.GetCapacity() + offset; break;
-    default: return STG_E_INVALIDFUNCTION;
-  }
-  if (newPosition)
-    *newPosition = _pos;
-  return S_OK;
-}
-
 struct CSeekExtent
 {
   UInt64 Phy;
@@ -362,8 +312,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   {
     CBufInStream *inStreamSpec = new CBufInStream;
     CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-    inStreamSpec->Init(item.InlineData);
-    *stream = inStream .Detach();
+    CReferenceBuf *referenceBuf = new CReferenceBuf;
+    CMyComPtr<IUnknown> ref = referenceBuf;
+    referenceBuf->Buf = item.InlineData;
+    inStreamSpec->Init(referenceBuf);
+    *stream = inStream.Detach();
     return S_OK;
   }
 
@@ -407,12 +360,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
-    Int32 _aTestMode, IArchiveExtractCallback *extractCallback)
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool testMode = (_aTestMode != 0);
-  bool allFilesMode = (numItems == UInt32(-1));
+  bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = _refs2.Size();
   if (numItems == 0)
@@ -450,8 +402,8 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     RINOK(lps->SetCur());
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
-        NArchive::NExtract::NAskMode::kTest :
-        NArchive::NExtract::NAskMode::kExtract;
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
     UInt32 index = allFilesMode ? i : indices[i];
     
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -464,7 +416,7 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     if (item.IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NArchive::NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
       continue;
     }
     currentTotalSize += item.Size;
@@ -480,15 +432,15 @@ STDMETHODIMP CHandler::Extract(const UInt32* indices, UInt32 numItems,
     CMyComPtr<ISequentialInStream> udfInStream;
     HRESULT res = GetStream(index, &udfInStream);
     if (res == E_NOTIMPL)
-      opRes = NArchive::NExtract::NOperationResult::kUnSupportedMethod;
+      opRes = NExtract::NOperationResult::kUnSupportedMethod;
     else if (res != S_OK)
-      opRes = NArchive::NExtract::NOperationResult::kDataError;
+      opRes = NExtract::NOperationResult::kDataError;
     else
     {
       RINOK(copyCoder->Code(udfInStream, outStream, NULL, NULL, progress));
       opRes = outStreamSpec->IsFinishedOK() ?
-        NArchive::NExtract::NOperationResult::kOK:
-        NArchive::NExtract::NOperationResult::kDataError;
+        NExtract::NOperationResult::kOK:
+        NExtract::NOperationResult::kDataError;
     }
     outStreamSpec->ReleaseStream();
     RINOK(extractCallback->SetOperationResult(opRes));

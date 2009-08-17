@@ -56,7 +56,7 @@ class CStartupInfo
 
 public:
   void Init(const PluginStartupInfo &pluginStartupInfo,
-      const CSysString &pliginNameForRegestry);
+      const CSysString &pluginNameForRegestry);
   const char *GetMsgString(int messageId);
   int ShowMessage(unsigned int flags, const char *helpTopic,
       const char **items, int numItems, int numButtons);

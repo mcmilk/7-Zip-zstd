@@ -1,4 +1,6 @@
-#define IDD_SETTINGS                    904
+#define IDD_SETTINGS                    543
+#define IDD_SETTINGS_2                  643
+
 #define IDC_SETTINGS_SHOW_DOTS          1000
 #define IDC_SETTINGS_SHOW_REAL_FILE_ICONS 1001
 
