@@ -99,10 +99,11 @@ class CInArchive
   HRESULT FindCd(CCdInfo &cdInfo);
   HRESULT TryReadCd(CObjectVector<CItemEx> &items, UInt64 cdOffset, UInt64 cdSize, CProgressVirt *progress);
   HRESULT ReadCd(CObjectVector<CItemEx> &items, UInt64 &cdOffset, UInt64 &cdSize, CProgressVirt *progress);
-  HRESULT ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset);
+  HRESULT ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset, int &numCdItems);
 public:
   CInArchiveInfo m_ArchiveInfo;
   bool IsZip64;
+  bool IsOkHeaders;
 
   HRESULT ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress);
   HRESULT ReadLocalItemAfterCdItem(CItemEx &item);

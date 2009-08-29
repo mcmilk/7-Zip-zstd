@@ -43,6 +43,8 @@ static bool g_Maximized = false;
 DWORD g_ComCtl32Version;
 #endif
 
+bool g_IsSmallScreen = false;
+
 bool g_LVN_ITEMACTIVATE_Support = true;
 // LVN_ITEMACTIVATE replaces both NM_DBLCLK & NM_RETURN
 // Windows 2000
@@ -417,6 +419,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
   g_LVN_ITEMACTIVATE_Support = (g_ComCtl32Version >= MAKELONG(71, 4));
   #endif
+
+  g_IsSmallScreen = !NWindows::NControl::IsDialogSizeOK(200, 200);
 
   // OleInitialize is required for drag and drop.
   #ifndef UNDER_CE

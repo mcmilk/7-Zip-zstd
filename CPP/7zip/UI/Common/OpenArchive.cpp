@@ -140,7 +140,7 @@ HRESULT CArc::OpenStream(
   }
 
   #ifndef _SFX
-  if (numFinded == 0)
+  if (orderIndices.Size() >= 2 && (numFinded == 0 || extension.CompareNoCase(L"exe") == 0))
   {
     CIntVector orderIndices2;
     CByteBuffer byteBuffer;

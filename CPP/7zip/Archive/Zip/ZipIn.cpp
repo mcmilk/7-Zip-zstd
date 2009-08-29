@@ -305,6 +305,27 @@ HRESULT CInArchive::ReadLocalItem(CItemEx &item)
   return S_OK;
 }
 
+static bool FlagsAreSame(CItem &i1, CItem &i2)
+{
+  if (i1.CompressionMethod != i2.CompressionMethod)
+    return false;
+  // i1.Time
+
+  if (i1.Flags == i2.Flags)
+    return true;
+  UInt32 mask = 0xFFFF;
+  switch(i1.CompressionMethod)
+  {
+    case NFileHeader::NCompressionMethod::kDeflated:
+      mask = 0x7FF9;
+      break;
+    default:
+      if (i1.CompressionMethod <= NFileHeader::NCompressionMethod::kImploded)
+        mask = 0x7FFF;
+  }
+  return ((i1.Flags & mask) == (i2.Flags & mask));
+}
+
 HRESULT CInArchive::ReadLocalItemAfterCdItem(CItemEx &item)
 {
   if (item.FromLocal)
@@ -316,25 +337,10 @@ HRESULT CInArchive::ReadLocalItemAfterCdItem(CItemEx &item)
     if (ReadUInt32() != NSignature::kLocalFileHeader)
       return S_FALSE;
     RINOK(ReadLocalItem(localItem));
-    if (item.Flags != localItem.Flags)
-    {
-      UInt32 mask = 0xFFFF;
-      switch(item.CompressionMethod)
-      {
-        case NFileHeader::NCompressionMethod::kDeflated:
-          mask = 0x7FF9;
-          break;
-        default:
-          if (item.CompressionMethod <= NFileHeader::NCompressionMethod::kImploded)
-            mask = 0x7FFF;
-      }
-      if ((item.Flags & mask) != (localItem.Flags & mask))
-        return S_FALSE;
-    }
+    if (!FlagsAreSame(item, localItem))
+      return S_FALSE;
 
-    if (item.CompressionMethod != localItem.CompressionMethod ||
-        // item.Time != localItem.Time ||
-        (!localItem.HasDescriptor() &&
+    if ((!localItem.HasDescriptor() &&
           (
             item.FileCRC != localItem.FileCRC ||
             item.PackSize != localItem.PackSize ||
@@ -597,9 +603,10 @@ HRESULT CInArchive::ReadCd(CObjectVector<CItemEx> &items, UInt64 &cdOffset, UInt
   return res;
 }
 
-HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset)
+HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt *progress, UInt64 &cdOffset, int &numCdItems)
 {
   items.Clear();
+  numCdItems = 0;
   while (m_Signature == NSignature::kLocalFileHeader)
   {
     // FSeek points to next byte after signature
@@ -616,10 +623,14 @@ HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt
       break;
   }
   cdOffset = m_Position - 4;
-  for (int i = 0; i < items.Size(); i++)
+  int i;
+  for (i = 0; i < items.Size(); i++, numCdItems++)
   {
     if (progress && i % 1000 == 0)
       RINOK(progress->SetCompleted(items.Size()));
+    if (m_Signature == NSignature::kEndOfCentralDir)
+      break;
+
     if (m_Signature != NSignature::kCentralFileHeader)
       return S_FALSE;
 
@@ -627,7 +638,20 @@ HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt
     RINOK(ReadCdItem(cdItem));
 
     if (i == 0)
-      m_ArchiveInfo.Base = items[i].LocalHeaderPosition - cdItem.LocalHeaderPosition;
+    {
+      int j;
+      for (j = 0; j < items.Size(); j++)
+      {
+        CItemEx &item = items[j];
+        if (item.Name == cdItem.Name)
+        {
+          m_ArchiveInfo.Base = item.LocalHeaderPosition - cdItem.LocalHeaderPosition;
+          break;
+        }
+      }
+      if (j == items.Size())
+        return S_FALSE;
+    }
 
     int index;
     int left = 0, right = items.Size();
@@ -645,15 +669,13 @@ HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt
         left = index + 1;
     }
     CItemEx &item = items[index];
-    item.LocalHeaderPosition = cdItem.LocalHeaderPosition;
+    // item.LocalHeaderPosition = cdItem.LocalHeaderPosition;
     item.MadeByVersion = cdItem.MadeByVersion;
     item.CentralExtra = cdItem.CentralExtra;
 
     if (
         // item.ExtractVersion != cdItem.ExtractVersion ||
-        item.Flags != cdItem.Flags ||
-        item.CompressionMethod != cdItem.CompressionMethod ||
-        // item.Time != cdItem.Time ||
+        !FlagsAreSame(item, cdItem) ||
         item.FileCRC != cdItem.FileCRC)
       return S_FALSE;
 
@@ -670,6 +692,8 @@ HRESULT CInArchive::ReadLocalsAndCd(CObjectVector<CItemEx> &items, CProgressVirt
     if (!ReadUInt32(m_Signature))
       return S_FALSE;
   }
+  for (i = 0; i < items.Size(); i++)
+    items[i].LocalHeaderPosition -= m_ArchiveInfo.Base;
   return S_OK;
 }
 
@@ -753,6 +777,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   res = S_FALSE;
   */
 
+  int numCdItems = items.Size();
   if (res == S_FALSE)
   {
     _inBufMode = false;
@@ -762,7 +787,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       return S_FALSE;
     if (!ReadUInt32(m_Signature))
       return S_FALSE;
-    RINOK(ReadLocalsAndCd(items, progress, cdStartOffset));
+    RINOK(ReadLocalsAndCd(items, progress, cdStartOffset, numCdItems));
     cdSize = (m_Position - 4) - cdStartOffset;
     cdStartOffset -= m_ArchiveInfo.Base;
   }
@@ -785,8 +810,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
       return S_FALSE;
     if (ecd64.thisDiskNumber != 0 || ecd64.startCDDiskNumber != 0)
       throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
-    if (ecd64.numEntriesInCDOnThisDisk != items.Size() ||
-        ecd64.numEntriesInCD != items.Size() ||
+    if (ecd64.numEntriesInCDOnThisDisk != numCdItems ||
+        ecd64.numEntriesInCD != numCdItems ||
         ecd64.cdSize != cdSize ||
         (ecd64.cdStartOffset != cdStartOffset &&
         (!items.IsEmpty())))
@@ -822,8 +847,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
 
   if (ecd64.thisDiskNumber != 0 || ecd64.startCDDiskNumber != 0)
     throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
-  if ((UInt16)ecd64.numEntriesInCDOnThisDisk != ((UInt16)items.Size()) ||
-      (UInt16)ecd64.numEntriesInCD != ((UInt16)items.Size()) ||
+  if ((UInt16)ecd64.numEntriesInCDOnThisDisk != ((UInt16)numCdItems) ||
+      (UInt16)ecd64.numEntriesInCD != ((UInt16)numCdItems) ||
       (UInt32)ecd64.cdSize != (UInt32)cdSize ||
       ((UInt32)(ecd64.cdStartOffset) != (UInt32)cdStartOffset &&
         (!items.IsEmpty())))
@@ -831,6 +856,7 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   
   _inBufMode = false;
   _inBuffer.Free();
+  IsOkHeaders = (numCdItems == items.Size());
   return S_OK;
 }
 

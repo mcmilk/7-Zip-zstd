@@ -1,13 +1,19 @@
 #include "EditPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc SMALL_PAGE_SIZE_X
-#define yc 60
+#define xc 200
+#define yc 80
 
 IDD_EDIT  MY_PAGE
-CAPTION "Editor"
-{
-  LTEXT       "&Editor:", IDC_EDIT_STATIC_EDITOR, m, m, xc, 8
-  EDITTEXT    IDC_EDIT_EDIT_EDITOR, m, 20, xc - m - bxsDots, 14, ES_AUTOHSCROLL
-  PUSHBUTTON  "...", IDC_EDIT_BUTTON_SET, xs - m - bxsDots, 19, bxsDots, bys
-}
+#include "EditPage2.rc"
+
+#ifdef UNDER_CE
+
+#undef xc
+
+#define xc SMALL_PAGE_SIZE_X
+
+IDD_EDIT_2  MY_PAGE
+#include "EditPage2.rc"
+
+#endif

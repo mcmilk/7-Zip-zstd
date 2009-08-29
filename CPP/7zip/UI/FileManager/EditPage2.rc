@@ -1,0 +1,9 @@
+CAPTION "Editor"
+{
+  LTEXT       "&Editor:", IDC_EDIT_STATIC_EDITOR, m, m, xc, 8
+  EDITTEXT    IDC_EDIT_EDIT_EDITOR, m, 20, xc - m - bxsDots, 14, ES_AUTOHSCROLL
+  PUSHBUTTON  "...", IDC_EDIT_BUTTON_EDITOR, xs - m - bxsDots, 19, bxsDots, bys
+  LTEXT       "&Diff:", IDC_EDIT_STATIC_DIFF, m, 40, xc, 8
+  EDITTEXT    IDC_EDIT_EDIT_DIFF, m, 52, xc - m - bxsDots, 14, ES_AUTOHSCROLL
+  PUSHBUTTON  "...", IDC_EDIT_BUTTON_DIFF, xs - m - bxsDots, 51, bxsDots, bys
+}

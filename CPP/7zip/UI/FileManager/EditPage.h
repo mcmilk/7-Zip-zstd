@@ -8,7 +8,8 @@
 
 class CEditPage: public NWindows::NControl::CPropertyPage
 {
-  NWindows::NControl::CEdit _editorEdit;
+  NWindows::NControl::CEdit _editor;
+  NWindows::NControl::CEdit _diff;
 public:
   virtual bool OnInit();
   virtual void OnNotifyHelp();

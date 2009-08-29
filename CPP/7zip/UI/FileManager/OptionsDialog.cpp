@@ -106,7 +106,7 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
       // IDD_PLUGINS,
       SIZED_DIALOG(IDD_MENU),
       SIZED_DIALOG(IDD_FOLDERS),
-      IDD_EDIT,
+      SIZED_DIALOG(IDD_EDIT),
       SIZED_DIALOG(IDD_SETTINGS),
       SIZED_DIALOG(IDD_LANG) };
   NControl::CPropertyPage *pagePinters[] = { &systemPage,  &menuPage, &foldersPage, &editPage, &settingsPage, &langPage };

@@ -817,7 +817,7 @@ HRESULT Update(
   if(inArchive != 0)
   {
     inArchive->GetArchiveInfo(archiveInfo);
-    if (archiveInfo.Base != 0)
+    if (archiveInfo.Base != 0 || !inArchive->IsOkHeaders)
       return E_NOTIMPL;
   }
   else

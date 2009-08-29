@@ -16,6 +16,8 @@ extern HWND g_HWND;
 
 const int kNumPanelsMax = 2;
 
+extern bool g_IsSmallScreen;
+
 enum
 {
   kAddCommand = kToolbarStartID,
@@ -202,8 +204,8 @@ public:
 
   void RefreshStatusBar() { GetFocusedPanel().RefreshStatusBar(); }
 
-  void SetListViewMode(UINT32 index) { GetFocusedPanel().SetListViewMode(index); }
-  UINT32 GetListViewMode() { return  GetFocusedPanel().GetListViewMode(); }
+  void SetListViewMode(UInt32 index) { GetFocusedPanel().SetListViewMode(index); }
+  UInt32 GetListViewMode() { return GetFocusedPanel().GetListViewMode(); }
   PROPID GetSortID() { return GetFocusedPanel().GetSortID(); }
 
   void SortItemsWithPropID(PROPID propID) { GetFocusedPanel().SortItemsWithPropID(propID); }
@@ -248,15 +250,24 @@ public:
   void ReloadToolbars();
   void ReadToolbar()
   {
-    UINT32 mask = ReadToolbarsMask();
-    ShowButtonsLables = ((mask & 1) != 0);
-    LargeButtons = ((mask & 2) != 0);
-    ShowStandardToolbar = ((mask & 4) != 0);
-    ShowArchiveToolbar  = ((mask & 8) != 0);
+    UInt32 mask = ReadToolbarsMask();
+    if (mask & ((UInt32)1 << 31))
+    {
+      ShowButtonsLables = !g_IsSmallScreen;
+      LargeButtons = false;
+      ShowStandardToolbar = ShowArchiveToolbar = true;
+    }
+    else
+    {
+      ShowButtonsLables = ((mask & 1) != 0);
+      LargeButtons = ((mask & 2) != 0);
+      ShowStandardToolbar = ((mask & 4) != 0);
+      ShowArchiveToolbar  = ((mask & 8) != 0);
+    }
   }
   void SaveToolbar()
   {
-    UINT32 mask = 0;
+    UInt32 mask = 0;
     if (ShowButtonsLables) mask |= 1;
     if (LargeButtons) mask |= 2;
     if (ShowStandardToolbar) mask |= 4;

@@ -281,7 +281,7 @@ void SaveToolbarsMask(UInt32 toolbarMask)
   key.SetValue(kToolbars, toolbarMask);
 }
 
-static const UInt32 kDefaultToolbarMask = 8 | 4 | 1;
+static const UInt32 kDefaultToolbarMask = ((UInt32)1 << 31) | 8 | 4 | 1;
 
 UInt32 ReadToolbarsMask()
 {
